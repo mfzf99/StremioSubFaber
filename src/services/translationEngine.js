@@ -2201,8 +2201,9 @@ CRITICAL ENFORCEMENT RULES (ZERO TOLERANCE):
    - PRESERVE all [br], <i>...</i>, and speaker dashes (-) in the exact same position as in the source.
 
 7. CLEAN PAYLOAD ONLY:
-   - Output ONLY the sequence of <s id="N">...</s> tags.
+   - Output ONLY raw <s id="N">...</s> tags.
    - ZERO commentary, ZERO markdown code blocks, ZERO translator notes in parentheses.
+   - Nothing before the first tag or after the last tag.
 
 <input>
 ${batchText}
