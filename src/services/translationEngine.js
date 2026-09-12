@@ -2186,7 +2186,6 @@ CRITICAL ENFORCEMENT RULES (ZERO TOLERANCE):
 3. ZERO SHIFTING, ANTI-HALLUCINATION & SOURCE FIDELITY:
    - NEVER shift subsequent dialogue forward to compensate for short or empty slots.
    - NEVER invent synthetic filler lines to satisfy the tag count.
-   - ZERO SCRIPT RESTORATION: Translate EXCLUSIVELY the written source text. Even if you recognize the media and know actors spoke omitted/unscripted lines in the audio, you are STRICTLY FORBIDDEN from inserting missing lines.
    - ZERO CONVERSATIONAL CONTINUATION: Output <s id="${startId}"> MUST translate input <s id="${startId}"> directly. NEVER generate reactive conversational replies or commentary to the background memory (<m> tags).
 
 4. AIR-GAPPED READ-ONLY CONTEXT MEMORY (<m> TAGS):
@@ -2195,15 +2194,15 @@ CRITICAL ENFORCEMENT RULES (ZERO TOLERANCE):
    - Your response MUST begin immediately with <s id="${startId}">.
 
 5. ESCAPE HATCH:
-   - If an entry contains corrupt characters, untranslatable proper nouns, or unintelligible strings, copy the EXACT source text into that slot.
+   - If content cannot be translated — foreign proper nouns, brand/entity names, corrupted text — copy the EXACT source text into that slot instead.
 
 6. SONG LYRICS & INLINE MARKUP:
-   - Translate all lyrics marked with musical notes (♪/♫).
-   - Retain all formatting tags ([br], <i>...</i>, hyphens) in their exact relative positions.
+   - Lyrics inside music notes (♪/♫) must always be translated, whether as a full song block or scattered background music.
+   - PRESERVE all [br], <i>...</i>, and speaker dashes (-) in the exact same position as in the source.
 
 7. CLEAN PAYLOAD ONLY:
    - Output ONLY the sequence of <s id="N">...</s> tags.
-   - ZERO markdown code blocks, ZERO preambles, and ZERO translator notes.
+   - ZERO commentary, ZERO markdown code blocks, ZERO translator notes in parentheses.
 
 <input>
 ${batchText}
