@@ -2193,16 +2193,20 @@ CRITICAL ENFORCEMENT RULES (ZERO TOLERANCE):
    - NEVER translate, modify, output, or duplicate text from <m> tags into active <s id="N"> tags.
    - Your response MUST begin immediately with <s id="${startId}">.
 
-5. ESCAPE HATCH:
-   - If content cannot be translated — foreign proper nouns, brand/entity names, corrupted text — copy the EXACT source text into that slot instead.
+5. ESCAPE HATCH (EXACT COPY PROTOCOL):
+   - Copy the EXACT original text into the slot ONLY if: content is untranslatable (foreign proper nouns, fictional entities, corrupted text); the slot contains ONLY symbols, music notes (♪/♫), numbers, or punctuation; or the slot is empty.
+   - NEVER skip the slot, and NEVER use this as a shortcut for difficult translations.
 
 6. SONG LYRICS & INLINE MARKUP:
    - Lyrics inside music notes (♪/♫) must always be translated, whether as a full song block or scattered background music.
    - PRESERVE all [br], <i>...</i>, and speaker dashes (-) in the exact same position as in the source.
+   - Do NOT add line breaks or formatting tags that don't exist in the source.
 
 7. CLEAN PAYLOAD ONLY:
-   - Output ONLY raw <s id="N">...</s> tags.
+   - Output ONLY the raw <s id="N">...</s> sequence.
    - ZERO commentary, ZERO markdown code blocks, ZERO translator notes in parentheses.
+   - ZERO PROMPT ECHO: Do NOT echo [input], [OUTPUT_FORMAT], or BATCH headers.
+   - Do NOT repeat the leading <s id="${startId}"> prefix pre-filled at the prompt boundary.
    - Nothing before the first tag or after the last tag.
 
 <input>
