@@ -127,7 +127,7 @@ function getBatchSizeForModel(model) {
 
   // Gemini 3.0 Flash: Large context window, higher batch size for throughput
   if (modelStr.includes('gemini-3-flash')) {
-    return 50;
+    return 200;
   }
 
   // Gemma models: Lower batch size for stability
@@ -2153,7 +2153,7 @@ class TranslationEngine {
 
     const promptBody = `${introInstruction}
 
-[UNIVERSAL STRUCTURAL DEMONSTRATION: ZERO MERGING]
+[UNIVERSAL STRUCTURAL DEMONSTRATION: FRAGMENTATION & TAG ISOLATION]
 Input:
 <s id="1">The chief director was the one</s>
 <s id="2">responsible for the approval.</s>
@@ -2163,41 +2163,51 @@ Input:
 <s id="6">not to.</s>
 <s id="7">Wait.</s>
 
-Target Output (Mandatory Hanging & Incomplete Syntax Per Slot):
-<s id="1">${targetLabel} translation of opening clause only (leave grammatically incomplete)</s>
-<s id="2">${targetLabel} translation of continuation only</s>
-<s id="3">${targetLabel} translation of statement only (DO NOT attach question tag here)</s>
-<s id="4">${targetLabel} isolated question tag only (e.g., "kan?", "bukan?", "betul tak?")</s>
-<s id="5">${targetLabel} translation of conjunction clause only (leave hanging)</s>
-<s id="6">${targetLabel} translation of isolated negation only</s>
-<s id="7">${targetLabel} translation of single reaction word only</s>
+Target Output (Mandatory Grammatical Incompleteness Per Slot - Zero Merging Across Slots):
+<s id="1">${targetLabel} translation of opening relative clause only (leave grammatically incomplete)</s>
+<s id="2">${targetLabel} translation of predicate continuation only</s>
+<s id="3">${targetLabel} translation of the main statement ONLY (DO NOT attach question tag here)</s>
+<s id="4">${targetLabel} isolated question tag / confirmation particle only (e.g., "kan?", "bukan?", "betul tak?")</s>
+<s id="5">${targetLabel} translation of dependent conjunction clause only (leave hanging)</s>
+<s id="6">${targetLabel} translation of isolated negation particle only</s>
+<s id="7">${targetLabel} translation of the single reaction word only</s>
 
 CRITICAL ENFORCEMENT RULES (ZERO TOLERANCE):
 
-1. STRICT 1-TO-1 ID PARITY:
-   - Output EXACTLY ${expectedCount} tags from <s id="${startId}"> to <s id="${endId}">.
-   - Every input <s id="N"> MUST produce one output <s id="N">. NEVER skip, combine, or invent IDs.
+1. STRICT 1-TO-1 CARDINALITY & ID PARITY:
+   - Output EXACTLY ${expectedCount} entries, numbered sequentially from ID ${startId} to ID ${endId}.
+   - Every input <s id="N"> pairs strictly with one output <s id="N">. Never omit, combine, or invent IDs.
 
-2. ZERO MERGING & MANDATORY HANGING LINES:
-   - NEVER combine adjacent slots. Output <s id="N"> translates ONLY input <s id="N">.
-   - Keep incomplete sentences INCOMPLETE. Do NOT finish sentences across tags.
-   - Short slots (1-2 words), question tags ("kan?", "bukan?"), negations ("not to."), and interjections ("Wait.") MUST stay alone in their own slot.
+2. ABSOLUTE SLOT ISOLATION (ZERO MERGING / ZERO FOLDING):
+   - Output <s id="N"> MUST contain ONLY the translation of input <s id="N">. NEVER pull or fold words from adjacent slots.
+   - ISOLATED PARTICLES & SHORT SLOTS (1-2 WORDS): If a slot contains only isolated question tags ("are you?", "right?"), negation particles ("not to."), or interjections ("Wait.", "Yes."), translate ONLY those words inside that exact slot (e.g., "kan?", "bukan?"). NEVER attach them to preceding or subsequent lines.
+   - Incomplete target syntax is MANDATORY to preserve subtitle synchronization.
 
-3. READ-ONLY CONTEXT (<m> TAGS):
-   - Tags inside <m id="N"> are READ-ONLY context. NEVER translate, repeat, or output <m> tags.
+3. ZERO SHIFTING, ANTI-HALLUCINATION & SOURCE FIDELITY:
+   - NEVER shift subsequent dialogue forward to compensate for short or empty slots.
+   - NEVER invent synthetic filler lines to satisfy the tag count.
+   - ZERO CONVERSATIONAL CONTINUATION: Output <s id="${startId}"> MUST translate input <s id="${startId}"> directly. NEVER generate reactive conversational replies or commentary to the background memory (<m> tags).
 
-4. ESCAPE HATCH (EXACT COPY ONLY):
-   - If slot is empty, untranslatable, or contains ONLY symbols, music notes (♪/♫), or numbers, COPY the exact source text. NEVER skip the tag.
+4. AIR-GAPPED READ-ONLY CONTEXT MEMORY (<m> TAGS):
+   - Entries inside <m id="N"><src>...</src><dst>...</dst></m> are STRICTLY READ-ONLY background context.
+   - NEVER translate, modify, output, or duplicate text from <m> tags into active <s id="N"> tags.
+   - Your response MUST begin immediately with <s id="${startId}">.
 
-5. MARKUP & LYRICS PRESERVATION:
-   - Preserve all [br], <i>...</i>, and speaker dashes (-) in exact source positions.
-   - Always translate lyrics inside music notes (♪/♫).
+5. ESCAPE HATCH (EXACT COPY PROTOCOL):
+   - Copy the EXACT original text into the slot ONLY if: content is untranslatable (foreign proper nouns, fictional entities, corrupted text); the slot contains ONLY symbols, music notes (♪/♫), numbers, or punctuation; or the slot is empty.
+   - NEVER skip the slot, and NEVER use this as a shortcut for difficult translations.
 
-6. STRICT RAW PAYLOAD:
-   - Output raw <s id="N">...</s> tags ONLY.
-   - NEVER use markdown code fences or triple backticks.
-   - ZERO translator notes, ZERO explanations, ZERO conversational intro.
-   - Do NOT repeat the pre-filled <s id="${startId}"> prefix.
+6. SONG LYRICS & INLINE MARKUP:
+   - Lyrics inside music notes (♪/♫) must always be translated, whether as a full song block or scattered background music.
+   - PRESERVE all [br], <i>...</i>, and speaker dashes (-) in the exact same position as in the source.
+   - Do NOT add line breaks or formatting tags that don't exist in the source.
+
+7. CLEAN PAYLOAD ONLY:
+   - Output ONLY the raw <s id="N">...</s> sequence.
+   - ZERO commentary, ZERO markdown code blocks, ZERO notes in parentheses.
+   - ZERO PROMPT ECHO: Do NOT echo [input], [OUTPUT_FORMAT], or BATCH headers.
+   - Do NOT repeat the leading <s id="${startId}"> prefix pre-filled at the prompt boundary.
+   - Nothing before the first tag or after the last tag.
 
 <input>
 ${batchText}
