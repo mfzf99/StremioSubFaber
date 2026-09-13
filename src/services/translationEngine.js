@@ -2195,7 +2195,7 @@ CRITICAL ENFORCEMENT RULES (ZERO TOLERANCE):
 
 6. STRICT RAW PAYLOAD:
    - Output raw <s id="N">...</s> tags ONLY.
-   - NEVER use markdown code fences (NO ```xml or ```).
+   - NEVER use markdown code fences or triple backticks.
    - ZERO translator notes, ZERO explanations, ZERO conversational intro.
    - Do NOT repeat the pre-filled <s id="${startId}"> prefix.
 
