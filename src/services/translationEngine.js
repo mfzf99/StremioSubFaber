@@ -127,7 +127,7 @@ function getBatchSizeForModel(model) {
 
   // Gemini 3.0 Flash: Large context window, higher batch size for throughput
   if (modelStr.includes('gemini-3-flash')) {
-    return 100;
+    return 50;
   }
 
   // Gemma models: Lower batch size for stability
@@ -137,16 +137,16 @@ function getBatchSizeForModel(model) {
 
   // Flash-lite models: More conservative batch size for stability
   if (modelStr.includes('flash-lite')) {
-    return 60;
+    return 50;
   }
 
   // Flash models (non-lite): Larger batch size for better throughput
   if (modelStr.includes('flash')) {
-    return 80;
+    return 50;
   }
 
   // Default batch size for unknown models
-  return 80;
+  return 50;
 }
 
 // Module-level shared key health tracking across engine instances.
@@ -2174,40 +2174,26 @@ Target Output (Mandatory Grammatical Incompleteness Per Slot - Zero Merging Acro
 
 CRITICAL ENFORCEMENT RULES (ZERO TOLERANCE):
 
-1. STRICT 1-TO-1 CARDINALITY & ID PARITY:
-   - Output EXACTLY ${expectedCount} entries, numbered sequentially from ID ${startId} to ID ${endId}.
-   - Every input <s id="N"> pairs strictly with one output <s id="N">. Never omit, combine, or invent IDs.
+1. STRICT 1:1 ID PARITY & ZERO SHIFTING:
+   - Output EXACTLY ${expectedCount} entries, numbered sequentially from <s id="${startId}"> to <s id="${endId}">.
+   - NEVER omit, combine, invent, or shift IDs forward/backward to compensate for short slots.
 
-2. ABSOLUTE SLOT ISOLATION (ZERO MERGING / ZERO FOLDING):
-   - Output <s id="N"> MUST contain ONLY the translation of input <s id="N">. NEVER pull or fold words from adjacent slots.
-   - ISOLATED PARTICLES & SHORT SLOTS (1-2 WORDS): If a slot contains only isolated question tags ("are you?", "right?"), negation particles ("not to."), or interjections ("Wait.", "Yes."), translate ONLY those words inside that exact slot (e.g., "kan?", "bukan?"). NEVER attach them to preceding or subsequent lines.
-   - Incomplete target syntax is MANDATORY to preserve subtitle synchronization.
+2. ABSOLUTE SLOT ISOLATION & HANGING SYNTAX (CRITICAL):
+   - Output <s id="N"> translates ONLY input <s id="N">. ZERO folding or word-borrowing across adjacent tags.
+   - MANDATORY INCOMPLETE SYNTAX: Isolated question tags ("kan?", "right?"), negations ("not to."), conjunctions, or 1-word interjections ("Wait.") MUST stay isolated in their exact slot. NEVER merge them with surrounding lines.
 
-3. ZERO SHIFTING, ANTI-HALLUCINATION & SOURCE FIDELITY:
-   - NEVER shift subsequent dialogue forward to compensate for short or empty slots.
-   - NEVER invent synthetic filler lines to satisfy the tag count.
-   - ZERO CONVERSATIONAL CONTINUATION: Output <s id="${startId}"> MUST translate input <s id="${startId}"> directly. NEVER generate reactive conversational replies or commentary to the background memory (<m> tags).
+3. CONTEXT (<m>) & ESCAPE HATCH PROTOCOL:
+   - <m> tags are STRICTLY read-only background context; NEVER translate, duplicate, or reply to them.
+   - Copy EXACT source text ONLY if: slot is empty, untranslatable, or contains ONLY symbols, numbers, or music notes (♪/♫).
 
-4. AIR-GAPPED READ-ONLY CONTEXT MEMORY (<m> TAGS):
-   - Entries inside <m id="N"><src>...</src><dst>...</dst></m> are STRICTLY READ-ONLY background context.
-   - NEVER translate, modify, output, or duplicate text from <m> tags into active <s id="N"> tags.
-   - Your response MUST begin immediately with <s id="${startId}">.
+4. INLINE MARKUP & LYRICS:
+   - Preserve all [br], <i>...</i>, and speaker dashes (-) in exact source positions.
+   - Translate lyrics inside music notes (♪/♫); do not skip them.
 
-5. ESCAPE HATCH (EXACT COPY PROTOCOL):
-   - Copy the EXACT original text into the slot ONLY if: content is untranslatable (foreign proper nouns, fictional entities, corrupted text); the slot contains ONLY symbols, music notes (♪/♫), numbers, or punctuation; or the slot is empty.
-   - NEVER skip the slot, and NEVER use this as a shortcut for difficult translations.
-
-6. SONG LYRICS & INLINE MARKUP:
-   - Lyrics inside music notes (♪/♫) must always be translated, whether as a full song block or scattered background music.
-   - PRESERVE all [br], <i>...</i>, and speaker dashes (-) in the exact same position as in the source.
-   - Do NOT add line breaks or formatting tags that don't exist in the source.
-
-7. CLEAN PAYLOAD ONLY:
+5. CLEAN PAYLOAD ONLY:
    - Output ONLY the raw <s id="N">...</s> sequence.
-   - ZERO commentary, ZERO markdown code blocks, ZERO notes in parentheses.
-   - ZERO PROMPT ECHO: Do NOT echo [input], [OUTPUT_FORMAT], or BATCH headers.
-   - Do NOT repeat the leading <s id="${startId}"> prefix pre-filled at the prompt boundary.
-   - Nothing before the first tag or after the last tag.
+   - ZERO commentary, ZERO markdown blocks, ZERO notes in parentheses, ZERO prompt/header echo.
+   - Do NOT repeat the pre-filled <s id="${startId}"> prefix at the prompt boundary.
 
 <input>
 ${batchText}
