@@ -34,11 +34,11 @@ const { executeParallelTranslation } = require('../utils/parallelTranslation');
 const PROMPT_TEMPLATES = {
   // 1. PROMPT ASAL (Enterprise Broadcast Standard + Natural Register)
   primary: (targetLabel, sourceLabel) => 
-    `Translate the text inside each <s id="N"> tag from ${sourceLabel} to ${targetLabel}. Use appropriate ${targetLabel} colloquialisms. Adapt idioms, slang, and cultural references into natural ${targetLabel} equivalents. Match the original speaker's tone, emotion, and register.`,
+    `Translate the text inside each <s id="N"> tag from ${sourceLabel} to ${targetLabel}. Translate meaning and idioms, not literal words, into natural, conversational ${targetLabel} that matches the scene's tone.`,
 
   // 2. PROMPT KECEMASAN (PROHIBITED_CONTENT Fallback - Neutral & Safe)
   fallback: (targetLabel, sourceLabel) => 
-    `Translate the text inside each <s id="N"> tag from ${sourceLabel} to ${targetLabel}. Use appropriate ${targetLabel} colloquialisms. Adapt idioms, slang, and cultural references into natural ${targetLabel} equivalents. Match the original speaker's tone, emotion, and register.`
+    `Translate the text inside each <s id="N"> tag from ${sourceLabel} to ${targetLabel}. Translate meaning and idioms, not literal words, into natural, conversational ${targetLabel} that matches the scene's tone.`
 };
 // ============================================================================
 // Extract normalized tokens from a language label/code (split on common separators)
@@ -127,7 +127,7 @@ function getBatchSizeForModel(model) {
 
   // Gemini 3.0 Flash: Large context window, higher batch size for throughput
   if (modelStr.includes('gemini-3-flash')) {
-    return 400;
+    return 200;
   }
 
   // Gemma models: Lower batch size for stability
