@@ -2204,7 +2204,7 @@ CRITICAL ENFORCEMENT RULES (ZERO TOLERANCE):
 
 7. CLEAN PAYLOAD ONLY:
    - Output ONLY the raw <s id="N">...</s> sequence.
-   - ZERO commentary, ZERO markdown code blocks, ZERO translator notes in parentheses.
+   - ZERO commentary, ZERO markdown code blocks, ZERO notes in parentheses.
    - ZERO PROMPT ECHO: Do NOT echo [input], [OUTPUT_FORMAT], or BATCH headers.
    - Do NOT repeat the leading <s id="${startId}"> prefix pre-filled at the prompt boundary.
    - Nothing before the first tag or after the last tag.
