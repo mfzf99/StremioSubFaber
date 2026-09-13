@@ -2153,7 +2153,7 @@ class TranslationEngine {
 
     const promptBody = `${introInstruction}
 
-[UNIVERSAL STRUCTURAL DEMONSTRATION: FRAGMENTATION & TAG ISOLATION]
+[UNIVERSAL STRUCTURAL DEMONSTRATION: ZERO MERGING]
 Input:
 <s id="1">The chief director was the one</s>
 <s id="2">responsible for the approval.</s>
@@ -2163,37 +2163,41 @@ Input:
 <s id="6">not to.</s>
 <s id="7">Wait.</s>
 
-Target Output (Mandatory Grammatical Incompleteness Per Slot - Zero Merging Across Slots):
-<s id="1">${targetLabel} translation of opening relative clause only (leave grammatically incomplete)</s>
-<s id="2">${targetLabel} translation of predicate continuation only</s>
-<s id="3">${targetLabel} translation of the main statement ONLY (DO NOT attach question tag here)</s>
-<s id="4">${targetLabel} isolated question tag / confirmation particle only (e.g., "kan?", "bukan?", "betul tak?")</s>
-<s id="5">${targetLabel} translation of dependent conjunction clause only (leave hanging)</s>
-<s id="6">${targetLabel} translation of isolated negation particle only</s>
-<s id="7">${targetLabel} translation of the single reaction word only</s>
+Target Output (Mandatory Hanging & Incomplete Syntax Per Slot):
+<s id="1">${targetLabel} translation of opening clause only (leave grammatically incomplete)</s>
+<s id="2">${targetLabel} translation of continuation only</s>
+<s id="3">${targetLabel} translation of statement only (DO NOT attach question tag here)</s>
+<s id="4">${targetLabel} isolated question tag only (e.g., "kan?", "bukan?", "betul tak?")</s>
+<s id="5">${targetLabel} translation of conjunction clause only (leave hanging)</s>
+<s id="6">${targetLabel} translation of isolated negation only</s>
+<s id="7">${targetLabel} translation of single reaction word only</s>
 
 CRITICAL ENFORCEMENT RULES (ZERO TOLERANCE):
 
-1. STRICT 1:1 ID PARITY & ZERO SHIFTING:
-   - Output EXACTLY ${expectedCount} entries, numbered sequentially from <s id="${startId}"> to <s id="${endId}">.
-   - NEVER omit, combine, invent, or shift IDs forward/backward to compensate for short slots.
+1. STRICT 1-TO-1 ID PARITY:
+   - Output EXACTLY ${expectedCount} tags from <s id="${startId}"> to <s id="${endId}">.
+   - Every input <s id="N"> MUST produce one output <s id="N">. NEVER skip, combine, or invent IDs.
 
-2. ABSOLUTE SLOT ISOLATION & HANGING SYNTAX (CRITICAL):
-   - Output <s id="N"> translates ONLY input <s id="N">. ZERO folding or word-borrowing across adjacent tags.
-   - MANDATORY INCOMPLETE SYNTAX: Isolated question tags ("kan?", "right?"), negations ("not to."), conjunctions, or 1-word interjections ("Wait.") MUST stay isolated in their exact slot. NEVER merge them with surrounding lines.
+2. ZERO MERGING & MANDATORY HANGING LINES:
+   - NEVER combine adjacent slots. Output <s id="N"> translates ONLY input <s id="N">.
+   - Keep incomplete sentences INCOMPLETE. Do NOT finish sentences across tags.
+   - Short slots (1-2 words), question tags ("kan?", "bukan?"), negations ("not to."), and interjections ("Wait.") MUST stay alone in their own slot.
 
-3. CONTEXT (<m>) & ESCAPE HATCH PROTOCOL:
-   - <m> tags are STRICTLY read-only background context; NEVER translate, duplicate, or reply to them.
-   - Copy EXACT source text ONLY if: slot is empty, untranslatable, or contains ONLY symbols, numbers, or music notes (♪/♫).
+3. READ-ONLY CONTEXT (<m> TAGS):
+   - Tags inside <m id="N"> are READ-ONLY context. NEVER translate, repeat, or output <m> tags.
 
-4. INLINE MARKUP & LYRICS:
+4. ESCAPE HATCH (EXACT COPY ONLY):
+   - If slot is empty, untranslatable, or contains ONLY symbols, music notes (♪/♫), or numbers, COPY the exact source text. NEVER skip the tag.
+
+5. MARKUP & LYRICS PRESERVATION:
    - Preserve all [br], <i>...</i>, and speaker dashes (-) in exact source positions.
-   - Translate lyrics inside music notes (♪/♫); do not skip them.
+   - Always translate lyrics inside music notes (♪/♫).
 
-5. CLEAN PAYLOAD ONLY:
-   - Output ONLY the raw <s id="N">...</s> sequence.
-   - ZERO commentary, ZERO markdown blocks, ZERO notes in parentheses, ZERO prompt/header echo.
-   - Do NOT repeat the pre-filled <s id="${startId}"> prefix at the prompt boundary.
+6. STRICT RAW PAYLOAD:
+   - Output raw <s id="N">...</s> tags ONLY.
+   - NEVER use markdown code fences (NO ```xml or ```).
+   - ZERO translator notes, ZERO explanations, ZERO conversational intro.
+   - Do NOT repeat the pre-filled <s id="${startId}"> prefix.
 
 <input>
 ${batchText}
