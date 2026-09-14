@@ -38,7 +38,7 @@ const PROMPT_TEMPLATES = {
 
   // 2. PROMPT KECEMASAN (PROHIBITED_CONTENT Fallback - Neutral & Safe)
   fallback: (targetLabel, sourceLabel) => 
-    `Translate the text inside each <s id="N"> tag from ${sourceLabel} to ${targetLabel} using appropriate colloquialisms. Adapt idioms, slang, and cultural references into natural ${targetLabel} equivalents. Match the original speaker's tone, emotion, and register. Preserve profanity at its original level.`
+    `Translate the text inside each <s id="N"> tag from ${sourceLabel} to ${targetLabel} using appropriate colloquialisms. Adapt idioms, slang, and cultural references into natural ${targetLabel} equivalents. Match the original speaker's tone, emotion, and register.`
 };
 // ============================================================================
 // Extract normalized tokens from a language label/code (split on common separators)
