@@ -2194,7 +2194,8 @@ CRITICAL ENFORCEMENT RULES (ZERO TOLERANCE):
    - Your response MUST begin immediately with <s id="${startId}">.
 
 5. ESCAPE HATCH (EXACT COPY PROTOCOL):
-   - Copy the EXACT original text into the slot ONLY if: content is untranslatable (foreign proper nouns, fictional entities, corrupted text); the slot contains ONLY symbols, music notes (♪/♫), numbers, or punctuation; or the slot is empty.
+   - Copy the EXACT original text into the slot ONLY if: content is untranslatable (company/brand names, foreign proper nouns, fictional entities, corrupted text); the slot contains ONLY symbols, music notes (♪/♫), numbers, or punctuation; or the slot is empty.
+   - NEVER translate company names, registered entities, or their legal suffixes (e.g., Co., Ltd., Inc.).
    - NEVER skip the slot, and NEVER use this as a shortcut for difficult translations.
 
 6. SONG LYRICS & INLINE MARKUP:
