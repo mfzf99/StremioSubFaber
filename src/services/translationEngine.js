@@ -34,11 +34,11 @@ const { executeParallelTranslation } = require('../utils/parallelTranslation');
 const PROMPT_TEMPLATES = {
   // 1. PROMPT ASAL (Enterprise Broadcast Standard + Natural Register)
   primary: (targetLabel, sourceLabel) => 
-    `Translate the text inside each <s id="N"> tag from ${sourceLabel} to ${targetLabel}. Use appropriate ${targetLabel} colloquialisms. NEVER mirror or copy the ${sourceLabel} sentence structure.`,
+    `Translate the text inside each <s id="N"> tag from ${sourceLabel} to ${targetLabel}. Use natural ${targetLabel} colloquialisms.`,
 
   // 2. PROMPT KECEMASAN (PROHIBITED_CONTENT Fallback - Neutral & Safe)
   fallback: (targetLabel, sourceLabel) => 
-    `Translate the text inside each <s id="N"> tag from ${sourceLabel} to ${targetLabel}. Use appropriate ${targetLabel} colloquialisms. NEVER mirror or copy the ${sourceLabel} sentence structure.`
+    `Translate the text inside each <s id="N"> tag from ${sourceLabel} to ${targetLabel}. Use natural ${targetLabel} colloquialisms.`
 };
 // ============================================================================
 // Extract normalized tokens from a language label/code (split on common separators)
@@ -2152,25 +2152,6 @@ class TranslationEngine {
     const introInstruction = PROMPT_TEMPLATES.primary(targetLabel, sourceLabel);
 
     const promptBody = `${introInstruction}
-
-[UNIVERSAL STRUCTURAL DEMONSTRATION: FRAGMENTATION & TAG ISOLATION]
-Input:
-<s id="1">The chief director was the one</s>
-<s id="2">responsible for the approval.</s>
-<s id="3">You are coming with us,</s>
-<s id="4">aren't you?</s>
-<s id="5">Even after we told them</s>
-<s id="6">not to.</s>
-<s id="7">Wait.</s>
-
-Target Output (Mandatory Grammatical Incompleteness Per Slot - Zero Merging Across Slots):
-<s id="1">${targetLabel} translation of opening relative clause only (leave grammatically incomplete)</s>
-<s id="2">${targetLabel} translation of predicate continuation only</s>
-<s id="3">${targetLabel} translation of the main statement ONLY (DO NOT attach question tag here)</s>
-<s id="4">${targetLabel} isolated question tag / confirmation particle only (e.g., "kan?", "bukan?", "betul tak?")</s>
-<s id="5">${targetLabel} translation of dependent conjunction clause only (leave hanging)</s>
-<s id="6">${targetLabel} translation of isolated negation particle only</s>
-<s id="7">${targetLabel} translation of the single reaction word only</s>
 
 CRITICAL ENFORCEMENT RULES (ZERO TOLERANCE):
 
