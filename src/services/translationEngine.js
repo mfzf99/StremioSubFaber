@@ -2376,7 +2376,14 @@ RESPOND ONLY WITH EXACTLY ${expectedCount} VALID JSON ENTRIES AS A RAW ARRAY.
         }
 
         // Kalau match[2] wujud, ia tag normal. Kalau undefined, ia tag self-closing (teks kosong).
-        const text = match[2] !== undefined ? match[2].trim() : "";
+        let text = match[2] !== undefined ? match[2].trim() : "";
+
+        // Unescape XML entities yang kita escape dalam prepareBatchXml()
+        // URUTAN WAJIB: &lt; dan &gt; dulu, &amp; LAST — elak double-unescape.
+        text = text
+          .replace(/&lt;/g, '<')
+          .replace(/&gt;/g, '>')
+          .replace(/&amp;/g, '&');
 
         // Hanya simpan kejadian PERTAMA (buang duplikat automatik dengan Map)
         if (!entriesMap.has(localIndex)) {
