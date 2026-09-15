@@ -2193,10 +2193,11 @@ CRITICAL ENFORCEMENT (ZERO TOLERANCE):
    - NEVER output, translate, duplicate, or echo <m> content.
    - If <m> text conflicts with <s> source, prioritize <s>.
 
-5. ESCAPE HATCH (COPY PROTOCOL):
-   - Verbatim copy ONLY when: (a) whole slot untranslatable (brands, proper nouns, corrupted), (b) slot is symbols/music/numbers/punctuation only, (c) slot empty/whitespace.
-   - Partial untranslatable: translate translatable tokens, copy proper nouns as-is.
-   - Never translate legal suffixes (Co., Ltd., Inc.). Never skip. Never use as shortcut.
+5. ESCAPE HATCH (EXACT COPY PROTOCOL):
+   - Copy the EXACT original text into the slot ONLY if: content is untranslatable (company/brand names, foreign proper nouns, fictional entities, corrupted text); the slot contains ONLY symbols, music notes (♪/♫), numbers, or punctuation; or the slot is empty.
+   - Partial untranslatable: translate the translatable portion, but copy company/brand names, foreign proper nouns, and fictional entities VERBATIM (in original language, unmodified).
+   - NEVER translate company names, brand names, registered entities, or their legal suffixes (e.g., Co., Ltd., Inc.). Keep them in their original form.
+   - NEVER skip the slot, and NEVER use this as a shortcut for difficult translations.
 
 6. LYRICS & INLINE MARKUP:
    - Translate ALL lyrics (♪/♫), standalone or scattered.
@@ -2290,10 +2291,11 @@ CRITICAL ENFORCEMENT (ZERO TOLERANCE):
    - NEVER output, translate, duplicate, or echo memory content.
    - If memory text conflicts with entries_to_translate, prioritize entries_to_translate.
 
-5. ESCAPE HATCH (COPY PROTOCOL):
-   - Verbatim copy ONLY when: (a) whole slot untranslatable (brands, proper nouns, corrupted), (b) slot is symbols/music/numbers/punctuation only, (c) slot empty/whitespace.
-   - Partial untranslatable: translate translatable tokens, copy proper nouns as-is.
-   - Never translate legal suffixes (Co., Ltd., Inc.). Never skip. Never use as shortcut.
+5. ESCAPE HATCH (EXACT COPY PROTOCOL):
+   - Copy the EXACT original text into the slot ONLY if: content is untranslatable (company/brand names, foreign proper nouns, fictional entities, corrupted text); the slot contains ONLY symbols, music notes (♪/♫), numbers, or punctuation; or the slot is empty.
+   - Partial untranslatable: translate the translatable portion, but copy company/brand names, foreign proper nouns, and fictional entities VERBATIM (in original language, unmodified).
+   - NEVER translate company names, brand names, registered entities, or their legal suffixes (e.g., Co., Ltd., Inc.). Keep them in their original form.
+   - NEVER skip the slot, and NEVER use this as a shortcut for difficult translations.
 
 6. LYRICS & INLINE MARKUP:
    - Translate ALL lyrics (♪/♫), standalone or scattered.
