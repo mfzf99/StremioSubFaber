@@ -5139,6 +5139,9 @@ async function performTranslation(sourceFileId, targetLanguage, config, { cacheK
     // 🧹 INJECT: MESIN PENYAPU ALIEN (MOJIBAKE & RAW PRE-PROCESSOR CLEANER) 🧹
     // Sapu bersih teks mentah SEBELUM masuk ke AI (Jimat token, elak halusinasi & selamatkan format)
     if (typeof sourceContent === 'string') {
+        const originalLength = sourceContent.length;
+        let assTagsRemoved = 0;
+
         sourceContent = sourceContent
             // 0. Buang BOM (Byte Order Mark) & Karakter Halimunan (Zero-width space)
             .replace(/[\uFEFF\u200B\u200C\u200D\u00A0]/g, (m) => (m === '\u00A0' ? ' ' : ''))
@@ -5208,11 +5211,17 @@ async function performTranslation(sourceFileId, targetLanguage, config, { cacheK
             // 6. Pembersih Tag ASS/SSA Override — hanya `{\...}` pattern (lebih tepat)
             // (cth: {\an8}, {\pos(x,y)}, {\b1}, {\i1}, {\fs20}, {\c&HFFFFFF&})
             // NOTA: `{\` prefix adalah WAJIB untuk ASS/SSA tag — elak buang `{dialog}` biasa
-            .replace(/\{\\[^}]*\}/g, '')
+            // Counter: assTagsRemoved (untuk logging diagnostics)
+            .replace(/\{\\[^}]*\}/g, () => { assTagsRemoved++; return ''; })
 
             // 7. Pembersih `>` tergantung di permulaan baris (artifak ASS tag terpotong)
             // NOTA: JANGAN buang `"` atau `'` — ia legitimate untuk dialog quoted & song lyrics
             .replace(/^[ \t]*>+[ \t]*/gm, '');
+
+        // 🧹 Logging — kira berapa banyak ASS tag dibuang (hanya log kalau ada)
+        if (assTagsRemoved > 0) {
+            log.debug(() => `[Translation] Pre-processor removed ${assTagsRemoved} ASS/SSA override tags from source (${originalLength} → ${sourceContent.length} chars)`);
+        }
     }
     // =======================================================
 
