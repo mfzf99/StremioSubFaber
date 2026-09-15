@@ -107,7 +107,8 @@ const CACHE_TRANSLATIONS = process.env.CACHE_TRANSLATIONS === 'true'; // Enable/
 /**
  * Universal batch size applied to ALL models (Gemini, Gemma, Flash, etc.).
  * Chosen at 80 to align with natural narrative pauses in subtitle flow,
- * while staying within the LLM attention sweet spot for strict XML slot enforcement.
+ * while staying within the LLM attention sweet spot where strict XML slot
+ * enforcement holds reliably — see translation prompt design notes.
  */
 const UNIVERSAL_BATCH_SIZE = 80;
 
