@@ -2250,29 +2250,17 @@ ${batchText}
     const targetLabel = normalizeTargetLanguageForPrompt(targetLanguage);
     const sourceLabel = this.sourceLanguage; // 🌐 Sedut sourceLabel dinamik dari instance
 
-    let startId = 'START';
-    let endId = 'END';
-
     // 🚨 Halang baca ID dari memori, fokus pada entries_to_translate sahaja
     let targetSection = batchText;
     if (batchText.includes('"entries_to_translate":')) {
       targetSection = batchText.split('"entries_to_translate":')[1];
     }
 
-    if (totalBatches === 1) {
-      const firstMatch = targetSection.match(/"id"\s*:\s*(\d+)/);
-      if (firstMatch) startId = firstMatch[1];
-
-      const lastIndex = targetSection.lastIndexOf('"id"');
-      if (lastIndex !== -1) {
-        const endMatch = targetSection.substring(lastIndex).match(/"id"\s*:\s*(\d+)/);
-        if (endMatch) endId = endMatch[1];
-      }
-    } else {
-      const idMatches = [...targetSection.matchAll(/"id"\s*:\s*(\d+)/g)].map(m => m[1]);
-      startId = idMatches.length > 0 ? idMatches[0] : '1';
-      endId = idMatches.length > 0 ? idMatches[idMatches.length - 1] : expectedCount;
-    }
+    // Extract SEMUA global IDs dari batch (dalam susunan asal) untuk ID list eksplisit.
+    // Selaras 1:1 dengan XML workflow — tutup silent bug bila source SRT ada ID gap.
+    const idMatches = [...targetSection.matchAll(/"id"\s*:\s*(\d+)/g)].map(m => m[1]);
+    const startId = idMatches.length > 0 ? idMatches[0] : '1';
+    const idList = idMatches.length > 0 ? idMatches.join(', ') : 'N/A';
 
     // 🛑 SEDUT AYAT PENGENALAN DARI ZON TEMPLATE BERSAMA SOURCE & TARGET LABEL 🛑
     const introInstruction = PROMPT_TEMPLATES.primary(targetLabel, sourceLabel); //
