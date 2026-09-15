@@ -2860,8 +2860,17 @@ RESPOND ONLY WITH EXACTLY ${expectedCount} NUMBERED ENTRIES.
         let match;
         while ((match = xmlPattern.exec(cleaned)) !== null) {
           const id = parseInt(match[1], 10);
-          const text = match[2].trim();
-          
+          let text = match[2].trim();
+
+          // Unescape XML entities yang kita escape dalam prepareBatchXml().
+          // URUTAN WAJIB: &lt; dan &gt; dulu, &amp; LAST — elak double-unescape.
+          // NOTA: Dalam streaming, entity mungkin terpotong (contoh: "AT&am") —
+          //       entity tak lengkap takkan match regex, jadi ia selamat.
+          text = text
+            .replace(/&lt;/g, '<')
+            .replace(/&gt;/g, '>')
+            .replace(/&amp;/g, '&');
+
           // Mesti ada teks kalau bukan tag senyap
           if (id > 0 && text) {
             let localIndex = id - 1; // Default/Fallback
