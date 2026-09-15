@@ -2671,11 +2671,19 @@ RESPOND ONLY WITH EXACTLY ${expectedCount} VALID JSON ENTRIES AS A RAW ARRAY.
       if (!text) return true;
       const t = text.trim();
       if (!t) return true;
-      // Abai kalau cuma ada simbol muzik, sengkang, atau space sahaja
-      if (/^[♪♫♬\-\s_]+$/.test(t)) return true; 
-      // Abai tag HTML kosong macam <i></i> atau tag yang takde teks <font color="#fff">
+
+      // Tier 1: Hanya punctuation, symbol, angka, atau whitespace — tiada huruf.
+      // Guna Unicode property escapes supaya senarai tak perlu diselenggara manual:
+      //   \p{P} = punctuation (…, –, —, ?, !, ., ", dsb.)
+      //   \p{S} = symbol    (♪♫♬, emoji, mata wang, matematik, dsb.)
+      //   \p{N} = number    (0-9 & varian unicode)
+      //   \s    = whitespace
+      // Contoh dilindungi: "...", "…", "—", "?!", "♪♪", "100%", "$", "—–—".
+      if (/^[\p{P}\p{S}\p{N}\s]+$/u.test(t)) return true;
+
+      // Tier 2: Tag HTML sahaja tanpa teks (contoh: <i></i>, <font color="#fff">)
       if (/^<[^>]+>\s*<\/[^>]+>$/.test(t) || /^<[^>]+>$/.test(t)) return true;
-      
+
       return false;
     };
 
