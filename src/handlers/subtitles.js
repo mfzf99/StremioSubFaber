@@ -5205,11 +5205,14 @@ async function performTranslation(sourceFileId, targetLanguage, config, { cacheK
             // 5. Sapu sisa aksara 'â' terapung di hadapan simbol/emoji
             .replace(/\bâ\s+(?=[💥💖💗💜💙💚💓😊😂😀🔥🎉👍✔✓✨”"“‘'…—–♪♫★☆♥])/g, '')
 
-            // 6. Pembersih Tag ASS/SSA Override (cth: {\an8}, {\pos(x,y)}, {\b1})
-            .replace(/\{[^}]*\}/g, '')
+            // 6. Pembersih Tag ASS/SSA Override — hanya `{\...}` pattern (lebih tepat)
+            // (cth: {\an8}, {\pos(x,y)}, {\b1}, {\i1}, {\fs20}, {\c&HFFFFFF&})
+            // NOTA: `{\` prefix adalah WAJIB untuk ASS/SSA tag — elak buang `{dialog}` biasa
+            .replace(/\{\\[^}]*\}/g, '')
 
-            // 7. Pembersih Tahi Tag XML/HTML/Petik tergantung di permulaan baris (cth: ">, >, '>)
-            .replace(/^[ \t]*["'>]+/gm, '');
+            // 7. Pembersih `>` tergantung di permulaan baris (artifak ASS tag terpotong)
+            // NOTA: JANGAN buang `"` atau `'` — ia legitimate untuk dialog quoted & song lyrics
+            .replace(/^[ \t]*>+[ \t]*/gm, '');
     }
     // =======================================================
 
