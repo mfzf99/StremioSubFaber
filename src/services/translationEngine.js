@@ -2274,55 +2274,58 @@ ${batchText}
 
     const promptBody = `${introInstruction}
 
-CRITICAL ENFORCEMENT (ZERO TOLERANCE):
+CRITICAL ENFORCEMENT RULES (ZERO TOLERANCE):
 
-1. EXACT SLOT COUNT & ID PARITY:
-   - Output EXACTLY ${expectedCount} JSON objects with these EXACT IDs, in this order:
+1. STRICT 1-TO-1 CARDINALITY & ID PARITY:
+   - Output EXACTLY ${expectedCount} entries matching these EXACT IDs, in this order:
      [${idList}]
-   - IDs are GLOBAL from the source SRT. Preserve gaps and exact values.
-   - Never omit, combine, reorder, duplicate, or invent IDs.
+   - Every input <s id="N"> pairs strictly with one output <s id="N">. Never omit, combine, reorder, duplicate, or invent IDs.
+   - IDs are GLOBAL from the source SRT. Preserve gaps and exact values — do NOT renumber.
 
-2. SLOT ISOLATION (ZERO MERGING / FOLDING):
-   - Each {"id":N,"text":"..."} = translation of the matching input object ONLY. No folding from adjacent slots.
-   - Short slots (≤3 words: particles, interjections, tags, negation): translate in-place only. Broken target syntax is MANDATORY.
-   - Whitespace-only / empty slots: copy verbatim.
+2. ABSOLUTE SLOT ISOLATION (ZERO MERGING / ZERO FOLDING):
+   - Output <s id="N"> MUST contain ONLY the translation of input <s id="N">. NEVER pull or fold words from adjacent slots.
+   - ISOLATED PARTICLES & SHORT SLOTS (≤3 WORDS): If a slot contains only isolated question tags ("are you?", "right?"), negation particles ("not to."), interjections ("Wait.", "Yes."), or other short fragments, translate ONLY those words inside that exact slot (e.g., "kan?", "bukan?"). NEVER attach them to preceding or subsequent lines.
+   - EMPTY / WHITESPACE-ONLY SLOTS: Copy verbatim (empty or whitespace).
+   - Incomplete target syntax is MANDATORY to preserve subtitle synchronization.
 
-3. SOURCE FIDELITY (NO SHIFT / NO HALLUCINATION):
-   - No shifting, no synthetic filler, no conversational continuation, no answering source questions.
-   - Never pull words from previous_translation_memory into active slots.
-   - Mixed-language slot: translate translatable tokens, copy proper nouns verbatim.
+3. ZERO SHIFTING, ANTI-HALLUCINATION & SOURCE FIDELITY:
+   - NEVER shift subsequent dialogue forward to compensate for short or empty slots.
+   - NEVER invent synthetic filler lines to satisfy the tag count.
+   - ZERO CONVERSATIONAL CONTINUATION: Output <s id="${startId}"> MUST translate input <s id="${startId}"> directly. NEVER generate reactive conversational replies or commentary to the background memory (<m> tags).
+   - MIXED-LANGUAGE SLOTS: Translate the translatable tokens; copy foreign proper nouns, brands, and fictional entities VERBATIM in their original language.
 
-4. READ-ONLY MEMORY (previous_translation_memory):
-   - previous_translation_memory = continuity reference ONLY. Use for name/pronoun consistency.
-   - NEVER output, translate, duplicate, or echo memory content.
-   - If memory text conflicts with entries_to_translate, prioritize entries_to_translate.
+4. AIR-GAPPED READ-ONLY CONTEXT MEMORY (<m> TAGS):
+   - Entries inside <m id="N"><src>...</src><dst>...</dst></m> are STRICTLY READ-ONLY background context.
+   - NEVER translate, modify, output, or duplicate text from <m> tags into active <s id="N"> tags.
+   - CONFLICT RESOLUTION: If <m> text conflicts with <s> source, ALWAYS prioritize <s>.
+   - CONTINUATION FROM PREFILL: The prompt ends with the pre-filled opening tag <s id="${startId}">. Your response continues DIRECTLY from it — output the translation for slot ${startId} immediately, then close it with </s> before opening the next slot.
 
 5. ESCAPE HATCH (EXACT COPY PROTOCOL):
    - Copy the EXACT original text into the slot ONLY if: content is untranslatable (company/brand names, foreign proper nouns, fictional entities, corrupted text); the slot contains ONLY symbols, music notes (♪/♫), numbers, or punctuation; or the slot is empty.
-   - Partial untranslatable: translate the translatable portion, but copy company/brand names, foreign proper nouns, and fictional entities VERBATIM (in original language, unmodified).
+   - PARTIAL UNTRANSLATABLE: Translate the translatable portion, but copy company/brand names, foreign proper nouns, and fictional entities VERBATIM (in original language, unmodified).
    - NEVER translate company names, brand names, registered entities, or their legal suffixes (e.g., Co., Ltd., Inc.). Keep them in their original form.
    - NEVER skip the slot, and NEVER use this as a shortcut for difficult translations.
 
-6. LYRICS & INLINE MARKUP:
-   - Translate ALL lyrics (♪/♫), standalone or scattered.
-   - Preserve [br], <i>...</i>, speaker dashes (-), and any inline tag verbatim in exact position.
-   - Do NOT add/remove/reorder tags. Do NOT introduce new formatting.
+6. SONG LYRICS & INLINE MARKUP:
+   - Lyrics inside music notes (♪/♫) must always be translated, whether as a full song block or scattered background music.
+   - PRESERVE all [br], <i>...</i>, speaker dashes (-), and ANY other inline markup tags in the exact same position as in the source.
+   - Do NOT add line breaks or formatting tags that don't exist in the source.
 
-7. CLEAN PAYLOAD & JSON ESCAPING:
-   - Output ONLY the raw JSON object sequence: {"id":N,"text":"..."},{"id":N,"text":"..."},...
-   - Continue directly from the pre-filled [{"id":${startId},"text":" — do NOT repeat the opening bracket, the object key, or the first ID.
-   - Close each object with "} and separate objects with a comma. The final object MUST close with "}] to complete the array.
-   - Escape double quotes inside text with backslash (\\"). Use \\n for line breaks. No trailing commas.
-   - Zero: commentary, markdown, code fences, parentheses notes, prompt echo, batch header, thinking/reasoning blocks.
-   - If self-violation detected mid-output: stop and restart from id ${startId}.
+7. CLEAN PAYLOAD ONLY:
+   - Output ONLY the raw <s id="N">...</s> sequence.
+   - ZERO commentary, ZERO markdown code blocks, ZERO notes in parentheses.
+   - ZERO PROMPT ECHO: Do NOT echo [input], [OUTPUT_FORMAT], or BATCH headers.
+   - ZERO REASONING LEAKS: Do NOT output thinking blocks, reasoning tags, or self-reflection (e.g., </think>, <reasoning>).
+   - Do NOT repeat the pre-filled opening tag <s id="${startId}"> — continue directly from it.
+   - Nothing before the first content character or after the last </s>.
+   - SELF-RECOVERY: If you detect a self-violation mid-output (wrong ID, merged slot, etc.), stop and restart from <s id="${startId}">.
 
 <input>
 ${batchText}
 </input>
 
 [OUTPUT_FORMAT]
-RESPOND ONLY WITH EXACTLY ${expectedCount} VALID JSON ENTRIES AS A RAW ARRAY.
-[{"id":${startId},"text":"`;
+<s id="${startId}">`;
 
     return this.addBatchHeader(promptBody, batchIndex, totalBatches);
   }
