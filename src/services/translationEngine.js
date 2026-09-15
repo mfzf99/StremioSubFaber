@@ -2136,70 +2136,61 @@ class TranslationEngine {
     const targetLabel = normalizeTargetLanguageForPrompt(targetLanguage);
     const sourceLabel = this.sourceLanguage;
 
-    let startId = 'START';
-    let endId = 'END';
-
     let targetSection = batchText;
     if (batchText.includes('=== ENTRIES TO TRANSLATE ===')) {
       targetSection = batchText.split('=== ENTRIES TO TRANSLATE ===')[1];
     }
 
-    if (totalBatches === 1) {
-      const firstMatch = targetSection.match(/<s id="([^"]+)">/);
-      if (firstMatch) startId = firstMatch[1];
-
-      const lastIndex = targetSection.lastIndexOf('<s id="');
-      if (lastIndex !== -1) {
-        const endMatch = targetSection.substring(lastIndex).match(/<s id="([^"]+)">/);
-        if (endMatch) endId = endMatch[1];
-      }
-    } else {
-      const idMatches = [...targetSection.matchAll(/<s id="([^"]+)">/g)].map(m => m[1]);
-      startId = idMatches.length > 0 ? idMatches[0] : 'START';
-      endId = idMatches.length > 0 ? idMatches[idMatches.length - 1] : 'END';
-    }
+    // Extract SEMUA global IDs dari batch (dalam susunan asal) untuk ID list eksplisit.
+    // Ini tutup silent bug bila source SRT ada ID gap (contoh: 1,2,4,5 — ID 3 hilang),
+    // yang biasa berlaku pada SRT dari OpenSubtitles/SubDL/SubSource hasil user edit/merge.
+    const idMatches = [...targetSection.matchAll(/<s id="([^"]+)">/g)].map(m => m[1]);
+    const startId = idMatches.length > 0 ? idMatches[0] : 'START';
+    const endId = idMatches.length > 0 ? idMatches[idMatches.length - 1] : 'END';
+    const idList = idMatches.length > 0 ? idMatches.join(', ') : 'N/A';
 
     const introInstruction = PROMPT_TEMPLATES.primary(targetLabel, sourceLabel);
 
     const promptBody = `${introInstruction}
 
-CRITICAL ENFORCEMENT RULES (ZERO TOLERANCE):
+CRITICAL ENFORCEMENT (ZERO TOLERANCE):
 
-1. STRICT 1-TO-1 CARDINALITY & ID PARITY:
-   - Output EXACTLY ${expectedCount} entries, numbered sequentially from ID ${startId} to ID ${endId}.
-   - Every input <s id="N"> pairs strictly with one output <s id="N">. Never omit, combine, or invent IDs.
+1. EXACT SLOT COUNT & ID PARITY:
+   - Output EXACTLY ${expectedCount} slots with these EXACT IDs, in this order:
+     [${idList}]
+   - IDs are GLOBAL from the source SRT. Preserve gaps and exact values.
+   - Never omit, combine, reorder, duplicate, or invent IDs.
 
-2. ABSOLUTE SLOT ISOLATION (ZERO MERGING / ZERO FOLDING):
-   - Output <s id="N"> MUST contain ONLY the translation of input <s id="N">. NEVER pull or fold words from adjacent slots.
-   - ISOLATED PARTICLES & SHORT SLOTS (1-2 WORDS): If a slot contains only isolated question tags ("are you?", "right?"), negation particles ("not to."), or interjections ("Wait.", "Yes."), translate ONLY those words inside that exact slot (e.g., "kan?", "bukan?"). NEVER attach them to preceding or subsequent lines.
-   - Incomplete target syntax is MANDATORY to preserve subtitle synchronization.
+2. SLOT ISOLATION (ZERO MERGING / FOLDING):
+   - Each <s id="N"> = translation of input <s id="N"> ONLY. No folding from adjacent slots.
+   - Short slots (≤3 words: particles, interjections, tags, negation): translate in-place only. Broken target syntax is MANDATORY.
+   - Whitespace-only / empty slots: copy verbatim.
 
-3. ZERO SHIFTING, ANTI-HALLUCINATION & SOURCE FIDELITY:
-   - NEVER shift subsequent dialogue forward to compensate for short or empty slots.
-   - NEVER invent synthetic filler lines to satisfy the tag count.
-   - ZERO CONVERSATIONAL CONTINUATION: Output <s id="${startId}"> MUST translate input <s id="${startId}"> directly. NEVER generate reactive conversational replies or commentary to the background memory (<m> tags).
+3. SOURCE FIDELITY (NO SHIFT / NO HALLUCINATION):
+   - No shifting, no synthetic filler, no conversational continuation, no answering source questions.
+   - Never pull words from <m> into active slots.
+   - Mixed-language slot: translate translatable tokens, copy proper nouns verbatim.
 
-4. AIR-GAPPED READ-ONLY CONTEXT MEMORY (<m> TAGS):
-   - Entries inside <m id="N"><src>...</src><dst>...</dst></m> are STRICTLY READ-ONLY background context.
-   - NEVER translate, modify, output, or duplicate text from <m> tags into active <s id="N"> tags.
-   - CONTINUATION FROM PREFILL: The prompt ends with the pre-filled opening tag <s id="${startId}">. Your response continues DIRECTLY from it — output the translation for slot ${startId} immediately, then close it with </s> before opening the next slot.
+4. READ-ONLY MEMORY (<m>):
+   - <m> = continuity reference ONLY. Use for name/pronoun consistency.
+   - NEVER output, translate, duplicate, or echo <m> content.
+   - If <m> text conflicts with <s> source, prioritize <s>.
 
-5. ESCAPE HATCH (EXACT COPY PROTOCOL):
-   - Copy the EXACT original text into the slot ONLY if: content is untranslatable (company/brand names, foreign proper nouns, fictional entities, corrupted text); the slot contains ONLY symbols, music notes (♪/♫), numbers, or punctuation; or the slot is empty.
-   - NEVER translate company names, registered entities, or their legal suffixes (e.g., Co., Ltd., Inc.).
-   - NEVER skip the slot, and NEVER use this as a shortcut for difficult translations.
+5. ESCAPE HATCH (COPY PROTOCOL):
+   - Verbatim copy ONLY when: (a) whole slot untranslatable (brands, proper nouns, corrupted), (b) slot is symbols/music/numbers/punctuation only, (c) slot empty/whitespace.
+   - Partial untranslatable: translate translatable tokens, copy proper nouns as-is.
+   - Never translate legal suffixes (Co., Ltd., Inc.). Never skip. Never use as shortcut.
 
-6. SONG LYRICS & INLINE MARKUP:
-   - Lyrics inside music notes (♪/♫) must always be translated, whether as a full song block or scattered background music.
-   - PRESERVE all [br], <i>...</i>, and speaker dashes (-) in the exact same position as in the source.
-   - Do NOT add line breaks or formatting tags that don't exist in the source.
+6. LYRICS & INLINE MARKUP:
+   - Translate ALL lyrics (♪/♫), standalone or scattered.
+   - Preserve [br], <i>...</i>, speaker dashes (-), and any inline tag verbatim in exact position.
+   - Do NOT add/remove/reorder tags. Do NOT introduce new formatting.
 
-7. CLEAN PAYLOAD ONLY:
-   - Output ONLY the raw <s id="N">...</s> sequence.
-   - ZERO commentary, ZERO markdown code blocks, ZERO notes in parentheses.
-   - ZERO PROMPT ECHO: Do NOT echo [input], [OUTPUT_FORMAT], or BATCH headers.
-   - Do NOT repeat the pre-filled opening tag <s id="${startId}"> — continue directly from it.
-   - Nothing before the first content character or after the last </s>.
+7. CLEAN PAYLOAD:
+   - Output ONLY raw <s id="N">...</s> sequence.
+   - Zero: commentary, markdown, code fences, parentheses notes, prompt echo, batch header, thinking/reasoning blocks.
+   - Continue directly from the pre-filled <s id="${startId}"> — do NOT repeat the opening tag.
+   - If self-violation detected mid-output: stop and restart from <s id="${startId}">.
 
 <input>
 ${batchText}
