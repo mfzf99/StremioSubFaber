@@ -569,29 +569,47 @@ class TranslationEngine {
     );
   }
 
-  /**
-   * Check if an error is a retryable HTTP error (Mod Ganas + Perisai Prohibited Content)
+    /**
+   * Check if an error is a retryable HTTP error (Mod Ganas + Perisai Prohibited Content).
+   *
+   * Uses word-boundary regex to avoid false positives:
+   *   - "429"  must be standalone (not "1429" or "4290")
+   *   - "503"  must be standalone (not "5030" or "1503")
+   *   - "network" must be followed by failure context (not "not a network problem")
+   *
    * @param {Error} error
    * @returns {boolean}
    */
   _isRetryableHttpError(error) {
     if (!error) return false;
+
     const msg = String(error.message || '').toLowerCase();
     const status = error.statusCode || error.status || error.response?.status || 0;
-    
+
     // 🛡️ PERISAI KHAS: Jangan hijack ralat Prohibited Content / Safety Filter!
-    // Jika ralat ada unsur sensitiviti, pulangkan false supaya litar 'else if' di bawah yang uruskan Stage 1 & 2.
-    if (msg.includes('prohibited_content') || msg.includes('safety') || msg.includes('recitation')) {
+    // Guna "not-followed-by-letter" pattern supaya padan dengan "safety_filter",
+    // "safety block", "SAFETY" — tapi TIDAK padan dengan "safeguard" atau "safetypin".
+    if (/prohibited[_ ]content/.test(msg) ||
+        /safety(?![a-z])/.test(msg) ||
+        /recitation/.test(msg)) {
       return false;
     }
 
-    // 🚀 MOD GANAS: Janji ada status code ralat HTTP (4xx, 5xx) ATAU string ralat API/Network, terus paksa rotate key!
-    return status >= 400 || 
-      msg.includes('429') || msg.includes('too many requests') ||
-      msg.includes('503') || msg.includes('service unavailable') ||
-      msg.includes('resource_exhausted') || msg.includes('rate limit') ||
-      msg.includes('fetch failed') || msg.includes('network') ||
-      msg.includes('timeout');
+    // HTTP status code (4xx / 5xx) — paling reliable, check dulu.
+    if (status >= 400) return true;
+
+    // Text-based signatures — word boundary WAJIB untuk elak false positive.
+    //   "429"/"503" tanpa boundary → "1429", "4290", "error_code_5031" akan match.
+    //   "network" generik → "network" alone boleh padan "not a network problem".
+    //   "timeout" boleh padan "no timeout occurred".
+    return /\b(429|503)\b/.test(msg) ||
+      /\btoo many requests\b/.test(msg) ||
+      /\bservice unavailable\b/.test(msg) ||
+      /resource[_ ]exhausted/.test(msg) ||
+      /\brate[_ ]limit(ed)?\b/.test(msg) ||
+      /\bfetch failed\b/.test(msg) ||
+      /\bnetwork (error|failure|timeout|unreachable|down)\b/.test(msg) ||
+      /\b(timeout|timed out)\b/.test(msg);
   }
 
   _isStructuredOutputCapabilityError(error) {
