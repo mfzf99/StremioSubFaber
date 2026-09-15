@@ -5287,7 +5287,24 @@ function preprocessSubtitleForAI(sourceContent) {
 
 
   // ==========================================================
-  // 3. Special spaces → normal space
+  // 3. Repair mojibake (MUST run BEFORE space normalization)
+  //
+  // Mojibake patterns like "Â\u00A0" require the non-ASCII
+  // non-breaking space (U+00A0) to remain intact for the byte-
+  // level CP1252 → UTF-8 decoder to recognize the pair.
+  // If we normalize U+00A0 → ' ' first, "Â" would be orphaned
+  // because the regex would no longer see a non-ASCII follower.
+  // ==========================================================
+
+  const mojibakeResult = repairSubtitleMojibake(text);
+
+  text = mojibakeResult.text;
+  stats.mojibakeRepairs = mojibakeResult.repairs;
+  stats.mojibakeIterations = mojibakeResult.iterations;
+
+
+  // ==========================================================
+  // 4. Special spaces → normal space
   // ==========================================================
 
   text = text.replace(
@@ -5297,7 +5314,7 @@ function preprocessSubtitleForAI(sourceContent) {
 
 
   // ==========================================================
-  // 4. Remove unsafe ASCII control characters
+  // 5. Remove unsafe ASCII control characters
   //
   // Preserve:
   //   \t = TAB
@@ -5315,7 +5332,7 @@ function preprocessSubtitleForAI(sourceContent) {
 
 
   // ==========================================================
-  // 5. Normalize line endings
+  // 6. Normalize line endings
   // ==========================================================
 
   const beforeLineEndings = text;
@@ -5327,17 +5344,6 @@ function preprocessSubtitleForAI(sourceContent) {
   if (text !== beforeLineEndings) {
     stats.lineEndingsNormalized++;
   }
-
-
-  // ==========================================================
-  // 6. Repair mojibake
-  // ==========================================================
-
-  const mojibakeResult = repairSubtitleMojibake(text);
-
-  text = mojibakeResult.text;
-  stats.mojibakeRepairs = mojibakeResult.repairs;
-  stats.mojibakeIterations = mojibakeResult.iterations;
 
 
   // ==========================================================
