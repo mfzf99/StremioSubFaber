@@ -2200,6 +2200,7 @@ CRITICAL ENFORCEMENT RULES (ZERO TOLERANCE):
 5. ESCAPE HATCH (EXACT COPY PROTOCOL):
    - Copy the EXACT original text into the slot ONLY if: content is untranslatable (company/brand names, foreign proper nouns, fictional entities, corrupted text); the slot contains ONLY symbols, music notes (♪/♫), numbers, or punctuation; or the slot is empty.
    - PARTIAL UNTRANSLATABLE: Translate the translatable portion, but copy company/brand names, foreign proper nouns, and fictional entities VERBATIM (in original language, unmodified).
+   - CREATIVE WORK TITLES: NEVER translate titles of movies, TV shows, books, novels, songs, plays, or games — even when the words themselves are translatable. Keep them VERBATIM in original language. Examples: "Begin Again" stays "Begin Again" (NOT "Bermula Semula"); "The Office" stays "The Office"; "Shine on Me" stays "Shine on Me".
    - NEVER translate company names, brand names, registered entities, or their legal suffixes (e.g., Co., Ltd., Inc.). Keep them in their original form.
    - NEVER skip the slot, and NEVER use this as a shortcut for difficult translations.
 
@@ -2304,6 +2305,7 @@ CRITICAL ENFORCEMENT RULES (ZERO TOLERANCE):
 5. ESCAPE HATCH (EXACT COPY PROTOCOL):
    - Copy the EXACT original text into the "text" field ONLY if: content is untranslatable (company/brand names, foreign proper nouns, fictional entities, corrupted text); the slot contains ONLY symbols, music notes (♪/♫), numbers, or punctuation; or the slot is empty.
    - PARTIAL UNTRANSLATABLE: Translate the translatable portion, but copy company/brand names, foreign proper nouns, and fictional entities VERBATIM (in original language, unmodified).
+   - CREATIVE WORK TITLES: NEVER translate titles of movies, TV shows, books, novels, songs, plays, or games — even when the words themselves are translatable. Keep them VERBATIM in original language. Examples: "Begin Again" stays "Begin Again" (NOT "Bermula Semula"); "The Office" stays "The Office"; "Shine on Me" stays "Shine on Me".
    - NEVER translate company names, brand names, registered entities, or their legal suffixes (e.g., Co., Ltd., Inc.). Keep them in their original form.
    - NEVER skip the slot, and NEVER use this as a shortcut for difficult translations.
 
