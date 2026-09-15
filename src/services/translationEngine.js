@@ -342,8 +342,12 @@ class TranslationEngine {
     // 🛡️ PERISAI KUNCI SUCI: Kalau ralat sbb safety filter / kandungan terlarang, JANGAN HUKUM KEY NI!
     if (error && error.message) {
       const msg = String(error.message).toLowerCase();
-      if (msg.includes('prohibited_content') || msg.includes('safety') || msg.includes('recitation')) {
-        log.debug(() => `[TranslationEngine] 🛡️ Perisai aktif: Skip kuarantin untuk key ${this._redactKey(apiKey)} sbb ralat isu kandungan teks.`);
+      // Guna word-boundary regex (sama pattern dengan _isRetryableHttpError).
+      // "safety" must not be followed by a letter — avoid false positive on "safeguard", "safetypin".
+      if (/prohibited[_ ]content/.test(msg) ||
+          /safety(?![a-z])/.test(msg) ||
+          /recitation/.test(msg)) {
+        log.debug(() => `[TranslationEngine] 🛡️ Perisai aktif: Skip kuarantin untuk key ${this._redactKey(apiKey)} sebab ralat isu kandungan teks.`);
         return; // Terus keluar, selamatkan key dari masuk lokap 1 jam!
       }
     }
