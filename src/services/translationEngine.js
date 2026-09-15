@@ -3131,6 +3131,13 @@ RESPOND ONLY WITH EXACTLY ${expectedCount} NUMBERED ENTRIES.
     const timecodePattern = /\d{2}:\d{2}:\d{2},\d{3}\s*-->\s*\d{2}:\d{2}:\d{2},\d{3}\s*\n?/g;
     cleaned = cleaned.replace(timecodePattern, '').trim();
 
+    // 1.5 Strip numeric prefix hallucination ("1>text", "3. text") — defensive clean
+    const beforeStrip = cleaned;
+    cleaned = cleaned.replace(/^\s*\d+\s*[>.]\s*/, '').trim();
+    if (beforeStrip !== cleaned) {
+      log.debug(() => `[TranslationEngine] Stripped numeric prefix hallucination: "${beforeStrip.slice(0, 40)}..."`);
+    }
+
     // 2. Buang tag override ASS/SSA mutlak (contoh: {\an8}, {\b1}, {an8})
     cleaned = cleaned.replace(/\{[^}]*\}/g, '').trim();
 
