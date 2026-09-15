@@ -109,7 +109,7 @@ const CACHE_TRANSLATIONS = process.env.CACHE_TRANSLATIONS === 'true'; // Enable/
  * Chosen at 50 to stay within the LLM attention sweet spot where strict
  * XML slot enforcement holds reliably — see translation prompt design notes.
  */
-const UNIVERSAL_BATCH_SIZE = 100;
+const UNIVERSAL_BATCH_SIZE = 80;
 
 /**
  * Get the batch size to use for translation requests.
@@ -715,6 +715,20 @@ class TranslationEngine {
     }
     // Stats: entry count
     this.translationStats.entryCount = entries.length;
+
+    // Gap detection — log sekali per file, bukan per batch.
+    // Berguna untuk monitor kualiti SRT dari pelbagai provider (OpenSubtitles/SubDL/SubSource).
+    // Gap biasa berlaku bila user edit/merge SRT manual sebelum upload.
+    // NOTE: Tidak mengganggu aliran — hanya logging untuk observability.
+    if (entries.length > 1) {
+      const firstId = entries[0].id;
+      const lastId = entries[entries.length - 1].id;
+      const expectedContiguous = lastId - firstId + 1;
+      const missingCount = expectedContiguous - entries.length;
+      if (missingCount > 0) {
+        log.info(() => `[TranslationEngine] SRT ID gaps detected: ${entries.length} entries spanning ID ${firstId}–${lastId} (contiguous would be ${expectedContiguous}, missing ${missingCount} IDs). ID list will be sent to model for exact parity.`);
+      }
+    }
 
     // Single-batch mode: translate the whole file (with limited auto-splitting)
     if (this.singleBatchMode) {
