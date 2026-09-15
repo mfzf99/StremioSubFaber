@@ -2146,7 +2146,6 @@ class TranslationEngine {
     // yang biasa berlaku pada SRT dari OpenSubtitles/SubDL/SubSource hasil user edit/merge.
     const idMatches = [...targetSection.matchAll(/<s id="([^"]+)">/g)].map(m => m[1]);
     const startId = idMatches.length > 0 ? idMatches[0] : 'START';
-    const endId = idMatches.length > 0 ? idMatches[idMatches.length - 1] : 'END';
     const idList = idMatches.length > 0 ? idMatches.join(', ') : 'N/A';
 
     const introInstruction = PROMPT_TEMPLATES.primary(targetLabel, sourceLabel);
