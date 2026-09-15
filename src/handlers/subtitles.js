@@ -4969,6 +4969,470 @@ async function handleTranslation(sourceFileId, targetLanguage, config, options =
   }
 }
 
+// ============================================================
+// 🧹 SUBTITLE AI PRE-PROCESSOR
+// Character-level sanitizer for translation input.
+//
+// Design principles:
+//   - Repair only high-confidence corruption.
+//   - Preserve legitimate Unicode, emoji, punctuation and dialogue.
+//   - Never globally strip HTML/XML-looking content.
+//   - Never remove normal {...} dialogue text.
+//   - Never remove ZWJ (U+200D) because it is required by
+//     compound emoji sequences.
+//   - Treat U+FFFD (�) as unrecoverable corruption.
+// ============================================================
+
+const SUBTITLE_CP1252_EXTRA_BYTES = new Map([
+  ['€', 0x80],
+  ['‚', 0x82],
+  ['ƒ', 0x83],
+  ['„', 0x84],
+  ['…', 0x85],
+  ['†', 0x86],
+  ['‡', 0x87],
+  ['ˆ', 0x88],
+  ['‰', 0x89],
+  ['Š', 0x8A],
+  ['‹', 0x8B],
+  ['Œ', 0x8C],
+  ['Ž', 0x8E],
+  ['‘', 0x91],
+  ['’', 0x92],
+  ['“', 0x93],
+  ['”', 0x94],
+  ['•', 0x95],
+  ['–', 0x96],
+  ['—', 0x97],
+  ['˜', 0x98],
+  ['™', 0x99],
+  ['š', 0x9A],
+  ['›', 0x9B],
+  ['œ', 0x9C],
+  ['ž', 0x9E],
+  ['Ÿ', 0x9F]
+]);
+
+function cp1252CharToByte(char) {
+  const code = char.charCodeAt(0);
+
+  // ASCII + normal Latin-1 byte range.
+  if (
+    code <= 0x7F ||
+    (code >= 0xA0 && code <= 0xFF)
+  ) {
+    return code;
+  }
+
+  return SUBTITLE_CP1252_EXTRA_BYTES.get(char);
+}
+
+function countMojibakeMarkers(text) {
+  return (text.match(/[ÃÂâð]/gu) || []).length;
+}
+
+/**
+ * Repair common UTF-8 → CP1252/Latin-1 mojibake.
+ *
+ * Handles:
+ *   rÃ©sumÃ©  → résumé
+ *   JÃ¼rgen   → Jürgen
+ *   â€™       → ’
+ *   â€œ       → “
+ *   ðŸ˜Š     → 😊
+ *   ÃƒÂ¼     → ü
+ *
+ * Double-encoded corruption is attempted up to 3 passes.
+ * A repair is accepted only when the number of mojibake
+ * markers decreases and the resulting bytes decode as valid UTF-8.
+ */
+function repairSubtitleMojibake(input) {
+  let text = input;
+  let repairs = 0;
+  let iterations = 0;
+
+  const MAX_ITERATIONS = 3;
+
+  // Covers common mojibake shapes:
+  //   Ã©
+  //   Â°
+  //   â€™
+  //   â€œ
+  //   ðŸ˜Š
+  //
+  // Repeated groups allow:
+  //   ÃƒÂ¼
+  //   ÃƒÂ¢Ã¢â‚¬Å¡ÃƒÂ¬
+  //
+  const candidatePattern =
+    /(?:(?:[ÃÂ][^\x00-\x7F])|(?:â[^\x00-\x7F]{2,3})|(?:ð[^\x00-\x7F]{3,4}))+/gu;
+
+  for (let pass = 0; pass < MAX_ITERATIONS; pass++) {
+    let changedThisPass = false;
+
+    text = text.replace(candidatePattern, (candidate) => {
+      const beforeScore = countMojibakeMarkers(candidate);
+
+      if (beforeScore === 0) {
+        return candidate;
+      }
+
+      const bytes = [];
+
+      for (const char of candidate) {
+        const byte = cp1252CharToByte(char);
+
+        // If any character cannot safely be represented as CP1252,
+        // leave the candidate untouched. It may be legitimate Unicode.
+        if (byte == null) {
+          return candidate;
+        }
+
+        bytes.push(byte);
+      }
+
+      try {
+        const decoder = new TextDecoder('utf-8', {
+          fatal: true
+        });
+
+        const decoded = decoder.decode(
+          Uint8Array.from(bytes)
+        );
+
+        // Never accept another replacement character as a repair.
+        if (decoded.includes('\uFFFD')) {
+          return candidate;
+        }
+
+        const afterScore = countMojibakeMarkers(decoded);
+
+        // Only accept a repair that demonstrably reduces corruption.
+        if (
+          decoded !== candidate &&
+          afterScore < beforeScore
+        ) {
+          changedThisPass = true;
+          repairs++;
+          return decoded;
+        }
+      } catch (_) {
+        // Not valid UTF-8 after reinterpretation.
+      }
+
+      return candidate;
+    });
+
+    if (!changedThisPass) {
+      break;
+    }
+
+    iterations++;
+  }
+
+  return {
+    text,
+    repairs,
+    iterations
+  };
+}
+
+
+// ============================================================
+// Common HTML ENTITY DECODER
+// ============================================================
+
+const SUBTITLE_HTML_ENTITIES = new Map([
+  ['amp', '&'],
+  ['lt', '<'],
+  ['gt', '>'],
+  ['quot', '"'],
+  ['apos', "'"],
+  ['nbsp', ' '],
+  ['hellip', '…'],
+  ['ndash', '–'],
+  ['mdash', '—'],
+  ['lsquo', '‘'],
+  ['rsquo', '’'],
+  ['ldquo', '“'],
+  ['rdquo', '”'],
+  ['bull', '•'],
+  ['copy', '©'],
+  ['reg', '®'],
+  ['trade', '™']
+]);
+
+function decodeSubtitleHtmlEntities(input) {
+  let decodedCount = 0;
+
+  const text = input.replace(
+    /&(#(?:x[0-9a-f]+|\d+)|[a-z][a-z0-9]+);/gi,
+    (fullMatch, entity) => {
+      // Numeric entity:
+      //   &#39;
+      //   &#x2019;
+      if (entity[0] === '#') {
+        let codePoint;
+
+        if (
+          entity.length >= 3 &&
+          entity[1].toLowerCase() === 'x'
+        ) {
+          codePoint = parseInt(entity.slice(2), 16);
+        } else {
+          codePoint = parseInt(entity.slice(1), 10);
+        }
+
+        // Reject invalid Unicode scalar values.
+        if (
+          Number.isInteger(codePoint) &&
+          codePoint >= 0 &&
+          codePoint <= 0x10FFFF &&
+          !(codePoint >= 0xD800 && codePoint <= 0xDFFF)
+        ) {
+          decodedCount++;
+          return String.fromCodePoint(codePoint);
+        }
+
+        return fullMatch;
+      }
+
+      const replacement =
+        SUBTITLE_HTML_ENTITIES.get(entity.toLowerCase());
+
+      if (replacement != null) {
+        decodedCount++;
+        return replacement;
+      }
+
+      return fullMatch;
+    }
+  );
+
+  return {
+    text,
+    decoded: decodedCount
+  };
+}
+
+
+// ============================================================
+// MAIN AI INPUT SANITIZER
+// ============================================================
+
+function preprocessSubtitleForAI(sourceContent) {
+  if (
+    typeof sourceContent !== 'string' ||
+    sourceContent.length === 0
+  ) {
+    return {
+      content: sourceContent,
+      stats: null
+    };
+  }
+
+  const stats = {
+    originalLength: sourceContent.length,
+    finalLength: 0,
+
+    bomRemoved: 0,
+    zeroWidthRemoved: 0,
+    controlCharsRemoved: 0,
+    whitespaceNormalized: 0,
+    lineEndingsNormalized: 0,
+
+    mojibakeRepairs: 0,
+    mojibakeIterations: 0,
+
+    htmlEntitiesDecoded: 0,
+    assTagsRemoved: 0,
+
+    replacementCharsDetected: 0
+  };
+
+  let text = sourceContent;
+
+
+  // ==========================================================
+  // 1. Unicode canonical normalization
+  // ==========================================================
+
+  text = text.normalize('NFC');
+
+
+  // ==========================================================
+  // 2. BOM / invisible artifacts
+  // ==========================================================
+
+  // BOM at start.
+  if (text.startsWith('\uFEFF')) {
+    text = text.slice(1);
+    stats.bomRemoved++;
+  }
+
+  // Stray BOM elsewhere.
+  text = text.replace(/\uFEFF/g, () => {
+    stats.bomRemoved++;
+    return '';
+  });
+
+  // Zero-width space + word joiner + soft hyphen.
+  //
+  // IMPORTANT:
+  // U+200D ZERO WIDTH JOINER is NOT removed.
+  text = text.replace(/[\u200B\u2060\u00AD]/g, () => {
+    stats.zeroWidthRemoved++;
+    return '';
+  });
+
+
+  // ==========================================================
+  // 3. Special spaces → normal space
+  // ==========================================================
+
+  text = text.replace(
+    /[\u00A0\u2007\u202F]/g,
+    ' '
+  );
+
+
+  // ==========================================================
+  // 4. Remove unsafe ASCII control characters
+  //
+  // Preserve:
+  //   \t = TAB
+  //   \n = LF
+  //   \r = CR
+  // ==========================================================
+
+  text = text.replace(
+    /[\u0000-\u0008\u000B\u000C\u000E-\u001F\u007F]/g,
+    () => {
+      stats.controlCharsRemoved++;
+      return '';
+    }
+  );
+
+
+  // ==========================================================
+  // 5. Normalize line endings
+  // ==========================================================
+
+  const beforeLineEndings = text;
+
+  text = text
+    .replace(/\r\n/g, '\n')
+    .replace(/\r/g, '\n');
+
+  if (text !== beforeLineEndings) {
+    stats.lineEndingsNormalized++;
+  }
+
+
+  // ==========================================================
+  // 6. Repair mojibake
+  // ==========================================================
+
+  const mojibakeResult = repairSubtitleMojibake(text);
+
+  text = mojibakeResult.text;
+  stats.mojibakeRepairs = mojibakeResult.repairs;
+  stats.mojibakeIterations = mojibakeResult.iterations;
+
+
+  // ==========================================================
+  // 7. Decode common HTML entities
+  // ==========================================================
+
+  const entityResult = decodeSubtitleHtmlEntities(text);
+
+  text = entityResult.text;
+  stats.htmlEntitiesDecoded = entityResult.decoded;
+
+
+  // ==========================================================
+  // 8. ASS / SSA override tag cleanup
+  //
+  // SAFE:
+  //   {\an8}
+  //   {\pos(100,200)}
+  //   {\b1}
+  //   {\i1}
+  //   {\fs20}
+  //   {\c&HFFFFFF&}
+  //   {\t(0,500,\fs40)}
+  //
+  // NOT REMOVED:
+  //   {Laughs}
+  //   {John}
+  //   {something}
+  // ==========================================================
+
+  text = text.replace(/\{\\[^}\r\n]*\}/g, () => {
+    stats.assTagsRemoved++;
+    return '';
+  });
+
+
+  // ==========================================================
+  // 9. Conservative horizontal whitespace cleanup
+  // ==========================================================
+
+  const beforeWhitespace = text;
+
+  text = text
+    // Remove trailing spaces/tabs.
+    .replace(/[ \t]+$/gm, '')
+
+    // Collapse repeated horizontal whitespace.
+    .replace(/[ \t]{2,}/g, ' ');
+
+  if (text !== beforeWhitespace) {
+    stats.whitespaceNormalized++;
+  }
+
+
+  // ==========================================================
+  // 10. Remove ONLY orphaned > marker lines
+  //
+  // Removes:
+  //   >
+  //   >>
+  //   >>>
+  //
+  // Does NOT remove:
+  //   > Hello
+  //   >> What?
+  // ==========================================================
+
+  text = text.replace(
+    /^[ \t]*>+[ \t]*$/gm,
+    ''
+  );
+
+
+  // ==========================================================
+  // 11. Detect unrecoverable Unicode replacement characters
+  // ==========================================================
+
+  stats.replacementCharsDetected =
+    (text.match(/\uFFFD/g) || []).length;
+
+
+  // ==========================================================
+  // 12. Final Unicode normalization
+  // ==========================================================
+
+  text = text.normalize('NFC');
+
+  stats.finalLength = text.length;
+
+  return {
+    content: text,
+    stats
+  };
+}
+
 /**
  * Perform the actual translation in the background
  * @param {string} sourceFileId - Source subtitle file ID
