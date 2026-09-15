@@ -5136,94 +5136,83 @@ async function performTranslation(sourceFileId, targetLanguage, config, { cacheK
       sourceContent = ensureSRTForTranslation(sourceContent, '[Translation]');
     }
 
-    // 🧹 INJECT: MESIN PENYAPU ALIEN (MOJIBAKE & RAW PRE-PROCESSOR CLEANER) 🧹
-    // Sapu bersih teks mentah SEBELUM masuk ke AI (Jimat token, elak halusinasi & selamatkan format)
-    if (typeof sourceContent === 'string') {
-        const originalLength = sourceContent.length;
-        let assTagsRemoved = 0;
+// 🧹 AI INPUT CLEANER — sanitized immediately before translation
+//
+// IMPORTANT:
+// Keep this stage AFTER ASS/VTT/SRT normalization.
+// The ASS passthrough path has already captured the original
+// ASS structure in assTranslationData for later reassembly.
 
-        sourceContent = sourceContent
-            // 0. Buang BOM (Byte Order Mark) & Karakter Halimunan (Zero-width space)
-            .replace(/[\uFEFF\u200B\u200C\u200D\u00A0]/g, (m) => (m === '\u00A0' ? ' ' : ''))
+if (
+  typeof sourceContent === 'string' &&
+  translatedContent === undefined
+) {
+  const cleanup = preprocessSubtitleForAI(sourceContent);
 
-            // 1. Pemulihan Mojibake Huruf Beraksen / Latin (cth: rÃ©sumÃ© -> résumé)
-            .replace(/Ã©/g, 'é')
-            .replace(/Ã¨/g, 'è')
-            .replace(/Ãª/g, 'ê')
-            .replace(/Ã«/g, 'ë')
-            .replace(/Ã /g, 'à')
-            .replace(/Ã¡/g, 'á')
-            .replace(/Ã¢/g, 'â')
-            .replace(/Ã¤/g, 'ä')
-            .replace(/Ã³/g, 'ó')
-            .replace(/Ã²/g, 'ò')
-            .replace(/Ã´/g, 'ô')
-            .replace(/Ã¶/g, 'ö')
-            .replace(/Ã­/g, 'í')
-            .replace(/Ã¬/g, 'ì')
-            .replace(/Ã®/g, 'î')
-            .replace(/Ã¯/g, 'ï')
-            .replace(/Ãº/g, 'ú')
-            .replace(/Ã¹/g, 'ù')
-            .replace(/Ã»/g, 'û')
-            .replace(/Ã¼/g, 'ü')
-            .replace(/Ã§/g, 'ç')
-            .replace(/Ã±/g, 'ñ')
+  sourceContent = cleanup.content;
 
-            // 2. Pemulihan Mojibake Tanda Baca & Tanda Petik (Windows-1252 to UTF-8)
-            .replace(/â€¦/g, '...')     // Ellipsis / Titik tiga
-            .replace(/â€™/g, "'")       // Apostrophe / Single quote kanan
-            .replace(/â€˜/g, "'")       // Single quote kiri
-            .replace(/â€œ/g, '"')       // Double quote pembuka
-            .replace(/â€[”\?]|â€/g, '"') // Double quote penutup / simbol tergantung
-            .replace(/â€“/g, '-')       // En-dash (Sempang)
-            .replace(/â€”/g, ' — ')     // Em-dash (Sempang panjang)
+  const stats = cleanup.stats;
 
-            // 3. Pemulihan Mojibake Simbol Muzik & Hiasan
-            .replace(/â™«/g, '♫')       // Nota muzik berganda
-            .replace(/â™ª/g, '♪')       // Nota muzik tunggal
-            .replace(/â˜…/g, '★')       // Bintang penuh
-            .replace(/â˜☆/g, '☆')       // Bintang kosong
-            .replace(/âœ¨/g, '✨')      // Sparkles
-            .replace(/âœ[“”✔]/g, '✔')    // Checkmark tebal
-            .replace(/âœ✓/g, '✓')       // Checkmark biasa
-            .replace(/â™¥/g, '♥')       // Hati / Heart
+  if (stats) {
+    log.debug(() =>
+      `[Translation] Pre-processor cleanup:` +
+      ` ${stats.originalLength} → ${stats.finalLength} chars` +
+      ` | BOM=${stats.bomRemoved}` +
+      ` | ZW=${stats.zeroWidthRemoved}` +
+      ` | CTRL=${stats.controlCharsRemoved}` +
+      ` | Mojibake=${stats.mojibakeRepairs}` +
+      ` | HTML=${stats.htmlEntitiesDecoded}` +
+      ` | ASS=${stats.assTagsRemoved}`
+    );
 
-            // 4. Pemulihan Mojibake Emoji Asal (UTF-8 4-byte yang pecah)
-            .replace(/ðŸ'¥|ðŸ’¥/g, '💥')
-            .replace(/ðŸ'–|ðŸ’–/g, '💖')
-            .replace(/ðŸ'—|ðŸ’—/g, '💗')
-            .replace(/ðŸ'œ|ðŸ’œ/g, '💜')
-            .replace(/ðŸ'™|ðŸ’™/g, '💙')
-            .replace(/ðŸ'š|ðŸ’š/g, '💚')
-            .replace(/ðŸ'•|ðŸ’•/g, '💗')
-            .replace(/ðŸ'|ðŸ’/g, '💓')
-            .replace(/ðŸ˜Š/g, '😊')
-            .replace(/ðŸ˜‚/g, '😂')
-            .replace(/ðŸ˜/g, '😀')
-            .replace(/ðŸ”¥/g, '🔥')
-            .replace(/ðŸŽ‰/g, '🎉')
-            .replace(/ðŸ‘/g, '👍')
+    // U+FFFD means the source decoder already lost information.
+    // Do NOT pass damaged text to AI pretending it was repaired.
+    if (stats.replacementCharsDetected > 0) {
+      const error = new Error(
+        `Source subtitle contains ${stats.replacementCharsDetected} ` +
+        `unrecoverable Unicode replacement character(s) U+FFFD (�).`
+      );
 
-            // 5. Sapu sisa aksara 'â' terapung di hadapan simbol/emoji
-            .replace(/\bâ\s+(?=[💥💖💗💜💙💚💓😊😂😀🔥🎉👍✔✓✨”"“‘'…—–♪♫★☆♥])/g, '')
+      error.translationErrorType = 'INVALID_SOURCE';
 
-            // 6. Pembersih Tag ASS/SSA Override — hanya `{\...}` pattern (lebih tepat)
-            // (cth: {\an8}, {\pos(x,y)}, {\b1}, {\i1}, {\fs20}, {\c&HFFFFFF&})
-            // NOTA: `{\` prefix adalah WAJIB untuk ASS/SSA tag — elak buang `{dialog}` biasa
-            // Counter: assTagsRemoved (untuk logging diagnostics)
-            .replace(/\{\\[^}]*\}/g, () => { assTagsRemoved++; return ''; })
+      log.warn(() =>
+        `[Translation] Rejecting corrupted source: ` +
+        `${stats.replacementCharsDetected} unrecoverable U+FFFD character(s)`
+      );
 
-            // 7. Pembersih `>` tergantung di permulaan baris (artifak ASS tag terpotong)
-            // NOTA: JANGAN buang `"` atau `'` — ia legitimate untuk dialog quoted & song lyrics
-            .replace(/^[ \t]*>+[ \t]*/gm, '');
-
-        // 🧹 Logging — kira berapa banyak ASS tag dibuang (hanya log kalau ada)
-        if (assTagsRemoved > 0) {
-            log.debug(() => `[Translation] Pre-processor removed ${assTagsRemoved} ASS/SSA override tags from source (${originalLength} → ${sourceContent.length} chars)`);
-        }
+      throw error;
     }
-    // =======================================================
+
+    // Final structural gate:
+    // ensure that cleaning did not leave us with something that
+    // parseSRT cannot actually understand.
+    const cleanedEntries = parseSRT(sourceContent);
+
+    if (
+      !Array.isArray(cleanedEntries) ||
+      cleanedEntries.length === 0
+    ) {
+      const error = new Error(
+        'Source subtitle contains no valid subtitle entries after preprocessing.'
+      );
+
+      error.translationErrorType = 'INVALID_SOURCE';
+
+      log.warn(() =>
+        '[Translation] Rejecting source after preprocessing: no valid SRT entries remain'
+      );
+
+      throw error;
+    }
+
+    log.debug(() =>
+      `[Translation] Pre-processor validation passed: ` +
+      `${cleanedEntries.length} subtitle entries ready for AI`
+    );
+  }
+}
+
+// =======================================================
 
     // Get language names for better translation context
     const targetLangName = getLanguageName(targetLanguage) || targetLanguage;
