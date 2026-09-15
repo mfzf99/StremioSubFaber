@@ -2174,7 +2174,7 @@ CRITICAL ENFORCEMENT RULES (ZERO TOLERANCE):
 4. AIR-GAPPED READ-ONLY CONTEXT MEMORY (<m> TAGS):
    - Entries inside <m id="N"><src>...</src><dst>...</dst></m> are STRICTLY READ-ONLY background context.
    - NEVER translate, modify, output, or duplicate text from <m> tags into active <s id="N"> tags.
-   - Your response MUST begin immediately with <s id="${startId}">.
+   - CONTINUATION FROM PREFILL: The prompt ends with the pre-filled opening tag <s id="${startId}">. Your response continues DIRECTLY from it — output the translation for slot ${startId} immediately, then close it with </s> before opening the next slot.
 
 5. ESCAPE HATCH (EXACT COPY PROTOCOL):
    - Copy the EXACT original text into the slot ONLY if: content is untranslatable (company/brand names, foreign proper nouns, fictional entities, corrupted text); the slot contains ONLY symbols, music notes (♪/♫), numbers, or punctuation; or the slot is empty.
@@ -2190,8 +2190,8 @@ CRITICAL ENFORCEMENT RULES (ZERO TOLERANCE):
    - Output ONLY the raw <s id="N">...</s> sequence.
    - ZERO commentary, ZERO markdown code blocks, ZERO notes in parentheses.
    - ZERO PROMPT ECHO: Do NOT echo [input], [OUTPUT_FORMAT], or BATCH headers.
-   - Do NOT repeat the leading <s id="${startId}"> prefix pre-filled at the prompt boundary.
-   - Nothing before the first tag or after the last tag.
+   - Do NOT repeat the pre-filled opening tag <s id="${startId}"> — continue directly from it.
+   - Nothing before the first content character or after the last </s>.
 
 <input>
 ${batchText}
