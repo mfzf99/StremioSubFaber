@@ -2079,15 +2079,17 @@ class TranslationEngine {
     return toSRT(srtEntries).trim();
   }
 
-  /**
+    /**
    * Prepare batch text using XML tags for robust entry identification
    * [UPGRADED]: Kalis Simbol Beracun XML (&, <, >) dalam Memori <m> & Teks <s>
    */
   prepareBatchXml(batch, context = null) {
     let result = '';
 
-    // Fungsi keselamatan untuk mengelak struktur tag <m> pecah akibat simbol mentah
-    const escapeMemoryXml = (str) => {
+    // Fungsi keselamatan untuk mengelak struktur tag XML pecah akibat simbol mentah.
+    // Digunakan untuk SEMUA content dalam <m> DAN <s> tags.
+    // URUTAN WAJIB: & dulu, baru < dan > — jika terbalik, akan berlaku double-escape.
+    const escapeXml = (str) => {
       return String(str || '')
         .replace(/&/g, '&amp;')
         .replace(/</g, '&lt;')
@@ -2100,7 +2102,7 @@ class TranslationEngine {
         if (entry.translation) {
           const cleanSource = String(entry.source || '').trim().replace(/\n+/g, ' [br] ');
           const cleanTrans = String(entry.translation || '').trim().replace(/\n+/g, ' [br] ');
-          result += `<m id="${entry.id}"><src>${escapeMemoryXml(cleanSource)}</src><dst>${escapeMemoryXml(cleanTrans)}</dst></m>\n`;
+          result += `<m id="${entry.id}"><src>${escapeXml(cleanSource)}</src><dst>${escapeXml(cleanTrans)}</dst></m>\n`;
         }
       });
       result += '=== END OF MEMORY ===\n\n';
@@ -2109,8 +2111,8 @@ class TranslationEngine {
 
     const xmlEntries = batch.map((entry) => {
       // 🚨 PENGGUNAAN GLOBAL ID: Jangan reset ke 1,2,3. Guna ID asal!
-      const num = entry.id; 
-      const cleanText = entry.text.trim().replace(/\n+/g, ' [br] ');
+      const num = entry.id;
+      const cleanText = escapeXml(entry.text.trim().replace(/\n+/g, ' [br] '));
       return `<s id="${num}">${cleanText}</s>`;
     }).join('\n');
 
