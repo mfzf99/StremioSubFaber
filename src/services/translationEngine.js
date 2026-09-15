@@ -2267,46 +2267,46 @@ ${batchText}
 
     const promptBody = `${introInstruction}
 
-CRITICAL RULES (VIOLATING THESE WILL CORRUPT THE SUBTITLES):
+CRITICAL ENFORCEMENT (ZERO TOLERANCE):
 
-1. SLOT LOCK (MOST CRITICAL): Each JSON object inside the "entries_to_translate" array is a completely 
-   sealed container. NEVER steal, merge, or complete a sentence using words that belong 
-   in an adjacent ID.
+1. EXACT SLOT COUNT & ID PARITY:
+   - Output EXACTLY ${expectedCount} JSON objects with these EXACT IDs, in this order:
+     [${idList}]
+   - IDs are GLOBAL from the source SRT. Preserve gaps and exact values.
+   - Never omit, combine, reorder, duplicate, or invent IDs.
 
-   ✅ CORRECT (X and Y are placeholder IDs, not real ones from the input):
-   IN:  [{"id": X, "text": "If you really think"}, {"id": Y, "text": "that I would betray you..."}]
-   OUT: [{"id": X, "text": "Kalau awak betul-betul rasa"}, {"id": Y, "text": "saya sanggup khianati awak..."}]
+2. SLOT ISOLATION (ZERO MERGING / FOLDING):
+   - Each {"id":N,"text":"..."} = translation of the matching input object ONLY. No folding from adjacent slots.
+   - Short slots (≤3 words: particles, interjections, tags, negation): translate in-place only. Broken target syntax is MANDATORY.
+   - Whitespace-only / empty slots: copy verbatim.
 
-   ❌ CATASTROPHICALLY WRONG:
-   OUT: [{"id": X, "text": "Kalau awak betul-betul rasa saya sanggup khianati awak..."}, {"id": Y, "text": "..."}]
+3. SOURCE FIDELITY (NO SHIFT / NO HALLUCINATION):
+   - No shifting, no synthetic filler, no conversational continuation, no answering source questions.
+   - Never pull words from previous_translation_memory into active slots.
+   - Mixed-language slot: translate translatable tokens, copy proper nouns verbatim.
 
-   Dividing the natural thought across matching fragments is MANDATORY. 
-   Merging them DESTROYS subtitle sync permanently.
+4. READ-ONLY MEMORY (previous_translation_memory):
+   - previous_translation_memory = continuity reference ONLY. Use for name/pronoun consistency.
+   - NEVER output, translate, duplicate, or echo memory content.
+   - If memory text conflicts with entries_to_translate, prioritize entries_to_translate.
 
-2. ESCAPE HATCH & MUSIC: ALL song lyrics in music notes (♫ / ♪) — including 
-   background music (BGM) playing during scenes — MUST be fully translated. 
-   Copy EXACT ORIGINAL TEXT for an ID only if content is untranslatable 
-   (foreign proper nouns, corrupted text) or contains ONLY standalone 
-   symbols/music notes (♪, ♫, ♪♪) and numbers. NEVER shift any 
-   remaining entry.
+5. ESCAPE HATCH (COPY PROTOCOL):
+   - Verbatim copy ONLY when: (a) whole slot untranslatable (brands, proper nouns, corrupted), (b) slot is symbols/music/numbers/punctuation only, (c) slot empty/whitespace.
+   - Partial untranslatable: translate translatable tokens, copy proper nouns as-is.
+   - Never translate legal suffixes (Co., Ltd., Inc.). Never skip. Never use as shortcut.
 
-3. ID INTEGRITY & EXACT COUNT: Output EXACTLY ${expectedCount} entries 
-   total, matching input IDs strictly in order from id: ${startId} to 
-   id: ${endId}. Format: [{"id":N,"text":"..."}]. Never skip, 
-   reorder, or invent IDs. NEVER fabricate content to hit the count — 
-   use Rule 2 instead.
+6. LYRICS & INLINE MARKUP:
+   - Translate ALL lyrics (♪/♫), standalone or scattered.
+   - Preserve [br], <i>...</i>, speaker dashes (-), and any inline tag verbatim in exact position.
+   - Do NOT add/remove/reorder tags. Do NOT introduce new formatting.
 
-4. PRESERVE ALL INLINE MARKUP: Every [br] tag, <i> tag, and speaker 
-   dash (-) MUST be preserved in the exact same structure and position 
-   as in the source.
-
-5. FORMAT & ESCAPING: Valid, raw JSON array matching the schema exactly: [{"id":N,"text":"..."}]
-   Ensure JSON is strictly valid: escape double quotes with backslash (\\") and use \\n for line breaks. 
-   No trailing commas. Do NOT wrap in \`\`\`json markdown code blocks.
-
-6. CLEAN OUTPUT: Response MUST start immediately with the opening bracket '[' of the JSON array. 
-   Zero commentary, zero markdown code blocks. Every translated word 
-   MUST be enclosed inside its corresponding object.
+7. CLEAN PAYLOAD & JSON ESCAPING:
+   - Output ONLY the raw JSON object sequence: {"id":N,"text":"..."},{"id":N,"text":"..."},...
+   - Continue directly from the pre-filled [{"id":${startId},"text":" — do NOT repeat the opening bracket, the object key, or the first ID.
+   - Close each object with "} and separate objects with a comma. The final object MUST close with "}] to complete the array.
+   - Escape double quotes inside text with backslash (\\"). Use \\n for line breaks. No trailing commas.
+   - Zero: commentary, markdown, code fences, parentheses notes, prompt echo, batch header, thinking/reasoning blocks.
+   - If self-violation detected mid-output: stop and restart from id ${startId}.
 
 <input>
 ${batchText}
@@ -2314,7 +2314,7 @@ ${batchText}
 
 [OUTPUT_FORMAT]
 RESPOND ONLY WITH EXACTLY ${expectedCount} VALID JSON ENTRIES AS A RAW ARRAY.
-[{"id":${startId},"text":`;
+[{"id":${startId},"text":"`;
 
     return this.addBatchHeader(promptBody, batchIndex, totalBatches);
   }
