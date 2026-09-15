@@ -927,6 +927,9 @@ class TranslationEngine {
     }
 
     // Step 5: Convert back to SRT format
+    if (translatedEntries.length > 0) {
+      log.info(() => `[DIAGNOSTIC] Final entry 0 text: "${translatedEntries[0]?.text?.slice(0, 60)}"`);
+    }
     return toSRT(translatedEntries);
   }
 
