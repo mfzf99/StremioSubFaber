@@ -5137,21 +5137,78 @@ async function performTranslation(sourceFileId, targetLanguage, config, { cacheK
     }
 
     // 🧹 INJECT: MESIN PENYAPU ALIEN (MOJIBAKE & RAW PRE-PROCESSOR CLEANER) 🧹
-    // Kita sapu bersih teks mentah ini SEBELUM dia masuk ke dalam otak AI (Jimat Token + Elak Simbol Pelik)
+    // Sapu bersih teks mentah SEBELUM masuk ke AI (Jimat token, elak halusinasi & selamatkan format)
     if (typeof sourceContent === 'string') {
         sourceContent = sourceContent
-            // 1. Pembersih Mojibake (Simbol Rosak)
-            .replace(/â™«/g, '♫')     // Nota Muzik (Mojibake Fix)
-            .replace(/â€¦/g, '...')   // Titik tiga
-            .replace(/â€™/g, "'")     // Koma atas (Apostrophe)
-            .replace(/â€“/g, '-')     // Dash / Sempang
-            .replace(/â€œ/g, '"')     // Pembuka pengikat kata
-            .replace(/â€/g, '"')      // Penutup pengikat kata
+            // 0. Buang BOM (Byte Order Mark) & Karakter Halimunan (Zero-width space)
+            .replace(/[\uFEFF\u200B\u200C\u200D\u00A0]/g, (m) => (m === '\u00A0' ? ' ' : ''))
 
-            // 2. Pembersih Tag ASS/SSA Override (contoh: {\an8}, {\b1}, {an8})
+            // 1. Pemulihan Mojibake Huruf Beraksen / Latin (cth: rÃ©sumÃ© -> résumé)
+            .replace(/Ã©/g, 'é')
+            .replace(/Ã¨/g, 'è')
+            .replace(/Ãª/g, 'ê')
+            .replace(/Ã«/g, 'ë')
+            .replace(/Ã /g, 'à')
+            .replace(/Ã¡/g, 'á')
+            .replace(/Ã¢/g, 'â')
+            .replace(/Ã¤/g, 'ä')
+            .replace(/Ã³/g, 'ó')
+            .replace(/Ã²/g, 'ò')
+            .replace(/Ã´/g, 'ô')
+            .replace(/Ã¶/g, 'ö')
+            .replace(/Ã­/g, 'í')
+            .replace(/Ã¬/g, 'ì')
+            .replace(/Ã®/g, 'î')
+            .replace(/Ã¯/g, 'ï')
+            .replace(/Ãº/g, 'ú')
+            .replace(/Ã¹/g, 'ù')
+            .replace(/Ã»/g, 'û')
+            .replace(/Ã¼/g, 'ü')
+            .replace(/Ã§/g, 'ç')
+            .replace(/Ã±/g, 'ñ')
+
+            // 2. Pemulihan Mojibake Tanda Baca & Tanda Petik (Windows-1252 to UTF-8)
+            .replace(/â€¦/g, '...')     // Ellipsis / Titik tiga
+            .replace(/â€™/g, "'")       // Apostrophe / Single quote kanan
+            .replace(/â€˜/g, "'")       // Single quote kiri
+            .replace(/â€œ/g, '"')       // Double quote pembuka
+            .replace(/â€[”\?]|â€/g, '"') // Double quote penutup / simbol tergantung
+            .replace(/â€“/g, '-')       // En-dash (Sempang)
+            .replace(/â€”/g, ' — ')     // Em-dash (Sempang panjang)
+
+            // 3. Pemulihan Mojibake Simbol Muzik & Hiasan
+            .replace(/â™«/g, '♫')       // Nota muzik berganda
+            .replace(/â™ª/g, '♪')       // Nota muzik tunggal
+            .replace(/â˜…/g, '★')       // Bintang penuh
+            .replace(/â˜☆/g, '☆')       // Bintang kosong
+            .replace(/âœ¨/g, '✨')      // Sparkles
+            .replace(/âœ[“”✔]/g, '✔')    // Checkmark tebal
+            .replace(/âœ✓/g, '✓')       // Checkmark biasa
+            .replace(/â™¥/g, '♥')       // Hati / Heart
+
+            // 4. Pemulihan Mojibake Emoji Asal (UTF-8 4-byte yang pecah)
+            .replace(/ðŸ'¥|ðŸ’¥/g, '💥')
+            .replace(/ðŸ'–|ðŸ’–/g, '💖')
+            .replace(/ðŸ'—|ðŸ’—/g, '💗')
+            .replace(/ðŸ'œ|ðŸ’œ/g, '💜')
+            .replace(/ðŸ'™|ðŸ’™/g, '💙')
+            .replace(/ðŸ'š|ðŸ’š/g, '💚')
+            .replace(/ðŸ'•|ðŸ’•/g, '💗')
+            .replace(/ðŸ'|ðŸ’/g, '💓')
+            .replace(/ðŸ˜Š/g, '😊')
+            .replace(/ðŸ˜‚/g, '😂')
+            .replace(/ðŸ˜/g, '😀')
+            .replace(/ðŸ”¥/g, '🔥')
+            .replace(/ðŸŽ‰/g, '🎉')
+            .replace(/ðŸ‘/g, '👍')
+
+            // 5. Sapu sisa aksara 'â' terapung di hadapan simbol/emoji
+            .replace(/\bâ\s+(?=[💥💖💗💜💙💚💓😊😂😀🔥🎉👍✔✓✨”"“‘'…—–♪♫★☆♥])/g, '')
+
+            // 6. Pembersih Tag ASS/SSA Override (cth: {\an8}, {\pos(x,y)}, {\b1})
             .replace(/\{[^}]*\}/g, '')
 
-            // 3. Pembersih Tahi Tag XML/HTML/Petik kat permulaan setiap baris (contoh: ">, >, '>)
+            // 7. Pembersih Tahi Tag XML/HTML/Petik tergantung di permulaan baris (cth: ">, >, '>)
             .replace(/^[ \t]*["'>]+/gm, '');
     }
     // =======================================================
