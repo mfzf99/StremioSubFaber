@@ -105,48 +105,38 @@ const NATIVE_BATCH_PROVIDER_NAMES = new Set(['deepl', 'googletranslate']);
 const CACHE_TRANSLATIONS = process.env.CACHE_TRANSLATIONS === 'true'; // Enable/disable entry caching
 
 /**
- * Get batch size for model (model-specific optimization)
- * Priority: Environment variable > Model-specific > Default (250)
+ * Universal batch size applied to ALL models (Gemini, Gemma, Flash, etc.).
+ * Chosen at 50 to stay within the LLM attention sweet spot where strict
+ * XML slot enforcement holds reliably — see translation prompt design notes.
+ */
+const UNIVERSAL_BATCH_SIZE = 50;
+
+/**
+ * Get the batch size to use for translation requests.
  *
- * Model-specific batch sizes are hardcoded in backend and safe from client manipulation.
- * Different models have different processing speeds and capabilities:
- * - Flash models: 250 entries (faster, more capable)
- * - Flash-lite models: 200 entries (more conservative for stability)
+ * Resolution order:
+ *   1. TRANSLATION_BATCH_SIZE env var (validated 1-1000)
+ *   2. UNIVERSAL_BATCH_SIZE fallback
  *
- * @param {string} model - Gemini model name
- * @returns {number} - Batch size for this model
+ * Per-model branching was intentionally removed — a single uniform batch size
+ * keeps prompt behaviour, retry rates, and A/B comparisons consistent across
+ * all models.
+ *
+ * @param {string} model - Model name (kept for backward compatibility; unused).
+ * @returns {number} - Batch size (slot count per request).
  */
 function getBatchSizeForModel(model) {
-  // Environment variable override (highest priority)
+  // 1. Environment override — validated to prevent NaN / 0 / negative / absurd values.
   if (process.env.TRANSLATION_BATCH_SIZE) {
-    return parseInt(process.env.TRANSLATION_BATCH_SIZE);
+    const parsed = parseInt(process.env.TRANSLATION_BATCH_SIZE, 10);
+    if (Number.isFinite(parsed) && parsed >= 1 && parsed <= 1000) {
+      return parsed;
+    }
+    log.warn(() => `[TranslationEngine] Invalid TRANSLATION_BATCH_SIZE="${process.env.TRANSLATION_BATCH_SIZE}" (expected integer 1-1000), falling back to ${UNIVERSAL_BATCH_SIZE}`);
   }
 
-  // Model-specific batch sizes (hardcoded, safe from client manipulation)
-  const modelStr = String(model || '').toLowerCase();
-
-  // Gemini 3.0 Flash: Large context window, higher batch size for throughput
-  if (modelStr.includes('gemini-3-flash')) {
-    return 100;
-  }
-
-  // Gemma models: Lower batch size for stability
-  if (modelStr.includes('gemma')) {
-    return 50;
-  }
-
-  // Flash-lite models: More conservative batch size for stability
-  if (modelStr.includes('flash-lite')) {
-    return 50;
-  }
-
-  // Flash models (non-lite): Larger batch size for better throughput
-  if (modelStr.includes('flash')) {
-    return 50;
-  }
-
-  // Default batch size for unknown models
-  return 50;
+  // 2. Universal fallback — same value for every model.
+  return UNIVERSAL_BATCH_SIZE;
 }
 
 // Module-level shared key health tracking across engine instances.
