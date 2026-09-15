@@ -3371,6 +3371,10 @@ RESPOND ONLY WITH EXACTLY ${expectedCount} NUMBERED ENTRIES.
   sanitizeTimecodes(text) {
     let cleaned = String(text || '').trim();
 
+    // 🛡️ BACKUP: Strip numeric prefix hallucination (defense-in-depth)
+    // Kalau cleanTranslatedText terlepas, ini adalah final net.
+    cleaned = cleaned.replace(/^\s*\d+\s*[>.]\s*/, '').trim();
+
     // Full-line time ranges with various separators (optional milliseconds)
     const rangeLine = /^(?:\s*)\d{1,2}:\d{2}:\d{2}(?:[.,]\d{1,3})?\s*(?:-->|–>|—>|->|→|to)\s*\d{1,2}:\d{2}:\d{2}(?:[.,]\d{1,3})?(?:\s*)$/gm;
     cleaned = cleaned.replace(rangeLine, '');
