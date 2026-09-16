@@ -2216,8 +2216,8 @@ CRITICAL ENFORCEMENT RULES (ZERO TOLERANCE):
    - ZERO commentary, ZERO markdown code blocks, ZERO notes in parentheses.
    - ZERO PROMPT ECHO: Do NOT echo [input], [OUTPUT_FORMAT], or BATCH headers.
    - ZERO REASONING LEAKS: Do NOT output thinking blocks, reasoning tags, or self-reflection (e.g., </think>, <reasoning>).
-   - ZERO ID ECHO: Do NOT prepend the numeric ID or any separator ("${startId}>", "N>", "N.", "N:") to the translated text. The pre-filled <s id="${startId}"> at the prompt boundary already establishes the ID — start DIRECTLY with the translation content.
-   - Do NOT repeat the pre-filled opening tag <s id="${startId}"> — continue directly from it as if already typed.
+   - CONTINUATION POINT: The pre-filled <s id="${startId}"> at the prompt boundary is your anchor. Your response BEGINS with the CONTENT of slot ${startId} — the translated text starts at your very first character.
+   - The pre-filled opening tag is NOT part of your output. Do not repeat it, re-emit it, or acknowledge it. Simply continue from it as if you had already typed it.
    - Nothing before the first content character or after the last </s>.
    - SELF-CORRECTION: If you detect a violation in the slot you are currently writing, correct that slot before closing it. Never restart completed slots, and never append corrections after </s>.
 
