@@ -2174,20 +2174,39 @@ class TranslationEngine {
 
     const promptBody = `${introInstruction}
 
+[UNIVERSAL STRUCTURAL DEMONSTRATION: FRAGMENTATION & TAG ISOLATION]
+Input:
+<s id="1">The chief director was the one</s>
+<s id="2">responsible for the approval.</s>
+<s id="3">You are coming with us,</s>
+<s id="4">aren't you?</s>
+<s id="5">Even after we told them</s>
+<s id="6">not to.</s>
+<s id="7">Wait.</s>
+
+Target Output (Mandatory Grammatical Incompleteness Per Slot - Zero Merging Across Slots):
+<s id="1">${targetLabel} translation of opening relative clause only (leave grammatically incomplete)</s>
+<s id="2">${targetLabel} translation of predicate continuation only</s>
+<s id="3">${targetLabel} translation of the main statement ONLY (DO NOT attach question tag here)</s>
+<s id="4">${targetLabel} isolated question tag / confirmation particle only (e.g., "kan?", "bukan?", "betul tak?")</s>
+<s id="5">${targetLabel} translation of dependent conjunction clause only (leave hanging)</s>
+<s id="6">${targetLabel} translation of isolated negation particle only</s>
+<s id="7">${targetLabel} translation of the single reaction word only</s>
+
 CRITICAL ENFORCEMENT RULES (ZERO TOLERANCE):
 
 1. STRICT 1-TO-1 CARDINALITY & ID PARITY:
    - Output EXACTLY ${expectedCount} entries matching these EXACT IDs, in this order:
      [${idList}]
    - Every input <s id="N"> pairs strictly with one output <s id="N">. Never omit, combine, reorder, duplicate, or invent IDs.
-   - IDs are GLOBAL from the source SRT. Preserve gaps and exact values — do NOT renumber.
+   - IDs are GLOBAL from the source SRT. Preserve gaps and exact values — do NOT renumber or force sequential ordering.
 
 2. ABSOLUTE SLOT ISOLATION (ZERO MERGING / ZERO FOLDING):
    - Output <s id="N"> MUST contain ONLY the translation of input <s id="N">. NEVER pull or fold words from adjacent slots.
    - SHORT SLOTS & ISOLATED FRAGMENTS: Regardless of length, if a slot contains an isolated question tag ("are you?", "right?"), negation particle ("not to."), interjection ("Wait.", "Yes."), dependent clause, or any incomplete fragment, translate ONLY those words inside that exact slot (e.g., "kan?", "bukan?"). NEVER attach them to preceding or subsequent lines.
    - Incomplete target syntax is MANDATORY to preserve subtitle synchronization.
 
-3. ZERO SHIFTING & ANTI-HALLUCINATION:
+3. ZERO SHIFTING, ANTI-HALLUCINATION & SOURCE FIDELITY:
    - NEVER shift subsequent dialogue forward to compensate for short or empty slots.
    - NEVER invent synthetic filler lines to satisfy the tag count.
    - ZERO CONVERSATIONAL CONTINUATION: Output <s id="${startId}"> MUST translate input <s id="${startId}"> directly. NEVER generate reactive conversational replies or commentary to the background memory (<m> tags).
@@ -2202,7 +2221,7 @@ CRITICAL ENFORCEMENT RULES (ZERO TOLERANCE):
 5. ESCAPE HATCH (EXACT COPY PROTOCOL):
    - Copy the EXACT original text into the slot ONLY if: content is untranslatable (company/brand names, foreign proper nouns, fictional entities, corrupted text); the slot contains ONLY symbols, music notes (♪/♫), numbers, or punctuation; or the slot is empty or whitespace-only.
    - PARTIAL UNTRANSLATABLE: Translate the translatable portion, but copy company/brand names, foreign proper nouns, and fictional entities VERBATIM (original language, unmodified).
-   - CREATIVE WORK TITLES: NEVER translate titles of movies, TV shows, books, novels, songs, plays, or games — even when the words themselves are translatable. Keep them VERBATIM in the original language.
+   - CREATIVE WORK TITLES: NEVER translate titles of movies, TV shows, books, novels, songs, plays, or games — keep them VERBATIM in the original language.
    - NEVER translate company names, brand names, registered entities, or their legal suffixes (e.g., Co., Ltd., Inc.).
    - NEVER skip the slot, and NEVER use this as a shortcut for difficult translations.
 
@@ -2226,7 +2245,7 @@ ${batchText}
 </input>
 
 [OUTPUT_FORMAT]
-<s id="${startId}">`;
+<s id="${startId}">
 
     return this.addBatchHeader(promptBody, batchIndex, totalBatches);
   }
