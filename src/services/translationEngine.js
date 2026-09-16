@@ -34,11 +34,26 @@ const sleep = (ms) => new Promise(resolve => setTimeout(resolve, ms));
 const PROMPT_TEMPLATES = {
   // 1. PROMPT ASAL (Enterprise Broadcast Standard + Natural Register)
   primary: (targetLabel, sourceLabel) => 
-    `Translate the text inside each <s id="N"> tag from ${sourceLabel} to spoken, conversational ${targetLabel} dialogue. NEVER mirror or copy the original sentence structure.`,
+    `Translate the text inside each <s id="N"> tag from ${sourceLabel} to natural, spoken${targetLabel} film dialogue. NEVER mirror English syntax or literal sentence structure.
+
+CRITICAL LINGUISTIC MAPPING (BAD VS GOOD):
+- AVOID STIFF COPULAS: Drop "adalah" and "merupakan" completely. In spoken dialogue, nouns connect directly without filler verbs.
+  * BAD: "Ini adalah draf pertama" | GOOD: "Ini draf pertama"
+  * BAD: "Nie adalah ketuanya" | GOOD: "Nie ketuanya" (or "Nie yang ketuai")
+- AVOID LITERAL CALQUES & IDIOMS: Translate intent figuratively into authentic spoken phrasing.
+  * BAD: "pelajar yang lembap" (for slow learner) | GOOD: "lambat sikit faham" (or "lambat tangkap")
+- ZERO CHAT/SMS SHORTFORMS: Dialogue must use proper spoken spelling. STRICTLY FORBIDDEN: "sbb", "dgn", "utk", "xde", "aq", "tp".
+  * ALWAYS USE: "sebab", "dengan", "untuk", "tak ada", "saya", "tapi".
+- NATURAL SPOKEN WORD ORDER: Avoid trailing markers translated literally from English clause tails.
+  * BAD: "...untuk Pusat Digital Pintar sebagai gantinya."
+  * GOOD: "Sebaliknya, pereka kanan yang akan pegang Pusat Digital Pintar tu."
+- SPLIT CLAUSE HARMONY: In broken/dependent clauses, do not resolve the action prematurely if the next slot holds the negation.
+  * BAD: Slot 1: "kata tak payah" / Slot 2: "jangan"
+  * GOOD: Slot 1: "suruh dia" / Slot 2: "jangan"`,
 
   // 2. PROMPT KECEMASAN (PROHIBITED_CONTENT Fallback - Neutral & Safe)
   fallback: (targetLabel, sourceLabel) => 
-    `Translate the text inside each <s id="N"> tag from ${sourceLabel} to spoken, conversational ${targetLabel} dialogue. NEVER mirror or copy the original sentence structure.`
+    `Translate the text inside each <s id="N"> tag from ${sourceLabel} to spoken, conversational${targetLabel} dialogue. NEVER mirror or copy the original sentence structure.`
 };
 // ============================================================================
 // Extract normalized tokens from a language label/code (split on common separators)
