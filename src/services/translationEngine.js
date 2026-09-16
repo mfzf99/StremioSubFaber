@@ -2300,6 +2300,7 @@ CRITICAL ENFORCEMENT RULES (ZERO TOLERANCE):
    - NEVER invent synthetic filler lines to satisfy the object count.
    - ZERO CONVERSATIONAL CONTINUATION: Output for id ${startId} MUST translate input for id ${startId} directly. NEVER generate reactive conversational replies or commentary to the background memory (previous_translation_memory).
    - MIXED-LANGUAGE SLOTS: Translate the translatable tokens; copy foreign proper nouns, brands, and fictional entities VERBATIM in their original language.
+   - ZERO ACKNOWLEDGMENT PREFIX: NEVER prepend the batch ID, object ID, or batch number as a prefix (e.g., "${startId}>", "81>", "Batch 2:", "N.") to the translated text. The pre-filled [{"id":${startId},"text":" at the prompt boundary already establishes the ID — start DIRECTLY with the translation content for object ${startId}.
 
 4. AIR-GAPPED READ-ONLY CONTEXT MEMORY (previous_translation_memory):
    - Entries inside previous_translation_memory are STRICTLY READ-ONLY background context.
