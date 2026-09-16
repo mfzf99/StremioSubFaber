@@ -5630,9 +5630,13 @@ if (
       ` | BOM=${stats.bomRemoved}` +
       ` | ZW=${stats.zeroWidthRemoved}` +
       ` | CTRL=${stats.controlCharsRemoved}` +
+      ` | LE=${stats.lineEndingsNormalized}` +
+      ` | WS=${stats.whitespaceNormalized}` +
       ` | Mojibake=${stats.mojibakeRepairs}` +
+      (stats.mojibakeIterations > 0 ? `(${stats.mojibakeIterations}pass)` : '') +
       ` | HTML=${stats.htmlEntitiesDecoded}` +
-      ` | ASS=${stats.assTagsRemoved}`
+      ` | ASS=${stats.assTagsRemoved}` +
+      ` | FFFD=${stats.replacementCharsDetected}`
     );
 
     // U+FFFD means the source decoder already lost information.
