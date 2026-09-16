@@ -34,17 +34,19 @@ const sleep = (ms) => new Promise(resolve => setTimeout(resolve, ms));
 const PROMPT_TEMPLATES = {
   // 1. PROMPT ASAL (Enterprise Broadcast Standard - Intra-Slot Localization)
   primary: (targetLabel, sourceLabel) => 
-    `Translate each <s id="N"> tag from ${sourceLabel} to authentic spoken ${targetLabel} film dialogue.
+    `Translate each <s id="N"> tag from ${sourceLabel} to ${targetLabel}.
 
 INTRA-SLOT LOCALIZATION RULES:
-1. ISOLATED FREEDOM: Rephrase naturally into spoken ${targetLabel} INSIDE each tag. NEVER alter tag boundaries, NEVER split [br] into new tags, and NEVER pull text from adjacent tags.
-2. ZERO TEXTBOOK COPULAS: Drop "adalah" and "merupakan" completely. In spoken dialogue, link nouns directly to predicates (e.g., "Dialah ketua kami", NOT "Dia adalah ketua kami").
-3. FIGURATIVE INTENT OVER LITERAL WORDS: Translate the implied meaning of idioms naturally (e.g., "slow learner" -> "lambat tangkap / lambat faham", NOT "pelajar lembap").
-4. DEPENDENT CLAUSES: If an input tag contains an incomplete phrase, translate ONLY that fragment inside the tag and leave it incomplete.`,
+1. ISOLATED FREEDOM: Rephrase naturally into spoken, conversational ${targetLabel} dialogue INSIDE each tag. NEVER alter tag boundaries, NEVER split [br] into new tags, and NEVER pull text from adjacent tags.
+2. DEPENDENT CLAUSES: If an input tag contains an incomplete phrase, translate ONLY that fragment inside the tag and leave it incomplete.`,
 
   // 2. PROMPT KECEMASAN (PROHIBITED_CONTENT Fallback - Neutral & Safe)
   fallback: (targetLabel, sourceLabel) => 
-    `Translate each <s id="N"> tag from ${sourceLabel} to authentic, spoken ${targetLabel} film dialogue. NEVER mirror or copy original sentence structure.`
+    `Translate each <s id="N"> tag from ${sourceLabel} to ${targetLabel}.
+
+INTRA-SLOT LOCALIZATION RULES:
+1. ISOLATED FREEDOM: Rephrase naturally into spoken, conversational ${targetLabel} dialogue INSIDE each tag. NEVER alter tag boundaries, NEVER split [br] into new tags, and NEVER pull text from adjacent tags.
+2. DEPENDENT CLAUSES: If an input tag contains an incomplete phrase, translate ONLY that fragment inside the tag and leave it incomplete.`
 };
 // ============================================================================
 // Extract normalized tokens from a language label/code (split on common separators)
