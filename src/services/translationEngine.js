@@ -32,28 +32,41 @@ const sleep = (ms) => new Promise(resolve => setTimeout(resolve, ms));
 // 🛠️ ZON TEMPLATE PROMPT (100% UNIVERSAL & DYNAMIC)
 // ============================================================================
 const PROMPT_TEMPLATES = {
-  // 1. PROMPT ASAL (Enterprise Broadcast Standard + Natural Register)
+  // 1. PROMPT ASAL (Enterprise Broadcast Standard + Universal Spoken Register)
   primary: (targetLabel, sourceLabel) => 
-    `Translate the text inside each <s id="N"> tag from ${sourceLabel} to natural, spoken${targetLabel} film dialogue. NEVER mirror English syntax or literal sentence structure.
+    `Translate the text inside each <s id="N"> tag from ${sourceLabel} to authentic, natural spoken ${targetLabel} film dialogue. NEVER mirror English grammar, word order, or sentence structure.
 
-CRITICAL LINGUISTIC MAPPING (BAD VS GOOD):
-- AVOID STIFF COPULAS: Drop "adalah" and "merupakan" completely. In spoken dialogue, nouns connect directly without filler verbs.
-  * BAD: "Ini adalah draf pertama" | GOOD: "Ini draf pertama"
-  * BAD: "Nie adalah ketuanya" | GOOD: "Nie ketuanya" (or "Nie yang ketuai")
-- AVOID LITERAL CALQUES & IDIOMS: Translate intent figuratively into authentic spoken phrasing.
-  * BAD: "pelajar yang lembap" (for slow learner) | GOOD: "lambat sikit faham" (or "lambat tangkap")
-- ZERO CHAT/SMS SHORTFORMS: Dialogue must use proper spoken spelling. STRICTLY FORBIDDEN: "sbb", "dgn", "utk", "xde", "aq", "tp".
-  * ALWAYS USE: "sebab", "dengan", "untuk", "tak ada", "saya", "tapi".
-- NATURAL SPOKEN WORD ORDER: Avoid trailing markers translated literally from English clause tails.
-  * BAD: "...untuk Pusat Digital Pintar sebagai gantinya."
-  * GOOD: "Sebaliknya, pereka kanan yang akan pegang Pusat Digital Pintar tu."
-- SPLIT CLAUSE HARMONY: In broken/dependent clauses, do not resolve the action prematurely if the next slot holds the negation.
-  * BAD: Slot 1: "kata tak payah" / Slot 2: "jangan"
-  * GOOD: Slot 1: "suruh dia" / Slot 2: "jangan"`,
+CRITICAL UNIVERSAL LINGUISTIC RULES (CONTRASTIVE PATTERNS):
+
+1. BAN STIFF COPULAS & TEXTBOOK CONNECTORS:
+   - Completely eliminate "adalah" and "merupakan". Connect nouns directly to predicates without filler verbs.
+   - BAD: "Dia adalah ketua kami" | GOOD: "Dialah ketua kami"
+   - BAD: "Ini merupakan peluang terakhir" | GOOD: "Inilah peluang terakhir"
+
+2. IDIOMATIC INTENT OVER LITERAL CALQUES:
+   - Translate figurative intent into natural native expressions, not word-by-word literal meanings.
+   - BAD: "pecahkan kaki" (break a leg) | GOOD: "semoga berjaya"
+   - BAD: "kacang yang keras" (hard nut to crack) | GOOD: "memang liat / keras kepala"
+   - BAD: "pelajar yang lembap" (slow learner) | GOOD: "lambat tangkap / lambat faham"
+
+3. ZERO CHAT/SMS SHORTFORMS:
+   - Dialogue must be fully spelled out for dubbing and readability. Never emit text-messaging shorthand.
+   - STRICTLY FORBIDDEN: "sbb", "dgn", "utk", "x", "aq", "tp", "klu", "dkt".
+   - ALWAYS USE: "sebab", "dengan", "untuk", "tak", "saya", "tapi", "kalau", "dekat".
+
+4. NATURAL SPOKEN SYNTAX (NO TRAILING PREPOSITIONS):
+   - Never mirror trailing English qualifiers ("instead", "though", "either") stiffly at the end of a line.
+   - BAD: "Saya ambil keputusan itu sebagai gantinya."
+   - GOOD: "Sebaliknya, saya buat keputusan macam tu."
+
+5. SPLIT CLAUSE HARMONY (DEPENDENT NEGATION):
+   - When a sentence is cut across slots (e.g., "told them / not to"), prepare the verb neutrally in slot 1 so slot 2 completes the negative action without duplicating "jangan/tak".
+   - BAD: Slot 1: "Saya dah kata tak payah" / Slot 2: "jangan."
+   - GOOD: Slot 1: "Saya dah pesan kat dia" / Slot 2: "jangan buat."`,
 
   // 2. PROMPT KECEMASAN (PROHIBITED_CONTENT Fallback - Neutral & Safe)
   fallback: (targetLabel, sourceLabel) => 
-    `Translate the text inside each <s id="N"> tag from ${sourceLabel} to spoken, conversational${targetLabel} dialogue. NEVER mirror or copy the original sentence structure.`
+    `Translate the text inside each <s id="N"> tag from ${sourceLabel} to authentic, spoken ${targetLabel} film dialogue. NEVER mirror or copy original sentence structure.`
 };
 // ============================================================================
 // Extract normalized tokens from a language label/code (split on common separators)
