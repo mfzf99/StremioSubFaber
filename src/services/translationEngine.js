@@ -2245,7 +2245,7 @@ ${batchText}
 </input>
 
 [OUTPUT_FORMAT]
-<s id="${startId}">
+<s id="${startId}">`;
 
     return this.addBatchHeader(promptBody, batchIndex, totalBatches);
   }
