@@ -2323,10 +2323,11 @@ CRITICAL ENFORCEMENT RULES (ZERO TOLERANCE):
    - ZERO commentary, ZERO markdown code blocks, ZERO notes in parentheses.
    - ZERO PROMPT ECHO: Do NOT echo [input], [OUTPUT_FORMAT], or BATCH headers.
    - ZERO REASONING LEAKS: Do NOT output thinking blocks, reasoning tags, or self-reflection (e.g., </think>, <reasoning>).
-   - Do NOT repeat the pre-filled opening [{"id":${startId},"text":" — continue directly from it.
+   - ZERO ID ECHO: Do NOT prepend the numeric ID or any separator ("${startId}>", "N>", "N.", "N:") to the translation text. The pre-filled [{"id":${startId},"text":" at the prompt boundary already establishes the ID — start DIRECTLY with the translation content of that object.
+   - Do NOT repeat the pre-filled opening [{"id":${startId},"text":" — continue directly from it as if it were already typed.
    - Each object MUST close with "} and separate objects with a comma. The final object MUST close with "}] to complete the array.
    - ESCAPING: Escape double quotes inside text with backslash (\\"). Use \\n for line breaks. No trailing commas. No unescaped control characters.
-   - SELF-RECOVERY: If you detect a self-violation mid-output (wrong ID, merged slot, malformed JSON), stop and restart from id ${startId}.
+   - SELF-RECOVERY: If you detect a self-violation mid-output (wrong ID, merged slot, ID echo, malformed JSON), stop and restart from id ${startId}.
 
 <input>
 ${batchText}
