@@ -32,41 +32,17 @@ const sleep = (ms) => new Promise(resolve => setTimeout(resolve, ms));
 // 🛠️ ZON TEMPLATE PROMPT (100% UNIVERSAL & DYNAMIC)
 // ============================================================================
 const PROMPT_TEMPLATES = {
-  // 1. PROMPT ASAL (Enterprise Broadcast Standard + Universal Spoken Register)
+  // 1. PROMPT ASAL (Enterprise Broadcast Standard - Strict Zero-Drift)
   primary: (targetLabel, sourceLabel) => 
-    `Translate the text inside each <s id="N"> tag from ${sourceLabel} to authentic, natural spoken ${targetLabel} film dialogue. NEVER mirror English grammar, word order, or sentence structure.
-
-CRITICAL UNIVERSAL LINGUISTIC RULES (CONTRASTIVE PATTERNS):
-
-1. BAN STIFF COPULAS & TEXTBOOK CONNECTORS:
-   - Completely eliminate "adalah" and "merupakan". Connect nouns directly to predicates without filler verbs.
-   - BAD: "Dia adalah ketua kami" | GOOD: "Dialah ketua kami"
-   - BAD: "Ini merupakan peluang terakhir" | GOOD: "Inilah peluang terakhir"
-
-2. IDIOMATIC INTENT OVER LITERAL CALQUES:
-   - Translate figurative intent into natural native expressions, not word-by-word literal meanings.
-   - BAD: "pecahkan kaki" (break a leg) | GOOD: "semoga berjaya"
-   - BAD: "kacang yang keras" (hard nut to crack) | GOOD: "memang liat / keras kepala"
-   - BAD: "pelajar yang lembap" (slow learner) | GOOD: "lambat tangkap / lambat faham"
-
-3. ZERO CHAT/SMS SHORTFORMS:
-   - Dialogue must be fully spelled out for dubbing and readability. Never emit text-messaging shorthand.
-   - STRICTLY FORBIDDEN: "sbb", "dgn", "utk", "x", "aq", "tp", "klu", "dkt".
-   - ALWAYS USE: "sebab", "dengan", "untuk", "tak", "saya", "tapi", "kalau", "dekat".
-
-4. NATURAL SPOKEN SYNTAX (NO TRAILING PREPOSITIONS):
-   - Never mirror trailing English qualifiers ("instead", "though", "either") stiffly at the end of a line.
-   - BAD: "Saya ambil keputusan itu sebagai gantinya."
-   - GOOD: "Sebaliknya, saya buat keputusan macam tu."
-
-5. SPLIT CLAUSE HARMONY (DEPENDENT NEGATION):
-   - When a sentence is cut across slots (e.g., "told them / not to"), prepare the verb neutrally in slot 1 so slot 2 completes the negative action without duplicating "jangan/tak".
-   - BAD: Slot 1: "Saya dah kata tak payah" / Slot 2: "jangan."
-   - GOOD: Slot 1: "Saya dah pesan kat dia" / Slot 2: "jangan buat."`,
+    `Translate each <s id="N"> tag from ${sourceLabel} to authentic spoken ${targetLabel} film dialogue. 
+STRICT RULES:
+1. Completely ban "adalah", "merupakan", and chat abbreviations (sbb, dgn, utk).
+2. Translate idioms figuratively (e.g. "slow learner" -> "lambat faham/tangkap"), never word-for-word.
+3. NEVER split [br] into new tags. NEVER fold or steal text across <s id="N"> tags.`,
 
   // 2. PROMPT KECEMASAN (PROHIBITED_CONTENT Fallback - Neutral & Safe)
   fallback: (targetLabel, sourceLabel) => 
-    `Translate the text inside each <s id="N"> tag from ${sourceLabel} to authentic, spoken ${targetLabel} film dialogue. NEVER mirror or copy original sentence structure.`
+    `Translate each <s id="N"> tag from ${sourceLabel} to natural, spoken ${targetLabel} dialogue. NEVER mirror or copy original sentence structure.`
 };
 // ============================================================================
 // Extract normalized tokens from a language label/code (split on common separators)
