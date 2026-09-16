@@ -3413,12 +3413,31 @@ RESPOND ONLY WITH EXACTLY ${expectedCount} NUMBERED ENTRIES.
         .replace(/\bHALO\b/g, 'HELLO')
 
       // 4. SINGKATAN TEKS
+        // Sebab
+        .replace(/\bsbb\b/g, 'sebab')
+        .replace(/\bSbb\b/g, 'Sebab')
+        .replace(/\bSBB\b/g, 'SEBAB')
+        // Untuk
+        .replace(/\butk\b/g, 'untuk')
+        .replace(/\bUtk\b/g, 'Untuk')
+        .replace(/\bUTK\b/g, 'UNTUK')
+        // Tapi
+        .replace(/\btp\b/g, 'tapi')
+        .replace(/\bTp\b/g, 'Tapi')
+        .replace(/\bTP\b/g, 'TAPI')
+        // Kalau
+        .replace(/\bklu\b/g, 'kalau')
+        .replace(/\bKlu\b/g, 'Kalau')
+        .replace(/\bKLU\b/g, 'KALAU')
+        // Dengan
         .replace(/\bdgn\b/g, 'dengan')
         .replace(/\bDgn\b/g, 'Dengan')
         .replace(/\bDGN\b/g, 'DENGAN')
+        // Yang
         .replace(/\byg\b/g, 'yang')
         .replace(/\bYg\b/g, 'Yang')
         .replace(/\bYG\b/g, 'YANG')
+        // Dekat
         .replace(/\bkat\b/g, 'dekat')
         .replace(/\bKat\b/g, 'Dekat')
         .replace(/\bKAT\b/g, 'DEKAT')
