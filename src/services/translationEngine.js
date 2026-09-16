@@ -3129,7 +3129,7 @@ RESPOND ONLY WITH EXACTLY ${expectedCount} NUMBERED ENTRIES.
     return deduped;
   }
 
-   /**
+  /**
    * Clean translated text (remove timecodes, normalize line endings)
    * [UPDATED]: Pemulihan Penuh Simbol & Emoji + Enjin Sanitasi Hibrid + Auto-Closer (per-line)
    */
@@ -3151,7 +3151,7 @@ RESPOND ONLY WITH EXACTLY ${expectedCount} NUMBERED ENTRIES.
     // (cth: {\an8}, {\pos(x,y)}, {\b1}, {\i1}) — jangan rosak `{dialog}` biasa
     cleaned = cleaned.replace(/\{\\[^}\r\n]*\}/g, '').trim();
 
-    // 3. Buang sisa kurungan tag '>' di permulaan baris
+        // 3. Buang sisa kurungan tag '>' di permulaan baris
     cleaned = cleaned.replace(/^(?:["']?\s*>)+\s*/, '').trim();
 
     // 3.0 PENYAPU SISA SINTAKS KOD & KOMEN (/*, */, //)
@@ -3176,6 +3176,69 @@ RESPOND ONLY WITH EXACTLY ${expectedCount} NUMBERED ENTRIES.
       .replace(/([a-zA-Z0-9])['’`]([\s)\]}.,!?-]|$)/g, '$1$2')
       // 3. Buang sebarang tanda petik tunggal yang terapung kosong seorang diri
       .replace(/(^|\s)['‘`]+(?=\s|$)/g, '$1');
+
+    // 3.2 LITERAL UNICODE & HEX ESCAPE — some providers (Mistral/Llama/Qwen/DeepSeek)
+    //     output escape sequences as literal TEXT instead of actual characters.
+    //     Example: "\u2019" (literal) → "’" (actual), "\xe2\x99\xa5" → "♥"
+    cleaned = cleaned
+      // A. Surrogate pairs FIRST — must run before single \uXXXX matcher
+      //    Example: "\uD83D\uDE0A" → 😊
+      .replace(
+        /\\u(D[89AB][0-9a-fA-F]{2})\\u(D[C-F][0-9a-fA-F]{2})/gi,
+        (_, high, low) => String.fromCharCode(
+          parseInt(high, 16),
+          parseInt(low, 16)
+        )
+      )
+      // B. \u{XXXXX} — ES6-style brace notation (BMP + astral)
+      //    Example: "\u{1F60A}" → 😊
+      .replace(
+        /\\u\{([0-9a-fA-F]{1,6})\}/g,
+        (match, hex) => {
+          try {
+            const cp = parseInt(hex, 16);
+            // Reject invalid Unicode scalar values
+            if (cp < 0 || cp > 0x10FFFF || (cp >= 0xD800 && cp <= 0xDFFF)) {
+              return match;
+            }
+            return String.fromCodePoint(cp);
+          } catch (_) {
+            return match;
+          }
+        }
+      )
+      // C. \uXXXX — standard 4-digit escape (BMP)
+      //    Example: "\u2019" → "’"
+      .replace(
+        /\\u([0-9a-fA-F]{4})/g,
+        (_, hex) => String.fromCharCode(parseInt(hex, 16))
+      )
+      // D. \xXX sequences — UTF-8 byte escape (rare, mostly DeepSeek/Mistral)
+      //    Example: "\xe2\x99\xa5" → "♥"
+      .replace(
+        /(?:\\x[0-9a-fA-F]{2})+/g,
+        (match) => {
+          try {
+            const bytes = match
+              .split('\\x')
+              .filter(Boolean)
+              .map(h => parseInt(h, 16));
+
+            const decoded = new TextDecoder('utf-8', {
+              fatal: false
+            }).decode(Uint8Array.from(bytes));
+
+            // If decode failed (produced replacement char), keep original
+            if (decoded.includes('\uFFFD')) {
+              return match;
+            }
+            return decoded;
+          } catch (_) {
+            return match;
+          }
+        }
+      )
+      .trim();
 
     // 4. Tukar balik [br] kepada \n
     cleaned = cleaned
