@@ -34,11 +34,11 @@ const { executeParallelTranslation } = require('../utils/parallelTranslation');
 const PROMPT_TEMPLATES = {
   // 1. PROMPT ASAL (Enterprise Broadcast Standard + Natural Register)
   primary: (targetLabel, sourceLabel) => 
-    `Translate the text inside each <s id="N"> tag from ${sourceLabel} to spoken ${targetLabel} dialogue. NEVER mirror or copy the ${sourceLabel} sentence structure. Grasp the speaker's intended meaning and rebuild each line using natural ${targetLabel} word order, grammar, and rhythm, as a native speaker would say it in that exact situation.`,
+    `Translate the text inside each <s id="N"> tag from ${sourceLabel} to spoken ${targetLabel} dialogue. NEVER mirror or copy the ${sourceLabel} sentence structure.`,
 
   // 2. PROMPT KECEMASAN (PROHIBITED_CONTENT Fallback - Neutral & Safe)
   fallback: (targetLabel, sourceLabel) => 
-    `Translate the text inside each <s id="N"> tag from ${sourceLabel} to spoken ${targetLabel} dialogue. NEVER mirror or copy the ${sourceLabel} sentence structure. Grasp the speaker's intended meaning and rebuild each line using natural ${targetLabel} word order, grammar, and rhythm, as a native speaker would say it in that exact situation.`
+    `Translate the text inside each <s id="N"> tag from ${sourceLabel} to spoken ${targetLabel} dialogue. NEVER mirror or copy the ${sourceLabel} sentence structure.`
 };
 // ============================================================================
 // Extract normalized tokens from a language label/code (split on common separators)
