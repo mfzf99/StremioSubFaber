@@ -2193,6 +2193,7 @@ CRITICAL ENFORCEMENT RULES (ZERO TOLERANCE):
    - NEVER invent synthetic filler lines to satisfy the tag count.
    - ZERO CONVERSATIONAL CONTINUATION: Output <s id="${startId}"> MUST translate input <s id="${startId}"> directly. NEVER generate reactive conversational replies or commentary to the background memory (<m> tags).
    - MIXED-LANGUAGE SLOTS: Translate the translatable tokens; copy foreign proper nouns, brands, and fictional entities VERBATIM in their original language.
+   - ZERO ACKNOWLEDGMENT PREFIX: NEVER prepend the batch ID, slot ID, or batch number as a prefix (e.g., "${startId}>", "81>", "Batch 2:", "N.") to the translated text. The pre-filled <s id="${startId}"> at the prompt boundary already establishes the ID — start DIRECTLY with the translation content of slot ${startId}.
 
 4. AIR-GAPPED READ-ONLY CONTEXT MEMORY (<m> TAGS):
    - Entries inside <m id="N"><src>...</src><dst>...</dst></m> are STRICTLY READ-ONLY background context.
