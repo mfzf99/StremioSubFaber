@@ -2169,9 +2169,6 @@ class TranslationEngine {
       targetSection = batchText.split('=== ENTRIES TO TRANSLATE ===')[1];
     }
 
-    // Extract SEMUA global IDs dari batch (dalam susunan asal) untuk ID list eksplisit.
-    // Ini tutup silent bug bila source SRT ada ID gap (contoh: 1,2,4,5 — ID 3 hilang),
-    // yang biasa berlaku pada SRT dari OpenSubtitles/SubDL/SubSource hasil user edit/merge.
     const idMatches = [...targetSection.matchAll(/<s id="([^"]+)">/g)].map(m => m[1]);
     const startId = idMatches.length > 0 ? idMatches[0] : 'START';
     const idList = idMatches.length > 0 ? idMatches.join(', ') : 'N/A';
@@ -2180,24 +2177,22 @@ class TranslationEngine {
 
     const promptBody = `${introInstruction}
 
-[UNIVERSAL STRUCTURAL DEMONSTRATION: FRAGMENTATION & TAG ISOLATION]
+[UNIVERSAL STRUCTURAL DEMONSTRATION: INTRA-SLOT LOCALIZATION & ZERO DRIFT]
 Input:
 <s id="1">The chief director was the one</s>
 <s id="2">responsible for the approval.</s>
 <s id="3">You are coming with us,</s>
 <s id="4">aren't you?</s>
-<s id="5">Even after we told them</s>
-<s id="6">not to.</s>
-<s id="7">Wait.</s>
+<s id="5">We already warned him[br]during the meeting.</s>
+<s id="6">First,</s>
 
-Target Output (Mandatory Grammatical Incompleteness Per Slot - Zero Merging Across Slots):
-<s id="1">${targetLabel} translation of opening relative clause only (leave grammatically incomplete)</s>
-<s id="2">${targetLabel} translation of predicate continuation only</s>
-<s id="3">${targetLabel} translation of the main statement ONLY (DO NOT attach question tag here)</s>
-<s id="4">${targetLabel} isolated question tag / confirmation particle only (e.g., "kan?", "bukan?", "betul tak?")</s>
-<s id="5">${targetLabel} translation of dependent conjunction clause only (leave hanging)</s>
-<s id="6">${targetLabel} translation of isolated negation particle only</s>
-<s id="7">${targetLabel} translation of the single reaction word only</s>
+Target Output:
+<s id="1">Pengarah utama yang</s>
+<s id="2">bertanggungjawab atas kelulusan itu.</s>
+<s id="3">Awak ikut kami sekali,</s>
+<s id="4">kan?</s>
+<s id="5">Kami dah ingatkan dia[br]masa mesyuarat hari tu.</s>
+<s id="6">Pertama,</s>
 
 CRITICAL ENFORCEMENT RULES (ZERO TOLERANCE):
 
@@ -2207,9 +2202,10 @@ CRITICAL ENFORCEMENT RULES (ZERO TOLERANCE):
    - Every input <s id="N"> pairs strictly with one output <s id="N">. Never omit, combine, reorder, duplicate, or invent IDs.
    - IDs are GLOBAL from the source SRT. Preserve gaps and exact values — do NOT renumber or force sequential ordering.
 
-2. ABSOLUTE SLOT ISOLATION (ZERO MERGING / ZERO FOLDING):
+2. ABSOLUTE SLOT ISOLATION & ZERO SPLITTING:
    - Output <s id="N"> MUST contain ONLY the translation of input <s id="N">. NEVER pull or fold words from adjacent slots.
-   - SHORT SLOTS & ISOLATED FRAGMENTS: Regardless of length, if a slot contains an isolated question tag ("are you?", "right?"), negation particle ("not to."), interjection ("Wait.", "Yes."), dependent clause, or any incomplete fragment, translate ONLY those words inside that exact slot (e.g., "kan?", "bukan?"). NEVER attach them to preceding or subsequent lines.
+   - NEVER split [br] into a new <s id> tag! Text with [br] must remain completely inside its single tag (e.g. <s id="5">ayat satu[br]ayat dua</s>).
+   - SHORT SLOTS & ISOLATED FRAGMENTS: Regardless of length, if a slot contains an isolated question tag ("are you?", "right?"), negation particle ("not to."), interjection ("Wait.", "Yes."), dependent clause, or single word ("First,"), translate ONLY those words inside that exact slot. NEVER attach them to adjacent lines and NEVER echo demonstration text.
    - Incomplete target syntax is MANDATORY to preserve subtitle synchronization.
 
 3. ZERO SHIFTING, ANTI-HALLUCINATION & SOURCE FIDELITY:
