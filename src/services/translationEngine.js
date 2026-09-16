@@ -32,17 +32,19 @@ const sleep = (ms) => new Promise(resolve => setTimeout(resolve, ms));
 // 🛠️ ZON TEMPLATE PROMPT (100% UNIVERSAL & DYNAMIC)
 // ============================================================================
 const PROMPT_TEMPLATES = {
-  // 1. PROMPT ASAL (Enterprise Broadcast Standard - Strict Zero-Drift)
+  // 1. PROMPT ASAL (Enterprise Broadcast Standard - Intra-Slot Localization)
   primary: (targetLabel, sourceLabel) => 
-    `Translate each <s id="N"> tag from ${sourceLabel} to authentic spoken ${targetLabel} film dialogue. 
-STRICT RULES:
-1. Completely ban "adalah", "merupakan", and chat abbreviations (sbb, dgn, utk).
-2. Translate idioms figuratively (e.g. "slow learner" -> "lambat faham/tangkap"), never word-for-word.
-3. NEVER split [br] into new tags. NEVER fold or steal text across <s id="N"> tags.`,
+    `Translate each <s id="N"> tag from ${sourceLabel} to authentic spoken ${targetLabel} film dialogue.
+
+INTRA-SLOT LOCALIZATION RULES:
+1. ISOLATED FREEDOM: Rephrase naturally into spoken ${targetLabel} INSIDE each tag. NEVER alter tag boundaries, NEVER split [br] into new tags, and NEVER pull text from adjacent tags.
+2. ZERO TEXTBOOK COPULAS: Drop "adalah" and "merupakan" completely. In spoken dialogue, link nouns directly to predicates (e.g., "Dialah ketua kami", NOT "Dia adalah ketua kami").
+3. FIGURATIVE INTENT OVER LITERAL WORDS: Translate the implied meaning of idioms naturally (e.g., "slow learner" -> "lambat tangkap / lambat faham", NOT "pelajar lembap").
+4. DEPENDENT CLAUSES: If an input tag contains an incomplete phrase, translate ONLY that fragment inside the tag and leave it incomplete.`,
 
   // 2. PROMPT KECEMASAN (PROHIBITED_CONTENT Fallback - Neutral & Safe)
   fallback: (targetLabel, sourceLabel) => 
-    `Translate each <s id="N"> tag from ${sourceLabel} to natural, spoken ${targetLabel} dialogue. NEVER mirror or copy original sentence structure.`
+    `Translate each <s id="N"> tag from ${sourceLabel} to authentic, spoken ${targetLabel} film dialogue. NEVER mirror or copy original sentence structure.`
 };
 // ============================================================================
 // Extract normalized tokens from a language label/code (split on common separators)
