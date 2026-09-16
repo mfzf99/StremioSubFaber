@@ -3129,9 +3129,9 @@ RESPOND ONLY WITH EXACTLY ${expectedCount} NUMBERED ENTRIES.
     return deduped;
   }
 
-  /**
+   /**
    * Clean translated text (remove timecodes, normalize line endings)
-   * [UPDATED]: Pemulihan Penuh Simbol & Emoji + Enjin Sanitasi Hibrid + Auto-Closer + Smart 42 CPL Wrapper
+   * [UPDATED]: Pemulihan Penuh Simbol & Emoji + Enjin Sanitasi Hibrid + Auto-Closer (per-line)
    */
   cleanTranslatedText(text) {
     let cleaned = String(text || '').trim();
@@ -3147,8 +3147,9 @@ RESPOND ONLY WITH EXACTLY ${expectedCount} NUMBERED ENTRIES.
       log.debug(() => `[TranslationEngine] Stripped numeric prefix hallucination: "${beforeStrip.slice(0, 40)}..."`);
     }
 
-    // 2. Buang tag override ASS/SSA mutlak (contoh: {\an8}, {\b1}, {an8})
-    cleaned = cleaned.replace(/\{[^}]*\}/g, '').trim();
+    // 2. Buang tag override ASS/SSA — SCOPED hanya `{\...}` pattern sahaja
+    // (cth: {\an8}, {\pos(x,y)}, {\b1}, {\i1}) — jangan rosak `{dialog}` biasa
+    cleaned = cleaned.replace(/\{\\[^}\r\n]*\}/g, '').trim();
 
     // 3. Buang sisa kurungan tag '>' di permulaan baris
     cleaned = cleaned.replace(/^(?:["']?\s*>)+\s*/, '').trim();
@@ -3161,8 +3162,9 @@ RESPOND ONLY WITH EXACTLY ${expectedCount} NUMBERED ENTRIES.
       .replace(/\s*\*+\/\s*(?=\n|$)/g, '')
       // 3. Buang pembuka komen tergantung (cth: '/*') di awal ayat/baris
       .replace(/(?:^|\n)\s*\/\*+\s*/g, '\n')
-      // 4. Buang tanda komen dua garis (//) di permulaan baris
-      .replace(/(?:^|\n)\s*\/\/\s*/g, '\n')
+      // 4. Buang tanda komen dua garis (//) — HANYA jika diikuti space (elak rosak URL `//example.com`)
+      .replace(/(?:^|\n)[ \t]*\/\/[ \t]+/g, '\n')
+      .replace(/(?:^|\n)[ \t]*\/\/[ \t]*$/gm, '')
       .trim();
 
     // 3.1 PEMBERSIH TANDA PETIK (NETFLIX STYLE + KEBAL ERROR AI)
@@ -3180,9 +3182,15 @@ RESPOND ONLY WITH EXACTLY ${expectedCount} NUMBERED ENTRIES.
       .replace(/\s*(?:\[br\]|<br\s*\/?>|&lt;br\s*\/?&gt;)\s*/gi, '\n')
       .replace(/\n{2,}/g, '\n'); // Runtuhkan pemisah baris berganda jadi satu
 
-    // 5. Tukar sengkang lewah ('--', '—', '–') atau sengkang tergantung di hujung ayat kepada elipsis '...'
+    // 5. Tukar sengkang lewah kepada elipsis '...' — SKIP number ranges (elak rosak "2020—2024")
     cleaned = cleaned
-      .replace(/\s*(-{2,}|—|–)\s*/g, ' ... ')
+      // Replace `--` / `---` (interruption marker)
+      .replace(/\s*--+\s*/g, ' ... ')
+      // Em-dash `—` — hanya tukar jika BUKAN di antara digits
+      .replace(/(?<!\d)\s*—\s*(?!\d)/g, ' ... ')
+      // En-dash `–` — hanya tukar jika BUKAN di antara digits
+      .replace(/(?<!\d)\s*–\s*(?!\d)/g, ' ... ')
+      // Trailing hyphen di hujung baris → elipsis
       .replace(/(?<=[^\s\-])\s*-(?=\s*($|\n))/g, ' ...');
 
     // ============================================================================
@@ -3338,16 +3346,20 @@ RESPOND ONLY WITH EXACTLY ${expectedCount} NUMBERED ENTRIES.
       return line;
     }).join('\n');
 
-    // 6. Penyelamat Tag Terputus & Tersilang (Auto-Closer)
+    // 6. Penyelamat Tag Terputus & Tersilang (Auto-Closer PER-LINE)
+    //    Close setiap line secara individual untuk elak <i> leak merentas baris
     const formattingTags = ['i', 'b', 'u'];
-    formattingTags.forEach(tag => {
-      const openCount = (cleaned.match(new RegExp(`<${tag}>`, 'gi')) || []).length;
-      const closeCount = (cleaned.match(new RegExp(`</${tag}>`, 'gi')) || []).length;
+    cleaned = cleaned.split('\n').map(line => {
+      formattingTags.forEach(tag => {
+        const openCount = (line.match(new RegExp(`<${tag}>`, 'gi')) || []).length;
+        const closeCount = (line.match(new RegExp(`</${tag}>`, 'gi')) || []).length;
 
-      if (openCount > closeCount) {
-        cleaned += `</${tag}>`.repeat(openCount - closeCount);
-      }
-    });
+        if (openCount > closeCount) {
+          line += `</${tag}>`.repeat(openCount - closeCount);
+        }
+      });
+      return line;
+    }).join('\n');
 
     // 7. Bersihkan Simbol Beracun
     cleaned = cleaned.replace(/<(?=[\s\d])/g, '&lt;');
