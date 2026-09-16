@@ -37,7 +37,7 @@ const PROMPT_TEMPLATES = {
     `Translate each <s id="N"> tag from ${sourceLabel} to spoken, conversational ${targetLabel} dialogue.
 
 INTRA-SLOT LOCALIZATION RULES:
-1. ISOLATED FREEDOM: Rephrase naturally INSIDE each tag. NEVER alter tag boundaries, NEVER split [br] into new tags, and NEVER pull text from adjacent tags.
+1. ISOLATED FREEDOM: Rephrase naturally INSIDE each tag instead of mirror or copy the original sentences structure. NEVER alter tag boundaries, NEVER split [br] into new tags, and NEVER pull text from adjacent tags.
 2. DEPENDENT CLAUSES: If an input tag contains an incomplete phrase, translate ONLY that fragment inside the tag and leave it incomplete.`,
 
   // 2. PROMPT KECEMASAN (PROHIBITED_CONTENT Fallback - Neutral & Safe)
