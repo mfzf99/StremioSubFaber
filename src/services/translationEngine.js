@@ -2223,6 +2223,18 @@ CRITICAL ENFORCEMENT RULES (ZERO TOLERANCE):
    - Nothing before the first content character or after the last </s>.
    - SELF-RECOVERY: If you detect a self-violation mid-output (wrong ID, merged slot, ID echo, etc.), stop and restart from <s id="${startId}">.
 
+   8. SPEAKER AWARENESS (MULTI-SPEAKER DETECTION):
+   - DASH MARKERS: Lines starting with "- " inside the SAME <s id="N"> slot = different speakers. PRESERVE the exact dash structure in the output (one dash per speaker line, matching source).
+   - MULTI-SPEAKER SLOTS: When one slot has 2-3 dash-marked lines, translate each line as a separate speaker's voice. Do NOT merge their voices into one.
+   - SPEAKER CONTEXT FROM <m> TAGS: Use <m> background context to infer WHO is talking and TO WHOM. If a name is mentioned in <m>, refer to that character consistently.
+   - PRONOUN CONSISTENCY: Once you choose a pronoun register for a character (e.g., "awak/saya" vs "kau/aku"), KEEP IT CONSISTENT across all slots in this batch. Do NOT swap registers randomly.
+   - RELATIONSHIP INFERENCE (from context only):
+     * If speaker addresses someone as "Mom/Dad/Boss/Sir" → use polite register ("awak/saya" or honorifics).
+     * If casual peer dialogue (no honorifics, teasing tone) → "kau/aku" acceptable.
+     * If unsure → default to "awak/saya" (safe neutral).
+   - NAME FIDELITY: If source says "Kevin", output "Kevin" — never swap to a different name. If a character is called by one name in <m>, use that exact name.
+   - DO NOT INVENT: Never add speaker labels, names, or markers that don't exist in the source. Just preserve what's there (dashes) and translate accordingly.
+
 <input>
 ${batchText}
 </input>
@@ -2330,6 +2342,18 @@ CRITICAL ENFORCEMENT RULES (ZERO TOLERANCE):
    - Each object MUST close with "} and separate objects with a comma. The final object MUST close with "}] to complete the array.
    - ESCAPING: Escape double quotes inside text with backslash (\\"). Use \\n for line breaks. No trailing commas. No unescaped control characters.
    - SELF-RECOVERY: If you detect a self-violation mid-output (wrong ID, merged slot, ID echo, malformed JSON), stop and restart from id ${startId}.
+
+   8. SPEAKER AWARENESS (MULTI-SPEAKER DETECTION):
+   - DASH MARKERS: Lines starting with "- " inside the SAME object's "text" field = different speakers. PRESERVE the exact dash structure in the output (one dash per speaker line, matching source).
+   - MULTI-SPEAKER OBJECTS: When one object has 2-3 dash-marked lines, translate each line as a separate speaker's voice. Do NOT merge their voices into one.
+   - SPEAKER CONTEXT FROM previous_translation_memory: Use background context to infer WHO is talking and TO WHOM. If a name is mentioned in memory, refer to that character consistently.
+   - PRONOUN CONSISTENCY: Once you choose a pronoun register for a character (e.g., "awak/saya" vs "kau/aku"), KEEP IT CONSISTENT across all objects in this batch. Do NOT swap registers randomly.
+   - RELATIONSHIP INFERENCE (from context only):
+     * If speaker addresses someone as "Mom/Dad/Boss/Sir" → use polite register ("awak/saya" or honorifics).
+     * If casual peer dialogue (no honorifics, teasing tone) → "kau/aku" acceptable.
+     * If unsure → default to "awak/saya" (safe neutral).
+   - NAME FIDELITY: If source says "Kevin", output "Kevin" — never swap to a different name. If a character is called by one name in memory, use that exact name.
+   - DO NOT INVENT: Never add speaker labels, names, or markers that don't exist in the source. Just preserve what's there (dashes) and translate accordingly.
 
 <input>
 ${batchText}
