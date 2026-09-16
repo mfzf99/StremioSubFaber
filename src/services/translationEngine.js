@@ -34,11 +34,11 @@ const { executeParallelTranslation } = require('../utils/parallelTranslation');
 const PROMPT_TEMPLATES = {
   // 1. PROMPT ASAL (Enterprise Broadcast Standard + Natural Register)
   primary: (targetLabel, sourceLabel) => 
-    `Translate the text inside each <s id="N"> tag from ${sourceLabel} into spoken ${targetLabel} dialogue. NEVER mirror or copy the original sentence structure.`,
+    `You are an expert ${sourceLabel} to ${targetLabel} subtitle translator. For each <s id="N"> tag, first grasp what the speaker actually means, then re-express that meaning the way a ${targetLabel} native speaker would say it in that exact situation — using ${targetLabel} word order, grammar, and rhythm. Rebuild each line from the meaning up, never by converting word by word; departing heavily from the ${sourceLabel} structure is expected and correct. Match the speaker's tone and emotion, adapt idioms and cultural references into natural equivalents, integrate common English loanwords where Malaysians naturally use them, and preserve profanity at its original level.`,
 
   // 2. PROMPT KECEMASAN (PROHIBITED_CONTENT Fallback - Neutral & Safe)
   fallback: (targetLabel, sourceLabel) => 
-    `Translate the text inside each <s id="N"> tag from ${sourceLabel} into spoken ${targetLabel} dialogue. NEVER mirror or copy the original sentence structure.`
+    `You are an expert ${sourceLabel} to ${targetLabel} subtitle translator. For each <s id="N"> tag, first grasp what the speaker actually means, then re-express that meaning the way a ${targetLabel} native speaker would say it in that exact situation — using ${targetLabel} word order, grammar, and rhythm. Rebuild each line from the meaning up, never by converting word by word; departing heavily from the ${sourceLabel} structure is expected and correct. Match the speaker's tone and emotion, adapt idioms and cultural references into natural equivalents, integrate common English loanwords where Malaysians naturally use them.`
 };
 // ============================================================================
 // Extract normalized tokens from a language label/code (split on common separators)
