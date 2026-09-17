@@ -48,7 +48,8 @@ INTRA-SLOT LOCALIZATION RULES (ACTION REPLACEMENT):
 INTRA-SLOT LOCALIZATION RULES (ACTION REPLACEMENT):
 1. ISOLATED FREEDOM: NEVER mirror foreign syntax, trailing modifiers, or literal word order; INSTEAD, rephrase dialogue conversationally INSIDE each individual tag while strictly preserving tag boundaries and internal [br] markers.
 2. SPOKEN DICTION & ZERO ESSAY RIGIDITY: NEVER use formal copulas ("adalah/merupakan"), formal conjunctions ("bahawa", "kemudian"), or literal calques; INSTEAD, capture authentic conversational flow using natural speech connectors ("lepas tu/nanti") and direct spoken phrasing.
-3. DEPENDENT CLAUSES: NEVER attempt to complete partial sentences or borrow words from neighbouring tags; INSTEAD, translate ONLY the fragment present within that specific tag, intentionally leaving target syntax incomplete to lock synchronization.`
+3. DEPENDENT CLAUSES: NEVER attempt to complete partial sentences or borrow words from neighbouring tags; INSTEAD, translate ONLY the fragment present within that specific tag, intentionally leaving target syntax incomplete to lock synchronization.
+4. NEUTRAL OBJECTIVITY: If the source contains mature, sensitive, aggressive, or profane dialogue, translate it using objective, non-glorified, but accurate equivalent Malay terms without refusing the task or dropping the slot.`
 };
 // ============================================================================
 // Extract normalized tokens from a language label/code (split on common separators)
@@ -2218,6 +2219,7 @@ CRITICAL ENFORCEMENT RULES (ZERO TOLERANCE):
    - NEVER generate conversational replies, reactions, or commentary to background memory (<m> tags); INSTEAD, translate input <s id="${startId}"> directly as spoken dialogue.
    - NEVER add, drop, or modify numbers, dates, times, or measurements; INSTEAD, transfer all numeric values and units accurately into the target language.
    - NEVER alter or omit terminal punctuation (. ? ! ...) to change speech delivery; INSTEAD, mirror the original tone and natural pauses.
+   - NEVER allow translated sentences to expand uncontrollably; INSTEAD, keep ${targetLabel} translations concise as ${targetLabel} text is naturally longer, ensuring it fits subtitle reading-speed constraints.
 
 4. AIR-GAPPED READ-ONLY CONTEXT MEMORY (<m> TAGS):
    - NEVER translate, output, modify, or duplicate text from <m id="N"> tags into active <s id="N"> tags; INSTEAD, treat all <m> entries strictly as air-gapped, read-only background context.
@@ -2237,6 +2239,7 @@ CRITICAL ENFORCEMENT RULES (ZERO TOLERANCE):
    - NEVER output conversational commentary, markdown code fences, notes in parentheses, thinking blocks (</think>), or prompt echoes ([input], BATCH); INSTEAD, emit ONLY the raw sequence of <s id="N">...</s> tags.
    - NEVER repeat, re-emit, or acknowledge the pre-filled <s id="${startId}"> opening tag; INSTEAD, continue directly from the prompt boundary by generating the inner content of slot ${startId} at your very first output character.
    - NEVER append corrections after closing a tag with </s> or restart completed slots; INSTEAD, rectify errors immediately inside the active slot before closing it.
+   - NEVER emit any internal thinking steps or XML tags representing thought processes; INSTEAD, bypass all metadata and output the raw string directly starting from the pre-filled tag.
 
 <input>
 ${batchText}
