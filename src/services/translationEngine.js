@@ -37,7 +37,7 @@ const PROMPT_TEMPLATES = {
     `Translate each <s id="N"> tag from ${sourceLabel} to ${targetLabel}.
 
 INTRA-SLOT LOCALIZATION RULES (ACTION REPLACEMENT):
-1. ISOLATED FREEDOM: NEVER mirror foreign syntax, trailing modifiers, or literal word order; INSTEAD, rephrase dialogue conversationally INSIDE each individual tag while strictly preserving tag boundaries and internal [br] markers.
+1. ISOLATED FREEDOM: NEVER mirror foreign syntax, trailing modifiers, or literal word order; INSTEAD, rephrase the dialogue conversationally INSIDE each individual tag while strictly preserving tag boundaries and internal [br] markers.
 2. SPOKEN DICTION & ZERO ESSAY RIGIDITY: NEVER use formal copulas ("adalah/merupakan"), formal conjunctions ("bahawa", "kemudian" for "later"), or literal word-by-word calques; INSTEAD, capture authentic conversational flow using natural speech connectors ("lepas tu/nanti"), question particles ("...ke?", "...kan?"), and direct native phrasing.
 3. DEPENDENT CLAUSES: NEVER attempt to complete partial sentences or borrow words from neighbouring tags; INSTEAD, translate ONLY the fragment present within that specific tag, intentionally leaving target syntax incomplete to lock synchronization.`,
 
@@ -46,7 +46,7 @@ INTRA-SLOT LOCALIZATION RULES (ACTION REPLACEMENT):
     `Translate each <s id="N"> tag from ${sourceLabel} to ${targetLabel}.
 
 INTRA-SLOT LOCALIZATION RULES (ACTION REPLACEMENT):
-1. ISOLATED FREEDOM: NEVER mirror foreign syntax, trailing modifiers, or literal word order; INSTEAD, rephrase dialogue conversationally INSIDE each individual tag while strictly preserving tag boundaries and internal [br] markers.
+1. ISOLATED FREEDOM: NEVER mirror foreign syntax, trailing modifiers, or literal word order; INSTEAD, rephrase the dialogue conversationally INSIDE each individual tag while strictly preserving tag boundaries and internal [br] markers.
 2. SPOKEN DICTION & ZERO ESSAY RIGIDITY: NEVER use formal copulas ("adalah/merupakan"), formal conjunctions ("bahawa", "kemudian"), or literal calques; INSTEAD, capture authentic conversational flow using natural speech connectors ("lepas tu/nanti") and direct spoken phrasing.
 3. DEPENDENT CLAUSES: NEVER attempt to complete partial sentences or borrow words from neighbouring tags; INSTEAD, translate ONLY the fragment present within that specific tag, intentionally leaving target syntax incomplete to lock synchronization.
 4. NEUTRAL OBJECTIVITY: If the source contains mature, sensitive, aggressive, or profane dialogue, translate it using objective, non-glorified, but accurate equivalent ${targetLabel} terms without refusing the task or dropping the slot.`
