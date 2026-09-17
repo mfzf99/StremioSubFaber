@@ -34,7 +34,7 @@ const sleep = (ms) => new Promise(resolve => setTimeout(resolve, ms));
 const PROMPT_TEMPLATES = {
   // 1. PROMPT ASAL (Enterprise Broadcast Standard - Intra-Slot Action-Replacement)
   primary: (targetLabel, sourceLabel) => 
-    `Translate each <s id="N"> tag from ${sourceLabel} to spoken, conversational ${targetLabel} dialogue.
+    `Translate each <s id="N"> tag from ${sourceLabel} to ${targetLabel}.
 
 INTRA-SLOT LOCALIZATION RULES (ACTION REPLACEMENT):
 1. ISOLATED FREEDOM: NEVER mirror foreign syntax, trailing modifiers, or literal word order; INSTEAD, rephrase dialogue naturally into idiomatic spoken ${targetLabel} INSIDE each individual tag while strictly preserving tag boundaries and internal [br] markers.
@@ -43,7 +43,7 @@ INTRA-SLOT LOCALIZATION RULES (ACTION REPLACEMENT):
 
   // 2. PROMPT KECEMASAN (PROHIBITED_CONTENT Fallback - Neutral & Safe)
   fallback: (targetLabel, sourceLabel) => 
-    `Translate each <s id="N"> tag from ${sourceLabel} to spoken, conversational ${targetLabel}.
+    `Translate each <s id="N"> tag from ${sourceLabel} to ${targetLabel}.
 
 INTRA-SLOT LOCALIZATION RULES (ACTION REPLACEMENT):
 1. ISOLATED FREEDOM: NEVER mirror foreign syntax, trailing modifiers, or literal word order; INSTEAD, rephrase dialogue naturally into idiomatic spoken ${targetLabel} INSIDE each individual tag while strictly preserving tag boundaries and internal [br] markers.
