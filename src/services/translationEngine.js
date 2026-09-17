@@ -38,7 +38,7 @@ const PROMPT_TEMPLATES = {
 
 INTRA-SLOT LOCALIZATION RULES (ACTION REPLACEMENT):
 1. ISOLATED FREEDOM: NEVER mirror foreign syntax, trailing modifiers, or literal word order; INSTEAD, rephrase the dialogue into spoken, conversational ${targetLabel} INSIDE each individual tag while strictly preserving tag boundaries and internal [br] markers.
-2. SPOKEN DICTION & ZERO ESSAY RIGIDITY: NEVER use formal copulas ("adalah/merupakan"), formal conjunctions ("bahawa", "kemudian" for "later"), dictionary jargon (e.g., avoid "tengok imbas" for "skim", use "tengok sepintas lalu / belek"), or literal pronoun calques (drop redundant "them/it"); INSTEAD, capture authentic conversational flow using natural speech connectors ("lepas tu/nanti"), question particles ("...ke?", "...kan?"), and direct native phrasing.
+2. SPOKEN DICTION & ZERO ESSAY RIGIDITY: NEVER use formal copulas, formal conjunctions, dictionary jargon, or literal pronoun calques; INSTEAD, capture authentic conversational flow using natural speech connectors, question particles, and direct native phrasing.
 3. DEPENDENT CLAUSES: NEVER attempt to complete partial sentences or borrow words from neighbouring tags; INSTEAD, translate ONLY the fragment present within that specific tag, intentionally leaving target syntax incomplete to lock synchronization.`,
 
   // 2. PROMPT KECEMASAN (PROHIBITED_CONTENT Fallback - Neutral & Safe)
@@ -47,7 +47,7 @@ INTRA-SLOT LOCALIZATION RULES (ACTION REPLACEMENT):
 
 INTRA-SLOT LOCALIZATION RULES (ACTION REPLACEMENT):
 1. ISOLATED FREEDOM: NEVER mirror foreign syntax, trailing modifiers, or literal word order; INSTEAD, rephrase the dialogue into spoken, conversational ${targetLabel} INSIDE each individual tag while strictly preserving tag boundaries and internal [br] markers.
-2. SPOKEN DICTION & ZERO ESSAY RIGIDITY: NEVER use formal copulas ("adalah/merupakan"), formal conjunctions ("bahawa", "kemudian" for "later"), dictionary jargon (e.g., avoid "tengok imbas" for "skim", use "tengok sepintas lalu / belek"), or literal pronoun calques (drop redundant "them/it"); INSTEAD, capture authentic conversational flow using natural speech connectors ("lepas tu/nanti"), question particles ("...ke?", "...kan?"), and direct native phrasing.
+2. SPOKEN DICTION & ZERO ESSAY RIGIDITY: NEVER use formal copulas, formal conjunctions, dictionary jargon, or literal pronoun calques; INSTEAD, capture authentic conversational flow using natural speech connectors, question particles, and direct native phrasing.
 3. DEPENDENT CLAUSES: NEVER attempt to complete partial sentences or borrow words from neighbouring tags; INSTEAD, translate ONLY the fragment present within that specific tag, intentionally leaving target syntax incomplete to lock synchronization.
 4. NEUTRAL OBJECTIVITY: If the source contains mature, sensitive, aggressive, or profane dialogue, translate it using objective, non-glorified, but accurate equivalent ${targetLabel} terms without refusing the task or dropping the slot.`
 };
