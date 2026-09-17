@@ -37,8 +37,9 @@ const PROMPT_TEMPLATES = {
     `Translate each <s id="N"> tag from ${sourceLabel} to spoken, conversational ${targetLabel} dialogue.
 
 INTRA-SLOT LOCALIZATION RULES (ACTION REPLACEMENT):
-1. ISOLATED FREEDOM: NEVER mirror foreign syntax, trailing modifiers, or literal word order (e.g., place adverbials before verbs naturally, such as "dengan berbesar hati menjemput", not "jemput dengan berbesar hati"); INSTEAD, rephrase dialogue naturally into idiomatic spoken ${targetLabel} INSIDE each individual tag while strictly preserving tag boundaries and internal [br] markers.
-2. DEPENDENT CLAUSES: NEVER attempt to complete partial sentences or borrow words from neighbouring tags; INSTEAD, translate ONLY the fragment present within that specific tag, intentionally leaving target syntax incomplete to lock synchronization.`,
+1. ISOLATED FREEDOM: NEVER mirror foreign syntax, trailing modifiers, or literal word order; INSTEAD, rephrase dialogue naturally into idiomatic spoken ${targetLabel} INSIDE each individual tag while strictly preserving tag boundaries and internal [br] markers.
+2. SPOKEN DICTION OVER TEXTBOOK CALQUES: NEVER translate conversational phrases literally or use stiff essay connectors (e.g., avoid "kemudian" for "later", or word-by-word calques like "untuk rasa puas"); INSTEAD, capture the natural intent using authentic everyday spoken vocabulary (e.g., "lepas tu / nanti", "nak bagi puas hati").
+3. DEPENDENT CLAUSES: NEVER attempt to complete partial sentences or borrow words from neighbouring tags; INSTEAD, translate ONLY the fragment present within that specific tag, intentionally leaving target syntax incomplete to lock synchronization.`,
 
   // 2. PROMPT KECEMASAN (PROHIBITED_CONTENT Fallback - Neutral & Safe)
   fallback: (targetLabel, sourceLabel) => 
@@ -46,7 +47,8 @@ INTRA-SLOT LOCALIZATION RULES (ACTION REPLACEMENT):
 
 INTRA-SLOT LOCALIZATION RULES (ACTION REPLACEMENT):
 1. ISOLATED FREEDOM: NEVER mirror foreign syntax, trailing modifiers, or literal word order; INSTEAD, rephrase dialogue naturally into idiomatic spoken ${targetLabel} INSIDE each individual tag while strictly preserving tag boundaries and internal [br] markers.
-2. DEPENDENT CLAUSES: NEVER attempt to complete partial sentences or borrow words from neighbouring tags; INSTEAD, translate ONLY the fragment present within that specific tag, intentionally leaving target syntax incomplete to lock synchronization.`
+2. SPOKEN DICTION OVER TEXTBOOK CALQUES: NEVER translate conversational phrases literally or use stiff essay connectors (e.g., avoid "kemudian" for "later"); INSTEAD, capture the natural intent using authentic everyday spoken vocabulary (e.g., "lepas tu / nanti").
+3. DEPENDENT CLAUSES: NEVER attempt to complete partial sentences or borrow words from neighbouring tags; INSTEAD, translate ONLY the fragment present within that specific tag, intentionally leaving target syntax incomplete to lock synchronization.`
 };
 // ============================================================================
 // Extract normalized tokens from a language label/code (split on common separators)
