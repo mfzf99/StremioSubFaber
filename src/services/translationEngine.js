@@ -38,7 +38,7 @@ const PROMPT_TEMPLATES = {
 
 INTRA-SLOT LOCALIZATION RULES (ACTION REPLACEMENT):
 1. ISOLATED FREEDOM: NEVER mirror foreign syntax, trailing modifiers, or literal word order; INSTEAD, rephrase dialogue naturally into idiomatic spoken ${targetLabel} INSIDE each individual tag while strictly preserving tag boundaries and internal [br] markers.
-2. SPOKEN DICTION OVER TEXTBOOK CALQUES: NEVER translate conversational phrases literally or use stiff essay connectors (e.g., avoid "kemudian" for "later", or word-by-word calques like "untuk rasa puas"); INSTEAD, capture the natural intent using authentic everyday spoken vocabulary (e.g., "lepas tu / nanti", "nak bagi puas hati").
+2. SPOKEN DICTION & ZERO ESSAY RIGIDITY: NEVER use formal copulas ("adalah/merupakan"), formal conjunctions ("bahawa", "kemudian" for "later"), or literal word-by-word calques; INSTEAD, capture authentic conversational flow using natural speech connectors ("lepas tu/nanti"), question particles ("...ke?", "...kan?"), and direct native phrasing.
 3. DEPENDENT CLAUSES: NEVER attempt to complete partial sentences or borrow words from neighbouring tags; INSTEAD, translate ONLY the fragment present within that specific tag, intentionally leaving target syntax incomplete to lock synchronization.`,
 
   // 2. PROMPT KECEMASAN (PROHIBITED_CONTENT Fallback - Neutral & Safe)
@@ -47,7 +47,7 @@ INTRA-SLOT LOCALIZATION RULES (ACTION REPLACEMENT):
 
 INTRA-SLOT LOCALIZATION RULES (ACTION REPLACEMENT):
 1. ISOLATED FREEDOM: NEVER mirror foreign syntax, trailing modifiers, or literal word order; INSTEAD, rephrase dialogue naturally into idiomatic spoken ${targetLabel} INSIDE each individual tag while strictly preserving tag boundaries and internal [br] markers.
-2. SPOKEN DICTION OVER TEXTBOOK CALQUES: NEVER translate conversational phrases literally or use stiff essay connectors (e.g., avoid "kemudian" for "later"); INSTEAD, capture the natural intent using authentic everyday spoken vocabulary (e.g., "lepas tu / nanti").
+2. SPOKEN DICTION & ZERO ESSAY RIGIDITY: NEVER use formal copulas ("adalah/merupakan"), formal conjunctions ("bahawa", "kemudian"), or literal calques; INSTEAD, capture authentic conversational flow using natural speech connectors ("lepas tu/nanti") and direct spoken phrasing.
 3. DEPENDENT CLAUSES: NEVER attempt to complete partial sentences or borrow words from neighbouring tags; INSTEAD, translate ONLY the fragment present within that specific tag, intentionally leaving target syntax incomplete to lock synchronization.`
 };
 // ============================================================================
