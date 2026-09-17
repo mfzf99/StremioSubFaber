@@ -37,7 +37,7 @@ const PROMPT_TEMPLATES = {
     `Translate each <s id="N"> tag from ${sourceLabel} to spoken, conversational ${targetLabel} dialogue.
 
 INTRA-SLOT LOCALIZATION RULES (ACTION REPLACEMENT):
-1. ISOLATED FREEDOM: NEVER mirror foreign syntax, alter tag boundaries, split [br] across tags, or pull text from adjacent tags; INSTEAD, rephrase dialogue naturally and idiomatically INSIDE each individual tag while preserving all internal formatting.
+1. ISOLATED FREEDOM: NEVER mirror foreign syntax, trailing modifiers, or literal word order (e.g., place adverbials before verbs naturally, such as "dengan berbesar hati menjemput", not "jemput dengan berbesar hati"); INSTEAD, rephrase dialogue naturally into idiomatic spoken ${targetLabel} INSIDE each individual tag while strictly preserving tag boundaries and internal [br] markers.
 2. DEPENDENT CLAUSES: NEVER attempt to complete partial sentences or borrow words from neighbouring tags; INSTEAD, translate ONLY the fragment present within that specific tag, intentionally leaving target syntax incomplete to lock synchronization.`,
 
   // 2. PROMPT KECEMASAN (PROHIBITED_CONTENT Fallback - Neutral & Safe)
@@ -45,7 +45,7 @@ INTRA-SLOT LOCALIZATION RULES (ACTION REPLACEMENT):
     `Translate each <s id="N"> tag from ${sourceLabel} to spoken, conversational ${targetLabel}.
 
 INTRA-SLOT LOCALIZATION RULES (ACTION REPLACEMENT):
-1. ISOLATED FREEDOM: NEVER mirror foreign syntax, alter tag boundaries, split [br] across tags, or pull text from adjacent tags; INSTEAD, rephrase dialogue naturally and idiomatically INSIDE each individual tag while preserving all internal formatting.
+1. ISOLATED FREEDOM: NEVER mirror foreign syntax, trailing modifiers, or literal word order; INSTEAD, rephrase dialogue naturally into idiomatic spoken ${targetLabel} INSIDE each individual tag while strictly preserving tag boundaries and internal [br] markers.
 2. DEPENDENT CLAUSES: NEVER attempt to complete partial sentences or borrow words from neighbouring tags; INSTEAD, translate ONLY the fragment present within that specific tag, intentionally leaving target syntax incomplete to lock synchronization.`
 };
 // ============================================================================
