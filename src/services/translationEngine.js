@@ -120,7 +120,7 @@ const CACHE_TRANSLATIONS = process.env.CACHE_TRANSLATIONS === 'true'; // Enable/
  * while staying within the LLM attention sweet spot where strict XML slot
  * enforcement holds reliably — see translation prompt design notes.
  */
-const UNIVERSAL_BATCH_SIZE = 60;
+const UNIVERSAL_BATCH_SIZE = 200;
 
 /**
  * Get the batch size to use for translation requests.
