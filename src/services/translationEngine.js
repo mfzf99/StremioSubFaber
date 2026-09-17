@@ -3184,6 +3184,9 @@ RESPOND ONLY WITH EXACTLY ${expectedCount} NUMBERED ENTRIES.
 
     // 3.1 PEMBERSIH TANDA PETIK (NETFLIX STYLE + KEBAL ERROR AI)
     cleaned = cleaned
+      // 0. Buang entiti tanda petik XML yang tertinggal (&quot; &apos;)
+      .replace(/&quot;/gi, '')
+      .replace(/&apos;/gi, '')
       // 1. Buang SEMUA tanda petik berganda (berpasangan mahupun sebiji tergantung)
       .replace(/["“”„«»]/g, '')
       // 2. Buang tanda petik tunggal di awal atau di hujung perkataan/ayat
