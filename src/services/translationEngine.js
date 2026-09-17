@@ -34,19 +34,19 @@ const sleep = (ms) => new Promise(resolve => setTimeout(resolve, ms));
 const PROMPT_TEMPLATES = {
   // 1. PROMPT ASAL (Enterprise Broadcast Standard - Intra-Slot Action-Replacement)
   primary: (targetLabel, sourceLabel) => 
-    `Translate each <s id="N"> tag from ${sourceLabel} to ${targetLabel}.
+    `Translate each <s id="N"> tag from ${sourceLabel} to spoken, conversational ${targetLabel} dialogue.
 
 INTRA-SLOT LOCALIZATION RULES (ACTION REPLACEMENT):
-1. ISOLATED FREEDOM: NEVER mirror foreign syntax, trailing modifiers, or literal word order; INSTEAD, rephrase dialogue naturally into idiomatic spoken ${targetLabel} INSIDE each individual tag while strictly preserving tag boundaries and internal [br] markers.
+1. ISOLATED FREEDOM: NEVER mirror foreign syntax, trailing modifiers, or literal word order; INSTEAD, rephrase dialogue naturally INSIDE each individual tag while strictly preserving tag boundaries and internal [br] markers.
 2. SPOKEN DICTION & ZERO ESSAY RIGIDITY: NEVER use formal copulas ("adalah/merupakan"), formal conjunctions ("bahawa", "kemudian" for "later"), or literal word-by-word calques; INSTEAD, capture authentic conversational flow using natural speech connectors ("lepas tu/nanti"), question particles ("...ke?", "...kan?"), and direct native phrasing.
 3. DEPENDENT CLAUSES: NEVER attempt to complete partial sentences or borrow words from neighbouring tags; INSTEAD, translate ONLY the fragment present within that specific tag, intentionally leaving target syntax incomplete to lock synchronization.`,
 
   // 2. PROMPT KECEMASAN (PROHIBITED_CONTENT Fallback - Neutral & Safe)
   fallback: (targetLabel, sourceLabel) => 
-    `Translate each <s id="N"> tag from ${sourceLabel} to ${targetLabel}.
+    `Translate each <s id="N"> tag from ${sourceLabel} to spoken, conversational ${targetLabel} dialogue.
 
 INTRA-SLOT LOCALIZATION RULES (ACTION REPLACEMENT):
-1. ISOLATED FREEDOM: NEVER mirror foreign syntax, trailing modifiers, or literal word order; INSTEAD, rephrase dialogue naturally into idiomatic spoken ${targetLabel} INSIDE each individual tag while strictly preserving tag boundaries and internal [br] markers.
+1. ISOLATED FREEDOM: NEVER mirror foreign syntax, trailing modifiers, or literal word order; INSTEAD, rephrase dialogue naturally INSIDE each individual tag while strictly preserving tag boundaries and internal [br] markers.
 2. SPOKEN DICTION & ZERO ESSAY RIGIDITY: NEVER use formal copulas ("adalah/merupakan"), formal conjunctions ("bahawa", "kemudian"), or literal calques; INSTEAD, capture authentic conversational flow using natural speech connectors ("lepas tu/nanti") and direct spoken phrasing.
 3. DEPENDENT CLAUSES: NEVER attempt to complete partial sentences or borrow words from neighbouring tags; INSTEAD, translate ONLY the fragment present within that specific tag, intentionally leaving target syntax incomplete to lock synchronization.`
 };
