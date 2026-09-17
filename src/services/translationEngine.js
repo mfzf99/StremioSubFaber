@@ -25,28 +25,28 @@ const { handleCaughtError } = require('../utils/errorClassifier');
 const { normalizeTargetLanguageForPrompt } = require('./utils/normalizeTargetLanguageForPrompt');
 const { recordKeyError: recordKeyErrorRedis, isKeyCoolingDown: isKeyCoolingDownRedis, getNextRotationIndex, resetKeyHealth } = require('../utils/sharedCache');
 const { executeParallelTranslation } = require('../utils/parallelTranslation');
-// 🛑 BINA PEDAL BREK ANGIN (5.0 SAAT)
+// Rate-limiting throttle helper: Client-side pacing delay
 const sleep = (ms) => new Promise(resolve => setTimeout(resolve, ms));
 
 // ============================================================================
 // 🛠️ ZON TEMPLATE PROMPT (100% UNIVERSAL & DYNAMIC)
 // ============================================================================
 const PROMPT_TEMPLATES = {
-  // 1. PROMPT ASAL (Enterprise Broadcast Standard - Intra-Slot Localization)
+  // 1. PROMPT ASAL (Enterprise Broadcast Standard - Intra-Slot Action-Replacement)
   primary: (targetLabel, sourceLabel) => 
     `Translate each <s id="N"> tag from ${sourceLabel} to spoken, conversational ${targetLabel} dialogue.
 
-INTRA-SLOT LOCALIZATION RULES:
-1. ISOLATED FREEDOM: Rephrase naturally INSIDE each tag instead of mirror or copy the original sentence structure. NEVER alter tag boundaries, NEVER split [br] into new tags, and NEVER pull text from adjacent tags.
-2. DEPENDENT CLAUSES: If an input tag contains an incomplete phrase, translate ONLY that fragment inside the tag and leave it incomplete.`,
+INTRA-SLOT LOCALIZATION RULES (ACTION REPLACEMENT):
+1. ISOLATED FREEDOM: NEVER mirror foreign syntax, alter tag boundaries, split [br] across tags, or pull text from adjacent tags; INSTEAD, rephrase dialogue naturally and idiomatically INSIDE each individual tag while preserving all internal formatting.
+2. DEPENDENT CLAUSES: NEVER attempt to complete partial sentences or borrow words from neighbouring tags; INSTEAD, translate ONLY the fragment present within that specific tag, intentionally leaving target syntax incomplete to lock synchronization.`,
 
   // 2. PROMPT KECEMASAN (PROHIBITED_CONTENT Fallback - Neutral & Safe)
   fallback: (targetLabel, sourceLabel) => 
     `Translate each <s id="N"> tag from ${sourceLabel} to spoken, conversational ${targetLabel}.
 
-INTRA-SLOT LOCALIZATION RULES:
-1. ISOLATED FREEDOM: Rephrase naturally INSIDE each tag instead of mirror or copy the original sentence structure. NEVER alter tag boundaries, NEVER split [br] into new tags, and NEVER pull text from adjacent tags.
-2. DEPENDENT CLAUSES: If an input tag contains an incomplete phrase, translate ONLY that fragment inside the tag and leave it incomplete.`
+INTRA-SLOT LOCALIZATION RULES (ACTION REPLACEMENT):
+1. ISOLATED FREEDOM: NEVER mirror foreign syntax, alter tag boundaries, split [br] across tags, or pull text from adjacent tags; INSTEAD, rephrase dialogue naturally and idiomatically INSIDE each individual tag while preserving all internal formatting.
+2. DEPENDENT CLAUSES: NEVER attempt to complete partial sentences or borrow words from neighbouring tags; INSTEAD, translate ONLY the fragment present within that specific tag, intentionally leaving target syntax incomplete to lock synchronization.`
 };
 // ============================================================================
 // Extract normalized tokens from a language label/code (split on common separators)
@@ -890,9 +890,9 @@ class TranslationEngine {
             log.info(() => `[TranslationEngine] Progress: ${progress}% (${translatedEntries.length}/${entries.length} entries, batch ${batchIndex + 1}/${batches.length})`);
           }
 
-          // 🛑 INJECT BREK 5.0 SAAT DI SINI
+          // Inter-batch pacing: Enforce a 5.0s cooldown delay to mitigate upstream RPM burst limits
           if (batchIndex < batches.length - 1) {
-            log.debug(() => `[⏳ RATE LIMIT] Brek angin 5.0 saat sebelum batch seterusnya...`);
+            log.debug(() => `[⏳ RATE LIMIT] Applying 5.0s pacing delay before dispatching next batch...`);
             await sleep(5000);
           }
 
@@ -1071,9 +1071,9 @@ class TranslationEngine {
         }
       }
 
-      // 🛑 INJECT BREK 5.0 SAAT DI SINI (UNTUK CHUNKING)
+      // Inter-chunk pacing: Enforce a 5.0s cooldown delay between auto-chunked requests
       if (batchIndex < chunks.length - 1) {
-        log.debug(() => `[⏳ RATE LIMIT] Brek angin 5.0 saat sebelum chunk seterusnya...`);
+        log.debug(() => `[⏳ RATE LIMIT] Applying 5.0s pacing delay before processing next chunk...`);
         await sleep(5000);
       }
 
@@ -2160,7 +2160,7 @@ class TranslationEngine {
 
   /**
    * Create translation prompt for XML-tagged batches (Enterprise Industry Standard)
-   * Dilengkapi Universal Demonstration & Strict Tag-Question Isolation
+   * Features Universal Structural Demonstration & Strict Tag-Question Isolation
    */
   createXmlBatchPrompt(batchText, targetLanguage, customPrompt, expectedCount, context = null, batchIndex = 0, totalBatches = 1) {
     const targetLabel = normalizeTargetLanguageForPrompt(targetLanguage);
@@ -2201,48 +2201,40 @@ CRITICAL ENFORCEMENT RULES (ZERO TOLERANCE):
 1. STRICT 1-TO-1 CARDINALITY & ID PARITY:
    - Output EXACTLY ${expectedCount} entries matching these EXACT IDs, in this order:
      [${idList}]
-   - Every input <s id="N"> pairs strictly with one output <s id="N">. Never omit, combine, reorder, duplicate, or invent IDs.
-   - IDs are GLOBAL from the source SRT. Preserve gaps and exact values — do NOT renumber or force sequential ordering.
+   - NEVER omit, combine, reorder, duplicate, or invent IDs; INSTEAD, pair every single input <s id="N"> strictly 1-to-1 with its matching output <s id="N">.
+   - NEVER renumber, compress, or force sequential order; INSTEAD, preserve source SRT global IDs verbatim, retaining all numerical values and existing gaps.
 
 2. ABSOLUTE SLOT ISOLATION & ZERO SPLITTING:
-   - Output <s id="N"> MUST contain ONLY the translation of input <s id="N">. NEVER pull or fold words from adjacent slots.
-   - NEVER split [br] into a new <s id> tag! Text with [br] must remain completely inside its single tag (e.g. <s id="5">ayat satu[br]ayat dua</s>).
-   - SHORT SLOTS & ISOLATED FRAGMENTS: Regardless of length, if a slot contains an isolated question tag ("are you?", "right?"), negation particle ("not to."), interjection ("Wait.", "Yes."), dependent clause, or single word ("First,"), translate ONLY those words inside that exact slot. NEVER attach them to adjacent lines and NEVER echo demonstration text.
-   - Incomplete target syntax is MANDATORY to preserve subtitle synchronization.
+   - NEVER pull, borrow, or fold words across adjacent slots; INSTEAD, confine every translation strictly inside its matching <s id="N"> slot.
+   - NEVER split [br] into a new <s id> tag; INSTEAD, keep all multi-line text separated by [br] enclosed entirely inside its single parent tag (e.g. <s id="5">ayat satu[br]ayat dua</s>).
+   - NEVER attach short slots (question tags, negation particles, interjections, single words like "First,") to preceding or subsequent lines, and NEVER echo demonstration text; INSTEAD, translate ONLY those specific words within that exact slot and close the tag immediately.
+   - NEVER force complete target grammar on broken clauses; INSTEAD, preserve grammatically incomplete syntax to maintain 100% subtitle synchronization.
 
 3. ZERO SHIFTING, ANTI-HALLUCINATION & SOURCE FIDELITY:
-   - NEVER shift subsequent dialogue forward to compensate for short or empty slots.
-   - NEVER invent synthetic filler lines to satisfy the tag count.
-   - ZERO CONVERSATIONAL CONTINUATION: Output <s id="${startId}"> MUST translate input <s id="${startId}"> directly. NEVER generate reactive conversational replies or commentary to the background memory (<m> tags).
-   - NEVER add, remove, or alter numbers, dates, times, or measurements present in the source.
-   - NEVER add or remove terminal punctuation (. ? ! ...) that changes the delivery of a line.
+   - NEVER shift subsequent dialogue forward to compensate for short or empty slots; INSTEAD, keep every line strictly anchored to its assigned ID.
+   - NEVER invent synthetic filler lines to satisfy slot counts; INSTEAD, translate only verified source dialogue.
+   - NEVER generate conversational replies, reactions, or commentary to background memory (<m> tags); INSTEAD, translate input <s id="${startId}"> directly as spoken dialogue.
+   - NEVER add, drop, or modify numbers, dates, times, or measurements; INSTEAD, transfer all numeric values and units accurately into the target language.
+   - NEVER alter or omit terminal punctuation (. ? ! ...) to change speech delivery; INSTEAD, mirror the original tone and natural pauses.
 
 4. AIR-GAPPED READ-ONLY CONTEXT MEMORY (<m> TAGS):
-   - Entries inside <m id="N"><src>...</src><dst>...</dst></m> are STRICTLY READ-ONLY background context.
-   - NEVER translate, modify, output, or duplicate text from <m> tags into active <s id="N"> tags.
-   - CONFLICT RESOLUTION: If <m> text conflicts with <s> source, ALWAYS prioritize <s>.
+   - NEVER translate, output, modify, or duplicate text from <m id="N"> tags into active <s id="N"> tags; INSTEAD, treat all <m> entries strictly as air-gapped, read-only background context.
+   - NEVER allow background memory to override active dialogue; INSTEAD, always prioritize <s> source text whenever memory and source conflict.
 
 5. ESCAPE HATCH (EXACT COPY PROTOCOL):
-   - Copy the EXACT original text into the slot ONLY if: content is untranslatable (company/brand names, foreign proper nouns, fictional entities, corrupted text); the slot contains ONLY symbols, music notes (♪/♫), numbers, or punctuation; or the slot is empty or whitespace-only.
-   - PARTIAL UNTRANSLATABLE: Translate the translatable portion, but copy company/brand names, foreign proper nouns, and fictional entities VERBATIM (original language, unmodified).
-   - CREATIVE WORK TITLES: NEVER translate titles of movies, TV shows, books, novels, songs, plays, or games — keep them VERBATIM in the original language.
-   - NEVER translate company names, brand names, registered entities, or their legal suffixes (e.g., Co., Ltd., Inc.).
-   - NEVER skip the slot, and NEVER use this as a shortcut for difficult translations.
+   - NEVER translate titles of creative works (movies, TV shows, books, novels, songs, plays, games), registered corporate/brand names, or legal entities (e.g., Co., Ltd., Inc.); INSTEAD, keep them VERBATIM in their original language.
+   - NEVER invent translations for untranslatable content (proper nouns, standalone music notes ♪/♫, isolated symbols, numbers, punctuation, corrupted text, or whitespace); INSTEAD, copy the EXACT original text into the slot.
+   - NEVER translate unlocalizable entities in mixed slots; INSTEAD, translate the dialogue portion while copying brand names and foreign proper nouns unmodified.
+   - NEVER skip a slot under any circumstance; INSTEAD, emit the opening and closing tags containing the verbatim copy.
 
 6. SONG LYRICS & INLINE MARKUP:
-   - Lyrics inside music notes (♪/♫) must always be translated, whether as a full song block or scattered background music.
-   - PRESERVE all [br], <i>...</i>, speaker dashes (-), and ANY other inline markup in the exact same position and count as in the source.
-   - Do NOT add line breaks or formatting tags that don't exist in the source.
+   - NEVER omit or leave song lyrics untranslated when enclosed in music notes (♪/♫); INSTEAD, fully translate vocal lyrics (foreground and BGM) while preserving the musical notes.
+   - NEVER strip, displace, or inject formatting tags not present in the source; INSTEAD, preserve all [br], <i>...</i>, <b>...</b>, speaker dashes (-), and inline markup in their exact source positions and counts.
 
 7. CLEAN PAYLOAD ONLY:
-   - Output ONLY the raw <s id="N">...</s> sequence.
-   - ZERO commentary, ZERO markdown code blocks, ZERO notes in parentheses.
-   - ZERO PROMPT ECHO: Do NOT echo [input], [OUTPUT_FORMAT], or BATCH headers.
-   - ZERO REASONING LEAKS: Do NOT output thinking blocks, reasoning tags, or self-reflection (e.g., </think>, <reasoning>).
-   - CONTINUATION POINT: The pre-filled <s id="${startId}"> at the prompt boundary is your anchor. Your response BEGINS with the CONTENT of slot ${startId} — the translated text starts at your very first character.
-   - The pre-filled opening tag is NOT part of your output. Do not repeat it, re-emit it, or acknowledge it. Simply continue from it as if you had already typed it.
-   - Nothing before the first content character or after the last </s>.
-   - SELF-CORRECTION: If you detect a violation in the slot you are currently writing, correct that slot before closing it. Never restart completed slots, and never append corrections after </s>.
+   - NEVER output conversational commentary, markdown code fences, notes in parentheses, thinking blocks (</think>), or prompt echoes ([input], BATCH); INSTEAD, emit ONLY the raw sequence of <s id="N">...</s> tags.
+   - NEVER repeat, re-emit, or acknowledge the pre-filled <s id="${startId}"> opening tag; INSTEAD, continue directly from the prompt boundary by generating the inner content of slot ${startId} at your very first output character.
+   - NEVER append corrections after closing a tag with </s> or restart completed slots; INSTEAD, rectify errors immediately inside the active slot before closing it.
 
 <input>
 ${batchText}
