@@ -2219,7 +2219,6 @@ CRITICAL ENFORCEMENT RULES (ZERO TOLERANCE):
    - NEVER generate conversational replies, reactions, or commentary to background memory (<m> tags); INSTEAD, translate input <s id="${startId}"> directly as spoken dialogue.
    - NEVER add, drop, or modify numbers, dates, times, or measurements; INSTEAD, transfer all numeric values and units accurately into the target language.
    - NEVER alter or omit terminal punctuation (. ? ! ...) to change speech delivery; INSTEAD, mirror the original tone and natural pauses.
-   - NEVER allow translated sentences to expand uncontrollably; INSTEAD, keep ${targetLabel} translations concise as ${targetLabel} text is naturally longer, ensuring it fits subtitle reading-speed constraints.
 
 4. AIR-GAPPED READ-ONLY CONTEXT MEMORY (<m> TAGS):
    - NEVER translate, output, modify, or duplicate text from <m id="N"> tags into active <s id="N"> tags; INSTEAD, treat all <m> entries strictly as air-gapped, read-only background context.
