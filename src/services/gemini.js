@@ -736,17 +736,28 @@ class GeminiService {
           let blockReason = null;
           let safetyRatings = null;
           let rawStream = '';
+          let streamDone = false;
+          let parseFailed = false;
 
           const processPayload = (payloadStr) => {
             if (!payloadStr || !payloadStr.trim()) return;
-            const cleaned = payloadStr.trim().startsWith('data:')
-              ? payloadStr.trim().slice(5).trim()
-              : payloadStr.trim();
-            if (!cleaned) return;
+            const trimmed = payloadStr.trim();
+            if (trimmed === '[DONE]' || trimmed === 'data: [DONE]') {
+              streamDone = true;
+              return;
+            }
+            const cleaned = trimmed.startsWith('data:')
+              ? trimmed.slice(5).trim()
+              : trimmed;
+            if (!cleaned || cleaned === '[DONE]') {
+              if (cleaned === '[DONE]') streamDone = true;
+              return;
+            }
             let data;
             try {
               data = JSON.parse(cleaned);
             } catch (_) {
+              parseFailed = true;
               return;
             }
 
@@ -786,9 +797,49 @@ class GeminiService {
               const chunkStr = chunk.toString('utf8');
               rawStream += chunkStr;
               buffer += chunkStr;
-              const parts = buffer.split(/\r?\n/);
-              buffer = parts.pop();
-              parts.forEach(processPayload);
+              if (streamDone) return;
+
+              // SSE events are separated by a blank line (double newline). Keep
+              // buffering until we see that boundary so multi-line JSON payloads
+              // are never passed to JSON.parse in pieces. A single newline
+              // followed by "data: " is also accepted as a fallback boundary for
+              // providers that do not emit the SSE blank line faithfully.
+              while (buffer) {
+                let boundary = null;
+                let boundaryIndex = buffer.indexOf('\r\n\r\n');
+                if (boundaryIndex !== -1) {
+                  boundary = '\r\n\r\n';
+                } else {
+                  boundaryIndex = buffer.indexOf('\n\n');
+                  if (boundaryIndex !== -1) {
+                    boundary = '\n\n';
+                  } else {
+                    const altIndex = buffer.search(/\r?\ndata:\s*/);
+                    if (altIndex !== -1) {
+                      boundaryIndex = altIndex;
+                      boundary = buffer.slice(boundaryIndex).startsWith('\r\n') ? '\r\n' : '\n';
+                    } else {
+                      break;
+                    }
+                  }
+                }
+
+                const eventBlock = buffer.slice(0, boundaryIndex);
+                buffer = buffer.slice(boundaryIndex + boundary.length);
+                const eventLines = eventBlock.split(/\r?\n/);
+                for (const line of eventLines) {
+                  const trimmed = line.trim();
+                  if (!trimmed) continue;
+                  if (trimmed.startsWith('data:')) {
+                    processPayload(trimmed);
+                  } else if (trimmed.startsWith('event:') || trimmed.startsWith('id:') || trimmed.startsWith('retry:')) {
+                    // SSE control fields; ignore for Gemini payloads.
+                    continue;
+                  } else {
+                    processPayload(trimmed);
+                  }
+                }
+              }
             } catch (err) {
               log.warn(() => ['[Gemini] Stream chunk processing failed:', err.message]);
             }
@@ -800,15 +851,23 @@ class GeminiService {
                 processPayload(buffer);
               }
 
-              if (!aggregated && rawStream.trim()) {
+              // Run recovery when we have no parsed text OR when any SSE payload
+              // failed to parse (partial JSON corruption / multi-line split). This
+              // keeps the stream usable even if only a subset of chunks were parsed.
+              if ((!aggregated || parseFailed) && rawStream.trim()) {
                 try {
                   const recovered = this.recoverStreamPayload(rawStream);
                   if (recovered.text) {
-                    aggregated = recovered.text;
+                    const priorLength = aggregated.length;
+                    // Prefer the recovered text when it contains more content
+                    // than what normal parsing managed to extract.
+                    if (recovered.text.length > aggregated.length) {
+                      aggregated = recovered.text;
+                    }
                     finishReason = finishReason || recovered.finishReason;
                     blockReason = blockReason || recovered.blockReason;
                     safetyRatings = safetyRatings || recovered.safetyRatings;
-                    log.debug(() => `[Gemini] Stream parsed via fallback (${recovered.payloadCount} payloads, content-type=${contentType || 'unknown'})`);
+                    log.debug(() => `[Gemini] Stream parsed via fallback (${recovered.payloadCount} payloads, content-type=${contentType || 'unknown'}, prior=${priorLength}, recovered=${recovered.text.length})`);
                   } else if (contentType && !contentType.includes('text/event-stream')) {
                     log.warn(() => `[Gemini] Streaming response was '${contentType}' with no text; check API base/alt=sse config`);
                   }
