@@ -63,8 +63,19 @@ class FallbackTranslationProvider {
         if (!this.fallback) {
           throw primaryError;
         }
-        log.warn(() => `[Providers] Primary ${this.primaryName} stream failed, falling back to ${this.fallbackName} (non-stream)`);
+
+        const fallbackSupportsStreaming = typeof this.fallback.streamTranslateSubtitle === 'function';
+        log.warn(() => `[Providers] Primary ${this.primaryName} stream failed, falling back to ${this.fallbackName} (${fallbackSupportsStreaming ? 'stream' : 'non-stream'})`);
         try {
+          if (fallbackSupportsStreaming) {
+            // Preserve progressive delivery by streaming through the fallback as well.
+            const translated = await this.fallback.streamTranslateSubtitle(subtitleContent, sourceLanguage, targetLanguage, customPrompt, onPartial);
+            log.info(() => `[Providers] Secondary ${this.fallbackName} streaming succeeded after streaming failure on ${this.primaryName}`);
+            return translated;
+          }
+
+          // Last resort: non-streaming translation, then deliver the full result
+          // through the progress callback so callers still receive the payload.
           const full = await this.fallback.translateSubtitle(subtitleContent, sourceLanguage, targetLanguage, customPrompt);
           if (typeof onPartial === 'function') {
             try { await onPartial(full); } catch (_) { }
