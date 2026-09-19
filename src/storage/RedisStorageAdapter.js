@@ -144,9 +144,22 @@ class RedisStorageAdapter extends StorageAdapter {
     return transientPhrases.some(fragment => message.includes(fragment));
   }
 
+  /**
+   * Decide whether a transient Redis error deserves another attempt.
+   *
+   * Streaming stability note:
+   * - "Command timed out" may be a short network blip, so we allow exactly one
+   *   fast retry in `_executeWithRetry` rather than the full 3 attempts. This
+   *   keeps Redis calls bounded and avoids long route stalls while still
+   *   tolerating a single hiccup.
+   * - "Stream isn't writeable" means the connection is already broken, so
+   *   retrying here only wastes time. We surface it as a StorageUnavailableError
+   *   immediately so the upper layer can fall back cleanly.
+   * @private
+   */
   _shouldRetryRedisError(error = {}) {
     const message = error?.message || '';
-    if (message.includes('Command timed out') || message.includes("Stream isn't writeable")) {
+    if (message.includes("Stream isn't writeable")) {
       return false;
     }
     return this._isTransientRedisError(error);
@@ -166,6 +179,7 @@ class RedisStorageAdapter extends StorageAdapter {
    */
   async _executeWithRetry(operationName, fn) {
     const maxAttempts = 3;
+    const commandTimeoutMessage = 'Command timed out';
     let attempt = 0;
     let lastError = null;
 
@@ -177,16 +191,36 @@ class RedisStorageAdapter extends StorageAdapter {
         lastError = err;
         const isTransient = this._isTransientRedisError(err);
         const shouldRetry = this._shouldRetryRedisError(err);
+        const isCommandTimeout = String(err?.message || '').includes(commandTimeoutMessage);
+        const isBrokenStream = String(err?.message || '').includes("Stream isn't writeable");
 
-        if (shouldRetry && attempt < maxAttempts) {
-          const delay = Math.min(100 * attempt, 750);
-          log.warn(() => `[RedisStorage] ${operationName} transient failure (${err.message || err}), retrying in ${delay}ms (${attempt}/${maxAttempts})`);
+        // Fast-path retry budget:
+        // - Regular transient errors: up to maxAttempts (3) with bounded backoff.
+        // - Command timeout: allow only 1 fast retry to absorb transient network
+        //   hiccups; do NOT keep retrying or Stremio subtitle routes can stall.
+        // - Broken stream: never retry; the connection is already unusable.
+        const attemptsForTimeout = 2; // initial attempt + 1 fast retry
+        const canRetryRegular = shouldRetry && !isCommandTimeout && !isBrokenStream && attempt < maxAttempts;
+        const canRetryTimeout = shouldRetry && isCommandTimeout && attempt < attemptsForTimeout;
+
+        if (canRetryRegular || canRetryTimeout) {
+          const delay = isCommandTimeout ? 50 : Math.min(100 * attempt, 750);
+          const budget = isCommandTimeout ? attemptsForTimeout : maxAttempts;
+          log.warn(() => `[RedisStorage] ${operationName} transient failure (${err.message || err}), retrying in ${delay}ms (${attempt}/${budget})`);
           await this._sleep(delay);
           continue;
         }
 
         if (isTransient) {
-          throw new StorageUnavailableError(`[RedisStorage] ${operationName} failed after ${maxAttempts} attempt(s)`, { operation: operationName, cause: err });
+          const detail = isBrokenStream
+            ? 'connection is not writeable'
+            : isCommandTimeout
+              ? 'command timed out after fast retry'
+              : 'transient failure exhausted';
+          throw new StorageUnavailableError(
+            `[RedisStorage] ${operationName} failed: ${detail}`,
+            { operation: operationName, cause: err }
+          );
         }
 
         throw err;
