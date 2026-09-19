@@ -637,7 +637,8 @@ class GeminiService {
         return this.cleanTranslatedSubtitle(translatedText);
 
       } catch (error) {
-        handleTranslationError(error, 'Gemini', { skipResponseData: true });
+        const normalized = handleTranslationError(error, 'Gemini', { skipResponseData: true });
+        throw normalized;
       }
     });
   }
@@ -927,7 +928,8 @@ class GeminiService {
         });
 
       } catch (error) {
-        handleTranslationError(error, 'Gemini', { skipResponseData: true });
+        const normalized = handleTranslationError(error, 'Gemini', { skipResponseData: true });
+        throw normalized;
       }
     });
   }
