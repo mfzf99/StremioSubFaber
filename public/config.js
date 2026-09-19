@@ -7931,7 +7931,7 @@ Translate to {target_language}.`;
             tryFetchAdvancedModels();
         });
 
-        [advModelEl, advThinkingEl, advThinkingLevelEl, advTempEl, advTopPEl, ...workflowInputs].forEach(el => {
+        [advModelEl, advThinkingEl, advThinkingLevelEl, advTempEl, advTopPEl].forEach(el => {
             if (el) {
                 el.addEventListener('change', updateBypassCacheForAdvancedSettings);
                 el.addEventListener('input', updateBypassCacheForAdvancedSettings);
