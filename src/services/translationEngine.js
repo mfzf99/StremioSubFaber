@@ -336,8 +336,13 @@ class TranslationEngine {
 
   /**
    * Key health tracking constants
+   *
+   * Values must match the Redis-backed constants in src/utils/sharedCache.js so
+   * the local in-memory fallback and the distributed Redis path apply the same
+   * quarantine policy: a key enters cooldown after 5 errors and stays there for
+   * up to 1 hour unless explicitly reset after a successful translation.
    */
-  static KEY_HEALTH_ERROR_THRESHOLD = 1; // 🚀 TUKAR JADI 1! 1 kali ralat, terus masuk lokap 1 jam!
+  static KEY_HEALTH_ERROR_THRESHOLD = 5; // Consistent with sharedCache.js (5 errors)
   static KEY_HEALTH_COOLDOWN_MS = 60 * 60 * 1000; // 1 hour
   
   /**
