@@ -364,7 +364,7 @@ class TranslationEngine {
   async _recordKeyError(apiKey, error = null) {
     if (!this.retryRotationEnabled || !apiKey) return;
 
-    // 🛡️ PERISAI KUNCI SUCI: Kalau ralat sbb safety filter / kandungan terlarang, JANGAN HUKUM KEY NI!
+    // 🛡️ PERISAI KUNCI SUCI: Kalau ralat sbb safety filter / kandungan terlarang, JANGAN HUKUM KEY NI!
     if (error && error.message) {
       const msg = String(error.message).toLowerCase();
       // Guna word-boundary regex (sama pattern dengan _isRetryableHttpError).
@@ -372,7 +372,7 @@ class TranslationEngine {
       if (/prohibited[_ ]content/.test(msg) ||
           /safety(?![a-z])/.test(msg) ||
           /recitation/.test(msg)) {
-        log.debug(() => `[TranslationEngine] 🛡️ Perisai aktif: Skip kuarantin untuk key ${this._redactKey(apiKey)} sebab ralat isu kandungan teks.`);
+        log.debug(() => `[TranslationEngine] 🛡️ Perisai aktif: Skip kuarantin untuk key ${this._redactKey(apiKey)} sebab ralat isu kandungan teks.`);
         return; // Terus keluar, selamatkan key dari masuk lokap 1 jam!
       }
     }
@@ -615,7 +615,7 @@ class TranslationEngine {
     const msg = String(error.message || '').toLowerCase();
     const status = error.statusCode || error.status || error.response?.status || 0;
 
-    // 🛡️ PERISAI KHAS: Jangan hijack ralat Prohibited Content / Safety Filter!
+    // 🛡️ PERISAI KHAS: Jangan hijack ralat Prohibited Content / Safety Filter!
     // Guna "not-followed-by-letter" pattern supaya padan dengan "safety_filter",
     // "safety block", "SAFETY" — tapi TIDAK padan dengan "safeguard" atau "safetypin".
     if (/prohibited[_ ]content/.test(msg) ||
@@ -731,7 +731,7 @@ class TranslationEngine {
    * @returns {Promise<string>} - Translated SRT content
    */
   async translateSubtitle(srtContent, targetLanguage, customPrompt = null, onProgress = null, sourceLanguage = null) {
-    // 🧹 Sedut & normalkan apa jua bahasa sumber dari SubMaker
+    // 🧹 Sedut & normalkan apa jua bahasa sumber dari SubMaker
     this.sourceLanguage = sourceLanguage ? normalizeTargetLanguageForPrompt(sourceLanguage) : '';
 
     // Track per-run RTL so all cleanups (including streaming) can apply markers consistently
@@ -2371,7 +2371,7 @@ RESPOND ONLY WITH EXACTLY ${expectedCount} VALID JSON ENTRIES AS A RAW ARRAY.
     // Fix #15 (v1.4.38+): Remove any content between </s> and <s tags before parsing.
     cleaned = cleaned.replace(/<\/s>\s*(?:(?!<s[\s>])[\s\S])*?(?=<s[\s>])/gi, '</s>\n');
 
-    // 🛡️ PETA GLOBAL ID KE INDEX TEMPATAN 🛡️
+    // 🛡️ PETA GLOBAL ID KE INDEX TEMPATAN 🛡️
     // Petakan ID sebenar dari filem ke index tempatan (0 hingga 99)
     const validIds = new Map();
     if (batch && batch.length > 0) {
@@ -2545,7 +2545,7 @@ RESPOND ONLY WITH EXACTLY ${expectedCount} VALID JSON ENTRIES AS A RAW ARRAY.
       }
       if (!Array.isArray(parsed)) return null;
 
-      // 🛡️ PERISAI GLOBAL ID: Petakan Global ID srt asal ke index tempatan batch
+      // 🛡️ PERISAI GLOBAL ID: Petakan Global ID srt asal ke index tempatan batch
       const validIds = new Map();
       if (batch && batch.length > 0) {
         batch.forEach((entry, idx) => {
@@ -2595,7 +2595,7 @@ RESPOND ONLY WITH EXACTLY ${expectedCount} VALID JSON ENTRIES AS A RAW ARRAY.
     try {
       let repaired = jsonStr;
 
-      // 🛡️ PERISAI MAGIS: Cari lambakan tanda petik berkembar yang tidak sah di hujung string (contoh: ""粉" atau """}) dan runtuhkan jadi satu ketul " sahaja
+      // 🛡️ PERISAI MAGIS: Cari lambakan tanda petik berkembar yang tidak sah di hujung string (contoh: ""粉" atau """}) dan runtuhkan jadi satu ketul " sahaja
       repaired = repaired.replace(/(?<!\\)"{2,}(?=\s*[,\]\}])/g, '"');
 
       // Fix unescaped newlines/tabs inside string values (between quotes)
@@ -2720,7 +2720,7 @@ RESPOND ONLY WITH EXACTLY ${expectedCount} VALID JSON ENTRIES AS A RAW ARRAY.
           timecode: existing.timecode || undefined
         };
       } 
-      // 2. 🛡️ THE UPGRADE: Kalau AI tertinggal, tapi ayat tu tak perlu diterjemah pun
+      // 2. 🛡️ THE UPGRADE: Kalau AI tertinggal, tapi ayat tu tak perlu diterjemah pun
       else if (isUntranslatable(originalText)) {
         aligned[i] = {
           index: i,
@@ -2834,7 +2834,7 @@ RESPOND ONLY WITH EXACTLY ${expectedCount} NUMBERED ENTRIES.
     const batchStartId = originalBatch?.[0]?.id || 1;
     const batchEndId = originalBatch?.[originalBatch.length - 1]?.id || batchStartId;
 
-    // 🛡️ PETA GLOBAL ID KE INDEX TEMPATAN 🛡️
+    // 🛡️ PETA GLOBAL ID KE INDEX TEMPATAN 🛡️
     // Digunakan untuk padankan ID sebenar dari filem (contoh: 101) ke index array batch ini (0-99)
     const validIds = new Map();
     if (originalBatch && originalBatch.length > 0) {
@@ -2878,7 +2878,7 @@ RESPOND ONLY WITH EXACTLY ${expectedCount} NUMBERED ENTRIES.
           timecode: entry.timecode || ''
         }));
       } else if (this.translationWorkflow === 'xml') {
-        // 🛡️ FASA 3: REGEX KEBAL UNTUK STREAMING 🛡️
+        // 🛡️ FASA 3: REGEX KEBAL UNTUK STREAMING 🛡️
         let cleaned = partialText;
         
         // Pancing penyambung untuk streaming (Guna batchStartId yang sudah sedia ada di atas)
@@ -3473,7 +3473,7 @@ RESPOND ONLY WITH EXACTLY ${expectedCount} NUMBERED ENTRIES.
   sanitizeTimecodes(text) {
     let cleaned = String(text || '').trim();
 
-    // 🛡️ BACKUP: Strip numeric prefix hallucination (defense-in-depth)
+    // 🛡️ BACKUP: Strip numeric prefix hallucination (defense-in-depth)
     // Kalau cleanTranslatedText terlepas, ini adalah final net.
     cleaned = cleaned.replace(/^\s*\d+\s*[>.]\s*/, '').trim();
 
