@@ -628,9 +628,9 @@ class TranslationEngine {
     if (status >= 400) return true;
 
     // Text-based signatures — word boundary required to avoid false positives.
-    //   "429"/"503" tanpa boundary → "1429", "4290", "error_code_5031" akan match.
-    //   "network" generik → "network" alone boleh padan "not a network problem".
-    //   "timeout" boleh padan "no timeout occurred".
+    //   "429"/"503" without boundary → "1429", "4290", "error_code_5031" would match.
+    //   generic "network" → "network" alone could match "not a network problem".
+    //   "timeout" could match "no timeout occurred".
     return /\b(429|503)\b/.test(msg) ||
       /\btoo many requests\b/.test(msg) ||
       /\bservice unavailable\b/.test(msg) ||
@@ -1093,7 +1093,7 @@ class TranslationEngine {
         await sleep(5000);
       }
 
-    } // <-- Ini kurungan yang tutup gelung 'for'
+    } // End of chunk processing loop
 
     if (translatedEntries.length !== entries.length) {
       log.warn(() => `[TranslationEngine] Single-batch entry count mismatch: expected ${entries.length}, got ${translatedEntries.length}`);
