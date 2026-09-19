@@ -334,7 +334,7 @@ class GeminiService {
     try {
       const response = await axios.get(`${this.baseUrl}/models/${this.model}`, {
         headers: this.getAuthHeaders(),
-        timeout: 10000,
+        timeout: this.timeout || 10000,
         httpAgent,
         httpsAgent
       });
@@ -405,13 +405,17 @@ class GeminiService {
         const delay = useGemmaConfig
           ? effectiveBaseDelay * Math.pow(3, attempt)
           : effectiveBaseDelay * Math.pow(2, attempt);
+        // Apply jitter so multiple instances hitting the same rate-limit or
+        // network window do not retry at exactly the same instant (thundering
+        // herd). Range: 0.8x – 1.2x of the computed backoff.
+        const jitteredDelay = Math.max(50, Math.round(delay * (0.8 + Math.random() * 0.4)));
         const errorType = isRateLimit ? '429 rate limit' :
           isServiceUnavailable ? '503 service unavailable' :
             isSocketHangup ? 'socket hang up' :
               isTimeout ? 'timeout' :
                 isMarkedRetryable ? 'transient error (OTHER)' : 'network error';
-        log.debug(() => `[Gemini] Attempt ${attempt + 1} failed (${errorType}), retrying in ${delay}ms...`);
-        await new Promise(resolve => setTimeout(resolve, delay));
+        log.debug(() => `[Gemini] Attempt ${attempt + 1} failed (${errorType}), retrying in ${jitteredDelay}ms...`);
+        await new Promise(resolve => setTimeout(resolve, jitteredDelay));
       }
     }
   }
@@ -943,8 +947,31 @@ class GeminiService {
 
   estimateTokenCount(text) {
     if (!text) return 0;
-    const approx = Math.ceil(text.length / 3);
-    return Math.ceil(approx * 1.1);
+
+    let cjkCount = 0;
+    let otherCount = 0;
+    for (const char of text) {
+      const codePoint = char.codePointAt(0);
+      const isCjk = (codePoint >= 0x2E80 && codePoint <= 0x9FFF) // CJK radicals, Kangxi, ideographs
+        || (codePoint >= 0x3400 && codePoint <= 0x4DBF) // CJK Ext A
+        || (codePoint >= 0xF900 && codePoint <= 0xFAFF) // CJK Compatibility Ideographs
+        || (codePoint >= 0x20000 && codePoint <= 0x2EBEF); // CJK Ext B+
+      const isEmoji = (codePoint >= 0x1F000 && codePoint <= 0x1FAFF)
+        || (codePoint >= 0x2600 && codePoint <= 0x27BF);
+
+      if (isCjk || isEmoji) {
+        cjkCount += 1;
+      } else {
+        otherCount += 1;
+      }
+    }
+
+    // Latin text averages ~3-4 chars/token. CJK/emoji characters are usually
+    // 1-2 tokens each, so underestimating them can cause MAX_TOKENS truncation.
+    // Use ~1.25 tokens per CJK/emoji codepoint and keep the old heuristic for
+    // the rest, then add the existing 10% safety margin.
+    const approx = (otherCount / 3) + (cjkCount * 1.25);
+    return Math.ceil(Math.ceil(approx) * 1.1);
   }
 
   recoverStreamPayload(rawStream) {
