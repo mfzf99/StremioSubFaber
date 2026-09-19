@@ -223,48 +223,78 @@ async function executeParallelTranslation(engine, entries, targetLanguage, custo
 
     async function runWithProgressiveSequentialResolution(tasks, limit) {
         const executing = new Set();
+        const batchErrors = [];
 
         for (let i = 0; i < tasks.length; i++) {
             const taskIdx = i; // capture for closure
             const p = Promise.resolve().then(() => tasks[taskIdx]());
 
-            const wrapped = p.then(async (res) => {
-                batchResults[taskIdx] = res;
-                executing.delete(wrapped);
+            // Wrap with both handlers so `wrapped` NEVER rejects. This prevents
+            // unhandled promise rejections when several batches fail while others
+            // are still in flight. Rejections are collected into batchErrors and
+            // re-thrown after all in-flight work has settled.
+            const wrapped = p.then(
+                async (res) => {
+                    executing.delete(wrapped);
+                    batchResults[taskIdx] = res;
 
-                // Drain completed batches in order so translatedEntries stays sequential
-                while (nextBatchToAppend < tasks.length && batchResults[nextBatchToAppend] !== undefined) {
-                    const currentToAppend = nextBatchToAppend;
-                    nextBatchToAppend++;
+                    // Drain completed batches in order so translatedEntries stays sequential
+                    while (nextBatchToAppend < tasks.length && batchResults[nextBatchToAppend] !== undefined) {
+                        const currentToAppend = nextBatchToAppend;
+                        nextBatchToAppend++;
 
-                    const batchData = batches[currentToAppend];
-                    const resolvedData = batchResults[currentToAppend];
+                        const batchData = batches[currentToAppend];
+                        const resolvedData = batchResults[currentToAppend];
 
-                    for (let j = 0; j < batchData.length; j++) {
-                        const original = batchData[j];
-                        const translated = resolvedData[j] || {};
-                        const cleanedText = engine.cleanTranslatedText(translated.text || original.text);
-                        const timecode = (engine.sendTimestampsToAI && translated.timecode) ? translated.timecode : original.timecode;
+                        for (let j = 0; j < batchData.length; j++) {
+                            const original = batchData[j];
+                            const translated = resolvedData[j] || {};
+                            const cleanedText = engine.cleanTranslatedText(translated.text || original.text);
+                            const timecode = (engine.sendTimestampsToAI && translated.timecode) ? translated.timecode : original.timecode;
 
-                        translatedEntries.push({
-                            id: original.id,
-                            timecode,
-                            text: cleanedText
-                        });
+                            translatedEntries.push({
+                                id: original.id,
+                                timecode,
+                                text: cleanedText
+                            });
+                        }
+
+                        completedEntryCount = translatedEntries.length;
+                        completedSRT = toSRT(translatedEntries);
+                        await fireProgress(currentToAppend);
                     }
-
-                    completedEntryCount = translatedEntries.length;
-                    completedSRT = toSRT(translatedEntries);
-                    await fireProgress(currentToAppend);
+                },
+                (error) => {
+                    executing.delete(wrapped);
+                    batchErrors.push({ batchIdx: taskIdx, error });
+                    log.warn(() => `[ParallelTranslation] Batch ${taskIdx + 1} failed: ${error?.message || error}`);
                 }
-            });
+            );
 
             executing.add(wrapped);
+
+            // When at the concurrency limit, wait for at least one task to settle.
+            // `wrapped` never rejects, so this race is purely a progress throttle.
             if (executing.size >= limit) {
                 await Promise.race([...executing]);
             }
         }
+
+        // All tasks are non-rejecting, so Promise.all just drains the queue.
         await Promise.all([...executing]);
+
+        if (batchErrors.length > 0) {
+            const errorsText = batchErrors
+                .sort((a, b) => a.batchIdx - b.batchIdx)
+                .map(({ batchIdx, error }) => `batch ${batchIdx + 1}: ${error?.message || error}`)
+                .join('; ');
+
+            const aggregate = new Error(`Parallel translation failed (${batchErrors.length}/${tasks.length} batches): ${errorsText}`);
+            aggregate.name = 'AggregateError';
+            aggregate.batchErrors = batchErrors;
+            aggregate.failedBatches = batchErrors.map(({ batchIdx }) => batchIdx);
+            throw aggregate;
+        }
     }
 
     // Build tasks for ALL batches (0 through N) and run them together
