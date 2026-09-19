@@ -40,7 +40,6 @@ const PROMPT_TEMPLATES = {
 INTRA-SLOT LOCALIZATION RULES (ACTION REPLACEMENT):
 1. ISOLATED FREEDOM: NEVER mirror foreign syntax, trailing modifiers, or literal word order; INSTEAD, rephrase the dialogue into spoken, conversational ${targetLabel} INSIDE each individual tag while strictly preserving tag boundaries and internal [br] markers.
 2. SPOKEN DICTION & ZERO ESSAY RIGIDITY: NEVER use formal copulas, formal conjunctions, dictionary jargon, or literal pronoun calques; INSTEAD, capture authentic conversational flow using natural speech connectors, question particles, and direct native phrasing.
-   - Translate meaning and idioms naturally; NEVER translate literally word-by-word.
 3. DEPENDENT CLAUSES: NEVER attempt to complete partial sentences or borrow words from neighbouring tags; INSTEAD, translate ONLY the fragment present within that specific tag, intentionally leaving target syntax incomplete to lock synchronization.`,
 
   // 2. Emergency prompt (PROHIBITED_CONTENT fallback - neutral, objective & policy-compliant)
@@ -50,7 +49,6 @@ INTRA-SLOT LOCALIZATION RULES (ACTION REPLACEMENT):
 INTRA-SLOT LOCALIZATION RULES (ACTION REPLACEMENT):
 1. ISOLATED FREEDOM: NEVER mirror foreign syntax, trailing modifiers, or literal word order; INSTEAD, rephrase the dialogue into spoken, conversational ${targetLabel} INSIDE each individual tag while strictly preserving tag boundaries and internal [br] markers.
 2. SPOKEN DICTION & ZERO ESSAY RIGIDITY: NEVER use formal copulas, formal conjunctions, dictionary jargon, or literal pronoun calques; INSTEAD, capture authentic conversational flow using natural speech connectors, question particles, and direct native phrasing.
-   - Translate meaning and idioms naturally; NEVER translate literally word-by-word.
 3. DEPENDENT CLAUSES: NEVER attempt to complete partial sentences or borrow words from neighbouring tags; INSTEAD, translate ONLY the fragment present within that specific tag, intentionally leaving target syntax incomplete to lock synchronization.
 4. NEUTRAL OBJECTIVITY: If the source contains mature, sensitive, aggressive, or profane dialogue, translate it using objective, non-glorified, but accurate equivalent ${targetLabel} terms without refusing the task or dropping the slot.`
 };
