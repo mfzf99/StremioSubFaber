@@ -29,7 +29,7 @@ const { executeParallelTranslation } = require('../utils/parallelTranslation');
 const sleep = (ms) => new Promise(resolve => setTimeout(resolve, ms));
 
 // ============================================================================
-// ðŸ› ï¸ ZON TEMPLATE PROMPT (100% UNIVERSAL & DYNAMIC)
+// 🛠️ ZON TEMPLATE PROMPT (100% UNIVERSAL & DYNAMIC)
 // ============================================================================
 const PROMPT_TEMPLATES = {
   // 1. PROMPT ASAL (Enterprise Broadcast Standard - Intra-Slot Action-Replacement)
@@ -1182,8 +1182,8 @@ class TranslationEngine {
 
       const translatedText = translatedMap.get(origEntry.id);
 
-      // Hanya masukkan ke dalam memori jika terjemahan sah dan bukan amaran ralat [⚠️ ]
-      if (translatedText && typeof translatedText === 'string' && !translatedText.startsWith('[⚠️ ]')) {
+      // Hanya masukkan ke dalam memori jika terjemahan sah dan bukan amaran ralat [⚠️]
+      if (translatedText && typeof translatedText === 'string' && !translatedText.startsWith('[⚠️]')) {
         memoryContext.push({
           id: origEntry.id,
           source: origEntry.text,
@@ -1338,7 +1338,7 @@ class TranslationEngine {
       }
 
       // Fix #7: Build context for second half from first half's translations
-      // [UPGRADED]: Kalis Ralat Indeks Auto-Chunking + Penapis [⚠️ ] Bersih
+      // [UPGRADED]: Kalis Ralat Indeks Auto-Chunking + Penapis [⚠️] Bersih
       const contextCount = Math.min(this.contextSize, firstHalf.length);
       const targetEntries = firstHalf.slice(-contextCount);
       const startIndex = firstHalf.length - contextCount;
@@ -1362,8 +1362,8 @@ class TranslationEngine {
         const actualIndexInFirstHalf = startIndex + i;
         const transText = transMapByIndex.get(actualIndexInFirstHalf);
 
-        // Hanya simpan jika terjemahan sah dan bukan amaran ralat [⚠️ ]
-        if (transText && !transText.startsWith('[⚠️ ]')) {
+        // Hanya simpan jika terjemahan sah dan bukan amaran ralat [⚠️]
+        if (transText && !transText.startsWith('[⚠️]')) {
           memoryList.push({
             id: orig.id,
             source: orig.text,
@@ -1885,7 +1885,7 @@ class TranslationEngine {
                     timecode: recoveredTimecode || batch[i].timecode
                  };
               } else {
-                 freshAlignedContainer[i] = aligned[i]; // Gagal recover, salin amaran [⚠️ ]
+                 freshAlignedContainer[i] = aligned[i]; // Gagal recover, salin amaran [⚠️]
               }
             } 
             // 2. Jika kerusi ini memang dah elok dari Pass 1, salin masuk ke bekas baru
@@ -1898,7 +1898,7 @@ class TranslationEngine {
           aligned = freshAlignedContainer;
 
           // Semak semula berapa yang masih missing lepas dijahit
-          missingIndices = Object.keys(aligned).map(Number).filter(i => aligned[i].text.startsWith('[⚠️ ]'));
+          missingIndices = Object.keys(aligned).map(Number).filter(i => aligned[i].text.startsWith('[⚠️]'));
 
           if (missingIndices.length > 0) {
             log.warn(() => `[TranslationEngine] Two-pass recovery: ${missingIndices.length} entries still missing after targeted retry`);
@@ -1965,7 +1965,7 @@ class TranslationEngine {
     if (this.translationWorkflow === 'json' && !jsonXmlFallbackAttempted) {
       const markedCount = translatedEntries.filter(entry =>
         typeof entry?.text === 'string' &&
-        entry.text.startsWith('[⚠️ ]')
+        entry.text.startsWith('[⚠️]')
       ).length;
       if (markedCount > 0) {
         jsonXmlFallbackAttempted = true;
@@ -2365,7 +2365,7 @@ RESPOND ONLY WITH EXACTLY ${expectedCount} VALID JSON ENTRIES AS A RAW ARRAY.
     cleaned = cleaned.replace(mdRegex, '');
     cleaned = cleaned.replace(new RegExp('\\x60\\x60\\x60', 'g'), '');
 
-    // ⚠️ ï¸ KITA BUANG KOD 'lastClosingTag' & 'slice' DI SINI ⚠️ ï¸
+    // ⚠️ KITA BUANG KOD 'lastClosingTag' & 'slice' DI SINI ⚠️
     // (Ini adalah punca utama ayat terakhir yang terputus dibuang terus dari memori)
 
     // Fix #15 (v1.4.38+): Remove any content between </s> and <s tags before parsing.
@@ -2695,11 +2695,11 @@ RESPOND ONLY WITH EXACTLY ${expectedCount} VALID JSON ENTRIES AS A RAW ARRAY.
 
       // Tier 1: Hanya punctuation, symbol, angka, atau whitespace — tiada huruf.
       // Guna Unicode property escapes supaya senarai tak perlu diselenggara manual:
-      //   \p{P} = punctuation (”¦, –, —, ?, !, ., ", dsb.)
+      //   \p{P} = punctuation (…, –, —, ?, !, ., ", dsb.)
       //   \p{S} = symbol    (♪♫♬, emoji, mata wang, matematik, dsb.)
       //   \p{N} = number    (0-9 & varian unicode)
       //   \s    = whitespace
-      // Contoh dilindungi: "...", "”¦", "—", "?!", "♪♪", "100%", "$", "—–—".
+      // Contoh dilindungi: "...", "…", "—", "?!", "♪♪", "100%", "$", "—–—".
       if (/^[\p{P}\p{S}\p{N}\s]+$/u.test(t)) return true;
 
       // Tier 2: Tag HTML sahaja tanpa teks (contoh: <i></i>, <font color="#fff">)
@@ -2733,7 +2733,7 @@ RESPOND ONLY WITH EXACTLY ${expectedCount} VALID JSON ENTRIES AS A RAW ARRAY.
         missingIndices.push(i);
         aligned[i] = {
           index: i,
-          text: `[⚠️ ] ${originalText}`,
+          text: `[⚠️] ${originalText}`,
           timecode: originalBatch[i].timecode || undefined
         };
       }
@@ -3175,19 +3175,19 @@ RESPOND ONLY WITH EXACTLY ${expectedCount} NUMBERED ENTRIES.
       .replace(/&quot;/gi, '')
       .replace(/&apos;/gi, '')
       // 1. Buang SEMUA tanda petik berganda (berpasangan mahupun sebiji tergantung)
-      .replace(/["“””ž«»]/g, '')
+      .replace(/["“”„«»]/g, '')
       // 2. Buang tanda petik tunggal di awal atau di hujung perkataan/ayat
-      .replace(/(^|[\s([{\-])['”˜`]([a-zA-Z0-9])/g, '$1$2')
-      .replace(/([a-zA-Z0-9])['”™`]([\s)\]}.,!?-]|$)/g, '$1$2')
+      .replace(/(^|[\s([{\-])['‘`]([a-zA-Z0-9])/g, '$1$2')
+      .replace(/([a-zA-Z0-9])['’`]([\s)\]}.,!?-]|$)/g, '$1$2')
       // 3. Buang sebarang tanda petik tunggal yang terapung kosong seorang diri
-      .replace(/(^|\s)['”˜`]+(?=\s|$)/g, '$1');
+      .replace(/(^|\s)['‘`]+(?=\s|$)/g, '$1');
 
     // 3.2 LITERAL UNICODE & HEX ESCAPE — some providers (Mistral/Llama/Qwen/DeepSeek)
     //     output escape sequences as literal TEXT instead of actual characters.
-    //     Example: "\u2019" (literal) → "”™" (actual), "\xe2\x99\xa5" → "♥"
+    //     Example: "\u2019" (literal) → "’" (actual), "\xe2\x99\xa5" → "♥"
     cleaned = cleaned
       // A. Surrogate pairs FIRST — must run before single \uXXXX matcher
-      //    Example: "\uD83D\uDE0A" → ðŸ˜Š
+      //    Example: "\uD83D\uDE0A" → 😊
       .replace(
         /\\u(D[89AB][0-9a-fA-F]{2})\\u(D[C-F][0-9a-fA-F]{2})/gi,
         (_, high, low) => String.fromCharCode(
@@ -3196,7 +3196,7 @@ RESPOND ONLY WITH EXACTLY ${expectedCount} NUMBERED ENTRIES.
         )
       )
       // B. \u{XXXXX} — ES6-style brace notation (BMP + astral)
-      //    Example: "\u{1F60A}" → ðŸ˜Š
+      //    Example: "\u{1F60A}" → 😊
       .replace(
         /\\u\{([0-9a-fA-F]{1,6})\}/g,
         (match, hex) => {
@@ -3213,7 +3213,7 @@ RESPOND ONLY WITH EXACTLY ${expectedCount} NUMBERED ENTRIES.
         }
       )
       // C. \uXXXX — standard 4-digit escape (BMP)
-      //    Example: "\u2019" → "”™"
+      //    Example: "\u2019" → "’"
       .replace(
         /\\u([0-9a-fA-F]{4})/g,
         (_, hex) => String.fromCharCode(parseInt(hex, 16))
@@ -3262,7 +3262,7 @@ RESPOND ONLY WITH EXACTLY ${expectedCount} NUMBERED ENTRIES.
       .replace(/(?<=[^\s\-])\s*-(?=\s*($|\n))/g, ' ...');
 
     // ============================================================================
-    // ðŸ› ï¸ ENJIN PEMULIHAN MOJIBAKE & SIMBOL/EMOJI ASAL (RESTORATION ENGINE)
+    // 🛠️ ENJIN PEMULIHAN MOJIBAKE & SIMBOL/EMOJI ASAL (RESTORATION ENGINE)
     // ============================================================================
     cleaned = cleaned
       // --- Pemulihan Emoji Utama & Hiasan Subtitle ---
