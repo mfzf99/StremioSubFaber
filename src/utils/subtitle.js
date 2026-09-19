@@ -136,8 +136,11 @@ function convertToSRT(content, logPrefix = '[SRT Conversion]') {
       return normalized;
     }
     log.warn(() => `${logPrefix} Generic subsrt-ts conversion returned invalid SRT; proceeding with original content`);
-  } catch (_) { }
+  } catch (e) {
+    log.warn(() => [`${logPrefix} Generic subsrt-ts conversion threw; proceeding with original content:`, e.message]);
+  }
 
+  log.warn(() => `${logPrefix} Unrecognized or non-convertible format; passing through original content for downstream handling`);
   return content;
 }
 
