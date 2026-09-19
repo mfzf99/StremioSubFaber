@@ -1119,16 +1119,16 @@ function getDefaultConfig(modelName = null) {
     translationPrompt: DEFAULT_TRANSLATION_PROMPT,
     subtitleProviders: {
       opensubtitles: {
-        enabled: true,
+        enabled: false,
         username: '',
         password: ''
       },
       subdl: {
-        enabled: true,
+        enabled: false,
         apiKey: DEFAULT_API_KEYS.SUBDL
       },
       subsource: {
-        enabled: true,
+        enabled: false,
         apiKey: DEFAULT_API_KEYS.SUBSOURCE
       },
       scs: {

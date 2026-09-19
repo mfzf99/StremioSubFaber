@@ -1343,17 +1343,17 @@ Translate to {target_language}.`;
             translationPrompt: STRICT_TRANSLATION_PROMPT,
             subtitleProviders: {
                 opensubtitles: {
-                    enabled: true,
+                    enabled: false,
                     implementationType: 'v3', // 'auth' or 'v3'
                     username: '',
                     password: ''
                 },
                 subdl: {
-                    enabled: true,
+                    enabled: false,
                     apiKey: DEFAULT_API_KEYS.SUBDL
                 },
                 subsource: {
-                    enabled: true,
+                    enabled: false,
                     apiKey: DEFAULT_API_KEYS.SUBSOURCE
                 },
                 scs: {
@@ -10713,7 +10713,7 @@ Translate to {target_language}.`;
         }
 
         // OpenSubtitles
-        const opensubtitlesEnabled = (isFirstRun ? false : (currentConfig.subtitleProviders?.opensubtitles?.enabled !== false));
+        const opensubtitlesEnabled = currentConfig.subtitleProviders?.opensubtitles?.enabled === true;
         document.getElementById('enableOpenSubtitles').checked = opensubtitlesEnabled;
 
         // Load implementation type
@@ -10737,14 +10737,14 @@ Translate to {target_language}.`;
             currentConfig.subtitleProviders?.opensubtitles?.password || '';
 
         // SubDL
-        const subdlEnabled = (isFirstRun ? false : (currentConfig.subtitleProviders?.subdl?.enabled !== false));
+        const subdlEnabled = currentConfig.subtitleProviders?.subdl?.enabled === true;
         document.getElementById('enableSubDL').checked = subdlEnabled;
         document.getElementById('subdlApiKey').value =
             currentConfig.subtitleProviders?.subdl?.apiKey || DEFAULT_API_KEYS.SUBDL;
         toggleProviderConfig('subdlConfig', subdlEnabled);
 
         // SubSource
-        const subsourceEnabled = (isFirstRun ? false : (currentConfig.subtitleProviders?.subsource?.enabled !== false));
+        const subsourceEnabled = currentConfig.subtitleProviders?.subsource?.enabled === true;
         document.getElementById('enableSubSource').checked = subsourceEnabled;
         document.getElementById('subsourceApiKey').value =
             currentConfig.subtitleProviders?.subsource?.apiKey || DEFAULT_API_KEYS.SUBSOURCE;

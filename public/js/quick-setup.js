@@ -1882,7 +1882,7 @@
             promptStyle: 'strict',
             subtitleProviders: {
                 opensubtitles: {
-                    enabled: true,
+                    enabled: false,
                     implementationType: state.openSubsAuth ? 'auth' : 'v3',
                     username: state.openSubsAuth ? state.openSubsUsername : '',
                     password: state.openSubsAuth ? state.openSubsPassword : ''
