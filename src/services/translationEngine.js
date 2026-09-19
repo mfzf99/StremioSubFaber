@@ -32,35 +32,33 @@ const sleep = (ms) => new Promise(resolve => setTimeout(resolve, ms));
 // ðŸ› ï¸ ZON TEMPLATE PROMPT (100% UNIVERSAL & DYNAMIC)
 // ============================================================================
 const PROMPT_TEMPLATES = {
-  // 1. PROMPT UTAMA — ditoreh khas untuk Bahasa Melayu Malaysia natural &
-  //    kawalan CPL yang mesra skrin. Kurangkan perulangan supaya model fokus
-  //    pada arahan yang benar-benar penting.
-  primary: (targetLabel, sourceLabel) =>
-    `Translate each <s id="N"> tag from ${sourceLabel || 'the source'} to natural spoken ${targetLabel}.
+  // 1. PROMPT ASAL (Enterprise Broadcast Standard - Intra-Slot Action-Replacement)
+  //    Digabungkan dengan panduan Bahasa Melayu Malaysia natural.
+  primary: (targetLabel, sourceLabel) => 
+    `Translate each <s id="N"> tag from ${sourceLabel || 'the source'} to ${targetLabel}.
 
-LANGUAGE MANDATE (${targetLabel}):
-- Use natural, conversational ${targetLabel} as spoken daily — NOT textbook, NOT literary.
-- For Malay (ms/my/mya/zsm): use Bahasa Melayu Malaysia, NOT Indonesian.
-  - Keep common English loanwords used in Malaysian speech: okay, hello, bye, sorry, confirm, check, settle, try, call, parking, boss, cancel, standard, style, line, mood, plus, internet, meeting, issue, etc.
-  - Self-reference must fit scene context: DEFAULT: saya/awak. Close/intimate/emotional: aku/kau. Formal/public: saya/anda. NEVER use dialect pronouns (avoid "hang").
-  - Particles: use lah, kah, je, dah, kan, tak, nak, pun, kena, kita, diorang naturally. Do NOT overuse.
-  - ANTI-INDONESIA BENTENG: Never use Indonesianisms — bisa (use boleh), banget (use sangat), gimana (use macam mana), cewek/cowok (use perempuan/lelaki), kalian (use korang/awak semua), ngomong (use cakap), kok, dong, sih.
-  - Translate meaning and idioms naturally; NEVER translate literally word-by-word.
-- Translate each dialogue fragment strictly inside its own <s id="N"> tag while preserving tag boundaries and internal [br] markers. Never pull or borrow words from neighbouring tags.`,
+INTRA-SLOT LOCALIZATION RULES (ACTION REPLACEMENT):
+1. ISOLATED FREEDOM: NEVER mirror foreign syntax, trailing modifiers, or literal word order; INSTEAD, rephrase the dialogue into spoken, conversational ${targetLabel} INSIDE each individual tag while strictly preserving tag boundaries and internal [br] markers.
+2. SPOKEN DICTION & ZERO ESSAY RIGIDITY: NEVER use formal copulas, formal conjunctions, dictionary jargon, or literal pronoun calques; INSTEAD, capture authentic conversational flow using natural speech connectors, question particles, and direct native phrasing.
+   - For Malay (ms/my/mya/zsm): use natural Bahasa Melayu Malaysia, NOT Indonesian. Keep common English loanwords used in daily Malaysian speech: okay, hello, bye, sorry, confirm, check, settle, try, call, parking, boss, cancel, standard, style, line, mood, plus, internet, meeting, issue, etc.
+   - Self-reference must fit scene context: DEFAULT: saya/awak. Close/intimate/emotional: aku/kau. Formal/public: saya/anda. NEVER use dialect pronouns (avoid "hang").
+   - ANTI-INDONESIA BENTENG: Never use Indonesianisms — bisa (use boleh), banget (use sangat), gimana (use macam mana), cewek/cowok (use perempuan/lelaki), kalian (use korang/awak semua), ngomong (use cakap), kok, dong, sih.
+   - Translate meaning and idioms naturally; NEVER translate literally word-by-word.
+3. DEPENDENT CLAUSES: NEVER attempt to complete partial sentences or borrow words from neighbouring tags; INSTEAD, translate ONLY the fragment present within that specific tag, intentionally leaving target syntax incomplete to lock synchronization.`,
 
   // 2. PROMPT KECEMASAN (PROHIBITED_CONTENT Fallback - Neutral & Safe)
-  fallback: (targetLabel, sourceLabel) =>
-    `Translate each <s id="N"> tag from ${sourceLabel || 'the source'} to natural spoken ${targetLabel}.
+  fallback: (targetLabel, sourceLabel) => 
+    `Translate each <s id="N"> tag from ${sourceLabel || 'the source'} to ${targetLabel}.
 
-LANGUAGE MANDATE (${targetLabel}):
-- Use natural, conversational ${targetLabel} as spoken daily — NOT textbook, NOT literary.
-- For Malay (ms/my/mya/zsm): use Bahasa Melayu Malaysia, NOT Indonesian.
-  - Keep common English loanwords used in Malaysian speech: okay, hello, bye, sorry, confirm, check, settle, try, call, parking, boss, cancel, standard, style, line, mood, plus, internet, meeting, issue, etc.
-  - Self-reference must fit scene context: DEFAULT: saya/awak. Close/intimate/emotional: aku/kau. Formal/public: saya/anda. NEVER use dialect pronouns (avoid "hang").
-  - ANTI-INDONESIA BENTENG: Never use Indonesianisms — bisa (use boleh), banget (use sangat), gimana (use macam mana), cewek/cowok (use perempuan/lelaki), kalian (use korang/awak semua), ngomong (use cakap), kok, dong, sih.
-  - Translate meaning and idioms naturally; NEVER translate literally word-by-word.
-- Translate each dialogue fragment strictly inside its own <s id="N"> tag while preserving tag boundaries and internal [br] markers. Never pull or borrow words from neighbouring tags.
-- NEUTRAL OBJECTIVITY: If the source contains mature, sensitive, aggressive, or profane dialogue, translate it using objective, non-glorified, but accurate equivalent ${targetLabel} terms without refusing the task or dropping the slot.`
+INTRA-SLOT LOCALIZATION RULES (ACTION REPLACEMENT):
+1. ISOLATED FREEDOM: NEVER mirror foreign syntax, trailing modifiers, or literal word order; INSTEAD, rephrase the dialogue into spoken, conversational ${targetLabel} INSIDE each individual tag while strictly preserving tag boundaries and internal [br] markers.
+2. SPOKEN DICTION & ZERO ESSAY RIGIDITY: NEVER use formal copulas, formal conjunctions, dictionary jargon, or literal pronoun calques; INSTEAD, capture authentic conversational flow using natural speech connectors, question particles, and direct native phrasing.
+   - For Malay (ms/my/mya/zsm): use natural Bahasa Melayu Malaysia, NOT Indonesian. Keep common English loanwords used in daily Malaysian speech: okay, hello, bye, sorry, confirm, check, settle, try, call, parking, boss, cancel, standard, style, line, mood, plus, internet, meeting, issue, etc.
+   - Self-reference must fit scene context: DEFAULT: saya/awak. Close/intimate/emotional: aku/kau. Formal/public: saya/anda. NEVER use dialect pronouns (avoid "hang").
+   - ANTI-INDONESIA BENTENG: Never use Indonesianisms — bisa (use boleh), banget (use sangat), gimana (use macam mana), cewek/cowok (use perempuan/lelaki), kalian (use korang/awak semua), ngomong (use cakap), kok, dong, sih.
+   - Translate meaning and idioms naturally; NEVER translate literally word-by-word.
+3. DEPENDENT CLAUSES: NEVER attempt to complete partial sentences or borrow words from neighbouring tags; INSTEAD, translate ONLY the fragment present within that specific tag, intentionally leaving target syntax incomplete to lock synchronization.
+4. NEUTRAL OBJECTIVITY: If the source contains mature, sensitive, aggressive, or profane dialogue, translate it using objective, non-glorified, but accurate equivalent ${targetLabel} terms without refusing the task or dropping the slot.`
 };
 // Extract normalized tokens from a language label/code (split on common separators)
 function tokenizeLanguageValue(value) {
@@ -2197,38 +2195,63 @@ class TranslationEngine {
 
     const promptBody = `${introInstruction}
 
-[CRITICAL FORMAT & CARDINALITY RULES]
-1. CARDINALITY & ID PARITY:
-   - Output EXACTLY ${expectedCount} <s id="N"> slots, using EXACTLY these global IDs, in this order: [${idList}]
-   - NEVER omit, merge, reorder, duplicate, renumber, or invent IDs. Preserve source SRT gaps verbatim.
+[UNIVERSAL STRUCTURAL DEMONSTRATION: INTRA-SLOT LOCALIZATION & ZERO DRIFT]
+Input:
+<s id="1">The chief director was the one</s>
+<s id="2">responsible for the approval.</s>
+<s id="3">You are coming with us,</s>
+<s id="4">aren't you?</s>
+<s id="5">We already warned him[br]during the meeting.</s>
+<s id="6">First,</s>
 
-2. SLOT ISOLATION:
-   - Translate ONLY the text inside each <s id="N"> slot. Never borrow or fold words across adjacent slots.
-   - Keep [br] inside the same slot (e.g. <s id="5">ayat satu[br]ayat dua</s>).
-   - Short slots (question tags, interjections, single words) stay in their own slot; never attach them to neighbours.
+Target Output:
+<s id="1">Pengarah utama yang</s>
+<s id="2">bertanggungjawab atas kelulusan itu.</s>
+<s id="3">Awak ikut kami sekali,</s>
+<s id="4">kan?</s>
+<s id="5">Kami dah ingatkan dia[br]masa mesyuarat hari tu.</s>
+<s id="6">Pertama,</s>
 
-3. LINE FORMAT & CPL:
-   - Maximum 2 lines per subtitle entry; maximum 42 characters per line (CPL <= 42).
-   - Split at natural pauses — punctuation, conjunctions, or phrase boundaries — using [br]. Do not introduce more [br] than the text needs.
-   - Preserve all existing inline markup (<i>, <b>, speaker dashes) in exact positions.
+CRITICAL ENFORCEMENT RULES (ZERO TOLERANCE):
 
-4. EXACT COPY PROTOCOL:
-   - Copy VERBATIM: creative work titles, brands, legal suffixes, proper nouns, numbers, dates, times, measurements, symbols, music notes, corrupted text, and empty slots.
-   - For mixed slots: translate the dialogue portion only; copy untranslatable entities unmodified.
+1. STRICT 1-TO-1 CARDINALITY & ID PARITY:
+   - Output EXACTLY ${expectedCount} entries matching these EXACT IDs, in this order:
+     [${idList}]
+   - NEVER omit, combine, reorder, duplicate, or invent IDs; INSTEAD, pair every single input <s id="N"> strictly 1-to-1 with its matching output <s id="N">.
+   - NEVER renumber, compress, or force sequential order; INSTEAD, preserve source SRT global IDs verbatim, retaining all numerical values and existing gaps.
 
-5. SONG LYRICS & MUSIC:
-   - Translate all song lyrics enclosed in music notes (♪/♫) fully — foreground and BGM — while preserving the notes.
+2. ABSOLUTE SLOT ISOLATION & ZERO SPLITTING:
+   - NEVER pull, borrow, or fold words across adjacent slots; INSTEAD, confine every translation strictly inside its matching <s id="N"> slot.
+   - NEVER split [br] into a new <s id> tag; INSTEAD, keep all multi-line text separated by [br] enclosed entirely inside its single parent tag (e.g. <s id="5">ayat satu[br]ayat dua</s>).
+   - NEVER attach short slots (question tags, negation particles, interjections, single words like "First,") to preceding or subsequent lines, and NEVER echo demonstration text; INSTEAD, translate ONLY those specific words within that exact slot and close the tag immediately.
+   - NEVER force complete target grammar on broken clauses; INSTEAD, preserve grammatically incomplete syntax to maintain 100% subtitle synchronization.
 
-6. READ-ONLY CONTEXT:
-   - Treat <m id="N"> memory as read-only reference. Never output, translate, or duplicate it into <s> slots.
+3. ZERO SHIFTING, ANTI-HALLUCINATION & SOURCE FIDELITY:
+   - NEVER shift subsequent dialogue forward to compensate for short or empty slots; INSTEAD, keep every line strictly anchored to its assigned ID.
+   - NEVER invent synthetic filler lines to satisfy slot counts; INSTEAD, translate only verified source dialogue.
+   - NEVER generate conversational replies, reactions, or commentary to background memory (<m> tags); INSTEAD, translate input <s id="${startId}"> directly as spoken dialogue.
+   - NEVER add, drop, or modify numbers, dates, times, or measurements; INSTEAD, transfer all numeric values and units accurately into the target language.
+   - NEVER alter or omit terminal punctuation (. ? ! ...) to change speech delivery; INSTEAD, mirror the original tone and natural pauses.
+
+4. AIR-GAPPED READ-ONLY CONTEXT MEMORY (<m> TAGS):
+   - NEVER translate, output, modify, or duplicate text from <m id="N"> tags into active <s id="N"> tags; INSTEAD, treat all <m> entries strictly as air-gapped, read-only background context.
+   - NEVER allow background memory to override active dialogue; INSTEAD, always prioritize <s> source text whenever memory and source conflict.
+
+5. ESCAPE HATCH (EXACT COPY PROTOCOL):
+   - NEVER translate titles of creative works (movies, TV shows, books, novels, songs, plays, games), registered corporate/brand names, or legal entities (e.g., Co., Ltd., Inc.); INSTEAD, keep them VERBATIM in their original language.
+   - NEVER invent translations for untranslatable content (proper nouns, standalone music notes ♪/♫, isolated symbols, numbers, punctuation, corrupted text, or whitespace); INSTEAD, copy the EXACT original text into the slot.
+   - NEVER translate unlocalizable entities in mixed slots; INSTEAD, translate the dialogue portion while copying brand names and foreign proper nouns unmodified.
+   - NEVER skip a slot under any circumstance; INSTEAD, emit the opening and closing tags containing the verbatim copy.
+
+6. SONG LYRICS & INLINE MARKUP:
+   - NEVER omit or leave song lyrics untranslated when enclosed in music notes (♪/♫); INSTEAD, fully translate vocal lyrics (foreground and BGM) while preserving the musical notes.
+   - NEVER strip, displace, or inject formatting tags not present in the source; INSTEAD, preserve all [br], <i>...</i>, <b>...</b>, speaker dashes (-), and inline markup in their exact source positions and counts.
 
 7. CLEAN PAYLOAD ONLY:
-   - Output ONLY raw <s id="N">...</s> tags. No commentary, markdown, notes, thinking blocks, or prompt echoes.
-   - Continue directly from the pre-filled <s id="${startId}"> boundary: output the inner content of slot ${startId} as your first characters. Never repeat or re-emit the opening tag.
-
-<thinking-budget>
-Use internal reasoning only for register/context disambiguation. Do NOT emit reasoning tokens. When unsure, choose the most natural spoken form.
-</thinking-budget>
+   - NEVER output conversational commentary, markdown code fences, notes in parentheses, thinking blocks (</think>), or prompt echoes ([input], BATCH); INSTEAD, emit ONLY the raw sequence of <s id="N">...</s> tags.
+   - NEVER repeat, re-emit, or acknowledge the pre-filled <s id="${startId}"> opening tag; INSTEAD, continue directly from the prompt boundary by generating the inner content of slot ${startId} at your very first output character.
+   - NEVER append corrections after closing a tag with </s> or restart completed slots; INSTEAD, rectify errors immediately inside the active slot before closing it.
+   - NEVER emit any internal thinking steps or XML tags representing thought processes; INSTEAD, bypass all metadata and output the raw string directly starting from the pre-filled tag.
 
 <input>
 ${batchText}
@@ -2282,7 +2305,7 @@ ${batchText}
 
     const promptBody = `${introInstruction}
 
-CRITICAL FORMAT & CARDINALITY RULES:
+CRITICAL ENFORCEMENT RULES (ZERO TOLERANCE):
 1. CARDINALITY & ID PARITY:
    - Output EXACTLY ${expectedCount} JSON objects, using EXACTLY these global IDs, in this order: [${idList}]
    - Every input object pairs strictly with one output object. Never omit, merge, reorder, duplicate, renumber, or invent IDs. Preserve source SRT gaps verbatim.
@@ -2291,30 +2314,22 @@ CRITICAL FORMAT & CARDINALITY RULES:
    - Each "text" field contains ONLY the translation of its matching input text. Never borrow or fold words across adjacent objects.
    - Short slots (question tags, interjections, single words) stay in their own object. Empty/whitespace-only slots: copy verbatim.
 
-3. LINE FORMAT & CPL:
-   - Maximum 2 lines per subtitle entry; maximum 42 characters per line (CPL <= 42).
-   - Split at natural pauses using [br]. Preserve all existing inline markup in exact positions.
-
-4. EXACT COPY PROTOCOL:
+3. EXACT COPY PROTOCOL:
    - Copy VERBATIM: creative work titles, brands, legal suffixes, proper nouns, numbers, dates, times, measurements, symbols, music notes, corrupted text, and empty slots.
    - Mixed slots: translate dialogue portion only; copy untranslatable entities unmodified.
 
-5. SONG LYRICS & MUSIC:
+4. SONG LYRICS & MUSIC:
    - Translate all song lyrics enclosed in music notes (♪/♫) fully while preserving the notes.
 
-6. READ-ONLY CONTEXT:
+5. READ-ONLY CONTEXT:
    - previous_translation_memory is read-only reference. Never output, translate, or duplicate it into active objects.
 
-7. CLEAN PAYLOAD ONLY & JSON ESCAPING:
+6. CLEAN PAYLOAD ONLY & JSON ESCAPING:
    - Output ONLY raw JSON object sequence: {"id":N,"text":"..."},{"id":N,"text":"..."},...
    - No commentary, markdown, notes, thinking blocks, reasoning leaks, or prompt echoes.
    - Continue DIRECTLY from the pre-filled [{"id":${startId},"text":" boundary. Never repeat or re-emit the opening object.
    - Close every string with " and separate objects with commas; final object closes with "}] to complete the array.
    - Escape double quotes inside text with backslash (\\"). Use \\n for line breaks. No trailing commas.
-
-<thinking-budget>
-Use internal reasoning only for register/context disambiguation. Do NOT emit reasoning tokens. When unsure, choose the most natural spoken form.
-</thinking-budget>
 
 <input>
 ${batchText}
@@ -3449,31 +3464,6 @@ RESPOND ONLY WITH EXACTLY ${expectedCount} NUMBERED ENTRIES.
     if (this.isRtlTarget) {
       cleaned = wrapRtlText(cleaned);
     }
-
-    // 10. Ringan CPL Enforcement — jangan sampai satu baris terlalu panjang
-    //     sehingga melimpah keluar skrin. Hanya pecahkan pada ruang semula
-    //     jadi, tanpa merosakkan tag masa atau struktur SRT.
-    cleaned = cleaned
-      .split('\n')
-      .map(line => {
-        const raw = String(line || '').trim();
-        if (raw.length <= 42) return raw;
-        const words = raw.split(' ');
-        const lines = [];
-        let current = '';
-        for (const word of words) {
-          const candidate = current ? `${current} ${word}` : word;
-          if (candidate.length > 42 && current) {
-            lines.push(current);
-            current = word;
-          } else {
-            current = candidate;
-          }
-        }
-        if (current) lines.push(current);
-        return lines.join('\n');
-      })
-      .join('\n');
 
     return cleaned;
   }

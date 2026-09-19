@@ -106,8 +106,7 @@ const DEFAULT_TRANSLATION_PROMPT = `Translate the following subtitles while:
 3. Keeping the same number of lines and line breaks
 4. Preserving any formatting tags or special characters
 5. Ensuring translations are contextually accurate for film/TV dialogue
-6. Using at most 2 lines per subtitle and at most 42 characters per line (CPL <= 42)
-7. For Malay (ms/my/mya/zsm): use natural Bahasa Melayu Malaysia, keep common English loanwords used in daily speech (okay, confirm, check, settle, try, call, parking, boss, etc.), and choose self-reference based on context: default saya/awak, close aku/kau, formal saya/anda. Strictly avoid Indonesianisms (bisa, banget, gimana, cewek/cowok, kalian, ngomong, kok, dong, sih). Never translate literally word-by-word.
+6. For Malay (ms/my/mya/zsm): use natural Bahasa Melayu Malaysia, keep common English loanwords used in daily speech (okay, confirm, check, settle, try, call, parking, boss, etc.), and choose self-reference based on context: default saya/awak, close aku/kau, formal saya/anda. Strictly avoid Indonesianisms (bisa, banget, gimana, cewek/cowok, kalian, ngomong, kok, dong, sih). Never translate literally word-by-word.
 
 Translate to {target_language}.
 
