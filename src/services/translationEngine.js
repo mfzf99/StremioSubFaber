@@ -220,7 +220,7 @@ class TranslationEngine {
     }
 
     // JSON workflow caps batch size — large JSON arrays (300-400 objects)
-    // are extremely error-prone for LLMs. Keep batches at â‰¤200 entries.
+    // are extremely error-prone for LLMs. Keep batches at <= 200 entries.
     const JSON_MAX_BATCH_SIZE = 100;
     if (this.translationWorkflow === 'json' && this.batchSize > JSON_MAX_BATCH_SIZE) {
       log.debug(() => `[TranslationEngine] Capping batch size from ${this.batchSize} to ${JSON_MAX_BATCH_SIZE} for JSON workflow`);
@@ -908,7 +908,7 @@ class TranslationEngine {
 
           // Inter-batch pacing: Enforce a 5.0s cooldown delay to mitigate upstream RPM burst limits
           if (batchIndex < batches.length - 1) {
-            log.debug(() => `[â³ RATE LIMIT] Applying 5.0s pacing delay before dispatching next batch...`);
+            log.debug(() => `[⏳ RATE LIMIT] Applying 5.0s pacing delay before dispatching next batch...`);
             await sleep(5000);
           }
 
@@ -1089,7 +1089,7 @@ class TranslationEngine {
 
       // Inter-chunk pacing: Enforce a 5.0s cooldown delay between auto-chunked requests
       if (batchIndex < chunks.length - 1) {
-        log.debug(() => `[â³ RATE LIMIT] Applying 5.0s pacing delay before processing next chunk...`);
+        log.debug(() => `[⏳ RATE LIMIT] Applying 5.0s pacing delay before processing next chunk...`);
         await sleep(5000);
       }
 
@@ -2595,7 +2595,7 @@ RESPOND ONLY WITH EXACTLY ${expectedCount} VALID JSON ENTRIES AS A RAW ARRAY.
     try {
       let repaired = jsonStr;
 
-      // 🛡️ PERISAI MAGIS: Cari lambakan tanda petik berkembar yang tidak sah di hujung string (contoh: ""ç²‰" atau """}) dan runtuhkan jadi satu ketul " sahaja
+      // 🛡️ PERISAI MAGIS: Cari lambakan tanda petik berkembar yang tidak sah di hujung string (contoh: ""粉" atau """}) dan runtuhkan jadi satu ketul " sahaja
       repaired = repaired.replace(/(?<!\\)"{2,}(?=\s*[,\]\}])/g, '"');
 
       // Fix unescaped newlines/tabs inside string values (between quotes)
