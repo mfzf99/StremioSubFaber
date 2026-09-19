@@ -1768,12 +1768,6 @@ async function generateEmbeddedSubtitlePage(configStr, videoId, filename) {
       settingsMeta: t('toolbox.embedded.step2.settingsMeta', {}, 'Provider, workflow, batching, context'),
       providerLabel: t('toolbox.embedded.step2.providerLabel', {}, 'Provider'),
       providerHelper: t('toolbox.embedded.step2.providerHelper', {}, 'Uses your configured model for the selected provider.'),
-      workflowLabel: t('config.translationSettings.workflow.label', {}, 'Translation Workflow'),
-      workflowHelper: t('config.translationSettings.workflow.description', {}, 'Switching between modes is recommended if you have translation sync problems.'),
-      workflowXml: t('config.translationSettings.workflow.xml', {}, 'XML Tags (Default)'),
-      workflowJson: t('config.translationSettings.workflow.json', {}, 'JSON (Structured)'),
-      workflowOriginal: t('config.translationSettings.workflow.original', {}, 'Original Timestamps (Legacy)'),
-      workflowAi: t('config.translationSettings.workflow.ai', {}, 'Send Timestamps to AI'),
       batchingLabel: t('toolbox.embedded.step2.batchingLabel', {}, 'Batching'),
       batchingMultiple: t('toolbox.embedded.step2.batchingMultiple', {}, 'Multiple batches (recommended)'),
       batchingSingle: t('toolbox.embedded.step2.batchingSingle', {}, 'Single batch (all at once)'),
@@ -1909,13 +1903,9 @@ async function generateEmbeddedSubtitlePage(configStr, videoId, filename) {
     providerOptions,
     defaults: {
       singleBatchMode: config.singleBatchMode === true,
-      translationWorkflow: (() => {
-        const workflow = String(config.advancedSettings?.translationWorkflow || '').trim().toLowerCase();
-        if (['xml', 'json', 'original', 'ai'].includes(workflow)) return workflow;
-        return config.advancedSettings?.sendTimestampsToAI === true ? 'ai' : 'xml';
-      })(),
+      translationWorkflow: 'xml',
       enableBatchContext: config.advancedSettings?.enableBatchContext === true,
-      sendTimestampsToAI: config.advancedSettings?.sendTimestampsToAI === true,
+      sendTimestampsToAI: false,
       translationPrompt: config.translationPrompt || '',
       forceSRTOutput: config.forceSRTOutput === true,
       assPassthroughEnabled: config.forceSRTOutput !== true && config.convertAssToVtt === false
@@ -3317,15 +3307,6 @@ async function generateEmbeddedSubtitlePage(configStr, videoId, filename) {
 
             <div class="translation-settings-grid">
               <div class="select-stack">
-                <label for="workflow-select" style="font-weight:600; margin:0;">${escapeHtml(copy.step2.workflowLabel)}</label>
-                <select id="workflow-select" class="compact-select" style="width:100%;">
-                  <option value="xml">${escapeHtml(copy.step2.workflowXml)}</option>
-                  <option value="json">${escapeHtml(copy.step2.workflowJson)}</option>
-                  <option value="original">${escapeHtml(copy.step2.workflowOriginal)}</option>
-                  <option value="ai">${escapeHtml(copy.step2.workflowAi)}</option>
-                </select>
-              </div>
-              <div class="select-stack">
                 <label for="single-batch-select" style="font-weight:600; margin:0;">${escapeHtml(copy.step2.batchingLabel)}</label>
                 <select id="single-batch-select" class="compact-select" style="width:100%;">
                   <option value="multi">${escapeHtml(copy.step2.batchingMultiple)}</option>
@@ -3333,7 +3314,7 @@ async function generateEmbeddedSubtitlePage(configStr, videoId, filename) {
                 </select>
               </div>
             </div>
-            <p class="translation-setting-helper">${escapeHtml(copy.step2.workflowHelper)}</p>
+            <p class="translation-setting-helper"></p>
             <label class="translation-toggle" for="batch-context-toggle">
               <input type="checkbox" id="batch-context-toggle">
               <div class="translation-toggle-copy">
@@ -4116,7 +4097,6 @@ async function generateEmbeddedSubtitlePage(configStr, videoId, filename) {
       translateBtn: document.getElementById('translate-btn'),
       translationContext: document.getElementById('translation-context'),
       providerSelect: document.getElementById('provider-select'),
-      workflowSelect: document.getElementById('workflow-select'),
       singleBatch: document.getElementById('single-batch-select'),
       batchContext: document.getElementById('batch-context-toggle'),
       extractedDownloads: document.getElementById('extracted-downloads'),
@@ -5656,10 +5636,9 @@ async function generateEmbeddedSubtitlePage(configStr, videoId, filename) {
             targetLanguage: targetLang,
             content: track.content,
             options: {
-              translationWorkflow: (els.workflowSelect?.value || BOOTSTRAP.defaults?.translationWorkflow || 'xml'),
+              translationWorkflow: 'xml',
               singleBatchMode: (els.singleBatch?.value || 'multi') === 'single',
-              enableBatchContext: !!els.batchContext?.checked,
-              sendTimestampsToAI: (els.workflowSelect?.value || BOOTSTRAP.defaults?.translationWorkflow || 'xml') === 'ai'
+              enableBatchContext: !!els.batchContext?.checked
             },
             overrides: {
               providerName: els.providerSelect?.value || ''
@@ -6060,10 +6039,6 @@ async function generateEmbeddedSubtitlePage(configStr, videoId, filename) {
     renderDownloads();
     updateVideoMeta();
     setStep2Enabled(!!state.selectedTrackId, state.selectedTrackId ? null : lockReasons.needExtraction);
-    if (els.workflowSelect) {
-      const workflow = String(BOOTSTRAP.defaults.translationWorkflow || '').toLowerCase();
-      els.workflowSelect.value = ['xml', 'json', 'original', 'ai'].includes(workflow) ? workflow : 'xml';
-    }
     if (els.singleBatch) {
       els.singleBatch.value = BOOTSTRAP.defaults.singleBatchMode ? 'single' : 'multi';
     }
@@ -6216,7 +6191,6 @@ async function generateAutoSubtitlePage(configStr, videoId, filename, config = {
         translationSettings: document.getElementById('autoTranslationSettings'),
         translationSettingsToggle: document.getElementById('autoTranslationSettingsToggle'),
         translationProvider: document.getElementById('autoTranslationProvider'),
-        workflowSelect: document.getElementById('autoWorkflowSelect'),
         singleBatchSelect: document.getElementById('autoSingleBatchSelect'),
         batchContext: document.getElementById('autoBatchContext'),
         srtPreview: document.getElementById('srtPreview'),
@@ -7209,21 +7183,14 @@ async function generateAutoSubtitlePage(configStr, videoId, filename, config = {
       }
 
       function getTranslationSettings() {
-        const requestedWorkflow = (els.workflowSelect?.value || BOOTSTRAP.defaults?.translationWorkflow || 'xml')
-          .toString()
-          .trim()
-          .toLowerCase();
-        const translationWorkflow = ['xml', 'json', 'original', 'ai'].includes(requestedWorkflow)
-          ? requestedWorkflow
-          : 'xml';
         const singleBatchMode = (els.singleBatchSelect?.value || (BOOTSTRAP.defaults?.singleBatchMode ? 'single' : 'multi')) === 'single';
         const enableBatchContext = !!els.batchContext?.checked;
         return {
           translationProvider: normalizeProviderKey(els.translationProvider?.value || BOOTSTRAP.defaults?.provider || ''),
-          translationWorkflow,
+          translationWorkflow: 'xml',
           singleBatchMode,
           enableBatchContext,
-          sendTimestampsToAI: translationWorkflow === 'ai'
+          sendTimestampsToAI: false
         };
       }
 
@@ -7298,7 +7265,6 @@ async function generateAutoSubtitlePage(configStr, videoId, filename, config = {
           const providerDisabled = !enabled || !hasProviderOptions;
           els.translationProvider.disabled = providerDisabled;
         }
-        if (els.workflowSelect) els.workflowSelect.disabled = !enabled;
         if (els.singleBatchSelect) els.singleBatchSelect.disabled = !enabled;
         if (els.batchContext) els.batchContext.disabled = !enabled;
         refreshStepLocks();
@@ -7729,14 +7695,14 @@ async function generateAutoSubtitlePage(configStr, videoId, filename, config = {
           targetLanguages: targets,
           translate: translateEnabled,
           translationProvider: overrides.translationProvider || translationSettings.translationProvider || '',
-          sendTimestampsToAI: overrides.sendTimestampsToAI ?? translationSettings.sendTimestampsToAI,
+          sendTimestampsToAI: false,
           singleBatchMode: overrides.singleBatchMode ?? translationSettings.singleBatchMode,
           enableBatchContext: overrides.enableBatchContext ?? translationSettings.enableBatchContext,
           options: {
-            translationWorkflow: overrides.translationWorkflow || translationSettings.translationWorkflow,
+            translationWorkflow: 'xml',
             singleBatchMode: overrides.singleBatchMode ?? translationSettings.singleBatchMode,
             enableBatchContext: overrides.enableBatchContext ?? translationSettings.enableBatchContext,
-            sendTimestampsToAI: overrides.sendTimestampsToAI ?? translationSettings.sendTimestampsToAI
+            sendTimestampsToAI: false
           },
           translationPrompt: overrides.translationPrompt || ''
         };
@@ -8220,10 +8186,6 @@ async function generateAutoSubtitlePage(configStr, videoId, filename, config = {
           els.translateToggle.checked = BOOTSTRAP.defaults?.translateToTarget !== false;
         }
         renderTranslationProviders();
-        if (els.workflowSelect) {
-          const workflow = String(BOOTSTRAP.defaults?.translationWorkflow || '').trim().toLowerCase();
-          els.workflowSelect.value = ['xml', 'json', 'original', 'ai'].includes(workflow) ? workflow : 'xml';
-        }
         if (els.singleBatchSelect) {
           els.singleBatchSelect.value = BOOTSTRAP.defaults?.singleBatchMode ? 'single' : 'multi';
         }
@@ -8543,12 +8505,8 @@ async function generateAutoSubtitlePage(configStr, videoId, filename, config = {
       const matchKey = Object.keys(providers).find(key => String(key).toLowerCase() === activeProvider);
       return matchKey ? (providers[matchKey]?.model || '') : '';
     })(),
-    translationWorkflow: (() => {
-      const workflow = String(config?.advancedSettings?.translationWorkflow || '').trim().toLowerCase();
-      if (['xml', 'json', 'original', 'ai'].includes(workflow)) return workflow;
-      return config?.advancedSettings?.sendTimestampsToAI === true ? 'ai' : 'xml';
-    })(),
-    sendTimestampsToAI: config?.advancedSettings?.sendTimestampsToAI === true,
+    translationWorkflow: 'xml',
+    sendTimestampsToAI: false,
     singleBatchMode: config?.singleBatchMode === true,
     enableBatchContext: config?.advancedSettings?.enableBatchContext === true,
     assemblySendFullVideo: config?.autoSubs?.sendFullVideoToAssembly === true,
@@ -8641,12 +8599,6 @@ async function generateAutoSubtitlePage(configStr, videoId, filename, config = {
       targetWorkflowHelper: t('toolbox.autoSubs.steps.targetWorkflowHelper', {}, 'Uses the same translation workflow configured for Stremio.'),
       providerLabel: t('toolbox.autoSubs.steps.providerLabel', {}, 'Translation provider'),
       providerHelper: t('toolbox.embedded.step2.providerHelper', {}, 'Uses your configured model for the selected provider.'),
-      workflowLabel: t('config.translationSettings.workflow.label', {}, 'Translation Workflow'),
-      workflowHelper: t('config.translationSettings.workflow.description', {}, 'Switching between modes is recommended if you have translation sync problems.'),
-      workflowXml: t('config.translationSettings.workflow.xml', {}, 'XML Tags (Default)'),
-      workflowJson: t('config.translationSettings.workflow.json', {}, 'JSON (Structured)'),
-      workflowOriginal: t('config.translationSettings.workflow.original', {}, 'Original Timestamps (Legacy)'),
-      workflowAi: t('config.translationSettings.workflow.ai', {}, 'Send Timestamps to AI'),
       batchingLabel: t('toolbox.autoSubs.steps.batchingLabel', {}, 'Batching'),
       batchingMultiple: t('toolbox.autoSubs.steps.batchingMultiple', {}, 'Multiple batches (recommended)'),
       batchingSingle: t('toolbox.autoSubs.steps.batchingSingle', {}, 'Single batch (all at once)'),
@@ -9841,18 +9793,8 @@ async function generateAutoSubtitlePage(configStr, videoId, filename, config = {
                     <label for="autoTranslationProvider">${escapeHtml(copy.steps.providerLabel)}</label>
                     <select id="autoTranslationProvider"></select>
                   </div>
-                  <div>
-                    <label for="autoWorkflowSelect">${escapeHtml(copy.steps.workflowLabel)}</label>
-                    <select id="autoWorkflowSelect">
-                      <option value="xml">${escapeHtml(copy.steps.workflowXml)}</option>
-                      <option value="json">${escapeHtml(copy.steps.workflowJson)}</option>
-                      <option value="original">${escapeHtml(copy.steps.workflowOriginal)}</option>
-                      <option value="ai">${escapeHtml(copy.steps.workflowAi)}</option>
-                    </select>
-                  </div>
                 </div>
                 <p class="muted" style="margin:10px 0 0; text-align:center;">${escapeHtml(copy.steps.providerHelper)}</p>
-                <p class="muted" style="margin:6px 0 0; text-align:center;">${escapeHtml(copy.steps.workflowHelper)}</p>
                 <div class="row" style="margin-top:12px;">
                   <div>
                     <label for="autoSingleBatchSelect">${escapeHtml(copy.steps.batchingLabel)}</label>

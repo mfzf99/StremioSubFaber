@@ -4325,13 +4325,6 @@ app.post('/api/translate-file', fileTranslationLimiter, validateRequest(fileTran
         // Resolve translation workflow/timing options (per-request overrides win over config defaults)
         const options = req.body.options || {};
 
-        // Translation workflow (xml/json/original/ai) — per-request override wins over saved config
-        const validWorkflows = ['xml', 'json', 'original', 'ai'];
-        const requestedWorkflow = typeof options.translationWorkflow === 'string'
-            ? options.translationWorkflow.trim().toLowerCase() : '';
-        const translationWorkflow = validWorkflows.includes(requestedWorkflow)
-            ? requestedWorkflow : '';
-
         // Single batch mode — per-request override
         const singleBatchRequested = typeof options.singleBatchMode === 'boolean'
             ? options.singleBatchMode : false;
@@ -4341,28 +4334,15 @@ app.post('/api/translate-file', fileTranslationLimiter, validateRequest(fileTran
         const enableBatchContextRequested = typeof options.enableBatchContext === 'boolean'
             ? options.enableBatchContext : null;
 
-        // Derive sendTimestampsToAI from the workflow (only 'ai' workflow uses it)
-        const sendTimestampsToAI = translationWorkflow
-            ? translationWorkflow === 'ai'
-            : (config.advancedSettings?.sendTimestampsToAI === true);
+        // Translation workflow is locked to XML Tags; legacy values normalize silently.
+        const translationWorkflow = 'xml';
+        const sendTimestampsToAI = false;
 
         config.singleBatchMode = singleBatchMode;
         const advanced = { ...(config.advancedSettings || {}) };
 
-        // Forward translation workflow to engine
-        if (translationWorkflow) {
-            advanced.translationWorkflow = translationWorkflow;
-            // Sync the legacy sendTimestampsToAI flag with workflow choice
-            if (translationWorkflow === 'ai') {
-                advanced.sendTimestampsToAI = true;
-            } else {
-                delete advanced.sendTimestampsToAI;
-            }
-        } else if (sendTimestampsToAI) {
-            advanced.sendTimestampsToAI = true;
-        } else {
-            delete advanced.sendTimestampsToAI;
-        }
+        advanced.translationWorkflow = translationWorkflow;
+        delete advanced.sendTimestampsToAI;
 
         // Forward batch context setting
         if (enableBatchContextRequested !== null) {
@@ -4410,7 +4390,7 @@ app.post('/api/translate-file', fileTranslationLimiter, validateRequest(fileTran
             }, KEEPALIVE_INTERVAL_MS);
 
             // Always use TranslationEngine — it handles batching, parallel translation,
-            // and all workflows (xml/json/original/ai) internally.
+            // and the XML Tags workflow internally.
             const engine = new TranslationEngine(
                 translationProvider,
                 effectiveModel,
@@ -6564,35 +6544,20 @@ app.post('/api/auto-subtitles/run', autoSubLimiter, async (req, res) => {
         }
         t = getTranslatorFromRequest(req, res, config);
 
-        const validWorkflows = ['xml', 'json', 'original', 'ai'];
-        const requestedWorkflow = (typeof options.translationWorkflow === 'string')
-            ? options.translationWorkflow.trim().toLowerCase()
-            : ((typeof req.body?.translationWorkflow === 'string') ? req.body.translationWorkflow.trim().toLowerCase() : '');
-        const savedWorkflow = (() => {
-            const raw = String(config.advancedSettings?.translationWorkflow || '').trim().toLowerCase();
-            return validWorkflows.includes(raw) ? raw : '';
-        })();
-        const translationWorkflow = validWorkflows.includes(requestedWorkflow)
-            ? requestedWorkflow
-            : (((options.sendTimestampsToAI === true) || (hasLegacySendTimestamps && sendTimestampsToAI === true))
-                ? 'ai'
-                : (savedWorkflow || (config.advancedSettings?.sendTimestampsToAI === true ? 'ai' : 'xml')));
+        // Translation workflow is locked to XML Tags; legacy values normalize silently.
+        const translationWorkflow = 'xml';
         singleBatchMode = (typeof options.singleBatchMode === 'boolean')
             ? options.singleBatchMode
             : (hasLegacySingleBatch ? singleBatchMode === true : config.singleBatchMode === true);
         enableBatchContext = (typeof options.enableBatchContext === 'boolean')
             ? options.enableBatchContext
             : (hasLegacyBatchContext ? enableBatchContext === true : config.advancedSettings?.enableBatchContext === true);
-        sendTimestampsToAI = translationWorkflow === 'ai';
+        sendTimestampsToAI = false;
         config.singleBatchMode = singleBatchMode === true;
         config.advancedSettings = { ...(config.advancedSettings || {}) };
         config.advancedSettings.translationWorkflow = translationWorkflow;
         config.advancedSettings.enableBatchContext = enableBatchContext === true;
-        if (sendTimestampsToAI) {
-            config.advancedSettings.sendTimestampsToAI = true;
-        } else {
-            delete config.advancedSettings.sendTimestampsToAI;
-        }
+        delete config.advancedSettings.sendTimestampsToAI;
 
         const linkedHash = deriveVideoHash(filename || '', videoId || '');
         const streamHashInfo = deriveStreamHashFromUrlServer(streamUrl, { filename, videoId });
@@ -7578,35 +7543,19 @@ app.post('/api/translate-embedded', embeddedTranslationLimiter, async (req, res)
         };
 
         // Apply TranslationEngine-specific toggles
-        const validWorkflows = ['xml', 'json', 'original', 'ai'];
-        const requestedWorkflow = (options && typeof options.translationWorkflow === 'string')
-            ? options.translationWorkflow.trim().toLowerCase()
-            : '';
-        const savedWorkflow = (() => {
-            const raw = String(workingConfig.advancedSettings?.translationWorkflow || '').trim().toLowerCase();
-            return validWorkflows.includes(raw) ? raw : '';
-        })();
-        const translationWorkflow = validWorkflows.includes(requestedWorkflow)
-            ? requestedWorkflow
-            : ((options && options.sendTimestampsToAI === true)
-                ? 'ai'
-                : (savedWorkflow || (workingConfig.advancedSettings.sendTimestampsToAI === true ? 'ai' : 'xml')));
+        const translationWorkflow = 'xml';
         const singleBatchMode = (options && typeof options.singleBatchMode === 'boolean')
             ? options.singleBatchMode
             : workingConfig.singleBatchMode === true;
         const enableBatchContext = (options && typeof options.enableBatchContext === 'boolean')
             ? options.enableBatchContext
             : workingConfig.advancedSettings.enableBatchContext === true;
-        const sendTimestampsToAI = translationWorkflow === 'ai';
+        const sendTimestampsToAI = false;
 
         workingConfig.singleBatchMode = singleBatchMode;
         workingConfig.advancedSettings.translationWorkflow = translationWorkflow;
         workingConfig.advancedSettings.enableBatchContext = enableBatchContext;
-        if (sendTimestampsToAI) {
-            workingConfig.advancedSettings.sendTimestampsToAI = true;
-        } else {
-            delete workingConfig.advancedSettings.sendTimestampsToAI;
-        }
+        delete workingConfig.advancedSettings.sendTimestampsToAI;
 
         // Provider/model overrides (mirrors file upload behavior)
         const sanitizeAdvancedSettings = (incoming = {}) => {
@@ -7751,13 +7700,8 @@ app.post('/api/translate-embedded', embeddedTranslationLimiter, async (req, res)
                 if (metaWorkflow !== translationWorkflow) {
                     return false;
                 }
-            } else if (translationWorkflow === 'ai') {
-                if (meta.sendTimestampsToAI !== true) {
-                    return false;
-                }
             } else {
-                // Older embedded cache entries do not record non-AI workflows,
-                // so they are ambiguous between XML/original/JSON modes.
+                // Older embedded cache entries do not record a workflow.
                 return false;
             }
 
@@ -8040,7 +7984,7 @@ app.post('/api/translate-embedded', embeddedTranslationLimiter, async (req, res)
                             }
                         }
                         if (stats.jsonXmlFallback) {
-                            advancedStats += `🛠️ <b>Format Rescue:</b> JSON to XML Fallback Activated\n`;
+                            advancedStats += `🛠️ <b>Format Rescue:</b> XML Fallback Activated\n`;
                         }
                         if (stats.parallelBatchesUsed) {
                             advancedStats += `⚡ <b>Execution:</b> Parallel Batches\n`;

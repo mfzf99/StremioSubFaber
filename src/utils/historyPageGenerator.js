@@ -381,7 +381,7 @@ function renderHistoryContent(configStr, historyEntries, config, videoId, filena
       tier3Tags.push(`<span class="history-tag">${wfLabels[entry.workflow] || escapeHtml(entry.workflow)}</span>`);
     }
     if (entry.jsonXmlFallback === true) {
-      tier3Tags.push('<span class="history-chip warning" title="JSON structured output failed, fell back to XML">JSON→XML</span>');
+      tier3Tags.push('<span class="history-chip warning" title="Structured output failed, fell back to XML">XML fallback</span>');
     }
     if (typeof entry.batchCount === 'number' && entry.batchCount > 0) {
       tier3Tags.push(`<span class="history-tag">${entry.batchCount} batch${entry.batchCount > 1 ? 'es' : ''}</span>`);

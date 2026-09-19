@@ -233,12 +233,6 @@ function generateFileTranslationPage(videoId, configStr, config, filename = '') 
     const translationOptionsTitle = t('fileUpload.options.title', {}, 'Translation Options');
     const translationProviderLabel = t('fileUpload.options.provider.label', {}, 'Translation Provider');
     const translationProviderHelper = t('fileUpload.options.provider.helper', {}, 'Choose which configured provider to use for this translation.');
-    const translationWorkflowLabel = t('fileUpload.options.workflow.label', {}, 'Translation Workflow');
-    const translationWorkflowHelper = t('fileUpload.options.workflow.helper', {}, 'How subtitles are formatted for the AI. XML Tags is recommended for most use cases.');
-    const workflowXml = t('fileUpload.options.workflow.xml', {}, 'XML Tags (Default)');
-    const workflowJson = t('fileUpload.options.workflow.json', {}, 'JSON (Structured)');
-    const workflowOriginal = t('fileUpload.options.workflow.original', {}, 'Original Timestamps (Legacy)');
-    const workflowAi = t('fileUpload.options.workflow.ai', {}, 'Send Timestamps to AI');
     const singleBatchLabel = t('fileUpload.options.singleBatch.label', {}, 'Single Batch Mode');
     const singleBatchHelper = t('fileUpload.options.singleBatch.helper', {}, 'Translate the whole subtitle in one go. Improves contextual coherence but can hit provider limits more easily.');
     const batchContextLabel = t('fileUpload.options.batchContext.label', {}, 'Enable Batch Context');
@@ -2215,19 +2209,6 @@ function generateFileTranslationPage(videoId, configStr, config, filename = '') 
                             </div>
 
                             <div class="form-group">
-                                <label for="workflowMode">
-                                    ${escapeHtml(translationWorkflowLabel)}
-                                    <span class="label-description">${escapeHtml(translationWorkflowHelper)}</span>
-                                </label>
-                                <select id="workflowMode">
-                                    <option value="xml">${escapeHtml(workflowXml)}</option>
-                                    <option value="json">${escapeHtml(workflowJson)}</option>
-                                    <option value="original">${escapeHtml(workflowOriginal)}</option>
-                                    <option value="ai">${escapeHtml(workflowAi)}</option>
-                                </select>
-                            </div>
-
-                            <div class="form-group">
                                 <label style="display: flex; align-items: flex-start; gap: 0.5rem; cursor: pointer;">
                                     <input type="checkbox" id="singleBatchMode" style="margin-top: 0.3rem;">
                                     <div>
@@ -2683,7 +2664,6 @@ function generateFileTranslationPage(videoId, configStr, config, filename = '') 
         const providerSelect = document.getElementById('providerSelect');
         const sourceLang = document.getElementById('sourceLang');
         const sourceLangGroup = document.getElementById('sourceLangGroup');
-        const workflowMode = document.getElementById('workflowMode');
         const singleBatchCheckbox = document.getElementById('singleBatchMode');
         const enableBatchContextCheckbox = document.getElementById('enableBatchContext');
         const queuePanel = document.getElementById('queuePanel');
@@ -2710,10 +2690,8 @@ function generateFileTranslationPage(videoId, configStr, config, filename = '') 
             : '';
         const defaultTargetLanguage = hasConfiguredLanguages ? clientConfig.targetLanguages[0] : '';
         const defaultShowAllLanguages = hasConfiguredLanguages ? false : true;
-        const defaultWorkflowValue = translationDefaults.translationWorkflow || 'xml';
         const defaultSingleBatchValue = translationDefaults.singleBatchMode === true;
         const defaultBatchContextValue = translationDefaults.enableBatchContext === true;
-        if (workflowMode) workflowMode.value = defaultWorkflowValue;
         if (singleBatchCheckbox) singleBatchCheckbox.checked = defaultSingleBatchValue;
         if (enableBatchContextCheckbox) enableBatchContextCheckbox.checked = defaultBatchContextValue;
 
@@ -3281,7 +3259,6 @@ function generateFileTranslationPage(videoId, configStr, config, filename = '') 
                 providerSelect.value = defaultProviderKey;
             }
 
-            if (workflowMode) workflowMode.value = defaultWorkflowValue;
             if (singleBatchCheckbox) singleBatchCheckbox.checked = defaultSingleBatchValue;
             if (enableBatchContextCheckbox) enableBatchContextCheckbox.checked = defaultBatchContextValue;
 
@@ -3672,13 +3649,7 @@ function generateFileTranslationPage(videoId, configStr, config, filename = '') 
         }
 
         const summarizeQueueMeta = (job) => {
-            const workflowNames = {
-                'xml': 'XML Tags',
-                'json': 'JSON',
-                'original': 'Original Timestamps',
-                'ai': 'Send to AI'
-            };
-            const workflowLabel = workflowNames[job.settings.translationWorkflow] || job.settings.translationWorkflow || 'XML Tags';
+            const workflowLabel = 'XML Tags';
             const batchLabel = job.settings.singleBatchMode
                 ? tt('fileUpload.queue.meta.single', {}, 'Single-batch')
                 : tt('fileUpload.queue.meta.multi', {}, 'Multiple batches');
@@ -3870,7 +3841,6 @@ function generateFileTranslationPage(videoId, configStr, config, filename = '') 
                 overrides.advancedSettings = advancedOverrides;
             }
 
-            const workflowValue = workflowMode ? workflowMode.value : 'xml';
             const singleBatchValue = singleBatchCheckbox ? singleBatchCheckbox.checked : false;
             const batchContextValue = enableBatchContextCheckbox ? enableBatchContextCheckbox.checked : false;
 
@@ -3880,7 +3850,7 @@ function generateFileTranslationPage(videoId, configStr, config, filename = '') 
                 sourceLanguage: caps.requiresSourceLanguage ? selectedSourceLanguage : '',
                 overrides,
                 advancedOverrides,
-                translationWorkflow: workflowValue,
+                translationWorkflow: 'xml',
                 singleBatchMode: singleBatchValue,
                 enableBatchContext: batchContextValue
             };

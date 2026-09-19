@@ -366,16 +366,11 @@ async function createTranslationProvider(config) {
   const multiEnabled = config?.multiProviderEnabled === true;
   const providersConfig = config?.providers || {};
   const mainProvider = String(config?.mainProvider || (multiEnabled ? 'gemini' : 'gemini')).toLowerCase();
-  const normalizedWorkflow = String(config?.advancedSettings?.translationWorkflow || '').toLowerCase();
-  const structuredJsonEnabled = normalizedWorkflow === 'json' || config?.advancedSettings?.enableJsonOutput === true;
   const secondaryEnabled = multiEnabled && config?.secondaryProviderEnabled === true;
   const secondaryProviderKey = secondaryEnabled
     ? String(config?.secondaryProvider || '').toLowerCase()
     : '';
-  // Build globalOptions for non-Gemini providers (Gemini gets it via advancedSettings)
-  const jsonOutputOptions = {
-    enableJsonOutput: structuredJsonEnabled
-  };
+  const jsonOutputOptions = { enableJsonOutput: false };
   const defaultProviderParams = getDefaultProviderParameters();
   const mergedProviderParams = mergeProviderParameters(
     defaultProviderParams,
@@ -407,12 +402,8 @@ async function createTranslationProvider(config) {
           topP: settings.topP,
           topK: settings.topK
         };
-    // Keep provider JSON mode aligned with workflow-based JSON structured mode.
-    if (structuredJsonEnabled) {
-      base.enableJsonOutput = true;
-    } else {
-      base.enableJsonOutput = false;
-    }
+    // XML Tags is the only workflow; structured JSON output is intentionally disabled.
+    base.enableJsonOutput = false;
     return base;
   };
   const findSecondaryConfig = async (key) => {

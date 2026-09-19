@@ -87,7 +87,7 @@ const translationOverridesSchema = Joi.object({
 
 // Optional translation engine toggles (workflow/timing)
 const translationOptionsSchema = Joi.object({
-  translationWorkflow: Joi.string().valid('xml', 'json', 'original', 'ai').optional(),
+  translationWorkflow: Joi.string().valid('xml').optional(),
   singleBatchMode: Joi.boolean().optional(),
   enableBatchContext: Joi.boolean().optional(),
   // Legacy fields kept for backward compatibility with older clients

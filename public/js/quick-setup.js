@@ -1937,9 +1937,7 @@
                 topP: 0.95,
                 enableBatchContext: false,
                 contextSize: 20,
-                sendTimestampsToAI: false,
                 translationWorkflow: 'xml',
-                enableJsonOutput: false,
                 mismatchRetries: 3
             }
         };

@@ -191,48 +191,12 @@ class TranslationEngine {
     const rawMismatchRetries = parseInt(this.advancedSettings.mismatchRetries);
     this.mismatchRetries = Number.isFinite(rawMismatchRetries) ? Math.max(0, Math.min(3, rawMismatchRetries)) : 3;
 
-    // Translation workflow mode: 'original' (numbered list), 'ai' (send timestamps),
-    //                           'xml' (XML-tagged entries), 'json' (JSON structured I/O)
+    // Translation workflow is permanently locked to XML Tags.
+    // Native batch providers (DeepL/Google Translate) bypass this path entirely
+    // through translateBatchNative(), so they are unaffected by the lock.
     this.isNativeBatchProvider = NATIVE_BATCH_PROVIDER_NAMES.has(this.providerName);
-
-    const rawWorkflow = String(this.advancedSettings.translationWorkflow || '').toLowerCase();
-    if (rawWorkflow === 'json') {
-      this.translationWorkflow = 'json';
-      this.sendTimestampsToAI = false;
-    } else if (rawWorkflow === 'xml') {
-      this.translationWorkflow = 'xml';
-      this.sendTimestampsToAI = false;
-    } else if (rawWorkflow === 'ai' || this.advancedSettings.sendTimestampsToAI === true) {
-      this.translationWorkflow = 'ai';
-      this.sendTimestampsToAI = true;
-    } else {
-      this.translationWorkflow = 'xml';
-      this.sendTimestampsToAI = false;
-    }
-
-    // Backward compat: enableJsonOutput toggle → 'json' workflow
-    // Only migrate when workflow is not 'ai' (JSON is incompatible with SRT-based workflow)
-    if (this.advancedSettings.enableJsonOutput === true
-      && this.translationWorkflow !== 'ai'
-      && !this.isNativeBatchProvider) {
-      this.translationWorkflow = 'json';
-      this.sendTimestampsToAI = false;
-    }
-
-    // JSON workflow caps batch size — large JSON arrays (300-400 objects)
-    // are extremely error-prone for LLMs. Keep batches at <= 200 entries.
-    const JSON_MAX_BATCH_SIZE = 100;
-    if (this.translationWorkflow === 'json' && this.batchSize > JSON_MAX_BATCH_SIZE) {
-      log.debug(() => `[TranslationEngine] Capping batch size from ${this.batchSize} to ${JSON_MAX_BATCH_SIZE} for JSON workflow`);
-      this.batchSize = JSON_MAX_BATCH_SIZE;
-    }
-
-    // Force workflow to 'original' for non-LLM providers — XML/AI/JSON workflows are LLM-only
-    if (this.isNativeBatchProvider && this.translationWorkflow !== 'original') {
-      log.debug(() => `[TranslationEngine] Forcing workflow to 'original' for non-LLM provider ${this.providerName} (was '${this.translationWorkflow}')`);
-      this.translationWorkflow = 'original';
-      this.sendTimestampsToAI = false;
-    }
+    this.translationWorkflow = 'xml';
+    this.sendTimestampsToAI = false;
 
     // Key rotation configuration for per-batch and per-request rotation
     // keyRotationConfig: { enabled: boolean, mode: 'per-request' | 'per-batch', keys: string[], advancedSettings: {} }
@@ -290,7 +254,7 @@ class TranslationEngine {
       log.debug(() => `[TranslationEngine] Per-request key rotation enabled with ${this.keyRotationConfig.keys.length} keys (retry rotation active)`);
     }
 
-    // isNativeBatchProvider already set above during JSON/workflow normalization
+    // Native batch provider flag was set above during XML workflow initialization.
 
     const rotationLabel = this.perBatchRotationEnabled ? 'per-batch' : (this.retryRotationEnabled ? 'per-request' : '');
     log.debug(() => `[TranslationEngine] Initialized with model: ${model || 'unknown'}, batch size: ${this.batchSize}, batch context: ${this.enableBatchContext ? 'enabled (' + this.contextSize + ' lines)' : 'disabled'}, workflow: ${this.translationWorkflow}, mode: ${this.singleBatchMode ? 'single-batch' : 'batched'}, mismatchRetries: ${this.mismatchRetries}${rotationLabel ? `, key-rotation: ${rotationLabel}, keys: ${this.keyRotationConfig.keys.length}` : ''}${this.isNativeBatchProvider ? ', native-batch: true' : ''}`);
@@ -314,7 +278,6 @@ class TranslationEngine {
       entryCount: 0,
       batchCount: 0,
       // Tier 3: Configuration context
-      jsonXmlFallback: false,
       workflow: this.translationWorkflow,
       keyRotationMode: this.keyRotationConfig?.enabled ? (this.keyRotationConfig.mode || 'per-batch') : 'disabled',
       batchContextEnabled: this.enableBatchContext,
@@ -641,87 +604,6 @@ class TranslationEngine {
       /\b(timeout|timed out)\b/.test(msg);
   }
 
-  _isStructuredOutputCapabilityError(error) {
-    if (!error) return false;
-    const status = error.statusCode || error.status || error.response?.status || 0;
-    const raw =
-      error.message ||
-      error.response?.data?.error?.message ||
-      error.response?.data?.message ||
-      '';
-    const msg = String(raw).toLowerCase();
-
-    const statusSuggestsRequestIssue = status === 400 || status === 404 || status === 405 || status === 415 || status === 422 || status === 501;
-    const mentionsStructuredFeature =
-      msg.includes('response_format') ||
-      msg.includes('json_schema') ||
-      msg.includes('json_object') ||
-      msg.includes('structured output') ||
-      msg.includes('does not support') ||
-      msg.includes('unsupported') ||
-      msg.includes('unknown parameter');
-
-    return statusSuggestsRequestIssue && mentionsStructuredFeature;
-  }
-
-  _collectStructuredToggleTargets(provider, changes, enabled) {
-    if (!provider || typeof provider !== 'object') return;
-
-    if (Object.prototype.hasOwnProperty.call(provider, 'enableJsonOutput')) {
-      changes.push({ target: provider, prev: provider.enableJsonOutput });
-      provider.enableJsonOutput = enabled;
-    }
-
-    if (provider.primary && typeof provider.primary === 'object') {
-      this._collectStructuredToggleTargets(provider.primary, changes, enabled);
-    }
-    if (provider.fallback && typeof provider.fallback === 'object') {
-      this._collectStructuredToggleTargets(provider.fallback, changes, enabled);
-    }
-  }
-
-  _restoreStructuredToggles(changes) {
-    if (!Array.isArray(changes)) return;
-    for (const change of changes) {
-      if (!change || !change.target) continue;
-      change.target.enableJsonOutput = change.prev;
-    }
-  }
-
-  async _attemptJsonWorkflowFallbackToXml(batch, targetLanguage, customPrompt, batchIndex, totalBatches, context, reason = 'parse-failure') {
-    if (this.translationWorkflow !== 'json') return null;
-
-    const originalWorkflow = this.translationWorkflow;
-    const originalSendTimestamps = this.sendTimestampsToAI;
-    const structuredToggleChanges = [];
-
-    try {
-      this.translationWorkflow = 'xml';
-      this.sendTimestampsToAI = false;
-      this._collectStructuredToggleTargets(this.gemini, structuredToggleChanges, false);
-
-      const xmlBatchText = this.prepareBatchContent(batch, context);
-      const xmlPrompt = this.createPromptForWorkflow(xmlBatchText, targetLanguage, customPrompt, batch.length, context, batchIndex, totalBatches);
-      const xmlText = await this._translateCall(xmlBatchText, targetLanguage, xmlPrompt, false, null);
-      const xmlEntries = this.parseResponseForWorkflow(xmlText, batch.length, batch);
-      if (!xmlEntries || xmlEntries.length === 0) {
-        return null;
-      }
-      log.warn(() => `[TranslationEngine] JSON workflow fallback to XML succeeded for batch ${batchIndex + 1} (${reason})`);
-      return {
-        translatedText: xmlText,
-        entries: xmlEntries
-      };
-    } catch (fallbackErr) {
-      log.warn(() => `[TranslationEngine] JSON workflow fallback to XML failed for batch ${batchIndex + 1} (${reason}): ${fallbackErr.message}`);
-      return null;
-    } finally {
-      this.translationWorkflow = originalWorkflow;
-      this.sendTimestampsToAI = originalSendTimestamps;
-      this._restoreStructuredToggles(structuredToggleChanges);
-    }
-  }
-
   /**
    * Main translation method - unified approach for all files
    * @param {string} srtContent - Original SRT content
@@ -941,13 +823,8 @@ class TranslationEngine {
     log.info(() => `[TranslationEngine] Translation completed: ${translatedEntries.length} entries`);
 
     // Final safety: strip any timecodes/timeranges that slipped through.
-    // Skip in 'ai' mode — the SRT parser already extracts timecodes into entry.timecode,
-    // and sanitizeTimecodes() is too aggressive for dialogue text (e.g. "Meet me at 12:30:00"
-    // on its own line would be stripped as a standalone timestamp).
-    if (this.translationWorkflow !== 'ai') {
-      for (const entry of translatedEntries) {
-        entry.text = this.sanitizeTimecodes(entry.text);
-      }
+    for (const entry of translatedEntries) {
+      entry.text = this.sanitizeTimecodes(entry.text);
     }
 
     // Step 5: Convert back to SRT format
@@ -1099,12 +976,9 @@ class TranslationEngine {
       log.warn(() => `[TranslationEngine] Single-batch entry count mismatch: expected ${entries.length}, got ${translatedEntries.length}`);
     }
 
-    // Skip sanitizeTimecodes in 'ai' mode — SRT parser already handles timecode extraction,
-    // and the broad patterns would strip timecode-like dialogue text (e.g. "Meet me at 12:30:00").
-    if (this.translationWorkflow !== 'ai') {
-      for (const entry of translatedEntries) {
-        entry.text = this.sanitizeTimecodes(entry.text);
-      }
+    // Strip any timecodes/timeranges that slipped through.
+    for (const entry of translatedEntries) {
+      entry.text = this.sanitizeTimecodes(entry.text);
     }
 
     log.info(() => `[TranslationEngine] Single-batch translation completed: ${translatedEntries.length} entries (tokens: est ${estimatedTokens}${actualTokenCount ? `, actual ${actualTokenCount}` : ''})`);
@@ -1385,7 +1259,6 @@ class TranslationEngine {
     // Translate batch - with retry on PROHIBITED_CONTENT and MAX_TOKENS errors
     let translatedText;
     let translatedEntries = null;
-    let jsonXmlFallbackAttempted = false;
     let prohibitedRetryAttempted = false;
     let maxTokensRetryAttempted = false;
     const maxHttpRotationRetries = this.retryRotationEnabled && Array.isArray(this.keyRotationConfig?.keys)
@@ -1422,26 +1295,6 @@ class TranslationEngine {
   if (this.retryRotationEnabled && this.gemini?.apiKey) {
     this._recordKeyError(this.gemini.apiKey, error); // Pass 'error' for classification
   }
-
-      // If JSON structured mode itself appears unsupported by provider/model, immediately
-      // retry this batch in XML mode for robust ID-based recovery.
-      if (this.translationWorkflow === 'json' && this._isStructuredOutputCapabilityError(error)) {
-        jsonXmlFallbackAttempted = true;
-        this.translationStats.jsonXmlFallback = true;
-        const xmlFallback = await this._attemptJsonWorkflowFallbackToXml(
-          batch,
-          targetLanguage,
-          customPrompt,
-          batchIndex,
-          totalBatches,
-          context,
-          'provider-unsupported'
-        );
-        if (xmlFallback?.entries?.length > 0) {
-          translatedText = xmlFallback.translatedText;
-          translatedEntries = xmlFallback.entries;
-        }
-      }
 
       // 429/503: rotate through remaining keys and retry before other error-specific retries
       if (!translatedEntries && this._isRetryableHttpError(error) && this.retryRotationEnabled && maxHttpRotationRetries > 0) {
@@ -1793,24 +1646,6 @@ class TranslationEngine {
       translatedEntries = this.parseResponseForWorkflow(translatedText, batch.length, batch);
     }
 
-    // JSON parse failed completely: immediately retry this batch as XML once.
-    if (this.translationWorkflow === 'json' && translatedEntries.length === 0) {
-      jsonXmlFallbackAttempted = true;
-      const xmlFallback = await this._attemptJsonWorkflowFallbackToXml(
-        batch,
-        targetLanguage,
-        customPrompt,
-        batchIndex,
-        totalBatches,
-        context,
-        'json-parse-empty'
-      );
-      if (xmlFallback?.entries?.length > 0) {
-        translatedText = xmlFallback.translatedText;
-        translatedEntries = xmlFallback.entries;
-      }
-    }
-
     // Handle entry count mismatches with two-pass recovery
     if (translatedEntries.length !== batch.length) {
       log.warn(() => `[TranslationEngine] Entry count mismatch: expected ${batch.length}, got ${translatedEntries.length}`);
@@ -1960,32 +1795,6 @@ class TranslationEngine {
       const { aligned } = this.alignTranslatedEntries(translatedEntries, batch);
       translatedEntries = Object.values(aligned).sort((a, b) => a.index - b.index);
     }
-    
-    // If JSON mismatch recovery still leaves warning placeholders, try XML once.
-    if (this.translationWorkflow === 'json' && !jsonXmlFallbackAttempted) {
-      const markedCount = translatedEntries.filter(entry =>
-        typeof entry?.text === 'string' &&
-        entry.text.startsWith('[⚠️]')
-      ).length;
-      if (markedCount > 0) {
-        jsonXmlFallbackAttempted = true;
-        this.translationStats.jsonXmlFallback = true;
-        const xmlFallback = await this._attemptJsonWorkflowFallbackToXml(
-          batch,
-          targetLanguage,
-          customPrompt,
-          batchIndex,
-          totalBatches,
-          context,
-          'mismatch-marked'
-        );
-        if (xmlFallback?.entries?.length > 0) {
-          translatedText = xmlFallback.translatedText;
-          const { aligned: fallbackAligned } = this.alignTranslatedEntries(xmlFallback.entries, batch);
-          translatedEntries = Object.values(fallbackAligned).sort((a, b) => a.index - b.index);
-        }
-      }
-    }
 
     // Cache individual entries
     if (CACHE_TRANSLATIONS) {
@@ -2086,38 +1895,6 @@ class TranslationEngine {
     }
 
     return translatedEntries;
-  }
-
-  /**
-   * Prepare batch text for translation (numbered list format)
-   * [UPGRADED]: Bilingual memory (source + target) based on previousMemory
-   */
-  prepareBatchText(batch, context = null) {
-    let result = '';
-
-    // Bilingual translation memory
-    if (context?.previousMemory?.length > 0) {
-      result += '[PREVIOUS_TRANSLATION_MEMORY - FOR CONTINUITY ONLY. DO NOT TRANSLATE THIS]\n';
-      context.previousMemory.forEach((entry) => {
-        if (entry.translation) {
-          const cleanSource = String(entry.source || '').trim().replace(/\n+/g, ' ');
-          const cleanTrans = String(entry.translation || '').trim().replace(/\n+/g, ' ');
-          result += `[Ref ${entry.id}] Original: "${cleanSource}" -> Translated: "${cleanTrans}"\n`;
-        }
-      });
-      result += '=== END OF MEMORY ===\n\n';
-      result += '=== ENTRIES TO TRANSLATE ===\n\n';
-    }
-
-    // Numbered target entries
-    const batchText = batch.map((entry, index) => {
-      const num = index + 1;
-      const cleanText = entry.text.trim().replace(/\n+/g, ' [br] ');
-      return `${num}. ${cleanText}`;
-    }).join('\n\n');
-
-    result += batchText;
-    return result;
   }
 
   /**
@@ -2264,87 +2041,6 @@ ${batchText}
   }
 
   /**
-   * Prepare batch content as a JSON array for the 'json' workflow.
-   */
-  _prepareJsonBatchContent(batch, context = null) {
-    let result = {};
-
-    if (context?.previousMemory?.length > 0) {
-      result.previous_translation_memory = context.previousMemory.map((entry) => ({
-        id: entry.id,
-        source: entry.source ? String(entry.source).trim().replace(/\n+/g, ' [br] ') : '',
-        translation: entry.translation ? String(entry.translation).trim().replace(/\n+/g, ' [br] ') : ''
-      })).filter(m => m.translation);
-    }
-
-    result.entries_to_translate = batch.map((entry) => ({
-      id: entry.id,
-      text: entry.text.trim().replace(/\n+/g, ' [br] ')
-    }));
-
-    return JSON.stringify(result, null, 0);
-  }
-
-  /**
-   * Build a translation prompt for the 'json' workflow.
-   */
-  _buildJsonPrompt(batchText, targetLanguage, customPrompt, expectedCount, context = null, batchIndex = 0, totalBatches = 1) {
-    const targetLabel = normalizeTargetLanguageForPrompt(targetLanguage);
-    const sourceLabel = this.sourceLanguage;
-
-    let targetSection = batchText;
-    if (batchText.includes('"entries_to_translate":')) {
-      targetSection = batchText.split('"entries_to_translate":')[1];
-    }
-
-    const idMatches = [...targetSection.matchAll(/"id"\s*:\s*(\d+)/g)].map(m => m[1]);
-    const startId = idMatches.length > 0 ? idMatches[0] : '1';
-    const idList = idMatches.length > 0 ? idMatches.join(', ') : 'N/A';
-
-    const introInstruction = PROMPT_TEMPLATES.primary(targetLabel, sourceLabel);
-
-    const promptBody = `${introInstruction}
-
-CRITICAL ENFORCEMENT RULES (ZERO TOLERANCE):
-1. CARDINALITY & ID PARITY:
-   - Output EXACTLY ${expectedCount} JSON objects, using EXACTLY these global IDs, in this order: [${idList}]
-   - Every input object pairs strictly with one output object. Never omit, merge, reorder, duplicate, renumber, or invent IDs. Preserve source SRT gaps verbatim.
-
-2. SLOT ISOLATION:
-   - Each "text" field contains ONLY the translation of its matching input text. Never borrow or fold words across adjacent objects.
-   - Short slots (question tags, interjections, single words) stay in their own object. Empty/whitespace-only slots: copy verbatim.
-
-3. EXACT COPY PROTOCOL:
-   - Copy VERBATIM: creative work titles, brands, legal suffixes, proper nouns, numbers, dates, times, measurements, symbols, music notes, corrupted text, and empty slots.
-   - Mixed slots: translate dialogue portion only; copy untranslatable entities unmodified.
-
-4. SONG LYRICS & MUSIC:
-   - Translate all song lyrics enclosed in music notes (♪/♫) fully while preserving the notes.
-
-5. READ-ONLY CONTEXT:
-   - previous_translation_memory is read-only reference. Never output, translate, or duplicate it into active objects.
-
-6. CLEAN PAYLOAD ONLY & JSON ESCAPING:
-   - Output ONLY raw JSON object sequence: {"id":N,"text":"..."},{"id":N,"text":"..."},...
-   - No commentary, markdown, notes, thinking blocks, reasoning leaks, or prompt echoes.
-   - Continue DIRECTLY from the pre-filled [{"id":${startId},"text":" boundary. Never repeat or re-emit the opening object.
-   - Close every string with " and separate objects with commas; final object closes with "}] to complete the array.
-   - Escape double quotes inside text with backslash (\\"). Use \\n for line breaks. No trailing commas.
-
-<input>
-${batchText}
-</input>
-
-[OUTPUT_FORMAT]
-RESPOND ONLY WITH EXACTLY ${expectedCount} VALID JSON ENTRIES AS A RAW ARRAY.
-[{"id":${startId},"text":"`;
-
-    return this.addBatchHeader(promptBody, batchIndex, totalBatches);
-  }
-
-
-
-  /**
    * Parse XML-tagged translation response
    * Matches <s id="N">text</s> patterns and recovers entries by ID.
    * [UPGRADED]: Single-pass Regex for blazing speed, handles both normal and self-closing tags.
@@ -2429,246 +2125,26 @@ RESPOND ONLY WITH EXACTLY ${expectedCount} VALID JSON ENTRIES AS A RAW ARRAY.
   }
   
   /**
-   * Route to the correct batch content preparation method based on workflow
+   * Prepare batch content for the XML Tags workflow.
    */
   prepareBatchContent(batch, context) {
-    if (this.translationWorkflow === 'json') {
-      return this._prepareJsonBatchContent(batch, context);
-    }
-    if (this.translationWorkflow === 'ai') {
-      return this.prepareBatchSrt(batch);
-    }
-    if (this.translationWorkflow === 'xml') {
-      return this.prepareBatchXml(batch, context);
-    }
-    return this.prepareBatchText(batch, context);
+    return this.prepareBatchXml(batch, context);
   }
 
   /**
-   * Route to the correct prompt creation method based on workflow
-   * [UPGRADED]: Passes expectedCount to createTimestampPrompt for SRT integrity control
+   * Create a translation prompt for the XML Tags workflow.
    */
   createPromptForWorkflow(batchText, targetLanguage, customPrompt, expectedCount, context, batchIndex, totalBatches) {
-    if (this.translationWorkflow === 'json') {
-      return this._buildJsonPrompt(batchText, targetLanguage, customPrompt, expectedCount, context, batchIndex, totalBatches);
-    }
-    if (this.translationWorkflow === 'ai') {
-      return this.createTimestampPrompt(targetLanguage, batchIndex, totalBatches, expectedCount);
-    }
-    if (this.translationWorkflow === 'xml') {
-      return this.createXmlBatchPrompt(batchText, targetLanguage, customPrompt, expectedCount, context, batchIndex, totalBatches);
-    }
-    return this.createBatchPrompt(batchText, targetLanguage, customPrompt, expectedCount, context, batchIndex, totalBatches);
+    return this.createXmlBatchPrompt(batchText, targetLanguage, customPrompt, expectedCount, context, batchIndex, totalBatches);
   }
 
   /**
-   * Route to the correct response parser based on workflow
+   * Parse a response for the XML Tags workflow.
    */
   parseResponseForWorkflow(translatedText, expectedCount, batch) {
-    // JSON workflow: strict JSON parse — no fallback to numbered-list/XML parsers
-    if (this.translationWorkflow === 'json') {
-      const jsonEntries = this.parseJsonResponse(translatedText, expectedCount);
-      if (jsonEntries && jsonEntries.length > 0) {
-        return jsonEntries;
-      }
-      // JSON.parse failed — try regex extraction for malformed-but-recoverable JSON
-      const rawCleaned = String(translatedText || '').trim()
-        .replace(/```json\s*/gi, '').replace(/```\s*/g, '');
-      const regexEntries = this.extractJsonEntries(rawCleaned);
-      if (regexEntries && regexEntries.length > 0) {
-        const mapped = regexEntries.map(item => {
-          const index = item.id >= 1 ? item.id - 1 : (item.id === 0 ? 0 : -1);
-          return index >= 0 ? { index, text: String(item.text).trim() } : null;
-        }).filter(Boolean);
-        mapped.sort((a, b) => a.index - b.index);
-        if (mapped.length > 0) {
-          log.info(() => `[TranslationEngine] JSON regex fallback recovered ${mapped.length}/${expectedCount} entries`);
-          return mapped;
-        }
-      }
-      log.warn(() => `[TranslationEngine] JSON workflow parsing failed completely — returning empty`);
-      return [];
-    }
-
-    if (this.translationWorkflow === 'ai') {
-      return this.parseBatchSrtResponse(translatedText, expectedCount, batch);
-    }
-    if (this.translationWorkflow === 'xml') {
-      // Pass 'batch' so the parser can resolve Global IDs
-      return this.parseXmlBatchResponse(translatedText, expectedCount, batch);
-    }
-    return this.parseBatchResponse(translatedText, expectedCount);
+    return this.parseXmlBatchResponse(translatedText, expectedCount, batch);
   }
 
-  /**
-   * Parse JSON structured output response
-   * [GLOBAL ID UNIFIED]: Uses the same Global ID Map shield as the XML tags parser.
-   */
-  parseJsonResponse(translatedText, expectedCount, batch = []) {
-    try {
-      let cleaned = String(translatedText || '').trim();
-
-      if (!cleaned.startsWith('[')) {
-        const startId = batch && batch.length > 0 ? batch[0].id : '1';
-        cleaned = `[{"id":${startId},"text":` + cleaned;
-      }
-
-      cleaned = cleaned.replace(/```json\s*/gi, '').replace(/```\s*/g, '');
-      const arrayStart = cleaned.indexOf('[');
-      const arrayEnd = cleaned.lastIndexOf(']');
-      if (arrayStart !== -1 && arrayEnd !== -1 && arrayEnd > arrayStart) {
-        cleaned = cleaned.slice(arrayStart, arrayEnd + 1);
-      } else {
-        return null;
-      }
-
-      let parsed = null;
-      try {
-        parsed = JSON.parse(cleaned);
-      } catch (_directErr) {
-        parsed = this.repairAndParseJson(cleaned);
-      }
-
-      if (!parsed) {
-        const extracted = this.extractJsonEntries(cleaned);
-        if (extracted && extracted.length > 0) {
-          parsed = extracted;
-        }
-      }
-
-      if (!Array.isArray(parsed) && parsed && typeof parsed === 'object') {
-        if (Array.isArray(parsed.entries_to_translate)) {
-          parsed = parsed.entries_to_translate;
-        } else if (Array.isArray(parsed.entries)) {
-          parsed = parsed.entries;
-        }
-      }
-      if (!Array.isArray(parsed)) return null;
-
-      // Global ID shield: map original SRT IDs to local batch indices
-      const validIds = new Map();
-      if (batch && batch.length > 0) {
-        batch.forEach((entry, idx) => {
-          validIds.set(entry.id, idx);
-        });
-      }
-
-      const entriesMap = new Map();
-      for (const item of parsed) {
-        if (item && (typeof item.id === 'number' || typeof item.id === 'string') && typeof item.text === 'string') {
-          const numericId = parseInt(item.id, 10);
-          if (Number.isNaN(numericId)) continue;
-
-          // Match only valid global IDs (filters AI hallucinations)
-          if (validIds.size > 0) {
-            if (validIds.has(numericId)) {
-              const localIndex = validIds.get(numericId);
-              if (!entriesMap.has(localIndex)) {
-                entriesMap.set(localIndex, {
-                  index: localIndex,
-                  text: item.text.trim()
-                });
-              }
-            }
-          } else {
-            const index = numericId >= 1 ? numericId - 1 : 0;
-            entriesMap.set(index, { index, text: item.text.trim() });
-          }
-        }
-      }
-
-      return Array.from(entriesMap.values()).sort((a, b) => a.index - b.index);
-    } catch (err) {
-      log.debug(() => `[TranslationEngine] JSON response parse error: ${err.message}`);
-      return null;
-    }
-  }
-
-  /**
-   * Attempt to repair common LLM JSON mistakes and parse.
-   * Handles: trailing commas, missing commas between objects, unescaped newlines in strings,
-   * single quotes instead of double quotes, unescaped control characters.
-   * [UPGRADED]: Added Magic Shield to trim excess quotes caused by nested quoting.
-   * @returns {Array|null}
-   */
-  repairAndParseJson(jsonStr) {
-    try {
-      let repaired = jsonStr;
-
-      // Quote boundary normalizer: collapse invalid duplicate double quotes before closing delimiters
-      repaired = repaired.replace(/(?<!\\)"{2,}(?=\s*[,\]\}])/g, '"');
-
-      // Fix unescaped newlines/tabs inside string values (between quotes)
-      // Replace literal newlines/tabs inside JSON strings with escaped versions
-      // Use [\s\S] to match across literal newlines within the string
-      repaired = repaired.replace(/"((?:[^"\\]|\\[\s\S])*)"/g, (match) => {
-        return match
-          .replace(/(?<!\\)\t/g, '\\t')
-          .replace(/\r\n/g, '\\n')
-          .replace(/(?<!\\)\r/g, '\\n')
-          .replace(/(?<!\\)\n/g, '\\n');
-      });
-
-      // Fix trailing commas before ] or }
-      repaired = repaired.replace(/,\s*([\]}])/g, '$1');
-
-      // Fix missing commas between objects: }{ or }\n{
-      repaired = repaired.replace(/\}\s*\{/g, '},{');
-
-      // Fix single quotes used as JSON delimiters (but not inside strings)
-      // Only do this if there are no double-quoted strings (avoids breaking mixed content)
-      if (!repaired.includes('"id"') && repaired.includes("'id'")) {
-        repaired = repaired.replace(/'/g, '"');
-      }
-
-      const parsed = JSON.parse(repaired);
-      if (Array.isArray(parsed)) {
-        log.debug(() => `[TranslationEngine] JSON repair: successfully repaired and parsed`);
-        return parsed;
-      }
-      return null;
-    } catch (_) {
-      return null;
-    }
-  }
-
-  /**
-   * Last-resort extraction: pull individual {"id":N,"text":"..."} objects from malformed JSON
-   * using regex. Handles cases where the overall array structure is broken but individual
-   * objects are valid.
-   * @returns {Array|null}
-   */
-  extractJsonEntries(jsonStr) {
-    const entries = [];
-    // Match individual JSON objects with id and text fields
-    // Handles both {"id":N,"text":"..."} and {"text":"...","id":N} orderings
-    // Use [\s\S] instead of . to match across newlines in text values
-    const objectPattern = /\{\s*"id"\s*:\s*(\d+)\s*,\s*"text"\s*:\s*"((?:[^"\\]|\\[\s\S])*)"\s*\}/g;
-    const objectPatternAlt = /\{\s*"text"\s*:\s*"((?:[^"\\]|\\[\s\S])*)"\s*,\s*"id"\s*:\s*(\d+)\s*\}/g;
-
-    let match;
-    while ((match = objectPattern.exec(jsonStr)) !== null) {
-      const id = parseInt(match[1], 10);
-      let text = match[2];
-      try { text = JSON.parse(`"${text}"`); } catch (_) { /* use raw */ }
-      if (id >= 0 && text !== undefined) {
-        entries.push({ id, text: String(text) });
-      }
-    }
-
-    // Also try alternate field ordering
-    while ((match = objectPatternAlt.exec(jsonStr)) !== null) {
-      const id = parseInt(match[2], 10);
-      let text = match[1];
-      try { text = JSON.parse(`"${text}"`); } catch (_) { /* use raw */ }
-      // Avoid duplicates
-      if (id >= 0 && text !== undefined && !entries.some(e => e.id === id)) {
-        entries.push({ id, text: String(text) });
-      }
-    }
-
-    return entries.length > 0 ? entries : null;
-  }
 
   /**
    * Align translated entries to original batch by index, identifying missing entries
@@ -2742,78 +2218,6 @@ RESPOND ONLY WITH EXACTLY ${expectedCount} VALID JSON ENTRIES AS A RAW ARRAY.
     return { aligned, missingIndices };
   }
 
-  /**
-   * Create translation prompt for timestamp-aware batches (Send Timestamps to AI / SRT Mode)
-   * [UPGRADED]: Universal Dynamic Prompt + immutable timecodes, SRT slot lock & anchor continuation
-   */
-  createTimestampPrompt(targetLanguage, batchIndex = 0, totalBatches = 1, expectedCount = null) {
-    const targetLabel = normalizeTargetLanguageForPrompt(targetLanguage);
-    const sourceLabel = this.sourceLanguage;
-
-    const introInstruction = PROMPT_TEMPLATES.primary(targetLabel, sourceLabel);
-    const countRule = expectedCount ? ` Output EXACTLY ${expectedCount} SRT subtitle blocks.` : '';
-
-    const promptBody = `${introInstruction}
-
-CRITICAL RULES (VIOLATING THESE WILL CORRUPT THE SUBTITLES):
-
-1. PRESERVE TIMECODES & STRUCTURE (MOST CRITICAL): Keep the EXACT SRT format including index numbers, timecodes (00:00:00,000 --> 00:00:00,000), and line breaks. DO NOT alter, shift, recalculate, or drop any timestamp.${countRule}
-
-2. SLOT LOCK: Translate ONLY the dialogue text within its own timestamp block. NEVER merge or shift sentences across different timestamps.
-
-3. ESCAPE HATCH & MUSIC: ALL song lyrics in music notes (♫ / ♪) — including background music (BGM) — MUST be fully translated. Copy EXACT ORIGINAL TEXT only if untranslatable or symbol-only.
-
-4. PRESERVE ALL INLINE MARKUP: Every <i> tag, <b> tag, font tag, and speaker dash (-) MUST be preserved in the exact same position as in the source.
-
-5. CLEAN OUTPUT: Response MUST contain ONLY valid SRT subtitle blocks. Zero preamble, zero explanations, zero markdown code blocks.
-
-[OUTPUT_FORMAT]
-RESPOND ONLY WITH VALID SRT SUBTITLES.
-1
-00:`;
-
-    return this.addBatchHeader(promptBody, batchIndex, totalBatches);
-  }
-
-  /**
-   * Create translation prompt for numbered list batches (Legacy/Original Workflow)
-   * [UPGRADED]: 1:1 aligned with Universal Dynamic Prompt, slot lock & anchor continuation
-   */
-  createBatchPrompt(batchText, targetLanguage, customPrompt, expectedCount, context = null, batchIndex = 0, totalBatches = 1) {
-    const targetLabel = normalizeTargetLanguageForPrompt(targetLanguage);
-    const sourceLabel = this.sourceLanguage;
-
-    const introInstruction = PROMPT_TEMPLATES.primary(targetLabel, sourceLabel);
-
-    const promptBody = `${introInstruction}
-
-CRITICAL RULES (VIOLATING THESE WILL CORRUPT THE SUBTITLES):
-
-1. SLOT LOCK (MOST CRITICAL): Each numbered entry (1. to ${expectedCount}.) is a separate output slot. 
-   NEVER steal, merge, or complete a sentence using words that belong in an adjacent numbered line.
-   Dividing the natural thought across matching lines is MANDATORY. Merging them DESTROYS subtitle sync permanently.
-
-2. ESCAPE HATCH & MUSIC: ALL song lyrics in music notes (♫ / ♪) — including background music (BGM) — MUST be fully translated. 
-   Copy EXACT ORIGINAL TEXT for a number only if content is untranslatable (proper nouns, corrupted text) or contains ONLY standalone symbols/music notes (♪, ♫, ♪♪) and numbers. NEVER shift any remaining entry.
-
-3. NUMBERING INTEGRITY & EXACT COUNT: Output EXACTLY ${expectedCount} numbered entries total, strictly from 1. to ${expectedCount}. 
-   Format: "N. translated text". Never skip, reorder, or invent numbers. NEVER fabricate content to hit the count — use Rule 2 instead.
-
-4. PRESERVE ALL INLINE MARKUP: Every [br] tag, <i> tag, and speaker dash (-) MUST be preserved in the exact same structure and position as in the source.
-
-5. CLEAN OUTPUT: Response MUST contain ONLY the numbered entries (1. to ${expectedCount}.). 
-   Zero commentary, zero markdown code blocks. Every translated line MUST start with its number.
-
-<input>
-${batchText}
-</input>
-
-[OUTPUT_FORMAT]
-RESPOND ONLY WITH EXACTLY ${expectedCount} NUMBERED ENTRIES.
-1. `;
-
-    return this.addBatchHeader(promptBody, batchIndex, totalBatches);
-  }
 
   /**
    * Prefix prompt with batch marker so the model knows which chunk it is handling
@@ -2843,167 +2247,98 @@ RESPOND ONLY WITH EXACTLY ${expectedCount} NUMBERED ENTRIES.
       });
     }
 
-    let parsedEntries = [];
+    const parsedEntries = [];
 
-    if (this.translationWorkflow === 'json') {
-      let rawCleaned = String(partialText).trim()
-        .replace(/```json\s*/gi, '').replace(new RegExp('\\x60\\x60\\x60', 'g'), '');
-      
-      if (!rawCleaned.startsWith('[') && originalBatch && originalBatch.length > 0) {
-        const startId = originalBatch[0].id;
-        rawCleaned = `{"id":${startId},"text":` + rawCleaned;
-      }
+    // Phase 3: streaming-safe XML regex
+    let cleaned = partialText;
 
-      const extracted = this.extractJsonEntries(rawCleaned);
-      if (extracted && extracted.length > 0) {
-        parsedEntries = extracted.map(item => {
-          const numericId = parseInt(item.id, 10);
-          if (Number.isNaN(numericId)) return null;
+    // Prepend anchor continuation for streaming (uses batchStartId above)
+    if (!cleaned.startsWith('<s')) {
+      cleaned = `<s id="${batchStartId}">` + cleaned;
+    }
 
-          // Cross-check against Global ID map to prevent streaming desync
-          if (validIds.has(numericId)) {
-            return { index: validIds.get(numericId), text: String(item.text).trim() };
+    // Remove markdown fences (hex avoids markdown UI breakage)
+    const mdRegex = new RegExp('\\x60\\x60\\x60[a-z]*(?:\\r?\\n)?', 'gi');
+    cleaned = cleaned.replace(mdRegex, '');
+    cleaned = cleaned.replace(new RegExp('\\x60\\x60\\x60', 'g'), '');
+
+    // Capture normal and truncated lines during real-time streaming
+    // Tolerant of quotes, spaces, and invalid attributes.
+    const xmlPattern = /<s\s+[^>]*id\s*=\s*["']?(\d+)["']?[^>]*(?<!\/)>([\s\S]*?)(?:<\/s>|$)/gi;
+    let match;
+    while ((match = xmlPattern.exec(cleaned)) !== null) {
+      const id = parseInt(match[1], 10);
+      let text = match[2].trim();
+
+      // Unescape XML entities escaped in prepareBatchXml().
+      // MANDATORY ORDER: &lt; then &gt;, &amp; LAST — avoid double-unescape.
+      // NOTE: entities may be truncated during streaming (e.g. "AT&am") —
+      //       incomplete entities won't match regex, so they are safe.
+      text = text
+        .replace(/&lt;/g, '<')
+        .replace(/&gt;/g, '>')
+        .replace(/&amp;/g, '&');
+
+      // Text required unless silent tag
+      if (id > 0 && text) {
+        let localIndex = id - 1; // Default/fallback
+
+        // Match against Global ID map
+        if (validIds.size > 0) {
+          if (validIds.has(id)) {
+            localIndex = validIds.get(id); // Resolve actual index for this batch
+          } else {
+            continue; // Skip hallucinated IDs
           }
-          return null;
-        }).filter(Boolean);
+        }
+
+        parsedEntries.push({ index: localIndex, text });
       }
     }
 
-    if (parsedEntries.length === 0) {
-      if (this.translationWorkflow === 'ai') {
-        const parsed = parseSRT(partialText) || [];
-        parsedEntries = parsed.map((entry, idx) => ({
-          index: (typeof entry.id === 'number') ? entry.id - 1 : idx,
-          text: (entry.text || '').trim(),
-          timecode: entry.timecode || ''
-        }));
-      } else if (this.translationWorkflow === 'xml') {
-        // Phase 3: streaming-safe XML regex
-        let cleaned = partialText;
-        
-        // Prepend anchor continuation for streaming (uses batchStartId above)
-        if (!cleaned.startsWith('<s')) {
-          cleaned = `<s id="${batchStartId}">` + cleaned;
-        }
-        
-        // Remove markdown fences (hex avoids markdown UI breakage)
-        const mdRegex = new RegExp('\\x60\\x60\\x60[a-z]*(?:\\r?\\n)?', 'gi');
-        cleaned = cleaned.replace(mdRegex, '');
-        cleaned = cleaned.replace(new RegExp('\\x60\\x60\\x60', 'g'), '');
+    // Capture silent/self-closing tags (<s id="15"/>)
+    const selfClosingPattern = /<s\s+[^>]*id\s*=\s*["']?(\d+)["']?[^>]*\/>/gi;
+    while ((match = selfClosingPattern.exec(cleaned)) !== null) {
+      const id = parseInt(match[1], 10);
+      if (id > 0) {
+        let localIndex = id - 1;
 
-        // Capture normal and truncated lines during real-time streaming
-        // Tolerant of quotes, spaces, and invalid attributes.
-        const xmlPattern = /<s\s+[^>]*id\s*=\s*["']?(\d+)["']?[^>]*(?<!\/)>([\s\S]*?)(?:<\/s>|$)/gi;
-        let match;
-        while ((match = xmlPattern.exec(cleaned)) !== null) {
-          const id = parseInt(match[1], 10);
-          let text = match[2].trim();
-
-          // Unescape XML entities escaped in prepareBatchXml().
-          // MANDATORY ORDER: &lt; then &gt;, &amp; LAST — avoid double-unescape.
-          // NOTE: entities may be truncated during streaming (e.g. "AT&am") —
-          //       incomplete entities won't match regex, so they are safe.
-          text = text
-            .replace(/&lt;/g, '<')
-            .replace(/&gt;/g, '>')
-            .replace(/&amp;/g, '&');
-
-          // Text required unless silent tag
-          if (id > 0 && text) {
-            let localIndex = id - 1; // Default/fallback
-
-            // Match against Global ID map
-            if (validIds.size > 0) {
-              if (validIds.has(id)) {
-                localIndex = validIds.get(id); // Resolve actual index for this batch
-              } else {
-                continue; // Skip hallucinated IDs
-              }
-            }
-
-            parsedEntries.push({ index: localIndex, text });
+        // Match against Global ID map
+        if (validIds.size > 0) {
+          if (validIds.has(id)) {
+            localIndex = validIds.get(id);
+          } else {
+            continue; // Skip hallucinated IDs
           }
         }
-        
-        // Capture silent/self-closing tags (<s id="15"/>)
-        const selfClosingPattern = /<s\s+[^>]*id\s*=\s*["']?(\d+)["']?[^>]*\/>/gi;
-        while ((match = selfClosingPattern.exec(cleaned)) !== null) {
-          const id = parseInt(match[1], 10);
-          if (id > 0) {
-            let localIndex = id - 1;
 
-            // Match against Global ID map
-            if (validIds.size > 0) {
-              if (validIds.has(id)) {
-                localIndex = validIds.get(id);
-              } else {
-                continue; // Skip hallucinated IDs
-              }
-            }
-
-            // Empty text allowed for self-closing tags
-            parsedEntries.push({ index: localIndex, text: "" });
-          }
-        }
-      } else {
-        let cleaned = partialText.trim();
-        cleaned = cleaned.replace(new RegExp('\\x60\\x60\\x60[a-z]*(?:\\r?\\n)?', 'gi'), '');
-        // Strip echoed context sections
-        cleaned = cleaned.replace(/===\s*CONTEXT\s*\(FOR REFERENCE ONLY[^=]*===[\s\S]*?===\s*END OF CONTEXT\s*===/gi, '');
-        cleaned = cleaned.replace(/===\s*ENTRIES TO TRANSLATE[^=]*===/gi, '');
-        cleaned = cleaned.replace(/^---\s*(?:Original Context|Previous Translations)\s*.*---\s*$/gm, '');
-
-        const lines = cleaned.split(/\r?\n/);
-        let currentNum = null;
-        let currentLines = [];
-
-        for (const line of lines) {
-          const headerMatch = line.match(/^(\d+)[.):\s-]+(.*)$/);
-          if (headerMatch) {
-            if (currentNum !== null && currentLines.length > 0) {
-              const text = currentLines.join('\n').trim();
-              if (text && !text.match(/^\[(?:Context|Translated)\s+\d+\]/i)) {
-                parsedEntries.push({ index: currentNum - 1, text });
-              }
-            }
-            currentNum = parseInt(headerMatch[1], 10);
-            currentLines = [headerMatch[2]];
-          } else if (currentNum !== null) {
-            currentLines.push(line);
-          }
-        }
-        if (currentNum !== null && currentLines.length > 0) {
-          const text = currentLines.join('\n').trim();
-          if (text && !text.match(/^\[(?:Context|Translated)\s+\d+\]/i)) {
-            parsedEntries.push({ index: currentNum - 1, text });
-          }
-        }
+        // Empty text allowed for self-closing tags
+        parsedEntries.push({ index: localIndex, text: "" });
       }
-      
-      // Deduplicate by index (keep first occurrence)
-      const seen = new Set();
-      parsedEntries = parsedEntries.filter(entry => {
-        if (seen.has(entry.index)) return false;
-        seen.add(entry.index);
-        return true;
-      });
     }
 
-    if (!parsedEntries || parsedEntries.length === 0) {
+    // Deduplicate by index (keep first occurrence)
+    const seen = new Set();
+    const uniqueEntries = parsedEntries.filter(entry => {
+      if (seen.has(entry.index)) return false;
+      seen.add(entry.index);
+      return true;
+    });
+
+    if (!uniqueEntries || uniqueEntries.length === 0) {
       return null;
     }
 
     const merged = [];
-    for (const entry of parsedEntries) {
+    for (const entry of uniqueEntries) {
       const original = originalBatch[entry.index];
       if (!original) continue;
-      
+
       // Clean text in real time
       const cleanedText = this.cleanTranslatedText(entry.text || original.text);
-      const timecode = (this.sendTimestampsToAI && entry.timecode) ? entry.timecode : original.timecode;
       merged.push({
         id: original.id,
-        timecode,
+        timecode: original.timecode,
         text: cleanedText
       });
     }

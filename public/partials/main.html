@@ -1603,42 +1603,6 @@
                         </div>
 
                         <div class="form-group">
-                            <label for="sendTimestampsToAI" class="form-label">
-                                <span class="label-title"
-                                    data-i18n="config.translationSettings.workflow.label">Translation Workflow</span>
-                                <div style="display: flex; align-items: center; gap: 0.35rem; flex-wrap: wrap;">
-                                    <span class="label-description"
-                                        data-i18n="config.translationSettings.workflow.description">Switching between
-                                        modes is recommended if you have translation sync problems.</span>
-                                    <div class="v3-warning-tooltip">
-                                        <span class="warning-icon" tabindex="0"
-                                            aria-label="Translation workflow details"
-                                            data-i18n="config.translationSettings.workflow.tooltip"
-                                            data-i18n-attr="aria-label">?</span>
-                                        <div class="tooltip-bubble" role="tooltip" aria-hidden="true"
-                                            id="translationWorkflowTooltip"
-                                            data-i18n="config.translationSettings.workflow.tooltip">"Original
-                                            Timestamps" sends a numbered list and reattaches original timecodes. "Send
-                                            Timestamps to AI" sends full SRT and trusts the AI to preserve timecodes.
-                                            "XML Tags" wraps each entry in &lt;s id="N"&gt; tags for robust ID-based
-                                            recovery. "JSON" sends and receives structured JSON arrays for
-                                            unambiguous parsing.</div>
-                                    </div>
-                                </div>
-                            </label>
-                            <select id="sendTimestampsToAI" class="styled-select">
-                                <option value="xml" data-i18n="config.translationSettings.workflow.xml">XML Tags
-                                    (Default)</option>
-                                <option value="json" data-i18n="config.translationSettings.workflow.json">JSON
-                                    (Structured)</option>
-                                <option value="original" data-i18n="config.translationSettings.workflow.original">
-                                    Original Timestamps (Legacy)</option>
-                                <option value="ai" data-i18n="config.translationSettings.workflow.ai">Send Timestamps to
-                                    AI</option>
-                            </select>
-                        </div>
-
-                        <div class="form-group">
                             <label>
                                 <input type="checkbox" id="singleBatchMode">
                                 <span data-i18n="config.translationSettings.chunking.label">Enable Single Batch</span>

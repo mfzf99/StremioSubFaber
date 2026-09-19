@@ -6037,7 +6037,7 @@ if (
             }
             
             if (stats.jsonXmlFallback) {
-                advancedStats += `🛠️ <b>Format Rescue:</b> JSON to XML Fallback Activated\n`;
+                advancedStats += `🛠️ <b>Format Rescue:</b> XML Fallback Activated\n`;
             }
             
             if (stats.parallelBatchesUsed) {

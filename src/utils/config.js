@@ -531,15 +531,9 @@ function normalizeConfig(config) {
     geminiModel: normalizedAdvancedModel,
     thinkingLevel: sanitizeGeminiThinkingLevel(advSettings.thinkingLevel, advancedModelDefaults.thinkingLevel),
     enabled: advSettings.enabled === true,
-    sendTimestampsToAI: advSettings.sendTimestampsToAI === true,
-    translationWorkflow: (() => {
-      const val = String(advSettings.translationWorkflow || '').toLowerCase();
-      if (['original', 'ai', 'xml', 'json'].includes(val)) return val;
-      if (advSettings.enableJsonOutput === true) return 'json';
-      if (advSettings.sendTimestampsToAI === true) return 'ai';
-      return 'xml';
-    })(),
-    enableJsonOutput: advSettings.enableJsonOutput === true,
+    sendTimestampsToAI: false,
+    translationWorkflow: 'xml',
+    enableJsonOutput: false,
     mismatchRetries: (() => {
       const val = parseInt(advSettings.mismatchRetries, 10);
       return Number.isFinite(val) ? Math.max(0, Math.min(3, val)) : 3;
@@ -1059,9 +1053,9 @@ function getDefaultConfig(modelName = null) {
     chunkSize: 12000,
     translationTimeout: parseInt(process.env.GEMINI_TRANSLATION_TIMEOUT, 10) || 720,
     maxRetries: process.env.GEMINI_MAX_RETRIES !== undefined ? parseInt(process.env.GEMINI_MAX_RETRIES, 10) : 3,
-    sendTimestampsToAI: process.env.SEND_TIMESTAMPS_TO_AI === 'true',
-    translationWorkflow: process.env.TRANSLATION_WORKFLOW || 'xml',
-    enableJsonOutput: process.env.ENABLE_JSON_OUTPUT === 'true',
+    sendTimestampsToAI: false,
+    translationWorkflow: 'xml',
+    enableJsonOutput: false,
     thinkingBudget: Number.isFinite(modelDefaults.thinkingBudget) ? modelDefaults.thinkingBudget : -1,
     thinkingLevel: sanitizeGeminiThinkingLevel(process.env.GEMINI_THINKING_LEVEL, modelDefaults.thinkingLevel),
     temperature: process.env.GEMINI_TEMPERATURE !== undefined

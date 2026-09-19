@@ -1402,8 +1402,8 @@ Translate to {target_language}.`;
                 topK: 40,
                 enableBatchContext: false, // Include original surrounding context and previous translations
                 contextSize: 20, // Number of preceding original entries to include as context
-                sendTimestampsToAI: false, // Let AI handle timestamps directly
-                translationWorkflow: 'xml', // 'original', 'ai', 'xml', or 'json'
+                sendTimestampsToAI: false, // Deprecated legacy field, locked to false
+                translationWorkflow: 'xml', // Single enterprise workflow: XML Tags
                 mismatchRetries: 3 // Retries when AI returns wrong entry count (0-3)
             }
         };
@@ -5378,61 +5378,8 @@ Translate to {target_language}.`;
         return convertAssEl ? convertAssEl.checked === true : false;
     }
 
-    function normalizeTranslationWorkflowValue(value, fallback = 'xml') {
-        const normalized = String(value || '').toLowerCase();
-        return ['xml', 'json', 'original', 'ai'].includes(normalized) ? normalized : fallback;
-    }
-
-    function getTranslationWorkflowInputs() {
-        const legacySelect = document.getElementById('sendTimestampsToAI');
-        if (legacySelect) return [legacySelect];
-        return Array.from(document.querySelectorAll('input[name="translationWorkflow"]'));
-    }
-
-    function getSelectedTranslationWorkflow(fallback = 'xml') {
-        const legacySelect = document.getElementById('sendTimestampsToAI');
-        if (legacySelect) {
-            return normalizeTranslationWorkflowValue(legacySelect.value, fallback);
-        }
-
-        const selectedRadio = document.querySelector('input[name="translationWorkflow"]:checked');
-        return normalizeTranslationWorkflowValue(selectedRadio ? selectedRadio.value : '', fallback);
-    }
-
-    function setSelectedTranslationWorkflow(workflow) {
-        const normalized = normalizeTranslationWorkflowValue(workflow, 'xml');
-        const legacySelect = document.getElementById('sendTimestampsToAI');
-        if (legacySelect) {
-            legacySelect.value = normalized;
-        }
-
-        const radioInputs = Array.from(document.querySelectorAll('input[name="translationWorkflow"]'));
-        if (radioInputs.length > 0) {
-            let matched = false;
-            radioInputs.forEach((input) => {
-                const isMatch = normalizeTranslationWorkflowValue(input.value, '') === normalized;
-                input.checked = isMatch;
-                if (isMatch) matched = true;
-            });
-            if (!matched) {
-                const xmlRadio = radioInputs.find((input) => normalizeTranslationWorkflowValue(input.value, '') === 'xml');
-                if (xmlRadio) xmlRadio.checked = true;
-            }
-        }
-
-        return normalized;
-    }
-
-    function getTranslationWorkflowContainer() {
-        const legacySelect = document.getElementById('sendTimestampsToAI');
-        if (legacySelect) {
-            return legacySelect.closest('.form-group');
-        }
-        const radioGroup = document.getElementById('translationWorkflow');
-        if (radioGroup) {
-            return radioGroup.closest('.v2-card, .v2-form-group, .form-group');
-        }
-        return null;
+    function getSelectedTranslationWorkflow() {
+        return 'xml';
     }
 
     function syncUrlExtensionTestModeUi(options = {}) {
@@ -6551,7 +6498,7 @@ Translate to {target_language}.`;
         const ctxSizeChanged = ctxSizeEl ? (parseInt(ctxSizeEl.value) !== (defaults.contextSize || 20)) : false;
         const mismatchRetriesEl = document.getElementById('mismatchRetries');
         const mismatchRetriesChanged = mismatchRetriesEl ? (parseInt(mismatchRetriesEl.value) !== (defaults.mismatchRetries ?? 3)) : false;
-        const workflowChanged = getSelectedTranslationWorkflow('xml') !== 'xml';
+        const workflowChanged = false;
 
         return modelChanged || thinkingChanged || tempChanged || topPChanged || batchCtxChanged || ctxSizeChanged || mismatchRetriesChanged || workflowChanged;
     }
@@ -7947,7 +7894,6 @@ Translate to {target_language}.`;
         const advThinkingLevelEl = document.getElementById('advancedThinkingLevel');
         const advTempEl = document.getElementById('advancedTemperature');
         const advTopPEl = document.getElementById('advancedTopP');
-        const workflowInputs = getTranslationWorkflowInputs();
 
         // Fetch models when dropdown is clicked (on-demand fallback)
         if (advModelEl) {
@@ -9743,8 +9689,6 @@ Translate to {target_language}.`;
         const excludeHearingImpairedNoTranslationGroup = document.getElementById('excludeHearingImpairedNoTranslationGroup');
         const convertAssToVttNoTranslationGroup = document.getElementById('convertAssToVttNoTranslationGroup');
         const forceSRTOutputNoTranslationGroup = document.getElementById('forceSRTOutputNoTranslationGroup');
-        const workflowGroup = getTranslationWorkflowContainer();
-        if (workflowGroup) groupsToHide.push(workflowGroup);
 
         ['databaseMode', 'learnModeEnabled', 'mobileMode', 'singleBatchMode', 'betaMode'].forEach(id => {
             const group = document.getElementById(id)?.closest('.form-group');
@@ -10995,15 +10939,6 @@ Translate to {target_language}.`;
             }
         }
         if (contextSizeEl) contextSizeEl.value = currentConfig.advancedSettings?.contextSize || 20;
-        {
-            let workflow = currentConfig.advancedSettings?.translationWorkflow ||
-                ((currentConfig.advancedSettings?.sendTimestampsToAI === true) ? 'ai' : 'xml');
-            // Backward compat: migrate enableJsonOutput toggle → 'json' workflow
-            if (currentConfig.advancedSettings?.enableJsonOutput === true && workflow !== 'ai') {
-                workflow = 'json';
-            }
-            setSelectedTranslationWorkflow(workflow);
-        }
 
         // Load mismatch retries setting
         const mismatchRetriesEl = document.getElementById('mismatchRetries');
@@ -11348,7 +11283,7 @@ Translate to {target_language}.`;
                 topP: (function () { const el = document.getElementById('advancedTopP'); return el ? parseFloat(el.value) : 0.95; })(),
                 enableBatchContext: (function () { const el = document.getElementById('enableBatchContext'); return el ? el.checked : false; })(),
                 contextSize: (function () { const el = document.getElementById('contextSize'); return el ? parseInt(el.value) : 20; })(),
-                translationWorkflow: getSelectedTranslationWorkflow('xml'),
+                translationWorkflow: 'xml',
                 mismatchRetries: (function () { const el = document.getElementById('mismatchRetries'); return el ? Math.max(0, Math.min(3, parseInt(el.value) || 3)) : 3; })()
             }
         };
