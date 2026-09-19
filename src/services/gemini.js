@@ -152,10 +152,16 @@ class GeminiService {
       ? advancedSettings.maxRetries
       : (process.env.GEMINI_MAX_RETRIES !== undefined ? parseInt(process.env.GEMINI_MAX_RETRIES, 10) : 3);
 
-    // Thinking Level Rasmi Mengikut Model
+    // Thinking Level Rasmi Mengikut Model.
+    // Empty string is a valid legacy value for Gemini 2.x models (thinking
+    // disabled via budget path), so only fall back when the caller did NOT
+    // provide a string at all.
     const modelProfile = getModelThinkingProfile(this.model);
-    this.thinkingLevel = typeof advancedSettings.thinkingLevel === 'string' && advancedSettings.thinkingLevel.trim() !== ''
+    const rawThinkingLevel = typeof advancedSettings.thinkingLevel === 'string'
       ? advancedSettings.thinkingLevel.trim().toLowerCase()
+      : undefined;
+    this.thinkingLevel = rawThinkingLevel !== undefined
+      ? rawThinkingLevel
       : (process.env.GEMINI_THINKING_LEVEL ? process.env.GEMINI_THINKING_LEVEL.trim().toLowerCase() : modelProfile.default);
 
     // Universal 1:1 Sampling Defaults (Temperature: 0.2, Top-P: 0.95 | Pure Nucleus Sampling)
@@ -166,6 +172,15 @@ class GeminiService {
     this.topP = advancedSettings.topP !== undefined
       ? advancedSettings.topP
       : (process.env.GEMINI_TOP_P !== undefined ? parseFloat(process.env.GEMINI_TOP_P) : 0.95);
+
+    // Legacy sampling controls kept for Gemini 2.x / non-3.x models.
+    this.topK = advancedSettings.topK !== undefined
+      ? advancedSettings.topK
+      : (process.env.GEMINI_TOP_K !== undefined ? parseFloat(process.env.GEMINI_TOP_K) : undefined);
+
+    this.thinkingBudget = advancedSettings.thinkingBudget !== undefined
+      ? advancedSettings.thinkingBudget
+      : (process.env.GEMINI_THINKING_BUDGET !== undefined ? parseInt(process.env.GEMINI_THINKING_BUDGET, 10) : undefined);
 
     if (this.isGemmaModel) {
       this.maxOutputTokens = 8192;
@@ -229,19 +244,40 @@ class GeminiService {
   }
 
   buildGenerationConfig(maxOutputTokens) {
+    // Gemini 3.x models reject legacy sampling parameters (temperature, topK,
+    // topP) and numeric thinking budgets. Send only the current request shape.
+    if (this.isGemini3Model) {
+      const profile = getModelThinkingProfile(this.model);
+      const requestedLevel = String(this.thinkingLevel || '').trim().toLowerCase();
+      let effectiveLevel = requestedLevel;
+
+      // Gemini 3.x requires a supported level. Disabled/off and unsupported
+      // values (e.g. "minimal" on a model that only supports low/medium/high)
+      // are mapped to "low" per the current API contract.
+      if (!effectiveLevel || effectiveLevel === 'disabled' || effectiveLevel === 'off') {
+        effectiveLevel = 'low';
+      } else if (!profile.levels.includes(effectiveLevel)) {
+        effectiveLevel = 'low';
+      }
+
+      return {
+        maxOutputTokens,
+        thinkingConfig: { thinkingLevel: effectiveLevel }
+      };
+    }
+
+    // Legacy Gemini 2.x / Gemma path keeps numeric sampling controls.
     const generationConfig = {
       maxOutputTokens,
       temperature: this.temperature,
-      topP: this.topP,
-      frequencyPenalty: 0.0,
-      presencePenalty: 0.0
+      topP: this.topP
     };
-
-    const effectiveLevel = this.getEffectiveThinkingLevel();
-    if (effectiveLevel && effectiveLevel !== 'disabled' && effectiveLevel !== 'off') {
-      generationConfig.thinkingConfig = { thinkingLevel: effectiveLevel };
+    if (this.topK !== undefined) {
+      generationConfig.topK = this.topK;
     }
-
+    if (this.thinkingBudget !== undefined) {
+      generationConfig.thinkingConfig = { thinkingBudget: this.thinkingBudget };
+    }
     return generationConfig;
   }
 

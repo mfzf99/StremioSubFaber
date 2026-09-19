@@ -2869,7 +2869,7 @@ function generateFileTranslationPage(videoId, configStr, config, filename = '') 
         }
 
         function normalizeGeminiModelId(modelName) {
-            return String(modelName || '').trim().replace(/^models\//, '').toLowerCase();
+            return String(modelName || '').trim().replace(/^models\\//, '').toLowerCase();
         }
 
         function getGeminiModelFamilyDefaults(modelName) {
@@ -3809,7 +3809,8 @@ function generateFileTranslationPage(videoId, configStr, config, filename = '') 
             const thinkingBudget = providerKey === 'anthropic'
                 ? readBoundedNumber(advancedThinkingBudget, 0, 32768, (v) => parseInt(v, 10))
                 : null;
-            const thinkingLevel = providerKey === 'gemini' && advancedThinkingLevel
+            const usesThinkingLevel = providerKey === 'gemini' && !!advancedThinkingLevel;
+            const thinkingLevel = usesThinkingLevel
                 ? String(advancedThinkingLevel.value || '').trim().toLowerCase()
                 : '';
             const temperature = caps.supportsTemperature
@@ -3851,7 +3852,7 @@ function generateFileTranslationPage(videoId, configStr, config, filename = '') 
             const advancedOverrides = providerKey === 'gemini'
                 ? {
                     geminiModel: selectedModel || clientConfig.geminiModel || '',
-                    thinkingLevel: thinkingLevel || undefined,
+                    thinkingLevel: usesThinkingLevel ? thinkingLevel : undefined,
                     temperature: Number.isFinite(temperature) ? temperature : 0.2,
                     topP: Number.isFinite(topP) ? topP : 0.95,
                     maxOutputTokens: Number.isFinite(maxTokens) ? maxTokens : undefined,
