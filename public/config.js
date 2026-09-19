@@ -1008,55 +1008,68 @@ Translate to {target_language}.`;
 
     const MODEL_SPECIFIC_DEFAULTS = {
         'gemini-3.7-flash': {
-            thinkingLevel: 'medium',
-            temperature: 0.2
+            thinkingLevel: 'high',
+            thinkingBudget: -1,
+            temperature: 0.5
         },
         'gemini-3.6-flash': {
-            thinkingLevel: 'medium',
-            temperature: 0.2
+            thinkingLevel: 'high',
+            thinkingBudget: -1,
+            temperature: 0.5
         },
         'gemini-3.5-flash-lite': {
             thinkingLevel: 'minimal',
+            thinkingBudget: -1,
             temperature: 0.2
         },
         'gemini-3.1-pro-preview': {
             thinkingLevel: 'high',
+            thinkingBudget: -1,
             temperature: 0.2
         },
         'gemini-3.1-flash-lite': {
             thinkingLevel: 'minimal',
+            thinkingBudget: -1,
             temperature: 0.2
         },
         'gemini-3-flash-preview': {
             thinkingLevel: 'high',
-            temperature: 0.2
+            thinkingBudget: -1,
+            temperature: 0.5
         },
         'gemini-3-pro-preview': {
             thinkingLevel: 'high',
+            thinkingBudget: -1,
             temperature: 0.2
         },
         'gemini-3.5-flash': {
-            thinkingLevel: 'medium',
-            temperature: 0.2
+            thinkingLevel: 'high',
+            thinkingBudget: -1,
+            temperature: 0.5
         },
         'gemini-flash-lite-latest': {
             thinkingLevel: 'minimal',
+            thinkingBudget: -1,
             temperature: 0.2
         },
         'gemini-2.5-pro': {
             thinkingLevel: 'medium',
+            thinkingBudget: -1,
             temperature: 0.2
         },
         'gemini-2.5-flash': {
-            thinkingLevel: 'medium',
-            temperature: 0.2
+            thinkingLevel: '',
+            thinkingBudget: -1,
+            temperature: 0.5
         },
         'gemini-2.5-flash-lite': {
             thinkingLevel: 'disabled',
+            thinkingBudget: -1,
             temperature: 0.2
         },
         'gemma-3-27b-it': {
             thinkingLevel: 'disabled',
+            thinkingBudget: -1,
             temperature: 0.2
         }
     };
@@ -1075,24 +1088,24 @@ Translate to {target_language}.`;
             || /^gemini-(?:flash|flash-lite|pro)-latest$/.test(normalized);
 
         if (isGemini3 && normalized.includes('flash-lite')) {
-            return { thinkingLevel: 'minimal', temperature: 0.2 };
+            return { thinkingLevel: 'minimal', thinkingBudget: -1, temperature: 0.2 };
         }
         if (isGemini3 && normalized.includes('flash')) {
-            return { thinkingLevel: 'medium', temperature: 0.2 };
+            return { thinkingLevel: 'high', thinkingBudget: -1, temperature: 0.5 };
         }
         if (isGemini3 && normalized.includes('pro')) {
-            return { thinkingLevel: 'high', temperature: 0.2 };
+            return { thinkingLevel: 'high', thinkingBudget: -1, temperature: 0.2 };
         }
         if (normalized.includes('gemma')) {
-            return { thinkingLevel: 'disabled', temperature: 0.2 };
+            return { thinkingLevel: 'disabled', thinkingBudget: -1, temperature: 0.2 };
         }
         if (normalized.includes('flash-lite')) {
-            return { thinkingLevel: 'disabled', temperature: 0.2 };
+            return { thinkingLevel: 'disabled', thinkingBudget: -1, temperature: 0.2 };
         }
         if (normalized.includes('flash') || normalized.includes('pro')) {
-            return { thinkingLevel: 'medium', temperature: 0.2 };
+            return { thinkingLevel: 'medium', thinkingBudget: -1, temperature: 0.2 };
         }
-        return { thinkingLevel: 'minimal', temperature: 0.2 };
+        return { thinkingLevel: 'minimal', thinkingBudget: -1, temperature: 0.2 };
     }
 
     function getVisibleGeminiModelOptions() {

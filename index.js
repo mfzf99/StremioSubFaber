@@ -3411,6 +3411,7 @@ app.post('/api/validate-gemini', validationLimiter, async (req, res) => {
         // 🔥 Use GeminiService (hybrid) instead of hardcoding Google endpoint
         const GeminiService = require('./src/services/gemini');
         const gemini = new GeminiService(geminiApiKey);
+        const validateWithGoogleModelList = () => gemini.getAvailableModels({ silent: true, throwOnError: true });
 
         let validationPassed = false;
         let models = [];
@@ -3452,7 +3453,7 @@ app.post('/api/validate-gemini', validationLimiter, async (req, res) => {
         else {
             // Try 1: Dapatkan senarai model terus dari Google
             try {
-                models = await gemini.getAvailableModels({ silent: true, throwOnError: true });
+                models = await validateWithGoogleModelList();
                 if (models && models.length > 0) {
                     validationPassed = true;
                     log.debug(() => '[ValidateGemini] Google model list fetch succeeded.');

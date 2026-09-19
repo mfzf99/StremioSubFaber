@@ -152,10 +152,16 @@ class GeminiService {
       ? advancedSettings.maxRetries
       : (process.env.GEMINI_MAX_RETRIES !== undefined ? parseInt(process.env.GEMINI_MAX_RETRIES, 10) : 3);
 
-    // Thinking Level Rasmi Mengikut Model
+    // Thinking Level Rasmi Mengikut Model.
+    // Empty string is a valid legacy value for Gemini 2.x models (thinking
+    // disabled via budget path), so only fall back when the caller did NOT
+    // provide a string at all.
     const modelProfile = getModelThinkingProfile(this.model);
-    this.thinkingLevel = typeof advancedSettings.thinkingLevel === 'string' && advancedSettings.thinkingLevel.trim() !== ''
+    const rawThinkingLevel = typeof advancedSettings.thinkingLevel === 'string'
       ? advancedSettings.thinkingLevel.trim().toLowerCase()
+      : undefined;
+    this.thinkingLevel = rawThinkingLevel !== undefined
+      ? rawThinkingLevel
       : (process.env.GEMINI_THINKING_LEVEL ? process.env.GEMINI_THINKING_LEVEL.trim().toLowerCase() : modelProfile.default);
 
     // Universal 1:1 Sampling Defaults (Temperature: 0.2, Top-P: 0.95 | Pure Nucleus Sampling)
@@ -166,6 +172,15 @@ class GeminiService {
     this.topP = advancedSettings.topP !== undefined
       ? advancedSettings.topP
       : (process.env.GEMINI_TOP_P !== undefined ? parseFloat(process.env.GEMINI_TOP_P) : 0.95);
+
+    // Legacy sampling controls kept for Gemini 2.x / non-3.x models.
+    this.topK = advancedSettings.topK !== undefined
+      ? advancedSettings.topK
+      : (process.env.GEMINI_TOP_K !== undefined ? parseFloat(process.env.GEMINI_TOP_K) : undefined);
+
+    this.thinkingBudget = advancedSettings.thinkingBudget !== undefined
+      ? advancedSettings.thinkingBudget
+      : (process.env.GEMINI_THINKING_BUDGET !== undefined ? parseInt(process.env.GEMINI_THINKING_BUDGET, 10) : undefined);
 
     if (this.isGemmaModel) {
       this.maxOutputTokens = 8192;
@@ -229,19 +244,40 @@ class GeminiService {
   }
 
   buildGenerationConfig(maxOutputTokens) {
+    // Gemini 3.x models reject legacy sampling parameters (temperature, topK,
+    // topP) and numeric thinking budgets. Send only the current request shape.
+    if (this.isGemini3Model) {
+      const profile = getModelThinkingProfile(this.model);
+      const requestedLevel = String(this.thinkingLevel || '').trim().toLowerCase();
+      let effectiveLevel = requestedLevel;
+
+      // Gemini 3.x requires a supported level. Disabled/off and unsupported
+      // values (e.g. "minimal" on a model that only supports low/medium/high)
+      // are mapped to "low" per the current API contract.
+      if (!effectiveLevel || effectiveLevel === 'disabled' || effectiveLevel === 'off') {
+        effectiveLevel = 'low';
+      } else if (!profile.levels.includes(effectiveLevel)) {
+        effectiveLevel = 'low';
+      }
+
+      return {
+        maxOutputTokens,
+        thinkingConfig: { thinkingLevel: effectiveLevel }
+      };
+    }
+
+    // Legacy Gemini 2.x / Gemma path keeps numeric sampling controls.
     const generationConfig = {
       maxOutputTokens,
       temperature: this.temperature,
-      topP: this.topP,
-      frequencyPenalty: 0.0,
-      presencePenalty: 0.0
+      topP: this.topP
     };
-
-    const effectiveLevel = this.getEffectiveThinkingLevel();
-    if (effectiveLevel && effectiveLevel !== 'disabled' && effectiveLevel !== 'off') {
-      generationConfig.thinkingConfig = { thinkingLevel: effectiveLevel };
+    if (this.topK !== undefined) {
+      generationConfig.topK = this.topK;
     }
-
+    if (this.thinkingBudget !== undefined) {
+      generationConfig.thinkingConfig = { thinkingBudget: this.thinkingBudget };
+    }
     return generationConfig;
   }
 
@@ -334,7 +370,7 @@ class GeminiService {
     try {
       const response = await axios.get(`${this.baseUrl}/models/${this.model}`, {
         headers: this.getAuthHeaders(),
-        timeout: 10000,
+        timeout: this.timeout || 10000,
         httpAgent,
         httpsAgent
       });
@@ -405,13 +441,17 @@ class GeminiService {
         const delay = useGemmaConfig
           ? effectiveBaseDelay * Math.pow(3, attempt)
           : effectiveBaseDelay * Math.pow(2, attempt);
+        // Apply jitter so multiple instances hitting the same rate-limit or
+        // network window do not retry at exactly the same instant (thundering
+        // herd). Range: 0.8x – 1.2x of the computed backoff.
+        const jitteredDelay = Math.max(50, Math.round(delay * (0.8 + Math.random() * 0.4)));
         const errorType = isRateLimit ? '429 rate limit' :
           isServiceUnavailable ? '503 service unavailable' :
             isSocketHangup ? 'socket hang up' :
               isTimeout ? 'timeout' :
                 isMarkedRetryable ? 'transient error (OTHER)' : 'network error';
-        log.debug(() => `[Gemini] Attempt ${attempt + 1} failed (${errorType}), retrying in ${delay}ms...`);
-        await new Promise(resolve => setTimeout(resolve, delay));
+        log.debug(() => `[Gemini] Attempt ${attempt + 1} failed (${errorType}), retrying in ${jitteredDelay}ms...`);
+        await new Promise(resolve => setTimeout(resolve, jitteredDelay));
       }
     }
   }
@@ -637,7 +677,8 @@ class GeminiService {
         return this.cleanTranslatedSubtitle(translatedText);
 
       } catch (error) {
-        handleTranslationError(error, 'Gemini', { skipResponseData: true });
+        const normalized = handleTranslationError(error, 'Gemini', { skipResponseData: true });
+        throw normalized;
       }
     });
   }
@@ -736,17 +777,28 @@ class GeminiService {
           let blockReason = null;
           let safetyRatings = null;
           let rawStream = '';
+          let streamDone = false;
+          let parseFailed = false;
 
           const processPayload = (payloadStr) => {
             if (!payloadStr || !payloadStr.trim()) return;
-            const cleaned = payloadStr.trim().startsWith('data:')
-              ? payloadStr.trim().slice(5).trim()
-              : payloadStr.trim();
-            if (!cleaned) return;
+            const trimmed = payloadStr.trim();
+            if (trimmed === '[DONE]' || trimmed === 'data: [DONE]') {
+              streamDone = true;
+              return;
+            }
+            const cleaned = trimmed.startsWith('data:')
+              ? trimmed.slice(5).trim()
+              : trimmed;
+            if (!cleaned || cleaned === '[DONE]') {
+              if (cleaned === '[DONE]') streamDone = true;
+              return;
+            }
             let data;
             try {
               data = JSON.parse(cleaned);
             } catch (_) {
+              parseFailed = true;
               return;
             }
 
@@ -786,9 +838,49 @@ class GeminiService {
               const chunkStr = chunk.toString('utf8');
               rawStream += chunkStr;
               buffer += chunkStr;
-              const parts = buffer.split(/\r?\n/);
-              buffer = parts.pop();
-              parts.forEach(processPayload);
+              if (streamDone) return;
+
+              // SSE events are separated by a blank line (double newline). Keep
+              // buffering until we see that boundary so multi-line JSON payloads
+              // are never passed to JSON.parse in pieces. A single newline
+              // followed by "data: " is also accepted as a fallback boundary for
+              // providers that do not emit the SSE blank line faithfully.
+              while (buffer) {
+                let boundary = null;
+                let boundaryIndex = buffer.indexOf('\r\n\r\n');
+                if (boundaryIndex !== -1) {
+                  boundary = '\r\n\r\n';
+                } else {
+                  boundaryIndex = buffer.indexOf('\n\n');
+                  if (boundaryIndex !== -1) {
+                    boundary = '\n\n';
+                  } else {
+                    const altIndex = buffer.search(/\r?\ndata:\s*/);
+                    if (altIndex !== -1) {
+                      boundaryIndex = altIndex;
+                      boundary = buffer.slice(boundaryIndex).startsWith('\r\n') ? '\r\n' : '\n';
+                    } else {
+                      break;
+                    }
+                  }
+                }
+
+                const eventBlock = buffer.slice(0, boundaryIndex);
+                buffer = buffer.slice(boundaryIndex + boundary.length);
+                const eventLines = eventBlock.split(/\r?\n/);
+                for (const line of eventLines) {
+                  const trimmed = line.trim();
+                  if (!trimmed) continue;
+                  if (trimmed.startsWith('data:')) {
+                    processPayload(trimmed);
+                  } else if (trimmed.startsWith('event:') || trimmed.startsWith('id:') || trimmed.startsWith('retry:')) {
+                    // SSE control fields; ignore for Gemini payloads.
+                    continue;
+                  } else {
+                    processPayload(trimmed);
+                  }
+                }
+              }
             } catch (err) {
               log.warn(() => ['[Gemini] Stream chunk processing failed:', err.message]);
             }
@@ -800,15 +892,23 @@ class GeminiService {
                 processPayload(buffer);
               }
 
-              if (!aggregated && rawStream.trim()) {
+              // Run recovery when we have no parsed text OR when any SSE payload
+              // failed to parse (partial JSON corruption / multi-line split). This
+              // keeps the stream usable even if only a subset of chunks were parsed.
+              if ((!aggregated || parseFailed) && rawStream.trim()) {
                 try {
                   const recovered = this.recoverStreamPayload(rawStream);
                   if (recovered.text) {
-                    aggregated = recovered.text;
+                    const priorLength = aggregated.length;
+                    // Prefer the recovered text when it contains more content
+                    // than what normal parsing managed to extract.
+                    if (recovered.text.length > aggregated.length) {
+                      aggregated = recovered.text;
+                    }
                     finishReason = finishReason || recovered.finishReason;
                     blockReason = blockReason || recovered.blockReason;
                     safetyRatings = safetyRatings || recovered.safetyRatings;
-                    log.debug(() => `[Gemini] Stream parsed via fallback (${recovered.payloadCount} payloads, content-type=${contentType || 'unknown'})`);
+                    log.debug(() => `[Gemini] Stream parsed via fallback (${recovered.payloadCount} payloads, content-type=${contentType || 'unknown'}, prior=${priorLength}, recovered=${recovered.text.length})`);
                   } else if (contentType && !contentType.includes('text/event-stream')) {
                     log.warn(() => `[Gemini] Streaming response was '${contentType}' with no text; check API base/alt=sse config`);
                   }
@@ -868,7 +968,8 @@ class GeminiService {
         });
 
       } catch (error) {
-        handleTranslationError(error, 'Gemini', { skipResponseData: true });
+        const normalized = handleTranslationError(error, 'Gemini', { skipResponseData: true });
+        throw normalized;
       }
     });
   }
@@ -882,8 +983,31 @@ class GeminiService {
 
   estimateTokenCount(text) {
     if (!text) return 0;
-    const approx = Math.ceil(text.length / 3);
-    return Math.ceil(approx * 1.1);
+
+    let cjkCount = 0;
+    let otherCount = 0;
+    for (const char of text) {
+      const codePoint = char.codePointAt(0);
+      const isCjk = (codePoint >= 0x2E80 && codePoint <= 0x9FFF) // CJK radicals, Kangxi, ideographs
+        || (codePoint >= 0x3400 && codePoint <= 0x4DBF) // CJK Ext A
+        || (codePoint >= 0xF900 && codePoint <= 0xFAFF) // CJK Compatibility Ideographs
+        || (codePoint >= 0x20000 && codePoint <= 0x2EBEF); // CJK Ext B+
+      const isEmoji = (codePoint >= 0x1F000 && codePoint <= 0x1FAFF)
+        || (codePoint >= 0x2600 && codePoint <= 0x27BF);
+
+      if (isCjk || isEmoji) {
+        cjkCount += 1;
+      } else {
+        otherCount += 1;
+      }
+    }
+
+    // Latin text averages ~3-4 chars/token. CJK/emoji characters are usually
+    // 1-2 tokens each, so underestimating them can cause MAX_TOKENS truncation.
+    // Use ~1.25 tokens per CJK/emoji codepoint and keep the old heuristic for
+    // the rest, then add the existing 10% safety margin.
+    const approx = (otherCount / 3) + (cjkCount * 1.25);
+    return Math.ceil(Math.ceil(approx) * 1.1);
   }
 
   recoverStreamPayload(rawStream) {

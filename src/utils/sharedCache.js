@@ -129,7 +129,26 @@ async function incrementCounter(key, ttlSeconds = 1800) {
         pipeline.expire(fullKey, ttlSeconds);
 
         const results = await pipeline.exec();
-        const newCount = results[0][1]; // INCR result
+
+        // Defensive validation: pipeline.exec() may return null on Redis
+        // failure, and each slot is an [error, value] tuple. Never trust the
+        // raw shape blindly — return -1 on any unexpected payload.
+        if (!Array.isArray(results) || results.length === 0) {
+            log.warn(() => `[SharedCache] INCR ${key} returned no pipeline results`);
+            return -1;
+        }
+
+        const [pipelineError, rawCount] = results[0] || [];
+        if (pipelineError) {
+            log.warn(() => `[SharedCache] INCR ${key} pipeline error: ${pipelineError.message || pipelineError}`);
+            return -1;
+        }
+
+        const newCount = Number(rawCount);
+        if (!Number.isSafeInteger(newCount) || newCount < 0) {
+            log.warn(() => `[SharedCache] INCR ${key} returned invalid counter value: ${rawCount}`);
+            return -1;
+        }
 
         log.debug(() => `[SharedCache] INCR ${key} = ${newCount} (TTL: ${ttlSeconds}s)`);
         return newCount;
@@ -376,10 +395,24 @@ async function getNextRotationIndex(counterId, keyCount) {
         // Value wraps naturally due to modulo, so no risk of overflow issues in practice
         const newValue = await adapter.client.incr(fullKey);
 
-        // Use modulo to get index, -1 because we want 0-based after first increment
-        const index = (newValue - 1) % keyCount;
+        // Normalise to a safe integer before applying modulo arithmetic.
+        // If Redis returns an unexpected type or the parsed value is not a
+        // positive integer, fall back safely instead of producing NaN/negative
+        // indices that could break round-robin key selection.
+        const parsedValue = Number(newValue);
+        if (!Number.isSafeInteger(parsedValue) || parsedValue < 1) {
+            log.warn(() => `[SharedCache] Rotation counter ${counterId} returned invalid value: ${newValue}`);
+            return -1;
+        }
 
-        log.debug(() => `[SharedCache] Rotation counter ${counterId}: raw=${newValue}, index=${index}/${keyCount}`);
+        // Use modulo to get index, -1 because we want 0-based after first increment
+        const index = (parsedValue - 1) % keyCount;
+        if (!Number.isSafeInteger(index) || index < 0) {
+            log.warn(() => `[SharedCache] Rotation counter ${counterId} produced invalid index: ${index}`);
+            return -1;
+        }
+
+        log.debug(() => `[SharedCache] Rotation counter ${counterId}: raw=${parsedValue}, index=${index}/${keyCount}`);
         return index;
     } catch (error) {
         return handleCaughtError(error, `[SharedCache] getNextRotationIndex failed`, log, { fallbackValue: -1 });

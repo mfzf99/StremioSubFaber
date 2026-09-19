@@ -102,7 +102,7 @@ test('disabling startup prefix scans keeps per-key legacy recovery available', a
   }
 });
 
-test('Redis command timeouts are not retried into long route stalls', async () => {
+test('Redis command timeouts get exactly one fast retry (no long route stall)', async () => {
   const adapter = new RedisStorageAdapter({ host: '127.0.0.1', port: 6379 });
   let attempts = 0;
 
@@ -110,6 +110,22 @@ test('Redis command timeouts are not retried into long route stalls', async () =
     adapter._executeWithRetry('test command timeout', async () => {
       attempts += 1;
       throw new Error('Command timed out');
+    }),
+    StorageUnavailableError
+  );
+
+  // Initial attempt + one bounded fast retry, then give up to keep routes snappy.
+  assert.equal(attempts, 2);
+});
+
+test('Redis broken streams are not retried and fail cleanly', async () => {
+  const adapter = new RedisStorageAdapter({ host: '127.0.0.1', port: 6379 });
+  let attempts = 0;
+
+  await assert.rejects(
+    adapter._executeWithRetry('test broken stream', async () => {
+      attempts += 1;
+      throw new Error("Stream isn't writeable");
     }),
     StorageUnavailableError
   );
