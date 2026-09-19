@@ -372,7 +372,7 @@ class TranslationEngine {
       if (/prohibited[_ ]content/.test(msg) ||
           /safety(?![a-z])/.test(msg) ||
           /recitation/.test(msg)) {
-        log.debug(() => `[TranslationEngine] 🛡️ Perisai aktif: Skip kuarantin untuk key ${this._redactKey(apiKey)} sebab ralat isu kandungan teks.`);
+        log.debug(() => `[TranslationEngine] Key shield active: skipping quarantine for key ${this._redactKey(apiKey)} due to content policy error.`);
         return; // Early exit — keep the key out of the 1-hour cooldown lock.
       }
     }
@@ -1355,7 +1355,7 @@ class TranslationEngine {
         }
       }
 
-      // 2. Bina memori konteks berdasarkan padanan index tepat di dalam firstHalf
+      // 2. Build context memory matching exact indices in firstHalf
       const memoryList = [];
       for (let i = 0; i < targetEntries.length; i++) {
         const orig = targetEntries[i];
@@ -1420,7 +1420,7 @@ class TranslationEngine {
 } catch (error) {
   // Track the error against the current key for health tracking
   if (this.retryRotationEnabled && this.gemini?.apiKey) {
-    this._recordKeyError(this.gemini.apiKey, error); // 🚀 Pasang 'error' kat sini!
+    this._recordKeyError(this.gemini.apiKey, error); // Pass 'error' for classification
   }
 
       // If JSON structured mode itself appears unsupported by provider/model, immediately
@@ -1742,7 +1742,7 @@ class TranslationEngine {
                 }
             }
           } else {
-            throw fallbackResult.error; // TIER 5: Fallback pun gagal, give up & crash.
+            throw fallbackResult.error; // Tier 5: Fallback provider failed, abort batch
           }
         }
       } else if (!translatedEntries) {
@@ -1786,7 +1786,7 @@ class TranslationEngine {
           }
         }
       }
-    } // <--- KURUNGAN PALING PENTING! (Menutup blok catch)
+    } // End of translation attempt catch block
 
     // Parse translated text back into entries
     if (!translatedEntries) {
@@ -3248,7 +3248,7 @@ RESPOND ONLY WITH EXACTLY ${expectedCount} NUMBERED ENTRIES.
     // 4. Convert [br] back to newline
     cleaned = cleaned
       .replace(/\s*(?:\[br\]|<br\s*\/?>|&lt;br\s*\/?&gt;)\s*/gi, '\n')
-      .replace(/\n{2,}/g, '\n'); // Runtuhkan pemisah baris berganda jadi satu
+      .replace(/\n{2,}/g, '\n'); // Collapse multiple consecutive newlines into one
 
     // 5. Convert redundant dashes to ellipsis — skip numeric ranges ("2020—2024")
     cleaned = cleaned
