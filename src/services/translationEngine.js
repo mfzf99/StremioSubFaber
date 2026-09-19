@@ -33,7 +33,7 @@ const sleep = (ms) => new Promise(resolve => setTimeout(resolve, ms));
 // ============================================================================
 const PROMPT_TEMPLATES = {
   // 1. Primary prompt (Enterprise Broadcast Standard - Intra-Slot Action-Replacement)
-  //    Universal spoken register, authentic dialogue cadence, and idiomatic flow guidance.
+  //    Universal spoken register and authentic dialogue cadence guidance.
   primary: (targetLabel, sourceLabel) => 
     `Translate each <s id="N"> tag from ${sourceLabel || 'the source'} to ${targetLabel}.
 
