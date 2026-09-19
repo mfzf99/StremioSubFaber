@@ -1,4 +1,4 @@
-/**
+﻿/**
  * Translation Engine - Unified Subtitle Translation
  *
  * Clean, simple, predictable translation workflow:
@@ -29,29 +29,39 @@ const { executeParallelTranslation } = require('../utils/parallelTranslation');
 const sleep = (ms) => new Promise(resolve => setTimeout(resolve, ms));
 
 // ============================================================================
-// 🛠️ ZON TEMPLATE PROMPT (100% UNIVERSAL & DYNAMIC)
+// ðŸ› ï¸ ZON TEMPLATE PROMPT (100% UNIVERSAL & DYNAMIC)
 // ============================================================================
 const PROMPT_TEMPLATES = {
-  // 1. PROMPT ASAL (Enterprise Broadcast Standard - Intra-Slot Action-Replacement)
-  primary: (targetLabel, sourceLabel) => 
-    `Translate each <s id="N"> tag from ${sourceLabel} to ${targetLabel}.
+  // 1. PROMPT UTAMA — ditoreh khas untuk Bahasa Melayu Malaysia natural &
+  //    kawalan CPL yang mesra skrin. Kurangkan perulangan supaya model fokus
+  //    pada arahan yang benar-benar penting.
+  primary: (targetLabel, sourceLabel) =>
+    `Translate each <s id="N"> tag from ${sourceLabel || 'the source'} to natural spoken ${targetLabel}.
 
-INTRA-SLOT LOCALIZATION RULES (ACTION REPLACEMENT):
-1. ISOLATED FREEDOM: NEVER mirror foreign syntax, trailing modifiers, or literal word order; INSTEAD, rephrase the dialogue into spoken, conversational ${targetLabel} INSIDE each individual tag while strictly preserving tag boundaries and internal [br] markers.
-2. SPOKEN DICTION & ZERO ESSAY RIGIDITY: NEVER use formal copulas, formal conjunctions, dictionary jargon, or literal pronoun calques; INSTEAD, capture authentic conversational flow using natural speech connectors, question particles, and direct native phrasing.
-3. DEPENDENT CLAUSES: NEVER attempt to complete partial sentences or borrow words from neighbouring tags; INSTEAD, translate ONLY the fragment present within that specific tag, intentionally leaving target syntax incomplete to lock synchronization.`,
+LANGUAGE MANDATE (${targetLabel}):
+- Use natural, conversational ${targetLabel} as spoken daily — NOT textbook, NOT literary.
+- For Malay (ms/my/mya/zsm): use Bahasa Melayu Malaysia, NOT Indonesian.
+  - Keep common English loanwords used in Malaysian speech: okay, hello, bye, sorry, confirm, check, settle, try, call, parking, boss, cancel, standard, style, line, mood, plus, internet, meeting, issue, etc.
+  - Self-reference must fit scene context: DEFAULT: saya/awak. Close/intimate/emotional: aku/kau. Formal/public: saya/anda. NEVER use dialect pronouns (avoid "hang").
+  - Particles: use lah, kah, je, dah, kan, tak, nak, pun, kena, kita, diorang naturally. Do NOT overuse.
+  - ANTI-INDONESIA BENTENG: Never use Indonesianisms — bisa (use boleh), banget (use sangat), gimana (use macam mana), cewek/cowok (use perempuan/lelaki), kalian (use korang/awak semua), ngomong (use cakap), kok, dong, sih.
+  - Translate meaning and idioms naturally; NEVER translate literally word-by-word.
+- Translate each dialogue fragment strictly inside its own <s id="N"> tag while preserving tag boundaries and internal [br] markers. Never pull or borrow words from neighbouring tags.`,
 
   // 2. PROMPT KECEMASAN (PROHIBITED_CONTENT Fallback - Neutral & Safe)
-  fallback: (targetLabel, sourceLabel) => 
-    `Translate each <s id="N"> tag from ${sourceLabel} to ${targetLabel}.
+  fallback: (targetLabel, sourceLabel) =>
+    `Translate each <s id="N"> tag from ${sourceLabel || 'the source'} to natural spoken ${targetLabel}.
 
-INTRA-SLOT LOCALIZATION RULES (ACTION REPLACEMENT):
-1. ISOLATED FREEDOM: NEVER mirror foreign syntax, trailing modifiers, or literal word order; INSTEAD, rephrase the dialogue into spoken, conversational ${targetLabel} INSIDE each individual tag while strictly preserving tag boundaries and internal [br] markers.
-2. SPOKEN DICTION & ZERO ESSAY RIGIDITY: NEVER use formal copulas, formal conjunctions, dictionary jargon, or literal pronoun calques; INSTEAD, capture authentic conversational flow using natural speech connectors, question particles, and direct native phrasing.
-3. DEPENDENT CLAUSES: NEVER attempt to complete partial sentences or borrow words from neighbouring tags; INSTEAD, translate ONLY the fragment present within that specific tag, intentionally leaving target syntax incomplete to lock synchronization.
-4. NEUTRAL OBJECTIVITY: If the source contains mature, sensitive, aggressive, or profane dialogue, translate it using objective, non-glorified, but accurate equivalent ${targetLabel} terms without refusing the task or dropping the slot.`
+LANGUAGE MANDATE (${targetLabel}):
+- Use natural, conversational ${targetLabel} as spoken daily — NOT textbook, NOT literary.
+- For Malay (ms/my/mya/zsm): use Bahasa Melayu Malaysia, NOT Indonesian.
+  - Keep common English loanwords used in Malaysian speech: okay, hello, bye, sorry, confirm, check, settle, try, call, parking, boss, cancel, standard, style, line, mood, plus, internet, meeting, issue, etc.
+  - Self-reference must fit scene context: DEFAULT: saya/awak. Close/intimate/emotional: aku/kau. Formal/public: saya/anda. NEVER use dialect pronouns (avoid "hang").
+  - ANTI-INDONESIA BENTENG: Never use Indonesianisms — bisa (use boleh), banget (use sangat), gimana (use macam mana), cewek/cowok (use perempuan/lelaki), kalian (use korang/awak semua), ngomong (use cakap), kok, dong, sih.
+  - Translate meaning and idioms naturally; NEVER translate literally word-by-word.
+- Translate each dialogue fragment strictly inside its own <s id="N"> tag while preserving tag boundaries and internal [br] markers. Never pull or borrow words from neighbouring tags.
+- NEUTRAL OBJECTIVITY: If the source contains mature, sensitive, aggressive, or profane dialogue, translate it using objective, non-glorified, but accurate equivalent ${targetLabel} terms without refusing the task or dropping the slot.`
 };
-// ============================================================================
 // Extract normalized tokens from a language label/code (split on common separators)
 function tokenizeLanguageValue(value) {
   return String(value || '')
@@ -119,7 +129,7 @@ const CACHE_TRANSLATIONS = process.env.CACHE_TRANSLATIONS === 'true'; // Enable/
  * Universal batch size applied to ALL models (Gemini, Gemma, Flash, etc.).
  * Chosen at 80 to align with natural narrative pauses in subtitle flow,
  * while staying within the LLM attention sweet spot where strict XML slot
- * enforcement holds reliably — see translation prompt design notes.
+ * enforcement holds reliably â€” see translation prompt design notes.
  */
 const UNIVERSAL_BATCH_SIZE = 200;
 
@@ -130,7 +140,7 @@ const UNIVERSAL_BATCH_SIZE = 200;
  *   1. TRANSLATION_BATCH_SIZE env var (validated 1-1000)
  *   2. UNIVERSAL_BATCH_SIZE fallback
  *
- * Per-model branching was intentionally removed — a single uniform batch size
+ * Per-model branching was intentionally removed â€” a single uniform batch size
  * keeps prompt behaviour, retry rates, and A/B comparisons consistent across
  * all models.
  *
@@ -138,7 +148,7 @@ const UNIVERSAL_BATCH_SIZE = 200;
  * @returns {number} - Batch size (slot count per request).
  */
 function getBatchSizeForModel(model) {
-  // 1. Environment override — validated to prevent NaN / 0 / negative / absurd values.
+  // 1. Environment override â€” validated to prevent NaN / 0 / negative / absurd values.
   if (process.env.TRANSLATION_BATCH_SIZE) {
     const parsed = parseInt(process.env.TRANSLATION_BATCH_SIZE, 10);
     if (Number.isFinite(parsed) && parsed >= 1 && parsed <= 1000) {
@@ -147,7 +157,7 @@ function getBatchSizeForModel(model) {
     log.warn(() => `[TranslationEngine] Invalid TRANSLATION_BATCH_SIZE="${process.env.TRANSLATION_BATCH_SIZE}" (expected integer 1-1000), falling back to ${UNIVERSAL_BATCH_SIZE}`);
   }
 
-  // 2. Universal fallback — same value for every model.
+  // 2. Universal fallback â€” same value for every model.
   return UNIVERSAL_BATCH_SIZE;
 }
 
@@ -202,7 +212,7 @@ class TranslationEngine {
       this.sendTimestampsToAI = false;
     }
 
-    // Backward compat: enableJsonOutput toggle → 'json' workflow
+    // Backward compat: enableJsonOutput toggle â†’ 'json' workflow
     // Only migrate when workflow is not 'ai' (JSON is incompatible with SRT-based workflow)
     if (this.advancedSettings.enableJsonOutput === true
       && this.translationWorkflow !== 'ai'
@@ -211,15 +221,15 @@ class TranslationEngine {
       this.sendTimestampsToAI = false;
     }
 
-    // JSON workflow caps batch size — large JSON arrays (300-400 objects)
-    // are extremely error-prone for LLMs. Keep batches at ≤200 entries.
+    // JSON workflow caps batch size â€” large JSON arrays (300-400 objects)
+    // are extremely error-prone for LLMs. Keep batches at â‰¤200 entries.
     const JSON_MAX_BATCH_SIZE = 100;
     if (this.translationWorkflow === 'json' && this.batchSize > JSON_MAX_BATCH_SIZE) {
       log.debug(() => `[TranslationEngine] Capping batch size from ${this.batchSize} to ${JSON_MAX_BATCH_SIZE} for JSON workflow`);
       this.batchSize = JSON_MAX_BATCH_SIZE;
     }
 
-    // Force workflow to 'original' for non-LLM providers — XML/AI/JSON workflows are LLM-only
+    // Force workflow to 'original' for non-LLM providers â€” XML/AI/JSON workflows are LLM-only
     if (this.isNativeBatchProvider && this.translationWorkflow !== 'original') {
       log.debug(() => `[TranslationEngine] Forcing workflow to 'original' for non-LLM provider ${this.providerName} (was '${this.translationWorkflow}')`);
       this.translationWorkflow = 'original';
@@ -287,7 +297,7 @@ class TranslationEngine {
     const rotationLabel = this.perBatchRotationEnabled ? 'per-batch' : (this.retryRotationEnabled ? 'per-request' : '');
     log.debug(() => `[TranslationEngine] Initialized with model: ${model || 'unknown'}, batch size: ${this.batchSize}, batch context: ${this.enableBatchContext ? 'enabled (' + this.contextSize + ' lines)' : 'disabled'}, workflow: ${this.translationWorkflow}, mode: ${this.singleBatchMode ? 'single-batch' : 'batched'}, mismatchRetries: ${this.mismatchRetries}${rotationLabel ? `, key-rotation: ${rotationLabel}, keys: ${this.keyRotationConfig.keys.length}` : ''}${this.isNativeBatchProvider ? ', native-batch: true' : ''}`);
     
-    // Translation diagnostics — accumulated during translation, read by caller after completion.
+    // Translation diagnostics â€” accumulated during translation, read by caller after completion.
     // These stats are surfaced on the Translation History cards in Sub Toolbox.
     this.translationStats = {
       // Tier 1: Critical diagnostics
@@ -325,7 +335,7 @@ class TranslationEngine {
   async maybeRotateKeyForBatch(batchIndex) {
     if (!this.perBatchRotationEnabled) return;
 
-    // Skip rotation for the first batch — the initial GeminiService was already created
+    // Skip rotation for the first batch â€” the initial GeminiService was already created
     // with the key selected by selectGeminiApiKey(), so rotating here would waste that
     // instance and create a duplicate. Subsequent batches rotate normally.
     if (batchIndex === 0) return;
@@ -356,15 +366,15 @@ class TranslationEngine {
   async _recordKeyError(apiKey, error = null) {
     if (!this.retryRotationEnabled || !apiKey) return;
 
-    // 🛡️ PERISAI KUNCI SUCI: Kalau ralat sbb safety filter / kandungan terlarang, JANGAN HUKUM KEY NI!
+    // ðŸ›¡ï¸ PERISAI KUNCI SUCI: Kalau ralat sbb safety filter / kandungan terlarang, JANGAN HUKUM KEY NI!
     if (error && error.message) {
       const msg = String(error.message).toLowerCase();
       // Guna word-boundary regex (sama pattern dengan _isRetryableHttpError).
-      // "safety" must not be followed by a letter — avoid false positive on "safeguard", "safetypin".
+      // "safety" must not be followed by a letter â€” avoid false positive on "safeguard", "safetypin".
       if (/prohibited[_ ]content/.test(msg) ||
           /safety(?![a-z])/.test(msg) ||
           /recitation/.test(msg)) {
-        log.debug(() => `[TranslationEngine] 🛡️ Perisai aktif: Skip kuarantin untuk key ${this._redactKey(apiKey)} sebab ralat isu kandungan teks.`);
+        log.debug(() => `[TranslationEngine] ðŸ›¡ï¸ Perisai aktif: Skip kuarantin untuk key ${this._redactKey(apiKey)} sebab ralat isu kandungan teks.`);
         return; // Terus keluar, selamatkan key dari masuk lokap 1 jam!
       }
     }
@@ -607,21 +617,21 @@ class TranslationEngine {
     const msg = String(error.message || '').toLowerCase();
     const status = error.statusCode || error.status || error.response?.status || 0;
 
-    // 🛡️ PERISAI KHAS: Jangan hijack ralat Prohibited Content / Safety Filter!
+    // ðŸ›¡ï¸ PERISAI KHAS: Jangan hijack ralat Prohibited Content / Safety Filter!
     // Guna "not-followed-by-letter" pattern supaya padan dengan "safety_filter",
-    // "safety block", "SAFETY" — tapi TIDAK padan dengan "safeguard" atau "safetypin".
+    // "safety block", "SAFETY" â€” tapi TIDAK padan dengan "safeguard" atau "safetypin".
     if (/prohibited[_ ]content/.test(msg) ||
         /safety(?![a-z])/.test(msg) ||
         /recitation/.test(msg)) {
       return false;
     }
 
-    // HTTP status code (4xx / 5xx) — paling reliable, check dulu.
+    // HTTP status code (4xx / 5xx) â€” paling reliable, check dulu.
     if (status >= 400) return true;
 
-    // Text-based signatures — word boundary WAJIB untuk elak false positive.
-    //   "429"/"503" tanpa boundary → "1429", "4290", "error_code_5031" akan match.
-    //   "network" generik → "network" alone boleh padan "not a network problem".
+    // Text-based signatures â€” word boundary WAJIB untuk elak false positive.
+    //   "429"/"503" tanpa boundary â†’ "1429", "4290", "error_code_5031" akan match.
+    //   "network" generik â†’ "network" alone boleh padan "not a network problem".
     //   "timeout" boleh padan "no timeout occurred".
     return /\b(429|503)\b/.test(msg) ||
       /\btoo many requests\b/.test(msg) ||
@@ -723,7 +733,7 @@ class TranslationEngine {
    * @returns {Promise<string>} - Translated SRT content
    */
   async translateSubtitle(srtContent, targetLanguage, customPrompt = null, onProgress = null, sourceLanguage = null) {
-    // 🌐 Sedut & normalkan apa jua bahasa sumber dari SubMaker
+    // ðŸŒ Sedut & normalkan apa jua bahasa sumber dari SubMaker
     this.sourceLanguage = sourceLanguage ? normalizeTargetLanguageForPrompt(sourceLanguage) : '';
 
     // Track per-run RTL so all cleanups (including streaming) can apply markers consistently
@@ -737,24 +747,24 @@ class TranslationEngine {
     // Stats: entry count
     this.translationStats.entryCount = entries.length;
 
-    // Gap detection — log sekali per file, bukan per batch.
+    // Gap detection â€” log sekali per file, bukan per batch.
     // Berguna untuk monitor kualiti SRT dari pelbagai provider (OpenSubtitles/SubDL/SubSource).
     // Gap biasa berlaku bila user edit/merge SRT manual sebelum upload.
-    // NOTE: Tidak mengganggu aliran — hanya logging untuk observability.
+    // NOTE: Tidak mengganggu aliran â€” hanya logging untuk observability.
     if (entries.length > 1) {
       const firstId = entries[0].id;
       const lastId = entries[entries.length - 1].id;
       const expectedContiguous = lastId - firstId + 1;
       const missingCount = expectedContiguous - entries.length;
       if (missingCount > 0) {
-        log.info(() => `[TranslationEngine] SRT ID gaps detected: ${entries.length} entries spanning ID ${firstId}–${lastId} (contiguous would be ${expectedContiguous}, missing ${missingCount} IDs). ID list will be sent to model for exact parity.`);
+        log.info(() => `[TranslationEngine] SRT ID gaps detected: ${entries.length} entries spanning ID ${firstId}â€“${lastId} (contiguous would be ${expectedContiguous}, missing ${missingCount} IDs). ID list will be sent to model for exact parity.`);
       }
     }
 
     // Single-batch mode: translate the whole file (with limited auto-splitting)
     if (this.singleBatchMode) {
       if (this.advancedSettings?.parallelBatchesEnabled === true) {
-        log.warn(() => '[TranslationEngine] Parallel Batches is enabled but Single Batch Mode takes priority — parallel mode will NOT run. Disable Single Batch Mode to use Parallel Batches.');
+        log.warn(() => '[TranslationEngine] Parallel Batches is enabled but Single Batch Mode takes priority â€” parallel mode will NOT run. Disable Single Batch Mode to use Parallel Batches.');
       }
       this.translationStats.batchCount = 1;
       return this.translateSubtitleSingleBatch(entries, targetLanguage, customPrompt, onProgress);
@@ -900,7 +910,7 @@ class TranslationEngine {
 
           // Inter-batch pacing: Enforce a 5.0s cooldown delay to mitigate upstream RPM burst limits
           if (batchIndex < batches.length - 1) {
-            log.debug(() => `[⏳ RATE LIMIT] Applying 5.0s pacing delay before dispatching next batch...`);
+            log.debug(() => `[â³ RATE LIMIT] Applying 5.0s pacing delay before dispatching next batch...`);
             await sleep(5000);
           }
 
@@ -933,7 +943,7 @@ class TranslationEngine {
     log.info(() => `[TranslationEngine] Translation completed: ${translatedEntries.length} entries`);
 
     // Final safety: strip any timecodes/timeranges that slipped through.
-    // Skip in 'ai' mode — the SRT parser already extracts timecodes into entry.timecode,
+    // Skip in 'ai' mode â€” the SRT parser already extracts timecodes into entry.timecode,
     // and sanitizeTimecodes() is too aggressive for dialogue text (e.g. "Meet me at 12:30:00"
     // on its own line would be stripped as a standalone timestamp).
     if (this.translationWorkflow !== 'ai') {
@@ -1081,7 +1091,7 @@ class TranslationEngine {
 
       // Inter-chunk pacing: Enforce a 5.0s cooldown delay between auto-chunked requests
       if (batchIndex < chunks.length - 1) {
-        log.debug(() => `[⏳ RATE LIMIT] Applying 5.0s pacing delay before processing next chunk...`);
+        log.debug(() => `[â³ RATE LIMIT] Applying 5.0s pacing delay before processing next chunk...`);
         await sleep(5000);
       }
 
@@ -1091,7 +1101,7 @@ class TranslationEngine {
       log.warn(() => `[TranslationEngine] Single-batch entry count mismatch: expected ${entries.length}, got ${translatedEntries.length}`);
     }
 
-    // Skip sanitizeTimecodes in 'ai' mode — SRT parser already handles timecode extraction,
+    // Skip sanitizeTimecodes in 'ai' mode â€” SRT parser already handles timecode extraction,
     // and the broad patterns would strip timecode-like dialogue text (e.g. "Meet me at 12:30:00").
     if (this.translationWorkflow !== 'ai') {
       for (const entry of translatedEntries) {
@@ -1174,8 +1184,8 @@ class TranslationEngine {
 
       const translatedText = translatedMap.get(origEntry.id);
 
-      // Hanya masukkan ke dalam memori jika terjemahan sah dan bukan amaran ralat [⚠]
-      if (translatedText && typeof translatedText === 'string' && !translatedText.startsWith('[⚠]')) {
+      // Hanya masukkan ke dalam memori jika terjemahan sah dan bukan amaran ralat [âš ]
+      if (translatedText && typeof translatedText === 'string' && !translatedText.startsWith('[âš ]')) {
         memoryContext.push({
           id: origEntry.id,
           source: origEntry.text,
@@ -1244,14 +1254,14 @@ class TranslationEngine {
         }
         return { handled: true, text: translated };
       } catch (fallbackError) {
-        // Stats: secondary provider also failed — capture its error details for the history card.
+        // Stats: secondary provider also failed â€” capture its error details for the history card.
         // We always flag usage even on failure so the card knows the secondary was attempted.
         this.translationStats.usedSecondaryProvider = true;
         this.translationStats.secondaryProviderName = this.fallbackProviderName || 'secondary';
         if (!this.translationStats.primaryFailureReason) {
           this.translationStats.primaryFailureReason = primaryError?.message || String(primaryError);
         }
-        // Capture secondary failure reason (truncated — full message goes on the combined error)
+        // Capture secondary failure reason (truncated â€” full message goes on the combined error)
         if (!this.translationStats.secondaryFailureReason) {
           this.translationStats.secondaryFailureReason = fallbackError?.message || String(fallbackError);
         }
@@ -1330,7 +1340,7 @@ class TranslationEngine {
       }
 
       // Fix #7: Build context for second half from first half's translations
-      // [UPGRADED]: Kalis Ralat Indeks Auto-Chunking + Penapis [⚠] Bersih
+      // [UPGRADED]: Kalis Ralat Indeks Auto-Chunking + Penapis [âš ] Bersih
       const contextCount = Math.min(this.contextSize, firstHalf.length);
       const targetEntries = firstHalf.slice(-contextCount);
       const startIndex = firstHalf.length - contextCount;
@@ -1354,8 +1364,8 @@ class TranslationEngine {
         const actualIndexInFirstHalf = startIndex + i;
         const transText = transMapByIndex.get(actualIndexInFirstHalf);
 
-        // Hanya simpan jika terjemahan sah dan bukan amaran ralat [⚠]
-        if (transText && !transText.startsWith('[⚠]')) {
+        // Hanya simpan jika terjemahan sah dan bukan amaran ralat [âš ]
+        if (transText && !transText.startsWith('[âš ]')) {
           memoryList.push({
             id: orig.id,
             source: orig.text,
@@ -1385,12 +1395,12 @@ class TranslationEngine {
       : 0;
     let httpRetryAttempts = 0;
 
-    // 🚀 INJECT: VARIABEL UNTUK CHECKPOINT RECOVERY
+    // ðŸš€ INJECT: VARIABEL UNTUK CHECKPOINT RECOVERY
     let lastStreamedText = '';
 
     // Build a streaming callback for reuse in retry paths (Bug 1 fix: retries preserve streaming)
     const streamCallback = streamingRequested ? async (partialText) => {
-      // 🚀 INJECT: TANGKAP STREAM
+      // ðŸš€ INJECT: TANGKAP STREAM
       lastStreamedText = partialText;
 
       if (typeof opts.onStreamProgress !== 'function') return;
@@ -1412,7 +1422,7 @@ class TranslationEngine {
 } catch (error) {
   // Track the error against the current key for health tracking
   if (this.retryRotationEnabled && this.gemini?.apiKey) {
-    this._recordKeyError(this.gemini.apiKey, error); // 🚀 Pasang 'error' kat sini!
+    this._recordKeyError(this.gemini.apiKey, error); // ðŸš€ Pasang 'error' kat sini!
   }
 
       // If JSON structured mode itself appears unsupported by provider/model, immediately
@@ -1457,7 +1467,7 @@ class TranslationEngine {
             // Stats: count each failed retry as an additional rate-limit error
             this.translationStats.rateLimitErrors++;
             if (this.retryRotationEnabled && this.gemini?.apiKey) {
-              this._recordKeyError(this.gemini.apiKey, retryError); // 🚀 Letak 'retryError'
+              this._recordKeyError(this.gemini.apiKey, retryError); // ðŸš€ Letak 'retryError'
             }
             log.warn(() => `[TranslationEngine] 429/503 key-rotation retry failed for batch ${batchIndex + 1} on attempt ${httpRetryAttempts}/${maxHttpRotationRetries}: ${retryError.message}`);
             if (!this._isRetryableHttpError(retryError)) {
@@ -1485,7 +1495,7 @@ class TranslationEngine {
         await this._rotateToNextKey(`MAX_TOKENS retry for batch ${batchIndex + 1}`);
         log.warn(() => `[TranslationEngine] MAX_TOKENS error detected, retrying batch ${batchIndex + 1} with next key`);
 
-        // 🚀 INJECT: CHECKPOINT RECOVERY UNTUK MAX_TOKENS 🚀
+        // ðŸš€ INJECT: CHECKPOINT RECOVERY UNTUK MAX_TOKENS ðŸš€
         let checkpointEntries = [];
         if (lastStreamedText) {
           const parsedPartial = this.parseResponseForWorkflow(lastStreamedText, batch.length, batch);
@@ -1515,7 +1525,7 @@ class TranslationEngine {
         try {
           const retryText = await this._translateCall(pendingBatchText, targetLanguage, pendingPrompt, streamingRequested, streamCallback);
           
-          // 🚀 INJECT: JAHIT BALIK KALAU GUNA CHECKPOINT
+          // ðŸš€ INJECT: JAHIT BALIK KALAU GUNA CHECKPOINT
           if (checkpointEntries.length > 0 && pendingBatch.length < batch.length) {
               const retryEntries = this.parseResponseForWorkflow(retryText, pendingBatch.length, pendingBatch);
               const mergedMap = new Map();
@@ -1535,7 +1545,7 @@ class TranslationEngine {
           log.info(() => `[TranslationEngine] MAX_TOKENS retry succeeded for batch ${batchIndex + 1}`);
         } catch (retryError) {
           if (this.retryRotationEnabled && this.gemini?.apiKey) {
-            this._recordKeyError(this.gemini.apiKey, retryError); // 🚀 Letak 'retryError'
+            this._recordKeyError(this.gemini.apiKey, retryError); // ðŸš€ Letak 'retryError'
           }
           // Retry also failed, give up and throw the original error
           log.warn(() => `[TranslationEngine] MAX_TOKENS retry also failed for batch ${batchIndex + 1}: ${retryError.message}`);
@@ -1556,7 +1566,7 @@ class TranslationEngine {
         let retrySuccess = false;
         let currentError = error;
 
-        // 🚀 THE 2-STAGE RECOVERY PROTOCOL 🚀
+        // ðŸš€ THE 2-STAGE RECOVERY PROTOCOL ðŸš€
         // Stage 1: Rotate Key + Fictitious Header (No Word Masking)
         // Stage 2: Rotate Key + Fictitious Header + Word Masking + Fallback Prompt
         for (let stage = 1; stage <= 2; stage++) {
@@ -1569,7 +1579,7 @@ class TranslationEngine {
                 log.warn(() => `[TranslationEngine] PROHIBITED_CONTENT still blocking! Stage 2: Retrying with next key, Full Text Masking, and Fallback Prompt.`);
             }
 
-            // 🚀 INJECT: CHECKPOINT RECOVERY UNTUK PROHIBITED 🚀
+            // ðŸš€ INJECT: CHECKPOINT RECOVERY UNTUK PROHIBITED ðŸš€
             let checkpointEntries = [];
             if (lastStreamedText) {
               const parsedPartial = this.parseResponseForWorkflow(lastStreamedText, batch.length, batch);
@@ -1608,7 +1618,7 @@ class TranslationEngine {
                 const primaryIntro = PROMPT_TEMPLATES.primary(targetLabelForFallback, sourceLabelForFallback);
                 const fallbackIntro = PROMPT_TEMPLATES.fallback(targetLabelForFallback, sourceLabelForFallback);
               
-                // 🚀 KAMUS SENSOR GERGASI (Kalis Semua Genre: Aksi, Seram, Drama Matang)
+                // ðŸš€ KAMUS SENSOR GERGASI (Kalis Semua Genre: Aksi, Seram, Drama Matang)
                 const maskToxicWords = (text) => {
                   return String(text)
                     // --- Kategori Seksual / Cabul / Penderaan (Sensitiviti Tinggi Google) ---
@@ -1685,7 +1695,7 @@ class TranslationEngine {
             try {
               const retryText = await this._translateCall(finalBatchText, targetLanguage, finalPrompt, streamingRequested, streamCallback);
               
-              // 🚀 INJECT: JAHIT BALIK KALAU GUNA CHECKPOINT
+              // ðŸš€ INJECT: JAHIT BALIK KALAU GUNA CHECKPOINT
               if (checkpointEntries.length > 0 && pendingBatch.length < batch.length) {
                   const retryEntries = this.parseResponseForWorkflow(retryText, pendingBatch.length, pendingBatch);
                   const mergedMap = new Map();
@@ -1707,7 +1717,7 @@ class TranslationEngine {
               break; // Berjaya! Terus keluar dari loop.
             } catch (retryError) {
               if (this.retryRotationEnabled && this.gemini?.apiKey) {
-                this._recordKeyError(this.gemini.apiKey, retryError); // 🚀 Letak 'retryError'
+                this._recordKeyError(this.gemini.apiKey, retryError); // ðŸš€ Letak 'retryError'
               }
               log.warn(() => `[TranslationEngine] Retry Stage ${stage} failed: ${retryError.message}`);
               currentError = retryError;
@@ -1723,7 +1733,7 @@ class TranslationEngine {
           if (fallbackResult.handled) {
             translatedText = fallbackResult.text;
             
-            // 🚀 INJECT: JAHIT HASIL DEEPL (SRT) SUPAYA TAK MASUK PARSER XML 🚀
+            // ðŸš€ INJECT: JAHIT HASIL DEEPL (SRT) SUPAYA TAK MASUK PARSER XML ðŸš€
             const fallbackName = String(this.fallbackProviderName || '').toLowerCase();
             if (NATIVE_BATCH_PROVIDER_NAMES.has(fallbackName) || String(fallbackResult.text).includes('-->')) {
                 const trimmed = String(translatedText || '').trim();
@@ -1812,11 +1822,11 @@ class TranslationEngine {
       // Pass 1: Align what we can by index, identify missing entries
       let { aligned, missingIndices } = this.alignTranslatedEntries(translatedEntries, batch);
       
-      // 🚀 UBAHAN BARU: Simpan rekod jumlah hilang asal untuk kiraan Recovered
+      // ðŸš€ UBAHAN BARU: Simpan rekod jumlah hilang asal untuk kiraan Recovered
       const initialMissingCount = missingIndices.length;
       this.translationStats.missingEntries += initialMissingCount;
 
-      // 🚀 INJECT: OTAK SUPER GENIUS (SHIFT DETECTOR) 🚀
+      // ðŸš€ INJECT: OTAK SUPER GENIUS (SHIFT DETECTOR) ðŸš€
       let isShiftedError = false;
       if (missingIndices.length > 0) {
         const lastExpectedIndices = [];
@@ -1829,7 +1839,7 @@ class TranslationEngine {
       }
 
       if (isShiftedError) {
-         log.warn(() => `[TranslationEngine] 🚨 SHIFT DETECTED 🚨 Missing indices are at the exact end of the batch. Bypassing targeted retry and forcing FULL BATCH RETRY to prevent subtitle desync!`);
+         log.warn(() => `[TranslationEngine] ðŸš¨ SHIFT DETECTED ðŸš¨ Missing indices are at the exact end of the batch. Bypassing targeted retry and forcing FULL BATCH RETRY to prevent subtitle desync!`);
       }
 
       // Pass 2: Targeted Retry (Hanya jalan kalau BUKAN kes Geseran, dan hilang kurang 30%)
@@ -1843,7 +1853,7 @@ class TranslationEngine {
           
           const retryEntries = this.parseResponseForWorkflow(retryText, missingBatch.length, missingBatch);
           
-          // 🚀 UBAHAN DEWA: KITA HAPUSKAN BEKAS LAMA (NO MUTATION)! 🚀
+          // ðŸš€ UBAHAN DEWA: KITA HAPUSKAN BEKAS LAMA (NO MUTATION)! ðŸš€
           // Kita bina bekas baru dari kosong dan susun ID dari awal sampai akhir.
           const freshAlignedContainer = {};
           const retryHasIds = retryEntries.some(e => typeof e.index === 'number' && e.index >= 0);
@@ -1877,7 +1887,7 @@ class TranslationEngine {
                     timecode: recoveredTimecode || batch[i].timecode
                  };
               } else {
-                 freshAlignedContainer[i] = aligned[i]; // Gagal recover, salin amaran [⚠]
+                 freshAlignedContainer[i] = aligned[i]; // Gagal recover, salin amaran [âš ]
               }
             } 
             // 2. Jika kerusi ini memang dah elok dari Pass 1, salin masuk ke bekas baru
@@ -1886,11 +1896,11 @@ class TranslationEngine {
             }
           }
 
-          // 🚨 TUKAR BEKAS SEKARANG! Buang terus memori 'aligned' yang lama!
+          // ðŸš¨ TUKAR BEKAS SEKARANG! Buang terus memori 'aligned' yang lama!
           aligned = freshAlignedContainer;
 
           // Semak semula berapa yang masih missing lepas dijahit
-          missingIndices = Object.keys(aligned).map(Number).filter(i => aligned[i].text.startsWith('[⚠]'));
+          missingIndices = Object.keys(aligned).map(Number).filter(i => aligned[i].text.startsWith('[âš ]'));
 
           if (missingIndices.length > 0) {
             log.warn(() => `[TranslationEngine] Two-pass recovery: ${missingIndices.length} entries still missing after targeted retry`);
@@ -1938,7 +1948,7 @@ class TranslationEngine {
         }
       }
 
-      // 🚀 UBAHAN BARU: KIRAAN RECOVERED ENTRIES TEPAT 🚀
+      // ðŸš€ UBAHAN BARU: KIRAAN RECOVERED ENTRIES TEPAT ðŸš€
       // Selepas Pass 2 & Pass 3 selesai, kita bandingkan baki missingIndices dengan initialMissingCount
       const recoveredCount = initialMissingCount - missingIndices.length;
       if (recoveredCount > 0) {
@@ -1957,7 +1967,7 @@ class TranslationEngine {
     if (this.translationWorkflow === 'json' && !jsonXmlFallbackAttempted) {
       const markedCount = translatedEntries.filter(entry =>
         typeof entry?.text === 'string' &&
-        entry.text.startsWith('[⚠]')
+        entry.text.startsWith('[âš ]')
       ).length;
       if (markedCount > 0) {
         jsonXmlFallbackAttempted = true;
@@ -1996,7 +2006,7 @@ class TranslationEngine {
 
   /**
    * Translate a batch using a native (non-LLM) provider like DeepL or Google Translate.
-   * Sends raw SRT directly — no numbered-list prompt, no response parsing overhead.
+   * Sends raw SRT directly â€” no numbered-list prompt, no response parsing overhead.
    */
   async translateBatchNative(batch, targetLanguage, batchIndex, totalBatches) {
     const srtContent = this.prepareBatchSrt(batch);
@@ -2024,7 +2034,7 @@ class TranslationEngine {
           }
           log.info(() => `[TranslationEngine] Native fallback provider ${this.fallbackProviderName || 'secondary'} succeeded after primary ${this.providerName} failed`);
         } catch (fallbackError) {
-          // Stats: secondary provider also failed — mirror tryFallback tracking for native path
+          // Stats: secondary provider also failed â€” mirror tryFallback tracking for native path
           this.translationStats.usedSecondaryProvider = true;
           this.translationStats.secondaryProviderName = this.fallbackProviderName || 'secondary';
           if (!this.translationStats.primaryFailureReason) {
@@ -2054,14 +2064,14 @@ class TranslationEngine {
     const trimmed = String(translatedText || '').trim();
 
     if (trimmed.includes('-->')) {
-      // Provider returned SRT — parse it directly
+      // Provider returned SRT â€” parse it directly
       translatedEntries = this.parseBatchSrtResponse(trimmed, batch.length, batch);
     } else {
-      // Provider returned numbered list — parse that
+      // Provider returned numbered list â€” parse that
       translatedEntries = this.parseBatchResponse(trimmed, batch.length);
     }
 
-    // Handle count mismatches (no retries for native providers — they're deterministic)
+    // Handle count mismatches (no retries for native providers â€” they're deterministic)
     // Use alignTranslatedEntries for consistent entry structure with LLM providers,
     // but skip retry logic since native providers are deterministic.
     if (translatedEntries.length !== batch.length) {
@@ -2134,7 +2144,7 @@ class TranslationEngine {
 
     // Fungsi keselamatan untuk mengelak struktur tag XML pecah akibat simbol mentah.
     // Digunakan untuk SEMUA content dalam <m> DAN <s> tags.
-    // URUTAN WAJIB: & dulu, baru < dan > — jika terbalik, akan berlaku double-escape.
+    // URUTAN WAJIB: & dulu, baru < dan > â€” jika terbalik, akan berlaku double-escape.
     const escapeXml = (str) => {
       return String(str || '')
         .replace(/&/g, '&amp;')
@@ -2156,7 +2166,7 @@ class TranslationEngine {
     }
 
     const xmlEntries = batch.map((entry) => {
-      // 🚨 PENGGUNAAN GLOBAL ID: Jangan reset ke 1,2,3. Guna ID asal!
+      // ðŸš¨ PENGGUNAAN GLOBAL ID: Jangan reset ke 1,2,3. Guna ID asal!
       const num = entry.id;
       const cleanText = escapeXml(entry.text.trim().replace(/\n+/g, ' [br] '));
       return `<s id="${num}">${cleanText}</s>`;
@@ -2187,63 +2197,38 @@ class TranslationEngine {
 
     const promptBody = `${introInstruction}
 
-[UNIVERSAL STRUCTURAL DEMONSTRATION: INTRA-SLOT LOCALIZATION & ZERO DRIFT]
-Input:
-<s id="1">The chief director was the one</s>
-<s id="2">responsible for the approval.</s>
-<s id="3">You are coming with us,</s>
-<s id="4">aren't you?</s>
-<s id="5">We already warned him[br]during the meeting.</s>
-<s id="6">First,</s>
+[CRITICAL FORMAT & CARDINALITY RULES]
+1. CARDINALITY & ID PARITY:
+   - Output EXACTLY ${expectedCount} <s id="N"> slots, using EXACTLY these global IDs, in this order: [${idList}]
+   - NEVER omit, merge, reorder, duplicate, renumber, or invent IDs. Preserve source SRT gaps verbatim.
 
-Target Output:
-<s id="1">Pengarah utama yang</s>
-<s id="2">bertanggungjawab atas kelulusan itu.</s>
-<s id="3">Awak ikut kami sekali,</s>
-<s id="4">kan?</s>
-<s id="5">Kami dah ingatkan dia[br]masa mesyuarat hari tu.</s>
-<s id="6">Pertama,</s>
+2. SLOT ISOLATION:
+   - Translate ONLY the text inside each <s id="N"> slot. Never borrow or fold words across adjacent slots.
+   - Keep [br] inside the same slot (e.g. <s id="5">ayat satu[br]ayat dua</s>).
+   - Short slots (question tags, interjections, single words) stay in their own slot; never attach them to neighbours.
 
-CRITICAL ENFORCEMENT RULES (ZERO TOLERANCE):
+3. LINE FORMAT & CPL:
+   - Maximum 2 lines per subtitle entry; maximum 42 characters per line (CPL <= 42).
+   - Split at natural pauses — punctuation, conjunctions, or phrase boundaries — using [br]. Do not introduce more [br] than the text needs.
+   - Preserve all existing inline markup (<i>, <b>, speaker dashes) in exact positions.
 
-1. STRICT 1-TO-1 CARDINALITY & ID PARITY:
-   - Output EXACTLY ${expectedCount} entries matching these EXACT IDs, in this order:
-     [${idList}]
-   - NEVER omit, combine, reorder, duplicate, or invent IDs; INSTEAD, pair every single input <s id="N"> strictly 1-to-1 with its matching output <s id="N">.
-   - NEVER renumber, compress, or force sequential order; INSTEAD, preserve source SRT global IDs verbatim, retaining all numerical values and existing gaps.
+4. EXACT COPY PROTOCOL:
+   - Copy VERBATIM: creative work titles, brands, legal suffixes, proper nouns, numbers, dates, times, measurements, symbols, music notes, corrupted text, and empty slots.
+   - For mixed slots: translate the dialogue portion only; copy untranslatable entities unmodified.
 
-2. ABSOLUTE SLOT ISOLATION & ZERO SPLITTING:
-   - NEVER pull, borrow, or fold words across adjacent slots; INSTEAD, confine every translation strictly inside its matching <s id="N"> slot.
-   - NEVER split [br] into a new <s id> tag; INSTEAD, keep all multi-line text separated by [br] enclosed entirely inside its single parent tag (e.g. <s id="5">ayat satu[br]ayat dua</s>).
-   - NEVER attach short slots (question tags, negation particles, interjections, single words like "First,") to preceding or subsequent lines, and NEVER echo demonstration text; INSTEAD, translate ONLY those specific words within that exact slot and close the tag immediately.
-   - NEVER force complete target grammar on broken clauses; INSTEAD, preserve grammatically incomplete syntax to maintain 100% subtitle synchronization.
+5. SONG LYRICS & MUSIC:
+   - Translate all song lyrics enclosed in music notes (♪/♫) fully — foreground and BGM — while preserving the notes.
 
-3. ZERO SHIFTING, ANTI-HALLUCINATION & SOURCE FIDELITY:
-   - NEVER shift subsequent dialogue forward to compensate for short or empty slots; INSTEAD, keep every line strictly anchored to its assigned ID.
-   - NEVER invent synthetic filler lines to satisfy slot counts; INSTEAD, translate only verified source dialogue.
-   - NEVER generate conversational replies, reactions, or commentary to background memory (<m> tags); INSTEAD, translate input <s id="${startId}"> directly as spoken dialogue.
-   - NEVER add, drop, or modify numbers, dates, times, or measurements; INSTEAD, transfer all numeric values and units accurately into the target language.
-   - NEVER alter or omit terminal punctuation (. ? ! ...) to change speech delivery; INSTEAD, mirror the original tone and natural pauses.
-
-4. AIR-GAPPED READ-ONLY CONTEXT MEMORY (<m> TAGS):
-   - NEVER translate, output, modify, or duplicate text from <m id="N"> tags into active <s id="N"> tags; INSTEAD, treat all <m> entries strictly as air-gapped, read-only background context.
-   - NEVER allow background memory to override active dialogue; INSTEAD, always prioritize <s> source text whenever memory and source conflict.
-
-5. ESCAPE HATCH (EXACT COPY PROTOCOL):
-   - NEVER translate titles of creative works (movies, TV shows, books, novels, songs, plays, games), registered corporate/brand names, or legal entities (e.g., Co., Ltd., Inc.); INSTEAD, keep them VERBATIM in their original language.
-   - NEVER invent translations for untranslatable content (proper nouns, standalone music notes ♪/♫, isolated symbols, numbers, punctuation, corrupted text, or whitespace); INSTEAD, copy the EXACT original text into the slot.
-   - NEVER translate unlocalizable entities in mixed slots; INSTEAD, translate the dialogue portion while copying brand names and foreign proper nouns unmodified.
-   - NEVER skip a slot under any circumstance; INSTEAD, emit the opening and closing tags containing the verbatim copy.
-
-6. SONG LYRICS & INLINE MARKUP:
-   - NEVER omit or leave song lyrics untranslated when enclosed in music notes (♪/♫); INSTEAD, fully translate vocal lyrics (foreground and BGM) while preserving the musical notes.
-   - NEVER strip, displace, or inject formatting tags not present in the source; INSTEAD, preserve all [br], <i>...</i>, <b>...</b>, speaker dashes (-), and inline markup in their exact source positions and counts.
+6. READ-ONLY CONTEXT:
+   - Treat <m id="N"> memory as read-only reference. Never output, translate, or duplicate it into <s> slots.
 
 7. CLEAN PAYLOAD ONLY:
-   - NEVER output conversational commentary, markdown code fences, notes in parentheses, thinking blocks (</think>), or prompt echoes ([input], BATCH); INSTEAD, emit ONLY the raw sequence of <s id="N">...</s> tags.
-   - NEVER repeat, re-emit, or acknowledge the pre-filled <s id="${startId}"> opening tag; INSTEAD, continue directly from the prompt boundary by generating the inner content of slot ${startId} at your very first output character.
-   - NEVER append corrections after closing a tag with </s> or restart completed slots; INSTEAD, rectify errors immediately inside the active slot before closing it.
-   - NEVER emit any internal thinking steps or XML tags representing thought processes; INSTEAD, bypass all metadata and output the raw string directly starting from the pre-filled tag.
+   - Output ONLY raw <s id="N">...</s> tags. No commentary, markdown, notes, thinking blocks, or prompt echoes.
+   - Continue directly from the pre-filled <s id="${startId}"> boundary: output the inner content of slot ${startId} as your first characters. Never repeat or re-emit the opening tag.
+
+<thinking-budget>
+Use internal reasoning only for register/context disambiguation. Do NOT emit reasoning tokens. When unsure, choose the most natural spoken form.
+</thinking-budget>
 
 <input>
 ${batchText}
@@ -2257,7 +2242,6 @@ ${batchText}
 
   /**
    * Prepare batch content as a JSON array for the 'json' workflow.
-   * [UPGRADED]: Menghantar pasangan Source + Target dalam previous_translation_memory untuk keselarasan sejagat.
    */
   _prepareJsonBatchContent(batch, context = null) {
     let result = {};
@@ -2271,7 +2255,7 @@ ${batchText}
     }
 
     result.entries_to_translate = batch.map((entry) => ({
-      id: entry.id, // 🚨 KUNCI MUTLAK: Gunakan Global ID asal srt, buang sistem local (i + 1)
+      id: entry.id,
       text: entry.text.trim().replace(/\n+/g, ' [br] ')
     }));
 
@@ -2280,78 +2264,57 @@ ${batchText}
 
   /**
    * Build a translation prompt for the 'json' workflow.
-   * [GLOBAL ID UNIFIED]: Selaras 1:1 dengan struktur, dinamik sourceLanguage & peraturan ketat XML workflow.
    */
   _buildJsonPrompt(batchText, targetLanguage, customPrompt, expectedCount, context = null, batchIndex = 0, totalBatches = 1) {
     const targetLabel = normalizeTargetLanguageForPrompt(targetLanguage);
-    const sourceLabel = this.sourceLanguage; // 🌐 Sedut sourceLabel dinamik dari instance
+    const sourceLabel = this.sourceLanguage;
 
-    // 🚨 Halang baca ID dari memori, fokus pada entries_to_translate sahaja
     let targetSection = batchText;
     if (batchText.includes('"entries_to_translate":')) {
       targetSection = batchText.split('"entries_to_translate":')[1];
     }
 
-    // Extract SEMUA global IDs dari batch (dalam susunan asal) untuk ID list eksplisit.
-    // Selaras 1:1 dengan XML workflow — tutup silent bug bila source SRT ada ID gap.
     const idMatches = [...targetSection.matchAll(/"id"\s*:\s*(\d+)/g)].map(m => m[1]);
     const startId = idMatches.length > 0 ? idMatches[0] : '1';
     const idList = idMatches.length > 0 ? idMatches.join(', ') : 'N/A';
 
-    // 🛑 SEDUT AYAT PENGENALAN DARI ZON TEMPLATE BERSAMA SOURCE & TARGET LABEL 🛑
-    const introInstruction = PROMPT_TEMPLATES.primary(targetLabel, sourceLabel); //
+    const introInstruction = PROMPT_TEMPLATES.primary(targetLabel, sourceLabel);
 
     const promptBody = `${introInstruction}
 
-CRITICAL ENFORCEMENT RULES (ZERO TOLERANCE):
+CRITICAL FORMAT & CARDINALITY RULES:
+1. CARDINALITY & ID PARITY:
+   - Output EXACTLY ${expectedCount} JSON objects, using EXACTLY these global IDs, in this order: [${idList}]
+   - Every input object pairs strictly with one output object. Never omit, merge, reorder, duplicate, renumber, or invent IDs. Preserve source SRT gaps verbatim.
 
-1. STRICT 1-TO-1 CARDINALITY & ID PARITY:
-   - Output EXACTLY ${expectedCount} JSON objects with these EXACT IDs, in this order:
-     [${idList}]
-   - Every input object {"id":N,...} pairs strictly with one output object {"id":N,...}. Never omit, combine, reorder, duplicate, or invent IDs.
-   - IDs are GLOBAL from the source SRT. Preserve gaps and exact values — do NOT renumber.
+2. SLOT ISOLATION:
+   - Each "text" field contains ONLY the translation of its matching input text. Never borrow or fold words across adjacent objects.
+   - Short slots (question tags, interjections, single words) stay in their own object. Empty/whitespace-only slots: copy verbatim.
 
-2. ABSOLUTE SLOT ISOLATION (ZERO MERGING / ZERO FOLDING):
-   - Each output object's "text" field MUST contain ONLY the translation of its matching input "text". NEVER pull or fold words from adjacent objects.
-   - ISOLATED PARTICLES & SHORT SLOTS (≤3 WORDS): If a slot contains only isolated question tags ("are you?", "right?"), negation particles ("not to."), interjections ("Wait.", "Yes."), or other short fragments, translate ONLY those words inside that exact object (e.g., "kan?", "bukan?"). NEVER attach them to preceding or subsequent objects.
-   - EMPTY / WHITESPACE-ONLY SLOTS: Copy verbatim (empty string or whitespace).
-   - Incomplete target syntax is MANDATORY to preserve subtitle synchronization.
+3. LINE FORMAT & CPL:
+   - Maximum 2 lines per subtitle entry; maximum 42 characters per line (CPL <= 42).
+   - Split at natural pauses using [br]. Preserve all existing inline markup in exact positions.
 
-3. ZERO SHIFTING, ANTI-HALLUCINATION & SOURCE FIDELITY:
-   - NEVER shift subsequent dialogue forward to compensate for short or empty slots.
-   - NEVER invent synthetic filler lines to satisfy the object count.
-   - ZERO CONVERSATIONAL CONTINUATION: Output for id ${startId} MUST translate input for id ${startId} directly. NEVER generate reactive conversational replies or commentary to the background memory (previous_translation_memory).
-   - MIXED-LANGUAGE SLOTS: Translate the translatable tokens; copy foreign proper nouns, brands, and fictional entities VERBATIM in their original language.
-   - ZERO ACKNOWLEDGMENT PREFIX: NEVER prepend the batch ID, object ID, or batch number as a prefix (e.g., "${startId}>", "81>", "Batch 2:", "N.") to the translated text. The pre-filled [{"id":${startId},"text":" at the prompt boundary already establishes the ID — start DIRECTLY with the translation content for object ${startId}.
+4. EXACT COPY PROTOCOL:
+   - Copy VERBATIM: creative work titles, brands, legal suffixes, proper nouns, numbers, dates, times, measurements, symbols, music notes, corrupted text, and empty slots.
+   - Mixed slots: translate dialogue portion only; copy untranslatable entities unmodified.
 
-4. AIR-GAPPED READ-ONLY CONTEXT MEMORY (previous_translation_memory):
-   - Entries inside previous_translation_memory are STRICTLY READ-ONLY background context.
-   - NEVER translate, modify, output, or duplicate text from previous_translation_memory into active entries_to_translate objects.
-   - CONFLICT RESOLUTION: If previous_translation_memory text conflicts with entries_to_translate source, ALWAYS prioritize entries_to_translate.
-   - CONTINUATION FROM PREFILL: The prompt ends with the pre-filled opening [{"id":${startId},"text":" . Your response continues DIRECTLY from it — output the translation for id ${startId} immediately, then close the string with "} before opening the next object.
+5. SONG LYRICS & MUSIC:
+   - Translate all song lyrics enclosed in music notes (♪/♫) fully while preserving the notes.
 
-5. ESCAPE HATCH (EXACT COPY PROTOCOL):
-   - Copy the EXACT original text into the "text" field ONLY if: content is untranslatable (company/brand names, foreign proper nouns, fictional entities, corrupted text); the slot contains ONLY symbols, music notes (♪/♫), numbers, or punctuation; or the slot is empty.
-   - PARTIAL UNTRANSLATABLE: Translate the translatable portion, but copy company/brand names, foreign proper nouns, and fictional entities VERBATIM (in original language, unmodified).
-   - CREATIVE WORK TITLES: NEVER translate titles of movies, TV shows, books, novels, songs, plays, or games — even when the words themselves are translatable. Keep them VERBATIM in original language. Examples: "Begin Again" stays "Begin Again" (NOT "Bermula Semula"); "The Office" stays "The Office"; "Shine on Me" stays "Shine on Me".
-   - NEVER translate company names, brand names, registered entities, or their legal suffixes (e.g., Co., Ltd., Inc.). Keep them in their original form.
-   - NEVER skip the slot, and NEVER use this as a shortcut for difficult translations.
-
-6. SONG LYRICS & INLINE MARKUP:
-   - Lyrics inside music notes (♪/♫) must always be translated, whether as a full song block or scattered background music.
-   - PRESERVE all [br], <i>...</i>, speaker dashes (-), and ANY other inline markup tags in the exact same position as in the source.
-   - Do NOT add line breaks or formatting tags that don't exist in the source.
+6. READ-ONLY CONTEXT:
+   - previous_translation_memory is read-only reference. Never output, translate, or duplicate it into active objects.
 
 7. CLEAN PAYLOAD ONLY & JSON ESCAPING:
-   - Output ONLY the raw JSON object sequence: {"id":N,"text":"..."},{"id":N,"text":"..."},...
-   - ZERO commentary, ZERO markdown code blocks, ZERO notes in parentheses.
-   - ZERO PROMPT ECHO: Do NOT echo [input], [OUTPUT_FORMAT], or BATCH headers.
-   - ZERO REASONING LEAKS: Do NOT output thinking blocks, reasoning tags, or self-reflection (e.g., </think>, <reasoning>).
-   - ZERO ID ECHO: Do NOT prepend the numeric ID or any separator ("${startId}>", "N>", "N.", "N:") to the translation text. The pre-filled [{"id":${startId},"text":" at the prompt boundary already establishes the ID — start DIRECTLY with the translation content of that object.
-   - Do NOT repeat the pre-filled opening [{"id":${startId},"text":" — continue directly from it as if it were already typed.
-   - Each object MUST close with "} and separate objects with a comma. The final object MUST close with "}] to complete the array.
-   - ESCAPING: Escape double quotes inside text with backslash (\\"). Use \\n for line breaks. No trailing commas. No unescaped control characters.
-   - SELF-RECOVERY: If you detect a self-violation mid-output (wrong ID, merged slot, ID echo, malformed JSON), stop and restart from id ${startId}.
+   - Output ONLY raw JSON object sequence: {"id":N,"text":"..."},{"id":N,"text":"..."},...
+   - No commentary, markdown, notes, thinking blocks, reasoning leaks, or prompt echoes.
+   - Continue DIRECTLY from the pre-filled [{"id":${startId},"text":" boundary. Never repeat or re-emit the opening object.
+   - Close every string with " and separate objects with commas; final object closes with "}] to complete the array.
+   - Escape double quotes inside text with backslash (\\"). Use \\n for line breaks. No trailing commas.
+
+<thinking-budget>
+Use internal reasoning only for register/context disambiguation. Do NOT emit reasoning tokens. When unsure, choose the most natural spoken form.
+</thinking-budget>
 
 <input>
 ${batchText}
@@ -2364,6 +2327,8 @@ RESPOND ONLY WITH EXACTLY ${expectedCount} VALID JSON ENTRIES AS A RAW ARRAY.
     return this.addBatchHeader(promptBody, batchIndex, totalBatches);
   }
 
+
+
   /**
    * Parse XML-tagged translation response
    * Matches <s id="N">text</s> patterns and recovers entries by ID.
@@ -2373,7 +2338,7 @@ RESPOND ONLY WITH EXACTLY ${expectedCount} VALID JSON ENTRIES AS A RAW ARRAY.
   parseXmlBatchResponse(translatedText, expectedCount, batch = []) {
     let cleaned = String(translatedText || '').trim();
 
-    // 🚨 PISAU BEDAH: PENYAMBUNG PANCING! 🚨
+    // ðŸš¨ PISAU BEDAH: PENYAMBUNG PANCING! ðŸš¨
     // AI menyambung terus dari pancing `<s id="${startId}">` yang kita hantar.
     const firstId = batch && batch.length > 0 ? batch[0].id : 1;
     if (!cleaned.startsWith('<s')) {
@@ -2385,13 +2350,13 @@ RESPOND ONLY WITH EXACTLY ${expectedCount} VALID JSON ENTRIES AS A RAW ARRAY.
     cleaned = cleaned.replace(mdRegex, '');
     cleaned = cleaned.replace(new RegExp('\\x60\\x60\\x60', 'g'), '');
 
-    // ⚠️ KITA BUANG KOD 'lastClosingTag' & 'slice' DI SINI ⚠️
+    // âš ï¸ KITA BUANG KOD 'lastClosingTag' & 'slice' DI SINI âš ï¸
     // (Ini adalah punca utama ayat terakhir yang terputus dibuang terus dari memori)
 
     // Fix #15 (v1.4.38+): Remove any content between </s> and <s tags before parsing.
     cleaned = cleaned.replace(/<\/s>\s*(?:(?!<s[\s>])[\s\S])*?(?=<s[\s>])/gi, '</s>\n');
 
-    // 🛡️ PETA GLOBAL ID KE INDEX TEMPATAN 🛡️
+    // ðŸ›¡ï¸ PETA GLOBAL ID KE INDEX TEMPATAN ðŸ›¡ï¸
     // Petakan ID sebenar dari filem ke index tempatan (0 hingga 99)
     const validIds = new Map();
     if (batch && batch.length > 0) {
@@ -2403,7 +2368,7 @@ RESPOND ONLY WITH EXACTLY ${expectedCount} VALID JSON ENTRIES AS A RAW ARRAY.
     // Guna Map terus untuk auto-deduplicate tanpa perlu loop kedua
     const entriesMap = new Map(); 
     
-    // 🚀 THE GOD-TIER REGEX (One Pass to Rule Them All)
+    // ðŸš€ THE GOD-TIER REGEX (One Pass to Rule Them All)
     // Tangkap tag normal & self-closing serentak dalam satu pusingan.
     const superXmlPattern = /<s\s+[^>]*id\s*=\s*["']?(\d+)["']?[^>]*?(?:\/>|>([\s\S]*?)(?:<\/s>|(?=<s\b)|$))/gi;
     let match;
@@ -2411,7 +2376,7 @@ RESPOND ONLY WITH EXACTLY ${expectedCount} VALID JSON ENTRIES AS A RAW ARRAY.
     while ((match = superXmlPattern.exec(cleaned)) !== null) {
       const id = parseInt(match[1], 10);
       
-      // Fix #14: Accept entries with empty text (legitimate for "♪", sound effects, etc.)
+      // Fix #14: Accept entries with empty text (legitimate for "â™ª", sound effects, etc.)
       if (id > 0) {
         let localIndex = id - 1; // Fallback jika map kosong
 
@@ -2419,7 +2384,7 @@ RESPOND ONLY WITH EXACTLY ${expectedCount} VALID JSON ENTRIES AS A RAW ARRAY.
           if (validIds.has(id)) {
             localIndex = validIds.get(id); // Dapatkan kedudukan sebenar dari peta
           } else {
-            // 🚨 PISAU PEMOTONG: Buang ID halusinasi yang AI cipta!
+            // ðŸš¨ PISAU PEMOTONG: Buang ID halusinasi yang AI cipta!
             continue; 
           }
         }
@@ -2428,7 +2393,7 @@ RESPOND ONLY WITH EXACTLY ${expectedCount} VALID JSON ENTRIES AS A RAW ARRAY.
         let text = match[2] !== undefined ? match[2].trim() : "";
 
         // Unescape XML entities yang kita escape dalam prepareBatchXml()
-        // URUTAN WAJIB: &lt; dan &gt; dulu, &amp; LAST — elak double-unescape.
+        // URUTAN WAJIB: &lt; dan &gt; dulu, &amp; LAST â€” elak double-unescape.
         text = text
           .replace(/&lt;/g, '<')
           .replace(/&gt;/g, '>')
@@ -2485,13 +2450,13 @@ RESPOND ONLY WITH EXACTLY ${expectedCount} VALID JSON ENTRIES AS A RAW ARRAY.
    * Route to the correct response parser based on workflow
    */
   parseResponseForWorkflow(translatedText, expectedCount, batch) {
-    // JSON workflow: strict JSON parse — no fallback to numbered-list/XML parsers
+    // JSON workflow: strict JSON parse â€” no fallback to numbered-list/XML parsers
     if (this.translationWorkflow === 'json') {
       const jsonEntries = this.parseJsonResponse(translatedText, expectedCount);
       if (jsonEntries && jsonEntries.length > 0) {
         return jsonEntries;
       }
-      // JSON.parse failed — try regex extraction for malformed-but-recoverable JSON
+      // JSON.parse failed â€” try regex extraction for malformed-but-recoverable JSON
       const rawCleaned = String(translatedText || '').trim()
         .replace(/```json\s*/gi, '').replace(/```\s*/g, '');
       const regexEntries = this.extractJsonEntries(rawCleaned);
@@ -2506,7 +2471,7 @@ RESPOND ONLY WITH EXACTLY ${expectedCount} VALID JSON ENTRIES AS A RAW ARRAY.
           return mapped;
         }
       }
-      log.warn(() => `[TranslationEngine] JSON workflow parsing failed completely — returning empty`);
+      log.warn(() => `[TranslationEngine] JSON workflow parsing failed completely â€” returning empty`);
       return [];
     }
 
@@ -2514,7 +2479,7 @@ RESPOND ONLY WITH EXACTLY ${expectedCount} VALID JSON ENTRIES AS A RAW ARRAY.
       return this.parseBatchSrtResponse(translatedText, expectedCount, batch);
     }
     if (this.translationWorkflow === 'xml') {
-      // 🚨 Hantar 'batch' supaya parser boleh faham Global ID
+      // ðŸš¨ Hantar 'batch' supaya parser boleh faham Global ID
       return this.parseXmlBatchResponse(translatedText, expectedCount, batch);
     }
     return this.parseBatchResponse(translatedText, expectedCount);
@@ -2565,7 +2530,7 @@ RESPOND ONLY WITH EXACTLY ${expectedCount} VALID JSON ENTRIES AS A RAW ARRAY.
       }
       if (!Array.isArray(parsed)) return null;
 
-      // 🛡️ PERISAI GLOBAL ID: Petakan Global ID srt asal ke index tempatan batch
+      // ðŸ›¡ï¸ PERISAI GLOBAL ID: Petakan Global ID srt asal ke index tempatan batch
       const validIds = new Map();
       if (batch && batch.length > 0) {
         batch.forEach((entry, idx) => {
@@ -2615,7 +2580,7 @@ RESPOND ONLY WITH EXACTLY ${expectedCount} VALID JSON ENTRIES AS A RAW ARRAY.
     try {
       let repaired = jsonStr;
 
-      // 🛡️ PERISAI MAGIS: Cari lambakan tanda petik berkembar yang tidak sah di hujung string (contoh: ""粉" atau """}) dan runtuhkan jadi satu ketul " sahaja
+      // ðŸ›¡ï¸ PERISAI MAGIS: Cari lambakan tanda petik berkembar yang tidak sah di hujung string (contoh: ""ç²‰" atau """}) dan runtuhkan jadi satu ketul " sahaja
       repaired = repaired.replace(/(?<!\\)"{2,}(?=\s*[,\]\}])/g, '"');
 
       // Fix unescaped newlines/tabs inside string values (between quotes)
@@ -2707,19 +2672,19 @@ RESPOND ONLY WITH EXACTLY ${expectedCount} VALID JSON ENTRIES AS A RAW ARRAY.
 
     const missingIndices = [];
 
-    // 🚀 THE UPGRADE: Fungsi penilai ayat (Adakah ayat ini patut diterjemah?)
+    // ðŸš€ THE UPGRADE: Fungsi penilai ayat (Adakah ayat ini patut diterjemah?)
     const isUntranslatable = (text) => {
       if (!text) return true;
       const t = text.trim();
       if (!t) return true;
 
-      // Tier 1: Hanya punctuation, symbol, angka, atau whitespace — tiada huruf.
+      // Tier 1: Hanya punctuation, symbol, angka, atau whitespace â€” tiada huruf.
       // Guna Unicode property escapes supaya senarai tak perlu diselenggara manual:
-      //   \p{P} = punctuation (…, –, —, ?, !, ., ", dsb.)
-      //   \p{S} = symbol    (♪♫♬, emoji, mata wang, matematik, dsb.)
+      //   \p{P} = punctuation (â€¦, â€“, â€”, ?, !, ., ", dsb.)
+      //   \p{S} = symbol    (â™ªâ™«â™¬, emoji, mata wang, matematik, dsb.)
       //   \p{N} = number    (0-9 & varian unicode)
       //   \s    = whitespace
-      // Contoh dilindungi: "...", "…", "—", "?!", "♪♪", "100%", "$", "—–—".
+      // Contoh dilindungi: "...", "â€¦", "â€”", "?!", "â™ªâ™ª", "100%", "$", "â€”â€“â€”".
       if (/^[\p{P}\p{S}\p{N}\s]+$/u.test(t)) return true;
 
       // Tier 2: Tag HTML sahaja tanpa teks (contoh: <i></i>, <font color="#fff">)
@@ -2740,7 +2705,7 @@ RESPOND ONLY WITH EXACTLY ${expectedCount} VALID JSON ENTRIES AS A RAW ARRAY.
           timecode: existing.timecode || undefined
         };
       } 
-      // 2. 🛡️ THE UPGRADE: Kalau AI tertinggal, tapi ayat tu tak perlu diterjemah pun
+      // 2. ðŸ›¡ï¸ THE UPGRADE: Kalau AI tertinggal, tapi ayat tu tak perlu diterjemah pun
       else if (isUntranslatable(originalText)) {
         aligned[i] = {
           index: i,
@@ -2753,7 +2718,7 @@ RESPOND ONLY WITH EXACTLY ${expectedCount} VALID JSON ENTRIES AS A RAW ARRAY.
         missingIndices.push(i);
         aligned[i] = {
           index: i,
-          text: `[⚠] ${originalText}`,
+          text: `[âš ] ${originalText}`,
           timecode: originalBatch[i].timecode || undefined
         };
       }
@@ -2781,7 +2746,7 @@ CRITICAL RULES (VIOLATING THESE WILL CORRUPT THE SUBTITLES):
 
 2. SLOT LOCK: Translate ONLY the dialogue text within its own timestamp block. NEVER merge or shift sentences across different timestamps.
 
-3. ESCAPE HATCH & MUSIC: ALL song lyrics in music notes (♫ / ♪) — including background music (BGM) — MUST be fully translated. Copy EXACT ORIGINAL TEXT only if untranslatable or symbol-only.
+3. ESCAPE HATCH & MUSIC: ALL song lyrics in music notes (â™« / â™ª) â€” including background music (BGM) â€” MUST be fully translated. Copy EXACT ORIGINAL TEXT only if untranslatable or symbol-only.
 
 4. PRESERVE ALL INLINE MARKUP: Every <i> tag, <b> tag, font tag, and speaker dash (-) MUST be preserved in the exact same position as in the source.
 
@@ -2813,11 +2778,11 @@ CRITICAL RULES (VIOLATING THESE WILL CORRUPT THE SUBTITLES):
    NEVER steal, merge, or complete a sentence using words that belong in an adjacent numbered line.
    Dividing the natural thought across matching lines is MANDATORY. Merging them DESTROYS subtitle sync permanently.
 
-2. ESCAPE HATCH & MUSIC: ALL song lyrics in music notes (♫ / ♪) — including background music (BGM) — MUST be fully translated. 
-   Copy EXACT ORIGINAL TEXT for a number only if content is untranslatable (proper nouns, corrupted text) or contains ONLY standalone symbols/music notes (♪, ♫, ♪♪) and numbers. NEVER shift any remaining entry.
+2. ESCAPE HATCH & MUSIC: ALL song lyrics in music notes (â™« / â™ª) â€” including background music (BGM) â€” MUST be fully translated. 
+   Copy EXACT ORIGINAL TEXT for a number only if content is untranslatable (proper nouns, corrupted text) or contains ONLY standalone symbols/music notes (â™ª, â™«, â™ªâ™ª) and numbers. NEVER shift any remaining entry.
 
 3. NUMBERING INTEGRITY & EXACT COUNT: Output EXACTLY ${expectedCount} numbered entries total, strictly from 1. to ${expectedCount}. 
-   Format: "N. translated text". Never skip, reorder, or invent numbers. NEVER fabricate content to hit the count — use Rule 2 instead.
+   Format: "N. translated text". Never skip, reorder, or invent numbers. NEVER fabricate content to hit the count â€” use Rule 2 instead.
 
 4. PRESERVE ALL INLINE MARKUP: Every [br] tag, <i> tag, and speaker dash (-) MUST be preserved in the exact same structure and position as in the source.
 
@@ -2854,7 +2819,7 @@ RESPOND ONLY WITH EXACTLY ${expectedCount} NUMBERED ENTRIES.
     const batchStartId = originalBatch?.[0]?.id || 1;
     const batchEndId = originalBatch?.[originalBatch.length - 1]?.id || batchStartId;
 
-    // 🛡️ PETA GLOBAL ID KE INDEX TEMPATAN 🛡️
+    // ðŸ›¡ï¸ PETA GLOBAL ID KE INDEX TEMPATAN ðŸ›¡ï¸
     // Digunakan untuk padankan ID sebenar dari filem (contoh: 101) ke index array batch ini (0-99)
     const validIds = new Map();
     if (originalBatch && originalBatch.length > 0) {
@@ -2898,7 +2863,7 @@ RESPOND ONLY WITH EXACTLY ${expectedCount} NUMBERED ENTRIES.
           timecode: entry.timecode || ''
         }));
       } else if (this.translationWorkflow === 'xml') {
-        // 🛡️ FASA 3: REGEX KEBAL UNTUK STREAMING 🛡️
+        // ðŸ›¡ï¸ FASA 3: REGEX KEBAL UNTUK STREAMING ðŸ›¡ï¸
         let cleaned = partialText;
         
         // Pancing penyambung untuk streaming (Guna batchStartId yang sudah sedia ada di atas)
@@ -2920,8 +2885,8 @@ RESPOND ONLY WITH EXACTLY ${expectedCount} NUMBERED ENTRIES.
           let text = match[2].trim();
 
           // Unescape XML entities yang kita escape dalam prepareBatchXml().
-          // URUTAN WAJIB: &lt; dan &gt; dulu, &amp; LAST — elak double-unescape.
-          // NOTA: Dalam streaming, entity mungkin terpotong (contoh: "AT&am") —
+          // URUTAN WAJIB: &lt; dan &gt; dulu, &amp; LAST â€” elak double-unescape.
+          // NOTA: Dalam streaming, entity mungkin terpotong (contoh: "AT&am") â€”
           //       entity tak lengkap takkan match regex, jadi ia selamat.
           text = text
             .replace(/&lt;/g, '<')
@@ -3074,7 +3039,7 @@ RESPOND ONLY WITH EXACTLY ${expectedCount} NUMBERED ENTRIES.
       }
     }
 
-    // Don't fix count mismatches here — let the outer translateBatch handle retries first.
+    // Don't fix count mismatches here â€” let the outer translateBatch handle retries first.
     // Only fill missing timecodes with originals to avoid gaps.
     for (const entry of deduped) {
       if (!entry.timecode && originalBatch[entry.index]) {
@@ -3162,15 +3127,15 @@ RESPOND ONLY WITH EXACTLY ${expectedCount} NUMBERED ENTRIES.
     const timecodePattern = /\d{2}:\d{2}:\d{2},\d{3}\s*-->\s*\d{2}:\d{2}:\d{2},\d{3}\s*\n?/g;
     cleaned = cleaned.replace(timecodePattern, '').trim();
 
-    // 1.5 Strip numeric prefix hallucination ("1>text", "3. text") — defensive clean
+    // 1.5 Strip numeric prefix hallucination ("1>text", "3. text") â€” defensive clean
     const beforeStrip = cleaned;
     cleaned = cleaned.replace(/^\s*\d+\s*[>.]\s*/, '').trim();
     if (beforeStrip !== cleaned) {
       log.debug(() => `[TranslationEngine] Stripped numeric prefix hallucination: "${beforeStrip.slice(0, 40)}..."`);
     }
 
-    // 2. Buang tag override ASS/SSA — SCOPED hanya `{\...}` pattern sahaja
-    // (cth: {\an8}, {\pos(x,y)}, {\b1}, {\i1}) — jangan rosak `{dialog}` biasa
+    // 2. Buang tag override ASS/SSA â€” SCOPED hanya `{\...}` pattern sahaja
+    // (cth: {\an8}, {\pos(x,y)}, {\b1}, {\i1}) â€” jangan rosak `{dialog}` biasa
     cleaned = cleaned.replace(/\{\\[^}\r\n]*\}/g, '').trim();
 
         // 3. Buang sisa kurungan tag '>' di permulaan baris
@@ -3184,7 +3149,7 @@ RESPOND ONLY WITH EXACTLY ${expectedCount} NUMBERED ENTRIES.
       .replace(/\s*\*+\/\s*(?=\n|$)/g, '')
       // 3. Buang pembuka komen tergantung (cth: '/*') di awal ayat/baris
       .replace(/(?:^|\n)\s*\/\*+\s*/g, '\n')
-      // 4. Buang tanda komen dua garis (//) — HANYA jika diikuti space (elak rosak URL `//example.com`)
+      // 4. Buang tanda komen dua garis (//) â€” HANYA jika diikuti space (elak rosak URL `//example.com`)
       .replace(/(?:^|\n)[ \t]*\/\/[ \t]+/g, '\n')
       .replace(/(?:^|\n)[ \t]*\/\/[ \t]*$/gm, '')
       .trim();
@@ -3195,19 +3160,19 @@ RESPOND ONLY WITH EXACTLY ${expectedCount} NUMBERED ENTRIES.
       .replace(/&quot;/gi, '')
       .replace(/&apos;/gi, '')
       // 1. Buang SEMUA tanda petik berganda (berpasangan mahupun sebiji tergantung)
-      .replace(/["“”„«»]/g, '')
+      .replace(/["â€œâ€â€žÂ«Â»]/g, '')
       // 2. Buang tanda petik tunggal di awal atau di hujung perkataan/ayat
-      .replace(/(^|[\s([{\-])['‘`]([a-zA-Z0-9])/g, '$1$2')
-      .replace(/([a-zA-Z0-9])['’`]([\s)\]}.,!?-]|$)/g, '$1$2')
+      .replace(/(^|[\s([{\-])['â€˜`]([a-zA-Z0-9])/g, '$1$2')
+      .replace(/([a-zA-Z0-9])['â€™`]([\s)\]}.,!?-]|$)/g, '$1$2')
       // 3. Buang sebarang tanda petik tunggal yang terapung kosong seorang diri
-      .replace(/(^|\s)['‘`]+(?=\s|$)/g, '$1');
+      .replace(/(^|\s)['â€˜`]+(?=\s|$)/g, '$1');
 
-    // 3.2 LITERAL UNICODE & HEX ESCAPE — some providers (Mistral/Llama/Qwen/DeepSeek)
+    // 3.2 LITERAL UNICODE & HEX ESCAPE â€” some providers (Mistral/Llama/Qwen/DeepSeek)
     //     output escape sequences as literal TEXT instead of actual characters.
-    //     Example: "\u2019" (literal) → "’" (actual), "\xe2\x99\xa5" → "♥"
+    //     Example: "\u2019" (literal) â†’ "â€™" (actual), "\xe2\x99\xa5" â†’ "â™¥"
     cleaned = cleaned
-      // A. Surrogate pairs FIRST — must run before single \uXXXX matcher
-      //    Example: "\uD83D\uDE0A" → 😊
+      // A. Surrogate pairs FIRST â€” must run before single \uXXXX matcher
+      //    Example: "\uD83D\uDE0A" â†’ ðŸ˜Š
       .replace(
         /\\u(D[89AB][0-9a-fA-F]{2})\\u(D[C-F][0-9a-fA-F]{2})/gi,
         (_, high, low) => String.fromCharCode(
@@ -3215,8 +3180,8 @@ RESPOND ONLY WITH EXACTLY ${expectedCount} NUMBERED ENTRIES.
           parseInt(low, 16)
         )
       )
-      // B. \u{XXXXX} — ES6-style brace notation (BMP + astral)
-      //    Example: "\u{1F60A}" → 😊
+      // B. \u{XXXXX} â€” ES6-style brace notation (BMP + astral)
+      //    Example: "\u{1F60A}" â†’ ðŸ˜Š
       .replace(
         /\\u\{([0-9a-fA-F]{1,6})\}/g,
         (match, hex) => {
@@ -3232,14 +3197,14 @@ RESPOND ONLY WITH EXACTLY ${expectedCount} NUMBERED ENTRIES.
           }
         }
       )
-      // C. \uXXXX — standard 4-digit escape (BMP)
-      //    Example: "\u2019" → "’"
+      // C. \uXXXX â€” standard 4-digit escape (BMP)
+      //    Example: "\u2019" â†’ "â€™"
       .replace(
         /\\u([0-9a-fA-F]{4})/g,
         (_, hex) => String.fromCharCode(parseInt(hex, 16))
       )
-      // D. \xXX sequences — UTF-8 byte escape (rare, mostly DeepSeek/Mistral)
-      //    Example: "\xe2\x99\xa5" → "♥"
+      // D. \xXX sequences â€” UTF-8 byte escape (rare, mostly DeepSeek/Mistral)
+      //    Example: "\xe2\x99\xa5" â†’ "â™¥"
       .replace(
         /(?:\\x[0-9a-fA-F]{2})+/g,
         (match) => {
@@ -3270,61 +3235,61 @@ RESPOND ONLY WITH EXACTLY ${expectedCount} NUMBERED ENTRIES.
       .replace(/\s*(?:\[br\]|<br\s*\/?>|&lt;br\s*\/?&gt;)\s*/gi, '\n')
       .replace(/\n{2,}/g, '\n'); // Runtuhkan pemisah baris berganda jadi satu
 
-    // 5. Tukar sengkang lewah kepada elipsis '...' — SKIP number ranges (elak rosak "2020—2024")
+    // 5. Tukar sengkang lewah kepada elipsis '...' â€” SKIP number ranges (elak rosak "2020â€”2024")
     cleaned = cleaned
       // Replace `--` / `---` (interruption marker)
       .replace(/\s*--+\s*/g, ' ... ')
-      // Em-dash `—` — hanya tukar jika BUKAN di antara digits
-      .replace(/(?<!\d)\s*—\s*(?!\d)/g, ' ... ')
-      // En-dash `–` — hanya tukar jika BUKAN di antara digits
-      .replace(/(?<!\d)\s*–\s*(?!\d)/g, ' ... ')
-      // Trailing hyphen di hujung baris → elipsis
+      // Em-dash `â€”` â€” hanya tukar jika BUKAN di antara digits
+      .replace(/(?<!\d)\s*â€”\s*(?!\d)/g, ' ... ')
+      // En-dash `â€“` â€” hanya tukar jika BUKAN di antara digits
+      .replace(/(?<!\d)\s*â€“\s*(?!\d)/g, ' ... ')
+      // Trailing hyphen di hujung baris â†’ elipsis
       .replace(/(?<=[^\s\-])\s*-(?=\s*($|\n))/g, ' ...');
 
     // ============================================================================
-    // 🛠️ ENJIN PEMULIHAN MOJIBAKE & SIMBOL/EMOJI ASAL (RESTORATION ENGINE)
+    // ðŸ› ï¸ ENJIN PEMULIHAN MOJIBAKE & SIMBOL/EMOJI ASAL (RESTORATION ENGINE)
     // ============================================================================
     cleaned = cleaned
       // --- Pemulihan Emoji Utama & Hiasan Subtitle ---
-      .replace(/ðŸ'¥|ðŸ’¥/g, '💥')
-      .replace(/ðŸ'–|ðŸ’–/g, '💖')
-      .replace(/ðŸ'—|ðŸ’—/g, '💗')
-      .replace(/ðŸ'œ|ðŸ’œ/g, '💜')
-      .replace(/ðŸ'™|ðŸ’™/g, '💙')
-      .replace(/ðŸ'š|ðŸ’š/g, '💚')
-      .replace(/ðŸ'•|ðŸ’•/g, '💗')
-      .replace(/ðŸ'|ðŸ’/g, '💓')
-      .replace(/ðŸ˜Š/g, '😊')
-      .replace(/ðŸ˜‚/g, '😂')
-      .replace(/ðŸ˜/g, '😀')
-      .replace(/ðŸ”¥/g, '🔥')
-      .replace(/ðŸŽ‰/g, '🎉')
-      .replace(/ðŸ‘/g, '👍')
+      .replace(/Ã°Å¸'Â¥|Ã°Å¸â€™Â¥/g, 'ðŸ’¥')
+      .replace(/Ã°Å¸'â€“|Ã°Å¸â€™â€“/g, 'ðŸ’–')
+      .replace(/Ã°Å¸'â€”|Ã°Å¸â€™â€”/g, 'ðŸ’—')
+      .replace(/Ã°Å¸'Å“|Ã°Å¸â€™Å“/g, 'ðŸ’œ')
+      .replace(/Ã°Å¸'â„¢|Ã°Å¸â€™â„¢/g, 'ðŸ’™')
+      .replace(/Ã°Å¸'Å¡|Ã°Å¸â€™Å¡/g, 'ðŸ’š')
+      .replace(/Ã°Å¸'â€¢|Ã°Å¸â€™â€¢/g, 'ðŸ’—')
+      .replace(/Ã°Å¸'|Ã°Å¸â€™/g, 'ðŸ’“')
+      .replace(/Ã°Å¸ËœÅ /g, 'ðŸ˜Š')
+      .replace(/Ã°Å¸Ëœâ€š/g, 'ðŸ˜‚')
+      .replace(/Ã°Å¸Ëœ/g, 'ðŸ˜€')
+      .replace(/Ã°Å¸â€Â¥/g, 'ðŸ”¥')
+      .replace(/Ã°Å¸Å½â€°/g, 'ðŸŽ‰')
+      .replace(/Ã°Å¸â€˜/g, 'ðŸ‘')
 
       // --- Pemulihan Simbol Khas, Muzik & Tanda Petik ---
-      .replace(/âœ["”]|âœ”/g, '✔')
-      .replace(/âœ“/g, '✓')
-      .replace(/âœ¨/g, '✨')
-      .replace(/âž¡|â\s*ž/g, '”')
-      .replace(/â€œ/g, '“')
-      .replace(/â€[”\?]/g, '”')
-      .replace(/â€˜/g, '‘')
-      .replace(/â€™/g, '’')
-      .replace(/â€¦/g, '…')
-      .replace(/â€”/g, '—')
-      .replace(/â€“/g, '–')
-      .replace(/â™ª/g, '♪')
-      .replace(/â™«/g, '♫')
-      .replace(/â˜…/g, '★')
-      .replace(/â˜†/g, '☆')
-      .replace(/â™¥/g, '♥')
-      .replace(/\bâ\s+(?=[💥💖💗💜💙💚💓😊😂😀🔥🎉👍✔✓✨”"“‘'…—–♪♫★☆♥])/g, '');
+      .replace(/Ã¢Å“["â€]|Ã¢Å“â€/g, 'âœ”')
+      .replace(/Ã¢Å“â€œ/g, 'âœ“')
+      .replace(/Ã¢Å“Â¨/g, 'âœ¨')
+      .replace(/Ã¢Å¾Â¡|Ã¢\s*Å¾/g, 'â€')
+      .replace(/Ã¢â‚¬Å“/g, 'â€œ')
+      .replace(/Ã¢â‚¬[â€\?]/g, 'â€')
+      .replace(/Ã¢â‚¬Ëœ/g, 'â€˜')
+      .replace(/Ã¢â‚¬â„¢/g, 'â€™')
+      .replace(/Ã¢â‚¬Â¦/g, 'â€¦')
+      .replace(/Ã¢â‚¬â€/g, 'â€”')
+      .replace(/Ã¢â‚¬â€œ/g, 'â€“')
+      .replace(/Ã¢â„¢Âª/g, 'â™ª')
+      .replace(/Ã¢â„¢Â«/g, 'â™«')
+      .replace(/Ã¢Ëœâ€¦/g, 'â˜…')
+      .replace(/Ã¢Ëœâ€ /g, 'â˜†')
+      .replace(/Ã¢â„¢Â¥/g, 'â™¥')
+      .replace(/\bÃ¢\s+(?=[ðŸ’¥ðŸ’–ðŸ’—ðŸ’œðŸ’™ðŸ’šðŸ’“ðŸ˜ŠðŸ˜‚ðŸ˜€ðŸ”¥ðŸŽ‰ðŸ‘âœ”âœ“âœ¨â€"â€œâ€˜'â€¦â€”â€“â™ªâ™«â˜…â˜†â™¥])/g, '');
 
     // ============================================================================
-    // 🧹 ENJIN SANITASI HIBRID (Dialog Biasa vs Lirik Muzik + Sokongan Penuh CAPSLOCK)
+    // ðŸ§¹ ENJIN SANITASI HIBRID (Dialog Biasa vs Lirik Muzik + Sokongan Penuh CAPSLOCK)
     // ============================================================================
     cleaned = cleaned.split('\n').map(line => {
-      const isMusicLine = /[♫♪♬♩🎵🎶]/.test(line);
+      const isMusicLine = /[â™«â™ªâ™¬â™©ðŸŽµðŸŽ¶]/.test(line);
 
       // 1. KATA GANTI NAMA (Dialog sahaja, lirik muzik dikekalkan)
       if (!isMusicLine) {
@@ -3471,7 +3436,7 @@ RESPOND ONLY WITH EXACTLY ${expectedCount} NUMBERED ENTRIES.
     // 7. Bersihkan Simbol Beracun
     cleaned = cleaned.replace(/<(?=[\s\d])/g, '&lt;');
 
-    // 8. Normalisasi Pemisah Baris (CRLF → LF) & Buang baris kosong tergantung
+    // 8. Normalisasi Pemisah Baris (CRLF â†’ LF) & Buang baris kosong tergantung
     cleaned = cleaned
       .replace(/\r\n/g, '\n')
       .replace(/\r/g, '\n')
@@ -3485,6 +3450,31 @@ RESPOND ONLY WITH EXACTLY ${expectedCount} NUMBERED ENTRIES.
       cleaned = wrapRtlText(cleaned);
     }
 
+    // 10. Ringan CPL Enforcement — jangan sampai satu baris terlalu panjang
+    //     sehingga melimpah keluar skrin. Hanya pecahkan pada ruang semula
+    //     jadi, tanpa merosakkan tag masa atau struktur SRT.
+    cleaned = cleaned
+      .split('\n')
+      .map(line => {
+        const raw = String(line || '').trim();
+        if (raw.length <= 42) return raw;
+        const words = raw.split(' ');
+        const lines = [];
+        let current = '';
+        for (const word of words) {
+          const candidate = current ? `${current} ${word}` : word;
+          if (candidate.length > 42 && current) {
+            lines.push(current);
+            current = word;
+          } else {
+            current = candidate;
+          }
+        }
+        if (current) lines.push(current);
+        return lines.join('\n');
+      })
+      .join('\n');
+
     return cleaned;
   }
   
@@ -3494,16 +3484,16 @@ RESPOND ONLY WITH EXACTLY ${expectedCount} NUMBERED ENTRIES.
   sanitizeTimecodes(text) {
     let cleaned = String(text || '').trim();
 
-    // 🛡️ BACKUP: Strip numeric prefix hallucination (defense-in-depth)
+    // ðŸ›¡ï¸ BACKUP: Strip numeric prefix hallucination (defense-in-depth)
     // Kalau cleanTranslatedText terlepas, ini adalah final net.
     cleaned = cleaned.replace(/^\s*\d+\s*[>.]\s*/, '').trim();
 
     // Full-line time ranges with various separators (optional milliseconds)
-    const rangeLine = /^(?:\s*)\d{1,2}:\d{2}:\d{2}(?:[.,]\d{1,3})?\s*(?:-->|–>|—>|->|→|to)\s*\d{1,2}:\d{2}:\d{2}(?:[.,]\d{1,3})?(?:\s*)$/gm;
+    const rangeLine = /^(?:\s*)\d{1,2}:\d{2}:\d{2}(?:[.,]\d{1,3})?\s*(?:-->|â€“>|â€”>|->|â†’|to)\s*\d{1,2}:\d{2}:\d{2}(?:[.,]\d{1,3})?(?:\s*)$/gm;
     cleaned = cleaned.replace(rangeLine, '');
 
     // Inline time ranges
-    const rangeInline = /\d{1,2}:\d{2}:\d{2}(?:[.,]\d{1,3})?\s*(?:-->|–>|—>|->|→|to)\s*\d{1,2}:\d{2}:\d{2}(?:[.,]\d{1,3})?/g;
+    const rangeInline = /\d{1,2}:\d{2}:\d{2}(?:[.,]\d{1,3})?\s*(?:-->|â€“>|â€”>|->|â†’|to)\s*\d{1,2}:\d{2}:\d{2}(?:[.,]\d{1,3})?/g;
     cleaned = cleaned.replace(rangeInline, '').trim();
 
     // Standalone full-line timestamps (with or without ms)
