@@ -22,6 +22,10 @@ All notable changes to this project will be documented in this file.
 
 - **Aligned the model matrix with the official Google deprecation timeline:** Model classification now follows the verified July 21, 2026 changelog boundary — sampling parameters (`temperature`/`top_p`/`top_k`) are stripped only for the GA releases from that date onward (`gemini-3.6-flash`, `gemini-3.5-flash-lite`, and newer `3.7`/`3.8`), while earlier 3.x models are classified `3.x-legacy`. The `thinkingLevel` fallback for `disabled`/`off`/empty is now always `low` (never `minimal`, which returns an API error on 3.7/3.8 Flash), profile matching uses exact-then-longest-prefix (so `gemini-3.5-flash-lite` no longer mismatches the `gemini-3.5-flash` profile), `gemini-2.5-pro` thinking budget `0` is clamped to the documented `128` minimum, and the output-token fallback is standardized to `65536` across all routes. Added six ground-truth regression tests (GT-1 to GT-6) locking this behavior.
 
+**Breaking Changes:**
+
+- **Removed the SCS, Wyzie Subs, and Subs.ro subtitle providers:** The subtitle source lineup is now OpenSubtitles (Auth + V3), SubDL, and SubSource only. The three removed providers' services, configuration UI, Quick Setup entries, validation endpoints, health probes, credential encryption fields, and locale keys were deleted across backend and frontend, along with the now-empty "More Providers (beta)" section. A migration sweep in `normalizeConfig()` drops orphaned provider keys from previously-saved configs automatically. Regression suite: 83/83 passing.
+
 ## SubMaker v1.4.90
 
 **Improvements:**
