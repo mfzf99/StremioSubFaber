@@ -413,6 +413,13 @@ function encryptUserConfig(config) {
       encrypted.assemblyAiApiKey = encrypt(encrypted.assemblyAiApiKey);
     }
 
+    // Encrypt the Cloudflare Workers ACCOUNT_ID|TOKEN credential. Keep an
+    // already-encrypted value unchanged so a failed legacy normalization (for
+    // example after an encryption-key mismatch) can never add another layer.
+    if (encrypted.cloudflareWorkersApiKey && !isEncrypted(encrypted.cloudflareWorkersApiKey)) {
+      encrypted.cloudflareWorkersApiKey = encrypt(encrypted.cloudflareWorkersApiKey);
+    }
+
     // Encrypt subtitle provider credentials
     if (encrypted.subtitleProviders) {
       // OpenSubtitles username/password
@@ -468,6 +475,7 @@ function encryptUserConfig(config) {
 // Track if any decryption operations fail during this call - helps detect encryption key mismatches
 let decryptionWarnings = [];
 let nestedEncryptionRecoveredFields = [];
+let plaintextSensitiveFieldsDetected = [];
 
 function decryptUserConfig(config) {
   if (!config || typeof config !== 'object') {
@@ -477,6 +485,7 @@ function decryptUserConfig(config) {
   // Reset warnings for this call
   decryptionWarnings = [];
   nestedEncryptionRecoveredFields = [];
+  plaintextSensitiveFieldsDetected = [];
 
   // Clone config to avoid modifying original
   const decrypted = JSON.parse(JSON.stringify(config));
@@ -533,6 +542,24 @@ function decryptUserConfig(config) {
     if (decrypted.assemblyAiApiKey && (isConfigEncrypted || isEncrypted(decrypted.assemblyAiApiKey))) {
       log.debug(() => '[Encryption] Decrypting AssemblyAI API key');
       decrypted.assemblyAiApiKey = safeDecrypt(decrypted.assemblyAiApiKey, 'assemblyAiApiKey');
+    }
+
+    // cloudflareWorkersApiKey was stored in plaintext by earlier releases
+    // even when the rest of the config carried the encryption marker.
+    // Preserve it for the current request and flag the session manager to
+    // rewrite that legacy payload once with field-level encryption.
+    if (decrypted.cloudflareWorkersApiKey) {
+      const cloudflareKeyEncrypted = isEncrypted(decrypted.cloudflareWorkersApiKey);
+      if (isConfigEncrypted && !cloudflareKeyEncrypted) {
+        plaintextSensitiveFieldsDetected.push('cloudflareWorkersApiKey');
+      }
+      if (isConfigEncrypted || cloudflareKeyEncrypted) {
+        log.debug(() => `[Encryption] Cloudflare Workers credential exists, encrypted: ${cloudflareKeyEncrypted}, will decrypt: ${isConfigEncrypted || cloudflareKeyEncrypted}`);
+        decrypted.cloudflareWorkersApiKey = safeDecrypt(
+          decrypted.cloudflareWorkersApiKey,
+          'cloudflareWorkersApiKey'
+        );
+      }
     }
 
     // Decrypt subtitle provider credentials
@@ -605,6 +632,12 @@ function decryptUserConfig(config) {
       decrypted.__nestedEncryptionRecovered = true;
       decrypted.__nestedEncryptionRecoveredFields = [...nestedEncryptionRecoveredFields];
       log.warn(() => `[Encryption] Recovered nested encryption for fields: ${nestedEncryptionRecoveredFields.join(', ')}. Session should be re-saved in normalized form.`);
+    }
+
+    if (plaintextSensitiveFieldsDetected.length > 0) {
+      decrypted.__plaintextSensitiveFieldsDetected = true;
+      decrypted.__plaintextSensitiveFieldsDetectedFields = [...plaintextSensitiveFieldsDetected];
+      log.warn(() => `[Encryption] Detected legacy plaintext sensitive fields: ${plaintextSensitiveFieldsDetected.join(', ')}. Session should be re-saved with field-level encryption.`);
     }
 
     return decrypted;

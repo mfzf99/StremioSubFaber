@@ -143,7 +143,19 @@ function getGeminiErrorMessage(error) {
   return String(error?.response?.data?.message || error?.message || '');
 }
 
+function isGeminiUnsupportedLocation(error) {
+  const message = getGeminiErrorMessage(error).toLowerCase();
+  return (
+    (message.includes('location') || message.includes('region') || message.includes('country') || message.includes('territor')) &&
+    (message.includes('not supported') || message.includes('unsupported') || message.includes('not available'))
+  );
+}
+
 function isGeminiAuthFailure(error) {
+  if (isGeminiUnsupportedLocation(error)) {
+    return false;
+  }
+
   const status = error?.response?.status || error?.statusCode;
   if (status === 401 || status === 403) {
     return true;
@@ -159,6 +171,59 @@ function isGeminiAuthFailure(error) {
     message.includes('permission') ||
     message.includes('authentication')
   );
+}
+
+function getGeminiErrorInfo(error) {
+  const statusCode = Number(error?.response?.status || error?.statusCode) || null;
+  const googleError = error?.response?.data?.error;
+  const googleStatus = typeof googleError === 'object' && googleError
+    ? String(googleError.status || '').trim().slice(0, 80)
+    : '';
+  const detailReason = Array.isArray(googleError?.details)
+    ? googleError.details
+      .map(detail => String(detail?.reason || '').trim())
+      .find(Boolean) || ''
+    : '';
+  const message = getGeminiErrorMessage(error) || 'Gemini request failed';
+
+  let type = 'upstream_error';
+  if (isGeminiUnsupportedLocation(error)) {
+    type = 'unsupported_location';
+  } else if (isGeminiAuthFailure(error)) {
+    type = 'authentication';
+  } else if (statusCode === 429) {
+    type = 'rate_limit';
+  } else if (statusCode === 400 || googleStatus === 'INVALID_ARGUMENT') {
+    type = 'invalid_request';
+  } else if (googleStatus === 'FAILED_PRECONDITION') {
+    type = 'failed_precondition';
+  } else if (statusCode && statusCode >= 500) {
+    type = 'server_error';
+  } else if (!statusCode) {
+    type = 'network_error';
+  }
+
+  return {
+    type,
+    statusCode,
+    googleStatus,
+    detailReason: detailReason.slice(0, 120),
+    message
+  };
+}
+
+function decorateGeminiError(error) {
+  const info = getGeminiErrorInfo(error);
+  if (info.message) {
+    error.providerMessage = info.message;
+    error.message = info.message;
+  }
+  if (info.type === 'unsupported_location') {
+    error.type = 'unsupported_location';
+    error.isRetryable = false;
+    error.translationErrorType = 'GEMINI_UNSUPPORTED_LOCATION';
+  }
+  return info;
 }
 
 // Default translation prompt (base - thinking rules added conditionally)
@@ -409,7 +474,11 @@ class GeminiService {
   async getAvailableModels(options = {}) {
     const silent = !!options.silent;
     const throwOnError = options.throwOnError === true;
-    if (await hasCachedProviderAuthFailure(this.authFailureCacheKey)) {
+    // Explicit validation requests must always reach Google so a stale
+    // negative-cache entry (older release or a newly issued key's
+    // provisioning window) can no longer force every manual retry to fail.
+    const bypassAuthFailureCache = options.bypassAuthFailureCache === true;
+    if (!bypassAuthFailureCache && await hasCachedProviderAuthFailure(this.authFailureCacheKey)) {
       log.warn(() => '[Gemini] Fetch models blocked: cached invalid API key detected');
       return [];
     }
@@ -449,7 +518,11 @@ class GeminiService {
 
     } catch (error) {
       if (isGeminiAuthFailure(error)) {
-        await cacheProviderAuthFailure(this.authFailureCacheKey);
+        if (bypassAuthFailureCache) {
+          await clearCachedProviderAuthFailure(this.authFailureCacheKey);
+        } else {
+          await cacheProviderAuthFailure(this.authFailureCacheKey);
+        }
       }
       if (!silent) {
         logApiError(error, 'Gemini', 'Fetch models', { skipResponseData: true });

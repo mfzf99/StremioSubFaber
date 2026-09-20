@@ -7,12 +7,19 @@ const { version } = require('../utils/version');
 const { hasExplicitSeasonEpisodeMismatch } = require('../utils/animeSearchResolver');
 const log = require('../utils/logger');
 const { isTrueishFlag, inferHearingImpairedFromName } = require('../utils/subtitleFlags');
-const { detectArchiveType, extractSubtitleFromArchive, convertSubtitleToVtt } = require('../utils/archiveExtractor');
+const { detectArchiveType, extractSubtitleFromArchive, createZipTooLargeSubtitle, convertSubtitleToVtt } = require('../utils/archiveExtractor');
 const { analyzeResponseContent, createInvalidResponseSubtitle } = require('../utils/responseAnalyzer');
+const { encodeProviderUrl, decodeProviderUrl } = require('../utils/providerUrlToken');
+const {
+  MAX_REMOTE_SUBTITLE_BYTES,
+  createPublicRemoteRequestConfig,
+  isRemoteResponseTooLargeError,
+  isSsrfBlockedRequestError
+} = require('../utils/publicRemoteRequest');
 
 const OPENSUBTITLES_V3_BASE_URL = 'https://opensubtitles-v3.strem.io/subtitles/';
 const USER_AGENT = `SubMaker v${version}`;
-const MAX_ZIP_BYTES = 25 * 1024 * 1024; // hard cap for ZIP downloads (~25MB) to avoid huge packs
+const MAX_ZIP_BYTES = MAX_REMOTE_SUBTITLE_BYTES; // shared wire/archive cap (~25MB)
 
 // 🎯 RAM Cache Anti-Spam (30s TTL + Had Siling Memori)
 const osV3MemoryCache = new Map();
@@ -247,10 +254,10 @@ class OpenSubtitlesV3Service {
         const batch = subtitles.slice(i, i + BATCH_SIZE);
         const batchPromises = batch.map(async (sub) => {
           try {
-            const response = await this.client.head(sub.url, {
+            const response = await this.client.head(sub.url, createPublicRemoteRequestConfig(sub.url, {
               headers: { 'User-Agent': USER_AGENT },
               timeout: HEAD_TIMEOUT
-            });
+            }, { context: 'OpenSubtitles V3 filename URL', maxBytes: 64 * 1024 }));
 
             const contentDisposition = response.headers['content-disposition'];
             if (contentDisposition) {
@@ -266,10 +273,10 @@ class OpenSubtitlesV3Service {
               log.debug(() => `[OpenSubtitles V3] 429 while extracting filename for ${sub.id} - retrying once`);
               await new Promise(r => setTimeout(r, 1500));
               try {
-                const response = await this.client.head(sub.url, {
+                const response = await this.client.head(sub.url, createPublicRemoteRequestConfig(sub.url, {
                   headers: { 'User-Agent': USER_AGENT },
                   timeout: HEAD_TIMEOUT
-                });
+                }, { context: 'OpenSubtitles V3 filename URL', maxBytes: 64 * 1024 }));
                 const contentDisposition = response.headers['content-disposition'];
                 if (contentDisposition) {
                   const match = contentDisposition.match(/filename="(.+?)"/);
@@ -296,8 +303,19 @@ class OpenSubtitlesV3Service {
     }
 
     return subtitles.map((sub, index) => {
-      const encodedUrl = Buffer.from(sub.url).toString('base64url');
-      const fileId = `v3_${encodedUrl}`;
+      let fileId;
+      try {
+        // Validate URL structure/literals before exposing the result. DNS and
+        // the actual socket destination are checked again during download.
+        createPublicRemoteRequestConfig(sub.url, {}, {
+          context: 'OpenSubtitles V3 download URL',
+          maxBytes: MAX_ZIP_BYTES
+        });
+        fileId = encodeProviderUrl('v3_', sub.url);
+      } catch (error) {
+        log.warn(() => `[OpenSubtitles V3] Skipping unsafe download URL: ${error.message}`);
+        return null;
+      }
 
       const extracted = extractedNames[index];
       let detectedFormat = null;
@@ -344,7 +362,7 @@ class OpenSubtitlesV3Service {
         provider: 'opensubtitles-v3',
         _v3Url: sub.url
       };
-    });
+    }).filter(Boolean);
   }
 
   /**
@@ -381,8 +399,15 @@ class OpenSubtitlesV3Service {
       log.debug(() => `[OpenSubtitles V3] Season pack download: S${String(seasonPackSeason).padStart(2, '0')}E${String(seasonPackEpisode).padStart(2, '0')}`);
     }
 
-    const encodedUrl = baseFileId.substring(3);
-    const downloadUrl = Buffer.from(encodedUrl, 'base64url').toString('utf-8');
+    const downloadUrl = decodeProviderUrl(baseFileId, 'v3_');
+    const downloadRequestConfig = createPublicRemoteRequestConfig(downloadUrl, {
+      responseType: 'arraybuffer',
+      headers: { 'User-Agent': USER_AGENT },
+      timeout
+    }, {
+      context: 'OpenSubtitles V3 download URL',
+      maxBytes: MAX_ZIP_BYTES
+    });
 
     log.debug(() => '[OpenSubtitles V3] Decoded download URL');
 
@@ -391,12 +416,7 @@ class OpenSubtitlesV3Service {
       try {
         log.debug(() => `[OpenSubtitles V3] Downloading subtitle (attempt ${attempt}/${maxRetries}): ${fileId}`);
 
-        const response = await this.client.get(downloadUrl, {
-          responseType: 'arraybuffer',
-          headers: { 'User-Agent': USER_AGENT },
-          timeout: timeout,
-          maxContentLength: MAX_ZIP_BYTES
-        });
+        const response = await this.client.get(downloadUrl, downloadRequestConfig);
 
         const buf = Buffer.isBuffer(response.data) ? response.data : Buffer.from(response.data);
         const contentAnalysis = analyzeResponseContent(buf);
@@ -454,6 +474,16 @@ class OpenSubtitlesV3Service {
       } catch (error) {
         lastError = error;
         const status = error.response?.status;
+
+        if (isRemoteResponseTooLargeError(error)) {
+          log.warn(() => `[OpenSubtitles V3] Download exceeded ${MAX_ZIP_BYTES} byte response limit`);
+          return createZipTooLargeSubtitle(MAX_ZIP_BYTES, MAX_ZIP_BYTES + 1);
+        }
+
+        if (isSsrfBlockedRequestError(error)) {
+          log.warn(() => `[OpenSubtitles V3] Blocked unsafe download destination: ${error.message}`);
+          break;
+        }
 
         if (status === 404 || status === 401 || status === 403) {
           log.debug(() => `[OpenSubtitles V3] Non-retryable error (${status}), aborting retries`);
