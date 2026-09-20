@@ -8,6 +8,10 @@ const axios = require('axios');
 const GeminiService = require('./gemini');
 const { createTranslationProvider } = require('./translationProviderFactory');
 const { sanitizeApiKeyForHeader } = require('../utils/security');
+const {
+  handleTranslationError,
+  isCrazyRouterUpstreamExhaustion
+} = require('../utils/apiErrorHandler');
 const { generateFileTranslationPage } = require('../utils/fileUploadPageGenerator');
 const {
   generateEmbeddedSubtitlePage,
@@ -321,4 +325,107 @@ test('[GT-6] normalizeConfig preserves topK and thinkingBudget (no aggressive de
   });
   assert.equal(normalized.advancedSettings.topK, 25, 'topK must be preserved');
   assert.equal(normalized.advancedSettings.thinkingBudget, 2048, 'thinkingBudget must be preserved');
+});
+
+// ─── CrazyRouter: honest upstream errors (A) + unavailable-model warnings (B) ───
+
+test('[CR-A1] provider_account_exhausted 403 surfaces honest upstream reason, not "Authentication failed"', () => {
+  const upstreamError = {
+    response: {
+      status: 403,
+      data: {
+        error: {
+          message: 'The upstream provider account for this route has run out of credit. Retry to use another route.',
+          type: 'new_api_error',
+          code: 'provider_account_exhausted'
+        }
+      }
+    },
+    message: 'Request failed with status code 403'
+  };
+
+  assert.equal(isCrazyRouterUpstreamExhaustion(upstreamError), true);
+
+  let thrown = null;
+  try {
+    handleTranslationError(upstreamError, 'Gemini', { skipResponseData: true });
+  } catch (err) {
+    thrown = err;
+  }
+  assert.ok(thrown, 'handleTranslationError should throw');
+  assert.equal(thrown.type, 'upstream_quota');
+  assert.equal(thrown.translationErrorType, 'UPSTREAM_QUOTA');
+  assert.equal(thrown.isRetryable, false);
+  assert.match(thrown.message, /run out of credit/i);
+  assert.doesNotMatch(thrown.message, /Authentication failed/i);
+});
+
+test('[CR-A2] genuine 403 auth failure still classified as authentication (not upstream_quota)', () => {
+  const authError = {
+    response: { status: 403, data: { error: { message: 'API key not valid. Please pass a valid API key.' } } },
+    message: 'Request failed with status code 403'
+  };
+
+  assert.equal(isCrazyRouterUpstreamExhaustion(authError), false);
+
+  let thrown = null;
+  try {
+    handleTranslationError(authError, 'Gemini', { skipResponseData: true });
+  } catch (err) {
+    thrown = err;
+  }
+  assert.ok(thrown, 'handleTranslationError should throw');
+  assert.equal(thrown.type, 'authentication');
+  assert.equal(thrown.translationErrorType, '403');
+  assert.match(thrown.message, /Authentication failed/i);
+});
+
+test('[CR-B1] CrazyRouter unavailable model triggers warn; available model does not', async () => {
+  const log = require('../utils/logger');
+  const originalPost = axios.post;
+  const originalGet = axios.get;
+  const originalWarn = log.warn;
+  const warnings = [];
+
+  log.warn = (fn) => { warnings.push(typeof fn === 'function' ? fn() : String(fn)); };
+
+  axios.get = async (url) => {
+    if (String(url).endsWith('/v1/models')) {
+      return { data: { data: [{ id: 'gemini-3.6-flash' }, { id: 'gemini-2.5-flash' }] } };
+    }
+    throw new Error('unexpected GET ' + url);
+  };
+
+  try {
+    const unavailable = new GeminiService('sk-test-key', 'gemini-3-flash-preview', { maxRetries: 0 });
+    await unavailable.warnIfModelUnavailable();
+    assert.equal(warnings.length, 1, 'expected one unavailable-model warning');
+    assert.match(String(warnings[0]), /NOT listed among the models callable/i);
+
+    warnings.length = 0;
+    const available = new GeminiService('sk-test-key', 'gemini-3.6-flash', { maxRetries: 0 });
+    await available.warnIfModelUnavailable();
+    assert.equal(warnings.length, 0, 'no warning expected for a callable model');
+  } finally {
+    log.warn = originalWarn;
+    axios.get = originalGet;
+    axios.post = originalPost;
+  }
+});
+
+test('[CR-B2] model availability check is a no-op for Google Direct and when disabled', async () => {
+  const direct = new GeminiService('AQ.test-key', 'gemini-3.6-flash', { maxRetries: 0 });
+  const ids = await direct.getCrazyRouterAvailableModels();
+  assert.equal(ids, null, 'Google Direct should skip CrazyRouter model fetch');
+  // warnIfModelUnavailable resolves without side effects for Google Direct
+  await direct.warnIfModelUnavailable();
+
+  process.env.GEMINI_DISABLE_MODEL_AVAILABILITY_CHECK = 'true';
+  try {
+    const cr = new GeminiService('sk-test-key', 'gemini-3-flash-preview', { maxRetries: 0 });
+    await cr.warnIfModelUnavailable();
+    assert.equal(cr._crazyRouterModelIds, undefined, 'disabled check must not fetch the model list');
+  } finally {
+    delete process.env.GEMINI_DISABLE_MODEL_AVAILABILITY_CHECK;
+  }
 });

@@ -122,6 +122,33 @@ function looksLikeCloudflareChallenge(error) {
 }
 
 /**
+ * Detect CrazyRouter (and similar one-api/new-api relay) upstream exhaustion errors.
+ * These are NOT user authentication failures: the proxy accepted the key but the
+ * upstream provider account behind the route ran out of credit / quota. Surfacing
+ * these as "Authentication failed" misleads users into re-checking valid keys.
+ * @param {Error} error - The error object from axios
+ * @returns {boolean} - True if this is an upstream account exhaustion error
+ */
+function isCrazyRouterUpstreamExhaustion(error) {
+  const data = error?.response?.data?.error || error?.response?.data || {};
+  const code = String(data.code || '').toLowerCase();
+  const type = String(data.type || '').toLowerCase();
+  const message = String(data.message || error?.providerMessage || error?.message || '').toLowerCase();
+
+  const codeMatch = code === 'provider_account_exhausted'
+    || code === 'insufficient_quota'
+    || type === 'insufficient_quota'
+    || type === 'new_api_error';
+  const messageMatch = message.includes('run out of credit')
+    || message.includes('out of credit')
+    || message.includes('insufficient quota')
+    || message.includes('provider account')
+    || message.includes('upstream provider account');
+
+  return codeMatch || messageMatch;
+}
+
+/**
  * Parse and classify an API error
  * @param {Error} error - The error object from axios or other API call
  * @param {string} serviceName - Name of the service (e.g., 'OpenSubtitles', 'Gemini')
@@ -199,6 +226,22 @@ function parseApiError(error, serviceName = 'API', options = {}) {
         'apiErrors.cloudflareBlocked',
         { service: serviceLabel },
         `${serviceLabel} is blocking this download on their side. Please try again later.`
+      );
+    }
+    // CrazyRouter / relay upstream account exhaustion (403) — surface the honest
+    // upstream reason instead of a misleading generic "Authentication failed".
+    else if ((parsed.statusCode === 401 || parsed.statusCode === 403) && isCrazyRouterUpstreamExhaustion(error)) {
+      parsed.type = 'upstream_quota';
+      parsed.isRetryable = false;
+      const upstreamRaw = (error?.response?.data?.error && error.response.data.error.message)
+        || error?.response?.data?.message
+        || error?.providerMessage
+        || '';
+      const upstreamMsg = String(upstreamRaw).trim();
+      parsed.userMessage = translate(
+        'apiErrors.upstreamQuotaExhausted',
+        { message: upstreamMsg },
+        `CrazyRouter upstream account is out of credit for this model route. ${upstreamMsg || 'Try a different model, or contact CrazyRouter support.'}`
       );
     }
     // Authentication errors (401, 403)
@@ -417,7 +460,11 @@ function handleTranslationError(error, serviceName, options = {}) {
 
   // Add translation-specific error flags for all error types
   // These are checked by performTranslation() and used to create user-friendly error messages
-  if (!customError.translationErrorType && parsed.statusCode === 403) {
+  if (!customError.translationErrorType && parsed.type === 'upstream_quota') {
+    // Distinguish relay upstream-credit exhaustion from a genuine auth failure so
+    // downstream UI can show the real reason instead of "check your API key".
+    customError.translationErrorType = 'UPSTREAM_QUOTA';
+  } else if (!customError.translationErrorType && parsed.statusCode === 403) {
     customError.translationErrorType = '403';
   } else if (!customError.translationErrorType && parsed.statusCode === 404) {
     customError.translationErrorType = 'MODEL_NOT_FOUND';
@@ -465,6 +512,7 @@ function isRetryableError(error) {
 module.exports = {
   getApiErrorMessage,
   isOpenSubtitlesQuotaError,
+  isCrazyRouterUpstreamExhaustion,
   parseApiError,
   logApiError,
   handleSearchError,

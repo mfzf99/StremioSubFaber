@@ -461,6 +461,66 @@ class GeminiService {
     }
   }
 
+  /**
+   * Fetch the model IDs callable by THIS CrazyRouter token from the relay's
+   * OpenAI-compatible endpoint (GET /v1/models). CrazyRouter documents the token's
+   * available models there (not under /v1beta). Result is cached per-instance.
+   * Defensive: returns null on any failure so the translation flow is unaffected.
+   * @returns {Promise<Set<string>|null>} Set of model IDs, or null if unavailable.
+   */
+  async getCrazyRouterAvailableModels() {
+    if (this.keyType !== 'crazyrouter') return null;
+    if (this._crazyRouterModelIds instanceof Set) return this._crazyRouterModelIds;
+    if (this._crazyRouterModelsFailed) return null;
+
+    try {
+      const url = `${String(this.baseUrl).replace(/\/v1beta\/?$/, '/v1')}/models`;
+      const response = await axios.get(url, {
+        headers: this.getAuthHeaders(),
+        timeout: 10000,
+        httpAgent,
+        httpsAgent
+      });
+      const list = response?.data?.data;
+      if (!Array.isArray(list)) {
+        this._crazyRouterModelsFailed = true;
+        return null;
+      }
+      this._crazyRouterModelIds = new Set(
+        list.map(m => (m && m.id ? String(m.id).trim() : '')).filter(Boolean)
+      );
+      return this._crazyRouterModelIds;
+    } catch (_) {
+      this._crazyRouterModelsFailed = true;
+      return null;
+    }
+  }
+
+  /**
+   * Warn (once per instance) if the configured model is NOT in the set of models
+   * this CrazyRouter token may call. Helps users self-diagnose "why won't it run"
+   * without guessing. No-op for Google Direct and when the model list is unknown.
+   * Set GEMINI_DISABLE_MODEL_AVAILABILITY_CHECK=true to silence this check.
+   * @returns {Promise<void>}
+   */
+  async warnIfModelUnavailable() {
+    if (this.keyType !== 'crazyrouter') return;
+    if (this._modelAvailabilityChecked) return;
+    if (String(process.env.GEMINI_DISABLE_MODEL_AVAILABILITY_CHECK || '').toLowerCase() === 'true') {
+      this._modelAvailabilityChecked = true;
+      return;
+    }
+    this._modelAvailabilityChecked = true;
+
+    const ids = await this.getCrazyRouterAvailableModels();
+    if (!ids || ids.size === 0) return;
+    if (ids.has(this.model)) return;
+
+    const sample = Array.from(ids).filter(id => id.toLowerCase().includes('gemini')).slice(0, 10);
+    const sampleText = sample.length ? sample.join(', ') : Array.from(ids).slice(0, 10).join(', ');
+    log.warn(() => `[Gemini] Model '${this.model}' is NOT listed among the models callable by this CrazyRouter key. Translation may fail or be routed to an exhausted upstream. Available Gemini models include: ${sampleText}${ids.size > 10 ? ' …' : ''}. Consider switching model in Advanced Settings.`);
+  }
+
   async getModelLimits() {
     if (this._modelLimits) {
       return this._modelLimits;
@@ -633,6 +693,10 @@ class GeminiService {
       try {
         const { userPrompt, systemPrompt } = this.buildUserPrompt(subtitleContent, targetLanguage, customPrompt);
 
+        // Warn early (once) if the configured model is not callable by this
+        // CrazyRouter token — no-op for Google Direct. Never blocks translation.
+        await this.warnIfModelUnavailable();
+
         const estimatedSubtitleTokens = this.estimateTokenCount(subtitleContent);
 
         const limits = await this.getModelLimits();
@@ -789,6 +853,11 @@ class GeminiService {
         return this.cleanTranslatedSubtitle(translatedText);
 
       } catch (error) {
+        // Attach route context so the error handler can distinguish relay/upstream
+        // quota exhaustion (CrazyRouter) from genuine auth failures.
+        if (this.keyType === 'crazyrouter' && error && typeof error === 'object') {
+          error.providerRoute = 'crazyrouter';
+        }
         const normalized = handleTranslationError(error, 'Gemini', { skipResponseData: true });
         throw normalized;
       }
@@ -799,6 +868,10 @@ class GeminiService {
     return this.retryWithBackoff(async () => {
       try {
         const { userPrompt, systemPrompt } = this.buildUserPrompt(subtitleContent, targetLanguage, customPrompt);
+
+        // Warn early (once) if the configured model is not callable by this
+        // CrazyRouter token — no-op for Google Direct. Never blocks translation.
+        await this.warnIfModelUnavailable();
 
         const estimatedSubtitleTokens = this.estimateTokenCount(subtitleContent);
 
@@ -1087,6 +1160,11 @@ class GeminiService {
         });
 
       } catch (error) {
+        // Attach route context so the error handler can distinguish relay/upstream
+        // quota exhaustion (CrazyRouter) from genuine auth failures.
+        if (this.keyType === 'crazyrouter' && error && typeof error === 'object') {
+          error.providerRoute = 'crazyrouter';
+        }
         const normalized = handleTranslationError(error, 'Gemini', { skipResponseData: true });
         throw normalized;
       }

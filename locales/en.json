@@ -143,6 +143,7 @@
       "serviceUnavailable": "{service} temporarily unavailable. Please try again in a few minutes.",
       "databaseUnavailable": "Subtitle server database temporarily unavailable. Trying next subtitle...",
       "authFailed": "Authentication failed. Please check your API credentials.",
+      "upstreamQuotaExhausted": "CrazyRouter upstream account is out of credit for this model route. {message}",
       "notFound": "Resource not found. The requested content may have been removed.",
       "serverError": "{service} returned a server error. Please try again later.",
       "opensubsQuota": "OpenSubtitles daily download limit reached. Try again after the next UTC midnight.",
