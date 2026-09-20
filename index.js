@@ -4229,6 +4229,12 @@ app.post('/api/translate-file', fileTranslationLimiter, validateRequest(fileTran
             const topK = clampNumber(incoming.topK, 1, 100);
             if (topK !== null) parsed.topK = topK;
 
+            const frequencyPenalty = clampNumber(incoming.frequencyPenalty, -2, 2);
+            if (frequencyPenalty !== null) parsed.frequencyPenalty = frequencyPenalty;
+
+            const presencePenalty = clampNumber(incoming.presencePenalty, -2, 2);
+            if (presencePenalty !== null) parsed.presencePenalty = presencePenalty;
+
             const maxTokens = clampNumber(incoming.maxOutputTokens, 1, 200000);
             if (maxTokens !== null) parsed.maxOutputTokens = maxTokens;
 
@@ -7586,6 +7592,12 @@ app.post('/api/translate-embedded', embeddedTranslationLimiter, async (req, res)
 
             const topK = clampNumber(incoming.topK, 1, 100);
             if (topK !== null) parsed.topK = topK;
+
+            const frequencyPenalty = clampNumber(incoming.frequencyPenalty, -2, 2);
+            if (frequencyPenalty !== null) parsed.frequencyPenalty = frequencyPenalty;
+
+            const presencePenalty = clampNumber(incoming.presencePenalty, -2, 2);
+            if (presencePenalty !== null) parsed.presencePenalty = presencePenalty;
 
             const maxTokens = clampNumber(incoming.maxOutputTokens, 1, 200000);
             if (maxTokens !== null) parsed.maxOutputTokens = maxTokens;

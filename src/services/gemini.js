@@ -24,40 +24,103 @@ function isGemini3Model(model) {
   return /^gemini-3(?:[.-]|$)/i.test(modelId) || /^gemini-(?:flash|flash-lite|pro)-latest$/i.test(modelId);
 }
 
-// Jadual Pemetaan Rasmi Google Dokumen untuk Thinking Level & Tahap Disokong
+// Model 3.x yang dikenalpasti dalam changelog 21 Julai 2026 & ke atas sebagai
+// tertakluk kepada penamatan parameter pensampelan (temperature/topP/topK).
+// Model ini MESTI di-strip parameter pensampelan sepenuhnya (3.x-strict).
+const SAMPLING_DEPRECATED_MODELS = new Set([
+  'gemini-3.6-flash',
+  'gemini-3.5-flash-lite',
+  'gemini-3.7-flash',
+  'gemini-3.8-flash'
+]);
+
+// Klasifikasi keluarga model mengikut keupayaan parameter sebenar.
+// Pulangkan { family, sampling, thinking, alias }:
+//  - sampling: 'full' (hantar semua), 'warn-default-1.0' (hanya suhu 1.0), 'stripped' (tiada)
+//  - thinking: 'none' | 'budget' (integer 2.5) | 'level' (enum 3.x)
+function getModelFamily(model) {
+  const m = normalizeGeminiModelId(model).toLowerCase();
+
+  // Gemma — tiada thinking, pensampelan penuh
+  if (m.includes('gemma')) return { family: 'gemma', sampling: 'full', thinking: 'none' };
+
+  // Gemini 1.5 / 2.0 — pensampelan penuh, tiada thinking
+  if (/^gemini-1\.5/.test(m)) return { family: '1.5', sampling: 'full', thinking: 'none' };
+  if (/^gemini-2\.0/.test(m)) return { family: '2.0', sampling: 'full', thinking: 'none' };
+
+  // Gemini 2.5 — thinkingBudget integer, pensampelan penuh
+  if (/^gemini-2\.5/.test(m)) return { family: '2.5', sampling: 'full', thinking: 'budget' };
+
+  // Gemini 3.x — thinkingLevel enum
+  if (/^gemini-3(?:[.-]|$)/.test(m)) {
+    // STRICT: model yang tertakluk penamatan pensampelan (21 Jul 2026+)
+    if (SAMPLING_DEPRECATED_MODELS.has(m)) {
+      return { family: '3.x-strict', sampling: 'stripped', thinking: 'level' };
+    }
+    // LEGACY 3.x terdahulu — masih terima pensampelan, tetapi suhu mesti 1.0
+    if (m === 'gemini-3-flash-preview'
+      || m.startsWith('gemini-3.1')
+      || m === 'gemini-3.5-flash') {
+      return { family: '3.x-legacy', sampling: 'warn-default-1.0', thinking: 'level' };
+    }
+    // Lalai konservatif: mana-mana 3.x lain (3.7+, 3.9, dsb.) dianggap strict.
+    return { family: '3.x-strict', sampling: 'stripped', thinking: 'level' };
+  }
+
+  // Alias -latest (hot-swap). Kini menunjuk ke 3.x terkini, tetapi tidak
+  // dijamin — tandakan alias:true supaya lapisan atas boleh mengesahkan melalui API.
+  if (/^gemini-(flash|flash-lite|pro)-latest$/.test(m)) {
+    return { family: '3.x-strict', sampling: 'stripped', thinking: 'level', alias: true };
+  }
+
+  return { family: 'unknown', sampling: 'full', thinking: 'none' };
+}
+
+// Jadual Pemetaan Rasmi Google (disahkan melalui dokumentasi Thinking).
+// Disusun PALING KHUSUS dahulu supaya padanan longest-prefix berfungsi
+// (cth. 'gemini-3.5-flash-lite' sebelum 'gemini-3.5-flash').
+// Rujukan: https://ai.google.dev/gemini-api/docs/generate-content/thinking
 const MODEL_THINKING_PROFILES = {
-  'gemini-3.7-flash': { default: 'medium', levels: ['low', 'medium', 'high'] },
+  // STRICT 3.x (penamatan pensampelan 21 Jul 2026+)
+  'gemini-3.8-flash': { default: 'medium', levels: ['low', 'medium', 'high'] }, // minimal = RALAT
+  'gemini-3.7-flash': { default: 'medium', levels: ['low', 'medium', 'high'] }, // minimal = RALAT
   'gemini-3.6-flash': { default: 'medium', levels: ['minimal', 'low', 'medium', 'high'] },
   'gemini-3.5-flash-lite': { default: 'minimal', levels: ['minimal', 'low', 'medium', 'high'] },
-  'gemini-3.1-pro-preview': { default: 'high', levels: ['low', 'medium', 'high'] },
-  'gemini-3.1-flash-lite-image': { default: 'minimal', levels: ['minimal', 'high'] },
-  'gemini-3-flash-preview': { default: 'high', levels: ['minimal', 'low', 'medium', 'high'] },
-  'gemini-3-pro-preview': { default: 'high', levels: ['low', 'high'] },
+  // LEGACY 3.x
+  'gemini-3.1-flash-lite-image': { default: 'minimal', levels: ['minimal', 'high'] }, // low/medium TIDAK disokong
+  'gemini-3.1-flash-lite': { default: 'minimal', levels: ['minimal', 'low', 'medium', 'high'] },
+  'gemini-3.1-pro-preview': { default: 'high', levels: ['low', 'medium', 'high'] }, // minimal TIDAK disokong
   'gemini-3.5-flash': { default: 'medium', levels: ['minimal', 'low', 'medium', 'high'] },
-  'gemini-2.5-pro': { default: 'medium', levels: ['low', 'medium', 'high'] },
-  'gemini-2.5-flash': { default: 'medium', levels: ['low', 'medium', 'high'] },
-  'gemini-2.5-flash-lite': { default: 'disabled', levels: ['low', 'medium', 'high'] }
+  'gemini-3-flash-preview': { default: 'high', levels: ['minimal', 'low', 'medium', 'high'] }
+  // gemini-3-pro-preview dialih keluar (shutdown 9 Mac 2026)
 };
 
 function getModelThinkingProfile(modelName) {
   const normalized = normalizeGeminiModelId(modelName).toLowerCase();
-  for (const [key, profile] of Object.entries(MODEL_THINKING_PROFILES)) {
-    if (normalized.includes(key) || key.includes(normalized)) {
-      return profile;
+  // Padanan tepat dahulu
+  if (MODEL_THINKING_PROFILES[normalized]) {
+    return MODEL_THINKING_PROFILES[normalized];
+  }
+  // Padanan longest-prefix: cari kunci terpanjang yang menjadi prefix nama model
+  let best = null;
+  for (const key of Object.keys(MODEL_THINKING_PROFILES)) {
+    if (normalized.startsWith(key) && (!best || key.length > best.length)) {
+      best = key;
     }
   }
+  if (best) return MODEL_THINKING_PROFILES[best];
+  // Lalai selamat — 'low' disokong merentas semua model 3.x
   return { default: 'medium', levels: ['minimal', 'low', 'medium', 'high'] };
 }
 
 function getFallbackOutputTokenLimit(model) {
   const modelName = normalizeGeminiModelId(model).toLowerCase();
+  // Gemini 2.0 dan varian -001 dihadkan kepada 8192 output token mengikut spesifikasi.
   if (modelName.includes('2.0') || modelName.includes('-flash-001') || modelName.includes('-flash-lite-001')) {
     return 8192;
   }
-  if (modelName.includes('2.5') || isGemini3Model(modelName)) {
-    return 65536;
-  }
-  return 8192;
+  // Standardkan kepada 65536 untuk semua laluan lain (2.5, 3.x, dan masa hadapan).
+  return 65536;
 }
 
 // Normalize human-readable target language names for Gemini prompts
@@ -183,6 +246,15 @@ class GeminiService {
       ? advancedSettings.thinkingBudget
       : (process.env.GEMINI_THINKING_BUDGET !== undefined ? parseInt(process.env.GEMINI_THINKING_BUDGET, 10) : undefined);
 
+    // Penalti kekerapan/kehadiran — sah untuk 1.5/2.x sahaja (bukan 3.x).
+    this.frequencyPenalty = advancedSettings.frequencyPenalty !== undefined
+      ? advancedSettings.frequencyPenalty
+      : (process.env.GEMINI_FREQUENCY_PENALTY !== undefined ? parseFloat(process.env.GEMINI_FREQUENCY_PENALTY) : undefined);
+
+    this.presencePenalty = advancedSettings.presencePenalty !== undefined
+      ? advancedSettings.presencePenalty
+      : (process.env.GEMINI_PRESENCE_PENALTY !== undefined ? parseFloat(process.env.GEMINI_PRESENCE_PENALTY) : undefined);
+
     if (this.isGemmaModel) {
       this.maxOutputTokens = 8192;
       this.gemmaRetryConfig = {
@@ -244,30 +316,66 @@ class GeminiService {
     return level && level !== 'disabled' && level !== 'off';
   }
 
+  // Dedahkan klasifikasi keluarga model untuk instance ini (digunakan oleh
+  // buildGenerationConfig dan lapisan engine untuk keputusan payload).
+  getModelFamily() {
+    return getModelFamily(this.model);
+  }
+
   buildGenerationConfig(maxOutputTokens) {
-    // Gemini 3.x models reject legacy sampling parameters (temperature, topK,
-    // topP) and numeric thinking budgets. Send only the current request shape.
-    if (this.isGemini3Model) {
+    const { thinking } = this.getModelFamily();
+
+    // ── Cabang THINKING LEVEL (semua Gemini 3.x) ──────────────────────────────
+    if (thinking === 'level') {
       const profile = getModelThinkingProfile(this.model);
       const requestedLevel = String(this.thinkingLevel || '').trim().toLowerCase();
       let effectiveLevel = requestedLevel;
 
-      // Gemini 3.x requires a supported level. Disabled/off and unsupported
-      // values (e.g. "minimal" on a model that only supports low/medium/high)
-      // are mapped to "low" per the current API contract.
+      // Gemini 3.x memerlukan tahap yang disokong. 'disabled'/'off'/kosong
+      // dipetakan kepada 'low' — JANGAN gunakan 'minimal' sebagai fallback kerana
+      // ia mencetuskan RALAT API pada 3.7/3.8 Flash. Nilai tidak disokong juga
+      // dipetakan kepada 'low' (disokong merentas semua model 3.x).
       if (!effectiveLevel || effectiveLevel === 'disabled' || effectiveLevel === 'off') {
         effectiveLevel = 'low';
       } else if (!profile.levels.includes(effectiveLevel)) {
         effectiveLevel = 'low';
       }
 
+      // Untuk SEMUA model 3.x (strict & legacy), parameter pensampelan tidak
+      // dihantar. Panduan rasmi Google mengesyorkan suhu kekal pada lalai 1.0 —
+      // dan 1.0 adalah lalai pelayan, jadi menghantarnya secara eksplisit adalah
+      // berlebihan dan berisiko mencetuskan ralat pada model strict. Dengan tidak
+      // menghantar apa-apa, kedua-dua cabang mematuhi kontrak API dengan selamat.
       return {
         maxOutputTokens,
         thinkingConfig: { thinkingLevel: effectiveLevel }
       };
     }
 
-    // Legacy Gemini 2.x / Gemma path keeps numeric sampling controls.
+    // ── Cabang THINKING BUDGET (Gemini 2.5) ───────────────────────────────────
+    if (thinking === 'budget') {
+      const config = {
+        maxOutputTokens,
+        temperature: this.temperature,
+        topP: this.topP
+      };
+      if (this.topK !== undefined) config.topK = this.topK;
+      if (this.frequencyPenalty !== undefined) config.frequencyPenalty = this.frequencyPenalty;
+      if (this.presencePenalty !== undefined) config.presencePenalty = this.presencePenalty;
+
+      if (this.thinkingBudget !== undefined) {
+        let budget = this.thinkingBudget;
+        // Gemini 2.5 Pro tidak boleh dinyahaktifkan (min 128); Flash/Lite
+        // benarkan 0 (mati) dan -1 (dinamik).
+        if (String(this.model).toLowerCase().includes('pro') && budget === 0) {
+          budget = 128;
+        }
+        config.thinkingConfig = { thinkingBudget: budget };
+      }
+      return config;
+    }
+
+    // ── Cabang PENSAMPELAN PENUH (1.5 / 2.0 / Gemma / unknown) ───────────────
     const generationConfig = {
       maxOutputTokens,
       temperature: this.temperature,
@@ -276,8 +384,11 @@ class GeminiService {
     if (this.topK !== undefined) {
       generationConfig.topK = this.topK;
     }
-    if (this.thinkingBudget !== undefined) {
-      generationConfig.thinkingConfig = { thinkingBudget: this.thinkingBudget };
+    if (this.frequencyPenalty !== undefined) {
+      generationConfig.frequencyPenalty = this.frequencyPenalty;
+    }
+    if (this.presencePenalty !== undefined) {
+      generationConfig.presencePenalty = this.presencePenalty;
     }
     return generationConfig;
   }
@@ -317,12 +428,21 @@ class GeminiService {
 
       const models = response.data.models
         .filter(model => model.supportedGenerationMethods?.includes('generateContent'))
-        .map(model => ({
-          name: model.name.replace('models/', ''),
-          displayName: model.displayName || model.name,
-          description: model.description || '',
-          maxTokens: model.inputTokenLimit || 30000
-        }));
+        .map(model => {
+          const name = model.name.replace('models/', '');
+          const family = getModelFamily(name);
+          return {
+            name,
+            displayName: model.displayName || model.name,
+            description: model.description || '',
+            maxTokens: model.inputTokenLimit || 30000,
+            outputTokenLimit: model.outputTokenLimit || null,
+            thinking: family.thinking,           // 'none' | 'budget' | 'level'
+            sampling: family.sampling,           // 'full' | 'warn-default-1.0' | 'stripped'
+            family: family.family,
+            alias: family.alias === true
+          };
+        });
 
       await clearCachedProviderAuthFailure(this.authFailureCacheKey);
       return models;
@@ -463,22 +583,6 @@ class GeminiService {
     let systemPrompt = (customPrompt || DEFAULT_TRANSLATION_PROMPT)
       .replace('{target_language}', normalizedTarget);
 
-    const thinkingEnabled = this.isThinkingEnabled();
-
-    if (thinkingEnabled) {
-      const universalReasoningChain = '';
-
-      if (systemPrompt.includes('<input>')) {
-        systemPrompt = systemPrompt.replace('<input>', `${universalReasoningChain}\n\n<input>`);
-      } else if (systemPrompt.includes('Do NOT include acknowledgements')) {
-        systemPrompt = systemPrompt.replace(/(Do NOT include acknowledgements[^\n]+)\n/, `$1\n\n${universalReasoningChain}\n`);
-      } else if (systemPrompt.includes('Output ONLY')) {
-        systemPrompt = systemPrompt.replace(/\n(Output ONLY)/, `\n\n${universalReasoningChain}\n\n$1`);
-      } else {
-        systemPrompt = `${systemPrompt}\n\n${universalReasoningChain}`;
-      }
-    }
-
     let userPrompt;
     if (systemPrompt.includes('<input>') || systemPrompt.includes('INPUT (')) {
       userPrompt = systemPrompt;
@@ -527,7 +631,7 @@ class GeminiService {
   async translateSubtitle(subtitleContent, sourceLanguage, targetLanguage, customPrompt = null) {
     return this.retryWithBackoff(async () => {
       try {
-        const { userPrompt } = this.buildUserPrompt(subtitleContent, targetLanguage, customPrompt);
+        const { userPrompt, systemPrompt } = this.buildUserPrompt(subtitleContent, targetLanguage, customPrompt);
 
         const estimatedSubtitleTokens = this.estimateTokenCount(subtitleContent);
 
@@ -589,13 +693,20 @@ class GeminiService {
           ];
         }
 
+        // Strukturkan requestBody dengan systemInstruction sebagai medan peringkat
+        // atas yang berasingan (REST v1beta), bukan digabung dalam contents.
+        const requestBody = {
+          contents,
+          generationConfig,
+          safetySettings
+        };
+        if (systemPrompt && String(systemPrompt).trim()) {
+          requestBody.systemInstruction = { parts: [{ text: systemPrompt }] };
+        }
+
         const response = await axios.post(
           `${this.baseUrl}/models/${this.model}:generateContent`,
-          {
-            contents,
-            generationConfig,
-            safetySettings
-          },
+          requestBody,
           {
             headers: this.getAuthHeaders(),
             timeout: this.timeout,
@@ -687,7 +798,7 @@ class GeminiService {
   async streamTranslateSubtitle(subtitleContent, sourceLanguage, targetLanguage, customPrompt = null, onChunk = null) {
     return this.retryWithBackoff(async () => {
       try {
-        const { userPrompt } = this.buildUserPrompt(subtitleContent, targetLanguage, customPrompt);
+        const { userPrompt, systemPrompt } = this.buildUserPrompt(subtitleContent, targetLanguage, customPrompt);
 
         const estimatedSubtitleTokens = this.estimateTokenCount(subtitleContent);
 
@@ -749,13 +860,20 @@ class GeminiService {
           ];
         }
 
+        // Strukturkan requestBody dengan systemInstruction sebagai medan peringkat
+        // atas yang berasingan (REST v1beta), bukan digabung dalam contents.
+        const requestBody = {
+          contents,
+          generationConfig,
+          safetySettings
+        };
+        if (systemPrompt && String(systemPrompt).trim()) {
+          requestBody.systemInstruction = { parts: [{ text: systemPrompt }] };
+        }
+
         const response = await axios.post(
           `${this.baseUrl}/models/${this.model}:streamGenerateContent`,
-          {
-            contents,
-            generationConfig,
-            safetySettings
-          },
+          requestBody,
           {
             headers: {
               ...this.getAuthHeaders(),
@@ -1094,7 +1212,13 @@ class GeminiService {
 
 module.exports = GeminiService;
 module.exports.DEFAULT_TRANSLATION_PROMPT = DEFAULT_TRANSLATION_PROMPT;
+module.exports.getModelFamily = getModelFamily;
+module.exports.getModelThinkingProfile = getModelThinkingProfile;
+module.exports.SAMPLING_DEPRECATED_MODELS = SAMPLING_DEPRECATED_MODELS;
 module.exports.__testing = {
   getGeminiErrorMessage,
-  isGeminiAuthFailure
+  isGeminiAuthFailure,
+  getModelFamily,
+  getModelThinkingProfile,
+  SAMPLING_DEPRECATED_MODELS
 };

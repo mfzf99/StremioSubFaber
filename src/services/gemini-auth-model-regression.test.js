@@ -248,3 +248,77 @@ test('Configure and Toolbox pages expose current Gemini choices and model-aware 
     }
   }
 });
+
+// ─── Fasa 5: Kunci Ground Truth — family-aware payload & schema regression ───
+
+test('[GT-1] gemini-3.8-flash strips sampling and maps disabled -> low (not minimal)', () => {
+  const service = new GeminiService('test-key', 'gemini-3.8-flash', { thinkingLevel: 'disabled' });
+  const cfg = service.buildGenerationConfig(4096);
+  assert.equal('temperature' in cfg, false);
+  assert.equal('topP' in cfg, false);
+  assert.equal('topK' in cfg, false);
+  assert.equal('frequencyPenalty' in cfg, false);
+  assert.equal('presencePenalty' in cfg, false);
+  assert.equal(cfg.thinkingConfig.thinkingLevel, 'low'); // BUKAN 'minimal' — elak ralat API 3.7/3.8
+});
+
+test('[GT-2] profile matching: 3.5-flash-lite default minimal vs 3.5-flash default medium', () => {
+  const lite = new GeminiService('test-key', 'gemini-3.5-flash-lite', {});
+  assert.equal(lite.buildGenerationConfig(4096).thinkingConfig.thinkingLevel, 'minimal');
+  const flash = new GeminiService('test-key', 'gemini-3.5-flash', {});
+  assert.equal(flash.buildGenerationConfig(4096).thinkingConfig.thinkingLevel, 'medium');
+});
+
+test('[GT-3] gemini-2.5-pro clamps thinkingBudget 0 -> 128', () => {
+  const service = new GeminiService('test-key', 'gemini-2.5-pro', { thinkingBudget: 0 });
+  assert.equal(service.buildGenerationConfig(4096).thinkingConfig.thinkingBudget, 128);
+});
+
+test('[GT-4] gemini-2.5-flash allows thinkingBudget 0 (disable)', () => {
+  const service = new GeminiService('test-key', 'gemini-2.5-flash', { thinkingBudget: 0 });
+  assert.equal(service.buildGenerationConfig(4096).thinkingConfig.thinkingBudget, 0);
+});
+
+test('[GT-5] systemInstruction is sent as top-level field, not inside contents', async () => {
+  const originalPost = axios.post;
+  let requestBody = null;
+  const service = new GeminiService('AQ.test-key', 'gemini-2.5-flash', { maxRetries: 0 });
+  service.getModelLimits = async () => ({ inputTokenLimit: 1048576, outputTokenLimit: 65536 });
+
+  axios.post = async (url, body) => {
+    requestBody = body;
+    return {
+      data: {
+        candidates: [{ finishReason: 'STOP', content: { parts: [{ text: 'Olá' }] } }]
+      }
+    };
+  };
+
+  try {
+    await service.translateSubtitle('Hello', 'English', 'Portuguese');
+    assert.ok(requestBody.systemInstruction, 'systemInstruction should exist at top level');
+    assert.ok(Array.isArray(requestBody.systemInstruction.parts), 'systemInstruction.parts should be an array');
+    assert.equal(typeof requestBody.systemInstruction.parts[0].text, 'string');
+    // contents must not carry the system instruction role
+    const roles = requestBody.contents.map(c => c.role);
+    assert.ok(!roles.includes('system'), 'contents should not contain a system role entry');
+  } finally {
+    axios.post = originalPost;
+  }
+});
+
+test('[GT-6] normalizeConfig preserves topK and thinkingBudget (no aggressive deletion)', () => {
+  const normalized = normalizeConfig({
+    geminiApiKey: 'AQ.saved.key',
+    geminiModel: 'gemini-2.5-flash',
+    advancedSettings: {
+      enabled: true,
+      topK: 25,
+      thinkingBudget: 2048,
+      frequencyPenalty: 0.5,
+      presencePenalty: -0.5
+    }
+  });
+  assert.equal(normalized.advancedSettings.topK, 25, 'topK must be preserved');
+  assert.equal(normalized.advancedSettings.thinkingBudget, 2048, 'thinkingBudget must be preserved');
+});

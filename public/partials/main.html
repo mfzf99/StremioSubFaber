@@ -746,17 +746,19 @@
                                 <option value="gemini-3.1-flash-lite"
                                     data-i18n="config.gemini.model.options.flashLite31" selected>Gemini 3.1 Flash Lite
                                 </option>
+                                <option value="gemini-3.8-flash" data-i18n="config.gemini.model.options.flash38">
+                                    Gemini 3.8 Flash</option>
                                 <option value="gemini-3.7-flash" data-i18n="config.gemini.model.options.flash37">
-                                    Gemini 3.7 Flash (beta)</option>
+                                    Gemini 3.7 Flash</option>
                                 <option value="gemini-3.6-flash" data-i18n="config.gemini.model.options.flash36">
-                                    Gemini 3.6 Flash (beta)</option>
+                                    Gemini 3.6 Flash</option>
                                 <option value="gemini-3.5-flash" data-i18n="config.gemini.model.options.flash35">
-                                    Gemini 3.5 Flash (beta)</option>
+                                    Gemini 3.5 Flash</option>
                                 <option value="gemini-3.5-flash-lite"
-                                    data-i18n="config.gemini.model.options.flashLite35">Gemini 3.5 Flash-Lite (beta)
+                                    data-i18n="config.gemini.model.options.flashLite35">Gemini 3.5 Flash-Lite
                                 </option>
                                 <option value="gemini-3-flash-preview" data-i18n="config.gemini.model.options.flash3">
-                                    Gemini 3.0 Flash (beta)</option>
+                                    Gemini 3.0 Flash (preview)</option>
                                 <option value="gemini-2.5-flash-lite" data-i18n="config.gemini.model.options.flashLite">
                                     Gemini 2.5 Flash-Lite</option>
                                 <option value="gemini-2.5-flash" data-i18n="config.gemini.model.options.flash">Gemini
@@ -2108,7 +2110,13 @@
                 </div>
 
                 <div class="form-group" id="advancedThinkingBudgetGroup" style="display: none;">
-                    <input type="hidden" id="advancedThinkingBudget" value="0">
+                    <label for="advancedThinkingBudget">
+                        <span data-i18n="config.advancedGemini.thinkingBudget.label">Thinking Budget</span>
+                        <span class="label-description"
+                            data-i18n="config.advancedGemini.thinkingBudget.description">Reasoning token budget for Gemini 2.5 (0 = off for Flash/Lite, -1 = dynamic, Pro min 128).</span>
+                    </label>
+                    <input type="number" id="advancedThinkingBudget" min="-1" max="200000" step="1" value="-1"
+                        placeholder="-1">
                 </div>
 
                 <div class="form-group" id="advancedThinkingLevelGroup">
@@ -2145,6 +2153,40 @@
                             more diverse. Default: 0.95</span>
                     </label>
                     <input type="number" id="advancedTopP" min="0" max="1" step="0.05" value="0.95" placeholder="0.95">
+                </div>
+
+                <div class="form-group" id="advancedTopKGroup">
+                    <label for="advancedTopK">
+                        <span data-i18n="config.advancedGemini.topK.label">Top-K</span>
+                        <span class="label-description"
+                            data-i18n="config.advancedGemini.topK.description">Sample from top-K tokens (1-100). Gemini 1.5 / 2.x only. Default: 40</span>
+                    </label>
+                    <input type="number" id="advancedTopK" min="1" max="100" step="1" value="40" placeholder="40">
+                </div>
+
+                <div class="form-group" id="advancedFrequencyPenaltyGroup">
+                    <label for="advancedFrequencyPenalty">
+                        <span data-i18n="config.advancedGemini.frequencyPenalty.label">Frequency Penalty</span>
+                        <span class="label-description"
+                            data-i18n="config.advancedGemini.frequencyPenalty.description">Penalize repeated tokens (-2.0 to 2.0). Gemini 1.5 / 2.x only. Default: 0</span>
+                    </label>
+                    <input type="number" id="advancedFrequencyPenalty" min="-2" max="2" step="0.1" value="0"
+                        placeholder="0">
+                </div>
+
+                <div class="form-group" id="advancedPresencePenaltyGroup">
+                    <label for="advancedPresencePenalty">
+                        <span data-i18n="config.advancedGemini.presencePenalty.label">Presence Penalty</span>
+                        <span class="label-description"
+                            data-i18n="config.advancedGemini.presencePenalty.description">Penalize tokens already present (-2.0 to 2.0). Gemini 1.5 / 2.x only. Default: 0</span>
+                    </label>
+                    <input type="number" id="advancedPresencePenalty" min="-2" max="2" step="0.1" value="0"
+                        placeholder="0">
+                </div>
+
+                <div class="form-group" id="samplingControlledNote" style="display: none; margin-bottom: 0;">
+                    <p style="margin: 0; font-size: 0.85rem; color: var(--text-secondary); padding: 0.6rem; background: rgba(59, 130, 246, 0.08); border: 1px solid rgba(59, 130, 246, 0.25); border-radius: 8px;"
+                        data-i18n="config.advancedGemini.samplingControlled">This Gemini 3 model manages sampling automatically — temperature / topP / topK / penalties are not configurable.</p>
                 </div>
             </div>
         </div>

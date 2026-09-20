@@ -969,15 +969,18 @@ Translate to {target_language}.`;
         return normalized;
     }
 
+    // Disusun PALING KHUSUS dahulu untuk padanan longest-prefix.
+    // Disahkan mengikut dokumentasi rasmi Google Thinking.
     const MODEL_THINKING_PROFILES = {
+        'gemini-3.8-flash': { default: 'medium', levels: ['low', 'medium', 'high'] },
         'gemini-3.7-flash': { default: 'medium', levels: ['low', 'medium', 'high'] },
         'gemini-3.6-flash': { default: 'medium', levels: ['minimal', 'low', 'medium', 'high'] },
         'gemini-3.5-flash-lite': { default: 'minimal', levels: ['minimal', 'low', 'medium', 'high'] },
-        'gemini-3.1-pro-preview': { default: 'high', levels: ['low', 'medium', 'high'] },
+        'gemini-3.1-flash-lite-image': { default: 'minimal', levels: ['minimal', 'high'] },
         'gemini-3.1-flash-lite': { default: 'minimal', levels: ['minimal', 'low', 'medium', 'high'] },
-        'gemini-3-flash-preview': { default: 'high', levels: ['minimal', 'low', 'medium', 'high'] },
-        'gemini-3-pro-preview': { default: 'high', levels: ['low', 'high'] },
+        'gemini-3.1-pro-preview': { default: 'high', levels: ['low', 'medium', 'high'] },
         'gemini-3.5-flash': { default: 'medium', levels: ['minimal', 'low', 'medium', 'high'] },
+        'gemini-3-flash-preview': { default: 'high', levels: ['minimal', 'low', 'medium', 'high'] },
         'gemini-2.5-pro': { default: 'medium', levels: ['low', 'medium', 'high'] },
         'gemini-2.5-flash': { default: 'medium', levels: ['low', 'medium', 'high'] },
         'gemini-2.5-flash-lite': { default: 'disabled', levels: ['low', 'medium', 'high'] }
@@ -985,17 +988,52 @@ Translate to {target_language}.`;
 
     function getModelThinkingProfile(modelName) {
         const normalized = normalizeGeminiModelName(modelName).toLowerCase();
-        for (const [key, profile] of Object.entries(MODEL_THINKING_PROFILES)) {
-            if (normalized.includes(key) || key.includes(normalized)) {
-                return profile;
+        if (MODEL_THINKING_PROFILES[normalized]) {
+            return MODEL_THINKING_PROFILES[normalized];
+        }
+        let best = null;
+        for (const key of Object.keys(MODEL_THINKING_PROFILES)) {
+            if (normalized.startsWith(key) && (!best || key.length > best.length)) {
+                best = key;
             }
         }
+        if (best) return MODEL_THINKING_PROFILES[best];
         return { default: 'medium', levels: ['minimal', 'low', 'medium', 'high'] };
     }
 
     function isGemini3ModelName(modelName) {
         const modelId = normalizeGeminiModelName(modelName);
         return /^gemini-3(?:[.-]|$)/i.test(modelId) || /^gemini-(?:flash|flash-lite|pro)-latest$/i.test(modelId);
+    }
+
+    // Cermin klasifikasi backend (src/services/gemini.js getModelFamily).
+    // Menggunakan pengecualian EKSPLISIT untuk model 3.x-legacy supaya model 3.x
+    // baharu (3.6+, 3.7, 3.8, dan masa hadapan) lalai kepada 'strict'.
+    const GEMINI_LEGACY_3X_MODELS = new Set([
+        'gemini-3-flash-preview',
+        'gemini-3.1-flash-lite',
+        'gemini-3.1-flash-lite-image',
+        'gemini-3.1-flash-image',
+        'gemini-3.1-pro-preview',
+        'gemini-3.5-flash'
+    ]);
+
+    function getModelFamily(modelName) {
+        const m = normalizeGeminiModelName(modelName).toLowerCase();
+        if (m.includes('gemma')) return { family: 'gemma', sampling: 'full', thinking: 'none' };
+        if (/^gemini-1\.5/.test(m)) return { family: '1.5', sampling: 'full', thinking: 'none' };
+        if (/^gemini-2\.0/.test(m)) return { family: '2.0', sampling: 'full', thinking: 'none' };
+        if (/^gemini-2\.5/.test(m)) return { family: '2.5', sampling: 'full', thinking: 'budget' };
+        if (/^gemini-3(?:[.-]|$)/.test(m)) {
+            if (GEMINI_LEGACY_3X_MODELS.has(m) || m.startsWith('gemini-3.1')) {
+                return { family: '3.x-legacy', sampling: 'warn-default-1.0', thinking: 'level' };
+            }
+            return { family: '3.x-strict', sampling: 'stripped', thinking: 'level' };
+        }
+        if (/^gemini-(flash|flash-lite|pro)-latest$/.test(m)) {
+            return { family: '3.x-strict', sampling: 'stripped', thinking: 'level', alias: true };
+        }
+        return { family: 'unknown', sampling: 'full', thinking: 'none' };
     }
 
     function sanitizeGeminiThinkingLevel(value, fallback = 'minimal') {
@@ -1199,31 +1237,110 @@ Translate to {target_language}.`;
     function updateGeminiThinkingControl() {
         const model = getAdvancedGeminiModelValue();
         const profile = getModelThinkingProfile(model);
+        const familyInfo = getModelFamily(model);
+
         const levelSelect = document.getElementById('advancedThinkingLevel');
         const levelGroup = document.getElementById('advancedThinkingLevelGroup');
         const budgetGroup = document.getElementById('advancedThinkingBudgetGroup');
+        const budgetInput = document.getElementById('advancedThinkingBudget');
+        const tempEl = document.getElementById('advancedTemperature');
+        const topPEl = document.getElementById('advancedTopP');
+        const topKGroup = document.getElementById('advancedTopKGroup');
+        const topKEl = document.getElementById('advancedTopK');
+        const freqGroup = document.getElementById('advancedFrequencyPenaltyGroup');
+        const freqEl = document.getElementById('advancedFrequencyPenalty');
+        const presGroup = document.getElementById('advancedPresencePenaltyGroup');
+        const presEl = document.getElementById('advancedPresencePenalty');
+        const samplingNote = document.getElementById('samplingControlledNote');
 
-        if (budgetGroup) budgetGroup.style.display = 'none';
-
+        // ── Bina semula pilihan Thinking Level mengikut profil model ──
         if (levelSelect && profile && Array.isArray(profile.levels)) {
             const currentVal = levelSelect.value;
             levelSelect.innerHTML = '';
-            
             profile.levels.forEach(lvl => {
                 const opt = document.createElement('option');
                 opt.value = lvl;
                 opt.textContent = lvl.charAt(0).toUpperCase() + lvl.slice(1);
                 levelSelect.appendChild(opt);
             });
-
-            if (profile.levels.includes(currentVal)) {
-                levelSelect.value = currentVal;
-            } else {
-                levelSelect.value = profile.default;
-            }
+            levelSelect.value = profile.levels.includes(currentVal) ? currentVal : profile.default;
         }
 
-        if (levelGroup) levelGroup.style.display = '';
+        // ── Morphing 4-keadaan mengikut keluarga model ──
+        const setDisabled = (el, disabled) => { if (el) el.disabled = disabled; };
+        const setVisible = (el, visible) => { if (el) el.style.display = visible ? '' : 'none'; };
+
+        switch (familyInfo.family) {
+            case '3.x-strict':
+                // Tunjuk Thinking Level; sembunyi Budget; nyahaktifkan pensampelan.
+                setVisible(levelGroup, true);
+                setVisible(budgetGroup, false);
+                setDisabled(tempEl, true);
+                setDisabled(topPEl, true);
+                setVisible(topKGroup, false);
+                setVisible(freqGroup, false);
+                setVisible(presGroup, false);
+                setVisible(samplingNote, true);
+                break;
+
+            case '3.x-legacy':
+                // Tunjuk Thinking Level; kunci suhu kepada 1.0; pensampelan lain aktif.
+                setVisible(levelGroup, true);
+                setVisible(budgetGroup, false);
+                if (tempEl) { tempEl.disabled = false; tempEl.value = '1.0'; tempEl.title = 'Disyorkan 1.0 oleh Google untuk Gemini 3'; }
+                setDisabled(topPEl, false);
+                setVisible(topKGroup, true);
+                setDisabled(topKEl, false);
+                setVisible(freqGroup, true);
+                setDisabled(freqEl, false);
+                setVisible(presGroup, true);
+                setDisabled(presEl, false);
+                setVisible(samplingNote, false);
+                break;
+
+            case '2.5':
+                // Tunjuk Thinking Budget; pensampelan penuh aktif.
+                setVisible(levelGroup, false);
+                setVisible(budgetGroup, true);
+                if (budgetInput) {
+                    // Gemini 2.5 Pro tidak boleh nyahaktif (min 128); Flash/Lite benarkan 0.
+                    budgetInput.min = model.includes('pro') ? '128' : '-1';
+                    budgetInput.title = model.includes('pro')
+                        ? 'Gemini 2.5 Pro: min 128 (tidak boleh dimatikan), -1 = dinamik'
+                        : '0 = mati, -1 = dinamik';
+                }
+                setDisabled(tempEl, false);
+                if (tempEl) tempEl.title = '';
+                setDisabled(topPEl, false);
+                setVisible(topKGroup, true);
+                setDisabled(topKEl, false);
+                setVisible(freqGroup, true);
+                setDisabled(freqEl, false);
+                setVisible(presGroup, true);
+                setDisabled(presEl, false);
+                setVisible(samplingNote, false);
+                break;
+
+            case '1.5':
+            case '2.0':
+            case 'gemma':
+            case 'unknown':
+            default:
+                // Tiada kawalan thinking; pensampelan penuh aktif.
+                setVisible(levelGroup, false);
+                setVisible(budgetGroup, false);
+                setDisabled(tempEl, false);
+                if (tempEl) tempEl.title = '';
+                setDisabled(topPEl, false);
+                setVisible(topKGroup, true);
+                setDisabled(topKEl, false);
+                setVisible(freqGroup, true);
+                setDisabled(freqEl, false);
+                setVisible(presGroup, true);
+                setDisabled(presEl, false);
+                setVisible(samplingNote, false);
+                break;
+        }
     }
 
     function getDefaultProviderParameters() {
@@ -1400,6 +1517,8 @@ Translate to {target_language}.`;
                 temperature: modelDefaults.temperature,
                 topP: 0.95,
                 topK: 40,
+                frequencyPenalty: 0,
+                presencePenalty: 0,
                 enableBatchContext: false, // Include original surrounding context and previous translations
                 contextSize: 20, // Number of preceding original entries to include as context
                 sendTimestampsToAI: false, // Deprecated legacy field, locked to false
@@ -6494,13 +6613,25 @@ Translate to {target_language}.`;
         const thinkingChanged = sanitizeGeminiThinkingLevel(advThinkingLevelEl.value, activeModelDefaults.thinkingLevel) !== activeModelDefaults.thinkingLevel;
         const tempChanged = parseFloat(advTempEl.value) !== defaults.temperature;
         const topPChanged = parseFloat(advTopPEl.value) !== defaults.topP;
+
+        // topK / penalti: anggap berubah hanya jika berbeza daripada lalai.
+        const advTopKEl = document.getElementById('advancedTopK');
+        const advFreqEl = document.getElementById('advancedFrequencyPenalty');
+        const advPresEl = document.getElementById('advancedPresencePenalty');
+        const topKChanged = advTopKEl ? (parseInt(advTopKEl.value, 10) !== (defaults.topK ?? 40)) : false;
+        const freqChanged = advFreqEl ? (parseFloat(advFreqEl.value) !== (defaults.frequencyPenalty ?? 0)) : false;
+        const presChanged = advPresEl ? (parseFloat(advPresEl.value) !== (defaults.presencePenalty ?? 0)) : false;
+
+        // thinkingBudget: hanya kira untuk model 2.5 (lalai -1 = dinamik).
+        const thinkingBudgetChanged = advThinkingEl ? (parseInt(advThinkingEl.value, 10) !== (defaults.thinkingBudget ?? -1)) : false;
+
         const batchCtxChanged = batchCtxEl ? (batchCtxEl.checked !== (defaults.enableBatchContext === true)) : false;
         const ctxSizeChanged = ctxSizeEl ? (parseInt(ctxSizeEl.value) !== (defaults.contextSize || 20)) : false;
         const mismatchRetriesEl = document.getElementById('mismatchRetries');
         const mismatchRetriesChanged = mismatchRetriesEl ? (parseInt(mismatchRetriesEl.value) !== (defaults.mismatchRetries ?? 3)) : false;
         const workflowChanged = false;
 
-        return modelChanged || thinkingChanged || tempChanged || topPChanged || batchCtxChanged || ctxSizeChanged || mismatchRetriesChanged || workflowChanged;
+        return modelChanged || thinkingChanged || thinkingBudgetChanged || tempChanged || topPChanged || topKChanged || freqChanged || presChanged || batchCtxChanged || ctxSizeChanged || mismatchRetriesChanged || workflowChanged;
     }
 
     /**
@@ -7827,6 +7958,13 @@ Translate to {target_language}.`;
             if (advThinkingLevelEl) advThinkingLevelEl.value = modelDefaults.thinkingLevel;
             if (advTempEl) advTempEl.value = modelDefaults.temperature;
             if (advTopPEl) advTopPEl.value = fullDefaults.topP;
+            if (advThinkingEl) advThinkingEl.value = fullDefaults.thinkingBudget ?? -1;
+            const advTopKEl2 = document.getElementById('advancedTopK');
+            const advFreqEl2 = document.getElementById('advancedFrequencyPenalty');
+            const advPresEl2 = document.getElementById('advancedPresencePenalty');
+            if (advTopKEl2) advTopKEl2.value = fullDefaults.topK ?? 40;
+            if (advFreqEl2) advFreqEl2.value = fullDefaults.frequencyPenalty ?? 0;
+            if (advPresEl2) advPresEl2.value = fullDefaults.presencePenalty ?? 0;
             updateGeminiThinkingControl();
 
             // Update bypass cache state based on new defaults
@@ -7894,6 +8032,9 @@ Translate to {target_language}.`;
         const advThinkingLevelEl = document.getElementById('advancedThinkingLevel');
         const advTempEl = document.getElementById('advancedTemperature');
         const advTopPEl = document.getElementById('advancedTopP');
+        const advTopKEl = document.getElementById('advancedTopK');
+        const advFreqEl = document.getElementById('advancedFrequencyPenalty');
+        const advPresEl = document.getElementById('advancedPresencePenalty');
 
         // Fetch models when dropdown is clicked (on-demand fallback)
         if (advModelEl) {
@@ -7931,7 +8072,7 @@ Translate to {target_language}.`;
             tryFetchAdvancedModels();
         });
 
-        [advModelEl, advThinkingEl, advThinkingLevelEl, advTempEl, advTopPEl].forEach(el => {
+        [advModelEl, advThinkingEl, advThinkingLevelEl, advTempEl, advTopPEl, advTopKEl, advFreqEl, advPresEl].forEach(el => {
             if (el) {
                 el.addEventListener('change', updateBypassCacheForAdvancedSettings);
                 el.addEventListener('input', updateBypassCacheForAdvancedSettings);
@@ -10096,65 +10237,62 @@ Translate to {target_language}.`;
         }
     }
 
-    async function populateAdvancedModels(models) {
-        const advModelSelect = document.getElementById('advancedModel');
-        if (!advModelSelect) {
-            return;
+    // Fallback selamat jika API model tidak dapat dicapai (offline / ralat rangkaian).
+    const SAFE_DEFAULT_MODELS = [
+        { name: 'gemini-flash-lite-latest', displayName: 'Gemini Flash Lite Latest' },
+        { name: 'gemini-3.1-flash-lite', displayName: 'Gemini 3.1 Flash Lite' },
+        { name: 'gemini-2.5-flash-lite', displayName: 'Gemini 2.5 Flash-Lite' },
+        { name: 'gemini-2.5-flash', displayName: 'Gemini 2.5 Flash' }
+    ];
+
+    // Isi KEDUA-DUA dropdown (#geminiModel dan #advancedModel) serentak daripada
+    // senarai model rasmi API. Pulihkan pilihan tersimpan jika masih wujud.
+    function populateGeminiModelDropdowns(models) {
+        const baseSelect = document.getElementById('geminiModel');
+        const advSelect = document.getElementById('advancedModel');
+        const list = (Array.isArray(models) && models.length) ? models : SAFE_DEFAULT_MODELS;
+
+        // Simpan pilihan semasa / tersimpan
+        const savedBase = currentConfig.geminiModel || (baseSelect ? baseSelect.value : '');
+        const savedAdv = currentConfig.advancedSettings?.geminiModel || (advSelect ? advSelect.value : '');
+
+        // ── Dropdown asas ──
+        if (baseSelect) {
+            const prevValue = baseSelect.value;
+            baseSelect.innerHTML = '';
+            list.forEach(model => {
+                const opt = document.createElement('option');
+                opt.value = model.name;
+                opt.textContent = model.displayName || model.name;
+                baseSelect.appendChild(opt);
+            });
+            // Pulihkan: utamakan nilai tersimpan konfigurasi, kemudian nilai DOM sebelumnya.
+            const target = [savedBase, prevValue, DEFAULT_GEMINI_MODEL].find(v => v && list.some(m => m.name === v));
+            baseSelect.value = target || list[0].name;
         }
 
-        // Clear and populate advanced model dropdown with ALL models
-        advModelSelect.innerHTML = `<option value="">${tConfig('config.providersUi.useDefaultModel', {}, 'Use Default Model')}</option>`;
+        // ── Dropdown override advanced ──
+        if (advSelect) {
+            const prevValue = advSelect.value;
+            advSelect.innerHTML = `<option value="">${tConfig('config.providersUi.useDefaultModel', {}, 'Use Default Model')}</option>`;
+            list.forEach(model => {
+                const opt = document.createElement('option');
+                opt.value = model.name;
+                opt.textContent = model.displayName || model.name;
+                advSelect.appendChild(opt);
+            });
+            const target = [savedAdv, prevValue].find(v => v && list.some(m => m.name === v));
+            advSelect.value = target || '';
+        }
 
-        // Define hardcoded multi-model options
-        const hardcodedModels = [
+        // Picu morphing mengikut pilihan aktif.
+        updateGeminiThinkingControl();
+    }
 
-            { name: 'gemini-3.1-flash-lite', displayName: 'Gemini 3.1 Flash Lite' },
-            { name: 'gemini-3.7-flash', displayName: 'Gemini 3.7 Flash (beta)' },
-            { name: 'gemini-3.6-flash', displayName: 'Gemini 3.6 Flash (beta)' },
-            { name: 'gemini-3.5-flash', displayName: 'Gemini 3.5 Flash (beta)' },
-            { name: 'gemini-3.5-flash-lite', displayName: 'Gemini 3.5 Flash-Lite (beta)' },
-            { name: 'gemini-2.5-flash-lite', displayName: 'Gemini 2.5 Flash-Lite' },
-            { name: 'gemini-2.5-flash', displayName: 'Gemini 2.5 Flash' },
-            { name: 'gemini-3-flash-preview', displayName: 'Gemini 3.0 Flash (beta)' },
-            { name: 'gemini-2.5-pro', displayName: 'Gemini 2.5 Pro (beta)' },
-            { name: 'gemini-3.1-pro-preview', displayName: 'Gemini 3.1 Pro (beta)' }
-        ];
-
-        // Track added models to avoid duplicates
-        const addedModels = new Set(['', ...hardcodedModels.map(m => m.name)]);
-
-        // Add hardcoded models first
-        hardcodedModels.forEach(model => {
-            const option = document.createElement('option');
-            option.value = model.name;
-            option.textContent = model.displayName;
-
-            // Preserve user's saved selection if it exists
-            if (currentConfig.advancedSettings?.geminiModel === model.name) {
-                option.selected = true;
-            }
-
-            advModelSelect.appendChild(option);
-        });
-
-        // Add API-fetched models (avoid duplicates)
-        models.forEach(model => {
-            if (!addedModels.has(model.name)) {
-                const option = document.createElement('option');
-                option.value = model.name;
-                option.textContent = `${model.displayName}`;
-
-                // Preserve user's saved selection if it exists
-                if (currentConfig.advancedSettings?.geminiModel === model.name) {
-                    option.selected = true;
-                }
-
-                advModelSelect.appendChild(option);
-                addedModels.add(model.name);
-            }
-        });
-
-
+    async function populateAdvancedModels(models) {
+        // Kekalkan nama fungsi untuk keserasian dengan pemanggil sedia ada;
+        // tugas sebenar diserahkan kepada populateGeminiModelDropdowns.
+        populateGeminiModelDropdowns(models);
     }
 
     function handleQuickAction(e) {
@@ -10914,7 +11052,7 @@ Translate to {target_language}.`;
             advModelEl.value = currentConfig.advancedSettings?.geminiModel || '';
         }
 
-        if (advThinkingEl) advThinkingEl.value = currentConfig.advancedSettings?.thinkingBudget ?? 0;
+        if (advThinkingEl) advThinkingEl.value = currentConfig.advancedSettings?.thinkingBudget ?? -1;
         if (advThinkingLevelEl) {
             const activeDefaults = getModelSpecificDefaults(currentConfig.advancedSettings?.geminiModel || currentConfig.geminiModel);
             advThinkingLevelEl.value = sanitizeGeminiThinkingLevel(
@@ -10924,6 +11062,12 @@ Translate to {target_language}.`;
         }
         if (advTempEl) advTempEl.value = currentConfig.advancedSettings?.temperature ?? 0.2;
         if (advTopPEl) advTopPEl.value = currentConfig.advancedSettings?.topP ?? 0.95;
+        const advTopKEl = document.getElementById('advancedTopK');
+        const advFreqEl = document.getElementById('advancedFrequencyPenalty');
+        const advPresEl = document.getElementById('advancedPresencePenalty');
+        if (advTopKEl) advTopKEl.value = currentConfig.advancedSettings?.topK ?? 40;
+        if (advFreqEl) advFreqEl.value = currentConfig.advancedSettings?.frequencyPenalty ?? 0;
+        if (advPresEl) advPresEl.value = currentConfig.advancedSettings?.presencePenalty ?? 0;
         updateGeminiThinkingControl();
 
         // Load batch context settings
@@ -11279,8 +11423,12 @@ Translate to {target_language}.`;
                 enabled: areAdvancedSettingsModified(), // Auto-detect if any setting differs from defaults
                 geminiModel: (function () { const el = document.getElementById('advancedModel'); return el ? el.value : ''; })(),
                 thinkingLevel: (function () { const el = document.getElementById('advancedThinkingLevel'); return el ? sanitizeGeminiThinkingLevel(el.value) : 'minimal'; })(),
+                thinkingBudget: (function () { const el = document.getElementById('advancedThinkingBudget'); if (!el) return -1; const v = parseInt(el.value, 10); return Number.isFinite(v) ? Math.max(-1, Math.min(200000, v)) : -1; })(),
                 temperature: (function () { const el = document.getElementById('advancedTemperature'); return el ? parseFloat(el.value) : 0.2; })(),
                 topP: (function () { const el = document.getElementById('advancedTopP'); return el ? parseFloat(el.value) : 0.95; })(),
+                topK: (function () { const el = document.getElementById('advancedTopK'); if (!el) return 40; const v = parseInt(el.value, 10); return Number.isFinite(v) ? Math.max(1, Math.min(100, v)) : 40; })(),
+                frequencyPenalty: (function () { const el = document.getElementById('advancedFrequencyPenalty'); return el ? parseFloat(el.value) : 0; })(),
+                presencePenalty: (function () { const el = document.getElementById('advancedPresencePenalty'); return el ? parseFloat(el.value) : 0; })(),
                 enableBatchContext: (function () { const el = document.getElementById('enableBatchContext'); return el ? el.checked : false; })(),
                 contextSize: (function () { const el = document.getElementById('contextSize'); return el ? parseInt(el.value) : 20; })(),
                 translationWorkflow: 'xml',

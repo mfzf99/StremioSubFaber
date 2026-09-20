@@ -171,7 +171,12 @@ Visit: **http://localhost:7001**
 Enable "Advanced Mode" in Other Settings to unlock:
 - Batch Context (surrounding context for coherence)
 - Mismatch Retries (retry on wrong entry count)
-- Gemini Parameters (temperature, top-p, thinking budget)
+- Model-aware Gemini Parameters — the panel reshapes itself to the selected model:
+  - **Thinking Level** (Minimal/Low/Medium/High) for Gemini 3.x models
+  - **Thinking Budget** (0 = off, -1 = dynamic, Pro min 128) for Gemini 2.5 models
+  - **Sampling controls** — temperature, top-P, top-K, frequency & presence penalties — for Gemini 1.5/2.0/2.5 (automatically managed and disabled for newer Gemini 3.x models)
+
+> **Model Discovery:** Both the base and override model dropdowns are populated live from your API key via Google's model list, so newly released models appear automatically without waiting for an app update.
 
 ---
 

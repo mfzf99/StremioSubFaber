@@ -161,9 +161,31 @@ function mergeProviderParameters(defaults, incoming) {
           : NaN;
         const fallback = Number.isFinite(parseInt(base.thinkingBudget, 10))
           ? parseInt(base.thinkingBudget, 10)
-          : 0;
+          : -1;
         const chosen = Number.isFinite(requested) ? requested : fallback;
-        return Math.max(0, Math.min(200000, chosen));
+        // Benarkan -1 (dynamic) dan 0 (disable) mengikut spesifikasi Gemini 2.5.
+        return Math.max(-1, Math.min(200000, chosen));
+      })(),
+      topK: (() => {
+        const requested = Number.isFinite(parseInt(raw?.topK, 10))
+          ? parseInt(raw.topK, 10)
+          : NaN;
+        if (!Number.isFinite(requested)) return base.topK;
+        return Math.max(1, Math.min(100, requested));
+      })(),
+      frequencyPenalty: (() => {
+        const requested = Number.isFinite(parseFloat(raw?.frequencyPenalty))
+          ? parseFloat(raw.frequencyPenalty)
+          : NaN;
+        if (!Number.isFinite(requested)) return base.frequencyPenalty;
+        return Math.max(-2, Math.min(2, requested));
+      })(),
+      presencePenalty: (() => {
+        const requested = Number.isFinite(parseFloat(raw?.presencePenalty))
+          ? parseFloat(raw.presencePenalty)
+          : NaN;
+        if (!Number.isFinite(requested)) return base.presencePenalty;
+        return Math.max(-2, Math.min(2, requested));
       })(),
       formality: typeof raw?.formality === 'string'
         ? raw.formality
@@ -540,12 +562,13 @@ function normalizeConfig(config) {
     })()
   };
 
-  // 🔥 Pembersihan Mutlak Parameter Legasi (topK, minP, repetitionPenalty, thinkingBudget)
+  // 🔥 Pembersihan Parameter Legasi Terpilih (minP, repetitionPenalty).
+  // NOTA: thinkingBudget & topK DIKEKALKAN — thinkingBudget diperlukan oleh
+  // Gemini 2.5 (mod nyahaktif=0 / dinamik=-1), manakala topK disokong oleh
+  // Gemini 1.5 / 2.x. Pemadaman mutlak sebelum ini membuang tetapan sah pengguna.
   if (mergedConfig.advancedSettings) {
-    delete mergedConfig.advancedSettings.topK;
     delete mergedConfig.advancedSettings.minP;
     delete mergedConfig.advancedSettings.repetitionPenalty;
-    delete mergedConfig.advancedSettings.thinkingBudget;
   }
 
   mergedConfig.parallelBatchesEnabled = mergedConfig.parallelBatchesEnabled === true;

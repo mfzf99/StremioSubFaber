@@ -2,6 +2,26 @@
 
 All notable changes to this project will be documented in this file.
 
+## SubMaker v1.4.91
+
+**New Features:**
+
+- **Real-time Gemini model discovery from the official Google API:** Both the base **Translation Model** dropdown (`#geminiModel`) and the **Advanced Model Override** dropdown (`#advancedModel`) are now populated live from the authenticated `v1beta/models` endpoint (filtered to `generateContent` capability) via a new `populateGeminiModelDropdowns()` helper. The stale hardcoded advanced-model list (which included unofficial/retired slugs such as `gemini-3.7-flash` mislabeled "beta" and the shutdown `gemini-3-pro-preview`) has been removed, and each discovered model now carries `outputTokenLimit`, `thinking`, `sampling`, `family`, and `alias` metadata for downstream decisions. A safe offline fallback list keeps the UI usable when the model endpoint is unreachable.
+
+- **Four-state model-aware DOM morphing in Advanced Settings:** A new shared `getModelFamily()` classifier (mirrored between the backend driver and the config UI) drives `updateGeminiThinkingControl()`, which now reshapes the Advanced Gemini panel based on the selected model's family:
+  - **`3.x-strict`** (`gemini-3.6-flash`, `gemini-3.5-flash-lite`, `gemini-3.7-flash`, `gemini-3.8-flash`): shows the Thinking Level selector and disables/grays out all sampling controls (temperature, top-P, top-K, penalties) with an explanatory note that these models manage sampling automatically.
+  - **`3.x-legacy`** (`gemini-3-flash-preview`, `gemini-3.5-flash`, `gemini-3.1-*`): shows Thinking Level, locks temperature to `1.0` with a "recommended by Google" hint, and keeps the remaining sampling controls active.
+  - **`2.5`** (`gemini-2.5-flash/-pro/-flash-lite`): swaps Thinking Level for the numeric **Thinking Budget** input (min `128` for Pro, `-1` dynamic/`0` disabled for Flash/Lite) and enables full sampling controls.
+  - **`1.5 / 2.0 / Gemma / unknown`**: hides both thinking controls and enables full sampling.
+
+- **Separated `systemInstruction` at the top level of the REST v1beta payload:** Translation requests (`translateSubtitle` and `streamTranslateSubtitle`) now send the system prompt as a dedicated top-level `systemInstruction: { parts: [{ text }] }` field in `GenerateContentRequest`, per the official Google reference, instead of relying solely on inlined prompt text inside `contents`. Added new Top-K (1-100), Frequency Penalty (-2.0 to 2.0), and Presence Penalty (-2.0 to 2.0) inputs to the Advanced Gemini panel, wired end-to-end through form build/save, rehydration, bypass-cache detection, and backend validation.
+
+**Bug Fixes:**
+
+- **Fixed critical parameter deletion wiping valid user tuning in `normalizeConfig()`:** The "absolute legacy cleanup" block in `src/utils/config.js` previously deleted `thinkingBudget` and `topK` from every saved config's `advancedSettings` on each load — silently discarding a Gemini 2.5 user's disable (`0`) / dynamic (`-1`) thinking budget and any custom Top-K. Only the genuinely legacy `minP` and `repetitionPenalty` keys are removed now; `thinkingBudget`, `topK`, `frequencyPenalty`, and `presencePenalty` are preserved and validated. Provider-parameter merging also now clamps `thinkingBudget` to `-1..200000` (was `0..200000`, which broke the dynamic `-1` mode) and accepts Top-K and both penalties.
+
+- **Aligned the model matrix with the official Google deprecation timeline:** Model classification now follows the verified July 21, 2026 changelog boundary — sampling parameters (`temperature`/`top_p`/`top_k`) are stripped only for the GA releases from that date onward (`gemini-3.6-flash`, `gemini-3.5-flash-lite`, and newer `3.7`/`3.8`), while earlier 3.x models are classified `3.x-legacy`. The `thinkingLevel` fallback for `disabled`/`off`/empty is now always `low` (never `minimal`, which returns an API error on 3.7/3.8 Flash), profile matching uses exact-then-longest-prefix (so `gemini-3.5-flash-lite` no longer mismatches the `gemini-3.5-flash` profile), `gemini-2.5-pro` thinking budget `0` is clamped to the documented `128` minimum, and the output-token fallback is standardized to `65536` across all routes. Added six ground-truth regression tests (GT-1 to GT-6) locking this behavior.
+
 ## SubMaker v1.4.90
 
 **Improvements:**
