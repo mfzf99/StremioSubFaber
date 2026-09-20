@@ -752,6 +752,27 @@
         return '';
     }
 
+    const UI_LANGUAGE_FLAG_SVG = Object.freeze({
+        en: '<svg viewBox="0 0 28 20" xmlns="http://www.w3.org/2000/svg"><rect width="28" height="20" fill="#fff"/><path d="M0 0h28v2H0zm0 4h28v2H0zm0 4h28v2H0zm0 4h28v2H0zm0 4h28v2H0z" fill="#b22234"/><rect width="12" height="10.8" fill="#3c3b6e"/><g fill="#fff"><circle cx="2" cy="2" r=".65"/><circle cx="6" cy="2" r=".65"/><circle cx="10" cy="2" r=".65"/><circle cx="4" cy="5.2" r=".65"/><circle cx="8" cy="5.2" r=".65"/><circle cx="2" cy="8.4" r=".65"/><circle cx="6" cy="8.4" r=".65"/><circle cx="10" cy="8.4" r=".65"/></g></svg>',
+        es: '<svg viewBox="0 0 28 20" xmlns="http://www.w3.org/2000/svg"><rect width="28" height="20" fill="#aa151b"/><rect y="5" width="28" height="10" fill="#f1bf00"/><circle cx="9" cy="10" r="1.7" fill="#aa151b"/><rect x="8.4" y="8.2" width="1.2" height="3.6" rx=".3" fill="#f1bf00"/></svg>',
+        'pt-br': '<svg viewBox="0 0 28 20" xmlns="http://www.w3.org/2000/svg"><rect width="28" height="20" fill="#009b3a"/><path d="m14 2 11 8-11 8L3 10z" fill="#ffdf00"/><circle cx="14" cy="10" r="4.2" fill="#002776"/><path d="M10.4 9.2c2.8-.8 5.5-.3 7.6 1.1" fill="none" stroke="#fff" stroke-width=".75"/></svg>',
+        'pt-pt': '<svg viewBox="0 0 28 20" xmlns="http://www.w3.org/2000/svg"><rect width="11" height="20" fill="#046a38"/><rect x="11" width="17" height="20" fill="#da291c"/><circle cx="11" cy="10" r="3.4" fill="none" stroke="#ffcd00" stroke-width="1.2"/><path d="M9.2 8.2h3.6v3.6H9.2z" fill="#fff" stroke="#da291c" stroke-width=".6"/></svg>',
+        ar: '<svg viewBox="0 0 28 20" xmlns="http://www.w3.org/2000/svg"><rect width="28" height="20" fill="#006c35"/><path d="M7 8.2h14M9 11.7h10" stroke="#fff" stroke-width="1.2" stroke-linecap="round"/><path d="m8 14 11-1.4" stroke="#fff" stroke-width=".8" stroke-linecap="round"/></svg>'
+    });
+
+    function createUiLanguageFlagIcon(language, fallbackLabel) {
+        const icon = document.createElement('span');
+        icon.className = 'ui-lang-flag-icon';
+        icon.setAttribute('aria-hidden', 'true');
+        const markup = UI_LANGUAGE_FLAG_SVG[language];
+        if (markup) {
+            icon.innerHTML = markup;
+        } else {
+            icon.textContent = fallbackLabel || String(language || '').toUpperCase();
+        }
+        return icon;
+    }
+
     function resolveUiLanguageMeta(entry) {
         if (!entry) return null;
         const codeLabelMap = {
@@ -788,7 +809,7 @@
         }
         const flagEl = document.getElementById('uiLanguageFlag');
         if (flagEl) {
-            flagEl.textContent = meta.flag || '🏳️';
+            flagEl.textContent = meta.label || meta.value.toUpperCase();
         }
         const dock = document.getElementById('uiLanguageDock');
         if (dock) {
@@ -5368,7 +5389,7 @@ Translate to {target_language}.`;
             btn.setAttribute('aria-pressed', meta.value === activeMeta.value ? 'true' : 'false');
             btn.setAttribute('aria-label', ariaPrefix + (meta.label || meta.value.toUpperCase()));
             btn.title = meta.label || meta.value.toUpperCase();
-            btn.textContent = meta.flag || meta.value.toUpperCase();
+            btn.appendChild(createUiLanguageFlagIcon(meta.value, meta.label));
             btn.addEventListener('click', () => {
                 const current = (currentConfig && currentConfig.uiLanguage) || '';
                 if (meta.value === current) return;

@@ -162,8 +162,7 @@ const ASSET_URLS = [
     '/configure',
     '/config.js',
     '/configure.html',
-    '/favicon.svg',
-    '/fonts/Twemoji.ttf'
+    '/favicon.svg'
 ];
 
 /**

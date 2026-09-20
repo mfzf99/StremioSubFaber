@@ -2131,12 +2131,12 @@ const validationLimiter = rateLimit({
     }
 });
 
-// Enable gzip compression for all responses
-// SRT files compress extremely well (typically 5-10x reduction)
-// Use maximum compression (level 9) for best bandwidth savings
+// Enable gzip compression for all responses. Level 6 keeps nearly all of level
+// 9's size savings while significantly reducing server CPU cycles per request,
+// which matters under high concurrency for SRT/API traffic.
 app.use(compression({
     threshold: 512, // Compress responses larger than 512 bytes (was 1KB)
-    level: 9, // Maximum compression for SRT files (10-15x reduction)
+    level: 6, // Balanced compression (SRT files still compress 5-10x)
     filter: (req, res) => {
         const accept = req.headers?.accept || '';
         const contentTypeHeader = res.getHeader('content-type') || '';
@@ -2420,13 +2420,9 @@ app.use((req, res, next) => {
         '/partials/overlays.html',
         '/partials/quick-setup.html'
     ];
-    const configUiFonts = [
-        '/fonts/Twemoji.ttf'
-    ];
     const isConfigUiAsset =
         configUiAssets.includes(req.path) ||
-        configUiPartials.includes(req.path) ||
-        configUiFonts.includes(req.path);
+        configUiPartials.includes(req.path);
 
     if (isConfigUiAsset) {
         // Force a cache-busting query so stale CDN copies (e.g. elfhosted) are bypassed
