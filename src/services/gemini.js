@@ -516,9 +516,60 @@ class GeminiService {
     if (!ids || ids.size === 0) return;
     if (ids.has(this.model)) return;
 
+    // CrazyRouter's /v1/models catalog lists only canonical names (e.g.
+    // 'gemini-3-flash') even though it also serves alias/variant names
+    // (e.g. 'gemini-3-flash-preview'). Exact-matching alone therefore produces
+    // false-positive warnings for valid aliased models. Check canonical forms too.
+    if (this._isCanonicalModelListed(ids)) return;
+
     const sample = Array.from(ids).filter(id => id.toLowerCase().includes('gemini')).slice(0, 10);
     const sampleText = sample.length ? sample.join(', ') : Array.from(ids).slice(0, 10).join(', ');
     log.warn(() => `[Gemini] Model '${this.model}' is NOT listed among the models callable by this CrazyRouter key. Translation may fail or be routed to an exhausted upstream. Available Gemini models include: ${sampleText}${ids.size > 10 ? ' …' : ''}. Consider switching model in Advanced Settings.`);
+  }
+
+  /**
+   * Build candidate canonical names for a model so that alias/variant slugs map
+   * to the form the relay actually lists. Handles:
+   *  - '-preview' suffix          (gemini-3-flash-preview -> gemini-3-flash)
+   *  - dated/numeric suffixes     (gemini-3.7-flash-001 -> gemini-3.7-flash,
+   *                                gemini-2.5-flash-preview-09-2025 -> gemini-2.5-flash)
+   * @param {string} model
+   * @returns {string[]} ordered candidate names, most specific first
+   */
+  _canonicalModelCandidates(model) {
+    const raw = String(model || '').trim();
+    const candidates = [raw];
+    let m = raw.toLowerCase();
+
+    // Strip suffixes in sequence so combined variants like
+    // 'gemini-2.5-flash-preview-09-2025' reduce to 'gemini-2.5-flash'.
+    // 1) trailing date/numeric stamp: -09-2025 / -2025 / -001 / -02-05
+    m = m.replace(/-(?:\d{2}-\d{4}|\d{4}|\d{3}|\d{2}-\d{2})$/, '');
+    // 2) '-preview' suffix (possibly revealed after step 1)
+    m = m.replace(/-preview$/, '');
+    // 3) a second date/numeric stamp that may sit before '-preview'
+    m = m.replace(/-(?:\d{2}-\d{4}|\d{4}|\d{3}|\d{2}-\d{2})$/, '');
+
+    if (m && m !== raw.toLowerCase()) candidates.push(m);
+    return candidates;
+  }
+
+  /**
+   * Returns true if the configured model (or any of its canonical variants) is
+   * present in the provided set of callable model IDs.
+   * @param {Set<string>} ids
+   * @returns {boolean}
+   */
+  _isCanonicalModelListed(ids) {
+    for (const candidate of this._canonicalModelCandidates(this.model)) {
+      if (ids.has(candidate)) return true;
+      // Also try a case-insensitive match against the catalog entries.
+      const lower = candidate.toLowerCase();
+      for (const id of ids) {
+        if (String(id).toLowerCase() === lower) return true;
+      }
+    }
+    return false;
   }
 
   async getModelLimits() {

@@ -429,3 +429,60 @@ test('[CR-B2] model availability check is a no-op for Google Direct and when dis
     delete process.env.GEMINI_DISABLE_MODEL_AVAILABILITY_CHECK;
   }
 });
+
+test('[CR-B3] canonical/alias variants do NOT trigger a false-positive warning', async () => {
+  const log = require('../utils/logger');
+  const originalGet = axios.get;
+  const originalWarn = log.warn;
+  const warnings = [];
+  log.warn = (fn) => { warnings.push(typeof fn === 'function' ? fn() : String(fn)); };
+
+  // Catalog lists only canonical names, mirroring the real CrazyRouter /v1/models.
+  axios.get = async (url) => {
+    if (String(url).endsWith('/v1/models')) {
+      return { data: { data: [{ id: 'gemini-3-flash' }, { id: 'gemini-2.5-flash' }, { id: 'gemini-3.6-flash' }] } };
+    }
+    throw new Error('unexpected GET ' + url);
+  };
+
+  try {
+    // 'gemini-3-flash-preview' is served by the relay but not listed; its canonical
+    // form 'gemini-3-flash' IS listed, so no warning should be emitted.
+    const aliasModel = new GeminiService('sk-test-key', 'gemini-3-flash-preview', { maxRetries: 0 });
+    await aliasModel.warnIfModelUnavailable();
+    assert.equal(warnings.length, 0, 'canonical alias must not warn (false-positive guard)');
+
+    warnings.length = 0;
+    const datedVariant = new GeminiService('sk-test-key', 'gemini-2.5-flash-preview-09-2025', { maxRetries: 0 });
+    await datedVariant.warnIfModelUnavailable();
+    assert.equal(warnings.length, 0, 'dated variant reducing to a listed canonical must not warn');
+  } finally {
+    log.warn = originalWarn;
+    axios.get = originalGet;
+  }
+});
+
+test('[CR-B4] genuinely unlisted model STILL warns after canonicalization', async () => {
+  const log = require('../utils/logger');
+  const originalGet = axios.get;
+  const originalWarn = log.warn;
+  const warnings = [];
+  log.warn = (fn) => { warnings.push(typeof fn === 'function' ? fn() : String(fn)); };
+
+  axios.get = async (url) => {
+    if (String(url).endsWith('/v1/models')) {
+      return { data: { data: [{ id: 'gemini-3-flash' }, { id: 'gemini-2.5-flash' }] } };
+    }
+    throw new Error('unexpected GET ' + url);
+  };
+
+  try {
+    const bogus = new GeminiService('sk-test-key', 'gemini-9-xyz', { maxRetries: 0 });
+    await bogus.warnIfModelUnavailable();
+    assert.equal(warnings.length, 1, 'genuinely unlisted model should still warn');
+    assert.match(String(warnings[0]), /NOT listed among the models callable/i);
+  } finally {
+    log.warn = originalWarn;
+    axios.get = originalGet;
+  }
+});
