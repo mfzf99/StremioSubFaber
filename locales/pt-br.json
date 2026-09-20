@@ -803,20 +803,7 @@
           "subsourceKeyPlaceholder": "Digite a chave de API do SubSource",
           "subsourceGetKey": "Obtenha sua chave de API gratuita em SubSource.net",
           "noKeyNeeded": "Sem chave necessária",
-          "keyRequired": "Chave obrigatória",
-          "scsName": "Stremio Community Subs",
-          "scsDesc": "Legendas selecionadas pela comunidade do Stremio",
-          "scsCommunityBadge": "Community/Auth",
-          "scsCommunityMode": "Token comunitário",
-          "scsAuthMode": "Chave Auth",
-          "scsKeyPlaceholder": "Digite a chave Auth do SCS",
-          "scsKeyNote": "Use sua própria chave Auth do SCS para requisições mais rápidas filtradas por idioma.",
-          "scsModeNote": "O modo Community usa o token compartilhado do SubMaker; Auth envia apenas os idiomas selecionados.",
-          "wyzieName": "Wyzie Subs",
-          "wyzieDesc": "Agregador que pesquisa todas as fontes disponíveis para sua chave de API",
-          "wyzieKeyPlaceholder": "Digite a chave da API do Wyzie",
-          "wyzieGetKey": "Obtenha sua chave de API gratuita em store.wyzie.io/redeem",
-          "wyzieAutoSources": "O Wyzie pesquisa automaticamente todas as fontes atuais disponíveis para o plano da sua chave de API."
+          "keyRequired": "Chave obrigatória"
         },
         "step3": {
           "title": "Tradução com IA",
@@ -879,9 +866,6 @@
           "opensubsV3": "V3 (sem login)",
           "enabled": "Ativado",
           "disabled": "Desativado",
-          "scsAuth": "Chave Auth",
-          "scsCommunity": "Token comunitário",
-          "wyzieSources": "Todas as fontes disponíveis",
           "aiTranslation": "Tradução com IA",
           "aiConfigured": "{model}",
           "aiNotConfigured": "Não configurado",
@@ -1071,9 +1055,6 @@
         "secondaryProvidersCount": "O Provedor Secundário requer dois provedores de IA configurados (principal e fallback)",
         "subdlKeyRequired": "SubDL está habilitado, mas a chave da API está faltando",
         "subsourceKeyRequired": "SubSource está habilitado, mas a chave da API está faltando",
-        "scsKeyRequired": "SCS Auth está habilitado, mas a chave está faltando",
-        "wyzieKeyRequired": "Wyzie Subs está habilitado, mas a chave da API está faltando",
-        "subsroKeyRequired": "Subs.ro está habilitado, mas a chave da API está faltando",
         "subtitleProviderRequired": "Por favor, habilite pelo menos um provedor de legendas",
         "geminiKeysRequired": "Pelo menos uma chave de API é necessária para rotação",
         "geminiKeysFillEmpty": "Preencha todos os campos de chave de API antes de adicionar uma nova",
@@ -1128,49 +1109,12 @@
           "validateCta": "Teste",
           "toggleLabel": "Habilitar SubDL"
         },
-        "subsro": {
-          "title": "Subs.ro",
-          "description": "Apenas legendas em romeno. Obtenha sua chave de API em",
-          "linkLabel": "subs.ro",
-          "placeholder": "Digite a chave de API do Subs.ro",
-          "validateTitle": "Validar chave da API",
-          "validateCta": "Teste",
-          "toggleLabel": "Habilitar Subs.ro"
-        },
-        "wyzie": {
-          "title": "Wyzie Subs",
-          "description": "Obtenha sua chave de API gratuita em",
-          "linkLabel": "store.wyzie.io/redeem",
-          "placeholder": "Digite a chave da API do Wyzie",
-          "validateTitle": "Validar chave da API",
-          "validateCta": "Testar",
-          "toggleLabel": "Habilitar Wyzie Subs",
-          "note": "O Wyzie pesquisa automaticamente todas as fontes atuais disponíveis para o plano da sua chave de API. Os resultados podem se sobrepor a outros provedores habilitados."
-        },
-        "scs": {
-          "title": "Stremio Community Subtitles",
-          "description": "Legendas curadas pela comunidade. Escolha o token compartilhado ou sua própria chave de autenticação.",
-          "toggleLabel": "Habilitar SCS",
-          "note": "SCS fornece legendas enviadas pela comunidade. Os resultados dependem das contribuições da comunidade para seu arquivo de vídeo específico.",
-          "implementationType": "Tipo de implementação",
-          "communityTitle": "Community (Padrão)",
-          "communityDescription": "Usa o token SCS compartilhado do SubMaker. Não requer chave.",
-          "authTitle": "Auth (Recomendado)",
-          "authDescription": "Usa sua própria chave SCS e envia apenas os idiomas selecionados no SubMaker.",
-          "apiKeyLabel": "Chave Auth do SCS",
-          "apiKeyPlaceholder": "Digite a chave Auth do SCS",
-          "apiKeyNote": "Obtenha-a na sua conta SCS em stremio-community-subtitles.top."
-        },
-        "moreProviders": {
-          "title": "Mais provedores (beta)",
-          "description": "Fontes de legendas adicionais e agregadores."
-        },
         "timeout": {
           "title": "Tempo de espera do provedor",
           "description": "Tempo máximo de espera para cada provedor de legendas (em segundos).",
           "note": "Menor = respostas mais rápidas mas pode perder provedores lentos. Maior = mais confiável mas mais lento. Padrão: 12s",
           "ariaLabel": "Tempo de espera do provedor de legendas",
-          "slowWarning": "Wyzie e SubSource podem ser lentos. Se você não obtiver resultados de legendas, tente um tempo de espera maior."
+          "slowWarning": "SubSource pode ser lento. Se você não obtiver resultados de legendas, tente um tempo de espera maior."
         }
       },
       "providersUi": {

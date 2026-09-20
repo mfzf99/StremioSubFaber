@@ -604,7 +604,7 @@ function normalizeLanguageCode(lang) {
     // Special case: LatAm country codes → spn (Latin American Spanish)
     // These are BCP-47 codes for countries in Latin America
     // They should fetch LatAm-tagged subtitles from providers that distinguish
-    // (SubSource: spanish_latin_america, Wyzie: ea, OpenSubs V3: spn)
+    // (SubSource: spanish_latin_america, OpenSubs V3: spn)
     const latamCountries = new Set(['ar', 'bo', 'cl', 'co', 'cr', 'cu', 'do', 'ec', 'sv', 'gt', 'hn', 'mx', 'ni', 'pa', 'py', 'pe', 'pr', 'uy', 've']);
     if (base === 'es' && latamCountries.has(subtag1)) {
       return 'spn';

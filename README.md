@@ -46,7 +46,7 @@ Check their [FREE Stremio Addons Guide](https://stremio-addons-guide.elfhosted.c
 | Category | Highlights |
 |----------|------------|
 | **Languages** | 197 supported languages (433 for translation) |
-| **Subtitle Sources** | OpenSubtitles, SubDL, SubSource, Wyzie, Stremio Community, Subs.ro |
+| **Subtitle Sources** | OpenSubtitles, SubDL, SubSource |
 | **AI Translation** | 10+ providers: Gemini, OpenAI, Claude, DeepL, DeepSeek, Grok, Mistral, OpenRouter, Cloudflare, Custom/Local |
 | **Smart Caching** | Shared translation database — translate once, benefit everyone |
 | **Timestamp Workflows** | XML Tags, JSON, Numbered Timestamps, Send Timestamps to AI |
@@ -61,9 +61,6 @@ Check their [FREE Stremio Addons Guide](https://stremio-addons-guide.elfhosted.c
 | OpenSubtitles | Optional (recommended) | V3 or authenticated mode |
 | SubDL | API key | [subdl.com/panel/api](https://subdl.com/panel/api) |
 | SubSource | API key | [subsource.net](https://subsource.net/) |
-| Wyzie Subs | API key | [store.wyzie.io/redeem](https://store.wyzie.io/redeem) |
-| Stremio Community Subtitles | None | Curated subtitles (beta) |
-| Subs.ro | API key | Romanian subtitles (beta) |
 
 ### 🤖 AI Translation Providers
 
@@ -163,7 +160,7 @@ Visit: **http://localhost:7001**
 |---------|----------------|
 | Translation Workflow | "XML Tags" for best sync |
 | Database Mode | "Use SubMaker Database" for shared caching |
-| Provider Timeout | 12s default, increase to 30s for SCS/Wyzie |
+| Provider Timeout | 12s default, increase to 30s for slow providers |
 | Mobile Mode | Enable for Android/iOS |
 
 ### Advanced Mode

@@ -7,9 +7,8 @@ const { inspectStremioIdSupport, parseStremioId } = require('./subtitle');
  */
 
 // Validate fileId (subtitle file identifier)
-// SCS uses opaque download tokens embedded in the provider URL, which can be long
-// because they encode content metadata such as filename/video hash.
-// Typical SCS IDs are 250-400 chars, so allow up to 600 for safety.
+// Some providers embed opaque tokens or encoded URLs in the fileId, which can be
+// long because they encode content metadata such as filename/video hash.
 const fileIdSchema = Joi.string()
   .pattern(/^[a-zA-Z0-9_-]+$/)
   .min(1)

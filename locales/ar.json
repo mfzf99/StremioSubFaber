@@ -803,20 +803,7 @@
           "subsourceKeyPlaceholder": "أدخل مفتاح API لـ SubSource",
           "subsourceGetKey": "احصل على مفتاح API المجاني من SubSource.net",
           "noKeyNeeded": "لا يتطلب مفتاحاً",
-          "keyRequired": "مفتاح مطلوب",
-          "scsName": "Stremio Community Subs",
-          "scsDesc": "ترجمات منتقاة من مجتمع Stremio",
-          "scsCommunityBadge": "Community/Auth",
-          "scsCommunityMode": "رمز المجتمع",
-          "scsAuthMode": "مفتاح Auth",
-          "scsKeyPlaceholder": "أدخل مفتاح SCS Auth",
-          "scsKeyNote": "استخدم مفتاح SCS Auth الخاص بك لطلبات أسرع مفلترة حسب اللغة.",
-          "scsModeNote": "يستخدم وضع Community الرمز المشترك في SubMaker؛ ويرسل وضع Auth اللغات المختارة فقط.",
-          "wyzieName": "Wyzie Subs",
-          "wyzieDesc": "مجمّع يبحث في كل المصادر المتاحة لمفتاح API الخاص بك",
-          "wyzieKeyPlaceholder": "أدخل مفتاح API الخاص بـ Wyzie",
-          "wyzieGetKey": "احصل على مفتاح API مجاني من store.wyzie.io/redeem",
-          "wyzieAutoSources": "يبحث Wyzie تلقائيًا في كل المصادر الحالية المتاحة لخطة مفتاح API الخاص بك."
+          "keyRequired": "مفتاح مطلوب"
         },
         "step3": {
           "title": "الترجمة بالذكاء الاصطناعي",
@@ -880,9 +867,6 @@
           "opensubsV3": "V3 (بدون تسجيل دخول)",
           "enabled": "مُفعّل",
           "disabled": "مُعطّل",
-          "scsAuth": "مفتاح Auth",
-          "scsCommunity": "رمز المجتمع",
-          "wyzieSources": "كل المصادر المتاحة",
           "aiTranslation": "الترجمة بالذكاء الاصطناعي",
           "aiConfigured": "{model}",
           "aiNotConfigured": "غير مُعدّ",
@@ -1071,9 +1055,6 @@
         "secondaryProvidersCount": "يتطلب المزود الثانوي تكوين اثنين من مزودي الذكاء الاصطناعي (رئيسي واحتياطي)",
         "subdlKeyRequired": "SubDL ممكّن لكن مفتاح API مفقود",
         "subsourceKeyRequired": "SubSource ممكّن لكن مفتاح API مفقود",
-        "scsKeyRequired": "SCS Auth ممكّن لكن المفتاح مفقود",
-        "wyzieKeyRequired": "Wyzie Subs مفعّل لكن مفتاح API مفقود",
-        "subsroKeyRequired": "Subs.ro ممكّن لكن مفتاح API مفقود",
         "subtitleProviderRequired": "يرجى تمكين مزود ترجمة واحد على الأقل",
         "geminiKeysRequired": "مطلوب مفتاح API واحد على الأقل للتدوير",
         "geminiKeysFillEmpty": "يُرجى ملء جميع حقول مفاتيح API قبل إضافة مفتاح جديد",
@@ -1128,49 +1109,12 @@
           "validateCta": "اختبار",
           "toggleLabel": "تمكين SubDL"
         },
-        "subsro": {
-          "title": "Subs.ro",
-          "description": "ترجمات باللغة الرومانية فقط. احصل على مفتاح API من",
-          "linkLabel": "subs.ro",
-          "placeholder": "أدخل مفتاح Subs.ro API",
-          "validateTitle": "التحقق من مفتاح API",
-          "validateCta": "اختبار",
-          "toggleLabel": "تمكين Subs.ro"
-        },
-        "wyzie": {
-          "title": "Wyzie Subs",
-          "description": "احصل على مفتاح API مجاني من",
-          "linkLabel": "store.wyzie.io/redeem",
-          "placeholder": "أدخل مفتاح API الخاص بـ Wyzie",
-          "validateTitle": "التحقق من مفتاح API",
-          "validateCta": "اختبار",
-          "toggleLabel": "تمكين Wyzie Subs",
-          "note": "يبحث Wyzie تلقائيًا في كل المصادر الحالية المتاحة لخطة مفتاح API الخاص بك. قد تتداخل النتائج مع مزودين آخرين ممكّنين."
-        },
-        "scs": {
-          "title": "Stremio Community Subtitles",
-          "description": "ترجمات منسقة من المجتمع. اختر الرمز المشترك أو مفتاح المصادقة الخاص بك.",
-          "toggleLabel": "تمكين SCS",
-          "note": "يوفر SCS ترجمات مرفوعة من المجتمع. تعتمد النتائج على مساهمات المجتمع لملف الفيديو الخاص بك.",
-          "implementationType": "نوع التنفيذ",
-          "communityTitle": "Community (افتراضي)",
-          "communityDescription": "يستخدم رمز SCS المشترك في SubMaker. لا يتطلب مفتاحاً.",
-          "authTitle": "Auth (موصى به)",
-          "authDescription": "يستخدم مفتاح SCS الخاص بك ويرسل لغات SubMaker المختارة فقط.",
-          "apiKeyLabel": "مفتاح SCS Auth",
-          "apiKeyPlaceholder": "أدخل مفتاح SCS Auth",
-          "apiKeyNote": "احصل عليه من حساب SCS الخاص بك في stremio-community-subtitles.top."
-        },
-        "moreProviders": {
-          "title": "مزودين إضافيين (تجريبي)",
-          "description": "مصادر ترجمات إضافية ومجمّعات."
-        },
         "timeout": {
           "title": "مهلة انتظار المزود",
           "description": "أقصى وقت للانتظار لكل مزود ترجمات (بالثواني).",
           "note": "أقل = استجابات أسرع ولكن قد تفوّت المزودين البطيئين. أعلى = أكثر موثوقية ولكن أبطأ. الافتراضي: 12 ثانية",
           "ariaLabel": "مهلة انتظار مزود الترجمات",
-          "slowWarning": "قد يكون Wyzie و SubSource بطيئين. إذا لم تحصل على نتائج ترجمات، جرّب قيمة مهلة أعلى."
+          "slowWarning": "قد يكون SubSource بطيئًا. إذا لم تحصل على نتائج ترجمات، جرّب قيمة مهلة أعلى."
         }
       },
       "providersUi": {

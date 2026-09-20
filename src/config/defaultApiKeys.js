@@ -19,11 +19,6 @@ const DEFAULT_API_KEYS = {
   // Get your own at: https://subsource.net/
   SUBSOURCE: '',
 
-  // Wyzie Subs API Key
-  // Get your own at: https://store.wyzie.io/redeem
-  // No bundled fallback key; users must provide their own
-  WYZIE: '',
-
   // Gemini API Key
   // Get your own at: https://makersuite.google.com/app/apikey
   GEMINI: '',

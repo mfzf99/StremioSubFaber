@@ -369,8 +369,7 @@ function normalizeProviderApiKey(value) {
 function getLegacySubtitleProviderApiKey(config, providerKey) {
   const legacyFields = {
     subdl: ['SubDLAPIKey', 'SubDLApiKey', 'subDLAPIKey', 'subdlApiKey', 'subdl_api_key'],
-    subsource: ['SubSourceAPIKey', 'SubSourceAPiKey', 'SubSourceApiKey', 'subSourceAPIKey', 'subsourceApiKey', 'subsource_api_key'],
-    scs: ['SCS_MANIFEST_TOKEN', 'SCSManifestToken', 'scsManifestToken', 'scsAuthKey', 'scsApiKey']
+    subsource: ['SubSourceAPIKey', 'SubSourceAPiKey', 'SubSourceApiKey', 'subSourceAPIKey', 'subsourceApiKey', 'subsource_api_key']
   };
   const fields = legacyFields[providerKey] || [];
   for (const field of fields) {
@@ -460,7 +459,6 @@ function normalizeConfig(config) {
 
   normalizeApiKeySubtitleProvider(mergedConfig, config, 'subdl');
   normalizeApiKeySubtitleProvider(mergedConfig, config, 'subsource');
-  normalizeApiKeySubtitleProvider(mergedConfig, config, 'subsro');
 
   const rawProviderParams = config.providerParameters || {};
   const deepseekInputKey = Object.keys(rawProviderParams).find(k => String(k).toLowerCase() === 'deepseek');
@@ -848,80 +846,11 @@ function normalizeConfig(config) {
     }
   }
 
-  const scsConfig = mergedConfig.subtitleProviders?.scs;
-  if (scsConfig) {
-    const normalizeScsValue = (value) => {
-      if (value === undefined || value === null) return '';
-      const normalized = String(value).trim();
-      if (normalized === '[object Object]' || normalized === '[object Array]') {
-        return '';
-      }
-      return normalized;
-    };
-
-    const rawImpl = typeof scsConfig.implementationType === 'string'
-      ? scsConfig.implementationType.trim().toLowerCase()
-      : '';
-    const implementationType = rawImpl === 'auth' ? 'auth' : 'community';
-    const legacyApiKey = getLegacySubtitleProviderApiKey(config, 'scs');
-    const apiKey = normalizeScsValue(scsConfig.apiKey) || legacyApiKey;
-    const apiKeyStillEncrypted = looksEncrypted(apiKey);
-
-    mergedConfig.subtitleProviders.scs = {
-      ...scsConfig,
-      enabled: scsConfig.enabled === true,
-      implementationType,
-      apiKey: apiKeyStillEncrypted ? '' : apiKey
-    };
-
-    if (apiKeyStillEncrypted) {
-      log.warn(() => '[Config] SCS auth key appears to still be encrypted; falling back to Community mode.');
-      mergedConfig.subtitleProviders.scs.implementationType = 'community';
-      mergedConfig.__credentialDecryptionFailed = true;
-      const credentialFailureFields = new Set(mergedConfig.__credentialDecryptionFailedFields || []);
-      credentialFailureFields.add('scs.apiKey');
-      mergedConfig.__credentialDecryptionFailedFields = Array.from(credentialFailureFields);
-    }
-
-    if (mergedConfig.subtitleProviders.scs.implementationType === 'auth' && !mergedConfig.subtitleProviders.scs.apiKey) {
-      log.warn(() => '[Config] SCS Auth selected without an auth key; switching to Community mode.');
-      mergedConfig.subtitleProviders.scs.implementationType = 'community';
-      mergedConfig.__needsSessionPersist = true;
-      mergedConfig.__persistReason = mergedConfig.__persistReason || 'scs-auth-to-community';
-    }
-  }
-
-  const wyzieConfig = mergedConfig.subtitleProviders?.wyzie;
-  if (wyzieConfig) {
-    const normalizeWyzieValue = (value, fallback = '') => {
-      if (value === undefined || value === null) return fallback;
-      const normalized = String(value).trim();
-      if (normalized === '[object Object]' || normalized === '[object Array]') {
-        return fallback;
-      }
-      return normalized || fallback;
-    };
-
-    const previousApiKey = typeof wyzieConfig.apiKey === 'string' ? wyzieConfig.apiKey.trim() : '';
-    const normalizedApiKey = normalizeWyzieValue(wyzieConfig.apiKey, '');
-    const normalizedEnabled = wyzieConfig.enabled === true && !!normalizedApiKey;
-    const hadLegacySources = Object.prototype.hasOwnProperty.call(wyzieConfig, 'sources');
-    const needsPersist =
-      previousApiKey !== normalizedApiKey
-      || (wyzieConfig.enabled === true && !normalizedApiKey)
-      || hadLegacySources;
-
-    const { sources: _legacySources, ...currentWyzieConfig } = wyzieConfig;
-
-    mergedConfig.subtitleProviders.wyzie = {
-      ...currentWyzieConfig,
-      enabled: normalizedEnabled,
-      apiKey: normalizedApiKey
-    };
-
-    if (needsPersist) {
-      mergedConfig.__needsSessionPersist = true;
-      mergedConfig.__persistReason = mergedConfig.__persistReason || 'wyzie-dynamic-sources-migration';
+  // Removed providers (SCS, Wyzie Subs, Subs.ro) are no longer supported.
+  // Sweep orphaned keys from previously-saved configs and persist the cleaned shape.
+  if (mergedConfig.subtitleProviders) {
+    for (const orphanKey of ['scs', 'wyzie', 'subsro']) {
+      delete mergedConfig.subtitleProviders[orphanKey];
     }
   }
 
@@ -1154,19 +1083,6 @@ function getDefaultConfig(modelName = null) {
         enabled: false,
         apiKey: DEFAULT_API_KEYS.SUBSOURCE
       },
-      scs: {
-        enabled: false,
-        implementationType: 'community',
-        apiKey: ''
-      },
-      wyzie: {
-        enabled: false,
-        apiKey: ''
-      },
-      subsro: {
-        enabled: false,
-        apiKey: ''
-      }
     },
     subtitleProviderTimeout: parseInt(process.env.SUBTITLE_PROVIDER_TIMEOUT, 10) || 12,
     translationCache: {

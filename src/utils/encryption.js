@@ -361,24 +361,6 @@ function normalizeSensitiveInputsForStorage(config) {
     'subsource.apiKey'
   );
 
-  normalizeField(
-    () => normalized.subtitleProviders?.scs?.apiKey,
-    (value) => { normalized.subtitleProviders.scs.apiKey = value; },
-    'scs.apiKey'
-  );
-
-  normalizeField(
-    () => normalized.subtitleProviders?.wyzie?.apiKey,
-    (value) => { normalized.subtitleProviders.wyzie.apiKey = value; },
-    'wyzie.apiKey'
-  );
-
-  normalizeField(
-    () => normalized.subtitleProviders?.subsro?.apiKey,
-    (value) => { normalized.subtitleProviders.subsro.apiKey = value; },
-    'subsro.apiKey'
-  );
-
   if (normalized.providers && typeof normalized.providers === 'object') {
     for (const [key, provider] of Object.entries(normalized.providers)) {
       if (!provider || typeof provider !== 'object') continue;
@@ -457,23 +439,6 @@ function encryptUserConfig(config) {
           encrypt(encrypted.subtitleProviders.subsource.apiKey);
       }
 
-      // SCS auth key
-      if (encrypted.subtitleProviders.scs?.apiKey) {
-        encrypted.subtitleProviders.scs.apiKey =
-          encrypt(encrypted.subtitleProviders.scs.apiKey);
-      }
-
-      // Wyzie API key
-      if (encrypted.subtitleProviders.wyzie?.apiKey) {
-        encrypted.subtitleProviders.wyzie.apiKey =
-          encrypt(encrypted.subtitleProviders.wyzie.apiKey);
-      }
-
-      // Subs.ro API key
-      if (encrypted.subtitleProviders.subsro?.apiKey) {
-        encrypted.subtitleProviders.subsro.apiKey =
-          encrypt(encrypted.subtitleProviders.subsro.apiKey);
-      }
     }
 
     // Encrypt alternative AI provider API keys
@@ -612,41 +577,6 @@ function decryptUserConfig(config) {
         }
       }
 
-      // SCS auth key
-      if (decrypted.subtitleProviders.scs?.apiKey) {
-        const scsKeyEncrypted = isEncrypted(decrypted.subtitleProviders.scs.apiKey);
-        log.debug(() => `[Encryption] SCS auth key exists, encrypted: ${scsKeyEncrypted}, will decrypt: ${isConfigEncrypted || scsKeyEncrypted}`);
-        if (isConfigEncrypted || scsKeyEncrypted) {
-          decrypted.subtitleProviders.scs.apiKey =
-            safeDecrypt(decrypted.subtitleProviders.scs.apiKey, 'scs.apiKey');
-          const isString = typeof decrypted.subtitleProviders.scs.apiKey === 'string';
-          log.debug(() => `[Encryption] SCS auth key decrypted successfully, type: ${isString ? 'string' : 'NOT_STRING'}`);
-        }
-      }
-
-      // Wyzie API key
-      if (decrypted.subtitleProviders.wyzie?.apiKey) {
-        const wyzieKeyEncrypted = isEncrypted(decrypted.subtitleProviders.wyzie.apiKey);
-        log.debug(() => `[Encryption] Wyzie API key exists, encrypted: ${wyzieKeyEncrypted}, will decrypt: ${isConfigEncrypted || wyzieKeyEncrypted}`);
-        if (isConfigEncrypted || wyzieKeyEncrypted) {
-          decrypted.subtitleProviders.wyzie.apiKey =
-            safeDecrypt(decrypted.subtitleProviders.wyzie.apiKey, 'wyzie.apiKey');
-          const isString = typeof decrypted.subtitleProviders.wyzie.apiKey === 'string';
-          log.debug(() => `[Encryption] Wyzie key decrypted successfully, type: ${isString ? 'string' : 'NOT_STRING'}`);
-        }
-      }
-
-      // Subs.ro API key
-      if (decrypted.subtitleProviders.subsro?.apiKey) {
-        const subsroKeyEncrypted = isEncrypted(decrypted.subtitleProviders.subsro.apiKey);
-        log.debug(() => `[Encryption] Subs.ro API key exists, encrypted: ${subsroKeyEncrypted}, will decrypt: ${isConfigEncrypted || subsroKeyEncrypted}`);
-        if (isConfigEncrypted || subsroKeyEncrypted) {
-          decrypted.subtitleProviders.subsro.apiKey =
-            safeDecrypt(decrypted.subtitleProviders.subsro.apiKey, 'subsro.apiKey');
-          const isString = typeof decrypted.subtitleProviders.subsro.apiKey === 'string';
-          log.debug(() => `[Encryption] Subs.ro key decrypted successfully, type: ${isString ? 'string' : 'NOT_STRING'}`);
-        }
-      }
     }
 
     // Decrypt alternative AI provider API keys

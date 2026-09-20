@@ -39,15 +39,14 @@ Common issues and solutions for SubMaker.
 | Check | Action |
 |-------|--------|
 | Provider status | Validate API keys using the "Test" button next to each provider |
-| Provider timeout | Increase timeout (default 12s) — SCS requires 28-30s |
+| Provider timeout | Increase timeout (default 12s) for slow providers |
 | Language selection | Verify both source and target languages are selected |
 | Provider enabled | Ensure toggle is ON for desired providers |
 
 ### 🐢 Slow Subtitle Loading
 
-- **Reduce providers** — Disable unnecessary providers (Wyzie, SCS are slower)
+- **Reduce providers** — Disable unnecessary providers to speed up searches
 - **Increase timeout** — Higher values for reliable results from slow providers
-- **Wyzie searches** — Wyzie automatically searches every current source available to the API-key plan; disable Wyzie itself if you do not want the extra aggregator request
 - **Search hang guard** — The provider timeout saved in the config page controls normal subtitle searches. Advanced deployments can tune the separate stuck-search guard with `SUBTITLE_SEARCH_HARD_TIMEOUT_MS` (default 60000ms) and `SUBTITLE_SEARCH_STALE_GRACE_MS`; cache lookups such as xEmbed, xSync, Auto, and SMDB are not hidden behind route-level fallback timers.
 - **Redis/cache stalls** — Redis commands are bounded by `REDIS_COMMAND_TIMEOUT_MS` (default 5000ms). xEmbed, xSync, and Auto subtitle-list reads use maintained per-video indexes and must not rebuild indexes with Redis `SCAN` during a subtitle request.
 

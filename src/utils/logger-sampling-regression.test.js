@@ -41,10 +41,7 @@ test('logger sampling never drops warn/error by default', () => {
 test('logger keeps operational warnings visible under request trace pressure', () => {
   const operationalWarnings = [
     '[ConfigResolver] Session token not found: bedadbea..., returning default config with error flag',
-    '[Subtitles] Session token error detected - returning config error entry',
-    '[SCS] Search failed (403): Request failed with status code 403',
-    '[WyzieSubs] Search rejected: Invalid API key',
-    '[WyzieSubs] API key is required for Wyzie search requests'
+    '[Subtitles] Session token error detected - returning config error entry'
   ];
   const script = `
     const log = require(${JSON.stringify(loggerPath)});

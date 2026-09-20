@@ -2188,9 +2188,7 @@ app.use((req, res, next) => {
         '/api/validate-gemini',
         '/api/validate-subsource',
         '/api/validate-subdl',
-        '/api/validate-wyzie',
         '/api/validate-opensubtitles',
-        '/api/validate-subsro',
         // Stream metadata endpoints for tool pages
         '/api/stream-activity',
         '/api/resolve-linked-title',
@@ -2458,7 +2456,6 @@ app.use((req, res, next) => {
         '/api/validate-gemini',
         '/api/validate-subsource',
         '/api/validate-subdl',
-        '/api/validate-wyzie',
         '/api/validate-opensubtitles',
         '/api/translate-file',
         '/api/save-synced-subtitle',
@@ -3506,169 +3503,6 @@ app.post('/api/validate-gemini', validationLimiter, async (req, res) => {
             error: isAuthError
                 ? (res.locals?.t || getTranslatorFromRequest(req, res))('server.errors.invalidApiKeyAuth', {}, 'Invalid API key - authentication failed')
                 : (res.locals?.t || getTranslatorFromRequest(req, res))('server.validation.apiError', { reason: error.message || 'Unknown error' }, `Validation failed: ${error.message || 'Unknown error'}`)
-        });
-    }
-});
-
-// API endpoint to validate Subs.ro API key
-app.post('/api/validate-subsro', validationLimiter, async (req, res) => {
-    // CRITICAL: Prevent caching to avoid cross-user config contamination (user credentials in request body)
-    setNoStore(res);
-
-    try {
-        const t = res.locals?.t || getTranslatorFromRequest(req, res);
-        const { apiKey } = req.body || {};
-
-        if (!apiKey || !String(apiKey).trim()) {
-            return res.status(400).json({
-                valid: false,
-                error: t('server.errors.apiKeyRequired', {}, 'API key is required')
-            });
-        }
-
-        const axios = require('axios');
-        const { httpAgent, httpsAgent, dnsLookup } = require('./src/utils/httpAgents');
-        const { version } = require('./src/utils/version');
-
-        // Test API key by fetching quota information
-        const quotaUrl = 'https://subs.ro/api/v1.0/quota';
-
-        try {
-            const response = await axios.get(quotaUrl, {
-                headers: {
-                    'User-Agent': `SubMaker v${version}`,
-                    'Accept': 'application/json',
-                    'X-Subs-Api-Key': String(apiKey).trim()
-                },
-                timeout: 10000,
-                httpAgent,
-                httpsAgent,
-                lookup: dnsLookup
-            });
-
-            // Check if we got a valid response with quota info
-            if (response.data && response.data.status === 200 && response.data.quota) {
-                const quota = response.data.quota;
-                return res.json({
-                    valid: true,
-                    message: t('server.validation.apiKeyValid', {}, 'API key is valid'),
-                    // Include quota info in response
-                    quota: {
-                        remaining: quota.remaining_quota,
-                        total: quota.total_quota,
-                        type: quota.quota_type
-                    }
-                });
-            } else if (response.data && response.data.status !== 200) {
-                // API returned non-200 status in body
-                return res.json({
-                    valid: false,
-                    error: response.data.message || t('server.errors.invalidApiKey', {}, 'Invalid API key')
-                });
-            } else {
-                // Unexpected response format but no error - assume valid
-                return res.json({
-                    valid: true,
-                    message: t('server.validation.apiKeyAppearsValid', {}, 'API key appears valid')
-                });
-            }
-        } catch (apiError) {
-            const status = apiError.response?.status;
-            const msg = apiError.message || '';
-
-            // Handle authentication errors
-            if (status === 401 || status === 403) {
-                return res.json({
-                    valid: false,
-                    error: t('server.errors.invalidApiKeyAuth', {}, 'Invalid API key - authentication failed')
-                });
-            }
-
-            // Handle timeout
-            if (apiError.code === 'ECONNABORTED' || /timeout/i.test(msg)) {
-                return res.json({
-                    valid: false,
-                    error: t('server.errors.requestTimedOut', {}, 'Request timed out')
-                });
-            }
-
-            // Surface upstream error if present
-            const upstream = apiError.response?.data?.message || apiError.response?.data?.error;
-            return res.json({
-                valid: false,
-                error: upstream || msg || t('server.errors.requestFailed', {}, 'Request failed')
-            });
-        }
-    } catch (error) {
-        res.json({
-            valid: false,
-            error: (res.locals?.t || getTranslatorFromRequest(req, res))('server.validation.apiError', { reason: error.message }, `API error: ${error.message}`)
-        });
-    }
-});
-
-// API endpoint to validate Wyzie API key
-app.post('/api/validate-wyzie', validationLimiter, async (req, res) => {
-    setNoStore(res);
-
-    try {
-        const t = res.locals?.t || getTranslatorFromRequest(req, res);
-        const apiKey = String(req.body?.apiKey || '').trim();
-
-        if (!apiKey) {
-            return res.status(400).json({
-                valid: false,
-                error: t('server.errors.apiKeyRequired', {}, 'API key is required')
-            });
-        }
-
-        const WyzieSubsService = require('./src/services/wyzieSubs');
-        const wyzie = new WyzieSubsService(apiKey);
-        const result = await wyzie.validateApiKey({ timeout: 10000 });
-
-        if (result.valid) {
-            const payload = {
-                valid: true,
-                message: result.message || t('server.validation.apiKeyValid', {}, 'API key is valid')
-            };
-
-            if (Number.isFinite(result.resultsCount)) {
-                payload.resultsCount = result.resultsCount;
-            }
-
-            if (typeof result.keyType === 'string' && result.keyType) {
-                payload.keyType = result.keyType;
-            }
-            if (Array.isArray(result.availableSources)) {
-                payload.availableSources = result.availableSources;
-            }
-            if (Array.isArray(result.restrictedSources)) {
-                payload.restrictedSources = result.restrictedSources;
-            }
-
-            return res.json(payload);
-        }
-
-        const normalizedError = String(result.error || '').trim();
-        const lowerError = normalizedError.toLowerCase();
-        let translatedError = normalizedError || t('server.errors.requestFailed', {}, 'Request failed');
-
-        if (lowerError.includes('api key required')) {
-            translatedError = t('server.errors.apiKeyRequired', {}, 'API key is required');
-        } else if (lowerError.includes('invalid api key')) {
-            translatedError = t('server.errors.invalidApiKeyAuth', {}, 'Invalid API key - authentication failed');
-        } else if (lowerError.includes('timeout')) {
-            translatedError = t('server.errors.requestTimedOut', {}, 'Request timed out');
-        }
-
-        return res.json({
-            valid: false,
-            error: translatedError
-        });
-    } catch (error) {
-        res.json({
-            valid: false,
-            error: (res.locals?.t || getTranslatorFromRequest(req, res))('server.validation.apiError', { reason: error.message }, `API error: ${error.message}`)
         });
     }
 });
@@ -4962,7 +4796,7 @@ const subtitleDownloadHandler = async (req, res) => {
         // SubMaker pods allow one initial request, defer the other distinct
         // file IDs, and immediately allow the file the client requests again
         // as its real selection. Cache hits above never enter this guard.
-        const providerPrefixes = ['subdl_', 'subsource_', 'v3_', 'scs_', 'wyzie_', 'subsro_'];
+        const providerPrefixes = ['subdl_', 'subsource_', 'v3_'];
         const isOpenSubtitlesAuthFile = !providerPrefixes.some(prefix => fileId.startsWith(prefix));
         const openSubtitlesConfig = config.subtitleProviders?.opensubtitles || {};
         const usesOpenSubtitlesAuth = openSubtitlesConfig.enabled === true

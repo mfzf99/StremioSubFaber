@@ -91,13 +91,6 @@ test('API-key subtitle providers are skipped before fan-out when unconfigured', 
   const handlerSource = readWorkspaceFile('src/handlers/subtitles.js');
   const configSource = readWorkspaceFile('src/utils/config.js');
 
-  assert.match(handlerSource, /const wyzieApiKey = normalizeProviderApiKey/);
-  assert.match(handlerSource, /config\.subtitleProviders\?\.wyzie\?\.enabled && wyzieApiKey/);
-  assert.match(handlerSource, /Wyzie Subs provider has no API key; treating it as not selected/);
-  assert.match(handlerSource, /const subsroApiKey = normalizeProviderApiKey/);
-  assert.match(handlerSource, /config\.subtitleProviders\?\.subsro\?\.enabled && subsroApiKey/);
-  assert.match(configSource, /normalizeApiKeySubtitleProvider\(mergedConfig, config, 'subsro'\)/);
-  assert.match(configSource, /const normalizedEnabled = wyzieConfig\.enabled === true && !!normalizedApiKey/);
 });
 
 test('session-backed requests fail fast while storage is still initializing', () => {

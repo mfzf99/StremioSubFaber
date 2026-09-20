@@ -89,55 +89,6 @@ test('SubDL caches invalid API keys and blocks repeated searches', async () => {
   }
 });
 
-test('Wyzie caches invalid API keys and blocks repeated searches', async () => {
-  const sharedCache = require('../utils/sharedCache');
-  const { resetProviderAuthFailureCache } = require('../utils/providerAuthFailureCache');
-  const WyzieSubsService = require('./wyzieSubs');
-  const originalGetShared = sharedCache.getShared;
-  const originalSetShared = sharedCache.setShared;
-  const originalDeleteShared = sharedCache.deleteShared;
-
-  sharedCache.getShared = async () => null;
-  sharedCache.setShared = async () => true;
-  sharedCache.deleteShared = async () => true;
-  resetProviderAuthFailureCache();
-
-  try {
-    const service = new WyzieSubsService('bad-wyzie-key');
-    let searchCalls = 0;
-    service.client = {
-      get: async () => {
-        searchCalls += 1;
-        const error = new Error('Request failed with status code 403');
-        error.response = {
-          status: 403,
-          data: { details: 'Invalid API key' }
-        };
-        throw error;
-      }
-    };
-
-    const params = {
-      imdb_id: 'tt1234567',
-      type: 'movie',
-      languages: ['eng'],
-      sources: { opensubtitles: true },
-      providerTimeout: 1000
-    };
-
-    assert.deepEqual(await service.searchSubtitles(params), []);
-    assert.equal(searchCalls, 1);
-
-    assert.deepEqual(await service.searchSubtitles(params), []);
-    assert.equal(searchCalls, 1);
-  } finally {
-    resetProviderAuthFailureCache();
-    sharedCache.getShared = originalGetShared;
-    sharedCache.setShared = originalSetShared;
-    sharedCache.deleteShared = originalDeleteShared;
-  }
-});
-
 test('OpenAI-compatible model fetch caches invalid API keys', async () => {
   const axios = require('axios');
   const sharedCache = require('../utils/sharedCache');

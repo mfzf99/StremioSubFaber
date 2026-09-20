@@ -33,7 +33,6 @@ const https = require('https');
 const dns = require('dns');
 const axios = require('axios');
 const log = require('./logger');
-const { scsHttpsAgent } = require('./scsHttpAgent');
 
 /**
  * HTTP Agent with connection pooling
@@ -138,33 +137,6 @@ const PROVIDER_ENDPOINTS = {
     url: 'https://api.subsource.net/',
     name: 'SubSource',
     warmUpPath: null, // API requires key, just warm TLS
-    pingPath: null, // HEAD to base URL
-    warmUpEnabled: true,
-    keepAliveEnabled: true
-  },
-  wyzie: {
-    url: 'https://sub.wyzie.io/',
-    name: 'Wyzie Subs',
-    warmUpPath: 'status', // Public status endpoint; search requests require a key
-    pingPath: 'status',
-    keepAliveFailureOpensCircuit: false, // Status probe failures should not suppress real searches
-    warmUpEnabled: true,
-    keepAliveEnabled: true
-  },
-  scs: {
-    url: 'https://stremio-community-subtitles.top/',
-    name: 'Stremio Community Subtitles',
-    warmUpPath: null, // Just warm TLS
-    pingPath: null, // HEAD to base URL
-    httpsAgent: scsHttpsAgent,
-    keepAliveFailureOpensCircuit: false, // Slow/flaky probes should not block real SCS attempts
-    warmUpEnabled: true,
-    keepAliveEnabled: true
-  },
-  subsro: {
-    url: 'https://api.subs.ro/',
-    name: 'Subs.ro',
-    warmUpPath: null, // API requires key
     pingPath: null, // HEAD to base URL
     warmUpEnabled: true,
     keepAliveEnabled: true
@@ -336,17 +308,14 @@ const PROVIDER_KEY_MAP = {
   'opensubtitles_v3': 'opensubtitlesV3',
   'opensubtitles_auth': 'opensubtitlesAuth',
   'subdl': 'subdl',
-  'subsource': 'subsource',
-  'wyzie': 'wyzie',
-  'scs': 'scs',
-  'subsro': 'subsro'
+  'subsource': 'subsource'
 };
 
 /**
  * Check if a provider is healthy enough to make a request
  * Returns false if the circuit breaker is open (provider is failing)
  * 
- * @param {string} providerName - Provider name (e.g., 'subdl', 'opensubtitles_v3', 'scs')
+ * @param {string} providerName - Provider name (e.g., 'subdl', 'opensubtitles_v3')
  * @returns {{ healthy: boolean, reason?: string, retryInMs?: number }}
  */
 function isProviderHealthy(providerName) {

@@ -250,19 +250,6 @@
         setDescriptionWithLink('subsourceDescription', 'config.providers.subsource.description', 'config.providers.subsource.linkLabel', 'Get your free API key from');
         setText('subdlTitle', 'config.providers.subdl.title', 'SubDL');
         setDescriptionWithLink('subdlDescription', 'config.providers.subdl.description', 'config.providers.subdl.linkLabel', 'Get your free API key from');
-        setText('scsTitle', 'config.providers.scs.title', 'Stremio Community Subtitles');
-        setText('scsDescription', 'config.providers.scs.description', 'Community-curated subtitles from the Stremio Community Subtitles addon. Choose the shared community token or your own auth key.');
-        setText('scsImplTypeLabel', 'config.providers.scs.implementationType', 'Implementation Type');
-        setText('scsCommunityTitle', 'config.providers.scs.communityTitle', 'Community (Default)');
-        setText('scsCommunityDescription', 'config.providers.scs.communityDescription', "Uses SubMaker's shared SCS token. No auth key required.");
-        setText('scsAuthTitle', 'config.providers.scs.authTitle', 'Auth (Recommended)');
-        setText('scsAuthDescription', 'config.providers.scs.authDescription', 'Uses your own SCS auth key and sends only your selected SubMaker languages.');
-        setText('scsApiKeyLabel', 'config.providers.scs.apiKeyLabel', 'SCS Auth Key');
-        setAttr('scsApiKey', 'placeholder', 'config.providers.scs.apiKeyPlaceholder', 'Enter SCS auth key');
-        setText('scsApiKeyNote', 'config.providers.scs.apiKeyNote', 'Get this from your SCS account at stremio-community-subtitles.top.');
-        setText('wyzieTitle', 'config.providers.wyzie.title', 'Wyzie Subs');
-        setDescriptionWithLink('wyzieDescription', 'config.providers.wyzie.description', 'config.providers.wyzie.linkLabel', 'Get your free API key from');
-        setAttr('validateWyzie', 'title', 'config.providers.wyzie.validateTitle', 'Validate API key');
         setDescriptionWithLink('geminiApiHelper', 'config.gemini.apiKey.helper', 'config.gemini.apiKey.linkLabel', 'Get your free API key from');
         setText('sourceLanguagesError', 'config.validation.sourceRequired', 'Please select at least one source language');
         setText('targetLanguagesError', 'config.validation.targetRequired', 'Please select at least one target language');
@@ -317,7 +304,6 @@
         // Client-visible default values for provider fields
         SUBDL: '',
         SUBSOURCE: '',
-        WYZIE: '',
         GEMINI: '',
         ASSEMBLYAI: '',
         CF_WORKERS_AUTOSUBS: ''
@@ -1473,15 +1459,6 @@ Translate to {target_language}.`;
                     enabled: false,
                     apiKey: DEFAULT_API_KEYS.SUBSOURCE
                 },
-                scs: {
-                    enabled: false,
-                    implementationType: 'community',
-                    apiKey: ''
-                },
-                wyzie: {
-                    enabled: false,
-                    apiKey: ''
-                }
             },
             // Subtitle provider timeout in seconds (min: 8, max: 30, default: 12)
             subtitleProviderTimeout: 12,
@@ -5782,9 +5759,7 @@ Translate to {target_language}.`;
             currentConfig.subtitleProviders = {
                 opensubtitles: { ...(defaults.subtitleProviders?.opensubtitles || {}), enabled: false },
                 subdl: { ...(defaults.subtitleProviders?.subdl || {}), enabled: false },
-                subsource: { ...(defaults.subtitleProviders?.subsource || {}), enabled: false },
-                scs: { ...(defaults.subtitleProviders?.scs || {}), enabled: false },
-                wyzie: { ...(defaults.subtitleProviders?.wyzie || {}), enabled: false }
+                subsource: { ...(defaults.subtitleProviders?.subsource || {}), enabled: false }
             };
             setActiveSessionContext({
                 token: '',
@@ -7253,19 +7228,6 @@ Translate to {target_language}.`;
             }
         });
 
-        // More Providers (beta) collapsible section toggle
-        const moreProvidersToggle = document.getElementById('moreProvidersToggle');
-        const moreProvidersContent = document.getElementById('moreProvidersContent');
-        const moreProvidersChevron = document.getElementById('moreProvidersChevron');
-        if (moreProvidersToggle && moreProvidersContent && moreProvidersChevron) {
-            moreProvidersToggle.addEventListener('click', () => {
-                const isExpanded = moreProvidersContent.style.display !== 'none';
-                moreProvidersContent.style.display = isExpanded ? 'none' : 'block';
-                moreProvidersChevron.style.transform = isExpanded ? 'rotate(0deg)' : 'rotate(180deg)';
-                moreProvidersToggle.setAttribute('aria-expanded', (!isExpanded).toString());
-            });
-        }
-
         // Delegate language grid item clicks to containers (reduces per-item listeners)
         const gridMap = [
             ['sourceLanguages', 'source'],
@@ -7492,32 +7454,6 @@ Translate to {target_language}.`;
         document.getElementById('enableSubSource').addEventListener('change', (e) => {
             toggleProviderConfig('subsourceConfig', e.target.checked);
         });
-
-        const scsToggle = document.getElementById('enableSCS');
-        if (scsToggle) {
-            scsToggle.addEventListener('change', (e) => {
-                toggleProviderConfig('scsConfig', e.target.checked);
-            });
-        }
-
-        document.querySelectorAll('input[name="scsImplementation"]').forEach(radio => {
-            radio.addEventListener('change', handleScsImplChange);
-        });
-
-        const wyzieToggle = document.getElementById('enableWyzie');
-        if (wyzieToggle) {
-            wyzieToggle.addEventListener('change', (e) => {
-                toggleProviderConfig('wyzieConfig', e.target.checked);
-            });
-        }
-
-        // Subs.ro toggle and config visibility
-        const subsroToggle = document.getElementById('enableSubsRo');
-        if (subsroToggle) {
-            subsroToggle.addEventListener('change', (e) => {
-                toggleProviderConfig('subsroConfig', e.target.checked);
-            });
-        }
 
         // Install and copy buttons
         document.getElementById('installBtn').addEventListener('click', installAddon);
@@ -7979,16 +7915,6 @@ Translate to {target_language}.`;
         document.getElementById('validateSubSource').addEventListener('click', () => validateApiKey('subsource'));
         document.getElementById('validateSubDL').addEventListener('click', () => validateApiKey('subdl'));
         document.getElementById('validateGemini').addEventListener('click', () => validateApiKey('gemini'));
-        const validateWyzieBtn = document.getElementById('validateWyzie');
-        if (validateWyzieBtn) {
-            validateWyzieBtn.addEventListener('click', () => validateApiKey('wyzie'));
-        }
-
-        // Subs.ro validation button
-        const validateSubsRoBtn = document.getElementById('validateSubsRo');
-        if (validateSubsRoBtn) {
-            validateSubsRoBtn.addEventListener('click', () => validateApiKey('subsro'));
-        }
 
         // File translation toggle - show modal when enabled
         const toolboxToggle = document.getElementById('subToolboxEnabled');
@@ -8137,34 +8063,6 @@ Translate to {target_language}.`;
 
         // Update visual selection state for all radio buttons
         document.querySelectorAll('input[name="opensubtitlesImplementation"]').forEach(radio => {
-            const label = radio.closest('label');
-            if (label) {
-                if (radio.checked) {
-                    label.style.borderColor = 'var(--primary)';
-                    label.style.background = 'var(--surface-light)';
-                } else {
-                    label.style.borderColor = 'var(--border)';
-                    label.style.background = 'white';
-                }
-            }
-        });
-    }
-
-    function handleScsImplChange(e) {
-        const authConfig = document.getElementById('scsAuthConfig');
-        if (!authConfig) return;
-
-        let implementationType;
-        if (e && e.target && e.target.value) {
-            implementationType = e.target.value;
-        } else {
-            const checkedRadio = document.querySelector('input[name="scsImplementation"]:checked');
-            implementationType = checkedRadio ? checkedRadio.value : 'community';
-        }
-
-        authConfig.style.display = implementationType === 'auth' ? 'block' : 'none';
-
-        document.querySelectorAll('input[name="scsImplementation"]').forEach(radio => {
             const label = radio.closest('label');
             if (label) {
                 if (radio.checked) {
@@ -9495,11 +9393,6 @@ Translate to {target_language}.`;
             feedback = document.getElementById('subdlValidationFeedback');
             apiKey = document.getElementById('subdlApiKey').value.trim();
             endpoint = '/api/validate-subdl';
-        } else if (provider === 'wyzie') {
-            btn = document.getElementById('validateWyzie');
-            feedback = document.getElementById('wyzieValidationFeedback');
-            apiKey = document.getElementById('wyzieApiKey').value.trim();
-            endpoint = '/api/validate-wyzie';
         } else if (provider === 'opensubtitles') {
             btn = document.getElementById('validateOpenSubtitles');
             feedback = document.getElementById('opensubtitlesValidationFeedback');
@@ -9523,11 +9416,6 @@ Translate to {target_language}.`;
             feedback = document.getElementById('geminiValidationFeedback');
             apiKey = document.getElementById('geminiApiKey').value.trim();
             endpoint = '/api/validate-gemini';
-        } else if (provider === 'subsro') {
-            btn = document.getElementById('validateSubsRo');
-            feedback = document.getElementById('subsroValidationFeedback');
-            apiKey = document.getElementById('subsroApiKey').value.trim();
-            endpoint = '/api/validate-subsro';
         }
 
         // Validate input
@@ -10587,28 +10475,6 @@ Translate to {target_language}.`;
                     newConfig.subtitleProviders.subsource.apiKey = (oldSubsource.apiKey || '').trim();
                 }
 
-                // SCS: preserve enabled state if provider exists
-                if (defaults.subtitleProviders.scs) {
-                    const oldScs = oldConfig.subtitleProviders.scs || {};
-                    newConfig.subtitleProviders.scs.enabled = oldScs.enabled === true;
-                    newConfig.subtitleProviders.scs.implementationType = oldScs.implementationType === 'auth' ? 'auth' : 'community';
-                    newConfig.subtitleProviders.scs.apiKey = (oldScs.apiKey || '').trim();
-                }
-
-                // Wyzie: preserve enabled state and API key. Wyzie now owns the
-                // dynamic source inventory, so legacy per-source settings are dropped.
-                if (defaults.subtitleProviders.wyzie) {
-                    const oldWyzie = oldConfig.subtitleProviders.wyzie || {};
-                    newConfig.subtitleProviders.wyzie.enabled = oldWyzie.enabled === true;
-                    newConfig.subtitleProviders.wyzie.apiKey = (oldWyzie.apiKey || '').trim();
-                }
-
-                // Subs.ro: preserve enabled state and apiKey if provider exists
-                if (defaults.subtitleProviders.subsro) {
-                    const oldSubsro = oldConfig.subtitleProviders.subsro || {};
-                    newConfig.subtitleProviders.subsro.enabled = oldSubsro.enabled === true;
-                    newConfig.subtitleProviders.subsro.apiKey = (oldSubsro.apiKey || '').trim();
-                }
             }
 
             // Preserve standalone API keys for auto-subs flows
@@ -10887,45 +10753,6 @@ Translate to {target_language}.`;
         document.getElementById('subsourceApiKey').value =
             currentConfig.subtitleProviders?.subsource?.apiKey || DEFAULT_API_KEYS.SUBSOURCE;
         toggleProviderConfig('subsourceConfig', subsourceEnabled);
-
-        // Stremio Community Subtitles (SCS)
-        const scsEnabled = currentConfig.subtitleProviders?.scs?.enabled === true;
-        const scsToggle = document.getElementById('enableSCS');
-        if (scsToggle) scsToggle.checked = scsEnabled;
-        const scsImplementationType = currentConfig.subtitleProviders?.scs?.implementationType === 'auth' ? 'auth' : 'community';
-        const scsCommunityRadio = document.getElementById('scsImplCommunity');
-        const scsAuthRadio = document.getElementById('scsImplAuth');
-        if (scsImplementationType === 'auth') {
-            if (scsAuthRadio) scsAuthRadio.checked = true;
-        } else if (scsCommunityRadio) {
-            scsCommunityRadio.checked = true;
-        }
-        const scsApiKeyEl = document.getElementById('scsApiKey');
-        if (scsApiKeyEl) {
-            scsApiKeyEl.value = currentConfig.subtitleProviders?.scs?.apiKey || '';
-        }
-        toggleProviderConfig('scsConfig', scsEnabled);
-        handleScsImplChange();
-
-        // Wyzie Subs
-        const wyzieEnabled = currentConfig.subtitleProviders?.wyzie?.enabled === true;
-        const wyzieToggle = document.getElementById('enableWyzie');
-        if (wyzieToggle) wyzieToggle.checked = wyzieEnabled;
-        const wyzieApiKeyEl = document.getElementById('wyzieApiKey');
-        if (wyzieApiKeyEl) {
-            wyzieApiKeyEl.value = currentConfig.subtitleProviders?.wyzie?.apiKey || '';
-        }
-        toggleProviderConfig('wyzieConfig', wyzieEnabled);
-
-        // Subs.ro - Romanian subtitle database, requires API key
-        const subsroEnabled = currentConfig.subtitleProviders?.subsro?.enabled === true;
-        const subsroToggle = document.getElementById('enableSubsRo');
-        if (subsroToggle) subsroToggle.checked = subsroEnabled;
-        const subsroApiKeyEl = document.getElementById('subsroApiKey');
-        if (subsroApiKeyEl) {
-            subsroApiKeyEl.value = currentConfig.subtitleProviders?.subsro?.apiKey || '';
-        }
-        toggleProviderConfig('subsroConfig', subsroEnabled);
 
         // Load subtitle provider timeout setting (min: 8, max: 30, default: 12)
         const timeoutSlider = document.getElementById('subtitleProviderTimeout');
@@ -11350,19 +11177,6 @@ Translate to {target_language}.`;
                     enabled: document.getElementById('enableSubSource').checked,
                     apiKey: document.getElementById('subsourceApiKey').value.trim()
                 },
-                scs: {
-                    enabled: document.getElementById('enableSCS')?.checked || false,
-                    implementationType: document.querySelector('input[name="scsImplementation"]:checked')?.value === 'auth' ? 'auth' : 'community',
-                    apiKey: document.getElementById('scsApiKey')?.value?.trim() || ''
-                },
-                wyzie: {
-                    enabled: document.getElementById('enableWyzie')?.checked || false,
-                    apiKey: document.getElementById('wyzieApiKey')?.value?.trim() || ''
-                },
-                subsro: {
-                    enabled: document.getElementById('enableSubsRo')?.checked || false,
-                    apiKey: document.getElementById('subsroApiKey')?.value?.trim() || ''
-                }
             },
             // Subtitle provider timeout (clamp to 8-30 range)
             subtitleProviderTimeout: Math.max(8, Math.min(30, parseInt(document.getElementById('subtitleProviderTimeout')?.value, 10) || 12)),
@@ -11470,15 +11284,6 @@ Translate to {target_language}.`;
         }
         if (config.subtitleProviders.subsource?.enabled && !config.subtitleProviders.subsource.apiKey?.trim()) {
             errors.push(tConfig('config.validation.subsourceKeyRequired', {}, '⚠️ SubSource is enabled but API key is missing'));
-        }
-        if (config.subtitleProviders.scs?.enabled && config.subtitleProviders.scs.implementationType === 'auth' && !config.subtitleProviders.scs.apiKey?.trim()) {
-            errors.push(tConfig('config.validation.scsKeyRequired', {}, '⚠️ SCS Auth is enabled but auth key is missing'));
-        }
-        if (config.subtitleProviders.wyzie?.enabled && !config.subtitleProviders.wyzie.apiKey?.trim()) {
-            errors.push(tConfig('config.validation.wyzieKeyRequired', {}, '⚠️ Wyzie Subs is enabled but API key is missing'));
-        }
-        if (config.subtitleProviders.subsro?.enabled && !config.subtitleProviders.subsro.apiKey?.trim()) {
-            errors.push(tConfig('config.validation.subsroKeyRequired', {}, '⚠️ Subs.ro is enabled but API key is missing'));
         }
 
         // Validate that every enabled AI provider has an API key

@@ -51,18 +51,6 @@
         'gemini-3.1-pro-preview': 'Gemini 3.1 Pro (beta)',
         'gemini-flash-lite-latest': 'Gemini Flash Lite Latest'
     };
-    const DEFAULT_WYZIE_API_KEY = '';
-
-    function getQuickSetupDefaultWyzieApiKey() {
-        try {
-            const candidate = window.SubMakerDefaultApiKeys && window.SubMakerDefaultApiKeys.WYZIE;
-            if (typeof candidate === 'string' && candidate.trim()) {
-                return candidate.trim();
-            }
-        } catch (_) { }
-        return DEFAULT_WYZIE_API_KEY;
-    }
-
     // Wizard State
     const state = {
         currentStep: 1,
@@ -75,11 +63,6 @@
         subdlApiKey: '',
         subsourceEnabled: false,
         subsourceApiKey: '',
-        scsEnabled: false,
-        scsAuth: false,
-        scsApiKey: '',
-        wyzieEnabled: false,
-        wyzieApiKey: getQuickSetupDefaultWyzieApiKey(),
         // AI (translate mode only)
         geminiApiKey: '',
         geminiKeyValid: false,
@@ -943,10 +926,7 @@
         switch (step) {
             case 1: return !!state.mode;
             case 2: {
-                const scsEnabled = !!($('qsEnableSCS') || {}).checked;
-                const scsAuth = !!($('qsScsImplAuth') || {}).checked;
-                const scsKey = (($('qsScsApiKey') || {}).value || '').trim();
-                return !(scsEnabled && scsAuth && !scsKey);
+                return true;
             }
             case 3:
                 if (state.mode === 'fetch') return true; // skipped
@@ -990,13 +970,6 @@
                 // SubSource
                 state.subsourceEnabled = !!($('qsEnableSubSource') || {}).checked;
                 state.subsourceApiKey = ($('qsSubsourceApiKey') || {}).value || '';
-                // SCS
-                state.scsEnabled = !!($('qsEnableSCS') || {}).checked;
-                state.scsAuth = !!($('qsScsImplAuth') || {}).checked;
-                state.scsApiKey = (($('qsScsApiKey') || {}).value || '').trim();
-                // Wyzie
-                state.wyzieEnabled = !!($('qsEnableWyzie') || {}).checked;
-                state.wyzieApiKey = (($('qsWyzieApiKey') || {}).value || '').trim() || getQuickSetupDefaultWyzieApiKey();
                 break;
             case 3:
                 state.geminiApiKey = ($('qsGeminiApiKey') || {}).value || '';
@@ -1054,42 +1027,6 @@
             if (ssCheck.checked) ssWrap.style.display = '';
         }
 
-        // SCS toggle
-        const scsCheck = $('qsEnableSCS');
-        const scsNote = $('qsScsNote');
-        const scsOptions = $('qsScsOptions');
-        const scsAuthConfig = $('qsScsAuthConfig');
-        const scsCommunityRadio = $('qsScsImplCommunity');
-        const scsAuthRadio = $('qsScsImplAuth');
-        const scsApiKey = $('qsScsApiKey');
-        const updateScsModeUi = () => {
-            const enabled = !!(scsCheck && scsCheck.checked);
-            const auth = !!(scsAuthRadio && scsAuthRadio.checked);
-            if (scsNote) scsNote.style.display = enabled ? '' : 'none';
-            if (scsOptions) scsOptions.style.display = enabled ? '' : 'none';
-            if (scsAuthConfig) scsAuthConfig.style.display = enabled && auth ? '' : 'none';
-            state.scsEnabled = enabled;
-            state.scsAuth = auth;
-            state.scsApiKey = ((scsApiKey || {}).value || '').trim();
-            updateNav(2);
-        };
-        if (scsCheck) {
-            scsCheck.addEventListener('change', updateScsModeUi);
-            if (scsCommunityRadio) scsCommunityRadio.addEventListener('change', updateScsModeUi);
-            if (scsAuthRadio) scsAuthRadio.addEventListener('change', updateScsModeUi);
-            if (scsApiKey) scsApiKey.addEventListener('input', updateScsModeUi);
-            updateScsModeUi();
-        }
-
-        // Wyzie toggle
-        const wyzieCheck = $('qsEnableWyzie');
-        const wyzieConfig = $('qsWyzieConfig');
-        if (wyzieCheck && wyzieConfig) {
-            wyzieCheck.addEventListener('change', () => {
-                wyzieConfig.style.display = wyzieCheck.checked ? '' : 'none';
-            });
-            if (wyzieCheck.checked) wyzieConfig.style.display = '';
-        }
         // Test / Validate Buttons
 
         // OpenSubtitles auth test
@@ -1135,19 +1072,6 @@
             });
         }
 
-        // Wyzie test
-        const wyzieBtn = $('qsValidateWyzie');
-        if (wyzieBtn) {
-            wyzieBtn.addEventListener('click', async () => {
-                const apiKey = ($('qsWyzieApiKey') || {}).value?.trim();
-                const statusEl = $('qsWyzieStatus');
-                if (!apiKey) {
-                    showQsStatus(statusEl, tQs('status.enterKey', null, 'Please enter an API key'), 'error');
-                    return;
-                }
-                await runQsValidation(wyzieBtn, statusEl, '/api/validate-wyzie', { apiKey });
-            });
-        }
     }
     // Step 3: AI Translation
 
@@ -1694,20 +1618,6 @@
         if (state.subsourceEnabled) {
             items.push({ icon: '\uD83D\uDCE1', label: 'SubSource', value: tQs('summary.enabled', null, 'Enabled'), cls: 'qs-on' });
         }
-        if (state.scsEnabled) {
-            items.push({
-                icon: '\uD83C\uDF10',
-                label: 'Stremio Community Subs',
-                value: state.scsAuth
-                    ? tQs('summary.scsAuth', null, 'Auth key')
-                    : tQs('summary.scsCommunity', null, 'Community token'),
-                cls: 'qs-on'
-            });
-        }
-        if (state.wyzieEnabled) {
-            items.push({ icon: '\uD83D\uDD0D', label: 'Wyzie Subs', value: tQs('summary.wyzieSources', null, 'All available sources'), cls: 'qs-on' });
-        }
-
         // AI
         if (state.mode === 'translate') {
             const defaultGeminiModelLabel = getQuickSetupGeminiModelLabel();
@@ -1895,15 +1805,6 @@
                     enabled: state.subsourceEnabled,
                     apiKey: state.subsourceApiKey
                 },
-                scs: {
-                    enabled: state.scsEnabled,
-                    implementationType: state.scsAuth ? 'auth' : 'community',
-                    apiKey: state.scsAuth ? (state.scsApiKey || '').trim() : ''
-                },
-                wyzie: {
-                    enabled: state.wyzieEnabled,
-                    apiKey: (state.wyzieApiKey || getQuickSetupDefaultWyzieApiKey()).trim()
-                }
             },
             subtitleProviderTimeout: 12,
             translationCache: {
@@ -2004,8 +1905,6 @@
                                 opensubtitles: qsConfig.subtitleProviders.opensubtitles,
                                 subdl: qsConfig.subtitleProviders.subdl,
                                 subsource: qsConfig.subtitleProviders.subsource,
-                                scs: qsConfig.subtitleProviders.scs,
-                                wyzie: qsConfig.subtitleProviders.wyzie
                             };
 
                             // 3. Reset Quick Setup-owned translation behavior to the standard Gemini + database path.
@@ -2223,18 +2122,6 @@
         hide('qsSubdlKeyWrap');
         hide('qsSubsourceKeyWrap');
         hide('qsOpenSubsAuthFields');
-        const scsCheck = $('qsEnableSCS');
-        const wyzieCheck = $('qsEnableWyzie');
-        if (scsCheck) scsCheck.checked = false;
-        if (wyzieCheck) wyzieCheck.checked = false;
-        hide('qsScsNote');
-        hide('qsScsOptions');
-        hide('qsScsAuthConfig');
-        hide('qsWyzieConfig');
-        const scsCommunityRadio = $('qsScsImplCommunity');
-        const scsKey = $('qsScsApiKey');
-        if (scsCommunityRadio) scsCommunityRadio.checked = true;
-        if (scsKey) scsKey.value = '';
         const un = $('qsOpenSubsUsername');
         const pw = $('qsOpenSubsPassword');
         if (un) un.value = '';
@@ -2244,7 +2131,7 @@
         if (keyInput) keyInput.value = '';
         const keyStatus = $('qsGeminiKeyStatus');
         if (keyStatus) { keyStatus.textContent = ''; keyStatus.className = 'qs-key-status'; }
-        ['qsOpenSubsStatus', 'qsSubDLStatus', 'qsSubSourceStatus', 'qsWyzieStatus'].forEach((id) => {
+        ['qsOpenSubsStatus', 'qsSubDLStatus', 'qsSubSourceStatus'].forEach((id) => {
             const statusEl = $(id);
             if (statusEl) {
                 statusEl.textContent = '';
@@ -2335,17 +2222,6 @@
         state.subsourceEnabled = !!ss.enabled;
         state.subsourceApiKey = ss.apiKey || '';
 
-        // SCS
-        const scs = subs.scs || {};
-        state.scsEnabled = !!scs.enabled;
-        state.scsAuth = scs.implementationType === 'auth';
-        state.scsApiKey = (scs.apiKey || '').trim();
-
-        // Wyzie
-        const wyzie = subs.wyzie || {};
-        state.wyzieEnabled = !!wyzie.enabled;
-        state.wyzieApiKey = (wyzie.apiKey || '').trim() || getQuickSetupDefaultWyzieApiKey();
-
         // AI
         state.geminiApiKey = config.geminiApiKey || '';
         // If key exists, assume valid or let them re-validate
@@ -2379,11 +2255,6 @@
         state.subdlApiKey = '';
         state.subsourceEnabled = false;
         state.subsourceApiKey = '';
-        state.scsEnabled = false;
-        state.scsAuth = false;
-        state.scsApiKey = '';
-        state.wyzieEnabled = false;
-        state.wyzieApiKey = getQuickSetupDefaultWyzieApiKey();
         state.geminiApiKey = '';
         state.geminiKeyValid = false;
         state.sourceLanguages = ['eng'];
@@ -2403,38 +2274,18 @@
         // Step 2 - checkboxes and inputs
         const subdlCheck = $('qsEnableSubDL');
         const ssCheck = $('qsEnableSubSource');
-        const scsCheck = $('qsEnableSCS');
-        const wyzieCheck = $('qsEnableWyzie');
         if (subdlCheck) subdlCheck.checked = state.subdlEnabled;
         if (ssCheck) ssCheck.checked = state.subsourceEnabled;
-        if (scsCheck) scsCheck.checked = state.scsEnabled;
-        if (wyzieCheck) wyzieCheck.checked = state.wyzieEnabled;
-        const scsCommunityRadio = $('qsScsImplCommunity');
-        const scsAuthRadio = $('qsScsImplAuth');
-        if (scsAuthRadio) scsAuthRadio.checked = state.scsAuth === true;
-        if (scsCommunityRadio) scsCommunityRadio.checked = state.scsAuth !== true;
 
         const subdlWrap = $('qsSubdlKeyWrap');
         const ssWrap = $('qsSubsourceKeyWrap');
-        const scsNote = $('qsScsNote');
-        const scsOptions = $('qsScsOptions');
-        const scsAuthConfig = $('qsScsAuthConfig');
-        const wyzieConfig = $('qsWyzieConfig');
         if (subdlWrap) subdlWrap.style.display = state.subdlEnabled ? '' : 'none';
         if (ssWrap) ssWrap.style.display = state.subsourceEnabled ? '' : 'none';
-        if (scsNote) scsNote.style.display = state.scsEnabled ? '' : 'none';
-        if (scsOptions) scsOptions.style.display = state.scsEnabled ? '' : 'none';
-        if (scsAuthConfig) scsAuthConfig.style.display = state.scsEnabled && state.scsAuth ? '' : 'none';
-        if (wyzieConfig) wyzieConfig.style.display = state.wyzieEnabled ? '' : 'none';
 
         const subdlKey = $('qsSubdlApiKey');
         const ssKey = $('qsSubsourceApiKey');
-        const scsKey = $('qsScsApiKey');
-        const wyzieKey = $('qsWyzieApiKey');
         if (subdlKey) subdlKey.value = state.subdlApiKey || '';
         if (ssKey) ssKey.value = state.subsourceApiKey || '';
-        if (scsKey) scsKey.value = state.scsApiKey || '';
-        if (wyzieKey) wyzieKey.value = state.wyzieApiKey || getQuickSetupDefaultWyzieApiKey();
 
         const un = $('qsOpenSubsUsername');
         const pw = $('qsOpenSubsPassword');

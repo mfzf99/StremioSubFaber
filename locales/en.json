@@ -804,20 +804,7 @@
           "subsourceKeyPlaceholder": "Enter SubSource API key",
           "subsourceGetKey": "Get your free API key at SubSource.net",
           "noKeyNeeded": "No key needed",
-          "keyRequired": "Key required",
-          "scsName": "Stremio Community Subs",
-          "scsDesc": "Community-curated subtitles from the Stremio community",
-          "scsCommunityBadge": "Community/Auth",
-          "scsCommunityMode": "Community token",
-          "scsAuthMode": "Auth key",
-          "scsKeyPlaceholder": "Enter SCS auth key",
-          "scsKeyNote": "Use your own SCS auth key for faster language-filtered requests.",
-          "scsModeNote": "Community mode uses SubMaker's shared token; Auth mode sends only your selected languages.",
-          "wyzieName": "Wyzie Subs",
-          "wyzieDesc": "Subtitle aggregator that searches every source available to your API key",
-          "wyzieKeyPlaceholder": "Enter Wyzie API key",
-          "wyzieGetKey": "Get your free API key at store.wyzie.io/redeem",
-          "wyzieAutoSources": "Wyzie automatically searches every current source available to your API-key plan."
+          "keyRequired": "Key required"
         },
         "step3": {
           "title": "AI Translation",
@@ -894,9 +881,6 @@
           "opensubsV3": "V3 (no login)",
           "enabled": "Enabled",
           "disabled": "Disabled",
-          "scsAuth": "Auth key",
-          "scsCommunity": "Community token",
-          "wyzieSources": "All available sources",
           "aiTranslation": "AI Translation",
           "aiConfigured": "{model}",
           "aiNotConfigured": "Not configured",
@@ -1072,9 +1056,6 @@
         "secondaryProvidersCount": "Secondary Provider requires two configured AI providers (main and fallback)",
         "subdlKeyRequired": "SubDL is enabled but API key is missing",
         "subsourceKeyRequired": "SubSource is enabled but API key is missing",
-        "scsKeyRequired": "SCS Auth is enabled but auth key is missing",
-        "wyzieKeyRequired": "Wyzie Subs is enabled but API key is missing",
-        "subsroKeyRequired": "Subs.ro is enabled but API key is missing",
         "subtitleProviderRequired": "Please enable at least one subtitle provider",
         "geminiKeysRequired": "At least one API key is required for rotation",
         "geminiKeysFillEmpty": "Please fill in all API key fields before adding a new one",
@@ -1129,49 +1110,12 @@
           "validateCta": "Test",
           "toggleLabel": "Enable SubDL"
         },
-        "subsro": {
-          "title": "Subs.ro",
-          "description": "Romanian subtitles. Get your API key from",
-          "linkLabel": "subs.ro",
-          "placeholder": "Enter Subs.ro API key",
-          "validateTitle": "Validate API key",
-          "validateCta": "Test",
-          "toggleLabel": "Enable Subs.ro"
-        },
-        "wyzie": {
-          "title": "Wyzie Subs",
-          "description": "Get your free API key from",
-          "linkLabel": "store.wyzie.io/redeem",
-          "placeholder": "Enter Wyzie API key",
-          "validateTitle": "Validate API key",
-          "validateCta": "Test",
-          "toggleLabel": "Enable Wyzie Subs",
-          "note": "Wyzie automatically searches every current source available to your API-key plan. Results may overlap with other providers you have enabled."
-        },
-        "scs": {
-          "title": "Stremio Community Subtitles",
-          "description": "Community-curated subtitles. Choose the shared community token or your own auth key.",
-          "toggleLabel": "Enable SCS",
-          "note": "SCS provides community-uploaded subtitles. Results depend on community contributions for your specific video file.",
-          "implementationType": "Implementation Type",
-          "communityTitle": "Community (Default)",
-          "communityDescription": "Uses SubMaker's shared SCS token. No auth key required.",
-          "authTitle": "Auth (Recommended)",
-          "authDescription": "Uses your own SCS auth key and sends only your selected SubMaker languages.",
-          "apiKeyLabel": "SCS Auth Key",
-          "apiKeyPlaceholder": "Enter SCS auth key",
-          "apiKeyNote": "Get this from your SCS account at stremio-community-subtitles.top."
-        },
-        "moreProviders": {
-          "title": "More Providers (beta)",
-          "description": "Additional subtitle sources and aggregator providers."
-        },
         "timeout": {
           "title": "Provider Timeout",
           "description": "Maximum time to wait for each subtitle provider (in seconds).",
           "note": "Lower = faster responses but may miss slow providers. Higher = more reliable but slower. Default: 12s",
           "ariaLabel": "Subtitle provider timeout",
-          "slowWarning": "Wyzie and SubSource might be slow. If you get no subtitle results, try a higher timeout value."
+          "slowWarning": "SubSource might be slow. If you get no subtitle results, try a higher timeout value."
         }
       },
       "providersUi": {
