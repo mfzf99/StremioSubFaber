@@ -601,11 +601,14 @@ class GeminiService {
       }
       // Smart filter: only retain Google/Gemini/Gemma models from the ~605-model
       // catalog. isGoogleModel() uses dual-layer detection (owned_by + prefix).
+      // displayName dibiarkan kosong — Crazy Router /v1/models hanya mengembalikan ID
+      // mentah (cth: 'gemini-3.1-flash-lite') tanpa displayName rasmi. Frontend
+      // akan memformatnya melalui formatModelDisplayName() menjadi "Gemini 3.1 Flash Lite".
       const googleModels = list.filter(m => isGoogleModel(m));
       this._crazyRouterGoogleModels = googleModels.map(m => ({
         id: String(m.id || '').trim(),
         name: String(m.id || '').trim(),
-        displayName: String(m.id || '').trim(),
+        displayName: '',
         ownedBy: String(m.owned_by || 'google').trim()
       })).filter(m => m.id);
       this._crazyRouterModelIds = new Set(

@@ -10191,28 +10191,49 @@ Translate to {target_language}.`;
             .join(' ');
     }
 
+    // Klasifikasi rank 5-tier untuk susunan model dropdown:
+    //   Rank 1: Gemini 3 Flash tulen (tiada 'lite') — gemini-3-flash, gemini-3.6-flash, dll.
+    //   Rank 2: Gemini 3 Flash-Lite — gemini-3.1-flash-lite, dll.
+    //   Rank 3: Gemini 3 Pro — gemini-3.1-pro, dll.
+    //   Rank 4: Gemini 2.5 (flash / pro / lite)
+    //   Rank 5: Model legasi lain (1.5, gemma, unknown)
+    function getModelSortRank(modelName) {
+        const n = String(modelName || '').toLowerCase();
+        const isGemini3 = n.startsWith('gemini-3') || n.startsWith('gemini-flash') || n.startsWith('gemini-pro');
+        if (isGemini3) {
+            if (n.includes('flash') && !n.includes('lite')) return 1;   // Gemini 3 Flash tulen
+            if (n.includes('flash') && n.includes('lite')) return 2;   // Gemini 3 Flash-Lite
+            if (n.includes('pro')) return 3;                           // Gemini 3 Pro
+            return 2;                                                  // Gemini 3 lain (default ke rank 2)
+        }
+        if (n.startsWith('gemini-2.5')) return 4;                      // Gemini 2.5
+        return 5;                                                      // Legasi / gemma / unknown
+    }
+
+    // Format displayName untuk option. Guard: jika displayName rasmi sama dengan ID mentah
+    // atau mengandungi sengkang huruf kecil (cth: 'gemini-3.1-flash-lite'), format ia
+    // menjadi paparan kemas "Gemini 3.1 Flash Lite".
+    function getDisplayLabelForModel(model) {
+        const rawName = String(model.name || '');
+        const officialDisplayName = String(model.displayName || '').trim();
+        const isRawId = !officialDisplayName
+            || officialDisplayName === rawName
+            || (officialDisplayName === officialDisplayName.toLowerCase() && officialDisplayName.includes('-'));
+        return isRawId ? formatModelDisplayName(rawName) : officialDisplayName;
+    }
+
     function populateGeminiModelDropdowns(models) {
         const baseSelect = document.getElementById('geminiModel');
         if (!baseSelect) return;
 
         const list = (Array.isArray(models) && models.length) ? models : SAFE_DEFAULT_MODELS;
 
-        // Susun: model keluarga Gemini 3 Flash di indeks teratas (index 0),
-        // kemudian model Gemini 3 lain, kemudian model 2.5 / legacy.
+        // Susun mengikut rank 5-tier — Rank 1 (Gemini 3 Flash tulen) di indeks 0.
         const sortedList = [...list].sort((a, b) => {
-            const aName = String(a.name || '').toLowerCase();
-            const bName = String(b.name || '').toLowerCase();
-            // Utamakan model yang mengandungi 'gemini-3' dan 'flash' (cth: gemini-3-flash, gemini-3.6-flash)
-            const aIsGemini3Flash = aName.startsWith('gemini-3') && aName.includes('flash');
-            const bIsGemini3Flash = bName.startsWith('gemini-3') && bName.includes('flash');
-            if (aIsGemini3Flash && !bIsGemini3Flash) return -1;
-            if (!aIsGemini3Flash && bIsGemini3Flash) return 1;
-            // Kemudian mana-mana model Gemini 3 lain
-            const aIsGemini3 = aName.startsWith('gemini-3');
-            const bIsGemini3 = bName.startsWith('gemini-3');
-            if (aIsGemini3 && !bIsGemini3) return -1;
-            if (!aIsGemini3 && bIsGemini3) return 1;
-            return 0;
+            const rankDiff = getModelSortRank(a.name) - getModelSortRank(b.name);
+            if (rankDiff !== 0) return rankDiff;
+            // Dalam rank yang sama, susun mengikut nama secara stabil
+            return String(a.name || '').localeCompare(String(b.name || ''));
         });
 
         // Simpan nilai tersimpan sah dari config — JANGAN gunakan prevValue dari DOM
@@ -10224,20 +10245,31 @@ Translate to {target_language}.`;
         sortedList.forEach(model => {
             const opt = document.createElement('option');
             opt.value = model.name;
-            // Gunakan displayName rasmi jika ada, sebaliknya format dari ID model
+            // Gunakan displayName rasmi jika berkualiti, sebaliknya format dari ID model
             // (penting untuk Crazy Router yang mengembalikan hanya 'id' tanpa displayName).
-            opt.textContent = model.displayName || formatModelDisplayName(model.name);
+            opt.textContent = getDisplayLabelForModel(model);
             baseSelect.appendChild(opt);
         });
 
         // Aktifkan dropdown selepas model dimuatkan.
         baseSelect.disabled = false;
 
-        // Pemilihan Default: Jika pengguna BELUM menyimpan model tersuai secara sah
-        // dalam config sesi, WAJIB pilih model indeks 0 (Gemini 3 Flash) secara automatik!
-        const target = (savedBase && sortedList.some(m => m.name === savedBase))
-            ? savedBase
-            : sortedList[0].name;
+        // ── Pemilihan Sasaran Eksplisit ──
+        // 1. Jika ada model tersimpan sah dalam config, guna itu.
+        // 2. Jika tiada, semak model sasaran: DEFAULT_GEMINI_MODEL ('gemini-3-flash-preview')
+        //    atau 'gemini-3-flash' — WAJIB pilih jika wujud dalam katalog penyedia.
+        // 3. Fallback hanya ke sortedList[0] (Rank 1 tertinggi) sekiranya sasaran tiada.
+        const loadedNames = sortedList.map(m => m.name);
+        let target = '';
+        if (savedBase && loadedNames.includes(savedBase)) {
+            target = savedBase;
+        } else if (loadedNames.includes(DEFAULT_GEMINI_MODEL)) {
+            target = DEFAULT_GEMINI_MODEL;
+        } else if (loadedNames.includes('gemini-3-flash')) {
+            target = 'gemini-3-flash';
+        } else {
+            target = sortedList[0].name;
+        }
         baseSelect.value = target;
 
         // Picu morphing parameter mengikut model yang dipilih di dropdown atas.
