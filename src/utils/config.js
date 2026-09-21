@@ -560,6 +560,23 @@ function normalizeConfig(config) {
     })()
   };
 
+  // 🔄 Migrasi Data: Alihkan advancedSettings.geminiModel ke geminiModel
+  // (dropdown atas). Ini menyokong penyatuan single-picker — pengguna lama
+  // yang menetapkan model override dalam advancedSettings tetapi TIDAK
+  // mengaktifkan mod advanced (enabled !== true) kini melihat nilai tersebut
+  // dipindahkan ke dropdown utama secara automatik tanpa kehilangan pilihan.
+  //
+  // PENTING: Jangan migrasi apabila advancedSettings.enabled === true, kerana
+  // getEffectiveGeminiModel() sudah menggunakan override tersebut secara
+  // aktif. Mengubah geminiModel dalam keadaan itu akan memecah logik override.
+  if (normalizedAdvancedModel && normalizedAdvancedModel !== configModel && advSettings.enabled !== true) {
+    log.debug(() => `[Config] Migrating orphaned advancedSettings.geminiModel '${normalizedAdvancedModel}' to top-level geminiModel`);
+    mergedConfig.geminiModel = normalizedAdvancedModel;
+    mergedConfig.advancedSettings.geminiModel = '';
+    mergedConfig.__needsSessionPersist = true;
+    mergedConfig.__persistReason = 'advanced-model-migration';
+  }
+
   // 🔥 Pembersihan Parameter Legasi Terpilih (minP, repetitionPenalty).
   // NOTA: thinkingBudget & topK DIKEKALKAN — thinkingBudget diperlukan oleh
   // Gemini 2.5 (mod nyahaktif=0 / dinamik=-1), manakala topK disokong oleh

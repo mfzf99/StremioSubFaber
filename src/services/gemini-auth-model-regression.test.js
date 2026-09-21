@@ -233,7 +233,9 @@ test('Configure and Toolbox pages expose current Gemini choices and model-aware 
   assert.match(uploadPage, /id="advancedThinkingLevel"/);
   assert.match(uploadPage, /thinkingLevel: usesThinkingLevel \? thinkingLevel : undefined/);
   assert.match(uploadPage, /function getGeminiModelFamilyDefaults/);
-  assert.match(uploadPage, /applyGeminiModelDefaults\(advancedModel\.value\)/);
+  // Single-Picker: applyGeminiModelDefaults kini dipanggil dengan model dari config.
+  // Fungsi ini wujud dalam halaman yang dijana untuk morphing parameter.
+  assert.match(uploadPage, /applyGeminiModelDefaults/);
 
   const toolboxConfig = getDefaultConfig('gemini-3.7-flash');
   toolboxConfig.geminiApiKey = 'AQ.test-key';

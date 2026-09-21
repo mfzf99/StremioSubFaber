@@ -1236,9 +1236,8 @@ Translate to {target_language}.`;
     }
 
     function getAdvancedGeminiModelValue() {
-        const advancedModel = document.getElementById('advancedModel')?.value || '';
-        const baseModel = document.getElementById('geminiModel')?.value || DEFAULT_GEMINI_MODEL;
-        return normalizeGeminiModelName(advancedModel || baseModel);
+        // Single-Picker: baca terus dari dropdown atas #geminiModel.
+        return normalizeGeminiModelName(document.getElementById('geminiModel')?.value || DEFAULT_GEMINI_MODEL);
     }
 
     function updateGeminiThinkingControl() {
@@ -1250,6 +1249,9 @@ Translate to {target_language}.`;
         const levelGroup = document.getElementById('advancedThinkingLevelGroup');
         const budgetGroup = document.getElementById('advancedThinkingBudgetGroup');
         const budgetInput = document.getElementById('advancedThinkingBudget');
+
+        // ── Null-guard: elak TypeError jika DOM belum siap atau elemen dipadam ──
+        if (!levelGroup || !budgetGroup) return;
         const tempEl = document.getElementById('advancedTemperature');
         const topPEl = document.getElementById('advancedTopP');
         const topKGroup = document.getElementById('advancedTopKGroup');
@@ -6590,7 +6592,6 @@ Translate to {target_language}.`;
         const currentBaseModel = geminiModelEl ? geminiModelEl.value : DEFAULT_GEMINI_MODEL;
         const defaults = getDefaultConfig(currentBaseModel).advancedSettings;
 
-        const advModelEl = document.getElementById('advancedModel');
         const advThinkingEl = document.getElementById('advancedThinkingBudget');
         const advThinkingLevelEl = document.getElementById('advancedThinkingLevel');
         const advTempEl = document.getElementById('advancedTemperature');
@@ -6598,13 +6599,13 @@ Translate to {target_language}.`;
         const batchCtxEl = document.getElementById('enableBatchContext');
         const ctxSizeEl = document.getElementById('contextSize');
 
-        if (!advModelEl || !advThinkingEl || !advThinkingLevelEl || !advTempEl || !advTopPEl) {
+        if (!advThinkingEl || !advThinkingLevelEl || !advTempEl || !advTopPEl) {
             return false; // Elements not loaded yet
         }
 
-        // Check if any value differs from model-specific defaults
-        const modelChanged = advModelEl.value !== (defaults.geminiModel || '');
-        const activeModel = normalizeGeminiModelName(advModelEl.value || currentBaseModel);
+        // Single-Picker: model is read from #geminiModel (currentBaseModel), not a separate override.
+        // There is no separate model override to check — the base dropdown IS the model.
+        const activeModel = currentBaseModel;
         const activeModelDefaults = getModelSpecificDefaults(activeModel);
         const thinkingChanged = sanitizeGeminiThinkingLevel(advThinkingLevelEl.value, activeModelDefaults.thinkingLevel) !== activeModelDefaults.thinkingLevel;
         const tempChanged = parseFloat(advTempEl.value) !== defaults.temperature;
@@ -7905,13 +7906,11 @@ Translate to {target_language}.`;
             const fullDefaults = getDefaultConfig(selectedModel).advancedSettings;
 
             // Reset ALL advanced settings fields to the new model's defaults
-            const advModelEl = document.getElementById('advancedModel');
             const advThinkingEl = document.getElementById('advancedThinkingBudget');
             const advThinkingLevelEl = document.getElementById('advancedThinkingLevel');
             const advTempEl = document.getElementById('advancedTemperature');
             const advTopPEl = document.getElementById('advancedTopP');
 
-            if (advModelEl) advModelEl.value = ''; // Reset to "Use Default Model"
             if (advThinkingLevelEl) advThinkingLevelEl.value = modelDefaults.thinkingLevel;
             if (advTempEl) advTempEl.value = modelDefaults.temperature;
             if (advTopPEl) advTopPEl.value = fullDefaults.topP;
@@ -7974,7 +7973,6 @@ Translate to {target_language}.`;
         }
 
         // Advanced Settings - Auto-enable bypass cache when any setting is modified
-        const advModelEl = document.getElementById('advancedModel');
         const advThinkingEl = document.getElementById('advancedThinkingBudget');
         const advThinkingLevelEl = document.getElementById('advancedThinkingLevel');
         const advTempEl = document.getElementById('advancedTemperature');
@@ -7983,11 +7981,11 @@ Translate to {target_language}.`;
         const advFreqEl = document.getElementById('advancedFrequencyPenalty');
         const advPresEl = document.getElementById('advancedPresencePenalty');
 
-        // Fetch models when dropdown is clicked (on-demand fallback)
-        if (advModelEl) {
-            advModelEl.addEventListener('focus', async () => {
-                const apiKey = document.getElementById('geminiApiKey').value.trim();
-                // Only fetch if we have an API key and haven't fetched yet
+        // Single-Picker: model fetch is triggered by #geminiModel focus, not #advancedModel.
+        const geminiModelEl = document.getElementById('geminiModel');
+        if (geminiModelEl) {
+            geminiModelEl.addEventListener('focus', async () => {
+                const apiKey = document.getElementById('geminiApiKey')?.value?.trim();
                 if (apiKey && apiKey.length >= 10 && apiKey !== lastFetchedApiKey) {
                     await autoFetchModels(apiKey);
                 }
@@ -8006,7 +8004,7 @@ Translate to {target_language}.`;
             const btn = e.target && e.target.closest ? e.target.closest('.combo-button') : null;
             if (!btn) return;
             const combo = btn.closest('.combo');
-            if (!combo || !combo.querySelector('#advancedModel')) return;
+            if (!combo || !combo.querySelector('#geminiModel')) return;
             tryFetchAdvancedModels();
         });
 
@@ -8015,27 +8013,19 @@ Translate to {target_language}.`;
             const btn = e.target && e.target.closest ? e.target.closest('.combo-button') : null;
             if (!btn) return;
             const combo = btn.closest('.combo');
-            if (!combo || !combo.querySelector('#advancedModel')) return;
+            if (!combo || !combo.querySelector('#geminiModel')) return;
             tryFetchAdvancedModels();
         });
 
-        [advModelEl, advThinkingEl, advThinkingLevelEl, advTempEl, advTopPEl, advTopKEl, advFreqEl, advPresEl].forEach(el => {
+        [advThinkingEl, advThinkingLevelEl, advTempEl, advTopPEl, advTopKEl, advFreqEl, advPresEl].forEach(el => {
             if (el) {
                 el.addEventListener('change', updateBypassCacheForAdvancedSettings);
                 el.addEventListener('input', updateBypassCacheForAdvancedSettings);
             }
         });
 
-        if (advModelEl) {
-            advModelEl.addEventListener('change', () => {
-                const selectedModel = getAdvancedGeminiModelValue();
-                const selectedDefaults = getModelSpecificDefaults(selectedModel);
-                updateGeminiThinkingControl();
-                if (advThinkingLevelEl) advThinkingLevelEl.value = selectedDefaults.thinkingLevel;
-                if (advTempEl) advTempEl.value = selectedDefaults.temperature;
-                updateBypassCacheForAdvancedSettings();
-            });
-        }
+        // Single-Picker: model change is handled by #geminiModel listener (already wired).
+        // No #advancedModel listener needed.
 
         // Batch context toggle - show/hide context size field
         const enableBatchContextEl = document.getElementById('enableBatchContext');
@@ -10154,47 +10144,42 @@ Translate to {target_language}.`;
         { name: 'gemini-2.5-flash', displayName: 'Gemini 2.5 Flash' }
     ];
 
-    // Isi KEDUA-DUA dropdown (#geminiModel dan #advancedModel) serentak daripada
-    // senarai model rasmi API. Pulihkan pilihan tersimpan jika masih wujud.
+    // Isi SATU dropdown sahaja (#geminiModel) daripada senarai model rasmi API.
+    // Pulihkan pilihan tersimpan jika masih wujud. Model Gemini 3 Flash
+    // (atau alias stabil gemini-flash-lite-latest) disusun di kedudukan teratas.
     function populateGeminiModelDropdowns(models) {
         const baseSelect = document.getElementById('geminiModel');
-        const advSelect = document.getElementById('advancedModel');
         const list = (Array.isArray(models) && models.length) ? models : SAFE_DEFAULT_MODELS;
+
+        // Susun: model yang bermula dengan 'gemini-3' di atas, kemudian lain-lain.
+        // Ini memastikan keluarga "Gemini 3 Flash" sentiasa di kedudukan teratas.
+        const sortedList = [...list].sort((a, b) => {
+            const aIsGemini3 = String(a.name || '').startsWith('gemini-3') || String(a.name || '').startsWith('gemini-flash');
+            const bIsGemini3 = String(b.name || '').startsWith('gemini-3') || String(b.name || '').startsWith('gemini-flash');
+            if (aIsGemini3 && !bIsGemini3) return -1;
+            if (!aIsGemini3 && bIsGemini3) return 1;
+            return 0;
+        });
 
         // Simpan pilihan semasa / tersimpan
         const savedBase = currentConfig.geminiModel || (baseSelect ? baseSelect.value : '');
-        const savedAdv = currentConfig.advancedSettings?.geminiModel || (advSelect ? advSelect.value : '');
 
-        // ── Dropdown asas ──
         if (baseSelect) {
             const prevValue = baseSelect.value;
             baseSelect.innerHTML = '';
-            list.forEach(model => {
+            sortedList.forEach(model => {
                 const opt = document.createElement('option');
                 opt.value = model.name;
                 opt.textContent = model.displayName || model.name;
                 baseSelect.appendChild(opt);
             });
             // Pulihkan: utamakan nilai tersimpan konfigurasi, kemudian nilai DOM sebelumnya.
-            const target = [savedBase, prevValue, DEFAULT_GEMINI_MODEL].find(v => v && list.some(m => m.name === v));
-            baseSelect.value = target || list[0].name;
+            const target = [savedBase, prevValue, DEFAULT_GEMINI_MODEL]
+                .find(v => v && sortedList.some(m => m.name === v));
+            baseSelect.value = target || sortedList[0].name;
         }
 
-        // ── Dropdown override advanced ──
-        if (advSelect) {
-            const prevValue = advSelect.value;
-            advSelect.innerHTML = `<option value="">${tConfig('config.providersUi.useDefaultModel', {}, 'Use Default Model')}</option>`;
-            list.forEach(model => {
-                const opt = document.createElement('option');
-                opt.value = model.name;
-                opt.textContent = model.displayName || model.name;
-                advSelect.appendChild(opt);
-            });
-            const target = [savedAdv, prevValue].find(v => v && list.some(m => m.name === v));
-            advSelect.value = target || '';
-        }
-
-        // Picu morphing mengikut pilihan aktif.
+        // Picu morphing parameter mengikut model yang dipilih di dropdown atas.
         updateGeminiThinkingControl();
     }
 
@@ -10889,16 +10874,13 @@ Translate to {target_language}.`;
             };
         }
 
-        const advModelEl = document.getElementById('advancedModel');
         const advThinkingEl = document.getElementById('advancedThinkingBudget');
         const advThinkingLevelEl = document.getElementById('advancedThinkingLevel');
         const advTempEl = document.getElementById('advancedTemperature');
         const advTopPEl = document.getElementById('advancedTopP');
 
-        if (advModelEl) {
-            // Will be populated by fetchAvailableModels
-            advModelEl.value = currentConfig.advancedSettings?.geminiModel || '';
-        }
+        // Single-Picker: model value comes from #geminiModel dropdown, not #advancedModel.
+        // currentConfig.geminiModel already holds the effective model after Phase 1 migration.
 
         if (advThinkingEl) advThinkingEl.value = currentConfig.advancedSettings?.thinkingBudget ?? -1;
         if (advThinkingLevelEl) {
@@ -11256,7 +11238,7 @@ Translate to {target_language}.`;
             parallelBatchesCount: (function () { const el = document.getElementById('parallelBatchesCount'); return el ? parseInt(el.value, 10) : 3; })(),
             advancedSettings: {
                 enabled: areAdvancedSettingsModified(), // Auto-detect if any setting differs from defaults
-                geminiModel: (function () { const el = document.getElementById('advancedModel'); return el ? el.value : ''; })(),
+                geminiModel: '', // Single-Picker: no override; model is in top-level geminiModel
                 thinkingLevel: (function () { const el = document.getElementById('advancedThinkingLevel'); return el ? sanitizeGeminiThinkingLevel(el.value) : 'minimal'; })(),
                 thinkingBudget: (function () { const el = document.getElementById('advancedThinkingBudget'); if (!el) return -1; const v = parseInt(el.value, 10); return Number.isFinite(v) ? Math.max(-1, Math.min(200000, v)) : -1; })(),
                 temperature: (function () { const el = document.getElementById('advancedTemperature'); return el ? parseFloat(el.value) : 0.2; })(),

@@ -2253,14 +2253,16 @@ function generateFileTranslationPage(videoId, configStr, config, filename = '') 
                                 </p>
                             </div>
 
+                            <!-- Single-Picker: #advancedModel ditukar kepada paparan read-only.
+                                 Model aktif mengikut konfigurasi utama (tiada override per-halaman). -->
                             <div class="form-group">
-                                <label for="advancedModel">
+                                <label>
                                     ${escapeHtml(advancedModelLabel)}
                                     <span class="label-description">${escapeHtml(advancedModelHelper)}</span>
                                 </label>
-                                <select id="advancedModel">
-                                    <option value="">${escapeHtml(t('fileUpload.advanced.model.useConfigured', {}, 'Use Configured Model (from your config)'))}</option>
-                                </select>
+                                <div class="readonly-model-display" style="padding: 0.75rem 1rem; background: var(--surface-light); border: 2px solid var(--border); border-radius: 12px; color: var(--text-primary); font-weight: 600; text-align: center;">
+                                    ${escapeHtml(clientConfig.geminiModel)}
+                                </div>
                                 <div class="model-status" id="modelStatus"></div>
                             </div>
 
@@ -2702,7 +2704,7 @@ function generateFileTranslationPage(videoId, configStr, config, filename = '') 
         // Advanced settings elements
         const advancedSettings = document.getElementById('advancedSettings');
         const advancedSettingsHeader = document.getElementById('advancedSettingsHeader');
-        const advancedModel = document.getElementById('advancedModel');
+        // Single-Picker: advancedModel element removed; model now read from config
         const advancedThinkingBudget = document.getElementById('advancedThinkingBudget');
         const advancedThinkingLevel = document.getElementById('advancedThinkingLevel');
         const advancedTemperature = document.getElementById('advancedTemperature');
@@ -2818,8 +2820,8 @@ function generateFileTranslationPage(videoId, configStr, config, filename = '') 
         }
 
         function getSelectedGeminiModel() {
-            return (advancedModel && advancedModel.value ? advancedModel.value.trim() : '')
-                || getConfiguredModelForProvider('gemini');
+            // Single-Picker: model comes from config, not a dropdown override.
+            return getConfiguredModelForProvider('gemini');
         }
 
         const MODEL_THINKING_PROFILES = {
@@ -3078,36 +3080,21 @@ function generateFileTranslationPage(videoId, configStr, config, filename = '') 
         }
 
         function populateModelDropdown(providerKey, models = [], options = {}) {
+            // Single-Picker: model is read-only; only update status badge.
             const normalized = normalizeProviderKey(providerKey);
             const configuredModel = getConfiguredModelForProvider(normalized);
+            if (options.loading === true) {
+                setModelStatus(localeStrings.modelStatusFetching || 'Fetching models...', 'fetching');
+                return;
+            }
             const normalizedModels = normalizeProviderModels(models);
-            const placeholder = configuredModel
-                ? tt('fileUpload.advanced.model.useConfiguredWith', { model: configuredModel }, 'Use Configured Model (' + configuredModel + ')')
-                : tt('fileUpload.advanced.model.useConfigured', {}, 'Use Configured Model (from your config)');
-            if (advancedModel) {
-                advancedModel.innerHTML = '';
-                const defaultOption = document.createElement('option');
-                defaultOption.value = '';
-                defaultOption.textContent = placeholder;
-                advancedModel.appendChild(defaultOption);
-
-                if (options.loading === true) {
-                    const loadingOption = document.createElement('option');
-                    loadingOption.value = '__loading__';
-                    loadingOption.textContent = localeStrings.modelStatusFetching || 'Fetching models...';
-                    loadingOption.disabled = true;
-                    advancedModel.appendChild(loadingOption);
-                }
-
-                normalizedModels.forEach(model => {
-                    const option = document.createElement('option');
-                    option.value = model.name;
-                    option.textContent = model.displayName || model.name;
-                    advancedModel.appendChild(option);
-                });
-                advancedModel.value = '';
-                advancedModel.disabled = false;
-                advancedModel.setAttribute('aria-busy', options.loading === true ? 'true' : 'false');
+            if (normalizedModels.length > 0) {
+                setModelStatus(localeStrings.modelStatusLoaded || 'Models loaded!', 'success');
+                setTimeout(() => setModelStatus(''), 3000);
+            } else if (configuredModel) {
+                setModelStatus(tt('fileUpload.advanced.model.useConfiguredWith', { model: configuredModel }, 'Using ' + configuredModel), '');
+            } else {
+                setModelStatus(localeStrings.modelStatusEmpty || 'No provider models returned', '');
             }
         }
 
@@ -3118,9 +3105,10 @@ function generateFileTranslationPage(videoId, configStr, config, filename = '') 
         }
 
         function setModelDropdownLoading(isLoading) {
-            if (!advancedModel) return;
-            advancedModel.setAttribute('aria-busy', isLoading ? 'true' : 'false');
-            advancedModel.disabled = false;
+            // Single-Picker: no dropdown to toggle; status badge handles UX.
+            if (isLoading) {
+                setModelStatus(localeStrings.modelStatusFetching || 'Fetching models...', 'fetching');
+            }
         }
 
         function updateProviderDetails(providerKey) {
@@ -3237,9 +3225,9 @@ function generateFileTranslationPage(videoId, configStr, config, filename = '') 
                 advancedPreserveFormatting.checked = params.preserveFormatting !== false;
             }
 
-            if (advancedModel) {
-                const cachedModels = modelCache.get(normalized) || [];
-                populateModelDropdown(normalized, cachedModels);
+            // Single-Picker: model status updated only; no dropdown to populate.
+            if (modelCache.has(normalized)) {
+                populateModelDropdown(normalized, modelCache.get(normalized) || []);
             }
 
             setModelStatus('');
@@ -3281,7 +3269,7 @@ function generateFileTranslationPage(videoId, configStr, config, filename = '') 
                 sourceLang.value = hasDefaultSource ? defaultSourceLanguage : '';
             }
 
-            if (advancedModel) advancedModel.value = '';
+            // Single-Picker: no model override to clear.
 
             applyDefaults(defaultProviderKey);
             updateFileNameDisplay([]);
@@ -3403,15 +3391,7 @@ function generateFileTranslationPage(videoId, configStr, config, filename = '') 
             });
         }
 
-        if (advancedModel) {
-            advancedModel.addEventListener('change', () => {
-                if (activeProviderKey === 'gemini') {
-                    applyGeminiModelDefaults(advancedModel.value);
-                    return;
-                }
-                updateThinkingControls(activeProviderKey);
-            });
-        }
+        // Single-Picker: model change listener removed; model comes from config.
 
         // Reset to defaults
         resetDefaultsBtn.addEventListener('click', () => {
@@ -3776,7 +3756,7 @@ function generateFileTranslationPage(videoId, configStr, config, filename = '') 
                 throw new Error(tt('fileUpload.errors.sourceMissing', {}, 'Please select a source language for DeepL translations'));
             }
 
-            const selectedModel = advancedModel && advancedModel.value ? advancedModel.value.trim() : '';
+            const selectedModel = getSelectedGeminiModel();
             const thinkingBudget = providerKey === 'anthropic'
                 ? readBoundedNumber(advancedThinkingBudget, 0, 32768, (v) => parseInt(v, 10))
                 : null;

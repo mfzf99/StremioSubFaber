@@ -1902,18 +1902,10 @@
                     </p>
                 </div>
 
-                <div class="form-group">
-                    <label for="advancedModel">
-                        <span data-i18n="config.advancedGemini.model.label">Translation Model Override</span>
-                        <span class="label-description" data-i18n="config.advancedGemini.model.description">Override the
-                            default model. Leave empty to use system default
-                            (Gemini 3.1 Flash Lite).</span>
-                    </label>
-                    <select id="advancedModel">
-                        <option value="" data-i18n="config.advancedGemini.model.default">Use Default Model</option>
-                    </select>
-                    <div class="model-status" id="modelStatus"></div>
-                </div>
+                <!-- Single-Picker: #advancedModel dipadam. Model kini dipilih sekali sahaja
+                     melalui #geminiModel di bahagian atas. Panel parameter di bawah
+                     morphing secara automatik berdasarkan pilihan tersebut. -->
+                <div class="model-status" id="modelStatus"></div>
 
                 <div class="form-group" id="advancedThinkingBudgetGroup" style="display: none;">
                     <label for="advancedThinkingBudget">

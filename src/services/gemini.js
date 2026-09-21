@@ -73,7 +73,42 @@ function getModelFamily(model) {
     return { family: '3.x-strict', sampling: 'stripped', thinking: 'level', alias: true };
   }
 
+  // Future-proof: Gemini 4.x+ dan seterusnya dianggap mod reasoning moden
+  // (sama seperti 3.x-strict) supaya tidak jatuh ke 'unknown' yang menghantar
+  // parameter pensampelan penuh (yang akan ditolak oleh API generasi baharu).
+  if (/^gemini-[4-9](?:[.-]|$)/.test(m)) {
+    return { family: '3.x-strict', sampling: 'stripped', thinking: 'level' };
+  }
+
   return { family: 'unknown', sampling: 'full', thinking: 'none' };
+}
+
+/**
+ * Smart filter untuk mengekstrak hanya model Google/Gemini/Gemma daripada
+ * respons senarai model Crazy Router (GET /v1/models).
+ *
+ * Crazy Router mengembalikan ~605 model pelbagai jenama (OpenAI, Anthropic,
+ * DeepSeek, Google, dll). Fungsi ini menggunakan penapisan dwi-lapis yang
+ * bersifat future-proof:
+ *   1. Semakan owned_by === 'google' (paling dipercayai)
+ *   2. Fallback semakan awalan ID: 'gemini-' atau 'gemma-'
+ *
+ * @param {object} modelEntry - Entry model dari respons /v1/models
+ * @param {string} modelEntry.id - ID model (cth: 'gemini-3.1-pro')
+ * @param {string} [modelEntry.owned_by] - Pemilik model (cth: 'google')
+ * @returns {boolean} true jika model adalah Google/Gemini/Gemma
+ */
+function isGoogleModel(modelEntry) {
+  if (!modelEntry || typeof modelEntry !== 'object') return false;
+
+  // Sumber 1: owned_by field (paling dipercayai)
+  if (modelEntry.owned_by === 'google') return true;
+
+  // Sumber 2: Awalan ID model (fallback jika owned_by tidak hadir)
+  const id = String(modelEntry.id || '').toLowerCase();
+  if (id.startsWith('gemini-') || id.startsWith('gemma-')) return true;
+
+  return false;
 }
 
 // Jadual Pemetaan Rasmi Google (disahkan melalui dokumentasi Thinking).
@@ -538,8 +573,13 @@ class GeminiService {
    * Fetch the model IDs callable by THIS CrazyRouter token from the relay's
    * OpenAI-compatible endpoint (GET /v1/models). CrazyRouter documents the token's
    * available models there (not under /v1beta). Result is cached per-instance.
+   *
+   * The raw ~605-model catalog is filtered through isGoogleModel() so only
+   * Google/Gemini/Gemma models are retained (~11 models). This keeps the Set
+   * focused on models SubMaker can actually use via the Gemini Native endpoint.
+   *
    * Defensive: returns null on any failure so the translation flow is unaffected.
-   * @returns {Promise<Set<string>|null>} Set of model IDs, or null if unavailable.
+   * @returns {Promise<Set<string>|null>} Set of Google model IDs, or null if unavailable.
    */
   async getCrazyRouterAvailableModels() {
     if (this.keyType !== 'crazyrouter') return null;
@@ -559,14 +599,35 @@ class GeminiService {
         this._crazyRouterModelsFailed = true;
         return null;
       }
+      // Smart filter: only retain Google/Gemini/Gemma models from the ~605-model
+      // catalog. isGoogleModel() uses dual-layer detection (owned_by + prefix).
+      const googleModels = list.filter(m => isGoogleModel(m));
+      this._crazyRouterGoogleModels = googleModels.map(m => ({
+        id: String(m.id || '').trim(),
+        name: String(m.id || '').trim(),
+        displayName: String(m.id || '').trim(),
+        ownedBy: String(m.owned_by || 'google').trim()
+      })).filter(m => m.id);
       this._crazyRouterModelIds = new Set(
-        list.map(m => (m && m.id ? String(m.id).trim() : '')).filter(Boolean)
+        this._crazyRouterGoogleModels.map(m => m.id)
       );
       return this._crazyRouterModelIds;
     } catch (_) {
       this._crazyRouterModelsFailed = true;
       return null;
     }
+  }
+
+  /**
+   * Returns the structured list of Google models available on this CrazyRouter
+   * token, suitable for dropdown population. Each entry contains {id, name,
+   * displayName, ownedBy}. Returns null if getCrazyRouterAvailableModels() has
+   * not been called or failed.
+   * @returns {Array<{id: string, name: string, displayName: string, ownedBy: string}>|null}
+   */
+  getCrazyRouterGoogleModelList() {
+    if (!Array.isArray(this._crazyRouterGoogleModels)) return null;
+    return this._crazyRouterGoogleModels;
   }
 
   /**
@@ -1416,11 +1477,13 @@ module.exports = GeminiService;
 module.exports.DEFAULT_TRANSLATION_PROMPT = DEFAULT_TRANSLATION_PROMPT;
 module.exports.getModelFamily = getModelFamily;
 module.exports.getModelThinkingProfile = getModelThinkingProfile;
+module.exports.isGoogleModel = isGoogleModel;
 module.exports.SAMPLING_DEPRECATED_MODELS = SAMPLING_DEPRECATED_MODELS;
 module.exports.__testing = {
   getGeminiErrorMessage,
   isGeminiAuthFailure,
   getModelFamily,
   getModelThinkingProfile,
+  isGoogleModel,
   SAMPLING_DEPRECATED_MODELS
 };
