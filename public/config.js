@@ -960,7 +960,7 @@ Translate to {target_language}.`;
      */
     const GEMINI_31_FLASH_LITE_MODEL = 'gemini-3.1-flash-lite';
     const GEMINI_FLASH_LATEST_MODEL = 'gemini-flash-latest';
-    const DEFAULT_GEMINI_MODEL = 'gemini-flash-lite-latest';
+    const DEFAULT_GEMINI_MODEL = 'gemini-3-flash-preview';
 
     function normalizeGeminiModelName(modelName) {
         const normalized = typeof modelName === 'string' ? modelName.trim().replace(/^models\//, '') : '';
@@ -6628,7 +6628,9 @@ Translate to {target_language}.`;
         const mismatchRetriesChanged = mismatchRetriesEl ? (parseInt(mismatchRetriesEl.value) !== (defaults.mismatchRetries ?? 3)) : false;
         const workflowChanged = false;
 
-        return modelChanged || thinkingChanged || thinkingBudgetChanged || tempChanged || topPChanged || topKChanged || freqChanged || presChanged || batchCtxChanged || ctxSizeChanged || mismatchRetriesChanged || workflowChanged;
+        // Single-Picker: modelChanged is always false — no separate override dropdown exists.
+        // The base #geminiModel dropdown IS the model; changes to it don't count as "advanced modified".
+        return thinkingChanged || thinkingBudgetChanged || tempChanged || topPChanged || topKChanged || freqChanged || presChanged || batchCtxChanged || ctxSizeChanged || mismatchRetriesChanged || workflowChanged;
     }
 
     /**
@@ -9503,6 +9505,14 @@ Translate to {target_language}.`;
                     }
                 }
 
+                // Single-Picker: jika response mengandungi senarai model, isi dropdown #geminiModel.
+                // Ini menyokong penemuan model dinamik dari Google Direct (GET /v1beta/models)
+                // dan Crazy Router (GET /v1/models, ditapis kepada model Google sahaja).
+                if (provider === 'gemini' && Array.isArray(result.models) && result.models.length > 0) {
+                    populateGeminiModelDropdowns(result.models);
+                    lastFetchedApiKey = apiKey;
+                }
+
                 // Reset button after 3 seconds
                 setTimeout(() => {
                     btn.classList.remove('success');
@@ -10138,6 +10148,7 @@ Translate to {target_language}.`;
 
     // Fallback selamat jika API model tidak dapat dicapai (offline / ralat rangkaian).
     const SAFE_DEFAULT_MODELS = [
+        { name: 'gemini-3-flash-preview', displayName: 'Gemini 3 Flash (preview)' },
         { name: 'gemini-flash-lite-latest', displayName: 'Gemini Flash Lite Latest' },
         { name: 'gemini-3.1-flash-lite', displayName: 'Gemini 3.1 Flash Lite' },
         { name: 'gemini-2.5-flash-lite', displayName: 'Gemini 2.5 Flash-Lite' },

@@ -3433,7 +3433,20 @@ app.post('/api/validate-gemini', validationLimiter, async (req, res) => {
 
                 validationPassed = true;
                 log.debug(() => '[ValidateGemini] CrazyRouter active probe successful. Key is ALIVE.');
-                models = await gemini.getAvailableModels({ silent: true });
+
+                // Crazy Router: model discovery mesti melalui endpoint OpenAI-compatible
+                // (GET /v1/models), BUKAN /v1beta/models (format Google). getCrazyRouterAvailableModels()
+                // akan menapis senarai ~605 model kepada model Google sahaja melalui isGoogleModel().
+                const ids = await gemini.getCrazyRouterAvailableModels();
+                const googleModelList = gemini.getCrazyRouterGoogleModelList();
+                if (googleModelList && googleModelList.length > 0) {
+                    models = googleModelList;
+                    log.debug(() => `[ValidateGemini] CrazyRouter Google-filtered model list: ${googleModelList.length} models (from ${ids ? ids.size : 0} filtered).`);
+                } else {
+                    // Fallback: jika senarai ter struktur tiada, kekalkan kosong tetapi key masih sah.
+                    models = [];
+                    log.debug(() => '[ValidateGemini] CrazyRouter model list empty after Google filter; key still valid.');
+                }
 
             } catch (probeError) {
                 log.debug(() => `[ValidateGemini] CrazyRouter active probe failed: ${probeError.message}`);

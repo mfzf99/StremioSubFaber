@@ -232,7 +232,7 @@ function getDefaultProviderParameters() {
 const OVERRIDE_DEPRECATED_MODELS = true;
 const GEMINI_31_FLASH_LITE_MODEL = 'gemini-3.1-flash-lite';
 const GEMINI_FLASH_LATEST_MODEL = 'gemini-flash-latest';
-const DEFAULT_GEMINI_MODEL = 'gemini-flash-lite-latest';
+const DEFAULT_GEMINI_MODEL = 'gemini-3-flash-preview';
 
 function normalizeGeminiModelName(modelName) {
   const normalized = typeof modelName === 'string' ? modelName.trim().replace(/^models\//, '') : '';

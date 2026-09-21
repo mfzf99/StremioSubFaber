@@ -152,7 +152,7 @@ test('legacy numeric thinking budgets and sampling controls remain unchanged for
 test('saved model IDs and Gemini 3.x defaults normalize without breaking old configs', () => {
   assert.equal(normalizeGeminiModelName(' models/gemini-3.7-flash '), 'gemini-3.7-flash');
   assert.equal(normalizeGeminiModelName('gemini-3.1-flash-lite-preview'), 'gemini-3.1-flash-lite');
-  assert.equal(normalizeGeminiModelName('gemini-3-pro-preview'), 'gemini-flash-lite-latest');
+  assert.equal(normalizeGeminiModelName('gemini-3-pro-preview'), 'gemini-3-flash-preview');
 
   const defaults = getDefaultConfig('gemini-3.6-flash');
   assert.equal(defaults.geminiModel, 'gemini-3.6-flash');
