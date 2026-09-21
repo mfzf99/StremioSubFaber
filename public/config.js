@@ -7669,6 +7669,17 @@ Translate to {target_language}.`;
         document.getElementById('geminiApiKey').addEventListener('input', validateGeminiApiKey);
         document.getElementById('geminiModel').addEventListener('change', validateGeminiModel);
 
+        // Single-Picker: kembalikan dropdown kepada placeholder disabled sebaik sahaja
+        // pengguna memadamkan API key sehingga kosong (bukan hanya semasa validasi gagal).
+        document.getElementById('geminiApiKey').addEventListener('input', () => {
+            const modelSelect = document.getElementById('geminiModel');
+            if (modelSelect && !document.getElementById('geminiApiKey').value.trim()) {
+                modelSelect.innerHTML = '<option value="" disabled selected>Enter and validate API key to select model</option>';
+                modelSelect.disabled = true;
+                modelSelect.value = '';
+            }
+        });
+
         // Gemini API Key Rotation toggle
         const keyRotationToggle = document.getElementById('geminiKeyRotationEnabled');
         if (keyRotationToggle) {
@@ -8925,7 +8936,18 @@ Translate to {target_language}.`;
         // Single key mode validation
         const value = input?.value?.trim() || '';
 
+        // Restore dropdown to disabled placeholder when API key is cleared
+        function restoreModelDropdownToPlaceholder() {
+            const modelSelect = document.getElementById('geminiModel');
+            if (modelSelect) {
+                modelSelect.innerHTML = '<option value="" disabled selected>Enter and validate API key to select model</option>';
+                modelSelect.disabled = true;
+                modelSelect.value = '';
+            }
+        }
+
         if (!value) {
+            restoreModelDropdownToPlaceholder();
             const message = tConfig('config.validation.geminiKeyRequired', {}, '⚠️ Gemini API key is required');
             if (input) {
                 input.classList.add('invalid');
@@ -10158,37 +10180,65 @@ Translate to {target_language}.`;
     // Isi SATU dropdown sahaja (#geminiModel) daripada senarai model rasmi API.
     // Pulihkan pilihan tersimpan jika masih wujud. Model Gemini 3 Flash
     // (atau alias stabil gemini-flash-lite-latest) disusun di kedudukan teratas.
+    // Format display name dari ID model jika tiada displayName rasmi.
+    // Cth: 'gemini-3.6-flash' -> 'Gemini 3.6 Flash', 'gemma-3-27b-it' -> 'Gemma 3 27b It'
+    function formatModelDisplayName(modelId) {
+        if (!modelId) return '';
+        return String(modelId)
+            .replace(/^models\//, '')
+            .split('-')
+            .map(word => word.charAt(0).toUpperCase() + word.slice(1))
+            .join(' ');
+    }
+
     function populateGeminiModelDropdowns(models) {
         const baseSelect = document.getElementById('geminiModel');
+        if (!baseSelect) return;
+
         const list = (Array.isArray(models) && models.length) ? models : SAFE_DEFAULT_MODELS;
 
-        // Susun: model yang bermula dengan 'gemini-3' di atas, kemudian lain-lain.
-        // Ini memastikan keluarga "Gemini 3 Flash" sentiasa di kedudukan teratas.
+        // Susun: model keluarga Gemini 3 Flash di indeks teratas (index 0),
+        // kemudian model Gemini 3 lain, kemudian model 2.5 / legacy.
         const sortedList = [...list].sort((a, b) => {
-            const aIsGemini3 = String(a.name || '').startsWith('gemini-3') || String(a.name || '').startsWith('gemini-flash');
-            const bIsGemini3 = String(b.name || '').startsWith('gemini-3') || String(b.name || '').startsWith('gemini-flash');
+            const aName = String(a.name || '').toLowerCase();
+            const bName = String(b.name || '').toLowerCase();
+            // Utamakan model yang mengandungi 'gemini-3' dan 'flash' (cth: gemini-3-flash, gemini-3.6-flash)
+            const aIsGemini3Flash = aName.startsWith('gemini-3') && aName.includes('flash');
+            const bIsGemini3Flash = bName.startsWith('gemini-3') && bName.includes('flash');
+            if (aIsGemini3Flash && !bIsGemini3Flash) return -1;
+            if (!aIsGemini3Flash && bIsGemini3Flash) return 1;
+            // Kemudian mana-mana model Gemini 3 lain
+            const aIsGemini3 = aName.startsWith('gemini-3');
+            const bIsGemini3 = bName.startsWith('gemini-3');
             if (aIsGemini3 && !bIsGemini3) return -1;
             if (!aIsGemini3 && bIsGemini3) return 1;
             return 0;
         });
 
-        // Simpan pilihan semasa / tersimpan
-        const savedBase = currentConfig.geminiModel || (baseSelect ? baseSelect.value : '');
+        // Simpan nilai tersimpan sah dari config — JANGAN gunakan prevValue dari DOM
+        // kerana ia menjerat dropdown untuk memilih semula nilai lapuk (stale) selepas
+        // model baru dimuatkan.
+        const savedBase = currentConfig.geminiModel || '';
 
-        if (baseSelect) {
-            const prevValue = baseSelect.value;
-            baseSelect.innerHTML = '';
-            sortedList.forEach(model => {
-                const opt = document.createElement('option');
-                opt.value = model.name;
-                opt.textContent = model.displayName || model.name;
-                baseSelect.appendChild(opt);
-            });
-            // Pulihkan: utamakan nilai tersimpan konfigurasi, kemudian nilai DOM sebelumnya.
-            const target = [savedBase, prevValue, DEFAULT_GEMINI_MODEL]
-                .find(v => v && sortedList.some(m => m.name === v));
-            baseSelect.value = target || sortedList[0].name;
-        }
+        baseSelect.innerHTML = '';
+        sortedList.forEach(model => {
+            const opt = document.createElement('option');
+            opt.value = model.name;
+            // Gunakan displayName rasmi jika ada, sebaliknya format dari ID model
+            // (penting untuk Crazy Router yang mengembalikan hanya 'id' tanpa displayName).
+            opt.textContent = model.displayName || formatModelDisplayName(model.name);
+            baseSelect.appendChild(opt);
+        });
+
+        // Aktifkan dropdown selepas model dimuatkan.
+        baseSelect.disabled = false;
+
+        // Pemilihan Default: Jika pengguna BELUM menyimpan model tersuai secara sah
+        // dalam config sesi, WAJIB pilih model indeks 0 (Gemini 3 Flash) secara automatik!
+        const target = (savedBase && sortedList.some(m => m.name === savedBase))
+            ? savedBase
+            : sortedList[0].name;
+        baseSelect.value = target;
 
         // Picu morphing parameter mengikut model yang dipilih di dropdown atas.
         updateGeminiThinkingControl();
@@ -10685,7 +10735,16 @@ Translate to {target_language}.`;
         currentConfig.geminiModel = modelToUse;
 
         if (modelSelect) {
-            modelSelect.value = modelToUse;
+            const apiKeyHasValue = !!(document.getElementById('geminiApiKey')?.value?.trim());
+            if (apiKeyHasValue && currentConfig.geminiModel) {
+                // API key exists and model saved — populate dropdown with saved model.
+                // populateGeminiModelDropdowns() will enable the dropdown and auto-select.
+                populateGeminiModelDropdowns();
+            } else {
+                // No API key or no saved model — keep dropdown disabled with placeholder.
+                modelSelect.innerHTML = '<option value="" disabled selected>Enter and validate API key to select model</option>';
+                modelSelect.disabled = true;
+            }
         }
 
         // Load prompt style

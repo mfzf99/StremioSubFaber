@@ -207,22 +207,13 @@ test('base-model selections apply their cloned runtime defaults without enabling
 
 test('Configure and Toolbox pages expose current Gemini choices and model-aware controls', async () => {
   const html = fs.readFileSync(path.join(projectRoot, 'public', 'partials', 'main.html'), 'utf8');
-  const requiredModels = [
-    'gemini-2.5-flash-lite',
-    'gemini-2.5-flash',
-    'gemini-3-flash-preview',
-    'gemini-3.1-flash-lite',
-    'gemini-3.5-flash-lite',
-    'gemini-3.5-flash',
-    'gemini-3.6-flash',
-    'gemini-3.7-flash'
-  ];
-
-  for (const model of requiredModels) {
-    assert.match(html, new RegExp(`value=["']${model}["']`));
-  }
-  assert.match(html, /id="advancedThinkingLevel"/);
+  // Single-Picker: dropdown bermula kosong & disabled. Model diisi secara dinamik
+  // oleh populateGeminiModelDropdowns() selepas validasi API key.
+  assert.match(html, /id="geminiModel"/);
+  assert.match(html, /disabled/);
+  assert.match(html, /Enter and validate API key to select model/);
   assert.doesNotMatch(html, /value="gemini-3-pro-preview"/);
+  assert.match(html, /id="advancedThinkingLevel"/);
 
   const uploadPage = generateFileTranslationPage(
     'tt-test',

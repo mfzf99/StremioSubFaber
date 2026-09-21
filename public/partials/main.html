@@ -548,27 +548,10 @@
                                 <span class="label-description force-normal-whitespace"
                                     data-i18n="config.gemini.model.helper">AI model for translations</span>
                             </label>
-                            <select id="geminiModel" required>
-                                <option value="gemini-3.1-flash-lite"
-                                    data-i18n="config.gemini.model.options.flashLite31" selected>Gemini 3.1 Flash Lite
-                                </option>
-                                <option value="gemini-3.8-flash" data-i18n="config.gemini.model.options.flash38">
-                                    Gemini 3.8 Flash</option>
-                                <option value="gemini-3.7-flash" data-i18n="config.gemini.model.options.flash37">
-                                    Gemini 3.7 Flash</option>
-                                <option value="gemini-3.6-flash" data-i18n="config.gemini.model.options.flash36">
-                                    Gemini 3.6 Flash</option>
-                                <option value="gemini-3.5-flash" data-i18n="config.gemini.model.options.flash35">
-                                    Gemini 3.5 Flash</option>
-                                <option value="gemini-3.5-flash-lite"
-                                    data-i18n="config.gemini.model.options.flashLite35">Gemini 3.5 Flash-Lite
-                                </option>
-                                <option value="gemini-3-flash-preview" data-i18n="config.gemini.model.options.flash3">
-                                    Gemini 3.0 Flash (preview)</option>
-                                <option value="gemini-2.5-flash-lite" data-i18n="config.gemini.model.options.flashLite">
-                                    Gemini 2.5 Flash-Lite</option>
-                                <option value="gemini-2.5-flash" data-i18n="config.gemini.model.options.flash">Gemini
-                                    2.5 Flash</option>
+                            <!-- Single-Picker: dropdown bermula kosong & disabled sehingga API key divalidkan.
+                                 populateGeminiModelDropdowns() akan mengisi dan mengaktifkannya. -->
+                            <select id="geminiModel" required disabled>
+                                <option value="" disabled selected>Enter and validate API key to select model</option>
                             </select>
                             <div class="field-error" id="geminiModelError"
                                 data-i18n="config.validation.geminiModelRequired">Please select a model</div>
