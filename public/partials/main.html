@@ -512,7 +512,13 @@
                             <div id="geminiApiKeysList" class="dynamic-keys-list">
                                 <!-- Dynamic key inputs will be added here -->
                             </div>
-                            <div style="display: flex; justify-content: flex-end; margin-top: 0.5rem;">
+                            <div class="gemini-keys-actions"
+                                style="display: flex; justify-content: flex-end; gap: 0.5rem; margin-top: 0.5rem;">
+                                <button type="button" id="bulkImportKeysBtn" class="btn btn-secondary btn-sm"
+                                    data-i18n="config.gemini.bulkImport.openTitle" data-i18n-attr="title"
+                                    title="Paste many keys at once (validated locally, no network)">
+                                    <span>📋</span> <span data-i18n="config.gemini.keyRotation.bulkImport">Bulk Import</span>
+                                </button>
                                 <button type="button" id="addGeminiKeyBtn" class="btn btn-secondary btn-sm">
                                     <span>+</span> <span data-i18n="config.gemini.keyRotation.addKey">Add Key</span>
                                 </button>

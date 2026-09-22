@@ -1203,7 +1203,24 @@
           "modeLabel": "Rotation Frequency",
           "modeDescription": "How often to switch between API keys",
           "modePerRequest": "Per Request (once per file)",
-          "modePerBatch": "Per Batch (each translation batch)"
+          "modePerBatch": "Per Batch (each translation batch)",
+          "bulkImport": "استيراد جماعي"
+        },
+        "bulkImport": {
+          "title": "استيراد جماعي لمفاتيح API",
+          "hint": "الصق أي تنسيق — أسطر مرقّمة، نص مختلط، CSV، JSON. يتم اكتشاف المفاتيح <strong>محليًا في متصفحك</strong> عبر النمط. لا يتم إجراء أي تحقق عبر الشبكة أثناء الاستيراد، لذلك لا تُرسل مفاتيحك إلى Google مطلقًا لمجرد فحصها.",
+          "placeholder": "1. AIzaSy…\n2. AQ.Ab8…\n3. sk-…",
+          "import": "استيراد",
+          "cancel": "إلغاء",
+          "openTitle": "الصق العديد من المفاتيح دفعة واحدة (يتم التحقق محليًا، بدون شبكة)",
+          "previewNone": "لم يتم اكتشاف مفاتيح API صالحة.",
+          "previewMore": "…و{count} إضافية",
+          "typeGoogleLegacy": "Google",
+          "typeGoogleNew": "Google (جديد)",
+          "warnDuplicatesInText": "تم تجاهل {count} مكررًا داخل النص الملصوق",
+          "warnDuplicatesExisting": "{count} موجودة بالفعل في القائمة",
+          "warnTruncated": "تم تحديد الاستيراد بحد أقصى {max} مفتاحًا",
+          "imported": "تم استيراد {count} مفتاح API. انقر على \"حفظ\" للاحتفاظ بها."
         }
       },
       "otherApiKeys": {

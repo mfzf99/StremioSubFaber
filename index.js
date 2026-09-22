@@ -2405,6 +2405,7 @@ app.use((req, res, next) => {
         '/js/init.js',
         '/js/combobox.js',
         '/js/combobox-init.js',
+        '/js/bulk-key-import.js',
         '/js/config-page-state.js',
         '/js/config-loader.js',
         '/js/ui-widgets.js',

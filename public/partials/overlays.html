@@ -133,6 +133,37 @@
         </div>
     </div>
 
+    <!-- Bulk Import Gemini Keys Modal -->
+    <div class="modal-overlay" id="bulkImportModal" role="dialog" aria-modal="true" aria-labelledby="bulkImportTitle">
+        <div class="modal bulk-import-modal">
+            <div class="modal-header">
+                <h2 id="bulkImportTitle" data-i18n="config.gemini.bulkImport.title">Bulk Import API Keys</h2>
+                <div class="modal-close" id="closeBulkImportBtn" role="button" tabindex="0"
+                    aria-label="Close bulk import">&times;</div>
+            </div>
+            <div class="modal-content">
+                <p class="label-description" data-i18n="config.gemini.bulkImport.hint" data-i18n-attr="innerHTML">
+                    Paste any format — numbered lines, mixed text, CSV, JSON. Keys are detected
+                    <strong>locally in your browser</strong> by pattern. No network validation is performed during
+                    import, so your keys are never sent to Google just to be checked.
+                </p>
+                <textarea id="bulkImportTextarea" rows="9" autocomplete="off" autocapitalize="none" autocorrect="off"
+                    spellcheck="false" wrap="off"
+                    placeholder="1. AIzaSy…&#10;2. AQ.Ab8…&#10;3. sk-…"
+                    data-i18n="config.gemini.bulkImport.placeholder" data-i18n-attr="placeholder"></textarea>
+                <div id="bulkImportPreview" class="bulk-import-preview" aria-live="polite"></div>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" id="bulkImportCancelBtn"
+                    data-i18n="config.gemini.bulkImport.cancel">Cancel</button>
+                <button type="button" class="btn btn-primary" id="bulkImportConfirmBtn" disabled>
+                    <span data-i18n="config.gemini.bulkImport.import">Import</span>
+                    <span id="bulkImportCount"></span>
+                </button>
+            </div>
+        </div>
+    </div>
+
     <!-- Reset Confirmation Modal -->
     <div class="modal-overlay" id="resetConfirmModal">
         <div class="modal" role="dialog" aria-modal="true" aria-labelledby="resetConfirmTitle">

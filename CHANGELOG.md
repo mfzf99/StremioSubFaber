@@ -2,6 +2,26 @@
 
 All notable changes to this project will be documented in this file.
 
+## SubMaker v1.5.8 (2026-09-22)
+
+**Key Vault — Bulk Import (zero-network, burst-safe):**
+
+- **Bulk Import modal for Gemini API key rotation:** New "Bulk Import" button beside "+ Add Key" in the Gemini card opens a modal where users can paste raw text in any format — numbered lines (`1. AIzaSy…`), CSV, JSON, or mixed prose. A pure-regex token scanner (`public/js/bulk-key-import.js`) detects all three supported key formats client-side: legacy Google (`AIzaSy…` 39-char), new Google (`AQ.Ab8…`), and CrazyRouter proxy (`sk-…`). Numbered-list noise, whitespace, and quotes are ignored automatically by the token alphabets.
+
+- **Zero-network validation guardrail (abuse-detection safe):** The import path performs **zero** calls to `/api/validate-gemini` or any Google endpoint — no 99-key validation burst that could trigger Google abuse detection / IP flagging. Key liveness is instead enforced by the existing lazy failover: 429/503 during translation marks the key (Redis-distributed, 5-error threshold, ~1h cooldown) and rotation skips cooling keys without probing them.
+
+- **Merge-not-replace + two-tier dedup:** Existing UI keys are preserved; pasted keys are deduplicated within the paste and against the current list (idempotent re-import). `MAX_GEMINI_API_KEYS` from `/api/session-stats` is respected with a `truncated` warning badge. Session Vault protection is unchanged: keys reach Redis only through the normal Save flow (AES-256-GCM per-key encryption at rest; Stremio URLs carry only the 32-hex session token).
+
+- **One-reflow batch append:** `addGeminiKeyInputBatch()` builds rows in a `DocumentFragment` — a single reflow and one count-label update for ~99 rows instead of 98 focus-stealing DOM insertions. Rows share `createGeminiKeyRow()`, so per-row show/hide toggle, per-key Test, and Remove listeners behave identically to manually added rows. Auto-enables the rotation toggle (UI-only) and syncs Key 1 into the single-key field for model fetching.
+
+- **Masked live preview:** Debounced (250ms) preview renders masked keys (`AIzaSyAd••••••••DI4w`) with per-type count badges (Google / Google-new / CrazyRouter), duplicate warnings, and an import-count label. Full key values are never written to preview HTML; the textarea is wiped on close/cancel.
+
+- **i18n:** All modal strings added to en/es/pt-br/pt-pt/ar with English fallbacks baked into `tConfig()` calls.
+
+- **Tests:** New `public/js/bulk-key-import-regression.test.js` (9 tests: format detection across mixed input, malformed rejection, in-paste dedup, idempotent re-import, maxKeys cap, null safety, mask-leak guard, runtime no-fetch guard). Registered in `test:tracked`; suite now 101 pass / 0 fail / 1 skip.
+
+- Plan: `plans/bulk-import-key-vault-plan.md`
+
 ## SubMaker v1.5.7 (2026-09-22)
 
 **Sampling — Top-K is now opt-in (default OFF):**

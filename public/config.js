@@ -7728,6 +7728,9 @@ Translate to {target_language}.`;
             });
         }
 
+        // Bulk Import Gemini Keys (zero-network modal)
+        try { initBulkImportFeature(); } catch (_) { }
+
         const betaToggle = document.getElementById('betaMode');
         if (betaToggle) {
             betaToggle.addEventListener('change', (e) => {
@@ -9231,6 +9234,357 @@ Translate to {target_language}.`;
         input.focus();
     }
 
+    /**
+     * Build a single Gemini key row (input wrapper + test + remove buttons) WITHOUT
+     * appending it to the DOM. Shared by addGeminiKeyInput() (interactive add) and
+     * addGeminiKeyInputBatch() (bulk import) so both paths produce identical markup
+     * and wire identical event listeners (show/hide toggle, per-key Test, Remove).
+     *
+     * @param {string} value
+     * @returns {{row: HTMLDivElement, input: HTMLInputElement}}
+     */
+    function createGeminiKeyRow(value) {
+        const row = document.createElement('div');
+        row.className = 'gemini-key-row';
+
+        const inputWrapper = document.createElement('div');
+        inputWrapper.className = 'password-field-wrapper';
+
+        const input = document.createElement('input');
+        input.type = 'text';
+        input.className = 'sensitive-input masked gemini-api-key-input';
+        input.placeholder = tConfig('config.gemini.keyRotation.keyPlaceholder', {}, 'Enter API key');
+        input.value = value;
+        input.autocomplete = 'off';
+        input.spellcheck = false;
+
+        const toggleIcon = document.createElement('span');
+        toggleIcon.className = 'password-toggle-icon';
+        toggleIcon.textContent = '🔒👁';
+        toggleIcon.title = tConfig('config.gemini.apiKey.showHideKey', {}, 'Show/hide API key');
+        toggleIcon.addEventListener('click', () => {
+            const isMasked = input.classList.toggle('masked');
+            toggleIcon.textContent = isMasked ? '🔒👁' : '👁';
+            toggleIcon.title = isMasked
+                ? tConfig('config.gemini.apiKey.showKey', {}, 'Show API key')
+                : tConfig('config.gemini.apiKey.hideKey', {}, 'Hide API key');
+        });
+
+        inputWrapper.appendChild(input);
+        inputWrapper.appendChild(toggleIcon);
+
+        input.addEventListener('input', (e) => {
+            syncFirstKeyToSingleInput();
+            updateGeminiKeysCount();
+            if (e.target.value?.trim()) {
+                e.target.classList.remove('invalid');
+            }
+        });
+
+        const testBtn = document.createElement('button');
+        testBtn.type = 'button';
+        testBtn.className = 'validate-api-btn btn-sm';
+        testBtn.innerHTML = '<span class="validate-icon">✓</span>';
+        testBtn.title = tConfig('config.gemini.keyRotation.testKey', {}, 'Test this key');
+        testBtn.addEventListener('click', () => validateGeminiKeyRow(input, testBtn));
+
+        const removeBtn = document.createElement('button');
+        removeBtn.type = 'button';
+        removeBtn.className = 'btn btn-danger btn-sm';
+        removeBtn.innerHTML = '−';
+        removeBtn.title = tConfig('config.gemini.keyRotation.removeKey', {}, 'Remove this key');
+        removeBtn.addEventListener('click', () => removeGeminiKeyInput(row));
+
+        row.appendChild(inputWrapper);
+        row.appendChild(testBtn);
+        row.appendChild(removeBtn);
+
+        return { row, input };
+    }
+
+    /**
+     * Append many key rows in ONE reflow using a DocumentFragment. Unlike
+     * addGeminiKeyInput() this does NOT focus each input and updates the count
+     * label only once at the end — critical when importing ~99 keys.
+     *
+     * @param {string[]} values
+     * @returns {number} number of rows actually appended (respects MAX_GEMINI_API_KEYS)
+     */
+    function addGeminiKeyInputBatch(values) {
+        const keysList = document.getElementById('geminiApiKeysList');
+        if (!keysList || !Array.isArray(values) || values.length === 0) return 0;
+
+        const fragment = document.createDocumentFragment();
+        let appended = 0;
+        for (const value of values) {
+            const key = typeof value === 'string' ? value.trim() : '';
+            if (!key) continue;
+            const currentTotal = keysList.children.length + 1; // +1 for Key 1 single field
+            if (currentTotal >= MAX_GEMINI_API_KEYS) break;
+            const { row } = createGeminiKeyRow(key);
+            fragment.appendChild(row);
+            appended++;
+        }
+        if (appended > 0) {
+            keysList.appendChild(fragment); // single reflow
+        }
+        updateGeminiKeysCount();
+        return appended;
+    }
+
+    /* ================= Bulk Import Modal (zero-network) ================= */
+
+    function getBulkImportApi() {
+        return (typeof window !== 'undefined' && window.SubMakerBulkKeyImport) || null;
+    }
+
+    function openBulkImportModal() {
+        const modal = document.getElementById('bulkImportModal');
+        if (!modal) return;
+        const ta = document.getElementById('bulkImportTextarea');
+        const preview = document.getElementById('bulkImportPreview');
+        const confirmBtn = document.getElementById('bulkImportConfirmBtn');
+        const countSpan = document.getElementById('bulkImportCount');
+        if (ta) ta.value = '';
+        if (preview) preview.textContent = '';
+        if (confirmBtn) confirmBtn.disabled = true;
+        if (countSpan) countSpan.textContent = '';
+        modal.classList.add('show');
+        if (ta) ta.focus();
+    }
+
+    function closeBulkImportModal() {
+        const modal = document.getElementById('bulkImportModal');
+        if (!modal) return;
+        modal.classList.remove('show');
+        // Wipe the textarea so pasted keys don't linger in the DOM longer than needed.
+        const ta = document.getElementById('bulkImportTextarea');
+        if (ta) ta.value = '';
+        const preview = document.getElementById('bulkImportPreview');
+        if (preview) preview.textContent = '';
+    }
+
+    /**
+     * Live preview of the paste — debounced. Zero network: parser is pure regex.
+     * Renders masked rows + per-type summary; never writes full key values to HTML.
+     */
+    function refreshBulkImportPreview() {
+        const ta = document.getElementById('bulkImportTextarea');
+        const preview = document.getElementById('bulkImportPreview');
+        const confirmBtn = document.getElementById('bulkImportConfirmBtn');
+        const countSpan = document.getElementById('bulkImportCount');
+        if (!ta || !preview || !confirmBtn) return;
+
+        const api = getBulkImportApi();
+        if (!api) {
+            preview.textContent = '';
+            confirmBtn.disabled = true;
+            return;
+        }
+
+        const text = ta.value || '';
+        const existing = getGeminiApiKeys();
+        const remaining = Number.isFinite(MAX_GEMINI_API_KEYS)
+            ? Math.max(0, MAX_GEMINI_API_KEYS - existing.length)
+            : Infinity;
+        const result = api.parseBulkKeys(text, { existingKeys: existing, maxKeys: remaining });
+
+        // Clear previous preview safely.
+        preview.textContent = '';
+
+        if (!text.trim()) {
+            confirmBtn.disabled = true;
+            if (countSpan) countSpan.textContent = '';
+            return;
+        }
+
+        if (result.keys.length === 0) {
+            const empty = document.createElement('div');
+            empty.className = 'bulk-import-preview-empty';
+            empty.textContent = tConfig('config.gemini.bulkImport.previewNone', {}, 'No valid API keys detected.');
+            preview.appendChild(empty);
+            confirmBtn.disabled = true;
+            if (countSpan) countSpan.textContent = '';
+            return;
+        }
+
+        // Summary badges (per type).
+        const summary = document.createElement('div');
+        summary.className = 'bulk-import-preview-summary';
+        const byType = result.stats.byType || {};
+        const badgeDefs = [
+            { n: byType['google-legacy'] || 0, label: tConfig('config.gemini.bulkImport.typeGoogleLegacy', {}, 'Google'), crazy: false },
+            { n: byType['google-new'] || 0, label: tConfig('config.gemini.bulkImport.typeGoogleNew', {}, 'Google (new)'), crazy: false },
+            { n: byType['crazyrouter'] || 0, label: 'CrazyRouter', crazy: true }
+        ];
+        let anyBadge = false;
+        for (const def of badgeDefs) {
+            if (def.n > 0) {
+                const b = document.createElement('span');
+                b.className = 'bulk-import-badge' + (def.crazy ? ' bulk-import-badge-crazy' : '');
+                b.textContent = def.label + ' ×' + def.n;
+                summary.appendChild(b);
+                anyBadge = true;
+            }
+        }
+        if (anyBadge) preview.appendChild(summary);
+
+        // Masked row list (cap display at 20 rows for readability).
+        const list = document.createElement('div');
+        list.className = 'bulk-import-preview-list';
+        const DISPLAY_CAP = 20;
+        const display = result.keys.slice(0, DISPLAY_CAP);
+        display.forEach((key, i) => {
+            const row = document.createElement('div');
+            row.className = 'bulk-import-preview-row';
+            const idx = document.createElement('span');
+            idx.className = 'bulk-import-idx';
+            idx.textContent = String(i + 1) + '.';
+            const val = document.createElement('span');
+            val.textContent = api.maskKey(key);
+            row.appendChild(idx);
+            row.appendChild(val);
+            list.appendChild(row);
+        });
+        if (result.keys.length > DISPLAY_CAP) {
+            const more = document.createElement('div');
+            more.className = 'bulk-import-preview-more';
+            more.textContent = tConfig(
+                'config.gemini.bulkImport.previewMore',
+                { count: result.keys.length - DISPLAY_CAP },
+                `…and ${result.keys.length - DISPLAY_CAP} more`
+            );
+            list.appendChild(more);
+        }
+        preview.appendChild(list);
+
+        // Warnings (duplicates / truncated).
+        const warnParts = [];
+        if (result.stats.duplicatesInText > 0) {
+            warnParts.push(tConfig('config.gemini.bulkImport.warnDuplicatesInText', { count: result.stats.duplicatesInText }, `${result.stats.duplicatesInText} duplicate(s) within the paste ignored`));
+        }
+        if (result.stats.duplicatesExisting > 0) {
+            warnParts.push(tConfig('config.gemini.bulkImport.warnDuplicatesExisting', { count: result.stats.duplicatesExisting }, `${result.stats.duplicatesExisting} already in the list`));
+        }
+        if (result.stats.truncated) {
+            warnParts.push(tConfig('config.gemini.bulkImport.warnTruncated', { max: MAX_GEMINI_API_KEYS }, `Import capped at ${MAX_GEMINI_API_KEYS} keys`));
+        }
+        if (warnParts.length > 0) {
+            const warn = document.createElement('div');
+            warn.className = 'bulk-import-preview-warn';
+            warn.textContent = warnParts.join(' · ');
+            preview.appendChild(warn);
+        }
+
+        confirmBtn.disabled = result.keys.length === 0;
+        if (countSpan) {
+            countSpan.textContent = result.keys.length > 0 ? ` (${result.keys.length})` : '';
+        }
+    }
+
+    /**
+     * Apply the import: first key -> Key 1 single field (only if empty), the rest
+     * -> rotation rows via ONE batch append. Auto-enables rotation UI when needed.
+     * Zero network: no validation calls, no auto-save, no model fetch.
+     */
+    function applyBulkImport() {
+        const api = getBulkImportApi();
+        const ta = document.getElementById('bulkImportTextarea');
+        if (!api || !ta) { closeBulkImportModal(); return; }
+
+        const existing = getGeminiApiKeys();
+        const remaining = Number.isFinite(MAX_GEMINI_API_KEYS)
+            ? Math.max(0, MAX_GEMINI_API_KEYS - existing.length)
+            : Infinity;
+        const result = api.parseBulkKeys(ta.value || '', { existingKeys: existing, maxKeys: remaining });
+
+        if (result.keys.length === 0) { closeBulkImportModal(); return; }
+
+        // Ensure rotation UI is active so the list is visible (UI-only; no network).
+        const rotationToggle = document.getElementById('geminiKeyRotationEnabled');
+        if (rotationToggle && rotationToggle.checked !== true) {
+            rotationToggle.checked = true;
+            currentConfig.geminiKeyRotationEnabled = true;
+            toggleGeminiKeyRotationUI(true);
+        } else {
+            toggleGeminiKeyRotationUI(true);
+        }
+
+        // Key 1 -> single field only when it's currently empty.
+        const singleInput = document.getElementById('geminiApiKey');
+        let consumed = 0;
+        if (singleInput && !singleInput.value.trim()) {
+            singleInput.value = result.keys[0];
+            consumed = 1;
+        }
+
+        const rest = result.keys.slice(consumed);
+        const appended = addGeminiKeyInputBatch(rest);
+        const totalImported = consumed + appended;
+
+        // Keep single field synced to Key 1 for downstream model fetching.
+        syncFirstKeyToSingleInput();
+
+        // Persist the rotation state into the in-memory config (NOT saved to server
+        // yet — the normal Save flow handles that with rate limiting).
+        try {
+            currentConfig.geminiApiKeys = getGeminiApiKeys();
+            currentConfig.geminiKeyRotationEnabled = document.getElementById('geminiKeyRotationEnabled')?.checked === true;
+        } catch (_) { }
+
+        closeBulkImportModal();
+
+        showAlert(
+            tConfig(
+                'config.gemini.bulkImport.imported',
+                { count: totalImported },
+                `Imported ${totalImported} API key${totalImported === 1 ? '' : 's'}. Click "Save" to persist them.`
+            ),
+            'success'
+        );
+    }
+
+    function initBulkImportFeature() {
+        if (!getBulkImportApi()) return; // feature-detect: parser module not loaded
+        const openBtn = document.getElementById('bulkImportKeysBtn');
+        const modal = document.getElementById('bulkImportModal');
+        const closeBtn = document.getElementById('closeBulkImportBtn');
+        const cancelBtn = document.getElementById('bulkImportCancelBtn');
+        const confirmBtn = document.getElementById('bulkImportConfirmBtn');
+        const ta = document.getElementById('bulkImportTextarea');
+
+        if (openBtn) {
+            openBtn.addEventListener('click', openBulkImportModal);
+        }
+        if (closeBtn) {
+            closeBtn.addEventListener('click', closeBulkImportModal);
+        }
+        if (cancelBtn) {
+            cancelBtn.addEventListener('click', closeBulkImportModal);
+        }
+        if (confirmBtn) {
+            confirmBtn.addEventListener('click', applyBulkImport);
+        }
+        if (modal) {
+            // Click on the dimmed overlay (outside the modal box) closes it.
+            modal.addEventListener('click', (e) => {
+                if (e.target === modal) closeBulkImportModal();
+            });
+            // Escape closes it while the modal is open.
+            document.addEventListener('keydown', (e) => {
+                if (e.key === 'Escape' && modal.classList.contains('show')) {
+                    closeBulkImportModal();
+                }
+            });
+        }
+        if (ta) {
+            let debounceTimer = null;
+            ta.addEventListener('input', () => {
+                if (debounceTimer) clearTimeout(debounceTimer);
+                debounceTimer = setTimeout(refreshBulkImportPreview, 250);
+            });
+        }
+    }
 
     /**
      * Remove a Gemini API key input row

@@ -1204,7 +1204,24 @@
           "modeLabel": "Rotation Frequency",
           "modeDescription": "How often to switch between API keys",
           "modePerRequest": "Per Request (once per file)",
-          "modePerBatch": "Per Batch (each translation batch)"
+          "modePerBatch": "Per Batch (each translation batch)",
+          "bulkImport": "Bulk Import"
+        },
+        "bulkImport": {
+          "title": "Bulk Import API Keys",
+          "hint": "Paste any format — numbered lines, mixed text, CSV, JSON. Keys are detected <strong>locally in your browser</strong> by pattern. No network validation is performed during import, so your keys are never sent to Google just to be checked.",
+          "placeholder": "1. AIzaSy…\n2. AQ.Ab8…\n3. sk-…",
+          "import": "Import",
+          "cancel": "Cancel",
+          "openTitle": "Paste many keys at once (validated locally, no network)",
+          "previewNone": "No valid API keys detected.",
+          "previewMore": "…and {count} more",
+          "typeGoogleLegacy": "Google",
+          "typeGoogleNew": "Google (new)",
+          "warnDuplicatesInText": "{count} duplicate(s) within the paste ignored",
+          "warnDuplicatesExisting": "{count} already in the list",
+          "warnTruncated": "Import capped at {max} keys",
+          "imported": "Imported {count} API key(s). Click \"Save\" to persist them."
         }
       },
       "otherApiKeys": {

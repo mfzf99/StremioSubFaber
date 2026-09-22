@@ -1203,7 +1203,24 @@
           "modeLabel": "Rotation Frequency",
           "modeDescription": "How often to switch between API keys",
           "modePerRequest": "Per Request (once per file)",
-          "modePerBatch": "Per Batch (each translation batch)"
+          "modePerBatch": "Per Batch (each translation batch)",
+          "bulkImport": "Importação em massa"
+        },
+        "bulkImport": {
+          "title": "Importação em massa de chaves de API",
+          "hint": "Cole qualquer formato — linhas numeradas, texto misto, CSV, JSON. As chaves são detetadas <strong>localmente no seu navegador</strong> por padrão. Nenhuma validação de rede é efetuada durante a importação, pelo que as suas chaves nunca são enviadas à Google apenas para serem verificadas.",
+          "placeholder": "1. AIzaSy…\n2. AQ.Ab8…\n3. sk-…",
+          "import": "Importar",
+          "cancel": "Cancelar",
+          "openTitle": "Cole várias chaves de uma vez (validadas localmente, sem rede)",
+          "previewNone": "Nenhuma chave de API válida detetada.",
+          "previewMore": "…e mais {count}",
+          "typeGoogleLegacy": "Google",
+          "typeGoogleNew": "Google (nova)",
+          "warnDuplicatesInText": "{count} duplicada(s) dentro do texto colado ignoradas",
+          "warnDuplicatesExisting": "{count} já estão na lista",
+          "warnTruncated": "Importação limitada a {max} chaves",
+          "imported": "{count} chave(s) de API importada(s). Clique em \"Guardar\" para as manter."
         }
       },
       "otherApiKeys": {
