@@ -1285,7 +1285,9 @@ async function verifyBypassCacheIntegrity() {
       try {
         const content = await fs.promises.readFile(filePath, 'utf8');
         const cached = JSON.parse(content);
-        if (!cached.expiresAt || now > cached.expiresAt) {
+        // Bypass entries without expiresAt are permanent by design (duration 0);
+        // only remove entries that explicitly carry a past expiry timestamp.
+        if (cached.expiresAt && now > cached.expiresAt) {
           await fs.promises.unlink(filePath);
           removedCount++;
         }
@@ -6143,9 +6145,13 @@ if (
     const bypassEnabled = bypass && (bypassCfg.enabled !== false);
 
     if (bypass && bypassEnabled) {
-      // Save only to bypass storage with TTL
-      const bypassDuration = (typeof bypassCfg.duration === 'number') ? bypassCfg.duration : 12;
-      const expiresAt = Date.now() + (bypassDuration * 60 * 60 * 1000);
+      // Save to bypass storage. Bypass cache is now permanent by default
+      // (duration 0 = no expiry); users purge entries manually via the
+      // 3-click cache reset when a translation is unsatisfactory.
+      // A positive duration (hours) still applies a TTL for users who
+      // explicitly configured one.
+      const bypassDuration = (typeof bypassCfg.duration === 'number') ? bypassCfg.duration : 0;
+      const expiresAt = bypassDuration > 0 ? Date.now() + (bypassDuration * 60 * 60 * 1000) : null;
 
       // CRITICAL: Ensure we have a valid configHash before saving
       // At this point, userHash should always be valid due to earlier validation
@@ -6164,7 +6170,7 @@ if (
           configHash: userHash  // Always set configHash for user isolation
         };
         await saveToBypassStorage(cacheKey, cachedData);
-        log.debug(() => `[Translation] Saved to bypass cache: key=${cacheKey}, userHash=${userHash}, expiresAt=${new Date(expiresAt).toISOString()}`);
+        log.debug(() => `[Translation] Saved to bypass cache: key=${cacheKey}, userHash=${userHash}, expiresAt=${expiresAt ? new Date(expiresAt).toISOString() : 'permanent'}`);
       }
     } else if (cacheConfig.enabled && cacheConfig.persistent !== false && allowPermanent && ENABLE_PERMANENT_TRANSLATIONS) {
       // Save to permanent storage (no expiry)

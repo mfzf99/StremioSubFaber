@@ -1815,11 +1815,11 @@
             bypassCache: false,
             bypassCacheConfig: {
                 enabled: false,
-                duration: 12
+                duration: 0 // 0 = permanent (no expiry); user purges manually
             },
             tempCache: {
                 enabled: false,
-                duration: 12
+                duration: 0
             },
             subToolboxEnabled: state.subToolbox,
             fileTranslationEnabled: state.subToolbox,

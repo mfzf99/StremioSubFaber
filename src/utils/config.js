@@ -808,7 +808,10 @@ function normalizeConfig(config) {
   mergedConfig.bypassCacheConfig = mergedConfig.bypassCacheConfig || {};
   mergedConfig.bypassCacheConfig.enabled = mergedConfig.bypassCache === true;
   const bypassDur = Number(mergedConfig.bypassCacheConfig.duration);
-  mergedConfig.bypassCacheConfig.duration = (Number.isFinite(bypassDur) && bypassDur > 0) ? Math.min(12, bypassDur) : 12;
+  // Bypass cache is now permanent by default (duration 0 = no expiry).
+  // A positive duration still applies a TTL for users who explicitly
+  // configured one (capped at 12 hours).
+  mergedConfig.bypassCacheConfig.duration = (Number.isFinite(bypassDur) && bypassDur > 0) ? Math.min(12, bypassDur) : 0;
   mergedConfig.tempCache = mergedConfig.bypassCacheConfig;
   mergedConfig.mobileMode = mergedConfig.mobileMode === true;
 
@@ -1110,11 +1113,11 @@ function getDefaultConfig(modelName = null) {
     bypassCache: false,
     bypassCacheConfig: {
       enabled: true,
-      duration: 12
+      duration: 0 // 0 = permanent (no expiry); user purges manually
     },
     tempCache: {
       enabled: true,
-      duration: 12
+      duration: 0
     },
     subToolboxEnabled: false,
     fileTranslationEnabled: false,

@@ -224,7 +224,7 @@ class StorageAdapter {
 // Cache types
 StorageAdapter.CACHE_TYPES = {
   TRANSLATION: 'translation',      // Permanent translation cache
-  BYPASS: 'bypass',                // Temporary user-scoped cache (12h TTL)
+  BYPASS: 'bypass',                // Permanent user-scoped cache (until manual purge)
   PARTIAL: 'partial',              // In-flight partial translations (1h TTL)
   SYNC: 'sync',                    // Synced subtitles
   AUTOSUB: 'autosub',              // AutoSubs outputs (separate from manual sync cache)
@@ -266,7 +266,7 @@ StorageAdapter.SIZE_LIMITS = resolveSizeLimits();
 // Default TTL in seconds
 StorageAdapter.DEFAULT_TTL = {
   [StorageAdapter.CACHE_TYPES.TRANSLATION]: null,     // No expiry
-  [StorageAdapter.CACHE_TYPES.BYPASS]: 12 * 60 * 60, // 12 hours
+  [StorageAdapter.CACHE_TYPES.BYPASS]: null,          // No expiry - permanent until manually purged by user (3-click cache reset)
   [StorageAdapter.CACHE_TYPES.PARTIAL]: 60 * 60,     // 1 hour
   [StorageAdapter.CACHE_TYPES.SYNC]: null,            // No expiry
   [StorageAdapter.CACHE_TYPES.AUTOSUB]: null,         // No expiry

@@ -1493,11 +1493,11 @@ Translate to {target_language}.`;
             bypassCache: false,
             bypassCacheConfig: {
                 enabled: true,
-                duration: 12
+                duration: 0 // 0 = permanent (no expiry); user purges manually
             },
             tempCache: { // Deprecated: kept for backward compatibility, use bypassCacheConfig instead
                 enabled: true,
-                duration: 12
+                duration: 0
             },
             subToolboxEnabled: false, // unified toolbox entry for translate/sync/auto tools
             fileTranslationEnabled: false, // legacy flag (mirrors subToolboxEnabled)
@@ -8104,7 +8104,7 @@ Translate to {target_language}.`;
      * Handle database mode dropdown changes
      * Maps dropdown values to cache flags:
      * - "use" → cacheEnabled=true, bypassCache=false (permanent database)
-     * - "bypass" → cacheEnabled=false, bypassCache=true (temporary 12h cache)
+     * - "bypass" → cacheEnabled=false, bypassCache=true (permanent user-scoped cache; purge manually)
      */
     function handleDatabaseModeChange(e) {
         updateBypassCacheForAdvancedSettings();
@@ -11293,11 +11293,11 @@ Translate to {target_language}.`;
             bypassCache: isBypassRequested(),
             bypassCacheConfig: {
                 enabled: isBypassRequested(),
-                duration: 12
+                duration: 0 // 0 = permanent (no expiry); user purges manually
             },
             tempCache: { // Deprecated: kept for backward compatibility
                 enabled: isBypassRequested(),
-                duration: 12
+                duration: 0
             },
             excludeHearingImpairedSubtitles: (function () {
                 const el = document.getElementById('excludeHearingImpairedSubtitlesNoTranslation') || document.getElementById('excludeHearingImpairedSubtitles');
