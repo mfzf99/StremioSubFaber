@@ -2,6 +2,18 @@
 
 All notable changes to this project will be documented in this file.
 
+## SubMaker v1.5.6 (2026-09-22)
+
+**Prompt Quality — Persona-Free System Instruction (ground-truth backed):**
+
+- **Persona role-play removed from Gemini 3 System Instruction:** Ground-truth research (Zheng et al. 2024, arXiv:2311.10054 — 162 personas × 2,410 MMLU questions × 9 models) shows personas in system prompts have **no or small negative effects** on objective-task accuracy, and role-play can derail reasoning (arXiv:2408.08631 — persona caused wrong answers in 13.78% of cases solvable without one). User's own A/B test confirmed: persona-free prompts produced livelier, more accurate translations. The SI now opens directly with the task definition ("Translate subtitle dialogue from...") instead of "You are SubMaker, an expert...".
+
+- **Detailed style directives restored from pre-v1.5.3 backup:** The compression to v1.5.3 had collapsed the rich anti-pattern list into one generic line, degrading dialogue liveliness. Restored into the SI: never mirror foreign syntax/trailing modifiers/literal word order; never use formal copulas, formal conjunctions, dictionary jargon, or literal pronoun calques; preserve intentionally incomplete clauses for synchronization. The paired NEVER→positive-instruction pattern is back, now living in the System Instruction (Google mazhab: behavioral constraints belong in SI).
+
+- **`<task>` block simplified to a pure task statement:** Style guidance is no longer duplicated between SI and user prompt — eliminating the double-emphasis duplication that existed pre-v1.5.3 (the old path sent the rulebook twice, inflating input tokens ~2x without measurable benefit).
+
+- Research: `plans/persona-ground-truth-research.md`
+
 ## SubMaker v1.5.5 (2026-09-22)
 
 **Bug Fixes:**

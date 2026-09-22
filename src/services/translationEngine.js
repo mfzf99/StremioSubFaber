@@ -32,23 +32,21 @@ const sleep = (ms) => new Promise(resolve => setTimeout(resolve, ms));
 // Universal & Dynamic Prompt Templates
 // ============================================================================
 const PROMPT_TEMPLATES = {
-  // 1. Primary prompt (v1.5.3 — Google Gemini 3 prompting guide alignment)
-  //    Concise per official guidance: direct instructions, consistent XML
-  //    structure, behavioral constraints live in the Gemini 3 System
-  //    Instruction (gemini.js) — this template is the user-prompt task block.
+  // 1. Primary prompt (v1.5.6 — persona-free, style directives moved to SI)
+  //    Per Zheng et al. 2024 (arXiv:2311.10054), persona role-play does not
+  //    improve objective-task accuracy. Style/behavioral constraints live in
+  //    the Gemini 3 System Instruction (gemini.js); this template is a pure
+  //    task statement. For non-Gemini-3 providers the full rulebook remains
+  //    in DEFAULT_TRANSLATION_PROMPT (gemini.js).
   primary: (targetLabel, sourceLabel) =>
     `<task>
 Translate each <s id="N"> tag from ${sourceLabel || 'the source'} to ${targetLabel}.
-
-Rephrase each slot into spoken, conversational ${targetLabel} — natural connectors, question particles, direct native phrasing. Do not mirror foreign word order or use formal essay tone. Translate only the fragment inside each tag, even if the clause is incomplete; keep partial syntax partial to lock subtitle synchronization.
 </task>`,
 
   // 2. Emergency prompt (PROHIBITED_CONTENT fallback - neutral, objective & policy-compliant)
   fallback: (targetLabel, sourceLabel) =>
     `<task>
 Translate each <s id="N"> tag from ${sourceLabel || 'the source'} to ${targetLabel}.
-
-Rephrase each slot into spoken, conversational ${targetLabel} — natural connectors, question particles, direct native phrasing. Do not mirror foreign word order or use formal essay tone. Translate only the fragment inside each tag, even if the clause is incomplete; keep partial syntax partial to lock subtitle synchronization.
 
 If the source contains mature, sensitive, aggressive, or profane dialogue, translate it using objective, non-glorified, but accurate equivalent ${targetLabel} terms without refusing the task or dropping the slot.
 </task>`

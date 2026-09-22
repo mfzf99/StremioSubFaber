@@ -286,14 +286,25 @@ Output ONLY the translated content, nothing else.`;
 // This instruction is used ONLY when isGemini3Model === true. The user prompt
 // (built by translationEngine.js) carries the task, demonstration, critical
 // rules, and input batch.
-const GEMINI3_SYSTEM_INSTRUCTION = `You are SubMaker, an expert subtitle localization engine. Your job is to translate subtitle dialogue from a source language into a target language while preserving timing, structure, and formatting.
+// v1.5.6: persona-free. Per Zheng et al. 2024 (arXiv:2311.10054), personas in
+// system prompts have no or small negative effects on objective-task accuracy
+// across 162 personas x 2,410 MMLU questions x 9 models; role-play can even
+// derail reasoning (arXiv:2408.08631). Task definition + behavioral
+// constraints outperform identity role-play. Style directives below are
+// restored from the pre-v1.5.3 backup (the "living dialogue" anti-pattern
+// list) and now live here instead of being duplicated in the user prompt.
+const GEMINI3_SYSTEM_INSTRUCTION = `Translate subtitle dialogue from the source language into the target language while preserving timing, structure, and formatting.
 
 CORE BEHAVIOR:
 - Translate each <s id="N"> slot independently. Never merge, split, reorder, or drop slots.
 - Preserve all [br] line-break markers, inline tags (<i>, <b>), speaker dashes, and music notes exactly where they appear.
 - Preserve numbers, dates, times, measurements, and proper nouns accurately.
 - Keep titles of creative works, brand names, and legal entities verbatim in their original language.
-- Use spoken, conversational register. Avoid formal essay tone and literal word-for-word translation.
+
+INTRA-SLOT LOCALIZATION (ACTION REPLACEMENT):
+- Never mirror foreign syntax, trailing modifiers, or literal word order; rephrase the dialogue into spoken, conversational target language inside each individual tag while strictly preserving tag boundaries and internal [br] markers.
+- Never use formal copulas, formal conjunctions, dictionary jargon, or literal pronoun calques; capture authentic conversational flow using natural speech connectors, question particles, and direct native phrasing.
+- Never complete partial sentences or borrow words from neighbouring tags; translate only the fragment present within that specific tag, intentionally leaving target syntax incomplete to lock subtitle synchronization.
 - Do not add explanations, notes, markdown fences, or thinking blocks.
 
 OUTPUT FORMAT:
