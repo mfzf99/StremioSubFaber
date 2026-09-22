@@ -978,19 +978,22 @@ Translate to {target_language}.`;
 
     // Disusun PALING KHUSUS dahulu untuk padanan longest-prefix.
     // Disahkan mengikut dokumentasi rasmi Google Thinking.
+    // Disusun PALING KHUSUS dahulu untuk padanan longest-prefix.
+    // Disahkan mengikut dokumentasi rasmi Google Thinking (scraped 2026-09-22).
     const MODEL_THINKING_PROFILES = {
-        'gemini-3.8-flash': { default: 'medium', levels: ['low', 'medium', 'high'] },
-        'gemini-3.7-flash': { default: 'medium', levels: ['low', 'medium', 'high'] },
+        // STRICT 3.x (penamatan pensampelan 21 Jul 2026+)
+        'gemini-3.8-flash': { default: 'medium', levels: ['low', 'medium', 'high'] }, // minimal = RALAT
+        'gemini-3.7-flash': { default: 'medium', levels: ['low', 'medium', 'high'] }, // minimal = RALAT
         'gemini-3.6-flash': { default: 'medium', levels: ['minimal', 'low', 'medium', 'high'] },
         'gemini-3.5-flash-lite': { default: 'minimal', levels: ['minimal', 'low', 'medium', 'high'] },
-        'gemini-3.1-flash-lite-image': { default: 'minimal', levels: ['minimal', 'high'] },
+        'gemini-3.5-flash': { default: 'medium', levels: ['minimal', 'low', 'medium', 'high'] }, // Now strict (deprecation Jul 2026)
+        // LEGACY 3.x (pensampelan masih diterima tetapi suhu mesti 1.0)
+        'gemini-3.1-flash-lite-image': { default: 'minimal', levels: ['minimal', 'high'] }, // low/medium TIDAK disokong
         'gemini-3.1-flash-lite': { default: 'minimal', levels: ['minimal', 'low', 'medium', 'high'] },
-        'gemini-3.1-pro-preview': { default: 'high', levels: ['low', 'medium', 'high'] },
-        'gemini-3.5-flash': { default: 'medium', levels: ['minimal', 'low', 'medium', 'high'] },
-        'gemini-3-flash-preview': { default: 'high', levels: ['minimal', 'low', 'medium', 'high'] },
-        'gemini-2.5-pro': { default: 'medium', levels: ['low', 'medium', 'high'] },
-        'gemini-2.5-flash': { default: 'medium', levels: ['low', 'medium', 'high'] },
-        'gemini-2.5-flash-lite': { default: 'disabled', levels: ['low', 'medium', 'high'] }
+        'gemini-3.1-pro-preview': { default: 'high', levels: ['low', 'medium', 'high'] }, // minimal TIDAK disokong
+        'gemini-3-flash-preview': { default: 'high', levels: ['minimal', 'low', 'medium', 'high'] }
+        // gemini-3-pro-preview dialih keluar (shutdown 9 Mac 2026)
+        // 2.5 models tiada 'level' — guna thinkingBudget (integer) sahaja
     };
 
     function getModelThinkingProfile(modelName) {
@@ -1268,7 +1271,9 @@ Translate to {target_language}.`;
         // ── Null-guard: elak TypeError jika DOM belum siap atau elemen dipadam ──
         if (!levelGroup || !budgetGroup) return;
         const tempEl = document.getElementById('advancedTemperature');
+        const tempGroup = tempEl?.closest('.form-group');
         const topPEl = document.getElementById('advancedTopP');
+        const topPGroup = topPEl?.closest('.form-group');
         const topKGroup = document.getElementById('advancedTopKGroup');
         const topKEl = document.getElementById('advancedTopK');
         const freqGroup = document.getElementById('advancedFrequencyPenaltyGroup');
@@ -1276,6 +1281,9 @@ Translate to {target_language}.`;
         const presGroup = document.getElementById('advancedPresencePenaltyGroup');
         const presEl = document.getElementById('advancedPresencePenalty');
         const samplingNote = document.getElementById('samplingControlledNote');
+        const deprecatedToggleGroup = document.getElementById('showDeprecatedSamplingToggleGroup');
+        const deprecatedToggle = document.getElementById('showDeprecatedSamplingToggle');
+        const showDeprecated = deprecatedToggle && deprecatedToggle.checked;
 
         // ── Bina semula pilihan Thinking Level mengikut profil model ──
         if (levelSelect && profile && Array.isArray(profile.levels)) {
@@ -1291,41 +1299,49 @@ Translate to {target_language}.`;
         }
 
         // ── Morphing 4-keadaan mengikut keluarga model ──
-        const setDisabled = (el, disabled) => { if (el) el.disabled = disabled; };
+        // HIDE ≠ LOCK: semua kekal editable; hidden fields boleh di-reveal melalui
+        // "Show deprecated sampling parameters" toggle.
         const setVisible = (el, visible) => { if (el) el.style.display = visible ? '' : 'none'; };
 
         switch (familyInfo.family) {
             case '3.x-strict':
-                // Tunjuk Thinking Level; sembunyi Budget; nyahaktifkan pensampelan.
+                // Tunjuk Thinking Level; sembunyi Budget; sembunyi pensampelan (deprecated Jul 2026).
                 setVisible(levelGroup, true);
                 setVisible(budgetGroup, false);
-                setDisabled(tempEl, true);
-                setDisabled(topPEl, true);
-                setVisible(topKGroup, false);
-                setVisible(freqGroup, false);
-                setVisible(presGroup, false);
-                setVisible(samplingNote, true);
+                setVisible(deprecatedToggleGroup, true);
+                setVisible(tempGroup, showDeprecated);
+                setVisible(topPGroup, showDeprecated);
+                setVisible(topKGroup, showDeprecated);
+                setVisible(freqGroup, showDeprecated);
+                setVisible(presGroup, showDeprecated);
+                setVisible(samplingNote, !showDeprecated);
+                if (samplingNote) {
+                    const noteP = samplingNote.querySelector('p');
+                    if (noteP) {
+                        noteP.textContent =
+                            'Sampling parameters are deprecated for this model. Enable "Show deprecated sampling parameters" to edit them.';
+                    }
+                }
                 break;
 
             case '3.x-legacy':
-                // Tunjuk Thinking Level; kunci suhu kepada 1.0; pensampelan lain aktif.
+                // Tunjuk Thinking Level; sembunyi Budget; tunjuk semua pensampelan.
                 setVisible(levelGroup, true);
                 setVisible(budgetGroup, false);
-                if (tempEl) { tempEl.disabled = false; tempEl.value = '1.0'; tempEl.title = 'Disyorkan 1.0 oleh Google untuk Gemini 3'; }
-                setDisabled(topPEl, false);
+                setVisible(deprecatedToggleGroup, false);
+                setVisible(tempGroup, true);
+                setVisible(topPGroup, true);
                 setVisible(topKGroup, true);
-                setDisabled(topKEl, false);
                 setVisible(freqGroup, true);
-                setDisabled(freqEl, false);
                 setVisible(presGroup, true);
-                setDisabled(presEl, false);
                 setVisible(samplingNote, false);
                 break;
 
             case '2.5':
-                // Tunjuk Thinking Budget; pensampelan penuh aktif.
+                // Tunjuk Thinking Budget; sembunyi Level; tunjuk semua pensampelan.
                 setVisible(levelGroup, false);
                 setVisible(budgetGroup, true);
+                setVisible(deprecatedToggleGroup, false);
                 if (budgetInput) {
                     // Gemini 2.5 Pro tidak boleh nyahaktif (min 128); Flash/Lite benarkan 0.
                     budgetInput.min = model.includes('pro') ? '128' : '-1';
@@ -1333,15 +1349,11 @@ Translate to {target_language}.`;
                         ? 'Gemini 2.5 Pro: min 128 (tidak boleh dimatikan), -1 = dinamik'
                         : '0 = mati, -1 = dinamik';
                 }
-                setDisabled(tempEl, false);
-                if (tempEl) tempEl.title = '';
-                setDisabled(topPEl, false);
+                setVisible(tempGroup, true);
+                setVisible(topPGroup, true);
                 setVisible(topKGroup, true);
-                setDisabled(topKEl, false);
                 setVisible(freqGroup, true);
-                setDisabled(freqEl, false);
                 setVisible(presGroup, true);
-                setDisabled(presEl, false);
                 setVisible(samplingNote, false);
                 break;
 
@@ -1350,18 +1362,15 @@ Translate to {target_language}.`;
             case 'gemma':
             case 'unknown':
             default:
-                // Tiada kawalan thinking; pensampelan penuh aktif.
+                // Tiada kawalan thinking; tunjuk semua pensampelan.
                 setVisible(levelGroup, false);
                 setVisible(budgetGroup, false);
-                setDisabled(tempEl, false);
-                if (tempEl) tempEl.title = '';
-                setDisabled(topPEl, false);
+                setVisible(deprecatedToggleGroup, false);
+                setVisible(tempGroup, true);
+                setVisible(topPGroup, true);
                 setVisible(topKGroup, true);
-                setDisabled(topKEl, false);
                 setVisible(freqGroup, true);
-                setDisabled(freqEl, false);
                 setVisible(presGroup, true);
-                setDisabled(presEl, false);
                 setVisible(samplingNote, false);
                 break;
         }
@@ -7949,11 +7958,24 @@ Translate to {target_language}.`;
             if (advTopKEl2) advTopKEl2.value = fullDefaults.topK ?? 40;
             if (advFreqEl2) advFreqEl2.value = fullDefaults.frequencyPenalty ?? 0;
             if (advPresEl2) advPresEl2.value = fullDefaults.presencePenalty ?? 0;
+
+            // Reset deprecated sampling toggle on model change
+            const deprecatedToggle = document.getElementById('showDeprecatedSamplingToggle');
+            if (deprecatedToggle) deprecatedToggle.checked = false;
+
             updateGeminiThinkingControl();
 
             // Update bypass cache state based on new defaults
             updateBypassCacheForAdvancedSettings();
         });
+
+        // Listener untuk toggle "Show deprecated sampling parameters"
+        const showDeprecatedToggle = document.getElementById('showDeprecatedSamplingToggle');
+        if (showDeprecatedToggle) {
+            showDeprecatedToggle.addEventListener('change', function () {
+                updateGeminiThinkingControl();
+            });
+        }
 
         // API Key Validation Buttons
         const validateOpenSubsBtn = document.getElementById('validateOpenSubtitles');
@@ -10189,14 +10211,16 @@ Translate to {target_language}.`;
         { name: 'gemini-flash-lite-latest', displayName: 'Gemini Flash Lite Latest' },
         { name: 'gemini-3.1-flash-lite', displayName: 'Gemini 3.1 Flash Lite' },
         { name: 'gemini-2.5-flash-lite', displayName: 'Gemini 2.5 Flash-Lite' },
-        { name: 'gemini-2.5-flash', displayName: 'Gemini 2.5 Flash' }
+        { name: 'gemini-2.5-flash', displayName: 'Gemini 2.5 Flash' },
+        { name: 'gemma-4-26b-a4b-it', displayName: 'Gemma 4 26B (Free)' },
+        { name: 'gemma-4-31b-it', displayName: 'Gemma 4 31B (Free)' }
     ];
 
     // Isi SATU dropdown sahaja (#geminiModel) daripada senarai model rasmi API.
     // Pulihkan pilihan tersimpan jika masih wujud. Model Gemini 3 Flash
     // (atau alias stabil gemini-flash-lite-latest) disusun di kedudukan teratas.
     // Format display name dari ID model jika tiada displayName rasmi.
-    // Cth: 'gemini-3.6-flash' -> 'Gemini 3.6 Flash', 'gemma-3-27b-it' -> 'Gemma 3 27b It'
+    // Cth: 'gemini-3.6-flash' -> 'Gemini 3.6 Flash', 'gemma-4-26b-a4b-it' -> 'Gemma 4 26B A4b It'
     function formatModelDisplayName(modelId) {
         if (!modelId) return '';
         return String(modelId)
@@ -10228,9 +10252,18 @@ Translate to {target_language}.`;
     // Format displayName untuk option. Guard: jika displayName rasmi sama dengan ID mentah
     // atau mengandungi sengkang huruf kecil (cth: 'gemini-3.1-flash-lite'), format ia
     // menjadi paparan kemas "Gemini 3.1 Flash Lite".
+    // Gemma 4: label khas "Gemma 4 26B (Free)" / "Gemma 4 31B (Free)".
     function getDisplayLabelForModel(model) {
         const rawName = String(model.name || '');
         const officialDisplayName = String(model.displayName || '').trim();
+
+        // Gemma 4: label khas "Gemma 4 XXB (Free)"
+        if (/^gemma-4-(\d+)b/i.test(rawName)) {
+            const sizeMatch = rawName.match(/^gemma-4-(\d+)b/i);
+            const size = sizeMatch ? sizeMatch[1] : '';
+            return size ? `Gemma 4 ${size}B (Free)` : 'Gemma 4 (Free)';
+        }
+
         const isRawId = !officialDisplayName
             || officialDisplayName === rawName
             || (officialDisplayName === officialDisplayName.toLowerCase() && officialDisplayName.includes('-'));
