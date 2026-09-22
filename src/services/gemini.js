@@ -393,12 +393,32 @@ class GeminiService {
     const thought = usage.thoughtsTokenCount || usage.thoughtTokenCount || 0;
     const textOut = usage.candidatesTokenCount || 0;
 
+    // Accumulate instead of overwrite: a single stream may report
+    // usageMetadata on multiple SSE chunks (intermediate + final). The last
+    // chunk must add to the running total, not replace it.
+    const existing = global.geminiFinOps.streams[streamId]
+      || { input: 0, cached: 0, thought: 0, output: 0 };
     global.geminiFinOps.streams[streamId] = {
-      input,
-      cached,
-      thought,
-      output: textOut
+      input: existing.input + input,
+      cached: existing.cached + cached,
+      thought: existing.thought + thought,
+      output: existing.output + textOut
     };
+  }
+
+  /**
+   * Safely extract usageMetadata from an API response body and record it in
+   * the FinOps ledger. Google reports token consumption even for blocked /
+   * truncated / rate-limited responses, so this must run before any error
+   * checks — otherwise the cost of failed attempts is invisible in reports.
+   * @param {object} responseBody - Raw API response body (may be partial)
+   * @param {string} streamId - Ledger key for this attempt
+   */
+  recordUsageIfPresent(responseBody, streamId) {
+    const usage = responseBody?.usageMetadata || responseBody?.response?.usageMetadata || null;
+    if (usage) {
+      this.updateUsageStats(usage, streamId);
+    }
   }
 
   getEffectiveThinkingLevel() {
@@ -967,6 +987,14 @@ class GeminiService {
           }
         );
 
+        // FINOPS: Record token usage BEFORE any error checks. Google bills
+        // input/cached tokens even for blocked, truncated or partial
+        // responses, so skipping this on the error path made every failed
+        // attempt (PROHIBITED_CONTENT retries, MAX_TOKENS, 429 rotations)
+        // invisible in the cost report.
+        const finOpsStreamId = `ns_${Date.now()}_${Math.random().toString(36).slice(2, 8)}`;
+        this.recordUsageIfPresent(response.data, finOpsStreamId);
+
         if (!response.data) {
           log.warn(() => '[Gemini] No data in response');
           throw new Error('No data returned from Gemini API');
@@ -994,6 +1022,7 @@ class GeminiService {
           if (blockReason || safetyRatings) {
             const err = new Error(`PROHIBITED_CONTENT: ${blockReason || 'SAFETY'}`);
             err.translationErrorType = 'PROHIBITED_CONTENT';
+            // FINOPS: usage already recorded above via recordUsageIfPresent()
             throw err;
           }
 
@@ -1009,6 +1038,8 @@ class GeminiService {
           if (candidate.finishReason === 'SAFETY' || candidate.finishReason === 'PROHIBITED_CONTENT') {
             const err = new Error(`PROHIBITED_CONTENT: ${candidate.finishReason}`);
             err.translationErrorType = 'PROHIBITED_CONTENT';
+            // FINOPS: usage for this blocked attempt was already recorded
+            // above via recordUsageIfPresent()
             throw err;
           } else if (candidate.finishReason === 'RECITATION') {
             throw new Error('Translation blocked due to recitation concerns');

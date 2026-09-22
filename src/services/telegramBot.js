@@ -1,11 +1,16 @@
 const axios = require('axios');
 const os = require('os');
+const crypto = require('crypto');
+const log = require('../utils/logger');
 const { getStorageAdapter } = require('../storage/StorageFactory');
 const { StorageAdapter } = require('../storage');
 
 const REGISTRY_REDIS_KEY = 'stremio:sub_registry';
 const KEY_STATS_REDIS_KEY = 'stremio:key_stats';
 const ITEMS_PER_PAGE = 5;
+const MAX_REGISTRY_ENTRIES = 200;
+const POLL_INTERVAL_MS = 1000;
+const CRAZYROUTER_QUOTA_PER_USD = 500000;
 
 // Format saiz bait ke format mudah dibaca (MB/GB)
 function formatBytes(bytes) {
@@ -162,7 +167,7 @@ async function fetchLiveCrazyRouterBalance() {
       timeout: 5000
     });
     if (res?.data?.success && res?.data?.data && typeof res.data.data.quota === 'number') {
-      return res.data.data.quota / 500000;
+      return res.data.data.quota / CRAZYROUTER_QUOTA_PER_USD;
     }
   } catch (err) {}
   return null;
@@ -314,7 +319,7 @@ async function getActiveKeyInfo() {
 async function registerCompletedSubtitle({ title, provider, targetLang, keys, apiKeys, model, walletBalanceUSD }) {
   try {
     const adapter = await getStorageAdapter();
-    const id = 'sub_' + Math.random().toString(36).substring(2, 9);
+    const id = 'sub_' + crypto.randomBytes(4).toString('hex');
 
     let existingStats = null;
     try {
@@ -365,10 +370,14 @@ async function registerCompletedSubtitle({ title, provider, targetLang, keys, ap
     const filtered = list.filter(item => item.title !== entry.title || item.provider !== entry.provider);
     filtered.unshift(entry);
 
-    await adapter.set(REGISTRY_REDIS_KEY, filtered, StorageAdapter.CACHE_TYPES.TRANSLATION);
+    // Cap registry size: oldest entries fall off after MAX_REGISTRY_ENTRIES so
+    // every renderRegistryPage call does not load an ever-growing array.
+    const capped = filtered.slice(0, MAX_REGISTRY_ENTRIES);
+
+    await adapter.set(REGISTRY_REDIS_KEY, capped, StorageAdapter.CACHE_TYPES.TRANSLATION);
     return id;
   } catch (err) {
-    console.error(`[Telegram Bot] Gagal daftar registry: ${err.message}`);
+    log.error(() => `[Telegram Bot] Failed to register subtitle: ${err.message}`);
     return null;
   }
 }
@@ -411,7 +420,7 @@ async function renderMainMenu(chatId, messageId, botToken) {
       });
     }
   } catch (err) {
-    console.error(`[Telegram Bot] Ralat render main menu: ${err.message}`);
+    log.error(() => `[Telegram Bot] Ralat render main menu: ${err.message}`);
   }
 }
 
@@ -461,7 +470,7 @@ async function renderServerStatus(chatId, messageId, botToken) {
       });
     }
   } catch (err) {
-    console.error(`[Telegram Bot] Ralat render server: ${err.message}`);
+    log.error(() => `[Telegram Bot] Ralat render server: ${err.message}`);
   }
 }
 
@@ -527,7 +536,7 @@ async function renderApiKeysStatus(chatId, messageId, botToken) {
       });
     }
   } catch (err) {
-    console.error(`[Telegram Bot] Ralat render keys: ${err.message}`);
+    log.error(() => `[Telegram Bot] Ralat render keys: ${err.message}`);
   }
 }
 
@@ -605,7 +614,7 @@ async function renderRegistryPage(chatId, messageId, page = 1, botToken) {
       });
     }
   } catch (err) {
-    console.error(`[Telegram Bot] Ralat render page: ${err.message}`);
+    log.error(() => `[Telegram Bot] Ralat render page: ${err.message}`);
   }
 }
 
@@ -616,7 +625,7 @@ async function startTelegramBot() {
 
   if (!botToken || !authorizedChatId) return;
 
-  console.log('[Telegram Bot] 🤖 Enjin bot interaktif Dashboard & 2-Hala dimulakan...');
+  log.info(() => '[Telegram Bot] 🤖 Enjin bot interaktif Dashboard & 2-Hala dimulakan...');
 
   let offset = 0;
 
@@ -646,7 +655,7 @@ async function startTelegramBot() {
       }
     }
 
-    setImmediate(poll);
+    setTimeout(poll, POLL_INTERVAL_MS);
   };
 
   poll();
@@ -702,13 +711,13 @@ async function handleCallbackQuery(query, botToken, authorizedChatId) {
 
   if (callbackData === 'menu:main') {
     await renderMainMenu(fromChatId, messageId, botToken);
-    try { await axios.post(`https://api.telegram.org/bot${botToken}/answerCallbackQuery`, { callback_query_id: query.id }); } catch (e) {}
+    try { await axios.post(`https://api.telegram.org/bot${botToken}/answerCallbackQuery`, { callback_query_id: query.id }); } catch (e) { log.debug(() => `[Telegram] answerCallbackQuery ack failed: ${e.message}`); }
   } else if (callbackData === 'menu:server') {
     await renderServerStatus(fromChatId, messageId, botToken);
-    try { await axios.post(`https://api.telegram.org/bot${botToken}/answerCallbackQuery`, { callback_query_id: query.id }); } catch (e) {}
+    try { await axios.post(`https://api.telegram.org/bot${botToken}/answerCallbackQuery`, { callback_query_id: query.id }); } catch (e) { log.debug(() => `[Telegram] answerCallbackQuery ack failed: ${e.message}`); }
   } else if (callbackData === 'menu:keys') {
     await renderApiKeysStatus(fromChatId, messageId, botToken);
-    try { await axios.post(`https://api.telegram.org/bot${botToken}/answerCallbackQuery`, { callback_query_id: query.id }); } catch (e) {}
+    try { await axios.post(`https://api.telegram.org/bot${botToken}/answerCallbackQuery`, { callback_query_id: query.id }); } catch (e) { log.debug(() => `[Telegram] answerCallbackQuery ack failed: ${e.message}`); }
   } else if (callbackData === 'menu:flush_confirm') {
     const text =
       `⚠️ <b>AMARAN: Kosongkan Semua Cache?</b>\n\n` +
@@ -726,7 +735,7 @@ async function handleCallbackQuery(query, botToken, authorizedChatId) {
     await axios.post(`https://api.telegram.org/bot${botToken}/editMessageText`, {
       chat_id: fromChatId, message_id: messageId, text, parse_mode: 'HTML', reply_markup
     });
-    try { await axios.post(`https://api.telegram.org/bot${botToken}/answerCallbackQuery`, { callback_query_id: query.id }); } catch (e) {}
+    try { await axios.post(`https://api.telegram.org/bot${botToken}/answerCallbackQuery`, { callback_query_id: query.id }); } catch (e) { log.debug(() => `[Telegram] answerCallbackQuery ack failed: ${e.message}`); }
   } else if (callbackData === 'menu:flush_do') {
     try {
       const adapter = await getStorageAdapter();
@@ -735,7 +744,9 @@ async function handleCallbackQuery(query, botToken, authorizedChatId) {
       if (Array.isArray(list)) {
         for (const item of list) {
           for (const key of (item.keys || [])) {
-            await adapter.delete(key, StorageAdapter.CACHE_TYPES.SUBTITLES);
+            await adapter.delete(key, StorageAdapter.CACHE_TYPES.EMBEDDED);
+          await adapter.delete(key, StorageAdapter.CACHE_TYPES.SYNC);
+          await adapter.delete(key, StorageAdapter.CACHE_TYPES.AUTOSUB);
             await adapter.delete(key, StorageAdapter.CACHE_TYPES.BYPASS);
             await adapter.delete(key, StorageAdapter.CACHE_TYPES.PARTIAL);
             await adapter.delete(key, StorageAdapter.CACHE_TYPES.TRANSLATION);
@@ -750,12 +761,12 @@ async function handleCallbackQuery(query, botToken, authorizedChatId) {
       });
       await renderMainMenu(fromChatId, messageId, botToken);
     } catch (err) {
-      console.error(`[Telegram Bot] Ralat flush: ${err.message}`);
+      log.error(() => `[Telegram Bot] Ralat flush: ${err.message}`);
     }
   } else if (callbackData.startsWith('page:')) {
     const targetPage = parseInt(callbackData.split(':')[1], 10) || 1;
     await renderRegistryPage(fromChatId, messageId, targetPage, botToken);
-    try { await axios.post(`https://api.telegram.org/bot${botToken}/answerCallbackQuery`, { callback_query_id: query.id }); } catch (e) {}
+    try { await axios.post(`https://api.telegram.org/bot${botToken}/answerCallbackQuery`, { callback_query_id: query.id }); } catch (e) { log.debug(() => `[Telegram] answerCallbackQuery ack failed: ${e.message}`); }
   } else if (callbackData.startsWith('del_reg:')) {
     const [, targetId, pageStr] = callbackData.split(':');
     const page = parseInt(pageStr, 10) || 1;
@@ -769,7 +780,9 @@ async function handleCallbackQuery(query, botToken, authorizedChatId) {
         const item = list[itemIndex];
 
         for (const key of item.keys) {
-          await adapter.delete(key, StorageAdapter.CACHE_TYPES.SUBTITLES);
+          await adapter.delete(key, StorageAdapter.CACHE_TYPES.EMBEDDED);
+          await adapter.delete(key, StorageAdapter.CACHE_TYPES.SYNC);
+          await adapter.delete(key, StorageAdapter.CACHE_TYPES.AUTOSUB);
           await adapter.delete(key, StorageAdapter.CACHE_TYPES.BYPASS);
           await adapter.delete(key, StorageAdapter.CACHE_TYPES.PARTIAL);
           await adapter.delete(key, StorageAdapter.CACHE_TYPES.TRANSLATION);
@@ -790,7 +803,7 @@ async function handleCallbackQuery(query, botToken, authorizedChatId) {
         await renderRegistryPage(fromChatId, messageId, page, botToken);
       }
     } catch (err) {
-      console.error(`[Telegram Bot] Ralat padam registry: ${err.message}`);
+      log.error(() => `[Telegram Bot] Ralat padam registry: ${err.message}`);
     }
   }
 }

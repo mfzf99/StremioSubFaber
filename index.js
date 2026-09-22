@@ -7849,23 +7849,14 @@ app.post('/api/translate-embedded', embeddedTranslationLimiter, async (req, res)
 
                         let diagnosticsSection = advancedStats !== '' ? `\n🔍 <b>Advanced Diagnostics:</b>\n${advancedStats}` : '';
 
-                        // --- 🚀 MULA: PEMBEDAHAN FINOPS TOKEN 🚀 ---
-                        let inputTokens = 0;
-                        let cachedTokens = 0;
-                        let thoughtTokens = 0;
-                        let baseOutputTokens = 0;
-
-                        if (global.geminiFinOps && global.geminiFinOps.streams) {
-                            for (const streamId in global.geminiFinOps.streams) {
-                                const st = global.geminiFinOps.streams[streamId];
-                                inputTokens += (st.input || 0);
-                                cachedTokens += (st.cached || 0);
-                                thoughtTokens += (st.thought || 0);
-                                baseOutputTokens += (st.output || 0);
-                            }
-                            // SELEPAS sedut, cuci laci supaya tak bertindih dengan job lain
-                            global.geminiFinOps.streams = {};
-                        }
+                        // --- 🚀 FINOPS: Token aggregation via shared module 🚀 ---
+                        // (Previously duplicated inline; see src/utils/telegramFinOps)
+                        const { drainFinOpsLedger } = require('./src/utils/telegramFinOps');
+                        const drainedTokens = drainFinOpsLedger();
+                        const inputTokens = drainedTokens.inputTokens;
+                        const cachedTokens = drainedTokens.cachedTokens;
+                        const thoughtTokens = drainedTokens.thoughtTokens;
+                        const baseOutputTokens = drainedTokens.baseOutputTokens;
 
                         // Fallback jika API down atau provider lain digunakan (bukan Gemini)
                         if (inputTokens === 0 && baseOutputTokens === 0) {
@@ -7873,145 +7864,21 @@ app.post('/api/translate-embedded', embeddedTranslationLimiter, async (req, res)
                             baseOutputTokens = finalTotal * 30;
                         }
 
-                        const outputTokens = baseOutputTokens + thoughtTokens; 
-                        const totalPromptSize = inputTokens + cachedTokens; 
+                        const outputTokens = baseOutputTokens + thoughtTokens;
+                        const totalPromptSize = inputTokens + cachedTokens;
                         const totalTokens = totalPromptSize + outputTokens;
-                        // --- 🏁 TAMAT: PEMBEDAHAN FINOPS TOKEN 🏁 ---
+                        // --- 🏁 FINOPS TOKEN AGGREGATION COMPLETE 🏁 ---
 
-                        // 🚨 PANGKALAN DATA HARGA PENUH (Input, Output, Cache, Tier 2) 🚨
-                        const pricing = {
-                            "3.7-flash": { input: 0.75, output: 3.75, cache: 0.075 },
-                            "3.6-flash": { input: 0.75, output: 3.75, cache: 0.075 },
-                            "3.5-flash": { input: 1.50, output: 9.00, cache: 0.15 },
-                            "3.5-flash-lite": { input: 0.30, output: 2.50, cache: 0.03 },
-                            "3.1-pro": { input: 2.00, output: 12.00, cache: 0.20, inputT2: 4.00, outputT2: 18.00, cacheT2: 0.40 },
-                            "3.1-flash-lite": { input: 0.25, output: 1.50, cache: 0.025 },
-                            "3.0-flash": { input: 0.50, output: 3.00, cache: 0.05 },
-                            "2.5-pro": { input: 1.25, output: 10.00, cache: 0.125, inputT2: 2.50, outputT2: 15.00, cacheT2: 0.25 },
-                            "2.5-flash": { input: 0.30, output: 2.50, cache: 0.03 },
-                            "2.5-flash-lite": { input: 0.10, output: 0.40, cache: 0.01 }
-                        };
+                        // 🧮 FINOPS — delegated to shared module (src/utils/telegramFinOps)
+                        const { buildCostSection } = require('./src/utils/telegramFinOps');
+                        const _xEmbedKey = (typeof selectGeminiApiKey === 'function') ? (await selectGeminiApiKey(workingConfig) || process.env.GEMINI_API_KEY || '') : '';
+                        const isCrazyRouter = String(_xEmbedKey).trim().startsWith('sk-');
+                        const { costSection } = await buildCostSection({ usedModel, isCrazyRouter });
 
-                        // Enjin Pencari Harga Dinamik
-                        let rateInput = pricing["3.5-flash-lite"].input;
-                        let rateOutput = pricing["3.5-flash-lite"].output;
-                        let rateCache = pricing["3.5-flash-lite"].cache;
-
-                        if (usedModel.includes('3.7-flash')) {
-                            rateInput = pricing["3.7-flash"].input; rateOutput = pricing["3.7-flash"].output; rateCache = pricing["3.7-flash"].cache;
-                        } else if (usedModel.includes('3.6-flash')) {
-                            rateInput = pricing["3.6-flash"].input; rateOutput = pricing["3.6-flash"].output; rateCache = pricing["3.6-flash"].cache;
-                        } else if (usedModel.includes('3.5-flash-lite')) {
-                            rateInput = pricing["3.5-flash-lite"].input; rateOutput = pricing["3.5-flash-lite"].output; rateCache = pricing["3.5-flash-lite"].cache;
-                        } else if (usedModel.includes('3.5-flash')) {
-                            rateInput = pricing["3.5-flash"].input; rateOutput = pricing["3.5-flash"].output; rateCache = pricing["3.5-flash"].cache;
-                        } else if (usedModel.includes('3.1-pro')) {
-                            const isT2 = totalPromptSize > 200000;
-                            rateInput = isT2 ? pricing["3.1-pro"].inputT2 : pricing["3.1-pro"].input;
-                            rateOutput = isT2 ? pricing["3.1-pro"].outputT2 : pricing["3.1-pro"].output;
-                            rateCache = isT2 ? pricing["3.1-pro"].cacheT2 : pricing["3.1-pro"].cache;
-                        } else if (usedModel.includes('3.1-flash-lite')) {
-                            rateInput = pricing["3.1-flash-lite"].input; rateOutput = pricing["3.1-flash-lite"].output; rateCache = pricing["3.1-flash-lite"].cache;
-                        } else if (usedModel.includes('3.0-flash') || usedModel.includes('3-flash')) {
-                            rateInput = pricing["3.0-flash"].input; rateOutput = pricing["3.0-flash"].output; rateCache = pricing["3.0-flash"].cache;
-                        } else if (usedModel.includes('2.5-pro')) {
-                            const isT2 = totalPromptSize > 200000;
-                            rateInput = isT2 ? pricing["2.5-pro"].inputT2 : pricing["2.5-pro"].input;
-                            rateOutput = isT2 ? pricing["2.5-pro"].outputT2 : pricing["2.5-pro"].output;
-                            rateCache = isT2 ? pricing["2.5-pro"].cacheT2 : pricing["2.5-pro"].cache;
-                        } else if (usedModel.includes('2.5-flash-lite')) {
-                            rateInput = pricing["2.5-flash-lite"].input; rateOutput = pricing["2.5-flash-lite"].output; rateCache = pricing["2.5-flash-lite"].cache;
-                        } else if (usedModel.includes('2.5-flash')) {
-                            rateInput = pricing["2.5-flash"].input; rateOutput = pricing["2.5-flash"].output; rateCache = pricing["2.5-flash"].cache;
-                        }
-
-                        let KADAR_TUKARAN_MYR = 4.40;
-                        let rateIndicator = '🔒 Fixed Rate';
-                        try {
-                            const exResponse = await axios.get('https://open.er-api.com/v6/latest/USD', {timeout: 3000});
-                            if (exResponse.data?.rates?.MYR) {
-                                KADAR_TUKARAN_MYR = exResponse.data.rates.MYR;
-                                rateIndicator = `📈 Live RM${KADAR_TUKARAN_MYR.toFixed(2)}`;
-                            }
-                        } catch (err) {}
-
-                        const costInput = (inputTokens / 1000000) * rateInput;
-                        const costCache = (cachedTokens / 1000000) * rateCache;
-                        const costOutput = (outputTokens / 1000000) * rateOutput;
-                        
-                        const retailUSD = costInput + costCache + costOutput;
-                        let totalUSD = retailUSD;
-
-                        // 🔥 INJECT AUTOMATIK: Kesan key CrazyRouter (sk-) untuk diskaun 45% khusus kluster xEmbed
-                        const geminiKey = (typeof selectGeminiApiKey === 'function') ? (await selectGeminiApiKey(workingConfig) || process.env.GEMINI_API_KEY || '') : '';
-                        const isCrazyRouter = String(geminiKey).trim().startsWith('sk-');
-
-                        if (isCrazyRouter) {
-                            totalUSD = retailUSD * 0.55; // Bayar 55% sahaja (Diskaun 45% mutlak!)
-                        }
-
-                        const totalMYR = totalUSD * KADAR_TUKARAN_MYR;
-                        const retailMYR = retailUSD * KADAR_TUKARAN_MYR;
-
-                        const fmt = (num) => (num || 0).toLocaleString();
-                        let cleanModelName = usedModel.replace('gemini-', '').replace('-preview', '');
-
-                        let tokenBreakdown = `  ├ <b>Input:</b> ${fmt(inputTokens)}`;
-                        if (cachedTokens > 0) tokenBreakdown += ` <i>(Cached: ${fmt(cachedTokens)})</i>`;
-                        tokenBreakdown += `\n`;
-                        if (thoughtTokens > 0) tokenBreakdown += `  ├ <b>Thought:</b> ${fmt(thoughtTokens)}\n`;
-                        tokenBreakdown += `  ├ <b>Output:</b> ${fmt(baseOutputTokens)}\n` +
-                                           `  ├ <b>Total Tokens:</b> ±${fmt(totalTokens)}\n`;
-
-                        // 🛡️ PERISAI PELINDUNG: Pastikan tierBadge sentiasa wujud & takkan buat skrip crash
-                        if (typeof tierBadge === 'undefined') {
-                            const validKeys = Array.isArray(workingConfig?.geminiApiKeys) ? workingConfig.geminiApiKeys.filter(k => typeof k === 'string' && k.trim()) : [];
-                            const keyCount = validKeys.length > 0 ? validKeys.length : 1;
-                            var tierBadge = keyCount > 1 ? `${keyCount} Keys Active` : `1 Key Active`;
-                        }
-
-                        // 🌐 ENJIN AUTOMATIK SEDUT BAKI WALLET CRAZYROUTER (Adik) - WALLET DI BAWAH SEKALI
-                        let walletSection = '';
-                        if (isCrazyRouter && process.env.CRAZYROUTER_ACCESS_TOKEN && process.env.CRAZYROUTER_USER_ID) {
-                            try {
-                                const axios = require('axios');
-                                const walletRes = await axios.get("https://crazyrouter.com/api/user/self", {
-                                    headers: {
-                                        "Authorization": `Bearer ${process.env.CRAZYROUTER_ACCESS_TOKEN}`,
-                                        "New-Api-User": process.env.CRAZYROUTER_USER_ID
-                                    },
-                                    timeout: 5000
-                                });
-                                if (walletRes?.data?.success && walletRes?.data?.data) {
-                                    const quota = walletRes.data.data.quota || 0;
-                                    const balanceUSD = quota / 500000;
-                                    const balanceMYR = balanceUSD * KADAR_TUKARAN_MYR;
-                                    
-                                    // 👈 Tukar ke └ sebab wallet dah jadi garisan penutup lantai
-                                    walletSection = `  └ <b>Wallet Balance:</b> RM ${balanceMYR.toFixed(2)} ($${balanceUSD.toFixed(2)}) 💳\n`;
-                                }
-                            } catch (err) {
-                                // Tembak log amaran ke terminal Docker supaya tak buta!
-                                console.error(`[Wallet Error] Gagal dapatkan baki CrazyRouter: ${err.message}`);
-                            }
-                        }
-
-                        // STRUKTUR KOS EMBEDDED BARU (TALLY DENGAN WALLET CRAZYROUTER)
-                        let costSection = `\n💰 <b>API Cost Estimate (${cleanModelName}):</b>\n` + tokenBreakdown;
-                        
-                        if (isCrazyRouter) {
-                            costSection += `  ├ <b>Retail Price:</b> $${retailUSD.toFixed(2)} (RM ${retailMYR.toFixed(2)})\n` +
-                                           `  ├ <b>Discount:</b> 45% (CrazyRouter Proxy) 📉\n`;
-                            
-                            // 🔄 SUSUNAN DINAMIK: Kalau wallet wujud, Actual Cost guna ├, disusuli Wallet Balance (└)
-                            if (walletSection) {
-                                costSection += `  ├ <b>Actual Cost:</b> $${totalUSD.toFixed(2)} (RM ${totalMYR.toFixed(2)} | <i>${rateIndicator}</i>)\n` + walletSection;
-                            } else {
-                                costSection += `  └ <b>Actual Cost:</b> $${totalUSD.toFixed(2)} (RM ${totalMYR.toFixed(2)} | <i>${rateIndicator}</i>)\n`;
-                            }
-                        } else {
-                            costSection += `  └ <b>Actual Cost:</b> $${totalUSD.toFixed(2)} (RM ${totalMYR.toFixed(2)} | <i>${rateIndicator}</i>)\n`;
-                        }
+                        // Resolve tier badge
+                        const _validKeys = Array.isArray(workingConfig?.geminiApiKeys) ? workingConfig.geminiApiKeys.filter(k => typeof k === 'string' && k.trim()) : [];
+                        const _keyCount = _validKeys.length > 0 ? _validKeys.length : 1;
+                        const tierBadge = _keyCount > 1 ? `${_keyCount} Keys Active` : '1 Key Active';
 
                         const teleMsg = `✅ <b>Subtitle Translation Report (xEmbed)</b> 🎬\n\n` +
                                         `🍿 <b>Title:</b> <code>${movieTitle}</code>\n` +
