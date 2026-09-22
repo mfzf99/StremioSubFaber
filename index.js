@@ -7880,6 +7880,20 @@ app.post('/api/translate-embedded', embeddedTranslationLimiter, async (req, res)
                         const _keyCount = _validKeys.length > 0 ? _validKeys.length : 1;
                         const tierBadge = _keyCount > 1 ? `${_keyCount} Keys Active` : '1 Key Active';
 
+                        // Incident report section (xEmbed)
+                        const { renderIncidentSection } = require('./src/utils/telegramFinOps');
+                        const _xIncidents = stats.incidents || [];
+                        const incidentSection = _xIncidents.length > 0
+                          ? renderIncidentSection(_xIncidents)
+                          : '';
+
+                        // Efficiency metrics (xEmbed)
+                        const _xEntriesPerMin = Math.round((finalTotal / durationSec) * 60);
+                        const efficiencyLine = `⚡ <b>Efficiency:</b> ${_xEntriesPerMin} entries/min`;
+
+                        // Cache destination (xEmbed always goes to embedded cache)
+                        const cacheLine = `💾 <b>Saved:</b> Embedded Cache (original + translated)`;
+
                         const teleMsg = `✅ <b>Subtitle Translation Report (xEmbed)</b> 🎬\n\n` +
                                         `🍿 <b>Title:</b> <code>${movieTitle}</code>\n` +
                                         `📥 <b>Source:</b> ${sourceProv}\n\n` +
@@ -7891,6 +7905,9 @@ app.post('/api/translate-embedded', embeddedTranslationLimiter, async (req, res)
                                         `🔄 <b>Mismatch Event:</b> ${mismatchDetected} (Recovered: ${recovered})\n` +
                                         `${diagnosticsSection}` +
                                         `${costSection}\n` +
+                                        `${incidentSection}` +
+                                        `${efficiencyLine}\n` +
+                                        `${cacheLine}\n` +
                                         `🌐 <b>Target:</b> ${(targetLangName || 'MAY').toUpperCase()}\n` +
                                         `🔑 <b>Provider:</b> Gemini [${tierBadge}]\n` +
                                         `🧠 <b>Engine:</b> ${usedModel}\n\n` +

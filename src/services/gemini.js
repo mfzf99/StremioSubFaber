@@ -1022,6 +1022,7 @@ class GeminiService {
           if (blockReason || safetyRatings) {
             const err = new Error(`PROHIBITED_CONTENT: ${blockReason || 'SAFETY'}`);
             err.translationErrorType = 'PROHIBITED_CONTENT';
+            err.finOpsStreamId = finOpsStreamId;
             // FINOPS: usage already recorded above via recordUsageIfPresent()
             throw err;
           }
@@ -1038,6 +1039,7 @@ class GeminiService {
           if (candidate.finishReason === 'SAFETY' || candidate.finishReason === 'PROHIBITED_CONTENT') {
             const err = new Error(`PROHIBITED_CONTENT: ${candidate.finishReason}`);
             err.translationErrorType = 'PROHIBITED_CONTENT';
+            err.finOpsStreamId = finOpsStreamId;
             // FINOPS: usage for this blocked attempt was already recorded
             // above via recordUsageIfPresent()
             throw err;
@@ -1047,7 +1049,10 @@ class GeminiService {
             log.warn(() => '[Gemini] MAX_TOKENS reached - translation may be incomplete');
 
             if (aggregatedText.length < subtitleContent.length * 0.3) {
-              throw new Error('Translation exceeded maximum token limit with minimal output');
+              const err = new Error('Translation exceeded maximum token limit with minimal output');
+              err.translationErrorType = 'MAX_TOKENS';
+              err.finOpsStreamId = finOpsStreamId;
+              throw err;
             }
 
             log.warn(() => '[Gemini] Continuing with partial translation due to MAX_TOKENS');

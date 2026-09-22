@@ -5772,13 +5772,31 @@ if (
             const geminiKey = (typeof selectGeminiApiKey === 'function') ? (await selectGeminiApiKey(config) || '') : '';
             const isCrazyRouter = (providerName === 'gemini' || !providerName) && String(geminiKey).trim().startsWith('sk-');
 
-            const { buildCostSection } = require('../utils/telegramFinOps');
+            const { buildCostSection, renderIncidentSection } = require('../utils/telegramFinOps');
             const { costSection, finalUSD: _finalUSD } = await buildCostSection({ usedModel, isCrazyRouter });
 
             // Resolve tier badge for the Provider line in the Telegram message
             const _validKeys = Array.isArray(config?.geminiApiKeys) ? config.geminiApiKeys.filter(k => typeof k === 'string' && k.trim()) : [];
             const _keyCount = _validKeys.length > 0 ? _validKeys.length : 1;
             const tierBadge = _keyCount > 1 ? `${_keyCount} Keys Active` : '1 Key Active';
+
+            // Build incident report section (only if incidents occurred)
+            const _incidents = stats.incidents || [];
+            const incidentSection = _incidents.length > 0
+              ? renderIncidentSection(_incidents)
+              : (Object.keys(advancedStats || {}).length > 0 ? `\n🛡️ <b>Incidents:</b> None — clean run 🏆` : '');
+
+            // Efficiency metrics
+            const _efficiencyDurationSec = Math.max(1, Math.round((Date.now() - (tStatus?.startedAt || Date.now())) / 1000));
+            const _entriesPerMin = Math.round((finalTotal / _efficiencyDurationSec) * 60);
+            const _costPerEntry = _finalUSD > 0 ? `$${(_finalUSD / finalTotal).toFixed(7)}` : '$0';
+            const efficiencyLine = `⚡ <b>Efficiency:</b> ${_entriesPerMin} entries/min • ${_costPerEntry}/entry`;
+
+            // Cache destination line
+            const _cacheDest = (bypass && bypassEnabled)
+              ? 'Bypass Cache (permanent, private)'
+              : 'Translation Cache (shared, permanent)';
+            const cacheLine = `💾 <b>Saved:</b> ${_cacheDest}`;
 
             // ====================================================================
 
@@ -5796,6 +5814,9 @@ if (
                             `🔄 <b>Mismatch Event:</b> ${mismatchDetected} (Recovered: ${recovered})\n` +
                             `${diagnosticsSection}` +
                             `${costSection}\n` +
+                            `${incidentSection}` +
+                            `${efficiencyLine}\n` +
+                            `${cacheLine}\n` +
                             `🌐 <b>Target:</b> ${(targetLanguage || 'MAY').toUpperCase()}\n` +
                             `🔑 <b>Provider:</b> ${providerName || 'gemini'} [${tierBadge}]\n` +
                             `🧠 <b>Engine:</b> ${usedModel}\n\n` +

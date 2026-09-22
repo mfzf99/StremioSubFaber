@@ -161,27 +161,42 @@ async function fetchCrazyRouterWalletUSD() {
  * The ledger is written by GeminiService.updateUsageStats() for every API
  * attempt — successful, blocked or retried alike — so this total reflects
  * the true billed token consumption.
- * @returns {{inputTokens: number, cachedTokens: number, thoughtTokens: number, baseOutputTokens: number}}
+ *
+ * Streams flagged `wasted` by TranslationEngine._markAttemptWasted() are
+ * summed separately so the Telegram receipt can split billed tokens into
+ * effective (produced output) vs wasted (burned by failed retries).
+ * @returns {{inputTokens: number, cachedTokens: number, thoughtTokens: number,
+ *            baseOutputTokens: number, wastedTokens: number}}
  */
 function drainFinOpsLedger() {
   let inputTokens = 0;
   let cachedTokens = 0;
   let thoughtTokens = 0;
   let baseOutputTokens = 0;
+  let wastedTokens = 0;
 
   const ledger = global.geminiFinOps || { streams: {} };
   for (const streamId in ledger.streams) {
     const batch = ledger.streams[streamId];
-    inputTokens += batch.input || 0;
-    cachedTokens += batch.cached || 0;
-    thoughtTokens += batch.thought || 0;
-    baseOutputTokens += batch.output || 0;
+    const inp = batch.input || 0;
+    const cac = batch.cached || 0;
+    const tho = batch.thought || 0;
+    const out = batch.output || 0;
+
+    inputTokens += inp;
+    cachedTokens += cac;
+    thoughtTokens += tho;
+    baseOutputTokens += out;
+
+    if (batch.wasted) {
+      wastedTokens += inp + cac + tho + out;
+    }
   }
 
   // Reset for the next translation job
   global.geminiFinOps = { streams: {} };
 
-  return { inputTokens, cachedTokens, thoughtTokens, baseOutputTokens };
+  return { inputTokens, cachedTokens, thoughtTokens, baseOutputTokens, wastedTokens };
 }
 
 /**
@@ -195,11 +210,12 @@ function drainFinOpsLedger() {
  */
 async function buildCostSection({ usedModel, isCrazyRouter }) {
   // 1. Aggregate all token usage recorded during this translation
-  const { inputTokens, cachedTokens, thoughtTokens, baseOutputTokens } = drainFinOpsLedger();
+  const { inputTokens, cachedTokens, thoughtTokens, baseOutputTokens, wastedTokens } = drainFinOpsLedger();
 
   const outputTokens = baseOutputTokens + thoughtTokens; // thought billed as output
   const totalPromptSize = inputTokens + cachedTokens;
   const totalTokens = totalPromptSize + outputTokens;
+  const effectiveTokens = totalTokens - wastedTokens;
 
   // 2. Resolve per-token pricing for this model (incl. Tier-2 long context)
   const { input: rateInput, output: rateOutput, cache: rateCache } = resolvePricing(usedModel, totalPromptSize);
@@ -239,7 +255,11 @@ async function buildCostSection({ usedModel, isCrazyRouter }) {
     tokenBreakdown += `  ├ <b>Thought:</b> ${fmt(thoughtTokens)}\n`;
   }
   tokenBreakdown += `  ├ <b>Output:</b> ${fmt(baseOutputTokens)}\n` +
-                    `  ├ <b>Total Tokens:</b> ±${fmt(totalTokens)}\n`;
+                    `  ├ <b>Total Billed:</b> ±${fmt(totalTokens)} tokens\n`;
+  if (wastedTokens > 0) {
+    tokenBreakdown += `  │   ├ ✅ <b>Effective:</b> ${fmt(effectiveTokens)}\n`;
+    tokenBreakdown += `  │   └ 🔥 <b>Wasted (retries):</b> ${fmt(wastedTokens)} ⚠️\n`;
+  }
 
   const walletSection = walletBalanceUSD !== null
     ? `  └ <b>Wallet Balance:</b> RM ${(walletBalanceUSD * kadarTukaranMYR).toFixed(2)} ($${walletBalanceUSD.toFixed(2)}) 💳\n`
@@ -262,11 +282,53 @@ async function buildCostSection({ usedModel, isCrazyRouter }) {
   return { costSection, finalUSD, retailUSD, walletBalanceUSD };
 }
 
+/**
+ * Render the 🚨 incident-report section for the Telegram receipt.
+ * Only rendered when at least one recovery incident was recorded.
+ *
+ * @param {Array<{type: string, batch: number, recovery: string, outcome: string, tokensBurned?: number}>} incidents
+ * @param {number} rateUSD_MYR - live exchange rate for token-burn cost estimates
+ * @returns {string} HTML section (may be empty)
+ */
+function renderIncidentSection(incidents, rateUSD_MYR = FALLBACK_USD_MYR) {
+  if (!Array.isArray(incidents) || incidents.length === 0) return '';
+
+  const ICONS = {
+    'PROHIBITED_CONTENT': '⛔',
+    'MAX_TOKENS': '⏳',
+    '429_RATE_LIMIT': '⏳',
+    'MISMATCH_RETRY': '💥',
+    'EMPTY_STREAM': '🌫️'
+  };
+  const OUTCOME_LABELS = {
+    recovered: '✅ recovered',
+    recovered_partial: '🟡 partially recovered',
+    fallback: '🛟 fallback provider',
+    failed: '❌ not recovered',
+    in_progress: '✅ recovered'
+  };
+
+  let section = `\n🚨 <b>Incident Report</b> — ${incidents.length} ${incidents.length === 1 ? 'recovery' : 'recoveries'}:\n`;
+  for (const inc of incidents) {
+    const icon = ICONS[inc.type] || '⚠️';
+    section += `${icon} <b>${inc.type}</b> @ batch ${inc.batch}\n`;
+    section += `  ├ <i>${inc.recovery}</i>\n`;
+    if (inc.tokensBurned > 0) {
+      const costUSD = (inc.tokensBurned / 1000000) * 0.5; // rough estimate at mid-tier rates
+      section += `  ├ 🔥 Burned: ${inc.tokensBurned.toLocaleString()} tokens (~$${costUSD.toFixed(4)})\n`;
+    }
+    const outcome = OUTCOME_LABELS[inc.outcome] || inc.outcome;
+    section += `  └ ${outcome}\n`;
+  }
+  return section;
+}
+
 module.exports = {
   GEMINI_PRICING,
   resolvePricing,
   fetchExchangeRate,
   fetchCrazyRouterWalletUSD,
   drainFinOpsLedger,
-  buildCostSection
+  buildCostSection,
+  renderIncidentSection
 };

@@ -276,7 +276,52 @@ class TranslationEngine {
       singleBatchMode: this.singleBatchMode,
       parallelBatchesUsed: false,
       streaming: this.enableStreaming,
+      // Tier 4: FinOps incident log — each entry describes one recovery
+      // operation with the tokens burned by the failed attempt(s).
+      incidents: [],
     };
+  }
+
+  /**
+   * Mark the FinOps ledger streams consumed by a FAILED attempt as wasted so
+   * the Telegram receipt can split billed tokens into effective vs wasted.
+   * Called by retry handlers after they catch an error carrying
+   * `finOpsStreamId` (attached by GeminiService on every thrown attempt).
+   * @param {string|string[]} streamIds - ledger stream id(s) to mark wasted
+   * @private
+   */
+  _markAttemptWasted(streamIds) {
+    if (!global.geminiFinOps || !global.geminiFinOps.streams) return;
+    const ids = Array.isArray(streamIds) ? streamIds : [streamIds];
+    for (const id of ids) {
+      if (id && global.geminiFinOps.streams[id]) {
+        const stream = global.geminiFinOps.streams[id];
+        if (!stream.wasted) {
+          stream.wasted = true;
+        }
+      }
+    }
+  }
+
+  /**
+   * Record a recovery incident for the Telegram battle-log section.
+   * @param {object} incident
+   * @param {string} incident.type - e.g. 'PROHIBITED_CONTENT' | 'MAX_TOKENS' | '429_RATE_LIMIT' | 'MISMATCH_RETRY'
+   * @param {number} incident.batch - 1-based batch number
+   * @param {string} incident.recovery - short description of the recovery action
+   * @param {string} [incident.outcome] - 'recovered' | 'recovered_partial' | 'fallback' | 'failed'
+   * @param {number} [incident.tokensBurned] - total tokens consumed by the failed attempt(s)
+   * @private
+   */
+  _logIncident({ type, batch, recovery, outcome = 'recovered', tokensBurned = 0 }) {
+    this.translationStats.incidents.push({
+      type,
+      batch,
+      recovery,
+      outcome,
+      tokensBurned,
+      at: Date.now()
+    });
   }
 
   /**
@@ -1293,6 +1338,8 @@ class TranslationEngine {
         // Stats: record initial rate-limit / retryable error
         this.translationStats.rateLimitErrors++;
         if (!this.translationStats.errorTypes.includes('429')) this.translationStats.errorTypes.push('429');
+        // FinOps: the failed attempt burned tokens — mark them wasted
+        this._markAttemptWasted(error.finOpsStreamId);
         let retrySucceeded = false;
         let shouldStopHttpRotation = false;
 
@@ -1305,10 +1352,13 @@ class TranslationEngine {
           try {
             translatedText = await this._translateCall(batchText, targetLanguage, prompt, streamingRequested, streamCallback);
             retrySucceeded = true;
+            this._logIncident({ type: '429_RATE_LIMIT', batch: batchIndex + 1, recovery: `rotated to next key (attempt ${httpRetryAttempts}/${maxHttpRotationRetries})`, outcome: 'recovered' });
             log.info(() => `[TranslationEngine] 429/503 key-rotation retry succeeded for batch ${batchIndex + 1} on attempt ${httpRetryAttempts}/${maxHttpRotationRetries}`);
           } catch (retryError) {
             // Stats: count each failed retry as an additional rate-limit error
             this.translationStats.rateLimitErrors++;
+            // FinOps: this retry attempt also burned tokens — mark wasted
+            this._markAttemptWasted(retryError.finOpsStreamId);
             if (this.retryRotationEnabled && this.gemini?.apiKey) {
               this._recordKeyError(this.gemini.apiKey, retryError); // Pass 'retryError'
             }
@@ -1335,6 +1385,9 @@ class TranslationEngine {
         // Stats: MAX_TOKENS error
         if (!this.translationStats.errorTypes.includes('MAX_TOKENS')) this.translationStats.errorTypes.push('MAX_TOKENS');
         this.translationStats.keyRotationRetries++;
+        // FinOps: the truncated attempt burned tokens — mark wasted + log incident
+        this._markAttemptWasted(error.finOpsStreamId);
+        this._logIncident({ type: 'MAX_TOKENS', batch: batchIndex + 1, recovery: 'checkpoint resume with next key', outcome: 'recovered' });
         await this._rotateToNextKey(`MAX_TOKENS retry for batch ${batchIndex + 1}`);
         log.warn(() => `[TranslationEngine] MAX_TOKENS error detected, retrying batch ${batchIndex + 1} with next key`);
 
@@ -1405,20 +1458,30 @@ class TranslationEngine {
         prohibitedRetryAttempted = true;
         // Stats: PROHIBITED_CONTENT error
         if (!this.translationStats.errorTypes.includes('PROHIBITED_CONTENT')) this.translationStats.errorTypes.push('PROHIBITED_CONTENT');
+        // FinOps: the blocked attempt burned input tokens — mark wasted
+        this._markAttemptWasted(error.finOpsStreamId);
+        this._logIncident({ type: 'PROHIBITED_CONTENT', batch: batchIndex + 1, recovery: 'two-stage recovery (key rotate + prompt masking)', outcome: 'in_progress' });
         
         let retrySuccess = false;
         let currentError = error;
+        let stage1Error = null;
 
         // Two-stage recovery protocol
         // Stage 1: rotate key + fictitious header only
         // Stage 2: rotate key + fictitious header + word masking + fallback prompt
         for (let stage = 1; stage <= 2; stage++) {
             this.translationStats.keyRotationRetries++;
+            if (stage > 1) {
+              // FinOps: the failed Stage-1 masked attempt burned tokens too
+              this._markAttemptWasted(stage1Error?.finOpsStreamId);
+            }
             await this._rotateToNextKey(`PROHIBITED_CONTENT retry Stage ${stage} for batch ${batchIndex + 1}`);
             
             if (stage === 1) {
                 log.warn(() => `[TranslationEngine] PROHIBITED_CONTENT detected! Stage 1: Retrying with next key & FICTITIOUS header only (No text masking).`);
             } else {
+                // Track the Stage-1 failure for FinOps wasted accounting
+                stage1Error = currentError;
                 log.warn(() => `[TranslationEngine] PROHIBITED_CONTENT still blocking! Stage 2: Retrying with next key, Full Text Masking, and Fallback Prompt.`);
             }
 
@@ -1643,6 +1706,7 @@ class TranslationEngine {
       log.warn(() => `[TranslationEngine] Entry count mismatch: expected ${batch.length}, got ${translatedEntries.length}`);
       // Stats: mismatch detected
       this.translationStats.mismatchDetected = true;
+      this._logIncident({ type: 'MISMATCH_RETRY', batch: batchIndex + 1, recovery: 'two-pass alignment + shift detection', outcome: 'in_progress' });
 
       // Pass 1: Align what we can by index, identify missing entries
       let { aligned, missingIndices } = this.alignTranslatedEntries(translatedEntries, batch);
