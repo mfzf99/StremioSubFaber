@@ -2,6 +2,12 @@
 
 All notable changes to this project will be documented in this file.
 
+## SubMaker v1.5.2 (2026-09-22)
+
+**Bug Fixes:**
+
+- **Telegram notification silently killed by `advancedStats is not defined`:** The FinOps refactor (v1.5.0) that extracted the cost-receipt logic into `src/utils/telegramFinOps.js` accidentally deleted the DYNAMIC ADVANCED DIAGNOSTICS block from the normal translation path in `src/handlers/subtitles.js`, leaving two dangling references — `advancedStats` (used by the incident fallback line) and `diagnosticsSection` (used by the `teleMsg` template). The resulting `ReferenceError` was thrown inside the async notification IIFE before `axios.sendMessage` could run, silently suppressing every Telegram notification after a successful translation ("Ralat dalam blok async FinOps: advancedStats is not defined"). The block has been restored 1:1 from the working xEmbed implementation in `index.js` and the incident fallback now uses a proper string check (`advancedStats !== ''`) consistent with `index.js`.
+
 ## SubMaker v1.5.1 (2026-09-22)
 
 **Bug Fixes:**
