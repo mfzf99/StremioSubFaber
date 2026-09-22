@@ -423,16 +423,25 @@ class GeminiService {
     const thought = usage.thoughtsTokenCount || usage.thoughtTokenCount || 0;
     const textOut = usage.candidatesTokenCount || 0;
 
-    // Accumulate instead of overwrite: a single stream may report
-    // usageMetadata on multiple SSE chunks (intermediate + final). The last
-    // chunk must add to the running total, not replace it.
+    // Google's streaming API reports usageMetadata on multiple SSE chunks, but
+    // each chunk carries the CUMULATIVE total (not a delta). The previous
+    // accumulation logic added these cumulative values, causing 4x-25x
+    // inflation depending on how many chunks the stream was split into.
+    //
+    // Fix: track the MAXIMUM value per stream instead of accumulating. Since
+    // Google reports cumulative totals, the last chunk always has the highest
+    // (final) value. Taking the max is equivalent to "last write wins" but is
+    // robust against out-of-order chunk delivery.
+    //
+    // For non-streaming (generateContent), usageMetadata appears once, so max()
+    // is identical to direct assignment — no behavioral change for that path.
     const existing = global.geminiFinOps.streams[streamId]
-      || { input: 0, cached: 0, thought: 0, output: 0 };
+      || { input: 0, cached: 0, thought: 0, output: 0, _rawInput: 0, _rawCached: 0, _rawThought: 0, _rawOutput: 0 };
     global.geminiFinOps.streams[streamId] = {
-      input: existing.input + input,
-      cached: existing.cached + cached,
-      thought: existing.thought + thought,
-      output: existing.output + textOut
+      input: Math.max(existing.input, input),
+      cached: Math.max(existing.cached, cached),
+      thought: Math.max(existing.thought, thought),
+      output: Math.max(existing.output, textOut)
     };
   }
 

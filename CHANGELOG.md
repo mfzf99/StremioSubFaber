@@ -2,6 +2,12 @@
 
 All notable changes to this project will be documented in this file.
 
+## SubMaker v1.5.5 (2026-09-22)
+
+**Bug Fixes:**
+
+- **FinOps ledger 25x token inflation eliminated (streaming SSE chunks):** `updateUsageStats()` accumulated `usageMetadata` values across SSE chunks, but Google's streaming API reports the **cumulative** total on every chunk (not a delta). A 4-batch stream split into ~4 chunks per batch was counted 4x per batch: 44k real tokens reported as 1.13M (25x inflation). The ledger now takes the **maximum** value per stream — equivalent to "last write wins" but robust against out-of-order chunk delivery. For non-streaming `generateContent` (single usageMetadata report), behavior is unchanged. The CrazyRouter wallet only dropped RM0.31 (not RM1.40 as the receipt claimed), confirming the spike was a measurement artifact, not real billing.
+
 ## SubMaker v1.5.4 (2026-09-22)
 
 **Bug Fixes:**
