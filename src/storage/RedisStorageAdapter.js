@@ -838,6 +838,17 @@ class RedisStorageAdapter extends StorageAdapter {
       return null;
     }
 
+    // Skip entirely when the main Redis client is reconnecting (e.g. an idle
+    // connection closed by the server timeout). Probing every alternate prefix
+    // through a non-ready client just produces a burst of "Stream isn't
+    // writeable" errors and burns round-trips for keys that are unlikely to
+    // exist. The next successful read through the main client re-enables
+    // probing organically.
+    if (!this.client || this.client.status !== 'ready') {
+      log.debug(() => `[RedisStorage] Skipping cross-prefix probing for ${cacheType} (main Redis client not ready: ${this.client ? this.client.status : 'null'})`);
+      return null;
+    }
+
     const canonicalPrefix = this.options.keyPrefix || '';
     const sanitizedKey = this._sanitizeKey(key);
     const contentKeySuffix = `${cacheType}:${sanitizedKey}`;
@@ -846,12 +857,29 @@ class RedisStorageAdapter extends StorageAdapter {
     const migrationClient = await this._getMigrationClient('[RedisStorage] Cross-prefix fetch skipped: could not open raw client:');
     if (!migrationClient) return null;
 
+    // A shared migration client can sit idle until Redis closes it (server
+    // --timeout). Probing through it fails fast under enableOfflineQueue=false,
+    // so verify readiness before every sweep; release the stale client so the
+    // next probe starts with a fresh connection instead of a dead socket.
+    if (migrationClient.status !== 'ready') {
+      log.debug(() => `[RedisStorage] Skipping cross-prefix probing for ${cacheType} (migration client not ready: ${migrationClient.status})`);
+      await this._closeMigrationClient();
+      return null;
+    }
+
     try {
-      // Cover double-prefixed legacy keys by expanding variants with the canonical prefix
+      // Probe only legitimate historical namespaces. Previous releases
+      // cross-multiplied every variant pair, generating nonsense prefixes
+      // (e.g. "stremiostremio:", "stremio:stremio:enc_xxx:stremio:") that
+      // could never exist; each MISS then wasted 6-10 extra round-trips and
+      // logged an ERROR per fabricated prefix. Restrict probing to:
+      //   1. the known prefix variants (colon/no-colon, isolation, legacy)
+      //   2. double-prefixed keys where a variant directly follows the
+      //      canonical prefix ("stremio:stremio:session:..."), which is the
+      //      only double-prefix shape ever written by old releases.
       const altPrefixes = new Set(this.prefixVariants);
-      for (const alt of this.prefixVariants) {
-        if (canonicalPrefix) {
-          altPrefixes.add(`${alt}${canonicalPrefix}`);
+      if (canonicalPrefix) {
+        for (const alt of this.prefixVariants) {
           altPrefixes.add(`${canonicalPrefix}${alt}`);
         }
       }
