@@ -24,16 +24,18 @@ const log = require('./logger');
 // ── Pricing table (USD per 1M tokens) ────────────────────────────────────────
 // Keep in sync with https://ai.google.dev/gemini-api/docs/pricing
 const GEMINI_PRICING = {
+  '3.8-flash': { input: 0.75, output: 3.75, cache: 0.075 },
   '3.7-flash': { input: 0.75, output: 3.75, cache: 0.075 },
   '3.6-flash': { input: 0.75, output: 3.75, cache: 0.075 },
   '3.5-flash': { input: 1.50, output: 9.00, cache: 0.15 },
   '3.5-flash-lite': { input: 0.30, output: 2.50, cache: 0.03 },
   '3.1-pro': { input: 2.00, output: 12.00, cache: 0.20, inputT2: 4.00, outputT2: 18.00, cacheT2: 0.40 },
   '3.1-flash-lite': { input: 0.25, output: 1.50, cache: 0.025 },
-  '3.0-flash': { input: 0.50, output: 3.00, cache: 0.05 },
+  '3-flash-preview': { input: 0.50, output: 3.00, cache: 0.05 },
   '2.5-pro': { input: 1.25, output: 10.00, cache: 0.125, inputT2: 2.50, outputT2: 15.00, cacheT2: 0.25 },
   '2.5-flash': { input: 0.30, output: 2.50, cache: 0.03 },
-  '2.5-flash-lite': { input: 0.10, output: 0.40, cache: 0.01 }
+  '2.5-flash-lite': { input: 0.10, output: 0.40, cache: 0.01 },
+  'gemma-4': { input: 0, output: 0, cache: 0 }
 };
 
 const DEFAULT_PRICING_KEY = '3.5-flash-lite';
@@ -60,17 +62,20 @@ function resolvePricing(usedModel, totalPromptSize) {
 
   // Order matters: check the most specific keys first.
   const checks = [
+    ['3.8-flash', '3.8-flash'],
     ['3.7-flash', '3.7-flash'],
     ['3.6-flash', '3.6-flash'],
     ['3.5-flash-lite', '3.5-flash-lite'],
     ['3.5-flash', '3.5-flash'],
     ['3.1-pro', '3.1-pro'],
     ['3.1-flash-lite', '3.1-flash-lite'],
-    ['3.0-flash', '3.0-flash'],
-    ['3-flash', '3.0-flash'],
+    ['3-flash-preview', '3-flash-preview'],
+    ['3-flash', '3-flash-preview'],
     ['2.5-pro', '2.5-pro'],
     ['2.5-flash-lite', '2.5-flash-lite'],
-    ['2.5-flash', '2.5-flash']
+    ['2.5-flash', '2.5-flash'],
+    ['gemma-4', 'gemma-4'],
+    ['gemma', 'gemma-4'] // all Gemma is free-tier
   ];
 
   for (const [needle, key] of checks) {

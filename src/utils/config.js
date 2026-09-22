@@ -910,6 +910,11 @@ function encodeConfig(config) {
  * Model-specific default configurations (100% Mengikut Dokumentasi Rasmi Google)
  */
 const MODEL_SPECIFIC_DEFAULTS = {
+  'gemini-3.8-flash': {
+    thinkingLevel: 'medium',
+    thinkingBudget: -1,
+    temperature: 1.0
+  },
   'gemini-3.7-flash': {
     thinkingLevel: 'high',
     thinkingBudget: -1,
@@ -971,6 +976,16 @@ const MODEL_SPECIFIC_DEFAULTS = {
     temperature: 0.2
   },
   'gemma-3-27b-it': {
+    thinkingLevel: 'disabled',
+    thinkingBudget: -1,
+    temperature: 0.2
+  },
+  'gemma-4-26b-a4b-it': {
+    thinkingLevel: 'disabled',
+    thinkingBudget: -1,
+    temperature: 0.2
+  },
+  'gemma-4-31b-it': {
     thinkingLevel: 'disabled',
     thinkingBudget: -1,
     temperature: 0.2

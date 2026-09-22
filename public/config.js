@@ -1052,6 +1052,11 @@ Translate to {target_language}.`;
     }
 
     const MODEL_SPECIFIC_DEFAULTS = {
+        'gemini-3.8-flash': {
+            thinkingLevel: 'medium',
+            thinkingBudget: -1,
+            temperature: 1.0
+        },
         'gemini-3.7-flash': {
             thinkingLevel: 'high',
             thinkingBudget: -1,
@@ -1113,6 +1118,16 @@ Translate to {target_language}.`;
             temperature: 0.2
         },
         'gemma-3-27b-it': {
+            thinkingLevel: 'disabled',
+            thinkingBudget: -1,
+            temperature: 0.2
+        },
+        'gemma-4-26b-a4b-it': {
+            thinkingLevel: 'disabled',
+            thinkingBudget: -1,
+            temperature: 0.2
+        },
+        'gemma-4-31b-it': {
             thinkingLevel: 'disabled',
             thinkingBudget: -1,
             temperature: 0.2

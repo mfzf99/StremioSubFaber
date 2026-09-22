@@ -59,8 +59,7 @@ function getModelFamily(model) {
     }
     // LEGACY 3.x terdahulu — masih terima pensampelan, tetapi suhu mesti 1.0
     if (m === 'gemini-3-flash-preview'
-      || m.startsWith('gemini-3.1')
-      || m === 'gemini-3.5-flash') {
+      || m.startsWith('gemini-3.1')) {
       return { family: '3.x-legacy', sampling: 'warn-default-1.0', thinking: 'level' };
     }
     // Lalai konservatif: mana-mana 3.x lain (3.7+, 3.9, dsb.) dianggap strict.
@@ -121,11 +120,11 @@ const MODEL_THINKING_PROFILES = {
   'gemini-3.7-flash': { default: 'medium', levels: ['low', 'medium', 'high'] }, // minimal = RALAT
   'gemini-3.6-flash': { default: 'medium', levels: ['minimal', 'low', 'medium', 'high'] },
   'gemini-3.5-flash-lite': { default: 'minimal', levels: ['minimal', 'low', 'medium', 'high'] },
-  // LEGACY 3.x
+  'gemini-3.5-flash': { default: 'medium', levels: ['minimal', 'low', 'medium', 'high'] }, // Now strict (deprecation Jul 2026)
+  // LEGACY 3.x (pensampelan masih diterima tetapi suhu mesti 1.0)
   'gemini-3.1-flash-lite-image': { default: 'minimal', levels: ['minimal', 'high'] }, // low/medium TIDAK disokong
   'gemini-3.1-flash-lite': { default: 'minimal', levels: ['minimal', 'low', 'medium', 'high'] },
   'gemini-3.1-pro-preview': { default: 'high', levels: ['low', 'medium', 'high'] }, // minimal TIDAK disokong
-  'gemini-3.5-flash': { default: 'medium', levels: ['minimal', 'low', 'medium', 'high'] },
   'gemini-3-flash-preview': { default: 'high', levels: ['minimal', 'low', 'medium', 'high'] }
   // gemini-3-pro-preview dialih keluar (shutdown 9 Mac 2026)
 };

@@ -156,6 +156,8 @@
         }
 
         switch (normalizedModel) {
+            case 'gemini-3.8-flash':
+                return { thinkingLevel: 'medium', temperature: 1.0 };
             case 'gemini-3.7-flash':
             case 'gemini-3.6-flash':
             case 'gemini-3.5-flash':
@@ -172,6 +174,8 @@
                 return { thinkingLevel: 'minimal', temperature: 0.2 };
             case 'gemini-2.5-flash-lite':
             case 'gemma-3-27b-it':
+            case 'gemma-4-26b-a4b-it':
+            case 'gemma-4-31b-it':
                 return { thinkingLevel: 'disabled', temperature: 0.2 };
             default:
                 if (normalizedModel.includes('flash-lite')) {
