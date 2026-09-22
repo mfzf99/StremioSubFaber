@@ -5764,6 +5764,32 @@ if (
             // ====================================================================
             // 5. 🕵️‍♂️ DYNAMIC ADVANCED DIAGNOSTICS
             // ====================================================================
+            let advancedStats = '';
+            if (stats.keyRotationRetries > 0 || stats.rateLimitErrors > 0) {
+                advancedStats += `🔄 <b>Key Rotations:</b> ${stats.keyRotationRetries} times (Rate Limits: ${stats.rateLimitErrors})\n`;
+            }
+            if (stats.errorTypes && stats.errorTypes.length > 0) {
+                advancedStats += `🦠 <b>AI Errors Handled:</b> ${stats.errorTypes.join(', ')}\n`;
+            }
+            if (stats.usedSecondaryProvider) {
+                advancedStats += `🛟 <b>Fallback Triggered:</b> ${stats.secondaryProviderName || 'Unknown'}\n`;
+                if (stats.primaryFailureReason) {
+                    const shortReason = stats.primaryFailureReason.length > 50 ? stats.primaryFailureReason.substring(0, 50) + '...' : stats.primaryFailureReason;
+                    advancedStats += `   └ <i>Reason: ${shortReason}</i>\n`;
+                }
+            }
+            if (stats.jsonXmlFallback) {
+                advancedStats += `🛠️ <b>Format Rescue:</b> XML Fallback Activated\n`;
+            }
+            if (stats.parallelBatchesUsed) {
+                advancedStats += `⚡ <b>Execution:</b> Parallel Batches\n`;
+            } else if (stats.singleBatchMode) {
+                advancedStats += `📦 <b>Execution:</b> Single Batch Mode\n`;
+            }
+
+            let diagnosticsSection = advancedStats !== '' ? `\n🔍 <b>Advanced Diagnostics:</b>\n${advancedStats}` : '';
+
+            // ====================================================================
             // 5.5 🧮 FINOPS — Delegated to shared module (src/utils/telegramFinOps)
             // ====================================================================
             const usedModel = (effectiveModel || 'gemini-3.1-flash-lite-preview').toLowerCase();
@@ -5784,7 +5810,7 @@ if (
             const _incidents = stats.incidents || [];
             const incidentSection = _incidents.length > 0
               ? renderIncidentSection(_incidents)
-              : (Object.keys(advancedStats || {}).length > 0 ? `\n🛡️ <b>Incidents:</b> None — clean run 🏆` : '');
+              : (advancedStats !== '' ? `\n🛡️ <b>Incidents:</b> None — clean run 🏆` : '');
 
             // Efficiency metrics
             const _efficiencyDurationSec = Math.max(1, Math.round((Date.now() - (tStatus?.startedAt || Date.now())) / 1000));
