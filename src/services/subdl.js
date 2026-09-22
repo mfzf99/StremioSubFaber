@@ -3,10 +3,10 @@ const { toISO6391, toISO6392 } = require('../utils/languages');
 const { handleSearchError, handleDownloadError } = require('../utils/apiErrorHandler');
 const { httpAgent, httpsAgent, dnsLookup } = require('../utils/httpAgents');
 const { detectAndConvertEncoding } = require('../utils/encodingDetector');
-const { appendHiddenInformationalNote } = require('../utils/subtitle');
 const { redactSensitiveData } = require('../utils/logger');
 const log = require('../utils/logger');
-const { detectArchiveType, extractSubtitleFromArchive, isArchive, createEpisodeNotFoundSubtitle, createZipTooLargeSubtitle, convertSubtitleToVtt } = require('../utils/archiveExtractor');
+const { version } = require('../utils/version');
+const { detectArchiveType, extractSubtitleFromArchive, convertSubtitleToVtt } = require('../utils/archiveExtractor');
 const { analyzeResponseContent, createInvalidResponseSubtitle } = require('../utils/responseAnalyzer');
 const {
   getProviderAuthFailureCacheKey,
@@ -16,7 +16,7 @@ const {
 
 
 const SUBDL_API_URL = 'https://api.subdl.com/api/v1';
-const USER_AGENT = 'StremioSubtitleTranslator v1.0';
+const USER_AGENT = `SubMaker v${version}`;
 const MAX_ZIP_BYTES = 25 * 1024 * 1024; // hard cap for ZIP downloads (~25MB) to avoid huge packs
 
 // 🎯 RAM Cache dengan Siling Memori (Anti-Memory Leak + 30s Debounce)
@@ -422,6 +422,7 @@ class SubDLService {
 
     // Handle legacy call pattern where second arg is subdl_id string
     if (typeof options === 'string') {
+      log.warn(() => '[SubDL] Legacy 3-arg call pattern deprecated, use downloadSubtitle(fileId, { timeout })');
       subdl_id = options;
       subtitles_id = arguments[2] || null;
       timeout = 18000; // Match default timeout for new pattern

@@ -1,5 +1,5 @@
 const axios = require('axios');
-const { toISO6391, toISO6392 } = require('../utils/languages');
+const { toISO6392 } = require('../utils/languages');
 const { handleSearchError, handleDownloadError } = require('../utils/apiErrorHandler');
 const { httpAgent, httpsAgent, dnsLookup } = require('../utils/httpAgents');
 const { detectAndConvertEncoding } = require('../utils/encodingDetector');

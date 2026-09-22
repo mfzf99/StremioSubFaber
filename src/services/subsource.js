@@ -11,7 +11,7 @@
  */
 
 const axios = require('axios');
-const { toISO6391, toISO6392 } = require('../utils/languages');
+const { toISO6392 } = require('../utils/languages');
 const { handleSearchError, handleDownloadError, logApiError } = require('../utils/apiErrorHandler');
 const { httpAgent, httpsAgent, dnsLookup } = require('../utils/httpAgents');
 const { detectAndConvertEncoding } = require('../utils/encodingDetector');
@@ -29,7 +29,7 @@ const {
 } = require('../utils/providerAuthFailureCache');
 
 const SUBSOURCE_API_URL = 'https://api.subsource.net/api/v1';
-const USER_AGENT = 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/131.0.0.0 Safari/537.36';
+const USER_AGENT = process.env.SUBSOURCE_USER_AGENT || 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/131.0.0.0 Safari/537.36';
 const MAX_LINK_CACHE = 2000; // in-memory direct-link cache size
 const MAX_ZIP_BYTES = 25 * 1024 * 1024; // hard cap for ZIP downloads (~25MB) to avoid huge packs
 
@@ -798,6 +798,14 @@ class SubSourceService {
         } catch (e) {
           const firstErr = Array.isArray(e?.errors) && e.errors.length ? e.errors[0] : e;
           throw firstErr;
+        } finally {
+          // Orphaned-promise cleanup: once Promise.any settles, the losing
+          // download may still be in flight and reject later. Attach no-op
+          // catch handlers so late rejections never surface as unhandled
+          // promise rejections, while the fallback stays fully functional
+          // whenever the primary fails.
+          primaryPromise.catch(() => { });
+          fallbackPromise.catch(() => { });
         }
       }
 
