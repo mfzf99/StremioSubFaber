@@ -2,6 +2,42 @@
 
 All notable changes to this project will be documented in this file.
 
+## SubMaker v1.5.0 (2026-09-22)
+
+**New Features:**
+
+- **Bypass cache is now permanent by default:** The user-scoped bypass cache no longer expires after 12 hours. Translations persist indefinitely until manually purged via the 3-click cache reset. A positive `bypassCacheConfig.duration` still applies a TTL for users who explicitly configure one (capped at 12 hours). The 128 MiB LRU quota is retained so the oldest entries are still evicted when the namespace fills up.
+
+- **Full billed-token tracking in the FinOps ledger:** `usageMetadata` is now recorded on every Gemini API attempt — successful, blocked (PROHIBITED_CONTENT), truncated (MAX_TOKENS) and rate-limited (429) alike — before any error checks run. The non-streaming `translateSubtitle()` path, which previously tracked 0% of attempts, now records usage via `recordUsageIfPresent()`. Ledger streams accumulate (`+=`) instead of overwriting, so multi-chunk SSE usage totals are no longer clobbered. Every failed batch and mismatch retry is now visible in the Telegram cost receipt.
+
+- **Telegram V15 receipt — incident battle-log, effective/wasted token split and efficiency metrics:** The FinOps receipt now renders a 🚨 Incident Report section (one entry per recovery: type, batch, recovery action, burned-token estimate, outcome), a ✅ Effective vs 🔥 Wasted (retries) token split under Total Billed, an ⚡ efficiency line (entries/min, cost-per-entry) and a 💾 saved-cache destination line (bypass/translation/embedded). Clean runs show "🛡️ Incidents: None — clean run 🏆".
+
+- **`gemini-3.8-flash` support (flagship, GA 2026-09-02):** Added to `MODEL_THINKING_PROFILES` (thinkingLevel default `medium`; supported levels `low, medium, high` — no `minimal`), `SAMPLING_DEPRECATED_MODELS` (3.x-strict — sampling params stripped), `MODEL_SPECIFIC_DEFAULTS` (temperature 1.0) and the FinOps pricing table ($0.75 in / $3.75 out, promotional until Dec 31, 2026). Also wired into the frontend thinking-level dropdown filter, quick-setup defaults and provider defaults.
+
+- **Gemma 4 open models (`gemma-4-26b-a4b-it`, `gemma-4-31b-it`):** Added to `MODEL_SPECIFIC_DEFAULTS` (thinking disabled, full sampling, temperature 0.2), the frontend `SAFE_DEFAULT_MODELS` fallback list and the FinOps pricing table ($0 — free tier). Display labels read "Gemma 4 26B (Free)" / "Gemma 4 31B (Free)".
+
+- **Per-model Advanced Settings visibility morphing (Phases 3-5):** The Advanced Gemini panel now reshapes itself per model family: **Gemma** hides thinking controls entirely; **2.5** swaps Thinking Level for the numeric Thinking Budget; **3.x-strict** hides the deprecated sampling controls (temperature, top-P, top-K, penalties) behind a new "Show deprecated sampling parameters" toggle; **3.x-legacy** shows everything. The Thinking Level dropdown options are now filtered to only the levels each model officially supports (e.g. `gemini-3.8-flash` shows only Low/Medium/High — `minimal` would be rejected by the API).
+
+- **Shared FinOps module (`src/utils/telegramFinOps.js`):** The ~300-line FinOps receipt block (pricing table, model matching, token aggregation, live USD/MYR rate with 15-min cache, CrazyRouter wallet balance with 5-min cache, cost math and rendering) has been extracted from `subtitles.js` and `index.js` into a single module, eliminating copy-paste drift (`finalUSD` vs `totalUSD`).
+
+**Bug Fixes:**
+
+- **Redis migration client leak:** `_migrateFromAlternatePrefixes()` now wraps its body in try/finally and always closes the migration client, preventing idle ioredis connection accumulation on error paths.
+
+- **Cross-prefix migration error spam eliminated:** The alternate-prefix probe now (a) skips entirely when the main Redis client is not ready (reconnect window — was producing bursts of "Stream isn't writeable" errors), (b) verifies the shared migration client's readiness before each sweep and releases stale clients, and (c) restricts probing to legitimate namespaces only (the old variant cross-product fabricated impossible prefixes like `stremiostremio:`). 80 error lines per 30 min → 0.
+
+- **Redis idle connections no longer severed:** `--timeout` reduced from `300` to `0` in docker-compose so keep-alive app connections are not dropped by the server.
+
+- **`REDIS_KEY_PREFIX` unified to `stremio:`** across `.env` and `docker-compose.yaml` (previously `stremio` without the trailing colon in compose — harmless after normalization but confusing).
+
+- **`gemini-3.5-flash` reclassified as 3.x-strict:** Previously mis-classified as 3.x-legacy (sampling with temperature forced to 1.0); the Google deprecation list from Jul 21, 2026 includes it, so sampling params are now stripped.
+
+- **FinOps `3.0-flash` pricing key renamed to `3-flash-preview`:** Matches the actual Google endpoint name (`gemini-3-flash-preview`; no `gemini-3.0-flash` exists).
+
+- **`CACHE_TYPES.SUBTITLES` (never existed) removed from the Telegram delete flow:** The bot's "🗑️ Padam Subtitle Ini" button now correctly clears `EMBEDDED` + `SYNC` + `AUTOSUB` + `BYPASS` + `PARTIAL` + `TRANSLATION` for the registered keys.
+
+- **Telegram bot hygiene:** Registry capped at 200 entries (was unbounded); registry ids use `crypto.randomBytes` instead of `Math.random`; the long-poll loop uses `setTimeout(poll, 1000)` instead of `setImmediate` (prevents I/O starvation); all `console.error`/`console.log` calls replaced with the structured logger; empty catch blocks on `answerCallbackQuery` acks now log at debug; the magic CrazyRouter quota divisor is now a named constant.
+
 ## SubMaker v1.4.91
 
 **New Features:**
