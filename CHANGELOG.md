@@ -2,6 +2,16 @@
 
 All notable changes to this project will be documented in this file.
 
+## SubMaker v1.5.1 (2026-09-22)
+
+**Bug Fixes:**
+
+- **SubDL User-Agent corrected:** The hardcoded fake `StremioSubtitleTranslator v1.0` identifier has been replaced with `SubMaker v${version}`, matching every other provider. SubDL now sees the real app identity.
+- **SubSource orphaned fallback promise cleanup:** The parallel fallback download (details→CDN race) now attaches no-op `.catch()` handlers to losing promises after `Promise.any()` settles, preventing unhandled promise rejections when the primary download wins.
+- **SubSource User-Agent configurable:** The hardcoded Chrome/131 browser UA can now be overridden via the `SUBSOURCE_USER_AGENT` environment variable.
+- **SubDL legacy call pattern deprecation warning:** The old 3-argument `downloadSubtitle(fileId, subdl_id, subtitles_id)` pattern now logs a deprecation warning directing callers to `downloadSubtitle(fileId, { timeout })`.
+- **Unused imports removed:** `appendHiddenInformationalNote` + `isArchive` + `createEpisodeNotFoundSubtitle` + `createZipTooLargeSubtitle` (subdl.js), `toISO6391` (subsource.js, opensubtitles-v3.js).
+
 ## SubMaker v1.5.0 (2026-09-22)
 
 **New Features:**
