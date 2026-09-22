@@ -261,7 +261,6 @@ function decorateGeminiError(error) {
 }
 
 // Default translation prompt (base - thinking rules added conditionally)
-// Used by non-Gemini-3 providers (Anthropic, DeepL, OpenAI-compatible).
 const DEFAULT_TRANSLATION_PROMPT = `Translate the following subtitles while:
 
 1. Preserving the timing and structure exactly as given
@@ -276,36 +275,6 @@ Translate to {target_language}.
 Do NOT include acknowledgements, explanations, notes or alternative translations.
 
 Output ONLY the translated content, nothing else.`;
-
-// ── Gemini 3 System Instruction (v1.5.3 refactor) ──────────────────────────
-// Per Google's official prompting guide for Gemini 3 reasoning models
-// (https://ai.google.dev/gemini-api/docs/prompting-strategies#gemini-3):
-//   - Place role, output format, and behavioral constraints in System Instruction
-//   - Be precise and direct; avoid verbose prompt engineering
-//   - System Instruction is processed before any user content
-// This instruction is used ONLY when isGemini3Model === true. The user prompt
-// (built by translationEngine.js) carries the task, demonstration, critical
-// rules, and input batch.
-const GEMINI3_SYSTEM_INSTRUCTION = `You are SubMaker, an expert subtitle localization engine. Your job is to translate subtitle dialogue from a source language into a target language while preserving timing, structure, and formatting.
-
-CORE BEHAVIOR:
-- Translate each <s id="N"> slot independently. Never merge, split, reorder, or drop slots.
-- Preserve all [br] line-break markers, inline tags (<i>, <b>), speaker dashes, and music notes exactly where they appear.
-- Preserve numbers, dates, times, measurements, and proper nouns accurately.
-- Keep titles of creative works, brand names, and legal entities verbatim in their original language.
-- Use spoken, conversational register. Avoid formal essay tone and literal word-for-word translation.
-- Do not add explanations, notes, markdown fences, or thinking blocks.
-
-OUTPUT FORMAT:
-- Return only raw <s id="N">...</s> tags.
-- Output exactly as many tags as the input batch contains, with identical IDs in identical order.
-- Emit only the inner text of the first pre-filled slot at the very first character; do not repeat the opening tag.
-
-LANGUAGE-SPECIFIC:
-- For Malay (ms/my/mya/zsm): use Bahasa Melayu Malaysia register. Common English loanwords used in daily Malaysian speech (e.g., okay, confirm, check, settle, try, call, parking, boss) are acceptable. Avoid Indonesianisms (bisa, banget, gimana, cewek/cowok, kalian, ngomong, kok, dong, sih). Choose self-reference by context: saya/awak default, aku/kau intimate, saya/anda formal.
-
-SAFETY FALLBACK:
-- If a line contains sensitive, profane, or mature content, translate it with an objective, non-glorified equivalent. Do not refuse the task or omit the slot.`;
 
 class GeminiService {
   constructor(apiKey, model = '', advancedSettings = {}) {
@@ -878,22 +847,6 @@ class GeminiService {
   buildUserPrompt(subtitleContent, targetLanguage, customPrompt = null) {
     const normalizedTarget = normalizeTargetName(targetLanguage);
 
-    // ── Gemini 3 path: System Instruction carries behavioral constraints ──
-    // The user prompt (from translationEngine.js) already contains the task,
-    // demonstration, critical rules, and input batch. We pass the
-    // GEMINI3_SYSTEM_INSTRUCTION as the top-level systemInstruction field and
-    // use the provided customPrompt/subtitleContent directly as user content.
-    // This avoids duplicating the batch input in both systemInstruction and
-    // contents (which previously doubled input token costs).
-    if (this.isGemini3Model && !customPrompt) {
-      return {
-        userPrompt: subtitleContent,
-        systemPrompt: GEMINI3_SYSTEM_INSTRUCTION,
-        normalizedTarget
-      };
-    }
-
-    // ── Legacy / non-Gemini-3 path: single combined prompt ──
     let systemPrompt = (customPrompt || DEFAULT_TRANSLATION_PROMPT)
       .replace('{target_language}', normalizedTarget);
 
@@ -1560,7 +1513,6 @@ class GeminiService {
 
 module.exports = GeminiService;
 module.exports.DEFAULT_TRANSLATION_PROMPT = DEFAULT_TRANSLATION_PROMPT;
-module.exports.GEMINI3_SYSTEM_INSTRUCTION = GEMINI3_SYSTEM_INSTRUCTION;
 module.exports.getModelFamily = getModelFamily;
 module.exports.getModelThinkingProfile = getModelThinkingProfile;
 module.exports.isGoogleModel = isGoogleModel;

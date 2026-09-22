@@ -2,6 +2,20 @@
 
 All notable changes to this project will be documented in this file.
 
+## SubMaker v1.5.3 (2026-09-22)
+
+**Prompt Engineering Overhaul — Aligned with Google Gemini 3 Official Guidance:**
+
+- **New Gemini 3 System Instruction (`GEMINI3_SYSTEM_INSTRUCTION`):** Per Google's official prompting guide (`ai.google.dev/gemini-api/docs/prompting-strategies#gemini-3`), behavioral constraints, role definition, output format, language-specific rules, and safety fallback have been moved into a dedicated System Instruction field processed before any user content. This is the single most impactful change — it separates *what the model is* (system) from *what the model does* (user prompt).
+
+- **User prompt redesigned — concise Critical Rules replacing verbose `NEVER/INSTEAD` repetition:** The 7-rule enforcement block has been rewritten as concise numbered rules with XML section tags (`<task>`, `<demonstration>`, `<critical_rules>`, `<input>`). The few-shot Malay demonstration is retained (Google says always include examples). A final anchor phrase ("Based on the demonstration and rules above...") is placed after the input block, matching Google's long-context guidance.
+
+- **Token cost optimization — batch input no longer duplicated:** The legacy `buildUserPrompt()` duplicated the entire XML batch in both `systemInstruction` and `contents`, effectively doubling input token costs. The new Gemini 3 path passes `GEMINI3_SYSTEM_INSTRUCTION` as systemInstruction and the batch text directly as user content, eliminating the duplication.
+
+- **`PROMPT_TEMPLATES.primary/fallback` modernized:** The intra-slot localization rules have been rewritten as concise natural-language instructions inside `<task>` XML tags, replacing the verbose `NEVER/INSTEAD` patterns. The fallback (PROHIBITED_CONTENT) template adds a neutral-objectivity clause.
+
+- **`DEFAULT_TRANSLATION_PROMPT` preserved for non-Gemini-3 providers:** Anthropic, DeepL, and OpenAI-compatible providers continue to use the legacy combined prompt. Only Gemini 3.x models use the new System Instruction path.
+
 ## SubMaker v1.5.2 (2026-09-22)
 
 **Bug Fixes:**
