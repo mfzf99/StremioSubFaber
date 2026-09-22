@@ -936,6 +936,17 @@ class RedisStorageAdapter extends StorageAdapter {
           log.warn(() => `[RedisStorage] Migrated ${cacheType} key across prefixes (${altPrefix} -> ${canonicalPrefix || '<none>'}): ${key}`);
           return parsed;
         } catch (err) {
+          // "Stream isn't writeable" means the migration client's connection
+          // dropped mid-probe (Redis server --timeout, network blip, or
+          // container recreate killed the socket). Under enableOfflineQueue=false
+          // ioredis rejects all further commands immediately. Continuing the loop
+          // would produce one ERROR per remaining prefix (6-10 per key).
+          // Close the dead client and break — the next get() will open a fresh one.
+          if (err.message && err.message.includes('Stream isn\'t writeable')) {
+            log.debug(() => `[RedisStorage] Migration client stream died mid-probe for ${cacheType} key ${key.substring(0, 16)}... — closing stale client and skipping remaining prefixes`);
+            await this._closeMigrationClient();
+            break;
+          }
           log.error(() => ['[RedisStorage] Failed cross-prefix migration for key', key, 'prefix', altPrefix, err.message]);
         }
       }

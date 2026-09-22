@@ -2,6 +2,12 @@
 
 All notable changes to this project will be documented in this file.
 
+## SubMaker v1.5.4 (2026-09-22)
+
+**Bug Fixes:**
+
+- **Redis cross-prefix migration error burst eliminated:** When the migration client's Redis connection dropped mid-probe (server `--timeout`, network blip, or container recreate), the probe loop continued issuing commands through the dead socket. With `enableOfflineQueue: false`, every remaining prefix probe rejected immediately with "Stream isn't writeable and enableOfflineQueue options is false", producing 6-10 ERROR lines per cache miss (observed: 8 errors across embedded/sync/auto keys in one request). The probe loop now detects this specific error, closes the stale migration client immediately, and breaks — the next `get()` opens a fresh connection. Genuine per-prefix migration failures (key not found, corrupt data) still log ERROR as before.
+
 ## SubMaker v1.5.3 (2026-09-22)
 
 **Prompt Engineering Overhaul — Aligned with Google Gemini 3 Official Guidance:**
