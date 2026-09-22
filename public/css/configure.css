@@ -9193,3 +9193,92 @@ label:has(#subToolboxEnabled:disabled) {
 .provider-advanced-block select.styled-select {
     padding-right: 2rem;
 }
+
+/* ── Top-K toggle (v1.5.7) ── */
+/* Toggle switch for the Top-K enable/disable control in the Advanced Gemini panel. */
+.toggle-group {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 1rem;
+    margin-bottom: 0.5rem;
+}
+
+.toggle-label {
+    flex: 1;
+    font-size: 0.85rem;
+    font-weight: 500;
+    color: var(--text-primary);
+    cursor: pointer;
+    user-select: none;
+}
+
+.toggle-label .label-description {
+    display: block;
+    margin-top: 0.2rem;
+    font-size: 0.75rem;
+    font-weight: 400;
+    color: var(--text-secondary);
+    line-height: 1.35;
+}
+
+.switch {
+    position: relative;
+    display: inline-block;
+    width: 44px;
+    height: 24px;
+    flex-shrink: 0;
+}
+
+.switch input {
+    opacity: 0;
+    width: 0;
+    height: 0;
+}
+
+.slider {
+    position: absolute;
+    cursor: pointer;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background-color: var(--border);
+    border-radius: 24px;
+    transition: background-color 0.2s ease;
+}
+
+.slider::before {
+    position: absolute;
+    content: "";
+    height: 18px;
+    width: 18px;
+    left: 3px;
+    bottom: 3px;
+    background-color: white;
+    border-radius: 50%;
+    transition: transform 0.2s ease;
+    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.2);
+}
+
+.switch input:checked + .slider {
+    background-color: var(--primary);
+}
+
+.switch input:focus + .slider {
+    box-shadow: 0 0 0 3px var(--glow);
+}
+
+.switch input:checked + .slider::before {
+    transform: translateX(20px);
+}
+
+/* When Top-K is enabled, show the number input */
+#advancedTopKGroup:has(#advancedTopKEnabled:checked) #advancedTopK {
+    display: block;
+}
+
+/* Ensure the hidden number input doesn't take up space when toggled off */
+#advancedTopK[style*="display:none"] {
+    display: none;
+}

@@ -2,6 +2,18 @@
 
 All notable changes to this project will be documented in this file.
 
+## SubMaker v1.5.7 (2026-09-22)
+
+**Sampling — Top-K is now opt-in (default OFF):**
+
+- **Top-K disabled by default for Gemini translations:** Ground-truth research shows fixed-size top-k truncation hurts subtitle translation quality versus adaptive nucleus sampling — Holtzman et al. 2020 (arXiv:1904.09751) showed top-k produces degenerative/repetitive text while top-p alone tracks human-like distributions; the min-p paper (ICLR 2025, arXiv:2407.01082) showed top-k fixed-size truncation collapses quality at higher temperatures; and Google has deprecated top-K (along with the rest of the sampling parameter family) for the latest Gemini models. Subtitle slots are short (1-3 words) and highly peaked — top-k admits noise tokens into the pool where top-p 0.85-0.95 dynamically narrows to the best 1-2 candidates. The adapter now only sends `topK` when the user explicitly enables it.
+
+- **New `topKEnabled` config flag (default `false`):** `mergeProviderParameters()` sanitizes the new flag; `GeminiService` constructor honors `topKEnabled !== false` before falling back to `GEMINI_TOP_K` env. With the flag off (default), top-k is never sent to the API — pure nucleus sampling path.
+
+- **UI toggle in Advanced Gemini panel (default OFF):** "Enable Top-K" switch replaces the always-visible number input in both the configure page (public/partials/main.html + configure.css toggle styles) and the file upload advanced panel. Turning the toggle on reveals the 1-100 number input. Config save/rehydrate and the advanced-modified bypass-cache check all respect the new flag.
+
+- Research: `plans/topk-ground-truth-research.md`
+
 ## SubMaker v1.5.6 (2026-09-22)
 
 **Prompt Quality — Persona-Free System Instruction (ground-truth backed):**

@@ -1541,6 +1541,7 @@ Translate to {target_language}.`;
                 temperature: modelDefaults.temperature,
                 topP: 0.95,
                 topK: 40,
+                topKEnabled: false, // v1.5.7: top-k opt-in (default off)
                 frequencyPenalty: 0,
                 presencePenalty: 0,
                 enableBatchContext: false, // Include original surrounding context and previous translations
@@ -6637,9 +6638,14 @@ Translate to {target_language}.`;
 
         // topK / penalti: anggap berubah hanya jika berbeza daripada lalai.
         const advTopKEl = document.getElementById('advancedTopK');
+        const advTopKEnabledEl = document.getElementById('advancedTopKEnabled');
         const advFreqEl = document.getElementById('advancedFrequencyPenalty');
         const advPresEl = document.getElementById('advancedPresencePenalty');
-        const topKChanged = advTopKEl ? (parseInt(advTopKEl.value, 10) !== (defaults.topK ?? 40)) : false;
+        // topK "changed" only when the toggle is ON (topKEnabled=true) AND value differs.
+        // When the toggle is OFF (default), topK is not sent to the API at all —
+        // so there is nothing to flag as modified.
+        const topKEnabledChanged = advTopKEnabledEl ? (advTopKEnabledEl.checked !== false) : false;
+        const topKChanged = topKEnabledChanged && advTopKEl ? (parseInt(advTopKEl.value, 10) !== (defaults.topK ?? 40)) : false;
         const freqChanged = advFreqEl ? (parseFloat(advFreqEl.value) !== (defaults.frequencyPenalty ?? 0)) : false;
         const presChanged = advPresEl ? (parseFloat(advPresEl.value) !== (defaults.presencePenalty ?? 0)) : false;
 
@@ -6654,7 +6660,7 @@ Translate to {target_language}.`;
 
         // Single-Picker: modelChanged is always false — no separate override dropdown exists.
         // The base #geminiModel dropdown IS the model; changes to it don't count as "advanced modified".
-        return thinkingChanged || thinkingBudgetChanged || tempChanged || topPChanged || topKChanged || freqChanged || presChanged || batchCtxChanged || ctxSizeChanged || mismatchRetriesChanged || workflowChanged;
+        return thinkingChanged || thinkingBudgetChanged || tempChanged || topPChanged || topKEnabledChanged || freqChanged || presChanged || batchCtxChanged || ctxSizeChanged || mismatchRetriesChanged || workflowChanged;
     }
 
     /**
@@ -8073,6 +8079,12 @@ Translate to {target_language}.`;
                 el.addEventListener('input', updateBypassCacheForAdvancedSettings);
             }
         });
+
+        // Top-K toggle: show/hide number input and sync bypass-cache check (v1.5.7)
+        const advTopKEnabledEl = document.getElementById('advancedTopKEnabled');
+        if (advTopKEnabledEl) {
+            advTopKEnabledEl.addEventListener('change', updateBypassCacheForAdvancedSettings);
+        }
 
         // Single-Picker: model change is handled by #geminiModel listener (already wired).
         // No #advancedModel listener needed.
@@ -11046,6 +11058,8 @@ Translate to {target_language}.`;
         const advFreqEl = document.getElementById('advancedFrequencyPenalty');
         const advPresEl = document.getElementById('advancedPresencePenalty');
         if (advTopKEl) advTopKEl.value = currentConfig.advancedSettings?.topK ?? 40;
+        const advTopKEnabledEl = document.getElementById('advancedTopKEnabled');
+        if (advTopKEnabledEl) advTopKEnabledEl.checked = currentConfig.advancedSettings?.topKEnabled === true;
         if (advFreqEl) advFreqEl.value = currentConfig.advancedSettings?.frequencyPenalty ?? 0;
         if (advPresEl) advPresEl.value = currentConfig.advancedSettings?.presencePenalty ?? 0;
         updateGeminiThinkingControl();
@@ -11394,6 +11408,7 @@ Translate to {target_language}.`;
                 temperature: (function () { const el = document.getElementById('advancedTemperature'); return el ? parseFloat(el.value) : 0.2; })(),
                 topP: (function () { const el = document.getElementById('advancedTopP'); return el ? parseFloat(el.value) : 0.95; })(),
                 topK: (function () { const el = document.getElementById('advancedTopK'); if (!el) return 40; const v = parseInt(el.value, 10); return Number.isFinite(v) ? Math.max(1, Math.min(100, v)) : 40; })(),
+                topKEnabled: (function () { const el = document.getElementById('advancedTopKEnabled'); return el ? el.checked === true : false; })(),
                 frequencyPenalty: (function () { const el = document.getElementById('advancedFrequencyPenalty'); return el ? parseFloat(el.value) : 0; })(),
                 presencePenalty: (function () { const el = document.getElementById('advancedPresencePenalty'); return el ? parseFloat(el.value) : 0; })(),
                 enableBatchContext: (function () { const el = document.getElementById('enableBatchContext'); return el ? el.checked : false; })(),

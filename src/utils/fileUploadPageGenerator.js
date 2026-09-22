@@ -255,6 +255,8 @@ function generateFileTranslationPage(videoId, configStr, config, filename = '') 
     const topPHelper = t('fileUpload.advanced.topP.helper', {}, 'Probability threshold (0.0-1.0). Lower = focused, Higher = diverse. Default: 0.95');
     const topKLabel = t('fileUpload.advanced.topK.label', {}, 'Top-K (Token Selection)');
     const topKHelper = t('fileUpload.advanced.topK.helper', {}, 'Number of top tokens to consider (1-100). Default: 40');
+    const topKEnabledLabel = t('fileUpload.advanced.topKEnabled.label', {}, 'Enable Top-K');
+    const topKEnabledHelper = t('fileUpload.advanced.topKEnabled.helper', {}, 'Off recommended: adaptive nucleus sampling performs better for subtitle translation.');
     const maxTokensLabel = t('fileUpload.advanced.maxTokens.label', {}, 'Max Output Tokens');
     const maxTokensHelper = t('fileUpload.advanced.maxTokens.helper', {}, 'Maximum tokens in output (1-200000). Defaults follow your selected provider.');
     const formalityLabel = t('fileUpload.advanced.formality.label', {}, 'Formality');
@@ -2320,11 +2322,17 @@ function generateFileTranslationPage(videoId, configStr, config, filename = '') 
                             </div>
 
                             <div class="form-group" id="topKGroup">
-                                <label for="advancedTopK">
-                                    ${escapeHtml(topKLabel)}
-                                    <span class="label-description">${escapeHtml(topKHelper)}</span>
-                                </label>
-                                <input type="number" id="advancedTopK" min="1" max="100" step="1" value="40" placeholder="40">
+                                <div class="toggle-group">
+                                    <label class="toggle-label" for="advancedTopKEnabled">
+                                        ${escapeHtml(topKEnabledLabel)}
+                                        <span class="label-description">${escapeHtml(topKEnabledHelper)}</span>
+                                    </label>
+                                    <label class="switch">
+                                        <input type="checkbox" id="advancedTopKEnabled">
+                                        <span class="slider"></span>
+                                    </label>
+                                </div>
+                                <input type="number" id="advancedTopK" min="1" max="100" step="1" value="40" placeholder="40" style="display:none;">
                             </div>
 
                             <div class="form-group">
@@ -3202,6 +3210,13 @@ function generateFileTranslationPage(videoId, configStr, config, filename = '') 
             if (advancedTopK && caps.supportsTopK) {
                 advancedTopK.value = params.topK ?? 40;
             }
+            // v1.5.7: topK toggle (default off). The backend now expects
+            // topKEnabled from the frontend; when off, topK is omitted
+            // from the API request entirely.
+            const advancedTopKEnabled = document.getElementById('advancedTopKEnabled');
+            if (advancedTopKEnabled) {
+                advancedTopKEnabled.checked = params.topKEnabled === true;
+            }
             if (advancedMaxTokens && caps.supportsMaxTokens) {
                 advancedMaxTokens.min = '1';
                 advancedMaxTokens.max = String(MAX_OUTPUT_TOKEN_LIMIT);
@@ -3806,6 +3821,7 @@ function generateFileTranslationPage(videoId, configStr, config, filename = '') 
                     thinkingLevel: usesThinkingLevel ? thinkingLevel : undefined,
                     temperature: Number.isFinite(temperature) ? temperature : 0.2,
                     topP: Number.isFinite(topP) ? topP : 0.95,
+                    topKEnabled: (function () { const el = document.getElementById('advancedTopKEnabled'); return el ? el.checked === true : false; })(),
                     maxOutputTokens: Number.isFinite(maxTokens) ? maxTokens : undefined,
                     translationTimeout: Number.isFinite(timeout) ? timeout : undefined,
                     maxRetries: Number.isFinite(maxRetries) ? maxRetries : undefined

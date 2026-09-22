@@ -173,6 +173,17 @@ function mergeProviderParameters(defaults, incoming) {
         if (!Number.isFinite(requested)) return base.topK;
         return Math.max(1, Math.min(100, requested));
       })(),
+      // v1.5.7: topK toggle (default OFF) — ground truth shows fixed-size
+      // top-k truncation hurts subtitle translation quality vs adaptive
+      // nucleus sampling (arXiv:1904.09751, arXiv:2407.01082). When
+      // topKEnabled === false, the adapter omits topK entirely.
+      topKEnabled: (() => {
+        if (raw?.topKEnabled === false || raw?.topKEnabled === 'false') return false;
+        if (raw?.topKEnabled === true || raw?.topKEnabled === 'true') return true;
+        // Default OFF unless explicitly enabled by the user.
+        if (raw?.topKEnabled === undefined || raw?.topKEnabled === null || raw?.topKEnabled === '') return false;
+        return Boolean(base.topKEnabled);
+      })(),
       frequencyPenalty: (() => {
         const requested = Number.isFinite(parseFloat(raw?.frequencyPenalty))
           ? parseFloat(raw.frequencyPenalty)

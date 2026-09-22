@@ -1937,12 +1937,18 @@
                 </div>
 
                 <div class="form-group" id="advancedTopKGroup">
-                    <label for="advancedTopK">
-                        <span data-i18n="config.advancedGemini.topK.label">Top-K</span>
-                        <span class="label-description"
-                            data-i18n="config.advancedGemini.topK.description">Sample from top-K tokens (1-100). Gemini 1.5 / 2.x only. Default: 40</span>
-                    </label>
-                    <input type="number" id="advancedTopK" min="1" max="100" step="1" value="40" placeholder="40">
+                    <div class="toggle-group">
+                        <label class="toggle-label" for="advancedTopKEnabled">
+                            <span data-i18n="config.advancedGemini.topKEnabled.label">Enable Top-K</span>
+                            <span class="label-description"
+                                data-i18n="config.advancedGemini.topKEnabled.description">Sample from top-K tokens (1-100). Gemini 1.5 / 2.x only. Off recommended (adaptive nucleus sampling performs better for subtitle translation).</span>
+                        </label>
+                        <label class="switch">
+                            <input type="checkbox" id="advancedTopKEnabled">
+                            <span class="slider"></span>
+                        </label>
+                    </div>
+                    <input type="number" id="advancedTopK" min="1" max="100" step="1" value="40" placeholder="40" style="display:none;">
                 </div>
 
                 <div class="form-group" id="advancedFrequencyPenaltyGroup">
