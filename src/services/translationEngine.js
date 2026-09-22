@@ -32,15 +32,22 @@ const sleep = (ms) => new Promise(resolve => setTimeout(resolve, ms));
 // Universal & Dynamic Prompt Templates
 // ============================================================================
 const PROMPT_TEMPLATES = {
-  // 1. Primary prompt (v1.5.6 — persona-free, style directives moved to SI)
-  //    Per Zheng et al. 2024 (arXiv:2311.10054), persona role-play does not
-  //    improve objective-task accuracy. Style/behavioral constraints live in
-  //    the Gemini 3 System Instruction (gemini.js); this template is a pure
-  //    task statement. For non-Gemini-3 providers the full rulebook remains
-  //    in DEFAULT_TRANSLATION_PROMPT (gemini.js).
+  // 1. Primary prompt (Enterprise Broadcast Standard - Intra-Slot Action-Replacement)
+  //    v1.5.9 RESTORATION: the v1.5.6 bare `<task>` body removed the INTRA-SLOT
+  //    LOCALIZATION rulebook that anchors spoken-register output and incomplete
+  //    clause handling. Those three NEVER/INSTEAD rules are the proven recipe
+  //    (see plans/prompt-refactor-backup/translationEngine.js.bak) and are
+  //    restored verbatim inside the <task> XML wrapper. Persona remains absent
+  //    (persona-free per Zheng et al. 2024, arXiv:2311.10054) — behavioral
+  //    constraints only, no role-play identity.
   primary: (targetLabel, sourceLabel) =>
     `<task>
 Translate each <s id="N"> tag from ${sourceLabel || 'the source'} to ${targetLabel}.
+
+INTRA-SLOT LOCALIZATION RULES (ACTION REPLACEMENT):
+1. ISOLATED FREEDOM: NEVER mirror foreign syntax, trailing modifiers, or literal word order; INSTEAD, rephrase the dialogue into spoken, conversational ${targetLabel} INSIDE each individual tag while strictly preserving tag boundaries and internal [br] markers.
+2. SPOKEN DICTION & ZERO ESSAY RIGIDITY: NEVER use formal copulas, formal conjunctions, dictionary jargon, or literal pronoun calques; INSTEAD, capture authentic conversational flow using natural speech connectors, question particles, and direct native phrasing.
+3. DEPENDENT CLAUSES: NEVER attempt to complete partial sentences or borrow words from neighbouring tags; INSTEAD, translate ONLY the fragment present within that specific tag, intentionally leaving target syntax incomplete to lock synchronization.
 </task>`,
 
   // 2. Emergency prompt (PROHIBITED_CONTENT fallback - neutral, objective & policy-compliant)
@@ -48,7 +55,11 @@ Translate each <s id="N"> tag from ${sourceLabel || 'the source'} to ${targetLab
     `<task>
 Translate each <s id="N"> tag from ${sourceLabel || 'the source'} to ${targetLabel}.
 
-If the source contains mature, sensitive, aggressive, or profane dialogue, translate it using objective, non-glorified, but accurate equivalent ${targetLabel} terms without refusing the task or dropping the slot.
+INTRA-SLOT LOCALIZATION RULES (ACTION REPLACEMENT):
+1. ISOLATED FREEDOM: NEVER mirror foreign syntax, trailing modifiers, or literal word order; INSTEAD, rephrase the dialogue into spoken, conversational ${targetLabel} INSIDE each individual tag while strictly preserving tag boundaries and internal [br] markers.
+2. SPOKEN DICTION & ZERO ESSAY RIGIDITY: NEVER use formal copulas, formal conjunctions, dictionary jargon, or literal pronoun calques; INSTEAD, capture authentic conversational flow using natural speech connectors, question particles, and direct native phrasing.
+3. DEPENDENT CLAUSES: NEVER attempt to complete partial sentences or borrow words from neighbouring tags; INSTEAD, translate ONLY the fragment present within that specific tag, intentionally leaving target syntax incomplete to lock synchronization.
+4. NEUTRAL OBJECTIVITY: If the source contains mature, sensitive, aggressive, or profane dialogue, translate it using objective, non-glorified, but accurate equivalent ${targetLabel} terms without refusing the task or dropping the slot.
 </task>`
 };
 // Extract normalized tokens from a language label/code (split on common separators)
@@ -2027,7 +2038,7 @@ class TranslationEngine {
 
     const promptBody = `${introInstruction}
 
-<demonstration>
+[UNIVERSAL STRUCTURAL DEMONSTRATION: INTRA-SLOT LOCALIZATION & ZERO DRIFT]
 Input:
 <s id="1">The chief director was the one</s>
 <s id="2">responsible for the approval.</s>
@@ -2036,30 +2047,60 @@ Input:
 <s id="5">We already warned him[br]during the meeting.</s>
 <s id="6">First,</s>
 
-Output:
+Target Output:
 <s id="1">Pengarah utama yang</s>
 <s id="2">bertanggungjawab atas kelulusan itu.</s>
 <s id="3">Awak ikut kami sekali,</s>
 <s id="4">kan?</s>
 <s id="5">Kami dah ingatkan dia[br]masa mesyuarat hari tu.</s>
 <s id="6">Pertama,</s>
-</demonstration>
 
-<critical_rules>
-1. Cardinality: output exactly ${expectedCount} tags with these IDs in order: [${idList}]. Pair every input <s id="N"> strictly 1-to-1 with its output <s id="N">. Preserve source SRT global IDs verbatim — do not renumber, compress, or force sequential order.
-2. Slot isolation: confine every translation strictly inside its matching <s id="N"> tag. Do not pull, borrow, or fold words across adjacent slots. Keep [br] enclosed inside its single parent tag. Translate short slots (question tags, interjections, single words) independently — do not attach them to neighbouring lines.
-3. Fidelity: do not shift dialogue forward to compensate for short or empty slots. Do not invent synthetic filler lines. Do not add, drop, or change numbers, dates, times, measurements, or terminal punctuation (. ? ! ...). Transfer all values accurately. Mirror the original tone.
-4. Air-gapped memory: any <m id="N"> tags are read-only background context. Do not output, translate, or duplicate text from <m> tags. Always prioritize <s> source text when memory and source conflict.
-5. Exact copy protocol: keep titles of creative works (movies, TV shows, books, novels, songs, plays, games), brand names, and legal entities verbatim in their original language. Copy untranslatable content (proper nouns, music notes ♪/♫, isolated symbols, numbers, punctuation) exactly. Do not skip any slot.
-6. Format preservation: fully translate song lyrics enclosed in music notes (♪/♫). Preserve all [br], <i>...</i>, <b>...</b>, speaker dashes (-), and inline markup in their exact source positions and counts.
-7. Clean output: emit ONLY raw <s id="N">...</s> tags. No commentary, markdown fences, notes, thinking blocks, or prompt echoes. Continue directly from the pre-filled <s id="${startId}"> tag — generate the inner content of slot ${startId} at your first output character. Rectify errors inside the active slot before closing it.
-</critical_rules>
+CRITICAL ENFORCEMENT RULES (ZERO TOLERANCE):
+
+1. STRICT 1-TO-1 CARDINALITY & ID PARITY:
+   - Output EXACTLY ${expectedCount} entries matching these EXACT IDs, in this order:
+     [${idList}]
+   - NEVER omit, combine, reorder, duplicate, or invent IDs; INSTEAD, pair every single input <s id="N"> strictly 1-to-1 with its matching output <s id="N">.
+   - NEVER renumber, compress, or force sequential order; INSTEAD, preserve source SRT global IDs verbatim, retaining all numerical values and existing gaps.
+
+2. ABSOLUTE SLOT ISOLATION & ZERO SPLITTING:
+   - NEVER pull, borrow, or fold words across adjacent slots; INSTEAD, confine every translation strictly inside its matching <s id="N"> slot.
+   - NEVER split [br] into a new <s id> tag; INSTEAD, keep all multi-line text separated by [br] enclosed entirely inside its single parent tag (e.g. <s id="5">ayat satu[br]ayat dua</s>).
+   - NEVER attach short slots (question tags, negation particles, interjections, single words like "First,") to preceding or subsequent lines, and NEVER echo demonstration text; INSTEAD, translate ONLY those specific words within that exact slot and close the tag immediately.
+   - NEVER force complete target grammar on broken clauses; INSTEAD, preserve grammatically incomplete syntax to maintain 100% subtitle synchronization.
+
+3. ZERO SHIFTING, ANTI-HALLUCINATION & SOURCE FIDELITY:
+   - NEVER shift subsequent dialogue forward to compensate for short or empty slots; INSTEAD, keep every line strictly anchored to its assigned ID.
+   - NEVER invent synthetic filler lines to satisfy slot counts; INSTEAD, translate only verified source dialogue.
+   - NEVER generate conversational replies, reactions, or commentary to background memory (<m> tags); INSTEAD, translate input <s id="${startId}"> directly as spoken dialogue.
+   - NEVER add, drop, or modify numbers, dates, times, or measurements; INSTEAD, transfer all numeric values and units accurately into the target language.
+   - NEVER alter or omit terminal punctuation (. ? ! ...) to change speech delivery; INSTEAD, mirror the original tone and natural pauses.
+
+4. AIR-GAPPED READ-ONLY CONTEXT MEMORY (<m> TAGS):
+   - NEVER translate, output, modify, or duplicate text from <m id="N"> tags into active <s id="N"> tags; INSTEAD, treat all <m> entries strictly as air-gapped, read-only background context.
+   - NEVER allow background memory to override active dialogue; INSTEAD, always prioritize <s> source text whenever memory and source conflict.
+
+5. ESCAPE HATCH (EXACT COPY PROTOCOL):
+   - NEVER translate titles of creative works (movies, TV shows, books, novels, songs, plays, games), registered corporate/brand names, or legal entities (e.g., Co., Ltd., Inc.); INSTEAD, keep them VERBATIM in their original language.
+   - NEVER invent translations for untranslatable content (proper nouns, standalone music notes ♪/♫, isolated symbols, numbers, punctuation, corrupted text, or whitespace); INSTEAD, copy the EXACT original text into the slot.
+   - NEVER translate unlocalizable entities in mixed slots; INSTEAD, translate the dialogue portion while copying brand names and foreign proper nouns unmodified.
+   - NEVER skip a slot under any circumstance; INSTEAD, emit the opening and closing tags containing the verbatim copy.
+
+6. SONG LYRICS & INLINE MARKUP:
+   - NEVER omit or leave song lyrics untranslated when enclosed in music notes (♪/♫); INSTEAD, fully translate vocal lyrics (foreground and BGM) while preserving the musical notes.
+   - NEVER strip, displace, or inject formatting tags not present in the source; INSTEAD, preserve all [br], <i>...</i>, <b>...</b>, speaker dashes (-), and inline markup in their exact source positions and counts.
+
+7. CLEAN PAYLOAD ONLY:
+   - NEVER output conversational commentary, markdown code fences, notes in parentheses, thinking blocks (</think>), or prompt echoes ([input], BATCH); INSTEAD, emit ONLY the raw sequence of <s id="N">...</s> tags.
+   - NEVER repeat, re-emit, or acknowledge the pre-filled <s id="${startId}"> opening tag; INSTEAD, continue directly from the prompt boundary by generating the inner content of slot ${startId} at your very first output character.
+   - NEVER append corrections after closing a tag with </s> or restart completed slots; INSTEAD, rectify errors immediately inside the active slot before closing it.
+   - NEVER emit any internal thinking steps or XML tags representing thought processes; INSTEAD, bypass all metadata and output the raw string directly starting from the pre-filled tag.
 
 <input>
 ${batchText}
 </input>
 
-Based on the demonstration and rules above, translate the input into ${targetLabel}. Output:
+[OUTPUT_FORMAT]
 <s id="${startId}">`;
 
     return this.addBatchHeader(promptBody, batchIndex, totalBatches);

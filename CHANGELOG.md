@@ -2,6 +2,20 @@
 
 All notable changes to this project will be documented in this file.
 
+## SubMaker v1.5.9 (2026-09-22)
+
+**ID-Parity / Sync Surgery — ZERO TOLERANCE rulebook restoration (DESYNC fix):**
+
+- **Punca DESYNC dikenal pasti (3 lapisan):** (1) `buildUserPrompt()` dead-code — cabang Gemini 3 yang memasang `GEMINI3_SYSTEM_INSTRUCTION` dijaga oleh `&& !customPrompt`, tetapi engine batched sentiasa pass prompt penuh sebagai `customPrompt`, jadi SI **tidak pernah aktif** untuk laluan batch Gemini 3 dan prompt XML diduplikasi ke systemInstruction + contents; (2) v1.5.3 mencairkan 7 blok CRITICAL ENFORCEMENT RULES kepada 7 ayat ringkas — pola antithesis NEVER-X-INSTEAD-Y (resipi terbukti jinakkan AI daripada gabung ayat / shift ID) hilang; (3) v1.5.6 membuang INTRA-SLOT LOCALIZATION rules dari `PROMPT_TEMPLATES.primary` (jadi `<task>` kosong).
+
+- **A1 — ZERO TOLERANCE rulebook dipulihkan penuh** (`src/services/translationEngine.js`): `<critical_rules>` ringkas digantikan semula dengan 7 blok penuh dari resipi backup (`plans/prompt-refactor-backup/translationEngine.js.bak`): STRICT 1-TO-1 CARDINALITY & ID PARITY (dengan ID list literal), ABSOLUTE SLOT ISOLATION & ZERO SPLITTING, ZERO SHIFTING / ANTI-HALLUCINATION / SOURCE FIDELITY, AIR-GAPPED `<m>` MEMORY, ESCAPE HATCH EXACT COPY PROTOCOL, SONG LYRICS & INLINE MARKUP, CLEAN PAYLOAD ONLY. `[UNIVERSAL STRUCTURAL DEMONSTRATION]` + `[OUTPUT_FORMAT]` + anchor `<s id="startId">` dipulihkan mengikut struktur asal.
+
+- **A2 — INTRA-SLOT LOCALIZATION (ACTION REPLACEMENT) dipulihkan** dalam `PROMPT_TEMPLATES.primary` dan `fallback`: 3 rules ISOLATED FREEDOM / SPOKEN DICTION / DEPENDENT CLAUSES + rule 4 NEUTRAL OBJECTIVITY untuk emergency prompt. Kekal persona-free (bukti arXiv:2311.10054) — behavioral constraints sahaja.
+
+- **A3 — Dead-code SI routing dibetulkan** (`src/services/gemini.js`): Gemini 3 models kini SENTIASA menerima `GEMINI3_SYSTEM_INSTRUCTION` sebagai top-level `systemInstruction` (kekal di medan peringkat atas — TIDAK digabung dalam `contents`), dan prompt XML engine dihantar tepat 1x sebagai user content. Ini membuang duplikasi 2x input token dan memulangkan lapisan behavioral constraints "processed-first" kepada setiap permintaan batch Gemini 3.
+
+- **Tidak disentuh:** `thinkingBudget`/`topK` normalisasi (`src/utils/config.js`), ground truth sampling 3.x-strict/legacy/2.5, batch size 200, shift detector `isShiftedError`, parser GLOBAL ID mapping.
+
 ## SubMaker v1.5.8 (2026-09-22)
 
 **Key Vault — Bulk Import (zero-network, burst-safe):**

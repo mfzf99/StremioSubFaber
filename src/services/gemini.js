@@ -907,15 +907,20 @@ class GeminiService {
     const normalizedTarget = normalizeTargetName(targetLanguage);
 
     // ── Gemini 3 path: System Instruction carries behavioral constraints ──
-    // The user prompt (from translationEngine.js) already contains the task,
-    // demonstration, critical rules, and input batch. We pass the
-    // GEMINI3_SYSTEM_INSTRUCTION as the top-level systemInstruction field and
-    // use the provided customPrompt/subtitleContent directly as user content.
-    // This avoids duplicating the batch input in both systemInstruction and
-    // contents (which previously doubled input token costs).
-    if (this.isGemini3Model && !customPrompt) {
+    // v1.5.9 ID-PARITY SURGERY: the previous `!customPrompt` guard made this
+    // branch DEAD CODE for the batched translation flow. The engine always
+    // passes the full XML prompt (task + demonstration + rules + batch) as
+    // customPrompt, so every Gemini 3 batch request silently fell into the
+    // legacy path below where GEMINI3_SYSTEM_INSTRUCTION was never attached,
+    // AND the entire XML prompt was duplicated into BOTH systemInstruction
+    // and contents (2x input tokens, with the input batch processed in the
+    // system field ahead of the reasoning pass).
+    // FIX: Gemini 3 models ALWAYS receive GEMINI3_SYSTEM_INSTRUCTION as the
+    // top-level systemInstruction field (never merged into contents), and the
+    // engine's XML prompt travels exactly once as user content.
+    if (this.isGemini3Model) {
       return {
-        userPrompt: subtitleContent,
+        userPrompt: customPrompt || subtitleContent,
         systemPrompt: GEMINI3_SYSTEM_INSTRUCTION,
         normalizedTarget
       };
