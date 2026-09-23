@@ -16,6 +16,20 @@ All notable changes to this project will be documented in this file.
 
 - **Ujian:** [GT-6] dibalik — kini assert `topK`/`topKEnabled` MESTI di-drop oleh `normalizeConfig` (pengunci kekal terhadap kebangkitan semula); ujian legacy 2.5 dikemaskini tanpa topK. `npm test`: 106 tests, 105 PASS / 0 FAIL (baseline terpelihara).
 
+## SubMaker v1.7.1 (2026-09-23)
+
+**FinOps — token hangus MISMATCH_RETRY kini dikira dalam resit Telegram:**
+
+- **Gap dikenal pasti dari run produksi sebenar** (Shine.on.Me S01E23, 655 entri, 4 incident MISMATCH_RETRY): laluan mismatch ialah **satu-satunya laluan gagal di mana call asal berjaya HTTP 200** (output terpotong/berselang) — tiada error dilempar, tiada `finOpsStreamId` ditangkap, jadi stream asal tidak pernah ditanda wasted. Resit Telegram memaparkan semua token sebagai "Effective" walaupun ~25k+ token sebenarnya hangus akibat retry batch penuh.
+
+- **Fix — snapshot-diff accounting** ([`src/services/translationEngine.js`](src/services/translationEngine.js)): snapshot senarai stream ledger sebelum percubaan pertama setiap batch; apabila mismatch dikesan, semua stream yang direkodkan selepas snapshot ditanda wasted serta-merta; selepas Pass 2 (targeted retry) + Pass 3 (full-batch retry) selesai, stream retry turut ditanda dan insiden ditutup dengan outcome akhir (`recovered`/`failed`) + jumlah token terbakar. Titik penutupan tunggal selepas semua pass meliputi juga kes `recoveredCount === 0`.
+
+- **Helper baharu**: `_snapshotLedgerIds()` (keadaan ledger pre-attempt), `_markWastedSince(snapshot)` (tanda wasted + pulangkan jumlah token terbakar), `_closeIncident(type, batch, patch)` (outcome akhir + tokensBurned untuk battle-log Telegram). Laluan 429/503 key-rotation, PROHIBITED_CONTENT two-stage, dan MAX_TOKENS checkpoint kekal betul (semua melampirkan finOpsStreamId pada error yang dilempar).
+
+- **Kesan pada resit**: pecahan `Total Billed` → `✅ Effective` + `🔥 Wasted (retries)` kini meliputi incident mismatch; setiap baris MISMATCH_RETRY dalam Incident Report menunjukkan `🔥 Burned: N tokens (~$X)`.
+
+- **Ujian:** npm test 106 tests, 105 PASS / 0 FAIL (baseline terpelihara).
+
 ## SubMaker v1.6.4 (2026-09-23)
 
 **Prompt Ground Truth Restore — verbatim rollback ke commit `b1fca3f` (penamat eksperimen prompt iteratif):**
