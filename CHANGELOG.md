@@ -2,6 +2,18 @@
 
 All notable changes to this project will be documented in this file.
 
+## SubMaker v1.6.2 (2026-09-23)
+
+**Gemini Model Dropdown — Whitelist Sanitizer + hierarchical sorting:**
+
+- **Model filtering & whitelist sanitizer** pada validasi API Key (Google Direct `/v1beta/models`) dan senarai tetap 8 model CrazyRouter (key `sk-`): `generateContent` wajib dalam `supportedGenerationMethods`; blacklist tegar `gemma`/`nano`/`antigravity`/`deep-research`/`lyria`/`transcribe`/`computer`/`tts`/`omni`/`robotics`/`vision`/`imagen` + `tunedModels/` ditolak; strict whitelist 3 keluarga teks teras sahaja (Flash-Lite/Flash/Pro) dengan suffix dibenarkan hanya `-preview` — alias rasmi `-latest` kekal sah.
+
+- **Sorting hierarki:** Flash-Lite > Flash > Pro; dalam tier versi menurun (3.8 > 3.5 > 3.1 > 3 > 2.5); canonical sebelum `-preview`. Default auto-select ranking #1 selepas dropdown dimuatkan — tiada lagi hardcoded lock `gemini-3-flash-preview`.
+
+- **CrazyRouter zero-network:** `detectGeminiKeyType` (`sk-`) memilih senarai tetap 8 model tanpa panggilan rangkaian; backend `/api/gemini-models` sanitasi di servis ([`src/services/gemini.js`](src/services/gemini.js)). Display name seragam: 'Gemini 3.1 Flash-Lite', 'Gemini 2.5 Pro', dsb.
+
+- **Ujian:** regresi WF-1..WF-4 (sanitizer, 8-model CrazyRouter order, predicate, `getAvailableModels`) — npm test 105 PASS / 0 FAIL / 1 skipped.
+
 ## SubMaker v1.6.1 (2026-09-23)
 
 **Smart Preamble Recovery — off-by-one 4/4 batch disiasat dan dipbaiki (Pilihan A):**
