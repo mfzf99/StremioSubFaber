@@ -2,6 +2,20 @@
 
 All notable changes to this project will be documented in this file.
 
+## SubMaker v1.7.0 (2026-09-23)
+
+**Parameter Surgery — topK dibuang sepenuhnya dari SubMaker:**
+
+- **Keputusan ground truth tiga lapis:** (1) Holtzman 2019 ([arXiv:1904.09751](https://arxiv.org/abs/1904.09751)) — adaptive nucleus sampling mengatasi fixed-size top-k truncation untuk teks generatif; (2) spesifikasi Gemini API semasa (update 2026-09-22) — "models running with nucleus sampling don't allow topK setting", Google mempensyenkan topK untuk model moden; (3) pengharaman 3.x-strict sedia ada telah lama strip topK untuk semua model Gemini 3.x. Kesimpulan: topK ialah noise — tiada laluan traffic yang boleh mengaktifkannya secara berfaedah lagi.
+
+- **Set parameter akhir (diluluskan):** `temperature` · `topP` · `presencePenalty` · `frequencyPenalty` · `thinkingLevel` — dengan `thinkingBudget` dikekalkan sebagai mekanisme dalaman Gemini 2.5 sahaja (2.5 tidak mengenali `thinkingLevel`). Setiap parameter yang tinggal mempunyai sokongan saintifik, spesifikasi vendor, dan assertion ujian.
+
+- **Backend:** normalizer `topK`/`topKEnabled` dibuang ([`src/utils/config.js`](src/utils/config.js)); pembersihan legasi kini memadam `topK`/`topKEnabled` secara mutlak daripada config tersimpan (degrade senyap, tiada error runtime); constructor + dua serialization points dibuang ([`src/services/gemini.js`](src/services/gemini.js)); passthrough dibuang ([`src/services/translationProviderFactory.js`](src/services/translationProviderFactory.js)); parsing dibuang dari dua endpoint ([`index.js`](index.js)); UI generator dibersihkan ([`src/utils/fileUploadPageGenerator.js`](src/utils/fileUploadPageGenerator.js)); kunci i18n dibuang (en/es/pt-br/pt-pt/ar); `GEMINI_TOP_K` dibuang ([`.env.example`](.env.example)).
+
+- **Frontend:** group toggle Top-K dibuang ([`public/partials/main.html`](public/partials/main.html)); defaults, visibility morphing 4-kes, changed-detection, reset/rehydration, save-path, dan event listener dibuang ([`public/config.js`](public/config.js)) — 14 rujukan dikosongkan.
+
+- **Ujian:** [GT-6] dibalik — kini assert `topK`/`topKEnabled` MESTI di-drop oleh `normalizeConfig` (pengunci kekal terhadap kebangkitan semula); ujian legacy 2.5 dikemaskini tanpa topK. `npm test`: 106 tests, 105 PASS / 0 FAIL (baseline terpelihara).
+
 ## SubMaker v1.6.4 (2026-09-23)
 
 **Prompt Ground Truth Restore — verbatim rollback ke commit `b1fca3f` (penamat eksperimen prompt iteratif):**
