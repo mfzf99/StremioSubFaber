@@ -9195,6 +9195,12 @@ label:has(#subToolboxEnabled:disabled) {
 }
 
 /* ── Top-K toggle (v1.5.7) ── */
+/* Wrapper for the Top-K toggle + number input. Ensures the toggle row has
+   balanced vertical rhythm consistent with sibling .form-group fields. */
+#advancedTopKGroup {
+    margin-top: 0.85rem;
+}
+
 /* Toggle switch for the Top-K enable/disable control in the Advanced Gemini panel. */
 .toggle-group {
     display: flex;

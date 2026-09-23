@@ -2,6 +2,16 @@
 
 All notable changes to this project will be documented in this file.
 
+## SubMaker v1.6.3 (2026-09-23)
+
+**Configure UI — Advanced Gemini Parameters: jarak 'Enable Top-K' toggle dibaiki:**
+
+- **Punca:** form-group 'Top-P (Nucleus Sampling)' membawa inline `style="margin-bottom: 0;"` yang memansuh gap standard 0.85rem, manakala wrapper `#advancedTopKGroup` tiada spacing atas sendiri — toggle switch meleket terus dengan input Top-P dan jaraknya tak konsisten berbanding field lain dalam panel.
+
+- **Fix:** (1) inline `margin-bottom: 0;` dipadam dari form-group Top-P ([`public/partials/main.html`](public/partials/main.html)) supaya margin standard 0.85rem dipulihkan; (2) rule scoped baharu `#advancedTopKGroup { margin-top: 0.85rem; }` ditambah ([`public/css/configure.css`](public/css/configure.css)) supaya row toggle kekal rhythm atas/bawah seimbang merentas semua 4 state DOM morphing (3.x-strict / 3.x-legacy / 2.5 / legacy), bersandar dengan `.toggle-group { margin-bottom: 0.5rem; }` sedia ada.
+
+- **Kesan:** spacing menegak seluruh panel Advanced Gemini kini seragam; tiada perubahan tingkah laku atau payload — semata-mata CSS/HTML kosmetik.
+
 ## SubMaker v1.6.2 (2026-09-23)
 
 **Gemini Model Dropdown — Whitelist Sanitizer + hierarchical sorting:**
