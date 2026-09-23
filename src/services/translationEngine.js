@@ -277,6 +277,10 @@ class TranslationEngine {
       mismatchDetected: false,
       missingEntries: 0,
       recoveredEntries: 0,
+      // v1.6.1 telemetry: batches whose first slot arrived WITHOUT an opening
+      // tag (Rule 7 compliant continuation) and was rebuilt by the smart
+      // preamble scrubber instead of triggering two-pass recovery.
+      untaggedFirstSlotCount: 0,
       entryCount: 0,
       batchCount: 0,
       // Tier 3: Configuration context
@@ -2126,26 +2130,47 @@ ${batchText}
   parseXmlBatchResponse(translatedText, expectedCount, batch = []) {
     let cleaned = String(translatedText || '').trim();
 
-    // v1.6.0 V2 SURGERY — Preamble scrubbing (pro pattern, borrowed from
-    // Subtitle Edit's ChatGptTranslate.RemovePreamble). Models occasionally
-    // prefix the payload with conversational openers ("Here is the
-    // translation:", "Sure!", etc.) which corrupt the anchor restoration
-    // below and cascade into ID desync. Scrub any leading chatter BEFORE the
-    // first real <s tag; log it so the drift is observable in production.
+    // v1.6.1 SMART PREAMBLE SCRUBBER (Pilihan A, postmortem
+    // plans/id-pariti-v2-postmortem-off-by-one.md). Rule 7 orders the model
+    // to continue "directly from the prompt boundary by generating the inner
+    // content of slot ${startId} at your very first output character" — so a
+    // 100%-compliant response legitimately OPENS with the first slot's inner
+    // text and closing tag, with NO opening <s tag (the prompt already
+    // displayed it). The naive v1.6.0 scrubber mistook that for chatter and
+    // destroyed the first entry on every batch (off-by-one, 4/4).
+    //
+    // Classify the pre-<s segment before touching it:
+    //   A) Ends with </s>          → UNTAGGED FIRST SLOT (compliant output)
+    //                                → RECOVER: re-attach the anchor tag.
+    //   B) No </s>, short          → genuine chatter ("Here is the
+    //                                translation:") → DISCARD.
+    //   C) No </s>, long (>200)    → structural anomaly → LEAVE UNTOUCHED and
+    //                                let the anchor restoration / regex
+    //                                pipeline decide (never blind-slice).
+    const firstId = batch && batch.length > 0 ? batch[0].id : 1;
     const firstTagIdx = cleaned.indexOf('<s');
     if (firstTagIdx > 0) {
       const preamble = cleaned.slice(0, firstTagIdx).trim();
-      // Only scrub short chatter, never a large block (which would indicate
-      // a structural error upstream rather than a preamble).
-      if (preamble && preamble.length <= 200) {
+      const closeTagCount = (preamble.match(/<\/s>/gi) || []).length;
+      if (preamble && closeTagCount === 1) {
+        // Case A: untagged first slot — Rule 7 compliant continuation.
+        this.translationStats.untaggedFirstSlotCount =
+          (this.translationStats.untaggedFirstSlotCount || 0) + 1;
+        log.info(() => `[TranslationEngine] Smart-recovery: slot ${firstId} rebuilt from untagged preamble (${preamble.length} chars, ends with </s>)`);
+        cleaned = `<s id="${firstId}">` + cleaned;
+      } else if (preamble && preamble.length <= 200) {
+        // Case B: genuine conversational chatter — discard (pro pattern from
+        // Subtitle Edit's ChatGptTranslate.RemovePreamble).
         log.warn(() => `[TranslationEngine] Preamble chatter scrubbed before first <s tag (${preamble.length} chars): "${preamble.replace(/\s+/g, ' ').slice(0, 120)}"`);
         cleaned = cleaned.slice(firstTagIdx);
       }
+      // Case C: preamble >200 chars without </s> — no slice, no restore.
+      // Fall through to anchor restoration below (starts-with check decides).
     }
 
-    // Anchor restoration
-    // The AI continues directly from the pre-filled <s id="..."> anchor.
-    const firstId = batch && batch.length > 0 ? batch[0].id : 1;
+    // Anchor restoration (unchanged — original backup mechanism)
+    // Re-attaches the pre-filled opening tag when the model emits pure inner
+    // text with no <s tag at all.
     if (!cleaned.startsWith('<s')) {
       cleaned = `<s id="${firstId}">` + cleaned;
     }

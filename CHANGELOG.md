@@ -2,6 +2,20 @@
 
 All notable changes to this project will be documented in this file.
 
+## SubMaker v1.6.1 (2026-09-23)
+
+**Smart Preamble Recovery — off-by-one 4/4 batch disiasat dan dipbaiki (Pilihan A):**
+
+- **Punca sebenar disahkan (forensik + triangulasi Gemini):** Rule 7 mengarahkan model "continue directly from the prompt boundary by generating the inner content of slot ${startId}" — jadi respons 100% patuh sahaja BERMULA dengan isi slot pertama + `</s>` TANPA tag pembuka (anchor sudah dipaparkan dalam prompt). Scrubber v1.6.0 yang naif mengklasifikasikan teks sah itu sebagai "chatter" dan membuangnya setiap batch (off-by-one deterministik: 200→199, 4/4 batch, model TIDAK tergelincir).
+
+- **Smart Preamble Scrubber** (`parseXmlBatchResponse()`, [`src/services/translationEngine.js`](src/services/translationEngine.js)): klasifikasi 3-kes sebelum memotong — (A) preamble berakhir `</s>` = untagged first slot → **recover** dengan menampal semula `<s id="${firstId}">` (tiada entri hilang, tiada two-pass retry); (B) tanpa `</s>`, ≤200 chars = chatter sebenar → buang (pattern Subtitle Edit); (C) tanpa `</s>`, >200 chars = anomali struktur → biarkan utuh untuk anchor restoration / regex pipeline.
+
+- **Telemetry:** counter baru `untaggedFirstSlotCount` dalam `translationStats` + baris Telegram report `🎯 Untagged First Slots: N rebuilt inline (Rule 7 continuation)` — kesan fix dapat diaudit pada larian seterusnya.
+
+- **Kesan dijangka:** Laporan Telegram seterusnya berstatus PERFECT tanpa MISMATCH_RETRY; jimat token retry dan ~7-10s latensi per batch yang terlibat. 503 transient batch 4 (v1.6.0 test) disahkan bukan berkaitan.
+
+- **Ujian:** 101 PASS / 0 FAIL / 1 skip. Laporan postmortem: `plans/id-pariti-v2-postmortem-off-by-one.md`.
+
 ## SubMaker v1.6.0 (2026-09-23)
 
 **ID-Parity Surgery V2 — Revert ke struktur single flat prompt (mazhab Google SI dibersarakan):**

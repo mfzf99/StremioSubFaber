@@ -5786,6 +5786,9 @@ if (
             } else if (stats.singleBatchMode) {
                 advancedStats += `📦 <b>Execution:</b> Single Batch Mode\n`;
             }
+            if (stats.untaggedFirstSlotCount > 0) {
+                advancedStats += `🎯 <b>Untagged First Slots:</b> ${stats.untaggedFirstSlotCount} rebuilt inline (Rule 7 continuation)\n`;
+            }
 
             let diagnosticsSection = advancedStats !== '' ? `\n🔍 <b>Advanced Diagnostics:</b>\n${advancedStats}` : '';
 
