@@ -16,6 +16,20 @@ All notable changes to this project will be documented in this file.
 
 - **Ujian:** [GT-6] dibalik — kini assert `topK`/`topKEnabled` MESTI di-drop oleh `normalizeConfig` (pengunci kekal terhadap kebangkitan semula); ujian legacy 2.5 dikemaskini tanpa topK. `npm test`: 106 tests, 105 PASS / 0 FAIL (baseline terpelihara).
 
+## SubMaker v1.8.0 (2026-09-23)
+
+**Prompt Keyword Register — lock "natural, conversational":**
+
+- **Keputusan ground truth tiga sumber**: (1) kertas register-steering (arXiv:2505.00679) — descriptor register paling berkesan & meaning-preserving ialah `informal/conversational/colloquial`, manakala descriptor afektif (casual, humorous) cenderung mengubah makna; (2) kertas purpose-driven MT (arXiv:2606.03259, 50 bahasa/8 domain) — domain conversation mencatat delta adaptedness tertinggi dengan instruction (+25.6), dan mekanismenya ialah "instructions nudge the model off the written register of its pretraining default"; (3) standard industri AVT (Netflix Timed Text Style Guide, Díaz Cintas) — kriteria penerimaan emas ialah dialog yang "natural in the target language as spoken dialogue".
+
+- **Perubahan**: Rule 1 (ISOLATED FREEDOM) dalam `PROMPT_TEMPLATES` dan `createXmlBatchPrompt` ([`src/services/translationEngine.js`](src/services/translationEngine.js)): `spoken, conversational ${targetLabel}` → `natural, conversational ${targetLabel}`. Dua paksi bebas: naturalness (kriteria industri) + register (disahkan kajian). "Spoken" dibuang kerana separuh bertindih dengan "conversational".
+
+- **Parity backup dikemaskini serentak** ([`plans/prompt-refactor-backup/b1fca3f-translationEngine.js`](plans/prompt-refactor-backup/b1fca3f-translationEngine.js)) supaya `scripts/verify-prompt-parity.js` kekal PASS — verifikasi: PASS kedua-dua blok (2,315 + 6,011 chars).
+
+- **Dikekalkan secara sengaja**: `colloquial` dan `informal` TIDAK dipakai — colloquial berisiko terlalu slur untuk konten formal-dalam-filem; informal tidak selamat untuk fail yang bercampur register (adegan upacara, berita, pidato).
+
+- **Ujian:** npm test 106 tests, 105 PASS / 0 FAIL; parity PASS kedua-dua blok.
+
 ## SubMaker v1.7.1 (2026-09-23)
 
 **FinOps — token hangus MISMATCH_RETRY kini dikira dalam resit Telegram:**
