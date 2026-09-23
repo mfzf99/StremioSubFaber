@@ -110,6 +110,153 @@ function isGoogleModel(modelEntry) {
   return false;
 }
 
+// ─────────────────────────────────────────────────────────────────────────────
+// MODEL FILTERING & WHITELIST SANITIZER (dropdown penterjemahan subtitle)
+// ─────────────────────────────────────────────────────────────────────────────
+// Endpoint Google /v1beta/models dan Crazy Router /v1/models memulangkan
+// katalog bercampur (audio, visi, embedding, robotik, eksperimental) yang
+// tidak relevan untuk penterjemahan teks subtitle. Penapis 3-lapis:
+//   1. Capabilities check — supportedGenerationMethods mesti ada 'generateContent'.
+//   2. Blacklist tegar    — bukan-Gemini (gemma, nano, antigravity, deep-research,
+//                            lyria) + varian bukan-teks/khusus ditolak.
+//   3. Strict whitelist   — 3 keluarga teks teras sahaja (Flash-Lite / Flash / Pro),
+//                            suffix '-preview' dan alias rasmi '-latest' dibenarkan.
+// Susunan hierarki: Flash-Lite > Flash > Pro; dalam tier, generasi tertinggi dulu.
+// Mirror frontend: public/config.js (sanitizeGeminiModelCatalog) — kekal selari.
+const SUBTITLE_MODEL_BLACKLIST_KEYWORDS = [
+  'gemma',          // keluarga Gemma (bukan Gemini)
+  'nano',           // Gemini Nano (peranti/konfigurasi kecil)
+  'antigravity',    // model eksperimental Antigravity
+  'deep-research',  // varian Deep Research
+  'lyria',          // penjanaan muzik
+  'transcribe',     // audio transkripsi
+  'computer',       // computer-use
+  'tts',            // teks-ke-pertuturan
+  'omni',           // omnimodal (audio/visi natif)
+  'robotics',       // robotik
+  'vision',         // visi sahaja (vision-only)
+  'imagen'          // penjanaan imej
+];
+
+// Whitelist ketat: hanya keluarga teks teras. Suffix dibenarkan HANYA '-preview';
+// alias rasmi '-latest' disokong melalui corak berasingan.
+const GEMINI_TEXT_MODEL_WHITELIST_PATTERN = /^gemini-(\d+(?:\.\d+)?)-(flash-lite|flash|pro)(-preview)?$/;
+const GEMINI_LATEST_ALIAS_PATTERN = /^gemini-(flash-lite|flash|pro)-latest$/;
+
+// Senarai tetap 8 model Gemini sah pada endpoint CrazyRouter (key jenis 'sk-'),
+// telah tersusun mengikut hierarki rasmi dropdown:
+//   Lapisan 1 (Family Tier): Flash-Lite > Flash > Pro
+//   Lapisan 2 (Version Descending): 3.8 > 3.5 > 3.1 > 3 > 2.5
+const CRAZYROUTER_GEMINI_MODELS = [
+  { name: 'gemini-3.1-flash-lite' }, // 1. Flash-Lite (tertinggi)
+  { name: 'gemini-2.5-flash-lite' }, // 2. Flash-Lite
+  { name: 'gemini-3.8-flash' },      // 3. Flash (tertinggi)
+  { name: 'gemini-3.5-flash' },      // 4. Flash
+  { name: 'gemini-3-flash' },        // 5. Flash
+  { name: 'gemini-2.5-flash' },      // 6. Flash
+  { name: 'gemini-3.1-pro' },        // 7. Pro (tertinggi)
+  { name: 'gemini-2.5-pro' }         // 8. Pro
+];
+
+function modelSortName(model) {
+  const raw = typeof model === 'string' ? model : String(model?.name || model?.id || '');
+  return raw.toLowerCase().replace(/^models\//, '').trim();
+}
+
+/**
+ * Whitelist ketat untuk model teks subtitle. Menolak tunedModels/, kata kunci
+ * blacklist, dan apa-apa ID di luar 3 keluarga teras (+ suffix '-preview' dan
+ * alias '-latest').
+ * @param {string} modelName
+ * @returns {boolean}
+ */
+function isWhitelistedGeminiTextModel(modelName) {
+  const name = modelSortName(modelName);
+  if (!name) return false;
+  if (name.startsWith('tunedmodels/')) return false;
+  for (const keyword of SUBTITLE_MODEL_BLACKLIST_KEYWORDS) {
+    if (name.includes(keyword)) return false;
+  }
+  return GEMINI_TEXT_MODEL_WHITELIST_PATTERN.test(name) || GEMINI_LATEST_ALIAS_PATTERN.test(name);
+}
+
+/**
+ * Tier keluarga untuk susunan dropdown:
+ *   1 = Flash-Lite (paling jimat kuota & pantas untuk teks subtitle)
+ *   2 = Flash
+ *   3 = Pro
+ * @param {string} modelName
+ * @returns {number}
+ */
+function getGeminiFamilyTier(modelName) {
+  const name = modelSortName(modelName);
+  if (name.includes('flash-lite')) return 1;
+  if (name.includes('flash')) return 2;
+  if (name.includes('pro')) return 3;
+  return 9;
+}
+
+/**
+ * Nombor generasi untuk susunan menurun dalam tier ('3.8' > '3.5' > '3.1' > '3' > '2.5').
+ * Alias rasmi '-latest' merujuk generasi terkini → Infinity (teratas dalam tier).
+ * @param {string} modelName
+ * @returns {number}
+ */
+function getGeminiVersionValue(modelName) {
+  const name = modelSortName(modelName);
+  if (GEMINI_LATEST_ALIAS_PATTERN.test(name)) return Infinity;
+  const m = name.match(/^gemini-(\d+(?:\.\d+)?)-/);
+  return m ? parseFloat(m[1]) : -Infinity;
+}
+
+/**
+ * Comparator susunan dropdown: tier keluarga menaik (Lite > Flash > Pro),
+ * kemudian generasi menurun, kemudian canonical sebelum '-preview'.
+ * Menerima objek model ({name}) atau string ID — stabil untuk kedua-dua.
+ * @param {object|string} a
+ * @param {object|string} b
+ * @returns {number}
+ */
+function compareGeminiModelsForDropdown(a, b) {
+  const nameA = modelSortName(a);
+  const nameB = modelSortName(b);
+  const tierDiff = getGeminiFamilyTier(nameA) - getGeminiFamilyTier(nameB);
+  if (tierDiff !== 0) return tierDiff;
+  const verA = getGeminiVersionValue(nameA);
+  const verB = getGeminiVersionValue(nameB);
+  if (verA !== verB) return verB - verA; // generasi tertinggi dahulu
+  const previewA = nameA.endsWith('-preview') ? 1 : 0;
+  const previewB = nameB.endsWith('-preview') ? 1 : 0;
+  if (previewA !== previewB) return previewA - previewB;
+  return nameA.localeCompare(nameB);
+}
+
+/**
+ * Bersihkan katalog penuh kepada senarai dropdown: capabilities check,
+ * whitelist sanitizer, dedup, dan sorting hierarki. Idempotent — selamat
+ * dipanggil dua kali (backend + frontend menerima senarai yang telah ditapis).
+ * @param {Array<{name?: string, id?: string, supportedGenerationMethods?: string[]}>|Array<string>} models
+ * @returns {Array<{name: string, displayName: string}>}
+ */
+function sanitizeGeminiModelCatalog(models) {
+  const seen = new Set();
+  return (Array.isArray(models) ? models : [])
+    .filter(model => {
+      const name = modelSortName(model);
+      if (!name) return false;
+      if (Array.isArray(model?.supportedGenerationMethods)
+        && !model.supportedGenerationMethods.includes('generateContent')) {
+        return false; // embedding/audio/visi semata-mata ditolak serta-merta
+      }
+      if (!isWhitelistedGeminiTextModel(name)) return false;
+      if (seen.has(name)) return false;
+      seen.add(name);
+      return true;
+    })
+    .map(model => ({ name: modelSortName(model), displayName: String(model?.displayName || '').trim() }))
+    .sort(compareGeminiModelsForDropdown);
+}
+
 // Jadual Pemetaan Rasmi Google (disahkan melalui dokumentasi Thinking).
 // Disusun PALING KHUSUS dahulu supaya padanan longest-prefix berfungsi
 // (cth. 'gemini-3.5-flash-lite' sebelum 'gemini-3.5-flash').
@@ -596,7 +743,11 @@ class GeminiService {
         });
 
       await clearCachedProviderAuthFailure(this.authFailureCacheKey);
-      return models;
+      // Whitelist sanitizer + sorting hierarki: dropdown translation hanya
+      // menawarkan keluarga teks teras (Flash-Lite > Flash > Pro, versi menurun).
+      return models
+        .filter(model => isWhitelistedGeminiTextModel(model.name))
+        .sort(compareGeminiModelsForDropdown);
 
     } catch (error) {
       if (isGeminiAuthFailure(error)) {
@@ -1554,11 +1705,18 @@ module.exports.getModelFamily = getModelFamily;
 module.exports.getModelThinkingProfile = getModelThinkingProfile;
 module.exports.isGoogleModel = isGoogleModel;
 module.exports.SAMPLING_DEPRECATED_MODELS = SAMPLING_DEPRECATED_MODELS;
+module.exports.isWhitelistedGeminiTextModel = isWhitelistedGeminiTextModel;
+module.exports.compareGeminiModelsForDropdown = compareGeminiModelsForDropdown;
+module.exports.sanitizeGeminiModelCatalog = sanitizeGeminiModelCatalog;
+module.exports.CRAZYROUTER_GEMINI_MODELS = CRAZYROUTER_GEMINI_MODELS;
 module.exports.__testing = {
   getGeminiErrorMessage,
   isGeminiAuthFailure,
   getModelFamily,
   getModelThinkingProfile,
   isGoogleModel,
+  isWhitelistedGeminiTextModel,
+  compareGeminiModelsForDropdown,
+  sanitizeGeminiModelCatalog,
   SAMPLING_DEPRECATED_MODELS
 };

@@ -2959,14 +2959,10 @@ app.post('/api/gemini-models', async (req, res) => {
         );
         const models = await gemini.getAvailableModels({ silent: true });
 
-        // Filter to only show translation-capable Gemini models (pro/flash/gemma variants).
-        // Include Gemma family (e.g., tgemma) for advanced override use cases.
-        const filteredModels = models.filter(model => {
-            const nameLower = model.name.toLowerCase();
-            return nameLower.includes('pro') || nameLower.includes('flash') || nameLower.includes('gemma');
-        });
-
-        res.json(filteredModels);
+        // Whitelist Sanitizer sudah dijalankan di peringkat servis (getAvailableModels):
+        // hanya keluarga teks teras Gemini (Flash-Lite / Flash / Pro) dengan sorting
+        // hierarki — gemma, audio, visi, embedding dan tunedModels/ telah ditolak.
+        res.json(models);
     } catch (error) {
         log.error(() => '[API] Error fetching Gemini models:', error);
         // Surface upstream error details if available for easier debugging in UI

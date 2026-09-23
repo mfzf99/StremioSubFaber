@@ -1216,7 +1216,7 @@ Translate to {target_language}.`;
 
     function getDefaultGeminiModelOptionLabel() {
         const label = getGeminiModelOptionLabel(getDefaultGeminiModelOption());
-        return label || 'Gemini Flash Lite Latest';
+        return label || 'Gemini Flash-Lite (Latest)';
     }
 
     function getFirstGeminiModelOptionValue() {
@@ -1233,11 +1233,16 @@ Translate to {target_language}.`;
         }
         normalized = normalizeGeminiModelName(normalized);
 
+        // Tiada Hardcoded Lock: nilai tersimpan yang sah mengikut whitelist
+        // dikembalikan seadanya walaupun dropdown belum dimuatkan. Pemilihan
+        // default (ranking #1 — Flash-Lite generasi tertinggi) hanya dilakukan
+        // oleh populateGeminiModelDropdowns() apabila tiada pilihan tersimpan sah.
+        if (normalized && isWhitelistedGeminiTextModel(normalized)) {
+            return normalized;
+        }
+
         const optionValues = getGeminiModelSelectOptionValues();
         const defaultOption = getDefaultGeminiModelOptionValue();
-        if (normalized === DEFAULT_GEMINI_MODEL) {
-            return defaultOption;
-        }
         if (normalized && optionValues.includes(normalized)) {
             return normalized;
         }
@@ -10520,6 +10525,15 @@ Translate to {target_language}.`;
     async function autoFetchModels(apiKey) {
         if (!apiKey || apiKey.length < 10) return;
 
+        // CrazyRouter (key 'sk-...'): /api/gemini-models memanggil /v1beta/models
+        // yang tidak disokong oleh relay. Terus isi dropdown daripada senarai tetap
+        // CRAZYROUTER_GEMINI_MODELS tanpa sebarang panggilan rangkaian.
+        if (String(apiKey).trim().startsWith('sk-')) {
+            lastFetchedApiKey = apiKey;
+            await populateGeminiModelDropdowns(null);
+            return;
+        }
+
         const statusDiv = document.getElementById('modelStatus');
         if (statusDiv) {
             statusDiv.innerHTML = '<div class="spinner-small"></div> Fetching models...';
@@ -10572,19 +10586,138 @@ Translate to {target_language}.`;
     }
 
     // Fallback selamat jika API model tidak dapat dicapai (offline / ralat rangkaian).
+    // Sahaja model terwhitelist (keluarga teks teras) — Gemma/audio/visi ditolak.
     const SAFE_DEFAULT_MODELS = [
-        { name: 'gemini-3-flash-preview', displayName: 'Gemini 3 Flash (preview)' },
-        { name: 'gemini-flash-lite-latest', displayName: 'Gemini Flash Lite Latest' },
-        { name: 'gemini-3.1-flash-lite', displayName: 'Gemini 3.1 Flash Lite' },
-        { name: 'gemini-2.5-flash-lite', displayName: 'Gemini 2.5 Flash-Lite' },
-        { name: 'gemini-2.5-flash', displayName: 'Gemini 2.5 Flash' },
-        { name: 'gemma-4-26b-a4b-it', displayName: 'Gemma 4 26B (Free)' },
-        { name: 'gemma-4-31b-it', displayName: 'Gemma 4 31B (Free)' }
+        { name: 'gemini-flash-lite-latest' },
+        { name: 'gemini-3.1-flash-lite' },
+        { name: 'gemini-2.5-flash-lite' },
+        { name: 'gemini-3-flash-preview' },
+        { name: 'gemini-2.5-flash' },
+        { name: 'gemini-2.5-pro' }
     ];
 
+    // ── Model Filtering & Whitelist Sanitizer (cermin src/services/gemini.js) ──
+    // Endpoint Google /v1beta/models memulangkan katalog bercampur (audio, visi,
+    // embedding, robotik, eksperimental) yang tidak relevan untuk penterjemahan
+    // teks subtitle. Penapisan 3-lapis:
+    //   1. Capabilities check — 'generateContent' wajib dalam supportedGenerationMethods.
+    //   2. Blacklist tegar    — bukan-Gemini (gemma, nano, antigravity, deep-research,
+    //                            lyria) + varian bukan-teks/khusus ditolak.
+    //   3. Strict whitelist   — 3 keluarga teras sahaja; suffix '-preview' dan alias
+    //                            rasmi '-latest' dibenarkan; tunedModels/ ditolak.
+    const SUBTITLE_MODEL_BLACKLIST_KEYWORDS = [
+        'gemma',          // keluarga Gemma (bukan Gemini)
+        'nano',           // Gemini Nano (peranti/konfigurasi kecil)
+        'antigravity',    // model eksperimental Antigravity
+        'deep-research',  // varian Deep Research
+        'lyria',          // penjanaan muzik
+        'transcribe',     // audio transkripsi
+        'computer',       // computer-use
+        'tts',            // teks-ke-pertuturan
+        'omni',           // omnimodal (audio/visi natif)
+        'robotics',       // robotik
+        'vision',         // visi sahaja (vision-only)
+        'imagen'          // penjanaan imej
+    ];
+
+    // Whitelist ketat: suffix dibenarkan HANYA '-preview'; alias rasmi '-latest'
+    // disokong melalui corak berasingan.
+    const GEMINI_TEXT_MODEL_WHITELIST_PATTERN = /^gemini-(\d+(?:\.\d+)?)-(flash-lite|flash|pro)(-preview)?$/;
+    const GEMINI_LATEST_ALIAS_PATTERN = /^gemini-(flash-lite|flash|pro)-latest$/;
+    const GEMINI_TIER_LABELS = { 'flash-lite': 'Flash-Lite', 'flash': 'Flash', 'pro': 'Pro' };
+
+    // Senarai tetap 8 model Gemini sah pada endpoint CrazyRouter (key jenis 'sk-',
+    // dikesan oleh detectKeyType backend). Susunan rasmi dropdown:
+    //   Lapisan 1 (Family Tier): Flash-Lite > Flash > Pro
+    //   Lapisan 2 (Version Descending): 3.8 > 3.5 > 3.1 > 3 > 2.5
+    const CRAZYROUTER_GEMINI_MODELS = [
+        'gemini-3.1-flash-lite', // 1. Flash-Lite (tertinggi)
+        'gemini-2.5-flash-lite', // 2. Flash-Lite
+        'gemini-3.8-flash',      // 3. Flash (tertinggi)
+        'gemini-3.5-flash',      // 4. Flash
+        'gemini-3-flash',        // 5. Flash
+        'gemini-2.5-flash',      // 6. Flash
+        'gemini-3.1-pro',        // 7. Pro (tertinggi)
+        'gemini-2.5-pro'         // 8. Pro
+    ];
+
+    function getModelSortName(model) {
+        const raw = typeof model === 'string' ? model : String(model?.name || model?.id || '');
+        return raw.toLowerCase().replace(/^models\//, '').trim();
+    }
+
+    function isWhitelistedGeminiTextModel(modelName) {
+        const name = getModelSortName(modelName);
+        if (!name) return false;
+        if (name.startsWith('tunedmodels/')) return false;
+        for (const keyword of SUBTITLE_MODEL_BLACKLIST_KEYWORDS) {
+            if (name.includes(keyword)) return false;
+        }
+        return GEMINI_TEXT_MODEL_WHITELIST_PATTERN.test(name) || GEMINI_LATEST_ALIAS_PATTERN.test(name);
+    }
+
+    // Tier keluarga: 1 = Flash-Lite (paling jimat kuota & pantas untuk teks subtitle),
+    // 2 = Flash, 3 = Pro.
+    function getGeminiFamilyTier(modelName) {
+        const name = getModelSortName(modelName);
+        if (name.includes('flash-lite')) return 1;
+        if (name.includes('flash')) return 2;
+        if (name.includes('pro')) return 3;
+        return 9;
+    }
+
+    // Generasi menurun dalam tier ('3.8' > '3.5' > '3.1' > '3' > '2.5').
+    // Alias '-latest' merujuk generasi terkini → Infinity (teratas dalam tier).
+    function getGeminiVersionValue(modelName) {
+        const name = getModelSortName(modelName);
+        if (GEMINI_LATEST_ALIAS_PATTERN.test(name)) return Infinity;
+        const m = name.match(/^gemini-(\d+(?:\.\d+)?)-/);
+        return m ? parseFloat(m[1]) : -Infinity;
+    }
+
+    function compareGeminiModelsForDropdown(a, b) {
+        const nameA = getModelSortName(a);
+        const nameB = getModelSortName(b);
+        const tierDiff = getGeminiFamilyTier(nameA) - getGeminiFamilyTier(nameB);
+        if (tierDiff !== 0) return tierDiff;
+        const verA = getGeminiVersionValue(nameA);
+        const verB = getGeminiVersionValue(nameB);
+        if (verA !== verB) return verB - verA; // generasi tertinggi dahulu
+        const previewA = nameA.endsWith('-preview') ? 1 : 0;
+        const previewB = nameB.endsWith('-preview') ? 1 : 0;
+        if (previewA !== previewB) return previewA - previewB; // canonical sebelum '-preview'
+        return nameA.localeCompare(nameB);
+    }
+
+    // Bersihkan katalog penuh kepada senarai dropdown: capabilities check,
+    // whitelist sanitizer, dedup dan sorting hierarki. Idempotent.
+    function sanitizeGeminiModelCatalog(models) {
+        const seen = new Set();
+        return (Array.isArray(models) ? models : [])
+            .filter(model => {
+                const name = getModelSortName(model);
+                if (!name) return false;
+                if (Array.isArray(model?.supportedGenerationMethods)
+                    && !model.supportedGenerationMethods.includes('generateContent')) {
+                    return false; // embedding / audio / visi semata-mata ditolak
+                }
+                if (!isWhitelistedGeminiTextModel(name)) return false;
+                if (seen.has(name)) return false;
+                seen.add(name);
+                return true;
+            })
+            .map(model => ({ name: getModelSortName(model), displayName: String(model?.displayName || '').trim() }))
+            .sort(compareGeminiModelsForDropdown);
+    }
+
+    // Kesan jenis key dari medan #geminiApiKey — selari dengan detectKeyType backend
+    // (src/services/gemini.js): 'sk-...' = CrazyRouter, selain itu = Google Direct.
+    function detectGeminiKeyType() {
+        const key = String(document.getElementById('geminiApiKey')?.value || '').trim();
+        return key.startsWith('sk-') ? 'crazyrouter' : 'google';
+    }
+
     // Isi SATU dropdown sahaja (#geminiModel) daripada senarai model rasmi API.
-    // Pulihkan pilihan tersimpan jika masih wujud. Model Gemini 3 Flash
-    // (atau alias stabil gemini-flash-lite-latest) disusun di kedudukan teratas.
     // Format display name dari ID model jika tiada displayName rasmi.
     // Cth: 'gemini-3.6-flash' -> 'Gemini 3.6 Flash', 'gemma-4-26b-a4b-it' -> 'Gemma 4 26B A4b It'
     function formatModelDisplayName(modelId) {
@@ -10596,40 +10729,28 @@ Translate to {target_language}.`;
             .join(' ');
     }
 
-    // Klasifikasi rank 5-tier untuk susunan model dropdown:
-    //   Rank 1: Gemini 3 Flash tulen (tiada 'lite') — gemini-3-flash, gemini-3.6-flash, dll.
-    //   Rank 2: Gemini 3 Flash-Lite — gemini-3.1-flash-lite, dll.
-    //   Rank 3: Gemini 3 Pro — gemini-3.1-pro, dll.
-    //   Rank 4: Gemini 2.5 (flash / pro / lite)
-    //   Rank 5: Model legasi lain (1.5, gemma, unknown)
-    function getModelSortRank(modelName) {
-        const n = String(modelName || '').toLowerCase();
-        const isGemini3 = n.startsWith('gemini-3') || n.startsWith('gemini-flash') || n.startsWith('gemini-pro');
-        if (isGemini3) {
-            if (n.includes('flash') && !n.includes('lite')) return 1;   // Gemini 3 Flash tulen
-            if (n.includes('flash') && n.includes('lite')) return 2;   // Gemini 3 Flash-Lite
-            if (n.includes('pro')) return 3;                           // Gemini 3 Pro
-            return 2;                                                  // Gemini 3 lain (default ke rank 2)
-        }
-        if (n.startsWith('gemini-2.5')) return 4;                      // Gemini 2.5
-        return 5;                                                      // Legasi / gemma / unknown
+    // Label paparan seragam untuk model terwhitelist — 'gemini-3.1-flash-lite' ->
+    // 'Gemini 3.1 Flash-Lite', 'gemini-2.5-pro' -> 'Gemini 2.5 Pro',
+    // 'gemini-3-flash-preview' -> 'Gemini 3 Flash (Preview)',
+    // 'gemini-flash-lite-latest' -> 'Gemini Flash-Lite (Latest)'.
+    function formatGeminiModelLabel(modelName) {
+        const n = getModelSortName(modelName);
+        const alias = n.match(GEMINI_LATEST_ALIAS_PATTERN);
+        if (alias) return `Gemini ${GEMINI_TIER_LABELS[alias[1]]} (Latest)`;
+        const m = n.match(GEMINI_TEXT_MODEL_WHITELIST_PATTERN);
+        if (m) return `Gemini ${m[1]} ${GEMINI_TIER_LABELS[m[2]]}${m[3] ? ' (Preview)' : ''}`;
+        return '';
     }
 
-    // Format displayName untuk option. Guard: jika displayName rasmi sama dengan ID mentah
-    // atau mengandungi sengkang huruf kecil (cth: 'gemini-3.1-flash-lite'), format ia
-    // menjadi paparan kemas "Gemini 3.1 Flash Lite".
-    // Gemma 4: label khas "Gemma 4 26B (Free)" / "Gemma 4 31B (Free)".
+    // Format displayName untuk option. Model terwhitelist sentiasa guna label
+    // seragam daripada ID (formatGeminiModelLabel) supaya paparan kemas dan
+    // konsisten; model lain (fallback) kekalkan displayName rasmi jika berkualiti.
     function getDisplayLabelForModel(model) {
         const rawName = String(model.name || '');
+        const formatted = formatGeminiModelLabel(rawName);
+        if (formatted) return formatted;
+
         const officialDisplayName = String(model.displayName || '').trim();
-
-        // Gemma 4: label khas "Gemma 4 XXB (Free)"
-        if (/^gemma-4-(\d+)b/i.test(rawName)) {
-            const sizeMatch = rawName.match(/^gemma-4-(\d+)b/i);
-            const size = sizeMatch ? sizeMatch[1] : '';
-            return size ? `Gemma 4 ${size}B (Free)` : 'Gemma 4 (Free)';
-        }
-
         const isRawId = !officialDisplayName
             || officialDisplayName === rawName
             || (officialDisplayName === officialDisplayName.toLowerCase() && officialDisplayName.includes('-'));
@@ -10640,15 +10761,21 @@ Translate to {target_language}.`;
         const baseSelect = document.getElementById('geminiModel');
         if (!baseSelect) return;
 
-        const list = (Array.isArray(models) && models.length) ? models : SAFE_DEFAULT_MODELS;
+        // ── Sumber Senarai ──
+        // CrazyRouter (key 'sk-...'): hanya 8 model Gemini sah — guna senarai tetap
+        // CRAZYROUTER_GEMINI_MODELS (telah tersusun mengikut hierarki rasmi).
+        // Google Direct: katalog dinamik /v1beta/models; fallback SAFE_DEFAULT_MODELS.
+        let list;
+        if (detectGeminiKeyType() === 'crazyrouter') {
+            list = CRAZYROUTER_GEMINI_MODELS.map(name => ({ name, displayName: '' }));
+        } else {
+            list = (Array.isArray(models) && models.length) ? models : SAFE_DEFAULT_MODELS;
+        }
 
-        // Susun mengikut rank 5-tier — Rank 1 (Gemini 3 Flash tulen) di indeks 0.
-        const sortedList = [...list].sort((a, b) => {
-            const rankDiff = getModelSortRank(a.name) - getModelSortRank(b.name);
-            if (rankDiff !== 0) return rankDiff;
-            // Dalam rank yang sama, susun mengikut nama secara stabil
-            return String(a.name || '').localeCompare(String(b.name || ''));
-        });
+        // Whitelist sanitizer + susunan hierarki — ranking #1 (indeks 0) ialah
+        // Flash-Lite generasi tertinggi (paling jimat kuota & pantas untuk subtitle).
+        const sortedList = sanitizeGeminiModelCatalog(list);
+        if (!sortedList.length) return;
 
         // Simpan nilai tersimpan sah dari config — JANGAN gunakan prevValue dari DOM
         // kerana ia menjerat dropdown untuk memilih semula nilai lapuk (stale) selepas
@@ -10668,23 +10795,25 @@ Translate to {target_language}.`;
         // Aktifkan dropdown selepas model dimuatkan.
         baseSelect.disabled = false;
 
-        // ── Pemilihan Sasaran Eksplisit ──
-        // 1. Jika ada model tersimpan sah dalam config, guna itu.
-        // 2. Jika tiada, semak model sasaran: DEFAULT_GEMINI_MODEL ('gemini-3-flash-preview')
-        //    atau 'gemini-3-flash' — WAJIB pilih jika wujud dalam katalog penyedia.
-        // 3. Fallback hanya ke sortedList[0] (Rank 1 tertinggi) sekiranya sasaran tiada.
+        // ── Pemilihan Default (Tiada Hardcoded Lock) ──
+        // 1. Model tersimpan sah dalam config digunakan; varian '-preview'
+        //    disepadukan ke bentuk canonical jika perlu. Nilai default transisi
+        //    (DEFAULT_GEMINI_MODEL) TIDAK lagi dilayan sebagai sasaran paksa.
+        // 2. Selebihnya: ranking #1 (teratas susunan hierarki) dipilih automatik
+        //    sebaik sahaja dropdown selesai dimuatkan.
         const loadedNames = sortedList.map(m => m.name);
         let target = '';
-        if (savedBase && loadedNames.includes(savedBase)) {
-            target = savedBase;
-        } else if (loadedNames.includes(DEFAULT_GEMINI_MODEL)) {
-            target = DEFAULT_GEMINI_MODEL;
-        } else if (loadedNames.includes('gemini-3-flash')) {
-            target = 'gemini-3-flash';
-        } else {
-            target = sortedList[0].name;
+        if (savedBase && savedBase !== DEFAULT_GEMINI_MODEL) {
+            if (loadedNames.includes(savedBase)) {
+                target = savedBase;
+            } else {
+                const canonical = savedBase.replace(/-preview$/, '');
+                if (canonical && loadedNames.includes(canonical)) {
+                    target = canonical;
+                }
+            }
         }
-        baseSelect.value = target;
+        baseSelect.value = target || sortedList[0].name;
 
         // Picu morphing parameter mengikut model yang dipilih di dropdown atas.
         updateGeminiThinkingControl();

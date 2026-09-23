@@ -479,3 +479,131 @@ test('[CR-B4] genuinely unlisted model STILL warns after canonicalization', asyn
     axios.get = originalGet;
   }
 });
+
+// ─── Model Filtering & Whitelist Sanitizer (dropdown translation) ───
+
+test('[WF-1] whitelist sanitizer keeps only core text families, sorted Lite > Flash > Pro with descending versions', () => {
+  const { sanitizeGeminiModelCatalog } = GeminiService;
+  const mixedCatalog = [
+    // Bukan keluarga Gemini / khusus / eksperimental — WAJIB ditolak
+    { name: 'models/gemma-4-26b-it', supportedGenerationMethods: ['generateContent'] },
+    { name: 'models/lyria-002', supportedGenerationMethods: ['generateContent'] },
+    { name: 'models/imagen-4.0-generate-001', supportedGenerationMethods: ['generateContent'] },
+    { name: 'models/gemini-2.5-computer-use-preview', supportedGenerationMethods: ['generateContent'] },
+    { name: 'models/gemini-2.5-flash-preview-tts', supportedGenerationMethods: ['generateContent'] },
+    { name: 'models/gemini-2.5-flash-native-audio-latest', supportedGenerationMethods: ['generateContent'] },
+    { name: 'models/gemini-robotics-er-1.5-preview', supportedGenerationMethods: ['generateContent'] },
+    { name: 'tunedModels/my-tuned-model-abc', supportedGenerationMethods: ['generateContent'] },
+    // Bukan generateContent — ditolak serta-merta (capabilities check)
+    { name: 'models/gemini-embedding-001', supportedGenerationMethods: ['embedContent'] },
+    // Model teks teras — WAJIB dikekalkan & disusun
+    { name: 'models/gemini-2.5-pro', supportedGenerationMethods: ['generateContent'] },
+    { name: 'models/gemini-2.5-flash', supportedGenerationMethods: ['generateContent'] },
+    { name: 'models/gemini-2.5-flash-lite', supportedGenerationMethods: ['generateContent'] },
+    { name: 'models/gemini-3-flash-preview', supportedGenerationMethods: ['generateContent'] },
+    { name: 'models/gemini-3.8-flash', supportedGenerationMethods: ['generateContent'] },
+    { name: 'models/gemini-flash-lite-latest', supportedGenerationMethods: ['generateContent'] },
+    { name: 'models/gemini-flash-latest', supportedGenerationMethods: ['generateContent'] }
+  ];
+
+  const sanitized = sanitizeGeminiModelCatalog(mixedCatalog);
+  assert.deepEqual(sanitized.map(m => m.name), [
+    'gemini-flash-lite-latest', // Alias -latest: generasi terkini → teratas tier Lite
+    'gemini-2.5-flash-lite',
+    'gemini-flash-latest',      // Alias -latest: teratas tier Flash
+    'gemini-3.8-flash',
+    'gemini-3-flash-preview',   // canonical sebelum '-preview'
+    'gemini-2.5-flash',
+    'gemini-2.5-pro'
+  ]);
+});
+
+test('[WF-2] CrazyRouter fixed catalog lists exactly the 8 sanctioned models in official order', () => {
+  assert.deepEqual(GeminiService.CRAZYROUTER_GEMINI_MODELS.map(m => m.name), [
+    'gemini-3.1-flash-lite',
+    'gemini-2.5-flash-lite',
+    'gemini-3.8-flash',
+    'gemini-3.5-flash',
+    'gemini-3-flash',
+    'gemini-2.5-flash',
+    'gemini-3.1-pro',
+    'gemini-2.5-pro'
+  ]);
+  // Senarai tetap mesti sudah tersusun mengikut comparator hierarki yang sama.
+  const { compareGeminiModelsForDropdown } = GeminiService;
+  const sorted = [...GeminiService.CRAZYROUTER_GEMINI_MODELS].sort(compareGeminiModelsForDropdown);
+  assert.deepEqual(sorted, GeminiService.CRAZYROUTER_GEMINI_MODELS);
+});
+
+test('[WF-3] whitelist predicate rejects blacklisted/foreign/tuned models and accepts sanctioned forms', () => {
+  const { isWhitelistedGeminiTextModel } = GeminiService;
+  for (const rejected of [
+    'gemma-4-26b-it',              // bukan keluarga Gemini
+    'gemini-nano-1',               // Nano
+    'gemini-antigravity-1',        // eksperimental
+    'gemini-deep-research-1',      // Deep Research
+    'lyria-002',                   // muzik
+    'gemini-2.5-flash-tts',        // TTS
+    'gemini-omni-flashing',        // omnimodal
+    'gemini-2.5-computer-use-preview', // computer-use
+    'gemini-robotics-er-1.5-preview',  // robotik
+    'gemini-2.0-flash-vision',     // visi sahaja
+    'imagen-4.0-generate-001',     // imej
+    'tunedModels/my-tuned-model',  // tuning persendirian
+    'gemini-2.5-flash-preview-09-2025' // suffix bertarikh TIDAK dibenarkan
+  ]) {
+    assert.equal(isWhitelistedGeminiTextModel(rejected), false, `should reject: ${rejected}`);
+  }
+  for (const accepted of [
+    'gemini-2.5-flash-lite',
+    'gemini-3.5-flash-lite',
+    'gemini-flash-lite-latest',
+    'gemini-2.5-flash',
+    'gemini-3-flash',
+    'gemini-3.8-flash',
+    'gemini-3-flash-preview',
+    'gemini-flash-latest',
+    'gemini-2.5-pro',
+    'gemini-3.1-pro-preview',
+    'gemini-pro-latest'
+  ]) {
+    assert.equal(isWhitelistedGeminiTextModel(accepted), true, `should accept: ${accepted}`);
+  }
+});
+
+test('[WF-4] getAvailableModels applies whitelist sanitizer to the Google catalog', async () => {
+  const originalGet = axios.get;
+  axios.get = async () => ({
+    data: {
+      models: [
+        { name: 'models/gemini-2.5-flash', displayName: 'Gemini 2.5 Flash', supportedGenerationMethods: ['generateContent'] },
+        { name: 'models/gemma-4-31b-it', displayName: 'Gemma 4 31B', supportedGenerationMethods: ['generateContent'] },
+        { name: 'models/gemini-embedding-001', supportedGenerationMethods: ['embedContent'] },
+        { name: 'models/gemini-2.5-flash-lite', displayName: 'Gemini 2.5 Flash-Lite', supportedGenerationMethods: ['generateContent'] }
+      ]
+    }
+  });
+
+  try {
+    const { resetProviderAuthFailureCache } = require('../utils/providerAuthFailureCache');
+    const sharedCache = require('../utils/sharedCache');
+    const originalGetShared = sharedCache.getShared;
+    const originalSetShared = sharedCache.setShared;
+    const originalDeleteShared = sharedCache.deleteShared;
+    sharedCache.getShared = async () => null;
+    sharedCache.setShared = async () => true;
+    sharedCache.deleteShared = async () => true;
+    resetProviderAuthFailureCache();
+
+    const service = new GeminiService('test-key', 'gemini-2.5-flash');
+    const models = await service.getAvailableModels({ silent: true });
+    assert.deepEqual(models.map(m => m.name), ['gemini-2.5-flash-lite', 'gemini-2.5-flash']);
+
+    sharedCache.getShared = originalGetShared;
+    sharedCache.setShared = originalSetShared;
+    sharedCache.deleteShared = originalDeleteShared;
+    resetProviderAuthFailureCache();
+  } finally {
+    axios.get = originalGet;
+  }
+});
