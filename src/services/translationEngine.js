@@ -307,6 +307,62 @@ class TranslationEngine {
   }
 
   /**
+   * Snapshot the current FinOps ledger stream IDs. Used to attribute tokens
+   * recorded LATER (by an attempt whose output turns out to be superseded) as
+   * wasted — critical for MISMATCH_RETRY, where the original call succeeds
+   * (HTTP 200) and therefore never attaches a finOpsStreamId to a thrown error.
+   * @returns {string[]}
+   * @private
+   */
+  _snapshotLedgerIds() {
+    if (!global.geminiFinOps || !global.geminiFinOps.streams) return [];
+    return Object.keys(global.geminiFinOps.streams);
+  }
+
+  /**
+   * Mark every FinOps ledger stream recorded AFTER the given snapshot as
+   * wasted (tokens billed but superseded/discarded), and return the total
+   * token count newly marked — used for incident tokensBurned accounting.
+   * @param {string[]} snapshotIds - stream ids present before the attempt
+   * @returns {number} total tokens newly marked wasted
+   * @private
+   */
+  _markWastedSince(snapshotIds) {
+    if (!global.geminiFinOps || !global.geminiFinOps.streams) return 0;
+    const before = new Set(Array.isArray(snapshotIds) ? snapshotIds : []);
+    let burned = 0;
+    for (const id of Object.keys(global.geminiFinOps.streams)) {
+      if (before.has(id)) continue;
+      const stream = global.geminiFinOps.streams[id];
+      if (!stream.wasted) {
+        stream.wasted = true;
+        burned += (stream.input || 0) + (stream.cached || 0) + (stream.thought || 0) + (stream.output || 0);
+      }
+    }
+    return burned;
+  }
+
+  /**
+   * Update the most recent in-progress incident of the given type/batch with
+   * its final outcome and burned-token count (for the Telegram battle-log).
+   * @param {string} type - incident type, e.g. 'MISMATCH_RETRY'
+   * @param {number} batch - 1-based batch number
+   * @param {{outcome?: string, tokensBurned?: number}} patch - final values
+   * @private
+   */
+  _closeIncident(type, batch, { outcome, tokensBurned = 0 } = {}) {
+    const incidents = this.translationStats.incidents || [];
+    for (let i = incidents.length - 1; i >= 0; i--) {
+      const inc = incidents[i];
+      if (inc.type === type && inc.batch === batch && inc.outcome === 'in_progress') {
+        if (outcome) inc.outcome = outcome;
+        inc.tokensBurned = (inc.tokensBurned || 0) + tokensBurned;
+        return;
+      }
+    }
+  }
+
+  /**
    * Record a recovery incident for the Telegram battle-log section.
    * @param {object} incident
    * @param {string} incident.type - e.g. 'PROHIBITED_CONTENT' | 'MAX_TOKENS' | '429_RATE_LIMIT' | 'MISMATCH_RETRY'
@@ -1328,6 +1384,12 @@ class TranslationEngine {
       }
     } : null;
 
+    // FinOps: snapshot the ledger before the first attempt of this batch so
+    // superseded attempts (e.g. MISMATCH_RETRY full-batch replacement, where
+    // the original call returned HTTP 200 and never throws) can be marked
+    // wasted via snapshot-diff at recovery time.
+    const ledgerSnapshotBeforeAttempt = this._snapshotLedgerIds();
+
     try {
   translatedText = await this._translateCall(batchText, targetLanguage, prompt, streamingRequested, streamCallback);
 } catch (error) {
@@ -1711,6 +1773,13 @@ class TranslationEngine {
       this.translationStats.mismatchDetected = true;
       this._logIncident({ type: 'MISMATCH_RETRY', batch: batchIndex + 1, recovery: 'two-pass alignment + shift detection', outcome: 'in_progress' });
 
+      // FinOps: the attempt that produced this truncated/mismatched output
+      // completed HTTP 200 — Google billed it — but its output will be
+      // superseded by retries. Mark all streams recorded since the batch
+      // snapshot as wasted so the Telegram receipt splits burned tokens.
+      const mismatchBurned = this._markWastedSince(ledgerSnapshotBeforeAttempt);
+      this._closeIncident('MISMATCH_RETRY', batchIndex + 1, { tokensBurned: mismatchBurned });
+
       // Pass 1: Align what we can by index, identify missing entries
       let { aligned, missingIndices } = this.alignTranslatedEntries(translatedEntries, batch);
       
@@ -1847,6 +1916,15 @@ class TranslationEngine {
         this.translationStats.recoveredEntries += recoveredCount;
         log.info(() => `[TranslationEngine] Total recovered entries for this batch: ${recoveredCount}`);
       }
+
+      // FinOps: close the incident with its FINAL outcome + burned tokens.
+      // Placed after all retry passes so streams recorded by Pass 2 (targeted)
+      // and Pass 3 (full-batch) retries are attributed too, and so the
+      // recoveredCount === 0 case still closes the in_progress incident.
+      this._closeIncident('MISMATCH_RETRY', batchIndex + 1, {
+        outcome: recoveredCount > 0 ? 'recovered' : 'failed',
+        tokensBurned: this._markWastedSince(ledgerSnapshotBeforeAttempt)
+      });
 
       translatedEntries = Object.values(aligned).sort((a, b) => a.index - b.index);
 
