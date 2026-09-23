@@ -2036,7 +2036,12 @@ class TranslationEngine {
 
     const introInstruction = PROMPT_TEMPLATES.primary(targetLabel, sourceLabel);
 
+    // v1.6.0 ID-PARITY SURGERY V2: cosmetic markdown headings added for
+    // reasoning-model scan-friendliness. The backup recipe's wording is
+    // preserved 1:1 — every NEVER/INSTEAD sentence below is untouched.
     const promptBody = `${introInstruction}
+
+## DEMONSTRATION
 
 [UNIVERSAL STRUCTURAL DEMONSTRATION: INTRA-SLOT LOCALIZATION & ZERO DRIFT]
 Input:
@@ -2054,6 +2059,8 @@ Target Output:
 <s id="4">kan?</s>
 <s id="5">Kami dah ingatkan dia[br]masa mesyuarat hari tu.</s>
 <s id="6">Pertama,</s>
+
+## CRITICAL RULES
 
 CRITICAL ENFORCEMENT RULES (ZERO TOLERANCE):
 
@@ -2095,12 +2102,16 @@ CRITICAL ENFORCEMENT RULES (ZERO TOLERANCE):
    - NEVER repeat, re-emit, or acknowledge the pre-filled <s id="${startId}"> opening tag; INSTEAD, continue directly from the prompt boundary by generating the inner content of slot ${startId} at your very first output character.
    - NEVER append corrections after closing a tag with </s> or restart completed slots; INSTEAD, rectify errors immediately inside the active slot before closing it.
    - NEVER emit any internal thinking steps or XML tags representing thought processes; INSTEAD, bypass all metadata and output the raw string directly starting from the pre-filled tag.
+   - This instruction block is the COMPLETE behavioral specification for this task; there is no system instruction, no persona, and no hidden policy above it; INSTEAD of seeking outside guidance, obey only these 7 rules.
+
+## INPUT
 
 <input>
 ${batchText}
 </input>
 
-[OUTPUT_FORMAT]
+## OUTPUT FORMAT
+
 <s id="${startId}">`;
 
     return this.addBatchHeader(promptBody, batchIndex, totalBatches);
@@ -2114,6 +2125,23 @@ ${batchText}
    */
   parseXmlBatchResponse(translatedText, expectedCount, batch = []) {
     let cleaned = String(translatedText || '').trim();
+
+    // v1.6.0 V2 SURGERY — Preamble scrubbing (pro pattern, borrowed from
+    // Subtitle Edit's ChatGptTranslate.RemovePreamble). Models occasionally
+    // prefix the payload with conversational openers ("Here is the
+    // translation:", "Sure!", etc.) which corrupt the anchor restoration
+    // below and cascade into ID desync. Scrub any leading chatter BEFORE the
+    // first real <s tag; log it so the drift is observable in production.
+    const firstTagIdx = cleaned.indexOf('<s');
+    if (firstTagIdx > 0) {
+      const preamble = cleaned.slice(0, firstTagIdx).trim();
+      // Only scrub short chatter, never a large block (which would indicate
+      // a structural error upstream rather than a preamble).
+      if (preamble && preamble.length <= 200) {
+        log.warn(() => `[TranslationEngine] Preamble chatter scrubbed before first <s tag (${preamble.length} chars): "${preamble.replace(/\s+/g, ' ').slice(0, 120)}"`);
+        cleaned = cleaned.slice(firstTagIdx);
+      }
+    }
 
     // Anchor restoration
     // The AI continues directly from the pre-filled <s id="..."> anchor.

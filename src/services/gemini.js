@@ -277,46 +277,15 @@ Do NOT include acknowledgements, explanations, notes or alternative translations
 
 Output ONLY the translated content, nothing else.`;
 
-// ── Gemini 3 System Instruction (v1.5.3 refactor) ──────────────────────────
-// Per Google's official prompting guide for Gemini 3 reasoning models
-// (https://ai.google.dev/gemini-api/docs/prompting-strategies#gemini-3):
-//   - Place role, output format, and behavioral constraints in System Instruction
-//   - Be precise and direct; avoid verbose prompt engineering
-//   - System Instruction is processed before any user content
-// This instruction is used ONLY when isGemini3Model === true. The user prompt
-// (built by translationEngine.js) carries the task, demonstration, critical
-// rules, and input batch.
-// v1.5.6: persona-free. Per Zheng et al. 2024 (arXiv:2311.10054), personas in
-// system prompts have no or small negative effects on objective-task accuracy
-// across 162 personas x 2,410 MMLU questions x 9 models; role-play can even
-// derail reasoning (arXiv:2408.08631). Task definition + behavioral
-// constraints outperform identity role-play. Style directives below are
-// restored from the pre-v1.5.3 backup (the "living dialogue" anti-pattern
-// list) and now live here instead of being duplicated in the user prompt.
-const GEMINI3_SYSTEM_INSTRUCTION = `Translate subtitle dialogue from the source language into the target language while preserving timing, structure, and formatting.
-
-CORE BEHAVIOR:
-- Translate each <s id="N"> slot independently. Never merge, split, reorder, or drop slots.
-- Preserve all [br] line-break markers, inline tags (<i>, <b>), speaker dashes, and music notes exactly where they appear.
-- Preserve numbers, dates, times, measurements, and proper nouns accurately.
-- Keep titles of creative works, brand names, and legal entities verbatim in their original language.
-
-INTRA-SLOT LOCALIZATION (ACTION REPLACEMENT):
-- Never mirror foreign syntax, trailing modifiers, or literal word order; rephrase the dialogue into spoken, conversational target language inside each individual tag while strictly preserving tag boundaries and internal [br] markers.
-- Never use formal copulas, formal conjunctions, dictionary jargon, or literal pronoun calques; capture authentic conversational flow using natural speech connectors, question particles, and direct native phrasing.
-- Never complete partial sentences or borrow words from neighbouring tags; translate only the fragment present within that specific tag, intentionally leaving target syntax incomplete to lock subtitle synchronization.
-- Do not add explanations, notes, markdown fences, or thinking blocks.
-
-OUTPUT FORMAT:
-- Return only raw <s id="N">...</s> tags.
-- Output exactly as many tags as the input batch contains, with identical IDs in identical order.
-- Emit only the inner text of the first pre-filled slot at the very first character; do not repeat the opening tag.
-
-LANGUAGE-SPECIFIC:
-- For Malay (ms/my/mya/zsm): use Bahasa Melayu Malaysia register. Common English loanwords used in daily Malaysian speech (e.g., okay, confirm, check, settle, try, call, parking, boss) are acceptable. Avoid Indonesianisms (bisa, banget, gimana, cewek/cowok, kalian, ngomong, kok, dong, sih). Choose self-reference by context: saya/awak default, aku/kau intimate, saya/anda formal.
-
-SAFETY FALLBACK:
-- If a line contains sensitive, profane, or mature content, translate it with an objective, non-glorified equivalent. Do not refuse the task or omit the slot.`;
+// v1.6.0 ID-PARITY SURGERY V2: GEMINI3_SYSTEM_INSTRUCTION is RETIRED. The
+// "Google-official" school (system instruction carrying behavioral constraints
+// for reasoning models) proved harmful for structure-locked subtitle batches:
+// its generic "translate each slot independently" wording diluted the engine's
+// 7-rule NEVER/INSTEAD rulebook, and its prefill wording was factually wrong
+// for models > 3.1 (no prefill). Ground truth from professional tools
+// (Subtitle Edit, GPTSubtitler) shows structure-locked translation uses ONE
+// flat user prompt + protocol-level ID mapping + aggressive parser scrubbing
+// — exactly the pre-v1.5.3 backup recipe, which is now the single voice again.
 
 class GeminiService {
   constructor(apiKey, model = '', advancedSettings = {}) {
@@ -903,30 +872,18 @@ class GeminiService {
     }
   }
 
+  // v1.6.0 ID-PARITY SURGERY V2: restored verbatim to the pre-v1.5.3 backup
+  // structure (plans/prompt-refactor-backup/gemini.js.bak). ONE voice, ONE
+  // turn: the engine's XML prompt (task + demonstration + 7 ZERO TOLERANCE
+  // rules + batch + anchor) travels exactly once as user content, and NO
+  // system instruction competes with it. When a prompt already embeds the
+  // XML batch (<input> marker), it IS the user prompt; otherwise the prompt
+  // is combined with the subtitle content. systemInstruction remains a
+  // top-level field whenever a systemPrompt exists (never merged into
+  // contents) — see translateSubtitle().
   buildUserPrompt(subtitleContent, targetLanguage, customPrompt = null) {
     const normalizedTarget = normalizeTargetName(targetLanguage);
 
-    // ── Gemini 3 path: System Instruction carries behavioral constraints ──
-    // v1.5.9 ID-PARITY SURGERY: the previous `!customPrompt` guard made this
-    // branch DEAD CODE for the batched translation flow. The engine always
-    // passes the full XML prompt (task + demonstration + rules + batch) as
-    // customPrompt, so every Gemini 3 batch request silently fell into the
-    // legacy path below where GEMINI3_SYSTEM_INSTRUCTION was never attached,
-    // AND the entire XML prompt was duplicated into BOTH systemInstruction
-    // and contents (2x input tokens, with the input batch processed in the
-    // system field ahead of the reasoning pass).
-    // FIX: Gemini 3 models ALWAYS receive GEMINI3_SYSTEM_INSTRUCTION as the
-    // top-level systemInstruction field (never merged into contents), and the
-    // engine's XML prompt travels exactly once as user content.
-    if (this.isGemini3Model) {
-      return {
-        userPrompt: customPrompt || subtitleContent,
-        systemPrompt: GEMINI3_SYSTEM_INSTRUCTION,
-        normalizedTarget
-      };
-    }
-
-    // ── Legacy / non-Gemini-3 path: single combined prompt ──
     let systemPrompt = (customPrompt || DEFAULT_TRANSLATION_PROMPT)
       .replace('{target_language}', normalizedTarget);
 
@@ -1593,7 +1550,6 @@ class GeminiService {
 
 module.exports = GeminiService;
 module.exports.DEFAULT_TRANSLATION_PROMPT = DEFAULT_TRANSLATION_PROMPT;
-module.exports.GEMINI3_SYSTEM_INSTRUCTION = GEMINI3_SYSTEM_INSTRUCTION;
 module.exports.getModelFamily = getModelFamily;
 module.exports.getModelThinkingProfile = getModelThinkingProfile;
 module.exports.isGoogleModel = isGoogleModel;
