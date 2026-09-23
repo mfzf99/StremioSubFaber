@@ -2,6 +2,22 @@
 
 All notable changes to this project will be documented in this file.
 
+## SubMaker v1.6.4 (2026-09-23)
+
+**Prompt Ground Truth Restore — verbatim rollback ke commit `b1fca3f` (penamat eksperimen prompt iteratif):**
+
+- **Verdict real-world:** 3 lapisan mutasi prompt selepas `b1fca3f` (`<task>` wrapper v1.5.6 → bullet Rule 7 ke-4 v1.5.9 → heading markdown v1.6.0) terbukti merosotkan kualiti terjemahan dan memanjangkan masa proses — laporan terkini (Shine.on.Me S01E22, 600 entri) mencatat 12m 43s dengan 1× MISMATCH_RETRY full-batch (78 entri) dan 4× smart-recovery untagged preamble. Setiap tambalan seterusnya menjadikan hasil lebih teruk; diputuskan rollback penuh ke resipi asal, bukan tambal berlapis lagi.
+
+- **`PROMPT_TEMPLATES` dipulihkan verbatim** ([`src/services/translationEngine.js`](src/services/translationEngine.js)): wrapper `<task>...</task>` dibuang; guard `${sourceLabel || 'the source'}` kembali kepada `${sourceLabel}` murni; komen zon asal `🛠️ ZON TEMPLATE PROMPT (100% UNIVERSAL & DYNAMIC)` dipulihkan. Rulebook 3+1 peraturan (ISOLATED FREEDOM / SPOKEN DICTION / DEPENDENT CLAUSES + NEUTRAL OBJECTIVITY) kekal — teks sudah sepadan dengan `b1fca3f` sejak v1.5.9.
+
+- **`createXmlBatchPrompt` dipulihkan verbatim**: 4 heading markdown `## DEMONSTRATION` / `## CRITICAL RULES` / `## INPUT` / `## OUTPUT FORMAT` dibuang (kembali ke bentuk flat `[UNIVERSAL STRUCTURAL DEMONSTRATION...]` → `CRITICAL ENFORCEMENT RULES (ZERO TOLERANCE):` → `<input>` → `[OUTPUT_FORMAT]`); ayat penegas Rule 7 ke-4 ("This instruction block is the COMPLETE behavioral specification...") dibuang — ia bercanggah dengan realiti SI channel dan menambah noise meta-kognitif.
+
+- **Tidak disentuh (peraturan keras):** v1.6.1 Smart Preamble Scrubber (`parseXmlBatchResponse`) kekal sebagai jaring runtime; `systemInstruction` kekal medan top-level REST v1beta; `thinkingBudget`/`topK` normalisasi (`src/utils/config.js`) kekal; persona-free kekal; batch size 200 kekal.
+
+- **Verifikasi parity byte-exact:** script baru [`scripts/verify-prompt-parity.js`](scripts/verify-prompt-parity.js) membandingkan `PROMPT_TEMPLATES` (2,313 chars) + badan `createXmlBatchPrompt` (6,011 chars) dengan salinan `b1fca3f` ([`plans/prompt-refactor-backup/b1fca3f-translationEngine.js`](plans/prompt-refactor-backup/b1fca3f-translationEngine.js)) — PASS kedua-duanya, termasuk trailing-space selepas `=>`.
+
+- **Ujian:** npm test 105 PASS / 0 FAIL / 1 skipped (baseline 92 diatasi). Laporan pembedahan: `plans/pembedahan-prompt-restore-b1fca3f.md`.
+
 ## SubMaker v1.6.3 (2026-09-23)
 
 **Configure UI — Advanced Gemini Parameters: jarak 'Enable Top-K' toggle dibaiki:**
