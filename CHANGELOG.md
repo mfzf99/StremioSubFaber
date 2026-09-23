@@ -2,6 +2,22 @@
 
 All notable changes to this project will be documented in this file.
 
+## SubMaker v1.6.0 (2026-09-23)
+
+**ID-Parity Surgery V2 — Revert ke struktur single flat prompt (mazhab Google SI dibersarakan):**
+
+- **Verdict real-world:** v1.5.9 telah memulihkan resipi rulebook backup sepenuhnya DAN melampirkan `GEMINI3_SYSTEM_INSTRUCTION` — DESYNC tetap berlaku. Ini membuktikan punca bukan rulebook, tetapi mazhab rasmi Google (System Instruction membawa behavioral constraints) yang bercanggah dengan resipi tersebut: SI generik "translate each slot independently" mencairkan larangan 1-to-1 ID parity, dan arahan SI "Emit only the inner text of the first pre-filled slot" adalah PALSU untuk model 3.5+ (tiada prefill). Ground truth industri (Subtitle Edit, GPTSubtitler — source code diaudit melalui MCP) mengesahkan pro tools menggunakan SATU flat user prompt + protocol mapping ID + parser agresif, bukan SI/user split.
+
+- **`GEMINI3_SYSTEM_INSTRUCTION` dipadam sepenuhnya** (`src/services/gemini.js`): constant + module export dibuang. Dua set arahan bercanggah pada dua channel tidak lagi wujud — kini SATU suara, SATU turn: prompt XML engine (task + demonstration + 7 ZERO TOLERANCE rules + batch + anchor) dihantar tepat 1x sebagai user content tanpa system instruction bersaing. `buildUserPrompt()` dipulihkan verbatim kepada struktur backup pre-v1.5.3. `systemInstruction` kekal medan top-level REST v1beta bila wujud (CORE PANTANG dikekalkan).
+
+- **Prompt head scan-friendly** (`src/services/translationEngine.js`): heading kosmetik `## DEMONSTRATION` / `## CRITICAL RULES` / `## INPUT` / `## OUTPUT FORMAT` ditambah untuk navigasi pantas model reasoning — setiap ayat NEVER/INSTEAD resipi backup dikekalkan 1:1. Rule 7 CLEAN PAYLOAD ONLY ditambah satu ayat penegas: "This instruction block is the COMPLETE behavioral specification... there is no system instruction, no persona, and no hidden policy above it."
+
+- **Parser preamble scrubbing** (`parseXmlBatchResponse()`): pattern pro daripada Subtitle Edit `RemovePreamble` — buang chatter pembuka ("Here is the translation:" dsb.) sebelum tag `<s` pertama, dengan log amaran supaya drift boleh diperhatikan dalam produksi. Ini melindungi anchor restoration daripada ID desync cascade.
+
+- **Tidak disentuh (peraturan keras):** `thinkingBudget`/`topK` normalisasi (`src/utils/config.js`) — topK kekal opt-in OFF; persona-free kekal; ground truth sampling 3.x-strict/legacy/2.5 kekal; batch size 200 kekal; `<m>` air-gapped memory kekal; anchor prefill ≤3.1 kekal.
+
+- **Ujian:** 101 PASS / 0 FAIL / 1 skip (baseline 92 diatasi). Laporan penuh: `plans/pembedahan-id-pariti-v2-report.md`.
+
 ## SubMaker v1.5.9 (2026-09-22)
 
 **ID-Parity / Sync Surgery — ZERO TOLERANCE rulebook restoration (DESYNC fix):**
