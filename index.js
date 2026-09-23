@@ -4066,8 +4066,6 @@ app.post('/api/translate-file', fileTranslationLimiter, validateRequest(fileTran
             const topP = clampNumber(incoming.topP, 0, 1);
             if (topP !== null) parsed.topP = topP;
 
-            const topK = clampNumber(incoming.topK, 1, 100);
-            if (topK !== null) parsed.topK = topK;
 
             const frequencyPenalty = clampNumber(incoming.frequencyPenalty, -2, 2);
             if (frequencyPenalty !== null) parsed.frequencyPenalty = frequencyPenalty;
@@ -7430,8 +7428,6 @@ app.post('/api/translate-embedded', embeddedTranslationLimiter, async (req, res)
             const topP = clampNumber(incoming.topP, 0, 1);
             if (topP !== null) parsed.topP = topP;
 
-            const topK = clampNumber(incoming.topK, 1, 100);
-            if (topK !== null) parsed.topK = topK;
 
             const frequencyPenalty = clampNumber(incoming.frequencyPenalty, -2, 2);
             if (frequencyPenalty !== null) parsed.frequencyPenalty = frequencyPenalty;

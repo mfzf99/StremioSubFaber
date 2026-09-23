@@ -1942,21 +1942,6 @@
                     <input type="number" id="advancedTopP" min="0" max="1" step="0.05" value="0.95" placeholder="0.95">
                 </div>
 
-                <div class="form-group" id="advancedTopKGroup">
-                    <div class="toggle-group">
-                        <label class="toggle-label" for="advancedTopKEnabled">
-                            <span data-i18n="config.advancedGemini.topKEnabled.label">Enable Top-K</span>
-                            <span class="label-description"
-                                data-i18n="config.advancedGemini.topKEnabled.description">Sample from top-K tokens (1-100). Gemini 1.5 / 2.x only. Off recommended (adaptive nucleus sampling performs better for subtitle translation).</span>
-                        </label>
-                        <label class="switch">
-                            <input type="checkbox" id="advancedTopKEnabled">
-                            <span class="slider"></span>
-                        </label>
-                    </div>
-                    <input type="number" id="advancedTopK" min="1" max="100" step="1" value="40" placeholder="40" style="display:none;">
-                </div>
-
                 <div class="form-group" id="advancedFrequencyPenaltyGroup">
                     <label for="advancedFrequencyPenalty">
                         <span data-i18n="config.advancedGemini.frequencyPenalty.label">Frequency Penalty</span>
@@ -1986,7 +1971,7 @@
 
                 <div class="form-group" id="samplingControlledNote" style="display: none; margin-bottom: 0;">
                     <p style="margin: 0; font-size: 0.85rem; color: var(--text-secondary); padding: 0.6rem; background: rgba(59, 130, 246, 0.08); border: 1px solid rgba(59, 130, 246, 0.25); border-radius: 8px;"
-                        data-i18n="config.advancedGemini.samplingControlled">This Gemini 3 model manages sampling automatically — temperature / topP / topK / penalties are not configurable.</p>
+                        data-i18n="config.advancedGemini.samplingControlled">This Gemini 3 model manages sampling automatically — temperature / topP / penalties are not configurable.</p>
                 </div>
             </div>
         </div>

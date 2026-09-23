@@ -399,8 +399,7 @@ async function createTranslationProvider(config) {
           thinkingBudget: modelDefaults.thinkingBudget,
           thinkingLevel: modelDefaults.thinkingLevel,
           temperature: modelDefaults.temperature,
-          topP: settings.topP,
-          topK: settings.topK
+          topP: settings.topP
         };
     // XML Tags is the only workflow; structured JSON output is intentionally disabled.
     base.enableJsonOutput = false;

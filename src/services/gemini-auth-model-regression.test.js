@@ -67,7 +67,6 @@ test('Gemini 3.x uses thinking levels without legacy sampling fields', () => {
     thinkingBudget: 1000,
     thinkingLevel: 'high',
     temperature: 0.5,
-    topK: 40,
     topP: 0.95
   });
 
@@ -136,14 +135,12 @@ test('legacy numeric thinking budgets and sampling controls remain unchanged for
   const service = new GeminiService('test-key', 'gemini-2.5-flash', {
     thinkingBudget: 1000,
     temperature: 0.5,
-    topK: 20,
     topP: 0.9
   });
 
   assert.deepEqual(service.buildGenerationConfig(4096), {
     maxOutputTokens: 4096,
     temperature: 0.5,
-    topK: 20,
     topP: 0.9,
     thinkingConfig: { thinkingBudget: 1000 }
   });
@@ -304,19 +301,22 @@ test('[GT-5] systemInstruction is sent as top-level field, not inside contents',
   }
 });
 
-test('[GT-6] normalizeConfig preserves topK and thinkingBudget (no aggressive deletion)', () => {
+test('[GT-6] normalizeConfig drops topK permanently but preserves thinkingBudget', () => {
   const normalized = normalizeConfig({
     geminiApiKey: 'AQ.saved.key',
     geminiModel: 'gemini-2.5-flash',
     advancedSettings: {
       enabled: true,
       topK: 25,
+      topKEnabled: true,
       thinkingBudget: 2048,
       frequencyPenalty: 0.5,
       presencePenalty: -0.5
     }
   });
-  assert.equal(normalized.advancedSettings.topK, 25, 'topK must be preserved');
+  // v1.6.0: topK telah dibuang sepenuhnya — nilai lama mesti diabaikan senyap.
+  assert.equal('topK' in normalized.advancedSettings, false, 'topK must be dropped');
+  assert.equal('topKEnabled' in normalized.advancedSettings, false, 'topKEnabled must be dropped');
   assert.equal(normalized.advancedSettings.thinkingBudget, 2048, 'thinkingBudget must be preserved');
 });
 

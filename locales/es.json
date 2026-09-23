@@ -1576,10 +1576,6 @@
           "label": "Top-P (Nucleus Sampling)",
           "helper": "Umbral de probabilidad (0.0-1.0). Menor = enfocado, Mayor = diverso. Predeterminado: 0.95"
         },
-        "topK": {
-          "label": "Top-K (selección de tokens)",
-          "helper": "Número de tokens principales a considerar (1-100). Predeterminado: 40"
-        },
         "maxTokens": {
           "label": "Tokens máximos de salida",
           "helper": "Máximo de tokens en la salida (1-200000). Sigue tu proveedor seleccionado."

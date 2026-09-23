@@ -253,10 +253,6 @@ function generateFileTranslationPage(videoId, configStr, config, filename = '') 
     const reasoningEffortHelper = t('fileUpload.advanced.reasoning.helper', {}, 'Applies to reasoning-capable OpenAI-style models. Leave blank for default.');
     const topPLabel = t('fileUpload.advanced.topP.label', {}, 'Top-P (Nucleus Sampling)');
     const topPHelper = t('fileUpload.advanced.topP.helper', {}, 'Probability threshold (0.0-1.0). Lower = focused, Higher = diverse. Default: 0.95');
-    const topKLabel = t('fileUpload.advanced.topK.label', {}, 'Top-K (Token Selection)');
-    const topKHelper = t('fileUpload.advanced.topK.helper', {}, 'Number of top tokens to consider (1-100). Default: 40');
-    const topKEnabledLabel = t('fileUpload.advanced.topKEnabled.label', {}, 'Enable Top-K');
-    const topKEnabledHelper = t('fileUpload.advanced.topKEnabled.helper', {}, 'Off recommended: adaptive nucleus sampling performs better for subtitle translation.');
     const maxTokensLabel = t('fileUpload.advanced.maxTokens.label', {}, 'Max Output Tokens');
     const maxTokensHelper = t('fileUpload.advanced.maxTokens.helper', {}, 'Maximum tokens in output (1-200000). Defaults follow your selected provider.');
     const formalityLabel = t('fileUpload.advanced.formality.label', {}, 'Formality');
@@ -2321,20 +2317,6 @@ function generateFileTranslationPage(videoId, configStr, config, filename = '') 
                                 <input type="number" id="advancedTopP" min="0" max="1" step="0.05" value="0.95" placeholder="0.95">
                             </div>
 
-                            <div class="form-group" id="topKGroup">
-                                <div class="toggle-group">
-                                    <label class="toggle-label" for="advancedTopKEnabled">
-                                        ${escapeHtml(topKEnabledLabel)}
-                                        <span class="label-description">${escapeHtml(topKEnabledHelper)}</span>
-                                    </label>
-                                    <label class="switch">
-                                        <input type="checkbox" id="advancedTopKEnabled">
-                                        <span class="slider"></span>
-                                    </label>
-                                </div>
-                                <input type="number" id="advancedTopK" min="1" max="100" step="1" value="40" placeholder="40" style="display:none;">
-                            </div>
-
                             <div class="form-group">
                                 <label for="advancedMaxTokens">
                                     ${escapeHtml(maxTokensLabel)}
@@ -2717,14 +2699,12 @@ function generateFileTranslationPage(videoId, configStr, config, filename = '') 
         const advancedThinkingLevel = document.getElementById('advancedThinkingLevel');
         const advancedTemperature = document.getElementById('advancedTemperature');
         const advancedTopP = document.getElementById('advancedTopP');
-        const advancedTopK = document.getElementById('advancedTopK');
         const advancedMaxTokens = document.getElementById('advancedMaxTokens');
         const advancedTimeout = document.getElementById('advancedTimeout');
         const advancedMaxRetries = document.getElementById('advancedMaxRetries');
         const advancedReasoningEffort = document.getElementById('advancedReasoningEffort');
         const advancedFormality = document.getElementById('advancedFormality');
         const advancedPreserveFormatting = document.getElementById('advancedPreserveFormatting');
-        const topKGroup = document.getElementById('topKGroup');
         const thinkingBudgetGroup = document.getElementById('thinkingBudgetGroup');
         const thinkingLevelGroup = document.getElementById('thinkingLevelGroup');
         const reasoningEffortGroup = document.getElementById('reasoningEffortGroup');
@@ -3000,7 +2980,6 @@ function generateFileTranslationPage(videoId, configStr, config, filename = '') 
             const isDeepL = normalized === 'deepl';
             const isGoogle = normalized === 'googletranslate';
             return {
-                supportsTopK: normalized === 'gemini',
                 supportsThinking: normalized === 'gemini' || normalized === 'anthropic',
                 supportsReasoning: normalized === 'openai',
                 supportsFormality: isDeepL,
@@ -3165,9 +3144,6 @@ function generateFileTranslationPage(videoId, configStr, config, filename = '') 
             if (reasoningEffortGroup) {
                 reasoningEffortGroup.style.display = caps.supportsReasoning ? '' : 'none';
             }
-            if (topKGroup) {
-                topKGroup.style.display = caps.supportsTopK ? '' : 'none';
-            }
             if (formalityGroup) {
                 formalityGroup.style.display = caps.supportsFormality ? '' : 'none';
             }
@@ -3206,16 +3182,6 @@ function generateFileTranslationPage(videoId, configStr, config, filename = '') 
             }
             if (advancedTopP && caps.supportsTopP) {
                 advancedTopP.value = params.topP ?? 0.95;
-            }
-            if (advancedTopK && caps.supportsTopK) {
-                advancedTopK.value = params.topK ?? 40;
-            }
-            // v1.5.7: topK toggle (default off). The backend now expects
-            // topKEnabled from the frontend; when off, topK is omitted
-            // from the API request entirely.
-            const advancedTopKEnabled = document.getElementById('advancedTopKEnabled');
-            if (advancedTopKEnabled) {
-                advancedTopKEnabled.checked = params.topKEnabled === true;
             }
             if (advancedMaxTokens && caps.supportsMaxTokens) {
                 advancedMaxTokens.min = '1';
@@ -3821,7 +3787,6 @@ function generateFileTranslationPage(videoId, configStr, config, filename = '') 
                     thinkingLevel: usesThinkingLevel ? thinkingLevel : undefined,
                     temperature: Number.isFinite(temperature) ? temperature : 0.2,
                     topP: Number.isFinite(topP) ? topP : 0.95,
-                    topKEnabled: (function () { const el = document.getElementById('advancedTopKEnabled'); return el ? el.checked === true : false; })(),
                     maxOutputTokens: Number.isFinite(maxTokens) ? maxTokens : undefined,
                     translationTimeout: Number.isFinite(timeout) ? timeout : undefined,
                     maxRetries: Number.isFinite(maxRetries) ? maxRetries : undefined

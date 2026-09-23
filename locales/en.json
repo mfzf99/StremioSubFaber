@@ -1577,10 +1577,6 @@
           "label": "Top-P (Nucleus Sampling)",
           "helper": "Probability threshold (0.0-1.0). Lower = focused, Higher = diverse. Default: 0.95"
         },
-        "topK": {
-          "label": "Top-K (Token Selection)",
-          "helper": "Number of top tokens to consider (1-100). Default: 40"
-        },
         "maxTokens": {
           "label": "Max Output Tokens",
           "helper": "Maximum tokens in output (1-200000). Defaults follow your selected provider."

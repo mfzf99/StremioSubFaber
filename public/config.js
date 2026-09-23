@@ -1279,8 +1279,6 @@ Translate to {target_language}.`;
         const tempGroup = tempEl?.closest('.form-group');
         const topPEl = document.getElementById('advancedTopP');
         const topPGroup = topPEl?.closest('.form-group');
-        const topKGroup = document.getElementById('advancedTopKGroup');
-        const topKEl = document.getElementById('advancedTopK');
         const freqGroup = document.getElementById('advancedFrequencyPenaltyGroup');
         const freqEl = document.getElementById('advancedFrequencyPenalty');
         const presGroup = document.getElementById('advancedPresencePenaltyGroup');
@@ -1316,7 +1314,6 @@ Translate to {target_language}.`;
                 setVisible(deprecatedToggleGroup, true);
                 setVisible(tempGroup, showDeprecated);
                 setVisible(topPGroup, showDeprecated);
-                setVisible(topKGroup, showDeprecated);
                 setVisible(freqGroup, showDeprecated);
                 setVisible(presGroup, showDeprecated);
                 setVisible(samplingNote, !showDeprecated);
@@ -1336,7 +1333,6 @@ Translate to {target_language}.`;
                 setVisible(deprecatedToggleGroup, false);
                 setVisible(tempGroup, true);
                 setVisible(topPGroup, true);
-                setVisible(topKGroup, true);
                 setVisible(freqGroup, true);
                 setVisible(presGroup, true);
                 setVisible(samplingNote, false);
@@ -1356,7 +1352,6 @@ Translate to {target_language}.`;
                 }
                 setVisible(tempGroup, true);
                 setVisible(topPGroup, true);
-                setVisible(topKGroup, true);
                 setVisible(freqGroup, true);
                 setVisible(presGroup, true);
                 setVisible(samplingNote, false);
@@ -1373,7 +1368,6 @@ Translate to {target_language}.`;
                 setVisible(deprecatedToggleGroup, false);
                 setVisible(tempGroup, true);
                 setVisible(topPGroup, true);
-                setVisible(topKGroup, true);
                 setVisible(freqGroup, true);
                 setVisible(presGroup, true);
                 setVisible(samplingNote, false);
@@ -1545,8 +1539,6 @@ Translate to {target_language}.`;
                 thinkingLevel: modelDefaults.thinkingLevel,
                 temperature: modelDefaults.temperature,
                 topP: 0.95,
-                topK: 40,
-                topKEnabled: false, // v1.5.7: top-k opt-in (default off)
                 frequencyPenalty: 0,
                 presencePenalty: 0,
                 enableBatchContext: false, // Include original surrounding context and previous translations
@@ -6641,16 +6633,9 @@ Translate to {target_language}.`;
         const tempChanged = parseFloat(advTempEl.value) !== defaults.temperature;
         const topPChanged = parseFloat(advTopPEl.value) !== defaults.topP;
 
-        // topK / penalti: anggap berubah hanya jika berbeza daripada lalai.
-        const advTopKEl = document.getElementById('advancedTopK');
-        const advTopKEnabledEl = document.getElementById('advancedTopKEnabled');
+        // Penalti: anggap berubah hanya jika berbeza daripada lalai.
         const advFreqEl = document.getElementById('advancedFrequencyPenalty');
         const advPresEl = document.getElementById('advancedPresencePenalty');
-        // topK "changed" only when the toggle is ON (topKEnabled=true) AND value differs.
-        // When the toggle is OFF (default), topK is not sent to the API at all —
-        // so there is nothing to flag as modified.
-        const topKEnabledChanged = advTopKEnabledEl ? (advTopKEnabledEl.checked !== false) : false;
-        const topKChanged = topKEnabledChanged && advTopKEl ? (parseInt(advTopKEl.value, 10) !== (defaults.topK ?? 40)) : false;
         const freqChanged = advFreqEl ? (parseFloat(advFreqEl.value) !== (defaults.frequencyPenalty ?? 0)) : false;
         const presChanged = advPresEl ? (parseFloat(advPresEl.value) !== (defaults.presencePenalty ?? 0)) : false;
 
@@ -6665,7 +6650,7 @@ Translate to {target_language}.`;
 
         // Single-Picker: modelChanged is always false — no separate override dropdown exists.
         // The base #geminiModel dropdown IS the model; changes to it don't count as "advanced modified".
-        return thinkingChanged || thinkingBudgetChanged || tempChanged || topPChanged || topKEnabledChanged || freqChanged || presChanged || batchCtxChanged || ctxSizeChanged || mismatchRetriesChanged || workflowChanged;
+        return thinkingChanged || thinkingBudgetChanged || tempChanged || topPChanged || freqChanged || presChanged || batchCtxChanged || ctxSizeChanged || mismatchRetriesChanged || workflowChanged;
     }
 
     /**
@@ -7966,10 +7951,8 @@ Translate to {target_language}.`;
             if (advTempEl) advTempEl.value = modelDefaults.temperature;
             if (advTopPEl) advTopPEl.value = fullDefaults.topP;
             if (advThinkingEl) advThinkingEl.value = fullDefaults.thinkingBudget ?? -1;
-            const advTopKEl2 = document.getElementById('advancedTopK');
             const advFreqEl2 = document.getElementById('advancedFrequencyPenalty');
             const advPresEl2 = document.getElementById('advancedPresencePenalty');
-            if (advTopKEl2) advTopKEl2.value = fullDefaults.topK ?? 40;
             if (advFreqEl2) advFreqEl2.value = fullDefaults.frequencyPenalty ?? 0;
             if (advPresEl2) advPresEl2.value = fullDefaults.presencePenalty ?? 0;
 
@@ -8041,7 +8024,6 @@ Translate to {target_language}.`;
         const advThinkingLevelEl = document.getElementById('advancedThinkingLevel');
         const advTempEl = document.getElementById('advancedTemperature');
         const advTopPEl = document.getElementById('advancedTopP');
-        const advTopKEl = document.getElementById('advancedTopK');
         const advFreqEl = document.getElementById('advancedFrequencyPenalty');
         const advPresEl = document.getElementById('advancedPresencePenalty');
 
@@ -8081,18 +8063,13 @@ Translate to {target_language}.`;
             tryFetchAdvancedModels();
         });
 
-        [advThinkingEl, advThinkingLevelEl, advTempEl, advTopPEl, advTopKEl, advFreqEl, advPresEl].forEach(el => {
+        [advThinkingEl, advThinkingLevelEl, advTempEl, advTopPEl, advFreqEl, advPresEl].forEach(el => {
             if (el) {
                 el.addEventListener('change', updateBypassCacheForAdvancedSettings);
                 el.addEventListener('input', updateBypassCacheForAdvancedSettings);
             }
         });
 
-        // Top-K toggle: show/hide number input and sync bypass-cache check (v1.5.7)
-        const advTopKEnabledEl = document.getElementById('advancedTopKEnabled');
-        if (advTopKEnabledEl) {
-            advTopKEnabledEl.addEventListener('change', updateBypassCacheForAdvancedSettings);
-        }
 
         // Single-Picker: model change is handled by #geminiModel listener (already wired).
         // No #advancedModel listener needed.
@@ -11537,12 +11514,8 @@ Translate to {target_language}.`;
         }
         if (advTempEl) advTempEl.value = currentConfig.advancedSettings?.temperature ?? 0.2;
         if (advTopPEl) advTopPEl.value = currentConfig.advancedSettings?.topP ?? 0.95;
-        const advTopKEl = document.getElementById('advancedTopK');
         const advFreqEl = document.getElementById('advancedFrequencyPenalty');
         const advPresEl = document.getElementById('advancedPresencePenalty');
-        if (advTopKEl) advTopKEl.value = currentConfig.advancedSettings?.topK ?? 40;
-        const advTopKEnabledEl = document.getElementById('advancedTopKEnabled');
-        if (advTopKEnabledEl) advTopKEnabledEl.checked = currentConfig.advancedSettings?.topKEnabled === true;
         if (advFreqEl) advFreqEl.value = currentConfig.advancedSettings?.frequencyPenalty ?? 0;
         if (advPresEl) advPresEl.value = currentConfig.advancedSettings?.presencePenalty ?? 0;
         updateGeminiThinkingControl();
@@ -11890,8 +11863,6 @@ Translate to {target_language}.`;
                 thinkingBudget: (function () { const el = document.getElementById('advancedThinkingBudget'); if (!el) return -1; const v = parseInt(el.value, 10); return Number.isFinite(v) ? Math.max(-1, Math.min(200000, v)) : -1; })(),
                 temperature: (function () { const el = document.getElementById('advancedTemperature'); return el ? parseFloat(el.value) : 0.2; })(),
                 topP: (function () { const el = document.getElementById('advancedTopP'); return el ? parseFloat(el.value) : 0.95; })(),
-                topK: (function () { const el = document.getElementById('advancedTopK'); if (!el) return 40; const v = parseInt(el.value, 10); return Number.isFinite(v) ? Math.max(1, Math.min(100, v)) : 40; })(),
-                topKEnabled: (function () { const el = document.getElementById('advancedTopKEnabled'); return el ? el.checked === true : false; })(),
                 frequencyPenalty: (function () { const el = document.getElementById('advancedFrequencyPenalty'); return el ? parseFloat(el.value) : 0; })(),
                 presencePenalty: (function () { const el = document.getElementById('advancedPresencePenalty'); return el ? parseFloat(el.value) : 0; })(),
                 enableBatchContext: (function () { const el = document.getElementById('enableBatchContext'); return el ? el.checked : false; })(),

@@ -494,18 +494,11 @@ class GeminiService {
       ? advancedSettings.topP
       : (process.env.GEMINI_TOP_P !== undefined ? parseFloat(process.env.GEMINI_TOP_P) : 0.95);
 
-    // Legacy sampling controls kept for Gemini 2.x / non-3.x models.
-    // v1.5.7: topK is opt-in (topKEnabled !== false required). Fixed-size
-    // top-k truncation hurts subtitle translation vs adaptive nucleus
-    // sampling (arXiv:1904.09751 Holtzman; arXiv:2407.01082 min-p ICLR 2025;
-    // Google deprecated topK for latest Gemini models). Default: OFF —
-    // topK is only sent when the user explicitly enables it.
-    const topKEnabled = advancedSettings.topKEnabled !== false
-      && process.env.GEMINI_TOP_K_ENABLED !== 'false';
-    this.topKEnabled = topKEnabled;
-    this.topK = topKEnabled && advancedSettings.topK !== undefined
-      ? advancedSettings.topK
-      : (topKEnabled && process.env.GEMINI_TOP_K !== undefined ? parseFloat(process.env.GEMINI_TOP_K) : undefined);
+    // v1.6.0: topK/topKEnabled DIKELUARKAN sepenuhnya. Fixed-size top-k
+    // truncation mengalah kepada adaptive nucleus sampling (Holtzman 2019,
+    // arXiv:1904.09751) dan spesifikasi Gemini semasa tidak lagi menerima
+    // topK untuk model nucleus-sampling. topP sahaja dihantar untuk model
+    // 2.x/legacy. Nilai topK dalam advancedSettings lama diabaikan senyap.
 
     this.thinkingBudget = advancedSettings.thinkingBudget !== undefined
       ? advancedSettings.thinkingBudget
@@ -653,7 +646,6 @@ class GeminiService {
         temperature: this.temperature,
         topP: this.topP
       };
-      if (this.topK !== undefined) config.topK = this.topK;
       if (this.frequencyPenalty !== undefined) config.frequencyPenalty = this.frequencyPenalty;
       if (this.presencePenalty !== undefined) config.presencePenalty = this.presencePenalty;
 
@@ -675,9 +667,6 @@ class GeminiService {
       temperature: this.temperature,
       topP: this.topP
     };
-    if (this.topK !== undefined) {
-      generationConfig.topK = this.topK;
-    }
     if (this.frequencyPenalty !== undefined) {
       generationConfig.frequencyPenalty = this.frequencyPenalty;
     }

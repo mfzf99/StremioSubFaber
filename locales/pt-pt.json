@@ -1576,10 +1576,6 @@
           "label": "Top-P (Amostragem de Núcleo)",
           "helper": "Limite de probabilidade (0.0-1.0). Menor = focado, Maior = diverso. Padrão: 0.95"
         },
-        "topK": {
-          "label": "Top-K (Selecção de Token)",
-          "helper": "Número de tokens principais a considerar (1-100). Padrão: 40"
-        },
         "maxTokens": {
           "label": "Máximo Tokens de Saída",
           "helper": "Máximo de tokens na saída (1-200000). Padrões seguem o seu fornecedor selecionado."

@@ -166,24 +166,12 @@ function mergeProviderParameters(defaults, incoming) {
         // Benarkan -1 (dynamic) dan 0 (disable) mengikut spesifikasi Gemini 2.5.
         return Math.max(-1, Math.min(200000, chosen));
       })(),
-      topK: (() => {
-        const requested = Number.isFinite(parseInt(raw?.topK, 10))
-          ? parseInt(raw.topK, 10)
-          : NaN;
-        if (!Number.isFinite(requested)) return base.topK;
-        return Math.max(1, Math.min(100, requested));
-      })(),
-      // v1.5.7: topK toggle (default OFF) — ground truth shows fixed-size
-      // top-k truncation hurts subtitle translation quality vs adaptive
-      // nucleus sampling (arXiv:1904.09751, arXiv:2407.01082). When
-      // topKEnabled === false, the adapter omits topK entirely.
-      topKEnabled: (() => {
-        if (raw?.topKEnabled === false || raw?.topKEnabled === 'false') return false;
-        if (raw?.topKEnabled === true || raw?.topKEnabled === 'true') return true;
-        // Default OFF unless explicitly enabled by the user.
-        if (raw?.topKEnabled === undefined || raw?.topKEnabled === null || raw?.topKEnabled === '') return false;
-        return Boolean(base.topKEnabled);
-      })(),
+      // v1.6.0: topK/topKEnabled DIKELUARKAN sepenuhnya. Ground truth tiga
+      // lapis (Holtzman 2019 arXiv:1904.09751 — nucleus sampling mengatasi
+      // fixed-size top-k; spesifikasi Gemini 2026-09 — "models running with
+      // nucleus sampling don't allow topK"; pengharaman 3.x-strict) memuktamadkan
+      // bahawa topK tidak lagi berfungsi. Nilai topK/topKEnabled lama dalam
+      // config tersimpan akan diabaikan secara senyap (degrade gracefully).
       frequencyPenalty: (() => {
         const requested = Number.isFinite(parseFloat(raw?.frequencyPenalty))
           ? parseFloat(raw.frequencyPenalty)
@@ -588,13 +576,16 @@ function normalizeConfig(config) {
     mergedConfig.__persistReason = 'advanced-model-migration';
   }
 
-  // 🔥 Pembersihan Parameter Legasi Terpilih (minP, repetitionPenalty).
-  // NOTA: thinkingBudget & topK DIKEKALKAN — thinkingBudget diperlukan oleh
-  // Gemini 2.5 (mod nyahaktif=0 / dinamik=-1), manakala topK disokong oleh
-  // Gemini 1.5 / 2.x. Pemadaman mutlak sebelum ini membuang tetapan sah pengguna.
+  // 🔥 Pembersihan Parameter Legasi Terpilih (minP, repetitionPenalty, topK).
+  // NOTA: thinkingBudget DIKEKALKAN — diperlukan oleh Gemini 2.5
+  // (mod nyahaktif=0 / dinamik=-1). topK DIBUANG mulai v1.6.0 — ground truth
+  // tiga lapis memuktamadkan ia tidak lagi berguna untuk terjemahan subtitle.
   if (mergedConfig.advancedSettings) {
     delete mergedConfig.advancedSettings.minP;
     delete mergedConfig.advancedSettings.repetitionPenalty;
+    // v1.6.0: topK dibuang mutlak — nilai dalam config tersimpan tidak lagi sah.
+    delete mergedConfig.advancedSettings.topK;
+    delete mergedConfig.advancedSettings.topKEnabled;
   }
 
   mergedConfig.parallelBatchesEnabled = mergedConfig.parallelBatchesEnabled === true;
