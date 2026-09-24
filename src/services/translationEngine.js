@@ -32,23 +32,35 @@ const sleep = (ms) => new Promise(resolve => setTimeout(resolve, ms));
 // 🛠️ ZON TEMPLATE PROMPT (PRIMARY)
 // ============================================================================
 const PROMPT_TEMPLATES = {
-  // 1. PROMPT ASAL + REGISTER-MATCHED EXEMPLAR (Bahasa Melayu anchor — private build)
+  // Primary: untuk content normal
   primary: (targetLabel, sourceLabel) =>
-    `Translate each <s id="N"> tag from ${sourceLabel || 'the source'} to ${targetLabel}. Rephrase the dialogue into natural, conversational ${targetLabel}.
+    `Translate each <s id="N"> tag from ${sourceLabel || 'the source'} to ${targetLabel}. 
+Rephrase into natural, conversational ${targetLabel}.
 
-SPOKEN CADENCE & REGISTER BENCHMARK (MATCH THIS AUTHENTIC VIBE):
+RULES:
+- Preserve meaning accurately. Do not add or remove information.
+- Keep the same register as the source: informal → informal, formal → formal.
+- Use consistent pronouns within the same scene/context.
+- Do not over-formalize. Do not force slang if source is neutral.
+
+REGISTER & CADENCE BENCHMARK (SPOKEN MALAY VIBE):
 - Source: "Are you seriously telling me he had no idea what was going on?"
   Target: "Biar betul awak nak cakap dia langsung tak tahu apa yang tengah jadi?"
 - Source: "Look, whatever happens, just don't do anything stupid, okay?"
-  Target: "Macam inilah, walau apa pun yang jadi, jangan buat benda bukan-bukan, okay?"
+  Target: "Dengar sini, walau apa pun yang jadi, jangan buat benda bodoh, okay?"
 - Source: "If we wait until they're back, we won't get a turn."
-  Target: "Kalau tunggu mereka balik nanti, memang tak merasalah kita."`,
+  Target: "Kalau kita tunggu mereka balik, memang tak merasalah kita."
+- Source: "I'm warning you."
+  Target: "Aku bagi amaran."`,
 
-  // 2. EMERGENCY PROMPT (PROHIBITED_CONTENT Fallback + Neutral Register Anchor)
+  // Fallback: bila primary kena PROHIBITED_CONTENT
   fallback: (targetLabel, sourceLabel) =>
-    `Translate each <s id="N"> tag from ${sourceLabel || 'the source'} to ${targetLabel}. Rephrase the dialogue into natural, conversational ${targetLabel}.
+    `Translate each <s id="N"> tag from ${sourceLabel || 'the source'} to ${targetLabel}. 
+Translate literally and directly. Preserve the original intensity and tone.
+Do not soften, censor, or add creative flair.
+Do not add slang or particles unless present in the source.
 
-SPOKEN CADENCE & REGISTER BENCHMARK (MATCH THIS AUTHENTIC VIBE):
+REGISTER BENCHMARK (BLUNT, LITERAL MALAY):
 - Source: "Are you out of your mind? Shut the hell up!"
   Target: "Dah gila ke apa? Diamlah!"
 - Source: "Get the hell out of my house."
