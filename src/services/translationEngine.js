@@ -2076,14 +2076,7 @@ class TranslationEngine {
     const startId = idMatches.length > 0 ? idMatches[0] : 'START';
     const idList = idMatches.length > 0 ? idMatches.join(', ') : 'N/A';
 
-    const PROMPT_TEMPLATES = {
-  primary: (targetLabel, sourceLabel) =>
-    `Translate each <s id="N"> tag from ${sourceLabel || 'the source'} to ${targetLabel}.`
-};
-
-    const introInstruction = PROMPT_TEMPLATES.primary(targetLabel, sourceLabel);
-
-    const promptBody = `${introInstruction}
+    const promptBody = `Translate each <s id="N"> tag from ${sourceLabel || 'the source'} to ${targetLabel}. Use appropriate ${targetLabel} colloquialisms. 
 
 [UNIVERSAL STRUCTURAL DEMONSTRATION: ZERO DRIFT]
 Input:
@@ -2139,6 +2132,7 @@ CRITICAL ENFORCEMENT RULES (ZERO TOLERANCE):
 
 7. CLEAN PAYLOAD ONLY:
    - NEVER output conversational commentary, markdown code fences, notes in parentheses, thinking blocks (</think>), or prompt echoes ([input], BATCH); INSTEAD, emit ONLY the raw sequence of <s id="N">...</s> tags.
+   - NEVER output slash alternatives (/), multiple translation choices, or synonyms; INSTEAD, commit strictly to a SINGLE, definitive, best translation inside each slot.
    - NEVER repeat, re-emit, or acknowledge the pre-filled <s id="${startId}"> opening tag; INSTEAD, continue directly from the prompt boundary by generating the inner content of slot ${startId} at your very first output character.
    - NEVER append corrections after closing a tag with </s> or restart completed slots; INSTEAD, rectify errors immediately inside the active slot before closing it.
    - NEVER emit any internal thinking steps or XML tags representing thought processes; INSTEAD, bypass all metadata and output the raw string directly starting from the pre-filled tag.
@@ -2152,7 +2146,6 @@ ${batchText}
 
     return this.addBatchHeader(promptBody, batchIndex, totalBatches);
   }
-
   /**
    * Parse XML-tagged translation response
    * Matches <s id="N">text</s> patterns and recovers entries by ID.
