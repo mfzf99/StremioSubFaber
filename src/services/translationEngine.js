@@ -2083,30 +2083,43 @@ CRITICAL ENFORCEMENT RULES (ZERO TOLERANCE):
 1. STRICT 1-TO-1 CARDINALITY & ID PARITY:
    - Output EXACTLY ${expectedCount} entries matching these EXACT IDs, in this order:
      [${idList}]
-   - Every input <s id="N"> pairs strictly with one output <s id="N">. Never omit, combine, reorder, duplicate, or invent IDs.
-   - IDs are GLOBAL and may contain gaps. Preserve exact values — do NOT renumber.
-   - NEVER invent synthetic filler dialogue to satisfy the entry count; INSTEAD, translate only verified source text.
+   - NEVER omit, combine, reorder, duplicate, or invent IDs; INSTEAD, pair every single input <s id="N"> strictly 1-to-1 with its matching output <s id="N">.
+   - NEVER renumber, compress, or force sequential order; INSTEAD, preserve source SRT global IDs verbatim, retaining all numerical values and existing gaps.
 
-2. ABSOLUTE INTRA-SLOT ISOLATION (ZERO FORWARD PULLING):
-   - Output <s id="N"> MUST contain ONLY the translation of input <s id="N">; NEVER pull, borrow, or fold words from adjacent slots.
-   - FORWARD CONJUNCTION LOCK: NEVER pull conjunctions or connectors (e.g., "so", "and", "but", "because", "so I hope") from slot N+1 into slot N. If slot N+1 starts with a connector, its translation MUST strictly appear inside slot N+1, NEVER inside slot N.
-   - NEVER attach short slots (question tags, negation particles, interjections, single words like "First,") to preceding or subsequent lines; INSTEAD, translate ONLY those specific words within that exact slot and close the tag immediately.
-   - NEVER force complete target grammar on broken clauses; INSTEAD, preserve grammatically incomplete syntax — this is MANDATORY to maintain 100% subtitle synchronization.
+2. ABSOLUTE SLOT ISOLATION & ZERO SPLITTING:
+   - NEVER pull, borrow, or fold words across adjacent slots; INSTEAD, confine every translation strictly inside its matching <s id="N"> slot.
+   - NEVER split [br] into a new <s id> tag; INSTEAD, keep all multi-line text separated by [br] enclosed entirely inside its single parent tag (e.g. <s id="5">ayat satu[br]ayat dua</s>).
+   - NEVER attach short slots (question tags, negation particles, interjections, single words like "First,") to preceding or subsequent lines, and NEVER echo demonstration text; INSTEAD, translate ONLY those specific words within that exact slot and close the tag immediately.
+   - NEVER force complete target grammar on broken clauses; INSTEAD, preserve grammatically incomplete syntax to maintain 100% subtitle synchronization.
 
-3. TAG & LINE INTEGRITY:
-   - PRESERVE all [br], <i>...</i>, <b>...</b>, speaker dashes (-), and ANY other inline markup in the exact same position and count as in the source.
-   - ZERO commentary, ZERO markdown code blocks, ZERO notes in parentheses, ZERO thinking blocks (</think>), ZERO prompt echoes.
-   - Output ONLY the raw <s id="N">...</s> sequence.
+3. ZERO SHIFTING, ANTI-HALLUCINATION & SOURCE FIDELITY:
+   - NEVER shift subsequent dialogue forward to compensate for short or empty slots; INSTEAD, keep every line strictly anchored to its assigned ID.
+   - NEVER invent synthetic filler lines to satisfy slot counts; INSTEAD, translate only verified source dialogue.
+   - NEVER generate conversational replies, reactions, or commentary to background memory (<m> tags); INSTEAD, translate input <s id="${startId}"> directly as spoken dialogue.
+   - NEVER add, drop, or modify numbers, dates, times, or measurements; INSTEAD, transfer all numeric values and units accurately into the target language.
+   - NEVER alter or omit terminal punctuation (. ? ! ...) to change speech delivery; INSTEAD, mirror the original tone and natural pauses.
 
-4. MEMORY AIR-GAP (<m> TAGS):
-   - NEVER translate, output, or copy text from <m id="N"> memory tags into any <s id="N"> slot; INSTEAD, treat every <m> entry as read-only background context.
-   - NEVER let memory override source dialogue; INSTEAD, always prioritize the <s> input when memory and source conflict.
+4. AIR-GAPPED READ-ONLY CONTEXT MEMORY (<m> TAGS):
+   - NEVER translate, output, modify, or duplicate text from <m id="N"> tags into active <s id="N"> tags; INSTEAD, treat all <m> entries strictly as air-gapped, read-only background context.
+   - NEVER allow background memory to override active dialogue; INSTEAD, always prioritize <s> source text whenever memory and source conflict.
 
-5. EXACT COPY PROTOCOL (ESCAPE HATCH):
-   - NEVER invent translations for untranslatable content (proper nouns, brand names, ♪/♫ music notes, isolated symbols, numbers, corrupted text); INSTEAD, copy the EXACT original text into that slot.
-   - NEVER skip a slot under any circumstance; INSTEAD, emit the full <s id="N">...</s> pair containing the verbatim copy.
+5. ESCAPE HATCH (EXACT COPY PROTOCOL):
+   - NEVER translate titles of creative works (movies, TV shows, books, novels, songs, plays, games), registered corporate/brand names, or legal entities (e.g., Co., Ltd., Inc.); INSTEAD, keep them VERBATIM in their original language.
+   - NEVER invent translations for untranslatable content (proper nouns, standalone music notes ♪/♫, isolated symbols, numbers, punctuation, corrupted text, or whitespace); INSTEAD, copy the EXACT original text into the slot.
+   - NEVER translate unlocalizable entities in mixed slots; INSTEAD, translate the dialogue portion while copying brand names and foreign proper nouns unmodified.
+   - NEVER skip a slot under any circumstance; INSTEAD, emit the opening and closing tags containing the verbatim copy.
 
-[UNIVERSAL STRUCTURAL DEMONSTRATION: INTRA-SLOT ISOLATION & ZERO DRIFT]
+6. SONG LYRICS & INLINE MARKUP:
+   - NEVER omit or leave song lyrics untranslated when enclosed in music notes (♪/♫); INSTEAD, fully translate vocal lyrics (foreground and BGM) while preserving the musical notes.
+   - NEVER strip, displace, or inject formatting tags not present in the source; INSTEAD, preserve all [br], <i>...</i>, <b>...</b>, speaker dashes (-), and inline markup in their exact source positions and counts.
+
+7. CLEAN PAYLOAD ONLY:
+   - NEVER output conversational commentary, markdown code fences, notes in parentheses, thinking blocks (</think>), or prompt echoes ([input], BATCH); INSTEAD, emit ONLY the raw sequence of <s id="N">...</s> tags.
+   - NEVER repeat, re-emit, or acknowledge the pre-filled <s id="${startId}"> opening tag; INSTEAD, continue directly from the prompt boundary by generating the inner content of slot ${startId} at your very first output character.
+   - NEVER append corrections after closing a tag with </s> or restart completed slots; INSTEAD, rectify errors immediately inside the active slot before closing it.
+   - NEVER emit any internal thinking steps or XML tags representing thought processes; INSTEAD, bypass all metadata and output the raw string directly starting from the pre-filled tag.
+
+[UNIVERSAL STRUCTURAL DEMONSTRATION: SLOT ISOLATION & ZERO DRIFT]
 Input:
 <s id="1">We submitted the report[br]before the deadline,</s>
 <s id="2">so I hope</s>
