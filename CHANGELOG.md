@@ -16,6 +16,23 @@ All notable changes to this project will be documented in this file.
 
 - **Ujian:** [GT-6] dibalik — kini assert `topK`/`topKEnabled` MESTI di-drop oleh `normalizeConfig` (pengunci kekal terhadap kebangkitan semula); ujian legacy 2.5 dikemaskini tanpa topK. `npm test`: 106 tests, 105 PASS / 0 FAIL (baseline terpelihara).
 
+## SubMaker v1.9.0 (2026-09-24)
+
+**Register-Matched Exemplar — anchor Melayu dilancarkan ke dalam prompt (private build):**
+
+- **Konsep**: lombong terakhir yang belum digali daripada kajian purpose-driven MT (arXiv:2606.03259) — instruction *memerangkan* register, exemplar *menunjukkan* register. Untuk Melayu yang default pretraining condong ke bahasa baku, menunjukkan > memerangkan. Anchor diletak selepas rules sebagai benchmark, dilabel `MATCH THIS AUTHENTIC VIBE`.
+
+- **Keputusan projek**: build ini private untuk penggunaan Melayu — anchor Melayu tetap disuntik tanpa conditional routing ke bahasa lain (dual-template ditangguhkan sehingga codebase dikongsikan secara awam kelak).
+
+- **PROMPT_TEMPLATES dikembalikan ke struktur 4-rules penuh** (eksperimen kompression satu-ayat commit c7428d2 tidak diteruskan — dua pembolehubah tidak terbukti tidak boleh diuji serentak), dengan tiga patch diluluskan:
+  1. Keyword `natural, conversational` dikekalkan mengikut lock ground truth (arXiv:2505.00679 — top-2 meaning-preserving register descriptor; arXiv:2606.03259 — domain conversation mencatat gain instruction tertinggi; Netflix TTSG — kriteria "natural as spoken dialogue")
+  2. Primary anchor: 2 pasangan EN→MS yang menunjukkan skeptikal lisan + santai setia nada ("Biar betul awak nak cakap...", "Macam inilah, walau apa pun jadi...")
+  3. Fallback anchor: 2 pasangan termasuk **profane-neutral** ("Dah gila ke apa? Diamlah!" dan "Keluar dari rumah aku sekarang!") — menunjukkan intensitas dikekalkan tanpa sensor, sejajar Rule 4 NEUTRAL OBJECTIVITY
+
+- **Parity backup diselaraskan dalam lockstep** ([`plans/prompt-refactor-backup/b1fca3f-translationEngine.js`](plans/prompt-refactor-backup/b1fca3f-translationEngine.js)) — `scripts/verify-prompt-parity.js`: PASS kedua-dua blok (2,943 + 6,011 chars).
+
+- **Ujian:** npm test 106 tests, 105 PASS / 0 FAIL (baseline terpelihara).
+
 ## SubMaker v1.8.0 (2026-09-23)
 
 **Prompt Keyword Register — lock "natural, conversational":**
