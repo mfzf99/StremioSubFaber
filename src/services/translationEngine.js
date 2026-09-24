@@ -2076,38 +2076,39 @@ class TranslationEngine {
     const startId = idMatches.length > 0 ? idMatches[0] : 'START';
     const idList = idMatches.length > 0 ? idMatches.join(', ') : 'N/A';
 
-    const promptBody = `You are a precision subtitle translation engine. Translate each <s id="N"> tag from ${sourceLabel || 'the source'} to ${targetLabel}.
+    const promptBody = `Translate each <s id="N"> tag from ${sourceLabel || 'the source'} into natural, conversational ${targetLabel} dialogue.
 
-CRITICAL STRUCTURAL PROTOCOL (PARITY & ZERO-DRIFT ENFORCEMENT):
+CRITICAL STRUCTURAL PROTOCOL (PARITY & ZERO-BLEED ENFORCEMENT):
 
 1. STRICT 1-TO-1 CARDINALITY:
    - Output EXACTLY ${expectedCount} entries matching these EXACT IDs, in this order: [${idList}]
    - One input tag = Exactly one output tag. NEVER omit, merge, skip, combine, or split tags.
 
-2. ABSOLUTE INTRA-SLOT ISOLATION (ZERO BLEEDING):
+2. ABSOLUTE INTRA-SLOT ISOLATION (ZERO FORWARD PULLING):
    - Translate strictly INSIDE each individual tag. NEVER borrow, pull, or fold words across neighbouring tags.
-   - If an input tag contains an incomplete sentence fragment, broken clause, or single word, translate ONLY that fragment inside that exact tag.
+   - FORWARD CONJUNCTION LOCK: NEVER pull conjunctions or connectors (e.g., "so", "and", "but", "because", "so I hope") from slot N+1 into slot N. If slot N+1 starts with "so", its translation MUST strictly appear inside slot N+1, NEVER inside slot N.
+   - If an input tag contains an incomplete sentence fragment, broken clause, or single word, translate ONLY that fragment inside that exact tag and CLOSE the tag immediately.
    - Intentionally leave the target grammar incomplete to preserve subtitle timing. NEVER complete a thought across tags.
 
 3. TAG & LINE INTEGRITY:
    - Preserve all internal [br] line-break markers, <i>...</i>, <b>...</b>, and speaker dashes (-) in their exact counts and positions.
    - NEVER output commentary, explanations, thinking tags, or slash alternatives (/). Output ONLY the raw XML tags.
 
-[STRUCTURAL DEMONSTRATION: BROKEN CLAUSES & FRAGMENT ISOLATION]
+[UNIVERSAL STRUCTURAL DEMONSTRATION: INTRA-SLOT ISOLATION & ZERO DRIFT]
 Input:
-<s id="1">The chief director was the one</s>
-<s id="2">responsible for the approval.</s>
-<s id="3">You are coming with us,</s>
-<s id="4">aren't you?</s>
-<s id="5">We already warned him[br]during the meeting.</s>
+<s id="1">We submitted the report[br]before the deadline,</s>
+<s id="2">so I hope</s>
+<s id="3">the manager approves the plan.</s>
+<s id="4">You are coming with us,</s>
+<s id="5">aren't you?</s>
 <s id="6">First,</s>
 
 Target Output:
-<s id="1">Pengarah utama yang</s>
-<s id="2">bertanggungjawab atas kelulusan itu.</s>
-<s id="3">Awak ikut kami sekali,</s>
-<s id="4">kan?</s>
-<s id="5">Kami dah ingatkan dia[br]masa mesyuarat hari tu.</s>
+<s id="1">Kami dah hantar laporan[br]sebelum tarikh akhir,</s>
+<s id="2">jadi saya harap</s>
+<s id="3">pengurus luluskan rancangan itu.</s>
+<s id="4">Awak ikut kami sekali,</s>
+<s id="5">kan?</s>
 <s id="6">Pertama,</s>
 
 <input>
