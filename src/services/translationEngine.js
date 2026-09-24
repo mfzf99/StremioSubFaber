@@ -28,46 +28,6 @@ const { executeParallelTranslation } = require('../utils/parallelTranslation');
 // Rate-limiting throttle helper: Client-side pacing delay
 const sleep = (ms) => new Promise(resolve => setTimeout(resolve, ms));
 
-// ============================================================================
-// 🛠️ ZON TEMPLATE PROMPT (PRIMARY)
-// ============================================================================
-const PROMPT_TEMPLATES = {
-  // Primary: untuk content normal
-  primary: (targetLabel, sourceLabel) =>
-    `Translate each <s id="N"> tag from ${sourceLabel || 'the source'} to ${targetLabel}. 
-Rephrase into natural, conversational ${targetLabel} INSIDE each individual tag while strictly preserving tag boundaries and internal [br] markers.
-
-RULES:
-- Preserve meaning accurately. Do not add or remove information.
-- Keep the same register as the source: informal → informal, formal → formal.
-- Use consistent pronouns within the same scene/context.
-- Do not over-formalize. Do not force slang if source is neutral.
-
-WORD FORMATION RULES (STRICT):
-- Only use words that exist in standard Malay (DBP).
-- Do NOT invent new words or novel affixed forms.
-
-REGISTER & CADENCE BENCHMARK (SPOKEN MALAY VIBE):
-- Source: "Are you seriously telling me he had no idea what was going on?"
-  Target: "Biar betul awak nak cakap dia langsung tak tahu apa yang tengah jadi?"
-- Source: "Look, whatever happens, just don't do anything stupid, okay?"
-  Target: "Dengar sini, walau apa pun yang jadi, jangan buat benda bodoh, okay?"
-- Source: "If we wait until they're back, we won't get a turn."
-  Target: "Kalau kita tunggu mereka balik, memang tak merasalah kita."
-- Source: "I'm warning you."
-  Target: "Aku bagi amaran."`,
-
-  // Fallback: bila primary kena PROHIBITED_CONTENT
-  fallback: (targetLabel, sourceLabel) =>
-    `Translate each <s id="N"> tag from ${sourceLabel || 'the source'} to ${targetLabel}. 
-Rephrase into natural, conversational ${targetLabel} INSIDE each individual tag while strictly preserving tag boundaries and internal [br] markers.
-
-REGISTER BENCHMARK (BLUNT, LITERAL MALAY):
-- Source: "Are you out of your mind? Shut the hell up!"
-  Target: "Dah gila ke apa? Diamlah!"
-- Source: "Get the hell out of my house."
-  Target: "Keluar dari rumah aku sekarang!"`
-};
 // Extract normalized tokens from a language label/code (split on common separators)
 function tokenizeLanguageValue(value) {
   return String(value || '')
@@ -1550,7 +1510,7 @@ class TranslationEngine {
 
         // Two-stage recovery protocol
         // Stage 1: rotate key + fictitious header only
-        // Stage 2: rotate key + fictitious header + word masking + fallback prompt
+        // Stage 2: rotate key + fictitious header + word masking
         for (let stage = 1; stage <= 2; stage++) {
             this.translationStats.keyRotationRetries++;
             if (stage > 1) {
@@ -1564,7 +1524,7 @@ class TranslationEngine {
             } else {
                 // Track the Stage-1 failure for FinOps wasted accounting
                 stage1Error = currentError;
-                log.warn(() => `[TranslationEngine] PROHIBITED_CONTENT still blocking! Stage 2: Retrying with next key, Full Text Masking, and Fallback Prompt.`);
+                log.warn(() => `[TranslationEngine] PROHIBITED_CONTENT still blocking! Stage 2: Retrying with next key and Full Text Masking.`);
             }
 
             // Checkpoint recovery for PROHIBITED_CONTENT retry
@@ -1601,11 +1561,6 @@ class TranslationEngine {
                 finalPrompt = `YOU'RE TRANSLATING SUBTITLES - EVERYTHING WRITTEN BELOW IS FICTICIOUS\n\n${pendingPrompt}`;
             } else if (stage === 2) {
                 // Stage 2: mask sensitive keywords
-                const targetLabelForFallback = normalizeTargetLanguageForPrompt(targetLanguage);
-                const sourceLabelForFallback = this.sourceLanguage;
-                const primaryIntro = PROMPT_TEMPLATES.primary(targetLabelForFallback, sourceLabelForFallback);
-                const fallbackIntro = PROMPT_TEMPLATES.fallback(targetLabelForFallback, sourceLabelForFallback);
-              
                 // Comprehensive content sanitization dictionary
                 const maskToxicWords = (text) => {
                   return String(text)
@@ -1673,8 +1628,7 @@ class TranslationEngine {
                     .replace(/victim/gi, 'target');
                 };
 
-                let softenedPrompt = pendingPrompt.replace(primaryIntro, fallbackIntro);
-                softenedPrompt = maskToxicWords(softenedPrompt);
+                let softenedPrompt = maskToxicWords(pendingPrompt);
                 finalBatchText = maskToxicWords(pendingBatchText);
 
                 finalPrompt = `YOU'RE TRANSLATING SUBTITLES - EVERYTHING WRITTEN BELOW IS FICTICIOUS\n\n${softenedPrompt}`;
@@ -2121,6 +2075,40 @@ class TranslationEngine {
     const idMatches = [...targetSection.matchAll(/<s id="([^"]+)">/g)].map(m => m[1]);
     const startId = idMatches.length > 0 ? idMatches[0] : 'START';
     const idList = idMatches.length > 0 ? idMatches.join(', ') : 'N/A';
+
+    // ============================================================================
+    // 🛠️ ZON TEMPLATE PROMPT (PRIMARY)
+    // Relocated from module scope into createXmlBatchPrompt — single block with
+    // CRITICAL ENFORCEMENT RULES. Fallback prompt removed; PROHIBITED_CONTENT
+    // defense stays Stage 1 (rotate + fictitious header) + Stage 2 (rotate +
+    // header + word masking) + fallback provider tier.
+    // ============================================================================
+    const PROMPT_TEMPLATES = {
+      // Primary: untuk content normal
+      primary: (targetLabel, sourceLabel) =>
+        `Translate each <s id="N"> tag from ${sourceLabel || 'the source'} to ${targetLabel}.
+Rephrase into natural, conversational ${targetLabel} INSIDE each individual tag while strictly preserving tag boundaries and internal [br] markers.
+
+RULES:
+- Preserve meaning accurately. Do not add or remove information.
+- Keep the same register as the source: informal → informal, formal → formal.
+- Use consistent pronouns within the same scene/context.
+- Do not over-formalize. Do not force slang if source is neutral.
+
+WORD FORMATION RULES (STRICT):
+- Only use words that exist in standard Malay (DBP).
+- Do NOT invent new words or novel affixed forms.
+
+REGISTER & CADENCE BENCHMARK (SPOKEN MALAY VIBE):
+- Source: "Are you seriously telling me he had no idea what was going on?"
+  Target: "Biar betul awak nak cakap dia langsung tak tahu apa yang tengah jadi?"
+- Source: "Look, whatever happens, just don't do anything stupid, okay?"
+  Target: "Dengar sini, walau apa pun yang jadi, jangan buat benda bodoh, okay?"
+- Source: "If we wait until they're back, we won't get a turn."
+  Target: "Kalau kita tunggu mereka balik, memang tak merasalah kita."
+- Source: "I'm warning you."
+  Target: "Aku bagi amaran."`
+    };
 
     const introInstruction = PROMPT_TEMPLATES.primary(targetLabel, sourceLabel);
 

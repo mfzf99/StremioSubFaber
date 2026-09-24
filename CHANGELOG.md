@@ -2,6 +2,20 @@
 
 All notable changes to this project will be documented in this file.
 
+## Pembedahan Prompt (2026-09-24) — Purge Fallback + Relokasi `PROMPT_TEMPLATES`
+
+**Pertahanan dua-stage dilucutkan komponen fallback prompt + blok template dipindahkan masuk `createXmlBatchPrompt`:**
+
+- **Fallback prompt dibuang sepenuhnya:** kunci `PROMPT_TEMPLATES.fallback` (register BLUNT, LITERAL MALAY) dan satu-satunya penggunaannya — swap `pendingPrompt.replace(primaryIntro, fallbackIntro)` dalam Stage 2 — dipadam. Pertahanan PROHIBITED_CONTENT sebenar kekal berlapis: **Stage 1** (rotate key + fictitious header) → **Stage 2** (rotate key + fictitious header + `maskToxicWords` penuh ke atas prompt & batch text, tanpa swap prompt lagi) → **tier fallback provider** (`tryFallback` — tidak disentuh).
+
+- **`PROMPT_TEMPLATES` direlokasi masuk [`createXmlBatchPrompt`](src/services/translationEngine.js)** — satu blok bersama `CRITICAL ENFORCEMENT RULES (ZERO TOLERANCE)`. Resipi primary latest (`5f9c307`: RULES + WORD FORMATION DBP + REGISTER & CADENCE BENCHMARK) disalin **sebijik byte** (termasuk trailing-space warisan pada baris pembuka) — disahkan render sentinel, 1,168 aksara.
+
+- **Skrip pariti baharu:** [`scripts/verify-prompt-parity.js`](scripts/verify-prompt-parity.js) ditulis semula ke ground truth baharu — 5 semakan: (1) purge skop modul, (2) definisi tunggal dalam `createXmlBatchPrompt` sebelum blok CRITICAL, (3) sifar baki fallback, (4) tepat 2 rujukan identifier, (5) prompt primary byte-identical `5f9c307`. Semua **PASS**.
+
+- **Plan pembedahan + keputusan:** [`plans/pembedahan-fallback-purge-prompt-relocate.md`](plans/pembedahan-fallback-purge-prompt-relocate.md).
+
+- **Ujian:** `npm test` 106 tests, **105 PASS / 0 FAIL** (1 skipped; baseline terpelihara).
+
 ## SubMaker v1.7.0 (2026-09-23)
 
 **Parameter Surgery — topK dibuang sepenuhnya dari SubMaker:**
