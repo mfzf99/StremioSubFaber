@@ -2076,7 +2076,45 @@ class TranslationEngine {
     const startId = idMatches.length > 0 ? idMatches[0] : 'START';
     const idList = idMatches.length > 0 ? idMatches.join(', ') : 'N/A';
 
-    const promptBody = `Translate the text inside each <s id="N"> tag from ${sourceLabel || 'the source'} into natural, conversational ${targetLabel} subtitle dialogue.
+    const promptBody = `Translate each <s id="N"> tag from ${sourceLabel || 'the source'} to ${targetLabel}.
+Rephrase into natural, conversational ${targetLabel} INSIDE each individual tag while strictly preserving tag boundaries and internal [br] markers.
+
+RULES:
+- Preserve meaning accurately. Do not add or remove information.
+- Keep the same register as the source: informal → informal, formal → formal.
+- Use consistent pronouns within the same scene/context.
+- Do not over-formalize. Do not force slang if source is neutral.
+
+WORD FORMATION RULES (STRICT):
+- Only use words that exist in standard Malay (DBP).
+- Do NOT invent new words or novel affixed forms.
+
+REGISTER & CADENCE BENCHMARK (SPOKEN MALAY VIBE):
+- Source: "Are you seriously telling me he had no idea what was going on?"
+  Target: "Biar betul awak nak cakap dia langsung tak tahu apa yang tengah jadi?"
+- Source: "Look, whatever happens, just don't do anything stupid, okay?"
+  Target: "Dengar sini, walau apa pun yang jadi, jangan buat benda bodoh, okay?"
+- Source: "If we wait until they're back, we won't get a turn."
+  Target: "Kalau kita tunggu mereka balik, memang tak merasalah kita."
+- Source: "I'm warning you."
+  Target: "saya bagi amaran."
+
+[UNIVERSAL STRUCTURAL DEMONSTRATION: SLOT ISOLATION & ZERO DRIFT]
+Input:
+<s id="1">The chief director was the one</s>
+<s id="2">responsible for the approval.</s>
+<s id="3">You are coming with us,</s>
+<s id="4">aren't you?</s>
+<s id="5">We already warned him[br]during the meeting.</s>
+<s id="6">First,</s>
+
+Target Output:
+<s id="1">Pengarah utama yang</s>
+<s id="2">bertanggungjawab atas kelulusan itu.</s>
+<s id="3">Awak ikut kami sekali,</s>
+<s id="4">kan?</s>
+<s id="5">Kami dah ingatkan dia[br]masa mesyuarat hari tu.</s>
+<s id="6">Pertama,</s>
 
 CRITICAL ENFORCEMENT RULES (ZERO TOLERANCE):
 
@@ -2118,23 +2156,6 @@ CRITICAL ENFORCEMENT RULES (ZERO TOLERANCE):
    - NEVER repeat, re-emit, or acknowledge the pre-filled <s id="${startId}"> opening tag; INSTEAD, continue directly from the prompt boundary by generating the inner content of slot ${startId} at your very first output character.
    - NEVER append corrections after closing a tag with </s> or restart completed slots; INSTEAD, rectify errors immediately inside the active slot before closing it.
    - NEVER emit any internal thinking steps or XML tags representing thought processes; INSTEAD, bypass all metadata and output the raw string directly starting from the pre-filled tag.
-
-[UNIVERSAL STRUCTURAL DEMONSTRATION: SLOT ISOLATION & ZERO DRIFT]
-Input:
-<s id="1">We submitted the report[br]before the deadline,</s>
-<s id="2">so I hope</s>
-<s id="3">the manager approves the plan.</s>
-<s id="4">You are coming with us,</s>
-<s id="5">aren't you?</s>
-<s id="6">First,</s>
-
-Target Output:
-<s id="1">Kami dah hantar laporan[br]sebelum tarikh akhir,</s>
-<s id="2">jadi saya harap</s>
-<s id="3">pengurus luluskan rancangan itu.</s>
-<s id="4">Awak ikut kami sekali,</s>
-<s id="5">kan?</s>
-<s id="6">Pertama,</s>
 
 <input>
 ${batchText}
