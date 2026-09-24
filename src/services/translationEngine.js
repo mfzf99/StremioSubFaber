@@ -2076,38 +2076,12 @@ class TranslationEngine {
     const startId = idMatches.length > 0 ? idMatches[0] : 'START';
     const idList = idMatches.length > 0 ? idMatches.join(', ') : 'N/A';
 
-    // ============================================================================
-    // 🛠️ ZON TEMPLATE PROMPT (PRIMARY)
-    // Relocated from module scope into createXmlBatchPrompt — single block with
-    // CRITICAL ENFORCEMENT RULES. Fallback prompt removed; PROHIBITED_CONTENT
-    // defense stays Stage 1 (rotate + fictitious header) + Stage 2 (rotate +
-    // header + word masking) + fallback provider tier.
-    // ============================================================================
     const PROMPT_TEMPLATES = {
-      // Primary: untuk content normal
       primary: (targetLabel, sourceLabel) =>
         `Translate each <s id="N"> tag from ${sourceLabel || 'the source'} to ${targetLabel}.
-Rephrase into natural, conversational ${targetLabel} INSIDE each individual tag while strictly preserving tag boundaries and internal [br] markers.
-
 RULES:
-- Preserve meaning accurately. Do not add or remove information.
-- Keep the same register as the source: informal → informal, formal → formal.
-- Use consistent pronouns within the same scene/context.
-- Do not over-formalize. Do not force slang if source is neutral.
-
-WORD FORMATION RULES (STRICT):
-- Only use words that exist in standard Malay (DBP).
-- Do NOT invent new words or novel affixed forms.
-
-REGISTER & CADENCE BENCHMARK (SPOKEN MALAY VIBE):
-- Source: "Are you seriously telling me he had no idea what was going on?"
-  Target: "Biar betul awak nak cakap dia langsung tak tahu apa yang tengah jadi?"
-- Source: "Look, whatever happens, just don't do anything stupid, okay?"
-  Target: "Dengar sini, walau apa pun yang jadi, jangan buat benda bodoh, okay?"
-- Source: "If we wait until they're back, we won't get a turn."
-  Target: "Kalau kita tunggu mereka balik, memang tak merasalah kita."
-- Source: "I'm warning you."
-  Target: "Aku bagi amaran."`
+- Use appropriate colloquialisms.
+- Only use words that exist in standard Malay (DBP).`
     };
 
     const introInstruction = PROMPT_TEMPLATES.primary(targetLabel, sourceLabel);
