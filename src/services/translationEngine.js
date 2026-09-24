@@ -2076,9 +2076,24 @@ class TranslationEngine {
     const startId = idMatches.length > 0 ? idMatches[0] : 'START';
     const idList = idMatches.length > 0 ? idMatches.join(', ') : 'N/A';
 
-    const promptBody = `Translate each <s id="N"> tag from ${sourceLabel || 'the source'} to ${targetLabel}. Use appropriate ${targetLabel} colloquialisms. 
+    const promptBody = `Translate each <s id="N"> tag from ${sourceLabel || 'the source'} to ${targetLabel}.
 
-[UNIVERSAL STRUCTURAL DEMONSTRATION: ZERO DRIFT]
+INTRA-SLOT LOCALIZATION RULES (ACTION REPLACEMENT):
+1. ISOLATED FREEDOM: NEVER mirror foreign syntax, trailing modifiers, or literal word order; INSTEAD, rephrase the dialogue into natural, conversational ${targetLabel} INSIDE each individual tag while strictly preserving tag boundaries and internal [br] markers. Preserve meaning accurately — do not add, remove, or soften information.
+2. SPOKEN DICTION & ZERO ESSAY RIGIDITY: NEVER use formal copulas, formal conjunctions, dictionary jargon, fabricated neologisms with ungrammatical affixations, or regional sub-dialects; INSTEAD, capture authentic conversational flow using natural, informal-spoken ${targetLabel}. Avoid non-standard SMS abbreviations.
+3. DEPENDENT CLAUSES: NEVER attempt to complete partial sentences or borrow words from neighbouring tags; INSTEAD, translate ONLY the fragment present within that specific tag, intentionally leaving target syntax incomplete to lock synchronization. This overrides Rule 1 when the source tag is a fragment.
+
+REGISTER & CADENCE BENCHMARK (informal-spoken Malay):
+- Source: "Are you seriously telling me he had no idea what was going on?"
+  Target: "Biar betul awak nak cakap dia langsung tak tahu apa yang tengah jadi?"
+- Source: "Look, whatever happens, just don't do anything stupid, okay?"
+  Target: "Dengar sini, walau apa pun yang jadi, jangan buat benda bodoh, okay?"
+- Source: "If we wait until they're back, we won't get a turn."
+  Target: "Kalau kita tunggu diorang balik, memang tak dapat giliranlah kita."
+- Source: "I'm warning you."
+  Target: "Aku bagi amaran ni."
+
+[UNIVERSAL STRUCTURAL DEMONSTRATION: INTRA-SLOT LOCALIZATION & ZERO DRIFT]
 Input:
 <s id="1">The chief director was the one</s>
 <s id="2">responsible for the approval.</s>
