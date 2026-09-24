@@ -34,7 +34,7 @@ const sleep = (ms) => new Promise(resolve => setTimeout(resolve, ms));
 const PROMPT_TEMPLATES = {
   // 1. PROMPT ASAL + REGISTER-MATCHED EXEMPLAR (Bahasa Melayu anchor — private build)
   primary: (targetLabel, sourceLabel) =>
-    `Translate each <s id="N"> tag from ${sourceLabel || 'the source'} to natural, conversational ${targetLabel}.
+    `Translate each <s id="N"> tag from ${sourceLabel || 'the source'} ${targetLabel}. Rephrase the dialogue into natural, conversational ${targetLabel}.
 
 SPOKEN CADENCE & REGISTER BENCHMARK (MATCH THIS AUTHENTIC VIBE):
 - Source: "Are you seriously telling me he had no idea what was going on?"
@@ -46,7 +46,7 @@ SPOKEN CADENCE & REGISTER BENCHMARK (MATCH THIS AUTHENTIC VIBE):
 
   // 2. EMERGENCY PROMPT (PROHIBITED_CONTENT Fallback + Neutral Register Anchor)
   fallback: (targetLabel, sourceLabel) =>
-    `Translate each <s id="N"> tag from ${sourceLabel || 'the source'} to natural, conversational ${targetLabel}.
+    `Translate each <s id="N"> tag from ${sourceLabel || 'the source'} ${targetLabel}. Rephrase the dialogue into natural, conversational ${targetLabel}.
 
 SPOKEN CADENCE & REGISTER BENCHMARK (MATCH THIS AUTHENTIC VIBE):
 - Source: "Are you out of your mind? Shut the hell up!"
