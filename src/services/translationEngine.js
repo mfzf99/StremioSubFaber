@@ -2076,23 +2076,26 @@ class TranslationEngine {
     const startId = idMatches.length > 0 ? idMatches[0] : 'START';
     const idList = idMatches.length > 0 ? idMatches.join(', ') : 'N/A';
 
-    const promptBody = `Translate each <s id="N"> tag from ${sourceLabel || 'the source'} into natural, conversational ${targetLabel} dialogue.
+    const promptBody = `Translate each <s id="N"> tag from ${sourceLabel || 'the source'} into spoken, conversational ${targetLabel} dialogue.
 
-CRITICAL STRUCTURAL PROTOCOL (PARITY & ZERO-BLEED ENFORCEMENT):
+CRITICAL ENFORCEMENT RULES (ZERO TOLERANCE):
 
-1. STRICT 1-TO-1 CARDINALITY:
-   - Output EXACTLY ${expectedCount} entries matching these EXACT IDs, in this order: [${idList}]
-   - One input tag = Exactly one output tag. NEVER omit, merge, skip, combine, or split tags.
+1. STRICT 1-TO-1 CARDINALITY & ID PARITY:
+   - Output EXACTLY ${expectedCount} entries matching these EXACT IDs, in this order:
+     [${idList}]
+   - Every input <s id="N"> pairs strictly with one output <s id="N">. Never omit, combine, reorder, duplicate, or invent IDs.
+   - IDs are GLOBAL from the source SRT. Preserve gaps and exact values — do NOT renumber.
 
 2. ABSOLUTE INTRA-SLOT ISOLATION (ZERO FORWARD PULLING):
-   - Translate strictly INSIDE each individual tag. NEVER borrow, pull, or fold words across neighbouring tags.
-   - FORWARD CONJUNCTION LOCK: NEVER pull conjunctions or connectors (e.g., "so", "and", "but", "because", "so I hope") from slot N+1 into slot N. If slot N+1 starts with "so", its translation MUST strictly appear inside slot N+1, NEVER inside slot N.
-   - If an input tag contains an incomplete sentence fragment, broken clause, or single word, translate ONLY that fragment inside that exact tag and CLOSE the tag immediately.
-   - Intentionally leave the target grammar incomplete to preserve subtitle timing. NEVER complete a thought across tags.
+   - Output <s id="N"> MUST contain ONLY the translation of input <s id="N">; NEVER pull, borrow, or fold words from adjacent slots.
+   - FORWARD CONJUNCTION LOCK: NEVER pull conjunctions or connectors (e.g., "so", "and", "but", "because", "so I hope") from slot N+1 into slot N. If slot N+1 starts with a connector, its translation MUST strictly appear inside slot N+1, NEVER inside slot N.
+   - NEVER attach short slots (question tags, negation particles, interjections, single words like "First,") to preceding or subsequent lines; INSTEAD, translate ONLY those specific words within that exact slot and close the tag immediately.
+   - NEVER force complete target grammar on broken clauses; INSTEAD, preserve grammatically incomplete syntax — this is MANDATORY to maintain 100% subtitle synchronization.
 
 3. TAG & LINE INTEGRITY:
-   - Preserve all internal [br] line-break markers, <i>...</i>, <b>...</b>, and speaker dashes (-) in their exact counts and positions.
-   - NEVER output commentary, explanations, thinking tags, or slash alternatives (/). Output ONLY the raw XML tags.
+   - PRESERVE all [br], <i>...</i>, <b>...</b>, speaker dashes (-), and ANY other inline markup in the exact same position and count as in the source.
+   - ZERO commentary, ZERO markdown code blocks, ZERO notes in parentheses, ZERO slash alternatives (/) or multiple choices.
+   - Output ONLY the raw <s id="N">...</s> sequence.
 
 [UNIVERSAL STRUCTURAL DEMONSTRATION: INTRA-SLOT ISOLATION & ZERO DRIFT]
 Input:
