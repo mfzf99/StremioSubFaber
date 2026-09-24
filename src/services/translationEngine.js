@@ -35,7 +35,7 @@ const PROMPT_TEMPLATES = {
   // Primary: untuk content normal
   primary: (targetLabel, sourceLabel) =>
     `Translate each <s id="N"> tag from ${sourceLabel || 'the source'} to ${targetLabel}. 
-Rephrase into natural, conversational ${targetLabel}.
+Rephrase into natural, conversational ${targetLabel} INSIDE each individual tag while strictly preserving tag boundaries and internal [br] markers.
 
 RULES:
 - Preserve meaning accurately. Do not add or remove information.
@@ -60,9 +60,7 @@ REGISTER & CADENCE BENCHMARK (SPOKEN MALAY VIBE):
   // Fallback: bila primary kena PROHIBITED_CONTENT
   fallback: (targetLabel, sourceLabel) =>
     `Translate each <s id="N"> tag from ${sourceLabel || 'the source'} to ${targetLabel}. 
-Translate literally and directly. Preserve the original intensity and tone.
-Do not soften, censor, or add creative flair.
-Do not add slang or particles unless present in the source.
+Rephrase into natural, conversational ${targetLabel} INSIDE each individual tag while strictly preserving tag boundaries and internal [br] markers.
 
 REGISTER BENCHMARK (BLUNT, LITERAL MALAY):
 - Source: "Are you out of your mind? Shut the hell up!"
