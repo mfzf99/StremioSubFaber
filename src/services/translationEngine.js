@@ -2077,12 +2077,14 @@ class TranslationEngine {
     const idList = idMatches.length > 0 ? idMatches.join(', ') : 'N/A';
 
     const PROMPT_TEMPLATES = {
-      primary: (targetLabel, sourceLabel) =>
-        `Translate each <s id="N"> tag from ${sourceLabel || 'the source'} to ${targetLabel}.
-RULES:
-- Use appropriate colloquialisms.
-- Only use words that exist in standard Malay (DBP).`
-    };
+  primary: (targetLabel, sourceLabel) =>
+    `Translate each <s id="N"> tag from ${sourceLabel || 'the source'} to ${targetLabel}.
+
+INTRA-SLOT LOCALIZATION RULES (ACTION REPLACEMENT):
+1. ISOLATED FREEDOM: NEVER mirror foreign syntax, trailing modifiers, or literal word order; INSTEAD, rephrase the dialogue into natural, conversational ${targetLabel} INSIDE each individual tag while strictly preserving tag boundaries and internal [br] markers.
+2. SPOKEN DICTION & ZERO ESSAY RIGIDITY: NEVER use formal copulas, formal conjunctions, dictionary jargon, literal pronoun calques, fabricated neologisms with ungrammatical affixations, or regional sub-dialects; INSTEAD, capture authentic conversational flow using neutral, broadcast-grade spoken ${targetLabel} without non-standard SMS abbreviations or localized dialect words.
+3. DEPENDENT CLAUSES: NEVER attempt to complete partial sentences or borrow words from neighbouring tags; INSTEAD, translate ONLY the fragment present within that specific tag, intentionally leaving target syntax incomplete to lock synchronization.`
+};
 
     const introInstruction = PROMPT_TEMPLATES.primary(targetLabel, sourceLabel);
 
