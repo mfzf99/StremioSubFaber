@@ -2076,7 +2076,7 @@ class TranslationEngine {
     const startId = idMatches.length > 0 ? idMatches[0] : 'START';
     const idList = idMatches.length > 0 ? idMatches.join(', ') : 'N/A';
 
-    const promptBody = `Translate each <s id="N"> tag from ${sourceLabel || 'the source'} to ${targetLabel}. Rephrase into natural, conversational ${targetLabel} INSIDE each individual tag while strictly preserving tag boundaries and internal [br] markers.
+    const promptBody = `Translate each <s id="N"> tag from ${sourceLabel || 'the source'} to ${targetLabel}. Rephrase the subtitle dialogue into natural, conversational ${targetLabel} INSIDE each individual tag while strictly preserving tag boundaries and internal [br] markers.
 
 [UNIVERSAL STRUCTURAL DEMONSTRATION: SLOT ISOLATION & ZERO DRIFT]
 Input:
