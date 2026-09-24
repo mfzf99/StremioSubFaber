@@ -2076,7 +2076,7 @@ class TranslationEngine {
     const startId = idMatches.length > 0 ? idMatches[0] : 'START';
     const idList = idMatches.length > 0 ? idMatches.join(', ') : 'N/A';
 
-    const promptBody = `Translate each <s id="N"> tag from ${sourceLabel || 'the source'} into spoken, conversational ${targetLabel} dialogue.
+    const promptBody = `Translate the text inside each <s id="N"> tag from ${sourceLabel || 'the source'} into natural, conversational ${targetLabel} subtitle dialogue.
 
 CRITICAL ENFORCEMENT RULES (ZERO TOLERANCE):
 
@@ -2084,7 +2084,8 @@ CRITICAL ENFORCEMENT RULES (ZERO TOLERANCE):
    - Output EXACTLY ${expectedCount} entries matching these EXACT IDs, in this order:
      [${idList}]
    - Every input <s id="N"> pairs strictly with one output <s id="N">. Never omit, combine, reorder, duplicate, or invent IDs.
-   - IDs are GLOBAL from the source SRT. Preserve gaps and exact values — do NOT renumber.
+   - IDs are GLOBAL and may contain gaps. Preserve exact values — do NOT renumber.
+   - NEVER invent synthetic filler dialogue to satisfy the entry count; INSTEAD, translate only verified source text.
 
 2. ABSOLUTE INTRA-SLOT ISOLATION (ZERO FORWARD PULLING):
    - Output <s id="N"> MUST contain ONLY the translation of input <s id="N">; NEVER pull, borrow, or fold words from adjacent slots.
@@ -2094,8 +2095,16 @@ CRITICAL ENFORCEMENT RULES (ZERO TOLERANCE):
 
 3. TAG & LINE INTEGRITY:
    - PRESERVE all [br], <i>...</i>, <b>...</b>, speaker dashes (-), and ANY other inline markup in the exact same position and count as in the source.
-   - ZERO commentary, ZERO markdown code blocks, ZERO notes in parentheses, ZERO slash alternatives (/) or multiple choices.
+   - ZERO commentary, ZERO markdown code blocks, ZERO notes in parentheses, ZERO thinking blocks (</think>), ZERO prompt echoes.
    - Output ONLY the raw <s id="N">...</s> sequence.
+
+4. MEMORY AIR-GAP (<m> TAGS):
+   - NEVER translate, output, or copy text from <m id="N"> memory tags into any <s id="N"> slot; INSTEAD, treat every <m> entry as read-only background context.
+   - NEVER let memory override source dialogue; INSTEAD, always prioritize the <s> input when memory and source conflict.
+
+5. EXACT COPY PROTOCOL (ESCAPE HATCH):
+   - NEVER invent translations for untranslatable content (proper nouns, brand names, ♪/♫ music notes, isolated symbols, numbers, corrupted text); INSTEAD, copy the EXACT original text into that slot.
+   - NEVER skip a slot under any circumstance; INSTEAD, emit the full <s id="N">...</s> pair containing the verbatim copy.
 
 [UNIVERSAL STRUCTURAL DEMONSTRATION: INTRA-SLOT ISOLATION & ZERO DRIFT]
 Input:
