@@ -43,6 +43,10 @@ RULES:
 - Use consistent pronouns within the same scene/context.
 - Do not over-formalize. Do not force slang if source is neutral.
 
+WORD FORMATION RULES (STRICT):
+- Only use words that exist in standard Malay (DBP).
+- Do NOT invent new words or novel affixed forms.
+
 REGISTER & CADENCE BENCHMARK (SPOKEN MALAY VIBE):
 - Source: "Are you seriously telling me he had no idea what was going on?"
   Target: "Biar betul awak nak cakap dia langsung tak tahu apa yang tengah jadi?"
