@@ -2080,18 +2080,18 @@ class TranslationEngine {
 
 INTRA-SLOT LOCALIZATION RULES (ACTION REPLACEMENT):
 1. ISOLATED FREEDOM: NEVER mirror foreign syntax, trailing modifiers, or literal word order; INSTEAD, rephrase the dialogue into natural, conversational ${targetLabel} INSIDE each individual tag while strictly preserving tag boundaries and internal [br] markers. Preserve meaning accurately — do not add, remove, or soften information.
-2. SPOKEN DICTION & ZERO ESSAY RIGIDITY: NEVER use formal copulas, formal conjunctions, dictionary jargon, fabricated neologisms with ungrammatical affixations, or regional sub-dialects; INSTEAD, capture authentic conversational flow using natural, informal-spoken ${targetLabel}. Avoid non-standard SMS abbreviations.
+2. SPOKEN DICTION & VOCABULARY INTEGRITY: NEVER use formal copulas, formal conjunctions, dictionary jargon, fabricated neologisms, ungrammatical affixations, or regional sub-dialects; INSTEAD, capture authentic conversational flow using neutral, broadcast-grade modern spoken ${targetLabel}. Strictly avoid non-standard SMS abbreviations and hybrid slang portmanteaus.
 3. DEPENDENT CLAUSES: NEVER attempt to complete partial sentences or borrow words from neighbouring tags; INSTEAD, translate ONLY the fragment present within that specific tag, intentionally leaving target syntax incomplete to lock synchronization. This overrides Rule 1 when the source tag is a fragment.
 
-REGISTER & CADENCE BENCHMARK (informal-spoken Malay):
+REGISTER & CADENCE BENCHMARK (broadcast-grade spoken Malay):
 - Source: "Are you seriously telling me he had no idea what was going on?"
   Target: "Biar betul awak nak cakap dia langsung tak tahu apa yang tengah jadi?"
 - Source: "Look, whatever happens, just don't do anything stupid, okay?"
-  Target: "Dengar sini, walau apa pun yang jadi, jangan buat benda bodoh, okay?"
+  Target: "Macam inilah, walau apa pun yang jadi, jangan buat benda bukan-bukan, okay?"
 - Source: "If we wait until they're back, we won't get a turn."
-  Target: "Kalau kita tunggu diorang balik, memang tak dapat giliranlah kita."
+  Target: "Kalau tunggu mereka balik nanti, memang tak merasalah kita."
 - Source: "I'm warning you."
-  Target: "Aku bagi amaran ni."
+  Target: "Saya bagi amaran."
 
 [UNIVERSAL STRUCTURAL DEMONSTRATION: INTRA-SLOT LOCALIZATION & ZERO DRIFT]
 Input:
