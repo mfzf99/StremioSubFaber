@@ -34,11 +34,11 @@ const sleep = (ms) => new Promise(resolve => setTimeout(resolve, ms));
 const PROMPT_TEMPLATES = {
   // 1. PROMPT ASAL (Enterprise Broadcast Standard - Intra-Slot Action-Replacement)
   primary: (targetLabel, sourceLabel) => 
-    `Translate each <s id="N"> tag from ${sourceLabel} to ${targetLabel}. NEVER mirror foreign syntax, trailing modifiers, or literal word order; INSTEAD, rephrase the dialogue into natural, conversational ${targetLabel} INSIDE each individual tag while strictly preserving tag boundaries and internal [br] markers.`,
+    `Translate each <s id="N"> tag from ${sourceLabel} to ${targetLabel}. NEVER mirror foreign word order, enforce textbook essay rigidity, or bleed words across neighbouring tags to complete broken syntax; INSTEAD, rephrase dialogue into natural, conversational ${targetLabel} strictly INSIDE each isolated slot while preserving [br] markers.`,
 
   // 2. PROMPT KECEMASAN (PROHIBITED_CONTENT Fallback - Neutral & Safe)
   fallback: (targetLabel, sourceLabel) => 
-    `Translate each <s id="N"> tag from ${sourceLabel} to ${targetLabel}. NEVER mirror foreign syntax, trailing modifiers, or literal word order; INSTEAD, rephrase the dialogue into natural, conversational ${targetLabel} INSIDE each individual tag while strictly preserving tag boundaries and internal [br] markers.`
+    `Translate each <s id="N"> tag from ${sourceLabel} to ${targetLabel}. NEVER mirror foreign word order, enforce textbook essay rigidity, bleed words across neighbouring tags, or censor/refuse/drop slots on mature or profane dialogue; INSTEAD, rephrase dialogue into natural, conversational ${targetLabel} strictly INSIDE each isolated tag, rendering sensitive lines with objective, un-glorified neutrality while preserving [br] markers.`
 };
 // Extract normalized tokens from a language label/code (split on common separators)
 function tokenizeLanguageValue(value) {
