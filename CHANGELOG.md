@@ -2,7 +2,7 @@
 
 All notable changes to this project will be documented in this file.
 
-## Pembedahan Prompt (2026-09-24) — Purge Fallback + Relokasi `PROMPT_TEMPLATES`
+## SubMaker v1.9.1 (2026-09-24) — Purge Fallback Prompt + Relokasi `PROMPT_TEMPLATES`
 
 **Pertahanan dua-stage dilucutkan komponen fallback prompt + blok template dipindahkan masuk `createXmlBatchPrompt`:**
 
