@@ -34,7 +34,7 @@ const sleep = (ms) => new Promise(resolve => setTimeout(resolve, ms));
 const PROMPT_TEMPLATES = {
   // 1. PROMPT ASAL + REGISTER-MATCHED EXEMPLAR (Bahasa Melayu anchor — private build)
   primary: (targetLabel, sourceLabel) =>
-    `Translate each <s id="N"> tag from ${sourceLabel} to ${targetLabel}.
+    `Translate each <s id="N"> tag from ${sourceLabel || 'the source'} to ${targetLabel}.
 
 INTRA-SLOT LOCALIZATION RULES (ACTION REPLACEMENT):
 1. ISOLATED FREEDOM: NEVER mirror foreign syntax, trailing modifiers, or literal word order; INSTEAD, rephrase the dialogue into natural, conversational ${targetLabel} INSIDE each individual tag while strictly preserving tag boundaries and internal [br] markers.
@@ -43,13 +43,15 @@ INTRA-SLOT LOCALIZATION RULES (ACTION REPLACEMENT):
 
 SPOKEN CADENCE & REGISTER BENCHMARK (MATCH THIS AUTHENTIC VIBE):
 - Source: "Are you seriously telling me he had no idea what was going on?"
-  Target: "Biar betul awak nak cakap dia langsung tak tahu apa yang jadi?"
+  Target: "Biar betul awak nak cakap dia langsung tak tahu apa yang tengah jadi?"
 - Source: "Look, whatever happens, just don't do anything stupid, okay?"
-  Target: "Macam inilah, walau apa pun jadi, jangan buat benda bukan-bukan, okay?"`,
+  Target: "Macam inilah, walau apa pun yang jadi, jangan buat benda bukan-bukan, okay?"
+- Source: "If we wait until they're back, we won't get a turn."
+  Target: "Kalau tunggu mereka balik nanti, memang tak merasalah kita."`,
 
-  // 2. PROMPT KECEMASAN (PROHIBITED_CONTENT Fallback + Neutral Register Anchor)
+  // 2. EMERGENCY PROMPT (PROHIBITED_CONTENT Fallback + Neutral Register Anchor)
   fallback: (targetLabel, sourceLabel) =>
-    `Translate each <s id="N"> tag from ${sourceLabel} to ${targetLabel}.
+    `Translate each <s id="N"> tag from ${sourceLabel || 'the source'} to ${targetLabel}.
 
 INTRA-SLOT LOCALIZATION RULES (ACTION REPLACEMENT):
 1. ISOLATED FREEDOM: NEVER mirror foreign syntax, trailing modifiers, or literal word order; INSTEAD, rephrase the dialogue into natural, conversational ${targetLabel} INSIDE each individual tag while strictly preserving tag boundaries and internal [br] markers.
