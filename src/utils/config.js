@@ -553,15 +553,21 @@ function normalizeConfig(config) {
     sendTimestampsToAI: false,
     translationWorkflow: 'xml',
     enableJsonOutput: false,
-    // SubFaber Engine: DEFAULT MUTLAK (Rebrand Mandat 2026-09-25) —
-    // Enjin SubFaber kini enjin lalai sistem. Config lama (tanpa field ini)
-    // dianggap ON; explicit false dihormati untuk ujian/rollback sahaja.
-    subfaberEnabled: advSettings.subfaberEnabled !== false,
+    // TOTAL PURGE (Mandat 2026-09-25): Field 'subfaberEnabled' dibuang —
+    // SubFaber adalah enjin TUNGGAL, tiada toggle. Field legacy
+    // 'enableBatchContext'/'contextSize' juga dibuang daripada config yang
+    // disimpan (sliding window SubFaber hardcode prev 3 / next 2).
     mismatchRetries: (() => {
       const val = parseInt(advSettings.mismatchRetries, 10);
       return Number.isFinite(val) ? Math.max(0, Math.min(3, val)) : 3;
     })()
   };
+
+  // TOTAL PURGE: strip field legacy daripada advancedSettings yang disimpan
+  // supaya config Redis tidak membawa sisa mazhab lama.
+  delete mergedConfig.advancedSettings.subfaberEnabled;
+  delete mergedConfig.advancedSettings.enableBatchContext;
+  delete mergedConfig.advancedSettings.contextSize;
 
   // 🔄 Migrasi Data: Alihkan advancedSettings.geminiModel ke geminiModel
   // (dropdown atas). Ini menyokong penyatuan single-picker — pengguna lama
@@ -1055,8 +1061,6 @@ function getDefaultConfig(modelName = null) {
       ? parseFloat(process.env.GEMINI_TEMPERATURE)
       : modelDefaults.temperature,
     topP: process.env.GEMINI_TOP_P !== undefined ? parseFloat(process.env.GEMINI_TOP_P) : 0.95,
-    enableBatchContext: process.env.ENABLE_BATCH_CONTEXT === 'true',
-    contextSize: parseInt(process.env.BATCH_CONTEXT_SIZE, 10) || 20,
     mismatchRetries: process.env.MISMATCH_RETRIES !== undefined ? Math.max(0, Math.min(3, parseInt(process.env.MISMATCH_RETRIES, 10))) : 3
   };
 

@@ -4174,13 +4174,9 @@ app.post('/api/translate-file', fileTranslationLimiter, validateRequest(fileTran
             ? options.singleBatchMode : false;
         const singleBatchMode = singleBatchRequested || config.singleBatchMode === true;
 
-        // Batch context — per-request override
-        const enableBatchContextRequested = typeof options.enableBatchContext === 'boolean'
-            ? options.enableBatchContext : null;
-
-        // SubFaber engine — per-request override (LANGKAH 1, laporan backend §3.3)
-        const subfaberRequested = typeof options.subfaberEnabled === 'boolean'
-            ? options.subfaberEnabled : null;
+        // TOTAL PURGE (Mandat 2026-09-25): Per-request override untuk
+        // 'enableBatchContext' dan 'subfaberEnabled' dibuang — SubFaber ialah
+        // enjin tunggal; sliding context sentiasa aktif di peringkat engine.
 
         // Translation workflow is locked to XML Tags; legacy values normalize silently.
         const translationWorkflow = 'xml';
@@ -4191,16 +4187,9 @@ app.post('/api/translate-file', fileTranslationLimiter, validateRequest(fileTran
 
         advanced.translationWorkflow = translationWorkflow;
         delete advanced.sendTimestampsToAI;
-
-        // Forward batch context setting
-        if (enableBatchContextRequested !== null) {
-            advanced.enableBatchContext = enableBatchContextRequested;
-        }
-
-        // Forward SubFaber engine setting (per-request override menang)
-        if (subfaberRequested !== null) {
-            advanced.subfaberEnabled = subfaberRequested;
-        }
+        delete advanced.enableBatchContext;
+        delete advanced.contextSize;
+        delete advanced.subfaberEnabled;
 
         config.advancedSettings = advanced;
 
@@ -4276,7 +4265,7 @@ app.post('/api/translate-file', fileTranslationLimiter, validateRequest(fileTran
                 config.advancedSettings || {},
                 { singleBatchMode, providerName, fallbackProviderName, enableStreaming: false }
             );
-            log.debug(() => `[File Translation API] Using TranslationEngine (workflow=${effectiveWorkflow}, singleBatch=${singleBatchMode}, batchContext=${!!config.advancedSettings?.enableBatchContext}, sse=${wantsSse})`);
+            log.debug(() => `[File Translation API] Using TranslationEngine (workflow=${effectiveWorkflow}, singleBatch=${singleBatchMode}, engine=subfaber, sse=${wantsSse})`);
 
             // SSE mode: onProgress memancarkan event kontrak §8 laporan frontend:
             //   {phase:'preflight', status, summary, terms}   — dari Fasa 0
@@ -6439,7 +6428,6 @@ app.post('/api/auto-subtitles/run', autoSubLimiter, async (req, res) => {
             translationModel,
             sendTimestampsToAI = false,
             singleBatchMode = false,
-            enableBatchContext = false,
             translationPrompt,
             sendFullVideo = false,
             diarization = false
@@ -6447,7 +6435,6 @@ app.post('/api/auto-subtitles/run', autoSubLimiter, async (req, res) => {
         const options = (req.body && typeof req.body.options === 'object' && req.body.options) ? req.body.options : {};
         const hasLegacySendTimestamps = typeof req.body?.sendTimestampsToAI === 'boolean';
         const hasLegacySingleBatch = typeof req.body?.singleBatchMode === 'boolean';
-        const hasLegacyBatchContext = typeof req.body?.enableBatchContext === 'boolean';
         // Force diarization for all auto-subs modes (labels are stripped from outputs)
         diarization = true;
 
@@ -6476,18 +6463,19 @@ app.post('/api/auto-subtitles/run', autoSubLimiter, async (req, res) => {
         t = getTranslatorFromRequest(req, res, config);
 
         // Translation workflow is locked to XML Tags; legacy values normalize silently.
+        // TOTAL PURGE (Mandat 2026-09-25): enableBatchContext dibuang — SubFaber
+        // enjin tunggal; sliding context aktif di peringkat engine.
         const translationWorkflow = 'xml';
         singleBatchMode = (typeof options.singleBatchMode === 'boolean')
             ? options.singleBatchMode
             : (hasLegacySingleBatch ? singleBatchMode === true : config.singleBatchMode === true);
-        enableBatchContext = (typeof options.enableBatchContext === 'boolean')
-            ? options.enableBatchContext
-            : (hasLegacyBatchContext ? enableBatchContext === true : config.advancedSettings?.enableBatchContext === true);
         sendTimestampsToAI = false;
         config.singleBatchMode = singleBatchMode === true;
         config.advancedSettings = { ...(config.advancedSettings || {}) };
         config.advancedSettings.translationWorkflow = translationWorkflow;
-        config.advancedSettings.enableBatchContext = enableBatchContext === true;
+        delete config.advancedSettings.enableBatchContext;
+        delete config.advancedSettings.contextSize;
+        delete config.advancedSettings.subfaberEnabled;
         delete config.advancedSettings.sendTimestampsToAI;
 
         const linkedHash = deriveVideoHash(filename || '', videoId || '');
@@ -6658,7 +6646,7 @@ app.post('/api/auto-subtitles/run', autoSubLimiter, async (req, res) => {
                     ? `${providerBundle.providerName} (fallback from ${providerBundle.fallbackProviderName})`
                     : providerBundle.providerName;
                 logStep(`Using translation provider ${providerLabelFull} (${providerBundle.providerModel || 'default model'})`, 'info');
-                logStep(`Translation workflow=${translationWorkflow}, singleBatch=${singleBatchMode === true}, batchContext=${enableBatchContext === true}`, 'info');
+                logStep(`Translation workflow=${translationWorkflow}, singleBatch=${singleBatchMode === true} (SubFaber engine, sliding context always-on)`, 'info');
                 const translationEngine = new TranslationEngine(
                     providerBundle.provider,
                     providerBundle.providerModel,
@@ -6700,7 +6688,6 @@ app.post('/api/auto-subtitles/run', autoSubLimiter, async (req, res) => {
                                         targetLanguage: targetLang,
                                         translationWorkflow,
                                         singleBatchMode: singleBatchMode === true,
-                                        enableBatchContext: enableBatchContext === true,
                                         sendTimestampsToAI: sendTimestampsToAI === true
                                     }
                                 });
@@ -7474,18 +7461,19 @@ app.post('/api/translate-embedded', embeddedTranslationLimiter, async (req, res)
         };
 
         // Apply TranslationEngine-specific toggles
+        // TOTAL PURGE (Mandat 2026-09-25): enableBatchContext dibuang —
+        // SubFaber enjin tunggal, sliding context aktif di peringkat engine.
         const translationWorkflow = 'xml';
         const singleBatchMode = (options && typeof options.singleBatchMode === 'boolean')
             ? options.singleBatchMode
             : workingConfig.singleBatchMode === true;
-        const enableBatchContext = (options && typeof options.enableBatchContext === 'boolean')
-            ? options.enableBatchContext
-            : workingConfig.advancedSettings.enableBatchContext === true;
         const sendTimestampsToAI = false;
 
         workingConfig.singleBatchMode = singleBatchMode;
         workingConfig.advancedSettings.translationWorkflow = translationWorkflow;
-        workingConfig.advancedSettings.enableBatchContext = enableBatchContext;
+        delete workingConfig.advancedSettings.enableBatchContext;
+        delete workingConfig.advancedSettings.contextSize;
+        delete workingConfig.advancedSettings.subfaberEnabled;
         delete workingConfig.advancedSettings.sendTimestampsToAI;
 
         // Provider/model overrides (mirrors file upload behavior)
@@ -7646,12 +7634,10 @@ app.post('/api/translate-embedded', embeddedTranslationLimiter, async (req, res)
             if (meta.sendTimestampsToAI !== undefined && meta.sendTimestampsToAI !== sendTimestampsToAI) {
                 return false;
             }
-            if (meta.enableBatchContext !== undefined && meta.enableBatchContext !== enableBatchContext) {
-                return false;
-            }
-            if (enableBatchContext && meta.enableBatchContext !== true) {
-                return false;
-            }
+            // TOTAL PURGE (Mandat 2026-09-25): metadata matching enableBatchContext
+            // dibuang — SubFaber enjin tunggal, cache key tidak lagi berbeza
+            // mengikut mod konteks. Entri lama yang membawa field ini masih
+            // diterima (field diabaikan).
 
             const metaProvider = meta.provider ? String(meta.provider).toLowerCase() : '';
             const metaModel = meta.model ? String(meta.model).toLowerCase() : '';
@@ -7789,7 +7775,7 @@ app.post('/api/translate-embedded', embeddedTranslationLimiter, async (req, res)
             { singleBatchMode, providerName, fallbackProviderName, enableStreaming: true }
         );
 
-        log.debug(() => `[Embedded Translate] Translating track ${safeTrackId} to ${targetLangName} (workflow=${translationWorkflow}, singleBatch=${singleBatchMode}, batchContext=${enableBatchContext}, timestamps=${sendTimestampsToAI})`);
+        log.debug(() => `[Embedded Translate] Translating track ${safeTrackId} to ${targetLangName} (workflow=${translationWorkflow}, singleBatch=${singleBatchMode}, engine=subfaber, timestamps=${sendTimestampsToAI})`);
 
         // --- BERMULA KOD PEMBEDAHAN LOKASI 1 (V14.6 FINOPS + STOPWATCH + FULL DIAGNOSTICS) ---
         // 0. MULAKAN STOPWATCH KITA SENDIRI
@@ -8123,7 +8109,6 @@ app.post('/api/translate-embedded', embeddedTranslationLimiter, async (req, res)
             storedFormat,
             translationWorkflow,
             singleBatchMode,
-            enableBatchContext,
             sendTimestampsToAI,
             promptSignature
         };

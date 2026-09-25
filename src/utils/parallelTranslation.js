@@ -68,9 +68,9 @@ async function executeParallelTranslation(engine, entries, targetLanguage, custo
         // For batch 0 we intentionally skip cloning the engine so streaming
         // callbacks are wired directly to the original engine instance.
         if (batchIdx === 0) {
-            const firstContext = engine.enableBatchContext
-                ? engine.prepareContextForBatch(firstBatch, entries, translatedEntries, 0)
-                : null;
+            // TOTAL PURGE (Mandat 2026-09-25): SubFaber enjin tunggal —
+            // sliding context sentiasa dibina (tiada guard enableBatchContext).
+            const firstContext = engine.prepareContextForBatch(firstBatch, entries, translatedEntries, 0);
 
             return engine.translateBatch(
                 firstBatch,
@@ -161,9 +161,9 @@ async function executeParallelTranslation(engine, entries, targetLanguage, custo
         const batch = batches[batchIdx];
         // Context resolved at dispatch time; parallel peers won't be in
         // translatedEntries yet — this is expected behaviour.
-        const context = workerEngine.enableBatchContext
-            ? workerEngine.prepareContextForBatch(batch, entries, translatedEntries, batchIdx)
-            : null;
+        // TOTAL PURGE (Mandat 2026-09-25): SubFaber enjin tunggal — sliding
+        // context sentiasa dibina (tiada guard enableBatchContext).
+        const context = workerEngine.prepareContextForBatch(batch, entries, translatedEntries, batchIdx);
 
         let result;
         try {

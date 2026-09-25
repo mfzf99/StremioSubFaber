@@ -93,40 +93,13 @@ const NATIVE_BATCH_PROVIDER_NAMES = new Set(['deepl', 'googletranslate']);
 const CACHE_TRANSLATIONS = process.env.CACHE_TRANSLATIONS === 'true'; // Enable/disable entry caching
 
 /**
- * Universal batch size applied to ALL models (Gemini, Gemma, Flash, etc.).
- * Chosen at 80 to align with natural narrative pauses in subtitle flow,
- * while staying within the LLM attention sweet spot where strict XML slot
- * enforcement holds reliably — see translation prompt design notes.
+ * GOLDEN STANDARD (Mandat 2026-09-26): Batch size SubFaber = 50 baris.
+ * Ground truth VideoLingo: chunk kecil (600 aksara / 10 ayat ≈ beberapa
+ * baris) supaya pariti mudah dijaga & konteks tidak menenggelamkan
+ * arahan. Enjin SubFaber adalah enjin TUNGGAL — tiada env override,
+ * tiada mod legacy 200-baris (Total Purge Mandat 2026-09-25).
  */
-const UNIVERSAL_BATCH_SIZE = 200;
-
-/**
- * Get the batch size to use for translation requests.
- *
- * Resolution order:
- *   1. TRANSLATION_BATCH_SIZE env var (validated 1-1000)
- *   2. UNIVERSAL_BATCH_SIZE fallback
- *
- * Per-model branching was intentionally removed — a single uniform batch size
- * keeps prompt behaviour, retry rates, and A/B comparisons consistent across
- * all models.
- *
- * @param {string} model - Model name (kept for backward compatibility; unused).
- * @returns {number} - Batch size (slot count per request).
- */
-function getBatchSizeForModel(model) {
-  // 1. Environment override — validated to prevent NaN / 0 / negative / absurd values.
-  if (process.env.TRANSLATION_BATCH_SIZE) {
-    const parsed = parseInt(process.env.TRANSLATION_BATCH_SIZE, 10);
-    if (Number.isFinite(parsed) && parsed >= 1 && parsed <= 1000) {
-      return parsed;
-    }
-    log.warn(() => `[TranslationEngine] Invalid TRANSLATION_BATCH_SIZE="${process.env.TRANSLATION_BATCH_SIZE}" (expected integer 1-1000), falling back to ${UNIVERSAL_BATCH_SIZE}`);
-  }
-
-  // 2. Universal fallback — same value for every model.
-  return UNIVERSAL_BATCH_SIZE;
-}
+const SUBFABER_BATCH_SIZE = 50;
 
 // Module-level shared key health tracking across engine instances.
 // MULTI-INSTANCE: Now backed by Redis via sharedCache utilities.
@@ -145,33 +118,20 @@ class TranslationEngine {
       this.fallbackProviderName = this.fallbackProvider.providerName;
     }
     this.model = model;
-    this.batchSize = getBatchSizeForModel(model);
+    // TOTAL PURGE (Mandat 2026-09-25): SubFaber ialah enjin tunggal.
+    // Batch size dihardcode 50 (Golden Standard) — tiada env override.
+    this.batchSize = SUBFABER_BATCH_SIZE;
     this.singleBatchMode = options.singleBatchMode === true;
     this.enableStreaming = options.enableStreaming !== false
       && typeof (this.gemini?.streamTranslateSubtitle) === 'function';
     this.maxTokensPerBatch = this.singleBatchMode ? SINGLE_BATCH_MAX_TOKENS_PER_CHUNK : MAX_TOKENS_PER_BATCH;
     this.advancedSettings = advancedSettings || {};
 
-    // Context settings (disabled by default)
-    this.enableBatchContext = this.advancedSettings.enableBatchContext === true;
-    this.contextSize = parseInt(this.advancedSettings.contextSize) || 20;
-
-    // SubFaber Engine (v-next): Pre-Flight Semantic Pass (Fasa 0) + sliding
-    // context buffer (<previous_content>/<subsequent_content>) + persona
-    // VideoLingo. Flag dinormalisasi dalam src/utils/config.js (boolean strict).
-    // Bila aktif, ia MENGGANTI mod batch-context legacy: <m> memory tags
-    // diganti dengan previousContent source-only supaya satu bentuk sahaja.
-    this.subfaberEnabled = this.advancedSettings.subfaberEnabled === true;
+    // SubFaber Engine (enjin TUNGGAL — Total Purge Mandat 2026-09-25):
+    // Pre-Flight Semantic Pass (Fasa 0) + sliding context buffer
+    // (<previous_content>/<subsequent_content>) + persona VideoLingo.
+    // Tiada flag, tiada mod legacy batch-context/<m> memory.
     this.preflightContext = null; // Slot state Fasa 0 (theme + terms)
-
-    // ── GOLDEN STANDARD (Mandat 2026-09-26): Batch size SubFaber = 50 baris.
-    // Ground truth VideoLingo: chunk kecil (600 aksara / 10 ayat ≈ beberapa
-    // baris) supaya pariti mudah dijaga & konteks tidak menenggelamkan
-    // arahan. Legacy (subfaberEnabled=false) kekal UNIVERSAL_BATCH_SIZE=200.
-    // Dilakukan selepas assignment batchSize supaya mod SubFaber menindih.
-    if (this.subfaberEnabled) {
-      this.batchSize = 50;
-    }
 
     // Mismatch retry: number of retries when AI returns wrong entry count (default: 1)
     const rawMismatchRetries = parseInt(this.advancedSettings.mismatchRetries);
@@ -243,7 +203,7 @@ class TranslationEngine {
     // Native batch provider flag was set above during XML workflow initialization.
 
     const rotationLabel = this.perBatchRotationEnabled ? 'per-batch' : (this.retryRotationEnabled ? 'per-request' : '');
-    log.debug(() => `[TranslationEngine] Initialized with model: ${model || 'unknown'}, batch size: ${this.batchSize}, batch context: ${this.enableBatchContext ? 'enabled (' + this.contextSize + ' lines)' : 'disabled'}, workflow: ${this.translationWorkflow}, mode: ${this.singleBatchMode ? 'single-batch' : 'batched'}, mismatchRetries: ${this.mismatchRetries}${rotationLabel ? `, key-rotation: ${rotationLabel}, keys: ${this.keyRotationConfig.keys.length}` : ''}${this.isNativeBatchProvider ? ', native-batch: true' : ''}`);
+    log.debug(() => `[TranslationEngine] Initialized with model: ${model || 'unknown'}, batch size: ${this.batchSize} (SubFaber), workflow: ${this.translationWorkflow}, mode: ${this.singleBatchMode ? 'single-batch' : 'batched'}, mismatchRetries: ${this.mismatchRetries}${rotationLabel ? `, key-rotation: ${rotationLabel}, keys: ${this.keyRotationConfig.keys.length}` : ''}${this.isNativeBatchProvider ? ', native-batch: true' : ''}`);
     
     // Translation diagnostics — accumulated during translation, read by caller after completion.
     // These stats are surfaced on the Translation History cards in Sub Toolbox.
@@ -270,7 +230,7 @@ class TranslationEngine {
       // Tier 3: Configuration context
       workflow: this.translationWorkflow,
       keyRotationMode: this.keyRotationConfig?.enabled ? (this.keyRotationConfig.mode || 'per-batch') : 'disabled',
-      batchContextEnabled: this.enableBatchContext,
+      subfaberEngine: true, // TOTAL PURGE: enjin tunggal — sentiasa SubFaber
       singleBatchMode: this.singleBatchMode,
       parallelBatchesUsed: false,
       streaming: this.enableStreaming,
@@ -738,7 +698,8 @@ class TranslationEngine {
     // global). Emit event { phase: 'preflight', status, summary, terms }
     // untuk Pre-Flight HUD (KIMI K3). Native batch providers (DeepL/Google)
     // tiada keperluan konteks semantik — skip.
-    if (this.subfaberEnabled && !this.isNativeBatchProvider) {
+    // TOTAL PURGE (Mandat 2026-09-25): SubFaber enjin tunggal — tiada flag.
+    if (!this.isNativeBatchProvider) {
       this.preflightContext = await runPreflightSemanticPass(
         entries,
         targetLanguage,
@@ -795,10 +756,8 @@ class TranslationEngine {
           // Rotate API key for this batch if per-batch rotation is enabled
           await this.maybeRotateKeyForBatch(batchIndex);
 
-          // Prepare context for this batch (if enabled)
-          const context = this.enableBatchContext
-            ? this.prepareContextForBatch(batch, entries, translatedEntries, batchIndex)
-            : null;
+          // Prepare SubFaber sliding context for this batch (enjin tunggal)
+          const context = this.prepareContextForBatch(batch, entries, translatedEntries, batchIndex);
 
           // Translate batch (with auto-chunking if needed)
           const translatedBatch = await this.translateBatch(
@@ -998,10 +957,8 @@ class TranslationEngine {
       // Rotate API key for this batch if per-batch rotation is enabled
       await this.maybeRotateKeyForBatch(batchIndex);
 
-      // Preserve coherence when the "single-batch" path auto-splits by reusing the same context builder
-      const context = this.enableBatchContext
-        ? this.prepareContextForBatch(batch, entries, translatedEntries, batchIndex)
-        : null;
+      // Preserve coherence when the "single-batch" path auto-splits by reusing the same SubFaber context builder
+      const context = this.prepareContextForBatch(batch, entries, translatedEntries, batchIndex);
 
       // Capture accumulated state for the streaming closure
       const prevSRT = completedChunksSRT;
@@ -1120,82 +1077,31 @@ class TranslationEngine {
   }
 
   /**
-   * Prepare context for a batch (original surrounding entries + previous translations)
-   * Context improves translation coherence across batches
-   * Handles irregular index and ID alignment (Global Array Index Alignment)
+   * Prepare context for a batch — SubFaber sliding context buffer (ENJIN TUNGGAL).
    *
-   * SUBFABER MODE (subfaberEnabled): Bina sliding context buffer dua hala —
-   * <previous_content> (source-only + terjemahan disahkan sebagai memory
-   * tambahan) dan <subsequent_content> (source-only, forward-looking) —
-   * bersama konteks global Fasa 0 (preflight). Batch 1 kini DAPAT konteks
-   * (subsequent + preflight) walaupun tiada previous. Kekal legacy path
-   * untuk mod batch-context biasa (subfaberEnabled === false).
+   * TOTAL PURGE (Mandat 2026-09-25): Laluan legacy batch-context (<m> memory,
+   * backward-only, contextSize window) dibuang sepenuhnya. _prepareSubfaberContext
+   * adalah satu-satunya pembina konteks: sliding window dua hala
+   * (<previous_content> + <subsequent_content>) + konteks global Fasa 0
+   * (preflight). Batch 1 DAPAT konteks (subsequent + preflight) walaupun
+   * tiada previous.
    *
    * @param {Array} batch - Current batch entries
    * @param {Array} allOriginalEntries - All original entries
    * @param {Array} translatedSoFar - Previously translated entries
-   * @param {number} batchIndex - Current batch index
+   * @param {number} batchIndex - Current batch index (unused, kept for API compat)
    * @returns {Object} - Context object with surrounding and previous entries
    */
   prepareContextForBatch(batch, allOriginalEntries, translatedSoFar, batchIndex) {
-    // SubFaber sliding buffer: dua hala + preflight, tanpa syarat batchIndex > 0
-    if (this.subfaberEnabled && batch && batch.length > 0 && Array.isArray(allOriginalEntries)) {
-      return this._prepareSubfaberContext(batch, allOriginalEntries, translatedSoFar);
-    }
-    if (!this.enableBatchContext || batchIndex === 0 || !batch || batch.length === 0 || !Array.isArray(allOriginalEntries)) {
+    if (!batch || batch.length === 0 || !Array.isArray(allOriginalEntries)) {
       return null;
     }
-
-    // 1. Resolve true batch[0] index in original entries
-    let batchStartIdx = allOriginalEntries.indexOf(batch[0]);
-    if (batchStartIdx === -1) {
-      batchStartIdx = allOriginalEntries.findIndex(e => e.id === batch[0]?.id);
-    }
-
-    // No previous context when at file start or invalid position
-    if (batchStartIdx <= 0) {
-      return null;
-    }
-
-    const surroundingStartIdx = Math.max(0, batchStartIdx - this.contextSize);
-    const surroundingEndIdx = batchStartIdx - 1;
-    const memoryContext = [];
-
-    // 2. Build a fast lookup map keyed by original entry ID
-    const translatedMap = new Map();
-    if (Array.isArray(translatedSoFar)) {
-      for (const t of translatedSoFar) {
-        if (t && t.id !== undefined) {
-          translatedMap.set(t.id, t.text);
-        }
-      }
-    }
-
-    // 3. Collect preceding entries alongside their translations
-    for (let i = surroundingStartIdx; i <= surroundingEndIdx && i < allOriginalEntries.length; i++) {
-      const origEntry = allOriginalEntries[i];
-      if (!origEntry) continue;
-
-      const translatedText = translatedMap.get(origEntry.id);
-
-      // Only include valid translations; exclude [⚠️] warning placeholders
-      if (translatedText && typeof translatedText === 'string' && !translatedText.startsWith('[⚠️]')) {
-        memoryContext.push({
-          id: origEntry.id,
-          source: origEntry.text,
-          translation: translatedText
-        });
-      }
-    }
-
-    return memoryContext.length > 0 ? {
-      previousMemory: memoryContext
-    } : null;
+    return this._prepareSubfaberContext(batch, allOriginalEntries, translatedSoFar);
   }
 
   /**
    * SubFaber sliding context buffer (Fasa 1): bina konteks dua hala untuk
-   * satu batch. Dipanggil oleh prepareContextForBatch() bila subfaberEnabled.
+   * satu batch. Pembina konteks TUNGGAL (Total Purge Mandat 2026-09-25).
    *
    * GOLDEN STANDARD (Mandat 2026-09-26, ground truth VideoLingo):
    * Sliding window ASIMETRIS — previousContent = 3 baris terakhir sebelum
@@ -1463,9 +1369,11 @@ class TranslationEngine {
         } catch (_) { }
       }
 
-      // Fix #7: Build context for second half from first half's translations
-      // Auto-chunking index alignment and [⚠️] placeholder filtering
-      const contextCount = Math.min(this.contextSize, firstHalf.length);
+      // Fix #7: Build SubFaber sliding-window context for the second half from
+      // the first half's translations (TOTAL PURGE 2026-09-25 — prev 3 lines,
+      // asymmetric window per Golden Standard; <m> legacy memory format removed).
+      const PREV_W_CHUNK = 3;
+      const contextCount = Math.min(PREV_W_CHUNK, firstHalf.length);
       const targetEntries = firstHalf.slice(-contextCount);
       const startIndex = firstHalf.length - contextCount;
 
@@ -1481,16 +1389,18 @@ class TranslationEngine {
         }
       }
 
-      // 2. Build context memory matching exact indices in firstHalf
-      const memoryList = [];
+      // 2. Build previousContent/previousMemory matching exact indices in firstHalf
+      const previousContent = [];
+      const previousMemory = [];
       for (let i = 0; i < targetEntries.length; i++) {
         const orig = targetEntries[i];
         const actualIndexInFirstHalf = startIndex + i;
         const transText = transMapByIndex.get(actualIndexInFirstHalf);
 
+        previousContent.push(orig);
         // Only store valid translations; exclude [⚠️] warning placeholders
         if (transText && !transText.startsWith('[⚠️]')) {
-          memoryList.push({
+          previousMemory.push({
             id: orig.id,
             source: orig.text,
             translation: transText
@@ -1498,9 +1408,9 @@ class TranslationEngine {
         }
       }
 
-      const secondHalfContext = this.enableBatchContext && memoryList.length > 0 ? {
-        surroundingOriginal: targetEntries,
-        previousMemory: memoryList
+      const secondHalfContext = (previousContent.length > 0 || previousMemory.length > 0) ? {
+        previousContent,
+        previousMemory
       } : null;
 
       const secondTranslated = await this.translateBatch(secondHalf, targetLanguage, customPrompt, batchIndex, totalBatches, secondHalfContext, opts);
@@ -2220,15 +2130,16 @@ class TranslationEngine {
         .replace(/>/g, '&gt;');
     };
 
-    // ── SUBFABER CONTEXT BLOCK (Fasa 1: Sliding Buffer) ──
+    // ── SUBFABER CONTEXT BLOCK (Fasa 1: Sliding Buffer — ENJIN TUNGGAL) ──
     // Kontrak verbatim mandat §3: Context Information berlapis. Semua blok
-    // adalah READ-ONLY — 7-rule Rule 4 (air-gapped) di-enforce dalam prompt.
+    // adalah READ-ONLY. TOTAL PURGE 2026-09-25: tiada flag, tiada laluan
+    // legacy berasingan — previousMemory kini dirender DALAM blok ini.
     // GOLDEN STANDARD GS3: Points to Note guna DYNAMIC TERM-MATCHING per-chunk
     // (ground truth VideoLingo `search_things_to_note_in_prompt`) — hanya
     // istilah Fasa 0 yang teks asalnya wujud dalam previousContent/batch/
     // subsequentContent disuntik. Tiada padanan → seksyen dikosongkan (token
     // penjimatan). Theme (Content Summary) kekal disuntik untuk semua batch.
-    if (this.subfaberEnabled && context && (context.previousContent || context.subsequentContent || context.preflight)) {
+    if (context && (context.previousContent || context.subsequentContent || context.preflight || context.previousMemory)) {
       const hasPrev = Array.isArray(context.previousContent) && context.previousContent.length > 0;
       const hasNext = Array.isArray(context.subsequentContent) && context.subsequentContent.length > 0;
       const preflightBlock = context.preflight
@@ -2264,8 +2175,13 @@ class TranslationEngine {
       }
     }
 
+    // ── SUBFABER PREVIOUS MEMORY (dalam blok konteks — continuity translations) ──
+    // Terjemahan disahkan untuk 3 baris lalu (kelebihan kita atas VideoLingo:
+    // hantar terjemahan disahkan, bukan source sahaja). Dirender selepas blok
+    // context utama; dikelilingi oleh '===' terminator kedua-dua belah supaya
+    // satu bentuk sahaja.
     if (context?.previousMemory?.length > 0) {
-      result += '[PREVIOUS_TRANSLATION_MEMORY - FOR CONTINUITY ONLY. DO NOT TRANSLATE THIS]\n';
+      result += '[PREVIOUS VERIFIED TRANSLATIONS - FOR CONTINUITY ONLY. DO NOT TRANSLATE THIS]\n';
       context.previousMemory.forEach((entry) => {
         if (entry.translation) {
           const cleanSource = String(entry.source || '').trim().replace(/\n+/g, ' [br] ');
@@ -2274,7 +2190,6 @@ class TranslationEngine {
         }
       });
       result += '=== END OF MEMORY ===\n\n';
-      result += '=== ENTRIES TO TRANSLATE ===\n\n';
     }
 
     const xmlEntries = batch.map((entry) => {
@@ -2339,77 +2254,10 @@ Reply with EXACTLY one <s id="N"> element per input subtitle, reusing the same i
 <answer>
 <s id="${startId}">`;
 
-    /* ── CABANG LEGACY SUBMAKER DIBUANG (Rebrand Mandat 2026-09-25) ──
-       Block legacy 7-rule + structural demo dibuang sepenuhnya.
-       Enjin SubFaber tulen kini default mutlak. Petikan berikut
-       dikekalkan sebagai komen untuk sejarah sahaja:
-       promptBody = `Translate the text inside each <s id="N"> tag from ${sourceLabel || 'the source'} to ${targetLabel}. NEVER mirror foreign syntax, trailing modifiers, or literal word order; INSTEAD, render the subtitle dialogue into natural, conversational ${targetLabel} INSIDE each individual tag while strictly preserving tag boundaries and internal [br] markers.
-
-[UNIVERSAL STRUCTURAL DEMONSTRATION: SLOT ISOLATION & ZERO DRIFT]
-Input:
-<s id="1">The chief director was the one</s>
-<s id="2">responsible for the approval.</s>
-<s id="3">You are coming with us,</s>
-<s id="4">aren't you?</s>
-<s id="5">We already warned him[br]during the meeting.</s>
-<s id="6">First,</s>
-
-Target Output:
-<s id="1">Pengarah utama yang</s>
-<s id="2">bertanggungjawab atas kelulusan itu.</s>
-<s id="3">Awak ikut kami sekali,</s>
-<s id="4">kan?</s>
-<s id="5">Kami dah ingatkan dia[br]masa mesyuarat hari tu.</s>
-<s id="6">Pertama,</s>
-
-CRITICAL ENFORCEMENT RULES (ZERO TOLERANCE):
-
-1. STRICT 1-TO-1 CARDINALITY & ID PARITY:
-   - Output EXACTLY ${expectedCount} entries matching these EXACT IDs, in this order:
-     [${idList}]
-   - NEVER omit, combine, reorder, duplicate, or invent IDs; INSTEAD, pair every single input <s id="N"> strictly 1-to-1 with its matching output <s id="N">.
-   - NEVER renumber, compress, or force sequential order; INSTEAD, preserve source SRT global IDs verbatim, retaining all numerical values and existing gaps.
-
-2. ABSOLUTE SLOT ISOLATION & ZERO SPLITTING:
-   - NEVER pull, borrow, or fold words across adjacent slots; INSTEAD, confine every translation strictly inside its matching <s id="N"> slot.
-   - NEVER split [br] into a new <s id> tag; INSTEAD, keep all multi-line text separated by [br] enclosed entirely inside its single parent tag (e.g. <s id="5">ayat satu[br]ayat dua</s>).
-   - NEVER attach short slots (question tags, negation particles, interjections, single words like "First,") to preceding or subsequent lines, and NEVER echo demonstration text; INSTEAD, translate ONLY those specific words within that exact slot and close the tag immediately.
-   - NEVER force complete target grammar on broken clauses; INSTEAD, preserve grammatically incomplete syntax to maintain 100% subtitle synchronization.
-
-3. ZERO SHIFTING, ANTI-HALLUCINATION & SOURCE FIDELITY:
-   - NEVER shift subsequent dialogue forward to compensate for short or empty slots; INSTEAD, keep every line strictly anchored to its assigned ID.
-   - NEVER invent synthetic filler lines to satisfy slot counts; INSTEAD, translate only verified source dialogue.
-   - NEVER generate conversational replies, reactions, or commentary to background memory (<m> tags); INSTEAD, translate input <s id="${startId}"> directly as spoken dialogue.
-   - NEVER add, drop, or modify numbers, dates, times, or measurements; INSTEAD, transfer all numeric values and units accurately into the target language.
-   - NEVER alter or omit terminal punctuation (. ? ! ...) to change speech delivery; INSTEAD, mirror the original tone and natural pauses.
-
-4. AIR-GAPPED READ-ONLY CONTEXT MEMORY (<m> TAGS):
-   - NEVER translate, output, modify, or duplicate text from <m id="N"> tags into active <s id="N"> tags; INSTEAD, treat all <m> entries strictly as air-gapped, read-only background context.
-   - NEVER allow background memory to override active dialogue; INSTEAD, always prioritize <s> source text whenever memory and source conflict.
-
-5. ESCAPE HATCH (EXACT COPY PROTOCOL):
-   - NEVER translate titles of creative works (movies, TV shows, books, novels, songs, plays, games), registered corporate/brand names, or legal entities (e.g., Co., Ltd., Inc.); INSTEAD, keep them VERBATIM in their original language.
-   - NEVER invent translations for untranslatable content (proper nouns, standalone music notes ♪/♫, isolated symbols, numbers, punctuation, corrupted text, or whitespace); INSTEAD, copy the EXACT original text into the slot.
-   - NEVER translate unlocalizable entities in mixed slots; INSTEAD, translate the dialogue portion while copying brand names and foreign proper nouns unmodified.
-   - NEVER skip a slot under any circumstance; INSTEAD, emit the opening and closing tags containing the verbatim copy.
-
-6. SONG LYRICS & INLINE MARKUP:
-   - NEVER omit or leave song lyrics untranslated when enclosed in music notes (♪/♫); INSTEAD, fully translate vocal lyrics (foreground and BGM) while preserving the musical notes.
-   - NEVER strip, displace, or inject formatting tags not present in the source; INSTEAD, preserve all [br], <i>...</i>, <b>...</b>, speaker dashes (-), and inline markup in their exact source positions and counts.
-
-7. CLEAN PAYLOAD ONLY:
-   - NEVER output conversational commentary, markdown code fences, notes in parentheses, thinking blocks (</think>), or prompt echoes ([input], BATCH); INSTEAD, emit ONLY the raw sequence of <s id="N">...</s> tags.
-   - NEVER repeat, re-emit, or acknowledge the pre-filled <s id="${startId}"> opening tag; INSTEAD, continue directly from the prompt boundary by generating the inner content of slot ${startId} at your very first output character.
-   - NEVER append corrections after closing a tag with </s> or restart completed slots; INSTEAD, rectify errors immediately inside the active slot before closing it.
-   - NEVER emit any internal thinking steps or XML tags representing thought processes; INSTEAD, bypass all metadata and output the raw string directly starting from the pre-filled tag.
-
-<input>
-${batchText}
-</input>
-
-[OUTPUT_FORMAT]
-<s id="${startId}">`;
-    */
+    // TOTAL PURGE (Mandat 2026-09-25): Bangkai komen legacy 7-rule SubMaker
+    // (70 baris NEVER/INSTEAD rulebook + structural demo) dibuang sepenuhnya.
+    // Prompt SubFaber tulen di atas adalah satu-satuya laluan — pariti
+    // di-enforce oleh kontrak <answer> + parser + alignTranslatedEntries.
 
     return this.addBatchHeader(promptBody, batchIndex, totalBatches);
   }

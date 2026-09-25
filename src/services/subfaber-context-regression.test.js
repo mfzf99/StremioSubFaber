@@ -1,14 +1,14 @@
 /**
  * SubFaber Sliding Context Buffer + Prompt Composer — Regression Tests
- * (LANGKAH 1 & 2: Pembedahan C, D, E dalam translationEngine.js)
+ * (TOTAL PURGE Mandat 2026-09-25 — SubFaber enjin TUNGGAL)
  *
  * Menguji kontrak laporan plans/subfaber-technical-plan-backend.md §3.2:
  *   1. _prepareSubfaberContext: sliding window dua hala (previous + subsequent)
- *   2. prepareContextForBatch: routing SubFaber vs legacy
+ *   2. prepareContextForBatch: pembina konteks TUNGGAL (tiada laluan legacy)
  *   3. prepareBatchXml: blok konteks verbatim mandat (<previous_content>,
  *      <subsequent_content>, Content Summary, Points to Note)
  *   4. createXmlBatchPrompt: persona VideoLingo + <translation_principles>
- *   5. Flag subfaberEnabled default OFF — prompt legacy kekal verbatim
+ *   5. Flag subfaberEnabled DIBUANG — prompt SubFaber tulen tanpa sebarang flag
  */
 
 const test = require('node:test');
@@ -40,18 +40,27 @@ function makeEntries(count, startId = 1) {
   }));
 }
 
-// --- Flag default & routing ---
-test('SubFaberContext: subfaberEnabled defaults OFF; legacy context path intact', () => {
+// --- Enjin tunggal: flag dibuang (TOTAL PURGE 2026-09-25) ---
+test('SubFaberContext: subfaberEnabled flag REMOVED — SubFaber is the only engine', () => {
   const engine = makeEngine({});
-  assert.equal(engine.subfaberEnabled, false, 'Flag must default OFF');
+  assert.equal(engine.subfaberEnabled, undefined, 'Flag must NOT exist on engine (total purge)');
+  assert.equal(engine.enableBatchContext, undefined, 'Legacy batch context flag must NOT exist');
+  assert.equal(engine.contextSize, undefined, 'Legacy contextSize must NOT exist');
   assert.equal(engine.preflightContext, null, 'Preflight slot must start null');
+  // Config lama yang masih membawa field legacy mesti diabaikan sepenuhnya
+  const engineLegacy = makeEngine({ subfaberEnabled: false, enableBatchContext: true, contextSize: 20 });
+  assert.equal(engineLegacy.subfaberEnabled, undefined, 'Legacy subfaberEnabled:false ignored — engine stays SubFaber');
+  assert.equal(engineLegacy.batchSize, 50, 'Batch size stays 50 regardless of legacy flags');
 });
 
-test('SubFaberContext: subfaberEnabled reads boolean strict from advancedSettings', () => {
-  assert.equal(makeEngine({ subfaberEnabled: true }).subfaberEnabled, true);
-  assert.equal(makeEngine({ subfaberEnabled: false }).subfaberEnabled, false);
-  assert.equal(makeEngine({ subfaberEnabled: 'true' }).subfaberEnabled, false, 'String "true" must NOT enable');
-  assert.equal(makeEngine({ subfaberEnabled: 1 }).subfaberEnabled, false, 'Number 1 must NOT enable');
+test('SubFaberContext: context builder runs WITHOUT any flag (single engine path)', () => {
+  const engine = makeEngine({});
+  const all = makeEntries(30);
+  const batch = all.slice(10, 20); // batch tengah — ada baris sebelum & selepas
+  const ctx = engine.prepareContextForBatch(batch, all, [], 1);
+  assert.ok(ctx, 'Sliding context built without subfaberEnabled flag');
+  assert.equal(ctx.previousContent.length, 3, 'Prev window = 3 (always)');
+  assert.equal(ctx.subsequentContent.length, 2, 'Next window = 2 (always)');
 });
 
 // --- _prepareSubfaberContext: ASYMMETRIC sliding window (Golden Standard, VideoLingo ground truth) ---
@@ -110,12 +119,13 @@ test('SubFaberContext: window clamps at file boundaries', () => {
   assert.equal(ctx.subsequentContent.length, 2, 'Clamped next: only 2 entries requested (of 4 available)');
 });
 
-// --- GOLDEN STANDARD GS1: batch size SubFaber = 50 ---
-test('SubFaberContext: batch size = 50 when SubFaber ON, legacy 200 when OFF', () => {
-  const engineOn = makeEngine({ subfaberEnabled: true });
-  assert.equal(engineOn.batchSize, 50, 'SubFaber batch size = 50 (Golden Standard)');
-  const engineOff = makeEngine({ subfaberEnabled: false });
-  assert.equal(engineOff.batchSize, 200, 'Legacy batch size = 200 (UNIVERSAL_BATCH_SIZE, untouched)');
+// --- GOLDEN STANDARD GS1: batch size SubFaber = 50 (hardcoded, tiada env override) ---
+test('SubFaberContext: batch size = 50 ALWAYS (SUBFABER_BATCH_SIZE hardcoded)', () => {
+  const engine = makeEngine({});
+  assert.equal(engine.batchSize, 50, 'SubFaber batch size = 50 (Golden Standard, enjin tunggal)');
+  // Env TRANSLATION_BATCH_SIZE tidak lagi berkesan — nilai diabaikan
+  const engineEnv = makeEngine({ TRANSLATION_BATCH_SIZE: 200 });
+  assert.equal(engineEnv.batchSize, 50, 'Env override REMOVED — always 50');
 });
 
 test('SubFaberContext: previousMemory includes verified translations, excludes placeholders', () => {
@@ -232,16 +242,20 @@ test('SubFaberXml: XML escaping applied to context entries', () => {
   assert.ok(!xml.includes(`>A ${AMP} B ${LT}tag${GT}<`), 'Raw unescaped form must NOT appear inside tags');
 });
 
-test('SubFaberXml: legacy <m> memory block still works when SubFaber OFF', () => {
-  const engine = makeEngine({ enableBatchContext: true, subfaberEnabled: false });
+test('SubFaberXml: previousMemory rendered as continuity block (single SubFaber path)', () => {
+  // TOTAL PURGE: blok legacy [PREVIOUS_TRANSLATION_MEMORY] berasingan dibuang;
+  // previousMemory kini dirender sebagai blok continuity dalam laluan SubFaber.
+  const engine = makeEngine({});
   const batch = makeEntries(2, 1);
   const context = {
+    previousContent: makeEntries(1, 0),
     previousMemory: [{ id: 5, source: 'Hello', translation: 'Helo' }]
   };
   const xml = engine.prepareBatchXml(batch, context);
-  assert.ok(xml.includes('[PREVIOUS_TRANSLATION_MEMORY'), 'Legacy memory header intact');
-  assert.ok(xml.includes('<m id="5">'), 'Legacy <m> tag intact');
-  assert.ok(!xml.includes('<previous_content>'), 'No SubFaber block when OFF');
+  assert.ok(xml.includes('[PREVIOUS VERIFIED TRANSLATIONS'), 'Continuity memory header present');
+  assert.ok(xml.includes('<m id="5">'), 'Verified translation rendered as <m> tag');
+  assert.ok(xml.includes('=== END OF MEMORY ==='), 'Memory terminator present');
+  assert.ok(!xml.includes('[PREVIOUS_TRANSLATION_MEMORY'), 'Legacy standalone header REMOVED');
 });
 
 // --- createXmlBatchPrompt: persona + principles (Purification Mandat 2026-09-25) ---
@@ -279,17 +293,16 @@ test('SubFaberPrompt: pure SubFaber prompt when ON — persona + principles + XM
   assert.ok(prompt.trimEnd().endsWith('<s id="1">'), 'Prompt must END with anchor tag');
 });
 
-test('SubFaberPrompt: pure SubFaber prompt is the ABSOLUTE DEFAULT (legacy branch removed)', () => {
-  // Rebrand Mandat 2026-09-25: cabang legacy 7-rule dibuang sepenuhnya.
-  // Prompt SubFaber tulen dijana TANPA mengira nilai subfaberEnabled —
-  // enjin SubFaber adalah enjin lalai sistem.
-  const engine = makeEngine({ subfaberEnabled: false });
+test('SubFaberPrompt: pure SubFaber prompt is the ONLY path (no flags exist)', () => {
+  // TOTAL PURGE Mandat 2026-09-25: enjin SubFaber tunggal — prompt dijana
+  // tanpa sebarang flag. Bangkai komen legacy 7-rule dibuang sepenuhnya.
+  const engine = makeEngine({});
   engine.sourceLanguage = 'English';
   const batch = makeEntries(2, 1);
   const batchText = engine.prepareBatchXml(batch, null);
 
   const prompt = engine.createXmlBatchPrompt(batchText, 'Malay', null, batch.length, null, 0, 1);
-  assert.ok(prompt.includes('## Role'), 'Persona always present (SubFaber is absolute default)');
+  assert.ok(prompt.includes('## Role'), 'Persona always present (SubFaber is the only engine)');
   assert.ok(prompt.includes('<translation_principles>'), 'Principles always present');
   assert.ok(prompt.includes('Netflix subtitle translator'), 'Netflix persona always present');
   assert.ok(!prompt.includes('CRITICAL ENFORCEMENT RULES'), 'Legacy 7-rule REMOVED permanently');

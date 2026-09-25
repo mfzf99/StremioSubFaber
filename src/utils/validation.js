@@ -85,10 +85,13 @@ const translationOverridesSchema = Joi.object({
 }).optional();
 
 // Optional translation engine toggles (workflow/timing)
+// TOTAL PURGE (Mandat 2026-09-25): 'enableBatchContext' dibuang daripada
+// schema — SubFaber enjin tunggal, sliding context aktif di peringkat
+// engine. unknown(true) masih menerima field legacy daripada client lama
+// tetapi ia di-delete oleh config normalization sebelum sampai ke engine.
 const translationOptionsSchema = Joi.object({
   translationWorkflow: Joi.string().valid('xml').optional(),
   singleBatchMode: Joi.boolean().optional(),
-  enableBatchContext: Joi.boolean().optional(),
   // Legacy fields kept for backward compatibility with older clients
   workflow: Joi.string().valid('batched', 'single-pass', 'single-batch', 'one-pass').optional(),
   timingMode: Joi.string().valid('preserve-timing', 'ai-timing', 'ai-timestamps', 'source-timing').optional(),
