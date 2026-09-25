@@ -2,7 +2,7 @@
   <img src="public/logo.png" alt="SubFaber Logo" width="120"/>
 </p>
 
-<h1 align="center">SubMaker</h1>
+<h1 align="center">SubFaber</h1>
 
 <p align="center">
   <b>AI-Powered Subtitle Translation for Stremio</b><br/>
