@@ -2234,7 +2234,7 @@ Your expertise lies in accurately understanding the semantics and structure of t
 We have a segment of original ${sourceLabel || 'source'} subtitles that need to be directly translated into ${targetLabel}. These subtitles come from a specific context and may contain specific themes and terminology.
 
 1. Translate the original ${sourceLabel || 'source'} subtitles into ${targetLabel} line by line
-2. Ensure the translation is faithful to the original, accurately conveying the original meaning
+2. Ensure the translation renders the original meaning faithfully in natural spoken dialogue, avoiding stiff word-for-word English grammar
 3. Consider the context and professional terminology
 4. Strictly preserve all inline markup ([br], <i>, <b>) in their exact positions
 
@@ -2242,6 +2242,7 @@ We have a segment of original ${sourceLabel || 'source'} subtitles that need to 
 1. Faithful to the original: Accurately convey the content and meaning of the original text, without arbitrarily changing, adding, or omitting content.
 2. Accurate terminology: Use professional terms correctly and maintain consistency in terminology.
 3. Understand the context: Fully comprehend and reflect the background and contextual relationships of the text.
+4. Natural spoken syntax: Never translate word-for-word or mirror English sentence structure. Render the exact meaning into fluid, conversational dialogue flow.
 </translation_principles>
 
 <input>
