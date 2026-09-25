@@ -2305,20 +2305,13 @@ class TranslationEngine {
     const startId = idMatches.length > 0 ? idMatches[0] : 'START';
     const idList = idMatches.length > 0 ? idMatches.join(', ') : 'N/A';
 
-    // ── SUBFABER PROMPT PURIFICATION (Mandat 2026-09-25) ──
-    // Branching bersih: subfaberEnabled=true guna prompt SubFaber TULEN
-    // (VideoLingo persona + kontrak XML satu baris SRT AI Translator) —
-    // TANPA [UNIVERSAL STRUCTURAL DEMONSTRATION] dan TANPA 7-rule
-    // CRITICAL ENFORCEMENT RULES (detox SubMaker legacy bloat, ~1,000-1,500
-    // token penjimatan). subfaberEnabled=false kekal prompt legacy penuh
-    // untuk backward compatibility. Anchor '<s id="${startId}">' kekal
-    // di penutup kedua-dua cabang supaya Smart Preamble Scrubber (v1.6.1)
-    // dalam parseXmlBatchResponse terus berfungsi tanpa off-by-one.
-    let promptBody;
-
-    if (this.subfaberEnabled) {
-      // ── CABANG SUBFABER TULEN (struktur rasmi mandat §3) ──
-      promptBody = `## Role
+    // ── SUBFABER TULEN — DEFAULT MUTLAK (Rebrand Mandat 2026-09-25) ──
+    // Cabang legacy 7-rule SubMaker dibuang sepenuhnya. Enjin SubFaber
+    // (VideoLingo persona + kontrak XML satu baris SRT AI Translator)
+    // adalah satu-satunya laluan terjemahan. Anchor '<s id="${startId}">'
+    // kekal di penutup supaya Smart Preamble Scrubber (v1.6.1) dalam
+    // parseXmlBatchResponse terus berfungsi tanpa off-by-one.
+    const promptBody = `## Role
 You are a professional Netflix subtitle translator, fluent in both ${sourceLabel || 'the source language'} and ${targetLabel}, as well as their respective cultures.
 Your expertise lies in accurately understanding the semantics and structure of the original ${sourceLabel || 'source'} text and faithfully translating it into natural, conversational ${targetLabel} while preserving the original meaning.
 
@@ -2345,9 +2338,12 @@ Reply with EXACTLY one <s id="N"> element per input subtitle, reusing the same i
 
 <answer>
 <s id="${startId}">`;
-    } else {
-      // ── CABANG LEGACY SUBMAKER (backward compatibility, verbatim) ──
-      promptBody = `Translate the text inside each <s id="N"> tag from ${sourceLabel || 'the source'} to ${targetLabel}. NEVER mirror foreign syntax, trailing modifiers, or literal word order; INSTEAD, render the subtitle dialogue into natural, conversational ${targetLabel} INSIDE each individual tag while strictly preserving tag boundaries and internal [br] markers.
+
+    /* ── CABANG LEGACY SUBMAKER DIBUANG (Rebrand Mandat 2026-09-25) ──
+       Block legacy 7-rule + structural demo dibuang sepenuhnya.
+       Enjin SubFaber tulen kini default mutlak. Petikan berikut
+       dikekalkan sebagai komen untuk sejarah sahaja:
+       promptBody = `Translate the text inside each <s id="N"> tag from ${sourceLabel || 'the source'} to ${targetLabel}. NEVER mirror foreign syntax, trailing modifiers, or literal word order; INSTEAD, render the subtitle dialogue into natural, conversational ${targetLabel} INSIDE each individual tag while strictly preserving tag boundaries and internal [br] markers.
 
 [UNIVERSAL STRUCTURAL DEMONSTRATION: SLOT ISOLATION & ZERO DRIFT]
 Input:
@@ -2413,7 +2409,7 @@ ${batchText}
 
 [OUTPUT_FORMAT]
 <s id="${startId}">`;
-    }
+    */
 
     return this.addBatchHeader(promptBody, batchIndex, totalBatches);
   }

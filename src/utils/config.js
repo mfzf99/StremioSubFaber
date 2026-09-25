@@ -553,10 +553,10 @@ function normalizeConfig(config) {
     sendTimestampsToAI: false,
     translationWorkflow: 'xml',
     enableJsonOutput: false,
-    // SubFaber Engine (v-next): Pre-Flight Semantic Pass + sliding context
-    // buffer. Boolean strict — undefined/truthy-loose ditolak supaya state
-    // lama (sebelum flag wujud) kekal off secara default.
-    subfaberEnabled: advSettings.subfaberEnabled === true,
+    // SubFaber Engine: DEFAULT MUTLAK (Rebrand Mandat 2026-09-25) —
+    // Enjin SubFaber kini enjin lalai sistem. Config lama (tanpa field ini)
+    // dianggap ON; explicit false dihormati untuk ujian/rollback sahaja.
+    subfaberEnabled: advSettings.subfaberEnabled !== false,
     mismatchRetries: (() => {
       const val = parseInt(advSettings.mismatchRetries, 10);
       return Number.isFinite(val) ? Math.max(0, Math.min(3, val)) : 3;
@@ -1372,11 +1372,11 @@ function buildManifest(config, baseUrl = '') {
 
   const isElfHosted = process.env.ELFHOSTED === 'true';
   const addonName = isElfHosted
-    ? 'SubMaker | ElfHosted'
-    : t('manifest.name', {}, 'SubMaker - Subtitle Translator');
+    ? 'SubFaber | ElfHosted'
+    : t('manifest.name', {}, 'SubFaber - Netflix-Grade Subtitle Engine');
 
   return {
-    id: 'com.stremio.submaker',
+    id: 'com.stremio.subfaber',
     version: version,
     name: addonName,
     description: description,
@@ -1390,7 +1390,7 @@ function buildManifest(config, baseUrl = '') {
     logo: logo,
     icon: logo,
     background: background,
-    contactEmail: 'support@submaker.example.com'
+    contactEmail: 'support@subfaber.example.com'
   };
 }
 

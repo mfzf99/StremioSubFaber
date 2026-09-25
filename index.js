@@ -8335,14 +8335,14 @@ app.get('/manifest.json', (req, res) => {
 
         const isElfHosted = process.env.ELFHOSTED === 'true';
         const addonName = isElfHosted
-            ? 'SubMaker | ElfHosted'
-            : 'SubMaker - Subtitle Translator';
+            ? 'SubFaber | ElfHosted'
+            : 'SubFaber - Netflix-Grade Subtitle Engine';
 
         const manifest = {
-            id: 'com.stremio.submaker',
+            id: 'com.stremio.subfaber',
             version: version,
             name: addonName,
-            description: 'Take control of your subtitles! Fetch and translate subtitles from OpenSubtitles, SubScene, and SubDL with AI translation powered by Gemini, OpenAI, Anthropic, and more. Configure the addon to get started.',
+            description: 'High-fidelity Malay subtitle generator powered by Gemini & VideoLingo context architecture. Fetch and translate subtitles from OpenSubtitles, SubScene, and SubDL without ever leaving Stremio.',
             logo: `${baseUrl}/logo.png`,
             icon: `${baseUrl}/logo.png`,
             background: `${baseUrl}/background.svg`,
@@ -8797,7 +8797,7 @@ app.use((error, req, res, next) => {
     console.startup(`
 ╔═══════════════════════════════════════════════════════════╗
 ║                                                           ║
-║   🎬 SubMaker - Subtitle Translator Addon                ║
+║   🎬 SubFaber - Netflix-Grade Subtitle Engine             ║
 ║                                                           ║
 ║   Server running on: http://localhost:${PORT}            ║
 ║                                                           ║

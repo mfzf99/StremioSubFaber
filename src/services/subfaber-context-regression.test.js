@@ -279,17 +279,21 @@ test('SubFaberPrompt: pure SubFaber prompt when ON — persona + principles + XM
   assert.ok(prompt.trimEnd().endsWith('<s id="1">'), 'Prompt must END with anchor tag');
 });
 
-test('SubFaberPrompt: legacy prompt verbatim when SubFaber OFF', () => {
+test('SubFaberPrompt: pure SubFaber prompt is the ABSOLUTE DEFAULT (legacy branch removed)', () => {
+  // Rebrand Mandat 2026-09-25: cabang legacy 7-rule dibuang sepenuhnya.
+  // Prompt SubFaber tulen dijana TANPA mengira nilai subfaberEnabled —
+  // enjin SubFaber adalah enjin lalai sistem.
   const engine = makeEngine({ subfaberEnabled: false });
   engine.sourceLanguage = 'English';
   const batch = makeEntries(2, 1);
   const batchText = engine.prepareBatchXml(batch, null);
 
   const prompt = engine.createXmlBatchPrompt(batchText, 'Malay', null, batch.length, null, 0, 1);
-  assert.ok(!prompt.includes('## Role'), 'No persona when OFF');
-  assert.ok(!prompt.includes('<translation_principles>'), 'No principles when OFF');
-  assert.ok(!prompt.includes('Netflix subtitle translator'), 'No Netflix persona when OFF');
-  assert.ok(prompt.includes('CRITICAL ENFORCEMENT RULES (ZERO TOLERANCE)'), 'Rulebook intact when OFF');
+  assert.ok(prompt.includes('## Role'), 'Persona always present (SubFaber is absolute default)');
+  assert.ok(prompt.includes('<translation_principles>'), 'Principles always present');
+  assert.ok(prompt.includes('Netflix subtitle translator'), 'Netflix persona always present');
+  assert.ok(!prompt.includes('CRITICAL ENFORCEMENT RULES'), 'Legacy 7-rule REMOVED permanently');
+  assert.ok(!prompt.includes('[UNIVERSAL STRUCTURAL DEMONSTRATION'), 'Legacy demo REMOVED permanently');
 });
 
 test('SubFaberPrompt: anchor startId derived from active section, not context blocks', () => {

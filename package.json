@@ -1,8 +1,8 @@
 {
-  "name": "submaker-subtitle-translator",
+  "name": "stremio-subfaber",
   "version": "1.9.1",
   "xsyncMinVersion": "1.0.9",
-  "description": "Take control of your subtitles! Fetch and translate subtitles from OpenSubtitles, SubScene and SubDL with a free Gemini AI key or multiple AI providers, without ever leaving Stremio.",
+  "description": "Automated Netflix-Grade Malay Subtitle Engine for Stremio powered by VideoLingo principles",
   "main": "index.js",
   "packageManager": "npm@11.17.0",
   "engines": {
@@ -26,8 +26,12 @@
     "opensubtitles",
     "gemini"
   ],
-  "author": "",
+  "author": "Muhammad Faiz",
   "license": "AGPL-3.0-only",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/mfzf99/StremioSubFaber.git"
+  },
   "dependencies": {
     "@sentry/node": "^10.34.0",
     "7z-iterator": "^2.2.5",
