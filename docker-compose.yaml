@@ -1,11 +1,11 @@
 services:
-  # Stremio SubMaker application
-  submaker:
+  # Stremio SubFaber application
+  subfaber:
     # Use pre-built image from Docker Hub (recommended)
-    # image: xtremexq/submaker:latest
+    # image: mfzf99/subfaber:latest
     # Or build locally
     build: .
-    container_name: submaker
+    container_name: subfaber
     # Give container 30 seconds to gracefully shutdown and save sessions
     stop_grace_period: 30s
     ports:

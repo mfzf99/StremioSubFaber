@@ -28,7 +28,7 @@ jobs:
         id: meta
         uses: docker/metadata-action@v6
         with:
-          images: ${{ secrets.DOCKER_USERNAME }}/submaker
+          images: ${{ secrets.DOCKER_USERNAME }}/subfaber
           tags: |
             type=semver,pattern={{version}}
             type=raw,value=latest
@@ -41,5 +41,5 @@ jobs:
           push: true
           tags: ${{ steps.meta.outputs.tags }}
           labels: ${{ steps.meta.outputs.labels }}
-          cache-from: type=registry,ref=${{ secrets.DOCKER_USERNAME }}/submaker:buildcache
-          cache-to: type=registry,ref=${{ secrets.DOCKER_USERNAME }}/submaker:buildcache,mode=max
+          cache-from: type=registry,ref=${{ secrets.DOCKER_USERNAME }}/subfaber:buildcache
+          cache-to: type=registry,ref=${{ secrets.DOCKER_USERNAME }}/subfaber:buildcache,mode=max

@@ -1,6 +1,6 @@
 # 🔧 Troubleshooting Guide
 
-Common issues and solutions for SubMaker.
+Common issues and solutions for SubFaber.
 
 ---
 
@@ -52,7 +52,7 @@ Common issues and solutions for SubMaker.
 
 ### OpenSubtitles Auth 429 / Login Coordination
 
-OpenSubtitles limits API traffic per public IP, and `/login` is stricter than normal search traffic. In multi-instance deployments, use Redis storage so all SubMaker pods share the same JWT cache and login singleflight lock. Upstream `429` responses advance the next reservation from response headers; they do not create a separate multi-minute login cooldown.
+OpenSubtitles limits API traffic per public IP, and `/login` is stricter than normal search traffic. In multi-instance deployments, use Redis storage so all SubFaber pods share the same JWT cache and login singleflight lock. Upstream `429` responses advance the next reservation from response headers; they do not create a separate multi-minute login cooldown.
 
 Useful environment knobs:
 
@@ -61,7 +61,7 @@ Useful environment knobs:
 | `OPENSUBTITLES_LOGIN_MIN_INTERVAL_MS` | `1250` | Minimum spacing between `/login` sends across pods |
 | `OPENSUBTITLES_LOGIN_LOCK_TTL_MS` | `30000` | Distributed per-credential login lock TTL |
 
-If 429s persist on a public deployment using VPN/WARP/shared NAT egress, confirm no unrelated traffic shares the same OpenSubtitles-visible IP. Redis coordinates SubMaker pods, but it cannot coordinate other apps or other tenants using the same egress IP.
+If 429s persist on a public deployment using VPN/WARP/shared NAT egress, confirm no unrelated traffic shares the same OpenSubtitles-visible IP. Redis coordinates SubFaber pods, but it cannot coordinate other apps or other tenants using the same egress IP.
 
 ---
 
@@ -136,7 +136,7 @@ Stremio on Android makes only 1 request for subtitles and caches it. Mobile Mode
 
 1. In Stremio subtitles list, click "Sub Toolbox"
 2. Right-click the video → "Download Subtitles" to open in browser
-3. Ensure browser allows popups from your SubMaker domain
+3. Ensure browser allows popups from your SubFaber domain
 
 ---
 
@@ -146,7 +146,7 @@ Stremio on Android makes only 1 request for subtitles and caches it. Mobile Mode
 
 ```bash
 # Check logs
-docker-compose logs -f submaker
+docker-compose logs -f subfaber
 
 # Check Redis health
 docker-compose logs -f redis
@@ -162,7 +162,7 @@ netstat -ano | findstr :7001
 ### 🔄 Update to Latest Image
 
 ```bash
-docker pull xtremexq/submaker:latest
+docker pull mfzf99/subfaber:latest
 docker-compose up -d
 ```
 
@@ -207,7 +207,7 @@ Check "Advanced Mode" in Other Settings to unlock:
 
 ### 📧 Open a GitHub Issue
 
-[Open an issue](https://github.com/xtremexq/StremioSubMaker/issues) with:
+[Open an issue](https://github.com/mfzf99/StremioSubFaber/issues) with:
 - Description of the problem
 - Steps to reproduce
 - Browser and OS

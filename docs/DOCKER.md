@@ -1,6 +1,6 @@
 # Docker Deployment Guide
 
-You can run SubMaker directly from Docker Hub without cloning the repo. Below are copy-paste compose files, minimal `.env` examples, and optional build/run instructions for source checkouts.
+You can run SubFaber directly from Docker Hub without cloning the repo. Below are copy-paste compose files, minimal `.env` examples, and optional build/run instructions for source checkouts.
 
 ## Prerequisites
 - Docker 20+ and Docker Compose v2
@@ -10,7 +10,7 @@ You can run SubMaker directly from Docker Hub without cloning the repo. Below ar
 
 1) Create a folder and enter it:
 ```bash
-mkdir stremio-submaker && cd stremio-submaker
+mkdir stremio-subfaber && cd stremio-subfaber
 ```
 
 2) Create `.env` (minimum settings):
@@ -31,9 +31,9 @@ STORAGE_TYPE=redis
 version: "3.9"
 
 services:
-  submaker:
-    image: xtremexq/submaker:latest
-    container_name: submaker
+  subfaber:
+    image: mfzf99/subfaber:latest
+    container_name: subfaber
     ports:
       - "${PORT:-7001}:7001"
     env_file:
@@ -103,7 +103,7 @@ volumes:
 4) Start and watch logs:
 ```bash
 docker-compose up -d
-docker-compose logs -f submaker
+docker-compose logs -f subfaber
 ```
 
 ## Filesystem-only variant (no Redis)
@@ -122,9 +122,9 @@ STORAGE_TYPE=filesystem
 version: "3.9"
 
 services:
-  submaker:
-    image: xtremexq/submaker:latest
-    container_name: submaker
+  subfaber:
+    image: mfzf99/subfaber:latest
+    container_name: subfaber
     ports:
       - "${PORT:-7001}:7001"
     env_file:
@@ -144,7 +144,7 @@ services:
 Start with:
 ```bash
 docker-compose up -d
-docker-compose logs -f submaker
+docker-compose logs -f subfaber
 ```
 
 ## Using the repo (build or image)
@@ -152,8 +152,8 @@ docker-compose logs -f submaker
 If you clone the repo, `docker-compose.yaml` defaults to building locally. To use the Docker Hub image instead, comment out `build: .` and uncomment the `image:` line.
 
 ```bash
-git clone https://github.com/xtremexq/StremioSubMaker.git
-cd StremioSubMaker
+git clone https://github.com/mfzf99/StremioSubFaber.git
+cd StremioSubFaber
 cp .env.example .env
 # edit .env with your keys
 docker-compose up -d          # uses build
@@ -166,7 +166,7 @@ docker-compose up -d          # uses build
 Filesystem storage:
 ```bash
 docker run -d \
-  --name submaker \
+  --name subfaber \
   -p 7001:7001 \
   -v $(pwd)/data:/app/data \
   -v $(pwd)/logs:/app/logs \
@@ -174,13 +174,13 @@ docker run -d \
   -v $(pwd)/.cache:/app/.cache \
   -e STORAGE_TYPE=filesystem \
   -e OPENSUBTITLES_API_KEY=your_opensubtitles_key \
-  xtremexq/submaker:latest
+  mfzf99/subfaber:latest
 ```
 
 External Redis (you supply Redis):
 ```bash
 docker run -d \
-  --name submaker \
+  --name subfaber \
   -p 7001:7001 \
   -e STORAGE_TYPE=redis \
   -e REDIS_HOST=your-redis-host \
@@ -191,7 +191,7 @@ docker run -d \
   -e REDIS_PASSWORD_FILE=/app/keys/.redis-password \
   -e ENCRYPTION_KEY_FILE=/app/keys/.encryption-key \
   -v $(pwd)/keys:/app/keys \
-  xtremexq/submaker:latest
+  mfzf99/subfaber:latest
 ```
 
 ## Configuration notes
@@ -201,15 +201,15 @@ docker run -d \
 - Redis password: set `REDIS_PASSWORD_FILE` (for example `/app/keys/.redis-password`) to auto-generate and persist a strong Redis password. If `REDIS_PASSWORD` is set, that value is used instead and written to the password file. Ensure Redis is configured to read the same file; the provided `docker-compose.yaml` handles this via the shared `keys` volume.
 - Ports: container listens on `7001` by default; override with `PORT` env and matching host mapping.
 - `TRUST_PROXY`: set to `1` when running behind a reverse proxy (nginx, Cloudflare, etc.) so Express reads the real client IP from `X-Forwarded-For`. Defaults to `false` (safe for direct exposure). Accepts numeric depth, boolean, or named values (`loopback`, `linklocal`, `uniquelocal`).
-- OpenSubtitles Auth in multi-instance deployments uses shared Redis coordination. Keep all SubMaker replicas on the same Redis/key prefix so JWT cache and login singleflight locks are shared. Advanced tuning variables: `OPENSUBTITLES_LOGIN_MIN_INTERVAL_MS`, `OPENSUBTITLES_LOGIN_LOCK_TTL_MS`.
+- OpenSubtitles Auth in multi-instance deployments uses shared Redis coordination. Keep all SubFaber replicas on the same Redis/key prefix so JWT cache and login singleflight locks are shared. Advanced tuning variables: `OPENSUBTITLES_LOGIN_MIN_INTERVAL_MS`, `OPENSUBTITLES_LOGIN_LOCK_TTL_MS`.
 - Subtitle provider searches use the timeout saved in each installed config. A separate stuck-search guard defaults to 60s and can be tuned with `SUBTITLE_SEARCH_HARD_TIMEOUT_MS`; `SUBTITLE_SEARCH_STALE_GRACE_MS` controls when an old in-flight search may be replaced.
 - Redis commands default to a 5000ms command timeout via `REDIS_COMMAND_TIMEOUT_MS`; this is a storage safety limit, not the subtitle provider timeout.
 
 ## Troubleshooting
-- Check app logs: `docker-compose logs -f submaker`
+- Check app logs: `docker-compose logs -f subfaber`
 - Check Redis: `docker-compose logs -f redis` and `docker-compose ps`
 - Port in use? adjust `${PORT:-7001}` mapping or free the port (`lsof -i :7001` on Linux/macOS, `netstat -ano | findstr :7001` on Windows).
-- Refresh image: `docker pull xtremexq/submaker:latest` then `docker-compose up -d`
+- Refresh image: `docker pull mfzf99/subfaber:latest` then `docker-compose up -d`
 
 ---
 

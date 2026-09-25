@@ -5,12 +5,12 @@
 # No manual chown required — everything works out of the box.
 #
 services:
-  submaker:
+  subfaber:
     # Use pre-built image from Docker Hub (recommended)
-    # image: xtremexq/submaker:latest
+    # image: mfzf99/subfaber:latest
     # Or build locally
     build: .
-    container_name: submaker-local
+    container_name: subfaber-local
     ports:
       - "${PORT:-7001}:7001"
     # Load ALL environment variables from .env file

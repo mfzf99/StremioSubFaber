@@ -2,7 +2,7 @@
 set -e
 
 # ============================================================================
-# SubMaker Docker Entrypoint
+# SubFaber Docker Entrypoint
 #
 # Handles two scenarios:
 #   1. Running as root (default, no `user:` in compose):
@@ -94,7 +94,7 @@ done
 
 if [ "$HAS_ERRORS" = "1" ]; then
   echo ""
-  echo "SubMaker: Permission errors detected. The addon may not work correctly."
+  echo "SubFaber: Permission errors detected. The addon may not work correctly."
   echo "See messages above for details on how to fix."
   echo ""
 fi
