@@ -1,5 +1,5 @@
 <p align="center">
-  <img src="public/logo.png" alt="SubFaber Logo" width="130"/>
+  <img src="public/logo.png" alt="SubFaber Logo" width="120"/>
 </p>
 
 <h1 align="center">SubFaber</h1>
