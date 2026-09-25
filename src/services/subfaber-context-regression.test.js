@@ -229,27 +229,39 @@ test('SubFaberXml: legacy <m> memory block still works when SubFaber OFF', () =>
   assert.ok(!xml.includes('<previous_content>'), 'No SubFaber block when OFF');
 });
 
-// --- createXmlBatchPrompt: persona + principles ---
-test('SubFaberPrompt: persona VideoLingo + translation_principles injected when ON', () => {
+// --- createXmlBatchPrompt: persona + principles (Purification Mandat 2026-09-25) ---
+test('SubFaberPrompt: pure SubFaber prompt when ON — persona + principles + XML contract, NO legacy bloat', () => {
   const engine = makeEngine({ subfaberEnabled: true });
   engine.sourceLanguage = 'English';
   const batch = makeEntries(2, 1);
   const batchText = engine.prepareBatchXml(batch, null);
 
   const prompt = engine.createXmlBatchPrompt(batchText, 'Malay', null, batch.length, null, 0, 1);
+  // Persona VideoLingo verbatim
   assert.ok(prompt.includes('## Role'), 'Role section present');
   assert.ok(prompt.includes('professional Netflix subtitle translator'), 'VideoLingo persona verbatim');
   assert.ok(prompt.includes('fluent in both English and Malay'), 'Language pair in persona');
+  assert.ok(prompt.includes('natural, conversational Malay'), 'Conversational tone in persona');
+  // Task + principles verbatim
+  assert.ok(prompt.includes('## Task'), 'Task section present');
+  assert.ok(prompt.includes('Strictly preserve all inline markup'), 'Markup preservation rule (task item 4)');
   assert.ok(prompt.includes('<translation_principles>'), 'Principles opening tag');
   assert.ok(prompt.includes('</translation_principles>'), 'Principles closing tag');
   assert.ok(prompt.includes('Faithful to the original'), 'Principle 1 verbatim');
   assert.ok(prompt.includes('Accurate terminology'), 'Principle 2 verbatim');
   assert.ok(prompt.includes('Understand the context'), 'Principle 3 verbatim');
-  // Rulebook 7-rule kekal
-  assert.ok(prompt.includes('CRITICAL ENFORCEMENT RULES (ZERO TOLERANCE)'), '7-rule rulebook intact');
-  assert.ok(prompt.includes('STRICT 1-TO-1 CARDINALITY'), 'Rule 1 intact');
-  // Susunan: persona SEBELUM rulebook
-  assert.ok(prompt.indexOf('## Role') < prompt.indexOf('CRITICAL ENFORCEMENT RULES'), 'Persona precedes rules');
+  // Kontrak XML satu baris (SRT AI Translator)
+  assert.ok(prompt.includes('## Output Format'), 'Output Format section present');
+  assert.ok(prompt.includes('EXACTLY one <s id="N"> element per input subtitle'), '1-to-1 XML contract');
+  assert.ok(prompt.includes('<answer>'), 'Answer block wrapper in contract');
+  // DETOX: legacy bloat mesti HILANG
+  assert.ok(!prompt.includes('CRITICAL ENFORCEMENT RULES'), '7-rule rulebook REMOVED (detox)');
+  assert.ok(!prompt.includes('STRICT 1-TO-1 CARDINALITY'), 'Rule 1 REMOVED (detox)');
+  assert.ok(!prompt.includes('[UNIVERSAL STRUCTURAL DEMONSTRATION'), 'Structural demo REMOVED (detox)');
+  assert.ok(!prompt.includes('ZERO TOLERANCE'), 'Zero-tolerance tone REMOVED (detox)');
+  // Anchor kekal di penutup (Smart Preamble Scrubber compatibility)
+  assert.ok(prompt.includes('<s id="1">'), 'Anchor <s id="${startId}"> at prompt tail');
+  assert.ok(prompt.trimEnd().endsWith('<s id="1">'), 'Prompt must END with anchor tag');
 });
 
 test('SubFaberPrompt: legacy prompt verbatim when SubFaber OFF', () => {
@@ -265,16 +277,18 @@ test('SubFaberPrompt: legacy prompt verbatim when SubFaber OFF', () => {
   assert.ok(prompt.includes('CRITICAL ENFORCEMENT RULES (ZERO TOLERANCE)'), 'Rulebook intact when OFF');
 });
 
-test('SubFaberPrompt: id list extraction works with SubFaber context blocks', () => {
+test('SubFaberPrompt: anchor startId derived from active section, not context blocks', () => {
   // prepareBatchXml dengan konteks SubFaber meletakkan <s id> entries dalam
   // blok konteks SEBELUM '=== ENTRIES TO TRANSLATE ==='. createXmlBatchPrompt
-  // mesti extract ID dari SEKSYEN AKTIF sahaja (selepas marker), bukan konteks.
+  // mesti derive startId dari SEKSYEN AKTIF sahaja (selepas marker), bukan
+  // konteks. Prompt SubFaber tulen tiada idList eksplisit (7-rule dibuang),
+  // jadi pengesahan adalah melalui anchor di penutup prompt.
   const engine = makeEngine({ subfaberEnabled: true });
   engine.sourceLanguage = 'English';
   const all = makeEntries(10);
   const batch = all.slice(5, 10); // IDs 6..10
   const context = {
-    previousContent: all.slice(0, 5), // IDs 1..5 — mesti TIDAK dalam idList
+    previousContent: all.slice(0, 5), // IDs 1..5 — konteks, mesti TIDAK jadi anchor
     subsequentContent: [],
     previousMemory: [],
     preflight: null
@@ -282,11 +296,13 @@ test('SubFaberPrompt: id list extraction works with SubFaber context blocks', ()
   const batchText = engine.prepareBatchXml(batch, context);
   const prompt = engine.createXmlBatchPrompt(batchText, 'Malay', null, batch.length, context, 0, 1);
 
-  // idList mesti 6..10 sahaja (5 entri aktif), bukan 1..10
-  assert.ok(prompt.includes('[6, 7, 8, 9, 10]'), 'idList must contain ONLY active IDs 6-10');
-  assert.ok(!prompt.includes('[1, 2, 3, 4, 5, 6'), 'Context IDs must NOT leak into idList');
-  // startId mesti 6 (ID aktif pertama)
-  assert.ok(prompt.includes('<s id="${startId}">') || prompt.includes('slot 6'), 'startId derived from active section');
+  // Anchor mesti <s id="6"> (ID aktif pertama), BUKAN <s id="1"> (context ID)
+  assert.ok(prompt.includes('<s id="6">'), 'Anchor must be active first ID (6)');
+  assert.ok(prompt.trimEnd().endsWith('<s id="6">'), 'Prompt must END with anchor <s id="6">');
+  // Context IDs wujud dalam blok konteks (itu OK) tapi tidak sebagai anchor penutup
+  const lastIdx = prompt.trimEnd().length;
+  const anchorIdx = prompt.lastIndexOf('<s id="6">');
+  assert.ok(anchorIdx === lastIdx - '<s id="6">'.length, 'Anchor is the final token of the prompt');
 });
 
 // --- Parser: konteks tidak rosakkan parseXmlBatchResponse ---

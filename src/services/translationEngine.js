@@ -2234,17 +2234,22 @@ class TranslationEngine {
     const startId = idMatches.length > 0 ? idMatches[0] : 'START';
     const idList = idMatches.length > 0 ? idMatches.join(', ') : 'N/A';
 
-    // SUBFABER PERSONA PRELUDE (Pembedahan E laporan backend §3.2):
-    // Persona VideoLingo verbatim + <translation_principles> verbatim mandat,
-    // disuntik SEBELUM rulebook 7-rule sedia ada. Persona memberi model
-    // identiti penterjemah profesional; principles memberi falsafah kerja;
-    // 7-rule kekal sebagai enforcer pariti mekanikal. Susunan: persona →
-    // principles → rules → input → anchor.
-    let subfaberPrelude = '';
+    // ── SUBFABER PROMPT PURIFICATION (Mandat 2026-09-25) ──
+    // Branching bersih: subfaberEnabled=true guna prompt SubFaber TULEN
+    // (VideoLingo persona + kontrak XML satu baris SRT AI Translator) —
+    // TANPA [UNIVERSAL STRUCTURAL DEMONSTRATION] dan TANPA 7-rule
+    // CRITICAL ENFORCEMENT RULES (detox SubMaker legacy bloat, ~1,000-1,500
+    // token penjimatan). subfaberEnabled=false kekal prompt legacy penuh
+    // untuk backward compatibility. Anchor '<s id="${startId}">' kekal
+    // di penutup kedua-dua cabang supaya Smart Preamble Scrubber (v1.6.1)
+    // dalam parseXmlBatchResponse terus berfungsi tanpa off-by-one.
+    let promptBody;
+
     if (this.subfaberEnabled) {
-      subfaberPrelude = `## Role
+      // ── CABANG SUBFABER TULEN (struktur rasmi mandat §3) ──
+      promptBody = `## Role
 You are a professional Netflix subtitle translator, fluent in both ${sourceLabel || 'the source language'} and ${targetLabel}, as well as their respective cultures.
-Your expertise lies in accurately understanding the semantics and structure of the original ${sourceLabel || 'source'} text and faithfully translating it into ${targetLabel} while preserving the original meaning.
+Your expertise lies in accurately understanding the semantics and structure of the original ${sourceLabel || 'source'} text and faithfully translating it into natural, conversational ${targetLabel} while preserving the original meaning.
 
 ## Task
 We have a segment of original ${sourceLabel || 'source'} subtitles that need to be directly translated into ${targetLabel}. These subtitles come from a specific context and may contain specific themes and terminology.
@@ -2252,6 +2257,7 @@ We have a segment of original ${sourceLabel || 'source'} subtitles that need to 
 1. Translate the original ${sourceLabel || 'source'} subtitles into ${targetLabel} line by line
 2. Ensure the translation is faithful to the original, accurately conveying the original meaning
 3. Consider the context and professional terminology
+4. Strictly preserve all inline markup ([br], <i>, <b>) in their exact positions
 
 <translation_principles>
 1. Faithful to the original: Accurately convey the content and meaning of the original text, without arbitrarily changing, adding, or omitting content.
@@ -2259,10 +2265,18 @@ We have a segment of original ${sourceLabel || 'source'} subtitles that need to 
 3. Understand the context: Fully comprehend and reflect the background and contextual relationships of the text.
 </translation_principles>
 
-`;
-    }
+<input>
+${batchText}
+</input>
 
-    const promptBody = `${subfaberPrelude}Translate the text inside each <s id="N"> tag from ${sourceLabel || 'the source'} to ${targetLabel}. NEVER mirror foreign syntax, trailing modifiers, or literal word order; INSTEAD, render the subtitle dialogue into natural, conversational ${targetLabel} INSIDE each individual tag while strictly preserving tag boundaries and internal [br] markers.
+## Output Format
+Reply with EXACTLY one <s id="N"> element per input subtitle, reusing the same ids, wrapped in a single <answer> block, and output nothing else. Strictly maintain 1-to-1 correspondence without merging, omitting, or splitting subtitles:
+
+<answer>
+<s id="${startId}">`;
+    } else {
+      // ── CABANG LEGACY SUBMAKER (backward compatibility, verbatim) ──
+      promptBody = `Translate the text inside each <s id="N"> tag from ${sourceLabel || 'the source'} to ${targetLabel}. NEVER mirror foreign syntax, trailing modifiers, or literal word order; INSTEAD, render the subtitle dialogue into natural, conversational ${targetLabel} INSIDE each individual tag while strictly preserving tag boundaries and internal [br] markers.
 
 [UNIVERSAL STRUCTURAL DEMONSTRATION: SLOT ISOLATION & ZERO DRIFT]
 Input:
@@ -2328,6 +2342,7 @@ ${batchText}
 
 [OUTPUT_FORMAT]
 <s id="${startId}">`;
+    }
 
     return this.addBatchHeader(promptBody, batchIndex, totalBatches);
   }
