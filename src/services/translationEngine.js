@@ -2300,9 +2300,19 @@ Reply with EXACTLY one <s id="N"> element per input subtitle, reusing the same i
         log.info(() => `[TranslationEngine] Smart-recovery: slot ${firstId} rebuilt from untagged preamble (${preamble.length} chars, ends with </s>)`);
         cleaned = `<s id="${firstId}">` + cleaned;
       } else if (preamble && preamble.length <= 200) {
-        // Case B: genuine conversational chatter — discard (pro pattern from
-        // Subtitle Edit's ChatGptTranslate.RemovePreamble).
-        log.warn(() => `[TranslationEngine] Preamble chatter scrubbed before first <s tag (${preamble.length} chars): "${preamble.replace(/\s+/g, ' ').slice(0, 120)}"`);
+        if (preamble.trim().toLowerCase() === '<answer>') {
+          // BENIGN PREFIX (Mandat 2026-09-25): kontrak prompt SubFaber menyuruh
+          // model "wrap output in a single <answer> block" — model yang patuh
+          // memancarkan semula tag pembuka walaupun prefill anchor sudah
+          // memaparkannya. Tingkah laku sah, bukan halusinasi. Buang awalan dan
+          // log di tahap debug sahaja (log noise elimination — first run
+          // production 646/646 entries mendedikasikan 13x amaran ini).
+          log.debug(() => `[TranslationEngine] Benign <answer> wrapper prefix scrubbed before first <s tag (expected per prompt contract)`);
+        } else {
+          // Case B: genuine conversational chatter — discard (pro pattern from
+          // Subtitle Edit's ChatGptTranslate.RemovePreamble).
+          log.warn(() => `[TranslationEngine] Preamble chatter scrubbed before first <s tag (${preamble.length} chars): "${preamble.replace(/\s+/g, ' ').slice(0, 120)}"`);
+        }
         cleaned = cleaned.slice(firstTagIdx);
       }
       // Case C: preamble >200 chars without </s> — no slice, no restore.
