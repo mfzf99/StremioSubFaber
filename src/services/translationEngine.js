@@ -2304,10 +2304,10 @@ Reply with EXACTLY one <s id="N"> element per input subtitle, reusing the same i
           // BENIGN PREFIX (Mandat 2026-09-25): kontrak prompt SubFaber menyuruh
           // model "wrap output in a single <answer> block" — model yang patuh
           // memancarkan semula tag pembuka walaupun prefill anchor sudah
-          // memaparkannya. Tingkah laku sah, bukan halusinasi. Buang awalan dan
-          // log di tahap debug sahaja (log noise elimination — first run
-          // production 646/646 entries mendedikasikan 13x amaran ini).
-          log.debug(() => `[TranslationEngine] Benign <answer> wrapper prefix scrubbed before first <s tag (expected per prompt contract)`);
+          // memaparkannya. Tingkah laku 100% dijangka, bukan halusinasi.
+          // SILENT STRIP: buang awalan tanpa sebarang pembalakan — tiada nilai
+          // diagnostik, hanya kebisingan terminal (satu kejadian per batch).
+          // Pemantauan anomali dikekalkan melalui log.warn untuk chatter lain.
         } else {
           // Case B: genuine conversational chatter — discard (pro pattern from
           // Subtitle Edit's ChatGptTranslate.RemovePreamble).
