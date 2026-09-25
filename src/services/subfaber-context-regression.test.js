@@ -54,9 +54,9 @@ test('SubFaberContext: subfaberEnabled reads boolean strict from advancedSetting
   assert.equal(makeEngine({ subfaberEnabled: 1 }).subfaberEnabled, false, 'Number 1 must NOT enable');
 });
 
-// --- _prepareSubfaberContext: sliding window ---
-test('SubFaberContext: middle batch gets both previous and subsequent content', () => {
-  const engine = makeEngine({ subfaberEnabled: true, contextSize: 5 });
+// --- _prepareSubfaberContext: ASYMMETRIC sliding window (Golden Standard, VideoLingo ground truth) ---
+test('SubFaberContext: middle batch gets asymmetric context — prev=3 lines, next=2 lines', () => {
+  const engine = makeEngine({ subfaberEnabled: true, contextSize: 5 }); // contextSize diabaikan dalam mod SubFaber
   const all = makeEntries(30); // IDs 1..30
   const batch = all.slice(10, 20); // batch kedua (IDs 11..20)
 
@@ -64,18 +64,19 @@ test('SubFaberContext: middle batch gets both previous and subsequent content', 
   assert.ok(ctx, 'Context must be built for SubFaber');
   assert.ok(Array.isArray(ctx.previousContent), 'previousContent array');
   assert.ok(Array.isArray(ctx.subsequentContent), 'subsequentContent array');
-  assert.equal(ctx.previousContent.length, 5, 'W=5 previous entries');
-  assert.equal(ctx.subsequentContent.length, 5, 'W=5 subsequent entries');
-  // Verifikasi kandungan: previous = IDs 6..10, subsequent = IDs 21..25
-  assert.equal(ctx.previousContent[0].id, 6);
-  assert.equal(ctx.previousContent[4].id, 10);
+  // GOLDEN STANDARD: prev = 3 baris terakhir (VideoLingo [-3:]), next = 2 baris pertama ([:2])
+  assert.equal(ctx.previousContent.length, 3, 'Prev window = 3 entries (VideoLingo ground truth)');
+  assert.equal(ctx.subsequentContent.length, 2, 'Next window = 2 entries (VideoLingo ground truth)');
+  // Verifikasi kandungan: previous = IDs 8..10 (3 terakhir sebelum batch), subsequent = IDs 21..22 (2 pertama selepas)
+  assert.equal(ctx.previousContent[0].id, 8);
+  assert.equal(ctx.previousContent[2].id, 10);
   assert.equal(ctx.subsequentContent[0].id, 21);
-  assert.equal(ctx.subsequentContent[4].id, 25);
+  assert.equal(ctx.subsequentContent[1].id, 22);
   assert.equal(ctx.preflight, null, 'No preflight context set');
 });
 
 test('SubFaberContext: first batch gets subsequent but no previous (batch 1突破)', () => {
-  const engine = makeEngine({ subfaberEnabled: true, contextSize: 3 });
+  const engine = makeEngine({ subfaberEnabled: true, contextSize: 20 });
   const all = makeEntries(20);
   const batch = all.slice(0, 10); // batch pertama
 
@@ -83,17 +84,18 @@ test('SubFaberContext: first batch gets subsequent but no previous (batch 1突�
   assert.ok(ctx, 'SubFaber context must exist even for batch 0');
   assert.equal(ctx.previousContent.length, 0, 'No previous for first batch');
   assert.ok(ctx.subsequentContent.length > 0, 'First batch gets forward context');
+  assert.equal(ctx.subsequentContent.length, 2, 'First batch next window = 2 (asymmetric)');
   assert.equal(ctx.subsequentContent[0].id, 11);
 });
 
 test('SubFaberContext: last batch gets previous but no subsequent', () => {
-  const engine = makeEngine({ subfaberEnabled: true, contextSize: 3 });
+  const engine = makeEngine({ subfaberEnabled: true, contextSize: 20 });
   const all = makeEntries(20);
   const batch = all.slice(15, 20); // batch terakhir (IDs 16..20)
 
   const ctx = engine.prepareContextForBatch(batch, all, [], 1);
   assert.ok(ctx);
-  assert.equal(ctx.previousContent.length, 3);
+  assert.equal(ctx.previousContent.length, 3, 'Last batch prev window = 3');
   assert.equal(ctx.previousContent[2].id, 15, 'Previous ends at ID 15');
   assert.equal(ctx.subsequentContent.length, 0, 'No subsequent at file end');
 });
@@ -104,8 +106,16 @@ test('SubFaberContext: window clamps at file boundaries', () => {
   const batch = all.slice(4, 6); // IDs 5..6
 
   const ctx = engine.prepareContextForBatch(batch, all, [], 0);
-  assert.equal(ctx.previousContent.length, 4, 'Clamped: only 4 entries exist before');
-  assert.equal(ctx.subsequentContent.length, 4, 'Clamped: only 4 entries exist after');
+  assert.equal(ctx.previousContent.length, 3, 'Clamped prev: only 3 entries requested (of 4 available)');
+  assert.equal(ctx.subsequentContent.length, 2, 'Clamped next: only 2 entries requested (of 4 available)');
+});
+
+// --- GOLDEN STANDARD GS1: batch size SubFaber = 50 ---
+test('SubFaberContext: batch size = 50 when SubFaber ON, legacy 200 when OFF', () => {
+  const engineOn = makeEngine({ subfaberEnabled: true });
+  assert.equal(engineOn.batchSize, 50, 'SubFaber batch size = 50 (Golden Standard)');
+  const engineOff = makeEngine({ subfaberEnabled: false });
+  assert.equal(engineOff.batchSize, 200, 'Legacy batch size = 200 (UNIVERSAL_BATCH_SIZE, untouched)');
 });
 
 test('SubFaberContext: previousMemory includes verified translations, excludes placeholders', () => {
@@ -165,9 +175,14 @@ test('SubFaberXml: context block renders previous_content + subsequent_content +
   assert.ok(xml.includes('<s id="11">'), 'Active entry 11 rendered');
 });
 
-test('SubFaberXml: preflight renders Content Summary + Points to Note blocks', () => {
+test('SubFaberXml: preflight renders Content Summary + Points to Note blocks (term must match batch text)', () => {
   const engine = makeEngine({ subfaberEnabled: true });
-  const batch = makeEntries(2, 1);
+  // GS3: term-matching dinamik — istilah mesti wujud dalam skop chunk
+  // (prev/batch/next) untuk disuntik. Batch ini menyebut "Zhuang Xu".
+  const batch = [
+    { id: 1, timecode: 't', text: 'Zhuang Xu walked into the room.' },
+    { id: 2, timecode: 't', text: 'He looked tired.' }
+  ];
   const context = {
     previousContent: [],
     subsequentContent: [],
@@ -182,7 +197,7 @@ test('SubFaberXml: preflight renders Content Summary + Points to Note blocks', (
   assert.ok(xml.includes('### Content Summary'), 'Content Summary header');
   assert.ok(xml.includes('A story about survival.'), 'Theme text');
   assert.ok(xml.includes('### Points to Note'), 'Points to Note header');
-  assert.ok(xml.includes('- Zhuang Xu: Zhuang Xu (Male colleague)'), 'Term line rendered');
+  assert.ok(xml.includes('- Zhuang Xu: Zhuang Xu (Male colleague)'), 'Term line rendered (matched in batch)');
 });
 
 test('SubFaberXml: empty context renders no context block (plain batch)', () => {
@@ -303,6 +318,66 @@ test('SubFaberPrompt: anchor startId derived from active section, not context bl
   const lastIdx = prompt.trimEnd().length;
   const anchorIdx = prompt.lastIndexOf('<s id="6">');
   assert.ok(anchorIdx === lastIdx - '<s id="6">'.length, 'Anchor is the final token of the prompt');
+});
+
+// --- GOLDEN STANDARD GS3: Dynamic term-matching per-chunk (VideoLingo search_things_to_note) ---
+test('SubFaberGS3: Points to Note only injects terms whose source text appears in chunk scope', () => {
+  const engine = makeEngine({ subfaberEnabled: true });
+  engine.preflightContext = {
+    theme: 'A story about survival.',
+    terms: [
+      { src: 'Zhuang Xu', tgt: 'Zhuang Xu', note: 'Male colleague' },
+      { src: 'Nie Xiguang', tgt: 'Nie Xiguang', note: 'Female lead' },
+      { src: 'CP Group', tgt: 'CP Group', note: 'Company' } // Istilah TIDAK wujud dalam skop chunk
+    ]
+  };
+  const batch = [
+    { id: 11, timecode: 't', text: 'Zhuang Xu entered the office.' },
+    { id: 12, timecode: 't', text: 'Nie Xiguang followed behind him.' }
+  ];
+  const previousContent = [{ id: 8, timecode: 't', text: 'The corridor was quiet.' }];
+  const subsequentContent = [{ id: 13, timecode: 't', text: 'They sat down together.' }];
+
+  const block = engine._formatPreflightForChunk(
+    engine.preflightContext, previousContent, batch, subsequentContent
+  );
+  assert.ok(block.includes('### Content Summary'), 'Theme always injected');
+  assert.ok(block.includes('A story about survival.'), 'Theme text present');
+  assert.ok(block.includes('### Points to Note'), 'Points to Note present (2 terms matched)');
+  assert.ok(block.includes('- Zhuang Xu: Zhuang Xu (Male colleague)'), 'Matched term 1 rendered');
+  assert.ok(block.includes('- Nie Xiguang: Nie Xiguang (Female lead)'), 'Matched term 2 rendered');
+  assert.ok(!block.includes('CP Group'), 'Unmatched term NOT injected (token savings)');
+});
+
+test('SubFaberGS3: Points to Note section emptied when no terms match chunk scope', () => {
+  const engine = makeEngine({ subfaberEnabled: true });
+  engine.preflightContext = {
+    theme: 'A heist movie.',
+    terms: [{ src: 'Ghost', tgt: 'Hantu', note: 'Mastermind' }] // Tidak wujud dalam skop
+  };
+  const batch = [{ id: 1, timecode: 't', text: 'Hello world.' }];
+
+  const block = engine._formatPreflightForChunk(engine.preflightContext, [], batch, []);
+  assert.ok(block.includes('### Content Summary'), 'Theme still injected');
+  assert.ok(!block.includes('### Points to Note'), 'No Points to Note when zero matches (token savings)');
+});
+
+test('SubFaberGS3: term matching is case-insensitive and scans prev + batch + next scope', () => {
+  const engine = makeEngine({ subfaberEnabled: true });
+  engine.preflightContext = {
+    theme: 'T.',
+    terms: [
+      { src: 'BLACKWOOD', tgt: 'Hutan Hitam', note: 'Mansion' }      // Padanan dalam prev (UPPERCASE source)
+      , { src: 'Silverton', tgt: 'Bandar Perak', note: 'Town' }      // Padanan dalam next
+    ]
+  };
+  const previousContent = [{ id: 1, timecode: 't', text: 'Welcome to blackwood mansion.' }];
+  const batch = [{ id: 2, timecode: 't', text: 'The drive continues.' }];
+  const subsequentContent = [{ id: 3, timecode: 't', text: 'Arriving at Silverton soon.' }];
+
+  const block = engine._formatPreflightForChunk(engine.preflightContext, previousContent, batch, subsequentContent);
+  assert.ok(block.includes('- BLACKWOOD: Hutan Hitam'), 'Prev-scope match (case-insensitive)');
+  assert.ok(block.includes('- Silverton: Bandar Perak'), 'Next-scope match');
 });
 
 // --- Parser: konteks tidak rosakkan parseXmlBatchResponse ---

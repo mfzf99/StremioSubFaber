@@ -164,6 +164,15 @@ class TranslationEngine {
     this.subfaberEnabled = this.advancedSettings.subfaberEnabled === true;
     this.preflightContext = null; // Slot state Fasa 0 (theme + terms)
 
+    // ── GOLDEN STANDARD (Mandat 2026-09-26): Batch size SubFaber = 50 baris.
+    // Ground truth VideoLingo: chunk kecil (600 aksara / 10 ayat ≈ beberapa
+    // baris) supaya pariti mudah dijaga & konteks tidak menenggelamkan
+    // arahan. Legacy (subfaberEnabled=false) kekal UNIVERSAL_BATCH_SIZE=200.
+    // Dilakukan selepas assignment batchSize supaya mod SubFaber menindih.
+    if (this.subfaberEnabled) {
+      this.batchSize = 50;
+    }
+
     // Mismatch retry: number of retries when AI returns wrong entry count (default: 1)
     const rawMismatchRetries = parseInt(this.advancedSettings.mismatchRetries);
     this.mismatchRetries = Number.isFinite(rawMismatchRetries) ? Math.max(0, Math.min(3, rawMismatchRetries)) : 3;
@@ -1188,11 +1197,18 @@ class TranslationEngine {
    * SubFaber sliding context buffer (Fasa 1): bina konteks dua hala untuk
    * satu batch. Dipanggil oleh prepareContextForBatch() bila subfaberEnabled.
    *
+   * GOLDEN STANDARD (Mandat 2026-09-26, ground truth VideoLingo):
+   * Sliding window ASIMETRIS — previousContent = 3 baris terakhir sebelum
+   * batch (chunk sebelumnya `.split('\n')[-3:]`), subsequentContent = 2 baris
+   * pertama selepas batch (chunk berikutnya `[:2]`). previousMemory
+   * diselaraskan kepada 3 baris lalu yang sama. Konteks global Fasa 0
+   * (theme + term-matching dinamik) membawa beban koherens utama.
+   *
    * Struktur return (kontrak laporan backend §3.2 Pembedahan C):
    *   {
-   *     previousContent: entries[],   // source-only, W baris sebelum batch
-   *     subsequentContent: entries[], // source-only, W baris selepas batch
-   *     previousMemory: entries[],    // terjemahan disahkan (continuity)
+   *     previousContent: entries[],   // source-only, 3 baris sebelum batch
+   *     subsequentContent: entries[], // source-only, 2 baris selepas batch
+   *     previousMemory: entries[],    // terjemahan disahkan (3 baris lalu)
    *     preflight: {theme, terms}|null // konteks global Fasa 0
    *   }
    *
@@ -1212,12 +1228,13 @@ class TranslationEngine {
     }
     const batchEndIdx = batchStartIdx + batch.length - 1;
 
-    // 2. Sliding window dua hala (W = contextSize sedia ada, default 20)
-    const W = this.contextSize;
-    const prevStart = Math.max(0, batchStartIdx - W);
+    // 2. Sliding window ASIMETRIS (VideoLingo ground truth: prev 3 / next 2)
+    const PREV_W = 3;
+    const NEXT_W = 2;
+    const prevStart = Math.max(0, batchStartIdx - PREV_W);
     const prevEnd = batchStartIdx - 1; // -1 bermakna tiada previous (batch 1)
     const nextStart = batchEndIdx + 1;
-    const nextEnd = Math.min(allOriginalEntries.length - 1, batchEndIdx + W);
+    const nextEnd = Math.min(allOriginalEntries.length - 1, batchEndIdx + NEXT_W);
 
     const previousContent = prevEnd >= prevStart
       ? allOriginalEntries.slice(prevStart, prevEnd + 1)
@@ -1257,6 +1274,53 @@ class TranslationEngine {
       previousMemory,
       preflight: this.preflightContext || null
     };
+  }
+
+  /**
+   * GOLDEN STANDARD GS3: Format blok preflight untuk SATU chunk dengan
+   * dynamic term-matching (ground truth VideoLingo
+   * `search_things_to_note_in_prompt()`). Theme sentiasa disuntik; Points
+   * to Note hanya mengandungi istilah Fasa 0 yang teks asalnya (case-
+   * insensitive substring) wujud dalam previousContent, batch, atau
+   * subsequentContent. Tiada padanan → seksyen kosong (token penjimatan).
+   *
+   * @param {{theme:string, terms:Array}} preflight - Konteks Fasa 0
+   * @param {Array} previousContent - 3 baris sebelum batch (source-only)
+   * @param {Array} batch - Batch aktif
+   * @param {Array} subsequentContent - 2 baris selepas batch (source-only)
+   * @returns {string} Blok "Content Summary [+ Points to Note]"
+   */
+  _formatPreflightForChunk(preflight, previousContent, batch, subsequentContent) {
+    if (!preflight || !preflight.theme) return '';
+    let block = `### Content Summary\n${preflight.theme}`;
+
+    const terms = Array.isArray(preflight.terms) ? preflight.terms : [];
+    if (terms.length > 0) {
+      // Gabungkan semua teks dalam skop chunk (prev + batch + next) jadi
+      // satu lowercase haystack untuk imbasan substring sekali lalu.
+      const scopeText = [
+        ...(Array.isArray(previousContent) ? previousContent : []),
+        ...(Array.isArray(batch) ? batch : []),
+        ...(Array.isArray(subsequentContent) ? subsequentContent : [])
+      ].map(e => String(e?.text || '')).join('\n').toLowerCase();
+
+      const matched = [];
+      for (const term of terms) {
+        const src = String(term?.src || '').trim();
+        if (src && scopeText.includes(src.toLowerCase())) {
+          matched.push(term);
+        }
+      }
+
+      if (matched.length > 0) {
+        const termLines = matched
+          .map(t => `- ${t.src}: ${t.tgt}${t.note ? ` (${t.note})` : ''}`)
+          .join('\n');
+        block += `\n\n### Points to Note\n${termLines}`;
+      }
+      // Tiada padanan → tiada Points to Note (seksyen dikosongkan)
+    }
+    return block;
   }
 
   /**
@@ -2159,10 +2223,17 @@ class TranslationEngine {
     // ── SUBFABER CONTEXT BLOCK (Fasa 1: Sliding Buffer) ──
     // Kontrak verbatim mandat §3: Context Information berlapis. Semua blok
     // adalah READ-ONLY — 7-rule Rule 4 (air-gapped) di-enforce dalam prompt.
+    // GOLDEN STANDARD GS3: Points to Note guna DYNAMIC TERM-MATCHING per-chunk
+    // (ground truth VideoLingo `search_things_to_note_in_prompt`) — hanya
+    // istilah Fasa 0 yang teks asalnya wujud dalam previousContent/batch/
+    // subsequentContent disuntik. Tiada padanan → seksyen dikosongkan (token
+    // penjimatan). Theme (Content Summary) kekal disuntik untuk semua batch.
     if (this.subfaberEnabled && context && (context.previousContent || context.subsequentContent || context.preflight)) {
       const hasPrev = Array.isArray(context.previousContent) && context.previousContent.length > 0;
       const hasNext = Array.isArray(context.subsequentContent) && context.subsequentContent.length > 0;
-      const preflightBlock = context.preflight ? formatPreflightForPrompt(context.preflight) : '';
+      const preflightBlock = context.preflight
+        ? this._formatPreflightForChunk(context.preflight, context.previousContent, batch, context.subsequentContent)
+        : '';
 
       if (hasPrev || hasNext || preflightBlock) {
         result += '[CONTEXT INFORMATION - READ ONLY. DO NOT TRANSLATE THIS SECTION]\n';
