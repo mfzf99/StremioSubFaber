@@ -4178,6 +4178,10 @@ app.post('/api/translate-file', fileTranslationLimiter, validateRequest(fileTran
         const enableBatchContextRequested = typeof options.enableBatchContext === 'boolean'
             ? options.enableBatchContext : null;
 
+        // SubFaber engine — per-request override (LANGKAH 1, laporan backend §3.3)
+        const subfaberRequested = typeof options.subfaberEnabled === 'boolean'
+            ? options.subfaberEnabled : null;
+
         // Translation workflow is locked to XML Tags; legacy values normalize silently.
         const translationWorkflow = 'xml';
         const sendTimestampsToAI = false;
@@ -4191,6 +4195,11 @@ app.post('/api/translate-file', fileTranslationLimiter, validateRequest(fileTran
         // Forward batch context setting
         if (enableBatchContextRequested !== null) {
             advanced.enableBatchContext = enableBatchContextRequested;
+        }
+
+        // Forward SubFaber engine setting (per-request override menang)
+        if (subfaberRequested !== null) {
+            advanced.subfaberEnabled = subfaberRequested;
         }
 
         config.advancedSettings = advanced;
@@ -4213,19 +4222,45 @@ app.post('/api/translate-file', fileTranslationLimiter, validateRequest(fileTran
         const effectiveWorkflow = config.advancedSettings?.translationWorkflow || 'xml';
         let translatedContent = null;
 
+        // --- SubFaber SSE branch (LANGKAH 2, laporan backend §3 / frontend §8) ---
+        // Opt-in: client menghantar header 'Accept: text/event-stream'.
+        // Tanpa header ini, behavior kekal text/plain sepenuhnya (backward
+        // compatible). Compression middleware (index.js atas) sudah skip SSE.
+        const wantsSse = String(req.headers.accept || '').includes('text/event-stream');
+
+        // Helper: emit satu event SSE (safe-write, flush kalau ada).
+        const sseWrite = (event, dataObj) => {
+            if (!wantsSse || res.writableEnded) return;
+            try {
+                if (event) res.write(`event: ${event}\n`);
+                res.write(`data: ${JSON.stringify(dataObj)}\n\n`);
+                if (typeof res.flush === 'function') res.flush();
+            } catch (_) { /* response already closed */ }
+        };
+
         // --- Keepalive streaming to prevent Cloudflare 524 timeouts ---
         // Cloudflare kills connections after 100s of no data from origin.
         // Send periodic newline bytes to reset the timer while translation runs.
         // SRT parsers ignore leading blank lines, so this is safe.
+        // SSE mode: keepalive sebagai SSE comment (': ka') supaya parser
+        // client tidak salah tafsir.
         const KEEPALIVE_INTERVAL_MS = parseInt(process.env.FILE_UPLOAD_KEEPALIVE_INTERVAL) || 30000;
-        res.writeHead(200, { 'Content-Type': 'text/plain; charset=utf-8' });
+        if (wantsSse) {
+            res.writeHead(200, {
+                'Content-Type': 'text/event-stream; charset=utf-8',
+                'Cache-Control': 'no-cache',
+                'Connection': 'keep-alive'
+            });
+        } else {
+            res.writeHead(200, { 'Content-Type': 'text/plain; charset=utf-8' });
+        }
         let keepaliveTimer = null;
         let keepaliveCount = 0;
         try {
             keepaliveTimer = setInterval(() => {
                 try {
                     if (!res.writableEnded) {
-                        res.write('\n');
+                        res.write(wantsSse ? ': ka\n\n' : '\n');
                         if (typeof res.flush === 'function') res.flush();
                         keepaliveCount++;
                         log.debug(() => `[File Translation API] Keepalive #${keepaliveCount} sent`);
@@ -4241,12 +4276,46 @@ app.post('/api/translate-file', fileTranslationLimiter, validateRequest(fileTran
                 config.advancedSettings || {},
                 { singleBatchMode, providerName, fallbackProviderName, enableStreaming: false }
             );
-            log.debug(() => `[File Translation API] Using TranslationEngine (workflow=${effectiveWorkflow}, singleBatch=${singleBatchMode}, batchContext=${!!config.advancedSettings?.enableBatchContext})`);
+            log.debug(() => `[File Translation API] Using TranslationEngine (workflow=${effectiveWorkflow}, singleBatch=${singleBatchMode}, batchContext=${!!config.advancedSettings?.enableBatchContext}, sse=${wantsSse})`);
+
+            // SSE mode: onProgress memancarkan event kontrak §8 laporan frontend:
+            //   {phase:'preflight', status, summary, terms}   — dari Fasa 0
+            //   {phase:'batch', currentBatch, totalBatches, verifiedCount,
+            //    expectedCount, parityRate}                   — dari loop batch
+            // Event streaming per-chunk (streaming:true) ditapis supaya badge
+            // parity tidak banjir — hanya batch-completion yang dihantar.
+            const sseOnProgress = wantsSse ? async (payload) => {
+                if (!payload || typeof payload !== 'object') return;
+                if (payload.phase === 'preflight') {
+                    // Fasa 0: { status, summary?, terms? }
+                    sseWrite(null, {
+                        phase: 'preflight',
+                        status: payload.status,
+                        ...(payload.summary !== undefined ? { summary: payload.summary } : {}),
+                        ...(Array.isArray(payload.terms) ? { terms: payload.terms } : {})
+                    });
+                    return;
+                }
+                // Batch progress: tapis event streaming per-chunk
+                if (payload.streaming === true) return;
+                const expected = Number(payload.totalEntries) || 0;
+                const verified = Number(payload.completedEntries) || 0;
+                const parityRate = expected > 0 ? `${Math.round((verified / expected) * 100)}%` : '0%';
+                sseWrite(null, {
+                    phase: 'batch',
+                    currentBatch: payload.currentBatch,
+                    totalBatches: payload.totalBatches,
+                    verifiedCount: verified,
+                    expectedCount: expected,
+                    parityRate
+                });
+            } : null;
+
             translatedContent = await engine.translateSubtitle(
                 workingContent,
                 targetLangName,
                 config.translationPrompt,
-                null,
+                sseOnProgress,
                 sourceLanguage ? (getLanguageName(sourceLanguage) || sourceLanguage) : null // 🌐 Argumen ke-5
             );
 
@@ -4254,7 +4323,25 @@ app.post('/api/translate-file', fileTranslationLimiter, validateRequest(fileTran
 
             // Send translated content and end the response
             log.debug(() => `[File Translation API] Sending result (${keepaliveCount} keepalives sent during translation)`);
-            res.end(translatedContent);
+            if (wantsSse) {
+                // Event 'done' membawa translationStats (untuk badge Dwi-Panel
+                // KIMI K3) + kandungan penuh supaya client tak perlu fetch semula.
+                const stats = engine.translationStats || {};
+                sseWrite('done', {
+                    translationStats: {
+                        subfaberContextUsed: stats.subfaberContextUsed === true,
+                        mismatchDetected: stats.mismatchDetected === true,
+                        totalMismatchesHealed: stats.recoveredEntries || 0,
+                        syncFidelity: '100%',
+                        entryCount: stats.entryCount || 0,
+                        batchCount: stats.batchCount || 0
+                    },
+                    content: translatedContent
+                });
+                res.end();
+            } else {
+                res.end(translatedContent);
+            }
 
         } finally {
             if (keepaliveTimer) clearInterval(keepaliveTimer);

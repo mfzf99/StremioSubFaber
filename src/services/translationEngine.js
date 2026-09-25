@@ -19,6 +19,7 @@
 const { parseSRT, toSRT } = require('../utils/subtitle');
 const GeminiService = require('./gemini');
 const { DEFAULT_TRANSLATION_PROMPT } = GeminiService;
+const { runPreflightSemanticPass, formatPreflightForPrompt } = require('./subfaberPreflight');
 const crypto = require('crypto');
 const log = require('../utils/logger');
 const { handleCaughtError } = require('../utils/errorClassifier');
@@ -154,6 +155,14 @@ class TranslationEngine {
     // Context settings (disabled by default)
     this.enableBatchContext = this.advancedSettings.enableBatchContext === true;
     this.contextSize = parseInt(this.advancedSettings.contextSize) || 20;
+
+    // SubFaber Engine (v-next): Pre-Flight Semantic Pass (Fasa 0) + sliding
+    // context buffer (<previous_content>/<subsequent_content>) + persona
+    // VideoLingo. Flag dinormalisasi dalam src/utils/config.js (boolean strict).
+    // Bila aktif, ia MENGGANTI mod batch-context legacy: <m> memory tags
+    // diganti dengan previousContent source-only supaya satu bentuk sahaja.
+    this.subfaberEnabled = this.advancedSettings.subfaberEnabled === true;
+    this.preflightContext = null; // Slot state Fasa 0 (theme + terms)
 
     // Mismatch retry: number of retries when AI returns wrong entry count (default: 1)
     const rawMismatchRetries = parseInt(this.advancedSettings.mismatchRetries);
@@ -714,6 +723,25 @@ class TranslationEngine {
       }
     }
 
+    // SubFaber FASA 0: Pre-Flight Semantic Pass — satu panggilan AI ringkas
+    // sebelum batch bermula. BEST-EFFORT & NON-BLOCKING: kegagalan tidak
+    // menggagalkan terjemahan (fallback: null → batch jalan tanpa konteks
+    // global). Emit event { phase: 'preflight', status, summary, terms }
+    // untuk Pre-Flight HUD (KIMI K3). Native batch providers (DeepL/Google)
+    // tiada keperluan konteks semantik — skip.
+    if (this.subfaberEnabled && !this.isNativeBatchProvider) {
+      this.preflightContext = await runPreflightSemanticPass(
+        entries,
+        targetLanguage,
+        this.sourceLanguage,
+        this.gemini,
+        { onProgress }
+      );
+      if (this.preflightContext) {
+        this.translationStats.subfaberContextUsed = true;
+      }
+    }
+
     // Single-batch mode: translate the whole file (with limited auto-splitting)
     if (this.singleBatchMode) {
       if (this.advancedSettings?.parallelBatchesEnabled === true) {
@@ -1086,6 +1114,14 @@ class TranslationEngine {
    * Prepare context for a batch (original surrounding entries + previous translations)
    * Context improves translation coherence across batches
    * Handles irregular index and ID alignment (Global Array Index Alignment)
+   *
+   * SUBFABER MODE (subfaberEnabled): Bina sliding context buffer dua hala —
+   * <previous_content> (source-only + terjemahan disahkan sebagai memory
+   * tambahan) dan <subsequent_content> (source-only, forward-looking) —
+   * bersama konteks global Fasa 0 (preflight). Batch 1 kini DAPAT konteks
+   * (subsequent + preflight) walaupun tiada previous. Kekal legacy path
+   * untuk mod batch-context biasa (subfaberEnabled === false).
+   *
    * @param {Array} batch - Current batch entries
    * @param {Array} allOriginalEntries - All original entries
    * @param {Array} translatedSoFar - Previously translated entries
@@ -1093,6 +1129,10 @@ class TranslationEngine {
    * @returns {Object} - Context object with surrounding and previous entries
    */
   prepareContextForBatch(batch, allOriginalEntries, translatedSoFar, batchIndex) {
+    // SubFaber sliding buffer: dua hala + preflight, tanpa syarat batchIndex > 0
+    if (this.subfaberEnabled && batch && batch.length > 0 && Array.isArray(allOriginalEntries)) {
+      return this._prepareSubfaberContext(batch, allOriginalEntries, translatedSoFar);
+    }
     if (!this.enableBatchContext || batchIndex === 0 || !batch || batch.length === 0 || !Array.isArray(allOriginalEntries)) {
       return null;
     }
@@ -1142,6 +1182,81 @@ class TranslationEngine {
     return memoryContext.length > 0 ? {
       previousMemory: memoryContext
     } : null;
+  }
+
+  /**
+   * SubFaber sliding context buffer (Fasa 1): bina konteks dua hala untuk
+   * satu batch. Dipanggil oleh prepareContextForBatch() bila subfaberEnabled.
+   *
+   * Struktur return (kontrak laporan backend §3.2 Pembedahan C):
+   *   {
+   *     previousContent: entries[],   // source-only, W baris sebelum batch
+   *     subsequentContent: entries[], // source-only, W baris selepas batch
+   *     previousMemory: entries[],    // terjemahan disahkan (continuity)
+   *     preflight: {theme, terms}|null // konteks global Fasa 0
+   *   }
+   *
+   * @param {Array} batch - Current batch entries
+   * @param {Array} allOriginalEntries - All original entries
+   * @param {Array} translatedSoFar - Previously translated entries
+   * @returns {Object} SubFaber context object
+   */
+  _prepareSubfaberContext(batch, allOriginalEntries, translatedSoFar) {
+    // 1. Resolve julat batch dalam original entries (Global Array Index Alignment)
+    let batchStartIdx = allOriginalEntries.indexOf(batch[0]);
+    if (batchStartIdx === -1) {
+      batchStartIdx = allOriginalEntries.findIndex(e => e.id === batch[0]?.id);
+    }
+    if (batchStartIdx === -1) {
+      batchStartIdx = 0; // Fallback defensif — batch[0] tidak ditemui
+    }
+    const batchEndIdx = batchStartIdx + batch.length - 1;
+
+    // 2. Sliding window dua hala (W = contextSize sedia ada, default 20)
+    const W = this.contextSize;
+    const prevStart = Math.max(0, batchStartIdx - W);
+    const prevEnd = batchStartIdx - 1; // -1 bermakna tiada previous (batch 1)
+    const nextStart = batchEndIdx + 1;
+    const nextEnd = Math.min(allOriginalEntries.length - 1, batchEndIdx + W);
+
+    const previousContent = prevEnd >= prevStart
+      ? allOriginalEntries.slice(prevStart, prevEnd + 1)
+      : [];
+    const subsequentContent = nextEnd >= nextStart
+      ? allOriginalEntries.slice(nextStart, nextEnd + 1)
+      : [];
+
+    // 3. Previous memory: terjemahan disahkan untuk continuity (kelebihan
+    //    kita atas VideoLingo — hantar terjemahan disahkan, bukan source sahaja).
+    //    Exclude [⚠️] warning placeholders. Boleh kosong (batch 1 / selari).
+    const translatedMap = new Map();
+    if (Array.isArray(translatedSoFar)) {
+      for (const t of translatedSoFar) {
+        if (t && t.id !== undefined) {
+          translatedMap.set(t.id, t.text);
+        }
+      }
+    }
+    const previousMemory = [];
+    for (let i = prevStart; i <= prevEnd && i < allOriginalEntries.length; i++) {
+      const origEntry = allOriginalEntries[i];
+      if (!origEntry) continue;
+      const translatedText = translatedMap.get(origEntry.id);
+      if (translatedText && typeof translatedText === 'string' && !translatedText.startsWith('[⚠️]')) {
+        previousMemory.push({
+          id: origEntry.id,
+          source: origEntry.text,
+          translation: translatedText
+        });
+      }
+    }
+
+    return {
+      previousContent,
+      subsequentContent,
+      previousMemory,
+      preflight: this.preflightContext || null
+    };
   }
 
   /**
@@ -2021,6 +2136,12 @@ class TranslationEngine {
     /**
    * Prepare batch text using XML tags for robust entry identification
    * [UPGRADED]: Escapes XML-sensitive symbols (&, <, >) in <m> memory and <s> text
+   *
+   * SUBFABER MODE: bila context membawa struktur SubFaber (previousContent/
+   * subsequentContent/preflight), blok konteks dibina mengikut kontrak
+   * verbatim mandat — <previous_content>, <subsequent_content>, Content
+   * Summary, Points to Note — SEBELUM entri aktif. Entri aktif kekal
+   * <s id="N"> (Pilihan A diluluskan: tiada migrasi tag).
    */
   prepareBatchXml(batch, context = null) {
     let result = '';
@@ -2034,6 +2155,43 @@ class TranslationEngine {
         .replace(/</g, '&lt;')
         .replace(/>/g, '&gt;');
     };
+
+    // ── SUBFABER CONTEXT BLOCK (Fasa 1: Sliding Buffer) ──
+    // Kontrak verbatim mandat §3: Context Information berlapis. Semua blok
+    // adalah READ-ONLY — 7-rule Rule 4 (air-gapped) di-enforce dalam prompt.
+    if (this.subfaberEnabled && context && (context.previousContent || context.subsequentContent || context.preflight)) {
+      const hasPrev = Array.isArray(context.previousContent) && context.previousContent.length > 0;
+      const hasNext = Array.isArray(context.subsequentContent) && context.subsequentContent.length > 0;
+      const preflightBlock = context.preflight ? formatPreflightForPrompt(context.preflight) : '';
+
+      if (hasPrev || hasNext || preflightBlock) {
+        result += '[CONTEXT INFORMATION - READ ONLY. DO NOT TRANSLATE THIS SECTION]\n';
+
+        if (hasPrev) {
+          result += '<previous_content>\n';
+          context.previousContent.forEach((entry) => {
+            const cleanText = escapeXml(String(entry.text || '').trim().replace(/\n+/g, ' [br] '));
+            result += `<s id="${entry.id}">${cleanText}</s>\n`;
+          });
+          result += '</previous_content>\n\n';
+        }
+
+        if (hasNext) {
+          result += '<subsequent_content>\n';
+          context.subsequentContent.forEach((entry) => {
+            const cleanText = escapeXml(String(entry.text || '').trim().replace(/\n+/g, ' [br] '));
+            result += `<s id="${entry.id}">${cleanText}</s>\n`;
+          });
+          result += '</subsequent_content>\n\n';
+        }
+
+        if (preflightBlock) {
+          result += `${preflightBlock}\n\n`;
+        }
+
+        result += '=== ENTRIES TO TRANSLATE ===\n\n';
+      }
+    }
 
     if (context?.previousMemory?.length > 0) {
       result += '[PREVIOUS_TRANSLATION_MEMORY - FOR CONTINUITY ONLY. DO NOT TRANSLATE THIS]\n';
@@ -2076,7 +2234,35 @@ class TranslationEngine {
     const startId = idMatches.length > 0 ? idMatches[0] : 'START';
     const idList = idMatches.length > 0 ? idMatches.join(', ') : 'N/A';
 
-    const promptBody = `Translate the text inside each <s id="N"> tag from ${sourceLabel || 'the source'} to ${targetLabel}. NEVER mirror foreign syntax, trailing modifiers, or literal word order; INSTEAD, render the subtitle dialogue into natural, conversational ${targetLabel} INSIDE each individual tag while strictly preserving tag boundaries and internal [br] markers.
+    // SUBFABER PERSONA PRELUDE (Pembedahan E laporan backend §3.2):
+    // Persona VideoLingo verbatim + <translation_principles> verbatim mandat,
+    // disuntik SEBELUM rulebook 7-rule sedia ada. Persona memberi model
+    // identiti penterjemah profesional; principles memberi falsafah kerja;
+    // 7-rule kekal sebagai enforcer pariti mekanikal. Susunan: persona →
+    // principles → rules → input → anchor.
+    let subfaberPrelude = '';
+    if (this.subfaberEnabled) {
+      subfaberPrelude = `## Role
+You are a professional Netflix subtitle translator, fluent in both ${sourceLabel || 'the source language'} and ${targetLabel}, as well as their respective cultures.
+Your expertise lies in accurately understanding the semantics and structure of the original ${sourceLabel || 'source'} text and faithfully translating it into ${targetLabel} while preserving the original meaning.
+
+## Task
+We have a segment of original ${sourceLabel || 'source'} subtitles that need to be directly translated into ${targetLabel}. These subtitles come from a specific context and may contain specific themes and terminology.
+
+1. Translate the original ${sourceLabel || 'source'} subtitles into ${targetLabel} line by line
+2. Ensure the translation is faithful to the original, accurately conveying the original meaning
+3. Consider the context and professional terminology
+
+<translation_principles>
+1. Faithful to the original: Accurately convey the content and meaning of the original text, without arbitrarily changing, adding, or omitting content.
+2. Accurate terminology: Use professional terms correctly and maintain consistency in terminology.
+3. Understand the context: Fully comprehend and reflect the background and contextual relationships of the text.
+</translation_principles>
+
+`;
+    }
+
+    const promptBody = `${subfaberPrelude}Translate the text inside each <s id="N"> tag from ${sourceLabel || 'the source'} to ${targetLabel}. NEVER mirror foreign syntax, trailing modifiers, or literal word order; INSTEAD, render the subtitle dialogue into natural, conversational ${targetLabel} INSIDE each individual tag while strictly preserving tag boundaries and internal [br] markers.
 
 [UNIVERSAL STRUCTURAL DEMONSTRATION: SLOT ISOLATION & ZERO DRIFT]
 Input:

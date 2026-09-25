@@ -553,6 +553,10 @@ function normalizeConfig(config) {
     sendTimestampsToAI: false,
     translationWorkflow: 'xml',
     enableJsonOutput: false,
+    // SubFaber Engine (v-next): Pre-Flight Semantic Pass + sliding context
+    // buffer. Boolean strict — undefined/truthy-loose ditolak supaya state
+    // lama (sebelum flag wujud) kekal off secara default.
+    subfaberEnabled: advSettings.subfaberEnabled === true,
     mismatchRetries: (() => {
       const val = parseInt(advSettings.mismatchRetries, 10);
       return Number.isFinite(val) ? Math.max(0, Math.min(3, val)) : 3;

@@ -1392,6 +1392,10 @@
           "label": "حجم السياق",
           "description": "عدد الإدخالات المحيطة لتضمينها كسياق (1-20). الافتراضي: 20"
         },
+        "subfaber": {
+          "label": "تفعيل محرك SubFaber",
+          "description": "سياق دلالي بجودة Netflix: يحلل Pre-Flight Pass الحبكة وملفات الشخصيات، بالإضافة إلى الحفاظ الصارم على حدود الفتحات. يضمن دقة مزامنة 1:1. يزيد التكلفة الإعدادية لمرة واحدة (استدعاء API إضافي واحد)."
+        },
         "mismatchRetries": {
           "label": "Mismatch Retries",
           "description": "When the AI returns a different number of subtitle entries than expected, retry the batch this many times before marking untranslated lines. (0-3, Default: 1)"

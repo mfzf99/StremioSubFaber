@@ -1392,6 +1392,10 @@
           "label": "Tamanho do Contexto",
           "description": "Número de entradas circundantes a incluir como contexto (1-20). Padrão: 20"
         },
+        "subfaber": {
+          "label": "Ativar Motor SubFaber",
+          "description": "Contexto semântico de grau Netflix: Pre-Flight Pass analisa enredo e perfis de personagens, além de preservação rigorosa de limites de slot. Garante fidelidade de sincronização 1:1. Aumenta o custo de configuração único (1 chamada de API extra)."
+        },
         "mismatchRetries": {
           "label": "Mismatch Retries",
           "description": "When the AI returns a different number of subtitle entries than expected, retry the batch this many times before marking untranslated lines. (0-3, Default: 1)"

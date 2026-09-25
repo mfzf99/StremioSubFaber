@@ -93,7 +93,8 @@ function buildFileTranslationClientConfig(config) {
         fileTranslationEnabled: config?.fileTranslationEnabled !== false,
         singleBatchMode: config?.singleBatchMode === true,
         translationWorkflow: config?.advancedSettings?.translationWorkflow || 'xml',
-        enableBatchContext: config?.advancedSettings?.enableBatchContext === true
+        enableBatchContext: config?.advancedSettings?.enableBatchContext === true,
+        subfaberEnabled: config?.advancedSettings?.subfaberEnabled === true
     };
 }
 
@@ -156,7 +157,8 @@ function generateFileTranslationPage(videoId, configStr, config, filename = '') 
     const translationWorkflowDefaults = {
         singleBatchMode: config?.singleBatchMode === true,
         translationWorkflow: config?.advancedSettings?.translationWorkflow || 'xml',
-        enableBatchContext: config?.advancedSettings?.enableBatchContext === true
+        enableBatchContext: config?.advancedSettings?.enableBatchContext === true,
+        subfaberEnabled: config?.advancedSettings?.subfaberEnabled === true
     };
     const MAX_OUTPUT_TOKEN_LIMIT = 200000;
     const DEFAULT_MAX_OUTPUT_TOKENS = 65536;
@@ -237,6 +239,8 @@ function generateFileTranslationPage(videoId, configStr, config, filename = '') 
     const singleBatchHelper = t('fileUpload.options.singleBatch.helper', {}, 'Translate the whole subtitle in one go. Improves contextual coherence but can hit provider limits more easily.');
     const batchContextLabel = t('fileUpload.options.batchContext.label', {}, 'Enable Batch Context');
     const batchContextHelper = t('fileUpload.options.batchContext.helper', {}, 'Include surrounding context and previous translations when processing batches. Improves coherence but increases token usage.');
+    const subfaberLabel = t('fileUpload.options.subfaber.label', {}, 'Enable SubFaber Engine');
+    const subfaberHelper = t('fileUpload.options.subfaber.helper', {}, 'Netflix-grade semantic context: Pre-Flight Pass analyzes plot & characters, plus strict slot-boundary preservation. Guarantees 1:1 sync. Adds 1 extra API call.');
     const advancedSettingsTitle = t('fileUpload.advanced.title', {}, 'Advanced Settings');
     const advancedHighlightTitle = t('fileUpload.advanced.highlightTitle', {}, 'Fine-tune AI behavior for this translation only:');
     const advancedHighlightBody = t('fileUpload.advanced.highlightBody', {}, 'Override model and parameters.');
@@ -1331,6 +1335,308 @@ function generateFileTranslationPage(videoId, configStr, config, filename = '') 
             font-size: 0.95rem;
         }
 
+        /* ── SubFaber Pre-Flight HUD (KIMI K3, LANGKAH 3.2) ── */
+        .subfaber-preflight {
+            margin-top: 1rem;
+            text-align: left;
+        }
+
+        .preflight-status {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 0.75rem;
+        }
+
+        .preflight-label {
+            color: var(--text-primary);
+            font-weight: 600;
+            font-size: 0.95rem;
+            animation: subfaber-pulse 1.5s ease-in-out infinite;
+        }
+
+        @keyframes subfaber-pulse {
+            0%, 100% { opacity: 1; }
+            50% { opacity: 0.5; }
+        }
+
+        @media (prefers-reduced-motion: reduce) {
+            .preflight-label { animation: none; }
+        }
+
+        .preflight-result {
+            margin-top: 0.75rem;
+            padding: 0.75rem;
+            border: 1px solid var(--border);
+            border-radius: 10px;
+            background: var(--surface-light);
+        }
+
+        .preflight-summary summary {
+            cursor: pointer;
+            color: var(--text-primary);
+            font-weight: 600;
+            font-size: 0.9rem;
+            user-select: none;
+        }
+
+        .preflight-summary p {
+            margin: 0.5rem 0 0;
+            color: var(--text-secondary);
+            font-size: 0.85rem;
+            line-height: 1.4;
+        }
+
+        .preflight-terms {
+            margin-top: 0.5rem;
+            display: flex;
+            flex-wrap: wrap;
+            gap: 0.375rem;
+        }
+
+        .preflight-term-chip {
+            display: inline-flex;
+            align-items: center;
+            gap: 0.25rem;
+            padding: 0.25rem 0.625rem;
+            border-radius: 9999px;
+            background: var(--primary-alpha);
+            color: var(--primary);
+            font-size: 0.75rem;
+            font-weight: 600;
+            white-space: nowrap;
+        }
+
+        .preflight-term-chip .term-note {
+            color: var(--text-secondary);
+            font-weight: 400;
+            font-size: 0.7rem;
+        }
+
+        /* ── SubFaber Live Parity Monitor (KIMI K3, LANGKAH 3.3) ── */
+        .subfaber-parity {
+            margin-top: 1rem;
+        }
+
+        .parity-badges {
+            display: flex;
+            flex-wrap: wrap;
+            justify-content: center;
+            gap: 0.5rem;
+        }
+
+        .badge {
+            display: inline-flex;
+            align-items: center;
+            padding: 0.375rem 0.75rem;
+            border-radius: 9999px;
+            font-size: 0.875rem;
+            font-weight: 600;
+            background: var(--surface-light);
+            border: 1px solid var(--border);
+            color: var(--text-primary);
+        }
+
+        .badge-batch {
+            background: var(--primary-alpha);
+            color: var(--primary);
+            border-color: var(--primary-alpha);
+        }
+
+        .badge-parity {
+            background: var(--surface-light);
+            color: var(--text-primary);
+        }
+
+        .badge-status {
+            background: var(--success-alpha);
+            color: var(--success);
+            border-color: var(--success-alpha);
+        }
+
+        .badge-status.badge-healing {
+            background: var(--warning-alpha);
+            color: var(--warning);
+            border-color: var(--warning-alpha);
+        }
+
+        .parity-alert {
+            margin-top: 0.75rem;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 0.5rem;
+            padding: 0.5rem 0.75rem;
+            border-radius: 8px;
+            background: var(--warning-alpha);
+            color: var(--warning);
+            font-size: 0.85rem;
+            font-weight: 600;
+        }
+
+        .parity-alert-icon {
+            font-size: 1rem;
+        }
+
+        /* ── SubFaber Dwi-Panel Semakan (KIMI K3, LANGKAH 3.4) ── */
+        .subfaber-diff-modal {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0, 0, 0, 0.6);
+            display: none;
+            align-items: center;
+            justify-content: center;
+            z-index: 10000;
+            padding: 1rem;
+        }
+
+        .subfaber-diff-modal.active {
+            display: flex;
+        }
+
+        .diff-modal-content {
+            background: var(--surface);
+            border-radius: 14px;
+            border: 1px solid var(--border);
+            box-shadow: 0 24px 64px var(--shadow);
+            width: 100%;
+            max-width: 900px;
+            max-height: 85vh;
+            display: flex;
+            flex-direction: column;
+            overflow: hidden;
+        }
+
+        .diff-header {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            padding: 1rem 1.25rem;
+            border-bottom: 1px solid var(--border);
+            background: var(--surface-light);
+        }
+
+        .diff-header h3 {
+            margin: 0;
+            color: var(--success);
+            font-size: 1rem;
+            font-weight: 700;
+        }
+
+        .diff-close {
+            background: none;
+            border: none;
+            color: var(--text-secondary);
+            font-size: 1.5rem;
+            cursor: pointer;
+            padding: 0.25rem 0.5rem;
+            border-radius: 6px;
+            line-height: 1;
+        }
+
+        .diff-close:hover {
+            background: var(--surface-light);
+            color: var(--text-primary);
+        }
+
+        .diff-tabs {
+            display: flex;
+            gap: 0.5rem;
+            padding: 0.75rem 1.25rem 0;
+            border-bottom: 1px solid var(--border);
+        }
+
+        .diff-tab {
+            flex: 1;
+            padding: 0.625rem;
+            border: none;
+            background: var(--surface-light);
+            color: var(--text-secondary);
+            font-size: 0.875rem;
+            font-weight: 600;
+            cursor: pointer;
+            border-radius: 8px 8px 0 0;
+            transition: background-color 0.2s ease;
+        }
+
+        .diff-tab:hover {
+            background: var(--border);
+        }
+
+        .diff-tab-active {
+            background: var(--primary-alpha);
+            color: var(--primary);
+        }
+
+        .diff-body {
+            display: flex;
+            flex: 1;
+            overflow: hidden;
+            min-height: 0;
+        }
+
+        .diff-panel {
+            flex: 1;
+            display: flex;
+            flex-direction: column;
+            min-width: 0;
+            overflow: hidden;
+        }
+
+        .diff-panel h4 {
+            margin: 0;
+            padding: 0.625rem 1rem;
+            color: var(--text-primary);
+            font-size: 0.8rem;
+            font-weight: 700;
+            text-transform: uppercase;
+            letter-spacing: 0.05em;
+            border-bottom: 1px solid var(--border);
+            background: var(--surface-light);
+        }
+
+        .diff-panel pre {
+            flex: 1;
+            margin: 0;
+            padding: 1rem;
+            overflow: auto;
+            font-size: 0.8rem;
+            line-height: 1.5;
+            color: var(--text-primary);
+            background: var(--surface);
+            white-space: pre-wrap;
+            word-break: break-word;
+        }
+
+        .diff-panel .fmt-tag {
+            color: var(--primary);
+            font-weight: 600;
+            background: var(--primary-alpha);
+            padding: 0.125rem 0.25rem;
+            border-radius: 3px;
+        }
+
+        .diff-panel .fmt-br {
+            color: var(--warning);
+            font-weight: 700;
+        }
+
+        .diff-target {
+            border-left: 1px solid var(--border);
+        }
+
+        /* Mobile tab view */
+        @media (max-width: 768px) {
+            .diff-body { flex-direction: column; }
+            .diff-target { border-left: none; border-top: 1px solid var(--border); }
+            .diff-panel { max-height: 40vh; }
+            .parity-badges { gap: 0.375rem; }
+            .badge { font-size: 0.75rem; padding: 0.25rem 0.625rem; }
+        }
+
         .queue-panel {
             margin-top: 1.25rem;
             padding: 1rem 1.1rem;
@@ -2225,6 +2531,16 @@ function generateFileTranslationPage(videoId, configStr, config, filename = '') 
                                     </div>
                                 </label>
                             </div>
+
+                            <div class="form-group">
+                                <label style="display: flex; align-items: flex-start; gap: 0.5rem; cursor: pointer;">
+                                    <input type="checkbox" id="subfaberEnabled" style="margin-top: 0.3rem;">
+                                    <div>
+                                        ${escapeHtml(subfaberLabel)}
+                                        <span class="label-description">${escapeHtml(subfaberHelper)}</span>
+                                    </div>
+                                </label>
+                            </div>
                         </div>
                     </div>
                 </div>
@@ -2376,6 +2692,58 @@ function generateFileTranslationPage(videoId, configStr, config, filename = '') 
                 <div class="spinner"></div>
                 <div class="progress-text">${escapeHtml(progressTitle)}</div>
                 <div class="progress-subtext">${escapeHtml(progressSubtext)}</div>
+
+                <!-- SubFaber Pre-Flight Semantic HUD (KIMI K3, LANGKAH 3.2) -->
+                <div class="subfaber-preflight" id="subfaberPreflight" style="display:none;">
+                    <div class="preflight-status">
+                        <div class="spinner"></div>
+                        <div class="preflight-label" id="preflightLabel">Analyzing plot & building character profiles...</div>
+                    </div>
+                    <div class="preflight-result" id="preflightResult" style="display:none;">
+                        <details class="preflight-summary" id="preflightSummaryDetails">
+                            <summary>Episode Summary</summary>
+                            <p id="preflightSummaryText"></p>
+                        </details>
+                        <div class="preflight-terms" id="preflightTerms"></div>
+                    </div>
+                </div>
+
+                <!-- SubFaber Live Parity & Batch Monitor (KIMI K3, LANGKAH 3.3) -->
+                <div class="subfaber-parity" id="subfaberParity" style="display:none;">
+                    <div class="parity-badges">
+                        <span class="badge badge-batch" id="badgeBatch">Batch 0/0</span>
+                        <span class="badge badge-parity" id="badgeParity">Parity: 0/0</span>
+                        <span class="badge badge-status" id="badgeStatus">0% Sync</span>
+                    </div>
+                    <div class="parity-alert" id="parityAlert" style="display:none;">
+                        <span class="parity-alert-icon">⚠️</span>
+                        <span id="parityAlertText">Healing parity slots...</span>
+                    </div>
+                </div>
+            </div>
+
+            <!-- SubFaber Dwi-Panel Semakan (KIMI K3, LANGKAH 3.4) -->
+            <div class="subfaber-diff-modal" id="subfaberDiffModal" style="display:none;" role="dialog" aria-modal="true" aria-labelledby="diffModalTitle">
+                <div class="diff-modal-content">
+                    <div class="diff-header">
+                        <h3 id="diffModalTitle">SubFaber Engine: 100% Parity Verified</h3>
+                        <button class="diff-close" id="diffCloseBtn" aria-label="Close review panel">×</button>
+                    </div>
+                    <div class="diff-tabs" id="diffTabs">
+                        <button class="diff-tab diff-tab-active" id="diffTabSource" type="button">Original</button>
+                        <button class="diff-tab" id="diffTabTarget" type="button">Translation</button>
+                    </div>
+                    <div class="diff-body" id="diffBody">
+                        <div class="diff-panel diff-source" id="diffSourcePanel">
+                            <h4>Original (Source)</h4>
+                            <pre id="diffSourceText"></pre>
+                        </div>
+                        <div class="diff-panel diff-target" id="diffTargetPanel">
+                            <h4>SubFaber Translation (Target)</h4>
+                            <pre id="diffTargetText"></pre>
+                        </div>
+                    </div>
+                </div>
             </div>
 
             <div class="queue-panel" id="queuePanel" style="display: none;">
@@ -2658,6 +3026,38 @@ function generateFileTranslationPage(videoId, configStr, config, filename = '') 
         const sourceLangGroup = document.getElementById('sourceLangGroup');
         const singleBatchCheckbox = document.getElementById('singleBatchMode');
         const enableBatchContextCheckbox = document.getElementById('enableBatchContext');
+        const subfaberEnabledCheckbox = document.getElementById('subfaberEnabled');
+        // SubFaber HUD elements (null-check strict, rule #4)
+        const subfaberPreflight = document.getElementById('subfaberPreflight');
+        const preflightLabel = document.getElementById('preflightLabel');
+        const preflightResult = document.getElementById('preflightResult');
+        const preflightSummaryDetails = document.getElementById('preflightSummaryDetails');
+        const preflightSummaryText = document.getElementById('preflightSummaryText');
+        const preflightTerms = document.getElementById('preflightTerms');
+        const subfaberParity = document.getElementById('subfaberParity');
+        const badgeBatch = document.getElementById('badgeBatch');
+        const badgeParity = document.getElementById('badgeParity');
+        const badgeStatus = document.getElementById('badgeStatus');
+        const parityAlert = document.getElementById('parityAlert');
+        const parityAlertText = document.getElementById('parityAlertText');
+        const subfaberDiffModal = document.getElementById('subfaberDiffModal');
+        const diffModalTitle = document.getElementById('diffModalTitle');
+        const diffCloseBtn = document.getElementById('diffCloseBtn');
+        const diffTabSource = document.getElementById('diffTabSource');
+        const diffTabTarget = document.getElementById('diffTabTarget');
+        const diffSourceText = document.getElementById('diffSourceText');
+        const diffTargetText = document.getElementById('diffTargetText');
+        const diffSourcePanel = document.getElementById('diffSourcePanel');
+        const diffTargetPanel = document.getElementById('diffTargetPanel');
+
+        // SubFaber state (flat module-scoped object, no re-render bloat)
+        const subfaberState = {
+            enabled: translationDefaults.subfaberEnabled === true,
+            preflight: { status: 'idle', summary: '', terms: [] },
+            batch: { current: 0, total: 0, verified: 0, expected: 0, parityRate: '0%', healing: false },
+            diff: { sourceText: '', targetText: '' },
+            lastJob: null
+        };
         const queuePanel = document.getElementById('queuePanel');
         const queueList = document.getElementById('queueList');
         const queueSummary = document.getElementById('queueSummary');
@@ -2684,8 +3084,10 @@ function generateFileTranslationPage(videoId, configStr, config, filename = '') 
         const defaultShowAllLanguages = hasConfiguredLanguages ? false : true;
         const defaultSingleBatchValue = translationDefaults.singleBatchMode === true;
         const defaultBatchContextValue = translationDefaults.enableBatchContext === true;
+        const defaultSubfaberValue = translationDefaults.subfaberEnabled === true;
         if (singleBatchCheckbox) singleBatchCheckbox.checked = defaultSingleBatchValue;
         if (enableBatchContextCheckbox) enableBatchContextCheckbox.checked = defaultBatchContextValue;
+        if (subfaberEnabledCheckbox) subfaberEnabledCheckbox.checked = defaultSubfaberValue;
 
         // Translation options elements
         const translationOptions = document.getElementById('translationOptions');
@@ -3725,6 +4127,137 @@ function generateFileTranslationPage(videoId, configStr, config, filename = '') 
             }
         }
 
+        // ── SubFaber HUD update functions (targeted DOM, no re-render bloat) ──
+        function updateSubfaberPreflight(status, summary, terms) {
+            if (!subfaberPreflight) return;
+            subfaberState.preflight.status = status;
+            subfaberState.preflight.summary = summary || '';
+            subfaberState.preflight.terms = Array.isArray(terms) ? terms : [];
+
+            if (status === 'running') {
+                subfaberPreflight.style.display = 'block';
+                if (preflightResult) preflightResult.style.display = 'none';
+                if (preflightLabel) preflightLabel.textContent = 'Analyzing plot & building character profiles...';
+                return;
+            }
+
+            if (status === 'done') {
+                subfaberPreflight.style.display = 'block';
+                if (preflightResult) preflightResult.style.display = 'block';
+                if (preflightLabel) preflightLabel.style.display = 'none';
+                if (preflightSummaryText) preflightSummaryText.textContent = subfaberState.preflight.summary;
+                if (preflightTerms) {
+                    preflightTerms.innerHTML = subfaberState.preflight.terms
+                        .map(function(t) {
+                            var chip = '<span class="preflight-term-chip">' + escapeHtml(t.src || '');
+                            if (t.note) {
+                                chip += '<span class="term-note">' + escapeHtml(t.note) + '</span>';
+                            }
+                            return chip + '</span>';
+                        })
+                        .join('');
+                }
+                // Auto-collapse after 3s so it doesn't block batch flow
+                setTimeout(() => {
+                    if (subfaberState.preflight.status === 'done' && subfaberPreflight) {
+                        subfaberPreflight.style.display = 'none';
+                    }
+                }, 3000);
+                return;
+            }
+
+            // skipped / error
+            subfaberPreflight.style.display = 'none';
+        }
+
+        function updateSubfaberParity(currentBatch, totalBatches, verifiedCount, expectedCount, parityRate) {
+            if (!subfaberParity) return;
+            subfaberParity.style.display = 'block';
+            subfaberState.batch = { current: currentBatch, total: totalBatches, verified: verifiedCount, expected: expectedCount, parityRate, healing: verifiedCount !== expectedCount };
+
+            if (badgeBatch) badgeBatch.textContent = 'Batch ' + currentBatch + '/' + totalBatches;
+            if (badgeParity) badgeParity.textContent = 'Parity: ' + verifiedCount + '/' + expectedCount;
+            if (badgeStatus) {
+                badgeStatus.textContent = parityRate;
+                badgeStatus.className = verifiedCount === expectedCount
+                    ? 'badge badge-status'
+                    : 'badge badge-status badge-healing';
+            }
+
+            if (parityAlert && parityAlertText) {
+                const isHealing = verifiedCount !== expectedCount;
+                parityAlert.style.display = isHealing ? 'flex' : 'none';
+                if (isHealing) {
+                    parityAlertText.textContent = 'Healing parity slots...';
+                }
+            }
+        }
+
+        function showSubfaberDiff(sourceText, targetText, verified) {
+            if (!subfaberDiffModal) return;
+            subfaberState.diff = { sourceText: sourceText || '', targetText: targetText || '' };
+
+            if (diffModalTitle) {
+                diffModalTitle.textContent = verified
+                    ? 'SubFaber Engine: 100% Parity Verified'
+                    : 'SubFaber Engine: Review Translation';
+            }
+            if (diffSourceText) diffSourceText.textContent = subfaberState.diff.sourceText;
+            if (diffTargetText) diffTargetText.textContent = subfaberState.diff.targetText;
+
+            subfaberDiffModal.style.display = 'flex';
+            subfaberDiffModal.classList.add('active');
+        }
+
+        function closeSubfaberDiff() {
+            if (!subfaberDiffModal) return;
+            subfaberDiffModal.style.display = 'none';
+            subfaberDiffModal.classList.remove('active');
+        }
+
+        // Diff tab switching (mobile)
+        if (diffTabSource && diffTabTarget) {
+            diffTabSource.addEventListener('click', () => {
+                diffTabSource.classList.add('diff-tab-active');
+                diffTabTarget.classList.remove('diff-tab-active');
+                if (diffSourcePanel) diffSourcePanel.style.display = 'flex';
+                if (diffTargetPanel) diffTargetPanel.style.display = 'none';
+            });
+            diffTabTarget.addEventListener('click', () => {
+                diffTabTarget.classList.add('diff-tab-active');
+                diffTabSource.classList.remove('diff-tab-active');
+                if (diffTargetPanel) diffTargetPanel.style.display = 'flex';
+                if (diffSourcePanel) diffSourcePanel.style.display = 'none';
+            });
+        }
+        if (diffCloseBtn) {
+            diffCloseBtn.addEventListener('click', closeSubfaberDiff);
+        }
+        if (subfaberDiffModal) {
+            subfaberDiffModal.addEventListener('click', (e) => {
+                if (e.target === subfaberDiffModal) closeSubfaberDiff();
+            });
+        }
+
+        // SSE handler for SubFaber events (LANGKAH 3.2-3.4)
+        function handleSubfaberEvent(data) {
+            if (!subfaberState.enabled || !data || typeof data !== 'object') return;
+            if (data.phase === 'preflight') {
+                updateSubfaberPreflight(data.status, data.summary, data.terms);
+                return;
+            }
+            if (data.phase === 'batch') {
+                updateSubfaberParity(
+                    data.currentBatch || 0,
+                    data.totalBatches || 0,
+                    data.verifiedCount || 0,
+                    data.expectedCount || 0,
+                    data.parityRate || '0%'
+                );
+                return;
+            }
+        }
+
         function captureSelection() {
             if (!targetLang.value) {
                 throw new Error(tt('fileUpload.errors.targetMissing', {}, 'Please select a target language'));
@@ -3804,6 +4337,7 @@ function generateFileTranslationPage(videoId, configStr, config, filename = '') 
 
             const singleBatchValue = singleBatchCheckbox ? singleBatchCheckbox.checked : false;
             const batchContextValue = enableBatchContextCheckbox ? enableBatchContextCheckbox.checked : false;
+            const subfaberValue = subfaberEnabledCheckbox ? subfaberEnabledCheckbox.checked : false;
 
             return {
                 providerKey,
@@ -3813,7 +4347,8 @@ function generateFileTranslationPage(videoId, configStr, config, filename = '') 
                 advancedOverrides,
                 translationWorkflow: 'xml',
                 singleBatchMode: singleBatchValue,
-                enableBatchContext: batchContextValue
+                enableBatchContext: batchContextValue,
+                subfaberEnabled: subfaberValue
             };
         }
 
@@ -3828,7 +4363,8 @@ function generateFileTranslationPage(videoId, configStr, config, filename = '') 
                 options: {
                     translationWorkflow: settings.translationWorkflow || 'xml',
                     singleBatchMode: settings.singleBatchMode === true,
-                    enableBatchContext: settings.enableBatchContext === true
+                    enableBatchContext: settings.enableBatchContext === true,
+                    subfaberEnabled: settings.subfaberEnabled === true
                 }
             };
             if (settings.sourceLanguage) {
@@ -3880,31 +4416,136 @@ function generateFileTranslationPage(videoId, configStr, config, filename = '') 
             try {
                 const fileContent = await nextJob.file.text();
                 const payload = buildRequestPayload(nextJob, fileContent);
-                const response = await fetch('/api/translate-file', {
-                    method: 'POST',
-                    headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify(payload)
-                });
+                subfaberState.lastJob = nextJob;
 
-                if (!response.ok) {
-                    const responseText = await response.text();
-                    throw new Error(tt('fileUpload.errors.translationFailed', { error: responseText }, 'Translation failed: ' + responseText));
-                }
+                // SubFaber SSE opt-in: only when subfaberEnabled is active
+                const useSse = subfaberState.enabled === true;
+                let translatedContent = null;
+                let translationStats = null;
 
-                const rawContent = await response.text();
+                if (useSse) {
+                    // ── SSE branch (LANGKAH 3.2-3.4) ──
+                    try {
+                        const sseResponse = await fetch('/api/translate-file', {
+                            method: 'POST',
+                            headers: {
+                                'Content-Type': 'application/json',
+                                'Accept': 'text/event-stream'
+                            },
+                            body: JSON.stringify(payload)
+                        });
 
-                // Detect error marker (server sends [TRANSLATION_ERROR] when it fails
-                // after HTTP 200 was already committed for keepalive streaming)
-                const errorMarkerIdx = rawContent.indexOf('[TRANSLATION_ERROR]');
-                if (errorMarkerIdx !== -1) {
-                    const errorMsg = rawContent.substring(errorMarkerIdx + '[TRANSLATION_ERROR]'.length).trim();
-                    throw new Error(errorMsg || tt('fileUpload.errors.translationFailed', { error: '' }, 'Translation failed'));
-                }
+                        if (!sseResponse.ok) {
+                            const responseText = await sseResponse.text();
+                            throw new Error(tt('fileUpload.errors.translationFailed', { error: responseText }, 'Translation failed: ' + responseText));
+                        }
 
-                // Trim leading keepalive newlines sent during translation
-                const translatedContent = rawContent.replace(/^\\n+/, '');
-                if (!translatedContent) {
-                    throw new Error(tt('fileUpload.errors.translationFailed', { error: 'empty response' }, 'Translation failed: empty response'));
+                        // Read SSE stream
+                        const reader = sseResponse.body.getReader();
+                        const decoder = new TextDecoder();
+                        let buffer = '';
+                        let doneEvent = null;
+
+                        while (true) {
+                            const { done, value } = await reader.read();
+                            if (done) break;
+                            buffer += decoder.decode(value, { stream: true });
+
+                            // Parse SSE events (data: lines + event: lines)
+                            let eventEnd;
+                            while ((eventEnd = buffer.indexOf('\\n\\n')) !== -1) {
+                                const chunk = buffer.slice(0, eventEnd);
+                                buffer = buffer.slice(eventEnd + 2);
+
+                                let eventType = 'message';
+                                let eventData = '';
+                                for (const line of chunk.split('\\n')) {
+                                    if (line.startsWith('event:')) {
+                                        eventType = line.slice(6).trim();
+                                    } else if (line.startsWith('data:')) {
+                                        eventData = line.slice(5).trim();
+                                    } else if (line.startsWith(':')) {
+                                        // SSE comment (keepalive) — ignore
+                                        continue;
+                                    }
+                                }
+
+                                if (eventData) {
+                                    try {
+                                        const parsed = JSON.parse(eventData);
+                                        handleSubfaberEvent(parsed);
+                                        if (eventType === 'done') {
+                                            doneEvent = parsed;
+                                        }
+                                    } catch (_) { /* malformed JSON, skip */ }
+                                }
+                            }
+                        }
+
+                        if (!doneEvent) {
+                            throw new Error(tt('fileUpload.errors.translationFailed', { error: 'No done event' }, 'Translation failed: incomplete SSE stream'));
+                        }
+
+                        translatedContent = doneEvent.content || '';
+                        translationStats = doneEvent.translationStats || {};
+
+                        if (!translatedContent) {
+                            throw new Error(tt('fileUpload.errors.translationFailed', { error: 'empty response' }, 'Translation failed: empty response'));
+                        }
+                    } catch (sseErr) {
+                        // SSE failed — fallback to plain text path below
+                        console.warn('SubFaber SSE failed, falling back to plain text:', sseErr.message);
+                        const response = await fetch('/api/translate-file', {
+                            method: 'POST',
+                            headers: { 'Content-Type': 'application/json' },
+                            body: JSON.stringify(payload)
+                        });
+
+                        if (!response.ok) {
+                            const responseText = await response.text();
+                            throw new Error(tt('fileUpload.errors.translationFailed', { error: responseText }, 'Translation failed: ' + responseText));
+                        }
+
+                        const rawContent = await response.text();
+                        const errorMarkerIdx = rawContent.indexOf('[TRANSLATION_ERROR]');
+                        if (errorMarkerIdx !== -1) {
+                            const errorMsg = rawContent.substring(errorMarkerIdx + '[TRANSLATION_ERROR]'.length).trim();
+                            throw new Error(errorMsg || tt('fileUpload.errors.translationFailed', { error: '' }, 'Translation failed'));
+                        }
+
+                        translatedContent = rawContent.replace(/^\\n+/, '');
+                        if (!translatedContent) {
+                            throw new Error(tt('fileUpload.errors.translationFailed', { error: 'empty response' }, 'Translation failed: empty response'));
+                        }
+                    }
+                } else {
+                    // ── Plain text branch (default, unchanged) ──
+                    const response = await fetch('/api/translate-file', {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify(payload)
+                    });
+
+                    if (!response.ok) {
+                        const responseText = await response.text();
+                        throw new Error(tt('fileUpload.errors.translationFailed', { error: responseText }, 'Translation failed: ' + responseText));
+                    }
+
+                    const rawContent = await response.text();
+
+                    // Detect error marker (server sends [TRANSLATION_ERROR] when it fails
+                    // after HTTP 200 was already committed for keepalive streaming)
+                    const errorMarkerIdx = rawContent.indexOf('[TRANSLATION_ERROR]');
+                    if (errorMarkerIdx !== -1) {
+                        const errorMsg = rawContent.substring(errorMarkerIdx + '[TRANSLATION_ERROR]'.length).trim();
+                        throw new Error(errorMsg || tt('fileUpload.errors.translationFailed', { error: '' }, 'Translation failed'));
+                    }
+
+                    // Trim leading keepalive newlines sent during translation
+                    translatedContent = rawContent.replace(/^\\n+/, '');
+                    if (!translatedContent) {
+                        throw new Error(tt('fileUpload.errors.translationFailed', { error: 'empty response' }, 'Translation failed: empty response'));
+                    }
                 }
 
                 const blob = new Blob([translatedContent], { type: 'text/plain;charset=utf-8' });
@@ -3925,6 +4566,17 @@ function generateFileTranslationPage(videoId, configStr, config, filename = '') 
                 if (resultDesc) {
                     const name = nextJob.name || tt('fileUpload.progress.subtitle', {}, 'subtitle');
                     resultDesc.textContent = tt('fileUpload.result.finished', { name }, 'Finished: ' + name);
+                }
+
+                // SubFaber Dwi-Panel Semakan (LANGKAH 3.4): activate review modal
+                // Only when subfaberEnabled AND translationStats.subfaberContextUsed is true
+                if (subfaberState.enabled && translationStats && translationStats.subfaberContextUsed === true) {
+                    try {
+                        const sourceContent = await nextJob.file.text();
+                        showSubfaberDiff(sourceContent, translatedContent, true);
+                    } catch (diffErr) {
+                        console.warn('SubFaber diff modal failed to load source:', diffErr.message);
+                    }
                 }
             } catch (err) {
                 console.error('Translation error:', err);

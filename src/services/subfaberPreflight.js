@@ -1,0 +1,270 @@
+/**
+ * SubFaber Pre-Flight Semantic Pass (Fasa 0)
+ *
+ * Satu panggilan AI ringkas per fail SEBELUM batch translation bermula:
+ *   1. Ekstrak teks mentah keseluruhan fail (TANPA timecode — timeline
+ *      physically cannot be touched).
+ *   2. AI jana: Content Summary (2 ayat) + Points to Note / Glosari Watak.
+ *   3. Output disimpan dalam engine state (this.preflightContext) dan
+ *      disuntik ke setiap prompt batch sebagai konteks global.
+ *
+ * Prinsip reka bentuk (dari laporan plans/subfaber-technical-plan-backend.md §3.1):
+ *   - BEST-EFFORT, NON-BLOCKING: kegagalan Fasa 0 TIDAK menggagalkan
+ *     terjemahan. Fallback: return null → pipeline jalan tanpa konteks global.
+ *   - Token guard: fail besar di-sample merata (setiap k-th entry) supaya
+ *     panggilan Fasa 0 kekal murah (~12k token input max).
+ *   - Output JSON deterministik via responseMimeType (enableJsonOutput).
+ *
+ * Formula: VideoLingo get_summary_prompt (Otak/Persona) — diadaptasi untuk
+ * kontrak SubFaber. Lihat plans/subfaber-technical-plan-backend.md.
+ */
+
+const log = require('../utils/logger');
+
+// Had saiz input Fasa 0 (karakter kasar ~ 4 char/token → ~12k token)
+const PREFLIGHT_MAX_INPUT_CHARS = 48000;
+// Skip sampling jika fail lebih kecil dari ini (entries)
+const PREFLIGHT_MIN_ENTRIES = 10;
+// Had bilangan istilah yang diterima (VideoLingo: "Extract less than 15 terms")
+const PREFLIGHT_MAX_TERMS = 15;
+
+/**
+ * Bina teks mentah dari entries SRT untuk Fasa 0.
+ * Timecode dibuang sepenuhnya — hanya dialog disertakan.
+ * @param {Array<{id:number, timecode:string, text:string}>} entries - Parsed SRT entries
+ * @returns {string} Raw dialogue text (satu baris per entry)
+ */
+function buildPreflightRawText(entries) {
+  if (!Array.isArray(entries) || entries.length === 0) return '';
+  return entries
+    .map(e => String(e?.text || '').trim())
+    .filter(Boolean)
+    .join('\n');
+}
+
+/**
+ * Sample entries merata untuk fail besar (setiap k-th entry) supaya
+ * panggilan Fasa 0 kekal dalam bajet token.
+ * @param {Array} entries - Parsed SRT entries
+ * @returns {Array} Sampled entries (atau entries asal jika kecil)
+ */
+function sampleEntriesForPreflight(entries) {
+  if (!Array.isArray(entries) || entries.length === 0) return [];
+  const totalChars = entries.reduce((sum, e) => sum + String(e?.text || '').length, 0);
+  if (totalChars <= PREFLIGHT_MAX_INPUT_CHARS) {
+    return entries; // Kecil — hantar semua
+  }
+  // Sampling merata: kekal k-th entry supaya plot arc tersebar
+  const k = Math.ceil(totalChars / PREFLIGHT_MAX_INPUT_CHARS);
+  const sampled = entries.filter((_, idx) => idx % k === 0);
+  log.debug(() => `[SubFaberPreflight] Large file (${entries.length} entries, ${totalChars} chars) sampled to ${sampled.length} entries (k=${k})`);
+  return sampled;
+}
+
+/**
+ * Bina prompt Fasa 0 (adaptasi VideoLingo get_summary_prompt).
+ * Prompt ringkas — dihantar sebagai flat user prompt (konsisten v1.6.0 surgery).
+ * @param {string} rawText - Teks dialog mentah (tanpa timecode)
+ * @param {string} targetLanguage - Bahasa sasaran (untuk terjemahan istilah)
+ * @param {string} sourceLanguage - Bahasa sumber (label, boleh kosong)
+ * @returns {string} Prompt lengkap
+ */
+function buildPreflightPrompt(rawText, targetLanguage, sourceLanguage) {
+  const src = sourceLanguage || 'the source language';
+  const tgt = targetLanguage || 'the target language';
+  return `## Role
+You are a video translation expert and terminology consultant, specializing in ${src} comprehension and ${tgt} expression optimization.
+
+## Task
+For the provided ${src} subtitle dialogue:
+1. Summarize the main topic in two sentences
+2. Extract professional terms, character names, and recurring entities with ${tgt} translations
+3. Provide a brief explanation for each term (max 15 terms)
+
+## INPUT
+<text>
+${rawText}
+</text>
+
+## Output in only JSON format and no other text
+{
+  "theme": "Two-sentence summary of the content",
+  "terms": [
+    {
+      "src": "Original term",
+      "tgt": "${tgt} translation or original",
+      "note": "Brief explanation"
+    }
+  ]
+}
+
+Note: Start your answer with { and end with }, do not add any other text.`;
+}
+
+/**
+ * Parse + sanitize respons Fasa 0. Tahan kandungan rosak:
+ *   - Strip markdown fences jika model tak patuh arahan
+ *   - Regex-extract blok { ... } pertama sebagai fallback
+ *   - Validasi struktur { theme: string, terms: [{src,tgt,note}] }
+ *   - Hadkan terms kepada PREFLIGHT_MAX_TERMS
+ * @param {string} responseText - Respons mentah model
+ * @returns {{theme:string, terms:Array<{src:string,tgt:string,note:string}>}|null}
+ */
+function parsePreflightResponse(responseText) {
+  if (!responseText || typeof responseText !== 'string') return null;
+
+  let cleaned = responseText.trim();
+
+  // Strip markdown code fences (hex \x60 mengelakkan UI breakage)
+  cleaned = cleaned.replace(/\\x60\\x60\\x60[a-z]*(?:\r?\n)?/gi, '');
+  cleaned = cleaned.replace(/\\x60\\x60\\x60/g, '');
+
+  // Fallback: extract blok JSON pertama jika ada bahan sampingan
+  const jsonStart = cleaned.indexOf('{');
+  const jsonEnd = cleaned.lastIndexOf('}');
+  if (jsonStart === -1 || jsonEnd === -1 || jsonEnd <= jsonStart) {
+    return null;
+  }
+  if (jsonStart > 0 || jsonEnd < cleaned.length - 1) {
+    cleaned = cleaned.slice(jsonStart, jsonEnd + 1);
+  }
+
+  let parsed;
+  try {
+    parsed = JSON.parse(cleaned);
+  } catch (_) {
+    return null;
+  }
+
+  // Validasi struktur
+  if (!parsed || typeof parsed !== 'object') return null;
+
+  const theme = typeof parsed.theme === 'string' ? parsed.theme.trim() : '';
+  if (!theme) return null;
+
+  // Sanitize terms
+  const terms = [];
+  if (Array.isArray(parsed.terms)) {
+    for (const term of parsed.terms) {
+      if (!term || typeof term !== 'object') continue;
+      const src = String(term.src || '').trim();
+      if (!src) continue;
+      terms.push({
+        src,
+        tgt: String(term.tgt || src).trim(),
+        note: String(term.note || '').trim()
+      });
+      if (terms.length >= PREFLIGHT_MAX_TERMS) break;
+    }
+  }
+
+  return { theme, terms };
+}
+
+/**
+ * Format konteks Fasa 0 untuk suntikan ke prompt batch (Points to Note).
+ * @param {{theme:string, terms:Array}} preflightContext - Hasil Fasa 0
+ * @returns {string} Blok teks "Content Summary + Points to Note"
+ */
+function formatPreflightForPrompt(preflightContext) {
+  if (!preflightContext || !preflightContext.theme) return '';
+  let block = `### Content Summary\n${preflightContext.theme}`;
+  if (Array.isArray(preflightContext.terms) && preflightContext.terms.length > 0) {
+    const termLines = preflightContext.terms
+      .map(t => `- ${t.src}: ${t.tgt}${t.note ? ` (${t.note})` : ''}`)
+      .join('\n');
+    block += `\n\n### Points to Note\n${termLines}`;
+  }
+  return block;
+}
+
+/**
+ * Jalankan Fasa 0: Pre-Flight Semantic Pass.
+ * BEST-EFFORT: sebarang kegagalan → return null (pipeline jalan tanpa konteks).
+ *
+ * @param {Array} entries - Parsed SRT entries (dari parseSRT)
+ * @param {string} targetLanguage - Bahasa sasaran
+ * @param {string} sourceLanguage - Bahasa sumber (label, optional)
+ * @param {Object} geminiService - GeminiService instance (atau provider compatible)
+ * @param {Object} [options] - Options tambahan
+ * @param {Function} [options.onProgress] - Callback progress: ({phase:'preflight', status, summary, terms})
+ * @returns {Promise<{theme:string, terms:Array}|null>} Konteks Fasa 0 atau null
+ */
+async function runPreflightSemanticPass(entries, targetLanguage, sourceLanguage, geminiService, options = {}) {
+  const onProgress = typeof options.onProgress === 'function' ? options.onProgress : null;
+
+  const emit = async (payload) => {
+    if (!onProgress) return;
+    try {
+      await onProgress({ phase: 'preflight', ...payload });
+    } catch (err) {
+      log.debug(() => `[SubFaberPreflight] Progress callback error: ${err.message}`);
+    }
+  };
+
+  // Guard: fail terlalu kecil — skip Fasa 0
+  if (!Array.isArray(entries) || entries.length < PREFLIGHT_MIN_ENTRIES) {
+    log.info(() => `[SubFaberPreflight] Skipping pre-flight (${Array.isArray(entries) ? entries.length : 0} entries < ${PREFLIGHT_MIN_ENTRIES} minimum)`);
+    await emit({ status: 'skipped' });
+    return null;
+  }
+
+  // Guard: tiada provider
+  if (!geminiService || typeof geminiService.translateSubtitle !== 'function') {
+    log.warn(() => '[SubFaberPreflight] No provider available, skipping pre-flight');
+    await emit({ status: 'skipped' });
+    return null;
+  }
+
+  await emit({ status: 'running' });
+  log.info(() => `[SubFaberPreflight] Running pre-flight semantic pass (${entries.length} entries)`);
+
+  try {
+    // 1. Sample + ekstrak teks mentah (tanpa timecode)
+    const sampled = sampleEntriesForPreflight(entries);
+    const rawText = buildPreflightRawText(sampled);
+    if (!rawText) {
+      log.warn(() => '[SubFaberPreflight] No dialogue text extracted, skipping pre-flight');
+      await emit({ status: 'skipped' });
+      return null;
+    }
+
+    // 2. Bina prompt + panggil AI (flat user prompt, JSON output)
+    const prompt = buildPreflightPrompt(rawText, targetLanguage, sourceLanguage);
+    const responseText = await geminiService.translateSubtitle(
+      rawText,
+      'detected',
+      targetLanguage,
+      prompt
+    );
+
+    // 3. Parse + sanitize
+    const parsed = parsePreflightResponse(responseText);
+    if (!parsed) {
+      log.warn(() => '[SubFaberPreflight] Failed to parse pre-flight response, continuing without global context');
+      await emit({ status: 'skipped' });
+      return null;
+    }
+
+    log.info(() => `[SubFaberPreflight] Pre-flight complete: theme="${parsed.theme.slice(0, 80)}...", ${parsed.terms.length} terms locked`);
+    await emit({ status: 'done', summary: parsed.theme, terms: parsed.terms });
+    return parsed;
+  } catch (err) {
+    // NON-BLOCKING: kegagalan Fasa 0 tidak menggagalkan terjemahan
+    log.warn(() => `[SubFaberPreflight] Pre-flight failed (non-blocking): ${err.message}`);
+    await emit({ status: 'skipped' });
+    return null;
+  }
+}
+
+module.exports = {
+  runPreflightSemanticPass,
+  buildPreflightRawText,
+  sampleEntriesForPreflight,
+  buildPreflightPrompt,
+  parsePreflightResponse,
+  formatPreflightForPrompt,
+  PREFLIGHT_MAX_INPUT_CHARS,
+  PREFLIGHT_MIN_ENTRIES,
+  PREFLIGHT_MAX_TERMS
+};

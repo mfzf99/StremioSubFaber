@@ -11534,6 +11534,13 @@ Translate to {target_language}.`;
         }
         if (contextSizeEl) contextSizeEl.value = currentConfig.advancedSettings?.contextSize || 20;
 
+        // Load SubFaber engine setting (v-next)
+        // Null-check strict: if the partial hasn't loaded yet, leave untouched.
+        const subfaberEl = document.getElementById('subfaberEnabled');
+        if (subfaberEl) {
+            subfaberEl.checked = currentConfig.advancedSettings?.subfaberEnabled === true;
+        }
+
         // Load mismatch retries setting
         const mismatchRetriesEl = document.getElementById('mismatchRetries');
         if (mismatchRetriesEl) {
@@ -11867,6 +11874,7 @@ Translate to {target_language}.`;
                 presencePenalty: (function () { const el = document.getElementById('advancedPresencePenalty'); return el ? parseFloat(el.value) : 0; })(),
                 enableBatchContext: (function () { const el = document.getElementById('enableBatchContext'); return el ? el.checked : false; })(),
                 contextSize: (function () { const el = document.getElementById('contextSize'); return el ? parseInt(el.value) : 20; })(),
+                subfaberEnabled: (function () { const el = document.getElementById('subfaberEnabled'); return el ? el.checked : false; })(),
                 translationWorkflow: 'xml',
                 mismatchRetries: (function () { const el = document.getElementById('mismatchRetries'); return el ? Math.max(0, Math.min(3, parseInt(el.value) || 3)) : 3; })()
             }
