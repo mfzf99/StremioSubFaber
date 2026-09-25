@@ -250,7 +250,7 @@ Click the **Reset** button at the bottom of the config page.
 ---
 
 <p align="center">
-  <b>SubMaker</b> — Watch anything. Understand everything.<br/>
+  <b>SubFaber</b> — Watch anything. Understand everything.<br/>
   <sub>Made with ❤️ for the Stremio community</sub>
 </p>
 
