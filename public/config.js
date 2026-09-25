@@ -4,7 +4,7 @@
 
     const DEFAULT_LOCALE = { lang: 'en', messages: {} };
     const RTL_LANGS = new Set(['ar', 'he', 'fa', 'ur']);
-    const UI_LANGUAGE_STORAGE_KEY = 'submaker_ui_language';
+    const UI_LANGUAGE_STORAGE_KEY = 'subfaber_ui_language';
     const FLOATING_BOTTOM_SAFE_ZONE_SELECTOR = '#configHelp, #subToolboxLauncher, #tokenVaultLauncher, #tokenVaultRail.show';
     let locale = DEFAULT_LOCALE;
     let localeReadyPromise = null; // Track when locale is ready
@@ -1541,8 +1541,6 @@ Translate to {target_language}.`;
                 topP: 0.95,
                 frequencyPenalty: 0,
                 presencePenalty: 0,
-                enableBatchContext: false, // Include original surrounding context and previous translations
-                contextSize: 20, // Number of preceding original entries to include as context
                 sendTimestampsToAI: false, // Deprecated legacy field, locked to false
                 translationWorkflow: 'xml', // Single enterprise workflow: XML Tags
                 mismatchRetries: 3 // Retries when AI returns wrong entry count (0-3)
@@ -1585,18 +1583,18 @@ Translate to {target_language}.`;
     let urlExtensionTestForcedByAssPassthrough = false;
 
     // localStorage cache keys
-    const CACHE_KEY = 'submaker_config_cache';
-    const CACHE_EXPIRY_KEY = 'submaker_config_cache_expiry';
-    const CACHE_VERSION_KEY = 'submaker_config_cache_version';  // Tracks version when cache was saved
-    const CACHE_TOKEN_KEY = 'submaker_config_cache_token'; // Scopes cached config to the session token it was created for
-    const TOKEN_KEY = 'submaker_session_token';
-    const TOKEN_VAULT_KEY = 'submaker_token_vault_v1';
+    const CACHE_KEY = 'subfaber_config_cache';
+    const CACHE_EXPIRY_KEY = 'subfaber_config_cache_expiry';
+    const CACHE_VERSION_KEY = 'subfaber_config_cache_version';  // Tracks version when cache was saved
+    const CACHE_TOKEN_KEY = 'subfaber_config_cache_token'; // Scopes cached config to the session token it was created for
+    const TOKEN_KEY = 'subfaber_session_token';
+    const TOKEN_VAULT_KEY = 'subfaber_token_vault_v1';
     const TOKEN_VAULT_MAX_ENTRIES = 5;
     const TOKEN_VAULT_RAIL_LIMIT = 5;
     const TOKEN_VAULT_EXPORT_VERSION = 2;
     const TOKEN_VAULT_BACKUP_KIND = 'submaker-token-vault-backup';
     const TOKEN_VAULT_BRIEF_TTL_MS = 30 * 1000;
-    const CONFIG_INSTRUCTIONS_PREFERENCE_KEY = 'submaker_dont_show_instructions';
+    const CONFIG_INSTRUCTIONS_PREFERENCE_KEY = 'subfaber_dont_show_instructions';
     const LEGACY_CONFIG_INSTRUCTIONS_PREFERENCE_KEY = 'hideConfigInstructions';
 
     let activeSessionContext = {
@@ -1645,8 +1643,8 @@ Translate to {target_language}.`;
 
     // Visual state cache keys that can be safely reset on version changes
     const VISUAL_STATE_KEYS = [
-        'submaker_collapsed_sections',
-        'submaker_scroll_position'
+        'subfaber_collapsed_sections',
+        'subfaber_scroll_position'
     ];
 
     /**
@@ -6441,8 +6439,8 @@ Translate to {target_language}.`;
     function showSubToolboxModal() {
         // Always show the instructions now; clear any legacy suppression flags
         try {
-            localStorage.removeItem('submaker_dont_show_sub_toolbox');
-            localStorage.removeItem('submaker_dont_show_file_translation');
+            localStorage.removeItem('subfaber_dont_show_sub_toolbox');
+            localStorage.removeItem('subfaber_dont_show_file_translation');
         } catch (_) { }
         openModalById('subToolboxModal');
     }
@@ -6618,8 +6616,6 @@ Translate to {target_language}.`;
         const advThinkingLevelEl = document.getElementById('advancedThinkingLevel');
         const advTempEl = document.getElementById('advancedTemperature');
         const advTopPEl = document.getElementById('advancedTopP');
-        const batchCtxEl = document.getElementById('enableBatchContext');
-        const ctxSizeEl = document.getElementById('contextSize');
 
         if (!advThinkingEl || !advThinkingLevelEl || !advTempEl || !advTopPEl) {
             return false; // Elements not loaded yet
@@ -6642,15 +6638,13 @@ Translate to {target_language}.`;
         // thinkingBudget: hanya kira untuk model 2.5 (lalai -1 = dinamik).
         const thinkingBudgetChanged = advThinkingEl ? (parseInt(advThinkingEl.value, 10) !== (defaults.thinkingBudget ?? -1)) : false;
 
-        const batchCtxChanged = batchCtxEl ? (batchCtxEl.checked !== (defaults.enableBatchContext === true)) : false;
-        const ctxSizeChanged = ctxSizeEl ? (parseInt(ctxSizeEl.value) !== (defaults.contextSize || 20)) : false;
         const mismatchRetriesEl = document.getElementById('mismatchRetries');
         const mismatchRetriesChanged = mismatchRetriesEl ? (parseInt(mismatchRetriesEl.value) !== (defaults.mismatchRetries ?? 3)) : false;
         const workflowChanged = false;
 
         // Single-Picker: modelChanged is always false — no separate override dropdown exists.
         // The base #geminiModel dropdown IS the model; changes to it don't count as "advanced modified".
-        return thinkingChanged || thinkingBudgetChanged || tempChanged || topPChanged || freqChanged || presChanged || batchCtxChanged || ctxSizeChanged || mismatchRetriesChanged || workflowChanged;
+        return thinkingChanged || thinkingBudgetChanged || tempChanged || topPChanged || freqChanged || presChanged || mismatchRetriesChanged || workflowChanged;
     }
 
     /**
@@ -6739,7 +6733,7 @@ Translate to {target_language}.`;
                 const baseTranslationLanguages = translationLanguages.filter(l => !l.extended);
 
                 // Restore extended toggle state from localStorage
-                const extToggleSaved = localStorage.getItem('submaker_extended_languages') === 'true';
+                const extToggleSaved = localStorage.getItem('subfaber_extended_languages') === 'true';
                 const extToggleTarget = document.getElementById('extendedLanguagesToggle');
                 const extToggleLearn = document.getElementById('extendedLanguagesToggleLearn');
                 if (extToggleTarget) extToggleTarget.checked = extToggleSaved;
@@ -6816,7 +6810,7 @@ Translate to {target_language}.`;
      * Called when the checkbox is toggled.
      */
     function rerenderExtendedGrids(isExtended) {
-        localStorage.setItem('submaker_extended_languages', isExtended ? 'true' : 'false');
+        localStorage.setItem('subfaber_extended_languages', isExtended ? 'true' : 'false');
         // Sync both checkboxes
         const extToggleTarget = document.getElementById('extendedLanguagesToggle');
         const extToggleLearn = document.getElementById('extendedLanguagesToggleLearn');
@@ -8074,29 +8068,13 @@ Translate to {target_language}.`;
         // Single-Picker: model change is handled by #geminiModel listener (already wired).
         // No #advancedModel listener needed.
 
-        // Batch context toggle - show/hide context size field
-        const enableBatchContextEl = document.getElementById('enableBatchContext');
-        const contextSizeGroupEl = document.getElementById('contextSizeGroup');
-        const contextSizeEl = document.getElementById('contextSize');
-        if (enableBatchContextEl && contextSizeGroupEl) {
-            enableBatchContextEl.addEventListener('change', (e) => {
-                contextSizeGroupEl.style.display = e.target.checked ? 'block' : 'none';
-                // Changing batch context setting should force bypass cache logic
-                updateBypassCacheForAdvancedSettings();
-            });
-        }
-        if (contextSizeEl) {
-            contextSizeEl.addEventListener('change', updateBypassCacheForAdvancedSettings);
-            contextSizeEl.addEventListener('input', updateBypassCacheForAdvancedSettings);
-        }
+        // TOTAL PURGE (Mandat 2026-09-25): Legacy toggle listeners for
+        // #enableBatchContext / #contextSize / #contextSizeGroup removed.
+        // SubFaber is the single engine — no legacy batch context controls exist.
         const mismatchRetriesEl = document.getElementById('mismatchRetries');
         if (mismatchRetriesEl) {
             mismatchRetriesEl.addEventListener('change', updateBypassCacheForAdvancedSettings);
             mismatchRetriesEl.addEventListener('input', updateBypassCacheForAdvancedSettings);
-        }
-        if (contextSizeEl) {
-            contextSizeEl.addEventListener('input', updateBypassCacheForAdvancedSettings);
-            contextSizeEl.addEventListener('change', updateBypassCacheForAdvancedSettings);
         }
 
         // Note: Modal close buttons are handled by delegated event listeners (lines 188-206)
@@ -11520,26 +11498,9 @@ Translate to {target_language}.`;
         if (advPresEl) advPresEl.value = currentConfig.advancedSettings?.presencePenalty ?? 0;
         updateGeminiThinkingControl();
 
-        // Load batch context settings
-        const enableBatchContextEl = document.getElementById('enableBatchContext');
-        const contextSizeEl = document.getElementById('contextSize');
-        const contextSizeGroupEl = document.getElementById('contextSizeGroup');
-
-        if (enableBatchContextEl) {
-            enableBatchContextEl.checked = currentConfig.advancedSettings?.enableBatchContext === true;
-            // Show/hide context size field based on checkbox
-            if (contextSizeGroupEl) {
-                contextSizeGroupEl.style.display = enableBatchContextEl.checked ? 'block' : 'none';
-            }
-        }
-        if (contextSizeEl) contextSizeEl.value = currentConfig.advancedSettings?.contextSize || 20;
-
-        // Load SubFaber engine setting (v-next)
-        // Null-check strict: if the partial hasn't loaded yet, leave untouched.
-        const subfaberEl = document.getElementById('subfaberEnabled');
-        if (subfaberEl) {
-            subfaberEl.checked = currentConfig.advancedSettings?.subfaberEnabled === true;
-        }
+        // TOTAL PURGE (Mandat 2026-09-25): Rehydration for legacy controls
+        // #enableBatchContext / #contextSize / #subfaberEnabled removed.
+        // SubFaber is the single engine — no legacy controls to restore.
 
         // Load mismatch retries setting
         const mismatchRetriesEl = document.getElementById('mismatchRetries');
@@ -11872,9 +11833,6 @@ Translate to {target_language}.`;
                 topP: (function () { const el = document.getElementById('advancedTopP'); return el ? parseFloat(el.value) : 0.95; })(),
                 frequencyPenalty: (function () { const el = document.getElementById('advancedFrequencyPenalty'); return el ? parseFloat(el.value) : 0; })(),
                 presencePenalty: (function () { const el = document.getElementById('advancedPresencePenalty'); return el ? parseFloat(el.value) : 0; })(),
-                enableBatchContext: (function () { const el = document.getElementById('enableBatchContext'); return el ? el.checked : false; })(),
-                contextSize: (function () { const el = document.getElementById('contextSize'); return el ? parseInt(el.value) : 20; })(),
-                subfaberEnabled: (function () { const el = document.getElementById('subfaberEnabled'); return el ? el.checked : false; })(),
                 translationWorkflow: 'xml',
                 mismatchRetries: (function () { const el = document.getElementById('mismatchRetries'); return el ? Math.max(0, Math.min(3, parseInt(el.value) || 3)) : 3; })()
             }
@@ -12565,7 +12523,7 @@ Translate to {target_language}.`;
     }
 
     // ── What's New Portal ────────────────────────────────────────────────
-    const LAST_SEEN_VERSION_KEY = 'submaker_whats_new_seen';
+    const LAST_SEEN_VERSION_KEY = 'subfaber_whats_new_seen';
 
     function initWhatsNewPortal() {
         const portal = document.getElementById('whatsNewPortal');

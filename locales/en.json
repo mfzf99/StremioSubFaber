@@ -1298,9 +1298,9 @@
           }
         },
         "database": {
-          "label": "SubMaker Database",
-          "description": "SubMaker's database caches translations permanently to reduce community AI API costs/usage.\nBypass mode skips the shared database and stores translations temporarily (12 hours).",
-          "use": "Use SubMaker Database",
+          "label": "SubFaber Database",
+          "description": "SubFaber's database caches translations permanently to reduce community AI API costs/usage.\nBypass mode skips the shared database and stores translations temporarily (12 hours).",
+          "use": "Use SubFaber Database",
           "bypass": "Bypass Cache (Force Retranslation)",
           "noteTitle": "⚠️ Bypass Mode Required:"
         },
@@ -1384,18 +1384,6 @@
         "topP": {
           "label": "Top-P (Nucleus Sampling)",
           "description": "Probability threshold (0.0-1.0). Lower = more focused, Higher = more diverse. Default: 0.95"
-        },
-        "batchContext": {
-          "label": "Enable Batch Context",
-          "description": "Include original surrounding context and previous translations when processing batches. Improves translation coherence but may break outputs and increases token usage. Disabled by default."
-        },
-        "contextSize": {
-          "label": "Context Size",
-          "description": "Number of surrounding entries to include as context (1-20). Default: 20"
-        },
-        "subfaber": {
-          "label": "Enable SubFaber Engine",
-          "description": "Netflix-grade semantic context: Pre-Flight Pass analyzes plot & character profiles, plus strict slot-boundary preservation. Guarantees 1:1 sync fidelity. Increases one-time setup cost (1 extra API call)."
         },
         "mismatchRetries": {
           "label": "Mismatch Retries",

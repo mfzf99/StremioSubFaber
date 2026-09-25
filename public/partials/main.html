@@ -1408,43 +1408,18 @@
                             </label>
                         </div>
 
-                        <div class="form-group">
-                            <label>
-                                <input type="checkbox" id="enableBatchContext">
-                                <span data-i18n="config.advancedGemini.batchContext.label">Enable Batch Context</span>
-                                <span class="label-description"
-                                    data-i18n="config.advancedGemini.batchContext.description">Include original
-                                    surrounding context and previous translations
-                                    when processing batches. Improves translation coherence but may break outputs and
-                                    increases
-                                    token usage.</span>
-                            </label>
-                        </div>
-
-                        <div class="form-group">
-                            <label>
-                                <input type="checkbox" id="subfaberEnabled">
-                                <span data-i18n="config.advancedGemini.subfaber.label">Enable SubFaber Engine</span>
-                                <span class="label-description"
-                                    data-i18n="config.advancedGemini.subfaber.description">Netflix-grade semantic
-                                    context: Pre-Flight Pass analyzes plot & character profiles, plus strict slot-boundary
-                                    preservation. Guarantees 1:1 sync fidelity. Increases one-time setup cost
-                                    (1 extra API call).</span>
-                            </label>
-                        </div>
-
                         <div class="form-group" id="databaseModeGroup">
                             <label for="databaseMode" class="form-label">
-                                <span class="label-title" data-i18n="config.translationSettings.database.label">SubMaker
+                                <span class="label-title" data-i18n="config.translationSettings.database.label">SubFaber
                                     Database</span>
                                 <span class="label-description"
-                                    data-i18n="config.translationSettings.database.description">SubMaker's database
+                                    data-i18n="config.translationSettings.database.description">SubFaber's database
                                     caches translations permanently to reduce community AI API costs/usage.<br>Bypass
                                     mode skips the shared database and stores translations temporarily (12
                                     hours).</span>
                             </label>
                             <select id="databaseMode" class="styled-select">
-                                <option value="use" data-i18n="config.translationSettings.database.use">Use SubMaker
+                                <option value="use" data-i18n="config.translationSettings.database.use">Use SubFaber
                                     Database</option>
                                 <option value="bypass" data-i18n="config.translationSettings.database.bypass">Bypass
                                     Cache (Force Retranslation)</option>
@@ -1830,16 +1805,6 @@
                     </div>
                     <div class="card-content">
 
-                        <div class="form-group" id="contextSizeGroup" style="display: none;">
-                            <label for="contextSize">
-                                <span data-i18n="config.advancedGemini.contextSize.label">Context Size</span>
-                                <span class="label-description"
-                                    data-i18n="config.advancedGemini.contextSize.description">Number of surrounding
-                                    entries to include as context (1-20).
-                                    Default: 20</span>
-                            </label>
-                            <input type="number" id="contextSize" min="1" max="20" step="1" value="20" placeholder="20">
-                        </div>
 
                         <div class="form-group">
                             <label for="mismatchRetries">

@@ -1293,9 +1293,9 @@
           }
         },
         "database": {
-          "label": "Base de datos SubMaker",
+          "label": "Base de datos SubFaber",
           "description": "La base de datos de SubMaker guarda traducciones de forma permanente para reducir costos/uso de API de IA comunitaria.\nEl modo Omitir caché ignora la base compartida y guarda traducciones temporalmente (12 h).",
-          "use": "Usar base de datos SubMaker",
+          "use": "Usar base de datos SubFaber",
           "bypass": "Omitir caché (forzar retraducción)",
           "noteTitle": "⚠️ Se requiere omitir caché:"
         },
@@ -1383,18 +1383,6 @@
         "topP": {
           "label": "Top-P (muestreo por núcleo)",
           "description": "Umbral de probabilidad (0.0-1.0). Bajo = más enfocado, Alto = más diverso. Por defecto: 0.95"
-        },
-        "batchContext": {
-          "label": "Activar contexto por lote",
-          "description": "Incluye contexto y traducciones previas al procesar lotes. Mejora coherencia pero puede romper salidas y aumentar tokens. Desactivado por defecto."
-        },
-        "contextSize": {
-          "label": "Tamaño de contexto",
-          "description": "Número de entradas alrededor a incluir (1-20). Por defecto: 20"
-        },
-        "subfaber": {
-          "label": "Activar Motor SubFaber",
-          "description": "Contexto semántico de grado Netflix: Pre-Flight Pass analiza trama y perfiles de personajes, además de preservación estricta de límites de ranura. Garantiza fidelidad de sincronización 1:1. Aumenta el costo de configuración única (1 llamada API extra)."
         },
         "mismatchRetries": {
           "label": "Mismatch Retries",

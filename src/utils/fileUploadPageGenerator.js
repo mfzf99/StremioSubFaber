@@ -93,8 +93,6 @@ function buildFileTranslationClientConfig(config) {
         fileTranslationEnabled: config?.fileTranslationEnabled !== false,
         singleBatchMode: config?.singleBatchMode === true,
         translationWorkflow: config?.advancedSettings?.translationWorkflow || 'xml',
-        enableBatchContext: config?.advancedSettings?.enableBatchContext === true,
-        subfaberEnabled: config?.advancedSettings?.subfaberEnabled === true
     };
 }
 
@@ -157,8 +155,6 @@ function generateFileTranslationPage(videoId, configStr, config, filename = '') 
     const translationWorkflowDefaults = {
         singleBatchMode: config?.singleBatchMode === true,
         translationWorkflow: config?.advancedSettings?.translationWorkflow || 'xml',
-        enableBatchContext: config?.advancedSettings?.enableBatchContext === true,
-        subfaberEnabled: config?.advancedSettings?.subfaberEnabled === true
     };
     const MAX_OUTPUT_TOKEN_LIMIT = 200000;
     const DEFAULT_MAX_OUTPUT_TOKENS = 65536;
@@ -237,10 +233,6 @@ function generateFileTranslationPage(videoId, configStr, config, filename = '') 
     const translationProviderHelper = t('fileUpload.options.provider.helper', {}, 'Choose which configured provider to use for this translation.');
     const singleBatchLabel = t('fileUpload.options.singleBatch.label', {}, 'Single Batch Mode');
     const singleBatchHelper = t('fileUpload.options.singleBatch.helper', {}, 'Translate the whole subtitle in one go. Improves contextual coherence but can hit provider limits more easily.');
-    const batchContextLabel = t('fileUpload.options.batchContext.label', {}, 'Enable Batch Context');
-    const batchContextHelper = t('fileUpload.options.batchContext.helper', {}, 'Include surrounding context and previous translations when processing batches. Improves coherence but increases token usage.');
-    const subfaberLabel = t('fileUpload.options.subfaber.label', {}, 'Enable SubFaber Engine');
-    const subfaberHelper = t('fileUpload.options.subfaber.helper', {}, 'Netflix-grade semantic context: Pre-Flight Pass analyzes plot & characters, plus strict slot-boundary preservation. Guarantees 1:1 sync. Adds 1 extra API call.');
     const advancedSettingsTitle = t('fileUpload.advanced.title', {}, 'Advanced Settings');
     const advancedHighlightTitle = t('fileUpload.advanced.highlightTitle', {}, 'Fine-tune AI behavior for this translation only:');
     const advancedHighlightBody = t('fileUpload.advanced.highlightBody', {}, 'Override model and parameters.');
@@ -2522,25 +2514,6 @@ function generateFileTranslationPage(videoId, configStr, config, filename = '') 
                                 </label>
                             </div>
 
-                            <div class="form-group">
-                                <label style="display: flex; align-items: flex-start; gap: 0.5rem; cursor: pointer;">
-                                    <input type="checkbox" id="enableBatchContext" style="margin-top: 0.3rem;">
-                                    <div>
-                                        ${escapeHtml(batchContextLabel)}
-                                        <span class="label-description">${escapeHtml(batchContextHelper)}</span>
-                                    </div>
-                                </label>
-                            </div>
-
-                            <div class="form-group">
-                                <label style="display: flex; align-items: flex-start; gap: 0.5rem; cursor: pointer;">
-                                    <input type="checkbox" id="subfaberEnabled" style="margin-top: 0.3rem;">
-                                    <div>
-                                        ${escapeHtml(subfaberLabel)}
-                                        <span class="label-description">${escapeHtml(subfaberHelper)}</span>
-                                    </div>
-                                </label>
-                            </div>
                         </div>
                     </div>
                 </div>
@@ -3025,8 +2998,6 @@ function generateFileTranslationPage(videoId, configStr, config, filename = '') 
         const sourceLang = document.getElementById('sourceLang');
         const sourceLangGroup = document.getElementById('sourceLangGroup');
         const singleBatchCheckbox = document.getElementById('singleBatchMode');
-        const enableBatchContextCheckbox = document.getElementById('enableBatchContext');
-        const subfaberEnabledCheckbox = document.getElementById('subfaberEnabled');
         // SubFaber HUD elements (null-check strict, rule #4)
         const subfaberPreflight = document.getElementById('subfaberPreflight');
         const preflightLabel = document.getElementById('preflightLabel');
@@ -3052,7 +3023,7 @@ function generateFileTranslationPage(videoId, configStr, config, filename = '') 
 
         // SubFaber state (flat module-scoped object, no re-render bloat)
         const subfaberState = {
-            enabled: translationDefaults.subfaberEnabled === true,
+            enabled: true, // TOTAL PURGE: SubFaber is the single engine — always active
             preflight: { status: 'idle', summary: '', terms: [] },
             batch: { current: 0, total: 0, verified: 0, expected: 0, parityRate: '0%', healing: false },
             diff: { sourceText: '', targetText: '' },
@@ -3083,11 +3054,7 @@ function generateFileTranslationPage(videoId, configStr, config, filename = '') 
         const defaultTargetLanguage = hasConfiguredLanguages ? clientConfig.targetLanguages[0] : '';
         const defaultShowAllLanguages = hasConfiguredLanguages ? false : true;
         const defaultSingleBatchValue = translationDefaults.singleBatchMode === true;
-        const defaultBatchContextValue = translationDefaults.enableBatchContext === true;
-        const defaultSubfaberValue = translationDefaults.subfaberEnabled === true;
         if (singleBatchCheckbox) singleBatchCheckbox.checked = defaultSingleBatchValue;
-        if (enableBatchContextCheckbox) enableBatchContextCheckbox.checked = defaultBatchContextValue;
-        if (subfaberEnabledCheckbox) subfaberEnabledCheckbox.checked = defaultSubfaberValue;
 
         // Translation options elements
         const translationOptions = document.getElementById('translationOptions');
@@ -3631,7 +3598,6 @@ function generateFileTranslationPage(videoId, configStr, config, filename = '') 
             }
 
             if (singleBatchCheckbox) singleBatchCheckbox.checked = defaultSingleBatchValue;
-            if (enableBatchContextCheckbox) enableBatchContextCheckbox.checked = defaultBatchContextValue;
 
             if (showAllLanguagesCheckbox) {
                 showAllLanguagesCheckbox.checked = defaultShowAllLanguages;
@@ -4336,8 +4302,6 @@ function generateFileTranslationPage(videoId, configStr, config, filename = '') 
             }
 
             const singleBatchValue = singleBatchCheckbox ? singleBatchCheckbox.checked : false;
-            const batchContextValue = enableBatchContextCheckbox ? enableBatchContextCheckbox.checked : false;
-            const subfaberValue = subfaberEnabledCheckbox ? subfaberEnabledCheckbox.checked : false;
 
             return {
                 providerKey,
@@ -4346,9 +4310,7 @@ function generateFileTranslationPage(videoId, configStr, config, filename = '') 
                 overrides,
                 advancedOverrides,
                 translationWorkflow: 'xml',
-                singleBatchMode: singleBatchValue,
-                enableBatchContext: batchContextValue,
-                subfaberEnabled: subfaberValue
+                singleBatchMode: singleBatchValue
             };
         }
 
@@ -4362,9 +4324,7 @@ function generateFileTranslationPage(videoId, configStr, config, filename = '') 
                 overrides: settings.overrides,
                 options: {
                     translationWorkflow: settings.translationWorkflow || 'xml',
-                    singleBatchMode: settings.singleBatchMode === true,
-                    enableBatchContext: settings.enableBatchContext === true,
-                    subfaberEnabled: settings.subfaberEnabled === true
+                    singleBatchMode: settings.singleBatchMode === true
                 }
             };
             if (settings.sourceLanguage) {
@@ -4418,8 +4378,9 @@ function generateFileTranslationPage(videoId, configStr, config, filename = '') 
                 const payload = buildRequestPayload(nextJob, fileContent);
                 subfaberState.lastJob = nextJob;
 
-                // SubFaber SSE opt-in: only when subfaberEnabled is active
-                const useSse = subfaberState.enabled === true;
+                // TOTAL PURGE (Mandat 2026-09-25): SubFaber is the single engine —
+                // SSE is always active (no opt-in toggle exists).
+                const useSse = true;
                 let translatedContent = null;
                 let translationStats = null;
 
@@ -4569,8 +4530,8 @@ function generateFileTranslationPage(videoId, configStr, config, filename = '') 
                 }
 
                 // SubFaber Dwi-Panel Semakan (LANGKAH 3.4): activate review modal
-                // Only when subfaberEnabled AND translationStats.subfaberContextUsed is true
-                if (subfaberState.enabled && translationStats && translationStats.subfaberContextUsed === true) {
+                // SubFaber is the single engine — always active when subfaberContextUsed
+                if (translationStats && translationStats.subfaberContextUsed === true) {
                     try {
                         const sourceContent = await nextJob.file.text();
                         showSubfaberDiff(sourceContent, translatedContent, true);
