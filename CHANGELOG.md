@@ -2,6 +2,18 @@
 
 All notable changes to this project will be documented in this file.
 
+## SubMaker v1.9.3 (2026-09-26) — Agent B Unthrottled: Siling Token 4096 + Timeout Berfasa 45s/15s (Mandat Pembebasan Penuh)
+
+**Semua sekatan nafas Agent B dibuang — kuota infiniti (skala 1B token), operasi tanpa throttling:**
+
+- **Siling token dibuka ([`agentBInspector.js`](src/services/agentBInspector.js)):** `AGENT_B_MAX_OUTPUT_TOKENS` 256 → **4096** bagi kedua-dua Pre-Flight dan Semakan Batch — ruang secukupnya bagi GLM menjana reasoning tokens tanpa menghalang penjanaan content akhir. Override `getCappedMaxOutputTokens()` kekal mengunci nilai ini (lantai 65536 keluarga GLM masih dibypass).
+
+- **Timeout berfasa (generous):** konstanta tunggal 4000ms diganti dengan `AGENT_B_PREFLIGHT_TIMEOUT_MS = 45000` (Fasa 0 membaca episod penuh 48k aksara) dan `AGENT_B_INSPECTION_TIMEOUT_MS = 15000` (semakan batch — tiada lagi timeout palsu akibat latensi rangkaian rootsys.cloud). [`runPreflightPass()`](src/services/agentBInspector.js:286) menaikkan had axios kepada 45s untuk panggilan Fasa 0 sahaja dan memulihkannya dalam blok `finally` (selamat dari race — fasa tidak bertindih, di-await penuh oleh enjin).
+
+- **Ketahanan pengekstrakan jawapan ([`openaiCompatible.js`](src/services/providers/openaiCompatible.js), Mandat §C):** `translateSubtitle()` kini menggunakan [`extractChatMessageText()`](src/services/providers/openaiCompatible.js) dengan tangga fallback tiga peringkat — (1) `choice.message.content`, (2) `choice.message.reasoning_content` (endpoint reasoning-models; blok JSON/fenced diekstrak), (3) imbasan rekursif nilai string mesej (bukan stringify — stringify melepaskan braces dan memusnahkan JSON terbenam). [`extractStructuredBlock()`](src/services/providers/openaiCompatible.js) menggunakan scanner JSON seimbang dengan pengiraan kedalaman yang tahan braces dalam string. Ekstraksi kosong → log raw response pada DEBUG (800 aksara pertama) untuk siasatan mudah.
+
+- **Ujian:** suite Agent B berkembang 21 → **27 ujian**: had baharu (4096/15s/45s), kitaran naik-pulih timeout Fasa 0 (laluan skip, kejayaan, dan kegagalan), serta 4 ujian ketahanan pengekstrakan (content vs reasoning_content, fenced-in-reasoning, fallback rekursif, scanner seimbang). `npm test`: 180 tests, **179 PASS / 0 FAIL** (1 skipped).
+
 ## SubMaker v1.9.2 (2026-09-26) — Dual-AI Agent B: Semantic Inspector & Pre-Flight Offloader (Fasa 1 & 2 Backend)
 
 **Seni Bina 2-Agent diaktifkan — glm-5.3-flashx mengambil alih Fasa 0 dan mengaudit setiap kelompok terjemahan:**

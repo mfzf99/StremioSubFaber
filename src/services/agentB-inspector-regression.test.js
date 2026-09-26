@@ -1,18 +1,20 @@
 /**
  * Agent B — Semantic Inspector & Pre-Flight Offloader — Regression Tests
- * (Mandat Pelaksanaan 2026-09-26, Fasa 1 & 2)
+ * (Mandat Pelaksanaan 2026-09-26, Fasa 1 & 2 + Mandat Unthrottle)
  *
  * Kontrak yang diuji (parit laporan audit diluluskan):
  *   1. parseInspectorResponse: JSON sah / rosak / berpagar markdown / chatter
  *   2. buildInspectionPayload: blok <en>/<ms> padat, ID global, cap baris
  *   3. Fail-open: panggilan API tergendala → { valid: true, failOpen: true }
  *   4. Circuit breaker: 3 kegagalan berturut → silent mode (tiada panggilan)
- *   5. Payload GLM: model glm-5.3-flashx → reasoning_effort 'low',
- *      max_tokens 256 (bukan lantai 65536 keluarga GLM), timeout 4000ms
+ *   5. Payload GLM UNTHROTTLED: model glm-5.3-flashx → reasoning_effort
+ *      'low', max_tokens 4096, timeout berfasa 15s (semakan) / 45s (Fasa 0)
  *   6. Integriti enjin apabila agentB = null → 100% laluan Gemini asal
  *   7. Gerbang semantik enjin: valid:false → SATU retry + amaran jenayah;
  *      failOpen → tiada retry; hasil struktur bercacat → tiada semakan
  *   8. Normalisasi config agentB (env fallback + hygiene enabled)
+ *   9. Ketahanan pengekstrakan jawapan (Mandat Unthrottle §C): content →
+ *      reasoning_content → stringify fallback
  */
 
 const test = require('node:test');
@@ -25,10 +27,12 @@ const {
   AgentBInspector,
   buildInspectionPayload,
   parseInspectorResponse,
-  AGENT_B_TIMEOUT_MS,
+  AGENT_B_PREFLIGHT_TIMEOUT_MS,
+  AGENT_B_INSPECTION_TIMEOUT_MS,
   AGENT_B_MAX_OUTPUT_TOKENS,
   AGENT_B_CIRCUIT_THRESHOLD
 } = require('./agentBInspector');
+const OpenAICompatibleProvider = require('./providers/openaiCompatible');
 
 // Helper: jana entries dummy
 function makeEntries(count, textFn) {
@@ -216,9 +220,9 @@ test('AgentB: kejayaan reset kaunter kegagalan berturut-turut', async () => {
   assert.equal(inspector.circuitOpen, false, 'success reset the consecutive counter — circuit still closed');
 });
 
-// ── 5. Payload GLM (registry + override) ──
+// ── 5. Payload GLM (registry + override) — UNTHROTTLED ──
 
-test('AgentB: GLM payload — reasoning_effort low, max_tokens 256, timeout 4s, no retries', () => {
+test('AgentB: GLM payload unthrottled — reasoning_effort low, max_tokens 4096, timeout berfasa 15s/45s', () => {
   const inspector = new AgentBInspector({
     apiKey: 'test-key',
     baseUrl: 'https://agentb.example.com/v1',
@@ -228,20 +232,57 @@ test('AgentB: GLM payload — reasoning_effort low, max_tokens 256, timeout 4s, 
   assert.equal(inspector.model, 'glm-5.3-flashx');
   assert.equal(inspector.reasoningEffort, 'low', 'glm-5.3-flashx needs reasoning_effort low (thinking always-on)');
   assert.equal(inspector.maxRetries, 0, 'fail fast — no provider-level retries');
-  assert.equal(inspector.translationTimeout, AGENT_B_TIMEOUT_MS, 'soft timeout 4s');
-  assert.equal(inspector.translationTimeout, 4000);
-  assert.equal(AGENT_B_TIMEOUT_MS, 4000);
+  assert.equal(inspector.translationTimeout, AGENT_B_INSPECTION_TIMEOUT_MS, 'inspection timeout 15s');
+  assert.equal(inspector.translationTimeout, 15000);
+  assert.equal(AGENT_B_INSPECTION_TIMEOUT_MS, 15000, 'semakan batch: 15s (mandat unthrottle)');
+  assert.equal(AGENT_B_PREFLIGHT_TIMEOUT_MS, 45000, 'Fasa 0: 45s (mandat unthrottle)');
 
-  // Override lantai 65536 keluarga GLM — inspector mesti zero-yap
+  // Siling token dibuka: 4096 (bukan 256 zero-yap lama)
   assert.equal(inspector.getCappedMaxOutputTokens(), AGENT_B_MAX_OUTPUT_TOKENS);
-  assert.equal(AGENT_B_MAX_OUTPUT_TOKENS, 256);
+  assert.equal(AGENT_B_MAX_OUTPUT_TOKENS, 4096, 'max_tokens 4096 — ruang reasoning + content');
 
-  // buildChatRequest: body mesti membawa reasoning_effort low + max_tokens 256
+  // buildChatRequest: body mesti membawa reasoning_effort low + max_tokens 4096
   const { body } = inspector.buildChatRequest('inspector prompt', false, {});
   assert.equal(body.reasoning_effort, 'low', 'registry GLM 5.3 must map effort to low');
-  assert.equal(body.max_tokens, 256, 'max_tokens must honor inspector cap');
+  assert.equal(body.max_tokens, 4096, 'max_tokens must honor unthrottled budget');
   assert.equal(body.stream, false);
   assert.ok(Array.isArray(body.messages) && body.messages.length === 1, 'single user message');
+});
+
+test('AgentB: runPreflightPass menaikkan timeout kepada 45s dan memulihkannya selepas Fasa 0', async () => {
+  const inspector = new AgentBInspector({
+    apiKey: 'test-key',
+    baseUrl: 'https://agentb.example.com/v1'
+  });
+
+  // Fail kecil (< PREFLIGHT_MIN_ENTRIES) → skip cepat; laluan tetap melalui
+  // kitaran naik/pulih timeout dalam runPreflightPass.
+  assert.equal(inspector.translationTimeout, 15000, 'baseline 15s sebelum Fasa 0');
+  await inspector.runPreflightPass(makeEntries(3), 'Malay', 'English');
+  assert.equal(inspector.translationTimeout, 15000, 'timeout dipulihkan selepas skip path');
+
+  // Verifikasi kitaran penuh dengan fail besar (panggilan API di-override)
+  let observedTimeout = null;
+  inspector.translateSubtitle = async () => {
+    observedTimeout = inspector.translationTimeout;
+    return JSON.stringify({ theme: 'Theme.', terms: [] });
+  };
+  const result = await inspector.runPreflightPass(makeEntries(50), 'Malay', 'English');
+  assert.ok(result, 'preflight context returned');
+  assert.equal(observedTimeout, 45000, 'Fasa 0 mesti berjalan pada 45s');
+  assert.equal(inspector.translationTimeout, 15000, 'pulih kepada 15s selepas Fasa 0');
+});
+
+test('AgentB: runPreflightPass memulihkan timeout walaupun panggilan API gagal', async () => {
+  const inspector = new AgentBInspector({
+    apiKey: 'test-key',
+    baseUrl: 'https://agentb.example.com/v1'
+  });
+  inspector.translateSubtitle = async () => { throw new Error('boom'); };
+
+  const result = await inspector.runPreflightPass(makeEntries(50), 'Malay', 'English');
+  assert.equal(result, null, 'kegagalan Fasa 0 → null (non-blocking, kontrak asal)');
+  assert.equal(inspector.translationTimeout, 15000, 'finally block sentiasa memulihkan 15s');
 });
 
 test('AgentB: buildUserPrompt override menghantar prompt inspector verbatim', () => {
@@ -488,6 +529,72 @@ test('AgentB: normalizeConfig membina struktur agentB dengan env fallback + hygi
       else process.env[k] = v;
     }
   }
+});
+
+// ── 9. Ketahanan pengekstrakan jawapan (Mandat Unthrottle §C) ──
+
+test('AgentB: extractChatMessageText — laluan standard content diutamakan', () => {
+  const provider = new OpenAICompatibleProvider({ apiKey: 'k', baseUrl: 'https://x.example/v1', providerName: 'custom' });
+  assert.equal(
+    provider.extractChatMessageText({ content: '{"valid":true}', reasoning_content: 'thinking noise' }),
+    '{"valid":true}',
+    'content mesti menang ke atas reasoning_content'
+  );
+  assert.equal(provider.extractChatMessageText({ content: 'plain text' }), 'plain text');
+  assert.equal(provider.extractChatMessageText(null), '');
+  assert.equal(provider.extractChatMessageText(undefined), '');
+});
+
+test('AgentB: extractChatMessageText — reasoning_content dipakai bila content kosong', () => {
+  const provider = new OpenAICompatibleProvider({ apiKey: 'k', baseUrl: 'https://x.example/v1', providerName: 'custom' });
+
+  // JSON terus dalam reasoning_content
+  assert.equal(
+    provider.extractChatMessageText({ content: '', reasoning_content: '{"valid":true}' }),
+    '{"valid":true}'
+  );
+
+  // JSON berpagar markdown dalam reasoning_content
+  const fenced = 'analysis...\n```json\n{"valid":true}\n```\nend';
+  assert.equal(
+    provider.extractChatMessageText({ content: '', reasoning_content: fenced }),
+    '{"valid":true}'
+  );
+
+  // reasoning_content proza tanpa blok berstruktur → diguna mentah
+  assert.equal(
+    provider.extractChatMessageText({ content: '', reasoning_content: 'just prose, no braces' }),
+    'just prose, no braces'
+  );
+});
+
+test('AgentB: extractChatMessageText — fallback stringify mesej penuh bila kedua-dua medan kosong', () => {
+  const provider = new OpenAICompatibleProvider({ apiKey: 'k', baseUrl: 'https://x.example/v1', providerName: 'custom' });
+
+  // content bertindih dalam medan luar + braces dalam string mesti tidak pecahkan scanner
+  const message = { role: 'assistant', content: '', note: '{"valid":false,"crimes":[{"type":"MERGE","ids":[1,2],"note":"x{y}z"}]}' };
+  const extracted = provider.extractChatMessageText(message);
+  assert.ok(extracted.includes('"valid":false'), 'blok JSON seimbang mesti diekstrak dari stringify');
+
+  // Tiada blok langsung → ''
+  assert.equal(provider.extractChatMessageText({ role: 'assistant', content: '' }), '');
+});
+
+test('AgentB: extractStructuredBlock — scanner JSON seimbang tahan braces dalam string', () => {
+  const provider = new OpenAICompatibleProvider({ apiKey: 'k', baseUrl: 'https://x.example/v1', providerName: 'custom' });
+
+  const balanced = 'prefix {"a":"has } brace","b":{"c":1}} suffix';
+  assert.equal(provider.extractStructuredBlock(balanced), '{"a":"has } brace","b":{"c":1}}');
+
+  // Bracket dalam prosa tanpa ':' → bukan JSON → ''
+  assert.equal(provider.extractStructuredBlock('text with (parens) and [brackets] but no object'), '');
+
+  // Fenced block dipilih dahulu
+  const fenced = 'x ```json\n{"valid":true}\n``` y {"other":1}';
+  assert.equal(provider.extractStructuredBlock(fenced), '{"valid":true}');
+
+  // JSON tidak seimbang → ''
+  assert.equal(provider.extractStructuredBlock('{"broken": true'), '');
 });
 
 // ── Kontrak preflight offload (Fasa 0) ──

@@ -21,8 +21,10 @@
  *     { valid: true } — Agent B TIDAK PERNAH menggagalkan terjemahan.
  *   - CIRCUIT BREAKER: 3 kegagalan berturut-turut dalam satu sesi fail →
  *     Agent B dinyahaktifkan senyap bagi baki fail tersebut.
- *   - ZERO-YAP: max_tokens 256 + reasoning_effort 'low' + kontrak JSON mini
- *     → sasaran latensi < 1.5s per batch (P50 ~0.6–1.1s).
+ *   - UNTHROTTLED (Mandat Pembebasan 2026-09-26): kuota Agent B infiniti
+ *     (skala 1B token) — max_tokens 4096 (ruang reasoning + content) dan
+ *     timeout berfasa: Fasa 0 45s (baca episod penuh) / semakan batch 15s.
+ *     Tiada micro-timeout / tiny token cap yang membekukan nafas Agent B.
  *   - 100% BACKWARDS COMPATIBLE: Agent B null → enjin jalan 100% Gemini.
  */
 
@@ -30,10 +32,11 @@ const OpenAICompatibleProvider = require('./providers/openaiCompatible');
 const { runPreflightSemanticPass } = require('./subfaberPreflight');
 const log = require('../utils/logger');
 
-// ── Konfigurasi tetap Agent B (Mandat Pelaksanaan) ──
+// ── Konfigurasi tetap Agent B (Mandat Pembebasan Penuh 2026-09-26) ──
 const AGENT_B_DEFAULT_MODEL = 'glm-5.3-flashx';
-const AGENT_B_TIMEOUT_MS = 4000;          // Had masa lembut 4 saat (bukan 30s default)
-const AGENT_B_MAX_OUTPUT_TOKENS = 256;    // Zero-yap: output JSON mini sahaja
+const AGENT_B_PREFLIGHT_TIMEOUT_MS = 45000;  // Fasa 0: baca episod penuh (48k aksara) + analisis tema
+const AGENT_B_INSPECTION_TIMEOUT_MS = 15000; // Semakan batch: latensi rangkaian rootsys.cloud selamat
+const AGENT_B_MAX_OUTPUT_TOKENS = 4096;      // Ruang reasoning tokens + content (kuota infiniti)
 const AGENT_B_CIRCUIT_THRESHOLD = 3;      // 3 kegagalan berturut → silent mode
 const AGENT_B_MAX_LINE_CHARS = 200;       // Cap panjang baris dalam payload padat
 const AGENT_B_MAX_CRIMES = 5;             // >5 jenayah → tetap sahaja ditolong
@@ -185,12 +188,13 @@ function parseInspectorResponse(responseText) {
  * Agent B — Inspector Semantik & Pre-Flight Offloader.
  *
  * Wrapper nipis di atas OpenAICompatibleProvider (reuse: SSRF agents,
- * auth headers, retry loop, registry GLM). Tiga override wajib:
- *   1. getCappedMaxOutputTokens() → 256 (bypass lantai 65536 keluarga GLM —
- *      mandat zero-yap).
+ * auth headers, retry loop, registry GLM). Empat override wajib:
+ *   1. getCappedMaxOutputTokens() → 4096 (bypass lantai 65536 keluarga GLM;
+ *      ruang secukupnya untuk reasoning tokens tanpa menghalang content).
  *   2. buildUserPrompt() → prompt inspector dihantar verbatim sebagai user
  *      message (implementasi asas membuang customPrompt bukan-terjemahan).
- *   3. translationTimeout → 4000ms (pembina asas clamp pada >= 5000ms).
+ *   3. translationTimeout → 15s (semakan batch) / 45s (Fasa 0, dinaikkan
+ *      sementara oleh runPreflightPass — pembina asas clamp >= 5000ms).
  */
 class AgentBInspector extends OpenAICompatibleProvider {
   constructor(options = {}) {
@@ -201,15 +205,16 @@ class AgentBInspector extends OpenAICompatibleProvider {
       providerName: 'agentb',
       reasoningEffort: 'low',           // GLM 5.3: thinking always-on, effort minimum
       maxOutputTokens: AGENT_B_MAX_OUTPUT_TOKENS,
-      translationTimeout: AGENT_B_TIMEOUT_MS / 1000,
+      translationTimeout: AGENT_B_INSPECTION_TIMEOUT_MS / 1000,
       maxRetries: 0,                    // Fail fast — satu percubaan sahaja
       enableJsonOutput: false,          // Parse JSON manual (kompatibiliti maksimum endpoint)
       ssrfLookup: options.ssrfLookup || null
     });
 
     // Pembina asas clamp translationTimeout kepada >= 5000ms — enforce semula
-    // had lembut 4 saat mandat (axios timeout tunggal, maxRetries 0).
-    this.translationTimeout = AGENT_B_TIMEOUT_MS;
+    // had mandate: 15s bagi semakan batch (lalai instance); Fasa 0 dinaikkan
+    // sementara kepada 45s oleh runPreflightPass().
+    this.translationTimeout = AGENT_B_INSPECTION_TIMEOUT_MS;
 
     // ── Circuit breaker (per sesi fail — instance dibina per permintaan) ──
     this._consecutiveFailures = 0;
@@ -218,8 +223,9 @@ class AgentBInspector extends OpenAICompatibleProvider {
   }
 
   /**
-   * Override: lantai 65536 token keluarga GLM terlalu besar untuk inspector
-   * zero-yap — kunci kepada 256 supaya model tidak berpeluang "yap".
+   * Override: kunci siling output kepada 4096 token — ruang secukupnya bagi
+   * model menjana reasoning tokens tanpa menghalang penjanaan content akhir
+   * (Mandat Unthrottle 2026-09-26; kuota Agent B infiniti).
    */
   getCappedMaxOutputTokens() {
     return AGENT_B_MAX_OUTPUT_TOKENS;
@@ -278,7 +284,18 @@ class AgentBInspector extends OpenAICompatibleProvider {
    * konteks global (tingkah laku Fasa 0 sedia ada dipelihara 100%).
    */
   async runPreflightPass(entries, targetLanguage, sourceLanguage, options = {}) {
-    return runPreflightSemanticPass(entries, targetLanguage, sourceLanguage, this, options);
+    // Fasa 0 membaca teks episod penuh (hingga 48k aksara disampel) dan
+    // menjana analisis tema — naikkan had masa axios kepada 45s untuk
+    // panggilan ini sahaja, kemudian pulihkan 15s (fasa semakan batch).
+    // SELAMAT dari race: preflight di-await sepenuhnya oleh enjin sebelum
+    // mana-mana panggilan batch bermula; fasa tidak bertindih.
+    const previousTimeout = this.translationTimeout;
+    this.translationTimeout = AGENT_B_PREFLIGHT_TIMEOUT_MS;
+    try {
+      return await runPreflightSemanticPass(entries, targetLanguage, sourceLanguage, this, options);
+    } finally {
+      this.translationTimeout = previousTimeout;
+    }
   }
 
   /**
@@ -306,7 +323,8 @@ class AgentBInspector extends OpenAICompatibleProvider {
     let responseText;
     try {
       // Payload di-bake ke dalam customPrompt (buildUserPrompt override
-      // menghantarnya verbatim). maxRetries 0 + timeout 4s = fail pantas.
+      // menghantarnya verbatim). maxRetries 0 + timeout 15s — pantas tetapi
+      // tidak mencetuskan timeout palsu akibat latensi rangkaian.
       responseText = await this.translateSubtitle(payload.prompt, 'en', 'en', payload.prompt);
     } catch (err) {
       this._recordFailure();
@@ -317,9 +335,11 @@ class AgentBInspector extends OpenAICompatibleProvider {
     const verdict = parseInspectorResponse(responseText);
     if (!verdict) {
       // Respons tidak boleh ditafsir — dikira sebagai kegagalan kualiti
-      // (circuit breaker), tetapi fail-open bagi pipeline.
+      // (circuit breaker), tetapi fail-open bagi pipeline. Raw text
+      // dilog pada DEBUG (Mandat Unthrottle §C) untuk siasatan mudah.
       this._recordFailure();
       log.warn(() => '[AgentB] Inspection response unparseable (fail-open)');
+      log.debug(() => `[AgentB] Raw inspector response (first 800 chars): ${String(responseText).slice(0, 800)}`);
       return { valid: true, failOpen: true, error: 'unparseable_response' };
     }
 
@@ -334,7 +354,8 @@ module.exports = {
   parseInspectorResponse,
   INSPECTOR_INSTRUCTION,
   AGENT_B_DEFAULT_MODEL,
-  AGENT_B_TIMEOUT_MS,
+  AGENT_B_PREFLIGHT_TIMEOUT_MS,
+  AGENT_B_INSPECTION_TIMEOUT_MS,
   AGENT_B_MAX_OUTPUT_TOKENS,
   AGENT_B_CIRCUIT_THRESHOLD
 };

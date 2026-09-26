@@ -703,10 +703,13 @@ class OpenAICompatibleProvider {
         } else if (useResponsesApi) {
           text = this.extractResponsesText(response.data);
         } else {
-          text = response.data?.choices?.[0]?.message?.content;
+          text = this.extractChatMessageText(response.data?.choices?.[0]?.message);
         }
 
         if (!text) {
+          // Unthrottle Mandat §C (2026-09-26): log raw pada DEBUG supaya
+          // respons berhenti di sini mudah disiasat (cth: reasoning sahaja).
+          log.debug(() => `[${this.providerName}] Empty extraction — raw response (first 800 chars): ${JSON.stringify(response.data || {}).slice(0, 800)}`);
           throw new Error('No translation returned from API');
         }
 
@@ -926,6 +929,102 @@ class OpenAICompatibleProvider {
     if (payload.result) {
       if (typeof payload.result.response === 'string') return payload.result.response;
       if (typeof payload.result.output === 'string') return payload.result.output;
+    }
+    return '';
+  }
+
+  /**
+   * Unthrottle Mandat §C (2026-09-26): Ekstraksi respons chat tahan lasak
+   * bagi endpoint reasoning-models (GLM/Zhipu dsb.). Turutan fallback:
+   *   1. choice.message.content            — jawapan akhir standard.
+   *   2. choice.message.reasoning_content  — sesetengah endpoint menukar
+   *      reasoning GLM kepada medan ini; JSON/fenced-block dibuang
+   *      sebelum digunakan.
+   *   3. Stringified message                — content mungkin berpagar
+   *      markdown atau bertindih dalam medan lain; blok JSON/fenced pertama
+   *      diekstrak dengan selamat.
+   * @param {Object|undefined} message - choice.message payload
+   * @returns {string} teks yang diekstrak ('' jika tiada)
+   */
+  extractChatMessageText(message) {
+    if (!message || typeof message !== 'object') return '';
+
+    // 1. Laluan standard: content
+    const content = typeof message.content === 'string' ? message.content.trim() : '';
+    if (content) return content;
+
+    // 2. Reasoning-only endpoint: reasoning_content membawa jawapan
+    const reasoning = typeof message.reasoning_content === 'string' ? message.reasoning_content.trim() : '';
+    if (reasoning) {
+      const extracted = this.extractStructuredBlock(reasoning);
+      if (extracted) return extracted;
+      return reasoning;
+    }
+
+    // 3. Fallback terakhir (Mandat §C): imbas rekursif nilai string mesej
+    //    (RAW — bukan stringify, kerana stringify melepaskan braces dalam
+    //    string dan memusnahkan struktur JSON terbenam) dan tarik blok
+    //    JSON / fenced markdown pertama yang wujud dalam mana-mana medan.
+    const stringValues = [];
+    const collect = (obj, depth) => {
+      if (!obj || typeof obj !== 'object' || depth > 3) return;
+      for (const value of Object.values(obj)) {
+        if (typeof value === 'string' && value.trim()) {
+          stringValues.push(value);
+        } else if (value && typeof value === 'object') {
+          collect(value, depth + 1);
+        }
+      }
+    };
+    collect(message, 0);
+    for (const raw of stringValues) {
+      const extracted = this.extractStructuredBlock(raw);
+      if (extracted) return extracted;
+    }
+
+    return '';
+  }
+
+  /**
+   * Ekstrak blok berstruktur pertama daripada teks mentah: samaada blok
+   * berpagar markdown (\x60\x60\x60 ... \x60\x60\x60) atau objek JSON
+   * seimbang { ... }. Pulangkan kandungan dalamnya, dibersihkan.
+   * @param {string} raw - teks mentah
+   * @returns {string} blok yang diekstrak ('' jika tiada)
+   */
+  extractStructuredBlock(raw) {
+    const text = String(raw || '');
+    if (!text) return '';
+
+    // Fenced markdown block (hex escapes — konvensyen projek)
+    const fenceMatch = text.match(new RegExp('\\x60\\x60\\x60[a-z]*\\r?\\n?([\\s\\S]*?)\\x60\\x60\\x60', 'i'));
+    if (fenceMatch && fenceMatch[1] && fenceMatch[1].trim()) {
+      return fenceMatch[1].trim();
+    }
+
+    // JSON object seimbang pertama: scan dari '{' sehingga '}' dengan
+    // pengiraan kedalaman (tahan string nested + braces dalam string).
+    const start = text.indexOf('{');
+    if (start === -1) return '';
+    let depth = 0;
+    let inString = false;
+    let escaped = false;
+    for (let i = start; i < text.length; i++) {
+      const ch = text[i];
+      if (escaped) { escaped = false; continue; }
+      if (ch === '\\') { if (inString) escaped = true; continue; }
+      if (ch === '"') { inString = !inString; continue; }
+      if (inString) continue;
+      if (ch === '{') depth++;
+      else if (ch === '}') {
+        depth--;
+        if (depth === 0) {
+          const candidate = text.slice(start, i + 1);
+          // Mesti nampak seperti objek JSON sebenar — bukan bracket dalam prosa
+          if (candidate.includes(':')) return candidate;
+          return '';
+        }
+      }
     }
     return '';
   }
