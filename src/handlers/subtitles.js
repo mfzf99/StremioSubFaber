@@ -5464,6 +5464,7 @@ if (
           apiKey: config.agentB.apiKey,
           baseUrl: config.agentB.baseUrl,
           model: config.agentB.model || 'glm-5.3-flashx',
+          fallbackModel: config.agentB.fallbackModel || 'deepseek-v4.1-flash',
           ssrfLookup: createSsrfSafeLookup()
         });
         log.info(() => `[Translation] Agent B inspector active: model=${agentBInspector.model} baseUrl=${config.agentB.baseUrl}`);

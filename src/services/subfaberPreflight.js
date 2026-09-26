@@ -129,9 +129,72 @@ function stripReasoningTags(text) {
 }
 
 /**
+ * RESILIENT JSON PARSER (Mandat Pengerasan 2026-09-26 §1, forensik Beta Run 3):
+ * JSON.parse asli gagal terhadap anomali sintaks biasa LLM walaupun struktur
+ * respons pada asasnya sah (2101 aksara bermula '{"theme": ...}'). Lapisan
+ * ini membersihkan anomali KLASIK sebelum parse:
+ *   1. Sempadan: teks di antara '{' pertama dan '}' terakhir (buang chatter).
+ *   2. Koma tergantung: "},]" dan "},}" — `.replace(/,\s*([}\]])/g, '$1')`.
+ *   3. Markdown fences: ```json ... ``` (hex \x60 — konvensyen projek).
+ *   4. Aksara kawalan tidak sah (0x00–0x1F kecuali \n \r \t).
+ * Sekiranya parse masih gagal selepas pembersihan, mesej ralat sintaks +
+ * kedudukan aksara (position offset) + 100 aksara sekitar kawasan bermasalah
+ * dicetak pada WARN untuk siasatan forensik segera.
+ *
+ * @param {string} text - Respons yang telah dibersihkan tag penaakulan
+ * @returns {Object|null} Objek JS terhurai, atau null jika tidak boleh diselamatkan
+ */
+function resilientParseJson(text) {
+  let candidate = String(text || '');
+
+  // 3. Buang markdown fences SEBELUM pengekstrakan sempadan supaya
+  // fence yang membingkai JSON tidak menghalang pengesanan '{' pertama.
+  // (Konstruktor RegExp + string '\\x60' = escape heks 0x60 yang betul —
+  // regex literal berganda-backslash TIDAK memadankan backtick sebenar.)
+  const fenceOpen = new RegExp('\\x60\\x60\\x60[a-z]*(?:\\r?\\n)?', 'gi');
+  candidate = candidate.replace(fenceOpen, '');
+  candidate = candidate.replace(new RegExp('\\x60\\x60\\x60', 'g'), '');
+
+  // 1. Ekstrak sempadan: '{' pertama → '}' terakhir (buang perbualan luar).
+  const jsonStart = candidate.indexOf('{');
+  const jsonEnd = candidate.lastIndexOf('}');
+  if (jsonStart === -1 || jsonEnd === -1 || jsonEnd <= jsonStart) {
+    log.warn(() => `[SubFaberPreflight] Resilient parse: no JSON object boundary found`);
+    return null;
+  }
+  if (jsonStart > 0 || jsonEnd < candidate.length - 1) {
+    candidate = candidate.slice(jsonStart, jsonEnd + 1);
+  }
+
+  // 4. Buang aksara kawalan tidak sah (JSON melarang 0x00–0x1F mentah
+  //    kecuali \n \r \t — punca biasa ralat "Unexpected token" LLM).
+  candidate = candidate.replace(/[\x00-\x08\x0B\x0C\x0E-\x1F]/g, '');
+
+  // 2. Koma tergantung pada array dan object:
+  //    {...,}  →  {...}    /    [...,]  →  [...]
+  candidate = candidate.replace(/,\s*([}\]])/g, '$1');
+
+  try {
+    return JSON.parse(candidate);
+  } catch (err) {
+    // FORENSIK: kedudukan aksara + 100 aksara sekitar kawasan bermasalah.
+    const posMatch = String(err?.message || '').match(/position (\d+)/i);
+    const pos = posMatch ? parseInt(posMatch[1], 10) : null;
+    let context = '';
+    if (Number.isFinite(pos)) {
+      const from = Math.max(0, pos - 50);
+      const to = Math.min(candidate.length, pos + 50);
+      context = ` Offset ${pos} (${from}–${to}): "${candidate.slice(from, to).replace(/\n/g, '\\n')}"`;
+    }
+    log.warn(() => `[SubFaberPreflight] Resilient parse failed even after cleaning: ${err?.message}.${context}`);
+    return null;
+  }
+}
+
+/**
  * Parse + sanitize respons Fasa 0. Tahan kandungan rosak:
- *   - Strip markdown fences jika model tak patuh arahan
- *   - Regex-extract blok { ... } pertama sebagai fallback
+ *   - stripReasoningTags (tag penaakulan GLM/DeepSeek) dipanggil oleh caller
+ *   - Resilient parser: fences, chatter, koma tergantung, control chars
  *   - Validasi struktur { theme: string, terms: [{src,tgt,note}] }
  *   - Hadkan terms kepada PREFLIGHT_MAX_TERMS
  * @param {string} responseText - Respons mentah model
@@ -140,28 +203,9 @@ function stripReasoningTags(text) {
 function parsePreflightResponse(responseText) {
   if (!responseText || typeof responseText !== 'string') return null;
 
-  let cleaned = responseText.trim();
-
-  // Strip markdown code fences (hex \x60 mengelakkan UI breakage)
-  cleaned = cleaned.replace(/\\x60\\x60\\x60[a-z]*(?:\r?\n)?/gi, '');
-  cleaned = cleaned.replace(/\\x60\\x60\\x60/g, '');
-
-  // Fallback: extract blok JSON pertama jika ada bahan sampingan
-  const jsonStart = cleaned.indexOf('{');
-  const jsonEnd = cleaned.lastIndexOf('}');
-  if (jsonStart === -1 || jsonEnd === -1 || jsonEnd <= jsonStart) {
-    return null;
-  }
-  if (jsonStart > 0 || jsonEnd < cleaned.length - 1) {
-    cleaned = cleaned.slice(jsonStart, jsonEnd + 1);
-  }
-
-  let parsed;
-  try {
-    parsed = JSON.parse(cleaned);
-  } catch (_) {
-    return null;
-  }
+  // RESILIENT PARSER (Mandat §1): semua pembersihan + forensik dijalankan
+  // oleh resilientParseJson — parsePreflightResponse hanya mengesahkan struktur.
+  const parsed = resilientParseJson(responseText);
 
   // Validasi struktur
   if (!parsed || typeof parsed !== 'object') return null;
@@ -316,6 +360,7 @@ module.exports = {
   sampleEntriesForPreflight,
   buildPreflightPrompt,
   parsePreflightResponse,
+  resilientParseJson,
   stripReasoningTags,
   formatPreflightForPrompt,
   PREFLIGHT_MAX_INPUT_CHARS,

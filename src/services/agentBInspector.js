@@ -228,15 +228,25 @@ class AgentBInspector extends OpenAICompatibleProvider {
     // sementara kepada 45s oleh runPreflightPass().
     this.translationTimeout = AGENT_B_INSPECTION_TIMEOUT_MS;
 
-    // ── DUAL-MODEL FAILOVER (Mandat §4A): hierarki model Agent B ──
-    // Utama: glm-5.3-flashx (pantas). Sandaran: deepseek-v4.1-flash
-    // (askar penyelamat kestabilan struktur). this.model sentiasa menjejak
-    // model yang AKTIF supaya log forensik melaporkan model sebenar.
-    const primary = options.model || AGENT_B_DEFAULT_MODEL;
+    // ── DUAL-MODEL FAILOVER DINAMIK (Mandat Hot-Swap 2026-09-26 §2) ──
+    // Hierarki model 100% configurable — TIADA susunan hardcoded:
+    //   - Utama: options.model (lalai glm-5.3-flashx)
+    //   - Sandaran: options.fallbackModel (lalai deepseek-v4.1-flash);
+    //     nilai 'none' ATAU sama dengan utama ATAU kosong → hierarki
+    //     model tunggal (tiada failover).
+    // this.model sentiasa menjejak model AKTIF supaya log forensik
+    // melaporkan model sebenar yang sedang beroperasi.
+    const primary = String(options.model || AGENT_B_DEFAULT_MODEL).trim() || AGENT_B_DEFAULT_MODEL;
+    const requestedFallback = String(options.fallbackModel || AGENT_B_FALLBACK_MODEL).trim();
     this.modelHierarchy = [primary];
-    if (String(primary).toLowerCase() !== AGENT_B_FALLBACK_MODEL) {
-      this.modelHierarchy.push(AGENT_B_FALLBACK_MODEL);
+    if (
+      requestedFallback &&
+      requestedFallback.toLowerCase() !== 'none' &&
+      requestedFallback.toLowerCase() !== primary.toLowerCase()
+    ) {
+      this.modelHierarchy.push(requestedFallback);
     }
+    this.fallbackModel = this.modelHierarchy.length > 1 ? this.modelHierarchy[1] : null;
 
     // ── Circuit breaker (per sesi fail — instance dibina per permintaan) ──
     this._consecutiveFailures = 0;

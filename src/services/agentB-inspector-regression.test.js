@@ -822,3 +822,176 @@ test('AgentB: gerbang enjin menghantar meta {batchIndex, totalBatches} kepada in
   assert.equal(capturedMeta.batchIndex, 0);
   assert.equal(capturedMeta.totalBatches, 1);
 });
+
+// ── 13. Resilient Pre-Flight JSON Parser (Mandat Pengerasan 2026-09-26 §1) ──
+// Forensik Beta Run 3: respons 2101 aksara sah gagal parse akibat anomali
+// sintaks biasa LLM — koma tergantung, fences, chatter, control chars.
+
+test('AgentB: parsePreflightResponse selamat dari koma tergantung (trailing comma)', () => {
+  const { parsePreflightResponse } = require('./subfaberPreflight');
+
+  // Koma tergantung pada entri array terakhir "terms": [...,]
+  const withArrayComma = '{"theme":"Heist drama.","terms":[{"src":"Boss","tgt":"Ketua","note":"n"},]}';
+  const parsedArray = parsePreflightResponse(withArrayComma);
+  assert.ok(parsedArray, 'koma tergantung dalam array mesti dibersihkan');
+  assert.equal(parsedArray.theme, 'Heist drama.');
+  assert.equal(parsedArray.terms.length, 1);
+
+  // Koma tergantung pada object: {"theme": "...", }
+  const withObjectComma = '{"theme":"T.", "terms":[],}';
+  const parsedObject = parsePreflightResponse(withObjectComma);
+  assert.ok(parsedObject, 'koma tergantung dalam object mesti dibersihkan');
+  assert.equal(parsedObject.theme, 'T.');
+
+  // Kedua-dua serentak + berbilang tahap
+  const both = '{"theme":"B.", "terms":[{"src":"A","tgt":"B",},],}';
+  const parsedBoth = parsePreflightResponse(both);
+  assert.ok(parsedBoth, 'koma tergantung berbilang tahap mesti dibersihkan');
+  assert.equal(parsedBoth.terms[0].src, 'A');
+});
+
+test('AgentB: parsePreflightResponse selamat dari fences + chatter di luar sempadan', () => {
+  const { parsePreflightResponse } = require('./subfaberPreflight');
+  const fence = String.fromCharCode(0x60, 0x60, 0x60); // dibina supaya literal tidak rosak
+
+  // ```json ... ``` (fence dibuang sebelum pengekstrakan sempadan)
+  const fenced = `${fence}json\n{"theme":"F.","terms":[]}\n${fence}`;
+  assert.ok(parsePreflightResponse(fenced), 'fences mesti dibuang');
+
+  // Chatter sebelum DAN selepas JSON
+  const chatty = 'Sure! Here is the analysis:\n{"theme":"C.","terms":[{"src":"X","tgt":"Y","note":""}]}\nHope this helps!';
+  const parsedChatty = parsePreflightResponse(chatty);
+  assert.ok(parsedChatty, 'chatter luar mesti dibuang');
+  assert.equal(parsedChatty.theme, 'C.');
+  assert.equal(parsedChatty.terms[0].src, 'X');
+
+  // Kombinasi penuh: chatter + fence + koma tergantung (corak Beta Run 3)
+  const combined = `Absolutely, here you go:\n${fence}json\n{"theme":"K.","terms":[{"src":"Z","tgt":"Z","note":""},]}\n${fence}\nLet me know!`;
+  const parsedCombined = parsePreflightResponse(combined);
+  assert.ok(parsedCombined, 'kombinasi anomali mesti selamat');
+  assert.equal(parsedCombined.theme, 'K.');
+});
+
+test('AgentB: parsePreflightResponse membersihkan aksara kawalan tidak sah', () => {
+  const { parsePreflightResponse } = require('./subfaberPreflight');
+  // Control chars mentah (0x01, 0x0B) dibina secara programatik — JSON.parse
+  // asli menolaknya ("Unexpected token"); parser tahan lasak mesti membuangnya.
+  const CTRL_01 = String.fromCharCode(0x01);
+  const CTRL_0B = String.fromCharCode(0x0B);
+  const ctrl = `{"theme":"Ctrl${CTRL_01}clean${CTRL_0B}now.","terms":[]}`;
+
+  // Semakan awal: JSON.parse asli memang gagal dengan input ini
+  let nativeFailed = false;
+  try { JSON.parse(ctrl); } catch (_) { nativeFailed = true; }
+  assert.ok(nativeFailed, 'precondition: JSON.parse asli mesti gagal');
+
+  const parsed = parsePreflightResponse(ctrl);
+  assert.ok(parsed, 'control chars tidak sah mesti dibuang');
+  assert.equal(parsed.theme, 'Ctrlcleannow.', '0x01 dan 0x0B dibuang; teks sah kekal');
+  assert.ok(!parsed.theme.includes(CTRL_01) && !parsed.theme.includes(CTRL_0B), 'tiada control char tersisa');
+});
+
+test('AgentB: parse gagal selepas pembersihan → forensik offset + konteks 100 aksara pada WARN', () => {
+  const { parsePreflightResponse } = require('./subfaberPreflight');
+  const log = require('../utils/logger');
+  const captured = [];
+  const originalWarn = log.warn;
+  log.warn = (fn) => {
+    try { captured.push(typeof fn === 'function' ? String(fn()) : String(fn)); } catch (_) { /* noop */ }
+  };
+  try {
+    // JSON rosak yang TIDAK boleh diselamatkan (string tidak ditutup)
+    const result = parsePreflightResponse('{"theme":"broken... no closing quote, "terms":[]}');
+    assert.equal(result, null, 'tetap null untuk JSON yang benar-benar rosak');
+
+    const forensic = captured.find(l => l.includes('Resilient parse failed'));
+    assert.ok(forensic, 'kegagalan parse mesti dilog dengan forensik');
+    assert.ok(/Offset \d+/.test(forensic), 'offset kedudukan aksara mesti dipaparkan');
+    assert.ok(forensic.includes('broken'), 'konteks 100 aksara sekitar kawasan bermasalah mesti dipaparkan');
+  } finally {
+    log.warn = originalWarn;
+  }
+});
+
+// ── 14. Dynamic Model Swapping — Hot-Swappable (Mandat §2) ──
+
+test('AgentB: hierarki model 100% dinamik — kimi-k3 utama, sandaran custom', async () => {
+  const inspector = new AgentBInspector({
+    apiKey: 'k',
+    baseUrl: 'https://x.example/v1',
+    model: 'kimi-k3',
+    fallbackModel: 'glm-5.3-flashx'
+  });
+  assert.deepEqual(inspector.modelHierarchy, ['kimi-k3', 'glm-5.3-flashx'], 'susunan configurable, bukan hardcoded');
+
+  const calls = [];
+  inspector.translateSubtitle = async function () {
+    calls.push(this.model);
+    if (this.model === 'kimi-k3') throw new Error('kimi down');
+    return '{"valid":true}';
+  };
+  const verdict = await inspector.runSemanticInspection(makeEntries(2), makeTranslated(2));
+  assert.deepEqual(calls, ['kimi-k3', 'glm-5.3-flashx'], 'failover mengikut hierarki dinamik');
+  assert.equal(verdict.modelUsed, 'glm-5.3-flashx');
+  assert.equal(verdict.valid, true);
+});
+
+test('AgentB: fallbackModel "none" → hierarki model tunggal (tiada failover)', async () => {
+  const inspector = new AgentBInspector({
+    apiKey: 'k',
+    baseUrl: 'https://x.example/v1',
+    model: 'deepseek-v4.1-flash',
+    fallbackModel: 'none'
+  });
+  assert.deepEqual(inspector.modelHierarchy, ['deepseek-v4.1-flash'], '"none" = single-model');
+  assert.equal(inspector.fallbackModel, null);
+
+  let calls = 0;
+  inspector.translateSubtitle = async function () { calls++; throw new Error('primary dead'); };
+  const verdict = await inspector.runSemanticInspection(makeEntries(2), makeTranslated(2));
+  assert.equal(calls, 1, 'tiada panggilan kedua — failover dimatikan');
+  assert.equal(verdict.failOpen, true);
+  assert.equal(verdict.error, 'both_models_failed');
+});
+
+test('AgentB: fallbackModel sama dengan utama → dedupe kepada hierarki tunggal', () => {
+  const inspector = new AgentBInspector({
+    apiKey: 'k',
+    baseUrl: 'https://x.example/v1',
+    model: 'glm-5.3-flashx',
+    fallbackModel: 'GLM-5.3-FLASHX' // sama (case-insensitive)
+  });
+  assert.deepEqual(inspector.modelHierarchy, ['glm-5.3-flashx'], 'duplikat mesti didedup');
+  assert.equal(inspector.fallbackModel, null);
+});
+
+test('AgentB: lalai tanpa sebarang options — glm utama + deepseek sandaran (backwards compat)', () => {
+  const inspector = new AgentBInspector({ apiKey: 'k', baseUrl: 'https://x.example/v1' });
+  assert.deepEqual(inspector.modelHierarchy, ['glm-5.3-flashx', 'deepseek-v4.1-flash'], 'lalai dipelihara');
+  assert.equal(inspector.fallbackModel, 'deepseek-v4.1-flash');
+});
+
+test('AgentB: config.js normalisasi agentB.fallbackModel dengan env fallback', async () => {
+  const { normalizeConfig } = require('../utils/config');
+  const savedEnv = { AGENT_B_FALLBACK_MODEL: process.env.AGENT_B_FALLBACK_MODEL };
+  try {
+    // Kes 1: config menang
+    const cfg = normalizeConfig({
+      agentB: { enabled: true, baseUrl: 'https://c.example/v1', apiKey: 'ck', model: 'm1', fallbackModel: 'm2' }
+    });
+    assert.equal(cfg.agentB.fallbackModel, 'm2');
+
+    // Kes 2: env fallback
+    process.env.AGENT_B_FALLBACK_MODEL = 'kimi-k3';
+    const fromEnv = normalizeConfig({});
+    assert.equal(fromEnv.agentB.fallbackModel, 'kimi-k3', 'AGENT_B_FALLBACK_MODEL env mesti dipakai');
+
+    // Kes 3: lalai deepseek
+    delete process.env.AGENT_B_FALLBACK_MODEL;
+    const defaults = normalizeConfig({});
+    assert.equal(defaults.agentB.fallbackModel, 'deepseek-v4.1-flash', 'lalai fallback deepseek');
+  } finally {
+    if (savedEnv.AGENT_B_FALLBACK_MODEL === undefined) delete process.env.AGENT_B_FALLBACK_MODEL;
+    else process.env.AGENT_B_FALLBACK_MODEL = savedEnv.AGENT_B_FALLBACK_MODEL;
+  }
+});

@@ -2,6 +2,18 @@
 
 All notable changes to this project will be documented in this file.
 
+## SubMaker v1.9.5 (2026-09-26) — Resilient Pre-Flight JSON Parser + Dynamic Model Hot-Swap
+
+**Pembaikan forensik Beta Run 3 + model Agent B 100% configurable:**
+
+- **Resilient JSON Parser ([`subfaberPreflight.js`](src/services/subfaberPreflight.js), Mandat §1):** [`resilientParseJson()`](src/services/subfaberPreflight.js:140) membersihkan anomali sintaks biasa LLM SEBELUM `JSON.parse` — (1) ekstrak sempadan `{` pertama → `}` terakhir (buang chatter), (2) koma tergantung `,\s*([}\]])` pada array dan object, (3) markdown fences ( konstruktor RegExp + hex 0x60), (4) aksara kawalan tidak sah (0x00–0x08, 0x0B, 0x0C, 0x0E–0x1F). Parse masih gagal → WARN forensik dengan **position offset + 100 aksara sekitar kawasan bermasalah**. `parsePreflightResponse()` kini menjadi pengesah struktur tulen — semua pembersihan dipusatkan. Respons 2101 aksara sah yang pernah gagal kini dihuraikan.
+
+- **Dynamic Model Hot-Swap (Mandat §2):** susunan model TIADA lagi hardcoded. `AgentBInspector` menerima `options.fallbackModel` — hierarki dibina dinamik: utama (`options.model`, lalai `glm-5.3-flashx`) + sandaran (`options.fallbackModel`, lalai `deepseek-v4.1-flash`); nilai `'none'`/kosong/sama-dengan-utama (case-insensitive) → hierarki model tunggal. Semua log dan failover merujuk nama model dinamik.
+
+- **Konfigurasi ([`config.js`](src/utils/config.js)):** medan `agentB.fallbackModel` dengan env fallback `AGENT_B_FALLBACK_MODEL` (lalai `deepseek-v4.1-flash`); [`handlers/subtitles.js`](src/handlers/subtitles.js:5468) menyuntiknya ke instans inspector.
+
+- **Ujian:** 9 ujian baharu (suite Agent B 37 → **42**): koma tergantung (array/object/berbilang tahap), fences + chatter + kombinasi penuh corak Beta Run 3, control chars (dengan pengesahan precondition `JSON.parse` asli gagal), forensik offset pada WARN, hierarki dinamik (`kimi-k3` utama + sandaran custom melalui failover sebenar), `'none'` → tiada failover, dedupe case-insensitive, lalai backwards-compat, normalisasi config + env. `npm test`: 199 tests, **198 PASS / 0 FAIL** (1 skipped).
+
 ## SubMaker v1.9.4 (2026-09-26) — Agent B: Zero-Swallowed-Error Observability + Dual-Model Failover (glm-5.3-flashx → deepseek-v4.1-flash)
 
 **Kotak hitam dibongkar — tiada lagi ralat ditelan senyap, sandaran automatik dipasang:**

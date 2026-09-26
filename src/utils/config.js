@@ -579,7 +579,10 @@ function normalizeConfig(config) {
       || (!!process.env.AGENT_B_API_KEY && !!process.env.AGENT_B_BASE_URL)),
     baseUrl: String(mergedConfig.agentB?.baseUrl || process.env.AGENT_B_BASE_URL || '').trim(),
     apiKey: String(mergedConfig.agentB?.apiKey || process.env.AGENT_B_API_KEY || '').trim(),
-    model: String(mergedConfig.agentB?.model || process.env.AGENT_B_MODEL || 'glm-5.3-flashx').trim()
+    model: String(mergedConfig.agentB?.model || process.env.AGENT_B_MODEL || 'glm-5.3-flashx').trim(),
+    // HOT-SWAP (Mandat 2026-09-26 §2A): model sandaran configurable —
+    // 'none' mematikan failover; lalai deepseek-v4.1-flash.
+    fallbackModel: String(mergedConfig.agentB?.fallbackModel || process.env.AGENT_B_FALLBACK_MODEL || 'deepseek-v4.1-flash').trim()
   };
   // Hygiene: Agent B tanpa kredensial lengkap mesti terlerai sepenuhnya —
   // jangan biarkan enabled:true terapung tanpa baseUrl/apiKey (Fasa 0 +
