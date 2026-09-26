@@ -570,29 +570,32 @@ function normalizeConfig(config) {
   delete mergedConfig.advancedSettings.contextSize;
 
   // ── DUAL-AI AGENT B (Mandat Pelaksanaan 2026-09-26, Fasa 2) ──
-  // Semantic Inspector & Pre-Flight Offloader (glm-5.3-flashx, endpoint
-  // OpenAI-compatible). Struktur additive — tiada field sedia ada disentuh.
-  // env fallback: AGENT_B_BASE_URL / AGENT_B_API_KEY / AGENT_B_MODEL.
-  // Semasa Fasa 3 (UI) belum wujud, medan ini diisi melalui env sahaja.
-  // ── CLEAN 2-MODEL (MANDAT PENYATUAN BERSIH 2026-09-26) ──
-  // Seni bina modular 2 model ringkas: SATU model utama (glm-5.3-flash)
-  // mengendalikan Fasa 0 + Semakan Kelompok; SATU sandaran universal
-  // (deepseek-v4.1-flash). Medan trinity (preflightModel/inspectionModel)
-  // dimansuhkan — medan legacy 'model' kekal sebagai model utama.
+  // Semantic Inspector & Pre-Flight Offloader (endpoint OpenAI-compatible).
+  // Struktur additive — tiada field sedia ada disentuh.
+  // env fallback: AGENT_B_BASE_URL / AGENT_B_API_KEY / AGENT_B_MODEL /
+  // AGENT_B_PREFLIGHT_MODEL / AGENT_B_FALLBACK_MODEL.
+  // ── FRONTIER UPGRADE (MANDAT FRONTIER 2026-09-26 — TRINITY POWERHOUSE) ──
+  // Kredensial rootsys.cloud (1B token quota / 1M context window):
+  //   Pre-Flight Fasa 0  : kimi-k3 (2.8T MoE Long-Context King)
+  //   Semakan Kelompok   : glm-5.3 (753B Flagship Rigorous Auditor)
+  //   Sandaran Universal : deepseek-v4.1-flash
   mergedConfig.agentB = {
     enabled: (mergedConfig.agentB?.enabled === true
       || (!!process.env.AGENT_B_API_KEY && !!process.env.AGENT_B_BASE_URL)),
     baseUrl: String(mergedConfig.agentB?.baseUrl || process.env.AGENT_B_BASE_URL || '').trim(),
     apiKey: String(mergedConfig.agentB?.apiKey || process.env.AGENT_B_API_KEY || '').trim(),
-    model: String(mergedConfig.agentB?.model || process.env.AGENT_B_MODEL || 'glm-5.3-flash').trim(),
+    model: String(mergedConfig.agentB?.model || mergedConfig.agentB?.inspectionModel || process.env.AGENT_B_MODEL || 'glm-5.3').trim(),
+    preflightModel: String(mergedConfig.agentB?.preflightModel || process.env.AGENT_B_PREFLIGHT_MODEL || 'kimi-k3').trim(),
     fallbackModel: String(mergedConfig.agentB?.fallbackModel || process.env.AGENT_B_FALLBACK_MODEL || 'deepseek-v4.1-flash').trim()
   };
-  // Hygiene: medan trinity (preflightModel/inspectionModel) daripada config
-  // lama dilucutkan daripada struktur tersimpan — tidak dibenarkan terapung.
-  delete mergedConfig.agentB.preflightModel;
+  // Hygiene: inspectionModel adalah alias warisan bagi 'model' (Semakan) —
+  // dilucutkan daripada struktur tersimpan selepas migrasi.
   delete mergedConfig.agentB.inspectionModel;
   if (!mergedConfig.agentB.model) {
-    mergedConfig.agentB.model = 'glm-5.3-flash';
+    mergedConfig.agentB.model = 'glm-5.3';
+  }
+  if (!mergedConfig.agentB.preflightModel) {
+    mergedConfig.agentB.preflightModel = 'kimi-k3';
   }
   // Hygiene: Agent B tanpa kredensial lengkap mesti terlerai sepenuhnya —
   // jangan biarkan enabled:true terapung tanpa baseUrl/apiKey (Fasa 0 +
@@ -600,8 +603,8 @@ function normalizeConfig(config) {
   if (!mergedConfig.agentB.baseUrl || !mergedConfig.agentB.apiKey) {
     mergedConfig.agentB.enabled = false;
   }
-  if (!mergedConfig.agentB.model) {
-    mergedConfig.agentB.model = 'glm-5.3-flashx';
+  if (!mergedConfig.agentB.preflightModel) {
+    mergedConfig.agentB.preflightModel = 'kimi-k3';
   }
 
   // 🔄 Migrasi Data: Alihkan advancedSettings.geminiModel ke geminiModel

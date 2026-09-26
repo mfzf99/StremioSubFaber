@@ -5454,7 +5454,8 @@ if (
     effectiveModel = model || getEffectiveGeminiModel(config);
     log.debug(() => `[Translation] Using provider=${providerName} model=${effectiveModel}`);
 
-    // DUAL-AI (Faza 2, Mandat 2026-09-26): Bina Agent B (glm-5.3-flashx)
+    // DUAL-AI (FRONTIER UPGRADE 2026-09-26): Bina Agent B Trinity Powerhouse
+    // (kimi-k3 Pre-Flight + glm-5.3 Semakan + deepseek-v4.1-flash sandaran)
     // apabila config agentB sah + lengkap. Gagal konfigurasi → null →
     // enjin jalan 100% Gemini (backwards compatible penuh).
     let agentBInspector = null;
@@ -5463,9 +5464,12 @@ if (
         agentBInspector = new AgentBInspector({
           apiKey: config.agentB.apiKey,
           baseUrl: config.agentB.baseUrl,
-          // CLEAN 2-MODEL (Mandat Penyatuan Bersih 2026-09-26):
-          // {model, fallbackModel} — tiada pemisahan per operasi.
-          model: config.agentB.model || 'glm-5.3-flash',
+          // TRINITY (Mandat Frontier 2026-09-26):
+          //   Pre-Flight  : kimi-k3 (sampling digugurkan, max_tokens 16384)
+          //   Semakan     : glm-5.3 penuh (temperature 0.0, top_p 0.1)
+          //   Sandaran    : deepseek-v4.1-flash
+          preflightModel: config.agentB.preflightModel || 'kimi-k3',
+          model: config.agentB.model || 'glm-5.3',
           fallbackModel: config.agentB.fallbackModel || 'deepseek-v4.1-flash',
           ssrfLookup: createSsrfSafeLookup()
         });

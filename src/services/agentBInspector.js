@@ -2,9 +2,18 @@
  * Agent B — Semantic Inspector & Pre-Flight Offloader
  * (Dual-AI Mandat Pelaksanaan 2026-09-26, Fasa 1)
  *
- * Seni Bina 2-Agent (MANDAT PENYATUAN BERSIH 2026-09-26 — Clean 2-Model):
+ * Seni Bina 2-Agent (FRONTIER UPGRADE 2026-09-26 — Trinity Powerhouse,
+ * kredensial rootsys.cloud: 1B token quota / 1M context window):
  *   AGENT A (Worker): Gemini 3 Flash — penterjemahan kelompok 50 baris.
- *   AGENT B (Inspector): glm-5.3-flash (OpenAI-compatible, 1M context):
+ *   AGENT B (Inspector): Frontier Trinity (OpenAI-compatible):
+ *     - PRE-FLIGHT (Fasa 0) : kimi-k3 (2.8T MoE Long-Context King).
+ *       Peraturan payload mandat: temperature/top_p/presence_penalty
+ *       DIGUGURKAN (server lock — nilai 0.0/0.1 → HTTP 400) + max_tokens
+ *       16384 (ruang penuh ringkasan + 15 istilah).
+ *     - SEMAKAN KELOMPOK    : glm-5.3 (753B Flagship Rigorous Auditor,
+ *       bukan flash). Peraturan payload mandat: temperature 0.0
+ *       (deterministik) + top_p 0.1 + max_tokens 4096.
+ *     - SANDARAN UNIVERSAL  : deepseek-v4.1-flash (~214 tok/s).
  *     Tugasan 1: Mengambil alih Fasa 0 (Pre-Flight Semantic Pass) sepenuhnya
  *                daripada Gemini — jimat kuota TPM/RPM Gemini.
  *     Tugasan 2: Askar Pertahanan Semantik — menyemak setiap kelompok hasil
@@ -22,15 +31,15 @@
  *   - CIRCUIT BREAKER: 3 kegagalan berturut-turut dalam satu sesi fail →
  *     Agent B dinyahaktifkan senyap bagi baki fail tersebut.
  *   - UNTHROTTLED (Mandat Pembebasan 2026-09-26): kuota Agent B infiniti
- *     (skala 1B token) — max_tokens 4096 (ruang reasoning + content) dan
- *     timeout berfasa: Fasa 0 45s (baca episod penuh) / semakan batch 15s.
- *     Tiada micro-timeout / tiny token cap yang membekukan nafas Agent B.
- *   - ZERO-SWALLOWED-ERROR + DUAL-MODEL FAILOVER (Mandat Observabiliti
- *     2026-09-26 + PENYATUAN BERSIH): tiada ralat ditelan senyap — setiap
+ *     (skala 1B token) — timeout berfasa: Fasa 0 180s (baca episod penuh)
+ *     / semakan batch 45s. Tiada micro-timeout yang membekukan nafas Agent B.
+ *   - ZERO-SWALLOWED-ERROR + TRINITY FAILOVER (Mandat Observabiliti +
+ *     Frontier Upgrade 2026-09-26): tiada ralat ditelan senyap — setiap
  *     kegagalan mencetak status + punca teknikal + raw snippet 500 aksara.
- *     CLEAN 2-MODEL: hierarki TUNGGAL [glm-5.3-flash (utama, kedua-dua
- *     fasa) → deepseek-v4.1-flash (sandaran)] — tiada pemisahan
- *     preflightModel/inspectionModel, tiada _hierarchyFor().
+ *     TRINITY: dua hierarki berasingan — preflightHierarchy
+ *     [kimi-k3 → deepseek-v4.1-flash] dan modelHierarchy
+ *     [glm-5.3 → deepseek-v4.1-flash]. Kegagalan mana-mana model utama
+ *     beralih automatik ke deepseek-v4.1-flash.
  *   - 100% BACKWARDS COMPATIBLE: Agent B null → enjin jalan 100% Gemini.
  */
 
@@ -38,11 +47,15 @@ const OpenAICompatibleProvider = require('./providers/openaiCompatible');
 const { runPreflightSemanticPass, stripReasoningTags } = require('./subfaberPreflight');
 const log = require('../utils/logger');
 
-// ── Konfigurasi tetap Agent B (MANDAT PENYATUAN BERSIH 2026-09-26) ──
-// CLEAN 2-MODEL: SATU model utama (glm-5.3-flash) untuk KEDUA-DUA fasa
-// + SATU sandaran universal (deepseek-v4.1-flash). flashx digugurkan.
-const AGENT_B_DEFAULT_MODEL = 'glm-5.3-flash';   // Utama: Pre-Flight + Semakan
-const AGENT_B_FALLBACK_MODEL = 'deepseek-v4.1-flash'; // Sandaran universal (~214 tok/s)
+// ── Konfigurasi tetap Agent B (FRONTIER UPGRADE 2026-09-26) ──
+// TRINITY POWERHOUSE (kredensial rootsys.cloud, 1B token / 1M context):
+//   Pre-Flight : kimi-k3 (2.8T MoE Long-Context King)
+//   Semakan    : glm-5.3 (753B Flagship Rigorous Auditor — bukan flash)
+//   Sandaran   : deepseek-v4.1-flash (~214 tok/s, universal)
+const AGENT_B_DEFAULT_MODEL = 'glm-5.3';               // Semakan: 753B penuh
+const AGENT_B_PREFLIGHT_MODEL = 'kimi-k3';             // Fasa 0: Long-Context King
+const AGENT_B_FALLBACK_MODEL = 'deepseek-v4.1-flash';  // Sandaran universal
+const AGENT_B_KIMI_MAX_OUTPUT_TOKENS = 16384;          // Ruang penuh ringkasan + 15 istilah
 // HEADROOM KESELAMATAN (Mandat Headroom 2026-09-26):
 // Fasa 0 180s — baca 2,500 entri penuh (250k aksara) tanpa tercekik;
 // Semakan 45s — 60% headroom ke atas latensi purata GLM (12–16s).
@@ -235,24 +248,36 @@ class AgentBInspector extends OpenAICompatibleProvider {
     // mewarisi had masa yang sama — failover berkongsi headroom ini.
     this.translationTimeout = AGENT_B_INSPECTION_TIMEOUT_MS;
 
-    // ── CLEAN 2-MODEL (MANDAT PENYATUAN BERSIH 2026-09-26) ──
-    // Satu hierarki tunggal untuk KEDUA-DUA operasi (Pre-Flight + Semakan):
-    //   - Utama:    options.model (lalai glm-5.3-flash)
-    //   - Sandaran: options.fallbackModel (lalai deepseek-v4.1-flash);
-    //     'none' ATAU kosong ATAU sama dengan utama → model tunggal.
+    // ── TRINITY POWERHOUSE (FRONTIER UPGRADE 2026-09-26) ──
+    // Dua hierarki berasingan bagi dua fasa:
+    //   - Semakan Kelompok: options.model (lalai glm-5.3, 753B penuh)
+    //       → modelHierarchy = [glm-5.3, deepseek-v4.1-flash]
+    //   - Pre-Flight Fasa 0: options.preflightModel (lalai kimi-k3)
+    //       → preflightHierarchy = [kimi-k3, deepseek-v4.1-flash]
+    //   - Sandaran universal: options.fallbackModel (lalai deepseek-v4.1-flash);
+    //     'none' ATAU kosong ATAU sama dengan model utama → model tunggal.
     // this.model sentiasa menjejak model AKTIF supaya log forensik melaporkan
     // model sebenar yang sedang beroperasi.
-    this.model = String(options.model || AGENT_B_DEFAULT_MODEL).trim() || AGENT_B_DEFAULT_MODEL;
+    this.model = String(options.model || options.inspectionModel || AGENT_B_DEFAULT_MODEL).trim() || AGENT_B_DEFAULT_MODEL;
+    this.preflightModel = String(options.preflightModel || AGENT_B_PREFLIGHT_MODEL).trim() || AGENT_B_PREFLIGHT_MODEL;
     const requestedFallback = String(options.fallbackModel || AGENT_B_FALLBACK_MODEL).trim();
-    this.modelHierarchy = [this.model];
-    if (
-      requestedFallback &&
-      requestedFallback.toLowerCase() !== 'none' &&
-      requestedFallback.toLowerCase() !== this.model.toLowerCase()
-    ) {
-      this.modelHierarchy.push(requestedFallback);
-    }
+
+    const buildHierarchy = (primary) => {
+      const hierarchy = [primary];
+      if (
+        requestedFallback &&
+        requestedFallback.toLowerCase() !== 'none' &&
+        requestedFallback.toLowerCase() !== primary.toLowerCase()
+      ) {
+        hierarchy.push(requestedFallback);
+      }
+      return hierarchy;
+    };
+    this.modelHierarchy = buildHierarchy(this.model);
+    this.preflightHierarchy = buildHierarchy(this.preflightModel);
+
     this.fallbackModel = this.modelHierarchy.length > 1 ? this.modelHierarchy[1] : null;
+    this.inspectionModel = this.model;
 
     // ── Circuit breaker (per sesi fail — instance dibina per permintaan) ──
     this._consecutiveFailures = 0;
@@ -273,10 +298,15 @@ class AgentBInspector extends OpenAICompatibleProvider {
    * @returns {Promise<{result:*, modelUsed:string, failedAttempts:Array}>}
    * @throws {Error} ralat percubaan terakhir apabila SEMUA model gagal
    */
-  async _callWithFailover(operation, attempt, isFailure) {
+  async _callWithFailover(operation, attempt, isFailure, hierarchyOverride = null) {
     const failedAttempts = [];
-    // CLEAN 2-MODEL: satu hierarki tunggal untuk KEDUA-DUA operasi.
-    const hierarchy = this.modelHierarchy;
+    // TRINITY (Frontier Upgrade 2026-09-26): Pre-Flight menggunakan
+    // preflightHierarchy (kimi-k3 → deepseek); Semakan menggunakan
+    // modelHierarchy (glm-5.3 → deepseek). Suntikan hierarki mengatasi
+    // kedua-duanya (kes ujian susunan tersuai).
+    const hierarchy = Array.isArray(hierarchyOverride) && hierarchyOverride.length > 0
+      ? hierarchyOverride
+      : this.modelHierarchy;
     for (let i = 0; i < hierarchy.length; i++) {
       const model = hierarchy[i];
       this.model = model; // log + payload pembawa sentiasa melihat model aktif
@@ -312,12 +342,14 @@ class AgentBInspector extends OpenAICompatibleProvider {
   }
 
   /**
-   * Override: kunci siling output kepada 4096 token — ruang secukupnya bagi
-   * model menjana reasoning tokens tanpa menghalang penjanaan content akhir
-   * (Mandat Unthrottle 2026-09-26; kuota Agent B infiniti).
+   * Override: siling output berfasa mengikut model aktif:
+   *   - kimi-k3 (Pre-Flight): 16384 — ruang penuh ringkasan + 15 istilah
+   *     (Mandat Frontier 2026-09-26 §1A).
+   *   - glm-5.3 / deepseek (Semakan): 4096 — ruang reasoning + content
+   *     (Mandat Unthrottle 2026-09-26; kuota Agent B infiniti).
    */
   getCappedMaxOutputTokens() {
-    return AGENT_B_MAX_OUTPUT_TOKENS;
+    return this.isKimiModel() ? AGENT_B_KIMI_MAX_OUTPUT_TOKENS : AGENT_B_MAX_OUTPUT_TOKENS;
   }
 
   /**
@@ -382,10 +414,11 @@ class AgentBInspector extends OpenAICompatibleProvider {
     const previousModel = this.model;
     this.translationTimeout = AGENT_B_PREFLIGHT_TIMEOUT_MS; // 180s headroom
 
-    // DUAL-MODEL FAILOVER (Mandat §4B): setiap model menjalankan Fasa 0
-    // penuh melalui runPreflightSemanticPass dengan hook zero-swallowed-
-    // error. null + hook aktif = kegagalan model (failover); null tanpa
-    // hook = skip sahaja (fail kecil / tiada teks) — jangan failover.
+    // TRINITY FAILOVER (Frontier Upgrade 2026-09-26 §2B): Fasa 0 dihalakan
+    // ke preflightHierarchy [kimi-k3 → deepseek-v4.1-flash]. Setiap model
+    // menjalankan Fasa 0 penuh melalui runPreflightSemanticPass dengan hook
+    // zero-swallowed-error. null + hook aktif = kegagalan model (failover);
+    // null tanpa hook = skip sahaja (fail kecil / tiada teks) — jangan failover.
     try {
       const { result } = await this._callWithFailover(
         'Pre-flight',
@@ -411,7 +444,8 @@ class AgentBInspector extends OpenAICompatibleProvider {
           }
           return { ok: true, context: null }; // skip sahaja (bukan kegagalan)
         },
-        (outcome) => outcome && outcome.ok === false
+        (outcome) => outcome && outcome.ok === false,
+        this.preflightHierarchy // TRINITY: Fasa 0 → [kimi-k3 → deepseek]
       );
       return result && result.ok ? result.context : null;
     } catch (failoverErr) {
@@ -509,9 +543,11 @@ module.exports = {
   parseInspectorResponse,
   INSPECTOR_INSTRUCTION,
   AGENT_B_DEFAULT_MODEL,
+  AGENT_B_PREFLIGHT_MODEL,
   AGENT_B_FALLBACK_MODEL,
   AGENT_B_PREFLIGHT_TIMEOUT_MS,
   AGENT_B_INSPECTION_TIMEOUT_MS,
   AGENT_B_MAX_OUTPUT_TOKENS,
+  AGENT_B_KIMI_MAX_OUTPUT_TOKENS,
   AGENT_B_CIRCUIT_THRESHOLD
 };

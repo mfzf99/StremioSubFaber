@@ -105,6 +105,8 @@ ${rawText}
   ]
 }
 
+You must respond ONLY with a raw JSON object matching the schema. Do not write any conversational preamble, introduction, or markdown commentary.
+
 Note: Start your answer with { and end with }, do not add any other text.`;
 }
 

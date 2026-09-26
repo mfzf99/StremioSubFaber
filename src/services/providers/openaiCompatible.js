@@ -34,6 +34,7 @@ class OpenAICompatibleProvider {
     this.temperature = options.temperature !== undefined ? options.temperature : 0.2;
     this.maxOutputTokens = options.maxOutputTokens || 65536;
     this.topP = options.topP !== undefined ? options.topP : 0.95;
+    this.presencePenalty = options.presencePenalty;
     this.reasoningEffort = this.normalizeReasoningEffort(options.reasoningEffort);
     const timeoutSeconds = options.translationTimeout !== undefined ? options.translationTimeout : 120;
     this.translationTimeout = Math.max(5000, parseInt(timeoutSeconds * 1000, 10) || 120000);
@@ -66,6 +67,54 @@ class OpenAICompatibleProvider {
   isCfTranslationModel() {
     const model = String(this.model || '').toLowerCase();
     return model.includes('m2m100') || model.includes('nllb-200');
+  }
+
+  /**
+   * FRONTIER UPGRADE (Mandat Frontier 2026-09-26): Pengesan keluarga model
+   * Kimi/Moonshot AI (case-insensitive). Pelayan Kimi K3 mengunci nilai
+   * sampling secara dalaman — menghantar temperature/top_p/presence_penalty
+   * menyebabkan ralat HTTP 400.
+   * @param {string} [modelName] - Override nama model (lalai model aktif)
+   * @returns {boolean}
+   */
+  isKimiModel(modelName = this.model) {
+    return String(modelName || '').toLowerCase().includes('kimi');
+  }
+
+  /**
+   * FRONTIER UPGRADE (Mandat Frontier 2026-09-26): Pengesan GLM-5.3 versi
+   * penuh (753B flagship) — MENGEKECUALIKAN varian 'flash'. Auditor rigor
+   * Semakan Kelompok dijalankan pada 100% deterministik (temperature 0.0,
+   * top_p 0.1).
+   * @param {string} [modelName] - Override nama model (lalai model aktif)
+   * @returns {boolean}
+   */
+  isGlmFull53Model(modelName = this.model) {
+    const m = String(modelName || '').toLowerCase();
+    return m.includes('glm') && m.includes('5.3') && !m.includes('flash');
+  }
+
+  /**
+   * FRONTIER UPGRADE (Mandat Frontier 2026-09-26): Terapkan peraturan payload
+   * wajib model frontier di atas body yang telah dibina:
+   *   - "kimi"   → GUGURKAN temperature/top_p/presence_penalty (server lock;
+   *                nilai 0.0/0.1 → HTTP 400) + max_tokens 16384.
+   *   - "glm-5.3" (bukan flash) → KUNCI temperature 0.0 + top_p 0.1
+   *                (deterministik mutlak, sifar kreativiti).
+   * @param {Object} body - Payload chat/completions (dimutasi secara langsung)
+   */
+  applyFrontierModelRules(body) {
+    if (this.isKimiModel()) {
+      delete body.temperature;
+      delete body.top_p;
+      delete body.presence_penalty;
+      body.max_tokens = 16384;
+      return;
+    }
+    if (this.isGlmFull53Model()) {
+      body.temperature = 0.0;
+      body.top_p = 0.1;
+    }
   }
 
   normalizeCfModelId() {
@@ -353,6 +402,16 @@ class OpenAICompatibleProvider {
       }
       if (!omitSampling && this.topP !== undefined) {
         body.top_p = this.topP;
+      }
+      if (!omitSampling && this.presencePenalty !== undefined && !useResponsesApi) {
+        body.presence_penalty = this.presencePenalty;
+      }
+      // 🚀 FRONTIER UPGRADE (Mandat Frontier 2026-09-26): Peraturan wajib
+      // kimi-k3 (gugurkan sampling, max_tokens 16384) & glm-5.3 penuh
+      // (kunci temperature 0.0 / top_p 0.1) — dilaksanakan TERAKHIR supaya
+      // sentiasa mengatasi nilai lalai builder.
+      if (!isCfTranslation) {
+        this.applyFrontierModelRules(body);
       }
     }
 
