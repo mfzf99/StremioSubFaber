@@ -133,6 +133,12 @@ class TranslationEngine {
     // Tiada flag, tiada mod legacy batch-context/<m> memory.
     this.preflightContext = null; // Slot state Fasa 0 (theme + terms)
 
+    // DUAL-AI (Mandat Pelaksanaan 2026-09-26): Agent B — Semantic Inspector
+    // & Pre-Flight Offloader (glm-5.3-flashx, OpenAI-compatible). null →
+    // enjin jalan 100% Gemini (backwards compatible penuh).
+    this.agentB = options.agentB || null;
+    this._agentBSemanticRetries = new Set(); // batchIndex yang sudah guna retry semantik
+
     // Mismatch retry: number of retries when AI returns wrong entry count (default: 1)
     const rawMismatchRetries = parseInt(this.advancedSettings.mismatchRetries);
     this.mismatchRetries = Number.isFinite(rawMismatchRetries) ? Math.max(0, Math.min(3, rawMismatchRetries)) : 3;
@@ -237,6 +243,11 @@ class TranslationEngine {
       // Tier 4: FinOps incident log — each entry describes one recovery
       // operation with the tokens burned by the failed attempt(s).
       incidents: [],
+      // DUAL-AI: Agent B telemetry
+      agentBUsed: false,        // Fasa 0 dijalankan oleh Agent B
+      agentBFailures: 0,        // kegagalan API/rosak (fail-open count)
+      agentBInspections: 0,     // panggilan semakan semantik berjaya
+      agentBRetries: 0,         // semantic retry dilaksanakan
     };
   }
 
@@ -700,13 +711,26 @@ class TranslationEngine {
     // tiada keperluan konteks semantik — skip.
     // TOTAL PURGE (Mandat 2026-09-25): SubFaber enjin tunggal — tiada flag.
     if (!this.isNativeBatchProvider) {
-      this.preflightContext = await runPreflightSemanticPass(
+      // DUAL-AI FASA 0 OFFLOAD (Mandat Pelaksanaan 2026-09-26): Agent B
+      // mengambil alih Pre-Flight Semantic Pass sepenuhnya apabila aktif —
+      // Gemini 3 Flash dikecualikan (jimat kuota TPM/RPM). Fallback semula
+      // kepada Gemini bila Agent B null / circuit breaker terbuka.
+      const preflightProvider = (this.agentB && !this.agentB.circuitOpen)
+        ? this.agentB
+        : this.gemini;
+      const preflightRunner = (this.agentB && !this.agentB.circuitOpen)
+        ? this.agentB.runPreflightPass.bind(this.agentB)
+        : runPreflightSemanticPass;
+      this.preflightContext = await preflightRunner(
         entries,
         targetLanguage,
         this.sourceLanguage,
-        this.gemini,
+        preflightProvider,
         { onProgress }
       );
+      if (this.agentB && preflightProvider === this.agentB) {
+        this.translationStats.agentBUsed = true;
+      }
       if (this.preflightContext) {
         this.translationStats.subfaberContextUsed = true;
       }
@@ -1991,6 +2015,87 @@ class TranslationEngine {
     } else {
       const { aligned } = this.alignTranslatedEntries(translatedEntries, batch);
       translatedEntries = Object.values(aligned).sort((a, b) => a.index - b.index);
+    }
+
+    // ── DUAL-AI GERBANG SEMANTIK (Mandat Pelaksanaan 2026-09-26) ──
+    // Agent B menyemak hasil MUKA-AKHIR (selepas semua pemulihan struktur
+    // Pass 1/2/3 selesai) — mengesan MERGE/DROP/PHANTOM yang lolos daripada
+    // parser kuantiti (tag 50/50 sahaja mengesahkan kuantiti, bukan makna).
+    // Lokasi: selepas alignment muktamad, SEBELUM cache/stream commit.
+    // Semua kegagalan Agent B fail-open — pipeline tidak pernah tergugat.
+    // Guard struktur: hasil muktamad mesti lengkap tanpa placeholder [⚠️]
+    // (alignTranslatedEntries memadamkan slot hilang dengan placeholder —
+    // bercacat dari segi struktur, bukan calon semakan semantik).
+    const agentBStructurallyClean = translatedEntries.length === batch.length
+      && !translatedEntries.some(e => typeof e?.text === 'string' && e.text.startsWith('[⚠️]'));
+
+    if (this.agentB && !this.agentB.circuitOpen
+        && !this._agentBSemanticRetries.has(batchIndex)
+        && agentBStructurallyClean) {
+      try {
+        const verdict = await this.agentB.runSemanticInspection(batch, translatedEntries);
+        if (verdict?.failOpen) {
+          this.translationStats.agentBFailures++;
+        } else if (verdict && verdict.valid === false && Array.isArray(verdict.crimes)) {
+          // Rekod insiden telemetry + jalankan SATU full batch retry dengan
+          // amaran jenayah disuntik ringkas ke hujung prompt penterjemahan.
+          const crimeLines = verdict.crimes
+            .map(c => `- ${c.type} at line(s) ${c.ids.join(',')}: ${c.note}`)
+            .join('\n');
+          this._logIncident({
+            type: 'AGENT_B_SEMANTIC_RETRY',
+            batch: batchIndex + 1,
+            recovery: 'full batch retry with crime warning',
+            outcome: 'in_progress'
+          });
+          this._agentBSemanticRetries.add(batchIndex);
+          this.translationStats.agentBRetries++;
+          log.warn(() => `[AgentB] Semantic crime(s) detected in batch ${batchIndex + 1}:\n${crimeLines}`);
+
+          const warningBlock = `
+
+CRITICAL SEMANTIC ALERT (from independent inspector):
+${crimeLines}
+You MUST translate each numbered line 1:1. NEVER merge two source lines into one output slot. NEVER invent dialogue.`;
+
+          try {
+            await new Promise(resolve => setTimeout(resolve, 500));
+            const retryText = await this._translateCall(batchText, targetLanguage, prompt + warningBlock, false, null);
+            const retryEntries = this.parseResponseForWorkflow(retryText, batch.length, batch);
+            const { aligned: retryAligned, missingIndices: retryMissing } = this.alignTranslatedEntries(retryEntries, batch);
+
+            // Ganti hasil HANYA jika retry lengkap dari segi struktur (50/50)
+            // DAN lulus semakan semantik kedua (satu-satunya re-verdict).
+            if (retryMissing.length === 0 && retryEntries.length === batch.length) {
+              const retrySorted = Object.values(retryAligned).sort((a, b) => a.index - b.index);
+              const reVerdict = await this.agentB.runSemanticInspection(batch, retrySorted);
+              if (reVerdict?.valid !== false) {
+                translatedEntries = retrySorted;
+                this._closeIncident('AGENT_B_SEMANTIC_RETRY', batchIndex + 1, { outcome: 'recovered' });
+                log.info(() => `[AgentB] Semantic retry succeeded for batch ${batchIndex + 1}`);
+              } else {
+                this._closeIncident('AGENT_B_SEMANTIC_RETRY', batchIndex + 1, { outcome: 'unsalvageable — best result kept' });
+                log.warn(() => `[AgentB] Semantic retry still failing for batch ${batchIndex + 1} — accepting best result`);
+              }
+            } else {
+              this._closeIncident('AGENT_B_SEMANTIC_RETRY', batchIndex + 1, { outcome: 'unsalvageable — structural mismatch on retry' });
+              log.warn(() => `[AgentB] Semantic retry returned ${retryEntries.length}/${batch.length} entries — keeping original result`);
+            }
+          } catch (retryErr) {
+            if (this.retryRotationEnabled && this.gemini?.apiKey) {
+              this._recordKeyError(this.gemini.apiKey);
+            }
+            this._closeIncident('AGENT_B_SEMANTIC_RETRY', batchIndex + 1, { outcome: 'retry failed — original kept' });
+            log.warn(() => `[AgentB] Semantic retry call failed for batch ${batchIndex + 1}: ${retryErr.message}`);
+          }
+        } else if (verdict && verdict.valid === true) {
+          this.translationStats.agentBInspections++;
+        }
+      } catch (agentBErr) {
+        // Fail-open mutlak — jangan sekat pipeline walau apa pun berlaku.
+        this.translationStats.agentBFailures++;
+        log.warn(() => `[AgentB] Semantic gate error (fail-open): ${agentBErr?.message || agentBErr}`);
+      }
     }
 
     // Cache individual entries

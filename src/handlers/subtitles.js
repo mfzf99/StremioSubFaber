@@ -4,6 +4,8 @@ const SubDLService = require('../services/subdl');
 const SubSourceService = require('../services/subsource');
 const TranslationEngine = require('../services/translationEngine');
 const { createTranslationProvider } = require('../services/translationProviderFactory');
+const { AgentBInspector } = require('../services/agentBInspector');
+const { createSsrfSafeLookup } = require('../utils/ssrfProtection');
 const AniDBService = require('../services/anidb');
 const KitsuService = require('../services/kitsu');
 const MALService = require('../services/mal');
@@ -5451,6 +5453,24 @@ if (
     providerName = _providerName;
     effectiveModel = model || getEffectiveGeminiModel(config);
     log.debug(() => `[Translation] Using provider=${providerName} model=${effectiveModel}`);
+
+    // DUAL-AI (Faza 2, Mandat 2026-09-26): Bina Agent B (glm-5.3-flashx)
+    // apabila config agentB sah + lengkap. Gagal konfigurasi → null →
+    // enjin jalan 100% Gemini (backwards compatible penuh).
+    let agentBInspector = null;
+    if (config.agentB?.enabled === true && config.agentB?.baseUrl && config.agentB?.apiKey) {
+      try {
+        agentBInspector = new AgentBInspector({
+          apiKey: config.agentB.apiKey,
+          baseUrl: config.agentB.baseUrl,
+          model: config.agentB.model || 'glm-5.3-flashx',
+          ssrfLookup: createSsrfSafeLookup()
+        });
+        log.info(() => `[Translation] Agent B inspector active: model=${agentBInspector.model} baseUrl=${config.agentB.baseUrl}`);
+      } catch (err) {
+        log.warn(() => `[Translation] Agent B inspector construction failed, continuing Gemini-only: ${err?.message || err}`);
+      }
+    }
       
     // Initialize new Translation Engine (structure-first approach)
     // Pass model to enable model-specific batch size optimization
@@ -5475,7 +5495,8 @@ if (
         singleBatchMode: config.singleBatchMode === true,
         providerName,
         fallbackProviderName,
-        keyRotationConfig
+        keyRotationConfig,
+        agentB: agentBInspector
       }
     );
 

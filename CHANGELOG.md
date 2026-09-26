@@ -2,6 +2,24 @@
 
 All notable changes to this project will be documented in this file.
 
+## SubMaker v1.9.2 (2026-09-26) — Dual-AI Agent B: Semantic Inspector & Pre-Flight Offloader (Fasa 1 & 2 Backend)
+
+**Seni Bina 2-Agent diaktifkan — glm-5.3-flashx mengambil alih Fasa 0 dan mengaudit setiap kelompok terjemahan:**
+
+- **Modul baharu [`src/services/agentBInspector.js`](src/services/agentBInspector.js):** kelas `AgentBInspector` (warisan `OpenAICompatibleProvider`) dengan tiga override wajib — `getCappedMaxOutputTokens()` dikunci 256 token (bypass lantai 65536 keluarga GLM, mandat zero-yap), `buildUserPrompt()` menghantar prompt inspector verbatim, dan timeout lembut 4 saat (bukan 30s). Kontrak JSON mini `{"valid":true}` / `{"valid":false,"crimes":[{type:MERGE|DROP|PHANTOM,ids,note}]}`; `maxRetries: 0` + `reasoning_effort: 'low'` (registry GLM 5.3 sedia ada) — sasaran latensi < 1.5s per batch.
+
+- **Kebal ralat penuh (fail-open):** sebarang timeout/ralat rangkaian/respons rosak ditangkap senyap → verdict `{valid:true}`; pipeline Gemini tidak pernah tergugat. **Circuit breaker:** 3 kegagalan berturut-turut → Agent B dinyahaktifkan bagi baki fail tersebut; kejayaan mereset kaunter.
+
+- **Fasa 0 offload ([`translationEngine.js`](src/services/translationEngine.js)):** `translateSubtitle()` kini menjalankan Pre-Flight Semantic Pass melalui `(this.agentB || this.gemini)` — Gemini 3 Flash dikecualikan sepenuhnya apabila Agent B aktif (jimat kuota TPM/RPM). `runPreflightSemanticPass()` asal tidak diubah (suntikan provider murni).
+
+- **Gerbang semantik post-alignment:** selepas Pass 1/2/3 pemulihan struktur selesai (sebelum cache), Agent B menyemak hasil muka-akhir (blok `<en>`/`<ms>` padat, ID global). `valid:false` → SATU full batch retry dengan blok amaran `CRITICAL SEMANTIC ALERT` disuntik ke hujung prompt + re-verdict tunggal; gagal lagi → hasil terbaik diterima (streaming tidak disekat). Insiden `AGENT_B_SEMANTIC_RETRY` direkod ke FinOps/telemetry; hasil bercacat struktur (placeholder `[⚠️]`) atau litar terbuka melangkau gerbang.
+
+- **Statistik DUAL-AI:** `agentBUsed`, `agentBFailures`, `agentBInspections`, `agentBRetries` ditambah ke `translationStats` (termasuk zeroing + merge-back additive pekerja [`parallelTranslation.js`](src/utils/parallelTranslation.js)).
+
+- **Konfigurasi ([`config.js`](src/utils/config.js)):** struktur `agentB` (enabled/baseUrl/apiKey/model, lalai `glm-5.3-flashx`) dengan env fallback `AGENT_B_BASE_URL` / `AGENT_B_API_KEY` / `AGENT_B_MODEL`; kedua-dua kredensial env lengkap → auto-aktif (Fasa 3 UI belum wujud); kredensial tak lengkap → hygiene melumpuhkan. [`handlers/subtitles.js`](src/handlers/subtitles.js) membina instans (dengan `createSsrfSafeLookup()`) dan menyuntik `options.agentB` — `null` → 100% laluan Gemini asal.
+
+- **Ujian:** suite baharu [`agentB-inspector-regression.test.js`](src/services/agentB-inspector-regression.test.js) — 21 ujian: parser JSON (sah/rosak/fence/chatter/sanitasi), payload `<en>`/`<ms>`, fail-open, circuit breaker (3→silent→reset), payload GLM (`reasoning_effort:low`, `max_tokens:256`, timeout 4s), integriti `agentB=null` (satu panggilan provider sahaja), gerbang enjin (retry beramarah, failOpen tanpa retry, mismatch melangkau, litar terbuka melangkau), normalisasi config. `npm test`: 174 tests, **173 PASS / 0 FAIL** (1 skipped; baseline 152 dipelihara penuh).
+
 ## SubMaker v1.9.1 (2026-09-24) — Purge Fallback Prompt + Relokasi `PROMPT_TEMPLATES`
 
 **Pertahanan dua-stage dilucutkan komponen fallback prompt + blok template dipindahkan masuk `createXmlBatchPrompt`:**

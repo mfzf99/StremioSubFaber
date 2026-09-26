@@ -569,6 +569,28 @@ function normalizeConfig(config) {
   delete mergedConfig.advancedSettings.enableBatchContext;
   delete mergedConfig.advancedSettings.contextSize;
 
+  // ── DUAL-AI AGENT B (Mandat Pelaksanaan 2026-09-26, Fasa 2) ──
+  // Semantic Inspector & Pre-Flight Offloader (glm-5.3-flashx, endpoint
+  // OpenAI-compatible). Struktur additive — tiada field sedia ada disentuh.
+  // env fallback: AGENT_B_BASE_URL / AGENT_B_API_KEY / AGENT_B_MODEL.
+  // Semasa Fasa 3 (UI) belum wujud, medan ini diisi melalui env sahaja.
+  mergedConfig.agentB = {
+    enabled: (mergedConfig.agentB?.enabled === true
+      || (!!process.env.AGENT_B_API_KEY && !!process.env.AGENT_B_BASE_URL)),
+    baseUrl: String(mergedConfig.agentB?.baseUrl || process.env.AGENT_B_BASE_URL || '').trim(),
+    apiKey: String(mergedConfig.agentB?.apiKey || process.env.AGENT_B_API_KEY || '').trim(),
+    model: String(mergedConfig.agentB?.model || process.env.AGENT_B_MODEL || 'glm-5.3-flashx').trim()
+  };
+  // Hygiene: Agent B tanpa kredensial lengkap mesti terlerai sepenuhnya —
+  // jangan biarkan enabled:true terapung tanpa baseUrl/apiKey (Fasa 0 +
+  // gate akan fallback senyap kepada Gemini).
+  if (!mergedConfig.agentB.baseUrl || !mergedConfig.agentB.apiKey) {
+    mergedConfig.agentB.enabled = false;
+  }
+  if (!mergedConfig.agentB.model) {
+    mergedConfig.agentB.model = 'glm-5.3-flashx';
+  }
+
   // 🔄 Migrasi Data: Alihkan advancedSettings.geminiModel ke geminiModel
   // (dropdown atas). Ini menyokong penyatuan single-picker — pengguna lama
   // yang menetapkan model override dalam advancedSettings tetapi TIDAK
