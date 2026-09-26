@@ -21,8 +21,14 @@
 
 const log = require('../utils/logger');
 
-// Had saiz input Fasa 0 (karakter kasar ~ 4 char/token → ~12k token)
-const PREFLIGHT_MAX_INPUT_CHARS = 48000;
+// HEADROOM PRINSIP (Mandat Penghapusan 48k 2026-09-26): fail drama boleh
+// mencecah 1,500–2,500 baris (150k–200k aksara). Siling 48k lama memaksa
+// sampling yang membuang watak/plot babak tengah & akhir. GLM-5.3-flash
+// mempunyai konteks 1M token — muatan 250k aksara hanya ~5% kapasiti.
+// SILING BAHARU: 250,000 aksara (~2,500 entri penuh) — tiada pemotongan
+// jalan cerita; sampling hanya aktif melebihi siling keselamatan ini.
+const MAX_PREFLIGHT_CHARS = 250000;
+const PREFLIGHT_MAX_INPUT_CHARS = MAX_PREFLIGHT_CHARS; // alias warisan
 // Skip sampling jika fail lebih kecil dari ini (entries)
 const PREFLIGHT_MIN_ENTRIES = 10;
 // Had bilangan istilah yang diterima (VideoLingo: "Extract less than 15 terms")
@@ -55,7 +61,8 @@ function sampleEntriesForPreflight(entries) {
     return entries; // Kecil — hantar semua
   }
   // Sampling merata: kekal k-th entry supaya plot arc tersebar
-  const k = Math.ceil(totalChars / PREFLIGHT_MAX_INPUT_CHARS);
+  // (HANYA melebihi siling 250k — fail sehingga 2,500 entri diserahkan penuh)
+  const k = Math.ceil(totalChars / MAX_PREFLIGHT_CHARS);
   const sampled = entries.filter((_, idx) => idx % k === 0);
   log.debug(() => `[SubFaberPreflight] Large file (${entries.length} entries, ${totalChars} chars) sampled to ${sampled.length} entries (k=${k})`);
   return sampled;
@@ -363,6 +370,7 @@ module.exports = {
   resilientParseJson,
   stripReasoningTags,
   formatPreflightForPrompt,
+  MAX_PREFLIGHT_CHARS,
   PREFLIGHT_MAX_INPUT_CHARS,
   PREFLIGHT_MIN_ENTRIES,
   PREFLIGHT_MAX_TERMS

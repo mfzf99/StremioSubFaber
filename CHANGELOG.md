@@ -2,6 +2,16 @@
 
 All notable changes to this project will be documented in this file.
 
+## SubMaker v1.9.8 (2026-09-26) — Pre-Flight Payload Ceiling 250k Chars + Headroom Timeouts 180s/45s
+
+**Sekatan buatan 48k aksara dimansuhkan — jalan cerita penuh diserahkan kepada Inspector:**
+
+- **Siling penyerapan 250k ([`subfaberPreflight.js`](src/services/subfaberPreflight.js)):** `MAX_PREFLIGHT_CHARS = 250000` menggantikan had 48k yang memaksa sampling pada fail 1,500–2,500 baris (150k–200k aksara) — watak dan plot babak tengah/akhir tercicir. Muatan 250k hanya ~5% kapasiti konteks 1M token GLM-5.3-flash. Fail sehingga 2,500 entri kini diserahkan **penuh tanpa pemotongan**; sampling merata hanya aktif melebihi siling keselamatan 250k (fail ekstrem). Alias warisan `PREFLIGHT_MAX_INPUT_CHARS` sejajar ke 250k.
+
+- **Headroom timeout ([`agentBInspector.js`](src/services/agentBInspector.js)):** `AGENT_B_PREFLIGHT_TIMEOUT_MS` 45s → **180s** (3 minit — baca 2,500 entri penuh tanpa tercekik); `AGENT_B_INSPECTION_TIMEOUT_MS` 15s → **45s** (60% headroom ke atas latensi purata GLM 12–16s bagi beban 50 baris). Model sandaran `deepseek-v4.1-flash` mewarisi kedua-dua had ini semasa failover (timeout dikongsi per-operasi). [`resilientParseJson()`](src/services/subfaberPreflight.js:140) dikekalkan.
+
+- **Ujian:** suite 71 → **73** ujian preflight+inspector: konstanta siling 250k, kes forensik mandat (mock **2,000 entri / ~210k aksara** diserahkan PENUH tanpa sampling — baris tengah [1,000] dan akhir [2,000] disahkan hadir dalam raw text), sampling keselamatan ekstrem (>250k aktif), kitaran timeout 180s naik/pulih (3 laluan). `npm test`: 203 tests, **202 PASS / 0 FAIL** (1 skipped).
+
 ## SubMaker v1.9.7 (2026-09-26) — Clean 2-Model Consolidation: glm-5.3-flash + deepseek-v4.1-flash
 
 **Kerumitan Trinity dimansuhkan — seni bina modular 2 model yang ringkas dan padu:**

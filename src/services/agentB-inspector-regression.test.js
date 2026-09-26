@@ -7,8 +7,8 @@
  *   2. buildInspectionPayload: blok <en>/<ms> padat, ID global, cap baris
  *   3. Fail-open: panggilan API tergendala → { valid: true, failOpen: true }
  *   4. Circuit breaker: 3 kegagalan berturut → silent mode (tiada panggilan)
- *   5. Payload GLM UNTHROTTLED: model glm-5.3-flashx → reasoning_effort
- *      'low', max_tokens 4096, timeout berfasa 15s (semakan) / 45s (Fasa 0)
+ *   5. Payload GLM UNTHROTTLED: reasoning_effort 'low', max_tokens 4096,
+ *      timeout berfasa 45s (semakan) / 180s (Fasa 0 — headroom 250k aksara)
  *   6. Integriti enjin apabila agentB = null → 100% laluan Gemini asal
  *   7. Gerbang semantik enjin: valid:false → SATU retry + amaran jenayah;
  *      failOpen → tiada retry; hasil struktur bercacat → tiada semakan
@@ -232,10 +232,10 @@ test('AgentB: GLM payload unthrottled — reasoning_effort low, max_tokens 4096,
   assert.equal(inspector.model, 'glm-5.3-flashx');
   assert.equal(inspector.reasoningEffort, 'low', 'glm-5.3-flashx needs reasoning_effort low (thinking always-on)');
   assert.equal(inspector.maxRetries, 0, 'fail fast — no provider-level retries');
-  assert.equal(inspector.translationTimeout, AGENT_B_INSPECTION_TIMEOUT_MS, 'inspection timeout 15s');
-  assert.equal(inspector.translationTimeout, 15000);
-  assert.equal(AGENT_B_INSPECTION_TIMEOUT_MS, 15000, 'semakan batch: 15s (mandat unthrottle)');
-  assert.equal(AGENT_B_PREFLIGHT_TIMEOUT_MS, 45000, 'Fasa 0: 45s (mandat unthrottle)');
+  assert.equal(inspector.translationTimeout, AGENT_B_INSPECTION_TIMEOUT_MS, 'inspection timeout 45s');
+  assert.equal(inspector.translationTimeout, 45000);
+  assert.equal(AGENT_B_INSPECTION_TIMEOUT_MS, 45000, 'semakan batch: 45s (mandat headroom 2026-09-26)');
+  assert.equal(AGENT_B_PREFLIGHT_TIMEOUT_MS, 180000, 'Fasa 0: 180s (mandat headroom — 250k aksara)');
 
   // Siling token dibuka: 4096 (bukan 256 zero-yap lama)
   assert.equal(inspector.getCappedMaxOutputTokens(), AGENT_B_MAX_OUTPUT_TOKENS);
@@ -249,7 +249,7 @@ test('AgentB: GLM payload unthrottled — reasoning_effort low, max_tokens 4096,
   assert.ok(Array.isArray(body.messages) && body.messages.length === 1, 'single user message');
 });
 
-test('AgentB: runPreflightPass menaikkan timeout kepada 45s dan memulihkannya selepas Fasa 0', async () => {
+test('AgentB: runPreflightPass menaikkan timeout kepada 180s dan memulihkannya selepas Fasa 0', async () => {
   const inspector = new AgentBInspector({
     apiKey: 'test-key',
     baseUrl: 'https://agentb.example.com/v1'
@@ -257,9 +257,9 @@ test('AgentB: runPreflightPass menaikkan timeout kepada 45s dan memulihkannya se
 
   // Fail kecil (< PREFLIGHT_MIN_ENTRIES) → skip cepat; laluan tetap melalui
   // kitaran naik/pulih timeout dalam runPreflightPass.
-  assert.equal(inspector.translationTimeout, 15000, 'baseline 15s sebelum Fasa 0');
+  assert.equal(inspector.translationTimeout, 45000, 'baseline 45s sebelum Fasa 0');
   await inspector.runPreflightPass(makeEntries(3), 'Malay', 'English');
-  assert.equal(inspector.translationTimeout, 15000, 'timeout dipulihkan selepas skip path');
+  assert.equal(inspector.translationTimeout, 45000, 'timeout dipulihkan selepas skip path');
 
   // Verifikasi kitaran penuh dengan fail besar (panggilan API di-override)
   let observedTimeout = null;
@@ -269,8 +269,8 @@ test('AgentB: runPreflightPass menaikkan timeout kepada 45s dan memulihkannya se
   };
   const result = await inspector.runPreflightPass(makeEntries(50), 'Malay', 'English');
   assert.ok(result, 'preflight context returned');
-  assert.equal(observedTimeout, 45000, 'Fasa 0 mesti berjalan pada 45s');
-  assert.equal(inspector.translationTimeout, 15000, 'pulih kepada 15s selepas Fasa 0');
+  assert.equal(observedTimeout, 180000, 'Fasa 0 mesti berjalan pada 180s (headroom 250k aksara)');
+  assert.equal(inspector.translationTimeout, 45000, 'pulih kepada 45s selepas Fasa 0');
 });
 
 test('AgentB: runPreflightPass memulihkan timeout walaupun panggilan API gagal', async () => {
@@ -282,7 +282,7 @@ test('AgentB: runPreflightPass memulihkan timeout walaupun panggilan API gagal',
 
   const result = await inspector.runPreflightPass(makeEntries(50), 'Malay', 'English');
   assert.equal(result, null, 'kegagalan Fasa 0 → null (non-blocking, kontrak asal)');
-  assert.equal(inspector.translationTimeout, 15000, 'finally block sentiasa memulihkan 15s');
+  assert.equal(inspector.translationTimeout, 45000, 'finally block sentiasa memulihkan 45s');
 });
 
 test('AgentB: buildUserPrompt override menghantar prompt inspector verbatim', () => {

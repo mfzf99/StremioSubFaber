@@ -43,8 +43,11 @@ const log = require('../utils/logger');
 // + SATU sandaran universal (deepseek-v4.1-flash). flashx digugurkan.
 const AGENT_B_DEFAULT_MODEL = 'glm-5.3-flash';   // Utama: Pre-Flight + Semakan
 const AGENT_B_FALLBACK_MODEL = 'deepseek-v4.1-flash'; // Sandaran universal (~214 tok/s)
-const AGENT_B_PREFLIGHT_TIMEOUT_MS = 45000;  // Fasa 0: baca episod penuh (48k aksara) + analisis tema
-const AGENT_B_INSPECTION_TIMEOUT_MS = 15000; // Semakan batch: latensi rangkaian rootsys.cloud selamat
+// HEADROOM KESELAMATAN (Mandat Headroom 2026-09-26):
+// Fasa 0 180s — baca 2,500 entri penuh (250k aksara) tanpa tercekik;
+// Semakan 45s — 60% headroom ke atas latensi purata GLM (12–16s).
+const AGENT_B_PREFLIGHT_TIMEOUT_MS = 180000;
+const AGENT_B_INSPECTION_TIMEOUT_MS = 45000;
 const AGENT_B_MAX_OUTPUT_TOKENS = 4096;      // Ruang reasoning tokens + content (kuota infiniti)
 const AGENT_B_CIRCUIT_THRESHOLD = 3;      // 3 kegagalan berturut → silent mode
 const AGENT_B_MAX_LINE_CHARS = 200;       // Cap panjang baris dalam payload padat
@@ -227,8 +230,9 @@ class AgentBInspector extends OpenAICompatibleProvider {
     });
 
     // Pembina asas clamp translationTimeout kepada >= 5000ms — enforce semula
-    // had mandate: 15s bagi semakan batch (lalai instance); Fasa 0 dinaikkan
-    // sementara kepada 45s oleh runPreflightPass().
+    // had mandate: 45s bagi semakan batch (lalai instance); Fasa 0 dinaikkan
+    // sementara kepada 180s oleh runPreflightPass(). Sandaran (deepseek)
+    // mewarisi had masa yang sama — failover berkongsi headroom ini.
     this.translationTimeout = AGENT_B_INSPECTION_TIMEOUT_MS;
 
     // ── CLEAN 2-MODEL (MANDAT PENYATUAN BERSIH 2026-09-26) ──
@@ -376,7 +380,7 @@ class AgentBInspector extends OpenAICompatibleProvider {
     // mana-mana panggilan batch bermula; fasa tidak bertindih.
     const previousTimeout = this.translationTimeout;
     const previousModel = this.model;
-    this.translationTimeout = AGENT_B_PREFLIGHT_TIMEOUT_MS;
+    this.translationTimeout = AGENT_B_PREFLIGHT_TIMEOUT_MS; // 180s headroom
 
     // DUAL-MODEL FAILOVER (Mandat §4B): setiap model menjalankan Fasa 0
     // penuh melalui runPreflightSemanticPass dengan hook zero-swallowed-

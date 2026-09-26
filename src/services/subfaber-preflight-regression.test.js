@@ -19,6 +19,8 @@ const {
   buildPreflightRawText,
   sampleEntriesForPreflight,
   buildPreflightPrompt,
+  MAX_PREFLIGHT_CHARS,
+  PREFLIGHT_MAX_INPUT_CHARS,
   parsePreflightResponse,
   formatPreflightForPrompt,
   PREFLIGHT_MAX_TERMS
@@ -52,22 +54,43 @@ test('SubFaberPreflight: buildPreflightRawText empty/invalid entries return empt
 });
 
 // --- sampleEntriesForPreflight ---
+test('SubFaberPreflight: ceiling constant is 250k (mandat headroom 2026-09-26)', () => {
+  assert.equal(MAX_PREFLIGHT_CHARS, 250000, 'siling penyerapan = 250,000 aksara (1M token GLM ~5% utilisasi)');
+  assert.equal(PREFLIGHT_MAX_INPUT_CHARS, 250000, 'alias warisan sejajar');
+});
+
 test('SubFaberPreflight: small files pass through unchanged', () => {
   const entries = makeEntries(50, () => 'A'.repeat(20));
   const sampled = sampleEntriesForPreflight(entries);
   assert.equal(sampled.length, entries.length, 'Small file must not be sampled');
 });
 
-test('SubFaberPreflight: large files are evenly sampled under char budget', () => {
-  // 2000 entries × ~60 chars = ~120k chars > 48k budget → sampling aktif
-  const entries = makeEntries(2000, (i) => `Line number ${i} with some dialogue content here. `);
+test('SubFaberPreflight: file up to 250k chars is absorbed FULLY (mandat headroom 2026-09-26)', () => {
+  // 2000 entri × ~110 aksara = ~210k aksara — di bawah siling 250k baharu
+  // → TANPA sampling: seluruh jalan cerita diserahkan (watak babak tengah/
+  // akhir tidak tercicir lagi). Kes forensik mandat: filem/drama sebenar.
+  const entries = makeEntries(2000, (i) => `Baris dialog epik nombor ${i} dengan kandungan naratif penuh keseluruhan babak cereka. `);
   const totalBefore = entries.reduce((s, e) => s + e.text.length, 0);
+  assert.ok(totalBefore > 150000, `prasyarat: fail mesti besar (dapat ${totalBefore} aksara)`);
+  assert.ok(totalBefore <= 250000, `mesti di bawah siling baharu (dapat ${totalBefore})`);
+
   const sampled = sampleEntriesForPreflight(entries);
-  assert.ok(sampled.length < entries.length, 'Large file must be sampled down');
-  const totalAfter = sampled.reduce((s, e) => s + e.text.length, 0);
-  assert.ok(totalAfter < totalBefore, 'Sampled total chars must be smaller');
-  // Sampling merata: entry pertama sentiasa kekal (idx % k === 0)
-  assert.equal(sampled[0].id, entries[0].id, 'First entry always kept for plot continuity');
+  assert.equal(sampled.length, entries.length, 'FAIL PENUH diserahkan — sampling TIDAK aktif di bawah 250k');
+  const raw = buildPreflightRawText(sampled);
+  assert.ok(raw.includes(entries[1999].text.trim()), 'baris TERAKHIR (plot akhir) mesti hadir');
+  assert.ok(raw.includes(entries[1000].text.trim()), 'baris TENGAH (plot tengah) mesti hadir');
+});
+
+test('SubFaberPreflight: sampling hanya aktif melebihi siling 250k (keselamatan ekstrem)', () => {
+  // 4000 entri × ~90 aksara = ~360k aksara > 250k siling → sampling aktif
+  const entries = makeEntries(4000, (i) => `Baris luar biasa panjang ${i} untuk melepasi siling keselamatan. `);
+  const totalBefore = entries.reduce((s, e) => s + e.text.length, 0);
+  assert.ok(totalBefore > 250000, `prasyarat: mesti melebihi siling (dapat ${totalBefore})`);
+
+  const sampled = sampleEntriesForPreflight(entries);
+  assert.ok(sampled.length < entries.length, 'melebihi 250k → sampling keselamatan aktif');
+  // Entry pertama sentiasa kekal untuk kontinuiti plot
+  assert.equal(sampled[0].id, entries[0].id, 'First entry always kept');
 });
 
 // --- buildPreflightPrompt ---
