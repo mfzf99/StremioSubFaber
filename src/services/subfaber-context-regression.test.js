@@ -7,7 +7,8 @@
  *   2. prepareContextForBatch: pembina konteks TUNGGAL (tiada laluan legacy)
  *   3. prepareBatchXml: blok konteks verbatim mandat (<previous_content>,
  *      <subsequent_content>, Content Summary, Points to Note)
- *   4. createXmlBatchPrompt: persona VideoLingo + <translation_principles>
+ *   4. createXmlBatchPrompt: persona hybrid V1.9.2 (expressiveness) +
+ *      guardrail split-sentence + <translation_principles>
  *   5. Flag subfaberEnabled DIBUANG — prompt SubFaber tulen tanpa sebarang flag
  */
 
@@ -266,19 +267,22 @@ test('SubFaberPrompt: pure SubFaber prompt when ON — persona + principles + XM
   const batchText = engine.prepareBatchXml(batch, null);
 
   const prompt = engine.createXmlBatchPrompt(batchText, 'Malay', null, batch.length, null, 0, 1);
-  // Persona VideoLingo verbatim
+  // Persona hybrid V1.9.2 verbatim (localization expert + natural spoken flow)
   assert.ok(prompt.includes('## Role'), 'Role section present');
   assert.ok(prompt.includes('professional Netflix subtitle translator'), 'VideoLingo persona verbatim');
   assert.ok(prompt.includes('fluent in both English and Malay'), 'Language pair in persona');
-  assert.ok(prompt.includes('natural, conversational Malay'), 'Conversational tone in persona');
-  // Task + principles verbatim
+  assert.ok(prompt.includes('natural, fluent, and conversational Malay'), 'Conversational tone in persona (hybrid V1.9.2)');
+  // Task + principles verbatim (hybrid: expressiveness + split-sentence guardrail)
   assert.ok(prompt.includes('## Task'), 'Task section present');
+  assert.ok(prompt.includes('Handle split sentences correctly'), 'Split-sentence guardrail (task item 3, hybrid V1.9.2)');
+  assert.ok(prompt.includes('Translate ONLY the fragment present in each line'), 'Fragment isolation rule verbatim');
   assert.ok(prompt.includes('Strictly preserve all inline markup'), 'Markup preservation rule (task item 4)');
   assert.ok(prompt.includes('<translation_principles>'), 'Principles opening tag');
   assert.ok(prompt.includes('</translation_principles>'), 'Principles closing tag');
-  assert.ok(prompt.includes('Faithful to the original'), 'Principle 1 verbatim');
-  assert.ok(prompt.includes('Accurate terminology'), 'Principle 2 verbatim');
-  assert.ok(prompt.includes('Understand the context'), 'Principle 3 verbatim');
+  assert.ok(prompt.includes('Meaning over literal words'), 'Principle 1 verbatim (hybrid V1.9.2)');
+  assert.ok(prompt.includes('Natural spoken flow'), 'Principle 2 verbatim (hybrid V1.9.2)');
+  assert.ok(prompt.includes('Strict line isolation'), 'Principle 3 verbatim (split-sentence isolation)');
+  assert.ok(prompt.includes('Professional terminology'), 'Principle 4 verbatim (hybrid V1.9.2)');
   // Kontrak XML satu baris (SRT AI Translator)
   assert.ok(prompt.includes('## Output Format'), 'Output Format section present');
   assert.ok(prompt.includes('EXACTLY one <s id="N"> element per input subtitle'), '1-to-1 XML contract');

@@ -2220,28 +2220,30 @@ class TranslationEngine {
     const startId = idMatches.length > 0 ? idMatches[0] : 'START';
     const idList = idMatches.length > 0 ? idMatches.join(', ') : 'N/A';
 
-    // ── SUBFABER TULEN — DEFAULT MUTLAK (Rebrand Mandat 2026-09-25) ──
-    // Cabang legacy 7-rule SubMaker dibuang sepenuhnya. Enjin SubFaber
-    // (VideoLingo persona + kontrak XML satu baris SRT AI Translator)
-    // adalah satu-satunya laluan terjemahan. Anchor '<s id="${startId}">'
-    // kekal di penutup supaya Smart Preamble Scrubber (v1.6.1) dalam
-    // parseXmlBatchResponse terus berfungsi tanpa off-by-one.
+    // ── SUBFABER HYBRID V1.9.2 (Mandat Pelaksanaan 2026-09-26) ──
+    // Prompt Fasa 1 harfiah (faithfulness) diganti dengan HYBRID 1-Pass:
+    // roh Fasa 2 VideoLingo (expressiveness) + guardrail serpihan ayat
+    // (split sentences) + kontrak XML satu baris SRT AI Translator.
+    // Anchor '<s id="${startId}">' kekal di penutup supaya Smart Preamble
+    // Scrubber (v1.6.1) dalam parseXmlBatchResponse terus berfungsi tanpa
+    // off-by-one.
     const promptBody = `## Role
-You are a professional Netflix subtitle translator, fluent in both ${sourceLabel || 'the source language'} and ${targetLabel}, as well as their respective cultures.
-Your expertise lies in accurately understanding the semantics and structure of the original ${sourceLabel || 'source'} text and faithfully translating it into natural, conversational ${targetLabel} while preserving the original meaning.
+You are a professional Netflix subtitle translator and localization expert, fluent in both ${sourceLabel || 'the source language'} and ${targetLabel}, as well as their respective cultures.
+Your expertise lies in accurately capturing the context and meaning of the original dialogue and rendering it into natural, fluent, and conversational ${targetLabel} as spoken by native speakers.
 
 ## Task
-We have a segment of original ${sourceLabel || 'source'} subtitles that need to be directly translated into ${targetLabel}. These subtitles come from a specific context and may contain specific themes and terminology.
+Translate the provided ${sourceLabel || 'source'} subtitles into ${targetLabel} line by line, preserving the exact context, tone, and character dynamics.
 
-1. Translate the original ${sourceLabel || 'source'} subtitles into ${targetLabel} line by line
-2. Ensure the translation is faithful to the original, accurately conveying the original meaning
-3. Consider the context and professional terminology
-4. Strictly preserve all inline markup ([br], <i>, <b>) in their exact positions
+1. Translate each subtitle line into natural, spoken ${targetLabel} dialogue.
+2. Aim for contextual smoothness and natural phrasing that conforms to ${targetLabel} conversational habits, avoiding stiff or unnatural literal translations.
+3. Handle split sentences correctly: Dialogue frequently splits across consecutive lines due to speech timing. Translate ONLY the fragment present in each line without merging multiple lines together.
+4. Strictly preserve all inline markup ([br], <i>, <b>) in their exact corresponding positions.
 
 <translation_principles>
-1. Faithful to the original: Accurately convey the content and meaning of the original text, without arbitrarily changing, adding, or omitting content.
-2. Accurate terminology: Use professional terms correctly and maintain consistency in terminology.
-3. Understand the context: Fully comprehend and reflect the background and contextual relationships of the text.
+1. Meaning over literal words: Accurately convey the true intent, emotion, and tone of the original dialogue rather than translating word-for-word.
+2. Natural spoken flow: Ensure the dialogue flows effortlessly and sounds authentic to native audiences, while fully respecting the narrative context.
+3. Strict line isolation: Each subtitle line is bound to strict video timestamps. Never merge, skip, or redistribute text between different lines.
+4. Professional terminology: Keep established character names, titles, and context-specific terms consistent throughout.
 </translation_principles>
 
 <input>
