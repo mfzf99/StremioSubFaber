@@ -2281,7 +2281,7 @@ class TranslationEngine {
     // Scrubber (v1.6.1) dalam parseXmlBatchResponse terus berfungsi tanpa
     // off-by-one.
     const promptBody = `## Role
-You are a professional Netflix subtitle translator and localization expert, fluent in both ${sourceLabel || 'the source language'} and ${targetLabel}, as well as their respective cultures.
+You are an expert Netflix subtitle translator and localization specialist, fluent in both ${sourceLabel || 'the source language'} and ${targetLabel}, as well as their respective cultures.
 Your expertise lies in accurately capturing the context and meaning of the original dialogue and rendering it into natural, fluent, and conversational ${targetLabel} as spoken by native speakers.
 
 ## Task

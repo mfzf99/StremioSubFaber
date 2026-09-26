@@ -307,9 +307,9 @@ test('SubFaberPrompt: pure SubFaber prompt when ON — persona + principles + XM
   const batchText = engine.prepareBatchXml(batch, null);
 
   const prompt = engine.createXmlBatchPrompt(batchText, 'Malay', null, batch.length, null, 0, 1);
-  // Persona hybrid V1.9.2 verbatim (localization expert + natural spoken flow)
+  // Persona hybrid V1.9.2 verbatim (localization specialist + natural spoken flow)
   assert.ok(prompt.includes('## Role'), 'Role section present');
-  assert.ok(prompt.includes('professional Netflix subtitle translator'), 'VideoLingo persona verbatim');
+  assert.ok(prompt.includes('expert Netflix subtitle translator'), 'VideoLingo persona verbatim (expert anchor)');
   assert.ok(prompt.includes('fluent in both English and Malay'), 'Language pair in persona');
   assert.ok(prompt.includes('natural, fluent, and conversational Malay'), 'Conversational tone in persona (hybrid V1.9.2)');
   // Task + principles verbatim (hybrid: expressiveness + split-sentence guardrail)
