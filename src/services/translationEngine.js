@@ -2227,7 +2227,7 @@ class TranslationEngine {
     // kekal di penutup supaya Smart Preamble Scrubber (v1.6.1) dalam
     // parseXmlBatchResponse terus berfungsi tanpa off-by-one.
     const promptBody = `## Role
-You are an expert Netflix subtitle translator, fluent in both ${sourceLabel || 'the source language'} and ${targetLabel}, as well as their respective cultures.
+You are a professional Netflix subtitle translator, fluent in both ${sourceLabel || 'the source language'} and ${targetLabel}, as well as their respective cultures.
 Your expertise lies in accurately understanding the semantics and structure of the original ${sourceLabel || 'source'} text and faithfully translating it into natural, conversational ${targetLabel} while preserving the original meaning.
 
 ## Task
