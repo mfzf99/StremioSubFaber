@@ -2033,7 +2033,7 @@ class TranslationEngine {
         && !this._agentBSemanticRetries.has(batchIndex)
         && agentBStructurallyClean) {
       try {
-        const verdict = await this.agentB.runSemanticInspection(batch, translatedEntries);
+        const verdict = await this.agentB.runSemanticInspection(batch, translatedEntries, { batchIndex, totalBatches });
         if (verdict?.failOpen) {
           this.translationStats.agentBFailures++;
         } else if (verdict && verdict.valid === false && Array.isArray(verdict.crimes)) {
@@ -2068,7 +2068,7 @@ You MUST translate each numbered line 1:1. NEVER merge two source lines into one
             // DAN lulus semakan semantik kedua (satu-satunya re-verdict).
             if (retryMissing.length === 0 && retryEntries.length === batch.length) {
               const retrySorted = Object.values(retryAligned).sort((a, b) => a.index - b.index);
-              const reVerdict = await this.agentB.runSemanticInspection(batch, retrySorted);
+              const reVerdict = await this.agentB.runSemanticInspection(batch, retrySorted, { batchIndex, totalBatches });
               if (reVerdict?.valid !== false) {
                 translatedEntries = retrySorted;
                 this._closeIncident('AGENT_B_SEMANTIC_RETRY', batchIndex + 1, { outcome: 'recovered' });

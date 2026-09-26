@@ -102,6 +102,33 @@ Note: Start your answer with { and end with }, do not add any other text.`;
 }
 
 /**
+ * ZERO-SWALLOWED-ERROR (Mandat Observability 2026-09-26 §3A): bersihkan tag
+ * penaakulan GLM/DeepSeek (<think>...</think>, <thinking>...</thinking>)
+ * SEBELUM teks diserahkan kepada parsePreflightResponse(). Blok penaakulan
+ * boleh berlegar di hadapan JSON jawapan dan menyebabkan parse gagal palsu
+ * (isu runtime beta: respons 28s "gagal dihuraikan" sedangkan jawapan sah
+ * terbenam selepas <think>).
+ * @param {string} text - Respons mentah model
+ * @returns {string} Teks tanpa blok penaakulan
+ */
+function stripReasoningTags(text) {
+  // Tag pembuka GLM 5.3 ialah emoji otak (U+1F9E0) — dibina daripada pasangan
+  // UTF-16 surrogates supaya literal tidak rosak oleh pipeline penghantaran.
+  const GLM_BRAIN = String.fromCharCode(0xD83E, 0xDDE0);
+  const brainOpen = new RegExp(GLM_BRAIN + '[\\s\\S]*?<\\/think>', 'gi');
+  const brainUnclosed = new RegExp(GLM_BRAIN + '[\\s\\S]*$', 'gi');
+
+  let cleaned = String(text || '');
+  cleaned = cleaned.replace(/<think>[\s\S]*?<\/think>/gi, '');
+  cleaned = cleaned.replace(/<think>[\s\S]*$/gi, '');          // tag tidak ditutup (stream terpotong)
+  cleaned = cleaned.replace(/<thinking>[\s\S]*?<\/thinking>/gi, '');
+  cleaned = cleaned.replace(/<thinking>[\s\S]*$/gi, '');        // tag tidak ditutup
+  cleaned = cleaned.replace(brainOpen, '');                     // 🧠... </think> (GLM 5.3)
+  cleaned = cleaned.replace(brainUnclosed, '');                 // 🧠 tanpa penutup
+  return cleaned.trim();
+}
+
+/**
  * Parse + sanitize respons Fasa 0. Tahan kandungan rosak:
  *   - Strip markdown fences jika model tak patuh arahan
  *   - Regex-extract blok { ... } pertama sebagai fallback
@@ -188,6 +215,10 @@ function formatPreflightForPrompt(preflightContext) {
  * @param {Object} geminiService - GeminiService instance (atau provider compatible)
  * @param {Object} [options] - Options tambahan
  * @param {Function} [options.onProgress] - Callback progress: ({phase:'preflight', status, summary, terms})
+ * @param {Function} [options.onParseFailure] - Zero-swallowed-error hook: dipanggil
+ *        dengan teks mentah apabila parse gagal (forensik / failover dual-model).
+ * @param {Function} [options.onCallError] - Zero-swallowed-error hook: dipanggil
+ *        dengan ralat apabila panggilan API Fasa 0 gagal (failover dual-model).
  * @returns {Promise<{theme:string, terms:Array}|null>} Konteks Fasa 0 atau null
  */
 async function runPreflightSemanticPass(entries, targetLanguage, sourceLanguage, geminiService, options = {}) {
@@ -231,17 +262,34 @@ async function runPreflightSemanticPass(entries, targetLanguage, sourceLanguage,
 
     // 2. Bina prompt + panggil AI (flat user prompt, JSON output)
     const prompt = buildPreflightPrompt(rawText, targetLanguage, sourceLanguage);
+    const callStartedAt = Date.now();
     const responseText = await geminiService.translateSubtitle(
       rawText,
       'detected',
       targetLanguage,
       prompt
     );
+    const callDuration = Date.now() - callStartedAt;
+    const modelUsed = (geminiService && geminiService.model) ? geminiService.model : 'unknown';
+
+    // ZERO-SWALLOWED-ERROR §3A: observability penuh — saiz + durasi + model
+    // setiap respons Fasa 0 wajib dipaparkan supaya runtime boleh diper-
+    // diagnosis tanpa menebing (isu "blind log" beta 2).
+    log.info(() => `[SubFaberPreflight] Raw response received (${String(responseText || '').length} chars) in ${callDuration}ms [${modelUsed}]`);
+
+    // Mandat §3A: bersihkan tag penaakulan GLM/DeepSeek SEBELUM parse.
+    const cleanedResponse = stripReasoningTags(responseText);
 
     // 3. Parse + sanitize
-    const parsed = parsePreflightResponse(responseText);
+    const parsed = parsePreflightResponse(cleanedResponse);
     if (!parsed) {
-      log.warn(() => '[SubFaberPreflight] Failed to parse pre-flight response, continuing without global context');
+      // FORENSIK §B: 500 aksara pertama respons mentah wajib dipaparkan —
+      // kita tidak lagi buta terhadap apa yang dipulangkan endpoint.
+      const rawForLog = String(cleanedResponse || responseText || '');
+      log.warn(() => `[SubFaberPreflight] Parse failure. Raw snippet (first 500 chars): "${rawForLog.slice(0, 500)}..."`);
+      if (typeof options.onParseFailure === 'function') {
+        try { options.onParseFailure(rawForLog); } catch (_) { /* hook tidak boleh menggagalkan Fasa 0 */ }
+      }
       await emit({ status: 'skipped' });
       return null;
     }
@@ -250,8 +298,13 @@ async function runPreflightSemanticPass(entries, targetLanguage, sourceLanguage,
     await emit({ status: 'done', summary: parsed.theme, terms: parsed.terms });
     return parsed;
   } catch (err) {
-    // NON-BLOCKING: kegagalan Fasa 0 tidak menggagalkan terjemahan
-    log.warn(() => `[SubFaberPreflight] Pre-flight failed (non-blocking): ${err.message}`);
+    // NON-BLOCKING: kegagalan Fasa 0 tidak menggagalkan terjemahan.
+    // ZERO-SWALLOWED-ERROR §A: status + punca teknikal sebenar wajib dicetak.
+    const status = err?.statusCode || err?.response?.status || err?.status || 'N/A';
+    log.warn(() => `[SubFaberPreflight] Pre-flight API call failed (non-blocking, Status: ${status}): ${err?.message || err}`);
+    if (typeof options.onCallError === 'function') {
+      try { options.onCallError(err); } catch (_) { /* hook tidak boleh menggagalkan Fasa 0 */ }
+    }
     await emit({ status: 'skipped' });
     return null;
   }
@@ -263,6 +316,7 @@ module.exports = {
   sampleEntriesForPreflight,
   buildPreflightPrompt,
   parsePreflightResponse,
+  stripReasoningTags,
   formatPreflightForPrompt,
   PREFLIGHT_MAX_INPUT_CHARS,
   PREFLIGHT_MIN_ENTRIES,

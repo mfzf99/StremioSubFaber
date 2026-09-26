@@ -25,15 +25,21 @@
  *     (skala 1B token) — max_tokens 4096 (ruang reasoning + content) dan
  *     timeout berfasa: Fasa 0 45s (baca episod penuh) / semakan batch 15s.
  *     Tiada micro-timeout / tiny token cap yang membekukan nafas Agent B.
+ *   - ZERO-SWALLOWED-ERROR + DUAL-MODEL FAILOVER (Mandat Observabiliti
+ *     2026-09-26): tiada ralat ditelan senyap — setiap kegagalan mencetak
+ *     status + punca teknikal + raw snippet 500 aksara. Hierarki model:
+ *     glm-5.3-flashx (utama) → deepseek-v4.1-flash (sandaran) bagi
+ *     kedua-dua Fasa 0 dan Semakan Kelompok.
  *   - 100% BACKWARDS COMPATIBLE: Agent B null → enjin jalan 100% Gemini.
  */
 
 const OpenAICompatibleProvider = require('./providers/openaiCompatible');
-const { runPreflightSemanticPass } = require('./subfaberPreflight');
+const { runPreflightSemanticPass, stripReasoningTags } = require('./subfaberPreflight');
 const log = require('../utils/logger');
 
 // ── Konfigurasi tetap Agent B (Mandat Pembebasan Penuh 2026-09-26) ──
 const AGENT_B_DEFAULT_MODEL = 'glm-5.3-flashx';
+const AGENT_B_FALLBACK_MODEL = 'deepseek-v4.1-flash'; // Mandat Failover §4: askar penyelamat
 const AGENT_B_PREFLIGHT_TIMEOUT_MS = 45000;  // Fasa 0: baca episod penuh (48k aksara) + analisis tema
 const AGENT_B_INSPECTION_TIMEOUT_MS = 15000; // Semakan batch: latensi rangkaian rootsys.cloud selamat
 const AGENT_B_MAX_OUTPUT_TOKENS = 4096;      // Ruang reasoning tokens + content (kuota infiniti)
@@ -188,13 +194,19 @@ function parseInspectorResponse(responseText) {
  * Agent B — Inspector Semantik & Pre-Flight Offloader.
  *
  * Wrapper nipis di atas OpenAICompatibleProvider (reuse: SSRF agents,
- * auth headers, retry loop, registry GLM). Empat override wajib:
+ * auth headers, retry loop, registry GLM). Override wajib:
  *   1. getCappedMaxOutputTokens() → 4096 (bypass lantai 65536 keluarga GLM;
  *      ruang secukupnya untuk reasoning tokens tanpa menghalang content).
  *   2. buildUserPrompt() → prompt inspector dihantar verbatim sebagai user
  *      message (implementasi asas membuang customPrompt bukan-terjemahan).
  *   3. translationTimeout → 15s (semakan batch) / 45s (Fasa 0, dinaikkan
  *      sementara oleh runPreflightPass — pembina asas clamp >= 5000ms).
+ *
+ * DUAL-MODEL FAILOVER (Mandat Observabiliti §4): hierarki model disimpan
+ * dalam this.modelHierarchy (utama + sandaran deepseek-v4.1-flash). Setiap
+ * panggilan bergerak melalui _callWithFailover(): cuba utama → sebarang
+ * kegagalan (HTTP/timeout/kosong/rosak) → log WARN berformat mandat dan
+ * cuba sandaran → kedua-dua gagal → error terakhir dilempar.
  */
 class AgentBInspector extends OpenAICompatibleProvider {
   constructor(options = {}) {
@@ -206,8 +218,8 @@ class AgentBInspector extends OpenAICompatibleProvider {
       reasoningEffort: 'low',           // GLM 5.3: thinking always-on, effort minimum
       maxOutputTokens: AGENT_B_MAX_OUTPUT_TOKENS,
       translationTimeout: AGENT_B_INSPECTION_TIMEOUT_MS / 1000,
-      maxRetries: 0,                    // Fail fast — satu percubaan sahaja
-      enableJsonOutput: false,          // Parse JSON manual (kompatibiliti maksimum endpoint)
+      maxRetries: 0,                    // Fail fast — satu percubaan sahaja per model
+      enableJsonOutput: false,          // Parse JSON manual (kompatibilitas maksimum endpoint)
       ssrfLookup: options.ssrfLookup || null
     });
 
@@ -216,10 +228,69 @@ class AgentBInspector extends OpenAICompatibleProvider {
     // sementara kepada 45s oleh runPreflightPass().
     this.translationTimeout = AGENT_B_INSPECTION_TIMEOUT_MS;
 
+    // ── DUAL-MODEL FAILOVER (Mandat §4A): hierarki model Agent B ──
+    // Utama: glm-5.3-flashx (pantas). Sandaran: deepseek-v4.1-flash
+    // (askar penyelamat kestabilan struktur). this.model sentiasa menjejak
+    // model yang AKTIF supaya log forensik melaporkan model sebenar.
+    const primary = options.model || AGENT_B_DEFAULT_MODEL;
+    this.modelHierarchy = [primary];
+    if (String(primary).toLowerCase() !== AGENT_B_FALLBACK_MODEL) {
+      this.modelHierarchy.push(AGENT_B_FALLBACK_MODEL);
+    }
+
     // ── Circuit breaker (per sesi fail — instance dibina per permintaan) ──
     this._consecutiveFailures = 0;
     this._circuitOpen = false;
     this.circuitThreshold = AGENT_B_CIRCUIT_THRESHOLD;
+  }
+
+  /**
+   * DUAL-MODEL FAILOVER CORE (Mandat §4B): jalankan satu operasi AI melalui
+   * hierarki model. Predicate `isFailure` memutuskan samaada hasil operasi
+   * dianggap gagal (ralat dilempar ATAU respons rosak/kosong) — membolehkan
+   * failover berlaku walaupun endpoint memulangkan HTTP 200 dengan badan
+   * sampah.
+   *
+   * @param {string} operation - Label operasi ('Pre-flight' / 'Batch N inspection') untuk log
+   * @param {Function} attempt - async (model) => hasil panggilan (boleh throw)
+   * @param {Function} isFailure - (hasil) => boolean — true jika failover diperlukan
+   * @returns {Promise<{result:*, modelUsed:string, failedAttempts:Array}>}
+   * @throws {Error} ralat percubaan terakhir apabila SEMUA model gagal
+   */
+  async _callWithFailover(operation, attempt, isFailure) {
+    const failedAttempts = [];
+    for (let i = 0; i < this.modelHierarchy.length; i++) {
+      const model = this.modelHierarchy[i];
+      this.model = model; // log + payload pembawa sentiasa melihat model aktif
+      let result;
+      try {
+        result = await attempt(model);
+      } catch (err) {
+        // ZERO-SWALLOWED-ERROR §3B/§4B: status + punca sebenar, bukan generik
+        const status = err?.statusCode || err?.response?.status || err?.status || 'N/A';
+        failedAttempts.push({ model, error: err });
+        if (i < this.modelHierarchy.length - 1) {
+          log.warn(() => `[AgentB] ${operation} on ${model} failed (Status: ${status}): ${err?.message || err}. Failing over to ${this.modelHierarchy[i + 1]}...`);
+          continue;
+        }
+        log.warn(() => `[AgentB] ${operation} on ${model} failed (Status: ${status}): ${err?.message || err}. All models exhausted.`);
+        throw err;
+      }
+      if (!isFailure(result)) {
+        return { result, modelUsed: model, failedAttempts };
+      }
+      // Respons diterima tetapi rosak/kosong (HTTP 200 sampah)
+      const reason = 'Empty or corrupt response';
+      failedAttempts.push({ model, error: new Error(reason) });
+      if (i < this.modelHierarchy.length - 1) {
+        log.warn(() => `[AgentB] ${operation} on ${model} failed (${reason}). Failing over to ${this.modelHierarchy[i + 1]}...`);
+        continue;
+      }
+      log.warn(() => `[AgentB] ${operation} on ${model} failed (${reason}). All models exhausted.`);
+      throw new Error(`${operation}: ${reason} on all models`);
+    }
+    // Tidak boleh dicapai — loop sentiasa return/throw
+    throw new Error(`${operation}: exhausted`);
   }
 
   /**
@@ -290,10 +361,49 @@ class AgentBInspector extends OpenAICompatibleProvider {
     // SELAMAT dari race: preflight di-await sepenuhnya oleh enjin sebelum
     // mana-mana panggilan batch bermula; fasa tidak bertindih.
     const previousTimeout = this.translationTimeout;
+    const previousModel = this.model;
     this.translationTimeout = AGENT_B_PREFLIGHT_TIMEOUT_MS;
+
+    // DUAL-MODEL FAILOVER (Mandat §4B): setiap model menjalankan Fasa 0
+    // penuh melalui runPreflightSemanticPass dengan hook zero-swallowed-
+    // error. null + hook aktif = kegagalan model (failover); null tanpa
+    // hook = skip sahaja (fail kecil / tiada teks) — jangan failover.
     try {
-      return await runPreflightSemanticPass(entries, targetLanguage, sourceLanguage, this, options);
+      const { result } = await this._callWithFailover(
+        'Pre-flight',
+        async () => {
+          let callError = null;
+          let parseFailed = false;
+          let rawSnippet = '';
+          let inner = null;
+          try {
+            inner = await runPreflightSemanticPass(entries, targetLanguage, sourceLanguage, this, {
+              ...options,
+              onCallError: (err) => { callError = err; },
+              onParseFailure: (raw) => { parseFailed = true; rawSnippet = String(raw || ''); }
+            });
+          } catch (err) {
+            // Defensive: runPreflightSemanticPass non-blocking, tetapi
+            // zero-swallowed-error bermakna kita tidak bergantung pada andaian.
+            callError = err;
+          }
+          if (inner) return { ok: true, context: inner };
+          if (callError || parseFailed) {
+            return { ok: false, callError, parseFailed, rawSnippet };
+          }
+          return { ok: true, context: null }; // skip sahaja (bukan kegagalan)
+        },
+        (outcome) => outcome && outcome.ok === false
+      );
+      return result && result.ok ? result.context : null;
+    } catch (failoverErr) {
+      // SEMUA model gagal — Fasa 0 kekal NON-BLOCKING (kontrak asal):
+      // pulangkan null, pipeline jalan tanpa konteks global. Punca
+      // teknikal telah dipapar oleh _callWithFailover (zero-swallowed).
+      log.warn(() => `[AgentB] Pre-flight exhausted all models — continuing without global context (non-blocking): ${failoverErr?.message || failoverErr}`);
+      return null;
     } finally {
+      this.model = previousModel;
       this.translationTimeout = previousTimeout;
     }
   }
@@ -301,15 +411,19 @@ class AgentBInspector extends OpenAICompatibleProvider {
   /**
    * TUGASAN 2: Semakan Semantik per batch — banding sumber vs hasil.
    *
-   * KEBAL RALAT (FAIL-OPEN): sebarang ralat rangkaian/timeout/respons rosak
-   * ditangkap senyap → { valid: true, failOpen: true } — pipeline tidak
-   * tergugat. Enjin membaca flag failOpen untuk statistik agentBFailures.
+   * DUAL-MODEL FAILOVER + ZERO-SWALLOWED-ERROR (Mandat Observabiliti):
+   *   - PASSED  → [INFO]  dengan latensi ms + model (§3C).
+   *   - CRIME   → [WARN]  jenis jenayah + model → Triggering Retry (§3B).
+   *   - FAILED  → [WARN]  status + punca teknikal sebenar per model (§3B).
+   *   - Parse gagal → [WARN] raw snippet 500 aksara pertama (§B).
+   *   - Kedua-dua model gagal → fail-open { valid: true, failOpen: true }.
    *
    * @param {Array<{id:number, text:string}>} sourceBatch - Batch sumber
    * @param {Array<{index:number, text:string}>} translatedEntries - Hasil sejajar
-   * @returns {Promise<{valid:boolean, crimes?:Array, failOpen?:boolean, skipped?:string}>}
+   * @param {{batchIndex?:number, totalBatches?:number}} [meta] - Meta batch untuk log
+   * @returns {Promise<{valid:boolean, crimes?:Array, failOpen?:boolean, skipped?:string, modelUsed?:string}>}
    */
-  async runSemanticInspection(sourceBatch, translatedEntries) {
+  async runSemanticInspection(sourceBatch, translatedEntries, meta = {}) {
     // Circuit breaker terbuka → senyap terus (tiada panggilan rangkaian)
     if (this._circuitOpen) {
       return { valid: true, skipped: 'circuit_open' };
@@ -320,31 +434,54 @@ class AgentBInspector extends OpenAICompatibleProvider {
       return { valid: true, skipped: 'no_input' };
     }
 
-    let responseText;
+    const hasBatchMeta = Number.isFinite(meta.batchIndex);
+    const batchLabel = hasBatchMeta
+      ? `Batch ${meta.batchIndex + 1}${Number.isFinite(meta.totalBatches) ? `/${meta.totalBatches}` : ''} inspection`
+      : 'Inspection';
+
+    const previousModel = this.model;
     try {
-      // Payload di-bake ke dalam customPrompt (buildUserPrompt override
-      // menghantarnya verbatim). maxRetries 0 + timeout 15s — pantas tetapi
-      // tidak mencetuskan timeout palsu akibat latensi rangkaian.
-      responseText = await this.translateSubtitle(payload.prompt, 'en', 'en', payload.prompt);
+      const { result, modelUsed } = await this._callWithFailover(
+        batchLabel,
+        async () => {
+          const startedAt = Date.now();
+          // Payload di-bake ke dalam customPrompt (buildUserPrompt override
+          // menghantarnya verbatim). maxRetries 0 per model + timeout 15s.
+          const responseText = await this.translateSubtitle(payload.prompt, 'en', 'en', payload.prompt);
+          const latency = Date.now() - startedAt;
+          // Mandat §3A: bersihkan tag penaakulan sebelum parse.
+          const cleaned = stripReasoningTags(responseText);
+          const verdict = parseInspectorResponse(cleaned);
+          if (!verdict) {
+            // FORENSIK §B: 500 aksara pertama respons mentah wajib dipaparkan.
+            const rawForLog = String(cleaned || responseText || '');
+            log.warn(() => `[AgentB] ${batchLabel} parse failure. Raw snippet (first 500 chars): "${rawForLog.slice(0, 500)}..."`);
+            return { verdict: null };
+          }
+          return { verdict, latency };
+        },
+        (outcome) => !outcome || !outcome.verdict // kosong/rosak → failover model seterusnya
+      );
+
+      // Berjaya pada salah satu model — log status keputusan (§3B/§3C)
+      const { verdict, latency } = result;
+      this._recordSuccess();
+      if (verdict.valid === false && Array.isArray(verdict.crimes) && verdict.crimes.length > 0) {
+        const types = verdict.crimes.map(c => c.type).join(', ');
+        log.warn(() => `[AgentB] ${batchLabel}: CRIME DETECTED [${types}] [${modelUsed}] -> Triggering Retry`);
+      } else {
+        log.info(() => `[AgentB] ${batchLabel}: PASSED (valid: true) [${modelUsed}] (${latency}ms)`);
+      }
+      return { ...verdict, modelUsed };
     } catch (err) {
+      // SEMUA model dalam hierarki gagal — fail-open forensik penuh.
       this._recordFailure();
-      log.warn(() => `[AgentB] Inspection call failed (fail-open): ${err?.message || err}`);
-      return { valid: true, failOpen: true, error: err?.message || String(err) };
+      const status = err?.statusCode || err?.response?.status || err?.status || 'N/A';
+      log.warn(() => `[AgentB] ${batchLabel} failed on ALL models (Status: ${status}): ${err?.message || err} — accepting Agent A output (fail-open)`);
+      return { valid: true, failOpen: true, error: 'both_models_failed', detail: err?.message || String(err) };
+    } finally {
+      this.model = previousModel;
     }
-
-    const verdict = parseInspectorResponse(responseText);
-    if (!verdict) {
-      // Respons tidak boleh ditafsir — dikira sebagai kegagalan kualiti
-      // (circuit breaker), tetapi fail-open bagi pipeline. Raw text
-      // dilog pada DEBUG (Mandat Unthrottle §C) untuk siasatan mudah.
-      this._recordFailure();
-      log.warn(() => '[AgentB] Inspection response unparseable (fail-open)');
-      log.debug(() => `[AgentB] Raw inspector response (first 800 chars): ${String(responseText).slice(0, 800)}`);
-      return { valid: true, failOpen: true, error: 'unparseable_response' };
-    }
-
-    this._recordSuccess();
-    return verdict;
   }
 }
 
@@ -354,6 +491,7 @@ module.exports = {
   parseInspectorResponse,
   INSPECTOR_INSTRUCTION,
   AGENT_B_DEFAULT_MODEL,
+  AGENT_B_FALLBACK_MODEL,
   AGENT_B_PREFLIGHT_TIMEOUT_MS,
   AGENT_B_INSPECTION_TIMEOUT_MS,
   AGENT_B_MAX_OUTPUT_TOKENS,

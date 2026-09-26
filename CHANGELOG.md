@@ -2,6 +2,20 @@
 
 All notable changes to this project will be documented in this file.
 
+## SubMaker v1.9.4 (2026-09-26) — Agent B: Zero-Swallowed-Error Observability + Dual-Model Failover (glm-5.3-flashx → deepseek-v4.1-flash)
+
+**Kotak hitam dibongkar — tiada lagi ralat ditelan senyap, sandaran automatik dipasang:**
+
+- **Observabiliti Pre-Flight ([`subfaberPreflight.js`](src/services/subfaberPreflight.js)):** setiap respons Fasa 0 kini mencetak `[INFO] Raw response received (N chars) in Xms [model]` — punca isu beta 2 (respons 28s "gagal dihuraikan" tanpa bukti) kini kelihatan. Parse gagal → `[WARN] Parse failure. Raw snippet (first 500 chars): "..."` — teks mentah endpoint dipapar ke terminal VPS. Hook `onParseFailure`/`onCallError` baru membenarkan failover dual-model. Catch block mencetak `Status:` + punca sebenar, bukan generik.
+
+- **Tag penaakulan dibersihkan sebelum parse:** [`stripReasoningTags()`](src/services/subfaberPreflight.js) membuang `<think>...</think>`, `<thinking>...</thinking>`, varian tidak tertutup (stream terpotong), dan blok GLM 5.3 🧠...`</think>` (emoji U+1F9E0 dibina daripada surrogates UTF-16) — dilaksanakan pada kedua-dua Fasa 0 dan semakan kelompok. Respons bercampur reasoning+JSON kini dihuraikan dengan jayanya.
+
+- **Dual-Model Failover Engine ([`agentBInspector.js`](src/services/agentBInspector.js)):** hierarki `modelHierarchy = ['glm-5.3-flashx', 'deepseek-v4.1-flash']`. Core baharu [`_callWithFailover()`](src/services/agentBInspector.js) — cuba utama → sebarang kegagalan (HTTP/sambungan/timeout/respons kosong/format rosak) → `[WARN] ... Failing over to deepseek-v4.1-flash...` → sandaran berjaya → operasi diteruskan; kedua-dua gagal → fail-open forensik penuh. Berkuat kuasa bagi kedua-dua Pre-Flight (non-blocking dipelihara) dan Semakan Kelompok.
+
+- **Log status kelompok berformat mandat:** LULUS → `[INFO] Batch N/M inspection: PASSED (valid: true) [model] (Xms)`; JENAYAH → `[WARN] ... CRIME DETECTED [MERGE, PHANTOM] [model] -> Triggering Retry`; RALAT → `[WARN] Batch N failed on model (Status: 502): punca sebenar`. Gerbang enjin kini menghantar meta `{batchIndex, totalBatches}`.
+
+- **Ujian:** suite 27 → **37 ujian**: failover automatik semakan + Pre-Flight (mock 502/504 → deepseek menyelamatkan), kedua-dua model gagal (rangkaian & HTTP 200 sampah) → fail-open `both_models_failed`, forensik log (raw snippet tepat 500 aksara + pengumuman failover — diassert melalui interception log.warn), strip tag (🧠 tertutup/terbuka, `<thinking>`, berbilang blok), hook `onParseFailure` teks mentah, dan meta batch dari gerbang. `npm test`: 190 tests, **189 PASS / 0 FAIL** (1 skipped).
+
 ## SubMaker v1.9.3 (2026-09-26) — Agent B Unthrottled: Siling Token 4096 + Timeout Berfasa 45s/15s (Mandat Pembebasan Penuh)
 
 **Semua sekatan nafas Agent B dibuang — kuota infiniti (skala 1B token), operasi tanpa throttling:**

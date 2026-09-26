@@ -612,3 +612,213 @@ test('AgentB: runPreflightPass mewarisi kontrak runPreflightSemanticPass (non-bl
   // Guard provider: inspector sendiri memenuhi kontrak translateSubtitle
   assert.equal(typeof inspector.translateSubtitle, 'function');
 });
+
+// ── 10. Dual-model failover + zero-swallowed-error (Mandat Observabiliti 2026-09-26) ──
+
+test('AgentB: failover automatik — glm gagal, deepseek-v4.1-flash menyelamatkan semakan', async () => {
+  const inspector = new AgentBInspector({
+    apiKey: 'test-key',
+    baseUrl: 'https://agentb.example.com/v1'
+  });
+  assert.deepEqual(inspector.modelHierarchy, ['glm-5.3-flashx', 'deepseek-v4.1-flash'], 'hierarki: primary + fallback');
+
+  const calls = [];
+  inspector.translateSubtitle = async function () {
+    calls.push(this.model);
+    if (this.model === 'glm-5.3-flashx') {
+      throw Object.assign(new Error('HTTP 502 Bad Gateway from upstream'), { statusCode: 502 });
+    }
+    return '{"valid":false,"crimes":[{"type":"MERGE","ids":[3,4],"note":"fused"}]}';
+  };
+
+  const verdict = await inspector.runSemanticInspection(makeEntries(4), makeTranslated(4), { batchIndex: 0, totalBatches: 2 });
+  assert.deepEqual(calls, ['glm-5.3-flashx', 'deepseek-v4.1-flash'], 'kedua-dua model dipanggil mengikut hierarki');
+  assert.equal(verdict.valid, false, 'verdict dari model sandaran diterima');
+  assert.equal(verdict.crimes[0].type, 'MERGE');
+  assert.equal(verdict.modelUsed, 'deepseek-v4.1-flash', 'model sandaran direkodkan');
+  assert.equal(inspector.model, 'glm-5.3-flashx', 'model dipulihkan kepada primary selepas operasi');
+  assert.equal(inspector.circuitOpen, false, 'kejayaan sandaran tidak membuka litar');
+});
+
+test('AgentB: failover Pre-Flight — primary 504, sandaran menghasilkan konteks Fasa 0', async () => {
+  const inspector = new AgentBInspector({
+    apiKey: 'test-key',
+    baseUrl: 'https://agentb.example.com/v1'
+  });
+  const calls = [];
+  inspector.translateSubtitle = async function () {
+    calls.push(this.model);
+    if (this.model === inspector.modelHierarchy[0]) {
+      throw Object.assign(new Error('gateway timeout'), { statusCode: 504 });
+    }
+    return '{"theme":"Fallback analysis.","terms":[]}';
+  };
+
+  const result = await inspector.runPreflightPass(makeEntries(50), 'Malay', 'English');
+  assert.ok(result, 'konteks dari model sandaran diterima');
+  assert.equal(result.theme, 'Fallback analysis.');
+  assert.deepEqual(calls, ['glm-5.3-flashx', 'deepseek-v4.1-flash']);
+  assert.equal(inspector.model, 'glm-5.3-flashx', 'model dipulihkan');
+});
+
+test('AgentB: kedua-dua model gagal (rangkaian) → fail-open both_models_failed + 1 kegagalan litar', async () => {
+  const inspector = new AgentBInspector({
+    apiKey: 'test-key',
+    baseUrl: 'https://agentb.example.com/v1'
+  });
+  let calls = 0;
+  inspector.translateSubtitle = async function () { calls++; throw new Error('connection reset by peer'); };
+
+  const verdict = await inspector.runSemanticInspection(makeEntries(2), makeTranslated(2), { batchIndex: 0, totalBatches: 1 });
+  assert.equal(calls, 2, 'primary + fallback kedua-duanya dicuba');
+  assert.equal(verdict.valid, true, 'fail-open');
+  assert.equal(verdict.failOpen, true);
+  assert.equal(verdict.error, 'both_models_failed');
+  assert.equal(verdict.detail, 'connection reset by peer', 'punca teknikal sebenar dibawa keluar');
+  assert.equal(inspector._consecutiveFailures, 1, 'satu operasi gagal = satu kegagalan litar sahaja');
+});
+
+test('AgentB: kedua-dua model gagal parse (HTTP 200 sampah) → fail-open selepas raw snippet', async () => {
+  const inspector = new AgentBInspector({
+    apiKey: 'test-key',
+    baseUrl: 'https://agentb.example.com/v1'
+  });
+  let calls = 0;
+  inspector.translateSubtitle = async function () { calls++; return 'garbage not json'; };
+
+  const verdict = await inspector.runSemanticInspection(makeEntries(2), makeTranslated(2));
+  assert.equal(calls, 2, 'failover turut berlaku untuk respons rosak (bukan ralat rangkaian)');
+  assert.equal(verdict.failOpen, true);
+  assert.equal(verdict.error, 'both_models_failed');
+});
+
+test('AgentB: logging forensik — raw snippet 500 aksara + pengumuman failover pada WARN', async () => {
+  const log = require('../utils/logger');
+  const inspector = new AgentBInspector({
+    apiKey: 'test-key',
+    baseUrl: 'https://agentb.example.com/v1'
+  });
+  inspector.translateSubtitle = async () => 'G'.repeat(1200);
+
+  const captured = [];
+  const originalWarn = log.warn;
+  log.warn = (fn) => {
+    try { captured.push(typeof fn === 'function' ? String(fn()) : String(fn)); } catch (_) { /* noop */ }
+  };
+  try {
+    const verdict = await inspector.runSemanticInspection(makeEntries(2), makeTranslated(2), { batchIndex: 0, totalBatches: 1 });
+    assert.equal(verdict.failOpen, true);
+
+    const snippetLog = captured.find(l => l.includes('Raw snippet'));
+    assert.ok(snippetLog, 'raw snippet mesti dicetak pada WARN semasa parse failure');
+    assert.ok(snippetLog.includes('G'.repeat(500)), 'snippet dipotong kepada tepat 500 aksara pertama');
+    assert.ok(!snippetLog.includes('G'.repeat(501)), 'snippet TIDAK melebihi 500 aksara');
+
+    const failoverLog = captured.find(l => l.includes('Failing over to deepseek-v4.1-flash'));
+    assert.ok(failoverLog, 'pengumuman failover kepada model sandaran mesti dicetak');
+  } finally {
+    log.warn = originalWarn;
+  }
+});
+
+// ── 11. Pembersihan tag penaakulan (Mandat §3A) ──
+// Nota: tag GLM/DeepSeek dibina melalui fromCharCode + hexpair supaya
+// literal Unicode tidak rosak oleh pipeline penghantaran (konvensyen projek
+// — corak sama digunakan oleh subfaber-context-regression.test.js).
+
+test('AgentB: stripReasoningTags membuang tag penaakulan (tertutup & terbuka)', () => {
+  const { stripReasoningTags } = require('./subfaberPreflight');
+
+  // Tag GLM sebenar: THINK = U+1F9E0 (🧠) — dibina dari pasangan UTF-16 surrogates
+  const BRAIN = String.fromCharCode(0xD83E, 0xDDE0);          // U+1F9E0
+  const THINK_OPEN = `${BRAIN}`;
+  const THINK_CLOSE = `</think>`;
+
+  // 1. Blok tertutup: THINK... </think> dibuang, jawapan JSON kekal
+  assert.equal(stripReasoningTags(`${THINK_OPEN}chain of thought${THINK_CLOSE}{"valid":true}`), '{"valid":true}');
+
+  // 2. Blok tidak ditutup (stream terpotong): semuanya selepas THINK dibuang
+  assert.equal(stripReasoningTags(`${THINK_OPEN}truncated reasoning without close`), '');
+
+  // 3. Berbilang blok + kandungan sah di luar blok
+  assert.equal(
+    stripReasoningTags(`${THINK_OPEN}a${THINK_CLOSE}pre ${THINK_OPEN}b${THINK_CLOSE}mid{"valid":true}`),
+    'pre mid{"valid":true}'
+  );
+
+  // 4. <thinking> tertutup & tidak tertutup
+  assert.equal(stripReasoningTags('<thinking>reasoning</thinking>{"valid":true}'), '{"valid":true}');
+  assert.equal(stripReasoningTags('<thinking>truncated'), '');
+
+  // 5. Tiada tag → kekal; input kosong/null selamat
+  assert.equal(stripReasoningTags('{"valid":true}'), '{"valid":true}');
+  assert.equal(stripReasoningTags(null), '');
+  assert.equal(stripReasoningTags('   '), '');
+});
+
+test('AgentB: inspection membersihkan tag THINK sebelum parse — verdict bertahan', async () => {
+  const inspector = new AgentBInspector({
+    apiKey: 'test-key',
+    baseUrl: 'https://agentb.example.com/v1'
+  });
+  const BRAIN = String.fromCharCode(0xD83E, 0xDDE0);
+  inspector.translateSubtitle = async () =>
+    `${BRAIN}I need to compare each line carefully... lines 1 and 2 look fine, no merge detected.</think>\n{"valid":true}`;
+
+  const verdict = await inspector.runSemanticInspection(makeEntries(2), makeTranslated(2), { batchIndex: 0, totalBatches: 1 });
+  assert.equal(verdict.valid, true);
+  assert.equal(verdict.failOpen, undefined, 'parse berjaya — bukan fail-open');
+  assert.equal(verdict.modelUsed, 'glm-5.3-flashx', 'primary model cukup — tiada failover diperlukan');
+});
+
+test('SubFaberPreflight: pembersihan tag dilaksanakan sebelum parse (provider mentah)', async () => {
+  const { runPreflightSemanticPass } = require('./subfaberPreflight');
+  const BRAIN = String.fromCharCode(0xD83E, 0xDDE0);
+  // Provider mentah yang TIDAK membersihkan THINK (corak bukan-openai) —
+  // tanggungjawab pembersihan kini pada lapisan preflight sendiri.
+  const rawProvider = {
+    model: 'glm-5.3-flashx',
+    translateSubtitle: async () => `${BRAIN}raw reasoning that would leak into a naive parser</think>{"theme":"Theme X.","terms":[]}`
+  };
+  const result = await runPreflightSemanticPass(makeEntries(50), 'Malay', 'English', rawProvider);
+  assert.ok(result, 'tag THINK mesti dibersihkan sebelum parsePreflightResponse');
+  assert.equal(result.theme, 'Theme X.');
+});
+
+test('SubFaberPreflight: hook onParseFailure menghantar teks mentah untuk forensik', async () => {
+  const { runPreflightSemanticPass } = require('./subfaberPreflight');
+  let hookRaw = null;
+  const provider = {
+    model: 'glm-5.3-flashx',
+    translateSubtitle: async () => 'not-json-at-all {broken'
+  };
+  const result = await runPreflightSemanticPass(makeEntries(50), 'Malay', 'English', provider, {
+    onParseFailure: (raw) => { hookRaw = raw; }
+  });
+  assert.equal(result, null, 'parse gagal → null (non-blocking dipelihara)');
+  assert.equal(hookRaw, 'not-json-at-all {broken', 'hook menerima teks mentah yang sama dengan log forensik');
+});
+
+// ── 12. Meta batch dari gerbang enjin ──
+
+test('AgentB: gerbang enjin menghantar meta {batchIndex, totalBatches} kepada inspector', async () => {
+  const TranslationEngine = require('./translationEngine');
+  let capturedMeta = null;
+  const dummyGemini = {
+    translateSubtitle: async () => '<s id="1">Satu</s>\n<s id="2">Dua</s>',
+    streamTranslateSubtitle: async () => '',
+    estimateTokenCount: () => 10
+  };
+  const agentB = {
+    circuitOpen: false,
+    runSemanticInspection: async (batch, translated, meta) => {
+      capturedMeta = meta;
+      return { valid: true };
+    }
+  };
+  const engine = new TranslationEngine(dummyGemini, 'gemini-2.5-flash', {}, { providerName: 'gemini', agentB });
+  await engine.translateBatch(makeEntries(2), 'Malay', null, 0, 1, null, { streaming: false });
+  assert.ok(capturedMeta, 'meta mesti dihantar oleh gerbang enjin');
+  assert.equal(capturedMeta.batchIndex, 0);
+  assert.equal(capturedMeta.totalBatches, 1);
+});
