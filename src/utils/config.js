@@ -574,11 +574,13 @@ function normalizeConfig(config) {
   // Struktur additive — tiada field sedia ada disentuh.
   // env fallback: AGENT_B_BASE_URL / AGENT_B_API_KEY / AGENT_B_MODEL /
   // AGENT_B_PREFLIGHT_MODEL / AGENT_B_FALLBACK_MODEL.
-  // ── FRONTIER UPGRADE (MANDAT FRONTIER 2026-09-26 — TRINITY POWERHOUSE) ──
+  // ── UNIVERSAL PAYLOAD (MANDAT SENI BINA UNIVERSAL PAYLOAD 2026-09-26) ──
   // Kredensial rootsys.cloud (1B token quota / 1M context window):
-  //   Pre-Flight Fasa 0  : kimi-k3 (2.8T MoE Long-Context King)
-  //   Semakan Kelompok   : glm-5.3 (753B Flagship Rigorous Auditor)
-  //   Sandaran Universal : deepseek-v4.1-flash
+  //   Fasa 0 (Pre-Flight Macro)  : kimi-k3 (Timeout 180,000ms / 180s)
+  //   Fasa 1 (Semakan Kelompok)  : glm-5.3 (Timeout 45,000ms / 45s)
+  //   Universal Failover Engine  : deepseek-v4-pro (timeout dinamik)
+  // Muatan universal: {model, temperature: 0.0, messages} — tiada
+  // max_tokens/max_completion_tokens/top_p/presence_penalty.
   mergedConfig.agentB = {
     enabled: (mergedConfig.agentB?.enabled === true
       || (!!process.env.AGENT_B_API_KEY && !!process.env.AGENT_B_BASE_URL)),
@@ -586,7 +588,7 @@ function normalizeConfig(config) {
     apiKey: String(mergedConfig.agentB?.apiKey || process.env.AGENT_B_API_KEY || '').trim(),
     model: String(mergedConfig.agentB?.model || mergedConfig.agentB?.inspectionModel || process.env.AGENT_B_MODEL || 'glm-5.3').trim(),
     preflightModel: String(mergedConfig.agentB?.preflightModel || process.env.AGENT_B_PREFLIGHT_MODEL || 'kimi-k3').trim(),
-    fallbackModel: String(mergedConfig.agentB?.fallbackModel || process.env.AGENT_B_FALLBACK_MODEL || 'deepseek-v4.1-flash').trim()
+    fallbackModel: String(mergedConfig.agentB?.fallbackModel || process.env.AGENT_B_FALLBACK_MODEL || 'deepseek-v4-pro').trim()
   };
   // Hygiene: inspectionModel adalah alias warisan bagi 'model' (Semakan) —
   // dilucutkan daripada struktur tersimpan selepas migrasi.

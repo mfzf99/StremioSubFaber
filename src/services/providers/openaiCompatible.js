@@ -42,6 +42,10 @@ class OpenAICompatibleProvider {
       ? Math.max(0, parseInt(options.maxRetries, 10))
       : 2;
     this.enableJsonOutput = options.enableJsonOutput === true;
+    // ═══ UNIVERSAL PAYLOAD FLAG (Mandat Seni Bina Universal Payload
+    // 2026-09-26): apabila true, buildChatRequest membina muatan seragam
+    // { model, temperature: 0.0, messages } — digunakan oleh Agent B.
+    this.universalPayload = options.universalPayload === true;
     this._ssrfLookup = options.ssrfLookup || null;
     if (this._ssrfLookup) {
       const http = require('http');
@@ -358,6 +362,32 @@ class OpenAICompatibleProvider {
         content: userPrompt
       }
     ];
+
+    // ═══ UNIVERSAL PAYLOAD BUILDER (Mandat Seni Bina Universal Payload
+    // 2026-09-26 §A — PENYATUAN MUATAN SEJAGAT) ═══
+    // Payload builder bagi Agent B: TIADA lagi logik bercabang (if/else)
+    // berasaskan nama model — semua enjin (kimi-k3 / glm-5.3 /
+    // deepseek-v4-pro) berkongsi satu format muatan yang seragam:
+    //   - Kunci temperature: 0.0 secara mutlak (persampelan tamak / argmax).
+    //   - JANGAN hantar: max_tokens, max_completion_tokens, top_p,
+    //     presence_penalty (SIFAR SEKATAN TOKEN — ujian empirikal terminal
+    //     mengesahkan ketiadaan max_tokens menjamin respons tamat dengan
+    //     finish_reason="stop" tanpa masalah pemotongan teks).
+    if (this.universalPayload === true) {
+      const universalBody = {
+        model: this.model,
+        temperature: 0.0,
+        messages
+      };
+      if (stream === true) universalBody.stream = true;
+      return {
+        body: universalBody,
+        url: `${this.baseUrl}/chat/completions`,
+        isCfRun: false,
+        isCfTranslation: false,
+        useResponsesApi: false
+      };
+    }
 
     const body = isCfRun
       ? { prompt: userPrompt, stream }

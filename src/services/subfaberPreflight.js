@@ -301,7 +301,10 @@ async function runPreflightSemanticPass(entries, targetLanguage, sourceLanguage,
   }
 
   await emit({ status: 'running' });
-  log.info(() => `[SubFaberPreflight] Running pre-flight semantic pass (${entries.length} entries)`);
+  // Mandat Seni Bina Universal Payload §C: nama model tepat dicatatkan
+  // semasa log — [kimi-k3] (Fasa 0) / [deepseek-v4-pro] (failover).
+  const preflightModel = (geminiService && geminiService.model) ? geminiService.model : 'unknown';
+  log.info(() => `[SubFaberPreflight] Running pre-flight semantic pass (${entries.length} entries) [${preflightModel}]`);
 
   try {
     // 1. Sample + ekstrak teks mentah (tanpa timecode)

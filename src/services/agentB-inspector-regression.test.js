@@ -7,14 +7,18 @@
  *   2. buildInspectionPayload: blok <en>/<ms> padat, ID global, cap baris
  *   3. Fail-open: panggilan API tergendala → { valid: true, failOpen: true }
  *   4. Circuit breaker: 3 kegagalan berturut → silent mode (tiada panggilan)
- *   5. Payload GLM UNTHROTTLED: reasoning_effort 'low', max_tokens 4096,
- *      timeout berfasa 45s (semakan) / 180s (Fasa 0 — headroom 250k aksara)
+ *   5. Muatan Universal (Mandat Seni Bina Universal Payload 2026-09-26):
+ *      temperature 0.0 mutlak — TIADA max_tokens / max_completion_tokens /
+ *      top_p / presence_penalty / reasoning_effort (SIFAR SEKATAN TOKEN,
+ *      persampelan tamak argmax, finish_reason="stop" dijamin);
+ *      timeout berfasa 45s (semakan) / 180s (Fasa 0 — siling 250k aksara)
  *   6. Integriti enjin apabila agentB = null → 100% laluan Gemini asal
  *   7. Gerbang semantik enjin: valid:false → SATU retry + amaran jenayah;
  *      failOpen → tiada retry; hasil struktur bercacat → tiada semakan
  *   8. Normalisasi config agentB (env fallback + hygiene enabled)
- *   9. Ketahanan pengekstrakan jawapan (Mandat Unthrottle §C): content →
- *      reasoning_content → stringify fallback
+ *   9. Ketahanan pengekstrakan jawapan: content → reasoning_content →
+ *      stringify fallback
+ *  10. Ketelusan log mandat: [kimi-k3] / [glm-5.3] / Fallback triggered ->
  */
 
 const test = require('node:test');
@@ -27,11 +31,11 @@ const {
   AgentBInspector,
   buildInspectionPayload,
   parseInspectorResponse,
+  AGENT_B_DEFAULT_MODEL,
   AGENT_B_PREFLIGHT_TIMEOUT_MS,
   AGENT_B_INSPECTION_TIMEOUT_MS,
-  AGENT_B_MAX_OUTPUT_TOKENS,
-  AGENT_B_KIMI_MAX_OUTPUT_TOKENS,
   AGENT_B_PREFLIGHT_MODEL,
+  AGENT_B_FALLBACK_MODEL,
   AGENT_B_CIRCUIT_THRESHOLD
 } = require('./agentBInspector');
 const OpenAICompatibleProvider = require('./providers/openaiCompatible');
@@ -222,9 +226,9 @@ test('AgentB: kejayaan reset kaunter kegagalan berturut-turut', async () => {
   assert.equal(inspector.circuitOpen, false, 'success reset the consecutive counter — circuit still closed');
 });
 
-// ── 5. Payload GLM (registry + override) — UNTHROTTLED ──
+// ── 5. Muatan Universal (Mandat Seni Bina Universal Payload 2026-09-26) ──
 
-test('AgentB: GLM-5.3 payload frontier-locked — temperature 0.0, top_p 0.1, max_tokens 4096, timeout berfasa 45s/180s', () => {
+test('AgentB: GLM-5.3 universal payload — temperature 0.0 mutlak, SIFAR SEKATAN TOKEN, timeout berfasa 45s/180s', () => {
   const inspector = new AgentBInspector({
     apiKey: 'test-key',
     baseUrl: 'https://agentb.example.com/v1',
@@ -232,29 +236,27 @@ test('AgentB: GLM-5.3 payload frontier-locked — temperature 0.0, top_p 0.1, ma
   });
 
   assert.equal(inspector.model, 'glm-5.3');
-  assert.equal(inspector.reasoningEffort, 'low', 'glm-5.3 needs reasoning_effort low (thinking always-on)');
   assert.equal(inspector.maxRetries, 0, 'fail fast — no provider-level retries');
   assert.equal(inspector.translationTimeout, AGENT_B_INSPECTION_TIMEOUT_MS, 'inspection timeout 45s');
   assert.equal(inspector.translationTimeout, 45000);
   assert.equal(AGENT_B_INSPECTION_TIMEOUT_MS, 45000, 'semakan batch: 45s (mandat headroom 2026-09-26)');
   assert.equal(AGENT_B_PREFLIGHT_TIMEOUT_MS, 180000, 'Fasa 0: 180s (mandat headroom — 250k aksara)');
 
-  // Siling token dibuka: 4096 (bukan 256 zero-yap lama)
-  assert.equal(inspector.getCappedMaxOutputTokens(), AGENT_B_MAX_OUTPUT_TOKENS);
-  assert.equal(AGENT_B_MAX_OUTPUT_TOKENS, 4096, 'max_tokens 4096 — ruang reasoning + content');
-
-  // buildChatRequest: body mesti membawa reasoning_effort low + max_tokens 4096
+  // MANDAT UNIVERSAL PAYLOAD §A: muatan akhir wajib berbentuk
+  // { model, temperature: 0.0, messages } — kunci lain DILARANG sama sekali.
   const { body } = inspector.buildChatRequest('inspector prompt', false, {});
-  assert.equal(body.reasoning_effort, 'low', 'registry GLM 5.3 must map effort to low');
-  assert.equal(body.max_tokens, 4096, 'max_tokens must honor unthrottled budget');
-  // FRONTIER MANDAT §1B: glm-5.3 (bukan flash) dikunci deterministik mutlak
-  assert.equal(body.temperature, 0.0, 'glm-5.3 full must be locked to temperature 0.0');
-  assert.equal(body.top_p, 0.1, 'glm-5.3 full must be locked to top_p 0.1');
-  assert.equal(body.stream, false);
+  assert.equal(body.temperature, 0.0, 'universal payload locks temperature 0.0 (persampelan tamak argmax)');
+  assert.equal('max_tokens' in body, false, 'max_tokens TIDAK dihantar (sifar sekatan token — finish_reason="stop" dijamin)');
+  assert.equal('max_completion_tokens' in body, false, 'max_completion_tokens TIDAK dihantar');
+  assert.equal('top_p' in body, false, 'top_p digugurkan sepenuhnya (latensi minimum)');
+  assert.equal('presence_penalty' in body, false, 'presence_penalty digugurkan sepenuhnya');
+  assert.equal('reasoning_effort' in body, false, 'reasoning_effort digugurkan — tiada logik bercabang nama model');
+  assert.equal(body.model, 'glm-5.3');
   assert.ok(Array.isArray(body.messages) && body.messages.length === 1, 'single user message');
+  assert.deepEqual(Object.keys(body).sort(), ['messages', 'model', 'temperature'], 'muatan mesti TEPAT {model, temperature, messages}');
 });
 
-test('AgentB: kimi-k3 payload frontier rules — temperature/top_p/presence_penalty DIGUGURKAN, max_tokens 16384', () => {
+test('AgentB: kimi-k3 universal payload — temperature 0.0, TIADA max_tokens 16384 lama / top_p / presence_penalty', () => {
   const inspector = new AgentBInspector({
     apiKey: 'test-key',
     baseUrl: 'https://agentb.example.com/v1',
@@ -264,15 +266,15 @@ test('AgentB: kimi-k3 payload frontier rules — temperature/top_p/presence_pena
   assert.equal(inspector.isKimiModel(), true, 'kimi detector mesti aktif untuk kimi-k3');
 
   const { body } = inspector.buildChatRequest('preflight prompt', false, {});
-  // FRONTIER MANDAT §1A: pelayan Kimi K3 mengunci sampling secara dalaman —
-  // menghantar temperature/top_p/presence_penalty menyebabkan HTTP 400.
-  assert.equal(body.temperature, undefined, 'kimi payload must NOT carry temperature');
-  assert.equal(body.top_p, undefined, 'kimi payload must NOT carry top_p');
-  assert.equal(body.presence_penalty, undefined, 'kimi payload must NOT carry presence_penalty');
-  assert.equal(body.max_tokens, 16384, 'kimi payload must use max_tokens 16384 (ruang ringkasan + 15 istilah)');
-  assert.equal(AGENT_B_KIMI_MAX_OUTPUT_TOKENS, 16384);
-  assert.equal(inspector.getCappedMaxOutputTokens(), 16384, 'kimi siling token 16384');
-  assert.equal(body.reasoning_effort, 'low', 'kimi-k3 always-on reasoning_effort low dikekalkan');
+  // MANDAT UNIVERSAL PAYLOAD §A: satu format muatan seragam — kimi-k3
+  // TIDAK lagi menerima rawatan istimewa (registry model dimansuhkan).
+  assert.equal(body.temperature, 0.0, 'universal payload locks temperature 0.0');
+  assert.equal('max_tokens' in body, false, 'max_tokens TIDAK dihantar (siling 16384 lama dimansuhkan — sifar sekatan token)');
+  assert.equal('max_completion_tokens' in body, false, 'max_completion_tokens TIDAK dihantar');
+  assert.equal('top_p' in body, false, 'top_p digugurkan');
+  assert.equal('presence_penalty' in body, false, 'presence_penalty digugurkan');
+  assert.equal(body.model, 'kimi-k3');
+  assert.deepEqual(Object.keys(body).sort(), ['messages', 'model', 'temperature'], 'muatan mesti TEPAT {model, temperature, messages}');
 });
 
 test('AgentB: glm-5.3-flash TIDAK terjejas peraturan frontier glm-5.3 penuh (pembezaan flash)', () => {
@@ -282,6 +284,27 @@ test('AgentB: glm-5.3-flash TIDAK terjejas peraturan frontier glm-5.3 penuh (pem
   const { body } = provider.buildChatRequest('probe', false, {});
   assert.notEqual(body.temperature, 0.0, 'flash variant must not inherit full glm-5.3 temperature lock');
   assert.notEqual(body.top_p, 0.1, 'flash variant must not inherit full glm-5.3 top_p lock');
+});
+
+test('AgentB: deepseek-v4-pro universal payload — satu format seragam tanpa logik bercabang nama model', () => {
+  const inspector = new AgentBInspector({
+    apiKey: 'test-key',
+    baseUrl: 'https://agentb.example.com/v1',
+    model: 'deepseek-v4-pro'
+  });
+
+  const { body } = inspector.buildChatRequest('fallback probe', false, {});
+  // Mandat §A: tiada if/else berasaskan nama model — deepseek-v4-pro
+  // menerima muatan universal yang SAMA dengan kimi-k3 / glm-5.3.
+  assert.equal(body.temperature, 0.0, 'universal payload locks temperature 0.0');
+  assert.equal('max_tokens' in body, false, 'max_tokens must NOT be sent');
+  assert.equal('max_completion_tokens' in body, false, 'max_completion_tokens must NOT be sent');
+  assert.equal('top_p' in body, false, 'top_p must NOT be sent');
+  assert.equal('presence_penalty' in body, false, 'presence_penalty must NOT be sent');
+  assert.equal('reasoning_effort' in body, false, 'reasoning_effort must NOT be sent');
+  assert.equal('thinking' in body, false, 'thinking parameter must NOT be sent');
+  assert.equal(body.model, 'deepseek-v4-pro');
+  assert.deepEqual(Object.keys(body).sort(), ['messages', 'model', 'temperature'], 'muatan mesti TEPAT {model, temperature, messages}');
 });
 
 test('AgentB: runPreflightPass menaikkan timeout kepada 180s dan memulihkannya selepas Fasa 0', async () => {
@@ -650,12 +673,13 @@ test('AgentB: runPreflightPass mewarisi kontrak runPreflightSemanticPass (non-bl
 
 // ── 10. Dual-model failover + zero-swallowed-error (Mandat Observabiliti 2026-09-26) ──
 
-test('AgentB: failover automatik — glm-5.3 gagal, deepseek-v4.1-flash menyelamatkan semakan', async () => {
+test('AgentB: failover automatik — glm-5.3 gagal, deepseek-v4-pro menyelamatkan semakan', async () => {
   const inspector = new AgentBInspector({
     apiKey: 'test-key',
     baseUrl: 'https://agentb.example.com/v1'
   });
-  assert.deepEqual(inspector.modelHierarchy, ['glm-5.3', 'deepseek-v4.1-flash'], 'hierarki semakan: glm-5.3 + fallback (TRINITY)');
+  assert.deepEqual(inspector.modelHierarchy, ['glm-5.3', 'deepseek-v4-pro'], 'hierarki semakan: glm-5.3 + fallback (TRINITY)');
+  assert.equal(AGENT_B_FALLBACK_MODEL, 'deepseek-v4-pro', 'sandaran universal deepseek-v4-pro (Mandat Universal Payload)');
 
   const calls = [];
   inspector.translateSubtitle = async function () {
@@ -667,10 +691,10 @@ test('AgentB: failover automatik — glm-5.3 gagal, deepseek-v4.1-flash menyelam
   };
 
   const verdict = await inspector.runSemanticInspection(makeEntries(4), makeTranslated(4), { batchIndex: 0, totalBatches: 2 });
-  assert.deepEqual(calls, ['glm-5.3', 'deepseek-v4.1-flash'], 'kedua-dua model dipanggil mengikut hierarki');
+  assert.deepEqual(calls, ['glm-5.3', 'deepseek-v4-pro'], 'kedua-dua model dipanggil mengikut hierarki');
   assert.equal(verdict.valid, false, 'verdict dari model sandaran diterima');
   assert.equal(verdict.crimes[0].type, 'MERGE');
-  assert.equal(verdict.modelUsed, 'deepseek-v4.1-flash', 'model sandaran direkodkan');
+  assert.equal(verdict.modelUsed, 'deepseek-v4-pro', 'model sandaran direkodkan');
   assert.equal(inspector.model, 'glm-5.3', 'model dipulihkan kepada primary selepas operasi');
   assert.equal(inspector.circuitOpen, false, 'kejayaan sandaran tidak membuka litar');
 });
@@ -681,7 +705,7 @@ test('AgentB: failover Pre-Flight — kimi-k3 504, sandaran menghasilkan konteks
     baseUrl: 'https://agentb.example.com/v1'
   });
   assert.equal(inspector.preflightModel, 'kimi-k3', 'lalai Pre-Flight kimi-k3 (TRINITY)');
-  assert.deepEqual(inspector.preflightHierarchy, ['kimi-k3', 'deepseek-v4.1-flash'], 'hierarki Fasa 0 berasingan');
+  assert.deepEqual(inspector.preflightHierarchy, ['kimi-k3', 'deepseek-v4-pro'], 'hierarki Fasa 0 berasingan');
 
   const calls = [];
   inspector.translateSubtitle = async function () {
@@ -695,8 +719,8 @@ test('AgentB: failover Pre-Flight — kimi-k3 504, sandaran menghasilkan konteks
   const result = await inspector.runPreflightPass(makeEntries(50), 'Malay', 'English');
   assert.ok(result, 'konteks dari model sandaran diterima');
   assert.equal(result.theme, 'Fallback analysis.');
-  // TRINITY: Fasa 0 → kimi-k3 dahulu, sandaran deepseek-v4.1-flash
-  assert.deepEqual(calls, ['kimi-k3', 'deepseek-v4.1-flash']);
+  // TRINITY: Fasa 0 → kimi-k3 dahulu, sandaran deepseek-v4-pro
+  assert.deepEqual(calls, ['kimi-k3', 'deepseek-v4-pro']);
   assert.equal(inspector.model, 'glm-5.3', 'model semakan tidak terjejas oleh Fasa 0');
 });
 
@@ -753,8 +777,12 @@ test('AgentB: logging forensik — raw snippet 500 aksara + pengumuman failover 
     assert.ok(snippetLog.includes('G'.repeat(500)), 'snippet dipotong kepada tepat 500 aksara pertama');
     assert.ok(!snippetLog.includes('G'.repeat(501)), 'snippet TIDAK melebihi 500 aksara');
 
-    const failoverLog = captured.find(l => l.includes('Failing over to deepseek-v4.1-flash'));
+    const failoverLog = captured.find(l => l.includes('Failing over to deepseek-v4-pro'));
     assert.ok(failoverLog, 'pengumuman failover kepada model sandaran mesti dicetak');
+
+    // MANDAT SENI BINA UNIVERSAL PAYLOAD §C: format trigger wajib
+    const triggerLog = captured.find(l => l.includes('[AgentB] Fallback triggered -> [deepseek-v4-pro]'));
+    assert.ok(triggerLog, 'format trigger wajib: [AgentB] Fallback triggered -> [deepseek-v4-pro]');
   } finally {
     log.warn = originalWarn;
   }
@@ -979,10 +1007,10 @@ test('AgentB: fallbackModel "none" → hierarki model tunggal (tiada failover)',
   const inspector = new AgentBInspector({
     apiKey: 'k',
     baseUrl: 'https://x.example/v1',
-    model: 'deepseek-v4.1-flash',
+    model: 'deepseek-v4-pro',
     fallbackModel: 'none'
   });
-  assert.deepEqual(inspector.modelHierarchy, ['deepseek-v4.1-flash'], '"none" = single-model');
+  assert.deepEqual(inspector.modelHierarchy, ['deepseek-v4-pro'], '"none" = single-model');
   assert.equal(inspector.fallbackModel, null);
 
   let calls = 0;
@@ -1007,11 +1035,14 @@ test('AgentB: fallbackModel sama dengan utama → dedupe kepada hierarki tunggal
 test('AgentB: lalai tanpa sebarang options — kimi-k3 Fasa 0 + glm-5.3 semakan + deepseek sandaran (TRINITY)', () => {
   const inspector = new AgentBInspector({ apiKey: 'k', baseUrl: 'https://x.example/v1' });
   assert.equal(inspector.preflightModel, 'kimi-k3', 'lalai Fasa 0 kimi-k3 (2.8T MoE Long-Context King)');
-  assert.deepEqual(inspector.preflightHierarchy, ['kimi-k3', 'deepseek-v4.1-flash'], 'hierarki Fasa 0');
+  assert.deepEqual(inspector.preflightHierarchy, ['kimi-k3', 'deepseek-v4-pro'], 'hierarki Fasa 0');
   assert.equal(inspector.model, 'glm-5.3', 'lalai semakan glm-5.3 (753B penuh)');
-  assert.deepEqual(inspector.modelHierarchy, ['glm-5.3', 'deepseek-v4.1-flash'], 'hierarki semakan');
-  assert.equal(inspector.fallbackModel, 'deepseek-v4.1-flash');
+  assert.deepEqual(inspector.modelHierarchy, ['glm-5.3', 'deepseek-v4-pro'], 'hierarki semakan');
+  assert.equal(inspector.fallbackModel, 'deepseek-v4-pro', 'sandaran universal deepseek-v4-pro');
   assert.equal(inspector.inspectionModel, 'glm-5.3', 'alias inspectionModel menunjuk model semakan');
+  assert.equal(AGENT_B_DEFAULT_MODEL, 'glm-5.3');
+  assert.equal(AGENT_B_PREFLIGHT_MODEL, 'kimi-k3');
+  assert.equal(AGENT_B_FALLBACK_MODEL, 'deepseek-v4-pro');
 });
 
 test('AgentB: config.js normalisasi agentB — TRINITY FRONTIER (preflight + inspection + fallback)', async () => {
@@ -1035,7 +1066,7 @@ test('AgentB: config.js normalisasi agentB — TRINITY FRONTIER (preflight + ins
     const defaults = normalizeConfig({});
     assert.equal(defaults.agentB.model, 'glm-5.3', 'lalai semakan glm-5.3 (753B penuh)');
     assert.equal(defaults.agentB.preflightModel, 'kimi-k3', 'lalai Fasa 0 kimi-k3');
-    assert.equal(defaults.agentB.fallbackModel, 'deepseek-v4.1-flash', 'lalai sandaran deepseek');
+    assert.equal(defaults.agentB.fallbackModel, 'deepseek-v4-pro', 'lalai sandaran deepseek-v4-pro (Universal Failover Engine)');
 
     // Kes 3: inspectionModel warisan bermigrasi ke 'model'
     const legacy = normalizeConfig({
@@ -1067,7 +1098,7 @@ test('AgentB: TRINITY — Fasa 0 dihalakan ke kimi-k3, semakan ke glm-5.3 (dua h
   };
   const preflightContext = await inspector.runPreflightPass(makeEntries(50), 'Malay', 'English');
   assert.ok(preflightContext, 'konteks dari penyelamat diterima');
-  assert.deepEqual(calls, ['kimi-k3', 'deepseek-v4.1-flash'], 'Pre-Flight hierarki kimi → deepseek');
+  assert.deepEqual(calls, ['kimi-k3', 'deepseek-v4-pro'], 'Pre-Flight hierarki kimi → deepseek');
 
   // Semakan: hierarki berasingan glm-5.3 → deepseek
   calls.length = 0;
@@ -1078,7 +1109,7 @@ test('AgentB: TRINITY — Fasa 0 dihalakan ke kimi-k3, semakan ke glm-5.3 (dua h
   };
   const verdict = await inspector.runSemanticInspection(makeEntries(2), makeTranslated(2));
   assert.equal(verdict.valid, true);
-  assert.deepEqual(calls, ['glm-5.3', 'deepseek-v4.1-flash'], 'Semakan hierarki glm → deepseek');
+  assert.deepEqual(calls, ['glm-5.3', 'deepseek-v4-pro'], 'Semakan hierarki glm → deepseek');
 });
 
 test('AgentB: TRINITY — hot-swap utama tersuai + sandaran tersuai', () => {
@@ -1094,4 +1125,98 @@ test('AgentB: TRINITY — hot-swap utama tersuai + sandaran tersuai', () => {
   assert.equal(inspector.fallbackModel, 'deepseek-v4-pro');
   assert.deepEqual(inspector.modelHierarchy, ['glm-5.3-flashx', 'deepseek-v4-pro']);
   assert.deepEqual(inspector.preflightHierarchy, ['kimi-k2.7', 'deepseek-v4-pro']);
+});
+
+// ── 16. KETELUSAN LOG + MUATAN HTTP SEBENAR (Mandat Universal Payload §C) ──
+
+test('AgentB: log PASSED berformat mandat — [AgentB] Batch X/Y inspection: PASSED (valid: true) [glm-5.3] (...ms)', async () => {
+  const log = require('../utils/logger');
+  const inspector = new AgentBInspector({
+    apiKey: 'test-key',
+    baseUrl: 'https://agentb.example.com/v1'
+  });
+  inspector.translateSubtitle = async () => '{"valid":true}';
+
+  const captured = [];
+  const originalInfo = log.info;
+  log.info = (fn) => {
+    try { captured.push(typeof fn === 'function' ? String(fn()) : String(fn)); } catch (_) { /* noop */ }
+  };
+  try {
+    const verdict = await inspector.runSemanticInspection(makeEntries(2), makeTranslated(2), { batchIndex: 0, totalBatches: 1 });
+    assert.equal(verdict.valid, true);
+    assert.equal(verdict.modelUsed, 'glm-5.3');
+
+    const passedLog = captured.find(l => l.includes('PASSED'));
+    assert.ok(passedLog, 'log PASSED mesti dicetak pada INFO');
+    assert.ok(
+      passedLog.startsWith('[AgentB] Batch 1/1 inspection: PASSED (valid: true) [glm-5.3] ('),
+      'format mandat: prefix + model glm-5.3 tepat dicatatkan'
+    );
+    assert.ok(/\(\d+ms\)$/.test(passedLog), 'latensi ms mesti dicatatkan dalam kurungan');
+  } finally {
+    log.info = originalInfo;
+  }
+});
+
+test('AgentB: log Pre-Flight berformat mandat — [SubFaberPreflight] Running pre-flight semantic pass (N entries) [kimi-k3]', async () => {
+  const log = require('../utils/logger');
+  const inspector = new AgentBInspector({
+    apiKey: 'test-key',
+    baseUrl: 'https://agentb.example.com/v1'
+  });
+  inspector.translateSubtitle = async () => JSON.stringify({ theme: 'Theme.', terms: [] });
+
+  const captured = [];
+  const originalInfo = log.info;
+  log.info = (fn) => {
+    try { captured.push(typeof fn === 'function' ? String(fn()) : String(fn)); } catch (_) { /* noop */ }
+  };
+  try {
+    const context = await inspector.runPreflightPass(makeEntries(50), 'Malay', 'English');
+    assert.ok(context, 'preflight context returned');
+
+    const runningLog = captured.find(l => l.includes('Running pre-flight semantic pass'));
+    assert.ok(runningLog, 'log Running pre-flight mesti dicetak');
+    assert.ok(
+      runningLog.includes('Running pre-flight semantic pass (50 entries) [kimi-k3]'),
+      'format mandat: N entries + nama model tepat [kimi-k3]'
+    );
+  } finally {
+    log.info = originalInfo;
+  }
+});
+
+test('AgentB: muatan HTTP sebenar (axios.post) — temperature 0.0 sahaja, SIFAR kunci token/sampling', async () => {
+  const axios = require('axios');
+  const inspector = new AgentBInspector({
+    apiKey: 'test-key',
+    baseUrl: 'https://agentb.example.com/v1'
+  });
+
+  const captured = [];
+  const originalPost = axios.post;
+  axios.post = async (url, body) => {
+    captured.push({ url, body });
+    return { data: { choices: [{ message: { content: '{"valid":true}' } }] } };
+  };
+  try {
+    const verdict = await inspector.runSemanticInspection(makeEntries(2), makeTranslated(2), { batchIndex: 0, totalBatches: 1 });
+    assert.equal(verdict.valid, true);
+    assert.equal(captured.length, 1, 'satu panggilan HTTP sahaja (primary lulus)');
+
+    const { url, body } = captured[0];
+    assert.ok(url.endsWith('/chat/completions'), 'endpoint chat/completions');
+    // MANDAT UNIVERSAL PAYLOAD §A — semakan ke atas payload HTTP SEBENAR:
+    assert.equal(body.temperature, 0.0, 'muatan HTTP wajib membawa temperature 0.0');
+    assert.equal('max_tokens' in body, false, 'muatan HTTP TIDAK boleh membawa max_tokens');
+    assert.equal('max_completion_tokens' in body, false, 'muatan HTTP TIDAK boleh membawa max_completion_tokens');
+    assert.equal('top_p' in body, false, 'muatan HTTP TIDAK boleh membawa top_p');
+    assert.equal('presence_penalty' in body, false, 'muatan HTTP TIDAK boleh membawa presence_penalty');
+    assert.equal(body.model, 'glm-5.3');
+    assert.ok(Array.isArray(body.messages) && body.messages.length === 1, 'satu mesej user');
+    assert.deepEqual(Object.keys(body).sort(), ['messages', 'model', 'temperature'], 'muatan HTTP mesti TEPAT {model, temperature, messages}');
+  } finally {
+    axios.post = originalPost;
+  }
 });
