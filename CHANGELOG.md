@@ -2,6 +2,18 @@
 
 All notable changes to this project will be documented in this file.
 
+## SubMaker v1.9.7 (2026-09-26) — Clean 2-Model Consolidation: glm-5.3-flash + deepseek-v4.1-flash
+
+**Kerumitan Trinity dimansuhkan — seni bina modular 2 model yang ringkas dan padu:**
+
+- **[agentBInspector.js](src/services/agentBInspector.js):** `preflightModel`/`inspectionModel` dimansuhkan sepenuhnya — kaedah `_hierarchyFor()` dipadam, `preflightHierarchy` dibuang. Kembali kepada pembolehubah tunggal: `this.model = options.model || 'glm-5.3-flash'` (mengendalikan KEDUA-DUA Fasa 0 dan Semakan Kelompok) + `this.fallbackModel = options.fallbackModel || 'deepseek-v4.1-flash'`. `modelHierarchy` tunggal `[utama, sandaran]` dengan logik penyingkiran duplikasi ('none'/kosong/kesamaan nama case-insensitive). Kedua-dua `runPreflightPass()` dan `runSemanticInspection()` berkongsi hierarki tunggal melalui `_callWithFailover()`.
+
+- **[config.js](src/utils/config.js):** blok `agentB` bersih — `model` (lalai `glm-5.3-flash`) + `fallbackModel` (lalai `deepseek-v4.1-flash`); medan trinity (`preflightModel`/`inspectionModel`) dilucutkan daripada config tersimpan (`delete`) supaya sisa mazhab Trinity tidak terapung dalam Redis.
+
+- **[subtitles.js](src/handlers/subtitles.js:5463):** suntikan pembina kembali kepada `{apiKey, baseUrl, model, fallbackModel}`. [`.env.example`](.env.example): format 2-model bersih — `AGENT_B_MODEL="glm-5.3-flash"`, `AGENT_B_FALLBACK_MODEL="deepseek-v4.1-flash"` (contoh endpoint rootsys.cloud).
+
+- **Ujian:** suite Agent B 49 → **48** (3 ujian Trinity digugurkan, diganti 2 ujian bersih: satu utama `glm-5.3-flash` untuk KEDUA-DUA fasa dengan hierarki tunggal sama; config bersih tanpa medan trinity + hot-swap custom). Ujian warisan dikemas kini kepada default `glm-5.3-flash`. `npm test`: 201 tests, **200 PASS / 0 FAIL** (1 skipped).
+
 ## SubMaker v1.9.6 (2026-09-26) — Holy Trinity: Specialized 3-Model Dual-Agent Architecture
 
 **Agent B kini mengkhususkan model mengikut kekuatan empirik — tiga peranan, tiga model:**

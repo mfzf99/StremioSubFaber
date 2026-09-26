@@ -5463,9 +5463,9 @@ if (
         agentBInspector = new AgentBInspector({
           apiKey: config.agentB.apiKey,
           baseUrl: config.agentB.baseUrl,
-          // HOLY TRINITY (Mandat 2026-09-26): model khas per operasi.
-          preflightModel: config.agentB.preflightModel || 'glm-5.3-flash',
-          inspectionModel: config.agentB.inspectionModel || 'glm-5.3-flashx',
+          // CLEAN 2-MODEL (Mandat Penyatuan Bersih 2026-09-26):
+          // {model, fallbackModel} — tiada pemisahan per operasi.
+          model: config.agentB.model || 'glm-5.3-flash',
           fallbackModel: config.agentB.fallbackModel || 'deepseek-v4.1-flash',
           ssrfLookup: createSsrfSafeLookup()
         });

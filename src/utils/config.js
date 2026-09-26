@@ -574,50 +574,26 @@ function normalizeConfig(config) {
   // OpenAI-compatible). Struktur additive — tiada field sedia ada disentuh.
   // env fallback: AGENT_B_BASE_URL / AGENT_B_API_KEY / AGENT_B_MODEL.
   // Semasa Fasa 3 (UI) belum wujud, medan ini diisi melalui env sahaja.
-  // ── HOLY TRINITY (Mandat Trinity 2026-09-26 §2A): pengkhususan 3-model ──
-  // Pre-Flight (makro, glm-5.3-flash) / Semakan (mikro, glm-5.3-flashx) /
-  // Sandaran (penyelamat, deepseek-v4.1-flash) — setiap satu configurable
-  // secara bebas. inspectionModel mewarisi alias legacy 'model' supaya
-  // konfigurasi lama terus berfungsi (backwards compatible).
+  // ── CLEAN 2-MODEL (MANDAT PENYATUAN BERSIH 2026-09-26) ──
+  // Seni bina modular 2 model ringkas: SATU model utama (glm-5.3-flash)
+  // mengendalikan Fasa 0 + Semakan Kelompok; SATU sandaran universal
+  // (deepseek-v4.1-flash). Medan trinity (preflightModel/inspectionModel)
+  // dimansuhkan — medan legacy 'model' kekal sebagai model utama.
   mergedConfig.agentB = {
     enabled: (mergedConfig.agentB?.enabled === true
       || (!!process.env.AGENT_B_API_KEY && !!process.env.AGENT_B_BASE_URL)),
     baseUrl: String(mergedConfig.agentB?.baseUrl || process.env.AGENT_B_BASE_URL || '').trim(),
     apiKey: String(mergedConfig.agentB?.apiKey || process.env.AGENT_B_API_KEY || '').trim(),
-    // Model khas untuk Pre-Flight (Lalai: glm-5.3-flash)
-    preflightModel: String(
-      mergedConfig.agentB?.preflightModel ||
-      process.env.AGENT_B_PREFLIGHT_MODEL ||
-      'glm-5.3-flash'
-    ).trim(),
-    // Model khas untuk Semakan Kelompok (Lalai: glm-5.3-flashx)
-    // Rantai: agentB.inspectionModel → agentB.model (alias legacy) →
-    //         AGENT_B_INSPECTION_MODEL → AGENT_B_MODEL (alias legacy) → lalai
-    inspectionModel: String(
-      mergedConfig.agentB?.inspectionModel ||
-      mergedConfig.agentB?.model ||
-      process.env.AGENT_B_INSPECTION_MODEL ||
-      process.env.AGENT_B_MODEL ||
-      'glm-5.3-flashx'
-    ).trim(),
-    // Model sandaran jika model utama gagal (Lalai: deepseek-v4.1-flash)
-    fallbackModel: String(
-      mergedConfig.agentB?.fallbackModel ||
-      process.env.AGENT_B_FALLBACK_MODEL ||
-      'deepseek-v4.1-flash'
-    ).trim()
+    model: String(mergedConfig.agentB?.model || process.env.AGENT_B_MODEL || 'glm-5.3-flash').trim(),
+    fallbackModel: String(mergedConfig.agentB?.fallbackModel || process.env.AGENT_B_FALLBACK_MODEL || 'deepseek-v4.1-flash').trim()
   };
-  // Hygiene hot-swap: 'none' diterima (mematikan failover); medan kosong
-  // tidak dibenarkan terapung — isi dengan lalai Trinity.
-  if (!mergedConfig.agentB.preflightModel) {
-    mergedConfig.agentB.preflightModel = 'glm-5.3-flash';
+  // Hygiene: medan trinity (preflightModel/inspectionModel) daripada config
+  // lama dilucutkan daripada struktur tersimpan — tidak dibenarkan terapung.
+  delete mergedConfig.agentB.preflightModel;
+  delete mergedConfig.agentB.inspectionModel;
+  if (!mergedConfig.agentB.model) {
+    mergedConfig.agentB.model = 'glm-5.3-flash';
   }
-  if (!mergedConfig.agentB.inspectionModel) {
-    mergedConfig.agentB.inspectionModel = 'glm-5.3-flashx';
-  }
-  // Alias legacy dipelihara: agentB.model sentiasa mencerminkan
-  // inspectionModel (pembaca warisan + ujian sedia ada terus berfungsi).
-  mergedConfig.agentB.model = mergedConfig.agentB.inspectionModel;
   // Hygiene: Agent B tanpa kredensial lengkap mesti terlerai sepenuhnya —
   // jangan biarkan enabled:true terapung tanpa baseUrl/apiKey (Fasa 0 +
   // gate akan fallback senyap kepada Gemini).

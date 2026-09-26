@@ -2,9 +2,9 @@
  * Agent B — Semantic Inspector & Pre-Flight Offloader
  * (Dual-AI Mandat Pelaksanaan 2026-09-26, Fasa 1)
  *
- * Seni Bina 2-Agent:
+ * Seni Bina 2-Agent (MANDAT PENYATUAN BERSIH 2026-09-26 — Clean 2-Model):
  *   AGENT A (Worker): Gemini 3 Flash — penterjemahan kelompok 50 baris.
- *   AGENT B (Inspector): glm-5.3-flashx (OpenAI-compatible, 1M context):
+ *   AGENT B (Inspector): glm-5.3-flash (OpenAI-compatible, 1M context):
  *     Tugasan 1: Mengambil alih Fasa 0 (Pre-Flight Semantic Pass) sepenuhnya
  *                daripada Gemini — jimat kuota TPM/RPM Gemini.
  *     Tugasan 2: Askar Pertahanan Semantik — menyemak setiap kelompok hasil
@@ -26,10 +26,11 @@
  *     timeout berfasa: Fasa 0 45s (baca episod penuh) / semakan batch 15s.
  *     Tiada micro-timeout / tiny token cap yang membekukan nafas Agent B.
  *   - ZERO-SWALLOWED-ERROR + DUAL-MODEL FAILOVER (Mandat Observabiliti
- *     2026-09-26): tiada ralat ditelan senyap — setiap kegagalan mencetak
- *     status + punca teknikal + raw snippet 500 aksara. Hierarki model:
- *     glm-5.3-flashx (utama) → deepseek-v4.1-flash (sandaran) bagi
- *     kedua-dua Fasa 0 dan Semakan Kelompok.
+ *     2026-09-26 + PENYATUAN BERSIH): tiada ralat ditelan senyap — setiap
+ *     kegagalan mencetak status + punca teknikal + raw snippet 500 aksara.
+ *     CLEAN 2-MODEL: hierarki TUNGGAL [glm-5.3-flash (utama, kedua-dua
+ *     fasa) → deepseek-v4.1-flash (sandaran)] — tiada pemisahan
+ *     preflightModel/inspectionModel, tiada _hierarchyFor().
  *   - 100% BACKWARDS COMPATIBLE: Agent B null → enjin jalan 100% Gemini.
  */
 
@@ -37,10 +38,11 @@ const OpenAICompatibleProvider = require('./providers/openaiCompatible');
 const { runPreflightSemanticPass, stripReasoningTags } = require('./subfaberPreflight');
 const log = require('../utils/logger');
 
-// ── Konfigurasi tetap Agent B (Mandat Pembebasan Penuh 2026-09-26) ──
-const AGENT_B_DEFAULT_MODEL = 'glm-5.3-flashx';   // Semakan kelompok (ultra-fast ~200 tok/s)
-const AGENT_B_PREFLIGHT_MODEL = 'glm-5.3-flash';  // TRINITY: Fasa 0 (sintesis makro, 48k aksara)
-const AGENT_B_FALLBACK_MODEL = 'deepseek-v4.1-flash'; // Mandat Failover §4: askar penyelamat (~214 tok/s)
+// ── Konfigurasi tetap Agent B (MANDAT PENYATUAN BERSIH 2026-09-26) ──
+// CLEAN 2-MODEL: SATU model utama (glm-5.3-flash) untuk KEDUA-DUA fasa
+// + SATU sandaran universal (deepseek-v4.1-flash). flashx digugurkan.
+const AGENT_B_DEFAULT_MODEL = 'glm-5.3-flash';   // Utama: Pre-Flight + Semakan
+const AGENT_B_FALLBACK_MODEL = 'deepseek-v4.1-flash'; // Sandaran universal (~214 tok/s)
 const AGENT_B_PREFLIGHT_TIMEOUT_MS = 45000;  // Fasa 0: baca episod penuh (48k aksara) + analisis tema
 const AGENT_B_INSPECTION_TIMEOUT_MS = 15000; // Semakan batch: latensi rangkaian rootsys.cloud selamat
 const AGENT_B_MAX_OUTPUT_TOKENS = 4096;      // Ruang reasoning tokens + content (kuota infiniti)
@@ -229,38 +231,24 @@ class AgentBInspector extends OpenAICompatibleProvider {
     // sementara kepada 45s oleh runPreflightPass().
     this.translationTimeout = AGENT_B_INSPECTION_TIMEOUT_MS;
 
-    // ── HOLY TRINITY: PENGKHUSUSAN 3-MODEL (Mandat Trinity 2026-09-26) ──
-    // Setiap operasi Agent B memakai model KHAS mengikut kekuatan empirik:
-    //   Pre-Flight  → preflightModel   (lalai glm-5.3-flash):
-    //                 sintesis makro, baca 48k aksara, penjejakan watak.
-    //   Semakan     → inspectionModel  (lalai glm-5.3-flashx):
-    //                 mikro ~200 tok/s — cukup dalam pacing delay 5.0s.
-    //   Sandaran    → fallbackModel    (lalai deepseek-v4.1-flash):
-    //                 penyelamat ultra-pantas ~214 tok/s, struktur tahan lasak.
-    // 100% configurable: 'none'/kosong/sama → tiada failover (model tunggal).
+    // ── CLEAN 2-MODEL (MANDAT PENYATUAN BERSIH 2026-09-26) ──
+    // Satu hierarki tunggal untuk KEDUA-DUA operasi (Pre-Flight + Semakan):
+    //   - Utama:    options.model (lalai glm-5.3-flash)
+    //   - Sandaran: options.fallbackModel (lalai deepseek-v4.1-flash);
+    //     'none' ATAU kosong ATAU sama dengan utama → model tunggal.
     // this.model sentiasa menjejak model AKTIF supaya log forensik melaporkan
     // model sebenar yang sedang beroperasi.
-    this.preflightModel = String(options.preflightModel || AGENT_B_PREFLIGHT_MODEL).trim() || AGENT_B_PREFLIGHT_MODEL;
-    const inspection = String(options.inspectionModel || options.model || AGENT_B_DEFAULT_MODEL).trim() || AGENT_B_DEFAULT_MODEL;
+    this.model = String(options.model || AGENT_B_DEFAULT_MODEL).trim() || AGENT_B_DEFAULT_MODEL;
     const requestedFallback = String(options.fallbackModel || AGENT_B_FALLBACK_MODEL).trim();
-
-    const buildHierarchy = (primaryModel, fallbackModel) => {
-      const hierarchy = [primaryModel];
-      if (
-        fallbackModel &&
-        fallbackModel.toLowerCase() !== 'none' &&
-        fallbackModel.toLowerCase() !== primaryModel.toLowerCase()
-      ) {
-        hierarchy.push(fallbackModel);
-      }
-      return hierarchy;
-    };
-
-    this.modelHierarchy = buildHierarchy(inspection, requestedFallback);       // untuk SEMAKAN
-    this.inspectionModel = this.modelHierarchy[0];
-    this.preflightHierarchy = buildHierarchy(this.preflightModel, requestedFallback); // untuk PRE-FLIGHT
+    this.modelHierarchy = [this.model];
+    if (
+      requestedFallback &&
+      requestedFallback.toLowerCase() !== 'none' &&
+      requestedFallback.toLowerCase() !== this.model.toLowerCase()
+    ) {
+      this.modelHierarchy.push(requestedFallback);
+    }
     this.fallbackModel = this.modelHierarchy.length > 1 ? this.modelHierarchy[1] : null;
-    this.model = this.inspectionModel; // model aktif lalai = semakan
 
     // ── Circuit breaker (per sesi fail — instance dibina per permintaan) ──
     this._consecutiveFailures = 0;
@@ -283,9 +271,8 @@ class AgentBInspector extends OpenAICompatibleProvider {
    */
   async _callWithFailover(operation, attempt, isFailure) {
     const failedAttempts = [];
-    // TRINITY: hierarki dipilih mengikut operasi — Pre-flight memakai
-    // preflightModel, Semakan memakai inspectionModel (lihat _hierarchyFor).
-    const hierarchy = this._hierarchyFor(operation);
+    // CLEAN 2-MODEL: satu hierarki tunggal untuk KEDUA-DUA operasi.
+    const hierarchy = this.modelHierarchy;
     for (let i = 0; i < hierarchy.length; i++) {
       const model = hierarchy[i];
       this.model = model; // log + payload pembawa sentiasa melihat model aktif
@@ -318,17 +305,6 @@ class AgentBInspector extends OpenAICompatibleProvider {
     }
     // Tidak boleh dicapai — loop sentiasa return/throw
     throw new Error(`${operation}: exhausted`);
-  }
-
-  /**
-   * TRINITY: pulangkan hierarki model untuk operasi tertentu — Pre-Flight
-   * memakai preflightModel (glm-5.3-flash) manakala Semakan memakai
-   * inspectionModel (glm-5.3-flashx). Kedua-duanya berkongsi fallback.
-   * @param {'preflight'|'inspection'} operation
-   * @returns {string[]} Hierarki model untuk operasi tersebut
-   */
-  _hierarchyFor(operation) {
-    return operation === 'Pre-flight' ? this.preflightHierarchy : this.modelHierarchy;
   }
 
   /**
@@ -529,7 +505,6 @@ module.exports = {
   parseInspectorResponse,
   INSPECTOR_INSTRUCTION,
   AGENT_B_DEFAULT_MODEL,
-  AGENT_B_PREFLIGHT_MODEL,
   AGENT_B_FALLBACK_MODEL,
   AGENT_B_PREFLIGHT_TIMEOUT_MS,
   AGENT_B_INSPECTION_TIMEOUT_MS,
