@@ -2107,21 +2107,133 @@ class TranslationEngine {
     return toSRT(srtEntries).trim();
   }
 
-    /**
-   * Prepare batch text using XML tags for robust entry identification
-   * [UPGRADED]: Escapes XML-sensitive symbols (&, <, >) in <m> memory and <s> text
+  /**
+   * Format the SubFaber shared context block (Fasa 0 + Fasa 1 sliding buffer)
+   * for injection between ## Task and <translation_principles> — the exact
+   * slot of {shared_prompt} in the original VideoLingo architecture.
    *
-   * SUBFABER MODE: bila context membawa struktur SubFaber (previousContent/
-   * subsequentContent/preflight), blok konteks dibina mengikut kontrak
-   * verbatim mandat — <previous_content>, <subsequent_content>, Content
-   * Summary, Points to Note — SEBELUM entri aktif. Entri aktif kekal
-   * <s id="N"> (Pilihan A diluluskan: tiada migrasi tag).
+   * SHARED PROMPT ARCHITECTURE (Mandat 2026-09-26, Lingo 1:1 parity):
+   * Semua data rujukan READ-ONLY (<previous_content>, <subsequent_content>,
+   * Content Summary, Points to Note, previousMemory) hidup di sini — BUKAN
+   * dalam <input>. Blok input hanya entri sari kata aktif.
+   *
+   * GOLDEN STANDARD GS3: Points to Note guna DYNAMIC TERM-MATCHING per-chunk
+   * (ground truth VideoLingo search_things_to_note_in_prompt) — skop imbasan
+   * ialah previousContent + batchText (entri aktif) + subsequentContent.
+   *
+   * @param {Object} context - SubFaber context from prepareContextForBatch()
+   * @param {string} batchText - Active-entries-only batch text
+   * @returns {string} Shared context block ('' when context is empty)
    */
-  prepareBatchXml(batch, context = null) {
-    let result = '';
+  _formatSharedContext(context, batchText) {
+    if (!context || !(context.previousContent || context.subsequentContent || context.preflight || context.previousMemory)) {
+      return '';
+    }
 
     // Escape raw symbols to prevent XML tag structure breakage.
-    // Applies to ALL content in <m> and <s> tags.
+    // MANDATORY ORDER: & first, then < and > — reverse order double-escapes.
+    // Char-code construction avoids entity literals in source that tooling
+    // may normalize (precedent: subfaber-context-regression.test.js).
+    const AMP = String.fromCharCode(38);
+    const LT = String.fromCharCode(60);
+    const GT = String.fromCharCode(62);
+    const escapeXml = (str) => {
+      return String(str || '')
+        .replace(new RegExp(AMP, 'g'), `${AMP}amp;`)
+        .replace(new RegExp(LT, 'g'), `${AMP}lt;`)
+        .replace(new RegExp(GT, 'g'), `${AMP}gt;`);
+    };
+
+    // Recover active-entry texts from batchText for dynamic term-matching
+    // (GS3). XML entities are unescaped (lt/gt first, amp LAST) so matching
+    // sees the original source text, exactly as the escaped round-trip
+    // convention used by the response parser.
+    const batchEntries = [];
+    const activeTag = new RegExp('<s id="(\\d+)">([\\s\\S]*?)<\\/s>', 'g');
+    let activeMatch;
+    while ((activeMatch = activeTag.exec(String(batchText || ''))) !== null) {
+      batchEntries.push({
+        id: activeMatch[1],
+        text: activeMatch[2]
+          .split(`${AMP}lt;`).join(LT)
+          .split(`${AMP}gt;`).join(GT)
+          .split(`${AMP}amp;`).join(AMP)
+      });
+    }
+
+    const hasPrev = Array.isArray(context.previousContent) && context.previousContent.length > 0;
+    const hasNext = Array.isArray(context.subsequentContent) && context.subsequentContent.length > 0;
+    const preflightBlock = context.preflight
+      ? this._formatPreflightForChunk(context.preflight, context.previousContent, batchEntries, context.subsequentContent)
+      : '';
+
+    let block = '';
+
+    // ── SUBFABER CONTEXT BLOCK (Fasa 1: Sliding Buffer — ENJIN TUNGGAL) ──
+    // Kontrak verbatim mandat: Context Information berlapis, semua blok
+    // READ-ONLY. Theme (Content Summary) kekal disuntik untuk semua batch;
+    // Points to Note dikosongkan apabila tiada istilah padan (penjimatan
+    // token).
+    if (hasPrev || hasNext || preflightBlock) {
+      block += '[CONTEXT INFORMATION - READ ONLY. DO NOT TRANSLATE THIS SECTION]\n';
+
+      if (hasPrev) {
+        block += '<previous_content>\n';
+        context.previousContent.forEach((entry) => {
+          const cleanText = escapeXml(String(entry.text || '').trim().replace(/\n+/g, ' [br] '));
+          block += `<s id="${entry.id}">${cleanText}</s>\n`;
+        });
+        block += '</previous_content>\n\n';
+      }
+
+      if (hasNext) {
+        block += '<subsequent_content>\n';
+        context.subsequentContent.forEach((entry) => {
+          const cleanText = escapeXml(String(entry.text || '').trim().replace(/\n+/g, ' [br] '));
+          block += `<s id="${entry.id}">${cleanText}</s>\n`;
+        });
+        block += '</subsequent_content>\n\n';
+      }
+
+      if (preflightBlock) {
+        block += `${preflightBlock}\n\n`;
+      }
+    }
+
+    // ── SUBFABER PREVIOUS MEMORY (continuity translations) ──
+    // Terjemahan disahkan untuk 3 baris lalu (kelebihan kita atas VideoLingo:
+    // hantar terjemahan disahkan, bukan source sahaja).
+    if (Array.isArray(context.previousMemory) && context.previousMemory.length > 0) {
+      block += '[PREVIOUS VERIFIED TRANSLATIONS - FOR CONTINUITY ONLY. DO NOT TRANSLATE THIS]\n';
+      context.previousMemory.forEach((entry) => {
+        if (entry.translation) {
+          const cleanSource = String(entry.source || '').trim().replace(/\n+/g, ' [br] ');
+          const cleanTrans = String(entry.translation || '').trim().replace(/\n+/g, ' [br] ');
+          block += `<m id="${entry.id}"><src>${escapeXml(cleanSource)}</src><dst>${escapeXml(cleanTrans)}</dst></m>\n`;
+        }
+      });
+      block += '=== END OF MEMORY ===\n';
+    }
+
+    return block.trim();
+  }
+
+  /**
+   * Prepare batch text using XML tags for robust entry identification
+   * [UPGRADED]: Escapes XML-sensitive symbols (&, <, >) in <s> text
+   *
+   * SHARED PROMPT ARCHITECTURE (Mandat 2026-09-26, Lingo 1:1 parity):
+   * batchText kini HANYA entri aktif <s id="N"> — penanda
+   * '=== ENTRIES TO TRANSLATE ===' dibuang sepenuhnya. Blok konteks SubFaber
+   * dipindahkan ke _formatSharedContext() dan disuntik oleh
+   * createXmlBatchPrompt() antara ## Task dan <translation_principles>.
+   * <input> kekal suci. Parameter context dikekalkan untuk kestabilan API
+   * tetapi diabaikan.
+   */
+  prepareBatchXml(batch, context = null) {
+
+    // Escape raw symbols to prevent XML tag structure breakage.
+    // Applies to ALL content in <s> tags.
     // MANDATORY ORDER: & first, then < and > — reverse order double-escapes.
     const escapeXml = (str) => {
       return String(str || '')
@@ -2130,68 +2242,6 @@ class TranslationEngine {
         .replace(/>/g, '&gt;');
     };
 
-    // ── SUBFABER CONTEXT BLOCK (Fasa 1: Sliding Buffer — ENJIN TUNGGAL) ──
-    // Kontrak verbatim mandat §3: Context Information berlapis. Semua blok
-    // adalah READ-ONLY. TOTAL PURGE 2026-09-25: tiada flag, tiada laluan
-    // legacy berasingan — previousMemory kini dirender DALAM blok ini.
-    // GOLDEN STANDARD GS3: Points to Note guna DYNAMIC TERM-MATCHING per-chunk
-    // (ground truth VideoLingo `search_things_to_note_in_prompt`) — hanya
-    // istilah Fasa 0 yang teks asalnya wujud dalam previousContent/batch/
-    // subsequentContent disuntik. Tiada padanan → seksyen dikosongkan (token
-    // penjimatan). Theme (Content Summary) kekal disuntik untuk semua batch.
-    if (context && (context.previousContent || context.subsequentContent || context.preflight || context.previousMemory)) {
-      const hasPrev = Array.isArray(context.previousContent) && context.previousContent.length > 0;
-      const hasNext = Array.isArray(context.subsequentContent) && context.subsequentContent.length > 0;
-      const preflightBlock = context.preflight
-        ? this._formatPreflightForChunk(context.preflight, context.previousContent, batch, context.subsequentContent)
-        : '';
-
-      if (hasPrev || hasNext || preflightBlock) {
-        result += '[CONTEXT INFORMATION - READ ONLY. DO NOT TRANSLATE THIS SECTION]\n';
-
-        if (hasPrev) {
-          result += '<previous_content>\n';
-          context.previousContent.forEach((entry) => {
-            const cleanText = escapeXml(String(entry.text || '').trim().replace(/\n+/g, ' [br] '));
-            result += `<s id="${entry.id}">${cleanText}</s>\n`;
-          });
-          result += '</previous_content>\n\n';
-        }
-
-        if (hasNext) {
-          result += '<subsequent_content>\n';
-          context.subsequentContent.forEach((entry) => {
-            const cleanText = escapeXml(String(entry.text || '').trim().replace(/\n+/g, ' [br] '));
-            result += `<s id="${entry.id}">${cleanText}</s>\n`;
-          });
-          result += '</subsequent_content>\n\n';
-        }
-
-        if (preflightBlock) {
-          result += `${preflightBlock}\n\n`;
-        }
-
-        result += '=== ENTRIES TO TRANSLATE ===\n\n';
-      }
-    }
-
-    // ── SUBFABER PREVIOUS MEMORY (dalam blok konteks — continuity translations) ──
-    // Terjemahan disahkan untuk 3 baris lalu (kelebihan kita atas VideoLingo:
-    // hantar terjemahan disahkan, bukan source sahaja). Dirender selepas blok
-    // context utama; dikelilingi oleh '===' terminator kedua-dua belah supaya
-    // satu bentuk sahaja.
-    if (context?.previousMemory?.length > 0) {
-      result += '[PREVIOUS VERIFIED TRANSLATIONS - FOR CONTINUITY ONLY. DO NOT TRANSLATE THIS]\n';
-      context.previousMemory.forEach((entry) => {
-        if (entry.translation) {
-          const cleanSource = String(entry.source || '').trim().replace(/\n+/g, ' [br] ');
-          const cleanTrans = String(entry.translation || '').trim().replace(/\n+/g, ' [br] ');
-          result += `<m id="${entry.id}"><src>${escapeXml(cleanSource)}</src><dst>${escapeXml(cleanTrans)}</dst></m>\n`;
-        }
-      });
-      result += '=== END OF MEMORY ===\n\n';
-    }
-
     const xmlEntries = batch.map((entry) => {
       // GLOBAL ID: preserve original IDs instead of renumbering 1,2,3
       const num = entry.id;
@@ -2199,8 +2249,7 @@ class TranslationEngine {
       return `<s id="${num}">${cleanText}</s>`;
     }).join('\n');
 
-    result += xmlEntries;
-    return result;
+    return xmlEntries;
   }
 
   /**
@@ -2211,14 +2260,18 @@ class TranslationEngine {
     const targetLabel = normalizeTargetLanguageForPrompt(targetLanguage);
     const sourceLabel = this.sourceLanguage;
 
-    let targetSection = batchText;
-    if (batchText.includes('=== ENTRIES TO TRANSLATE ===')) {
-      targetSection = batchText.split('=== ENTRIES TO TRANSLATE ===')[1];
-    }
-
-    const idMatches = [...targetSection.matchAll(/<s id="([^"]+)">/g)].map(m => m[1]);
+    // SHARED PROMPT ARCHITECTURE (Mandat 2026-09-26, Lingo 1:1 parity):
+    // batchText kini entri aktif SAHAJA (tiada blok konteks) — startId
+    // diekstrak TERUS daripada tag pertama tanpa pemisahan seksyen.
+    // idList legacy dibuang (dead code audit 2026-09-26).
+    const idMatches = [...String(batchText || '').matchAll(/<s id="([^"]+)">/g)].map(m => m[1]);
     const startId = idMatches.length > 0 ? idMatches[0] : 'START';
-    const idList = idMatches.length > 0 ? idMatches.join(', ') : 'N/A';
+
+    // Blok {shared_prompt} VideoLingo: semua data rujukan READ-ONLY
+    // (previous/subsequent content, Content Summary, Points to Note,
+    // previousMemory) disuntik DI ANTARA ## Task dan <translation_principles>
+    // — bukan lagi di dalam <input>.
+    const sharedContextBlock = this._formatSharedContext(context, batchText);
 
     // ── SUBFABER HYBRID V1.9.2 (Mandat Pelaksanaan 2026-09-26) ──
     // Prompt Fasa 1 harfiah (faithfulness) diganti dengan HYBRID 1-Pass:
@@ -2238,7 +2291,7 @@ Translate the provided ${sourceLabel || 'source'} subtitles into ${targetLabel} 
 2. Aim for contextual smoothness and natural phrasing that conforms to ${targetLabel} conversational habits, avoiding stiff or unnatural literal translations.
 3. Handle split sentences correctly: Dialogue frequently splits across consecutive lines due to speech timing. Translate ONLY the fragment present in each line without merging multiple lines together.
 4. Strictly preserve all inline markup ([br], <i>, <b>) in their exact corresponding positions.
-
+${sharedContextBlock ? `\n${sharedContextBlock}\n` : ''}
 <translation_principles>
 1. Meaning over literal words: Accurately convey the true intent, emotion, and tone of the original dialogue rather than translating word-for-word.
 2. Natural spoken flow: Ensure the dialogue flows effortlessly and sounds authentic to native audiences, while fully respecting the narrative context.

@@ -2,14 +2,17 @@
  * SubFaber Sliding Context Buffer + Prompt Composer — Regression Tests
  * (TOTAL PURGE Mandat 2026-09-25 — SubFaber enjin TUNGGAL)
  *
- * Menguji kontrak laporan plans/subfaber-technical-plan-backend.md §3.2:
+ * SHARED PROMPT ARCHITECTURE (Mandat 2026-09-26, Lingo 1:1 parity):
  *   1. _prepareSubfaberContext: sliding window dua hala (previous + subsequent)
  *   2. prepareContextForBatch: pembina konteks TUNGGAL (tiada laluan legacy)
- *   3. prepareBatchXml: blok konteks verbatim mandat (<previous_content>,
- *      <subsequent_content>, Content Summary, Points to Note)
- *   4. createXmlBatchPrompt: persona hybrid V1.9.2 (expressiveness) +
- *      guardrail split-sentence + <translation_principles>
- *   5. Flag subfaberEnabled DIBUANG — prompt SubFaber tulen tanpa sebarang flag
+ *   3. prepareBatchXml: entri aktif <s id> SAHAJA — tiada konteks, tiada
+ *      penanda '=== ENTRIES TO TRANSLATE ===' (dibuang)
+ *   4. _formatSharedContext: blok konteks verbatim mandat (<previous_content>,
+ *      <subsequent_content>, Content Summary, Points to Note, previousMemory)
+ *   5. createXmlBatchPrompt: {shared_prompt} VideoLingo di antara ## Task dan
+ *      <translation_principles>; <input> suci (entri aktif sahaja); persona
+ *      hybrid V1.9.2 + guardrail split-sentence
+ *   6. Flag subfaberEnabled DIBUANG — prompt SubFaber tulen tanpa sebarang flag
  */
 
 const test = require('node:test');
@@ -156,40 +159,70 @@ test('SubFaberContext: preflight context flows through when set', () => {
   assert.equal(ctx.preflight.terms.length, 1);
 });
 
-// --- prepareBatchXml: blok konteks verbatim mandat ---
-test('SubFaberXml: context block renders previous_content + subsequent_content + ENTRIES marker', () => {
+// --- prepareBatchXml: entri aktif sahaja (Shared Prompt Architecture 2026-09-26) ---
+test('SubFaberXml: batchText is active entries ONLY — no context, no ENTRIES marker', () => {
   const engine = makeEngine({ subfaberEnabled: true });
   const batch = makeEntries(3, 11); // IDs 11..13
   const context = {
     previousContent: makeEntries(2, 9),  // IDs 9..10
     subsequentContent: makeEntries(2, 14), // IDs 14..15
-    previousMemory: [],
-    preflight: null
+    previousMemory: [{ id: 9, source: 'Hi', translation: 'Hai' }],
+    preflight: { theme: 'T.', terms: [] }
   };
 
   const xml = engine.prepareBatchXml(batch, context);
-  assert.ok(xml.includes('[CONTEXT INFORMATION - READ ONLY. DO NOT TRANSLATE THIS SECTION]'), 'Read-only header');
-  assert.ok(xml.includes('<previous_content>'), 'previous_content opening tag');
-  assert.ok(xml.includes('</previous_content>'), 'previous_content closing tag');
-  assert.ok(xml.includes('<subsequent_content>'), 'subsequent_content opening tag');
-  assert.ok(xml.includes('</subsequent_content>'), 'subsequent_content closing tag');
-  assert.ok(xml.includes('=== ENTRIES TO TRANSLATE ==='), 'Entries marker present');
-
-  // Konteks SEBELUM entri aktif; entri aktif selepas marker
-  const ctxIdx = xml.indexOf('<previous_content>');
-  const entriesIdx = xml.indexOf('=== ENTRIES TO TRANSLATE ===');
-  assert.ok(ctxIdx < entriesIdx, 'Context must precede active entries');
-
-  // Verifikasi ID: konteks guna tag <s id> juga (satu bentuk sahaja)
-  assert.ok(xml.includes('<s id="9">'), 'Previous entry 9 rendered');
-  assert.ok(xml.includes('<s id="14">'), 'Subsequent entry 14 rendered');
+  assert.ok(!xml.includes('[CONTEXT INFORMATION'), 'No context header in batchText');
+  assert.ok(!xml.includes('<previous_content>'), 'No previous_content in batchText');
+  assert.ok(!xml.includes('<subsequent_content>'), 'No subsequent_content in batchText');
+  assert.ok(!xml.includes('### Content Summary'), 'No preflight summary in batchText');
+  assert.ok(!xml.includes('=== ENTRIES TO TRANSLATE ==='), 'Legacy ENTRIES marker REMOVED');
+  assert.ok(!xml.includes('<m id='), 'No memory tags in batchText');
+  // Hanya entri aktif — konteks parameter diabaikan sepenuhnya
   assert.ok(xml.includes('<s id="11">'), 'Active entry 11 rendered');
+  assert.ok(xml.includes('<s id="12">'), 'Active entry 12 rendered');
+  assert.ok(xml.includes('<s id="13">'), 'Active entry 13 rendered');
+  assert.ok(!xml.includes('<s id="9">'), 'Context entry 9 NOT in batchText');
+  assert.ok(!xml.includes('<s id="14">'), 'Context entry 14 NOT in batchText');
 });
 
-test('SubFaberXml: preflight renders Content Summary + Points to Note blocks (term must match batch text)', () => {
+// --- _formatSharedContext: blok konteks verbatim mandat (slot {shared_prompt}) ---
+test('SubFaberSharedContext: renders previous_content + subsequent_content + preflight + memory', () => {
+  const engine = makeEngine({ subfaberEnabled: true });
+  const batch = makeEntries(3, 11); // IDs 11..13
+  const batchText = engine.prepareBatchXml(batch);
+  const context = {
+    previousContent: makeEntries(2, 9),  // IDs 9..10
+    subsequentContent: makeEntries(2, 14), // IDs 14..15
+    previousMemory: [{ id: 9, source: 'Hi', translation: 'Hai' }],
+    preflight: { theme: 'A story about survival.', terms: [{ src: 'Entry 12', tgt: 'Entri 12', note: 'Term' }] }
+  };
+
+  const block = engine._formatSharedContext(context, batchText);
+  assert.ok(block.includes('[CONTEXT INFORMATION - READ ONLY. DO NOT TRANSLATE THIS SECTION]'), 'Read-only header');
+  assert.ok(block.includes('<previous_content>'), 'previous_content opening tag');
+  assert.ok(block.includes('</previous_content>'), 'previous_content closing tag');
+  assert.ok(block.includes('<subsequent_content>'), 'subsequent_content opening tag');
+  assert.ok(block.includes('</subsequent_content>'), 'subsequent_content closing tag');
+  assert.ok(block.includes('### Content Summary'), 'Preflight Content Summary block');
+  assert.ok(block.includes('[PREVIOUS VERIFIED TRANSLATIONS'), 'Continuity memory header');
+  assert.ok(block.includes('<m id="9">'), 'Verified translation rendered as <m> tag');
+  assert.ok(block.includes('=== END OF MEMORY ==='), 'Memory terminator present');
+  // Term 'Entry 12' wujud dalam batchText → Points to Note aktif
+  assert.ok(block.includes('### Points to Note'), 'Points to Note (term matched in batch)');
+  assert.ok(block.includes('- Entry 12: Entri 12 (Term)'), 'Matched term rendered');
+});
+
+test('SubFaberSharedContext: null/empty context returns empty string', () => {
+  const engine = makeEngine({ subfaberEnabled: true });
+  assert.equal(engine._formatSharedContext(null, '<s id="1">x</s>'), '', 'null context → empty');
+  assert.equal(engine._formatSharedContext({}, '<s id="1">x</s>'), '', 'empty context → empty');
+  assert.equal(engine._formatSharedContext({ previousContent: [], subsequentContent: [], previousMemory: [], preflight: null }, '<s id="1">x</s>'), '', 'all-empty arrays → empty');
+});
+
+test('SubFaberSharedContext: preflight renders Content Summary + Points to Note (term matched via batchText)', () => {
   const engine = makeEngine({ subfaberEnabled: true });
   // GS3: term-matching dinamik — istilah mesti wujud dalam skop chunk
-  // (prev/batch/next) untuk disuntik. Batch ini menyebut "Zhuang Xu".
+  // (prev/batchText/next) untuk disuntik. BatchText ini menyebut "Zhuang Xu".
   const batch = [
     { id: 1, timecode: 't', text: 'Zhuang Xu walked into the room.' },
     { id: 2, timecode: 't', text: 'He looked tired.' }
@@ -204,23 +237,27 @@ test('SubFaberXml: preflight renders Content Summary + Points to Note blocks (te
     }
   };
 
-  const xml = engine.prepareBatchXml(batch, context);
-  assert.ok(xml.includes('### Content Summary'), 'Content Summary header');
-  assert.ok(xml.includes('A story about survival.'), 'Theme text');
-  assert.ok(xml.includes('### Points to Note'), 'Points to Note header');
-  assert.ok(xml.includes('- Zhuang Xu: Zhuang Xu (Male colleague)'), 'Term line rendered (matched in batch)');
+  const batchText = engine.prepareBatchXml(batch);
+  const block = engine._formatSharedContext(context, batchText);
+  assert.ok(block.includes('### Content Summary'), 'Content Summary header');
+  assert.ok(block.includes('A story about survival.'), 'Theme text');
+  assert.ok(block.includes('### Points to Note'), 'Points to Note header');
+  assert.ok(block.includes('- Zhuang Xu: Zhuang Xu (Male colleague)'), 'Term line rendered (matched in batch)');
 });
 
-test('SubFaberXml: empty context renders no context block (plain batch)', () => {
+test('SubFaberXml: empty context renders plain active entries (no context anywhere)', () => {
   const engine = makeEngine({ subfaberEnabled: true });
   const batch = makeEntries(2, 1);
   const xml = engine.prepareBatchXml(batch, null);
   assert.ok(!xml.includes('[CONTEXT INFORMATION'), 'No context header when no context');
-  assert.ok(!xml.includes('=== ENTRIES TO TRANSLATE ==='), 'No entries marker when no context block');
+  assert.ok(!xml.includes('=== ENTRIES TO TRANSLATE ==='), 'No entries marker — legacy REMOVED');
   assert.ok(xml.includes('<s id="1">'), 'Active entries still rendered');
+  // Dan prompt tiada blok konteks
+  const prompt = engine.createXmlBatchPrompt(xml, 'Malay', null, batch.length, null, 0, 1);
+  assert.ok(!prompt.includes('[CONTEXT INFORMATION'), 'No context block in prompt without context');
 });
 
-test('SubFaberXml: XML escaping applied to context entries', () => {
+test('SubFaberSharedContext: XML escaping applied to context entries', () => {
   const engine = makeEngine({ subfaberEnabled: true });
   const batch = makeEntries(1, 1);
   // Bina string melalui char codes supaya sumber test tidak mengandungi
@@ -238,25 +275,28 @@ test('SubFaberXml: XML escaping applied to context entries', () => {
     previousMemory: [],
     preflight: null
   };
-  const xml = engine.prepareBatchXml(batch, context);
-  assert.ok(xml.includes(expectedEscaped), 'Special chars escaped in context');
-  assert.ok(!xml.includes(`>A ${AMP} B ${LT}tag${GT}<`), 'Raw unescaped form must NOT appear inside tags');
+  const batchText = engine.prepareBatchXml(batch);
+  const block = engine._formatSharedContext(context, batchText);
+  assert.ok(block.includes(expectedEscaped), 'Special chars escaped in context');
+  assert.ok(!block.includes(`>A ${AMP} B ${LT}tag${GT}<`), 'Raw unescaped form must NOT appear inside tags');
 });
 
-test('SubFaberXml: previousMemory rendered as continuity block (single SubFaber path)', () => {
+test('SubFaberSharedContext: previousMemory rendered as continuity block (single SubFaber path)', () => {
   // TOTAL PURGE: blok legacy [PREVIOUS_TRANSLATION_MEMORY] berasingan dibuang;
-  // previousMemory kini dirender sebagai blok continuity dalam laluan SubFaber.
+  // previousMemory dirender dalam blok {shared_prompt}, bukan batchText.
   const engine = makeEngine({});
   const batch = makeEntries(2, 1);
   const context = {
     previousContent: makeEntries(1, 0),
     previousMemory: [{ id: 5, source: 'Hello', translation: 'Helo' }]
   };
-  const xml = engine.prepareBatchXml(batch, context);
-  assert.ok(xml.includes('[PREVIOUS VERIFIED TRANSLATIONS'), 'Continuity memory header present');
-  assert.ok(xml.includes('<m id="5">'), 'Verified translation rendered as <m> tag');
-  assert.ok(xml.includes('=== END OF MEMORY ==='), 'Memory terminator present');
-  assert.ok(!xml.includes('[PREVIOUS_TRANSLATION_MEMORY'), 'Legacy standalone header REMOVED');
+  const batchText = engine.prepareBatchXml(batch);
+  const block = engine._formatSharedContext(context, batchText);
+  assert.ok(block.includes('[PREVIOUS VERIFIED TRANSLATIONS'), 'Continuity memory header present');
+  assert.ok(block.includes('<m id="5">'), 'Verified translation rendered as <m> tag');
+  assert.ok(block.includes('=== END OF MEMORY ==='), 'Memory terminator present');
+  assert.ok(!block.includes('[PREVIOUS_TRANSLATION_MEMORY'), 'Legacy standalone header REMOVED');
+  assert.ok(!batchText.includes('<m id='), 'Memory NOT in batchText (clean <input>)');
 });
 
 // --- createXmlBatchPrompt: persona + principles (Purification Mandat 2026-09-25) ---
@@ -313,12 +353,10 @@ test('SubFaberPrompt: pure SubFaber prompt is the ONLY path (no flags exist)', (
   assert.ok(!prompt.includes('[UNIVERSAL STRUCTURAL DEMONSTRATION'), 'Legacy demo REMOVED permanently');
 });
 
-test('SubFaberPrompt: anchor startId derived from active section, not context blocks', () => {
-  // prepareBatchXml dengan konteks SubFaber meletakkan <s id> entries dalam
-  // blok konteks SEBELUM '=== ENTRIES TO TRANSLATE ==='. createXmlBatchPrompt
-  // mesti derive startId dari SEKSYEN AKTIF sahaja (selepas marker), bukan
-  // konteks. Prompt SubFaber tulen tiada idList eksplisit (7-rule dibuang),
-  // jadi pengesahan adalah melalui anchor di penutup prompt.
+test('SubFaberPrompt: anchor startId derived directly from clean batchText (first active ID)', () => {
+  // Shared Prompt Architecture: batchText HANYA entri aktif — startId
+  // diekstrak TERUS daripada tag pertama. Konteks (IDs 1..5) hidup dalam
+  // blok {shared_prompt} dan TIDAK boleh mencemar anchor penutup.
   const engine = makeEngine({ subfaberEnabled: true });
   engine.sourceLanguage = 'English';
   const all = makeEntries(10);
@@ -329,16 +367,72 @@ test('SubFaberPrompt: anchor startId derived from active section, not context bl
     previousMemory: [],
     preflight: null
   };
-  const batchText = engine.prepareBatchXml(batch, context);
+  const batchText = engine.prepareBatchXml(batch); // context diabaikan — entri aktif sahaja
   const prompt = engine.createXmlBatchPrompt(batchText, 'Malay', null, batch.length, context, 0, 1);
 
   // Anchor mesti <s id="6"> (ID aktif pertama), BUKAN <s id="1"> (context ID)
   assert.ok(prompt.includes('<s id="6">'), 'Anchor must be active first ID (6)');
   assert.ok(prompt.trimEnd().endsWith('<s id="6">'), 'Prompt must END with anchor <s id="6">');
-  // Context IDs wujud dalam blok konteks (itu OK) tapi tidak sebagai anchor penutup
+  // Anchor ialah token terakhir prompt
   const lastIdx = prompt.trimEnd().length;
   const anchorIdx = prompt.lastIndexOf('<s id="6">');
   assert.ok(anchorIdx === lastIdx - '<s id="6">'.length, 'Anchor is the final token of the prompt');
+});
+
+test('SubFaberPrompt: shared context block injected between ## Task and <translation_principles>', () => {
+  // LINGO 1:1 PARITY: {shared_prompt} hidup di antara ## Task dan
+  // <translation_principles>; <input> hanya membalut entri aktif.
+  const engine = makeEngine({ subfaberEnabled: true });
+  engine.sourceLanguage = 'English';
+  const all = makeEntries(10);
+  const batch = all.slice(5, 10); // IDs 6..10
+  const context = {
+    previousContent: all.slice(0, 5), // IDs 1..5
+    subsequentContent: all.slice(10, 12).length ? all.slice(10, 12) : [], // IDs 11..12 (empty here, 10 entries total)
+    previousMemory: [],
+    preflight: { theme: 'A heist movie.', terms: [] }
+  };
+  const batchText = engine.prepareBatchXml(batch);
+  const prompt = engine.createXmlBatchPrompt(batchText, 'Malay', null, batch.length, context, 0, 1);
+
+  // Blok konteks wujud dalam prompt
+  assert.ok(prompt.includes('[CONTEXT INFORMATION - READ ONLY. DO NOT TRANSLATE THIS SECTION]'), 'Context block present in prompt');
+  assert.ok(prompt.includes('<previous_content>'), 'previous_content rendered in prompt');
+  assert.ok(prompt.includes('### Content Summary'), 'Content Summary (theme) rendered in prompt');
+  assert.ok(prompt.includes('A heist movie.'), 'Theme text present');
+
+  // Susunan wajib: ## Task → blok konteks → <translation_principles> → <input>
+  const taskIdx = prompt.indexOf('## Task');
+  const ctxIdx = prompt.indexOf('[CONTEXT INFORMATION');
+  const principlesIdx = prompt.indexOf('<translation_principles>');
+  const inputIdx = prompt.indexOf('<input>');
+  assert.ok(taskIdx < ctxIdx, 'Context AFTER ## Task');
+  assert.ok(ctxIdx < principlesIdx, 'Context BEFORE <translation_principles>');
+  assert.ok(principlesIdx < inputIdx, '<input> AFTER <translation_principles>');
+
+  // <input> SUCI — tiada konteks di dalamnya
+  const inputSection = prompt.slice(inputIdx, prompt.indexOf('</input>'));
+  assert.ok(inputSection.includes('<s id="6">'), 'Active entry 6 inside <input>');
+  assert.ok(!inputSection.includes('<previous_content>'), 'No previous_content inside <input>');
+  assert.ok(!inputSection.includes('### Content Summary'), 'No theme inside <input>');
+  assert.ok(!inputSection.includes('[CONTEXT INFORMATION'), 'No context header inside <input>');
+});
+
+test('SubFaberPrompt: no shared context block when context empty (clean spacing)', () => {
+  const engine = makeEngine({});
+  engine.sourceLanguage = 'English';
+  const batch = makeEntries(2, 1);
+  const batchText = engine.prepareBatchXml(batch);
+  const prompt = engine.createXmlBatchPrompt(batchText, 'Malay', null, batch.length, null, 0, 1);
+
+  assert.ok(!prompt.includes('[CONTEXT INFORMATION'), 'No context block without context');
+  // Susunan tetap: item 4 Task → principles → input
+  const taskItem4 = prompt.indexOf('Strictly preserve all inline markup');
+  const principlesIdx = prompt.indexOf('<translation_principles>');
+  assert.ok(taskItem4 < principlesIdx, 'Task item 4 precedes principles');
+  // Tiada baris kosong berganda antara Task dan principles (blok kosong dibuang)
+  const between = prompt.slice(taskItem4, principlesIdx);
+  assert.ok(!between.includes('\n\n\n'), 'No triple blank line when context empty');
 });
 
 // --- GOLDEN STANDARD GS3: Dynamic term-matching per-chunk (VideoLingo search_things_to_note) ---
