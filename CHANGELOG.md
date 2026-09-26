@@ -2,6 +2,20 @@
 
 All notable changes to this project will be documented in this file.
 
+## SubMaker v1.9.6 (2026-09-26) — Holy Trinity: Specialized 3-Model Dual-Agent Architecture
+
+**Agent B kini mengkhususkan model mengikut kekuatan empirik — tiga peranan, tiga model:**
+
+- **Pengkhususan ([`agentBInspector.js`](src/services/agentBInspector.js)):** constructor menerima `preflightModel` / `inspectionModel` / `fallbackModel` secara bebas (hot-swap penuh):
+  - Pre-Flight → **glm-5.3-flash** (sintesis makro, baca episod penuh 48k aksara, penjejakan watak tanpa looping);
+  - Semakan Kelompok → **glm-5.3-flashx** (mikro ~200 tok/s — selesai dalam celah pacing delay 5.0s);
+  - Failover → **deepseek-v4.1-flash** (penyelamat ~214 tok/s, struktur JSON tahan lasak).
+  [`_hierarchyFor()`](src/services/agentBInspector.js) memilih hierarki per-operasi (`preflightHierarchy` vs `modelHierarchy`); `_callWithFailover` merujuknya — Pre-Flight tidak pernah menyentuh flashx dan sebaliknya. Konvensyen `'none'`/dedupe dikekalkan.
+
+- **Konfigurasi ([`config.js`](src/utils/config.js), mandat §2A):** rantai `agentB.preflightModel` (`AGENT_B_PREFLIGHT_MODEL`, lalai `glm-5.3-flash`), `agentB.inspectionModel` (rantai 5-peringkat: inspectionModel → **alias legacy `agentB.model`** → `AGENT_B_INSPECTION_MODEL` → **alias `AGENT_B_MODEL`** → lalai `glm-5.3-flashx`), `agentB.fallbackModel` (lalai `deepseek-v4.1-flash`). `agentB.model` dipelihara sebagai mirror `inspectionModel` — config lama dan pembaca warisan terus berfungsi. [`subtitles.js`](src/handlers/subtitles.js:5464) menyuntik ketiga-tiga medan; [`.env.example`](.env.example) mendokumentasikan Trinity.
+
+- **Ujian:** suite Agent B 42 → **49** (3 baharu + 2 dikemas kini): lalai Trinity (flash/flashx/deepseek + hierarki berasingan), pemisahan operasi sebenar (mock: Pre-Flight flash→deepseek **tanpa** flashx; Semakan flashx→deepseek **tanpa** flash), hot-swap 3 medan bebas (kimi-k3/deepseek/glm), rantai alias legacy config + env khas per operasi. Ujian failover pre-flight lama dikemas kini kepada hierarki Trinity. `npm test`: 202 tests, **201 PASS / 0 FAIL** (1 skipped).
+
 ## SubMaker v1.9.5 (2026-09-26) — Resilient Pre-Flight JSON Parser + Dynamic Model Hot-Swap
 
 **Pembaikan forensik Beta Run 3 + model Agent B 100% configurable:**

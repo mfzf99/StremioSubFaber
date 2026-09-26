@@ -38,8 +38,9 @@ const { runPreflightSemanticPass, stripReasoningTags } = require('./subfaberPref
 const log = require('../utils/logger');
 
 // ── Konfigurasi tetap Agent B (Mandat Pembebasan Penuh 2026-09-26) ──
-const AGENT_B_DEFAULT_MODEL = 'glm-5.3-flashx';
-const AGENT_B_FALLBACK_MODEL = 'deepseek-v4.1-flash'; // Mandat Failover §4: askar penyelamat
+const AGENT_B_DEFAULT_MODEL = 'glm-5.3-flashx';   // Semakan kelompok (ultra-fast ~200 tok/s)
+const AGENT_B_PREFLIGHT_MODEL = 'glm-5.3-flash';  // TRINITY: Fasa 0 (sintesis makro, 48k aksara)
+const AGENT_B_FALLBACK_MODEL = 'deepseek-v4.1-flash'; // Mandat Failover §4: askar penyelamat (~214 tok/s)
 const AGENT_B_PREFLIGHT_TIMEOUT_MS = 45000;  // Fasa 0: baca episod penuh (48k aksara) + analisis tema
 const AGENT_B_INSPECTION_TIMEOUT_MS = 15000; // Semakan batch: latensi rangkaian rootsys.cloud selamat
 const AGENT_B_MAX_OUTPUT_TOKENS = 4096;      // Ruang reasoning tokens + content (kuota infiniti)
@@ -212,7 +213,7 @@ class AgentBInspector extends OpenAICompatibleProvider {
   constructor(options = {}) {
     super({
       apiKey: options.apiKey || '',
-      model: options.model || AGENT_B_DEFAULT_MODEL,
+      model: options.inspectionModel || options.model || AGENT_B_DEFAULT_MODEL,
       baseUrl: options.baseUrl || 'https://api.openai.com/v1',
       providerName: 'agentb',
       reasoningEffort: 'low',           // GLM 5.3: thinking always-on, effort minimum
@@ -228,25 +229,38 @@ class AgentBInspector extends OpenAICompatibleProvider {
     // sementara kepada 45s oleh runPreflightPass().
     this.translationTimeout = AGENT_B_INSPECTION_TIMEOUT_MS;
 
-    // ── DUAL-MODEL FAILOVER DINAMIK (Mandat Hot-Swap 2026-09-26 §2) ──
-    // Hierarki model 100% configurable — TIADA susunan hardcoded:
-    //   - Utama: options.model (lalai glm-5.3-flashx)
-    //   - Sandaran: options.fallbackModel (lalai deepseek-v4.1-flash);
-    //     nilai 'none' ATAU sama dengan utama ATAU kosong → hierarki
-    //     model tunggal (tiada failover).
-    // this.model sentiasa menjejak model AKTIF supaya log forensik
-    // melaporkan model sebenar yang sedang beroperasi.
-    const primary = String(options.model || AGENT_B_DEFAULT_MODEL).trim() || AGENT_B_DEFAULT_MODEL;
+    // ── HOLY TRINITY: PENGKHUSUSAN 3-MODEL (Mandat Trinity 2026-09-26) ──
+    // Setiap operasi Agent B memakai model KHAS mengikut kekuatan empirik:
+    //   Pre-Flight  → preflightModel   (lalai glm-5.3-flash):
+    //                 sintesis makro, baca 48k aksara, penjejakan watak.
+    //   Semakan     → inspectionModel  (lalai glm-5.3-flashx):
+    //                 mikro ~200 tok/s — cukup dalam pacing delay 5.0s.
+    //   Sandaran    → fallbackModel    (lalai deepseek-v4.1-flash):
+    //                 penyelamat ultra-pantas ~214 tok/s, struktur tahan lasak.
+    // 100% configurable: 'none'/kosong/sama → tiada failover (model tunggal).
+    // this.model sentiasa menjejak model AKTIF supaya log forensik melaporkan
+    // model sebenar yang sedang beroperasi.
+    this.preflightModel = String(options.preflightModel || AGENT_B_PREFLIGHT_MODEL).trim() || AGENT_B_PREFLIGHT_MODEL;
+    const inspection = String(options.inspectionModel || options.model || AGENT_B_DEFAULT_MODEL).trim() || AGENT_B_DEFAULT_MODEL;
     const requestedFallback = String(options.fallbackModel || AGENT_B_FALLBACK_MODEL).trim();
-    this.modelHierarchy = [primary];
-    if (
-      requestedFallback &&
-      requestedFallback.toLowerCase() !== 'none' &&
-      requestedFallback.toLowerCase() !== primary.toLowerCase()
-    ) {
-      this.modelHierarchy.push(requestedFallback);
-    }
+
+    const buildHierarchy = (primaryModel, fallbackModel) => {
+      const hierarchy = [primaryModel];
+      if (
+        fallbackModel &&
+        fallbackModel.toLowerCase() !== 'none' &&
+        fallbackModel.toLowerCase() !== primaryModel.toLowerCase()
+      ) {
+        hierarchy.push(fallbackModel);
+      }
+      return hierarchy;
+    };
+
+    this.modelHierarchy = buildHierarchy(inspection, requestedFallback);       // untuk SEMAKAN
+    this.inspectionModel = this.modelHierarchy[0];
+    this.preflightHierarchy = buildHierarchy(this.preflightModel, requestedFallback); // untuk PRE-FLIGHT
     this.fallbackModel = this.modelHierarchy.length > 1 ? this.modelHierarchy[1] : null;
+    this.model = this.inspectionModel; // model aktif lalai = semakan
 
     // ── Circuit breaker (per sesi fail — instance dibina per permintaan) ──
     this._consecutiveFailures = 0;
@@ -269,8 +283,11 @@ class AgentBInspector extends OpenAICompatibleProvider {
    */
   async _callWithFailover(operation, attempt, isFailure) {
     const failedAttempts = [];
-    for (let i = 0; i < this.modelHierarchy.length; i++) {
-      const model = this.modelHierarchy[i];
+    // TRINITY: hierarki dipilih mengikut operasi — Pre-flight memakai
+    // preflightModel, Semakan memakai inspectionModel (lihat _hierarchyFor).
+    const hierarchy = this._hierarchyFor(operation);
+    for (let i = 0; i < hierarchy.length; i++) {
+      const model = hierarchy[i];
       this.model = model; // log + payload pembawa sentiasa melihat model aktif
       let result;
       try {
@@ -279,8 +296,8 @@ class AgentBInspector extends OpenAICompatibleProvider {
         // ZERO-SWALLOWED-ERROR §3B/§4B: status + punca sebenar, bukan generik
         const status = err?.statusCode || err?.response?.status || err?.status || 'N/A';
         failedAttempts.push({ model, error: err });
-        if (i < this.modelHierarchy.length - 1) {
-          log.warn(() => `[AgentB] ${operation} on ${model} failed (Status: ${status}): ${err?.message || err}. Failing over to ${this.modelHierarchy[i + 1]}...`);
+        if (i < hierarchy.length - 1) {
+          log.warn(() => `[AgentB] ${operation} on ${model} failed (Status: ${status}): ${err?.message || err}. Failing over to ${hierarchy[i + 1]}...`);
           continue;
         }
         log.warn(() => `[AgentB] ${operation} on ${model} failed (Status: ${status}): ${err?.message || err}. All models exhausted.`);
@@ -292,8 +309,8 @@ class AgentBInspector extends OpenAICompatibleProvider {
       // Respons diterima tetapi rosak/kosong (HTTP 200 sampah)
       const reason = 'Empty or corrupt response';
       failedAttempts.push({ model, error: new Error(reason) });
-      if (i < this.modelHierarchy.length - 1) {
-        log.warn(() => `[AgentB] ${operation} on ${model} failed (${reason}). Failing over to ${this.modelHierarchy[i + 1]}...`);
+      if (i < hierarchy.length - 1) {
+        log.warn(() => `[AgentB] ${operation} on ${model} failed (${reason}). Failing over to ${hierarchy[i + 1]}...`);
         continue;
       }
       log.warn(() => `[AgentB] ${operation} on ${model} failed (${reason}). All models exhausted.`);
@@ -301,6 +318,17 @@ class AgentBInspector extends OpenAICompatibleProvider {
     }
     // Tidak boleh dicapai — loop sentiasa return/throw
     throw new Error(`${operation}: exhausted`);
+  }
+
+  /**
+   * TRINITY: pulangkan hierarki model untuk operasi tertentu — Pre-Flight
+   * memakai preflightModel (glm-5.3-flash) manakala Semakan memakai
+   * inspectionModel (glm-5.3-flashx). Kedua-duanya berkongsi fallback.
+   * @param {'preflight'|'inspection'} operation
+   * @returns {string[]} Hierarki model untuk operasi tersebut
+   */
+  _hierarchyFor(operation) {
+    return operation === 'Pre-flight' ? this.preflightHierarchy : this.modelHierarchy;
   }
 
   /**
@@ -501,6 +529,7 @@ module.exports = {
   parseInspectorResponse,
   INSPECTOR_INSTRUCTION,
   AGENT_B_DEFAULT_MODEL,
+  AGENT_B_PREFLIGHT_MODEL,
   AGENT_B_FALLBACK_MODEL,
   AGENT_B_PREFLIGHT_TIMEOUT_MS,
   AGENT_B_INSPECTION_TIMEOUT_MS,

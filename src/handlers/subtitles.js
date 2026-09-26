@@ -5463,7 +5463,9 @@ if (
         agentBInspector = new AgentBInspector({
           apiKey: config.agentB.apiKey,
           baseUrl: config.agentB.baseUrl,
-          model: config.agentB.model || 'glm-5.3-flashx',
+          // HOLY TRINITY (Mandat 2026-09-26): model khas per operasi.
+          preflightModel: config.agentB.preflightModel || 'glm-5.3-flash',
+          inspectionModel: config.agentB.inspectionModel || 'glm-5.3-flashx',
           fallbackModel: config.agentB.fallbackModel || 'deepseek-v4.1-flash',
           ssrfLookup: createSsrfSafeLookup()
         });
