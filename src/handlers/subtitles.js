@@ -5474,6 +5474,9 @@ if (
           // reasoning_effort:"max", max_tokens:131072 (128K), top_p:0.95,
           // response_format json_object} — temperature digugurkan.
           preflightModel: config.agentB.preflightModel || 'deepseek-v4-pro',
+          // MANDAT v4: fallback khusus Fasa 0 (cth. kimi-k3) — hierarki
+          // pre-flight merentas enjin; Fasa 1 tidak terjejas.
+          preflightFallbackModel: config.agentB.preflightFallbackModel || '',
           model: config.agentB.model || 'deepseek-v4-pro',
           fallbackModel: config.agentB.fallbackModel || 'deepseek-v4.1-flash',
           preflightTimeoutMs: config.agentB.preflightTimeoutMs,

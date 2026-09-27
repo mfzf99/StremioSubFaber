@@ -574,6 +574,7 @@ function normalizeConfig(config) {
   // Struktur additive — tiada field sedia ada disentuh.
   // env fallback: AGENT_B_BASE_URL / AGENT_B_API_KEY / AGENT_B_MODEL /
   // AGENT_B_PREFLIGHT_MODEL / AGENT_B_FALLBACK_MODEL /
+  // AGENT_B_PREFLIGHT_FALLBACK_MODEL /
   // AGENT_B_PREFLIGHT_TIMEOUT_MS / AGENT_B_INSPECTION_TIMEOUT_MS /
   // AGENT_B_MAX_TOKENS.
   // ── UNIVERSAL PAYLOAD (MANDAT SENI BINA UNIVERSAL PAYLOAD 2026-09-26) ──
@@ -599,6 +600,11 @@ function normalizeConfig(config) {
     apiKey: String(mergedConfig.agentB?.apiKey || process.env.AGENT_B_API_KEY || '').trim(),
     model: String(mergedConfig.agentB?.model || mergedConfig.agentB?.inspectionModel || process.env.AGENT_B_MODEL || 'deepseek-v4-pro').trim(),
     preflightModel: String(mergedConfig.agentB?.preflightModel || process.env.AGENT_B_PREFLIGHT_MODEL || 'deepseek-v4-pro').trim(),
+    // MANDAT v4: fallback khusus Fasa 0 (cth. kimi-k3) — kosong = tiada
+    // tingkat tambahan; hierarki pre-flight jatuh balik kepada fallbackModel.
+    preflightFallbackModel: String(
+      mergedConfig.agentB?.preflightFallbackModel ?? process.env.AGENT_B_PREFLIGHT_FALLBACK_MODEL ?? ''
+    ).trim(),
     fallbackModel: String(mergedConfig.agentB?.fallbackModel || process.env.AGENT_B_FALLBACK_MODEL || 'deepseek-v4.1-flash').trim(),
     preflightTimeoutMs: normalizeAgentBTimeoutMs(
       mergedConfig.agentB?.preflightTimeoutMs ?? process.env.AGENT_B_PREFLIGHT_TIMEOUT_MS,

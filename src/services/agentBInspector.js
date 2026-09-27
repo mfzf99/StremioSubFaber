@@ -67,6 +67,10 @@ const log = require('../utils/logger');
 //                                 (mewarisi had masa fasa berkaitan)
 const AGENT_B_DEFAULT_MODEL = 'deepseek-v4-pro';      // Fasa 1: Pemeriksa Utama
 const AGENT_B_PREFLIGHT_MODEL = 'deepseek-v4-pro';    // Fasa 0: Pre-Flight Makro (BETA RUN 10)
+// MANDAT OPERASI MUTLAK v4 2026-09-27: fallback pre-flight BERASINGAN —
+// membolehkan hierarki Fasa 0 merentas keluarga enjin (cth. deepseek-v4-pro
+// → kimi-k3 → deepseek-v4.1-flash) tanpa mengganggu hierarki Fasa 1.
+const AGENT_B_PREFLIGHT_FALLBACK_MODEL = process.env.AGENT_B_PREFLIGHT_FALLBACK_MODEL || '';
 const AGENT_B_FALLBACK_MODEL = 'deepseek-v4.1-flash'; // Fallback Universal (Fasa 0 + Fasa 1)
 // BEAST MODE (BETA RUN 10): muatan DeepSeek membuka kuasa mutlak penaakulan
 // (ground truth rasmi api-docs.deepseek.com):
@@ -376,20 +380,30 @@ class AgentBInspector extends OpenAICompatibleProvider {
     this.model = String(options.model || options.inspectionModel || AGENT_B_DEFAULT_MODEL).trim() || AGENT_B_DEFAULT_MODEL;
     this.preflightModel = String(options.preflightModel || AGENT_B_PREFLIGHT_MODEL).trim() || AGENT_B_PREFLIGHT_MODEL;
     const requestedFallback = String(options.fallbackModel || AGENT_B_FALLBACK_MODEL).trim();
+    // MANDAT v4: fallback khusus Fasa 0 — membolehkan hierarki pre-flight
+    // merentas keluarga enjin (deepseek → kimi → deepseek-flash) tanpa
+    // mengganggu hierarki Fasa 1.
+    this.preflightFallbackModel = String(
+      options.preflightFallbackModel !== undefined ? options.preflightFallbackModel : AGENT_B_PREFLIGHT_FALLBACK_MODEL
+    ).trim();
 
-    const buildHierarchy = (primary) => {
+    const buildHierarchy = (primary, extraFallback = '') => {
       const hierarchy = [primary];
-      if (
-        requestedFallback &&
-        requestedFallback.toLowerCase() !== 'none' &&
-        requestedFallback.toLowerCase() !== primary.toLowerCase()
-      ) {
-        hierarchy.push(requestedFallback);
-      }
+      const addCandidate = (candidate) => {
+        if (
+          candidate &&
+          candidate.toLowerCase() !== 'none' &&
+          !hierarchy.some((m) => m.toLowerCase() === candidate.toLowerCase())
+        ) {
+          hierarchy.push(candidate);
+        }
+      };
+      addCandidate(extraFallback);      // fallback khusus fasa (v4) dahulu
+      addCandidate(requestedFallback);  // fallback universal (kontrak lama dipelihara)
       return hierarchy;
     };
     this.modelHierarchy = buildHierarchy(this.model);
-    this.preflightHierarchy = buildHierarchy(this.preflightModel);
+    this.preflightHierarchy = buildHierarchy(this.preflightModel, this.preflightFallbackModel);
 
     this.fallbackModel = this.modelHierarchy.length > 1 ? this.modelHierarchy[1] : null;
     this.inspectionModel = this.model;
