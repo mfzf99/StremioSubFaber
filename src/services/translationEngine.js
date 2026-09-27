@@ -1298,13 +1298,22 @@ class TranslationEngine {
     }
 
     // ── TIANG 3: Character Hierarchy (watak utama — suntik penuh) ──
+    // MANDAT SOSIOLINGUISTIK 2026-09-27: canonical_address null kini dirender
+    // sebagai isyarat NOT LOCKED (fallback lama `|| name` menyesatkan Agent A
+    // dengan nama mentah dan memaksa tekaan gelaran Cik/Puan tanpa panduan).
     const characters = Array.isArray(preflight.characters) ? preflight.characters : [];
     if (characters.length > 0) {
       const charLines = characters
         .map(c => {
           const name = resolvePillarText(c, 'name');
           if (!name) return '';
-          const address = resolvePillarText(c, 'canonical_address', 'canonicalAddress') || name;
+          const rawAddress = (c && typeof c === 'object') ? c.canonical_address : undefined;
+          const legacyAddress = (c && typeof c === 'object') ? c.canonicalAddress : undefined;
+          const hasAddress = (rawAddress !== undefined && rawAddress !== null && String(rawAddress).trim() !== '')
+            || (legacyAddress !== undefined && legacyAddress !== null && String(legacyAddress).trim() !== '');
+          const address = hasAddress
+            ? (resolvePillarText(c, 'canonical_address', 'canonicalAddress') || name)
+            : 'address NOT LOCKED — infer the correct honorific from the dialogue context (Malay matrix: Puan for adult/married/auntie/manager women, Cik for young unmarried women)';
           const role = resolvePillarText(c, 'role');
           return `- ${name} → ${address}${role ? ` (${role})` : ''}`;
         })
@@ -2115,7 +2124,13 @@ class TranslationEngine {
         && !this._agentBSemanticRetries.has(batchIndex)
         && agentBStructurallyClean) {
       try {
-        const verdict = await this.agentB.runSemanticInspection(batch, translatedEntries, { batchIndex, totalBatches });
+        // CONTEXT-AWARE AUDIT (MANDAT OPERASI MUTLAK 2026-09-27): konteks
+        // Pre-Flight disuntik ke pemeriksa Agent B — tidak lagi mengaudit buta.
+        const verdict = await this.agentB.runSemanticInspection(batch, translatedEntries, {
+          batchIndex,
+          totalBatches,
+          preflightContext: this.preflightContext || null
+        });
         if (verdict?.failOpen) {
           this.translationStats.agentBFailures++;
         } else if (verdict && verdict.valid === false && Array.isArray(verdict.crimes)) {
@@ -2150,7 +2165,11 @@ You MUST translate each numbered line 1:1. NEVER merge two source lines into one
             // DAN lulus semakan semantik kedua (satu-satunya re-verdict).
             if (retryMissing.length === 0 && retryEntries.length === batch.length) {
               const retrySorted = Object.values(retryAligned).sort((a, b) => a.index - b.index);
-              const reVerdict = await this.agentB.runSemanticInspection(batch, retrySorted, { batchIndex, totalBatches });
+              const reVerdict = await this.agentB.runSemanticInspection(batch, retrySorted, {
+                batchIndex,
+                totalBatches,
+                preflightContext: this.preflightContext || null
+              });
               if (reVerdict?.valid !== false) {
                 translatedEntries = retrySorted;
                 this._closeIncident('AGENT_B_SEMANTIC_RETRY', batchIndex + 1, { outcome: 'recovered' });

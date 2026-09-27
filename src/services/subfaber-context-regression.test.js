@@ -508,6 +508,26 @@ test('SubFaberGS3: term matching is case-insensitive and scans prev + batch + ne
   assert.ok(block.includes('- Silverton: Bandar Perak'), 'Next-scope match');
 });
 
+test('SubFaberGS3: null canonical_address renders NOT LOCKED marker (MANDAT SOSIOLINGUISTIK 2026-09-27)', () => {
+  const engine = makeEngine({ subfaberEnabled: true });
+  engine.preflightContext = {
+    theme: 'T.',
+    terms: [],
+    characters: [
+      { name: 'Shen Ruoxin', canonical_address: 'Puan Shen', role: 'female lead' },
+      { name: 'Mystery Woman', canonical_address: null, role: 'unknown' }
+    ],
+    credits_and_titles: []
+  };
+  const batch = [{ id: 1, timecode: 't', text: 'Shen Ruoxin arrives.' }];
+
+  const block = engine._formatPreflightForChunk(engine.preflightContext, [], batch, []);
+  assert.ok(block.includes('- Shen Ruoxin → Puan Shen (female lead)'), 'gelaran terkunci dirender seperti biasa');
+  assert.ok(block.includes('- Mystery Woman → address NOT LOCKED'), 'null → isyarat NOT LOCKED (fallback lama || name DIBUANG)');
+  assert.ok(!block.includes('- Mystery Woman → Mystery Woman'), 'nama mentah TIDAK lagi dijadikan gelaran');
+  assert.ok(block.includes('Malay matrix'), 'panduan matriks BM mesti hadir untuk Agent A');
+});
+
 // --- Parser: konteks tidak rosakkan parseXmlBatchResponse ---
 test('SubFaberParse: parser ignores context IDs not in batch (hallucination filter)', () => {
   const engine = makeEngine({ subfaberEnabled: true });

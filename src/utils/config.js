@@ -581,7 +581,7 @@ function normalizeConfig(config) {
   //    2026-09-27) ──
   // Kredensial rootsys.cloud (1B token quota / 1M context window):
   //   Fasa 0 (Pre-Flight Makro)  : deepseek-v4-pro     (Timeout 150,000ms / 150s)
-  //   Fasa 1 (Pemeriksa Utama)   : deepseek-v4-pro     (Timeout  60,000ms / 60s)
+  //   Fasa 1 (Pemeriksa Utama)   : deepseek-v4-pro     (Timeout  90,000ms / 90s)
   //   Fallback Universal         : deepseek-v4.1-flash (mewarisi had masa fasa)
   // Had masa di bawah siling 300s Caddy rootsys.cloud. Muatan BEAST
   // (thinking:{type:"enabled"} + reasoning_effort:"max" + max_tokens:131072
@@ -605,9 +605,11 @@ function normalizeConfig(config) {
       mergedConfig.agentB?.preflightTimeoutMs ?? process.env.AGENT_B_PREFLIGHT_TIMEOUT_MS,
       150000
     ),
+    // MANDAT OPERASI MUTLAK 2026-09-27: 90000 (90s) — bukti empirikal semakan
+    // 50 baris ~18–20 saat; had lama 60s sempit di bawah beban pelayan.
     inspectionTimeoutMs: normalizeAgentBTimeoutMs(
       mergedConfig.agentB?.inspectionTimeoutMs ?? process.env.AGENT_B_INSPECTION_TIMEOUT_MS,
-      60000
+      90000
     ),
     // BEAST MODE BETA RUN 10: siling token muatan DeepSeek — 131072 (128K
     // rasmi apabila reasoning_effort="max"); boleh ditindih melalui env

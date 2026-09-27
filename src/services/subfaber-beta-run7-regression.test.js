@@ -59,19 +59,19 @@ test('BetaRun7/Run8: theme lock appears in the JSON schema contract itself', () 
 });
 
 // --- A.2: Matriks Gelaran Watak (kini TIANG 3 "characters" — canonical_address) ---
-test('BetaRun7/Run8: preflight prompt mandates honorific locking in the terms list', () => {
+test('BetaRun7/Run8: preflight prompt mandates honorific locking in the terms list (MATRIKS SOSIOLINGUISTIK 2026-09-27)', () => {
   const prompt = buildPreflightPrompt('Some dialogue.', 'Malay', 'English');
   assert.ok(
     prompt.includes("In the 'terms' list, you MUST include and lock the official"),
     'Prompt must contain the verbatim honorific-lock directive'
   );
   assert.ok(
-    prompt.includes('titles/honorifics for recurring entities'),
-    'Prompt must reference titles/honorifics for recurring entities'
+    prompt.includes('titles/honorifics for recurring entities using this MANDATORY sociolinguistic matrix'),
+    'Prompt must reference titles/honorifics via the mandatory sociolinguistic matrix'
   );
   assert.ok(
-    prompt.includes('Ms. / Mr. / Uncle / Aunt'),
-    'Prompt must enumerate family vs professional title examples'
+    prompt.includes('"Ms." / "Mrs." for an adult woman'),
+    'Prompt must enumerate the Ms./Mrs. -> Puan rule'
   );
   assert.ok(
     prompt.includes('never alternate'),

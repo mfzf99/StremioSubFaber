@@ -37,6 +37,8 @@ const {
   AgentBInspector,
   buildInspectionPayload,
   parseInspectorResponse,
+  formatPreflightContextForInspection,
+  INSPECTOR_INSTRUCTION,
   AGENT_B_DEFAULT_MODEL,
   AGENT_B_PREFLIGHT_TIMEOUT_MS,
   AGENT_B_INSPECTION_TIMEOUT_MS,
@@ -126,6 +128,32 @@ test('AgentB: parseInspectorResponse valid:false tanpa crimes boleh diperbetulka
   assert.deepEqual(verdict, { valid: true }, 'no salvageable crimes → treat as valid');
 });
 
+// ── 1B. SHIFT crime (MANDAT OPERASI MUTLAK 2026-09-27) ──
+
+test('AgentB: parseInspectorResponse accepts SHIFT crime (4th crime type, klausa emas)', () => {
+  const response = JSON.stringify({
+    valid: false,
+    crimes: [{ type: 'SHIFT', ids: [5, 6], note: 'line 5 dialogue in line 6' }]
+  });
+  const verdict = parseInspectorResponse(response);
+  assert.equal(verdict.valid, false);
+  assert.equal(verdict.crimes.length, 1);
+  assert.equal(verdict.crimes[0].type, 'SHIFT');
+  assert.deepEqual(verdict.crimes[0].ids, [5, 6]);
+});
+
+test('AgentB: inspector instruction locks the SHIFT golden clause verbatim', () => {
+  assert.ok(
+    INSPECTOR_INSTRUCTION.includes('- SHIFT: Dialogue content displaced or shifted across indices (e.g. line 5 dialogue appears in line 6).'),
+    'Klausa rasmi SHIFT mesti hadir verbatim dalam arahan pemeriksa'
+  );
+  assert.ok(
+    INSPECTOR_INSTRUCTION.includes('NOTE: Ignore minor millisecond timecode differences; audit solely whether the dialogue text matches the corresponding line index.'),
+    'Klausa emas pengurang token (abaikan millisecond timecode) mesti hadir'
+  );
+  assert.ok(INSPECTOR_INSTRUCTION.includes('MERGE|DROP|PHANTOM|SHIFT'), 'output contract mesti menyenaraikan 4 jenayah');
+});
+
 // ── 2. buildInspectionPayload ──
 
 test('AgentB: buildInspectionPayload builds compact parallel <en>/<ms> blocks with global ids', () => {
@@ -152,6 +180,45 @@ test('AgentB: buildInspectionPayload clamps long lines and rejects empty input',
 
   assert.equal(buildInspectionPayload([], []), null);
   assert.equal(buildInspectionPayload(null, null), null);
+});
+
+test('AgentB: buildInspectionPayload injects preflight context (theme/terms/characters) — CONTEXT-AWARE AUDIT', () => {
+  const source = makeEntries(2, (i) => `Hello ${i}`);
+  const translated = makeTranslated(2, (i) => `Hai ${i}`);
+  const context = {
+    theme: 'A corporate family drama about inheritance.',
+    terms: [{ source: 'Zhuang Group', target: 'Kumpulan Zhuang', note: '' }],
+    characters: [
+      { name: 'Shen Ruoxin', canonical_address: 'Puan Shen', role: 'female lead' },
+      { name: 'Lin Bo', canonical_address: null, role: 'antagonist' }
+    ]
+  };
+  const payload = buildInspectionPayload(source, translated, context);
+  assert.ok(payload, 'payload must be built');
+  assert.ok(payload.prompt.includes('### Story Context (from Pre-Flight)'), 'theme header mesti hadir');
+  assert.ok(payload.prompt.includes('A corporate family drama about inheritance.'), 'theme mesti disuntik');
+  assert.ok(payload.prompt.includes('### Locked Terms'), 'terms header mesti hadir');
+  assert.ok(payload.prompt.includes('- Zhuang Group → Kumpulan Zhuang'), 'istilah terkunci mesti disuntik');
+  assert.ok(payload.prompt.includes('### Character Address Reference'), 'characters header mesti hadir');
+  assert.ok(payload.prompt.includes('- Shen Ruoxin → Puan Shen (female lead)'), 'gelaran terkunci mesti dirender');
+  assert.ok(payload.prompt.includes('address NOT LOCKED'), 'null address mesti dirender sebagai NOT LOCKED');
+  // Blok input kekal selepas konteks
+  assert.ok(payload.prompt.indexOf('### Story Context') < payload.prompt.indexOf('<en>'), 'konteks sebelum blok input');
+});
+
+test('AgentB: buildInspectionPayload tanpa preflightContext → tiada blok konteks (backwards compatible)', () => {
+  const source = makeEntries(1, () => 'Hello');
+  const translated = makeTranslated(1, () => 'Hai');
+  const payload = buildInspectionPayload(source, translated);
+  assert.ok(payload, 'payload must be built');
+  assert.equal(payload.prompt.includes('### Story Context'), false, 'tiada konteks → tiada seksyen konteks');
+  assert.equal(payload.prompt.includes('### Locked Terms'), false, 'tiada konteks → tiada istilah');
+});
+
+test('AgentB: formatPreflightContextForInspection — null/empty context returns empty string', () => {
+  assert.equal(formatPreflightContextForInspection(null), '');
+  assert.equal(formatPreflightContextForInspection({}), '');
+  assert.equal(formatPreflightContextForInspection({ theme: '', terms: [], characters: [] }), '');
 });
 
 // ── 3. Fail-open + 4. Circuit breaker ──
@@ -245,8 +312,8 @@ test('AgentB: kimi-k3 (warisan) universal payload — temperature 0.0, TIADA max
   assert.equal(inspector.isKimiModel(), true, 'kimi detector mesti aktif untuk kimi-k3');
   assert.equal(inspector.maxRetries, 0, 'fail fast — no provider-level retries');
   assert.equal(inspector.translationTimeout, AGENT_B_INSPECTION_TIMEOUT_MS, 'inspection timeout = konstanta mandat');
-  assert.equal(inspector.translationTimeout, 60000, 'semakan batch: 60s (BETA RUN 10)');
-  assert.equal(AGENT_B_INSPECTION_TIMEOUT_MS, 60000, 'Fasa 1: 60s (mandat BETA RUN 10)');
+  assert.equal(inspector.translationTimeout, 90000, 'semakan batch: 90s (MANDAT OPERASI MUTLAK 2026-09-27)');
+  assert.equal(AGENT_B_INSPECTION_TIMEOUT_MS, 90000, 'Fasa 1: 90s (mandat OPERASI MUTLAK — empirikal 18–20s/50 baris)');
   assert.equal(AGENT_B_PREFLIGHT_TIMEOUT_MS, 150000, 'Fasa 0: 150s (mandat BETA RUN 10 — di bawah siling 300s Caddy)');
 
   // MANDAT UNIVERSAL PAYLOAD §A (laluan warisan bukan-DeepSeek): muatan akhir
@@ -313,10 +380,10 @@ test('AgentB: BEAST payload deepseek-v4-pro — thinking enabled + reasoning_eff
   assert.equal('temperature' in flashBody, false, 'fallback flash: temperature digugurkan');
 });
 
-test('AgentB: BETA RUN 10 — lalai modul BEAST: timeout 150s/60s + siling token 131072 (128K) + override maxTokens per-instance', () => {
-  // Lalai mandat modul (BEAST MODE DEEPSEEK FRONTIER 2026-09-27).
+test('AgentB: OPERASI MUTLAK — lalai modul BEAST: timeout 150s/90s + siling token 131072 (128K) + override maxTokens per-instance', () => {
+  // Lalai mandat modul (BEAST MODE DEEPSEEK FRONTIER + OPERASI MUTLAK 2026-09-27).
   assert.equal(AGENT_B_PREFLIGHT_TIMEOUT_MS, 150000, 'lalai Fasa 0 150s — di bawah siling 300s Caddy');
-  assert.equal(AGENT_B_INSPECTION_TIMEOUT_MS, 60000, 'lalai Fasa 1 60s');
+  assert.equal(AGENT_B_INSPECTION_TIMEOUT_MS, 90000, 'lalai Fasa 1 90s (dinaikkan daripada 60s)');
   assert.equal(AGENT_B_MAX_TOKENS, 131072, 'siling token rasmi DeepSeek 128K apabila reasoning_effort="max"');
 
   // Siling 128K dihantar dalam muatan BEAST (primary deepseek-v4-pro).
@@ -342,9 +409,9 @@ test('AgentB: runPreflightPass menaikkan timeout kepada 150s dan memulihkannya s
 
   // Fail kecil (< PREFLIGHT_MIN_ENTRIES) → skip cepat; laluan tetap melalui
   // kitaran naik/pulih timeout dalam runPreflightPass.
-  assert.equal(inspector.translationTimeout, 60000, 'baseline 60s sebelum Fasa 0');
+  assert.equal(inspector.translationTimeout, 90000, 'baseline 90s sebelum Fasa 0');
   await inspector.runPreflightPass(makeEntries(3), 'Malay', 'English');
-  assert.equal(inspector.translationTimeout, 60000, 'timeout dipulihkan selepas skip path');
+  assert.equal(inspector.translationTimeout, 90000, 'timeout dipulihkan selepas skip path');
 
   // Verifikasi kitaran penuh dengan fail besar (panggilan API di-override)
   let observedTimeout = null;
@@ -355,7 +422,7 @@ test('AgentB: runPreflightPass menaikkan timeout kepada 150s dan memulihkannya s
   const result = await inspector.runPreflightPass(makeEntries(50), 'Malay', 'English');
   assert.ok(result, 'preflight context returned');
   assert.equal(observedTimeout, 150000, 'Fasa 0 mesti berjalan pada 150s (BETA RUN 10 — di bawah siling Caddy 300s)');
-  assert.equal(inspector.translationTimeout, 60000, 'pulih kepada 60s selepas Fasa 0');
+  assert.equal(inspector.translationTimeout, 90000, 'pulih kepada 90s selepas Fasa 0');
 });
 
 test('AgentB: runPreflightPass memulihkan timeout walaupun panggilan API gagal', async () => {
@@ -367,7 +434,7 @@ test('AgentB: runPreflightPass memulihkan timeout walaupun panggilan API gagal',
 
   const result = await inspector.runPreflightPass(makeEntries(50), 'Malay', 'English');
   assert.equal(result, null, 'kegagalan Fasa 0 → null (non-blocking, kontrak asal)');
-  assert.equal(inspector.translationTimeout, 60000, 'finally block sentiasa memulihkan 60s');
+  assert.equal(inspector.translationTimeout, 90000, 'finally block sentiasa memulihkan 90s');
 });
 
 test('AgentB: buildUserPrompt override menghantar prompt inspector verbatim', () => {
@@ -410,6 +477,7 @@ test('AgentB: engine dengan agentB=null kekal 100% Gemini — tiada panggilan in
 
   // Batch 3 entri kecil (< PREFLIGHT_MIN_ENTRIES) — Fasa 0 skip, terus batch.
   // Semak gate: tiada panggilan tambahan selepas 3 panggilan penterjemahan.
+  // (blok konteks dipelihara)
   const batch = makeEntries(3);
   const result = await engine.translateBatch(batch, 'Malay', null, 0, 1, null, { streaming: false });
   assert.equal(result.length, 3);
@@ -1263,8 +1331,8 @@ test('AgentB: BETA RUN 10 — Pre-Flight lalai deepseek-v4-pro dengan timeout 15
   assert.equal(inspector.preflightModel, 'deepseek-v4-pro', 'Fasa 0 mesti lalai ke deepseek-v4-pro (BETA RUN 10)');
   assert.equal(AGENT_B_PREFLIGHT_MODEL, 'deepseek-v4-pro');
   assert.equal(AGENT_B_PREFLIGHT_TIMEOUT_MS, 150000, 'Fasa 0 timeout 150s (mandat BETA RUN 10 — di bawah siling 300s Caddy)');
-  assert.equal(AGENT_B_INSPECTION_TIMEOUT_MS, 60000, 'Fasa 1 kekal 60s');
-  assert.equal(inspector.translationTimeout, 60000, 'baseline instance 60s');
+  assert.equal(AGENT_B_INSPECTION_TIMEOUT_MS, 90000, 'Fasa 1 dinaikkan kepada 90s (MANDAT OPERASI MUTLAK 2026-09-27)');
+  assert.equal(inspector.translationTimeout, 90000, 'baseline instance 90s');
   // (b) Override env berfungsi (integer ms positif sahaja).
   const override = new AgentBInspector({
     apiKey: 'k', baseUrl: 'https://x.example/v1',
@@ -1278,7 +1346,7 @@ test('AgentB: BETA RUN 10 — Pre-Flight lalai deepseek-v4-pro dengan timeout 15
     preflightTimeoutMs: -5, inspectionTimeoutMs: 'junk'
   });
   assert.equal(invalid.preflightTimeoutMs, 150000, 'override tidak sah → lalai 150s');
-  assert.equal(invalid.inspectionTimeoutMs, 60000, 'override tidak sah → lalai 60s');
+  assert.equal(invalid.inspectionTimeoutMs, 90000, 'override tidak sah → lalai 90s');
 });
 
 test('AgentB: BETA RUN 10 — fallback universal deepseek-v4.1-flash pada Fasa 0 dan Fasa 1', async () => {

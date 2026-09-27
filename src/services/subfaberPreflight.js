@@ -123,11 +123,16 @@ For the provided ${src} subtitle dialogue, build the 4-pillar pre-flight context
    The 'theme' field MUST be written strictly in clear, precise English (2-3 sentences), summarizing the narrative arc (plot), setting, and central conflict/stakes.
 2. Extract technical terms, location names, and industry entities with ${tgt} translations.
    Each 'terms' entry is an object with exactly two keys: "source" (original text) and "target" (${tgt} translation or original).
-   In the 'terms' list, you MUST include and lock the official ${tgt} titles/honorifics for recurring entities (e.g., ensure consistent mapping for family vs professional titles like Ms. / Mr. / Uncle / Aunt — one canonical title per character, never alternate).
+   In the 'terms' list, you MUST include and lock the official ${tgt} titles/honorifics for recurring entities using this MANDATORY sociolinguistic matrix (Malay honorifics):
+   * "Ms." / "Mrs." for an adult woman — married, mature, an auntie/mak cik figure, or holding a corporate/management position — MUST map to "Puan" (e.g. "Ms. Shen" who is clearly an Aunt/manager -> "Puan Shen", NEVER "Cik Shen").
+   * "Miss" / "Ms." for a young unmarried woman -> "Cik".
+   * "Mr." -> "Encik". "Aunt" / "Auntie" -> "Mak Cik". "Uncle" -> "Pak Cik".
+   * "Director" -> "Pengarah". "GM" / "General Manager" -> "Pengurus Besar".
+   Cross-reference titles: if the same character is addressed as "Aunt" in dialogue AND called "Ms. Shen", lock the formal address as "Puan Shen" (NOT "Cik Shen") — one canonical title per character, never alternate.
 3. Build profiles for the main recurring characters.
    Each 'characters' entry is an object with exactly three keys:
    - "name": the character's name exactly as it appears in the dialogue.
-   - "canonical_address": the ONE locked ${tgt} address/title used for this character every single time (one canonical address per character, never alternate). Lock ONLY with explicit, unambiguous textual evidence per the FACT VS INFERENCE DISCIPLINE; if gender, social hierarchy, or formal title is unclear, set null instead of guessing.
+   - "canonical_address": the ONE locked ${tgt} address/title used for this character every single time (one canonical address per character, never alternate). Apply the SAME mandatory Malay honorific matrix from the 'terms' pillar (Ms./Mrs./mature/auntie/manager -> Puan; young unmarried -> Cik; Mr. -> Encik; Auntie -> Mak Cik; Uncle -> Pak Cik; Director -> Pengarah; GM -> Pengurus Besar). Lock ONLY with explicit, unambiguous textual evidence per the FACT VS INFERENCE DISCIPLINE; if gender, social hierarchy, or formal title is unclear, set null instead of guessing.
    - "role": a short description of their narrative role (e.g. female lead, antagonist, mentor, butler).
 4. Scan the EARLIEST lines of the file (lines 1-5) for NON-DIALOGUE opening text.
    If the file opens with production credits (e.g. "Adapted from..."), the work's title, or a studio name card, provide the official ${tgt} media/publishing translation for each line (e.g. "Adapted from" -> "Diadaptasi daripada").
@@ -314,9 +319,19 @@ function parsePreflightResponse(responseText) {
       if (!character || typeof character !== 'object') continue;
       const name = pickField(character, 'name');
       if (!name) continue;
+      // MANDAT SOSIOLINGUISTIK 2026-09-27: nilai null dikekalkan SEBAGAI null
+      // (fallback lama `|| name` memadam isyarat "tidak dikunci" — punca akar
+      // ketirisan gelaran Ms.→Cik; Agent A kini menerima isyarat NOT LOCKED).
+      const rawAddress = character['canonical_address'];
+      const legacyAddress = character['canonicalAddress'];
+      const resolvedAddress = (rawAddress !== undefined && rawAddress !== null && String(rawAddress).trim() !== '')
+        ? rawAddress
+        : ((legacyAddress !== undefined && legacyAddress !== null && String(legacyAddress).trim() !== '')
+          ? legacyAddress
+          : null);
       characters.push({
         name,
-        canonical_address: pickField(character, 'canonical_address', 'canonicalAddress') || name,
+        canonical_address: resolvedAddress,
         role: pickField(character, 'role')
       });
       if (characters.length >= PREFLIGHT_MAX_CHARACTERS) break;
@@ -372,7 +387,16 @@ function formatPreflightForPrompt(preflightContext) {
       .map(c => {
         const name = pickField(c, 'name');
         if (!name) return '';
-        const address = pickField(c, 'canonical_address', 'canonicalAddress') || name;
+        // MANDAT SOSIOLINGUISTIK 2026-09-27: null canonical_address mesti
+        // dirender sebagai isyarat NOT LOCKED (bukan nama mentah) supaya
+        // Agent A boleh menilai gelaran daripada konteks dialog chunk itu.
+        const rawAddress = (c && typeof c === 'object') ? c.canonical_address : undefined;
+        const legacyAddress = (c && typeof c === 'object') ? c.canonicalAddress : undefined;
+        const hasAddress = (rawAddress !== undefined && rawAddress !== null && String(rawAddress).trim() !== '')
+          || (legacyAddress !== undefined && legacyAddress !== null && String(legacyAddress).trim() !== '');
+        const address = hasAddress
+          ? (pickField(c, 'canonical_address', 'canonicalAddress') || name)
+          : 'address NOT LOCKED — infer the correct honorific from the dialogue context (Malay matrix: Puan for adult/married/auntie/manager women, Cik for young unmarried women)';
         const role = pickField(c, 'role');
         return `- ${name} → ${address}${role ? ` (${role})` : ''}`;
       })

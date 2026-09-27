@@ -343,7 +343,7 @@ test('SubFaberPreflight: characters/credits pillars capped at mandate limits', (
   assert.equal(parsed.credits_and_titles.length, PREFLIGHT_MAX_CREDITS, `credits must cap at ${PREFLIGHT_MAX_CREDITS}`);
 });
 
-test('SubFaberPreflight: malformed character/credit entries are filtered, missing canonical_address defaults to name', () => {
+test('SubFaberPreflight: malformed character/credit entries are filtered (MANDAT SOSIOLINGUISTIK 2026-09-27)', () => {
   const response = JSON.stringify({
     theme: 'T.',
     characters: [
@@ -361,10 +361,54 @@ test('SubFaberPreflight: malformed character/credit entries are filtered, missin
   });
   const parsed = parsePreflightResponse(response);
   assert.equal(parsed.characters.length, 2, 'null/string/missing-name entries filtered');
-  assert.equal(parsed.characters[0].canonical_address, 'Solo', 'Missing canonical_address defaults to name');
+  assert.equal(parsed.characters[0].canonical_address, null, 'Missing canonical_address kekal null — isyarat NOT LOCKED dipelihara');
   assert.equal(parsed.characters[1].canonical_address, 'Encik Full');
   assert.equal(parsed.credits_and_titles.length, 1, 'entries without source are filtered');
   assert.equal(parsed.credits_and_titles[0].target, 'Kad Studio');
+});
+
+test('SubFaberPreflight: canonical_address null dari model kekal null (tanpa dipaksa menjadi name)', () => {
+  const response = JSON.stringify({
+    theme: 'T.',
+    characters: [
+      { name: 'Mystery Woman', canonical_address: null, role: 'unknown' },
+      { name: 'Explicit', canonical_address: 'Puan Explicit', role: 'manager' }
+    ]
+  });
+  const parsed = parsePreflightResponse(response);
+  assert.equal(parsed.characters.length, 2);
+  assert.equal(parsed.characters[0].canonical_address, null, 'null dikekalkan (MANDAT — fallback lama || name DIBUANG)');
+  assert.equal(parsed.characters[1].canonical_address, 'Puan Explicit');
+});
+
+test('SubFaberPreflight: formatPreflightForPrompt renders NOT LOCKED marker for null canonical_address', () => {
+  const block = formatPreflightForPrompt({
+    theme: 'T.',
+    characters: [
+      { name: 'Shen Ruoxin', canonical_address: 'Puan Shen', role: 'female lead' },
+      { name: 'Mystery', canonical_address: null, role: 'unknown' }
+    ]
+  });
+  assert.ok(block.includes('- Shen Ruoxin → Puan Shen (female lead)'), 'gelaran terkunci dirender seperti biasa');
+  assert.ok(block.includes('- Mystery → address NOT LOCKED'), 'null → isyarat NOT LOCKED (bukan nama mentah)');
+  assert.ok(block.includes('Malay matrix'), 'panduan matriks BM mesti hadir untuk Agent A');
+});
+
+test('SubFaberPreflight: prompt carries the Malay sociolinguistic honorific matrix (Puan/Cik/Encik/Mak Cik/Pak Cik)', () => {
+  const prompt = buildPreflightPrompt('Some dialogue.', 'Malay', 'English');
+  assert.ok(prompt.includes('MUST map to "Puan"'), 'aturan wajib Puan bagi wanita dewasa/berkahwin/auntie/pengurus');
+  assert.ok(prompt.includes('"Puan Shen"'), 'contoh rasmi Ms. Shen -> Puan Shen (BUKAN Cik Shen)');
+  assert.ok(prompt.includes('NEVER "Cik Shen"'), 'larangan eksplisit Cik Shen bagi kes Aunt/manager');
+  assert.ok(prompt.includes('young unmarried woman -> "Cik"'), 'aturan Cik bagi wanita muda bujang');
+  assert.ok(prompt.includes('"Mr." -> "Encik"'), 'pemetaan Encik');
+  assert.ok(prompt.includes('"Aunt" / "Auntie" -> "Mak Cik"'), 'pemetaan Mak Cik');
+  assert.ok(prompt.includes('"Uncle" -> "Pak Cik"'), 'pemetaan Pak Cik');
+  assert.ok(prompt.includes('"Director" -> "Pengarah"'), 'pemetaan Pengarah');
+  assert.ok(prompt.includes('"GM" / "General Manager" -> "Pengurus Besar"'), 'pemetaan Pengurus Besar');
+  assert.ok(
+    prompt.includes('if the same character is addressed as "Aunt" in dialogue AND called "Ms. Shen", lock the formal address as "Puan Shen"'),
+    'peraturan hubung kait gelaran (Aunt + Ms. -> Puan Shen) wajib hadir'
+  );
 });
 
 // --- runPreflightSemanticPass (async) ---

@@ -9,7 +9,7 @@
  *     (BEAST MODE — Mandat Beast Mode DeepSeek Frontier 2026-09-27,
  *     OpenAI-compatible):
  *     - PRE-FLIGHT (Fasa 0)   : deepseek-v4-pro     (Frontier Inspector), 150s.
- *     - PEMERIKSA UTAMA       : deepseek-v4-pro     (Frontier Inspector), 60s.
+ *     - PEMERIKSA UTAMA       : deepseek-v4-pro     (Frontier Inspector), 90s.
  *     - FALLBACK UNIVERSAL    : deepseek-v4.1-flash (mewarisi had masa fasa berkaitan).
  *     Bukti empirikal terminal: had hulu Caddy rootsys.cloud ialah tepat 300s
  *     (Kimi K3 mencetus 502 akibat letupan token penaakulan); deepseek-v4-pro
@@ -37,7 +37,12 @@
  *     Agent B dinyahaktifkan senyap bagi baki fail tersebut.
  *   - UNTHROTTLED (Mandat Pembebasan 2026-09-26): kuota Agent B infiniti
  *     (skala 1B token) — timeout berfasa: Fasa 0 150s (baca episod penuh)
- *     / semakan batch 60s. Tiada micro-timeout yang membekukan nafas Agent B.
+ *     / semakan batch 90s. Tiada micro-timeout yang membekukan nafas Agent B.
+ *   - CONTEXT-AWARE AUDIT (MANDAT OPERASI MUTLAK 2026-09-27): Agent B TIDAK
+ *     lagi mengaudit secara buta — buildInspectionPayload menerima
+ *     preflightContext (theme + terms + characters) dan menyuntiknya ke dalam
+ *     prompt pemeriksaan. Jenayah SHIFT dikunci dengan klausa emas pengurang
+ *     token (abaikan perbezaan millisecond timecode; audit teks sahaja).
  *   - ZERO-SWALLOWED-ERROR + TRINITY FAILOVER (Mandat Observabiliti +
  *     Universal Payload 2026-09-26): tiada ralat ditelan senyap — setiap
  *     kegagalan mencetak status + punca teknikal + raw snippet 500 aksara
@@ -58,7 +63,7 @@ const log = require('../utils/logger');
 // TRINITY DUAL-AGENT — FULL DEEPSEEK FRONTIER STACK (kredensial rootsys.cloud,
 // 1B token / 1M context; Mandat Penyatuuan DeepSeek Stack 2026-09-27):
 //   Fasa 0 (Pre-Flight Makro) : deepseek-v4-pro     — Timeout 150,000ms / 150s
-//   Fasa 1 (Pemeriksa Utama)  : deepseek-v4-pro     — Timeout  60,000ms / 60s
+//   Fasa 1 (Pemeriksa Utama)  : deepseek-v4-pro     — Timeout  90,000ms / 90s
 //   Fallback Universal        : deepseek-v4.1-flash — Timeout dinamik
 //                                 (mewarisi had masa fasa berkaitan)
 const AGENT_B_DEFAULT_MODEL = 'deepseek-v4-pro';      // Fasa 1: Pemeriksa Utama
@@ -74,9 +79,11 @@ const AGENT_B_FALLBACK_MODEL = 'deepseek-v4.1-flash'; // Fallback Universal (Fas
 //   temperature DIGUGURKAN      — "has no effect in thinking mode" (rasmi).
 // Tiada parameter terlarang (presence_penalty deprecated dsb.) dihantar —
 // elak HTTP 400.
-// HEADROOM KESELAMATAN (Mandat BETA RUN 10 2026-09-27):
-// Fasa 0 150s + Semakan 60s — kedua-duanya di bawah siling 300s Caddy
-// rootsys.cloud; latensi empirikal DeepSeek ~3.45s (Fasa 0) / ~2.1s (Fasa 1).
+// HEADROOM KESELAMATAN (Mandat BETA RUN 10 + OPERASI MUTLAK 2026-09-27):
+// Fasa 0 150s + Semakan 90s — kedua-duanya di bawah siling 300s Caddy
+// rootsys.cloud. Bukti empirikal: semakan 50 baris mengambil ~18–20 saat;
+// had lama 60s terlalu sempit di bawah beban pelayan → timeout. 90s memberi
+// margin keselamatan. Latensi DeepSeek: ~3.45s (Fasa 0) / ~2.1s (Fasa 1).
 // Had masa boleh ditindih melalui env AGENT_B_PREFLIGHT_TIMEOUT_MS /
 // AGENT_B_INSPECTION_TIMEOUT_MS (integer ms positif).
 const parseAgentBTimeout = (raw, fallbackMs) => {
@@ -84,7 +91,7 @@ const parseAgentBTimeout = (raw, fallbackMs) => {
   return Number.isFinite(parsed) && parsed > 0 ? parsed : fallbackMs;
 };
 const AGENT_B_PREFLIGHT_TIMEOUT_MS = parseAgentBTimeout(process.env.AGENT_B_PREFLIGHT_TIMEOUT_MS, 150000);
-const AGENT_B_INSPECTION_TIMEOUT_MS = parseAgentBTimeout(process.env.AGENT_B_INSPECTION_TIMEOUT_MS, 60000);
+const AGENT_B_INSPECTION_TIMEOUT_MS = parseAgentBTimeout(process.env.AGENT_B_INSPECTION_TIMEOUT_MS, 90000);
 // BEAST MODE (BETA RUN 10): siling token muatan DeepSeek — 131072 (128K)
 // rasmi apabila reasoning_effort="max"; boleh ditindih melalui env
 // AGENT_B_MAX_TOKENS (integer positif sahaja).
@@ -94,7 +101,14 @@ const AGENT_B_MAX_LINE_CHARS = 200;       // Cap panjang baris dalam payload pad
 const AGENT_B_MAX_CRIMES = 5;             // >5 jenayah → tetap sahaja ditolong
 const AGENT_B_MAX_IDS_PER_CRIME = 10;     // Cap bilangan id per jenayah
 const AGENT_B_MAX_NOTE_CHARS = 120;       // Cap panjang nota jenayah
-const VALID_CRIME_TYPES = new Set(['MERGE', 'DROP', 'PHANTOM']);
+// MANDAT OPERASI MUTLAK 2026-09-27: SHIFT dikunci sebagai jenayah ke-4 —
+// kandungan dialog berpindah merentasi indeks (dialog baris 5 muncul di
+// baris 6). Klausa emas pengurang token di dalam arahan pemeriksa.
+const VALID_CRIME_TYPES = new Set(['MERGE', 'DROP', 'PHANTOM', 'SHIFT']);
+// Cap ringkasan konteks Pre-Flight yang disuntik ke prompt pemeriksaan.
+const AGENT_B_MAX_CONTEXT_TERMS = 10;     // Istilah padat (source → target)
+const AGENT_B_MAX_CONTEXT_CHARACTERS = 12;// Selari dengan PREFLIGHT_MAX_CHARACTERS
+const AGENT_B_MAX_CONTEXT_THEME_CHARS = 400; // Cap panjang ringkasan tema
 
 /**
  * Arahan inspector (zero-yap). Dihantar sebagai SATU mesej user lengkap
@@ -105,10 +119,12 @@ const INSPECTOR_INSTRUCTION = `## Role
 You are a subtitle integrity inspector. You compare source lines with their translations, line by line.
 
 ## Task
-Detect ONLY these three violations:
+Detect ONLY these four violations:
 - MERGE: two source lines were translated into ONE output line while another output line contains fabricated filler text.
 - DROP: a source line's meaning is completely missing from its output line.
 - PHANTOM: an output line contains content with no basis in the source line.
+- SHIFT: Dialogue content displaced or shifted across indices (e.g. line 5 dialogue appears in line 6).
+  NOTE: Ignore minor millisecond timecode differences; audit solely whether the dialogue text matches the corresponding line index.
 
 Ignore: translation style, grammar, tone, cultural adaptation, and minor omissions.
 
@@ -116,7 +132,61 @@ Ignore: translation style, grammar, tone, cultural adaptation, and minor omissio
 Respond with ONLY this JSON and nothing else — no explanations, no markdown:
 {"valid":true}
 If any violation exists:
-{"valid":false,"crimes":[{"type":"MERGE|DROP|PHANTOM","ids":[line ids],"note":"max 10 words"}]}`;
+{"valid":false,"crimes":[{"type":"MERGE|DROP|PHANTOM|SHIFT","ids":[line ids],"note":"max 10 words"}]}`;
+
+/**
+ * Format ringkasan konteks Pre-Flight (Fasa 0) untuk suntikan ke prompt
+ * pemeriksaan Agent B (MANDAT OPERASI MUTLAK 2026-09-27 — CONTEXT-AWARE
+ * AUDIT): Agent B tidak boleh lagi mengaudit secara buta. Ringkasan merangkumi
+ * theme + istilah padat + profil watak (gelaran canonical_address terkunci —
+ * rujukan konsistensi gelaran semasa audit).
+ * @param {{theme?:string, terms?:Array, characters?:Array}} preflightContext - Konteks Fasa 0
+ * @returns {string} Blok teks konteks ('' bila tiada konteks berguna)
+ */
+function formatPreflightContextForInspection(preflightContext) {
+  if (!preflightContext || typeof preflightContext !== 'object') return '';
+  const sections = [];
+
+  const theme = String(preflightContext.theme || '').trim();
+  if (theme) {
+    sections.push(`### Story Context (from Pre-Flight)\n${theme.slice(0, AGENT_B_MAX_CONTEXT_THEME_CHARS)}`);
+  }
+
+  if (Array.isArray(preflightContext.terms) && preflightContext.terms.length > 0) {
+    const termLines = preflightContext.terms
+      .slice(0, AGENT_B_MAX_CONTEXT_TERMS)
+      .map(t => {
+        const src = String(t?.source ?? t?.src ?? '').trim();
+        const tgt = String(t?.target ?? t?.tgt ?? '').trim() || src;
+        return src ? `- ${src} → ${tgt}` : '';
+      })
+      .filter(Boolean)
+      .join('\n');
+    if (termLines) sections.push(`### Locked Terms (use for consistency judgement)\n${termLines}`);
+  }
+
+  if (Array.isArray(preflightContext.characters) && preflightContext.characters.length > 0) {
+    const charLines = preflightContext.characters
+      .slice(0, AGENT_B_MAX_CONTEXT_CHARACTERS)
+      .map(c => {
+        const name = String(c?.name || '').trim();
+        if (!name) return '';
+        const address = (c.canonical_address !== undefined && c.canonical_address !== null && String(c.canonical_address).trim() !== '')
+          ? String(c.canonical_address).trim()
+          : (c.canonicalAddress !== undefined && c.canonicalAddress !== null && String(c.canonicalAddress).trim() !== ''
+            ? String(c.canonicalAddress).trim()
+            : 'address NOT LOCKED');
+        const role = String(c?.role || '').trim();
+        return `- ${name} → ${address}${role ? ` (${role})` : ''}`;
+      })
+      .filter(Boolean)
+      .join('\n');
+    if (charLines) sections.push(`### Character Address Reference (titles must stay consistent)\n${charLines}`);
+  }
+
+  if (sections.length === 0) return '';
+  return `${sections.join('\n\n')}\n\n`;
+}
 
 /**
  * Bina payload padat untuk semakan semantik: dua blok selari <en> (sumber)
@@ -129,7 +199,7 @@ If any violation exists:
  * @param {Array<{index:number, text:string}>} translatedEntries - Hasil sejajar (MS)
  * @returns {{prompt:string}|null} Prompt lengkap inspector atau null (input kosong)
  */
-function buildInspectionPayload(sourceBatch, translatedEntries) {
+function buildInspectionPayload(sourceBatch, translatedEntries, preflightContext = null) {
   if (!Array.isArray(sourceBatch) || sourceBatch.length === 0) return null;
   if (!Array.isArray(translatedEntries) || translatedEntries.length === 0) return null;
 
@@ -151,9 +221,14 @@ function buildInspectionPayload(sourceBatch, translatedEntries) {
   }
   if (enLines.length === 0) return null;
 
+  // CONTEXT-AWARE AUDIT (MANDAT OPERASI MUTLAK 2026-09-27): suntik ringkasan
+  // konteks Pre-Flight SEBELUM blok <en>/<ms> supaya pemeriksa menilai
+  // konsistensi gelaran/istilah dengan bukti Fasa 0, bukan secara buta.
+  const contextBlock = formatPreflightContextForInspection(preflightContext);
+
   const prompt = `${INSPECTOR_INSTRUCTION}
 
-## Input
+${contextBlock ? `${contextBlock}` : ''}## Input
 <en>
 ${enLines.join('\n')}
 </en>
@@ -515,7 +590,9 @@ class AgentBInspector extends OpenAICompatibleProvider {
    *
    * @param {Array<{id:number, text:string}>} sourceBatch - Batch sumber
    * @param {Array<{index:number, text:string}>} translatedEntries - Hasil sejajar
-   * @param {{batchIndex?:number, totalBatches?:number}} [meta] - Meta batch untuk log
+   * @param {{batchIndex?:number, totalBatches?:number, preflightContext?:Object}} [meta] - Meta batch
+   *        (preflightContext: konteks Fasa 0 — theme/terms/characters — untuk
+   *        CONTEXT-AWARE AUDIT; mandat operasi mutlak 2026-09-27)
    * @returns {Promise<{valid:boolean, crimes?:Array, failOpen?:boolean, skipped?:string, modelUsed?:string}>}
    */
   async runSemanticInspection(sourceBatch, translatedEntries, meta = {}) {
@@ -524,7 +601,9 @@ class AgentBInspector extends OpenAICompatibleProvider {
       return { valid: true, skipped: 'circuit_open' };
     }
 
-    const payload = buildInspectionPayload(sourceBatch, translatedEntries);
+    // CONTEXT-AWARE AUDIT: konteks Pre-Flight dihantar melalui meta supaya
+    // signature lama runSemanticInspection(source, translated) kekal sah.
+    const payload = buildInspectionPayload(sourceBatch, translatedEntries, meta.preflightContext || null);
     if (!payload) {
       return { valid: true, skipped: 'no_input' };
     }
@@ -541,7 +620,7 @@ class AgentBInspector extends OpenAICompatibleProvider {
         async () => {
           const startedAt = Date.now();
           // Payload di-bake ke dalam customPrompt (buildUserPrompt override
-          // menghantarnya verbatim). maxRetries 0 per model + timeout 60s.
+          // menghantarnya verbatim). maxRetries 0 per model + timeout 90s.
           const responseText = await this.translateSubtitle(payload.prompt, 'en', 'en', payload.prompt);
           const latency = Date.now() - startedAt;
           // Mandat §3A: bersihkan tag penaakulan sebelum parse.
@@ -584,6 +663,7 @@ module.exports = {
   AgentBInspector,
   buildInspectionPayload,
   parseInspectorResponse,
+  formatPreflightContextForInspection,
   INSPECTOR_INSTRUCTION,
   AGENT_B_DEFAULT_MODEL,
   AGENT_B_PREFLIGHT_MODEL,
