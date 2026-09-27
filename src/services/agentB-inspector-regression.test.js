@@ -378,6 +378,35 @@ test('AgentB v5: config/env lalai preflight kimi-k3 + fallback deepseek-v4-pro; 
   }
 });
 
+// ── MANDAT v5.1: alias env AGENT_B_INSPECTION_MODEL (.env pengeluaran owner) ──
+
+test('AgentB v5.1: env AGENT_B_INSPECTION_MODEL ialah alias rasmi model semakan', () => {
+  const { normalizeConfig } = require('../utils/config');
+  const saved = {
+    AGENT_B_MODEL: process.env.AGENT_B_MODEL,
+    AGENT_B_INSPECTION_MODEL: process.env.AGENT_B_INSPECTION_MODEL
+  };
+  try {
+    delete process.env.AGENT_B_MODEL;
+    delete process.env.AGENT_B_INSPECTION_MODEL;
+
+    // Setting .env pengeluaran owner: AGENT_B_INSPECTION_MODEL="deepseek-v4-pro"
+    process.env.AGENT_B_INSPECTION_MODEL = 'deepseek-v4-pro';
+    const cfg = normalizeConfig({});
+    assert.equal(cfg.agentB.model, 'deepseek-v4-pro', 'alias AGENT_B_INSPECTION_MODEL dibaca');
+
+    // AGENT_B_MODEL lebih diutamakan apabila kedua-duanya wujud
+    process.env.AGENT_B_MODEL = 'deepseek-v4.1-flash';
+    const dual = normalizeConfig({});
+    assert.equal(dual.agentB.model, 'deepseek-v4.1-flash', 'AGENT_B_MODEL menang atas alias');
+  } finally {
+    for (const key of Object.keys(saved)) {
+      if (saved[key] === undefined) delete process.env[key];
+      else process.env[key] = saved[key];
+    }
+  }
+});
+
 // ── MANDAT v4: fallback pre-flight berasingan (kimi-k3 standby) ──
 
 test('AgentB v4: preflightFallbackModel membina hierarki 3-tingkat merentas enjin (deepseek → kimi → flash)', () => {
