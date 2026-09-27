@@ -4,7 +4,7 @@
  *
  * Seni Bina 2-Agent (UNIVERSAL PAYLOAD 2026-09-26 — Trinity Dual-Agent,
  * kredensial rootsys.cloud: 1B token quota / 1M context window):
- *   AGENT A (Worker): Gemini 3 Flash — penterjemahan kelompok 50 baris.
+ *   AGENT A (Worker): Gemini 3 Flash — penterjemahan kelompok 60 baris.
  *   AGENT B (Inspector): Trinity BETA RUN 10 — FULL DEEPSEEK FRONTIER STACK
  *     (BEAST MODE — Mandat Beast Mode DeepSeek Frontier 2026-09-27,
  *     OpenAI-compatible):

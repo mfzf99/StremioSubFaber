@@ -54,7 +54,7 @@ test('SubFaberContext: subfaberEnabled flag REMOVED — SubFaber is the only eng
   // Config lama yang masih membawa field legacy mesti diabaikan sepenuhnya
   const engineLegacy = makeEngine({ subfaberEnabled: false, enableBatchContext: true, contextSize: 20 });
   assert.equal(engineLegacy.subfaberEnabled, undefined, 'Legacy subfaberEnabled:false ignored — engine stays SubFaber');
-  assert.equal(engineLegacy.batchSize, 50, 'Batch size stays 50 regardless of legacy flags');
+  assert.equal(engineLegacy.batchSize, 60, 'Batch size stays 60 regardless of legacy flags');
 });
 
 test('SubFaberContext: context builder runs WITHOUT any flag (single engine path)', () => {
@@ -123,13 +123,13 @@ test('SubFaberContext: window clamps at file boundaries', () => {
   assert.equal(ctx.subsequentContent.length, 2, 'Clamped next: only 2 entries requested (of 4 available)');
 });
 
-// --- GOLDEN STANDARD GS1: batch size SubFaber = 50 (hardcoded, tiada env override) ---
-test('SubFaberContext: batch size = 50 ALWAYS (SUBFABER_BATCH_SIZE hardcoded)', () => {
+// --- MANDAT 2026-09-27: batch size SubFaber = 60 (hardcoded, tiada env override) ---
+test('SubFaberContext: batch size = 60 ALWAYS (SUBFABER_BATCH_SIZE hardcoded)', () => {
   const engine = makeEngine({});
-  assert.equal(engine.batchSize, 50, 'SubFaber batch size = 50 (Golden Standard, enjin tunggal)');
+  assert.equal(engine.batchSize, 60, 'SubFaber batch size = 60 (MANDAT 2026-09-27, enjin tunggal)');
   // Env TRANSLATION_BATCH_SIZE tidak lagi berkesan — nilai diabaikan
   const engineEnv = makeEngine({ TRANSLATION_BATCH_SIZE: 200 });
-  assert.equal(engineEnv.batchSize, 50, 'Env override REMOVED — always 50');
+  assert.equal(engineEnv.batchSize, 60, 'Env override REMOVED — always 60');
 });
 
 test('SubFaberContext: previousMemory includes verified translations, excludes placeholders', () => {

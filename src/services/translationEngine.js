@@ -99,13 +99,13 @@ const NATIVE_BATCH_PROVIDER_NAMES = new Set(['deepl', 'googletranslate']);
 const CACHE_TRANSLATIONS = process.env.CACHE_TRANSLATIONS === 'true'; // Enable/disable entry caching
 
 /**
- * GOLDEN STANDARD (Mandat 2026-09-26): Batch size SubFaber = 50 baris.
+ * MANDAT 2026-09-27: Batch size SubFaber = 60 baris (dinaikkan daripada 50).
  * Ground truth VideoLingo: chunk kecil (600 aksara / 10 ayat ≈ beberapa
  * baris) supaya pariti mudah dijaga & konteks tidak menenggelamkan
  * arahan. Enjin SubFaber adalah enjin TUNGGAL — tiada env override,
  * tiada mod legacy 200-baris (Total Purge Mandat 2026-09-25).
  */
-const SUBFABER_BATCH_SIZE = 50;
+const SUBFABER_BATCH_SIZE = 60;
 
 // Module-level shared key health tracking across engine instances.
 // MULTI-INSTANCE: Now backed by Redis via sharedCache utilities.
@@ -125,7 +125,8 @@ class TranslationEngine {
     }
     this.model = model;
     // TOTAL PURGE (Mandat 2026-09-25): SubFaber ialah enjin tunggal.
-    // Batch size dihardcode 50 (Golden Standard) — tiada env override.
+    // Batch size dihardcode 60 (MANDAT 2026-09-27: dinaikkan daripada 50) —
+    // tiada env override.
     this.batchSize = SUBFABER_BATCH_SIZE;
     this.singleBatchMode = options.singleBatchMode === true;
     this.enableStreaming = options.enableStreaming !== false
