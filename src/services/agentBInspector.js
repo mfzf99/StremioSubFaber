@@ -66,11 +66,13 @@ const log = require('../utils/logger');
 //   Fallback Universal        : deepseek-v4.1-flash — Timeout dinamik
 //                                 (mewarisi had masa fasa berkaitan)
 const AGENT_B_DEFAULT_MODEL = 'deepseek-v4-pro';      // Fasa 1: Pemeriksa Utama
-const AGENT_B_PREFLIGHT_MODEL = 'deepseek-v4-pro';    // Fasa 0: Pre-Flight Makro (BETA RUN 10)
-// MANDAT OPERASI MUTLAK v4 2026-09-27: fallback pre-flight BERASINGAN —
-// membolehkan hierarki Fasa 0 merentas keluarga enjin (cth. deepseek-v4-pro
-// → kimi-k3 → deepseek-v4.1-flash) tanpa mengganggu hierarki Fasa 1.
-const AGENT_B_PREFLIGHT_FALLBACK_MODEL = process.env.AGENT_B_PREFLIGHT_FALLBACK_MODEL || '';
+// MANDAT OPERASI MUTLAK v5 2026-09-27 (bukti empirikal API bos Afiq —
+// kimi-k3 menerima muatan penuh, HTTP 200 dalam 122s):
+//   Pre-Flight agent  = Main kimi-k3, fallback deepseek-v4-pro
+//   Inspection agent  = Main deepseek-v4-pro, fallback deepseek-v4.1-flash
+const AGENT_B_PREFLIGHT_MODEL = 'kimi-k3';
+// Fallback khusus Fasa 0 — deepseek-v4-pro (sandaran pre-flight).
+const AGENT_B_PREFLIGHT_FALLBACK_MODEL = process.env.AGENT_B_PREFLIGHT_FALLBACK_MODEL || 'deepseek-v4-pro';
 const AGENT_B_FALLBACK_MODEL = 'deepseek-v4.1-flash'; // Fallback Universal (Fasa 0 + Fasa 1)
 // BEAST MODE (BETA RUN 10): muatan DeepSeek membuka kuasa mutlak penaakulan
 // (ground truth rasmi api-docs.deepseek.com):

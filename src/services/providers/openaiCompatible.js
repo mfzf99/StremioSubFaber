@@ -377,41 +377,31 @@ class OpenAICompatibleProvider {
       }
     ];
 
-    // ═══ UNIVERSAL PAYLOAD BUILDER (MANDAT OPERASI MUTLAK v2 2026-09-27) ═══
-    // Payload builder bagi Agent B. ARAHAN PROJECT OWNER (mengetepikan ground
-    // truth api-docs buat sementara): enjin DeepSeek (deepseek-v4-pro /
-    // deepseek-v4.1-flash — primary DAN fallback) menerima muatan:
+    // ═══ UNIVERSAL PAYLOAD BUILDER (MANDAT OPERASI MUTLAK v5 2026-09-27) ═══
+    // Payload builder bagi Agent B. ARAHAN PROJECT OWNER — disahkan empirikal
+    // melalui API bos Afiq (kimi-k3 menerima muatan penuh, HTTP 200):
+    // SEMUA enjin model reasoning frontier (deepseek-v4-pro / deepseek-v4.1-flash
+    // / kimi-k3) menerima muatan SERAGAM:
     //   - temperature: 0.0           — WAJIB dihantar (deterministik).
-    //   - reasoning_effort:"max"     — parameter rasmi peringkat atas.
-    //   - max_tokens: 16384          — siling mandat owner (dinaik taraf
-    //                                   daripada 131072 BEAST lama).
-    //   - extra_body.thinking:{type:"enabled"} — suis CoT DALAM extra_body
-    //                                   (BUKAN top-level).
+    //   - reasoning_effort:"max"     — parameter peringkat atas.
+    //   - max_tokens: 131072         — siling 128K.
+    //   - extra_body.thinking:{type:"enabled"} — suis CoT DALAM extra_body.
     //   - response_format json_object — JSON sah dijamin.
     //   - top_p DIGUGURKAN           — DILARANG oleh arahan owner.
-    // Enjin bukan-DeepSeek (kimi-k3 / glm-5.3 — laluan warisan) kekal
-    // menerima muatan universal asal {model, temperature: 0.0, messages}.
     if (this.universalPayload === true) {
-      const isDeepSeekEngine = String(this.model || '').toLowerCase().includes('deepseek');
-      const universalBody = isDeepSeekEngine
-        ? {
-          model: this.model,
-          temperature: 0.0,
-          reasoning_effort: 'max',
-          max_tokens: this.beastMaxTokens,
-          extra_body: {
-            thinking: {
-              type: 'enabled'
-            }
-          },
-          response_format: { type: 'json_object' },
-          messages
-        }
-        : {
-          model: this.model,
-          temperature: 0.0,
-          messages
-        };
+      const universalBody = {
+        model: this.model,
+        temperature: 0.0,
+        reasoning_effort: 'max',
+        max_tokens: this.beastMaxTokens,
+        extra_body: {
+          thinking: {
+            type: 'enabled'
+          }
+        },
+        response_format: { type: 'json_object' },
+        messages
+      };
       if (stream === true) universalBody.stream = true;
       return {
         body: universalBody,

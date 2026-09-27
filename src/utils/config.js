@@ -599,11 +599,12 @@ function normalizeConfig(config) {
     baseUrl: String(mergedConfig.agentB?.baseUrl || process.env.AGENT_B_BASE_URL || '').trim(),
     apiKey: String(mergedConfig.agentB?.apiKey || process.env.AGENT_B_API_KEY || '').trim(),
     model: String(mergedConfig.agentB?.model || mergedConfig.agentB?.inspectionModel || process.env.AGENT_B_MODEL || 'deepseek-v4-pro').trim(),
-    preflightModel: String(mergedConfig.agentB?.preflightModel || process.env.AGENT_B_PREFLIGHT_MODEL || 'deepseek-v4-pro').trim(),
-    // MANDAT v4: fallback khusus Fasa 0 (cth. kimi-k3) — kosong = tiada
-    // tingkat tambahan; hierarki pre-flight jatuh balik kepada fallbackModel.
+    // MANDAT v5: pre-flight agent lalai kimi-k3 (empirikal API bos Afiq).
+    preflightModel: String(mergedConfig.agentB?.preflightModel || process.env.AGENT_B_PREFLIGHT_MODEL || 'kimi-k3').trim(),
+    // MANDAT v5: fallback khusus Fasa 0 — deepseek-v4-pro (pre-flight agent
+    // ialah kimi-k3). Boleh ditindih melalui config/env.
     preflightFallbackModel: String(
-      mergedConfig.agentB?.preflightFallbackModel ?? process.env.AGENT_B_PREFLIGHT_FALLBACK_MODEL ?? ''
+      mergedConfig.agentB?.preflightFallbackModel ?? process.env.AGENT_B_PREFLIGHT_FALLBACK_MODEL ?? 'deepseek-v4-pro'
     ).trim(),
     fallbackModel: String(mergedConfig.agentB?.fallbackModel || process.env.AGENT_B_FALLBACK_MODEL || 'deepseek-v4.1-flash').trim(),
     preflightTimeoutMs: normalizeAgentBTimeoutMs(
