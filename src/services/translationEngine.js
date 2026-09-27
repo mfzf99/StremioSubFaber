@@ -2513,7 +2513,7 @@ Correct output:
 Wrong (merged):
 <s id="1">Awak ikut kami, kan?</s>
 <s id="2">.</s>
-${sharedContextBlock ? `\n${sharedContextBlock}\n` : ''}
+${sharedContextBlock ? `\n${sharedContextBlock}\n(Reference only — do not translate or output content from this block as a target entry.)\n` : ''}
 <input>
 ${batchText}
 </input>

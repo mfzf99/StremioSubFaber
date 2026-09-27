@@ -426,6 +426,13 @@ test('SubFaberPrompt: shared context block injected between ## Task and <structu
   assert.ok(prompt.includes('### Content Summary'), 'Content Summary (theme) rendered in prompt');
   assert.ok(prompt.includes('A heist movie.'), 'Theme text present');
 
+  // Disclaimer anti-PHANTOM (Mandat Pembedahan B+ 2026-09-27): penegasan
+  // terakhir sebelum <input> — konteks ialah RUJUKAN, bukan bahan terjemahan.
+  assert.ok(
+    prompt.includes('(Reference only — do not translate or output content from this block as a target entry.)'),
+    'Anti-PHANTOM disclaimer selepas blok konteks wajib hadir'
+  );
+
   // Susunan wajib (V2 — susunan sebenar prompt B): ## Task → <structural_rules>
   // → example → blok konteks → <input>. Slot ${sharedContextBlock} berpindah
   // selepas example (kedudukan dalam template B).
@@ -436,6 +443,9 @@ test('SubFaberPrompt: shared context block injected between ## Task and <structu
   assert.ok(taskIdx < rulesIdx, 'Rules AFTER ## Task');
   assert.ok(rulesIdx < ctxIdx, 'Rules BEFORE context block (slot B: selepas example)');
   assert.ok(ctxIdx < inputIdx, 'Context BEFORE <input>');
+  // Disclaimer mungkin berada SEBELUM <input> (selepas blok konteks)
+  const disclaimerIdx = prompt.indexOf('(Reference only — do not translate');
+  assert.ok(disclaimerIdx > ctxIdx && disclaimerIdx < inputIdx, 'Disclaimer antara konteks dan <input>');
 
   // <input> SUCI — tiada konteks di dalamnya
   const inputSection = prompt.slice(inputIdx, prompt.indexOf('</input>'));
