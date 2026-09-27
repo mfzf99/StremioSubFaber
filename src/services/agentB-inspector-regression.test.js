@@ -9,7 +9,7 @@
  *   4. Circuit breaker: 3 kegagalan berturut → silent mode (tiada panggilan)
  *   5. Muatan (MANDAT OPERASI MUTLAK v2 2026-09-27, arahan Project Owner):
  *      enjin DeepSeek (v4-pro primary + v4.1-flash fallback) membawa
- *      temperature: 0.0 + reasoning_effort:"max" + max_tokens:16384 +
+ *      temperature: 0.0 + reasoning_effort:"max" + max_tokens:131072 +
  *      extra_body.thinking:{type:"enabled"} + response_format json_object —
  *      top_p DIGUGURKAN (DILARANG);
  *      timeout berfasa 5 minit (semakan) / 5 minit (Fasa 0);
@@ -339,7 +339,7 @@ test('AgentB: glm-5.3-flash TIDAK terjejas peraturan frontier glm-5.3 penuh (pem
   assert.notEqual(body.top_p, 0.1, 'flash variant must not inherit full glm-5.3 top_p lock');
 });
 
-test('AgentB: payload deepseek-v4-pro — temperature 0.0 + extra_body.thinking + reasoning_effort max + max_tokens 16384 + TIADA top_p (MANDAT OPERASI MUTLAK v2)', () => {
+test('AgentB: payload deepseek-v4-pro — temperature 0.0 + extra_body.thinking + reasoning_effort max + max_tokens 131072 + TIADA top_p (MANDAT v3 pembetulan owner)', () => {
   const inspector = new AgentBInspector({
     apiKey: 'test-key',
     baseUrl: 'https://agentb.example.com/v1',
@@ -350,7 +350,7 @@ test('AgentB: payload deepseek-v4-pro — temperature 0.0 + extra_body.thinking 
   const { body } = inspector.buildChatRequest('fallback probe', false, {});
   assert.equal(body.temperature, 0.0, 'temperature 0.0 WAJIB dihantar (deterministik)');
   assert.equal(body.reasoning_effort, 'max', 'reasoning_effort:"max" — parameter rasmi peringkat atas');
-  assert.equal(body.max_tokens, 16384, 'max_tokens 16384 — siling mandat owner');
+  assert.equal(body.max_tokens, 131072, 'max_tokens 131072 — siling 128K (pembetulan owner)');
   assert.deepEqual(body.extra_body, { thinking: { type: 'enabled' } }, 'extra_body.thinking:{type:"enabled"} — suis CoT DALAM extra_body');
   assert.deepEqual(body.response_format, { type: 'json_object' }, 'response_format json_object — JSON sah dijamin');
   assert.equal('top_p' in body, false, 'top_p DILARANG — digugurkan sepenuhnya (arahan owner)');
@@ -376,30 +376,30 @@ test('AgentB: payload deepseek-v4-pro — temperature 0.0 + extra_body.thinking 
   assert.equal(flashBody.temperature, 0.0, 'fallback flash: temperature 0.0');
   assert.deepEqual(flashBody.extra_body, { thinking: { type: 'enabled' } }, 'fallback flash: extra_body.thinking enabled');
   assert.equal(flashBody.reasoning_effort, 'max', 'fallback flash: reasoning_effort max');
-  assert.equal(flashBody.max_tokens, 16384, 'fallback flash: max_tokens 16384');
+  assert.equal(flashBody.max_tokens, 131072, 'fallback flash: max_tokens 131072 (128K)');
   assert.deepEqual(flashBody.response_format, { type: 'json_object' }, 'fallback flash: json_object');
   assert.equal('top_p' in flashBody, false, 'fallback flash: top_p digugurkan');
 });
 
-test('AgentB: OPERASI MUTLAK v2 — lalai modul: timeout 5 min/5 min + siling token 16384 + override maxTokens per-instance', () => {
-  // Lalai mandat modul (MANDAT OPERASI MUTLAK v2 2026-09-27).
+test('AgentB: MANDAT v3 — lalai modul: timeout 5 min/5 min + siling token 131072 + override maxTokens per-instance', () => {
+  // Lalai mandat modul (MANDAT v3 pembetulan owner 2026-09-27).
   assert.equal(AGENT_B_PREFLIGHT_TIMEOUT_MS, 300000, 'lalai Fasa 0 5 minit');
   assert.equal(AGENT_B_INSPECTION_TIMEOUT_MS, 300000, 'lalai Fasa 1 5 minit');
-  assert.equal(AGENT_B_MAX_TOKENS, 16384, 'siling token mandat owner');
+  assert.equal(AGENT_B_MAX_TOKENS, 131072, 'siling token 128K (pembetulan owner)');
 
-  // Siling 16384 dihantar dalam muatan (primary deepseek-v4-pro).
+  // Siling 128K dihantar dalam muatan (primary deepseek-v4-pro).
   const def = new AgentBInspector({ apiKey: 'k', baseUrl: 'https://x.example/v1', model: 'deepseek-v4-pro' });
   const defBody = def.buildChatRequest('p', false, {}).body;
-  assert.equal(defBody.max_tokens, 16384, 'muatan membawa max_tokens 16384 secara lalai');
+  assert.equal(defBody.max_tokens, 131072, 'muatan membawa max_tokens 131072 secara lalai');
   assert.equal(defBody.reasoning_effort, 'max');
 
   // Override per-instance dihormati (config.agentB.maxTokens → AGENT_B_MAX_TOKENS).
   const capped = new AgentBInspector({ apiKey: 'k', baseUrl: 'https://x.example/v1', model: 'deepseek-v4-pro', maxTokens: 4096 });
   assert.equal(capped.buildChatRequest('p', false, {}).body.max_tokens, 4096, 'override maxTokens sah → digunakan');
 
-  // Override tidak sah → lalai mandat 16384.
+  // Override tidak sah → lalai mandat 131072.
   const invalid = new AgentBInspector({ apiKey: 'k', baseUrl: 'https://x.example/v1', model: 'deepseek-v4-pro', maxTokens: -1 });
-  assert.equal(invalid.buildChatRequest('p', false, {}).body.max_tokens, 16384, 'override tidak sah → lalai 16384');
+  assert.equal(invalid.buildChatRequest('p', false, {}).body.max_tokens, 131072, 'override tidak sah → lalai 131072');
 });
 
 test('AgentB: runPreflightPass menaikkan timeout kepada 5 min dan memulihkannya selepas Fasa 0 (MANDAT OPERASI MUTLAK v2)', async () => {
@@ -1283,7 +1283,7 @@ test('AgentB: log Pre-Flight berformat mandat — [SubFaberPreflight] Running pr
   }
 });
 
-test('AgentB: muatan HTTP sebenar (axios.post) — payload mandat owner pada Fasa 1 (temp 0.0 + extra_body.thinking + 16384 + json_object, TIADA top_p)', async () => {
+test('AgentB: muatan HTTP sebenar (axios.post) — payload mandat owner pada Fasa 1 (temp 0.0 + extra_body.thinking + 131072 + json_object, TIADA top_p)', async () => {
   const axios = require('axios');
   const inspector = new AgentBInspector({
     apiKey: 'test-key',
@@ -1306,7 +1306,7 @@ test('AgentB: muatan HTTP sebenar (axios.post) — payload mandat owner pada Fas
     // MANDAT OPERASI MUTLAK v2 — semakan ke atas payload HTTP SEBENAR:
     assert.equal(body.temperature, 0.0, 'muatan HTTP WAJIB membawa temperature 0.0 (arahan owner)');
     assert.equal(body.reasoning_effort, 'max', 'muatan HTTP wajib membawa reasoning_effort max');
-    assert.equal(body.max_tokens, 16384, 'muatan HTTP wajib membawa max_tokens 16384');
+    assert.equal(body.max_tokens, 131072, 'muatan HTTP wajib membawa max_tokens 131072 (128K)');
     assert.deepEqual(body.extra_body, { thinking: { type: 'enabled' } }, 'muatan HTTP wajib membawa extra_body.thinking enabled');
     assert.deepEqual(body.response_format, { type: 'json_object' }, 'muatan HTTP wajib membawa response_format json_object');
     assert.equal('top_p' in body, false, 'muatan HTTP DILARANG membawa top_p (arahan owner)');

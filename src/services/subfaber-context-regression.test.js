@@ -323,7 +323,13 @@ test('SubFaberPrompt: pure SubFaber prompt when ON — persona + principles + XM
   assert.ok(prompt.includes('## Task'), 'Task section present');
   assert.ok(prompt.includes('Handle split sentences correctly'), 'Split-sentence guardrail (task item 3, hybrid V1.9.2)');
   assert.ok(prompt.includes('Translate ONLY the fragment present in each line'), 'Fragment isolation rule verbatim');
-  assert.ok(prompt.includes('Strictly preserve all inline markup'), 'Markup preservation rule (task item 4)');
+  // Pembetulan selepas commit 890078f: item 4 kini "PRESERVE all [br], <i>...</i>,
+  // speaker dashes (-), and ANY other inline markup" (lebih spesifik daripada
+  // "Strictly preserve all inline markup" lama).
+  assert.ok(
+    prompt.includes('PRESERVE all [br], <i>...</i>, speaker dashes (-), and ANY other inline markup'),
+    'Markup preservation rule (task item 4 — kontrak baharu)'
+  );
   assert.ok(prompt.includes('<translation_principles>'), 'Principles opening tag');
   assert.ok(prompt.includes('</translation_principles>'), 'Principles closing tag');
   assert.ok(prompt.includes('Meaning over literal words'), 'Principle 1 verbatim (hybrid V1.9.2)');

@@ -609,11 +609,12 @@ function normalizeConfig(config) {
       mergedConfig.agentB?.inspectionTimeoutMs ?? process.env.AGENT_B_INSPECTION_TIMEOUT_MS,
       300000
     ),
-    // MANDAT OPERASI MUTLAK v2: siling token muatan DeepSeek — 16384; boleh
-    // ditindih melalui env AGENT_B_MAX_TOKENS (integer positif sahaja).
+    // MANDAT v3 (pembetulan owner): siling token muatan DeepSeek — 131072
+    // (128K); boleh ditindih melalui env AGENT_B_MAX_TOKENS
+    // (integer positif sahaja).
     maxTokens: normalizeAgentBTimeoutMs(
       mergedConfig.agentB?.maxTokens ?? process.env.AGENT_B_MAX_TOKENS,
-      16384
+      131072
     )
   };
   // Hygiene: inspectionModel adalah alias warisan bagi 'model' (Semakan) —

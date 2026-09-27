@@ -90,9 +90,10 @@ const parseAgentBTimeout = (raw, fallbackMs) => {
 };
 const AGENT_B_PREFLIGHT_TIMEOUT_MS = parseAgentBTimeout(process.env.AGENT_B_PREFLIGHT_TIMEOUT_MS, 300000);
 const AGENT_B_INSPECTION_TIMEOUT_MS = parseAgentBTimeout(process.env.AGENT_B_INSPECTION_TIMEOUT_MS, 300000);
-// MANDAT OPERASI MUTLAK v2: siling token muatan DeepSeek — 16384; boleh
-// ditindih melalui env AGENT_B_MAX_TOKENS (integer positif sahaja).
-const AGENT_B_MAX_TOKENS = parseAgentBTimeout(process.env.AGENT_B_MAX_TOKENS, 16384);
+// MANDAT v3 (pembetulan owner 2026-09-27): siling token muatan DeepSeek —
+// 131072 (128K); boleh ditindih melalui env AGENT_B_MAX_TOKENS
+// (integer positif sahaja).
+const AGENT_B_MAX_TOKENS = parseAgentBTimeout(process.env.AGENT_B_MAX_TOKENS, 131072);
 const AGENT_B_CIRCUIT_THRESHOLD = 3;      // 3 kegagalan berturut → silent mode
 const AGENT_B_MAX_LINE_CHARS = 200;       // Cap panjang baris dalam payload padat
 const AGENT_B_MAX_CRIMES = 5;             // >5 jenayah → tetap sahaja ditolong

@@ -19,16 +19,16 @@ const {
   clearCachedProviderAuthFailure
 } = require('../../utils/providerAuthFailureCache');
 
-// ═══ MANDAT OPERASI MUTLAK v2 2026-09-27 (Arahan Project Owner) ═══
-// Siling token muatan DeepSeek: 16384 (dinaik taraf daripada 131072 BEAST
-// lama mengikut spesifikasi payload baharu owner).
+// ═══ MANDAT OPERASI MUTLAK v3 2026-09-27 (pembetulan Project Owner) ═══
+// Siling token muatan DeepSeek: 131072 (128K) — dikembalikan; nilai 16384
+// dalam v2 adalah salah taip owner.
 // Boleh ditindih melalui env AGENT_B_MAX_TOKENS (integer positif sahaja);
 // dihantar sebagai max_tokens dalam muatan universal (universalPayload).
 const parseAgentBMaxTokens = (raw, fallback) => {
   const parsed = parseInt(raw, 10);
   return Number.isFinite(parsed) && parsed > 0 ? parsed : fallback;
 };
-const AGENT_B_BEAST_MAX_TOKENS = parseAgentBMaxTokens(process.env.AGENT_B_MAX_TOKENS, 16384);
+const AGENT_B_BEAST_MAX_TOKENS = parseAgentBMaxTokens(process.env.AGENT_B_MAX_TOKENS, 131072);
 
 /**
  * Universal OpenAI-Compatible Provider Wrapper
@@ -45,8 +45,8 @@ class OpenAICompatibleProvider {
     this.temperature = options.temperature !== undefined ? options.temperature : 0.2;
     this.maxOutputTokens = options.maxOutputTokens || 65536;
     this.topP = options.topP !== undefined ? options.topP : 0.95;
-    // MANDAT OPERASI MUTLAK v2: siling token muatan DeepSeek — 16384
-    // secara lalai; boleh ditindih per-instance melalui options.beastMaxTokens.
+    // MANDAT v3: siling token muatan DeepSeek — 131072 (128K) secara lalai;
+    // boleh ditindih per-instance melalui options.beastMaxTokens.
     this.beastMaxTokens = parseAgentBMaxTokens(options.beastMaxTokens, AGENT_B_BEAST_MAX_TOKENS);
     this.presencePenalty = options.presencePenalty;
     this.reasoningEffort = this.normalizeReasoningEffort(options.reasoningEffort);
