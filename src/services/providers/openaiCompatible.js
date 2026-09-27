@@ -19,16 +19,16 @@ const {
   clearCachedProviderAuthFailure
 } = require('../../utils/providerAuthFailureCache');
 
-// ═══ BEAST MODE DEEPSEEK FRONTIER (BETA RUN 10 — Mandat 2026-09-27) ═══
-// Siling token rasmi DeepSeek apabila reasoning_effort="max": 131072 (128K)
-// — membebaskan sepenuhnya output CoT + JSON tanpa risiko terpotong.
+// ═══ MANDAT OPERASI MUTLAK v2 2026-09-27 (Arahan Project Owner) ═══
+// Siling token muatan DeepSeek: 16384 (dinaik taraf daripada 131072 BEAST
+// lama mengikut spesifikasi payload baharu owner).
 // Boleh ditindih melalui env AGENT_B_MAX_TOKENS (integer positif sahaja);
-// dihantar sebagai max_tokens dalam muatan BEAST (universalPayload).
+// dihantar sebagai max_tokens dalam muatan universal (universalPayload).
 const parseAgentBMaxTokens = (raw, fallback) => {
   const parsed = parseInt(raw, 10);
   return Number.isFinite(parsed) && parsed > 0 ? parsed : fallback;
 };
-const AGENT_B_BEAST_MAX_TOKENS = parseAgentBMaxTokens(process.env.AGENT_B_MAX_TOKENS, 131072);
+const AGENT_B_BEAST_MAX_TOKENS = parseAgentBMaxTokens(process.env.AGENT_B_MAX_TOKENS, 16384);
 
 /**
  * Universal OpenAI-Compatible Provider Wrapper
@@ -45,7 +45,7 @@ class OpenAICompatibleProvider {
     this.temperature = options.temperature !== undefined ? options.temperature : 0.2;
     this.maxOutputTokens = options.maxOutputTokens || 65536;
     this.topP = options.topP !== undefined ? options.topP : 0.95;
-    // BEAST MODE (BETA RUN 10): siling token muatan DeepSeek — 131072 (128K)
+    // MANDAT OPERASI MUTLAK v2: siling token muatan DeepSeek — 16384
     // secara lalai; boleh ditindih per-instance melalui options.beastMaxTokens.
     this.beastMaxTokens = parseAgentBMaxTokens(options.beastMaxTokens, AGENT_B_BEAST_MAX_TOKENS);
     this.presencePenalty = options.presencePenalty;
@@ -377,30 +377,33 @@ class OpenAICompatibleProvider {
       }
     ];
 
-    // ═══ UNIVERSAL PAYLOAD BUILDER (Mandat Seni Bina Universal Payload
-    // 2026-09-26 §A + BEAST MODE DEEPSEEK FRONTIER — BETA RUN 10) ═══
-    // Payload builder bagi Agent B. BETA RUN 10 (Mandat Beast Mode DeepSeek
-    // Frontier 2026-09-27): enjin DeepSeek (deepseek-v4-pro / deepseek-
-    // v4.1-flash — primary DAN fallback) menerima muatan BEAST yang membuka
-    // kuasa mutlak penaakulan (ground truth rasmi api-docs.deepseek.com):
-    //   - thinking:{type:"enabled"}   — suis utama pembuka CoT.
-    //   - reasoning_effort:"max"      — parameter rasmi peringkat atas.
-    //   - max_tokens:131072           — siling rasmi 128K (CoT + JSON penuh).
-    //   - top_p:0.95                  — julat pensampelan aktif rasmi (0.95–1.0).
+    // ═══ UNIVERSAL PAYLOAD BUILDER (MANDAT OPERASI MUTLAK v2 2026-09-27) ═══
+    // Payload builder bagi Agent B. ARAHAN PROJECT OWNER (mengetepikan ground
+    // truth api-docs buat sementara): enjin DeepSeek (deepseek-v4-pro /
+    // deepseek-v4.1-flash — primary DAN fallback) menerima muatan:
+    //   - temperature: 0.0           — WAJIB dihantar (deterministik).
+    //   - reasoning_effort:"max"     — parameter rasmi peringkat atas.
+    //   - max_tokens: 16384          — siling mandat owner (dinaik taraf
+    //                                   daripada 131072 BEAST lama).
+    //   - extra_body.thinking:{type:"enabled"} — suis CoT DALAM extra_body
+    //                                   (BUKAN top-level).
     //   - response_format json_object — JSON sah dijamin.
-    //   - temperature DIGUGURKAN      — "has no effect in thinking mode".
-    // Tiada parameter terlarang (presence_penalty deprecated dsb.) — elak
-    // HTTP 400. Enjin bukan-DeepSeek (kimi-k3 / glm-5.3 — laluan warisan)
-    // kekal menerima muatan universal asal {model, temperature: 0.0, messages}.
+    //   - top_p DIGUGURKAN           — DILARANG oleh arahan owner.
+    // Enjin bukan-DeepSeek (kimi-k3 / glm-5.3 — laluan warisan) kekal
+    // menerima muatan universal asal {model, temperature: 0.0, messages}.
     if (this.universalPayload === true) {
       const isDeepSeekEngine = String(this.model || '').toLowerCase().includes('deepseek');
       const universalBody = isDeepSeekEngine
         ? {
           model: this.model,
-          thinking: { type: 'enabled' },
+          temperature: 0.0,
           reasoning_effort: 'max',
           max_tokens: this.beastMaxTokens,
-          top_p: 0.95,
+          extra_body: {
+            thinking: {
+              type: 'enabled'
+            }
+          },
           response_format: { type: 'json_object' },
           messages
         }

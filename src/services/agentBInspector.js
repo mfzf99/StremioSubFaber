@@ -8,17 +8,16 @@
  *   AGENT B (Inspector): Trinity BETA RUN 10 — FULL DEEPSEEK FRONTIER STACK
  *     (BEAST MODE — Mandat Beast Mode DeepSeek Frontier 2026-09-27,
  *     OpenAI-compatible):
- *     - PRE-FLIGHT (Fasa 0)   : deepseek-v4-pro     (Frontier Inspector), 150s.
- *     - PEMERIKSA UTAMA       : deepseek-v4-pro     (Frontier Inspector), 90s.
+ *     - PRE-FLIGHT (Fasa 0)   : deepseek-v4-pro     (Frontier Inspector), 5 min.
+ *     - PEMERIKSA UTAMA       : deepseek-v4-pro     (Frontier Inspector), 5 min.
  *     - FALLBACK UNIVERSAL    : deepseek-v4.1-flash (mewarisi had masa fasa berkaitan).
  *     Bukti empirikal terminal: had hulu Caddy rootsys.cloud ialah tepat 300s
  *     (Kimi K3 mencetus 502 akibat letupan token penaakulan); deepseek-v4-pro
  *     menyelesaikan analisis Pre-Flight 4-tiang dalam 3.45 saat dengan JSON sah.
- *     Muatan BEAST sejagat (BETA RUN 10 — Mandat Beast Mode DeepSeek
- *     Frontier 2026-09-27): enjin DeepSeek membawa thinking:{type:"enabled"}
- *     + reasoning_effort:"max" + max_tokens:131072 (128K) + top_p:0.95 +
- *     response_format json_object — sekatan pemikiran dihapuskan sepenuhnya;
- *     temperature digugurkan (tiada kesan dalam thinking mode, rasmi).
+ *     Muatan sejagat (MANDAT OPERASI MUTLAK v2 — arahan Project Owner
+ *     2026-09-27): enjin DeepSeek membawa temperature: 0.0 +
+ *     reasoning_effort:"max" + max_tokens:16384 + extra_body.thinking:
+ *     {type:"enabled"} + response_format json_object — top_p DIGUGURKAN.
  *     Tugasan 1: Mengambil alih Fasa 0 (Pre-Flight Semantic Pass) sepenuhnya
  *                daripada Gemini — jimat kuota TPM/RPM Gemini.
  *     Tugasan 2: Askar Pertahanan Semantik — menyemak setiap kelompok hasil
@@ -36,8 +35,8 @@
  *   - CIRCUIT BREAKER: 3 kegagalan berturut-turut dalam satu sesi fail →
  *     Agent B dinyahaktifkan senyap bagi baki fail tersebut.
  *   - UNTHROTTLED (Mandat Pembebasan 2026-09-26): kuota Agent B infiniti
- *     (skala 1B token) — timeout berfasa: Fasa 0 150s (baca episod penuh)
- *     / semakan batch 90s. Tiada micro-timeout yang membekukan nafas Agent B.
+ *     (skala 1B token) — timeout berfasa: Fasa 0 5 minit (baca episod penuh)
+ *     / semakan batch 5 minit. Tiada micro-timeout yang membekukan nafas Agent B.
  *   - CONTEXT-AWARE AUDIT (MANDAT OPERASI MUTLAK 2026-09-27): Agent B TIDAK
  *     lagi mengaudit secara buta — buildInspectionPayload menerima
  *     preflightContext (theme + terms + characters) dan menyuntiknya ke dalam
@@ -62,8 +61,8 @@ const log = require('../utils/logger');
 //    BEAST MODE — Mandat Beast Mode DeepSeek Frontier 2026-09-27) ──
 // TRINITY DUAL-AGENT — FULL DEEPSEEK FRONTIER STACK (kredensial rootsys.cloud,
 // 1B token / 1M context; Mandat Penyatuuan DeepSeek Stack 2026-09-27):
-//   Fasa 0 (Pre-Flight Makro) : deepseek-v4-pro     — Timeout 150,000ms / 150s
-//   Fasa 1 (Pemeriksa Utama)  : deepseek-v4-pro     — Timeout  90,000ms / 90s
+//   Fasa 0 (Pre-Flight Makro) : deepseek-v4-pro     — Timeout 300,000ms / 5 min
+//   Fasa 1 (Pemeriksa Utama)  : deepseek-v4-pro     — Timeout 300,000ms / 5 min
 //   Fallback Universal        : deepseek-v4.1-flash — Timeout dinamik
 //                                 (mewarisi had masa fasa berkaitan)
 const AGENT_B_DEFAULT_MODEL = 'deepseek-v4-pro';      // Fasa 1: Pemeriksa Utama
@@ -79,23 +78,21 @@ const AGENT_B_FALLBACK_MODEL = 'deepseek-v4.1-flash'; // Fallback Universal (Fas
 //   temperature DIGUGURKAN      — "has no effect in thinking mode" (rasmi).
 // Tiada parameter terlarang (presence_penalty deprecated dsb.) dihantar —
 // elak HTTP 400.
-// HEADROOM KESELAMATAN (Mandat BETA RUN 10 + OPERASI MUTLAK 2026-09-27):
-// Fasa 0 150s + Semakan 90s — kedua-duanya di bawah siling 300s Caddy
-// rootsys.cloud. Bukti empirikal: semakan 50 baris mengambil ~18–20 saat;
-// had lama 60s terlalu sempit di bawah beban pelayan → timeout. 90s memberi
-// margin keselamatan. Latensi DeepSeek: ~3.45s (Fasa 0) / ~2.1s (Fasa 1).
-// Had masa boleh ditindih melalui env AGENT_B_PREFLIGHT_TIMEOUT_MS /
-// AGENT_B_INSPECTION_TIMEOUT_MS (integer ms positif).
+// HEADROOM KESELAMATAN (MANDAT OPERASI MUTLAK v2 2026-09-27):
+// Fasa 0 5 minit + Semakan 5 minit (300,000ms) — arahan Project Owner:
+// kedua-dua fasa ditetapkan 5 minit penuh bagi menjamin kejayaan panggilan
+// penaakulan max tanpa timeout hulu. Had masa boleh ditindih melalui env
+// AGENT_B_PREFLIGHT_TIMEOUT_MS / AGENT_B_INSPECTION_TIMEOUT_MS
+// (integer ms positif).
 const parseAgentBTimeout = (raw, fallbackMs) => {
   const parsed = parseInt(raw, 10);
   return Number.isFinite(parsed) && parsed > 0 ? parsed : fallbackMs;
 };
-const AGENT_B_PREFLIGHT_TIMEOUT_MS = parseAgentBTimeout(process.env.AGENT_B_PREFLIGHT_TIMEOUT_MS, 150000);
-const AGENT_B_INSPECTION_TIMEOUT_MS = parseAgentBTimeout(process.env.AGENT_B_INSPECTION_TIMEOUT_MS, 90000);
-// BEAST MODE (BETA RUN 10): siling token muatan DeepSeek — 131072 (128K)
-// rasmi apabila reasoning_effort="max"; boleh ditindih melalui env
-// AGENT_B_MAX_TOKENS (integer positif sahaja).
-const AGENT_B_MAX_TOKENS = parseAgentBTimeout(process.env.AGENT_B_MAX_TOKENS, 131072);
+const AGENT_B_PREFLIGHT_TIMEOUT_MS = parseAgentBTimeout(process.env.AGENT_B_PREFLIGHT_TIMEOUT_MS, 300000);
+const AGENT_B_INSPECTION_TIMEOUT_MS = parseAgentBTimeout(process.env.AGENT_B_INSPECTION_TIMEOUT_MS, 300000);
+// MANDAT OPERASI MUTLAK v2: siling token muatan DeepSeek — 16384; boleh
+// ditindih melalui env AGENT_B_MAX_TOKENS (integer positif sahaja).
+const AGENT_B_MAX_TOKENS = parseAgentBTimeout(process.env.AGENT_B_MAX_TOKENS, 16384);
 const AGENT_B_CIRCUIT_THRESHOLD = 3;      // 3 kegagalan berturut → silent mode
 const AGENT_B_MAX_LINE_CHARS = 200;       // Cap panjang baris dalam payload padat
 const AGENT_B_MAX_CRIMES = 5;             // >5 jenayah → tetap sahaja ditolong

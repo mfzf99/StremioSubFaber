@@ -580,14 +580,13 @@ function normalizeConfig(config) {
   // ── BETA RUN 10 BEAST MODE (MANDAT BEAST MODE DEEPSEEK FRONTIER
   //    2026-09-27) ──
   // Kredensial rootsys.cloud (1B token quota / 1M context window):
-  //   Fasa 0 (Pre-Flight Makro)  : deepseek-v4-pro     (Timeout 150,000ms / 150s)
-  //   Fasa 1 (Pemeriksa Utama)   : deepseek-v4-pro     (Timeout  90,000ms / 90s)
+  //   Fasa 0 (Pre-Flight Makro)  : deepseek-v4-pro     (Timeout 300,000ms / 5 min)
+  //   Fasa 1 (Pemeriksa Utama)   : deepseek-v4-pro     (Timeout 300,000ms / 5 min)
   //   Fallback Universal         : deepseek-v4.1-flash (mewarisi had masa fasa)
-  // Had masa di bawah siling 300s Caddy rootsys.cloud. Muatan BEAST
-  // (thinking:{type:"enabled"} + reasoning_effort:"max" + max_tokens:131072
-  // (128K rasmi apabila reasoning_effort="max") + top_p:0.95 +
-  // response_format json_object; temperature digugurkan —
-  // "has no effect in thinking mode") dibina dalam
+  // MANDAT OPERASI MUTLAK v2 (arahan Project Owner 2026-09-27): kedua-dua fasa
+  // 5 minit. Muatan (temperature: 0.0 + reasoning_effort:"max" +
+  // max_tokens:16384 + extra_body.thinking:{type:"enabled"} +
+  // response_format json_object; top_p DIGUGURKAN) dibina dalam
   // OpenAICompatibleProvider.buildChatRequest (universalPayload=true).
   const normalizeAgentBTimeoutMs = (raw, fallbackMs) => {
     const parsed = parseInt(raw, 10);
@@ -603,20 +602,18 @@ function normalizeConfig(config) {
     fallbackModel: String(mergedConfig.agentB?.fallbackModel || process.env.AGENT_B_FALLBACK_MODEL || 'deepseek-v4.1-flash').trim(),
     preflightTimeoutMs: normalizeAgentBTimeoutMs(
       mergedConfig.agentB?.preflightTimeoutMs ?? process.env.AGENT_B_PREFLIGHT_TIMEOUT_MS,
-      150000
+      300000
     ),
-    // MANDAT OPERASI MUTLAK 2026-09-27: 90000 (90s) — bukti empirikal semakan
-    // 50 baris ~18–20 saat; had lama 60s sempit di bawah beban pelayan.
+    // MANDAT OPERASI MUTLAK v2 2026-09-27: kedua-dua fasa 5 minit (300000ms).
     inspectionTimeoutMs: normalizeAgentBTimeoutMs(
       mergedConfig.agentB?.inspectionTimeoutMs ?? process.env.AGENT_B_INSPECTION_TIMEOUT_MS,
-      90000
+      300000
     ),
-    // BEAST MODE BETA RUN 10: siling token muatan DeepSeek — 131072 (128K
-    // rasmi apabila reasoning_effort="max"); boleh ditindih melalui env
-    // AGENT_B_MAX_TOKENS (integer positif sahaja).
+    // MANDAT OPERASI MUTLAK v2: siling token muatan DeepSeek — 16384; boleh
+    // ditindih melalui env AGENT_B_MAX_TOKENS (integer positif sahaja).
     maxTokens: normalizeAgentBTimeoutMs(
       mergedConfig.agentB?.maxTokens ?? process.env.AGENT_B_MAX_TOKENS,
-      131072
+      16384
     )
   };
   // Hygiene: inspectionModel adalah alias warisan bagi 'model' (Semakan) —
