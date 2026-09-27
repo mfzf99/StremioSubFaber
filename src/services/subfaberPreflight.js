@@ -1,27 +1,35 @@
 /**
- * SubFaber Pre-Flight Semantic Pass (Fasa 0)
+ * SubFaber Pre-Flight Semantic Pass (Fasa 0) — SKEMA 4-TIANG (BETA RUN 8)
  *
  * Satu panggilan AI ringkas per fail SEBELUM batch translation bermula:
  *   1. Ekstrak teks mentah keseluruhan fail (TANPA timecode — timeline
  *      physically cannot be touched).
- *   2. AI jana: Content Summary (2 ayat) + Points to Note / Glosari Watak.
+ *   2. AI jana kontrak JSON 4-TIANG (Mandat Enjin Pemeriksa DeepSeek &
+ *      Pre-Flight 4-Tiang, Beta Run 8 2026-09-27 — dilaksanakan oleh Kimi K3):
+ *        1. "theme"             — Ringkasan naratif makro (Bahasa Inggeris, 2-3 ayat).
+ *        2. "terms"             — Istilah teknikal, lokasi, entiti industri [{source,target}].
+ *        3. "characters"        — Profil watak utama berulang [{name, canonical_address, role}].
+ *        4. "credits_and_titles"— Teks pembukaan bukan dialog [{source,target}] (baris 1-5).
  *   3. Output disimpan dalam engine state (this.preflightContext) dan
- *      disuntik ke setiap prompt batch sebagai konteks global.
+ *      disuntik ke setiap prompt batch sebagai konteks global (4 seksyen).
  *
  * Prinsip reka bentuk (dari laporan plans/subfaber-technical-plan-backend.md §3.1):
  *   - BEST-EFFORT, NON-BLOCKING: kegagalan Fasa 0 TIDAK menggagalkan
  *     terjemahan. Fallback: return null → pipeline jalan tanpa konteks global.
  *   - Token guard: fail besar di-sample merata (setiap k-th entry) supaya
  *     panggilan Fasa 0 kekal murah (~12k token input max).
- *   - Output JSON deterministik via responseMimeType (enableJsonOutput).
+ *   - SIFAR PERUBAHAN KOD RAPUH (Mandat Beta Run 8): tiada hardcoding teks
+ *     kredit dalam peraturan batch — pengesanan kredit 100% delegasi kepada
+ *     Kimi K3 melalui arahan Fasa 0; Agent A menerima hanya hasil JSON terurai.
  *
  * Formula: VideoLingo get_summary_prompt (Otak/Persona) — diadaptasi untuk
  * kontrak SubFaber. Lihat plans/subfaber-technical-plan-backend.md.
  *
- * BETA RUN 7 (2026-09-27, Preflight Coherence Tune): medan 'theme' DIKUNCI
- * kepada Bahasa Inggeris (elak 'framing interference' pada Agent A yang
- * menerima sistem arahan Bahasa Inggeris) + Matriks Gelaran Watak
- * (honorific consistency) diwajibkan dalam senarai 'terms'.
+ * Sejarah penalaan (dikekalkan sebagai kontrak regresi):
+ *   - BETA RUN 7 (2026-09-27, Preflight Coherence Tune): medan 'theme' DIKUNCI
+ *     kepada Bahasa Inggeris (elak 'framing interference' pada Agent A) —
+ *     kini digabungkan ke dalam TIANG 1 skema 4-tiang; gelaran watak pula
+ *     dinaik taraf menjadi TIANG 3 "characters" (canonical_address lock).
  */
 
 const log = require('../utils/logger');
@@ -38,6 +46,10 @@ const PREFLIGHT_MAX_INPUT_CHARS = MAX_PREFLIGHT_CHARS; // alias warisan
 const PREFLIGHT_MIN_ENTRIES = 10;
 // Had bilangan istilah yang diterima (VideoLingo: "Extract less than 15 terms")
 const PREFLIGHT_MAX_TERMS = 15;
+// Had bilangan watak utama (TIANG 3) — watak utama berulang sahaja, bukan extras
+const PREFLIGHT_MAX_CHARACTERS = 12;
+// Had bilangan kredit/gelaran pembukaan (TIANG 4) — baris 1-5 sahaja diperiksa
+const PREFLIGHT_MAX_CREDITS = 10;
 
 /**
  * Bina teks mentah dari entries SRT untuk Fasa 0.
@@ -74,8 +86,14 @@ function sampleEntriesForPreflight(entries) {
 }
 
 /**
- * Bina prompt Fasa 0 (adaptasi VideoLingo get_summary_prompt).
+ * Bina prompt Fasa 0 (adaptasi VideoLingo get_summary_prompt — SKEMA 4-TIANG).
  * Prompt ringkas — dihantar sebagai flat user prompt (konsisten v1.6.0 surgery).
+ *
+ * SIFAR PERUBAHAN KOD RAPUH (Mandat Beta Run 8): tiada teks kredit yang
+ * di-hardcode dalam peraturan batch Agent A. Contoh kredit ("Adapted from...")
+ * wujud HANYA sebagai arahan pemeriksaan kepada Kimi K3 di sini (Fasa 0) —
+ * Agent A menerima terjemahan muktamad melalui data JSON, bukan peraturan.
+ *
  * @param {string} rawText - Teks dialog mentah (tanpa timecode)
  * @param {string} targetLanguage - Bahasa sasaran (untuk terjemahan istilah)
  * @param {string} sourceLanguage - Bahasa sumber (label, boleh kosong)
@@ -88,12 +106,21 @@ function buildPreflightPrompt(rawText, targetLanguage, sourceLanguage) {
 You are a video translation expert and terminology consultant, specializing in ${src} comprehension and ${tgt} expression optimization.
 
 ## Task
-For the provided ${src} subtitle dialogue:
+For the provided ${src} subtitle dialogue, build the 4-pillar pre-flight context:
 1. Summarize the main topic.
-   The 'theme' field MUST be written strictly in clear, precise English (2-3 sentences), summarizing the narrative arc, setting, and stakes.
-2. Extract professional terms, character names, and recurring entities with ${tgt} translations.
-   In the 'terms' list, you MUST include and lock the official ${tgt} titles/honorifics for recurring characters (e.g., ensure consistent mapping for family vs professional titles like Ms. / Mr. / Uncle / Aunt — one canonical title per character, never alternate).
-3. Provide a brief explanation for each term (max 15 terms)
+   The 'theme' field MUST be written strictly in clear, precise English (2-3 sentences), summarizing the narrative arc (plot), setting, and central conflict/stakes.
+2. Extract technical terms, location names, and industry entities with ${tgt} translations.
+   Each 'terms' entry is an object with exactly two keys: "source" (original text) and "target" (${tgt} translation or original).
+   In the 'terms' list, you MUST include and lock the official ${tgt} titles/honorifics for recurring entities (e.g., ensure consistent mapping for family vs professional titles like Ms. / Mr. / Uncle / Aunt — one canonical title per character, never alternate).
+3. Build profiles for the main recurring characters.
+   Each 'characters' entry is an object with exactly three keys:
+   - "name": the character's name exactly as it appears in the dialogue.
+   - "canonical_address": the ONE locked ${tgt} address/title used for this character every single time (one canonical address per character, never alternate).
+   - "role": a short description of their narrative role (e.g. female lead, antagonist, mentor, butler).
+4. Scan the EARLIEST lines of the file (lines 1-5) for NON-DIALOGUE opening text.
+   If the file opens with production credits (e.g. "Adapted from..."), the work's title, or a studio name card, provide the official ${tgt} media/publishing translation for each line (e.g. "Adapted from" -> "Diadaptasi daripada").
+   If the file starts directly with normal dialogue, return an empty array [] for 'credits_and_titles'.
+   Each 'credits_and_titles' entry is an object with exactly two keys: "source" (original opening text) and "target" (official ${tgt} translation).
 
 ## INPUT
 <text>
@@ -102,13 +129,15 @@ ${rawText}
 
 ## Output in only JSON format and no other text
 {
-  "theme": "Summary of the content — strictly in English (2-3 sentences: narrative arc, setting, stakes)",
+  "theme": "Summary of the content — strictly in English (2-3 sentences: narrative arc, setting, conflict)",
   "terms": [
-    {
-      "src": "Original term",
-      "tgt": "${tgt} translation or original",
-      "note": "Brief explanation"
-    }
+    { "source": "Original term", "target": "${tgt} translation or original" }
+  ],
+  "characters": [
+    { "name": "Character name", "canonical_address": "Locked ${tgt} address/title", "role": "Narrative role" }
+  ],
+  "credits_and_titles": [
+    { "source": "Opening credit/title text", "target": "Official ${tgt} translation" }
   ]
 }
 
@@ -208,13 +237,34 @@ function resilientParseJson(text) {
 }
 
 /**
- * Parse + sanitize respons Fasa 0. Tahan kandungan rosak:
+ * Resolve medan dari objek dengan beberapa kunci calon (ketahanan skema —
+ * terima kunci 4-tiang baharu DAN kunci warisan Beta Run 7 tanpa gagal).
+ * @param {Object} obj - Objek sumber
+ * @param {...string} keys - Kunci calon mengikut keutamaan
+ * @returns {string} Nilai pertama yang tidak kosong (trimmed), atau ''
+ */
+function pickField(obj, ...keys) {
+  if (!obj || typeof obj !== 'object') return '';
+  for (const key of keys) {
+    const value = obj[key];
+    if (value !== undefined && value !== null && String(value).trim() !== '') {
+      return String(value).trim();
+    }
+  }
+  return '';
+}
+
+/**
+ * Parse + sanitize respons Fasa 0 (SKEMA 4-TIANG). Tahan kandungan rosak:
  *   - stripReasoningTags (tag penaakulan GLM/DeepSeek) dipanggil oleh caller
  *   - Resilient parser: fences, chatter, koma tergantung, control chars
- *   - Validasi struktur { theme: string, terms: [{src,tgt,note}] }
- *   - Hadkan terms kepada PREFLIGHT_MAX_TERMS
+ *   - Validasi struktur { theme, terms, characters, credits_and_titles }
+ *   - Kunci warisan Beta Run 7 (src/tgt) diterima untuk ketahanan maksimum
+ *   - Hadkan setiap tiang kepada siling mandat masing-masing
  * @param {string} responseText - Respons mentah model
- * @returns {{theme:string, terms:Array<{src:string,tgt:string,note:string}>}|null}
+ * @returns {{theme:string, terms:Array<{source:string,target:string,note:string}>,
+ *            characters:Array<{name:string,canonical_address:string,role:string}>,
+ *            credits_and_titles:Array<{source:string,target:string}>}|null}
  */
 function parsePreflightResponse(responseText) {
   if (!responseText || typeof responseText !== 'string') return null;
@@ -229,44 +279,119 @@ function parsePreflightResponse(responseText) {
   const theme = typeof parsed.theme === 'string' ? parsed.theme.trim() : '';
   if (!theme) return null;
 
-  // Sanitize terms
+  // ── TIANG 2: terms [{source, target}] (kunci warisan src/tgt diterima) ──
   const terms = [];
   if (Array.isArray(parsed.terms)) {
     for (const term of parsed.terms) {
       if (!term || typeof term !== 'object') continue;
-      const src = String(term.src || '').trim();
-      if (!src) continue;
+      const source = pickField(term, 'source', 'src');
+      if (!source) continue;
       terms.push({
-        src,
-        tgt: String(term.tgt || src).trim(),
-        note: String(term.note || '').trim()
+        source,
+        target: pickField(term, 'target', 'tgt') || source,
+        note: pickField(term, 'note')
       });
       if (terms.length >= PREFLIGHT_MAX_TERMS) break;
     }
   }
 
-  return { theme, terms };
+  // ── TIANG 3: characters [{name, canonical_address, role}] ──
+  const characters = [];
+  if (Array.isArray(parsed.characters)) {
+    for (const character of parsed.characters) {
+      if (!character || typeof character !== 'object') continue;
+      const name = pickField(character, 'name');
+      if (!name) continue;
+      characters.push({
+        name,
+        canonical_address: pickField(character, 'canonical_address', 'canonicalAddress') || name,
+        role: pickField(character, 'role')
+      });
+      if (characters.length >= PREFLIGHT_MAX_CHARACTERS) break;
+    }
+  }
+
+  // ── TIANG 4: credits_and_titles [{source, target}] ──
+  const creditsAndTitles = [];
+  if (Array.isArray(parsed.credits_and_titles)) {
+    for (const credit of parsed.credits_and_titles) {
+      if (!credit || typeof credit !== 'object') continue;
+      const source = pickField(credit, 'source', 'src');
+      if (!source) continue;
+      creditsAndTitles.push({
+        source,
+        target: pickField(credit, 'target', 'tgt') || source
+      });
+      if (creditsAndTitles.length >= PREFLIGHT_MAX_CREDITS) break;
+    }
+  }
+
+  return { theme, terms, characters, credits_and_titles: creditsAndTitles };
 }
 
 /**
- * Format konteks Fasa 0 untuk suntikan ke prompt batch (Points to Note).
- * @param {{theme:string, terms:Array}} preflightContext - Hasil Fasa 0
- * @returns {string} Blok teks "Content Summary + Points to Note"
+ * Format konteks Fasa 0 (4 TIANG) untuk suntikan ke prompt batch.
+ * @param {{theme:string, terms:Array, characters:Array, credits_and_titles:Array}} preflightContext - Hasil Fasa 0
+ * @returns {string} Blok teks "Content Summary + Technical Glossary + Character Hierarchy + Opening Credits / Titles"
  */
 function formatPreflightForPrompt(preflightContext) {
   if (!preflightContext || !preflightContext.theme) return '';
   let block = `### Content Summary\n${preflightContext.theme}`;
+
+  // TIANG 2: Technical Glossary
   if (Array.isArray(preflightContext.terms) && preflightContext.terms.length > 0) {
     const termLines = preflightContext.terms
-      .map(t => `- ${t.src}: ${t.tgt}${t.note ? ` (${t.note})` : ''}`)
+      .map(t => {
+        const source = pickField(t, 'source', 'src');
+        const target = pickField(t, 'target', 'tgt') || source;
+        const note = pickField(t, 'note');
+        return `- ${source}: ${target}${note ? ` (${note})` : ''}`;
+      })
+      .filter(line => !line.startsWith('- :'))
       .join('\n');
-    block += `\n\n### Points to Note\n${termLines}`;
+    if (termLines) {
+      block += `\n\n### Technical Glossary\n${termLines}`;
+    }
   }
+
+  // TIANG 3: Character Hierarchy
+  if (Array.isArray(preflightContext.characters) && preflightContext.characters.length > 0) {
+    const charLines = preflightContext.characters
+      .map(c => {
+        const name = pickField(c, 'name');
+        if (!name) return '';
+        const address = pickField(c, 'canonical_address', 'canonicalAddress') || name;
+        const role = pickField(c, 'role');
+        return `- ${name} → ${address}${role ? ` (${role})` : ''}`;
+      })
+      .filter(Boolean)
+      .join('\n');
+    if (charLines) {
+      block += `\n\n### Character Hierarchy\n${charLines}`;
+    }
+  }
+
+  // TIANG 4: Opening Credits / Titles
+  if (Array.isArray(preflightContext.credits_and_titles) && preflightContext.credits_and_titles.length > 0) {
+    const creditLines = preflightContext.credits_and_titles
+      .map(c => {
+        const source = pickField(c, 'source', 'src');
+        if (!source) return '';
+        const target = pickField(c, 'target', 'tgt') || source;
+        return `- ${source}: ${target}`;
+      })
+      .filter(Boolean)
+      .join('\n');
+    if (creditLines) {
+      block += `\n\n### Opening Credits / Titles\n${creditLines}`;
+    }
+  }
+
   return block;
 }
 
 /**
- * Jalankan Fasa 0: Pre-Flight Semantic Pass.
+ * Jalankan Fasa 0: Pre-Flight Semantic Pass (SKEMA 4-TIANG).
  * BEST-EFFORT: sebarang kegagalan → return null (pipeline jalan tanpa konteks).
  *
  * @param {Array} entries - Parsed SRT entries (dari parseSRT)
@@ -274,12 +399,12 @@ function formatPreflightForPrompt(preflightContext) {
  * @param {string} sourceLanguage - Bahasa sumber (label, optional)
  * @param {Object} geminiService - GeminiService instance (atau provider compatible)
  * @param {Object} [options] - Options tambahan
- * @param {Function} [options.onProgress] - Callback progress: ({phase:'preflight', status, summary, terms})
+ * @param {Function} [options.onProgress] - Callback progress: ({phase:'preflight', status, summary, terms, characters, credits_and_titles})
  * @param {Function} [options.onParseFailure] - Zero-swallowed-error hook: dipanggil
  *        dengan teks mentah apabila parse gagal (forensik / failover dual-model).
  * @param {Function} [options.onCallError] - Zero-swallowed-error hook: dipanggil
  *        dengan ralat apabila panggilan API Fasa 0 gagal (failover dual-model).
- * @returns {Promise<{theme:string, terms:Array}|null>} Konteks Fasa 0 atau null
+ * @returns {Promise<{theme:string, terms:Array, characters:Array, credits_and_titles:Array}|null>} Konteks Fasa 0 atau null
  */
 async function runPreflightSemanticPass(entries, targetLanguage, sourceLanguage, geminiService, options = {}) {
   const onProgress = typeof options.onProgress === 'function' ? options.onProgress : null;
@@ -309,7 +434,7 @@ async function runPreflightSemanticPass(entries, targetLanguage, sourceLanguage,
 
   await emit({ status: 'running' });
   // Mandat Seni Bina Universal Payload §C: nama model tepat dicatatkan
-  // semasa log — [kimi-k3] (Fasa 0) / [deepseek-v4-pro] (failover).
+  // semasa log — [kimi-k3] (Fasa 0) / [deepseek-v4.1-flash] (fallback).
   const preflightModel = (geminiService && geminiService.model) ? geminiService.model : 'unknown';
   log.info(() => `[SubFaberPreflight] Running pre-flight semantic pass (${entries.length} entries) [${preflightModel}]`);
 
@@ -323,7 +448,7 @@ async function runPreflightSemanticPass(entries, targetLanguage, sourceLanguage,
       return null;
     }
 
-    // 2. Bina prompt + panggil AI (flat user prompt, JSON output)
+    // 2. Bina prompt 4-tiang + panggil AI (flat user prompt, JSON output)
     const prompt = buildPreflightPrompt(rawText, targetLanguage, sourceLanguage);
     const callStartedAt = Date.now();
     const responseText = await geminiService.translateSubtitle(
@@ -357,8 +482,14 @@ async function runPreflightSemanticPass(entries, targetLanguage, sourceLanguage,
       return null;
     }
 
-    log.info(() => `[SubFaberPreflight] Pre-flight complete: theme="${parsed.theme.slice(0, 80)}...", ${parsed.terms.length} terms locked`);
-    await emit({ status: 'done', summary: parsed.theme, terms: parsed.terms });
+    log.info(() => `[SubFaberPreflight] Pre-flight complete: theme="${parsed.theme.slice(0, 80)}...", ${parsed.terms.length} terms, ${parsed.characters.length} characters, ${parsed.credits_and_titles.length} credits/titles locked`);
+    await emit({
+      status: 'done',
+      summary: parsed.theme,
+      terms: parsed.terms,
+      characters: parsed.characters,
+      credits_and_titles: parsed.credits_and_titles
+    });
     return parsed;
   } catch (err) {
     // NON-BLOCKING: kegagalan Fasa 0 tidak menggagalkan terjemahan.
@@ -385,5 +516,7 @@ module.exports = {
   MAX_PREFLIGHT_CHARS,
   PREFLIGHT_MAX_INPUT_CHARS,
   PREFLIGHT_MIN_ENTRIES,
-  PREFLIGHT_MAX_TERMS
+  PREFLIGHT_MAX_TERMS,
+  PREFLIGHT_MAX_CHARACTERS,
+  PREFLIGHT_MAX_CREDITS
 };

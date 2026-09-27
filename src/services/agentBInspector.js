@@ -5,11 +5,10 @@
  * Seni Bina 2-Agent (UNIVERSAL PAYLOAD 2026-09-26 — Trinity Dual-Agent,
  * kredensial rootsys.cloud: 1B token quota / 1M context window):
  *   AGENT A (Worker): Gemini 3 Flash — penterjemahan kelompok 50 baris.
- *   AGENT B (Inspector): Frontier Trinity (OpenAI-compatible):
- *     - PRE-FLIGHT (Fasa 0) : kimi-k3 (2.8T MoE Long-Context King), 180s.
- *     - SEMAKAN KELOMPOK    : glm-5.3 (753B Flagship Rigorous Auditor), 45s.
- *     - SANDARAN UNIVERSAL  : deepseek-v4-pro (Universal Failover Engine,
- *       timeout dinamik — mewarisi had masa fasa berkaitan).
+ *   AGENT B (Inspector): Trinity BETA RUN 8 (OpenAI-compatible):
+ *     - PRE-FLIGHT (Fasa 0)   : kimi-k3             (2.8T MoE Long-Context King), 180s.
+ *     - PEMERIKSA UTAMA       : deepseek-v4-pro     (Frontier Inspector), 45s.
+ *     - FALLBACK PEMERIKSA    : deepseek-v4.1-flash (mewarisi had masa fasa berkaitan).
  *     Muatan universal sejagat (Mandat Seni Bina Universal Payload
  *     2026-09-26): ketiga-tiga enjin berkongsi SATU format muatan —
  *     { model, temperature: 0.0, messages } — tiada max_tokens /
@@ -38,10 +37,10 @@
  *     Universal Payload 2026-09-26): tiada ralat ditelan senyap — setiap
  *     kegagalan mencetak status + punca teknikal + raw snippet 500 aksara
  *     + format trigger wajib `[AgentB] Fallback triggered -> [model]`.
- *     TRINITY: dua hierarki berasingan — preflightHierarchy
- *     [kimi-k3 → deepseek-v4-pro] dan modelHierarchy
- *     [glm-5.3 → deepseek-v4-pro]. Kegagalan mana-mana model utama
- *     beralih automatik ke deepseek-v4-pro.
+ *     TRINITY BETA RUN 8: dua hierarki berasingan — preflightHierarchy
+ *     [kimi-k3 → deepseek-v4.1-flash] dan modelHierarchy
+ *     [deepseek-v4-pro → deepseek-v4.1-flash]. Kegagalan mana-mana model
+ *     utama beralih automatik ke deepseek-v4.1-flash.
  *   - 100% BACKWARDS COMPATIBLE: Agent B null → enjin jalan 100% Gemini.
  */
 
@@ -49,15 +48,15 @@ const OpenAICompatibleProvider = require('./providers/openaiCompatible');
 const { runPreflightSemanticPass, stripReasoningTags } = require('./subfaberPreflight');
 const log = require('../utils/logger');
 
-// ── Konfigurasi tetap Agent B (UNIVERSAL PAYLOAD 2026-09-26) ──
+// ── Konfigurasi tetap Agent B (UNIVERSAL PAYLOAD 2026-09-26 + BETA RUN 8) ──
 // TRINITY DUAL-AGENT (kredensial rootsys.cloud, 1B token / 1M context):
-//   Fasa 0 (Pre-Flight Macro)  : kimi-k3        — Timeout 180,000ms / 180s
-//   Fasa 1 (Semakan Kelompok)  : glm-5.3        — Timeout 45,000ms / 45s
-//   Universal Failover Engine  : deepseek-v4-pro — Timeout dinamik
+//   Fasa 0 (Pre-Flight Makro) : kimi-k3             — Timeout 180,000ms / 180s
+//   Fasa 1 (Pemeriksa Utama)  : deepseek-v4-pro     — Timeout 45,000ms / 45s
+//   Fallback Pemeriksa        : deepseek-v4.1-flash — Timeout dinamik
 //                                 (mewarisi had masa fasa berkaitan)
-const AGENT_B_DEFAULT_MODEL = 'glm-5.3';          // Fasa 1: Semakan Kelompok
-const AGENT_B_PREFLIGHT_MODEL = 'kimi-k3';        // Fasa 0: Pre-Flight Macro
-const AGENT_B_FALLBACK_MODEL = 'deepseek-v4-pro'; // Sandaran universal
+const AGENT_B_DEFAULT_MODEL = 'deepseek-v4-pro';      // Fasa 1: Pemeriksa Utama
+const AGENT_B_PREFLIGHT_MODEL = 'kimi-k3';            // Fasa 0: Pre-Flight Makro
+const AGENT_B_FALLBACK_MODEL = 'deepseek-v4.1-flash'; // Fallback Pemeriksa
 // SIFAR SEKATAN TOKEN (Mandat Seni Bina Universal Payload 2026-09-26):
 // Muatan Agent B TIDAK menghantar max_tokens/max_completion_tokens —
 // ujian empirikal terminal mengesahkan ketiadaan max_tokens menjamin
@@ -65,7 +64,7 @@ const AGENT_B_FALLBACK_MODEL = 'deepseek-v4-pro'; // Sandaran universal
 // Siling token lama (16384 kimi / 4096 semakan) dimansuhkan sepenuhnya.
 // HEADROOM KESELAMATAN (Mandat Headroom 2026-09-26):
 // Fasa 0 180s — baca 2,500 entri penuh (250k aksara) tanpa tercekik;
-// Semakan 45s — 60% headroom ke atas latensi purata GLM (12–16s).
+// Semakan 45s — headroom besar ke atas latensi purata DeepSeek (~2.1s).
 const AGENT_B_PREFLIGHT_TIMEOUT_MS = 180000;
 const AGENT_B_INSPECTION_TIMEOUT_MS = 45000;
 const AGENT_B_CIRCUIT_THRESHOLD = 3;      // 3 kegagalan berturut → silent mode
@@ -228,12 +227,12 @@ function parseInspectorResponse(responseText) {
  * MUATAN UNIVERSAL (Mandat Seni Bina Universal Payload §A): instance
  * dibina dengan universalPayload=true — buildChatRequest membina
  * { model, temperature: 0.0, messages } sahaja bagi SEMUA enjin trinity
- * (kimi-k3 / glm-5.3 / deepseek-v4-pro). Siling token lama
+ * (kimi-k3 / deepseek-v4-pro / deepseek-v4.1-flash). Siling token lama
  * (getCappedMaxOutputTokens 4096/16384) dimansuhkan — muatan tidak
  * menghantar parameter token/sampling langsung.
  *
  * DUAL-MODEL FAILOVER (Mandat Observabiliti §4): hierarki model disimpan
- * dalam this.modelHierarchy (utama + sandaran deepseek-v4-pro). Setiap
+ * dalam this.modelHierarchy (utama + sandaran deepseek-v4.1-flash). Setiap
  * panggilan bergerak melalui _callWithFailover(): cuba utama → sebarang
  * kegagalan (HTTP/timeout/kosong/rosak) → log WARN berformat mandat dan
  * cuba sandaran → kedua-dua gagal → error terakhir dilempar.
@@ -258,13 +257,13 @@ class AgentBInspector extends OpenAICompatibleProvider {
     // mewarisi had masa yang sama — failover berkongsi headroom ini.
     this.translationTimeout = AGENT_B_INSPECTION_TIMEOUT_MS;
 
-    // ── TRINITY DUAL-AGENT (UNIVERSAL PAYLOAD 2026-09-26) ──
+    // ── TRINITY DUAL-AGENT (UNIVERSAL PAYLOAD 2026-09-26 + BETA RUN 8) ──
     // Dua hierarki berasingan bagi dua fasa:
-    //   - Semakan Kelompok: options.model (lalai glm-5.3)
-    //       → modelHierarchy = [glm-5.3, deepseek-v4-pro]
+    //   - Pemeriksa Utama : options.model (lalai deepseek-v4-pro)
+    //       → modelHierarchy = [deepseek-v4-pro, deepseek-v4.1-flash]
     //   - Pre-Flight Fasa 0: options.preflightModel (lalai kimi-k3)
-    //       → preflightHierarchy = [kimi-k3, deepseek-v4-pro]
-    //   - Sandaran universal: options.fallbackModel (lalai deepseek-v4-pro);
+    //       → preflightHierarchy = [kimi-k3, deepseek-v4.1-flash]
+    //   - Fallback pemeriksa: options.fallbackModel (lalai deepseek-v4.1-flash);
     //     'none' ATAU kosong ATAU sama dengan model utama → model tunggal.
     // this.model sentiasa menjejak model AKTIF supaya log forensik melaporkan
     // model sebenar yang sedang beroperasi.
@@ -310,10 +309,10 @@ class AgentBInspector extends OpenAICompatibleProvider {
    */
   async _callWithFailover(operation, attempt, isFailure, hierarchyOverride = null) {
     const failedAttempts = [];
-    // TRINITY (Frontier Upgrade 2026-09-26): Pre-Flight menggunakan
-    // preflightHierarchy (kimi-k3 → deepseek); Semakan menggunakan
-    // modelHierarchy (glm-5.3 → deepseek). Suntikan hierarki mengatasi
-    // kedua-duanya (kes ujian susunan tersuai).
+    // TRINITY BETA RUN 8: Pre-Flight menggunakan preflightHierarchy
+    // (kimi-k3 → deepseek-v4.1-flash); Pemeriksaan menggunakan
+    // modelHierarchy (deepseek-v4-pro → deepseek-v4.1-flash). Suntikan
+    // hierarki mengatasi kedua-duanya (kes ujian susunan tersuai).
     const hierarchy = Array.isArray(hierarchyOverride) && hierarchyOverride.length > 0
       ? hierarchyOverride
       : this.modelHierarchy;
@@ -415,8 +414,8 @@ class AgentBInspector extends OpenAICompatibleProvider {
   async runPreflightPass(entries, targetLanguage, sourceLanguage, options = {}) {
     // Fasa 0 membaca teks episod penuh (hingga 250k aksara) dan menjana
     // analisis tema — naikkan had masa axios kepada 180s untuk panggilan
-    // ini sahaja, kemudian pulihkan 45s (fasa semakan batch). Sandaran
-    // universal deepseek-v4-pro mewarisi had masa fasa yang sama
+    // ini sahaja, kemudian pulihkan 45s (fasa pemeriksaan batch). Fallback
+    // pemeriksa deepseek-v4.1-flash mewarisi had masa fasa yang sama
     // (timeout dinamik) — failover berkongsi headroom ini.
     // SELAMAT dari race: preflight di-await sepenuhnya oleh enjin sebelum
     // mana-mana panggilan batch bermula; fasa tidak bertindih.
@@ -425,7 +424,7 @@ class AgentBInspector extends OpenAICompatibleProvider {
     this.translationTimeout = AGENT_B_PREFLIGHT_TIMEOUT_MS; // 180s headroom
 
     // TRINITY FAILOVER (Universal Payload 2026-09-26 §2B): Fasa 0 dihalakan
-    // ke preflightHierarchy [kimi-k3 → deepseek-v4-pro]. Setiap model
+    // ke preflightHierarchy [kimi-k3 → deepseek-v4.1-flash]. Setiap model
     // menjalankan Fasa 0 penuh melalui runPreflightSemanticPass dengan hook
     // zero-swallowed-error. null + hook aktif = kegagalan model (failover);
     // null tanpa hook = skip sahaja (fail kecil / tiada teks) — jangan failover.
@@ -455,7 +454,7 @@ class AgentBInspector extends OpenAICompatibleProvider {
           return { ok: true, context: null }; // skip sahaja (bukan kegagalan)
         },
         (outcome) => outcome && outcome.ok === false,
-        this.preflightHierarchy // TRINITY: Fasa 0 → [kimi-k3 → deepseek]
+        this.preflightHierarchy // TRINITY BETA RUN 8: Fasa 0 → [kimi-k3 → deepseek-v4.1-flash]
       );
       return result && result.ok ? result.context : null;
     } catch (failoverErr) {

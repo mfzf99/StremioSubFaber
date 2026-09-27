@@ -573,7 +573,7 @@ test('AgentB: normalizeConfig membina struktur agentB dengan env fallback + hygi
     const disabled = normalizeConfig({});
     assert.equal(disabled.agentB.enabled, false);
     assert.equal(disabled.agentB.baseUrl, '');
-    assert.equal(disabled.agentB.model, 'glm-5.3', 'default model semakan (TRINITY FRONTIER)');
+    assert.equal(disabled.agentB.model, 'deepseek-v4-pro', 'default pemeriksa utama (TRINITY BETA RUN 8)');
 
     // Kes 4: enabled:true tetapi kredensial tak lengkap → hygiene melumpuhkan
     const partial = normalizeConfig({
@@ -673,39 +673,39 @@ test('AgentB: runPreflightPass mewarisi kontrak runPreflightSemanticPass (non-bl
 
 // ── 10. Dual-model failover + zero-swallowed-error (Mandat Observabiliti 2026-09-26) ──
 
-test('AgentB: failover automatik — glm-5.3 gagal, deepseek-v4-pro menyelamatkan semakan', async () => {
+test('AgentB: failover automatik — deepseek-v4-pro gagal, deepseek-v4.1-flash menyelamatkan semakan', async () => {
   const inspector = new AgentBInspector({
     apiKey: 'test-key',
     baseUrl: 'https://agentb.example.com/v1'
   });
-  assert.deepEqual(inspector.modelHierarchy, ['glm-5.3', 'deepseek-v4-pro'], 'hierarki semakan: glm-5.3 + fallback (TRINITY)');
-  assert.equal(AGENT_B_FALLBACK_MODEL, 'deepseek-v4-pro', 'sandaran universal deepseek-v4-pro (Mandat Universal Payload)');
+  assert.deepEqual(inspector.modelHierarchy, ['deepseek-v4-pro', 'deepseek-v4.1-flash'], 'hierarki semakan: deepseek-v4-pro + fallback (TRINITY BETA RUN 8)');
+  assert.equal(AGENT_B_FALLBACK_MODEL, 'deepseek-v4.1-flash', 'fallback pemeriksa deepseek-v4.1-flash (Mandat Beta Run 8)');
 
   const calls = [];
   inspector.translateSubtitle = async function () {
     calls.push(this.model);
-    if (this.model === 'glm-5.3') {
+    if (this.model === 'deepseek-v4-pro') {
       throw Object.assign(new Error('HTTP 502 Bad Gateway from upstream'), { statusCode: 502 });
     }
     return '{"valid":false,"crimes":[{"type":"MERGE","ids":[3,4],"note":"fused"}]}';
   };
 
   const verdict = await inspector.runSemanticInspection(makeEntries(4), makeTranslated(4), { batchIndex: 0, totalBatches: 2 });
-  assert.deepEqual(calls, ['glm-5.3', 'deepseek-v4-pro'], 'kedua-dua model dipanggil mengikut hierarki');
+  assert.deepEqual(calls, ['deepseek-v4-pro', 'deepseek-v4.1-flash'], 'kedua-dua model dipanggil mengikut hierarki');
   assert.equal(verdict.valid, false, 'verdict dari model sandaran diterima');
   assert.equal(verdict.crimes[0].type, 'MERGE');
-  assert.equal(verdict.modelUsed, 'deepseek-v4-pro', 'model sandaran direkodkan');
-  assert.equal(inspector.model, 'glm-5.3', 'model dipulihkan kepada primary selepas operasi');
+  assert.equal(verdict.modelUsed, 'deepseek-v4.1-flash', 'model sandaran direkodkan');
+  assert.equal(inspector.model, 'deepseek-v4-pro', 'model dipulihkan kepada primary selepas operasi');
   assert.equal(inspector.circuitOpen, false, 'kejayaan sandaran tidak membuka litar');
 });
 
-test('AgentB: failover Pre-Flight — kimi-k3 504, sandaran menghasilkan konteks Fasa 0', async () => {
+test('AgentB: failover Pre-Flight — kimi-k3 504, sandaran deepseek-v4.1-flash menghasilkan konteks Fasa 0', async () => {
   const inspector = new AgentBInspector({
     apiKey: 'test-key',
     baseUrl: 'https://agentb.example.com/v1'
   });
-  assert.equal(inspector.preflightModel, 'kimi-k3', 'lalai Pre-Flight kimi-k3 (TRINITY)');
-  assert.deepEqual(inspector.preflightHierarchy, ['kimi-k3', 'deepseek-v4-pro'], 'hierarki Fasa 0 berasingan');
+  assert.equal(inspector.preflightModel, 'kimi-k3', 'lalai Pre-Flight kimi-k3 (TRINITY BETA RUN 8)');
+  assert.deepEqual(inspector.preflightHierarchy, ['kimi-k3', 'deepseek-v4.1-flash'], 'hierarki Fasa 0 berasingan');
 
   const calls = [];
   inspector.translateSubtitle = async function () {
@@ -719,9 +719,9 @@ test('AgentB: failover Pre-Flight — kimi-k3 504, sandaran menghasilkan konteks
   const result = await inspector.runPreflightPass(makeEntries(50), 'Malay', 'English');
   assert.ok(result, 'konteks dari model sandaran diterima');
   assert.equal(result.theme, 'Fallback analysis.');
-  // TRINITY: Fasa 0 → kimi-k3 dahulu, sandaran deepseek-v4-pro
-  assert.deepEqual(calls, ['kimi-k3', 'deepseek-v4-pro']);
-  assert.equal(inspector.model, 'glm-5.3', 'model semakan tidak terjejas oleh Fasa 0');
+  // TRINITY: Fasa 0 → kimi-k3 dahulu, sandaran deepseek-v4.1-flash
+  assert.deepEqual(calls, ['kimi-k3', 'deepseek-v4.1-flash']);
+  assert.equal(inspector.model, 'deepseek-v4-pro', 'model semakan tidak terjejas oleh Fasa 0');
 });
 
 test('AgentB: kedua-dua model gagal (rangkaian) → fail-open both_models_failed + 1 kegagalan litar', async () => {
@@ -777,12 +777,12 @@ test('AgentB: logging forensik — raw snippet 500 aksara + pengumuman failover 
     assert.ok(snippetLog.includes('G'.repeat(500)), 'snippet dipotong kepada tepat 500 aksara pertama');
     assert.ok(!snippetLog.includes('G'.repeat(501)), 'snippet TIDAK melebihi 500 aksara');
 
-    const failoverLog = captured.find(l => l.includes('Failing over to deepseek-v4-pro'));
+    const failoverLog = captured.find(l => l.includes('Failing over to deepseek-v4.1-flash'));
     assert.ok(failoverLog, 'pengumuman failover kepada model sandaran mesti dicetak');
 
     // MANDAT SENI BINA UNIVERSAL PAYLOAD §C: format trigger wajib
-    const triggerLog = captured.find(l => l.includes('[AgentB] Fallback triggered -> [deepseek-v4-pro]'));
-    assert.ok(triggerLog, 'format trigger wajib: [AgentB] Fallback triggered -> [deepseek-v4-pro]');
+    const triggerLog = captured.find(l => l.includes('[AgentB] Fallback triggered -> [deepseek-v4.1-flash]'));
+    assert.ok(triggerLog, 'format trigger wajib: [AgentB] Fallback triggered -> [deepseek-v4.1-flash]');
   } finally {
     log.warn = originalWarn;
   }
@@ -835,7 +835,7 @@ test('AgentB: inspection membersihkan tag THINK sebelum parse — verdict bertah
   const verdict = await inspector.runSemanticInspection(makeEntries(2), makeTranslated(2), { batchIndex: 0, totalBatches: 1 });
   assert.equal(verdict.valid, true);
   assert.equal(verdict.failOpen, undefined, 'parse berjaya — bukan fail-open');
-  assert.equal(verdict.modelUsed, 'glm-5.3', 'primary model cukup — tiada failover diperlukan');
+  assert.equal(verdict.modelUsed, 'deepseek-v4-pro', 'primary model cukup — tiada failover diperlukan');
 });
 
 test('SubFaberPreflight: pembersihan tag dilaksanakan sebelum parse (provider mentah)', async () => {
@@ -914,7 +914,7 @@ test('AgentB: parsePreflightResponse selamat dari koma tergantung (trailing comm
   const both = '{"theme":"B.", "terms":[{"src":"A","tgt":"B",},],}';
   const parsedBoth = parsePreflightResponse(both);
   assert.ok(parsedBoth, 'koma tergantung berbilang tahap mesti dibersihkan');
-  assert.equal(parsedBoth.terms[0].src, 'A');
+  assert.equal(parsedBoth.terms[0].source, 'A');
 });
 
 test('AgentB: parsePreflightResponse selamat dari fences + chatter di luar sempadan', () => {
@@ -930,7 +930,7 @@ test('AgentB: parsePreflightResponse selamat dari fences + chatter di luar sempa
   const parsedChatty = parsePreflightResponse(chatty);
   assert.ok(parsedChatty, 'chatter luar mesti dibuang');
   assert.equal(parsedChatty.theme, 'C.');
-  assert.equal(parsedChatty.terms[0].src, 'X');
+  assert.equal(parsedChatty.terms[0].source, 'X');
 
   // Kombinasi penuh: chatter + fence + koma tergantung (corak Beta Run 3)
   const combined = `Absolutely, here you go:\n${fence}json\n{"theme":"K.","terms":[{"src":"Z","tgt":"Z","note":""},]}\n${fence}\nLet me know!`;
@@ -1032,17 +1032,17 @@ test('AgentB: fallbackModel sama dengan utama → dedupe kepada hierarki tunggal
   assert.equal(inspector.fallbackModel, null);
 });
 
-test('AgentB: lalai tanpa sebarang options — kimi-k3 Fasa 0 + glm-5.3 semakan + deepseek sandaran (TRINITY)', () => {
+test('AgentB: lalai tanpa sebarang options — kimi-k3 Fasa 0 + deepseek-v4-pro semakan + deepseek-v4.1-flash sandaran (TRINITY BETA RUN 8)', () => {
   const inspector = new AgentBInspector({ apiKey: 'k', baseUrl: 'https://x.example/v1' });
   assert.equal(inspector.preflightModel, 'kimi-k3', 'lalai Fasa 0 kimi-k3 (2.8T MoE Long-Context King)');
-  assert.deepEqual(inspector.preflightHierarchy, ['kimi-k3', 'deepseek-v4-pro'], 'hierarki Fasa 0');
-  assert.equal(inspector.model, 'glm-5.3', 'lalai semakan glm-5.3 (753B penuh)');
-  assert.deepEqual(inspector.modelHierarchy, ['glm-5.3', 'deepseek-v4-pro'], 'hierarki semakan');
-  assert.equal(inspector.fallbackModel, 'deepseek-v4-pro', 'sandaran universal deepseek-v4-pro');
-  assert.equal(inspector.inspectionModel, 'glm-5.3', 'alias inspectionModel menunjuk model semakan');
-  assert.equal(AGENT_B_DEFAULT_MODEL, 'glm-5.3');
+  assert.deepEqual(inspector.preflightHierarchy, ['kimi-k3', 'deepseek-v4.1-flash'], 'hierarki Fasa 0');
+  assert.equal(inspector.model, 'deepseek-v4-pro', 'lalai pemeriksa utama deepseek-v4-pro (Mandat Beta Run 8)');
+  assert.deepEqual(inspector.modelHierarchy, ['deepseek-v4-pro', 'deepseek-v4.1-flash'], 'hierarki semakan');
+  assert.equal(inspector.fallbackModel, 'deepseek-v4.1-flash', 'fallback pemeriksa deepseek-v4.1-flash');
+  assert.equal(inspector.inspectionModel, 'deepseek-v4-pro', 'alias inspectionModel menunjuk model semakan');
+  assert.equal(AGENT_B_DEFAULT_MODEL, 'deepseek-v4-pro');
   assert.equal(AGENT_B_PREFLIGHT_MODEL, 'kimi-k3');
-  assert.equal(AGENT_B_FALLBACK_MODEL, 'deepseek-v4-pro');
+  assert.equal(AGENT_B_FALLBACK_MODEL, 'deepseek-v4.1-flash');
 });
 
 test('AgentB: config.js normalisasi agentB — TRINITY FRONTIER (preflight + inspection + fallback)', async () => {
@@ -1060,13 +1060,13 @@ test('AgentB: config.js normalisasi agentB — TRINITY FRONTIER (preflight + ins
     assert.equal(cfg.agentB.preflightModel, 'p1', 'preflightModel = model Fasa 0');
     assert.equal(cfg.agentB.fallbackModel, 'm2');
 
-    // Kes 2: lalai bersih — trinity frontier penuh
+    // Kes 2: lalai bersih — trinity beta run 8 penuh
     delete process.env.AGENT_B_MODEL;
     delete process.env.AGENT_B_PREFLIGHT_MODEL;
     const defaults = normalizeConfig({});
-    assert.equal(defaults.agentB.model, 'glm-5.3', 'lalai semakan glm-5.3 (753B penuh)');
+    assert.equal(defaults.agentB.model, 'deepseek-v4-pro', 'lalai pemeriksa utama deepseek-v4-pro (Mandat Beta Run 8)');
     assert.equal(defaults.agentB.preflightModel, 'kimi-k3', 'lalai Fasa 0 kimi-k3');
-    assert.equal(defaults.agentB.fallbackModel, 'deepseek-v4-pro', 'lalai sandaran deepseek-v4-pro (Universal Failover Engine)');
+    assert.equal(defaults.agentB.fallbackModel, 'deepseek-v4.1-flash', 'lalai fallback pemeriksa deepseek-v4.1-flash');
 
     // Kes 3: inspectionModel warisan bermigrasi ke 'model'
     const legacy = normalizeConfig({
@@ -1084,13 +1084,13 @@ test('AgentB: config.js normalisasi agentB — TRINITY FRONTIER (preflight + ins
 
 // ── 15. TRINITY POWERHOUSE (Mandat Frontier 2026-09-26) ──
 
-test('AgentB: TRINITY — Fasa 0 dihalakan ke kimi-k3, semakan ke glm-5.3 (dua hierarki berasingan)', async () => {
+test('AgentB: TRINITY — Fasa 0 dihalakan ke kimi-k3, semakan ke deepseek-v4-pro (dua hierarki berasingan)', async () => {
   const inspector = new AgentBInspector({ apiKey: 'k', baseUrl: 'https://x.example/v1' });
   assert.equal(inspector.preflightModel, 'kimi-k3', 'Fasa 0 kimi-k3');
-  assert.equal(inspector.model, 'glm-5.3', 'semakan glm-5.3');
+  assert.equal(inspector.model, 'deepseek-v4-pro', 'semakan deepseek-v4-pro');
 
   const calls = [];
-  // Pre-Flight: cuba kimi-k3 dahulu, failover deepseek
+  // Pre-Flight: cuba kimi-k3 dahulu, failover deepseek-v4.1-flash
   inspector.translateSubtitle = async function () {
     calls.push(this.model);
     if (this.model === 'kimi-k3') throw new Error('kimi down');
@@ -1098,18 +1098,18 @@ test('AgentB: TRINITY — Fasa 0 dihalakan ke kimi-k3, semakan ke glm-5.3 (dua h
   };
   const preflightContext = await inspector.runPreflightPass(makeEntries(50), 'Malay', 'English');
   assert.ok(preflightContext, 'konteks dari penyelamat diterima');
-  assert.deepEqual(calls, ['kimi-k3', 'deepseek-v4-pro'], 'Pre-Flight hierarki kimi → deepseek');
+  assert.deepEqual(calls, ['kimi-k3', 'deepseek-v4.1-flash'], 'Pre-Flight hierarki kimi → deepseek-v4.1-flash');
 
-  // Semakan: hierarki berasingan glm-5.3 → deepseek
+  // Semakan: hierarki berasingan deepseek-v4-pro → deepseek-v4.1-flash
   calls.length = 0;
   inspector.translateSubtitle = async function () {
     calls.push(this.model);
-    if (this.model === 'glm-5.3') throw new Error('primary down');
+    if (this.model === 'deepseek-v4-pro') throw new Error('primary down');
     return '{"valid":true}';
   };
   const verdict = await inspector.runSemanticInspection(makeEntries(2), makeTranslated(2));
   assert.equal(verdict.valid, true);
-  assert.deepEqual(calls, ['glm-5.3', 'deepseek-v4-pro'], 'Semakan hierarki glm → deepseek');
+  assert.deepEqual(calls, ['deepseek-v4-pro', 'deepseek-v4.1-flash'], 'Semakan hierarki deepseek-v4-pro → deepseek-v4.1-flash');
 });
 
 test('AgentB: TRINITY — hot-swap utama tersuai + sandaran tersuai', () => {
@@ -1145,13 +1145,13 @@ test('AgentB: log PASSED berformat mandat — [AgentB] Batch X/Y inspection: PAS
   try {
     const verdict = await inspector.runSemanticInspection(makeEntries(2), makeTranslated(2), { batchIndex: 0, totalBatches: 1 });
     assert.equal(verdict.valid, true);
-    assert.equal(verdict.modelUsed, 'glm-5.3');
+    assert.equal(verdict.modelUsed, 'deepseek-v4-pro');
 
     const passedLog = captured.find(l => l.includes('PASSED'));
     assert.ok(passedLog, 'log PASSED mesti dicetak pada INFO');
     assert.ok(
-      passedLog.startsWith('[AgentB] Batch 1/1 inspection: PASSED (valid: true) [glm-5.3] ('),
-      'format mandat: prefix + model glm-5.3 tepat dicatatkan'
+      passedLog.startsWith('[AgentB] Batch 1/1 inspection: PASSED (valid: true) [deepseek-v4-pro] ('),
+      'format mandat: prefix + model deepseek-v4-pro tepat dicatatkan'
     );
     assert.ok(/\(\d+ms\)$/.test(passedLog), 'latensi ms mesti dicatatkan dalam kurungan');
   } finally {
@@ -1213,7 +1213,7 @@ test('AgentB: muatan HTTP sebenar (axios.post) — temperature 0.0 sahaja, SIFAR
     assert.equal('max_completion_tokens' in body, false, 'muatan HTTP TIDAK boleh membawa max_completion_tokens');
     assert.equal('top_p' in body, false, 'muatan HTTP TIDAK boleh membawa top_p');
     assert.equal('presence_penalty' in body, false, 'muatan HTTP TIDAK boleh membawa presence_penalty');
-    assert.equal(body.model, 'glm-5.3');
+    assert.equal(body.model, 'deepseek-v4-pro');
     assert.ok(Array.isArray(body.messages) && body.messages.length === 1, 'satu mesej user');
     assert.deepEqual(Object.keys(body).sort(), ['messages', 'model', 'temperature'], 'muatan HTTP mesti TEPAT {model, temperature, messages}');
   } finally {

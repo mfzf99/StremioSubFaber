@@ -5454,9 +5454,10 @@ if (
     effectiveModel = model || getEffectiveGeminiModel(config);
     log.debug(() => `[Translation] Using provider=${providerName} model=${effectiveModel}`);
 
-    // DUAL-AI (UNIVERSAL PAYLOAD 2026-09-26): Bina Agent B Trinity Dual-Agent
-    // (kimi-k3 Fasa 0 + glm-5.3 Semakan + deepseek-v4-pro Failover Universal)
-    // apabila config agentB sah + lengkap. Gagal konfigurasi → null →
+    // DUAL-AI (BETA RUN 8 TRINITY — MANDAT ENJIN PEMERIKSA DEEPSEEK 2026-09-27):
+    // Bina Agent B Trinity Dual-Agent (kimi-k3 Fasa 0 + deepseek-v4-pro
+    // Pemeriksa Utama + deepseek-v4.1-flash Fallback Pemeriksa) apabila
+    // config agentB sah + lengkap. Gagal konfigurasi → null →
     // enjin jalan 100% Gemini (backwards compatible penuh).
     let agentBInspector = null;
     if (config.agentB?.enabled === true && config.agentB?.baseUrl && config.agentB?.apiKey) {
@@ -5464,14 +5465,14 @@ if (
         agentBInspector = new AgentBInspector({
           apiKey: config.agentB.apiKey,
           baseUrl: config.agentB.baseUrl,
-          // TRINITY (Mandat Seni Bina Universal Payload 2026-09-26):
-          //   Fasa 0     : kimi-k3 (Pre-Flight Macro, timeout 180s)
-          //   Fasa 1     : glm-5.3 (Semakan Kelompok, timeout 45s)
-          //   Sandaran   : deepseek-v4-pro (timeout dinamik)
+          // TRINITY (Mandat Beta Run 8 — Enjin Pemeriksa DeepSeek 2026-09-27):
+          //   Fasa 0     : kimi-k3             (Pre-Flight Makro, timeout 180s)
+          //   Fasa 1     : deepseek-v4-pro     (Pemeriksa Utama, timeout 45s)
+          //   Fallback   : deepseek-v4.1-flash (mewarisi had masa fasa)
           // Muatan universal: {model, temperature: 0.0, messages}
           preflightModel: config.agentB.preflightModel || 'kimi-k3',
-          model: config.agentB.model || 'glm-5.3',
-          fallbackModel: config.agentB.fallbackModel || 'deepseek-v4-pro',
+          model: config.agentB.model || 'deepseek-v4-pro',
+          fallbackModel: config.agentB.fallbackModel || 'deepseek-v4.1-flash',
           ssrfLookup: createSsrfSafeLookup()
         });
         log.info(() => `[Translation] Agent B inspector active: model=${agentBInspector.model} baseUrl=${config.agentB.baseUrl}`);

@@ -194,7 +194,12 @@ test('SubFaberSharedContext: renders previous_content + subsequent_content + pre
     previousContent: makeEntries(2, 9),  // IDs 9..10
     subsequentContent: makeEntries(2, 14), // IDs 14..15
     previousMemory: [{ id: 9, source: 'Hi', translation: 'Hai' }],
-    preflight: { theme: 'A story about survival.', terms: [{ src: 'Entry 12', tgt: 'Entri 12', note: 'Term' }] }
+    preflight: {
+      theme: 'A story about survival.',
+      terms: [{ source: 'Entry 12', target: 'Entri 12', note: 'Term' }],
+      characters: [],
+      credits_and_titles: []
+    }
   };
 
   const block = engine._formatSharedContext(context, batchText);
@@ -207,8 +212,8 @@ test('SubFaberSharedContext: renders previous_content + subsequent_content + pre
   assert.ok(block.includes('[PREVIOUS VERIFIED TRANSLATIONS'), 'Continuity memory header');
   assert.ok(block.includes('<m id="9">'), 'Verified translation rendered as <m> tag');
   assert.ok(block.includes('=== END OF MEMORY ==='), 'Memory terminator present');
-  // Term 'Entry 12' wujud dalam batchText → Points to Note aktif
-  assert.ok(block.includes('### Points to Note'), 'Points to Note (term matched in batch)');
+  // Term 'Entry 12' wujud dalam batchText → Technical Glossary aktif (TIANG 2)
+  assert.ok(block.includes('### Technical Glossary'), 'Technical Glossary (term matched in batch)');
   assert.ok(block.includes('- Entry 12: Entri 12 (Term)'), 'Matched term rendered');
 });
 
@@ -233,7 +238,9 @@ test('SubFaberSharedContext: preflight renders Content Summary + Points to Note 
     previousMemory: [],
     preflight: {
       theme: 'A story about survival.',
-      terms: [{ src: 'Zhuang Xu', tgt: 'Zhuang Xu', note: 'Male colleague' }]
+      terms: [{ source: 'Zhuang Xu', target: 'Zhuang Xu', note: 'Male colleague' }],
+      characters: [],
+      credits_and_titles: []
     }
   };
 
@@ -241,7 +248,7 @@ test('SubFaberSharedContext: preflight renders Content Summary + Points to Note 
   const block = engine._formatSharedContext(context, batchText);
   assert.ok(block.includes('### Content Summary'), 'Content Summary header');
   assert.ok(block.includes('A story about survival.'), 'Theme text');
-  assert.ok(block.includes('### Points to Note'), 'Points to Note header');
+  assert.ok(block.includes('### Technical Glossary'), 'Technical Glossary header');
   assert.ok(block.includes('- Zhuang Xu: Zhuang Xu (Male colleague)'), 'Term line rendered (matched in batch)');
 });
 
@@ -436,15 +443,17 @@ test('SubFaberPrompt: no shared context block when context empty (clean spacing)
 });
 
 // --- GOLDEN STANDARD GS3: Dynamic term-matching per-chunk (VideoLingo search_things_to_note) ---
-test('SubFaberGS3: Points to Note only injects terms whose source text appears in chunk scope', () => {
+test('SubFaberGS3: Technical Glossary only injects terms whose source text appears in chunk scope', () => {
   const engine = makeEngine({ subfaberEnabled: true });
   engine.preflightContext = {
     theme: 'A story about survival.',
     terms: [
-      { src: 'Zhuang Xu', tgt: 'Zhuang Xu', note: 'Male colleague' },
-      { src: 'Nie Xiguang', tgt: 'Nie Xiguang', note: 'Female lead' },
-      { src: 'CP Group', tgt: 'CP Group', note: 'Company' } // Istilah TIDAK wujud dalam skop chunk
-    ]
+      { source: 'Zhuang Xu', target: 'Zhuang Xu', note: 'Male colleague' },
+      { source: 'Nie Xiguang', target: 'Nie Xiguang', note: 'Female lead' },
+      { source: 'CP Group', target: 'CP Group', note: 'Company' } // Istilah TIDAK wujud dalam skop chunk
+    ],
+    characters: [],
+    credits_and_titles: []
   };
   const batch = [
     { id: 11, timecode: 't', text: 'Zhuang Xu entered the office.' },
@@ -458,23 +467,25 @@ test('SubFaberGS3: Points to Note only injects terms whose source text appears i
   );
   assert.ok(block.includes('### Content Summary'), 'Theme always injected');
   assert.ok(block.includes('A story about survival.'), 'Theme text present');
-  assert.ok(block.includes('### Points to Note'), 'Points to Note present (2 terms matched)');
+  assert.ok(block.includes('### Technical Glossary'), 'Technical Glossary present (2 terms matched)');
   assert.ok(block.includes('- Zhuang Xu: Zhuang Xu (Male colleague)'), 'Matched term 1 rendered');
   assert.ok(block.includes('- Nie Xiguang: Nie Xiguang (Female lead)'), 'Matched term 2 rendered');
   assert.ok(!block.includes('CP Group'), 'Unmatched term NOT injected (token savings)');
 });
 
-test('SubFaberGS3: Points to Note section emptied when no terms match chunk scope', () => {
+test('SubFaberGS3: Technical Glossary section emptied when no terms match chunk scope', () => {
   const engine = makeEngine({ subfaberEnabled: true });
   engine.preflightContext = {
     theme: 'A heist movie.',
-    terms: [{ src: 'Ghost', tgt: 'Hantu', note: 'Mastermind' }] // Tidak wujud dalam skop
+    terms: [{ source: 'Ghost', target: 'Hantu', note: 'Mastermind' }], // Tidak wujud dalam skop
+    characters: [],
+    credits_and_titles: []
   };
   const batch = [{ id: 1, timecode: 't', text: 'Hello world.' }];
 
   const block = engine._formatPreflightForChunk(engine.preflightContext, [], batch, []);
   assert.ok(block.includes('### Content Summary'), 'Theme still injected');
-  assert.ok(!block.includes('### Points to Note'), 'No Points to Note when zero matches (token savings)');
+  assert.ok(!block.includes('### Technical Glossary'), 'No Technical Glossary when zero matches (token savings)');
 });
 
 test('SubFaberGS3: term matching is case-insensitive and scans prev + batch + next scope', () => {
@@ -482,9 +493,11 @@ test('SubFaberGS3: term matching is case-insensitive and scans prev + batch + ne
   engine.preflightContext = {
     theme: 'T.',
     terms: [
-      { src: 'BLACKWOOD', tgt: 'Hutan Hitam', note: 'Mansion' }      // Padanan dalam prev (UPPERCASE source)
-      , { src: 'Silverton', tgt: 'Bandar Perak', note: 'Town' }      // Padanan dalam next
-    ]
+      { source: 'BLACKWOOD', target: 'Hutan Hitam', note: 'Mansion' }      // Padanan dalam prev (UPPERCASE source)
+      , { source: 'Silverton', target: 'Bandar Perak', note: 'Town' }      // Padanan dalam next
+    ],
+    characters: [],
+    credits_and_titles: []
   };
   const previousContent = [{ id: 1, timecode: 't', text: 'Welcome to blackwood mansion.' }];
   const batch = [{ id: 2, timecode: 't', text: 'The drive continues.' }];

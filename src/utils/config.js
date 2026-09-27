@@ -575,10 +575,11 @@ function normalizeConfig(config) {
   // env fallback: AGENT_B_BASE_URL / AGENT_B_API_KEY / AGENT_B_MODEL /
   // AGENT_B_PREFLIGHT_MODEL / AGENT_B_FALLBACK_MODEL.
   // ── UNIVERSAL PAYLOAD (MANDAT SENI BINA UNIVERSAL PAYLOAD 2026-09-26) ──
+  // ── BETA RUN 8 TRINITY (MANDAT ENJIN PEMERIKSA DEEPSEEK 2026-09-27) ──
   // Kredensial rootsys.cloud (1B token quota / 1M context window):
-  //   Fasa 0 (Pre-Flight Macro)  : kimi-k3 (Timeout 180,000ms / 180s)
-  //   Fasa 1 (Semakan Kelompok)  : glm-5.3 (Timeout 45,000ms / 45s)
-  //   Universal Failover Engine  : deepseek-v4-pro (timeout dinamik)
+  //   Fasa 0 (Pre-Flight Makro)  : kimi-k3             (Timeout 180,000ms / 180s)
+  //   Fasa 1 (Pemeriksa Utama)   : deepseek-v4-pro     (Timeout 45,000ms / 45s)
+  //   Fallback Pemeriksa         : deepseek-v4.1-flash (mewarisi had masa fasa)
   // Muatan universal: {model, temperature: 0.0, messages} — tiada
   // max_tokens/max_completion_tokens/top_p/presence_penalty.
   mergedConfig.agentB = {
@@ -586,15 +587,15 @@ function normalizeConfig(config) {
       || (!!process.env.AGENT_B_API_KEY && !!process.env.AGENT_B_BASE_URL)),
     baseUrl: String(mergedConfig.agentB?.baseUrl || process.env.AGENT_B_BASE_URL || '').trim(),
     apiKey: String(mergedConfig.agentB?.apiKey || process.env.AGENT_B_API_KEY || '').trim(),
-    model: String(mergedConfig.agentB?.model || mergedConfig.agentB?.inspectionModel || process.env.AGENT_B_MODEL || 'glm-5.3').trim(),
+    model: String(mergedConfig.agentB?.model || mergedConfig.agentB?.inspectionModel || process.env.AGENT_B_MODEL || 'deepseek-v4-pro').trim(),
     preflightModel: String(mergedConfig.agentB?.preflightModel || process.env.AGENT_B_PREFLIGHT_MODEL || 'kimi-k3').trim(),
-    fallbackModel: String(mergedConfig.agentB?.fallbackModel || process.env.AGENT_B_FALLBACK_MODEL || 'deepseek-v4-pro').trim()
+    fallbackModel: String(mergedConfig.agentB?.fallbackModel || process.env.AGENT_B_FALLBACK_MODEL || 'deepseek-v4.1-flash').trim()
   };
   // Hygiene: inspectionModel adalah alias warisan bagi 'model' (Semakan) —
   // dilucutkan daripada struktur tersimpan selepas migrasi.
   delete mergedConfig.agentB.inspectionModel;
   if (!mergedConfig.agentB.model) {
-    mergedConfig.agentB.model = 'glm-5.3';
+    mergedConfig.agentB.model = 'deepseek-v4-pro';
   }
   if (!mergedConfig.agentB.preflightModel) {
     mergedConfig.agentB.preflightModel = 'kimi-k3';

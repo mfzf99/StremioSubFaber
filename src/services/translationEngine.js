@@ -1222,16 +1222,37 @@ class TranslationEngine {
    * insensitive substring) wujud dalam previousContent, batch, atau
    * subsequentContent. Tiada padanan → seksyen kosong (token penjimatan).
    *
-   * @param {{theme:string, terms:Array}} preflight - Konteks Fasa 0
+   * SKEMA 4-TIANG (Mandat Beta Run 8 — Enjin Pemeriksa DeepSeek & Pre-Flight
+   * 4-Tiang 2026-09-27): theme sentiasa disuntik; Technical Glossary (terms)
+   * ikut dynamic term-matching per-chunk; Character Hierarchy (characters)
+   * dan Opening Credits / Titles (credits_and_titles) disuntik penuh (bukan
+   * bermusim — watak utama dan kredit permulaan relevan pada SETIAP batch).
+   *
+   * SIFAR PERUBAHAN KOD RAPUH: tiada hardcoding teks kredit di sini —
+   * terjemahan kredit datang sebagai data Fasa 0 (credits_and_titles).
+   *
+   * @param {{theme:string, terms:Array, characters:Array, credits_and_titles:Array}} preflight - Konteks Fasa 0 (4 tiang)
    * @param {Array} previousContent - 3 baris sebelum batch (source-only)
    * @param {Array} batch - Batch aktif
    * @param {Array} subsequentContent - 2 baris selepas batch (source-only)
-   * @returns {string} Blok "Content Summary [+ Points to Note]"
+   * @returns {string} Blok "Content Summary [+ Technical Glossary][+ Character Hierarchy][+ Opening Credits / Titles]"
    */
   _formatPreflightForChunk(preflight, previousContent, batch, subsequentContent) {
     if (!preflight || !preflight.theme) return '';
     let block = `### Content Summary\n${preflight.theme}`;
 
+    const resolvePillarText = (item, ...keys) => {
+      if (!item || typeof item !== 'object') return '';
+      for (const key of keys) {
+        const value = item[key];
+        if (value !== undefined && value !== null && String(value).trim() !== '') {
+          return String(value).trim();
+        }
+      }
+      return '';
+    };
+
+    // ── TIANG 2: Technical Glossary (dynamic term-matching per-chunk) ──
     const terms = Array.isArray(preflight.terms) ? preflight.terms : [];
     if (terms.length > 0) {
       // Gabungkan semua teks dalam skop chunk (prev + batch + next) jadi
@@ -1244,7 +1265,7 @@ class TranslationEngine {
 
       const matched = [];
       for (const term of terms) {
-        const src = String(term?.src || '').trim();
+        const src = resolvePillarText(term, 'source', 'src');
         if (src && scopeText.includes(src.toLowerCase())) {
           matched.push(term);
         }
@@ -1252,12 +1273,53 @@ class TranslationEngine {
 
       if (matched.length > 0) {
         const termLines = matched
-          .map(t => `- ${t.src}: ${t.tgt}${t.note ? ` (${t.note})` : ''}`)
+          .map(t => {
+            const src = resolvePillarText(t, 'source', 'src');
+            const tgt = resolvePillarText(t, 'target', 'tgt') || src;
+            const note = resolvePillarText(t, 'note');
+            return `- ${src}: ${tgt}${note ? ` (${note})` : ''}`;
+          })
           .join('\n');
-        block += `\n\n### Points to Note\n${termLines}`;
+        block += `\n\n### Technical Glossary\n${termLines}`;
       }
-      // Tiada padanan → tiada Points to Note (seksyen dikosongkan)
+      // Tiada padanan → tiada Technical Glossary (seksyen dikosongkan)
     }
+
+    // ── TIANG 3: Character Hierarchy (watak utama — suntik penuh) ──
+    const characters = Array.isArray(preflight.characters) ? preflight.characters : [];
+    if (characters.length > 0) {
+      const charLines = characters
+        .map(c => {
+          const name = resolvePillarText(c, 'name');
+          if (!name) return '';
+          const address = resolvePillarText(c, 'canonical_address', 'canonicalAddress') || name;
+          const role = resolvePillarText(c, 'role');
+          return `- ${name} → ${address}${role ? ` (${role})` : ''}`;
+        })
+        .filter(Boolean)
+        .join('\n');
+      if (charLines) {
+        block += `\n\n### Character Hierarchy\n${charLines}`;
+      }
+    }
+
+    // ── TIANG 4: Opening Credits / Titles (kredit permulaan — suntik penuh) ──
+    const credits = Array.isArray(preflight.credits_and_titles) ? preflight.credits_and_titles : [];
+    if (credits.length > 0) {
+      const creditLines = credits
+        .map(c => {
+          const src = resolvePillarText(c, 'source', 'src');
+          if (!src) return '';
+          const tgt = resolvePillarText(c, 'target', 'tgt') || src;
+          return `- ${src}: ${tgt}`;
+        })
+        .filter(Boolean)
+        .join('\n');
+      if (creditLines) {
+        block += `\n\n### Opening Credits / Titles\n${creditLines}`;
+      }
+    }
+
     return block;
   }
 

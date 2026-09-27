@@ -36,20 +36,20 @@ const ENGINE_SOURCE = fs.readFileSync(
 process.env.ENTRY_CACHE_SIZE = '100';
 const TranslationEngine = require('./translationEngine');
 
-// --- A.1: Kunci Bahasa Inggeris untuk medan 'theme' ---
-test('BetaRun7: preflight prompt locks the theme field strictly to English', () => {
+// --- A.1: Kunci Bahasa Inggeris untuk medan 'theme' (kini TIANG 1 skema 4-tiang) ---
+test('BetaRun7/Run8: preflight prompt locks the theme field strictly to English (pillar 1)', () => {
   const prompt = buildPreflightPrompt('Some dialogue.', 'Malay', 'English');
   assert.ok(
     prompt.includes("The 'theme' field MUST be written strictly in clear, precise English"),
     'Prompt must contain the verbatim English-lock directive for the theme field'
   );
   assert.ok(
-    prompt.includes('summarizing the narrative arc, setting, and stakes'),
-    'Prompt must require narrative arc, setting, and stakes coverage'
+    prompt.includes('narrative arc (plot), setting, and central conflict/stakes'),
+    'Prompt must require narrative arc, setting, and conflict coverage'
   );
 });
 
-test('BetaRun7: theme lock appears in the JSON schema contract itself', () => {
+test('BetaRun7/Run8: theme lock appears in the JSON schema contract itself', () => {
   const prompt = buildPreflightPrompt('Dialogue.', 'French', '');
   // Skema JSON mesti menyatakan keperluan Bahasa Inggeris pada medan theme
   assert.ok(
@@ -58,16 +58,16 @@ test('BetaRun7: theme lock appears in the JSON schema contract itself', () => {
   );
 });
 
-// --- A.2: Matriks Gelaran Watak (Honorific Consistency) ---
-test('BetaRun7: preflight prompt mandates honorific locking in the terms list', () => {
+// --- A.2: Matriks Gelaran Watak (kini TIANG 3 "characters" — canonical_address) ---
+test('BetaRun7/Run8: preflight prompt mandates honorific locking in the terms list', () => {
   const prompt = buildPreflightPrompt('Some dialogue.', 'Malay', 'English');
   assert.ok(
     prompt.includes("In the 'terms' list, you MUST include and lock the official"),
     'Prompt must contain the verbatim honorific-lock directive'
   );
   assert.ok(
-    prompt.includes('titles/honorifics for recurring characters'),
-    'Prompt must reference titles/honorifics for recurring characters'
+    prompt.includes('titles/honorifics for recurring entities'),
+    'Prompt must reference titles/honorifics for recurring entities'
   );
   assert.ok(
     prompt.includes('Ms. / Mr. / Uncle / Aunt'),
@@ -79,11 +79,63 @@ test('BetaRun7: preflight prompt mandates honorific locking in the terms list', 
   );
 });
 
-test('BetaRun7: honorific directive adapts to the target language label', () => {
+test('BetaRun7/Run8: character hierarchy pillar locks one canonical address per character', () => {
+  const prompt = buildPreflightPrompt('Some dialogue.', 'Malay', 'English');
+  assert.ok(
+    prompt.includes('"canonical_address"'),
+    'Characters pillar must use the canonical_address key'
+  );
+  assert.ok(
+    prompt.includes('one canonical address per character, never alternate'),
+    'Characters pillar must forbid alternating addresses'
+  );
+  assert.ok(
+    prompt.includes('"role"'),
+    'Characters pillar must carry the narrative role field'
+  );
+});
+
+test('BetaRun7/Run8: honorific directive adapts to the target language label', () => {
   const prompt = buildPreflightPrompt('Dialogue.', 'Spanish', 'English');
   assert.ok(
     prompt.includes('official Spanish titles/honorifics'),
     'Honorific directive must interpolate the target language label'
+  );
+});
+
+// --- A.3: Skema 4-TIANG (Mandat Beta Run 8) ---
+test('BetaRun8: preflight prompt produces the full 4-pillar JSON contract', () => {
+  const prompt = buildPreflightPrompt('Some dialogue.', 'Malay', 'English');
+  for (const pillar of ['"theme"', '"terms"', '"characters"', '"credits_and_titles"']) {
+    assert.ok(prompt.includes(pillar), `JSON contract must declare pillar ${pillar}`);
+  }
+  assert.ok(
+    prompt.includes('{ "source": "Original term", "target":'),
+    'terms pillar must use {source, target} entries'
+  );
+  assert.ok(
+    prompt.includes('{ "name": "Character name", "canonical_address":'),
+    'characters pillar must use {name, canonical_address, role} entries'
+  );
+});
+
+test('BetaRun8: credits detection is delegated to Kimi K3 over lines 1-5 with official translations', () => {
+  const prompt = buildPreflightPrompt('Some dialogue.', 'Malay', 'English');
+  assert.ok(
+    prompt.includes('lines 1-5'),
+    'Credits scan must be scoped to the earliest lines (1-5)'
+  );
+  assert.ok(
+    prompt.includes('NON-DIALOGUE opening text'),
+    'Credits scan must target non-dialogue openings only'
+  );
+  assert.ok(
+    prompt.includes('Adapted from') && prompt.includes('Diadaptasi daripada'),
+    'Official media/publishing translation example must be present in Phase 0 only'
+  );
+  assert.ok(
+    prompt.includes("return an empty array [] for 'credits_and_titles'"),
+    'Dialogue-first files must produce an empty credits_and_titles array'
   );
 });
 
@@ -217,11 +269,49 @@ test('BetaRun7: opening-credit translation rules remain UNTOUCHED (Plan 2 deferr
     !batchPrompt.includes('narrative arc'),
     'Batch prompt must NOT carry the English theme-lock directive (Phase 0 only)'
   );
+  // SIFAR PERUBAHAN KOD RAPUH (Mandat Beta Run 8): prompt batch TIDAK BOLEH
+  // membawa teks kredit yang di-hardcode — pengesanan kredit adalah data
+  // Fasa 0 (credits_and_titles), bukan peraturan batch.
+  assert.ok(
+    !batchPrompt.includes('Diadaptasi daripada'),
+    'Batch prompt must NOT carry hardcoded credit translations (Phase 0 data only)'
+  );
+  assert.ok(
+    !batchPrompt.includes('credits_and_titles'),
+    'Batch prompt must NOT reference the credits_and_titles schema directly'
+  );
   // Peraturan kredit permulaan sedia ada mesti kekal hadir (tidak dihapuskan).
   assert.ok(
     typeof batchPrompt === 'string' && batchPrompt.length > 0,
     'Batch prompt contract must remain fully intact'
   );
+});
+
+test('BetaRun8: engine renders all four preflight pillars into the Agent A context block', () => {
+  // Kontrak suntikan konteks Agent A (translationEngine._formatPreflightForChunk):
+  // Theme + Technical Glossary + Character Hierarchy + Opening Credits / Titles.
+  const provider = { translateSubtitle: async () => '', estimateTokenCount: () => 10 };
+  const engine = new TranslationEngine(provider, 'gemini-2.5-flash', {}, { providerName: 'gemini' });
+  const batch = [{ id: 5, timecode: '00:00:05,000 --> 00:00:06,000', text: 'Uncle Shen arrives at Zhuang Group.' }];
+  const block = engine._formatPreflightForChunk(
+    {
+      theme: 'A corporate family drama.',
+      terms: [{ source: 'Zhuang Group', target: 'Kumpulan Zhuang', note: 'company' }],
+      characters: [{ name: 'Shen', canonical_address: 'Pakcik Shen', role: 'mentor' }],
+      credits_and_titles: [{ source: 'Adapted from the novel', target: 'Diadaptasi daripada novel' }]
+    },
+    [],
+    batch,
+    []
+  );
+  assert.ok(block.includes('### Content Summary'), 'Pillar 1: Content Summary rendered');
+  assert.ok(block.includes('A corporate family drama.'), 'Pillar 1: theme text rendered');
+  assert.ok(block.includes('### Technical Glossary'), 'Pillar 2: Technical Glossary rendered');
+  assert.ok(block.includes('- Zhuang Group: Kumpulan Zhuang (company)'), 'Pillar 2: matched term rendered');
+  assert.ok(block.includes('### Character Hierarchy'), 'Pillar 3: Character Hierarchy rendered');
+  assert.ok(block.includes('- Shen → Pakcik Shen (mentor)'), 'Pillar 3: canonical address rendered');
+  assert.ok(block.includes('### Opening Credits / Titles'), 'Pillar 4: Opening Credits / Titles rendered');
+  assert.ok(block.includes('- Adapted from the novel: Diadaptasi daripada novel'), 'Pillar 4: credit translation rendered');
 });
 
 test('BetaRun7: cleanTranslatedText HTML tag preservation contract intact', () => {
