@@ -2480,38 +2480,46 @@ You MUST translate each numbered line 1:1. NEVER merge two source lines into one
     // — bukan lagi di dalam <input>.
     const sharedContextBlock = this._formatSharedContext(context, batchText);
 
-    // ── SUBFABER HYBRID V1.9.2 (Mandat Pelaksanaan 2026-09-26) ──
-    // Prompt Fasa 1 harfiah (faithfulness) diganti dengan HYBRID 1-Pass:
-    // roh Fasa 2 VideoLingo (expressiveness) + guardrail serpihan ayat
-    // (split sentences) + kontrak XML satu baris SRT AI Translator.
+    // ── PROMPT V2 "CRIME-PROOF" (Mandat Pembedahan B 2026-09-27) ──
+    // Versi B (Claude) diluluskan Project Owner — structural_rules dipetakan
+    // 1:1 kepada 4 jenayah Agent B (SLOT ISOLATION→MERGE, ZERO SHIFTING→SHIFT,
+    // ESCAPE HATCH→PHANTOM, SONG LYRICS→DROP) + few-shot split-sentence.
+    // Tampalan mandat: (1) sourceLabel dikembalikan dalam Task (B asal
+    // membuangnya); (2) "spoken" → "conversational" (arahan owner).
     // Anchor '<s id="${startId}">' kekal di penutup supaya Smart Preamble
     // Scrubber (v1.6.1) dalam parseXmlBatchResponse terus berfungsi tanpa
     // off-by-one.
     const promptBody = `## Role
-You are an expert Netflix subtitle translator and localization specialist, fluent in both ${sourceLabel || 'the source language'} and ${targetLabel}, as well as their respective cultures.
-Your expertise lies in accurately capturing the context and meaning of the original dialogue and rendering it into natural, fluent, and conversational ${targetLabel} as spoken by native speakers.
+You are an expert Netflix subtitle translator and localization specialist, fluent in both ${sourceLabel || 'the source language'} and ${targetLabel || 'the target language'}, as well as their respective cultures.
 
 ## Task
-Translate the provided ${sourceLabel || 'source'} subtitles into ${targetLabel} line by line, preserving the exact context, tone, and character dynamics.
+Translate the provided ${sourceLabel || 'source'} subtitles line by line into natural, conversational ${targetLabel}, the way a native speaker would say it — conveying the speaker's true meaning, tone, and intent rather than translating word-for-word. Keep established character names, titles, and context-specific terms consistent throughout.
 
-1. Translate each subtitle line into natural, spoken ${targetLabel} dialogue.
-2. Aim for contextual smoothness and natural phrasing that conforms to ${targetLabel} conversational habits, avoiding stiff or unnatural literal translations.
-3. Handle split sentences correctly: Dialogue frequently splits across consecutive lines due to speech timing. Translate ONLY the fragment present in each line without merging multiple lines together.
-4. PRESERVE all [br], <i>...</i>, speaker dashes (-), and ANY other inline markup in the exact same position and count as in the source.
+<structural_rules>
+1. SLOT ISOLATION: Dialogue frequently splits across consecutive lines due to speech timing. Translate ONLY the fragment present in each <s id="N">. NEVER merge, complete, or pull words from an adjacent line — including short fragments, question tags, negation particles, or single-word interjections. Leaving a slot grammatically incomplete is correct and required.
+2. ZERO SHIFTING: NEVER shift subsequent dialogue forward to fill a short or empty slot. Every input id must align with the exact same dialogue event in the output.
+3. ESCAPE HATCH: If content cannot be translated — foreign proper nouns, brand/entity names, creative work titles, corrupted text — copy the exact source text into that slot instead. If a slot contains only symbols, music notes, or numbers with no translatable words, copy it as-is.
+4. SONG LYRICS: Lyrics inside music notes (♪/♫) must always be translated, whether as a full song block or scattered background music.
+5. PRESERVE all [br], <i>...</i>, speaker dashes (-), and any other inline markup in the exact same position and count as in the source.
+</structural_rules>
+
+[EXAMPLE — split sentence and isolated question tag]
+Input:
+<s id="1">You are coming with us,</s>
+<s id="2">aren't you?</s>
+Correct output:
+<s id="1">Awak ikut kami,</s>
+<s id="2">kan?</s>
+Wrong (merged):
+<s id="1">Awak ikut kami, kan?</s>
+<s id="2">.</s>
 ${sharedContextBlock ? `\n${sharedContextBlock}\n` : ''}
-<translation_principles>
-1. Meaning over literal words: Accurately convey the true intent, emotion, and tone of the original dialogue rather than translating word-for-word.
-2. Natural spoken flow: Ensure the dialogue flows effortlessly and sounds authentic to native audiences, while fully respecting the narrative context.
-3. Strict line isolation: Each subtitle line is bound to strict video timestamps. Never merge, skip, or redistribute text between different lines.
-4. Professional terminology: Keep established character names, titles, and context-specific terms consistent throughout.
-</translation_principles>
-
 <input>
 ${batchText}
 </input>
 
 ## Output Format
-Reply with EXACTLY one <s id="N"> element per input subtitle, reusing the same ids, wrapped in a single <answer> block, and output nothing else. Strictly maintain 1-to-1 correspondence without merging, omitting, or splitting subtitles:
+Reply with EXACTLY one <s id="N"> element per input subtitle, reusing the same ids, in strict order, wrapped in a single <answer> block. No commentary, no markdown code blocks, no parenthetical notes, no reasoning or thinking tags. Output nothing before <answer> or after </answer>.
 
 <answer>
 <s id="${startId}">`;
