@@ -17,6 +17,11 @@
  *
  * Formula: VideoLingo get_summary_prompt (Otak/Persona) — diadaptasi untuk
  * kontrak SubFaber. Lihat plans/subfaber-technical-plan-backend.md.
+ *
+ * BETA RUN 7 (2026-09-27, Preflight Coherence Tune): medan 'theme' DIKUNCI
+ * kepada Bahasa Inggeris (elak 'framing interference' pada Agent A yang
+ * menerima sistem arahan Bahasa Inggeris) + Matriks Gelaran Watak
+ * (honorific consistency) diwajibkan dalam senarai 'terms'.
  */
 
 const log = require('../utils/logger');
@@ -84,8 +89,10 @@ You are a video translation expert and terminology consultant, specializing in $
 
 ## Task
 For the provided ${src} subtitle dialogue:
-1. Summarize the main topic in two sentences
-2. Extract professional terms, character names, and recurring entities with ${tgt} translations
+1. Summarize the main topic.
+   The 'theme' field MUST be written strictly in clear, precise English (2-3 sentences), summarizing the narrative arc, setting, and stakes.
+2. Extract professional terms, character names, and recurring entities with ${tgt} translations.
+   In the 'terms' list, you MUST include and lock the official ${tgt} titles/honorifics for recurring characters (e.g., ensure consistent mapping for family vs professional titles like Ms. / Mr. / Uncle / Aunt — one canonical title per character, never alternate).
 3. Provide a brief explanation for each term (max 15 terms)
 
 ## INPUT
@@ -95,7 +102,7 @@ ${rawText}
 
 ## Output in only JSON format and no other text
 {
-  "theme": "Two-sentence summary of the content",
+  "theme": "Summary of the content — strictly in English (2-3 sentences: narrative arc, setting, stakes)",
   "terms": [
     {
       "src": "Original term",

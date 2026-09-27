@@ -26,7 +26,13 @@ const { handleCaughtError } = require('../utils/errorClassifier');
 const { normalizeTargetLanguageForPrompt } = require('./utils/normalizeTargetLanguageForPrompt');
 const { recordKeyError: recordKeyErrorRedis, isKeyCoolingDown: isKeyCoolingDownRedis, getNextRotationIndex, resetKeyHealth } = require('../utils/sharedCache');
 const { executeParallelTranslation } = require('../utils/parallelTranslation');
-// Rate-limiting throttle helper: Client-side pacing delay
+// Rate-limiting throttle helper: Client-side pacing delay.
+// BETA RUN 7 (2026-09-27, Zero Pacing): PACING_DELAY_MS dimansuhkan (0ms).
+// Latensi semakan kelompok GLM-5.3 (11s-16s) sudah bertindak sebagai penimbal
+// semula jadi antara dispatch — jeda tidur buatan 5.0s hanya menambah wall-clock
+// tanpa perlindungan rate-limit tambahan pada Gemini. Guard `<= 0` kekal
+// supaya pemalar ini boleh diaktifkan semula tanpa perubahan struktur.
+const PACING_DELAY_MS = 0;
 const sleep = (ms) => new Promise(resolve => setTimeout(resolve, ms));
 
 // Extract normalized tokens from a language label/code (split on common separators)
@@ -881,10 +887,11 @@ class TranslationEngine {
             log.info(() => `[TranslationEngine] Progress: ${progress}% (${translatedEntries.length}/${entries.length} entries, batch ${batchIndex + 1}/${batches.length})`);
           }
 
-          // Inter-batch pacing: Enforce a 5.0s cooldown delay to mitigate upstream RPM burst limits
-          if (batchIndex < batches.length - 1) {
-            log.debug(() => `[⏳ RATE LIMIT] Applying 5.0s pacing delay before dispatching next batch...`);
-            await sleep(5000);
+          // Inter-batch pacing: zero-idle (Beta Run 7) — GLM-5.3 inspection
+          // latency (11s-16s) acts as the natural buffer between dispatches.
+          if (PACING_DELAY_MS > 0 && batchIndex < batches.length - 1) {
+            log.debug(() => `[⏳ RATE LIMIT] Applying ${PACING_DELAY_MS}ms pacing delay before dispatching next batch...`);
+            await sleep(PACING_DELAY_MS);
           }
 
         } catch (error) {
@@ -1055,10 +1062,11 @@ class TranslationEngine {
         }
       }
 
-      // Inter-chunk pacing: Enforce a 5.0s cooldown delay between auto-chunked requests
-      if (batchIndex < chunks.length - 1) {
-        log.debug(() => `[⏳ RATE LIMIT] Applying 5.0s pacing delay before processing next chunk...`);
-        await sleep(5000);
+      // Inter-chunk pacing: zero-idle (Beta Run 7) — natural latency replaces
+      // the artificial 5.0s sleep between auto-chunked requests.
+      if (PACING_DELAY_MS > 0 && batchIndex < chunks.length - 1) {
+        log.debug(() => `[⏳ RATE LIMIT] Applying ${PACING_DELAY_MS}ms pacing delay before processing next chunk...`);
+        await sleep(PACING_DELAY_MS);
       }
 
     } // End of chunk processing loop
