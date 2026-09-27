@@ -1228,6 +1228,13 @@ class TranslationEngine {
    * dan Opening Credits / Titles (credits_and_titles) disuntik penuh (bukan
    * bermusim — watak utama dan kredit permulaan relevan pada SETIAP batch).
    *
+   * HIERARCHY OF TRUTH (JARING KESELAMATAN AGENT A — Mandat Beta Run 9,
+   * Penyatuuan DeepSeek Stack & Hierarki Kebenaran 2026-09-27): setiap blok
+   * konteks membawa peraturan keselamatan tegar — dialog sumber dalam
+   * kelompok aktif ialah ground truth MUTLAK dan sentiasa mengatasi
+   * andaian Pre-Flight. Ini menghalang 'Upstream Error Propagation'
+   * (racun tekaan Fasa 0 menular ke semua kelompok).
+   *
    * SIFAR PERUBAHAN KOD RAPUH: tiada hardcoding teks kredit di sini —
    * terjemahan kredit datang sebagai data Fasa 0 (credits_and_titles).
    *
@@ -1235,11 +1242,16 @@ class TranslationEngine {
    * @param {Array} previousContent - 3 baris sebelum batch (source-only)
    * @param {Array} batch - Batch aktif
    * @param {Array} subsequentContent - 2 baris selepas batch (source-only)
-   * @returns {string} Blok "Content Summary [+ Technical Glossary][+ Character Hierarchy][+ Opening Credits / Titles]"
+   * @returns {string} Blok "Content Summary + HIERARCHY OF TRUTH [+ Technical Glossary][+ Character Hierarchy][+ Opening Credits / Titles]"
    */
   _formatPreflightForChunk(preflight, previousContent, batch, subsequentContent) {
     if (!preflight || !preflight.theme) return '';
     let block = `### Content Summary\n${preflight.theme}`;
+
+    // ── HIERARCHY OF TRUTH (Agent A Safety Net — Mandat Beta Run 9) ──
+    // Suntikan VERBATIM peraturan hierarki kebenaran: dialog sumber
+    // mengatasi apa-apa gelaran/jantina/andaian Pre-Flight yang bertentangan.
+    block += `\n\n### HIERARCHY OF TRUTH\nHIERARCHY OF TRUTH: Pre-flight context provides macro-guidance. However, the SOURCE DIALOGUE in the current batch is the absolute ground truth. If the source dialogue explicitly contradicts a pre-flight title, gender, or assumption, ALWAYS FOLLOW THE SOURCE DIALOGUE.`;
 
     const resolvePillarText = (item, ...keys) => {
       if (!item || typeof item !== 'object') return '';

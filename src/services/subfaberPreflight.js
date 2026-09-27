@@ -1,11 +1,12 @@
 /**
- * SubFaber Pre-Flight Semantic Pass (Fasa 0) — SKEMA 4-TIANG (BETA RUN 8)
+ * SubFaber Pre-Flight Semantic Pass (Fasa 0) — SKEMA 4-TIANG (BETA RUN 9)
  *
  * Satu panggilan AI ringkas per fail SEBELUM batch translation bermula:
  *   1. Ekstrak teks mentah keseluruhan fail (TANPA timecode — timeline
  *      physically cannot be touched).
- *   2. AI jana kontrak JSON 4-TIANG (Mandat Enjin Pemeriksa DeepSeek &
- *      Pre-Flight 4-Tiang, Beta Run 8 2026-09-27 — dilaksanakan oleh Kimi K3):
+ *   2. AI jana kontrak JSON 4-TIANG (Mandat Penyatuuan DeepSeek Stack &
+ *      Hierarki Kebenaran, Beta Run 9 2026-09-27 — dilaksanakan oleh
+ *      deepseek-v4-pro):
  *        1. "theme"             — Ringkasan naratif makro (Bahasa Inggeris, 2-3 ayat).
  *        2. "terms"             — Istilah teknikal, lokasi, entiti industri [{source,target}].
  *        3. "characters"        — Profil watak utama berulang [{name, canonical_address, role}].
@@ -20,7 +21,13 @@
  *     panggilan Fasa 0 kekal murah (~12k token input max).
  *   - SIFAR PERUBAHAN KOD RAPUH (Mandat Beta Run 8): tiada hardcoding teks
  *     kredit dalam peraturan batch — pengesanan kredit 100% delegasi kepada
- *     Kimi K3 melalui arahan Fasa 0; Agent A menerima hanya hasil JSON terurai.
+ *     enjin Fasa 0 melalui arahan Pre-Flight; Agent A menerima hanya hasil
+ *     JSON terurai.
+ *   - DISIPLIN BUKTI (Mandat BETA RUN 9 — Anti 'Upstream Error Propagation'):
+ *     Pre-Flight DILARANG meneka maklumat watak/gelaran tanpa bukti teks
+ *     eksplisit (FACT VS INFERENCE DISCIPLINE). Racun tekaan tidak menular
+ *     ke Agent A kerana Agent A diikat oleh HIERARCHY OF TRUTH (dialog
+ *     sumber mengatasi andaian Pre-Flight).
  *
  * Formula: VideoLingo get_summary_prompt (Otak/Persona) — diadaptasi untuk
  * kontrak SubFaber. Lihat plans/subfaber-technical-plan-backend.md.
@@ -105,6 +112,11 @@ function buildPreflightPrompt(rawText, targetLanguage, sourceLanguage) {
   return `## Role
 You are a video translation expert and terminology consultant, specializing in ${src} comprehension and ${tgt} expression optimization.
 
+## FACT VS INFERENCE DISCIPLINE (MANDATORY)
+FACT VS INFERENCE DISCIPLINE: Only lock relationships or canonical_address in 'characters' if there is EXPLICIT, UNAMBIGUOUS textual evidence in the source. If gender, social hierarchy, or formal title is unclear, DO NOT GUESS; mark canonical_address as null or omit the character.
+- Every name, gender, title, and relationship you output must be supported by explicit dialogue evidence (how characters address each other in the text).
+- Prefer omission over hallucination: a shorter 'characters' list with only evidenced entries is always safer than an invented one.
+
 ## Task
 For the provided ${src} subtitle dialogue, build the 4-pillar pre-flight context:
 1. Summarize the main topic.
@@ -115,7 +127,7 @@ For the provided ${src} subtitle dialogue, build the 4-pillar pre-flight context
 3. Build profiles for the main recurring characters.
    Each 'characters' entry is an object with exactly three keys:
    - "name": the character's name exactly as it appears in the dialogue.
-   - "canonical_address": the ONE locked ${tgt} address/title used for this character every single time (one canonical address per character, never alternate).
+   - "canonical_address": the ONE locked ${tgt} address/title used for this character every single time (one canonical address per character, never alternate). Lock ONLY with explicit, unambiguous textual evidence per the FACT VS INFERENCE DISCIPLINE; if gender, social hierarchy, or formal title is unclear, set null instead of guessing.
    - "role": a short description of their narrative role (e.g. female lead, antagonist, mentor, butler).
 4. Scan the EARLIEST lines of the file (lines 1-5) for NON-DIALOGUE opening text.
    If the file opens with production credits (e.g. "Adapted from..."), the work's title, or a studio name card, provide the official ${tgt} media/publishing translation for each line (e.g. "Adapted from" -> "Diadaptasi daripada").
@@ -134,7 +146,7 @@ ${rawText}
     { "source": "Original term", "target": "${tgt} translation or original" }
   ],
   "characters": [
-    { "name": "Character name", "canonical_address": "Locked ${tgt} address/title", "role": "Narrative role" }
+    { "name": "Character name", "canonical_address": "Locked ${tgt} address/title, or null if unclear", "role": "Narrative role" }
   ],
   "credits_and_titles": [
     { "source": "Opening credit/title text", "target": "Official ${tgt} translation" }

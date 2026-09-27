@@ -99,6 +99,33 @@ test('SubFaberPreflight: sampling hanya aktif melebihi siling 250k (keselamatan 
   assert.equal(sampled[0].id, entries[0].id, 'First entry always kept');
 });
 
+// --- BETA RUN 9: Disiplin Bukti (FACT VS INFERENCE) ---
+test('SubFaberPreflight: prompt enforces FACT VS INFERENCE DISCIPLINE (no guessing without explicit evidence)', () => {
+  const prompt = buildPreflightPrompt('Dialogue.', 'Malay', 'English');
+  // Mandat Beta Run 9 (Anti Upstream Error Propagation): larangan meneka
+  // wajar hadir verbatim dalam arahan sistem Fasa 0.
+  assert.ok(
+    prompt.includes('FACT VS INFERENCE DISCIPLINE'),
+    'Prompt must carry the FACT VS INFERENCE DISCIPLINE header'
+  );
+  assert.ok(
+    prompt.includes('Only lock relationships or canonical_address'),
+    'Prompt must restrict relationship/canonical_address locking to explicit evidence'
+  );
+  assert.ok(
+    prompt.includes('EXPLICIT, UNAMBIGUOUS textual evidence'),
+    'Prompt must require explicit, unambiguous textual evidence'
+  );
+  assert.ok(
+    prompt.includes('DO NOT GUESS'),
+    'Prompt must forbid guessing when gender/hierarchy/title is unclear'
+  );
+  assert.ok(
+    prompt.includes('mark canonical_address as null or omit the character'),
+    'Prompt must offer the null/omit escape hatch instead of hallucination'
+  );
+});
+
 // --- buildPreflightPrompt (SKEMA 4-TIANG) ---
 test('SubFaberPreflight: prompt contains VideoLingo persona + <text> XML wrapper + 4-pillar JSON contract', () => {
   const prompt = buildPreflightPrompt('Some dialogue.', 'Malay', 'English');
@@ -114,7 +141,7 @@ test('SubFaberPreflight: prompt contains VideoLingo persona + <text> XML wrapper
   assert.ok(prompt.includes('English'), 'Must include source language');
 });
 
-test('SubFaberPreflight: 4-pillar terms/credits use {source, target} keys and characters use canonical_address', () => {
+test('SubFaberPreflight: 4-pillar schema stays clean (theme / terms / characters / credits_and_titles) — BETA RUN 9', () => {
   const prompt = buildPreflightPrompt('Dialogue.', 'Malay', 'English');
   assert.ok(prompt.includes('"source"'), 'terms/credits entries must use "source" key');
   assert.ok(prompt.includes('"target"'), 'terms/credits entries must use "target" key');
@@ -122,7 +149,7 @@ test('SubFaberPreflight: 4-pillar terms/credits use {source, target} keys and ch
   assert.ok(prompt.includes('"role"'), 'characters entries must use "role" key');
 });
 
-test('SubFaberPreflight: credits detection directive — Kimi K3 inspects lines 1-5 for non-dialogue openings', () => {
+test('SubFaberPreflight: credits detection directive — Phase 0 engine inspects lines 1-5 for non-dialogue openings', () => {
   const prompt = buildPreflightPrompt('Dialogue.', 'Malay', 'English');
   assert.ok(
     prompt.includes('lines 1-5'),

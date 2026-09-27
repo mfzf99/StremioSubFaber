@@ -5454,9 +5454,9 @@ if (
     effectiveModel = model || getEffectiveGeminiModel(config);
     log.debug(() => `[Translation] Using provider=${providerName} model=${effectiveModel}`);
 
-    // DUAL-AI (BETA RUN 8 TRINITY — MANDAT ENJIN PEMERIKSA DEEPSEEK 2026-09-27):
-    // Bina Agent B Trinity Dual-Agent (kimi-k3 Fasa 0 + deepseek-v4-pro
-    // Pemeriksa Utama + deepseek-v4.1-flash Fallback Pemeriksa) apabila
+    // DUAL-AI (BETA RUN 9 TRINITY — MANDAT PENYATUAN DEEPSEEK STACK 2026-09-27):
+    // Bina Agent B Trinity Dual-Agent (deepseek-v4-pro Fasa 0 & Pemeriksa
+    // Utama + deepseek-v4.1-flash Fallback Universal) apabila
     // config agentB sah + lengkap. Gagal konfigurasi → null →
     // enjin jalan 100% Gemini (backwards compatible penuh).
     let agentBInspector = null;
@@ -5465,12 +5465,12 @@ if (
         agentBInspector = new AgentBInspector({
           apiKey: config.agentB.apiKey,
           baseUrl: config.agentB.baseUrl,
-          // TRINITY (Mandat Beta Run 8 — Enjin Pemeriksa DeepSeek 2026-09-27):
-          //   Fasa 0     : kimi-k3             (Pre-Flight Makro, timeout 180s)
+          // TRINITY (Mandat Beta Run 9 — Penyatuuan DeepSeek Stack 2026-09-27):
+          //   Fasa 0     : deepseek-v4-pro     (Pre-Flight Makro, timeout 60s)
           //   Fasa 1     : deepseek-v4-pro     (Pemeriksa Utama, timeout 45s)
           //   Fallback   : deepseek-v4.1-flash (mewarisi had masa fasa)
           // Muatan universal: {model, temperature: 0.0, messages}
-          preflightModel: config.agentB.preflightModel || 'kimi-k3',
+          preflightModel: config.agentB.preflightModel || 'deepseek-v4-pro',
           model: config.agentB.model || 'deepseek-v4-pro',
           fallbackModel: config.agentB.fallbackModel || 'deepseek-v4.1-flash',
           ssrfLookup: createSsrfSafeLookup()
