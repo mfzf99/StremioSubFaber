@@ -5,20 +5,20 @@
  * Seni Bina 2-Agent (UNIVERSAL PAYLOAD 2026-09-26 — Trinity Dual-Agent,
  * kredensial rootsys.cloud: 1B token quota / 1M context window):
  *   AGENT A (Worker): Gemini 3 Flash — penterjemahan kelompok 50 baris.
- *   AGENT B (Inspector): Trinity BETA RUN 9 — FULL DEEPSEEK FRONTIER STACK
- *     (Mandat Penyatuuan DeepSeek Stack & Hierarki Kebenaran 2026-09-27,
+ *   AGENT B (Inspector): Trinity BETA RUN 10 — FULL DEEPSEEK FRONTIER STACK
+ *     (BEAST MODE — Mandat Beast Mode DeepSeek Frontier 2026-09-27,
  *     OpenAI-compatible):
- *     - PRE-FLIGHT (Fasa 0)   : deepseek-v4-pro     (Frontier Inspector), 60s.
- *     - PEMERIKSA UTAMA       : deepseek-v4-pro     (Frontier Inspector), 45s.
+ *     - PRE-FLIGHT (Fasa 0)   : deepseek-v4-pro     (Frontier Inspector), 150s.
+ *     - PEMERIKSA UTAMA       : deepseek-v4-pro     (Frontier Inspector), 60s.
  *     - FALLBACK UNIVERSAL    : deepseek-v4.1-flash (mewarisi had masa fasa berkaitan).
  *     Bukti empirikal terminal: had hulu Caddy rootsys.cloud ialah tepat 300s
  *     (Kimi K3 mencetus 502 akibat letupan token penaakulan); deepseek-v4-pro
  *     menyelesaikan analisis Pre-Flight 4-tiang dalam 3.45 saat dengan JSON sah.
- *     Muatan universal sejagat (Mandat Seni Bina Universal Payload
- *     2026-09-26): ketiga-tiga enjin berkongsi SATU format muatan —
- *     { model, temperature: 0.0, messages } — tiada max_tokens /
- *     max_completion_tokens / top_p / presence_penalty (SIFAR SEKATAN
- *     TOKEN; persampelan tamak argmax; finish_reason="stop" dijamin).
+ *     Muatan BEAST sejagat (BETA RUN 10 — Mandat Beast Mode DeepSeek
+ *     Frontier 2026-09-27): enjin DeepSeek membawa thinking:{type:"enabled"}
+ *     + reasoning_effort:"max" + max_tokens:65536 + top_p:0.95 +
+ *     response_format json_object — sekatan pemikiran dihapuskan sepenuhnya;
+ *     temperature digugurkan (tiada kesan dalam thinking mode, rasmi).
  *     Tugasan 1: Mengambil alih Fasa 0 (Pre-Flight Semantic Pass) sepenuhnya
  *                daripada Gemini — jimat kuota TPM/RPM Gemini.
  *     Tugasan 2: Askar Pertahanan Semantik — menyemak setiap kelompok hasil
@@ -36,8 +36,8 @@
  *   - CIRCUIT BREAKER: 3 kegagalan berturut-turut dalam satu sesi fail →
  *     Agent B dinyahaktifkan senyap bagi baki fail tersebut.
  *   - UNTHROTTLED (Mandat Pembebasan 2026-09-26): kuota Agent B infiniti
- *     (skala 1B token) — timeout berfasa: Fasa 0 60s (baca episod penuh)
- *     / semakan batch 45s. Tiada micro-timeout yang membekukan nafas Agent B.
+ *     (skala 1B token) — timeout berfasa: Fasa 0 150s (baca episod penuh)
+ *     / semakan batch 60s. Tiada micro-timeout yang membekukan nafas Agent B.
  *   - ZERO-SWALLOWED-ERROR + TRINITY FAILOVER (Mandat Observabiliti +
  *     Universal Payload 2026-09-26): tiada ralat ditelan senyap — setiap
  *     kegagalan mencetak status + punca teknikal + raw snippet 500 aksara
@@ -53,27 +53,38 @@ const OpenAICompatibleProvider = require('./providers/openaiCompatible');
 const { runPreflightSemanticPass, stripReasoningTags } = require('./subfaberPreflight');
 const log = require('../utils/logger');
 
-// ── Konfigurasi tetap Agent B (UNIVERSAL PAYLOAD 2026-09-26 + BETA RUN 9) ──
+// ── Konfigurasi tetap Agent B (UNIVERSAL PAYLOAD 2026-09-26 + BETA RUN 10
+//    BEAST MODE — Mandat Beast Mode DeepSeek Frontier 2026-09-27) ──
 // TRINITY DUAL-AGENT — FULL DEEPSEEK FRONTIER STACK (kredensial rootsys.cloud,
 // 1B token / 1M context; Mandat Penyatuuan DeepSeek Stack 2026-09-27):
-//   Fasa 0 (Pre-Flight Makro) : deepseek-v4-pro     — Timeout 60,000ms / 60s
-//   Fasa 1 (Pemeriksa Utama)  : deepseek-v4-pro     — Timeout 45,000ms / 45s
+//   Fasa 0 (Pre-Flight Makro) : deepseek-v4-pro     — Timeout 150,000ms / 150s
+//   Fasa 1 (Pemeriksa Utama)  : deepseek-v4-pro     — Timeout  60,000ms / 60s
 //   Fallback Universal        : deepseek-v4.1-flash — Timeout dinamik
 //                                 (mewarisi had masa fasa berkaitan)
 const AGENT_B_DEFAULT_MODEL = 'deepseek-v4-pro';      // Fasa 1: Pemeriksa Utama
-const AGENT_B_PREFLIGHT_MODEL = 'deepseek-v4-pro';    // Fasa 0: Pre-Flight Makro (BETA RUN 9)
+const AGENT_B_PREFLIGHT_MODEL = 'deepseek-v4-pro';    // Fasa 0: Pre-Flight Makro (BETA RUN 10)
 const AGENT_B_FALLBACK_MODEL = 'deepseek-v4.1-flash'; // Fallback Universal (Fasa 0 + Fasa 1)
-// SIFAR SEKATAN TOKEN (Mandat Seni Bina Universal Payload 2026-09-26):
-// Muatan Agent B TIDAK menghantar max_tokens/max_completion_tokens —
-// ujian empirikal terminal mengesahkan ketiadaan max_tokens menjamin
-// respons tamat dengan finish_reason="stop" tanpa pemotongan teks.
-// Siling token lama (16384 kimi / 4096 semakan) dimansuhkan sepenuhnya.
-// HEADROOM KESELAMATAN (Mandat BETA RUN 9 2026-09-27):
-// Fasa 0 60s — ujian empirikal terminal: deepseek-v4-pro menyelesaikan
-// analisis 4-tiang penuh dalam 3.45s (JSON sah); had hulu Caddy = 300s.
-// Semakan 45s — headroom besar ke atas latensi purata DeepSeek (~2.1s).
-const AGENT_B_PREFLIGHT_TIMEOUT_MS = 60000;
-const AGENT_B_INSPECTION_TIMEOUT_MS = 45000;
+// BEAST MODE (BETA RUN 10): muatan DeepSeek membuka kuasa mutlak penaakulan
+// (ground truth rasmi api-docs.deepseek.com):
+//   thinking:{type:"enabled"}   — suis utama pembuka CoT;
+//   reasoning_effort:"max"      — parameter rasmi peringkat atas (top-level);
+//   max_tokens:65536            — ruang output CoT + JSON tanpa potongan teks;
+//   top_p:0.95                  — julat pensampelan aktif rasmi (0.95–1.0);
+//   response_format json_object — JSON sah dijamin;
+//   temperature DIGUGURKAN      — "has no effect in thinking mode" (rasmi).
+// Tiada parameter terlarang (presence_penalty deprecated dsb.) dihantar —
+// elak HTTP 400.
+// HEADROOM KESELAMATAN (Mandat BETA RUN 10 2026-09-27):
+// Fasa 0 150s + Semakan 60s — kedua-duanya di bawah siling 300s Caddy
+// rootsys.cloud; latensi empirikal DeepSeek ~3.45s (Fasa 0) / ~2.1s (Fasa 1).
+// Had masa boleh ditindih melalui env AGENT_B_PREFLIGHT_TIMEOUT_MS /
+// AGENT_B_INSPECTION_TIMEOUT_MS (integer ms positif).
+const parseAgentBTimeout = (raw, fallbackMs) => {
+  const parsed = parseInt(raw, 10);
+  return Number.isFinite(parsed) && parsed > 0 ? parsed : fallbackMs;
+};
+const AGENT_B_PREFLIGHT_TIMEOUT_MS = parseAgentBTimeout(process.env.AGENT_B_PREFLIGHT_TIMEOUT_MS, 150000);
+const AGENT_B_INSPECTION_TIMEOUT_MS = parseAgentBTimeout(process.env.AGENT_B_INSPECTION_TIMEOUT_MS, 60000);
 const AGENT_B_CIRCUIT_THRESHOLD = 3;      // 3 kegagalan berturut → silent mode
 const AGENT_B_MAX_LINE_CHARS = 200;       // Cap panjang baris dalam payload padat
 const AGENT_B_MAX_CRIMES = 5;             // >5 jenayah → tetap sahaja ditolong
@@ -228,15 +239,16 @@ function parseInspectorResponse(responseText) {
  * auth headers, retry loop). Override wajib:
  *   1. buildUserPrompt() → prompt inspector dihantar verbatim sebagai user
  *      message (implementasi asas membuang customPrompt bukan-terjemahan).
- *   2. translationTimeout → 45s (semakan batch) / 60s (Fasa 0, dinaikkan
+ *   2. translationTimeout → 60s (semakan batch) / 150s (Fasa 0, dinaikkan
  *      sementara oleh runPreflightPass — pembina asas clamp >= 5000ms).
  *
- * MUATAN UNIVERSAL (Mandat Seni Bina Universal Payload §A): instance
- * dibina dengan universalPayload=true — buildChatRequest membina
- * { model, temperature: 0.0, messages } sahaja bagi SEMUA enjin trinity
- * (kimi-k3 / deepseek-v4-pro / deepseek-v4.1-flash). Siling token lama
- * (getCappedMaxOutputTokens 4096/16384) dimansuhkan — muatan tidak
- * menghantar parameter token/sampling langsung.
+ * MUATAN BEAST (Mandat Seni Bina Universal Payload §A + BETA RUN 10):
+ * instance dibina dengan universalPayload=true — buildChatRequest membina
+ * muatan BEAST bagi enjin DeepSeek { model, thinking:{type:"enabled"},
+ * reasoning_effort:"max", max_tokens:65536, top_p:0.95,
+ * response_format:{type:"json_object"}, messages } (temperature digugurkan
+ * — tiada kesan dalam thinking mode). Enjin warisan bukan-DeepSeek kekal
+ * menerima { model, temperature: 0.0, messages }.
  *
  * DUAL-MODEL FAILOVER (Mandat Observabiliti §4): hierarki model disimpan
  * dalam this.modelHierarchy (utama + sandaran deepseek-v4.1-flash). Setiap
@@ -246,23 +258,32 @@ function parseInspectorResponse(responseText) {
  */
 class AgentBInspector extends OpenAICompatibleProvider {
   constructor(options = {}) {
+    // BEAST MODE BETA RUN 10: had masa berfasa boleh ditindih melalui
+    // options (config.agentB.preflightTimeoutMs / inspectionTimeoutMs —
+    // env AGENT_B_*_TIMEOUT_MS dinormalisasi oleh config.js). Lalai mandat:
+    // Fasa 1 60s / Fasa 0 150s.
+    const inspectionTimeoutMs = parseAgentBTimeout(options.inspectionTimeoutMs, AGENT_B_INSPECTION_TIMEOUT_MS);
+    const preflightTimeoutMs = parseAgentBTimeout(options.preflightTimeoutMs, AGENT_B_PREFLIGHT_TIMEOUT_MS);
     super({
       apiKey: options.apiKey || '',
       model: options.inspectionModel || options.model || AGENT_B_DEFAULT_MODEL,
       baseUrl: options.baseUrl || 'https://api.openai.com/v1',
       providerName: 'agentb',
-      universalPayload: true,           // Muatan universal sejagat (Mandat §A)
-      translationTimeout: AGENT_B_INSPECTION_TIMEOUT_MS / 1000,
+      universalPayload: true,           // Muatan BEAST sejagat (Mandat §A + BETA RUN 10)
+      translationTimeout: inspectionTimeoutMs / 1000,
       maxRetries: 0,                    // Fail fast — satu percubaan sahaja per model
       enableJsonOutput: false,          // Parse JSON manual (kompatibilitas maksimum endpoint)
       ssrfLookup: options.ssrfLookup || null
     });
 
+    this.inspectionTimeoutMs = inspectionTimeoutMs;
+    this.preflightTimeoutMs = preflightTimeoutMs;
+
     // Pembina asas clamp translationTimeout kepada >= 5000ms — enforce semula
-    // had mandate: 45s bagi semakan batch (lalai instance); Fasa 0 dinaikkan
-    // sementara kepada 60s oleh runPreflightPass(). Sandaran (deepseek)
+    // had mandate: 60s bagi semakan batch (lalai instance); Fasa 0 dinaikkan
+    // sementara kepada 150s oleh runPreflightPass(). Sandaran (deepseek)
     // mewarisi had masa yang sama — failover berkongsi headroom ini.
-    this.translationTimeout = AGENT_B_INSPECTION_TIMEOUT_MS;
+    this.translationTimeout = inspectionTimeoutMs;
 
     // ── TRINITY DUAL-AGENT (UNIVERSAL PAYLOAD 2026-09-26 + BETA RUN 9) ──
     // Dua hierarki berasingan bagi dua fasa:
@@ -420,15 +441,16 @@ class AgentBInspector extends OpenAICompatibleProvider {
    */
   async runPreflightPass(entries, targetLanguage, sourceLanguage, options = {}) {
     // Fasa 0 membaca teks episod penuh (hingga 250k aksara) dan menjana
-    // analisis tema — naikkan had masa axios kepada 60s untuk panggilan
-    // ini sahaja, kemudian pulihkan 45s (fasa pemeriksaan batch). Fallback
-    // pemeriksa deepseek-v4.1-flash mewarisi had masa fasa yang sama
-    // (timeout dinamik) — failover berkongsi headroom ini.
+    // analisis tema — naikkan had masa axios kepada 150s untuk panggilan
+    // ini sahaja (BEAST MODE BETA RUN 10 — di bawah siling 300s Caddy),
+    // kemudian pulihkan 60s (fasa pemeriksaan batch). Fallback pemeriksa
+    // deepseek-v4.1-flash mewarisi had masa fasa yang sama (timeout
+    // dinamik) — failover berkongsi headroom ini.
     // SELAMAT dari race: preflight di-await sepenuhnya oleh enjin sebelum
     // mana-mana panggilan batch bermula; fasa tidak bertindih.
     const previousTimeout = this.translationTimeout;
     const previousModel = this.model;
-    this.translationTimeout = AGENT_B_PREFLIGHT_TIMEOUT_MS; // 60s headroom (BETA RUN 9)
+    this.translationTimeout = this.preflightTimeoutMs; // 150s headroom (BETA RUN 10)
 
     // TRINITY FAILOVER (Universal Payload 2026-09-26 §2B): Fasa 0 dihalakan
     // ke preflightHierarchy [deepseek-v4-pro → deepseek-v4.1-flash]. Setiap model
@@ -514,7 +536,7 @@ class AgentBInspector extends OpenAICompatibleProvider {
         async () => {
           const startedAt = Date.now();
           // Payload di-bake ke dalam customPrompt (buildUserPrompt override
-          // menghantarnya verbatim). maxRetries 0 per model + timeout 45s.
+          // menghantarnya verbatim). maxRetries 0 per model + timeout 60s.
           const responseText = await this.translateSubtitle(payload.prompt, 'en', 'en', payload.prompt);
           const latency = Date.now() - startedAt;
           // Mandat §3A: bersihkan tag penaakulan sebelum parse.

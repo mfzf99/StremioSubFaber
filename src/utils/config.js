@@ -573,18 +573,24 @@ function normalizeConfig(config) {
   // Semantic Inspector & Pre-Flight Offloader (endpoint OpenAI-compatible).
   // Struktur additive — tiada field sedia ada disentuh.
   // env fallback: AGENT_B_BASE_URL / AGENT_B_API_KEY / AGENT_B_MODEL /
-  // AGENT_B_PREFLIGHT_MODEL / AGENT_B_FALLBACK_MODEL.
+  // AGENT_B_PREFLIGHT_MODEL / AGENT_B_FALLBACK_MODEL /
+  // AGENT_B_PREFLIGHT_TIMEOUT_MS / AGENT_B_INSPECTION_TIMEOUT_MS.
   // ── UNIVERSAL PAYLOAD (MANDAT SENI BINA UNIVERSAL PAYLOAD 2026-09-26) ──
-  // ── BETA RUN 9 TRINITY (MANDAT PENYATUAN DEEPSEEK STACK 2026-09-27) ──
+  // ── BETA RUN 10 BEAST MODE (MANDAT BEAST MODE DEEPSEEK FRONTIER
+  //    2026-09-27) ──
   // Kredensial rootsys.cloud (1B token quota / 1M context window):
-  //   Fasa 0 (Pre-Flight Makro)  : deepseek-v4-pro     (Timeout 60,000ms / 60s)
-  //   Fasa 1 (Pemeriksa Utama)   : deepseek-v4-pro     (Timeout 45,000ms / 45s)
+  //   Fasa 0 (Pre-Flight Makro)  : deepseek-v4-pro     (Timeout 150,000ms / 150s)
+  //   Fasa 1 (Pemeriksa Utama)   : deepseek-v4-pro     (Timeout  60,000ms / 60s)
   //   Fallback Universal         : deepseek-v4.1-flash (mewarisi had masa fasa)
-  // Bukti empirikal terminal: had hulu Caddy rootsys.cloud = 300s (Kimi K3
-  // mencetus 502 akibat letupan token penaakulan); deepseek-v4-pro
-  // menyelesaikan Pre-Flight 4-tiang dalam 3.45 saat dengan JSON sah.
-  // Muatan universal: {model, temperature: 0.0, messages} — tiada
-  // max_tokens/max_completion_tokens/top_p/presence_penalty.
+  // Had masa di bawah siling 300s Caddy rootsys.cloud. Muatan BEAST
+  // (thinking:{type:"enabled"} + reasoning_effort:"max" + max_tokens:65536 +
+  // top_p:0.95 + response_format json_object; temperature digugurkan —
+  // "has no effect in thinking mode") dibina dalam
+  // OpenAICompatibleProvider.buildChatRequest (universalPayload=true).
+  const normalizeAgentBTimeoutMs = (raw, fallbackMs) => {
+    const parsed = parseInt(raw, 10);
+    return Number.isFinite(parsed) && parsed > 0 ? parsed : fallbackMs;
+  };
   mergedConfig.agentB = {
     enabled: (mergedConfig.agentB?.enabled === true
       || (!!process.env.AGENT_B_API_KEY && !!process.env.AGENT_B_BASE_URL)),
@@ -592,7 +598,15 @@ function normalizeConfig(config) {
     apiKey: String(mergedConfig.agentB?.apiKey || process.env.AGENT_B_API_KEY || '').trim(),
     model: String(mergedConfig.agentB?.model || mergedConfig.agentB?.inspectionModel || process.env.AGENT_B_MODEL || 'deepseek-v4-pro').trim(),
     preflightModel: String(mergedConfig.agentB?.preflightModel || process.env.AGENT_B_PREFLIGHT_MODEL || 'deepseek-v4-pro').trim(),
-    fallbackModel: String(mergedConfig.agentB?.fallbackModel || process.env.AGENT_B_FALLBACK_MODEL || 'deepseek-v4.1-flash').trim()
+    fallbackModel: String(mergedConfig.agentB?.fallbackModel || process.env.AGENT_B_FALLBACK_MODEL || 'deepseek-v4.1-flash').trim(),
+    preflightTimeoutMs: normalizeAgentBTimeoutMs(
+      mergedConfig.agentB?.preflightTimeoutMs ?? process.env.AGENT_B_PREFLIGHT_TIMEOUT_MS,
+      150000
+    ),
+    inspectionTimeoutMs: normalizeAgentBTimeoutMs(
+      mergedConfig.agentB?.inspectionTimeoutMs ?? process.env.AGENT_B_INSPECTION_TIMEOUT_MS,
+      60000
+    )
   };
   // Hygiene: inspectionModel adalah alias warisan bagi 'model' (Semakan) —
   // dilucutkan daripada struktur tersimpan selepas migrasi.

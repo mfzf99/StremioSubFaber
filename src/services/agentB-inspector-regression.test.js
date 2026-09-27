@@ -7,11 +7,14 @@
  *   2. buildInspectionPayload: blok <en>/<ms> padat, ID global, cap baris
  *   3. Fail-open: panggilan API tergendala → { valid: true, failOpen: true }
  *   4. Circuit breaker: 3 kegagalan berturut → silent mode (tiada panggilan)
- *   5. Muatan Universal (Mandat Seni Bina Universal Payload 2026-09-26):
- *      temperature 0.0 mutlak — TIADA max_tokens / max_completion_tokens /
- *      top_p / presence_penalty / reasoning_effort (SIFAR SEKATAN TOKEN,
- *      persampelan tamak argmax, finish_reason="stop" dijamin);
- *      timeout berfasa 45s (semakan) / 60s (Fasa 0 — BETA RUN 9 deepseek)
+ *   5. Muatan BEAST (Mandat Beast Mode DeepSeek Frontier 2026-09-27,
+ *      BETA RUN 10): enjin DeepSeek (v4-pro primary + v4.1-flash fallback)
+ *      membawa thinking:{type:"enabled"} + reasoning_effort:"max" +
+ *      max_tokens:65536 + top_p:0.95 + response_format json_object —
+ *      temperature DIGUGURKAN ("has no effect in thinking mode", rasmi);
+ *      timeout berfasa 60s (semakan) / 150s (Fasa 0 — di bawah siling
+ *      300s Caddy); enjin warisan bukan-DeepSeek kekal muatan universal
+ *      {model, temperature: 0.0, messages}.
  *   6. Integriti enjin apabila agentB = null → 100% laluan Gemini asal
  *   7. Gerbang semantik enjin: valid:false → SATU retry + amaran jenayah;
  *      failOpen → tiada retry; hasil struktur bercacat → tiada semakan
@@ -19,9 +22,9 @@
  *   9. Ketahanan pengekstrakan jawapan: content → reasoning_content →
  *      stringify fallback
  *  10. Ketelusan log mandat: [deepseek-v4-pro] / [glm-5.3] / Fallback triggered ->
- *  11. BETA RUN 9 (Mandat Penyatuuan DeepSeek Stack & Hierarki Kebenaran):
- *      Pre-Flight lalai deepseek-v4-pro (60s) + fallback universal
- *      deepseek-v4.1-flash bagi Fasa 0 dan Fasa 1.
+ *  11. BETA RUN 10 (Mandat Beast Mode DeepSeek Frontier):
+ *      Pre-Flight lalai deepseek-v4-pro (150s) + fallback universal
+ *      deepseek-v4.1-flash bagi Fasa 0 dan Fasa 1 (60s semakan).
  */
 
 const test = require('node:test');
@@ -231,35 +234,7 @@ test('AgentB: kejayaan reset kaunter kegagalan berturut-turut', async () => {
 
 // ── 5. Muatan Universal (Mandat Seni Bina Universal Payload 2026-09-26) ──
 
-test('AgentB: GLM-5.3 universal payload — temperature 0.0 mutlak, SIFAR SEKATAN TOKEN, timeout berfasa 45s/60s', () => {
-  const inspector = new AgentBInspector({
-    apiKey: 'test-key',
-    baseUrl: 'https://agentb.example.com/v1',
-    model: 'glm-5.3'
-  });
-
-  assert.equal(inspector.model, 'glm-5.3');
-  assert.equal(inspector.maxRetries, 0, 'fail fast — no provider-level retries');
-  assert.equal(inspector.translationTimeout, AGENT_B_INSPECTION_TIMEOUT_MS, 'inspection timeout 45s');
-  assert.equal(inspector.translationTimeout, 45000);
-  assert.equal(AGENT_B_INSPECTION_TIMEOUT_MS, 45000, 'semakan batch: 45s (mandat headroom 2026-09-26)');
-  assert.equal(AGENT_B_PREFLIGHT_TIMEOUT_MS, 60000, 'Fasa 0: 60s (BETA RUN 9 — deepseek-v4-pro selesai 4-tiang dalam 3.45s)');
-
-  // MANDAT UNIVERSAL PAYLOAD §A: muatan akhir wajib berbentuk
-  // { model, temperature: 0.0, messages } — kunci lain DILARANG sama sekali.
-  const { body } = inspector.buildChatRequest('inspector prompt', false, {});
-  assert.equal(body.temperature, 0.0, 'universal payload locks temperature 0.0 (persampelan tamak argmax)');
-  assert.equal('max_tokens' in body, false, 'max_tokens TIDAK dihantar (sifar sekatan token — finish_reason="stop" dijamin)');
-  assert.equal('max_completion_tokens' in body, false, 'max_completion_tokens TIDAK dihantar');
-  assert.equal('top_p' in body, false, 'top_p digugurkan sepenuhnya (latensi minimum)');
-  assert.equal('presence_penalty' in body, false, 'presence_penalty digugurkan sepenuhnya');
-  assert.equal('reasoning_effort' in body, false, 'reasoning_effort digugurkan — tiada logik bercabang nama model');
-  assert.equal(body.model, 'glm-5.3');
-  assert.ok(Array.isArray(body.messages) && body.messages.length === 1, 'single user message');
-  assert.deepEqual(Object.keys(body).sort(), ['messages', 'model', 'temperature'], 'muatan mesti TEPAT {model, temperature, messages}');
-});
-
-test('AgentB: kimi-k3 universal payload — temperature 0.0, TIADA max_tokens 16384 lama / top_p / presence_penalty', () => {
+test('AgentB: kimi-k3 (warisan) universal payload — temperature 0.0, TIADA max_tokens / top_p / presence_penalty; timeout berfasa 60s/150s', () => {
   const inspector = new AgentBInspector({
     apiKey: 'test-key',
     baseUrl: 'https://agentb.example.com/v1',
@@ -267,15 +242,22 @@ test('AgentB: kimi-k3 universal payload — temperature 0.0, TIADA max_tokens 16
   });
 
   assert.equal(inspector.isKimiModel(), true, 'kimi detector mesti aktif untuk kimi-k3');
+  assert.equal(inspector.maxRetries, 0, 'fail fast — no provider-level retries');
+  assert.equal(inspector.translationTimeout, AGENT_B_INSPECTION_TIMEOUT_MS, 'inspection timeout = konstanta mandat');
+  assert.equal(inspector.translationTimeout, 60000, 'semakan batch: 60s (BETA RUN 10)');
+  assert.equal(AGENT_B_INSPECTION_TIMEOUT_MS, 60000, 'Fasa 1: 60s (mandat BETA RUN 10)');
+  assert.equal(AGENT_B_PREFLIGHT_TIMEOUT_MS, 150000, 'Fasa 0: 150s (mandat BETA RUN 10 — di bawah siling 300s Caddy)');
 
+  // MANDAT UNIVERSAL PAYLOAD §A (laluan warisan bukan-DeepSeek): muatan akhir
+  // wajib berbentuk { model, temperature: 0.0, messages } — kunci lain DILARANG.
   const { body } = inspector.buildChatRequest('preflight prompt', false, {});
-  // MANDAT UNIVERSAL PAYLOAD §A: satu format muatan seragam — kimi-k3
-  // TIDAK lagi menerima rawatan istimewa (registry model dimansuhkan).
   assert.equal(body.temperature, 0.0, 'universal payload locks temperature 0.0');
-  assert.equal('max_tokens' in body, false, 'max_tokens TIDAK dihantar (siling 16384 lama dimansuhkan — sifar sekatan token)');
+  assert.equal('max_tokens' in body, false, 'max_tokens TIDAK dihantar');
   assert.equal('max_completion_tokens' in body, false, 'max_completion_tokens TIDAK dihantar');
   assert.equal('top_p' in body, false, 'top_p digugurkan');
   assert.equal('presence_penalty' in body, false, 'presence_penalty digugurkan');
+  assert.equal('thinking' in body, false, 'thinking TIDAK dihantar (bukan enjin DeepSeek)');
+  assert.equal('reasoning_effort' in body, false, 'reasoning_effort digugurkan');
   assert.equal(body.model, 'kimi-k3');
   assert.deepEqual(Object.keys(body).sort(), ['messages', 'model', 'temperature'], 'muatan mesti TEPAT {model, temperature, messages}');
 });
@@ -289,28 +271,48 @@ test('AgentB: glm-5.3-flash TIDAK terjejas peraturan frontier glm-5.3 penuh (pem
   assert.notEqual(body.top_p, 0.1, 'flash variant must not inherit full glm-5.3 top_p lock');
 });
 
-test('AgentB: deepseek-v4-pro universal payload — satu format seragam tanpa logik bercabang nama model', () => {
+test('AgentB: BEAST payload deepseek-v4-pro — thinking enabled + reasoning_effort max + max_tokens 65536 + top_p 0.95 + json_object', () => {
   const inspector = new AgentBInspector({
     apiKey: 'test-key',
     baseUrl: 'https://agentb.example.com/v1',
     model: 'deepseek-v4-pro'
   });
 
+  // FASA 1 (Pemeriksa Utama) — Mandat BETA RUN 10: muatan BEAST penuh.
   const { body } = inspector.buildChatRequest('fallback probe', false, {});
-  // Mandat §A: tiada if/else berasaskan nama model — deepseek-v4-pro
-  // menerima muatan universal yang SAMA dengan kimi-k3 / glm-5.3.
-  assert.equal(body.temperature, 0.0, 'universal payload locks temperature 0.0');
-  assert.equal('max_tokens' in body, false, 'max_tokens must NOT be sent');
-  assert.equal('max_completion_tokens' in body, false, 'max_completion_tokens must NOT be sent');
-  assert.equal('top_p' in body, false, 'top_p must NOT be sent');
-  assert.equal('presence_penalty' in body, false, 'presence_penalty must NOT be sent');
-  assert.equal('reasoning_effort' in body, false, 'reasoning_effort must NOT be sent');
-  assert.equal('thinking' in body, false, 'thinking parameter must NOT be sent');
+  assert.deepEqual(body.thinking, { type: 'enabled' }, 'thinking:{type:"enabled"} ialah suis utama pembuka CoT');
+  assert.equal(body.reasoning_effort, 'max', 'reasoning_effort:"max" — parameter rasmi peringkat atas');
+  assert.equal(body.max_tokens, 65536, 'max_tokens 65536 — ruang CoT + JSON tanpa potongan teks');
+  assert.equal(body.top_p, 0.95, 'top_p 0.95 — julat pensampelan aktif rasmi (0.95–1.0)');
+  assert.deepEqual(body.response_format, { type: 'json_object' }, 'response_format json_object — JSON sah dijamin');
+  assert.equal('temperature' in body, false, 'temperature DIGUGURKAN — "has no effect in thinking mode" (rasmi)');
+  assert.equal('presence_penalty' in body, false, 'presence_penalty TERLARANG (deprecated rasmi)');
+  assert.equal('frequency_penalty' in body, false, 'frequency_penalty TERLARANG (deprecated rasmi)');
+  assert.equal('max_completion_tokens' in body, false, 'max_completion_tokens TERLARANG');
   assert.equal(body.model, 'deepseek-v4-pro');
-  assert.deepEqual(Object.keys(body).sort(), ['messages', 'model', 'temperature'], 'muatan mesti TEPAT {model, temperature, messages}');
+  assert.ok(Array.isArray(body.messages) && body.messages.length === 1, 'single user message');
+  assert.deepEqual(
+    Object.keys(body).sort(),
+    ['max_tokens', 'messages', 'model', 'reasoning_effort', 'response_format', 'thinking', 'top_p'],
+    'muatan BEAST mesti TEPAT {model, thinking, reasoning_effort, max_tokens, top_p, response_format, messages}'
+  );
+
+  // FALLBACK UNIVERSAL (deepseek-v4.1-flash) — muatan BEAST YANG SAMA.
+  const flash = new AgentBInspector({
+    apiKey: 'test-key',
+    baseUrl: 'https://agentb.example.com/v1',
+    model: 'deepseek-v4.1-flash'
+  });
+  const flashBody = flash.buildChatRequest('flash probe', false, {}).body;
+  assert.deepEqual(flashBody.thinking, { type: 'enabled' }, 'fallback flash: thinking enabled');
+  assert.equal(flashBody.reasoning_effort, 'max', 'fallback flash: reasoning_effort max');
+  assert.equal(flashBody.max_tokens, 65536, 'fallback flash: max_tokens 65536');
+  assert.equal(flashBody.top_p, 0.95, 'fallback flash: top_p 0.95');
+  assert.deepEqual(flashBody.response_format, { type: 'json_object' }, 'fallback flash: json_object');
+  assert.equal('temperature' in flashBody, false, 'fallback flash: temperature digugurkan');
 });
 
-test('AgentB: runPreflightPass menaikkan timeout kepada 60s dan memulihkannya selepas Fasa 0 (BETA RUN 9)', async () => {
+test('AgentB: runPreflightPass menaikkan timeout kepada 150s dan memulihkannya selepas Fasa 0 (BETA RUN 10)', async () => {
   const inspector = new AgentBInspector({
     apiKey: 'test-key',
     baseUrl: 'https://agentb.example.com/v1'
@@ -318,9 +320,9 @@ test('AgentB: runPreflightPass menaikkan timeout kepada 60s dan memulihkannya se
 
   // Fail kecil (< PREFLIGHT_MIN_ENTRIES) → skip cepat; laluan tetap melalui
   // kitaran naik/pulih timeout dalam runPreflightPass.
-  assert.equal(inspector.translationTimeout, 45000, 'baseline 45s sebelum Fasa 0');
+  assert.equal(inspector.translationTimeout, 60000, 'baseline 60s sebelum Fasa 0');
   await inspector.runPreflightPass(makeEntries(3), 'Malay', 'English');
-  assert.equal(inspector.translationTimeout, 45000, 'timeout dipulihkan selepas skip path');
+  assert.equal(inspector.translationTimeout, 60000, 'timeout dipulihkan selepas skip path');
 
   // Verifikasi kitaran penuh dengan fail besar (panggilan API di-override)
   let observedTimeout = null;
@@ -330,8 +332,8 @@ test('AgentB: runPreflightPass menaikkan timeout kepada 60s dan memulihkannya se
   };
   const result = await inspector.runPreflightPass(makeEntries(50), 'Malay', 'English');
   assert.ok(result, 'preflight context returned');
-  assert.equal(observedTimeout, 60000, 'Fasa 0 mesti berjalan pada 60s (BETA RUN 9 — had hulu Caddy 300s, pro 3.45s)');
-  assert.equal(inspector.translationTimeout, 45000, 'pulih kepada 45s selepas Fasa 0');
+  assert.equal(observedTimeout, 150000, 'Fasa 0 mesti berjalan pada 150s (BETA RUN 10 — di bawah siling Caddy 300s)');
+  assert.equal(inspector.translationTimeout, 60000, 'pulih kepada 60s selepas Fasa 0');
 });
 
 test('AgentB: runPreflightPass memulihkan timeout walaupun panggilan API gagal', async () => {
@@ -343,7 +345,7 @@ test('AgentB: runPreflightPass memulihkan timeout walaupun panggilan API gagal',
 
   const result = await inspector.runPreflightPass(makeEntries(50), 'Malay', 'English');
   assert.equal(result, null, 'kegagalan Fasa 0 → null (non-blocking, kontrak asal)');
-  assert.equal(inspector.translationTimeout, 45000, 'finally block sentiasa memulihkan 45s');
+  assert.equal(inspector.translationTimeout, 60000, 'finally block sentiasa memulihkan 60s');
 });
 
 test('AgentB: buildUserPrompt override menghantar prompt inspector verbatim', () => {
@@ -1190,7 +1192,7 @@ test('AgentB: log Pre-Flight berformat mandat — [SubFaberPreflight] Running pr
   }
 });
 
-test('AgentB: muatan HTTP sebenar (axios.post) — temperature 0.0 sahaja, SIFAR kunci token/sampling', async () => {
+test('AgentB: muatan HTTP sebenar (axios.post) — BEAST penuh pada Fasa 1 (thinking max + 65536 + top_p 0.95 + json_object)', async () => {
   const axios = require('axios');
   const inspector = new AgentBInspector({
     apiKey: 'test-key',
@@ -1210,15 +1212,22 @@ test('AgentB: muatan HTTP sebenar (axios.post) — temperature 0.0 sahaja, SIFAR
 
     const { url, body } = captured[0];
     assert.ok(url.endsWith('/chat/completions'), 'endpoint chat/completions');
-    // MANDAT UNIVERSAL PAYLOAD §A — semakan ke atas payload HTTP SEBENAR:
-    assert.equal(body.temperature, 0.0, 'muatan HTTP wajib membawa temperature 0.0');
-    assert.equal('max_tokens' in body, false, 'muatan HTTP TIDAK boleh membawa max_tokens');
-    assert.equal('max_completion_tokens' in body, false, 'muatan HTTP TIDAK boleh membawa max_completion_tokens');
-    assert.equal('top_p' in body, false, 'muatan HTTP TIDAK boleh membawa top_p');
+    // MANDAT BEAST MODE BETA RUN 10 — semakan ke atas payload HTTP SEBENAR:
+    assert.deepEqual(body.thinking, { type: 'enabled' }, 'muatan HTTP wajib membawa thinking enabled');
+    assert.equal(body.reasoning_effort, 'max', 'muatan HTTP wajib membawa reasoning_effort max');
+    assert.equal(body.max_tokens, 65536, 'muatan HTTP wajib membawa max_tokens 65536');
+    assert.equal(body.top_p, 0.95, 'muatan HTTP wajib membawa top_p 0.95');
+    assert.deepEqual(body.response_format, { type: 'json_object' }, 'muatan HTTP wajib membawa response_format json_object');
+    assert.equal('temperature' in body, false, 'muatan HTTP TIDAK boleh membawa temperature (tiada kesan dalam thinking mode)');
     assert.equal('presence_penalty' in body, false, 'muatan HTTP TIDAK boleh membawa presence_penalty');
+    assert.equal('max_completion_tokens' in body, false, 'muatan HTTP TIDAK boleh membawa max_completion_tokens');
     assert.equal(body.model, 'deepseek-v4-pro');
     assert.ok(Array.isArray(body.messages) && body.messages.length === 1, 'satu mesej user');
-    assert.deepEqual(Object.keys(body).sort(), ['messages', 'model', 'temperature'], 'muatan HTTP mesti TEPAT {model, temperature, messages}');
+    assert.deepEqual(
+      Object.keys(body).sort(),
+      ['max_tokens', 'messages', 'model', 'reasoning_effort', 'response_format', 'thinking', 'top_p'],
+      'muatan HTTP mesti TEPAT BEAST {model, thinking, reasoning_effort, max_tokens, top_p, response_format, messages}'
+    );
   } finally {
     axios.post = originalPost;
   }
@@ -1226,17 +1235,31 @@ test('AgentB: muatan HTTP sebenar (axios.post) — temperature 0.0 sahaja, SIFAR
 
 // ── 17. BETA RUN 9 — PENYATUAN DEEPSEEK STACK & HIERARKI KEBENARAN ──
 
-test('AgentB: BETA RUN 9 — Pre-Flight lalai deepseek-v4-pro dengan timeout 60s (mandat penyatuuan stack)', () => {
+test('AgentB: BETA RUN 10 — Pre-Flight lalai deepseek-v4-pro dengan timeout 150s (mandat BEAST MODE)', () => {
   const inspector = new AgentBInspector({ apiKey: 'k', baseUrl: 'https://x.example/v1' });
   // (a) Pre-Flight memanggil deepseek-v4-pro sebagai model lalai utama.
-  assert.equal(inspector.preflightModel, 'deepseek-v4-pro', 'Fasa 0 mesti lalai ke deepseek-v4-pro (BETA RUN 9)');
+  assert.equal(inspector.preflightModel, 'deepseek-v4-pro', 'Fasa 0 mesti lalai ke deepseek-v4-pro (BETA RUN 10)');
   assert.equal(AGENT_B_PREFLIGHT_MODEL, 'deepseek-v4-pro');
-  assert.equal(AGENT_B_PREFLIGHT_TIMEOUT_MS, 60000, 'Fasa 0 timeout 60s (bukti empirikal: 3.45s untuk 4-tiang penuh)');
-  assert.equal(AGENT_B_INSPECTION_TIMEOUT_MS, 45000, 'Fasa 1 kekal 45s');
-  assert.equal(inspector.translationTimeout, 45000, 'baseline instance 45s');
+  assert.equal(AGENT_B_PREFLIGHT_TIMEOUT_MS, 150000, 'Fasa 0 timeout 150s (mandat BETA RUN 10 — di bawah siling 300s Caddy)');
+  assert.equal(AGENT_B_INSPECTION_TIMEOUT_MS, 60000, 'Fasa 1 kekal 60s');
+  assert.equal(inspector.translationTimeout, 60000, 'baseline instance 60s');
+  // (b) Override env berfungsi (integer ms positif sahaja).
+  const override = new AgentBInspector({
+    apiKey: 'k', baseUrl: 'https://x.example/v1',
+    preflightTimeoutMs: 120000, inspectionTimeoutMs: 30000
+  });
+  assert.equal(override.preflightTimeoutMs, 120000, 'override preflight 120s diterima');
+  assert.equal(override.inspectionTimeoutMs, 30000, 'override inspection 30s diterima');
+  // (c) Override tidak sah → lalai mandat.
+  const invalid = new AgentBInspector({
+    apiKey: 'k', baseUrl: 'https://x.example/v1',
+    preflightTimeoutMs: -5, inspectionTimeoutMs: 'junk'
+  });
+  assert.equal(invalid.preflightTimeoutMs, 150000, 'override tidak sah → lalai 150s');
+  assert.equal(invalid.inspectionTimeoutMs, 60000, 'override tidak sah → lalai 60s');
 });
 
-test('AgentB: BETA RUN 9 — fallback universal deepseek-v4.1-flash pada Fasa 0 dan Fasa 1', async () => {
+test('AgentB: BETA RUN 10 — fallback universal deepseek-v4.1-flash pada Fasa 0 dan Fasa 1', async () => {
   // Fasa 0: deepseek-v4-pro gagal → deepseek-v4.1-flash menyelamatkan.
   const inspector0 = new AgentBInspector({ apiKey: 'k', baseUrl: 'https://x.example/v1' });
   assert.deepEqual(inspector0.preflightHierarchy, ['deepseek-v4-pro', 'deepseek-v4.1-flash'], 'preflightHierarchy = [deepseek-v4-pro, deepseek-v4.1-flash]');

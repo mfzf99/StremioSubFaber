@@ -364,21 +364,37 @@ class OpenAICompatibleProvider {
     ];
 
     // ═══ UNIVERSAL PAYLOAD BUILDER (Mandat Seni Bina Universal Payload
-    // 2026-09-26 §A — PENYATUAN MUATAN SEJAGAT) ═══
-    // Payload builder bagi Agent B: TIADA lagi logik bercabang (if/else)
-    // berasaskan nama model — semua enjin (kimi-k3 / glm-5.3 /
-    // deepseek-v4-pro) berkongsi satu format muatan yang seragam:
-    //   - Kunci temperature: 0.0 secara mutlak (persampelan tamak / argmax).
-    //   - JANGAN hantar: max_tokens, max_completion_tokens, top_p,
-    //     presence_penalty (SIFAR SEKATAN TOKEN — ujian empirikal terminal
-    //     mengesahkan ketiadaan max_tokens menjamin respons tamat dengan
-    //     finish_reason="stop" tanpa masalah pemotongan teks).
+    // 2026-09-26 §A + BEAST MODE DEEPSEEK FRONTIER — BETA RUN 10) ═══
+    // Payload builder bagi Agent B. BETA RUN 10 (Mandat Beast Mode DeepSeek
+    // Frontier 2026-09-27): enjin DeepSeek (deepseek-v4-pro / deepseek-
+    // v4.1-flash — primary DAN fallback) menerima muatan BEAST yang membuka
+    // kuasa mutlak penaakulan (ground truth rasmi api-docs.deepseek.com):
+    //   - thinking:{type:"enabled"}   — suis utama pembuka CoT.
+    //   - reasoning_effort:"max"      — parameter rasmi peringkat atas.
+    //   - max_tokens:65536            — ruang output CoT + JSON tanpa potong.
+    //   - top_p:0.95                  — julat pensampelan aktif rasmi (0.95–1.0).
+    //   - response_format json_object — JSON sah dijamin.
+    //   - temperature DIGUGURKAN      — "has no effect in thinking mode".
+    // Tiada parameter terlarang (presence_penalty deprecated dsb.) — elak
+    // HTTP 400. Enjin bukan-DeepSeek (kimi-k3 / glm-5.3 — laluan warisan)
+    // kekal menerima muatan universal asal {model, temperature: 0.0, messages}.
     if (this.universalPayload === true) {
-      const universalBody = {
-        model: this.model,
-        temperature: 0.0,
-        messages
-      };
+      const isDeepSeekEngine = String(this.model || '').toLowerCase().includes('deepseek');
+      const universalBody = isDeepSeekEngine
+        ? {
+          model: this.model,
+          thinking: { type: 'enabled' },
+          reasoning_effort: 'max',
+          max_tokens: 65536,
+          top_p: 0.95,
+          response_format: { type: 'json_object' },
+          messages
+        }
+        : {
+          model: this.model,
+          temperature: 0.0,
+          messages
+        };
       if (stream === true) universalBody.stream = true;
       return {
         body: universalBody,

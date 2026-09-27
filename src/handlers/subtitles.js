@@ -5465,14 +5465,19 @@ if (
         agentBInspector = new AgentBInspector({
           apiKey: config.agentB.apiKey,
           baseUrl: config.agentB.baseUrl,
-          // TRINITY (Mandat Beta Run 9 — Penyatuuan DeepSeek Stack 2026-09-27):
-          //   Fasa 0     : deepseek-v4-pro     (Pre-Flight Makro, timeout 60s)
-          //   Fasa 1     : deepseek-v4-pro     (Pemeriksa Utama, timeout 45s)
+          // TRINITY BEAST MODE (Mandat Beta Run 10 — Beast Mode DeepSeek
+          // Frontier 2026-09-27):
+          //   Fasa 0     : deepseek-v4-pro     (Pre-Flight Makro, timeout 150s)
+          //   Fasa 1     : deepseek-v4-pro     (Pemeriksa Utama, timeout 60s)
           //   Fallback   : deepseek-v4.1-flash (mewarisi had masa fasa)
-          // Muatan universal: {model, temperature: 0.0, messages}
+          // Muatan BEAST: {model, thinking:{type:"enabled"},
+          // reasoning_effort:"max", max_tokens:65536, top_p:0.95,
+          // response_format json_object} — temperature digugurkan.
           preflightModel: config.agentB.preflightModel || 'deepseek-v4-pro',
           model: config.agentB.model || 'deepseek-v4-pro',
           fallbackModel: config.agentB.fallbackModel || 'deepseek-v4.1-flash',
+          preflightTimeoutMs: config.agentB.preflightTimeoutMs,
+          inspectionTimeoutMs: config.agentB.inspectionTimeoutMs,
           ssrfLookup: createSsrfSafeLookup()
         });
         log.info(() => `[Translation] Agent B inspector active: model=${agentBInspector.model} baseUrl=${config.agentB.baseUrl}`);
