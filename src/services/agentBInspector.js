@@ -16,7 +16,7 @@
  *     menyelesaikan analisis Pre-Flight 4-tiang dalam 3.45 saat dengan JSON sah.
  *     Muatan BEAST sejagat (BETA RUN 10 — Mandat Beast Mode DeepSeek
  *     Frontier 2026-09-27): enjin DeepSeek membawa thinking:{type:"enabled"}
- *     + reasoning_effort:"max" + max_tokens:65536 + top_p:0.95 +
+ *     + reasoning_effort:"max" + max_tokens:131072 (128K) + top_p:0.95 +
  *     response_format json_object — sekatan pemikiran dihapuskan sepenuhnya;
  *     temperature digugurkan (tiada kesan dalam thinking mode, rasmi).
  *     Tugasan 1: Mengambil alih Fasa 0 (Pre-Flight Semantic Pass) sepenuhnya
@@ -68,7 +68,7 @@ const AGENT_B_FALLBACK_MODEL = 'deepseek-v4.1-flash'; // Fallback Universal (Fas
 // (ground truth rasmi api-docs.deepseek.com):
 //   thinking:{type:"enabled"}   — suis utama pembuka CoT;
 //   reasoning_effort:"max"      — parameter rasmi peringkat atas (top-level);
-//   max_tokens:65536            — ruang output CoT + JSON tanpa potongan teks;
+//   max_tokens:131072           — siling rasmi 128K (CoT + JSON tanpa potong);
 //   top_p:0.95                  — julat pensampelan aktif rasmi (0.95–1.0);
 //   response_format json_object — JSON sah dijamin;
 //   temperature DIGUGURKAN      — "has no effect in thinking mode" (rasmi).
@@ -85,6 +85,10 @@ const parseAgentBTimeout = (raw, fallbackMs) => {
 };
 const AGENT_B_PREFLIGHT_TIMEOUT_MS = parseAgentBTimeout(process.env.AGENT_B_PREFLIGHT_TIMEOUT_MS, 150000);
 const AGENT_B_INSPECTION_TIMEOUT_MS = parseAgentBTimeout(process.env.AGENT_B_INSPECTION_TIMEOUT_MS, 60000);
+// BEAST MODE (BETA RUN 10): siling token muatan DeepSeek — 131072 (128K)
+// rasmi apabila reasoning_effort="max"; boleh ditindih melalui env
+// AGENT_B_MAX_TOKENS (integer positif sahaja).
+const AGENT_B_MAX_TOKENS = parseAgentBTimeout(process.env.AGENT_B_MAX_TOKENS, 131072);
 const AGENT_B_CIRCUIT_THRESHOLD = 3;      // 3 kegagalan berturut → silent mode
 const AGENT_B_MAX_LINE_CHARS = 200;       // Cap panjang baris dalam payload padat
 const AGENT_B_MAX_CRIMES = 5;             // >5 jenayah → tetap sahaja ditolong
@@ -245,7 +249,7 @@ function parseInspectorResponse(responseText) {
  * MUATAN BEAST (Mandat Seni Bina Universal Payload §A + BETA RUN 10):
  * instance dibina dengan universalPayload=true — buildChatRequest membina
  * muatan BEAST bagi enjin DeepSeek { model, thinking:{type:"enabled"},
- * reasoning_effort:"max", max_tokens:65536, top_p:0.95,
+ * reasoning_effort:"max", max_tokens:131072 (128K), top_p:0.95,
  * response_format:{type:"json_object"}, messages } (temperature digugurkan
  * — tiada kesan dalam thinking mode). Enjin warisan bukan-DeepSeek kekal
  * menerima { model, temperature: 0.0, messages }.
@@ -270,6 +274,7 @@ class AgentBInspector extends OpenAICompatibleProvider {
       baseUrl: options.baseUrl || 'https://api.openai.com/v1',
       providerName: 'agentb',
       universalPayload: true,           // Muatan BEAST sejagat (Mandat §A + BETA RUN 10)
+      beastMaxTokens: parseAgentBTimeout(options.maxTokens, AGENT_B_MAX_TOKENS), // siling 128K (BETA RUN 10)
       translationTimeout: inspectionTimeoutMs / 1000,
       maxRetries: 0,                    // Fail fast — satu percubaan sahaja per model
       enableJsonOutput: false,          // Parse JSON manual (kompatibilitas maksimum endpoint)
@@ -382,10 +387,10 @@ class AgentBInspector extends OpenAICompatibleProvider {
     throw new Error(`${operation}: exhausted`);
   }
 
-  // SILING TOKEN DIMANSUHKAN (Mandat Seni Bina Universal Payload 2026-09-26):
-  // muatan universal tidak menghantar max_tokens/max_completion_tokens —
-  // override getCappedMaxOutputTokens() warisan (4096/16384) dipadam;
-  // finish_reason="stop" dijamin oleh ketiadaan siling token.
+  // SILING TOKEN BEAST (BETA RUN 10 — Mandat Beast Mode DeepSeek Frontier
+  // 2026-09-27): muatan BEAST menghantar max_tokens = 131072 (128K rasmi
+  // apabila reasoning_effort="max") — override getCappedMaxOutputTokens()
+  // warisan (4096/16384) kekal dipadam; CoT + JSON bebas terpotong.
 
   /**
    * Override: prompt inspector ialah arahan lengkap + payload (self-contained)
@@ -585,5 +590,6 @@ module.exports = {
   AGENT_B_FALLBACK_MODEL,
   AGENT_B_PREFLIGHT_TIMEOUT_MS,
   AGENT_B_INSPECTION_TIMEOUT_MS,
+  AGENT_B_MAX_TOKENS,
   AGENT_B_CIRCUIT_THRESHOLD
 };

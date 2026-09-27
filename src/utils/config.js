@@ -574,7 +574,8 @@ function normalizeConfig(config) {
   // Struktur additive — tiada field sedia ada disentuh.
   // env fallback: AGENT_B_BASE_URL / AGENT_B_API_KEY / AGENT_B_MODEL /
   // AGENT_B_PREFLIGHT_MODEL / AGENT_B_FALLBACK_MODEL /
-  // AGENT_B_PREFLIGHT_TIMEOUT_MS / AGENT_B_INSPECTION_TIMEOUT_MS.
+  // AGENT_B_PREFLIGHT_TIMEOUT_MS / AGENT_B_INSPECTION_TIMEOUT_MS /
+  // AGENT_B_MAX_TOKENS.
   // ── UNIVERSAL PAYLOAD (MANDAT SENI BINA UNIVERSAL PAYLOAD 2026-09-26) ──
   // ── BETA RUN 10 BEAST MODE (MANDAT BEAST MODE DEEPSEEK FRONTIER
   //    2026-09-27) ──
@@ -583,8 +584,9 @@ function normalizeConfig(config) {
   //   Fasa 1 (Pemeriksa Utama)   : deepseek-v4-pro     (Timeout  60,000ms / 60s)
   //   Fallback Universal         : deepseek-v4.1-flash (mewarisi had masa fasa)
   // Had masa di bawah siling 300s Caddy rootsys.cloud. Muatan BEAST
-  // (thinking:{type:"enabled"} + reasoning_effort:"max" + max_tokens:65536 +
-  // top_p:0.95 + response_format json_object; temperature digugurkan —
+  // (thinking:{type:"enabled"} + reasoning_effort:"max" + max_tokens:131072
+  // (128K rasmi apabila reasoning_effort="max") + top_p:0.95 +
+  // response_format json_object; temperature digugurkan —
   // "has no effect in thinking mode") dibina dalam
   // OpenAICompatibleProvider.buildChatRequest (universalPayload=true).
   const normalizeAgentBTimeoutMs = (raw, fallbackMs) => {
@@ -606,6 +608,13 @@ function normalizeConfig(config) {
     inspectionTimeoutMs: normalizeAgentBTimeoutMs(
       mergedConfig.agentB?.inspectionTimeoutMs ?? process.env.AGENT_B_INSPECTION_TIMEOUT_MS,
       60000
+    ),
+    // BEAST MODE BETA RUN 10: siling token muatan DeepSeek — 131072 (128K
+    // rasmi apabila reasoning_effort="max"); boleh ditindih melalui env
+    // AGENT_B_MAX_TOKENS (integer positif sahaja).
+    maxTokens: normalizeAgentBTimeoutMs(
+      mergedConfig.agentB?.maxTokens ?? process.env.AGENT_B_MAX_TOKENS,
+      131072
     )
   };
   // Hygiene: inspectionModel adalah alias warisan bagi 'model' (Semakan) —

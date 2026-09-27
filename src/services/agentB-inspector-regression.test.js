@@ -10,7 +10,7 @@
  *   5. Muatan BEAST (Mandat Beast Mode DeepSeek Frontier 2026-09-27,
  *      BETA RUN 10): enjin DeepSeek (v4-pro primary + v4.1-flash fallback)
  *      membawa thinking:{type:"enabled"} + reasoning_effort:"max" +
- *      max_tokens:65536 + top_p:0.95 + response_format json_object —
+ *      max_tokens:131072 (128K rasmi) + top_p:0.95 + response_format json_object —
  *      temperature DIGUGURKAN ("has no effect in thinking mode", rasmi);
  *      timeout berfasa 60s (semakan) / 150s (Fasa 0 — di bawah siling
  *      300s Caddy); enjin warisan bukan-DeepSeek kekal muatan universal
@@ -40,6 +40,7 @@ const {
   AGENT_B_DEFAULT_MODEL,
   AGENT_B_PREFLIGHT_TIMEOUT_MS,
   AGENT_B_INSPECTION_TIMEOUT_MS,
+  AGENT_B_MAX_TOKENS,
   AGENT_B_PREFLIGHT_MODEL,
   AGENT_B_FALLBACK_MODEL,
   AGENT_B_CIRCUIT_THRESHOLD
@@ -271,7 +272,7 @@ test('AgentB: glm-5.3-flash TIDAK terjejas peraturan frontier glm-5.3 penuh (pem
   assert.notEqual(body.top_p, 0.1, 'flash variant must not inherit full glm-5.3 top_p lock');
 });
 
-test('AgentB: BEAST payload deepseek-v4-pro — thinking enabled + reasoning_effort max + max_tokens 65536 + top_p 0.95 + json_object', () => {
+test('AgentB: BEAST payload deepseek-v4-pro — thinking enabled + reasoning_effort max + max_tokens 131072 + top_p 0.95 + json_object', () => {
   const inspector = new AgentBInspector({
     apiKey: 'test-key',
     baseUrl: 'https://agentb.example.com/v1',
@@ -282,7 +283,7 @@ test('AgentB: BEAST payload deepseek-v4-pro — thinking enabled + reasoning_eff
   const { body } = inspector.buildChatRequest('fallback probe', false, {});
   assert.deepEqual(body.thinking, { type: 'enabled' }, 'thinking:{type:"enabled"} ialah suis utama pembuka CoT');
   assert.equal(body.reasoning_effort, 'max', 'reasoning_effort:"max" — parameter rasmi peringkat atas');
-  assert.equal(body.max_tokens, 65536, 'max_tokens 65536 — ruang CoT + JSON tanpa potongan teks');
+  assert.equal(body.max_tokens, 131072, 'max_tokens 131072 — siling rasmi 128K (CoT + JSON tanpa potongan teks)');
   assert.equal(body.top_p, 0.95, 'top_p 0.95 — julat pensampelan aktif rasmi (0.95–1.0)');
   assert.deepEqual(body.response_format, { type: 'json_object' }, 'response_format json_object — JSON sah dijamin');
   assert.equal('temperature' in body, false, 'temperature DIGUGURKAN — "has no effect in thinking mode" (rasmi)');
@@ -306,10 +307,31 @@ test('AgentB: BEAST payload deepseek-v4-pro — thinking enabled + reasoning_eff
   const flashBody = flash.buildChatRequest('flash probe', false, {}).body;
   assert.deepEqual(flashBody.thinking, { type: 'enabled' }, 'fallback flash: thinking enabled');
   assert.equal(flashBody.reasoning_effort, 'max', 'fallback flash: reasoning_effort max');
-  assert.equal(flashBody.max_tokens, 65536, 'fallback flash: max_tokens 65536');
+  assert.equal(flashBody.max_tokens, 131072, 'fallback flash: max_tokens 131072 (128K)');
   assert.equal(flashBody.top_p, 0.95, 'fallback flash: top_p 0.95');
   assert.deepEqual(flashBody.response_format, { type: 'json_object' }, 'fallback flash: json_object');
   assert.equal('temperature' in flashBody, false, 'fallback flash: temperature digugurkan');
+});
+
+test('AgentB: BETA RUN 10 — lalai modul BEAST: timeout 150s/60s + siling token 131072 (128K) + override maxTokens per-instance', () => {
+  // Lalai mandat modul (BEAST MODE DEEPSEEK FRONTIER 2026-09-27).
+  assert.equal(AGENT_B_PREFLIGHT_TIMEOUT_MS, 150000, 'lalai Fasa 0 150s — di bawah siling 300s Caddy');
+  assert.equal(AGENT_B_INSPECTION_TIMEOUT_MS, 60000, 'lalai Fasa 1 60s');
+  assert.equal(AGENT_B_MAX_TOKENS, 131072, 'siling token rasmi DeepSeek 128K apabila reasoning_effort="max"');
+
+  // Siling 128K dihantar dalam muatan BEAST (primary deepseek-v4-pro).
+  const def = new AgentBInspector({ apiKey: 'k', baseUrl: 'https://x.example/v1', model: 'deepseek-v4-pro' });
+  const defBody = def.buildChatRequest('p', false, {}).body;
+  assert.equal(defBody.max_tokens, 131072, 'muatan BEAST membawa max_tokens 131072 secara lalai');
+  assert.equal(defBody.reasoning_effort, 'max');
+
+  // Override per-instance dihormati (config.agentB.maxTokens → AGENT_B_MAX_TOKENS).
+  const capped = new AgentBInspector({ apiKey: 'k', baseUrl: 'https://x.example/v1', model: 'deepseek-v4-pro', maxTokens: 4096 });
+  assert.equal(capped.buildChatRequest('p', false, {}).body.max_tokens, 4096, 'override maxTokens sah → digunakan');
+
+  // Override tidak sah → lalai mandat 131072.
+  const invalid = new AgentBInspector({ apiKey: 'k', baseUrl: 'https://x.example/v1', model: 'deepseek-v4-pro', maxTokens: -1 });
+  assert.equal(invalid.buildChatRequest('p', false, {}).body.max_tokens, 131072, 'override tidak sah → lalai 131072');
 });
 
 test('AgentB: runPreflightPass menaikkan timeout kepada 150s dan memulihkannya selepas Fasa 0 (BETA RUN 10)', async () => {
@@ -1192,7 +1214,7 @@ test('AgentB: log Pre-Flight berformat mandat — [SubFaberPreflight] Running pr
   }
 });
 
-test('AgentB: muatan HTTP sebenar (axios.post) — BEAST penuh pada Fasa 1 (thinking max + 65536 + top_p 0.95 + json_object)', async () => {
+test('AgentB: muatan HTTP sebenar (axios.post) — BEAST penuh pada Fasa 1 (thinking max + 131072 + top_p 0.95 + json_object)', async () => {
   const axios = require('axios');
   const inspector = new AgentBInspector({
     apiKey: 'test-key',
@@ -1215,7 +1237,7 @@ test('AgentB: muatan HTTP sebenar (axios.post) — BEAST penuh pada Fasa 1 (thin
     // MANDAT BEAST MODE BETA RUN 10 — semakan ke atas payload HTTP SEBENAR:
     assert.deepEqual(body.thinking, { type: 'enabled' }, 'muatan HTTP wajib membawa thinking enabled');
     assert.equal(body.reasoning_effort, 'max', 'muatan HTTP wajib membawa reasoning_effort max');
-    assert.equal(body.max_tokens, 65536, 'muatan HTTP wajib membawa max_tokens 65536');
+    assert.equal(body.max_tokens, 131072, 'muatan HTTP wajib membawa max_tokens 131072 (128K)');
     assert.equal(body.top_p, 0.95, 'muatan HTTP wajib membawa top_p 0.95');
     assert.deepEqual(body.response_format, { type: 'json_object' }, 'muatan HTTP wajib membawa response_format json_object');
     assert.equal('temperature' in body, false, 'muatan HTTP TIDAK boleh membawa temperature (tiada kesan dalam thinking mode)');

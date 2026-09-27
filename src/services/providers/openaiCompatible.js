@@ -19,6 +19,17 @@ const {
   clearCachedProviderAuthFailure
 } = require('../../utils/providerAuthFailureCache');
 
+// ═══ BEAST MODE DEEPSEEK FRONTIER (BETA RUN 10 — Mandat 2026-09-27) ═══
+// Siling token rasmi DeepSeek apabila reasoning_effort="max": 131072 (128K)
+// — membebaskan sepenuhnya output CoT + JSON tanpa risiko terpotong.
+// Boleh ditindih melalui env AGENT_B_MAX_TOKENS (integer positif sahaja);
+// dihantar sebagai max_tokens dalam muatan BEAST (universalPayload).
+const parseAgentBMaxTokens = (raw, fallback) => {
+  const parsed = parseInt(raw, 10);
+  return Number.isFinite(parsed) && parsed > 0 ? parsed : fallback;
+};
+const AGENT_B_BEAST_MAX_TOKENS = parseAgentBMaxTokens(process.env.AGENT_B_MAX_TOKENS, 131072);
+
 /**
  * Universal OpenAI-Compatible Provider Wrapper
  * 100% Full Parity with Gemini Engine & 28-Model Smart Payload Registry.
@@ -34,6 +45,9 @@ class OpenAICompatibleProvider {
     this.temperature = options.temperature !== undefined ? options.temperature : 0.2;
     this.maxOutputTokens = options.maxOutputTokens || 65536;
     this.topP = options.topP !== undefined ? options.topP : 0.95;
+    // BEAST MODE (BETA RUN 10): siling token muatan DeepSeek — 131072 (128K)
+    // secara lalai; boleh ditindih per-instance melalui options.beastMaxTokens.
+    this.beastMaxTokens = parseAgentBMaxTokens(options.beastMaxTokens, AGENT_B_BEAST_MAX_TOKENS);
     this.presencePenalty = options.presencePenalty;
     this.reasoningEffort = this.normalizeReasoningEffort(options.reasoningEffort);
     const timeoutSeconds = options.translationTimeout !== undefined ? options.translationTimeout : 120;
@@ -371,7 +385,7 @@ class OpenAICompatibleProvider {
     // kuasa mutlak penaakulan (ground truth rasmi api-docs.deepseek.com):
     //   - thinking:{type:"enabled"}   — suis utama pembuka CoT.
     //   - reasoning_effort:"max"      — parameter rasmi peringkat atas.
-    //   - max_tokens:65536            — ruang output CoT + JSON tanpa potong.
+    //   - max_tokens:131072           — siling rasmi 128K (CoT + JSON penuh).
     //   - top_p:0.95                  — julat pensampelan aktif rasmi (0.95–1.0).
     //   - response_format json_object — JSON sah dijamin.
     //   - temperature DIGUGURKAN      — "has no effect in thinking mode".
@@ -385,7 +399,7 @@ class OpenAICompatibleProvider {
           model: this.model,
           thinking: { type: 'enabled' },
           reasoning_effort: 'max',
-          max_tokens: 65536,
+          max_tokens: this.beastMaxTokens,
           top_p: 0.95,
           response_format: { type: 'json_object' },
           messages

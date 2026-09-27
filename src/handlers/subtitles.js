@@ -5471,13 +5471,16 @@ if (
           //   Fasa 1     : deepseek-v4-pro     (Pemeriksa Utama, timeout 60s)
           //   Fallback   : deepseek-v4.1-flash (mewarisi had masa fasa)
           // Muatan BEAST: {model, thinking:{type:"enabled"},
-          // reasoning_effort:"max", max_tokens:65536, top_p:0.95,
+          // reasoning_effort:"max", max_tokens:131072 (128K), top_p:0.95,
           // response_format json_object} — temperature digugurkan.
           preflightModel: config.agentB.preflightModel || 'deepseek-v4-pro',
           model: config.agentB.model || 'deepseek-v4-pro',
           fallbackModel: config.agentB.fallbackModel || 'deepseek-v4.1-flash',
           preflightTimeoutMs: config.agentB.preflightTimeoutMs,
           inspectionTimeoutMs: config.agentB.inspectionTimeoutMs,
+          // BEAST MODE BETA RUN 10: siling token 131072 (128K rasmi DeepSeek
+          // apabila reasoning_effort="max") — dinormalisasi oleh config.js.
+          maxTokens: config.agentB.maxTokens,
           ssrfLookup: createSsrfSafeLookup()
         });
         log.info(() => `[Translation] Agent B inspector active: model=${agentBInspector.model} baseUrl=${config.agentB.baseUrl}`);
