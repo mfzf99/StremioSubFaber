@@ -2497,7 +2497,7 @@ Translate the provided ${sourceLabel || 'source'} subtitles into ${targetLabel} 
 1. Translate each subtitle line into natural, spoken ${targetLabel} dialogue.
 2. Aim for contextual smoothness and natural phrasing that conforms to ${targetLabel} conversational habits, avoiding stiff or unnatural literal translations.
 3. Handle split sentences correctly: Dialogue frequently splits across consecutive lines due to speech timing. Translate ONLY the fragment present in each line without merging multiple lines together.
-4. Strictly preserve all inline markup ([br], <i>, <b>) in their exact corresponding positions.
+4. PRESERVE all [br], <i>...</i>, speaker dashes (-), and ANY other inline markup in the exact same position and count as in the source.
 ${sharedContextBlock ? `\n${sharedContextBlock}\n` : ''}
 <translation_principles>
 1. Meaning over literal words: Accurately convey the true intent, emotion, and tone of the original dialogue rather than translating word-for-word.
