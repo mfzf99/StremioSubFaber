@@ -5018,6 +5018,7 @@ function preprocessSubtitleForAI(sourceContent) {
 
     htmlEntitiesDecoded: 0,
     assTagsRemoved: 0,
+    htmlTagsRemoved: 0,
 
     replacementCharsDetected: 0
   };
@@ -5148,6 +5149,30 @@ function preprocessSubtitleForAI(sourceContent) {
 
   text = text.replace(/\{\\[^}\r\n]*\}/g, () => {
     stats.assTagsRemoved++;
+    return '';
+  });
+
+
+  // ==========================================================
+  // 8.5 HTML/XML inline tag cleanup (SRT formatting tags)
+  //
+  // Removes:
+  //   <i>, </i>, <b>, </b>, <u>, <s>, <br>, <br/>
+  //   <font color="#fff">, </font>
+  //
+  // SAFETY:
+  //   First char after '<' must be a letter → math/comparison
+  //   text like "a < b > c" is NOT matched.
+  //   Attribute content cannot cross '<' or '>' boundaries.
+  //
+  // MUST run AFTER entity decoding (stage 7):
+  //   escaped entities (ampersand-lt + i + ampersand-gt)
+  //   decode to a literal "<i>" in stage 7, then the tag
+  //   itself is stripped here — order is critical.
+  // ==========================================================
+
+  text = text.replace(/<\/?[a-zA-Z][a-zA-Z0-9]*(?:\s[^<>]*)?\/?>/g, () => {
+    stats.htmlTagsRemoved++;
     return '';
   });
 
@@ -5386,6 +5411,7 @@ if (
       (stats.mojibakeIterations > 0 ? `(${stats.mojibakeIterations}pass)` : '') +
       ` | HTML=${stats.htmlEntitiesDecoded}` +
       ` | ASS=${stats.assTagsRemoved}` +
+      ` | HTMLTAG=${stats.htmlTagsRemoved}` +
       ` | FFFD=${stats.replacementCharsDetected}`
     );
 
@@ -7059,7 +7085,9 @@ module.exports = {
   migrateHistoryNamespace,
   saveRequestToHistory,
   resolveHistoryTitle,
-  enrichHistoryEntriesBackground
+  enrichHistoryEntriesBackground,
+  // AI input cleaner (SubFaber preprocessing pipeline) — exposed for regression tests
+  preprocessSubtitleForAI
 };
 
 // Append the complex object methods to module.exports since they were defined inline
