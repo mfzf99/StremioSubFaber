@@ -116,7 +116,7 @@ const AGENT_B_MAX_NOTE_CHARS = 120;       // Cap panjang nota jenayah (sanity)
 // MANDAT OPERASI MUTLAK 2026-09-27: SHIFT dikunci sebagai jenayah ke-4 —
 // kandungan dialog berpindah merentasi indeks (dialog baris 5 muncul di
 // baris 6). Klausa emas pengurang token di dalam arahan pemeriksa.
-const VALID_CRIME_TYPES = new Set(['MERGE', 'DROP', 'PHANTOM', 'SHIFT']);
+const VALID_CRIME_TYPES = new Set(['MERGE', 'DROP', 'PHANTOM', 'SHIFT', 'UNTRANSLATED', 'REGISTER']);
 // [UNBOUNDED-CONTEXT 2026-09-29] Siling konteks Pre-Flight (10 istilah /
 // 12 watak / 400 aksara tema) DIGUGURKAN sepenuhnya. Sebab: rantaian
 // pemotongan — preflight mengekstrak 50 istilah → siling lama memotong
@@ -137,20 +137,22 @@ const INSPECTOR_INSTRUCTION = `## Role
 You are a subtitle integrity inspector. You compare source lines with their translations, line by line.
 
 ## Task
-Detect ONLY these four violations:
+Detect ONLY these six violations:
 - MERGE: Two source lines merged into ONE output slot, displacing subsequent lines (off-by-one drift).
 - DROP: Source line's specific meaning is missing or replaced by a generic substitute that erases it.
 - PHANTOM: Output slot contains fabricated content with no basis in its source line (invented dialogue, elaboration, hallucinated detail).
 - SHIFT: Dialogue content displaced across indices (line 5 text appearing in line 6's slot).
   NOTE: Ignore minor millisecond timecode differences; audit solely whether the dialogue text matches the corresponding line index.
+- UNTRANSLATED: Output slot still carries the source-language sentence verbatim (or near-verbatim) when it clearly should have been translated. This is a LAZY-COPY leak. EXCEPTION — do NOT flag: proper nouns, character/brand/company names, creative-work titles, on-screen credits, or symbol/number/music-note-only lines that are legitimately kept as-is.
+- REGISTER: A recurring character's honorific/title in the translation contradicts the locked address in the Character Address Reference below (e.g. the reference locks "Puan Shen" but the output says "Cik Shen"). Only flag when a Character Address Reference is provided and the contradiction is unambiguous.
 
-Ignore: translation style, grammar, tone, cultural adaptation, and minor omissions.
+Ignore: translation style, word choice, grammar, tone, cultural adaptation, and minor omissions — EXCEPT the six violations above.
 
 ## Output Contract
 Respond with ONLY this JSON and nothing else — no explanations, no markdown:
 {"valid":true}
 If any violation exists:
-{"valid":false,"crimes":[{"type":"MERGE|DROP|PHANTOM|SHIFT","ids":[line ids],"note":"max 10 words"}]}`;
+{"valid":false,"crimes":[{"type":"MERGE|DROP|PHANTOM|SHIFT|UNTRANSLATED|REGISTER","ids":[line ids],"note":"max 10 words"}]}`;
 
 /**
  * Format ringkasan konteks Pre-Flight (Fasa 0) untuk suntikan ke prompt
@@ -184,17 +186,25 @@ function formatPreflightContextForInspection(preflightContext) {
   }
 
   if (Array.isArray(preflightContext.characters) && preflightContext.characters.length > 0) {
+    const pick = (...vals) => {
+      for (const v of vals) {
+        if (v !== undefined && v !== null && String(v).trim() !== '') return String(v).trim();
+      }
+      return '';
+    };
     const charLines = preflightContext.characters
       .map(c => {
         const name = String(c?.name || '').trim();
         if (!name) return '';
-        const address = (c.canonical_address !== undefined && c.canonical_address !== null && String(c.canonical_address).trim() !== '')
-          ? String(c.canonical_address).trim()
-          : (c.canonicalAddress !== undefined && c.canonicalAddress !== null && String(c.canonicalAddress).trim() !== ''
-            ? String(c.canonicalAddress).trim()
-            : 'address NOT LOCKED');
+        const narrative = pick(c?.canonical_address, c?.canonicalAddress) || 'address NOT LOCKED';
+        // Vocative (direct-address) is optional; only render when it differs
+        // from the narrative form so the inspector sees both valid options.
+        const vocative = pick(c?.direct_address, c?.directAddress);
         const role = String(c?.role || '').trim();
-        return `- ${name} → ${address}${role ? ` (${role})` : ''}`;
+        const addressPart = (vocative && vocative !== narrative)
+          ? `${narrative} / ${vocative} (when addressed directly)`
+          : narrative;
+        return `- ${name} → ${addressPart}${role ? ` (${role})` : ''}`;
       })
       .filter(Boolean)
       .join('\n');

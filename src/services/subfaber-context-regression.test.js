@@ -340,12 +340,20 @@ test('SubFaberPrompt: pure SubFaber prompt when ON — persona + principles + XM
   assert.ok(prompt.includes('4. ANTI-DROP — FULL MEANING TRANSFER'), 'Rule 4: ANTI-DROP (label jenayah hadir)');
   assert.ok(prompt.includes('NEVER replace a line\'s specific content with a generic substitute that erases its meaning.'), 'Rule 4 verbatim: generic substitute dilarang (TIADA perkataan "truncated")');
   assert.ok(!prompt.includes('truncated'), 'Rule 4 TIDAK membawa false-positive "truncated"');
-  assert.ok(prompt.includes('5. ESCAPE HATCH'), 'Rule 5: escape hatch');
-  assert.ok(prompt.includes('6. SONG LYRICS'), 'Rule 6: song lyrics');
+  // [SOCIOLINGUISTIC v2 2026-09-29] structural_rules dikembang 7→8:
+  // rule 5 baharu (SLOT-BOUNDARY TIEBREAKER) disisip; ESCAPE HATCH→6,
+  // SONG LYRICS→7, PRESERVE markup→8 (dengan [br] reposition adaptif).
+  assert.ok(prompt.includes('5. SLOT-BOUNDARY TIEBREAKER'), 'Rule 5: slot-boundary tiebreaker (anti cross-slot pull)');
+  assert.ok(prompt.includes('Slot integrity always outranks cross-slot grammatical smoothness'), 'Tiebreaker verbatim: slot integrity outranks grammar');
+  assert.ok(prompt.includes('6. ESCAPE HATCH'), 'Rule 6: escape hatch');
+  assert.ok(prompt.includes('a normal sentence must always be translated, never copied verbatim in the source language'), 'Escape hatch narrowed: no lazy source-copy');
+  assert.ok(prompt.includes('7. SONG LYRICS'), 'Rule 7: song lyrics');
   assert.ok(
-    prompt.includes('7. PRESERVE all [br], <i>...</i>, speaker dashes (-), and any other inline markup'),
-    'Rule 7: markup preservation'
+    prompt.includes('8. PRESERVE inline markup'),
+    'Rule 8: markup preservation'
   );
+  assert.ok(prompt.includes('you MAY reposition a [br] to the most natural break point'), 'Rule 8: adaptive [br] repositioning (count preserved, position flexible)');
+  assert.ok(prompt.includes('with the SAME COUNT as the source'), 'Rule 8: [br] count still locked');
   // ── TINGKAT 1 (Netflix-Quality Craft Mandat 2026-09-29): translation_craft ──
   // Blok kualiti Netflix — dipacu equivalent-effect + compression + anti-calque.
   // Diletak SELEPAS structural_rules supaya pariti kekal keutamaan #1.

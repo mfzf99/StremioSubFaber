@@ -52,10 +52,10 @@ test('AgentBObs T1: translationStats carries all 10 new fields with safe default
   assert.equal(s.agentBFailuresBeforeOpen, 0, 'agentBFailuresBeforeOpen default 0');
   assert.equal(s.agentBBatchesInspected, 0, 'agentBBatchesInspected default 0 (denominator)');
   assert.equal(s.agentBBatchesSkippedAfterOpen, 0, 'agentBBatchesSkippedAfterOpen default 0');
-  assert.deepEqual(s.crimesDetectedByType, { MERGE: 0, DROP: 0, PHANTOM: 0, SHIFT: 0 }, 'crimesDetectedByType zeroed 4 types');
+  assert.deepEqual(s.crimesDetectedByType, { MERGE: 0, DROP: 0, PHANTOM: 0, SHIFT: 0, UNTRANSLATED: 0, REGISTER: 0 }, 'crimesDetectedByType zeroed 6 types');
   assert.equal(s.crimesResolvedByRetry, 0, 'crimesResolvedByRetry default 0');
   assert.equal(s.crimePatternDetected, null, 'crimePatternDetected default null');
-  assert.deepEqual(s.crimeBatchIndices, { MERGE: [], DROP: [], PHANTOM: [], SHIFT: [] }, 'crimeBatchIndices empty arrays');
+  assert.deepEqual(s.crimeBatchIndices, { MERGE: [], DROP: [], PHANTOM: [], SHIFT: [], UNTRANSLATED: [], REGISTER: [] }, 'crimeBatchIndices empty arrays');
   // Legacy additive contract — tiada rename, tiada buang
   for (const legacy of ['agentBUsed', 'agentBFailures', 'agentBInspections', 'agentBRetries']) {
     assert.ok(legacy in s, `legacy field ${legacy} still present`);

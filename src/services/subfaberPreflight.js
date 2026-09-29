@@ -143,9 +143,11 @@ For the provided ${src} subtitle dialogue, build the 4-pillar pre-flight context
    Each 'terms' entry is an object with exactly two keys: "source" (original text) and "target" (${tgt} translation or original).
    ${honorificMatrix}
 3. Build profiles for the main recurring characters.
-   Each 'characters' entry is an object with exactly three keys:
+   Each 'characters' entry is an object with exactly five keys:
    - "name": the character's name exactly as it appears in the dialogue.
-   - "canonical_address": the ONE locked ${tgt} address/title used for this character every single time (one canonical address per character, never alternate). ${canonicalAddressMatrix}. Lock ONLY with explicit, unambiguous textual evidence per the FACT VS INFERENCE DISCIPLINE; if gender, social hierarchy, or formal title is unclear, set null instead of guessing.
+   - "canonical_address": the ONE locked ${tgt} THIRD-PERSON reference/title used when talking ABOUT this character (narrative reference — one canonical address per character, never alternate). ${canonicalAddressMatrix}. Lock ONLY with explicit, unambiguous textual evidence per the FACT VS INFERENCE DISCIPLINE; if gender, social hierarchy, or formal title is unclear, set null instead of guessing.
+   - "direct_address": the ${tgt} VOCATIVE form used when a character is spoken TO face-to-face (e.g. a niece addressing her aunt uses "Mak Cik Shen" even though the narrative reference is "Puan Shen"). If it is identical to canonical_address or unclear, set null.
+   - "pronoun_register": the locked ${tgt} self/other pronoun pairing that fits this character's relationships and social standing, chosen from the target language's own register system (for Malay: "saya/awak" default, "aku/kau" intimate, "saya/anda" formal). If the target language does not distinguish pronoun register, or evidence is unclear, set null.
    - "role": a short description of their narrative role (e.g. female lead, antagonist, mentor, butler).
 4. Scan the EARLIEST lines of the file (lines 1-5) for NON-DIALOGUE opening text.
    If the file opens with production credits (e.g. "Adapted from..."), the work's title, or a studio name card, ${creditsExample}.
@@ -164,7 +166,7 @@ ${rawText}
     { "source": "Original term", "target": "${tgt} translation or original" }
   ],
   "characters": [
-    { "name": "Character name", "canonical_address": "Locked ${tgt} address/title, or null if unclear", "role": "Narrative role" }
+    { "name": "Character name", "canonical_address": "Locked ${tgt} third-person reference/title, or null if unclear", "direct_address": "${tgt} vocative form used when spoken to, or null if same/unclear", "pronoun_register": "Locked ${tgt} pronoun pairing (e.g. saya/awak), or null if N/A", "role": "Narrative role" }
   ],
   "credits_and_titles": [
     { "source": "Opening credit/title text", "target": "Official ${tgt} translation" }
@@ -342,9 +344,16 @@ function parsePreflightResponse(responseText) {
         : ((legacyAddress !== undefined && legacyAddress !== null && String(legacyAddress).trim() !== '')
           ? legacyAddress
           : null);
+      // MANDAT SOSIOLINGUISTIK v2 2026-09-29: direct_address (vocative) +
+      // pronoun_register. Null dikekalkan SEBAGAI null (isyarat "tidak
+      // dikunci" — konsisten dengan rawatan canonical_address).
+      const directRaw = pickField(character, 'direct_address', 'directAddress');
+      const pronounRaw = pickField(character, 'pronoun_register', 'pronounRegister');
       characters.push({
         name,
         canonical_address: resolvedAddress,
+        direct_address: directRaw || null,
+        pronoun_register: pronounRaw || null,
         role: pickField(character, 'role')
       });
     }

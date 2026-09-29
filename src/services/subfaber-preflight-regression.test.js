@@ -146,6 +146,51 @@ test('SubFaberPreflight: 4-pillar schema stays clean (theme / terms / characters
   assert.ok(prompt.includes('"role"'), 'characters entries must use "role" key');
 });
 
+// [SOCIOLINGUISTIC v2 2026-09-29] direct_address (vocative) + pronoun_register
+test('SubFaberPreflight: characters schema declares direct_address + pronoun_register keys', () => {
+  const prompt = buildPreflightPrompt('Dialogue.', 'Malay', 'English');
+  assert.ok(prompt.includes('"direct_address"'), 'characters schema must declare direct_address (vocative) key');
+  assert.ok(prompt.includes('"pronoun_register"'), 'characters schema must declare pronoun_register key');
+  assert.ok(prompt.includes('spoken TO face-to-face'), 'direct_address instruction must explain the vocative use');
+  assert.ok(prompt.includes('THIRD-PERSON reference'), 'canonical_address must be clarified as third-person narrative form');
+  assert.ok(prompt.includes('saya/awak'), 'pronoun_register instruction must include the Malay register example');
+});
+
+test('SubFaberPreflight: parse preserves direct_address + pronoun_register (null when absent)', () => {
+  const response = JSON.stringify({
+    theme: 'Family drama.',
+    terms: [],
+    characters: [
+      { name: 'Shen', canonical_address: 'Puan Shen', direct_address: 'Mak Cik Shen', pronoun_register: 'saya/awak', role: 'aunt' },
+      { name: 'Lin', canonical_address: 'Encik Lin', role: 'antagonist' }
+    ],
+    credits_and_titles: []
+  });
+  const parsed = parsePreflightResponse(response);
+  assert.equal(parsed.characters[0].direct_address, 'Mak Cik Shen', 'vocative preserved');
+  assert.equal(parsed.characters[0].pronoun_register, 'saya/awak', 'pronoun register preserved');
+  assert.equal(parsed.characters[1].direct_address, null, 'absent vocative → null');
+  assert.equal(parsed.characters[1].pronoun_register, null, 'absent pronoun register → null');
+});
+
+test('SubFaberPreflight: engine renders vocative + pronoun register in Character Hierarchy', () => {
+  const TranslationEngine = require('./translationEngine');
+  const provider = { translateSubtitle: async () => '', estimateTokenCount: () => 10 };
+  const engine = new TranslationEngine(provider, 'gemini-2.5-flash', {}, { providerName: 'gemini' });
+  const batch = [{ id: 5, timecode: '00:00:05,000 --> 00:00:06,000', text: 'Shen arrives.' }];
+  const block = engine._formatPreflightForChunk(
+    {
+      theme: 'Drama.',
+      terms: [],
+      characters: [{ name: 'Shen', canonical_address: 'Puan Shen', direct_address: 'Mak Cik Shen', pronoun_register: 'saya/awak', role: 'aunt' }],
+      credits_and_titles: []
+    },
+    [], batch, [], 'Malay'
+  );
+  assert.ok(block.includes('direct address: Mak Cik Shen'), 'vocative rendered in Character Hierarchy');
+  assert.ok(block.includes('[pronouns: saya/awak]'), 'pronoun register rendered in Character Hierarchy');
+});
+
 test('SubFaberPreflight: credits detection directive — Phase 0 engine inspects lines 1-5 for non-dialogue openings', () => {
   const prompt = buildPreflightPrompt('Dialogue.', 'Malay', 'English');
   assert.ok(

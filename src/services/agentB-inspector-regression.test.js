@@ -196,7 +196,62 @@ test('AgentB: inspector instruction locks the SHIFT golden clause verbatim', () 
     'DROP mesti membawa definisi generic substitute (maksud spesifik terpadam)'
   );
   assert.ok(!INSPECTOR_INSTRUCTION.includes('fabricated filler'), 'MERGE TIADA lagi klausa "fabricated filler" (pertindihan PHANTOM dibuang)');
-  assert.ok(INSPECTOR_INSTRUCTION.includes('MERGE|DROP|PHANTOM|SHIFT'), 'output contract mesti menyenaraikan 4 jenayah');
+  assert.ok(INSPECTOR_INSTRUCTION.includes('MERGE|DROP|PHANTOM|SHIFT|UNTRANSLATED|REGISTER'), 'output contract mesti menyenaraikan 6 jenayah');
+});
+
+// ── 1C. UNTRANSLATED + REGISTER crimes (SOCIOLINGUISTIC v2 2026-09-29) ──
+
+test('AgentB: parseInspectorResponse accepts UNTRANSLATED crime (lazy source-copy leak)', () => {
+  const response = JSON.stringify({
+    valid: false,
+    crimes: [{ type: 'UNTRANSLATED', ids: [12], note: 'english sentence copied verbatim' }]
+  });
+  const verdict = parseInspectorResponse(response);
+  assert.equal(verdict.valid, false);
+  assert.equal(verdict.crimes[0].type, 'UNTRANSLATED');
+  assert.deepEqual(verdict.crimes[0].ids, [12]);
+});
+
+test('AgentB: parseInspectorResponse accepts REGISTER crime (honorific contradiction)', () => {
+  const response = JSON.stringify({
+    valid: false,
+    crimes: [{ type: 'REGISTER', ids: [7], note: 'Puan Shen became Cik Shen' }]
+  });
+  const verdict = parseInspectorResponse(response);
+  assert.equal(verdict.valid, false);
+  assert.equal(verdict.crimes[0].type, 'REGISTER');
+});
+
+test('AgentB: inspector instruction defines UNTRANSLATED + REGISTER with guardrails', () => {
+  assert.ok(
+    INSPECTOR_INSTRUCTION.includes('UNTRANSLATED: Output slot still carries the source-language sentence'),
+    'UNTRANSLATED definition (lazy-copy leak) mesti hadir'
+  );
+  assert.ok(
+    INSPECTOR_INSTRUCTION.includes('do NOT flag: proper nouns, character/brand/company names, creative-work titles'),
+    'UNTRANSLATED mesti kecualikan kata nama khas / tajuk (elak false-positive ESCAPE HATCH sah)'
+  );
+  assert.ok(
+    INSPECTOR_INSTRUCTION.includes("REGISTER: A recurring character's honorific/title in the translation contradicts the locked address"),
+    'REGISTER definition (percanggahan gelaran) mesti hadir'
+  );
+  assert.ok(
+    INSPECTOR_INSTRUCTION.includes('Only flag when a Character Address Reference is provided'),
+    'REGISTER mesti hanya trigger bila rujukan alamat wujud (elak audit buta)'
+  );
+});
+
+test('AgentB: formatPreflightContextForInspection renders vocative direct-address when it differs', () => {
+  const block = formatPreflightContextForInspection({
+    theme: 'Family drama.',
+    terms: [],
+    characters: [
+      { name: 'Shen', canonical_address: 'Puan Shen', direct_address: 'Mak Cik Shen', role: 'aunt' },
+      { name: 'Lin', canonical_address: 'Encik Lin', role: 'antagonist' }
+    ]
+  });
+  assert.ok(block.includes('Puan Shen / Mak Cik Shen (when addressed directly)'), 'vocative rendered beside narrative form');
+  assert.ok(block.includes('- Lin → Encik Lin'), 'character without vocative renders narrative form only');
 });
 
 // ── 2. buildInspectionPayload ──

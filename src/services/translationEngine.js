@@ -277,10 +277,10 @@ class TranslationEngine {
       agentBBatchesInspected: 0,           // penyebut (semua semakan lengkap — bukan PASS-only; beza dgn agentBInspections legasi)
       agentBBatchesSkippedAfterOpen: 0,    // batch tanpa perlindungan selepas open
       // [AGENTB-OBS P3] Crime pattern tracking (observation-only)
-      crimesDetectedByType: { MERGE: 0, DROP: 0, PHANTOM: 0, SHIFT: 0 },
+      crimesDetectedByType: { MERGE: 0, DROP: 0, PHANTOM: 0, SHIFT: 0, UNTRANSLATED: 0, REGISTER: 0 },
       crimesResolvedByRetry: 0,            // hanya re-verdict LULUS yang disahkan (K3)
       crimePatternDetected: null,          // → array string (K2)
-      crimeBatchIndices: { MERGE: [], DROP: [], PHANTOM: [], SHIFT: [] } // cap 50/type
+      crimeBatchIndices: { MERGE: [], DROP: [], PHANTOM: [], SHIFT: [], UNTRANSLATED: [], REGISTER: [] } // cap 50/type
     };
   }
 
@@ -366,7 +366,7 @@ class TranslationEngine {
     // [AGENTB-OBS P3/BS#4] Corak dievaluasi SEKALI di hujung fail —
     // mengelakkan warn pramatang daripada kluster panas awal (3 batch
     // berturut yang akhirnya di-dilute di bawah 15%).
-    for (const t of ['MERGE', 'DROP', 'PHANTOM', 'SHIFT']) {
+    for (const t of ['MERGE', 'DROP', 'PHANTOM', 'SHIFT', 'UNTRANSLATED', 'REGISTER']) {
       if (s.crimesDetectedByType[t] > 0) this._checkCrimePattern(t);
     }
     const totalCrimes = Object.values(s.crimesDetectedByType).reduce((a, b) => a + b, 0);
@@ -1459,7 +1459,16 @@ class TranslationEngine {
             ? (resolvePillarText(c, 'canonical_address', 'canonicalAddress') || name)
             : chunkPack.notLockedGuidance; // [UNIVERSAL-FIX] pack-driven (Malay / generic)
           const role = resolvePillarText(c, 'role');
-          return `- ${name} → ${address}${role ? ` (${role})` : ''}`;
+          // MANDAT SOSIOLINGUISTIK v2 2026-09-29: vocative (direct address) +
+          // pronoun register. Dirender hanya bila hadir supaya token dijimat
+          // dan watak tanpa data tidak dipaksa gelaran/ganti nama tekaan.
+          const vocative = resolvePillarText(c, 'direct_address', 'directAddress');
+          const pronoun = resolvePillarText(c, 'pronoun_register', 'pronounRegister');
+          const addressPart = (vocative && vocative !== address)
+            ? `${address} (direct address: ${vocative})`
+            : address;
+          const pronounPart = pronoun ? ` [pronouns: ${pronoun}]` : '';
+          return `- ${name} → ${addressPart}${role ? ` (${role})` : ''}${pronounPart}`;
         })
         .filter(Boolean)
         .join('\n');
@@ -2689,9 +2698,10 @@ Translate the provided ${sourceLabel || 'source'} subtitles line by line into na
 2. ANTI-SHIFT — ZERO SKIPPING: Every <s id="N"> in the input MUST produce exactly one <s id="N"> in the output. NEVER skip a slot, and NEVER shift subsequent dialogue forward to fill a short or empty one. If a slot contains only symbols, music notes, or numbers with no translatable words, copy it as-is rather than omitting it — an empty slot causes every line after it to drift out of sync.
 3. ANTI-PHANTOM — NO FABRICATION: NEVER invent, add, or elaborate on content that has no basis in that line's own source text. If unsure how to translate a line, translate it as literally as possible rather than inventing plausible-sounding dialogue.
 4. ANTI-DROP — FULL MEANING TRANSFER: Every output line must carry the actual specific meaning of its source line. NEVER replace a line's specific content with a generic substitute that erases its meaning.
-5. ESCAPE HATCH: If content cannot be translated — foreign proper nouns, brand/entity names, creative work titles, corrupted text — copy the exact source text into that slot instead.
-6. SONG LYRICS: Lyrics inside music notes (♪/♫) must always be translated, whether as a full song block or scattered background music.
-7. PRESERVE all [br], <i>...</i>, speaker dashes (-), and any other inline markup in the exact same position and count as in the source.
+5. SLOT-BOUNDARY TIEBREAKER: When a single sentence is split across slots and the target language's natural word order differs from the source, keep each slot's translated content within that same slot. Translate the fragment as it stands even if the resulting grammar looks reordered or incomplete — do NOT "fix" the grammar by moving words across slot boundaries. Slot integrity always outranks cross-slot grammatical smoothness.
+6. ESCAPE HATCH: If a fragment genuinely cannot be translated — foreign proper nouns, brand/entity names, creative work titles, corrupted text — copy the exact source text into that slot. This applies ONLY to such untranslatable fragments; a normal sentence must always be translated, never copied verbatim in the source language.
+7. SONG LYRICS: Lyrics inside music notes (♪/♫) must always be translated, whether as a full song block or scattered background music.
+8. PRESERVE inline markup — keep every [br], <i>...</i>, speaker dash (-), and other inline tag, with the SAME COUNT as the source. Keep <i>/dash markup anchored to the words it wraps. For [br] line breaks: preserve the same number of [br] markers, but you MAY reposition a [br] to the most natural break point for the target language (after punctuation, before a conjunction or preposition) since target phrasing length often differs — never split a word, a name, or strand a lone conjunction/particle on its own line.
 </structural_rules>
 
 <translation_craft>
