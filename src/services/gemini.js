@@ -835,7 +835,7 @@ class GeminiService {
    *
    * The raw ~605-model catalog is filtered through isGoogleModel() so only
    * Google/Gemini/Gemma models are retained (~11 models). This keeps the Set
-   * focused on models SubMaker can actually use via the Gemini Native endpoint.
+   * focused on models SubFaber can actually use via the Gemini Native endpoint.
    *
    * Defensive: returns null on any failure so the translation flow is unaffected.
    * @returns {Promise<Set<string>|null>} Set of Google model IDs, or null if unavailable.

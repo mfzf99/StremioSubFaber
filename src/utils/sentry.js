@@ -1,5 +1,5 @@
 /**
- * Sentry Integration for SubMaker
+ * Sentry Integration for SubFaber
  * 
  * All errors are sent to Sentry (no filtering).
  * Only warn/info level messages are filtered out.

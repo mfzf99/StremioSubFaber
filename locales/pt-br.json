@@ -25,7 +25,7 @@
       "selectOption": "Selecione uma opção"
     },
     "manifest": {
-      "name": "SubMaker - Tradutor de Legendas",
+      "name": "SubFaber - Tradutor de Legendas",
       "description": "Assuma o controle das suas legendas! Busque e traduza legendas do OpenSubtitles, SubScene e SubDL com uma chave gratuita do Gemini AI ou outros provedores de IA, sem nunca sair do Stremio.\n\nIdiomas de origem: {sources}\nIdiomas de destino: {targets}"
     },
     "api": {
@@ -152,10 +152,10 @@
       "dns": "Não é possível alcançar o serviço. Falha na busca DNS."
     },
     "toolbox": {
-      "documentTitle": "Sub Toolbox - SubMaker",
+      "documentTitle": "Sub Toolbox - SubFaber",
       "streamUnknown": "Nome do arquivo do stream não detectado (ainda funciona)",
       "header": {
-        "title": "SubMaker Toolbox",
+        "title": "SubFaber Toolbox",
         "linked": "Vinculado a {id}"
       },
       "refresh": {
@@ -180,7 +180,7 @@
       "hero": {
         "eyebrow": "Sub Toolbox",
         "title": "Escolha uma ferramenta sem sair do seu stream",
-        "body": "Aproveite o Toolbox do SubMaker! Suas chaves de API salvas, idiomas de destino e cache vêm com você automaticamente.",
+        "body": "Aproveite o Toolbox do SubFaber! Suas chaves de API salvas, idiomas de destino e cache vêm com você automaticamente.",
         "smdbHint": "Envie ou traduza legendas SMDB para seus streams no nosso banco de dados:",
         "primary": "Histórico de tradução",
         "secondary": "Configurar"
@@ -274,7 +274,7 @@
       },
       "embedded": {
         "meta": {
-          "documentTitle": "Traduzir legendas embutidas - SubMaker",
+          "documentTitle": "Traduzir legendas embutidas - SubFaber",
           "pageHeading": "Estúdio de legendas embutidas",
           "pageSubtitle": "Extraia faixas embutidas do seu stream atual e traduza na hora.",
           "title": "Título: {title}",
@@ -383,7 +383,7 @@
         }
       },
       "autoSubs": {
-        "documentTitle": "Legendas Automáticas - SubMaker",
+        "documentTitle": "Legendas Automáticas - SubFaber",
         "heroTitle": "Legendas Automáticas",
         "heroSubtitle": "Gerar legendas com Whisper e traduzir",
         "badges": {
@@ -587,7 +587,7 @@
       "sessionErrorAdvice": "Por favor, reconfigure e reinstale o addon.",
       "sessionErrorQuickFix": "Correção rápida: Abra este link para reinstalar com nova configuração:",
       "sessionErrorToken": "Uma nova configuração foi criada. Use este token para reinstalar:",
-      "sessionErrorFooter": "Algo está errado ou uma atualização quebrou sua configuração do SubMaker. Desculpe! Por favor, reconfigure e reinstale o addon.",
+      "sessionErrorFooter": "Algo está errado ou uma atualização quebrou sua configuração do SubFaber. Desculpe! Por favor, reconfigure e reinstale o addon.",
       "osAuthFailTitle": "Falha no login do OpenSubtitles",
       "osAuthFailBody": "Por favor, corrija seu nome de usuário/senha na configuração do addon",
       "osQuotaTitle": "Limite diário de download do OpenSubtitles atingido",
@@ -701,7 +701,7 @@
     },
     "history": {
       "eyebrow": "Sub toolbox",
-      "documentTitle": "Histórico de Traduções - SubMaker",
+      "documentTitle": "Histórico de Traduções - SubFaber",
       "title": "Histórico de Traduções",
       "subtitle": "Revise as traduções realizadas em suas ferramentas",
       "cachedLabel": "Em cache",
@@ -1482,7 +1482,7 @@
     },
     "fileUpload": {
       "title": "Tradução de Arquivo",
-      "documentTitle": "Tradução de Arquivo - SubMaker",
+      "documentTitle": "Tradução de Arquivo - SubFaber",
       "subtitle": "Faça upload e traduza seus arquivos de legenda",
       "help": "Mostrar Instruções",
       "themeToggle": "Alternar tema",
@@ -1694,7 +1694,7 @@
         "closeAria": "Fechar diálogo de redefinição"
       },
       "provider": {
-        "using": "Usando {main}{mainModel} da sua configuração salva do SubMaker.",
+        "using": "Usando {main}{mainModel} da sua configuração salva do SubFaber.",
         "withFallback": "Usando {main}{mainModel} com fallback {fallback}{fallbackModel}."
       },
       "errors": {
@@ -1708,7 +1708,7 @@
       }
     },
     "sync": {
-      "documentTitle": "Subtitles Sync Studio - SubMaker",
+      "documentTitle": "Subtitles Sync Studio - SubFaber",
       "title": "Subtitles Sync Studio",
       "subtitle": "Sincronize legendas automaticamente com seu vídeo usando análise de áudio",
       "sectionHeading": "Vincule seu stream, escolha uma legenda e sincronize",
@@ -1813,7 +1813,7 @@
           "linked": "URL do stream vinculada para autosync.",
           "needSubtitle": "Por favor, selecione uma legenda primeiro",
           "needLanguage": "Selecione o idioma da legenda antes de sincronizar.",
-          "extensionRequired": "O Autosync requer a Extensão Chrome SubMaker. Por favor, instale/habilite-a.",
+          "extensionRequired": "O Autosync requer a Extensão Chrome SubFaber. Por favor, instale/habilite-a.",
           "urlRequired": "O Autosync requer uma URL de stream http(s) válida. Por favor, cole-a no Passo 1.",
           "profileRequired": "Selecione um perfil de varredura antes de iniciar o autosync.",
           "success": "Legenda sincronizada com sucesso!",

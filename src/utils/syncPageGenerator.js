@@ -228,7 +228,7 @@ function themeToggleStyles() {
         .theme-toggle:focus,
         .theme-toggle:focus-visible {
             outline: none;
-            box-shadow: 0 0 0 3px rgba(8, 164, 213, 0.35), 0 8px 20px var(--shadow);
+            box-shadow: 0 0 0 3px rgba(225, 29, 42, 0.35), 0 8px 20px var(--shadow);
         }
 
         .theme-toggle:hover {
@@ -383,7 +383,7 @@ async function generateSubtitleSyncPage(subtitles, videoId, streamFilename, conf
     const localeBootstrap = buildClientBootstrap(loadLocale(config?.uiLanguage || 'en'));
     const themeToggleLabel = t('fileUpload.themeToggle', {}, 'Toggle theme');
     const copy = {
-        documentTitle: t('sync.documentTitle', {}, 'Subtitles Sync Studio - SubMaker'),
+        documentTitle: t('sync.documentTitle', {}, 'Subtitles Sync Studio - SubFaber'),
         title: t('sync.title', {}, 'Subtitles Sync Studio'),
         subtitle: t('sync.subtitle', {}, 'Automatically synchronize subtitles with your video using audio analysis'),
         badges: {
@@ -626,10 +626,10 @@ async function generateSubtitleSyncPage(subtitles, videoId, streamFilename, conf
         }
 
         :root {
-            --primary: #08A4D5;
-            --primary-light: #33B9E1;
-            --primary-dark: #068DB7;
-            --secondary: #33B9E1;
+            --primary: #e11d2a;
+            --primary-light: #ff4655;
+            --primary-dark: #b3141f;
+            --secondary: #ff4655;
             --success: #10b981;
             --warning: #f59e0b;
             --danger: #ef4444;
@@ -643,16 +643,16 @@ async function generateSubtitleSyncPage(subtitles, videoId, streamFilename, conf
             --muted: #475569;
             --border: #dbe3ea;
             --shadow: rgba(0, 0, 0, 0.08);
-            --glow: rgba(8, 164, 213, 0.25);
+            --glow: rgba(225, 29, 42, 0.25);
             --theme-toggle-size: 48px;
         }
 
         [data-theme="dark"] {
             color-scheme: dark;
-            --primary: #08A4D5;
-            --primary-light: #33B9E1;
-            --primary-dark: #068DB7;
-            --secondary: #33B9E1;
+            --primary: #e11d2a;
+            --primary-light: #ff4655;
+            --primary-dark: #b3141f;
+            --secondary: #ff4655;
             --success: #10b981;
             --warning: #f59e0b;
             --danger: #ef4444;
@@ -666,16 +666,16 @@ async function generateSubtitleSyncPage(subtitles, videoId, streamFilename, conf
             --muted: #9AA0A6;
             --border: #2A3247;
             --shadow: rgba(0, 0, 0, 0.3);
-            --glow: rgba(8, 164, 213, 0.35);
+            --glow: rgba(225, 29, 42, 0.35);
         }
 
         /* True Dark mode (Blackhole) color scheme */
         [data-theme="true-dark"] {
             color-scheme: dark;
-            --primary: #08A4D5;
-            --primary-light: #33B9E1;
-            --primary-dark: #068DB7;
-            --secondary: #33B9E1;
+            --primary: #e11d2a;
+            --primary-light: #ff4655;
+            --primary-dark: #b3141f;
+            --secondary: #ff4655;
             --success: #10b981;
             --warning: #f59e0b;
             --danger: #ef4444;
@@ -689,7 +689,7 @@ async function generateSubtitleSyncPage(subtitles, videoId, streamFilename, conf
             --muted: #8A8A8A;
             --border: #1a1a1a;
             --shadow: rgba(0, 0, 0, 0.8);
-            --glow: rgba(8, 164, 213, 0.45);
+            --glow: rgba(225, 29, 42, 0.45);
         }
 
         /* Removed forced color-scheme override - let theme cascade handle it naturally */
@@ -721,22 +721,22 @@ async function generateSubtitleSyncPage(subtitles, videoId, streamFilename, conf
             right: 0;
             bottom: 0;
             background:
-                radial-gradient(circle at 20% 50%, rgba(8, 164, 213, 0.12) 0%, transparent 50%),
-                radial-gradient(circle at 80% 50%, rgba(51, 185, 225, 0.12) 0%, transparent 50%);
+                radial-gradient(circle at 20% 50%, rgba(225, 29, 42, 0.12) 0%, transparent 50%),
+                radial-gradient(circle at 80% 50%, rgba(255, 70, 85, 0.12) 0%, transparent 50%);
             pointer-events: none;
             z-index: 0;
         }
 
         [data-theme="dark"] body::before {
             background:
-                radial-gradient(circle at 20% 50%, rgba(8, 164, 213, 0.15) 0%, transparent 50%),
-                radial-gradient(circle at 80% 50%, rgba(51, 185, 225, 0.15) 0%, transparent 50%);
+                radial-gradient(circle at 20% 50%, rgba(225, 29, 42, 0.15) 0%, transparent 50%),
+                radial-gradient(circle at 80% 50%, rgba(255, 70, 85, 0.15) 0%, transparent 50%);
         }
 
         [data-theme="true-dark"] body::before {
             background:
-                radial-gradient(circle at 20% 50%, rgba(8, 164, 213, 0.08) 0%, transparent 50%),
-                radial-gradient(circle at 80% 50%, rgba(51, 185, 225, 0.08) 0%, transparent 50%);
+                radial-gradient(circle at 20% 50%, rgba(225, 29, 42, 0.08) 0%, transparent 50%),
+                radial-gradient(circle at 80% 50%, rgba(255, 70, 85, 0.08) 0%, transparent 50%);
         }
 
         body.modal-open {
@@ -843,7 +843,7 @@ async function generateSubtitleSyncPage(subtitles, videoId, streamFilename, conf
             max-height: 88vh;
             overflow: hidden;
             border: 1px solid var(--border);
-            box-shadow: 0 24px 72px var(--shadow), 0 0 0 1px rgba(8, 164, 213, 0.14);
+            box-shadow: 0 24px 72px var(--shadow), 0 0 0 1px rgba(225, 29, 42, 0.14);
             animation: modalSlideIn 0.42s cubic-bezier(0.22, 1, 0.36, 1);
             position: relative;
             display: flex;
@@ -865,7 +865,7 @@ async function generateSubtitleSyncPage(subtitles, videoId, streamFilename, conf
         .modal-header {
             padding: 1.25rem 1.5rem;
             border-bottom: 1px solid var(--border);
-            background: linear-gradient(135deg, rgba(8, 164, 213, 0.08) 0%, rgba(51, 185, 225, 0.08) 100%);
+            background: linear-gradient(135deg, rgba(225, 29, 42, 0.08) 0%, rgba(255, 70, 85, 0.08) 100%);
             position: sticky;
             top: 0;
             z-index: 1;
@@ -1202,8 +1202,8 @@ async function generateSubtitleSyncPage(subtitles, videoId, streamFilename, conf
             margin-top: 10px;
             padding: 12px;
             border-radius: 12px;
-            background: rgba(8,164,213,0.12);
-            border: 1px solid rgba(8,164,213,0.25);
+            background: rgba(225, 29, 42,0.12);
+            border: 1px solid rgba(225, 29, 42,0.25);
             color: var(--text);
             font-weight: 700;
         }
@@ -1214,9 +1214,9 @@ async function generateSubtitleSyncPage(subtitles, videoId, streamFilename, conf
             gap: 10px;
             padding: 10px 12px;
             border-radius: 12px;
-            background: linear-gradient(135deg, rgba(8,164,213,0.14), rgba(255,255,255,0.08));
-            border: 1px solid rgba(8,164,213,0.25);
-            box-shadow: 0 12px 30px rgba(8,164,213,0.16);
+            background: linear-gradient(135deg, rgba(225, 29, 42,0.14), rgba(255,255,255,0.08));
+            border: 1px solid rgba(225, 29, 42,0.25);
+            box-shadow: 0 12px 30px rgba(225, 29, 42,0.16);
         }
         .status-labels { display: flex; flex-direction: column; line-height: 1.15; }
         .label-eyebrow { font-size: 11px; letter-spacing: 0.12em; text-transform: uppercase; color: var(--muted); font-weight: 700; }
@@ -1248,16 +1248,16 @@ async function generateSubtitleSyncPage(subtitles, videoId, streamFilename, conf
             width: 12px;
             height: 12px;
             border-radius: 999px;
-            box-shadow: 0 0 0 0 rgba(8, 164, 213, 0.0);
+            box-shadow: 0 0 0 0 rgba(225, 29, 42, 0.0);
         }
         .status-dot.ok { background: linear-gradient(135deg, #4ade80, #22c55e); }
         .status-dot.warn { background: linear-gradient(135deg, #fbbf24, #f59e0b); }
         .status-dot.bad { background: linear-gradient(135deg, #f43f5e, #dc2626); }
         .status-dot.pulse { animation: pulse 1.15s ease-in-out infinite; }
         @keyframes pulse {
-            0% { box-shadow: 0 0 0 0 rgba(8, 164, 213, 0.22); }
-            70% { box-shadow: 0 0 0 10px rgba(8, 164, 213, 0); }
-            100% { box-shadow: 0 0 0 0 rgba(8, 164, 213, 0); }
+            0% { box-shadow: 0 0 0 0 rgba(225, 29, 42, 0.22); }
+            70% { box-shadow: 0 0 0 10px rgba(225, 29, 42, 0); }
+            100% { box-shadow: 0 0 0 0 rgba(225, 29, 42, 0); }
         }
 
         .section {
@@ -1278,14 +1278,14 @@ async function generateSubtitleSyncPage(subtitles, videoId, streamFilename, conf
             background:
                 linear-gradient(180deg, rgba(20, 25, 49, 0.9) 0%, rgba(20, 25, 49, 0.82) 100%),
                 var(--surface);
-            box-shadow: 0 12px 34px var(--shadow), 0 0 0 1px rgba(8, 164, 213, 0.1);
+            box-shadow: 0 12px 34px var(--shadow), 0 0 0 1px rgba(225, 29, 42, 0.1);
         }
 
         [data-theme="true-dark"] .section {
             background:
                 linear-gradient(180deg, rgba(10, 10, 10, 0.94) 0%, rgba(10, 10, 10, 0.86) 100%),
                 var(--surface);
-            box-shadow: 0 14px 40px var(--shadow), 0 0 0 1px rgba(8, 164, 213, 0.12);
+            box-shadow: 0 14px 40px var(--shadow), 0 0 0 1px rgba(225, 29, 42, 0.12);
         }
 
         .section:hover {
@@ -1441,7 +1441,7 @@ async function generateSubtitleSyncPage(subtitles, videoId, streamFilename, conf
             justify-content: center;
             padding: 0.35rem 0.75rem;
             border-radius: 999px;
-            background: rgba(8, 164, 213, 0.12);
+            background: rgba(225, 29, 42, 0.12);
             color: var(--primary);
             font-weight: 700;
             font-size: 0.85rem;
@@ -1670,8 +1670,8 @@ async function generateSubtitleSyncPage(subtitles, videoId, streamFilename, conf
         }
 
         .status-message.info {
-            background: rgba(8, 164, 213, 0.08);
-            border: 1px solid rgba(8, 164, 213, 0.2);
+            background: rgba(225, 29, 42, 0.08);
+            border: 1px solid rgba(225, 29, 42, 0.2);
             color: var(--text-primary);
             text-align: center;
         }
@@ -1874,7 +1874,7 @@ async function generateSubtitleSyncPage(subtitles, videoId, streamFilename, conf
 
         .upload-area.dragover {
             border-color: var(--primary);
-            background: rgba(8, 164, 213, 0.08);
+            background: rgba(225, 29, 42, 0.08);
             border-style: solid;
         }
 
@@ -1932,8 +1932,8 @@ async function generateSubtitleSyncPage(subtitles, videoId, streamFilename, conf
         }
 
         .info-box {
-            background: rgba(8, 164, 213, 0.08);
-            border: 1px solid rgba(8, 164, 213, 0.2);
+            background: rgba(225, 29, 42, 0.08);
+            border: 1px solid rgba(225, 29, 42, 0.2);
             border-radius: 12px;
             padding: 1.25rem;
             margin-bottom: 1rem;
@@ -1953,8 +1953,8 @@ async function generateSubtitleSyncPage(subtitles, videoId, streamFilename, conf
         }
 
         .auto-sync-box {
-            background: rgba(8, 164, 213, 0.12);
-            border-color: rgba(8, 164, 213, 0.25);
+            background: rgba(225, 29, 42, 0.12);
+            border-color: rgba(225, 29, 42, 0.25);
             color: var(--text-primary);
         }
 
@@ -3695,7 +3695,7 @@ async function generateSubtitleSyncPage(subtitles, videoId, streamFilename, conf
         const VERSION_WARNING_TEMPLATE = tt(
             'toolbox.extension.versionOutdated',
             { detected: '{detected}', required: '{required}' },
-            'SubMaker xSync {detected} detected. This toolbox expects {required} or newer, so some sync and subtitle tools may behave unpredictably until you update.'
+            'SubFaber xSync {detected} detected. This toolbox expects {required} or newer, so some sync and subtitle tools may behave unpredictably until you update.'
         );
         const primaryModeSelect = document.getElementById('primarySyncMode');
         const secondaryModeSelect = document.getElementById('secondarySyncMode');
@@ -4284,7 +4284,7 @@ async function generateSubtitleSyncPage(subtitles, videoId, streamFilename, conf
 
                 if (!extensionInstalled) {
                     pingExtension(true);
-                    throw new Error(tt('sync.step3.status.extensionRequired', {}, 'Autosync requires the SubMaker Chrome Extension. Please install/enable it.'));
+                    throw new Error(tt('sync.step3.status.extensionRequired', {}, 'Autosync requires the SubFaber Chrome Extension. Please install/enable it.'));
                 }
                 if (!isHttpUrl(STATE.streamUrl || '')) {
                     throw new Error(tt('sync.step3.status.urlRequired', {}, 'Autosync requires a valid http(s) stream URL. Please paste it in Step 1.'));

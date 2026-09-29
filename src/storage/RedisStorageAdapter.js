@@ -12,7 +12,7 @@ const DEFAULT_REDIS_COMMAND_TIMEOUT_MS = 5000;
 
 // The size check and all writes that make up one cache entry must happen in one
 // Redis operation. A pipeline only batches commands; it does not isolate them
-// from concurrent writers in other SubMaker pods.
+// from concurrent writers in other SubFaber pods.
 const ATOMIC_CACHE_WRITE_SCRIPT = `
 local contentSize = tonumber(ARGV[2]) or 0
 local now = ARGV[3]

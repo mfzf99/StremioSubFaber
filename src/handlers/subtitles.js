@@ -896,7 +896,7 @@ ${reinstallInstruction}
 
 3
 00:00:06,001 --> 04:00:00,000
-${t('subtitle.sessionErrorTitle', {}, 'Session Token Error')}\n${t('subtitle.sessionErrorFooter', {}, 'Something is wrong or an update broke your SubMaker config.\nSorry! Please reconfig and reinstall the addon.')}
+${t('subtitle.sessionErrorTitle', {}, 'Session Token Error')}\n${t('subtitle.sessionErrorFooter', {}, 'Something is wrong or an update broke your SubFaber config.\nSorry! Please reconfig and reinstall the addon.')}
 `;
 
   return ensureInformationalSubtitleSize(srt, null, uiLanguage);
@@ -2671,7 +2671,7 @@ function createSubtitleHandler(config) {
           subtitles: [{
             id: 'config_error_session_token',
             // Prefix with "!" so Stremio lists this error entry first
-            lang: '!SubMaker Error',
+            lang: '!SubFaber Error',
             url: `{{ADDON_URL}}/error-subtitle/session-token-not-found.srt`
           }]
         };
@@ -2692,7 +2692,7 @@ function createSubtitleHandler(config) {
         const warningEntry = {
           id: 'config_warning_credential_decryption',
           // Use "⚠" prefix to sort near the top and indicate warning (not error)
-          lang: '⚠ SubMaker Notice',
+          lang: '⚠ SubFaber Notice',
           url: `{{ADDON_URL}}/error-subtitle/credential-decryption-failed.srt`
         };
 
@@ -2708,7 +2708,7 @@ function createSubtitleHandler(config) {
           subtitles: [{
             id: 'config_error_session_token',
             // Prefix with "!" so Stremio lists this error entry first
-            lang: '!SubMaker Error',
+            lang: '!SubFaber Error',
             url: `{{ADDON_URL}}/error-subtitle/session-token-not-found.srt`
           }]
         };

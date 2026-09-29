@@ -624,7 +624,7 @@ const SUPPORTED_ANIME_PREFIXES = new Set([
 ]);
 
 /**
- * Classify whether a Stremio ID is supported by SubMaker before deeper parsing.
+ * Classify whether a Stremio ID is supported by SubFaber before deeper parsing.
  * This lets the server log filtered-out requests instead of relying on manifest
  * `idPrefixes`, which causes Stremio to skip the addon entirely client-side.
  *

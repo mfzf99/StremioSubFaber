@@ -25,7 +25,7 @@
       "selectOption": "Select an option"
     },
     "manifest": {
-      "name": "SubMaker - Subtitle Translator",
+      "name": "SubFaber - Subtitle Translator",
       "description": "Take control of your subtitles! Fetch and translate subtitles from OpenSubtitles, SubScene and SubDL with a free Gemini AI key or other AI providers, without ever leaving Stremio.\n\nSource languages: {sources}\nTarget languages: {targets}"
     },
     "api": {
@@ -153,10 +153,10 @@
       "dns": "Cannot reach service. DNS lookup failed."
     },
     "toolbox": {
-      "documentTitle": "Sub Toolbox - SubMaker",
+      "documentTitle": "Sub Toolbox - SubFaber",
       "streamUnknown": "Stream filename not detected (still works)",
       "header": {
-        "title": "SubMaker Toolbox",
+        "title": "SubFaber Toolbox",
         "linked": "Linked to {id}"
       },
       "refresh": {
@@ -181,7 +181,7 @@
       "hero": {
         "eyebrow": "Sub Toolbox",
         "title": "Pick a tool without leaving your stream",
-        "body": "Enjoy SubMaker's Toolbox! Your saved API keys, target languages, and cache come with you automatically.",
+        "body": "Enjoy SubFaber's Toolbox! Your saved API keys, target languages, and cache come with you automatically.",
         "smdbHint": "Upload or translate SMDB subtitles for your streams in our database:",
         "primary": "Translation History",
         "secondary": "Configure"
@@ -275,7 +275,7 @@
       },
       "embedded": {
         "meta": {
-          "documentTitle": "Translate Embedded Subtitles - SubMaker",
+          "documentTitle": "Translate Embedded Subtitles - SubFaber",
           "pageHeading": "Embedded Subtitles Studio",
           "pageSubtitle": "Extract embedded tracks from your current stream and translate them instantly.",
           "title": "Title: {title}",
@@ -384,7 +384,7 @@
         }
       },
       "autoSubs": {
-        "documentTitle": "Automatic Subtitles - SubMaker",
+        "documentTitle": "Automatic Subtitles - SubFaber",
         "heroTitle": "Automatic Subtitles",
         "heroSubtitle": "Generate subtitles with Whisper then translate",
         "badges": {
@@ -588,7 +588,7 @@
       "sessionErrorAdvice": "Please reconfig and reinstall the addon.",
       "sessionErrorQuickFix": "Quick fix: Open this link to reinstall with fresh config:",
       "sessionErrorToken": "A fresh config was created. Use this token to reinstall:",
-      "sessionErrorFooter": "Something is wrong or an update broke your SubMaker config. Sorry! Please reconfig and reinstall the addon.",
+      "sessionErrorFooter": "Something is wrong or an update broke your SubFaber config. Sorry! Please reconfig and reinstall the addon.",
       "osAuthFailTitle": "OpenSubtitles login failed",
       "osAuthFailBody": "Please fix your username/password in addon config",
       "osQuotaTitle": "OpenSubtitles daily download limit reached",
@@ -702,7 +702,7 @@
     },
     "history": {
       "eyebrow": "Sub toolbox",
-      "documentTitle": "Translation History - SubMaker",
+      "documentTitle": "Translation History - SubFaber",
       "title": "Translation History",
       "subtitle": "Review translations performed across your tools",
       "cachedLabel": "Cached",
@@ -1481,7 +1481,7 @@
     },
     "fileUpload": {
       "title": "File Translation",
-      "documentTitle": "File Translation - SubMaker",
+      "documentTitle": "File Translation - SubFaber",
       "subtitle": "Upload and translate your subtitle files",
       "help": "Show Instructions",
       "themeToggle": "Toggle theme",
@@ -1694,7 +1694,7 @@
         "closeAria": "Close reset dialog"
       },
       "provider": {
-        "using": "Using {main}{mainModel} from your saved SubMaker config.",
+        "using": "Using {main}{mainModel} from your saved SubFaber config.",
         "withFallback": "Using {main}{mainModel} with fallback {fallback}{fallbackModel}."
       },
       "errors": {
@@ -1708,7 +1708,7 @@
       }
     },
     "sync": {
-      "documentTitle": "Subtitles Sync Studio - SubMaker",
+      "documentTitle": "Subtitles Sync Studio - SubFaber",
       "title": "Subtitles Sync Studio",
       "subtitle": "Automatically synchronize subtitles with your video using audio analysis",
       "sectionHeading": "Link your stream, choose a subtitle, and sync",

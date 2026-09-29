@@ -278,7 +278,7 @@ function generateFileTranslationPage(videoId, configStr, config, filename = '') 
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     ${localeBootstrap}
-    <title>${t('fileUpload.documentTitle', {}, 'File Translation - SubMaker')}</title>
+    <title>${t('fileUpload.documentTitle', {}, 'File Translation - SubFaber')}</title>
     <!-- Favicon -->
     <link rel="icon" type="image/svg+xml" href="/favicon-toolbox.svg?_cb=${escapeHtml(appVersion || 'dev')}">
     <link rel="shortcut icon" href="/favicon-toolbox.svg?_cb=${escapeHtml(appVersion || 'dev')}">
@@ -315,10 +315,10 @@ function generateFileTranslationPage(videoId, configStr, config, filename = '') 
         }
 
         :root {
-            --primary: #08A4D5;
-            --primary-light: #33B9E1;
-            --primary-dark: #068DB7;
-            --secondary: #33B9E1;
+            --primary: #e11d2a;
+            --primary-light: #ff4655;
+            --primary-dark: #b3141f;
+            --secondary: #ff4655;
             --success: #10b981;
             --danger: #ef4444;
             --bg-primary: #f7fafc;
@@ -329,16 +329,16 @@ function generateFileTranslationPage(videoId, configStr, config, filename = '') 
             --muted: #475569;
             --border: #dbe3ea;
             --shadow: rgba(0, 0, 0, 0.08);
-            --glow: rgba(8, 164, 213, 0.25);
+            --glow: rgba(225, 29, 42, 0.25);
             --theme-toggle-size: 48px;
         }
 
         [data-theme="dark"] {
             color-scheme: dark;
-            --primary: #08A4D5;
-            --primary-light: #33B9E1;
-            --primary-dark: #068DB7;
-            --secondary: #33B9E1;
+            --primary: #e11d2a;
+            --primary-light: #ff4655;
+            --primary-dark: #b3141f;
+            --secondary: #ff4655;
             --success: #10b981;
             --danger: #ef4444;
             --bg-primary: #0A0E27;
@@ -349,16 +349,16 @@ function generateFileTranslationPage(videoId, configStr, config, filename = '') 
             --muted: #9AA0A6;
             --border: #2A3247;
             --shadow: rgba(0, 0, 0, 0.3);
-            --glow: rgba(8, 164, 213, 0.35);
+            --glow: rgba(225, 29, 42, 0.35);
         }
 
         /* True Dark mode (Blackhole) color scheme */
         [data-theme="true-dark"] {
             color-scheme: dark;
-            --primary: #08A4D5;
-            --primary-light: #33B9E1;
-            --primary-dark: #068DB7;
-            --secondary: #33B9E1;
+            --primary: #e11d2a;
+            --primary-light: #ff4655;
+            --primary-dark: #b3141f;
+            --secondary: #ff4655;
             --success: #10b981;
             --danger: #ef4444;
             --bg-primary: #000000;
@@ -369,7 +369,7 @@ function generateFileTranslationPage(videoId, configStr, config, filename = '') 
             --muted: #8A8A8A;
             --border: #1a1a1a;
             --shadow: rgba(0, 0, 0, 0.8);
-            --glow: rgba(8, 164, 213, 0.45);
+            --glow: rgba(225, 29, 42, 0.45);
         }
 
         /* Removed forced color-scheme override - let theme cascade handle it naturally */
@@ -404,22 +404,22 @@ function generateFileTranslationPage(videoId, configStr, config, filename = '') 
             right: 0;
             bottom: 0;
             background:
-                radial-gradient(circle at 20% 50%, rgba(8, 164, 213, 0.12) 0%, transparent 50%),
-                radial-gradient(circle at 80% 50%, rgba(51, 185, 225, 0.12) 0%, transparent 50%);
+                radial-gradient(circle at 20% 50%, rgba(225, 29, 42, 0.12) 0%, transparent 50%),
+                radial-gradient(circle at 80% 50%, rgba(255, 70, 85, 0.12) 0%, transparent 50%);
             pointer-events: none;
             z-index: 0;
         }
 
         [data-theme="dark"] body::before {
             background:
-                radial-gradient(circle at 20% 50%, rgba(8, 164, 213, 0.15) 0%, transparent 50%),
-                radial-gradient(circle at 80% 50%, rgba(51, 185, 225, 0.15) 0%, transparent 50%);
+                radial-gradient(circle at 20% 50%, rgba(225, 29, 42, 0.15) 0%, transparent 50%),
+                radial-gradient(circle at 80% 50%, rgba(255, 70, 85, 0.15) 0%, transparent 50%);
         }
 
         [data-theme="true-dark"] body::before {
             background:
-                radial-gradient(circle at 20% 50%, rgba(8, 164, 213, 0.08) 0%, transparent 50%),
-                radial-gradient(circle at 80% 50%, rgba(51, 185, 225, 0.08) 0%, transparent 50%);
+                radial-gradient(circle at 20% 50%, rgba(225, 29, 42, 0.08) 0%, transparent 50%),
+                radial-gradient(circle at 80% 50%, rgba(255, 70, 85, 0.08) 0%, transparent 50%);
         }
 
         .episode-toast {
@@ -590,9 +590,9 @@ function generateFileTranslationPage(videoId, configStr, config, filename = '') 
             gap: 10px;
             padding: 10px 12px;
             border-radius: 12px;
-            background: linear-gradient(135deg, rgba(8,164,213,0.14), rgba(255,255,255,0.08));
-            border: 1px solid rgba(8,164,213,0.25);
-            box-shadow: 0 12px 30px rgba(8,164,213,0.16);
+            background: linear-gradient(135deg, rgba(225, 29, 42,0.14), rgba(255,255,255,0.08));
+            border: 1px solid rgba(225, 29, 42,0.25);
+            box-shadow: 0 12px 30px rgba(225, 29, 42,0.16);
         }
 
         .status-labels {
@@ -629,7 +629,7 @@ function generateFileTranslationPage(videoId, configStr, config, filename = '') 
             width: 12px;
             height: 12px;
             border-radius: 999px;
-            box-shadow: 0 0 0 0 rgba(8, 164, 213, 0.0);
+            box-shadow: 0 0 0 0 rgba(225, 29, 42, 0.0);
         }
 
         .status-dot.ok {
@@ -843,7 +843,7 @@ function generateFileTranslationPage(videoId, configStr, config, filename = '') 
             max-width: 640px;
             width: 92%;
             border: 1px solid var(--border);
-            box-shadow: 0 24px 72px var(--shadow), 0 0 0 1px rgba(8, 164, 213, 0.12);
+            box-shadow: 0 24px 72px var(--shadow), 0 0 0 1px rgba(225, 29, 42, 0.12);
             overflow: hidden;
             animation: slideInScale 0.32s cubic-bezier(0.16, 1, 0.3, 1);
             position: relative;
@@ -854,7 +854,7 @@ function generateFileTranslationPage(videoId, configStr, config, filename = '') 
         .modal-header {
             padding: 1.25rem 1.5rem;
             border-bottom: 1px solid var(--border);
-            background: linear-gradient(135deg, rgba(8, 164, 213, 0.08) 0%, rgba(51, 185, 225, 0.08) 100%);
+            background: linear-gradient(135deg, rgba(225, 29, 42, 0.08) 0%, rgba(255, 70, 85, 0.08) 100%);
             position: sticky;
             top: 0;
             z-index: 1;
@@ -1082,7 +1082,7 @@ function generateFileTranslationPage(videoId, configStr, config, filename = '') 
         .file-name {
             margin-top: 0.75rem;
             padding: 0.75rem 1rem;
-            background: rgba(8, 164, 213, 0.08);
+            background: rgba(225, 29, 42, 0.08);
             border-radius: 8px;
             font-size: 0.95rem;
             color: var(--text-primary);
@@ -1173,12 +1173,12 @@ function generateFileTranslationPage(videoId, configStr, config, filename = '') 
             display: flex;
             justify-content: space-between;
             align-items: center;
-            background: linear-gradient(135deg, rgba(8, 164, 213, 0.05) 0%, rgba(51, 185, 225, 0.05) 100%);
+            background: linear-gradient(135deg, rgba(225, 29, 42, 0.05) 0%, rgba(255, 70, 85, 0.05) 100%);
             transition: background 0.2s ease;
         }
 
         .translation-options-header:hover {
-            background: linear-gradient(135deg, rgba(8, 164, 213, 0.1) 0%, rgba(51, 185, 225, 0.1) 100%);
+            background: linear-gradient(135deg, rgba(225, 29, 42, 0.1) 0%, rgba(255, 70, 85, 0.1) 100%);
         }
 
         .translation-options-title {
@@ -1822,12 +1822,12 @@ function generateFileTranslationPage(videoId, configStr, config, filename = '') 
             display: flex;
             justify-content: space-between;
             align-items: center;
-            background: linear-gradient(135deg, rgba(8, 164, 213, 0.05) 0%, rgba(51, 185, 225, 0.05) 100%);
+            background: linear-gradient(135deg, rgba(225, 29, 42, 0.05) 0%, rgba(255, 70, 85, 0.05) 100%);
             transition: background 0.2s ease;
         }
 
         .advanced-settings-header:hover {
-            background: linear-gradient(135deg, rgba(8, 164, 213, 0.1) 0%, rgba(51, 185, 225, 0.1) 100%);
+            background: linear-gradient(135deg, rgba(225, 29, 42, 0.1) 0%, rgba(255, 70, 85, 0.1) 100%);
         }
 
         .advanced-settings-title {
@@ -1959,7 +1959,7 @@ function generateFileTranslationPage(videoId, configStr, config, filename = '') 
 
         .model-status.fetching {
             color: var(--primary);
-            background: rgba(8, 164, 213, 0.1);
+            background: rgba(225, 29, 42, 0.1);
         }
 
         .model-status.success {
@@ -1976,7 +1976,7 @@ function generateFileTranslationPage(videoId, configStr, config, filename = '') 
             display: inline-block;
             width: 12px;
             height: 12px;
-            border: 2px solid rgba(8, 164, 213, 0.2);
+            border: 2px solid rgba(225, 29, 42, 0.2);
             border-top-color: var(--primary);
             border-radius: 50%;
             animation: spin 0.8s linear infinite;
@@ -2058,7 +2058,7 @@ function generateFileTranslationPage(videoId, configStr, config, filename = '') 
         .theme-toggle:focus,
         .theme-toggle:focus-visible {
             outline: none;
-            box-shadow: 0 0 0 3px rgba(8, 164, 213, 0.35), 0 8px 20px var(--shadow);
+            box-shadow: 0 0 0 3px rgba(225, 29, 42, 0.35), 0 8px 20px var(--shadow);
         }
 
         .theme-toggle:hover {
@@ -2862,7 +2862,7 @@ function generateFileTranslationPage(videoId, configStr, config, filename = '') 
             const VERSION_WARNING_TEMPLATE = tt(
                 'toolbox.extension.versionOutdated',
                 { detected: '{detected}', required: '{required}' },
-                'SubMaker xSync {detected} detected. This toolbox expects {required} or newer, so some sync and subtitle tools may behave unpredictably until you update.'
+                'SubFaber xSync {detected} detected. This toolbox expects {required} or newer, so some sync and subtitle tools may behave unpredictably until you update.'
             );
 
             function parseVersionParts(version) {
@@ -3474,7 +3474,7 @@ function generateFileTranslationPage(videoId, configStr, config, filename = '') 
                     providerDetails.textContent = tt(
                         'fileUpload.provider.using',
                         { main: label, mainModel: configuredModel ? ' (' + configuredModel + ')' : '' },
-                        'Using ' + label + (configuredModel ? ' (' + configuredModel + ')' : '') + ' from your saved SubMaker config.'
+                        'Using ' + label + (configuredModel ? ' (' + configuredModel + ')' : '') + ' from your saved SubFaber config.'
                     );
                 }
             }

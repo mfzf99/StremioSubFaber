@@ -1,5 +1,5 @@
 /**
- * SubMaker Database (SMDB) Cache
+ * SubFaber Database (SMDB) Cache
  * Community-uploaded subtitles keyed by video hash + language code.
  * One subtitle per language per video hash. Supports override limiting.
  */

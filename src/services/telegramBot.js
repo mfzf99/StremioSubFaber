@@ -390,7 +390,7 @@ async function renderMainMenu(chatId, messageId, botToken) {
     const totalSubtitles = Array.isArray(list) ? list.length : 0;
 
     const text =
-      `🎛️ <b>Papan Pemuka SubMaker VPS</b> ⚡\n\n` +
+      `🎛️ <b>Papan Pemuka SubFaber VPS</b> ⚡\n\n` +
       `📦 <b>Sarikata Berdaftar:</b> ${totalSubtitles} fail\n` +
       `⏱️ <b>Bot Uptime:</b> ${formatUptime(process.uptime())}\n` +
       `🟢 <b>Status Enjin:</b> Aktif & Bersedia\n\n` +
@@ -670,7 +670,7 @@ async function handleTextMessage(message, botToken, authorizedChatId) {
   if (text === '/start') {
     await axios.post(`https://api.telegram.org/bot${botToken}/sendMessage`, {
       chat_id: fromChatId,
-      text: '👋 <b>Selamat Datang ke Panel Kawalan SubMaker!</b>\n\nPapan kekunci menu telah diaktifkan:',
+      text: '👋 <b>Selamat Datang ke Panel Kawalan SubFaber!</b>\n\nPapan kekunci menu telah diaktifkan:',
       parse_mode: 'HTML',
       reply_markup: {
         keyboard: [

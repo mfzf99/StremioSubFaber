@@ -130,7 +130,7 @@ function themeToggleStyles() {
     .theme-toggle:focus,
     .theme-toggle:focus-visible {
       outline: none;
-      box-shadow: 0 0 0 3px rgba(8, 164, 213, 0.35), 0 8px 20px var(--shadow);
+      box-shadow: 0 0 0 3px rgba(225, 29, 42, 0.35), 0 8px 20px var(--shadow);
     }
 
     .theme-toggle:hover {
@@ -563,7 +563,7 @@ function generateHistoryPage(configStr, historyEntries, config, videoId, filenam
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>${t('history.documentTitle', {}, 'Translation History - SubMaker')}</title>
+    <title>${t('history.documentTitle', {}, 'Translation History - SubFaber')}</title>
   ${localeBootstrap}
   <link rel="icon" type="image/svg+xml" href="/favicon-toolbox.svg?_cb=${escapeHtml(appVersion || 'dev')}">
   <link rel="shortcut icon" href="/favicon-toolbox.svg?_cb=${escapeHtml(appVersion || 'dev')}">
@@ -597,10 +597,10 @@ function generateHistoryPage(configStr, historyEntries, config, videoId, filenam
     html { scroll-behavior: smooth; }
 
     :root {
-      --primary: #08A4D5;
-      --primary-light: #33B9E1;
-      --primary-dark: #068DB7;
-      --secondary: #33B9E1;
+      --primary: #e11d2a;
+      --primary-light: #ff4655;
+      --primary-dark: #b3141f;
+      --secondary: #ff4655;
       --bg-primary: #f7fafc;
       --surface: #ffffff;
       --surface-2: #f3f7fb;
@@ -615,12 +615,12 @@ function generateHistoryPage(configStr, historyEntries, config, videoId, filenam
       --warning: #f59e0b;
       --shadow: rgba(0, 0, 0, 0.08);
       --shadow-color: rgba(0, 0, 0, 0.08);
-      --glow: rgba(8, 164, 213, 0.25);
+      --glow: rgba(225, 29, 42, 0.25);
       --theme-toggle-size: 48px;
       /* Provider accent colors for history card differentiation */
-      --provider-main: #08A4D5;          /* Main provider — cyan/blue */
-      --provider-main-bg: rgba(8, 164, 213, 0.08);
-      --provider-main-border: rgba(8, 164, 213, 0.3);
+      --provider-main: #e11d2a;          /* Main provider — cyan/blue */
+      --provider-main-bg: rgba(225, 29, 42, 0.08);
+      --provider-main-border: rgba(225, 29, 42, 0.3);
       --provider-secondary: #f59e0b;     /* Secondary provider — amber */
       --provider-secondary-bg: rgba(245, 158, 11, 0.08);
       --provider-secondary-border: rgba(245, 158, 11, 0.3);
@@ -639,10 +639,10 @@ function generateHistoryPage(configStr, historyEntries, config, videoId, filenam
       --border: #2A3247;
       --shadow: rgba(0, 0, 0, 0.3);
       --shadow-color: rgba(0, 0, 0, 0.3);
-      --glow: rgba(8, 164, 213, 0.35);
-      --provider-main: #33B9E1;
-      --provider-main-bg: rgba(51, 185, 225, 0.1);
-      --provider-main-border: rgba(51, 185, 225, 0.25);
+      --glow: rgba(225, 29, 42, 0.35);
+      --provider-main: #ff4655;
+      --provider-main-bg: rgba(255, 70, 85, 0.1);
+      --provider-main-border: rgba(255, 70, 85, 0.25);
       --provider-secondary: #fbbf24;
       --provider-secondary-bg: rgba(251, 191, 36, 0.1);
       --provider-secondary-border: rgba(251, 191, 36, 0.25);
@@ -661,10 +661,10 @@ function generateHistoryPage(configStr, historyEntries, config, videoId, filenam
       --border: #1a1a1a;
       --shadow: rgba(0, 0, 0, 0.8);
       --shadow-color: rgba(0, 0, 0, 0.8);
-      --glow: rgba(8, 164, 213, 0.45);
-      --provider-main: #33B9E1;
-      --provider-main-bg: rgba(51, 185, 225, 0.07);
-      --provider-main-border: rgba(51, 185, 225, 0.2);
+      --glow: rgba(225, 29, 42, 0.45);
+      --provider-main: #ff4655;
+      --provider-main-bg: rgba(255, 70, 85, 0.07);
+      --provider-main-border: rgba(255, 70, 85, 0.2);
       --provider-secondary: #fbbf24;
       --provider-secondary-bg: rgba(251, 191, 36, 0.07);
       --provider-secondary-border: rgba(251, 191, 36, 0.2);
@@ -697,22 +697,22 @@ function generateHistoryPage(configStr, historyEntries, config, videoId, filenam
       right: 0;
       bottom: 0;
       background:
-        radial-gradient(circle at 20% 50%, rgba(8, 164, 213, 0.12) 0%, transparent 50%),
-        radial-gradient(circle at 80% 50%, rgba(51, 185, 225, 0.12) 0%, transparent 50%);
+        radial-gradient(circle at 20% 50%, rgba(225, 29, 42, 0.12) 0%, transparent 50%),
+        radial-gradient(circle at 80% 50%, rgba(255, 70, 85, 0.12) 0%, transparent 50%);
       pointer-events: none;
       z-index: 0;
     }
 
     [data-theme="dark"] body::before {
       background:
-        radial-gradient(circle at 20% 50%, rgba(8, 164, 213, 0.15) 0%, transparent 50%),
-        radial-gradient(circle at 80% 50%, rgba(51, 185, 225, 0.15) 0%, transparent 50%);
+        radial-gradient(circle at 20% 50%, rgba(225, 29, 42, 0.15) 0%, transparent 50%),
+        radial-gradient(circle at 80% 50%, rgba(255, 70, 85, 0.15) 0%, transparent 50%);
     }
 
     [data-theme="true-dark"] body::before {
       background:
-        radial-gradient(circle at 20% 50%, rgba(8, 164, 213, 0.08) 0%, transparent 50%),
-        radial-gradient(circle at 80% 50%, rgba(51, 185, 225, 0.08) 0%, transparent 50%);
+        radial-gradient(circle at 20% 50%, rgba(225, 29, 42, 0.08) 0%, transparent 50%),
+        radial-gradient(circle at 80% 50%, rgba(255, 70, 85, 0.08) 0%, transparent 50%);
     }
     
     ${quickNavStyles()}
@@ -1053,9 +1053,9 @@ function generateHistoryPage(configStr, historyEntries, config, videoId, filenam
 
     .history-loading-badge {
       gap: 0.35rem;
-      background: linear-gradient(135deg, rgba(8, 164, 213, 0.18) 0%, rgba(51, 185, 225, 0.38) 100%);
-      border: 1px solid rgba(8, 164, 213, 0.22);
-      box-shadow: 0 10px 26px rgba(8, 164, 213, 0.16);
+      background: linear-gradient(135deg, rgba(225, 29, 42, 0.18) 0%, rgba(255, 70, 85, 0.38) 100%);
+      border: 1px solid rgba(225, 29, 42, 0.22);
+      box-shadow: 0 10px 26px rgba(225, 29, 42, 0.16);
     }
 
     .history-loading-badge span {
@@ -1098,7 +1098,7 @@ function generateHistoryPage(configStr, historyEntries, config, videoId, filenam
 
     .history-skeleton-card {
       border-radius: 12px;
-      border: 1px solid rgba(8, 164, 213, 0.1);
+      border: 1px solid rgba(225, 29, 42, 0.1);
       background: rgba(255, 255, 255, 0.32);
       padding: 1rem;
       display: grid;
@@ -1114,7 +1114,7 @@ function generateHistoryPage(configStr, historyEntries, config, videoId, filenam
     .history-skeleton-line {
       height: 0.82rem;
       border-radius: 999px;
-      background: linear-gradient(90deg, rgba(148, 163, 184, 0.16) 0%, rgba(8, 164, 213, 0.22) 48%, rgba(148, 163, 184, 0.16) 100%);
+      background: linear-gradient(90deg, rgba(148, 163, 184, 0.16) 0%, rgba(225, 29, 42, 0.22) 48%, rgba(148, 163, 184, 0.16) 100%);
       background-size: 220% 100%;
       animation: history-shimmer 1.45s linear infinite;
     }

@@ -232,7 +232,7 @@ StorageAdapter.CACHE_TYPES = {
   SESSION: 'session',              // Session persistence (hard count cap; optional hard serialized-byte cap)
   HISTORY: 'history',              // Translation history
   PROVIDER_METADATA: 'provider_meta', // Provider-specific metadata (IMDB→movieId, etc.)
-  SMDB: 'smdb'                     // SubMaker Database community subtitle cache
+  SMDB: 'smdb'                     // SubFaber Database community subtitle cache
 };
 
 // Cache size limits in bytes

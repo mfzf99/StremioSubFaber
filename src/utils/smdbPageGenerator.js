@@ -1,5 +1,5 @@
 /**
- * SubMaker Database (SMDB) Page Generator
+ * SubFaber Database (SMDB) Page Generator
  * Generates the full HTML page for the SMDB tool – link stream, browse/upload subtitles.
  */
 
@@ -129,7 +129,7 @@ function themeToggleStyles() {
     .theme-toggle:focus,
     .theme-toggle:focus-visible {
       outline: none;
-      box-shadow: 0 0 0 3px rgba(8, 164, 213, 0.35), 0 8px 20px var(--shadow);
+      box-shadow: 0 0 0 3px rgba(225, 29, 42, 0.35), 0 8px 20px var(--shadow);
     }
 
     .theme-toggle:hover {
@@ -264,7 +264,7 @@ function themeToggleStyles() {
 }
 
 /**
- * Generate the SubMaker Database page
+ * Generate the SubFaber Database page
  * @param {string} configStr - Encoded config string
  * @param {string} videoId - Stremio video ID
  * @param {string} filename - Stream filename
@@ -323,7 +323,7 @@ async function generateSmdbPage(configStr, videoId, filename, config = {}) {
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   ${localeBootstrap}
-  <title>SubMaker Database - SubMaker</title>
+  <title>SubFaber Database - SubFaber</title>
   <link rel="icon" type="image/svg+xml" href="/favicon-toolbox.svg?_cb=${escapeHtml(appVersion)}">
   <link rel="shortcut icon" href="/favicon-toolbox.svg?_cb=${escapeHtml(appVersion)}">
   <link rel="apple-touch-icon" href="/favicon-toolbox.svg?_cb=${escapeHtml(appVersion)}">
@@ -352,12 +352,12 @@ async function generateSmdbPage(configStr, videoId, filename, config = {}) {
     }
 
     :root {
-      --primary: #08A4D5;
-      --primary-light: #33B9E1;
-      --primary-dark: #068DB7;
-      --primary-2: #33B9E1;
-      --secondary: #33B9E1;
-      --accent: #0ea5e9;
+      --primary: #e11d2a;
+      --primary-light: #ff4655;
+      --primary-dark: #b3141f;
+      --primary-2: #ff4655;
+      --secondary: #ff4655;
+      --accent: #f43f5e;
       --success: #10b981;
       --warning: #f59e0b;
       --danger: #ef4444;
@@ -374,16 +374,16 @@ async function generateSmdbPage(configStr, videoId, filename, config = {}) {
       --border: #dbe3ea;
       --shadow: rgba(0, 0, 0, 0.08);
       --shadow-color: rgba(12, 19, 56, 0.12);
-      --glow: rgba(8, 164, 213, 0.25);
+      --glow: rgba(225, 29, 42, 0.25);
       --theme-toggle-size: 48px;
     }
 
     [data-theme="dark"] {
       color-scheme: dark;
-      --primary: #08A4D5;
-      --primary-light: #33B9E1;
-      --primary-dark: #068DB7;
-      --secondary: #33B9E1;
+      --primary: #e11d2a;
+      --primary-light: #ff4655;
+      --primary-dark: #b3141f;
+      --secondary: #ff4655;
       --success: #10b981;
       --warning: #f59e0b;
       --danger: #ef4444;
@@ -400,15 +400,15 @@ async function generateSmdbPage(configStr, videoId, filename, config = {}) {
       --border: #2A3247;
       --shadow: rgba(0, 0, 0, 0.3);
       --shadow-color: rgba(0, 0, 0, 0.4);
-      --glow: rgba(8, 164, 213, 0.35);
+      --glow: rgba(225, 29, 42, 0.35);
     }
 
     [data-theme="true-dark"] {
       color-scheme: dark;
-      --primary: #08A4D5;
-      --primary-light: #33B9E1;
-      --primary-dark: #068DB7;
-      --secondary: #33B9E1;
+      --primary: #e11d2a;
+      --primary-light: #ff4655;
+      --primary-dark: #b3141f;
+      --secondary: #ff4655;
       --success: #10b981;
       --warning: #f59e0b;
       --danger: #ef4444;
@@ -425,7 +425,7 @@ async function generateSmdbPage(configStr, videoId, filename, config = {}) {
       --border: #1a1a1a;
       --shadow: rgba(0, 0, 0, 0.8);
       --shadow-color: rgba(0, 0, 0, 0.6);
-      --glow: rgba(8, 164, 213, 0.45);
+      --glow: rgba(225, 29, 42, 0.45);
     }
 
     ${quickNavStyles()}
@@ -453,22 +453,22 @@ async function generateSmdbPage(configStr, videoId, filename, config = {}) {
       position: fixed;
       top: 0; left: 0; right: 0; bottom: 0;
       background:
-        radial-gradient(circle at 20% 50%, rgba(8, 164, 213, 0.12) 0%, transparent 50%),
-        radial-gradient(circle at 80% 50%, rgba(51, 185, 225, 0.12) 0%, transparent 50%);
+        radial-gradient(circle at 20% 50%, rgba(225, 29, 42, 0.12) 0%, transparent 50%),
+        radial-gradient(circle at 80% 50%, rgba(255, 70, 85, 0.12) 0%, transparent 50%);
       pointer-events: none;
       z-index: 0;
     }
 
     [data-theme="dark"] body::before {
       background:
-        radial-gradient(circle at 20% 50%, rgba(8, 164, 213, 0.15) 0%, transparent 50%),
-        radial-gradient(circle at 80% 50%, rgba(51, 185, 225, 0.15) 0%, transparent 50%);
+        radial-gradient(circle at 20% 50%, rgba(225, 29, 42, 0.15) 0%, transparent 50%),
+        radial-gradient(circle at 80% 50%, rgba(255, 70, 85, 0.15) 0%, transparent 50%);
     }
 
     [data-theme="true-dark"] body::before {
       background:
-        radial-gradient(circle at 20% 50%, rgba(8, 164, 213, 0.08) 0%, transparent 50%),
-        radial-gradient(circle at 80% 50%, rgba(51, 185, 225, 0.08) 0%, transparent 50%);
+        radial-gradient(circle at 20% 50%, rgba(225, 29, 42, 0.08) 0%, transparent 50%),
+        radial-gradient(circle at 80% 50%, rgba(255, 70, 85, 0.08) 0%, transparent 50%);
     }
 
     /* ── Page Container ──────────────────────── */
@@ -795,7 +795,7 @@ async function generateSmdbPage(configStr, videoId, filename, config = {}) {
     }
     .file-drop-zone.drag-over {
       border-color: var(--primary);
-      background: rgba(8, 164, 213, 0.08);
+      background: rgba(225, 29, 42, 0.08);
       box-shadow: 0 0 0 3px var(--glow);
       transform: scale(1.01);
     }
@@ -818,7 +818,7 @@ async function generateSmdbPage(configStr, videoId, filename, config = {}) {
     .file-drop-name {
       margin-top: 0.5rem;
       padding: 0.5rem 0.75rem;
-      background: rgba(8, 164, 213, 0.08);
+      background: rgba(225, 29, 42, 0.08);
       border-radius: 8px;
       font-size: 0.85rem;
       color: var(--text-primary);
@@ -861,7 +861,7 @@ async function generateSmdbPage(configStr, videoId, filename, config = {}) {
     .status-bar.success { display: block; background: rgba(16, 185, 129, 0.12); color: var(--success); border: 1px solid rgba(16, 185, 129, 0.25); }
     .status-bar.error { display: block; background: rgba(239, 68, 68, 0.12); color: var(--danger); border: 1px solid rgba(239, 68, 68, 0.25); }
     .status-bar.warning { display: block; background: rgba(245, 158, 11, 0.12); color: var(--warning); border: 1px solid rgba(245, 158, 11, 0.25); }
-    .status-bar.info { display: block; background: rgba(8, 164, 213, 0.10); color: var(--primary); border: 1px solid rgba(8, 164, 213, 0.25); }
+    .status-bar.info { display: block; background: rgba(225, 29, 42, 0.10); color: var(--primary); border: 1px solid rgba(225, 29, 42, 0.25); }
 
     /* ── Override Modal ────────────────── */
     .modal-overlay {
@@ -928,7 +928,7 @@ async function generateSmdbPage(configStr, videoId, filename, config = {}) {
   <div class="page">
     <!-- Header -->
     <div class="page-header">
-      <h1>📦 SubMaker Database</h1>
+      <h1>📦 SubFaber Database</h1>
       <p>Upload and share subtitles with the community</p>
     </div>
 

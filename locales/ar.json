@@ -25,7 +25,7 @@
       "selectOption": "اختر خياراً"
     },
     "manifest": {
-      "name": "SubMaker - مترجم الترجمات",
+      "name": "SubFaber - مترجم الترجمات",
       "description": "تحكم في ترجماتك! اجلب وترجم ملفات الترجمة من OpenSubtitles و SubScene و SubDL باستخدام مفتاح Gemini AI مجاني أو مزودي ذكاء اصطناعي آخرين، دون مغادرة Stremio أبدًا.\n\nلغات المصدر: {sources}\nلغات الهدف: {targets}"
     },
     "api": {
@@ -152,10 +152,10 @@
       "dns": "لا يمكن الوصول للخدمة. فشل بحث DNS."
     },
     "toolbox": {
-      "documentTitle": "صندوق أدوات الترجمة - SubMaker",
+      "documentTitle": "صندوق أدوات الترجمة - SubFaber",
       "streamUnknown": "لم يتم اكتشاف اسم ملف البث (لا يزال يعمل)",
       "header": {
-        "title": "صندوق أدوات SubMaker",
+        "title": "صندوق أدوات SubFaber",
         "linked": "مرتبط بـ {id}"
       },
       "refresh": {
@@ -180,7 +180,7 @@
       "hero": {
         "eyebrow": "صندوق أدوات الترجمة",
         "title": "اختر أداة دون مغادرة البث",
-        "body": "استمتع بصندوق أدوات SubMaker! ستنتقل معك مفاتيح API المحفوظة، ولغات الهدف، والذاكرة المؤقتة تلقائياً.",
+        "body": "استمتع بصندوق أدوات SubFaber! ستنتقل معك مفاتيح API المحفوظة، ولغات الهدف، والذاكرة المؤقتة تلقائياً.",
         "smdbHint": "ارفع أو ترجم ترجمات SMDB لبثوثك في قاعدة بياناتنا:",
         "primary": "سجل الترجمة",
         "secondary": "تكوين"
@@ -274,7 +274,7 @@
       },
       "embedded": {
         "meta": {
-          "documentTitle": "ترجمة ترجمات مدمجة - SubMaker",
+          "documentTitle": "ترجمة ترجمات مدمجة - SubFaber",
           "pageHeading": "استوديو الترجمات المدمجة",
           "pageSubtitle": "استخرج المسارات المدمجة من البث الحالي وترجمها فورًا.",
           "title": "العنوان: {title}",
@@ -383,7 +383,7 @@
         }
       },
       "autoSubs": {
-        "documentTitle": "ترجمات تلقائية - SubMaker",
+        "documentTitle": "ترجمات تلقائية - SubFaber",
         "heroTitle": "ترجمات تلقائية",
         "heroSubtitle": "توليد ترجمات باستخدام Whisper ثم ترجمتها",
         "badges": {
@@ -587,7 +587,7 @@
       "sessionErrorAdvice": "يرجى إعادة تكوين وتثبيت الإضافة.",
       "sessionErrorQuickFix": "إصلاح سريع: افتح هذا الرابط لإعادة التثبيت بإعدادات جديدة:",
       "sessionErrorToken": "تم إنشاء إعدادات جديدة. استخدم هذا الرمز لإعادة التثبيت:",
-      "sessionErrorFooter": "هناك خطأ ما أو أن تحديثاً قد كسر إعدادات SubMaker الخاصة بك. نعتذر! يرجى إعادة تكوين وتثبيت الإضافة.",
+      "sessionErrorFooter": "هناك خطأ ما أو أن تحديثاً قد كسر إعدادات SubFaber الخاصة بك. نعتذر! يرجى إعادة تكوين وتثبيت الإضافة.",
       "osAuthFailTitle": "فشل تسجيل الدخول إلى OpenSubtitles",
       "osAuthFailBody": "يرجى إصلاح اسم المستخدم/كلمة المرور في إعدادات الإضافة",
       "osQuotaTitle": "تم الوصول إلى الحد اليومي للتحميل من OpenSubtitles",
@@ -701,7 +701,7 @@
     },
     "history": {
       "eyebrow": "صندوق أدوات الترجمة",
-      "documentTitle": "سجل الترجمات - SubMaker",
+      "documentTitle": "سجل الترجمات - SubFaber",
       "title": "سجل الترجمات",
       "subtitle": "راجع الترجمات التي تمت عبر أدواتك",
       "cachedLabel": "من الذاكرة المؤقتة",
@@ -1482,7 +1482,7 @@
     },
     "fileUpload": {
       "title": "ترجمة الملفات",
-      "documentTitle": "ترجمة الملفات - SubMaker",
+      "documentTitle": "ترجمة الملفات - SubFaber",
       "subtitle": "رفع وترجمة ملفات الترجمة الخاصة بك",
       "help": "إظهار التعليمات",
       "themeToggle": "تبديل المظهر",
@@ -1694,7 +1694,7 @@
         "closeAria": "إغلاق مربع حوار إعادة التعيين"
       },
       "provider": {
-        "using": "استخدام {main}{mainModel} من إعدادات SubMaker المحفوظة.",
+        "using": "استخدام {main}{mainModel} من إعدادات SubFaber المحفوظة.",
         "withFallback": "استخدام {main}{mainModel} مع احتياطي {fallback}{fallbackModel}."
       },
       "errors": {
@@ -1708,7 +1708,7 @@
       }
     },
     "sync": {
-      "documentTitle": "استوديو مزامنة الترجمات - SubMaker",
+      "documentTitle": "استوديو مزامنة الترجمات - SubFaber",
       "title": "استوديو مزامنة الترجمات",
       "subtitle": "مزامنة الترجمات تلقائياً مع الفيديو الخاص بك باستخدام تحليل الصوت",
       "sectionHeading": "اربط البث الخاص بك، اختر ترجمة، وقم بالمزامنة",

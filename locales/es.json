@@ -25,7 +25,7 @@
       "selectOption": "Selecciona una opción"
     },
     "manifest": {
-      "name": "SubMaker - Traductor de subtítulos",
+      "name": "SubFaber - Traductor de subtítulos",
       "description": "¡Toma el control de tus subtítulos! Obtén y traduce subtítulos de OpenSubtitles, SubScene y SubDL con una clave gratuita de Gemini AI u otros proveedores de IA, sin salir de Stremio.\n\nIdiomas origen: {sources}\nIdiomas destino: {targets}"
     },
     "api": {
@@ -152,10 +152,10 @@
       "dns": "No se puede alcanzar el servicio. Error de DNS."
     },
     "toolbox": {
-      "documentTitle": "Sub Toolbox - SubMaker",
+      "documentTitle": "Sub Toolbox - SubFaber",
       "streamUnknown": "Nombre de archivo de la emisión no detectado (sigue funcionando)",
       "header": {
-        "title": "SubMaker Toolbox",
+        "title": "SubFaber Toolbox",
         "linked": "Vinculado a {id}"
       },
       "refresh": {
@@ -180,7 +180,7 @@
       "hero": {
         "eyebrow": "Sub Toolbox",
         "title": "Elige una herramienta sin salir de tu emisión",
-        "body": "¡Disfruta del Toolbox de SubMaker! Tus API keys, idiomas destino y caché llegan automáticamente.",
+        "body": "¡Disfruta del Toolbox de SubFaber! Tus API keys, idiomas destino y caché llegan automáticamente.",
         "smdbHint": "Sube o traduce subtítulos SMDB para tus emisiones en nuestra base de datos:",
         "primary": "Historial de traducción",
         "secondary": "Configurar"
@@ -274,7 +274,7 @@
       },
       "embedded": {
         "meta": {
-          "documentTitle": "Traducir subtítulos incrustados - SubMaker",
+          "documentTitle": "Traducir subtítulos incrustados - SubFaber",
           "pageHeading": "Estudio de subtítulos incrustados",
           "pageSubtitle": "Extrae pistas incrustadas de tu emisión actual y tradúcelas al instante.",
           "title": "Título: {title}",
@@ -383,7 +383,7 @@
         }
       },
       "autoSubs": {
-        "documentTitle": "Subtítulos automáticos - SubMaker",
+        "documentTitle": "Subtítulos automáticos - SubFaber",
         "heroTitle": "Subtítulos automáticos",
         "heroSubtitle": "Genera subtítulos con Whisper y luego tradúcelos",
         "badges": {
@@ -701,7 +701,7 @@
     },
     "history": {
       "eyebrow": "Caja de herramientas de subtítulos",
-      "documentTitle": "Historial de traducciones - SubMaker",
+      "documentTitle": "Historial de traducciones - SubFaber",
       "title": "Historial de traducciones",
       "subtitle": "Revisa las traducciones realizadas en tus herramientas",
       "cachedLabel": "En caché",
@@ -1482,7 +1482,7 @@
     },
     "fileUpload": {
       "title": "Traducción de archivos",
-      "documentTitle": "Traducción de archivos - SubMaker",
+      "documentTitle": "Traducción de archivos - SubFaber",
       "subtitle": "Sube y traduce tus archivos de subtítulos",
       "help": "Mostrar instrucciones",
       "themeToggle": "Cambiar tema",
@@ -1694,7 +1694,7 @@
         "closeAria": "Cerrar diálogo de restablecimiento"
       },
       "provider": {
-        "using": "Usando {main}{mainModel} desde tu configuración guardada de SubMaker.",
+        "using": "Usando {main}{mainModel} desde tu configuración guardada de SubFaber.",
         "withFallback": "Usando {main}{mainModel} con respaldo {fallback}{fallbackModel}."
       },
       "errors": {
@@ -1708,7 +1708,7 @@
       }
     },
     "sync": {
-      "documentTitle": "Estudio de Sincronización de Subtítulos - SubMaker",
+      "documentTitle": "Estudio de Sincronización de Subtítulos - SubFaber",
       "title": "Estudio de Sincronización de Subtítulos",
       "subtitle": "Sincroniza automáticamente los subtítulos con tu video mediante análisis de audio",
       "sectionHeading": "Vincula tu stream, elige un subtítulo y sincroniza",
@@ -1813,7 +1813,7 @@
           "linked": "URL del stream vinculada para autosync.",
           "needSubtitle": "Selecciona un subtítulo primero",
           "needLanguage": "Selecciona el idioma del subtítulo antes de sincronizar.",
-          "extensionRequired": "El autosync requiere la extensión SubMaker. Instálala/actívala.",
+          "extensionRequired": "El autosync requiere la extensión SubFaber. Instálala/actívala.",
           "urlRequired": "El autosync requiere una URL http(s) válida. Pégala en el Paso 1.",
           "profileRequired": "Selecciona un perfil de escaneo antes de iniciar el autosync.",
           "success": "Subtítulo sincronizado correctamente.",
