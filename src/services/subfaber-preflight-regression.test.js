@@ -106,8 +106,8 @@ test('SubFaberPreflight: prompt enforces FACT VS INFERENCE DISCIPLINE (no guessi
     'Prompt must carry the FACT VS INFERENCE DISCIPLINE header'
   );
   assert.ok(
-    prompt.includes('Only lock relationships or canonical_address'),
-    'Prompt must restrict relationship/canonical_address locking to explicit evidence'
+    prompt.includes('Only lock a canonical_address'),
+    'Prompt must restrict canonical_address locking to explicit evidence'
   );
   assert.ok(
     prompt.includes('EXPLICIT, UNAMBIGUOUS textual evidence'),
@@ -146,14 +146,19 @@ test('SubFaberPreflight: 4-pillar schema stays clean (theme / terms / characters
   assert.ok(prompt.includes('"role"'), 'characters entries must use "role" key');
 });
 
-// [SOCIOLINGUISTIC v2 2026-09-29] direct_address (vocative) + pronoun_register
-test('SubFaberPreflight: characters schema declares direct_address + pronoun_register keys', () => {
+// [PREFLIGHT-SLIM 2026-09-29] Skema characters dipangkas: pronoun_register +
+// direct_address DIGUGURKAN (kimi-k3 curl ground-truth: field tersebut cetus
+// deliberation meleret 9182 reasoning tokens / 80% output; slim = 3x lebih
+// laju, varians runtuh, kualiti gelaran kekal). canonical_address KEKAL.
+test('SubFaberPreflight: slim characters schema drops pronoun_register + direct_address, keeps canonical_address', () => {
   const prompt = buildPreflightPrompt('Dialogue.', 'Malay', 'English');
-  assert.ok(prompt.includes('"direct_address"'), 'characters schema must declare direct_address (vocative) key');
-  assert.ok(prompt.includes('"pronoun_register"'), 'characters schema must declare pronoun_register key');
-  assert.ok(prompt.includes('spoken TO face-to-face'), 'direct_address instruction must explain the vocative use');
+  assert.ok(!prompt.includes('"direct_address"'), 'slim: direct_address key must NOT be declared (overthinking trigger)');
+  assert.ok(!prompt.includes('"pronoun_register"'), 'slim: pronoun_register key must NOT be declared (overthinking trigger)');
+  assert.ok(prompt.includes('"canonical_address"'), 'canonical_address (title) MUST remain — fact, not register guessing');
   assert.ok(prompt.includes('THIRD-PERSON reference'), 'canonical_address must be clarified as third-person narrative form');
-  assert.ok(prompt.includes('saya/awak'), 'pronoun_register instruction must include the Malay register example');
+  assert.ok(prompt.includes('exactly three keys'), 'characters schema must declare exactly three keys (name, canonical_address, role)');
+  assert.ok(prompt.includes('DECISION DISCIPLINE'), 'slim prompt must carry the anti-deliberation directive');
+  assert.ok(/one[- ]?pass|ONE fast pass/i.test(prompt), 'anti-deliberation must instruct a single fast pass');
 });
 
 test('SubFaberPreflight: parse preserves direct_address + pronoun_register (null when absent)', () => {

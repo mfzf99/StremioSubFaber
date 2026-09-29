@@ -127,12 +127,26 @@ function buildPreflightPrompt(rawText, targetLanguage, sourceLanguage) {
   const honorificMatrix = pack.honorificMatrix.replaceAll('${tgt}', tgt);
   const canonicalAddressMatrix = pack.canonicalAddressMatrix.replaceAll('${tgt}', tgt);
   const creditsExample = pack.creditsExample.replaceAll('${tgt}', tgt);
+  // [PREFLIGHT-SLIM 2026-09-29] Ground-truth curl (kimi-k3, SRT 759 baris)
+  // membuktikan medan 'pronoun_register' + 'direct_address' (SOCIOLINGUISTIC
+  // v2) mencetuskan deliberation subjektif meleret: kimi-k3 membakar ~80%
+  // token output (9182/11512 reasoning tokens) teragak-agak antara aku/kau vs
+  // saya/awak dan meneka jantina, menaikkan jumlah masa ke 98-407s dengan
+  // varians liar. Membuang kedua-dua medan + menambah DECISION DISCIPLINE
+  // (satu-laluan, null-bila-kabur) menurunkan reasoning tokens 55-78%, masa
+  // ~3x (325s -> ~108s), varians runtuh — SAMBIL mengekalkan kualiti Bible
+  // (43-44 terms, 14-15 characters, canonical_address Puan/Encik/Cik terkunci
+  // 9/14 setiap run). canonical_address KEKAL (gelaran = FAKTA); register kata
+  // ganti kini diputuskan Agent A dari konteks chunk (bukan lock global goyah).
   return `## Role
 You are a video translation expert and terminology consultant, specializing in ${src} comprehension and ${tgt} expression optimization.
 
+## DECISION DISCIPLINE (MANDATORY — READ FIRST)
+Work in ONE fast pass. Do NOT deliberate, second-guess, or weigh alternatives out loud. For every field: if the evidence is explicit, record it; if it is unclear or ambiguous, output null IMMEDIATELY and move on. Never agonize over borderline cases — null is always the correct answer when in doubt. Do NOT debate pronoun choices, gender, or social nuance; pronoun register is decided later by the translator, not here.
+
 ## FACT VS INFERENCE DISCIPLINE (MANDATORY)
-FACT VS INFERENCE DISCIPLINE: Only lock relationships or canonical_address in 'characters' if there is EXPLICIT, UNAMBIGUOUS textual evidence in the source. If gender, social hierarchy, or formal title is unclear, DO NOT GUESS; mark canonical_address as null or omit the character.
-- Every name, gender, title, and relationship you output must be supported by explicit dialogue evidence (how characters address each other in the text).
+Only lock a canonical_address in 'characters' if there is EXPLICIT, UNAMBIGUOUS textual evidence in the source. If gender, social hierarchy, or formal title is unclear, DO NOT GUESS; mark canonical_address as null or omit the character.
+- Every name, title, and relationship you output must be supported by explicit dialogue evidence (how characters address each other in the text).
 - Prefer omission over hallucination: a shorter 'characters' list with only evidenced entries is always safer than an invented one.
 
 ## Task
@@ -143,11 +157,9 @@ For the provided ${src} subtitle dialogue, build the 4-pillar pre-flight context
    Each 'terms' entry is an object with exactly two keys: "source" (original text) and "target" (${tgt} translation or original).
    ${honorificMatrix}
 3. Build profiles for the main recurring characters.
-   Each 'characters' entry is an object with exactly five keys:
+   Each 'characters' entry is an object with exactly three keys:
    - "name": the character's name exactly as it appears in the dialogue.
    - "canonical_address": the ONE locked ${tgt} THIRD-PERSON reference/title used when talking ABOUT this character (narrative reference — one canonical address per character, never alternate). ${canonicalAddressMatrix}. Lock ONLY with explicit, unambiguous textual evidence per the FACT VS INFERENCE DISCIPLINE; if gender, social hierarchy, or formal title is unclear, set null instead of guessing.
-   - "direct_address": the ${tgt} VOCATIVE form used when this character is spoken TO face-to-face, which may differ from the third-person reference in languages that distinguish the two (e.g. a familial or intimate address form used to someone's face vs the formal title used about them). If it is identical to canonical_address, or the target language does not distinguish them, or it is unclear, set null.
-   - "pronoun_register": the locked ${tgt} self/other pronoun pairing that fits this character's relationships and social standing, chosen from the target language's OWN register system (many languages encode formality/intimacy through distinct first/second-person pronoun sets). If the target language does not distinguish pronoun register, or evidence is unclear, set null.
    - "role": a short description of their narrative role (e.g. female lead, antagonist, mentor, butler).
 4. Scan the EARLIEST lines of the file (lines 1-5) for NON-DIALOGUE opening text.
    If the file opens with production credits (e.g. "Adapted from..."), the work's title, or a studio name card, ${creditsExample}.
@@ -166,7 +178,7 @@ ${rawText}
     { "source": "Original term", "target": "${tgt} translation or original" }
   ],
   "characters": [
-    { "name": "Character name", "canonical_address": "Locked ${tgt} third-person reference/title, or null if unclear", "direct_address": "${tgt} vocative form used when spoken to, or null if same/unclear", "pronoun_register": "Locked ${tgt} pronoun pairing (e.g. saya/awak), or null if N/A", "role": "Narrative role" }
+    { "name": "Character name", "canonical_address": "Locked ${tgt} third-person reference/title, or null if unclear", "role": "Narrative role" }
   ],
   "credits_and_titles": [
     { "source": "Opening credit/title text", "target": "Official ${tgt} translation" }
