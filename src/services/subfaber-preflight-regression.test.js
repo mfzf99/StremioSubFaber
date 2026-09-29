@@ -146,17 +146,22 @@ test('SubFaberPreflight: 4-pillar schema stays clean (theme / terms / characters
   assert.ok(prompt.includes('"role"'), 'characters entries must use "role" key');
 });
 
-// [PREFLIGHT-SLIM 2026-09-29] Skema characters dipangkas: pronoun_register +
-// direct_address DIGUGURKAN (kimi-k3 curl ground-truth: field tersebut cetus
-// deliberation meleret 9182 reasoning tokens / 80% output; slim = 3x lebih
-// laju, varians runtuh, kualiti gelaran kekal). canonical_address KEKAL.
-test('SubFaberPreflight: slim characters schema drops pronoun_register + direct_address, keeps canonical_address', () => {
+// [PREFLIGHT-SLIM v2 2026-09-29] Skema characters: pronoun_register DIGUGURKAN
+// (kimi-k3 curl ground-truth: field itu cetus deliberation meleret 9182
+// reasoning tokens / 80% output — model teragak "aku/kau vs saya/awak"). TAPI
+// direct_address DIPULIHKAN: ia ekstraksi FAKTA (Aunt → Mak Cik dari matriks
+// honorifik), BUKAN pilihan subjektif, dan ketiadaannya menyebabkan Agent A
+// hentam gelaran third-person (Puan Shen) pada baris vocative (Aunt) — kesan
+// sampingan yang disahkan pada run runtime ke-3. canonical_address + anti-
+// deliberation (pronoun sahaja) KEKAL.
+test('SubFaberPreflight: slim characters schema drops pronoun_register but keeps direct_address + canonical_address', () => {
   const prompt = buildPreflightPrompt('Dialogue.', 'Malay', 'English');
-  assert.ok(!prompt.includes('"direct_address"'), 'slim: direct_address key must NOT be declared (overthinking trigger)');
   assert.ok(!prompt.includes('"pronoun_register"'), 'slim: pronoun_register key must NOT be declared (overthinking trigger)');
+  assert.ok(prompt.includes('"direct_address"'), 'direct_address (vocative) MUST remain — factual mapping (Aunt → Mak Cik), fixes third-person leak');
   assert.ok(prompt.includes('"canonical_address"'), 'canonical_address (title) MUST remain — fact, not register guessing');
   assert.ok(prompt.includes('THIRD-PERSON reference'), 'canonical_address must be clarified as third-person narrative form');
-  assert.ok(prompt.includes('exactly three keys'), 'characters schema must declare exactly three keys (name, canonical_address, role)');
+  assert.ok(prompt.includes('spoken TO face-to-face'), 'direct_address instruction must explain the vocative use');
+  assert.ok(prompt.includes('exactly four keys'), 'characters schema must declare exactly four keys (name, canonical_address, direct_address, role)');
   assert.ok(prompt.includes('DECISION DISCIPLINE'), 'slim prompt must carry the anti-deliberation directive');
   assert.ok(/one[- ]?pass|ONE fast pass/i.test(prompt), 'anti-deliberation must instruct a single fast pass');
 });

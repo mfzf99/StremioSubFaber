@@ -157,9 +157,10 @@ For the provided ${src} subtitle dialogue, build the 4-pillar pre-flight context
    Each 'terms' entry is an object with exactly two keys: "source" (original text) and "target" (${tgt} translation or original).
    ${honorificMatrix}
 3. Build profiles for the main recurring characters.
-   Each 'characters' entry is an object with exactly three keys:
+   Each 'characters' entry is an object with exactly four keys:
    - "name": the character's name exactly as it appears in the dialogue.
    - "canonical_address": the ONE locked ${tgt} THIRD-PERSON reference/title used when talking ABOUT this character (narrative reference — one canonical address per character, never alternate). ${canonicalAddressMatrix}. Lock ONLY with explicit, unambiguous textual evidence per the FACT VS INFERENCE DISCIPLINE; if gender, social hierarchy, or formal title is unclear, set null instead of guessing.
+   - "direct_address": the ${tgt} VOCATIVE form used when this character is spoken TO face-to-face (e.g. an English line that addresses them as "Aunt" maps to the familial vocative, which differs from the third-person title). This is a FACTUAL mapping from the honorific matrix, NOT a subjective choice — map it directly and quickly. If it is identical to canonical_address, or the source never addresses this character face-to-face, set null.
    - "role": a short description of their narrative role (e.g. female lead, antagonist, mentor, butler).
 4. Scan the EARLIEST lines of the file (lines 1-5) for NON-DIALOGUE opening text.
    If the file opens with production credits (e.g. "Adapted from..."), the work's title, or a studio name card, ${creditsExample}.
@@ -178,7 +179,7 @@ ${rawText}
     { "source": "Original term", "target": "${tgt} translation or original" }
   ],
   "characters": [
-    { "name": "Character name", "canonical_address": "Locked ${tgt} third-person reference/title, or null if unclear", "role": "Narrative role" }
+    { "name": "Character name", "canonical_address": "Locked ${tgt} third-person reference/title, or null if unclear", "direct_address": "${tgt} vocative form used when spoken to face-to-face (e.g. Aunt), or null if same/absent", "role": "Narrative role" }
   ],
   "credits_and_titles": [
     { "source": "Opening credit/title text", "target": "Official ${tgt} translation" }
