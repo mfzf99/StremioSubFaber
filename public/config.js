@@ -981,13 +981,13 @@ Translate to {target_language}.`;
     // Disusun PALING KHUSUS dahulu untuk padanan longest-prefix.
     // Disahkan mengikut dokumentasi rasmi Google Thinking (scraped 2026-09-22).
     const MODEL_THINKING_PROFILES = {
-        // STRICT 3.x (penamatan pensampelan 21 Jul 2026+)
+        // STRICT 3.x — sampling di-strip (GA pada/selepas 21 Jul 2026)
         'gemini-3.8-flash': { default: 'medium', levels: ['low', 'medium', 'high'] }, // minimal = RALAT
         'gemini-3.7-flash': { default: 'medium', levels: ['low', 'medium', 'high'] }, // minimal = RALAT
         'gemini-3.6-flash': { default: 'medium', levels: ['minimal', 'low', 'medium', 'high'] },
-        'gemini-3.5-flash-lite': { default: 'minimal', levels: ['minimal', 'low', 'medium', 'high'] },
-        'gemini-3.5-flash': { default: 'medium', levels: ['minimal', 'low', 'medium', 'high'] }, // Now strict (deprecation Jul 2026)
-        // LEGACY 3.x (pensampelan masih diterima tetapi suhu mesti 1.0)
+        'gemini-3.5-flash-lite': { default: 'minimal', levels: ['minimal', 'low', 'medium', 'high'] }, // STRICT: GA 21 Jul 2026 (kes tepi minor-5)
+        // LEGACY 3.x — sampling masih diterima (GA sebelum 21 Jul 2026)
+        'gemini-3.5-flash': { default: 'medium', levels: ['minimal', 'low', 'medium', 'high'] }, // LEGACY: GA 19 Mei 2026
         'gemini-3.1-flash-lite-image': { default: 'minimal', levels: ['minimal', 'high'] }, // low/medium TIDAK disokong
         'gemini-3.1-flash-lite': { default: 'minimal', levels: ['minimal', 'low', 'medium', 'high'] },
         'gemini-3.1-pro-preview': { default: 'high', levels: ['low', 'medium', 'high'] }, // minimal TIDAK disokong
@@ -1016,17 +1016,32 @@ Translate to {target_language}.`;
         return /^gemini-3(?:[.-]|$)/i.test(modelId) || /^gemini-(?:flash|flash-lite|pro)-latest$/i.test(modelId);
     }
 
-    // Cermin klasifikasi backend (src/services/gemini.js getModelFamily).
-    // Menggunakan pengecualian EKSPLISIT untuk model 3.x-legacy supaya model 3.x
-    // baharu (3.6+, 3.7, 3.8, dan masa hadapan) lalai kepada 'strict'.
-    const GEMINI_LEGACY_3X_MODELS = new Set([
-        'gemini-3-flash-preview',
-        'gemini-3.1-flash-lite',
-        'gemini-3.1-flash-lite-image',
-        'gemini-3.1-flash-image',
-        'gemini-3.1-pro-preview',
-        'gemini-3.5-flash'
-    ]);
+    // Cermin TEPAT klasifikasi backend (src/services/gemini.js
+    // isSamplingStrictGemini3 + getModelFamily; ground truth
+    // plans/gemini-sampling-ground-truth-2026.md). Sempadan penamatan sampling
+    // ialah TARIKH GA 21 Jul 2026, diproksikan kepada versi minor:
+    //   • minor >= 6                → strict
+    //   • minor == 5 DAN flash-lite → strict (gemini-3.5-flash-lite GA 21 Jul)
+    //   • selainnya (3.0/3.1/3.5-flash) → legacy
+    // gemini-3-flash-preview tiada minor → dianggap 3.0 → legacy.
+    const SAMPLING_DEPRECATION_MINOR = 6;
+
+    function gemini3MinorVersion(m) {
+        const withMinor = m.match(/^gemini-3\.(\d+)/);
+        if (withMinor) return parseInt(withMinor[1], 10);
+        if (/^gemini-3(?:-|$)/.test(m)) return 0; // gemini-3-flash-preview → 3.0
+        return null;
+    }
+
+    function isSamplingStrictGemini3(m) {
+        const minor = gemini3MinorVersion(m);
+        if (minor === null) return false;
+        if (minor >= SAMPLING_DEPRECATION_MINOR) return true;
+        // Kes tepi: gemini-3.5-flash-lite (minor 5) GA pada hari penamatan → strict;
+        // gemini-3.5-flash (minor 5, pra-sempadan) kekal legacy.
+        if (minor === 5 && /flash-lite/.test(m)) return true;
+        return false;
+    }
 
     function getModelFamily(modelName) {
         const m = normalizeGeminiModelName(modelName).toLowerCase();
@@ -1035,10 +1050,12 @@ Translate to {target_language}.`;
         if (/^gemini-2\.0/.test(m)) return { family: '2.0', sampling: 'full', thinking: 'none' };
         if (/^gemini-2\.5/.test(m)) return { family: '2.5', sampling: 'full', thinking: 'budget' };
         if (/^gemini-3(?:[.-]|$)/.test(m)) {
-            if (GEMINI_LEGACY_3X_MODELS.has(m) || m.startsWith('gemini-3.1')) {
-                return { family: '3.x-legacy', sampling: 'warn-default-1.0', thinking: 'level' };
+            // STRICT: 3.6+ ATAU 3.5-flash-lite (GA pada hari penamatan).
+            if (isSamplingStrictGemini3(m)) {
+                return { family: '3.x-strict', sampling: 'stripped', thinking: 'level' };
             }
-            return { family: '3.x-strict', sampling: 'stripped', thinking: 'level' };
+            // LEGACY: 3.0 (gemini-3-flash-preview), 3.1, 3.5-flash.
+            return { family: '3.x-legacy', sampling: 'warn-default-1.0', thinking: 'level' };
         }
         if (/^gemini-(flash|flash-lite|pro)-latest$/.test(m)) {
             return { family: '3.x-strict', sampling: 'stripped', thinking: 'level', alias: true };
