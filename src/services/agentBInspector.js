@@ -80,9 +80,16 @@ const AGENT_B_PREFLIGHT_MODEL = 'kimi-k3';            // Fasa 0: kimi-k3 SAHAJA
 // env AGENT_B_PREFLIGHT_FALLBACK_MODEL diabaikan sepenuhnya (nilai muktamad
 // sentiasa sama dengan primer supaya hierarki Fasa 0 ialah 1-tingkat).
 const AGENT_B_PREFLIGHT_FALLBACK_MODEL = AGENT_B_PREFLIGHT_MODEL;
-// Bilangan percubaan RETRY-SAME-MODEL bagi Fasa 0: percubaan pertama + 2
-// retry (2x kegagalan berturut) sebelum pre-flight dihentikan (fail-open).
-const AGENT_B_PREFLIGHT_RETRIES = 2;
+// Bilangan percubaan RETRY-SAME-MODEL bagi Fasa 0: percubaan pertama + 4
+// retry sebelum pre-flight dihentikan (fail-open).
+// [UPSTREAM-RESILIENCE v2 2026-09-29] Dinaikkan 2→4. Forensik run kedua
+// S01E31: attempt 1 gagal TTFT (gateway reset ~44s SEBELUM token pertama
+// kimi-k3), attempt 2 BERJAYA (304s, konteks penuh dibina). Ini bukti
+// retry MENANG bila TTFT-laju tercapai — kegagalan bersifat variance
+// TTFT, bukan kekal. Lebih banyak percubaan = peluang lebih tinggi
+// menangkap tetingkap TTFT-laju. Dipasangkan dengan first-byte watchdog
+// (35s) yang abort attempt TTFT-lambat lebih awal daripada reset gateway.
+const AGENT_B_PREFLIGHT_RETRIES = 4;
 const AGENT_B_FALLBACK_MODEL = 'deepseek-v4.1-flash'; // Fallback Fasa 1 SAHAJA
 // [PAYLOAD-GODTIER] SEJARAH (dikekalkan untuk forensik): muatan lama
 // BETA RUN 10 membawa 7 kunci; keempat-empat parameter tambahan terbukti

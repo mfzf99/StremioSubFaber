@@ -75,22 +75,31 @@ class OpenAICompatibleProvider {
     // 2026-09-26): apabila true, buildChatRequest membina muatan seragam
     // { model, temperature: 0.0, messages } — digunakan oleh Agent B.
     this.universalPayload = options.universalPayload === true;
-    // [UPSTREAM-RESILIENCE 2026-09-29] Stall watchdog untuk aliran SSE.
-    // Forensik run S01E31: kimi-k3 tidak memancar SATU chunk pun selama
-    // ~221s, lalu gateway hulu RESET sambungan idle (ECONNRESET). Streaming
-    // sepatutnya menghidupkan sambungan Caddy — tetapi jika model diam
-    // (silent-reasoning) tiada chunk dipancar, aliran itu idle dan gateway
-    // membunuhnya. Watchdog ini abort AWAL (retry boleh ambil alih dengan
-    // backoff) jika tiada chunk dalam tetingkap ini. Timer di-RESET setiap
-    // chunk — jadi ia menutup KEDUA-DUA first-byte (TTFT) dan stall
-    // pertengahan aliran. LALAI 75000ms (75s) — AKTIF secara lalai: bawah
-    // purata reasoning Kimi 109s tetapi cukup luas supaya aliran sihat
-    // (yang memancar chunk berkala) tidak pernah tersentuh; hanya stall
-    // BENAR (sifar chunk selama 75s) yang di-abort awal untuk retry
-    // berbanding menunggu buta ~221s sehingga gateway reset. Stream sihat
-    // reset timer setiap chunk jadi tiada regresi pada laluan biasa.
-    // 0 = dilumpuhkan. Boleh ditindih melalui options.streamStallTimeoutMs
-    // atau env OPENAI_COMPAT_STREAM_STALL_MS (integer ms >= 0).
+    // [UPSTREAM-RESILIENCE v2 2026-09-29] DUA watchdog aliran SSE berasingan:
+    //
+    //   1. FIRST-BYTE (TTFT) — masa sehingga token PERTAMA tiba. Forensik
+    //      run kedua S01E31: attempt 1 gagal kerana kimi-k3 masuk silent-
+    //      reasoning dan gateway RESET sambungan pada ~44s SEBELUM token
+    //      pertama; attempt 2 (TTFT-laju) BERJAYA 304s. Punca kegagalan =
+    //      variance TTFT vs had idle gateway (~44s). Watchdog first-byte
+    //      LALAI 35000ms (35s) — DI BAWAH had gateway supaya KITA abort
+    //      dulu (bersih, retryable) sebelum gateway reset separuh jalan.
+    //      Digabung dengan retry×5 + backoff: setiap retry cuba tangkap
+    //      tetingkap TTFT-laju.
+    //
+    //   2. INTER-CHUNK STALL — jeda antara chunk SELEPAS token pertama.
+    //      LALAI 75000ms (75s), longgar supaya aliran sihat-tapi-lambat
+    //      (attempt 2 yang mencurah chunk sepanjang 304s) TIDAK di-abort.
+    //
+    // Kedua-dua 0 = dilumpuhkan. Env: OPENAI_COMPAT_FIRST_BYTE_MS,
+    // OPENAI_COMPAT_STREAM_STALL_MS. Timer first-byte aktif dari mula;
+    // sebaik token pertama tiba, ia bertukar kepada timer inter-chunk.
+    this.firstByteTimeoutMs = parseStreamStallMs(
+      options.firstByteTimeoutMs !== undefined
+        ? options.firstByteTimeoutMs
+        : process.env.OPENAI_COMPAT_FIRST_BYTE_MS,
+      35000
+    );
     this.streamStallTimeoutMs = parseStreamStallMs(
       options.streamStallTimeoutMs !== undefined
         ? options.streamStallTimeoutMs
@@ -998,32 +1007,41 @@ class OpenAICompatibleProvider {
         let finishReason = null;
         let rawStream = '';
 
-        // [UPSTREAM-RESILIENCE 2026-09-29] Stall watchdog: jika tiada chunk
-        // tiba dalam streamStallTimeoutMs, abort AWAL supaya loop retry
-        // (dengan backoff) boleh ambil alih — daripada menunggu buta sampai
-        // gateway hulu reset sambungan idle (~221s dalam forensik S01E31).
-        // Timer di-RESET setiap chunk → menutup first-byte (TTFT) DAN stall
-        // pertengahan. 0 = dilumpuhkan (lalai). settled guard menghalang
-        // resolve/reject berganda.
+        // [UPSTREAM-RESILIENCE v2 2026-09-29] Watchdog DUA-FASA:
+        //   Fasa A (first-byte/TTFT): timer firstByteMs berjalan sehingga
+        //     token PERTAMA tiba. Abort awal jika TTFT melebihi had gateway
+        //     (~44s forensik) supaya KITA yang tutup sambungan (bersih,
+        //     retryable) sebelum gateway reset separuh jalan.
+        //   Fasa B (inter-chunk): sebaik token pertama tiba, timer bertukar
+        //     kepada stallMs (longgar) yang di-RESET setiap chunk — aliran
+        //     sihat-tapi-lambat (304s dengan chunk berkala) tidak di-abort.
+        // 0 pada mana-mana had = fasa itu dilumpuhkan. settled guard
+        // menghalang resolve/reject berganda.
+        const firstByteMs = Number(this.firstByteTimeoutMs) || 0;
         const stallMs = Number(this.streamStallTimeoutMs) || 0;
         let settled = false;
+        let firstChunkSeen = false;
         let stallTimer = null;
         const clearStallTimer = () => {
           if (stallTimer) { clearTimeout(stallTimer); stallTimer = null; }
         };
+        const fireStall = (ms, phase) => {
+          if (settled) return;
+          settled = true;
+          log.warn(() => [`[${this.providerName}] Stream ${phase} — no data for ${ms}ms, aborting for retry`]);
+          try { response.data.destroy(); } catch (_) { /* abaikan */ }
+          const err = new Error(`Stream ${phase}: no data received within ${ms}ms`);
+          err.code = 'ECONNABORTED';
+          err.streamStall = true;
+          reject(err);
+        };
         const armStallTimer = () => {
-          if (stallMs <= 0) return;
           clearStallTimer();
-          stallTimer = setTimeout(() => {
-            if (settled) return;
-            settled = true;
-            log.warn(() => [`[${this.providerName}] Stream stalled — no data for ${stallMs}ms, aborting for retry`]);
-            try { response.data.destroy(); } catch (_) { /* abaikan */ }
-            const err = new Error(`Stream stalled: no data received within ${stallMs}ms`);
-            err.code = 'ECONNABORTED';
-            err.streamStall = true;
-            reject(err);
-          }, stallMs);
+          // Sebelum token pertama → had first-byte; selepas itu → had inter-chunk.
+          const ms = firstChunkSeen ? stallMs : firstByteMs;
+          if (ms <= 0) return; // fasa berkaitan dilumpuhkan
+          const phase = firstChunkSeen ? 'stalled' : 'first-byte timeout';
+          stallTimer = setTimeout(() => fireStall(ms, phase), ms);
           if (typeof stallTimer.unref === 'function') stallTimer.unref();
         };
         const safeResolve = (value) => { if (settled) return; settled = true; clearStallTimer(); resolve(value); };
@@ -1070,6 +1088,9 @@ class OpenAICompatibleProvider {
 
         response.data.on('data', (chunk) => {
           if (settled) return;
+          // Token pertama tiba → tukar fasa watchdog ke had inter-chunk
+          // (longgar) untuk baki aliran; sebelum ini had first-byte (ketat).
+          firstChunkSeen = true;
           // Reset watchdog: chunk tiba → sambungan hidup semula.
           armStallTimer();
           try {
