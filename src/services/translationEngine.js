@@ -2675,10 +2675,17 @@ You MUST translate each numbered line 1:1. NEVER merge two source lines into one
     const sharedContextBlock = this._formatSharedContext(context, batchText);
 
     // ── PROMPT V2 "CRIME-PROOF" (Mandat Pembedahan B 2026-09-27) ──
-    // [HARMONY-FIX] Harmonisasi penuh 2026-09-29: structural_rules kini 7
-    // peraturan dengan pemetaan 1:1 eksplisit kepada 4 jenayah Agent B
-    // (ANTI-MERGE→MERGE, ANTI-SHIFT→SHIFT, ANTI-PHANTOM→PHANTOM,
-    // ANTI-DROP→DROP) + ESCAPE HATCH + SONG LYRICS + PRESERVE markup.
+    // [HARMONY-FIX] Harmonisasi 2026-09-29: structural_rules memetakan 1:1
+    // kepada jenayah Agent B (ANTI-MERGE→MERGE, ANTI-SHIFT→SHIFT,
+    // ANTI-PHANTOM→PHANTOM, ANTI-DROP→DROP).
+    // [SOCIOLINGUISTIC v2 2026-09-29] structural_rules kini 8 peraturan
+    // (+ SLOT-BOUNDARY TIEBREAKER; ESCAPE HATCH dipersempit untuk memetakan
+    // ke jenayah UNTRANSLATED; PRESERVE markup dengan [br] reposition adaptif).
+    // Taksonomi Agent B kini 6 jenayah (+ UNTRANSLATED + REGISTER). Blok
+    // <translation_craft> (equivalent-effect + compression + anti-calque)
+    // diselaraskan dengan klausa "compression/idiom sah" dalam arahan Agent B
+    // supaya tiada retry palsu. SEMUA teks universal (${targetLabel}) — sifar
+    // hardcode khusus-bahasa (kontrak 400+ bahasa).
     // Rule 4 (ANTI-DROP) sengaja mengelak perkataan "truncated" (false
     // positive pada subtitle pendek yang memang satu perkataan) dan TIADA
     // contoh khusus-bahasa dalam teks peraturan (kontrak universal 433

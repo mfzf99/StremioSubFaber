@@ -103,16 +103,19 @@ test('P1 Japanese: generic pack — tiada teks BM', () => {
   assert.ok(!prompt.includes('Diadaptasi daripada'));
 });
 
-// ── 4. P2 (translationEngine) — few-shot 4 jenayah, target-conditional ──
-// [HARMONY-FIX] 2026-09-29: few-shot kini 4 contoh (MERGE/SHIFT/PHANTOM/DROP),
-// label jenayah pada setiap header — pariti 1:1 dengan structural_rules
+// ── 4. P2 (translationEngine) — few-shot 6 jenayah, target-conditional ──
+// [HARMONY v2 2026-09-29] few-shot kini 6 contoh (MERGE/SHIFT/PHANTOM/DROP/
+// UNTRANSLATED/REGISTER), label jenayah pada setiap header — pariti 1:1
+// dengan structural_rules + taksonomi 6-jenayah Agent B
 // Agent A + taksonomi Agent B.
 
 const CRIME_EXAMPLE_HEADERS = [
   '[EXAMPLE 1 — MERGE:',
   '[EXAMPLE 2 — SHIFT:',
   '[EXAMPLE 3 — PHANTOM:',
-  '[EXAMPLE 4 — DROP:'
+  '[EXAMPLE 4 — DROP:',
+  '[EXAMPLE 5 — UNTRANSLATED:',
+  '[EXAMPLE 6 — REGISTER:'
 ];
 
 test('P2 Malay: few-shot 4 jenayah hadir (MERGE/SHIFT/PHANTOM/DROP), BM "Awak ikut kami," kekal', () => {

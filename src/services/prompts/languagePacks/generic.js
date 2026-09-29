@@ -88,7 +88,24 @@ Input:
 Correct output:
 <s id="6">[translation preserving specific meaning]</s>
 Wrong (meaning dropped, replaced with generic):
-<s id="6">[generic filler without source meaning]</s>`,
+<s id="6">[generic filler without source meaning]</s>
+
+[EXAMPLE 5 — UNTRANSLATED: a normal sentence must be translated, never copied verbatim]
+Input:
+<s id="7">Get in the car, now.</s>
+Correct output:
+<s id="7">[translation of "Get in the car, now." into the target language]</s>
+Wrong (source sentence copied verbatim — lazy-copy leak):
+<s id="7">Get in the car, now.</s>
+
+[EXAMPLE 6 — REGISTER: keep the locked title/pronoun for a character, never switch]
+Context: pre-flight locked one canonical target-language title for this character.
+Input:
+<s id="8">[a line addressing that character by title]</s>
+Correct output:
+<s id="8">[translation using the LOCKED canonical title/pronoun for that character]</s>
+Wrong (locked title/pronoun switched to a different register):
+<s id="8">[translation using a different title/pronoun than the locked one]</s>`,
 
   /**
    * P8 injection: neutral rule #6 for DEFAULT_TRANSLATION_PROMPT.

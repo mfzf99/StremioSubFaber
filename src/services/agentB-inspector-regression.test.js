@@ -232,11 +232,11 @@ test('AgentB: inspector instruction defines UNTRANSLATED + REGISTER with guardra
     'UNTRANSLATED mesti kecualikan kata nama khas / tajuk (elak false-positive ESCAPE HATCH sah)'
   );
   assert.ok(
-    INSPECTOR_INSTRUCTION.includes("REGISTER: A recurring character's honorific/title in the translation contradicts the locked address"),
-    'REGISTER definition (percanggahan gelaran) mesti hadir'
+    INSPECTOR_INSTRUCTION.includes("REGISTER: A recurring character's locked form in the Character Address Reference below is contradicted"),
+    'REGISTER definition (percanggahan gelaran/kata ganti) mesti hadir'
   );
   assert.ok(
-    INSPECTOR_INSTRUCTION.includes('Only flag when a Character Address Reference is provided'),
+    INSPECTOR_INSTRUCTION.includes('Only flag when the Character Address Reference provides the locked value'),
     'REGISTER mesti hanya trigger bila rujukan alamat wujud (elak audit buta)'
   );
 });
@@ -252,6 +252,47 @@ test('AgentB: formatPreflightContextForInspection renders vocative direct-addres
   });
   assert.ok(block.includes('Puan Shen / Mak Cik Shen (when addressed directly)'), 'vocative rendered beside narrative form');
   assert.ok(block.includes('- Lin → Encik Lin'), 'character without vocative renders narrative form only');
+});
+
+// [HARMONY v2 2026-09-29] H1: pronoun register must reach Agent B's audit context
+test('AgentB: formatPreflightContextForInspection renders locked pronoun register', () => {
+  const block = formatPreflightContextForInspection({
+    theme: 'Drama.',
+    terms: [],
+    characters: [
+      { name: 'Shen', canonical_address: 'Puan Shen', pronoun_register: 'saya/awak', role: 'lead' }
+    ]
+  });
+  assert.ok(block.includes('[pronouns: saya/awak]'), 'pronoun register surfaced to Agent B (H1 bridge complete)');
+  assert.ok(block.includes('locked titles and pronouns must stay consistent'), 'reference header signals pronoun consistency audit');
+});
+
+// [HARMONY v2 2026-09-29] H1: REGISTER crime covers BOTH honorific AND pronoun
+test('AgentB: REGISTER definition covers honorific AND pronoun-register mismatch', () => {
+  assert.ok(
+    INSPECTOR_INSTRUCTION.includes('honorific/title mismatch'),
+    'REGISTER must cover honorific/title mismatch'
+  );
+  assert.ok(
+    INSPECTOR_INSTRUCTION.includes('pronoun-register mismatch'),
+    'REGISTER must ALSO cover pronoun-register mismatch (H1 harmony)'
+  );
+});
+
+// [HARMONY v2 2026-09-29] H2: Agent B must NOT punish legitimate craft (compression/idiom)
+test('AgentB: inspector explicitly permits compression + idiomatic adaptation', () => {
+  assert.ok(
+    INSPECTOR_INSTRUCTION.includes('condensing wordy lines, trimming redundant filler, and replacing source idioms'),
+    'inspector must declare compression/idiom-adaptation as REQUIRED (not a crime)'
+  );
+  assert.ok(
+    INSPECTOR_INSTRUCTION.includes('not when the translation is simply shorter, reworded, or idiomatically adapted'),
+    'DROP/PHANTOM must not fire on legitimate craft output (H2 harmony with translation_craft)'
+  );
+  assert.ok(
+    INSPECTOR_INSTRUCTION.includes('length reduction, idiomatic rephrasing'),
+    'ignore-list must include length reduction + idiomatic rephrasing'
+  );
 });
 
 // ── 2. buildInspectionPayload ──

@@ -128,10 +128,16 @@ const VALID_CRIME_TYPES = new Set(['MERGE', 'DROP', 'PHANTOM', 'SHIFT', 'UNTRANS
  * (pariti 1:1 dengan kontrak pembawa OpenAI-compatible projek — payload
  * dibake terus ke dalam prompt, bukan dihantar berasingan).
  * [HARMONY-FIX] 2026-09-29: taksonomi 4 jenayah dipertajam selari dengan
- * structural_rules Agent A (7 peraturan ANTI-*). MERGE kini semata-mata
- * isu bilangan slot (off-by-one drift — klausa "fabricated filler" lama
- * dibuang kerana bertindih dengan PHANTOM), PHANTOM = fabrikasi kandungan,
- * DROP = maksud spesifik diganti substitut generik.
+ * structural_rules Agent A. MERGE kini semata-mata isu bilangan slot
+ * (off-by-one drift — klausa "fabricated filler" lama dibuang kerana
+ * bertindih dengan PHANTOM), PHANTOM = fabrikasi kandungan, DROP = maksud
+ * spesifik diganti substitut generik.
+ * [SOCIOLINGUISTIC v2 2026-09-29] Taksonomi dikembang 4→6 (selari dengan 8
+ * structural_rules Agent A): + UNTRANSLATED (kebocoran salinan malas sumber)
+ * + REGISTER (percanggahan gelaran ATAU daftar kata ganti vs Bible Fasa 0).
+ * Nota keharmonian: arahan kini eksplisit membenarkan pemampatan &
+ * penyesuaian idiom (kerja sah Agent A) supaya tidak tersalah tuduh DROP/
+ * PHANTOM — Agent A & Agent B kini berkongsi definisi "terjemahan betul".
  */
 const INSPECTOR_INSTRUCTION = `## Role
 You are a subtitle integrity inspector. You compare source lines with their translations, line by line.
@@ -144,9 +150,11 @@ Detect ONLY these six violations:
 - SHIFT: Dialogue content displaced across indices (line 5 text appearing in line 6's slot).
   NOTE: Ignore minor millisecond timecode differences; audit solely whether the dialogue text matches the corresponding line index.
 - UNTRANSLATED: Output slot still carries the source-language sentence verbatim (or near-verbatim) when it clearly should have been translated. This is a LAZY-COPY leak. EXCEPTION — do NOT flag: proper nouns, character/brand/company names, creative-work titles, on-screen credits, or symbol/number/music-note-only lines that are legitimately kept as-is.
-- REGISTER: A recurring character's honorific/title in the translation contradicts the locked address in the Character Address Reference below (e.g. the reference locks "Puan Shen" but the output says "Cik Shen"). Only flag when a Character Address Reference is provided and the contradiction is unambiguous.
+- REGISTER: A recurring character's locked form in the Character Address Reference below is contradicted by the translation. This covers BOTH (a) honorific/title mismatch (the reference locks one title but the output uses a different one for the same character) AND (b) pronoun-register mismatch (the reference locks a self/other pronoun pairing but the output switches to a different register for that character). Only flag when the Character Address Reference provides the locked value AND the contradiction is unambiguous.
 
-Ignore: translation style, word choice, grammar, tone, cultural adaptation, and minor omissions — EXCEPT the six violations above.
+The translator is REQUIRED to produce natural, idiomatic phrasing: condensing wordy lines, trimming redundant filler, and replacing source idioms with target-language equivalents are all CORRECT and must NOT be flagged. Only flag DROP when a line's core meaning is genuinely lost, and PHANTOM when content is genuinely fabricated — not when the translation is simply shorter, reworded, or idiomatically adapted.
+
+Ignore: translation style, word choice, grammar, tone, cultural adaptation, length reduction, idiomatic rephrasing, and minor omissions — EXCEPT the six violations above.
 
 ## Output Contract
 Respond with ONLY this JSON and nothing else — no explanations, no markdown:
@@ -200,15 +208,19 @@ function formatPreflightContextForInspection(preflightContext) {
         // Vocative (direct-address) is optional; only render when it differs
         // from the narrative form so the inspector sees both valid options.
         const vocative = pick(c?.direct_address, c?.directAddress);
+        // Pronoun register (self/other pairing) — rendered when locked so the
+        // inspector can audit REGISTER (b) pronoun-register mismatches.
+        const pronoun = pick(c?.pronoun_register, c?.pronounRegister);
         const role = String(c?.role || '').trim();
         const addressPart = (vocative && vocative !== narrative)
           ? `${narrative} / ${vocative} (when addressed directly)`
           : narrative;
-        return `- ${name} → ${addressPart}${role ? ` (${role})` : ''}`;
+        const pronounPart = pronoun ? ` [pronouns: ${pronoun}]` : '';
+        return `- ${name} → ${addressPart}${role ? ` (${role})` : ''}${pronounPart}`;
       })
       .filter(Boolean)
       .join('\n');
-    if (charLines) sections.push(`### Character Address Reference (titles must stay consistent)\n${charLines}`);
+    if (charLines) sections.push(`### Character Address Reference (locked titles and pronouns must stay consistent)\n${charLines}`);
   }
 
   if (sections.length === 0) return '';

@@ -45,11 +45,13 @@ const malayPack = {
   creditsExample: 'provide the official ${tgt} media/publishing translation for each line (e.g. "Adapted from" -> "Diadaptasi daripada")',
 
   /**
-   * P2 injection: Malay few-shot examples — 4 jenayah (anti-crime weapons).
-   * [HARMONY-FIX] 2026-09-29: satu contoh → EMPAT contoh, satu bagi setiap
-   * jenayah Agent B (MERGE/SHIFT/PHANTOM/DROP), label jenayah pada setiap
-   * header supaya Agent A dapat mengaitkan few-shot ↔ structural_rules
-   * ↔ INSPECTOR_INSTRUCTION secara 1:1.
+   * P2 injection: Malay few-shot examples — 6 jenayah (anti-crime weapons).
+   * [HARMONY-FIX] 2026-09-29: satu contoh → ENAM contoh, satu bagi setiap
+   * jenayah Agent B (MERGE/SHIFT/PHANTOM/DROP/UNTRANSLATED/REGISTER), label
+   * jenayah pada setiap header supaya Agent A dapat mengaitkan few-shot ↔
+   * structural_rules ↔ INSPECTOR_INSTRUCTION secara 1:1.
+   * [SOCIOLINGUISTIC v2 2026-09-29] + EXAMPLE 5 (UNTRANSLATED: larang salinan
+   * malas sumber) + EXAMPLE 6 (REGISTER: kunci gelaran/kata ganti watak).
    */
   fewShot: `[EXAMPLE 1 — MERGE: split sentence and isolated question tag]
 Input:
@@ -91,7 +93,24 @@ Input:
 Correct output:
 <s id="6">Saya tak pernah nak benda ni jadi.</s>
 Wrong (meaning dropped, replaced with generic):
-<s id="6">Baiklah.</s>`,
+<s id="6">Baiklah.</s>
+
+[EXAMPLE 5 — UNTRANSLATED: a normal sentence must be translated, never copied verbatim]
+Input:
+<s id="7">Get in the car, now.</s>
+Correct output:
+<s id="7">Masuk kereta, sekarang.</s>
+Wrong (source sentence copied verbatim — lazy-copy leak):
+<s id="7">Get in the car, now.</s>
+
+[EXAMPLE 6 — REGISTER: keep the locked title/pronoun for a character, never switch]
+Context: pre-flight locked "Ms. Tan" → "Puan Tan".
+Input:
+<s id="8">Ms. Tan, please sit down.</s>
+Correct output:
+<s id="8">Puan Tan, sila duduk.</s>
+Wrong (locked title switched to a different register):
+<s id="8">Cik Tan, sila duduk.</s>`,
 
   /**
    * P8 injection: DEFAULT_TRANSLATION_PROMPT rule (target-conditional).
