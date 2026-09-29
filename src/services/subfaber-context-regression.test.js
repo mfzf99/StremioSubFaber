@@ -324,7 +324,8 @@ test('SubFaberPrompt: pure SubFaber prompt when ON — persona + principles + XM
     prompt.includes('Translate the provided English subtitles line by line into natural, conversational Malay'),
     'Task verbatim: sourceLabel + conversational (tampalan mandat)'
   );
-  assert.ok(prompt.includes('the way a native speaker would say it'), 'Native-speaker phrasing directive');
+  assert.ok(prompt.includes('the way a real native speaker would actually say it out loud'), 'Native-speaker phrasing directive (craft-enhanced)');
+  assert.ok(prompt.includes("reproducing the speaker's true meaning, emotion, and register"), 'Register/emotion directive present in Task');
   assert.ok(prompt.includes('Keep established character names, titles, and context-specific terms consistent'), 'Terminology consistency (dipindah ke Task)');
   // structural_rules — [HARMONY-FIX] 7 peraturan, pemetaan 1:1 kepada 4
   // jenayah Agent B melalui label ANTI-*
@@ -344,6 +345,23 @@ test('SubFaberPrompt: pure SubFaber prompt when ON — persona + principles + XM
   assert.ok(
     prompt.includes('7. PRESERVE all [br], <i>...</i>, speaker dashes (-), and any other inline markup'),
     'Rule 7: markup preservation'
+  );
+  // ── TINGKAT 1 (Netflix-Quality Craft Mandat 2026-09-29): translation_craft ──
+  // Blok kualiti Netflix — dipacu equivalent-effect + compression + anti-calque.
+  // Diletak SELEPAS structural_rules supaya pariti kekal keutamaan #1.
+  assert.ok(prompt.includes('<translation_craft>'), 'Craft block opening tag present');
+  assert.ok(prompt.includes('</translation_craft>'), 'Craft block closing tag present');
+  assert.ok(prompt.includes('1. EQUIVALENT EFFECT'), 'Craft rule 1: equivalent effect');
+  assert.ok(prompt.includes('Reproduce the emotional impact of the line, not its individual words'), 'Equivalent effect verbatim');
+  assert.ok(prompt.includes('2. NATURAL COMPRESSION'), 'Craft rule 2: natural compression');
+  assert.ok(prompt.includes('favour the shortest phrasing that still carries the full meaning'), 'Compression directive verbatim');
+  assert.ok(prompt.includes('3. ANTI-CALQUE'), 'Craft rule 3: anti-calque');
+  assert.ok(prompt.includes('Never mirror the source word order'), 'Anti-calque directive verbatim');
+  assert.ok(prompt.includes('4. LIVING VOICE'), 'Craft rule 4: living voice');
+  // Guardrail: craft block MESTI datang SELEPAS structural_rules (pariti #1)
+  assert.ok(
+    prompt.indexOf('</structural_rules>') < prompt.indexOf('<translation_craft>'),
+    'Craft block must appear AFTER structural_rules (parity remains priority #1)'
   );
   // Few-shot 4 jenayah (senjata anti-crime) — [HARMONY-FIX]
   assert.ok(prompt.includes('[EXAMPLE 1 — MERGE:'), 'Few-shot EXAMPLE 1 (MERGE) header');
