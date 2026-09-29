@@ -2,22 +2,29 @@
  * [AGENTB-OBS] Circuit Breaker Visibility (P0) + Crime Pattern Tracking (P3)
  * — Regression Tests
  *
- * Kontrak yang diuji (Mandat 2026-09-29, owner-approved K1–K5 + WARN tiering):
+ * Kontrak yang diuji (Mandat 2026-09-29, owner-approved K1–K5 + WARN tiering;
+ * Fasa 0 blind-spot fixes BS#1–BS#4 diluluskan 2026-09-29):
  *   T1. Field contract: 10 medan baharu dalam translationStats (additive,
  *       default selamat) + 4 medan legasi kekal tidak berubah.
  *   T2. Circuit preflight: phase='preflight', batch=0 (K1).
  *   T3. Circuit inspection: phase='inspection', batch 1-based.
  *   T4. Sentry dipanggil TEPAT sekali per fail walaupun helper dipanggil lagi.
+ *   T4b. [BS#3] Transisi circuit-open pada RE-VERDICT turut direkod —
+ *       phase=inspection, Sentry sekali, via laluan gerbang sebenar.
  *   T5. Crime counters: jenis dikenali dikira; jenis tak dikenali diabaikan
  *       + warn SEKALI (K4); batch-index direkod.
  *   T6. crimeBatchIndices cap 50 entri per jenis.
- *   T7. Pattern trigger: nisbah ≥15% AND ≥3 batch unik (fail besar);
- *       fallback mutlak ≥3 batch (fail kecil ≤10); warn SEKALI per jenis.
- *   T8. Pattern TIADA bila di bawah nisbah (false-alarm guard).
+ *   T7. Pattern trigger (BS#4: dievaluasi pada file summary, bukan mid-file):
+ *       nisbah ≥15% AND ≥3 batch unik (fail besar); fallback mutlak ≥3 batch
+ *       (fail kecil ≤10); warn SEKALI per jenis.
+ *   T8. Pattern TIADA bila di bawah nisbah walaupun selepas summary
+ *       (false-alarm guard).
  *   T9. Summary log tier: WARN bila circuit open; DEBUG-ish (tiada WARN)
  *       untuk fail bersih 0-2 crime (owner refinement: WARN jika total
  *       crimes ≥3 ATAU circuit ATAU pattern).
  *   T10. Repeated circuit calls idempotent — fields tidak bertindih.
+ *   T11. [BS#2] Penyebut agentBBatchesInspected TIDAK naik bila
+ *       runSemanticInspection throw — denominator jujur.
  */
 
 const test = require('node:test');
@@ -94,6 +101,57 @@ test('AgentBObs T4: sentry.captureMessage fires EXACTLY once even with repeated 
   }
 });
 
+// T4b — [BS#3] Transisi circuit-open pada RE-VERDICT direkod (laluan gerbang sebenar)
+test('AgentBObs T4b [BS#3]: re-verdict failOpen + circuitOpen records transition (phase=inspection, sentry once)', async () => {
+  const original = sentry.captureMessage;
+  let sentryCalls = 0;
+  sentry.captureMessage = () => { sentryCalls++; };
+  try {
+    // Engine mock mengikut konvensyen 'gerbang enjin' (lihat agentB-inspector-regression):
+    // semakan pertama → crime; retry structurally-complete; re-verdict → failOpen + circuit terbuka.
+    const dummyGemini = {
+      translateSubtitle: async () => '<s id="1">Satu</s>\n<s id="2">Dua</s>\n<s id="3">Tiga</s>',
+      streamTranslateSubtitle: async () => '',
+      estimateTokenCount: () => 10
+    };
+    let inspectorCallCount = 0;
+    const verdicts = [
+      { valid: false, crimes: [{ type: 'DROP', ids: [1], note: 'generic substitute' }] }, // semakan pertama
+      { failOpen: true } // re-verdict — circuit terbuka semasa re-verdict
+    ];
+    const agentB = {
+      circuitOpen: false, // mula TERBUKA-ditutup: semakan pertama MESTI berlaku
+      runSemanticInspection: async () => {
+        const v = verdicts[Math.min(inspectorCallCount, verdicts.length - 1)];
+        inspectorCallCount++;
+        if (inspectorCallCount === 2) {
+          agentB.circuitOpen = true; // circuit terbuka ANTARA semakan & re-verdict (senario sebenar)
+        }
+        return v;
+      }
+    };
+    const engine = new TranslationEngine(dummyGemini, 'gemini-2.5-flash', {}, {
+      providerName: 'gemini',
+      agentB
+    });
+    const batch = Array.from({ length: 3 }, (_, i) => ({
+      id: i + 1,
+      timecode: `00:00:0${i},000 --> 00:00:0${i + 1},000`,
+      text: `Line ${i + 1}`
+    }));
+    await engine.translateBatch(batch, 'Malay', null, 0, 1, null, { streaming: false });
+
+    const s = engine.translationStats;
+    assert.equal(s.agentBCircuitOpened, true, '[BS#3] re-verdict failOpen MUST record transition');
+    assert.equal(s.agentBCircuitOpenAtPhase, 'inspection', 'phase=inspection');
+    assert.equal(s.agentBCircuitOpenAtBatch, 1, 'batch 1-based (batchIndex 0 + 1)');
+    assert.equal(sentryCalls, 1, 'Sentry tepat sekali (helper guard)');
+    assert.ok(s.agentBRetries >= 1, 'retry path dijalankan');
+  } finally {
+    sentry.captureMessage = original;
+  }
+});
+
 // T5 — Crime counters + unknown type (K4)
 test('AgentBObs T5: known crime types counted; unknown type ignored + warned once (K4)', () => {
   const e = makeEngine();
@@ -122,40 +180,48 @@ test('AgentBObs T6: crimeBatchIndices capped at 50 entries per type', () => {
 });
 
 // T7 — Pattern trigger: ratio + fallback + warn-once
-test('AgentBObs T7: pattern fires at ≥3 unique batches AND ≥15% ratio; warn once per type', () => {
+// [BS#4] Evaluasi berlaku pada _logAgentBFileSummary (hujung fail), bukan mid-file.
+test('AgentBObs T7: pattern fires at ≥3 unique batches AND ≥15% ratio (evaluated at file summary); warn once per type', () => {
   const e = makeEngine();
   e.translationStats.agentBBatchesInspected = 20; // 4/20 = 20% ≥ 15%
   e._recordCrime('PHANTOM', 1);
   e._recordCrime('PHANTOM', 2);
+  // [BS#4] Mid-file: BELUM trigger — evaluasi ditangguhkan ke summary
+  assert.equal(e.translationStats.crimePatternDetected, null, 'no mid-file evaluation (BS#4)');
   e._recordCrime('PHANTOM', 3);
-  assert.equal(e.translationStats.crimePatternDetected.length, 1, 'pattern triggered');
+  e._logAgentBFileSummary(); // ← titik evaluasi muktamad
+  assert.equal(e.translationStats.crimePatternDetected.length, 1, 'pattern triggered at file summary');
   assert.match(e.translationStats.crimePatternDetected[0], /^PHANTOM in 3\/20 inspected batches \(15%\)$/);
-  // Warn-once per type: jenis sama selepas trigger TIDAK duplikat entri
+  // Warn-once per type: jenis sama, summary dipanggil lagi TIDAK duplikat entri
   e._recordCrime('PHANTOM', 4);
+  e._logAgentBFileSummary();
   assert.equal(e.translationStats.crimePatternDetected.length, 1, 'no duplicate pattern entry per type');
   // Jenis lain berasingan
   e._recordCrime('SHIFT', 5);
   e._recordCrime('SHIFT', 6);
   e._recordCrime('SHIFT', 7);
+  e._logAgentBFileSummary();
   assert.equal(e.translationStats.crimePatternDetected.length, 2, 'second type gets its own entry');
 });
 
-test('AgentBObs T7b: pattern fallback for small files (≤10 batches): ≥3 batches mutlak', () => {
+test('AgentBObs T7b: pattern fallback for small files (≤10 batches): ≥3 batches mutlak (file summary)', () => {
   const e = makeEngine();
   e.translationStats.agentBBatchesInspected = 4; // fail kecil
   e._recordCrime('MERGE', 1);
   e._recordCrime('MERGE', 2);
   e._recordCrime('MERGE', 3);
+  e._logAgentBFileSummary(); // ← evaluasi pada hujung fail
   assert.equal(e.translationStats.crimePatternDetected.length, 1, 'small-file fallback: 3/4 batches triggers');
 });
 
-// T8 — False-alarm guard: di bawah nisbah tidak trigger
-test('AgentBObs T8: pattern does NOT fire below 15% ratio on large files', () => {
+// T8 — False-alarm guard: di bawah nisbah tidak trigger WALAUPUN selepas summary
+test('AgentBObs T8: pattern does NOT fire below 15% ratio on large files (even after summary)', () => {
   const e = makeEngine();
   e.translationStats.agentBBatchesInspected = 25; // 3/25 = 12% < 15%
   e._recordCrime('DROP', 1);
   e._recordCrime('DROP', 2);
   e._recordCrime('DROP', 3);
+  e._logAgentBFileSummary(); // ← evaluasi berlaku, tetapi di bawah nisbah
   assert.equal(e.translationStats.crimePatternDetected, null, 'no false alarm (null kekal)');
 });
 
@@ -193,4 +259,32 @@ test('AgentBObs T10: circuit transition is idempotent — fields locked to first
   assert.equal(s.agentBCircuitOpenAtPhase, 'preflight', 'phase locked');
   assert.equal(s.agentBCircuitOpenAtBatch, 0, 'batch locked');
   assert.equal(s.agentBFailuresBeforeOpen, 3, 'failures snapshot locked at transition moment');
+});
+
+// T11 — [BS#2] Denominator jujur: inspection yang throw TIDAK mengembungkan penyebut
+test('AgentBObs T11 [BS#2]: agentBBatchesInspected NOT incremented when runSemanticInspection throws', async () => {
+  const dummyGemini = {
+    translateSubtitle: async () => '<s id="1">Satu</s>\n<s id="2">Dua</s>',
+    streamTranslateSubtitle: async () => '',
+    estimateTokenCount: () => 10
+  };
+  const agentB = {
+    circuitOpen: false,
+    runSemanticInspection: async () => { throw new Error('inspection mid-flight crash'); }
+  };
+  const engine = new TranslationEngine(dummyGemini, 'gemini-2.5-flash', {}, {
+    providerName: 'gemini',
+    agentB
+  });
+  const batch = Array.from({ length: 2 }, (_, i) => ({
+    id: i + 1,
+    timecode: `00:00:0${i},000 --> 00:00:0${i + 1},000`,
+    text: `Line ${i + 1}`
+  }));
+  const result = await engine.translateBatch(batch, 'Malay', null, 0, 1, null, { streaming: false });
+
+  const s = engine.translationStats;
+  assert.equal(s.agentBBatchesInspected, 0, '[BS#2] throw = inspection TIDAK selesai → penyebut kekal 0');
+  assert.equal(s.agentBFailures, 1, 'fail-open path counts the failure');
+  assert.equal(result.length, 2, 'pipeline fail-open — hasil tidak terjejas');
 });
