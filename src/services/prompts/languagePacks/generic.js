@@ -41,20 +41,54 @@ const genericPack = {
   creditsExample: 'provide the official ${tgt} media/publishing translation for each line (e.g. "Adapted from..." -> its official published ${tgt} rendering)',
 
   /**
-   * P2 injection: language-neutral few-shot (anti-MERGE weapon).
-   * The bracketed placeholders show the TARGET-side slot discipline without
-   * baking any concrete language into the prompt.
+   * P2 injection: language-neutral few-shot — 4 jenayah (anti-crime weapons).
+   * [HARMONY-FIX] 2026-09-29: satu contoh → EMPAT contoh, satu bagi setiap
+   * jenayah Agent B (MERGE/SHIFT/PHANTOM/DROP). UNIVERSAL COMPLIANCE:
+   * sifar teks contoh khusus-bahasa — hanya kurungan placeholder + simbol
+   * universal (♪♪, [door slams]); mana-mana bahasa sasaran boleh mengalir
+   * melalui bentuk prompt yang sama.
    */
-  fewShot: `[EXAMPLE — split sentence and isolated question tag]
+  fewShot: `[EXAMPLE 1 — MERGE: split sentence and isolated question tag]
 Input:
 <s id="1">You are coming with us,</s>
 <s id="2">aren't you?</s>
 Correct output:
-<s id="1">[TARGET-LANGUAGE translation of "You are coming with us,"]</s>
-<s id="2">[TARGET-LANGUAGE translation of "aren't you?" — keep the isolated question tag in its own slot]</s>
+<s id="1">[translation of "You are coming with us,"]</s>
+<s id="2">[translation of "aren't you?" — isolated tag in own slot]</s>
 Wrong (merged):
-<s id="1">[full merged sentence in the target language]</s>
-<s id="2">.</s>`,
+<s id="1">[full merged sentence]</s>
+<s id="2">.</s>
+
+[EXAMPLE 2 — SHIFT: every slot must appear, symbol or SFX]
+Input:
+<s id="1">Sorry I'm late.</s>
+<s id="2">♪♪</s>
+<s id="3">[door slams]</s>
+<s id="4">No problem, sit down.</s>
+Correct output:
+<s id="1">[translation of "Sorry I'm late."]</s>
+<s id="2">♪♪</s>
+<s id="3">[translation of "[door slams]"]</s>
+<s id="4">[translation of "No problem, sit down."]</s>
+Wrong (slots skipped, dialogue drifts):
+<s id="1">[translation of "Sorry I'm late."]</s>
+<s id="2">[translation of "No problem, sit down."]</s>
+
+[EXAMPLE 3 — PHANTOM: never elaborate beyond what the source says]
+Input:
+<s id="5">Wait.</s>
+Correct output:
+<s id="5">[translation of "Wait."]</s>
+Wrong (fabricated content not present in source):
+<s id="5">[elaborated version with content not in source]</s>
+
+[EXAMPLE 4 — DROP: the line's own meaning must survive, not be replaced]
+Input:
+<s id="6">I never wanted this to happen.</s>
+Correct output:
+<s id="6">[translation preserving specific meaning]</s>
+Wrong (meaning dropped, replaced with generic):
+<s id="6">[generic filler without source meaning]</s>`,
 
   /**
    * P8 injection: neutral rule #6 for DEFAULT_TRANSLATION_PROMPT.

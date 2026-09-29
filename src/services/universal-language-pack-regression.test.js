@@ -103,9 +103,19 @@ test('P1 Japanese: generic pack — tiada teks BM', () => {
   assert.ok(!prompt.includes('Diadaptasi daripada'));
 });
 
-// ── 4. P2 (translationEngine) — few-shot target-conditional ──
+// ── 4. P2 (translationEngine) — few-shot 4 jenayah, target-conditional ──
+// [HARMONY-FIX] 2026-09-29: few-shot kini 4 contoh (MERGE/SHIFT/PHANTOM/DROP),
+// label jenayah pada setiap header — pariti 1:1 dengan structural_rules
+// Agent A + taksonomi Agent B.
 
-test('P2 Malay: few-shot BM "Awak ikut kami," hadir (identik dengan lama)', () => {
+const CRIME_EXAMPLE_HEADERS = [
+  '[EXAMPLE 1 — MERGE:',
+  '[EXAMPLE 2 — SHIFT:',
+  '[EXAMPLE 3 — PHANTOM:',
+  '[EXAMPLE 4 — DROP:'
+];
+
+test('P2 Malay: few-shot 4 jenayah hadir (MERGE/SHIFT/PHANTOM/DROP), BM "Awak ikut kami," kekal', () => {
   const TranslationEngine = require('./translationEngine');
   const dummyGemini = {
     translateSubtitle: async () => '',
@@ -116,12 +126,18 @@ test('P2 Malay: few-shot BM "Awak ikut kami," hadir (identik dengan lama)', () =
   engine.sourceLanguage = 'English';
   const batchText = '<s id="1">You are coming with us,</s>\n<s id="2">aren\'t you?</s>';
   const prompt = engine.createXmlBatchPrompt(batchText, 'Malay', null, 2, null, 0, 1);
-  assert.ok(prompt.includes('[EXAMPLE — split sentence and isolated question tag]'));
+  for (const header of CRIME_EXAMPLE_HEADERS) {
+    assert.ok(prompt.includes(header), `few-shot header jenayah hadir: ${header}`);
+  }
+  assert.ok(prompt.includes('EXAMPLE 1 — MERGE'), 'label jenayah MERGE pada EXAMPLE 1');
+  assert.ok(prompt.includes('EXAMPLE 2 — SHIFT'), 'label jenayah SHIFT pada EXAMPLE 2');
+  assert.ok(prompt.includes('EXAMPLE 3 — PHANTOM'), 'label jenayah PHANTOM pada EXAMPLE 3');
+  assert.ok(prompt.includes('EXAMPLE 4 — DROP'), 'label jenayah DROP pada EXAMPLE 4');
   assert.ok(prompt.includes('Awak ikut kami,'), 'few-shot BM hadir untuk sasaran Malay');
   assert.ok(prompt.includes('Wrong (merged):'));
 });
 
-test('P2 Vietnamese: few-shot neutral — TIADA "Awak ikut kami"', () => {
+test('P2 Vietnamese: few-shot 4 jenayah neutral — TIADA "Awak ikut kami"', () => {
   const TranslationEngine = require('./translationEngine');
   const dummyGemini = {
     translateSubtitle: async () => '',
@@ -132,8 +148,12 @@ test('P2 Vietnamese: few-shot neutral — TIADA "Awak ikut kami"', () => {
   engine.sourceLanguage = 'English';
   const batchText = '<s id="1">You are coming with us,</s>\n<s id="2">aren\'t you?</s>';
   const prompt = engine.createXmlBatchPrompt(batchText, 'Vietnamese', null, 2, null, 0, 1);
-  assert.ok(prompt.includes('[EXAMPLE — split sentence and isolated question tag]'), 'struktur few-shot kekal');
+  for (const header of CRIME_EXAMPLE_HEADERS) {
+    assert.ok(prompt.includes(header), `few-shot header jenayah neutral hadir: ${header}`);
+  }
   assert.ok(!prompt.includes('Awak ikut kami'), 'TIADA teks BM dalam prompt Vietnamese');
+  assert.ok(!prompt.includes('Tunggu'), 'TIADA teks BM (contoh PHANTOM BM) dalam prompt Vietnamese');
+  assert.ok(!prompt.includes('Baiklah'), 'TIADA teks BM (contoh DROP BM) dalam prompt Vietnamese');
   assert.ok(prompt.includes('Correct output:'), 'disiplin slot kekal didemonstrasi');
 });
 

@@ -127,16 +127,21 @@ const VALID_CRIME_TYPES = new Set(['MERGE', 'DROP', 'PHANTOM', 'SHIFT']);
  * Arahan inspector (zero-yap). Dihantar sebagai SATU mesej user lengkap
  * (pariti 1:1 dengan kontrak pembawa OpenAI-compatible projek — payload
  * dibake terus ke dalam prompt, bukan dihantar berasingan).
+ * [HARMONY-FIX] 2026-09-29: taksonomi 4 jenayah dipertajam selari dengan
+ * structural_rules Agent A (7 peraturan ANTI-*). MERGE kini semata-mata
+ * isu bilangan slot (off-by-one drift — klausa "fabricated filler" lama
+ * dibuang kerana bertindih dengan PHANTOM), PHANTOM = fabrikasi kandungan,
+ * DROP = maksud spesifik diganti substitut generik.
  */
 const INSPECTOR_INSTRUCTION = `## Role
 You are a subtitle integrity inspector. You compare source lines with their translations, line by line.
 
 ## Task
 Detect ONLY these four violations:
-- MERGE: two source lines were translated into ONE output line while another output line contains fabricated filler text.
-- DROP: a source line's meaning is completely missing from its output line.
-- PHANTOM: an output line contains content with no basis in the source line.
-- SHIFT: Dialogue content displaced or shifted across indices (e.g. line 5 dialogue appears in line 6).
+- MERGE: Two source lines merged into ONE output slot, displacing subsequent lines (off-by-one drift).
+- DROP: Source line's specific meaning is missing or replaced by a generic substitute that erases it.
+- PHANTOM: Output slot contains fabricated content with no basis in its source line (invented dialogue, elaboration, hallucinated detail).
+- SHIFT: Dialogue content displaced across indices (line 5 text appearing in line 6's slot).
   NOTE: Ignore minor millisecond timecode differences; audit solely whether the dialogue text matches the corresponding line index.
 
 Ignore: translation style, grammar, tone, cultural adaptation, and minor omissions.

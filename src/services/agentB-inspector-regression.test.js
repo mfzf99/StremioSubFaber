@@ -173,14 +173,29 @@ test('AgentB: parseInspectorResponse accepts SHIFT crime (4th crime type, klausa
 });
 
 test('AgentB: inspector instruction locks the SHIFT golden clause verbatim', () => {
+  // [HARMONY-FIX] 2026-09-29: taksonomi dipertajam — MERGE = bilangan slot
+  // sahaja, PHANTOM = fabrikasi kandungan (tiada lagi pertindihan).
   assert.ok(
-    INSPECTOR_INSTRUCTION.includes('- SHIFT: Dialogue content displaced or shifted across indices (e.g. line 5 dialogue appears in line 6).'),
+    INSPECTOR_INSTRUCTION.includes('- SHIFT: Dialogue content displaced across indices (line 5 text appearing in line 6\'s slot).'),
     'Klausa rasmi SHIFT mesti hadir verbatim dalam arahan pemeriksa'
   );
   assert.ok(
     INSPECTOR_INSTRUCTION.includes('NOTE: Ignore minor millisecond timecode differences; audit solely whether the dialogue text matches the corresponding line index.'),
     'Klausa emas pengurang token (abaikan millisecond timecode) mesti hadir'
   );
+  assert.ok(
+    INSPECTOR_INSTRUCTION.includes('- MERGE: Two source lines merged into ONE output slot, displacing subsequent lines (off-by-one drift).'),
+    'MERGE mesti membawa definisi off-by-one drift (isue bilangan slot)'
+  );
+  assert.ok(
+    INSPECTOR_INSTRUCTION.includes('- PHANTOM: Output slot contains fabricated content with no basis in its source line (invented dialogue, elaboration, hallucinated detail).'),
+    'PHANTOM mesti membawa definisi fabrikasi kandungan (invented dialogue, elaboration, hallucinated detail)'
+  );
+  assert.ok(
+    INSPECTOR_INSTRUCTION.includes('- DROP: Source line\'s specific meaning is missing or replaced by a generic substitute that erases it.'),
+    'DROP mesti membawa definisi generic substitute (maksud spesifik terpadam)'
+  );
+  assert.ok(!INSPECTOR_INSTRUCTION.includes('fabricated filler'), 'MERGE TIADA lagi klausa "fabricated filler" (pertindihan PHANTOM dibuang)');
   assert.ok(INSPECTOR_INSTRUCTION.includes('MERGE|DROP|PHANTOM|SHIFT'), 'output contract mesti menyenaraikan 4 jenayah');
 });
 

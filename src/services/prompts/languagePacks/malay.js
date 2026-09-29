@@ -45,10 +45,13 @@ const malayPack = {
   creditsExample: 'provide the official ${tgt} media/publishing translation for each line (e.g. "Adapted from" -> "Diadaptasi daripada")',
 
   /**
-   * P2 injection: Malay few-shot example (anti-MERGE weapon).
-   * Placeholder ${sourceWord} never changes — the Malay words are the point.
+   * P2 injection: Malay few-shot examples — 4 jenayah (anti-crime weapons).
+   * [HARMONY-FIX] 2026-09-29: satu contoh → EMPAT contoh, satu bagi setiap
+   * jenayah Agent B (MERGE/SHIFT/PHANTOM/DROP), label jenayah pada setiap
+   * header supaya Agent A dapat mengaitkan few-shot ↔ structural_rules
+   * ↔ INSPECTOR_INSTRUCTION secara 1:1.
    */
-  fewShot: `[EXAMPLE — split sentence and isolated question tag]
+  fewShot: `[EXAMPLE 1 — MERGE: split sentence and isolated question tag]
 Input:
 <s id="1">You are coming with us,</s>
 <s id="2">aren't you?</s>
@@ -57,7 +60,38 @@ Correct output:
 <s id="2">kan?</s>
 Wrong (merged):
 <s id="1">Awak ikut kami, kan?</s>
-<s id="2">.</s>`,
+<s id="2">.</s>
+
+[EXAMPLE 2 — SHIFT: every slot must appear, symbol or SFX]
+Input:
+<s id="1">Sorry I'm late.</s>
+<s id="2">♪♪</s>
+<s id="3">[door slams]</s>
+<s id="4">No problem, sit down.</s>
+Correct output:
+<s id="1">Maaf saya lewat.</s>
+<s id="2">♪♪</s>
+<s id="3">[pintu terhempas]</s>
+<s id="4">Tak apa, duduklah.</s>
+Wrong (slots skipped, dialogue drifts):
+<s id="1">Maaf saya lewat.</s>
+<s id="2">Tak apa, duduklah.</s>
+
+[EXAMPLE 3 — PHANTOM: never elaborate beyond what the source says]
+Input:
+<s id="5">Wait.</s>
+Correct output:
+<s id="5">Tunggu.</s>
+Wrong (fabricated content not present in source):
+<s id="5">Tunggu, saya perlu fikir dulu sebelum kita teruskan.</s>
+
+[EXAMPLE 4 — DROP: the line's own meaning must survive, not be replaced]
+Input:
+<s id="6">I never wanted this to happen.</s>
+Correct output:
+<s id="6">Saya tak pernah nak benda ni jadi.</s>
+Wrong (meaning dropped, replaced with generic):
+<s id="6">Baiklah.</s>`,
 
   /**
    * P8 injection: DEFAULT_TRANSLATION_PROMPT rule (target-conditional).

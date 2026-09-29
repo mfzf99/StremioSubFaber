@@ -2501,14 +2501,18 @@ You MUST translate each numbered line 1:1. NEVER merge two source lines into one
     const sharedContextBlock = this._formatSharedContext(context, batchText);
 
     // ── PROMPT V2 "CRIME-PROOF" (Mandat Pembedahan B 2026-09-27) ──
-    // Versi B (Claude) diluluskan Project Owner — structural_rules dipetakan
-    // 1:1 kepada 4 jenayah Agent B (SLOT ISOLATION→MERGE, ZERO SHIFTING→SHIFT,
-    // ESCAPE HATCH→PHANTOM, SONG LYRICS→DROP) + few-shot split-sentence.
-    // Tampalan mandat: (1) sourceLabel dikembalikan dalam Task (B asal
-    // membuangnya); (2) "spoken" → "conversational" (arahan owner).
-    // Anchor '<s id="${startId}">' kekal di penutup supaya Smart Preamble
-    // Scrubber (v1.6.1) dalam parseXmlBatchResponse terus berfungsi tanpa
-    // off-by-one.
+    // [HARMONY-FIX] Harmonisasi penuh 2026-09-29: structural_rules kini 7
+    // peraturan dengan pemetaan 1:1 eksplisit kepada 4 jenayah Agent B
+    // (ANTI-MERGE→MERGE, ANTI-SHIFT→SHIFT, ANTI-PHANTOM→PHANTOM,
+    // ANTI-DROP→DROP) + ESCAPE HATCH + SONG LYRICS + PRESERVE markup.
+    // Rule 4 (ANTI-DROP) sengaja mengelak perkataan "truncated" (false
+    // positive pada subtitle pendek yang memang satu perkataan) dan TIADA
+    // contoh khusus-bahasa dalam teks peraturan (kontrak universal 433
+    // bahasa — hanya kod format & simbol universal sahaja).
+    // Tampalan mandat terdahulu kekal: sourceLabel dalam Task; "spoken" →
+    // "conversational". Anchor '<s id="${startId}">' kekal di penutup supaya
+    // Smart Preamble Scrubber (v1.6.1) dalam parseXmlBatchResponse terus
+    // berfungsi tanpa off-by-one.
     const promptBody = `## Role
 You are an expert Netflix subtitle translator and localization specialist, fluent in both ${sourceLabel || 'the source language'} and ${targetLabel || 'the target language'}, as well as their respective cultures.
 
@@ -2516,11 +2520,13 @@ You are an expert Netflix subtitle translator and localization specialist, fluen
 Translate the provided ${sourceLabel || 'source'} subtitles line by line into natural, conversational ${targetLabel}, the way a native speaker would say it — conveying the speaker's true meaning, tone, and intent rather than translating word-for-word. Keep established character names, titles, and context-specific terms consistent throughout.
 
 <structural_rules>
-1. SLOT ISOLATION: Dialogue frequently splits across consecutive lines due to speech timing. Translate ONLY the fragment present in each <s id="N">. NEVER merge, complete, or pull words from an adjacent line — including short fragments, question tags, negation particles, or single-word interjections. Leaving a slot grammatically incomplete is correct and required.
-2. ZERO SHIFTING: NEVER shift subsequent dialogue forward to fill a short or empty slot. Every input id must align with the exact same dialogue event in the output.
-3. ESCAPE HATCH: If content cannot be translated — foreign proper nouns, brand/entity names, creative work titles, corrupted text — copy the exact source text into that slot instead. If a slot contains only symbols, music notes, or numbers with no translatable words, copy it as-is.
-4. SONG LYRICS: Lyrics inside music notes (♪/♫) must always be translated, whether as a full song block or scattered background music.
-5. PRESERVE all [br], <i>...</i>, speaker dashes (-), and any other inline markup in the exact same position and count as in the source.
+1. ANTI-MERGE — SLOT ISOLATION: Dialogue frequently splits across consecutive lines due to speech timing. Translate ONLY the fragment present in each <s id="N">. NEVER merge, complete, or pull words from an adjacent line — including short fragments, question tags, negation particles, or single-word interjections. Leaving a slot grammatically incomplete is correct and required.
+2. ANTI-SHIFT — ZERO SKIPPING: Every <s id="N"> in the input MUST produce exactly one <s id="N"> in the output. NEVER skip a slot, and NEVER shift subsequent dialogue forward to fill a short or empty one. If a slot contains only symbols, music notes, or numbers with no translatable words, copy it as-is rather than omitting it — an empty slot causes every line after it to drift out of sync.
+3. ANTI-PHANTOM — NO FABRICATION: NEVER invent, add, or elaborate on content that has no basis in that line's own source text. If unsure how to translate a line, translate it as literally as possible rather than inventing plausible-sounding dialogue.
+4. ANTI-DROP — FULL MEANING TRANSFER: Every output line must carry the actual specific meaning of its source line. NEVER replace a line's specific content with a generic substitute that erases its meaning.
+5. ESCAPE HATCH: If content cannot be translated — foreign proper nouns, brand/entity names, creative work titles, corrupted text — copy the exact source text into that slot instead.
+6. SONG LYRICS: Lyrics inside music notes (♪/♫) must always be translated, whether as a full song block or scattered background music.
+7. PRESERVE all [br], <i>...</i>, speaker dashes (-), and any other inline markup in the exact same position and count as in the source.
 </structural_rules>
 
 ${fewShotPack.fewShot}

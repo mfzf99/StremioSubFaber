@@ -326,21 +326,30 @@ test('SubFaberPrompt: pure SubFaber prompt when ON — persona + principles + XM
   );
   assert.ok(prompt.includes('the way a native speaker would say it'), 'Native-speaker phrasing directive');
   assert.ok(prompt.includes('Keep established character names, titles, and context-specific terms consistent'), 'Terminology consistency (dipindah ke Task)');
-  // structural_rules — pemetaan 1:1 kepada 4 jenayah Agent B
+  // structural_rules — [HARMONY-FIX] 7 peraturan, pemetaan 1:1 kepada 4
+  // jenayah Agent B melalui label ANTI-*
   assert.ok(prompt.includes('<structural_rules>'), 'Structural rules opening tag');
   assert.ok(prompt.includes('</structural_rules>'), 'Structural rules closing tag');
-  assert.ok(prompt.includes('1. SLOT ISOLATION'), 'Rule 1: SLOT ISOLATION (anti-MERGE)');
+  assert.ok(prompt.includes('1. ANTI-MERGE — SLOT ISOLATION'), 'Rule 1: ANTI-MERGE (label jenayah hadir)');
   assert.ok(prompt.includes('Translate ONLY the fragment present in each <s id="N">'), 'Fragment isolation rule verbatim (rule 1)');
   assert.ok(prompt.includes('Leaving a slot grammatically incomplete is correct and required.'), 'Incomplete slot mandate (anti-MERGE terkuat)');
-  assert.ok(prompt.includes('2. ZERO SHIFTING'), 'Rule 2: ZERO SHIFTING (anti-SHIFT)');
-  assert.ok(prompt.includes('3. ESCAPE HATCH'), 'Rule 3: ESCAPE HATCH (anti-PHANTOM)');
-  assert.ok(prompt.includes('4. SONG LYRICS'), 'Rule 4: SONG LYRICS (anti-DROP)');
+  assert.ok(prompt.includes('2. ANTI-SHIFT — ZERO SKIPPING'), 'Rule 2: ANTI-SHIFT (label jenayah hadir)');
+  assert.ok(prompt.includes('3. ANTI-PHANTOM — NO FABRICATION'), 'Rule 3: ANTI-PHANTOM (label jenayah hadir)');
+  assert.ok(prompt.includes("NEVER invent, add, or elaborate on content that has no basis in that line's own source text."), 'Rule 3 verbatim: no fabrication');
+  assert.ok(prompt.includes('4. ANTI-DROP — FULL MEANING TRANSFER'), 'Rule 4: ANTI-DROP (label jenayah hadir)');
+  assert.ok(prompt.includes('NEVER replace a line\'s specific content with a generic substitute that erases its meaning.'), 'Rule 4 verbatim: generic substitute dilarang (TIADA perkataan "truncated")');
+  assert.ok(!prompt.includes('truncated'), 'Rule 4 TIDAK membawa false-positive "truncated"');
+  assert.ok(prompt.includes('5. ESCAPE HATCH'), 'Rule 5: escape hatch');
+  assert.ok(prompt.includes('6. SONG LYRICS'), 'Rule 6: song lyrics');
   assert.ok(
-    prompt.includes('5. PRESERVE all [br], <i>...</i>, speaker dashes (-), and any other inline markup'),
-    'Rule 5: markup preservation'
+    prompt.includes('7. PRESERVE all [br], <i>...</i>, speaker dashes (-), and any other inline markup'),
+    'Rule 7: markup preservation'
   );
-  // Few-shot split-sentence (senjata anti-MERGE)
-  assert.ok(prompt.includes('[EXAMPLE — split sentence and isolated question tag]'), 'Few-shot example header');
+  // Few-shot 4 jenayah (senjata anti-crime) — [HARMONY-FIX]
+  assert.ok(prompt.includes('[EXAMPLE 1 — MERGE:'), 'Few-shot EXAMPLE 1 (MERGE) header');
+  assert.ok(prompt.includes('[EXAMPLE 2 — SHIFT:'), 'Few-shot EXAMPLE 2 (SHIFT) header');
+  assert.ok(prompt.includes('[EXAMPLE 3 — PHANTOM:'), 'Few-shot EXAMPLE 3 (PHANTOM) header');
+  assert.ok(prompt.includes('[EXAMPLE 4 — DROP:'), 'Few-shot EXAMPLE 4 (DROP) header');
   assert.ok(prompt.includes('Correct output:'), 'Few-shot correct output shown');
   assert.ok(prompt.includes('Wrong (merged):'), 'Few-shot wrong output shown');
   assert.ok(prompt.includes('Awak ikut kami,'), 'Few-shot BM translation present');
