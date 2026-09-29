@@ -54,12 +54,12 @@ const MAX_PREFLIGHT_CHARS = 250000;
 const PREFLIGHT_MAX_INPUT_CHARS = MAX_PREFLIGHT_CHARS; // alias warisan
 // Skip sampling jika fail lebih kecil dari ini (entries)
 const PREFLIGHT_MIN_ENTRIES = 10;
-// Had bilangan istilah yang diterima (VideoLingo: "Extract less than 15 terms")
-const PREFLIGHT_MAX_TERMS = 15;
-// Had bilangan watak utama (TIANG 3) — watak utama berulang sahaja, bukan extras
-const PREFLIGHT_MAX_CHARACTERS = 12;
-// Had bilangan kredit/gelaran pembukaan (TIANG 4) — baris 1-5 sahaja diperiksa
-const PREFLIGHT_MAX_CREDITS = 10;
+// [UNBOUNDED-CONTEXT 2026-09-29] Siling lama 15 istilah / 12 watak /
+// 10 kredit DIGUGURKAN sepenuhnya — konteks 4-tiang kini TIDAK dihad dari
+// sisi parser. Sebab pembaikan: rantaian pemotongan (preflight 15 ->
+// inspection 10) menyebabkan Agent B mengaudit atas konteks separuh jalan
+// sahaja. Model Fasa 0 kini menentukan sendiri kedalaman analisis; SEMUA
+// entri sah dipulangkan.
 
 /**
  * Bina teks mentah dari entries SRT untuk Fasa 0.
@@ -290,7 +290,8 @@ function pickField(obj, ...keys) {
  *   - Resilient parser: fences, chatter, koma tergantung, control chars
  *   - Validasi struktur { theme, terms, characters, credits_and_titles }
  *   - Kunci warisan Beta Run 7 (src/tgt) diterima untuk ketahanan maksimum
- *   - Hadkan setiap tiang kepada siling mandat masing-masing
+ *   - UNBOUNDED-CONTEXT 2026-09-29: tiada siling per tiang — SEMUA entri
+ *     sah dipulangkan (rantaian pemotongan preflight→inspection dihapus)
  * @param {string} responseText - Respons mentah model
  * @returns {{theme:string, terms:Array<{source:string,target:string,note:string}>,
  *            characters:Array<{name:string,canonical_address:string,role:string}>,
@@ -321,7 +322,6 @@ function parsePreflightResponse(responseText) {
         target: pickField(term, 'target', 'tgt') || source,
         note: pickField(term, 'note')
       });
-      if (terms.length >= PREFLIGHT_MAX_TERMS) break;
     }
   }
 
@@ -347,7 +347,6 @@ function parsePreflightResponse(responseText) {
         canonical_address: resolvedAddress,
         role: pickField(character, 'role')
       });
-      if (characters.length >= PREFLIGHT_MAX_CHARACTERS) break;
     }
   }
 
@@ -362,7 +361,6 @@ function parsePreflightResponse(responseText) {
         source,
         target: pickField(credit, 'target', 'tgt') || source
       });
-      if (creditsAndTitles.length >= PREFLIGHT_MAX_CREDITS) break;
     }
   }
 
@@ -569,8 +567,5 @@ module.exports = {
   formatPreflightForPrompt,
   MAX_PREFLIGHT_CHARS,
   PREFLIGHT_MAX_INPUT_CHARS,
-  PREFLIGHT_MIN_ENTRIES,
-  PREFLIGHT_MAX_TERMS,
-  PREFLIGHT_MAX_CHARACTERS,
-  PREFLIGHT_MAX_CREDITS
+  PREFLIGHT_MIN_ENTRIES
 };

@@ -128,6 +128,36 @@ test('AgentB: parseInspectorResponse valid:false tanpa crimes boleh diperbetulka
   assert.deepEqual(verdict, { valid: true }, 'no salvageable crimes → treat as valid');
 });
 
+test('AgentB: parseInspectorResponse UNBOUNDED — SEMUA jenayah dipulangkan (siling 5 digugurkan)', () => {
+  // Jika batch mengandungi 8 jenayah, SEMUA 8 mesti dipulangkan supaya
+  // retry engine memperbaiki semuanya. Siling lama 5 jenayah DIGUGURKAN
+  // (UNBOUNDED-CONTEXT 2026-09-29).
+  const eightCrimes = Array.from({ length: 8 }, (_, i) => ({
+    type: i % 2 === 0 ? 'MERGE' : 'DROP',
+    ids: [i * 10, i * 10 + 1],
+    note: `crime ${i}`
+  }));
+  const verdict = parseInspectorResponse(JSON.stringify({ valid: false, crimes: eightCrimes }));
+  assert.equal(verdict.valid, false, '8 jenayah → valid:false');
+  assert.equal(verdict.crimes.length, 8, 'Semua 8 jenayah dipulangkan (bukan 5)');
+  assert.equal(verdict.crimes[7].note, 'crime 7', 'Jenayah TERAKHIR hadir');
+});
+
+test('AgentB: sanity caps kekal — id per jenayah 10, nota 120 aksara (UNBOUNDED-CONTEXT 2026-09-29)', () => {
+  // AGENT_B_MAX_IDS_PER_CRIME (10) dan AGENT_B_MAX_NOTE_CHARS (120) KEKAL
+  // sebagai pertahanan sanity (elak 1 jenayah senaraikan 200 id / nota panjang).
+  const verdict = parseInspectorResponse(JSON.stringify({
+    valid: false,
+    crimes: [{
+      type: 'MERGE',
+      ids: Array.from({ length: 50 }, (_, i) => i + 1), // 50 id → dipotong ke 10
+      note: 'N'.repeat(500)                              // 500 aksara → dipotong ke 120
+    }]
+  }));
+  assert.equal(verdict.crimes[0].ids.length, 10, 'Max 10 id per jenayah (sanity kekal)');
+  assert.equal(verdict.crimes[0].note.length, 120, 'Nota dicap 120 aksara (sanity kekal)');
+});
+
 // ── 1B. SHIFT crime (MANDAT OPERASI MUTLAK 2026-09-27) ──
 
 test('AgentB: parseInspectorResponse accepts SHIFT crime (4th crime type, klausa emas)', () => {
@@ -171,15 +201,28 @@ test('AgentB: buildInspectionPayload builds compact parallel <en>/<ms> blocks wi
   assert.ok(payload.prompt.includes('"valid":true'), 'JSON contract must be present');
 });
 
-test('AgentB: buildInspectionPayload clamps long lines and rejects empty input', () => {
+test('AgentB: buildInspectionPayload rejects empty input (line truncation DIGUGURKAN — UNBOUNDED-CONTEXT 2026-09-29)', () => {
+  // Siling lama 200 aksara/baris DIGUGURKAN — baris dialog bersubtitle
+  // dengan markup boleh melebihi 200 aksara; inspector mesti melihat
+  // baris PENUH untuk mengesan PHANTOM/DROP dengan tepat.
   const source = makeEntries(1, () => 'A'.repeat(500));
   const translated = makeTranslated(1, () => 'B');
   const payload = buildInspectionPayload(source, translated);
   const longLine = payload.prompt.split('\n').find(l => l.startsWith('1|A'));
-  assert.ok(longLine.length <= 202, 'lines must be clamped to ~200 chars + prefix');
+  assert.equal(longLine.length, 502, '500 aksara + prefix "1|" — baris PENUH tanpa pemotongan');
 
   assert.equal(buildInspectionPayload([], []), null);
   assert.equal(buildInspectionPayload(null, null), null);
+});
+
+test('AgentB: buildInspectionPayload menormalkan whitespace tanpa memotong baris (sanity kekal)', () => {
+  // Whitespace collapse masih dijalankan (muatan padat) — ini BUKAN pemotongan.
+  const source = makeEntries(1, () => 'Hello   \n\t world    with   spaces');
+  const translated = makeTranslated(1, () => 'Hai dunia');
+  const payload = buildInspectionPayload(source, translated);
+  const line = payload.prompt.split('\n').find(l => l.startsWith('1|Hello'));
+  assert.ok(line.includes('Hello world with spaces'), 'whitespace collapse aktif');
+  assert.ok(!line.includes('\t'), 'tab dibuang');
 });
 
 test('AgentB: buildInspectionPayload injects preflight context (theme/terms/characters) — CONTEXT-AWARE AUDIT', () => {
@@ -219,6 +262,43 @@ test('AgentB: formatPreflightContextForInspection — null/empty context returns
   assert.equal(formatPreflightContextForInspection(null), '');
   assert.equal(formatPreflightContextForInspection({}), '');
   assert.equal(formatPreflightContextForInspection({ theme: '', terms: [], characters: [] }), '');
+});
+
+test('AgentB: formatPreflightContextForInspection UNBOUNDED — SEMUA terms/characters/theme disuntik (UNBOUNDED-CONTEXT 2026-09-29)', () => {
+  // RANTAIAN PEMOTONGAN DIHAPUS: preflight kini pulangkan 50 istilah /
+  // 20 watak; inspector WAJIB melihat SEMUANYA. Siling lama 10 istilah /
+  // 12 watak / 400 aksara tema DIGUGURKAN.
+  const manyTerms = Array.from({ length: 50 }, (_, i) => ({ source: `Term${i}`, target: `Istilah${i}` }));
+  const manyChars = Array.from({ length: 20 }, (_, i) => ({ name: `Watak${i}`, canonical_address: `Gelaran${i}`, role: 'r' }));
+  const longTheme = 'X'.repeat(600) + '|THEME-TAIL-MARKER';
+  const context = { theme: longTheme, terms: manyTerms, characters: manyChars };
+
+  const block = formatPreflightContextForInspection(context);
+
+  assert.ok(block.includes('Term49 → Istilah49'), 'Istilah ke-50 (indeks 49) hadir — siling 10 digugurkan');
+  assert.ok(block.includes('Term10 → Istilah10'), 'Istilah ke-11 (indeks 10) hadir — melepasi siling lama 10');
+  assert.ok(block.includes('Watak19 → Gelaran19'), 'Watak ke-20 (indeks 19) hadir — siling 12 digugurkan');
+  assert.ok(block.includes('Watak12 → Gelaran12'), 'Watak ke-13 hadir — melepasi siling lama 12');
+  assert.ok(block.includes('THEME-TAIL-MARKER'), 'Tema penuh (600+ aksara) disuntik tanpa dipotong pada 400');
+  assert.equal(block.split('\n').filter(l => l.startsWith('- Term')).length, 50, 'Semua 50 baris istilah dirender');
+  assert.equal(block.split('\n').filter(l => l.startsWith('- Watak')).length, 20, 'Semua 20 baris watak dirender');
+});
+
+test('AgentB: buildInspectionPayload menyuntik konteks penuh ke prompt inspector (chain-of-truncation dihapus)', () => {
+  // Ujian hujung-ke-hujung: 50 istilah preflight → prompt inspector mesti
+  // membawa 50 istilah (bukan 10). Ini kontrak ASAS audit Agent B.
+  const source = makeEntries(1, () => 'Hello');
+  const translated = makeTranslated(1, () => 'Hai');
+  const manyTerms = Array.from({ length: 50 }, (_, i) => ({ source: `Term${i}`, target: `Istilah${i}` }));
+  const payload = buildInspectionPayload(source, translated, {
+    theme: 'A story.',
+    terms: manyTerms,
+    characters: []
+  });
+  assert.ok(payload, 'payload mesti dibina');
+  assert.equal(payload.prompt.split('\n').filter(l => l.startsWith('- Term')).length, 50,
+    'Semua 50 istilah masuk prompt inspector — siling 10 digugurkan');
+  assert.ok(payload.prompt.includes('Term49 → Istilah49'), 'Istilah TERAKHIR hadir dalam prompt');
 });
 
 // ── 3. Fail-open + 4. Circuit breaker ──

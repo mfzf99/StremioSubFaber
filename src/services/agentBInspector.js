@@ -106,18 +106,22 @@ const AGENT_B_INSPECTION_TIMEOUT_MS = parseAgentBTimeout(process.env.AGENT_B_INS
 // (integer positif sahaja).
 const AGENT_B_MAX_TOKENS = parseAgentBTimeout(process.env.AGENT_B_MAX_TOKENS, 131072);
 const AGENT_B_CIRCUIT_THRESHOLD = 3;      // 3 kegagalan berturut → silent mode
-const AGENT_B_MAX_LINE_CHARS = 200;       // Cap panjang baris dalam payload padat
-const AGENT_B_MAX_CRIMES = 5;             // >5 jenayah → tetap sahaja ditolong
-const AGENT_B_MAX_IDS_PER_CRIME = 10;     // Cap bilangan id per jenayah
-const AGENT_B_MAX_NOTE_CHARS = 120;       // Cap panjang nota jenayah
+// [UNBOUNDED-CONTEXT 2026-09-29] Siling lama 200 aksara/baris dan
+// 5 jenayah DIGUGURKAN — tiada mandat pemotongan baris dialog (dialog
+// bersubtitle boleh melebihi 200 aksara) dan jika batch mengandungi
+// 8 jenayah, SEMUA 8 mesti dipulangkan untuk retry. Hanya siling sanity
+// pertahanan kekal (id-per-crime + nota ringkas).
+const AGENT_B_MAX_IDS_PER_CRIME = 10;     // Cap bilangan id per jenayah (sanity)
+const AGENT_B_MAX_NOTE_CHARS = 120;       // Cap panjang nota jenayah (sanity)
 // MANDAT OPERASI MUTLAK 2026-09-27: SHIFT dikunci sebagai jenayah ke-4 —
 // kandungan dialog berpindah merentasi indeks (dialog baris 5 muncul di
 // baris 6). Klausa emas pengurang token di dalam arahan pemeriksa.
 const VALID_CRIME_TYPES = new Set(['MERGE', 'DROP', 'PHANTOM', 'SHIFT']);
-// Cap ringkasan konteks Pre-Flight yang disuntik ke prompt pemeriksaan.
-const AGENT_B_MAX_CONTEXT_TERMS = 10;     // Istilah padat (source → target)
-const AGENT_B_MAX_CONTEXT_CHARACTERS = 12;// Selari dengan PREFLIGHT_MAX_CHARACTERS
-const AGENT_B_MAX_CONTEXT_THEME_CHARS = 400; // Cap panjang ringkasan tema
+// [UNBOUNDED-CONTEXT 2026-09-29] Siling konteks Pre-Flight (10 istilah /
+// 12 watak / 400 aksara tema) DIGUGURKAN sepenuhnya. Sebab: rantaian
+// pemotongan — preflight mengekstrak 50 istilah → siling lama memotong
+// kepada 15 → inspection memotong kepada 10 → Agent B mengaudit atas
+// 10/50 istilah jelah. Inspector MELIHAT konteks Pre-Flight PENUH.
 
 /**
  * Arahan inspector (zero-yap). Dihantar sebagai SATU mesej user lengkap
@@ -158,12 +162,12 @@ function formatPreflightContextForInspection(preflightContext) {
 
   const theme = String(preflightContext.theme || '').trim();
   if (theme) {
-    sections.push(`### Story Context (from Pre-Flight)\n${theme.slice(0, AGENT_B_MAX_CONTEXT_THEME_CHARS)}`);
+    // UNBOUNDED-CONTEXT: tema penuh disuntik — tiada pemotongan 400 aksara.
+    sections.push(`### Story Context (from Pre-Flight)\n${theme}`);
   }
 
   if (Array.isArray(preflightContext.terms) && preflightContext.terms.length > 0) {
     const termLines = preflightContext.terms
-      .slice(0, AGENT_B_MAX_CONTEXT_TERMS)
       .map(t => {
         const src = String(t?.source ?? t?.src ?? '').trim();
         const tgt = String(t?.target ?? t?.tgt ?? '').trim() || src;
@@ -176,7 +180,6 @@ function formatPreflightContextForInspection(preflightContext) {
 
   if (Array.isArray(preflightContext.characters) && preflightContext.characters.length > 0) {
     const charLines = preflightContext.characters
-      .slice(0, AGENT_B_MAX_CONTEXT_CHARACTERS)
       .map(c => {
         const name = String(c?.name || '').trim();
         if (!name) return '';
@@ -212,10 +215,12 @@ function buildInspectionPayload(sourceBatch, translatedEntries, preflightContext
   if (!Array.isArray(sourceBatch) || sourceBatch.length === 0) return null;
   if (!Array.isArray(translatedEntries) || translatedEntries.length === 0) return null;
 
+  // UNBOUNDED-CONTEXT 2026-09-29: pemotongan 200 aksara digugurkan — baris
+  // dialog bersubtitle (dengan markup) boleh melebihi 200; whitespace
+  // normalization masih dijalankan supaya muatan kekal padat.
   const clamp = (t) => String(t || '')
     .replace(/\s+/g, ' ')
-    .trim()
-    .slice(0, AGENT_B_MAX_LINE_CHARS);
+    .trim();
 
   const enLines = [];
   const msLines = [];
@@ -310,7 +315,8 @@ function parseInspectorResponse(responseText) {
         ids,
         note: String(crime.note || '').trim().slice(0, AGENT_B_MAX_NOTE_CHARS)
       });
-      if (crimes.length >= AGENT_B_MAX_CRIMES) break;
+      // UNBOUNDED-CONTEXT: tiada siling bilangan jenayah — jika batch
+      // mengandungi 8 jenayah, SEMUA 8 mesti dipulangkan untuk retry.
     }
   }
 

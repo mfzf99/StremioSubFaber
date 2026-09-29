@@ -26,10 +26,7 @@ const {
   MAX_PREFLIGHT_CHARS,
   PREFLIGHT_MAX_INPUT_CHARS,
   parsePreflightResponse,
-  formatPreflightForPrompt,
-  PREFLIGHT_MAX_TERMS,
-  PREFLIGHT_MAX_CHARACTERS,
-  PREFLIGHT_MAX_CREDITS
+  formatPreflightForPrompt
 } = require('./subfaberPreflight');
 
 // Helper: jana entries dummy
@@ -274,11 +271,15 @@ test('SubFaberPreflight: invalid term entries filtered, missing tgt defaults to 
   assert.equal(parsed.terms[1].target, 'X');
 });
 
-test(`SubFaberPreflight: terms capped at ${PREFLIGHT_MAX_TERMS}`, () => {
+test('SubFaberPreflight: terms are UNBOUNDED — SEMUA istilah dipulangkan (UNBOUNDED-CONTEXT 2026-09-29)', () => {
+  // Kes produksi: SRT 759 baris → model mengekstrak 30-80 istilah. Siling lama
+  // 15 (VideoLingo) DIGUGURKAN — rantaian pemotongan preflight→inspection
+  // menyebabkan Agent B mengaudit atas konteks separuh jelah.
   const manyTerms = Array.from({ length: 30 }, (_, i) => ({ src: `T${i}`, tgt: `T${i}`, note: 'n' }));
   const response = JSON.stringify({ theme: 'T.', terms: manyTerms });
   const parsed = parsePreflightResponse(response);
-  assert.equal(parsed.terms.length, PREFLIGHT_MAX_TERMS, `Must cap at ${PREFLIGHT_MAX_TERMS}`);
+  assert.equal(parsed.terms.length, 30, 'Tiada siling — SEMUA 30 istilah sah dipulangkan');
+  assert.equal(parsed.terms[29].source, 'T29', 'Istilah TERAKHIR hadir (tiada pemotongan)');
 });
 
 // --- formatPreflightForPrompt (4 TIANG) ---
@@ -330,7 +331,9 @@ test('SubFaberPreflight: null/invalid context returns empty string', () => {
   assert.equal(noTerms.includes('Technical Glossary'), false, 'No terms → no Technical Glossary block');
 });
 
-test('SubFaberPreflight: characters/credits pillars capped at mandate limits', () => {
+test('SubFaberPreflight: characters/credits pillars UNBOUNDED — SEMUA entri dipulangkan (UNBOUNDED-CONTEXT 2026-09-29)', () => {
+  // Siling lama 12 watak / 10 kredit DIGUGURKAN — drama ensemble besar
+  // (20+ watak berulang) mesti sampai penuh kepada enjin dan inspector.
   const manyChars = Array.from({ length: 30 }, (_, i) => ({ name: `C${i}`, canonical_address: `A${i}`, role: 'r' }));
   const manyCredits = Array.from({ length: 30 }, (_, i) => ({ source: `S${i}`, target: `T${i}` }));
   const response = JSON.stringify({
@@ -339,8 +342,28 @@ test('SubFaberPreflight: characters/credits pillars capped at mandate limits', (
     credits_and_titles: manyCredits
   });
   const parsed = parsePreflightResponse(response);
-  assert.equal(parsed.characters.length, PREFLIGHT_MAX_CHARACTERS, `characters must cap at ${PREFLIGHT_MAX_CHARACTERS}`);
-  assert.equal(parsed.credits_and_titles.length, PREFLIGHT_MAX_CREDITS, `credits must cap at ${PREFLIGHT_MAX_CREDITS}`);
+  assert.equal(parsed.characters.length, 30, 'Tiada siling watak (siling lama 12 digugurkan)');
+  assert.equal(parsed.credits_and_titles.length, 30, 'Tiada siling kredit (siling lama 10 digugurkan)');
+  assert.equal(parsed.characters[29].name, 'C29', 'Watak TERAKHIR hadir');
+  assert.equal(parsed.credits_and_titles[29].source, 'S29', 'Kredit TERAKHIR hadir');
+});
+
+test('SubFaberPreflight: skala produksi 80 istilah / 20 watak / 20 kredit — PENUH tanpa pemotongan', () => {
+  // Simulasi output model bagi SRT drama penuh (759 baris). Kontrak pasca
+  // UNBOUNDED-CONTEXT: semua entri sah melintas tanpa ditapis oleh siling.
+  const bigTerms = Array.from({ length: 80 }, (_, i) => ({ source: `Term${i}`, target: `Istilah${i}` }));
+  const bigChars = Array.from({ length: 20 }, (_, i) => ({ name: `Watak${i}`, canonical_address: null, role: 'r' }));
+  const bigCredits = Array.from({ length: 20 }, (_, i) => ({ source: `Credit${i}`, target: `Kredit${i}` }));
+  const response = JSON.stringify({
+    theme: 'Drama ensemble penuh.',
+    terms: bigTerms,
+    characters: bigChars,
+    credits_and_titles: bigCredits
+  });
+  const parsed = parsePreflightResponse(response);
+  assert.equal(parsed.terms.length, 80, '80 istilah → 80 dipulangkan (bukan 15)');
+  assert.equal(parsed.characters.length, 20, '20 watak → 20 dipulangkan (bukan 12)');
+  assert.equal(parsed.credits_and_titles.length, 20, '20 kredit → 20 dipulangkan (bukan 10)');
 });
 
 test('SubFaberPreflight: malformed character/credit entries are filtered (MANDAT SOSIOLINGUISTIK 2026-09-27)', () => {
