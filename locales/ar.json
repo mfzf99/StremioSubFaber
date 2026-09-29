@@ -447,7 +447,6 @@
           "alignPill": "محاذاة + طوابع زمنية",
           "translatePill": "ترجمة",
           "deliverPill": "جاهز للتسليم",
-          "singleBatch": "وضع دفعة واحدة",
           "sendTimestamps": "إرسال الطوابع الزمنية إلى الذكاء الاصطناعي",
           "providerLabel": "مزود الترجمة",
           "providerModelLabel": "نموذج الترجمة",

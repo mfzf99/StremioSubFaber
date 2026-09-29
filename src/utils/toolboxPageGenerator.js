@@ -1768,9 +1768,6 @@ async function generateEmbeddedSubtitlePage(configStr, videoId, filename) {
       settingsMeta: t('toolbox.embedded.step2.settingsMeta', {}, 'Provider, workflow, batching, context'),
       providerLabel: t('toolbox.embedded.step2.providerLabel', {}, 'Provider'),
       providerHelper: t('toolbox.embedded.step2.providerHelper', {}, 'Uses your configured model for the selected provider.'),
-      batchingLabel: t('toolbox.embedded.step2.batchingLabel', {}, 'Batching'),
-      batchingMultiple: t('toolbox.embedded.step2.batchingMultiple', {}, 'Multiple batches (recommended)'),
-      batchingSingle: t('toolbox.embedded.step2.batchingSingle', {}, 'Single batch (all at once)'),
       translationContext: t('toolbox.embedded.step2.translationContext', { label: '{label}' }, "You're translating subtitles for {label}"),
       translationContextFallback: t('toolbox.embedded.step2.translationContextFallback', {}, 'your linked stream'),
       translateButton: t('toolbox.embedded.step2.translateButton', {}, 'Translate Subtitles'),
@@ -1900,7 +1897,6 @@ async function generateEmbeddedSubtitlePage(configStr, videoId, filename) {
     languageMaps,
     providerOptions,
     defaults: {
-      singleBatchMode: config.singleBatchMode === true,
       translationWorkflow: 'xml',
       sendTimestampsToAI: false,
       translationPrompt: config.translationPrompt || '',
@@ -3302,15 +3298,7 @@ async function generateEmbeddedSubtitlePage(configStr, videoId, filename) {
             </div>
             <p class="muted" style="margin:0; text-align:center;">${escapeHtml(copy.step2.providerHelper)}</p>
 
-            <div class="translation-settings-grid">
-              <div class="select-stack">
-                <label for="single-batch-select" style="font-weight:600; margin:0;">${escapeHtml(copy.step2.batchingLabel)}</label>
-                <select id="single-batch-select" class="compact-select" style="width:100%;">
-                  <option value="multi">${escapeHtml(copy.step2.batchingMultiple)}</option>
-                  <option value="single">${escapeHtml(copy.step2.batchingSingle)}</option>
-                </select>
-              </div>
-            </div>
+            <div class="translation-settings-grid"></div>
             <p class="translation-setting-helper"></p>
           </div>
         </details>
@@ -4087,7 +4075,6 @@ async function generateEmbeddedSubtitlePage(configStr, videoId, filename) {
       translateBtn: document.getElementById('translate-btn'),
       translationContext: document.getElementById('translation-context'),
       providerSelect: document.getElementById('provider-select'),
-      singleBatch: document.getElementById('single-batch-select'),
       extractedDownloads: document.getElementById('extracted-downloads'),
       translatedDownloads: document.getElementById('translated-downloads'),
       extractedEmpty: document.getElementById('extracted-empty'),
@@ -5625,8 +5612,7 @@ async function generateEmbeddedSubtitlePage(configStr, videoId, filename) {
             targetLanguage: targetLang,
             content: track.content,
             options: {
-              translationWorkflow: 'xml',
-              singleBatchMode: (els.singleBatch?.value || 'multi') === 'single'
+              translationWorkflow: 'xml'
             },
             overrides: {
               providerName: els.providerSelect?.value || ''
@@ -6027,9 +6013,6 @@ async function generateEmbeddedSubtitlePage(configStr, videoId, filename) {
     renderDownloads();
     updateVideoMeta();
     setStep2Enabled(!!state.selectedTrackId, state.selectedTrackId ? null : lockReasons.needExtraction);
-    if (els.singleBatch) {
-      els.singleBatch.value = BOOTSTRAP.defaults.singleBatchMode ? 'single' : 'multi';
-    }
 
     // Prefetch subtitles once so menu + target list share the same request
     if (subtitleMenuInstance && typeof subtitleMenuInstance.prefetch === 'function') {
@@ -6176,7 +6159,6 @@ async function generateAutoSubtitlePage(configStr, videoId, filename, config = {
         translationSettings: document.getElementById('autoTranslationSettings'),
         translationSettingsToggle: document.getElementById('autoTranslationSettingsToggle'),
         translationProvider: document.getElementById('autoTranslationProvider'),
-        singleBatchSelect: document.getElementById('autoSingleBatchSelect'),
         srtPreview: document.getElementById('srtPreview'),
         dlSrt: document.getElementById('downloadSrt'),
         dlRaw: document.getElementById('downloadRawTranscript'),
@@ -7167,11 +7149,9 @@ async function generateAutoSubtitlePage(configStr, videoId, filename, config = {
       }
 
       function getTranslationSettings() {
-        const singleBatchMode = (els.singleBatchSelect?.value || (BOOTSTRAP.defaults?.singleBatchMode ? 'single' : 'multi')) === 'single';
         return {
           translationProvider: normalizeProviderKey(els.translationProvider?.value || BOOTSTRAP.defaults?.provider || ''),
           translationWorkflow: 'xml',
-          singleBatchMode,
           sendTimestampsToAI: false
         };
       }
@@ -7247,7 +7227,6 @@ async function generateAutoSubtitlePage(configStr, videoId, filename, config = {
           const providerDisabled = !enabled || !hasProviderOptions;
           els.translationProvider.disabled = providerDisabled;
         }
-        if (els.singleBatchSelect) els.singleBatchSelect.disabled = !enabled;
         refreshStepLocks();
       }
 
@@ -7677,10 +7656,8 @@ async function generateAutoSubtitlePage(configStr, videoId, filename, config = {
           translate: translateEnabled,
           translationProvider: overrides.translationProvider || translationSettings.translationProvider || '',
           sendTimestampsToAI: false,
-          singleBatchMode: overrides.singleBatchMode ?? translationSettings.singleBatchMode,
           options: {
             translationWorkflow: 'xml',
-            singleBatchMode: overrides.singleBatchMode ?? translationSettings.singleBatchMode,
             sendTimestampsToAI: false
           },
           translationPrompt: overrides.translationPrompt || ''
@@ -8165,9 +8142,6 @@ async function generateAutoSubtitlePage(configStr, videoId, filename, config = {
           els.translateToggle.checked = BOOTSTRAP.defaults?.translateToTarget !== false;
         }
         renderTranslationProviders();
-        if (els.singleBatchSelect) {
-          els.singleBatchSelect.value = BOOTSTRAP.defaults?.singleBatchMode ? 'single' : 'multi';
-        }
         setTranslationSettingsExpanded(false);
         hydrateVideoMeta({
           title: BOOTSTRAP.linkedTitle || '',
@@ -8483,7 +8457,6 @@ async function generateAutoSubtitlePage(configStr, videoId, filename, config = {
     })(),
     translationWorkflow: 'xml',
     sendTimestampsToAI: false,
-    singleBatchMode: config?.singleBatchMode === true,
     assemblySendFullVideo: config?.autoSubs?.sendFullVideoToAssembly === true,
     assemblySpeechModel: defaultAssemblySpeechModel
   };
@@ -8574,9 +8547,6 @@ async function generateAutoSubtitlePage(configStr, videoId, filename, config = {
       targetWorkflowHelper: t('toolbox.autoSubs.steps.targetWorkflowHelper', {}, 'Uses the same translation workflow configured for Stremio.'),
       providerLabel: t('toolbox.autoSubs.steps.providerLabel', {}, 'Translation provider'),
       providerHelper: t('toolbox.embedded.step2.providerHelper', {}, 'Uses your configured model for the selected provider.'),
-      batchingLabel: t('toolbox.autoSubs.steps.batchingLabel', {}, 'Batching'),
-      batchingMultiple: t('toolbox.autoSubs.steps.batchingMultiple', {}, 'Multiple batches (recommended)'),
-      batchingSingle: t('toolbox.autoSubs.steps.batchingSingle', {}, 'Single batch (all at once)'),
       runPipelineTitle: t('toolbox.autoSubs.steps.step3Title', {}, 'Run pipeline'),
       pipelineDesc: t('toolbox.autoSubs.steps.pipeline', {}, 'We\'ll stitch: fetch -> segment -> transcribe -> align -> translate (optional) -> deliver SRT.'),
       start: t('toolbox.autoSubs.actions.start', {}, 'Start auto-subtitles'),
@@ -9769,12 +9739,6 @@ async function generateAutoSubtitlePage(configStr, videoId, filename, config = {
                 </div>
                 <p class="muted" style="margin:10px 0 0; text-align:center;">${escapeHtml(copy.steps.providerHelper)}</p>
                 <div class="row" style="margin-top:12px;">
-                  <div>
-                    <label for="autoSingleBatchSelect">${escapeHtml(copy.steps.batchingLabel)}</label>
-                    <select id="autoSingleBatchSelect">
-                      <option value="multi">${escapeHtml(copy.steps.batchingMultiple)}</option>
-                      <option value="single">${escapeHtml(copy.steps.batchingSingle)}</option>
-                    </select>
                   </div>
                 </div>
               </div>

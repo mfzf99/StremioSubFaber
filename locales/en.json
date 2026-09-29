@@ -435,7 +435,6 @@
           "translateOutput": "Translate to target language",
           "sendFullVideo": "Send full video to AssemblyAI (≤5GB)",
           "sendFullVideoHelper": "If the stream is larger than 5GB, we will fall back to audio extraction automatically.",
-          "singleBatch": "Single batch mode",
           "sendTimestamps": "Send timestamps to AI",
           "providerLabel": "Translation provider",
           "providerModelLabel": "Translation model",
@@ -1305,8 +1304,6 @@
           "noteTitle": "⚠️ Bypass Mode Required:"
         },
         "chunking": {
-          "label": "Enable Single Batch",
-          "description": "Translate the whole subtitle in one go (auto-splits only when extremely large).",
           "multiple": "Multiple Batches (Default)",
           "single": "Single-Batch"
         }

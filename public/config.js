@@ -1548,7 +1548,6 @@ Translate to {target_language}.`;
             convertAssToVtt: true, // If true, convert ASS/SSA subtitles to VTT (default: enabled for backwards compatibility)
             androidSubtitleCompatMode: 'off', // Dev mode only: 'off' | 'safe' | 'aggressive'
             mobileMode: false, // Opt-in: wait for full translation before responding (no automatic device detection)
-            singleBatchMode: false, // Try translating whole file at once
             advancedSettings: {
                 enabled: false, // Auto-set to true if any setting differs from defaults (forces bypass cache)
                 geminiModel: '', // Override model (empty = use default)
@@ -10142,7 +10141,7 @@ Translate to {target_language}.`;
         const convertAssToVttNoTranslationGroup = document.getElementById('convertAssToVttNoTranslationGroup');
         const forceSRTOutputNoTranslationGroup = document.getElementById('forceSRTOutputNoTranslationGroup');
 
-        ['databaseMode', 'learnModeEnabled', 'mobileMode', 'singleBatchMode', 'betaMode'].forEach(id => {
+        ['databaseMode', 'learnModeEnabled', 'mobileMode', 'betaMode'].forEach(id => {
             const group = document.getElementById(id)?.closest('.form-group');
             if (group) groupsToHide.push(group);
         });
@@ -11134,8 +11133,6 @@ Translate to {target_language}.`;
             newConfig.bypassCache = oldConfig.bypassCache === true;
             // - mobile mode
             newConfig.mobileMode = oldConfig.mobileMode === true;
-            // - single-batch mode
-            newConfig.singleBatchMode = oldConfig.singleBatchMode === true;
             // - exclude HI/SDH subtitles
             newConfig.excludeHearingImpairedSubtitles = oldConfig.excludeHearingImpairedSubtitles === true;
             // - enable season pack subtitles (defaults to true for backwards compatibility)
@@ -11410,8 +11407,6 @@ Translate to {target_language}.`;
         if (hiExcludeElNoTranslation) hiExcludeElNoTranslation.checked = hiExcludeEnabled;
         const mobileModeEl = document.getElementById('mobileMode');
         if (mobileModeEl) mobileModeEl.checked = currentConfig.mobileMode === true;
-        const singleBatchEl = document.getElementById('singleBatchMode');
-        if (singleBatchEl) singleBatchEl.checked = currentConfig.singleBatchMode === true;
         const forceSRTEl = document.getElementById('forceSRTOutput');
         const forceSRTElNoTranslation = document.getElementById('forceSRTOutputNoTranslation');
         if (forceSRTEl) forceSRTEl.checked = currentConfig.forceSRTOutput === true;
@@ -11639,14 +11634,6 @@ Translate to {target_language}.`;
         if (forceSRTToggleNoTranslation) {
             forceSRTToggleNoTranslation.onchange = (e) => syncForceSRT(e.target.checked);
         }
-        const singleBatchToggle = document.getElementById('singleBatchMode');
-        if (singleBatchToggle) {
-            singleBatchToggle.onchange = (e) => {
-                currentConfig.singleBatchMode = e.target.checked === true;
-                updateBypassCacheForAdvancedSettings();
-            };
-        }
-
         const parallelBatchesEl = document.getElementById('parallelBatchesEnabled');
         if (parallelBatchesEl) {
             parallelBatchesEl.checked = currentConfig.parallelBatchesEnabled === true;
@@ -11680,11 +11667,6 @@ Translate to {target_language}.`;
 
         const promptStyle = document.getElementById('promptStyle').value;
         let translationPrompt = '';
-        const singleBatchEnabled = (function () {
-            const el = document.getElementById('singleBatchMode');
-            if (el) return el.checked === true;
-            return currentConfig?.singleBatchMode === true;
-        })();
         const hasActiveMultiProvider = isMultiProviderActiveInForm();
         const multiProviderToggleChecked = document.getElementById('enableMultiProviders')?.checked === true;
 
@@ -11838,7 +11820,6 @@ Translate to {target_language}.`;
                 if (el) return el.checked;
                 return currentConfig?.mobileMode === true;
             })(),
-            singleBatchMode: singleBatchEnabled,
             parallelBatchesEnabled: (function () { const el = document.getElementById('parallelBatchesEnabled'); return el ? el.checked === true : false; })(),
             parallelBatchesCount: (function () { const el = document.getElementById('parallelBatchesCount'); return el ? parseInt(el.value, 10) : 3; })(),
             advancedSettings: {

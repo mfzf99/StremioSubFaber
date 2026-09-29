@@ -91,7 +91,6 @@ function buildFileTranslationClientConfig(config) {
         providers: safeProviders,
         providerParameters: mergedParams,
         fileTranslationEnabled: config?.fileTranslationEnabled !== false,
-        singleBatchMode: config?.singleBatchMode === true,
         translationWorkflow: config?.advancedSettings?.translationWorkflow || 'xml',
     };
 }
@@ -153,7 +152,6 @@ function generateFileTranslationPage(videoId, configStr, config, filename = '') 
     const maxConcurrency = Math.max(1, Math.min(parseInt(process.env.FILE_UPLOAD_MAX_CONCURRENCY, 10) || 1, 5));
     const uploadQueueDefaults = { maxFiles: maxBatchFiles, maxConcurrent: maxConcurrency };
     const translationWorkflowDefaults = {
-        singleBatchMode: config?.singleBatchMode === true,
         translationWorkflow: config?.advancedSettings?.translationWorkflow || 'xml',
     };
     const MAX_OUTPUT_TOKEN_LIMIT = 200000;
@@ -231,8 +229,6 @@ function generateFileTranslationPage(videoId, configStr, config, filename = '') 
     const translationOptionsTitle = t('fileUpload.options.title', {}, 'Translation Options');
     const translationProviderLabel = t('fileUpload.options.provider.label', {}, 'Translation Provider');
     const translationProviderHelper = t('fileUpload.options.provider.helper', {}, 'Choose which configured provider to use for this translation.');
-    const singleBatchLabel = t('fileUpload.options.singleBatch.label', {}, 'Single Batch Mode');
-    const singleBatchHelper = t('fileUpload.options.singleBatch.helper', {}, 'Translate the whole subtitle in one go. Improves contextual coherence but can hit provider limits more easily.');
     const advancedSettingsTitle = t('fileUpload.advanced.title', {}, 'Advanced Settings');
     const advancedHighlightTitle = t('fileUpload.advanced.highlightTitle', {}, 'Fine-tune AI behavior for this translation only:');
     const advancedHighlightBody = t('fileUpload.advanced.highlightBody', {}, 'Override model and parameters.');
@@ -2504,16 +2500,6 @@ function generateFileTranslationPage(videoId, configStr, config, filename = '') 
                                 <select id="providerSelect"></select>
                             </div>
 
-                            <div class="form-group">
-                                <label style="display: flex; align-items: flex-start; gap: 0.5rem; cursor: pointer;">
-                                    <input type="checkbox" id="singleBatchMode" style="margin-top: 0.3rem;">
-                                    <div>
-                                        ${escapeHtml(singleBatchLabel)}
-                                        <span class="label-description">${escapeHtml(singleBatchHelper)}</span>
-                                    </div>
-                                </label>
-                            </div>
-
                         </div>
                     </div>
                 </div>
@@ -2997,7 +2983,6 @@ function generateFileTranslationPage(videoId, configStr, config, filename = '') 
         const providerSelect = document.getElementById('providerSelect');
         const sourceLang = document.getElementById('sourceLang');
         const sourceLangGroup = document.getElementById('sourceLangGroup');
-        const singleBatchCheckbox = document.getElementById('singleBatchMode');
         // SubFaber HUD elements (null-check strict, rule #4)
         const subfaberPreflight = document.getElementById('subfaberPreflight');
         const preflightLabel = document.getElementById('preflightLabel');
@@ -3053,8 +3038,6 @@ function generateFileTranslationPage(videoId, configStr, config, filename = '') 
             : '';
         const defaultTargetLanguage = hasConfiguredLanguages ? clientConfig.targetLanguages[0] : '';
         const defaultShowAllLanguages = hasConfiguredLanguages ? false : true;
-        const defaultSingleBatchValue = translationDefaults.singleBatchMode === true;
-        if (singleBatchCheckbox) singleBatchCheckbox.checked = defaultSingleBatchValue;
 
         // Translation options elements
         const translationOptions = document.getElementById('translationOptions');
@@ -3597,8 +3580,6 @@ function generateFileTranslationPage(videoId, configStr, config, filename = '') 
                 providerSelect.value = defaultProviderKey;
             }
 
-            if (singleBatchCheckbox) singleBatchCheckbox.checked = defaultSingleBatchValue;
-
             if (showAllLanguagesCheckbox) {
                 showAllLanguagesCheckbox.checked = defaultShowAllLanguages;
                 showAllLanguagesCheckbox.disabled = false;
@@ -3979,9 +3960,7 @@ function generateFileTranslationPage(videoId, configStr, config, filename = '') 
 
         const summarizeQueueMeta = (job) => {
             const workflowLabel = 'XML Tags';
-            const batchLabel = job.settings.singleBatchMode
-                ? tt('fileUpload.queue.meta.single', {}, 'Single-batch')
-                : tt('fileUpload.queue.meta.multi', {}, 'Multiple batches');
+            const batchLabel = tt('fileUpload.queue.meta.multi', {}, 'Multiple batches');
             const target = (job.settings.targetLanguage || '').toUpperCase();
             const targetLabel = tt('fileUpload.queue.meta.target', { target }, target);
             return workflowLabel + ' • ' + batchLabel + ' • ' + targetLabel;
@@ -4301,16 +4280,13 @@ function generateFileTranslationPage(videoId, configStr, config, filename = '') 
                 overrides.advancedSettings = advancedOverrides;
             }
 
-            const singleBatchValue = singleBatchCheckbox ? singleBatchCheckbox.checked : false;
-
             return {
                 providerKey,
                 targetLanguage: targetLang.value,
                 sourceLanguage: caps.requiresSourceLanguage ? selectedSourceLanguage : '',
                 overrides,
                 advancedOverrides,
-                translationWorkflow: 'xml',
-                singleBatchMode: singleBatchValue
+                translationWorkflow: 'xml'
             };
         }
 
@@ -4323,8 +4299,7 @@ function generateFileTranslationPage(videoId, configStr, config, filename = '') 
                 advancedSettings: settings.providerKey === 'gemini' ? settings.advancedOverrides : {},
                 overrides: settings.overrides,
                 options: {
-                    translationWorkflow: settings.translationWorkflow || 'xml',
-                    singleBatchMode: settings.singleBatchMode === true
+                    translationWorkflow: settings.translationWorkflow || 'xml'
                 }
             };
             if (settings.sourceLanguage) {

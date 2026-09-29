@@ -434,7 +434,6 @@
           "translateOutput": "Traducir al idioma de destino",
           "sendFullVideo": "Enviar video completo a AssemblyAI (≤5GB)",
           "sendFullVideoHelper": "Si el stream supera 5GB, volveremos automáticamente a extraer el audio.",
-          "singleBatch": "Modo de lote único",
           "sendTimestamps": "Enviar marcas de tiempo a la IA",
           "providerLabel": "Proveedor de traducción",
           "providerModelLabel": "Modelo de traducción",

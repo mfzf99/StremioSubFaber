@@ -513,7 +513,6 @@ function normalizeConfig(config) {
   mergedConfig.subToolboxEnabled = mergedConfig.subToolboxEnabled === true || legacyToolboxEnabled;
   mergedConfig.fileTranslationEnabled = mergedConfig.subToolboxEnabled === true;
   mergedConfig.syncSubtitlesEnabled = mergedConfig.subToolboxEnabled === true;
-  mergedConfig.singleBatchMode = mergedConfig.singleBatchMode === true;
   mergedConfig.multiProviderEnabled = mergedConfig.multiProviderEnabled === true;
   mergedConfig.excludeHearingImpairedSubtitles = mergedConfig.excludeHearingImpairedSubtitles === true;
   mergedConfig.forceSRTOutput = mergedConfig.forceSRTOutput === true;
@@ -1237,7 +1236,6 @@ function getDefaultConfig(modelName = null) {
     urlExtensionTest: 'srt',
     androidSubtitleCompatMode: 'off',
     mobileMode: false,
-    singleBatchMode: false,
     minSubtitleSizeBytes: 200,
     maxSubtitlesPerLanguage,
     advancedSettings

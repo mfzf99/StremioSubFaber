@@ -162,10 +162,11 @@ test('BetaRun7: no hardcoded 5.0s inter-batch sleep remains', () => {
 });
 
 test('BetaRun7: pacing guard skips sleep when delay <= 0', () => {
-  // Kedua-dua tapak (inter-batch & inter-chunk) mesti dikawal oleh guard
-  // `PACING_DELAY_MS > 0` supaya sleep tidak dipanggil apabila pemalar 0.
+  // SINGLE-BATCH PURGE (2026-09-29): tapak inter-chunk (dalam laluan
+  // single-batch) dibuang; kini hanya tapak inter-batch dalam laluan batched
+  // yang dikawal oleh guard `PACING_DELAY_MS > 0`.
   const guardSites = ENGINE_SOURCE.match(/PACING_DELAY_MS > 0/g) || [];
-  assert.ok(guardSites.length >= 2, `Expected >= 2 pacing guards, found ${guardSites.length}`);
+  assert.ok(guardSites.length >= 1, `Expected >= 1 pacing guard, found ${guardSites.length}`);
 });
 
 test('BetaRun7: runtime inter-batch wall-clock contains no artificial 5s delay', async () => {
@@ -210,39 +211,9 @@ test('BetaRun7: runtime inter-batch wall-clock contains no artificial 5s delay',
   );
 });
 
-test('BetaRun7: runtime single-batch auto-chunk path contains no artificial 5s delay', async () => {
-  // Mod single-batch dengan token est tinggi → 2 chunks → tapak jeda kedua.
-  const makeSrt = (count) => Array.from({ length: count }, (_, i) =>
-    `${i + 1}\n00:00:${String(i % 59).padStart(2, '0')},000 --> 00:00:${String((i + 1) % 59).padStart(2, '0')},000\nChunk dialogue number ${i + 1} with some padding text for token estimation.\n`
-  ).join('\n');
-
-  const provider = {
-    translateSubtitle: async (content, sourceLang, targetLang, prompt) => {
-      if (prompt && prompt.includes('Output in only JSON format')) {
-        return JSON.stringify({ theme: 'Family drama with locked honorifics.', terms: [] });
-      }
-      const ids = [...String(content).matchAll(/<s id="(\d+)">([^<]*)<\/s>/g)];
-      return ids.map((m) => `<s id="${m[1]}">${m[2]} (translated)</s>`).join('\n');
-    },
-    estimateTokenCount: () => 10
-  };
-
-  const engine = new TranslationEngine(provider, 'glm-5.3', {}, {
-    providerName: 'gemini',
-    enableStreaming: false,
-    singleBatchMode: true
-  });
-
-  const startedAt = Date.now();
-  const result = await engine.translateSubtitle(makeSrt(60), 'Malay', null, null, 'English');
-  const duration = Date.now() - startedAt;
-
-  assert.ok(result && result.length > 0, 'Single-batch translation must complete');
-  assert.ok(
-    duration < 5000,
-    `Inter-chunk pacing must be zero — single-batch cycle took ${duration}ms (must be < 5000ms)`
-  );
-});
+// SINGLE-BATCH PURGE (2026-09-29): ujian "single-batch auto-chunk pacing"
+// dibuang — mod single-batch dimansuhkan sepenuhnya. Pacing inter-batch
+// biasa masih diliputi oleh ujian "runtime inter-batch wall-clock" di atas.
 
 // --- C: Peraturan Terjemahan Kekal (Plan 2 Ditangguh) ---
 test('BetaRun7: opening-credit translation rules remain UNTOUCHED (Plan 2 deferred)', () => {

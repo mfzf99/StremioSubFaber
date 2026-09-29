@@ -99,8 +99,6 @@ const MAX_ENTRY_CACHE_SIZE = parseInt(process.env.ENTRY_CACHE_SIZE) || 100000;
 
 // Configuration constants
 const MAX_TOKENS_PER_BATCH = parseInt(process.env.MAX_TOKENS_PER_BATCH) || 25000; // Max tokens before auto-chunking
-const SINGLE_BATCH_MAX_TOKENS_PER_CHUNK = parseInt(process.env.SINGLE_BATCH_MAX_TOKENS_PER_CHUNK) || 120000;
-const SINGLE_BATCH_TOKEN_SOFT_LIMIT = Math.floor(SINGLE_BATCH_MAX_TOKENS_PER_CHUNK * 0.9);
 const NATIVE_BATCH_PROVIDER_NAMES = new Set(['deepl', 'googletranslate']);
 // Entry cache disabled by default - causes stale data on cache resets and not HA-aware
 // Only useful for repeated translations with identical config (rare)
@@ -139,10 +137,12 @@ class TranslationEngine {
     // Batch size dihardcode 60 (MANDAT 2026-09-27: dinaikkan daripada 50) —
     // tiada env override.
     this.batchSize = SUBFABER_BATCH_SIZE;
-    this.singleBatchMode = options.singleBatchMode === true;
+    // SINGLE-BATCH PURGE (2026-09-29): mod single-batch dibuang sepenuhnya —
+    // SubFaber kini SATU workflow sahaja (chunking/batch). Tiada option
+    // singleBatchMode, tiada laluan translateSubtitleSingleBatch.
     this.enableStreaming = options.enableStreaming !== false
       && typeof (this.gemini?.streamTranslateSubtitle) === 'function';
-    this.maxTokensPerBatch = this.singleBatchMode ? SINGLE_BATCH_MAX_TOKENS_PER_CHUNK : MAX_TOKENS_PER_BATCH;
+    this.maxTokensPerBatch = MAX_TOKENS_PER_BATCH;
     this.advancedSettings = advancedSettings || {};
 
     // SubFaber Engine (enjin TUNGGAL — Total Purge Mandat 2026-09-25):
@@ -227,7 +227,7 @@ class TranslationEngine {
     // Native batch provider flag was set above during XML workflow initialization.
 
     const rotationLabel = this.perBatchRotationEnabled ? 'per-batch' : (this.retryRotationEnabled ? 'per-request' : '');
-    log.debug(() => `[TranslationEngine] Initialized with model: ${model || 'unknown'}, batch size: ${this.batchSize} (SubFaber), workflow: ${this.translationWorkflow}, mode: ${this.singleBatchMode ? 'single-batch' : 'batched'}, mismatchRetries: ${this.mismatchRetries}${rotationLabel ? `, key-rotation: ${rotationLabel}, keys: ${this.keyRotationConfig.keys.length}` : ''}${this.isNativeBatchProvider ? ', native-batch: true' : ''}`);
+    log.debug(() => `[TranslationEngine] Initialized with model: ${model || 'unknown'}, batch size: ${this.batchSize} (SubFaber), workflow: ${this.translationWorkflow}, mode: batched, mismatchRetries: ${this.mismatchRetries}${rotationLabel ? `, key-rotation: ${rotationLabel}, keys: ${this.keyRotationConfig.keys.length}` : ''}${this.isNativeBatchProvider ? ', native-batch: true' : ''}`);
 
     // [UNIVERSAL-FIX] Bahasa sasaran aktif sesi (untuk pemilihan language pack
     // pada few-shot + NOT-LOCKED guidance). Dikemas kini oleh translateBatch().
@@ -259,7 +259,6 @@ class TranslationEngine {
       workflow: this.translationWorkflow,
       keyRotationMode: this.keyRotationConfig?.enabled ? (this.keyRotationConfig.mode || 'per-batch') : 'disabled',
       subfaberEngine: true, // TOTAL PURGE: enjin tunggal — sentiasa SubFaber
-      singleBatchMode: this.singleBatchMode,
       parallelBatchesUsed: false,
       streaming: this.enableStreaming,
       // Tier 4: FinOps incident log — each entry describes one recovery
@@ -877,15 +876,6 @@ class TranslationEngine {
       }
     }
 
-    // Single-batch mode: translate the whole file (with limited auto-splitting)
-    if (this.singleBatchMode) {
-      if (this.advancedSettings?.parallelBatchesEnabled === true) {
-        log.warn(() => '[TranslationEngine] Parallel Batches is enabled but Single Batch Mode takes priority — parallel mode will NOT run. Disable Single Batch Mode to use Parallel Batches.');
-      }
-      this.translationStats.batchCount = 1;
-      return this.translateSubtitleSingleBatch(entries, targetLanguage, customPrompt, onProgress);
-    }
-
     let translatedEntries = [];
 
     // Parallel Batches Mode (Dev Mode specific, excluding ElfHosted)
@@ -1070,161 +1060,6 @@ class TranslationEngine {
     if (translatedEntries.length > 0) {
       log.info(() => `[DIAGNOSTIC] Final entry 0 text: "${translatedEntries[0]?.text?.slice(0, 60)}"`);
     }
-    return toSRT(translatedEntries);
-  }
-
-  /**
-   * Single-batch translation workflow with optional streaming partials
-   */
-  async translateSubtitleSingleBatch(entries, targetLanguage, customPrompt = null, onProgress = null) {
-    log.info(() => `[TranslationEngine] Single-batch translation: ${entries.length} entries`);
-
-    const fullBatchText = this.prepareBatchContent(entries, null);
-
-    const promptForCache = this.createPromptForWorkflow(fullBatchText, targetLanguage, customPrompt, entries.length, null, 0, 1);
-
-    let actualTokenCount = null;
-    try {
-      actualTokenCount = await this.gemini.countTokensForTranslation(fullBatchText, targetLanguage, promptForCache);
-    } catch (err) {
-      log.debug(() => ['[TranslationEngine] Single-batch token count failed, using estimate:', err.message]);
-    }
-
-    let estimatedTokens = actualTokenCount;
-    if (!estimatedTokens) {
-      try {
-        const { userPrompt } = this.gemini.buildUserPrompt(fullBatchText, targetLanguage, promptForCache);
-        estimatedTokens = this.safeEstimateTokens(userPrompt);
-      } catch (estimateErr) {
-        log.debug(() => ['[TranslationEngine] Single-batch prompt estimation failed, falling back:', estimateErr.message]);
-        estimatedTokens = this.safeEstimateTokens(fullBatchText + (promptForCache || ''));
-      }
-    }
-
-    // Dynamic chunk sizing: keep each chunk comfortably under the max token limit
-    const softLimit = Math.max(1000, SINGLE_BATCH_TOKEN_SOFT_LIMIT);
-    let chunkCount = Math.max(1, Math.ceil(estimatedTokens / softLimit));
-    // Never create more chunks than entries (prevents empty chunks on tiny files)
-    chunkCount = Math.min(chunkCount, Math.max(1, entries.length));
-
-    if (chunkCount > 1) {
-      const basis = actualTokenCount ? 'actual' : 'estimated';
-      log.info(() => `[TranslationEngine] Single-batch token split: ${estimatedTokens} tokens (${basis}) -> ${chunkCount} chunks (limit ~${SINGLE_BATCH_MAX_TOKENS_PER_CHUNK}/chunk)`);
-    }
-
-    const chunks = chunkCount > 1 ? this.splitIntoChunks(entries, chunkCount) : [entries];
-    // Stats: update actual chunk count (may differ from the initial batchCount=1 set by caller)
-    this.translationStats.batchCount = chunks.length;
-    const translatedEntries = [];
-    // Track completed SRT from previous chunks so streaming partials include all progress
-    let completedChunksSRT = '';
-    let completedChunksEntryCount = 0;
-
-    for (let batchIndex = 0; batchIndex < chunks.length; batchIndex++) {
-      const batch = chunks[batchIndex];
-      const useStreaming = this.enableStreaming;
-
-      // Rotate API key for this batch if per-batch rotation is enabled
-      await this.maybeRotateKeyForBatch(batchIndex);
-
-      // Preserve coherence when the "single-batch" path auto-splits by reusing the same SubFaber context builder
-      const context = this.prepareContextForBatch(batch, entries, translatedEntries, batchIndex);
-
-      // Capture accumulated state for the streaming closure
-      const prevSRT = completedChunksSRT;
-      const prevEntryCount = completedChunksEntryCount;
-
-      const translatedBatch = await this.translateBatch(
-        batch,
-        targetLanguage,
-        customPrompt,
-        batchIndex,
-        chunks.length,
-        context,
-        {
-          allowAutoChunking: false,
-          streaming: useStreaming,
-          onStreamProgress: async (payload) => {
-            if (typeof onProgress === 'function' && payload?.partialSRT) {
-              try {
-                // Prepend completed chunks so the partial includes all translated entries
-                const fullPartialSRT = prevSRT
-                  ? prevSRT + '\n\n' + payload.partialSRT
-                  : payload.partialSRT;
-                await onProgress({
-                  totalEntries: entries.length,
-                  completedEntries: prevEntryCount + (payload.completedEntries || 0),
-                  currentBatch: batchIndex + 1,
-                  totalBatches: chunks.length,
-                  partialSRT: fullPartialSRT,
-                  streaming: true,
-                  streamSequence: payload.streamSequence
-                });
-              } catch (err) {
-                log.warn(() => ['[TranslationEngine] Streaming progress callback error:', err.message]);
-              }
-            }
-          }
-        }
-      );
-
-      // Merge translated text with original structure
-      for (let i = 0; i < batch.length; i++) {
-        const original = batch[i];
-        const translated = translatedBatch[i] || {};
-
-        const cleanedText = this.cleanTranslatedText(translated.text || original.text);
-        const timecode = (this.sendTimestampsToAI && translated.timecode) ? translated.timecode : original.timecode;
-        translatedEntries.push({
-          id: original.id,
-          timecode,
-          text: cleanedText
-        });
-      }
-
-      // Update accumulated SRT snapshot for next chunk's streaming closure
-      completedChunksEntryCount = translatedEntries.length;
-      completedChunksSRT = toSRT(translatedEntries);
-
-      // Progress callback after each chunk
-      if (typeof onProgress === 'function') {
-        try {
-          await onProgress({
-            totalEntries: entries.length,
-            completedEntries: translatedEntries.length,
-            currentBatch: batchIndex + 1,
-            totalBatches: chunks.length,
-            partialSRT: completedChunksSRT
-          });
-        } catch (err) {
-          log.warn(() => ['[TranslationEngine] Progress callback error (single-batch):', err.message]);
-        }
-      }
-
-      // Inter-chunk pacing: zero-idle (Beta Run 7) — natural latency replaces
-      // the artificial 5.0s sleep between auto-chunked requests.
-      if (PACING_DELAY_MS > 0 && batchIndex < chunks.length - 1) {
-        log.debug(() => `[⏳ RATE LIMIT] Applying ${PACING_DELAY_MS}ms pacing delay before processing next chunk...`);
-        await sleep(PACING_DELAY_MS);
-      }
-
-    } // End of chunk processing loop
-
-    if (translatedEntries.length !== entries.length) {
-      log.warn(() => `[TranslationEngine] Single-batch entry count mismatch: expected ${entries.length}, got ${translatedEntries.length}`);
-    }
-
-    // Strip any timecodes/timeranges that slipped through.
-    for (const entry of translatedEntries) {
-      entry.text = this.sanitizeTimecodes(entry.text);
-    }
-
-    log.info(() => `[TranslationEngine] Single-batch translation completed: ${translatedEntries.length} entries (tokens: est ${estimatedTokens}${actualTokenCount ? `, actual ${actualTokenCount}` : ''})`);
-
-    // [AGENTB-OBS] Ringkasan hujung fail (laluan single-batch — engine
-    // pulang awal di sini, sebelum laluan batched).
-    this._logAgentBFileSummary();
-
     return toSRT(translatedEntries);
   }
 
