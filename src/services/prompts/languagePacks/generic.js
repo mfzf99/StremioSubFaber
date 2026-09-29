@@ -50,8 +50,8 @@ Input:
 <s id="1">You are coming with us,</s>
 <s id="2">aren't you?</s>
 Correct output:
-<s id="1">[${'target'} translation of "You are coming with us,"]</s>
-<s id="2">[${'target'} translation of "aren't you?" — keep the isolated question tag in its own slot]</s>
+<s id="1">[TARGET-LANGUAGE translation of "You are coming with us,"]</s>
+<s id="2">[TARGET-LANGUAGE translation of "aren't you?" — keep the isolated question tag in its own slot]</s>
 Wrong (merged):
 <s id="1">[full merged sentence in the target language]</s>
 <s id="2">.</s>`,

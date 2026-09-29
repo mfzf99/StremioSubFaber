@@ -3,7 +3,7 @@
  *
  * Migrated verbatim from the formerly-hardcoded prompt blocks:
  *   - P1 (subfaberPreflight.js): Malay sociolinguistic honorific matrix
- *     ("Ms. Shen" → "Puan Shen"), canonical_address guidance, credits example.
+ *     ("Ms. [Surname]" → "Puan [Surname]"), canonical_address guidance, credits example.
  *   - P2 (translationEngine.js): Malay few-shot split-sentence example
  *     ("Awak ikut kami," / "kan?").
  *   - P8 (gemini.js DEFAULT_TRANSLATION_PROMPT rule #6): natural Bahasa
@@ -27,11 +27,11 @@ const malayPack = {
    */
   honorificMatrix: [
     'In the \'terms\' list, you MUST include and lock the official ${tgt} titles/honorifics for recurring entities using this MANDATORY sociolinguistic matrix (Malay honorifics):',
-    '* "Ms." / "Mrs." for an adult woman — married, mature, an auntie/mak cik figure, or holding a corporate/management position — MUST map to "Puan" (e.g. "Ms. Shen" who is clearly an Aunt/manager -> "Puan Shen", NEVER "Cik Shen").',
+    '* "Ms." / "Mrs." for an adult woman — married, mature, an auntie/mak cik figure, or holding a corporate/management position — MUST map to "Puan" (e.g. "Ms. [Surname]" -> "Puan [Surname]", NEVER "Cik [Surname]").',
     '* "Miss" / "Ms." for a young unmarried woman -> "Cik".',
     '* "Mr." -> "Encik". "Aunt" / "Auntie" -> "Mak Cik". "Uncle" -> "Pak Cik".',
     '* "Director" -> "Pengarah". "GM" / "General Manager" -> "Pengurus Besar".',
-    'Cross-reference titles: if the same character is addressed as "Aunt" in dialogue AND called "Ms. Shen", lock the formal address as "Puan Shen" (NOT "Cik Shen") — one canonical title per character, never alternate.'
+    'Cross-reference titles: if the same character is addressed as "Aunt" in dialogue AND called "Ms. [Surname]", lock the formal address as "Puan [Surname]" (NOT "Cik [Surname]") — one canonical title per character, never alternate.'
   ].join('\n   '),
 
   /**

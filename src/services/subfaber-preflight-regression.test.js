@@ -420,8 +420,8 @@ test('SubFaberPreflight: formatPreflightForPrompt renders NOT LOCKED marker for 
 test('SubFaberPreflight: prompt carries the Malay sociolinguistic honorific matrix (Puan/Cik/Encik/Mak Cik/Pak Cik)', () => {
   const prompt = buildPreflightPrompt('Some dialogue.', 'Malay', 'English');
   assert.ok(prompt.includes('MUST map to "Puan"'), 'aturan wajib Puan bagi wanita dewasa/berkahwin/auntie/pengurus');
-  assert.ok(prompt.includes('"Puan Shen"'), 'contoh rasmi Ms. Shen -> Puan Shen (BUKAN Cik Shen)');
-  assert.ok(prompt.includes('NEVER "Cik Shen"'), 'larangan eksplisit Cik Shen bagi kes Aunt/manager');
+  assert.ok(prompt.includes('"Puan [Surname]"'), 'contoh generik Ms. [Surname] -> Puan [Surname] (BUKAN Cik [Surname])');
+  assert.ok(prompt.includes('NEVER "Cik [Surname]"'), 'larangan eksplisit Cik [Surname] bagi kes Aunt/manager');
   assert.ok(prompt.includes('young unmarried woman -> "Cik"'), 'aturan Cik bagi wanita muda bujang');
   assert.ok(prompt.includes('"Mr." -> "Encik"'), 'pemetaan Encik');
   assert.ok(prompt.includes('"Aunt" / "Auntie" -> "Mak Cik"'), 'pemetaan Mak Cik');
@@ -429,8 +429,8 @@ test('SubFaberPreflight: prompt carries the Malay sociolinguistic honorific matr
   assert.ok(prompt.includes('"Director" -> "Pengarah"'), 'pemetaan Pengarah');
   assert.ok(prompt.includes('"GM" / "General Manager" -> "Pengurus Besar"'), 'pemetaan Pengurus Besar');
   assert.ok(
-    prompt.includes('if the same character is addressed as "Aunt" in dialogue AND called "Ms. Shen", lock the formal address as "Puan Shen"'),
-    'peraturan hubung kait gelaran (Aunt + Ms. -> Puan Shen) wajib hadir'
+    prompt.includes('if the same character is addressed as "Aunt" in dialogue AND called "Ms. [Surname]", lock the formal address as "Puan [Surname]"'),
+    'peraturan hubung kait gelaran (Aunt + Ms. -> Puan [Surname]) wajib hadir'
   );
 });
 

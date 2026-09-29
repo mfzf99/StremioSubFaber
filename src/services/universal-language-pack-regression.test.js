@@ -61,14 +61,14 @@ test('LanguagePacks: antara muka pack — semua kunci wajib wujud pada kedua-dua
 test('P1 Malay: prompt bawa matriks honorifik penuh (Puan/Cik/Encik/Mak Cik/Pak Cik/Pengarah/Pengurus Besar)', () => {
   const prompt = buildPreflightPrompt('Some dialogue.', 'Malay', 'English');
   assert.ok(prompt.includes('MUST map to "Puan"'));
-  assert.ok(prompt.includes('"Puan Shen"'));
-  assert.ok(prompt.includes('NEVER "Cik Shen"'));
+  assert.ok(prompt.includes('"Puan [Surname]"'));
+  assert.ok(prompt.includes('NEVER "Cik [Surname]"'));
   assert.ok(prompt.includes('young unmarried woman -> "Cik"'));
   assert.ok(prompt.includes('"Mr." -> "Encik"'));
   assert.ok(prompt.includes('"Aunt" / "Auntie" -> "Mak Cik"'));
   assert.ok(prompt.includes('"Uncle" -> "Pak Cik"'));
   assert.ok(prompt.includes('"Director" -> "Pengarah"'));
-  assert.ok(prompt.includes('if the same character is addressed as "Aunt" in dialogue AND called "Ms. Shen", lock the formal address as "Puan Shen"'));
+  assert.ok(prompt.includes('if the same character is addressed as "Aunt" in dialogue AND called "Ms. [Surname]", lock the formal address as "Puan [Surname]"'));
 });
 
 test('P1 Malay: kredit contoh "Diadaptasi daripada" hadir', () => {
@@ -171,7 +171,7 @@ test('Grep proof: P1/P2/P8 source TIADA hardcoded "Ms. Shen"/"Puan Shen"/Awak ik
   // Few-shot BM hanya dalam malay.js
   assert.ok(!p2.includes('Awak ikut kami'), 'P2: TIADA few-shot BM hardcoded');
   const malayPackSrc = fs.readFileSync(path.join(__dirname, 'prompts/languagePacks/malay.js'), 'utf8');
-  assert.ok(malayPackSrc.includes('Puan Shen'), 'malay.js membawa contoh Puan Shen (migration verified)');
+  assert.ok(malayPackSrc.includes('Puan [Surname]'), 'malay.js membawa contoh generik Puan [Surname] (migration verified)');
   assert.ok(malayPackSrc.includes('Awak ikut kami'), 'malay.js membawa few-shot BM (migration verified)');
   // Rule #6 BM hanya dalam malay.js
   assert.ok(!p8.includes('Indonesianisms'), 'P8: TIADA peraturan BM hardcoded');

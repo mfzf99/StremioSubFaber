@@ -19,7 +19,7 @@
 const { parseSRT, toSRT } = require('../utils/subtitle');
 const GeminiService = require('./gemini');
 const { DEFAULT_TRANSLATION_PROMPT } = GeminiService;
-const { runPreflightSemanticPass, formatPreflightForPrompt } = require('./subfaberPreflight');
+const { runPreflightSemanticPass } = require('./subfaberPreflight');
 // [UNIVERSAL-FIX] Target-conditional few-shot / NOT-LOCKED guidance — pack
 // di-resolve mengikut bahasa sasaran (Malay → malay.js; lain → generic.js).
 const { getLanguagePack } = require('./prompts/languagePacks');
