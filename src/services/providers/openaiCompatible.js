@@ -20,10 +20,13 @@ const {
 } = require('../../utils/providerAuthFailureCache');
 
 // ═══ MANDAT OPERASI MUTLAK v3 2026-09-27 (pembetulan Project Owner) ═══
-// Siling token muatan DeepSeek: 131072 (128K) — dikembalikan; nilai 16384
-// dalam v2 adalah salah taip owner.
-// Boleh ditindih melalui env AGENT_B_MAX_TOKENS (integer positif sahaja);
-// dihantar sebagai max_tokens dalam muatan universal (universalPayload).
+// [AUDIT-WARISAN 2026-09-29] env AGENT_B_MAX_TOKENS → constant
+// AGENT_B_BEAST_MAX_TOKENS kini LALAI SAHAJA (legacy-only, no-op):
+// muatan universal [PAYLOAD-GODTIER] 4-kunci TIDAK membawa max_tokens
+// langsung (pencetus overthinking + istilah kritikal tergugur — siling
+// token dikendalikan oleh lalai pelayan). Nilai masih di-parse dan
+// disimpan ke this.beastMaxTokens untuk keserasian warisan, tetapi TIDAK
+// dibaca oleh sebarang laluan aktif. Sejarah v3: 131072 (128K).
 const parseAgentBMaxTokens = (raw, fallback) => {
   const parsed = parseInt(raw, 10);
   return Number.isFinite(parsed) && parsed > 0 ? parsed : fallback;
@@ -45,8 +48,11 @@ class OpenAICompatibleProvider {
     this.temperature = options.temperature !== undefined ? options.temperature : 0.2;
     this.maxOutputTokens = options.maxOutputTokens || 65536;
     this.topP = options.topP !== undefined ? options.topP : 0.95;
-    // MANDAT v3: siling token muatan DeepSeek — 131072 (128K) secara lalai;
-    // boleh ditindih per-instance melalui options.beastMaxTokens.
+    // [AUDIT-WARISAN 2026-09-29] WARISAN/no-op (dead store): disimpan tetapi
+    // tidak pernah dibaca — builder universal (universalPayload=true) tidak
+    // membawa max_tokens; laluan terjemahan warisan pula menggunakan
+    // maxOutputTokens (getCappedMaxOutputTokens). Dikekalkan untuk
+    // keserasian kontrak AgentBInspector (options.beastMaxTokens).
     this.beastMaxTokens = parseAgentBMaxTokens(options.beastMaxTokens, AGENT_B_BEAST_MAX_TOKENS);
     this.presencePenalty = options.presencePenalty;
     this.reasoningEffort = this.normalizeReasoningEffort(options.reasoningEffort);
@@ -89,9 +95,11 @@ class OpenAICompatibleProvider {
 
   /**
    * FRONTIER UPGRADE (Mandat Frontier 2026-09-26): Pengesan keluarga model
-   * Kimi/Moonshot AI (case-insensitive). Pelayan Kimi K3 mengunci nilai
-   * sampling secara dalaman — menghantar temperature/top_p/presence_penalty
-   * menyebabkan ralat HTTP 400.
+   * Kimi/Moonshot AI (case-insensitive).
+   * [AUDIT 2026-09-29] Dakwaan lama "pelayan Kimi K3 mengunci sampling
+   * secara dalaman → HTTP 400" sudah LAPUK — disahkan melalui curl pada
+   * 2026-09-28: pelayan Kimi K3 TIDAK lagi mengunci temperature. Nota
+   * sejarah dikekalkan; lihat applyFrontierModelRules untuk status semasa.
    * @param {string} [modelName] - Override nama model (lalai model aktif)
    * @returns {boolean}
    */
@@ -114,11 +122,21 @@ class OpenAICompatibleProvider {
 
   /**
    * FRONTIER UPGRADE (Mandat Frontier 2026-09-26): Terapkan peraturan payload
-   * wajib model frontier di atas body yang telah dibina:
-   *   - "kimi"   → GUGURKAN temperature/top_p/presence_penalty (server lock;
-   *                nilai 0.0/0.1 → HTTP 400) + max_tokens 16384.
+   * model frontier di atas body yang telah dibina.
+   * [AUDIT 2026-09-29] — KOMEN ASAL LAPUK (OBSOLETE): dakwaan "pelayan Kimi
+   * mengunci sampling secara dalaman → HTTP 400" TIDAK lagi benar; disahkan
+   * melalui curl terus ke pelayan pada 2026-09-28 — pelayan Kimi K3 kini
+   * menerima temperature tanpa ralat. Kelakuan kaedah DIKEKALKAN tanpa
+   * perubahan (jangan ubah kelakuan tanpa pengesahan empirikal baharu):
+   *   - "kimi"   → GUGURKAN temperature/top_p/presence_penalty +
+   *                max_tokens 16384 (konservatif warisan; rationale lapuk).
    *   - "glm-5.3" (bukan flash) → KUNCI temperature 0.0 + top_p 0.1
    *                (deterministik mutlak, sifar kreativiti).
+   * PENGGUNA AKTIF: laluan terjemahan warisan sahaja — buildChatRequest
+   * TANPA universalPayload (semua provider kilang: openai/xai/deepseek/
+   * mistral/openrouter/cfworkers/custom). Laluan Agent B
+   * (universalPayload=true) TIDAK melalui kaedah ini (builder 4-kunci
+   * god-tier return awal).
    * @param {Object} body - Payload chat/completions (dimutasi secara langsung)
    */
   applyFrontierModelRules(body) {
@@ -243,6 +261,12 @@ class OpenAICompatibleProvider {
   /**
    * 🧠 ENJIN PINTAR BINA PAYLOAD (28-Model Registry & Behavior Engine)
    * Menyusun struktur JSON body mengikut spesifikasi rasmi setiap model.
+   * [AUDIT 2026-09-29] MASIH AKTIF — BUKAN warisan: dipanggil oleh
+   * buildChatRequest (laluan warisan) bagi SEMUA provider terjemahan kilang
+   * (openai/xai/deepseek/mistral/openrouter/cfworkers/custom) — iaitu enjin
+   * terjemahan utama (Agent A). Laluan Agent B (universalPayload=true)
+   * TIDAK melalui kaedah ini (builder 4-kunci god-tier return awal).
+   * Oleh itu JANGAN tandakan @deprecated.
    */
   applySmartModelPayload(body, modelName, rawEffort) {
     const m = String(modelName || '').toLowerCase();
@@ -467,10 +491,12 @@ class OpenAICompatibleProvider {
       if (!omitSampling && this.presencePenalty !== undefined && !useResponsesApi) {
         body.presence_penalty = this.presencePenalty;
       }
-      // 🚀 FRONTIER UPGRADE (Mandat Frontier 2026-09-26): Peraturan wajib
+      // 🚀 FRONTIER UPGRADE (Mandat Frontier 2026-09-26): Peraturan warisan
       // kimi-k3 (gugurkan sampling, max_tokens 16384) & glm-5.3 penuh
       // (kunci temperature 0.0 / top_p 0.1) — dilaksanakan TERAKHIR supaya
       // sentiasa mengatasi nilai lalai builder.
+      // [AUDIT 2026-09-29] Rationale kimi "server lock" LAPUK (curl
+      // 2026-09-28) — kelakuan dikekalkan untuk laluan terjemahan warisan.
       if (!isCfTranslation) {
         this.applyFrontierModelRules(body);
       }

@@ -363,7 +363,7 @@ class AgentBInspector extends OpenAICompatibleProvider {
       baseUrl: options.baseUrl || 'https://api.openai.com/v1',
       providerName: 'agentb',
       universalPayload: true,           // Muatan BEAST sejagat (Mandat §A + BETA RUN 10)
-      beastMaxTokens: parseAgentBTimeout(options.maxTokens, AGENT_B_MAX_TOKENS), // siling 128K (BETA RUN 10)
+      beastMaxTokens: parseAgentBTimeout(options.maxTokens, AGENT_B_MAX_TOKENS), // [AUDIT-WARISAN 2026-09-29] no-op — builder 4-kunci god-tier tidak membaca beastMaxTokens
       translationTimeout: inspectionTimeoutMs / 1000,
       maxRetries: 0,                    // Fail fast — satu percubaan sahaja per model
       enableJsonOutput: false,          // Parse JSON manual (kompatibilitas maksimum endpoint)

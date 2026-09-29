@@ -585,10 +585,12 @@ function normalizeConfig(config) {
   //   Fasa 1 (Pemeriksa Utama)   : deepseek-v4-pro     (Timeout 300,000ms / 5 min)
   //   Fallback Universal         : deepseek-v4.1-flash (mewarisi had masa fasa)
   // MANDAT OPERASI MUTLAK v2 (arahan Project Owner 2026-09-27): kedua-dua fasa
-  // 5 minit. Muatan (temperature: 0.0 + reasoning_effort:"max" +
-  // max_tokens:16384 + extra_body.thinking:{type:"enabled"} +
-  // response_format json_object; top_p DIGUGURKAN) dibina dalam
-  // OpenAICompatibleProvider.buildChatRequest (universalPayload=true).
+  // 5 minit. [AUDIT 2026-09-29] Muatan kini 4-kunci god-tier
+  // [PAYLOAD-GODTIER 2026-09-28] — TEPAT { model, messages, stream: true,
+  // temperature: 0.0 }, dibina dalam OpenAICompatibleProvider.
+  // buildChatRequest (universalPayload=true). reasoning_effort /
+  // max_tokens / extra_body.thinking / response_format DIGUGURKAN
+  // (pencetus overthinking; kesahan JSON dijamin parser tahan lasak).
   const normalizeAgentBTimeoutMs = (raw, fallbackMs) => {
     const parsed = parseInt(raw, 10);
     return Number.isFinite(parsed) && parsed > 0 ? parsed : fallbackMs;
@@ -623,9 +625,9 @@ function normalizeConfig(config) {
       mergedConfig.agentB?.inspectionTimeoutMs ?? process.env.AGENT_B_INSPECTION_TIMEOUT_MS,
       300000
     ),
-    // MANDAT v3 (pembetulan owner): siling token muatan DeepSeek — 131072
-    // (128K); boleh ditindih melalui env AGENT_B_MAX_TOKENS
-    // (integer positif sahaja).
+    // [AUDIT-WARISAN 2026-09-29] WARISAN/no-op: AGENT_B_MAX_TOKENS TIDAK lagi
+    // dihantar dalam muatan (builder god-tier tiada max_tokens). Dikekalkan
+    // untuk keserasian warisan sahaja — JANGAN set (tiada kesan runtime).
     maxTokens: normalizeAgentBTimeoutMs(
       mergedConfig.agentB?.maxTokens ?? process.env.AGENT_B_MAX_TOKENS,
       131072
