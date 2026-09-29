@@ -114,7 +114,7 @@ const CACHE_TRANSLATIONS = process.env.CACHE_TRANSLATIONS === 'true'; // Enable/
  * coherence antara batch. Enjin SubFaber adalah enjin TUNGGAL — tiada env
  * override, tiada mod legacy 200-baris (Total Purge Mandat 2026-09-25).
  */
-const SUBFABER_BATCH_SIZE = 200;
+const SUBFABER_BATCH_SIZE = 60;
 
 // Module-level shared key health tracking across engine instances.
 // MULTI-INSTANCE: Now backed by Redis via sharedCache utilities.
@@ -2551,7 +2551,7 @@ You MUST translate each numbered line 1:1. NEVER merge two source lines into one
     //     melengkapkan pemetaan REGISTER/UNTRANSLATED. Universal 400+ bahasa
     //     (${targetLabel}) — few-shot & peraturan khusus-bahasa dari pack.
     const systemPart = `## Role
-You are an expert Netflix-standard subtitle translator and localization specialist, fluent in both languages and their cultural nuances, localizing from ${sourceLabel || 'the source language'} into ${targetLabel || 'the target language'}.
+You are an expert Netflix subtitle translator and localization specialist, localizing from ${sourceLabel || 'the source language'} into ${targetLabel || 'the target language'}, fluent in both languages and their cultures.
 
 ## Top Priority — Slot & ID Parity (ABSOLUTE)
 Output EXACTLY one <s id="N"> for every input <s id="N">, reusing the same ids in the same order. Never merge, split, add, drop, or reorder slots. When slot/ID parity and natural phrasing ever conflict, PARITY WINS — a perfectly synced subtitle track matters more than a smoother line. A single missing or shifted slot desyncs the entire file.
