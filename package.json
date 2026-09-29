@@ -1,6 +1,6 @@
 {
   "name": "stremio-subfaber",
-  "version": "1.9.5",
+  "version": "1.9.6",
   "xsyncMinVersion": "1.0.9",
   "description": "Automated Netflix-Grade Malay Subtitle Engine for Stremio powered by VideoLingo principles",
   "main": "index.js",

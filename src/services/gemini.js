@@ -25,15 +25,28 @@ function isGemini3Model(model) {
   return /^gemini-3(?:[.-]|$)/i.test(modelId) || /^gemini-(?:flash|flash-lite|pro)-latest$/i.test(modelId);
 }
 
-// Model 3.x yang dikenalpasti dalam changelog 21 Julai 2026 & ke atas sebagai
-// tertakluk kepada penamatan parameter pensampelan (temperature/topP/topK).
-// Model ini MESTI di-strip parameter pensampelan sepenuhnya (3.x-strict).
-const SAMPLING_DEPRECATED_MODELS = new Set([
-  'gemini-3.6-flash',
-  'gemini-3.5-flash-lite',
-  'gemini-3.7-flash',
-  'gemini-3.8-flash'
-]);
+// GROUND TRUTH (plans/gemini-sampling-ground-truth-2026.md):
+// Changelog 21 Julai 2026 (hari Gemini 3.6 Flash GA): "The sampling parameters
+// temperature, top_p and top_k are now deprecated." Penamatan bermula pada
+// Gemini 3.6 — BUKAN seluruh famili 3.x. Model pra-3.6 (3-flash-preview [3.0],
+// 3.1, 3.5) MASIH menerima pensampelan (Google syor 1.0, tetapi param diterima).
+//
+// Ambang versi minor: Gemini 3 minor >= 6 → strict (strip); < 6 → legacy (hantar).
+// gemini-3-flash-preview tiada minor → dianggap 3.0 → legacy.
+const SAMPLING_DEPRECATION_MINOR = 6;
+
+/**
+ * Ekstrak nombor minor daripada ID Gemini 3.x. Pulangkan 0 untuk "gemini-3-..."
+ * tanpa minor (cth: gemini-3-flash-preview → 3.0). null jika bukan Gemini 3.
+ * @param {string} m - model id ternormalisasi (lowercase)
+ * @returns {number|null}
+ */
+function gemini3MinorVersion(m) {
+  const withMinor = m.match(/^gemini-3\.(\d+)/);
+  if (withMinor) return parseInt(withMinor[1], 10);
+  if (/^gemini-3(?:-|$)/.test(m)) return 0; // gemini-3-flash-preview → 3.0
+  return null;
+}
 
 // Klasifikasi keluarga model mengikut keupayaan parameter sebenar.
 // Pulangkan { family, sampling, thinking, alias }:
@@ -52,18 +65,16 @@ function getModelFamily(model) {
   // Gemini 2.5 — thinkingBudget integer, pensampelan penuh
   if (/^gemini-2\.5/.test(m)) return { family: '2.5', sampling: 'full', thinking: 'budget' };
 
-  // Gemini 3.x — thinkingLevel enum
+  // Gemini 3.x — thinkingLevel enum. Ambang penamatan pensampelan pada minor 6
+  // (GROUND TRUTH: changelog 21 Jul 2026 = hari Gemini 3.6 GA).
   if (/^gemini-3(?:[.-]|$)/.test(m)) {
-    // STRICT: model yang tertakluk penamatan pensampelan (21 Jul 2026+)
-    if (SAMPLING_DEPRECATED_MODELS.has(m)) {
-      return { family: '3.x-strict', sampling: 'stripped', thinking: 'level' };
-    }
-    // LEGACY 3.x terdahulu — masih terima pensampelan, tetapi suhu mesti 1.0
-    if (m === 'gemini-3-flash-preview'
-      || m.startsWith('gemini-3.1')) {
+    const minor = gemini3MinorVersion(m);
+    // LEGACY: 3.0 (gemini-3-flash-preview) hingga 3.5 — pensampelan MASIH
+    // diterima (Google syor 1.0, tetapi param bukan ralat).
+    if (minor !== null && minor < SAMPLING_DEPRECATION_MINOR) {
       return { family: '3.x-legacy', sampling: 'warn-default-1.0', thinking: 'level' };
     }
-    // Lalai konservatif: mana-mana 3.x lain (3.7+, 3.9, dsb.) dianggap strict.
+    // STRICT: 3.6+ — pensampelan dinyah-guna, mesti di-strip.
     return { family: '3.x-strict', sampling: 'stripped', thinking: 'level' };
   }
 
@@ -642,7 +653,7 @@ class GeminiService {
   }
 
   buildGenerationConfig(maxOutputTokens) {
-    const { thinking } = this.getModelFamily();
+    const { thinking, sampling } = this.getModelFamily();
 
     // ── Cabang THINKING LEVEL (semua Gemini 3.x) ──────────────────────────────
     if (thinking === 'level') {
@@ -660,15 +671,23 @@ class GeminiService {
         effectiveLevel = 'low';
       }
 
-      // Untuk SEMUA model 3.x (strict & legacy), parameter pensampelan tidak
-      // dihantar. Panduan rasmi Google mengesyorkan suhu kekal pada lalai 1.0 —
-      // dan 1.0 adalah lalai pelayan, jadi menghantarnya secara eksplisit adalah
-      // berlebihan dan berisiko mencetuskan ralat pada model strict. Dengan tidak
-      // menghantar apa-apa, kedua-dua cabang mematuhi kontrak API dengan selamat.
-      return {
+      const levelConfig = {
         maxOutputTokens,
         thinkingConfig: { thinkingLevel: effectiveLevel }
       };
+
+      // GROUND TRUTH (plans/gemini-sampling-ground-truth-2026.md):
+      // 3.x-STRICT (3.6+) — pensampelan dinyah-guna; JANGAN hantar apa-apa param
+      // pensampelan (boleh cetuskan ralat / diabaikan). 3.x-LEGACY (3.0-3.5,
+      // termasuk gemini-3-flash-preview) — API MASIH menerima temperature/topP;
+      // hantar supaya tetapan pengguna benar-benar berkesan (dahulu di-strip
+      // secara senyap — pepijat yang belum selesai). topK tidak dihantar (nucleus).
+      if (sampling !== 'stripped') {
+        if (this.temperature !== undefined) levelConfig.temperature = this.temperature;
+        if (this.topP !== undefined) levelConfig.topP = this.topP;
+      }
+
+      return levelConfig;
     }
 
     // ── Cabang THINKING BUDGET (Gemini 2.5) ───────────────────────────────────
@@ -1746,7 +1765,6 @@ module.exports.composeDefaultTranslationPrompt = composeDefaultTranslationPrompt
 module.exports.getModelFamily = getModelFamily;
 module.exports.getModelThinkingProfile = getModelThinkingProfile;
 module.exports.isGoogleModel = isGoogleModel;
-module.exports.SAMPLING_DEPRECATED_MODELS = SAMPLING_DEPRECATED_MODELS;
 module.exports.isWhitelistedGeminiTextModel = isWhitelistedGeminiTextModel;
 module.exports.compareGeminiModelsForDropdown = compareGeminiModelsForDropdown;
 module.exports.sanitizeGeminiModelCatalog = sanitizeGeminiModelCatalog;
@@ -1759,6 +1777,5 @@ module.exports.__testing = {
   isGoogleModel,
   isWhitelistedGeminiTextModel,
   compareGeminiModelsForDropdown,
-  sanitizeGeminiModelCatalog,
-  SAMPLING_DEPRECATED_MODELS
+  sanitizeGeminiModelCatalog
 };

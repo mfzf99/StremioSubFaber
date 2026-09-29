@@ -62,16 +62,42 @@ test('AQ authorization keys are preserved and sent through the runtime v1beta mo
   }
 });
 
-test('Gemini 3.x uses thinking levels without legacy sampling fields', () => {
-  const service = new GeminiService('test-key', 'models/gemini-3.5-flash', {
+// [SAMPLING GROUND TRUTH 2026-09-29] Deprecation begins at Gemini 3.6 (changelog
+// 21 Jul 2026). Pre-3.6 models (3.0 preview / 3.1 / 3.5) are 3.x-LEGACY and STILL
+// accept temperature/topP. 3.6+ are 3.x-STRICT and strip sampling. topK never sent.
+test('Gemini 3.x-legacy (3.5) keeps sampling; 3.x-strict (3.7) strips it', () => {
+  const legacy = new GeminiService('test-key', 'models/gemini-3.5-flash', {
     thinkingBudget: 1000,
     thinkingLevel: 'high',
     temperature: 0.5,
     topP: 0.95
   });
+  assert.equal(legacy.model, 'gemini-3.5-flash');
+  assert.equal(legacy.getModelFamily().family, '3.x-legacy');
+  // LEGACY: sampling IS sent alongside thinkingLevel (fix — dulu di-strip senyap)
+  assert.deepEqual(legacy.buildGenerationConfig(4096), {
+    maxOutputTokens: 4096,
+    thinkingConfig: { thinkingLevel: 'high' },
+    temperature: 0.5,
+    topP: 0.95
+  });
+  // topK never sent even for legacy (nucleus sampling)
+  assert.equal('topK' in legacy.buildGenerationConfig(4096), false);
 
-  assert.equal(service.model, 'gemini-3.5-flash');
-  assert.deepEqual(service.buildGenerationConfig(4096), {
+  // gemini-3-flash-preview = 3.0 → legacy, keeps sampling
+  const preview = new GeminiService('test-key', 'gemini-3-flash-preview', {
+    thinkingLevel: 'low', temperature: 0.3, topP: 0.9
+  });
+  assert.equal(preview.getModelFamily().family, '3.x-legacy');
+  assert.equal(preview.buildGenerationConfig(4096).temperature, 0.3);
+  assert.equal(preview.buildGenerationConfig(4096).topP, 0.9);
+
+  // STRICT 3.7: sampling stripped, thinking level kept
+  const strict = new GeminiService('test-key', 'gemini-3.7-flash', {
+    thinkingLevel: 'high', temperature: 0.5, topP: 0.95
+  });
+  assert.equal(strict.getModelFamily().family, '3.x-strict');
+  assert.deepEqual(strict.buildGenerationConfig(4096), {
     maxOutputTokens: 4096,
     thinkingConfig: { thinkingLevel: 'high' }
   });
@@ -82,6 +108,7 @@ test('Gemini 3.x uses thinking levels without legacy sampling fields', () => {
   const dated37 = new GeminiService('test-key', 'gemini-3.7-flash-001', { thinkingLevel: 'minimal' });
   assert.equal(dated37.buildGenerationConfig(4096).thinkingConfig.thinkingLevel, 'low');
 
+  // -latest alias resolves to strict (points to newest 3.x) → sampling stripped
   const latestLite = new GeminiService('test-key', 'gemini-flash-lite-latest', {
     thinkingBudget: 0,
     thinkingLevel: 'minimal',
