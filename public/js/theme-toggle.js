@@ -1,85 +1,91 @@
 (function () {
     'use strict';
 
+    // Modern 3-mode theme system: Light / Dark / System.
+    // - localStorage 'theme' stores the *preference*: 'light' | 'dark' | 'system'.
+    // - data-theme on <html> is always the *resolved* concrete theme ('light' | 'dark').
+    // - data-theme-pref on <html> mirrors the preference so the segmented control
+    //   can highlight the active choice (including 'system').
     var html = document.documentElement;
     var darkQuery = window.matchMedia ? window.matchMedia('(prefers-color-scheme: dark)') : null;
 
-    function getThirdThemeToken() {
-        return html.getAttribute('data-third-theme') === 'true-dark' ? 'true-dark' : 'blackhole';
-    }
+    var VALID_PREFS = ['light', 'dark', 'system'];
 
-    function normalizeTheme(theme) {
-        if (theme === 'true-dark' || theme === 'blackhole') return 'blackhole';
-        if (theme === 'light' || theme === 'dark') return theme;
+    function normalizePref(pref) {
+        if (pref === 'light' || pref === 'dark' || pref === 'system') return pref;
+        // Legacy values migrate to a sensible concrete theme.
+        if (pref === 'blackhole' || pref === 'true-dark') return 'dark';
         return null;
     }
 
-    function readStoredTheme() {
+    function readStoredPref() {
         try {
-            return localStorage.getItem('theme');
+            return normalizePref(localStorage.getItem('theme'));
         } catch (_) {
             return null;
         }
     }
 
-    function getPreferredTheme() {
-        var saved = normalizeTheme(readStoredTheme());
-        if (saved) return saved;
+    function systemTheme() {
         return darkQuery && darkQuery.matches ? 'dark' : 'light';
     }
 
-    function setTheme(theme, persist) {
-        var normalized = normalizeTheme(theme) || 'light';
-        var applied = normalized === 'blackhole' ? getThirdThemeToken() : normalized;
-        html.setAttribute('data-theme', applied);
+    function resolveTheme(pref) {
+        return pref === 'system' ? systemTheme() : pref;
+    }
+
+    function getPreferredPref() {
+        // Default to System when the user has never chosen explicitly.
+        return readStoredPref() || 'system';
+    }
+
+    function updateSwitchState(pref) {
+        var buttons = document.querySelectorAll('#themeToggle [data-theme-choice]');
+        if (!buttons || !buttons.length) return;
+        buttons.forEach(function (btn) {
+            var active = btn.getAttribute('data-theme-choice') === pref;
+            btn.classList.toggle('active', active);
+            btn.setAttribute('aria-pressed', active ? 'true' : 'false');
+        });
+    }
+
+    function applyPref(pref, persist) {
+        var normalized = normalizePref(pref) || 'system';
+        html.setAttribute('data-theme', resolveTheme(normalized));
+        html.setAttribute('data-theme-pref', normalized);
         try {
             if (persist === true) {
                 localStorage.setItem('theme', normalized);
             }
         } catch (_) { }
+        updateSwitchState(normalized);
         return normalized;
     }
 
-    function spawnCoin(x, y) {
-        try {
-            var c = document.createElement('div');
-            c.className = 'coin animate';
-            c.style.left = x + 'px';
-            c.style.top = y + 'px';
-            document.body.appendChild(c);
-            c.addEventListener('animationend', function () { c.remove(); }, { once: true });
-            setTimeout(function () { if (c && c.parentNode) c.remove(); }, 1200);
-        } catch (_) { }
-    }
-
     function wireToggle() {
-        var themeToggle = document.getElementById('themeToggle');
-        var rawStoredTheme = readStoredTheme();
-        var normalizedStoredTheme = normalizeTheme(rawStoredTheme);
+        // Re-apply on boot so data-theme-pref + button state match the stored pref,
+        // and legacy stored values ('blackhole') get migrated on disk.
+        var stored = readStoredPref();
+        applyPref(getPreferredPref(), stored != null);
 
-        if (rawStoredTheme && normalizedStoredTheme && rawStoredTheme !== normalizedStoredTheme) {
-            setTheme(normalizedStoredTheme, true);
-        } else {
-            setTheme(getPreferredTheme(), false);
-        }
-
-        if (themeToggle && themeToggle.dataset.themeToggleBound !== 'true') {
-            themeToggle.dataset.themeToggleBound = 'true';
-            themeToggle.addEventListener('click', function (e) {
-                var active = normalizeTheme(html.getAttribute('data-theme')) || 'light';
-                var next = active === 'light' ? 'dark' : (active === 'dark' ? 'blackhole' : 'light');
-                setTheme(next, true);
-                if (e && e.clientX != null && e.clientY != null) {
-                    spawnCoin(e.clientX, e.clientY);
-                }
+        var control = document.getElementById('themeToggle');
+        if (control && control.dataset.themeToggleBound !== 'true') {
+            control.dataset.themeToggleBound = 'true';
+            control.addEventListener('click', function (e) {
+                var target = e.target && e.target.closest ? e.target.closest('[data-theme-choice]') : null;
+                if (!target) return;
+                var choice = normalizePref(target.getAttribute('data-theme-choice'));
+                if (!choice) return;
+                applyPref(choice, true);
             });
         }
 
         if (darkQuery && html.dataset.themeMediaListenerBound !== 'true') {
             html.dataset.themeMediaListenerBound = 'true';
-            darkQuery.addEventListener('change', function (event) {
-                if (!normalizeTheme(readStoredTheme())) {
-                    setTheme(event.matches ? 'dark' : 'light', false);
+            darkQuery.addEventListener('change', function () {
+                // Only OS-follow mode reacts to system changes.
+                if (getPreferredPref() === 'system') {
+                    applyPref('system', false);
                 }
             });
         }

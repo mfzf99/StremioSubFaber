@@ -1,21 +1,8 @@
 <div class="container">
-    <div class="ui-language-dock" id="uiLanguageDock" role="group" aria-label="UI language"
-        data-i18n="config.uiLanguageAria" data-i18n-attr="aria-label">
-        <div class="ui-language-glow" aria-hidden="true"></div>
-        <div class="ui-language-flag-row" id="uiLanguageFlags">
-            <!-- Flags are rendered dynamically -->
-        </div>
-    </div>
-
-    <div class="header">
-        <div class="logo">
-            <img src="/logo.png" alt="SubFaber Logo" style="width: 80px; height: 80px; border-radius: 18px;">
-        </div>
-        <h1 id="heroTitle" data-i18n="config.heroTitle">SubFaber</h1>
-        <div class="version-badge-wrapper">
-            <p class="subtitle" id="heroSubtitle" data-i18n="config.heroSubtitle">AI-Powered Subtitle Translation</p>
-            <span id="version-badge" class="version-badge" style="display:none;"></span>
-        </div>
+    <!-- Flat page header (brand + version badge now live in the top navbar) -->
+    <div class="page-header">
+        <h1 class="page-title" id="heroTitle" data-i18n="config.heroTitle">SubFaber</h1>
+        <p class="page-subtitle" id="heroSubtitle" data-i18n="config.heroSubtitle">AI-Powered Subtitle Translation</p>
     </div>
 
     <div id="alertContainer"></div>
@@ -51,74 +38,15 @@
             </svg>
         </span>
     </button>
-    <button class="help-button token-vault-launcher" id="tokenVaultLauncher" title="Open Token Vault"
-        aria-label="Open Token Vault" aria-expanded="false" aria-controls="tokenVaultRail" data-state="draft">
-        <svg class="token-vault-launcher-icon" viewBox="0 0 32 32" aria-hidden="true" focusable="false">
-            <defs>
-                <linearGradient id="tvShield" x1="0%" y1="0%" x2="0%" y2="100%">
-                    <stop offset="0%" stop-color="rgba(255,255,255,0.95)"/>
-                    <stop offset="100%" stop-color="rgba(255,255,255,0.55)"/>
-                </linearGradient>
-            </defs>
-            <path d="M16 3L5 8v7c0 7.73 4.66 14.28 11 16 6.34-1.72 11-8.27 11-16V8L16 3z"
-                  fill="url(#tvShield)" stroke="rgba(255,255,255,0.4)" stroke-width="1.2"
-                  stroke-linejoin="round"/>
-            <circle cx="16" cy="14" r="3" fill="none" stroke="rgba(255,255,255,0.9)" stroke-width="1.8"/>
-            <path d="M16 17v4" stroke="rgba(255,255,255,0.9)" stroke-width="1.8" stroke-linecap="round"/>
-        </svg>
-        <span class="token-vault-launcher-ribbon">
-            <span class="token-vault-launcher-label">VAULT</span>
-        </span>
-    </button>
-    <div class="token-vault-rail" id="tokenVaultRail" aria-hidden="true">
-        <div class="token-vault-rail-list" id="tokenVaultRailList"></div>
-    </div>
+    <!-- Token Vault launcher + rail relocated into the API Keys section below. -->
+    <!-- #configHelp kept for JS integrity but visually retired (Docs lives in the navbar). -->
     <button class="help-button mario" id="configHelp" title="Help" aria-label="Help" data-i18n="config.quickActionHelp"
-        data-i18n-attr="title,aria-label">?</button>
+        data-i18n-attr="title,aria-label" hidden>?</button>
 
     <!-- Disable native HTML validation: we run all validation in config.js and hidden inputs (provider advanced sliders) can trip browser validity when collapsed -->
     <form id="configForm" autocomplete="off" spellcheck="false" novalidate>
 
-        <!-- What's New Portal -->
-        <div class="whats-new-portal" id="whatsNewPortal">
-            <div class="portal-frame">
-                <div class="portal-starfield" aria-hidden="true"></div>
-                <div class="portal-glow" aria-hidden="true"></div>
-                <!-- Corner decorations -->
-                <span class="portal-corner tl" aria-hidden="true"></span>
-                <span class="portal-corner tr" aria-hidden="true"></span>
-                <span class="portal-corner bl" aria-hidden="true"></span>
-                <span class="portal-corner br" aria-hidden="true"></span>
-                <!-- Animated creatures (butterflies / fireflies / bats per theme) -->
-                <div class="portal-creatures" aria-hidden="true">
-                    <span class="portal-creature c1"></span>
-                    <span class="portal-creature c2"></span>
-                    <span class="portal-creature c3"></span>
-                    <span class="portal-creature c4"></span>
-                    <span class="portal-creature c5"></span>
-                </div>
-                <!-- Pixel runner character -->
-                <div class="portal-runner" aria-hidden="true"></div>
-                <div class="portal-header" id="portalHeader" role="button" tabindex="0"
-                    aria-label="Toggle What's New changelog">
-                    <div class="portal-header-left">
-                        <span class="portal-icon">✨</span>
-                        <span class="portal-title">What's New</span>
-                        <span class="portal-version-badge" id="portalVersionBadge"></span>
-                    </div>
-                    <div class="portal-header-right">
-                        <span class="portal-new-dot" id="portalNewDot" style="display:none;"
-                            title="New updates available!"></span>
-                        <span class="portal-toggle-arrow" id="portalToggleArrow">▼</span>
-                    </div>
-                </div>
-                <div class="portal-content" id="portalContent">
-                    <div class="portal-entries" id="portalEntries">
-                        <!-- Changelog entries rendered by JS -->
-                    </div>
-                </div>
-            </div>
-        </div>
+        <!-- Legacy "What's New" bubble banner removed for the minimalist dashboard. -->
 
         <!-- Quick Setup Entry Banner (shown on first run or via help menu) -->
         <div class="qs-entry-banner" id="quickSetupBanner" role="button" tabindex="0"
@@ -168,6 +96,27 @@
                     data-collapse-section="api-keys"></button>
             </div>
             <div class="section-grid">
+                <!-- Token Vault (relocated from the floating dock into API Keys) -->
+                <div class="token-vault-inline" id="tokenVaultInline">
+                    <button class="token-vault-launcher" id="tokenVaultLauncher" type="button"
+                        title="Open Token Vault" aria-label="Open Token Vault" aria-expanded="false"
+                        aria-controls="tokenVaultRail" data-state="draft">
+                        <svg class="token-vault-launcher-icon" viewBox="0 0 24 24" aria-hidden="true"
+                            focusable="false" fill="none" stroke="currentColor" stroke-width="1.8"
+                            stroke-linecap="round" stroke-linejoin="round">
+                            <path d="M12 3 4 6v6c0 4.7 3.2 8.6 8 9.7 4.8-1.1 8-5 8-9.7V6l-8-3z" />
+                            <circle cx="12" cy="11" r="2.2" />
+                            <path d="M12 13.2V16" />
+                        </svg>
+                        <span class="token-vault-launcher-ribbon">
+                            <span class="token-vault-launcher-label">Token Vault</span>
+                        </span>
+                    </button>
+                    <div class="token-vault-rail" id="tokenVaultRail" aria-hidden="true">
+                        <div class="token-vault-rail-list" id="tokenVaultRailList"></div>
+                    </div>
+                </div>
+
                 <!-- Subtitle API Providers -->
                 <div class="card collapsed" data-card="subtitle-api">
                     <div class="card-header">
