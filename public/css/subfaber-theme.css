@@ -21,16 +21,24 @@
    --------------------------------------------------------------------------- */
 :root,
 [data-theme="light"] {
-    /* Crimson / mangosteen accent (flat, no gloss) */
-    --primary: #e11d48;
-    --primary-light: #f43f5e;
-    --primary-dark: #be123c;
-    --secondary: #e11d48;
-    --accent: #e11d48;
+    /* Modern azure / sky accent (flat, no gloss) */
+    --primary: #0284C7;
+    --primary-light: #0EA5E9;
+    --primary-dark: #0369A1;
+    --secondary: #0284C7;
+    --accent: #0284C7;
 
     --success: #16a34a;
     --warning: #d97706;
     --danger: #dc2626;
+
+    /* Category badge palette (soft container tints for icon badges) */
+    --badge-sky-bg: #E0F2FE;
+    --badge-sky-fg: #0284C7;
+    --badge-teal-bg: #CCFBF1;
+    --badge-teal-fg: #0D9488;
+    --badge-slate-bg: #E2E8F0;
+    --badge-slate-fg: #475569;
 
     /* Slate surface system — light */
     --bg-primary: #f1f5f9;
@@ -45,7 +53,7 @@
     --border: #e2e8f0;
     --border-strong: #cbd5e1;
     --shadow: rgba(15, 23, 42, 0.06);
-    --glow: rgba(225, 29, 72, 0.16);
+    --glow: rgba(2, 132, 199, 0.16);
 
     --radius-card: 16px;
     --radius-control: 10px;
@@ -58,15 +66,23 @@
 [data-theme="dark"],
 [data-theme="blackhole"],
 [data-theme="true-dark"] {
-    --primary: #f43f5e;
-    --primary-light: #fb7185;
-    --primary-dark: #e11d48;
-    --secondary: #f43f5e;
-    --accent: #f43f5e;
+    --primary: #0EA5E9;
+    --primary-light: #38BDF8;
+    --primary-dark: #0284C7;
+    --secondary: #0EA5E9;
+    --accent: #0EA5E9;
 
     --success: #22c55e;
     --warning: #f59e0b;
     --danger: #ef4444;
+
+    /* Category badge palette — dark (soft translucent container tints) */
+    --badge-sky-bg: rgba(3, 105, 161, 0.32);
+    --badge-sky-fg: #7DD3FC;
+    --badge-teal-bg: rgba(13, 148, 136, 0.30);
+    --badge-teal-fg: #5EEAD4;
+    --badge-slate-bg: rgba(71, 85, 105, 0.35);
+    --badge-slate-fg: #CBD5E1;
 
     /* Slate surface system — dark (body slate-950, cards slate-900) */
     --bg-primary: #020617;
@@ -81,7 +97,7 @@
     --border: #1e293b;
     --border-strong: #334155;
     --shadow: rgba(0, 0, 0, 0.5);
-    --glow: rgba(244, 63, 94, 0.22);
+    --glow: rgba(14, 165, 233, 0.22);
 
     color-scheme: dark;
 }
@@ -445,17 +461,77 @@ body::-webkit-scrollbar-thumb {
     border-bottom-color: var(--border) !important;
 }
 
-/* Section + card icon tiles → flat, subtle, no 3D bevels or glows */
+/* Section header icon tiles → solid category "badge" containers (rounded-xl).
+   Soft category-tinted background with a matching solid glyph — mirrors the
+   Quick Setup mode-icon badge style. Category is derived from the marker
+   classes already on the markup (.language-emoji, .settings-emoji); the
+   default (API Keys) uses the sky tint. */
 .section-icon,
 [data-theme="dark"] .section-icon,
 [data-theme="blackhole"] .section-icon {
-    background: color-mix(in srgb, var(--primary) 12%, var(--surface)) !important;
-    border: 1px solid color-mix(in srgb, var(--primary) 24%, transparent) !important;
-    color: var(--primary) !important;
+    background: var(--badge-sky-bg) !important;
+    border: none !important;
+    color: var(--badge-sky-fg) !important;
     text-shadow: none !important;
     box-shadow: none !important;
     animation: none !important;
-    border-radius: 10px !important;
+    border-radius: 14px !important;
+}
+
+.section-icon::before {
+    display: none !important;
+    content: none !important;
+}
+
+.section-icon:hover {
+    transform: none !important;
+    box-shadow: none !important;
+}
+
+/* Languages → teal badge */
+.section-icon.language-emoji,
+[data-theme="dark"] .section-icon.language-emoji,
+[data-theme="blackhole"] .section-icon.language-emoji {
+    background: var(--badge-teal-bg) !important;
+    color: var(--badge-teal-fg) !important;
+}
+
+/* Settings → slate badge */
+.section-icon.settings-emoji,
+[data-theme="dark"] .section-icon.settings-emoji,
+[data-theme="blackhole"] .section-icon.settings-emoji {
+    background: var(--badge-slate-bg) !important;
+    color: var(--badge-slate-fg) !important;
+}
+
+/* The badge glyph inherits the category foreground color */
+.section-icon svg {
+    width: 22px;
+    height: 22px;
+    display: block;
+    color: inherit;
+}
+
+/* Provider sub-menu glyphs (OpenSubtitles / SubSource / SubDL) → uniform
+   monochrome mini-badges in the same rounded-xl language as the section
+   badges, using the sky category tint. Replaces the mismatched emoji set. */
+.provider-glyph {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 34px;
+    height: 34px;
+    flex-shrink: 0;
+    border-radius: 10px;
+    background: var(--badge-sky-bg);
+    color: var(--badge-sky-fg);
+}
+
+.provider-glyph svg {
+    width: 18px;
+    height: 18px;
+    display: block;
+    color: inherit;
 }
 
 .card-icon,
@@ -569,7 +645,7 @@ label:has(input[type="radio"]:checked)[style*="background: white"] {
     box-shadow: none !important;
 }
 
-/* Primary button: slate-900 on light, crimson accent on dark. Flat, no gloss. */
+/* Primary button: sky/azure accent in both themes. Flat, no gloss. */
 .btn {
     border-radius: var(--radius-control) !important;
     box-shadow: none !important;
@@ -577,14 +653,14 @@ label:has(input[type="radio"]:checked)[style*="background: white"] {
 }
 
 .btn-primary {
-    background: #0f172a !important;
+    background: var(--primary) !important;
     color: #ffffff !important;
-    border: 1px solid #0f172a !important;
+    border: 1px solid var(--primary) !important;
 }
 
 .btn-primary:hover {
-    background: #1e293b !important;
-    border-color: #1e293b !important;
+    background: var(--primary-dark) !important;
+    border-color: var(--primary-dark) !important;
     box-shadow: none !important;
     transform: none !important;
 }
@@ -622,7 +698,7 @@ label:has(input[type="radio"]:checked)[style*="background: white"] {
     box-shadow: none !important;
 }
 
-/* Validate / Test buttons → flat crimson */
+/* Validate / Test buttons → flat sky/azure */
 .validate-api-btn {
     background: var(--primary) !important;
     color: #ffffff !important;
