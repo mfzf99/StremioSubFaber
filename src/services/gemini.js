@@ -25,14 +25,19 @@ function isGemini3Model(model) {
   return /^gemini-3(?:[.-]|$)/i.test(modelId) || /^gemini-(?:flash|flash-lite|pro)-latest$/i.test(modelId);
 }
 
-// GROUND TRUTH (plans/gemini-sampling-ground-truth-2026.md):
-// Changelog 21 Julai 2026 (hari Gemini 3.6 Flash GA): "The sampling parameters
-// temperature, top_p and top_k are now deprecated." Penamatan bermula pada
-// Gemini 3.6 — BUKAN seluruh famili 3.x. Model pra-3.6 (3-flash-preview [3.0],
-// 3.1, 3.5) MASIH menerima pensampelan (Google syor 1.0, tetapi param diterima).
+// GROUND TRUTH (plans/gemini-sampling-ground-truth-2026.md; scraped
+// ai.google.dev/deprecations 2026-09-24). Sampling params (temperature/top_p/
+// top_k) dinyah-guna bermula 21 Julai 2026. Sempadan ialah TARIKH GA, BUKAN
+// semata nombor versi — dua model minor-5 berpecah:
+//   • gemini-3.6-flash        (GA 21 Jul 2026) → STRICT
+//   • gemini-3.5-flash-lite   (GA 21 Jul 2026) → STRICT  ← perangkap: minor 5
+//   • gemini-3.5-flash        (GA 19 Mei 2026) → LEGACY  (minor 5, pra-sempadan)
+//   • gemini-3.1-flash-lite   (GA  7 Mei 2026) → LEGACY
+//   • gemini-3.1-pro-preview  (GA 19 Feb 2026) → LEGACY
+//   • gemini-3-flash-preview  (GA 17 Dis 2025) → LEGACY  (dianggap 3.0)
 //
-// Ambang versi minor: Gemini 3 minor >= 6 → strict (strip); < 6 → legacy (hantar).
-// gemini-3-flash-preview tiada minor → dianggap 3.0 → legacy.
+// Peraturan kod (proksi versi kepada tarikh): minor >= 6 → strict; minor == 5
+// DAN varian flash-lite → strict; selainnya (3.0-3.5-flash, 3.1) → legacy.
 const SAMPLING_DEPRECATION_MINOR = 6;
 
 /**
@@ -46,6 +51,23 @@ function gemini3MinorVersion(m) {
   if (withMinor) return parseInt(withMinor[1], 10);
   if (/^gemini-3(?:-|$)/.test(m)) return 0; // gemini-3-flash-preview → 3.0
   return null;
+}
+
+/**
+ * Adakah model Gemini 3.x tertakluk penamatan pensampelan (strict)?
+ * Ground truth tarikh GA: minor >= 6 → ya; minor == 5 flash-lite → ya
+ * (gemini-3.5-flash-lite GA pada hari penamatan); selainnya tidak.
+ * @param {string} m - model id ternormalisasi (lowercase)
+ * @returns {boolean}
+ */
+function isSamplingStrictGemini3(m) {
+  const minor = gemini3MinorVersion(m);
+  if (minor === null) return false;
+  if (minor >= SAMPLING_DEPRECATION_MINOR) return true;
+  // Kes tepi: gemini-3.5-flash-lite (minor 5) di-GA pada hari penamatan →
+  // strict; tetapi gemini-3.5-flash (minor 5, pra-sempadan) kekal legacy.
+  if (minor === 5 && /flash-lite/.test(m)) return true;
+  return false;
 }
 
 // Klasifikasi keluarga model mengikut keupayaan parameter sebenar.
@@ -68,14 +90,13 @@ function getModelFamily(model) {
   // Gemini 3.x — thinkingLevel enum. Ambang penamatan pensampelan pada minor 6
   // (GROUND TRUTH: changelog 21 Jul 2026 = hari Gemini 3.6 GA).
   if (/^gemini-3(?:[.-]|$)/.test(m)) {
-    const minor = gemini3MinorVersion(m);
-    // LEGACY: 3.0 (gemini-3-flash-preview) hingga 3.5 — pensampelan MASIH
-    // diterima (Google syor 1.0, tetapi param bukan ralat).
-    if (minor !== null && minor < SAMPLING_DEPRECATION_MINOR) {
-      return { family: '3.x-legacy', sampling: 'warn-default-1.0', thinking: 'level' };
+    // STRICT: 3.6+ ATAU 3.5-flash-lite (GA pada hari penamatan 21 Jul 2026).
+    if (isSamplingStrictGemini3(m)) {
+      return { family: '3.x-strict', sampling: 'stripped', thinking: 'level' };
     }
-    // STRICT: 3.6+ — pensampelan dinyah-guna, mesti di-strip.
-    return { family: '3.x-strict', sampling: 'stripped', thinking: 'level' };
+    // LEGACY: 3.0 (gemini-3-flash-preview), 3.1, 3.5-flash — pensampelan MASIH
+    // diterima (Google syor 1.0, tetapi param bukan ralat).
+    return { family: '3.x-legacy', sampling: 'warn-default-1.0', thinking: 'level' };
   }
 
   // Alias -latest (hot-swap). Kini menunjuk ke 3.x terkini, tetapi tidak

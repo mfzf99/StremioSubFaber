@@ -121,6 +121,35 @@ test('Gemini 3.x-legacy (3.5) keeps sampling; 3.x-strict (3.7) strips it', () =>
   });
 });
 
+// [SAMPLING EDGE CASE 2026-09-29] The boundary is the GA date (21 Jul 2026),
+// NOT the version number. Two minor-5 models split:
+//   gemini-3.5-flash (GA 19 May 2026)      → LEGACY (sampling accepted)
+//   gemini-3.5-flash-lite (GA 21 Jul 2026) → STRICT (stripped, same day as 3.6)
+test('Gemini 3.5-flash-lite is STRICT (GA on deprecation day) but 3.5-flash is LEGACY', () => {
+  const flashLite = new GeminiService('test-key', 'gemini-3.5-flash-lite', {
+    thinkingLevel: 'low', temperature: 0.5, topP: 0.95
+  });
+  assert.equal(flashLite.getModelFamily().family, '3.x-strict', '3.5-flash-lite must be STRICT');
+  const liteCfg = flashLite.buildGenerationConfig(4096);
+  assert.equal('temperature' in liteCfg, false, '3.5-flash-lite strips temperature');
+  assert.equal('topP' in liteCfg, false, '3.5-flash-lite strips topP');
+
+  const flash = new GeminiService('test-key', 'gemini-3.5-flash', {
+    thinkingLevel: 'low', temperature: 0.5, topP: 0.95
+  });
+  assert.equal(flash.getModelFamily().family, '3.x-legacy', '3.5-flash must stay LEGACY');
+  const flashCfg = flash.buildGenerationConfig(4096);
+  assert.equal(flashCfg.temperature, 0.5, '3.5-flash keeps temperature');
+  assert.equal(flashCfg.topP, 0.95, '3.5-flash keeps topP');
+
+  // 3.1 flash-lite is pre-boundary → still legacy (keeps sampling)
+  const lite31 = new GeminiService('test-key', 'gemini-3.1-flash-lite', {
+    thinkingLevel: 'low', temperature: 0.4
+  });
+  assert.equal(lite31.getModelFamily().family, '3.x-legacy', '3.1-flash-lite stays LEGACY (pre-boundary)');
+  assert.equal(lite31.buildGenerationConfig(4096).temperature, 0.4);
+});
+
 test('Gemini 3 translation and structured-output paths send the current request shape', async () => {
   const originalPost = axios.post;
   let requestBody = null;

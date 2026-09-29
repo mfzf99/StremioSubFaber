@@ -45,8 +45,27 @@ So: 3.0–3.5 = sampling **accepted** (Google recommends 1.0). 3.6+ = sampling
 | 1.5 | gemini-1.5-* | FULL (+topK 1..40) | none | shut down but keep classifier safe |
 | 2.0 | gemini-2.0-* | FULL | none | shut down |
 | 2.5 | gemini-2.5-flash/pro/lite | FULL | thinkingBudget (int) | +frequency/presence penalty |
-| 3.x LEGACY | gemini-3-flash-preview, gemini-3.1-*, gemini-3.5-flash, gemini-3.5-flash-lite | **ACCEPTED** (Google recommends 1.0) | thinkingLevel enum | pre-3.6 |
-| 3.x STRICT | gemini-3.6+, 3.7, 3.8, and 4.x+ | **STRIPPED** (deprecated) | thinkingLevel enum | minimal not on 3.8 |
+| 3.x LEGACY | gemini-3-flash-preview (3.0), gemini-3.1-*, **gemini-3.5-flash** | **ACCEPTED** (Google recommends 1.0) | thinkingLevel enum | GA'd BEFORE 21 Jul 2026 |
+| 3.x STRICT | gemini-3.6+, 3.7, 3.8, 4.x+, AND **gemini-3.5-flash-lite** | **STRIPPED** (deprecated) | thinkingLevel enum | GA'd ON/AFTER 21 Jul 2026 |
+
+**CRITICAL EDGE CASE (owner-flagged, verified on deprecations page GA dates):**
+The boundary is the **GA date (21 Jul 2026)**, NOT the version number. Two
+minor-5 models split:
+- `gemini-3.5-flash` — GA 19 May 2026 → **LEGACY** (sampling accepted)
+- `gemini-3.5-flash-lite` — GA 21 Jul 2026 (same day as 3.6) → **STRICT** (stripped)
+
+Deprecation notice (owner quote, matches deprecations page): *"temperature,
+top_p, and top_k are deprecated in Gemini 3.6 Flash and Gemini 3.5 Flash-Lite.
+The API ignores them and will return errors in future generations."*
+
+Code rule (`isSamplingStrictGemini3`): minor >= 6 → strict; minor == 5 AND
+flash-lite → strict; else legacy.
+
+Verified GA dates (deprecations page, 2026-09-24):
+gemini-3-flash-preview 2025-12-17 · gemini-3.1-flash-lite 2026-05-07 ·
+gemini-3.1-pro-preview 2026-02-19 · gemini-3.5-flash 2026-05-19 ·
+gemini-3.5-flash-lite 2026-07-21 · gemini-3.6-flash 2026-07-21 ·
+gemini-3.7-flash 2026-08-13 · gemini-3.8-flash 2026-09-02.
 
 thinking_level enum: `minimal` (3-flash/3.5-lite only, NOT 3.1-pro, NOT 3.8),
 `low`, `medium`, `high`. Defaults: 3.1-pro/3-flash = high; 3.8 = medium.
