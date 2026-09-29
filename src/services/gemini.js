@@ -5,6 +5,7 @@ const { httpAgent, httpsAgent } = require('../utils/httpAgents');
 const log = require('../utils/logger');
 const { resolveLanguageDisplayName } = require('../utils/languageResolver');
 const { normalizeTargetLanguageForPrompt } = require('./utils/normalizeTargetLanguageForPrompt');
+const { splitStructuredPrompt } = require('./utils/structuredPrompt');
 const {
   getProviderAuthFailureCacheKey,
   hasCachedProviderAuthFailure,
@@ -1058,17 +1059,31 @@ class GeminiService {
     // [UNIVERSAL-FIX] customPrompt warisan (config.translationPrompt)
     // diutamakan seperti sebelumnya; fallback prompt lalai kini
     // TARGET-CONDITIONAL (Malay → peraturan BM; lain → neutral).
-    let systemPrompt = (customPrompt || composeDefaultTranslationPrompt(targetLanguage))
+    let combined = (customPrompt || composeDefaultTranslationPrompt(targetLanguage))
       .replace('{target_language}', normalizedTarget);
 
-    let userPrompt;
-    if (systemPrompt.includes('<input>') || systemPrompt.includes('INPUT (')) {
-      userPrompt = systemPrompt;
-    } else {
-      userPrompt = `${systemPrompt}\n\nContent to translate:\n\n${subtitleContent}`;
+    // [PROMPT REBUILD v2 2026-09-29] Structured split: SubFaber Agent A prompt
+    // membawa SUBFABER_PROMPT_BOUNDARY yang memisah bahagian STATIK (systemInstruction,
+    // cacheable) daripada bahagian DINAMIK (kandungan user: Bible + <input> + anchor).
+    // Ini menghapuskan penghantaran-dua-kali (dulu userPrompt = systemPrompt penuh).
+    // Prompt tanpa sempadan (custom warisan) kekal laluan lama.
+    const structured = splitStructuredPrompt(combined);
+    if (structured) {
+      return {
+        userPrompt: structured.user,
+        systemPrompt: structured.system,
+        normalizedTarget
+      };
     }
 
-    return { userPrompt, systemPrompt, normalizedTarget };
+    let userPrompt;
+    if (combined.includes('<input>') || combined.includes('INPUT (')) {
+      userPrompt = combined;
+    } else {
+      userPrompt = `${combined}\n\nContent to translate:\n\n${subtitleContent}`;
+    }
+
+    return { userPrompt, systemPrompt: combined, normalizedTarget };
   }
 
   async countTokensForTranslation(subtitleContent, targetLanguage, customPrompt = null) {

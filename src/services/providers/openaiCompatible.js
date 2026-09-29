@@ -4,6 +4,7 @@ const { httpAgent, httpsAgent } = require('../../utils/httpAgents');
 const log = require('../../utils/logger');
 const { sanitizeApiKeyForHeader } = require('../../utils/security');
 const { DEFAULT_TRANSLATION_PROMPT, composeDefaultTranslationPrompt } = require('../gemini');
+const { splitStructuredPrompt } = require('../utils/structuredPrompt');
 const {
   findISO6391ByName,
   getLanguageName,
@@ -613,6 +614,21 @@ class OpenAICompatibleProvider {
     // [UNIVERSAL-FIX] Fallback prompt lalai kini TARGET-CONDITIONAL —
     // peraturan khusus-Malay hanya apabila sasaran ialah Malay; lain neutral.
     let systemPrompt = (customPrompt || composeDefaultTranslationPrompt(targetLanguage)).replace('{target_language}', normalizedTarget);
+
+    // [PROMPT REBUILD v2 2026-09-29] Structured split: bila SubFaber Agent A
+    // prompt (dengan SUBFABER_PROMPT_BOUNDARY) mengalir ke provider ini sebagai
+    // fallback, pisahkan STATIK (system) daripada DINAMIK (user) supaya arahan
+    // tidak dihantar dua kali dan sempadan tidak bocor ke prompt hidup.
+    const structured = splitStructuredPrompt(systemPrompt);
+    if (structured) {
+      return {
+        userPrompt: structured.user,
+        systemPrompt: structured.system,
+        normalizedTarget,
+        subtitleContent,
+        isSelfContained: true
+      };
+    }
 
     let userPrompt;
     let isSelfContained = false;

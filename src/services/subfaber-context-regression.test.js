@@ -54,7 +54,7 @@ test('SubFaberContext: subfaberEnabled flag REMOVED — SubFaber is the only eng
   // Config lama yang masih membawa field legacy mesti diabaikan sepenuhnya
   const engineLegacy = makeEngine({ subfaberEnabled: false, enableBatchContext: true, contextSize: 20 });
   assert.equal(engineLegacy.subfaberEnabled, undefined, 'Legacy subfaberEnabled:false ignored — engine stays SubFaber');
-  assert.equal(engineLegacy.batchSize, 60, 'Batch size stays 60 regardless of legacy flags');
+  assert.equal(engineLegacy.batchSize, 30, 'Batch size stays 30 regardless of legacy flags');
 });
 
 test('SubFaberContext: context builder runs WITHOUT any flag (single engine path)', () => {
@@ -123,13 +123,13 @@ test('SubFaberContext: window clamps at file boundaries', () => {
   assert.equal(ctx.subsequentContent.length, 2, 'Clamped next: only 2 entries requested (of 4 available)');
 });
 
-// --- MANDAT 2026-09-27: batch size SubFaber = 60 (hardcoded, tiada env override) ---
-test('SubFaberContext: batch size = 60 ALWAYS (SUBFABER_BATCH_SIZE hardcoded)', () => {
+// --- MANDAT 2026-09-29 (Rebuild v2): batch size SubFaber = 30 (hardcoded, tiada env override) ---
+test('SubFaberContext: batch size = 30 ALWAYS (SUBFABER_BATCH_SIZE hardcoded)', () => {
   const engine = makeEngine({});
-  assert.equal(engine.batchSize, 60, 'SubFaber batch size = 60 (MANDAT 2026-09-27, enjin tunggal)');
+  assert.equal(engine.batchSize, 30, 'SubFaber batch size = 30 (Rebuild v2 2026-09-29, enjin tunggal)');
   // Env TRANSLATION_BATCH_SIZE tidak lagi berkesan — nilai diabaikan
   const engineEnv = makeEngine({ TRANSLATION_BATCH_SIZE: 200 });
-  assert.equal(engineEnv.batchSize, 60, 'Env override REMOVED — always 60');
+  assert.equal(engineEnv.batchSize, 30, 'Env override REMOVED — always 30');
 });
 
 test('SubFaberContext: previousMemory includes verified translations, excludes placeholders', () => {
@@ -306,110 +306,123 @@ test('SubFaberSharedContext: previousMemory rendered as continuity block (single
   assert.ok(!batchText.includes('<m id='), 'Memory NOT in batchText (clean <input>)');
 });
 
-// --- createXmlBatchPrompt: persona + principles (Purification Mandat 2026-09-25) ---
-test('SubFaberPrompt: pure SubFaber prompt when ON — persona + principles + XML contract, NO legacy bloat', () => {
+// --- createXmlBatchPrompt: PROMPT V3 "PARITY-FIRST + SPLIT" (Rebuild v2 2026-09-29) ---
+const { splitStructuredPrompt, SUBFABER_PROMPT_BOUNDARY } = require('./utils/structuredPrompt');
+
+test('SubFaberPrompt V3: parity-first, slim rules, split system/user, no double-send', () => {
   const engine = makeEngine({ subfaberEnabled: true });
   engine.sourceLanguage = 'English';
   const batch = makeEntries(2, 1);
   const batchText = engine.prepareBatchXml(batch, null);
 
   const prompt = engine.createXmlBatchPrompt(batchText, 'Malay', null, batch.length, null, 0, 1);
-  // ── PROMPT V2 "CRIME-PROOF" (Mandat Pembedahan B 2026-09-27) ──
-  assert.ok(prompt.includes('## Role'), 'Role section present');
-  assert.ok(prompt.includes('expert Netflix subtitle translator'), 'VideoLingo persona verbatim (expert anchor)');
-  assert.ok(prompt.includes('fluent in both English and Malay'), 'Language pair in persona');
-  // Task: conversational (arahan owner — "spoken" diganti) + sourceLabel dipulihkan
-  assert.ok(prompt.includes('## Task'), 'Task section present');
-  assert.ok(
-    prompt.includes('Translate the provided English subtitles line by line into natural, conversational Malay'),
-    'Task verbatim: sourceLabel + conversational (tampalan mandat)'
-  );
-  assert.ok(prompt.includes('the way a real native speaker would actually say it out loud'), 'Native-speaker phrasing directive (craft-enhanced)');
-  assert.ok(prompt.includes("reproducing the speaker's true meaning, emotion, and register"), 'Register/emotion directive present in Task');
-  assert.ok(prompt.includes('Keep established character names, titles, and context-specific terms consistent'), 'Terminology consistency (dipindah ke Task)');
-  // structural_rules — [HARMONY-FIX] 7 peraturan, pemetaan 1:1 kepada 4
-  // jenayah Agent B melalui label ANTI-*
-  assert.ok(prompt.includes('<structural_rules>'), 'Structural rules opening tag');
-  assert.ok(prompt.includes('</structural_rules>'), 'Structural rules closing tag');
-  assert.ok(prompt.includes('1. ANTI-MERGE — SLOT ISOLATION'), 'Rule 1: ANTI-MERGE (label jenayah hadir)');
-  assert.ok(prompt.includes('Translate ONLY the fragment present in each <s id="N">'), 'Fragment isolation rule verbatim (rule 1)');
-  assert.ok(prompt.includes('Leaving a slot grammatically incomplete is correct and required.'), 'Incomplete slot mandate (anti-MERGE terkuat)');
-  assert.ok(prompt.includes('2. ANTI-SHIFT — ZERO SKIPPING'), 'Rule 2: ANTI-SHIFT (label jenayah hadir)');
-  assert.ok(prompt.includes('3. ANTI-PHANTOM — NO FABRICATION'), 'Rule 3: ANTI-PHANTOM (label jenayah hadir)');
-  assert.ok(prompt.includes("NEVER invent, add, or elaborate on content that has no basis in that line's own source text."), 'Rule 3 verbatim: no fabrication');
-  assert.ok(prompt.includes('4. ANTI-DROP — FULL MEANING TRANSFER'), 'Rule 4: ANTI-DROP (label jenayah hadir)');
-  assert.ok(prompt.includes('NEVER replace a line\'s specific content with a generic substitute that erases its meaning.'), 'Rule 4 verbatim: generic substitute dilarang (TIADA perkataan "truncated")');
-  assert.ok(!prompt.includes('truncated'), 'Rule 4 TIDAK membawa false-positive "truncated"');
-  // [SOCIOLINGUISTIC v2 2026-09-29] structural_rules dikembang 7→8:
-  // rule 5 baharu (SLOT-BOUNDARY TIEBREAKER) disisip; ESCAPE HATCH→6,
-  // SONG LYRICS→7, PRESERVE markup→8 (dengan [br] reposition adaptif).
-  assert.ok(prompt.includes('5. SLOT-BOUNDARY TIEBREAKER'), 'Rule 5: slot-boundary tiebreaker (anti cross-slot pull)');
-  assert.ok(prompt.includes('Slot integrity always outranks cross-slot grammatical smoothness'), 'Tiebreaker verbatim: slot integrity outranks grammar');
-  assert.ok(prompt.includes('6. ESCAPE HATCH'), 'Rule 6: escape hatch');
-  assert.ok(prompt.includes('a normal sentence must always be translated, never copied verbatim in the source language'), 'Escape hatch narrowed: no lazy source-copy');
-  assert.ok(prompt.includes('7. SONG LYRICS'), 'Rule 7: song lyrics');
-  assert.ok(
-    prompt.includes('8. PRESERVE inline markup'),
-    'Rule 8: markup preservation'
-  );
-  assert.ok(prompt.includes('you MAY reposition a [br] to the most natural break point'), 'Rule 8: adaptive [br] repositioning (count preserved, position flexible)');
-  assert.ok(prompt.includes('with the SAME COUNT as the source'), 'Rule 8: [br] count still locked');
-  // ── TINGKAT 1 (Netflix-Quality Craft Mandat 2026-09-29): translation_craft ──
-  // Blok kualiti Netflix — dipacu equivalent-effect + compression + anti-calque.
-  // Diletak SELEPAS structural_rules supaya pariti kekal keutamaan #1.
-  assert.ok(prompt.includes('<translation_craft>'), 'Craft block opening tag present');
-  assert.ok(prompt.includes('</translation_craft>'), 'Craft block closing tag present');
-  assert.ok(prompt.includes('1. EQUIVALENT EFFECT'), 'Craft rule 1: equivalent effect');
-  assert.ok(prompt.includes('Reproduce the emotional impact of the line, not its individual words'), 'Equivalent effect verbatim');
-  assert.ok(prompt.includes('2. NATURAL COMPRESSION'), 'Craft rule 2: natural compression');
-  assert.ok(prompt.includes('favour the shortest phrasing that still carries the full meaning'), 'Compression directive verbatim');
-  assert.ok(prompt.includes('3. ANTI-CALQUE'), 'Craft rule 3: anti-calque');
-  assert.ok(prompt.includes('Never mirror the source word order'), 'Anti-calque directive verbatim');
-  assert.ok(prompt.includes('4. LIVING VOICE'), 'Craft rule 4: living voice');
-  // Guardrail: craft block MESTI datang SELEPAS structural_rules (pariti #1)
-  assert.ok(
-    prompt.indexOf('</structural_rules>') < prompt.indexOf('<translation_craft>'),
-    'Craft block must appear AFTER structural_rules (parity remains priority #1)'
-  );
-  // Few-shot 4 jenayah (senjata anti-crime) — [HARMONY-FIX]
-  assert.ok(prompt.includes('[EXAMPLE 1 — MERGE:'), 'Few-shot EXAMPLE 1 (MERGE) header');
-  assert.ok(prompt.includes('[EXAMPLE 2 — SHIFT:'), 'Few-shot EXAMPLE 2 (SHIFT) header');
-  assert.ok(prompt.includes('[EXAMPLE 3 — PHANTOM:'), 'Few-shot EXAMPLE 3 (PHANTOM) header');
-  assert.ok(prompt.includes('[EXAMPLE 4 — DROP:'), 'Few-shot EXAMPLE 4 (DROP) header');
-  assert.ok(prompt.includes('Correct output:'), 'Few-shot correct output shown');
-  assert.ok(prompt.includes('Wrong (merged):'), 'Few-shot wrong output shown');
-  assert.ok(prompt.includes('Awak ikut kami,'), 'Few-shot BM translation present');
-  // Kontrak XML satu baris (SRT AI Translator) — versi B lebih tegas
-  assert.ok(prompt.includes('## Output Format'), 'Output Format section present');
-  assert.ok(prompt.includes('EXACTLY one <s id="N"> element per input subtitle'), '1-to-1 XML contract');
-  assert.ok(prompt.includes('<answer>'), 'Answer block wrapper in contract');
-  assert.ok(prompt.includes('no reasoning or thinking tags'), 'Kontrak output B: larangan thinking tags');
-  // Prinsip V1.9.2 telah digantikan oleh structural_rules
-  assert.ok(!prompt.includes('<translation_principles>'), 'translation_principles REMOVED (digantikan structural_rules)');
-  // DETOX: legacy bloat mesti HILANG
-  assert.ok(!prompt.includes('CRITICAL ENFORCEMENT RULES'), '7-rule rulebook REMOVED (detox)');
-  assert.ok(!prompt.includes('STRICT 1-TO-1 CARDINALITY'), 'Rule 1 REMOVED (detox)');
-  assert.ok(!prompt.includes('[UNIVERSAL STRUCTURAL DEMONSTRATION'), 'Structural demo REMOVED (detox)');
-  assert.ok(!prompt.includes('ZERO TOLERANCE'), 'Zero-tolerance tone REMOVED (detox)');
-  // Anchor kekal di penutup (Smart Preamble Scrubber compatibility)
-  assert.ok(prompt.includes('<s id="1">'), 'Anchor <s id="${startId}"> at prompt tail');
-  assert.ok(prompt.trimEnd().endsWith('<s id="1">'), 'Prompt must END with anchor tag');
+
+  // ── Sempadan system/user hadir; split bersih ──
+  assert.ok(prompt.includes(SUBFABER_PROMPT_BOUNDARY), 'Boundary marker present between system and user parts');
+  const parts = splitStructuredPrompt(prompt);
+  assert.ok(parts, 'Prompt must split into { system, user }');
+  const { system, user } = parts;
+
+  // ── SYSTEM part: Role + Priority + Rules + Style + few-shot + Output Format ──
+  assert.ok(system.includes('## Role'), 'Role section in system part');
+  assert.ok(system.includes('expert subtitle translator and localization specialist'), 'Universal role (no hardcoded Netflix)');
+  assert.ok(system.includes('from English into Malay'), 'Language pair in role');
+  // Priority 0 — pariti #1 (mandat owner: ID PARITI comes first)
+  assert.ok(system.includes('## Top Priority — Slot & ID Parity (ABSOLUTE)'), 'Parity-first Priority section present');
+  assert.ok(system.includes('PARITY WINS'), 'Explicit hierarchy: parity beats fluency');
+  assert.ok(system.includes('desyncs the entire file'), 'Parity rationale present');
+  // Rules — 7 tajam, label ANTI-* kekal (pemetaan 1:1 taksonomi Agent B)
+  assert.ok(system.includes('1. ANTI-MERGE — SLOT ISOLATION'), 'Rule 1 ANTI-MERGE');
+  assert.ok(system.includes('2. ANTI-SHIFT — NO SKIP, NO DRIFT'), 'Rule 2 ANTI-SHIFT');
+  assert.ok(system.includes('3. ANTI-PHANTOM — NO FABRICATION'), 'Rule 3 ANTI-PHANTOM');
+  assert.ok(system.includes('4. ANTI-DROP — FULL MEANING'), 'Rule 4 ANTI-DROP');
+  assert.ok(system.includes('5. ANTI-UNTRANSLATED — ALWAYS TRANSLATE'), 'Rule 5 ANTI-UNTRANSLATED (lazy-copy guard)');
+  assert.ok(system.includes('6. CROSS-SLOT TIEBREAKER'), 'Rule 6 cross-slot tiebreaker');
+  assert.ok(system.includes('slot integrity outranks cross-slot grammatical smoothness'), 'Tiebreaker: parity > grammar');
+  assert.ok(system.includes('7. PRESERVE markup'), 'Rule 7 markup preservation');
+  assert.ok(system.includes('SAME COUNT as the source'), '[br] count locked');
+  assert.ok(system.includes('reposition a [br] to a natural break'), '[br] reposition adaptif');
+  // Style prose (secondary to parity) — craft padat
+  assert.ok(system.includes('## Style (secondary to parity)'), 'Style section subordinate to parity');
+  assert.ok(system.includes('reproduce the meaning and emotion (not the individual words)'), 'Equivalent-effect in style');
+  assert.ok(system.includes('adapt idioms'), 'Anti-calque/idiom adaptation in style');
+  assert.ok(system.includes('locked titles and pronouns'), 'Style references locked register (harmony with Bible)');
+  assert.ok(system.includes('do NOT worry about reading-speed'), 'Text-to-text: timing fixed, no CPS math');
+  // Few-shot (dari pack) hidup di SYSTEM (hantar sekali, cacheable)
+  assert.ok(system.includes('[EXAMPLE 1 — MERGE:'), 'Few-shot EXAMPLE 1 in system');
+  assert.ok(system.includes('[EXAMPLE 6 — REGISTER:'), 'Few-shot EXAMPLE 6 in system');
+  assert.ok(system.includes('Awak ikut kami,'), 'Malay few-shot present (target=Malay)');
+  // Output Format di SYSTEM
+  assert.ok(system.includes('## Output Format'), 'Output Format in system part');
+  assert.ok(system.includes('one <s id="N"> per input id'), '1-to-1 contract');
+  assert.ok(system.includes('no reasoning or thinking tags'), 'No-thinking-tags contract');
+
+  // ── USER part: HANYA data dinamik + anchor (tiada arahan statik) ──
+  assert.ok(user.includes('<input>'), 'input block in user part');
+  assert.ok(user.trimEnd().endsWith('<s id="1">'), 'User part ENDS with prefill anchor');
+  assert.ok(!user.includes('## Role'), 'Role NOT duplicated into user part');
+  assert.ok(!user.includes('ANTI-MERGE'), 'Rules NOT duplicated into user part');
+  assert.ok(!user.includes('[EXAMPLE 1'), 'Few-shot NOT duplicated into user part');
+
+  // ── NO DOUBLE-SEND: static instructions live ONLY in system, not in user ──
+  assert.ok(system.includes('ANTI-MERGE') && !user.includes('ANTI-MERGE'), 'No duplication: rules only in system');
+
+  // ── DETOX: legacy bloat gone ──
+  assert.ok(!prompt.includes('<translation_craft>'), 'translation_craft tag block REMOVED (folded into Style prose)');
+  assert.ok(!prompt.includes('CRITICAL ENFORCEMENT RULES'), 'Legacy 7-rule REMOVED');
+  assert.ok(!prompt.includes('[UNIVERSAL STRUCTURAL DEMONSTRATION'), 'Legacy demo REMOVED');
 });
 
-test('SubFaberPrompt: pure SubFaber prompt is the ONLY path (no flags exist)', () => {
-  // TOTAL PURGE Mandat 2026-09-25: enjin SubFaber tunggal — prompt dijana
-  // tanpa sebarang flag. Bangkai komen legacy 7-rule dibuang sepenuhnya.
+test('SubFaberPrompt V3: gemini buildUserPrompt splits system/user (no double-send)', () => {
+  // Fix bazir token: arahan statik dihantar SEKALI (systemInstruction),
+  // data dinamik SEKALI (user content). Dulu userPrompt = systemPrompt penuh.
+  const GeminiService = require('./gemini');
+  const engine = makeEngine({ subfaberEnabled: true });
+  engine.sourceLanguage = 'English';
+  const batch = makeEntries(3, 1);
+  const batchText = engine.prepareBatchXml(batch, null);
+  const combined = engine.createXmlBatchPrompt(batchText, 'Malay', null, batch.length, null, 0, 1);
+
+  const svc = new GeminiService('dummy-key', 'gemini-2.5-flash', {});
+  const { userPrompt, systemPrompt } = svc.buildUserPrompt('unused', 'Malay', combined);
+
+  // System carries the static instructions; user carries the dynamic data.
+  assert.ok(systemPrompt.includes('## Role'), 'systemPrompt carries Role');
+  assert.ok(systemPrompt.includes('1. ANTI-MERGE'), 'systemPrompt carries Rules');
+  assert.ok(userPrompt.includes('<input>'), 'userPrompt carries the batch input');
+  assert.ok(userPrompt.trimEnd().endsWith('<s id="1">'), 'userPrompt keeps the prefill anchor');
+  // The critical anti-duplication guarantee:
+  assert.ok(!userPrompt.includes('## Role'), 'Role NOT duplicated into userPrompt');
+  assert.ok(!userPrompt.includes('1. ANTI-MERGE'), 'Rules NOT duplicated into userPrompt');
+  assert.ok(!systemPrompt.includes('<input>'), 'Input NOT leaked into systemPrompt');
+  // Boundary sentinel must never survive into either delivered part.
+  assert.ok(!userPrompt.includes(SUBFABER_PROMPT_BOUNDARY), 'No boundary sentinel in userPrompt');
+  assert.ok(!systemPrompt.includes(SUBFABER_PROMPT_BOUNDARY), 'No boundary sentinel in systemPrompt');
+});
+
+test('SubFaberPrompt V3: legacy markerless custom prompt keeps old behaviour', () => {
+  // Backward-compat: prompt tanpa sempadan (custom warisan) → laluan lama,
+  // systemPrompt = combined penuh (tiada regresi untuk pengguna custom prompt).
+  const GeminiService = require('./gemini');
+  const svc = new GeminiService('dummy-key', 'gemini-2.5-flash', {});
+  const legacy = 'Translate everything into {target_language} nicely.';
+  const { userPrompt, systemPrompt } = svc.buildUserPrompt('Hello world', 'Malay', legacy);
+  assert.ok(systemPrompt.includes('Translate everything into Malay'), 'legacy systemPrompt intact');
+  assert.ok(userPrompt.includes('Content to translate:'), 'legacy non-self-contained path intact');
+  assert.ok(userPrompt.includes('Hello world'), 'legacy user carries the subtitle content');
+});
+
+test('SubFaberPrompt V3: prompt is the ONLY path (no flags), parity + rules always present', () => {
   const engine = makeEngine({});
   engine.sourceLanguage = 'English';
   const batch = makeEntries(2, 1);
   const batchText = engine.prepareBatchXml(batch, null);
 
   const prompt = engine.createXmlBatchPrompt(batchText, 'Malay', null, batch.length, null, 0, 1);
-  assert.ok(prompt.includes('## Role'), 'Persona always present (SubFaber is the only engine)');
-  assert.ok(prompt.includes('<structural_rules>'), 'Structural rules always present (pengganti principles — V2)');
-  assert.ok(prompt.includes('Netflix subtitle translator'), 'Netflix persona always present');
+  assert.ok(prompt.includes('## Role'), 'Role always present');
+  assert.ok(prompt.includes('## Top Priority — Slot & ID Parity (ABSOLUTE)'), 'Parity-first always present');
+  assert.ok(prompt.includes('1. ANTI-MERGE — SLOT ISOLATION'), 'Rules always present');
   assert.ok(!prompt.includes('CRITICAL ENFORCEMENT RULES'), 'Legacy 7-rule REMOVED permanently');
-  assert.ok(!prompt.includes('[UNIVERSAL STRUCTURAL DEMONSTRATION'), 'Legacy demo REMOVED permanently');
 });
 
 test('SubFaberPrompt: anchor startId derived directly from clean batchText (first active ID)', () => {
@@ -438,72 +451,65 @@ test('SubFaberPrompt: anchor startId derived directly from clean batchText (firs
   assert.ok(anchorIdx === lastIdx - '<s id="6">'.length, 'Anchor is the final token of the prompt');
 });
 
-test('SubFaberPrompt: shared context block injected between ## Task and <structural_rules>', () => {
-  // LINGO 1:1 PARITY: {shared_prompt} hidup di antara ## Task dan
-  // <structural_rules> (dahulunya <translation_principles>); <input>
-  // hanya membalut entri aktif.
+test('SubFaberPrompt V3: shared context block lives in the USER part, before <input>', () => {
+  // Rebuild v2: blok konteks Bible + previous/subsequent hidup dalam bahagian
+  // USER (dinamik), SEBELUM <input>. Bahagian SYSTEM (statik) tidak membawa
+  // konteks. <input> kekal suci (entri aktif sahaja).
   const engine = makeEngine({ subfaberEnabled: true });
   engine.sourceLanguage = 'English';
   const all = makeEntries(10);
   const batch = all.slice(5, 10); // IDs 6..10
   const context = {
     previousContent: all.slice(0, 5), // IDs 1..5
-    subsequentContent: all.slice(10, 12).length ? all.slice(10, 12) : [], // IDs 11..12 (empty here, 10 entries total)
+    subsequentContent: [],
     previousMemory: [],
     preflight: { theme: 'A heist movie.', terms: [] }
   };
   const batchText = engine.prepareBatchXml(batch);
   const prompt = engine.createXmlBatchPrompt(batchText, 'Malay', null, batch.length, context, 0, 1);
+  const { system, user } = splitStructuredPrompt(prompt);
 
-  // Blok konteks wujud dalam prompt
-  assert.ok(prompt.includes('[CONTEXT INFORMATION - READ ONLY. DO NOT TRANSLATE THIS SECTION]'), 'Context block present in prompt');
-  assert.ok(prompt.includes('<previous_content>'), 'previous_content rendered in prompt');
-  assert.ok(prompt.includes('### Content Summary'), 'Content Summary (theme) rendered in prompt');
-  assert.ok(prompt.includes('A heist movie.'), 'Theme text present');
+  // Konteks wujud dalam bahagian USER (bukan SYSTEM)
+  assert.ok(user.includes('[CONTEXT INFORMATION - READ ONLY. DO NOT TRANSLATE THIS SECTION]'), 'Context block in USER part');
+  assert.ok(user.includes('<previous_content>'), 'previous_content in USER part');
+  assert.ok(user.includes('### Content Summary'), 'Content Summary (theme) in USER part');
+  assert.ok(user.includes('A heist movie.'), 'Theme text present in USER');
+  assert.ok(!system.includes('[CONTEXT INFORMATION'), 'Context NOT in SYSTEM part (dynamic data only in user)');
 
-  // Disclaimer anti-PHANTOM (Mandat Pembedahan B+ 2026-09-27): penegasan
-  // terakhir sebelum <input> — konteks ialah RUJUKAN, bukan bahan terjemahan.
+  // Disclaimer anti-PHANTOM kekal, selepas blok konteks
   assert.ok(
-    prompt.includes('(Reference only — do not translate or output content from this block as a target entry.)'),
-    'Anti-PHANTOM disclaimer selepas blok konteks wajib hadir'
+    user.includes('(Reference only — do not translate or output content from this block as a target entry.)'),
+    'Anti-PHANTOM disclaimer present in USER part'
   );
 
-  // Susunan wajib (V2 — susunan sebenar prompt B): ## Task → <structural_rules>
-  // → example → blok konteks → <input>. Slot ${sharedContextBlock} berpindah
-  // selepas example (kedudukan dalam template B).
-  const taskIdx = prompt.indexOf('## Task');
-  const rulesIdx = prompt.indexOf('<structural_rules>');
-  const ctxIdx = prompt.indexOf('[CONTEXT INFORMATION');
-  const inputIdx = prompt.indexOf('<input>');
-  assert.ok(taskIdx < rulesIdx, 'Rules AFTER ## Task');
-  assert.ok(rulesIdx < ctxIdx, 'Rules BEFORE context block (slot B: selepas example)');
-  assert.ok(ctxIdx < inputIdx, 'Context BEFORE <input>');
-  // Disclaimer mungkin berada SEBELUM <input> (selepas blok konteks)
-  const disclaimerIdx = prompt.indexOf('(Reference only — do not translate');
-  assert.ok(disclaimerIdx > ctxIdx && disclaimerIdx < inputIdx, 'Disclaimer antara konteks dan <input>');
+  // Susunan dalam USER: context → disclaimer → <input> → anchor
+  const ctxIdx = user.indexOf('[CONTEXT INFORMATION');
+  const inputIdx = user.indexOf('<input>');
+  const disclaimerIdx = user.indexOf('(Reference only — do not translate');
+  assert.ok(ctxIdx < inputIdx, 'Context BEFORE <input> in USER');
+  assert.ok(disclaimerIdx > ctxIdx && disclaimerIdx < inputIdx, 'Disclaimer between context and <input>');
 
   // <input> SUCI — tiada konteks di dalamnya
-  const inputSection = prompt.slice(inputIdx, prompt.indexOf('</input>'));
+  const inputSection = user.slice(inputIdx, user.indexOf('</input>'));
   assert.ok(inputSection.includes('<s id="6">'), 'Active entry 6 inside <input>');
   assert.ok(!inputSection.includes('<previous_content>'), 'No previous_content inside <input>');
   assert.ok(!inputSection.includes('### Content Summary'), 'No theme inside <input>');
   assert.ok(!inputSection.includes('[CONTEXT INFORMATION'), 'No context header inside <input>');
 });
 
-test('SubFaberPrompt: no shared context block when context empty (clean spacing)', () => {
+test('SubFaberPrompt V3: no shared context block when context empty (user part clean)', () => {
   const engine = makeEngine({});
   engine.sourceLanguage = 'English';
   const batch = makeEntries(2, 1);
   const batchText = engine.prepareBatchXml(batch);
   const prompt = engine.createXmlBatchPrompt(batchText, 'Malay', null, batch.length, null, 0, 1);
+  const { user } = splitStructuredPrompt(prompt);
 
-  assert.ok(!prompt.includes('[CONTEXT INFORMATION'), 'No context block without context');
-  // Susunan tetap (V2): example block → structural_rules → input
-  const exampleIdx = prompt.indexOf('[EXAMPLE');
-  const rulesIdx = prompt.indexOf('<structural_rules>');
-  const inputIdx = prompt.indexOf('<input>');
-  assert.ok(exampleIdx !== -1 && rulesIdx !== -1, 'Example + rules present');
-  assert.ok(rulesIdx < inputIdx, '<input> AFTER structural_rules');
+  assert.ok(!user.includes('[CONTEXT INFORMATION'), 'No context block without context');
+  // USER part goes straight to <input> then anchor
+  const inputIdx = user.indexOf('<input>');
+  assert.ok(inputIdx !== -1, '<input> present in user part');
+  assert.ok(user.trimEnd().endsWith('<s id="1">'), 'User ends with anchor even without context');
 });
 
 // --- GOLDEN STANDARD GS3: Dynamic term-matching per-chunk (VideoLingo search_things_to_note) ---

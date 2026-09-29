@@ -23,6 +23,8 @@ const { runPreflightSemanticPass } = require('./subfaberPreflight');
 // [UNIVERSAL-FIX] Target-conditional few-shot / NOT-LOCKED guidance — pack
 // di-resolve mengikut bahasa sasaran (Malay → malay.js; lain → generic.js).
 const { getLanguagePack } = require('./prompts/languagePacks');
+// [PROMPT REBUILD v2] Sempadan split system/user (fix hantar-dua-kali).
+const { SUBFABER_PROMPT_BOUNDARY } = require('./utils/structuredPrompt');
 // [AGENTB-OBS] Namespace import (bukan destructure) — mudah di-stub dalam
 // ujian. Telemetri tulen: tiada panggilan API tambahan.
 const sentry = require('../utils/sentry');
@@ -105,13 +107,16 @@ const NATIVE_BATCH_PROVIDER_NAMES = new Set(['deepl', 'googletranslate']);
 const CACHE_TRANSLATIONS = process.env.CACHE_TRANSLATIONS === 'true'; // Enable/disable entry caching
 
 /**
- * MANDAT 2026-09-27: Batch size SubFaber = 60 baris (dinaikkan daripada 50).
- * Ground truth VideoLingo: chunk kecil (600 aksara / 10 ayat ≈ beberapa
- * baris) supaya pariti mudah dijaga & konteks tidak menenggelamkan
- * arahan. Enjin SubFaber adalah enjin TUNGGAL — tiada env override,
- * tiada mod legacy 200-baris (Total Purge Mandat 2026-09-25).
+ * MANDAT 2026-09-29 (Prompt Rebuild v2): Batch size SubFaber = 30 baris
+ * (diturunkan daripada 60). Rasional owner + model-self assessment: pada 30
+ * baris satu babak penuh muat dalam satu tumpuan model, attention decay
+ * hilang, dan risiko ID-parity drift jatuh mendadak (kurang slot per nafas).
+ * Sejajar ground truth VideoLingo (chunk kecil supaya konteks tidak
+ * menenggelamkan arahan). Sliding window kekal 3/2; previousMemory membawa
+ * coherence antara batch. Enjin SubFaber adalah enjin TUNGGAL — tiada env
+ * override, tiada mod legacy 200-baris (Total Purge Mandat 2026-09-25).
  */
-const SUBFABER_BATCH_SIZE = 60;
+const SUBFABER_BATCH_SIZE = 30;
 
 // Module-level shared key health tracking across engine instances.
 // MULTI-INSTANCE: Now backed by Redis via sharedCache utilities.
@@ -2694,49 +2699,55 @@ You MUST translate each numbered line 1:1. NEVER merge two source lines into one
     // "conversational". Anchor '<s id="${startId}">' kekal di penutup supaya
     // Smart Preamble Scrubber (v1.6.1) dalam parseXmlBatchResponse terus
     // berfungsi tanpa off-by-one.
-    const promptBody = `## Role
-You are an expert Netflix subtitle translator and localization specialist, fluent in both ${sourceLabel || 'the source language'} and ${targetLabel || 'the target language'}, as well as their respective cultures.
+    // ── PROMPT V3 "PARITY-FIRST + SPLIT" (Rebuild v2 2026-09-29) ──
+    // Reka bentuk baru (pelan: plans/agent-a-prompt-rebuild-v2-plan.md):
+    //   • SYSTEM part (statik, cacheable): Role + Priority(pariti #1) + 7
+    //     Rules (label ANTI-* kekal → pemetaan 1:1 taksonomi 6-jenayah Agent B)
+    //     + Style prose + few-shot + Output Format.
+    //   • USER part (dinamik/batch): BATCH header + blok konteks Bible +
+    //     <input> + anchor <answer>/<s id> (prefill di HUJUNG — Smart Preamble
+    //     Scrubber & prefill Gemini bergantung padanya).
+    //   • Dipisah oleh SUBFABER_PROMPT_BOUNDARY; buildUserPrompt setiap
+    //     provider memecah pada sempadan supaya arahan statik dihantar SEKALI
+    //     sebagai systemInstruction (fix bazir token / hantar-dua-kali) dan
+    //     hanya data dinamik jadi kandungan user. Pemanggil tanpa sempadan
+    //     (custom prompt warisan) kekal tingkah laku lama.
+    //   • Rule 5 (anti-UNTRANSLATED) + "locked titles/pronouns" dalam Style
+    //     melengkapkan pemetaan REGISTER/UNTRANSLATED. Universal 400+ bahasa
+    //     (${targetLabel}) — few-shot & peraturan khusus-bahasa dari pack.
+    const systemPart = `## Role
+You are an expert subtitle translator and localization specialist, localizing from ${sourceLabel || 'the source language'} into ${targetLabel || 'the target language'}, fluent in both languages and their cultures.
 
-## Task
-Translate the provided ${sourceLabel || 'source'} subtitles line by line into natural, conversational ${targetLabel}, the way a real native speaker would actually say it out loud — reproducing the speaker's true meaning, emotion, and register (casual, tense, tender, formal — match the mood of the scene) rather than translating word-for-word. Keep established character names, titles, and context-specific terms consistent throughout.
+## Top Priority — Slot & ID Parity (ABSOLUTE)
+Output EXACTLY one <s id="N"> for every input <s id="N">, reusing the same ids in the same order. Never merge, split, add, drop, or reorder slots. When slot/ID parity and natural phrasing ever conflict, PARITY WINS — a perfectly synced subtitle track matters more than a smoother line. A single missing or shifted slot desyncs the entire file.
 
-<structural_rules>
-1. ANTI-MERGE — SLOT ISOLATION: Dialogue frequently splits across consecutive lines due to speech timing. Translate ONLY the fragment present in each <s id="N">. NEVER merge, complete, or pull words from an adjacent line — including short fragments, question tags, negation particles, or single-word interjections. Leaving a slot grammatically incomplete is correct and required.
-2. ANTI-SHIFT — ZERO SKIPPING: Every <s id="N"> in the input MUST produce exactly one <s id="N"> in the output. NEVER skip a slot, and NEVER shift subsequent dialogue forward to fill a short or empty one. If a slot contains only symbols, music notes, or numbers with no translatable words, copy it as-is rather than omitting it — an empty slot causes every line after it to drift out of sync.
-3. ANTI-PHANTOM — NO FABRICATION: NEVER invent, add, or elaborate on content that has no basis in that line's own source text. If unsure how to translate a line, translate it as literally as possible rather than inventing plausible-sounding dialogue.
-4. ANTI-DROP — FULL MEANING TRANSFER: Every output line must carry the actual specific meaning of its source line. NEVER replace a line's specific content with a generic substitute that erases its meaning.
-5. SLOT-BOUNDARY TIEBREAKER: When a single sentence is split across slots and the target language's natural word order differs from the source, keep each slot's translated content within that same slot. Translate the fragment as it stands even if the resulting grammar looks reordered or incomplete — do NOT "fix" the grammar by moving words across slot boundaries. Slot integrity always outranks cross-slot grammatical smoothness.
-6. ESCAPE HATCH: If a fragment genuinely cannot be translated — foreign proper nouns, brand/entity names, creative work titles, corrupted text — copy the exact source text into that slot. This applies ONLY to such untranslatable fragments; a normal sentence must always be translated, never copied verbatim in the source language.
-7. SONG LYRICS: Lyrics inside music notes (♪/♫) must always be translated, whether as a full song block or scattered background music.
-8. PRESERVE inline markup — keep every [br], <i>...</i>, speaker dash (-), and other inline tag, with the SAME COUNT as the source. Keep <i>/dash markup anchored to the words it wraps. For [br] line breaks: preserve the same number of [br] markers, but you MAY reposition a [br] to the most natural break point for the target language (after punctuation, before a conjunction or preposition) since target phrasing length often differs — never split a word, a name, or strand a lone conjunction/particle on its own line.
-</structural_rules>
+## Rules
+1. ANTI-MERGE — SLOT ISOLATION: dialogue often splits across consecutive lines. Translate ONLY the fragment inside each <s id="N">. Never merge, complete, or pull words from an adjacent slot — not even question tags, negation particles, or single-word interjections. A grammatically incomplete slot is correct and required.
+2. ANTI-SHIFT — NO SKIP, NO DRIFT: every input slot produces exactly one output slot. If a slot holds only symbols, music notes, or numbers, copy it as-is. Never skip a slot or shift later dialogue forward to fill a short one.
+3. ANTI-PHANTOM — NO FABRICATION: never invent, add, or elaborate beyond that slot's own source text. If unsure, translate as literally as possible rather than inventing dialogue.
+4. ANTI-DROP — FULL MEANING: every output must carry the specific meaning of its source line; never replace it with a generic substitute that erases its meaning.
+5. ANTI-UNTRANSLATED — ALWAYS TRANSLATE: translate every real sentence into ${targetLabel || 'the target language'}. Copy the source verbatim ONLY for genuinely untranslatable fragments — proper nouns, brand/entity names, creative-work titles, or corrupted text.
+6. CROSS-SLOT TIEBREAKER: when one sentence spans slots and the target word order differs, keep each slot's content within its own slot rather than moving words across — slot integrity outranks cross-slot grammatical smoothness.
+7. PRESERVE markup: keep every [br], <i>...</i>, speaker dash (-), and inline tag with the SAME COUNT as the source, anchored to the words they wrap. You MAY reposition a [br] to a natural break for ${targetLabel || 'the target language'} (after punctuation, before a conjunction/preposition), but never split a word or name, or strand a lone particle on its own line.
 
-<translation_craft>
-These principles govern HOW you phrase each line, and apply only WITHIN the structural rules above (they never justify merging, skipping, padding, or dropping a slot).
-1. EQUIVALENT EFFECT: Reproduce the emotional impact of the line, not its individual words. If the source makes a native viewer laugh, feel tension, or feel warmth, the translation must produce that same reaction. Choose the phrasing a real ${targetLabel} speaker would use in that situation over a dictionary-literal rendering.
-2. NATURAL COMPRESSION: Subtitles are read at a glance, so favour the shortest phrasing that still carries the full meaning and emotion. Trim filler and redundancy that add no plot or emotional value, but NEVER drop the actual meaning of the line (that is a DROP violation). Aim for tight, readable lines rather than long literal ones.
-3. ANTI-CALQUE: Never mirror the source word order, sentence rhythm, or foreign connectors. Recast the line using ${targetLabel}'s own idioms, discourse particles, and natural syntax. Convert source-language idioms to their closest ${targetLabel} equivalent in effect; when no equivalent exists, paraphrase the meaning naturally instead of translating the image literally.
-4. LIVING VOICE: Preserve each character's individual voice and speech level — how casually or formally they speak, and to whom. Contractions, interjections, and everyday spoken forms are encouraged where a native speaker would use them, so the dialogue sounds spoken, not written.
-</translation_craft>
+## Style (secondary to parity)
+Within the rules above, make each line read the way a real native ${targetLabel || 'target-language'} speaker would actually say it: reproduce the meaning and emotion (not the individual words), keep lines tight and natural, adapt idioms to their ${targetLabel || 'target-language'} equivalents instead of calquing source word order, and preserve each character's voice plus the locked titles and pronouns given in the context. The subtitle timing is already fixed — you only swap the language, so do NOT worry about reading-speed or character-count math; just make every line read cleanly and naturally.
 
 ${fewShotPack.fewShot}
-${sharedContextBlock ? `\n${sharedContextBlock}\n(Reference only — do not translate or output content from this block as a target entry.)\n` : ''}
-<input>
-${batchText}
-</input>
 
 ## Output Format
-Reply with EXACTLY one <s id="N"> element per input subtitle, reusing the same ids, in strict order, wrapped in a single <answer> block. No commentary, no markdown code blocks, no parenthetical notes, no reasoning or thinking tags. Output nothing before <answer> or after </answer>.
+Reply with the <answer> block ONLY: exactly one <s id="N"> per input id, same ids, strict order. No commentary, no markdown code blocks, no parenthetical notes, no reasoning or thinking tags. Output nothing before <answer> or after </answer>.`;
+
+    const userPart = `${sharedContextBlock ? `${sharedContextBlock}\n(Reference only — do not translate or output content from this block as a target entry.)\n\n` : ''}<input>
+${batchText}
+</input>
 
 <answer>
 <s id="${startId}">`;
 
-    // TOTAL PURGE (Mandat 2026-09-25): Bangkai komen legacy 7-rule SubMaker
-    // (70 baris NEVER/INSTEAD rulebook + structural demo) dibuang sepenuhnya.
-    // Prompt SubFaber tulen di atas adalah satu-satuya laluan — pariti
-    // di-enforce oleh kontrak <answer> + parser + alignTranslatedEntries.
-
-    return this.addBatchHeader(promptBody, batchIndex, totalBatches);
+    // Gabung dengan sempadan; batch header memimpin bahagian USER (dinamik).
+    const userWithHeader = this.addBatchHeader(userPart, batchIndex, totalBatches);
+    return `${systemPart}\n\n${SUBFABER_PROMPT_BOUNDARY}\n\n${userWithHeader}`;
   }
   
   /**

@@ -5,6 +5,7 @@ const log = require('../../utils/logger');
 const { sanitizeApiKeyForHeader } = require('../../utils/security');
 const { DEFAULT_TRANSLATION_PROMPT, composeDefaultTranslationPrompt } = require('../gemini');
 const { normalizeTargetLanguageForPrompt } = require('../utils/normalizeTargetLanguageForPrompt');
+const { splitStructuredPrompt } = require('../utils/structuredPrompt');
 
 const ANTHROPIC_API_URL = process.env.ANTHROPIC_API_BASE || 'https://api.anthropic.com/v1';
 const ANTHROPIC_VERSION = process.env.ANTHROPIC_VERSION || '2023-06-01';
@@ -42,9 +43,18 @@ class AnthropicProvider {
   buildUserPrompt(subtitleContent, targetLanguage, customPrompt = null) {
     const normalizedTarget = this.normalizeTargetName(targetLanguage);
     // [UNIVERSAL-FIX] Target-conditional rule #6 (Malay-only) — neutral untuk lain.
-    const systemPrompt = (customPrompt || composeDefaultTranslationPrompt(targetLanguage)).replace('{target_language}', normalizedTarget);
-    const userPrompt = `${systemPrompt}\n\nContent to translate:\n\n${subtitleContent}`;
-    return { systemPrompt, userPrompt };
+    const combined = (customPrompt || composeDefaultTranslationPrompt(targetLanguage)).replace('{target_language}', normalizedTarget);
+
+    // [PROMPT REBUILD v2 2026-09-29] Structured split: SubFaber Agent A prompt
+    // (dengan SUBFABER_PROMPT_BOUNDARY) → system (statik) + user (dinamik),
+    // elak hantar-dua-kali & elak sempadan bocor ke prompt hidup.
+    const structured = splitStructuredPrompt(combined);
+    if (structured) {
+      return { systemPrompt: structured.system, userPrompt: structured.user };
+    }
+
+    const userPrompt = `${combined}\n\nContent to translate:\n\n${subtitleContent}`;
+    return { systemPrompt: combined, userPrompt };
   }
 
   estimateTokenCount(text) {
