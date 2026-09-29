@@ -21,12 +21,15 @@
    --------------------------------------------------------------------------- */
 :root,
 [data-theme="light"] {
-    /* Modern azure / sky accent (flat, no gloss) */
-    --primary: #0284C7;
-    --primary-light: #0EA5E9;
-    --primary-dark: #0369A1;
-    --secondary: #0284C7;
-    --accent: #0284C7;
+    /* Rootsys violet accent (flat, no gloss) */
+    --primary: #7C3AED;
+    --primary-light: #8B5CF6;
+    --primary-dark: #6D28D9;
+    --secondary: #7C3AED;
+    --accent: #7C3AED;
+
+    /* Soft violet container for active / accented surfaces (Violet-100) */
+    --accent-soft: #EDE9FE;
 
     --success: #16a34a;
     --warning: #d97706;
@@ -40,20 +43,20 @@
     --badge-slate-bg: #E2E8F0;
     --badge-slate-fg: #475569;
 
-    /* Slate surface system — light */
-    --bg-primary: #f1f5f9;
-    --bg-secondary: #ffffff;
-    --bg-tertiary: #f8fafc;
-    --surface: #ffffff;
-    --surface-light: #f8fafc;
+    /* Slate surface system — light (Rootsys) */
+    --bg-primary: #F8FAFC;
+    --bg-secondary: #FFFFFF;
+    --bg-tertiary: #F8FAFC;
+    --surface: #FFFFFF;
+    --surface-light: #F8FAFC;
 
-    --text-primary: #0f172a;
-    --text-secondary: #64748b;
+    --text-primary: #0F172A;
+    --text-secondary: #64748B;
 
-    --border: #e2e8f0;
-    --border-strong: #cbd5e1;
+    --border: #F1F5F9;
+    --border-strong: #E2E8F0;
     --shadow: rgba(15, 23, 42, 0.06);
-    --glow: rgba(2, 132, 199, 0.16);
+    --glow: rgba(124, 58, 237, 0.16);
 
     --radius-card: 16px;
     --radius-control: 10px;
@@ -622,7 +625,7 @@ label[style*="background: #fff"] {
 }
 
 label:has(input[type="radio"]:checked)[style*="background: white"] {
-    background: color-mix(in srgb, var(--primary) 8%, var(--surface)) !important;
+    background: var(--accent-soft, color-mix(in srgb, var(--primary) 8%, var(--surface))) !important;
     border-color: var(--primary) !important;
 }
 
@@ -840,7 +843,7 @@ input[type="range"]::-moz-range-thumb {
 
 /* Selected language chips */
 .language-item.selected {
-    background: color-mix(in srgb, var(--primary) 12%, var(--surface)) !important;
+    background: var(--accent-soft, color-mix(in srgb, var(--primary) 12%, var(--surface))) !important;
     border-color: var(--primary) !important;
     color: var(--text-primary) !important;
 }
