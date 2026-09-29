@@ -650,7 +650,8 @@ test('AgentB [MODEL-HIERARCHY]: custom preflightModel — fallback sentiasa menu
 test('AgentB [MODEL-HIERARCHY]: Fasa 0 — kimi-k3 gagal → RETRY kimi-k3 (bukan model lain); 2x gagal → fail-open null', async () => {
   const inspector = new AgentBInspector({
     apiKey: 'k', baseUrl: 'https://x.example/v1',
-    preflightModel: 'kimi-k3'
+    preflightModel: 'kimi-k3',
+    preflightRetryBackoffMs: 0 // [UPSTREAM-RESILIENCE] lumpuh backoff — ujian pantas
   });
 
   const calls = [];
@@ -1178,7 +1179,8 @@ test('AgentB: failover automatik — deepseek-v4-pro gagal, deepseek-v4.1-flash 
 test('AgentB [MODEL-HIERARCHY]: Fasa 0 — kimi-k3 504 pada percubaan pertama → RETRY kimi-k3 berjaya (tiada peralihan model)', async () => {
   const inspector = new AgentBInspector({
     apiKey: 'test-key',
-    baseUrl: 'https://agentb.example.com/v1'
+    baseUrl: 'https://agentb.example.com/v1',
+    preflightRetryBackoffMs: 0 // [UPSTREAM-RESILIENCE] lumpuh backoff — ujian pantas
   });
   // [MODEL-HIERARCHY] FINAL: lalai Fasa 0 ialah kimi-k3 SAHAJA.
   assert.equal(inspector.preflightModel, 'kimi-k3', 'lalai Pre-Flight kimi-k3');

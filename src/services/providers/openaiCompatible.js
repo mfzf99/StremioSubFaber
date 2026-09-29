@@ -33,6 +33,14 @@ const parseAgentBMaxTokens = (raw, fallback) => {
   return Number.isFinite(parsed) && parsed > 0 ? parsed : fallback;
 };
 const AGENT_B_BEAST_MAX_TOKENS = parseAgentBMaxTokens(process.env.AGENT_B_MAX_TOKENS, 131072);
+// [UPSTREAM-RESILIENCE 2026-09-29] Parser tetapan stall-watchdog aliran SSE.
+// Menerima 0 EKSPLISIT (melumpuhkan watchdog) — dibezakan daripada nilai
+// hilang/tak sah yang jatuh ke fallback. Integer ms >= 0 sahaja.
+const parseStreamStallMs = (raw, fallback) => {
+  if (raw === undefined || raw === null || String(raw).trim() === '') return fallback;
+  const parsed = parseInt(raw, 10);
+  return Number.isFinite(parsed) && parsed >= 0 ? parsed : fallback;
+};
 
 /**
  * Universal OpenAI-Compatible Provider Wrapper
@@ -67,6 +75,28 @@ class OpenAICompatibleProvider {
     // 2026-09-26): apabila true, buildChatRequest membina muatan seragam
     // { model, temperature: 0.0, messages } — digunakan oleh Agent B.
     this.universalPayload = options.universalPayload === true;
+    // [UPSTREAM-RESILIENCE 2026-09-29] Stall watchdog untuk aliran SSE.
+    // Forensik run S01E31: kimi-k3 tidak memancar SATU chunk pun selama
+    // ~221s, lalu gateway hulu RESET sambungan idle (ECONNRESET). Streaming
+    // sepatutnya menghidupkan sambungan Caddy — tetapi jika model diam
+    // (silent-reasoning) tiada chunk dipancar, aliran itu idle dan gateway
+    // membunuhnya. Watchdog ini abort AWAL (retry boleh ambil alih dengan
+    // backoff) jika tiada chunk dalam tetingkap ini. Timer di-RESET setiap
+    // chunk — jadi ia menutup KEDUA-DUA first-byte (TTFT) dan stall
+    // pertengahan aliran. LALAI 75000ms (75s) — AKTIF secara lalai: bawah
+    // purata reasoning Kimi 109s tetapi cukup luas supaya aliran sihat
+    // (yang memancar chunk berkala) tidak pernah tersentuh; hanya stall
+    // BENAR (sifar chunk selama 75s) yang di-abort awal untuk retry
+    // berbanding menunggu buta ~221s sehingga gateway reset. Stream sihat
+    // reset timer setiap chunk jadi tiada regresi pada laluan biasa.
+    // 0 = dilumpuhkan. Boleh ditindih melalui options.streamStallTimeoutMs
+    // atau env OPENAI_COMPAT_STREAM_STALL_MS (integer ms >= 0).
+    this.streamStallTimeoutMs = parseStreamStallMs(
+      options.streamStallTimeoutMs !== undefined
+        ? options.streamStallTimeoutMs
+        : process.env.OPENAI_COMPAT_STREAM_STALL_MS,
+      75000
+    );
     this._ssrfLookup = options.ssrfLookup || null;
     if (this._ssrfLookup) {
       const http = require('http');
@@ -968,6 +998,37 @@ class OpenAICompatibleProvider {
         let finishReason = null;
         let rawStream = '';
 
+        // [UPSTREAM-RESILIENCE 2026-09-29] Stall watchdog: jika tiada chunk
+        // tiba dalam streamStallTimeoutMs, abort AWAL supaya loop retry
+        // (dengan backoff) boleh ambil alih — daripada menunggu buta sampai
+        // gateway hulu reset sambungan idle (~221s dalam forensik S01E31).
+        // Timer di-RESET setiap chunk → menutup first-byte (TTFT) DAN stall
+        // pertengahan. 0 = dilumpuhkan (lalai). settled guard menghalang
+        // resolve/reject berganda.
+        const stallMs = Number(this.streamStallTimeoutMs) || 0;
+        let settled = false;
+        let stallTimer = null;
+        const clearStallTimer = () => {
+          if (stallTimer) { clearTimeout(stallTimer); stallTimer = null; }
+        };
+        const armStallTimer = () => {
+          if (stallMs <= 0) return;
+          clearStallTimer();
+          stallTimer = setTimeout(() => {
+            if (settled) return;
+            settled = true;
+            log.warn(() => [`[${this.providerName}] Stream stalled — no data for ${stallMs}ms, aborting for retry`]);
+            try { response.data.destroy(); } catch (_) { /* abaikan */ }
+            const err = new Error(`Stream stalled: no data received within ${stallMs}ms`);
+            err.code = 'ECONNABORTED';
+            err.streamStall = true;
+            reject(err);
+          }, stallMs);
+          if (typeof stallTimer.unref === 'function') stallTimer.unref();
+        };
+        const safeResolve = (value) => { if (settled) return; settled = true; clearStallTimer(); resolve(value); };
+        const safeReject = (err) => { if (settled) return; settled = true; clearStallTimer(); reject(err); };
+
         const processPayload = (payloadStr) => {
           if (!payloadStr || !payloadStr.trim()) return;
           const cleaned = payloadStr.trim().startsWith('data:')
@@ -1004,7 +1065,13 @@ class OpenAICompatibleProvider {
           }
         };
 
+        // Lengan watchdog awal — menutup tetingkap first-byte (TTFT).
+        armStallTimer();
+
         response.data.on('data', (chunk) => {
+          if (settled) return;
+          // Reset watchdog: chunk tiba → sambungan hidup semula.
+          armStallTimer();
           try {
             const str = chunk.toString('utf8');
             rawStream += str;
@@ -1018,6 +1085,8 @@ class OpenAICompatibleProvider {
         });
 
         response.data.on('end', () => {
+          if (settled) return;
+          clearStallTimer();
           try {
             if (buffer && buffer.trim()) {
               processPayload(buffer);
@@ -1035,20 +1104,20 @@ class OpenAICompatibleProvider {
               if (finishReason === 'content_filter') {
                 const err = new Error('PROHIBITED_CONTENT: content_filter');
                 err.translationErrorType = 'PROHIBITED_CONTENT';
-                reject(err);
+                safeReject(err);
                 return;
               }
-              reject(new Error('No content returned from stream'));
+              safeReject(new Error('No content returned from stream'));
               return;
             }
 
-            resolve(cleaned);
+            safeResolve(cleaned);
           } catch (err) {
-            reject(err);
+            safeReject(err);
           }
         });
 
-        response.data.on('error', (err) => reject(err));
+        response.data.on('error', (err) => safeReject(err));
       });
     };
 

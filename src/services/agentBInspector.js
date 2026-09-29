@@ -101,6 +101,21 @@ const parseAgentBTimeout = (raw, fallbackMs) => {
 };
 const AGENT_B_PREFLIGHT_TIMEOUT_MS = parseAgentBTimeout(process.env.AGENT_B_PREFLIGHT_TIMEOUT_MS, 300000);
 const AGENT_B_INSPECTION_TIMEOUT_MS = parseAgentBTimeout(process.env.AGENT_B_INSPECTION_TIMEOUT_MS, 300000);
+// [UPSTREAM-RESILIENCE 2026-09-29] Backoff eksponen antara retry-same-model
+// Fasa 0. Forensik run S01E31: kimi-k3 di-reset gateway (ECONNRESET ~221s),
+// lalu 2 retry pukul 502 dalam 200ms TANPA jeda → semua percubaan terbakar
+// serta-merta. 502/reset gateway lazimnya transient; jeda 2s→4s memberi
+// backend hulu masa pulih. Delay = base * 2^r dihadkan pada siling.
+// parseInt kongsi parseAgentBTimeout: integer > 0 sahaja; 0/tak sah → lalai.
+// Nilai 0 EKSPLISIT (melumpuhkan backoff — ujian pantas) diterima melalui
+// pemeriksaan berasingan supaya tidak jatuh ke lalai 2000.
+const parseAgentBBackoff = (raw, fallbackMs) => {
+  if (raw === undefined || raw === null || String(raw).trim() === '') return fallbackMs;
+  const parsed = parseInt(raw, 10);
+  return Number.isFinite(parsed) && parsed >= 0 ? parsed : fallbackMs;
+};
+const AGENT_B_PREFLIGHT_RETRY_BACKOFF_MS = parseAgentBBackoff(process.env.AGENT_B_PREFLIGHT_RETRY_BACKOFF_MS, 2000);
+const AGENT_B_PREFLIGHT_RETRY_BACKOFF_CAP_MS = 15000;
 // MANDAT v3 (pembetulan owner 2026-09-27): siling token muatan DeepSeek —
 // 131072 (128K); boleh ditindih melalui env AGENT_B_MAX_TOKENS
 // (integer positif sahaja).
@@ -455,6 +470,13 @@ class AgentBInspector extends OpenAICompatibleProvider {
     // berturut-turut pada model yang sama sebelum fail-open.
     this.preflightRetries = Math.max(0, parseInt(options.preflightRetries, 10) || AGENT_B_PREFLIGHT_RETRIES);
 
+    // [UPSTREAM-RESILIENCE 2026-09-29] Backoff eksponen retry-same-model.
+    // Boleh ditindih per-instance (options.preflightRetryBackoffMs) atau env;
+    // 0 melumpuhkan jeda (ujian pantas). _sleep boleh di-stub oleh ujian
+    // supaya assertion susunan panggilan kekal deterministik tanpa jeda nyata.
+    this.preflightRetryBackoffMs = parseAgentBBackoff(options.preflightRetryBackoffMs, AGENT_B_PREFLIGHT_RETRY_BACKOFF_MS);
+    this.preflightRetryBackoffCapMs = AGENT_B_PREFLIGHT_RETRY_BACKOFF_CAP_MS;
+
     this.fallbackModel = this.modelHierarchy.length > 1 ? this.modelHierarchy[1] : null;
     this.inspectionModel = this.model;
 
@@ -517,6 +539,9 @@ class AgentBInspector extends OpenAICompatibleProvider {
           const hasRetry = r < totalTries - 1;
           if (hasRetry) {
             log.warn(() => `[AgentB] ${operation} on ${model} failed (Status: ${status}): ${err?.message || err}. Retry ${r + 1}/${totalTries - 1} on the SAME model [${model}]...`);
+            // [UPSTREAM-RESILIENCE] Backoff eksponen SEBELUM retry berikutnya
+            // (retry-same-model sahaja — Fasa 1 failover tiada singleModelRetries).
+            await this._retrySameModelBackoff(operation, model, r);
             continue;
           }
           if (hasSibling) {
@@ -538,6 +563,8 @@ class AgentBInspector extends OpenAICompatibleProvider {
         const hasRetry = r < totalTries - 1;
         if (hasRetry) {
           log.warn(() => `[AgentB] ${operation} on ${model} failed (${reason}). Retry ${r + 1}/${totalTries - 1} on the SAME model [${model}]...`);
+          // [UPSTREAM-RESILIENCE] Backoff eksponen SEBELUM retry berikutnya.
+          await this._retrySameModelBackoff(operation, model, r);
           continue;
         }
         if (hasSibling) {
@@ -552,6 +579,37 @@ class AgentBInspector extends OpenAICompatibleProvider {
     }
     // Tidak boleh dicapai — loop sentiasa return/throw
     throw new Error(`${operation}: exhausted`);
+  }
+
+  /**
+   * [UPSTREAM-RESILIENCE 2026-09-29] Jeda boleh-diganti (test-stubbable).
+   * Diasingkan supaya ujian boleh menindih tanpa jeda nyata.
+   * @param {number} ms - Milisaat untuk tidur
+   * @returns {Promise<void>}
+   */
+  _sleep(ms) {
+    const delay = Number(ms);
+    if (!Number.isFinite(delay) || delay <= 0) return Promise.resolve();
+    return new Promise((resolve) => setTimeout(resolve, delay));
+  }
+
+  /**
+   * [UPSTREAM-RESILIENCE 2026-09-29] Backoff eksponen antara percubaan
+   * retry-same-model. r=0 → base; r=1 → base*2; dihadkan pada cap. Jeda 0
+   * (env/option) melangkau tidur sepenuhnya. Berasingan supaya ujian boleh
+   * stub _sleep dan mengesahkan susunan panggilan tanpa jeda dinding-jam.
+   * @param {string} operation - Label operasi (untuk log)
+   * @param {string} model - Model aktif (untuk log)
+   * @param {number} r - Indeks percubaan semasa (0-based)
+   * @returns {Promise<void>}
+   */
+  async _retrySameModelBackoff(operation, model, r) {
+    const base = Number(this.preflightRetryBackoffMs) || 0;
+    if (base <= 0) return; // backoff dilumpuhkan
+    const cap = Number(this.preflightRetryBackoffCapMs) || base;
+    const delay = Math.min(cap, base * Math.pow(2, r));
+    log.debug(() => `[AgentB] ${operation} backoff ${delay}ms before retrying [${model}]`);
+    await this._sleep(delay);
   }
 
   // [PAYLOAD-GODTIER] SEJARAH (dikekalkan untuk forensik): muatan BEAST lama
@@ -765,6 +823,8 @@ module.exports = {
   AGENT_B_FALLBACK_MODEL,
   AGENT_B_PREFLIGHT_FALLBACK_MODEL, // [MODEL-HIERARCHY] sentiasa = primer Fasa 0
   AGENT_B_PREFLIGHT_RETRIES,        // [MODEL-HIERARCHY] retry-same-model Fasa 0
+  AGENT_B_PREFLIGHT_RETRY_BACKOFF_MS,     // [UPSTREAM-RESILIENCE] backoff base retry Fasa 0
+  AGENT_B_PREFLIGHT_RETRY_BACKOFF_CAP_MS, // [UPSTREAM-RESILIENCE] siling backoff
   AGENT_B_PREFLIGHT_TIMEOUT_MS,
   AGENT_B_INSPECTION_TIMEOUT_MS,
   AGENT_B_MAX_TOKENS,

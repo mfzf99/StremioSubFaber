@@ -150,6 +150,7 @@
       "invalidRequest": "Invalid request. Please check your configuration.",
       "timeout": "Request timed out. Please try again.",
       "network": "Network connection failed. Please check your internet connection.",
+      "connectionReset": "Connection to the service was interrupted. Retrying.",
       "dns": "Cannot reach service. DNS lookup failed."
     },
     "toolbox": {

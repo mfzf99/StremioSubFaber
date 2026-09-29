@@ -289,7 +289,16 @@ function parseApiError(error, serviceName = 'API', options = {}) {
       parsed.type = 'timeout';
       parsed.isRetryable = true;
       parsed.userMessage = translate('apiErrors.timeout', {}, 'Request timed out. Please try again.');
-    } else if (error.code === 'ECONNRESET' || error.code === 'ECONNREFUSED') {
+    } else if (error.code === 'ECONNRESET') {
+      // [UPSTREAM-RESILIENCE 2026-09-29] ECONNRESET lazimnya bermakna peer
+      // (gateway/endpoint hulu) MENUTUP sambungan — BUKAN internet klien
+      // putus. Forensik run S01E31: kimi-k3 di-reset gateway pada ~221s dan
+      // log lama tersalah tuduh "check your internet connection". Dilabel
+      // berasingan supaya diagnosis tidak salah hala; tetap retryable.
+      parsed.type = 'connection_reset';
+      parsed.isRetryable = true;
+      parsed.userMessage = translate('apiErrors.connectionReset', {}, 'Connection to the service was interrupted. Retrying.');
+    } else if (error.code === 'ECONNREFUSED') {
       parsed.type = 'network';
       parsed.isRetryable = true;
       parsed.userMessage = translate('apiErrors.network', {}, 'Network connection failed. Please check your internet connection.');
