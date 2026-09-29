@@ -23,6 +23,9 @@ const { runPreflightSemanticPass } = require('./subfaberPreflight');
 // [UNIVERSAL-FIX] Target-conditional few-shot / NOT-LOCKED guidance — pack
 // di-resolve mengikut bahasa sasaran (Malay → malay.js; lain → generic.js).
 const { getLanguagePack } = require('./prompts/languagePacks');
+// [AGENTB-OBS] Namespace import (bukan destructure) — mudah di-stub dalam
+// ujian. Telemetri tulen: tiada panggilan API tambahan.
+const sentry = require('../utils/sentry');
 const crypto = require('crypto');
 const log = require('../utils/logger');
 const { handleCaughtError } = require('../utils/errorClassifier');
@@ -262,7 +265,105 @@ class TranslationEngine {
       agentBFailures: 0,        // kegagalan API/rosak (fail-open count)
       agentBInspections: 0,     // panggilan semakan semantik berjaya
       agentBRetries: 0,         // semantic retry dilaksanakan
+      // [AGENTB-OBS P0] Circuit breaker visibility (semua additive, default selamat)
+      agentBCircuitOpened: false,          // transisi sekali per fail
+      agentBCircuitOpenAtPhase: null,      // 'preflight' | 'inspection'
+      agentBCircuitOpenAtBatch: null,      // 1-based; 0 untuk fasa preflight (K1)
+      agentBFailuresBeforeOpen: 0,         // snapshot agentBFailures saat transisi
+      agentBBatchesInspected: 0,           // denominator (semua semakan lengkap)
+      agentBBatchesSkippedAfterOpen: 0,    // batch tanpa perlindungan selepas open
+      // [AGENTB-OBS P3] Crime pattern tracking (observation-only)
+      crimesDetectedByType: { MERGE: 0, DROP: 0, PHANTOM: 0, SHIFT: 0 },
+      crimesResolvedByRetry: 0,            // hanya re-verdict LULUS yang disahkan (K3)
+      crimePatternDetected: null,          // → array string (K2)
+      crimeBatchIndices: { MERGE: [], DROP: [], PHANTOM: [], SHIFT: [] } // cap 50/type
     };
+  }
+
+  /**
+   * [AGENTB-OBS P0] Rekod transisi circuit-open (Sekali per fail).
+   * K1: batch=0 untuk fasa preflight. K3 guard tiada di sini — transisi
+   * diketahui pasti. Sentry single-point: max 1 panggilan per fail.
+   * @param {'preflight'|'inspection'} phase
+   * @param {number} batch - 1-based batch number (0 untuk preflight)
+   */
+  _recordAgentBCircuitOpen(phase, batch) {
+    if (this.translationStats.agentBCircuitOpened) return;
+    this.translationStats.agentBCircuitOpened = true;
+    this.translationStats.agentBCircuitOpenAtPhase = phase;
+    this.translationStats.agentBCircuitOpenAtBatch = batch;
+    this.translationStats.agentBFailuresBeforeOpen = this.translationStats.agentBFailures;
+    log.warn(() => `[AgentB] CIRCUIT OPENED at ${phase} (batch ${batch}) after ${this.translationStats.agentBFailures} failures — inspection degrades to observe-only for the rest of this file`);
+    try {
+      sentry.captureMessage('[AgentB] Circuit breaker opened — semantic inspection skipped', 'warning', {
+        phase,
+        batch,
+        failuresBeforeOpen: this.translationStats.agentBFailuresBeforeOpen
+      });
+    } catch (_) { /* telemetri tak boleh menggugat pipeline */ }
+  }
+
+  /**
+   * [AGENTB-OBS P3] Rekod satu jenayah terkesan (observation-only).
+   * K4: jenis tak dikenali → abaikan + warn sekali (taksonomi terlindung).
+   * Cap 50 entri batch-index per jenis.
+   * @param {string} type - MERGE|DROP|PHANTOM|SHIFT (atau lain-lain)
+   * @param {number} batch - 1-based batch number
+   */
+  _recordCrime(type, batch) {
+    const stats = this.translationStats;
+    if (!Object.prototype.hasOwnProperty.call(stats.crimesDetectedByType, type)) {
+      if (!stats._unknownCrimeWarned) {
+        stats._unknownCrimeWarned = true;
+        log.warn(() => `[AgentB] Unknown crime type "${type}" detected — ignored from taxonomy counters`);
+      }
+      return;
+    }
+    stats.crimesDetectedByType[type] += 1;
+    const idx = stats.crimeBatchIndices[type];
+    if (idx.length < 50) idx.push(batch);
+    this._checkCrimePattern(type);
+  }
+
+  /**
+   * [AGENTB-OBS P3] Deteksi corak jenayah berulang (observation-only).
+   * Trigger: ≥3 batch unik DAN ≥15% batch diperiksa (fallback: ≥3 batch
+   * untuk fail kecil ≤10 batch). Warn SEKALI per jenis (guard array).
+   * @param {string} type
+   */
+  _checkCrimePattern(type) {
+    const stats = this.translationStats;
+    const idx = stats.crimeBatchIndices[type];
+    const uniqueBatches = new Set(idx).size;
+    const total = stats.agentBBatchesInspected;
+    const triggered = total > 10
+      ? (uniqueBatches >= 3 && uniqueBatches / total >= 0.15)
+      : uniqueBatches >= 3;
+    if (!triggered) return;
+    if (!Array.isArray(stats.crimePatternDetected)) stats.crimePatternDetected = [];
+    const entry = `${type} in ${uniqueBatches}/${total || '?'} inspected batches${total ? ` (${Math.round(uniqueBatches / total * 100)}%)` : ''}`;
+    if (stats.crimePatternDetected.some(e => e.startsWith(`${type} `))) return;
+    stats.crimePatternDetected.push(entry);
+    log.warn(() => `[AgentB] CRIME PATTERN DETECTED: ${entry} — Agent A prompt may need reinforcement`);
+  }
+
+  /**
+   * [AGENTB-OBS] Ringkasan hujung fail. Tier log (owner refinement):
+   * WARN  = circuit open ATAU pattern detected ATAU jumlah crime ≥3
+   * DEBUG = selainnya (file dengan 1-2 crime minor tidak berbunyi)
+   */
+  _logAgentBFileSummary() {
+    const s = this.translationStats;
+    const totalCrimes = Object.values(s.crimesDetectedByType).reduce((a, b) => a + b, 0);
+    const hasPattern = Array.isArray(s.crimePatternDetected) && s.crimePatternDetected.length > 0;
+    const coverage = s.agentBBatchesInspected + s.agentBBatchesSkippedAfterOpen;
+    const pct = coverage > 0 ? Math.round(s.agentBBatchesInspected / coverage * 100) : 100;
+    const msg = `[AgentB] FILE SUMMARY: Circuit opened at ${s.agentBCircuitOpenAtPhase || '—'}${s.agentBCircuitOpened ? ` batch ${s.agentBCircuitOpenAtBatch}` : ''}. Inspection coverage: ${s.agentBBatchesInspected}/${coverage} (${pct}% protected). Crimes: ${JSON.stringify(s.crimesDetectedByType)}, resolved-by-retry: ${s.crimesResolvedByRetry}.`;
+    if (s.agentBCircuitOpened || hasPattern || totalCrimes >= 3) {
+      log.warn(() => msg);
+    } else {
+      log.debug(() => msg);
+    }
   }
 
   /**
@@ -748,6 +849,12 @@ class TranslationEngine {
       if (this.preflightContext) {
         this.translationStats.subfaberContextUsed = true;
       }
+      // [AGENTB-OBS P0] Deteksi circuit-open pada FASA PREFLIGHT — kes
+      // inspector dikongsi: circuit terbuka pada fail sebelumnya → Fasa 0
+      // fail ini senyap jatuh ke Gemini. Sekarang diberi isyarat jelas.
+      if (this.agentB && this.agentB.circuitOpen) {
+        this._recordAgentBCircuitOpen('preflight', 0); // K1: batch=0 untuk preflight
+      }
     }
 
     // Single-batch mode: translate the whole file (with limited auto-splitting)
@@ -930,6 +1037,10 @@ class TranslationEngine {
 
     log.info(() => `[TranslationEngine] Translation completed: ${translatedEntries.length} entries`);
 
+    // [AGENTB-OBS] Ringkasan hujung fail — circuit coverage + crime counts
+    // (WARN bila circuit open / pattern detected / crimes >= 3; else DEBUG).
+    this._logAgentBFileSummary();
+
     // Final safety: strip any timecodes/timeranges that slipped through.
     for (const entry of translatedEntries) {
       entry.text = this.sanitizeTimecodes(entry.text);
@@ -1089,6 +1200,10 @@ class TranslationEngine {
     }
 
     log.info(() => `[TranslationEngine] Single-batch translation completed: ${translatedEntries.length} entries (tokens: est ${estimatedTokens}${actualTokenCount ? `, actual ${actualTokenCount}` : ''})`);
+
+    // [AGENTB-OBS] Ringkasan hujung fail (laluan single-batch — engine
+    // pulang awal di sini, sebelum laluan batched).
+    this._logAgentBFileSummary();
 
     return toSRT(translatedEntries);
   }
@@ -2141,6 +2256,9 @@ class TranslationEngine {
         && !this._agentBSemanticRetries.has(batchIndex)
         && agentBStructurallyClean) {
       try {
+        // [AGENTB-OBS P0] Denominator: setiap semakan yang TELAH DILAKUKAN
+        // (bukan skip) dikira — asas nisbah corak jenayah & liputan.
+        this.translationStats.agentBBatchesInspected++;
         // CONTEXT-AWARE AUDIT (MANDAT OPERASI MUTLAK 2026-09-27): konteks
         // Pre-Flight disuntik ke pemeriksa Agent B — tidak lagi mengaudit buta.
         const verdict = await this.agentB.runSemanticInspection(batch, translatedEntries, {
@@ -2148,9 +2266,19 @@ class TranslationEngine {
           totalBatches,
           preflightContext: this.preflightContext || null
         });
+        // [AGENTB-OBS P0] Deteksi transisi circuit-open pada FASA INSPECTION
+        // (3 kegagalan berturut-turut sepanjang fail ini).
+        if (verdict?.failOpen && this.agentB.circuitOpen) {
+          this._recordAgentBCircuitOpen('inspection', batchIndex + 1);
+        }
         if (verdict?.failOpen) {
           this.translationStats.agentBFailures++;
         } else if (verdict && verdict.valid === false && Array.isArray(verdict.crimes)) {
+          // [AGENTB-OBS P3] Kira jenayah terkesan (semua termasuk selapas
+          // retry) + simpan batch-index untuk analisis retrospektif.
+          for (const crime of verdict.crimes) {
+            if (crime && crime.type) this._recordCrime(String(crime.type), batchIndex + 1);
+          }
           // Rekod insiden telemetry + jalankan SATU full batch retry dengan
           // amaran jenayah disuntik ringkas ke hujung prompt penterjemahan.
           const crimeLines = verdict.crimes
@@ -2187,8 +2315,13 @@ You MUST translate each numbered line 1:1. NEVER merge two source lines into one
                 totalBatches,
                 preflightContext: this.preflightContext || null
               });
-              if (reVerdict?.valid !== false) {
+              // [AGENTB-OBS P3/K3] Resolved-by-retry hanya bila re-verdict
+              // LULUS dan DISAHKAN (bukan failOpen — failOpen bermaksud
+              // TIDAK disemak; mengiranya sebagai resolved ialah telemetry
+              // yang tidak jujur). Pipeline behavior kekal tidak berubah.
+              if (reVerdict && !reVerdict.failOpen && reVerdict.valid !== false) {
                 translatedEntries = retrySorted;
+                this.translationStats.crimesResolvedByRetry += Array.isArray(verdict.crimes) ? verdict.crimes.length : 0;
                 this._closeIncident('AGENT_B_SEMANTIC_RETRY', batchIndex + 1, { outcome: 'recovered' });
                 log.info(() => `[AgentB] Semantic retry succeeded for batch ${batchIndex + 1}`);
               } else {
@@ -2214,6 +2347,11 @@ You MUST translate each numbered line 1:1. NEVER merge two source lines into one
         this.translationStats.agentBFailures++;
         log.warn(() => `[AgentB] Semantic gate error (fail-open): ${agentBErr?.message || agentBErr}`);
       }
+    } else if (this.agentB && this.agentB.circuitOpen && agentBStructurallyClean) {
+      // [AGENTB-OBS P0] Batch ini TIDAK dilindungi semakan semantik —
+      // circuit breaker terbuka. Kira skip (tanpa log per-batch — elak
+      // spam; ringkasan hujung fail membawa signal).
+      this.translationStats.agentBBatchesSkippedAfterOpen++;
     }
 
     // Cache individual entries
