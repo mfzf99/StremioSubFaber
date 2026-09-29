@@ -2,22 +2,26 @@
  * Agent B — Semantic Inspector & Pre-Flight Offloader
  * (Dual-AI Mandat Pelaksanaan 2026-09-26, Fasa 1)
  *
- * Seni Bina 2-Agent (UNIVERSAL PAYLOAD 2026-09-26 — Trinity Dual-Agent,
- * kredensial rootsys.cloud: 1B token quota / 1M context window):
+ * Seni Bina 2-Agent ([MODEL-HIERARCHY] + [PAYLOAD-GODTIER] 2026-09-28 —
+ * Trinity Dual-Agent, kredensial rootsys.cloud: 1B token quota / 1M context):
  *   AGENT A (Worker): Gemini 3 Flash — penterjemahan kelompok 60 baris.
- *   AGENT B (Inspector): Trinity BETA RUN 10 — FULL DEEPSEEK FRONTIER STACK
- *     (BEAST MODE — Mandat Beast Mode DeepSeek Frontier 2026-09-27,
- *     OpenAI-compatible):
- *     - PRE-FLIGHT (Fasa 0)   : deepseek-v4-pro     (Frontier Inspector), 5 min.
- *     - PEMERIKSA UTAMA       : deepseek-v4-pro     (Frontier Inspector), 5 min.
- *     - FALLBACK UNIVERSAL    : deepseek-v4.1-flash (mewarisi had masa fasa berkaitan).
- *     Bukti empirikal terminal: had hulu Caddy rootsys.cloud ialah tepat 300s
- *     (Kimi K3 mencetus 502 akibat letupan token penaakulan); deepseek-v4-pro
- *     menyelesaikan analisis Pre-Flight 4-tiang dalam 3.45 saat dengan JSON sah.
- *     Muatan sejagat (MANDAT OPERASI MUTLAK v2 — arahan Project Owner
- *     2026-09-27): enjin DeepSeek membawa temperature: 0.0 +
- *     reasoning_effort:"max" + max_tokens:16384 + extra_body.thinking:
- *     {type:"enabled"} + response_format json_object — top_p DIGUGURKAN.
+ *   AGENT B (Inspector): MODEL HIERARCHY FINAL 2026-09-28 (OpenAI-compatible):
+ *     - PRE-FLIGHT (Fasa 0)   : kimi-k3 SAHAJA (STANDALONE — tiada fallback
+ *                               merentas model). Kegagalan → RETRY kimi-k3
+ *                               (2x berturut) → gagal juga → pre-flight dihentikan,
+ *                               terjemahan jalan TANPA konteks (fail-open).
+ *                               Pre-flight ialah ASAS — pre-flight lemah daripada
+ *                               model sandaran LEBIH BURUK daripada tiada pre-flight.
+ *     - PEMERIKSA UTAMA       : deepseek-v4-pro     (Frontier Inspector).
+ *     - FALLBACK PEMERIKSA    : deepseek-v4.1-flash (mewarisi had masa fasa).
+ *     [PAYLOAD-GODTIER] Muatan 4-KUNCI STREAMING (ground truth empirikal curl
+ *     ke gateway rootsys.cloud — Kimi K3, SRT 759 baris):
+ *       { model, messages, stream: true, temperature: 0.0 }
+ *       stream:true WAJIB — chunk SSE menghidupkan sambungan Caddy (siling
+ *       keras 300s tidak lagi membunuh penaakulan panjang; purata 109s, JSON
+ *       sah, 18/18 istilah kritikal). Keempat-empat parameter tambahan
+ *       muatan 7-kunci lama ialah PENCETUS
+ *       OVERTHINKING (+90-110s) dan TANPA stream gagal timeout 300s sepenuhnya.
  *     Tugasan 1: Mengambil alih Fasa 0 (Pre-Flight Semantic Pass) sepenuhnya
  *                daripada Gemini — jimat kuota TPM/RPM Gemini.
  *     Tugasan 2: Askar Pertahanan Semantik — menyemak setiap kelompok hasil
@@ -57,33 +61,34 @@ const OpenAICompatibleProvider = require('./providers/openaiCompatible');
 const { runPreflightSemanticPass, stripReasoningTags } = require('./subfaberPreflight');
 const log = require('../utils/logger');
 
-// ── Konfigurasi tetap Agent B (UNIVERSAL PAYLOAD 2026-09-26 + BETA RUN 10
-//    BEAST MODE — Mandat Beast Mode DeepSeek Frontier 2026-09-27) ──
-// TRINITY DUAL-AGENT — FULL DEEPSEEK FRONTIER STACK (kredensial rootsys.cloud,
-// 1B token / 1M context; Mandat Penyatuuan DeepSeek Stack 2026-09-27):
-//   Fasa 0 (Pre-Flight Makro) : deepseek-v4-pro     — Timeout 300,000ms / 5 min
-//   Fasa 1 (Pemeriksa Utama)  : deepseek-v4-pro     — Timeout 300,000ms / 5 min
-//   Fallback Universal        : deepseek-v4.1-flash — Timeout dinamik
-//                                 (mewarisi had masa fasa berkaitan)
+// ── [MODEL-HIERARCHY] Konfigurasi tetap Agent B (FINAL 2026-09-28) ──
+// Hierarki model MUKTAMAD (empirikal curl gateway rootsys.cloud):
+//   Fasa 0 (Pre-Flight Makro) : kimi-k3 SAHAJA — STANDALONE. Tiada fallback
+//                               merentas model. Kegagalan → retry kimi-k3
+//                               (AGENT_B_PREFLIGHT_RETRIES) → gagal juga →
+//                               pre-flight dihentikan, terjemahan TANPA konteks
+//                               (fail-open kontrak sedia ada).
+//   Fasa 1 (Pemeriksa Utama)  : deepseek-v4-pro — Timeout 300,000ms / 5 min
+//   Fallback Pemeriksa        : deepseek-v4.1-flash — Timeout dinamik
+//                               (mewarisi had masa fasa berkaitan)
+// NOTA reka bentuk: pre-flight ialah ASAS analisis. Pre-flight daripada
+// model sandaran (kualiti rendah) LEBIH BURUK daripada tiada pre-flight —
+// itulah sebabnya hierarki Fasa 0 TIDAK MERENTAS keluarga model.
 const AGENT_B_DEFAULT_MODEL = 'deepseek-v4-pro';      // Fasa 1: Pemeriksa Utama
-// MANDAT OPERASI MUTLAK v5 2026-09-27 (bukti empirikal API bos Afiq —
-// kimi-k3 menerima muatan penuh, HTTP 200 dalam 122s):
-//   Pre-Flight agent  = Main kimi-k3, fallback deepseek-v4-pro
-//   Inspection agent  = Main deepseek-v4-pro, fallback deepseek-v4.1-flash
-const AGENT_B_PREFLIGHT_MODEL = 'kimi-k3';
-// Fallback khusus Fasa 0 — deepseek-v4-pro (sandaran pre-flight).
-const AGENT_B_PREFLIGHT_FALLBACK_MODEL = process.env.AGENT_B_PREFLIGHT_FALLBACK_MODEL || 'deepseek-v4-pro';
-const AGENT_B_FALLBACK_MODEL = 'deepseek-v4.1-flash'; // Fallback Universal (Fasa 0 + Fasa 1)
-// BEAST MODE (BETA RUN 10): muatan DeepSeek membuka kuasa mutlak penaakulan
-// (ground truth rasmi api-docs.deepseek.com):
-//   thinking:{type:"enabled"}   — suis utama pembuka CoT;
-//   reasoning_effort:"max"      — parameter rasmi peringkat atas (top-level);
-//   max_tokens:131072           — siling rasmi 128K (CoT + JSON tanpa potong);
-//   top_p:0.95                  — julat pensampelan aktif rasmi (0.95–1.0);
-//   response_format json_object — JSON sah dijamin;
-//   temperature DIGUGURKAN      — "has no effect in thinking mode" (rasmi).
-// Tiada parameter terlarang (presence_penalty deprecated dsb.) dihantar —
-// elak HTTP 400.
+const AGENT_B_PREFLIGHT_MODEL = 'kimi-k3';            // Fasa 0: kimi-k3 SAHAJA
+// [MODEL-HIERARCHY] Fallback khusus Fasa 0 DIGUGURKAN — kimi-k3 standalone.
+// env AGENT_B_PREFLIGHT_FALLBACK_MODEL diabaikan sepenuhnya (nilai muktamad
+// sentiasa sama dengan primer supaya hierarki Fasa 0 ialah 1-tingkat).
+const AGENT_B_PREFLIGHT_FALLBACK_MODEL = AGENT_B_PREFLIGHT_MODEL;
+// Bilangan percubaan RETRY-SAME-MODEL bagi Fasa 0: percubaan pertama + 2
+// retry (2x kegagalan berturut) sebelum pre-flight dihentikan (fail-open).
+const AGENT_B_PREFLIGHT_RETRIES = 2;
+const AGENT_B_FALLBACK_MODEL = 'deepseek-v4.1-flash'; // Fallback Fasa 1 SAHAJA
+// [PAYLOAD-GODTIER] SEJARAH (dikekalkan untuk forensik): muatan lama
+// BETA RUN 10 membawa 7 kunci; keempat-empat parameter tambahan terbukti
+// PENCETUS OVERTHINKING (masing-masing +90-110s) dan digugurkan —
+// sekarang hanya {model, messages, stream:true, temperature:0.0}. Kesahan
+// JSON dijamin parser tahan lasak. Tiada parameter terlarang dihantar.
 // HEADROOM KESELAMATAN (MANDAT OPERASI MUTLAK v2 2026-09-27):
 // Fasa 0 5 minit + Semakan 5 minit (300,000ms) — arahan Project Owner:
 // kedua-dua fasa ditetapkan 5 minit penuh bagi menjamin kejayaan panggilan
@@ -325,13 +330,12 @@ function parseInspectorResponse(responseText) {
  *   2. translationTimeout → 60s (semakan batch) / 150s (Fasa 0, dinaikkan
  *      sementara oleh runPreflightPass — pembina asas clamp >= 5000ms).
  *
- * MUATAN BEAST (Mandat Seni Bina Universal Payload §A + BETA RUN 10):
- * instance dibina dengan universalPayload=true — buildChatRequest membina
- * muatan BEAST bagi enjin DeepSeek { model, thinking:{type:"enabled"},
- * reasoning_effort:"max", max_tokens:131072 (128K), top_p:0.95,
- * response_format:{type:"json_object"}, messages } (temperature digugurkan
- * — tiada kesan dalam thinking mode). Enjin warisan bukan-DeepSeek kekal
- * menerima { model, temperature: 0.0, messages }.
+ * MUATAN GOD-TIER ([PAYLOAD-GODTIER] 2026-09-28): instance dibina dengan
+ * universalPayload=true — buildChatRequest membina muatan 4-kunci streaming
+ * TEPAT { model, messages, stream: true, temperature: 0.0 } bagi SEMUA
+ * enjin Agent B (deepseek/kimi — endpoint sama). Param tambahan muatan lama
+ * digugurkan (pencetus overthinking). Kesahan JSON dijamin parser tahan
+ * lasak (stripReasoningTags + parseInspectorResponse), bukan response_format.
  *
  * DUAL-MODEL FAILOVER (Mandat Observabiliti §4): hierarki model disimpan
  * dalam this.modelHierarchy (utama + sandaran deepseek-v4.1-flash). Setiap
@@ -369,12 +373,14 @@ class AgentBInspector extends OpenAICompatibleProvider {
     // mewarisi had masa yang sama — failover berkongsi headroom ini.
     this.translationTimeout = inspectionTimeoutMs;
 
-    // ── TRINITY DUAL-AGENT (UNIVERSAL PAYLOAD 2026-09-26 + BETA RUN 9) ──
+    // ── [MODEL-HIERARCHY] DUAL-AGENT FINAL (2026-09-28) ──
     // Dua hierarki berasingan bagi dua fasa:
     //   - Pemeriksa Utama : options.model (lalai deepseek-v4-pro)
     //       → modelHierarchy = [deepseek-v4-pro, deepseek-v4.1-flash]
-    //   - Pre-Flight Fasa 0: options.preflightModel (lalai deepseek-v4-pro)
-    //       → preflightHierarchy = [deepseek-v4-pro, deepseek-v4.1-flash]
+    //   - Pre-Flight Fasa 0: options.preflightModel (lalai kimi-k3)
+    //       → preflightHierarchy = [kimi-k3] SAHAJA — STANDALONE (fallback
+    //         merentas model DIGUGURKAN; kegagalan dikendalikan melalui
+    //         retry-same-model dalam _callWithFailover).
     //   - Fallback pemeriksa: options.fallbackModel (lalai deepseek-v4.1-flash);
     //     'none' ATAU kosong ATAU sama dengan model utama → model tunggal.
     // this.model sentiasa menjejak model AKTIF supaya log forensik melaporkan
@@ -382,12 +388,12 @@ class AgentBInspector extends OpenAICompatibleProvider {
     this.model = String(options.model || options.inspectionModel || AGENT_B_DEFAULT_MODEL).trim() || AGENT_B_DEFAULT_MODEL;
     this.preflightModel = String(options.preflightModel || AGENT_B_PREFLIGHT_MODEL).trim() || AGENT_B_PREFLIGHT_MODEL;
     const requestedFallback = String(options.fallbackModel || AGENT_B_FALLBACK_MODEL).trim();
-    // MANDAT v4: fallback khusus Fasa 0 — membolehkan hierarki pre-flight
-    // merentas keluarga enjin (deepseek → kimi → deepseek-flash) tanpa
-    // mengganggu hierarki Fasa 1.
-    this.preflightFallbackModel = String(
-      options.preflightFallbackModel !== undefined ? options.preflightFallbackModel : AGENT_B_PREFLIGHT_FALLBACK_MODEL
-    ).trim();
+    // [MODEL-HIERARCHY] preflightFallbackModel DINEUTRALKAN — sentiasa sama
+    // dengan primer Fasa 0 supaya hierarki pre-flight kekal 1-tingkat
+    // (kimi-k3 standalone). Nilai options/env lama diabaikan atas sebab:
+    // pre-flight daripada model sandaran lebih buruk daripada tiada
+    // pre-flight (ujian empirikal kualiti menurun dengan model lemah).
+    this.preflightFallbackModel = this.preflightModel;
 
     const buildHierarchy = (primary, extraFallback = '') => {
       const hierarchy = [primary];
@@ -400,17 +406,29 @@ class AgentBInspector extends OpenAICompatibleProvider {
           hierarchy.push(candidate);
         }
       };
-      addCandidate(extraFallback);      // fallback khusus fasa (v4) dahulu
-      addCandidate(requestedFallback);  // fallback universal (kontrak lama dipelihara)
+      addCandidate(extraFallback);      // fallback khusus fasa
+      addCandidate(requestedFallback);  // fallback universal (kontrak lama dipelihara — Fasa 1 sahaja)
       return hierarchy;
     };
     this.modelHierarchy = buildHierarchy(this.model);
-    this.preflightHierarchy = buildHierarchy(this.preflightModel, this.preflightFallbackModel);
+    // [MODEL-HIERARCHY] Fasa 0: kimi-k3 SAHAJA — dedupe primer+preflightFallback
+    // (nilai sama) membina hierarki 1-tingkat; requestedFallback tidak disuntik
+    // (kimi-k3 TIDAK beralih ke deepseek bagi pre-flight).
+    this.preflightHierarchy = buildHierarchy(this.preflightModel, this.preflightFallbackModel)
+      .filter((m) => m.toLowerCase() === this.preflightModel.toLowerCase());
+
+    // [MODEL-HIERARCHY] Retry-same-model bagi Fasa 0 (kimi-k3 standalone):
+    // 1 percubaan + AGENT_B_PREFLIGHT_RETRIES retry = maksimum 3 panggilan
+    // berturut-turut pada model yang sama sebelum fail-open.
+    this.preflightRetries = Math.max(0, parseInt(options.preflightRetries, 10) || AGENT_B_PREFLIGHT_RETRIES);
 
     this.fallbackModel = this.modelHierarchy.length > 1 ? this.modelHierarchy[1] : null;
     this.inspectionModel = this.model;
 
     // ── Circuit breaker (per sesi fail — instance dibina per permintaan) ──
+    // NOTA [MODEL-HIERARCHY]: breaker tidak lagi mengandaikan hierarki
+    // berbilang-model bagi pre-flight — kegagalan Fasa 0 dikira sama seperti
+    // kegagalan Fasa 1 (kaunter gabungan per sesi fail).
     this._consecutiveFailures = 0;
     this._circuitOpen = false;
     this.circuitThreshold = AGENT_B_CIRCUIT_THRESHOLD;
@@ -429,57 +447,84 @@ class AgentBInspector extends OpenAICompatibleProvider {
    * @returns {Promise<{result:*, modelUsed:string, failedAttempts:Array}>}
    * @throws {Error} ralat percubaan terakhir apabila SEMUA model gagal
    */
-  async _callWithFailover(operation, attempt, isFailure, hierarchyOverride = null) {
+  async _callWithFailover(operation, attempt, isFailure, hierarchyOverride = null, retrySameModel = 0) {
     const failedAttempts = [];
-    // TRINITY BETA RUN 9: Pre-Flight menggunakan preflightHierarchy
-    // (deepseek-v4-pro → deepseek-v4.1-flash); Pemeriksaan menggunakan
-    // modelHierarchy (deepseek-v4-pro → deepseek-v4.1-flash). Suntikan
-    // hierarki mengatasi kedua-duanya (kes ujian susunan tersuai).
+    // [MODEL-HIERARCHY] FINAL 2026-09-28: Pre-Flight menggunakan
+    // preflightHierarchy [kimi-k3] SAHAJA (standalone — tiada failover
+    // merentas model); Pemeriksaan menggunakan modelHierarchy
+    // (deepseek-v4-pro → deepseek-v4.1-flash). Suntikan hierarki mengatasi
+    // kedua-duanya (kes ujian susunan tersuai).
+    //
+    // RETRY-SAME-MODEL ([MODEL-HIERARCHY]): apabila hierarki hanya memuat
+    // SATU model (hierarki Fasa 0), kegagalan TIDAK beralih model — model
+    // yang sama di-RETRY sehingga `retrySameModel` kali tambahan sebelum
+    // kegagalan muktamad. Log `[AgentB] Fallback triggered` TIDAK PERNAH
+    // dicetak bagi Fasa 0 (tiada fallback wujud); sebaliknya
+    // `[AgentB] Retry-same-model` yang dicetak.
     const hierarchy = Array.isArray(hierarchyOverride) && hierarchyOverride.length > 0
       ? hierarchyOverride
       : this.modelHierarchy;
+    const singleModelRetries = (hierarchy.length === 1 && retrySameModel > 0) ? retrySameModel : 0;
     for (let i = 0; i < hierarchy.length; i++) {
       const model = hierarchy[i];
       this.model = model; // log + payload pembawa sentiasa melihat model aktif
-      let result;
-      try {
-        result = await attempt(model);
-      } catch (err) {
-        // ZERO-SWALLOWED-ERROR §3B/§4B: status + punca sebenar, bukan generik
-        const status = err?.statusCode || err?.response?.status || err?.status || 'N/A';
-        failedAttempts.push({ model, error: err });
-        if (i < hierarchy.length - 1) {
-          log.warn(() => `[AgentB] ${operation} on ${model} failed (Status: ${status}): ${err?.message || err}. Failing over to ${hierarchy[i + 1]}...`);
-          // Mandat Seni Bina Universal Payload §C: format trigger wajib
-          log.warn(() => `[AgentB] Fallback triggered -> [${hierarchy[i + 1]}]`);
+      // [MODEL-HIERARCHY] Inner retry loop untuk hierarki model tunggal.
+      // totalTries = 1 + singleModelRetries; untuk multi-model (Fasa 1),
+      // singleModelRetries = 0 → tingkah laku failover sedia ada 100%.
+      const totalTries = 1 + singleModelRetries;
+      for (let r = 0; r < totalTries; r++) {
+        let result;
+        try {
+          result = await attempt(model);
+        } catch (err) {
+          // ZERO-SWALLOWED-ERROR §3B/§4B: status + punca sebenar, bukan generik
+          const status = err?.statusCode || err?.response?.status || err?.status || 'N/A';
+          failedAttempts.push({ model, error: err });
+          const hasSibling = i < hierarchy.length - 1;
+          const hasRetry = r < totalTries - 1;
+          if (hasRetry) {
+            log.warn(() => `[AgentB] ${operation} on ${model} failed (Status: ${status}): ${err?.message || err}. Retry ${r + 1}/${totalTries - 1} on the SAME model [${model}]...`);
+            continue;
+          }
+          if (hasSibling) {
+            log.warn(() => `[AgentB] ${operation} on ${model} failed (Status: ${status}): ${err?.message || err}. Failing over to ${hierarchy[i + 1]}...`);
+            // Mandat Seni Bina Universal Payload §C: format trigger wajib
+            log.warn(() => `[AgentB] Fallback triggered -> [${hierarchy[i + 1]}]`);
+            break;
+          }
+          log.warn(() => `[AgentB] ${operation} on ${model} failed (Status: ${status}): ${err?.message || err}. All models exhausted.`);
+          throw err;
+        }
+        if (!isFailure(result)) {
+          return { result, modelUsed: model, failedAttempts };
+        }
+        // Respons diterima tetapi rosak/kosong (HTTP 200 sampah)
+        const reason = 'Empty or corrupt response';
+        failedAttempts.push({ model, error: new Error(reason) });
+        const hasSibling = i < hierarchy.length - 1;
+        const hasRetry = r < totalTries - 1;
+        if (hasRetry) {
+          log.warn(() => `[AgentB] ${operation} on ${model} failed (${reason}). Retry ${r + 1}/${totalTries - 1} on the SAME model [${model}]...`);
           continue;
         }
-        log.warn(() => `[AgentB] ${operation} on ${model} failed (Status: ${status}): ${err?.message || err}. All models exhausted.`);
-        throw err;
+        if (hasSibling) {
+          log.warn(() => `[AgentB] ${operation} on ${model} failed (${reason}). Failing over to ${hierarchy[i + 1]}...`);
+          // Mandat Seni Bina Universal Payload §C: format trigger wajib
+          log.warn(() => `[AgentB] Fallback triggered -> [${hierarchy[i + 1]}]`);
+          break;
+        }
+        log.warn(() => `[AgentB] ${operation} on ${model} failed (${reason}). All models exhausted.`);
+        throw new Error(`${operation}: ${reason} on all models`);
       }
-      if (!isFailure(result)) {
-        return { result, modelUsed: model, failedAttempts };
-      }
-      // Respons diterima tetapi rosak/kosong (HTTP 200 sampah)
-      const reason = 'Empty or corrupt response';
-      failedAttempts.push({ model, error: new Error(reason) });
-      if (i < hierarchy.length - 1) {
-        log.warn(() => `[AgentB] ${operation} on ${model} failed (${reason}). Failing over to ${hierarchy[i + 1]}...`);
-        // Mandat Seni Bina Universal Payload §C: format trigger wajib
-        log.warn(() => `[AgentB] Fallback triggered -> [${hierarchy[i + 1]}]`);
-        continue;
-      }
-      log.warn(() => `[AgentB] ${operation} on ${model} failed (${reason}). All models exhausted.`);
-      throw new Error(`${operation}: ${reason} on all models`);
     }
     // Tidak boleh dicapai — loop sentiasa return/throw
     throw new Error(`${operation}: exhausted`);
   }
 
-  // SILING TOKEN BEAST (BETA RUN 10 — Mandat Beast Mode DeepSeek Frontier
-  // 2026-09-27): muatan BEAST menghantar max_tokens = 131072 (128K rasmi
-  // apabila reasoning_effort="max") — override getCappedMaxOutputTokens()
-  // warisan (4096/16384) kekal dipadam; CoT + JSON bebas terpotong.
+  // [PAYLOAD-GODTIER] SEJARAH (dikekalkan untuk forensik): muatan BEAST lama
+  // membawa siling token 131072 (128K) — kini DIGUGURKAN sepenuhnya daripada
+  // muatan 4-kunci god-tier (pencetus overthinking + istilah kritikal
+  // tergugur). Constant AGENT_B_MAX_TOKENS kekal untuk keserasian warisan.
 
   /**
    * Override: prompt inspector ialah arahan lengkap + payload (self-contained)
@@ -546,11 +591,13 @@ class AgentBInspector extends OpenAICompatibleProvider {
     const previousModel = this.model;
     this.translationTimeout = this.preflightTimeoutMs; // 150s headroom (BETA RUN 10)
 
-    // TRINITY FAILOVER (Universal Payload 2026-09-26 §2B): Fasa 0 dihalakan
-    // ke preflightHierarchy [deepseek-v4-pro → deepseek-v4.1-flash]. Setiap model
-    // menjalankan Fasa 0 penuh melalui runPreflightSemanticPass dengan hook
-    // zero-swallowed-error. null + hook aktif = kegagalan model (failover);
-    // null tanpa hook = skip sahaja (fail kecil / tiada teks) — jangan failover.
+    // [MODEL-HIERARCHY] FAILOVER FINAL (2026-09-28): Fasa 0 dihalakan ke
+    // preflightHierarchy [kimi-k3] SAHAJA — STANDALONE. Kegagalan kimi-k3
+    // TIDAK beralih model; model yang sama di-retry (preflightRetries = 2)
+    // melalui _callWithFailover(retrySameModel). 2x kegagalan berturut
+    // → pre-flight dihentikan, terjemahan jalan tanpa konteks (fail-open
+    // kontrak asal). null + hook aktif = kegagalan model (retry);
+    // null tanpa hook = skip sahaja (fail kecil / tiada teks) — jangan retry.
     try {
       const { result } = await this._callWithFailover(
         'Pre-flight',
@@ -577,14 +624,15 @@ class AgentBInspector extends OpenAICompatibleProvider {
           return { ok: true, context: null }; // skip sahaja (bukan kegagalan)
         },
         (outcome) => outcome && outcome.ok === false,
-        this.preflightHierarchy // TRINITY BETA RUN 9: Fasa 0 → [deepseek-v4-pro → deepseek-v4.1-flash]
+        this.preflightHierarchy, // [MODEL-HIERARCHY] Fasa 0 → [kimi-k3] SAHAJA
+        this.preflightRetries    // [MODEL-HIERARCHY] retry-same-model (kimi-k3), bukan failover
       );
       return result && result.ok ? result.context : null;
     } catch (failoverErr) {
-      // SEMUA model gagal — Fasa 0 kekal NON-BLOCKING (kontrak asal):
-      // pulangkan null, pipeline jalan tanpa konteks global. Punca
+      // SEMUA percubaan kimi-k3 gagal — Fasa 0 kekal NON-BLOCKING (kontrak
+      // asal): pulangkan null, pipeline jalan tanpa konteks global. Punca
       // teknikal telah dipapar oleh _callWithFailover (zero-swallowed).
-      log.warn(() => `[AgentB] Pre-flight exhausted all models — continuing without global context (non-blocking): ${failoverErr?.message || failoverErr}`);
+      log.warn(() => `[AgentB] Pre-flight exhausted all attempts on [${this.preflightModel}] — continuing without global context (non-blocking): ${failoverErr?.message || failoverErr}`);
       return null;
     } finally {
       this.model = previousModel;
@@ -682,6 +730,8 @@ module.exports = {
   AGENT_B_DEFAULT_MODEL,
   AGENT_B_PREFLIGHT_MODEL,
   AGENT_B_FALLBACK_MODEL,
+  AGENT_B_PREFLIGHT_FALLBACK_MODEL, // [MODEL-HIERARCHY] sentiasa = primer Fasa 0
+  AGENT_B_PREFLIGHT_RETRIES,        // [MODEL-HIERARCHY] retry-same-model Fasa 0
   AGENT_B_PREFLIGHT_TIMEOUT_MS,
   AGENT_B_INSPECTION_TIMEOUT_MS,
   AGENT_B_MAX_TOKENS,

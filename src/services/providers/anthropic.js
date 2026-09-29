@@ -3,7 +3,7 @@ const { handleTranslationError, logApiError } = require('../../utils/apiErrorHan
 const { httpAgent, httpsAgent } = require('../../utils/httpAgents');
 const log = require('../../utils/logger');
 const { sanitizeApiKeyForHeader } = require('../../utils/security');
-const { DEFAULT_TRANSLATION_PROMPT } = require('../gemini');
+const { DEFAULT_TRANSLATION_PROMPT, composeDefaultTranslationPrompt } = require('../gemini');
 const { normalizeTargetLanguageForPrompt } = require('../utils/normalizeTargetLanguageForPrompt');
 
 const ANTHROPIC_API_URL = process.env.ANTHROPIC_API_BASE || 'https://api.anthropic.com/v1';
@@ -41,7 +41,8 @@ class AnthropicProvider {
 
   buildUserPrompt(subtitleContent, targetLanguage, customPrompt = null) {
     const normalizedTarget = this.normalizeTargetName(targetLanguage);
-    const systemPrompt = (customPrompt || DEFAULT_TRANSLATION_PROMPT).replace('{target_language}', normalizedTarget);
+    // [UNIVERSAL-FIX] Target-conditional rule #6 (Malay-only) — neutral untuk lain.
+    const systemPrompt = (customPrompt || composeDefaultTranslationPrompt(targetLanguage)).replace('{target_language}', normalizedTarget);
     const userPrompt = `${systemPrompt}\n\nContent to translate:\n\n${subtitleContent}`;
     return { systemPrompt, userPrompt };
   }

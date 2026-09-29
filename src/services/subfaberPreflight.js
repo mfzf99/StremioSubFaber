@@ -40,6 +40,9 @@
  */
 
 const log = require('../utils/logger');
+// [UNIVERSAL-FIX] Target-conditional prompt composition — pack di-resolve
+// mengikut bahasa sasaran (Malay → malay.js; lain → generic.js).
+const { getLanguagePack } = require('./prompts/languagePacks');
 
 // HEADROOM PRINSIP (Mandat Penghapusan 48k 2026-09-26): fail drama boleh
 // mencecah 1,500–2,500 baris (150k–200k aksara). Siling 48k lama memaksa
@@ -101,6 +104,16 @@ function sampleEntriesForPreflight(entries) {
  * wujud HANYA sebagai arahan pemeriksaan kepada Kimi K3 di sini (Fasa 0) —
  * Agent A menerima terjemahan muktamad melalui data JSON, bukan peraturan.
  *
+ * [UNIVERSAL-FIX] TARGET-CONDITIONAL ARCHITECTURE (2026-09-28): Prompt ini
+ * kini TEMPLATE — matriks honorifik, arahan canonical_address, dan contoh
+ * kredit disuntik daripada language pack mengikut bahasa sasaran:
+ *   - Malay (ms/my/mya/zsm/...) → malay.js (matriks gelaran penuh BM +
+ *     contoh kredit rasmi BM) — IDENTIK dengan tingkah laku lama (tiada
+ *     regresi kualiti).
+ *   - Bukan-Malay (vi/ja/es/... 432 lagi) → generic.js (peraturan neutral).
+ * SIFAR teks khusus-Malay di-hardcode dalam fail ini — getLanguagePack()
+ * satu-satunya punca.
+ *
  * @param {string} rawText - Teks dialog mentah (tanpa timecode)
  * @param {string} targetLanguage - Bahasa sasaran (untuk terjemahan istilah)
  * @param {string} sourceLanguage - Bahasa sumber (label, boleh kosong)
@@ -109,6 +122,11 @@ function sampleEntriesForPreflight(entries) {
 function buildPreflightPrompt(rawText, targetLanguage, sourceLanguage) {
   const src = sourceLanguage || 'the source language';
   const tgt = targetLanguage || 'the target language';
+  // [UNIVERSAL-FIX] {{PLACEHOLDER}} injection: pack mengikut bahasa sasaran.
+  const pack = getLanguagePack(targetLanguage);
+  const honorificMatrix = pack.honorificMatrix.replaceAll('${tgt}', tgt);
+  const canonicalAddressMatrix = pack.canonicalAddressMatrix.replaceAll('${tgt}', tgt);
+  const creditsExample = pack.creditsExample.replaceAll('${tgt}', tgt);
   return `## Role
 You are a video translation expert and terminology consultant, specializing in ${src} comprehension and ${tgt} expression optimization.
 
@@ -123,19 +141,14 @@ For the provided ${src} subtitle dialogue, build the 4-pillar pre-flight context
    The 'theme' field MUST be written strictly in clear, precise English (2-3 sentences), summarizing the narrative arc (plot), setting, and central conflict/stakes.
 2. Extract technical terms, location names, and industry entities with ${tgt} translations.
    Each 'terms' entry is an object with exactly two keys: "source" (original text) and "target" (${tgt} translation or original).
-   In the 'terms' list, you MUST include and lock the official ${tgt} titles/honorifics for recurring entities using this MANDATORY sociolinguistic matrix (Malay honorifics):
-   * "Ms." / "Mrs." for an adult woman — married, mature, an auntie/mak cik figure, or holding a corporate/management position — MUST map to "Puan" (e.g. "Ms. Shen" who is clearly an Aunt/manager -> "Puan Shen", NEVER "Cik Shen").
-   * "Miss" / "Ms." for a young unmarried woman -> "Cik".
-   * "Mr." -> "Encik". "Aunt" / "Auntie" -> "Mak Cik". "Uncle" -> "Pak Cik".
-   * "Director" -> "Pengarah". "GM" / "General Manager" -> "Pengurus Besar".
-   Cross-reference titles: if the same character is addressed as "Aunt" in dialogue AND called "Ms. Shen", lock the formal address as "Puan Shen" (NOT "Cik Shen") — one canonical title per character, never alternate.
+   ${honorificMatrix}
 3. Build profiles for the main recurring characters.
    Each 'characters' entry is an object with exactly three keys:
    - "name": the character's name exactly as it appears in the dialogue.
-   - "canonical_address": the ONE locked ${tgt} address/title used for this character every single time (one canonical address per character, never alternate). Apply the SAME mandatory Malay honorific matrix from the 'terms' pillar (Ms./Mrs./mature/auntie/manager -> Puan; young unmarried -> Cik; Mr. -> Encik; Auntie -> Mak Cik; Uncle -> Pak Cik; Director -> Pengarah; GM -> Pengurus Besar). Lock ONLY with explicit, unambiguous textual evidence per the FACT VS INFERENCE DISCIPLINE; if gender, social hierarchy, or formal title is unclear, set null instead of guessing.
+   - "canonical_address": the ONE locked ${tgt} address/title used for this character every single time (one canonical address per character, never alternate). ${canonicalAddressMatrix}. Lock ONLY with explicit, unambiguous textual evidence per the FACT VS INFERENCE DISCIPLINE; if gender, social hierarchy, or formal title is unclear, set null instead of guessing.
    - "role": a short description of their narrative role (e.g. female lead, antagonist, mentor, butler).
 4. Scan the EARLIEST lines of the file (lines 1-5) for NON-DIALOGUE opening text.
-   If the file opens with production credits (e.g. "Adapted from..."), the work's title, or a studio name card, provide the official ${tgt} media/publishing translation for each line (e.g. "Adapted from" -> "Diadaptasi daripada").
+   If the file opens with production credits (e.g. "Adapted from..."), the work's title, or a studio name card, ${creditsExample}.
    If the file starts directly with normal dialogue, return an empty array [] for 'credits_and_titles'.
    Each 'credits_and_titles' entry is an object with exactly two keys: "source" (original opening text) and "target" (official ${tgt} translation).
 
@@ -361,8 +374,13 @@ function parsePreflightResponse(responseText) {
  * @param {{theme:string, terms:Array, characters:Array, credits_and_titles:Array}} preflightContext - Hasil Fasa 0
  * @returns {string} Blok teks "Content Summary + Technical Glossary + Character Hierarchy + Opening Credits / Titles"
  */
-function formatPreflightForPrompt(preflightContext) {
+function formatPreflightForPrompt(preflightContext, targetLanguage) {
   if (!preflightContext || !preflightContext.theme) return '';
+  // [UNIVERSAL-FIX] NOT-LOCKED guidance mengikut pack bahasa sasaran.
+  // Lalai 'Malay' mengekalkan tingkah laku lama (matriks BM) bagi pemanggil
+  // warisan yang tidak menghantar targetLanguage; pemanggil enjin menghantar
+  // bahasa sasaran sebenar supaya bukan-Malay dapat panduan neutral.
+  const notLockedPack = getLanguagePack(targetLanguage || 'Malay');
   let block = `### Content Summary\n${preflightContext.theme}`;
 
   // TIANG 2: Technical Glossary
@@ -396,7 +414,7 @@ function formatPreflightForPrompt(preflightContext) {
           || (legacyAddress !== undefined && legacyAddress !== null && String(legacyAddress).trim() !== '');
         const address = hasAddress
           ? (pickField(c, 'canonical_address', 'canonicalAddress') || name)
-          : 'address NOT LOCKED — infer the correct honorific from the dialogue context (Malay matrix: Puan for adult/married/auntie/manager women, Cik for young unmarried women)';
+          : notLockedPack.notLockedGuidance; // [UNIVERSAL-FIX] pack-driven (Malay / generic)
         const role = pickField(c, 'role');
         return `- ${name} → ${address}${role ? ` (${role})` : ''}`;
       })

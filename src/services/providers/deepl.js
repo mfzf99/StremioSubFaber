@@ -1,5 +1,5 @@
 const axios = require('axios');
-const { DEFAULT_TRANSLATION_PROMPT } = require('../gemini');
+const { DEFAULT_TRANSLATION_PROMPT, composeDefaultTranslationPrompt } = require('../gemini');
 const { normalizeTargetLanguageForPrompt } = require('../utils/normalizeTargetLanguageForPrompt');
 const { handleTranslationError, logApiError } = require('../../utils/apiErrorHandler');
 const { httpAgent, httpsAgent } = require('../../utils/httpAgents');
@@ -257,7 +257,8 @@ class DeepLProvider {
 
   buildUserPrompt(subtitleContent, targetLanguage, customPrompt = null) {
     const normalizedTarget = normalizeTargetLanguageForPrompt(targetLanguage);
-    const systemPrompt = (customPrompt || DEFAULT_TRANSLATION_PROMPT).replace('{target_language}', normalizedTarget);
+    // [UNIVERSAL-FIX] Target-conditional rule #6 (Malay-only) — neutral untuk lain.
+    const systemPrompt = (customPrompt || composeDefaultTranslationPrompt(targetLanguage)).replace('{target_language}', normalizedTarget);
     const userPrompt = `${systemPrompt}\n\nContent to translate:\n\n${subtitleContent}`;
     return { userPrompt, systemPrompt, normalizedTarget };
   }

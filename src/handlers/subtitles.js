@@ -5491,19 +5491,20 @@ if (
         agentBInspector = new AgentBInspector({
           apiKey: config.agentB.apiKey,
           baseUrl: config.agentB.baseUrl,
-          // TRINITY BEAST MODE (Mandat Beta Run 10 — Beast Mode DeepSeek
-          // Frontier 2026-09-27):
-          //   Fasa 0     : deepseek-v4-pro     (Pre-Flight Makro, timeout 150s)
-          //   Fasa 1     : deepseek-v4-pro     (Pemeriksa Utama, timeout 60s)
+          // [MODEL-HIERARCHY] FINAL 2026-09-28 (empirikal gateway rootsys):
+          //   Fasa 0     : kimi-k3 SAHAJA — STANDALONE (kegagalan → retry
+          //                kimi-k3 2x → fail-open tanpa konteks; TIADA
+          //                fallback merentas model — pre-flight lemah dari
+          //                model sandaran lebih buruk daripada tiada).
+          //   Fasa 1     : deepseek-v4-pro (Pemeriksa Utama)
           //   Fallback   : deepseek-v4.1-flash (mewarisi had masa fasa)
-          // Muatan BEAST: {model, thinking:{type:"enabled"},
-          // reasoning_effort:"max", max_tokens:131072 (128K), top_p:0.95,
-          // response_format json_object} — temperature digugurkan.
-          // MANDAT v5: Pre-Flight agent = kimi-k3 (main) + deepseek-v4-pro
-          // (fallback); Inspection agent = deepseek-v4-pro (main) +
-          // deepseek-v4.1-flash (fallback). Empirikal API bos Afiq.
+          // [PAYLOAD-GODTIER] Muatan 4-kunci streaming dibina oleh builder
+          // universal (openaiCompatible.buildChatRequest):
+          //   { model, messages, stream: true, temperature: 0.0 }
           preflightModel: config.agentB.preflightModel || 'kimi-k3',
-          preflightFallbackModel: config.agentB.preflightFallbackModel || 'deepseek-v4-pro',
+          // [MODEL-HIERARCHY] preflightFallbackModel DIBUANG — nilai lalai
+          // = primer (kimi-k3); inspector menormalkan kepada 1-tingkat.
+          preflightFallbackModel: config.agentB.preflightModel || 'kimi-k3',
           model: config.agentB.model || 'deepseek-v4-pro',
           fallbackModel: config.agentB.fallbackModel || 'deepseek-v4.1-flash',
           preflightTimeoutMs: config.agentB.preflightTimeoutMs,

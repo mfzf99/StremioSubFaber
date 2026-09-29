@@ -20,6 +20,9 @@ const { parseSRT, toSRT } = require('../utils/subtitle');
 const GeminiService = require('./gemini');
 const { DEFAULT_TRANSLATION_PROMPT } = GeminiService;
 const { runPreflightSemanticPass, formatPreflightForPrompt } = require('./subfaberPreflight');
+// [UNIVERSAL-FIX] Target-conditional few-shot / NOT-LOCKED guidance — pack
+// di-resolve mengikut bahasa sasaran (Malay → malay.js; lain → generic.js).
+const { getLanguagePack } = require('./prompts/languagePacks');
 const crypto = require('crypto');
 const log = require('../utils/logger');
 const { handleCaughtError } = require('../utils/errorClassifier');
@@ -217,6 +220,10 @@ class TranslationEngine {
 
     const rotationLabel = this.perBatchRotationEnabled ? 'per-batch' : (this.retryRotationEnabled ? 'per-request' : '');
     log.debug(() => `[TranslationEngine] Initialized with model: ${model || 'unknown'}, batch size: ${this.batchSize} (SubFaber), workflow: ${this.translationWorkflow}, mode: ${this.singleBatchMode ? 'single-batch' : 'batched'}, mismatchRetries: ${this.mismatchRetries}${rotationLabel ? `, key-rotation: ${rotationLabel}, keys: ${this.keyRotationConfig.keys.length}` : ''}${this.isNativeBatchProvider ? ', native-batch: true' : ''}`);
+
+    // [UNIVERSAL-FIX] Bahasa sasaran aktif sesi (untuk pemilihan language pack
+    // pada few-shot + NOT-LOCKED guidance). Dikemas kini oleh translateBatch().
+    this.currentTargetLanguage = null;
     
     // Translation diagnostics — accumulated during translation, read by caller after completion.
     // These stats are surfaced on the Translation History cards in Sub Toolbox.
@@ -1245,8 +1252,14 @@ class TranslationEngine {
    * @param {Array} subsequentContent - 2 baris selepas batch (source-only)
    * @returns {string} Blok "Content Summary + HIERARCHY OF TRUTH [+ Technical Glossary][+ Character Hierarchy][+ Opening Credits / Titles]"
    */
-  _formatPreflightForChunk(preflight, previousContent, batch, subsequentContent) {
+  _formatPreflightForChunk(preflight, previousContent, batch, subsequentContent, targetLanguage) {
     if (!preflight || !preflight.theme) return '';
+    // [UNIVERSAL-FIX] NOT-LOCKED guidance mengikut pack bahasa sasaran.
+    // Lalai 'Malay' mengekalkan tingkah laku lama (matriks BM) bagi pemanggil
+    // warisan 4-arg (ujian regresi); runtime menghantar bahasa sasaran
+    // sebenar melalui this.currentTargetLanguage supaya bukan-Malay dapat
+    // panduan neutral tanpa teks BM.
+    const chunkPack = getLanguagePack(targetLanguage || this.currentTargetLanguage || 'Malay');
     let block = `### Content Summary\n${preflight.theme}`;
 
     // ── HIERARCHY OF TRUTH (Agent A Safety Net — Mandat Beta Run 9) ──
@@ -1314,7 +1327,7 @@ class TranslationEngine {
             || (legacyAddress !== undefined && legacyAddress !== null && String(legacyAddress).trim() !== '');
           const address = hasAddress
             ? (resolvePillarText(c, 'canonical_address', 'canonicalAddress') || name)
-            : 'address NOT LOCKED — infer the correct honorific from the dialogue context (Malay matrix: Puan for adult/married/auntie/manager women, Cik for young unmarried women)';
+            : chunkPack.notLockedGuidance; // [UNIVERSAL-FIX] pack-driven (Malay / generic)
           const role = resolvePillarText(c, 'role');
           return `- ${name} → ${address}${role ? ` (${role})` : ''}`;
         })
@@ -1350,6 +1363,9 @@ class TranslationEngine {
    */
   async translateBatch(batch, targetLanguage, customPrompt, batchIndex, totalBatches, context = null, options = {}) {
     const opts = options || {};
+    // [UNIVERSAL-FIX] Rekod bahasa sasaran aktif — dipakai oleh
+    // _formatPreflightForChunk untuk pack-driven NOT-LOCKED guidance.
+    this.currentTargetLanguage = targetLanguage || this.currentTargetLanguage || null;
 
     // Native batch providers (DeepL, Google Translate): send raw SRT directly,
     // skip numbered-list prompt construction and response parsing entirely.
@@ -2371,7 +2387,7 @@ You MUST translate each numbered line 1:1. NEVER merge two source lines into one
     const hasPrev = Array.isArray(context.previousContent) && context.previousContent.length > 0;
     const hasNext = Array.isArray(context.subsequentContent) && context.subsequentContent.length > 0;
     const preflightBlock = context.preflight
-      ? this._formatPreflightForChunk(context.preflight, context.previousContent, batchEntries, context.subsequentContent)
+      ? this._formatPreflightForChunk(context.preflight, context.previousContent, batchEntries, context.subsequentContent, this.currentTargetLanguage)
       : '';
 
     let block = '';
@@ -2466,6 +2482,10 @@ You MUST translate each numbered line 1:1. NEVER merge two source lines into one
   createXmlBatchPrompt(batchText, targetLanguage, customPrompt, expectedCount, context = null, batchIndex = 0, totalBatches = 1) {
     const targetLabel = normalizeTargetLanguageForPrompt(targetLanguage);
     const sourceLabel = this.sourceLanguage;
+    // [UNIVERSAL-FIX] Target-conditional few-shot: pack mengikut bahasa
+    // sasaran (Malay → contoh few-shot BM dari pack; bukan-Malay → contoh
+    // neutral). SIFAR teks khusus-bahasa di-hardcode di sini.
+    const fewShotPack = getLanguagePack(targetLanguage);
 
     // SHARED PROMPT ARCHITECTURE (Mandat 2026-09-26, Lingo 1:1 parity):
     // batchText kini entri aktif SAHAJA (tiada blok konteks) — startId
@@ -2503,16 +2523,7 @@ Translate the provided ${sourceLabel || 'source'} subtitles line by line into na
 5. PRESERVE all [br], <i>...</i>, speaker dashes (-), and any other inline markup in the exact same position and count as in the source.
 </structural_rules>
 
-[EXAMPLE — split sentence and isolated question tag]
-Input:
-<s id="1">You are coming with us,</s>
-<s id="2">aren't you?</s>
-Correct output:
-<s id="1">Awak ikut kami,</s>
-<s id="2">kan?</s>
-Wrong (merged):
-<s id="1">Awak ikut kami, kan?</s>
-<s id="2">.</s>
+${fewShotPack.fewShot}
 ${sharedContextBlock ? `\n${sharedContextBlock}\n(Reference only — do not translate or output content from this block as a target entry.)\n` : ''}
 <input>
 ${batchText}

@@ -607,13 +607,12 @@ function normalizeConfig(config) {
       || process.env.AGENT_B_INSPECTION_MODEL
       || 'deepseek-v4-pro'
     ).trim(),
-    // MANDAT v5: pre-flight agent lalai kimi-k3 (empirikal API bos Afiq).
+    // [MODEL-HIERARCHY] FINAL 2026-09-28: pre-flight agent lalai kimi-k3.
     preflightModel: String(mergedConfig.agentB?.preflightModel || process.env.AGENT_B_PREFLIGHT_MODEL || 'kimi-k3').trim(),
-    // MANDAT v5: fallback khusus Fasa 0 — deepseek-v4-pro (pre-flight agent
-    // ialah kimi-k3). Boleh ditindih melalui config/env.
-    preflightFallbackModel: String(
-      mergedConfig.agentB?.preflightFallbackModel ?? process.env.AGENT_B_PREFLIGHT_FALLBACK_MODEL ?? 'deepseek-v4-pro'
-    ).trim(),
+    // [MODEL-HIERARCHY] Fallback khusus Fasa 0 DIGUGURKAN — kimi-k3
+    // STANDALONE (kegagalan → retry kimi-k3, bukan model lain). Env lama
+    // AGENT_B_PREFLIGHT_FALLBACK_MODEL diabaikan; nilai sentiasa = primer.
+    preflightFallbackModel: String(mergedConfig.agentB?.preflightModel || process.env.AGENT_B_PREFLIGHT_MODEL || 'kimi-k3').trim(),
     fallbackModel: String(mergedConfig.agentB?.fallbackModel || process.env.AGENT_B_FALLBACK_MODEL || 'deepseek-v4.1-flash').trim(),
     preflightTimeoutMs: normalizeAgentBTimeoutMs(
       mergedConfig.agentB?.preflightTimeoutMs ?? process.env.AGENT_B_PREFLIGHT_TIMEOUT_MS,

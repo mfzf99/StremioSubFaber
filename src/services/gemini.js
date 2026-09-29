@@ -409,20 +409,51 @@ function decorateGeminiError(error) {
 
 // Default translation prompt (base - thinking rules added conditionally)
 // Used by non-Gemini-3 providers (Anthropic, DeepL, OpenAI-compatible).
-const DEFAULT_TRANSLATION_PROMPT = `Translate the following subtitles while:
+//
+// [UNIVERSAL-FIX] TARGET-CONDITIONAL RULE #6 (2026-09-28): Peraturan
+// khusus-Malay DIGUGURKAN daripada templat ini — ia kini hidup dalam
+// language pack (malay.js) dan disuntik HANYA apabila bahasa sasaran ialah
+// Malay, melalui composeDefaultTranslationPrompt(targetLanguage). Untuk 432
+// bahasa lain, generic.js membekalkan peraturan neutral. SIFAR teks
+// khusus-bahasa di sini.
+// Placeholder {{SPECIFIC_RULES}} digantikan pada masa komposisi; nilai statik
+// lalai ialah peraturan neutral supaya pemanggil warisan yang memakai
+// templat mentah (config.translationPrompt) kekal berfungsi.
+const { getLanguagePack } = require('./prompts/languagePacks');
+
+const DEFAULT_TRANSLATION_PROMPT_TEMPLATE = `Translate the following subtitles while:
 
 1. Preserving the timing and structure exactly as given
 2. Maintaining natural dialogue flow and colloquialisms appropriate to the target language
 3. Keeping the same number of lines and line breaks
 4. Preserving any formatting tags or special characters
 5. Ensuring translations are contextually accurate for film/TV dialogue
-6. For Malay (ms/my/mya/zsm): use natural Bahasa Melayu Malaysia, keep common English loanwords used in daily speech (okay, confirm, check, settle, try, call, parking, boss, etc.), and choose self-reference based on context: default saya/awak, close aku/kau, formal saya/anda. Strictly avoid Indonesianisms (bisa, banget, gimana, cewek/cowok, kalian, ngomong, kok, dong, sih). Never translate literally word-by-word.
+{{SPECIFIC_RULES}}
 
 Translate to {target_language}.
 
 Do NOT include acknowledgements, explanations, notes or alternative translations.
 
 Output ONLY the translated content, nothing else.`;
+
+// Neutral statik lalai (generic pack) — keserasian warisan bagi pemanggil
+// yang membaca DEFAULT_TRANSLATION_PROMPT terus tanpa bahasa sasaran.
+const DEFAULT_TRANSLATION_PROMPT = DEFAULT_TRANSLATION_PROMPT_TEMPLATE.replace(
+  '{{SPECIFIC_RULES}}',
+  getLanguagePack(null).specificRules
+);
+
+/**
+ * [UNIVERSAL-FIX] Komposisi prompt lalai mengikut bahasa sasaran.
+ * Malay → peraturan BM penuh daripada malay.js; lain → peraturan neutral
+ * generic.js. Identik untuk Malay (tiada regresi), baru untuk 432 bahasa lain.
+ * @param {string} targetLanguage - Bahasa sasaran (kod/nama)
+ * @returns {string} Prompt lalai penuh dengan rule #6 target-conditional
+ */
+function composeDefaultTranslationPrompt(targetLanguage) {
+  const pack = getLanguagePack(targetLanguage);
+  return DEFAULT_TRANSLATION_PROMPT_TEMPLATE.replace('{{SPECIFIC_RULES}}', pack.specificRules);
+}
 
 // v1.6.0 ID-PARITY SURGERY V2: GEMINI3_SYSTEM_INSTRUCTION is RETIRED. The
 // "Google-official" school (system instruction carrying behavioral constraints
@@ -1024,7 +1055,10 @@ class GeminiService {
   buildUserPrompt(subtitleContent, targetLanguage, customPrompt = null) {
     const normalizedTarget = normalizeTargetName(targetLanguage);
 
-    let systemPrompt = (customPrompt || DEFAULT_TRANSLATION_PROMPT)
+    // [UNIVERSAL-FIX] customPrompt warisan (config.translationPrompt)
+    // diutamakan seperti sebelumnya; fallback prompt lalai kini
+    // TARGET-CONDITIONAL (Malay → peraturan BM; lain → neutral).
+    let systemPrompt = (customPrompt || composeDefaultTranslationPrompt(targetLanguage))
       .replace('{target_language}', normalizedTarget);
 
     let userPrompt;
@@ -1690,6 +1724,10 @@ class GeminiService {
 
 module.exports = GeminiService;
 module.exports.DEFAULT_TRANSLATION_PROMPT = DEFAULT_TRANSLATION_PROMPT;
+// [UNIVERSAL-FIX] Target-conditional composer + templat mentah
+// ({{SPECIFIC_RULES}} belum diganti) bagi integrasi masa depan.
+module.exports.DEFAULT_TRANSLATION_PROMPT_TEMPLATE = DEFAULT_TRANSLATION_PROMPT_TEMPLATE;
+module.exports.composeDefaultTranslationPrompt = composeDefaultTranslationPrompt;
 module.exports.getModelFamily = getModelFamily;
 module.exports.getModelThinkingProfile = getModelThinkingProfile;
 module.exports.isGoogleModel = isGoogleModel;

@@ -3,7 +3,7 @@ const { handleTranslationError, logApiError } = require('../../utils/apiErrorHan
 const { httpAgent, httpsAgent } = require('../../utils/httpAgents');
 const log = require('../../utils/logger');
 const { sanitizeApiKeyForHeader } = require('../../utils/security');
-const { DEFAULT_TRANSLATION_PROMPT } = require('../gemini');
+const { DEFAULT_TRANSLATION_PROMPT, composeDefaultTranslationPrompt } = require('../gemini');
 const {
   findISO6391ByName,
   getLanguageName,
@@ -377,32 +377,40 @@ class OpenAICompatibleProvider {
       }
     ];
 
-    // ═══ UNIVERSAL PAYLOAD BUILDER (MANDAT OPERASI MUTLAK v5 2026-09-27) ═══
-    // Payload builder bagi Agent B. ARAHAN PROJECT OWNER — disahkan empirikal
-    // melalui API bos Afiq (kimi-k3 menerima muatan penuh, HTTP 200):
-    // SEMUA enjin model reasoning frontier (deepseek-v4-pro / deepseek-v4.1-flash
-    // / kimi-k3) menerima muatan SERAGAM:
-    //   - temperature: 0.0           — WAJIB dihantar (deterministik).
-    //   - reasoning_effort:"max"     — parameter peringkat atas.
-    //   - max_tokens: 131072         — siling 128K.
-    //   - extra_body.thinking:{type:"enabled"} — suis CoT DALAM extra_body.
-    //   - response_format json_object — JSON sah dijamin.
-    //   - top_p DIGUGURKAN           — DILARANG oleh arahan owner.
+    // ═══ [PAYLOAD-GODTIER] UNIVERSAL PAYLOAD BUILDER (4-KUNCI STREAMING, 2026-09-28) ═══
+    // Payload builder bagi Agent B (Fasa 0 Pre-Flight + Fasa B Inspection —
+    // endpoint yang sama). Ground truth empirikal (curl terus ke gateway
+    // rootsys.cloud, Kimi K3, SRT 759 baris): muatan 7-kunci lama GAGAL
+    // SEPENUHNYA (timeout Caddy 300s — tiada streaming), manakala muatan
+    // 4-kunci ini berjaya:
+    //   { model, messages, stream: true, temperature: 0.0 }
+    //   - stream:true  → chunk SSE menghidupkan sambungan Caddy → siling
+    //     keras 300s gateway tidak lagi membunuh giliran penaakulan panjang.
+    //     STREAMING WAJIB bagi setiap panggilan Agent B (Fasa 0 + Fasa B).
+    //   - temperature:0.0 → varians 61s → 19s (deterministik).
+    //   - extra_body.thinking / reasoning_effort / max_tokens /
+    //     response_format ialah PENCETUS OVERTHINKING terbukti (+90-110s
+    //     setiap satu) — DIGUGURKAN. Penaakulan Kimi K3 berlaku secara
+    //     semula jadi dalam mod stream. max_tokens juga menyebabkan
+    //     istilah kritikal tergugur.
+    //   - Kesahan JSON dijamin oleh lapisan parser tahan lasak
+    //     (stripReasoningTags + resilientParseJson / parseInspectorResponse),
+    //     BUKAN oleh response_format.
+    //   - Siling masa: diuruskan pada lapisan axios (translationTimeout,
+    //     lalai Agent B 300000ms = tepat siling Caddy) — bukan pada muatan.
     if (this.universalPayload === true) {
       const universalBody = {
         model: this.model,
-        temperature: 0.0,
-        reasoning_effort: 'max',
-        max_tokens: this.beastMaxTokens,
-        extra_body: {
-          thinking: {
-            type: 'enabled'
-          }
-        },
-        response_format: { type: 'json_object' },
-        messages
+        messages,
+        // [PAYLOAD-GODTIER] 4-kunci TEPAT: {model, messages, stream, temperature}.
+        // Laluan sebenar Agent B (translateSubtitle → delegasi SSE) sentiasa
+        // memanggil builder ini dengan stream=true — STREAMING WAJIB untuk
+        // mengalahkan siling keras Caddy 300s. Bentuk stream:false hanya
+        // wujud pada laluan fallback apabila endpoint membuktikan ketidak-
+        // sokongan SSE (lebih baik daripada kegagalan total).
+        stream: stream === true,
+        temperature: 0.0
       };
-      if (stream === true) universalBody.stream = true;
       return {
         body: universalBody,
         url: `${this.baseUrl}/chat/completions`,
@@ -576,7 +584,9 @@ class OpenAICompatibleProvider {
 
   buildUserPrompt(subtitleContent, targetLanguage, customPrompt = null) {
     const normalizedTarget = this.normalizeTargetName(targetLanguage);
-    let systemPrompt = (customPrompt || DEFAULT_TRANSLATION_PROMPT).replace('{target_language}', normalizedTarget);
+    // [UNIVERSAL-FIX] Fallback prompt lalai kini TARGET-CONDITIONAL —
+    // peraturan khusus-Malay hanya apabila sasaran ialah Malay; lain neutral.
+    let systemPrompt = (customPrompt || composeDefaultTranslationPrompt(targetLanguage)).replace('{target_language}', normalizedTarget);
 
     let userPrompt;
     let isSelfContained = false;
@@ -772,6 +782,27 @@ class OpenAICompatibleProvider {
   }
 
   async translateSubtitle(subtitleContent, sourceLanguage, targetLanguage, customPrompt = null, requestOptions = {}) {
+    // ═══ [PAYLOAD-GODTIER] STREAMING PROPAGATION (2026-09-28) ═══
+    // Agent B (universalPayload) membina muatan dengan stream:true secara
+    // MANDATORI (4-kunci god-tier). Respons mesti dihurai melalui laluan SSE
+    // — delegasi ke streamTranslateSubtitle (parser SSE sedia ada: proses
+    // chunk data:, [DONE], delta.content, raw recovery). Bendera
+    // __universalStreamFallback menghalang lelaran tak terhingga apabila
+    // streamTranslateSubtitle melakukan fallback bukan-stream (endpoint
+    // tidak menyokong SSE).
+    if (
+      this.universalPayload === true &&
+      requestOptions?.__universalStreamFallback !== true
+    ) {
+      return this.streamTranslateSubtitle(
+        subtitleContent,
+        sourceLanguage,
+        targetLanguage,
+        customPrompt,
+        null,
+        { ...requestOptions, __universalStreamFallback: true }
+      );
+    }
     const promptData = this.buildUserPrompt(subtitleContent, targetLanguage, customPrompt);
 
     let lastError;
