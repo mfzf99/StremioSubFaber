@@ -748,9 +748,9 @@
           "flag": "SA"
         }
       },
-      "heroTitle": "SubMaker",
+      "heroTitle": "SubFaber",
       "heroSubtitle": "AI-Powered Subtitle Translation",
-      "documentTitle": "SubMaker - Configure",
+      "documentTitle": "SubFaber - Configure",
       "quickStatsStatus": "Status",
       "quickStatsConfigure": "Configure",
       "quickStatsToolbox": "Toolbox",
@@ -762,7 +762,7 @@
       },
       "footer": {
         "love": "Made with <span class=\"footer-heart\">❤️</span> for Stremio users everywhere",
-        "thanks": "Thank you for using SubMaker! Your support helps make content accessible to everyone."
+        "thanks": "Thank you for using SubFaber! Your support helps make content accessible to everyone."
       },
       "quickSetup": {
         "title": "Quick Setup",
@@ -774,7 +774,7 @@
         "stepOf": "Step {current} of {total}",
         "step1": {
           "title": "What would you like to do?",
-          "subtitle": "Choose how SubMaker should handle your subtitles",
+          "subtitle": "Choose how SubFaber should handle your subtitles",
           "modeTranslateTitle": "Translate Subtitles",
           "modeTranslateDesc": "Fetch subtitles and translate them to your language using AI",
           "modeTranslateBadge": "Recommended",
@@ -783,7 +783,7 @@
         },
         "step2": {
           "title": "Subtitle Sources",
-          "subtitle": "Where should SubMaker fetch subtitles from?",
+          "subtitle": "Where should SubFaber fetch subtitles from?",
           "autoEnabled": "Auto-enabled",
           "opensubsDesc": "The largest subtitle database — no API key needed",
           "opensubsAuthToggle": "🔓 I have an OpenSubtitles account",
@@ -809,7 +809,7 @@
           "title": "AI Translation",
           "subtitle": "Set up Gemini AI for translating your subtitles",
           "poweredBy": "Powered by Google Gemini",
-          "poweredByDesc": "SubMaker uses {model} for fast, accurate subtitle translations. You'll need a free API key from Google AI Studio.",
+          "poweredByDesc": "SubFaber uses {model} for fast, accurate subtitle translations. You'll need a free API key from Google AI Studio.",
           "geminiKeyLabel": "Gemini API Key",
           "required": "*",
           "geminiKeyPlaceholder": "Enter your Gemini API key",
@@ -859,15 +859,15 @@
           "installOnStremio": "Install on Stremio"
         },
         "instructions": {
-          "link": "SubMaker Instructions",
+          "link": "SubFaber Instructions",
           "eyebrow": "Quick Setup guide",
-          "title": "What SubMaker does",
+          "title": "What SubFaber does",
           "closeAria": "Close instructions",
           "item1": "Fetches and shows all <strong>Source</strong> and <strong>Target</strong> language subtitles from subtitle sources.",
           "item2": "Creates <strong>\"Make [Target Language]\"</strong> translation lists inside Stremio's subtitles list.",
           "item3": "<strong>All \"Make\" translation lists keep the same order as the selected Source language subtitles list.</strong>",
           "clickTitle": "How translation starts",
-          "clickBody": "When you click a subtitle inside a <strong>\"Make\"</strong> translation list, SubMaker starts translating it from the selected source subtitle.<br>After 20-30 seconds, reload the same subtitle entry.<br>It should load <strong>translated</strong>.",
+          "clickBody": "When you click a subtitle inside a <strong>\"Make\"</strong> translation list, SubFaber starts translating it from the selected source subtitle.<br>After 20-30 seconds, reload the same subtitle entry.<br>It should load <strong>translated</strong>.",
           "sourceTitle": "Only 1 source language recommended",
           "sourceBody": "When <strong>\"Make\"</strong> translation lists are created, they follow the same subtitle order as the source language.<br>That lets you test the source subtitles for sync first, then choose the matching entry in the translation list instead of translating a source subtitle that is already out of sync.",
           "tip": "<strong>Tip:</strong> Check for sync drift around the middle and end of the source subtitles before translating."
@@ -925,8 +925,8 @@
           "gotIt": "Got it!"
         },
         "instructions": {
-          "eyebrow": "SubMaker guide",
-          "title": "How SubMaker works in Stremio",
+          "eyebrow": "SubFaber guide",
+          "title": "How SubFaber works in Stremio",
           "closeAria": "Close instructions",
           "intro": "Set your source-language order first, then use the matching <strong>\"Make\"</strong> entries in Stremio to translate from the source subtitle you already checked.",
           "usageTitle": "Basic setup",
@@ -935,10 +935,10 @@
           "step3": "Select <strong>source languages</strong>. One source language is usually best.",
           "step4": "Select <strong>target languages</strong> for the <strong>\"Make [Language]\"</strong> lists.",
           "step5": "<strong>Install in Stremio</strong> and open any video's subtitles list.",
-          "stremioTitle": "What SubMaker adds in Stremio",
+          "stremioTitle": "What SubFaber adds in Stremio",
           "stremioBody": "1. Fetches and shows subtitles in your selected source and target languages from the enabled subtitle providers.<br>2. Creates <strong>\"Make [Target Language]\"</strong> lists inside Stremio's subtitle picker.<br>3. Each <strong>\"Make\"</strong> list keeps the same order as the selected source-language list.",
           "whenTitle": "When you use a \"Make\" subtitle entry",
-          "whenBody": "Click a subtitle inside a <strong>\"Make\"</strong> list and SubMaker starts translating from the matching source subtitle.<br>After about 20-30 seconds, reload that same subtitle entry to see the translated version.",
+          "whenBody": "Click a subtitle inside a <strong>\"Make\"</strong> list and SubFaber starts translating from the matching source subtitle.<br>After about 20-30 seconds, reload that same subtitle entry to see the translated version.",
           "quickTipTitle": "Recovery tip",
           "quickTipBody": "If a translation looks broken, wrong, or out of sync while the source subtitle is fine, triple-click that same subtitle entry to force a fresh re-translation, or change translation settings.",
           "deliveryTitle": "Translation timing",
@@ -953,15 +953,15 @@
           "step1": "In Stremio, open the subtitles list and click <strong>\"Sub Toolbox\"</strong>.",
           "step2": "Right-click the playing stream/video in Stremio and choose <strong>\"Download Subtitles\"</strong> to launch the toolbox in your browser.",
           "step3": "Pick a tool: Extract & translate embedded subs, Translate subtitle files, Synchronize subtitles, or Automatic subtitles.",
-          "step4": "Each tool opens in your browser using your saved SubMaker session and AI provider settings.",
+          "step4": "Each tool opens in your browser using your saved SubFaber session and AI provider settings.",
           "step5": "Follow the on-screen steps, then drag the result back into Stremio if needed."
         },
         "reset": {
-          "title": "Reset This Browser's SubMaker Data",
+          "title": "Reset This Browser's SubFaber Data",
           "intro": "<strong>This is a full local reset for this browser on this site. It will:</strong>",
           "item1": "Forget the current config token, cached config, Token Vault / Profile Manager entries, and any Quick Setup draft progress saved in this browser",
           "item2": "Reset site and tool preferences such as UI language, theme, panel/section state, What's New status, dismissed instructions, and saved tool options",
-          "item3": "Clear SubMaker browser storage for this site: localStorage, sessionStorage, cookies, service worker, Cache Storage, and any IndexedDB created here",
+          "item3": "Clear SubFaber browser storage for this site: localStorage, sessionStorage, cookies, service worker, Cache Storage, and any IndexedDB created here",
           "item4": "Reload Configure as a fresh blank draft with default settings and no saved local profile selected",
           "item5": "Not delete server-side tokens or profiles; any token URL saved elsewhere can still reopen them",
           "footer": "After reload, this browser starts from scratch.",
@@ -1330,7 +1330,7 @@
         },
         "enableSeasonPacks": {
           "label": "Include Season Pack Subtitles",
-          "description": "SubMaker fetches and tries to extract specific subtitles from full season packs for better coverage. Useful for Animes. Disable to only show episode-specific subtitles."
+          "description": "SubFaber fetches and tries to extract specific subtitles from full season packs for better coverage. Useful for Animes. Disable to only show episode-specific subtitles."
         },
         "forceSRTOutput": {
           "label": "Force SRT output",

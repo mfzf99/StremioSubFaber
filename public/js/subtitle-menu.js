@@ -1225,7 +1225,7 @@
       <div class="subtitle-menu-status" id="subtitleMenuStatus" role="status" aria-live="polite"></div>
       <div class="subtitle-menu-footer" id="subtitleMenuFooter">
         <div class="subtitle-menu-footer-info">
-          <div class="subtitle-menu-footer-title">SubMaker</div>
+          <div class="subtitle-menu-footer-title">SubFaber</div>
           <div class="subtitle-menu-footer-meta">${versionLabel}</div>
         </div>
         <div class="subtitle-menu-footer-stats" id="subtitleMenuFooterStats"></div>

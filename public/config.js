@@ -206,11 +206,11 @@
 
     function applyStaticCopy() {
         try {
-            document.title = tConfig('config.documentTitle', {}, document.title || 'SubMaker - Configure');
+            document.title = tConfig('config.documentTitle', {}, document.title || 'SubFaber - Configure');
         } catch (_) { }
         setAttr('uiLanguageDock', 'aria-label', 'config.uiLanguageAria', 'UI language');
         setAttr('uiLanguageDock', 'title', 'config.uiLanguageAria', 'UI language');
-        setText('heroTitle', 'config.heroTitle', 'SubMaker');
+        setText('heroTitle', 'config.heroTitle', 'SubFaber');
         setText('heroSubtitle', 'config.heroSubtitle', 'AI-Powered Subtitle Translation');
         setAttr('subToolboxLauncher', 'title', 'config.actions.openToolbox', 'Open Sub Toolbox');
         setAttr('subToolboxLauncher', 'aria-label', 'config.actions.openToolbox', 'Open Sub Toolbox');
@@ -2346,7 +2346,7 @@ Translate to {target_language}.`;
         openTokenVaultOverridePrompt({
             eyebrow: `${TOKEN_VAULT_MAX_ENTRIES} saved tokens max`,
             title: 'Saving this token needs one vault slot',
-            message: `SubMaker keeps up to ${TOKEN_VAULT_MAX_ENTRIES} saved tokens in this browser. Keeping this save will purge the oldest local vault entry below.`,
+            message: `SubFaber keeps up to ${TOKEN_VAULT_MAX_ENTRIES} saved tokens in this browser. Keeping this save will purge the oldest local vault entry below.`,
             detail: 'Only the local browser vault changes. The purged token is not deleted from the server.',
             confirmLabel: 'Keep new token',
             victims: plan.overflowVictims,
@@ -3361,7 +3361,7 @@ Translate to {target_language}.`;
         const completeRemovalMarkup = selected.token
             ? `<div class="token-vault-complete-removal">
                     <button type="button" class="token-vault-action token-vault-action-danger" data-vault-action="complete-removal"${managerTokenAttr}>Complete Removal</button>
-                    <p class="token-vault-complete-removal-copy">Permanently deletes this token from SubMaker storage and clears this browser copy.</p>
+                    <p class="token-vault-complete-removal-copy">Permanently deletes this token from SubFaber storage and clears this browser copy.</p>
                 </div>`
             : '';
 
@@ -4987,7 +4987,7 @@ Translate to {target_language}.`;
             emblem: '!',
             eyebrow: 'Forget this token',
             title: `Forget ${view.label}?`,
-            message: 'SubMaker will forget this token in the current browser immediately.',
+            message: 'SubFaber will forget this token in the current browser immediately.',
             detail: detailParts.join(' '),
             victims: [view.entry],
             cancelLabel: 'Keep token',
@@ -5014,7 +5014,7 @@ Translate to {target_language}.`;
         const subjectEntry = buildTokenVaultSubjectEntry(view);
 
         const detailParts = [
-            'This permanently deletes the session from SubMaker storage and removes any saved browser copy on this device.'
+            'This permanently deletes the session from SubFaber storage and removes any saved browser copy on this device.'
         ];
         if (wasActiveToken) {
             detailParts.push('This page will detach immediately and keep your current settings only as a recovered draft until you save again.');
@@ -5094,7 +5094,7 @@ Translate to {target_language}.`;
                     } else {
                         showAlert(
                             serverDeleted
-                                ? `${view.label} permanently removed from SubMaker.`
+                                ? `${view.label} permanently removed from SubFaber.`
                                 : `${view.label} cleared locally. No live session remained on the server.`,
                             'success'
                         );
@@ -5473,7 +5473,7 @@ Translate to {target_language}.`;
         setUiLanguageExpanded(wasExpanded);
         const heroTitle = document.getElementById('heroTitle');
         if (heroTitle) {
-            heroTitle.textContent = translate('config.heroTitle', 'SubMaker');
+            heroTitle.textContent = translate('config.heroTitle', 'SubFaber');
         }
         const heroSubtitle = document.getElementById('heroSubtitle');
         if (heroSubtitle) {
@@ -12072,7 +12072,7 @@ Translate to {target_language}.`;
                 openTokenVaultOverridePrompt({
                     eyebrow: `${TOKEN_VAULT_MAX_ENTRIES} saved tokens max`,
                     title: 'Saving this draft needs one vault slot',
-                    message: `SubMaker keeps up to ${TOKEN_VAULT_MAX_ENTRIES} saved tokens in this browser. Saving this draft will purge the oldest local vault ${victimNoun} below.`,
+                    message: `SubFaber keeps up to ${TOKEN_VAULT_MAX_ENTRIES} saved tokens in this browser. Saving this draft will purge the oldest local vault ${victimNoun} below.`,
                     detail: 'Only the local browser vault changes. The purged token is not deleted from the server.',
                     confirmLabel: 'Save and replace',
                     victims: overflowVictims,

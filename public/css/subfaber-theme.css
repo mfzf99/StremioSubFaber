@@ -1,0 +1,445 @@
+/* ============================================================================
+   SubFaber — Modern Dark Dashboard Theme (standalone override)
+   ----------------------------------------------------------------------------
+   Loaded AFTER configure.css. Redefines the token layer to a slate/charcoal
+   surface system with a premium-red accent, and neutralises the legacy
+   glossy-pastel components (yellow icons, white cards, cyan glows, 3D bevels).
+
+   IMPORTANT: This file only changes visual presentation. No selectors here add
+   or remove behaviour, and every hook (ids, classes, data-* attributes) used
+   by config.js and the other scripts is preserved. Purely additive styling.
+   ============================================================================ */
+
+/* ---------------------------------------------------------------------------
+   1. Design tokens — force the dark dashboard palette across every theme state
+   (light / dark / blackhole all resolve to the same premium dark surface so
+   the brand look is consistent regardless of the saved theme preference).
+   --------------------------------------------------------------------------- */
+:root,
+:root:not([data-theme]),
+[data-theme="light"],
+[data-theme="dark"],
+[data-theme="blackhole"] {
+    /* Premium red accent ramp */
+    --primary: #e11d2a;
+    --primary-light: #ff4655;
+    --primary-dark: #b3141f;
+    --secondary: #ff4655;
+    --accent: #f43f5e;
+
+    /* Status colours (kept semantic, tuned for dark) */
+    --success: #22c55e;
+    --warning: #f59e0b;
+    --danger: #ef4444;
+
+    /* Slate / charcoal surface system */
+    --bg-primary: #0d0f14;
+    --bg-secondary: #12141b;
+    --bg-tertiary: #171a22;
+    --surface: #16191f;
+    --surface-light: #1e222b;
+
+    /* Typography */
+    --text-primary: #eceef1;
+    --text-secondary: #9aa1ad;
+
+    /* Structure */
+    --border: #2a2f3a;
+    --shadow: rgba(0, 0, 0, 0.55);
+    --glow: rgba(225, 29, 42, 0.28);
+
+    color-scheme: dark;
+}
+
+html {
+    color-scheme: dark;
+}
+
+/* Modern system font stack + dark canvas */
+body {
+    font-family: 'Inter', 'Segoe UI Variable Text', -apple-system, BlinkMacSystemFont, 'Segoe UI', system-ui, sans-serif;
+    background:
+        radial-gradient(1200px 600px at 15% -10%, rgba(225, 29, 42, 0.10) 0%, transparent 55%),
+        radial-gradient(1000px 500px at 100% 0%, rgba(255, 70, 85, 0.06) 0%, transparent 50%),
+        linear-gradient(180deg, #0b0d11 0%, #0d0f14 40%, #0a0c10 100%);
+    background-attachment: fixed;
+    color: var(--text-primary);
+}
+
+/* Neutralise the light-mode body::before pastel wash */
+body::before {
+    background:
+        radial-gradient(circle at 20% 50%, rgba(225, 29, 42, 0.08) 0%, transparent 50%),
+        radial-gradient(circle at 80% 50%, rgba(255, 70, 85, 0.06) 0%, transparent 50%) !important;
+}
+
+/* Scrollbars → red on charcoal */
+html,
+body {
+    scrollbar-color: var(--primary) var(--surface-light);
+}
+
+html::-webkit-scrollbar-thumb,
+body::-webkit-scrollbar-thumb {
+    background: linear-gradient(135deg, var(--primary) 0%, var(--primary-light) 100%);
+    border: 2px solid var(--surface-light);
+}
+
+/* ---------------------------------------------------------------------------
+   2. Hero title — replace glossy 3D pastel block with a clean dark card
+   --------------------------------------------------------------------------- */
+h1,
+[data-theme="dark"] h1,
+[data-theme="blackhole"] h1 {
+    background:
+        linear-gradient(180deg, rgba(255, 255, 255, 0.03) 0%, rgba(0, 0, 0, 0.10) 100%),
+        linear-gradient(135deg, #1c1f27 0%, #14161c 100%);
+    border: 1px solid var(--border);
+    border-radius: 16px;
+    color: #ffffff;
+    text-shadow: 0 1px 2px rgba(0, 0, 0, 0.6);
+    box-shadow:
+        inset 0 1px 0 rgba(255, 255, 255, 0.05),
+        0 10px 30px rgba(0, 0, 0, 0.5),
+        0 0 0 1px rgba(225, 29, 42, 0.14);
+    animation: none;
+    letter-spacing: -0.02em;
+    background-clip: padding-box;
+}
+
+/* Red accent underline on the hero for a dashboard header feel */
+h1::after {
+    content: '';
+    position: absolute;
+    left: 1.5rem;
+    right: 1.5rem;
+    bottom: 0.35rem;
+    height: 3px;
+    border-radius: 3px;
+    background: linear-gradient(90deg, var(--primary) 0%, var(--primary-light) 100%);
+    box-shadow: 0 0 14px rgba(225, 29, 42, 0.55);
+    pointer-events: none;
+}
+
+h1:hover,
+[data-theme="dark"] h1:hover,
+[data-theme="blackhole"] h1:hover {
+    transform: translateY(-2px);
+    box-shadow:
+        inset 0 1px 0 rgba(255, 255, 255, 0.06),
+        0 16px 40px rgba(0, 0, 0, 0.6),
+        0 0 0 1px rgba(225, 29, 42, 0.3);
+}
+
+.subtitle {
+    color: var(--text-secondary);
+}
+
+.logo img {
+    box-shadow: 0 8px 28px rgba(0, 0, 0, 0.55), 0 0 0 1px var(--border);
+}
+
+/* ---------------------------------------------------------------------------
+   3. Section blocks + cards → clean slate dashboard cards
+   --------------------------------------------------------------------------- */
+.section-block {
+    background: linear-gradient(180deg, #14171d 0%, #111318 100%);
+    border: 1px solid var(--border);
+    border-radius: 16px;
+    box-shadow: 0 10px 30px rgba(0, 0, 0, 0.45);
+}
+
+.card,
+[data-theme="dark"] .card,
+[data-theme="blackhole"] .card {
+    background: linear-gradient(180deg, rgba(30, 34, 43, 0.65) 0%, rgba(22, 25, 31, 0.85) 100%);
+    border: 1px solid var(--border);
+    border-radius: 14px;
+    box-shadow: 0 6px 20px rgba(0, 0, 0, 0.35);
+}
+
+.card:hover {
+    border-color: rgba(225, 29, 42, 0.5);
+    box-shadow: 0 12px 34px rgba(0, 0, 0, 0.5), 0 0 0 1px rgba(225, 29, 42, 0.18);
+    transform: translateY(-2px);
+}
+
+.card-header {
+    border-bottom-color: var(--border);
+}
+
+/* Section icon — was cyan glossy glow, now a flat red tile */
+.section-icon,
+[data-theme="dark"] .section-icon,
+[data-theme="blackhole"] .section-icon {
+    background: linear-gradient(135deg, var(--primary) 0%, var(--primary-dark) 100%);
+    border: 1px solid rgba(255, 255, 255, 0.08);
+    color: #fff;
+    text-shadow: 0 1px 2px rgba(0, 0, 0, 0.5);
+    box-shadow:
+        inset 0 1px 0 rgba(255, 255, 255, 0.18),
+        0 6px 16px rgba(225, 29, 42, 0.28);
+    animation: none;
+}
+
+/* Card icon — was yellow/blue glossy 3D, now a subtle slate tile with red glyph */
+.card-icon,
+[data-theme="dark"] .card-icon,
+[data-theme="blackhole"] .card-icon {
+    background: linear-gradient(180deg, #232732 0%, #1a1e26 100%);
+    border: 1px solid var(--border);
+    color: var(--primary-light);
+    text-shadow: none;
+    box-shadow:
+        inset 0 1px 0 rgba(255, 255, 255, 0.05),
+        0 4px 12px rgba(0, 0, 0, 0.4);
+}
+
+.section-title,
+.card-title {
+    color: var(--text-primary);
+}
+
+.section-description,
+.label-description {
+    color: var(--text-secondary);
+}
+
+/* ---------------------------------------------------------------------------
+   4. Inputs / selects / textareas → dark fields
+   --------------------------------------------------------------------------- */
+input[type="text"],
+input[type="password"],
+input[type="number"],
+input[type="email"],
+input[type="url"],
+textarea,
+select {
+    background: #0f1218;
+    border: 1px solid var(--border);
+    color: var(--text-primary);
+}
+
+input[type="text"]:focus,
+input[type="password"]:focus,
+input[type="number"]:focus,
+input[type="email"]:focus,
+input[type="url"]:focus,
+textarea:focus,
+select:focus {
+    border-color: var(--primary);
+    box-shadow: 0 0 0 3px rgba(225, 29, 42, 0.28);
+    outline: none;
+}
+
+input::placeholder,
+textarea::placeholder,
+[data-theme="dark"] input[type="text"]::placeholder,
+[data-theme="dark"] input[type="password"]::placeholder,
+[data-theme="blackhole"] input[type="text"]::placeholder,
+[data-theme="blackhole"] input[type="password"]::placeholder {
+    color: #5b616d;
+}
+
+/* Radio/label tiles that used inline white backgrounds */
+label[style*="background: white"],
+label[style*="background:#fff"],
+label[style*="background: #fff"] {
+    background: #14171d !important;
+    border-color: var(--border) !important;
+    color: var(--text-primary);
+}
+
+label:has(input[type="radio"]:checked)[style*="background: white"] {
+    background: #1b1f27 !important;
+    border-color: var(--primary) !important;
+}
+
+/* Inline surface-light chips used across the form */
+[style*="var(--surface-light)"] {
+    color: var(--text-primary);
+}
+
+/* ---------------------------------------------------------------------------
+   5. Toggles, buttons, validation → premium red
+   --------------------------------------------------------------------------- */
+.toggle-slider {
+    background: #2a2f3a;
+}
+
+.toggle-switch input:checked+.toggle-slider {
+    background: linear-gradient(135deg, var(--primary) 0%, var(--primary-light) 100%);
+}
+
+.btn-primary {
+    background: linear-gradient(135deg, var(--primary) 0%, var(--primary-dark) 100%);
+    color: #fff;
+}
+
+.btn-primary:hover {
+    box-shadow: 0 10px 26px rgba(225, 29, 42, 0.4);
+}
+
+.btn-secondary {
+    background: var(--surface-light);
+    color: var(--text-primary);
+    border: 1px solid var(--border);
+}
+
+.btn-secondary:hover {
+    border-color: var(--primary);
+}
+
+.validate-api-btn {
+    background: linear-gradient(135deg, var(--primary) 0%, var(--primary-light) 100%);
+    color: #fff;
+}
+
+.collapse-btn:hover {
+    background: rgba(225, 29, 42, 0.12);
+    border-color: var(--primary);
+}
+
+/* Floating action / help buttons — dark slate pucks with red edge */
+.help-button.mario {
+    background: linear-gradient(180deg, #1d212a 0%, #14171d 100%);
+    border: 1px solid rgba(225, 29, 42, 0.4);
+    color: var(--text-primary);
+}
+
+[data-theme="blackhole"] .theme-toggle,
+.theme-toggle {
+    background: linear-gradient(180deg, #1d212a 0%, #14171d 100%);
+    border-color: var(--border);
+}
+
+/* ---------------------------------------------------------------------------
+   6. Alerts, info boxes, feedback → red-tinted on dark
+   --------------------------------------------------------------------------- */
+.alert-info,
+[data-theme="dark"] .alert-info,
+[data-theme="blackhole"] .alert-info {
+    background: rgba(225, 29, 42, 0.12);
+    border-color: var(--primary);
+    color: #ffd9dd;
+}
+
+.info-box {
+    background: rgba(225, 29, 42, 0.08);
+    border: 1px solid rgba(225, 29, 42, 0.3);
+}
+
+.validation-feedback.info {
+    background: rgba(225, 29, 42, 0.1);
+    border: 1px solid rgba(225, 29, 42, 0.3);
+    color: var(--primary-light);
+}
+
+.language-item.selected {
+    background: linear-gradient(135deg, rgba(225, 29, 42, 0.18) 0%, rgba(255, 70, 85, 0.14) 100%);
+    border-color: var(--primary);
+}
+
+/* ---------------------------------------------------------------------------
+   7. Modals + What's New portal → dark glass, red seams
+   --------------------------------------------------------------------------- */
+.modal,
+[data-theme="dark"] .modal,
+[data-theme="blackhole"] .modal {
+    background: linear-gradient(180deg, #16191f 0%, #12141a 100%);
+    border: 1px solid var(--border);
+    box-shadow: 0 28px 80px rgba(0, 0, 0, 0.7), 0 0 0 1px rgba(225, 29, 42, 0.14);
+}
+
+.modal-header,
+[data-theme="dark"] .modal-header,
+[data-theme="blackhole"] .modal-header {
+    background: linear-gradient(135deg, rgba(225, 29, 42, 0.10) 0%, rgba(255, 70, 85, 0.05) 100%);
+    border-bottom-color: var(--border);
+}
+
+.modal-footer {
+    background: var(--surface);
+    border-top-color: var(--border);
+}
+
+.portal-frame,
+:root:not([data-theme]) .portal-frame,
+[data-theme="dark"] .portal-frame,
+[data-theme="blackhole"] .portal-frame {
+    background: linear-gradient(135deg, #131519 0%, #0f1116 60%, #0c0e12 100%);
+    border: 1px solid var(--border) !important;
+    box-shadow:
+        0 0 0 1px rgba(225, 29, 42, 0.18),
+        0 20px 60px rgba(0, 0, 0, 0.6);
+}
+
+.portal-corner,
+:root:not([data-theme]) .portal-corner,
+[data-theme="blackhole"] .portal-corner {
+    border-color: rgba(225, 29, 42, 0.6) !important;
+}
+
+.portal-header:hover {
+    background: rgba(225, 29, 42, 0.1);
+}
+
+.portal-icon {
+    filter: drop-shadow(0 0 8px rgba(225, 29, 42, 0.7));
+}
+
+.portal-version-badge {
+    color: #ffe1e4;
+    background: linear-gradient(135deg, rgba(225, 29, 42, 0.35), rgba(255, 70, 85, 0.2));
+    border: 1px solid rgba(225, 29, 42, 0.4);
+}
+
+/* ---------------------------------------------------------------------------
+   8. Token Vault + quick-setup accents → red on slate
+   --------------------------------------------------------------------------- */
+.token-vault-rail-item,
+.token-vault-rail-add,
+.token-vault-create,
+.token-vault-manager {
+    border-color: var(--border) !important;
+    background: linear-gradient(180deg, rgba(30, 34, 43, 0.6), rgba(22, 25, 31, 0.8)) !important;
+    color: var(--text-primary);
+}
+
+.token-vault-rail-item {
+    border-left: 4px solid var(--primary) !important;
+}
+
+.token-vault-launcher {
+    background: linear-gradient(180deg, #1d212a 0%, #14171d 100%);
+    border: 1px solid rgba(225, 29, 42, 0.4);
+}
+
+/* Progress / gradient bars that were cyan */
+.token-vault-create-progress-bar,
+.token-vault-header-accent {
+    background: linear-gradient(90deg, var(--primary), var(--primary-light)) !important;
+}
+
+/* ---------------------------------------------------------------------------
+   9. Footer
+   --------------------------------------------------------------------------- */
+.footer {
+    color: var(--text-secondary);
+    border-top: 1px solid var(--border);
+}
+
+.footer-heart {
+    filter: drop-shadow(0 0 6px rgba(225, 29, 42, 0.6));
+}
+
+/* ---------------------------------------------------------------------------
+   10. Reduced-motion friendliness (dashboard should feel calm, not animated)
+   --------------------------------------------------------------------------- */
+@media (prefers-reduced-motion: reduce) {
+
+    h1,
+    .section-icon {
+        animation: none !important;
+    }
+}

@@ -200,7 +200,7 @@
             poweredByDesc.textContent = tQs(
                 'step3.poweredByDesc',
                 { model: modelLabel },
-                `SubMaker uses ${modelLabel} for fast, accurate subtitle translations. You'll need a free API key from Google AI Studio.`
+                `SubFaber uses ${modelLabel} for fast, accurate subtitle translations. You'll need a free API key from Google AI Studio.`
             );
         }
         if (defaultModelValue) {

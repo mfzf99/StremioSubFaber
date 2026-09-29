@@ -13,8 +13,8 @@
         <div class="modal instructions-modal">
             <div class="modal-header instructions-modal-header">
                 <div class="instructions-hero-copy">
-                    <div class="instructions-eyebrow" data-i18n="config.overlays.instructions.eyebrow">SubMaker guide</div>
-                    <h2 data-i18n="config.overlays.instructions.title">How SubMaker works in Stremio</h2>
+                    <div class="instructions-eyebrow" data-i18n="config.overlays.instructions.eyebrow">SubFaber guide</div>
+                    <h2 data-i18n="config.overlays.instructions.title">How SubFaber works in Stremio</h2>
                     <p class="instructions-intro" data-i18n="config.overlays.instructions.intro" data-i18n-attr="innerHTML">Set your source-language order first, then use the matching <strong>"Make"</strong> entries in Stremio to translate from the source subtitle you already checked.</p>
                 </div>
                 <button type="button" class="modal-close" id="closeInstructionsBtn"
@@ -36,13 +36,13 @@
 
                 <div class="instructions-grid">
                     <article class="instructions-card">
-                        <h3 data-i18n="config.overlays.instructions.stremioTitle">What SubMaker adds in Stremio</h3>
+                        <h3 data-i18n="config.overlays.instructions.stremioTitle">What SubFaber adds in Stremio</h3>
                         <p data-i18n="config.overlays.instructions.stremioBody" data-i18n-attr="innerHTML">1. Fetches and shows subtitles in your selected source and target languages from the enabled subtitle providers.<br>2. Creates <strong>"Make [Target Language]"</strong> lists inside Stremio's subtitle picker.<br>3. Each <strong>"Make"</strong> list keeps the same order as the selected source-language list.</p>
                     </article>
 
                     <article class="instructions-card">
                         <h3 data-i18n="config.overlays.instructions.whenTitle">When you use a "Make" subtitle entry</h3>
-                        <p data-i18n="config.overlays.instructions.whenBody" data-i18n-attr="innerHTML">Click a subtitle inside a <strong>"Make"</strong> list and SubMaker starts translating from the matching source subtitle.<br>After about 20-30 seconds, reload that same subtitle entry to see the translated version.</p>
+                        <p data-i18n="config.overlays.instructions.whenBody" data-i18n-attr="innerHTML">Click a subtitle inside a <strong>"Make"</strong> list and SubFaber starts translating from the matching source subtitle.<br>After about 20-30 seconds, reload that same subtitle entry to see the translated version.</p>
                     </article>
                 </div>
 
@@ -86,7 +86,7 @@
                     <li data-i18n="config.overlays.toolbox.step1" data-i18n-attr="innerHTML">In Stremio, open the subtitles list and click <strong>"Sub Toolbox"</strong>.</li>
                     <li data-i18n="config.overlays.toolbox.step2" data-i18n-attr="innerHTML">Right-click the playing stream/video in Stremio and choose <strong>"Download Subtitles"</strong> to launch the toolbox in your browser.</li>
                     <li data-i18n="config.overlays.toolbox.step3" data-i18n-attr="innerHTML">Pick a tool: Extract & translate embedded subs, Translate subtitle files, Synchronize subtitles, or Automatic subtitles.</li>
-                    <li data-i18n="config.overlays.toolbox.step4" data-i18n-attr="innerHTML">Each tool opens in your browser using your saved SubMaker session and AI provider settings.</li>
+                    <li data-i18n="config.overlays.toolbox.step4" data-i18n-attr="innerHTML">Each tool opens in your browser using your saved SubFaber session and AI provider settings.</li>
                     <li data-i18n="config.overlays.toolbox.step5" data-i18n-attr="innerHTML">Follow the on-screen steps, then drag the result back into Stremio if needed.</li>
                 </ol>
             </div>
@@ -168,7 +168,7 @@
     <div class="modal-overlay" id="resetConfirmModal">
         <div class="modal" role="dialog" aria-modal="true" aria-labelledby="resetConfirmTitle">
             <div class="modal-header">
-                <h2 id="resetConfirmTitle" data-i18n="config.overlays.reset.title">Reset This Browser's SubMaker Data</h2>
+                <h2 id="resetConfirmTitle" data-i18n="config.overlays.reset.title">Reset This Browser's SubFaber Data</h2>
                 <div class="modal-close" id="closeResetConfirmBtn">&times;</div>
             </div>
             <div class="modal-content">
@@ -176,7 +176,7 @@
                 <ul class="reset-checklist">
                     <li data-i18n="config.overlays.reset.item1">Forget the current config token, cached config, Token Vault / Profile Manager entries, and any Quick Setup draft progress saved in this browser</li>
                     <li data-i18n="config.overlays.reset.item2">Reset site and tool preferences such as UI language, theme, panel/section state, What's New status, dismissed instructions, and saved tool options</li>
-                    <li data-i18n="config.overlays.reset.item3">Clear SubMaker browser storage for this site: localStorage, sessionStorage, cookies, service worker, Cache Storage, and any IndexedDB created here</li>
+                    <li data-i18n="config.overlays.reset.item3">Clear SubFaber browser storage for this site: localStorage, sessionStorage, cookies, service worker, Cache Storage, and any IndexedDB created here</li>
                     <li data-i18n="config.overlays.reset.item4">Reload Configure as a fresh blank draft with default settings and no saved local profile selected</li>
                     <li data-i18n="config.overlays.reset.item5">Not delete server-side tokens or profiles; any token URL saved elsewhere can still reopen them</li>
                 </ul>

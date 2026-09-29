@@ -747,9 +747,9 @@
           "flag": "SA"
         }
       },
-      "heroTitle": "SubMaker",
+      "heroTitle": "SubFaber",
       "heroSubtitle": "Traducción de subtítulos con IA",
-      "documentTitle": "SubMaker - Configuración",
+      "documentTitle": "SubFaber - Configuración",
       "quickStatsStatus": "Estado",
       "quickStatsConfigure": "Configurar",
       "quickStatsToolbox": "Toolbox",
@@ -761,7 +761,7 @@
       },
       "footer": {
         "love": "Hecho con <span class=\"footer-heart\">❤️</span> para usuarios de Stremio en todas partes",
-        "thanks": "¡Gracias por usar SubMaker! Tu apoyo ayuda a que el contenido sea accesible para todos."
+        "thanks": "¡Gracias por usar SubFaber! Tu apoyo ayuda a que el contenido sea accesible para todos."
       },
       "quickSetup": {
         "title": "Configuración rápida",
@@ -773,7 +773,7 @@
         "stepOf": "Paso {current} de {total}",
         "step1": {
           "title": "¿Qué te gustaría hacer?",
-          "subtitle": "Elige cómo SubMaker debe manejar tus subtítulos",
+          "subtitle": "Elige cómo SubFaber debe manejar tus subtítulos",
           "modeTranslateTitle": "Traducir subtítulos",
           "modeTranslateDesc": "Buscar subtítulos y traducirlos a tu idioma con IA",
           "modeTranslateBadge": "Recomendado",
@@ -782,7 +782,7 @@
         },
         "step2": {
           "title": "Fuentes de subtítulos",
-          "subtitle": "¿De dónde debería SubMaker obtener los subtítulos?",
+          "subtitle": "¿De dónde debería SubFaber obtener los subtítulos?",
           "autoEnabled": "Habilitado automáticamente",
           "opensubsDesc": "La base de datos de subtítulos más grande — no se necesita clave API",
           "opensubsAuthToggle": "🔓 Tengo una cuenta de OpenSubtitles",
@@ -808,7 +808,7 @@
           "title": "Traducción con IA",
           "subtitle": "Configura Gemini AI para traducir tus subtítulos",
           "poweredBy": "Impulsado por Google Gemini",
-          "poweredByDesc": "SubMaker usa {model} para traducciones de subtítulos rápidas y precisas. Necesitarás una clave API gratuita de Google AI Studio.",
+          "poweredByDesc": "SubFaber usa {model} para traducciones de subtítulos rápidas y precisas. Necesitarás una clave API gratuita de Google AI Studio.",
           "geminiKeyLabel": "Clave API de Gemini",
           "required": "*",
           "geminiKeyPlaceholder": "Introduce tu clave API de Gemini",
@@ -858,15 +858,15 @@
           "installOnStremio": "Instalar en Stremio"
         },
         "instructions": {
-          "link": "Instrucciones de SubMaker",
+          "link": "Instrucciones de SubFaber",
           "eyebrow": "Guía de configuración rápida",
-          "title": "Qué hace SubMaker",
+          "title": "Qué hace SubFaber",
           "closeAria": "Cerrar instrucciones",
           "item1": "Obtiene y muestra todos los subtítulos en idiomas de <strong>origen</strong> y <strong>destino</strong> desde las fuentes de subtítulos.",
           "item2": "Crea listas de traducción <strong>\"Make [Idioma de destino]\"</strong> dentro de la lista de subtítulos de Stremio.",
           "item3": "<strong>Todas las listas \"Make\" mantienen el mismo orden que la lista de subtítulos del idioma de origen seleccionado.</strong>",
           "clickTitle": "Cómo empieza la traducción",
-          "clickBody": "Cuando haces clic en un subtítulo dentro de una lista de traducción <strong>\"Make\"</strong>, SubMaker empieza a traducirlo usando el subtítulo de origen seleccionado.<br>Después de 20-30 segundos, recarga la misma entrada de subtítulo.<br>Debería cargarse <strong>traducido</strong>.",
+          "clickBody": "Cuando haces clic en un subtítulo dentro de una lista de traducción <strong>\"Make\"</strong>, SubFaber empieza a traducirlo usando el subtítulo de origen seleccionado.<br>Después de 20-30 segundos, recarga la misma entrada de subtítulo.<br>Debería cargarse <strong>traducido</strong>.",
           "sourceTitle": "Se recomienda usar solo 1 idioma de origen",
           "sourceBody": "Cuando se crean las listas de traducción <strong>\"Make\"</strong>, siguen el mismo orden de subtítulos que el idioma de origen.<br>Eso te permite comprobar primero la sincronización de los subtítulos de origen y luego elegir la entrada equivalente en la lista de traducción en lugar de traducir un subtítulo de origen que ya está desincronizado.",
           "tip": "<strong>Consejo:</strong> Revisa si hay desfases de sincronización hacia la mitad y el final de los subtítulos de origen antes de traducir."
@@ -924,8 +924,8 @@
           "gotIt": "¡Entendido!"
         },
         "instructions": {
-          "eyebrow": "Guía de SubMaker",
-          "title": "Cómo funciona SubMaker en Stremio",
+          "eyebrow": "Guía de SubFaber",
+          "title": "Cómo funciona SubFaber en Stremio",
           "closeAria": "Cerrar instrucciones",
           "intro": "Primero define el orden de tus idiomas de origen y luego usa las entradas <strong>\"Make\"</strong> equivalentes en Stremio para traducir desde el subtítulo de origen que ya comprobaste.",
           "usageTitle": "Configuración básica",
@@ -934,10 +934,10 @@
           "step3": "Elige <strong>idiomas de origen</strong>. Normalmente es mejor usar uno solo.",
           "step4": "Elige <strong>idiomas de destino</strong> para las listas <strong>\"Make [Idioma]\"</strong>.",
           "step5": "<strong>Instala en Stremio</strong> y abre la lista de subtítulos de cualquier video.",
-          "stremioTitle": "Qué añade SubMaker en Stremio",
+          "stremioTitle": "Qué añade SubFaber en Stremio",
           "stremioBody": "1. Obtiene y muestra subtítulos en tus idiomas de origen y destino seleccionados desde los proveedores de subtítulos activados.<br>2. Crea listas <strong>\"Make [Idioma de destino]\"</strong> dentro del selector de subtítulos de Stremio.<br>3. Cada lista <strong>\"Make\"</strong> mantiene el mismo orden que la lista del idioma de origen seleccionado.",
           "whenTitle": "Cuando usas una entrada de subtítulo \"Make\"",
-          "whenBody": "Haz clic en un subtítulo dentro de una lista <strong>\"Make\"</strong> y SubMaker empezará a traducir desde el subtítulo de origen correspondiente.<br>Tras unos 20-30 segundos, recarga esa misma entrada para ver la versión traducida.",
+          "whenBody": "Haz clic en un subtítulo dentro de una lista <strong>\"Make\"</strong> y SubFaber empezará a traducir desde el subtítulo de origen correspondiente.<br>Tras unos 20-30 segundos, recarga esa misma entrada para ver la versión traducida.",
           "quickTipTitle": "Consejo de recuperación",
           "quickTipBody": "Si una traducción se ve rota, incorrecta o desincronizada mientras el subtítulo de origen está bien, haz triple clic en esa misma entrada de subtítulo para forzar una retraducción nueva, o cambia los ajustes de traducción.",
           "deliveryTitle": "Tiempos de traducción",
@@ -952,15 +952,15 @@
           "step1": "En Stremio, abre la lista de subtítulos y haz clic en <strong>\"Sub Toolbox\"</strong>.",
           "step2": "Haz clic derecho en el stream/video en reproducción en Stremio y elige <strong>\"Download Subtitles\"</strong> para abrir el toolbox en tu navegador.",
           "step3": "Elige una herramienta: Extraer y traducir subtítulos incrustados, traducir archivos de subtítulos, sincronizar subtítulos o subtítulos automáticos.",
-          "step4": "Cada herramienta se abre en tu navegador usando tu sesión de SubMaker y ajustes de proveedor de IA guardados.",
+          "step4": "Cada herramienta se abre en tu navegador usando tu sesión de SubFaber y ajustes de proveedor de IA guardados.",
           "step5": "Sigue los pasos en pantalla y arrastra el resultado a Stremio si es necesario."
         },
         "reset": {
-          "title": "Restablecer los datos de SubMaker en este navegador",
+          "title": "Restablecer los datos de SubFaber en este navegador",
           "intro": "<strong>Este es un reinicio local completo para este navegador en este sitio. Hará lo siguiente:</strong>",
           "item1": "Olvidar el token actual de configuración, la configuración en caché, las entradas de Token Vault / Gestor de Perfiles y cualquier progreso de Quick Setup guardado en este navegador",
           "item2": "Restablecer las preferencias del sitio y de las herramientas, como idioma de la interfaz, tema, estado de paneles/secciones, estado de Novedades, instrucciones descartadas y opciones guardadas de herramientas",
-          "item3": "Borrar los datos del navegador que usa SubMaker en este sitio: localStorage, sessionStorage, cookies, service worker, Cache Storage y cualquier IndexedDB creado aquí",
+          "item3": "Borrar los datos del navegador que usa SubFaber en este sitio: localStorage, sessionStorage, cookies, service worker, Cache Storage y cualquier IndexedDB creado aquí",
           "item4": "Recargar Configurar como un borrador en blanco con los ajustes predeterminados y sin ningún perfil local guardado seleccionado",
           "item5": "No borrar tokens ni perfiles del servidor; cualquier URL de token guardada en otro lugar todavía podrá reabrirlos",
           "footer": "Después de recargar, este navegador empezará desde cero.",
@@ -1293,7 +1293,7 @@
         },
         "database": {
           "label": "Base de datos SubFaber",
-          "description": "La base de datos de SubMaker guarda traducciones de forma permanente para reducir costos/uso de API de IA comunitaria.\nEl modo Omitir caché ignora la base compartida y guarda traducciones temporalmente (12 h).",
+          "description": "La base de datos de SubFaber guarda traducciones de forma permanente para reducir costos/uso de API de IA comunitaria.\nEl modo Omitir caché ignora la base compartida y guarda traducciones temporalmente (12 h).",
           "use": "Usar base de datos SubFaber",
           "bypass": "Omitir caché (forzar retraducción)",
           "noteTitle": "⚠️ Se requiere omitir caché:"
@@ -1331,7 +1331,7 @@
         },
         "enableSeasonPacks": {
           "label": "Incluir Subtítulos de Temporada Completa",
-          "description": "SubMaker busca y extrae subtítulos específicos de paquetes de temporada completa para mejor cobertura. Útil para Animes. Desactiva para mostrar solo subtítulos específicos de episodio."
+          "description": "SubFaber busca y extrae subtítulos específicos de paquetes de temporada completa para mejor cobertura. Útil para Animes. Desactiva para mostrar solo subtítulos específicos de episodio."
         },
         "forceSRTOutput": {
           "label": "Forzar salida SRT",

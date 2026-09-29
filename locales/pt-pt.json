@@ -747,9 +747,9 @@
           "flag": "SA"
         }
       },
-      "heroTitle": "SubMaker",
+      "heroTitle": "SubFaber",
       "heroSubtitle": "Tradução de Legendas com IA",
-      "documentTitle": "SubMaker - Configurar",
+      "documentTitle": "SubFaber - Configurar",
       "quickStatsStatus": "Estado",
       "quickStatsConfigure": "Configurar",
       "quickStatsToolbox": "Toolbox",
@@ -761,7 +761,7 @@
       },
       "footer": {
         "love": "Feito com <span class=\"footer-heart\">❤️</span> para utilizadores de Stremio em todo o lado",
-        "thanks": "Obrigado por usar o SubMaker! O seu apoio ajuda a tornar o conteúdo acessível a todos."
+        "thanks": "Obrigado por usar o SubFaber! O seu apoio ajuda a tornar o conteúdo acessível a todos."
       },
       "quickSetup": {
         "title": "Configuração Rápida",
@@ -773,7 +773,7 @@
         "stepOf": "Passo {current} de {total}",
         "step1": {
           "title": "O que gostaria de fazer?",
-          "subtitle": "Escolha como o SubMaker deve lidar com as suas legendas",
+          "subtitle": "Escolha como o SubFaber deve lidar com as suas legendas",
           "modeTranslateTitle": "Traduzir Legendas",
           "modeTranslateDesc": "Obter legendas e traduzi-las para o seu idioma usando IA",
           "modeTranslateBadge": "Recomendado",
@@ -782,7 +782,7 @@
         },
         "step2": {
           "title": "Fontes de Legendas",
-          "subtitle": "De onde deve o SubMaker obter legendas?",
+          "subtitle": "De onde deve o SubFaber obter legendas?",
           "autoEnabled": "Ativado automaticamente",
           "opensubsDesc": "A maior base de dados de legendas — não precisa de chave API",
           "opensubsAuthToggle": "🔓 Tenho uma conta no OpenSubtitles",
@@ -808,7 +808,7 @@
           "title": "Tradução com IA",
           "subtitle": "Configure o Gemini AI para traduzir as suas legendas",
           "poweredBy": "Desenvolvido com Google Gemini",
-          "poweredByDesc": "O SubMaker usa {model} para traduções de legendas rápidas e precisas. Precisará de uma chave API gratuita do Google AI Studio.",
+          "poweredByDesc": "O SubFaber usa {model} para traduções de legendas rápidas e precisas. Precisará de uma chave API gratuita do Google AI Studio.",
           "geminiKeyLabel": "Chave API do Gemini",
           "required": "*",
           "geminiKeyPlaceholder": "Insira a sua chave API do Gemini",
@@ -894,15 +894,15 @@
           "validationFailed": "Validação falhou"
         },
         "instructions": {
-          "link": "Instruções do SubMaker",
+          "link": "Instruções do SubFaber",
           "eyebrow": "Guia da Configuração Rápida",
-          "title": "O que o SubMaker faz",
+          "title": "O que o SubFaber faz",
           "closeAria": "Fechar instruções",
           "item1": "Obtém e mostra todas as legendas nos idiomas de <strong>origem</strong> e <strong>destino</strong> a partir das fontes de legendas.",
           "item2": "Cria listas de tradução <strong>\"Make [Idioma de Destino]\"</strong> dentro da lista de legendas do Stremio.",
           "item3": "<strong>Todas as listas \"Make\" mantêm a mesma ordem da lista de legendas do idioma de origem selecionado.</strong>",
           "clickTitle": "Como a tradução começa",
-          "clickBody": "Quando clica numa legenda dentro de uma lista de tradução <strong>\"Make\"</strong>, o SubMaker começa a traduzi-la usando a legenda de origem selecionada.<br>Após 20-30 segundos, recarregue a mesma entrada de legenda.<br>Deverá carregar <strong>traduzida</strong>.",
+          "clickBody": "Quando clica numa legenda dentro de uma lista de tradução <strong>\"Make\"</strong>, o SubFaber começa a traduzi-la usando a legenda de origem selecionada.<br>Após 20-30 segundos, recarregue a mesma entrada de legenda.<br>Deverá carregar <strong>traduzida</strong>.",
           "sourceTitle": "Apenas 1 idioma de origem é recomendado",
           "sourceBody": "Quando as listas de tradução <strong>\"Make\"</strong> são criadas, seguem a mesma ordem de legendas do idioma de origem.<br>Isso permite testar primeiro a sincronização das legendas de origem e só depois escolher a entrada correspondente na lista de tradução, em vez de traduzir uma legenda de origem que já está dessincronizada.",
           "tip": "<strong>Dica:</strong> Verifique se há desvios de sincronização perto do meio e do fim das legendas de origem antes de traduzir."
@@ -924,8 +924,8 @@
           "gotIt": "Percebi!"
         },
         "instructions": {
-          "eyebrow": "Guia do SubMaker",
-          "title": "Como o SubMaker funciona no Stremio",
+          "eyebrow": "Guia do SubFaber",
+          "title": "Como o SubFaber funciona no Stremio",
           "closeAria": "Fechar instruções",
           "intro": "Defina primeiro a ordem dos idiomas de origem e depois use as entradas <strong>\"Make\"</strong> correspondentes no Stremio para traduzir a partir da legenda de origem que já verificou.",
           "usageTitle": "Configuração básica",
@@ -934,10 +934,10 @@
           "step3": "Selecione <strong>idiomas de origem</strong>. Normalmente é melhor usar apenas um.",
           "step4": "Selecione <strong>idiomas de destino</strong> para as listas <strong>\"Make [Idioma]\"</strong>.",
           "step5": "<strong>Instale no Stremio</strong> e abra a lista de legendas de qualquer vídeo.",
-          "stremioTitle": "O que o SubMaker adiciona no Stremio",
+          "stremioTitle": "O que o SubFaber adiciona no Stremio",
           "stremioBody": "1. Obtém e mostra legendas nos idiomas de origem e destino selecionados a partir dos fornecedores de legendas ativados.<br>2. Cria listas <strong>\"Make [Idioma de Destino]\"</strong> dentro do seletor de legendas do Stremio.<br>3. Cada lista <strong>\"Make\"</strong> mantém a mesma ordem da lista do idioma de origem selecionado.",
           "whenTitle": "Quando usa uma entrada de legenda \"Make\"",
-          "whenBody": "Clique numa legenda dentro de uma lista <strong>\"Make\"</strong> e o SubMaker começa a traduzir a partir da legenda de origem correspondente.<br>Após cerca de 20-30 segundos, recarregue essa mesma entrada para ver a versão traduzida.",
+          "whenBody": "Clique numa legenda dentro de uma lista <strong>\"Make\"</strong> e o SubFaber começa a traduzir a partir da legenda de origem correspondente.<br>Após cerca de 20-30 segundos, recarregue essa mesma entrada para ver a versão traduzida.",
           "quickTipTitle": "Dica de recuperação",
           "quickTipBody": "Se uma tradução parecer partida, errada ou fora de sincronização enquanto a legenda de origem está boa, faça triplo clique nessa mesma entrada de legenda para forçar uma nova retradução, ou altere as definições de tradução.",
           "deliveryTitle": "Tempo de tradução",
@@ -952,15 +952,15 @@
           "step1": "No Stremio, abra a lista de legendas e clique em <strong>\"Sub Toolbox\"</strong>.",
           "step2": "Clique com o botão direito na transmissão/vídeo em reprodução no Stremio e escolha <strong>\"Transferir Legendas\"</strong> para lançar a caixa de ferramentas no seu navegador.",
           "step3": "Escolha uma ferramenta: Extrair e traduzir legendas incorporadas, Traduzir ficheiros de legendas, Sincronizar legendas ou Legendas automáticas.",
-          "step4": "Cada ferramenta abre no seu navegador usando a sua sessão SubMaker guardada e definições do fornecedor de IA.",
+          "step4": "Cada ferramenta abre no seu navegador usando a sua sessão SubFaber guardada e definições do fornecedor de IA.",
           "step5": "Siga os passos no ecrã, depois arraste o resultado de volta para o Stremio se necessário."
         },
         "reset": {
-          "title": "Repor os Dados do SubMaker neste Navegador",
+          "title": "Repor os Dados do SubFaber neste Navegador",
           "intro": "<strong>Isto é um reinício local completo para este navegador neste site. Irá:</strong>",
           "item1": "Esquecer o token atual, a configuração em cache, as entradas do Token Vault / Gestor de Perfis e qualquer progresso do Quick Setup guardado neste navegador",
           "item2": "Repor preferências do site e das ferramentas, como idioma da interface, tema, estado de painéis/secções, estado de Novidades, instruções dispensadas e opções guardadas das ferramentas",
-          "item3": "Limpar os dados do navegador usados pelo SubMaker neste site: localStorage, sessionStorage, cookies, service worker, Cache Storage e qualquer IndexedDB criado aqui",
+          "item3": "Limpar os dados do navegador usados pelo SubFaber neste site: localStorage, sessionStorage, cookies, service worker, Cache Storage e qualquer IndexedDB criado aqui",
           "item4": "Recarregar Configurar como um rascunho em branco com as definições padrão e sem perfil local guardado selecionado",
           "item5": "Não apagar tokens ou perfis do servidor; qualquer URL de token guardada noutro local continuará a poder reabri-los",
           "footer": "Depois de recarregar, este navegador começa do zero.",
@@ -1293,7 +1293,7 @@
         },
         "database": {
           "label": "Base de Dados SubFaber",
-          "description": "A base de dados do SubMaker guarda traduções permanentemente para reduzir custos/uso de API de IA da comunidade.\nO modo Bypass ignora a base de dados partilhada e armazena traduções temporariamente (12 horas).",
+          "description": "A base de dados do SubFaber guarda traduções permanentemente para reduzir custos/uso de API de IA da comunidade.\nO modo Bypass ignora a base de dados partilhada e armazena traduções temporariamente (12 horas).",
           "use": "Usar Base de Dados SubFaber",
           "bypass": "Ignorar Cache (Forçar Nova Tradução)",
           "noteTitle": "⚠️ Modo Bypass Obrigatório:"
@@ -1331,7 +1331,7 @@
         },
         "enableSeasonPacks": {
           "label": "Incluir Legendas de Temporada Completa",
-          "description": "O SubMaker procura e tenta extrair legendas específicas de pacotes de temporada completa para maior cobertura. Útil para Animes. Desative para mostrar apenas legendas específicas de episódio."
+          "description": "O SubFaber procura e tenta extrair legendas específicas de pacotes de temporada completa para maior cobertura. Útil para Animes. Desative para mostrar apenas legendas específicas de episódio."
         },
         "forceSRTOutput": {
           "label": "Forçar saída SRT",
