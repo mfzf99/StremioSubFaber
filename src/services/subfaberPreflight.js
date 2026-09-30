@@ -141,11 +141,14 @@ function buildPreflightPrompt(rawText, targetLanguage, sourceLanguage) {
   return `## Role
 You are a video translation expert and terminology consultant, specializing in ${src} comprehension and ${tgt} expression optimization.
 
+You are performing PRE-FLIGHT CONTEXT EXTRACTION ONLY. You are NOT translating the subtitle file, NOT rewriting dialogue, NOT choosing final translator pronouns or register, and NOT optimizing subtitle style — those are downstream translator decisions.
+
 ## DECISION DISCIPLINE (MANDATORY — READ FIRST)
-Work in ONE fast pass. Do NOT deliberate, second-guess, or weigh alternatives out loud. For every field: if the evidence is explicit, record it; if it is unclear or ambiguous, output null IMMEDIATELY and move on. Never agonize over borderline cases — null is always the correct answer when in doubt. Do NOT debate pronoun choices, gender, or social nuance; pronoun register is decided later by the translator, not here.
+Work in ONE fast pass. Return ONE answer per field: use the first explicit, evidence-supported answer and never reconsider it. Do NOT deliberate, second-guess, or debate. Do NOT generate, compare, or weigh alternative candidates, competing translations, or multiple interpretations — never output A/B alternatives. For every field: if the evidence is explicit, record it; if it is unclear, ambiguous, incomplete, or conflicting, output null IMMEDIATELY and move on. Never agonize over borderline cases — null is always the correct answer when in doubt. Do NOT optimize wording; this task is factual extraction, not stylistic choice. Do NOT debate pronoun choices, gender, or social nuance; pronoun register is decided later by the translator, not here.
 
 ## FACT VS INFERENCE DISCIPLINE (MANDATORY)
 Only lock a canonical_address in 'characters' if there is EXPLICIT, UNAMBIGUOUS textual evidence in the source. If gender, social hierarchy, or formal title is unclear, DO NOT GUESS; mark canonical_address as null or omit the character.
+- Do not infer gender, age, social hierarchy, occupation, relationship, title, or honorific unless the dialogue establishes it explicitly.
 - Every name, title, and relationship you output must be supported by explicit dialogue evidence (how characters address each other in the text).
 - Prefer omission over hallucination: a shorter 'characters' list with only evidenced entries is always safer than an invented one.
 
@@ -186,7 +189,10 @@ ${rawText}
   ]
 }
 
-You must respond ONLY with a raw JSON object matching the schema. Do not write any conversational preamble, introduction, or markdown commentary.
+You must respond ONLY with a raw JSON object matching the schema. Do not write any conversational preamble, introduction, or markdown commentary. Do not include explanations, notes, justification, warnings, or confidence statements.
+
+## FINAL CHECK (mechanical, not re-analysis)
+Before answering, verify mechanically: valid JSON; exactly the specified keys; no text outside the JSON; no alternative candidates anywhere; null for every unresolved field.
 
 Note: Start your answer with { and end with }, do not add any other text.`;
 }

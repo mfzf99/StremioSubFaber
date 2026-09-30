@@ -166,6 +166,67 @@ test('SubFaberPreflight: slim characters schema drops pronoun_register but keeps
   assert.ok(/one[- ]?pass|ONE fast pass/i.test(prompt), 'anti-deliberation must instruct a single fast pass');
 });
 
+// [REASONING-DISCIPLINE 2026-09-30] Ground-truth curl kimi-k3/glm-5.3 (laporan
+// lead coder): model reasoning-heavy membakar bajet completion pada perbandingan
+// alternatif internal. Kawalan bukan "DO NOT THINK" tetapi membuang SEBAB
+// penaakulan: ban alternative generation + first-answer rule + scope narrowing
+// + mechanical final check.
+test('SubFaberPreflight: [REASONING-DISCIPLINE] prompt bans alternative/candidate generation (kimi-k3/glm-5.3 control)', () => {
+  const prompt = buildPreflightPrompt('Dialogue.', 'Malay', 'English');
+  assert.ok(
+    prompt.includes('Do NOT generate, compare, or weigh alternative candidates'),
+    'Prompt must ban generating/comparing alternatives (strongest lever for reasoning-heavy models)'
+  );
+  assert.ok(
+    prompt.includes('never output A/B alternatives'),
+    'Prompt must forbid A/B alternative output'
+  );
+});
+
+test('SubFaberPreflight: [REASONING-DISCIPLINE] first-evidence-answer rule — no field reconsideration', () => {
+  const prompt = buildPreflightPrompt('Dialogue.', 'Malay', 'English');
+  assert.ok(
+    prompt.includes('use the first explicit, evidence-supported answer and never reconsider it'),
+    'Prompt must lock the decision path to the first evidence-supported answer'
+  );
+  assert.ok(
+    prompt.includes('Return ONE answer per field'),
+    'Prompt must mandate exactly one answer per field'
+  );
+});
+
+test('SubFaberPreflight: [REASONING-DISCIPLINE] scope narrowed to pre-flight extraction (NOT translating/rewriting/register)', () => {
+  const prompt = buildPreflightPrompt('Dialogue.', 'Malay', 'English');
+  assert.ok(
+    prompt.includes('PRE-FLIGHT CONTEXT EXTRACTION ONLY'),
+    'Prompt must declare the narrow objective up front'
+  );
+  assert.ok(
+    prompt.includes('You are NOT translating the subtitle file'),
+    'Prompt must tell the model what it is NOT responsible for (search-space reduction)'
+  );
+  assert.ok(
+    prompt.includes('factual extraction, not stylistic choice'),
+    'Prompt must separate fact extraction from wording optimization'
+  );
+});
+
+test('SubFaberPreflight: [REASONING-DISCIPLINE] mechanical final check + commentary ban', () => {
+  const prompt = buildPreflightPrompt('Dialogue.', 'Malay', 'English');
+  assert.ok(
+    prompt.includes('## FINAL CHECK (mechanical, not re-analysis)'),
+    'Prompt must close with a mechanical checklist, not another semantic debate'
+  );
+  assert.ok(
+    prompt.includes('no alternative candidates anywhere'),
+    'Final check must mechanically forbid alternatives in output'
+  );
+  assert.ok(
+    prompt.includes('Do not include explanations, notes, justification, warnings, or confidence statements'),
+    'Prompt must ban commentary/notes/justification in the final answer'
+  );
+});
+
 test('SubFaberPreflight: parse preserves direct_address + pronoun_register (null when absent)', () => {
   const response = JSON.stringify({
     theme: 'Family drama.',
