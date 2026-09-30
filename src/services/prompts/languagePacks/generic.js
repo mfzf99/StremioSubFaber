@@ -41,71 +41,37 @@ const genericPack = {
   creditsExample: 'provide the official ${tgt} media/publishing translation for each line (e.g. "Adapted from..." -> its official published ${tgt} rendering)',
 
   /**
-   * P2 injection: language-neutral few-shot — 4 jenayah (anti-crime weapons).
-   * [HARMONY-FIX] 2026-09-29: satu contoh → EMPAT contoh, satu bagi setiap
-   * jenayah Agent B (MERGE/SHIFT/PHANTOM/DROP). UNIVERSAL COMPLIANCE:
-   * sifar teks contoh khusus-bahasa — hanya kurungan placeholder + simbol
-   * universal (♪♪, [door slams]); mana-mana bahasa sasaran boleh mengalir
-   * melalui bentuk prompt yang sama.
+   * P2 injection: language-neutral few-shot — 2 contoh PARITY-CRITICAL.
+   * [PROMPT-SLIM 2026-09-30] 6 → 2 contoh: hanya MERGE + SHIFT (dua
+   * jenayah yang merosakkan struktur; yang lain dilindungi rules +
+   * inspection Agent B). UNIVERSAL COMPLIANCE kekal: sifar teks
+   * khusus-bahasa — placeholder + simbol universal sahaja.
    */
-  fewShot: `[EXAMPLE 1 — MERGE: split sentence and isolated question tag]
+  fewShot: `[EXAMPLE 1 — MERGE: keep split sentences and question tags isolated]
 Input:
 <s id="1">You are coming with us,</s>
 <s id="2">aren't you?</s>
-Correct output:
+Correct:
 <s id="1">[translation of "You are coming with us,"]</s>
 <s id="2">[translation of "aren't you?" — isolated tag in own slot]</s>
 Wrong (merged):
 <s id="1">[full merged sentence]</s>
 <s id="2">.</s>
 
-[EXAMPLE 2 — SHIFT: every slot must appear, symbol or SFX]
+[EXAMPLE 2 — SHIFT: every slot must appear; symbols/music copied as-is]
 Input:
 <s id="1">Sorry I'm late.</s>
 <s id="2">♪♪</s>
 <s id="3">[door slams]</s>
 <s id="4">No problem, sit down.</s>
-Correct output:
+Correct:
 <s id="1">[translation of "Sorry I'm late."]</s>
 <s id="2">♪♪</s>
 <s id="3">[translation of "[door slams]"]</s>
 <s id="4">[translation of "No problem, sit down."]</s>
-Wrong (slots skipped, dialogue drifts):
+Wrong (slots skipped):
 <s id="1">[translation of "Sorry I'm late."]</s>
-<s id="2">[translation of "No problem, sit down."]</s>
-
-[EXAMPLE 3 — PHANTOM: never elaborate beyond what the source says]
-Input:
-<s id="5">Wait.</s>
-Correct output:
-<s id="5">[translation of "Wait."]</s>
-Wrong (fabricated content not present in source):
-<s id="5">[elaborated version with content not in source]</s>
-
-[EXAMPLE 4 — DROP: the line's own meaning must survive, not be replaced]
-Input:
-<s id="6">I never wanted this to happen.</s>
-Correct output:
-<s id="6">[translation preserving specific meaning]</s>
-Wrong (meaning dropped, replaced with generic):
-<s id="6">[generic filler without source meaning]</s>
-
-[EXAMPLE 5 — UNTRANSLATED: a normal sentence must be translated, never copied verbatim]
-Input:
-<s id="7">Get in the car, now.</s>
-Correct output:
-<s id="7">[translation of "Get in the car, now." into the target language]</s>
-Wrong (source sentence copied verbatim — lazy-copy leak):
-<s id="7">Get in the car, now.</s>
-
-[EXAMPLE 6 — REGISTER: keep the locked title/pronoun for a character, never switch]
-Context: pre-flight locked one canonical target-language title for this character.
-Input:
-<s id="8">[a line addressing that character by title]</s>
-Correct output:
-<s id="8">[translation using the LOCKED canonical title/pronoun for that character]</s>
-Wrong (locked title/pronoun switched to a different register):
-<s id="8">[translation using a different title/pronoun than the locked one]</s>`,
+<s id="2">[translation of "No problem, sit down."]</s>`,
 
   /**
    * P8 injection: neutral rule #6 for DEFAULT_TRANSLATION_PROMPT.

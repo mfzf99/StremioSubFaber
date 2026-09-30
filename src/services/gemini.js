@@ -1206,9 +1206,15 @@ class GeminiService {
           let processedUserPrompt = userPrompt;
           let modelPrefill = "Task confirmed. Executing the strictly isolated raw data pipe localization stream now.\n";
 
-          if (userPrompt.endsWith('<s id="')) {
-            processedUserPrompt = userPrompt.slice(0, -7);
-            modelPrefill += '<s id="';
+          // PROMPT-SLIM 2026-09-30: prefill anchor FIX — engine prompts end
+          // with the FULL tag '<s id="N">' (id + closing bracket), so the old
+          // literal endsWith('<s id="') check never fired. Match the complete
+          // anchor so it is stripped from user content and moved into the
+          // model prefill — the model then continues the first slot directly.
+          const anchorMatch = userPrompt.match(/<s id="\d+">\s*$/);
+          if (anchorMatch) {
+            processedUserPrompt = userPrompt.slice(0, anchorMatch.index).trimEnd();
+            modelPrefill += anchorMatch[0].trim();
           }
 
           contents = [
@@ -1398,9 +1404,14 @@ class GeminiService {
           let processedUserPrompt = userPrompt;
           let modelPrefill = "Task confirmed. Executing the strictly isolated raw data pipe localization stream now.\n";
 
-          if (userPrompt.endsWith('<s id="')) {
-            processedUserPrompt = userPrompt.slice(0, -7);
-            modelPrefill += "<s id=\"";
+          // PROMPT-SLIM 2026-09-30: prefill anchor FIX (stream path) — match
+          // the FULL '<s id="N">' anchor at the tail (not the old literal
+          // '<s id="' which never matched), strip it from user content and
+          // append it to the model prefill.
+          const anchorMatch = userPrompt.match(/<s id="\d+">\s*$/);
+          if (anchorMatch) {
+            processedUserPrompt = userPrompt.slice(0, anchorMatch.index).trimEnd();
+            modelPrefill += anchorMatch[0].trim();
           }
 
           contents = [

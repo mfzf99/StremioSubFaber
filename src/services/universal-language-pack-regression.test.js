@@ -103,22 +103,24 @@ test('P1 Japanese: generic pack — tiada teks BM', () => {
   assert.ok(!prompt.includes('Diadaptasi daripada'));
 });
 
-// ── 4. P2 (translationEngine) — few-shot 6 jenayah, target-conditional ──
-// [HARMONY v2 2026-09-29] few-shot kini 6 contoh (MERGE/SHIFT/PHANTOM/DROP/
-// UNTRANSLATED/REGISTER), label jenayah pada setiap header — pariti 1:1
-// dengan structural_rules + taksonomi 6-jenayah Agent B
-// Agent A + taksonomi Agent B.
+// ── 4. P2 (translationEngine) — few-shot 2 jenayah PARITY-CRITICAL, target-conditional ──
+// [PROMPT-SLIM 2026-09-30] few-shot dipangkas 6 → 2 contoh (MERGE/SHIFT
+// sahaja — jenayah struktur; PHANTOM/DROP/UNTRANSLATED/REGISTER kekal
+// dilindungi rules V4 + inspection Agent B). Label jenayah kekal pada
+// header supaya pemetaan 1:1 taksonomi Agent B tidak putus.
 
 const CRIME_EXAMPLE_HEADERS = [
   '[EXAMPLE 1 — MERGE:',
-  '[EXAMPLE 2 — SHIFT:',
+  '[EXAMPLE 2 — SHIFT:'
+];
+const REMOVED_CRIME_EXAMPLE_HEADERS = [
   '[EXAMPLE 3 — PHANTOM:',
   '[EXAMPLE 4 — DROP:',
   '[EXAMPLE 5 — UNTRANSLATED:',
   '[EXAMPLE 6 — REGISTER:'
 ];
 
-test('P2 Malay: few-shot 4 jenayah hadir (MERGE/SHIFT/PHANTOM/DROP), BM "Awak ikut kami," kekal', () => {
+test('P2 Malay: few-shot 2 jenayah parity hadir (MERGE/SHIFT), BM "Awak ikut kami," kekal', () => {
   const TranslationEngine = require('./translationEngine');
   const dummyGemini = {
     translateSubtitle: async () => '',
@@ -132,15 +134,16 @@ test('P2 Malay: few-shot 4 jenayah hadir (MERGE/SHIFT/PHANTOM/DROP), BM "Awak ik
   for (const header of CRIME_EXAMPLE_HEADERS) {
     assert.ok(prompt.includes(header), `few-shot header jenayah hadir: ${header}`);
   }
+  for (const gone of REMOVED_CRIME_EXAMPLE_HEADERS) {
+    assert.ok(!prompt.includes(gone), `few-shot dipangkas (Prompt-Slim): ${gone}`);
+  }
   assert.ok(prompt.includes('EXAMPLE 1 — MERGE'), 'label jenayah MERGE pada EXAMPLE 1');
   assert.ok(prompt.includes('EXAMPLE 2 — SHIFT'), 'label jenayah SHIFT pada EXAMPLE 2');
-  assert.ok(prompt.includes('EXAMPLE 3 — PHANTOM'), 'label jenayah PHANTOM pada EXAMPLE 3');
-  assert.ok(prompt.includes('EXAMPLE 4 — DROP'), 'label jenayah DROP pada EXAMPLE 4');
   assert.ok(prompt.includes('Awak ikut kami,'), 'few-shot BM hadir untuk sasaran Malay');
   assert.ok(prompt.includes('Wrong (merged):'));
 });
 
-test('P2 Vietnamese: few-shot 4 jenayah neutral — TIADA "Awak ikut kami"', () => {
+test('P2 Vietnamese: few-shot 2 jenayah neutral — TIADA "Awak ikut kami"', () => {
   const TranslationEngine = require('./translationEngine');
   const dummyGemini = {
     translateSubtitle: async () => '',
@@ -157,7 +160,7 @@ test('P2 Vietnamese: few-shot 4 jenayah neutral — TIADA "Awak ikut kami"', () 
   assert.ok(!prompt.includes('Awak ikut kami'), 'TIADA teks BM dalam prompt Vietnamese');
   assert.ok(!prompt.includes('Tunggu'), 'TIADA teks BM (contoh PHANTOM BM) dalam prompt Vietnamese');
   assert.ok(!prompt.includes('Baiklah'), 'TIADA teks BM (contoh DROP BM) dalam prompt Vietnamese');
-  assert.ok(prompt.includes('Correct output:'), 'disiplin slot kekal didemonstrasi');
+  assert.ok(prompt.includes('Correct:'), 'disiplin slot kekal didemonstrasi');
 });
 
 // ── 5. P8 (gemini DEFAULT_TRANSLATION_PROMPT) — rule #6 target-conditional ──

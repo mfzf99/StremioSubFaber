@@ -54,7 +54,7 @@ test('SubFaberContext: subfaberEnabled flag REMOVED — SubFaber is the only eng
   // Config lama yang masih membawa field legacy mesti diabaikan sepenuhnya
   const engineLegacy = makeEngine({ subfaberEnabled: false, enableBatchContext: true, contextSize: 20 });
   assert.equal(engineLegacy.subfaberEnabled, undefined, 'Legacy subfaberEnabled:false ignored — engine stays SubFaber');
-  assert.equal(engineLegacy.batchSize, 60, 'Batch size stays 60 regardless of legacy flags');
+  assert.equal(engineLegacy.batchSize, 30, 'Batch size stays 30 regardless of legacy flags');
 });
 
 test('SubFaberContext: context builder runs WITHOUT any flag (single engine path)', () => {
@@ -123,14 +123,14 @@ test('SubFaberContext: window clamps at file boundaries', () => {
   assert.equal(ctx.subsequentContent.length, 2, 'Clamped next: only 2 entries requested (of 4 available)');
 });
 
-// --- OWNER TUNING 2026-09-30: batch size SubFaber = 60 (dinaikkan daripada 30;
-// hardcoded, tiada env override — edit manual owner) ---
-test('SubFaberContext: batch size = 60 ALWAYS (SUBFABER_BATCH_SIZE hardcoded)', () => {
+// --- PROMPT-SLIM MANDATE 2026-09-30: batch size SubFaber = 30 (hardcoded,
+// tiada env override — diturunkan semula untuk kawalan token/attention) ---
+test('SubFaberContext: batch size = 30 ALWAYS (SUBFABER_BATCH_SIZE hardcoded)', () => {
   const engine = makeEngine({});
-  assert.equal(engine.batchSize, 60, 'SubFaber batch size = 60 (owner tuning 2026-09-30, enjin tunggal)');
+  assert.equal(engine.batchSize, 30, 'SubFaber batch size = 30 (Prompt-Slim Mandate 2026-09-30, enjin tunggal)');
   // Env TRANSLATION_BATCH_SIZE tidak lagi berkesan — nilai diabaikan
   const engineEnv = makeEngine({ TRANSLATION_BATCH_SIZE: 200 });
-  assert.equal(engineEnv.batchSize, 60, 'Env override REMOVED — always 60');
+  assert.equal(engineEnv.batchSize, 30, 'Env override REMOVED — always 30');
 });
 
 test('SubFaberContext: previousMemory includes verified translations, excludes placeholders', () => {
@@ -307,10 +307,10 @@ test('SubFaberSharedContext: previousMemory rendered as continuity block (single
   assert.ok(!batchText.includes('<m id='), 'Memory NOT in batchText (clean <input>)');
 });
 
-// --- createXmlBatchPrompt: PROMPT V3 "PARITY-FIRST + SPLIT" (Rebuild v2 2026-09-29) ---
+// --- createXmlBatchPrompt: PROMPT V4 "SLIM & SHARP" (Prompt-Slim Mandate 2026-09-30) ---
 const { splitStructuredPrompt, SUBFABER_PROMPT_BOUNDARY } = require('./utils/structuredPrompt');
 
-test('SubFaberPrompt V3: parity-first, slim rules, split system/user, no double-send', () => {
+test('SubFaberPrompt V4: slim sharp prompt, split system/user, no double-send', () => {
   const engine = makeEngine({ subfaberEnabled: true });
   engine.sourceLanguage = 'English';
   const batch = makeEntries(2, 1);
@@ -324,41 +324,37 @@ test('SubFaberPrompt V3: parity-first, slim rules, split system/user, no double-
   assert.ok(parts, 'Prompt must split into { system, user }');
   const { system, user } = parts;
 
-  // ── SYSTEM part: Role + Priority + Rules + Style + few-shot + Output Format ──
+  // ── SYSTEM part V4 (slim): Role+parity digabung, rules 6 tajam, style padat ──
   assert.ok(system.includes('## Role'), 'Role section in system part');
-  // OWNER TUNING 2026-09-30: persona Role dikembalikan kepada "expert Netflix
-  // subtitle translator" (edit manual owner) — ujian diselaraskan.
-  assert.ok(system.includes('expert Netflix subtitle translator and localization specialist'), 'Owner-tuned role (Netflix persona restored)');
-  assert.ok(system.includes('from English into Malay'), 'Language pair in role');
-  // Priority 0 — pariti #1 (mandat owner: ID PARITI comes first)
-  assert.ok(system.includes('## Top Priority — Slot & ID Parity (ABSOLUTE)'), 'Parity-first Priority section present');
-  assert.ok(system.includes('PARITY WINS'), 'Explicit hierarchy: parity beats fluency');
-  assert.ok(system.includes('desyncs the entire file'), 'Parity rationale present');
-  // Rules — 7 tajam, label ANTI-* kekal (pemetaan 1:1 taksonomi Agent B)
-  assert.ok(system.includes('1. ANTI-MERGE — SLOT ISOLATION'), 'Rule 1 ANTI-MERGE');
-  assert.ok(system.includes('2. ANTI-SHIFT — NO SKIP, NO DRIFT'), 'Rule 2 ANTI-SHIFT');
-  assert.ok(system.includes('3. ANTI-PHANTOM — NO FABRICATION'), 'Rule 3 ANTI-PHANTOM');
-  assert.ok(system.includes('4. ANTI-DROP — FULL MEANING'), 'Rule 4 ANTI-DROP');
-  assert.ok(system.includes('5. ANTI-UNTRANSLATED — ALWAYS TRANSLATE'), 'Rule 5 ANTI-UNTRANSLATED (lazy-copy guard)');
-  assert.ok(system.includes('6. CROSS-SLOT TIEBREAKER'), 'Rule 6 cross-slot tiebreaker');
-  assert.ok(system.includes('slot integrity outranks cross-slot grammatical smoothness'), 'Tiebreaker: parity > grammar');
-  assert.ok(system.includes('7. PRESERVE markup'), 'Rule 7 markup preservation');
-  assert.ok(system.includes('SAME COUNT as the source'), '[br] count locked');
-  assert.ok(system.includes('reposition a [br] to a natural break'), '[br] reposition adaptif');
-  // Style prose (secondary to parity) — craft padat
-  assert.ok(system.includes('## Style (secondary to parity)'), 'Style section subordinate to parity');
-  assert.ok(system.includes('reproduce the meaning and emotion (not the individual words)'), 'Equivalent-effect in style');
-  assert.ok(system.includes('adapt idioms'), 'Anti-calque/idiom adaptation in style');
-  assert.ok(system.includes('locked titles and pronouns'), 'Style references locked register (harmony with Bible)');
-  assert.ok(system.includes('do NOT worry about reading-speed'), 'Text-to-text: timing fixed, no CPS math');
-  // Few-shot (dari pack) hidup di SYSTEM (hantar sekali, cacheable)
+  // V4: Role terus ke point — dua mandat: parity suci + ayat hidup
+  assert.ok(system.includes('keep slot/ID parity sacred'), 'Role states parity mandate directly');
+  assert.ok(system.includes('a native speaker would actually say'), 'Role states living-language mandate');
+  assert.ok(system.includes('English'), 'Source language in role');
+  assert.ok(system.includes('Malay'), 'Target language in role');
+  // Rules — 6 padat, label ANTI-* kekal (pemetaan 1:1 taksonomi 6-jenayah Agent B)
+  assert.ok(system.includes('1. ANTI-MERGE'), 'Rule 1 ANTI-MERGE');
+  assert.ok(system.includes('2. ANTI-SHIFT'), 'Rule 2 ANTI-SHIFT');
+  assert.ok(system.includes('3. ANTI-PHANTOM'), 'Rule 3 ANTI-PHANTOM');
+  assert.ok(system.includes('4. ANTI-DROP'), 'Rule 4 ANTI-DROP');
+  assert.ok(system.includes('5. ANTI-UNTRANSLATED'), 'Rule 5 ANTI-UNTRANSLATED (lazy-copy guard)');
+  assert.ok(system.includes('6. PRESERVE markup'), 'Rule 6 markup preservation');
+  assert.ok(system.includes('same count of [br]'), '[br] count locked');
+  assert.ok(system.includes('may move to a natural'), '[br] reposition adaptif');
+  // Style padat — ayat hidup, anti-calque
+  assert.ok(system.includes('## Style'), 'Style section present');
+  assert.ok(system.includes('living'), 'Living-language directive in style');
+  assert.ok(system.includes('never calque'), 'Anti-calque in style');
+  assert.ok(system.includes('locked titles/pronouns'), 'Style references locked register (harmony with Bible)');
+  // Few-shot 2 contoh parity-critical sahaja (PROMPT-SLIM)
   assert.ok(system.includes('[EXAMPLE 1 — MERGE:'), 'Few-shot EXAMPLE 1 in system');
-  assert.ok(system.includes('[EXAMPLE 6 — REGISTER:'), 'Few-shot EXAMPLE 6 in system');
+  assert.ok(system.includes('[EXAMPLE 2 — SHIFT:'), 'Few-shot EXAMPLE 2 in system');
+  assert.ok(!system.includes('[EXAMPLE 3 — PHANTOM:'), 'Few-shot 3-6 REMOVED (Prompt-Slim)');
+  assert.ok(!system.includes('[EXAMPLE 6 — REGISTER:'), 'Few-shot 6 REMOVED (Prompt-Slim)');
   assert.ok(system.includes('Awak ikut kami,'), 'Malay few-shot present (target=Malay)');
   // Output Format di SYSTEM
   assert.ok(system.includes('## Output Format'), 'Output Format in system part');
   assert.ok(system.includes('one <s id="N"> per input id'), '1-to-1 contract');
-  assert.ok(system.includes('no reasoning or thinking tags'), 'No-thinking-tags contract');
+  assert.ok(system.includes('no thinking tags'), 'No-thinking-tags contract');
 
   // ── USER part: HANYA data dinamik + anchor (tiada arahan statik) ──
   assert.ok(user.includes('<input>'), 'input block in user part');
@@ -415,7 +411,7 @@ test('SubFaberPrompt V3: legacy markerless custom prompt keeps old behaviour', (
   assert.ok(userPrompt.includes('Hello world'), 'legacy user carries the subtitle content');
 });
 
-test('SubFaberPrompt V3: prompt is the ONLY path (no flags), parity + rules always present', () => {
+test('SubFaberPrompt V4: prompt is the ONLY path (no flags), parity + rules always present', () => {
   const engine = makeEngine({});
   engine.sourceLanguage = 'English';
   const batch = makeEntries(2, 1);
@@ -423,8 +419,8 @@ test('SubFaberPrompt V3: prompt is the ONLY path (no flags), parity + rules alwa
 
   const prompt = engine.createXmlBatchPrompt(batchText, 'Malay', null, batch.length, null, 0, 1);
   assert.ok(prompt.includes('## Role'), 'Role always present');
-  assert.ok(prompt.includes('## Top Priority — Slot & ID Parity (ABSOLUTE)'), 'Parity-first always present');
-  assert.ok(prompt.includes('1. ANTI-MERGE — SLOT ISOLATION'), 'Rules always present');
+  assert.ok(prompt.includes('keep slot/ID parity sacred'), 'Parity mandate always present (V4 role)');
+  assert.ok(prompt.includes('1. ANTI-MERGE'), 'Rules always present');
   assert.ok(!prompt.includes('CRITICAL ENFORCEMENT RULES'), 'Legacy 7-rule REMOVED permanently');
 });
 

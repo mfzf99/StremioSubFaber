@@ -105,15 +105,16 @@ const NATIVE_BATCH_PROVIDER_NAMES = new Set(['deepl', 'googletranslate']);
 const CACHE_TRANSLATIONS = process.env.CACHE_TRANSLATIONS === 'true'; // Enable/disable entry caching
 
 /**
- * OWNER TUNING 2026-09-30: Batch size SubFaber = 60 baris (dinaikkan
- * semula daripada 30 — edit manual owner). Ujian regresi
- * ("batch size = 60 ALWAYS") diselaraskan. Rasional Rebuild v2 (30 baris,
- * attention decay, ID-parity) dikekal sebagai rujukan sejarah sahaja.
+ * PROMPT-SLIM MANDATE 2026-09-30: Batch size SubFaber = 30 baris
+ * (diturunkan semula daripada 60 — keputusan owner + nasihat model:
+ * kurangkan beban token per panggilan, elak attention dilution &
+ * ID-parity drift). Bersama slim system prompt (~450 BPE) + BPE
+ * tokenizer guard, sasaran jumlah input ~1,000-1,100 BPE tok/panggilan.
  * Sliding window kekal 3/2; previousMemory membawa coherence antara batch.
  * Enjin SubFaber adalah enjin TUNGGAL — tiada env override, tiada mod
  * legacy 200-baris (Total Purge Mandat 2026-09-25).
  */
-const SUBFABER_BATCH_SIZE = 60;
+const SUBFABER_BATCH_SIZE = 30;
 
 // Module-level shared key health tracking across engine instances.
 // MULTI-INSTANCE: Now backed by Redis via sharedCache utilities.
@@ -2533,44 +2534,35 @@ You MUST translate each numbered line 1:1. NEVER merge two source lines into one
     // "conversational". Anchor '<s id="${startId}">' kekal di penutup supaya
     // Smart Preamble Scrubber (v1.6.1) dalam parseXmlBatchResponse terus
     // berfungsi tanpa off-by-one.
-    // ── PROMPT V3 "PARITY-FIRST + SPLIT" (Rebuild v2 2026-09-29) ──
-    // Reka bentuk baru (pelan: plans/agent-a-prompt-rebuild-v2-plan.md):
-    //   • SYSTEM part (statik, cacheable): Role + Priority(pariti #1) + 7
-    //     Rules (label ANTI-* kekal → pemetaan 1:1 taksonomi 6-jenayah Agent B)
-    //     + Style prose + few-shot + Output Format.
-    //   • USER part (dinamik/batch): BATCH header + blok konteks Bible +
-    //     <input> + anchor <answer>/<s id> (prefill di HUJUNG — Smart Preamble
-    //     Scrubber & prefill Gemini bergantung padanya).
-    //   • Dipisah oleh SUBFABER_PROMPT_BOUNDARY; buildUserPrompt setiap
-    //     provider memecah pada sempadan supaya arahan statik dihantar SEKALI
-    //     sebagai systemInstruction (fix bazir token / hantar-dua-kali) dan
-    //     hanya data dinamik jadi kandungan user. Pemanggil tanpa sempadan
-    //     (custom prompt warisan) kekal tingkah laku lama.
-    //   • Rule 5 (anti-UNTRANSLATED) + "locked titles/pronouns" dalam Style
-    //     melengkapkan pemetaan REGISTER/UNTRANSLATED. Universal 400+ bahasa
-    //     (${targetLabel}) — few-shot & peraturan khusus-bahasa dari pack.
+    // ── PROMPT V4 "SLIM & SHARP" (Prompt-Slim Mandate 2026-09-30) ──
+    // Sasaran owner: system statik ~450 BPE tok (dari ~1,266). Prinsip:
+    // arahan KENA tepat terus ke batang hidung — tiada puitis, tiada
+    // redundancy. Dua mandat kekal:
+    //   1. ID PARITI SUCI (slot 1:1, id sama, susunan sama)
+    //   2. Ayat HIDUP macam penutur jati (bukan kaku/calque)
+    // Label jenayah ANTI-* dikekal dalam rules supaya pemetaan 1:1 dengan
+    // taksonomi 6-jenayah Agent B (MERGE/SHIFT/PHANTOM/DROP/UNTRANSLATED/
+    // REGISTER) tidak putus. Few-shot dari pack (2 contoh parity-critical).
+    // Kontrak `<answer>` + anchor kekal di USER part (Smart Preamble
+    // Scrubber + prefill Gemini bergantung padanya).
     const systemPart = `## Role
-You are an expert Netflix subtitle translator and localization specialist, localizing from ${sourceLabel || 'the source language'} into ${targetLabel || 'the target language'}, fluent in both languages and their cultures.
+Expert ${targetLabel || 'target-language'} subtitle translator, localizing from ${sourceLabel || 'the source language'}. Two jobs only: (1) keep slot/ID parity sacred, (2) write lines a native speaker would actually say.
 
-## Top Priority — Slot & ID Parity (ABSOLUTE)
-Output EXACTLY one <s id="N"> for every input <s id="N">, reusing the same ids in the same order. Never merge, split, add, drop, or reorder slots. When slot/ID parity and natural phrasing ever conflict, PARITY WINS — a perfectly synced subtitle track matters more than a smoother line. A single missing or shifted slot desyncs the entire file.
+## Rules — parity first
+1. ANTI-MERGE: one <s id="N"> in → one <s id="N"> out, same ids, same order. Translate only the fragment inside each slot — never merge slots or borrow words from neighbours, even for split sentences or question tags.
+2. ANTI-SHIFT: no skipping, no drifting. Symbol/music slots (♪♪, [door slams]) are copied as-is.
+3. ANTI-PHANTOM: no invented content beyond the slot's own text.
+4. ANTI-DROP: keep each line's specific meaning — no generic filler.
+5. ANTI-UNTRANSLATED: translate every real sentence into ${targetLabel || 'the target language'}; copy verbatim only proper nouns, brands, titles, or corrupted text.
+6. PRESERVE markup: same count of [br], <i>...</i>, and speaker dashes, attached to the same words. [br] may move to a natural ${targetLabel || 'target-language'} break point.
 
-## Rules
-1. ANTI-MERGE — SLOT ISOLATION: dialogue often splits across consecutive lines. Translate ONLY the fragment inside each <s id="N">. Never merge, complete, or pull words from an adjacent slot — not even question tags, negation particles, or single-word interjections. A grammatically incomplete slot is correct and required.
-2. ANTI-SHIFT — NO SKIP, NO DRIFT: every input slot produces exactly one output slot. If a slot holds only symbols, music notes, or numbers, copy it as-is. Never skip a slot or shift later dialogue forward to fill a short one.
-3. ANTI-PHANTOM — NO FABRICATION: never invent, add, or elaborate beyond that slot's own source text. If unsure, translate as literally as possible rather than inventing dialogue.
-4. ANTI-DROP — FULL MEANING: every output must carry the specific meaning of its source line; never replace it with a generic substitute that erases its meaning.
-5. ANTI-UNTRANSLATED — ALWAYS TRANSLATE: translate every real sentence into ${targetLabel || 'the target language'}. Copy the source verbatim ONLY for genuinely untranslatable fragments — proper nouns, brand/entity names, creative-work titles, or corrupted text.
-6. CROSS-SLOT TIEBREAKER: when one sentence spans slots and the target word order differs, keep each slot's content within its own slot rather than moving words across — slot integrity outranks cross-slot grammatical smoothness.
-7. PRESERVE markup: keep every [br], <i>...</i>, speaker dash (-), and inline tag with the SAME COUNT as the source, anchored to the words they wrap. You MAY reposition a [br] to a natural break for ${targetLabel || 'the target language'} (after punctuation, before a conjunction/preposition), but never split a word or name, or strand a lone particle on its own line.
-
-## Style (secondary to parity)
-Within the rules above, make each line read the way a real native ${targetLabel || 'target-language'} speaker would actually say it: reproduce the meaning and emotion (not the individual words), keep lines tight and natural, adapt idioms to their ${targetLabel || 'target-language'} equivalents instead of calquing source word order, and preserve each character's voice plus the locked titles and pronouns given in the context. The subtitle timing is already fixed — you only swap the language, so do NOT worry about reading-speed or character-count math; just make every line read cleanly and naturally.
+## Style
+Write living ${targetLabel || 'target-language'}: meaning and emotion, not word-for-word. Adapt idioms, never calque. Keep each character's voice and any locked titles/pronouns from the context. Timing is fixed — just make every line read naturally.
 
 ${fewShotPack.fewShot}
 
 ## Output Format
-Reply with the <answer> block ONLY: exactly one <s id="N"> per input id, same ids, strict order. No commentary, no markdown code blocks, no parenthetical notes, no reasoning or thinking tags. Output nothing before <answer> or after </answer>.`;
+Return ONLY the <answer> block: one <s id="N"> per input id, same ids, same order. No commentary, no code blocks, no thinking tags.`;
 
     const userPart = `${sharedContextBlock ? `${sharedContextBlock}\n(Reference only — do not translate or output content from this block as a target entry.)\n\n` : ''}<input>
 ${batchText}
@@ -3440,7 +3432,11 @@ ${batchText}
   }
 
   /**
-   * Estimate token count with a safe fallback when provider doesn't expose it
+   * Estimate token count with a safe fallback when provider doesn't expose it.
+   * [PROMPT-SLIM 2026-09-30] Prefers real BPE tokenization (gpt-tokenizer,
+   * already a dependency) over the chars/3 and chars/4 heuristics, which
+   * overestimate Latin prose by ~30-40% and trigger needless auto-chunking.
+   * CJK/emoji weighting is preserved via the provider heuristic as fallback.
    */
   safeEstimateTokens(text) {
     const content = String(text || '');
@@ -3453,6 +3449,21 @@ ${batchText}
       } catch (err) {
         log.debug(() => ['[TranslationEngine] Token estimate failed, using fallback:', err.message]);
       }
+    }
+    // Real BPE count when the tokenizer is loadable (lazy, one-time).
+    if (!TranslationEngine._bpeCountTokens) {
+      try {
+        // eslint-disable-next-line global-require
+        TranslationEngine._bpeCountTokens = require('gpt-tokenizer').countTokens;
+      } catch (_) {
+        TranslationEngine._bpeCountTokens = false; // not available — permanent fallback
+      }
+    }
+    if (TranslationEngine._bpeCountTokens) {
+      try {
+        const bpe = TranslationEngine._bpeCountTokens(content);
+        if (Number.isFinite(bpe)) return bpe;
+      } catch (_) { /* fall through to heuristic */ }
     }
     // Rough heuristic: ~4 characters per token
     return Math.max(1, Math.ceil(content.length / 4));

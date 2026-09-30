@@ -45,72 +45,37 @@ const malayPack = {
   creditsExample: 'provide the official ${tgt} media/publishing translation for each line (e.g. "Adapted from" -> "Diadaptasi daripada")',
 
   /**
-   * P2 injection: Malay few-shot examples — 6 jenayah (anti-crime weapons).
-   * [HARMONY-FIX] 2026-09-29: satu contoh → ENAM contoh, satu bagi setiap
-   * jenayah Agent B (MERGE/SHIFT/PHANTOM/DROP/UNTRANSLATED/REGISTER), label
-   * jenayah pada setiap header supaya Agent A dapat mengaitkan few-shot ↔
-   * structural_rules ↔ INSPECTOR_INSTRUCTION secara 1:1.
-   * [SOCIOLINGUISTIC v2 2026-09-29] + EXAMPLE 5 (UNTRANSLATED: larang salinan
-   * malas sumber) + EXAMPLE 6 (REGISTER: kunci gelaran/kata ganti watak).
+   * P2 injection: Malay few-shot examples — 2 contoh PARITY-CRITICAL.
+   * [PROMPT-SLIM 2026-09-30] 6 → 2 contoh: hanya MERGE + SHIFT (dua
+   * jenayah yang merosakkan struktur fail; PHANTOM/DROP/UNTRANSLATED/
+   * REGISTER sudah dilindungi rules + inspection Agent B). Ini memangkas
+   * ~350 BPE tok daripada system statik tanpa hilang kuasa parity.
    */
-  fewShot: `[EXAMPLE 1 — MERGE: split sentence and isolated question tag]
+  fewShot: `[EXAMPLE 1 — MERGE: keep split sentences and question tags isolated]
 Input:
 <s id="1">You are coming with us,</s>
 <s id="2">aren't you?</s>
-Correct output:
+Correct:
 <s id="1">Awak ikut kami,</s>
 <s id="2">kan?</s>
 Wrong (merged):
 <s id="1">Awak ikut kami, kan?</s>
 <s id="2">.</s>
 
-[EXAMPLE 2 — SHIFT: every slot must appear, symbol or SFX]
+[EXAMPLE 2 — SHIFT: every slot must appear; symbols/music copied as-is]
 Input:
 <s id="1">Sorry I'm late.</s>
 <s id="2">♪♪</s>
 <s id="3">[door slams]</s>
 <s id="4">No problem, sit down.</s>
-Correct output:
+Correct:
 <s id="1">Maaf saya lewat.</s>
 <s id="2">♪♪</s>
 <s id="3">[pintu terhempas]</s>
 <s id="4">Tak apa, duduklah.</s>
-Wrong (slots skipped, dialogue drifts):
+Wrong (slots skipped):
 <s id="1">Maaf saya lewat.</s>
-<s id="2">Tak apa, duduklah.</s>
-
-[EXAMPLE 3 — PHANTOM: never elaborate beyond what the source says]
-Input:
-<s id="5">Wait.</s>
-Correct output:
-<s id="5">Tunggu.</s>
-Wrong (fabricated content not present in source):
-<s id="5">Tunggu, saya perlu fikir dulu sebelum kita teruskan.</s>
-
-[EXAMPLE 4 — DROP: the line's own meaning must survive, not be replaced]
-Input:
-<s id="6">I never wanted this to happen.</s>
-Correct output:
-<s id="6">Saya tak pernah nak benda ni jadi.</s>
-Wrong (meaning dropped, replaced with generic):
-<s id="6">Baiklah.</s>
-
-[EXAMPLE 5 — UNTRANSLATED: a normal sentence must be translated, never copied verbatim]
-Input:
-<s id="7">Get in the car, now.</s>
-Correct output:
-<s id="7">Masuk kereta, sekarang.</s>
-Wrong (source sentence copied verbatim — lazy-copy leak):
-<s id="7">Get in the car, now.</s>
-
-[EXAMPLE 6 — REGISTER: keep the locked title/pronoun for a character, never switch]
-Context: pre-flight locked "Ms. Tan" → "Puan Tan".
-Input:
-<s id="8">Ms. Tan, please sit down.</s>
-Correct output:
-<s id="8">Puan Tan, sila duduk.</s>
-Wrong (locked title switched to a different register):
-<s id="8">Cik Tan, sila duduk.</s>`,
+<s id="2">Tak apa, duduklah.</s>`,
 
   /**
    * P8 injection: DEFAULT_TRANSLATION_PROMPT rule (target-conditional).
