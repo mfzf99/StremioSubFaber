@@ -1806,6 +1806,17 @@ test('AgentB: BETA RUN 9 — hierarki kebenaran hadir dalam suntikan konteks kel
     block.includes('HIERARCHY OF TRUTH: Pre-flight context provides macro-guidance. However, the SOURCE DIALOGUE in the current batch is the absolute ground truth.'),
     'Arahan tegar dialog-sumber-mengatasi mesti hadir verbatim'
   );
+  // (b2) BARE-NAME FIX (runtime lesson Shine on Me S01E31, 2026-09-30):
+  // gelaran ialah MAPPING bukan mandat — nama kosong mesti kekal kosong,
+  // gelaran tidak boleh disuntik pada baris sumber yang tidak membawanya.
+  assert.ok(
+    block.includes('Character titles are MAPPINGS, not mandates'),
+    'Arahan mapping-bukan-mandat mesti hadir (anti gelaran-hantu)'
+  );
+  assert.ok(
+    block.includes('when the source uses a bare name'),
+    'Peraturan nama-kosong-kekal-kosong mesti hadir'
+  );
   assert.ok(
     block.includes('ALWAYS FOLLOW THE SOURCE DIALOGUE.'),
     'Arahan ikut dialog sumber mesti hadir'

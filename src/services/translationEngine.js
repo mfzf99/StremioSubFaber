@@ -1235,7 +1235,12 @@ class TranslationEngine {
     // ── HIERARCHY OF TRUTH (Agent A Safety Net — Mandat Beta Run 9) ──
     // Suntikan VERBATIM peraturan hierarki kebenaran: dialog sumber
     // mengatasi apa-apa gelaran/jantina/andaian Pre-Flight yang bertentangan.
-    block += `\n\n### HIERARCHY OF TRUTH\nHIERARCHY OF TRUTH: Pre-flight context provides macro-guidance. However, the SOURCE DIALOGUE in the current batch is the absolute ground truth. If the source dialogue explicitly contradicts a pre-flight title, gender, or assumption, ALWAYS FOLLOW THE SOURCE DIALOGUE.`;
+    // [BARE-NAME FIX 2026-09-30] Runtime lesson (Shine on Me S01E31): model
+    // menghormati "Encik Lin" sebagai mandat walaupun sumber hanya berkata
+    // "Lin" — gelaran disuntik pada nama kosong. Peraturan baru: mapping
+    // gelaran hanya dipakai BILA baris sumber sendiri membawa gelaran itu;
+    // nama kosong kekal kosong (jangan inject title yang tiada dalam sumber).
+    block += `\n\n### HIERARCHY OF TRUTH\nHIERARCHY OF TRUTH: Pre-flight context provides macro-guidance. However, the SOURCE DIALOGUE in the current batch is the absolute ground truth. If the source dialogue explicitly contradicts a pre-flight title, gender, or assumption, ALWAYS FOLLOW THE SOURCE DIALOGUE. Character titles are MAPPINGS, not mandates: use a locked title (e.g. "Encik Lin") only when the source line itself carries that title ("Mr. Lin" / "Lin xiansheng"); when the source uses a bare name ("Lin"), keep it bare — never inject a title the source line does not have.`;
 
     const resolvePillarText = (item, ...keys) => {
       if (!item || typeof item !== 'object') return '';
@@ -2557,7 +2562,7 @@ Expert ${targetLabel || 'target-language'} subtitle translator, localizing from 
 6. PRESERVE markup: same count of [br], <i>...</i>, and speaker dashes, attached to the same words. [br] may move to a natural ${targetLabel || 'target-language'} break point.
 
 ## Style
-Write living ${targetLabel || 'target-language'}: meaning and emotion, not word-for-word. Adapt idioms, never calque. Keep each character's voice and any locked titles/pronouns from the context. Timing is fixed — just make every line read naturally.
+Write living ${targetLabel || 'target-language'}: meaning and emotion, not word-for-word. Adapt idioms, never calque. Keep each character's voice. Use locked titles/pronouns from the context ONLY when the source line itself carries them — a bare name stays bare, never inject a title the source does not have. Timing is fixed — just make every line read naturally.
 
 ${fewShotPack.fewShot}
 
