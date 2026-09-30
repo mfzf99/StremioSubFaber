@@ -2567,7 +2567,7 @@ Write living ${targetLabel || 'target-language'}: meaning and emotion, not word-
 ${fewShotPack.fewShot}
 
 ## Output Format
-Return ONLY the <answer> block: one <s id="N"> per input id, same ids, same order. No commentary, no code blocks, no thinking tags.`;
+Return ONLY the <answer> block: one <s id="N"> per input id, same ids, same order. No commentary, no code blocks, no thinking tags. ZERO translator notes in parentheses — if a line is hard, commit to a real translation, never explain it in (brackets).`;
 
     const userPart = `${sharedContextBlock ? `${sharedContextBlock}\n(Reference only — do not translate or output content from this block as a target entry.)\n\n` : ''}<input>
 ${batchText}

@@ -355,6 +355,10 @@ test('SubFaberPrompt V4: slim sharp prompt, split system/user, no double-send', 
   assert.ok(system.includes('## Output Format'), 'Output Format in system part');
   assert.ok(system.includes('one <s id="N"> per input id'), '1-to-1 contract');
   assert.ok(system.includes('no thinking tags'), 'No-thinking-tags contract');
+  // OWNER HACK (2026-09-30, A/B tested): larangan nota penterjemah dalam
+  // kurungan — AI cenderung ambil jalan mudah jelaskan ayat susah dengan
+  // (brackets) berbanding commit kepada terjemahan sebenar.
+  assert.ok(system.includes('ZERO translator notes in parentheses'), 'Anti-lazy-parenthetical contract (owner A/B tested hack)');
 
   // ── USER part: HANYA data dinamik + anchor (tiada arahan statik) ──
   assert.ok(user.includes('<input>'), 'input block in user part');
