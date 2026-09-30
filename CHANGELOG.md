@@ -2,6 +2,26 @@
 
 All notable changes to this project will be documented in this file.
 
+## SubMaker v2.0.0 (2026-09-30) — "Prompt-Slim" — Agent A Payload Diet + Parity Discipline
+
+**Era baharu enjin terjemahan: beban token dipotong hampir separuh, disiplin pariti dikukuhkan, pintu malas disekat — tanpa hilang kuasa arahan:**
+
+- **Batch size 60 → 30 ([`translationEngine.js`](src/services/translationEngine.js)):** selaras mandat owner + nasihat model — kurang slot per nafas mengurangkan risiko ID-parity drift dan attention dilution. Sliding window 3/2 + previousMemory kekal.
+
+- **System prompt V4 "Slim & Sharp" ([`translationEngine.js`](src/services/translationEngine.js)):** 1,266 → **579 BPE tok (−54%)**. Arahan terus-ke-batang-hidung: "keep slot/ID parity sacred" + "lines a native speaker would actually say". 7 rules bertatah prosa → 6 rules satu-baris; label jenayah ANTI-MERGE/SHIFT/PHANTOM/DROP/UNTRANSLATED + PRESERVE kekal untuk pemetaan 1:1 dengan taksonomi 6-jenayah Agent B.
+
+- **Few-shot 6 → 2 ([`malay.js`](src/services/prompts/languagePacks/malay.js) / [`generic.js`](src/services/prompts/languagePacks/generic.js)):** hanya MERGE + SHIFT (jenayah parity-critical); jenayah lain dilindungi rules + inspection Agent B.
+
+- **FIX prefill anchor ([`gemini.js`](src/services/gemini.js)):** check lama `endsWith('<s id="')` tak pernah padankan tag penuh `<s id="N">` — anchor kini regex-match, distrip dari user content dan dipindah ke model prefill (kedua-dua laluan `generateContent` + `streamGenerateContent`). Model sambung isi slot pertama terus.
+
+- **BPE tokenizer guard ([`translationEngine.js`](src/services/translationEngine.js)):** `safeEstimateTokens` kini guna `gpt-tokenizer` (BPE sebenar) ganti heuristik chars/3 yang overestimate ~35% — auto-chunking tidak lagi terpicu palsu.
+
+- **Bare-name title discipline:** pelajaran runtime (Shine on Me S01E31 — sumber "Lin" diterjemah "Encik Lin"): HIERARCHY OF TRUTH kini menyatakan gelaran ialah **MAPPINGS, bukan mandates** — nama kosong kekal kosong; gelaran dipakai hanya bila baris sumber sendiri membawanya. Diperkuat melalui Style section (dua saluran).
+
+- **ZERO translator notes in parentheses:** hack A/B-tested owner — AI cenderung ambil jalan mudah menjelaskan ayat susah dalam (kurungan) berbanding commit kepada terjemahan sebenar; dilarang terus dalam Output Format.
+
+- **Keputusan:** input per panggilan **2,688 → 1,551 BPE tok (−42%)**; run pertama pasca-pembedahan: 26/26 batch inspection PASSED, 0 jenayah semua kategori, 0 mismatch, RM0.16/episod (759 entri). `npm test`: **287 PASS / 0 FAIL** (1 skipped).
+
 ## SubMaker v1.9.12 (2026-09-30) — "Rootify" — Rootsys-Inspired Visual Overhaul for Both Worlds
 
 **Full frontend redesign adopting the Rootsys design language across the public Configure page and the embedded Sub Toolbox — without touching any JS contract:**
