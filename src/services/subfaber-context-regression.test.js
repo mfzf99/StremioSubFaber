@@ -54,7 +54,7 @@ test('SubFaberContext: subfaberEnabled flag REMOVED — SubFaber is the only eng
   // Config lama yang masih membawa field legacy mesti diabaikan sepenuhnya
   const engineLegacy = makeEngine({ subfaberEnabled: false, enableBatchContext: true, contextSize: 20 });
   assert.equal(engineLegacy.subfaberEnabled, undefined, 'Legacy subfaberEnabled:false ignored — engine stays SubFaber');
-  assert.equal(engineLegacy.batchSize, 30, 'Batch size stays 30 regardless of legacy flags');
+  assert.equal(engineLegacy.batchSize, 60, 'Batch size stays 60 regardless of legacy flags');
 });
 
 test('SubFaberContext: context builder runs WITHOUT any flag (single engine path)', () => {
@@ -123,13 +123,14 @@ test('SubFaberContext: window clamps at file boundaries', () => {
   assert.equal(ctx.subsequentContent.length, 2, 'Clamped next: only 2 entries requested (of 4 available)');
 });
 
-// --- MANDAT 2026-09-29 (Rebuild v2): batch size SubFaber = 30 (hardcoded, tiada env override) ---
-test('SubFaberContext: batch size = 30 ALWAYS (SUBFABER_BATCH_SIZE hardcoded)', () => {
+// --- OWNER TUNING 2026-09-30: batch size SubFaber = 60 (dinaikkan daripada 30;
+// hardcoded, tiada env override — edit manual owner) ---
+test('SubFaberContext: batch size = 60 ALWAYS (SUBFABER_BATCH_SIZE hardcoded)', () => {
   const engine = makeEngine({});
-  assert.equal(engine.batchSize, 30, 'SubFaber batch size = 30 (Rebuild v2 2026-09-29, enjin tunggal)');
+  assert.equal(engine.batchSize, 60, 'SubFaber batch size = 60 (owner tuning 2026-09-30, enjin tunggal)');
   // Env TRANSLATION_BATCH_SIZE tidak lagi berkesan — nilai diabaikan
   const engineEnv = makeEngine({ TRANSLATION_BATCH_SIZE: 200 });
-  assert.equal(engineEnv.batchSize, 30, 'Env override REMOVED — always 30');
+  assert.equal(engineEnv.batchSize, 60, 'Env override REMOVED — always 60');
 });
 
 test('SubFaberContext: previousMemory includes verified translations, excludes placeholders', () => {
@@ -325,7 +326,9 @@ test('SubFaberPrompt V3: parity-first, slim rules, split system/user, no double-
 
   // ── SYSTEM part: Role + Priority + Rules + Style + few-shot + Output Format ──
   assert.ok(system.includes('## Role'), 'Role section in system part');
-  assert.ok(system.includes('expert subtitle translator and localization specialist'), 'Universal role (no hardcoded Netflix)');
+  // OWNER TUNING 2026-09-30: persona Role dikembalikan kepada "expert Netflix
+  // subtitle translator" (edit manual owner) — ujian diselaraskan.
+  assert.ok(system.includes('expert Netflix subtitle translator and localization specialist'), 'Owner-tuned role (Netflix persona restored)');
   assert.ok(system.includes('from English into Malay'), 'Language pair in role');
   // Priority 0 — pariti #1 (mandat owner: ID PARITI comes first)
   assert.ok(system.includes('## Top Priority — Slot & ID Parity (ABSOLUTE)'), 'Parity-first Priority section present');

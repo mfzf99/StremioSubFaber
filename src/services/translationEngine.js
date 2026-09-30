@@ -105,14 +105,13 @@ const NATIVE_BATCH_PROVIDER_NAMES = new Set(['deepl', 'googletranslate']);
 const CACHE_TRANSLATIONS = process.env.CACHE_TRANSLATIONS === 'true'; // Enable/disable entry caching
 
 /**
- * MANDAT 2026-09-29 (Prompt Rebuild v2): Batch size SubFaber = 30 baris
- * (diturunkan daripada 60). Rasional owner + model-self assessment: pada 30
- * baris satu babak penuh muat dalam satu tumpuan model, attention decay
- * hilang, dan risiko ID-parity drift jatuh mendadak (kurang slot per nafas).
- * Sejajar ground truth VideoLingo (chunk kecil supaya konteks tidak
- * menenggelamkan arahan). Sliding window kekal 3/2; previousMemory membawa
- * coherence antara batch. Enjin SubFaber adalah enjin TUNGGAL — tiada env
- * override, tiada mod legacy 200-baris (Total Purge Mandat 2026-09-25).
+ * OWNER TUNING 2026-09-30: Batch size SubFaber = 60 baris (dinaikkan
+ * semula daripada 30 — edit manual owner). Ujian regresi
+ * ("batch size = 60 ALWAYS") diselaraskan. Rasional Rebuild v2 (30 baris,
+ * attention decay, ID-parity) dikekal sebagai rujukan sejarah sahaja.
+ * Sliding window kekal 3/2; previousMemory membawa coherence antara batch.
+ * Enjin SubFaber adalah enjin TUNGGAL — tiada env override, tiada mod
+ * legacy 200-baris (Total Purge Mandat 2026-09-25).
  */
 const SUBFABER_BATCH_SIZE = 60;
 
