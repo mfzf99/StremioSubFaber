@@ -1,0 +1,615 @@
+/* ============================================================================
+   SubFaber × Rootsys — "Rootify" layer
+   ----------------------------------------------------------------------------
+   Loaded LAST (after configure.css, combobox.css, quick-setup.css,
+   subfaber-theme.css). Adds the Rootsys design identity on top of the
+   existing minimalist theme WITHOUT touching any JS hooks:
+
+     1. Design tokens aligned to the real Rootsys palette
+        (light #F7F8FB / dark #14161F, border #ECEFF4 / #2A2C3A,
+         text #1C1D2C / gray-100, accent violet #7C3AED).
+     2. The macOS "desktop window" frame — traffic-light dots, floating
+        window card, wallpaper backdrop (public Rootsys signature).
+     3. Component polish: hero, cards, buttons, inputs, pills, footer.
+
+   Contract safety: this file ONLY overrides presentation. Every id, class
+   and data-* attribute used by config.js / theme-toggle.js / quick-setup.js
+   is preserved. The markup changes live in configure.html (wrapper divs).
+   ============================================================================ */
+
+/* ---------------------------------------------------------------------------
+   1. Design tokens — Rootsys ground-truth palette
+   Map Rootsys values onto the variables subfaber-theme.css already uses,
+   so every existing component inherits the new palette automatically.
+   --------------------------------------------------------------------------- */
+:root,
+[data-theme="light"] {
+    /* Rootsys violet accent (matches dashboard ground truth) */
+    --primary: #7C3AED;
+    --primary-light: #8B5CF6;
+    --primary-dark: #6D28D9;
+    --secondary: #7C3AED;
+    --accent: #7C3AED;
+    --accent-soft: #EDE7FE;            /* Rootsys violet tint (exact) */
+
+    /* Rootsys light surfaces */
+    --bg-primary: #F7F8FB;             /* Rootsys app background (exact) */
+    --bg-secondary: #FFFFFF;
+    --bg-tertiary: #F7F8FB;
+    --surface: #FFFFFF;
+    --surface-light: #F3F4F6;          /* gray-100 chips */
+    --surface-tint: #F9FAFB;           /* gray-50  hover/tint */
+
+    /* Rootsys light text */
+    --text-primary: #1C1D2C;           /* Rootsys primary text (exact) */
+    --text-secondary: #6B7280;         /* gray-500 (exact) */
+    --text-tertiary: #9CA3AF;          /* gray-400 (exact) */
+
+    /* Rootsys light borders + shadow */
+    --border: #ECEFF4;                 /* Rootsys card border (exact) */
+    --border-strong: #E2E8F0;
+    --shadow: rgba(16, 24, 40, 0.06);  /* Rootsys card shadow (exact) */
+    --glow: rgba(124, 58, 237, 0.16);
+
+    /* Rootsys desktop "wallpaper" behind the window */
+    --desktop-bg: #E9ECF3;
+    --desktop-bg-image:
+        radial-gradient(1200px 600px at 15% -10%, rgba(124, 58, 237, 0.10), transparent 60%),
+        radial-gradient(1000px 500px at 110% 10%, rgba(14, 165, 233, 0.08), transparent 55%);
+
+    /* Rootsys traffic lights (exact macOS values) */
+    --tl-red: #FF5F56;
+    --tl-yellow: #FFBD2E;
+    --tl-green: #27C93F;
+
+    --radius-card: 16px;               /* rounded-2xl */
+    --radius-control: 12px;            /* rounded-xl (Rootsys controls) */
+    --radius-pill: 8px;                /* rounded-lg (nav pills) */
+
+    --navbar-height: 56px;
+}
+
+[data-theme="dark"],
+[data-theme="blackhole"],
+[data-theme="true-dark"] {
+    /* Keep violet accent in dark (Rootsys dashboard keeps #7C3AED / #A78BFA) */
+    --primary: #7C3AED;
+    --primary-light: #A78BFA;          /* Rootsys dark violet text (exact) */
+    --primary-dark: #8B5CF6;
+    --secondary: #7C3AED;
+    --accent: #A78BFA;
+    --accent-soft: rgba(124, 58, 237, 0.20);   /* Rootsys dark active nav tint */
+
+    /* Rootsys dark surfaces (ground truth) */
+    --bg-primary: #14161F;             /* Rootsys dark app bg (exact) */
+    --bg-secondary: #1B1D29;           /* Rootsys dark surface (exact) */
+    --bg-tertiary: #14161F;
+    --surface: #1B1D29;                /* cards, sidebar, header */
+    --surface-light: #232534;          /* Rootsys dark tint/hover (exact) */
+    --surface-tint: #232534;
+
+    /* Rootsys dark text */
+    --text-primary: #F3F4F6;           /* gray-100 */
+    --text-secondary: #9CA3AF;         /* gray-400 */
+    --text-tertiary: #6B7280;          /* gray-500 */
+
+    /* Rootsys dark borders (cards drop the shadow) */
+    --border: #2A2C3A;                 /* exact */
+    --border-strong: #3A3D4E;
+    --shadow: rgba(0, 0, 0, 0.45);
+    --glow: rgba(124, 58, 237, 0.28);
+
+    /* Dark desktop wallpaper */
+    --desktop-bg: #0C0E15;
+    --desktop-bg-image:
+        radial-gradient(1200px 600px at 15% -10%, rgba(124, 58, 237, 0.16), transparent 60%),
+        radial-gradient(1000px 500px at 110% 10%, rgba(14, 165, 233, 0.10), transparent 55%);
+
+    color-scheme: dark;
+}
+
+/* ---------------------------------------------------------------------------
+   2. Typography — Inter for UI (already the stack), JetBrains Mono for code
+   --------------------------------------------------------------------------- */
+code, kbd, pre, .mono, .install-url-box code, .token-vault-rail-item code {
+    font-family: 'JetBrains Mono', ui-monospace, 'SF Mono', 'Cascadia Mono', Menlo, Consolas, monospace;
+}
+
+/* ---------------------------------------------------------------------------
+   3. macOS "desktop window" frame (public Rootsys signature)
+   Markup contract (added in configure.html):
+     <body>
+       <div class="rootify-desktop">
+         <div class="rootify-window">
+           <div class="rootify-titlebar" aria-hidden="true">   <!-- optional -->
+             <span class="rootify-tl rootify-tl-red"></span>
+             <span class="rootify-tl rootify-tl-yellow"></span>
+             <span class="rootify-tl rootify-tl-green"></span>
+           </div>
+           ...existing content (navbar + partials)...
+         </div>
+       </div>
+     </body>
+   The existing .app-navbar stays INSIDE the window and keeps all JS hooks.
+   --------------------------------------------------------------------------- */
+.rootify-desktop {
+    min-height: 100vh;
+    padding: clamp(10px, 2.5vw, 28px);
+    background: var(--desktop-bg);
+    background-image: var(--desktop-bg-image);
+    background-attachment: fixed;
+}
+
+.rootify-window {
+    position: relative;
+    max-width: 1200px;
+    margin: 0 auto;
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 18px;
+    overflow: hidden;
+    box-shadow:
+        0 1px 2px rgba(16, 24, 40, 0.05),
+        0 24px 64px -24px rgba(16, 24, 40, 0.25);
+}
+
+[data-theme="dark"] .rootify-window,
+[data-theme="blackhole"] .rootify-window,
+[data-theme="true-dark"] .rootify-window {
+    box-shadow:
+        0 1px 2px rgba(0, 0, 0, 0.4),
+        0 24px 64px -24px rgba(0, 0, 0, 0.7);
+}
+
+/* Traffic-light dots (reusable anywhere: titlebar, sidebar headers, toolbox) */
+.rootify-traffic {
+    display: inline-flex;
+    align-items: center;
+    gap: 7px;
+    flex-shrink: 0;
+}
+
+.rootify-tl {
+    width: 12px;
+    height: 12px;
+    border-radius: 50%;
+    display: inline-block;
+    box-shadow: inset 0 0 0 1px rgba(0, 0, 0, 0.08);
+}
+
+.rootify-tl-red { background: var(--tl-red); }
+.rootify-tl-yellow { background: var(--tl-yellow); }
+.rootify-tl-green { background: var(--tl-green); }
+
+/* Slim titlebar strip shown above the app navbar (desktop only) */
+.rootify-titlebar {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    height: 40px;
+    padding: 0 16px;
+    background: var(--surface-tint);
+    border-bottom: 1px solid var(--border);
+    user-select: none;
+}
+
+.rootify-titlebar-title {
+    margin-left: 2px;
+    font-size: 12px;
+    font-weight: 600;
+    letter-spacing: 0.01em;
+    color: var(--text-secondary);
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+
+/* ---------------------------------------------------------------------------
+   4. Navbar adjustment — sit INSIDE the window, not fixed to the viewport
+   The theme's .app-navbar is position:fixed; inside the window frame we
+   make it sticky so it behaves like the Rootsys titlebar nav.
+   --------------------------------------------------------------------------- */
+body.rootify-framed {
+    padding-top: 0;                    /* window provides the offset now */
+}
+
+body.rootify-framed .app-navbar {
+    position: sticky;
+    top: 0;
+    border-bottom: 1px solid var(--border);
+    border-radius: 0;
+    background: color-mix(in srgb, var(--surface) 86%, transparent);
+    -webkit-backdrop-filter: saturate(180%) blur(12px);
+    backdrop-filter: saturate(180%) blur(12px);
+}
+
+/* Content column width aligned to the window */
+body.rootify-framed .container {
+    max-width: 1080px !important;
+}
+
+/* ---------------------------------------------------------------------------
+   5. Hero / page header — Rootsys display type (tracking-tight, brand span)
+   --------------------------------------------------------------------------- */
+.page-header {
+    padding-top: 0.5rem;
+}
+
+.page-title {
+    font-size: clamp(1.6rem, 3.2vw, 2.1rem);
+    font-weight: 800;
+    letter-spacing: -0.02em;
+    line-height: 1.12;
+    color: var(--text-primary);
+}
+
+.page-subtitle {
+    color: var(--text-secondary);
+    font-size: 0.95rem;
+    line-height: 1.6;
+    margin-top: 0.35rem;
+    max-width: 56ch;
+}
+
+/* Brand accent inside headings (Rootsys "13 models" span) */
+.text-brand,
+.page-title .brand-accent {
+    color: var(--primary);
+}
+
+/* ---------------------------------------------------------------------------
+   6. Cards & sections — exact Rootsys card recipe
+   --------------------------------------------------------------------------- */
+.section-block,
+.card,
+.modal,
+.install-url-box,
+.token-vault-inline,
+.qs-entry-banner {
+    border-color: var(--border) !important;
+}
+
+[data-theme="dark"] .section-block,
+[data-theme="dark"] .card,
+[data-theme="dark"] .modal,
+[data-theme="dark"] .install-url-box,
+[data-theme="blackhole"] .card,
+[data-theme="true-dark"] .card {
+    box-shadow: none !important;       /* Rootsys dark cards drop shadows */
+}
+
+/* Hover affordance — subtle border strengthen, no lift/transform */
+.section-block:hover,
+.card:hover {
+    border-color: var(--border-strong) !important;
+}
+
+/* ---------------------------------------------------------------------------
+   7. Buttons — Rootsys sizing (44px primary / 36px pill / 12px radius)
+   --------------------------------------------------------------------------- */
+.btn {
+    min-height: 42px;
+    border-radius: var(--radius-control) !important;
+    font-weight: 600;
+    letter-spacing: 0;
+    transition: background 0.15s ease, border-color 0.15s ease, color 0.15s ease, box-shadow 0.15s ease;
+}
+
+.btn-primary {
+    background: var(--primary) !important;
+    color: #fff !important;
+    border: none !important;
+    box-shadow: 0 1px 2px rgba(16, 24, 40, 0.10);
+}
+
+.btn-primary:hover {
+    background: var(--primary-dark) !important;
+    transform: none !important;
+}
+
+.btn-primary:focus-visible,
+.btn-secondary:focus-visible,
+.validate-api-btn:focus-visible {
+    outline: 2px solid var(--primary);
+    outline-offset: 2px;
+}
+
+.btn-secondary,
+.quick-btn {
+    background: var(--surface) !important;
+    border: 1px solid var(--border) !important;
+    color: var(--text-primary) !important;
+    border-radius: var(--radius-control) !important;
+}
+
+.btn-secondary:hover,
+.quick-btn:hover {
+    background: var(--surface-tint) !important;
+    border-color: var(--border-strong) !important;
+    transform: none !important;
+}
+
+.validate-api-btn {
+    border-radius: var(--radius-control) !important;
+}
+
+/* Outline-violet action (Rootsys "Extend / top-up" pattern) */
+.btn-outline-violet {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    min-height: 40px;
+    padding: 0 16px;
+    border-radius: var(--radius-control);
+    border: 1px solid color-mix(in srgb, var(--primary) 30%, transparent);
+    background: var(--surface);
+    color: var(--primary);
+    font-size: 14px;
+    font-weight: 600;
+    cursor: pointer;
+    transition: background 0.15s ease, border-color 0.15s ease;
+}
+
+.btn-outline-violet:hover {
+    background: var(--accent-soft);
+}
+
+/* ---------------------------------------------------------------------------
+   8. Inputs / selects — Rootsys field recipe (h-11, xl radius, brand ring)
+   --------------------------------------------------------------------------- */
+input[type="text"],
+input[type="password"],
+input[type="email"],
+input[type="number"],
+input[type="url"],
+select,
+textarea {
+    border-radius: var(--radius-control) !important;
+    border-color: var(--border) !important;
+    transition: border-color 0.15s ease, box-shadow 0.15s ease, background 0.15s ease;
+}
+
+input[type="text"]:focus,
+input[type="password"]:focus,
+input[type="email"]:focus,
+input[type="number"]:focus,
+input[type="url"]:focus,
+select:focus,
+textarea:focus {
+    border-color: var(--primary) !important;
+    outline: none !important;
+    box-shadow: 0 0 0 3px color-mix(in srgb, var(--primary) 20%, transparent) !important;
+}
+
+/* ---------------------------------------------------------------------------
+   9. Pills / chips / tabs — Rootsys segmented control
+   --------------------------------------------------------------------------- */
+.theme-switch {
+    background: var(--surface-tint);
+    border: 1px solid var(--border);
+    border-radius: var(--radius-control);
+}
+
+.theme-switch-option.active {
+    background: var(--surface);
+    color: var(--primary);
+    box-shadow: 0 1px 2px var(--shadow);
+    border-radius: 8px;
+}
+
+[data-theme="dark"] .theme-switch-option.active,
+[data-theme="blackhole"] .theme-switch-option.active,
+[data-theme="true-dark"] .theme-switch-option.active {
+    background: var(--surface-light);
+    color: var(--primary-light);
+}
+
+/* Generic nav pill (used by panel-nav quick links) */
+.rootify-pill {
+    display: inline-flex;
+    align-items: center;
+    min-height: 36px;
+    padding: 0 12px;
+    border-radius: var(--radius-pill);
+    font-size: 13px;
+    font-weight: 500;
+    color: var(--text-secondary);
+    text-decoration: none;
+    transition: background 0.15s ease, color 0.15s ease;
+}
+
+.rootify-pill:hover {
+    background: color-mix(in srgb, var(--text-primary) 4%, transparent);
+    color: var(--text-primary);
+}
+
+.rootify-pill.active,
+.rootify-pill[aria-current="page"] {
+    background: color-mix(in srgb, var(--text-primary) 7%, transparent);
+    color: var(--text-primary);
+}
+
+/* Violet active pill variant (dashboard sidebar pattern) */
+.rootify-pill-violet.active,
+.rootify-pill-violet[aria-current="page"] {
+    background: var(--accent-soft);
+    color: var(--primary);
+    font-weight: 600;
+}
+
+[data-theme="dark"] .rootify-pill-violet.active,
+[data-theme="dark"] .rootify-pill-violet[aria-current="page"],
+[data-theme="blackhole"] .rootify-pill-violet.active,
+[data-theme="true-dark"] .rootify-pill-violet.active {
+    color: var(--primary-light);
+}
+
+/* ---------------------------------------------------------------------------
+   10. Stat card + icon chip (dashboard pattern, reusable on the front page)
+   --------------------------------------------------------------------------- */
+.rootify-stat {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: var(--radius-card);
+    padding: 18px 20px;
+    box-shadow: 0 1px 3px var(--shadow);
+}
+
+[data-theme="dark"] .rootify-stat,
+[data-theme="blackhole"] .rootify-stat,
+[data-theme="true-dark"] .rootify-stat {
+    box-shadow: none;
+}
+
+.rootify-stat-chip {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 36px;
+    height: 36px;
+    border-radius: 50%;
+    margin-bottom: 12px;
+}
+
+.rootify-stat-chip svg {
+    width: 18px;
+    height: 18px;
+}
+
+.rootify-stat-chip-green { background: #DCFCE7; color: #22C55E; }
+.rootify-stat-chip-violet { background: var(--accent-soft); color: var(--primary); }
+.rootify-stat-chip-amber { background: #FEF3C7; color: #F59E0B; }
+.rootify-stat-chip-sky { background: #E0F2FE; color: #0EA5E9; }
+
+[data-theme="dark"] .rootify-stat-chip-green,
+[data-theme="blackhole"] .rootify-stat-chip-green,
+[data-theme="true-dark"] .rootify-stat-chip-green { background: rgba(34, 197, 94, 0.18); color: #4ADE80; }
+
+[data-theme="dark"] .rootify-stat-chip-violet,
+[data-theme="blackhole"] .rootify-stat-chip-violet,
+[data-theme="true-dark"] .rootify-stat-chip-violet { background: rgba(124, 58, 237, 0.20); color: var(--primary-light); }
+
+[data-theme="dark"] .rootify-stat-chip-amber,
+[data-theme="blackhole"] .rootify-stat-chip-amber,
+[data-theme="true-dark"] .rootify-stat-chip-amber { background: rgba(245, 158, 11, 0.18); color: #FBBF24; }
+
+[data-theme="dark"] .rootify-stat-chip-sky,
+[data-theme="blackhole"] .rootify-stat-chip-sky,
+[data-theme="true-dark"] .rootify-stat-chip-sky { background: rgba(14, 165, 233, 0.18); color: #38BDF8; }
+
+.rootify-stat-label {
+    font-size: 12px;
+    font-weight: 500;
+    color: var(--text-secondary);
+}
+
+.rootify-stat-value {
+    margin-top: 2px;
+    font-size: clamp(22px, 3vw, 28px);
+    font-weight: 700;
+    letter-spacing: -0.02em;
+    line-height: 1.15;
+    color: var(--text-primary);
+    font-variant-numeric: tabular-nums;
+}
+
+/* ---------------------------------------------------------------------------
+   11. Progress meter (token-usage pattern)
+   --------------------------------------------------------------------------- */
+.rootify-meter {
+    height: 12px;
+    width: 100%;
+    border-radius: 999px;
+    background: var(--surface-tint);
+    overflow: hidden;
+}
+
+[data-theme="dark"] .rootify-meter,
+[data-theme="blackhole"] .rootify-meter,
+[data-theme="true-dark"] .rootify-meter {
+    background: var(--surface-light);
+}
+
+.rootify-meter-fill {
+    height: 100%;
+    border-radius: 999px;
+    background: var(--primary);
+    transition: width 0.5s ease;
+}
+
+.rootify-meter-fill.is-warn { background: #F59E0B; }
+.rootify-meter-fill.is-danger { background: #EF4444; }
+.rootify-meter-fill.is-ok { background: #22C55E; }
+
+/* ---------------------------------------------------------------------------
+   12. Section separators + footer (Rootsys rhythm)
+   --------------------------------------------------------------------------- */
+.rootify-section-sep {
+    border-top: 1px solid var(--border);
+    margin: 28px 0 0;
+    padding-top: 28px;
+}
+
+.footer {
+    border-top: 1px solid var(--border);
+    padding: 28px 20px 34px;
+    text-align: center;
+}
+
+.footer .footer-content p {
+    margin: 2px 0;
+}
+
+.footer .footer-content p:first-child {
+    font-weight: 600;
+    color: var(--text-primary);
+    letter-spacing: -0.01em;
+}
+
+.footer .footer-content p:last-child {
+    font-size: 12px;
+    color: var(--text-tertiary);
+}
+
+.footer-heart {
+    color: var(--primary);
+}
+
+/* ---------------------------------------------------------------------------
+   13. Scrollbar polish inside the window
+   --------------------------------------------------------------------------- */
+body.rootify-framed {
+    scrollbar-color: var(--border-strong) transparent;
+}
+
+/* ---------------------------------------------------------------------------
+   14. Responsive — collapse the wallpaper frame on small screens
+   --------------------------------------------------------------------------- */
+@media (max-width: 720px) {
+    .rootify-desktop {
+        padding: 0;
+        background: var(--bg-primary);
+        background-image: none;
+    }
+
+    .rootify-window {
+        max-width: none;
+        border: none;
+        border-radius: 0;
+        box-shadow: none;
+        min-height: 100vh;
+    }
+
+    .rootify-titlebar {
+        display: none;                 /* slim strip only makes sense on desktop */
+    }
+}
+
+/* ---------------------------------------------------------------------------
+   15. Reduced motion
+   --------------------------------------------------------------------------- */
+@media (prefers-reduced-motion: reduce) {
+    .btn, .rootify-pill, input, select, textarea, .section-block, .card {
+        transition: none !important;
+    }
+}

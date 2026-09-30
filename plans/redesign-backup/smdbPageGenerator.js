@@ -129,7 +129,7 @@ function themeToggleStyles() {
     .theme-toggle:focus,
     .theme-toggle:focus-visible {
       outline: none;
-      box-shadow: 0 0 0 3px rgba(124, 58, 237, 0.35), 0 8px 20px var(--shadow);
+      box-shadow: 0 0 0 3px rgba(225, 29, 42, 0.35), 0 8px 20px var(--shadow);
     }
 
     .theme-toggle:hover {
@@ -346,91 +346,86 @@ async function generateSmdbPage(configStr, videoId, filename, config = {}) {
   <style>
     * { box-sizing: border-box; margin: 0; padding: 0; }
 
-    /* Rootsys traffic-light motif (shared across toolbox pages) */
-    .rootify-traffic{display:inline-flex;align-items:center;gap:7px;flex-shrink:0}
-    .rootify-tl{width:12px;height:12px;border-radius:50%;display:inline-block;box-shadow:inset 0 0 0 1px rgba(0,0,0,0.08)}
-    .rootify-tl-red{background:#FF5F56}.rootify-tl-yellow{background:#FFBD2E}.rootify-tl-green{background:#27C93F}
-
     html {
       scroll-behavior: smooth;
       color-scheme: light;
     }
 
     :root {
-      --primary: #7C3AED;
-      --primary-light: #8B5CF6;
-      --primary-dark: #6D28D9;
-      --primary-2: #8B5CF6;
-      --secondary: #8B5CF6;
-      --accent: #8B5CF6;
+      --primary: #e11d2a;
+      --primary-light: #ff4655;
+      --primary-dark: #b3141f;
+      --primary-2: #ff4655;
+      --secondary: #ff4655;
+      --accent: #f43f5e;
       --success: #10b981;
       --warning: #f59e0b;
-      --danger: #7C3AED;
-      --bg-primary: #F7F8FB;
+      --danger: #ef4444;
+      --bg-primary: #f7fafc;
       --surface: #ffffff;
-      --surface-light: #F3F4F6;
-      --surface-2: #F3F4F6;
-      --bg: #F7F8FB;
-      --bg-strong: #E9ECF3;
-      --text: #1C1D2C;
-      --text-primary: #1C1D2C;
-      --text-secondary: #6B7280;
-      --muted: #6B7280;
-      --border: #ECEFF4;
+      --surface-light: #f3f7fb;
+      --surface-2: #f4f7fc;
+      --bg: #f5f8fd;
+      --bg-strong: #e9eef7;
+      --text: #0f172a;
+      --text-primary: #0f172a;
+      --text-secondary: #475569;
+      --muted: #475569;
+      --border: #dbe3ea;
       --shadow: rgba(0, 0, 0, 0.08);
       --shadow-color: rgba(12, 19, 56, 0.12);
-      --glow: rgba(124, 58, 237, 0.25);
+      --glow: rgba(225, 29, 42, 0.25);
       --theme-toggle-size: 48px;
     }
 
     [data-theme="dark"] {
       color-scheme: dark;
-      --primary: #7C3AED;
-      --primary-light: #8B5CF6;
-      --primary-dark: #6D28D9;
-      --secondary: #8B5CF6;
+      --primary: #e11d2a;
+      --primary-light: #ff4655;
+      --primary-dark: #b3141f;
+      --secondary: #ff4655;
       --success: #10b981;
       --warning: #f59e0b;
-      --danger: #7C3AED;
-      --bg-primary: #14161F;
-      --surface: #1B1D29;
-      --surface-light: #232534;
-      --surface-2: #232534;
-      --bg: #1C1D2C;
+      --danger: #ef4444;
+      --bg-primary: #0A0E27;
+      --surface: #141931;
+      --surface-light: #1E2539;
+      --surface-2: #1e2539;
+      --bg: #0f172a;
       --bg-strong: #1a2438;
-      --text: #F3F4F6;
-      --text-primary: #F3F4F6;
-      --text-secondary: #9CA3AF;
-      --muted: #9CA3AF;
-      --border: #2A2C3A;
+      --text: #E8EAED;
+      --text-primary: #E8EAED;
+      --text-secondary: #9AA0A6;
+      --muted: #9AA0A6;
+      --border: #2A3247;
       --shadow: rgba(0, 0, 0, 0.3);
       --shadow-color: rgba(0, 0, 0, 0.4);
-      --glow: rgba(124, 58, 237, 0.35);
+      --glow: rgba(225, 29, 42, 0.35);
     }
 
     [data-theme="true-dark"] {
       color-scheme: dark;
-      --primary: #7C3AED;
-      --primary-light: #8B5CF6;
-      --primary-dark: #6D28D9;
-      --secondary: #8B5CF6;
+      --primary: #e11d2a;
+      --primary-light: #ff4655;
+      --primary-dark: #b3141f;
+      --secondary: #ff4655;
       --success: #10b981;
       --warning: #f59e0b;
-      --danger: #7C3AED;
+      --danger: #ef4444;
       --bg-primary: #000000;
       --surface: #0a0a0a;
       --surface-light: #151515;
       --surface-2: #151515;
       --bg: #000000;
       --bg-strong: #0a0a0a;
-      --text: #F3F4F6;
-      --text-primary: #F3F4F6;
-      --text-secondary: #9CA3AF;
-      --muted: #9CA3AF;
+      --text: #E8EAED;
+      --text-primary: #E8EAED;
+      --text-secondary: #8A8A8A;
+      --muted: #8A8A8A;
       --border: #1a1a1a;
       --shadow: rgba(0, 0, 0, 0.8);
       --shadow-color: rgba(0, 0, 0, 0.6);
-      --glow: rgba(124, 58, 237, 0.45);
+      --glow: rgba(225, 29, 42, 0.45);
     }
 
     ${quickNavStyles()}
@@ -446,7 +441,7 @@ async function generateSmdbPage(configStr, videoId, filename, config = {}) {
     }
 
     [data-theme="dark"] body {
-      background: linear-gradient(135deg, var(--bg-primary) 0%, #1B1D29 60%, var(--bg-primary) 100%);
+      background: linear-gradient(135deg, var(--bg-primary) 0%, #141931 60%, var(--bg-primary) 100%);
     }
 
     [data-theme="true-dark"] body {
@@ -458,22 +453,22 @@ async function generateSmdbPage(configStr, videoId, filename, config = {}) {
       position: fixed;
       top: 0; left: 0; right: 0; bottom: 0;
       background:
-        radial-gradient(circle at 20% 50%, rgba(124, 58, 237, 0.12) 0%, transparent 50%),
-        radial-gradient(circle at 80% 50%, rgba(139, 92, 246, 0.12) 0%, transparent 50%);
+        radial-gradient(circle at 20% 50%, rgba(225, 29, 42, 0.12) 0%, transparent 50%),
+        radial-gradient(circle at 80% 50%, rgba(255, 70, 85, 0.12) 0%, transparent 50%);
       pointer-events: none;
       z-index: 0;
     }
 
     [data-theme="dark"] body::before {
       background:
-        radial-gradient(circle at 20% 50%, rgba(124, 58, 237, 0.15) 0%, transparent 50%),
-        radial-gradient(circle at 80% 50%, rgba(139, 92, 246, 0.15) 0%, transparent 50%);
+        radial-gradient(circle at 20% 50%, rgba(225, 29, 42, 0.15) 0%, transparent 50%),
+        radial-gradient(circle at 80% 50%, rgba(255, 70, 85, 0.15) 0%, transparent 50%);
     }
 
     [data-theme="true-dark"] body::before {
       background:
-        radial-gradient(circle at 20% 50%, rgba(124, 58, 237, 0.08) 0%, transparent 50%),
-        radial-gradient(circle at 80% 50%, rgba(139, 92, 246, 0.08) 0%, transparent 50%);
+        radial-gradient(circle at 20% 50%, rgba(225, 29, 42, 0.08) 0%, transparent 50%),
+        radial-gradient(circle at 80% 50%, rgba(255, 70, 85, 0.08) 0%, transparent 50%);
     }
 
     /* ── Page Container ──────────────────────── */
@@ -800,7 +795,7 @@ async function generateSmdbPage(configStr, videoId, filename, config = {}) {
     }
     .file-drop-zone.drag-over {
       border-color: var(--primary);
-      background: rgba(124, 58, 237, 0.08);
+      background: rgba(225, 29, 42, 0.08);
       box-shadow: 0 0 0 3px var(--glow);
       transform: scale(1.01);
     }
@@ -823,7 +818,7 @@ async function generateSmdbPage(configStr, videoId, filename, config = {}) {
     .file-drop-name {
       margin-top: 0.5rem;
       padding: 0.5rem 0.75rem;
-      background: rgba(124, 58, 237, 0.08);
+      background: rgba(225, 29, 42, 0.08);
       border-radius: 8px;
       font-size: 0.85rem;
       color: var(--text-primary);
@@ -866,7 +861,7 @@ async function generateSmdbPage(configStr, videoId, filename, config = {}) {
     .status-bar.success { display: block; background: rgba(16, 185, 129, 0.12); color: var(--success); border: 1px solid rgba(16, 185, 129, 0.25); }
     .status-bar.error { display: block; background: rgba(239, 68, 68, 0.12); color: var(--danger); border: 1px solid rgba(239, 68, 68, 0.25); }
     .status-bar.warning { display: block; background: rgba(245, 158, 11, 0.12); color: var(--warning); border: 1px solid rgba(245, 158, 11, 0.25); }
-    .status-bar.info { display: block; background: rgba(124, 58, 237, 0.10); color: var(--primary); border: 1px solid rgba(124, 58, 237, 0.25); }
+    .status-bar.info { display: block; background: rgba(225, 29, 42, 0.10); color: var(--primary); border: 1px solid rgba(225, 29, 42, 0.25); }
 
     /* ── Override Modal ────────────────── */
     .modal-overlay {
@@ -933,7 +928,6 @@ async function generateSmdbPage(configStr, videoId, filename, config = {}) {
   <div class="page">
     <!-- Header -->
     <div class="page-header">
-      <span class="rootify-traffic" aria-hidden="true"><span class="rootify-tl rootify-tl-red"></span><span class="rootify-tl rootify-tl-yellow"></span><span class="rootify-tl rootify-tl-green"></span></span>
       <h1>📦 SubFaber Database</h1>
       <p>Upload and share subtitles with the community</p>
     </div>

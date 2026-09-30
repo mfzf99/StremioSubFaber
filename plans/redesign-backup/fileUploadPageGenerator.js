@@ -309,72 +309,67 @@ function generateFileTranslationPage(videoId, configStr, config, filename = '') 
             box-sizing: border-box;
         }
 
-        /* Rootsys traffic-light motif (shared across toolbox pages) */
-        .rootify-traffic{display:inline-flex;align-items:center;gap:7px;flex-shrink:0}
-        .rootify-tl{width:12px;height:12px;border-radius:50%;display:inline-block;box-shadow:inset 0 0 0 1px rgba(0,0,0,0.08)}
-        .rootify-tl-red{background:#FF5F56}.rootify-tl-yellow{background:#FFBD2E}.rootify-tl-green{background:#27C93F}
-
         html {
             scroll-behavior: smooth;
             color-scheme: light;
         }
 
         :root {
-            --primary: #7C3AED;
-            --primary-light: #8B5CF6;
-            --primary-dark: #6D28D9;
-            --secondary: #8B5CF6;
+            --primary: #e11d2a;
+            --primary-light: #ff4655;
+            --primary-dark: #b3141f;
+            --secondary: #ff4655;
             --success: #10b981;
-            --danger: #7C3AED;
-            --bg-primary: #F7F8FB;
+            --danger: #ef4444;
+            --bg-primary: #f7fafc;
             --surface: #ffffff;
-            --surface-light: #F3F4F6;
-            --text-primary: #1C1D2C;
-            --text-secondary: #6B7280;
-            --muted: #6B7280;
-            --border: #ECEFF4;
+            --surface-light: #f3f7fb;
+            --text-primary: #0f172a;
+            --text-secondary: #475569;
+            --muted: #475569;
+            --border: #dbe3ea;
             --shadow: rgba(0, 0, 0, 0.08);
-            --glow: rgba(124, 58, 237, 0.25);
+            --glow: rgba(225, 29, 42, 0.25);
             --theme-toggle-size: 48px;
         }
 
         [data-theme="dark"] {
             color-scheme: dark;
-            --primary: #7C3AED;
-            --primary-light: #8B5CF6;
-            --primary-dark: #6D28D9;
-            --secondary: #8B5CF6;
+            --primary: #e11d2a;
+            --primary-light: #ff4655;
+            --primary-dark: #b3141f;
+            --secondary: #ff4655;
             --success: #10b981;
-            --danger: #7C3AED;
-            --bg-primary: #14161F;
-            --surface: #1B1D29;
-            --surface-light: #232534;
-            --text-primary: #F3F4F6;
-            --text-secondary: #9CA3AF;
-            --muted: #9CA3AF;
-            --border: #2A2C3A;
+            --danger: #ef4444;
+            --bg-primary: #0A0E27;
+            --surface: #141931;
+            --surface-light: #1E2539;
+            --text-primary: #E8EAED;
+            --text-secondary: #9AA0A6;
+            --muted: #9AA0A6;
+            --border: #2A3247;
             --shadow: rgba(0, 0, 0, 0.3);
-            --glow: rgba(124, 58, 237, 0.35);
+            --glow: rgba(225, 29, 42, 0.35);
         }
 
         /* True Dark mode (Blackhole) color scheme */
         [data-theme="true-dark"] {
             color-scheme: dark;
-            --primary: #7C3AED;
-            --primary-light: #8B5CF6;
-            --primary-dark: #6D28D9;
-            --secondary: #8B5CF6;
+            --primary: #e11d2a;
+            --primary-light: #ff4655;
+            --primary-dark: #b3141f;
+            --secondary: #ff4655;
             --success: #10b981;
-            --danger: #7C3AED;
+            --danger: #ef4444;
             --bg-primary: #000000;
             --surface: #0a0a0a;
             --surface-light: #151515;
-            --text-primary: #F3F4F6;
-            --text-secondary: #9CA3AF;
-            --muted: #9CA3AF;
+            --text-primary: #E8EAED;
+            --text-secondary: #8A8A8A;
+            --muted: #8A8A8A;
             --border: #1a1a1a;
             --shadow: rgba(0, 0, 0, 0.8);
-            --glow: rgba(124, 58, 237, 0.45);
+            --glow: rgba(225, 29, 42, 0.45);
         }
 
         /* Removed forced color-scheme override - let theme cascade handle it naturally */
@@ -394,7 +389,7 @@ function generateFileTranslationPage(videoId, configStr, config, filename = '') 
         }
 
         [data-theme="dark"] body {
-            background: linear-gradient(135deg, var(--bg-primary) 0%, #1B1D29 60%, var(--bg-primary) 100%);
+            background: linear-gradient(135deg, var(--bg-primary) 0%, #141931 60%, var(--bg-primary) 100%);
         }
 
         [data-theme="true-dark"] body {
@@ -409,22 +404,22 @@ function generateFileTranslationPage(videoId, configStr, config, filename = '') 
             right: 0;
             bottom: 0;
             background:
-                radial-gradient(circle at 20% 50%, rgba(124, 58, 237, 0.12) 0%, transparent 50%),
-                radial-gradient(circle at 80% 50%, rgba(139, 92, 246, 0.12) 0%, transparent 50%);
+                radial-gradient(circle at 20% 50%, rgba(225, 29, 42, 0.12) 0%, transparent 50%),
+                radial-gradient(circle at 80% 50%, rgba(255, 70, 85, 0.12) 0%, transparent 50%);
             pointer-events: none;
             z-index: 0;
         }
 
         [data-theme="dark"] body::before {
             background:
-                radial-gradient(circle at 20% 50%, rgba(124, 58, 237, 0.15) 0%, transparent 50%),
-                radial-gradient(circle at 80% 50%, rgba(139, 92, 246, 0.15) 0%, transparent 50%);
+                radial-gradient(circle at 20% 50%, rgba(225, 29, 42, 0.15) 0%, transparent 50%),
+                radial-gradient(circle at 80% 50%, rgba(255, 70, 85, 0.15) 0%, transparent 50%);
         }
 
         [data-theme="true-dark"] body::before {
             background:
-                radial-gradient(circle at 20% 50%, rgba(124, 58, 237, 0.08) 0%, transparent 50%),
-                radial-gradient(circle at 80% 50%, rgba(139, 92, 246, 0.08) 0%, transparent 50%);
+                radial-gradient(circle at 20% 50%, rgba(225, 29, 42, 0.08) 0%, transparent 50%),
+                radial-gradient(circle at 80% 50%, rgba(255, 70, 85, 0.08) 0%, transparent 50%);
         }
 
         .episode-toast {
@@ -595,9 +590,9 @@ function generateFileTranslationPage(videoId, configStr, config, filename = '') 
             gap: 10px;
             padding: 10px 12px;
             border-radius: 12px;
-            background: linear-gradient(135deg, rgba(124, 58, 237,0.14), rgba(255,255,255,0.08));
-            border: 1px solid rgba(124, 58, 237,0.25);
-            box-shadow: 0 12px 30px rgba(124, 58, 237,0.16);
+            background: linear-gradient(135deg, rgba(225, 29, 42,0.14), rgba(255,255,255,0.08));
+            border: 1px solid rgba(225, 29, 42,0.25);
+            box-shadow: 0 12px 30px rgba(225, 29, 42,0.16);
         }
 
         .status-labels {
@@ -634,7 +629,7 @@ function generateFileTranslationPage(videoId, configStr, config, filename = '') 
             width: 12px;
             height: 12px;
             border-radius: 999px;
-            box-shadow: 0 0 0 0 rgba(124, 58, 237, 0.0);
+            box-shadow: 0 0 0 0 rgba(225, 29, 42, 0.0);
         }
 
         .status-dot.ok {
@@ -848,7 +843,7 @@ function generateFileTranslationPage(videoId, configStr, config, filename = '') 
             max-width: 640px;
             width: 92%;
             border: 1px solid var(--border);
-            box-shadow: 0 24px 72px var(--shadow), 0 0 0 1px rgba(124, 58, 237, 0.12);
+            box-shadow: 0 24px 72px var(--shadow), 0 0 0 1px rgba(225, 29, 42, 0.12);
             overflow: hidden;
             animation: slideInScale 0.32s cubic-bezier(0.16, 1, 0.3, 1);
             position: relative;
@@ -859,7 +854,7 @@ function generateFileTranslationPage(videoId, configStr, config, filename = '') 
         .modal-header {
             padding: 1.25rem 1.5rem;
             border-bottom: 1px solid var(--border);
-            background: linear-gradient(135deg, rgba(124, 58, 237, 0.08) 0%, rgba(139, 92, 246, 0.08) 100%);
+            background: linear-gradient(135deg, rgba(225, 29, 42, 0.08) 0%, rgba(255, 70, 85, 0.08) 100%);
             position: sticky;
             top: 0;
             z-index: 1;
@@ -1087,7 +1082,7 @@ function generateFileTranslationPage(videoId, configStr, config, filename = '') 
         .file-name {
             margin-top: 0.75rem;
             padding: 0.75rem 1rem;
-            background: rgba(124, 58, 237, 0.08);
+            background: rgba(225, 29, 42, 0.08);
             border-radius: 8px;
             font-size: 0.95rem;
             color: var(--text-primary);
@@ -1178,12 +1173,12 @@ function generateFileTranslationPage(videoId, configStr, config, filename = '') 
             display: flex;
             justify-content: space-between;
             align-items: center;
-            background: linear-gradient(135deg, rgba(124, 58, 237, 0.05) 0%, rgba(139, 92, 246, 0.05) 100%);
+            background: linear-gradient(135deg, rgba(225, 29, 42, 0.05) 0%, rgba(255, 70, 85, 0.05) 100%);
             transition: background 0.2s ease;
         }
 
         .translation-options-header:hover {
-            background: linear-gradient(135deg, rgba(124, 58, 237, 0.1) 0%, rgba(139, 92, 246, 0.1) 100%);
+            background: linear-gradient(135deg, rgba(225, 29, 42, 0.1) 0%, rgba(255, 70, 85, 0.1) 100%);
         }
 
         .translation-options-title {
@@ -1827,12 +1822,12 @@ function generateFileTranslationPage(videoId, configStr, config, filename = '') 
             display: flex;
             justify-content: space-between;
             align-items: center;
-            background: linear-gradient(135deg, rgba(124, 58, 237, 0.05) 0%, rgba(139, 92, 246, 0.05) 100%);
+            background: linear-gradient(135deg, rgba(225, 29, 42, 0.05) 0%, rgba(255, 70, 85, 0.05) 100%);
             transition: background 0.2s ease;
         }
 
         .advanced-settings-header:hover {
-            background: linear-gradient(135deg, rgba(124, 58, 237, 0.1) 0%, rgba(139, 92, 246, 0.1) 100%);
+            background: linear-gradient(135deg, rgba(225, 29, 42, 0.1) 0%, rgba(255, 70, 85, 0.1) 100%);
         }
 
         .advanced-settings-title {
@@ -1964,7 +1959,7 @@ function generateFileTranslationPage(videoId, configStr, config, filename = '') 
 
         .model-status.fetching {
             color: var(--primary);
-            background: rgba(124, 58, 237, 0.1);
+            background: rgba(225, 29, 42, 0.1);
         }
 
         .model-status.success {
@@ -1981,7 +1976,7 @@ function generateFileTranslationPage(videoId, configStr, config, filename = '') 
             display: inline-block;
             width: 12px;
             height: 12px;
-            border: 2px solid rgba(124, 58, 237, 0.2);
+            border: 2px solid rgba(225, 29, 42, 0.2);
             border-top-color: var(--primary);
             border-radius: 50%;
             animation: spin 0.8s linear infinite;
@@ -2063,7 +2058,7 @@ function generateFileTranslationPage(videoId, configStr, config, filename = '') 
         .theme-toggle:focus,
         .theme-toggle:focus-visible {
             outline: none;
-            box-shadow: 0 0 0 3px rgba(124, 58, 237, 0.35), 0 8px 20px var(--shadow);
+            box-shadow: 0 0 0 3px rgba(225, 29, 42, 0.35), 0 8px 20px var(--shadow);
         }
 
         .theme-toggle:hover {
@@ -2387,7 +2382,6 @@ function generateFileTranslationPage(videoId, configStr, config, filename = '') 
     <div class="container">
         <header class="masthead">
             <div class="page-hero">
-                <span class="rootify-traffic" aria-hidden="true"><span class="rootify-tl rootify-tl-red"></span><span class="rootify-tl rootify-tl-yellow"></span><span class="rootify-tl rootify-tl-green"></span></span>
                 <div class="page-icon">📄</div>
                 <h1 class="page-heading">${t('fileUpload.title', {}, 'File Translation')}</h1>
                 <p class="page-subtitle">${t('fileUpload.subtitle', {}, 'Upload and translate your subtitle files')}</p>

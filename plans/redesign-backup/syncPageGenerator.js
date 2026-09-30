@@ -228,7 +228,7 @@ function themeToggleStyles() {
         .theme-toggle:focus,
         .theme-toggle:focus-visible {
             outline: none;
-            box-shadow: 0 0 0 3px rgba(124, 58, 237, 0.35), 0 8px 20px var(--shadow);
+            box-shadow: 0 0 0 3px rgba(225, 29, 42, 0.35), 0 8px 20px var(--shadow);
         }
 
         .theme-toggle:hover {
@@ -620,81 +620,76 @@ async function generateSubtitleSyncPage(subtitles, videoId, streamFilename, conf
             box-sizing: border-box;
         }
 
-        /* Rootsys traffic-light motif (shared across toolbox pages) */
-        .rootify-traffic{display:inline-flex;align-items:center;gap:7px;flex-shrink:0}
-        .rootify-tl{width:12px;height:12px;border-radius:50%;display:inline-block;box-shadow:inset 0 0 0 1px rgba(0,0,0,0.08)}
-        .rootify-tl-red{background:#FF5F56}.rootify-tl-yellow{background:#FFBD2E}.rootify-tl-green{background:#27C93F}
-
         html {
             scroll-behavior: smooth;
             color-scheme: light;
         }
 
         :root {
-            --primary: #7C3AED;
-            --primary-light: #8B5CF6;
-            --primary-dark: #6D28D9;
-            --secondary: #8B5CF6;
+            --primary: #e11d2a;
+            --primary-light: #ff4655;
+            --primary-dark: #b3141f;
+            --secondary: #ff4655;
             --success: #10b981;
             --warning: #f59e0b;
-            --danger: #7C3AED;
-            --bg-primary: #F7F8FB;
+            --danger: #ef4444;
+            --bg-primary: #f7fafc;
             --surface: #ffffff;
-            --surface-light: #F3F4F6;
-            --surface-2: #F3F4F6;
-            --text-primary: #1C1D2C;
-            --text-secondary: #6B7280;
-            --text: #1C1D2C;
-            --muted: #6B7280;
-            --border: #ECEFF4;
+            --surface-light: #f3f7fb;
+            --surface-2: #f4f7fc;
+            --text-primary: #0f172a;
+            --text-secondary: #475569;
+            --text: #0f172a;
+            --muted: #475569;
+            --border: #dbe3ea;
             --shadow: rgba(0, 0, 0, 0.08);
-            --glow: rgba(124, 58, 237, 0.25);
+            --glow: rgba(225, 29, 42, 0.25);
             --theme-toggle-size: 48px;
         }
 
         [data-theme="dark"] {
             color-scheme: dark;
-            --primary: #7C3AED;
-            --primary-light: #8B5CF6;
-            --primary-dark: #6D28D9;
-            --secondary: #8B5CF6;
+            --primary: #e11d2a;
+            --primary-light: #ff4655;
+            --primary-dark: #b3141f;
+            --secondary: #ff4655;
             --success: #10b981;
             --warning: #f59e0b;
-            --danger: #7C3AED;
-            --bg-primary: #14161F;
-            --surface: #1B1D29;
-            --surface-light: #232534;
-            --surface-2: #232534;
-            --text-primary: #F3F4F6;
-            --text-secondary: #9CA3AF;
-            --text: #F3F4F6;
-            --muted: #9CA3AF;
-            --border: #2A2C3A;
+            --danger: #ef4444;
+            --bg-primary: #0A0E27;
+            --surface: #141931;
+            --surface-light: #1E2539;
+            --surface-2: #1e2539;
+            --text-primary: #E8EAED;
+            --text-secondary: #9AA0A6;
+            --text: #E8EAED;
+            --muted: #9AA0A6;
+            --border: #2A3247;
             --shadow: rgba(0, 0, 0, 0.3);
-            --glow: rgba(124, 58, 237, 0.35);
+            --glow: rgba(225, 29, 42, 0.35);
         }
 
         /* True Dark mode (Blackhole) color scheme */
         [data-theme="true-dark"] {
             color-scheme: dark;
-            --primary: #7C3AED;
-            --primary-light: #8B5CF6;
-            --primary-dark: #6D28D9;
-            --secondary: #8B5CF6;
+            --primary: #e11d2a;
+            --primary-light: #ff4655;
+            --primary-dark: #b3141f;
+            --secondary: #ff4655;
             --success: #10b981;
             --warning: #f59e0b;
-            --danger: #7C3AED;
+            --danger: #ef4444;
             --bg-primary: #000000;
             --surface: #0a0a0a;
             --surface-light: #151515;
             --surface-2: #151515;
-            --text-primary: #F3F4F6;
-            --text-secondary: #9CA3AF;
-            --text: #F3F4F6;
-            --muted: #9CA3AF;
+            --text-primary: #E8EAED;
+            --text-secondary: #8A8A8A;
+            --text: #E8EAED;
+            --muted: #8A8A8A;
             --border: #1a1a1a;
             --shadow: rgba(0, 0, 0, 0.8);
-            --glow: rgba(124, 58, 237, 0.45);
+            --glow: rgba(225, 29, 42, 0.45);
         }
 
         /* Removed forced color-scheme override - let theme cascade handle it naturally */
@@ -711,7 +706,7 @@ async function generateSubtitleSyncPage(subtitles, videoId, streamFilename, conf
         }
 
         [data-theme="dark"] body {
-            background: linear-gradient(135deg, var(--bg-primary) 0%, #1B1D29 60%, var(--bg-primary) 100%);
+            background: linear-gradient(135deg, var(--bg-primary) 0%, #141931 60%, var(--bg-primary) 100%);
         }
 
         [data-theme="true-dark"] body {
@@ -726,22 +721,22 @@ async function generateSubtitleSyncPage(subtitles, videoId, streamFilename, conf
             right: 0;
             bottom: 0;
             background:
-                radial-gradient(circle at 20% 50%, rgba(124, 58, 237, 0.12) 0%, transparent 50%),
-                radial-gradient(circle at 80% 50%, rgba(139, 92, 246, 0.12) 0%, transparent 50%);
+                radial-gradient(circle at 20% 50%, rgba(225, 29, 42, 0.12) 0%, transparent 50%),
+                radial-gradient(circle at 80% 50%, rgba(255, 70, 85, 0.12) 0%, transparent 50%);
             pointer-events: none;
             z-index: 0;
         }
 
         [data-theme="dark"] body::before {
             background:
-                radial-gradient(circle at 20% 50%, rgba(124, 58, 237, 0.15) 0%, transparent 50%),
-                radial-gradient(circle at 80% 50%, rgba(139, 92, 246, 0.15) 0%, transparent 50%);
+                radial-gradient(circle at 20% 50%, rgba(225, 29, 42, 0.15) 0%, transparent 50%),
+                radial-gradient(circle at 80% 50%, rgba(255, 70, 85, 0.15) 0%, transparent 50%);
         }
 
         [data-theme="true-dark"] body::before {
             background:
-                radial-gradient(circle at 20% 50%, rgba(124, 58, 237, 0.08) 0%, transparent 50%),
-                radial-gradient(circle at 80% 50%, rgba(139, 92, 246, 0.08) 0%, transparent 50%);
+                radial-gradient(circle at 20% 50%, rgba(225, 29, 42, 0.08) 0%, transparent 50%),
+                radial-gradient(circle at 80% 50%, rgba(255, 70, 85, 0.08) 0%, transparent 50%);
         }
 
         body.modal-open {
@@ -848,7 +843,7 @@ async function generateSubtitleSyncPage(subtitles, videoId, streamFilename, conf
             max-height: 88vh;
             overflow: hidden;
             border: 1px solid var(--border);
-            box-shadow: 0 24px 72px var(--shadow), 0 0 0 1px rgba(124, 58, 237, 0.14);
+            box-shadow: 0 24px 72px var(--shadow), 0 0 0 1px rgba(225, 29, 42, 0.14);
             animation: modalSlideIn 0.42s cubic-bezier(0.22, 1, 0.36, 1);
             position: relative;
             display: flex;
@@ -870,7 +865,7 @@ async function generateSubtitleSyncPage(subtitles, videoId, streamFilename, conf
         .modal-header {
             padding: 1.25rem 1.5rem;
             border-bottom: 1px solid var(--border);
-            background: linear-gradient(135deg, rgba(124, 58, 237, 0.08) 0%, rgba(139, 92, 246, 0.08) 100%);
+            background: linear-gradient(135deg, rgba(225, 29, 42, 0.08) 0%, rgba(255, 70, 85, 0.08) 100%);
             position: sticky;
             top: 0;
             z-index: 1;
@@ -1207,8 +1202,8 @@ async function generateSubtitleSyncPage(subtitles, videoId, streamFilename, conf
             margin-top: 10px;
             padding: 12px;
             border-radius: 12px;
-            background: rgba(124, 58, 237,0.12);
-            border: 1px solid rgba(124, 58, 237,0.25);
+            background: rgba(225, 29, 42,0.12);
+            border: 1px solid rgba(225, 29, 42,0.25);
             color: var(--text);
             font-weight: 700;
         }
@@ -1219,9 +1214,9 @@ async function generateSubtitleSyncPage(subtitles, videoId, streamFilename, conf
             gap: 10px;
             padding: 10px 12px;
             border-radius: 12px;
-            background: linear-gradient(135deg, rgba(124, 58, 237,0.14), rgba(255,255,255,0.08));
-            border: 1px solid rgba(124, 58, 237,0.25);
-            box-shadow: 0 12px 30px rgba(124, 58, 237,0.16);
+            background: linear-gradient(135deg, rgba(225, 29, 42,0.14), rgba(255,255,255,0.08));
+            border: 1px solid rgba(225, 29, 42,0.25);
+            box-shadow: 0 12px 30px rgba(225, 29, 42,0.16);
         }
         .status-labels { display: flex; flex-direction: column; line-height: 1.15; }
         .label-eyebrow { font-size: 11px; letter-spacing: 0.12em; text-transform: uppercase; color: var(--muted); font-weight: 700; }
@@ -1253,16 +1248,16 @@ async function generateSubtitleSyncPage(subtitles, videoId, streamFilename, conf
             width: 12px;
             height: 12px;
             border-radius: 999px;
-            box-shadow: 0 0 0 0 rgba(124, 58, 237, 0.0);
+            box-shadow: 0 0 0 0 rgba(225, 29, 42, 0.0);
         }
         .status-dot.ok { background: linear-gradient(135deg, #4ade80, #22c55e); }
         .status-dot.warn { background: linear-gradient(135deg, #fbbf24, #f59e0b); }
-        .status-dot.bad { background: linear-gradient(135deg, #8B5CF6, #6D28D9); }
+        .status-dot.bad { background: linear-gradient(135deg, #f43f5e, #dc2626); }
         .status-dot.pulse { animation: pulse 1.15s ease-in-out infinite; }
         @keyframes pulse {
-            0% { box-shadow: 0 0 0 0 rgba(124, 58, 237, 0.22); }
-            70% { box-shadow: 0 0 0 10px rgba(124, 58, 237, 0); }
-            100% { box-shadow: 0 0 0 0 rgba(124, 58, 237, 0); }
+            0% { box-shadow: 0 0 0 0 rgba(225, 29, 42, 0.22); }
+            70% { box-shadow: 0 0 0 10px rgba(225, 29, 42, 0); }
+            100% { box-shadow: 0 0 0 0 rgba(225, 29, 42, 0); }
         }
 
         .section {
@@ -1283,14 +1278,14 @@ async function generateSubtitleSyncPage(subtitles, videoId, streamFilename, conf
             background:
                 linear-gradient(180deg, rgba(20, 25, 49, 0.9) 0%, rgba(20, 25, 49, 0.82) 100%),
                 var(--surface);
-            box-shadow: 0 12px 34px var(--shadow), 0 0 0 1px rgba(124, 58, 237, 0.1);
+            box-shadow: 0 12px 34px var(--shadow), 0 0 0 1px rgba(225, 29, 42, 0.1);
         }
 
         [data-theme="true-dark"] .section {
             background:
                 linear-gradient(180deg, rgba(10, 10, 10, 0.94) 0%, rgba(10, 10, 10, 0.86) 100%),
                 var(--surface);
-            box-shadow: 0 14px 40px var(--shadow), 0 0 0 1px rgba(124, 58, 237, 0.12);
+            box-shadow: 0 14px 40px var(--shadow), 0 0 0 1px rgba(225, 29, 42, 0.12);
         }
 
         .section:hover {
@@ -1446,7 +1441,7 @@ async function generateSubtitleSyncPage(subtitles, videoId, streamFilename, conf
             justify-content: center;
             padding: 0.35rem 0.75rem;
             border-radius: 999px;
-            background: rgba(124, 58, 237, 0.12);
+            background: rgba(225, 29, 42, 0.12);
             color: var(--primary);
             font-weight: 700;
             font-size: 0.85rem;
@@ -1675,8 +1670,8 @@ async function generateSubtitleSyncPage(subtitles, videoId, streamFilename, conf
         }
 
         .status-message.info {
-            background: rgba(124, 58, 237, 0.08);
-            border: 1px solid rgba(124, 58, 237, 0.2);
+            background: rgba(225, 29, 42, 0.08);
+            border: 1px solid rgba(225, 29, 42, 0.2);
             color: var(--text-primary);
             text-align: center;
         }
@@ -1700,7 +1695,7 @@ async function generateSubtitleSyncPage(subtitles, videoId, streamFilename, conf
             border-radius: 12px;
             border: 1px solid rgba(239,68,68,0.35);
             background: rgba(239,68,68,0.08);
-            color: #4C1D95;
+            color: #7f1d1d;
             font-weight: 700;
             font-size: 14px;
             box-shadow: 0 8px 22px rgba(239,68,68,0.12);
@@ -1708,7 +1703,7 @@ async function generateSubtitleSyncPage(subtitles, videoId, streamFilename, conf
         }
         .hash-mismatch-alert .alert-head {
             color: #fff;
-            background: linear-gradient(135deg, #7C3AED, #5B21B6);
+            background: linear-gradient(135deg, #ef4444, #b91c1c);
             padding: 6px 12px;
             border-radius: 10px;
             font-size: 12px;
@@ -1730,7 +1725,7 @@ async function generateSubtitleSyncPage(subtitles, videoId, streamFilename, conf
             flex-direction: column;
             gap: 4px;
             text-align: center;
-            color: #4C1D95;
+            color: #7f1d1d;
         }
 
         .status-message.error {
@@ -1879,7 +1874,7 @@ async function generateSubtitleSyncPage(subtitles, videoId, streamFilename, conf
 
         .upload-area.dragover {
             border-color: var(--primary);
-            background: rgba(124, 58, 237, 0.08);
+            background: rgba(225, 29, 42, 0.08);
             border-style: solid;
         }
 
@@ -1937,8 +1932,8 @@ async function generateSubtitleSyncPage(subtitles, videoId, streamFilename, conf
         }
 
         .info-box {
-            background: rgba(124, 58, 237, 0.08);
-            border: 1px solid rgba(124, 58, 237, 0.2);
+            background: rgba(225, 29, 42, 0.08);
+            border: 1px solid rgba(225, 29, 42, 0.2);
             border-radius: 12px;
             padding: 1.25rem;
             margin-bottom: 1rem;
@@ -1958,8 +1953,8 @@ async function generateSubtitleSyncPage(subtitles, videoId, streamFilename, conf
         }
 
         .auto-sync-box {
-            background: rgba(124, 58, 237, 0.12);
-            border-color: rgba(124, 58, 237, 0.25);
+            background: rgba(225, 29, 42, 0.12);
+            border-color: rgba(225, 29, 42, 0.25);
             color: var(--text-primary);
         }
 
@@ -2035,7 +2030,6 @@ async function generateSubtitleSyncPage(subtitles, videoId, streamFilename, conf
     <div class="page">
         <header class="masthead">
             <div class="page-hero">
-                <span class="rootify-traffic" aria-hidden="true"><span class="rootify-tl rootify-tl-red"></span><span class="rootify-tl rootify-tl-yellow"></span><span class="rootify-tl rootify-tl-green"></span></span>
                 <div class="page-icon">⏱️</div>
                 <h1 class="page-heading">${escapeHtml(copy.title)}</h1>
                 <p class="page-subtitle">${escapeHtml(copy.subtitle)}</p>

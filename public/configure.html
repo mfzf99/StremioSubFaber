@@ -33,14 +33,31 @@
             html.setAttribute('data-theme-pref', pref);
         })();
     </script>
+    <!-- Rootsys-grade typography: JetBrains Mono for code/keys (Inter is already the UI stack) -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;600;700&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="/css/configure.css?_cb=__APP_VERSION_QUERY__">
     <link rel="stylesheet" href="/css/combobox.css?_cb=__APP_VERSION_QUERY__">
     <link rel="stylesheet" href="/css/quick-setup.css?_cb=__APP_VERSION_QUERY__">
-    <!-- SubFaber Modern Minimalist Dashboard theme (must load last to override token layer) -->
+    <!-- SubFaber Modern Minimalist Dashboard theme (must load after base sheets) -->
     <link rel="stylesheet" href="/css/subfaber-theme.css?_cb=__APP_VERSION_QUERY__">
+    <!-- Rootify: Rootsys design identity — macOS window frame + ground-truth tokens (must load LAST) -->
+    <link rel="stylesheet" href="/css/rootify.css?_cb=__APP_VERSION_QUERY__">
 </head>
 
-<body>
+<body class="rootify-framed">
+    <!-- Rootsys macOS window frame: wallpaper desktop + floating window + traffic lights -->
+    <div class="rootify-desktop">
+        <div class="rootify-window">
+            <div class="rootify-titlebar" aria-hidden="true">
+                <span class="rootify-traffic">
+                    <span class="rootify-tl rootify-tl-red"></span>
+                    <span class="rootify-tl rootify-tl-yellow"></span>
+                    <span class="rootify-tl rootify-tl-green"></span>
+                </span>
+                <span class="rootify-titlebar-title" data-i18n="config.documentTitle">SubFaber — Configure</span>
+            </div>
     <!-- ============================================================= -->
     <!-- Top Navigation Bar (sticky, flat, no floating clutter)        -->
     <!-- ============================================================= -->
@@ -124,6 +141,8 @@
     <script src="/js/theme-toggle.js?_cb=__APP_VERSION_QUERY__" defer></script>
     <script src="/js/sw-register.js?_cb=__APP_VERSION_QUERY__" defer></script>
     <script src="/js/quick-setup.js?_cb=__APP_VERSION_QUERY__" defer></script>
+        </div><!-- /.rootify-window -->
+    </div><!-- /.rootify-desktop -->
 </body>
 
 </html>

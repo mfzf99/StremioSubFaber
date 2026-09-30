@@ -2,6 +2,18 @@
 
 All notable changes to this project will be documented in this file.
 
+## SubMaker v1.9.12 (2026-09-30) — "Rootify" — Rootsys-Inspired Visual Overhaul for Both Worlds
+
+**Full frontend redesign adopting the Rootsys design language across the public Configure page and the embedded Sub Toolbox — without touching any JS contract:**
+
+- **Ground-truth design audit:** comprehensive scrape of rootsys.cloud public pages (macOS-window identity) and authenticated dashboard (sidebar-app identity, violet `#7C3AED`, surfaces `#F7F8FB`/`#14161F`, borders `#ECEFF4`/`#2A2C3A`). Full findings in [`plans/rootsys-design-audit-ground-truth.md`](plans/rootsys-design-audit-ground-truth.md); implementation blueprint in [`plans/subfaber-redesign-blueprint.md`](plans/subfaber-redesign-blueprint.md).
+
+- **World 1 (Configure page):** new [`public/css/rootify.css`](public/css/rootify.css) layer loaded last — re-maps every design token to the Rootsys palette (light `#F7F8FB` / dark `#14161F`, violet accent, gray text scale `#1C1D2C`/`#6B7280`/`#9CA3AF`), wraps the app in the signature macOS "desktop window" frame (wallpaper backdrop + floating `rounded-2xl` window + traffic-light dots), adds Rootsys-grade component polish (44px buttons, `rounded-xl` inputs with brand focus-ring, stat-card icon chips, segmented pills, JetBrains Mono for code). `configure.html` gains the frame wrapper + JetBrains Mono import; navbar made sticky inside the window. Zero changes to any id/class/data-* hook used by `config.js`.
+
+- **World 2 (Sub Toolbox):** all five page generators recolored from red (`#e11d2a` family) to the violet Rootsys brand (`#7C3AED`/`#8B5CF6`/`#6D28D9`) — 495 colour tokens swapped across [`toolboxPageGenerator.js`](src/utils/toolboxPageGenerator.js), [`fileUploadPageGenerator.js`](src/utils/fileUploadPageGenerator.js), [`syncPageGenerator.js`](src/utils/syncPageGenerator.js), [`historyPageGenerator.js`](src/utils/historyPageGenerator.js), [`smdbPageGenerator.js`](src/utils/smdbPageGenerator.js). Surfaces aligned to the dashboard palette (light `#F7F8FB`, dark `#14161F`/`#1B1D29`/`#232534`, border `#ECEFF4`/`#2A2C3A`). The Rootsys traffic-light motif (`#FF5F56`/`#FFBD2E`/`#27C93F`) is injected into every toolbox masthead as a shared `.rootify-traffic` component, unifying both worlds. Backup of originals in [`plans/redesign-backup/`](plans/redesign-backup/).
+
+- **Safety:** presentation-only changes — every JS hook, i18n attribute, partial token, theme bootstrap (3-mode light/system/dark preserved), and service-worker flow intact. `npm test`: **283 PASS / 0 FAIL** (1 skipped) after the overhaul, including the `all stream-based toolbox pages embed the shared filename selector` contract test.
+
 ## SubMaker v1.9.8 (2026-09-26) — Pre-Flight Payload Ceiling 250k Chars + Headroom Timeouts 180s/45s
 
 **Sekatan buatan 48k aksara dimansuhkan — jalan cerita penuh diserahkan kepada Inspector:**

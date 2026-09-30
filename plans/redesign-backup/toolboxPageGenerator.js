@@ -208,7 +208,7 @@ function themeToggleStyles() {
     .theme-toggle:focus,
     .theme-toggle:focus-visible {
       outline: none;
-      box-shadow: 0 0 0 3px rgba(124, 58, 237, 0.35), 0 8px 20px var(--shadow);
+      box-shadow: 0 0 0 3px rgba(225, 29, 42, 0.35), 0 8px 20px var(--shadow);
     }
 
     .theme-toggle:hover {
@@ -507,41 +507,37 @@ function generateSubToolboxPage(configStr, videoId, filename, config) {
     html { color-scheme: light; }
     [data-theme="dark"] { color-scheme: dark; }
     [data-theme="true-dark"] { color-scheme: dark; }
-    /* Rootsys traffic-light motif (shared across the toolbox pages) */
-    .rootify-traffic{display:inline-flex;align-items:center;gap:7px;flex-shrink:0}
-    .rootify-tl{width:12px;height:12px;border-radius:50%;display:inline-block;box-shadow:inset 0 0 0 1px rgba(0,0,0,0.08)}
-    .rootify-tl-red{background:#FF5F56}.rootify-tl-yellow{background:#FFBD2E}.rootify-tl-green{background:#27C93F}
     /* Removed forced color-scheme override - let theme cascade handle it naturally */
     :root {
-      --primary: #7C3AED;
-      --primary-2: #8B5CF6;
-      --secondary: #8B5CF6;
-      --accent: #8B5CF6;
+      --primary: #e11d2a;
+      --primary-2: #ff4655;
+      --secondary: #ff4655;
+      --accent: #f43f5e;
       --surface: #ffffff;
-      --surface-2: #F3F4F6;
+      --surface-2: #f4f7fc;
       --surface-hover: #ffffff;
-      --bg: #F7F8FB;
-      --bg-strong: #E9ECF3;
-      --text: #1C1D2C;
-      --muted: #6B7280;
-      --border: #ECEFF4;
+      --bg: #f5f8fd;
+      --bg-strong: #e9eef7;
+      --text: #0f172a;
+      --muted: #475569;
+      --border: #dbe3ea;
       --shadow: 0 14px 40px rgba(12, 19, 56, 0.12);
-      --glow: rgba(124, 58, 237, 0.25);
+      --glow: rgba(225, 29, 42, 0.25);
       --theme-toggle-size: 48px;
     }
     [data-theme="dark"] {
-      --surface: #1B1D29;
-      --surface-2: #232534;
-      --surface-hover: #2A2C3A;
-      --bg: #14161F;
-      --bg-strong: #1B1D29;
-      --text: #F3F4F6;
-      --text-primary: #F3F4F6;
-      --text-secondary: #9CA3AF;
-      --muted: #9CA3AF;
-      --border: #2A2C3A;
+      --surface: #141931;
+      --surface-2: #1e2539;
+      --surface-hover: #252f49;
+      --bg: #0A0E27;
+      --bg-strong: #141931;
+      --text: #E8EAED;
+      --text-primary: #E8EAED;
+      --text-secondary: #9AA0A6;
+      --muted: #9AA0A6;
+      --border: #2A3247;
       --shadow: 0 18px 48px rgba(0, 0, 0, 0.45);
-      --glow: rgba(124, 58, 237, 0.35);
+      --glow: rgba(225, 29, 42, 0.35);
     }
     [data-theme="true-dark"] {
       --surface: #0a0a0a;
@@ -549,13 +545,13 @@ function generateSubToolboxPage(configStr, videoId, filename, config) {
       --surface-hover: #1e1e1e;
       --bg: #000000;
       --bg-strong: #0a0a0a;
-      --text: #F3F4F6;
-      --text-primary: #F3F4F6;
-      --text-secondary: #9CA3AF;
-      --muted: #9CA3AF;
+      --text: #E8EAED;
+      --text-primary: #E8EAED;
+      --text-secondary: #8A8A8A;
+      --muted: #8A8A8A;
       --border: #1a1a1a;
       --shadow: 0 20px 56px rgba(0, 0, 0, 0.8);
-      --glow: rgba(124, 58, 237, 0.45);
+      --glow: rgba(225, 29, 42, 0.45);
     }
     body {
       margin: 0;
@@ -616,12 +612,12 @@ function generateSubToolboxPage(configStr, videoId, filename, config) {
       height: 52px;
       border-radius: 14px;
       border: 1px solid rgba(255, 255, 255, 0.16);
-      background: radial-gradient(140% 140% at 18% 18%, rgba(124, 58, 237, 0.26), transparent 46%), linear-gradient(135deg, var(--primary) 0%, var(--secondary) 100%);
+      background: radial-gradient(140% 140% at 18% 18%, rgba(225, 29, 42, 0.26), transparent 46%), linear-gradient(135deg, var(--primary) 0%, var(--secondary) 100%);
       color: #0b2336;
       font-weight: 800;
       cursor: pointer;
       transition: transform 0.16s ease, box-shadow 0.2s ease, border-color 0.2s ease;
-      box-shadow: 0 14px 30px rgba(124, 58, 237, 0.22), 0 8px 20px var(--shadow);
+      box-shadow: 0 14px 30px rgba(225, 29, 42, 0.22), 0 8px 20px var(--shadow);
       overflow: hidden;
       isolation: isolate;
     }
@@ -692,9 +688,9 @@ function generateSubToolboxPage(configStr, videoId, filename, config) {
       gap: 12px;
       padding: 12px 14px;
       border-radius: 14px;
-      background: radial-gradient(140% 140% at 18% 24%, rgba(124, 58, 237, 0.16), transparent 42%), linear-gradient(135deg, rgba(255,255,255,0.06), rgba(12,18,40,0.02));
-      border: 1px solid rgba(124, 58, 237, 0.28);
-      box-shadow: 0 14px 34px rgba(124, 58, 237, 0.14), inset 0 0 0 1px rgba(255, 255, 255, 0.05);
+      background: radial-gradient(140% 140% at 18% 24%, rgba(225, 29, 42, 0.16), transparent 42%), linear-gradient(135deg, rgba(255,255,255,0.06), rgba(12,18,40,0.02));
+      border: 1px solid rgba(225, 29, 42, 0.28);
+      box-shadow: 0 14px 34px rgba(225, 29, 42, 0.14), inset 0 0 0 1px rgba(255, 255, 255, 0.05);
       min-width: 0;
       overflow: hidden;
       isolation: isolate;
@@ -704,7 +700,7 @@ function generateSubToolboxPage(configStr, videoId, filename, config) {
       position: absolute;
       inset: 0;
       border-radius: inherit;
-      background: linear-gradient(120deg, rgba(124, 58, 237, 0.32), rgba(255,255,255,0.08), rgba(139, 92, 246, 0.2));
+      background: linear-gradient(120deg, rgba(225, 29, 42, 0.32), rgba(255,255,255,0.08), rgba(255, 70, 85, 0.2));
       opacity: 0;
       transition: opacity 0.25s ease;
       pointer-events: none;
@@ -712,10 +708,10 @@ function generateSubToolboxPage(configStr, videoId, filename, config) {
     }
     .status-badge:hover::after { opacity: 1; }
     .status-badge.accent {
-      background: linear-gradient(135deg, rgba(124, 58, 237, 0.42), rgba(139, 92, 246, 0.28));
+      background: linear-gradient(135deg, rgba(225, 29, 42, 0.42), rgba(255, 70, 85, 0.28));
       border-color: rgba(255, 255, 255, 0.16);
       color: #04101a;
-      box-shadow: 0 16px 40px rgba(124, 58, 237, 0.28), inset 0 0 0 1px rgba(255, 255, 255, 0.08);
+      box-shadow: 0 16px 40px rgba(225, 29, 42, 0.28), inset 0 0 0 1px rgba(255, 255, 255, 0.08);
     }
     .status-badge .labels {
       display: flex;
@@ -767,18 +763,18 @@ function generateSubToolboxPage(configStr, videoId, filename, config) {
       width: 12px;
       height: 12px;
       border-radius: 5px;
-      background: linear-gradient(135deg, #3df7ff, #7C3AED);
-      box-shadow: 0 0 0 5px rgba(124, 58, 237, 0.16), 0 4px 14px rgba(124, 58, 237, 0.35);
+      background: linear-gradient(135deg, #3df7ff, #e11d2a);
+      box-shadow: 0 0 0 5px rgba(225, 29, 42, 0.16), 0 4px 14px rgba(225, 29, 42, 0.35);
       border: 1px solid rgba(255, 255, 255, 0.28);
     }
     .status-dot.ok { background: linear-gradient(135deg, #4ade80, #22c55e); }
     .status-dot.warn { background: linear-gradient(135deg, #fbbf24, #f59e0b); }
-    .status-dot.bad { background: linear-gradient(135deg, #8B5CF6, #6D28D9); }
+    .status-dot.bad { background: linear-gradient(135deg, #f43f5e, #dc2626); }
     .status-dot.pulse { animation: pulse 1.15s ease-in-out infinite; }
     @keyframes pulse {
-      0% { box-shadow: 0 0 0 0 rgba(124, 58, 237, 0.22); }
-      70% { box-shadow: 0 0 0 10px rgba(124, 58, 237, 0); }
-      100% { box-shadow: 0 0 0 0 rgba(124, 58, 237, 0); }
+      0% { box-shadow: 0 0 0 0 rgba(225, 29, 42, 0.22); }
+      70% { box-shadow: 0 0 0 10px rgba(225, 29, 42, 0); }
+      100% { box-shadow: 0 0 0 0 rgba(225, 29, 42, 0); }
     }
     .card {
       background: var(--surface);
@@ -803,7 +799,7 @@ function generateSubToolboxPage(configStr, videoId, filename, config) {
       gap: 8px;
       padding: 20px 18px;
       min-width: 0;
-      background: linear-gradient(135deg, rgba(124, 58, 237,0.08), rgba(139, 92, 246,0.05)), var(--surface);
+      background: linear-gradient(135deg, rgba(225, 29, 42,0.08), rgba(255, 70, 85,0.05)), var(--surface);
       border: 1px solid var(--border);
       border-radius: 18px;
       box-shadow: var(--shadow);
@@ -876,20 +872,20 @@ function generateSubToolboxPage(configStr, videoId, filename, config) {
       padding: 10px 16px;
       margin-bottom: 6px;
       border-radius: 14px;
-      background: linear-gradient(135deg, rgba(124, 58, 237,0.06), rgba(139, 92, 246,0.04));
-      border: 1px dashed rgba(124, 58, 237, 0.28);
+      background: linear-gradient(135deg, rgba(225, 29, 42,0.06), rgba(255, 70, 85,0.04));
+      border: 1px dashed rgba(225, 29, 42, 0.28);
     }
     .smdb-section .smdb-btn {
       white-space: nowrap;
       flex-shrink: 0;
     }
     [data-theme="dark"] .smdb-section {
-      background: linear-gradient(135deg, rgba(124, 58, 237,0.10), rgba(139, 92, 246,0.06));
-      border-color: rgba(124, 58, 237, 0.22);
+      background: linear-gradient(135deg, rgba(225, 29, 42,0.10), rgba(255, 70, 85,0.06));
+      border-color: rgba(225, 29, 42, 0.22);
     }
     [data-theme="true-dark"] .smdb-section {
-      background: linear-gradient(135deg, rgba(124, 58, 237,0.08), rgba(139, 92, 246,0.04));
-      border-color: rgba(124, 58, 237, 0.18);
+      background: linear-gradient(135deg, rgba(225, 29, 42,0.08), rgba(255, 70, 85,0.04));
+      border-color: rgba(225, 29, 42, 0.18);
     }
     .smdb-hint {
       margin: 0;
@@ -903,15 +899,15 @@ function generateSubToolboxPage(configStr, videoId, filename, config) {
       gap: 7px;
       padding: 9px 14px;
       border-radius: 12px;
-      border: 1px solid rgba(124, 58, 237, 0.4);
-      background: linear-gradient(120deg, rgba(124, 58, 237, 0.16), rgba(139, 92, 246, 0.08));
+      border: 1px solid rgba(225, 29, 42, 0.4);
+      background: linear-gradient(120deg, rgba(225, 29, 42, 0.16), rgba(255, 70, 85, 0.08));
       color: var(--text);
       font-family: 'Space Grotesk', 'Inter', -apple-system, 'Segoe UI', sans-serif;
       font-weight: 700;
       letter-spacing: 0.06em;
       text-decoration: none;
       text-transform: uppercase;
-      box-shadow: 0 12px 32px rgba(124, 58, 237, 0.18), inset 0 1px 0 rgba(255, 255, 255, 0.06);
+      box-shadow: 0 12px 32px rgba(225, 29, 42, 0.18), inset 0 1px 0 rgba(255, 255, 255, 0.06);
       transition: transform 0.16s ease, box-shadow 0.16s ease, border-color 0.16s ease, background 0.16s ease;
     }
     .button.dev-disabled {
@@ -929,22 +925,22 @@ function generateSubToolboxPage(configStr, videoId, filename, config) {
       box-shadow: none;
     }
     .button.primary {
-      background: linear-gradient(120deg, #5af0ff, #8B5CF6 60%, #8B5CF6);
+      background: linear-gradient(120deg, #5af0ff, #ff4655 60%, #f43f5e);
       color: #04101a;
       border-color: rgba(255, 255, 255, 0.24);
-      box-shadow: 0 14px 40px rgba(124, 58, 237, 0.32);
+      box-shadow: 0 14px 40px rgba(225, 29, 42, 0.32);
       text-transform: none;
       font-size: 14px;
       letter-spacing: 0.03em;
     }
     .button.ghost {
-      background: linear-gradient(120deg, rgba(255,255,255,0.02), rgba(124, 58, 237, 0.08));
+      background: linear-gradient(120deg, rgba(255,255,255,0.02), rgba(225, 29, 42, 0.08));
       color: var(--text);
-      border-color: rgba(124, 58, 237, 0.3);
+      border-color: rgba(225, 29, 42, 0.3);
     }
     .button.smdb-cta {
-      background: linear-gradient(135deg, rgba(124, 58, 237, 0.18), rgba(139, 92, 246, 0.12));
-      border-color: rgba(124, 58, 237, 0.45);
+      background: linear-gradient(135deg, rgba(225, 29, 42, 0.18), rgba(255, 70, 85, 0.12));
+      border-color: rgba(225, 29, 42, 0.45);
       color: var(--text);
       text-transform: none;
       font-size: 14px;
@@ -968,17 +964,17 @@ function generateSubToolboxPage(configStr, videoId, filename, config) {
       line-height: 1;
     }
     [data-theme="dark"] .button.smdb-cta {
-      background: linear-gradient(135deg, rgba(124, 58, 237, 0.22), rgba(139, 92, 246, 0.14));
-      border-color: rgba(124, 58, 237, 0.38);
+      background: linear-gradient(135deg, rgba(225, 29, 42, 0.22), rgba(255, 70, 85, 0.14));
+      border-color: rgba(225, 29, 42, 0.38);
     }
     [data-theme="true-dark"] .button.smdb-cta {
-      background: linear-gradient(135deg, rgba(124, 58, 237, 0.16), rgba(139, 92, 246, 0.08));
-      border-color: rgba(124, 58, 237, 0.30);
+      background: linear-gradient(135deg, rgba(225, 29, 42, 0.16), rgba(255, 70, 85, 0.08));
+      border-color: rgba(225, 29, 42, 0.30);
     }
     .button:hover {
       transform: translateY(-3px) scale(1.01);
-      box-shadow: 0 18px 48px rgba(124, 58, 237, 0.26);
-      border-color: rgba(124, 58, 237, 0.55);
+      box-shadow: 0 18px 48px rgba(225, 29, 42, 0.26);
+      border-color: rgba(225, 29, 42, 0.55);
     }
     .smdb-btn {
       display: inline-flex;
@@ -988,8 +984,8 @@ function generateSubToolboxPage(configStr, videoId, filename, config) {
       margin-top: 0;
       padding: 9px 22px;
       border-radius: 12px;
-      border: 1px solid rgba(124, 58, 237, 0.45);
-      background: linear-gradient(135deg, rgba(124, 58, 237, 0.18), rgba(139, 92, 246, 0.10));
+      border: 1px solid rgba(225, 29, 42, 0.45);
+      background: linear-gradient(135deg, rgba(225, 29, 42, 0.18), rgba(255, 70, 85, 0.10));
       color: var(--text);
       font-family: 'Space Grotesk', 'Inter', -apple-system, 'Segoe UI', sans-serif;
       font-weight: 700;
@@ -997,7 +993,7 @@ function generateSubToolboxPage(configStr, videoId, filename, config) {
       letter-spacing: 0.04em;
       text-decoration: none;
       text-transform: none;
-      box-shadow: 0 8px 28px rgba(124, 58, 237, 0.16), inset 0 1px 0 rgba(255, 255, 255, 0.08);
+      box-shadow: 0 8px 28px rgba(225, 29, 42, 0.16), inset 0 1px 0 rgba(255, 255, 255, 0.08);
       transition: transform 0.2s cubic-bezier(0.16,1,0.3,1), box-shadow 0.2s ease, border-color 0.2s ease, background 0.2s ease;
       position: relative;
       overflow: hidden;
@@ -1008,15 +1004,15 @@ function generateSubToolboxPage(configStr, videoId, filename, config) {
       position: absolute;
       inset: 0;
       border-radius: inherit;
-      background: linear-gradient(120deg, rgba(90, 240, 255, 0.15), rgba(124, 58, 237, 0.22), rgba(139, 92, 246, 0.12));
+      background: linear-gradient(120deg, rgba(90, 240, 255, 0.15), rgba(225, 29, 42, 0.22), rgba(255, 70, 85, 0.12));
       opacity: 0;
       transition: opacity 0.25s ease;
       pointer-events: none;
     }
     .smdb-btn:hover {
       transform: translateY(-3px) scale(1.02);
-      box-shadow: 0 16px 44px rgba(124, 58, 237, 0.32), 0 0 20px rgba(124, 58, 237, 0.12);
-      border-color: rgba(124, 58, 237, 0.7);
+      box-shadow: 0 16px 44px rgba(225, 29, 42, 0.32), 0 0 20px rgba(225, 29, 42, 0.12);
+      border-color: rgba(225, 29, 42, 0.7);
     }
     .smdb-btn:hover::before { opacity: 1; }
     .smdb-btn:active {
@@ -1027,32 +1023,32 @@ function generateSubToolboxPage(configStr, videoId, filename, config) {
       filter: drop-shadow(0 1px 2px rgba(0,0,0,0.15));
     }
     [data-theme="dark"] .smdb-btn {
-      background: linear-gradient(135deg, rgba(124, 58, 237, 0.22), rgba(139, 92, 246, 0.12));
-      border-color: rgba(124, 58, 237, 0.35);
-      box-shadow: 0 8px 28px rgba(124, 58, 237, 0.20), inset 0 1px 0 rgba(255, 255, 255, 0.04);
+      background: linear-gradient(135deg, rgba(225, 29, 42, 0.22), rgba(255, 70, 85, 0.12));
+      border-color: rgba(225, 29, 42, 0.35);
+      box-shadow: 0 8px 28px rgba(225, 29, 42, 0.20), inset 0 1px 0 rgba(255, 255, 255, 0.04);
     }
     [data-theme="dark"] .smdb-btn:hover {
-      box-shadow: 0 16px 44px rgba(124, 58, 237, 0.35), 0 0 24px rgba(124, 58, 237, 0.18);
-      border-color: rgba(124, 58, 237, 0.6);
+      box-shadow: 0 16px 44px rgba(225, 29, 42, 0.35), 0 0 24px rgba(225, 29, 42, 0.18);
+      border-color: rgba(225, 29, 42, 0.6);
     }
     [data-theme="true-dark"] .smdb-btn {
-      background: linear-gradient(135deg, rgba(124, 58, 237, 0.16), rgba(139, 92, 246, 0.08));
-      border-color: rgba(124, 58, 237, 0.28);
-      box-shadow: 0 8px 28px rgba(124, 58, 237, 0.14), inset 0 1px 0 rgba(255, 255, 255, 0.03);
+      background: linear-gradient(135deg, rgba(225, 29, 42, 0.16), rgba(255, 70, 85, 0.08));
+      border-color: rgba(225, 29, 42, 0.28);
+      box-shadow: 0 8px 28px rgba(225, 29, 42, 0.14), inset 0 1px 0 rgba(255, 255, 255, 0.03);
     }
     [data-theme="true-dark"] .smdb-btn:hover {
-      box-shadow: 0 16px 44px rgba(124, 58, 237, 0.28), 0 0 28px rgba(124, 58, 237, 0.22);
-      border-color: rgba(124, 58, 237, 0.55);
+      box-shadow: 0 16px 44px rgba(225, 29, 42, 0.28), 0 0 28px rgba(225, 29, 42, 0.22);
+      border-color: rgba(225, 29, 42, 0.55);
     }
     .tool-stack {
-      background: linear-gradient(135deg, rgba(255,255,255,0.02), rgba(124, 58, 237, 0.06)), var(--surface);
-      border: 1px solid rgba(124, 58, 237, 0.24);
+      background: linear-gradient(135deg, rgba(255,255,255,0.02), rgba(225, 29, 42, 0.06)), var(--surface);
+      border: 1px solid rgba(225, 29, 42, 0.24);
       border-radius: 14px;
       padding: 16px;
       display: flex;
       flex-direction: column;
       gap: 12px;
-      box-shadow: 0 18px 44px rgba(124, 58, 237, 0.18);
+      box-shadow: 0 18px 44px rgba(225, 29, 42, 0.18);
     }
     .tool-stack header {
       display: flex;
@@ -1069,8 +1065,8 @@ function generateSubToolboxPage(configStr, videoId, filename, config) {
     .tool-tile {
       position: relative;
       text-decoration: none;
-      background: linear-gradient(135deg, rgba(255,255,255,0.02), rgba(124, 58, 237, 0.08));
-      border: 1px solid rgba(124, 58, 237, 0.24);
+      background: linear-gradient(135deg, rgba(255,255,255,0.02), rgba(225, 29, 42, 0.08));
+      border: 1px solid rgba(225, 29, 42, 0.24);
       border-radius: 14px;
       padding: 14px;
       display: grid;
@@ -1087,7 +1083,7 @@ function generateSubToolboxPage(configStr, videoId, filename, config) {
       position: absolute;
       inset: -1px;
       border-radius: inherit;
-      background: linear-gradient(115deg, rgba(124, 58, 237, 0.3), rgba(255,255,255,0.06), rgba(139, 92, 246,0.22));
+      background: linear-gradient(115deg, rgba(225, 29, 42, 0.3), rgba(255,255,255,0.06), rgba(255, 70, 85,0.22));
       opacity: 0;
       transition: opacity 0.25s ease;
       pointer-events: none;
@@ -1095,22 +1091,22 @@ function generateSubToolboxPage(configStr, videoId, filename, config) {
     }
     .tool-tile:hover {
       transform: translateY(-3px);
-      border-color: rgba(124, 58, 237, 0.48);
-      box-shadow: 0 18px 48px rgba(124, 58, 237, 0.2);
-      background: linear-gradient(135deg, rgba(255,255,255,0.03), rgba(124, 58, 237, 0.12));
+      border-color: rgba(225, 29, 42, 0.48);
+      box-shadow: 0 18px 48px rgba(225, 29, 42, 0.2);
+      background: linear-gradient(135deg, rgba(255,255,255,0.03), rgba(225, 29, 42, 0.12));
     }
     .tool-tile:hover::before { opacity: 1; }
     .tool-icon {
       width: 46px;
       height: 46px;
       border-radius: 12px;
-      background: radial-gradient(120% 120% at 20% 24%, rgba(255,255,255,0.22), rgba(255,255,255,0)), linear-gradient(135deg, #5af0ff, #8B5CF6);
+      background: radial-gradient(120% 120% at 20% 24%, rgba(255,255,255,0.22), rgba(255,255,255,0)), linear-gradient(135deg, #5af0ff, #ff4655);
       display: grid;
       place-items: center;
       font-size: 18px;
       color: #031018;
       font-weight: 800;
-      box-shadow: 0 12px 30px rgba(124, 58, 237, 0.28), inset 0 1px 0 rgba(255,255,255,0.18);
+      box-shadow: 0 12px 30px rgba(225, 29, 42, 0.28), inset 0 1px 0 rgba(255,255,255,0.18);
       border: 1px solid rgba(255, 255, 255, 0.24);
     }
     .tool-title {
@@ -1141,9 +1137,9 @@ function generateSubToolboxPage(configStr, videoId, filename, config) {
     }
     .tool-tile.dev-disabled:hover {
       transform: none;
-      border-color: rgba(124, 58, 237, 0.24);
+      border-color: rgba(225, 29, 42, 0.24);
       box-shadow: none;
-      background: linear-gradient(135deg, rgba(255,255,255,0.02), rgba(124, 58, 237, 0.08));
+      background: linear-gradient(135deg, rgba(255,255,255,0.02), rgba(225, 29, 42, 0.08));
     }
     .tool-tile.dev-disabled:hover::before {
       opacity: 0;
@@ -1325,7 +1321,6 @@ function generateSubToolboxPage(configStr, videoId, filename, config) {
   <div class="page">
     <header class="masthead">
       <div class="brand">
-        <span class="rootify-traffic" aria-hidden="true"><span class="rootify-tl rootify-tl-red"></span><span class="rootify-tl rootify-tl-yellow"></span><span class="rootify-tl rootify-tl-green"></span></span>
         <img class="brand-logo" src="/logo.png" alt="SubFaber logo">
         <div>
           <h1>${t('toolbox.header.title', {}, 'SubFaber Toolbox')}</h1>
@@ -1985,53 +1980,49 @@ async function generateEmbeddedSubtitlePage(configStr, videoId, filename) {
     html { color-scheme: light; }
     [data-theme="dark"] { color-scheme: dark; }
     [data-theme="true-dark"] { color-scheme: dark; }
-    /* Rootsys traffic-light motif (shared across the toolbox pages) */
-    .rootify-traffic{display:inline-flex;align-items:center;gap:7px;flex-shrink:0}
-    .rootify-tl{width:12px;height:12px;border-radius:50%;display:inline-block;box-shadow:inset 0 0 0 1px rgba(0,0,0,0.08)}
-    .rootify-tl-red{background:#FF5F56}.rootify-tl-yellow{background:#FFBD2E}.rootify-tl-green{background:#27C93F}
     /* Removed forced color-scheme override - let theme cascade handle it naturally */
     :root {
-      --primary: #7C3AED;
-      --primary-2: #8B5CF6;
-      --secondary: #8B5CF6;
-      --accent: #8B5CF6;
+      --primary: #e11d2a;
+      --primary-2: #ff4655;
+      --secondary: #ff4655;
+      --accent: #f43f5e;
       --surface: #ffffff;
-      --surface-2: #F3F4F6;
+      --surface-2: #f4f7fc;
       --surface-hover: #ffffff;
-      --surface-light: #F3F4F6;
-      --bg: #F7F8FB;
-      --bg-strong: #E9ECF3;
-      --bg-primary: #F7F8FB;
+      --surface-light: #f3f7fb;
+      --bg: #f5f8fd;
+      --bg-strong: #e9eef7;
+      --bg-primary: #f7fafc;
       --bg-mid: #ffffff;
-      --text: #1C1D2C;
-      --text-primary: #1C1D2C;
-      --text-secondary: #6B7280;
-      --muted: #6B7280;
-      --border: #ECEFF4;
+      --text: #0f172a;
+      --text-primary: #0f172a;
+      --text-secondary: #475569;
+      --muted: #475569;
+      --border: #dbe3ea;
       --shadow: 0 14px 40px rgba(12, 19, 56, 0.12);
       --shadow-color: rgba(12, 19, 56, 0.12);
-      --glow: rgba(124, 58, 237, 0.25);
-      --danger: #7C3AED;
+      --glow: rgba(225, 29, 42, 0.25);
+      --danger: #ef4444;
       --success: #10b981;
     }
     [data-theme="dark"] {
-      --surface: #1B1D29;
-      --surface-2: #232534;
-      --surface-hover: #2A2C3A;
-      --surface-light: #232534;
-      --bg: #14161F;
-      --bg-strong: #1B1D29;
-      --bg-primary: #14161F;
-      --bg-mid: #1B1D29;
-      --text: #F3F4F6;
-      --text-primary: #F3F4F6;
-      --text-secondary: #9CA3AF;
-      --muted: #9CA3AF;
-      --border: #2A2C3A;
+      --surface: #141931;
+      --surface-2: #1e2539;
+      --surface-hover: #252f49;
+      --surface-light: #1E2539;
+      --bg: #0A0E27;
+      --bg-strong: #141931;
+      --bg-primary: #0A0E27;
+      --bg-mid: #141931;
+      --text: #E8EAED;
+      --text-primary: #E8EAED;
+      --text-secondary: #9AA0A6;
+      --muted: #9AA0A6;
+      --border: #2A3247;
       --shadow: 0 18px 48px rgba(0, 0, 0, 0.45);
       --shadow-color: rgba(0, 0, 0, 0.45);
-      --glow: rgba(124, 58, 237, 0.35);
-      --secondary: #8B5CF6;
+      --glow: rgba(225, 29, 42, 0.35);
+      --secondary: #ff4655;
     }
     [data-theme="true-dark"] {
       --surface: #0a0a0a;
@@ -2042,15 +2033,15 @@ async function generateEmbeddedSubtitlePage(configStr, videoId, filename) {
       --bg-strong: #0a0a0a;
       --bg-primary: #000000;
       --bg-mid: #0a0a0a;
-      --text: #F3F4F6;
-      --text-primary: #F3F4F6;
-      --text-secondary: #9CA3AF;
-      --muted: #9CA3AF;
+      --text: #E8EAED;
+      --text-primary: #E8EAED;
+      --text-secondary: #8A8A8A;
+      --muted: #8A8A8A;
       --border: #1a1a1a;
       --shadow: 0 20px 56px rgba(0, 0, 0, 0.8);
       --shadow-color: rgba(0, 0, 0, 0.8);
-      --glow: rgba(124, 58, 237, 0.45);
-      --secondary: #8B5CF6;
+      --glow: rgba(225, 29, 42, 0.45);
+      --secondary: #ff4655;
     }
     ${quickNavStyles()}
     body {
@@ -2071,20 +2062,20 @@ async function generateEmbeddedSubtitlePage(configStr, videoId, filename) {
       right: 0;
       bottom: 0;
       background:
-        radial-gradient(circle at 20% 50%, rgba(124, 58, 237, 0.12) 0%, transparent 50%),
-        radial-gradient(circle at 80% 50%, rgba(139, 92, 246, 0.12) 0%, transparent 50%);
+        radial-gradient(circle at 20% 50%, rgba(225, 29, 42, 0.12) 0%, transparent 50%),
+        radial-gradient(circle at 80% 50%, rgba(255, 70, 85, 0.12) 0%, transparent 50%);
       pointer-events: none;
       z-index: 0;
     }
     [data-theme="dark"] body::before {
       background:
-        radial-gradient(circle at 20% 50%, rgba(124, 58, 237, 0.15) 0%, transparent 50%),
-        radial-gradient(circle at 80% 50%, rgba(139, 92, 246, 0.15) 0%, transparent 50%);
+        radial-gradient(circle at 20% 50%, rgba(225, 29, 42, 0.15) 0%, transparent 50%),
+        radial-gradient(circle at 80% 50%, rgba(255, 70, 85, 0.15) 0%, transparent 50%);
     }
     [data-theme="true-dark"] body::before {
       background:
-        radial-gradient(circle at 20% 50%, rgba(124, 58, 237, 0.08) 0%, transparent 50%),
-        radial-gradient(circle at 80% 50%, rgba(139, 92, 246, 0.08) 0%, transparent 50%);
+        radial-gradient(circle at 20% 50%, rgba(225, 29, 42, 0.08) 0%, transparent 50%),
+        radial-gradient(circle at 80% 50%, rgba(255, 70, 85, 0.08) 0%, transparent 50%);
     }
     body.modal-open { overflow: hidden; }
     .help-button {
@@ -2177,7 +2168,7 @@ async function generateEmbeddedSubtitlePage(configStr, videoId, filename) {
       max-height: 88vh;
       overflow: hidden;
       border: 1px solid var(--border);
-      box-shadow: 0 24px 72px var(--shadow), 0 0 0 1px rgba(124, 58, 237, 0.14);
+      box-shadow: 0 24px 72px var(--shadow), 0 0 0 1px rgba(225, 29, 42, 0.14);
       animation: modalSlideIn 0.42s cubic-bezier(0.22, 1, 0.36, 1);
       position: relative;
       display: flex;
@@ -2196,7 +2187,7 @@ async function generateEmbeddedSubtitlePage(configStr, videoId, filename) {
     .modal-header {
       padding: 1.25rem 1.5rem;
       border-bottom: 1px solid var(--border);
-      background: linear-gradient(135deg, rgba(124, 58, 237, 0.08) 0%, rgba(139, 92, 246, 0.08) 100%);
+      background: linear-gradient(135deg, rgba(225, 29, 42, 0.08) 0%, rgba(255, 70, 85, 0.08) 100%);
       position: sticky;
       top: 0;
       z-index: 1;
@@ -2355,9 +2346,9 @@ async function generateEmbeddedSubtitlePage(configStr, videoId, filename) {
       gap: 10px;
       padding: 10px 12px;
       border-radius: 12px;
-      background: linear-gradient(135deg, rgba(124, 58, 237,0.14), rgba(255,255,255,0.08));
-      border: 1px solid rgba(124, 58, 237,0.25);
-      box-shadow: 0 12px 30px rgba(124, 58, 237,0.16);
+      background: linear-gradient(135deg, rgba(225, 29, 42,0.14), rgba(255,255,255,0.08));
+      border: 1px solid rgba(225, 29, 42,0.25);
+      box-shadow: 0 12px 30px rgba(225, 29, 42,0.16);
     }
     .status-labels { display: flex; flex-direction: column; line-height: 1.15; }
     .label-eyebrow { font-size: 11px; letter-spacing: 0.12em; text-transform: uppercase; color: var(--muted); font-weight: 700; }
@@ -2402,7 +2393,7 @@ async function generateEmbeddedSubtitlePage(configStr, videoId, filename) {
     }
     .hero {
       border-radius: 18px;
-      background: radial-gradient(120% 120% at 0% 0%, rgba(124, 58, 237,0.16), transparent 42%), radial-gradient(120% 120% at 100% 0%, rgba(255,255,255,0.12), transparent 38%), linear-gradient(135deg, var(--surface), var(--surface-2));
+      background: radial-gradient(120% 120% at 0% 0%, rgba(225, 29, 42,0.16), transparent 42%), radial-gradient(120% 120% at 100% 0%, rgba(255,255,255,0.12), transparent 38%), linear-gradient(135deg, var(--surface), var(--surface-2));
       border: 1px solid rgba(255,255,255,0.4);
       box-shadow: var(--shadow);
       padding: 18px;
@@ -2449,7 +2440,7 @@ async function generateEmbeddedSubtitlePage(configStr, videoId, filename) {
       justify-content: center;
       padding: 0.35rem 0.75rem;
       border-radius: 999px;
-      background: rgba(124, 58, 237, 0.12);
+      background: rgba(225, 29, 42, 0.12);
       color: var(--primary);
       font-weight: 700;
       font-size: 0.85rem;
@@ -2540,7 +2531,7 @@ async function generateEmbeddedSubtitlePage(configStr, videoId, filename) {
     textarea:focus, input[type="text"]:focus, select:focus {
       outline: none;
       border-color: var(--primary);
-      box-shadow: 0 0 0 3px rgba(124, 58, 237,0.2);
+      box-shadow: 0 0 0 3px rgba(225, 29, 42,0.2);
     }
     .form-group {
       width: min(720px, 100%);
@@ -2752,8 +2743,8 @@ async function generateEmbeddedSubtitlePage(configStr, videoId, filename) {
     .extract-card .track-actions { display: flex; gap: 8px; flex-wrap: wrap; align-items: center; justify-content: flex-start; }
     .extract-card.active {
       border-color: var(--primary);
-      background: linear-gradient(135deg, rgba(124, 58, 237,0.12), var(--surface));
-      box-shadow: 0 14px 34px rgba(124, 58, 237,0.18);
+      background: linear-gradient(135deg, rgba(225, 29, 42,0.12), var(--surface));
+      box-shadow: 0 14px 34px rgba(225, 29, 42,0.18);
     }
     .pill-small { padding: 4px 8px; border-radius: 999px; border: 1px solid var(--border); font-size: 12px; background: var(--surface); }
     .log {
@@ -2768,8 +2759,8 @@ async function generateEmbeddedSubtitlePage(configStr, videoId, filename) {
       line-height: 1.5;
       box-shadow: inset 0 1px 0 rgba(255,255,255,0.3);
       background-image:
-        linear-gradient(135deg, rgba(124, 58, 237,0.08) 25%, transparent 25%),
-        linear-gradient(135deg, transparent 50%, rgba(124, 58, 237,0.08) 50%, rgba(124, 58, 237,0.08) 75%, transparent 75%),
+        linear-gradient(135deg, rgba(225, 29, 42,0.08) 25%, transparent 25%),
+        linear-gradient(135deg, transparent 50%, rgba(225, 29, 42,0.08) 50%, rgba(225, 29, 42,0.08) 75%, transparent 75%),
         linear-gradient(to bottom, rgba(255,255,255,0.08), rgba(255,255,255,0));
       background-size: 18px 18px, 18px 18px, auto;
       background-position: 0 0, 9px 9px, 0 0;
@@ -2793,7 +2784,7 @@ async function generateEmbeddedSubtitlePage(configStr, videoId, filename) {
     }
     .log-alert .alert-head {
       color: #fff;
-      background: linear-gradient(135deg, #7C3AED, #5B21B6);
+      background: linear-gradient(135deg, #ef4444, #b91c1c);
       padding: 6px 12px;
       border-radius: 10px;
       font-size: 12px;
@@ -2835,7 +2826,7 @@ async function generateEmbeddedSubtitlePage(configStr, videoId, filename) {
     }
     #hash-mismatch-alert .alert-head {
       color: #fff;
-      background: linear-gradient(135deg, #7C3AED, #5B21B6);
+      background: linear-gradient(135deg, #ef4444, #b91c1c);
       padding: 6px 12px;
       border-radius: 10px;
       font-size: 12px;
@@ -2869,7 +2860,7 @@ async function generateEmbeddedSubtitlePage(configStr, videoId, filename) {
       height: 9px;
       border-radius: 50%;
       background: var(--primary);
-      box-shadow: 0 0 0 0 rgba(124, 58, 237,0.35);
+      box-shadow: 0 0 0 0 rgba(225, 29, 42,0.35);
       animation: pulse 1.8s ease-out infinite;
     }
     .log-header .label {
@@ -2877,9 +2868,9 @@ async function generateEmbeddedSubtitlePage(configStr, videoId, filename) {
       font-weight: 800;
     }
     @keyframes pulse {
-      0% { box-shadow: 0 0 0 0 rgba(124, 58, 237,0.35); }
-      70% { box-shadow: 0 0 0 10px rgba(124, 58, 237,0); }
-      100% { box-shadow: 0 0 0 0 rgba(124, 58, 237,0); }
+      0% { box-shadow: 0 0 0 0 rgba(225, 29, 42,0.35); }
+      70% { box-shadow: 0 0 0 10px rgba(225, 29, 42,0); }
+      100% { box-shadow: 0 0 0 0 rgba(225, 29, 42,0); }
     }
     .video-meta {
       margin-top: 10px;
@@ -2984,8 +2975,8 @@ async function generateEmbeddedSubtitlePage(configStr, videoId, filename) {
       margin-top: 10px;
       padding: 12px;
       border-radius: 12px;
-      background: rgba(124, 58, 237,0.12);
-      border: 1px solid rgba(124, 58, 237,0.25);
+      background: rgba(225, 29, 42,0.12);
+      border: 1px solid rgba(225, 29, 42,0.25);
       color: var(--text);
       font-weight: 700;
     }
@@ -3026,12 +3017,12 @@ async function generateEmbeddedSubtitlePage(configStr, videoId, filename) {
     #hash-status.danger {
       background: rgba(239,68,68,0.12);
       border-color: rgba(239,68,68,0.35);
-      color: #4C1D95;
+      color: #7f1d1d;
     }
     .notice.warn, .notice.danger {
       background: rgba(239,68,68,0.12);
       border-color: rgba(239,68,68,0.35);
-      color: #4C1D95;
+      color: #7f1d1d;
     }
     .notice.success {
       background: rgba(16,185,129,0.12);
@@ -3041,7 +3032,7 @@ async function generateEmbeddedSubtitlePage(configStr, videoId, filename) {
     .notice.warn, .notice.danger {
       background: rgba(239,68,68,0.12);
       border-color: rgba(239,68,68,0.35);
-      color: #4C1D95;
+      color: #7f1d1d;
     }
     select.compact-select { width: min(240px, 100%); text-align: center; text-align-last: center; }
     select.target-select { width: min(420px, 100%); }
@@ -3179,7 +3170,6 @@ async function generateEmbeddedSubtitlePage(configStr, videoId, filename) {
   <div class="page">
     <header class="masthead">
         <div class="page-hero">
-          <span class="rootify-traffic" aria-hidden="true"><span class="rootify-tl rootify-tl-red"></span><span class="rootify-tl rootify-tl-yellow"></span><span class="rootify-tl rootify-tl-green"></span></span>
           <div class="page-icon">🧲</div>
           <h1 class="page-heading">${escapeHtml(copy.meta.pageHeading)}</h1>
           <p class="page-subtitle">${escapeHtml(copy.meta.pageSubtitle)}</p>
@@ -8673,73 +8663,69 @@ async function generateAutoSubtitlePage(configStr, videoId, filename, config = {
     <style>
       * { margin: 0; padding: 0; box-sizing: border-box; }
       html { scroll-behavior: smooth; color-scheme: light; }
-      /* Rootsys traffic-light motif (shared across the toolbox pages) */
-      .rootify-traffic{display:inline-flex;align-items:center;gap:7px;flex-shrink:0}
-      .rootify-tl{width:12px;height:12px;border-radius:50%;display:inline-block;box-shadow:inset 0 0 0 1px rgba(0,0,0,0.08)}
-      .rootify-tl-red{background:#FF5F56}.rootify-tl-yellow{background:#FFBD2E}.rootify-tl-green{background:#27C93F}
       /* Removed forced color-scheme override - let theme cascade handle it naturally */
 
     :root {
-      --primary: #7C3AED;
-      --primary-light: #8B5CF6;
-      --primary-dark: #6D28D9;
-      --secondary: #8B5CF6;
+      --primary: #e11d2a;
+      --primary-light: #ff4655;
+      --primary-dark: #b3141f;
+      --secondary: #ff4655;
       --success: #10b981;
       --warning: #f59e0b;
-      --danger: #7C3AED;
-      --bg-primary: #F7F8FB;
+      --danger: #ef4444;
+      --bg-primary: #f7fafc;
       --surface: #ffffff;
-      --surface-2: #F3F4F6;
-      --surface-light: #F3F4F6;
+      --surface-2: #f4f7fc;
+      --surface-light: #f3f7fb;
       --surface-muted: #eef2f7;
-      --text-primary: #1C1D2C;
-      --text-secondary: #6B7280;
-      --muted: #6B7280;
-      --border: #ECEFF4;
+      --text-primary: #0f172a;
+      --text-secondary: #475569;
+      --muted: #475569;
+      --border: #dbe3ea;
       --shadow: rgba(0, 0, 0, 0.08);
-      --glow: rgba(124, 58, 237, 0.25);
+      --glow: rgba(225, 29, 42, 0.25);
     }
 
     [data-theme="dark"] {
-      --primary: #7C3AED;
-      --primary-light: #8B5CF6;
-      --primary-dark: #6D28D9;
-      --secondary: #8B5CF6;
+      --primary: #e11d2a;
+      --primary-light: #ff4655;
+      --primary-dark: #b3141f;
+      --secondary: #ff4655;
       --success: #10b981;
       --warning: #f59e0b;
-      --danger: #7C3AED;
-      --bg-primary: #14161F;
-      --surface: #1B1D29;
-      --surface-2: #232534;
-      --surface-light: #232534;
+      --danger: #ef4444;
+      --bg-primary: #0A0E27;
+      --surface: #141931;
+      --surface-2: #1e2539;
+      --surface-light: #1E2539;
       --surface-muted: #1b2236;
-      --text-primary: #F3F4F6;
-      --text-secondary: #9CA3AF;
-      --muted: #9CA3AF;
-      --border: #2A2C3A;
+      --text-primary: #E8EAED;
+      --text-secondary: #9AA0A6;
+      --muted: #9AA0A6;
+      --border: #2A3247;
       --shadow: rgba(0, 0, 0, 0.3);
-      --glow: rgba(124, 58, 237, 0.35);
+      --glow: rgba(225, 29, 42, 0.35);
     }
 
     [data-theme="true-dark"] {
-      --primary: #7C3AED;
-      --primary-light: #8B5CF6;
-      --primary-dark: #6D28D9;
-      --secondary: #8B5CF6;
+      --primary: #e11d2a;
+      --primary-light: #ff4655;
+      --primary-dark: #b3141f;
+      --secondary: #ff4655;
       --success: #10b981;
       --warning: #f59e0b;
-      --danger: #7C3AED;
+      --danger: #ef4444;
       --bg-primary: #000000;
       --surface: #0a0a0a;
       --surface-2: #151515;
       --surface-light: #151515;
       --surface-muted: #1b1b1b;
-      --text-primary: #F3F4F6;
-      --text-secondary: #9CA3AF;
-      --muted: #9CA3AF;
+      --text-primary: #E8EAED;
+      --text-secondary: #8A8A8A;
+      --muted: #8A8A8A;
       --border: #1a1a1a;
       --shadow: rgba(0, 0, 0, 0.8);
-      --glow: rgba(124, 58, 237, 0.45);
+      --glow: rgba(225, 29, 42, 0.45);
     }
 
     ${quickNavStyles()}
@@ -8796,8 +8782,8 @@ async function generateAutoSubtitlePage(configStr, videoId, filename, config = {
       margin-top: 10px;
       padding: 12px;
       border-radius: 12px;
-      background: rgba(124, 58, 237,0.12);
-      border: 1px solid rgba(124, 58, 237,0.25);
+      background: rgba(225, 29, 42,0.12);
+      border: 1px solid rgba(225, 29, 42,0.25);
       color: var(--text);
       font-weight: 700;
     }
@@ -8808,9 +8794,9 @@ async function generateAutoSubtitlePage(configStr, videoId, filename, config = {
       gap: 10px;
       padding: 10px 12px;
       border-radius: 12px;
-      background: linear-gradient(135deg, rgba(124, 58, 237,0.14), rgba(255,255,255,0.08));
-      border: 1px solid rgba(124, 58, 237,0.25);
-      box-shadow: 0 12px 30px rgba(124, 58, 237,0.16);
+      background: linear-gradient(135deg, rgba(225, 29, 42,0.14), rgba(255,255,255,0.08));
+      border: 1px solid rgba(225, 29, 42,0.25);
+      box-shadow: 0 12px 30px rgba(225, 29, 42,0.16);
     }
     .status-labels { display: flex; flex-direction: column; line-height: 1.15; }
     .label-eyebrow { font-size: 11px; letter-spacing: 0.12em; text-transform: uppercase; color: var(--muted); font-weight: 700; }
@@ -8840,21 +8826,21 @@ async function generateAutoSubtitlePage(configStr, videoId, filename, config = {
       text-align: center;
       box-shadow: 0 8px 24px rgba(245, 158, 11, 0.16);
     }
-    .status-badge.warn { border-color: rgba(139, 92, 246,0.25); box-shadow: 0 12px 30px rgba(139, 92, 246,0.16); }
+    .status-badge.warn { border-color: rgba(244,63,94,0.25); box-shadow: 0 12px 30px rgba(244,63,94,0.16); }
     .status-dot {
       width: 12px;
       height: 12px;
       border-radius: 999px;
-      box-shadow: 0 0 0 0 rgba(124, 58, 237, 0.0);
+      box-shadow: 0 0 0 0 rgba(225, 29, 42, 0.0);
     }
     .status-dot.ok { background: linear-gradient(135deg, #4ade80, #22c55e); }
     .status-dot.warn { background: linear-gradient(135deg, #fbbf24, #f59e0b); }
-    .status-dot.bad { background: linear-gradient(135deg, #8B5CF6, #6D28D9); }
+    .status-dot.bad { background: linear-gradient(135deg, #f43f5e, #dc2626); }
     .status-dot.pulse { animation: pulse 1.15s ease-in-out infinite; }
     @keyframes pulse {
-      0% { box-shadow: 0 0 0 0 rgba(124, 58, 237, 0.22); }
-      70% { box-shadow: 0 0 0 10px rgba(124, 58, 237, 0); }
-      100% { box-shadow: 0 0 0 0 rgba(124, 58, 237, 0); }
+      0% { box-shadow: 0 0 0 0 rgba(225, 29, 42, 0.22); }
+      70% { box-shadow: 0 0 0 10px rgba(225, 29, 42, 0); }
+      100% { box-shadow: 0 0 0 0 rgba(225, 29, 42, 0); }
     }
 
       body {
@@ -8868,7 +8854,7 @@ async function generateAutoSubtitlePage(configStr, videoId, filename, config = {
     }
 
     [data-theme="dark"] body {
-      background: linear-gradient(135deg, var(--bg-primary) 0%, #1B1D29 60%, var(--bg-primary) 100%);
+      background: linear-gradient(135deg, var(--bg-primary) 0%, #141931 60%, var(--bg-primary) 100%);
     }
 
     [data-theme="true-dark"] body {
@@ -8880,22 +8866,22 @@ async function generateAutoSubtitlePage(configStr, videoId, filename, config = {
       position: fixed;
       inset: 0;
       background:
-        radial-gradient(circle at 20% 50%, rgba(124, 58, 237, 0.12) 0%, transparent 50%),
-        radial-gradient(circle at 80% 50%, rgba(139, 92, 246, 0.12) 0%, transparent 50%);
+        radial-gradient(circle at 20% 50%, rgba(225, 29, 42, 0.12) 0%, transparent 50%),
+        radial-gradient(circle at 80% 50%, rgba(255, 70, 85, 0.12) 0%, transparent 50%);
       pointer-events: none;
       z-index: 0;
     }
 
     [data-theme="dark"] body::before {
       background:
-        radial-gradient(circle at 20% 50%, rgba(124, 58, 237, 0.15) 0%, transparent 50%),
-        radial-gradient(circle at 80% 50%, rgba(139, 92, 246, 0.15) 0%, transparent 50%);
+        radial-gradient(circle at 20% 50%, rgba(225, 29, 42, 0.15) 0%, transparent 50%),
+        radial-gradient(circle at 80% 50%, rgba(255, 70, 85, 0.15) 0%, transparent 50%);
     }
 
     [data-theme="true-dark"] body::before {
       background:
-        radial-gradient(circle at 20% 50%, rgba(124, 58, 237, 0.08) 0%, transparent 50%),
-        radial-gradient(circle at 80% 50%, rgba(139, 92, 246, 0.08) 0%, transparent 50%);
+        radial-gradient(circle at 20% 50%, rgba(225, 29, 42, 0.08) 0%, transparent 50%),
+        radial-gradient(circle at 80% 50%, rgba(255, 70, 85, 0.08) 0%, transparent 50%);
     }
 
       .wrap {
@@ -8944,16 +8930,16 @@ async function generateAutoSubtitlePage(configStr, videoId, filename, config = {
       gap: 20px;
       align-items: center;
       background:
-        radial-gradient(120% 120% at 0% 0%, rgba(124, 58, 237,0.16), transparent 42%),
+        radial-gradient(120% 120% at 0% 0%, rgba(225, 29, 42,0.16), transparent 42%),
         radial-gradient(120% 120% at 100% 0%, rgba(255,255,255,0.12), transparent 38%),
         linear-gradient(135deg, var(--surface), var(--surface-light));
     }
 
     .chips { display: flex; flex-wrap: wrap; gap: 10px; margin-top: 10px; align-items: center; justify-content: center; }
     .pill-badge {
-      background: linear-gradient(135deg, rgba(124, 58, 237,0.14), rgba(255,255,255,0.08));
-      border: 1px solid rgba(124, 58, 237,0.25);
-      box-shadow: 0 12px 30px rgba(124, 58, 237,0.16);
+      background: linear-gradient(135deg, rgba(225, 29, 42,0.14), rgba(255,255,255,0.08));
+      border: 1px solid rgba(225, 29, 42,0.25);
+      box-shadow: 0 12px 30px rgba(225, 29, 42,0.16);
       /* 20% smaller than base status-badge padding */
       padding: 8px 10px;
     }
@@ -8969,9 +8955,9 @@ async function generateAutoSubtitlePage(configStr, videoId, filename, config = {
       box-shadow: 0 12px 30px rgba(34,197,94,0.16);
     }
     .pill-badge.danger {
-      border-color: rgba(139, 92, 246,0.45);
-      background: linear-gradient(135deg, rgba(139, 92, 246,0.14), rgba(255,255,255,0.08));
-      box-shadow: 0 12px 30px rgba(139, 92, 246,0.16);
+      border-color: rgba(244,63,94,0.45);
+      background: linear-gradient(135deg, rgba(244,63,94,0.14), rgba(255,255,255,0.08));
+      box-shadow: 0 12px 30px rgba(244,63,94,0.16);
     }
 
     .stat-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)); gap: 12px; margin-top: 12px; }
@@ -9078,7 +9064,7 @@ async function generateAutoSubtitlePage(configStr, videoId, filename, config = {
     }
     .hash-mismatch-alert .alert-head {
       color: #fff;
-      background: linear-gradient(135deg, #7C3AED, #5B21B6);
+      background: linear-gradient(135deg, #ef4444, #b91c1c);
       padding: 6px 12px;
       border-radius: 10px;
       font-size: 12px;
@@ -9114,7 +9100,7 @@ async function generateAutoSubtitlePage(configStr, videoId, filename, config = {
         margin: auto;
         width: 2px;
         height: 78%;
-        background: linear-gradient(180deg, transparent, rgba(124, 58, 237,0.18), transparent);
+        background: linear-gradient(180deg, transparent, rgba(225, 29, 42,0.18), transparent);
         pointer-events: none;
       }
     }
@@ -9159,7 +9145,7 @@ async function generateAutoSubtitlePage(configStr, videoId, filename, config = {
       justify-content: center;
       padding: 0.35rem 0.75rem;
       border-radius: 999px;
-      background: rgba(124, 58, 237, 0.12);
+      background: rgba(225, 29, 42, 0.12);
       color: var(--primary);
       font-weight: 700;
       font-size: 0.85rem;
@@ -9390,8 +9376,8 @@ async function generateAutoSubtitlePage(configStr, videoId, filename, config = {
       line-height: 1.5;
       box-shadow: inset 0 1px 0 rgba(255,255,255,0.2);
       background-image:
-        linear-gradient(135deg, rgba(124, 58, 237,0.06) 25%, transparent 25%),
-        linear-gradient(135deg, transparent 50%, rgba(124, 58, 237,0.06) 50%, rgba(124, 58, 237,0.06) 75%, transparent 75%),
+        linear-gradient(135deg, rgba(225, 29, 42,0.06) 25%, transparent 25%),
+        linear-gradient(135deg, transparent 50%, rgba(225, 29, 42,0.06) 50%, rgba(225, 29, 42,0.06) 75%, transparent 75%),
         linear-gradient(to bottom, rgba(255,255,255,0.08), rgba(255,255,255,0));
       background-size: 18px 18px, 18px 18px, auto;
       background-position: 0 0, 9px 9px, 0 0;
@@ -9623,7 +9609,6 @@ async function generateAutoSubtitlePage(configStr, videoId, filename, config = {
   <div class="wrap">
     <header class="masthead">
       <div class="page-hero">
-        <span class="rootify-traffic" aria-hidden="true"><span class="rootify-tl rootify-tl-red"></span><span class="rootify-tl rootify-tl-yellow"></span><span class="rootify-tl rootify-tl-green"></span></span>
         <div class="page-icon">🤖</div>
         <h1 class="page-heading">${escapeHtml(copy.hero.title)}</h1>
         <p class="page-subtitle">${escapeHtml(copy.hero.subtitle)}</p>

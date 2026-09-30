@@ -130,7 +130,7 @@ function themeToggleStyles() {
     .theme-toggle:focus,
     .theme-toggle:focus-visible {
       outline: none;
-      box-shadow: 0 0 0 3px rgba(124, 58, 237, 0.35), 0 8px 20px var(--shadow);
+      box-shadow: 0 0 0 3px rgba(225, 29, 42, 0.35), 0 8px 20px var(--shadow);
     }
 
     .theme-toggle:hover {
@@ -594,38 +594,33 @@ function generateHistoryPage(configStr, historyEntries, config, videoId, filenam
       box-sizing: border-box;
     }
 
-    /* Rootsys traffic-light motif (shared across toolbox pages) */
-    .rootify-traffic{display:inline-flex;align-items:center;gap:7px;flex-shrink:0}
-    .rootify-tl{width:12px;height:12px;border-radius:50%;display:inline-block;box-shadow:inset 0 0 0 1px rgba(0,0,0,0.08)}
-    .rootify-tl-red{background:#FF5F56}.rootify-tl-yellow{background:#FFBD2E}.rootify-tl-green{background:#27C93F}
-
     html { scroll-behavior: smooth; }
 
     :root {
-      --primary: #7C3AED;
-      --primary-light: #8B5CF6;
-      --primary-dark: #6D28D9;
-      --secondary: #8B5CF6;
-      --bg-primary: #F7F8FB;
+      --primary: #e11d2a;
+      --primary-light: #ff4655;
+      --primary-dark: #b3141f;
+      --secondary: #ff4655;
+      --bg-primary: #f7fafc;
       --surface: #ffffff;
-      --surface-2: #F3F4F6;
+      --surface-2: #f3f7fb;
       --surface-3: #edf2f7;
-      --text: #1C1D2C;
-      --text-primary: #1C1D2C;
-      --text-secondary: #6B7280;
-      --muted: #6B7280;
-      --border: #ECEFF4;
+      --text: #0f172a;
+      --text-primary: #0f172a;
+      --text-secondary: #475569;
+      --muted: #475569;
+      --border: #dbe3ea;
       --success: #10b981;
-      --error: #7C3AED;
+      --error: #ef4444;
       --warning: #f59e0b;
       --shadow: rgba(0, 0, 0, 0.08);
       --shadow-color: rgba(0, 0, 0, 0.08);
-      --glow: rgba(124, 58, 237, 0.25);
+      --glow: rgba(225, 29, 42, 0.25);
       --theme-toggle-size: 48px;
       /* Provider accent colors for history card differentiation */
-      --provider-main: #7C3AED;          /* Main provider — cyan/blue */
-      --provider-main-bg: rgba(124, 58, 237, 0.08);
-      --provider-main-border: rgba(124, 58, 237, 0.3);
+      --provider-main: #e11d2a;          /* Main provider — cyan/blue */
+      --provider-main-bg: rgba(225, 29, 42, 0.08);
+      --provider-main-border: rgba(225, 29, 42, 0.3);
       --provider-secondary: #f59e0b;     /* Secondary provider — amber */
       --provider-secondary-bg: rgba(245, 158, 11, 0.08);
       --provider-secondary-border: rgba(245, 158, 11, 0.3);
@@ -633,21 +628,21 @@ function generateHistoryPage(configStr, historyEntries, config, videoId, filenam
     
     [data-theme="dark"] {
       color-scheme: dark;
-      --bg-primary: #14161F;
-      --surface: #1B1D29;
-      --surface-2: #232534;
+      --bg-primary: #0A0E27;
+      --surface: #141931;
+      --surface-2: #1E2539;
       --surface-3: #111827;
-      --text: #F3F4F6;
-      --text-primary: #F3F4F6;
-      --text-secondary: #9CA3AF;
-      --muted: #9CA3AF;
-      --border: #2A2C3A;
+      --text: #E8EAED;
+      --text-primary: #E8EAED;
+      --text-secondary: #9AA0A6;
+      --muted: #9AA0A6;
+      --border: #2A3247;
       --shadow: rgba(0, 0, 0, 0.3);
       --shadow-color: rgba(0, 0, 0, 0.3);
-      --glow: rgba(124, 58, 237, 0.35);
-      --provider-main: #8B5CF6;
-      --provider-main-bg: rgba(139, 92, 246, 0.1);
-      --provider-main-border: rgba(139, 92, 246, 0.25);
+      --glow: rgba(225, 29, 42, 0.35);
+      --provider-main: #ff4655;
+      --provider-main-bg: rgba(255, 70, 85, 0.1);
+      --provider-main-border: rgba(255, 70, 85, 0.25);
       --provider-secondary: #fbbf24;
       --provider-secondary-bg: rgba(251, 191, 36, 0.1);
       --provider-secondary-border: rgba(251, 191, 36, 0.25);
@@ -659,17 +654,17 @@ function generateHistoryPage(configStr, historyEntries, config, videoId, filenam
       --surface: #0a0a0a;
       --surface-2: #151515;
       --surface-3: #0f0f0f;
-      --text: #F3F4F6;
-      --text-primary: #F3F4F6;
-      --text-secondary: #9CA3AF;
-      --muted: #9CA3AF;
+      --text: #E8EAED;
+      --text-primary: #E8EAED;
+      --text-secondary: #8A8A8A;
+      --muted: #8A8A8A;
       --border: #1a1a1a;
       --shadow: rgba(0, 0, 0, 0.8);
       --shadow-color: rgba(0, 0, 0, 0.8);
-      --glow: rgba(124, 58, 237, 0.45);
-      --provider-main: #8B5CF6;
-      --provider-main-bg: rgba(139, 92, 246, 0.07);
-      --provider-main-border: rgba(139, 92, 246, 0.2);
+      --glow: rgba(225, 29, 42, 0.45);
+      --provider-main: #ff4655;
+      --provider-main-bg: rgba(255, 70, 85, 0.07);
+      --provider-main-border: rgba(255, 70, 85, 0.2);
       --provider-secondary: #fbbf24;
       --provider-secondary-bg: rgba(251, 191, 36, 0.07);
       --provider-secondary-border: rgba(251, 191, 36, 0.2);
@@ -687,7 +682,7 @@ function generateHistoryPage(configStr, historyEntries, config, videoId, filenam
     }
 
     [data-theme="dark"] body {
-      background: linear-gradient(135deg, var(--bg-primary) 0%, #1B1D29 60%, var(--bg-primary) 100%);
+      background: linear-gradient(135deg, var(--bg-primary) 0%, #141931 60%, var(--bg-primary) 100%);
     }
 
     [data-theme="true-dark"] body {
@@ -702,22 +697,22 @@ function generateHistoryPage(configStr, historyEntries, config, videoId, filenam
       right: 0;
       bottom: 0;
       background:
-        radial-gradient(circle at 20% 50%, rgba(124, 58, 237, 0.12) 0%, transparent 50%),
-        radial-gradient(circle at 80% 50%, rgba(139, 92, 246, 0.12) 0%, transparent 50%);
+        radial-gradient(circle at 20% 50%, rgba(225, 29, 42, 0.12) 0%, transparent 50%),
+        radial-gradient(circle at 80% 50%, rgba(255, 70, 85, 0.12) 0%, transparent 50%);
       pointer-events: none;
       z-index: 0;
     }
 
     [data-theme="dark"] body::before {
       background:
-        radial-gradient(circle at 20% 50%, rgba(124, 58, 237, 0.15) 0%, transparent 50%),
-        radial-gradient(circle at 80% 50%, rgba(139, 92, 246, 0.15) 0%, transparent 50%);
+        radial-gradient(circle at 20% 50%, rgba(225, 29, 42, 0.15) 0%, transparent 50%),
+        radial-gradient(circle at 80% 50%, rgba(255, 70, 85, 0.15) 0%, transparent 50%);
     }
 
     [data-theme="true-dark"] body::before {
       background:
-        radial-gradient(circle at 20% 50%, rgba(124, 58, 237, 0.08) 0%, transparent 50%),
-        radial-gradient(circle at 80% 50%, rgba(139, 92, 246, 0.08) 0%, transparent 50%);
+        radial-gradient(circle at 20% 50%, rgba(225, 29, 42, 0.08) 0%, transparent 50%),
+        radial-gradient(circle at 80% 50%, rgba(255, 70, 85, 0.08) 0%, transparent 50%);
     }
     
     ${quickNavStyles()}
@@ -1058,9 +1053,9 @@ function generateHistoryPage(configStr, historyEntries, config, videoId, filenam
 
     .history-loading-badge {
       gap: 0.35rem;
-      background: linear-gradient(135deg, rgba(124, 58, 237, 0.18) 0%, rgba(139, 92, 246, 0.38) 100%);
-      border: 1px solid rgba(124, 58, 237, 0.22);
-      box-shadow: 0 10px 26px rgba(124, 58, 237, 0.16);
+      background: linear-gradient(135deg, rgba(225, 29, 42, 0.18) 0%, rgba(255, 70, 85, 0.38) 100%);
+      border: 1px solid rgba(225, 29, 42, 0.22);
+      box-shadow: 0 10px 26px rgba(225, 29, 42, 0.16);
     }
 
     .history-loading-badge span {
@@ -1103,7 +1098,7 @@ function generateHistoryPage(configStr, historyEntries, config, videoId, filenam
 
     .history-skeleton-card {
       border-radius: 12px;
-      border: 1px solid rgba(124, 58, 237, 0.1);
+      border: 1px solid rgba(225, 29, 42, 0.1);
       background: rgba(255, 255, 255, 0.32);
       padding: 1rem;
       display: grid;
@@ -1119,7 +1114,7 @@ function generateHistoryPage(configStr, historyEntries, config, videoId, filenam
     .history-skeleton-line {
       height: 0.82rem;
       border-radius: 999px;
-      background: linear-gradient(90deg, rgba(148, 163, 184, 0.16) 0%, rgba(124, 58, 237, 0.22) 48%, rgba(148, 163, 184, 0.16) 100%);
+      background: linear-gradient(90deg, rgba(148, 163, 184, 0.16) 0%, rgba(225, 29, 42, 0.22) 48%, rgba(148, 163, 184, 0.16) 100%);
       background-size: 220% 100%;
       animation: history-shimmer 1.45s linear infinite;
     }
@@ -1230,7 +1225,6 @@ function generateHistoryPage(configStr, historyEntries, config, videoId, filenam
   <div class="page">
     <div class="masthead">
       <div class="titles">
-        <span class="rootify-traffic" aria-hidden="true"><span class="rootify-tl rootify-tl-red"></span><span class="rootify-tl rootify-tl-yellow"></span><span class="rootify-tl rootify-tl-green"></span></span>
         <p class="eyebrow">${t('history.eyebrow', {}, 'Sub toolbox')}</p>
         <h1>${t('history.title', {}, 'Translation History')}</h1>
         <p class="lede">${t('history.subtitle', {}, 'Review translations performed across your tools')}</p>
