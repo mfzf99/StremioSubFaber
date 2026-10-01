@@ -724,6 +724,13 @@
         "errorGeneric": "Retranslation failed. Please try again."
       }
     },
+    "changelog": {
+      "title": "Changelog",
+      "subtitle": "What changed in SubFaber recently",
+      "viewFull": "View full changelog on GitHub",
+      "close": "Close changelog",
+      "open": "Open changelog"
+    },
     "nav": {
       "groupAccount": "Account",
       "groupExplore": "Explore",

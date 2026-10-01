@@ -2,6 +2,16 @@
 
 All notable changes to this project will be documented in this file.
 
+## SubMaker v3.2.0 (2026-10-01) — "Changelog Panel" — Version badge kini hidup dan clickable
+
+**Version badge di sidebar bukan lagi label statik — klik untuk buka slide-out changelog dari sebelah kanan:**
+
+- **Version badge clickable:** Badge `v{version}` di sidebar atas kini dibalut dalam butang yang bila klik akan buka panel changelog.
+- **Slide-out panel dari kanan:** Panel 400px dengan header (ikon + tajuk), body scrollable dengan entries changelog, dan footer dengan link ke GitHub. Overlay gelap di belakang, tutup dengan butang X, klik overlay, atau tekan Escape.
+- **Data dari backend:** Fetch `/api/changelog` (endpoint sedia ada dengan cache 5 minit) — tiada perubahan backend diperlukan. Content markdown ringkas dirender dengan selamat (bold, `code`, bullets, numbered, headings).
+- **Frontend sahaja:** Fail baru `public/js/changelog-panel.js`, CSS dalam `app-shell.css`, script wired dalam `configure.html`, keys `changelog.*` dalam `locales/en.json`.
+- **Ujian:** `npm test` — **287 PASS / 0 FAIL**.
+
 ## SubMaker v3.1.0 (2026-10-01) — "Hybrid Sidebar" — Hierarchical Configuration Nav
 
 **Susunan semula sidebar kepada hierarki yang tidak memeningkan pengguna — Configuration sebagai parent dengan sub-items anchor scroll:**
