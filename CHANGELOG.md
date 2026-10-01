@@ -2,6 +2,11 @@
 
 All notable changes to this project will be documented in this file.
 
+## SubMaker v2.0.2 (2026-10-01) — Fix: CI red — axios high-severity audit failure (both Node 22 & 24)
+
+- **Root cause:** the CI `npm audit --omit=dev --audit-level=high` step fails (exit 1) on both matrix jobs (Node 22 & 24) because axios sat at **1.19.0** — inside the vulnerable range `1.0.0 – 1.19.0` of a cluster of advisories (prototype-pollution gadgets in default/fetch adapters, ReDoS in `fromDataURI` and `shouldBypassProxy` host normalization, HTTP/2 adapter DNS/proxy bypass, header injection via inherited headers/FormData, CIDR-form `NO_PROXY` bypass, `maxRedirects: 0` not enforced by fetch adapter → redirect SSRF). Not a Node-version-specific bug — both matrix legs fail identically.
+- **Fix:** axios `^1.6.2` → **`^1.20.0`** in [`package.json`](package.json) + [`package-lock.json`](package-lock.json) (installed 1.20.0). `npm audit --omit=dev --audit-level=high`: **0 vulnerabilities**. `npm test`: **287 PASS / 0 FAIL** (1 skipped) — provider surfaces that sit on axios (OpenSubtitles, DeepSeek/AgentB failover, SubDL, download guard) all green post-upgrade.
+
 ## SubMaker v2.0.1 (2026-10-01) — Fix: Violet brand consistency in dark mode (Save Configuration button)
 
 - **Root cause:** `subfaber-theme.css` kept the old sky-blue accent (`#0EA5E9`) for `--primary` under `[data-theme="dark"]`, so the Save Configuration button (and other primary actions) rendered sky-blue in dark mode instead of the Rootsys violet.
