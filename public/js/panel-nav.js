@@ -17,15 +17,29 @@
     'use strict';
 
     // Page registry — order defines sidebar + bottom-nav order.
-    // Settings stays a single intact page (settingsSection + all its cards) —
-    // we never split it, so config.js collapse state stays valid.
+    // Configuration is ONE parent page containing every settings section
+    // (scrollable, like the original SubFaber layout) so users see the full
+    // structure in the sidebar but never lose context. Sub-items in the
+    // sidebar are anchor links that scroll within this page.
     const PAGES = [
-        { id: 'overview',    hash: '/overview',    group: 'account', icon: 'grid' },
-        { id: 'api-keys',    hash: '/api-keys',    group: 'account', icon: 'key' },
-        { id: 'languages',   hash: '/languages',   group: 'account', icon: 'languages' },
-        { id: 'settings',    hash: '/settings',    group: 'account', icon: 'sliders' },
-        { id: 'toolbox',     hash: '/toolbox',     group: 'explore', icon: 'package' }
+        { id: 'overview',       hash: '/overview',       group: 'account', icon: 'grid' },
+        { id: 'configuration',  hash: '/configuration',  group: 'account', icon: 'sliders' },
+        { id: 'toolbox',        hash: '/toolbox',        group: 'explore', icon: 'package' }
     ];
+
+    // Anchor map: sidebar sub-item -> element ID within the Configuration page
+    // that we should scroll to (and expand) when clicked.
+    const CONFIG_ANCHORS = {
+        'api-keys':        'apiKeysSection',
+        'subtitles-api':   'subtitleApiTitle',
+        'ai-translation':  'geminiCard',
+        'languages':       'languagesSection',
+        'source-languages': 'sourceCard',
+        'target-languages': 'targetCard',
+        'settings':        'settingsSection',
+        'translation-settings': 'translationSettingsCard',
+        'other-settings':  'otherSettingsCard'
+    };
 
     const DEFAULT_PAGE = 'overview';
     const HASH_PREFIX = '#/';
@@ -117,6 +131,45 @@
         showPage(id, options);
     }
 
+    // Scroll to (and expand) a specific section/card inside the Configuration page.
+    // Used by sidebar sub-items so users land exactly where they clicked.
+    function navigateToAnchor(anchorKey) {
+        // Ensure the Configuration page is active first
+        if (activePage !== 'configuration') {
+            showPage('configuration', { keepScroll: true });
+        }
+
+        const targetId = CONFIG_ANCHORS[anchorKey];
+        if (!targetId) return;
+
+        // Small delay so the page becomes visible before we measure/scroll
+        setTimeout(() => {
+            const el = document.getElementById(targetId);
+            if (!el) return;
+
+            // Expand the target card/section if it's collapsed
+            const card = el.closest('.card, .section-block') || el;
+            card.classList.remove('collapsed');
+            const collapseBtn = card.querySelector('.collapse-btn');
+            if (collapseBtn) collapseBtn.classList.remove('collapsed');
+
+            // Also expand the parent section if needed
+            const parentSection = el.closest('section.section-block');
+            if (parentSection) {
+                parentSection.classList.remove('collapsed');
+                parentSection.querySelectorAll('.section-collapse-btn, [data-collapse-section]').forEach(btn => btn.classList.remove('collapsed'));
+            }
+
+            el.scrollIntoView({ behavior: 'smooth', block: 'start' });
+
+            // Focus the first input inside for keyboard users (nice touch)
+            const focusable = el.querySelector('input, select, textarea, button:not(.collapse-btn)');
+            if (focusable) {
+                setTimeout(() => { try { focusable.focus({ preventScroll: true }); } catch (_) { focusable.focus(); } }, 320);
+            }
+        }, 60);
+    }
+
     function handleHashChange() {
         const id = pageFromHash(window.location.hash);
         if (id && id !== activePage) {
@@ -141,6 +194,37 @@
             });
         });
 
+        // Bind sidebar sub-item anchors (Configuration children)
+        document.querySelectorAll('[data-anchor]').forEach(el => {
+            el.addEventListener('click', function (e) {
+                e.preventDefault();
+                navigateToAnchor(this.dataset.anchor);
+            });
+        });
+
+        // Configuration parent: expand/collapse its children AND navigate.
+        const configParent = document.querySelector('[data-parent="configuration"]');
+        if (configParent) {
+            const parentWrap = configParent.closest('.app-nav-parent');
+            configParent.addEventListener('click', function (e) {
+                e.preventDefault();
+                if (parentWrap) parentWrap.classList.toggle('expanded');
+                navigate('configuration');
+            });
+        }
+
+        // Persist the Configuration group's expanded state across sessions.
+        try {
+            const wrap = document.querySelector('[data-children="configuration"]')?.closest('.app-nav-parent');
+            if (wrap) {
+                const saved = localStorage.getItem('subfaber-nav-config-expanded');
+                if (saved === '1') wrap.classList.add('expanded');
+                wrap.addEventListener('click', () => {
+                    try { localStorage.setItem('subfaber-nav-config-expanded', wrap.classList.contains('expanded') ? '1' : '0'); } catch (_) {}
+                }, true);
+            }
+        } catch (_) { /* localStorage unavailable */ }
+
         // Bind hash changes (back/forward)
         window.addEventListener('hashchange', handleHashChange);
 
@@ -155,6 +239,7 @@
 
     // Expose a tiny API for quick-setup.js and friends
     window.__appNavigate = navigate;
+    window.__appNavigateToAnchor = navigateToAnchor;
     window.__appCurrentPage = () => activePage;
     window.__appPages = PAGES.map(p => p.id);
 

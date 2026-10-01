@@ -148,6 +148,78 @@ body.app-shell .qs-entry-banner {
     color: var(--primary-light);
 }
 
+/* ---------------------------------------------------------------------------
+   5a. Hierarchical sidebar — Configuration parent with collapsible children
+   --------------------------------------------------------------------------- */
+.app-nav-parent { display: flex; flex-direction: column; }
+
+.app-nav-parent .app-nav-pill { position: relative; }
+
+.app-nav-caret {
+    margin-left: auto;
+    display: inline-flex;
+    width: 14px;
+    height: 14px;
+    transition: transform 0.18s ease;
+    flex-shrink: 0;
+}
+
+.app-nav-caret svg { width: 14px; height: 14px; }
+
+.app-nav-parent.expanded .app-nav-caret { transform: rotate(90deg); }
+
+.app-nav-children {
+    display: none;
+    flex-direction: column;
+    gap: 1px;
+    margin: 2px 0 4px;
+    padding-left: 14px;                /* indent under the parent */
+    border-left: 1px solid var(--border);
+    margin-left: 22px;
+}
+
+.app-nav-parent.expanded .app-nav-children { display: flex; }
+
+.app-nav-child {
+    display: flex;
+    align-items: center;
+    min-height: 34px;
+    padding: 0 12px 0 10px;
+    border-radius: 8px;
+    font-size: 13px;
+    font-weight: 500;
+    color: var(--text-secondary);
+    text-decoration: none;
+    transition: background 0.15s ease, color 0.15s ease;
+    cursor: pointer;
+}
+
+.app-nav-child:hover {
+    background: var(--surface-tint);
+    color: var(--text-primary);
+}
+
+.app-nav-grandchild {
+    padding-left: 22px;
+    font-size: 12.5px;
+    color: var(--text-tertiary);
+    min-height: 30px;
+}
+
+.app-nav-child.active,
+.app-nav-child[aria-current="page"] {
+    background: var(--accent-soft);
+    color: var(--primary);
+    font-weight: 600;
+}
+
+[data-theme="dark"] .app-nav-child.active,
+[data-theme="dark"] .app-nav-child[aria-current="page"],
+[data-theme="blackhole"] .app-nav-child.active,
+[data-theme="true-dark"] .app-nav-child.active {
+    color: var(--primary-light);
+}
+
 /* Sidebar footer — theme switch + language flags + docs */
 .app-sidebar-footer {
     flex-shrink: 0;

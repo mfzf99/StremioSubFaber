@@ -2,6 +2,16 @@
 
 All notable changes to this project will be documented in this file.
 
+## SubMaker v3.1.0 (2026-10-01) — "Hybrid Sidebar" — Hierarchical Configuration Nav
+
+**Susunan semula sidebar kepada hierarki yang tidak memeningkan pengguna — Configuration sebagai parent dengan sub-items anchor scroll:**
+
+- **3 pages sebenar** (bukan 5): Overview, **Configuration** (SATU page scrollable mengandungi SEMUA settings — apiKeysSection + languagesSection + settingsSection berturut-turut, macam SubFaber asal), Sub Toolbox. Configuration parent tidak dipecahkan — collapse mechanism `config.js` kekal 100% sah.
+- **Hierarchical sidebar:** Configuration adalah parent collapsible dengan caret; sub-items (API Keys → Subtitles API Keys + AI Translation API Keys; Languages → Source + Target; Settings → Translation Settings + Other Settings) adalah **anchor links** — klik scroll + expand card spesifik dalam Configuration page (`panel-nav.js` `navigateToAnchor`).
+- **UX:** State expand/collapse Configuration disimpan dalam `localStorage`; bottom nav mobile dikemas kini kepada 3 item; caret rotate 90° bila expanded.
+- **Fail diubah:** `panel-nav.js` (3 pages + anchor map + parent toggle + persistence), `configure.html` (hierarchical nav markup), `partials/main.html` (4 pages digabung jadi 1 Configuration), `app-shell.css` (children styles), `locales/en.json` (nav keys baru).
+- **Ujian:** `npm test` — **287 PASS / 0 FAIL**.
+
 ## SubMaker v3.0.0 (2026-10-01) — "App Shell" — Sidebar App Navigation ala Rootsys Dashboard
 
 **Configure page ditukar daripada single-column centered kepada sidebar app layout sebenar — 5 virtual pages dalam SATU DOM, routing hash, tanpa pecahkan kontrak JS:**
