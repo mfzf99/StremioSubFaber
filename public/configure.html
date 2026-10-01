@@ -62,7 +62,6 @@
                 </span>
                 <img class="app-sidebar-logo" src="/logo.png" alt="SubFaber logo" width="28" height="28">
                 <span class="app-sidebar-name" data-i18n="config.heroTitle">SubFaber</span>
-                <span class="app-navbar-version version-badge" id="version-badge" style="display:none;"></span>
             </div>
 
             <nav class="app-sidebar-nav" aria-label="Configure sections">
@@ -125,6 +124,9 @@
             <div class="app-sidebar-footer">
                 <!-- Interface language selector (populated dynamically by config.js) — same IDs as before -->
                 <div class="app-sidebar-footer-row">
+                    <!-- Version badge (clickable changelog) — moved from the brand header
+                         to sit beside the language flags -->
+                    <span class="app-navbar-version version-badge" id="version-badge" style="display:none;"></span>
                     <div class="ui-language-dock" id="uiLanguageDock" role="group" aria-label="UI language"
                         data-i18n="config.uiLanguageAria" data-i18n-attr="aria-label">
                         <div class="ui-language-flag-row" id="uiLanguageFlags">

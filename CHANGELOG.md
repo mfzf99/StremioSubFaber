@@ -2,6 +2,10 @@
 
 All notable changes to this project will be documented in this file.
 
+## SubMaker v3.2.1 (2026-10-01) — Fix: Version badge dipindahkan ke footer sidebar (sebelah bendera bahasa)
+
+- **UX:** Version badge (clickable changelog) dipindahkan dari brand header atas sidebar ke footer sidebar, duduk sebelah bendera pilih bahasa — lebih seimbang dan tidak bersaing dengan jenama. Badge span `#version-badge` kekal dengan ID sama supaya `config-loader.js` dan `changelog-panel.js` masih berfungsi tanpa perubahan. `npm test`: **287 PASS / 0 FAIL**.
+
 ## SubMaker v3.2.0 (2026-10-01) — "Changelog Panel" — Version badge kini hidup dan clickable
 
 **Version badge di sidebar bukan lagi label statik — klik untuk buka slide-out changelog dari sebelah kanan:**
