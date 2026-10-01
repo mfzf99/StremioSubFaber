@@ -334,6 +334,13 @@ test('SubFaberPrompt V4: slim sharp prompt, split system/user, no double-send', 
   // Rules — 6 padat, label ANTI-* kekal (pemetaan 1:1 taksonomi 6-jenayah Agent B)
   assert.ok(system.includes('1. ANTI-MERGE'), 'Rule 1 ANTI-MERGE');
   assert.ok(system.includes('2. ANTI-SHIFT'), 'Rule 2 ANTI-SHIFT');
+  // [SFX CONSISTENCY 2026-10-01] Rule 2 mesti berpisah tegas: muzik/simbol
+  // verbatim, kesan bunyi dalam kurungan DILOKALKAN — konsisten dengan
+  // Example 2 few-shot ([door slams] → [pintu terhempas] untuk Malay).
+  // Kontradiksi lama ("copied as-is" untuk kedua-duanya) membingungkan
+  // reasoning model (kritikan review 2026-10-01).
+  assert.ok(system.includes('Music symbols (♪♪) are copied as-is; bracketed sound effects ([door slams]) are localized'), 'Rule 2: music verbatim vs SFX localized (no contradiction with Example 2)');
+  assert.ok(!system.includes('[door slams]) are copied as-is'), 'Rule 2 mesti TIDAK mengatakan SFX copied as-is (kontradiksi few-shot)');
   assert.ok(system.includes('3. ANTI-PHANTOM'), 'Rule 3 ANTI-PHANTOM');
   assert.ok(system.includes('4. ANTI-DROP'), 'Rule 4 ANTI-DROP');
   assert.ok(system.includes('5. ANTI-UNTRANSLATED'), 'Rule 5 ANTI-UNTRANSLATED (lazy-copy guard)');

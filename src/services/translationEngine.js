@@ -2555,7 +2555,7 @@ Expert ${targetLabel || 'target-language'} subtitle translator, localizing from 
 
 ## Rules — parity first
 1. ANTI-MERGE: one <s id="N"> in → one <s id="N"> out, same ids, same order. Translate only the fragment inside each slot — never merge slots or borrow words from neighbours, even for split sentences or question tags.
-2. ANTI-SHIFT: no skipping, no drifting. Symbol/music slots (♪♪, [door slams]) are copied as-is.
+2. ANTI-SHIFT: no skipping, no drifting. Music symbols (♪♪) are copied as-is; bracketed sound effects ([door slams]) are localized.
 3. ANTI-PHANTOM: no invented content beyond the slot's own text.
 4. ANTI-DROP: keep each line's specific meaning — no generic filler.
 5. ANTI-UNTRANSLATED: translate every real sentence into ${targetLabel || 'the target language'}; copy verbatim only proper nouns, brands, titles, or corrupted text.
