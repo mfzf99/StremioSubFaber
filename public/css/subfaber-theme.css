@@ -69,11 +69,12 @@
 [data-theme="dark"],
 [data-theme="blackhole"],
 [data-theme="true-dark"] {
-    --primary: #0EA5E9;
-    --primary-light: #38BDF8;
-    --primary-dark: #0284C7;
-    --secondary: #0EA5E9;
-    --accent: #0EA5E9;
+    /* Rootsys violet accent — kept identical in dark for brand consistency */
+    --primary: #7C3AED;
+    --primary-light: #A78BFA;
+    --primary-dark: #8B5CF6;
+    --secondary: #7C3AED;
+    --accent: #A78BFA;
 
     --success: #22c55e;
     --warning: #f59e0b;

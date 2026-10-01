@@ -2,6 +2,11 @@
 
 All notable changes to this project will be documented in this file.
 
+## SubMaker v2.0.1 (2026-10-01) — Fix: Violet brand consistency in dark mode (Save Configuration button)
+
+- **Root cause:** `subfaber-theme.css` kept the old sky-blue accent (`#0EA5E9`) for `--primary` under `[data-theme="dark"]`, so the Save Configuration button (and other primary actions) rendered sky-blue in dark mode instead of the Rootsys violet.
+- **Fix:** dark-mode `--primary`/`--primary-light`/`--primary-dark`/`--secondary`/`--accent` in [`public/css/subfaber-theme.css`](public/css/subfaber-theme.css) now mirror the light-mode violet values (`#7C3AED` / `#A78BFA` / `#8B5CF6`) for brand consistency across both themes, matching the live Rootsys dashboard palette (verified against `rootsys.cloud/buyer/dashboard`: background `#F7F8FB`, accent `#7C3AED`, token-usage gradient `from-[#7C3AED] to-[#A78BFA]`). `npm test`: **287 PASS / 0 FAIL**.
+
 ## SubMaker v2.0.0 (2026-09-30) — "Prompt-Slim" — Agent A Payload Diet + Parity Discipline
 
 **Era baharu enjin terjemahan: beban token dipotong hampir separuh, disiplin pariti dikukuhkan, pintu malas disekat — tanpa hilang kuasa arahan:**
