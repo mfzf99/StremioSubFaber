@@ -42,95 +42,175 @@
     <link rel="stylesheet" href="/css/quick-setup.css?_cb=__APP_VERSION_QUERY__">
     <!-- SubFaber Modern Minimalist Dashboard theme (must load after base sheets) -->
     <link rel="stylesheet" href="/css/subfaber-theme.css?_cb=__APP_VERSION_QUERY__">
-    <!-- Rootify: Rootsys design identity — macOS window frame + ground-truth tokens (must load LAST) -->
+    <!-- Rootify: Rootsys design identity — ground-truth tokens + components (loads after theme) -->
     <link rel="stylesheet" href="/css/rootify.css?_cb=__APP_VERSION_QUERY__">
+    <!-- App Shell: sidebar layout ala Rootsys dashboard (must load LAST) -->
+    <link rel="stylesheet" href="/css/app-shell.css?_cb=__APP_VERSION_QUERY__">
 </head>
 
-<body class="rootify-framed">
-    <!-- Rootsys macOS window frame: wallpaper desktop + floating window + traffic lights -->
-    <div class="rootify-desktop">
-        <div class="rootify-window">
-            <div class="rootify-titlebar" aria-hidden="true">
-                <span class="rootify-traffic">
+<body class="app-shell">
+    <div class="app-desktop">
+        <!-- ============================================================= -->
+        <!-- Left sidebar (desktop) — brand, nav groups, footer controls   -->
+        <!-- ============================================================= -->
+        <aside class="app-sidebar" aria-label="Primary">
+            <div class="app-sidebar-brand">
+                <span class="rootify-traffic" aria-hidden="true">
                     <span class="rootify-tl rootify-tl-red"></span>
                     <span class="rootify-tl rootify-tl-yellow"></span>
                     <span class="rootify-tl rootify-tl-green"></span>
                 </span>
-                <span class="rootify-titlebar-title" data-i18n="config.documentTitle">SubFaber — Configure</span>
-            </div>
-    <!-- ============================================================= -->
-    <!-- Top Navigation Bar (sticky, flat, no floating clutter)        -->
-    <!-- ============================================================= -->
-    <header class="app-navbar" role="banner">
-        <div class="app-navbar-inner">
-            <div class="app-navbar-brand">
-                <img class="app-navbar-logo" src="/logo.png" alt="SubFaber logo" width="28" height="28">
-                <span class="app-navbar-name" data-i18n="config.heroTitle">SubFaber</span>
+                <img class="app-sidebar-logo" src="/logo.png" alt="SubFaber logo" width="28" height="28">
+                <span class="app-sidebar-name" data-i18n="config.heroTitle">SubFaber</span>
                 <span class="app-navbar-version version-badge" id="version-badge" style="display:none;"></span>
             </div>
 
-            <nav class="app-navbar-actions" aria-label="Site controls">
-                <!-- Interface language selector (populated dynamically by config.js) -->
-                <div class="ui-language-dock" id="uiLanguageDock" role="group" aria-label="UI language"
-                    data-i18n="config.uiLanguageAria" data-i18n-attr="aria-label">
-                    <div class="ui-language-flag-row" id="uiLanguageFlags">
-                        <!-- Flags are rendered dynamically -->
+            <nav class="app-sidebar-nav" aria-label="Configure sections">
+                <div class="app-nav-group">
+                    <div class="app-nav-label" data-i18n="nav.groupAccount">Account</div>
+                    <a class="app-nav-pill active" href="#/overview" data-nav="overview" aria-current="page">
+                        <span class="app-nav-icon" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect width="7" height="7" x="3" y="3" rx="1"/><rect width="7" height="7" x="14" y="3" rx="1"/><rect width="7" height="7" x="14" y="14" rx="1"/><rect width="7" height="7" x="3" y="14" rx="1"/></svg></span>
+                        <span data-i18n="nav.overview">Overview</span>
+                    </a>
+                    <a class="app-nav-pill" href="#/api-keys" data-nav="api-keys">
+                        <span class="app-nav-icon" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M2 18v3c0 .6.4 1 1 1h4v-3h3v-3h2l1.4-1.4a6.5 6.5 0 1 0-4-4Z"/><circle cx="16.5" cy="7.5" r=".5" fill="currentColor"/></svg></span>
+                        <span data-i18n="nav.apiKeys">API Keys</span>
+                    </a>
+                    <a class="app-nav-pill" href="#/languages" data-nav="languages">
+                        <span class="app-nav-icon" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="9"/><path d="M3 12h18"/><path d="M12 3a15 15 0 0 1 0 18a15 15 0 0 1 0-18Z"/></svg></span>
+                        <span data-i18n="nav.languages">Languages</span>
+                    </a>
+                    <a class="app-nav-pill" href="#/settings" data-nav="settings">
+                        <span class="app-nav-icon" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="4" x2="4" y1="21" y2="14"/><line x1="4" x2="4" y1="10" y2="3"/><line x1="12" x2="12" y1="21" y2="12"/><line x1="12" x2="12" y1="8" y2="3"/><line x1="20" x2="20" y1="21" y2="16"/><line x1="20" x2="20" y1="12" y2="3"/><line x1="2" x2="6" y1="14" y2="14"/><line x1="10" x2="14" y1="8" y2="8"/><line x1="18" x2="22" y1="16" y2="16"/></svg></span>
+                        <span data-i18n="nav.settings">Settings</span>
+                    </a>
+                </div>
+                <div class="app-nav-group">
+                    <div class="app-nav-label" data-i18n="nav.groupExplore">Explore</div>
+                    <a class="app-nav-pill" href="#/toolbox" data-nav="toolbox">
+                        <span class="app-nav-icon" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M11 21.73a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16V8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73z"/><path d="M12 22V12"/><path d="m3.3 7 8.7 5 8.7-5"/></svg></span>
+                        <span data-i18n="nav.toolbox">Sub Toolbox</span>
+                    </a>
+                </div>
+            </nav>
+
+            <div class="app-sidebar-footer">
+                <!-- Interface language selector (populated dynamically by config.js) — same IDs as before -->
+                <div class="app-sidebar-footer-row">
+                    <div class="ui-language-dock" id="uiLanguageDock" role="group" aria-label="UI language"
+                        data-i18n="config.uiLanguageAria" data-i18n-attr="aria-label">
+                        <div class="ui-language-flag-row" id="uiLanguageFlags">
+                            <!-- Flags are rendered dynamically -->
+                        </div>
                     </div>
                 </div>
 
-                <!-- 3-mode theme switch: Light / System / Dark -->
-                <div class="theme-switch" id="themeToggle" role="group" aria-label="Theme"
-                    data-i18n="fileUpload.themeToggle" data-i18n-attr="aria-label">
-                    <button type="button" class="theme-switch-option" data-theme-choice="light" aria-pressed="false"
-                        title="Light" aria-label="Light theme">
-                        <svg viewBox="0 0 24 24" width="16" height="16" aria-hidden="true" focusable="false"
-                            fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"
-                            stroke-linejoin="round">
-                            <circle cx="12" cy="12" r="4" />
-                            <path d="M12 2v2M12 20v2M4.9 4.9l1.4 1.4M17.7 17.7l1.4 1.4M2 12h2M20 12h2M4.9 19.1l1.4-1.4M17.7 6.3l1.4-1.4" />
+                <div class="app-sidebar-footer-row">
+                    <!-- 3-mode theme switch: Light / System / Dark — same IDs as before -->
+                    <div class="theme-switch" id="themeToggle" role="group" aria-label="Theme"
+                        data-i18n="fileUpload.themeToggle" data-i18n-attr="aria-label">
+                        <button type="button" class="theme-switch-option" data-theme-choice="light" aria-pressed="false"
+                            title="Light" aria-label="Light theme">
+                            <svg viewBox="0 0 24 24" width="16" height="16" aria-hidden="true" focusable="false"
+                                fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"
+                                stroke-linejoin="round">
+                                <circle cx="12" cy="12" r="4" />
+                                <path d="M12 2v2M12 20v2M4.9 4.9l1.4 1.4M17.7 17.7l1.4 1.4M2 12h2M20 12h2M4.9 19.1l1.4-1.4M17.7 6.3l1.4-1.4" />
+                            </svg>
+                        </button>
+                        <button type="button" class="theme-switch-option" data-theme-choice="system" aria-pressed="false"
+                            title="System" aria-label="Follow system theme">
+                            <svg viewBox="0 0 24 24" width="16" height="16" aria-hidden="true" focusable="false"
+                                fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"
+                                stroke-linejoin="round">
+                                <rect x="3" y="4" width="18" height="12" rx="2" />
+                                <path d="M8 20h8M12 16v4" />
+                            </svg>
+                        </button>
+                        <button type="button" class="theme-switch-option" data-theme-choice="dark" aria-pressed="false"
+                            title="Dark" aria-label="Dark theme">
+                            <svg viewBox="0 0 24 24" width="16" height="16" aria-hidden="true" focusable="false"
+                                fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"
+                                stroke-linejoin="round">
+                                <path d="M21 12.8A9 9 0 1 1 11.2 3a7 7 0 0 0 9.8 9.8z" />
+                            </svg>
+                        </button>
+                    </div>
+
+                    <!-- Documentation / help link -->
+                    <a class="app-sidebar-docs" href="https://github.com/xtremexq/StremioSubMaker#readme" target="_blank"
+                        rel="noopener noreferrer" data-i18n="config.quickActionHelp" data-i18n-attr="title,aria-label"
+                        title="Help" aria-label="Help">
+                        <svg viewBox="0 0 24 24" width="16" height="16" aria-hidden="true" focusable="false" fill="none"
+                            stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                            <circle cx="12" cy="12" r="9" />
+                            <path d="M9.5 9a2.5 2.5 0 0 1 4.9.6c0 1.7-2.5 2.2-2.5 3.9" />
+                            <path d="M12 17h.01" />
                         </svg>
-                    </button>
-                    <button type="button" class="theme-switch-option" data-theme-choice="system" aria-pressed="false"
-                        title="System" aria-label="Follow system theme">
-                        <svg viewBox="0 0 24 24" width="16" height="16" aria-hidden="true" focusable="false"
-                            fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"
-                            stroke-linejoin="round">
-                            <rect x="3" y="4" width="18" height="12" rx="2" />
-                            <path d="M8 20h8M12 16v4" />
-                        </svg>
-                    </button>
-                    <button type="button" class="theme-switch-option" data-theme-choice="dark" aria-pressed="false"
-                        title="Dark" aria-label="Dark theme">
-                        <svg viewBox="0 0 24 24" width="16" height="16" aria-hidden="true" focusable="false"
-                            fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"
-                            stroke-linejoin="round">
-                            <path d="M21 12.8A9 9 0 1 1 11.2 3a7 7 0 0 0 9.8 9.8z" />
-                        </svg>
-                    </button>
+                        <span class="app-navbar-docs-label" data-i18n="config.support.link">Docs</span>
+                    </a>
                 </div>
+            </div>
+        </aside>
 
-                <!-- Documentation / help link -->
-                <a class="app-navbar-docs" href="https://github.com/xtremexq/StremioSubMaker#readme" target="_blank"
-                    rel="noopener noreferrer" data-i18n="config.quickActionHelp" data-i18n-attr="title,aria-label"
-                    title="Help" aria-label="Help">
-                    <svg viewBox="0 0 24 24" width="16" height="16" aria-hidden="true" focusable="false" fill="none"
-                        stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-                        <circle cx="12" cy="12" r="9" />
-                        <path d="M9.5 9a2.5 2.5 0 0 1 4.9.6c0 1.7-2.5 2.2-2.5 3.9" />
-                        <path d="M12 17h.01" />
-                    </svg>
-                    <span class="app-navbar-docs-label" data-i18n="config.support.link">Docs</span>
-                </a>
-            </nav>
+        <!-- ============================================================= -->
+        <!-- Main column — mobile header, content, action bar              -->
+        <!-- ============================================================= -->
+        <div class="app-main">
+            <!-- Mobile header (hidden on desktop) -->
+            <header class="app-mobile-header">
+                <span class="rootify-traffic" aria-hidden="true">
+                    <span class="rootify-tl rootify-tl-red"></span>
+                    <span class="rootify-tl rootify-tl-yellow"></span>
+                    <span class="rootify-tl rootify-tl-green"></span>
+                </span>
+                <img class="app-sidebar-logo" src="/logo.png" alt="SubFaber logo" width="26" height="26">
+                <span class="app-mobile-header-title" data-i18n="config.heroTitle">SubFaber</span>
+            </header>
+
+            <main class="app-content">
+                __CONFIGURE_MAIN_PARTIAL__
+            </main>
+
+            <!-- Sticky action bar — Save/Install/Copy always visible (mandatory #2).
+                 Keeps the legacy .btn-group class so config.js reset-bar positioning still finds it. -->
+            <div class="app-action-bar">
+                <div class="app-action-bar-inner btn-group">
+                    <button type="submit" form="configForm" class="btn btn-primary" accesskey="enter">
+                        <span aria-hidden="true">💾</span>
+                        <span data-i18n="config.actions.save">Save Configuration</span>
+                    </button>
+                    <button type="button" class="btn btn-secondary" id="installBtn" disabled>
+                        <span aria-hidden="true">🚀</span>
+                        <span data-i18n="config.actions.install">Install in Stremio</span>
+                    </button>
+                    <button type="button" class="btn btn-secondary" id="copyBtn" disabled>
+                        <span aria-hidden="true">📋</span>
+                        <span data-i18n="config.actions.copy">Copy Install URL</span>
+                    </button>
+                    <span class="app-action-hint" data-i18n="nav.actionHint">Settings save across every page — no need to switch back.</span>
+                </div>
+            </div>
         </div>
-    </header>
 
-    __CONFIGURE_MAIN_PARTIAL__
+        <!-- ============================================================= -->
+        <!-- Mobile bottom navigation (hidden on desktop)                  -->
+        <!-- ============================================================= -->
+        <nav class="app-bottom-nav" aria-label="Sections">
+            <a class="app-bottom-nav-item" href="#/overview" data-nav="overview"><span data-i18n="nav.overview">Overview</span></a>
+            <a class="app-bottom-nav-item" href="#/api-keys" data-nav="api-keys"><span data-i18n="nav.apiKeys">API Keys</span></a>
+            <a class="app-bottom-nav-item" href="#/languages" data-nav="languages"><span data-i18n="nav.languages">Languages</span></a>
+            <a class="app-bottom-nav-item" href="#/settings" data-nav="settings"><span data-i18n="nav.settings">Settings</span></a>
+            <a class="app-bottom-nav-item" href="#/toolbox" data-nav="toolbox"><span data-i18n="nav.toolbox">Toolbox</span></a>
+        </nav>
+    </div>
+
     __CONFIGURE_FOOTER_PARTIAL__
     __CONFIGURE_OVERLAYS_PARTIAL__
     __CONFIGURE_QUICK_SETUP_PARTIAL__
 
     <script src="/js/init.js?_cb=__APP_VERSION_QUERY__" defer></script>
+    <script src="/js/panel-nav.js?_cb=__APP_VERSION_QUERY__" defer></script>
     <script src="/js/combobox.js?_cb=__APP_VERSION_QUERY__" defer></script>
     <script src="/js/combobox-init.js?_cb=__APP_VERSION_QUERY__" defer></script>
     <script src="/js/config-page-state.js?_cb=__APP_VERSION_QUERY__" defer></script>
@@ -141,8 +221,6 @@
     <script src="/js/theme-toggle.js?_cb=__APP_VERSION_QUERY__" defer></script>
     <script src="/js/sw-register.js?_cb=__APP_VERSION_QUERY__" defer></script>
     <script src="/js/quick-setup.js?_cb=__APP_VERSION_QUERY__" defer></script>
-        </div><!-- /.rootify-window -->
-    </div><!-- /.rootify-desktop -->
 </body>
 
 </html>

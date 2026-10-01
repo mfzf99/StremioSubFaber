@@ -724,6 +724,17 @@
         "errorGeneric": "Retranslation failed. Please try again."
       }
     },
+    "nav": {
+      "groupAccount": "Account",
+      "groupExplore": "Explore",
+      "groupHelp": "Help",
+      "overview": "Overview",
+      "apiKeys": "API Keys",
+      "languages": "Languages",
+      "settings": "Settings",
+      "toolbox": "Sub Toolbox",
+      "actionHint": "Settings save across every page — no need to switch back."
+    },
     "config": {
       "uiLanguageLabel": "Interface",
       "uiLanguageAria": "UI language",

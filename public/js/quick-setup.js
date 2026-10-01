@@ -418,9 +418,16 @@
     }
 
     function openMainConfigLanguageCard(cardType, attempt = 0) {
-        const navButton = document.querySelector(`[data-panel="languages"]`);
-        if (navButton && attempt === 0) {
-            navButton.click();
+        // App shell: navigate to the Languages page first so the target card is
+        // actually visible before we scroll/focus. Legacy data-panel selector
+        // kept as a fallback for safety.
+        if (attempt === 0) {
+            if (typeof window.__appNavigate === 'function') {
+                window.__appNavigate('languages');
+            } else {
+                const navButton = document.querySelector(`[data-nav="languages"], [data-panel="languages"]`);
+                if (navButton) navButton.click();
+            }
         }
 
         const section = $('languagesSection');

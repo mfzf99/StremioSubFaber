@@ -2,6 +2,16 @@
 
 All notable changes to this project will be documented in this file.
 
+## SubMaker v3.0.0 (2026-10-01) — "App Shell" — Sidebar App Navigation ala Rootsys Dashboard
+
+**Configure page ditukar daripada single-column centered kepada sidebar app layout sebenar — 5 virtual pages dalam SATU DOM, routing hash, tanpa pecahkan kontrak JS:**
+
+- **Layout Rootsys dashboard:** sidebar 240px kiri (traffic-light dots + logo + nav pills dengan ikon outline + active state ungu `#EDE7FE`/`#7C3AED`), content kanan flat `#F7F8FB`, cards dual-tone (putih `#FFFFFF` + border `#ECEFF4` supaya timbul), mobile header + bottom nav 5 item, sticky action bar (Save/Install/Copy sentiasa nampak).
+- **5 virtual pages** (`panel-nav.js` router baru): Overview, API Keys, Languages, Settings, Sub Toolbox — hash routing `#/page`, pages hidden guna `display:none` supaya semua 220 ID `config.js` kekal dalam DOM, auto-expand sections dalam page aktif, fallback `#/overview`, `__appNavigate()` exposed untuk quick-setup.
+- **Keselamatan kontrak:** `settingsSection` dikekalkan UTUH (tidak dipecahkan) supaya collapse mechanism `subfaber_collapsed_sections` sah; butang Save/Install/Copy hanya satu salinan dalam action bar dengan `.btn-group` legacy class; `novalidate` pada form kekal; zero duplicate IDs; quick-setup patched untuk navigate sebelum scroll.
+- **Fail:** `public/css/app-shell.css` (BARU), `public/js/panel-nav.js` (router baru), `configure.html` + `partials/main.html` (shell + pages), `quick-setup.js` (patch navigate), `locales/en.json` (blok `nav`). Blueprint lengkap dalam `plans/subfaber-sidebar-app-blueprint.md`.
+- **Ujian:** `npm test` — **287 PASS / 0 FAIL** konsisten merentasi semua fasa. Visual verify lulus: active pill, icons, kontras canvas/kad, page header per-page.
+
 ## SubMaker v2.0.2 (2026-10-01) — Fix: CI red — axios high-severity audit failure (both Node 22 & 24)
 
 - **Root cause:** the CI `npm audit --omit=dev --audit-level=high` step fails (exit 1) on both matrix jobs (Node 22 & 24) because axios sat at **1.19.0** — inside the vulnerable range `1.0.0 – 1.19.0` of a cluster of advisories (prototype-pollution gadgets in default/fetch adapters, ReDoS in `fromDataURI` and `shouldBypassProxy` host normalization, HTTP/2 adapter DNS/proxy bypass, header injection via inherited headers/FormData, CIDR-form `NO_PROXY` bypass, `maxRedirects: 0` not enforced by fetch adapter → redirect SSRF). Not a Node-version-specific bug — both matrix legs fail identically.

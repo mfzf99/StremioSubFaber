@@ -1,443 +1,166 @@
 /* ═══════════════════════════════════════════════════════════
-   SubMaker Config V2 — Panel Navigation Controller
-   Sidebar nav · Panel transitions · Keyboard nav · Hash routing
+   SubFaber App Shell — Sidebar Router (true app navigation)
+   ───────────────────────────────────────────────────────────
+   Virtual pages inside ONE DOM + ONE <form id="configForm">.
+   Hash routing (#/overview … #/system), display:none for
+   inactive pages so config.js can still read/write every
+   input (220 getElementById hooks stay valid).
+
+   Three mandatory behaviours (external review):
+     1. <form> keeps novalidate — handled in markup.
+     2. Sticky action bar always visible — handled in markup/CSS.
+     3. Hash fallback on load — handled here: empty/invalid
+        hash → #/overview (never a blank or stacked page).
    ═══════════════════════════════════════════════════════════ */
 
 (function () {
     'use strict';
 
-    const STORAGE_KEY = 'submaker-v2-active-panel';
-    const PANELS = ['dashboard', 'sources', 'ai-engine', 'languages', 'translation', 'extras', 'advanced', 'deploy'];
+    // Page registry — order defines sidebar + bottom-nav order.
+    // Settings stays a single intact page (settingsSection + all its cards) —
+    // we never split it, so config.js collapse state stays valid.
+    const PAGES = [
+        { id: 'overview',    hash: '/overview',    group: 'account', icon: 'grid' },
+        { id: 'api-keys',    hash: '/api-keys',    group: 'account', icon: 'key' },
+        { id: 'languages',   hash: '/languages',   group: 'account', icon: 'languages' },
+        { id: 'settings',    hash: '/settings',    group: 'account', icon: 'sliders' },
+        { id: 'toolbox',     hash: '/toolbox',     group: 'explore', icon: 'package' }
+    ];
 
-    let activePanel = null;
-    let isTransitioning = false;
+    const DEFAULT_PAGE = 'overview';
+    const HASH_PREFIX = '#/';
 
-    // ── Init ──
-    function init() {
-        const saved = localStorage.getItem(STORAGE_KEY);
-        const hash = window.location.hash.replace('#', '');
-        const initial = PANELS.includes(hash) ? hash : (PANELS.includes(saved) ? saved : 'dashboard');
-
-        // Bind sidebar nav items
-        document.querySelectorAll('.v2-nav-item[data-panel]').forEach(btn => {
-            btn.addEventListener('click', function (e) {
-                e.preventDefault();
-                switchPanel(this.dataset.panel);
-                closeMobileSidebar();
-            });
-        });
-
-        // Bind card collapse headers
-        document.querySelectorAll('[data-v2-collapse]').forEach(header => {
-            header.addEventListener('click', function () {
-                const card = this.closest('.v2-card');
-                if (card) card.classList.toggle('expanded');
-            });
-        });
-
-        // Keyboard navigation
-        document.addEventListener('keydown', handleKeyboard);
-
-        // Hash change
-        window.addEventListener('hashchange', function () {
-            const hash = window.location.hash.replace('#', '');
-            if (PANELS.includes(hash) && hash !== activePanel) {
-                switchPanel(hash, false);
-            }
-        });
-
-        // What's New portal toggle
-        const portal = document.getElementById('whatsNewPortal');
-        const portalHeader = document.getElementById('portalHeader');
-        if (portal && portalHeader) {
-            portalHeader.addEventListener('click', function () {
-                portal.classList.toggle('expanded');
-            });
-        }
-
-        // Quick Setup banner
-        const quickSetupBanner = document.getElementById('quickSetupBanner');
-        if (quickSetupBanner) {
-            quickSetupBanner.addEventListener('click', function () {
-                // Trigger quick setup overlay (existing JS handles #quickSetupOverlay)
-                const overlay = document.getElementById('quickSetupOverlay');
-                if (overlay) {
-                    overlay.style.display = 'flex';
-                    overlay.classList.add('show');
-                }
-            });
-        }
-
-        // Mobile hamburger toggle
-        var hamburger = document.getElementById('v2Hamburger');
-        var sidebar = document.querySelector('.v2-sidebar');
-        var backdrop = document.getElementById('v2MobileBackdrop');
-        if (hamburger && sidebar) {
-            hamburger.addEventListener('click', function () {
-                var isOpen = sidebar.classList.toggle('mobile-open');
-                hamburger.classList.toggle('active', isOpen);
-                if (backdrop) backdrop.classList.toggle('show', isOpen);
-            });
-        }
-        if (backdrop) {
-            backdrop.addEventListener('click', closeMobileSidebar);
-        }
-
-        // Prevent toggle clicks from collapsing parent card (CSP-safe replacement for inline onclick)
-        document.querySelectorAll('.v2-toggle').forEach(toggle => {
-            toggle.addEventListener('click', function (e) {
-                e.stopPropagation();
-            });
-        });
-
-        // Provider toggle → show/hide fields
-        document.querySelectorAll('.v2-provider-block .v2-toggle input[type="checkbox"]').forEach(cb => {
-            cb.addEventListener('change', function () {
-                const block = this.closest('.v2-provider-block');
-                if (block) block.classList.toggle('active', this.checked);
-            });
-        });
-
-        // Provider timeout range → value display
-        const rangeInput = document.getElementById('subtitleProviderTimeout');
-        const rangeValue = document.getElementById('subtitleProviderTimeoutValue');
-        if (rangeInput && rangeValue) {
-            rangeInput.addEventListener('input', function () {
-                rangeValue.textContent = this.value + 's';
-            });
-        }
-
-        // Advanced Settings nav visibility (tied to betaMode toggle in Other Settings)
-        const betaModeCheckbox = document.getElementById('betaMode');
-        const advancedNav = document.getElementById('navAdvanced');
-        if (betaModeCheckbox && advancedNav) {
-            const syncAdvancedNav = function () {
-                advancedNav.style.display = betaModeCheckbox.checked ? '' : 'none';
-                // If user disables while viewing Advanced Settings, redirect to dashboard
-                if (!betaModeCheckbox.checked && activePanel === 'advanced') {
-                    switchPanel('dashboard');
-                }
-            };
-            betaModeCheckbox.addEventListener('change', syncAdvancedNav);
-            // Sync on init
-            syncAdvancedNav();
-            // Re-sync after config-loader sets saved values (may fire after panel-nav init)
-            document.addEventListener('configLoaded', syncAdvancedNav);
-            // Fallback: re-check shortly in case config-loader doesn't emit an event
-            setTimeout(syncAdvancedNav, 500);
-            setTimeout(syncAdvancedNav, 1500);
-        }
-
-        // Activate initial panel
-        switchPanel(initial, false);
-
-        // Version badge
-        updateVersionBadge();
-
-        // Populate What's New changelog
-        populateChangelog();
-
-        console.log('[V2 Nav] 🎮 Panel navigation initialized');
-    }
-
-    // ── Switch Panel ──
-    function switchPanel(panelId, updateHash = true) {
-        if (!PANELS.includes(panelId) || panelId === activePanel || isTransitioning) return;
-        isTransitioning = true;
-
-        // Deactivate old panel(s)
-        if (activePanel) {
-            const oldPanel = document.getElementById('panel-' + activePanel);
-            if (oldPanel) {
-                oldPanel.classList.remove('active');
-                oldPanel.style.animation = 'none';
-            }
-        } else {
-            // First switch: clear the HTML-default 'active' class from all panels
-            document.querySelectorAll('.v2-panel.active').forEach(function (p) {
-                p.classList.remove('active');
-                p.style.animation = 'none';
-            });
-        }
-
-        // Update sidebar
-        document.querySelectorAll('.v2-nav-item[data-panel]').forEach(btn => {
-            const isActive = btn.dataset.panel === panelId;
-            btn.classList.toggle('active', isActive);
-            btn.setAttribute('aria-selected', isActive ? 'true' : 'false');
-        });
-
-        // Activate new panel with stagger re-animation
-        const newPanel = document.getElementById('panel-' + panelId);
-        if (newPanel) {
-            newPanel.classList.add('active');
-
-            // Re-trigger panel fade-in
-            newPanel.style.animation = 'none';
-            newPanel.offsetHeight; // Force reflow
-            newPanel.style.animation = '';
-
-            // Re-trigger stagger animations on children
-            const stagger = newPanel.querySelector('.v2-stagger');
-            if (stagger) {
-                const children = stagger.children;
-                for (let i = 0; i < children.length; i++) {
-                    const child = children[i];
-                    child.style.animation = 'none';
-                    child.offsetHeight; // Force reflow
-                    child.style.animation = '';
-                }
-            }
-
-            // Smooth scroll to top
-            const main = document.querySelector('.v2-main');
-            if (main) main.scrollTop = 0;
-        }
-
-        activePanel = panelId;
-        localStorage.setItem(STORAGE_KEY, panelId);
-
-        if (updateHash) {
-            history.replaceState(null, '', '#' + panelId);
-        }
-
-        setTimeout(() => { isTransitioning = false; }, 350);
-    }
-
-    // ── Keyboard Navigation ──
-    function handleKeyboard(e) {
-        // Arrow up/down to navigate sidebar when a nav item is focused
-        if (e.key === 'ArrowDown' || e.key === 'ArrowUp') {
-            const focused = document.activeElement;
-            if (focused && focused.classList.contains('v2-nav-item') && focused.dataset.panel) {
-                e.preventDefault();
-                const idx = PANELS.indexOf(focused.dataset.panel);
-                const next = e.key === 'ArrowDown'
-                    ? PANELS[(idx + 1) % PANELS.length]
-                    : PANELS[(idx - 1 + PANELS.length) % PANELS.length];
-                const nextBtn = document.querySelector('.v2-nav-item[data-panel="' + next + '"]');
-                if (nextBtn) {
-                    nextBtn.focus();
-                    switchPanel(next);
-                }
-            }
-        }
-
-        // Number keys 1-8 to jump to panels (when not in an input)
-        if (e.key >= '1' && e.key <= '8' && !isInputFocused()) {
-            if (e.ctrlKey || e.altKey || e.metaKey) return;
-            const idx = parseInt(e.key) - 1;
-            if (idx < PANELS.length) {
-                e.preventDefault();
-                switchPanel(PANELS[idx]);
-                const btn = document.querySelector('.v2-nav-item[data-panel="' + PANELS[idx] + '"]');
-                if (btn) btn.focus();
-            }
-        }
-    }
-
-    function isInputFocused() {
-        const el = document.activeElement;
-        if (!el) return false;
-        const tag = el.tagName.toLowerCase();
-        return tag === 'input' || tag === 'textarea' || tag === 'select' || el.isContentEditable;
-    }
-
-    // ── Version Badge ──
-    function updateVersionBadge() {
-        const badge = document.getElementById('version-badge');
-        const portalBadge = document.getElementById('portalVersionBadge');
-        const mainBadge = document.getElementById('main-version-badge');
-        // Try to read from existing version element or meta
-        const existingVersion = document.querySelector('meta[name="version"]');
-        if (existingVersion) {
-            const ver = existingVersion.content;
-            if (badge) { badge.textContent = ver; badge.style.display = ''; }
-            if (portalBadge) portalBadge.textContent = ver;
-            if (mainBadge) { mainBadge.textContent = ver; mainBadge.style.display = ''; }
-        }
-    }
-
-    // ── Confetti burst on save success ──
-    window.v2Confetti = function () {
-        const container = document.getElementById('v2Confetti');
-        if (!container) return;
-        container.innerHTML = '';
-        const colors = ['#4fa8ff', '#fbbf24', '#22d3ee', '#34d399', '#a78bfa', '#f87171', '#fb923c'];
-        for (let i = 0; i < 40; i++) {
-            const piece = document.createElement('div');
-            piece.className = 'v2-confetti-piece';
-            piece.style.left = Math.random() * 100 + '%';
-            piece.style.background = colors[Math.floor(Math.random() * colors.length)];
-            piece.style.animationDelay = (Math.random() * 0.5) + 's';
-            piece.style.animationDuration = (0.8 + Math.random() * 0.6) + 's';
-            container.appendChild(piece);
-        }
-        setTimeout(() => { container.innerHTML = ''; }, 2000);
+    const ICONS = {
+        grid: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect width="7" height="7" x="3" y="3" rx="1"/><rect width="7" height="7" x="14" y="3" rx="1"/><rect width="7" height="7" x="14" y="14" rx="1"/><rect width="7" height="7" x="3" y="14" rx="1"/></svg>',
+        key: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M2 18v3c0 .6.4 1 1 1h4v-3h3v-3h2l1.4-1.4a6.5 6.5 0 1 0-4-4Z"/><circle cx="16.5" cy="7.5" r=".5" fill="currentColor"/></svg>',
+        languages: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m5 8 6 6"/><path d="m4 14 6-6 2-3"/><path d="M2 5h12"/><path d="M7 2h1"/><path d="m22 22-5-10-5 10"/><path d="M14 18h6"/></svg>',
+        sliders: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><line x1="4" x2="4" y1="21" y2="14"/><line x1="4" x2="4" y1="10" y2="3"/><line x1="12" x2="12" y1="21" y2="12"/><line x1="12" x2="12" y1="8" y2="3"/><line x1="20" x2="20" y1="21" y2="16"/><line x1="20" x2="20" y1="12" y2="3"/><line x1="2" x2="6" y1="14" y2="14"/><line x1="10" x2="14" y1="8" y2="8"/><line x1="18" x2="22" y1="16" y2="16"/></svg>',
+        layers: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m12.83 2.18a2 2 0 0 0-1.66 0L2.6 6.08a1 1 0 0 0 0 1.83l8.58 3.91a2 2 0 0 0 1.66 0l8.58-3.9a1 1 0 0 0 0-1.83Z"/><path d="m22 17.65-9.17 4.16a2 2 0 0 1-1.66 0L2 17.65"/><path d="m22 12.65-9.17 4.16a2 2 0 0 1-1.66 0L2 12.65"/></svg>',
+        package: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M11 21.73a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16V8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73z"/><path d="M12 22V12"/><path d="m3.3 7 8.7 5 8.7-5"/></svg>',
+        settings: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12.22 2h-.44a2 2 0 0 0-2 2v.18a2 2 0 0 1-1 1.73l-.43.25a2 2 0 0 1-2 0l-.15-.08a2 2 0 0 0-2.73.73l-.22.38a2 2 0 0 0 .73 2.73l.15.1a2 2 0 0 1 1 1.72v.51a2 2 0 0 1-1 1.74l-.15.09a2 2 0 0 0-.73 2.73l.22.38a2 2 0 0 0 2.73.73l.15-.08a2 2 0 0 1 2 0l.43.25a2 2 0 0 1 1 1.73V20a2 2 0 0 0 2 2h.44a2 2 0 0 0 2-2v-.18a2 2 0 0 1 1-1.73l.43-.25a2 2 0 0 1 2 0l.15.08a2 2 0 0 0 2.73-.73l.22-.39a2 2 0 0 0-.73-2.73l-.15-.08a2 2 0 0 1-1-1.74v-.5a2 2 0 0 1 1-1.74l.15-.09a2 2 0 0 0 .73-2.73l-.22-.38a2 2 0 0 0-2.73-.73l-.15.08a2 2 0 0 1-2 0l-.43-.25a2 2 0 0 1-1-1.73V4a2 2 0 0 0-2-2z"/><circle cx="12" cy="12" r="3"/></svg>'
     };
 
-    // ── Close mobile sidebar ──
-    function closeMobileSidebar() {
-        var sidebar = document.querySelector('.v2-sidebar');
-        var hamburger = document.getElementById('v2Hamburger');
-        var backdrop = document.getElementById('v2MobileBackdrop');
-        if (sidebar) sidebar.classList.remove('mobile-open');
-        if (hamburger) hamburger.classList.remove('active');
-        if (backdrop) backdrop.classList.remove('show');
+    let activePage = null;
+    let initialized = false;
+
+    function pageFromHash(hash) {
+        const clean = (hash || '').replace(/^#\/?/, '').replace(/\/$/, '');
+        const found = PAGES.find(p => p.id === clean);
+        return found ? found.id : null;
     }
 
-    // ── Populate What's New Changelog ──
-    function populateChangelog() {
-        var container = document.getElementById('portalEntries');
-        var badge = document.getElementById('portalVersionBadge');
-        var dot = document.getElementById('portalNewDot');
-        if (!container) return;
+    function pageToHash(id) {
+        const page = PAGES.find(p => p.id === id);
+        return page ? HASH_PREFIX + page.hash.slice(1) : HASH_PREFIX + DEFAULT_PAGE;
+    }
 
-        fetch('/CHANGELOG.md')
-            .then(function (r) { return r.ok ? r.text() : Promise.reject('fetch failed'); })
-            .then(function (md) {
-                var versions = parseChangelog(md, 3);
-                if (!versions.length) return;
+    function getPageEl(id) {
+        return document.querySelector(`.app-page[data-page="${id}"]`);
+    }
 
-                // Version badge
-                if (badge) badge.textContent = versions[0].version;
-                var mainBadge = document.getElementById('main-version-badge');
-                if (mainBadge) { mainBadge.textContent = versions[0].version; mainBadge.style.display = ''; }
+    function showPage(id, options) {
+        const opts = options || {};
+        const target = PAGES.find(p => p.id === id) ? id : DEFAULT_PAGE;
 
-                // New-dot indicator
-                var SEEN_KEY = 'submaker-v2-whats-new-seen';
-                var lastSeen = '';
-                try { lastSeen = localStorage.getItem(SEEN_KEY) || ''; } catch (_) { }
-                if (lastSeen !== versions[0].version && dot) {
-                    dot.style.display = '';
-                }
-
-                // Mark as seen when portal is expanded
-                var portal = document.getElementById('whatsNewPortal');
-                if (portal) {
-                    var observer = new MutationObserver(function () {
-                        if (portal.classList.contains('expanded') && dot) {
-                            dot.style.display = 'none';
-                            try { localStorage.setItem(SEEN_KEY, versions[0].version); } catch (_) { }
-                        }
-                    });
-                    observer.observe(portal, { attributes: true, attributeFilter: ['class'] });
-                }
-
-                // Render entries
-                var html = '';
-                versions.forEach(function (v) {
-                    html += '<div class="v2-whats-new-entry">';
-                    html += '<div class="v2-whats-new-entry-title">✨ ' + escapeHtml(v.version) + '</div>';
-                    v.categories.forEach(function (cat) {
-                        html += '<div style="font-weight:600;color:var(--text-primary);margin:8px 0 4px;">' + escapeHtml(cat.name) + '</div>';
-                        html += '<ul style="margin:0 0 8px 16px;padding:0;list-style:disc;">';
-                        cat.items.forEach(function (item) {
-                            html += '<li style="margin-bottom:4px;">' + mdInline(item) + '</li>';
-                        });
-                        html += '</ul>';
-                    });
-                    html += '</div>';
+        // Hide all pages, show the target
+        document.querySelectorAll('.app-page').forEach(el => {
+            if (el.dataset.page === target) {
+                el.hidden = false;
+                // Within the app shell, top-level sections stay expanded — the
+                // legacy collapse pattern was built for a single scrolling page,
+                // not app navigation. Cards inside still collapse individually.
+                el.querySelectorAll(':scope > section.section-block.collapsed').forEach(sec => {
+                    sec.classList.remove('collapsed');
                 });
-                container.innerHTML = html;
-            })
-            .catch(function (err) {
-                console.warn('[V2 Nav] Could not load changelog:', err);
+            } else {
+                el.hidden = true;
+            }
+        });
+
+        // Update active states in sidebar + bottom nav
+        document.querySelectorAll('[data-nav]').forEach(el => {
+            const isActive = el.dataset.nav === target;
+            el.classList.toggle('active', isActive);
+            if (isActive) {
+                el.setAttribute('aria-current', 'page');
+            } else {
+                el.removeAttribute('aria-current');
+            }
+        });
+
+        activePage = target;
+
+        // Update hash without adding duplicate history entries
+        const desiredHash = pageToHash(target);
+        if (window.location.hash !== desiredHash) {
+            if (opts.replace) {
+                history.replaceState(null, '', desiredHash);
+            } else {
+                history.pushState(null, '', desiredHash);
+            }
+        }
+
+        // Scroll to top of content for a fresh page feel (unless suppressed)
+        if (!opts.keepScroll) {
+            const main = document.querySelector('.app-main');
+            if (main) main.scrollTop = 0;
+            window.scrollTo({ top: 0, behavior: 'instant' in window ? 'instant' : 'auto' });
+        }
+
+        // Notify other modules (config.js may want to react)
+        try {
+            document.dispatchEvent(new CustomEvent('app:navigate', { detail: { page: target } }));
+        } catch (_) { /* CustomEvent unsupported — ignore */ }
+    }
+
+    function navigate(id, options) {
+        showPage(id, options);
+    }
+
+    function handleHashChange() {
+        const id = pageFromHash(window.location.hash);
+        if (id && id !== activePage) {
+            showPage(id, { replace: false, keepScroll: false });
+        } else if (!id) {
+            showPage(DEFAULT_PAGE, { replace: true, keepScroll: false });
+        }
+    }
+
+    function init() {
+        if (initialized) return;
+        initialized = true;
+
+        // Icons now live directly in the markup (configure.html) so they render
+        // even without JS. We only bind behaviour here.
+
+        // Bind nav clicks (sidebar pills + bottom nav)
+        document.querySelectorAll('[data-nav]').forEach(el => {
+            el.addEventListener('click', function (e) {
+                e.preventDefault();
+                navigate(this.dataset.nav);
             });
-    }
+        });
 
-    function parseChangelog(md, maxVersions) {
-        var versions = [];
-        var lines = md.split(/\r?\n/);
-        var current = null;
-        var currentCat = null;
-        var itemBuffer = '';
+        // Bind hash changes (back/forward)
+        window.addEventListener('hashchange', handleHashChange);
 
-        for (var i = 0; i < lines.length && versions.length < maxVersions; i++) {
-            var line = lines[i];
-
-            // Version header: ## SubMaker v1.4.68
-            if (/^## SubMaker\s+v/i.test(line)) {
-                // Flush any pending item
-                if (itemBuffer && currentCat) {
-                    currentCat.items.push(itemBuffer.trim());
-                    itemBuffer = '';
-                }
-                if (current) versions.push(current);
-                if (versions.length >= maxVersions) break;
-                current = { version: line.replace(/^##\s*/, '').trim(), categories: [] };
-                currentCat = null;
-                continue;
-            }
-
-            if (!current) continue;
-
-            // Category header: **Bug Fixes:** or **Improvements:**
-            var catMatch = line.match(/^\*\*([^*]+)\*\*\s*:?\s*$/);
-            if (catMatch) {
-                if (itemBuffer && currentCat) {
-                    currentCat.items.push(itemBuffer.trim());
-                    itemBuffer = '';
-                }
-                currentCat = { name: catMatch[1].replace(/:$/, ''), items: [] };
-                current.categories.push(currentCat);
-                continue;
-            }
-
-            // List item: - **Bold title:** description
-            if (/^- /.test(line) && currentCat) {
-                if (itemBuffer) {
-                    currentCat.items.push(itemBuffer.trim());
-                }
-                // Take only the bold title portion for brevity
-                var boldMatch = line.match(/^- \*\*([^*]+)\*\*/);
-                itemBuffer = boldMatch ? boldMatch[1].replace(/:$/, '') : line.replace(/^- /, '');
-                continue;
-            }
-
-            // Continuation lines (indented) — skip for brevity
-        }
-
-        // Flush last
-        if (itemBuffer && currentCat) {
-            currentCat.items.push(itemBuffer.trim());
-        }
-        if (current && versions.length < maxVersions) versions.push(current);
-
-        return versions;
-    }
-
-    function escapeHtml(s) {
-        var div = document.createElement('div');
-        div.appendChild(document.createTextNode(s));
-        return div.innerHTML;
-    }
-
-    function mdInline(s) {
-        // Bold
-        s = escapeHtml(s);
-        s = s.replace(/\*\*([^*]+)\*\*/g, '<strong>$1</strong>');
-        // Inline code
-        s = s.replace(/`([^`]+)`/g, '<code style="background:var(--bg-input);padding:1px 4px;border-radius:3px;font-size:0.85em;">$1</code>');
-        return s;
-    }
-
-    // ── Wait for partials then init ──
-    // The sidebar nav items live inside main-v2.html which is loaded
-    // asynchronously by init.js. We must wait for that partial to be
-    // injected into the DOM before we can bind event listeners.
-    function waitForPartialsAndInit() {
-        if (window.mainPartialReady) {
-            window.mainPartialReady.then(init);
+        // Initial route — mandatory fallback: empty/invalid hash → default page
+        const initial = pageFromHash(window.location.hash);
+        if (initial) {
+            showPage(initial, { replace: true, keepScroll: true });
         } else {
-            // Fallback: partials script hasn't run yet, retry shortly
-            setTimeout(waitForPartialsAndInit, 50);
+            showPage(DEFAULT_PAGE, { replace: true, keepScroll: true });
         }
     }
+
+    // Expose a tiny API for quick-setup.js and friends
+    window.__appNavigate = navigate;
+    window.__appCurrentPage = () => activePage;
+    window.__appPages = PAGES.map(p => p.id);
 
     if (document.readyState === 'loading') {
-        document.addEventListener('DOMContentLoaded', waitForPartialsAndInit);
+        document.addEventListener('DOMContentLoaded', init);
     } else {
-        waitForPartialsAndInit();
+        init();
     }
 })();

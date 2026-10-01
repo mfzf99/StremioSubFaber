@@ -1,11 +1,16 @@
 <div class="container">
-    <!-- Flat page header (brand + version badge now live in the top navbar) -->
-    <div class="page-header">
-        <h1 class="page-title" id="heroTitle" data-i18n="config.heroTitle">SubFaber</h1>
-        <p class="page-subtitle" id="heroSubtitle" data-i18n="config.heroSubtitle">AI-Powered Subtitle Translation</p>
-    </div>
-
+    <!-- App-shell: pages are rendered inside ONE <form> and shown one-at-a-time
+         by panel-nav.js. All existing IDs/classes/data-* are preserved. -->
     <div id="alertContainer"></div>
+
+    <!-- ══════════════════════════════════════════════════════════════ -->
+    <!-- PAGE: Overview                                                  -->
+    <!-- ══════════════════════════════════════════════════════════════ -->
+    <div class="app-page" data-page="overview">
+    <div class="app-page-header">
+        <h2 class="app-page-title" id="heroTitle" data-i18n="nav.overview">Overview</h2>
+        <p class="app-page-subtitle" id="heroSubtitle" data-i18n="config.heroSubtitle">AI-Powered Subtitle Translation</p>
+    </div>
 
     <!-- Floating Help Button (Config page) -->
     <button class="help-button toolbox-button" id="subToolboxLauncher" title="Open Sub Toolbox"
@@ -78,8 +83,17 @@
                 <span class="toggle-slider"></span>
             </label>
         </div>
+    </div><!-- /.app-page[data-page="overview"] -->
 
-        <!-- API Keys Section -->
+    <!-- ══════════════════════════════════════════════════════════════ -->
+    <!-- PAGE: API Keys                                                  -->
+    <!-- ══════════════════════════════════════════════════════════════ -->
+    <div class="app-page" data-page="api-keys" hidden>
+        <div class="app-page-header">
+            <h2 class="app-page-title" data-i18n="nav.apiKeys">API Keys</h2>
+            <p class="app-page-subtitle" data-i18n="config.sections.apiKeysDescription">Add and validate your keys for subtitle providers and translation services.</p>
+        </div>
+
         <section id="apiKeysSection" class="section-block collapsed">
             <div class="section-header">
                 <div class="section-header-left">
@@ -1011,8 +1025,17 @@
                 </div>
             </div>
         </section>
+    </div><!-- /.app-page[data-page="api-keys"] -->
 
-        <!-- Languages Section -->
+    <!-- ══════════════════════════════════════════════════════════════ -->
+    <!-- PAGE: Languages                                                 -->
+    <!-- ══════════════════════════════════════════════════════════════ -->
+    <div class="app-page" data-page="languages" hidden>
+        <div class="app-page-header">
+            <h2 class="app-page-title" data-i18n="nav.languages">Languages</h2>
+            <p class="app-page-subtitle">Pick the source and target languages for your subtitles.</p>
+        </div>
+
         <section id="languagesSection" class="section-block collapsed">
             <div class="section-header">
                 <div class="section-header-left">
@@ -1028,7 +1051,7 @@
                         <h2 class="section-title" id="languagesSectionTitle" data-i18n="config.sections.languagesTitle">
                             Languages</h2>
                         <p class="section-description" id="languagesSectionDescription"
-                            data-i18n="config.sections.languagesDescription">Choose your source and target languages for
+                           >Choose your source and target languages for
                             fetching and translations.</p>
                     </div>
                 </div>
@@ -1298,8 +1321,17 @@
                 </div>
             </div>
         </section>
+    </div><!-- /.app-page[data-page="languages"] -->
 
-        <!-- Settings Section -->
+    <!-- ══════════════════════════════════════════════════════════════ -->
+    <!-- PAGE: Settings (settingsSection kept INTACT — all cards stay)   -->
+    <!-- ══════════════════════════════════════════════════════════════ -->
+    <div class="app-page" data-page="settings" hidden>
+        <div class="app-page-header">
+            <h2 class="app-page-title" data-i18n="nav.settings">Settings</h2>
+            <p class="app-page-subtitle">Adjust translation behavior and other preferences.</p>
+        </div>
+
         <section id="settingsSection" class="section-block collapsed">
             <div class="section-header">
                 <div class="section-header-left">
@@ -1314,7 +1346,7 @@
                         <h2 class="section-title" id="settingsSectionTitle" data-i18n="config.sections.settingsTitle">
                             Settings</h2>
                         <p class="section-description" id="settingsSectionDescription"
-                            data-i18n="config.sections.settingsDescription">Adjust translation behavior and other
+                           >Adjust translation behavior and other
                             preferences.</p>
                     </div>
                 </div>
@@ -2431,31 +2463,38 @@
             <div class="card-content">
             </div>
         </div>
+    </div><!-- /.app-page[data-page="settings"] -->
 
-        <!-- Actions -->
-        <div class="btn-group">
-            <button type="submit" class="btn btn-primary" accesskey="enter">
-                <span aria-hidden="true">💾</span>
-                <span data-i18n="config.actions.save">Save Configuration</span>
-            </button>
-            <button type="button" class="btn btn-secondary" id="installBtn" disabled>
-                <span aria-hidden="true">🚀</span>
-                <span data-i18n="config.actions.install">Install in Stremio</span>
-            </button>
-            <button type="button" class="btn btn-secondary" id="copyBtn" disabled>
-                <span aria-hidden="true">📋</span>
-                <span data-i18n="config.actions.copy">Copy Install URL</span>
-            </button>
+    <!-- ══════════════════════════════════════════════════════════════ -->
+    <!-- PAGE: Toolbox (Sub Toolbox launcher + install/deploy)           -->
+    <!-- ══════════════════════════════════════════════════════════════ -->
+    <div class="app-page" data-page="toolbox" hidden>
+        <div class="app-page-header">
+            <h2 class="app-page-title" data-i18n="nav.toolbox">Sub Toolbox</h2>
+            <p class="app-page-subtitle">Install SubFaber into Stremio and open the embedded toolbox.</p>
         </div>
+
+        <!-- Sub Toolbox launcher card (JS keeps the floating button hidden; this is the visible entry) -->
+        <div class="card" data-card="toolbox-entry">
+            <div class="card-content">
+                <p>The Sub Toolbox bundles file translation, embedded subtitle tools, and sync utilities for Stremio.</p>
+            </div>
+        </div>
+
+        <!-- Actions relocated to the app-shell sticky action bar (configure.html).
+             The legacy .btn-group with these exact IDs now lives there; keeping a
+             duplicate here would break getElementById. -->
 
         <!-- Install URL Display -->
         <div class="install-url-box" id="installUrlBox">
             <label for="installUrlDisplay" data-i18n="config.actions.installLabel">Install URL</label>
             <input type="text" id="installUrlDisplay" readonly>
         </div>
+    </div><!-- /.app-page[data-page="toolbox"] -->
     </form>
 
-    <!-- Full Reset CTA (positioned vertically by JS) -->
+    <!-- Full Reset CTA (positioned vertically by JS) — lives on the Toolbox page visually
+         but stays outside the form and outside pages so its JS positioning keeps working. -->
     <div id="resetBarWrapper" class="reset-bar">
         <div class="reset-text" data-i18n="config.reset.hint">Any problems? Reset settings to default &rarr;</div>
         <button type="button" id="resetSettingsBtn" class="reset-btn" data-i18n="config.reset.cta">Reset</button>

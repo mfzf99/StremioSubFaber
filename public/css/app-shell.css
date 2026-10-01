@@ -1,0 +1,416 @@
+/* ============================================================================
+   SubFaber App Shell — sidebar layout ala Rootsys dashboard
+   ----------------------------------------------------------------------------
+   Loaded LAST (after rootify.css). Converts the Configure page from the
+   macOS-window centered column into a flat sidebar-app layout:
+
+     - Flat app background var(--bg-primary) (#F7F8FB / #14161F)
+     - Left sidebar 240px (desktop) with brand, nav groups, footer controls
+     - Content area with lg offset, sticky action bar, virtual pages
+     - Mobile: sticky header + bottom navigation (Rootsys dashboard pattern)
+
+   Contract: presentation only. Every id/class/data-* used by config.js and
+   theme-toggle.js is preserved (they are re-homed inside this shell, not
+   removed). Pages are hidden with `hidden` attribute / display:none — all
+   form inputs remain in the DOM so config.js can read/write them.
+   ============================================================================ */
+
+/* ---------------------------------------------------------------------------
+   1. Shell — flat app background (no more macOS window frame)
+   --------------------------------------------------------------------------- */
+body.app-shell {
+    padding-top: 0;
+    background: var(--bg-primary);
+}
+
+.app-desktop {
+    display: flex;
+    min-height: 100vh;
+    background: var(--bg-primary);
+}
+
+/* Rootsys dual-tone: canvas is soft gray, cards are pure white with a hairline
+   border so they float above the canvas. The tokens already carry the exact
+   values (#F7F8FB / #FFFFFF / #ECEFF4) — we just make sure they win. */
+body.app-shell .section-block,
+body.app-shell .card,
+body.app-shell .modal,
+body.app-shell .install-url-box,
+body.app-shell .token-vault-inline,
+body.app-shell .qs-entry-banner {
+    background: var(--surface) !important;
+    border-color: var(--border) !important;
+}
+
+/* ---------------------------------------------------------------------------
+   2. Sidebar (desktop) — 240px, white surface, right border
+   --------------------------------------------------------------------------- */
+.app-sidebar {
+    position: fixed;
+    left: 0;
+    top: 0;
+    z-index: 900;
+    display: none;                       /* shown on lg+ */
+    flex-direction: column;
+    width: 240px;
+    height: 100vh;
+    background: var(--surface);
+    border-right: 1px solid var(--border);
+}
+
+@media (min-width: 1024px) {
+    .app-sidebar { display: flex; }
+}
+
+.app-sidebar-brand {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    height: 64px;
+    padding: 0 16px;
+    border-bottom: 1px solid var(--border);
+    flex-shrink: 0;
+}
+
+.app-sidebar-logo {
+    width: 28px;
+    height: 28px;
+    border-radius: 8px;
+    display: block;
+    flex-shrink: 0;
+}
+
+.app-sidebar-name {
+    font-weight: 700;
+    font-size: 15px;
+    letter-spacing: -0.01em;
+    color: var(--text-primary);
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+
+/* Nav groups */
+.app-sidebar-nav {
+    flex: 1;
+    overflow-y: auto;
+    padding: 12px;
+    display: flex;
+    flex-direction: column;
+    gap: 16px;
+}
+
+.app-nav-group { display: flex; flex-direction: column; gap: 2px; }
+
+.app-nav-label {
+    margin-bottom: 4px;
+    padding: 0 14px;
+    font-size: 10px;
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: 0.06em;
+    color: var(--text-tertiary);
+}
+
+.app-nav-pill {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    min-height: 40px;
+    padding: 0 14px;
+    border-radius: var(--radius-control);
+    font-size: 14px;
+    font-weight: 500;
+    color: var(--text-secondary);
+    text-decoration: none;
+    transition: background 0.15s ease, color 0.15s ease;
+    cursor: pointer;
+}
+
+.app-nav-pill svg { width: 18px; height: 18px; flex-shrink: 0; }
+
+.app-nav-pill:hover {
+    background: var(--surface-tint);
+    color: var(--text-primary);
+}
+
+.app-nav-pill.active,
+.app-nav-pill[aria-current="page"] {
+    background: var(--accent-soft);
+    color: var(--primary);
+    font-weight: 600;
+}
+
+[data-theme="dark"] .app-nav-pill.active,
+[data-theme="dark"] .app-nav-pill[aria-current="page"],
+[data-theme="blackhole"] .app-nav-pill.active,
+[data-theme="true-dark"] .app-nav-pill.active {
+    color: var(--primary-light);
+}
+
+/* Sidebar footer — theme switch + language flags + docs */
+.app-sidebar-footer {
+    flex-shrink: 0;
+    border-top: 1px solid var(--border);
+    padding: 12px;
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+}
+
+.app-sidebar-footer-row {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    flex-wrap: wrap;
+}
+
+/* Compact the language dock + theme switch so they sit neatly in 240px */
+.app-sidebar-footer .ui-language-flag-row {
+    max-width: 100%;
+    overflow-x: auto;
+    scrollbar-width: none;
+}
+
+.app-sidebar-footer .ui-language-flag-row::-webkit-scrollbar { display: none; }
+
+.app-sidebar-footer .ui-lang-flag {
+    width: 26px;
+    height: 26px;
+}
+
+.app-sidebar-footer .theme-switch { flex: 1; }
+.app-sidebar-footer .theme-switch-option { flex: 1; }
+
+.app-sidebar-docs {
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    min-height: 36px;
+    padding: 0 12px;
+    border-radius: var(--radius-control);
+    font-size: 13px;
+    font-weight: 500;
+    color: var(--text-secondary);
+    text-decoration: none;
+    transition: background 0.15s ease, color 0.15s ease;
+}
+
+.app-sidebar-docs:hover {
+    background: var(--surface-tint);
+    color: var(--text-primary);
+}
+
+/* ---------------------------------------------------------------------------
+   3. Main column — content offset by sidebar width on desktop
+   --------------------------------------------------------------------------- */
+.app-main {
+    flex: 1;
+    min-width: 0;
+    min-height: 100vh;
+    display: flex;
+    flex-direction: column;
+}
+
+@media (min-width: 1024px) {
+    .app-main { padding-left: 240px; }
+}
+
+/* Mobile header (hidden on desktop) */
+.app-mobile-header {
+    position: sticky;
+    top: 0;
+    z-index: 800;
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    height: 56px;
+    padding: 0 16px;
+    background: color-mix(in srgb, var(--surface) 88%, transparent);
+    -webkit-backdrop-filter: saturate(180%) blur(12px);
+    backdrop-filter: saturate(180%) blur(12px);
+    border-bottom: 1px solid var(--border);
+}
+
+@media (min-width: 1024px) {
+    .app-mobile-header { display: none; }
+}
+
+.app-mobile-header .app-sidebar-logo { width: 26px; height: 26px; }
+.app-mobile-header-title {
+    flex: 1;
+    font-weight: 700;
+    font-size: 15px;
+    letter-spacing: -0.01em;
+    color: var(--text-primary);
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+
+/* ---------------------------------------------------------------------------
+   4. Content + virtual pages
+   --------------------------------------------------------------------------- */
+.app-content {
+    flex: 1;
+    width: 100%;
+    max-width: 1024px;
+    margin: 0 auto;
+    padding: 24px 20px 120px;            /* bottom space for action bar / bottom nav */
+}
+
+@media (min-width: 640px) {
+    .app-content { padding: 32px 32px 140px; }
+}
+
+/* Page header (per virtual page) */
+.app-page-header {
+    margin-bottom: 20px;
+}
+
+.app-page-title {
+    margin: 0;
+    font-size: 28px;
+    font-weight: 700;
+    letter-spacing: -0.02em;
+    color: var(--text-primary);
+}
+
+.app-page-subtitle {
+    margin: 4px 0 0;
+    font-size: 14px;
+    color: var(--text-secondary);
+}
+
+/* Virtual pages — hidden with [hidden] until routed */
+.app-page[hidden] { display: none !important; }
+
+.app-page {
+    display: flex;
+    flex-direction: column;
+    gap: 20px;
+}
+
+/* ---------------------------------------------------------------------------
+   5. Sticky action bar — Save/Install/Copy always visible (desktop)
+   --------------------------------------------------------------------------- */
+.app-action-bar {
+    position: fixed;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    z-index: 850;
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    padding: 14px 20px;
+    background: color-mix(in srgb, var(--surface) 92%, transparent);
+    -webkit-backdrop-filter: saturate(180%) blur(12px);
+    backdrop-filter: saturate(180%) blur(12px);
+    border-top: 1px solid var(--border);
+}
+
+@media (min-width: 1024px) {
+    .app-action-bar { left: 240px; }     /* clear of the sidebar */
+}
+
+.app-action-bar-inner {
+    width: 100%;
+    max-width: 1024px;
+    margin: 0 auto;
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    flex-wrap: wrap;
+}
+
+.app-action-bar .btn { flex-shrink: 0; }
+
+.app-action-hint {
+    margin-left: auto;
+    font-size: 12px;
+    color: var(--text-tertiary);
+}
+
+/* ---------------------------------------------------------------------------
+   6. Mobile bottom navigation (Rootsys dashboard pattern)
+   --------------------------------------------------------------------------- */
+.app-bottom-nav {
+    position: fixed;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    z-index: 860;
+    display: flex;
+    background: var(--surface);
+    border-top: 1px solid var(--border);
+    padding-bottom: env(safe-area-inset-bottom, 0);
+}
+
+@media (min-width: 1024px) {
+    .app-bottom-nav { display: none; }
+}
+
+.app-bottom-nav-item {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 4px;
+    padding: 10px 4px;
+    font-size: 11px;
+    font-weight: 500;
+    color: var(--text-tertiary);
+    text-decoration: none;
+    transition: color 0.15s ease;
+}
+
+.app-bottom-nav-item svg { width: 20px; height: 20px; }
+
+.app-bottom-nav-item.active,
+.app-bottom-nav-item[aria-current="page"] {
+    color: var(--primary);
+}
+
+[data-theme="dark"] .app-bottom-nav-item.active,
+[data-theme="blackhole"] .app-bottom-nav-item.active,
+[data-theme="true-dark"] .app-bottom-nav-item.active {
+    color: var(--primary-light);
+}
+
+/* On mobile, action bar sits above bottom nav */
+@media (max-width: 1023.98px) {
+    .app-action-bar { bottom: 64px; }    /* clear of the bottom nav */
+    .app-action-bar-inner { justify-content: stretch; }
+    .app-action-bar-inner .btn { flex: 1; justify-content: center; }
+    .app-action-hint { display: none; }
+}
+
+/* ---------------------------------------------------------------------------
+   7. Retire the old macOS window frame when app-shell is active
+   --------------------------------------------------------------------------- */
+body.app-shell .rootify-desktop { padding: 0; background: var(--bg-primary); background-image: none; }
+body.app-shell .rootify-window {
+    max-width: none;
+    margin: 0;
+    border: none;
+    border-radius: 0;
+    box-shadow: none;
+    background: transparent;
+}
+body.app-shell .rootify-titlebar { display: none; }
+body.app-shell .app-navbar { display: none; }   /* old navbar replaced by sidebar */
+
+/* Old container keeps its width inside the new content column */
+body.app-shell .container {
+    max-width: none !important;
+    margin: 0;
+    padding: 0;
+}
+
+/* ---------------------------------------------------------------------------
+   8. Reduced motion
+   --------------------------------------------------------------------------- */
+@media (prefers-reduced-motion: reduce) {
+    .app-nav-pill, .app-bottom-nav-item, .app-sidebar-docs { transition: none !important; }
+}
