@@ -435,14 +435,15 @@ body.app-shell .section-block {
 }
 
 /* The 3 action buttons belong to the Settings flow — keep them tight under
-   the Settings section, then add breathing room before the Reset bar so the
-   destructive action is visually separated from the save/install actions. */
+   the Settings section. Override configure.css .btn-group margin-top: 1.25rem
+   (20px) so the group doesn't inject phantom space before the buttons. */
 .app-config-actions .btn-group {
     display: flex;
     align-items: center;
     justify-content: center;
     gap: 12px;
     flex-wrap: wrap;
+    margin-top: 0;
 }
 
 .app-config-actions .btn-group .btn { flex-shrink: 0; }
