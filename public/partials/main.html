@@ -1825,45 +1825,6 @@
             </div>
         </section>
 
-        <!-- ══════════════════════════════════════════════════════════════ -->
-        <!-- Button 3 Beradik — Save / Install / Copy                      -->
-        <!-- Directly after the Settings section, BEFORE the hidden         -->
-        <!-- advanced cards, so flex gap doesn't add phantom spacing from    -->
-        <!-- display:none elements between Settings and the action buttons.  -->
-        <!-- ══════════════════════════════════════════════════════════════ -->
-        <div class="app-config-actions">
-            <div class="btn-group">
-                <button type="submit" form="configForm" class="btn btn-primary" accesskey="enter">
-                    <span aria-hidden="true">💾</span>
-                    <span data-i18n="config.actions.save">Save Configuration</span>
-                </button>
-                <button type="button" class="btn btn-secondary" id="installBtn" disabled>
-                    <span aria-hidden="true">🚀</span>
-                    <span data-i18n="config.actions.install">Install in Stremio</span>
-                </button>
-                <button type="button" class="btn btn-secondary" id="copyBtn" disabled>
-                    <span aria-hidden="true">📋</span>
-                    <span data-i18n="config.actions.copy">Copy Install URL</span>
-                </button>
-            </div>
-
-            <!-- Full Reset CTA — right below the 3 action buttons, tight spacing -->
-            <div id="resetBarWrapper" class="reset-bar">
-                <div class="reset-text" data-i18n="config.reset.hint">Any problems? Reset settings to default &rarr;</div>
-                <button type="button" id="resetSettingsBtn" class="reset-btn" data-i18n="config.reset.cta">Reset</button>
-            </div>
-
-            <div class="support-link-hint">
-                <span data-i18n="config.support.hint">Still having issues?</span>
-                <a href="https://github.com/xtremexq/StremioSubMaker/issues" target="_blank" rel="noopener noreferrer"
-                    data-i18n="config.support.link">Open an issue on GitHub</a>
-            </div>
-        </div>
-
-        <!-- Hidden advanced cards — these sit AFTER the action buttons so
-             their display:none doesn't inject phantom flex gaps between the
-             Settings section and the 3 beradik above. -->
-
         <!-- Gemini Advanced Parameters -->
         <div class="card collapsed" id="geminiAdvancedCard" data-card="gemini-advanced" style="display: none;">
             <div class="card-header">
@@ -2477,6 +2438,42 @@
                 <button type="button" class="collapse-btn collapsed" data-collapse="dev"></button>
             </div>
             <div class="card-content">
+            </div>
+        </div>
+
+        <!-- ══════════════════════════════════════════════════════════════ -->
+        <!-- Button 3 Beradik — Save / Install / Copy                      -->
+        <!-- FINAL element in the Configuration page, AFTER every card     -->
+        <!-- including hidden ones. The CSS collapses phantom flex gaps    -->
+        <!-- from display:none siblings so the buttons always sit tight    -->
+        <!-- under whatever card is actually visible above them.           -->
+        <!-- ══════════════════════════════════════════════════════════════ -->
+        <div class="app-config-actions">
+            <div class="btn-group">
+                <button type="submit" form="configForm" class="btn btn-primary" accesskey="enter">
+                    <span aria-hidden="true">💾</span>
+                    <span data-i18n="config.actions.save">Save Configuration</span>
+                </button>
+                <button type="button" class="btn btn-secondary" id="installBtn" disabled>
+                    <span aria-hidden="true">🚀</span>
+                    <span data-i18n="config.actions.install">Install in Stremio</span>
+                </button>
+                <button type="button" class="btn btn-secondary" id="copyBtn" disabled>
+                    <span aria-hidden="true">📋</span>
+                    <span data-i18n="config.actions.copy">Copy Install URL</span>
+                </button>
+            </div>
+
+            <!-- Full Reset CTA — right below the 3 action buttons, tight spacing -->
+            <div id="resetBarWrapper" class="reset-bar">
+                <div class="reset-text" data-i18n="config.reset.hint">Any problems? Reset settings to default &rarr;</div>
+                <button type="button" id="resetSettingsBtn" class="reset-btn" data-i18n="config.reset.cta">Reset</button>
+            </div>
+
+            <div class="support-link-hint">
+                <span data-i18n="config.support.hint">Still having issues?</span>
+                <a href="https://github.com/xtremexq/StremioSubMaker/issues" target="_blank" rel="noopener noreferrer"
+                    data-i18n="config.support.link">Open an issue on GitHub</a>
             </div>
         </div>
     </div><!-- /.app-page[data-page="configuration"] -->

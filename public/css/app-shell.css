@@ -383,10 +383,14 @@ body.app-shell .qs-entry-banner {
    5. Config actions — Save/Install/Copy + Reset, inside Configuration page
    --------------------------------------------------------------------------- */
 /* The 3 action buttons are the CLOSER of the settings family:
-   API Keys → Languages → Settings → 3 beradik. Every .section-block carries
-   margin-bottom: 1.25rem (20px) from configure.css, stacking with the page
-   flex gap (20px) for a total 40px between sections. The action buttons must
-   keep the same 40px rhythm so they read as one continuous setup flow. */
+   API Keys → Languages → Settings → 3 beradik. They sit at the very END of
+   the Configuration page, after every card including hidden ones.
+
+   PROBLEM: display:none elements still count as flex items — the page gap
+   (20px) renders between them and their neighbours, creating phantom space.
+   SOLUTION: use :has() to detect when the previous sibling is display:none
+   and negate the phantom gap with a negative margin. This makes the buttons
+   always sit tight under whatever card is actually visible above. */
 .app-config-actions {
     margin-top: 0;
     margin-bottom: 20px;
@@ -395,6 +399,26 @@ body.app-shell .qs-entry-banner {
     align-items: center;
     gap: 12px;
 }
+
+/* When the immediately preceding card is display:none, the flex gap between
+   that hidden card and .app-config-actions is phantom — cancel it. */
+.app-page > [style*="display: none"] + .app-config-actions,
+.app-page > [style*="display:none"] + .app-config-actions {
+    margin-top: -20px;
+}
+
+/* When the preceding hidden card is itself preceded by another hidden card,
+   we have stacked phantom gaps. Cancel up to 3 levels deep. */
+.app-page > [style*="display: none"] + [style*="display: none"] + .app-config-actions,
+.app-page > [style*="display:none"] + [style*="display:none"] + .app-config-actions {
+    margin-top: -40px;
+}
+
+.app-page > [style*="display: none"] + [style*="display: none"] + [style*="display: none"] + .app-config-actions,
+.app-page > [style*="display:none"] + [style*="display:none"] + [style*="display:none"] + .app-config-actions {
+    margin-top: -60px;
+}
+
 
 /* The 3 action buttons belong to the Settings flow — keep them tight under
    the Settings section, then add breathing room before the Reset bar so the
