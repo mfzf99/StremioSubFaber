@@ -2,6 +2,18 @@
 
 All notable changes to this project will be documented in this file.
 
+## SubMaker v3.7.4 (2026-10-02) — Fix: Install URL box muncul semula selepas Save — antara 3 beradik dengan Reset
+
+**Feature SubMaker klasik yang hilang semasa refactoring app-shell dipulihkan:**
+
+- **Root cause:** Kotak Install URL (`#installUrlBox`) tersangkut di dalam `.app-page[data-page="toolbox"]` — page yang `hidden` secara default. Markup dan JS (`classList.add('show')` dalam `config.js`) kekal wujud dan berfungsi, tapi parent page Toolbox tak pernah visible bila user save dari Configuration — jadi kotak tak nampak walau class `.show` ditambah.
+- **Markup dipindah:** `#installUrlBox` kini duduk dalam `.app-config-actions` di Configuration page — tepat antara button 3 beradik (`.btn-group`) dengan kad Reset (`.reset-bar`), ikut susunan zaman SubMaker asal.
+- **Styling Rootsys:** Kotak input URL diberikan gaya kad bersih — background putih `var(--surface)`, border `1px solid var(--border)`, border-radius 12px, padding `1rem 1.25rem`, input monospace (`JetBrains Mono`) dengan focus ring lembut. Border 2px `var(--primary)` lama yang kasar digantikan dengan gaya hairline yang konsisten dengan kad lain.
+- **Spacing One World:** Kotak ikut parent flex gap 12px dari 3 beradik (satu family, rapat); Reset bar kekal zon 40px di bawahnya — kotak tak bertindih dengan kad Reset. Tiada margin sendiri (`.app-config-actions .install-url-box { margin: 0; }`).
+- **JS tak berubah:** `getElementById('installUrlBox')` / `getElementById('installUrlDisplay')` guna ID unik — lokasi baru tak jejas selector. `clearActiveInstallState()` masih buang `.show` bila reset.
+- **Fail diubah:** `public/partials/main.html` (pindah markup), `public/css/configure.css` (styling Rootsys), `public/css/app-shell.css` (margin rule), `package.json` (3.7.4).
+- **Ujian:** `npm test` — **287 PASS / 0 FAIL**.
+
 ## SubMaker v3.7.3 (2026-10-02) — "One World" — Spacing 40px seragam di seluruh Configuration page
 
 **Akhirnya — satu dunia, satu irama. Semua elemen belah kanan kongsi gap 40px yang sama:**

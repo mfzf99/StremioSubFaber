@@ -448,6 +448,13 @@ body.app-shell .section-block {
 
 .app-config-actions .btn-group .btn { flex-shrink: 0; }
 
+/* Install URL box sits between the 3 beradik and the Reset bar. It follows the
+   parent flex gap (12px) from the buttons above — no margin of its own. The
+   Reset bar below still keeps its 40px zone, so the box never collides with it. */
+.app-config-actions .install-url-box {
+    margin: 0;
+}
+
 /* Reset bar: 40px separation from the 3 action buttons above
    (destructive action gets its own visual zone). */
 .app-config-actions .reset-bar {

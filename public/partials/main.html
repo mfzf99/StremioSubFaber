@@ -2443,6 +2443,13 @@
                 </button>
             </div>
 
+            <!-- Install URL Display — muncul selepas Save Configuration berjaya.
+                 Duduk antara 3 beradik dengan Reset bar, ikut One World gap 40px. -->
+            <div class="install-url-box" id="installUrlBox">
+                <label for="installUrlDisplay" data-i18n="config.actions.installLabel">Install URL</label>
+                <input type="text" id="installUrlDisplay" readonly>
+            </div>
+
             <!-- Full Reset CTA — right below the 3 action buttons, tight spacing -->
             <div id="resetBarWrapper" class="reset-bar">
                 <div class="reset-text" data-i18n="config.reset.hint">Any problems? Reset settings to default &rarr;</div>
@@ -2473,11 +2480,6 @@
             </div>
         </div>
 
-        <!-- Install URL Display -->
-        <div class="install-url-box" id="installUrlBox">
-            <label for="installUrlDisplay" data-i18n="config.actions.installLabel">Install URL</label>
-            <input type="text" id="installUrlDisplay" readonly>
-        </div>
     </div><!-- /.app-page[data-page="toolbox"] -->
     </form>
 </div>

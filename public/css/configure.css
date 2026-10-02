@@ -2915,10 +2915,16 @@ textarea {
     margin: 0 0.25rem;
 }
 
-/* Install URL Display */
+/* Install URL Display — Rootsys card style.
+   Muncul antara 3 beradik dengan Reset bar dalam .app-config-actions.
+   Spacing 24px datang dari parent flex gap; tiada margin perlu di sini. */
 .install-url-box {
-    margin-top: 1.5rem;
     display: none;
+    width: 100%;
+    padding: 1rem 1.25rem;
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 12px;
 }
 
 .install-url-box.show {
@@ -2935,19 +2941,21 @@ textarea {
 
 .install-url-box input {
     width: 100%;
-    padding: 0.875rem 1rem;
-    background: var(--surface);
-    border: 2px solid var(--primary);
-    border-radius: 12px;
+    padding: 0.75rem 1rem;
+    background: var(--surface-light, #F7F8FB);
+    border: 1px solid var(--border);
+    border-radius: 10px;
     color: var(--text-primary);
-    font-size: 0.9rem;
-    font-family: monospace;
+    font-size: 0.85rem;
+    font-family: 'JetBrains Mono', ui-monospace, 'SF Mono', 'Cascadia Mono', Menlo, Consolas, monospace;
     cursor: text;
+    transition: border-color 0.2s ease, box-shadow 0.2s ease;
 }
 
 .install-url-box input:focus {
     outline: none;
-    box-shadow: 0 0 0 4px var(--glow);
+    border-color: var(--primary);
+    box-shadow: 0 0 0 3px var(--glow, rgba(79, 70, 229, 0.12));
 }
 
 
