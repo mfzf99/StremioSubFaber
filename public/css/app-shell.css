@@ -375,10 +375,64 @@ body.app-shell .qs-entry-banner {
 /* Virtual pages — hidden with [hidden] until routed */
 .app-page[hidden] { display: none !important; }
 
+/* ONE WORLD: every child of .app-page shares the same 40px rhythm.
+   No per-section margins, no stacked gaps — just one gap for all. */
 .app-page {
     display: flex;
     flex-direction: column;
-    gap: 20px;
+    gap: 40px;
+}
+
+/* Sections give up their own margin so they follow the world gap */
+body.app-shell .section-block {
+    margin-bottom: 0;
+}
+
+/* Quick-stack sits at the top; its own gap is internal (14px between
+   Quick Setup and Just Fetch), so the world gap handles the space below. */
+.app-quick-stack {
+    display: flex;
+    flex-direction: column;
+    gap: 14px;
+}
+
+/* Config actions (3 beradik + Reset + Support) join the world rhythm.
+   No special margins — the page gap spaces them like everything else. */
+.app-config-actions {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 12px;
+}
+
+/* Phantom gap protection for hidden cards: when display:none elements sit
+   before .app-config-actions, the world gap still renders between them.
+   Cancel the phantom so the buttons sit 40px under the last VISIBLE card. */
+.app-page > [style*="display: none"] + .app-config-actions,
+.app-page > [style*="display:none"] + .app-config-actions {
+    margin-top: 0;   /* world gap already provides 40px */
+}
+
+.app-page > [style*="display: none"] + [style*="display: none"] + .app-config-actions,
+.app-page > [style*="display:none"] + [style*="display:none"] + .app-config-actions {
+    margin-top: -40px;   /* cancel 1 phantom gap */
+}
+
+.app-page > [style*="display: none"] + [style*="display: none"] + [style*="display: none"] + .app-config-actions,
+.app-page > [style*="display:none"] + [style*="display:none"] + [style*="display:none"] + .app-config-actions {
+    margin-top: -80px;   /* cancel 2 phantom gaps */
+}
+
+/* Reset bar keeps its own 40px separation from the 3 beradik */
+.app-config-actions .reset-bar {
+    margin: 40px 0 0 0;
+    display: flex;
+    align-items: center;
+    gap: 10px;
+}
+
+.app-config-actions .support-link-hint {
+    margin: 0;
 }
 
 /* ---------------------------------------------------------------------------
