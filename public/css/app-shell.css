@@ -382,8 +382,12 @@ body.app-shell .qs-entry-banner {
 /* ---------------------------------------------------------------------------
    5. Config actions — Save/Install/Copy + Reset, inside Configuration page
    --------------------------------------------------------------------------- */
+/* The 3 action buttons are the CLOSER of the settings family:
+   API Keys → Languages → Settings → 3 beradik. The space above them must
+   match the space between the sections (the .app-page flex gap, 20px) so
+   they read as one continuous setup flow, not a separate island. */
 .app-config-actions {
-    margin-top: 8px;
+    margin-top: 0;
     display: flex;
     flex-direction: column;
     align-items: center;
