@@ -370,12 +370,14 @@ body.app-shell .qs-entry-banner {
     margin-top: 8px;
     display: flex;
     flex-direction: column;
+    align-items: center;
     gap: 12px;
 }
 
 .app-config-actions .btn-group {
     display: flex;
     align-items: center;
+    justify-content: center;
     gap: 12px;
     flex-wrap: wrap;
 }
@@ -391,6 +393,11 @@ body.app-shell .qs-entry-banner {
 
 .app-config-actions .support-link-hint {
     margin: 0;
+}
+
+/* Footer stays centered inside the app shell */
+body.app-shell .footer {
+    text-align: center;
 }
 
 /* ---------------------------------------------------------------------------
