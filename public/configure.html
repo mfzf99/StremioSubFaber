@@ -60,16 +60,12 @@
             <nav class="app-sidebar-nav" aria-label="Configure sections">
                 <div class="app-nav-group">
                     <div class="app-nav-label" data-i18n="nav.groupAccount">Account</div>
-                    <a class="app-nav-pill active" href="#/overview" data-nav="overview" aria-current="page">
-                        <span class="app-nav-icon" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect width="7" height="7" x="3" y="3" rx="1"/><rect width="7" height="7" x="14" y="3" rx="1"/><rect width="7" height="7" x="14" y="14" rx="1"/><rect width="7" height="7" x="3" y="14" rx="1"/></svg></span>
-                        <span data-i18n="nav.overview">Overview</span>
-                    </a>
 
-                    <!-- Configuration — parent that expands to reveal sub-items.
-                         Clicking the parent shows the full scrollable settings page;
-                         clicking a sub-item scrolls to that exact section within it. -->
+                    <!-- Configuration — the ONLY entry point. Parent expands to
+                         reveal sub-items; clicking it shows the full scrollable
+                         settings page (Quick Setup, API Keys, Languages, Settings). -->
                     <div class="app-nav-parent">
-                        <a class="app-nav-pill" href="#/configuration" data-nav="configuration" data-parent="configuration">
+                        <a class="app-nav-pill active" href="#/configuration" data-nav="configuration" data-parent="configuration" aria-current="page">
                             <span class="app-nav-icon" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="4" x2="4" y1="21" y2="14"/><line x1="4" x2="4" y1="10" y2="3"/><line x1="12" x2="12" y1="21" y2="12"/><line x1="12" x2="12" y1="8" y2="3"/><line x1="20" x2="20" y1="21" y2="16"/><line x1="20" x2="20" y1="12" y2="3"/><line x1="2" x2="6" y1="14" y2="14"/><line x1="10" x2="14" y1="8" y2="8"/><line x1="18" x2="22" y1="16" y2="16"/></svg></span>
                             <span data-i18n="nav.configuration">Configuration</span>
                             <span class="app-nav-caret" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m9 18 6-6-6-6"/></svg></span>
@@ -78,29 +74,11 @@
                             <a class="app-nav-child" href="#/configuration" data-anchor="api-keys">
                                 <span data-i18n="nav.apiKeys">API Keys</span>
                             </a>
-                            <a class="app-nav-child app-nav-grandchild" href="#/configuration" data-anchor="subtitles-api">
-                                <span data-i18n="nav.subtitlesApi">Subtitles API Keys</span>
-                            </a>
-                            <a class="app-nav-child app-nav-grandchild" href="#/configuration" data-anchor="ai-translation">
-                                <span data-i18n="nav.aiTranslationApi">AI Translation API Keys</span>
-                            </a>
                             <a class="app-nav-child" href="#/configuration" data-anchor="languages">
                                 <span data-i18n="nav.languages">Languages</span>
                             </a>
-                            <a class="app-nav-child app-nav-grandchild" href="#/configuration" data-anchor="source-languages">
-                                <span data-i18n="nav.sourceLanguages">Source Languages</span>
-                            </a>
-                            <a class="app-nav-child app-nav-grandchild" href="#/configuration" data-anchor="target-languages">
-                                <span data-i18n="nav.targetLanguages">Target Languages</span>
-                            </a>
                             <a class="app-nav-child" href="#/configuration" data-anchor="settings">
                                 <span data-i18n="nav.settings">Settings</span>
-                            </a>
-                            <a class="app-nav-child app-nav-grandchild" href="#/configuration" data-anchor="translation-settings">
-                                <span data-i18n="nav.translationSettings">Translation Settings</span>
-                            </a>
-                            <a class="app-nav-child app-nav-grandchild" href="#/configuration" data-anchor="other-settings">
-                                <span data-i18n="nav.otherSettings">Other Settings</span>
                             </a>
                         </div>
                     </div>
@@ -194,7 +172,6 @@
         <!-- Mobile bottom navigation (hidden on desktop)                  -->
         <!-- ============================================================= -->
         <nav class="app-bottom-nav" aria-label="Sections">
-            <a class="app-bottom-nav-item" href="#/overview" data-nav="overview"><span data-i18n="nav.overview">Overview</span></a>
             <a class="app-bottom-nav-item" href="#/configuration" data-nav="configuration"><span data-i18n="nav.configuration">Configure</span></a>
             <a class="app-bottom-nav-item" href="#/toolbox" data-nav="toolbox"><span data-i18n="nav.toolbox">Toolbox</span></a>
         </nav>

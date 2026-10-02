@@ -3,15 +3,6 @@
          by panel-nav.js. All existing IDs/classes/data-* are preserved. -->
     <div id="alertContainer"></div>
 
-    <!-- ══════════════════════════════════════════════════════════════ -->
-    <!-- PAGE: Overview                                                  -->
-    <!-- ══════════════════════════════════════════════════════════════ -->
-    <div class="app-page" data-page="overview">
-    <div class="app-page-header">
-        <h2 class="app-page-title" id="heroTitle" data-i18n="nav.overview">Overview</h2>
-        <p class="app-page-subtitle" id="heroSubtitle" data-i18n="config.heroSubtitle">AI-Powered Subtitle Translation</p>
-    </div>
-
     <!-- Floating Help Button (Config page) -->
     <button class="help-button toolbox-button" id="subToolboxLauncher" title="Open Sub Toolbox"
         aria-label="Open Sub Toolbox" style="display:none;" data-i18n="config.actions.openToolbox"
@@ -53,6 +44,17 @@
 
         <!-- Legacy "What's New" bubble banner removed for the minimalist dashboard. -->
 
+    <!-- ══════════════════════════════════════════════════════════════ -->
+    <!-- PAGE: Configuration — ONE scrollable page containing every       -->
+    <!-- settings section (Quick Setup + No Translation + apiKeys +       -->
+    <!-- languages + settings). Sidebar sub-items scroll into view.       -->
+    <!-- ══════════════════════════════════════════════════════════════ -->
+    <div class="app-page" data-page="configuration" hidden>
+        <div class="app-page-header">
+            <h2 class="app-page-title" data-i18n="nav.configuration">Configuration</h2>
+            <p class="app-page-subtitle">Everything about your SubFaber setup — keys, languages, and behaviour.</p>
+        </div>
+
         <!-- Quick Setup Entry Banner (shown on first run or via help menu) -->
         <div class="qs-entry-banner" id="quickSetupBanner" role="button" tabindex="0"
             aria-label="Open Quick Setup wizard">
@@ -82,18 +84,6 @@
                 <input type="checkbox" id="noTranslationMode">
                 <span class="toggle-slider"></span>
             </label>
-        </div>
-    </div><!-- /.app-page[data-page="overview"] -->
-
-    <!-- ══════════════════════════════════════════════════════════════ -->
-    <!-- PAGE: Configuration — ONE scrollable page containing every       -->
-    <!-- settings section (apiKeys + languages + settings), like the      -->
-    <!-- original SubFaber layout. Sidebar sub-items scroll into view.    -->
-    <!-- ══════════════════════════════════════════════════════════════ -->
-    <div class="app-page" data-page="configuration" hidden>
-        <div class="app-page-header">
-            <h2 class="app-page-title" data-i18n="nav.configuration">Configuration</h2>
-            <p class="app-page-subtitle">Everything about your SubFaber setup — keys, languages, and behaviour.</p>
         </div>
 
         <section id="apiKeysSection" class="section-block collapsed">

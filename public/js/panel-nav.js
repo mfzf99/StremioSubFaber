@@ -22,7 +22,6 @@
     // structure in the sidebar but never lose context. Sub-items in the
     // sidebar are anchor links that scroll within this page.
     const PAGES = [
-        { id: 'overview',       hash: '/overview',       group: 'account', icon: 'grid' },
         { id: 'configuration',  hash: '/configuration',  group: 'account', icon: 'sliders' },
         { id: 'toolbox',        hash: '/toolbox',        group: 'explore', icon: 'package' }
     ];
@@ -41,7 +40,7 @@
         'other-settings':  'otherSettingsCard'
     };
 
-    const DEFAULT_PAGE = 'overview';
+    const DEFAULT_PAGE = 'configuration';
     const HASH_PREFIX = '#/';
 
     const ICONS = {

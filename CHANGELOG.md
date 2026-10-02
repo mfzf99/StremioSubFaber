@@ -2,6 +2,20 @@
 
 All notable changes to this project will be documented in this file.
 
+## SubMaker v3.4.0 (2026-10-02) — "Single Entry" — Overview page dibuang, Configuration jadi pintu mutlak
+
+**User noob tidak akan keliru lagi — satu sahaja tempat untuk semua settings:**
+
+- **Overview page dibuang sepenuhnya:** Page "Overview" yang menyebabkan kekeliruan ("aku nak tekan mana?") dihapuskan dari DOM, sidebar, dan router. Quick Setup banner + No Translation toggle dipindahkan ke dalam Configuration page supaya user terus nampak bila buka app.
+- **Configuration = parent mutlak:** Sidebar kini hanya ada Configuration di bawah Account — tiada Overview, tiada pilihan lain. Klik Configuration = expand + land di scrollable settings page (Quick Setup → API Keys → Languages → Settings).
+- **Sidebar children dipermudah:** 9 sub-items (dulu ada grandchildren) dipermudah kepada 3 sahaja: API Keys, Languages, Settings. Tiada lagi "Subtitles API Keys", "AI Translation API Keys", "Source Languages", "Target Languages", "Translation Settings", "Other Settings" — semua tu kekal dalam page, tapi sidebar tak tunjuk supaya tak pening.
+- **Default page bertukar:** Hash fallback dan initial load kini pergi ke `#/configuration` bukan `#/overview`. User terus nampak settings, takde "home page" yang redundant.
+- **Bottom nav dipermudah:** Dari 3 items (Overview, Configure, Toolbox) kepada 2 sahaja (Configure, Toolbox).
+- **quick-setup.js fix:** `__appNavigate('languages')` ditukar kepada `__appNavigate('configuration')` — Quick Setup wizard kini buka Configuration page dan scroll ke Languages section.
+- **i18n keys dibuang:** `nav.overview`, `nav.subtitlesApi`, `nav.aiTranslationApi`, `nav.sourceLanguages`, `nav.targetLanguages`, `nav.translationSettings`, `nav.otherSettings` dihapuskan dari `locales/en.json`.
+- **Fail diubah:** `public/partials/main.html` (Overview page dibuang, Quick Setup + No Translation dipindah), `public/configure.html` (sidebar + bottom nav), `public/js/panel-nav.js` (PAGES + DEFAULT_PAGE), `public/js/quick-setup.js` (navigate target), `locales/en.json` (keys dibuang).
+- **Ujian:** `npm test` — **287 PASS / 0 FAIL**.
+
 ## SubMaker v3.3.0 (2026-10-02) — "Desktop Light" — Theme switch dibuang dari desktop, force cerah sahaja
 
 **Dashboard desktop kini bersih macam Rootsys — tiada theme toggle langsung, cerah sahaja:**
