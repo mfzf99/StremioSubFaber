@@ -393,10 +393,6 @@ body.app-shell .qs-entry-banner {
 /* The 3 action buttons belong to the Settings flow — keep them tight under
    the Settings section, then add breathing room before the Reset bar so the
    destructive action is visually separated from the save/install actions. */
-.app-config-actions .reset-bar {
-    margin-top: 20px;
-}
-
 .app-config-actions .btn-group {
     display: flex;
     align-items: center;
@@ -407,8 +403,11 @@ body.app-shell .qs-entry-banner {
 
 .app-config-actions .btn-group .btn { flex-shrink: 0; }
 
+/* Reset bar: margin-top 20px separates it from the 3 action buttons above
+   (destructive action gets its own visual zone). MUST be a single block —
+   an earlier duplicate with `margin: 0` was overriding this via cascade. */
 .app-config-actions .reset-bar {
-    margin: 0;
+    margin: 20px 0 0 0;
     display: flex;
     align-items: center;
     gap: 10px;
