@@ -63,6 +63,14 @@
     }
 
     function wireToggle() {
+        // DESKTOP: if the page bootstrap forced light (dashboard Rootsys pattern),
+        // do NOT re-apply the stored preference — desktop is light-only with no
+        // toggle. The theme system stays available for mobile/tablet later.
+        if (document.documentElement.getAttribute('data-theme-pref') === 'light' &&
+            !document.getElementById('themeToggle')) {
+            return;
+        }
+
         // Re-apply on boot so data-theme-pref + button state match the stored pref,
         // and legacy stored values ('blackhole') get migrated on disk.
         var stored = readStoredPref();

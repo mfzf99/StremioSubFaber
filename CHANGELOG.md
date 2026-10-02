@@ -2,6 +2,17 @@
 
 All notable changes to this project will be documented in this file.
 
+## SubMaker v3.3.0 (2026-10-02) — "Desktop Light" — Theme switch dibuang dari desktop, force cerah sahaja
+
+**Dashboard desktop kini bersih macam Rootsys — tiada theme toggle langsung, cerah sahaja:**
+
+- **Theme switch dibuang:** Button 3-mode (Light/System/Dark) dibuang sepenuhnya dari sidebar footer desktop — mengikut pattern dashboard Rootsys yang tidak mempunyai theme toggle langsung.
+- **Force light untuk desktop:** Theme bootstrap dalam `<head>` kini force `data-theme="light"` dan `data-theme-pref="light"` — mengabaikan stored preference sepenuhnya untuk desktop, macam dashboard Rootsys yang cerah sahaja.
+- **theme-toggle.js guard:** Modul theme-toggle kini skip re-apply stored preference jika desktop-forced-light (tiada `#themeToggle` dalam DOM dan `data-theme-pref="light"`) — bootstrap force light yang menang, bukan stored preference.
+- **System dark/light kekal dalam kod:** Tema gelap masih tersedia dalam kod untuk kegunaan mobile/tablet nanti; desktop UI kekal bersih tanpa button.
+- **Fail diubah:** `public/configure.html` (theme switch dibuang + bootstrap force light), `public/js/theme-toggle.js` (guard desktop-forced-light).
+- **Ujian:** `npm test` — **287 PASS / 0 FAIL**.
+
 ## SubMaker v3.2.1 (2026-10-01) — Fix: Version badge dipindahkan ke footer sidebar (sebelah bendera bahasa)
 
 - **UX:** Version badge (clickable changelog) dipindahkan dari brand header atas sidebar ke footer sidebar, duduk sebelah bendera pilih bahasa — lebih seimbang dan tidak bersaing dengan jenama. Badge span `#version-badge` kekal dengan ID sama supaya `config-loader.js` dan `changelog-panel.js` masih berfungsi tanpa perubahan. `npm test`: **287 PASS / 0 FAIL**.
