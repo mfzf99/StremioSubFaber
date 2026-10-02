@@ -340,6 +340,22 @@ body.app-shell .qs-entry-banner {
     margin-bottom: 20px;
 }
 
+/* Quick Setup + No Translation are siblings — keep them tight in one stack.
+   The page flex gap (20px) used to stack with their own margins, making the
+   pair look disconnected. Wrap them in .app-quick-stack (flex, gap 8px) so
+   they sit close together, with comfortable space before API Keys below. */
+.app-quick-stack {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+    margin-bottom: 4px;
+}
+
+.app-quick-stack .qs-entry-banner {
+    margin-bottom: 0;
+}
+
+
 .app-page-title {
     margin: 0;
     font-size: 28px;

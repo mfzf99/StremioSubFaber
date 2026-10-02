@@ -55,6 +55,8 @@
             <p class="app-page-subtitle">Everything about your SubFaber setup — keys, languages, and behaviour.</p>
         </div>
 
+        <!-- Quick Setup + No Translation — siblings kept tight in one stack -->
+        <div class="app-quick-stack">
         <!-- Quick Setup Entry Banner (shown on first run or via help menu) -->
         <div class="qs-entry-banner" id="quickSetupBanner" role="button" tabindex="0"
             aria-label="Open Quick Setup wizard">
@@ -69,7 +71,7 @@
 
         <!-- No Translation Mode Toggle -->
         <div
-            style="margin: 0.65rem 0; padding: 0.65rem 0.85rem; background: var(--surface-light); border: 2px solid var(--border); border-radius: 10px; display: flex; align-items: center; gap: 0.6rem;">
+            style="padding: 0.65rem 0.85rem; background: var(--surface-light); border: 2px solid var(--border); border-radius: 10px; display: flex; align-items: center; gap: 0.6rem;">
             <span style="font-size: 1.1rem;">⏸️</span>
             <div style="flex: 1;">
                 <span id="noTranslationTitle" data-i18n="config.noTranslation.title"
@@ -84,6 +86,7 @@
                 <input type="checkbox" id="noTranslationMode">
                 <span class="toggle-slider"></span>
             </label>
+        </div>
         </div>
 
         <section id="apiKeysSection" class="section-block collapsed">
