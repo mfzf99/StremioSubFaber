@@ -396,21 +396,32 @@ body.app-shell .section-block {
     gap: 14px;
 }
 
-/* Config actions (3 beradik + Reset + Support) join the world rhythm.
-   No special margins — the page gap spaces them like everything else. */
+/* ---------------------------------------------------------------------------
+   5. Config actions — Save/Install/Copy + Reset, inside Configuration page
+   --------------------------------------------------------------------------- */
+/* The 3 action buttons are the CLOSER of the settings family:
+   API Keys → Languages → Settings → 3 beradik. They sit at the very END of
+   the Configuration page, after every card including hidden ones.
+
+   PHANTOM GAP: display:none elements still count as flex items — the page
+   gap (40px) renders between them and their neighbours, creating phantom
+   space. We cancel the phantom so the buttons sit 40px under the last
+   VISIBLE card, matching the rhythm between sections. */
 .app-config-actions {
+    margin-top: 0;
+    margin-bottom: 0;
     display: flex;
     flex-direction: column;
     align-items: center;
     gap: 12px;
 }
 
-/* Phantom gap protection for hidden cards: when display:none elements sit
-   before .app-config-actions, the world gap still renders between them.
-   Cancel the phantom so the buttons sit 40px under the last VISIBLE card. */
+/* Cancel phantom gaps from hidden cards before .app-config-actions.
+   With page gap 40px, N hidden cards inject N×40px phantom space.
+   margin-top: 0 keeps the base 40px; negative values cancel stacked phantoms. */
 .app-page > [style*="display: none"] + .app-config-actions,
 .app-page > [style*="display:none"] + .app-config-actions {
-    margin-top: 0;   /* world gap already provides 40px */
+    margin-top: 0;   /* base 40px from page gap only */
 }
 
 .app-page > [style*="display: none"] + [style*="display: none"] + .app-config-actions,
@@ -422,64 +433,6 @@ body.app-shell .section-block {
 .app-page > [style*="display:none"] + [style*="display:none"] + [style*="display:none"] + .app-config-actions {
     margin-top: -80px;   /* cancel 2 phantom gaps */
 }
-
-/* Reset bar keeps its own 40px separation from the 3 beradik */
-.app-config-actions .reset-bar {
-    margin: 40px 0 0 0;
-    display: flex;
-    align-items: center;
-    gap: 10px;
-}
-
-.app-config-actions .support-link-hint {
-    margin: 0;
-}
-
-/* ---------------------------------------------------------------------------
-   5. Config actions — Save/Install/Copy + Reset, inside Configuration page
-   --------------------------------------------------------------------------- */
-/* The 3 action buttons are the CLOSER of the settings family:
-   API Keys → Languages → Settings → 3 beradik. They sit at the very END of
-   the Configuration page, after every card including hidden ones.
-
-   PROBLEM: display:none elements still count as flex items — the page gap
-   (20px) renders between them and their neighbours, creating phantom space.
-   SOLUTION: use :has() to detect when the previous sibling is display:none
-   and negate the phantom gap with a negative margin. This makes the buttons
-   always sit tight under whatever card is actually visible above. */
-.app-config-actions {
-    margin-top: 0;
-    margin-bottom: 0;
-    display: flex;
-    flex-direction: column;
-    align-items: center;
-    gap: 12px;
-}
-
-/* Phantom-gap cancellation for hidden cards.
-   The page flex gap (20px) renders between EVERY pair of flex children —
-   even display:none ones. So if 3 beradik is preceded by N hidden cards,
-   N phantom gaps stack. We want a constant 40px rhythm between the last
-   VISIBLE element and the 3 beradik (same as between sections):
-     - page gap (20px) already accounts for 20px
-     - .app-config-actions margin-top must make up the other 20px
-     - each hidden card in between injects one phantom 20px gap that must
-       be neutralised with an extra 20px on top of the base. */
-.app-page > [style*="display: none"] + .app-config-actions,
-.app-page > [style*="display:none"] + .app-config-actions {
-    margin-top: 20px;   /* base 20px + 20px page gap = 40px total */
-}
-
-.app-page > [style*="display: none"] + [style*="display: none"] + .app-config-actions,
-.app-page > [style*="display:none"] + [style*="display:none"] + .app-config-actions {
-    margin-top: 40px;   /* cancel 1 phantom + base 20px = 40px net */
-}
-
-.app-page > [style*="display: none"] + [style*="display: none"] + [style*="display: none"] + .app-config-actions,
-.app-page > [style*="display:none"] + [style*="display:none"] + [style*="display:none"] + .app-config-actions {
-    margin-top: 60px;   /* cancel 2 phantom + base 20px = 40px net */
-}
-
 
 /* The 3 action buttons belong to the Settings flow — keep them tight under
    the Settings section, then add breathing room before the Reset bar so the
@@ -494,9 +447,8 @@ body.app-shell .section-block {
 
 .app-config-actions .btn-group .btn { flex-shrink: 0; }
 
-/* Reset bar: margin-top 20px separates it from the 3 action buttons above
-   (destructive action gets its own visual zone). MUST be a single block —
-   an earlier duplicate with `margin: 0` was overriding this via cascade. */
+/* Reset bar: 40px separation from the 3 action buttons above
+   (destructive action gets its own visual zone). */
 .app-config-actions .reset-bar {
     margin: 40px 0 0 0;
     display: flex;
