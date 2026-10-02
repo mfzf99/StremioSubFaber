@@ -335,9 +335,11 @@ body.app-shell .qs-entry-banner {
     .app-content { padding: 32px 32px 140px; }
 }
 
-/* Page header (per virtual page) */
+/* Page header (per virtual page) — sits directly above the quick-stack.
+   The page flex gap (20px) already separates it from whatever follows;
+   a duplicate margin-bottom would stack into 40px and look detached. */
 .app-page-header {
-    margin-bottom: 20px;
+    margin-bottom: 0;
 }
 
 /* Quick Setup + No Translation are siblings — keep them tight in one stack.
@@ -348,7 +350,7 @@ body.app-shell .qs-entry-banner {
     display: flex;
     flex-direction: column;
     gap: 14px;
-    margin-bottom: 4px;
+    margin-bottom: 0;
 }
 
 .app-quick-stack .qs-entry-banner {
@@ -393,30 +395,35 @@ body.app-shell .qs-entry-banner {
    always sit tight under whatever card is actually visible above. */
 .app-config-actions {
     margin-top: 0;
-    margin-bottom: 20px;
+    margin-bottom: 0;
     display: flex;
     flex-direction: column;
     align-items: center;
     gap: 12px;
 }
 
-/* When the immediately preceding card is display:none, the flex gap between
-   that hidden card and .app-config-actions is phantom — cancel it. */
+/* Phantom-gap cancellation for hidden cards.
+   The page flex gap (20px) renders between EVERY pair of flex children —
+   even display:none ones. So if 3 beradik is preceded by N hidden cards,
+   N phantom gaps stack. We want a constant 40px rhythm between the last
+   VISIBLE element and the 3 beradik (same as between sections):
+     - page gap (20px) already accounts for 20px
+     - .app-config-actions margin-top must make up the other 20px
+     - each hidden card in between injects one phantom 20px gap that must
+       be neutralised with an extra 20px on top of the base. */
 .app-page > [style*="display: none"] + .app-config-actions,
 .app-page > [style*="display:none"] + .app-config-actions {
-    margin-top: -20px;
+    margin-top: 20px;   /* base 20px + 20px page gap = 40px total */
 }
 
-/* When the preceding hidden card is itself preceded by another hidden card,
-   we have stacked phantom gaps. Cancel up to 3 levels deep. */
 .app-page > [style*="display: none"] + [style*="display: none"] + .app-config-actions,
 .app-page > [style*="display:none"] + [style*="display:none"] + .app-config-actions {
-    margin-top: -40px;
+    margin-top: 40px;   /* cancel 1 phantom + base 20px = 40px net */
 }
 
 .app-page > [style*="display: none"] + [style*="display: none"] + [style*="display: none"] + .app-config-actions,
 .app-page > [style*="display:none"] + [style*="display:none"] + [style*="display:none"] + .app-config-actions {
-    margin-top: -60px;
+    margin-top: 60px;   /* cancel 2 phantom + base 20px = 40px net */
 }
 
 
