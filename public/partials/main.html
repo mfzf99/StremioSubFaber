@@ -2437,6 +2437,40 @@
             <div class="card-content">
             </div>
         </div>
+        <!-- ══════════════════════════════════════════════════════════════ -->
+        <!-- Button 3 Beradik — Save / Install / Copy                      -->
+        <!-- Lives at the bottom of the Configuration page, right after    -->
+        <!-- Settings section, so the flow feels complete:                 -->
+        <!-- configure → save → install → copy.                            -->
+        <!-- ══════════════════════════════════════════════════════════════ -->
+        <div class="app-config-actions">
+            <div class="btn-group">
+                <button type="submit" form="configForm" class="btn btn-primary" accesskey="enter">
+                    <span aria-hidden="true">💾</span>
+                    <span data-i18n="config.actions.save">Save Configuration</span>
+                </button>
+                <button type="button" class="btn btn-secondary" id="installBtn" disabled>
+                    <span aria-hidden="true">🚀</span>
+                    <span data-i18n="config.actions.install">Install in Stremio</span>
+                </button>
+                <button type="button" class="btn btn-secondary" id="copyBtn" disabled>
+                    <span aria-hidden="true">📋</span>
+                    <span data-i18n="config.actions.copy">Copy Install URL</span>
+                </button>
+            </div>
+
+            <!-- Full Reset CTA — right below the 3 action buttons, tight spacing -->
+            <div id="resetBarWrapper" class="reset-bar">
+                <div class="reset-text" data-i18n="config.reset.hint">Any problems? Reset settings to default &rarr;</div>
+                <button type="button" id="resetSettingsBtn" class="reset-btn" data-i18n="config.reset.cta">Reset</button>
+            </div>
+
+            <div class="support-link-hint">
+                <span data-i18n="config.support.hint">Still having issues?</span>
+                <a href="https://github.com/xtremexq/StremioSubMaker/issues" target="_blank" rel="noopener noreferrer"
+                    data-i18n="config.support.link">Open an issue on GitHub</a>
+            </div>
+        </div>
     </div><!-- /.app-page[data-page="configuration"] -->
 
     <!-- ══════════════════════════════════════════════════════════════ -->
@@ -2455,10 +2489,6 @@
             </div>
         </div>
 
-        <!-- Actions relocated to the app-shell sticky action bar (configure.html).
-             The legacy .btn-group with these exact IDs now lives there; keeping a
-             duplicate here would break getElementById. -->
-
         <!-- Install URL Display -->
         <div class="install-url-box" id="installUrlBox">
             <label for="installUrlDisplay" data-i18n="config.actions.installLabel">Install URL</label>
@@ -2466,16 +2496,4 @@
         </div>
     </div><!-- /.app-page[data-page="toolbox"] -->
     </form>
-
-    <!-- Full Reset CTA (positioned vertically by JS) — lives on the Toolbox page visually
-         but stays outside the form and outside pages so its JS positioning keeps working. -->
-    <div id="resetBarWrapper" class="reset-bar">
-        <div class="reset-text" data-i18n="config.reset.hint">Any problems? Reset settings to default &rarr;</div>
-        <button type="button" id="resetSettingsBtn" class="reset-btn" data-i18n="config.reset.cta">Reset</button>
-    </div>
-    <div class="support-link-hint">
-        <span data-i18n="config.support.hint">Still having issues?</span>
-        <a href="https://github.com/xtremexq/StremioSubMaker/issues" target="_blank" rel="noopener noreferrer"
-            data-i18n="config.support.link">Open an issue on GitHub</a>
-    </div>
 </div>

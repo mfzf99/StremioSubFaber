@@ -2,6 +2,18 @@
 
 All notable changes to this project will be documented in this file.
 
+## SubMaker v3.5.0 (2026-10-02) — "Inline Actions" — Button 3 beradik kembali ke dalam Configuration page
+
+**Aliran semula jadi dipulihkan — configure dulu, baru save/install/copy:**
+
+- **Sticky action bar dibuang:** Bar fixed di bahagian bawah skrin yang asingkan Save/Install/Copy dari konteks settings dihapuskan sepenuhnya dari `configure.html` dan CSS `.app-action-bar`.
+- **Button 3 beradik inline:** Save Configuration / Install in Stremio / Copy Install URL kini duduk di hujung Configuration page — selepas Settings section, sebelum footer. Susunan lengkap: Quick Setup → No Translation → API Keys → Languages → Settings → **3 Beradik** → **Reset** → Footer.
+- **Reset rapat, bukan jauh:** Reset bar dipindahkan masuk ke dalam `.app-config-actions` — rapat terus di bawah button 3 beradik dengan spacing kemas (12px gap), bukan lagi jauh ke bawah berhampiran footer. `positionResetBar()` dalam `config.js` ditukar kepada no-op yang selamat — tiada lagi pengiraan margin dinamik yang menyebabkan jarak pelik.
+- **Docs button dibuang:** Link "Docs" di sidebar footer dihapuskan — sidebar kini hanya ada version badge (clickable changelog) + bendera bahasa.
+- **Susunan kemas:** `.app-config-actions` flex column dengan gap 12px; mobile stack button penuh lebar. Spacing antara section seragam dan tersusun.
+- **Fail diubah:** `public/configure.html` (action bar + Docs dibuang), `public/partials/main.html` (3 beradik + reset + support link masuk Configuration page), `public/css/app-shell.css` (.app-action-bar → .app-config-actions), `public/config.js` (positionResetBar jadi no-op selamat), `CHANGELOG.md`.
+- **Ujian:** `npm test` — **287 PASS / 0 FAIL**.
+
 ## SubMaker v3.4.0 (2026-10-02) — "Single Entry" — Overview page dibuang, Configuration jadi pintu mutlak
 
 **User noob tidak akan keliru lagi — satu sahaja tempat untuk semua settings:**

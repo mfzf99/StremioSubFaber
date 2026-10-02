@@ -364,44 +364,33 @@ body.app-shell .qs-entry-banner {
 }
 
 /* ---------------------------------------------------------------------------
-   5. Sticky action bar — Save/Install/Copy always visible (desktop)
+   5. Config actions — Save/Install/Copy + Reset, inside Configuration page
    --------------------------------------------------------------------------- */
-.app-action-bar {
-    position: fixed;
-    left: 0;
-    right: 0;
-    bottom: 0;
-    z-index: 850;
+.app-config-actions {
+    margin-top: 8px;
     display: flex;
-    align-items: center;
+    flex-direction: column;
     gap: 12px;
-    padding: 14px 20px;
-    background: color-mix(in srgb, var(--surface) 92%, transparent);
-    -webkit-backdrop-filter: saturate(180%) blur(12px);
-    backdrop-filter: saturate(180%) blur(12px);
-    border-top: 1px solid var(--border);
 }
 
-@media (min-width: 1024px) {
-    .app-action-bar { left: 240px; }     /* clear of the sidebar */
-}
-
-.app-action-bar-inner {
-    width: 100%;
-    max-width: 1024px;
-    margin: 0 auto;
+.app-config-actions .btn-group {
     display: flex;
     align-items: center;
     gap: 12px;
     flex-wrap: wrap;
 }
 
-.app-action-bar .btn { flex-shrink: 0; }
+.app-config-actions .btn-group .btn { flex-shrink: 0; }
 
-.app-action-hint {
-    margin-left: auto;
-    font-size: 12px;
-    color: var(--text-tertiary);
+.app-config-actions .reset-bar {
+    margin: 0;
+    display: flex;
+    align-items: center;
+    gap: 10px;
+}
+
+.app-config-actions .support-link-hint {
+    margin: 0;
 }
 
 /* ---------------------------------------------------------------------------
@@ -450,12 +439,10 @@ body.app-shell .qs-entry-banner {
     color: var(--primary-light);
 }
 
-/* On mobile, action bar sits above bottom nav */
+/* On mobile, config actions stack vertically */
 @media (max-width: 1023.98px) {
-    .app-action-bar { bottom: 64px; }    /* clear of the bottom nav */
-    .app-action-bar-inner { justify-content: stretch; }
-    .app-action-bar-inner .btn { flex: 1; justify-content: center; }
-    .app-action-hint { display: none; }
+    .app-config-actions .btn-group { justify-content: stretch; }
+    .app-config-actions .btn-group .btn { flex: 1; justify-content: center; }
 }
 
 /* ---------------------------------------------------------------------------

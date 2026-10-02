@@ -12324,30 +12324,14 @@ Translate to {target_language}.`;
         loading.classList.toggle('show', show);
     }
 
-    // Compute vertical position of reset bar so it sits centered
+    // Reset bar now lives inline inside .app-config-actions (right after the
+    // Save/Install/Copy buttons) — no JS positioning needed anymore. Keep the
+    // function as a safe no-op so existing call-sites don't break.
     function positionResetBar() {
         try {
             const bar = document.getElementById('resetBarWrapper');
-            const btns = document.querySelector('.btn-group');
-            const footer = document.querySelector('.footer');
-            if (!bar || !btns || !footer) return;
-
-            // Temporarily remove margin to measure natural gap
-            bar.style.marginTop = '0px';
-
-            const btnRect = btns.getBoundingClientRect();
-            const footerRect = footer.getBoundingClientRect();
-            const barRect = bar.getBoundingClientRect();
-
-            let gap = footerRect.top - btnRect.bottom; // space between buttons and footer
-            // Fallback if negative/too small (small screens): just set small margin
-            if (!isFinite(gap) || gap < 40) {
-                bar.style.marginTop = '16px';
-                return;
-            }
-
-            const desired = Math.max(12, (gap - barRect.height) / 2);
-            bar.style.marginTop = desired + 'px';
+            if (!bar) return;
+            bar.style.marginTop = '';
         } catch (_) {
             // no-op
         }

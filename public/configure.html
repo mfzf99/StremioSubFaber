@@ -106,25 +106,11 @@
                     </div>
                 </div>
 
-                <div class="app-sidebar-footer-row">
-                    <!-- Theme switch REMOVED for desktop (dashboard Rootsys pattern —
-                         light-only, no toggle). The theme system stays in code for
-                         mobile/tablet later; desktop is forced to light via the
-                         head bootstrap. -->
-
-                    <!-- Documentation / help link -->
-                    <a class="app-sidebar-docs" href="https://github.com/xtremexq/StremioSubMaker#readme" target="_blank"
-                        rel="noopener noreferrer" data-i18n="config.quickActionHelp" data-i18n-attr="title,aria-label"
-                        title="Help" aria-label="Help">
-                        <svg viewBox="0 0 24 24" width="16" height="16" aria-hidden="true" focusable="false" fill="none"
-                            stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-                            <circle cx="12" cy="12" r="9" />
-                            <path d="M9.5 9a2.5 2.5 0 0 1 4.9.6c0 1.7-2.5 2.2-2.5 3.9" />
-                            <path d="M12 17h.01" />
-                        </svg>
-                        <span class="app-navbar-docs-label" data-i18n="config.support.link">Docs</span>
-                    </a>
-                </div>
+                <!-- Theme switch REMOVED for desktop (dashboard Rootsys pattern —
+                     light-only, no toggle). The theme system stays in code for
+                     mobile/tablet later; desktop is forced to light via the
+                     head bootstrap. -->
+                <!-- Docs button REMOVED — not needed in the app shell. -->
             </div>
         </aside>
 
@@ -147,25 +133,6 @@
                 __CONFIGURE_MAIN_PARTIAL__
             </main>
 
-            <!-- Sticky action bar — Save/Install/Copy always visible (mandatory #2).
-                 Keeps the legacy .btn-group class so config.js reset-bar positioning still finds it. -->
-            <div class="app-action-bar">
-                <div class="app-action-bar-inner btn-group">
-                    <button type="submit" form="configForm" class="btn btn-primary" accesskey="enter">
-                        <span aria-hidden="true">💾</span>
-                        <span data-i18n="config.actions.save">Save Configuration</span>
-                    </button>
-                    <button type="button" class="btn btn-secondary" id="installBtn" disabled>
-                        <span aria-hidden="true">🚀</span>
-                        <span data-i18n="config.actions.install">Install in Stremio</span>
-                    </button>
-                    <button type="button" class="btn btn-secondary" id="copyBtn" disabled>
-                        <span aria-hidden="true">📋</span>
-                        <span data-i18n="config.actions.copy">Copy Install URL</span>
-                    </button>
-                    <span class="app-action-hint" data-i18n="nav.actionHint">Settings save across every page — no need to switch back.</span>
-                </div>
-            </div>
         </div>
 
         <!-- ============================================================= -->
