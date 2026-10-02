@@ -2,6 +2,15 @@
 
 All notable changes to this project will be documented in this file.
 
+## SubMaker v3.7.5 (2026-10-02) — Fix: Spacing Install URL box simetri 24px atas dan bawah
+
+**Visual seimbang 100% — jarak atas dan bawah kad URL kini seragam:**
+
+- **Masalah:** Jarak Butang → Kad URL cuma 12px (tersepit) manakala Kad URL → Kad Reset 52px (parent gap 12px + margin-top 40px reset bar) — UI nampak senget.
+- **Fix simetri 24px:** `.install-url-box` diberi `margin: 12px 0 !important` — parent flex gap 12px + margin 12px = **24px visual** pada kedua-dua sisi. `.reset-bar` `margin-top: 0 !important` menghapuskan 40px lama yang buat jarak bawah 52px.
+- **Fail diubah:** `public/css/app-shell.css`, `package.json` (3.7.5).
+- **Ujian:** `npm test` — **287 PASS / 0 FAIL**.
+
 ## SubMaker v3.7.4 (2026-10-02) — Fix: Install URL box muncul semula selepas Save — antara 3 beradik dengan Reset
 
 **Feature SubMaker klasik yang hilang semasa refactoring app-shell dipulihkan:**
