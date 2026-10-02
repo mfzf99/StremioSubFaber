@@ -395,9 +395,19 @@ body.app-shell .qs-entry-banner {
     margin: 0;
 }
 
-/* Footer stays centered inside the app shell */
+/* Footer sits OUTSIDE .app-main (sibling of .app-desktop), so it spans the
+   full viewport width — including under the 240px sidebar. Push its content
+   right by the sidebar width on desktop so it centers relative to the
+   content column, not the whole window. */
 body.app-shell .footer {
     text-align: center;
+}
+
+@media (min-width: 1024px) {
+    body.app-shell .footer {
+        padding-left: 240px;
+        box-sizing: border-box;
+    }
 }
 
 /* ---------------------------------------------------------------------------
