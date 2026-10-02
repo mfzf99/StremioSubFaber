@@ -20,7 +20,10 @@ async function executeParallelTranslation(engine, entries, targetLanguage, custo
     const CONCURRENCY_LIMIT = Math.max(1, Math.min(5, parseInt(engine.advancedSettings?.parallelBatchesCount) || 3));
     const PARALLEL_BATCH_SIZE = 150; // Hardcoded optimal batch size for parallelism
 
-    log.info(() => `[ParallelTranslation] Initiating parallel translation mode. Entries: ${entries.length}, Concurrency: ${CONCURRENCY_LIMIT}`);
+    log.info(
+        () =>
+            `[ParallelTranslation] Initiating parallel translation mode. Entries: ${entries.length}, Concurrency: ${CONCURRENCY_LIMIT}`
+    );
 
     // Create batches explicitly sized for parallel mode
     const batches = [];
@@ -72,68 +75,60 @@ async function executeParallelTranslation(engine, entries, targetLanguage, custo
             // sliding context sentiasa dibina (tiada guard enableBatchContext).
             const firstContext = engine.prepareContextForBatch(firstBatch, entries, translatedEntries, 0);
 
-            return engine.translateBatch(
-                firstBatch,
-                targetLanguage,
-                customPrompt,
-                0,
-                batches.length,
-                firstContext,
-                {
-                    streaming: engine.enableStreaming,
-                    onStreamProgress: async (payload) => {
-                        if (typeof onProgress !== 'function' || !payload?.partialSRT) return;
+            return engine.translateBatch(firstBatch, targetLanguage, customPrompt, 0, batches.length, firstContext, {
+                streaming: engine.enableStreaming,
+                onStreamProgress: async (payload) => {
+                    if (typeof onProgress !== 'function' || !payload?.partialSRT) return;
 
-                        const parsed = parseSRT(payload.partialSRT) || [];
-                        const offset = (payload.batchStartId || firstBatchStartId) - 1;
+                    const parsed = parseSRT(payload.partialSRT) || [];
+                    const offset = (payload.batchStartId || firstBatchStartId) - 1;
 
-                        for (const entry of parsed) {
-                            const globalId = (entry.id || 0) + offset;
-                            if (globalId <= 0) continue;
-                            streamingBatchEntries.set(globalId, {
-                                id: globalId,
-                                timecode: entry.timecode,
-                                text: engine.cleanTranslatedText(entry.text || '')
+                    for (const entry of parsed) {
+                        const globalId = (entry.id || 0) + offset;
+                        if (globalId <= 0) continue;
+                        streamingBatchEntries.set(globalId, {
+                            id: globalId,
+                            timecode: entry.timecode,
+                            text: engine.cleanTranslatedText(entry.text || '')
+                        });
+                    }
+
+                    const streamEntriesCount = streamingBatchEntries.size;
+                    // Throttle UI updates to milestones: 30, 60, 90… (or the end)
+                    if (
+                        streamEntriesCount > 0 &&
+                        (streamEntriesCount % 30 === 0 || streamEntriesCount === firstBatch.length)
+                    ) {
+                        const streamEntries = Array.from(streamingBatchEntries.values()).sort((a, b) => a.id - b.id);
+                        const streamNormalized = streamEntries.map((entry, idx) => ({
+                            id: idx + 1,
+                            timecode: entry.timecode,
+                            text: entry.text
+                        }));
+
+                        const streamSRT = toSRT(streamNormalized);
+                        const seq = ++globalStreamSequence;
+                        try {
+                            await onProgress({
+                                totalEntries: entries.length,
+                                completedEntries: Math.min(entries.length, streamEntriesCount),
+                                currentBatch: payload.currentBatch || 1,
+                                totalBatches: batches.length,
+                                partialSRT: streamSRT,
+                                streaming: true,
+                                streamSequence: seq
                             });
-                        }
-
-                        const streamEntriesCount = streamingBatchEntries.size;
-                        // Throttle UI updates to milestones: 30, 60, 90… (or the end)
-                        if (streamEntriesCount > 0 && (streamEntriesCount % 30 === 0 || streamEntriesCount === firstBatch.length)) {
-                            const streamEntries = Array.from(streamingBatchEntries.values()).sort((a, b) => a.id - b.id);
-                            const streamNormalized = streamEntries.map((entry, idx) => ({
-                                id: idx + 1,
-                                timecode: entry.timecode,
-                                text: entry.text
-                            }));
-
-                            const streamSRT = toSRT(streamNormalized);
-                            const seq = ++globalStreamSequence;
-                            try {
-                                await onProgress({
-                                    totalEntries: entries.length,
-                                    completedEntries: Math.min(entries.length, streamEntriesCount),
-                                    currentBatch: payload.currentBatch || 1,
-                                    totalBatches: batches.length,
-                                    partialSRT: streamSRT,
-                                    streaming: true,
-                                    streamSequence: seq
-                                });
-                            } catch (err) {
-                                log.warn(() => ['[ParallelTranslation] Streaming callback error:', err.message]);
-                            }
+                        } catch (err) {
+                            log.warn(() => ['[ParallelTranslation] Streaming callback error:', err.message]);
                         }
                     }
                 }
-            );
+            });
         }
 
         // Batches 1-N: clone the engine to avoid key-rotation mutations on the
         // shared instance, then translate without streaming.
-        const workerEngine = Object.assign(
-            Object.create(Object.getPrototypeOf(engine)),
-            engine
-        );
+        const workerEngine = Object.assign(Object.create(Object.getPrototypeOf(engine)), engine);
 
         // Give each worker its own translationStats to avoid concurrent mutation
         // of the shared reference. Start with zeroed counters so merge-back is additive.
@@ -158,7 +153,7 @@ async function executeParallelTranslation(engine, entries, targetLanguage, custo
                 agentBUsed: false,
                 agentBFailures: 0,
                 agentBInspections: 0,
-                agentBRetries: 0,
+                agentBRetries: 0
             };
         }
 
@@ -190,10 +185,10 @@ async function executeParallelTranslation(engine, entries, targetLanguage, custo
                 const ws = workerEngine.translationStats;
                 const es = engine.translationStats;
                 // Accumulate numeric counters
-                es.rateLimitErrors += (ws.rateLimitErrors || 0);
-                es.keyRotationRetries += (ws.keyRotationRetries || 0);
-                es.missingEntries += (ws.missingEntries || 0);
-                es.recoveredEntries += (ws.recoveredEntries || 0);
+                es.rateLimitErrors += ws.rateLimitErrors || 0;
+                es.keyRotationRetries += ws.keyRotationRetries || 0;
+                es.missingEntries += ws.missingEntries || 0;
+                es.recoveredEntries += ws.recoveredEntries || 0;
                 // DUAL-AI: Agent B counters (additive)
                 es.agentBFailures = (es.agentBFailures || 0) + (ws.agentBFailures || 0);
                 es.agentBInspections = (es.agentBInspections || 0) + (ws.agentBInspections || 0);
@@ -203,10 +198,13 @@ async function executeParallelTranslation(engine, entries, targetLanguage, custo
                 if (ws.mismatchDetected) es.mismatchDetected = true;
                 if (ws.jsonXmlFallback) es.jsonXmlFallback = true;
                 if (ws.agentBUsed) es.agentBUsed = true;
-                if (ws.secondaryProviderName && !es.secondaryProviderName) es.secondaryProviderName = ws.secondaryProviderName;
-                if (ws.primaryFailureReason && !es.primaryFailureReason) es.primaryFailureReason = ws.primaryFailureReason;
+                if (ws.secondaryProviderName && !es.secondaryProviderName)
+                    es.secondaryProviderName = ws.secondaryProviderName;
+                if (ws.primaryFailureReason && !es.primaryFailureReason)
+                    es.primaryFailureReason = ws.primaryFailureReason;
                 // Merge secondary failure tracking (first-wins for reasons, deduplicated for types)
-                if (ws.secondaryFailureReason && !es.secondaryFailureReason) es.secondaryFailureReason = ws.secondaryFailureReason;
+                if (ws.secondaryFailureReason && !es.secondaryFailureReason)
+                    es.secondaryFailureReason = ws.secondaryFailureReason;
                 if (Array.isArray(ws.secondaryErrorTypes)) {
                     for (const et of ws.secondaryErrorTypes) {
                         if (!es.secondaryErrorTypes.includes(et)) es.secondaryErrorTypes.push(et);
@@ -261,7 +259,10 @@ async function executeParallelTranslation(engine, entries, targetLanguage, custo
                             const original = batchData[j];
                             const translated = resolvedData[j] || {};
                             const cleanedText = engine.cleanTranslatedText(translated.text || original.text);
-                            const timecode = (engine.sendTimestampsToAI && translated.timecode) ? translated.timecode : original.timecode;
+                            const timecode =
+                                engine.sendTimestampsToAI && translated.timecode
+                                    ? translated.timecode
+                                    : original.timecode;
 
                             translatedEntries.push({
                                 id: original.id,
@@ -300,7 +301,9 @@ async function executeParallelTranslation(engine, entries, targetLanguage, custo
                 .map(({ batchIdx, error }) => `batch ${batchIdx + 1}: ${error?.message || error}`)
                 .join('; ');
 
-            const aggregate = new Error(`Parallel translation failed (${batchErrors.length}/${tasks.length} batches): ${errorsText}`);
+            const aggregate = new Error(
+                `Parallel translation failed (${batchErrors.length}/${tasks.length} batches): ${errorsText}`
+            );
             aggregate.name = 'AggregateError';
             aggregate.batchErrors = batchErrors;
             aggregate.failedBatches = batchErrors.map(({ batchIdx }) => batchIdx);

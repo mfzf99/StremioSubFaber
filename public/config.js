@@ -5,7 +5,8 @@
     const DEFAULT_LOCALE = { lang: 'en', messages: {} };
     const RTL_LANGS = new Set(['ar', 'he', 'fa', 'ur']);
     const UI_LANGUAGE_STORAGE_KEY = 'subfaber_ui_language';
-    const FLOATING_BOTTOM_SAFE_ZONE_SELECTOR = '#configHelp, #subToolboxLauncher, #tokenVaultLauncher, #tokenVaultRail.show';
+    const FLOATING_BOTTOM_SAFE_ZONE_SELECTOR =
+        '#configHelp, #subToolboxLauncher, #tokenVaultLauncher, #tokenVaultRail.show';
     let locale = DEFAULT_LOCALE;
     let localeReadyPromise = null; // Track when locale is ready
 
@@ -27,7 +28,9 @@
                     }
                 }
                 const template = (typeof current === 'string' && current) || fallback || key;
-                return String(template).replace(/\{(\w+)\}/g, (match, k) => Object.prototype.hasOwnProperty.call(vars, k) ? vars[k] : match);
+                return String(template).replace(/\{(\w+)\}/g, (match, k) =>
+                    Object.prototype.hasOwnProperty.call(vars, k) ? vars[k] : match
+                );
             };
             if (document && document.documentElement) {
                 document.documentElement.lang = locale.lang || 'en';
@@ -56,12 +59,14 @@
                 try {
                     const stored = localStorage.getItem(UI_LANGUAGE_STORAGE_KEY);
                     if (stored) langParam = stored;
-                } catch (_) { }
+                } catch (_) {}
             }
             const query = [];
             if (configParam) query.push('config=' + encodeURIComponent(configParam));
             if (langParam) query.push('lang=' + encodeURIComponent(langParam));
-            const resp = await fetch('/api/locale' + (query.length ? ('?' + query.join('&')) : ''), { cache: 'no-store' });
+            const resp = await fetch('/api/locale' + (query.length ? '?' + query.join('&') : ''), {
+                cache: 'no-store'
+            });
             const data = await resp.json();
             bootstrapTranslator(data || DEFAULT_LOCALE);
             applyUiLanguageCopy();
@@ -80,13 +85,13 @@
     function notifyLocaleUpdated() {
         try {
             window.dispatchEvent(new CustomEvent('submaker:locale-updated'));
-        } catch (_) { }
+        } catch (_) {}
     }
 
     function tConfig(key, vars = {}, fallback = '') {
         try {
             if (typeof window.t === 'function') return window.t(key, vars, fallback || key);
-        } catch (_) { }
+        } catch (_) {}
         return fallback || key;
     }
 
@@ -112,7 +117,7 @@
     function applyDataI18n() {
         try {
             const nodes = document.querySelectorAll('[data-i18n]');
-            nodes.forEach(node => {
+            nodes.forEach((node) => {
                 const key = node.getAttribute('data-i18n');
                 if (!key) return;
                 const attr = node.getAttribute('data-i18n-attr');
@@ -120,11 +125,11 @@
                 // Accept comma or whitespace separated attribute lists and drop anything invalid to avoid DOM errors
                 const rawAttrList = (attr || '')
                     .split(',')
-                    .map(part => part.split(/\s+/))
+                    .map((part) => part.split(/\s+/))
                     .flat()
-                    .map(a => a.trim())
+                    .map((a) => a.trim())
                     .filter(Boolean);
-                const attrList = rawAttrList.filter(name => /^[A-Za-z_][\w.\-:]*$/.test(name));
+                const attrList = rawAttrList.filter((name) => /^[A-Za-z_][\w.\-:]*$/.test(name));
                 const fallback = fallbackAttr || (attrList.length ? node.getAttribute(attrList[0]) : node.textContent);
                 const varsAttr = node.getAttribute('data-i18n-vars');
                 let vars = {};
@@ -144,7 +149,7 @@
                 if (attrList.includes('innerHTML')) {
                     node.innerHTML = value;
                 } else if (attrList.length > 0) {
-                    attrList.forEach(name => {
+                    attrList.forEach((name) => {
                         try {
                             node.setAttribute(name, value);
                         } catch (attrErr) {
@@ -163,7 +168,7 @@
     function refreshComboboxTranslations() {
         try {
             const selects = document.querySelectorAll('select.combo-hidden-select');
-            selects.forEach(select => {
+            selects.forEach((select) => {
                 const wrapper = select.parentElement;
                 const state = wrapper && wrapper.__comboState;
                 if (state && typeof state.rebuild === 'function') {
@@ -207,7 +212,7 @@
     function applyStaticCopy() {
         try {
             document.title = tConfig('config.documentTitle', {}, document.title || 'SubFaber - Configure');
-        } catch (_) { }
+        } catch (_) {}
         setAttr('uiLanguageDock', 'aria-label', 'config.uiLanguageAria', 'UI language');
         setAttr('uiLanguageDock', 'title', 'config.uiLanguageAria', 'UI language');
         setText('heroTitle', 'config.heroTitle', 'SubFaber');
@@ -216,48 +221,106 @@
         setAttr('subToolboxLauncher', 'aria-label', 'config.actions.openToolbox', 'Open Sub Toolbox');
         setAttr('configHelp', 'title', 'config.quickActionHelp', 'Help');
         setText('apiKeysSectionTitle', 'config.sections.apiKeysTitle', 'API Keys');
-        setText('apiKeysSectionDescription', 'config.sections.apiKeysDescription', 'Add and validate your keys for subtitle providers and translation services.');
+        setText(
+            'apiKeysSectionDescription',
+            'config.sections.apiKeysDescription',
+            'Add and validate your keys for subtitle providers and translation services.'
+        );
         setText('languagesSectionTitle', 'config.sections.languagesTitle', 'Languages');
-        setText('languagesSectionDescription', 'config.sections.languagesDescription', 'Choose your source and target languages for fetching and translations.');
+        setText(
+            'languagesSectionDescription',
+            'config.sections.languagesDescription',
+            'Choose your source and target languages for fetching and translations.'
+        );
         setText('settingsSectionTitle', 'config.sections.settingsTitle', 'Settings');
-        setText('settingsSectionDescription', 'config.sections.settingsDescription', 'Adjust translation behavior and other preferences.');
+        setText(
+            'settingsSectionDescription',
+            'config.sections.settingsDescription',
+            'Adjust translation behavior and other preferences.'
+        );
         setText('noTranslationTitle', 'config.noTranslation.title', 'Just Fetch Subtitles (No Translation)');
-        setText('noTranslationDescription', 'config.noTranslation.description', 'Skip AI translation and just fetch subtitles in your chosen languages');
+        setText(
+            'noTranslationDescription',
+            'config.noTranslation.description',
+            'Skip AI translation and just fetch subtitles in your chosen languages'
+        );
         setText('subtitleApiTitle', 'config.sections.subtitleApiTitle', 'Subtitles API Keys');
-        setText('opensubsImplDescription', 'config.opensubs.implDescription', 'Choose your preferred OpenSubtitles implementation.');
+        setText(
+            'opensubsImplDescription',
+            'config.opensubs.implDescription',
+            'Choose your preferred OpenSubtitles implementation.'
+        );
         setText('opensubsImplTypeLabel', 'config.opensubs.implementationType', 'Implementation Type');
         setText('opensubsV3Title', 'config.opensubs.v3Title', 'V3 (Default)');
-        setText('opensubsV3Tooltip', 'config.opensubs.v3Tooltip', "V3 doesn't show all OpenSubtitles results and rate-limiting may apply.");
-        setText('opensubsV3Description', 'config.opensubs.v3Description', 'Uses the official Stremio OpenSubtitles V3 addon. No authentication required, simple setup.');
+        setText(
+            'opensubsV3Tooltip',
+            'config.opensubs.v3Tooltip',
+            "V3 doesn't show all OpenSubtitles results and rate-limiting may apply."
+        );
+        setText(
+            'opensubsV3Description',
+            'config.opensubs.v3Description',
+            'Uses the official Stremio OpenSubtitles V3 addon. No authentication required, simple setup.'
+        );
         setText('opensubsAuthTitle', 'config.opensubs.authTitle', 'Auth (Recommended)');
         setDescriptionWithLink(
             'opensubsAuthDescription',
             'config.opensubs.authDescription',
             'config.opensubs.authLink',
-            'Uses your OpenSubtitles.com account. Requires username/password.',
+            'Uses your OpenSubtitles.com account. Requires username/password.'
         );
         setText('opensubsUsernameLabel', 'config.opensubs.usernameLabel', 'Username');
         setText('opensubsPasswordLabel', 'config.opensubs.passwordLabel', 'Password');
 
         setAttr('toggleOpenSubsPassword', 'title', 'config.opensubs.showHidePassword', 'Show/hide password');
-        setAttr('validateOpenSubtitles', 'title', 'config.opensubs.validateTitle', 'Validate OpenSubtitles credentials');
+        setAttr(
+            'validateOpenSubtitles',
+            'title',
+            'config.opensubs.validateTitle',
+            'Validate OpenSubtitles credentials'
+        );
         const validateBtn = document.getElementById('validateOpenSubtitles');
         if (validateBtn) {
             const textEl = validateBtn.querySelector('.validate-text');
             if (textEl) setText(textEl, 'config.opensubs.validateCta', 'Run Test');
         }
         setText('subsourceTitle', 'config.providers.subsource.title', 'SubSource');
-        setDescriptionWithLink('subsourceDescription', 'config.providers.subsource.description', 'config.providers.subsource.linkLabel', 'Get your free API key from');
+        setDescriptionWithLink(
+            'subsourceDescription',
+            'config.providers.subsource.description',
+            'config.providers.subsource.linkLabel',
+            'Get your free API key from'
+        );
         setText('subdlTitle', 'config.providers.subdl.title', 'SubDL');
-        setDescriptionWithLink('subdlDescription', 'config.providers.subdl.description', 'config.providers.subdl.linkLabel', 'Get your free API key from');
-        setDescriptionWithLink('geminiApiHelper', 'config.gemini.apiKey.helper', 'config.gemini.apiKey.linkLabel', 'Get your free API key from');
-        setText('sourceLanguagesError', 'config.validation.sourceRequired', 'Please select at least one source language');
-        setText('targetLanguagesError', 'config.validation.targetRequired', 'Please select at least one target language');
+        setDescriptionWithLink(
+            'subdlDescription',
+            'config.providers.subdl.description',
+            'config.providers.subdl.linkLabel',
+            'Get your free API key from'
+        );
+        setDescriptionWithLink(
+            'geminiApiHelper',
+            'config.gemini.apiKey.helper',
+            'config.gemini.apiKey.linkLabel',
+            'Get your free API key from'
+        );
+        setText(
+            'sourceLanguagesError',
+            'config.validation.sourceRequired',
+            'Please select at least one source language'
+        );
+        setText(
+            'targetLanguagesError',
+            'config.validation.targetRequired',
+            'Please select at least one target language'
+        );
         setText('learnLanguagesError', 'config.validation.learnRequired', 'Please select at least one learn language');
         applyDataI18n();
         refreshComboboxTranslations();
         // Reapply any dynamic copy that depends on runtime values (e.g., language limits)
-        try { updateLanguageLimitCopy(); } catch (_) { }
+        try {
+            updateLanguageLimitCopy();
+        } catch (_) {}
     }
 
     // If partials finished loading after config.js executed (e.g., slow fetch/timeout path),
@@ -266,7 +329,7 @@
     let partialCopyApplied = false;
     function applyCopyAfterPartials() {
         if (partialCopyApplied) return;
-        const partialsReady = (typeof window !== 'undefined' && (window.partialsReady || window.mainPartialReady));
+        const partialsReady = typeof window !== 'undefined' && (window.partialsReady || window.mainPartialReady);
         // Build an array of promises to wait for
         const waitFor = [];
         if (partialsReady && typeof partialsReady.then === 'function') {
@@ -277,16 +340,18 @@
         }
         if (waitFor.length === 0) return;
         // Wait for BOTH partials and locale to be ready before applying translations
-        Promise.all(waitFor).then(() => {
-            if (partialCopyApplied) return;
-            partialCopyApplied = true;
-            try {
-                applyUiLanguageCopy();
-                applyStaticCopy();
-            } catch (err) {
-                console.warn('[i18n] Failed to reapply copy after partials', err);
-            }
-        }).catch(() => { });
+        Promise.all(waitFor)
+            .then(() => {
+                if (partialCopyApplied) return;
+                partialCopyApplied = true;
+                try {
+                    applyUiLanguageCopy();
+                    applyStaticCopy();
+                } catch (err) {
+                    console.warn('[i18n] Failed to reapply copy after partials', err);
+                }
+            })
+            .catch(() => {});
     }
     applyCopyAfterPartials();
 
@@ -362,19 +427,19 @@
         }
     ];
     const KEY_OPTIONAL_PROVIDERS = new Set(['googletranslate', 'custom']);
-    const configPageState = (typeof window !== 'undefined' && window.SubMakerConfigPageState)
-        ? window.SubMakerConfigPageState
-        : null;
+    const configPageState =
+        typeof window !== 'undefined' && window.SubMakerConfigPageState ? window.SubMakerConfigPageState : null;
 
     function configHasSubToolboxEnabled(config) {
         if (configPageState && typeof configPageState.configHasSubToolboxEnabled === 'function') {
             return configPageState.configHasSubToolboxEnabled(config);
         }
-        return !!(config && (
-            config.subToolboxEnabled === true
-            || config.fileTranslationEnabled === true
-            || config.syncSubtitlesEnabled === true
-        ));
+        return !!(
+            config &&
+            (config.subToolboxEnabled === true ||
+                config.fileTranslationEnabled === true ||
+                config.syncSubtitlesEnabled === true)
+        );
     }
 
     function getInitialConfigLoadPlan(options = {}) {
@@ -402,7 +467,10 @@
             return configPageState.resolveTranslationModeRestoreState(options);
         }
         const current = options.currentConfig && typeof options.currentConfig === 'object' ? options.currentConfig : {};
-        const backup = options.translationModeBackup && typeof options.translationModeBackup === 'object' ? options.translationModeBackup : null;
+        const backup =
+            options.translationModeBackup && typeof options.translationModeBackup === 'object'
+                ? options.translationModeBackup
+                : null;
         const hasTranslationModeBackup = !!backup;
         const pickArray = (key) => {
             const backupValue = hasTranslationModeBackup ? backup[key] : undefined;
@@ -420,7 +488,8 @@
             learnMode: learnModeSource && learnTargetLanguages.length > 0,
             learnOrder: (hasTranslationModeBackup ? backup.learnOrder : '') || current.learnOrder || 'source-top',
             learnItalic: hasTranslationModeBackup ? backup.learnItalic !== false : current.learnItalic !== false,
-            learnItalicTarget: (hasTranslationModeBackup ? backup.learnItalicTarget : '') || current.learnItalicTarget || 'target'
+            learnItalicTarget:
+                (hasTranslationModeBackup ? backup.learnItalicTarget : '') || current.learnItalicTarget || 'target'
         };
     }
 
@@ -449,8 +518,12 @@
         if (configPageState && typeof configPageState.resolveVisibleInstallToken === 'function') {
             return configPageState.resolveVisibleInstallToken(options);
         }
-        const activeToken = String(options.activeToken || '').trim().toLowerCase();
-        const revealedToken = String(options.revealedToken || '').trim().toLowerCase();
+        const activeToken = String(options.activeToken || '')
+            .trim()
+            .toLowerCase();
+        const revealedToken = String(options.revealedToken || '')
+            .trim()
+            .toLowerCase();
         const configDirty = options.configDirty === true;
 
         if (configDirty) {
@@ -482,9 +555,9 @@
                     sourceLabel: 'Recovered draft',
                     message: hasCachedFallback
                         ? 'The missing token was replaced with the last local copy until you save again.'
-                        : (loadedFromUrl
-                            ? 'The shared token could not be recovered. You are editing a fresh draft until you save again.'
-                            : 'The saved token could not be recovered. You are editing a fresh draft until you save again.'),
+                        : loadedFromUrl
+                          ? 'The shared token could not be recovered. You are editing a fresh draft until you save again.'
+                          : 'The saved token could not be recovered. You are editing a fresh draft until you save again.',
                     recoveredFromToken: sessionToken,
                     regenerated: true
                 }
@@ -530,17 +603,27 @@
         if (configPageState && typeof configPageState.buildCurrentTokenExportEntry === 'function') {
             return configPageState.buildCurrentTokenExportEntry(options);
         }
-        const targetToken = String(options.targetToken || '').trim().toLowerCase();
+        const targetToken = String(options.targetToken || '')
+            .trim()
+            .toLowerCase();
         if (!isValidSessionToken(targetToken)) {
             return null;
         }
 
         const entries = Array.isArray(options.entries) ? options.entries : [];
         const briefMap = options.briefMap && typeof options.briefMap === 'object' ? options.briefMap : {};
-        const activeSessionToken = String(options.activeSessionToken || '').trim().toLowerCase();
+        const activeSessionToken = String(options.activeSessionToken || '')
+            .trim()
+            .toLowerCase();
         const activeSession = options.activeSession || null;
         const now = Number(options.now) || Date.now();
-        const matchingEntry = entries.find(entry => String(entry?.token || '').trim().toLowerCase() === targetToken) || null;
+        const matchingEntry =
+            entries.find(
+                (entry) =>
+                    String(entry?.token || '')
+                        .trim()
+                        .toLowerCase() === targetToken
+            ) || null;
         const brief = briefMap[targetToken] || (activeSessionToken === targetToken ? activeSession : null);
 
         return {
@@ -548,10 +631,16 @@
             label: String(matchingEntry?.label || '').trim(),
             addedAt: Number(matchingEntry?.addedAt) || Number(brief?.createdAt) || now,
             lastOpenedAt: Number(matchingEntry?.lastOpenedAt) || (activeSessionToken === targetToken ? now : 0),
-            lastSavedAt: Number(matchingEntry?.lastSavedAt) || Number(matchingEntry?.lastKnownUpdatedAt) || Number(brief?.updatedAt) || Number(brief?.createdAt) || now,
+            lastSavedAt:
+                Number(matchingEntry?.lastSavedAt) ||
+                Number(matchingEntry?.lastKnownUpdatedAt) ||
+                Number(brief?.updatedAt) ||
+                Number(brief?.createdAt) ||
+                now,
             lastKnownCreatedAt: Number(matchingEntry?.lastKnownCreatedAt) || Number(brief?.createdAt) || 0,
             lastKnownUpdatedAt: Number(matchingEntry?.lastKnownUpdatedAt) || Number(brief?.updatedAt) || 0,
-            lastKnownLastAccessedAt: Number(matchingEntry?.lastKnownLastAccessedAt) || Number(brief?.lastAccessedAt) || 0,
+            lastKnownLastAccessedAt:
+                Number(matchingEntry?.lastKnownLastAccessedAt) || Number(brief?.lastAccessedAt) || 0,
             lastKnownDisabled: matchingEntry?.lastKnownDisabled === true || brief?.disabled === true
         };
     }
@@ -560,21 +649,25 @@
         if (configPageState && typeof configPageState.buildFreshDraftConfig === 'function') {
             return configPageState.buildFreshDraftConfig(options);
         }
-        const defaultConfig = options.defaultConfig && typeof options.defaultConfig === 'object'
-            ? options.defaultConfig
-            : {};
+        const defaultConfig =
+            options.defaultConfig && typeof options.defaultConfig === 'object' ? options.defaultConfig : {};
         const disableSubtitleProviders = options.disableSubtitleProviders === true;
         let freshConfig;
 
         try {
-            freshConfig = typeof structuredClone === 'function'
-                ? structuredClone(defaultConfig)
-                : JSON.parse(JSON.stringify(defaultConfig));
+            freshConfig =
+                typeof structuredClone === 'function'
+                    ? structuredClone(defaultConfig)
+                    : JSON.parse(JSON.stringify(defaultConfig));
         } catch (_) {
             freshConfig = { ...defaultConfig };
         }
 
-        if (disableSubtitleProviders && freshConfig?.subtitleProviders && typeof freshConfig.subtitleProviders === 'object') {
+        if (
+            disableSubtitleProviders &&
+            freshConfig?.subtitleProviders &&
+            typeof freshConfig.subtitleProviders === 'object'
+        ) {
             Object.keys(freshConfig.subtitleProviders).forEach((providerKey) => {
                 const providerConfig = freshConfig.subtitleProviders[providerKey];
                 if (!providerConfig || typeof providerConfig !== 'object') return;
@@ -592,8 +685,12 @@
         if (configPageState && typeof configPageState.resolveTokenVaultSwitchPlan === 'function') {
             return configPageState.resolveTokenVaultSwitchPlan(options);
         }
-        const targetToken = String(options.targetToken || '').trim().toLowerCase();
-        const activeToken = String(options.activeToken || '').trim().toLowerCase();
+        const targetToken = String(options.targetToken || '')
+            .trim()
+            .toLowerCase();
+        const activeToken = String(options.activeToken || '')
+            .trim()
+            .toLowerCase();
         const isDirty = options.isDirty === true;
 
         if (!isValidSessionToken(targetToken)) {
@@ -612,8 +709,12 @@
         if (configPageState && typeof configPageState.resolveCompleteTokenRemovalPlan === 'function') {
             return configPageState.resolveCompleteTokenRemovalPlan(options);
         }
-        const targetToken = String(options.targetToken || '').trim().toLowerCase();
-        const activeToken = String(options.activeToken || '').trim().toLowerCase();
+        const targetToken = String(options.targetToken || '')
+            .trim()
+            .toLowerCase();
+        const activeToken = String(options.activeToken || '')
+            .trim()
+            .toLowerCase();
         const isActiveToken = isValidSessionToken(targetToken) && targetToken === activeToken;
 
         return {
@@ -621,14 +722,17 @@
             deletedActiveToken: isActiveToken,
             clearStoredToken: isActiveToken,
             nextCacheToken: '',
-            nextContext: isActiveToken ? {
-                token: '',
-                provenance: 'recovered',
-                sourceLabel: 'Recovered draft',
-                message: 'This token was permanently removed. You are editing the last local copy until you save again.',
-                recoveredFromToken: targetToken,
-                regenerated: true
-            } : null
+            nextContext: isActiveToken
+                ? {
+                      token: '',
+                      provenance: 'recovered',
+                      sourceLabel: 'Recovered draft',
+                      message:
+                          'This token was permanently removed. You are editing the last local copy until you save again.',
+                      recoveredFromToken: targetToken,
+                      regenerated: true
+                  }
+                : null
         };
     }
 
@@ -641,10 +745,9 @@
             return { visible: false, configRef: '' };
         }
         const isActiveToken = tokenToCheck === (options.activeToken || '');
-        const cachedConfig = (options.cachedToken && options.cachedToken !== tokenToCheck)
-            ? null
-            : (options.cachedConfig || null);
-        const effectiveConfig = isActiveToken ? (options.currentConfig || null) : cachedConfig;
+        const cachedConfig =
+            options.cachedToken && options.cachedToken !== tokenToCheck ? null : options.cachedConfig || null;
+        const effectiveConfig = isActiveToken ? options.currentConfig || null : cachedConfig;
         const visible = configHasSubToolboxEnabled(effectiveConfig) && options.tokenDisabled !== true;
         return {
             visible,
@@ -662,16 +765,14 @@
         const loaded = options.loaded === true;
         const tokensKey = String(options.tokensKey || '');
         const lastTokensKey = String(options.lastTokensKey || '');
-        const maxAgeMs = Number.isFinite(options.maxAgeMs) && options.maxAgeMs >= 0
-            ? options.maxAgeMs
-            : 30 * 1000;
+        const maxAgeMs = Number.isFinite(options.maxAgeMs) && options.maxAgeMs >= 0 ? options.maxAgeMs : 30 * 1000;
         const now = Number(options.now) || Date.now();
         const lastRefreshAt = Number(options.lastRefreshAt) || 0;
 
         if (!tokensKey) return false;
         if (!loaded) return true;
         if (tokensKey !== lastTokensKey) return true;
-        return (now - lastRefreshAt) > maxAgeMs;
+        return now - lastRefreshAt > maxAgeMs;
     }
 
     function shouldUseCachedTokenVaultBrief(options = {}) {
@@ -679,13 +780,11 @@
             return configPageState.shouldUseCachedTokenVaultBrief(options);
         }
         const fetchedAt = Number(options.fetchedAt) || 0;
-        const maxAgeMs = Number.isFinite(options.maxAgeMs) && options.maxAgeMs >= 0
-            ? options.maxAgeMs
-            : 30 * 1000;
+        const maxAgeMs = Number.isFinite(options.maxAgeMs) && options.maxAgeMs >= 0 ? options.maxAgeMs : 30 * 1000;
         const now = Number(options.now) || Date.now();
 
         if (fetchedAt <= 0) return false;
-        return (now - fetchedAt) <= maxAgeMs;
+        return now - fetchedAt <= maxAgeMs;
     }
 
     function resolveConfigInstructionsPreference(options = {}) {
@@ -693,10 +792,14 @@
             return configPageState.resolveConfigInstructionsPreference(options);
         }
         const normalize = (value) => {
-            const normalized = String(value || '').trim().toLowerCase();
+            const normalized = String(value || '')
+                .trim()
+                .toLowerCase();
             if (!normalized) return '';
-            if (normalized === 'true' || normalized === '1' || normalized === 'yes' || normalized === 'on') return 'true';
-            if (normalized === 'false' || normalized === '0' || normalized === 'no' || normalized === 'off') return 'false';
+            if (normalized === 'true' || normalized === '1' || normalized === 'yes' || normalized === 'on')
+                return 'true';
+            if (normalized === 'false' || normalized === '0' || normalized === 'no' || normalized === 'off')
+                return 'false';
             return '';
         };
         const canonicalRaw = String(options.canonicalValue || '').trim();
@@ -739,7 +842,7 @@
         try {
             const stored = localStorage.getItem(UI_LANGUAGE_STORAGE_KEY);
             if (stored) return stored.toLowerCase();
-        } catch (_) { }
+        } catch (_) {}
         return (navigator.language || 'en').toLowerCase();
     }
 
@@ -747,7 +850,10 @@
         const candidate = (raw || '').toString().trim();
         if (/^[a-z]{2}$/i.test(candidate)) {
             const base = 127397;
-            return String.fromCodePoint(candidate[0].toUpperCase().charCodeAt(0) + base, candidate[1].toUpperCase().charCodeAt(0) + base);
+            return String.fromCodePoint(
+                candidate[0].toUpperCase().charCodeAt(0) + base,
+                candidate[1].toUpperCase().charCodeAt(0) + base
+            );
         }
         return '';
     }
@@ -755,8 +861,10 @@
     const UI_LANGUAGE_FLAG_SVG = Object.freeze({
         en: '<svg viewBox="0 0 28 20" xmlns="http://www.w3.org/2000/svg"><rect width="28" height="20" fill="#fff"/><path d="M0 0h28v2H0zm0 4h28v2H0zm0 4h28v2H0zm0 4h28v2H0zm0 4h28v2H0z" fill="#b22234"/><rect width="12" height="10.8" fill="#3c3b6e"/><g fill="#fff"><circle cx="2" cy="2" r=".65"/><circle cx="6" cy="2" r=".65"/><circle cx="10" cy="2" r=".65"/><circle cx="4" cy="5.2" r=".65"/><circle cx="8" cy="5.2" r=".65"/><circle cx="2" cy="8.4" r=".65"/><circle cx="6" cy="8.4" r=".65"/><circle cx="10" cy="8.4" r=".65"/></g></svg>',
         es: '<svg viewBox="0 0 28 20" xmlns="http://www.w3.org/2000/svg"><rect width="28" height="20" fill="#aa151b"/><rect y="5" width="28" height="10" fill="#f1bf00"/><circle cx="9" cy="10" r="1.7" fill="#aa151b"/><rect x="8.4" y="8.2" width="1.2" height="3.6" rx=".3" fill="#f1bf00"/></svg>',
-        'pt-br': '<svg viewBox="0 0 28 20" xmlns="http://www.w3.org/2000/svg"><rect width="28" height="20" fill="#009b3a"/><path d="m14 2 11 8-11 8L3 10z" fill="#ffdf00"/><circle cx="14" cy="10" r="4.2" fill="#002776"/><path d="M10.4 9.2c2.8-.8 5.5-.3 7.6 1.1" fill="none" stroke="#fff" stroke-width=".75"/></svg>',
-        'pt-pt': '<svg viewBox="0 0 28 20" xmlns="http://www.w3.org/2000/svg"><rect width="11" height="20" fill="#046a38"/><rect x="11" width="17" height="20" fill="#da291c"/><circle cx="11" cy="10" r="3.4" fill="none" stroke="#ffcd00" stroke-width="1.2"/><path d="M9.2 8.2h3.6v3.6H9.2z" fill="#fff" stroke="#da291c" stroke-width=".6"/></svg>',
+        'pt-br':
+            '<svg viewBox="0 0 28 20" xmlns="http://www.w3.org/2000/svg"><rect width="28" height="20" fill="#009b3a"/><path d="m14 2 11 8-11 8L3 10z" fill="#ffdf00"/><circle cx="14" cy="10" r="4.2" fill="#002776"/><path d="M10.4 9.2c2.8-.8 5.5-.3 7.6 1.1" fill="none" stroke="#fff" stroke-width=".75"/></svg>',
+        'pt-pt':
+            '<svg viewBox="0 0 28 20" xmlns="http://www.w3.org/2000/svg"><rect width="11" height="20" fill="#046a38"/><rect x="11" width="17" height="20" fill="#da291c"/><circle cx="11" cy="10" r="3.4" fill="none" stroke="#ffcd00" stroke-width="1.2"/><path d="M9.2 8.2h3.6v3.6H9.2z" fill="#fff" stroke="#da291c" stroke-width=".6"/></svg>',
         ar: '<svg viewBox="0 0 28 20" xmlns="http://www.w3.org/2000/svg"><rect width="28" height="20" fill="#006c35"/><path d="M7 8.2h14M9 11.7h10" stroke="#fff" stroke-width="1.2" stroke-linecap="round"/><path d="m8 14 11-1.4" stroke="#fff" stroke-width=".8" stroke-linecap="round"/></svg>'
     });
 
@@ -776,15 +884,20 @@
     function resolveUiLanguageMeta(entry) {
         if (!entry) return null;
         const codeLabelMap = {
-            'en': 'EN',
-            'es': 'ES',
+            en: 'EN',
+            es: 'ES',
             'pt-br': 'BR',
             'pt-pt': 'PT',
-            'ar': 'AR'
+            ar: 'AR'
         };
         const label = codeLabelMap[entry.value] || entry.value.toUpperCase();
         const translatedFlag = tConfig(entry.flagKey, {}, entry.fallbackFlag || entry.value.toUpperCase());
-        const emojiFlag = toFlagEmoji(translatedFlag) || toFlagEmoji(entry.fallbackFlag) || translatedFlag || entry.fallbackFlag || entry.value.toUpperCase();
+        const emojiFlag =
+            toFlagEmoji(translatedFlag) ||
+            toFlagEmoji(entry.fallbackFlag) ||
+            translatedFlag ||
+            entry.fallbackFlag ||
+            entry.value.toUpperCase();
         return {
             ...entry,
             label,
@@ -794,10 +907,10 @@
 
     function getUiLanguageMeta(lang) {
         const normalized = (lang || '').toString().toLowerCase();
-        const exact = SUPPORTED_UI_LANGUAGES.find(l => l.value === normalized);
+        const exact = SUPPORTED_UI_LANGUAGES.find((l) => l.value === normalized);
         if (exact) return resolveUiLanguageMeta(exact);
         const base = normalized.split('-')[0];
-        const fallback = SUPPORTED_UI_LANGUAGES.find(l => l.value === base) || SUPPORTED_UI_LANGUAGES[0];
+        const fallback = SUPPORTED_UI_LANGUAGES.find((l) => l.value === base) || SUPPORTED_UI_LANGUAGES[0];
         return resolveUiLanguageMeta(fallback);
     }
 
@@ -815,22 +928,27 @@
         if (dock) {
             dock.setAttribute('data-lang', meta.value);
             const label = tConfig('config.uiLanguageLabel', {}, 'Interface language');
-            const dockLabel = label ? `${label}: ${meta.label || meta.value.toUpperCase()}` : (meta.label || meta.value.toUpperCase());
+            const dockLabel = label
+                ? `${label}: ${meta.label || meta.value.toUpperCase()}`
+                : meta.label || meta.value.toUpperCase();
             dock.setAttribute('aria-label', dockLabel);
             dock.setAttribute('title', dockLabel);
         }
         const buttons = document.querySelectorAll('.ui-lang-flag');
-        buttons.forEach(btn => {
+        buttons.forEach((btn) => {
             const isActive = btn.dataset.lang === meta.value;
             btn.classList.toggle('active', isActive);
             btn.setAttribute('aria-pressed', isActive ? 'true' : 'false');
         });
     }
 
-    const SERVER_LIMITS = (typeof window !== 'undefined' && window.__CONFIG_LIMITS__) ? window.__CONFIG_LIMITS__ : {};
+    const SERVER_LIMITS = typeof window !== 'undefined' && window.__CONFIG_LIMITS__ ? window.__CONFIG_LIMITS__ : {};
     const MAX_SOURCE_LANGUAGES = parseLimit(SERVER_LIMITS.maxSourceLanguages, DEFAULT_LIMITS.maxSourceLanguages);
     const MAX_TARGET_LANGUAGES = parseLimit(SERVER_LIMITS.maxTargetLanguages, DEFAULT_LIMITS.maxTargetLanguages);
-    const MAX_NO_TRANSLATION_LANGUAGES = parseLimit(SERVER_LIMITS.maxNoTranslationLanguages, DEFAULT_LIMITS.maxNoTranslationLanguages);
+    const MAX_NO_TRANSLATION_LANGUAGES = parseLimit(
+        SERVER_LIMITS.maxNoTranslationLanguages,
+        DEFAULT_LIMITS.maxNoTranslationLanguages
+    );
 
     const PROVIDERS = {
         openai: { label: 'OpenAI' },
@@ -1060,7 +1178,62 @@ Translate to {target_language}.`;
         if (/^gemini-(flash|flash-lite|pro)-latest$/.test(m)) {
             return { family: '3.x-strict', sampling: 'stripped', thinking: 'level', alias: true };
         }
-        return { family: 'unknown', sampling: 'full', thinking: 'none' };
+        return { family: 'unknown', sampling: 'conservative', thinking: 'none' };
+    }
+
+    function getGeminiCapabilityMetadata(modelName) {
+        const normalized = normalizeGeminiModelName(modelName).toLowerCase();
+        const registry = window.__GEMINI_MODEL_CAPABILITIES__;
+        if (!registry || typeof registry !== 'object') return null;
+        const raw = registry[normalized] || registry[modelName];
+        return raw && typeof raw === 'object' ? raw : null;
+    }
+
+    function getGeminiCapabilities(modelName) {
+        const normalized = normalizeGeminiModelName(modelName).toLowerCase();
+        const familyInfo = getModelFamily(normalized);
+        const metadata = getGeminiCapabilityMetadata(normalized);
+        const metadataFamily = typeof metadata?.family === 'string' ? metadata.family : familyInfo.family;
+        const is25 = metadataFamily === '2.5';
+        const isStrict = metadataFamily === '3.x-strict';
+        const profile = getModelThinkingProfile(normalized);
+        const levelValues = Array.isArray(metadata?.thinkingLevel?.values)
+            ? metadata.thinkingLevel.values.filter((value) => typeof value === 'string')
+            : Array.isArray(metadata?.allowedThinkingLevels)
+              ? metadata.allowedThinkingLevels
+              : profile.levels;
+        const supports = metadata?.supports || {};
+        return {
+            ...familyInfo,
+            family: metadataFamily,
+            supportsThinkingLevel:
+                metadata?.supportsThinkingLevel ??
+                supports.thinkingLevel ??
+                (metadata ? false : metadataFamily === '3.x-strict' || metadataFamily === '3.x-legacy'),
+            supportsThinkingBudget:
+                metadata?.supportsThinkingBudget ?? supports.thinkingBudget ?? (metadata ? false : is25),
+            supportsTemperature: metadata?.supportsTemperature ?? supports.temperature ?? (!isStrict || !!metadata),
+            supportsTopP: metadata?.supportsTopP ?? supports.topP ?? (!isStrict || !!metadata),
+            supportsPenalties: metadata?.supportsPenalties ?? supports.penalties ?? (!isStrict || !!metadata),
+            allowedThinkingLevels: levelValues.length ? levelValues : ['minimal'],
+            thinkingBudgetMin: Number.isFinite(Number(metadata?.thinkingBudget?.min))
+                ? Number(metadata.thinkingBudget.min)
+                : is25 && normalized.includes('pro')
+                  ? 128
+                  : -1,
+            thinkingBudgetMax: Number.isFinite(Number(metadata?.thinkingBudget?.max))
+                ? Number(metadata.thinkingBudget.max)
+                : 200000,
+            metadata: !!metadata
+        };
+    }
+
+    function clampGeminiThinkingBudget(value, modelName, fallback = -1) {
+        const caps = getGeminiCapabilities(modelName);
+        const parsed = parseInt(value, 10);
+        const fallbackValue = Number.isFinite(parseInt(fallback, 10)) ? parseInt(fallback, 10) : caps.thinkingBudgetMin;
+        const chosen = Number.isFinite(parsed) ? parsed : fallbackValue;
+        return Math.max(caps.thinkingBudgetMin, Math.min(caps.thinkingBudgetMax, chosen));
     }
 
     function sanitizeGeminiThinkingLevel(value, fallback = 'minimal') {
@@ -1164,8 +1337,8 @@ Translate to {target_language}.`;
         const exactDefaults = MODEL_SPECIFIC_DEFAULTS[normalized];
         if (exactDefaults) return { ...exactDefaults };
 
-        const isGemini3 = /^gemini-3(?:[.-]|$)/.test(normalized)
-            || /^gemini-(?:flash|flash-lite|pro)-latest$/.test(normalized);
+        const isGemini3 =
+            /^gemini-3(?:[.-]|$)/.test(normalized) || /^gemini-(?:flash|flash-lite|pro)-latest$/.test(normalized);
 
         if (isGemini3 && normalized.includes('flash-lite')) {
             return { thinkingLevel: 'minimal', thinkingBudget: -1, temperature: 0.2 };
@@ -1193,22 +1366,21 @@ Translate to {target_language}.`;
         if (!select || !select.options) {
             return [];
         }
-        return Array.from(select.options)
-            .filter(option => {
-                const value = String(option.value || '').trim();
-                return !!value && option.disabled !== true && option.hidden !== true;
-            });
+        return Array.from(select.options).filter((option) => {
+            const value = String(option.value || '').trim();
+            return !!value && option.disabled !== true && option.hidden !== true;
+        });
     }
 
     function getGeminiModelSelectOptionValues() {
         return getVisibleGeminiModelOptions()
-            .map(option => String(option.value || '').trim())
+            .map((option) => String(option.value || '').trim())
             .filter(Boolean);
     }
 
     function getDefaultGeminiModelOption() {
         const options = getVisibleGeminiModelOptions();
-        const explicitlySelectedDefault = options.find(option => option.defaultSelected === true);
+        const explicitlySelectedDefault = options.find((option) => option.defaultSelected === true);
         return explicitlySelectedDefault || options[0] || null;
     }
 
@@ -1282,8 +1454,9 @@ Translate to {target_language}.`;
 
     function updateGeminiThinkingControl() {
         const model = getAdvancedGeminiModelValue();
+        const capabilities = getGeminiCapabilities(model);
         const profile = getModelThinkingProfile(model);
-        const familyInfo = getModelFamily(model);
+        const familyInfo = capabilities;
 
         const levelSelect = document.getElementById('advancedThinkingLevel');
         const levelGroup = document.getElementById('advancedThinkingLevelGroup');
@@ -1305,23 +1478,34 @@ Translate to {target_language}.`;
         const deprecatedToggle = document.getElementById('showDeprecatedSamplingToggle');
         const showDeprecated = deprecatedToggle && deprecatedToggle.checked;
 
-        // ── Bina semula pilihan Thinking Level mengikut profil model ──
-        if (levelSelect && profile && Array.isArray(profile.levels)) {
+        // ── Bina semula pilihan Thinking Level mengikut capability model ──
+        if (levelSelect && capabilities.supportsThinkingLevel && Array.isArray(capabilities.allowedThinkingLevels)) {
             const currentVal = levelSelect.value;
             levelSelect.innerHTML = '';
-            profile.levels.forEach(lvl => {
+            capabilities.allowedThinkingLevels.forEach((lvl) => {
                 const opt = document.createElement('option');
                 opt.value = lvl;
                 opt.textContent = lvl.charAt(0).toUpperCase() + lvl.slice(1);
                 levelSelect.appendChild(opt);
             });
-            levelSelect.value = profile.levels.includes(currentVal) ? currentVal : profile.default;
+            levelSelect.value = capabilities.allowedThinkingLevels.includes(currentVal)
+                ? currentVal
+                : capabilities.allowedThinkingLevels.includes(profile.default)
+                  ? profile.default
+                  : capabilities.allowedThinkingLevels[0];
+        }
+        if (budgetInput && capabilities.supportsThinkingBudget) {
+            budgetInput.min = String(capabilities.thinkingBudgetMin);
+            budgetInput.max = String(capabilities.thinkingBudgetMax);
+            budgetInput.value = clampGeminiThinkingBudget(budgetInput.value, model, budgetInput.value);
         }
 
         // ── Morphing 4-keadaan mengikut keluarga model ──
         // HIDE ≠ LOCK: semua kekal editable; hidden fields boleh di-reveal melalui
         // "Show deprecated sampling parameters" toggle.
-        const setVisible = (el, visible) => { if (el) el.style.display = visible ? '' : 'none'; };
+        const setVisible = (el, visible) => {
+            if (el) el.style.display = visible ? '' : 'none';
+        };
 
         switch (familyInfo.family) {
             case '3.x-strict':
@@ -1356,16 +1540,22 @@ Translate to {target_language}.`;
                 break;
 
             case '2.5':
-                // Tunjuk Thinking Budget; sembunyi Level; tunjuk semua pensampelan.
+                // Tunjuk Thinking Budget; sembunyi Level; tunjuk sampling yang disokong.
                 setVisible(levelGroup, false);
-                setVisible(budgetGroup, true);
+                setVisible(budgetGroup, capabilities.supportsThinkingBudget);
                 setVisible(deprecatedToggleGroup, false);
-                if (budgetInput) {
-                    // Gemini 2.5 Pro tidak boleh nyahaktif (min 128); Flash/Lite benarkan 0.
-                    budgetInput.min = model.includes('pro') ? '128' : '-1';
-                    budgetInput.title = model.includes('pro')
-                        ? 'Gemini 2.5 Pro: min 128 (tidak boleh dimatikan), -1 = dinamik'
-                        : '0 = mati, -1 = dinamik';
+                if (budgetInput && capabilities.supportsThinkingBudget) {
+                    budgetInput.min = String(capabilities.thinkingBudgetMin);
+                    budgetInput.max = String(capabilities.thinkingBudgetMax);
+                    budgetInput.value = clampGeminiThinkingBudget(
+                        budgetInput.value,
+                        model,
+                        capabilities.thinkingBudgetMin
+                    );
+                    budgetInput.title =
+                        capabilities.thinkingBudgetMin >= 128
+                            ? 'Gemini 2.5 Pro: min 128 (tidak boleh dimatikan), -1 = dinamik'
+                            : '0 = mati, -1 = dinamik';
                 }
                 setVisible(tempGroup, true);
                 setVisible(topPGroup, true);
@@ -1377,9 +1567,7 @@ Translate to {target_language}.`;
             case '1.5':
             case '2.0':
             case 'gemma':
-            case 'unknown':
-            default:
-                // Tiada kawalan thinking; tunjuk semua pensampelan.
+                // Model lama yang diketahui menyokong sampling penuh.
                 setVisible(levelGroup, false);
                 setVisible(budgetGroup, false);
                 setVisible(deprecatedToggleGroup, false);
@@ -1388,6 +1576,25 @@ Translate to {target_language}.`;
                 setVisible(freqGroup, true);
                 setVisible(presGroup, true);
                 setVisible(samplingNote, false);
+                break;
+
+            case 'unknown':
+            default:
+                // Unknown models use a conservative UI until metadata proves support.
+                setVisible(levelGroup, false);
+                setVisible(budgetGroup, false);
+                setVisible(deprecatedToggleGroup, false);
+                setVisible(tempGroup, false);
+                setVisible(topPGroup, false);
+                setVisible(freqGroup, false);
+                setVisible(presGroup, false);
+                setVisible(samplingNote, true);
+                if (samplingNote) {
+                    const noteP = samplingNote.querySelector('p');
+                    if (noteP)
+                        noteP.textContent =
+                            'Model capability metadata is unavailable; advanced sampling controls are disabled for safety.';
+                }
                 break;
         }
     }
@@ -1417,8 +1624,8 @@ Translate to {target_language}.`;
             const normalized = typeof value === 'string' ? value.trim().toLowerCase() : '';
             return allowed.includes(normalized) ? normalized : fallback;
         };
-        Object.keys(defaultParams || {}).forEach(key => {
-            const matchKey = Object.keys(incoming).find(k => String(k).toLowerCase() === String(key).toLowerCase());
+        Object.keys(defaultParams || {}).forEach((key) => {
+            const matchKey = Object.keys(incoming).find((k) => String(k).toLowerCase() === String(key).toLowerCase());
             const raw = matchKey ? incoming[matchKey] : {};
             const defaults = defaultParams[key] || {};
             merged[key] = {
@@ -1438,15 +1645,22 @@ Translate to {target_language}.`;
                     const chosen = Number.isFinite(requested) ? requested : fallback;
                     return Math.max(-1, Math.min(200000, chosen));
                 })(),
-                formality: typeof raw?.formality === 'string'
-                    ? raw.formality
-                    : (typeof defaults.formality === 'string' ? defaults.formality : 'default'),
-                modelType: typeof raw?.modelType === 'string'
-                    ? raw.modelType
-                    : (typeof defaults.modelType === 'string' ? defaults.modelType : ''),
-                preserveFormatting: raw?.preserveFormatting !== undefined
-                    ? raw.preserveFormatting === true
-                    : defaults.preserveFormatting === true
+                formality:
+                    typeof raw?.formality === 'string'
+                        ? raw.formality
+                        : typeof defaults.formality === 'string'
+                          ? defaults.formality
+                          : 'default',
+                modelType:
+                    typeof raw?.modelType === 'string'
+                        ? raw.modelType
+                        : typeof defaults.modelType === 'string'
+                          ? defaults.modelType
+                          : '',
+                preserveFormatting:
+                    raw?.preserveFormatting !== undefined
+                        ? raw.preserveFormatting === true
+                        : defaults.preserveFormatting === true
             };
         });
         return merged;
@@ -1521,7 +1735,7 @@ Translate to {target_language}.`;
                 subsource: {
                     enabled: false,
                     apiKey: DEFAULT_API_KEYS.SUBSOURCE
-                },
+                }
             },
             // Subtitle provider timeout in seconds (min: 8, max: 30, default: 12)
             subtitleProviderTimeout: 12,
@@ -1535,7 +1749,8 @@ Translate to {target_language}.`;
                 enabled: true,
                 duration: 0 // 0 = permanent (no expiry); user purges manually
             },
-            tempCache: { // Deprecated: kept for backward compatibility, use bypassCacheConfig instead
+            tempCache: {
+                // Deprecated: kept for backward compatibility, use bypassCacheConfig instead
                 enabled: true,
                 duration: 0
             },
@@ -1567,8 +1782,8 @@ Translate to {target_language}.`;
     function mergeProviders(defaultProviders, incomingProviders) {
         const merged = {};
         const incoming = incomingProviders || {};
-        Object.keys(defaultProviders || {}).forEach(key => {
-            const matchKey = Object.keys(incoming).find(k => String(k).toLowerCase() === String(key).toLowerCase());
+        Object.keys(defaultProviders || {}).forEach((key) => {
+            const matchKey = Object.keys(incoming).find((k) => String(k).toLowerCase() === String(key).toLowerCase());
             merged[key] = {
                 ...defaultProviders[key],
                 ...(matchKey ? incoming[matchKey] : {})
@@ -1579,9 +1794,9 @@ Translate to {target_language}.`;
 
     // State management
     let currentConfig = null;
-    let providerLanguages = [];    // Languages for source/no-translation (Stremio/provider-compatible)
+    let providerLanguages = []; // Languages for source/no-translation (Stremio/provider-compatible)
     let translationLanguages = []; // Languages for target/learn (AI translation targets with regional variants)
-    let allLanguages = [];         // Combined lookup (both sets merged for chip display)
+    let allLanguages = []; // Combined lookup (both sets merged for chip display)
     let isFirstRun = false;
     let modelsFetchTimeout = null;
     let lastFetchedApiKey = null;
@@ -1601,7 +1816,7 @@ Translate to {target_language}.`;
     // localStorage cache keys
     const CACHE_KEY = 'subfaber_config_cache';
     const CACHE_EXPIRY_KEY = 'subfaber_config_cache_expiry';
-    const CACHE_VERSION_KEY = 'subfaber_config_cache_version';  // Tracks version when cache was saved
+    const CACHE_VERSION_KEY = 'subfaber_config_cache_version'; // Tracks version when cache was saved
     const CACHE_TOKEN_KEY = 'subfaber_config_cache_token'; // Scopes cached config to the session token it was created for
     const TOKEN_KEY = 'subfaber_session_token';
     const TOKEN_VAULT_KEY = 'subfaber_token_vault_v1';
@@ -1658,10 +1873,7 @@ Translate to {target_language}.`;
     let suppressDirtyTracking = true;
 
     // Visual state cache keys that can be safely reset on version changes
-    const VISUAL_STATE_KEYS = [
-        'subfaber_collapsed_sections',
-        'subfaber_scroll_position'
-    ];
+    const VISUAL_STATE_KEYS = ['subfaber_collapsed_sections', 'subfaber_scroll_position'];
 
     /**
      * FIXED: Validate session token format
@@ -1705,7 +1917,7 @@ Translate to {target_language}.`;
             if (token) {
                 localStorage.removeItem(TOKEN_KEY);
             }
-        } catch (_) { }
+        } catch (_) {}
         return '';
     }
 
@@ -1798,8 +2010,8 @@ Translate to {target_language}.`;
 
     function buildVaultProfileOrdering(store = getTokenVaultStore()) {
         return (Array.isArray(store?.entries) ? store.entries : [])
-            .filter(entry => isValidSessionToken(entry?.token))
-            .map(entry => ({
+            .filter((entry) => isValidSessionToken(entry?.token))
+            .map((entry) => ({
                 token: String(entry.token).trim().toLowerCase(),
                 addedAt: Number(entry.addedAt) || Number(entry.lastSavedAt) || Number(entry.lastOpenedAt) || 0
             }))
@@ -1811,10 +2023,12 @@ Translate to {target_language}.`;
     }
 
     function getVaultProfileNumber(token, store = getTokenVaultStore()) {
-        const normalizedToken = String(token || '').trim().toLowerCase();
+        const normalizedToken = String(token || '')
+            .trim()
+            .toLowerCase();
         if (!isValidSessionToken(normalizedToken)) return 0;
         const orderedEntries = buildVaultProfileOrdering(store);
-        const existingIndex = orderedEntries.findIndex(entry => entry.token === normalizedToken);
+        const existingIndex = orderedEntries.findIndex((entry) => entry.token === normalizedToken);
         if (existingIndex >= 0) return existingIndex + 1;
         const detachedActiveToken = getDetachedActiveVaultToken(store);
         if (normalizedToken === detachedActiveToken) {
@@ -1856,17 +2070,19 @@ Translate to {target_language}.`;
             version: TOKEN_VAULT_EXPORT_VERSION,
             activeToken: isValidSessionToken(source.activeToken) ? source.activeToken : '',
             entries: Array.isArray(source.entries)
-                ? source.entries.map(entry => ({
-                    token: String(entry?.token || '').trim().toLowerCase(),
-                    label: normalizeVaultLabel(entry?.token || '', entry?.label || ''),
-                    addedAt: Number(entry?.addedAt) || 0,
-                    lastOpenedAt: Number(entry?.lastOpenedAt) || 0,
-                    lastSavedAt: Number(entry?.lastSavedAt) || 0,
-                    lastKnownCreatedAt: Number(entry?.lastKnownCreatedAt) || 0,
-                    lastKnownUpdatedAt: Number(entry?.lastKnownUpdatedAt) || 0,
-                    lastKnownLastAccessedAt: Number(entry?.lastKnownLastAccessedAt) || 0,
-                    lastKnownDisabled: entry?.lastKnownDisabled === true
-                }))
+                ? source.entries.map((entry) => ({
+                      token: String(entry?.token || '')
+                          .trim()
+                          .toLowerCase(),
+                      label: normalizeVaultLabel(entry?.token || '', entry?.label || ''),
+                      addedAt: Number(entry?.addedAt) || 0,
+                      lastOpenedAt: Number(entry?.lastOpenedAt) || 0,
+                      lastSavedAt: Number(entry?.lastSavedAt) || 0,
+                      lastKnownCreatedAt: Number(entry?.lastKnownCreatedAt) || 0,
+                      lastKnownUpdatedAt: Number(entry?.lastKnownUpdatedAt) || 0,
+                      lastKnownLastAccessedAt: Number(entry?.lastKnownLastAccessedAt) || 0,
+                      lastKnownDisabled: entry?.lastKnownDisabled === true
+                  }))
                 : []
         };
     }
@@ -1877,8 +2093,10 @@ Translate to {target_language}.`;
             version: TOKEN_VAULT_EXPORT_VERSION,
             activeToken: isValidSessionToken(storeLike?.activeToken) ? storeLike.activeToken : '',
             entries: entries
-                .map(entry => {
-                    const token = String(entry?.token || '').trim().toLowerCase();
+                .map((entry) => {
+                    const token = String(entry?.token || '')
+                        .trim()
+                        .toLowerCase();
                     return {
                         token,
                         label: normalizeVaultLabel(token, entry?.label || ''),
@@ -1891,7 +2109,7 @@ Translate to {target_language}.`;
                         lastKnownDisabled: entry?.lastKnownDisabled === true
                     };
                 })
-                .filter(entry => isValidSessionToken(entry.token))
+                .filter((entry) => isValidSessionToken(entry.token))
         };
     }
 
@@ -1915,20 +2133,20 @@ Translate to {target_language}.`;
                 ...store,
                 entries: Array.isArray(store?.entries)
                     ? store.entries
-                        .filter(entry => isValidSessionToken(entry?.token))
-                        .sort((a, b) => {
-                            const activityDelta = getVaultActivityTimestamp(b) - getVaultActivityTimestamp(a);
-                            if (activityDelta !== 0) return activityDelta;
-                            const openedDelta = Number(b.lastOpenedAt || 0) - Number(a.lastOpenedAt || 0);
-                            if (openedDelta !== 0) return openedDelta;
-                            return String(a.token).localeCompare(String(b.token));
-                        })
-                        .slice(0, TOKEN_VAULT_MAX_ENTRIES)
+                          .filter((entry) => isValidSessionToken(entry?.token))
+                          .sort((a, b) => {
+                              const activityDelta = getVaultActivityTimestamp(b) - getVaultActivityTimestamp(a);
+                              if (activityDelta !== 0) return activityDelta;
+                              const openedDelta = Number(b.lastOpenedAt || 0) - Number(a.lastOpenedAt || 0);
+                              if (openedDelta !== 0) return openedDelta;
+                              return String(a.token).localeCompare(String(b.token));
+                          })
+                          .slice(0, TOKEN_VAULT_MAX_ENTRIES)
                     : []
             });
             tokenVaultStoreCache = normalized;
             localStorage.setItem(TOKEN_VAULT_KEY, JSON.stringify(normalized));
-        } catch (_) { }
+        } catch (_) {}
     }
 
     function getVaultActivityTimestamp(entry) {
@@ -1957,7 +2175,9 @@ Translate to {target_language}.`;
             lastKnownCreatedAt: Number(patch.lastKnownCreatedAt ?? existing?.lastKnownCreatedAt) || 0,
             lastKnownUpdatedAt: Number(patch.lastKnownUpdatedAt ?? existing?.lastKnownUpdatedAt) || 0,
             lastKnownLastAccessedAt: Number(patch.lastKnownLastAccessedAt ?? existing?.lastKnownLastAccessedAt) || 0,
-            lastKnownDisabled: patch.lastKnownDisabled === true || (patch.lastKnownDisabled !== false && existing?.lastKnownDisabled === true)
+            lastKnownDisabled:
+                patch.lastKnownDisabled === true ||
+                (patch.lastKnownDisabled !== false && existing?.lastKnownDisabled === true)
         };
     }
 
@@ -1965,14 +2185,14 @@ Translate to {target_language}.`;
         if (!isValidSessionToken(token)) return null;
         const normalizedToken = token.toLowerCase();
         const store = options.store || getTokenVaultStore();
-        const existing = store.entries.find(entry => entry.token === normalizedToken) || null;
+        const existing = store.entries.find((entry) => entry.token === normalizedToken) || null;
         if (!existing && options.ifExistsOnly === true) {
             return null;
         }
         const next = buildTokenVaultEntry(normalizedToken, patch, existing);
         const nextEntries = sortVaultEntries([
             next,
-            ...store.entries.filter(entry => entry.token !== normalizedToken)
+            ...store.entries.filter((entry) => entry.token !== normalizedToken)
         ]);
         return {
             store,
@@ -1988,19 +2208,22 @@ Translate to {target_language}.`;
         const allowedVictims = new Set(
             (Array.isArray(options.allowVictimTokens) ? options.allowVictimTokens : [])
                 .filter(isValidSessionToken)
-                .map(token => token.toLowerCase())
+                .map((token) => token.toLowerCase())
         );
         if (plan.overflowVictims.length > 0) {
-            const allApproved = plan.overflowVictims.every(entry => allowedVictims.has(entry.token));
+            const allApproved = plan.overflowVictims.every((entry) => allowedVictims.has(entry.token));
             if (!allApproved) {
                 return null;
             }
         }
         saveTokenVaultStore({
             ...plan.store,
-            activeToken: options.activeToken !== undefined
-                ? (isValidSessionToken(options.activeToken) ? options.activeToken.toLowerCase() : '')
-                : plan.store.activeToken,
+            activeToken:
+                options.activeToken !== undefined
+                    ? isValidSessionToken(options.activeToken)
+                        ? options.activeToken.toLowerCase()
+                        : ''
+                    : plan.store.activeToken,
             entries: sortVaultEntries(plan.nextEntries).slice(0, TOKEN_VAULT_MAX_ENTRIES)
         });
         return plan.next;
@@ -2013,10 +2236,10 @@ Translate to {target_language}.`;
 
     function prepareTokenVaultMergePlan(incomingEntries, options = {}) {
         const store = options.store || getTokenVaultStore();
-        const mergedMap = new Map(store.entries.map(entry => [entry.token, entry]));
+        const mergedMap = new Map(store.entries.map((entry) => [entry.token, entry]));
         const incomingTokens = [];
 
-        (Array.isArray(incomingEntries) ? incomingEntries : []).forEach(entry => {
+        (Array.isArray(incomingEntries) ? incomingEntries : []).forEach((entry) => {
             const token = extractSessionTokenFromInput(entry?.token || entry);
             if (!token) return;
             const existing = mergedMap.get(token) || null;
@@ -2040,10 +2263,10 @@ Translate to {target_language}.`;
         const allowedVictims = new Set(
             (Array.isArray(options.allowVictimTokens) ? options.allowVictimTokens : [])
                 .filter(isValidSessionToken)
-                .map(token => token.toLowerCase())
+                .map((token) => token.toLowerCase())
         );
         if (plan.overflowVictims.length > 0) {
-            const allApproved = plan.overflowVictims.every(entry => allowedVictims.has(entry.token));
+            const allApproved = plan.overflowVictims.every((entry) => allowedVictims.has(entry.token));
             if (!allApproved) {
                 return 0;
             }
@@ -2051,12 +2274,15 @@ Translate to {target_language}.`;
         const keptEntries = sortVaultEntries(plan.nextEntries).slice(0, TOKEN_VAULT_MAX_ENTRIES);
         saveTokenVaultStore({
             ...plan.store,
-            activeToken: options.activeToken !== undefined
-                ? (isValidSessionToken(options.activeToken) ? options.activeToken.toLowerCase() : '')
-                : plan.store.activeToken,
+            activeToken:
+                options.activeToken !== undefined
+                    ? isValidSessionToken(options.activeToken)
+                        ? options.activeToken.toLowerCase()
+                        : ''
+                    : plan.store.activeToken,
             entries: keptEntries
         });
-        return keptEntries.filter(entry => plan.incomingTokens.includes(entry.token)).length;
+        return keptEntries.filter((entry) => plan.incomingTokens.includes(entry.token)).length;
     }
 
     function describeVaultEntry(entry) {
@@ -2079,7 +2305,9 @@ Translate to {target_language}.`;
     }
 
     function normalizeTokenVaultOverrideVerificationValue(value) {
-        return String(value || '').trim().toLowerCase();
+        return String(value || '')
+            .trim()
+            .toLowerCase();
     }
 
     function tokenVaultOverrideRequiresVerification(state = tokenVaultOverrideState) {
@@ -2090,7 +2318,10 @@ Translate to {target_language}.`;
         if (!tokenVaultOverrideRequiresVerification(state)) {
             return true;
         }
-        return normalizeTokenVaultOverrideVerificationValue(state?.verificationValue) === normalizeTokenVaultOverrideVerificationValue(state?.verificationToken);
+        return (
+            normalizeTokenVaultOverrideVerificationValue(state?.verificationValue) ===
+            normalizeTokenVaultOverrideVerificationValue(state?.verificationToken)
+        );
     }
 
     function syncTokenVaultOverrideConfirmationUi() {
@@ -2112,8 +2343,8 @@ Translate to {target_language}.`;
         if (statusEl && state) {
             statusEl.dataset.state = isSatisfied ? 'ready' : 'pending';
             statusEl.textContent = isSatisfied
-                ? (state.verificationStatusReady || 'Token matches. You can continue.')
-                : (state.verificationStatusPending || 'Rewrite the exact token to unlock this action.');
+                ? state.verificationStatusReady || 'Token matches. You can continue.'
+                : state.verificationStatusPending || 'Rewrite the exact token to unlock this action.';
         }
 
         if (confirmBtn) {
@@ -2156,10 +2387,12 @@ Translate to {target_language}.`;
                         aria-describedby="tokenVaultOverrideVerificationStatus"
                         aria-invalid="${verificationSatisfied ? 'false' : 'true'}"
                     >
-                    <p id="tokenVaultOverrideVerificationStatus" class="token-vault-override-verify-status" data-state="${verificationSatisfied ? 'ready' : 'pending'}">${escapeVaultHtml(verificationSatisfied ? (tokenVaultOverrideState.verificationStatusReady || 'Token matches. You can continue.') : (tokenVaultOverrideState.verificationStatusPending || 'Rewrite the exact token to unlock this action.'))}</p>
+                    <p id="tokenVaultOverrideVerificationStatus" class="token-vault-override-verify-status" data-state="${verificationSatisfied ? 'ready' : 'pending'}">${escapeVaultHtml(verificationSatisfied ? tokenVaultOverrideState.verificationStatusReady || 'Token matches. You can continue.' : tokenVaultOverrideState.verificationStatusPending || 'Rewrite the exact token to unlock this action.')}</p>
                 </div>`
             : '';
-        const victimHtml = victims.map(victim => `<article class="token-vault-override-victim ${victim.isActive ? 'is-active' : ''}">
+        const victimHtml = victims
+            .map(
+                (victim) => `<article class="token-vault-override-victim ${victim.isActive ? 'is-active' : ''}">
                 <div class="token-vault-override-victim-copy">
                     <strong>${escapeVaultHtml(victim.label)}</strong>
                     <span>${escapeVaultHtml(victim.maskedToken)}</span>
@@ -2168,7 +2401,9 @@ Translate to {target_language}.`;
                     <span>${escapeVaultHtml(victim.relativeSavedAt)}</span>
                     ${victim.isActive ? '<span class="token-vault-override-chip">Current page</span>' : ''}
                 </div>
-            </article>`).join('');
+            </article>`
+            )
+            .join('');
 
         content.innerHTML = `<div class="token-vault-override-copy token-vault-override-copy-${escapeVaultHtml(tone)}">
                 <div class="token-vault-override-header">
@@ -2272,7 +2507,7 @@ Translate to {target_language}.`;
                 onConfirm: async () => {
                     const applied = applyTokenVaultEntryPlan(plan, {
                         ...applyOptions,
-                        allowVictimTokens: plan.overflowVictims.map(entry => entry.token)
+                        allowVictimTokens: plan.overflowVictims.map((entry) => entry.token)
                     });
                     if (applied && typeof onApplied === 'function') {
                         await onApplied(applied);
@@ -2297,7 +2532,7 @@ Translate to {target_language}.`;
                 onConfirm: async () => {
                     const importedCount = applyTokenVaultMergePlan(plan, {
                         ...applyOptions,
-                        allowVictimTokens: plan.overflowVictims.map(entry => entry.token)
+                        allowVictimTokens: plan.overflowVictims.map((entry) => entry.token)
                     });
                     if (importedCount > 0 && typeof onApplied === 'function') {
                         await onApplied(importedCount);
@@ -2325,7 +2560,11 @@ Translate to {target_language}.`;
         });
         if (!plan) return false;
 
-        if (plan.overflowVictims.length > 0 && Array.isArray(options.approvedVictimTokens) && options.approvedVictimTokens.length > 0) {
+        if (
+            plan.overflowVictims.length > 0 &&
+            Array.isArray(options.approvedVictimTokens) &&
+            options.approvedVictimTokens.length > 0
+        ) {
             const applied = applyTokenVaultEntryPlan(plan, {
                 activeToken: token,
                 allowVictimTokens: options.approvedVictimTokens
@@ -2353,7 +2592,7 @@ Translate to {target_language}.`;
             onConfirm: async () => {
                 const applied = applyTokenVaultEntryPlan(plan, {
                     activeToken: token,
-                    allowVictimTokens: plan.overflowVictims.map(entry => entry.token)
+                    allowVictimTokens: plan.overflowVictims.map((entry) => entry.token)
                 });
                 if (applied) {
                     renderTokenVault();
@@ -2382,15 +2621,19 @@ Translate to {target_language}.`;
 
         const session = options.session !== undefined ? options.session : activeSessionContext.session;
         const fallbackTimestamp = Date.now();
-        return prepareTokenVaultEntryUpsert(activeToken, {
-            addedAt: Number(session?.createdAt) || fallbackTimestamp,
-            lastOpenedAt: Number(options.lastOpenedAt) || fallbackTimestamp,
-            lastSavedAt: Number(session?.updatedAt) || Number(session?.createdAt) || fallbackTimestamp,
-            lastKnownCreatedAt: Number(session?.createdAt) || 0,
-            lastKnownUpdatedAt: Number(session?.updatedAt) || 0,
-            lastKnownLastAccessedAt: Number(session?.lastAccessedAt) || 0,
-            lastKnownDisabled: session?.disabled === true
-        }, { store });
+        return prepareTokenVaultEntryUpsert(
+            activeToken,
+            {
+                addedAt: Number(session?.createdAt) || fallbackTimestamp,
+                lastOpenedAt: Number(options.lastOpenedAt) || fallbackTimestamp,
+                lastSavedAt: Number(session?.updatedAt) || Number(session?.createdAt) || fallbackTimestamp,
+                lastKnownCreatedAt: Number(session?.createdAt) || 0,
+                lastKnownUpdatedAt: Number(session?.updatedAt) || 0,
+                lastKnownLastAccessedAt: Number(session?.lastAccessedAt) || 0,
+                lastKnownDisabled: session?.disabled === true
+            },
+            { store }
+        );
     }
 
     function captureDetachedActiveTokenInVault(options = {}) {
@@ -2423,9 +2666,7 @@ Translate to {target_language}.`;
 
         const appliedEntry = applyTokenVaultEntryPlan(plan, {
             activeToken,
-            allowVictimTokens: options.allowOverflow === true
-                ? plan.overflowVictims.map(entry => entry.token)
-                : []
+            allowVictimTokens: options.allowOverflow === true ? plan.overflowVictims.map((entry) => entry.token) : []
         });
 
         return {
@@ -2450,7 +2691,7 @@ Translate to {target_language}.`;
         if (!isValidSessionToken(token)) return;
         const normalizedToken = token.toLowerCase();
         const store = getTokenVaultStore();
-        store.entries = store.entries.filter(entry => entry.token !== normalizedToken);
+        store.entries = store.entries.filter((entry) => entry.token !== normalizedToken);
         if (store.activeToken === normalizedToken) {
             store.activeToken = '';
         }
@@ -2459,13 +2700,17 @@ Translate to {target_language}.`;
 
     function syncTokenVaultEntryWithBrief(token, brief, patch = {}, options = {}) {
         if (!isValidSessionToken(token)) return null;
-        return upsertTokenVaultEntry(token, {
-            ...patch,
-            lastKnownCreatedAt: Number(brief?.createdAt) || patch.lastKnownCreatedAt || 0,
-            lastKnownUpdatedAt: Number(brief?.updatedAt) || patch.lastKnownUpdatedAt || 0,
-            lastKnownLastAccessedAt: Number(brief?.lastAccessedAt) || patch.lastKnownLastAccessedAt || 0,
-            lastKnownDisabled: brief?.disabled === true
-        }, options);
+        return upsertTokenVaultEntry(
+            token,
+            {
+                ...patch,
+                lastKnownCreatedAt: Number(brief?.createdAt) || patch.lastKnownCreatedAt || 0,
+                lastKnownUpdatedAt: Number(brief?.updatedAt) || patch.lastKnownUpdatedAt || 0,
+                lastKnownLastAccessedAt: Number(brief?.lastAccessedAt) || patch.lastKnownLastAccessedAt || 0,
+                lastKnownDisabled: brief?.disabled === true
+            },
+            options
+        );
     }
 
     function setActiveSessionContext(next) {
@@ -2493,10 +2738,9 @@ Translate to {target_language}.`;
     function getTokenVaultRefreshTokens() {
         const activeToken = getActiveConfigRef();
         const store = getTokenVaultStore();
-        return Array.from(new Set([
-            activeToken,
-            ...store.entries.map(entry => entry.token)
-        ].filter(isValidSessionToken))).sort();
+        return Array.from(
+            new Set([activeToken, ...store.entries.map((entry) => entry.token)].filter(isValidSessionToken))
+        ).sort();
     }
 
     function normalizeTokenVaultRefreshOptions(optionsOrForce = false) {
@@ -2532,9 +2776,12 @@ Translate to {target_language}.`;
         if (!button) return;
         const state = getActiveTokenState();
         button.dataset.state = state;
-        button.setAttribute('title', isValidSessionToken(activeSessionContext.token)
-            ? `Token Vault - ${maskToken(activeSessionContext.token)}`
-            : 'Token Vault - First save creates a token');
+        button.setAttribute(
+            'title',
+            isValidSessionToken(activeSessionContext.token)
+                ? `Token Vault - ${maskToken(activeSessionContext.token)}`
+                : 'Token Vault - First save creates a token'
+        );
         scheduleFloatingBottomSafeZoneSync();
     }
 
@@ -2583,7 +2830,7 @@ Translate to {target_language}.`;
         try {
             return JSON.parse(JSON.stringify(value));
         } catch (_) {
-            if (Array.isArray(value)) return value.map(item => cloneVaultJsonValue(item));
+            if (Array.isArray(value)) return value.map((item) => cloneVaultJsonValue(item));
             if (isPlainVaultObject(value)) return { ...value };
             return value;
         }
@@ -2593,8 +2840,10 @@ Translate to {target_language}.`;
         if (!isPlainVaultObject(config)) return null;
         const cloned = cloneVaultJsonValue(config);
         if (!isPlainVaultObject(cloned)) return null;
-        TOKEN_VAULT_CONFIG_INTERNAL_KEYS.forEach(key => {
-            try { delete cloned[key]; } catch (_) { }
+        TOKEN_VAULT_CONFIG_INTERNAL_KEYS.forEach((key) => {
+            try {
+                delete cloned[key];
+            } catch (_) {}
         });
         return cloned;
     }
@@ -2651,7 +2900,9 @@ Translate to {target_language}.`;
         const hasExplicitOverride = arguments.length > 0;
         const token = isValidSessionToken(configOverride)
             ? configOverride
-            : (hasExplicitOverride ? '' : getActiveConfigRef());
+            : hasExplicitOverride
+              ? ''
+              : getActiveConfigRef();
         if (!isValidSessionToken(token)) {
             clearActiveInstallState();
             return;
@@ -2667,11 +2918,17 @@ Translate to {target_language}.`;
         if (installBtn) installBtn.disabled = false;
         if (copyBtn) copyBtn.disabled = false;
         if (installUrlDisplay) installUrlDisplay.value = installUrl;
-        if (installUrlBox) installUrlBox.classList.add('show');
+        if (installUrlBox) {
+            installUrlBox.hidden = false;
+            installUrlBox.setAttribute('aria-hidden', 'false');
+            installUrlBox.classList.add('show');
+        }
 
         if (options.selectDisplay === true && installUrlDisplay) {
             setTimeout(() => {
-                try { installUrlDisplay.select(); } catch (_) { }
+                try {
+                    installUrlDisplay.select();
+                } catch (_) {}
             }, 100);
         }
     }
@@ -2733,10 +2990,13 @@ Translate to {target_language}.`;
         if (!isValidSessionToken(token)) return null;
 
         const cached = tokenVaultBriefFetchCache.get(token) || null;
-        if (cached && shouldUseCachedTokenVaultBrief({
-            fetchedAt: cached.fetchedAt,
-            maxAgeMs: options.maxAgeMs ?? TOKEN_VAULT_BRIEF_TTL_MS
-        })) {
+        if (
+            cached &&
+            shouldUseCachedTokenVaultBrief({
+                fetchedAt: cached.fetchedAt,
+                maxAgeMs: options.maxAgeMs ?? TOKEN_VAULT_BRIEF_TTL_MS
+            })
+        ) {
             return cached.session;
         }
 
@@ -2772,7 +3032,7 @@ Translate to {target_language}.`;
 
     function getVaultEntryForToken(token, store = getTokenVaultStore()) {
         if (!isValidSessionToken(token)) return null;
-        return store.entries.find(entry => entry.token === token) || null;
+        return store.entries.find((entry) => entry.token === token) || null;
     }
 
     function getTokenVaultManagerToken() {
@@ -2816,32 +3076,47 @@ Translate to {target_language}.`;
     function getTokenVaultRailMenuToggle(menuKey) {
         const normalizedKey = String(menuKey || '').trim();
         if (!normalizedKey) return null;
-        const escapedKey = window.CSS && typeof window.CSS.escape === 'function'
-            ? window.CSS.escape(normalizedKey)
-            : normalizedKey.replace(/\\/g, '\\\\').replace(/"/g, '\\"');
-        return document.querySelector(`#tokenVaultRail [data-vault-action="toggle-rail-menu"][data-menu-key="${escapedKey}"]`);
+        const escapedKey =
+            window.CSS && typeof window.CSS.escape === 'function'
+                ? window.CSS.escape(normalizedKey)
+                : normalizedKey.replace(/\\/g, '\\\\').replace(/"/g, '\\"');
+        return document.querySelector(
+            `#tokenVaultRail [data-vault-action="toggle-rail-menu"][data-menu-key="${escapedKey}"]`
+        );
     }
 
     function getTokenVaultRailEntryForMenuKey(menuKey) {
         const normalizedKey = String(menuKey || '').trim();
         if (!normalizedKey) return null;
-        return getVaultRailEntries().find(entry => getTokenVaultRailMenuKeyForEntry(entry.token, entry.isDraft) === normalizedKey) || null;
+        return (
+            getVaultRailEntries().find(
+                (entry) => getTokenVaultRailMenuKeyForEntry(entry.token, entry.isDraft) === normalizedKey
+            ) || null
+        );
     }
 
     function buildTokenVaultRailMenuItems(entry) {
         if (!entry) return '';
         const actionTokenAttr = entry.token
             ? ` data-token="${escapeVaultHtml(entry.token)}"`
-            : (entry.isDraft ? ' data-draft="true"' : '');
+            : entry.isDraft
+              ? ' data-draft="true"'
+              : '';
         const menuItems = [
             `<button type="button" class="token-vault-rail-menu-item" data-vault-action="manage-token"${actionTokenAttr}>Open</button>`
         ];
 
         if (entry.token) {
-            menuItems.push(`<button type="button" class="token-vault-rail-menu-item" data-vault-action="duplicate-token"${actionTokenAttr}>Duplicate</button>`);
-            menuItems.push(`<button type="button" class="token-vault-rail-menu-item" data-vault-action="export-current"${actionTokenAttr}>Export</button>`);
+            menuItems.push(
+                `<button type="button" class="token-vault-rail-menu-item" data-vault-action="duplicate-token"${actionTokenAttr}>Duplicate</button>`
+            );
+            menuItems.push(
+                `<button type="button" class="token-vault-rail-menu-item" data-vault-action="export-current"${actionTokenAttr}>Export</button>`
+            );
             if (entry.entry) {
-                menuItems.push(`<button type="button" class="token-vault-rail-menu-item danger" data-vault-action="forget-token"${actionTokenAttr}>Forget</button>`);
+                menuItems.push(
+                    `<button type="button" class="token-vault-rail-menu-item danger" data-vault-action="forget-token"${actionTokenAttr}>Forget</button>`
+                );
             }
         }
 
@@ -2875,10 +3150,16 @@ Translate to {target_language}.`;
         if (left < edgePadding) {
             left = anchorRect.right + gap;
         }
-        left = Math.min(Math.max(edgePadding, left), Math.max(edgePadding, viewportWidth - menuRect.width - edgePadding));
+        left = Math.min(
+            Math.max(edgePadding, left),
+            Math.max(edgePadding, viewportWidth - menuRect.width - edgePadding)
+        );
 
-        let top = anchorRect.top + (anchorRect.height / 2) - (menuRect.height / 2);
-        top = Math.min(Math.max(edgePadding, top), Math.max(edgePadding, viewportHeight - menuRect.height - edgePadding));
+        let top = anchorRect.top + anchorRect.height / 2 - menuRect.height / 2;
+        top = Math.min(
+            Math.max(edgePadding, top),
+            Math.max(edgePadding, viewportHeight - menuRect.height - edgePadding)
+        );
 
         menu.style.left = `${Math.round(left)}px`;
         menu.style.top = `${Math.round(top)}px`;
@@ -2973,7 +3254,11 @@ Translate to {target_language}.`;
         const plan = prepareTokenVaultEntryUpsert(actionToken, {
             label,
             lastOpenedAt: Date.now(),
-            lastSavedAt: Number(currentEntry?.lastSavedAt) || Number(currentBrief?.updatedAt) || Number(currentEntry?.lastKnownUpdatedAt) || Date.now()
+            lastSavedAt:
+                Number(currentEntry?.lastSavedAt) ||
+                Number(currentBrief?.updatedAt) ||
+                Number(currentEntry?.lastKnownUpdatedAt) ||
+                Date.now()
         });
 
         applyVaultEntryPlanWithOverflowPrompt(
@@ -3001,7 +3286,11 @@ Translate to {target_language}.`;
 
         const existingLabels = new Set(
             (Array.isArray(store?.entries) ? store.entries : [])
-                .map(entry => deriveVaultLabel(entry?.token || '', entry?.label || '', { store }).trim().toLowerCase())
+                .map((entry) =>
+                    deriveVaultLabel(entry?.token || '', entry?.label || '', { store })
+                        .trim()
+                        .toLowerCase()
+                )
                 .filter(Boolean)
         );
         const baseLabel = `${sourceLabel} Copy`;
@@ -3023,7 +3312,7 @@ Translate to {target_language}.`;
         const entry = token ? getVaultEntryForToken(token, store) : null;
         const isActiveToken = token && token === activeToken;
         const brief = token
-            ? (tokenVaultBriefMap.get(token) || (isActiveToken ? activeSessionContext.session : null) || null)
+            ? tokenVaultBriefMap.get(token) || (isActiveToken ? activeSessionContext.session : null) || null
             : null;
         const disabled = brief?.disabled === true || entry?.lastKnownDisabled === true;
 
@@ -3043,10 +3332,12 @@ Translate to {target_language}.`;
         if (token && !isActiveToken) {
             if (brief?.exists === false) {
                 provenanceLabel = 'Saved locally';
-                provenanceMessage = 'This token still exists in your browser vault, but no live session was found on the server.';
+                provenanceMessage =
+                    'This token still exists in your browser vault, but no live session was found on the server.';
             } else if (disabled) {
                 provenanceLabel = 'Saved locally';
-                provenanceMessage = 'This token is disabled, so addon, toolbox, and history routes stay blocked until you re-enable it.';
+                provenanceMessage =
+                    'This token is disabled, so addon, toolbox, and history routes stay blocked until you re-enable it.';
             } else {
                 provenanceLabel = 'Saved locally';
                 provenanceMessage = 'Ready to switch, copy, export, or open linked routes.';
@@ -3055,7 +3346,8 @@ Translate to {target_language}.`;
 
         const createdAt = Number(brief?.createdAt) || Number(entry?.lastKnownCreatedAt) || 0;
         const updatedAt = Number(brief?.updatedAt) || Number(entry?.lastKnownUpdatedAt) || createdAt || 0;
-        const lastAccessedAt = Number(brief?.lastAccessedAt) || Number(entry?.lastKnownLastAccessedAt) || updatedAt || 0;
+        const lastAccessedAt =
+            Number(brief?.lastAccessedAt) || Number(entry?.lastKnownLastAccessedAt) || updatedAt || 0;
 
         return {
             token,
@@ -3074,7 +3366,11 @@ Translate to {target_language}.`;
             canUseRoutes: isValidSessionToken(token) && disabled !== true && brief?.exists !== false,
             routeStateLabel: !token
                 ? 'Awaiting first save'
-                : (brief?.exists === false ? 'Missing on server' : (disabled ? 'Blocked' : 'Enabled'))
+                : brief?.exists === false
+                  ? 'Missing on server'
+                  : disabled
+                    ? 'Blocked'
+                    : 'Enabled'
         };
     }
 
@@ -3088,7 +3384,7 @@ Translate to {target_language}.`;
     function getVaultRailEntries() {
         const store = getTokenVaultStore();
         const activeToken = getActiveConfigRef();
-        const entryLimit = isValidSessionToken(activeToken) ? TOKEN_VAULT_RAIL_LIMIT : (TOKEN_VAULT_RAIL_LIMIT + 1);
+        const entryLimit = isValidSessionToken(activeToken) ? TOKEN_VAULT_RAIL_LIMIT : TOKEN_VAULT_RAIL_LIMIT + 1;
         const entries = [];
         const seen = new Set();
         const pushToken = (token) => {
@@ -3115,7 +3411,7 @@ Translate to {target_language}.`;
             pushToken(activeToken);
         }
 
-        sortVaultEntries(store.entries).forEach(entry => {
+        sortVaultEntries(store.entries).forEach((entry) => {
             pushToken(entry.token);
         });
 
@@ -3136,9 +3432,9 @@ Translate to {target_language}.`;
         const addTokenLabel = 'Add Profile';
         const addTokenMeta = draftAlreadyActive
             ? 'Draft already open. Create, import, or back up profiles from here.'
-            : (savedCount >= TOKEN_VAULT_MAX_ENTRIES
-                ? 'Vault full. New imports or saves will ask before replacing the oldest token.'
-                : 'Create, import, or restore profiles from here.');
+            : savedCount >= TOKEN_VAULT_MAX_ENTRIES
+              ? 'Vault full. New imports or saves will ask before replacing the oldest token.'
+              : 'Create, import, or restore profiles from here.';
         const addTokenHtml = `<button type="button" class="token-vault-rail-add" data-vault-action="open-creator" style="--vault-index:0;">
             <span class="token-vault-rail-add-icon" aria-hidden="true">+</span>
             <span class="token-vault-rail-add-main">
@@ -3148,9 +3444,7 @@ Translate to {target_language}.`;
             <span class="token-vault-rail-add-cap">${savedCount}/${TOKEN_VAULT_MAX_ENTRIES}</span>
         </button>`;
         const validMenuKeys = new Set(
-            entries
-                .map(entry => getTokenVaultRailMenuKeyForEntry(entry.token, entry.isDraft))
-                .filter(Boolean)
+            entries.map((entry) => getTokenVaultRailMenuKeyForEntry(entry.token, entry.isDraft)).filter(Boolean)
         );
         if (tokenVaultRailMenuKey && !validMenuKeys.has(tokenVaultRailMenuKey)) {
             tokenVaultRailMenuKey = '';
@@ -3172,21 +3466,24 @@ Translate to {target_language}.`;
                 <span>Save or import a token to start building a switchable history.</span>
             </div>`;
         } else {
-            markup = addTokenHtml + entries.map((entry, index) => {
-                const stateLabel = getVaultStateLabel(entry.state, entry.isActiveToken);
-                const canToggle = !entry.isDraft;
-                const switchDisabled = !entry.token || entry.isActiveToken;
-                const actionTokenAttr = entry.token
-                    ? ` data-token="${escapeVaultHtml(entry.token)}"`
-                    : (entry.isDraft ? ' data-draft="true"' : '');
-                const menuKey = getTokenVaultRailMenuKeyForEntry(entry.token, entry.isDraft);
-                const menuOpen = menuKey && tokenVaultRailMenuKey === menuKey;
+            markup =
+                addTokenHtml +
+                entries
+                    .map((entry, index) => {
+                        const stateLabel = getVaultStateLabel(entry.state, entry.isActiveToken);
+                        const canToggle = !entry.isDraft;
+                        const switchDisabled = !entry.token || entry.isActiveToken;
+                        const actionTokenAttr = entry.token
+                            ? ` data-token="${escapeVaultHtml(entry.token)}"`
+                            : entry.isDraft
+                              ? ' data-draft="true"'
+                              : '';
+                        const menuKey = getTokenVaultRailMenuKeyForEntry(entry.token, entry.isDraft);
+                        const menuOpen = menuKey && tokenVaultRailMenuKey === menuKey;
 
-                const openLabel = entry.isDraft
-                    ? 'Open current draft'
-                    : `Open ${entry.railLabel}`;
+                        const openLabel = entry.isDraft ? 'Open current draft' : `Open ${entry.railLabel}`;
 
-                return `<article class="token-vault-rail-item ${escapeVaultHtml(entry.state)} ${entry.isActiveToken ? 'is-active' : ''} ${menuOpen ? 'menu-open' : ''}" style="--vault-index:${index + 1};">
+                        return `<article class="token-vault-rail-item ${escapeVaultHtml(entry.state)} ${entry.isActiveToken ? 'is-active' : ''} ${menuOpen ? 'menu-open' : ''}" style="--vault-index:${index + 1};">
                     <button type="button" class="token-vault-rail-main" data-vault-action="manage-token"${actionTokenAttr} aria-label="${escapeVaultHtml(openLabel)}">
                         <span class="token-vault-rail-title-row">
                             <strong>${escapeVaultHtml(entry.railLabel)}</strong>
@@ -3202,7 +3499,8 @@ Translate to {target_language}.`;
                         </div>
                     </div>
                 </article>`;
-            }).join('');
+                    })
+                    .join('');
         }
 
         if (!list.hasChildNodes() || tokenVaultRailRenderedMarkup !== markup) {
@@ -3217,7 +3515,14 @@ Translate to {target_language}.`;
         const options = normalizeTokenVaultRefreshOptions(optionsOrForce);
         const modalOpen = document.getElementById('tokenVaultModal')?.classList.contains('show');
         const creatorOpen = document.getElementById('tokenVaultCreateModal')?.classList.contains('show');
-        if (!options.force && !options.background && tokenVaultLoaded && !modalOpen && !creatorOpen && !tokenVaultRailOpen) {
+        if (
+            !options.force &&
+            !options.background &&
+            tokenVaultLoaded &&
+            !modalOpen &&
+            !creatorOpen &&
+            !tokenVaultRailOpen
+        ) {
             return;
         }
 
@@ -3235,14 +3540,16 @@ Translate to {target_language}.`;
             }
             return;
         }
-        if (!shouldRefreshTokenVaultBriefs({
-            force: options.force,
-            loaded: tokenVaultLoaded,
-            tokensKey,
-            lastTokensKey: tokenVaultLastRefreshKey,
-            lastRefreshAt: tokenVaultLastRefreshAt,
-            maxAgeMs: TOKEN_VAULT_BRIEF_TTL_MS
-        })) {
+        if (
+            !shouldRefreshTokenVaultBriefs({
+                force: options.force,
+                loaded: tokenVaultLoaded,
+                tokensKey,
+                lastTokensKey: tokenVaultLastRefreshKey,
+                lastRefreshAt: tokenVaultLastRefreshAt,
+                maxAgeMs: TOKEN_VAULT_BRIEF_TTL_MS
+            })
+        ) {
             return;
         }
         if (tokenVaultRefreshPromise) {
@@ -3265,10 +3572,14 @@ Translate to {target_language}.`;
             const sessions = Array.isArray(data?.sessions) ? data.sessions : [];
             const refreshedAt = Date.now();
             const nextBriefMap = new Map();
-            sessions.forEach(session => {
+            sessions.forEach((session) => {
                 if (isValidSessionToken(session?.token)) {
                     nextBriefMap.set(session.token, session);
-                    rememberTokenVaultSingleBrief(session.token, session.exists === false ? null : session, refreshedAt);
+                    rememberTokenVaultSingleBrief(
+                        session.token,
+                        session.exists === false ? null : session,
+                        refreshedAt
+                    );
                     if (session.exists) {
                         syncTokenVaultEntryWithBrief(session.token, session, {}, { ifExistsOnly: true });
                     }
@@ -3278,10 +3589,13 @@ Translate to {target_language}.`;
 
             const liveActiveToken = getActiveConfigRef();
             if (isValidSessionToken(liveActiveToken)) {
-                const activeBrief = nextBriefMap.get(liveActiveToken)
-                    || (activeSessionContext.token === liveActiveToken ? activeSessionContext.session : null);
+                const activeBrief =
+                    nextBriefMap.get(liveActiveToken) ||
+                    (activeSessionContext.token === liveActiveToken ? activeSessionContext.session : null);
                 if (activeBrief && activeBrief.exists === false) {
-                    try { localStorage.removeItem(TOKEN_KEY); } catch (_) { }
+                    try {
+                        localStorage.removeItem(TOKEN_KEY);
+                    } catch (_) {}
                     setActiveSessionContext({
                         token: '',
                         provenance: 'recovered',
@@ -3310,15 +3624,17 @@ Translate to {target_language}.`;
             } else if (tokenVaultRailOpen) {
                 renderTokenVaultRail();
             }
-        })().catch((error) => {
-            console.warn('[TokenVault] Failed to refresh vault metadata', error);
-            if (modalOpen || creatorOpen || tokenVaultRailOpen) {
-                showAlert(`Failed to refresh token vault: ${error.message}`, 'warning');
-            }
-        }).finally(() => {
-            tokenVaultRefreshing = false;
-            tokenVaultRefreshPromise = null;
-        });
+        })()
+            .catch((error) => {
+                console.warn('[TokenVault] Failed to refresh vault metadata', error);
+                if (modalOpen || creatorOpen || tokenVaultRailOpen) {
+                    showAlert(`Failed to refresh token vault: ${error.message}`, 'warning');
+                }
+            })
+            .finally(() => {
+                tokenVaultRefreshing = false;
+                tokenVaultRefreshPromise = null;
+            });
 
         return tokenVaultRefreshPromise;
     }
@@ -3338,25 +3654,30 @@ Translate to {target_language}.`;
         const selectedLabel = selected.label;
         const isTitleEditing = !!selected.token && tokenVaultTitleEditToken === selected.token;
         const titleEditorValue = isTitleEditing ? tokenVaultTitleEditValue : '';
-        const pendingSwitch = tokenVaultPendingSwitch && isValidSessionToken(tokenVaultPendingSwitch)
-            ? deriveVaultLabel(tokenVaultPendingSwitch, getVaultEntryForToken(tokenVaultPendingSwitch, store)?.label || '', { store })
-            : '';
+        const pendingSwitch =
+            tokenVaultPendingSwitch && isValidSessionToken(tokenVaultPendingSwitch)
+                ? deriveVaultLabel(
+                      tokenVaultPendingSwitch,
+                      getVaultEntryForToken(tokenVaultPendingSwitch, store)?.label || '',
+                      { store }
+                  )
+                : '';
         const managerTokenAttr = selected.token ? ` data-token="${escapeVaultHtml(selected.token)}"` : '';
         const titleMarkup = !selected.token
             ? `<h3>${escapeVaultHtml(selectedLabel)}</h3>`
-            : (isTitleEditing
-                ? `<div class="token-vault-title-editor">
+            : isTitleEditing
+              ? `<div class="token-vault-title-editor">
                         <input type="text" id="tokenVaultTitleInlineInput" class="token-vault-title-input" value="${escapeVaultHtml(titleEditorValue)}" placeholder="${escapeVaultHtml(selectedLabel)}" autocomplete="off" autocapitalize="off" autocorrect="off" spellcheck="false">
                         <button type="button" class="token-vault-mini-btn token-vault-title-save" data-vault-action="save-label"${managerTokenAttr}>Save</button>
                     </div>
                     <div class="token-vault-title-hint is-editing">Editing title. Press Enter to save.</div>`
-                : `<button type="button" class="token-vault-title-trigger" data-vault-action="edit-title"${managerTokenAttr}>
+              : `<button type="button" class="token-vault-title-trigger" data-vault-action="edit-title"${managerTokenAttr}>
                         <span class="token-vault-title-trigger-text">${escapeVaultHtml(selectedLabel)}</span>
                         <span class="token-vault-title-hint">Click to rename</span>
-                    </button>`);
+                    </button>`;
         const heroBadges = [
             `<span class="token-vault-status-chip ${escapeVaultHtml(selected.state)}">${escapeVaultHtml(getVaultStateLabel(selected.state, selected.isActiveToken))}</span>`,
-            `<span class="token-vault-meta-chip">${escapeVaultHtml(selected.isDraft ? 'Unsaved page' : (selected.isActiveToken ? 'Active on this page' : 'Saved in vault'))}</span>`
+            `<span class="token-vault-meta-chip">${escapeVaultHtml(selected.isDraft ? 'Unsaved page' : selected.isActiveToken ? 'Active on this page' : 'Saved in vault')}</span>`
         ].join('');
         const completeRemovalMarkup = selected.token
             ? `<div class="token-vault-complete-removal">
@@ -3366,7 +3687,9 @@ Translate to {target_language}.`;
             : '';
 
         const markup = `<div class="token-vault-manager">
-            ${tokenVaultPendingSwitch ? `<section class="token-vault-confirm">
+            ${
+                tokenVaultPendingSwitch
+                    ? `<section class="token-vault-confirm">
                 <div>
                     <strong>Unsaved changes detected</strong>
                     <p>Switch to ${escapeVaultHtml(pendingSwitch)} without losing your current edits?</p>
@@ -3376,7 +3699,9 @@ Translate to {target_language}.`;
                     <button type="button" class="token-vault-action" data-vault-action="switch-discard">Switch now</button>
                     <button type="button" class="token-vault-action" data-vault-action="switch-cancel">Stay here</button>
                 </div>
-            </section>` : ''}
+            </section>`
+                    : ''
+            }
 
             <section class="token-vault-hero ${escapeVaultHtml(selected.state)}">
                 <div class="token-vault-hero-top">
@@ -3393,7 +3718,7 @@ Translate to {target_language}.`;
                     <button type="button" class="token-vault-mini-btn" data-vault-action="copy-token"${managerTokenAttr} ${selected.token ? '' : 'disabled'}>Copy token</button>
                 </div>
                 <div class="token-vault-hero-actions">
-                    <button type="button" class="token-vault-action token-vault-action-primary" data-vault-action="switch-token"${managerTokenAttr} ${selected.token && !selected.isActiveToken ? '' : 'disabled'}>${selected.isDraft ? 'Current page draft' : (selected.isActiveToken ? 'Already live' : 'Use on this page')}</button>
+                    <button type="button" class="token-vault-action token-vault-action-primary" data-vault-action="switch-token"${managerTokenAttr} ${selected.token && !selected.isActiveToken ? '' : 'disabled'}>${selected.isDraft ? 'Current page draft' : selected.isActiveToken ? 'Already live' : 'Use on this page'}</button>
                     <button type="button" class="token-vault-action ${selected.disabled ? 'token-vault-action-success' : 'token-vault-action-warning'}" data-vault-action="toggle-state"${managerTokenAttr} ${selected.token ? '' : 'disabled'}>${selected.disabled ? 'Enable token' : 'Disable token'}</button>
                     <button type="button" class="token-vault-action" data-vault-action="export-current"${managerTokenAttr} ${selected.token ? '' : 'disabled'}>Export full backup</button>
                     <button type="button" class="token-vault-action token-vault-action-danger" data-vault-action="forget-token"${managerTokenAttr} ${selected.token && selected.entry ? '' : 'disabled'}>Forget this token</button>
@@ -3477,7 +3802,7 @@ Translate to {target_language}.`;
                 input.focus();
                 try {
                     input.setSelectionRange(selectionStart, selectionEnd);
-                } catch (_) { }
+                } catch (_) {}
             }
         }
         if (previewEl) {
@@ -3522,9 +3847,7 @@ Translate to {target_language}.`;
                 tone: disabled ? 'disabled' : 'live',
                 statusLabel: disabled ? 'Current / off' : 'Current page',
                 title: label,
-                message: disabled
-                    ? 'Already on this page, but live routes are off.'
-                    : 'Already on this page.',
+                message: disabled ? 'Already on this page, but live routes are off.' : 'Already on this page.',
                 meta: metaParts.join(' · '),
                 canImport: true
             });
@@ -3550,9 +3873,7 @@ Translate to {target_language}.`;
                 tone: 'disabled',
                 statusLabel: entry ? 'Saved / off' : 'Disabled live',
                 title: label,
-                message: entry
-                    ? 'Saved locally and currently disabled.'
-                    : 'Live session found, but it is disabled.',
+                message: entry ? 'Saved locally and currently disabled.' : 'Live session found, but it is disabled.',
                 meta: metaParts.join(' · '),
                 canImport: true
             });
@@ -3563,9 +3884,7 @@ Translate to {target_language}.`;
             tone: 'live',
             statusLabel: entry ? 'Already saved' : 'Ready to import',
             title: label,
-            message: entry
-                ? 'Already saved locally.'
-                : 'Ready to save in this browser.',
+            message: entry ? 'Already saved locally.' : 'Ready to save in this browser.',
             meta: metaParts.join(' · '),
             canImport: true
         });
@@ -3630,15 +3949,16 @@ Translate to {target_language}.`;
             const entries = buildImportEntriesFromPayload(parsedJson.payload);
             const fullCount = entries.filter(hasRestorableVaultConfig).length;
             const tokenOnlyCount = entries.length - fullCount;
-            const firstToken = entries.find(entry => isValidSessionToken(entry?.token))?.token || '';
+            const firstToken = entries.find((entry) => isValidSessionToken(entry?.token))?.token || '';
             tokenVaultCreatorPreview = createTokenVaultCreatorPreviewState({
                 token: firstToken,
                 tone: entries.length > 0 ? 'live' : 'error',
                 statusLabel: entries.length > 0 ? 'Backup ready' : 'No profiles',
                 title: entries.length > 0 ? 'Backup JSON ready' : 'Backup preview',
-                message: entries.length > 0
-                    ? `Ready to restore ${fullCount} full profile${fullCount === 1 ? '' : 's'}${tokenOnlyCount ? ` and import ${tokenOnlyCount} token reference${tokenOnlyCount === 1 ? '' : 's'}` : ''}.`
-                    : 'No valid profiles were found in the pasted JSON.',
+                message:
+                    entries.length > 0
+                        ? `Ready to restore ${fullCount} full profile${fullCount === 1 ? '' : 's'}${tokenOnlyCount ? ` and import ${tokenOnlyCount} token reference${tokenOnlyCount === 1 ? '' : 's'}` : ''}.`
+                        : 'No valid profiles were found in the pasted JSON.',
                 meta: entries.length > 0 ? `${entries.length} profile${entries.length === 1 ? '' : 's'} detected` : '',
                 canImport: entries.length > 0
             });
@@ -3707,9 +4027,10 @@ Translate to {target_language}.`;
         const vaultFill = Math.max(savedCount > 0 ? 18 : 0, Math.round((savedCount / TOKEN_VAULT_MAX_ENTRIES) * 100));
         const nextOverflowVictim = getDraftOverflowVictims(store)[0] || null;
         const draftAlreadyActive = !activeToken && activeSessionContext.provenance === 'draft';
-        const toolsNote = savedCount >= TOKEN_VAULT_MAX_ENTRIES
-            ? `Next replacement: ${nextOverflowVictim ? deriveVaultLabel(nextOverflowVictim.token, nextOverflowVictim.label || '', { store }) : 'oldest profile'}.`
-            : `${TOKEN_VAULT_MAX_ENTRIES - savedCount} slot${TOKEN_VAULT_MAX_ENTRIES - savedCount === 1 ? '' : 's'} open.`;
+        const toolsNote =
+            savedCount >= TOKEN_VAULT_MAX_ENTRIES
+                ? `Next replacement: ${nextOverflowVictim ? deriveVaultLabel(nextOverflowVictim.token, nextOverflowVictim.label || '', { store }) : 'oldest profile'}.`
+                : `${TOKEN_VAULT_MAX_ENTRIES - savedCount} slot${TOKEN_VAULT_MAX_ENTRIES - savedCount === 1 ? '' : 's'} open.`;
         const fileToolsMeta = 'Full settings backups and older token-only JSON supported.';
         const previewMarkup = getTokenVaultCreatorPreviewMarkup();
 
@@ -3860,7 +4181,7 @@ Translate to {target_language}.`;
 
         try {
             window.__tokenVaultLauncherOpenRequested = false;
-        } catch (_) { }
+        } catch (_) {}
 
         if (!tokenVaultRailOpen) {
             openTokenVaultRail();
@@ -3881,7 +4202,11 @@ Translate to {target_language}.`;
         if (installBtn) installBtn.disabled = true;
         if (copyBtn) copyBtn.disabled = true;
         if (installUrlDisplay) installUrlDisplay.value = '';
-        if (installUrlBox) installUrlBox.classList.remove('show');
+        if (installUrlBox) {
+            installUrlBox.classList.remove('show');
+            installUrlBox.hidden = true;
+            installUrlBox.setAttribute('aria-hidden', 'true');
+        }
     }
 
     function setConfigDirty(nextDirty) {
@@ -3940,8 +4265,12 @@ Translate to {target_language}.`;
         const requestedSecondaryProvider = currentConfig.secondaryProvider || '';
         currentConfig.mainProvider = String(requestedMainProvider || 'gemini').toLowerCase();
         currentConfig.secondaryProvider = String(requestedSecondaryProvider || '').toLowerCase();
-        currentConfig.secondaryProviderEnabled = multiProviderToggleRequested && currentConfig.secondaryProviderEnabled === true;
-        if (currentConfig.secondaryProviderEnabled && (!currentConfig.secondaryProvider || currentConfig.secondaryProvider === currentConfig.mainProvider)) {
+        currentConfig.secondaryProviderEnabled =
+            multiProviderToggleRequested && currentConfig.secondaryProviderEnabled === true;
+        if (
+            currentConfig.secondaryProviderEnabled &&
+            (!currentConfig.secondaryProvider || currentConfig.secondaryProvider === currentConfig.mainProvider)
+        ) {
             currentConfig.secondaryProviderEnabled = false;
         }
 
@@ -3989,7 +4318,9 @@ Translate to {target_language}.`;
             disableSubtitleProviders: true
         });
 
-        try { localStorage.removeItem(TOKEN_KEY); } catch (_) { }
+        try {
+            localStorage.removeItem(TOKEN_KEY);
+        } catch (_) {}
 
         tokenVaultPendingSwitch = '';
         tokenVaultFocusedToken = '';
@@ -4040,7 +4371,8 @@ Translate to {target_language}.`;
             openTokenVaultOverridePrompt({
                 eyebrow: `${TOKEN_VAULT_MAX_ENTRIES} saved tokens max`,
                 title: 'Keep the current profile before opening a new draft?',
-                message: 'The live profile on this page is not in your local vault yet. Keeping it switchable while starting a new draft will purge the oldest local entry below.',
+                message:
+                    'The live profile on this page is not in your local vault yet. Keeping it switchable while starting a new draft will purge the oldest local entry below.',
                 detail: 'Only the local browser vault changes. The current live token is not deleted from the server.',
                 confirmLabel: 'Keep profile and continue',
                 victims: captureResult.plan?.overflowVictims || [],
@@ -4055,7 +4387,10 @@ Translate to {target_language}.`;
             return;
         }
         if (captureResult.status === 'blocked') {
-            showAlert('The current live profile could not be preserved locally. Draft creation was cancelled.', 'error');
+            showAlert(
+                'The current live profile could not be preserved locally. Draft creation was cancelled.',
+                'error'
+            );
             openTokenVaultCreator();
             return;
         }
@@ -4077,7 +4412,8 @@ Translate to {target_language}.`;
                 openTokenVaultOverridePrompt({
                     eyebrow: `${TOKEN_VAULT_MAX_ENTRIES} saved tokens max`,
                     title: 'Keep the current profile before switching?',
-                    message: 'The live profile on this page is not in your local vault yet. Keeping it switchable before loading another profile will purge the oldest local entry below.',
+                    message:
+                        'The live profile on this page is not in your local vault yet. Keeping it switchable before loading another profile will purge the oldest local entry below.',
                     detail: 'Only the local browser vault changes. The current live token is not deleted from the server.',
                     confirmLabel: 'Keep profile and switch',
                     victims: captureResult.plan?.overflowVictims || [],
@@ -4088,7 +4424,10 @@ Translate to {target_language}.`;
                 return false;
             }
             if (captureResult.status === 'blocked') {
-                showAlert('The current live profile could not be preserved locally. Profile switch was cancelled.', 'error');
+                showAlert(
+                    'The current live profile could not be preserved locally. Profile switch was cancelled.',
+                    'error'
+                );
                 return false;
             }
         }
@@ -4106,7 +4445,9 @@ Translate to {target_language}.`;
             });
 
             if (plan.clearStoredToken === true) {
-                try { localStorage.removeItem(TOKEN_KEY); } catch (_) { }
+                try {
+                    localStorage.removeItem(TOKEN_KEY);
+                } catch (_) {}
             }
 
             currentConfig = options.defaultConfig || getDefaultConfig();
@@ -4136,13 +4477,17 @@ Translate to {target_language}.`;
         showLoading(true);
         try {
             const cacheBuster = `_cb=${Date.now()}`;
-            const response = await fetchWithTimeout(`/api/get-session/${encodeURIComponent(token)}?${cacheBuster}&autoRegenerate=true`, {
-                cache: 'no-store',
-                headers: {
-                    'Cache-Control': 'no-cache, no-store, must-revalidate',
-                    'Pragma': 'no-cache'
-                }
-            }, 10000);
+            const response = await fetchWithTimeout(
+                `/api/get-session/${encodeURIComponent(token)}?${cacheBuster}&autoRegenerate=true`,
+                {
+                    cache: 'no-store',
+                    headers: {
+                        'Cache-Control': 'no-cache, no-store, must-revalidate',
+                        Pragma: 'no-cache'
+                    }
+                },
+                10000
+            );
 
             if (!response.ok) {
                 const errorText = await response.text().catch(() => '');
@@ -4154,9 +4499,10 @@ Translate to {target_language}.`;
                         : `Failed to load the selected token${reason}. Using a fresh draft for now.`,
                     {
                         contextOverrides: {
-                            message: response.status === 404 || response.status === 410
-                                ? 'The selected token no longer exists on the server. You are editing a recovered draft until you save again.'
-                                : 'The selected token could not be loaded. You are editing a fresh draft until you save again.'
+                            message:
+                                response.status === 404 || response.status === 410
+                                    ? 'The selected token no longer exists on the server. You are editing a recovered draft until you save again.'
+                                    : 'The selected token could not be loaded. You are editing a fresh draft until you save again.'
                         }
                     }
                 );
@@ -4170,7 +4516,8 @@ Translate to {target_language}.`;
                     'The selected token returned invalid data. Using a fresh draft for now.',
                     {
                         contextOverrides: {
-                            message: 'The selected token returned invalid data. You are editing a fresh draft until you save again.'
+                            message:
+                                'The selected token returned invalid data. You are editing a fresh draft until you save again.'
                         }
                     }
                 );
@@ -4182,23 +4529,35 @@ Translate to {target_language}.`;
             if (data.regenerated && data.token && data.token !== token) {
                 applyTokenLoadFailure(
                     'regenerated',
-                    tConfig('config.alerts.sessionLost', {}, 'Config session was lost. Please reconfigure and save to create a new session.'),
+                    tConfig(
+                        'config.alerts.sessionLost',
+                        {},
+                        'Config session was lost. Please reconfigure and save to create a new session.'
+                    ),
                     {
                         defaultConfig: data.config,
                         contextOverrides: {
-                            message: 'The selected token was missing or corrupted. You are editing a fresh draft until you save again.'
+                            message:
+                                'The selected token was missing or corrupted. You are editing a fresh draft until you save again.'
                         }
                     }
                 );
                 return false;
             }
 
-            try { localStorage.setItem(TOKEN_KEY, token); } catch (_) { }
+            try {
+                localStorage.setItem(TOKEN_KEY, token);
+            } catch (_) {}
             saveConfigToCache(currentConfig, token);
-            syncTokenVaultEntryWithBrief(token, data?.session || null, {
-                lastOpenedAt: Date.now(),
-                makeActive: true
-            }, { ifExistsOnly: true });
+            syncTokenVaultEntryWithBrief(
+                token,
+                data?.session || null,
+                {
+                    lastOpenedAt: Date.now(),
+                    makeActive: true
+                },
+                { ifExistsOnly: true }
+            );
             setActiveSessionContext({
                 token,
                 provenance: 'vault',
@@ -4213,19 +4572,18 @@ Translate to {target_language}.`;
             closeTokenVault();
             applyCurrentConfigToPage({ selectInstallUrl: true });
             setConfigDirty(false);
-            Promise.resolve().then(() => refreshTokenVaultData({ background: true })).catch(() => { });
+            Promise.resolve()
+                .then(() => refreshTokenVaultData({ background: true }))
+                .catch(() => {});
             return true;
         } catch (error) {
             console.warn('[Config] Failed to switch token:', error);
-            applyTokenLoadFailure(
-                'network',
-                'Failed to load the selected token. Using a fresh draft for now.',
-                {
-                    contextOverrides: {
-                        message: 'The selected token could not be loaded. You are editing a fresh draft until you save again.'
-                    }
+            applyTokenLoadFailure('network', 'Failed to load the selected token. Using a fresh draft for now.', {
+                contextOverrides: {
+                    message:
+                        'The selected token could not be loaded. You are editing a fresh draft until you save again.'
                 }
-            );
+            });
             return false;
         } finally {
             showLoading(false);
@@ -4270,13 +4628,17 @@ Translate to {target_language}.`;
         }
 
         const cacheBuster = `_cb=${Date.now()}`;
-        const response = await fetchWithTimeout(`/api/get-session/${encodeURIComponent(token)}?${cacheBuster}`, {
-            cache: 'no-store',
-            headers: {
-                'Cache-Control': 'no-cache, no-store, must-revalidate',
-                'Pragma': 'no-cache'
-            }
-        }, 15000);
+        const response = await fetchWithTimeout(
+            `/api/get-session/${encodeURIComponent(token)}?${cacheBuster}`,
+            {
+                cache: 'no-store',
+                headers: {
+                    'Cache-Control': 'no-cache, no-store, must-revalidate',
+                    Pragma: 'no-cache'
+                }
+            },
+            15000
+        );
         const data = await response.json().catch(() => ({}));
 
         if (!response.ok) {
@@ -4309,7 +4671,8 @@ Translate to {target_language}.`;
                 lastSavedAt: Number(baseEntry.lastSavedAt) || Number(session.updatedAt) || exportedAt,
                 lastKnownCreatedAt: Number(baseEntry.lastKnownCreatedAt) || Number(session.createdAt) || 0,
                 lastKnownUpdatedAt: Number(baseEntry.lastKnownUpdatedAt) || Number(session.updatedAt) || 0,
-                lastKnownLastAccessedAt: Number(baseEntry.lastKnownLastAccessedAt) || Number(session.lastAccessedAt) || 0,
+                lastKnownLastAccessedAt:
+                    Number(baseEntry.lastKnownLastAccessedAt) || Number(session.lastAccessedAt) || 0,
                 lastKnownDisabled: baseEntry.lastKnownDisabled === true || session.disabled === true,
                 session,
                 config: snapshot.config,
@@ -4319,9 +4682,10 @@ Translate to {target_language}.`;
             };
         } catch (error) {
             const activeToken = getActiveConfigRef();
-            const canUsePageFallback = options.allowActivePageFallback !== false
-                && token === activeToken
-                && activeSessionContext.token === token;
+            const canUsePageFallback =
+                options.allowActivePageFallback !== false &&
+                token === activeToken &&
+                activeSessionContext.token === token;
             const fallbackConfig = canUsePageFallback ? sanitizeVaultConfigSnapshot(currentConfig) : null;
             if (fallbackConfig) {
                 return {
@@ -4330,7 +4694,9 @@ Translate to {target_language}.`;
                     config: fallbackConfig,
                     configExportedAt: exportedAt,
                     configExportSource: 'active-page-cache',
-                    configExportWarning: error?.message || 'Live session snapshot was unavailable; exported the currently loaded page copy.',
+                    configExportWarning:
+                        error?.message ||
+                        'Live session snapshot was unavailable; exported the currently loaded page copy.',
                     restoreMode: 'create-session'
                 };
             }
@@ -4344,18 +4710,15 @@ Translate to {target_language}.`;
     }
 
     async function exportTokenVault(mode = 'all', tokenOverride = '') {
-        const targetToken = extractSessionTokenFromInput(tokenOverride) || getTokenVaultManagerToken() || getActiveConfigRef();
+        const targetToken =
+            extractSessionTokenFromInput(tokenOverride) || getTokenVaultManagerToken() || getActiveConfigRef();
         const store = getTokenVaultStore();
         const detachedActiveToken = getDetachedActiveVaultToken(store);
-        const exportTokens = mode === 'current'
-            ? [targetToken]
-            : [
-                ...store.entries.map(entry => entry.token),
-                detachedActiveToken
-            ];
-        const tokens = Array.from(new Set(exportTokens
-            .map(token => extractSessionTokenFromInput(token))
-            .filter(isValidSessionToken)));
+        const exportTokens =
+            mode === 'current' ? [targetToken] : [...store.entries.map((entry) => entry.token), detachedActiveToken];
+        const tokens = Array.from(
+            new Set(exportTokens.map((token) => extractSessionTokenFromInput(token)).filter(isValidSessionToken))
+        );
 
         if (mode === 'current' && tokens.length === 0) {
             showAlert('No token is loaded on this page yet.', 'warning');
@@ -4369,12 +4732,13 @@ Translate to {target_language}.`;
         showLoading(true);
         try {
             const exportedAt = Date.now();
-            const entries = (await Promise.all(tokens.map(token => buildTokenVaultFullExportEntry(token, store, { exportedAt }))))
-                .filter(Boolean);
+            const entries = (
+                await Promise.all(tokens.map((token) => buildTokenVaultFullExportEntry(token, store, { exportedAt })))
+            ).filter(Boolean);
 
-            const fullConfigCount = entries.filter(entry => isPlainVaultObject(entry.config)).length;
+            const fullConfigCount = entries.filter((entry) => isPlainVaultObject(entry.config)).length;
             const tokenOnlyCount = entries.length - fullConfigCount;
-            const fallbackWarningCount = entries.filter(entry => entry.configExportWarning).length;
+            const fallbackWarningCount = entries.filter((entry) => entry.configExportWarning).length;
 
             if (mode === 'current' && tokenOnlyCount > 0) {
                 const reason = entries[0]?.configExportError || 'The full configuration snapshot could not be read.';
@@ -4397,20 +4761,30 @@ Translate to {target_language}.`;
             const url = URL.createObjectURL(blob);
             const link = document.createElement('a');
             link.href = url;
-            link.download = mode === 'current' && isValidSessionToken(targetToken)
-                ? `submaker-profile-backup-${targetToken.slice(-6)}.json`
-                : `submaker-token-vault-backup-${new Date().toISOString().slice(0, 10)}.json`;
+            link.download =
+                mode === 'current' && isValidSessionToken(targetToken)
+                    ? `submaker-profile-backup-${targetToken.slice(-6)}.json`
+                    : `submaker-token-vault-backup-${new Date().toISOString().slice(0, 10)}.json`;
             document.body.appendChild(link);
             link.click();
             document.body.removeChild(link);
             URL.revokeObjectURL(url);
 
             if (tokenOnlyCount > 0) {
-                showAlert(`Vault exported with ${fullConfigCount} full profile backup${fullConfigCount === 1 ? '' : 's'} and ${tokenOnlyCount} token-only reference${tokenOnlyCount === 1 ? '' : 's'} that could not be read from the server.`, 'warning');
+                showAlert(
+                    `Vault exported with ${fullConfigCount} full profile backup${fullConfigCount === 1 ? '' : 's'} and ${tokenOnlyCount} token-only reference${tokenOnlyCount === 1 ? '' : 's'} that could not be read from the server.`,
+                    'warning'
+                );
             } else if (fallbackWarningCount > 0) {
-                showAlert(`Full backup exported. ${fallbackWarningCount} profile${fallbackWarningCount === 1 ? '' : 's'} used the currently loaded page copy because the live session snapshot was unavailable.`, 'warning');
+                showAlert(
+                    `Full backup exported. ${fallbackWarningCount} profile${fallbackWarningCount === 1 ? '' : 's'} used the currently loaded page copy because the live session snapshot was unavailable.`,
+                    'warning'
+                );
             } else {
-                showAlert(mode === 'current' ? 'Full profile backup exported.' : 'Full token vault backup exported.', 'success');
+                showAlert(
+                    mode === 'current' ? 'Full profile backup exported.' : 'Full token vault backup exported.',
+                    'success'
+                );
             }
             return true;
         } finally {
@@ -4440,7 +4814,7 @@ Translate to {target_language}.`;
                     victims: overflowVictims,
                     onConfirm: async () => {
                         await duplicateVaultToken(sourceToken, {
-                            approvedVictimTokens: overflowVictims.map(entry => entry.token)
+                            approvedVictimTokens: overflowVictims.map((entry) => entry.token)
                         });
                     }
                 });
@@ -4453,13 +4827,17 @@ Translate to {target_language}.`;
 
         try {
             const cacheBuster = `_cb=${Date.now()}`;
-            const sourceResponse = await fetchWithTimeout(`/api/get-session/${encodeURIComponent(sourceToken)}?${cacheBuster}`, {
-                cache: 'no-store',
-                headers: {
-                    'Cache-Control': 'no-cache, no-store, must-revalidate',
-                    'Pragma': 'no-cache'
-                }
-            }, 10000);
+            const sourceResponse = await fetchWithTimeout(
+                `/api/get-session/${encodeURIComponent(sourceToken)}?${cacheBuster}`,
+                {
+                    cache: 'no-store',
+                    headers: {
+                        'Cache-Control': 'no-cache, no-store, must-revalidate',
+                        Pragma: 'no-cache'
+                    }
+                },
+                10000
+            );
 
             if (!sourceResponse.ok) {
                 const errorText = await sourceResponse.text().catch(() => '');
@@ -4476,17 +4854,23 @@ Translate to {target_language}.`;
                 throw new Error('The selected profile returned invalid data.');
             }
 
-            const createResponse = await fetchWithTimeout('/api/create-session', {
-                method: 'POST',
-                headers: {
-                    'Content-Type': 'application/json'
+            const createResponse = await fetchWithTimeout(
+                '/api/create-session',
+                {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify(sourceData.config)
                 },
-                body: JSON.stringify(sourceData.config)
-            }, 10000);
+                10000
+            );
             const createData = await createResponse.json().catch(() => ({}));
 
             if (!createResponse.ok) {
-                throw new Error(createData?.error || `Failed to create the duplicated token (${createResponse.status})`);
+                throw new Error(
+                    createData?.error || `Failed to create the duplicated token (${createResponse.status})`
+                );
             }
 
             const duplicatedToken = extractSessionTokenFromInput(createData?.token);
@@ -4497,18 +4881,22 @@ Translate to {target_language}.`;
             const store = getTokenVaultStore();
             const sourceEntry = getVaultEntryForToken(sourceToken, store);
             const duplicateLabel = buildDuplicateVaultLabel(sourceToken, sourceEntry?.label || '', { store });
-            const duplicatedEntry = upsertTokenVaultEntry(duplicatedToken, {
-                label: duplicateLabel,
-                lastOpenedAt: Date.now(),
-                lastSavedAt: Date.now(),
-                lastKnownCreatedAt: Number(createData?.session?.createdAt) || 0,
-                lastKnownUpdatedAt: Number(createData?.session?.updatedAt) || Date.now(),
-                lastKnownLastAccessedAt: Number(createData?.session?.lastAccessedAt) || 0,
-                lastKnownDisabled: createData?.session?.disabled === true
-            }, {
-                activeToken: duplicatedToken,
-                allowVictimTokens: approvedVictimTokens
-            });
+            const duplicatedEntry = upsertTokenVaultEntry(
+                duplicatedToken,
+                {
+                    label: duplicateLabel,
+                    lastOpenedAt: Date.now(),
+                    lastSavedAt: Date.now(),
+                    lastKnownCreatedAt: Number(createData?.session?.createdAt) || 0,
+                    lastKnownUpdatedAt: Number(createData?.session?.updatedAt) || Date.now(),
+                    lastKnownLastAccessedAt: Number(createData?.session?.lastAccessedAt) || 0,
+                    lastKnownDisabled: createData?.session?.disabled === true
+                },
+                {
+                    activeToken: duplicatedToken,
+                    allowVictimTokens: approvedVictimTokens
+                }
+            );
 
             if (!duplicatedEntry) {
                 throw new Error('Failed to save the duplicated token into the local vault.');
@@ -4518,7 +4906,10 @@ Translate to {target_language}.`;
 
             const switched = await navigateToVaultToken(duplicatedToken);
             if (!switched) {
-                showAlert(`Duplicated ${sourceView.label}, but the new token could not be loaded automatically.`, 'warning');
+                showAlert(
+                    `Duplicated ${sourceView.label}, but the new token could not be loaded automatically.`,
+                    'warning'
+                );
                 return false;
             }
 
@@ -4543,11 +4934,13 @@ Translate to {target_language}.`;
 
         const importedEntries = Array.isArray(payload)
             ? payload
-            : (Array.isArray(payload?.entries)
-                ? payload.entries
-                : (Array.isArray(payload?.profiles)
-                    ? payload.profiles
-                    : [payload?.entry, payload?.profile, payload].filter(candidate => candidate && typeof candidate === 'object')));
+            : Array.isArray(payload?.entries)
+              ? payload.entries
+              : Array.isArray(payload?.profiles)
+                ? payload.profiles
+                : [payload?.entry, payload?.profile, payload].filter(
+                      (candidate) => candidate && typeof candidate === 'object'
+                  );
         const now = Date.now();
         const prepared = [];
         const pushPreparedEntry = (entry) => {
@@ -4560,7 +4953,8 @@ Translate to {target_language}.`;
                 label: normalizeVaultLabel(token, entry?.label || ''),
                 addedAt: Number(entry?.addedAt) || now,
                 lastOpenedAt: Number(entry?.lastOpenedAt) || 0,
-                lastSavedAt: Number(entry?.lastSavedAt) || Number(entry?.lastKnownUpdatedAt) || Number(session.updatedAt) || now,
+                lastSavedAt:
+                    Number(entry?.lastSavedAt) || Number(entry?.lastKnownUpdatedAt) || Number(session.updatedAt) || now,
                 lastKnownCreatedAt: Number(entry?.lastKnownCreatedAt) || Number(session.createdAt) || 0,
                 lastKnownUpdatedAt: Number(entry?.lastKnownUpdatedAt) || Number(session.updatedAt) || 0,
                 lastKnownLastAccessedAt: Number(entry?.lastKnownLastAccessedAt) || Number(session.lastAccessedAt) || 0,
@@ -4596,12 +4990,12 @@ Translate to {target_language}.`;
     }
 
     function estimateVaultImportNewEntryCount(preparedEntries, store = getTokenVaultStore()) {
-        const knownTokens = new Set((Array.isArray(store.entries) ? store.entries : [])
-            .map(entry => entry.token)
-            .filter(isValidSessionToken));
+        const knownTokens = new Set(
+            (Array.isArray(store.entries) ? store.entries : []).map((entry) => entry.token).filter(isValidSessionToken)
+        );
         let count = knownTokens.size;
 
-        (Array.isArray(preparedEntries) ? preparedEntries : []).forEach(entry => {
+        (Array.isArray(preparedEntries) ? preparedEntries : []).forEach((entry) => {
             if (hasRestorableVaultConfig(entry)) {
                 count += 1;
                 return;
@@ -4626,16 +5020,20 @@ Translate to {target_language}.`;
     async function setRestoredVaultTokenDisabled(token, disabled) {
         if (!isValidSessionToken(token) || disabled !== true) return null;
 
-        const response = await fetchWithTimeout(`/api/session-state/${encodeURIComponent(token)}`, {
-            method: 'POST',
-            headers: {
-                'Content-Type': 'application/json',
-                'Cache-Control': 'no-cache, no-store, must-revalidate',
-                'Pragma': 'no-cache'
+        const response = await fetchWithTimeout(
+            `/api/session-state/${encodeURIComponent(token)}`,
+            {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'Cache-Control': 'no-cache, no-store, must-revalidate',
+                    Pragma: 'no-cache'
+                },
+                cache: 'no-store',
+                body: JSON.stringify({ disabled: true })
             },
-            cache: 'no-store',
-            body: JSON.stringify({ disabled: true })
-        }, 10000);
+            10000
+        );
         const data = await response.json().catch(() => ({}));
         if (!response.ok) {
             throw new Error(data?.error || response.statusText || `HTTP ${response.status}`);
@@ -4649,16 +5047,20 @@ Translate to {target_language}.`;
             throw new Error('Backup entry does not include a restorable configuration.');
         }
 
-        const response = await fetchWithTimeout('/api/create-session', {
-            method: 'POST',
-            headers: {
-                'Content-Type': 'application/json',
-                'Cache-Control': 'no-cache, no-store, must-revalidate',
-                'Pragma': 'no-cache'
+        const response = await fetchWithTimeout(
+            '/api/create-session',
+            {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'Cache-Control': 'no-cache, no-store, must-revalidate',
+                    Pragma: 'no-cache'
+                },
+                cache: 'no-store',
+                body: JSON.stringify(config)
             },
-            cache: 'no-store',
-            body: JSON.stringify(config)
-        }, 15000);
+            15000
+        );
         const data = await response.json().catch(() => ({}));
 
         if (!response.ok) {
@@ -4675,7 +5077,7 @@ Translate to {target_language}.`;
         const shouldDisable = getVaultBackupDisabledState(entry);
         if (shouldDisable) {
             try {
-                session = await setRestoredVaultTokenDisabled(token, true) || session;
+                session = (await setRestoredVaultTokenDisabled(token, true)) || session;
             } catch (error) {
                 restoreWarning = error?.message || 'Failed to restore disabled state.';
             }
@@ -4712,7 +5114,7 @@ Translate to {target_language}.`;
         let restoredConfigCount = 0;
         let tokenReferenceCount = 0;
 
-        for (const entry of (Array.isArray(preparedEntries) ? preparedEntries : [])) {
+        for (const entry of Array.isArray(preparedEntries) ? preparedEntries : []) {
             if (!hasRestorableVaultConfig(entry)) {
                 restoredEntries.push(entry);
                 tokenReferenceCount += 1;
@@ -4759,7 +5161,9 @@ Translate to {target_language}.`;
         const parts = [];
 
         if (restored > 0) {
-            parts.push(`restored ${restored} full profile${restored === 1 ? '' : 's'} as new token${restored === 1 ? '' : 's'}`);
+            parts.push(
+                `restored ${restored} full profile${restored === 1 ? '' : 's'} as new token${restored === 1 ? '' : 's'}`
+            );
         }
         if (tokenOnly > 0) {
             parts.push(`imported ${tokenOnly} token-only reference${tokenOnly === 1 ? '' : 's'}`);
@@ -4800,7 +5204,10 @@ Translate to {target_language}.`;
                 { activeToken: getActiveConfigRef() },
                 async (importedCount) => {
                     await refreshTokenVaultData(true);
-                    showAlert(`Imported ${importedCount} profile${importedCount === 1 ? '' : 's'} into your local vault.`, 'success');
+                    showAlert(
+                        `Imported ${importedCount} profile${importedCount === 1 ? '' : 's'} into your local vault.`,
+                        'success'
+                    );
                     if (onApplied) {
                         await onApplied(importedCount);
                     }
@@ -4812,8 +5219,8 @@ Translate to {target_language}.`;
             ? options.approvedVictimTokens.filter(isValidSessionToken)
             : [];
         const overflowVictims = getVaultImportOverflowVictims(preparedEntries);
-        const approvedVictimSet = new Set(approvedVictimTokens.map(token => token.toLowerCase()));
-        const needsApproval = overflowVictims.some(entry => !approvedVictimSet.has(entry.token));
+        const approvedVictimSet = new Set(approvedVictimTokens.map((token) => token.toLowerCase()));
+        const needsApproval = overflowVictims.some((entry) => !approvedVictimSet.has(entry.token));
         if (needsApproval) {
             openTokenVaultOverridePrompt({
                 eyebrow: `${TOKEN_VAULT_MAX_ENTRIES} saved tokens max`,
@@ -4825,7 +5232,7 @@ Translate to {target_language}.`;
                 onConfirm: async () => {
                     await importPreparedTokenVaultEntries(preparedEntries, {
                         ...options,
-                        approvedVictimTokens: overflowVictims.map(entry => entry.token)
+                        approvedVictimTokens: overflowVictims.map((entry) => entry.token)
                     });
                 }
             });
@@ -4843,11 +5250,10 @@ Translate to {target_language}.`;
             }
 
             const plan = prepareTokenVaultMergePlan(restoreResult.entries);
-            const restoredTokenSet = new Set(restoreResult.entries
-                .map(entry => entry?.token)
-                .filter(isValidSessionToken));
-            const incomingOverflowVictims = plan.overflowVictims
-                .filter(entry => restoredTokenSet.has(entry.token));
+            const restoredTokenSet = new Set(
+                restoreResult.entries.map((entry) => entry?.token).filter(isValidSessionToken)
+            );
+            const incomingOverflowVictims = plan.overflowVictims.filter((entry) => restoredTokenSet.has(entry.token));
             if (incomingOverflowVictims.length > 0) {
                 restoreResult.warnings.push({
                     token: incomingOverflowVictims[0].token,
@@ -4856,10 +5262,7 @@ Translate to {target_language}.`;
             }
             const importedCount = applyTokenVaultMergePlan(plan, {
                 activeToken: getActiveConfigRef(),
-                allowVictimTokens: [
-                    ...approvedVictimTokens,
-                    ...incomingOverflowVictims.map(entry => entry.token)
-                ]
+                allowVictimTokens: [...approvedVictimTokens, ...incomingOverflowVictims.map((entry) => entry.token)]
             });
             if (importedCount <= 0) {
                 showAlert('The vault changed while importing. Reopen the import and try again.', 'warning');
@@ -4867,7 +5270,7 @@ Translate to {target_language}.`;
             }
 
             await refreshTokenVaultData(true);
-            const primaryToken = restoreResult.entries.find(entry => isValidSessionToken(entry?.token))?.token || '';
+            const primaryToken = restoreResult.entries.find((entry) => isValidSessionToken(entry?.token))?.token || '';
             const tone = restoreResult.failures.length > 0 || restoreResult.warnings.length > 0 ? 'warning' : 'success';
             showAlert(buildVaultImportSummaryMessage(restoreResult, importedCount), tone);
             if (onApplied) {
@@ -4970,9 +5373,7 @@ Translate to {target_language}.`;
         const view = buildTokenVaultViewModel(token);
         if (!view.entry) return;
 
-        const detailParts = [
-            'This only forgets the token in the local browser vault.'
-        ];
+        const detailParts = ['This only forgets the token in the local browser vault.'];
         if (view.isActiveToken) {
             detailParts.push('The page stays connected until you switch away or reload.');
         }
@@ -5017,11 +5418,17 @@ Translate to {target_language}.`;
             'This permanently deletes the session from SubFaber storage and removes any saved browser copy on this device.'
         ];
         if (wasActiveToken) {
-            detailParts.push('This page will detach immediately and keep your current settings only as a recovered draft until you save again.');
+            detailParts.push(
+                'This page will detach immediately and keep your current settings only as a recovered draft until you save again.'
+            );
         } else if (view.brief?.exists === false) {
-            detailParts.push('No live session is reachable on the server right now, but the local vault copy will still be cleared so the token is fully removed from this browser.');
+            detailParts.push(
+                'No live session is reachable on the server right now, but the local vault copy will still be cleared so the token is fully removed from this browser.'
+            );
         } else {
-            detailParts.push('Manifest, configure, history, and toolbox links for this token will stop working as soon as deletion finishes.');
+            detailParts.push(
+                'Manifest, configure, history, and toolbox links for this token will stop working as soon as deletion finishes.'
+            );
         }
 
         openTokenVaultOverridePrompt({
@@ -5043,10 +5450,14 @@ Translate to {target_language}.`;
             onConfirm: async () => {
                 showLoading(true);
                 try {
-                    const response = await fetchWithTimeout(`/api/session/${encodeURIComponent(token)}`, {
-                        method: 'DELETE',
-                        cache: 'no-store'
-                    }, 10000);
+                    const response = await fetchWithTimeout(
+                        `/api/session/${encodeURIComponent(token)}`,
+                        {
+                            method: 'DELETE',
+                            cache: 'no-store'
+                        },
+                        10000
+                    );
                     const data = await response.json().catch(() => ({}));
                     if (!response.ok && response.status !== 404) {
                         throw new Error(data?.error || `Failed to delete token (${response.status})`);
@@ -5062,13 +5473,18 @@ Translate to {target_language}.`;
                                 currentConfig = draftSnapshot;
                             }
                         } catch (snapshotError) {
-                            console.warn('[TokenVault] Failed to snapshot form state after permanent token removal', snapshotError);
+                            console.warn(
+                                '[TokenVault] Failed to snapshot form state after permanent token removal',
+                                snapshotError
+                            );
                         }
                         if (!currentConfig) {
                             currentConfig = getDefaultConfig();
                         }
                         if (removalPlan.clearStoredToken === true) {
-                            try { localStorage.removeItem(TOKEN_KEY); } catch (_) { }
+                            try {
+                                localStorage.removeItem(TOKEN_KEY);
+                            } catch (_) {}
                         }
                         saveConfigToCache(currentConfig, removalPlan.nextCacheToken || '');
                         setActiveSessionContext({
@@ -5132,14 +5548,22 @@ Translate to {target_language}.`;
         const brief = data?.session || null;
         tokenVaultBriefMap.set(token, brief);
         rememberTokenVaultSingleBrief(token, brief);
-        syncTokenVaultEntryWithBrief(token, brief, { lastOpenedAt: Date.now(), makeActive: token === getActiveConfigRef() }, { ifExistsOnly: true });
+        syncTokenVaultEntryWithBrief(
+            token,
+            brief,
+            { lastOpenedAt: Date.now(), makeActive: token === getActiveConfigRef() },
+            { ifExistsOnly: true }
+        );
         if (token === getActiveConfigRef()) {
             setActiveSessionContext({ token, session: brief });
             updateToolboxLauncherVisibility(token);
         } else {
             renderTokenVault();
         }
-        showAlert(disabled ? 'Token disabled. Toolbox and addon routes are now blocked.' : 'Token enabled again.', disabled ? 'warning' : 'success');
+        showAlert(
+            disabled ? 'Token disabled. Toolbox and addon routes are now blocked.' : 'Token enabled again.',
+            disabled ? 'warning' : 'success'
+        );
     }
 
     async function handleTokenVaultAction(actionEl) {
@@ -5222,7 +5646,8 @@ Translate to {target_language}.`;
                 const currentEntry = getVaultEntryForToken(actionToken);
                 const store = getTokenVaultStore();
                 const currentLabel = normalizeVaultLabel(actionToken, currentEntry?.label || '');
-                const initialValue = currentLabel || deriveVaultLabel(actionToken, currentEntry?.label || '', { store });
+                const initialValue =
+                    currentLabel || deriveVaultLabel(actionToken, currentEntry?.label || '', { store });
                 openTokenVaultTitleEditor(actionToken, initialValue);
                 return;
             }
@@ -5344,13 +5769,16 @@ Translate to {target_language}.`;
     }
 
     function isSubToolboxEnabled() {
-        const toolboxToggle = document.getElementById('subToolboxEnabledNoTranslation') || document.getElementById('subToolboxEnabled');
+        const toolboxToggle =
+            document.getElementById('subToolboxEnabledNoTranslation') || document.getElementById('subToolboxEnabled');
         if (toolboxToggle) {
             return toolboxToggle.checked === true;
         }
-        return currentConfig?.subToolboxEnabled === true
-            || currentConfig?.fileTranslationEnabled === true
-            || currentConfig?.syncSubtitlesEnabled === true;
+        return (
+            currentConfig?.subToolboxEnabled === true ||
+            currentConfig?.fileTranslationEnabled === true ||
+            currentConfig?.syncSubtitlesEnabled === true
+        );
     }
 
     function ensureUiLanguageDockExists() {
@@ -5453,7 +5881,9 @@ Translate to {target_language}.`;
         currentConfig.uiLanguage = normalized;
         updateUiLanguageBadge(normalized);
         setUiLanguageExpanded(false);
-        try { localStorage.setItem(UI_LANGUAGE_STORAGE_KEY, normalized); } catch (_) { }
+        try {
+            localStorage.setItem(UI_LANGUAGE_STORAGE_KEY, normalized);
+        } catch (_) {}
         initLocale(normalized);
     }
 
@@ -5461,7 +5891,7 @@ Translate to {target_language}.`;
         const translate = (key, fallback) => {
             try {
                 if (typeof window.t === 'function') return window.t(key, {}, fallback);
-            } catch (_) { }
+            } catch (_) {}
             return fallback;
         };
         // Preserve whether the flag dock is currently expanded so we don't auto-close it
@@ -5506,19 +5936,21 @@ Translate to {target_language}.`;
 
     function getConvertAssToVttToggle() {
         if (currentConfig?.noTranslationMode === true) {
-            return document.getElementById('convertAssToVttNoTranslation') || document.getElementById('convertAssToVtt');
+            return (
+                document.getElementById('convertAssToVttNoTranslation') || document.getElementById('convertAssToVtt')
+            );
         }
         return document.getElementById('convertAssToVtt') || document.getElementById('convertAssToVttNoTranslation');
     }
 
     function getConvertAssToVttToggles() {
         return ['convertAssToVtt', 'convertAssToVttNoTranslation']
-            .map(id => document.getElementById(id))
+            .map((id) => document.getElementById(id))
             .filter(Boolean);
     }
 
     function syncConvertAssToVttInputs({ checked, disabled } = {}) {
-        getConvertAssToVttToggles().forEach(toggle => {
+        getConvertAssToVttToggles().forEach((toggle) => {
             if (typeof checked === 'boolean') {
                 toggle.checked = checked;
             }
@@ -5545,7 +5977,10 @@ Translate to {target_language}.`;
         if (rememberCheckedSelection) {
             const checkedRadio = radios.find((radio) => radio.checked);
             if (checkedRadio && (checkedRadio.value !== 'none' || !urlExtensionTestForcedByAssPassthrough)) {
-                lastUrlExtensionTestChoice = normalizeUrlExtensionTestValue(checkedRadio.value, lastUrlExtensionTestChoice);
+                lastUrlExtensionTestChoice = normalizeUrlExtensionTestValue(
+                    checkedRadio.value,
+                    lastUrlExtensionTestChoice
+                );
             }
         }
 
@@ -5560,8 +5995,8 @@ Translate to {target_language}.`;
         }
 
         const targetValue = normalizeUrlExtensionTestValue(nextValue, 'srt');
-        const targetRadio = radios.find((radio) => radio.value === targetValue)
-            || radios.find((radio) => radio.value === 'srt');
+        const targetRadio =
+            radios.find((radio) => radio.value === targetValue) || radios.find((radio) => radio.value === 'srt');
 
         radios.forEach((radio) => {
             radio.disabled = assPassthroughEnabled && radio.value !== 'none';
@@ -5651,9 +6086,16 @@ Translate to {target_language}.`;
             const loadedFromUrl = loadPlan.hasExplicitUrlConfig === true;
             const hasCachedFallback = !!cachedConfig;
             const fallbackConfig = cachedConfig || urlConfig;
-            const fallbackCopy = hasCachedFallback ? 'Using the last local copy for now.' : 'Using a fresh draft for now.';
+            const fallbackCopy = hasCachedFallback
+                ? 'Using the last local copy for now.'
+                : 'Using a fresh draft for now.';
             currentConfig = fallbackConfig;
-            syncTokenVaultEntryWithBrief(sessionToken, null, { lastOpenedAt: Date.now(), makeActive: true }, { ifExistsOnly: true });
+            syncTokenVaultEntryWithBrief(
+                sessionToken,
+                null,
+                { lastOpenedAt: Date.now(), makeActive: true },
+                { ifExistsOnly: true }
+            );
 
             const applySessionLoadFailurePlan = (failureType, alertMessage, options = {}) => {
                 const plan = resolveSessionLoadFailurePlan({
@@ -5664,7 +6106,9 @@ Translate to {target_language}.`;
                 });
 
                 if (plan.clearStoredToken === true) {
-                    try { localStorage.removeItem(TOKEN_KEY); } catch (_) { }
+                    try {
+                        localStorage.removeItem(TOKEN_KEY);
+                    } catch (_) {}
                 }
 
                 if (plan.configSource === 'cache' && hasCachedFallback) {
@@ -5690,13 +6134,17 @@ Translate to {target_language}.`;
 
             try {
                 const cacheBuster = `_cb=${Date.now()}`;
-                const resp = await fetchWithTimeout(`/api/get-session/${sessionToken}?${cacheBuster}&autoRegenerate=true`, {
-                    cache: 'no-store',
-                    headers: {
-                        'Cache-Control': 'no-cache, no-store, must-revalidate',
-                        'Pragma': 'no-cache'
-                    }
-                }, 10000);
+                const resp = await fetchWithTimeout(
+                    `/api/get-session/${sessionToken}?${cacheBuster}&autoRegenerate=true`,
+                    {
+                        cache: 'no-store',
+                        headers: {
+                            'Cache-Control': 'no-cache, no-store, must-revalidate',
+                            Pragma: 'no-cache'
+                        }
+                    },
+                    10000
+                );
                 if (!resp.ok) {
                     const errorText = await resp.text().catch(() => '');
                     const reason = errorText && errorText.trim() ? ` (${errorText.trim()})` : '';
@@ -5758,7 +6206,11 @@ Translate to {target_language}.`;
 
                         applySessionLoadFailurePlan(
                             'regenerated',
-                            tConfig('config.alerts.sessionLost', {}, 'Config session was lost. Please reconfigure and save to create a new session.'),
+                            tConfig(
+                                'config.alerts.sessionLost',
+                                {},
+                                'Config session was lost. Please reconfigure and save to create a new session.'
+                            ),
                             {
                                 defaultConfig: data.config,
                                 contextOverrides: {
@@ -5769,7 +6221,9 @@ Translate to {target_language}.`;
                             }
                         );
                     } else {
-                        try { localStorage.setItem(TOKEN_KEY, sessionToken); } catch (_) { }
+                        try {
+                            localStorage.setItem(TOKEN_KEY, sessionToken);
+                        } catch (_) {}
                         setActiveSessionContext({
                             token: sessionToken,
                             provenance: loadedFromUrl ? 'url' : 'local',
@@ -5786,10 +6240,15 @@ Translate to {target_language}.`;
                             session: data?.session || null,
                             render: false
                         });
-                        syncTokenVaultEntryWithBrief(sessionToken, data?.session, {
-                            lastOpenedAt: Date.now(),
-                            makeActive: true
-                        }, { ifExistsOnly: true });
+                        syncTokenVaultEntryWithBrief(
+                            sessionToken,
+                            data?.session,
+                            {
+                                lastOpenedAt: Date.now(),
+                                makeActive: true
+                            },
+                            { ifExistsOnly: true }
+                        );
                     }
                 }
             } catch (e) {
@@ -5841,8 +6300,12 @@ Translate to {target_language}.`;
         const requestedSecondaryProvider = currentConfig.secondaryProvider || '';
         currentConfig.mainProvider = String(requestedMainProvider || 'gemini').toLowerCase();
         currentConfig.secondaryProvider = String(requestedSecondaryProvider || '').toLowerCase();
-        currentConfig.secondaryProviderEnabled = multiProviderToggleRequested && currentConfig.secondaryProviderEnabled === true;
-        if (currentConfig.secondaryProviderEnabled && (!currentConfig.secondaryProvider || currentConfig.secondaryProvider === currentConfig.mainProvider)) {
+        currentConfig.secondaryProviderEnabled =
+            multiProviderToggleRequested && currentConfig.secondaryProviderEnabled === true;
+        if (
+            currentConfig.secondaryProviderEnabled &&
+            (!currentConfig.secondaryProvider || currentConfig.secondaryProvider === currentConfig.mainProvider)
+        ) {
             currentConfig.secondaryProviderEnabled = false;
         }
 
@@ -5863,11 +6326,24 @@ Translate to {target_language}.`;
         // Populate UI language selector before wiring events
         const activeUiLang = currentConfig.uiLanguage || locale.lang || 'en';
         renderUiLanguageFlags(activeUiLang);
-        try { localStorage.setItem(UI_LANGUAGE_STORAGE_KEY, activeUiLang); } catch (_) { }
+        try {
+            localStorage.setItem(UI_LANGUAGE_STORAGE_KEY, activeUiLang);
+        } catch (_) {}
 
         // Kick off language loading without blocking UI/modals
-        loadLanguages().catch(err => {
-            try { showAlert(tConfig('config.alerts.loadLanguagesFailed', { reason: err.message }, 'Failed to load languages: ' + err.message), 'error', 'config.alerts.loadLanguagesFailed', { reason: err.message }); } catch (_) { }
+        loadLanguages().catch((err) => {
+            try {
+                showAlert(
+                    tConfig(
+                        'config.alerts.loadLanguagesFailed',
+                        { reason: err.message },
+                        'Failed to load languages: ' + err.message
+                    ),
+                    'error',
+                    'config.alerts.loadLanguagesFailed',
+                    { reason: err.message }
+                );
+            } catch (_) {}
         });
 
         setupEventListeners();
@@ -5888,31 +6364,40 @@ Translate to {target_language}.`;
         updateToolboxLauncherVisibility();
         updateQuickStats();
         updateTokenVaultButtonState();
-        const mainPartialReady = (typeof window !== 'undefined' && window.mainPartialReady);
+        const mainPartialReady = typeof window !== 'undefined' && window.mainPartialReady;
         if (mainPartialReady && typeof mainPartialReady.then === 'function') {
-            mainPartialReady.then(() => {
-                bindTokenVaultUiEventListeners();
-                updateTokenVaultButtonState();
-                renderTokenVaultRail({ forceContent: true });
-                consumePendingTokenVaultLauncherOpenRequest();
-            }).catch(() => { });
+            mainPartialReady
+                .then(() => {
+                    bindTokenVaultUiEventListeners();
+                    updateTokenVaultButtonState();
+                    renderTokenVaultRail({ forceContent: true });
+                    consumePendingTokenVaultLauncherOpenRequest();
+                })
+                .catch(() => {});
         }
-        const partialsReady = (typeof window !== 'undefined' && window.partialsReady);
+        const partialsReady = typeof window !== 'undefined' && window.partialsReady;
         if (partialsReady && typeof partialsReady.then === 'function') {
-            partialsReady.then(() => {
-                bindTokenVaultUiEventListeners();
-            }).catch(() => { });
+            partialsReady
+                .then(() => {
+                    bindTokenVaultUiEventListeners();
+                })
+                .catch(() => {});
         }
         if (isValidSessionToken(activeSessionContext.token)) {
-            Promise.resolve().then(() => refreshTokenVaultData({ background: true })).catch(() => { });
+            Promise.resolve()
+                .then(() => refreshTokenVaultData({ background: true }))
+                .catch(() => {});
         }
         setupKeyboardShortcuts();
         showKeyboardHint();
 
         // Auto-fetch models if API key exists (do not block UI/modals)
-        const apiKey = document.getElementById('geminiApiKey').value.trim();
+        const apiKeyEl = document.getElementById('geminiApiKey');
+        const apiKey = apiKeyEl?.value?.trim() || '';
         if (apiKey) {
-            Promise.resolve().then(() => autoFetchModels(apiKey)).catch(() => { });
+            Promise.resolve()
+                .then(() => autoFetchModels(apiKey))
+                .catch(() => {});
         }
 
         // Position reset bar after layout is ready
@@ -5924,23 +6409,28 @@ Translate to {target_language}.`;
         window.addEventListener('resize', debounce(positionResetBar, 120));
         window.addEventListener('resize', syncFloatingBottomSafeZoneDebounced);
         window.addEventListener('resize', debounce(scheduleTokenVaultRailFloatingMenuSync, 40));
-        window.addEventListener('resize', debounce(() => updateBodyScrollLock(true), 80));
+        window.addEventListener(
+            'resize',
+            debounce(() => updateBodyScrollLock(true), 80)
+        );
         suppressDirtyTracking = false;
     }
 
     function normalizeLanguageCodes(codes) {
         if (!Array.isArray(codes)) return [];
-        const normalized = codes.map(c => {
-            const lc = String(c || '').toLowerCase();
-            if (lc === 'ptbr' || lc === 'pt-br') return 'pob';
-            return lc;
-        }).filter(lc => {
-            // Block UI-only fake entries from ever persisting into config
-            if (!lc) return false;
-            if (lc === 'translate srt' || lc === '__') return false;
-            if (lc.startsWith('___')) return false; // frontend/internal placeholders
-            return true;
-        });
+        const normalized = codes
+            .map((c) => {
+                const lc = String(c || '').toLowerCase();
+                if (lc === 'ptbr' || lc === 'pt-br') return 'pob';
+                return lc;
+            })
+            .filter((lc) => {
+                // Block UI-only fake entries from ever persisting into config
+                if (!lc) return false;
+                if (lc === 'translate srt' || lc === '__') return false;
+                if (lc.startsWith('___')) return false; // frontend/internal placeholders
+                return true;
+            });
         // Deduplicate exact duplicate codes
         return [...new Set(normalized)];
     }
@@ -5966,7 +6456,10 @@ Translate to {target_language}.`;
     function enforceLanguageLimits() {
         if (!currentConfig) return;
 
-        if (Array.isArray(currentConfig.sourceLanguages) && currentConfig.sourceLanguages.length > MAX_SOURCE_LANGUAGES) {
+        if (
+            Array.isArray(currentConfig.sourceLanguages) &&
+            currentConfig.sourceLanguages.length > MAX_SOURCE_LANGUAGES
+        ) {
             currentConfig.sourceLanguages = currentConfig.sourceLanguages.slice(0, MAX_SOURCE_LANGUAGES);
         }
 
@@ -5987,51 +6480,78 @@ Translate to {target_language}.`;
             dest.push(code);
         };
 
-        targets.forEach(code => pushWithLimit(code, trimmedTargets));
-        learns.forEach(code => pushWithLimit(code, trimmedLearns));
+        targets.forEach((code) => pushWithLimit(code, trimmedTargets));
+        learns.forEach((code) => pushWithLimit(code, trimmedLearns));
 
         currentConfig.targetLanguages = trimmedTargets;
         currentConfig.learnTargetLanguages = trimmedLearns;
 
-        if (Array.isArray(currentConfig.noTranslationLanguages) && currentConfig.noTranslationLanguages.length > MAX_NO_TRANSLATION_LANGUAGES) {
-            currentConfig.noTranslationLanguages = currentConfig.noTranslationLanguages.slice(0, MAX_NO_TRANSLATION_LANGUAGES);
+        if (
+            Array.isArray(currentConfig.noTranslationLanguages) &&
+            currentConfig.noTranslationLanguages.length > MAX_NO_TRANSLATION_LANGUAGES
+        ) {
+            currentConfig.noTranslationLanguages = currentConfig.noTranslationLanguages.slice(
+                0,
+                MAX_NO_TRANSLATION_LANGUAGES
+            );
         }
     }
 
     function updateLanguageLimitCopy() {
         const sourceDesc = document.getElementById('sourceLanguagesDescription');
         if (sourceDesc) {
-            try { sourceDesc.setAttribute('data-i18n-vars', JSON.stringify({ max: MAX_SOURCE_LANGUAGES })); } catch (_) { }
-            sourceDesc.innerHTML = tConfig('config.limits.sourceDescription', { max: MAX_SOURCE_LANGUAGES }, `You can select up to ${MAX_SOURCE_LANGUAGES} source language${MAX_SOURCE_LANGUAGES === 1 ? '' : 's'}, but only 1 is recommended. This way you have the exact same &quot;Make (language)&quot; subtitles list order as the Source language and can verify the original subtitles for sync issues before translating.<br><br>All subtitles found in the selected Source language will show up in their original language AND will be used as sources for the &quot;Make (target language)&quot; translation lists.`);
+            try {
+                sourceDesc.setAttribute('data-i18n-vars', JSON.stringify({ max: MAX_SOURCE_LANGUAGES }));
+            } catch (_) {}
+            sourceDesc.innerHTML = tConfig(
+                'config.limits.sourceDescription',
+                { max: MAX_SOURCE_LANGUAGES },
+                `You can select up to ${MAX_SOURCE_LANGUAGES} source language${MAX_SOURCE_LANGUAGES === 1 ? '' : 's'}, but only 1 is recommended. This way you have the exact same &quot;Make (language)&quot; subtitles list order as the Source language and can verify the original subtitles for sync issues before translating.<br><br>All subtitles found in the selected Source language will show up in their original language AND will be used as sources for the &quot;Make (target language)&quot; translation lists.`
+            );
         }
 
         const targetDesc = document.getElementById('targetLanguagesDescription');
         if (targetDesc) {
-            try { targetDesc.setAttribute('data-i18n-vars', JSON.stringify({ max: MAX_TARGET_LANGUAGES })); } catch (_) { }
-            targetDesc.innerHTML = tConfig('config.limits.targetDescription', { max: MAX_TARGET_LANGUAGES }, `Subtitles in target languages will be fetched (found subtitles will show up) AND translation buttons (&quot;Make&quot; lists) will appear for translating FROM the Source language subtitles TO the target languages.<br><br>You can select up to ${MAX_TARGET_LANGUAGES} total target languages (including Learn Mode).`);
+            try {
+                targetDesc.setAttribute('data-i18n-vars', JSON.stringify({ max: MAX_TARGET_LANGUAGES }));
+            } catch (_) {}
+            targetDesc.innerHTML = tConfig(
+                'config.limits.targetDescription',
+                { max: MAX_TARGET_LANGUAGES },
+                `Subtitles in target languages will be fetched (found subtitles will show up) AND translation buttons (&quot;Make&quot; lists) will appear for translating FROM the Source language subtitles TO the target languages.<br><br>You can select up to ${MAX_TARGET_LANGUAGES} total target languages (including Learn Mode).`
+            );
         }
 
         const sourceError = document.getElementById('sourceLanguagesError');
         if (sourceError) {
-            sourceError.textContent = tConfig('config.validation.sourceRequired', {}, 'Please select at least one source language');
+            sourceError.textContent = tConfig(
+                'config.validation.sourceRequired',
+                {},
+                'Please select at least one source language'
+            );
         }
 
         const noTranslationDesc = document.getElementById('noTranslationLanguagesDescription');
         if (noTranslationDesc) {
-            try { noTranslationDesc.setAttribute('data-i18n-vars', JSON.stringify({ max: MAX_NO_TRANSLATION_LANGUAGES })); } catch (_) { }
-            noTranslationDesc.textContent = tConfig('config.limits.noTranslationDescription', { max: MAX_NO_TRANSLATION_LANGUAGES }, `Select which languages you want to fetch subtitles in (up to ${MAX_NO_TRANSLATION_LANGUAGES}).`);
+            try {
+                noTranslationDesc.setAttribute('data-i18n-vars', JSON.stringify({ max: MAX_NO_TRANSLATION_LANGUAGES }));
+            } catch (_) {}
+            noTranslationDesc.textContent = tConfig(
+                'config.limits.noTranslationDescription',
+                { max: MAX_NO_TRANSLATION_LANGUAGES },
+                `Select which languages you want to fetch subtitles in (up to ${MAX_NO_TRANSLATION_LANGUAGES}).`
+            );
         }
     }
 
     function buildLimitedTargetSelection(candidates, type) {
-        const otherList = type === 'target'
-            ? (currentConfig.learnTargetLanguages || [])
-            : (currentConfig.targetLanguages || []);
+        const otherList =
+            type === 'target' ? currentConfig.learnTargetLanguages || [] : currentConfig.targetLanguages || [];
         const combined = new Set(otherList);
         const selection = [];
         let truncated = false;
 
-        candidates.forEach(code => {
+        candidates.forEach((code) => {
             if (selection.includes(code)) return;
             if (combined.has(code)) {
                 selection.push(code);
@@ -6052,7 +6572,7 @@ Translate to {target_language}.`;
         const selection = [];
         let truncated = false;
 
-        candidates.forEach(code => {
+        candidates.forEach((code) => {
             if (selection.includes(code)) return;
             if (selection.length >= MAX_NO_TRANSLATION_LANGUAGES) {
                 truncated = true;
@@ -6072,20 +6592,31 @@ Translate to {target_language}.`;
             const vault = document.getElementById('tokenVaultModal');
             const vaultCreator = document.getElementById('tokenVaultCreateModal');
             const vaultOverride = document.getElementById('tokenVaultOverrideModal');
-            const shouldLock = (instr && instr.classList.contains('show'))
-                || (reset && reset.classList.contains('show'))
-                || (vault && vault.classList.contains('show'))
-                || (vaultCreator && vaultCreator.classList.contains('show'))
-                || (vaultOverride && vaultOverride.classList.contains('show'));
+            const shouldLock =
+                (instr && instr.classList.contains('show')) ||
+                (reset && reset.classList.contains('show')) ||
+                (vault && vault.classList.contains('show')) ||
+                (vaultCreator && vaultCreator.classList.contains('show')) ||
+                (vaultOverride && vaultOverride.classList.contains('show'));
             const viewportWidth = window.innerWidth || 0;
 
-            if (!force && bodyScrollLockState.locked === shouldLock && (!shouldLock || bodyScrollLockState.viewportWidth === viewportWidth)) {
+            if (
+                !force &&
+                bodyScrollLockState.locked === shouldLock &&
+                (!shouldLock || bodyScrollLockState.viewportWidth === viewportWidth)
+            ) {
                 return;
             }
 
             let scrollbarWidth = bodyScrollLockState.scrollbarWidth || 0;
-            if (shouldLock && (force || bodyScrollLockState.locked !== true || bodyScrollLockState.viewportWidth !== viewportWidth)) {
-                scrollbarWidth = Math.max(0, viewportWidth - (document.documentElement ? document.documentElement.clientWidth : 0));
+            if (
+                shouldLock &&
+                (force || bodyScrollLockState.locked !== true || bodyScrollLockState.viewportWidth !== viewportWidth)
+            ) {
+                scrollbarWidth = Math.max(
+                    0,
+                    viewportWidth - (document.documentElement ? document.documentElement.clientWidth : 0)
+                );
             }
 
             // Toggle scroll lock class
@@ -6096,9 +6627,8 @@ Translate to {target_language}.`;
                 if (document.body.dataset.prOriginal === undefined) {
                     document.body.dataset.prOriginal = document.body.style.paddingRight || '';
                 }
-                document.body.style.paddingRight = scrollbarWidth > 0
-                    ? (scrollbarWidth + 'px')
-                    : document.body.dataset.prOriginal;
+                document.body.style.paddingRight =
+                    scrollbarWidth > 0 ? scrollbarWidth + 'px' : document.body.dataset.prOriginal;
             } else {
                 if (document.body.dataset.prOriginal !== undefined) {
                     document.body.style.paddingRight = document.body.dataset.prOriginal;
@@ -6112,7 +6642,7 @@ Translate to {target_language}.`;
                 viewportWidth,
                 scrollbarWidth: shouldLock ? scrollbarWidth : 0
             };
-        } catch (_) { }
+        } catch (_) {}
     }
 
     function openModalById(id, opts) {
@@ -6151,16 +6681,21 @@ Translate to {target_language}.`;
         el.classList.add('show');
         el.style.display = 'flex';
         // Lock body scroll for full-screen instructions/reset modals
-        if (!peek && (id === 'instructionsModal' || id === 'resetConfirmModal' || id === 'tokenVaultModal' || id === 'tokenVaultCreateModal')) {
+        if (
+            !peek &&
+            (id === 'instructionsModal' ||
+                id === 'resetConfirmModal' ||
+                id === 'tokenVaultModal' ||
+                id === 'tokenVaultCreateModal')
+        ) {
             updateBodyScrollLock();
         }
         return true;
     }
 
     function applyConfigInstructionsPreferenceState(preference) {
-        const resolved = preference && typeof preference === 'object'
-            ? preference
-            : resolveConfigInstructionsPreference();
+        const resolved =
+            preference && typeof preference === 'object' ? preference : resolveConfigInstructionsPreference();
         try {
             if (resolved.shouldWriteCanonical) {
                 localStorage.setItem(CONFIG_INSTRUCTIONS_PREFERENCE_KEY, resolved.canonicalValue || 'true');
@@ -6170,27 +6705,32 @@ Translate to {target_language}.`;
             if (resolved.shouldRemoveLegacy) {
                 localStorage.removeItem(LEGACY_CONFIG_INSTRUCTIONS_PREFERENCE_KEY);
             }
-        } catch (_) { }
+        } catch (_) {}
         return resolved;
     }
 
     function getConfigInstructionsPreferenceState() {
         let canonicalValue = '';
         let legacyValue = '';
-        try { canonicalValue = localStorage.getItem(CONFIG_INSTRUCTIONS_PREFERENCE_KEY) || ''; } catch (_) { }
-        try { legacyValue = localStorage.getItem(LEGACY_CONFIG_INSTRUCTIONS_PREFERENCE_KEY) || ''; } catch (_) { }
-        return applyConfigInstructionsPreferenceState(resolveConfigInstructionsPreference({
-            canonicalValue,
-            legacyValue
-        }));
+        try {
+            canonicalValue = localStorage.getItem(CONFIG_INSTRUCTIONS_PREFERENCE_KEY) || '';
+        } catch (_) {}
+        try {
+            legacyValue = localStorage.getItem(LEGACY_CONFIG_INSTRUCTIONS_PREFERENCE_KEY) || '';
+        } catch (_) {}
+        return applyConfigInstructionsPreferenceState(
+            resolveConfigInstructionsPreference({
+                canonicalValue,
+                legacyValue
+            })
+        );
     }
 
     function syncConfigInstructionsPreferenceUi(preference) {
         const dontShowEl = document.getElementById('dontShowInstructions');
         if (!dontShowEl) return;
-        const resolved = preference && typeof preference === 'object'
-            ? preference
-            : getConfigInstructionsPreferenceState();
+        const resolved =
+            preference && typeof preference === 'object' ? preference : getConfigInstructionsPreferenceState();
         dontShowEl.checked = resolved.suppressed === true;
     }
 
@@ -6222,7 +6762,7 @@ Translate to {target_language}.`;
         };
 
         // Prefer to wait for main partial so the modal doesn't pop after footer-only render
-        const gate = (window.mainPartialReady || Promise.resolve());
+        const gate = window.mainPartialReady || Promise.resolve();
         gate.then(() => requestAnimationFrame(openFull)).catch(openFull);
     }
 
@@ -6317,7 +6857,7 @@ Translate to {target_language}.`;
             }
         };
 
-        ['click', 'wheel', 'touchstart', 'keydown'].forEach(type => {
+        ['click', 'wheel', 'touchstart', 'keydown'].forEach((type) => {
             overlay.addEventListener(type, mark, { passive: true, capture: true });
             if (modal) modal.addEventListener(type, mark, { passive: true, capture: true });
             if (content) content.addEventListener(type, mark, { passive: true, capture: true });
@@ -6343,7 +6883,10 @@ Translate to {target_language}.`;
         if (isValidConfigToken(activeSessionContext.token)) {
             return activeSessionContext.token;
         }
-        if (!activeSessionContext.token && (activeSessionContext.provenance === 'recovered' || activeSessionContext.provenance === 'draft')) {
+        if (
+            !activeSessionContext.token &&
+            (activeSessionContext.provenance === 'recovered' || activeSessionContext.provenance === 'draft')
+        ) {
             return '';
         }
         const stored = getStoredSessionToken();
@@ -6361,7 +6904,11 @@ Translate to {target_language}.`;
 
         const hasToken = !!getActiveConfigRef();
         const cachedAt = (() => {
-            try { return parseInt(localStorage.getItem(CACHE_EXPIRY_KEY) || '0', 10); } catch (_) { return 0; }
+            try {
+                return parseInt(localStorage.getItem(CACHE_EXPIRY_KEY) || '0', 10);
+            } catch (_) {
+                return 0;
+            }
         })();
 
         const readyLabel = tConfig('toolbox.status.ready', {}, 'Ready');
@@ -6369,9 +6916,20 @@ Translate to {target_language}.`;
         const toolboxMissing = tConfig('toolbox.autoSubs.extension.notDetected', {}, 'Extension not detected');
         const disabledLabel = 'Disabled';
 
-        if (statStatus) statStatus.textContent = hasToken ? (activeSessionContext.session?.disabled === true ? disabledLabel : readyLabel) : missingLabel;
-        if (statConfigure) statConfigure.textContent = hasToken ? tConfig('config.actions.install', {}, 'Install') : missingLabel;
-        if (statToolbox) statToolbox.textContent = hasToken ? (activeSessionContext.session?.disabled === true ? disabledLabel : readyLabel) : toolboxMissing;
+        if (statStatus)
+            statStatus.textContent = hasToken
+                ? activeSessionContext.session?.disabled === true
+                    ? disabledLabel
+                    : readyLabel
+                : missingLabel;
+        if (statConfigure)
+            statConfigure.textContent = hasToken ? tConfig('config.actions.install', {}, 'Install') : missingLabel;
+        if (statToolbox)
+            statToolbox.textContent = hasToken
+                ? activeSessionContext.session?.disabled === true
+                    ? disabledLabel
+                    : readyLabel
+                : toolboxMissing;
         if (statLastSave) {
             if (cachedAt) {
                 const dt = new Date(cachedAt);
@@ -6417,11 +6975,15 @@ Translate to {target_language}.`;
         if (!btn) return;
         // Visibility is based solely on whether toolbox is enabled, not viewport size
         const cfgRef = configOverride || getActiveConfigRef();
-        const tokenDisabled = !!(cfgRef && activeSessionContext.token === cfgRef && activeSessionContext.session?.disabled === true);
+        const tokenDisabled = !!(
+            cfgRef &&
+            activeSessionContext.token === cfgRef &&
+            activeSessionContext.session?.disabled === true
+        );
         let cachedToken = '';
         try {
             cachedToken = localStorage.getItem(CACHE_TOKEN_KEY) || '';
-        } catch (_) { }
+        } catch (_) {}
         const launcherState = resolveToolboxLauncherState({
             tokenToCheck: cfgRef,
             activeToken: getActiveConfigRef(),
@@ -6457,25 +7019,25 @@ Translate to {target_language}.`;
         try {
             localStorage.removeItem('subfaber_dont_show_sub_toolbox');
             localStorage.removeItem('subfaber_dont_show_file_translation');
-        } catch (_) { }
+        } catch (_) {}
         openModalById('subToolboxModal');
     }
 
     function updateSubToolboxInstructionsLink() {
         const wrappers = [
             document.getElementById('subToolboxInstructionsWrapper'),
-            document.getElementById('subToolboxInstructionsWrapperNoTranslation'),
+            document.getElementById('subToolboxInstructionsWrapperNoTranslation')
         ];
-        wrappers.forEach(wrapper => {
+        wrappers.forEach((wrapper) => {
             if (wrapper) {
                 wrapper.style.display = 'inline';
             }
         });
         const links = [
             document.getElementById('subToolboxInstructionsLink'),
-            document.getElementById('subToolboxInstructionsLinkNoTranslation'),
+            document.getElementById('subToolboxInstructionsLinkNoTranslation')
         ];
-        links.forEach(link => {
+        links.forEach((link) => {
             if (link) {
                 link.tabIndex = 0;
             }
@@ -6498,123 +7060,188 @@ Translate to {target_language}.`;
     // (Removed extra window load fallback to reduce complexity)
 
     // Unified delegated click handler (capture) for modals/FAB
-    document.addEventListener('click', function (e) {
-        const target = e.target;
-        if ((Date.now() - tokenVaultLauncherPointerDownAt) < 500) {
-            const clickedLauncher = target && target.closest ? target.closest('#tokenVaultLauncher') : null;
-            if (!clickedLauncher) {
-                return;
+    document.addEventListener(
+        'click',
+        function (e) {
+            const target = e.target;
+            if (Date.now() - tokenVaultLauncherPointerDownAt < 500) {
+                const clickedLauncher = target && target.closest ? target.closest('#tokenVaultLauncher') : null;
+                if (!clickedLauncher) {
+                    return;
+                }
             }
-        }
-        const overlay = target && target.closest ? target.closest('.modal-overlay') : null;
-        const clickedInsideModal = target && target.closest ? target.closest('.modal, .token-vault-panel, .token-vault-override-panel') : null;
-        const clickedInsideVaultRail = target && target.closest ? target.closest('#tokenVaultRail, #tokenVaultLauncher, #tokenVaultRailFloatingMenu') : null;
+            const overlay = target && target.closest ? target.closest('.modal-overlay') : null;
+            const clickedInsideModal =
+                target && target.closest
+                    ? target.closest('.modal, .token-vault-panel, .token-vault-override-panel')
+                    : null;
+            const clickedInsideVaultRail =
+                target && target.closest
+                    ? target.closest('#tokenVaultRail, #tokenVaultLauncher, #tokenVaultRailFloatingMenu')
+                    : null;
 
-        if (overlay && !clickedInsideModal) {
-            if (overlay.id === 'instructionsModal') {
-                closeInstructionsModal();
-                return;
-            } else if (overlay.id === 'subToolboxModal') {
-                closeSubToolboxModal();
-                return;
-            } else if (overlay.id === 'tokenVaultModal') {
-                closeTokenVault();
-                return;
-            } else if (overlay.id === 'tokenVaultCreateModal') {
-                closeTokenVaultCreator();
-                return;
-            } else if (overlay.id === 'tokenVaultOverrideModal') {
-                void closeTokenVaultOverridePrompt(true);
-                return;
-            } else if (overlay.id === 'resetConfirmModal') {
-                const modal = document.getElementById('resetConfirmModal');
-                if (modal) { modal.classList.remove('show'); modal.style.display = 'none'; updateBodyScrollLock(); }
-                return;
+            if (overlay && !clickedInsideModal) {
+                if (overlay.id === 'instructionsModal') {
+                    closeInstructionsModal();
+                    return;
+                } else if (overlay.id === 'subToolboxModal') {
+                    closeSubToolboxModal();
+                    return;
+                } else if (overlay.id === 'tokenVaultModal') {
+                    closeTokenVault();
+                    return;
+                } else if (overlay.id === 'tokenVaultCreateModal') {
+                    closeTokenVaultCreator();
+                    return;
+                } else if (overlay.id === 'tokenVaultOverrideModal') {
+                    void closeTokenVaultOverridePrompt(true);
+                    return;
+                } else if (overlay.id === 'resetConfirmModal') {
+                    const modal = document.getElementById('resetConfirmModal');
+                    if (modal) {
+                        modal.classList.remove('show');
+                        modal.style.display = 'none';
+                        updateBodyScrollLock();
+                    }
+                    return;
+                }
             }
-        }
 
-        if (tokenVaultRailOpen && !clickedInsideVaultRail && !clickedInsideModal) {
-            closeTokenVaultRail();
-        }
+            if (tokenVaultRailOpen && !clickedInsideVaultRail && !clickedInsideModal) {
+                closeTokenVaultRail();
+            }
 
-        const actionEl = target && target.closest
-            ? target.closest('#closeInstructionsBtn, #gotItInstructionsBtn, #closeSubToolboxBtn, #gotItSubToolboxBtn, .modal-close')
-            : null;
-        if (actionEl) {
-            if (actionEl.id === 'closeInstructionsBtn' || actionEl.id === 'gotItInstructionsBtn' || (actionEl.classList.contains('modal-close') && actionEl.closest('#instructionsModal'))) {
-                window.closeInstructionsModal();
+            const actionEl =
+                target && target.closest
+                    ? target.closest(
+                          '#closeInstructionsBtn, #gotItInstructionsBtn, #closeSubToolboxBtn, #gotItSubToolboxBtn, .modal-close'
+                      )
+                    : null;
+            if (actionEl) {
+                if (
+                    actionEl.id === 'closeInstructionsBtn' ||
+                    actionEl.id === 'gotItInstructionsBtn' ||
+                    (actionEl.classList.contains('modal-close') && actionEl.closest('#instructionsModal'))
+                ) {
+                    window.closeInstructionsModal();
+                    return;
+                }
+                if (
+                    actionEl.id === 'closeSubToolboxBtn' ||
+                    actionEl.id === 'gotItSubToolboxBtn' ||
+                    (actionEl.classList.contains('modal-close') && actionEl.closest('#subToolboxModal'))
+                ) {
+                    window.closeSubToolboxModal();
+                    return;
+                }
+            }
+
+            const fab = target && target.closest ? target.closest('#configHelp, #instructionsFab') : null;
+            if (fab) {
+                hideInstructionsFab();
+                if (instructionsAutoMinimizeTimer) {
+                    clearTimeout(instructionsAutoMinimizeTimer);
+                    instructionsAutoMinimizeTimer = null;
+                }
+                syncConfigInstructionsPreferenceUi();
+                openModalById('instructionsModal');
                 return;
             }
-            if (actionEl.id === 'closeSubToolboxBtn' || actionEl.id === 'gotItSubToolboxBtn' || (actionEl.classList.contains('modal-close') && actionEl.closest('#subToolboxModal'))) {
-                window.closeSubToolboxModal();
-                return;
-            }
-        }
-
-        const fab = target && target.closest ? target.closest('#configHelp, #instructionsFab') : null;
-        if (fab) {
-            hideInstructionsFab();
-            if (instructionsAutoMinimizeTimer) {
-                clearTimeout(instructionsAutoMinimizeTimer);
-                instructionsAutoMinimizeTimer = null;
-            }
-            syncConfigInstructionsPreferenceUi();
-            openModalById('instructionsModal');
-            return;
-        }
-    }, true);
+        },
+        true
+    );
 
     // Close modals with Escape key (priority handler)
-    document.addEventListener('keydown', function (e) {
-        if (e.key === 'Escape') {
-            const instructionsModal = document.getElementById('instructionsModal');
-            const subToolboxModal = document.getElementById('subToolboxModal');
-            const tokenVaultModal = document.getElementById('tokenVaultModal');
-            const tokenVaultCreateModal = document.getElementById('tokenVaultCreateModal');
-            const tokenVaultOverrideModal = document.getElementById('tokenVaultOverrideModal');
-            const resetConfirmModal = document.getElementById('resetConfirmModal');
+    document.addEventListener(
+        'keydown',
+        function (e) {
+            if (e.key === 'Escape') {
+                const instructionsModal = document.getElementById('instructionsModal');
+                const subToolboxModal = document.getElementById('subToolboxModal');
+                const tokenVaultModal = document.getElementById('tokenVaultModal');
+                const tokenVaultCreateModal = document.getElementById('tokenVaultCreateModal');
+                const tokenVaultOverrideModal = document.getElementById('tokenVaultOverrideModal');
+                const resetConfirmModal = document.getElementById('resetConfirmModal');
 
-            if (tokenVaultOverrideModal && tokenVaultOverrideModal.classList.contains('show')) {
-                e.preventDefault();
-                e.stopPropagation();
-                void closeTokenVaultOverridePrompt(true);
-            } else if (tokenVaultCreateModal && tokenVaultCreateModal.classList.contains('show')) {
-                e.preventDefault();
-                e.stopPropagation();
-                closeTokenVaultCreator();
-            } else if (instructionsModal && instructionsModal.classList.contains('show')) {
-                e.preventDefault();
-                e.stopPropagation();
-                closeInstructionsModal();
-            } else if (subToolboxModal && subToolboxModal.classList.contains('show')) {
-                e.preventDefault();
-                e.stopPropagation();
-                closeSubToolboxModal();
-            } else if (tokenVaultModal && tokenVaultModal.classList.contains('show')) {
-                e.preventDefault();
-                e.stopPropagation();
-                closeTokenVault();
-            } else if (tokenVaultRailOpen) {
-                e.preventDefault();
-                e.stopPropagation();
-                if (tokenVaultRailMenuKey) {
-                    closeTokenVaultRailMenu();
-                } else {
-                    closeTokenVaultRail();
+                if (tokenVaultOverrideModal && tokenVaultOverrideModal.classList.contains('show')) {
+                    e.preventDefault();
+                    e.stopPropagation();
+                    void closeTokenVaultOverridePrompt(true);
+                } else if (tokenVaultCreateModal && tokenVaultCreateModal.classList.contains('show')) {
+                    e.preventDefault();
+                    e.stopPropagation();
+                    closeTokenVaultCreator();
+                } else if (instructionsModal && instructionsModal.classList.contains('show')) {
+                    e.preventDefault();
+                    e.stopPropagation();
+                    closeInstructionsModal();
+                } else if (subToolboxModal && subToolboxModal.classList.contains('show')) {
+                    e.preventDefault();
+                    e.stopPropagation();
+                    closeSubToolboxModal();
+                } else if (tokenVaultModal && tokenVaultModal.classList.contains('show')) {
+                    e.preventDefault();
+                    e.stopPropagation();
+                    closeTokenVault();
+                } else if (tokenVaultRailOpen) {
+                    e.preventDefault();
+                    e.stopPropagation();
+                    if (tokenVaultRailMenuKey) {
+                        closeTokenVaultRailMenu();
+                    } else {
+                        closeTokenVaultRail();
+                    }
+                } else if (resetConfirmModal && resetConfirmModal.classList.contains('show')) {
+                    e.preventDefault();
+                    e.stopPropagation();
+                    resetConfirmModal.classList.remove('show');
+                    resetConfirmModal.style.display = 'none';
+                    updateBodyScrollLock();
                 }
-            } else if (resetConfirmModal && resetConfirmModal.classList.contains('show')) {
-                e.preventDefault();
-                e.stopPropagation();
-                resetConfirmModal.classList.remove('show');
-                resetConfirmModal.style.display = 'none';
-                updateBodyScrollLock();
             }
-        }
-    }, true); // Use capture phase to handle before other listeners
+        },
+        true
+    ); // Use capture phase to handle before other listeners
 
     function parseConfigFromUrl() {
         // Legacy base64 configs are no longer supported; default to a fresh config
         return getDefaultConfig();
+    }
+
+    function readAdvancedSettingsFromForm() {
+        const model = getAdvancedGeminiModelValue();
+        const defaults = getDefaultConfig(model).advancedSettings || {};
+        const levelEl = document.getElementById('advancedThinkingLevel');
+        const budgetEl = document.getElementById('advancedThinkingBudget');
+        const temperatureEl = document.getElementById('advancedTemperature');
+        const topPEl = document.getElementById('advancedTopP');
+        const frequencyEl = document.getElementById('advancedFrequencyPenalty');
+        const presenceEl = document.getElementById('advancedPresencePenalty');
+        const retriesEl = document.getElementById('mismatchRetries');
+        return {
+            ...defaults,
+            enabled: true,
+            geminiModel: '',
+            thinkingLevel: levelEl
+                ? sanitizeGeminiThinkingLevel(levelEl.value, defaults.thinkingLevel)
+                : defaults.thinkingLevel,
+            thinkingBudget: budgetEl
+                ? clampGeminiThinkingBudget(budgetEl.value, model, defaults.thinkingBudget)
+                : defaults.thinkingBudget,
+            temperature: temperatureEl
+                ? sanitizeNumber(temperatureEl.value, defaults.temperature, 0, 2)
+                : defaults.temperature,
+            topP: topPEl ? sanitizeNumber(topPEl.value, defaults.topP, 0, 1) : defaults.topP,
+            frequencyPenalty: frequencyEl
+                ? sanitizeNumber(frequencyEl.value, defaults.frequencyPenalty, -2, 2)
+                : defaults.frequencyPenalty,
+            presencePenalty: presenceEl
+                ? sanitizeNumber(presenceEl.value, defaults.presencePenalty, -2, 2)
+                : defaults.presencePenalty,
+            mismatchRetries: retriesEl
+                ? Math.max(0, Math.min(3, parseInt(retriesEl.value, 10) || defaults.mismatchRetries || 3))
+                : defaults.mismatchRetries
+        };
     }
 
     /**
@@ -6641,26 +7268,41 @@ Translate to {target_language}.`;
         // There is no separate model override to check — the base dropdown IS the model.
         const activeModel = currentBaseModel;
         const activeModelDefaults = getModelSpecificDefaults(activeModel);
-        const thinkingChanged = sanitizeGeminiThinkingLevel(advThinkingLevelEl.value, activeModelDefaults.thinkingLevel) !== activeModelDefaults.thinkingLevel;
+        const thinkingChanged =
+            sanitizeGeminiThinkingLevel(advThinkingLevelEl.value, activeModelDefaults.thinkingLevel) !==
+            activeModelDefaults.thinkingLevel;
         const tempChanged = parseFloat(advTempEl.value) !== defaults.temperature;
         const topPChanged = parseFloat(advTopPEl.value) !== defaults.topP;
 
         // Penalti: anggap berubah hanya jika berbeza daripada lalai.
         const advFreqEl = document.getElementById('advancedFrequencyPenalty');
         const advPresEl = document.getElementById('advancedPresencePenalty');
-        const freqChanged = advFreqEl ? (parseFloat(advFreqEl.value) !== (defaults.frequencyPenalty ?? 0)) : false;
-        const presChanged = advPresEl ? (parseFloat(advPresEl.value) !== (defaults.presencePenalty ?? 0)) : false;
+        const freqChanged = advFreqEl ? parseFloat(advFreqEl.value) !== (defaults.frequencyPenalty ?? 0) : false;
+        const presChanged = advPresEl ? parseFloat(advPresEl.value) !== (defaults.presencePenalty ?? 0) : false;
 
         // thinkingBudget: hanya kira untuk model 2.5 (lalai -1 = dinamik).
-        const thinkingBudgetChanged = advThinkingEl ? (parseInt(advThinkingEl.value, 10) !== (defaults.thinkingBudget ?? -1)) : false;
+        const thinkingBudgetChanged = advThinkingEl
+            ? parseInt(advThinkingEl.value, 10) !== (defaults.thinkingBudget ?? -1)
+            : false;
 
         const mismatchRetriesEl = document.getElementById('mismatchRetries');
-        const mismatchRetriesChanged = mismatchRetriesEl ? (parseInt(mismatchRetriesEl.value) !== (defaults.mismatchRetries ?? 3)) : false;
+        const mismatchRetriesChanged = mismatchRetriesEl
+            ? parseInt(mismatchRetriesEl.value) !== (defaults.mismatchRetries ?? 3)
+            : false;
         const workflowChanged = false;
 
         // Single-Picker: modelChanged is always false — no separate override dropdown exists.
         // The base #geminiModel dropdown IS the model; changes to it don't count as "advanced modified".
-        return thinkingChanged || thinkingBudgetChanged || tempChanged || topPChanged || freqChanged || presChanged || mismatchRetriesChanged || workflowChanged;
+        return (
+            thinkingChanged ||
+            thinkingBudgetChanged ||
+            tempChanged ||
+            topPChanged ||
+            freqChanged ||
+            presChanged ||
+            mismatchRetriesChanged ||
+            workflowChanged
+        );
     }
 
     /**
@@ -6689,7 +7331,9 @@ Translate to {target_language}.`;
             if (noteEl) {
                 noteEl.style.display = 'block';
                 if (reasonEl) {
-                    reasonEl.textContent = reasons.join(', ') + '. These settings require bypass mode to avoid polluting the shared database with experimental translations.';
+                    reasonEl.textContent =
+                        reasons.join(', ') +
+                        '. These settings require bypass mode to avoid polluting the shared database with experimental translations.';
                 }
             }
         } else {
@@ -6713,12 +7357,12 @@ Translate to {target_language}.`;
                     fetch('/api/languages', {
                         signal: controller.signal,
                         method: 'GET',
-                        headers: { 'Accept': 'application/json' }
+                        headers: { Accept: 'application/json' }
                     }),
                     fetch('/api/languages/translation', {
                         signal: controller.signal,
                         method: 'GET',
-                        headers: { 'Accept': 'application/json' }
+                        headers: { Accept: 'application/json' }
                     })
                 ]);
 
@@ -6735,18 +7379,20 @@ Translate to {target_language}.`;
                 const translationLangs = await translationResponse.json();
 
                 // Filter out special fake languages (like ___upload for File Translation) and dedupe variants
-                providerLanguages = dedupeLanguagesForUI(providerLangs.filter(lang => !lang.code.startsWith('___')));
-                translationLanguages = dedupeLanguagesForUI(translationLangs.filter(lang => !lang.code.startsWith('___')));
+                providerLanguages = dedupeLanguagesForUI(providerLangs.filter((lang) => !lang.code.startsWith('___')));
+                translationLanguages = dedupeLanguagesForUI(
+                    translationLangs.filter((lang) => !lang.code.startsWith('___'))
+                );
 
                 // Build combined lookup for chip display (translation languages include all provider languages)
                 // Use a Map to dedupe by code, preferring translationLanguages entries (they have more info)
                 const combinedMap = new Map();
-                providerLanguages.forEach(lang => combinedMap.set(lang.code, lang));
-                translationLanguages.forEach(lang => combinedMap.set(lang.code, lang));
+                providerLanguages.forEach((lang) => combinedMap.set(lang.code, lang));
+                translationLanguages.forEach((lang) => combinedMap.set(lang.code, lang));
                 allLanguages = Array.from(combinedMap.values());
 
                 // For target/learn grids: filter by extended flag
-                const baseTranslationLanguages = translationLanguages.filter(l => !l.extended);
+                const baseTranslationLanguages = translationLanguages.filter((l) => !l.extended);
 
                 // Restore extended toggle state from localStorage
                 const extToggleSaved = localStorage.getItem('subfaber_extended_languages') === 'true';
@@ -6776,13 +7422,22 @@ Translate to {target_language}.`;
 
                 if (attempt < maxRetries) {
                     const delayMs = 1000 * attempt; // Exponential backoff: 1s, 2s, 3s
-                    await new Promise(resolve => setTimeout(resolve, delayMs));
+                    await new Promise((resolve) => setTimeout(resolve, delayMs));
                 }
             }
         }
 
         // All retries failed
-        showAlert(tConfig('config.alerts.loadLanguagesExhausted', { retries: maxRetries, reason: lastError.message }, `Failed to load languages after ${maxRetries} attempts: ${lastError.message}. Please refresh the page.`), 'error', 'config.alerts.loadLanguagesExhausted', { retries: maxRetries, reason: lastError.message });
+        showAlert(
+            tConfig(
+                'config.alerts.loadLanguagesExhausted',
+                { retries: maxRetries, reason: lastError.message },
+                `Failed to load languages after ${maxRetries} attempts: ${lastError.message}. Please refresh the page.`
+            ),
+            'error',
+            'config.alerts.loadLanguagesExhausted',
+            { retries: maxRetries, reason: lastError.message }
+        );
     }
 
     // Normalize/dedupe languages for UI (e.g., merge ptbr/pt-br/pob into one 'pob')
@@ -6833,7 +7488,7 @@ Translate to {target_language}.`;
         if (extToggleTarget) extToggleTarget.checked = isExtended;
         if (extToggleLearn) extToggleLearn.checked = isExtended;
 
-        const baseTranslationLanguages = translationLanguages.filter(l => !l.extended);
+        const baseTranslationLanguages = translationLanguages.filter((l) => !l.extended);
         const targetList = isExtended ? translationLanguages : baseTranslationLanguages;
         renderLanguageGrid('targetLanguages', 'selectedTargetLanguages', targetList);
         renderLanguageGrid('learnLanguages', 'selectedLearnLanguages', targetList);
@@ -6861,7 +7516,7 @@ Translate to {target_language}.`;
             type = 'target';
         }
 
-        languages.forEach(lang => {
+        languages.forEach((lang) => {
             const isSelected = currentConfig[configKey].includes(lang.code);
             const item = document.createElement('div');
             item.className = `language-item ${isSelected ? 'selected' : ''}`;
@@ -6894,19 +7549,46 @@ Translate to {target_language}.`;
             // Add language
             if (type === 'source') {
                 if (currentConfig[configKey].length >= MAX_SOURCE_LANGUAGES) {
-                    showAlert(tConfig('config.alerts.sourceLimit', { limit: MAX_SOURCE_LANGUAGES }, `You can only select up to ${MAX_SOURCE_LANGUAGES} source languages`), 'warning', 'config.alerts.sourceLimit', { limit: MAX_SOURCE_LANGUAGES });
+                    showAlert(
+                        tConfig(
+                            'config.alerts.sourceLimit',
+                            { limit: MAX_SOURCE_LANGUAGES },
+                            `You can only select up to ${MAX_SOURCE_LANGUAGES} source languages`
+                        ),
+                        'warning',
+                        'config.alerts.sourceLimit',
+                        { limit: MAX_SOURCE_LANGUAGES }
+                    );
                     return;
                 }
                 currentConfig[configKey].push(code);
             } else if (type === 'target' || type === 'learn') {
                 if (!canAddTargetLanguage(code)) {
-                    showAlert(tConfig('config.alerts.targetLimit', { limit: MAX_TARGET_LANGUAGES }, `You can only select up to ${MAX_TARGET_LANGUAGES} total target languages (including Learn Mode)`), 'warning', 'config.alerts.targetLimit', { limit: MAX_TARGET_LANGUAGES });
+                    showAlert(
+                        tConfig(
+                            'config.alerts.targetLimit',
+                            { limit: MAX_TARGET_LANGUAGES },
+                            `You can only select up to ${MAX_TARGET_LANGUAGES} total target languages (including Learn Mode)`
+                        ),
+                        'warning',
+                        'config.alerts.targetLimit',
+                        { limit: MAX_TARGET_LANGUAGES }
+                    );
                     return;
                 }
                 currentConfig[configKey].push(code);
             } else if (type === 'notranslation') {
                 if (currentConfig[configKey].length >= MAX_NO_TRANSLATION_LANGUAGES) {
-                    showAlert(tConfig('config.alerts.noTranslationLimit', { limit: MAX_NO_TRANSLATION_LANGUAGES }, `You can only select up to ${MAX_NO_TRANSLATION_LANGUAGES} languages in Just Fetch mode`), 'warning', 'config.alerts.noTranslationLimit', { limit: MAX_NO_TRANSLATION_LANGUAGES });
+                    showAlert(
+                        tConfig(
+                            'config.alerts.noTranslationLimit',
+                            { limit: MAX_NO_TRANSLATION_LANGUAGES },
+                            `You can only select up to ${MAX_NO_TRANSLATION_LANGUAGES} languages in Just Fetch mode`
+                        ),
+                        'warning',
+                        'config.alerts.noTranslationLimit',
+                        { limit: MAX_NO_TRANSLATION_LANGUAGES }
+                    );
                     return;
                 }
                 currentConfig[configKey].push(code);
@@ -6947,22 +7629,22 @@ Translate to {target_language}.`;
 
         // Prune stale codes that no longer exist in allLanguages (e.g. after normalization)
         if (allLanguages && allLanguages.length > 0) {
-            const validCodes = new Set(allLanguages.map(l => l.code));
-            const pruned = languageCodes.filter(code => validCodes.has(code));
+            const validCodes = new Set(allLanguages.map((l) => l.code));
+            const pruned = languageCodes.filter((code) => validCodes.has(code));
             if (pruned.length !== languageCodes.length) {
                 languageCodes.length = 0;
-                pruned.forEach(c => languageCodes.push(c));
+                pruned.forEach((c) => languageCodes.push(c));
                 // Sync back to currentConfig so saved config won't contain stale codes
                 if (currentConfig[configKey]) {
                     currentConfig[configKey].length = 0;
-                    pruned.forEach(c => currentConfig[configKey].push(c));
+                    pruned.forEach((c) => currentConfig[configKey].push(c));
                 }
             }
         }
 
         // Render chips
-        languageCodes.forEach(code => {
-            const lang = allLanguages.find(l => l.code === code);
+        languageCodes.forEach((code) => {
+            const lang = allLanguages.find((l) => l.code === code);
             if (!lang) return;
             const chip = document.createElement('div');
             chip.className = 'language-chip';
@@ -6998,7 +7680,7 @@ Translate to {target_language}.`;
         const grid = document.getElementById(gridId);
         if (!grid) return;
         const selected = new Set(selectedList || []);
-        grid.querySelectorAll('.language-item').forEach(item => {
+        grid.querySelectorAll('.language-item').forEach((item) => {
             if (selected.has(item.dataset.code)) {
                 item.classList.add('selected');
             } else {
@@ -7043,48 +7725,61 @@ Translate to {target_language}.`;
             tokenVaultGlobalEventsBound = true;
             try {
                 window.__tokenVaultUiReady = true;
-            } catch (_) { }
+            } catch (_) {}
 
-            document.addEventListener('pointerdown', function (e) {
-                const launcher = e.target && e.target.closest ? e.target.closest('#tokenVaultLauncher') : null;
-                if (!launcher) return;
-                if (e.pointerType === 'touch') return;
-                if (typeof e.button === 'number' && e.button !== 0) return;
+            document.addEventListener(
+                'pointerdown',
+                function (e) {
+                    const launcher = e.target && e.target.closest ? e.target.closest('#tokenVaultLauncher') : null;
+                    if (!launcher) return;
+                    if (e.pointerType === 'touch') return;
+                    if (typeof e.button === 'number' && e.button !== 0) return;
 
-                tokenVaultLauncherPointerDownAt = Date.now();
-                e.preventDefault();
-                e.stopPropagation();
-                try {
-                    launcher.focus({ preventScroll: true });
-                } catch (_) {
-                    launcher.focus();
-                }
-                toggleTokenVaultRail();
-            }, true);
+                    tokenVaultLauncherPointerDownAt = Date.now();
+                    e.preventDefault();
+                    e.stopPropagation();
+                    try {
+                        launcher.focus({ preventScroll: true });
+                    } catch (_) {
+                        launcher.focus();
+                    }
+                    toggleTokenVaultRail();
+                },
+                true
+            );
 
-            document.addEventListener('click', function (e) {
-                const launcher = e.target && e.target.closest ? e.target.closest('#tokenVaultLauncher') : null;
-                if (!launcher) return;
+            document.addEventListener(
+                'click',
+                function (e) {
+                    const launcher = e.target && e.target.closest ? e.target.closest('#tokenVaultLauncher') : null;
+                    if (!launcher) return;
 
-                e.preventDefault();
-                e.stopPropagation();
-                if ((Date.now() - tokenVaultLauncherPointerDownAt) < 500) {
-                    return;
-                }
-                toggleTokenVaultRail();
-            }, true);
+                    e.preventDefault();
+                    e.stopPropagation();
+                    if (Date.now() - tokenVaultLauncherPointerDownAt < 500) {
+                        return;
+                    }
+                    toggleTokenVaultRail();
+                },
+                true
+            );
         }
 
         const tokenVaultRail = document.getElementById('tokenVaultRail');
         if (tokenVaultRail && !tokenVaultRail.__vaultBound) {
             tokenVaultRail.__vaultBound = true;
-            tokenVaultRail.addEventListener('scroll', () => {
-                scheduleTokenVaultRailFloatingMenuSync();
-            }, { passive: true });
+            tokenVaultRail.addEventListener(
+                'scroll',
+                () => {
+                    scheduleTokenVaultRailFloatingMenuSync();
+                },
+                { passive: true }
+            );
             tokenVaultRail.addEventListener('click', async (e) => {
                 const actionEl = e.target && e.target.closest ? e.target.closest('[data-vault-action]') : null;
                 if (!actionEl) {
-                    const clickedRailMenu = e.target && e.target.closest ? e.target.closest('.token-vault-rail-menu') : null;
+                    const clickedRailMenu =
+                        e.target && e.target.closest ? e.target.closest('.token-vault-rail-menu') : null;
                     if (tokenVaultRailMenuKey && !clickedRailMenu) {
                         closeTokenVaultRailMenu();
                     }
@@ -7241,14 +7936,25 @@ Translate to {target_language}.`;
     }
 
     function setupEventListeners() {
-        // Form submission
-        document.getElementById('configForm').addEventListener('submit', handleSubmit);
-        document.getElementById('configForm').addEventListener('input', () => {
-            if (!suppressDirtyTracking) setConfigDirty(true);
-        }, true);
-        document.getElementById('configForm').addEventListener('change', () => {
-            if (!suppressDirtyTracking) setConfigDirty(true);
-        }, true);
+        // Form submission — partial-safe when a section failed to load.
+        const configForm = document.getElementById('configForm');
+        if (configForm) {
+            configForm.addEventListener('submit', handleSubmit);
+            configForm.addEventListener(
+                'input',
+                () => {
+                    if (!suppressDirtyTracking) setConfigDirty(true);
+                },
+                true
+            );
+            configForm.addEventListener(
+                'change',
+                () => {
+                    if (!suppressDirtyTracking) setConfigDirty(true);
+                },
+                true
+            );
+        }
 
         bindTokenVaultUiEventListeners();
         syncConfigInstructionsPreferenceUi();
@@ -7266,9 +7972,10 @@ Translate to {target_language}.`;
         // and reload the form so the user can fine-tune before saving.
         window.addEventListener('quickSetupApply', (e) => {
             if (e.detail && typeof e.detail === 'object') {
-                const seedModel = (typeof e.detail.geminiModel === 'string' && e.detail.geminiModel.trim())
-                    ? e.detail.geminiModel.trim()
-                    : getDefaultGeminiModelOptionValue();
+                const seedModel =
+                    typeof e.detail.geminiModel === 'string' && e.detail.geminiModel.trim()
+                        ? e.detail.geminiModel.trim()
+                        : getDefaultGeminiModelOptionValue();
                 const defaults = getDefaultConfig(seedModel);
                 currentConfig = { ...defaults, ...e.detail };
                 ensureProvidersInState();
@@ -7277,7 +7984,9 @@ Translate to {target_language}.`;
                 setConfigDirty(true);
                 // Reload languages to reflect new selections
                 if (typeof loadLanguages === 'function') {
-                    loadLanguages().catch(() => { /* ignore */ });
+                    loadLanguages().catch(() => {
+                        /* ignore */
+                    });
                 }
             }
         });
@@ -7376,13 +8085,17 @@ Translate to {target_language}.`;
         document.getElementById('closeResetConfirmBtn')?.addEventListener('click', closeResetConfirmModal);
 
         // Search functionality
-        document.getElementById('sourceSearch').addEventListener('input', (e) => {
-            filterLanguages('sourceLanguages', e.target.value);
-        });
+        const sourceSearch = document.getElementById('sourceSearch');
+        if (sourceSearch)
+            sourceSearch.addEventListener('input', (e) => {
+                filterLanguages('sourceLanguages', e.target.value);
+            });
 
-        document.getElementById('targetSearch').addEventListener('input', (e) => {
-            filterLanguages('targetLanguages', e.target.value);
-        });
+        const targetSearch = document.getElementById('targetSearch');
+        if (targetSearch)
+            targetSearch.addEventListener('input', (e) => {
+                filterLanguages('targetLanguages', e.target.value);
+            });
 
         // Extended languages toggle (Target + Learn)
         const extToggleTarget = document.getElementById('extendedLanguagesToggle');
@@ -7451,18 +8164,20 @@ Translate to {target_language}.`;
         }
 
         // Quick action buttons
-        document.querySelectorAll('.quick-btn').forEach(btn => {
+        document.querySelectorAll('.quick-btn').forEach((btn) => {
             btn.addEventListener('click', handleQuickAction);
         });
 
         // Provider toggles
-        document.getElementById('enableOpenSubtitles').addEventListener('change', (e) => {
-            toggleProviderConfig('opensubtitlesConfig', e.target.checked);
-        });
+        const openSubtitlesToggle = document.getElementById('enableOpenSubtitles');
+        if (openSubtitlesToggle)
+            openSubtitlesToggle.addEventListener('change', (e) => {
+                toggleProviderConfig('opensubtitlesConfig', e.target.checked);
+            });
 
         // OpenSubtitles implementation type - attach listeners directly to radio buttons
         const implRadios = document.querySelectorAll('input[name="opensubtitlesImplementation"]');
-        implRadios.forEach(radio => {
+        implRadios.forEach((radio) => {
             radio.addEventListener('change', handleOpenSubtitlesImplChange);
         });
 
@@ -7501,42 +8216,56 @@ Translate to {target_language}.`;
             databaseModeEl.addEventListener('change', handleDatabaseModeChange);
         }
 
-        document.getElementById('enableSubDL').addEventListener('change', (e) => {
-            toggleProviderConfig('subdlConfig', e.target.checked);
-        });
+        const subDlToggle = document.getElementById('enableSubDL');
+        if (subDlToggle)
+            subDlToggle.addEventListener('change', (e) => {
+                toggleProviderConfig('subdlConfig', e.target.checked);
+            });
 
-        document.getElementById('enableSubSource').addEventListener('change', (e) => {
-            toggleProviderConfig('subsourceConfig', e.target.checked);
-        });
+        const subSourceToggle = document.getElementById('enableSubSource');
+        if (subSourceToggle)
+            subSourceToggle.addEventListener('change', (e) => {
+                toggleProviderConfig('subsourceConfig', e.target.checked);
+            });
 
         // Install and copy buttons
-        document.getElementById('installBtn').addEventListener('click', installAddon);
-        document.getElementById('copyBtn').addEventListener('click', copyInstallUrl);
+        const installButton = document.getElementById('installBtn');
+        const copyButton = document.getElementById('copyBtn');
+        if (installButton) installButton.addEventListener('click', installAddon);
+        if (copyButton) copyButton.addEventListener('click', copyInstallUrl);
         const toolboxLauncher = document.getElementById('subToolboxLauncher');
         if (toolboxLauncher) {
             toolboxLauncher.addEventListener('click', () => {
                 const configRef = toolboxLauncher.dataset.configRef || getActiveConfigRef();
                 const url = buildToolboxUrl(configRef);
                 if (!url) {
-                    showAlert(tConfig('config.alerts.saveConfigFirst', {}, 'Save your config first to open Sub Toolbox.'), 'warning', 'config.alerts.saveConfigFirst', {});
+                    showAlert(
+                        tConfig('config.alerts.saveConfigFirst', {}, 'Save your config first to open Sub Toolbox.'),
+                        'warning',
+                        'config.alerts.saveConfigFirst',
+                        {}
+                    );
                     return;
                 }
                 window.open(url, '_blank', 'noopener,noreferrer');
             });
         }
-        window.addEventListener('resize', debounce(() => updateToolboxLauncherVisibility(), 150));
+        window.addEventListener(
+            'resize',
+            debounce(() => updateToolboxLauncherVisibility(), 150)
+        );
 
         // Section collapse helpers (API keys, Languages, Settings)
         const sectionCollapseConfigs = [
             { id: 'apiKeysSection', toggleAttr: 'api-keys' },
             { id: 'languagesSection', toggleAttr: 'languages' },
-            { id: 'settingsSection', toggleAttr: 'settings' },
+            { id: 'settingsSection', toggleAttr: 'settings' }
         ];
         const SECTION_SCROLL_OFFSET = 18;
         // Collapse all cards with headers inside a section (skip headerless cards used as inline content)
         const collapseSectionCards = (section) => {
             if (!section) return;
-            section.querySelectorAll('.card').forEach(card => {
+            section.querySelectorAll('.card').forEach((card) => {
                 if (!card.querySelector('.card-header')) return;
                 card.classList.add('collapsed');
                 const btn = card.querySelector('.collapse-btn');
@@ -7546,7 +8275,7 @@ Translate to {target_language}.`;
         // Keep always-on cards (like just-fetch languages) visible when a section is opened
         const expandHeaderlessCards = (section) => {
             if (!section) return;
-            section.querySelectorAll('.card').forEach(card => {
+            section.querySelectorAll('.card').forEach((card) => {
                 if (card.querySelector('.card-header')) return;
                 card.classList.remove('collapsed');
             });
@@ -7568,14 +8297,16 @@ Translate to {target_language}.`;
             const sectionBody = section ? section.querySelector('.section-grid') : null;
             const sectionFooter = section ? section.querySelector('.section-footer') : null;
             const sectionHeader = section ? section.querySelector('.section-header') : null;
-            const toggles = Array.from(document.querySelectorAll(
-                `[data-collapse-section="${toggleAttr}"], [data-section-close="${toggleAttr}"]`
-            ));
+            const toggles = Array.from(
+                document.querySelectorAll(
+                    `[data-collapse-section="${toggleAttr}"], [data-section-close="${toggleAttr}"]`
+                )
+            );
             const toggleSection = () => {
                 if (!section) return;
                 const wasCollapsed = section.classList.contains('collapsed');
                 section.classList.toggle('collapsed');
-                toggles.forEach(btn => btn.classList.toggle('collapsed'));
+                toggles.forEach((btn) => btn.classList.toggle('collapsed'));
                 const nowCollapsed = section.classList.contains('collapsed');
                 if (!wasCollapsed && nowCollapsed) {
                     collapseSectionCards(section);
@@ -7594,7 +8325,7 @@ Translate to {target_language}.`;
                 }
             };
             if (toggles.length) {
-                toggles.forEach(btn => {
+                toggles.forEach((btn) => {
                     btn.addEventListener('click', (e) => {
                         e.preventDefault();
                         e.stopPropagation();
@@ -7625,7 +8356,7 @@ Translate to {target_language}.`;
 
         // Card collapse behavior
         // 1) Header click toggles (and stops propagation)
-        document.querySelectorAll('.card-header').forEach(header => {
+        document.querySelectorAll('.card-header').forEach((header) => {
             header.addEventListener('click', (e) => {
                 const card = e.currentTarget.closest('.card');
                 const collapseBtn = card.querySelector('.collapse-btn');
@@ -7635,7 +8366,7 @@ Translate to {target_language}.`;
             });
         });
         // 2) Make entire collapsed card clickable to expand; when expanded, clicks in content do nothing
-        document.querySelectorAll('.card').forEach(card => {
+        document.querySelectorAll('.card').forEach((card) => {
             card.addEventListener('click', (e) => {
                 const collapseBtn = card.querySelector('.collapse-btn');
                 const isCollapsed = card.classList.contains('collapsed');
@@ -7665,7 +8396,7 @@ Translate to {target_language}.`;
                 validateLanguageSelection('learn');
             });
         }
-        document.querySelectorAll('input[name="learnOrder"]').forEach(r => {
+        document.querySelectorAll('input[name="learnOrder"]').forEach((r) => {
             r.addEventListener('change', (e) => {
                 if (e.target.checked) {
                     currentConfig.learnOrder = e.target.value;
@@ -7680,7 +8411,7 @@ Translate to {target_language}.`;
                 if (targetGroup) targetGroup.style.display = e.target.checked ? 'flex' : 'none';
             });
         }
-        document.querySelectorAll('input[name="learnItalicTarget"]').forEach(r => {
+        document.querySelectorAll('input[name="learnItalicTarget"]').forEach((r) => {
             r.addEventListener('change', (e) => {
                 if (e.target.checked) {
                     currentConfig.learnItalicTarget = e.target.value;
@@ -7695,20 +8426,24 @@ Translate to {target_language}.`;
             showAdv.addEventListener('change', handleAdvancedSettingsToggle);
         }
 
-        // Live validation
-        document.getElementById('geminiApiKey').addEventListener('input', validateGeminiApiKey);
-        document.getElementById('geminiModel').addEventListener('change', validateGeminiModel);
+        // Live validation — partial-safe: missing controls must not abort bootstrap.
+        const geminiApiKeyInput = document.getElementById('geminiApiKey');
+        const geminiModelInput = document.getElementById('geminiModel');
+        if (geminiApiKeyInput) geminiApiKeyInput.addEventListener('input', validateGeminiApiKey);
+        if (geminiModelInput) geminiModelInput.addEventListener('change', validateGeminiModel);
 
         // Single-Picker: kembalikan dropdown kepada placeholder disabled sebaik sahaja
         // pengguna memadamkan API key sehingga kosong (bukan hanya semasa validasi gagal).
-        document.getElementById('geminiApiKey').addEventListener('input', () => {
-            const modelSelect = document.getElementById('geminiModel');
-            if (modelSelect && !document.getElementById('geminiApiKey').value.trim()) {
-                modelSelect.innerHTML = '<option value="" disabled selected>Enter and validate API key to select model</option>';
-                modelSelect.disabled = true;
-                modelSelect.value = '';
-            }
-        });
+        if (geminiApiKeyInput)
+            geminiApiKeyInput.addEventListener('input', () => {
+                const modelSelect = document.getElementById('geminiModel');
+                if (modelSelect && !geminiApiKeyInput.value.trim()) {
+                    modelSelect.innerHTML =
+                        '<option value="" disabled selected>Enter and validate API key to select model</option>';
+                    modelSelect.disabled = true;
+                    modelSelect.value = '';
+                }
+            });
 
         // Gemini API Key Rotation toggle
         const keyRotationToggle = document.getElementById('geminiKeyRotationEnabled');
@@ -7729,7 +8464,9 @@ Translate to {target_language}.`;
         }
 
         // Bulk Import Gemini Keys (zero-network modal)
-        try { initBulkImportFeature(); } catch (_) { }
+        try {
+            initBulkImportFeature();
+        } catch (_) {}
 
         const betaToggle = document.getElementById('betaMode');
         if (betaToggle) {
@@ -7769,7 +8506,7 @@ Translate to {target_language}.`;
             // checked = passthrough (ASS conversion OFF)
             const assConversionDisabled = convertAssEl && convertAssEl.checked;
             // Show only when devMode is ON and ASS conversion is OFF (raw ASS mode)
-            urlExtTestGroup.style.display = (devEnabled && assConversionDisabled) ? 'block' : 'none';
+            urlExtTestGroup.style.display = devEnabled && assConversionDisabled ? 'block' : 'none';
         }
 
         // Function to show/hide Android subtitle compatibility mode group (dev mode only)
@@ -7791,7 +8528,7 @@ Translate to {target_language}.`;
         }
 
         // Wire ASS/SSA passthrough toggles to stay in sync and update dependent UI.
-        getConvertAssToVttToggles().forEach(convertAssEl => {
+        getConvertAssToVttToggles().forEach((convertAssEl) => {
             convertAssEl.addEventListener('change', (event) => {
                 const passthroughEnabled = event.target.checked === true;
                 currentConfig.convertAssToVtt = !passthroughEnabled;
@@ -7853,7 +8590,7 @@ Translate to {target_language}.`;
             });
         }
 
-        getProviderKeys().forEach(key => {
+        getProviderKeys().forEach((key) => {
             const toggle = document.getElementById(`provider-${key}-enabled`);
             if (toggle) {
                 toggle.addEventListener('change', (e) => {
@@ -7875,11 +8612,14 @@ Translate to {target_language}.`;
             }
             const apiKeyInput = document.getElementById(`provider-${key}-key`);
             if (apiKeyInput) {
-                apiKeyInput.addEventListener('blur', debounce(() => {
-                    if (document.getElementById(`provider-${key}-enabled`)?.checked) {
-                        fetchProviderModels(key, { silent: true });
-                    }
-                }, 400));
+                apiKeyInput.addEventListener(
+                    'blur',
+                    debounce(() => {
+                        if (document.getElementById(`provider-${key}-enabled`)?.checked) {
+                            fetchProviderModels(key, { silent: true });
+                        }
+                    }, 400)
+                );
             }
             const loadBtn = document.querySelector(`.provider-block[data-provider="${key}"] .validate-api-btn`);
             if (loadBtn) {
@@ -7942,39 +8682,57 @@ Translate to {target_language}.`;
             });
         }
 
-        // Update advanced settings when model changes (apply model-specific defaults)
-        // When user selects a new model, always reset advanced settings to that model's defaults
-        // This overrides any cached values from previous model selections
-        // Manual changes made AFTER model selection will persist until next model change
-        document.getElementById('geminiModel').addEventListener('change', function (e) {
-            const selectedModel = e.target.value;
-            const modelDefaults = getModelSpecificDefaults(selectedModel);
-            const fullDefaults = getDefaultConfig(selectedModel).advancedSettings;
+        // Update advanced settings when model changes. Values are cached per model so
+        // switching models never silently destroys the user's draft.
+        if (geminiModelInput)
+            geminiModelInput.addEventListener('change', function (e) {
+                const selectedModel = normalizeGeminiModelName(e.target.value);
+                const previousModel = normalizeGeminiModelName(currentConfig.geminiModel || DEFAULT_GEMINI_MODEL);
+                currentConfig.advancedSettingsByModel = currentConfig.advancedSettingsByModel || {};
+                currentConfig.advancedSettingsByModel[previousModel] = readAdvancedSettingsFromForm();
+                const modelDefaults = getModelSpecificDefaults(selectedModel);
+                const fullDefaults =
+                    currentConfig.advancedSettingsByModel[selectedModel] ||
+                    getDefaultConfig(selectedModel).advancedSettings;
 
-            // Reset ALL advanced settings fields to the new model's defaults
-            const advThinkingEl = document.getElementById('advancedThinkingBudget');
-            const advThinkingLevelEl = document.getElementById('advancedThinkingLevel');
-            const advTempEl = document.getElementById('advancedTemperature');
-            const advTopPEl = document.getElementById('advancedTopP');
+                currentConfig.geminiModel = selectedModel;
+                currentConfig.advancedSettings = {
+                    ...getDefaultConfig(selectedModel).advancedSettings,
+                    ...fullDefaults,
+                    thinkingBudget: clampGeminiThinkingBudget(
+                        fullDefaults.thinkingBudget,
+                        selectedModel,
+                        getDefaultConfig(selectedModel).advancedSettings.thinkingBudget
+                    )
+                };
 
-            if (advThinkingLevelEl) advThinkingLevelEl.value = modelDefaults.thinkingLevel;
-            if (advTempEl) advTempEl.value = modelDefaults.temperature;
-            if (advTopPEl) advTopPEl.value = fullDefaults.topP;
-            if (advThinkingEl) advThinkingEl.value = fullDefaults.thinkingBudget ?? -1;
-            const advFreqEl2 = document.getElementById('advancedFrequencyPenalty');
-            const advPresEl2 = document.getElementById('advancedPresencePenalty');
-            if (advFreqEl2) advFreqEl2.value = fullDefaults.frequencyPenalty ?? 0;
-            if (advPresEl2) advPresEl2.value = fullDefaults.presencePenalty ?? 0;
+                // Apply cached values or defaults for every advanced field.
+                const advThinkingEl = document.getElementById('advancedThinkingBudget');
+                const advThinkingLevelEl = document.getElementById('advancedThinkingLevel');
+                const advTempEl = document.getElementById('advancedTemperature');
+                const advTopPEl = document.getElementById('advancedTopP');
 
-            // Reset deprecated sampling toggle on model change
-            const deprecatedToggle = document.getElementById('showDeprecatedSamplingToggle');
-            if (deprecatedToggle) deprecatedToggle.checked = false;
+                if (advThinkingLevelEl)
+                    advThinkingLevelEl.value =
+                        currentConfig.advancedSettings.thinkingLevel || modelDefaults.thinkingLevel;
+                if (advTempEl)
+                    advTempEl.value = currentConfig.advancedSettings.temperature ?? modelDefaults.temperature;
+                if (advTopPEl) advTopPEl.value = currentConfig.advancedSettings.topP ?? 0.95;
+                if (advThinkingEl) advThinkingEl.value = currentConfig.advancedSettings.thinkingBudget;
+                const advFreqEl2 = document.getElementById('advancedFrequencyPenalty');
+                const advPresEl2 = document.getElementById('advancedPresencePenalty');
+                if (advFreqEl2) advFreqEl2.value = currentConfig.advancedSettings.frequencyPenalty ?? 0;
+                if (advPresEl2) advPresEl2.value = currentConfig.advancedSettings.presencePenalty ?? 0;
 
-            updateGeminiThinkingControl();
+                // Reset deprecated sampling toggle on model change
+                const deprecatedToggle = document.getElementById('showDeprecatedSamplingToggle');
+                if (deprecatedToggle) deprecatedToggle.checked = false;
 
-            // Update bypass cache state based on new defaults
-            updateBypassCacheForAdvancedSettings();
-        });
+                updateGeminiThinkingControl();
+
+                // Update bypass cache state based on new defaults
+                updateBypassCacheForAdvancedSettings();
+            });
 
         // Listener untuk toggle "Show deprecated sampling parameters"
         const showDeprecatedToggle = document.getElementById('showDeprecatedSamplingToggle');
@@ -7985,13 +8743,16 @@ Translate to {target_language}.`;
         }
 
         // API Key Validation Buttons
-        const validateOpenSubsBtn = document.getElementById('validateOpenSubtitles');
-        if (validateOpenSubsBtn) {
-            validateOpenSubsBtn.addEventListener('click', () => validateApiKey('opensubtitles'));
-        }
-        document.getElementById('validateSubSource').addEventListener('click', () => validateApiKey('subsource'));
-        document.getElementById('validateSubDL').addEventListener('click', () => validateApiKey('subdl'));
-        document.getElementById('validateGemini').addEventListener('click', () => validateApiKey('gemini'));
+        const validationButtons = [
+            ['validateOpenSubtitles', 'opensubtitles'],
+            ['validateSubSource', 'subsource'],
+            ['validateSubDL', 'subdl'],
+            ['validateGemini', 'gemini']
+        ];
+        validationButtons.forEach(([id, provider]) => {
+            const button = document.getElementById(id);
+            if (button) button.addEventListener('click', () => validateApiKey(provider));
+        });
 
         // File translation toggle - show modal when enabled
         const toolboxToggle = document.getElementById('subToolboxEnabled');
@@ -8073,13 +8834,12 @@ Translate to {target_language}.`;
             tryFetchAdvancedModels();
         });
 
-        [advThinkingEl, advThinkingLevelEl, advTempEl, advTopPEl, advFreqEl, advPresEl].forEach(el => {
+        [advThinkingEl, advThinkingLevelEl, advTempEl, advTopPEl, advFreqEl, advPresEl].forEach((el) => {
             if (el) {
                 el.addEventListener('change', updateBypassCacheForAdvancedSettings);
                 el.addEventListener('input', updateBypassCacheForAdvancedSettings);
             }
         });
-
 
         // Single-Picker: model change is handled by #geminiModel listener (already wired).
         // No #advancedModel listener needed.
@@ -8114,7 +8874,7 @@ Translate to {target_language}.`;
         authConfig.style.display = implementationType === 'auth' ? 'block' : 'none';
 
         // Update visual selection state for all radio buttons
-        document.querySelectorAll('input[name="opensubtitlesImplementation"]').forEach(radio => {
+        document.querySelectorAll('input[name="opensubtitlesImplementation"]').forEach((radio) => {
             const label = radio.closest('label');
             if (label) {
                 if (radio.checked) {
@@ -8144,23 +8904,25 @@ Translate to {target_language}.`;
     }
 
     function validateLanguageSelection(type) {
-        const configKey = type === 'source'
-            ? 'sourceLanguages'
-            : type === 'target'
-                ? 'targetLanguages'
-                : 'learnTargetLanguages';
-        const errorId = type === 'source'
-            ? 'sourceLanguagesError'
-            : type === 'target'
-                ? 'targetLanguagesError'
-                : 'learnLanguagesError';
+        const configKey =
+            type === 'source' ? 'sourceLanguages' : type === 'target' ? 'targetLanguages' : 'learnTargetLanguages';
+        const errorId =
+            type === 'source'
+                ? 'sourceLanguagesError'
+                : type === 'target'
+                  ? 'targetLanguagesError'
+                  : 'learnLanguagesError';
         const errorDiv = document.getElementById(errorId);
 
         if (type === 'source') {
             // Source languages must have 1..MAX_SOURCE_LANGUAGES selections
             if (currentConfig[configKey].length < 1 || currentConfig[configKey].length > MAX_SOURCE_LANGUAGES) {
                 if (errorDiv) {
-                    errorDiv.textContent = tConfig('config.validation.sourceRange', { min: 1, max: MAX_SOURCE_LANGUAGES }, `Please select 1-${MAX_SOURCE_LANGUAGES} source languages`);
+                    errorDiv.textContent = tConfig(
+                        'config.validation.sourceRange',
+                        { min: 1, max: MAX_SOURCE_LANGUAGES },
+                        `Please select 1-${MAX_SOURCE_LANGUAGES} source languages`
+                    );
                     errorDiv.classList.add('show');
                 }
                 return false;
@@ -8171,12 +8933,18 @@ Translate to {target_language}.`;
             // Target and learn languages must have at least one when applicable
             const requiresSelection = type === 'target' ? true : !!currentConfig.learnMode;
             const combinedCount = getCombinedTargetCount();
-            const learnCount = Array.isArray(currentConfig.learnTargetLanguages) ? currentConfig.learnTargetLanguages.length : 0;
+            const learnCount = Array.isArray(currentConfig.learnTargetLanguages)
+                ? currentConfig.learnTargetLanguages.length
+                : 0;
 
             if (type === 'target') {
                 if (requiresSelection && combinedCount === 0) {
                     if (errorDiv) {
-                        errorDiv.textContent = tConfig('config.validation.targetMissing', {}, 'At least one target language is required');
+                        errorDiv.textContent = tConfig(
+                            'config.validation.targetMissing',
+                            {},
+                            'At least one target language is required'
+                        );
                         errorDiv.classList.add('show');
                     }
                     return false;
@@ -8184,7 +8952,11 @@ Translate to {target_language}.`;
             } else {
                 if (requiresSelection && learnCount === 0) {
                     if (errorDiv) {
-                        errorDiv.textContent = tConfig('config.validation.learnRequired', {}, 'Learn Mode requires at least one target language');
+                        errorDiv.textContent = tConfig(
+                            'config.validation.learnRequired',
+                            {},
+                            'Learn Mode requires at least one target language'
+                        );
                         errorDiv.classList.add('show');
                     }
                     return false;
@@ -8192,7 +8964,11 @@ Translate to {target_language}.`;
             }
             if (combinedCount > MAX_TARGET_LANGUAGES) {
                 if (errorDiv) {
-                    errorDiv.textContent = tConfig('config.validation.targetLimitShort', { limit: MAX_TARGET_LANGUAGES }, `Please select up to ${MAX_TARGET_LANGUAGES} target languages (including Learn Mode)`);
+                    errorDiv.textContent = tConfig(
+                        'config.validation.targetLimitShort',
+                        { limit: MAX_TARGET_LANGUAGES },
+                        `Please select up to ${MAX_TARGET_LANGUAGES} target languages (including Learn Mode)`
+                    );
                     errorDiv.classList.add('show');
                 }
                 return false;
@@ -8213,11 +8989,17 @@ Translate to {target_language}.`;
             return true;
         }
 
-        const count = Array.isArray(currentConfig.noTranslationLanguages) ? currentConfig.noTranslationLanguages.length : 0;
+        const count = Array.isArray(currentConfig.noTranslationLanguages)
+            ? currentConfig.noTranslationLanguages.length
+            : 0;
 
         if (count === 0) {
             if (errorDiv) {
-                errorDiv.textContent = tConfig('config.validation.noTranslationRequired', {}, 'Please select at least one language for Just Fetch mode');
+                errorDiv.textContent = tConfig(
+                    'config.validation.noTranslationRequired',
+                    {},
+                    'Please select at least one language for Just Fetch mode'
+                );
                 errorDiv.classList.add('show');
             }
             return false;
@@ -8225,7 +9007,11 @@ Translate to {target_language}.`;
 
         if (count > MAX_NO_TRANSLATION_LANGUAGES) {
             if (errorDiv) {
-                errorDiv.textContent = tConfig('config.validation.noTranslationLimitShort', { limit: MAX_NO_TRANSLATION_LANGUAGES }, `Please select up to ${MAX_NO_TRANSLATION_LANGUAGES} languages for Just Fetch mode`);
+                errorDiv.textContent = tConfig(
+                    'config.validation.noTranslationLimitShort',
+                    { limit: MAX_NO_TRANSLATION_LANGUAGES },
+                    `Please select up to ${MAX_NO_TRANSLATION_LANGUAGES} languages for Just Fetch mode`
+                );
                 errorDiv.classList.add('show');
             }
             return false;
@@ -8239,7 +9025,7 @@ Translate to {target_language}.`;
     }
 
     function getProviderKeys() {
-        return Object.keys(PROVIDERS).filter(k => k !== 'gemini');
+        return Object.keys(PROVIDERS).filter((k) => k !== 'gemini');
     }
 
     function isProviderEnabled(key) {
@@ -8268,8 +9054,15 @@ Translate to {target_language}.`;
 
         if (!options.silent && prev !== betaEnabled) {
             try {
-                showAlert(betaEnabled ? tConfig('config.alerts.betaOn', {}, '🔬 Experimental Mode ON') : tConfig('config.alerts.betaOff', {}, '🔬 Experimental Mode OFF'), betaEnabled ? 'success' : 'info', betaEnabled ? 'config.alerts.betaOn' : 'config.alerts.betaOff', {});
-            } catch (_) { }
+                showAlert(
+                    betaEnabled
+                        ? tConfig('config.alerts.betaOn', {}, '🔬 Experimental Mode ON')
+                        : tConfig('config.alerts.betaOff', {}, '🔬 Experimental Mode OFF'),
+                    betaEnabled ? 'success' : 'info',
+                    betaEnabled ? 'config.alerts.betaOn' : 'config.alerts.betaOff',
+                    {}
+                );
+            } catch (_) {}
         }
 
         updateBypassCacheForAdvancedSettings();
@@ -8369,11 +9162,11 @@ Translate to {target_language}.`;
         if (!select) return;
         ensureProvidersInState();
         const opts = ['gemini'];
-        getProviderKeys().forEach(key => {
+        getProviderKeys().forEach((key) => {
             if (isProviderEnabled(key)) opts.push(key);
         });
         const prevValue = select.value;
-        const desiredOptions = opts.map(key => ({
+        const desiredOptions = opts.map((key) => ({
             value: key,
             text: PROVIDERS[key]?.label || key
         }));
@@ -8397,16 +9190,21 @@ Translate to {target_language}.`;
         // Prefer the live UI value for main to avoid stale state during load
         const mainKey = (mainSelect?.value || currentConfig.mainProvider || 'gemini').toLowerCase();
         const opts = ['gemini'];
-        getProviderKeys().forEach(key => {
+        getProviderKeys().forEach((key) => {
             if (isProviderEnabled(key) && key.toLowerCase() !== mainKey) {
                 opts.push(key);
             }
         });
-        const filtered = opts.filter(key => key.toLowerCase() !== mainKey);
+        const filtered = opts.filter((key) => key.toLowerCase() !== mainKey);
 
         if (filtered.length === 0) {
             toggle.disabled = true;
-            syncSelectOptions(select, [{ value: '', text: tConfig('config.providersUi.noFallbackProviders', {}, 'No fallback providers available') }]);
+            syncSelectOptions(select, [
+                {
+                    value: '',
+                    text: tConfig('config.providersUi.noFallbackProviders', {}, 'No fallback providers available')
+                }
+            ]);
             select.disabled = true;
             toggle.checked = false;
             currentConfig.secondaryProviderEnabled = false;
@@ -8417,22 +9215,21 @@ Translate to {target_language}.`;
 
         toggle.disabled = false;
         const placeholderText = tConfig('config.providersUi.selectProvider', {}, 'Select provider');
-        const desiredOptions = [{ value: '', text: placeholderText }].concat(filtered.map(key => ({
-            value: key,
-            text: PROVIDERS[key]?.label || key
-        })));
+        const desiredOptions = [{ value: '', text: placeholderText }].concat(
+            filtered.map((key) => ({
+                value: key,
+                text: PROVIDERS[key]?.label || key
+            }))
+        );
         syncSelectOptions(select, desiredOptions);
 
         // Prefer the caller's requested key (case-insensitive), otherwise preserve current selection when valid
-        const lowerFiltered = new Set(filtered.map(f => f.toLowerCase()));
+        const lowerFiltered = new Set(filtered.map((f) => f.toLowerCase()));
         const matchKey = (key) => {
             const lower = String(key || '').toLowerCase();
-            return filtered.find(f => f.toLowerCase() === lower);
+            return filtered.find((f) => f.toLowerCase() === lower);
         };
-        const chosen =
-            matchKey(selectedKey) ||
-            matchKey(select.value) ||
-            filtered[0];
+        const chosen = matchKey(selectedKey) || matchKey(select.value) || filtered[0];
         select.value = chosen;
 
         // If fallback is enabled but no value was saved (e.g., previous UI bug), default to first available
@@ -8460,7 +9257,7 @@ Translate to {target_language}.`;
         const emptyState = document.getElementById('providerAdvancedEmpty');
         let visibleCount = 0;
 
-        blocks.forEach(block => {
+        blocks.forEach((block) => {
             const key = block.dataset.provider;
             const enabled = document.getElementById(`provider-${key}-enabled`)?.checked;
             const isVisible = enabled === true;
@@ -8478,7 +9275,7 @@ Translate to {target_language}.`;
         const merged = mergeProviderParameters(defaults, params || {});
         currentConfig.providerParameters = merged;
 
-        Object.keys(merged).forEach(key => {
+        Object.keys(merged).forEach((key) => {
             const cfg = merged[key] || {};
             const tempEl = document.getElementById(`provider-${key}-temperature`);
             const topPEl = document.getElementById(`provider-${key}-topP`);
@@ -8507,7 +9304,7 @@ Translate to {target_language}.`;
     function getProviderParametersFromForm() {
         const defaults = getDefaultProviderParameters();
         const params = {};
-        Object.keys(defaults).forEach(key => {
+        Object.keys(defaults).forEach((key) => {
             const tempEl = document.getElementById(`provider-${key}-temperature`);
             const topPEl = document.getElementById(`provider-${key}-topP`);
             const tokensEl = document.getElementById(`provider-${key}-maxTokens`);
@@ -8522,9 +9319,29 @@ Translate to {target_language}.`;
             params[key] = {
                 temperature: sanitizeNumber(tempEl ? tempEl.value : undefined, defaults[key].temperature, 0, 2),
                 topP: sanitizeNumber(topPEl ? topPEl.value : undefined, defaults[key].topP, 0, 1),
-                maxOutputTokens: Math.max(1, Math.min(200000, parseInt(tokensEl ? tokensEl.value : defaults[key].maxOutputTokens) || defaults[key].maxOutputTokens)),
-                translationTimeout: Math.max(5, Math.min(720, parseInt(timeoutEl ? timeoutEl.value : defaults[key].translationTimeout) || defaults[key].translationTimeout)),
-                maxRetries: Math.max(0, Math.min(5, parseInt(retriesEl ? retriesEl.value : defaults[key].maxRetries) || defaults[key].maxRetries)),
+                maxOutputTokens: Math.max(
+                    1,
+                    Math.min(
+                        200000,
+                        parseInt(tokensEl ? tokensEl.value : defaults[key].maxOutputTokens) ||
+                            defaults[key].maxOutputTokens
+                    )
+                ),
+                translationTimeout: Math.max(
+                    5,
+                    Math.min(
+                        720,
+                        parseInt(timeoutEl ? timeoutEl.value : defaults[key].translationTimeout) ||
+                            defaults[key].translationTimeout
+                    )
+                ),
+                maxRetries: Math.max(
+                    0,
+                    Math.min(
+                        5,
+                        parseInt(retriesEl ? retriesEl.value : defaults[key].maxRetries) || defaults[key].maxRetries
+                    )
+                ),
                 reasoningEffort: (() => {
                     const val = reasoningEl ? reasoningEl.value : baseDefaults.reasoningEffort;
                     // Allow empty string to explicitly disable reasoning effort
@@ -8551,7 +9368,9 @@ Translate to {target_language}.`;
                 params[key].modelType = modelTypeEl ? modelTypeEl.value : (baseDefaults.modelType ?? '');
             }
             if (preserveEl || baseDefaults.preserveFormatting !== undefined) {
-                params[key].preserveFormatting = preserveEl ? preserveEl.checked : baseDefaults.preserveFormatting === true;
+                params[key].preserveFormatting = preserveEl
+                    ? preserveEl.checked
+                    : baseDefaults.preserveFormatting === true;
             }
         });
         return params;
@@ -8566,7 +9385,7 @@ Translate to {target_language}.`;
         placeholder.textContent = tConfig('config.providersUi.selectModel', {}, 'Select model');
         select.appendChild(placeholder);
 
-        (models || []).forEach(model => {
+        (models || []).forEach((model) => {
             if (!model || !model.name) return;
             const opt = document.createElement('option');
             opt.value = model.name;
@@ -8575,7 +9394,7 @@ Translate to {target_language}.`;
         });
 
         if (selectedModel) {
-            const exists = Array.from(select.options || []).some(o => o.value === selectedModel);
+            const exists = Array.from(select.options || []).some((o) => o.value === selectedModel);
             if (!exists) {
                 const extraOpt = document.createElement('option');
                 extraOpt.value = selectedModel;
@@ -8627,9 +9446,7 @@ Translate to {target_language}.`;
 
         // 5. KIMI K2.7 (Always-on auto)
         if (m.includes('k2.7')) {
-            return [
-                { value: 'low', label: 'Always-On (Preserved Thinking)' }
-            ];
+            return [{ value: 'low', label: 'Always-On (Preserved Thinking)' }];
         }
 
         // 6. KIMI K3 (ALWAYS-ON: Tiada pilihan disabled)
@@ -8709,7 +9526,7 @@ Translate to {target_language}.`;
         const options = getModelThinkingOptions(modelName);
         reasoningSelect.innerHTML = '';
 
-        options.forEach(opt => {
+        options.forEach((opt) => {
             const el = document.createElement('option');
             el.value = opt.value;
             el.textContent = opt.label;
@@ -8717,7 +9534,7 @@ Translate to {target_language}.`;
         });
 
         // Pilih nilai yang sepadan, atau gunakan pilihan pertama sekiranya nilai semasa tidak sah untuk model ini
-        const validValues = options.map(o => o.value);
+        const validValues = options.map((o) => o.value);
         if (selectedEffort && validValues.includes(selectedEffort)) {
             reasoningSelect.value = selectedEffort;
         } else {
@@ -8738,8 +9555,9 @@ Translate to {target_language}.`;
     function applyProvidersToForm(providers) {
         ensureProvidersInState();
         ensureProviderParametersInState();
-        getProviderKeys().forEach(key => {
-            const cfg = providers && (providers[key] || providers[Object.keys(providers).find(k => k.toLowerCase() === key)]);
+        getProviderKeys().forEach((key) => {
+            const cfg =
+                providers && (providers[key] || providers[Object.keys(providers).find((k) => k.toLowerCase() === key)]);
             const enabled = cfg?.enabled === true;
             const toggle = document.getElementById(`provider-${key}-enabled`);
             const apiKeyInput = document.getElementById(`provider-${key}-key`);
@@ -8785,7 +9603,7 @@ Translate to {target_language}.`;
     function getProvidersFromForm() {
         ensureProvidersInState();
         const providers = {};
-        getProviderKeys().forEach(key => {
+        getProviderKeys().forEach((key) => {
             const toggle = document.getElementById(`provider-${key}-enabled`);
             const apiKeyInput = document.getElementById(`provider-${key}-key`);
             const modelSelect = document.getElementById(`provider-${key}-model`);
@@ -8802,14 +9620,14 @@ Translate to {target_language}.`;
         });
         return providers;
     }
-    
+
     function parseCfWorkersKey(rawKey) {
         const cleaned = typeof rawKey === 'string' ? rawKey.trim() : '';
         let accountId = '';
         let token = '';
 
         if (cleaned) {
-            const delimiter = cleaned.includes('|') ? '|' : (cleaned.includes(':') ? ':' : null);
+            const delimiter = cleaned.includes('|') ? '|' : cleaned.includes(':') ? ':' : null;
             if (delimiter) {
                 const [account, ...rest] = cleaned.split(delimiter);
                 accountId = (account || '').trim();
@@ -8830,7 +9648,16 @@ Translate to {target_language}.`;
         // For other providers, API key is required unless in KEY_OPTIONAL_PROVIDERS
         if (!apiKey && !KEY_OPTIONAL_PROVIDERS.has(providerKey)) {
             if (!options.silent) {
-                showAlert(tConfig('config.alerts.missingProviderKey', { provider: PROVIDERS[providerKey]?.label || providerKey }, `Add an API key for ${PROVIDERS[providerKey]?.label || providerKey} to load models`), 'warning', 'config.alerts.missingProviderKey', { provider: PROVIDERS[providerKey]?.label || providerKey });
+                showAlert(
+                    tConfig(
+                        'config.alerts.missingProviderKey',
+                        { provider: PROVIDERS[providerKey]?.label || providerKey },
+                        `Add an API key for ${PROVIDERS[providerKey]?.label || providerKey} to load models`
+                    ),
+                    'warning',
+                    'config.alerts.missingProviderKey',
+                    { provider: PROVIDERS[providerKey]?.label || providerKey }
+                );
             }
             return;
         }
@@ -8839,7 +9666,12 @@ Translate to {target_language}.`;
             const baseUrlInput = document.getElementById('provider-custom-baseUrl');
             if (!baseUrlInput || !baseUrlInput.value.trim()) {
                 if (!options.silent) {
-                    showAlert(tConfig('config.alerts.missingCustomBaseUrl', {}, 'Enter a base URL for the custom provider'), 'warning', 'config.alerts.missingCustomBaseUrl', {});
+                    showAlert(
+                        tConfig('config.alerts.missingCustomBaseUrl', {}, 'Enter a base URL for the custom provider'),
+                        'warning',
+                        'config.alerts.missingCustomBaseUrl',
+                        {}
+                    );
                 }
                 return;
             }
@@ -8856,7 +9688,16 @@ Translate to {target_language}.`;
                     modelSelect.innerHTML = `<option value="">${tConfig('config.providersUi.cfworkersLoadModels', {}, 'Add ACCOUNT_ID|TOKEN to load models')}</option>`;
                 }
                 if (!options.silent) {
-                    showAlert(tConfig('config.alerts.missingCfWorkers', {}, 'Cloudflare Workers AI key must be in ACCOUNT_ID|TOKEN format'), 'error', 'config.alerts.missingCfWorkers', {});
+                    showAlert(
+                        tConfig(
+                            'config.alerts.missingCfWorkers',
+                            {},
+                            'Cloudflare Workers AI key must be in ACCOUNT_ID|TOKEN format'
+                        ),
+                        'error',
+                        'config.alerts.missingCfWorkers',
+                        {}
+                    );
                 }
                 return;
             }
@@ -8883,7 +9724,7 @@ Translate to {target_language}.`;
                     try {
                         const text = await response.text();
                         if (text) errorMessage = text;
-                    } catch (_) { }
+                    } catch (_) {}
                 }
                 throw new Error(errorMessage);
             }
@@ -8892,12 +9733,30 @@ Translate to {target_language}.`;
             providerModelCache[providerKey] = models;
             populateProviderModels(providerKey, models, currentConfig.providers?.[providerKey]?.model || '');
             if (!options.silent) {
-                showAlert(tConfig('config.alerts.loadModelsSuccess', { count: models.length, provider: PROVIDERS[providerKey]?.label || providerKey }, `Loaded ${models.length} models for ${PROVIDERS[providerKey]?.label || providerKey}`), 'success', 'config.alerts.loadModelsSuccess', { count: models.length, provider: PROVIDERS[providerKey]?.label || providerKey });
+                showAlert(
+                    tConfig(
+                        'config.alerts.loadModelsSuccess',
+                        { count: models.length, provider: PROVIDERS[providerKey]?.label || providerKey },
+                        `Loaded ${models.length} models for ${PROVIDERS[providerKey]?.label || providerKey}`
+                    ),
+                    'success',
+                    'config.alerts.loadModelsSuccess',
+                    { count: models.length, provider: PROVIDERS[providerKey]?.label || providerKey }
+                );
             }
         } catch (err) {
             populateProviderModels(providerKey, [], '');
             if (!options.silent) {
-                showAlert(tConfig('config.alerts.loadModelsFailed', { provider: PROVIDERS[providerKey]?.label || providerKey, reason: err.message }, `Failed to load models for ${PROVIDERS[providerKey]?.label || providerKey}: ${err.message}`), 'error', 'config.alerts.loadModelsFailed', { provider: PROVIDERS[providerKey]?.label || providerKey, reason: err.message });
+                showAlert(
+                    tConfig(
+                        'config.alerts.loadModelsFailed',
+                        { provider: PROVIDERS[providerKey]?.label || providerKey, reason: err.message },
+                        `Failed to load models for ${PROVIDERS[providerKey]?.label || providerKey}: ${err.message}`
+                    ),
+                    'error',
+                    'config.alerts.loadModelsFailed',
+                    { provider: PROVIDERS[providerKey]?.label || providerKey, reason: err.message }
+                );
             }
         }
     }
@@ -8919,7 +9778,7 @@ Translate to {target_language}.`;
 
             if (keysList) {
                 const inputs = keysList.querySelectorAll('.gemini-api-key-input');
-                inputs.forEach(inp => {
+                inputs.forEach((inp) => {
                     if (!inp.value?.trim()) {
                         hasEmptyFields = true;
                         inp.classList.add('invalid');
@@ -8928,7 +9787,11 @@ Translate to {target_language}.`;
             }
 
             if (hasEmptyFields) {
-                const message = tConfig('config.validation.geminiKeysFillEmpty', {}, '⚠️ Please fill in all API key fields or remove empty ones');
+                const message = tConfig(
+                    'config.validation.geminiKeysFillEmpty',
+                    {},
+                    '⚠️ Please fill in all API key fields or remove empty ones'
+                );
                 if (keysError) {
                     keysError.textContent = message;
                     keysError.style.display = 'block';
@@ -8940,7 +9803,11 @@ Translate to {target_language}.`;
             }
 
             if (keys.length === 0) {
-                const message = tConfig('config.validation.geminiKeysRequired', {}, '⚠️ At least one API key is required for rotation');
+                const message = tConfig(
+                    'config.validation.geminiKeysRequired',
+                    {},
+                    '⚠️ At least one API key is required for rotation'
+                );
                 if (keysError) {
                     keysError.textContent = message;
                     keysError.style.display = 'block';
@@ -8968,7 +9835,8 @@ Translate to {target_language}.`;
         function restoreModelDropdownToPlaceholder() {
             const modelSelect = document.getElementById('geminiModel');
             if (modelSelect) {
-                modelSelect.innerHTML = '<option value="" disabled selected>Enter and validate API key to select model</option>';
+                modelSelect.innerHTML =
+                    '<option value="" disabled selected>Enter and validate API key to select model</option>';
                 modelSelect.disabled = true;
                 modelSelect.value = '';
             }
@@ -9088,7 +9956,10 @@ Translate to {target_language}.`;
             btn.classList.add('error');
             if (iconEl) iconEl.textContent = '✗';
             input.classList.add('invalid');
-            showAlert(tConfig('config.validation.apiError', { reason: err.message }, `API error: ${err.message}`), 'error');
+            showAlert(
+                tConfig('config.validation.apiError', { reason: err.message }, `API error: ${err.message}`),
+                'error'
+            );
         }
     }
 
@@ -9113,19 +9984,34 @@ Translate to {target_language}.`;
 
         const currentCount = keysList.children.length;
         if (currentCount >= MAX_GEMINI_API_KEYS) {
-            showAlert(tConfig('config.alerts.maxKeysReached', { max: MAX_GEMINI_API_KEYS }, `Maximum of ${MAX_GEMINI_API_KEYS} API keys allowed`), 'warning');
+            showAlert(
+                tConfig(
+                    'config.alerts.maxKeysReached',
+                    { max: MAX_GEMINI_API_KEYS },
+                    `Maximum of ${MAX_GEMINI_API_KEYS} API keys allowed`
+                ),
+                'warning'
+            );
             return;
         }
 
         // Check if any existing fields are empty before adding a new one
         // This includes Key 1 (single key input) and additional keys (Key 2+)
-        if (!value) { // Only check when adding empty field (not when loading saved keys)
+        if (!value) {
+            // Only check when adding empty field (not when loading saved keys)
             const singleKeyInput = document.getElementById('geminiApiKey');
             const singleKeyValue = singleKeyInput?.value?.trim() || '';
 
             // Check Key 1 (single key field)
             if (!singleKeyValue) {
-                showAlert(tConfig('config.validation.geminiKeysFillEmpty', {}, 'Please fill in all API key fields before adding a new one'), 'warning');
+                showAlert(
+                    tConfig(
+                        'config.validation.geminiKeysFillEmpty',
+                        {},
+                        'Please fill in all API key fields before adding a new one'
+                    ),
+                    'warning'
+                );
                 singleKeyInput?.focus();
                 singleKeyInput?.classList.add('invalid');
                 return;
@@ -9135,7 +10021,14 @@ Translate to {target_language}.`;
             const existingInputs = keysList.querySelectorAll('.gemini-api-key-input');
             for (const inp of existingInputs) {
                 if (!inp.value?.trim()) {
-                    showAlert(tConfig('config.validation.geminiKeysFillEmpty', {}, 'Please fill in all API key fields before adding a new one'), 'warning');
+                    showAlert(
+                        tConfig(
+                            'config.validation.geminiKeysFillEmpty',
+                            {},
+                            'Please fill in all API key fields before adding a new one'
+                        ),
+                        'warning'
+                    );
                     inp.focus();
                     inp.classList.add('invalid');
                     return;
@@ -9389,8 +10282,16 @@ Translate to {target_language}.`;
         summary.className = 'bulk-import-preview-summary';
         const byType = result.stats.byType || {};
         const badgeDefs = [
-            { n: byType['google-legacy'] || 0, label: tConfig('config.gemini.bulkImport.typeGoogleLegacy', {}, 'Google'), crazy: false },
-            { n: byType['google-new'] || 0, label: tConfig('config.gemini.bulkImport.typeGoogleNew', {}, 'Google (new)'), crazy: false },
+            {
+                n: byType['google-legacy'] || 0,
+                label: tConfig('config.gemini.bulkImport.typeGoogleLegacy', {}, 'Google'),
+                crazy: false
+            },
+            {
+                n: byType['google-new'] || 0,
+                label: tConfig('config.gemini.bulkImport.typeGoogleNew', {}, 'Google (new)'),
+                crazy: false
+            },
             { n: byType['crazyrouter'] || 0, label: 'CrazyRouter', crazy: true }
         ];
         let anyBadge = false;
@@ -9437,13 +10338,31 @@ Translate to {target_language}.`;
         // Warnings (duplicates / truncated).
         const warnParts = [];
         if (result.stats.duplicatesInText > 0) {
-            warnParts.push(tConfig('config.gemini.bulkImport.warnDuplicatesInText', { count: result.stats.duplicatesInText }, `${result.stats.duplicatesInText} duplicate(s) within the paste ignored`));
+            warnParts.push(
+                tConfig(
+                    'config.gemini.bulkImport.warnDuplicatesInText',
+                    { count: result.stats.duplicatesInText },
+                    `${result.stats.duplicatesInText} duplicate(s) within the paste ignored`
+                )
+            );
         }
         if (result.stats.duplicatesExisting > 0) {
-            warnParts.push(tConfig('config.gemini.bulkImport.warnDuplicatesExisting', { count: result.stats.duplicatesExisting }, `${result.stats.duplicatesExisting} already in the list`));
+            warnParts.push(
+                tConfig(
+                    'config.gemini.bulkImport.warnDuplicatesExisting',
+                    { count: result.stats.duplicatesExisting },
+                    `${result.stats.duplicatesExisting} already in the list`
+                )
+            );
         }
         if (result.stats.truncated) {
-            warnParts.push(tConfig('config.gemini.bulkImport.warnTruncated', { max: MAX_GEMINI_API_KEYS }, `Import capped at ${MAX_GEMINI_API_KEYS} keys`));
+            warnParts.push(
+                tConfig(
+                    'config.gemini.bulkImport.warnTruncated',
+                    { max: MAX_GEMINI_API_KEYS },
+                    `Import capped at ${MAX_GEMINI_API_KEYS} keys`
+                )
+            );
         }
         if (warnParts.length > 0) {
             const warn = document.createElement('div');
@@ -9466,7 +10385,10 @@ Translate to {target_language}.`;
     function applyBulkImport() {
         const api = getBulkImportApi();
         const ta = document.getElementById('bulkImportTextarea');
-        if (!api || !ta) { closeBulkImportModal(); return; }
+        if (!api || !ta) {
+            closeBulkImportModal();
+            return;
+        }
 
         const existing = getGeminiApiKeys();
         const remaining = Number.isFinite(MAX_GEMINI_API_KEYS)
@@ -9474,7 +10396,10 @@ Translate to {target_language}.`;
             : Infinity;
         const result = api.parseBulkKeys(ta.value || '', { existingKeys: existing, maxKeys: remaining });
 
-        if (result.keys.length === 0) { closeBulkImportModal(); return; }
+        if (result.keys.length === 0) {
+            closeBulkImportModal();
+            return;
+        }
 
         // Ensure rotation UI is active so the list is visible (UI-only; no network).
         const rotationToggle = document.getElementById('geminiKeyRotationEnabled');
@@ -9505,8 +10430,9 @@ Translate to {target_language}.`;
         // yet — the normal Save flow handles that with rate limiting).
         try {
             currentConfig.geminiApiKeys = getGeminiApiKeys();
-            currentConfig.geminiKeyRotationEnabled = document.getElementById('geminiKeyRotationEnabled')?.checked === true;
-        } catch (_) { }
+            currentConfig.geminiKeyRotationEnabled =
+                document.getElementById('geminiKeyRotationEnabled')?.checked === true;
+        } catch (_) {}
 
         closeBulkImportModal();
 
@@ -9611,7 +10537,7 @@ Translate to {target_language}.`;
         const keysList = document.getElementById('geminiApiKeysList');
         if (keysList) {
             const inputs = keysList.querySelectorAll('.gemini-api-key-input');
-            inputs.forEach(input => {
+            inputs.forEach((input) => {
                 const value = input.value?.trim();
                 if (value) {
                     keys.push(value);
@@ -9629,7 +10555,11 @@ Translate to {target_language}.`;
         if (!input) return false;
 
         const value = input.value.trim();
-        const requiredMsg = tConfig('config.validation.assemblyAiKeyRequired', {}, '⚠️ AssemblyAI API key is required for AssemblyAI mode');
+        const requiredMsg = tConfig(
+            'config.validation.assemblyAiKeyRequired',
+            {},
+            '⚠️ AssemblyAI API key is required for AssemblyAI mode'
+        );
 
         if (!value) {
             input.classList.add('invalid');
@@ -9663,9 +10593,12 @@ Translate to {target_language}.`;
             });
             const data = await resp.json().catch(() => ({}));
             const valid = data?.valid === true;
-            const message = data?.message || (valid
-                ? tConfig('config.validation.apiKeyValid', {}, 'API key is valid')
-                : (data?.error || tConfig('config.validation.assemblyAiKeyInvalid', {}, 'AssemblyAI API key is invalid')));
+            const message =
+                data?.message ||
+                (valid
+                    ? tConfig('config.validation.apiKeyValid', {}, 'API key is valid')
+                    : data?.error ||
+                      tConfig('config.validation.assemblyAiKeyInvalid', {}, 'AssemblyAI API key is invalid'));
             if (valid) {
                 input.classList.add('valid');
                 if (feedback) {
@@ -9710,8 +10643,16 @@ Translate to {target_language}.`;
         if (!input) return false;
 
         const value = input.value.trim();
-        const requiredMsg = tConfig('config.validation.cloudflareWorkersKeyRequired', {}, '⚠️ Cloudflare Workers AI key is required for auto-subs (xSync)');
-        const formatMsg = tConfig('config.validation.cloudflareWorkersKeyFormat', {}, '⚠️ Add Cloudflare Workers AI key as ACCOUNT_ID|TOKEN');
+        const requiredMsg = tConfig(
+            'config.validation.cloudflareWorkersKeyRequired',
+            {},
+            '⚠️ Cloudflare Workers AI key is required for auto-subs (xSync)'
+        );
+        const formatMsg = tConfig(
+            'config.validation.cloudflareWorkersKeyFormat',
+            {},
+            '⚠️ Add Cloudflare Workers AI key as ACCOUNT_ID|TOKEN'
+        );
 
         if (!value) {
             input.classList.add('invalid');
@@ -9818,11 +10759,19 @@ Translate to {target_language}.`;
 
             // Surface a user-facing message if Auth mode isn't active
             if (!opensubsEnabled) {
-                showValidationFeedback(feedback, 'error', tConfig('config.validation.opensubsEnable', {}, 'Enable OpenSubtitles before testing credentials.'));
+                showValidationFeedback(
+                    feedback,
+                    'error',
+                    tConfig('config.validation.opensubsEnable', {}, 'Enable OpenSubtitles before testing credentials.')
+                );
                 return;
             }
             if (impl !== 'auth') {
-                showValidationFeedback(feedback, 'error', tConfig('config.validation.opensubsAuthMode', {}, 'Switch to Auth mode to test your credentials.'));
+                showValidationFeedback(
+                    feedback,
+                    'error',
+                    tConfig('config.validation.opensubsAuthMode', {}, 'Switch to Auth mode to test your credentials.')
+                );
                 return;
             }
         } else if (provider === 'gemini') {
@@ -9835,12 +10784,20 @@ Translate to {target_language}.`;
         // Validate input
         if (provider === 'opensubtitles') {
             if (!username || !password) {
-                showValidationFeedback(feedback, 'error', tConfig('config.validation.credentialsRequired', {}, 'Please enter both username and password'));
+                showValidationFeedback(
+                    feedback,
+                    'error',
+                    tConfig('config.validation.credentialsRequired', {}, 'Please enter both username and password')
+                );
                 return;
             }
         } else {
             if (!apiKey) {
-                showValidationFeedback(feedback, 'error', tConfig('config.validation.apiKeyRequired', {}, 'Please enter an API key'));
+                showValidationFeedback(
+                    feedback,
+                    'error',
+                    tConfig('config.validation.apiKeyRequired', {}, 'Please enter an API key')
+                );
                 return;
             }
         }
@@ -9866,9 +10823,7 @@ Translate to {target_language}.`;
 
         try {
             // Call validation endpoint
-            const body = provider === 'opensubtitles'
-                ? { username, password }
-                : { apiKey };
+            const body = provider === 'opensubtitles' ? { username, password } : { apiKey };
 
             const response = await fetch(endpoint, {
                 method: 'POST',
@@ -9892,7 +10847,13 @@ Translate to {target_language}.`;
 
                 let message = result.message || tConfig('config.validation.apiKeyValid', {}, 'API key is valid');
                 if (result.resultsCount !== undefined) {
-                    message += ' ' + tConfig('config.validation.testResults', { count: result.resultsCount }, `(${result.resultsCount} test results)`);
+                    message +=
+                        ' ' +
+                        tConfig(
+                            'config.validation.testResults',
+                            { count: result.resultsCount },
+                            `(${result.resultsCount} test results)`
+                        );
                 }
 
                 showValidationFeedback(feedback, 'success', message);
@@ -9918,16 +10879,21 @@ Translate to {target_language}.`;
                 setTimeout(() => {
                     btn.classList.remove('success');
                     iconEl.textContent = originalIcon;
-                    textEl.textContent = provider === 'opensubtitles'
-                        ? tConfig('config.validation.testCredentials', {}, 'Test Credentials')
-                        : tConfig('config.validation.test', {}, 'Test');
+                    textEl.textContent =
+                        provider === 'opensubtitles'
+                            ? tConfig('config.validation.testCredentials', {}, 'Test Credentials')
+                            : tConfig('config.validation.test', {}, 'Test');
                 }, 3000);
             } else {
                 // Error
                 btn.classList.add('error');
                 iconEl.textContent = '✗';
                 textEl.textContent = tConfig('config.validation.invalid', {}, 'Invalid');
-                showValidationFeedback(feedback, 'error', result.error || tConfig('config.validation.validationFailed', {}, 'Validation failed'));
+                showValidationFeedback(
+                    feedback,
+                    'error',
+                    result.error || tConfig('config.validation.validationFailed', {}, 'Validation failed')
+                );
 
                 // For Gemini: Mark input as invalid (red border)
                 if (provider === 'gemini') {
@@ -9942,19 +10908,23 @@ Translate to {target_language}.`;
                 setTimeout(() => {
                     btn.classList.remove('error');
                     iconEl.textContent = originalIcon;
-                    textEl.textContent = provider === 'opensubtitles'
-                        ? tConfig('config.validation.testCredentials', {}, 'Test Credentials')
-                        : tConfig('config.validation.test', {}, 'Test');
+                    textEl.textContent =
+                        provider === 'opensubtitles'
+                            ? tConfig('config.validation.testCredentials', {}, 'Test Credentials')
+                            : tConfig('config.validation.test', {}, 'Test');
                 }, 4000);
             }
-
         } catch (error) {
             btn.classList.remove('validating');
             btn.classList.add('error');
             btn.disabled = false;
             iconEl.textContent = '✗';
             textEl.textContent = tConfig('config.validation.error', {}, 'Error');
-            showValidationFeedback(feedback, 'error', tConfig('config.validation.connectionError', {}, 'Connection error. Please try again.'));
+            showValidationFeedback(
+                feedback,
+                'error',
+                tConfig('config.validation.connectionError', {}, 'Connection error. Please try again.')
+            );
 
             // For Gemini: Mark input as invalid on connection error
             if (provider === 'gemini') {
@@ -10077,7 +11047,7 @@ Translate to {target_language}.`;
             { key: '?', action: 'Show this help' }
         ];
 
-        const message = shortcuts.map(s => `<span class="kbd">${s.key}</span> ${s.action}`).join('<br>');
+        const message = shortcuts.map((s) => `<span class="kbd">${s.key}</span> ${s.action}`).join('<br>');
 
         const alert = document.createElement('div');
         alert.className = 'alert alert-info';
@@ -10101,10 +11071,11 @@ Translate to {target_language}.`;
 
     function toggleAllSections() {
         const cards = Array.from(document.querySelectorAll('.card'));
-        const collapsibleCards = cards.filter(card => card.querySelector('.card-header'));
-        const allCollapsed = collapsibleCards.length > 0 && collapsibleCards.every(card => card.classList.contains('collapsed'));
+        const collapsibleCards = cards.filter((card) => card.querySelector('.card-header'));
+        const allCollapsed =
+            collapsibleCards.length > 0 && collapsibleCards.every((card) => card.classList.contains('collapsed'));
 
-        cards.forEach(card => {
+        cards.forEach((card) => {
             const hasHeader = !!card.querySelector('.card-header');
             if (!hasHeader) {
                 card.classList.remove('collapsed');
@@ -10117,7 +11088,7 @@ Translate to {target_language}.`;
             }
         });
 
-        document.querySelectorAll('.collapse-btn').forEach(btn => {
+        document.querySelectorAll('.collapse-btn').forEach((btn) => {
             if (allCollapsed) {
                 btn.classList.remove('collapsed');
             } else {
@@ -10137,17 +11108,19 @@ Translate to {target_language}.`;
         const otherSettingsCard = document.getElementById('otherSettingsCard');
         const subToolboxNoTranslationGroup = document.getElementById('subToolboxNoTranslationGroup');
         const enableSeasonPacksNoTranslationGroup = document.getElementById('enableSeasonPacksNoTranslationGroup');
-        const excludeHearingImpairedNoTranslationGroup = document.getElementById('excludeHearingImpairedNoTranslationGroup');
+        const excludeHearingImpairedNoTranslationGroup = document.getElementById(
+            'excludeHearingImpairedNoTranslationGroup'
+        );
         const convertAssToVttNoTranslationGroup = document.getElementById('convertAssToVttNoTranslationGroup');
         const forceSRTOutputNoTranslationGroup = document.getElementById('forceSRTOutputNoTranslationGroup');
 
-        ['databaseMode', 'learnModeEnabled', 'mobileMode', 'betaMode'].forEach(id => {
+        ['databaseMode', 'learnModeEnabled', 'mobileMode', 'betaMode'].forEach((id) => {
             const group = document.getElementById(id)?.closest('.form-group');
             if (group) groupsToHide.push(group);
         });
 
         if (enabled) {
-            groupsToHide.forEach(group => {
+            groupsToHide.forEach((group) => {
                 if (!group) return;
                 group.dataset.originalDisplay = group.style.display || '';
                 group.style.display = 'none';
@@ -10174,7 +11147,9 @@ Translate to {target_language}.`;
             return;
         }
 
-        const hasStoredState = groupsToHide.some(group => group && group.dataset.originalDisplay !== undefined) || (otherSettingsCard && otherSettingsCard.dataset.originalDisplay !== undefined);
+        const hasStoredState =
+            groupsToHide.some((group) => group && group.dataset.originalDisplay !== undefined) ||
+            (otherSettingsCard && otherSettingsCard.dataset.originalDisplay !== undefined);
         if (!hasStoredState) {
             if (subToolboxNoTranslationGroup) {
                 subToolboxNoTranslationGroup.style.display = 'none';
@@ -10194,13 +11169,16 @@ Translate to {target_language}.`;
             return;
         }
 
-        groupsToHide.forEach(group => {
+        groupsToHide.forEach((group) => {
             if (!group) return;
             const restoreValue = group.dataset.originalDisplay !== undefined ? group.dataset.originalDisplay : '';
             group.style.display = restoreValue;
         });
         if (otherSettingsCard) {
-            const restoreValue = otherSettingsCard.dataset.originalDisplay !== undefined ? otherSettingsCard.dataset.originalDisplay : '';
+            const restoreValue =
+                otherSettingsCard.dataset.originalDisplay !== undefined
+                    ? otherSettingsCard.dataset.originalDisplay
+                    : '';
             otherSettingsCard.style.display = restoreValue;
         }
         if (subToolboxNoTranslationGroup) {
@@ -10245,13 +11223,19 @@ Translate to {target_language}.`;
             translationModeBackup = {
                 sourceLanguages: Array.isArray(currentConfig.sourceLanguages) ? [...currentConfig.sourceLanguages] : [],
                 targetLanguages: Array.isArray(currentConfig.targetLanguages) ? [...currentConfig.targetLanguages] : [],
-                learnTargetLanguages: Array.isArray(currentConfig.learnTargetLanguages) ? [...currentConfig.learnTargetLanguages] : [],
+                learnTargetLanguages: Array.isArray(currentConfig.learnTargetLanguages)
+                    ? [...currentConfig.learnTargetLanguages]
+                    : [],
                 learnMode: currentConfig.learnMode === true,
                 learnOrder: currentConfig.learnOrder || 'source-top',
                 learnItalic: currentConfig.learnItalic !== false,
                 learnItalicTarget: currentConfig.learnItalicTarget || 'target'
             };
-            if ((!currentConfig.noTranslationLanguages || currentConfig.noTranslationLanguages.length === 0) && Array.isArray(noTranslationBackup) && noTranslationBackup.length > 0) {
+            if (
+                (!currentConfig.noTranslationLanguages || currentConfig.noTranslationLanguages.length === 0) &&
+                Array.isArray(noTranslationBackup) &&
+                noTranslationBackup.length > 0
+            ) {
                 currentConfig.noTranslationLanguages = [...noTranslationBackup];
             }
             betaModeLastState = {
@@ -10340,17 +11324,17 @@ Translate to {target_language}.`;
             const targetGrid = document.getElementById('targetLanguages');
 
             if (sourceGrid) {
-                sourceGrid.querySelectorAll('.language-item.selected').forEach(item => {
+                sourceGrid.querySelectorAll('.language-item.selected').forEach((item) => {
                     item.classList.remove('selected');
                 });
             }
             if (targetGrid) {
-                targetGrid.querySelectorAll('.language-item.selected').forEach(item => {
+                targetGrid.querySelectorAll('.language-item.selected').forEach((item) => {
                     item.classList.remove('selected');
                 });
             }
             if (learnGrid) {
-                learnGrid.querySelectorAll('.language-item.selected').forEach(item => {
+                learnGrid.querySelectorAll('.language-item.selected').forEach((item) => {
                     item.classList.remove('selected');
                 });
             }
@@ -10364,7 +11348,10 @@ Translate to {target_language}.`;
             updateSelectedChips('notranslation', currentConfig.noTranslationLanguages || []);
             syncGridSelection('noTranslationLanguages', currentConfig.noTranslationLanguages || []);
         } else {
-            if (Array.isArray(currentConfig.noTranslationLanguages) && currentConfig.noTranslationLanguages.length > 0) {
+            if (
+                Array.isArray(currentConfig.noTranslationLanguages) &&
+                currentConfig.noTranslationLanguages.length > 0
+            ) {
                 noTranslationBackup = [...currentConfig.noTranslationLanguages];
             }
             if (betaToggle) {
@@ -10422,7 +11409,7 @@ Translate to {target_language}.`;
             const noTranslationGrid = document.getElementById('noTranslationLanguages');
 
             if (noTranslationGrid) {
-                noTranslationGrid.querySelectorAll('.language-item.selected').forEach(item => {
+                noTranslationGrid.querySelectorAll('.language-item.selected').forEach((item) => {
                     item.classList.remove('selected');
                 });
             }
@@ -10466,14 +11453,12 @@ Translate to {target_language}.`;
         validateNoTranslationSelection();
     }
 
-
-
     function filterLanguages(gridId, searchTerm) {
         const grid = document.getElementById(gridId);
         const items = grid.querySelectorAll('.language-item');
         const term = searchTerm.toLowerCase();
 
-        items.forEach(item => {
+        items.forEach((item) => {
             const name = item.dataset.name;
             const code = item.dataset.code;
             const matches = name.includes(term) || code.includes(term);
@@ -10542,7 +11527,6 @@ Translate to {target_language}.`;
 
             // Populate advanced model dropdown with ALL models (no filtering, no auto-selection)
             await populateAdvancedModels(models);
-
         } catch (error) {
             if (statusDiv) {
                 statusDiv.innerHTML = '✗ Failed to fetch models. Check your API key.';
@@ -10577,25 +11561,25 @@ Translate to {target_language}.`;
     //   3. Strict whitelist   — 3 keluarga teras sahaja; suffix '-preview' dan alias
     //                            rasmi '-latest' dibenarkan; tunedModels/ ditolak.
     const SUBTITLE_MODEL_BLACKLIST_KEYWORDS = [
-        'gemma',          // keluarga Gemma (bukan Gemini)
-        'nano',           // Gemini Nano (peranti/konfigurasi kecil)
-        'antigravity',    // model eksperimental Antigravity
-        'deep-research',  // varian Deep Research
-        'lyria',          // penjanaan muzik
-        'transcribe',     // audio transkripsi
-        'computer',       // computer-use
-        'tts',            // teks-ke-pertuturan
-        'omni',           // omnimodal (audio/visi natif)
-        'robotics',       // robotik
-        'vision',         // visi sahaja (vision-only)
-        'imagen'          // penjanaan imej
+        'gemma', // keluarga Gemma (bukan Gemini)
+        'nano', // Gemini Nano (peranti/konfigurasi kecil)
+        'antigravity', // model eksperimental Antigravity
+        'deep-research', // varian Deep Research
+        'lyria', // penjanaan muzik
+        'transcribe', // audio transkripsi
+        'computer', // computer-use
+        'tts', // teks-ke-pertuturan
+        'omni', // omnimodal (audio/visi natif)
+        'robotics', // robotik
+        'vision', // visi sahaja (vision-only)
+        'imagen' // penjanaan imej
     ];
 
     // Whitelist ketat: suffix dibenarkan HANYA '-preview'; alias rasmi '-latest'
     // disokong melalui corak berasingan.
     const GEMINI_TEXT_MODEL_WHITELIST_PATTERN = /^gemini-(\d+(?:\.\d+)?)-(flash-lite|flash|pro)(-preview)?$/;
     const GEMINI_LATEST_ALIAS_PATTERN = /^gemini-(flash-lite|flash|pro)-latest$/;
-    const GEMINI_TIER_LABELS = { 'flash-lite': 'Flash-Lite', 'flash': 'Flash', 'pro': 'Pro' };
+    const GEMINI_TIER_LABELS = { 'flash-lite': 'Flash-Lite', flash: 'Flash', pro: 'Pro' };
 
     // Senarai tetap 8 model Gemini sah pada endpoint CrazyRouter (key jenis 'sk-',
     // dikesan oleh detectKeyType backend). Susunan rasmi dropdown:
@@ -10604,17 +11588,20 @@ Translate to {target_language}.`;
     const CRAZYROUTER_GEMINI_MODELS = [
         'gemini-3.1-flash-lite', // 1. Flash-Lite (tertinggi)
         'gemini-2.5-flash-lite', // 2. Flash-Lite
-        'gemini-3.8-flash',      // 3. Flash (tertinggi)
-        'gemini-3.5-flash',      // 4. Flash
-        'gemini-3-flash',        // 5. Flash
-        'gemini-2.5-flash',      // 6. Flash
-        'gemini-3.1-pro',        // 7. Pro (tertinggi)
-        'gemini-2.5-pro'         // 8. Pro
+        'gemini-3.8-flash', // 3. Flash (tertinggi)
+        'gemini-3.5-flash', // 4. Flash
+        'gemini-3-flash', // 5. Flash
+        'gemini-2.5-flash', // 6. Flash
+        'gemini-3.1-pro', // 7. Pro (tertinggi)
+        'gemini-2.5-pro' // 8. Pro
     ];
 
     function getModelSortName(model) {
         const raw = typeof model === 'string' ? model : String(model?.name || model?.id || '');
-        return raw.toLowerCase().replace(/^models\//, '').trim();
+        return raw
+            .toLowerCase()
+            .replace(/^models\//, '')
+            .trim();
     }
 
     function isWhitelistedGeminiTextModel(modelName) {
@@ -10665,11 +11652,13 @@ Translate to {target_language}.`;
     function sanitizeGeminiModelCatalog(models) {
         const seen = new Set();
         return (Array.isArray(models) ? models : [])
-            .filter(model => {
+            .filter((model) => {
                 const name = getModelSortName(model);
                 if (!name) return false;
-                if (Array.isArray(model?.supportedGenerationMethods)
-                    && !model.supportedGenerationMethods.includes('generateContent')) {
+                if (
+                    Array.isArray(model?.supportedGenerationMethods) &&
+                    !model.supportedGenerationMethods.includes('generateContent')
+                ) {
                     return false; // embedding / audio / visi semata-mata ditolak
                 }
                 if (!isWhitelistedGeminiTextModel(name)) return false;
@@ -10677,7 +11666,7 @@ Translate to {target_language}.`;
                 seen.add(name);
                 return true;
             })
-            .map(model => ({ name: getModelSortName(model), displayName: String(model?.displayName || '').trim() }))
+            .map((model) => ({ name: getModelSortName(model), displayName: String(model?.displayName || '').trim() }))
             .sort(compareGeminiModelsForDropdown);
     }
 
@@ -10696,7 +11685,7 @@ Translate to {target_language}.`;
         return String(modelId)
             .replace(/^models\//, '')
             .split('-')
-            .map(word => word.charAt(0).toUpperCase() + word.slice(1))
+            .map((word) => word.charAt(0).toUpperCase() + word.slice(1))
             .join(' ');
     }
 
@@ -10722,9 +11711,10 @@ Translate to {target_language}.`;
         if (formatted) return formatted;
 
         const officialDisplayName = String(model.displayName || '').trim();
-        const isRawId = !officialDisplayName
-            || officialDisplayName === rawName
-            || (officialDisplayName === officialDisplayName.toLowerCase() && officialDisplayName.includes('-'));
+        const isRawId =
+            !officialDisplayName ||
+            officialDisplayName === rawName ||
+            (officialDisplayName === officialDisplayName.toLowerCase() && officialDisplayName.includes('-'));
         return isRawId ? formatModelDisplayName(rawName) : officialDisplayName;
     }
 
@@ -10738,9 +11728,9 @@ Translate to {target_language}.`;
         // Google Direct: katalog dinamik /v1beta/models; fallback SAFE_DEFAULT_MODELS.
         let list;
         if (detectGeminiKeyType() === 'crazyrouter') {
-            list = CRAZYROUTER_GEMINI_MODELS.map(name => ({ name, displayName: '' }));
+            list = CRAZYROUTER_GEMINI_MODELS.map((name) => ({ name, displayName: '' }));
         } else {
-            list = (Array.isArray(models) && models.length) ? models : SAFE_DEFAULT_MODELS;
+            list = Array.isArray(models) && models.length ? models : SAFE_DEFAULT_MODELS;
         }
 
         // Whitelist sanitizer + susunan hierarki — ranking #1 (indeks 0) ialah
@@ -10754,7 +11744,7 @@ Translate to {target_language}.`;
         const savedBase = currentConfig.geminiModel || '';
 
         baseSelect.innerHTML = '';
-        sortedList.forEach(model => {
+        sortedList.forEach((model) => {
             const opt = document.createElement('option');
             opt.value = model.name;
             // Gunakan displayName rasmi jika berkualiti, sebaliknya format dari ID model
@@ -10772,7 +11762,7 @@ Translate to {target_language}.`;
         //    (DEFAULT_GEMINI_MODEL) TIDAK lagi dilayan sebagai sasaran paksa.
         // 2. Selebihnya: ranking #1 (teratas susunan hierarki) dipilih automatik
         //    sebaik sahaja dropdown selesai dimuatkan.
-        const loadedNames = sortedList.map(m => m.name);
+        const loadedNames = sortedList.map((m) => m.name);
         let target = '';
         if (savedBase && savedBase !== DEFAULT_GEMINI_MODEL) {
             if (loadedNames.includes(savedBase)) {
@@ -10840,7 +11830,7 @@ Translate to {target_language}.`;
                     // Source languages: respect MAX_SOURCE_LANGUAGES
                     // For "Popular" or "All", select up to the configured limit
                     const selectedCodes = [];
-                    items.forEach(item => {
+                    items.forEach((item) => {
                         if (selectedCodes.length >= MAX_SOURCE_LANGUAGES) return; // Limit to configured value
 
                         const code = item.dataset.code;
@@ -10853,7 +11843,7 @@ Translate to {target_language}.`;
 
                     if (selectedCodes.length > 0) {
                         currentConfig[configKey] = selectedCodes;
-                        items.forEach(item => {
+                        items.forEach((item) => {
                             if (selectedCodes.includes(item.dataset.code)) {
                                 item.classList.add('selected');
                             } else {
@@ -10864,7 +11854,7 @@ Translate to {target_language}.`;
                 } else {
                     // Target, learn and no-translation languages
                     const candidates = [];
-                    items.forEach(item => {
+                    items.forEach((item) => {
                         const code = item.dataset.code;
                         if (action.includes('popular')) {
                             if (POPULAR_LANGUAGES.includes(code)) {
@@ -10890,7 +11880,7 @@ Translate to {target_language}.`;
                     currentConfig[configKey] = selection;
                     const selectionSet = new Set(selection);
 
-                    items.forEach(item => {
+                    items.forEach((item) => {
                         if (selectionSet.has(item.dataset.code)) {
                             item.classList.add('selected');
                         } else {
@@ -10899,9 +11889,18 @@ Translate to {target_language}.`;
                     });
 
                     if (truncated) {
-                        const msg = type === 'notranslation'
-                            ? tConfig('config.alerts.noTranslationTrimmed', { limit: MAX_NO_TRANSLATION_LANGUAGES }, `Only the first ${MAX_NO_TRANSLATION_LANGUAGES} languages were kept for Just Fetch mode.`)
-                            : tConfig('config.alerts.targetsTrimmed', { limit: MAX_TARGET_LANGUAGES }, `Only the first ${MAX_TARGET_LANGUAGES} target languages were kept (combined with Learn Mode).`);
+                        const msg =
+                            type === 'notranslation'
+                                ? tConfig(
+                                      'config.alerts.noTranslationTrimmed',
+                                      { limit: MAX_NO_TRANSLATION_LANGUAGES },
+                                      `Only the first ${MAX_NO_TRANSLATION_LANGUAGES} languages were kept for Just Fetch mode.`
+                                  )
+                                : tConfig(
+                                      'config.alerts.targetsTrimmed',
+                                      { limit: MAX_TARGET_LANGUAGES },
+                                      `Only the first ${MAX_TARGET_LANGUAGES} target languages were kept (combined with Learn Mode).`
+                                  );
                         showAlert(msg, 'warning');
                     }
                 }
@@ -10911,7 +11910,7 @@ Translate to {target_language}.`;
                 currentConfig[configKey] = [];
                 // Remove selected class from ALL items, not just visible ones
                 const allItems = grid.querySelectorAll('.language-item');
-                allItems.forEach(item => {
+                allItems.forEach((item) => {
                     item.classList.remove('selected');
                 });
                 break;
@@ -10937,7 +11936,7 @@ Translate to {target_language}.`;
 
         // Fully disable inputs/buttons when hidden so nothing is focusable/tabbable
         const formControls = configDiv.querySelectorAll('input, select, textarea, button');
-        formControls.forEach(control => {
+        formControls.forEach((control) => {
             control.disabled = !enabled;
         });
 
@@ -10954,13 +11953,14 @@ Translate to {target_language}.`;
      */
     async function getCurrentAppVersion() {
         try {
-            const bootVersion = (typeof window !== 'undefined' && typeof window.__APP_VERSION__ === 'string')
-                ? window.__APP_VERSION__.trim()
-                : '';
+            const bootVersion =
+                typeof window !== 'undefined' && typeof window.__APP_VERSION__ === 'string'
+                    ? window.__APP_VERSION__.trim()
+                    : '';
             if (bootVersion) {
                 return bootVersion;
             }
-        } catch (_) { }
+        } catch (_) {}
 
         try {
             const controller = new AbortController();
@@ -10972,7 +11972,9 @@ Translate to {target_language}.`;
             } finally {
                 clearTimeout(timeout);
             }
-        } catch (error) { return 'unknown'; }
+        } catch (error) {
+            return 'unknown';
+        }
     }
 
     /**
@@ -10992,9 +11994,13 @@ Translate to {target_language}.`;
             }
 
             // Get and save current app version
-            getCurrentAppVersion().then(version => {
-                try { localStorage.setItem(CACHE_VERSION_KEY, version); } catch (error) { }
-            }).catch(function () { });
+            getCurrentAppVersion()
+                .then((version) => {
+                    try {
+                        localStorage.setItem(CACHE_VERSION_KEY, version);
+                    } catch (error) {}
+                })
+                .catch(function () {});
         } catch (error) {
             // Continue anyway - caching is optional
         }
@@ -11005,10 +12011,14 @@ Translate to {target_language}.`;
      * Returns null if invalid, otherwise returns the config
      */
     function validateConfig(config) {
-        if (!config || typeof config !== 'object') { return null; }
+        if (!config || typeof config !== 'object') {
+            return null;
+        }
 
         // Check for critical required fields
-        if (typeof config.subtitleProviders !== 'object') { return null; }
+        if (typeof config.subtitleProviders !== 'object') {
+            return null;
+        }
 
         // Config is valid
         return config;
@@ -11020,14 +12030,14 @@ Translate to {target_language}.`;
      */
     function clearVisualStateCache() {
         try {
-            VISUAL_STATE_KEYS.forEach(key => {
+            VISUAL_STATE_KEYS.forEach((key) => {
                 try {
                     localStorage.removeItem(key);
                 } catch (e) {
                     // Ignore individual removals
                 }
             });
-        } catch (error) { }
+        } catch (error) {}
     }
 
     /**
@@ -11047,13 +12057,15 @@ Translate to {target_language}.`;
             const oldMultiEnabled = oldConfig.multiProviderEnabled === true;
             const oldSecondaryEnabled = oldMultiEnabled && oldConfig.secondaryProviderEnabled === true;
             const oldMainProvider = String(oldConfig.mainProvider || 'gemini').toLowerCase();
-            const oldSecondaryProvider = oldSecondaryEnabled ? String(oldConfig.secondaryProvider || '').toLowerCase() : '';
+            const oldSecondaryProvider = oldSecondaryEnabled
+                ? String(oldConfig.secondaryProvider || '').toLowerCase()
+                : '';
 
             // Preserve Gemini API key and key rotation settings
             newConfig.geminiApiKey = (oldConfig.geminiApiKey || '').trim();
             newConfig.geminiKeyRotationEnabled = oldConfig.geminiKeyRotationEnabled === true;
             newConfig.geminiApiKeys = Array.isArray(oldConfig.geminiApiKeys)
-                ? oldConfig.geminiApiKeys.filter(k => typeof k === 'string' && k.trim())
+                ? oldConfig.geminiApiKeys.filter((k) => typeof k === 'string' && k.trim())
                 : [];
             newConfig.geminiKeyRotationMode = oldConfig.geminiKeyRotationMode || 'per-batch';
 
@@ -11087,7 +12099,6 @@ Translate to {target_language}.`;
                     newConfig.subtitleProviders.subsource.enabled = oldSubsource.enabled !== false;
                     newConfig.subtitleProviders.subsource.apiKey = (oldSubsource.apiKey || '').trim();
                 }
-
             }
 
             // Preserve standalone API keys for auto-subs flows
@@ -11099,35 +12110,45 @@ Translate to {target_language}.`;
             newConfig.multiProviderEnabled = oldConfig.multiProviderEnabled === true;
             newConfig.mainProvider = oldConfig.mainProvider || 'gemini';
             newConfig.providers = mergeProviders(defaults.providers, oldConfig.providers || {});
-            newConfig.providerParameters = mergeProviderParameters(defaults.providerParameters, oldConfig.providerParameters || {});
+            newConfig.providerParameters = mergeProviderParameters(
+                defaults.providerParameters,
+                oldConfig.providerParameters || {}
+            );
             if (
                 oldSecondaryEnabled &&
                 oldSecondaryProvider &&
                 oldSecondaryProvider !== oldMainProvider &&
-                (
-                    oldSecondaryProvider === 'gemini' ||
-                    (newConfig.providers?.[oldSecondaryProvider] && newConfig.providers[oldSecondaryProvider].enabled !== undefined)
-                )
+                (oldSecondaryProvider === 'gemini' ||
+                    (newConfig.providers?.[oldSecondaryProvider] &&
+                        newConfig.providers[oldSecondaryProvider].enabled !== undefined))
             ) {
                 newConfig.secondaryProviderEnabled = true;
                 newConfig.secondaryProvider = oldSecondaryProvider;
             }
 
             // Preserve languages
-            newConfig.sourceLanguages = Array.isArray(oldConfig.sourceLanguages) ? [...oldConfig.sourceLanguages] : defaults.sourceLanguages;
-            newConfig.targetLanguages = Array.isArray(oldConfig.targetLanguages) ? [...oldConfig.targetLanguages] : defaults.targetLanguages;
+            newConfig.sourceLanguages = Array.isArray(oldConfig.sourceLanguages)
+                ? [...oldConfig.sourceLanguages]
+                : defaults.sourceLanguages;
+            newConfig.targetLanguages = Array.isArray(oldConfig.targetLanguages)
+                ? [...oldConfig.targetLanguages]
+                : defaults.targetLanguages;
 
             // Preserve Other Settings checkboxes
             // - unified Sub Toolbox toggle (mirrors legacy file translation/sync flags)
-            const legacyToolboxEnabled = oldConfig.subToolboxEnabled === true
-                || oldConfig.fileTranslationEnabled === true
-                || oldConfig.syncSubtitlesEnabled === true;
+            const legacyToolboxEnabled =
+                oldConfig.subToolboxEnabled === true ||
+                oldConfig.fileTranslationEnabled === true ||
+                oldConfig.syncSubtitlesEnabled === true;
             newConfig.subToolboxEnabled = legacyToolboxEnabled;
             newConfig.fileTranslationEnabled = legacyToolboxEnabled;
             newConfig.syncSubtitlesEnabled = legacyToolboxEnabled;
             // - translation cache enabled
-            if (!newConfig.translationCache) newConfig.translationCache = { enabled: true, duration: 0, persistent: true };
-            const oldCacheEnabled = !!(oldConfig.translationCache ? oldConfig.translationCache.enabled !== false : true);
+            if (!newConfig.translationCache)
+                newConfig.translationCache = { enabled: true, duration: 0, persistent: true };
+            const oldCacheEnabled = !!(oldConfig.translationCache
+                ? oldConfig.translationCache.enabled !== false
+                : true);
             newConfig.translationCache.enabled = oldCacheEnabled;
             // - bypass cache
             newConfig.bypassCache = oldConfig.bypassCache === true;
@@ -11139,12 +12160,14 @@ Translate to {target_language}.`;
             newConfig.enableSeasonPacks = oldConfig.enableSeasonPacks !== false;
             // - subtitle provider timeout (preserve user's setting, fallback to default 12 if not set)
             const oldTimeout = parseInt(oldConfig.subtitleProviderTimeout, 10);
-            newConfig.subtitleProviderTimeout = Number.isFinite(oldTimeout) ? Math.max(8, Math.min(30, oldTimeout)) : 12;
+            newConfig.subtitleProviderTimeout = Number.isFinite(oldTimeout)
+                ? Math.max(8, Math.min(30, oldTimeout))
+                : 12;
 
             // Reset selected model to the dropdown's configured default option and reset advanced settings to defaults
             newConfig.geminiModel = defaultGeminiModel;
             newConfig.advancedSettings = { ...defaults.advancedSettings };
-        } catch (e) { }
+        } catch (e) {}
 
         return newConfig;
     }
@@ -11191,16 +12214,25 @@ Translate to {target_language}.`;
                 try {
                     localStorage.setItem(CACHE_KEY, JSON.stringify(migrated));
                     localStorage.setItem(CACHE_VERSION_KEY, currentVersion);
-                } catch (_) { }
+                } catch (_) {}
 
                 // Notify user briefly that a new version was detected
-                try { showAlert(tConfig('config.alerts.newVersionDetected', {}, 'New Version Detected'), 'info', 'config.alerts.newVersionDetected', {}); } catch (_) { }
+                try {
+                    showAlert(
+                        tConfig('config.alerts.newVersionDetected', {}, 'New Version Detected'),
+                        'info',
+                        'config.alerts.newVersionDetected',
+                        {}
+                    );
+                } catch (_) {}
 
                 return migrated;
             }
 
             return config;
-        } catch (error) { return null; }
+        } catch (error) {
+            return null;
+        }
     }
 
     /**
@@ -11232,7 +12264,8 @@ Translate to {target_language}.`;
         updateUiLanguageBadge(activeUiLang);
 
         // Load Gemini API key
-        document.getElementById('geminiApiKey').value = currentConfig.geminiApiKey || '';
+        const geminiApiKeyEl = document.getElementById('geminiApiKey');
+        if (geminiApiKeyEl) geminiApiKeyEl.value = currentConfig.geminiApiKey || '';
 
         // Load Gemini API key rotation settings
         const keyRotationEnabled = currentConfig.geminiKeyRotationEnabled === true;
@@ -11251,7 +12284,7 @@ Translate to {target_language}.`;
         // Only add Key 2+ to the additional keys list
         const additionalKeys = geminiApiKeys.slice(1);
         if (additionalKeys.length > 0) {
-            additionalKeys.forEach(key => addGeminiKeyInput(key));
+            additionalKeys.forEach((key) => addGeminiKeyInput(key));
         }
         // Toggle UI visibility based on state
         toggleGeminiKeyRotationUI(keyRotationEnabled);
@@ -11279,21 +12312,23 @@ Translate to {target_language}.`;
         currentConfig.geminiModel = modelToUse;
 
         if (modelSelect) {
-            const apiKeyHasValue = !!(document.getElementById('geminiApiKey')?.value?.trim());
+            const apiKeyHasValue = !!document.getElementById('geminiApiKey')?.value?.trim();
             if (apiKeyHasValue && currentConfig.geminiModel) {
                 // API key exists and model saved — populate dropdown with saved model.
                 // populateGeminiModelDropdowns() will enable the dropdown and auto-select.
                 populateGeminiModelDropdowns();
             } else {
                 // No API key or no saved model — keep dropdown disabled with placeholder.
-                modelSelect.innerHTML = '<option value="" disabled selected>Enter and validate API key to select model</option>';
+                modelSelect.innerHTML =
+                    '<option value="" disabled selected>Enter and validate API key to select model</option>';
                 modelSelect.disabled = true;
             }
         }
 
         // Load prompt style
         const promptStyle = currentConfig.promptStyle || 'natural';
-        document.getElementById('promptStyle').value = promptStyle;
+        const promptStyleEl = document.getElementById('promptStyle');
+        if (promptStyleEl) promptStyleEl.value = promptStyle;
 
         // Load translation prompt (kept for internal use, not displayed in UI)
         const translationPrompt = currentConfig.translationPrompt || NATURAL_TRANSLATION_PROMPT;
@@ -11393,9 +12428,10 @@ Translate to {target_language}.`;
         }
 
         // Load Sub Toolbox setting (unifies file translation and sync actions)
-        const toolboxEnabled = currentConfig.subToolboxEnabled === true
-            || currentConfig.fileTranslationEnabled === true
-            || currentConfig.syncSubtitlesEnabled === true;
+        const toolboxEnabled =
+            currentConfig.subToolboxEnabled === true ||
+            currentConfig.fileTranslationEnabled === true ||
+            currentConfig.syncSubtitlesEnabled === true;
         currentConfig.subToolboxEnabled = toolboxEnabled;
         setSubToolboxEnabledUI(toolboxEnabled);
 
@@ -11430,7 +12466,7 @@ Translate to {target_language}.`;
         const urlExtTestGroup = document.getElementById('urlExtensionTestGroup');
         if (urlExtTestGroup) {
             const assConversionDisabled = convertAssToVttEl ? convertAssToVttEl.checked : false;
-            urlExtTestGroup.style.display = (devEnabledAfterLoad && assConversionDisabled) ? 'block' : 'none';
+            urlExtTestGroup.style.display = devEnabledAfterLoad && assConversionDisabled ? 'block' : 'none';
         }
         const androidCompatGroup = document.getElementById('androidSubtitleCompatModeGroup');
         if (androidCompatGroup) {
@@ -11443,8 +12479,9 @@ Translate to {target_language}.`;
         lastUrlExtensionTestChoice = normalizeUrlExtensionTestValue(currentConfig.urlExtensionTest, 'srt');
         syncUrlExtensionTestModeUi();
         const selectedCompatMode = String(currentConfig.androidSubtitleCompatMode || 'off');
-        const compatRadio = document.querySelector(`input[name="androidSubtitleCompatMode"][value="${selectedCompatMode}"]`)
-            || document.querySelector('input[name="androidSubtitleCompatMode"][value="off"]');
+        const compatRadio =
+            document.querySelector(`input[name="androidSubtitleCompatMode"][value="${selectedCompatMode}"]`) ||
+            document.querySelector('input[name="androidSubtitleCompatMode"][value="off"]');
         if (compatRadio) {
             compatRadio.checked = true;
         }
@@ -11464,27 +12501,33 @@ Translate to {target_language}.`;
         // If bypass is true → show "bypass", otherwise → show "use"
         const databaseModeEl = document.getElementById('databaseMode');
         if (databaseModeEl) {
-            const bypassEnabled = currentConfig.bypassCache === true || currentConfig.translationCache?.enabled === false;
+            const bypassEnabled =
+                currentConfig.bypassCache === true || currentConfig.translationCache?.enabled === false;
             databaseModeEl.value = bypassEnabled ? 'bypass' : 'use';
         }
 
-        // Load advanced settings
-        if (!currentConfig.advancedSettings) {
-            currentConfig.advancedSettings = getDefaultConfig(currentConfig.geminiModel || getFirstGeminiModelOptionValue()).advancedSettings;
-        } else {
-            const shouldRebaseAdvancedDefaults = baseModelWasNormalized
-                && currentConfig.advancedSettings?.enabled !== true
-                && !(typeof currentConfig.advancedSettings?.geminiModel === 'string' && currentConfig.advancedSettings.geminiModel.trim());
-            if (shouldRebaseAdvancedDefaults) {
-                currentConfig.advancedSettings = getDefaultConfig(currentConfig.geminiModel || getFirstGeminiModelOptionValue()).advancedSettings;
-            }
-            // Merge with defaults to backfill any new fields
-            const advDefaults = getDefaultConfig(currentConfig.geminiModel || getFirstGeminiModelOptionValue()).advancedSettings;
-            currentConfig.advancedSettings = {
-                ...advDefaults,
-                ...currentConfig.advancedSettings
-            };
+        // Load advanced settings with a per-model draft cache.
+        const activeAdvancedModel = normalizeGeminiModelName(
+            currentConfig.geminiModel || getFirstGeminiModelOptionValue() || DEFAULT_GEMINI_MODEL
+        );
+        if (!currentConfig.advancedSettingsByModel || typeof currentConfig.advancedSettingsByModel !== 'object') {
+            currentConfig.advancedSettingsByModel = {};
         }
+        if (currentConfig.advancedSettings && !currentConfig.advancedSettingsByModel[activeAdvancedModel]) {
+            currentConfig.advancedSettingsByModel[activeAdvancedModel] = { ...currentConfig.advancedSettings };
+        }
+        const activeCachedSettings = currentConfig.advancedSettingsByModel[activeAdvancedModel];
+        const advDefaults = getDefaultConfig(activeAdvancedModel).advancedSettings;
+        currentConfig.advancedSettings = {
+            ...advDefaults,
+            ...(activeCachedSettings || currentConfig.advancedSettings || {})
+        };
+        currentConfig.advancedSettings.thinkingBudget = clampGeminiThinkingBudget(
+            currentConfig.advancedSettings.thinkingBudget,
+            activeAdvancedModel,
+            advDefaults.thinkingBudget
+        );
+        currentConfig.advancedSettingsByModel[activeAdvancedModel] = { ...currentConfig.advancedSettings };
 
         const advThinkingEl = document.getElementById('advancedThinkingBudget');
         const advThinkingLevelEl = document.getElementById('advancedThinkingLevel');
@@ -11494,9 +12537,15 @@ Translate to {target_language}.`;
         // Single-Picker: model value comes from #geminiModel dropdown, not #advancedModel.
         // currentConfig.geminiModel already holds the effective model after Phase 1 migration.
 
-        if (advThinkingEl) advThinkingEl.value = currentConfig.advancedSettings?.thinkingBudget ?? -1;
+        if (advThinkingEl) {
+            advThinkingEl.value = clampGeminiThinkingBudget(
+                currentConfig.advancedSettings?.thinkingBudget,
+                activeAdvancedModel,
+                advDefaults.thinkingBudget
+            );
+        }
         if (advThinkingLevelEl) {
-            const activeDefaults = getModelSpecificDefaults(currentConfig.advancedSettings?.geminiModel || currentConfig.geminiModel);
+            const activeDefaults = getModelSpecificDefaults(activeAdvancedModel);
             advThinkingLevelEl.value = sanitizeGeminiThinkingLevel(
                 currentConfig.advancedSettings?.thinkingLevel,
                 activeDefaults.thinkingLevel
@@ -11543,7 +12592,9 @@ Translate to {target_language}.`;
                 if (italicTargetGroup) italicTargetGroup.style.display = learnItalicToggle.checked ? 'flex' : 'none';
             }
             const italicTarget = currentConfig.learnItalicTarget || 'target';
-            const italicTargetInput = document.querySelector(`input[name="learnItalicTarget"][value="${italicTarget}"]`);
+            const italicTargetInput = document.querySelector(
+                `input[name="learnItalicTarget"][value="${italicTarget}"]`
+            );
             if (italicTargetInput) italicTargetInput.checked = true;
             const order = currentConfig.learnOrder || 'source-top';
             const orderInput = document.querySelector(`input[name=\"learnOrder\"][value=\"${order}\"]`);
@@ -11551,7 +12602,7 @@ Translate to {target_language}.`;
             const placement = currentConfig.learnPlacement || 'stacked';
             const placementInput = document.querySelector(`input[name=\"learnPlacement\"][value=\"${placement}\"]`);
             if (placementInput) placementInput.checked = true;
-        } catch (_) { }
+        } catch (_) {}
 
         // Track mobile mode toggle in state
         const mobileToggle = document.getElementById('mobileMode');
@@ -11573,7 +12624,10 @@ Translate to {target_language}.`;
             if (hiExcludeToggle && hiExcludeToggle.checked !== currentConfig.excludeHearingImpairedSubtitles) {
                 hiExcludeToggle.checked = currentConfig.excludeHearingImpairedSubtitles;
             }
-            if (hiExcludeToggleNoTranslation && hiExcludeToggleNoTranslation.checked !== currentConfig.excludeHearingImpairedSubtitles) {
+            if (
+                hiExcludeToggleNoTranslation &&
+                hiExcludeToggleNoTranslation.checked !== currentConfig.excludeHearingImpairedSubtitles
+            ) {
                 hiExcludeToggleNoTranslation.checked = currentConfig.excludeHearingImpairedSubtitles;
             }
         };
@@ -11595,7 +12649,10 @@ Translate to {target_language}.`;
             if (seasonPackToggle && seasonPackToggle.checked !== currentConfig.enableSeasonPacks) {
                 seasonPackToggle.checked = currentConfig.enableSeasonPacks;
             }
-            if (seasonPackToggleNoTranslation && seasonPackToggleNoTranslation.checked !== currentConfig.enableSeasonPacks) {
+            if (
+                seasonPackToggleNoTranslation &&
+                seasonPackToggleNoTranslation.checked !== currentConfig.enableSeasonPacks
+            ) {
                 seasonPackToggleNoTranslation.checked = currentConfig.enableSeasonPacks;
             }
         };
@@ -11663,7 +12720,7 @@ Translate to {target_language}.`;
             if (mobileToggle) {
                 currentConfig.mobileMode = mobileToggle.checked;
             }
-        } catch (_) { }
+        } catch (_) {}
 
         const promptStyle = document.getElementById('promptStyle').value;
         let translationPrompt = '';
@@ -11684,17 +12741,22 @@ Translate to {target_language}.`;
             translationPrompt = NATURAL_TRANSLATION_PROMPT;
         }
 
-
         const config = {
             noTranslationMode: currentConfig.noTranslationMode,
             noTranslationLanguages: currentConfig.noTranslationLanguages,
-            uiLanguage: (currentConfig.uiLanguage || (navigator.language || 'en')).toString().toLowerCase(),
+            uiLanguage: (currentConfig.uiLanguage || navigator.language || 'en').toString().toLowerCase(),
             geminiApiKey: document.getElementById('geminiApiKey').value.trim(),
             geminiKeyRotationEnabled: document.getElementById('geminiKeyRotationEnabled')?.checked === true,
             geminiApiKeys: getGeminiApiKeys(),
             geminiKeyRotationMode: document.getElementById('geminiKeyRotationMode')?.value || 'per-batch',
-            assemblyAiApiKey: (function () { const el = document.getElementById('assemblyAiApiKey'); return el ? el.value.trim() : ''; })(),
-            cloudflareWorkersApiKey: (function () { const el = document.getElementById('cloudflareWorkersApiKey'); return el ? el.value.trim() : ''; })(),
+            assemblyAiApiKey: (function () {
+                const el = document.getElementById('assemblyAiApiKey');
+                return el ? el.value.trim() : '';
+            })(),
+            cloudflareWorkersApiKey: (function () {
+                const el = document.getElementById('cloudflareWorkersApiKey');
+                return el ? el.value.trim() : '';
+            })(),
             otherApiKeysEnabled: isSubToolboxEnabled(),
             autoSubs: {
                 ...currentConfig.autoSubs,
@@ -11711,7 +12773,10 @@ Translate to {target_language}.`;
             promptStyle: promptStyle,
             translationPrompt: translationPrompt,
             betaModeEnabled: isBetaModeEnabled(),
-            devMode: (function () { const el = document.getElementById('devMode'); return el ? el.checked : false; })(),
+            devMode: (function () {
+                const el = document.getElementById('devMode');
+                return el ? el.checked : false;
+            })(),
             urlExtensionTest: (function () {
                 // When ASS passthrough is enabled, force 'none' to avoid extension/payload mismatch
                 const convertAssEl = getConvertAssToVttToggle();
@@ -11747,15 +12812,16 @@ Translate to {target_language}.`;
             learnItalic: currentConfig.learnItalic !== false,
             learnItalicTarget: currentConfig.learnItalicTarget || 'target',
             multiProviderEnabled: multiProviderToggleChecked,
-            mainProvider: (document.getElementById('mainProviderSelect')?.value || 'gemini'),
+            mainProvider: document.getElementById('mainProviderSelect')?.value || 'gemini',
             secondaryProviderEnabled: document.getElementById('enableSecondaryProvider')?.checked || false,
-            secondaryProvider: (document.getElementById('secondaryProviderSelect')?.value || ''),
+            secondaryProvider: document.getElementById('secondaryProviderSelect')?.value || '',
             providers: getProvidersFromForm(),
             providerParameters: getProviderParametersFromForm(),
             subtitleProviders: {
                 opensubtitles: {
                     enabled: document.getElementById('enableOpenSubtitles').checked,
-                    implementationType: document.querySelector('input[name="opensubtitlesImplementation"]:checked')?.value || 'v3',
+                    implementationType:
+                        document.querySelector('input[name="opensubtitlesImplementation"]:checked')?.value || 'v3',
                     username: document.getElementById('opensubtitlesUsername').value.trim(),
                     password: document.getElementById('opensubtitlesPassword').value.trim()
                 },
@@ -11766,10 +12832,13 @@ Translate to {target_language}.`;
                 subsource: {
                     enabled: document.getElementById('enableSubSource').checked,
                     apiKey: document.getElementById('subsourceApiKey').value.trim()
-                },
+                }
             },
             // Subtitle provider timeout (clamp to 8-30 range)
-            subtitleProviderTimeout: Math.max(8, Math.min(30, parseInt(document.getElementById('subtitleProviderTimeout')?.value, 10) || 12)),
+            subtitleProviderTimeout: Math.max(
+                8,
+                Math.min(30, parseInt(document.getElementById('subtitleProviderTimeout')?.value, 10) || 12)
+            ),
             translationCache: {
                 enabled: !isBypassRequested(), // Enabled when NOT in bypass mode
                 duration: 0,
@@ -11780,60 +12849,104 @@ Translate to {target_language}.`;
                 enabled: isBypassRequested(),
                 duration: 0 // 0 = permanent (no expiry); user purges manually
             },
-            tempCache: { // Deprecated: kept for backward compatibility
+            tempCache: {
+                // Deprecated: kept for backward compatibility
                 enabled: isBypassRequested(),
                 duration: 0
             },
             excludeHearingImpairedSubtitles: (function () {
-                const el = document.getElementById('excludeHearingImpairedSubtitlesNoTranslation') || document.getElementById('excludeHearingImpairedSubtitles');
-                return el ? el.checked === true : (currentConfig?.excludeHearingImpairedSubtitles === true);
+                const el =
+                    document.getElementById('excludeHearingImpairedSubtitlesNoTranslation') ||
+                    document.getElementById('excludeHearingImpairedSubtitles');
+                return el ? el.checked === true : currentConfig?.excludeHearingImpairedSubtitles === true;
             })(),
             enableSeasonPacks: (function () {
-                const el = document.getElementById('enableSeasonPacksNoTranslation') || document.getElementById('enableSeasonPacks');
+                const el =
+                    document.getElementById('enableSeasonPacksNoTranslation') ||
+                    document.getElementById('enableSeasonPacks');
                 // Default to true if element not found (backwards compatible)
-                return el ? el.checked : (currentConfig?.enableSeasonPacks !== false);
+                return el ? el.checked : currentConfig?.enableSeasonPacks !== false;
             })(),
             forceSRTOutput: (function () {
-                const el = document.getElementById('forceSRTOutputNoTranslation') || document.getElementById('forceSRTOutput');
-                return el ? el.checked === true : (currentConfig?.forceSRTOutput === true);
+                const el =
+                    document.getElementById('forceSRTOutputNoTranslation') || document.getElementById('forceSRTOutput');
+                return el ? el.checked === true : currentConfig?.forceSRTOutput === true;
             })(),
             convertAssToVtt: (function () {
                 const el = getConvertAssToVttToggle();
                 // Checkbox represents passthrough; stored config keeps convertAssToVtt.
                 // Default to true if element not found (backwards compatible)
-                return el ? !el.checked : (currentConfig?.convertAssToVtt !== false);
+                return el ? !el.checked : currentConfig?.convertAssToVtt !== false;
             })(),
             subToolboxEnabled: (function () {
-                const el = document.getElementById('subToolboxEnabledNoTranslation') || document.getElementById('subToolboxEnabled');
-                return el ? el.checked : (currentConfig?.subToolboxEnabled === true);
+                const el =
+                    document.getElementById('subToolboxEnabledNoTranslation') ||
+                    document.getElementById('subToolboxEnabled');
+                return el ? el.checked : currentConfig?.subToolboxEnabled === true;
             })(),
             fileTranslationEnabled: (function () {
-                const el = document.getElementById('subToolboxEnabledNoTranslation') || document.getElementById('subToolboxEnabled');
-                return el ? el.checked : (currentConfig?.fileTranslationEnabled === true);
+                const el =
+                    document.getElementById('subToolboxEnabledNoTranslation') ||
+                    document.getElementById('subToolboxEnabled');
+                return el ? el.checked : currentConfig?.fileTranslationEnabled === true;
             })(),
             syncSubtitlesEnabled: (function () {
-                const el = document.getElementById('subToolboxEnabledNoTranslation') || document.getElementById('subToolboxEnabled');
-                return el ? el.checked : (currentConfig?.syncSubtitlesEnabled === true);
+                const el =
+                    document.getElementById('subToolboxEnabledNoTranslation') ||
+                    document.getElementById('subToolboxEnabled');
+                return el ? el.checked : currentConfig?.syncSubtitlesEnabled === true;
             })(),
             mobileMode: (function () {
                 const el = document.getElementById('mobileMode');
                 if (el) return el.checked;
                 return currentConfig?.mobileMode === true;
             })(),
-            parallelBatchesEnabled: (function () { const el = document.getElementById('parallelBatchesEnabled'); return el ? el.checked === true : false; })(),
-            parallelBatchesCount: (function () { const el = document.getElementById('parallelBatchesCount'); return el ? parseInt(el.value, 10) : 3; })(),
+            parallelBatchesEnabled: (function () {
+                const el = document.getElementById('parallelBatchesEnabled');
+                return el ? el.checked === true : false;
+            })(),
+            parallelBatchesCount: (function () {
+                const el = document.getElementById('parallelBatchesCount');
+                return el ? parseInt(el.value, 10) : 3;
+            })(),
             advancedSettings: {
                 enabled: areAdvancedSettingsModified(), // Auto-detect if any setting differs from defaults
                 geminiModel: '', // Single-Picker: no override; model is in top-level geminiModel
-                thinkingLevel: (function () { const el = document.getElementById('advancedThinkingLevel'); return el ? sanitizeGeminiThinkingLevel(el.value) : 'minimal'; })(),
-                thinkingBudget: (function () { const el = document.getElementById('advancedThinkingBudget'); if (!el) return -1; const v = parseInt(el.value, 10); return Number.isFinite(v) ? Math.max(-1, Math.min(200000, v)) : -1; })(),
-                temperature: (function () { const el = document.getElementById('advancedTemperature'); return el ? parseFloat(el.value) : 0.2; })(),
-                topP: (function () { const el = document.getElementById('advancedTopP'); return el ? parseFloat(el.value) : 0.95; })(),
-                frequencyPenalty: (function () { const el = document.getElementById('advancedFrequencyPenalty'); return el ? parseFloat(el.value) : 0; })(),
-                presencePenalty: (function () { const el = document.getElementById('advancedPresencePenalty'); return el ? parseFloat(el.value) : 0; })(),
+                thinkingLevel: (function () {
+                    const el = document.getElementById('advancedThinkingLevel');
+                    return el ? sanitizeGeminiThinkingLevel(el.value) : 'minimal';
+                })(),
+                thinkingBudget: (function () {
+                    const el = document.getElementById('advancedThinkingBudget');
+                    if (!el) return -1;
+                    return clampGeminiThinkingBudget(el.value, config.geminiModel, -1);
+                })(),
+                temperature: (function () {
+                    const el = document.getElementById('advancedTemperature');
+                    return el ? parseFloat(el.value) : 0.2;
+                })(),
+                topP: (function () {
+                    const el = document.getElementById('advancedTopP');
+                    return el ? parseFloat(el.value) : 0.95;
+                })(),
+                frequencyPenalty: (function () {
+                    const el = document.getElementById('advancedFrequencyPenalty');
+                    return el ? parseFloat(el.value) : 0;
+                })(),
+                presencePenalty: (function () {
+                    const el = document.getElementById('advancedPresencePenalty');
+                    return el ? parseFloat(el.value) : 0;
+                })(),
                 translationWorkflow: 'xml',
-                mismatchRetries: (function () { const el = document.getElementById('mismatchRetries'); return el ? Math.max(0, Math.min(3, parseInt(el.value) || 3)) : 3; })()
-            }
+                mismatchRetries: (function () {
+                    const el = document.getElementById('mismatchRetries');
+                    return el ? Math.max(0, Math.min(3, parseInt(el.value) || 3)) : 3;
+                })()
+            },
+            advancedSettingsByModel:
+                currentConfig.advancedSettingsByModel && typeof currentConfig.advancedSettingsByModel === 'object'
+                    ? { ...currentConfig.advancedSettingsByModel }
+                    : {}
         };
         config.multiProviderEnabled = multiProviderToggleChecked;
         if (!config.multiProviderEnabled) {
@@ -11844,7 +12957,9 @@ Translate to {target_language}.`;
             config.secondaryProvider = '';
         }
         config.mainProvider = String(config.mainProvider || 'gemini').toLowerCase();
-        config.secondaryProvider = config.secondaryProviderEnabled ? String(config.secondaryProvider || '').toLowerCase() : '';
+        config.secondaryProvider = config.secondaryProviderEnabled
+            ? String(config.secondaryProvider || '').toLowerCase()
+            : '';
         return config;
     }
 
@@ -11854,22 +12969,30 @@ Translate to {target_language}.`;
         // Validation with visual feedback - collect all errors
         const errors = [];
 
-
-        const anyProviderEnabled = Object.values(config.subtitleProviders).some(p => p.enabled);
+        const anyProviderEnabled = Object.values(config.subtitleProviders).some((p) => p.enabled);
         if (!anyProviderEnabled) {
-            errors.push(tConfig('config.validation.subtitleProviderRequired', {}, '⚠️ Please enable at least one subtitle provider'));
+            errors.push(
+                tConfig(
+                    'config.validation.subtitleProviderRequired',
+                    {},
+                    '⚠️ Please enable at least one subtitle provider'
+                )
+            );
         }
-
 
         // Database mode dropdown validation (always valid - dropdown must have a value)
         // No need to validate since dropdown always has a selected value
 
         // Validate enabled subtitle sources have API keys (where required)
         if (config.subtitleProviders.subdl?.enabled && !config.subtitleProviders.subdl.apiKey?.trim()) {
-            errors.push(tConfig('config.validation.subdlKeyRequired', {}, '⚠️ SubDL is enabled but API key is missing'));
+            errors.push(
+                tConfig('config.validation.subdlKeyRequired', {}, '⚠️ SubDL is enabled but API key is missing')
+            );
         }
         if (config.subtitleProviders.subsource?.enabled && !config.subtitleProviders.subsource.apiKey?.trim()) {
-            errors.push(tConfig('config.validation.subsourceKeyRequired', {}, '⚠️ SubSource is enabled but API key is missing'));
+            errors.push(
+                tConfig('config.validation.subsourceKeyRequired', {}, '⚠️ SubSource is enabled but API key is missing')
+            );
         }
 
         // Validate that every enabled AI provider has an API key
@@ -11877,10 +13000,22 @@ Translate to {target_language}.`;
             const optionalKey = KEY_OPTIONAL_PROVIDERS.has(String(providerKey).toLowerCase());
             if (providerCfg?.enabled && !optionalKey && !providerCfg.apiKey?.trim()) {
                 const label = PROVIDERS[providerKey]?.label || providerKey;
-                errors.push(tConfig('config.validation.providerKeyMissing', { provider: label }, `⚠️ ${label} is enabled but API key is missing`));
+                errors.push(
+                    tConfig(
+                        'config.validation.providerKeyMissing',
+                        { provider: label },
+                        `⚠️ ${label} is enabled but API key is missing`
+                    )
+                );
             }
-            if (providerCfg?.enabled && String(providerKey).toLowerCase() === 'custom' && !providerCfg.baseUrl?.trim()) {
-                errors.push(tConfig('config.alerts.missingCustomBaseUrl', {}, 'Enter a base URL for the custom provider'));
+            if (
+                providerCfg?.enabled &&
+                String(providerKey).toLowerCase() === 'custom' &&
+                !providerCfg.baseUrl?.trim()
+            ) {
+                errors.push(
+                    tConfig('config.alerts.missingCustomBaseUrl', {}, 'Enter a base URL for the custom provider')
+                );
             }
         });
 
@@ -11888,7 +13023,13 @@ Translate to {target_language}.`;
         const openSubCfg = config.subtitleProviders.opensubtitles;
         const usingOpenSubsAuth = openSubCfg?.enabled && openSubCfg.implementationType === 'auth';
         if (usingOpenSubsAuth && (!openSubCfg.username || !openSubCfg.password)) {
-            errors.push(tConfig('config.validation.opensubsAuthCredentials', {}, '⚠️ OpenSubtitles Auth requires both username and password. Enter credentials or switch to V3 (no login needed).'));
+            errors.push(
+                tConfig(
+                    'config.validation.opensubsAuthCredentials',
+                    {},
+                    '⚠️ OpenSubtitles Auth requires both username and password. Enter credentials or switch to V3 (no login needed).'
+                )
+            );
         }
 
         // If not in no-translation mode, validate AI provider and languages
@@ -11913,7 +13054,7 @@ Translate to {target_language}.`;
                 // When rotation is enabled, check the keys array
                 if (config.geminiKeyRotationEnabled === true) {
                     const keys = Array.isArray(config.geminiApiKeys)
-                        ? config.geminiApiKeys.filter(k => typeof k === 'string' && k.trim() !== '')
+                        ? config.geminiApiKeys.filter((k) => typeof k === 'string' && k.trim() !== '')
                         : [];
                     return keys.length > 0;
                 }
@@ -11922,7 +13063,7 @@ Translate to {target_language}.`;
             })();
             const configuredProviders = new Set();
             if (geminiConfigured) configuredProviders.add('gemini');
-            Object.keys(config.providers || {}).forEach(key => {
+            Object.keys(config.providers || {}).forEach((key) => {
                 if (providerIsConfigured(key)) {
                     configuredProviders.add(String(key).toLowerCase());
                 }
@@ -11936,86 +13077,184 @@ Translate to {target_language}.`;
                 }
 
                 if (!validateGeminiModel()) {
-                    errors.push(tConfig('config.validation.geminiModelRequired', {}, '⚠️ Please select a Gemini model'));
+                    errors.push(
+                        tConfig('config.validation.geminiModelRequired', {}, '⚠️ Please select a Gemini model')
+                    );
                 }
             } else {
                 const providerCfg = config.providers?.[mainProvider];
                 if (!providerCfg || !providerCfg.enabled) {
-                    errors.push(tConfig('config.validation.mainProviderEnable', { provider: PROVIDERS[mainProvider]?.label || mainProvider }, `⚠️ Enable ${PROVIDERS[mainProvider]?.label || mainProvider} to use it as Main Provider`));
+                    errors.push(
+                        tConfig(
+                            'config.validation.mainProviderEnable',
+                            { provider: PROVIDERS[mainProvider]?.label || mainProvider },
+                            `⚠️ Enable ${PROVIDERS[mainProvider]?.label || mainProvider} to use it as Main Provider`
+                        )
+                    );
                 }
                 const keyOptional = KEY_OPTIONAL_PROVIDERS.has(String(mainProvider).toLowerCase());
                 if (!keyOptional && (!providerCfg || !providerCfg.apiKey?.trim())) {
-                    errors.push(tConfig('config.validation.mainProviderKeyRequired', { provider: PROVIDERS[mainProvider]?.label || mainProvider }, `⚠️ API key required for ${PROVIDERS[mainProvider]?.label || mainProvider}`));
+                    errors.push(
+                        tConfig(
+                            'config.validation.mainProviderKeyRequired',
+                            { provider: PROVIDERS[mainProvider]?.label || mainProvider },
+                            `⚠️ API key required for ${PROVIDERS[mainProvider]?.label || mainProvider}`
+                        )
+                    );
                 }
                 if (!providerCfg || !providerCfg.model) {
-                    errors.push(tConfig('config.validation.mainProviderModelRequired', { provider: PROVIDERS[mainProvider]?.label || mainProvider }, `⚠️ Select a model for ${PROVIDERS[mainProvider]?.label || mainProvider}`));
+                    errors.push(
+                        tConfig(
+                            'config.validation.mainProviderModelRequired',
+                            { provider: PROVIDERS[mainProvider]?.label || mainProvider },
+                            `⚠️ Select a model for ${PROVIDERS[mainProvider]?.label || mainProvider}`
+                        )
+                    );
                 }
             }
 
             if (multiEnabled && config.secondaryProviderEnabled) {
                 const secondaryKey = config.secondaryProvider;
                 if (!secondaryKey) {
-                    errors.push(tConfig('config.validation.secondaryProviderRequired', {}, '⚠️ Select a Secondary Provider or disable the fallback toggle'));
+                    errors.push(
+                        tConfig(
+                            'config.validation.secondaryProviderRequired',
+                            {},
+                            '⚠️ Select a Secondary Provider or disable the fallback toggle'
+                        )
+                    );
                 } else if (secondaryKey === mainProvider) {
-                    errors.push(tConfig('config.validation.secondaryProviderDifferent', {}, '⚠️ Secondary Provider must be different from Main Provider'));
+                    errors.push(
+                        tConfig(
+                            'config.validation.secondaryProviderDifferent',
+                            {},
+                            '⚠️ Secondary Provider must be different from Main Provider'
+                        )
+                    );
                 } else if (secondaryKey === 'gemini') {
                     if (!validateGeminiApiKey(true)) {
-                        errors.push(tConfig('config.validation.secondaryGeminiKey', {}, '⚠️ Gemini API key is required when Gemini is the Secondary Provider'));
+                        errors.push(
+                            tConfig(
+                                'config.validation.secondaryGeminiKey',
+                                {},
+                                '⚠️ Gemini API key is required when Gemini is the Secondary Provider'
+                            )
+                        );
                     }
                     if (!validateGeminiModel()) {
-                        errors.push(tConfig('config.validation.secondaryGeminiModel', {}, '⚠️ Please select a Gemini model for the Secondary Provider'));
+                        errors.push(
+                            tConfig(
+                                'config.validation.secondaryGeminiModel',
+                                {},
+                                '⚠️ Please select a Gemini model for the Secondary Provider'
+                            )
+                        );
                     }
                     if (!geminiConfigured) {
-                        errors.push(tConfig('config.validation.secondaryGeminiConfigured', {}, '⚠️ Gemini must have a valid API key and model when selected as Secondary Provider'));
+                        errors.push(
+                            tConfig(
+                                'config.validation.secondaryGeminiConfigured',
+                                {},
+                                '⚠️ Gemini must have a valid API key and model when selected as Secondary Provider'
+                            )
+                        );
                     }
                 } else {
                     const secondaryCfg = config.providers?.[secondaryKey];
                     if (!secondaryCfg || !secondaryCfg.enabled) {
-                        errors.push(tConfig('config.validation.secondaryProviderEnable', { provider: PROVIDERS[secondaryKey]?.label || secondaryKey }, `⚠️ Enable ${PROVIDERS[secondaryKey]?.label || secondaryKey} to use it as Secondary Provider`));
+                        errors.push(
+                            tConfig(
+                                'config.validation.secondaryProviderEnable',
+                                { provider: PROVIDERS[secondaryKey]?.label || secondaryKey },
+                                `⚠️ Enable ${PROVIDERS[secondaryKey]?.label || secondaryKey} to use it as Secondary Provider`
+                            )
+                        );
                     }
                     const keyOptional = KEY_OPTIONAL_PROVIDERS.has(String(secondaryKey).toLowerCase());
                     if (!keyOptional && (!secondaryCfg || !secondaryCfg.apiKey)) {
-                        errors.push(tConfig('config.validation.secondaryProviderKey', { provider: PROVIDERS[secondaryKey]?.label || secondaryKey }, `⚠️ API key required for ${PROVIDERS[secondaryKey]?.label || secondaryKey} (Secondary Provider)`));
+                        errors.push(
+                            tConfig(
+                                'config.validation.secondaryProviderKey',
+                                { provider: PROVIDERS[secondaryKey]?.label || secondaryKey },
+                                `⚠️ API key required for ${PROVIDERS[secondaryKey]?.label || secondaryKey} (Secondary Provider)`
+                            )
+                        );
                     }
                     if (!secondaryCfg || !secondaryCfg.model) {
-                        errors.push(tConfig('config.validation.secondaryProviderModel', { provider: PROVIDERS[secondaryKey]?.label || secondaryKey }, `⚠️ Select a model for ${PROVIDERS[secondaryKey]?.label || secondaryKey} (Secondary Provider)`));
+                        errors.push(
+                            tConfig(
+                                'config.validation.secondaryProviderModel',
+                                { provider: PROVIDERS[secondaryKey]?.label || secondaryKey },
+                                `⚠️ Select a model for ${PROVIDERS[secondaryKey]?.label || secondaryKey} (Secondary Provider)`
+                            )
+                        );
                     }
                 }
             }
 
             if (configuredProviders.size === 0) {
-                errors.push(tConfig('config.validation.providersMinimum', {}, '⚠️ Add at least one AI provider and enable it (API key required unless provider is keyless)'));
+                errors.push(
+                    tConfig(
+                        'config.validation.providersMinimum',
+                        {},
+                        '⚠️ Add at least one AI provider and enable it (API key required unless provider is keyless)'
+                    )
+                );
             }
 
             if (config.secondaryProviderEnabled && configuredProviders.size < 2) {
-                errors.push(tConfig('config.validation.secondaryProvidersCount', {}, '⚠️ Secondary Provider requires two configured AI providers (main and fallback)'));
+                errors.push(
+                    tConfig(
+                        'config.validation.secondaryProvidersCount',
+                        {},
+                        '⚠️ Secondary Provider requires two configured AI providers (main and fallback)'
+                    )
+                );
             }
 
             if (!validateLanguageSelection('source')) {
-                errors.push(`⚠️ ${tConfig('config.validation.sourceRange', { min: 1, max: MAX_SOURCE_LANGUAGES }, `Please select 1-${MAX_SOURCE_LANGUAGES} source languages`)}`);
+                errors.push(
+                    `⚠️ ${tConfig('config.validation.sourceRange', { min: 1, max: MAX_SOURCE_LANGUAGES }, `Please select 1-${MAX_SOURCE_LANGUAGES} source languages`)}`
+                );
             }
 
             if (!validateLanguageSelection('target')) {
-                errors.push(`⚠️ ${tConfig('config.validation.targetLimitShort', { limit: MAX_TARGET_LANGUAGES }, `Please select between 1 and ${MAX_TARGET_LANGUAGES} target languages (including Learn Mode)`)}`);
+                errors.push(
+                    `⚠️ ${tConfig('config.validation.targetLimitShort', { limit: MAX_TARGET_LANGUAGES }, `Please select between 1 and ${MAX_TARGET_LANGUAGES} target languages (including Learn Mode)`)}`
+                );
             }
 
             if (config.learnMode && !validateLanguageSelection('learn')) {
-                errors.push(`⚠️ ${tConfig('config.validation.learnRequired', {}, 'Learn Mode requires at least one target language')}`);
+                errors.push(
+                    `⚠️ ${tConfig('config.validation.learnRequired', {}, 'Learn Mode requires at least one target language')}`
+                );
             }
         } else {
             // In no-translation mode, validate language count bounds
             const noTranslationError = document.getElementById('noTranslationLanguagesError');
 
             if (!config.noTranslationLanguages || config.noTranslationLanguages.length === 0) {
-                errors.push(`⚠️ ${tConfig('config.validation.noTranslationRequired', {}, 'Please select at least one language for Just Fetch mode')}`);
+                errors.push(
+                    `⚠️ ${tConfig('config.validation.noTranslationRequired', {}, 'Please select at least one language for Just Fetch mode')}`
+                );
                 if (noTranslationError) {
-                    noTranslationError.textContent = tConfig('config.validation.noTranslationRequired', {}, 'Please select at least one language for Just Fetch mode');
+                    noTranslationError.textContent = tConfig(
+                        'config.validation.noTranslationRequired',
+                        {},
+                        'Please select at least one language for Just Fetch mode'
+                    );
                     noTranslationError.classList.add('show');
                 }
             } else if (config.noTranslationLanguages.length > MAX_NO_TRANSLATION_LANGUAGES) {
-                errors.push(`⚠️ ${tConfig('config.validation.noTranslationLimitShort', { limit: MAX_NO_TRANSLATION_LANGUAGES }, `Please select up to ${MAX_NO_TRANSLATION_LANGUAGES} languages in no-translation mode`)}`);
+                errors.push(
+                    `⚠️ ${tConfig('config.validation.noTranslationLimitShort', { limit: MAX_NO_TRANSLATION_LANGUAGES }, `Please select up to ${MAX_NO_TRANSLATION_LANGUAGES} languages in no-translation mode`)}`
+                );
                 if (noTranslationError) {
-                    noTranslationError.textContent = tConfig('config.validation.noTranslationLimitShort', { limit: MAX_NO_TRANSLATION_LANGUAGES }, `Please select up to ${MAX_NO_TRANSLATION_LANGUAGES} languages for Just Fetch mode`);
+                    noTranslationError.textContent = tConfig(
+                        'config.validation.noTranslationLimitShort',
+                        { limit: MAX_NO_TRANSLATION_LANGUAGES },
+                        `Please select up to ${MAX_NO_TRANSLATION_LANGUAGES} languages for Just Fetch mode`
+                    );
                     noTranslationError.classList.add('show');
                 }
             } else if (noTranslationError) {
@@ -12023,7 +13262,6 @@ Translate to {target_language}.`;
                 noTranslationError.classList.remove('show');
             }
         }
-
 
         if (errors.length > 0) {
             // Show all errors as a single alert
@@ -12043,7 +13281,7 @@ Translate to {target_language}.`;
                 } else {
                     const keyInput = document.getElementById(`provider-${mainProvider}-key`);
                     const modelSelect = document.getElementById(`provider-${mainProvider}-model`);
-                    if (keyInput && (!config.providers?.[mainProvider]?.apiKey)) {
+                    if (keyInput && !config.providers?.[mainProvider]?.apiKey) {
                         keyInput.focus();
                     } else if (modelSelect) {
                         modelSelect.focus();
@@ -12059,12 +13297,13 @@ Translate to {target_language}.`;
         const afterSuccess = typeof options.afterSuccess === 'function' ? options.afterSuccess : null;
 
         // Save against the token the page is actually editing, not stale browser storage.
-        let existingToken = resolveSaveTargetToken({
-            activeSessionToken: activeSessionContext.token,
-            activeProvenance: activeSessionContext.provenance,
-            urlSessionToken: getUrlSessionToken(),
-            persistentSessionToken: getStoredSessionToken()
-        }) || null;
+        let existingToken =
+            resolveSaveTargetToken({
+                activeSessionToken: activeSessionContext.token,
+                activeProvenance: activeSessionContext.provenance,
+                urlSessionToken: getUrlSessionToken(),
+                persistentSessionToken: getStoredSessionToken()
+            }) || null;
         if (!existingToken && approvedVictimTokens.length === 0) {
             const overflowVictims = getDraftOverflowVictims();
             if (overflowVictims.length > 0) {
@@ -12079,7 +13318,7 @@ Translate to {target_language}.`;
                     onConfirm: async () => {
                         await saveCurrentConfig({
                             ...options,
-                            approvedVictimTokens: overflowVictims.map(entry => entry.token)
+                            approvedVictimTokens: overflowVictims.map((entry) => entry.token)
                         });
                     }
                 });
@@ -12089,7 +13328,6 @@ Translate to {target_language}.`;
         let configToken;
         let isUpdate = false;
         let responseSession = null;
-
 
         try {
             if (existingToken) {
@@ -12103,27 +13341,60 @@ Translate to {target_language}.`;
                     // Try to update existing session first
                     try {
                         const encodedToken = encodeURIComponent(existingToken);
-                        const updateResponse = await fetchWithTimeout(`/api/update-session/${encodedToken}`, {
-                            method: 'POST',
-                            headers: {
-                                'Content-Type': 'application/json'
+                        const updateResponse = await fetchWithTimeout(
+                            `/api/update-session/${encodedToken}`,
+                            {
+                                method: 'POST',
+                                headers: {
+                                    'Content-Type': 'application/json'
+                                },
+                                body: JSON.stringify(config)
                             },
-                            body: JSON.stringify(config)
-                        }, 10000);
+                            10000
+                        );
 
                         // FIXED: Better error handling for different response codes
                         if (updateResponse.status === 404 || updateResponse.status === 410) {
                             // Token not found or expired - create new session
-                            showAlert(tConfig('config.alerts.sessionExpiredCreating', {}, 'Session expired. Creating new session...'), 'info', 'config.alerts.sessionExpiredCreating', {});
+                            showAlert(
+                                tConfig(
+                                    'config.alerts.sessionExpiredCreating',
+                                    {},
+                                    'Session expired. Creating new session...'
+                                ),
+                                'info',
+                                'config.alerts.sessionExpiredCreating',
+                                {}
+                            );
                             localStorage.removeItem(TOKEN_KEY);
                             existingToken = null;
                         } else if (updateResponse.status === 503) {
-                            showAlert(tConfig('config.alerts.sessionStorageUnavailable', {}, 'Session storage is temporarily unavailable. Please retry in a moment.'), 'warning', 'config.alerts.sessionStorageUnavailable', {});
+                            showAlert(
+                                tConfig(
+                                    'config.alerts.sessionStorageUnavailable',
+                                    {},
+                                    'Session storage is temporarily unavailable. Please retry in a moment.'
+                                ),
+                                'warning',
+                                'config.alerts.sessionStorageUnavailable',
+                                {}
+                            );
                             return false;
                         } else if (!updateResponse.ok) {
                             const errorText = await updateResponse.text();
-                            const reason = errorText && errorText.trim() ? errorText.trim() : `HTTP ${updateResponse.status}`;
-                            showAlert(tConfig('config.alerts.sessionUpdateRetry', { reason }, 'Failed to update the current session. Please retry instead of creating a new one. Reason: ' + reason), 'error', 'config.alerts.sessionUpdateRetry', { reason });
+                            const reason =
+                                errorText && errorText.trim() ? errorText.trim() : `HTTP ${updateResponse.status}`;
+                            showAlert(
+                                tConfig(
+                                    'config.alerts.sessionUpdateRetry',
+                                    { reason },
+                                    'Failed to update the current session. Please retry instead of creating a new one. Reason: ' +
+                                        reason
+                                ),
+                                'error',
+                                'config.alerts.sessionUpdateRetry',
+                                { reason }
+                            );
                             return false;
                         } else {
                             // Success
@@ -12133,15 +13404,42 @@ Translate to {target_language}.`;
                             responseSession = sessionData.session || null;
 
                             if (sessionData.updated) {
-                                showAlert(tConfig('config.alerts.configurationUpdated', {}, 'Configuration updated! Changes will take effect immediately in Stremio.'), 'success', 'config.alerts.configurationUpdated', {});
+                                showAlert(
+                                    tConfig(
+                                        'config.alerts.configurationUpdated',
+                                        {},
+                                        'Configuration updated! Changes will take effect immediately in Stremio.'
+                                    ),
+                                    'success',
+                                    'config.alerts.configurationUpdated',
+                                    {}
+                                );
                             } else if (sessionData.created) {
                                 // Token was expired, new one created
-                                showAlert(tConfig('config.alerts.sessionExpiredCreated', {}, 'Session expired. Created new session - please reinstall addon in Stremio.'), 'warning', 'config.alerts.sessionExpiredCreated', {});
+                                showAlert(
+                                    tConfig(
+                                        'config.alerts.sessionExpiredCreated',
+                                        {},
+                                        'Session expired. Created new session - please reinstall addon in Stremio.'
+                                    ),
+                                    'warning',
+                                    'config.alerts.sessionExpiredCreated',
+                                    {}
+                                );
                                 localStorage.setItem(TOKEN_KEY, configToken);
                             }
                         }
                     } catch (updateError) {
-                        showAlert(tConfig('config.alerts.sessionNetworkRetry', {}, 'Network error updating session. Please retry; your current session token was kept.'), 'warning', 'config.alerts.sessionNetworkRetry', {});
+                        showAlert(
+                            tConfig(
+                                'config.alerts.sessionNetworkRetry',
+                                {},
+                                'Network error updating session. Please retry; your current session token was kept.'
+                            ),
+                            'warning',
+                            'config.alerts.sessionNetworkRetry',
+                            {}
+                        );
                         return false;
                     }
                 }
@@ -12149,16 +13447,18 @@ Translate to {target_language}.`;
 
             // If we don't have a valid token, create new session
             if (!existingToken) {
-
                 try {
-                    const createResponse = await fetchWithTimeout('/api/create-session', {
-                        method: 'POST',
-                        headers: {
-                            'Content-Type': 'application/json'
+                    const createResponse = await fetchWithTimeout(
+                        '/api/create-session',
+                        {
+                            method: 'POST',
+                            headers: {
+                                'Content-Type': 'application/json'
+                            },
+                            body: JSON.stringify(config)
                         },
-                        body: JSON.stringify(config)
-                    }, 10000);
-
+                        10000
+                    );
 
                     if (!createResponse.ok) {
                         const errorText = await createResponse.text();
@@ -12176,7 +13476,16 @@ Translate to {target_language}.`;
                     isUpdate = false;
                     responseSession = sessionData.session || null;
                 } catch (createError) {
-                    showAlert(tConfig('config.alerts.saveFailed', { reason: createError.message }, 'Failed to save configuration: ' + createError.message), 'error', 'config.alerts.saveFailed', { reason: createError.message });
+                    showAlert(
+                        tConfig(
+                            'config.alerts.saveFailed',
+                            { reason: createError.message },
+                            'Failed to save configuration: ' + createError.message
+                        ),
+                        'error',
+                        'config.alerts.saveFailed',
+                        { reason: createError.message }
+                    );
                     return false;
                 }
             }
@@ -12189,7 +13498,16 @@ Translate to {target_language}.`;
             // Store token for future updates (only if valid)
             localStorage.setItem(TOKEN_KEY, configToken);
         } catch (error) {
-            showAlert(tConfig('config.alerts.saveFailed', { reason: error.message }, 'Failed to save configuration: ' + error.message), 'error', 'config.alerts.saveFailed', { reason: error.message });
+            showAlert(
+                tConfig(
+                    'config.alerts.saveFailed',
+                    { reason: error.message },
+                    'Failed to save configuration: ' + error.message
+                ),
+                'error',
+                'config.alerts.saveFailed',
+                { reason: error.message }
+            );
             return false;
         }
 
@@ -12221,7 +13539,16 @@ Translate to {target_language}.`;
 
         // Show appropriate message based on update vs new install
         if (!isUpdate) {
-            showAlert(tConfig('config.alerts.configurationSaved', {}, 'Configuration saved! You can now install the addon in Stremio.'), 'success', 'config.alerts.configurationSaved', {});
+            showAlert(
+                tConfig(
+                    'config.alerts.configurationSaved',
+                    {},
+                    'Configuration saved! You can now install the addon in Stremio.'
+                ),
+                'success',
+                'config.alerts.configurationSaved',
+                {}
+            );
         }
         const persistedToVault = persistSavedTokenToVault(configToken, responseSession, {
             approvedVictimTokens,
@@ -12242,7 +13569,12 @@ Translate to {target_language}.`;
             // Preserve any percent-encoding so Stremio receives a URL-safe config token
             const stremioUrl = window.installUrl.replace(/^https?:\/\//i, 'stremio://');
             window.location.href = stremioUrl;
-            showAlert(tConfig('config.alerts.openingStremio', {}, 'Opening Stremio...'), 'info', 'config.alerts.openingStremio', {});
+            showAlert(
+                tConfig('config.alerts.openingStremio', {}, 'Opening Stremio...'),
+                'info',
+                'config.alerts.openingStremio',
+                {}
+            );
         }
     }
 
@@ -12250,7 +13582,12 @@ Translate to {target_language}.`;
         if (window.installUrl) {
             try {
                 await navigator.clipboard.writeText(window.installUrl);
-                showAlert(tConfig('config.alerts.installUrlCopied', {}, 'Install URL copied to clipboard!'), 'success', 'config.alerts.installUrlCopied', {});
+                showAlert(
+                    tConfig('config.alerts.installUrlCopied', {}, 'Install URL copied to clipboard!'),
+                    'success',
+                    'config.alerts.installUrlCopied',
+                    {}
+                );
             } catch (error) {
                 // Fallback
                 const input = document.createElement('input');
@@ -12259,7 +13596,12 @@ Translate to {target_language}.`;
                 input.select();
                 document.execCommand('copy');
                 document.body.removeChild(input);
-                showAlert(tConfig('config.alerts.installUrlCopied', {}, 'Install URL copied to clipboard!'), 'success', 'config.alerts.installUrlCopied', {});
+                showAlert(
+                    tConfig('config.alerts.installUrlCopied', {}, 'Install URL copied to clipboard!'),
+                    'success',
+                    'config.alerts.installUrlCopied',
+                    {}
+                );
             }
         }
     }
@@ -12286,12 +13628,13 @@ Translate to {target_language}.`;
         const alert = document.createElement('div');
         alert.className = `alert alert-${type}`;
 
-        const icon = {
-            success: '✓',
-            error: '✗',
-            warning: '⚠',
-            info: 'ℹ'
-        }[type] || 'ℹ';
+        const icon =
+            {
+                success: '✓',
+                error: '✗',
+                warning: '⚠',
+                info: 'ℹ'
+            }[type] || 'ℹ';
 
         alert.setAttribute('data-i18n', i18nKey || '');
         if (i18nKey) {
@@ -12357,16 +13700,17 @@ Translate to {target_language}.`;
                 document.getElementById('subToolboxLauncher'),
                 document.getElementById('tokenVaultLauncher'),
                 tokenVaultRailOpen ? document.getElementById('tokenVaultRail') : null
-            ].forEach(el => {
+            ].forEach((el) => {
                 if (!el) return;
 
                 const style = window.getComputedStyle(el);
-                if (style.display === 'none' || style.visibility === 'hidden' || parseFloat(style.opacity || '1') === 0) return;
+                if (style.display === 'none' || style.visibility === 'hidden' || parseFloat(style.opacity || '1') === 0)
+                    return;
                 if (style.position !== 'fixed') return;
 
                 const rect = el.getBoundingClientRect();
                 if (rect.width <= 0 || rect.height <= 0) return;
-                if (rect.bottom < (viewportHeight - 220)) return;
+                if (rect.bottom < viewportHeight - 220) return;
 
                 clearance = Math.max(clearance, viewportHeight - rect.top);
             });
@@ -12399,11 +13743,14 @@ Translate to {target_language}.`;
     }
 
     function getCookiePathVariants(pathname) {
-        const normalizedPath = String(pathname || '/').split(/[?#]/)[0].trim() || '/';
+        const normalizedPath =
+            String(pathname || '/')
+                .split(/[?#]/)[0]
+                .trim() || '/';
         const segments = normalizedPath.split('/').filter(Boolean);
         const variants = new Set(['/']);
         let current = '';
-        segments.forEach(segment => {
+        segments.forEach((segment) => {
             current += `/${segment}`;
             variants.add(current);
             variants.add(`${current}/`);
@@ -12412,9 +13759,16 @@ Translate to {target_language}.`;
     }
 
     function getCookieDomainVariants(hostname) {
-        const normalizedHost = String(hostname || '').trim().replace(/^\.+/, '');
+        const normalizedHost = String(hostname || '')
+            .trim()
+            .replace(/^\.+/, '');
         const variants = new Set(['']);
-        if (!normalizedHost || normalizedHost === 'localhost' || normalizedHost.includes(':') || /^[\d.]+$/.test(normalizedHost)) {
+        if (
+            !normalizedHost ||
+            normalizedHost === 'localhost' ||
+            normalizedHost.includes(':') ||
+            /^[\d.]+$/.test(normalizedHost)
+        ) {
             return Array.from(variants);
         }
         const parts = normalizedHost.split('.').filter(Boolean);
@@ -12428,12 +13782,14 @@ Translate to {target_language}.`;
 
     function clearOriginCookies() {
         try {
-            const cookieNames = Array.from(new Set(
-                String(document.cookie || '')
-                    .split(';')
-                    .map(part => part.split('=')[0]?.trim())
-                    .filter(Boolean)
-            ));
+            const cookieNames = Array.from(
+                new Set(
+                    String(document.cookie || '')
+                        .split(';')
+                        .map((part) => part.split('=')[0]?.trim())
+                        .filter(Boolean)
+                )
+            );
             const pathVariants = getCookiePathVariants(window.location.pathname);
             const domainVariants = getCookieDomainVariants(window.location.hostname);
             cookieNames.forEach((name) => {
@@ -12444,7 +13800,7 @@ Translate to {target_language}.`;
                     });
                 });
             });
-        } catch (_) { }
+        } catch (_) {}
     }
 
     async function clearOriginIndexedDbDatabases() {
@@ -12452,14 +13808,16 @@ Translate to {target_language}.`;
             const dbApi = window.indexedDB;
             if (!dbApi || typeof dbApi.databases !== 'function') return;
             const databases = await dbApi.databases();
-            await Promise.all((databases || []).map(db => {
-                if (!db || !db.name) return Promise.resolve();
-                return new Promise((resolve) => {
-                    const request = dbApi.deleteDatabase(db.name);
-                    request.onsuccess = request.onerror = request.onblocked = () => resolve();
-                });
-            }));
-        } catch (_) { }
+            await Promise.all(
+                (databases || []).map((db) => {
+                    if (!db || !db.name) return Promise.resolve();
+                    return new Promise((resolve) => {
+                        const request = dbApi.deleteDatabase(db.name);
+                        request.onsuccess = request.onerror = request.onblocked = () => resolve();
+                    });
+                })
+            );
+        } catch (_) {}
     }
 
     // Reset settings flow
@@ -12477,26 +13835,30 @@ Translate to {target_language}.`;
                 if (navigator.serviceWorker && navigator.serviceWorker.controller) {
                     navigator.serviceWorker.controller.postMessage({ type: 'CLEAR_CACHE' });
                 }
-            } catch (_) { }
+            } catch (_) {}
 
             try {
                 if (window.caches && window.caches.keys) {
                     const names = await window.caches.keys();
-                    await Promise.all(names.map(n => window.caches.delete(n).catch(() => { })));
+                    await Promise.all(names.map((n) => window.caches.delete(n).catch(() => {})));
                 }
-            } catch (_) { }
+            } catch (_) {}
 
             try {
                 if ('serviceWorker' in navigator) {
                     const regs = await navigator.serviceWorker.getRegistrations();
-                    await Promise.all(regs.map(r => r.unregister().catch(() => { })));
+                    await Promise.all(regs.map((r) => r.unregister().catch(() => {})));
                 }
-            } catch (_) { }
+            } catch (_) {}
 
             await clearOriginIndexedDbDatabases();
 
-            try { localStorage.clear(); } catch (_) { }
-            try { sessionStorage.clear(); } catch (_) { }
+            try {
+                localStorage.clear();
+            } catch (_) {}
+            try {
+                sessionStorage.clear();
+            } catch (_) {}
 
             clearOriginCookies();
         } finally {
@@ -12517,17 +13879,18 @@ Translate to {target_language}.`;
         if (!portal || !header || !entriesEl) return;
 
         try {
-            const bootVersion = (typeof window !== 'undefined' && typeof window.__APP_VERSION__ === 'string')
-                ? window.__APP_VERSION__.trim()
-                : '';
+            const bootVersion =
+                typeof window !== 'undefined' && typeof window.__APP_VERSION__ === 'string'
+                    ? window.__APP_VERSION__.trim()
+                    : '';
             if (badge && bootVersion) {
                 badge.textContent = 'v' + bootVersion;
             }
-        } catch (_) { }
+        } catch (_) {}
 
         fetch('/api/changelog')
-            .then(r => r.json())
-            .then(data => {
+            .then((r) => r.json())
+            .then((data) => {
                 if (!data || !data.entries || !data.entries.length) return;
                 const { currentVersion, entries: versions } = data;
 
@@ -12536,7 +13899,9 @@ Translate to {target_language}.`;
 
                 // "New" dot logic
                 let lastSeen = '';
-                try { lastSeen = localStorage.getItem(LAST_SEEN_VERSION_KEY) || ''; } catch (_) { }
+                try {
+                    lastSeen = localStorage.getItem(LAST_SEEN_VERSION_KEY) || '';
+                } catch (_) {}
                 const latestVersion = versions[0]?.version || '';
                 if (lastSeen !== latestVersion && newDot) {
                     newDot.style.display = '';
@@ -12597,7 +13962,9 @@ Translate to {target_language}.`;
                     const isExpanded = portal.classList.toggle('expanded');
                     if (isExpanded && newDot) {
                         newDot.style.display = 'none';
-                        try { localStorage.setItem(LAST_SEEN_VERSION_KEY, latestVersion); } catch (_) { }
+                        try {
+                            localStorage.setItem(LAST_SEEN_VERSION_KEY, latestVersion);
+                        } catch (_) {}
                     }
                 });
                 header.addEventListener('keydown', (e) => {
@@ -12607,7 +13974,7 @@ Translate to {target_language}.`;
                     }
                 });
             })
-            .catch(err => {
+            .catch((err) => {
                 console.warn('[WhatsNew] Failed to load changelog:', err);
             });
     }
@@ -12617,15 +13984,15 @@ Translate to {target_language}.`;
         const lines = rawContent.split('\n');
         let html = '';
         const categoryEmojis = {
-            'improvements': '⚡',
+            improvements: '⚡',
             'bug fixes': '🐛',
             'new features': '🆕',
             'breaking changes': '⚠️',
-            'performance': '🚀',
-            'security': '🔒',
-            'documentation': '📖',
-            'internal': '🔧',
-            'deprecations': '⏳'
+            performance: '🚀',
+            security: '🔒',
+            documentation: '📖',
+            internal: '🔧',
+            deprecations: '⏳'
         };
 
         for (const line of lines) {
@@ -12663,11 +14030,16 @@ Translate to {target_language}.`;
 
     // Initialize portal after partials are loaded
     if (window.partialsReady && typeof window.partialsReady.then === 'function') {
-        window.partialsReady.then(function () { initWhatsNewPortal(); }).catch(function () { });
+        window.partialsReady
+            .then(function () {
+                initWhatsNewPortal();
+            })
+            .catch(function () {});
     } else if (document.getElementById('whatsNewPortal')) {
         initWhatsNewPortal();
     } else {
-        document.addEventListener('DOMContentLoaded', function () { initWhatsNewPortal(); });
+        document.addEventListener('DOMContentLoaded', function () {
+            initWhatsNewPortal();
+        });
     }
-
 })();

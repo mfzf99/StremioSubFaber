@@ -74,8 +74,8 @@ const log = require('../utils/logger');
 // NOTA reka bentuk: pre-flight ialah ASAS analisis. Pre-flight daripada
 // model sandaran (kualiti rendah) LEBIH BURUK daripada tiada pre-flight —
 // itulah sebabnya hierarki Fasa 0 TIDAK MERENTAS keluarga model.
-const AGENT_B_DEFAULT_MODEL = 'deepseek-v4-pro';      // Fasa 1: Pemeriksa Utama
-const AGENT_B_PREFLIGHT_MODEL = 'kimi-k3';            // Fasa 0: kimi-k3 SAHAJA
+const AGENT_B_DEFAULT_MODEL = 'deepseek-v4-pro'; // Fasa 1: Pemeriksa Utama
+const AGENT_B_PREFLIGHT_MODEL = 'kimi-k3'; // Fasa 0: kimi-k3 SAHAJA
 // [MODEL-HIERARCHY] Fallback khusus Fasa 0 DIGUGURKAN — kimi-k3 standalone.
 // env AGENT_B_PREFLIGHT_FALLBACK_MODEL diabaikan sepenuhnya (nilai muktamad
 // sentiasa sama dengan primer supaya hierarki Fasa 0 ialah 1-tingkat).
@@ -103,8 +103,8 @@ const AGENT_B_FALLBACK_MODEL = 'deepseek-v4.1-flash'; // Fallback Fasa 1 SAHAJA
 // AGENT_B_PREFLIGHT_TIMEOUT_MS / AGENT_B_INSPECTION_TIMEOUT_MS
 // (integer ms positif).
 const parseAgentBTimeout = (raw, fallbackMs) => {
-  const parsed = parseInt(raw, 10);
-  return Number.isFinite(parsed) && parsed > 0 ? parsed : fallbackMs;
+    const parsed = parseInt(raw, 10);
+    return Number.isFinite(parsed) && parsed > 0 ? parsed : fallbackMs;
 };
 const AGENT_B_PREFLIGHT_TIMEOUT_MS = parseAgentBTimeout(process.env.AGENT_B_PREFLIGHT_TIMEOUT_MS, 300000);
 const AGENT_B_INSPECTION_TIMEOUT_MS = parseAgentBTimeout(process.env.AGENT_B_INSPECTION_TIMEOUT_MS, 300000);
@@ -117,9 +117,9 @@ const AGENT_B_INSPECTION_TIMEOUT_MS = parseAgentBTimeout(process.env.AGENT_B_INS
 // Nilai 0 EKSPLISIT (melumpuhkan backoff — ujian pantas) diterima melalui
 // pemeriksaan berasingan supaya tidak jatuh ke lalai 2000.
 const parseAgentBBackoff = (raw, fallbackMs) => {
-  if (raw === undefined || raw === null || String(raw).trim() === '') return fallbackMs;
-  const parsed = parseInt(raw, 10);
-  return Number.isFinite(parsed) && parsed >= 0 ? parsed : fallbackMs;
+    if (raw === undefined || raw === null || String(raw).trim() === '') return fallbackMs;
+    const parsed = parseInt(raw, 10);
+    return Number.isFinite(parsed) && parsed >= 0 ? parsed : fallbackMs;
 };
 const AGENT_B_PREFLIGHT_RETRY_BACKOFF_MS = parseAgentBBackoff(process.env.AGENT_B_PREFLIGHT_RETRY_BACKOFF_MS, 2000);
 const AGENT_B_PREFLIGHT_RETRY_BACKOFF_CAP_MS = 15000;
@@ -127,14 +127,14 @@ const AGENT_B_PREFLIGHT_RETRY_BACKOFF_CAP_MS = 15000;
 // 131072 (128K); boleh ditindih melalui env AGENT_B_MAX_TOKENS
 // (integer positif sahaja).
 const AGENT_B_MAX_TOKENS = parseAgentBTimeout(process.env.AGENT_B_MAX_TOKENS, 131072);
-const AGENT_B_CIRCUIT_THRESHOLD = 3;      // 3 kegagalan berturut → silent mode
+const AGENT_B_CIRCUIT_THRESHOLD = 3; // 3 kegagalan berturut → silent mode
 // [UNBOUNDED-CONTEXT 2026-09-29] Siling lama 200 aksara/baris dan
 // 5 jenayah DIGUGURKAN — tiada mandat pemotongan baris dialog (dialog
 // bersubtitle boleh melebihi 200 aksara) dan jika batch mengandungi
 // 8 jenayah, SEMUA 8 mesti dipulangkan untuk retry. Hanya siling sanity
 // pertahanan kekal (id-per-crime + nota ringkas).
-const AGENT_B_MAX_IDS_PER_CRIME = 10;     // Cap bilangan id per jenayah (sanity)
-const AGENT_B_MAX_NOTE_CHARS = 120;       // Cap panjang nota jenayah (sanity)
+const AGENT_B_MAX_IDS_PER_CRIME = 10; // Cap bilangan id per jenayah (sanity)
+const AGENT_B_MAX_NOTE_CHARS = 120; // Cap panjang nota jenayah (sanity)
 // MANDAT OPERASI MUTLAK 2026-09-27: SHIFT dikunci sebagai jenayah ke-4 —
 // kandungan dialog berpindah merentasi indeks (dialog baris 5 muncul di
 // baris 6). Klausa emas pengurang token di dalam arahan pemeriksa.
@@ -194,59 +194,63 @@ If any violation exists:
  * @returns {string} Blok teks konteks ('' bila tiada konteks berguna)
  */
 function formatPreflightContextForInspection(preflightContext) {
-  if (!preflightContext || typeof preflightContext !== 'object') return '';
-  const sections = [];
+    if (!preflightContext || typeof preflightContext !== 'object') return '';
+    const sections = [];
 
-  const theme = String(preflightContext.theme || '').trim();
-  if (theme) {
-    // UNBOUNDED-CONTEXT: tema penuh disuntik — tiada pemotongan 400 aksara.
-    sections.push(`### Story Context (from Pre-Flight)\n${theme}`);
-  }
+    const theme = String(preflightContext.theme || '').trim();
+    if (theme) {
+        // UNBOUNDED-CONTEXT: tema penuh disuntik — tiada pemotongan 400 aksara.
+        sections.push(`### Story Context (from Pre-Flight)\n${theme}`);
+    }
 
-  if (Array.isArray(preflightContext.terms) && preflightContext.terms.length > 0) {
-    const termLines = preflightContext.terms
-      .map(t => {
-        const src = String(t?.source ?? t?.src ?? '').trim();
-        const tgt = String(t?.target ?? t?.tgt ?? '').trim() || src;
-        return src ? `- ${src} → ${tgt}` : '';
-      })
-      .filter(Boolean)
-      .join('\n');
-    if (termLines) sections.push(`### Locked Terms (use for consistency judgement)\n${termLines}`);
-  }
+    if (Array.isArray(preflightContext.terms) && preflightContext.terms.length > 0) {
+        const termLines = preflightContext.terms
+            .map((t) => {
+                const src = String(t?.source ?? t?.src ?? '').trim();
+                const tgt = String(t?.target ?? t?.tgt ?? '').trim() || src;
+                return src ? `- ${src} → ${tgt}` : '';
+            })
+            .filter(Boolean)
+            .join('\n');
+        if (termLines) sections.push(`### Locked Terms (use for consistency judgement)\n${termLines}`);
+    }
 
-  if (Array.isArray(preflightContext.characters) && preflightContext.characters.length > 0) {
-    const pick = (...vals) => {
-      for (const v of vals) {
-        if (v !== undefined && v !== null && String(v).trim() !== '') return String(v).trim();
-      }
-      return '';
-    };
-    const charLines = preflightContext.characters
-      .map(c => {
-        const name = String(c?.name || '').trim();
-        if (!name) return '';
-        const narrative = pick(c?.canonical_address, c?.canonicalAddress) || 'address NOT LOCKED';
-        // Vocative (direct-address) is optional; only render when it differs
-        // from the narrative form so the inspector sees both valid options.
-        const vocative = pick(c?.direct_address, c?.directAddress);
-        // Pronoun register (self/other pairing) — rendered when locked so the
-        // inspector can audit REGISTER (b) pronoun-register mismatches.
-        const pronoun = pick(c?.pronoun_register, c?.pronounRegister);
-        const role = String(c?.role || '').trim();
-        const addressPart = (vocative && vocative !== narrative)
-          ? `${narrative} / ${vocative} (when addressed directly)`
-          : narrative;
-        const pronounPart = pronoun ? ` [pronouns: ${pronoun}]` : '';
-        return `- ${name} → ${addressPart}${role ? ` (${role})` : ''}${pronounPart}`;
-      })
-      .filter(Boolean)
-      .join('\n');
-    if (charLines) sections.push(`### Character Address Reference (locked titles and pronouns must stay consistent)\n${charLines}`);
-  }
+    if (Array.isArray(preflightContext.characters) && preflightContext.characters.length > 0) {
+        const pick = (...vals) => {
+            for (const v of vals) {
+                if (v !== undefined && v !== null && String(v).trim() !== '') return String(v).trim();
+            }
+            return '';
+        };
+        const charLines = preflightContext.characters
+            .map((c) => {
+                const name = String(c?.name || '').trim();
+                if (!name) return '';
+                const narrative = pick(c?.canonical_address, c?.canonicalAddress) || 'address NOT LOCKED';
+                // Vocative (direct-address) is optional; only render when it differs
+                // from the narrative form so the inspector sees both valid options.
+                const vocative = pick(c?.direct_address, c?.directAddress);
+                // Pronoun register (self/other pairing) — rendered when locked so the
+                // inspector can audit REGISTER (b) pronoun-register mismatches.
+                const pronoun = pick(c?.pronoun_register, c?.pronounRegister);
+                const role = String(c?.role || '').trim();
+                const addressPart =
+                    vocative && vocative !== narrative
+                        ? `${narrative} / ${vocative} (when addressed directly)`
+                        : narrative;
+                const pronounPart = pronoun ? ` [pronouns: ${pronoun}]` : '';
+                return `- ${name} → ${addressPart}${role ? ` (${role})` : ''}${pronounPart}`;
+            })
+            .filter(Boolean)
+            .join('\n');
+        if (charLines)
+            sections.push(
+                `### Character Address Reference (locked titles and pronouns must stay consistent)\n${charLines}`
+            );
+    }
 
-  if (sections.length === 0) return '';
-  return `${sections.join('\n\n')}\n\n`;
+    if (sections.length === 0) return '';
+    return `${sections.join('\n\n')}\n\n`;
 }
 
 /**
@@ -261,35 +265,36 @@ function formatPreflightContextForInspection(preflightContext) {
  * @returns {{prompt:string}|null} Prompt lengkap inspector atau null (input kosong)
  */
 function buildInspectionPayload(sourceBatch, translatedEntries, preflightContext = null) {
-  if (!Array.isArray(sourceBatch) || sourceBatch.length === 0) return null;
-  if (!Array.isArray(translatedEntries) || translatedEntries.length === 0) return null;
+    if (!Array.isArray(sourceBatch) || sourceBatch.length === 0) return null;
+    if (!Array.isArray(translatedEntries) || translatedEntries.length === 0) return null;
 
-  // UNBOUNDED-CONTEXT 2026-09-29: pemotongan 200 aksara digugurkan — baris
-  // dialog bersubtitle (dengan markup) boleh melebihi 200; whitespace
-  // normalization masih dijalankan supaya muatan kekal padat.
-  const clamp = (t) => String(t || '')
-    .replace(/\s+/g, ' ')
-    .trim();
+    // UNBOUNDED-CONTEXT 2026-09-29: pemotongan 200 aksara digugurkan — baris
+    // dialog bersubtitle (dengan markup) boleh melebihi 200; whitespace
+    // normalization masih dijalankan supaya muatan kekal padat.
+    const clamp = (t) =>
+        String(t || '')
+            .replace(/\s+/g, ' ')
+            .trim();
 
-  const enLines = [];
-  const msLines = [];
-  for (let i = 0; i < sourceBatch.length; i++) {
-    const src = sourceBatch[i];
-    if (!src || typeof src.id === 'undefined') continue;
-    const id = Number(src.id);
-    if (!Number.isFinite(id) || id <= 0) continue;
-    enLines.push(`${id}|${clamp(src.text)}`);
-    const dst = translatedEntries[i];
-    msLines.push(`${id}|${clamp(dst?.text)}`);
-  }
-  if (enLines.length === 0) return null;
+    const enLines = [];
+    const msLines = [];
+    for (let i = 0; i < sourceBatch.length; i++) {
+        const src = sourceBatch[i];
+        if (!src || typeof src.id === 'undefined') continue;
+        const id = Number(src.id);
+        if (!Number.isFinite(id) || id <= 0) continue;
+        enLines.push(`${id}|${clamp(src.text)}`);
+        const dst = translatedEntries[i];
+        msLines.push(`${id}|${clamp(dst?.text)}`);
+    }
+    if (enLines.length === 0) return null;
 
-  // CONTEXT-AWARE AUDIT (MANDAT OPERASI MUTLAK 2026-09-27): suntik ringkasan
-  // konteks Pre-Flight SEBELUM blok <en>/<ms> supaya pemeriksa menilai
-  // konsistensi gelaran/istilah dengan bukti Fasa 0, bukan secara buta.
-  const contextBlock = formatPreflightContextForInspection(preflightContext);
+    // CONTEXT-AWARE AUDIT (MANDAT OPERASI MUTLAK 2026-09-27): suntik ringkasan
+    // konteks Pre-Flight SEBELUM blok <en>/<ms> supaya pemeriksa menilai
+    // konsistensi gelaran/istilah dengan bukti Fasa 0, bukan secara buta.
+    const contextBlock = formatPreflightContextForInspection(preflightContext);
 
-  const prompt = `${INSPECTOR_INSTRUCTION}
+    const prompt = `${INSPECTOR_INSTRUCTION}
 
 ${contextBlock ? `${contextBlock}` : ''}## Input
 <en>
@@ -301,7 +306,7 @@ ${msLines.join('\n')}
 
 Respond with ONLY the JSON now.`;
 
-  return { prompt };
+    return { prompt };
 }
 
 /**
@@ -316,63 +321,65 @@ Respond with ONLY the JSON now.`;
  *          null = respons tidak boleh ditafsir (pemanggil mesti fail-open)
  */
 function parseInspectorResponse(responseText) {
-  if (!responseText || typeof responseText !== 'string') return null;
+    if (!responseText || typeof responseText !== 'string') return null;
 
-  let cleaned = responseText.trim();
+    let cleaned = responseText.trim();
 
-  // Strip markdown code fences (hex \x60 mengelakkan UI breakage — konvensyen projek)
-  const fenceRegex = new RegExp('\\x60\\x60\\x60[a-z]*(?:\\r?\\n)?', 'gi');
-  cleaned = cleaned.replace(fenceRegex, '');
-  cleaned = cleaned.replace(new RegExp('\\x60\\x60\\x60', 'g'), '');
+    // Strip markdown code fences (hex \x60 mengelakkan UI breakage — konvensyen projek)
+    const fenceRegex = new RegExp('\\x60\\x60\\x60[a-z]*(?:\\r?\\n)?', 'gi');
+    cleaned = cleaned.replace(fenceRegex, '');
+    cleaned = cleaned.replace(new RegExp('\\x60\\x60\\x60', 'g'), '');
 
-  // Fallback: extract blok JSON pertama jika ada bahan sampingan (chatter)
-  const jsonStart = cleaned.indexOf('{');
-  const jsonEnd = cleaned.lastIndexOf('}');
-  if (jsonStart === -1 || jsonEnd === -1 || jsonEnd <= jsonStart) {
-    return null;
-  }
-  if (jsonStart > 0 || jsonEnd < cleaned.length - 1) {
-    cleaned = cleaned.slice(jsonStart, jsonEnd + 1);
-  }
-
-  let parsed;
-  try {
-    parsed = JSON.parse(cleaned);
-  } catch (_) {
-    return null;
-  }
-
-  if (!parsed || typeof parsed !== 'object') return null;
-  if (parsed.valid === true) return { valid: true };
-  if (parsed.valid !== false) return null; // medan valid hilang → tidak sah
-
-  // Sanitize crimes: jenis mesti sah, id mesti integer positif, nota di-cap
-  const crimes = [];
-  if (Array.isArray(parsed.crimes)) {
-    for (const crime of parsed.crimes) {
-      if (!crime || typeof crime !== 'object') continue;
-      const type = String(crime.type || '').toUpperCase();
-      if (!VALID_CRIME_TYPES.has(type)) continue;
-      const ids = Array.isArray(crime.ids)
-        ? crime.ids
-          .map((n) => parseInt(n, 10))
-          .filter((n) => Number.isFinite(n) && n > 0)
-          .slice(0, AGENT_B_MAX_IDS_PER_CRIME)
-        : [];
-      crimes.push({
-        type,
-        ids,
-        note: String(crime.note || '').trim().slice(0, AGENT_B_MAX_NOTE_CHARS)
-      });
-      // UNBOUNDED-CONTEXT: tiada siling bilangan jenayah — jika batch
-      // mengandungi 8 jenayah, SEMUA 8 mesti dipulangkan untuk retry.
+    // Fallback: extract blok JSON pertama jika ada bahan sampingan (chatter)
+    const jsonStart = cleaned.indexOf('{');
+    const jsonEnd = cleaned.lastIndexOf('}');
+    if (jsonStart === -1 || jsonEnd === -1 || jsonEnd <= jsonStart) {
+        return null;
     }
-  }
+    if (jsonStart > 0 || jsonEnd < cleaned.length - 1) {
+        cleaned = cleaned.slice(jsonStart, jsonEnd + 1);
+    }
 
-  // valid:false tetapi tiada jenayah boleh diperbetulkan → tiada tindakan
-  if (crimes.length === 0) return { valid: true };
+    let parsed;
+    try {
+        parsed = JSON.parse(cleaned);
+    } catch (_) {
+        return null;
+    }
 
-  return { valid: false, crimes };
+    if (!parsed || typeof parsed !== 'object') return null;
+    if (parsed.valid === true) return { valid: true };
+    if (parsed.valid !== false) return null; // medan valid hilang → tidak sah
+
+    // Sanitize crimes: jenis mesti sah, id mesti integer positif, nota di-cap
+    const crimes = [];
+    if (Array.isArray(parsed.crimes)) {
+        for (const crime of parsed.crimes) {
+            if (!crime || typeof crime !== 'object') continue;
+            const type = String(crime.type || '').toUpperCase();
+            if (!VALID_CRIME_TYPES.has(type)) continue;
+            const ids = Array.isArray(crime.ids)
+                ? crime.ids
+                      .map((n) => parseInt(n, 10))
+                      .filter((n) => Number.isFinite(n) && n > 0)
+                      .slice(0, AGENT_B_MAX_IDS_PER_CRIME)
+                : [];
+            crimes.push({
+                type,
+                ids,
+                note: String(crime.note || '')
+                    .trim()
+                    .slice(0, AGENT_B_MAX_NOTE_CHARS)
+            });
+            // UNBOUNDED-CONTEXT: tiada siling bilangan jenayah — jika batch
+            // mengandungi 8 jenayah, SEMUA 8 mesti dipulangkan untuk retry.
+        }
+    }
+
+    // valid:false tetapi tiada jenayah boleh diperbetulkan → tiada tindakan
+    if (crimes.length === 0) return { valid: true };
+
+    return { valid: false, crimes };
 }
 
 /**
@@ -399,441 +406,478 @@ function parseInspectorResponse(responseText) {
  * cuba sandaran → kedua-dua gagal → error terakhir dilempar.
  */
 class AgentBInspector extends OpenAICompatibleProvider {
-  constructor(options = {}) {
-    // BEAST MODE BETA RUN 10: had masa berfasa boleh ditindih melalui
-    // options (config.agentB.preflightTimeoutMs / inspectionTimeoutMs —
-    // env AGENT_B_*_TIMEOUT_MS dinormalisasi oleh config.js). Lalai mandat:
-    // Fasa 1 60s / Fasa 0 150s.
-    const inspectionTimeoutMs = parseAgentBTimeout(options.inspectionTimeoutMs, AGENT_B_INSPECTION_TIMEOUT_MS);
-    const preflightTimeoutMs = parseAgentBTimeout(options.preflightTimeoutMs, AGENT_B_PREFLIGHT_TIMEOUT_MS);
-    super({
-      apiKey: options.apiKey || '',
-      model: options.inspectionModel || options.model || AGENT_B_DEFAULT_MODEL,
-      baseUrl: options.baseUrl || 'https://api.openai.com/v1',
-      providerName: 'agentb',
-      universalPayload: true,           // Muatan BEAST sejagat (Mandat §A + BETA RUN 10)
-      beastMaxTokens: parseAgentBTimeout(options.maxTokens, AGENT_B_MAX_TOKENS), // [AUDIT-WARISAN 2026-09-29] no-op — builder 4-kunci god-tier tidak membaca beastMaxTokens
-      translationTimeout: inspectionTimeoutMs / 1000,
-      maxRetries: 0,                    // Fail fast — satu percubaan sahaja per model
-      enableJsonOutput: false,          // Parse JSON manual (kompatibilitas maksimum endpoint)
-      ssrfLookup: options.ssrfLookup || null
-    });
+    constructor(options = {}) {
+        // BEAST MODE BETA RUN 10: had masa berfasa boleh ditindih melalui
+        // options (config.agentB.preflightTimeoutMs / inspectionTimeoutMs —
+        // env AGENT_B_*_TIMEOUT_MS dinormalisasi oleh config.js). Lalai mandat:
+        // Fasa 1 60s / Fasa 0 150s.
+        const inspectionTimeoutMs = parseAgentBTimeout(options.inspectionTimeoutMs, AGENT_B_INSPECTION_TIMEOUT_MS);
+        const preflightTimeoutMs = parseAgentBTimeout(options.preflightTimeoutMs, AGENT_B_PREFLIGHT_TIMEOUT_MS);
+        super({
+            apiKey: options.apiKey || '',
+            model: options.inspectionModel || options.model || AGENT_B_DEFAULT_MODEL,
+            baseUrl: options.baseUrl || 'https://api.openai.com/v1',
+            providerName: 'agentb',
+            universalPayload: true, // Muatan BEAST sejagat (Mandat §A + BETA RUN 10)
+            beastMaxTokens: parseAgentBTimeout(options.maxTokens, AGENT_B_MAX_TOKENS), // [AUDIT-WARISAN 2026-09-29] no-op — builder 4-kunci god-tier tidak membaca beastMaxTokens
+            translationTimeout: inspectionTimeoutMs / 1000,
+            maxRetries: 0, // Fail fast — satu percubaan sahaja per model
+            enableJsonOutput: false, // Parse JSON manual (kompatibilitas maksimum endpoint)
+            ssrfLookup: options.ssrfLookup || null
+        });
 
-    this.inspectionTimeoutMs = inspectionTimeoutMs;
-    this.preflightTimeoutMs = preflightTimeoutMs;
+        this.inspectionTimeoutMs = inspectionTimeoutMs;
+        this.preflightTimeoutMs = preflightTimeoutMs;
 
-    // Pembina asas clamp translationTimeout kepada >= 5000ms — enforce semula
-    // had mandate: 60s bagi semakan batch (lalai instance); Fasa 0 dinaikkan
-    // sementara kepada 150s oleh runPreflightPass(). Sandaran (deepseek)
-    // mewarisi had masa yang sama — failover berkongsi headroom ini.
-    this.translationTimeout = inspectionTimeoutMs;
+        // Pembina asas clamp translationTimeout kepada >= 5000ms — enforce semula
+        // had mandate: 60s bagi semakan batch (lalai instance); Fasa 0 dinaikkan
+        // sementara kepada 150s oleh runPreflightPass(). Sandaran (deepseek)
+        // mewarisi had masa yang sama — failover berkongsi headroom ini.
+        this.translationTimeout = inspectionTimeoutMs;
 
-    // ── [MODEL-HIERARCHY] DUAL-AGENT FINAL (2026-09-28) ──
-    // Dua hierarki berasingan bagi dua fasa:
-    //   - Pemeriksa Utama : options.model (lalai deepseek-v4-pro)
-    //       → modelHierarchy = [deepseek-v4-pro, deepseek-v4.1-flash]
-    //   - Pre-Flight Fasa 0: options.preflightModel (lalai kimi-k3)
-    //       → preflightHierarchy = [kimi-k3] SAHAJA — STANDALONE (fallback
-    //         merentas model DIGUGURKAN; kegagalan dikendalikan melalui
-    //         retry-same-model dalam _callWithFailover).
-    //   - Fallback pemeriksa: options.fallbackModel (lalai deepseek-v4.1-flash);
-    //     'none' ATAU kosong ATAU sama dengan model utama → model tunggal.
-    // this.model sentiasa menjejak model AKTIF supaya log forensik melaporkan
-    // model sebenar yang sedang beroperasi.
-    this.model = String(options.model || options.inspectionModel || AGENT_B_DEFAULT_MODEL).trim() || AGENT_B_DEFAULT_MODEL;
-    this.preflightModel = String(options.preflightModel || AGENT_B_PREFLIGHT_MODEL).trim() || AGENT_B_PREFLIGHT_MODEL;
-    const requestedFallback = String(options.fallbackModel || AGENT_B_FALLBACK_MODEL).trim();
-    // [MODEL-HIERARCHY] preflightFallbackModel DINEUTRALKAN — sentiasa sama
-    // dengan primer Fasa 0 supaya hierarki pre-flight kekal 1-tingkat
-    // (kimi-k3 standalone). Nilai options/env lama diabaikan atas sebab:
-    // pre-flight daripada model sandaran lebih buruk daripada tiada
-    // pre-flight (ujian empirikal kualiti menurun dengan model lemah).
-    this.preflightFallbackModel = this.preflightModel;
+        // ── [MODEL-HIERARCHY] DUAL-AGENT FINAL (2026-09-28) ──
+        // Dua hierarki berasingan bagi dua fasa:
+        //   - Pemeriksa Utama : options.model (lalai deepseek-v4-pro)
+        //       → modelHierarchy = [deepseek-v4-pro, deepseek-v4.1-flash]
+        //   - Pre-Flight Fasa 0: options.preflightModel (lalai kimi-k3)
+        //       → preflightHierarchy = [kimi-k3] SAHAJA — STANDALONE (fallback
+        //         merentas model DIGUGURKAN; kegagalan dikendalikan melalui
+        //         retry-same-model dalam _callWithFailover).
+        //   - Fallback pemeriksa: options.fallbackModel (lalai deepseek-v4.1-flash);
+        //     'none' ATAU kosong ATAU sama dengan model utama → model tunggal.
+        // this.model sentiasa menjejak model AKTIF supaya log forensik melaporkan
+        // model sebenar yang sedang beroperasi.
+        this.model =
+            String(options.model || options.inspectionModel || AGENT_B_DEFAULT_MODEL).trim() || AGENT_B_DEFAULT_MODEL;
+        this.preflightModel =
+            String(options.preflightModel || AGENT_B_PREFLIGHT_MODEL).trim() || AGENT_B_PREFLIGHT_MODEL;
+        const requestedFallback = String(options.fallbackModel || AGENT_B_FALLBACK_MODEL).trim();
+        // [MODEL-HIERARCHY] preflightFallbackModel DINEUTRALKAN — sentiasa sama
+        // dengan primer Fasa 0 supaya hierarki pre-flight kekal 1-tingkat
+        // (kimi-k3 standalone). Nilai options/env lama diabaikan atas sebab:
+        // pre-flight daripada model sandaran lebih buruk daripada tiada
+        // pre-flight (ujian empirikal kualiti menurun dengan model lemah).
+        this.preflightFallbackModel = this.preflightModel;
 
-    const buildHierarchy = (primary, extraFallback = '') => {
-      const hierarchy = [primary];
-      const addCandidate = (candidate) => {
-        if (
-          candidate &&
-          candidate.toLowerCase() !== 'none' &&
-          !hierarchy.some((m) => m.toLowerCase() === candidate.toLowerCase())
-        ) {
-          hierarchy.push(candidate);
+        const buildHierarchy = (primary, extraFallback = '') => {
+            const hierarchy = [primary];
+            const addCandidate = (candidate) => {
+                if (
+                    candidate &&
+                    candidate.toLowerCase() !== 'none' &&
+                    !hierarchy.some((m) => m.toLowerCase() === candidate.toLowerCase())
+                ) {
+                    hierarchy.push(candidate);
+                }
+            };
+            addCandidate(extraFallback); // fallback khusus fasa
+            addCandidate(requestedFallback); // fallback universal (kontrak lama dipelihara — Fasa 1 sahaja)
+            return hierarchy;
+        };
+        this.modelHierarchy = buildHierarchy(this.model);
+        // [MODEL-HIERARCHY] Fasa 0: kimi-k3 SAHAJA — dedupe primer+preflightFallback
+        // (nilai sama) membina hierarki 1-tingkat; requestedFallback tidak disuntik
+        // (kimi-k3 TIDAK beralih ke deepseek bagi pre-flight).
+        this.preflightHierarchy = buildHierarchy(this.preflightModel, this.preflightFallbackModel).filter(
+            (m) => m.toLowerCase() === this.preflightModel.toLowerCase()
+        );
+
+        // [MODEL-HIERARCHY] Retry-same-model bagi Fasa 0 (kimi-k3 standalone):
+        // 1 percubaan + AGENT_B_PREFLIGHT_RETRIES retry = maksimum 3 panggilan
+        // berturut-turut pada model yang sama sebelum fail-open.
+        this.preflightRetries = Math.max(0, parseInt(options.preflightRetries, 10) || AGENT_B_PREFLIGHT_RETRIES);
+
+        // [UPSTREAM-RESILIENCE 2026-09-29] Backoff eksponen retry-same-model.
+        // Boleh ditindih per-instance (options.preflightRetryBackoffMs) atau env;
+        // 0 melumpuhkan jeda (ujian pantas). _sleep boleh di-stub oleh ujian
+        // supaya assertion susunan panggilan kekal deterministik tanpa jeda nyata.
+        this.preflightRetryBackoffMs = parseAgentBBackoff(
+            options.preflightRetryBackoffMs,
+            AGENT_B_PREFLIGHT_RETRY_BACKOFF_MS
+        );
+        this.preflightRetryBackoffCapMs = AGENT_B_PREFLIGHT_RETRY_BACKOFF_CAP_MS;
+
+        this.fallbackModel = this.modelHierarchy.length > 1 ? this.modelHierarchy[1] : null;
+        this.inspectionModel = this.model;
+
+        // ── Circuit breaker (per sesi fail — instance dibina per permintaan) ──
+        // NOTA [MODEL-HIERARCHY]: breaker tidak lagi mengandaikan hierarki
+        // berbilang-model bagi pre-flight — kegagalan Fasa 0 dikira sama seperti
+        // kegagalan Fasa 1 (kaunter gabungan per sesi fail).
+        this._consecutiveFailures = 0;
+        this._circuitOpen = false;
+        this.circuitThreshold = AGENT_B_CIRCUIT_THRESHOLD;
+    }
+
+    /**
+     * DUAL-MODEL FAILOVER CORE (Mandat §4B): jalankan satu operasi AI melalui
+     * hierarki model. Predicate `isFailure` memutuskan samaada hasil operasi
+     * dianggap gagal (ralat dilempar ATAU respons rosak/kosong) — membolehkan
+     * failover berlaku walaupun endpoint memulangkan HTTP 200 dengan badan
+     * sampah.
+     *
+     * @param {string} operation - Label operasi ('Pre-flight' / 'Batch N inspection') untuk log
+     * @param {Function} attempt - async (model) => hasil panggilan (boleh throw)
+     * @param {Function} isFailure - (hasil) => boolean — true jika failover diperlukan
+     * @returns {Promise<{result:*, modelUsed:string, failedAttempts:Array}>}
+     * @throws {Error} ralat percubaan terakhir apabila SEMUA model gagal
+     */
+    async _callWithFailover(operation, attempt, isFailure, hierarchyOverride = null, retrySameModel = 0) {
+        const failedAttempts = [];
+        // [MODEL-HIERARCHY] FINAL 2026-09-28: Pre-Flight menggunakan
+        // preflightHierarchy [kimi-k3] SAHAJA (standalone — tiada failover
+        // merentas model); Pemeriksaan menggunakan modelHierarchy
+        // (deepseek-v4-pro → deepseek-v4.1-flash). Suntikan hierarki mengatasi
+        // kedua-duanya (kes ujian susunan tersuai).
+        //
+        // RETRY-SAME-MODEL ([MODEL-HIERARCHY]): apabila hierarki hanya memuat
+        // SATU model (hierarki Fasa 0), kegagalan TIDAK beralih model — model
+        // yang sama di-RETRY sehingga `retrySameModel` kali tambahan sebelum
+        // kegagalan muktamad. Log `[AgentB] Fallback triggered` TIDAK PERNAH
+        // dicetak bagi Fasa 0 (tiada fallback wujud); sebaliknya
+        // `[AgentB] Retry-same-model` yang dicetak.
+        const hierarchy =
+            Array.isArray(hierarchyOverride) && hierarchyOverride.length > 0 ? hierarchyOverride : this.modelHierarchy;
+        const singleModelRetries = hierarchy.length === 1 && retrySameModel > 0 ? retrySameModel : 0;
+        for (let i = 0; i < hierarchy.length; i++) {
+            const model = hierarchy[i];
+            this.model = model; // log + payload pembawa sentiasa melihat model aktif
+            // [MODEL-HIERARCHY] Inner retry loop untuk hierarki model tunggal.
+            // totalTries = 1 + singleModelRetries; untuk multi-model (Fasa 1),
+            // singleModelRetries = 0 → tingkah laku failover sedia ada 100%.
+            const totalTries = 1 + singleModelRetries;
+            for (let r = 0; r < totalTries; r++) {
+                let result;
+                try {
+                    result = await attempt(model);
+                } catch (err) {
+                    // ZERO-SWALLOWED-ERROR §3B/§4B: status + punca sebenar, bukan generik
+                    const status = err?.statusCode || err?.response?.status || err?.status || 'N/A';
+                    failedAttempts.push({ model, error: err });
+                    const hasSibling = i < hierarchy.length - 1;
+                    const hasRetry = r < totalTries - 1;
+                    if (hasRetry) {
+                        log.warn(
+                            () =>
+                                `[AgentB] ${operation} on ${model} failed (Status: ${status}): ${err?.message || err}. Retry ${r + 1}/${totalTries - 1} on the SAME model [${model}]...`
+                        );
+                        // [UPSTREAM-RESILIENCE] Backoff eksponen SEBELUM retry berikutnya
+                        // (retry-same-model sahaja — Fasa 1 failover tiada singleModelRetries).
+                        await this._retrySameModelBackoff(operation, model, r);
+                        continue;
+                    }
+                    if (hasSibling) {
+                        log.warn(
+                            () =>
+                                `[AgentB] ${operation} on ${model} failed (Status: ${status}): ${err?.message || err}. Failing over to ${hierarchy[i + 1]}...`
+                        );
+                        // Mandat Seni Bina Universal Payload §C: format trigger wajib
+                        log.warn(() => `[AgentB] Fallback triggered -> [${hierarchy[i + 1]}]`);
+                        break;
+                    }
+                    log.warn(
+                        () =>
+                            `[AgentB] ${operation} on ${model} failed (Status: ${status}): ${err?.message || err}. All models exhausted.`
+                    );
+                    throw err;
+                }
+                if (!isFailure(result)) {
+                    return { result, modelUsed: model, failedAttempts };
+                }
+                // Respons diterima tetapi rosak/kosong (HTTP 200 sampah)
+                const reason = 'Empty or corrupt response';
+                failedAttempts.push({ model, error: new Error(reason) });
+                const hasSibling = i < hierarchy.length - 1;
+                const hasRetry = r < totalTries - 1;
+                if (hasRetry) {
+                    log.warn(
+                        () =>
+                            `[AgentB] ${operation} on ${model} failed (${reason}). Retry ${r + 1}/${totalTries - 1} on the SAME model [${model}]...`
+                    );
+                    // [UPSTREAM-RESILIENCE] Backoff eksponen SEBELUM retry berikutnya.
+                    await this._retrySameModelBackoff(operation, model, r);
+                    continue;
+                }
+                if (hasSibling) {
+                    log.warn(
+                        () =>
+                            `[AgentB] ${operation} on ${model} failed (${reason}). Failing over to ${hierarchy[i + 1]}...`
+                    );
+                    // Mandat Seni Bina Universal Payload §C: format trigger wajib
+                    log.warn(() => `[AgentB] Fallback triggered -> [${hierarchy[i + 1]}]`);
+                    break;
+                }
+                log.warn(() => `[AgentB] ${operation} on ${model} failed (${reason}). All models exhausted.`);
+                throw new Error(`${operation}: ${reason} on all models`);
+            }
         }
-      };
-      addCandidate(extraFallback);      // fallback khusus fasa
-      addCandidate(requestedFallback);  // fallback universal (kontrak lama dipelihara — Fasa 1 sahaja)
-      return hierarchy;
-    };
-    this.modelHierarchy = buildHierarchy(this.model);
-    // [MODEL-HIERARCHY] Fasa 0: kimi-k3 SAHAJA — dedupe primer+preflightFallback
-    // (nilai sama) membina hierarki 1-tingkat; requestedFallback tidak disuntik
-    // (kimi-k3 TIDAK beralih ke deepseek bagi pre-flight).
-    this.preflightHierarchy = buildHierarchy(this.preflightModel, this.preflightFallbackModel)
-      .filter((m) => m.toLowerCase() === this.preflightModel.toLowerCase());
+        // Tidak boleh dicapai — loop sentiasa return/throw
+        throw new Error(`${operation}: exhausted`);
+    }
 
-    // [MODEL-HIERARCHY] Retry-same-model bagi Fasa 0 (kimi-k3 standalone):
-    // 1 percubaan + AGENT_B_PREFLIGHT_RETRIES retry = maksimum 3 panggilan
-    // berturut-turut pada model yang sama sebelum fail-open.
-    this.preflightRetries = Math.max(0, parseInt(options.preflightRetries, 10) || AGENT_B_PREFLIGHT_RETRIES);
+    /**
+     * [UPSTREAM-RESILIENCE 2026-09-29] Jeda boleh-diganti (test-stubbable).
+     * Diasingkan supaya ujian boleh menindih tanpa jeda nyata.
+     * @param {number} ms - Milisaat untuk tidur
+     * @returns {Promise<void>}
+     */
+    _sleep(ms) {
+        const delay = Number(ms);
+        if (!Number.isFinite(delay) || delay <= 0) return Promise.resolve();
+        return new Promise((resolve) => setTimeout(resolve, delay));
+    }
 
-    // [UPSTREAM-RESILIENCE 2026-09-29] Backoff eksponen retry-same-model.
-    // Boleh ditindih per-instance (options.preflightRetryBackoffMs) atau env;
-    // 0 melumpuhkan jeda (ujian pantas). _sleep boleh di-stub oleh ujian
-    // supaya assertion susunan panggilan kekal deterministik tanpa jeda nyata.
-    this.preflightRetryBackoffMs = parseAgentBBackoff(options.preflightRetryBackoffMs, AGENT_B_PREFLIGHT_RETRY_BACKOFF_MS);
-    this.preflightRetryBackoffCapMs = AGENT_B_PREFLIGHT_RETRY_BACKOFF_CAP_MS;
+    /**
+     * [UPSTREAM-RESILIENCE 2026-09-29] Backoff eksponen antara percubaan
+     * retry-same-model. r=0 → base; r=1 → base*2; dihadkan pada cap. Jeda 0
+     * (env/option) melangkau tidur sepenuhnya. Berasingan supaya ujian boleh
+     * stub _sleep dan mengesahkan susunan panggilan tanpa jeda dinding-jam.
+     * @param {string} operation - Label operasi (untuk log)
+     * @param {string} model - Model aktif (untuk log)
+     * @param {number} r - Indeks percubaan semasa (0-based)
+     * @returns {Promise<void>}
+     */
+    async _retrySameModelBackoff(operation, model, r) {
+        const base = Number(this.preflightRetryBackoffMs) || 0;
+        if (base <= 0) return; // backoff dilumpuhkan
+        const cap = Number(this.preflightRetryBackoffCapMs) || base;
+        const delay = Math.min(cap, base * Math.pow(2, r));
+        log.debug(() => `[AgentB] ${operation} backoff ${delay}ms before retrying [${model}]`);
+        await this._sleep(delay);
+    }
 
-    this.fallbackModel = this.modelHierarchy.length > 1 ? this.modelHierarchy[1] : null;
-    this.inspectionModel = this.model;
+    // [PAYLOAD-GODTIER] SEJARAH (dikekalkan untuk forensik): muatan BEAST lama
+    // membawa siling token 131072 (128K) — kini DIGUGURKAN sepenuhnya daripada
+    // muatan 4-kunci god-tier (pencetus overthinking + istilah kritikal
+    // tergugur). Constant AGENT_B_MAX_TOKENS kekal untuk keserasian warisan.
 
-    // ── Circuit breaker (per sesi fail — instance dibina per permintaan) ──
-    // NOTA [MODEL-HIERARCHY]: breaker tidak lagi mengandaikan hierarki
-    // berbilang-model bagi pre-flight — kegagalan Fasa 0 dikira sama seperti
-    // kegagalan Fasa 1 (kaunter gabungan per sesi fail).
-    this._consecutiveFailures = 0;
-    this._circuitOpen = false;
-    this.circuitThreshold = AGENT_B_CIRCUIT_THRESHOLD;
-  }
+    /**
+     * Override: prompt inspector ialah arahan lengkap + payload (self-contained)
+     * — hantar verbatim sebagai user message. Implementasi asas akan
+     * menggugurkan customPrompt yang bukan template terjemahan.
+     */
+    buildUserPrompt(subtitleContent, targetLanguage, customPrompt = null) {
+        const userPrompt = String(customPrompt || subtitleContent || '');
+        return {
+            userPrompt,
+            systemPrompt: '',
+            normalizedTarget: '',
+            subtitleContent,
+            isSelfContained: true
+        };
+    }
 
-  /**
-   * DUAL-MODEL FAILOVER CORE (Mandat §4B): jalankan satu operasi AI melalui
-   * hierarki model. Predicate `isFailure` memutuskan samaada hasil operasi
-   * dianggap gagal (ralat dilempar ATAU respons rosak/kosong) — membolehkan
-   * failover berlaku walaupun endpoint memulangkan HTTP 200 dengan badan
-   * sampah.
-   *
-   * @param {string} operation - Label operasi ('Pre-flight' / 'Batch N inspection') untuk log
-   * @param {Function} attempt - async (model) => hasil panggilan (boleh throw)
-   * @param {Function} isFailure - (hasil) => boolean — true jika failover diperlukan
-   * @returns {Promise<{result:*, modelUsed:string, failedAttempts:Array}>}
-   * @throws {Error} ralat percubaan terakhir apabila SEMUA model gagal
-   */
-  async _callWithFailover(operation, attempt, isFailure, hierarchyOverride = null, retrySameModel = 0) {
-    const failedAttempts = [];
-    // [MODEL-HIERARCHY] FINAL 2026-09-28: Pre-Flight menggunakan
-    // preflightHierarchy [kimi-k3] SAHAJA (standalone — tiada failover
-    // merentas model); Pemeriksaan menggunakan modelHierarchy
-    // (deepseek-v4-pro → deepseek-v4.1-flash). Suntikan hierarki mengatasi
-    // kedua-duanya (kes ujian susunan tersuai).
-    //
-    // RETRY-SAME-MODEL ([MODEL-HIERARCHY]): apabila hierarki hanya memuat
-    // SATU model (hierarki Fasa 0), kegagalan TIDAK beralih model — model
-    // yang sama di-RETRY sehingga `retrySameModel` kali tambahan sebelum
-    // kegagalan muktamad. Log `[AgentB] Fallback triggered` TIDAK PERNAH
-    // dicetak bagi Fasa 0 (tiada fallback wujud); sebaliknya
-    // `[AgentB] Retry-same-model` yang dicetak.
-    const hierarchy = Array.isArray(hierarchyOverride) && hierarchyOverride.length > 0
-      ? hierarchyOverride
-      : this.modelHierarchy;
-    const singleModelRetries = (hierarchy.length === 1 && retrySameModel > 0) ? retrySameModel : 0;
-    for (let i = 0; i < hierarchy.length; i++) {
-      const model = hierarchy[i];
-      this.model = model; // log + payload pembawa sentiasa melihat model aktif
-      // [MODEL-HIERARCHY] Inner retry loop untuk hierarki model tunggal.
-      // totalTries = 1 + singleModelRetries; untuk multi-model (Fasa 1),
-      // singleModelRetries = 0 → tingkah laku failover sedia ada 100%.
-      const totalTries = 1 + singleModelRetries;
-      for (let r = 0; r < totalTries; r++) {
-        let result;
+    /** Circuit breaker terbuka? (Agent B ditenyapkan bagi sisa fail ini) */
+    get circuitOpen() {
+        return this._circuitOpen === true;
+    }
+
+    /** Reset circuit breaker (sesi fail baharu) */
+    resetCircuitBreaker() {
+        this._consecutiveFailures = 0;
+        this._circuitOpen = false;
+    }
+
+    /** Rekod kegagalan berturut-turut → buka litar pada ambang mandat */
+    _recordFailure() {
+        this._consecutiveFailures += 1;
+        if (this._consecutiveFailures >= this.circuitThreshold && !this._circuitOpen) {
+            this._circuitOpen = true;
+            log.warn(
+                () =>
+                    `[AgentB] Circuit breaker OPEN after ${this._consecutiveFailures} consecutive failures — Agent B silenced for the rest of this file`
+            );
+        }
+    }
+
+    /** Kejayaan → reset kaunter kegagalan berturut-turut */
+    _recordSuccess() {
+        this._consecutiveFailures = 0;
+    }
+
+    /**
+     * TUGASAN 1: Pre-Flight Offload — Fasa 0 dijalankan oleh Agent B sepenuhnya
+     * (Gemini 3 Flash dikecualikan, jimat kuota TPM/RPM).
+     *
+     * Guna semula runPreflightSemanticPass() sedia ada dengan menyuntik
+     * instance ini sebagai provider — kontrak duck-typing (translateSubtitle)
+     * dipenuhi oleh OpenAICompatibleProvider.
+     *
+     * BEST-EFFORT & NON-BLOCKING: kegagalan → null → pipeline jalan tanpa
+     * konteks global (tingkah laku Fasa 0 sedia ada dipelihara 100%).
+     */
+    async runPreflightPass(entries, targetLanguage, sourceLanguage, options = {}) {
+        // Fasa 0 membaca teks episod penuh (hingga 250k aksara) dan menjana
+        // analisis tema — naikkan had masa axios kepada 150s untuk panggilan
+        // ini sahaja (BEAST MODE BETA RUN 10 — di bawah siling 300s Caddy),
+        // kemudian pulihkan 60s (fasa pemeriksaan batch). Fallback pemeriksa
+        // deepseek-v4.1-flash mewarisi had masa fasa yang sama (timeout
+        // dinamik) — failover berkongsi headroom ini.
+        // SELAMAT dari race: preflight di-await sepenuhnya oleh enjin sebelum
+        // mana-mana panggilan batch bermula; fasa tidak bertindih.
+        const previousTimeout = this.translationTimeout;
+        const previousModel = this.model;
+        this.translationTimeout = this.preflightTimeoutMs; // 150s headroom (BETA RUN 10)
+
+        // [MODEL-HIERARCHY] FAILOVER FINAL (2026-09-28): Fasa 0 dihalakan ke
+        // preflightHierarchy [kimi-k3] SAHAJA — STANDALONE. Kegagalan kimi-k3
+        // TIDAK beralih model; model yang sama di-retry (preflightRetries = 2)
+        // melalui _callWithFailover(retrySameModel). 2x kegagalan berturut
+        // → pre-flight dihentikan, terjemahan jalan tanpa konteks (fail-open
+        // kontrak asal). null + hook aktif = kegagalan model (retry);
+        // null tanpa hook = skip sahaja (fail kecil / tiada teks) — jangan retry.
         try {
-          result = await attempt(model);
+            const { result } = await this._callWithFailover(
+                'Pre-flight',
+                async () => {
+                    let callError = null;
+                    let parseFailed = false;
+                    let rawSnippet = '';
+                    let inner = null;
+                    try {
+                        inner = await runPreflightSemanticPass(entries, targetLanguage, sourceLanguage, this, {
+                            ...options,
+                            onCallError: (err) => {
+                                callError = err;
+                            },
+                            onParseFailure: (raw) => {
+                                parseFailed = true;
+                                rawSnippet = String(raw || '');
+                            }
+                        });
+                    } catch (err) {
+                        // Defensive: runPreflightSemanticPass non-blocking, tetapi
+                        // zero-swallowed-error bermakna kita tidak bergantung pada andaian.
+                        callError = err;
+                    }
+                    if (inner) return { ok: true, context: inner };
+                    if (callError || parseFailed) {
+                        return { ok: false, callError, parseFailed, rawSnippet };
+                    }
+                    return { ok: true, context: null }; // skip sahaja (bukan kegagalan)
+                },
+                (outcome) => outcome && outcome.ok === false,
+                this.preflightHierarchy, // [MODEL-HIERARCHY] Fasa 0 → [kimi-k3] SAHAJA
+                this.preflightRetries // [MODEL-HIERARCHY] retry-same-model (kimi-k3), bukan failover
+            );
+            return result && result.ok ? result.context : null;
+        } catch (failoverErr) {
+            // SEMUA percubaan kimi-k3 gagal — Fasa 0 kekal NON-BLOCKING (kontrak
+            // asal): pulangkan null, pipeline jalan tanpa konteks global. Punca
+            // teknikal telah dipapar oleh _callWithFailover (zero-swallowed).
+            log.warn(
+                () =>
+                    `[AgentB] Pre-flight exhausted all attempts on [${this.preflightModel}] — continuing without global context (non-blocking): ${failoverErr?.message || failoverErr}`
+            );
+            return null;
+        } finally {
+            this.model = previousModel;
+            this.translationTimeout = previousTimeout;
+        }
+    }
+
+    /**
+     * TUGASAN 2: Semakan Semantik per batch — banding sumber vs hasil.
+     *
+     * DUAL-MODEL FAILOVER + ZERO-SWALLOWED-ERROR (Mandat Observabiliti):
+     *   - PASSED  → [INFO]  dengan latensi ms + model (§3C).
+     *   - CRIME   → [WARN]  jenis jenayah + model → Triggering Retry (§3B).
+     *   - FAILED  → [WARN]  status + punca teknikal sebenar per model (§3B).
+     *   - Parse gagal → [WARN] raw snippet 500 aksara pertama (§B).
+     *   - Kedua-dua model gagal → fail-open { valid: true, failOpen: true }.
+     *
+     * @param {Array<{id:number, text:string}>} sourceBatch - Batch sumber
+     * @param {Array<{index:number, text:string}>} translatedEntries - Hasil sejajar
+     * @param {{batchIndex?:number, totalBatches?:number, preflightContext?:Object}} [meta] - Meta batch
+     *        (preflightContext: konteks Fasa 0 — theme/terms/characters — untuk
+     *        CONTEXT-AWARE AUDIT; mandat operasi mutlak 2026-09-27)
+     * @returns {Promise<{valid:boolean, crimes?:Array, failOpen?:boolean, skipped?:string, modelUsed?:string}>}
+     */
+    async runSemanticInspection(sourceBatch, translatedEntries, meta = {}) {
+        // Circuit breaker terbuka → senyap terus (tiada panggilan rangkaian)
+        if (this._circuitOpen) {
+            return { valid: true, skipped: 'circuit_open' };
+        }
+
+        // CONTEXT-AWARE AUDIT: konteks Pre-Flight dihantar melalui meta supaya
+        // signature lama runSemanticInspection(source, translated) kekal sah.
+        const payload = buildInspectionPayload(sourceBatch, translatedEntries, meta.preflightContext || null);
+        if (!payload) {
+            return { valid: true, skipped: 'no_input' };
+        }
+
+        const hasBatchMeta = Number.isFinite(meta.batchIndex);
+        const batchLabel = hasBatchMeta
+            ? `Batch ${meta.batchIndex + 1}${Number.isFinite(meta.totalBatches) ? `/${meta.totalBatches}` : ''} inspection`
+            : 'Inspection';
+
+        const previousModel = this.model;
+        try {
+            const { result, modelUsed } = await this._callWithFailover(
+                batchLabel,
+                async () => {
+                    const startedAt = Date.now();
+                    // Payload di-bake ke dalam customPrompt (buildUserPrompt override
+                    // menghantarnya verbatim). maxRetries 0 per model + timeout 90s.
+                    const responseText = await this.translateSubtitle(payload.prompt, 'en', 'en', payload.prompt);
+                    const latency = Date.now() - startedAt;
+                    // Mandat §3A: bersihkan tag penaakulan sebelum parse.
+                    const cleaned = stripReasoningTags(responseText);
+                    const verdict = parseInspectorResponse(cleaned);
+                    if (!verdict) {
+                        // FORENSIK §B: 500 aksara pertama respons mentah wajib dipaparkan.
+                        const rawForLog = String(cleaned || responseText || '');
+                        log.warn(
+                            () =>
+                                `[AgentB] ${batchLabel} parse failure. Raw snippet (first 500 chars): "${rawForLog.slice(0, 500)}..."`
+                        );
+                        return { verdict: null };
+                    }
+                    return { verdict, latency };
+                },
+                (outcome) => !outcome || !outcome.verdict // kosong/rosak → failover model seterusnya
+            );
+
+            // Berjaya pada salah satu model — log status keputusan (§3B/§3C)
+            const { verdict, latency } = result;
+            this._recordSuccess();
+            if (verdict.valid === false && Array.isArray(verdict.crimes) && verdict.crimes.length > 0) {
+                const types = verdict.crimes.map((c) => c.type).join(', ');
+                log.warn(() => `[AgentB] ${batchLabel}: CRIME DETECTED [${types}] [${modelUsed}] -> Triggering Retry`);
+            } else {
+                log.info(() => `[AgentB] ${batchLabel}: PASSED (valid: true) [${modelUsed}] (${latency}ms)`);
+            }
+            return { ...verdict, modelUsed };
         } catch (err) {
-          // ZERO-SWALLOWED-ERROR §3B/§4B: status + punca sebenar, bukan generik
-          const status = err?.statusCode || err?.response?.status || err?.status || 'N/A';
-          failedAttempts.push({ model, error: err });
-          const hasSibling = i < hierarchy.length - 1;
-          const hasRetry = r < totalTries - 1;
-          if (hasRetry) {
-            log.warn(() => `[AgentB] ${operation} on ${model} failed (Status: ${status}): ${err?.message || err}. Retry ${r + 1}/${totalTries - 1} on the SAME model [${model}]...`);
-            // [UPSTREAM-RESILIENCE] Backoff eksponen SEBELUM retry berikutnya
-            // (retry-same-model sahaja — Fasa 1 failover tiada singleModelRetries).
-            await this._retrySameModelBackoff(operation, model, r);
-            continue;
-          }
-          if (hasSibling) {
-            log.warn(() => `[AgentB] ${operation} on ${model} failed (Status: ${status}): ${err?.message || err}. Failing over to ${hierarchy[i + 1]}...`);
-            // Mandat Seni Bina Universal Payload §C: format trigger wajib
-            log.warn(() => `[AgentB] Fallback triggered -> [${hierarchy[i + 1]}]`);
-            break;
-          }
-          log.warn(() => `[AgentB] ${operation} on ${model} failed (Status: ${status}): ${err?.message || err}. All models exhausted.`);
-          throw err;
+            // SEMUA model dalam hierarki gagal — fail-open forensik penuh.
+            this._recordFailure();
+            const status = err?.statusCode || err?.response?.status || err?.status || 'N/A';
+            log.warn(
+                () =>
+                    `[AgentB] ${batchLabel} failed on ALL models (Status: ${status}): ${err?.message || err} — accepting Agent A output (fail-open)`
+            );
+            return { valid: true, failOpen: true, error: 'both_models_failed', detail: err?.message || String(err) };
+        } finally {
+            this.model = previousModel;
         }
-        if (!isFailure(result)) {
-          return { result, modelUsed: model, failedAttempts };
-        }
-        // Respons diterima tetapi rosak/kosong (HTTP 200 sampah)
-        const reason = 'Empty or corrupt response';
-        failedAttempts.push({ model, error: new Error(reason) });
-        const hasSibling = i < hierarchy.length - 1;
-        const hasRetry = r < totalTries - 1;
-        if (hasRetry) {
-          log.warn(() => `[AgentB] ${operation} on ${model} failed (${reason}). Retry ${r + 1}/${totalTries - 1} on the SAME model [${model}]...`);
-          // [UPSTREAM-RESILIENCE] Backoff eksponen SEBELUM retry berikutnya.
-          await this._retrySameModelBackoff(operation, model, r);
-          continue;
-        }
-        if (hasSibling) {
-          log.warn(() => `[AgentB] ${operation} on ${model} failed (${reason}). Failing over to ${hierarchy[i + 1]}...`);
-          // Mandat Seni Bina Universal Payload §C: format trigger wajib
-          log.warn(() => `[AgentB] Fallback triggered -> [${hierarchy[i + 1]}]`);
-          break;
-        }
-        log.warn(() => `[AgentB] ${operation} on ${model} failed (${reason}). All models exhausted.`);
-        throw new Error(`${operation}: ${reason} on all models`);
-      }
     }
-    // Tidak boleh dicapai — loop sentiasa return/throw
-    throw new Error(`${operation}: exhausted`);
-  }
-
-  /**
-   * [UPSTREAM-RESILIENCE 2026-09-29] Jeda boleh-diganti (test-stubbable).
-   * Diasingkan supaya ujian boleh menindih tanpa jeda nyata.
-   * @param {number} ms - Milisaat untuk tidur
-   * @returns {Promise<void>}
-   */
-  _sleep(ms) {
-    const delay = Number(ms);
-    if (!Number.isFinite(delay) || delay <= 0) return Promise.resolve();
-    return new Promise((resolve) => setTimeout(resolve, delay));
-  }
-
-  /**
-   * [UPSTREAM-RESILIENCE 2026-09-29] Backoff eksponen antara percubaan
-   * retry-same-model. r=0 → base; r=1 → base*2; dihadkan pada cap. Jeda 0
-   * (env/option) melangkau tidur sepenuhnya. Berasingan supaya ujian boleh
-   * stub _sleep dan mengesahkan susunan panggilan tanpa jeda dinding-jam.
-   * @param {string} operation - Label operasi (untuk log)
-   * @param {string} model - Model aktif (untuk log)
-   * @param {number} r - Indeks percubaan semasa (0-based)
-   * @returns {Promise<void>}
-   */
-  async _retrySameModelBackoff(operation, model, r) {
-    const base = Number(this.preflightRetryBackoffMs) || 0;
-    if (base <= 0) return; // backoff dilumpuhkan
-    const cap = Number(this.preflightRetryBackoffCapMs) || base;
-    const delay = Math.min(cap, base * Math.pow(2, r));
-    log.debug(() => `[AgentB] ${operation} backoff ${delay}ms before retrying [${model}]`);
-    await this._sleep(delay);
-  }
-
-  // [PAYLOAD-GODTIER] SEJARAH (dikekalkan untuk forensik): muatan BEAST lama
-  // membawa siling token 131072 (128K) — kini DIGUGURKAN sepenuhnya daripada
-  // muatan 4-kunci god-tier (pencetus overthinking + istilah kritikal
-  // tergugur). Constant AGENT_B_MAX_TOKENS kekal untuk keserasian warisan.
-
-  /**
-   * Override: prompt inspector ialah arahan lengkap + payload (self-contained)
-   * — hantar verbatim sebagai user message. Implementasi asas akan
-   * menggugurkan customPrompt yang bukan template terjemahan.
-   */
-  buildUserPrompt(subtitleContent, targetLanguage, customPrompt = null) {
-    const userPrompt = String(customPrompt || subtitleContent || '');
-    return {
-      userPrompt,
-      systemPrompt: '',
-      normalizedTarget: '',
-      subtitleContent,
-      isSelfContained: true
-    };
-  }
-
-  /** Circuit breaker terbuka? (Agent B ditenyapkan bagi sisa fail ini) */
-  get circuitOpen() {
-    return this._circuitOpen === true;
-  }
-
-  /** Reset circuit breaker (sesi fail baharu) */
-  resetCircuitBreaker() {
-    this._consecutiveFailures = 0;
-    this._circuitOpen = false;
-  }
-
-  /** Rekod kegagalan berturut-turut → buka litar pada ambang mandat */
-  _recordFailure() {
-    this._consecutiveFailures += 1;
-    if (this._consecutiveFailures >= this.circuitThreshold && !this._circuitOpen) {
-      this._circuitOpen = true;
-      log.warn(() => `[AgentB] Circuit breaker OPEN after ${this._consecutiveFailures} consecutive failures — Agent B silenced for the rest of this file`);
-    }
-  }
-
-  /** Kejayaan → reset kaunter kegagalan berturut-turut */
-  _recordSuccess() {
-    this._consecutiveFailures = 0;
-  }
-
-  /**
-   * TUGASAN 1: Pre-Flight Offload — Fasa 0 dijalankan oleh Agent B sepenuhnya
-   * (Gemini 3 Flash dikecualikan, jimat kuota TPM/RPM).
-   *
-   * Guna semula runPreflightSemanticPass() sedia ada dengan menyuntik
-   * instance ini sebagai provider — kontrak duck-typing (translateSubtitle)
-   * dipenuhi oleh OpenAICompatibleProvider.
-   *
-   * BEST-EFFORT & NON-BLOCKING: kegagalan → null → pipeline jalan tanpa
-   * konteks global (tingkah laku Fasa 0 sedia ada dipelihara 100%).
-   */
-  async runPreflightPass(entries, targetLanguage, sourceLanguage, options = {}) {
-    // Fasa 0 membaca teks episod penuh (hingga 250k aksara) dan menjana
-    // analisis tema — naikkan had masa axios kepada 150s untuk panggilan
-    // ini sahaja (BEAST MODE BETA RUN 10 — di bawah siling 300s Caddy),
-    // kemudian pulihkan 60s (fasa pemeriksaan batch). Fallback pemeriksa
-    // deepseek-v4.1-flash mewarisi had masa fasa yang sama (timeout
-    // dinamik) — failover berkongsi headroom ini.
-    // SELAMAT dari race: preflight di-await sepenuhnya oleh enjin sebelum
-    // mana-mana panggilan batch bermula; fasa tidak bertindih.
-    const previousTimeout = this.translationTimeout;
-    const previousModel = this.model;
-    this.translationTimeout = this.preflightTimeoutMs; // 150s headroom (BETA RUN 10)
-
-    // [MODEL-HIERARCHY] FAILOVER FINAL (2026-09-28): Fasa 0 dihalakan ke
-    // preflightHierarchy [kimi-k3] SAHAJA — STANDALONE. Kegagalan kimi-k3
-    // TIDAK beralih model; model yang sama di-retry (preflightRetries = 2)
-    // melalui _callWithFailover(retrySameModel). 2x kegagalan berturut
-    // → pre-flight dihentikan, terjemahan jalan tanpa konteks (fail-open
-    // kontrak asal). null + hook aktif = kegagalan model (retry);
-    // null tanpa hook = skip sahaja (fail kecil / tiada teks) — jangan retry.
-    try {
-      const { result } = await this._callWithFailover(
-        'Pre-flight',
-        async () => {
-          let callError = null;
-          let parseFailed = false;
-          let rawSnippet = '';
-          let inner = null;
-          try {
-            inner = await runPreflightSemanticPass(entries, targetLanguage, sourceLanguage, this, {
-              ...options,
-              onCallError: (err) => { callError = err; },
-              onParseFailure: (raw) => { parseFailed = true; rawSnippet = String(raw || ''); }
-            });
-          } catch (err) {
-            // Defensive: runPreflightSemanticPass non-blocking, tetapi
-            // zero-swallowed-error bermakna kita tidak bergantung pada andaian.
-            callError = err;
-          }
-          if (inner) return { ok: true, context: inner };
-          if (callError || parseFailed) {
-            return { ok: false, callError, parseFailed, rawSnippet };
-          }
-          return { ok: true, context: null }; // skip sahaja (bukan kegagalan)
-        },
-        (outcome) => outcome && outcome.ok === false,
-        this.preflightHierarchy, // [MODEL-HIERARCHY] Fasa 0 → [kimi-k3] SAHAJA
-        this.preflightRetries    // [MODEL-HIERARCHY] retry-same-model (kimi-k3), bukan failover
-      );
-      return result && result.ok ? result.context : null;
-    } catch (failoverErr) {
-      // SEMUA percubaan kimi-k3 gagal — Fasa 0 kekal NON-BLOCKING (kontrak
-      // asal): pulangkan null, pipeline jalan tanpa konteks global. Punca
-      // teknikal telah dipapar oleh _callWithFailover (zero-swallowed).
-      log.warn(() => `[AgentB] Pre-flight exhausted all attempts on [${this.preflightModel}] — continuing without global context (non-blocking): ${failoverErr?.message || failoverErr}`);
-      return null;
-    } finally {
-      this.model = previousModel;
-      this.translationTimeout = previousTimeout;
-    }
-  }
-
-  /**
-   * TUGASAN 2: Semakan Semantik per batch — banding sumber vs hasil.
-   *
-   * DUAL-MODEL FAILOVER + ZERO-SWALLOWED-ERROR (Mandat Observabiliti):
-   *   - PASSED  → [INFO]  dengan latensi ms + model (§3C).
-   *   - CRIME   → [WARN]  jenis jenayah + model → Triggering Retry (§3B).
-   *   - FAILED  → [WARN]  status + punca teknikal sebenar per model (§3B).
-   *   - Parse gagal → [WARN] raw snippet 500 aksara pertama (§B).
-   *   - Kedua-dua model gagal → fail-open { valid: true, failOpen: true }.
-   *
-   * @param {Array<{id:number, text:string}>} sourceBatch - Batch sumber
-   * @param {Array<{index:number, text:string}>} translatedEntries - Hasil sejajar
-   * @param {{batchIndex?:number, totalBatches?:number, preflightContext?:Object}} [meta] - Meta batch
-   *        (preflightContext: konteks Fasa 0 — theme/terms/characters — untuk
-   *        CONTEXT-AWARE AUDIT; mandat operasi mutlak 2026-09-27)
-   * @returns {Promise<{valid:boolean, crimes?:Array, failOpen?:boolean, skipped?:string, modelUsed?:string}>}
-   */
-  async runSemanticInspection(sourceBatch, translatedEntries, meta = {}) {
-    // Circuit breaker terbuka → senyap terus (tiada panggilan rangkaian)
-    if (this._circuitOpen) {
-      return { valid: true, skipped: 'circuit_open' };
-    }
-
-    // CONTEXT-AWARE AUDIT: konteks Pre-Flight dihantar melalui meta supaya
-    // signature lama runSemanticInspection(source, translated) kekal sah.
-    const payload = buildInspectionPayload(sourceBatch, translatedEntries, meta.preflightContext || null);
-    if (!payload) {
-      return { valid: true, skipped: 'no_input' };
-    }
-
-    const hasBatchMeta = Number.isFinite(meta.batchIndex);
-    const batchLabel = hasBatchMeta
-      ? `Batch ${meta.batchIndex + 1}${Number.isFinite(meta.totalBatches) ? `/${meta.totalBatches}` : ''} inspection`
-      : 'Inspection';
-
-    const previousModel = this.model;
-    try {
-      const { result, modelUsed } = await this._callWithFailover(
-        batchLabel,
-        async () => {
-          const startedAt = Date.now();
-          // Payload di-bake ke dalam customPrompt (buildUserPrompt override
-          // menghantarnya verbatim). maxRetries 0 per model + timeout 90s.
-          const responseText = await this.translateSubtitle(payload.prompt, 'en', 'en', payload.prompt);
-          const latency = Date.now() - startedAt;
-          // Mandat §3A: bersihkan tag penaakulan sebelum parse.
-          const cleaned = stripReasoningTags(responseText);
-          const verdict = parseInspectorResponse(cleaned);
-          if (!verdict) {
-            // FORENSIK §B: 500 aksara pertama respons mentah wajib dipaparkan.
-            const rawForLog = String(cleaned || responseText || '');
-            log.warn(() => `[AgentB] ${batchLabel} parse failure. Raw snippet (first 500 chars): "${rawForLog.slice(0, 500)}..."`);
-            return { verdict: null };
-          }
-          return { verdict, latency };
-        },
-        (outcome) => !outcome || !outcome.verdict // kosong/rosak → failover model seterusnya
-      );
-
-      // Berjaya pada salah satu model — log status keputusan (§3B/§3C)
-      const { verdict, latency } = result;
-      this._recordSuccess();
-      if (verdict.valid === false && Array.isArray(verdict.crimes) && verdict.crimes.length > 0) {
-        const types = verdict.crimes.map(c => c.type).join(', ');
-        log.warn(() => `[AgentB] ${batchLabel}: CRIME DETECTED [${types}] [${modelUsed}] -> Triggering Retry`);
-      } else {
-        log.info(() => `[AgentB] ${batchLabel}: PASSED (valid: true) [${modelUsed}] (${latency}ms)`);
-      }
-      return { ...verdict, modelUsed };
-    } catch (err) {
-      // SEMUA model dalam hierarki gagal — fail-open forensik penuh.
-      this._recordFailure();
-      const status = err?.statusCode || err?.response?.status || err?.status || 'N/A';
-      log.warn(() => `[AgentB] ${batchLabel} failed on ALL models (Status: ${status}): ${err?.message || err} — accepting Agent A output (fail-open)`);
-      return { valid: true, failOpen: true, error: 'both_models_failed', detail: err?.message || String(err) };
-    } finally {
-      this.model = previousModel;
-    }
-  }
 }
 
 module.exports = {
-  AgentBInspector,
-  buildInspectionPayload,
-  parseInspectorResponse,
-  formatPreflightContextForInspection,
-  INSPECTOR_INSTRUCTION,
-  AGENT_B_DEFAULT_MODEL,
-  AGENT_B_PREFLIGHT_MODEL,
-  AGENT_B_FALLBACK_MODEL,
-  AGENT_B_PREFLIGHT_FALLBACK_MODEL, // [MODEL-HIERARCHY] sentiasa = primer Fasa 0
-  AGENT_B_PREFLIGHT_RETRIES,        // [MODEL-HIERARCHY] retry-same-model Fasa 0
-  AGENT_B_PREFLIGHT_RETRY_BACKOFF_MS,     // [UPSTREAM-RESILIENCE] backoff base retry Fasa 0
-  AGENT_B_PREFLIGHT_RETRY_BACKOFF_CAP_MS, // [UPSTREAM-RESILIENCE] siling backoff
-  AGENT_B_PREFLIGHT_TIMEOUT_MS,
-  AGENT_B_INSPECTION_TIMEOUT_MS,
-  AGENT_B_MAX_TOKENS,
-  AGENT_B_CIRCUIT_THRESHOLD
+    AgentBInspector,
+    buildInspectionPayload,
+    parseInspectorResponse,
+    formatPreflightContextForInspection,
+    INSPECTOR_INSTRUCTION,
+    AGENT_B_DEFAULT_MODEL,
+    AGENT_B_PREFLIGHT_MODEL,
+    AGENT_B_FALLBACK_MODEL,
+    AGENT_B_PREFLIGHT_FALLBACK_MODEL, // [MODEL-HIERARCHY] sentiasa = primer Fasa 0
+    AGENT_B_PREFLIGHT_RETRIES, // [MODEL-HIERARCHY] retry-same-model Fasa 0
+    AGENT_B_PREFLIGHT_RETRY_BACKOFF_MS, // [UPSTREAM-RESILIENCE] backoff base retry Fasa 0
+    AGENT_B_PREFLIGHT_RETRY_BACKOFF_CAP_MS, // [UPSTREAM-RESILIENCE] siling backoff
+    AGENT_B_PREFLIGHT_TIMEOUT_MS,
+    AGENT_B_INSPECTION_TIMEOUT_MS,
+    AGENT_B_MAX_TOKENS,
+    AGENT_B_CIRCUIT_THRESHOLD
 };

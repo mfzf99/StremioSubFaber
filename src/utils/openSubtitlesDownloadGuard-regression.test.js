@@ -24,9 +24,10 @@ function createSharedRedisSimulation() {
             repeatDelayMs: 1_000,
             async evaluateRedis(configHash, fileHash, timestamp, windowMs, repeatDelayMs) {
                 const existing = windows.get(configHash);
-                const entry = existing && existing.expiresAt > timestamp
-                    ? existing
-                    : { files: new Map(), expiresAt: timestamp + windowMs };
+                const entry =
+                    existing && existing.expiresAt > timestamp
+                        ? existing
+                        : { files: new Map(), expiresAt: timestamp + windowMs };
                 const previous = entry.files.get(fileHash);
                 entry.expiresAt = timestamp + windowMs;
 

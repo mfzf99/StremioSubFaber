@@ -60,9 +60,7 @@ function formatLocalTimestamp(date = new Date()) {
     return `${year}-${month}-${day}T${hours}:${minutes}:${seconds}.${milliseconds}${sign}${offsetHours}:${offsetMins}`;
 }
 
-const getTimestamp = () => USE_LOCAL_TIMEZONE_TIMESTAMPS
-    ? formatLocalTimestamp()
-    : new Date().toISOString();
+const getTimestamp = () => (USE_LOCAL_TIMEZONE_TIMESTAMPS ? formatLocalTimestamp() : new Date().toISOString());
 
 // Log level configuration (default to 'warn' for production)
 const LOG_LEVEL = (process.env.LOG_LEVEL || 'warn').toLowerCase();
@@ -99,7 +97,7 @@ function shouldSample(level) {
 
     // Simple counter-based sampling (deterministic and fast)
     logCounter++;
-    return (logCounter % Math.ceil(1 / LOG_SAMPLE_RATE)) === 0;
+    return logCounter % Math.ceil(1 / LOG_SAMPLE_RATE) === 0;
 }
 
 // Optional file logging with rotation/purge (enabled by default in production)
@@ -175,7 +173,7 @@ function closeStream() {
             logStream.end();
             logStream = null;
         }
-    } catch (_) { }
+    } catch (_) {}
 }
 
 /**
@@ -236,23 +234,31 @@ function rotateLogs() {
                 const dst = path.join(LOG_DIR, `${LOG_BASENAME}.${i + 1}`);
                 try {
                     if (fs.existsSync(src)) {
-                        try { fs.unlinkSync(dst); } catch (_) { }
+                        try {
+                            fs.unlinkSync(dst);
+                        } catch (_) {}
                         fs.renameSync(src, dst);
                     }
-                } catch (_) { /* continue */ }
+                } catch (_) {
+                    /* continue */
+                }
             }
             // app.log -> app.log.1
             const mainPath = currentLogPath();
             const rotatedPath = path.join(LOG_DIR, `${LOG_BASENAME}.1`);
-            try { fs.unlinkSync(rotatedPath); } catch (_) { }
+            try {
+                fs.unlinkSync(rotatedPath);
+            } catch (_) {}
             try {
                 if (fs.existsSync(mainPath)) fs.renameSync(mainPath, rotatedPath);
-            } catch (_) { }
+            } catch (_) {}
         } finally {
             openStream();
             currentLogSize = 0;
             rotating = false;
-            try { purgeOldLogs(); } catch (_) { }
+            try {
+                purgeOldLogs();
+            } catch (_) {}
         }
     });
 }
@@ -260,9 +266,10 @@ function rotateLogs() {
 function purgeOldLogs() {
     try {
         // Single directory scan - optimized for efficiency
-        let files = fs.readdirSync(LOG_DIR)
-            .filter(f => f === LOG_BASENAME || f.startsWith(`${LOG_BASENAME}.`))
-            .map(f => {
+        let files = fs
+            .readdirSync(LOG_DIR)
+            .filter((f) => f === LOG_BASENAME || f.startsWith(`${LOG_BASENAME}.`))
+            .map((f) => {
                 const p = path.join(LOG_DIR, f);
                 try {
                     const s = fs.statSync(p);
@@ -275,7 +282,7 @@ function purgeOldLogs() {
 
         // Remove by age (filter out deleted files)
         const cutoff = Date.now() - LOG_MAX_AGE_DAYS * 24 * 60 * 60 * 1000;
-        files = files.filter(file => {
+        files = files.filter((file) => {
             if (file.mtimeMs < cutoff && file.name !== LOG_BASENAME) {
                 try {
                     fs.unlinkSync(file.path);
@@ -297,7 +304,7 @@ function purgeOldLogs() {
             try {
                 fs.unlinkSync(file.path);
                 total -= file.size;
-            } catch (_) { }
+            } catch (_) {}
         }
     } catch (_) {
         // ignore purge errors
@@ -337,8 +344,8 @@ function serializeError(error, maxStackLines = 5) {
         if (lines.length <= maxStackLines) {
             result.stack = error.stack;
         } else {
-            result.stack = lines.slice(0, maxStackLines).join('\n') +
-                `\n... (${lines.length - maxStackLines} more lines omitted)`;
+            result.stack =
+                lines.slice(0, maxStackLines).join('\n') + `\n... (${lines.length - maxStackLines} more lines omitted)`;
         }
     }
 
@@ -390,7 +397,7 @@ function redactSensitiveData(value) {
 
     // Handle arrays
     if (Array.isArray(value)) {
-        return value.map(item => redactSensitiveData(item));
+        return value.map((item) => redactSensitiveData(item));
     }
 
     // Handle objects
@@ -399,12 +406,25 @@ function redactSensitiveData(value) {
         for (const [key, val] of Object.entries(value)) {
             // List of sensitive keys that should be fully redacted
             const sensitiveKeys = [
-                'api_key', 'apiKey', 'apikey', 'API_KEY',
-                'token', 'auth_token', 'authToken', 'access_token', 'accessToken',
-                'password', 'passwd', 'pwd',
-                'secret', 'client_secret', 'clientSecret',
-                'private_key', 'privateKey',
-                'authorization', 'Authorization'
+                'api_key',
+                'apiKey',
+                'apikey',
+                'API_KEY',
+                'token',
+                'auth_token',
+                'authToken',
+                'access_token',
+                'accessToken',
+                'password',
+                'passwd',
+                'pwd',
+                'secret',
+                'client_secret',
+                'clientSecret',
+                'private_key',
+                'privateKey',
+                'authorization',
+                'Authorization'
             ];
 
             if (sensitiveKeys.includes(key)) {
@@ -438,12 +458,25 @@ function createSafeReplacer(maxDepth = 3, maxStringLength = 500) {
     return function (key, value) {
         // Redact sensitive keys (API keys, tokens, passwords, etc.)
         const sensitiveKeys = [
-            'api_key', 'apiKey', 'apikey', 'API_KEY',
-            'token', 'auth_token', 'authToken', 'access_token', 'accessToken',
-            'password', 'passwd', 'pwd',
-            'secret', 'client_secret', 'clientSecret',
-            'private_key', 'privateKey',
-            'authorization', 'Authorization'
+            'api_key',
+            'apiKey',
+            'apikey',
+            'API_KEY',
+            'token',
+            'auth_token',
+            'authToken',
+            'access_token',
+            'accessToken',
+            'password',
+            'passwd',
+            'pwd',
+            'secret',
+            'client_secret',
+            'clientSecret',
+            'private_key',
+            'privateKey',
+            'authorization',
+            'Authorization'
         ];
 
         if (sensitiveKeys.includes(key)) {
@@ -455,20 +488,20 @@ function createSafeReplacer(maxDepth = 3, maxStringLength = 500) {
 
         // Skip known problematic/large objects that bloat logs
         const skipKeys = [
-            'request',      // Axios request object (huge)
-            'socket',       // Network socket (circular)
-            'agent',        // HTTP agent (circular)
-            'originalError',// Can contain all of the above
-            'config',       // Axios config (redundant)
-            'data',         // Response data buffers (huge)
-            'rawHeaders',   // Duplicate header data
-            'req',          // Express request (huge)
-            'res',          // Express response (circular)
+            'request', // Axios request object (huge)
+            'socket', // Network socket (circular)
+            'agent', // HTTP agent (circular)
+            'originalError', // Can contain all of the above
+            'config', // Axios config (redundant)
+            'data', // Response data buffers (huge)
+            'rawHeaders', // Duplicate header data
+            'req', // Express request (huge)
+            'res', // Express response (circular)
             '_eventsCount', // Internal Node.js (noise)
-            '_events',      // Internal Node.js (noise)
-            'domain',       // Internal Node.js (noise)
+            '_events', // Internal Node.js (noise)
+            'domain', // Internal Node.js (noise)
             '_readableState', // Stream internals (huge)
-            '_writableState'  // Stream internals (huge)
+            '_writableState' // Stream internals (huge)
         ];
 
         if (skipKeys.includes(key)) {
@@ -494,8 +527,8 @@ function createSafeReplacer(maxDepth = 3, maxStringLength = 500) {
         if (typeof value === 'string') {
             // Truncate long strings (like response bodies, large buffers)
             if (value.length > maxStringLength) {
-                const truncated = value.substring(0, maxStringLength) +
-                    `... (${value.length - maxStringLength} more characters)`;
+                const truncated =
+                    value.substring(0, maxStringLength) + `... (${value.length - maxStringLength} more characters)`;
                 return redactString(truncated);
             }
             return redactString(value);
@@ -528,7 +561,11 @@ function serializeArg(arg) {
         // Use safe replacer to prevent logging huge objects or circular references
         return JSON.stringify(arg, createSafeReplacer(), 2);
     } catch (_) {
-        try { return String(arg); } catch (_) { return '[Unserializable]'; }
+        try {
+            return String(arg);
+        } catch (_) {
+            return '[Unserializable]';
+        }
     }
 }
 
@@ -573,15 +610,24 @@ const shutdownLogger = () => {
             flushBuffer(); // Flush any pending writes
             closeStream();
         }
-    } catch (_) { }
+    } catch (_) {}
 };
 
 // Periodic purge (every 1 hour)
 if (LOG_TO_FILE) {
     ensureLogDir();
     openStream();
-    try { purgeOldLogs(); } catch (_) { }
-    setInterval(() => { try { purgeOldLogs(); } catch (_) { } }, 1000 * 60 * 60);
+    try {
+        purgeOldLogs();
+    } catch (_) {}
+    setInterval(
+        () => {
+            try {
+                purgeOldLogs();
+            } catch (_) {}
+        },
+        1000 * 60 * 60
+    );
 
     // Close stream on normal process exit
     // NOTE: SIGINT/SIGTERM are handled by sessionManager for coordinated shutdown
@@ -733,7 +779,7 @@ function getSentry() {
 /**
  * Critical error log - ALWAYS shown and ALWAYS sent to Sentry
  * Use for errors that indicate bugs in our code, not operational issues
- * 
+ *
  * @param {Function|string} messageFn - Function that returns the message, or a plain string
  * @param {Error} [errorObj] - Optional Error object to send to Sentry
  * @param {Object} [extras] - Optional extra context for Sentry

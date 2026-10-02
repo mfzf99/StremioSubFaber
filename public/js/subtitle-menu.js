@@ -1,59 +1,70 @@
 (function (global) {
-  if (global.SubtitleMenu) return;
+    if (global.SubtitleMenu) return;
 
-  const STYLE_ID = 'subtitle-menu-styles';
-  const translate = (key, vars, fallback) => {
-    try {
-      if (typeof global.t === 'function') return global.t(key, vars, fallback);
-    } catch (_) { }
-    return fallback || key;
-  };
-  const DEFAULT_LABELS = {
-    eyebrow: translate('subtitleMenu.eyebrow', {}, 'Stream subtitles'),
-    title: translate('subtitleMenu.title', {}, 'Sources & Targets'),
-    waiting: translate('subtitleMenu.waiting', {}, 'Waiting for first fetch'),
-    toggleTitle: translate('subtitleMenu.toggleTitle', {}, 'Stream subtitles'),
-    refreshTitle: translate('subtitleMenu.refreshTitle', {}, 'Refresh subtitle list'),
-    closeTitle: translate('subtitleMenu.closeTitle', {}, 'Close subtitle list')
-  };
-  const tMenu = (key, vars, fallback) => translate(`subtitleMenu.${key}`, vars, fallback);
-  const GROUP_LABELS = {
-    source: tMenu('group.source', {}, 'Source & Target'),
-    target: tMenu('group.target', {}, 'Target Languages'),
-    translation: tMenu('group.translation', {}, 'Translation'),
-    other: tMenu('group.other', {}, 'Other Entries')
-  };
-  const GROUP_HINTS = {
-    primary: tMenu('group.sourceHint', {}, 'Original + target subtitles'),
-    translation: tMenu('group.translationHint', {}, 'Spin up translations'),
-    other: tMenu('group.otherHint', {}, 'xEmbed, Learn, xSync & tools')
-  };
-  const STATUS_LABELS = {
-    waitingStream: tMenu('status.waitingStream', {}, 'Waiting for a linked stream before loading subtitles.'),
-    loading: tMenu('status.loading', {}, 'Loading subtitles...'),
-    none: tMenu('status.none', {}, 'No subtitles available for this stream yet.'),
-    loaded: (count) => tMenu('status.loaded', { count }, `Loaded ${count} subtitle entr${count === 1 ? 'y' : 'ies'}.`),
-    ready: (label) => tMenu('status.translationReady', { label: label || 'subtitle' }, `Translation ready for ${label || 'subtitle'}.`),
-    inProgress: (label) => tMenu('status.translationInProgress', { label: label || 'subtitle' }, `Translation in progress for ${label || 'subtitle'}.`),
-    failed: (reason) => tMenu('status.translationFailed', { reason }, `Translation failed: ${reason}`),
-    downloadFailed: (reason) => tMenu('status.downloadFailed', { reason }, `Download failed: ${reason}`),
-    translationFailedShort: tMenu('status.translationFailedShort', {}, 'Translation failed. Retry?')
-  };
+    const STYLE_ID = 'subtitle-menu-styles';
+    const translate = (key, vars, fallback) => {
+        try {
+            if (typeof global.t === 'function') return global.t(key, vars, fallback);
+        } catch (_) {}
+        return fallback || key;
+    };
+    const DEFAULT_LABELS = {
+        eyebrow: translate('subtitleMenu.eyebrow', {}, 'Stream subtitles'),
+        title: translate('subtitleMenu.title', {}, 'Sources & Targets'),
+        waiting: translate('subtitleMenu.waiting', {}, 'Waiting for first fetch'),
+        toggleTitle: translate('subtitleMenu.toggleTitle', {}, 'Stream subtitles'),
+        refreshTitle: translate('subtitleMenu.refreshTitle', {}, 'Refresh subtitle list'),
+        closeTitle: translate('subtitleMenu.closeTitle', {}, 'Close subtitle list')
+    };
+    const tMenu = (key, vars, fallback) => translate(`subtitleMenu.${key}`, vars, fallback);
+    const GROUP_LABELS = {
+        source: tMenu('group.source', {}, 'Source & Target'),
+        target: tMenu('group.target', {}, 'Target Languages'),
+        translation: tMenu('group.translation', {}, 'Translation'),
+        other: tMenu('group.other', {}, 'Other Entries')
+    };
+    const GROUP_HINTS = {
+        primary: tMenu('group.sourceHint', {}, 'Original + target subtitles'),
+        translation: tMenu('group.translationHint', {}, 'Spin up translations'),
+        other: tMenu('group.otherHint', {}, 'xEmbed, Learn, xSync & tools')
+    };
+    const STATUS_LABELS = {
+        waitingStream: tMenu('status.waitingStream', {}, 'Waiting for a linked stream before loading subtitles.'),
+        loading: tMenu('status.loading', {}, 'Loading subtitles...'),
+        none: tMenu('status.none', {}, 'No subtitles available for this stream yet.'),
+        loaded: (count) =>
+            tMenu('status.loaded', { count }, `Loaded ${count} subtitle entr${count === 1 ? 'y' : 'ies'}.`),
+        ready: (label) =>
+            tMenu(
+                'status.translationReady',
+                { label: label || 'subtitle' },
+                `Translation ready for ${label || 'subtitle'}.`
+            ),
+        inProgress: (label) =>
+            tMenu(
+                'status.translationInProgress',
+                { label: label || 'subtitle' },
+                `Translation in progress for ${label || 'subtitle'}.`
+            ),
+        failed: (reason) => tMenu('status.translationFailed', { reason }, `Translation failed: ${reason}`),
+        downloadFailed: (reason) => tMenu('status.downloadFailed', { reason }, `Download failed: ${reason}`),
+        translationFailedShort: tMenu('status.translationFailedShort', {}, 'Translation failed. Retry?')
+    };
 
-  // Guard: ensure a global config object exists to avoid ReferenceError on hosts that
-  // inject subtitle-menu before setting window.config
-  if (!global.config) {
-    global.config = {};
-  }
-  // Define a global identifier so bare `config` references (non-strict host scripts) don't throw
-  // before config.js has loaded; keep it pointing at window.config.
-  var config = global.config; // eslint-disable-line no-var
+    // Guard: ensure a global config object exists to avoid ReferenceError on hosts that
+    // inject subtitle-menu before setting window.config
+    if (!global.config) {
+        global.config = {};
+    }
+    // Define a global identifier so bare `config` references (non-strict host scripts) don't throw
+    // before config.js has loaded; keep it pointing at window.config.
+    var config = global.config; // eslint-disable-line no-var
 
-  function injectStyles() {
-    if (document.getElementById(STYLE_ID)) return;
-    const style = document.createElement('style');
-    style.id = STYLE_ID;
-    style.textContent = `
+    function injectStyles() {
+        if (document.getElementById(STYLE_ID)) return;
+        const style = document.createElement('style');
+        style.id = STYLE_ID;
+        style.textContent = `
     :root {
       --sm-primary: #08A4D5;
       --sm-primary-glow: rgba(8, 164, 213, 0.4);
@@ -1044,119 +1055,145 @@
       }
     }
     `;
-    document.head.appendChild(style);
-  }
-
-  function normalizeTargetLangCode(lang) {
-    return (lang || '').toString().trim().toLowerCase();
-  }
-
-  function normalizeImdbId(id) {
-    if (!id) return '';
-    const idStr = String(id).trim();
-    // If it already has 'tt' prefix, return as is (handles all digit lengths)
-    if (/^tt\d+$/i.test(idStr)) return idStr.toLowerCase();
-    // If it's just numbers, add 'tt' prefix
-    if (/^\d+$/.test(idStr)) return 'tt' + idStr;
-    // Try to extract tt followed by digits from a larger string
-    const match = idStr.match(/(tt\d+)/i);
-    return match ? match[1].toLowerCase() : '';
-  }
-
-  function cleanDisplayName(raw) {
-    if (!raw) return '';
-    const lastSegment = String(raw).split(/[/\\]/).pop() || '';
-    const withoutExt = lastSegment.replace(/\.[^.]+$/, '');
-    const spaced = withoutExt.replace(/[_\\.]+/g, ' ').replace(/\s+/g, ' ').trim();
-    return spaced || withoutExt || lastSegment;
-  }
-
-  function parseStremioId(id) {
-    if (!id) return null;
-    const parts = id.split(':');
-
-    if (parts[0] === 'tmdb') {
-      const tmdbId = parts[1];
-      if (!tmdbId) return null;
-      if (parts.length === 2) return { tmdbId, type: 'movie', tmdbMediaType: 'movie' };
-      if (parts.length === 3) return { tmdbId, type: 'episode', season: 1, episode: parseInt(parts[2], 10), tmdbMediaType: 'tv' };
-      if (parts.length === 4) return { tmdbId, type: 'episode', season: parseInt(parts[2], 10), episode: parseInt(parts[3], 10), tmdbMediaType: 'tv' };
+        document.head.appendChild(style);
     }
 
-    if (parts[0] && /^(anidb|kitsu|mal|anilist)/.test(parts[0])) {
-      const animeIdType = parts[0];
-      if (parts.length === 1) return { animeId: parts[0], animeIdType, type: 'anime', isAnime: true };
-      if (parts.length === 3) return { animeId: `${parts[0]}:${parts[1]}`, animeIdType, type: 'anime-episode', episode: parseInt(parts[2], 10), isAnime: true };
-      if (parts.length === 4) return { animeId: `${parts[0]}:${parts[1]}`, animeIdType, type: 'anime-episode', season: parseInt(parts[2], 10), episode: parseInt(parts[3], 10), isAnime: true };
+    function normalizeTargetLangCode(lang) {
+        return (lang || '').toString().trim().toLowerCase();
     }
 
-    const imdbId = normalizeImdbId(parts[0]);
-    // Return null only if we couldn't extract any IMDB ID
-    if (!imdbId) return null;
-    if (parts.length === 1) return { imdbId, type: 'movie' };
-    if (parts.length === 2) {
-      // Format: tt1234567:1 (episode with implicit season 1)
-      const ep = parseInt(parts[1], 10);
-      if (Number.isFinite(ep)) return { imdbId, type: 'episode', season: 1, episode: ep };
+    function normalizeImdbId(id) {
+        if (!id) return '';
+        const idStr = String(id).trim();
+        // If it already has 'tt' prefix, return as is (handles all digit lengths)
+        if (/^tt\d+$/i.test(idStr)) return idStr.toLowerCase();
+        // If it's just numbers, add 'tt' prefix
+        if (/^\d+$/.test(idStr)) return 'tt' + idStr;
+        // Try to extract tt followed by digits from a larger string
+        const match = idStr.match(/(tt\d+)/i);
+        return match ? match[1].toLowerCase() : '';
     }
-    if (parts.length === 3) {
-      const season = parseInt(parts[1], 10);
-      const episode = parseInt(parts[2], 10);
-      if (Number.isFinite(season) && Number.isFinite(episode)) {
-        return { imdbId, type: 'episode', season, episode };
-      }
+
+    function cleanDisplayName(raw) {
+        if (!raw) return '';
+        const lastSegment = String(raw).split(/[/\\]/).pop() || '';
+        const withoutExt = lastSegment.replace(/\.[^.]+$/, '');
+        const spaced = withoutExt
+            .replace(/[_\\.]+/g, ' ')
+            .replace(/\s+/g, ' ')
+            .trim();
+        return spaced || withoutExt || lastSegment;
     }
-    // Fallback: return as movie if we have an IMDB ID but couldn't parse episode info
-    return { imdbId, type: 'movie' };
-  }
 
-  function formatEpisodeTag(parsed) {
-    if (!parsed) return '';
-    const s = Number.isFinite(parsed.season) ? 'S' + String(parsed.season).padStart(2, '0') : '';
-    const e = Number.isFinite(parsed.episode) ? 'E' + String(parsed.episode).padStart(2, '0') : '';
-    return (s || e) ? (s + e) : '';
-  }
+    function parseStremioId(id) {
+        if (!id) return null;
+        const parts = id.split(':');
 
-  function mergeTargetOptions(primary = [], secondary = []) {
-    const merged = [];
-    const seen = new Set();
-    const push = (opt) => {
-      if (!opt) return;
-      const code = normalizeTargetLangCode(opt.code || opt.value || opt.lang || '');
-      if (!code || seen.has(code)) return;
-      seen.add(code);
-      merged.push({
-        code,
-        name: opt.name || opt.label || opt.languageLabel || opt.text || code,
-        source: opt.source || ''
-      });
-    };
-    (primary || []).forEach(push);
-    (secondary || []).forEach(push);
-    return merged;
-  }
+        if (parts[0] === 'tmdb') {
+            const tmdbId = parts[1];
+            if (!tmdbId) return null;
+            if (parts.length === 2) return { tmdbId, type: 'movie', tmdbMediaType: 'movie' };
+            if (parts.length === 3)
+                return { tmdbId, type: 'episode', season: 1, episode: parseInt(parts[2], 10), tmdbMediaType: 'tv' };
+            if (parts.length === 4)
+                return {
+                    tmdbId,
+                    type: 'episode',
+                    season: parseInt(parts[2], 10),
+                    episode: parseInt(parts[3], 10),
+                    tmdbMediaType: 'tv'
+                };
+        }
 
-  function normalizeLanguageList(list = []) {
-    return [...new Set((list || []).map(normalizeLangKey).filter(Boolean))];
-  }
+        if (parts[0] && /^(anidb|kitsu|mal|anilist)/.test(parts[0])) {
+            const animeIdType = parts[0];
+            if (parts.length === 1) return { animeId: parts[0], animeIdType, type: 'anime', isAnime: true };
+            if (parts.length === 3)
+                return {
+                    animeId: `${parts[0]}:${parts[1]}`,
+                    animeIdType,
+                    type: 'anime-episode',
+                    episode: parseInt(parts[2], 10),
+                    isAnime: true
+                };
+            if (parts.length === 4)
+                return {
+                    animeId: `${parts[0]}:${parts[1]}`,
+                    animeIdType,
+                    type: 'anime-episode',
+                    season: parseInt(parts[2], 10),
+                    episode: parseInt(parts[3], 10),
+                    isAnime: true
+                };
+        }
 
-  function createMarkup(labels, meta = {}) {
-    const versionLabel = meta.version ? 'v' + meta.version : '';
-    const toggle = document.createElement('button');
-    toggle.className = 'subtitle-menu-toggle';
-    toggle.id = 'subtitleMenuToggle';
-    toggle.title = labels.toggleTitle;
-    toggle.innerHTML = `
+        const imdbId = normalizeImdbId(parts[0]);
+        // Return null only if we couldn't extract any IMDB ID
+        if (!imdbId) return null;
+        if (parts.length === 1) return { imdbId, type: 'movie' };
+        if (parts.length === 2) {
+            // Format: tt1234567:1 (episode with implicit season 1)
+            const ep = parseInt(parts[1], 10);
+            if (Number.isFinite(ep)) return { imdbId, type: 'episode', season: 1, episode: ep };
+        }
+        if (parts.length === 3) {
+            const season = parseInt(parts[1], 10);
+            const episode = parseInt(parts[2], 10);
+            if (Number.isFinite(season) && Number.isFinite(episode)) {
+                return { imdbId, type: 'episode', season, episode };
+            }
+        }
+        // Fallback: return as movie if we have an IMDB ID but couldn't parse episode info
+        return { imdbId, type: 'movie' };
+    }
+
+    function formatEpisodeTag(parsed) {
+        if (!parsed) return '';
+        const s = Number.isFinite(parsed.season) ? 'S' + String(parsed.season).padStart(2, '0') : '';
+        const e = Number.isFinite(parsed.episode) ? 'E' + String(parsed.episode).padStart(2, '0') : '';
+        return s || e ? s + e : '';
+    }
+
+    function mergeTargetOptions(primary = [], secondary = []) {
+        const merged = [];
+        const seen = new Set();
+        const push = (opt) => {
+            if (!opt) return;
+            const code = normalizeTargetLangCode(opt.code || opt.value || opt.lang || '');
+            if (!code || seen.has(code)) return;
+            seen.add(code);
+            merged.push({
+                code,
+                name: opt.name || opt.label || opt.languageLabel || opt.text || code,
+                source: opt.source || ''
+            });
+        };
+        (primary || []).forEach(push);
+        (secondary || []).forEach(push);
+        return merged;
+    }
+
+    function normalizeLanguageList(list = []) {
+        return [...new Set((list || []).map(normalizeLangKey).filter(Boolean))];
+    }
+
+    function createMarkup(labels, meta = {}) {
+        const versionLabel = meta.version ? 'v' + meta.version : '';
+        const toggle = document.createElement('button');
+        toggle.className = 'subtitle-menu-toggle';
+        toggle.id = 'subtitleMenuToggle';
+        toggle.title = labels.toggleTitle;
+        toggle.innerHTML = `
       <svg viewBox="0 0 24 24" aria-hidden="true">
         <path d="M20 4H4c-1.1 0-2 .9-2 2v12c0 1.1.9 2 2 2h16c1.1 0 2-.9 2-2V6c0-1.1-.9-2-2-2zm0 14H4V6h16v12zM6 10h2v2H6zm0 4h8v2H6zm10 0h2v2h-2zm-6-4h8v2h-8z"/>
       </svg>
     `;
 
-    const panel = document.createElement('div');
-    panel.className = 'subtitle-menu-panel';
-    panel.id = 'subtitleMenu';
+        const panel = document.createElement('div');
+        panel.className = 'subtitle-menu-panel';
+        panel.id = 'subtitleMenu';
 
-    panel.innerHTML = `
+        panel.innerHTML = `
       <div class="subtitle-menu-header">
         <div class="subtitle-menu-titles">
           <p class="subtitle-menu-eyebrow">${labels.eyebrow}</p>
@@ -1232,802 +1269,873 @@
       </div>
     `;
 
-    document.body.appendChild(toggle);
-    document.body.appendChild(panel);
+        document.body.appendChild(toggle);
+        document.body.appendChild(panel);
 
-    return {
-      toggle,
-      panel,
-      status: panel.querySelector('#subtitleMenuStatus'),
-      body: panel.querySelector('#subtitleMenuBody'),
-      primaryList: panel.querySelector('#subtitleMenuPrimary'),
-      translationList: panel.querySelector('#subtitleMenuTranslation'),
-      otherList: panel.querySelector('#subtitleMenuOther'),
-      primaryGroup: panel.querySelector('.subtitle-menu-group-primary'),
-      translationGroup: panel.querySelector('.subtitle-menu-group-translation'),
-      otherGroup: panel.querySelector('.subtitle-menu-group-other'),
-      primaryToggle: panel.querySelector('#subtitleMenuPrimaryToggle'),
-      translationToggle: panel.querySelector('#subtitleMenuTranslationToggle'),
-      otherToggle: panel.querySelector('#subtitleMenuOtherToggle'),
-      primaryCount: panel.querySelector('#subtitleMenuPrimaryCount'),
-      translationCount: panel.querySelector('#subtitleMenuTranslationCount'),
-      otherCount: panel.querySelector('#subtitleMenuOtherCount'),
-      refresh: panel.querySelector('#subtitleMenuRefresh'),
-      close: panel.querySelector('#subtitleMenuClose'),
-      substatus: panel.querySelector('#subtitleMenuSubstatus'),
-      footer: panel.querySelector('#subtitleMenuFooter'),
-      footerTitle: panel.querySelector('.subtitle-menu-footer-title'),
-      footerMeta: panel.querySelector('.subtitle-menu-footer-meta'),
-      footerStats: panel.querySelector('#subtitleMenuFooterStats')
-    };
-  }
-
-  function normalizeStreamValue(val) {
-    return (val || '').toString().trim();
-  }
-
-  function isPlaceholderStreamValue(val) {
-    return normalizeStreamValue(val).toLowerCase() === 'stream and refresh';
-  }
-
-  function buildLanguageLookup(languageMaps) {
-    return {
-      byCode: (languageMaps && languageMaps.byCode) || {},
-      byNameKey: (languageMaps && languageMaps.byNameKey) || {}
-    };
-  }
-
-  function normalizeLangKey(val) {
-    return (val || '').toString().trim().toLowerCase().replace(/[^a-z]/g, '');
-  }
-
-  function normalizeNameKey(val) {
-    return (val || '').toString().trim().toLowerCase().replace(/[^a-z0-9]/g, '');
-  }
-
-  function lookupLanguageName(languageMaps, raw) {
-    if (!raw) return null;
-    const byCode = languageMaps.byCode;
-    const byNameKey = languageMaps.byNameKey;
-    const normCode = normalizeLangKey(raw);
-    if (byCode[normCode]) return byCode[normCode];
-    const nameKey = normalizeNameKey(raw);
-    return nameKey ? (byNameKey[nameKey] || null) : null;
-  }
-
-  function extractLanguageCode(value) {
-    if (!value) return '';
-    const raw = value.toString();
-    const direct = raw.match(/^[a-z]{2,3}(?:-[a-z]{2})?$/i);
-    if (direct) return normalizeLangKey(direct[0]);
-    const translateMatch = raw.match(/_to_([a-z]{2,3}(?:-[a-z]{2})?)/i);
-    if (translateMatch) return normalizeLangKey(translateMatch[1]);
-    const urlMatch = raw.match(/\/([a-z]{2,3}(?:-[a-z]{2})?)\.srt/i);
-    if (urlMatch) return normalizeLangKey(urlMatch[1]);
-    const pathMatch = raw.match(/\/([a-z]{2,3}(?:-[a-z]{2})?)\/[^/]*$/i);
-    if (pathMatch) return normalizeLangKey(pathMatch[1]);
-    return '';
-  }
-
-  function resolveLanguageInfo(entry, languageMaps) {
-    const rawLabel = (entry?.language || entry?.lang || entry?.langName || '').toString().trim();
-    const code = extractLanguageCode(entry?.languageCode)
-      || extractLanguageCode(rawLabel)
-      || extractLanguageCode(entry?.url)
-      || extractLanguageCode(entry?.id);
-    const friendly = lookupLanguageName(languageMaps, code) || lookupLanguageName(languageMaps, rawLabel);
-    return { code, name: friendly, rawLabel };
-  }
-
-  function subtitleChipForType(type, item) {
-    if (item?.isTranslation) return { label: tMenu('actions.translate', {}, 'Translate'), cls: 'target' };
-    switch (type) {
-      case 'target': return { label: 'Target', cls: 'target' };
-      case 'cached': return { label: 'xEmbed', cls: 'cached' };
-      case 'learn': return { label: 'Learn', cls: 'learn' };
-      case 'synced': return { label: 'xSync', cls: 'synced' };
-      case 'action': return { label: 'Tool', cls: 'cached' };
-      default: return { label: 'Source', cls: 'source' };
-    }
-  }
-
-  function createSubtitleMenu(options = {}) {
-    const config = {
-      labels: { ...DEFAULT_LABELS, ...(options.labels || {}) },
-      configStr: options.configStr || '',
-      videoId: normalizeStreamValue(options.videoId),
-      filename: normalizeStreamValue(options.filename),
-      videoHash: normalizeStreamValue(options.videoHash),
-      targetOptions: options.targetOptions || [],
-      sourceLanguages: normalizeLanguageList(options.sourceLanguages || []),
-      targetLanguages: normalizeLanguageList(options.targetLanguages || (options.targetOptions || []).map(opt => opt.code || opt.lang || opt.value)),
-      onTargetsHydrated: typeof options.onTargetsHydrated === 'function' ? options.onTargetsHydrated : null,
-      languageMaps: buildLanguageLookup(options.languageMaps || {}),
-      getVideoHash: typeof options.getVideoHash === 'function' ? options.getVideoHash : null,
-      version: options.version || ''
-    };
-
-    const subtitleMenuState = {
-      open: false,
-      loading: false,
-      items: [],
-      lastFetched: null,
-      hasFetchedOnce: false,
-      hasShownInitialNotice: false,
-      statusTimer: null
-    };
-    const streamMeta = {
-      parsed: parseStremioId(config.videoId),
-      title: '',
-      episodeTag: ''
-    };
-    const subtitleInventory = {
-      items: [],
-      lastFetched: null,
-      promise: null,
-      streamSig: null,
-      promiseStreamSig: null
-    };
-    const translationActions = new Map();
-    let translationRefreshTimer = null;
-    const languageSets = { source: new Set(), target: new Set() };
-
-    function rebuildLanguageSets() {
-      languageSets.source = new Set(normalizeLanguageList(config.sourceLanguages || []));
-      const fallbackTargets = (config.targetOptions || []).map(opt => opt.code || opt.lang || opt.value);
-      const targetList = (config.targetLanguages && config.targetLanguages.length)
-        ? config.targetLanguages
-        : fallbackTargets;
-      languageSets.target = new Set(normalizeLanguageList(targetList));
+        return {
+            toggle,
+            panel,
+            status: panel.querySelector('#subtitleMenuStatus'),
+            body: panel.querySelector('#subtitleMenuBody'),
+            primaryList: panel.querySelector('#subtitleMenuPrimary'),
+            translationList: panel.querySelector('#subtitleMenuTranslation'),
+            otherList: panel.querySelector('#subtitleMenuOther'),
+            primaryGroup: panel.querySelector('.subtitle-menu-group-primary'),
+            translationGroup: panel.querySelector('.subtitle-menu-group-translation'),
+            otherGroup: panel.querySelector('.subtitle-menu-group-other'),
+            primaryToggle: panel.querySelector('#subtitleMenuPrimaryToggle'),
+            translationToggle: panel.querySelector('#subtitleMenuTranslationToggle'),
+            otherToggle: panel.querySelector('#subtitleMenuOtherToggle'),
+            primaryCount: panel.querySelector('#subtitleMenuPrimaryCount'),
+            translationCount: panel.querySelector('#subtitleMenuTranslationCount'),
+            otherCount: panel.querySelector('#subtitleMenuOtherCount'),
+            refresh: panel.querySelector('#subtitleMenuRefresh'),
+            close: panel.querySelector('#subtitleMenuClose'),
+            substatus: panel.querySelector('#subtitleMenuSubstatus'),
+            footer: panel.querySelector('#subtitleMenuFooter'),
+            footerTitle: panel.querySelector('.subtitle-menu-footer-title'),
+            footerMeta: panel.querySelector('.subtitle-menu-footer-meta'),
+            footerStats: panel.querySelector('#subtitleMenuFooterStats')
+        };
     }
 
-    rebuildLanguageSets();
-
-    function deriveEpisodeTagFromState() {
-      if (streamMeta.episodeTag) return streamMeta.episodeTag;
-      return formatEpisodeTag(streamMeta.parsed);
+    function normalizeStreamValue(val) {
+        return (val || '').toString().trim();
     }
 
-    function deriveStreamDisplayTitle() {
-      if (!hasValidStream()) return '';
-      const cleanedFilename = cleanDisplayName(config.filename);
-      const cleanedVideoId = cleanDisplayName(config.videoId);
-      const base = streamMeta.title || cleanedFilename || cleanedVideoId || config.videoId || '';
-      const episodeTag = deriveEpisodeTagFromState();
-      return [base, episodeTag].filter(Boolean).join(' - ') || base || 'Linked stream';
+    function isPlaceholderStreamValue(val) {
+        return normalizeStreamValue(val).toLowerCase() === 'stream and refresh';
     }
 
-    async function hydrateStreamMetadata(els) {
-      if (!hasValidStream()) return;
-      streamMeta.parsed = parseStremioId(config.videoId);
-      streamMeta.episodeTag = formatEpisodeTag(streamMeta.parsed);
+    function buildLanguageLookup(languageMaps) {
+        return {
+            byCode: (languageMaps && languageMaps.byCode) || {},
+            byNameKey: (languageMaps && languageMaps.byNameKey) || {}
+        };
+    }
 
-      // Handle anime IDs (Kitsu) - fetch from Kitsu API
-      if (streamMeta.parsed?.isAnime && streamMeta.parsed?.animeIdType === 'kitsu' && streamMeta.parsed?.animeId) {
-        const animeIdParts = streamMeta.parsed.animeId.split(':');
-        const numericId = animeIdParts.length >= 2 ? animeIdParts[1] : null;
-        if (numericId) {
-          try {
-            const resp = await fetch('https://kitsu.io/api/edge/anime/' + numericId, {
-              headers: { 'Accept': 'application/vnd.api+json' },
-              cache: 'force-cache'
-            });
-            if (resp.ok) {
-              const data = await resp.json();
-              const title = data?.data?.attributes?.canonicalTitle ||
-                data?.data?.attributes?.titles?.en ||
-                data?.data?.attributes?.titles?.en_us || '';
-              if (title) {
-                streamMeta.title = title;
-                if (els && els.footerTitle) {
-                  els.footerTitle.textContent = deriveStreamDisplayTitle();
-                  els.footerTitle.title = deriveStreamDisplayTitle();
+    function normalizeLangKey(val) {
+        return (val || '')
+            .toString()
+            .trim()
+            .toLowerCase()
+            .replace(/[^a-z]/g, '');
+    }
+
+    function normalizeNameKey(val) {
+        return (val || '')
+            .toString()
+            .trim()
+            .toLowerCase()
+            .replace(/[^a-z0-9]/g, '');
+    }
+
+    function lookupLanguageName(languageMaps, raw) {
+        if (!raw) return null;
+        const byCode = languageMaps.byCode;
+        const byNameKey = languageMaps.byNameKey;
+        const normCode = normalizeLangKey(raw);
+        if (byCode[normCode]) return byCode[normCode];
+        const nameKey = normalizeNameKey(raw);
+        return nameKey ? byNameKey[nameKey] || null : null;
+    }
+
+    function extractLanguageCode(value) {
+        if (!value) return '';
+        const raw = value.toString();
+        const direct = raw.match(/^[a-z]{2,3}(?:-[a-z]{2})?$/i);
+        if (direct) return normalizeLangKey(direct[0]);
+        const translateMatch = raw.match(/_to_([a-z]{2,3}(?:-[a-z]{2})?)/i);
+        if (translateMatch) return normalizeLangKey(translateMatch[1]);
+        const urlMatch = raw.match(/\/([a-z]{2,3}(?:-[a-z]{2})?)\.srt/i);
+        if (urlMatch) return normalizeLangKey(urlMatch[1]);
+        const pathMatch = raw.match(/\/([a-z]{2,3}(?:-[a-z]{2})?)\/[^/]*$/i);
+        if (pathMatch) return normalizeLangKey(pathMatch[1]);
+        return '';
+    }
+
+    function resolveLanguageInfo(entry, languageMaps) {
+        const rawLabel = (entry?.language || entry?.lang || entry?.langName || '').toString().trim();
+        const code =
+            extractLanguageCode(entry?.languageCode) ||
+            extractLanguageCode(rawLabel) ||
+            extractLanguageCode(entry?.url) ||
+            extractLanguageCode(entry?.id);
+        const friendly = lookupLanguageName(languageMaps, code) || lookupLanguageName(languageMaps, rawLabel);
+        return { code, name: friendly, rawLabel };
+    }
+
+    function subtitleChipForType(type, item) {
+        if (item?.isTranslation) return { label: tMenu('actions.translate', {}, 'Translate'), cls: 'target' };
+        switch (type) {
+            case 'target':
+                return { label: 'Target', cls: 'target' };
+            case 'cached':
+                return { label: 'xEmbed', cls: 'cached' };
+            case 'learn':
+                return { label: 'Learn', cls: 'learn' };
+            case 'synced':
+                return { label: 'xSync', cls: 'synced' };
+            case 'action':
+                return { label: 'Tool', cls: 'cached' };
+            default:
+                return { label: 'Source', cls: 'source' };
+        }
+    }
+
+    function createSubtitleMenu(options = {}) {
+        const config = {
+            labels: { ...DEFAULT_LABELS, ...(options.labels || {}) },
+            configStr: options.configStr || '',
+            videoId: normalizeStreamValue(options.videoId),
+            filename: normalizeStreamValue(options.filename),
+            videoHash: normalizeStreamValue(options.videoHash),
+            targetOptions: options.targetOptions || [],
+            sourceLanguages: normalizeLanguageList(options.sourceLanguages || []),
+            targetLanguages: normalizeLanguageList(
+                options.targetLanguages || (options.targetOptions || []).map((opt) => opt.code || opt.lang || opt.value)
+            ),
+            onTargetsHydrated: typeof options.onTargetsHydrated === 'function' ? options.onTargetsHydrated : null,
+            languageMaps: buildLanguageLookup(options.languageMaps || {}),
+            getVideoHash: typeof options.getVideoHash === 'function' ? options.getVideoHash : null,
+            version: options.version || ''
+        };
+
+        const subtitleMenuState = {
+            open: false,
+            loading: false,
+            items: [],
+            lastFetched: null,
+            hasFetchedOnce: false,
+            hasShownInitialNotice: false,
+            statusTimer: null
+        };
+        const streamMeta = {
+            parsed: parseStremioId(config.videoId),
+            title: '',
+            episodeTag: ''
+        };
+        const subtitleInventory = {
+            items: [],
+            lastFetched: null,
+            promise: null,
+            streamSig: null,
+            promiseStreamSig: null
+        };
+        const translationActions = new Map();
+        let translationRefreshTimer = null;
+        const languageSets = { source: new Set(), target: new Set() };
+
+        function rebuildLanguageSets() {
+            languageSets.source = new Set(normalizeLanguageList(config.sourceLanguages || []));
+            const fallbackTargets = (config.targetOptions || []).map((opt) => opt.code || opt.lang || opt.value);
+            const targetList =
+                config.targetLanguages && config.targetLanguages.length ? config.targetLanguages : fallbackTargets;
+            languageSets.target = new Set(normalizeLanguageList(targetList));
+        }
+
+        rebuildLanguageSets();
+
+        function deriveEpisodeTagFromState() {
+            if (streamMeta.episodeTag) return streamMeta.episodeTag;
+            return formatEpisodeTag(streamMeta.parsed);
+        }
+
+        function deriveStreamDisplayTitle() {
+            if (!hasValidStream()) return '';
+            const cleanedFilename = cleanDisplayName(config.filename);
+            const cleanedVideoId = cleanDisplayName(config.videoId);
+            const base = streamMeta.title || cleanedFilename || cleanedVideoId || config.videoId || '';
+            const episodeTag = deriveEpisodeTagFromState();
+            return [base, episodeTag].filter(Boolean).join(' - ') || base || 'Linked stream';
+        }
+
+        async function hydrateStreamMetadata(els) {
+            if (!hasValidStream()) return;
+            streamMeta.parsed = parseStremioId(config.videoId);
+            streamMeta.episodeTag = formatEpisodeTag(streamMeta.parsed);
+
+            // Handle anime IDs (Kitsu) - fetch from Kitsu API
+            if (
+                streamMeta.parsed?.isAnime &&
+                streamMeta.parsed?.animeIdType === 'kitsu' &&
+                streamMeta.parsed?.animeId
+            ) {
+                const animeIdParts = streamMeta.parsed.animeId.split(':');
+                const numericId = animeIdParts.length >= 2 ? animeIdParts[1] : null;
+                if (numericId) {
+                    try {
+                        const resp = await fetch('https://kitsu.io/api/edge/anime/' + numericId, {
+                            headers: { Accept: 'application/vnd.api+json' },
+                            cache: 'force-cache'
+                        });
+                        if (resp.ok) {
+                            const data = await resp.json();
+                            const title =
+                                data?.data?.attributes?.canonicalTitle ||
+                                data?.data?.attributes?.titles?.en ||
+                                data?.data?.attributes?.titles?.en_us ||
+                                '';
+                            if (title) {
+                                streamMeta.title = title;
+                                if (els && els.footerTitle) {
+                                    els.footerTitle.textContent = deriveStreamDisplayTitle();
+                                    els.footerTitle.title = deriveStreamDisplayTitle();
+                                }
+                                if (els) {
+                                    updateSubtitleMenuMeta(els);
+                                    setSubtitleMenuStatus(els, '', 'muted', { persist: true });
+                                }
+                            }
+                        }
+                    } catch (_) {
+                        // Ignore Kitsu API errors; fall back to filename/videoId
+                    }
                 }
-                if (els) {
-                  updateSubtitleMenuMeta(els);
-                  setSubtitleMenuStatus(els, '', 'muted', { persist: true });
+                // For Kitsu, we don't fall through to Cinemeta
+                if (!streamMeta.title && els) {
+                    updateSubtitleMenuMeta(els);
+                    if (els.footerTitle) {
+                        els.footerTitle.textContent = deriveStreamDisplayTitle();
+                        els.footerTitle.title = deriveStreamDisplayTitle();
+                    }
                 }
-              }
+                return;
             }
-          } catch (_) {
-            // Ignore Kitsu API errors; fall back to filename/videoId
-          }
-        }
-        // For Kitsu, we don't fall through to Cinemeta
-        if (!streamMeta.title && els) {
-          updateSubtitleMenuMeta(els);
-          if (els.footerTitle) {
-            els.footerTitle.textContent = deriveStreamDisplayTitle();
-            els.footerTitle.title = deriveStreamDisplayTitle();
-          }
-        }
-        return;
-      }
 
-      // Handle IMDB/TMDB IDs - fetch from Cinemeta
-      const imdbId = streamMeta.parsed?.imdbId;
-      const tmdbId = streamMeta.parsed?.tmdbId;
-      const metaType = streamMeta.parsed?.type === 'episode' ? 'series' : 'movie';
+            // Handle IMDB/TMDB IDs - fetch from Cinemeta
+            const imdbId = streamMeta.parsed?.imdbId;
+            const tmdbId = streamMeta.parsed?.tmdbId;
+            const metaType = streamMeta.parsed?.type === 'episode' ? 'series' : 'movie';
 
-      // Determine the meta ID to use for Cinemeta lookup
-      const metaId = (() => {
-        if (imdbId && /^tt\d+$/i.test(imdbId)) return imdbId.toLowerCase();
-        if (tmdbId) return 'tmdb:' + tmdbId;
-        return null;
-      })();
+            // Determine the meta ID to use for Cinemeta lookup
+            const metaId = (() => {
+                if (imdbId && /^tt\d+$/i.test(imdbId)) return imdbId.toLowerCase();
+                if (tmdbId) return 'tmdb:' + tmdbId;
+                return null;
+            })();
 
-      if (!metaId) {
-        // No valid ID for Cinemeta lookup - update display with fallback
-        if (els) {
-          updateSubtitleMenuMeta(els);
-          if (els.footerTitle) {
-            els.footerTitle.textContent = deriveStreamDisplayTitle();
-            els.footerTitle.title = deriveStreamDisplayTitle();
-          }
-        }
-        return;
-      }
+            if (!metaId) {
+                // No valid ID for Cinemeta lookup - update display with fallback
+                if (els) {
+                    updateSubtitleMenuMeta(els);
+                    if (els.footerTitle) {
+                        els.footerTitle.textContent = deriveStreamDisplayTitle();
+                        els.footerTitle.title = deriveStreamDisplayTitle();
+                    }
+                }
+                return;
+            }
 
-      try {
-        const url = 'https://v3-cinemeta.strem.io/meta/' + metaType + '/' + encodeURIComponent(metaId) + '.json';
-        const resp = await fetch(url, { cache: 'force-cache' });
-        if (!resp.ok) throw new Error('Failed to load metadata');
-        const data = await resp.json();
-        const meta = data && data.meta;
-        const title = meta?.name || meta?.english_name || (meta?.nameTranslated && meta.nameTranslated.en) || '';
-        if (title) {
-          streamMeta.title = title;
-          if (els && els.footerTitle) {
-            els.footerTitle.textContent = deriveStreamDisplayTitle();
-            els.footerTitle.title = deriveStreamDisplayTitle();
-          }
-          if (els) {
-            updateSubtitleMenuMeta(els);
-            setSubtitleMenuStatus(els, '', 'muted', { persist: true });
-          }
-        }
-      } catch (_) {
-        // Ignore metadata errors; fall back to filename/videoId
-      }
+            try {
+                const url =
+                    'https://v3-cinemeta.strem.io/meta/' + metaType + '/' + encodeURIComponent(metaId) + '.json';
+                const resp = await fetch(url, { cache: 'force-cache' });
+                if (!resp.ok) throw new Error('Failed to load metadata');
+                const data = await resp.json();
+                const meta = data && data.meta;
+                const title =
+                    meta?.name || meta?.english_name || (meta?.nameTranslated && meta.nameTranslated.en) || '';
+                if (title) {
+                    streamMeta.title = title;
+                    if (els && els.footerTitle) {
+                        els.footerTitle.textContent = deriveStreamDisplayTitle();
+                        els.footerTitle.title = deriveStreamDisplayTitle();
+                    }
+                    if (els) {
+                        updateSubtitleMenuMeta(els);
+                        setSubtitleMenuStatus(els, '', 'muted', { persist: true });
+                    }
+                }
+            } catch (_) {
+                // Ignore metadata errors; fall back to filename/videoId
+            }
 
-      // Always update display even if Cinemeta fetch didn't find a title
-      if (!streamMeta.title && els) {
-        updateSubtitleMenuMeta(els);
-        if (els.footerTitle) {
-          els.footerTitle.textContent = deriveStreamDisplayTitle();
-          els.footerTitle.title = deriveStreamDisplayTitle();
-        }
-      }
-    }
-
-    function deriveStreamSignature(stream = {}) {
-      const videoId = normalizeStreamValue(stream.videoId !== undefined ? stream.videoId : config.videoId);
-      const filename = normalizeStreamValue(stream.filename !== undefined ? stream.filename : config.filename);
-      return [videoId, filename].join('::');
-    }
-
-    function hasValidStream() {
-      if (!config.configStr) return false;
-      const videoIdNorm = normalizeStreamValue(config.videoId);
-      if (!videoIdNorm) return false;
-      if (isPlaceholderStreamValue(videoIdNorm)) return false;
-      return true;
-    }
-
-    function buildSubtitleFetchUrl() {
-      if (!hasValidStream()) return '';
-      const parts = (config.videoId || '').split(':');
-      const type = (parts[0] === 'tmdb' && parts.length >= 3) || parts.length >= 3 ? 'series' : 'movie';
-      const suffix = config.filename ? ('?filename=' + encodeURIComponent(config.filename)) : '';
-      return '/addon/' + encodeURIComponent(config.configStr) + '/subtitles/' + type + '/' + encodeURIComponent(config.videoId || '') + '.json' + suffix;
-    }
-
-    function shouldDisplaySubtitle(item) {
-      if (!item) return false;
-      if (item.type === 'action') return false;
-      const label = (item.label || '').toString().toLowerCase();
-      if (label.includes('sub toolbox')) return false;
-      return true;
-    }
-
-    function normalizeSubtitleEntry(entry) {
-      const languageInfo = resolveLanguageInfo(entry, config.languageMaps);
-      const languageLabel = languageInfo.name || languageInfo.rawLabel || 'Unknown language';
-      const baseLabel = (entry?.title || entry?.name || entry?.label || languageInfo.rawLabel || '').toString().trim();
-      const fallbackLabel = baseLabel || languageLabel || 'Untitled';
-      const preferredLabel = baseLabel || languageLabel || fallbackLabel;
-      const idLower = (entry?.id || '').toString().toLowerCase();
-      const lower = fallbackLabel.toLowerCase();
-      const isTranslation = lower.startsWith('make ') || idLower.startsWith('translate_') || idLower.includes('_to_');
-      const isLearn = lower.startsWith('learn ') || idLower.startsWith('learn_');
-      const isEmbed = lower.startsWith('xembed') || idLower.startsWith('xembed_');
-      const isSync = lower.startsWith('xsync') || idLower.startsWith('xsync_');
-      const isAction = lower.includes('toolbox') || idLower.includes('toolbox');
-      const ensurePrefix = (labelValue, prefix, options = {}) => {
-        const raw = (labelValue || '').toString();
-        const stripped = raw.replace(new RegExp('^' + prefix + '\\s*', 'i'), '').trim().replace(/^\((.*)\)$/, '$1').trim();
-        if (!stripped) return prefix;
-        const lowerPrefix = prefix.toLowerCase();
-        if (lowerPrefix === 'make') {
-          return translate('subtitleMenu.makeLanguage', { language: stripped }, `Make ${stripped}`);
-        }
-        if (lowerPrefix === 'learn') {
-          return translate('subtitleMenu.learnLanguage', { language: stripped }, `Learn ${stripped}`);
-        }
-        if (options.wrapInParens) return `${prefix} (${stripped})`;
-        return `${prefix} ${stripped}`;
-      };
-
-      let displayLabel = fallbackLabel;
-      if (isTranslation && !lower.startsWith('make ')) {
-        displayLabel = ensurePrefix(preferredLabel, 'Make');
-      } else if (isLearn && !lower.startsWith('learn ')) {
-        displayLabel = ensurePrefix(preferredLabel, 'Learn');
-      } else if (isEmbed && !lower.startsWith('xembed')) {
-        displayLabel = ensurePrefix(preferredLabel, 'xEmbed', { wrapInParens: true });
-      } else if (isSync && !lower.startsWith('xsync')) {
-        displayLabel = ensurePrefix(preferredLabel, 'xSync');
-      }
-
-      const normalizedEntry = Object.assign({}, entry, { label: displayLabel, languageLabel });
-      const langKey = normalizeLangKey(languageInfo.code || parseTargetLangFromSubtitle(normalizedEntry) || '');
-      const inTarget = langKey && languageSets.target.has(langKey);
-      const inSource = langKey && languageSets.source.has(langKey);
-      const type = isTranslation ? 'target'
-        : isLearn ? 'learn'
-          : isEmbed ? 'cached'
-            : isSync ? 'synced'
-              : isAction ? 'action'
-                : (inTarget && !inSource ? 'target' : 'source');
-      let group = 'primary';
-      if (isTranslation) group = 'translation';
-      else if (isLearn || isEmbed || isSync || isAction) group = 'other';
-      return {
-        id: entry?.id || displayLabel,
-        label: displayLabel,
-        languageLabel,
-        languageKey: langKey || languageInfo.code || normalizeNameKey(languageLabel) || displayLabel.toLowerCase(),
-        url: entry?.url || '#',
-        type,
-        group,
-        isTranslation
-      };
-    }
-
-    function groupSubtitlesByLanguage(items) {
-      const buckets = { primary: new Map(), translation: new Map(), other: new Map() };
-      items.forEach(item => {
-        const bucket = item.group === 'translation' ? 'translation'
-          : (item.group === 'other' ? 'other' : 'primary');
-
-        const map = buckets[bucket];
-
-        // For main group, bucket by language so source+target stack together
-        // For Translation and Other, group by label (e.g. "Make Portuguese", "Learn Spanish")
-        let key, label;
-
-        if (bucket === 'translation' || bucket === 'other') {
-          key = item.label; // Group by the full label
-          label = item.label;
-        } else {
-          key = item.languageKey || item.languageLabel?.toLowerCase() || item.label.toLowerCase();
-          label = item.languageLabel || item.label;
+            // Always update display even if Cinemeta fetch didn't find a title
+            if (!streamMeta.title && els) {
+                updateSubtitleMenuMeta(els);
+                if (els.footerTitle) {
+                    els.footerTitle.textContent = deriveStreamDisplayTitle();
+                    els.footerTitle.title = deriveStreamDisplayTitle();
+                }
+            }
         }
 
-        if (!map.has(key)) map.set(key, { key, label, items: [] });
-        map.get(key).items.push(item);
-      });
-      return buckets;
-    }
-
-    function deriveLangKeyForItem(item) {
-      const raw = item?.languageKey || parseTargetLangFromSubtitle(item);
-      return normalizeTargetLangCode(raw || '');
-    }
-
-    function ensureTranslationAction(item) {
-      if (!item || !item.id) return null;
-      if (!translationActions.has(item.id)) {
-        translationActions.set(item.id, {
-          id: item.id,
-          status: 'idle',
-          timer: null,
-          pollAttempts: 0,
-          cachedContent: '',
-          filename: '',
-          downloadUrl: '',
-          langKey: deriveLangKeyForItem(item),
-          lastError: ''
-        });
-      }
-      const action = translationActions.get(item.id);
-      action.id = item.id || action.id || '';
-      action.langKey = deriveLangKeyForItem(item) || action.langKey || '';
-      action.label = item?.languageLabel || item?.label || action.label || '';
-      action.url = item?.url || action.url || '';
-      return action;
-    }
-
-    function applyTranslationActionState(action) {
-      if (!action || !action.button) return;
-      const button = action.button;
-      const status = action.status || 'idle';
-      button.disabled = status === 'translating';
-      if (status === 'ready') {
-        button.textContent = tMenu('actions.downloadShort', {}, 'Download');
-        button.title = tMenu('actions.download', {}, 'Download translated subtitle');
-      } else if (status === 'translating') {
-        button.textContent = tMenu('actions.translating', {}, 'Translating...');
-        button.title = STATUS_LABELS.inProgress(action.label);
-      } else if (status === 'error') {
-        button.textContent = tMenu('actions.retry', {}, 'Retry');
-        button.title = action.lastError || STATUS_LABELS.translationFailedShort;
-        button.disabled = false;
-      } else {
-        button.textContent = tMenu('actions.translate', {}, 'Translate');
-        button.title = tMenu('actions.translateThis', {}, 'Translate this subtitle');
-      }
-    }
-
-    function stopTranslationPoll(action) {
-      if (action && action.timer) {
-        clearTimeout(action.timer);
-        action.timer = null;
-      }
-    }
-
-    function markTranslationActions(predicate, info = {}) {
-      translationActions.forEach(action => {
-        if (typeof predicate === 'function' && !predicate(action)) return;
-        stopTranslationPoll(action);
-        action.status = 'ready';
-        action.downloadUrl = info.downloadUrl || action.downloadUrl || action.url;
-        action.cachedContent = info.cachedContent || action.cachedContent || '';
-        action.filename = info.filename || action.filename || '';
-        applyTranslationActionState(action);
-      });
-    }
-
-    function markTranslationActionReady(actionId, info = {}) {
-      if (!actionId) return;
-      markTranslationActions(action => action.id === actionId, info);
-    }
-
-    function markTranslationLanguageReady(langKey, info = {}, options = {}) {
-      const normalized = normalizeTargetLangCode(langKey || '');
-      if (!normalized) return;
-      const targetActionId = options.actionId || null;
-      markTranslationActions(action => {
-        const matchesLang = normalizeTargetLangCode(action.langKey) === normalized;
-        const matchesId = !targetActionId || action.id === targetActionId;
-        return matchesLang && matchesId;
-      }, info);
-    }
-
-    function syncTranslationActionsFromInventory(items) {
-      const present = new Set();
-      const readyLangs = new Map();
-      (items || []).forEach(it => {
-        if (it && it.type === 'cached') {
-          const langKey = normalizeTargetLangCode(it.languageKey || parseTargetLangFromSubtitle(it));
-          if (langKey) readyLangs.set(langKey, it.url || '');
+        function deriveStreamSignature(stream = {}) {
+            const videoId = normalizeStreamValue(stream.videoId !== undefined ? stream.videoId : config.videoId);
+            const filename = normalizeStreamValue(stream.filename !== undefined ? stream.filename : config.filename);
+            return [videoId, filename].join('::');
         }
-      });
 
-      (items || []).forEach(it => {
-        if (!it || !it.isTranslation) return;
-        present.add(it.id);
-        const action = ensureTranslationAction(it);
-        if (!action) return;
-        const langKey = normalizeTargetLangCode(action.langKey);
-        if (langKey && readyLangs.has(langKey)) {
-          action.status = 'ready';
-          action.downloadUrl = readyLangs.get(langKey) || action.downloadUrl || it.url;
-          stopTranslationPoll(action);
-          applyTranslationActionState(action);
+        function hasValidStream() {
+            if (!config.configStr) return false;
+            const videoIdNorm = normalizeStreamValue(config.videoId);
+            if (!videoIdNorm) return false;
+            if (isPlaceholderStreamValue(videoIdNorm)) return false;
+            return true;
         }
-      });
 
-      translationActions.forEach((action, key) => {
-        if (!present.has(key)) {
-          stopTranslationPoll(action);
-          translationActions.delete(key);
+        function buildSubtitleFetchUrl() {
+            if (!hasValidStream()) return '';
+            const parts = (config.videoId || '').split(':');
+            const type = (parts[0] === 'tmdb' && parts.length >= 3) || parts.length >= 3 ? 'series' : 'movie';
+            const suffix = config.filename ? '?filename=' + encodeURIComponent(config.filename) : '';
+            return (
+                '/addon/' +
+                encodeURIComponent(config.configStr) +
+                '/subtitles/' +
+                type +
+                '/' +
+                encodeURIComponent(config.videoId || '') +
+                '.json' +
+                suffix
+            );
         }
-      });
-    }
 
-    function getBaseStatusMessage() {
-      const parts = [];
-      const streamLabel = normalizeStreamValue(config.filename) || normalizeStreamValue(config.videoId);
-      parts.push(streamLabel ? ('Stream: ' + streamLabel) : 'Waiting for linked stream');
-      const hash = (typeof config.getVideoHash === 'function' ? config.getVideoHash() : config.videoHash) || '';
-      if (hash) parts.push('Hash ' + hash);
-      return parts.join(' | ') || 'Waiting for linked stream';
-    }
-
-    function setSubtitleMenuStatus(els, message, variant = 'muted', options = {}) {
-      if (!els.status) return;
-      const persist = options.persist === true;
-      if (subtitleMenuState.statusTimer) {
-        clearTimeout(subtitleMenuState.statusTimer);
-        subtitleMenuState.statusTimer = null;
-      }
-
-      const isBase = !message;
-      const statusText = isBase ? getBaseStatusMessage() : message;
-      const classes = ['subtitle-menu-status'];
-      if (variant === 'error') classes.push('error');
-      if (isBase) classes.push('base');
-      els.status.textContent = statusText || '';
-      els.status.className = classes.join(' ');
-      els.status.style.display = 'flex';
-      els.status.classList.add('show');
-
-      if (!isBase && !persist) {
-        subtitleMenuState.statusTimer = setTimeout(() => {
-          subtitleMenuState.statusTimer = null;
-          setSubtitleMenuStatus(els, '', 'muted', { persist: true });
-        }, 3200);
-      }
-    }
-
-    function parseTargetLangFromSubtitle(item) {
-      if (!item) return '';
-      if (item.id && typeof item.id === 'string') {
-        const match = item.id.match(/_to_([a-z0-9-]+)/i);
-        if (match && match[1]) return match[1];
-      }
-      const label = (item.languageLabel || item.label || '').toString();
-      if (label.toLowerCase().startsWith('make ')) {
-        return label.slice(5).trim();
-      }
-      return label.trim();
-    }
-
-    function deriveTargetOptionsFromSubtitles(items = []) {
-      const derived = [];
-      const seen = new Set();
-      items.forEach(item => {
-        if (!item || item.type !== 'target') return;
-        const code = normalizeTargetLangCode(parseTargetLangFromSubtitle(item));
-        if (!code || seen.has(code)) return;
-        seen.add(code);
-        const prettyName = (item.languageLabel || item.label || '').replace(/^make\\s+/i, '').trim() || code;
-        derived.push({ code, name: prettyName, source: 'subtitles' });
-      });
-      return derived;
-    }
-
-    function hydrateTargetsFromSubtitleInventory(items) {
-      if (!Array.isArray(items) || !items.length) return;
-      const derived = deriveTargetOptionsFromSubtitles(items);
-      if (!derived.length) return;
-      const merged = mergeTargetOptions(config.targetOptions, derived);
-      config.targetOptions = merged;
-      rebuildLanguageSets();
-      if (config.onTargetsHydrated) {
-        config.onTargetsHydrated(merged);
-      }
-    }
-
-    function buildSubtitleMenuItem(item, index) {
-      const row = document.createElement('div');
-      row.className = 'subtitle-menu-item';
-
-      const meta = document.createElement('div');
-      meta.className = 'meta';
-      const labelEl = document.createElement('div');
-      labelEl.className = 'label';
-
-      // Add index badge if provided
-      if (typeof index === 'number' && index >= 0) {
-        const indexBadge = document.createElement('span');
-        indexBadge.className = 'label-index';
-        indexBadge.textContent = '#' + (index + 1);
-        labelEl.appendChild(indexBadge);
-      }
-
-      const labelText = document.createElement('span');
-      labelText.className = 'label-text';
-      labelText.textContent = item.label;
-      labelEl.appendChild(labelText);
-
-      const chipData = subtitleChipForType(item.type, item);
-      const chip = document.createElement('span');
-      chip.className = 'subtitle-menu-chip ' + chipData.cls;
-      chip.textContent = chipData.label;
-      meta.appendChild(labelEl);
-      meta.appendChild(chip);
-
-      let actionEl;
-      if (item.isTranslation) {
-        const button = document.createElement('button');
-        button.type = 'button';
-        button.className = 'subtitle-menu-link subtitle-menu-translate';
-        const action = ensureTranslationAction(item);
-        if (action) {
-          action.button = button;
-          applyTranslationActionState(action);
-        } else {
-          button.textContent = tMenu('actions.translate', {}, 'Translate');
+        function shouldDisplaySubtitle(item) {
+            if (!item) return false;
+            if (item.type === 'action') return false;
+            const label = (item.label || '').toString().toLowerCase();
+            if (label.includes('sub toolbox')) return false;
+            return true;
         }
-        button.addEventListener('click', () => handleTranslationButtonClick(item));
-        actionEl = button;
-      } else {
-        const link = document.createElement('a');
-        link.className = 'subtitle-menu-link';
-        link.href = item.url;
-        link.target = '_blank';
-        link.rel = 'noopener';
-        link.textContent = tMenu('actions.downloadShort', {}, 'Download');
-        actionEl = link;
-      }
 
-      row.appendChild(meta);
-      row.appendChild(actionEl);
-      return row;
-    }
+        function normalizeSubtitleEntry(entry) {
+            const languageInfo = resolveLanguageInfo(entry, config.languageMaps);
+            const languageLabel = languageInfo.name || languageInfo.rawLabel || 'Unknown language';
+            const baseLabel = (entry?.title || entry?.name || entry?.label || languageInfo.rawLabel || '')
+                .toString()
+                .trim();
+            const fallbackLabel = baseLabel || languageLabel || 'Untitled';
+            const preferredLabel = baseLabel || languageLabel || fallbackLabel;
+            const idLower = (entry?.id || '').toString().toLowerCase();
+            const lower = fallbackLabel.toLowerCase();
+            const isTranslation =
+                lower.startsWith('make ') || idLower.startsWith('translate_') || idLower.includes('_to_');
+            const isLearn = lower.startsWith('learn ') || idLower.startsWith('learn_');
+            const isEmbed = lower.startsWith('xembed') || idLower.startsWith('xembed_');
+            const isSync = lower.startsWith('xsync') || idLower.startsWith('xsync_');
+            const isAction = lower.includes('toolbox') || idLower.includes('toolbox');
+            const ensurePrefix = (labelValue, prefix, options = {}) => {
+                const raw = (labelValue || '').toString();
+                const stripped = raw
+                    .replace(new RegExp('^' + prefix + '\\s*', 'i'), '')
+                    .trim()
+                    .replace(/^\((.*)\)$/, '$1')
+                    .trim();
+                if (!stripped) return prefix;
+                const lowerPrefix = prefix.toLowerCase();
+                if (lowerPrefix === 'make') {
+                    return translate('subtitleMenu.makeLanguage', { language: stripped }, `Make ${stripped}`);
+                }
+                if (lowerPrefix === 'learn') {
+                    return translate('subtitleMenu.learnLanguage', { language: stripped }, `Learn ${stripped}`);
+                }
+                if (options.wrapInParens) return `${prefix} (${stripped})`;
+                return `${prefix} ${stripped}`;
+            };
 
-    function buildLanguageCard(langEntry, openByDefault, container, groupType) {
-      const card = document.createElement('div');
-      card.className = 'subtitle-lang-card' + (openByDefault ? ' open' : '');
-      card.setAttribute('data-lang-key', langEntry.key || langEntry.label || '');
-      const header = document.createElement('button');
-      header.type = 'button';
-      header.className = 'subtitle-lang-header';
+            let displayLabel = fallbackLabel;
+            if (isTranslation && !lower.startsWith('make ')) {
+                displayLabel = ensurePrefix(preferredLabel, 'Make');
+            } else if (isLearn && !lower.startsWith('learn ')) {
+                displayLabel = ensurePrefix(preferredLabel, 'Learn');
+            } else if (isEmbed && !lower.startsWith('xembed')) {
+                displayLabel = ensurePrefix(preferredLabel, 'xEmbed', { wrapInParens: true });
+            } else if (isSync && !lower.startsWith('xsync')) {
+                displayLabel = ensurePrefix(preferredLabel, 'xSync');
+            }
 
-      const meta = document.createElement('div');
-      meta.className = 'subtitle-lang-meta';
-      const title = document.createElement('div');
-      title.className = 'subtitle-lang-label';
-      title.textContent = langEntry.label;
-      const pill = document.createElement('div');
-      pill.className = 'subtitle-lang-pill';
-      const counts = langEntry.items.reduce((acc, itm) => {
-        acc[itm.type] = (acc[itm.type] || 0) + 1;
-        return acc;
-      }, {});
-
-      // Build styled pill tags instead of plain text
-      const tagOrder = ['source', 'target', 'cached', 'synced', 'learn'];
-      const tagLabels = { source: 'Source', target: 'Target', cached: 'xEmbed', synced: 'xSync', learn: 'Learn' };
-      let hasTags = false;
-      tagOrder.forEach(type => {
-        if (counts[type]) {
-          hasTags = true;
-          const tag = document.createElement('span');
-          tag.className = 'subtitle-lang-pill-tag ' + type;
-          tag.textContent = counts[type] + ' ' + tagLabels[type];
-          pill.appendChild(tag);
+            const normalizedEntry = Object.assign({}, entry, { label: displayLabel, languageLabel });
+            const langKey = normalizeLangKey(languageInfo.code || parseTargetLangFromSubtitle(normalizedEntry) || '');
+            const inTarget = langKey && languageSets.target.has(langKey);
+            const inSource = langKey && languageSets.source.has(langKey);
+            const type = isTranslation
+                ? 'target'
+                : isLearn
+                  ? 'learn'
+                  : isEmbed
+                    ? 'cached'
+                    : isSync
+                      ? 'synced'
+                      : isAction
+                        ? 'action'
+                        : inTarget && !inSource
+                          ? 'target'
+                          : 'source';
+            let group = 'primary';
+            if (isTranslation) group = 'translation';
+            else if (isLearn || isEmbed || isSync || isAction) group = 'other';
+            return {
+                id: entry?.id || displayLabel,
+                label: displayLabel,
+                languageLabel,
+                languageKey:
+                    langKey || languageInfo.code || normalizeNameKey(languageLabel) || displayLabel.toLowerCase(),
+                url: entry?.url || '#',
+                type,
+                group,
+                isTranslation
+            };
         }
-      });
-      if (!hasTags) {
-        const defaultTag = document.createElement('span');
-        defaultTag.className = 'subtitle-lang-pill-tag';
-        defaultTag.textContent = 'Subtitles';
-        pill.appendChild(defaultTag);
-      }
-      meta.appendChild(title);
-      meta.appendChild(pill);
 
-      const right = document.createElement('div');
-      right.style.display = 'flex';
-      right.style.alignItems = 'center';
-      right.style.gap = '8px';
-      const count = document.createElement('span');
-      count.className = 'subtitle-lang-count';
-      count.textContent = langEntry.items.length;
-      const chevron = document.createElement('span');
-      chevron.className = 'subtitle-lang-chevron';
-      chevron.innerHTML = '<svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="9 18 15 12 9 6"></polyline></svg>';
-      right.appendChild(count);
-      right.appendChild(chevron);
+        function groupSubtitlesByLanguage(items) {
+            const buckets = { primary: new Map(), translation: new Map(), other: new Map() };
+            items.forEach((item) => {
+                const bucket =
+                    item.group === 'translation' ? 'translation' : item.group === 'other' ? 'other' : 'primary';
 
-      header.appendChild(meta);
-      header.appendChild(right);
+                const map = buckets[bucket];
 
-      const menu = document.createElement('div');
-      menu.className = 'subtitle-lang-menu';
-      const sortedItems = [...langEntry.items].sort((a, b) => a.label.localeCompare(b.label));
-      const languageCodeLabel = (() => {
-        const codeCandidate = (langEntry.items.find(it => it.languageKey)?.languageKey || langEntry.key || '').toString().trim();
-        return codeCandidate ? codeCandidate.toUpperCase() : 'SUB';
-      })();
-      let sourceCounter = 0;
-      sortedItems.forEach((item, idx) => {
-        const isSourceType = item.type === 'source';
-        const displayItem = (groupType === 'primary' && isSourceType)
-          ? Object.assign({}, item, { label: `${languageCodeLabel} - Subtitle ${sourceCounter + 1}` })
-          : item;
-        if (isSourceType) sourceCounter += 1;
-        menu.appendChild(buildSubtitleMenuItem(displayItem, idx));
-      });
+                // For main group, bucket by language so source+target stack together
+                // For Translation and Other, group by label (e.g. "Make Portuguese", "Learn Spanish")
+                let key, label;
 
-      const toggle = () => {
-        const next = !card.classList.contains('open');
-        if (next && container) {
-          const openSiblings = container.querySelectorAll('.subtitle-lang-card.open');
-          openSiblings.forEach(el => { if (el !== card) el.classList.remove('open'); });
+                if (bucket === 'translation' || bucket === 'other') {
+                    key = item.label; // Group by the full label
+                    label = item.label;
+                } else {
+                    key = item.languageKey || item.languageLabel?.toLowerCase() || item.label.toLowerCase();
+                    label = item.languageLabel || item.label;
+                }
+
+                if (!map.has(key)) map.set(key, { key, label, items: [] });
+                map.get(key).items.push(item);
+            });
+            return buckets;
         }
-        card.classList.toggle('open', next);
-      };
-      header.addEventListener('click', toggle);
 
-      card.appendChild(header);
-      card.appendChild(menu);
-      return card;
-    }
-
-    function getOpenCardKeys(container) {
-      const keys = new Set();
-      if (!container) return keys;
-      container.querySelectorAll('.subtitle-lang-card.open').forEach(el => {
-        const key = el.getAttribute('data-lang-key');
-        if (key) keys.add(key);
-      });
-      return keys;
-    }
-
-    function setGroupOpenState(groupEl, toggleEl, open) {
-      if (!groupEl) return;
-      const next = open === true;
-      groupEl.classList.toggle('is-collapsed', !next);
-      groupEl.classList.toggle('is-open', next);
-      if (toggleEl) {
-        toggleEl.setAttribute('aria-expanded', next ? 'true' : 'false');
-      }
-    }
-
-    function toggleGroupState(groupEl, toggleEl) {
-      if (!groupEl) return;
-      const isCurrentlyOpen = groupEl.classList.contains('is-open') && !groupEl.classList.contains('is-collapsed');
-      setGroupOpenState(groupEl, toggleEl, !isCurrentlyOpen);
-    }
-
-    function renderSubtitleMenu(items, els) {
-      if (!els.primaryList || !els.translationList) return;
-      const filtered = (items || []).filter(shouldDisplaySubtitle);
-      const grouped = groupSubtitlesByLanguage(filtered);
-
-      const renderList = (container, groupEl, map, groupType, countEl, toggleEl) => {
-        if (!container) return;
-        const openKeys = getOpenCardKeys(container);
-        container.innerHTML = '';
-        const languages = Array.from(map.values()).sort((a, b) => a.label.localeCompare(b.label));
-        const totalItems = languages.reduce((acc, lang) => acc + (lang.items?.length || 0), 0);
-        if (countEl) countEl.textContent = totalItems;
-
-        if (languages.length === 0) {
-          if (groupEl) {
-            groupEl.style.display = 'none';
-            groupEl.setAttribute('aria-hidden', 'true');
-            setGroupOpenState(groupEl, toggleEl, false);
-          }
-        } else {
-          if (groupEl) {
-            groupEl.style.display = 'flex';
-            groupEl.removeAttribute('aria-hidden');
-            setGroupOpenState(groupEl, toggleEl, false);
-          }
-          languages.forEach(lang => container.appendChild(buildLanguageCard(lang, openKeys.has(lang.key), container, groupType)));
+        function deriveLangKeyForItem(item) {
+            const raw = item?.languageKey || parseTargetLangFromSubtitle(item);
+            return normalizeTargetLangCode(raw || '');
         }
-      };
 
-      renderList(els.primaryList, els.primaryGroup, grouped.primary, 'primary', els.primaryCount, els.primaryToggle);
-      renderList(els.translationList, els.translationGroup, grouped.translation, 'translation', els.translationCount, els.translationToggle);
-      renderList(els.otherList, els.otherGroup, grouped.other, 'other', els.otherCount, els.otherToggle);
+        function ensureTranslationAction(item) {
+            if (!item || !item.id) return null;
+            if (!translationActions.has(item.id)) {
+                translationActions.set(item.id, {
+                    id: item.id,
+                    status: 'idle',
+                    timer: null,
+                    pollAttempts: 0,
+                    cachedContent: '',
+                    filename: '',
+                    downloadUrl: '',
+                    langKey: deriveLangKeyForItem(item),
+                    lastError: ''
+                });
+            }
+            const action = translationActions.get(item.id);
+            action.id = item.id || action.id || '';
+            action.langKey = deriveLangKeyForItem(item) || action.langKey || '';
+            action.label = item?.languageLabel || item?.label || action.label || '';
+            action.url = item?.url || action.url || '';
+            return action;
+        }
 
-      if (els.body) {
-        const hasAny = filtered.length > 0;
-        els.body.style.display = hasAny ? 'flex' : 'none';
-      }
+        function applyTranslationActionState(action) {
+            if (!action || !action.button) return;
+            const button = action.button;
+            const status = action.status || 'idle';
+            button.disabled = status === 'translating';
+            if (status === 'ready') {
+                button.textContent = tMenu('actions.downloadShort', {}, 'Download');
+                button.title = tMenu('actions.download', {}, 'Download translated subtitle');
+            } else if (status === 'translating') {
+                button.textContent = tMenu('actions.translating', {}, 'Translating...');
+                button.title = STATUS_LABELS.inProgress(action.label);
+            } else if (status === 'error') {
+                button.textContent = tMenu('actions.retry', {}, 'Retry');
+                button.title = action.lastError || STATUS_LABELS.translationFailedShort;
+                button.disabled = false;
+            } else {
+                button.textContent = tMenu('actions.translate', {}, 'Translate');
+                button.title = tMenu('actions.translateThis', {}, 'Translate this subtitle');
+            }
+        }
 
-      // Update footer stats
-      if (els.footerStats) {
-        const totalSubs = filtered.length;
-        const totalLangs = new Set(filtered.map(i => i.languageKey)).size;
+        function stopTranslationPoll(action) {
+            if (action && action.timer) {
+                clearTimeout(action.timer);
+                action.timer = null;
+            }
+        }
 
-        els.footerStats.innerHTML = `
+        function markTranslationActions(predicate, info = {}) {
+            translationActions.forEach((action) => {
+                if (typeof predicate === 'function' && !predicate(action)) return;
+                stopTranslationPoll(action);
+                action.status = 'ready';
+                action.downloadUrl = info.downloadUrl || action.downloadUrl || action.url;
+                action.cachedContent = info.cachedContent || action.cachedContent || '';
+                action.filename = info.filename || action.filename || '';
+                applyTranslationActionState(action);
+            });
+        }
+
+        function markTranslationActionReady(actionId, info = {}) {
+            if (!actionId) return;
+            markTranslationActions((action) => action.id === actionId, info);
+        }
+
+        function markTranslationLanguageReady(langKey, info = {}, options = {}) {
+            const normalized = normalizeTargetLangCode(langKey || '');
+            if (!normalized) return;
+            const targetActionId = options.actionId || null;
+            markTranslationActions((action) => {
+                const matchesLang = normalizeTargetLangCode(action.langKey) === normalized;
+                const matchesId = !targetActionId || action.id === targetActionId;
+                return matchesLang && matchesId;
+            }, info);
+        }
+
+        function syncTranslationActionsFromInventory(items) {
+            const present = new Set();
+            const readyLangs = new Map();
+            (items || []).forEach((it) => {
+                if (it && it.type === 'cached') {
+                    const langKey = normalizeTargetLangCode(it.languageKey || parseTargetLangFromSubtitle(it));
+                    if (langKey) readyLangs.set(langKey, it.url || '');
+                }
+            });
+
+            (items || []).forEach((it) => {
+                if (!it || !it.isTranslation) return;
+                present.add(it.id);
+                const action = ensureTranslationAction(it);
+                if (!action) return;
+                const langKey = normalizeTargetLangCode(action.langKey);
+                if (langKey && readyLangs.has(langKey)) {
+                    action.status = 'ready';
+                    action.downloadUrl = readyLangs.get(langKey) || action.downloadUrl || it.url;
+                    stopTranslationPoll(action);
+                    applyTranslationActionState(action);
+                }
+            });
+
+            translationActions.forEach((action, key) => {
+                if (!present.has(key)) {
+                    stopTranslationPoll(action);
+                    translationActions.delete(key);
+                }
+            });
+        }
+
+        function getBaseStatusMessage() {
+            const parts = [];
+            const streamLabel = normalizeStreamValue(config.filename) || normalizeStreamValue(config.videoId);
+            parts.push(streamLabel ? 'Stream: ' + streamLabel : 'Waiting for linked stream');
+            const hash = (typeof config.getVideoHash === 'function' ? config.getVideoHash() : config.videoHash) || '';
+            if (hash) parts.push('Hash ' + hash);
+            return parts.join(' | ') || 'Waiting for linked stream';
+        }
+
+        function setSubtitleMenuStatus(els, message, variant = 'muted', options = {}) {
+            if (!els.status) return;
+            const persist = options.persist === true;
+            if (subtitleMenuState.statusTimer) {
+                clearTimeout(subtitleMenuState.statusTimer);
+                subtitleMenuState.statusTimer = null;
+            }
+
+            const isBase = !message;
+            const statusText = isBase ? getBaseStatusMessage() : message;
+            const classes = ['subtitle-menu-status'];
+            if (variant === 'error') classes.push('error');
+            if (isBase) classes.push('base');
+            els.status.textContent = statusText || '';
+            els.status.className = classes.join(' ');
+            els.status.style.display = 'flex';
+            els.status.classList.add('show');
+
+            if (!isBase && !persist) {
+                subtitleMenuState.statusTimer = setTimeout(() => {
+                    subtitleMenuState.statusTimer = null;
+                    setSubtitleMenuStatus(els, '', 'muted', { persist: true });
+                }, 3200);
+            }
+        }
+
+        function parseTargetLangFromSubtitle(item) {
+            if (!item) return '';
+            if (item.id && typeof item.id === 'string') {
+                const match = item.id.match(/_to_([a-z0-9-]+)/i);
+                if (match && match[1]) return match[1];
+            }
+            const label = (item.languageLabel || item.label || '').toString();
+            if (label.toLowerCase().startsWith('make ')) {
+                return label.slice(5).trim();
+            }
+            return label.trim();
+        }
+
+        function deriveTargetOptionsFromSubtitles(items = []) {
+            const derived = [];
+            const seen = new Set();
+            items.forEach((item) => {
+                if (!item || item.type !== 'target') return;
+                const code = normalizeTargetLangCode(parseTargetLangFromSubtitle(item));
+                if (!code || seen.has(code)) return;
+                seen.add(code);
+                const prettyName = (item.languageLabel || item.label || '').replace(/^make\\s+/i, '').trim() || code;
+                derived.push({ code, name: prettyName, source: 'subtitles' });
+            });
+            return derived;
+        }
+
+        function hydrateTargetsFromSubtitleInventory(items) {
+            if (!Array.isArray(items) || !items.length) return;
+            const derived = deriveTargetOptionsFromSubtitles(items);
+            if (!derived.length) return;
+            const merged = mergeTargetOptions(config.targetOptions, derived);
+            config.targetOptions = merged;
+            rebuildLanguageSets();
+            if (config.onTargetsHydrated) {
+                config.onTargetsHydrated(merged);
+            }
+        }
+
+        function buildSubtitleMenuItem(item, index) {
+            const row = document.createElement('div');
+            row.className = 'subtitle-menu-item';
+
+            const meta = document.createElement('div');
+            meta.className = 'meta';
+            const labelEl = document.createElement('div');
+            labelEl.className = 'label';
+
+            // Add index badge if provided
+            if (typeof index === 'number' && index >= 0) {
+                const indexBadge = document.createElement('span');
+                indexBadge.className = 'label-index';
+                indexBadge.textContent = '#' + (index + 1);
+                labelEl.appendChild(indexBadge);
+            }
+
+            const labelText = document.createElement('span');
+            labelText.className = 'label-text';
+            labelText.textContent = item.label;
+            labelEl.appendChild(labelText);
+
+            const chipData = subtitleChipForType(item.type, item);
+            const chip = document.createElement('span');
+            chip.className = 'subtitle-menu-chip ' + chipData.cls;
+            chip.textContent = chipData.label;
+            meta.appendChild(labelEl);
+            meta.appendChild(chip);
+
+            let actionEl;
+            if (item.isTranslation) {
+                const button = document.createElement('button');
+                button.type = 'button';
+                button.className = 'subtitle-menu-link subtitle-menu-translate';
+                const action = ensureTranslationAction(item);
+                if (action) {
+                    action.button = button;
+                    applyTranslationActionState(action);
+                } else {
+                    button.textContent = tMenu('actions.translate', {}, 'Translate');
+                }
+                button.addEventListener('click', () => handleTranslationButtonClick(item));
+                actionEl = button;
+            } else {
+                const link = document.createElement('a');
+                link.className = 'subtitle-menu-link';
+                link.href = item.url;
+                link.target = '_blank';
+                link.rel = 'noopener';
+                link.textContent = tMenu('actions.downloadShort', {}, 'Download');
+                actionEl = link;
+            }
+
+            row.appendChild(meta);
+            row.appendChild(actionEl);
+            return row;
+        }
+
+        function buildLanguageCard(langEntry, openByDefault, container, groupType) {
+            const card = document.createElement('div');
+            card.className = 'subtitle-lang-card' + (openByDefault ? ' open' : '');
+            card.setAttribute('data-lang-key', langEntry.key || langEntry.label || '');
+            const header = document.createElement('button');
+            header.type = 'button';
+            header.className = 'subtitle-lang-header';
+
+            const meta = document.createElement('div');
+            meta.className = 'subtitle-lang-meta';
+            const title = document.createElement('div');
+            title.className = 'subtitle-lang-label';
+            title.textContent = langEntry.label;
+            const pill = document.createElement('div');
+            pill.className = 'subtitle-lang-pill';
+            const counts = langEntry.items.reduce((acc, itm) => {
+                acc[itm.type] = (acc[itm.type] || 0) + 1;
+                return acc;
+            }, {});
+
+            // Build styled pill tags instead of plain text
+            const tagOrder = ['source', 'target', 'cached', 'synced', 'learn'];
+            const tagLabels = { source: 'Source', target: 'Target', cached: 'xEmbed', synced: 'xSync', learn: 'Learn' };
+            let hasTags = false;
+            tagOrder.forEach((type) => {
+                if (counts[type]) {
+                    hasTags = true;
+                    const tag = document.createElement('span');
+                    tag.className = 'subtitle-lang-pill-tag ' + type;
+                    tag.textContent = counts[type] + ' ' + tagLabels[type];
+                    pill.appendChild(tag);
+                }
+            });
+            if (!hasTags) {
+                const defaultTag = document.createElement('span');
+                defaultTag.className = 'subtitle-lang-pill-tag';
+                defaultTag.textContent = 'Subtitles';
+                pill.appendChild(defaultTag);
+            }
+            meta.appendChild(title);
+            meta.appendChild(pill);
+
+            const right = document.createElement('div');
+            right.style.display = 'flex';
+            right.style.alignItems = 'center';
+            right.style.gap = '8px';
+            const count = document.createElement('span');
+            count.className = 'subtitle-lang-count';
+            count.textContent = langEntry.items.length;
+            const chevron = document.createElement('span');
+            chevron.className = 'subtitle-lang-chevron';
+            chevron.innerHTML =
+                '<svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="9 18 15 12 9 6"></polyline></svg>';
+            right.appendChild(count);
+            right.appendChild(chevron);
+
+            header.appendChild(meta);
+            header.appendChild(right);
+
+            const menu = document.createElement('div');
+            menu.className = 'subtitle-lang-menu';
+            const sortedItems = [...langEntry.items].sort((a, b) => a.label.localeCompare(b.label));
+            const languageCodeLabel = (() => {
+                const codeCandidate = (langEntry.items.find((it) => it.languageKey)?.languageKey || langEntry.key || '')
+                    .toString()
+                    .trim();
+                return codeCandidate ? codeCandidate.toUpperCase() : 'SUB';
+            })();
+            let sourceCounter = 0;
+            sortedItems.forEach((item, idx) => {
+                const isSourceType = item.type === 'source';
+                const displayItem =
+                    groupType === 'primary' && isSourceType
+                        ? Object.assign({}, item, { label: `${languageCodeLabel} - Subtitle ${sourceCounter + 1}` })
+                        : item;
+                if (isSourceType) sourceCounter += 1;
+                menu.appendChild(buildSubtitleMenuItem(displayItem, idx));
+            });
+
+            const toggle = () => {
+                const next = !card.classList.contains('open');
+                if (next && container) {
+                    const openSiblings = container.querySelectorAll('.subtitle-lang-card.open');
+                    openSiblings.forEach((el) => {
+                        if (el !== card) el.classList.remove('open');
+                    });
+                }
+                card.classList.toggle('open', next);
+            };
+            header.addEventListener('click', toggle);
+
+            card.appendChild(header);
+            card.appendChild(menu);
+            return card;
+        }
+
+        function getOpenCardKeys(container) {
+            const keys = new Set();
+            if (!container) return keys;
+            container.querySelectorAll('.subtitle-lang-card.open').forEach((el) => {
+                const key = el.getAttribute('data-lang-key');
+                if (key) keys.add(key);
+            });
+            return keys;
+        }
+
+        function setGroupOpenState(groupEl, toggleEl, open) {
+            if (!groupEl) return;
+            const next = open === true;
+            groupEl.classList.toggle('is-collapsed', !next);
+            groupEl.classList.toggle('is-open', next);
+            if (toggleEl) {
+                toggleEl.setAttribute('aria-expanded', next ? 'true' : 'false');
+            }
+        }
+
+        function toggleGroupState(groupEl, toggleEl) {
+            if (!groupEl) return;
+            const isCurrentlyOpen =
+                groupEl.classList.contains('is-open') && !groupEl.classList.contains('is-collapsed');
+            setGroupOpenState(groupEl, toggleEl, !isCurrentlyOpen);
+        }
+
+        function renderSubtitleMenu(items, els) {
+            if (!els.primaryList || !els.translationList) return;
+            const filtered = (items || []).filter(shouldDisplaySubtitle);
+            const grouped = groupSubtitlesByLanguage(filtered);
+
+            const renderList = (container, groupEl, map, groupType, countEl, toggleEl) => {
+                if (!container) return;
+                const openKeys = getOpenCardKeys(container);
+                container.innerHTML = '';
+                const languages = Array.from(map.values()).sort((a, b) => a.label.localeCompare(b.label));
+                const totalItems = languages.reduce((acc, lang) => acc + (lang.items?.length || 0), 0);
+                if (countEl) countEl.textContent = totalItems;
+
+                if (languages.length === 0) {
+                    if (groupEl) {
+                        groupEl.style.display = 'none';
+                        groupEl.setAttribute('aria-hidden', 'true');
+                        setGroupOpenState(groupEl, toggleEl, false);
+                    }
+                } else {
+                    if (groupEl) {
+                        groupEl.style.display = 'flex';
+                        groupEl.removeAttribute('aria-hidden');
+                        setGroupOpenState(groupEl, toggleEl, false);
+                    }
+                    languages.forEach((lang) =>
+                        container.appendChild(buildLanguageCard(lang, openKeys.has(lang.key), container, groupType))
+                    );
+                }
+            };
+
+            renderList(
+                els.primaryList,
+                els.primaryGroup,
+                grouped.primary,
+                'primary',
+                els.primaryCount,
+                els.primaryToggle
+            );
+            renderList(
+                els.translationList,
+                els.translationGroup,
+                grouped.translation,
+                'translation',
+                els.translationCount,
+                els.translationToggle
+            );
+            renderList(els.otherList, els.otherGroup, grouped.other, 'other', els.otherCount, els.otherToggle);
+
+            if (els.body) {
+                const hasAny = filtered.length > 0;
+                els.body.style.display = hasAny ? 'flex' : 'none';
+            }
+
+            // Update footer stats
+            if (els.footerStats) {
+                const totalSubs = filtered.length;
+                const totalLangs = new Set(filtered.map((i) => i.languageKey)).size;
+
+                els.footerStats.innerHTML = `
           <div class="subtitle-menu-stat" title="Total subtitles">
             <svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"></path></svg>
             ${totalSubs}
@@ -2037,428 +2145,455 @@
             ${totalLangs}
           </div>
         `;
-      }
+            }
 
-      if (els.footerTitle) {
-        const displayTitle = deriveStreamDisplayTitle();
-        if (displayTitle) {
-          els.footerTitle.textContent = displayTitle;
-          els.footerTitle.title = displayTitle;
-        }
-      }
-    }
-
-    function updateSubtitleMenuMeta(els) {
-      if (!els.substatus) return;
-      if (subtitleMenuState.loading) {
-        els.substatus.textContent = tMenu('meta.refreshing', {}, 'Refreshing...');
-        return;
-      }
-      if (subtitleMenuState.lastFetched) {
-        const elapsed = Math.max(0, Math.floor((Date.now() - subtitleMenuState.lastFetched) / 1000));
-        const recency = elapsed < 5
-          ? tMenu('meta.justNow', {}, 'just now')
-          : tMenu('meta.secondsAgo', { seconds: elapsed }, elapsed + 's ago');
-        els.substatus.textContent = tMenu('meta.updated', { time: recency }, 'Updated ' + recency);
-      } else {
-        els.substatus.textContent = config.labels.waiting;
-      }
-    }
-
-    function resetSubtitleInventoryState() {
-      subtitleInventory.items = [];
-      subtitleInventory.lastFetched = null;
-      subtitleInventory.promise = null;
-      subtitleInventory.streamSig = null;
-      subtitleInventory.promiseStreamSig = null;
-      translationActions.forEach(action => stopTranslationPoll(action));
-      translationActions.clear();
-      if (translationRefreshTimer) {
-        clearTimeout(translationRefreshTimer);
-        translationRefreshTimer = null;
-      }
-    }
-
-    async function loadSubtitleInventory(options = {}) {
-      const opts = typeof options === 'object' && options !== null ? options : {};
-      const force = opts.force === true;
-      const currentSig = deriveStreamSignature();
-
-      if (!hasValidStream()) {
-        throw new Error('Waiting for a valid stream before loading subtitles.');
-      }
-
-      if (subtitleInventory.streamSig && subtitleInventory.streamSig !== currentSig) {
-        resetSubtitleInventoryState();
-      }
-
-      if (subtitleInventory.promise && subtitleInventory.promiseStreamSig === currentSig) {
-        return subtitleInventory.promise;
-      }
-      if (!force && subtitleInventory.items.length && subtitleInventory.lastFetched && subtitleInventory.streamSig === currentSig) {
-        return Promise.resolve({
-          items: subtitleInventory.items,
-          fetchedAt: subtitleInventory.lastFetched,
-          fromCache: true
-        });
-      }
-      const fetchUrl = buildSubtitleFetchUrl();
-      if (!fetchUrl) {
-        throw new Error('No subtitle endpoint available for the current stream.');
-      }
-
-      subtitleInventory.promise = (async () => {
-        subtitleInventory.promiseStreamSig = currentSig;
-        const resp = await fetch(fetchUrl, { headers: { 'Accept': 'application/json' } });
-        if (!resp.ok) throw new Error('Request failed (' + resp.status + ')');
-        const data = await resp.json();
-        const normalized = Array.isArray(data?.subtitles) ? data.subtitles.map(normalizeSubtitleEntry) : [];
-        subtitleInventory.items = normalized;
-        subtitleInventory.lastFetched = Date.now();
-        subtitleInventory.streamSig = currentSig;
-        return { items: normalized, fetchedAt: subtitleInventory.lastFetched, fromCache: false };
-      })();
-      try {
-        return await subtitleInventory.promise;
-      } finally {
-        subtitleInventory.promise = null;
-        subtitleInventory.promiseStreamSig = null;
-      }
-    }
-
-    function queueSubtitleMenuRefresh(els) {
-      if (translationRefreshTimer) return;
-      translationRefreshTimer = setTimeout(() => {
-        translationRefreshTimer = null;
-        if (subtitleMenuState.loading) {
-          queueSubtitleMenuRefresh(els);
-          return;
-        }
-        fetchSubtitleMenuData(els, { silent: true, force: true });
-      }, 400);
-    }
-
-    function scheduleTranslationPoll(item, action, els, delay = 3500) {
-      stopTranslationPoll(action);
-      action.timer = setTimeout(() => requestTranslationStatus(item, els, { fromPoll: true }), delay);
-    }
-
-    function isTranslationLoadingMessage(text) {
-      const sample = (text || '').toLowerCase();
-      const marker = translate('subtitle.loadingTitle', {}, '').toLowerCase();
-      const tail = translate('subtitle.loadingTail', {}, '').toLowerCase();
-      return sample.includes('translation in progress')
-        || sample.includes('translation is happening in the background')
-        || sample.includes('please wait while the selected subtitle is being translated')
-        || sample.includes('click this subtitle again to confirm translation')
-        || sample.includes('reload this subtitle')
-        || (marker && sample.includes(marker))
-        || (tail && sample.includes(tail));
-    }
-
-    function parseDownloadFilename(resp, langKey) {
-      try {
-        const header = typeof resp?.headers?.get === 'function' ? resp.headers.get('Content-Disposition') : null;
-        if (header) {
-          const match = /filename[^=]*=\s*\"?([^\\";]+)/i.exec(header);
-          if (match && match[1]) return match[1].trim();
-        }
-      } catch (_) { }
-      const lang = normalizeTargetLangCode(langKey || '') || 'subtitle';
-      const hash = (config.getVideoHash ? config.getVideoHash() : config.videoHash || 'video') || 'video';
-      return (hash || 'video') + '_' + lang + '_translated.srt';
-    }
-
-    function triggerSubtitleDownload(content, filename) {
-      if (!content) return;
-      const blob = new Blob([content], { type: 'text/plain' });
-      const url = URL.createObjectURL(blob);
-      const link = document.createElement('a');
-      link.href = url;
-      link.download = filename || 'translated.srt';
-      document.body.appendChild(link);
-      link.click();
-      link.remove();
-      setTimeout(() => URL.revokeObjectURL(url), 500);
-    }
-
-    async function handleTranslationDownload(item) {
-      const action = ensureTranslationAction(item);
-      if (!action) return;
-      const filename = action.filename || parseDownloadFilename(null, action.langKey);
-      try {
-        if (action.cachedContent) {
-          triggerSubtitleDownload(action.cachedContent, filename);
-          return;
-        }
-        const url = action.downloadUrl || action.url || item.url;
-        if (!url) throw new Error('No download URL available');
-        const resp = await fetch(url, { cache: 'no-store' });
-        const text = await resp.text();
-        action.cachedContent = text;
-        action.filename = parseDownloadFilename(resp, action.langKey) || filename;
-        triggerSubtitleDownload(text, action.filename);
-      } catch (error) {
-        setSubtitleMenuStatus(elements, STATUS_LABELS.downloadFailed(error.message), 'error', { persist: true });
-      }
-    }
-
-    async function requestTranslationStatus(item, els, options = {}) {
-      const action = ensureTranslationAction(item);
-      if (!action || !action.url) return;
-      if (action.status === 'translating' && options.fromPoll !== true) {
-        return;
-      }
-      if (options.fromPoll !== true) {
-        action.pollAttempts = 0;
-      }
-      action.status = 'translating';
-      applyTranslationActionState(action);
-
-      try {
-        const resp = await fetch(action.url, { cache: 'no-store' });
-        const text = await resp.text();
-        const loading = resp.status === 202 || isTranslationLoadingMessage(text);
-        if (!resp.ok && resp.status !== 202) {
-          throw new Error('Request failed (' + resp.status + ')');
+            if (els.footerTitle) {
+                const displayTitle = deriveStreamDisplayTitle();
+                if (displayTitle) {
+                    els.footerTitle.textContent = displayTitle;
+                    els.footerTitle.title = displayTitle;
+                }
+            }
         }
 
-        if (loading) {
-          action.pollAttempts = (action.pollAttempts || 0) + 1;
-          setSubtitleMenuStatus(els, STATUS_LABELS.inProgress(action.label), 'muted');
-          if (action.pollAttempts >= 24) {
-            action.status = 'error';
-            action.lastError = tMenu('status.stillProcessing', {}, 'Still processing. Please retry shortly.');
+        function updateSubtitleMenuMeta(els) {
+            if (!els.substatus) return;
+            if (subtitleMenuState.loading) {
+                els.substatus.textContent = tMenu('meta.refreshing', {}, 'Refreshing...');
+                return;
+            }
+            if (subtitleMenuState.lastFetched) {
+                const elapsed = Math.max(0, Math.floor((Date.now() - subtitleMenuState.lastFetched) / 1000));
+                const recency =
+                    elapsed < 5
+                        ? tMenu('meta.justNow', {}, 'just now')
+                        : tMenu('meta.secondsAgo', { seconds: elapsed }, elapsed + 's ago');
+                els.substatus.textContent = tMenu('meta.updated', { time: recency }, 'Updated ' + recency);
+            } else {
+                els.substatus.textContent = config.labels.waiting;
+            }
+        }
+
+        function resetSubtitleInventoryState() {
+            subtitleInventory.items = [];
+            subtitleInventory.lastFetched = null;
+            subtitleInventory.promise = null;
+            subtitleInventory.streamSig = null;
+            subtitleInventory.promiseStreamSig = null;
+            translationActions.forEach((action) => stopTranslationPoll(action));
+            translationActions.clear();
+            if (translationRefreshTimer) {
+                clearTimeout(translationRefreshTimer);
+                translationRefreshTimer = null;
+            }
+        }
+
+        async function loadSubtitleInventory(options = {}) {
+            const opts = typeof options === 'object' && options !== null ? options : {};
+            const force = opts.force === true;
+            const currentSig = deriveStreamSignature();
+
+            if (!hasValidStream()) {
+                throw new Error('Waiting for a valid stream before loading subtitles.');
+            }
+
+            if (subtitleInventory.streamSig && subtitleInventory.streamSig !== currentSig) {
+                resetSubtitleInventoryState();
+            }
+
+            if (subtitleInventory.promise && subtitleInventory.promiseStreamSig === currentSig) {
+                return subtitleInventory.promise;
+            }
+            if (
+                !force &&
+                subtitleInventory.items.length &&
+                subtitleInventory.lastFetched &&
+                subtitleInventory.streamSig === currentSig
+            ) {
+                return Promise.resolve({
+                    items: subtitleInventory.items,
+                    fetchedAt: subtitleInventory.lastFetched,
+                    fromCache: true
+                });
+            }
+            const fetchUrl = buildSubtitleFetchUrl();
+            if (!fetchUrl) {
+                throw new Error('No subtitle endpoint available for the current stream.');
+            }
+
+            subtitleInventory.promise = (async () => {
+                subtitleInventory.promiseStreamSig = currentSig;
+                const resp = await fetch(fetchUrl, { headers: { Accept: 'application/json' } });
+                if (!resp.ok) throw new Error('Request failed (' + resp.status + ')');
+                const data = await resp.json();
+                const normalized = Array.isArray(data?.subtitles) ? data.subtitles.map(normalizeSubtitleEntry) : [];
+                subtitleInventory.items = normalized;
+                subtitleInventory.lastFetched = Date.now();
+                subtitleInventory.streamSig = currentSig;
+                return { items: normalized, fetchedAt: subtitleInventory.lastFetched, fromCache: false };
+            })();
+            try {
+                return await subtitleInventory.promise;
+            } finally {
+                subtitleInventory.promise = null;
+                subtitleInventory.promiseStreamSig = null;
+            }
+        }
+
+        function queueSubtitleMenuRefresh(els) {
+            if (translationRefreshTimer) return;
+            translationRefreshTimer = setTimeout(() => {
+                translationRefreshTimer = null;
+                if (subtitleMenuState.loading) {
+                    queueSubtitleMenuRefresh(els);
+                    return;
+                }
+                fetchSubtitleMenuData(els, { silent: true, force: true });
+            }, 400);
+        }
+
+        function scheduleTranslationPoll(item, action, els, delay = 3500) {
             stopTranslationPoll(action);
+            action.timer = setTimeout(() => requestTranslationStatus(item, els, { fromPoll: true }), delay);
+        }
+
+        function isTranslationLoadingMessage(text) {
+            const sample = (text || '').toLowerCase();
+            const marker = translate('subtitle.loadingTitle', {}, '').toLowerCase();
+            const tail = translate('subtitle.loadingTail', {}, '').toLowerCase();
+            return (
+                sample.includes('translation in progress') ||
+                sample.includes('translation is happening in the background') ||
+                sample.includes('please wait while the selected subtitle is being translated') ||
+                sample.includes('click this subtitle again to confirm translation') ||
+                sample.includes('reload this subtitle') ||
+                (marker && sample.includes(marker)) ||
+                (tail && sample.includes(tail))
+            );
+        }
+
+        function parseDownloadFilename(resp, langKey) {
+            try {
+                const header =
+                    typeof resp?.headers?.get === 'function' ? resp.headers.get('Content-Disposition') : null;
+                if (header) {
+                    const match = /filename[^=]*=\s*\"?([^\\";]+)/i.exec(header);
+                    if (match && match[1]) return match[1].trim();
+                }
+            } catch (_) {}
+            const lang = normalizeTargetLangCode(langKey || '') || 'subtitle';
+            const hash = (config.getVideoHash ? config.getVideoHash() : config.videoHash || 'video') || 'video';
+            return (hash || 'video') + '_' + lang + '_translated.srt';
+        }
+
+        function triggerSubtitleDownload(content, filename) {
+            if (!content) return;
+            const blob = new Blob([content], { type: 'text/plain' });
+            const url = URL.createObjectURL(blob);
+            const link = document.createElement('a');
+            link.href = url;
+            link.download = filename || 'translated.srt';
+            document.body.appendChild(link);
+            link.click();
+            link.remove();
+            setTimeout(() => URL.revokeObjectURL(url), 500);
+        }
+
+        async function handleTranslationDownload(item) {
+            const action = ensureTranslationAction(item);
+            if (!action) return;
+            const filename = action.filename || parseDownloadFilename(null, action.langKey);
+            try {
+                if (action.cachedContent) {
+                    triggerSubtitleDownload(action.cachedContent, filename);
+                    return;
+                }
+                const url = action.downloadUrl || action.url || item.url;
+                if (!url) throw new Error('No download URL available');
+                const resp = await fetch(url, { cache: 'no-store' });
+                const text = await resp.text();
+                action.cachedContent = text;
+                action.filename = parseDownloadFilename(resp, action.langKey) || filename;
+                triggerSubtitleDownload(text, action.filename);
+            } catch (error) {
+                setSubtitleMenuStatus(elements, STATUS_LABELS.downloadFailed(error.message), 'error', {
+                    persist: true
+                });
+            }
+        }
+
+        async function requestTranslationStatus(item, els, options = {}) {
+            const action = ensureTranslationAction(item);
+            if (!action || !action.url) return;
+            if (action.status === 'translating' && options.fromPoll !== true) {
+                return;
+            }
+            if (options.fromPoll !== true) {
+                action.pollAttempts = 0;
+            }
+            action.status = 'translating';
             applyTranslationActionState(action);
-            return;
-          }
-          scheduleTranslationPoll(item, action, els);
-          return;
+
+            try {
+                const resp = await fetch(action.url, { cache: 'no-store' });
+                const text = await resp.text();
+                const loading = resp.status === 202 || isTranslationLoadingMessage(text);
+                if (!resp.ok && resp.status !== 202) {
+                    throw new Error('Request failed (' + resp.status + ')');
+                }
+
+                if (loading) {
+                    action.pollAttempts = (action.pollAttempts || 0) + 1;
+                    setSubtitleMenuStatus(els, STATUS_LABELS.inProgress(action.label), 'muted');
+                    if (action.pollAttempts >= 24) {
+                        action.status = 'error';
+                        action.lastError = tMenu(
+                            'status.stillProcessing',
+                            {},
+                            'Still processing. Please retry shortly.'
+                        );
+                        stopTranslationPoll(action);
+                        applyTranslationActionState(action);
+                        return;
+                    }
+                    scheduleTranslationPoll(item, action, els);
+                    return;
+                }
+
+                action.status = 'ready';
+                action.cachedContent = text;
+                action.filename = parseDownloadFilename(resp, action.langKey);
+                action.pollAttempts = 0;
+                applyTranslationActionState(action);
+                markTranslationActionReady(action.id, {
+                    downloadUrl: action.downloadUrl || action.url,
+                    cachedContent: text,
+                    filename: action.filename
+                });
+                queueSubtitleMenuRefresh(els);
+                setSubtitleMenuStatus(els, STATUS_LABELS.ready(action.label), 'muted');
+            } catch (error) {
+                action.status = 'error';
+                action.lastError = error.message || STATUS_LABELS.translationFailedShort;
+                stopTranslationPoll(action);
+                applyTranslationActionState(action);
+                setSubtitleMenuStatus(els, STATUS_LABELS.failed(action.lastError), 'error', { persist: true });
+            }
         }
 
-        action.status = 'ready';
-        action.cachedContent = text;
-        action.filename = parseDownloadFilename(resp, action.langKey);
-        action.pollAttempts = 0;
-        applyTranslationActionState(action);
-        markTranslationActionReady(action.id, {
-          downloadUrl: action.downloadUrl || action.url,
-          cachedContent: text,
-          filename: action.filename
-        });
-        queueSubtitleMenuRefresh(els);
-        setSubtitleMenuStatus(els, STATUS_LABELS.ready(action.label), 'muted');
-      } catch (error) {
-        action.status = 'error';
-        action.lastError = error.message || STATUS_LABELS.translationFailedShort;
-        stopTranslationPoll(action);
-        applyTranslationActionState(action);
-        setSubtitleMenuStatus(els, STATUS_LABELS.failed(action.lastError), 'error', { persist: true });
-      }
-    }
-
-    function handleTranslationButtonClick(item) {
-      const action = ensureTranslationAction(item);
-      if (!action) return;
-      if (action.status === 'translating') return;
-      if (action.status === 'ready') {
-        handleTranslationDownload(item);
-        return;
-      }
-      requestTranslationStatus(item, elements, { fromPoll: false });
-    }
-
-    function renderMenuFromState(els) {
-      renderSubtitleMenu(subtitleMenuState.items, els);
-      updateSubtitleMenuMeta(els);
-    }
-
-    async function fetchSubtitleMenuData(els, silentOrOptions = false) {
-      const opts = typeof silentOrOptions === 'object' && silentOrOptions !== null
-        ? silentOrOptions
-        : { silent: !!silentOrOptions };
-      const silent = opts.silent === true;
-      const force = opts.force === true;
-      if (!hasValidStream()) {
-        setSubtitleMenuStatus(els, STATUS_LABELS.waitingStream, 'muted', { persist: true });
-        return;
-      }
-      subtitleMenuState.loading = true;
-      els.toggle?.classList.add('is-loading');
-      updateSubtitleMenuMeta(els);
-      if (!silent) setSubtitleMenuStatus(els, STATUS_LABELS.loading, 'muted');
-      const panelOpen = subtitleMenuState.open && els.panel?.classList.contains('show');
-      const shouldShowInitialNotice = panelOpen && !subtitleMenuState.hasShownInitialNotice;
-      const shouldShowActiveNotice = panelOpen && !silent;
-      try {
-        const { items: normalized, fetchedAt, fromCache } = await loadSubtitleInventory({ force });
-        const visibleCount = normalized.filter(shouldDisplaySubtitle).length;
-        subtitleMenuState.items = normalized;
-        subtitleMenuState.lastFetched = fetchedAt || Date.now();
-        syncTranslationActionsFromInventory(normalized);
-        hydrateTargetsFromSubtitleInventory(normalized);
-        const canShow = shouldShowInitialNotice || shouldShowActiveNotice || !subtitleMenuState.hasFetchedOnce;
-        if (visibleCount) {
-          if (canShow && (!fromCache || !subtitleMenuState.hasFetchedOnce || force)) {
-            setSubtitleMenuStatus(els, STATUS_LABELS.loaded(visibleCount));
-            if (shouldShowInitialNotice) subtitleMenuState.hasShownInitialNotice = true;
-          } else {
-            setSubtitleMenuStatus(els, '', 'muted');
-          }
-        } else if (canShow && (!fromCache || !subtitleMenuState.hasFetchedOnce || force)) {
-          setSubtitleMenuStatus(els, STATUS_LABELS.none);
-          if (shouldShowInitialNotice) subtitleMenuState.hasShownInitialNotice = true;
-        } else {
-          setSubtitleMenuStatus(els, '', 'muted');
+        function handleTranslationButtonClick(item) {
+            const action = ensureTranslationAction(item);
+            if (!action) return;
+            if (action.status === 'translating') return;
+            if (action.status === 'ready') {
+                handleTranslationDownload(item);
+                return;
+            }
+            requestTranslationStatus(item, elements, { fromPoll: false });
         }
-        renderMenuFromState(els);
-        subtitleMenuState.hasFetchedOnce = true;
-      } catch (err) {
-        setSubtitleMenuStatus(els, tMenu('status.loadError', { reason: err.message }, 'Could not load subtitles: ' + err.message), 'error', { persist: true });
-        subtitleMenuState.items = [];
-        translationActions.forEach(action => stopTranslationPoll(action));
-        translationActions.clear();
-        renderMenuFromState(els);
-        subtitleMenuState.hasFetchedOnce = true;
-      } finally {
-        subtitleMenuState.loading = false;
-        els.toggle?.classList.remove('is-loading');
-        updateSubtitleMenuMeta(els);
-      }
-    }
 
-    function toggleSubtitleMenu(els, forceOpen) {
-      const nextOpen = typeof forceOpen === 'boolean' ? !!forceOpen : !subtitleMenuState.open;
-      subtitleMenuState.open = nextOpen;
-      if (els.panel) {
-        els.panel.classList.toggle('show', subtitleMenuState.open);
-        els.panel.setAttribute('aria-hidden', subtitleMenuState.open ? 'false' : 'true');
-      }
-      if (subtitleMenuState.open) {
-        if (!subtitleMenuState.loading) {
-          fetchSubtitleMenuData(els, { silent: true });
+        function renderMenuFromState(els) {
+            renderSubtitleMenu(subtitleMenuState.items, els);
+            updateSubtitleMenuMeta(els);
         }
-        if (!subtitleMenuState.hasShownInitialNotice && subtitleMenuState.items.length) {
-          const visibleCount = subtitleMenuState.items.filter(shouldDisplaySubtitle).length;
-          if (visibleCount) {
-            setSubtitleMenuStatus(els, STATUS_LABELS.loaded(visibleCount));
-            subtitleMenuState.hasShownInitialNotice = true;
-          } else if (subtitleMenuState.hasFetchedOnce) {
-            setSubtitleMenuStatus(els, STATUS_LABELS.none);
-            subtitleMenuState.hasShownInitialNotice = true;
-          }
+
+        async function fetchSubtitleMenuData(els, silentOrOptions = false) {
+            const opts =
+                typeof silentOrOptions === 'object' && silentOrOptions !== null
+                    ? silentOrOptions
+                    : { silent: !!silentOrOptions };
+            const silent = opts.silent === true;
+            const force = opts.force === true;
+            if (!hasValidStream()) {
+                setSubtitleMenuStatus(els, STATUS_LABELS.waitingStream, 'muted', { persist: true });
+                return;
+            }
+            subtitleMenuState.loading = true;
+            els.toggle?.classList.add('is-loading');
+            updateSubtitleMenuMeta(els);
+            if (!silent) setSubtitleMenuStatus(els, STATUS_LABELS.loading, 'muted');
+            const panelOpen = subtitleMenuState.open && els.panel?.classList.contains('show');
+            const shouldShowInitialNotice = panelOpen && !subtitleMenuState.hasShownInitialNotice;
+            const shouldShowActiveNotice = panelOpen && !silent;
+            try {
+                const { items: normalized, fetchedAt, fromCache } = await loadSubtitleInventory({ force });
+                const visibleCount = normalized.filter(shouldDisplaySubtitle).length;
+                subtitleMenuState.items = normalized;
+                subtitleMenuState.lastFetched = fetchedAt || Date.now();
+                syncTranslationActionsFromInventory(normalized);
+                hydrateTargetsFromSubtitleInventory(normalized);
+                const canShow = shouldShowInitialNotice || shouldShowActiveNotice || !subtitleMenuState.hasFetchedOnce;
+                if (visibleCount) {
+                    if (canShow && (!fromCache || !subtitleMenuState.hasFetchedOnce || force)) {
+                        setSubtitleMenuStatus(els, STATUS_LABELS.loaded(visibleCount));
+                        if (shouldShowInitialNotice) subtitleMenuState.hasShownInitialNotice = true;
+                    } else {
+                        setSubtitleMenuStatus(els, '', 'muted');
+                    }
+                } else if (canShow && (!fromCache || !subtitleMenuState.hasFetchedOnce || force)) {
+                    setSubtitleMenuStatus(els, STATUS_LABELS.none);
+                    if (shouldShowInitialNotice) subtitleMenuState.hasShownInitialNotice = true;
+                } else {
+                    setSubtitleMenuStatus(els, '', 'muted');
+                }
+                renderMenuFromState(els);
+                subtitleMenuState.hasFetchedOnce = true;
+            } catch (err) {
+                setSubtitleMenuStatus(
+                    els,
+                    tMenu('status.loadError', { reason: err.message }, 'Could not load subtitles: ' + err.message),
+                    'error',
+                    { persist: true }
+                );
+                subtitleMenuState.items = [];
+                translationActions.forEach((action) => stopTranslationPoll(action));
+                translationActions.clear();
+                renderMenuFromState(els);
+                subtitleMenuState.hasFetchedOnce = true;
+            } finally {
+                subtitleMenuState.loading = false;
+                els.toggle?.classList.remove('is-loading');
+                updateSubtitleMenuMeta(els);
+            }
         }
-      } else {
-        setSubtitleMenuStatus(els, '');
-      }
+
+        function toggleSubtitleMenu(els, forceOpen) {
+            const nextOpen = typeof forceOpen === 'boolean' ? !!forceOpen : !subtitleMenuState.open;
+            subtitleMenuState.open = nextOpen;
+            if (els.panel) {
+                els.panel.classList.toggle('show', subtitleMenuState.open);
+                els.panel.setAttribute('aria-hidden', subtitleMenuState.open ? 'false' : 'true');
+            }
+            if (subtitleMenuState.open) {
+                if (!subtitleMenuState.loading) {
+                    fetchSubtitleMenuData(els, { silent: true });
+                }
+                if (!subtitleMenuState.hasShownInitialNotice && subtitleMenuState.items.length) {
+                    const visibleCount = subtitleMenuState.items.filter(shouldDisplaySubtitle).length;
+                    if (visibleCount) {
+                        setSubtitleMenuStatus(els, STATUS_LABELS.loaded(visibleCount));
+                        subtitleMenuState.hasShownInitialNotice = true;
+                    } else if (subtitleMenuState.hasFetchedOnce) {
+                        setSubtitleMenuStatus(els, STATUS_LABELS.none);
+                        subtitleMenuState.hasShownInitialNotice = true;
+                    }
+                }
+            } else {
+                setSubtitleMenuStatus(els, '');
+            }
+        }
+
+        function handleStreamUpdate(payload, els) {
+            const nextSig = deriveStreamSignature(payload || {});
+            const currentSig = deriveStreamSignature();
+            if (!nextSig || nextSig === currentSig) return;
+
+            config.videoId = normalizeStreamValue(payload.videoId) || config.videoId;
+            config.filename = normalizeStreamValue(payload.filename) || config.filename;
+            config.videoHash = normalizeStreamValue(payload.videoHash) || config.videoHash;
+            config.targetOptions = Array.isArray(options.targetOptions) ? [...options.targetOptions] : [];
+            config.sourceLanguages = Array.isArray(options.sourceLanguages)
+                ? normalizeLanguageList(options.sourceLanguages)
+                : config.sourceLanguages;
+            config.targetLanguages = Array.isArray(options.targetLanguages)
+                ? normalizeLanguageList(options.targetLanguages)
+                : config.targetLanguages;
+            rebuildLanguageSets();
+            streamMeta.title = '';
+            streamMeta.episodeTag = '';
+            streamMeta.parsed = parseStremioId(config.videoId);
+
+            resetSubtitleInventoryState();
+            subtitleMenuState.items = [];
+            subtitleMenuState.lastFetched = null;
+            subtitleMenuState.hasFetchedOnce = false;
+            subtitleMenuState.hasShownInitialNotice = false;
+            renderMenuFromState(els);
+            updateSubtitleMenuMeta(els);
+            setSubtitleMenuStatus(els, '', 'muted', { persist: true });
+            hydrateStreamMetadata(els).catch(() => {});
+            if (config.onTargetsHydrated) {
+                config.onTargetsHydrated(config.targetOptions);
+            }
+            loadSubtitleInventory({ force: false }).catch(() => {});
+            if (subtitleMenuState.open) {
+                fetchSubtitleMenuData(els, { silent: true });
+            }
+        }
+
+        injectStyles();
+        // Guard against unexpected ReferenceErrors during markup creation (e.g., partial loads)
+        let elements;
+        try {
+            elements = createMarkup(config.labels, config);
+        } catch (err) {
+            console.warn('Subtitle menu markup creation failed', err, { options });
+            return {
+                prefetch: () => {},
+                refresh: () => {},
+                toggle: () => {},
+                updateStream: () => {},
+                notify: () => {},
+                getTargets: () => config.targetOptions.slice(),
+                destroy: () => {}
+            };
+        }
+
+        if (elements.toggle) {
+            elements.toggle.addEventListener('click', () => toggleSubtitleMenu(elements));
+        }
+        if (elements.close) {
+            elements.close.addEventListener('click', () => toggleSubtitleMenu(elements, false));
+        }
+        if (elements.refresh) {
+            elements.refresh.addEventListener('click', () =>
+                fetchSubtitleMenuData(elements, { silent: false, force: true })
+            );
+        }
+
+        const attachGroupToggle = (toggleEl, groupEl) => {
+            if (!toggleEl || !groupEl) return;
+            toggleEl.addEventListener('click', () => toggleGroupState(groupEl, toggleEl));
+        };
+        attachGroupToggle(elements.primaryToggle, elements.primaryGroup);
+        attachGroupToggle(elements.translationToggle, elements.translationGroup);
+        attachGroupToggle(elements.otherToggle, elements.otherGroup);
+        setGroupOpenState(elements.primaryGroup, elements.primaryToggle, false);
+        setGroupOpenState(elements.translationGroup, elements.translationToggle, false);
+        setGroupOpenState(elements.otherGroup, elements.otherToggle, false);
+
+        updateSubtitleMenuMeta(elements);
+        setSubtitleMenuStatus(elements, '', 'muted', { persist: true });
+        hydrateStreamMetadata(elements).catch(() => {});
+
+        if (hasValidStream()) {
+            loadSubtitleInventory({ force: false })
+                .then((result) => {
+                    hydrateTargetsFromSubtitleInventory((result && result.items) || []);
+                })
+                .catch(() => {});
+        }
+
+        const api = {
+            refresh: (opts) => fetchSubtitleMenuData(elements, opts || { silent: false, force: true }),
+            prefetch: () => loadSubtitleInventory({ force: false }).catch(() => {}),
+            toggle: (open) => toggleSubtitleMenu(elements, open),
+            updateStream: (payload) => handleStreamUpdate(payload, elements),
+            notify: (message, variant = 'muted', options = {}) => {
+                const opts = Object.assign({ persist: true }, options || {});
+                setSubtitleMenuStatus(elements, message, variant, opts);
+            },
+            getTargets: () => config.targetOptions.slice(),
+            destroy: () => {
+                setSubtitleMenuStatus(elements, '');
+                if (elements.toggle) elements.toggle.remove();
+                if (elements.panel) elements.panel.remove();
+                resetSubtitleInventoryState();
+            }
+        };
+
+        return api;
     }
 
-    function handleStreamUpdate(payload, els) {
-      const nextSig = deriveStreamSignature(payload || {});
-      const currentSig = deriveStreamSignature();
-      if (!nextSig || nextSig === currentSig) return;
-
-      config.videoId = normalizeStreamValue(payload.videoId) || config.videoId;
-      config.filename = normalizeStreamValue(payload.filename) || config.filename;
-      config.videoHash = normalizeStreamValue(payload.videoHash) || config.videoHash;
-      config.targetOptions = Array.isArray(options.targetOptions) ? [...options.targetOptions] : [];
-      config.sourceLanguages = Array.isArray(options.sourceLanguages) ? normalizeLanguageList(options.sourceLanguages) : config.sourceLanguages;
-      config.targetLanguages = Array.isArray(options.targetLanguages) ? normalizeLanguageList(options.targetLanguages) : config.targetLanguages;
-      rebuildLanguageSets();
-      streamMeta.title = '';
-      streamMeta.episodeTag = '';
-      streamMeta.parsed = parseStremioId(config.videoId);
-
-      resetSubtitleInventoryState();
-      subtitleMenuState.items = [];
-      subtitleMenuState.lastFetched = null;
-      subtitleMenuState.hasFetchedOnce = false;
-      subtitleMenuState.hasShownInitialNotice = false;
-      renderMenuFromState(els);
-      updateSubtitleMenuMeta(els);
-      setSubtitleMenuStatus(els, '', 'muted', { persist: true });
-      hydrateStreamMetadata(els).catch(() => { });
-      if (config.onTargetsHydrated) {
-        config.onTargetsHydrated(config.targetOptions);
-      }
-      loadSubtitleInventory({ force: false }).catch(() => { });
-      if (subtitleMenuState.open) {
-        fetchSubtitleMenuData(els, { silent: true });
-      }
-    }
-
-    injectStyles();
-    // Guard against unexpected ReferenceErrors during markup creation (e.g., partial loads)
-    let elements;
-    try {
-      elements = createMarkup(config.labels, config);
-    } catch (err) {
-      console.warn('Subtitle menu markup creation failed', err, { options });
-      return {
-        prefetch: () => { },
-        refresh: () => { },
-        toggle: () => { },
-        updateStream: () => { },
-        notify: () => { },
-        getTargets: () => config.targetOptions.slice(),
-        destroy: () => { }
-      };
-    }
-
-    if (elements.toggle) {
-      elements.toggle.addEventListener('click', () => toggleSubtitleMenu(elements));
-    }
-    if (elements.close) {
-      elements.close.addEventListener('click', () => toggleSubtitleMenu(elements, false));
-    }
-    if (elements.refresh) {
-      elements.refresh.addEventListener('click', () => fetchSubtitleMenuData(elements, { silent: false, force: true }));
-    }
-
-    const attachGroupToggle = (toggleEl, groupEl) => {
-      if (!toggleEl || !groupEl) return;
-      toggleEl.addEventListener('click', () => toggleGroupState(groupEl, toggleEl));
-    };
-    attachGroupToggle(elements.primaryToggle, elements.primaryGroup);
-    attachGroupToggle(elements.translationToggle, elements.translationGroup);
-    attachGroupToggle(elements.otherToggle, elements.otherGroup);
-    setGroupOpenState(elements.primaryGroup, elements.primaryToggle, false);
-    setGroupOpenState(elements.translationGroup, elements.translationToggle, false);
-    setGroupOpenState(elements.otherGroup, elements.otherToggle, false);
-
-    updateSubtitleMenuMeta(elements);
-    setSubtitleMenuStatus(elements, '', 'muted', { persist: true });
-    hydrateStreamMetadata(elements).catch(() => { });
-
-    if (hasValidStream()) {
-      loadSubtitleInventory({ force: false })
-        .then(result => {
-          hydrateTargetsFromSubtitleInventory((result && result.items) || []);
-        })
-        .catch(() => { });
-    }
-
-    const api = {
-      refresh: (opts) => fetchSubtitleMenuData(elements, opts || { silent: false, force: true }),
-      prefetch: () => loadSubtitleInventory({ force: false }).catch(() => { }),
-      toggle: (open) => toggleSubtitleMenu(elements, open),
-      updateStream: (payload) => handleStreamUpdate(payload, elements),
-      notify: (message, variant = 'muted', options = {}) => {
-        const opts = Object.assign({ persist: true }, options || {});
-        setSubtitleMenuStatus(elements, message, variant, opts);
-      },
-      getTargets: () => config.targetOptions.slice(),
-      destroy: () => {
-        setSubtitleMenuStatus(elements, '');
-        if (elements.toggle) elements.toggle.remove();
-        if (elements.panel) elements.panel.remove();
-        resetSubtitleInventoryState();
-      }
-    };
-
-    return api;
-  }
-
-  global.SubtitleMenu = { mount: (options) => createSubtitleMenu(options) };
+    global.SubtitleMenu = { mount: (options) => createSubtitleMenu(options) };
 })(typeof window !== 'undefined' ? window : globalThis);

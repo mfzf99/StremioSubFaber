@@ -41,7 +41,9 @@ function persistPassword(passwordFile, password) {
         ensurePasswordDirectory(passwordFile);
         fs.writeFileSync(passwordFile, password, { mode: 0o600 });
         log.warn(() => ['[RedisHelper] Generated new Redis password and saved to:', passwordFile]);
-        log.warn(() => '[RedisHelper] Persist this file (volume/bind mount) so Redis stays accessible across restarts.');
+        log.warn(
+            () => '[RedisHelper] Persist this file (volume/bind mount) so Redis stays accessible across restarts.'
+        );
     } catch (err) {
         log.error(() => ['[RedisHelper] Failed to persist Redis password to file:', err.message]);
         throw err;

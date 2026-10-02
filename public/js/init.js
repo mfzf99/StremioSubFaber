@@ -1,4 +1,4 @@
-(function() {
+(function () {
     'use strict';
 
     function translate(key, vars, fallback) {
@@ -20,17 +20,19 @@
             const base = new URL(src, window.location.origin);
             const pageParams = new URLSearchParams(window.location.search || '');
             const existing = base.searchParams.get('_cb') || base.searchParams.get('v');
-            const bootVersion = (typeof window !== 'undefined' && typeof window.__APP_VERSION__ === 'string')
-                ? window.__APP_VERSION__.trim()
-                : '';
+            const bootVersion =
+                typeof window !== 'undefined' && typeof window.__APP_VERSION__ === 'string'
+                    ? window.__APP_VERSION__.trim()
+                    : '';
             const cb = existing || pageParams.get('_cb') || pageParams.get('v') || bootVersion || String(Date.now());
             base.searchParams.set('_cb', cb);
             return base.pathname + base.search;
         } catch (_) {
             const sep = src.includes('?') ? '&' : '?';
-            const bootVersion = (typeof window !== 'undefined' && typeof window.__APP_VERSION__ === 'string')
-                ? window.__APP_VERSION__.trim()
-                : '';
+            const bootVersion =
+                typeof window !== 'undefined' && typeof window.__APP_VERSION__ === 'string'
+                    ? window.__APP_VERSION__.trim()
+                    : '';
             return src + sep + '_cb=' + (bootVersion || Date.now());
         }
     }
@@ -44,19 +46,23 @@
         const bustedSrc = withCacheBuster(src);
 
         return fetch(bustedSrc, { cache: 'no-store', signal: controller.signal })
-            .then(function(res) {
+            .then(function (res) {
                 if (!res.ok) {
-                    const message = translate('config.partials.loadError', { src: src, status: res.status }, 'Failed to load partial: ' + src + ' (' + res.status + ')');
+                    const message = translate(
+                        'config.partials.loadError',
+                        { src: src, status: res.status },
+                        'Failed to load partial: ' + src + ' (' + res.status + ')'
+                    );
                     throw new Error(message);
                 }
                 return res.text();
             })
-            .catch(function(err) {
+            .catch(function (err) {
                 console.error(err);
                 const fallback = translate('config.partials.loadFallback', { src: src }, 'Failed to load ' + src);
                 return '<div style="padding:1rem; color:#ef4444;">' + fallback + '</div>';
             })
-            .finally(function() {
+            .finally(function () {
                 clearTimeout(timeout);
             });
     }
@@ -74,7 +80,7 @@
     }
 
     const targets = Array.prototype.slice.call(document.querySelectorAll('[data-include]'));
-    const entries = targets.map(function(el) {
+    const entries = targets.map(function (el) {
         return {
             el,
             priority: getPriority(el),
@@ -85,22 +91,26 @@
 
     function applyEntry(entry) {
         if (entry.applied) return entry.applied;
-        entry.applied = entry.fetchPromise.then(function(html) {
+        entry.applied = entry.fetchPromise.then(function (html) {
             applyPartial(entry.el, html);
         });
         return entry.applied;
     }
 
-    const prioritized = entries.slice().sort(function(a, b) { return a.priority - b.priority; });
-    const mainEntry = prioritized.find(function(e) { return e.priority === 0; });
+    const prioritized = entries.slice().sort(function (a, b) {
+        return a.priority - b.priority;
+    });
+    const mainEntry = prioritized.find(function (e) {
+        return e.priority === 0;
+    });
 
     // Render main content ASAP while keeping fetches parallel for the rest.
     const mainReady = mainEntry ? applyEntry(mainEntry) : Promise.resolve();
-    const ready = (async function() {
+    const ready = (async function () {
         for (const entry of prioritized) {
             await applyEntry(entry);
         }
-    })().catch(function(err) {
+    })().catch(function (err) {
         console.error(err);
     });
 

@@ -1,5 +1,5 @@
 function quickNavStyles() {
-  return `
+    return `
     .quick-nav {
       position: sticky;
       top: 2rem;
@@ -318,12 +318,18 @@ function quickNavStyles() {
   `;
 }
 
-function renderQuickNav(links, activeKey, showRefreshButton = true, devMode = true, t = (k, vars, fallback) => fallback || k) {
-  const devDisabled = devMode !== true ? ' dev-disabled' : '';
-  const devOnlyHref = (href) => devMode ? href : '#';
-  const label = (key, fallback, vars) => t(`nav.${key}`, vars || {}, fallback);
-  const mobileMenuLabel = label('mobileMenu', 'Open menu');
-  return `
+function renderQuickNav(
+    links,
+    activeKey,
+    showRefreshButton = true,
+    devMode = true,
+    t = (k, vars, fallback) => fallback || k
+) {
+    const devDisabled = devMode !== true ? ' dev-disabled' : '';
+    const devOnlyHref = (href) => (devMode ? href : '#');
+    const label = (key, fallback, vars) => t(`nav.${key}`, vars || {}, fallback);
+    const mobileMenuLabel = label('mobileMenu', 'Open menu');
+    return `
   <button class="mobile-menu-toggle" id="mobileMenuToggle" aria-label="${mobileMenuLabel}" title="${mobileMenuLabel}">
     <span></span>
     <span></span>
@@ -332,10 +338,14 @@ function renderQuickNav(links, activeKey, showRefreshButton = true, devMode = tr
   <div class="mobile-nav-overlay" id="mobileNavOverlay"></div>
   <nav class="quick-nav" id="quickNav">
     <div class="quick-nav-links">
-      ${showRefreshButton ? `<button type="button" class="quick-nav-link quick-nav-refresh" id="quickNavRefresh" title="${label('refreshTitle', 'Jump to your latest stream')}">
+      ${
+          showRefreshButton
+              ? `<button type="button" class="quick-nav-link quick-nav-refresh" id="quickNavRefresh" title="${label('refreshTitle', 'Jump to your latest stream')}">
         <span class="refresh-icon">⟳</span>
         <span class="refresh-label">${label('refresh', 'Refresh stream')}</span>
-      </button>` : ''}
+      </button>`
+              : ''
+      }
       <a class="quick-nav-link${activeKey === 'subToolbox' ? ' active' : ''}" href="${links.subToolbox}">
         <span>🧰</span>
         <span>${label('subToolbox', 'Sub Toolbox')}</span>
@@ -380,7 +390,7 @@ function renderQuickNav(links, activeKey, showRefreshButton = true, devMode = tr
 }
 
 function quickNavScript() {
-  return `
+    return `
     // Capture page load time for stream staleness guards.
     // initStreamWatcher uses this to suppress toasts for streams first detected
     // before this page was opened (prevents phantom notifications from stale cache).
@@ -1132,8 +1142,8 @@ function quickNavScript() {
 }
 
 function renderRefreshBadge(t = (k, vars, fallback) => fallback || k) {
-  const label = (key, fallback, vars) => t(`nav.${key}`, vars || {}, fallback);
-  return `
+    const label = (key, fallback, vars) => t(`nav.${key}`, vars || {}, fallback);
+    return `
     <button type="button" class="quick-nav-link quick-nav-refresh" id="quickNavRefresh" title="${label('refreshTitle', 'Jump to your latest stream')}">
       <span class="refresh-icon">⟳</span>
       <span class="refresh-label">${label('refresh', 'Refresh stream')}</span>
@@ -1142,8 +1152,8 @@ function renderRefreshBadge(t = (k, vars, fallback) => fallback || k) {
 }
 
 module.exports = {
-  quickNavStyles,
-  quickNavScript,
-  renderQuickNav,
-  renderRefreshBadge
+    quickNavStyles,
+    quickNavScript,
+    renderQuickNav,
+    renderRefreshBadge
 };

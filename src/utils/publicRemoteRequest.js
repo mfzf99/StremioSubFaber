@@ -42,26 +42,21 @@ const publicHttpsAgent = new https.Agent({
  * so a call site cannot accidentally override them.
  */
 function createPublicRemoteRequestConfig(rawUrl, requestConfig = {}, policy = {}) {
-    const allowedProtocols = policy.requireHttps === true
-        ? ['https:']
-        : ['http:', 'https:'];
+    const allowedProtocols = policy.requireHttps === true ? ['https:'] : ['http:', 'https:'];
     assertSafePublicRequestUrl(rawUrl, {
         allowedProtocols,
         context: policy.context || 'remote subtitle'
     });
 
-    const configuredLimit = Number.isSafeInteger(policy.maxBytes) && policy.maxBytes > 0
-        ? policy.maxBytes
-        : MAX_REMOTE_SUBTITLE_BYTES;
+    const configuredLimit =
+        Number.isSafeInteger(policy.maxBytes) && policy.maxBytes > 0 ? policy.maxBytes : MAX_REMOTE_SUBTITLE_BYTES;
 
     return {
         ...requestConfig,
         httpAgent: publicHttpAgent,
         httpsAgent: publicHttpsAgent,
         lookup: publicLookup,
-        beforeRedirect: policy.requireHttps === true
-            ? publicHttpsRedirectValidator
-            : publicRedirectValidator,
+        beforeRedirect: policy.requireHttps === true ? publicHttpsRedirectValidator : publicRedirectValidator,
         proxy: false,
         maxRedirects: 5,
         decompress: true,

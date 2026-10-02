@@ -1,166 +1,220 @@
-<!DOCTYPE html>
+<!doctype html>
 <html lang="en">
+    <head>
+        <meta charset="UTF-8" />
+        <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+        <title data-i18n="config.documentTitle">SubFaber - Configure</title>
+        <!-- Favicon -->
+        <link rel="icon" type="image/svg+xml" href="/favicon.svg?_cb=__APP_VERSION_QUERY__" />
+        <link rel="apple-touch-icon" href="/favicon.svg?_cb=__APP_VERSION_QUERY__" />
+        <script>
+            window.__APP_VERSION__ = __APP_VERSION_JSON__;
+            window.__CONFIG_LIMITS__ = __CONFIG_LIMITS_JSON__;
+        </script>
+        <script>
+            // FOUC-free theme bootstrap. Preference is one of: light | dark | system.
+            // data-theme is always the resolved concrete theme; data-theme-pref mirrors
+            // the stored choice so the segmented control can highlight it immediately.
+            (function () {
+                // DESKTOP: Force light theme (dashboard Rootsys pattern — light-only,
+                // no toggle). Stored preference is ignored on desktop; the theme
+                // system remains in code for mobile/tablet where a toggle will
+                // appear later. This keeps the desktop UI clean and consistent.
+                var html = document.documentElement;
+                html.setAttribute('data-theme', 'light');
+                html.setAttribute('data-theme-pref', 'light');
+            })();
+        </script>
+        <!-- Rootsys-grade typography: JetBrains Mono for code/keys (Inter is already the UI stack) -->
+        <link rel="preconnect" href="https://fonts.googleapis.com" />
+        <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+        <link
+            href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;600;700&display=swap"
+            rel="stylesheet"
+        />
+        <link rel="stylesheet" href="/css/configure.css?_cb=__APP_VERSION_QUERY__" />
+        <link rel="stylesheet" href="/css/combobox.css?_cb=__APP_VERSION_QUERY__" />
+        <link rel="stylesheet" href="/css/quick-setup.css?_cb=__APP_VERSION_QUERY__" />
+        <!-- SubFaber Modern Minimalist Dashboard theme (must load after base sheets) -->
+        <link rel="stylesheet" href="/css/subfaber-theme.css?_cb=__APP_VERSION_QUERY__" />
+        <!-- Rootify: Rootsys design identity — ground-truth tokens + components (loads after theme) -->
+        <link rel="stylesheet" href="/css/rootify.css?_cb=__APP_VERSION_QUERY__" />
+        <!-- App Shell: sidebar layout ala Rootsys dashboard (must load LAST) -->
+        <link rel="stylesheet" href="/css/app-shell.css?_cb=__APP_VERSION_QUERY__" />
+    </head>
 
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title data-i18n="config.documentTitle">SubFaber - Configure</title>
-    <!-- Favicon -->
-    <link rel="icon" type="image/svg+xml" href="/favicon.svg?_cb=__APP_VERSION_QUERY__">
-    <link rel="apple-touch-icon" href="/favicon.svg?_cb=__APP_VERSION_QUERY__">
-    <script>
-        window.__APP_VERSION__ = __APP_VERSION_JSON__;
-        window.__CONFIG_LIMITS__ = __CONFIG_LIMITS_JSON__;
-    </script>
-    <script>
-        // FOUC-free theme bootstrap. Preference is one of: light | dark | system.
-        // data-theme is always the resolved concrete theme; data-theme-pref mirrors
-        // the stored choice so the segmented control can highlight it immediately.
-        (function () {
-            // DESKTOP: Force light theme (dashboard Rootsys pattern — light-only,
-            // no toggle). Stored preference is ignored on desktop; the theme
-            // system remains in code for mobile/tablet where a toggle will
-            // appear later. This keeps the desktop UI clean and consistent.
-            var html = document.documentElement;
-            html.setAttribute('data-theme', 'light');
-            html.setAttribute('data-theme-pref', 'light');
-        })();
-    </script>
-    <!-- Rootsys-grade typography: JetBrains Mono for code/keys (Inter is already the UI stack) -->
-    <link rel="preconnect" href="https://fonts.googleapis.com">
-    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-    <link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;600;700&display=swap" rel="stylesheet">
-    <link rel="stylesheet" href="/css/configure.css?_cb=__APP_VERSION_QUERY__">
-    <link rel="stylesheet" href="/css/combobox.css?_cb=__APP_VERSION_QUERY__">
-    <link rel="stylesheet" href="/css/quick-setup.css?_cb=__APP_VERSION_QUERY__">
-    <!-- SubFaber Modern Minimalist Dashboard theme (must load after base sheets) -->
-    <link rel="stylesheet" href="/css/subfaber-theme.css?_cb=__APP_VERSION_QUERY__">
-    <!-- Rootify: Rootsys design identity — ground-truth tokens + components (loads after theme) -->
-    <link rel="stylesheet" href="/css/rootify.css?_cb=__APP_VERSION_QUERY__">
-    <!-- App Shell: sidebar layout ala Rootsys dashboard (must load LAST) -->
-    <link rel="stylesheet" href="/css/app-shell.css?_cb=__APP_VERSION_QUERY__">
-</head>
+    <body class="app-shell">
+        <div class="app-desktop">
+            <!-- ============================================================= -->
+            <!-- Left sidebar (desktop) — brand, nav groups, footer controls   -->
+            <!-- ============================================================= -->
+            <aside class="app-sidebar" aria-label="Primary">
+                <div class="app-sidebar-brand">
+                    <span class="rootify-traffic" aria-hidden="true">
+                        <span class="rootify-tl rootify-tl-red"></span>
+                        <span class="rootify-tl rootify-tl-yellow"></span>
+                        <span class="rootify-tl rootify-tl-green"></span>
+                    </span>
+                    <img class="app-sidebar-logo" src="/logo.png" alt="SubFaber logo" width="28" height="28" />
+                    <span class="app-sidebar-name" data-i18n="config.heroTitle">SubFaber</span>
+                </div>
 
-<body class="app-shell">
-    <div class="app-desktop">
-        <!-- ============================================================= -->
-        <!-- Left sidebar (desktop) — brand, nav groups, footer controls   -->
-        <!-- ============================================================= -->
-        <aside class="app-sidebar" aria-label="Primary">
-            <div class="app-sidebar-brand">
-                <span class="rootify-traffic" aria-hidden="true">
-                    <span class="rootify-tl rootify-tl-red"></span>
-                    <span class="rootify-tl rootify-tl-yellow"></span>
-                    <span class="rootify-tl rootify-tl-green"></span>
-                </span>
-                <img class="app-sidebar-logo" src="/logo.png" alt="SubFaber logo" width="28" height="28">
-                <span class="app-sidebar-name" data-i18n="config.heroTitle">SubFaber</span>
-            </div>
+                <nav class="app-sidebar-nav" aria-label="Configure sections">
+                    <div class="app-nav-group">
+                        <div class="app-nav-label" data-i18n="nav.groupAccount">Account</div>
 
-            <nav class="app-sidebar-nav" aria-label="Configure sections">
-                <div class="app-nav-group">
-                    <div class="app-nav-label" data-i18n="nav.groupAccount">Account</div>
-
-                    <!-- Configuration — the ONLY entry point. Parent expands to
+                        <!-- Configuration — the ONLY entry point. Parent expands to
                          reveal sub-items; clicking it shows the full scrollable
                          settings page (Quick Setup, API Keys, Languages, Settings). -->
-                    <div class="app-nav-parent">
-                        <a class="app-nav-pill active" href="#/configuration" data-nav="configuration" data-parent="configuration" aria-current="page">
-                            <span class="app-nav-icon" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="4" x2="4" y1="21" y2="14"/><line x1="4" x2="4" y1="10" y2="3"/><line x1="12" x2="12" y1="21" y2="12"/><line x1="12" x2="12" y1="8" y2="3"/><line x1="20" x2="20" y1="21" y2="16"/><line x1="20" x2="20" y1="12" y2="3"/><line x1="2" x2="6" y1="14" y2="14"/><line x1="10" x2="14" y1="8" y2="8"/><line x1="18" x2="22" y1="16" y2="16"/></svg></span>
-                            <span data-i18n="nav.configuration">Configuration</span>
-                            <span class="app-nav-caret" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m9 18 6-6-6-6"/></svg></span>
+                        <div class="app-nav-parent">
+                            <a
+                                class="app-nav-pill active"
+                                href="#/configuration"
+                                data-nav="configuration"
+                                data-parent="configuration"
+                                aria-current="page"
+                            >
+                                <span class="app-nav-icon" aria-hidden="true"
+                                    ><svg
+                                        viewBox="0 0 24 24"
+                                        fill="none"
+                                        stroke="currentColor"
+                                        stroke-width="2"
+                                        stroke-linecap="round"
+                                        stroke-linejoin="round"
+                                    >
+                                        <line x1="4" x2="4" y1="21" y2="14" />
+                                        <line x1="4" x2="4" y1="10" y2="3" />
+                                        <line x1="12" x2="12" y1="21" y2="12" />
+                                        <line x1="12" x2="12" y1="8" y2="3" />
+                                        <line x1="20" x2="20" y1="21" y2="16" />
+                                        <line x1="20" x2="20" y1="12" y2="3" />
+                                        <line x1="2" x2="6" y1="14" y2="14" />
+                                        <line x1="10" x2="14" y1="8" y2="8" />
+                                        <line x1="18" x2="22" y1="16" y2="16" /></svg
+                                ></span>
+                                <span data-i18n="nav.configuration">Configuration</span>
+                                <span class="app-nav-caret" aria-hidden="true"
+                                    ><svg
+                                        viewBox="0 0 24 24"
+                                        fill="none"
+                                        stroke="currentColor"
+                                        stroke-width="2"
+                                        stroke-linecap="round"
+                                        stroke-linejoin="round"
+                                    >
+                                        <path d="m9 18 6-6-6-6" /></svg
+                                ></span>
+                            </a>
+                            <div class="app-nav-children" data-children="configuration">
+                                <a class="app-nav-child" href="#/configuration/api-keys" data-anchor="api-keys">
+                                    <span data-i18n="nav.apiKeys">API Keys</span>
+                                </a>
+                                <a class="app-nav-child" href="#/configuration/languages" data-anchor="languages">
+                                    <span data-i18n="nav.languages">Languages</span>
+                                </a>
+                                <a class="app-nav-child" href="#/configuration/settings" data-anchor="settings">
+                                    <span data-i18n="nav.settings">Settings</span>
+                                </a>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="app-nav-group">
+                        <div class="app-nav-label" data-i18n="nav.groupExplore">Explore</div>
+                        <a class="app-nav-pill" href="#/toolbox" data-nav="toolbox">
+                            <span class="app-nav-icon" aria-hidden="true"
+                                ><svg
+                                    viewBox="0 0 24 24"
+                                    fill="none"
+                                    stroke="currentColor"
+                                    stroke-width="2"
+                                    stroke-linecap="round"
+                                    stroke-linejoin="round"
+                                >
+                                    <path
+                                        d="M11 21.73a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16V8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73z"
+                                    />
+                                    <path d="M12 22V12" />
+                                    <path d="m3.3 7 8.7 5 8.7-5" /></svg
+                            ></span>
+                            <span data-i18n="nav.toolbox">Sub Toolbox</span>
                         </a>
-                        <div class="app-nav-children" data-children="configuration">
-                            <a class="app-nav-child" href="#/configuration" data-anchor="api-keys">
-                                <span data-i18n="nav.apiKeys">API Keys</span>
-                            </a>
-                            <a class="app-nav-child" href="#/configuration" data-anchor="languages">
-                                <span data-i18n="nav.languages">Languages</span>
-                            </a>
-                            <a class="app-nav-child" href="#/configuration" data-anchor="settings">
-                                <span data-i18n="nav.settings">Settings</span>
-                            </a>
-                        </div>
                     </div>
-                </div>
-                <div class="app-nav-group">
-                    <div class="app-nav-label" data-i18n="nav.groupExplore">Explore</div>
-                    <a class="app-nav-pill" href="#/toolbox" data-nav="toolbox">
-                        <span class="app-nav-icon" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M11 21.73a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16V8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73z"/><path d="M12 22V12"/><path d="m3.3 7 8.7 5 8.7-5"/></svg></span>
-                        <span data-i18n="nav.toolbox">Sub Toolbox</span>
-                    </a>
-                </div>
-            </nav>
+                </nav>
 
-            <div class="app-sidebar-footer">
-                <!-- Interface language selector (populated dynamically by config.js) — same IDs as before -->
-                <div class="app-sidebar-footer-row">
-                    <!-- Version badge (clickable changelog) — moved from the brand header
+                <div class="app-sidebar-footer">
+                    <!-- Interface language selector (populated dynamically by config.js) — same IDs as before -->
+                    <div class="app-sidebar-footer-row">
+                        <!-- Version badge (clickable changelog) — moved from the brand header
                          to sit beside the language flags -->
-                    <span class="app-navbar-version version-badge" id="version-badge" style="display:none;"></span>
-                    <div class="ui-language-dock" id="uiLanguageDock" role="group" aria-label="UI language"
-                        data-i18n="config.uiLanguageAria" data-i18n-attr="aria-label">
-                        <div class="ui-language-flag-row" id="uiLanguageFlags">
-                            <!-- Flags are rendered dynamically -->
+                        <span class="app-navbar-version version-badge" id="version-badge" style="display: none"></span>
+                        <div
+                            class="ui-language-dock"
+                            id="uiLanguageDock"
+                            role="group"
+                            aria-label="UI language"
+                            data-i18n="config.uiLanguageAria"
+                            data-i18n-attr="aria-label"
+                        >
+                            <div class="ui-language-flag-row" id="uiLanguageFlags">
+                                <!-- Flags are rendered dynamically -->
+                            </div>
                         </div>
                     </div>
-                </div>
 
-                <!-- Theme switch REMOVED for desktop (dashboard Rootsys pattern —
+                    <!-- Theme switch REMOVED for desktop (dashboard Rootsys pattern —
                      light-only, no toggle). The theme system stays in code for
                      mobile/tablet later; desktop is forced to light via the
                      head bootstrap. -->
-                <!-- Docs button REMOVED — not needed in the app shell. -->
+                    <!-- Docs button REMOVED — not needed in the app shell. -->
+                </div>
+            </aside>
+
+            <!-- ============================================================= -->
+            <!-- Main column — mobile header, content, action bar              -->
+            <!-- ============================================================= -->
+            <div class="app-main">
+                <!-- Mobile header (hidden on desktop) -->
+                <header class="app-mobile-header">
+                    <span class="rootify-traffic" aria-hidden="true">
+                        <span class="rootify-tl rootify-tl-red"></span>
+                        <span class="rootify-tl rootify-tl-yellow"></span>
+                        <span class="rootify-tl rootify-tl-green"></span>
+                    </span>
+                    <img class="app-sidebar-logo" src="/logo.png" alt="SubFaber logo" width="26" height="26" />
+                    <span class="app-mobile-header-title" data-i18n="config.heroTitle">SubFaber</span>
+                </header>
+
+                <main class="app-content">__CONFIGURE_MAIN_PARTIAL__</main>
             </div>
-        </aside>
 
-        <!-- ============================================================= -->
-        <!-- Main column — mobile header, content, action bar              -->
-        <!-- ============================================================= -->
-        <div class="app-main">
-            <!-- Mobile header (hidden on desktop) -->
-            <header class="app-mobile-header">
-                <span class="rootify-traffic" aria-hidden="true">
-                    <span class="rootify-tl rootify-tl-red"></span>
-                    <span class="rootify-tl rootify-tl-yellow"></span>
-                    <span class="rootify-tl rootify-tl-green"></span>
-                </span>
-                <img class="app-sidebar-logo" src="/logo.png" alt="SubFaber logo" width="26" height="26">
-                <span class="app-mobile-header-title" data-i18n="config.heroTitle">SubFaber</span>
-            </header>
-
-            <main class="app-content">
-                __CONFIGURE_MAIN_PARTIAL__
-            </main>
-
+            <!-- ============================================================= -->
+            <!-- Mobile bottom navigation (hidden on desktop)                  -->
+            <!-- ============================================================= -->
+            <nav class="app-bottom-nav" aria-label="Sections">
+                <a class="app-bottom-nav-item" href="#/configuration" data-nav="configuration"
+                    ><span data-i18n="nav.configuration">Configure</span></a
+                >
+                <a class="app-bottom-nav-item" href="#/toolbox" data-nav="toolbox"
+                    ><span data-i18n="nav.toolbox">Toolbox</span></a
+                >
+            </nav>
         </div>
 
-        <!-- ============================================================= -->
-        <!-- Mobile bottom navigation (hidden on desktop)                  -->
-        <!-- ============================================================= -->
-        <nav class="app-bottom-nav" aria-label="Sections">
-            <a class="app-bottom-nav-item" href="#/configuration" data-nav="configuration"><span data-i18n="nav.configuration">Configure</span></a>
-            <a class="app-bottom-nav-item" href="#/toolbox" data-nav="toolbox"><span data-i18n="nav.toolbox">Toolbox</span></a>
-        </nav>
-    </div>
+        __CONFIGURE_FOOTER_PARTIAL__ __CONFIGURE_OVERLAYS_PARTIAL__ __CONFIGURE_QUICK_SETUP_PARTIAL__
 
-    __CONFIGURE_FOOTER_PARTIAL__
-    __CONFIGURE_OVERLAYS_PARTIAL__
-    __CONFIGURE_QUICK_SETUP_PARTIAL__
-
-    <script src="/js/init.js?_cb=__APP_VERSION_QUERY__" defer></script>
-    <script src="/js/panel-nav.js?_cb=__APP_VERSION_QUERY__" defer></script>
-    <script src="/js/combobox.js?_cb=__APP_VERSION_QUERY__" defer></script>
-    <script src="/js/combobox-init.js?_cb=__APP_VERSION_QUERY__" defer></script>
-    <script src="/js/config-page-state.js?_cb=__APP_VERSION_QUERY__" defer></script>
-    <!-- Bulk-key import parser must load before config.js (injected by config-loader.js) -->
-    <script src="/js/bulk-key-import.js?_cb=__APP_VERSION_QUERY__" defer></script>
-    <script src="/js/config-loader.js?_cb=__APP_VERSION_QUERY__" defer></script>
-    <script src="/js/ui-widgets.js?_cb=__APP_VERSION_QUERY__" defer></script>
-    <script src="/js/theme-toggle.js?_cb=__APP_VERSION_QUERY__" defer></script>
-    <script src="/js/changelog-panel.js?_cb=__APP_VERSION_QUERY__" defer></script>
-    <script src="/js/sw-register.js?_cb=__APP_VERSION_QUERY__" defer></script>
-    <script src="/js/quick-setup.js?_cb=__APP_VERSION_QUERY__" defer></script>
-</body>
-
+        <script src="/js/init.js?_cb=__APP_VERSION_QUERY__" defer></script>
+        <script src="/js/panel-nav.js?_cb=__APP_VERSION_QUERY__" defer></script>
+        <script src="/js/combobox.js?_cb=__APP_VERSION_QUERY__" defer></script>
+        <script src="/js/combobox-init.js?_cb=__APP_VERSION_QUERY__" defer></script>
+        <script src="/js/config-page-state.js?_cb=__APP_VERSION_QUERY__" defer></script>
+        <!-- Bulk-key import parser must load before config.js (injected by config-loader.js) -->
+        <script src="/js/bulk-key-import.js?_cb=__APP_VERSION_QUERY__" defer></script>
+        <script src="/js/config-loader.js?_cb=__APP_VERSION_QUERY__" defer></script>
+        <script src="/js/ui-widgets.js?_cb=__APP_VERSION_QUERY__" defer></script>
+        <script src="/js/theme-toggle.js?_cb=__APP_VERSION_QUERY__" defer></script>
+        <script src="/js/changelog-panel.js?_cb=__APP_VERSION_QUERY__" defer></script>
+        <script src="/js/sw-register.js?_cb=__APP_VERSION_QUERY__" defer></script>
+        <script src="/js/quick-setup.js?_cb=__APP_VERSION_QUERY__" defer></script>
+    </body>
 </html>

@@ -1,4 +1,4 @@
-(function() {
+(function () {
     'use strict';
 
     const SESSION_PING_TIMEOUT_MS = 9000;
@@ -55,12 +55,16 @@
     function fetchSessionStats() {
         try {
             var controller = new AbortController();
-            var timer = setTimeout(function() {
-                try { controller.abort(); } catch (_) {}
+            var timer = setTimeout(function () {
+                try {
+                    controller.abort();
+                } catch (_) {}
             }, SESSION_PING_TIMEOUT_MS);
             return fetch('/api/session-stats', { cache: 'no-store', signal: controller.signal })
-                .then(function(res) { return res && res.ok ? res.json() : null; })
-                .finally(function() {
+                .then(function (res) {
+                    return res && res.ok ? res.json() : null;
+                })
+                .finally(function () {
                     clearTimeout(timer);
                 });
         } catch (_) {
@@ -77,7 +81,7 @@
         }
 
         fetchSessionStats()
-            .then(function(data) {
+            .then(function (data) {
                 if (data && data.limits) {
                     window.__CONFIG_LIMITS__ = data.limits;
                 }
@@ -87,7 +91,7 @@
                     updateVersionBadge(version);
                 }
             })
-            .catch(function() {
+            .catch(function () {
                 loadConfigJs(buildVersionQuery(bootVersion));
                 if (bootVersion) {
                     updateVersionBadge(bootVersion);
@@ -95,18 +99,28 @@
             });
     }
 
-    document.addEventListener('click', function(event) {
-        if (window.__tokenVaultUiReady === true) return;
-        var target = event.target;
-        var launcher = target && target.closest ? target.closest('#tokenVaultLauncher') : null;
-        if (!launcher) return;
-        window.__tokenVaultLauncherOpenRequested = true;
-    }, true);
+    document.addEventListener(
+        'click',
+        function (event) {
+            if (window.__tokenVaultUiReady === true) return;
+            var target = event.target;
+            var launcher = target && target.closest ? target.closest('#tokenVaultLauncher') : null;
+            if (!launcher) return;
+            window.__tokenVaultLauncherOpenRequested = true;
+        },
+        true
+    );
 
     var partialsReady = window.mainPartialReady || window.partialsReady || Promise.resolve();
     var partialsOrTimeout = Promise.race([
         partialsReady,
-        new Promise(function(resolve) { setTimeout(resolve, PARTIALS_TIMEOUT_MS); })
+        new Promise(function (resolve) {
+            setTimeout(resolve, PARTIALS_TIMEOUT_MS);
+        })
     ]);
-    partialsOrTimeout.catch(function(err) { console.error(err); }).then(loadWithVersion);
+    partialsOrTimeout
+        .catch(function (err) {
+            console.error(err);
+        })
+        .then(loadWithVersion);
 })();

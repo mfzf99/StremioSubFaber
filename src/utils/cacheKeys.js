@@ -10,10 +10,10 @@
 const log = require('./logger');
 
 function normalizeUserHash(rawHash) {
-  if (!rawHash || typeof rawHash !== 'string') return '';
-  const trimmed = rawHash.trim();
-  if (!trimmed || trimmed === 'anonymous') return '';
-  return trimmed;
+    if (!rawHash || typeof rawHash !== 'string') return '';
+    const trimmed = rawHash.trim();
+    if (!trimmed || trimmed === 'anonymous') return '';
+    return trimmed;
 }
 
 /**
@@ -32,70 +32,68 @@ function normalizeUserHash(rawHash) {
  * @returns {boolean} .allowPermanent - Whether permanent cache reads/writes are allowed (requires userHash)
  */
 function generateCacheKeys(config, sourceFileId, targetLang) {
-  // When ASS passthrough is enabled, append format discriminator to prevent
-  // ASS-format cached translations from being served to users expecting SRT
-  const assPassthrough = config.convertAssToVtt === false && config.forceSRTOutput !== true;
-  const baseKey = assPassthrough
-    ? `${sourceFileId}_${targetLang}_ass`
-    : `${sourceFileId}_${targetLang}`;
+    // When ASS passthrough is enabled, append format discriminator to prevent
+    // ASS-format cached translations from being served to users expecting SRT
+    const assPassthrough = config.convertAssToVtt === false && config.forceSRTOutput !== true;
+    const baseKey = assPassthrough ? `${sourceFileId}_${targetLang}_ass` : `${sourceFileId}_${targetLang}`;
 
-  // Determine bypass mode
-  const bypass = config.bypassCache === true;
-  const bypassCfg = config.bypassCacheConfig || config.tempCache || {}; // Support both old and new names
-  let bypassEnabled = bypass && (bypassCfg.enabled !== false);
+    // Determine bypass mode
+    const bypass = config.bypassCache === true;
+    const bypassCfg = config.bypassCacheConfig || config.tempCache || {}; // Support both old and new names
+    let bypassEnabled = bypass && bypassCfg.enabled !== false;
 
-  // Get user hash for user-scoped caching
-  // CRITICAL: userHash must be a valid non-empty string for bypass cache
-  // If missing, bypass cache would be shared across all users!
-  const rawHash = (config && typeof config.__configHash === 'string' && config.__configHash.length > 0)
-    ? config.__configHash
-    : '';
-  const userHash = normalizeUserHash(rawHash);
-  const hasUserHash = userHash.length > 0;
-  // Only allow permanent caching when we have a scoped config hash
-  let allowPermanent = hasUserHash;
+    // Get user hash for user-scoped caching
+    // CRITICAL: userHash must be a valid non-empty string for bypass cache
+    // If missing, bypass cache would be shared across all users!
+    const rawHash =
+        config && typeof config.__configHash === 'string' && config.__configHash.length > 0 ? config.__configHash : '';
+    const userHash = normalizeUserHash(rawHash);
+    const hasUserHash = userHash.length > 0;
+    // Only allow permanent caching when we have a scoped config hash
+    let allowPermanent = hasUserHash;
 
-  // Security: Fall back to permanent cache if no userHash (prevents sharing bypass cache across users)
-  if (bypass && bypassEnabled && !userHash) {
-    log.warn(() => `[CacheKeys] Bypass cache requested but no valid configHash available for ${baseKey} - disabling bypass`);
-    bypassEnabled = false;
-    allowPermanent = false; // do not permit permanent cache writes/reads without a config hash
-  }
+    // Security: Fall back to permanent cache if no userHash (prevents sharing bypass cache across users)
+    if (bypass && bypassEnabled && !userHash) {
+        log.warn(
+            () =>
+                `[CacheKeys] Bypass cache requested but no valid configHash available for ${baseKey} - disabling bypass`
+        );
+        bypassEnabled = false;
+        allowPermanent = false; // do not permit permanent cache writes/reads without a config hash
+    }
 
-  // Generate scoped cache key
-  // Bypass mode: User-scoped key (e.g., "imdb123_en_es__u_abc123")
-  // Permanent mode: Shared key (baseKey) for storage, but runtime tracking is config-scoped when possible
-  let cacheKey = baseKey;
-  if (bypass && bypassEnabled && hasUserHash) {
-    cacheKey = `${baseKey}__u_${userHash}`;  // User-scoped for bypass mode
-  } else {
-    cacheKey = `${baseKey}`;
-  }
+    // Generate scoped cache key
+    // Bypass mode: User-scoped key (e.g., "imdb123_en_es__u_abc123")
+    // Permanent mode: Shared key (baseKey) for storage, but runtime tracking is config-scoped when possible
+    let cacheKey = baseKey;
+    if (bypass && bypassEnabled && hasUserHash) {
+        cacheKey = `${baseKey}__u_${userHash}`; // User-scoped for bypass mode
+    } else {
+        cacheKey = `${baseKey}`;
+    }
 
-  // Runtime/in-flight tracking key:
-  // - bypass: user-scoped key
-  // - permanent: shared base key so all users see in-flight status
-  const runtimeKey = (bypass && bypassEnabled)
-    ? cacheKey
-    : baseKey;
+    // Runtime/in-flight tracking key:
+    // - bypass: user-scoped key
+    // - permanent: shared base key so all users see in-flight status
+    const runtimeKey = bypass && bypassEnabled ? cacheKey : baseKey;
 
-  if (bypass && bypassEnabled) {
-    log.debug(() => `[CacheKeys] Generated user-scoped bypass cache key: ${cacheKey}`);
-  } else {
-    log.debug(() => `[CacheKeys] Using shared translation cache key for ${baseKey}`);
-  }
+    if (bypass && bypassEnabled) {
+        log.debug(() => `[CacheKeys] Generated user-scoped bypass cache key: ${cacheKey}`);
+    } else {
+        log.debug(() => `[CacheKeys] Using shared translation cache key for ${baseKey}`);
+    }
 
-  return {
-    baseKey,        // Base key without user scoping (e.g., "imdb123_en_es")
-    cacheKey,       // Scoped key for cache operations (e.g., "imdb123_en_es__u_abc123")
-    runtimeKey,     // Key for in-flight/partial tracking (scoped when possible)
-    bypass,         // Whether bypass mode is enabled in config
-    bypassEnabled,  // Whether bypass mode is actually active (requires userHash)
-    userHash,       // User configuration hash (empty string if not available)
-    allowPermanent  // Whether permanent cache access is allowed
-  };
+    return {
+        baseKey, // Base key without user scoping (e.g., "imdb123_en_es")
+        cacheKey, // Scoped key for cache operations (e.g., "imdb123_en_es__u_abc123")
+        runtimeKey, // Key for in-flight/partial tracking (scoped when possible)
+        bypass, // Whether bypass mode is enabled in config
+        bypassEnabled, // Whether bypass mode is actually active (requires userHash)
+        userHash, // User configuration hash (empty string if not available)
+        allowPermanent // Whether permanent cache access is allowed
+    };
 }
 
 module.exports = {
-  generateCacheKeys
+    generateCacheKeys
 };

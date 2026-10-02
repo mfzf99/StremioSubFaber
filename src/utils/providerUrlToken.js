@@ -47,12 +47,7 @@ function encodeProviderUrl(providerPrefix, rawUrl) {
     });
     const ciphertext = Buffer.concat([cipher.update(plaintext), cipher.final()]);
     const authTag = cipher.getAuthTag();
-    const payload = Buffer.concat([
-        Buffer.from([TOKEN_VERSION]),
-        iv,
-        authTag,
-        ciphertext
-    ]);
+    const payload = Buffer.concat([Buffer.from([TOKEN_VERSION]), iv, authTag, ciphertext]);
 
     return `${providerPrefix}${TOKEN_MARKER}${payload.toString('base64url')}`;
 }

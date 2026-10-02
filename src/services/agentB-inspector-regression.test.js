@@ -34,1237 +34,1407 @@ const assert = require('node:assert/strict');
 process.env.ENTRY_CACHE_SIZE = '100';
 
 const {
-  AgentBInspector,
-  buildInspectionPayload,
-  parseInspectorResponse,
-  formatPreflightContextForInspection,
-  INSPECTOR_INSTRUCTION,
-  AGENT_B_DEFAULT_MODEL,
-  AGENT_B_PREFLIGHT_TIMEOUT_MS,
-  AGENT_B_INSPECTION_TIMEOUT_MS,
-  AGENT_B_MAX_TOKENS,
-  AGENT_B_PREFLIGHT_MODEL,
-  AGENT_B_FALLBACK_MODEL,
-  AGENT_B_CIRCUIT_THRESHOLD
+    AgentBInspector,
+    buildInspectionPayload,
+    parseInspectorResponse,
+    formatPreflightContextForInspection,
+    INSPECTOR_INSTRUCTION,
+    AGENT_B_DEFAULT_MODEL,
+    AGENT_B_PREFLIGHT_TIMEOUT_MS,
+    AGENT_B_INSPECTION_TIMEOUT_MS,
+    AGENT_B_MAX_TOKENS,
+    AGENT_B_PREFLIGHT_MODEL,
+    AGENT_B_FALLBACK_MODEL,
+    AGENT_B_CIRCUIT_THRESHOLD
 } = require('./agentBInspector');
 const OpenAICompatibleProvider = require('./providers/openaiCompatible');
 
 // Helper: jana entries dummy
 function makeEntries(count, textFn) {
-  return Array.from({ length: count }, (_, i) => ({
-    id: i + 1,
-    timecode: `00:00:${String(i % 60).padStart(2, '0')},000 --> 00:00:${String((i + 1) % 60).padStart(2, '0')},000`,
-    text: typeof textFn === 'function' ? textFn(i) : `Dialogue line ${i + 1}`
-  }));
+    return Array.from({ length: count }, (_, i) => ({
+        id: i + 1,
+        timecode: `00:00:${String(i % 60).padStart(2, '0')},000 --> 00:00:${String((i + 1) % 60).padStart(2, '0')},000`,
+        text: typeof textFn === 'function' ? textFn(i) : `Dialogue line ${i + 1}`
+    }));
 }
 
 function makeTranslated(count, textFn) {
-  return Array.from({ length: count }, (_, i) => ({
-    index: i,
-    text: typeof textFn === 'function' ? textFn(i) : `Baris dialog ${i + 1}`
-  }));
+    return Array.from({ length: count }, (_, i) => ({
+        index: i,
+        text: typeof textFn === 'function' ? textFn(i) : `Baris dialog ${i + 1}`
+    }));
 }
 
 // ── 1. parseInspectorResponse ──
 
 test('AgentB: parseInspectorResponse accepts valid:true JSON verbatim', () => {
-  const verdict = parseInspectorResponse('{"valid":true}');
-  assert.deepEqual(verdict, { valid: true });
+    const verdict = parseInspectorResponse('{"valid":true}');
+    assert.deepEqual(verdict, { valid: true });
 });
 
 test('AgentB: parseInspectorResponse parses crimes with type/ids/note', () => {
-  const response = JSON.stringify({
-    valid: false,
-    crimes: [
-      { type: 'MERGE', ids: [48, 49], note: 'two lines fused' },
-      { type: 'PHANTOM', ids: [50], note: 'invented filler' }
-    ]
-  });
-  const verdict = parseInspectorResponse(response);
-  assert.equal(verdict.valid, false);
-  assert.equal(verdict.crimes.length, 2);
-  assert.equal(verdict.crimes[0].type, 'MERGE');
-  assert.deepEqual(verdict.crimes[0].ids, [48, 49]);
-  assert.equal(verdict.crimes[1].type, 'PHANTOM');
+    const response = JSON.stringify({
+        valid: false,
+        crimes: [
+            { type: 'MERGE', ids: [48, 49], note: 'two lines fused' },
+            { type: 'PHANTOM', ids: [50], note: 'invented filler' }
+        ]
+    });
+    const verdict = parseInspectorResponse(response);
+    assert.equal(verdict.valid, false);
+    assert.equal(verdict.crimes.length, 2);
+    assert.equal(verdict.crimes[0].type, 'MERGE');
+    assert.deepEqual(verdict.crimes[0].ids, [48, 49]);
+    assert.equal(verdict.crimes[1].type, 'PHANTOM');
 });
 
 test('AgentB: parseInspectorResponse strips markdown fences and chatter', () => {
-  const fenced = '```json\n{"valid":true}\n```';
-  assert.deepEqual(parseInspectorResponse(fenced), { valid: true });
+    const fenced = '```json\n{"valid":true}\n```';
+    assert.deepEqual(parseInspectorResponse(fenced), { valid: true });
 
-  const chatty = 'Here is my verdict:\n{"valid":true}\nHope this helps!';
-  assert.deepEqual(parseInspectorResponse(chatty), { valid: true });
+    const chatty = 'Here is my verdict:\n{"valid":true}\nHope this helps!';
+    assert.deepEqual(parseInspectorResponse(chatty), { valid: true });
 });
 
 test('AgentB: parseInspectorResponse returns null on unparseable garbage', () => {
-  assert.equal(parseInspectorResponse(''), null);
-  assert.equal(parseInspectorResponse(null), null);
-  assert.equal(parseInspectorResponse('totally not json at all'), null);
-  assert.equal(parseInspectorResponse('{broken json'), null);
-  assert.equal(parseInspectorResponse('{"noValidField":1}'), null);
+    assert.equal(parseInspectorResponse(''), null);
+    assert.equal(parseInspectorResponse(null), null);
+    assert.equal(parseInspectorResponse('totally not json at all'), null);
+    assert.equal(parseInspectorResponse('{broken json'), null);
+    assert.equal(parseInspectorResponse('{"noValidField":1}'), null);
 });
 
 test('AgentB: parseInspectorResponse sanitizes crime fields defensively', () => {
-  const response = JSON.stringify({
-    valid: false,
-    crimes: [
-      { type: 'merge', ids: ['12', 'x', 13], note: 'note'.repeat(100) }, // lowercase type + junk ids + long note
-      { type: 'INVALID_TYPE', ids: [1], note: 'x' },                      // jenis tidak sah → dibuang
-      { type: 'DROP', ids: [], note: '' }                                 // tiada id → masih diterima tapi tidak berbahaya
-    ]
-  });
-  const verdict = parseInspectorResponse(response);
-  assert.equal(verdict.valid, false);
-  // merge (lowercase) dinormalisasi; ids 'x' dibuang; nota di-cap 120
-  const merge = verdict.crimes.find(c => c.type === 'MERGE');
-  assert.ok(merge, 'lowercase type must normalize to MERGE');
-  assert.deepEqual(merge.ids, [12, 13]);
-  assert.ok(merge.note.length <= 120, 'note must be capped');
-  assert.equal(verdict.crimes.some(c => c.type === 'INVALID_TYPE'), false, 'invalid crime type dropped');
+    const response = JSON.stringify({
+        valid: false,
+        crimes: [
+            { type: 'merge', ids: ['12', 'x', 13], note: 'note'.repeat(100) }, // lowercase type + junk ids + long note
+            { type: 'INVALID_TYPE', ids: [1], note: 'x' }, // jenis tidak sah → dibuang
+            { type: 'DROP', ids: [], note: '' } // tiada id → masih diterima tapi tidak berbahaya
+        ]
+    });
+    const verdict = parseInspectorResponse(response);
+    assert.equal(verdict.valid, false);
+    // merge (lowercase) dinormalisasi; ids 'x' dibuang; nota di-cap 120
+    const merge = verdict.crimes.find((c) => c.type === 'MERGE');
+    assert.ok(merge, 'lowercase type must normalize to MERGE');
+    assert.deepEqual(merge.ids, [12, 13]);
+    assert.ok(merge.note.length <= 120, 'note must be capped');
+    assert.equal(
+        verdict.crimes.some((c) => c.type === 'INVALID_TYPE'),
+        false,
+        'invalid crime type dropped'
+    );
 });
 
 test('AgentB: parseInspectorResponse valid:false tanpa crimes boleh diperbetulkan → valid:true', () => {
-  const verdict = parseInspectorResponse('{"valid":false}');
-  assert.deepEqual(verdict, { valid: true }, 'no salvageable crimes → treat as valid');
+    const verdict = parseInspectorResponse('{"valid":false}');
+    assert.deepEqual(verdict, { valid: true }, 'no salvageable crimes → treat as valid');
 });
 
 test('AgentB: parseInspectorResponse UNBOUNDED — SEMUA jenayah dipulangkan (siling 5 digugurkan)', () => {
-  // Jika batch mengandungi 8 jenayah, SEMUA 8 mesti dipulangkan supaya
-  // retry engine memperbaiki semuanya. Siling lama 5 jenayah DIGUGURKAN
-  // (UNBOUNDED-CONTEXT 2026-09-29).
-  const eightCrimes = Array.from({ length: 8 }, (_, i) => ({
-    type: i % 2 === 0 ? 'MERGE' : 'DROP',
-    ids: [i * 10, i * 10 + 1],
-    note: `crime ${i}`
-  }));
-  const verdict = parseInspectorResponse(JSON.stringify({ valid: false, crimes: eightCrimes }));
-  assert.equal(verdict.valid, false, '8 jenayah → valid:false');
-  assert.equal(verdict.crimes.length, 8, 'Semua 8 jenayah dipulangkan (bukan 5)');
-  assert.equal(verdict.crimes[7].note, 'crime 7', 'Jenayah TERAKHIR hadir');
+    // Jika batch mengandungi 8 jenayah, SEMUA 8 mesti dipulangkan supaya
+    // retry engine memperbaiki semuanya. Siling lama 5 jenayah DIGUGURKAN
+    // (UNBOUNDED-CONTEXT 2026-09-29).
+    const eightCrimes = Array.from({ length: 8 }, (_, i) => ({
+        type: i % 2 === 0 ? 'MERGE' : 'DROP',
+        ids: [i * 10, i * 10 + 1],
+        note: `crime ${i}`
+    }));
+    const verdict = parseInspectorResponse(JSON.stringify({ valid: false, crimes: eightCrimes }));
+    assert.equal(verdict.valid, false, '8 jenayah → valid:false');
+    assert.equal(verdict.crimes.length, 8, 'Semua 8 jenayah dipulangkan (bukan 5)');
+    assert.equal(verdict.crimes[7].note, 'crime 7', 'Jenayah TERAKHIR hadir');
 });
 
 test('AgentB: sanity caps kekal — id per jenayah 10, nota 120 aksara (UNBOUNDED-CONTEXT 2026-09-29)', () => {
-  // AGENT_B_MAX_IDS_PER_CRIME (10) dan AGENT_B_MAX_NOTE_CHARS (120) KEKAL
-  // sebagai pertahanan sanity (elak 1 jenayah senaraikan 200 id / nota panjang).
-  const verdict = parseInspectorResponse(JSON.stringify({
-    valid: false,
-    crimes: [{
-      type: 'MERGE',
-      ids: Array.from({ length: 50 }, (_, i) => i + 1), // 50 id → dipotong ke 10
-      note: 'N'.repeat(500)                              // 500 aksara → dipotong ke 120
-    }]
-  }));
-  assert.equal(verdict.crimes[0].ids.length, 10, 'Max 10 id per jenayah (sanity kekal)');
-  assert.equal(verdict.crimes[0].note.length, 120, 'Nota dicap 120 aksara (sanity kekal)');
+    // AGENT_B_MAX_IDS_PER_CRIME (10) dan AGENT_B_MAX_NOTE_CHARS (120) KEKAL
+    // sebagai pertahanan sanity (elak 1 jenayah senaraikan 200 id / nota panjang).
+    const verdict = parseInspectorResponse(
+        JSON.stringify({
+            valid: false,
+            crimes: [
+                {
+                    type: 'MERGE',
+                    ids: Array.from({ length: 50 }, (_, i) => i + 1), // 50 id → dipotong ke 10
+                    note: 'N'.repeat(500) // 500 aksara → dipotong ke 120
+                }
+            ]
+        })
+    );
+    assert.equal(verdict.crimes[0].ids.length, 10, 'Max 10 id per jenayah (sanity kekal)');
+    assert.equal(verdict.crimes[0].note.length, 120, 'Nota dicap 120 aksara (sanity kekal)');
 });
 
 // ── 1B. SHIFT crime (MANDAT OPERASI MUTLAK 2026-09-27) ──
 
 test('AgentB: parseInspectorResponse accepts SHIFT crime (4th crime type, klausa emas)', () => {
-  const response = JSON.stringify({
-    valid: false,
-    crimes: [{ type: 'SHIFT', ids: [5, 6], note: 'line 5 dialogue in line 6' }]
-  });
-  const verdict = parseInspectorResponse(response);
-  assert.equal(verdict.valid, false);
-  assert.equal(verdict.crimes.length, 1);
-  assert.equal(verdict.crimes[0].type, 'SHIFT');
-  assert.deepEqual(verdict.crimes[0].ids, [5, 6]);
+    const response = JSON.stringify({
+        valid: false,
+        crimes: [{ type: 'SHIFT', ids: [5, 6], note: 'line 5 dialogue in line 6' }]
+    });
+    const verdict = parseInspectorResponse(response);
+    assert.equal(verdict.valid, false);
+    assert.equal(verdict.crimes.length, 1);
+    assert.equal(verdict.crimes[0].type, 'SHIFT');
+    assert.deepEqual(verdict.crimes[0].ids, [5, 6]);
 });
 
 test('AgentB: inspector instruction locks the SHIFT golden clause verbatim', () => {
-  // [HARMONY-FIX] 2026-09-29: taksonomi dipertajam — MERGE = bilangan slot
-  // sahaja, PHANTOM = fabrikasi kandungan (tiada lagi pertindihan).
-  assert.ok(
-    INSPECTOR_INSTRUCTION.includes('- SHIFT: Dialogue content displaced across indices (line 5 text appearing in line 6\'s slot).'),
-    'Klausa rasmi SHIFT mesti hadir verbatim dalam arahan pemeriksa'
-  );
-  assert.ok(
-    INSPECTOR_INSTRUCTION.includes('NOTE: Ignore minor millisecond timecode differences; audit solely whether the dialogue text matches the corresponding line index.'),
-    'Klausa emas pengurang token (abaikan millisecond timecode) mesti hadir'
-  );
-  assert.ok(
-    INSPECTOR_INSTRUCTION.includes('- MERGE: Two source lines merged into ONE output slot, displacing subsequent lines (off-by-one drift).'),
-    'MERGE mesti membawa definisi off-by-one drift (isue bilangan slot)'
-  );
-  assert.ok(
-    INSPECTOR_INSTRUCTION.includes('- PHANTOM: Output slot contains fabricated content with no basis in its source line (invented dialogue, elaboration, hallucinated detail).'),
-    'PHANTOM mesti membawa definisi fabrikasi kandungan (invented dialogue, elaboration, hallucinated detail)'
-  );
-  assert.ok(
-    INSPECTOR_INSTRUCTION.includes('- DROP: Source line\'s specific meaning is missing or replaced by a generic substitute that erases it.'),
-    'DROP mesti membawa definisi generic substitute (maksud spesifik terpadam)'
-  );
-  assert.ok(!INSPECTOR_INSTRUCTION.includes('fabricated filler'), 'MERGE TIADA lagi klausa "fabricated filler" (pertindihan PHANTOM dibuang)');
-  assert.ok(INSPECTOR_INSTRUCTION.includes('MERGE|DROP|PHANTOM|SHIFT|UNTRANSLATED|REGISTER'), 'output contract mesti menyenaraikan 6 jenayah');
+    // [HARMONY-FIX] 2026-09-29: taksonomi dipertajam — MERGE = bilangan slot
+    // sahaja, PHANTOM = fabrikasi kandungan (tiada lagi pertindihan).
+    assert.ok(
+        INSPECTOR_INSTRUCTION.includes(
+            "- SHIFT: Dialogue content displaced across indices (line 5 text appearing in line 6's slot)."
+        ),
+        'Klausa rasmi SHIFT mesti hadir verbatim dalam arahan pemeriksa'
+    );
+    assert.ok(
+        INSPECTOR_INSTRUCTION.includes(
+            'NOTE: Ignore minor millisecond timecode differences; audit solely whether the dialogue text matches the corresponding line index.'
+        ),
+        'Klausa emas pengurang token (abaikan millisecond timecode) mesti hadir'
+    );
+    assert.ok(
+        INSPECTOR_INSTRUCTION.includes(
+            '- MERGE: Two source lines merged into ONE output slot, displacing subsequent lines (off-by-one drift).'
+        ),
+        'MERGE mesti membawa definisi off-by-one drift (isue bilangan slot)'
+    );
+    assert.ok(
+        INSPECTOR_INSTRUCTION.includes(
+            '- PHANTOM: Output slot contains fabricated content with no basis in its source line (invented dialogue, elaboration, hallucinated detail).'
+        ),
+        'PHANTOM mesti membawa definisi fabrikasi kandungan (invented dialogue, elaboration, hallucinated detail)'
+    );
+    assert.ok(
+        INSPECTOR_INSTRUCTION.includes(
+            "- DROP: Source line's specific meaning is missing or replaced by a generic substitute that erases it."
+        ),
+        'DROP mesti membawa definisi generic substitute (maksud spesifik terpadam)'
+    );
+    assert.ok(
+        !INSPECTOR_INSTRUCTION.includes('fabricated filler'),
+        'MERGE TIADA lagi klausa "fabricated filler" (pertindihan PHANTOM dibuang)'
+    );
+    assert.ok(
+        INSPECTOR_INSTRUCTION.includes('MERGE|DROP|PHANTOM|SHIFT|UNTRANSLATED|REGISTER'),
+        'output contract mesti menyenaraikan 6 jenayah'
+    );
 });
 
 // ── 1C. UNTRANSLATED + REGISTER crimes (SOCIOLINGUISTIC v2 2026-09-29) ──
 
 test('AgentB: parseInspectorResponse accepts UNTRANSLATED crime (lazy source-copy leak)', () => {
-  const response = JSON.stringify({
-    valid: false,
-    crimes: [{ type: 'UNTRANSLATED', ids: [12], note: 'english sentence copied verbatim' }]
-  });
-  const verdict = parseInspectorResponse(response);
-  assert.equal(verdict.valid, false);
-  assert.equal(verdict.crimes[0].type, 'UNTRANSLATED');
-  assert.deepEqual(verdict.crimes[0].ids, [12]);
+    const response = JSON.stringify({
+        valid: false,
+        crimes: [{ type: 'UNTRANSLATED', ids: [12], note: 'english sentence copied verbatim' }]
+    });
+    const verdict = parseInspectorResponse(response);
+    assert.equal(verdict.valid, false);
+    assert.equal(verdict.crimes[0].type, 'UNTRANSLATED');
+    assert.deepEqual(verdict.crimes[0].ids, [12]);
 });
 
 test('AgentB: parseInspectorResponse accepts REGISTER crime (honorific contradiction)', () => {
-  const response = JSON.stringify({
-    valid: false,
-    crimes: [{ type: 'REGISTER', ids: [7], note: 'Puan Shen became Cik Shen' }]
-  });
-  const verdict = parseInspectorResponse(response);
-  assert.equal(verdict.valid, false);
-  assert.equal(verdict.crimes[0].type, 'REGISTER');
+    const response = JSON.stringify({
+        valid: false,
+        crimes: [{ type: 'REGISTER', ids: [7], note: 'Puan Shen became Cik Shen' }]
+    });
+    const verdict = parseInspectorResponse(response);
+    assert.equal(verdict.valid, false);
+    assert.equal(verdict.crimes[0].type, 'REGISTER');
 });
 
 test('AgentB: inspector instruction defines UNTRANSLATED + REGISTER with guardrails', () => {
-  assert.ok(
-    INSPECTOR_INSTRUCTION.includes('UNTRANSLATED: Output slot still carries the source-language sentence'),
-    'UNTRANSLATED definition (lazy-copy leak) mesti hadir'
-  );
-  assert.ok(
-    INSPECTOR_INSTRUCTION.includes('do NOT flag: proper nouns, character/brand/company names, creative-work titles'),
-    'UNTRANSLATED mesti kecualikan kata nama khas / tajuk (elak false-positive ESCAPE HATCH sah)'
-  );
-  assert.ok(
-    INSPECTOR_INSTRUCTION.includes("REGISTER: A recurring character's locked form in the Character Address Reference below is contradicted"),
-    'REGISTER definition (percanggahan gelaran/kata ganti) mesti hadir'
-  );
-  assert.ok(
-    INSPECTOR_INSTRUCTION.includes('Only flag when the Character Address Reference provides the locked value'),
-    'REGISTER mesti hanya trigger bila rujukan alamat wujud (elak audit buta)'
-  );
+    assert.ok(
+        INSPECTOR_INSTRUCTION.includes('UNTRANSLATED: Output slot still carries the source-language sentence'),
+        'UNTRANSLATED definition (lazy-copy leak) mesti hadir'
+    );
+    assert.ok(
+        INSPECTOR_INSTRUCTION.includes(
+            'do NOT flag: proper nouns, character/brand/company names, creative-work titles'
+        ),
+        'UNTRANSLATED mesti kecualikan kata nama khas / tajuk (elak false-positive ESCAPE HATCH sah)'
+    );
+    assert.ok(
+        INSPECTOR_INSTRUCTION.includes(
+            "REGISTER: A recurring character's locked form in the Character Address Reference below is contradicted"
+        ),
+        'REGISTER definition (percanggahan gelaran/kata ganti) mesti hadir'
+    );
+    assert.ok(
+        INSPECTOR_INSTRUCTION.includes('Only flag when the Character Address Reference provides the locked value'),
+        'REGISTER mesti hanya trigger bila rujukan alamat wujud (elak audit buta)'
+    );
 });
 
 test('AgentB: formatPreflightContextForInspection renders vocative direct-address when it differs', () => {
-  const block = formatPreflightContextForInspection({
-    theme: 'Family drama.',
-    terms: [],
-    characters: [
-      { name: 'Shen', canonical_address: 'Puan Shen', direct_address: 'Mak Cik Shen', role: 'aunt' },
-      { name: 'Lin', canonical_address: 'Encik Lin', role: 'antagonist' }
-    ]
-  });
-  assert.ok(block.includes('Puan Shen / Mak Cik Shen (when addressed directly)'), 'vocative rendered beside narrative form');
-  assert.ok(block.includes('- Lin → Encik Lin'), 'character without vocative renders narrative form only');
+    const block = formatPreflightContextForInspection({
+        theme: 'Family drama.',
+        terms: [],
+        characters: [
+            { name: 'Shen', canonical_address: 'Puan Shen', direct_address: 'Mak Cik Shen', role: 'aunt' },
+            { name: 'Lin', canonical_address: 'Encik Lin', role: 'antagonist' }
+        ]
+    });
+    assert.ok(
+        block.includes('Puan Shen / Mak Cik Shen (when addressed directly)'),
+        'vocative rendered beside narrative form'
+    );
+    assert.ok(block.includes('- Lin → Encik Lin'), 'character without vocative renders narrative form only');
 });
 
 // [HARMONY v2 2026-09-29] H1: pronoun register must reach Agent B's audit context
 test('AgentB: formatPreflightContextForInspection renders locked pronoun register', () => {
-  const block = formatPreflightContextForInspection({
-    theme: 'Drama.',
-    terms: [],
-    characters: [
-      { name: 'Shen', canonical_address: 'Puan Shen', pronoun_register: 'saya/awak', role: 'lead' }
-    ]
-  });
-  assert.ok(block.includes('[pronouns: saya/awak]'), 'pronoun register surfaced to Agent B (H1 bridge complete)');
-  assert.ok(block.includes('locked titles and pronouns must stay consistent'), 'reference header signals pronoun consistency audit');
+    const block = formatPreflightContextForInspection({
+        theme: 'Drama.',
+        terms: [],
+        characters: [{ name: 'Shen', canonical_address: 'Puan Shen', pronoun_register: 'saya/awak', role: 'lead' }]
+    });
+    assert.ok(block.includes('[pronouns: saya/awak]'), 'pronoun register surfaced to Agent B (H1 bridge complete)');
+    assert.ok(
+        block.includes('locked titles and pronouns must stay consistent'),
+        'reference header signals pronoun consistency audit'
+    );
 });
 
 // [HARMONY v2 2026-09-29] H1: REGISTER crime covers BOTH honorific AND pronoun
 test('AgentB: REGISTER definition covers honorific AND pronoun-register mismatch', () => {
-  assert.ok(
-    INSPECTOR_INSTRUCTION.includes('honorific/title mismatch'),
-    'REGISTER must cover honorific/title mismatch'
-  );
-  assert.ok(
-    INSPECTOR_INSTRUCTION.includes('pronoun-register mismatch'),
-    'REGISTER must ALSO cover pronoun-register mismatch (H1 harmony)'
-  );
+    assert.ok(
+        INSPECTOR_INSTRUCTION.includes('honorific/title mismatch'),
+        'REGISTER must cover honorific/title mismatch'
+    );
+    assert.ok(
+        INSPECTOR_INSTRUCTION.includes('pronoun-register mismatch'),
+        'REGISTER must ALSO cover pronoun-register mismatch (H1 harmony)'
+    );
 });
 
 // [HARMONY v2 2026-09-29] H2: Agent B must NOT punish legitimate craft (compression/idiom)
 test('AgentB: inspector explicitly permits compression + idiomatic adaptation', () => {
-  assert.ok(
-    INSPECTOR_INSTRUCTION.includes('condensing wordy lines, trimming redundant filler, and replacing source idioms'),
-    'inspector must declare compression/idiom-adaptation as REQUIRED (not a crime)'
-  );
-  assert.ok(
-    INSPECTOR_INSTRUCTION.includes('not when the translation is simply shorter, reworded, or idiomatically adapted'),
-    'DROP/PHANTOM must not fire on legitimate craft output (H2 harmony with translation_craft)'
-  );
-  assert.ok(
-    INSPECTOR_INSTRUCTION.includes('length reduction, idiomatic rephrasing'),
-    'ignore-list must include length reduction + idiomatic rephrasing'
-  );
+    assert.ok(
+        INSPECTOR_INSTRUCTION.includes(
+            'condensing wordy lines, trimming redundant filler, and replacing source idioms'
+        ),
+        'inspector must declare compression/idiom-adaptation as REQUIRED (not a crime)'
+    );
+    assert.ok(
+        INSPECTOR_INSTRUCTION.includes(
+            'not when the translation is simply shorter, reworded, or idiomatically adapted'
+        ),
+        'DROP/PHANTOM must not fire on legitimate craft output (H2 harmony with translation_craft)'
+    );
+    assert.ok(
+        INSPECTOR_INSTRUCTION.includes('length reduction, idiomatic rephrasing'),
+        'ignore-list must include length reduction + idiomatic rephrasing'
+    );
 });
 
 // ── 2. buildInspectionPayload ──
 
 test('AgentB: buildInspectionPayload builds compact parallel <en>/<ms> blocks with global ids', () => {
-  const source = makeEntries(3, (i) => `Hello ${i}`);
-  const translated = makeTranslated(3, (i) => `Hai ${i}`);
-  const payload = buildInspectionPayload(source, translated);
-  assert.ok(payload, 'payload must be built');
-  assert.ok(payload.prompt.includes('<en>'), 'must contain <en> block');
-  assert.ok(payload.prompt.includes('<ms>'), 'must contain <ms> block');
-  assert.ok(payload.prompt.includes('1|Hello 0'), 'source line id|text format');
-  assert.ok(payload.prompt.includes('1|Hai 0'), 'translated line id|text format');
-  assert.ok(payload.prompt.includes('MERGE'), 'instruction must list MERGE');
-  assert.ok(payload.prompt.includes('DROP'), 'instruction must list DROP');
-  assert.ok(payload.prompt.includes('PHANTOM'), 'instruction must list PHANTOM');
-  assert.ok(payload.prompt.includes('"valid":true'), 'JSON contract must be present');
+    const source = makeEntries(3, (i) => `Hello ${i}`);
+    const translated = makeTranslated(3, (i) => `Hai ${i}`);
+    const payload = buildInspectionPayload(source, translated);
+    assert.ok(payload, 'payload must be built');
+    assert.ok(payload.prompt.includes('<en>'), 'must contain <en> block');
+    assert.ok(payload.prompt.includes('<ms>'), 'must contain <ms> block');
+    assert.ok(payload.prompt.includes('1|Hello 0'), 'source line id|text format');
+    assert.ok(payload.prompt.includes('1|Hai 0'), 'translated line id|text format');
+    assert.ok(payload.prompt.includes('MERGE'), 'instruction must list MERGE');
+    assert.ok(payload.prompt.includes('DROP'), 'instruction must list DROP');
+    assert.ok(payload.prompt.includes('PHANTOM'), 'instruction must list PHANTOM');
+    assert.ok(payload.prompt.includes('"valid":true'), 'JSON contract must be present');
 });
 
 test('AgentB: buildInspectionPayload rejects empty input (line truncation DIGUGURKAN — UNBOUNDED-CONTEXT 2026-09-29)', () => {
-  // Siling lama 200 aksara/baris DIGUGURKAN — baris dialog bersubtitle
-  // dengan markup boleh melebihi 200 aksara; inspector mesti melihat
-  // baris PENUH untuk mengesan PHANTOM/DROP dengan tepat.
-  const source = makeEntries(1, () => 'A'.repeat(500));
-  const translated = makeTranslated(1, () => 'B');
-  const payload = buildInspectionPayload(source, translated);
-  const longLine = payload.prompt.split('\n').find(l => l.startsWith('1|A'));
-  assert.equal(longLine.length, 502, '500 aksara + prefix "1|" — baris PENUH tanpa pemotongan');
+    // Siling lama 200 aksara/baris DIGUGURKAN — baris dialog bersubtitle
+    // dengan markup boleh melebihi 200 aksara; inspector mesti melihat
+    // baris PENUH untuk mengesan PHANTOM/DROP dengan tepat.
+    const source = makeEntries(1, () => 'A'.repeat(500));
+    const translated = makeTranslated(1, () => 'B');
+    const payload = buildInspectionPayload(source, translated);
+    const longLine = payload.prompt.split('\n').find((l) => l.startsWith('1|A'));
+    assert.equal(longLine.length, 502, '500 aksara + prefix "1|" — baris PENUH tanpa pemotongan');
 
-  assert.equal(buildInspectionPayload([], []), null);
-  assert.equal(buildInspectionPayload(null, null), null);
+    assert.equal(buildInspectionPayload([], []), null);
+    assert.equal(buildInspectionPayload(null, null), null);
 });
 
 test('AgentB: buildInspectionPayload menormalkan whitespace tanpa memotong baris (sanity kekal)', () => {
-  // Whitespace collapse masih dijalankan (muatan padat) — ini BUKAN pemotongan.
-  const source = makeEntries(1, () => 'Hello   \n\t world    with   spaces');
-  const translated = makeTranslated(1, () => 'Hai dunia');
-  const payload = buildInspectionPayload(source, translated);
-  const line = payload.prompt.split('\n').find(l => l.startsWith('1|Hello'));
-  assert.ok(line.includes('Hello world with spaces'), 'whitespace collapse aktif');
-  assert.ok(!line.includes('\t'), 'tab dibuang');
+    // Whitespace collapse masih dijalankan (muatan padat) — ini BUKAN pemotongan.
+    const source = makeEntries(1, () => 'Hello   \n\t world    with   spaces');
+    const translated = makeTranslated(1, () => 'Hai dunia');
+    const payload = buildInspectionPayload(source, translated);
+    const line = payload.prompt.split('\n').find((l) => l.startsWith('1|Hello'));
+    assert.ok(line.includes('Hello world with spaces'), 'whitespace collapse aktif');
+    assert.ok(!line.includes('\t'), 'tab dibuang');
 });
 
 test('AgentB: buildInspectionPayload injects preflight context (theme/terms/characters) — CONTEXT-AWARE AUDIT', () => {
-  const source = makeEntries(2, (i) => `Hello ${i}`);
-  const translated = makeTranslated(2, (i) => `Hai ${i}`);
-  const context = {
-    theme: 'A corporate family drama about inheritance.',
-    terms: [{ source: 'Zhuang Group', target: 'Kumpulan Zhuang', note: '' }],
-    characters: [
-      { name: 'Shen Ruoxin', canonical_address: 'Puan Shen', role: 'female lead' },
-      { name: 'Lin Bo', canonical_address: null, role: 'antagonist' }
-    ]
-  };
-  const payload = buildInspectionPayload(source, translated, context);
-  assert.ok(payload, 'payload must be built');
-  assert.ok(payload.prompt.includes('### Story Context (from Pre-Flight)'), 'theme header mesti hadir');
-  assert.ok(payload.prompt.includes('A corporate family drama about inheritance.'), 'theme mesti disuntik');
-  assert.ok(payload.prompt.includes('### Locked Terms'), 'terms header mesti hadir');
-  assert.ok(payload.prompt.includes('- Zhuang Group → Kumpulan Zhuang'), 'istilah terkunci mesti disuntik');
-  assert.ok(payload.prompt.includes('### Character Address Reference'), 'characters header mesti hadir');
-  assert.ok(payload.prompt.includes('- Shen Ruoxin → Puan Shen (female lead)'), 'gelaran terkunci mesti dirender');
-  assert.ok(payload.prompt.includes('address NOT LOCKED'), 'null address mesti dirender sebagai NOT LOCKED');
-  // Blok input kekal selepas konteks
-  assert.ok(payload.prompt.indexOf('### Story Context') < payload.prompt.indexOf('<en>'), 'konteks sebelum blok input');
+    const source = makeEntries(2, (i) => `Hello ${i}`);
+    const translated = makeTranslated(2, (i) => `Hai ${i}`);
+    const context = {
+        theme: 'A corporate family drama about inheritance.',
+        terms: [{ source: 'Zhuang Group', target: 'Kumpulan Zhuang', note: '' }],
+        characters: [
+            { name: 'Shen Ruoxin', canonical_address: 'Puan Shen', role: 'female lead' },
+            { name: 'Lin Bo', canonical_address: null, role: 'antagonist' }
+        ]
+    };
+    const payload = buildInspectionPayload(source, translated, context);
+    assert.ok(payload, 'payload must be built');
+    assert.ok(payload.prompt.includes('### Story Context (from Pre-Flight)'), 'theme header mesti hadir');
+    assert.ok(payload.prompt.includes('A corporate family drama about inheritance.'), 'theme mesti disuntik');
+    assert.ok(payload.prompt.includes('### Locked Terms'), 'terms header mesti hadir');
+    assert.ok(payload.prompt.includes('- Zhuang Group → Kumpulan Zhuang'), 'istilah terkunci mesti disuntik');
+    assert.ok(payload.prompt.includes('### Character Address Reference'), 'characters header mesti hadir');
+    assert.ok(payload.prompt.includes('- Shen Ruoxin → Puan Shen (female lead)'), 'gelaran terkunci mesti dirender');
+    assert.ok(payload.prompt.includes('address NOT LOCKED'), 'null address mesti dirender sebagai NOT LOCKED');
+    // Blok input kekal selepas konteks
+    assert.ok(
+        payload.prompt.indexOf('### Story Context') < payload.prompt.indexOf('<en>'),
+        'konteks sebelum blok input'
+    );
 });
 
 test('AgentB: buildInspectionPayload tanpa preflightContext → tiada blok konteks (backwards compatible)', () => {
-  const source = makeEntries(1, () => 'Hello');
-  const translated = makeTranslated(1, () => 'Hai');
-  const payload = buildInspectionPayload(source, translated);
-  assert.ok(payload, 'payload must be built');
-  assert.equal(payload.prompt.includes('### Story Context'), false, 'tiada konteks → tiada seksyen konteks');
-  assert.equal(payload.prompt.includes('### Locked Terms'), false, 'tiada konteks → tiada istilah');
+    const source = makeEntries(1, () => 'Hello');
+    const translated = makeTranslated(1, () => 'Hai');
+    const payload = buildInspectionPayload(source, translated);
+    assert.ok(payload, 'payload must be built');
+    assert.equal(payload.prompt.includes('### Story Context'), false, 'tiada konteks → tiada seksyen konteks');
+    assert.equal(payload.prompt.includes('### Locked Terms'), false, 'tiada konteks → tiada istilah');
 });
 
 test('AgentB: formatPreflightContextForInspection — null/empty context returns empty string', () => {
-  assert.equal(formatPreflightContextForInspection(null), '');
-  assert.equal(formatPreflightContextForInspection({}), '');
-  assert.equal(formatPreflightContextForInspection({ theme: '', terms: [], characters: [] }), '');
+    assert.equal(formatPreflightContextForInspection(null), '');
+    assert.equal(formatPreflightContextForInspection({}), '');
+    assert.equal(formatPreflightContextForInspection({ theme: '', terms: [], characters: [] }), '');
 });
 
 test('AgentB: formatPreflightContextForInspection UNBOUNDED — SEMUA terms/characters/theme disuntik (UNBOUNDED-CONTEXT 2026-09-29)', () => {
-  // RANTAIAN PEMOTONGAN DIHAPUS: preflight kini pulangkan 50 istilah /
-  // 20 watak; inspector WAJIB melihat SEMUANYA. Siling lama 10 istilah /
-  // 12 watak / 400 aksara tema DIGUGURKAN.
-  const manyTerms = Array.from({ length: 50 }, (_, i) => ({ source: `Term${i}`, target: `Istilah${i}` }));
-  const manyChars = Array.from({ length: 20 }, (_, i) => ({ name: `Watak${i}`, canonical_address: `Gelaran${i}`, role: 'r' }));
-  const longTheme = 'X'.repeat(600) + '|THEME-TAIL-MARKER';
-  const context = { theme: longTheme, terms: manyTerms, characters: manyChars };
+    // RANTAIAN PEMOTONGAN DIHAPUS: preflight kini pulangkan 50 istilah /
+    // 20 watak; inspector WAJIB melihat SEMUANYA. Siling lama 10 istilah /
+    // 12 watak / 400 aksara tema DIGUGURKAN.
+    const manyTerms = Array.from({ length: 50 }, (_, i) => ({ source: `Term${i}`, target: `Istilah${i}` }));
+    const manyChars = Array.from({ length: 20 }, (_, i) => ({
+        name: `Watak${i}`,
+        canonical_address: `Gelaran${i}`,
+        role: 'r'
+    }));
+    const longTheme = 'X'.repeat(600) + '|THEME-TAIL-MARKER';
+    const context = { theme: longTheme, terms: manyTerms, characters: manyChars };
 
-  const block = formatPreflightContextForInspection(context);
+    const block = formatPreflightContextForInspection(context);
 
-  assert.ok(block.includes('Term49 → Istilah49'), 'Istilah ke-50 (indeks 49) hadir — siling 10 digugurkan');
-  assert.ok(block.includes('Term10 → Istilah10'), 'Istilah ke-11 (indeks 10) hadir — melepasi siling lama 10');
-  assert.ok(block.includes('Watak19 → Gelaran19'), 'Watak ke-20 (indeks 19) hadir — siling 12 digugurkan');
-  assert.ok(block.includes('Watak12 → Gelaran12'), 'Watak ke-13 hadir — melepasi siling lama 12');
-  assert.ok(block.includes('THEME-TAIL-MARKER'), 'Tema penuh (600+ aksara) disuntik tanpa dipotong pada 400');
-  assert.equal(block.split('\n').filter(l => l.startsWith('- Term')).length, 50, 'Semua 50 baris istilah dirender');
-  assert.equal(block.split('\n').filter(l => l.startsWith('- Watak')).length, 20, 'Semua 20 baris watak dirender');
+    assert.ok(block.includes('Term49 → Istilah49'), 'Istilah ke-50 (indeks 49) hadir — siling 10 digugurkan');
+    assert.ok(block.includes('Term10 → Istilah10'), 'Istilah ke-11 (indeks 10) hadir — melepasi siling lama 10');
+    assert.ok(block.includes('Watak19 → Gelaran19'), 'Watak ke-20 (indeks 19) hadir — siling 12 digugurkan');
+    assert.ok(block.includes('Watak12 → Gelaran12'), 'Watak ke-13 hadir — melepasi siling lama 12');
+    assert.ok(block.includes('THEME-TAIL-MARKER'), 'Tema penuh (600+ aksara) disuntik tanpa dipotong pada 400');
+    assert.equal(block.split('\n').filter((l) => l.startsWith('- Term')).length, 50, 'Semua 50 baris istilah dirender');
+    assert.equal(block.split('\n').filter((l) => l.startsWith('- Watak')).length, 20, 'Semua 20 baris watak dirender');
 });
 
 test('AgentB: buildInspectionPayload menyuntik konteks penuh ke prompt inspector (chain-of-truncation dihapus)', () => {
-  // Ujian hujung-ke-hujung: 50 istilah preflight → prompt inspector mesti
-  // membawa 50 istilah (bukan 10). Ini kontrak ASAS audit Agent B.
-  const source = makeEntries(1, () => 'Hello');
-  const translated = makeTranslated(1, () => 'Hai');
-  const manyTerms = Array.from({ length: 50 }, (_, i) => ({ source: `Term${i}`, target: `Istilah${i}` }));
-  const payload = buildInspectionPayload(source, translated, {
-    theme: 'A story.',
-    terms: manyTerms,
-    characters: []
-  });
-  assert.ok(payload, 'payload mesti dibina');
-  assert.equal(payload.prompt.split('\n').filter(l => l.startsWith('- Term')).length, 50,
-    'Semua 50 istilah masuk prompt inspector — siling 10 digugurkan');
-  assert.ok(payload.prompt.includes('Term49 → Istilah49'), 'Istilah TERAKHIR hadir dalam prompt');
+    // Ujian hujung-ke-hujung: 50 istilah preflight → prompt inspector mesti
+    // membawa 50 istilah (bukan 10). Ini kontrak ASAS audit Agent B.
+    const source = makeEntries(1, () => 'Hello');
+    const translated = makeTranslated(1, () => 'Hai');
+    const manyTerms = Array.from({ length: 50 }, (_, i) => ({ source: `Term${i}`, target: `Istilah${i}` }));
+    const payload = buildInspectionPayload(source, translated, {
+        theme: 'A story.',
+        terms: manyTerms,
+        characters: []
+    });
+    assert.ok(payload, 'payload mesti dibina');
+    assert.equal(
+        payload.prompt.split('\n').filter((l) => l.startsWith('- Term')).length,
+        50,
+        'Semua 50 istilah masuk prompt inspector — siling 10 digugurkan'
+    );
+    assert.ok(payload.prompt.includes('Term49 → Istilah49'), 'Istilah TERAKHIR hadir dalam prompt');
 });
 
 // ── 3. Fail-open + 4. Circuit breaker ──
 
 test('AgentB: runSemanticInspection fails open on API error and counts toward circuit breaker', async () => {
-  const inspector = new AgentBInspector({
-    apiKey: 'test-key',
-    baseUrl: 'https://agentb.example.com/v1'
-  });
-  // Paksa kegagalan rangkaian: translateSubtitle di-override supaya throw
-  inspector.translateSubtitle = async () => { throw new Error('network timeout'); };
+    const inspector = new AgentBInspector({
+        apiKey: 'test-key',
+        baseUrl: 'https://agentb.example.com/v1'
+    });
+    // Paksa kegagalan rangkaian: translateSubtitle di-override supaya throw
+    inspector.translateSubtitle = async () => {
+        throw new Error('network timeout');
+    };
 
-  const source = makeEntries(2);
-  const translated = makeTranslated(2);
+    const source = makeEntries(2);
+    const translated = makeTranslated(2);
 
-  const v1 = await inspector.runSemanticInspection(source, translated);
-  assert.equal(v1.valid, true, 'must fail open');
-  assert.equal(v1.failOpen, true, 'must be flagged fail-open');
-  assert.equal(inspector.circuitOpen, false, '1 failure — circuit still closed');
+    const v1 = await inspector.runSemanticInspection(source, translated);
+    assert.equal(v1.valid, true, 'must fail open');
+    assert.equal(v1.failOpen, true, 'must be flagged fail-open');
+    assert.equal(inspector.circuitOpen, false, '1 failure — circuit still closed');
 
-  await inspector.runSemanticInspection(source, translated);
-  assert.equal(inspector.circuitOpen, false, '2 failures — circuit still closed');
+    await inspector.runSemanticInspection(source, translated);
+    assert.equal(inspector.circuitOpen, false, '2 failures — circuit still closed');
 
-  await inspector.runSemanticInspection(source, translated);
-  assert.equal(inspector.circuitOpen, true, `3 failures (threshold ${AGENT_B_CIRCUIT_THRESHOLD}) — circuit OPEN`);
+    await inspector.runSemanticInspection(source, translated);
+    assert.equal(inspector.circuitOpen, true, `3 failures (threshold ${AGENT_B_CIRCUIT_THRESHOLD}) — circuit OPEN`);
 
-  // Litar terbuka → panggilan seterusnya senyap tanpa menyentuh rangkaian
-  let called = false;
-  inspector.translateSubtitle = async () => { called = true; return '{"valid":false}'; };
-  const v4 = await inspector.runSemanticInspection(source, translated);
-  assert.equal(v4.valid, true, 'silent mode returns valid');
-  assert.equal(v4.skipped, 'circuit_open');
-  assert.equal(called, false, 'no network call while circuit open');
+    // Litar terbuka → panggilan seterusnya senyap tanpa menyentuh rangkaian
+    let called = false;
+    inspector.translateSubtitle = async () => {
+        called = true;
+        return '{"valid":false}';
+    };
+    const v4 = await inspector.runSemanticInspection(source, translated);
+    assert.equal(v4.valid, true, 'silent mode returns valid');
+    assert.equal(v4.skipped, 'circuit_open');
+    assert.equal(called, false, 'no network call while circuit open');
 
-  // Reset membuka sesi baharu
-  inspector.resetCircuitBreaker();
-  assert.equal(inspector.circuitOpen, false);
+    // Reset membuka sesi baharu
+    inspector.resetCircuitBreaker();
+    assert.equal(inspector.circuitOpen, false);
 });
 
 test('AgentB: runSemanticInspection fails open on unparseable response', async () => {
-  const inspector = new AgentBInspector({
-    apiKey: 'test-key',
-    baseUrl: 'https://agentb.example.com/v1'
-  });
-  inspector.translateSubtitle = async () => 'garbage response <>.';
+    const inspector = new AgentBInspector({
+        apiKey: 'test-key',
+        baseUrl: 'https://agentb.example.com/v1'
+    });
+    inspector.translateSubtitle = async () => 'garbage response <>.';
 
-  const verdict = await inspector.runSemanticInspection(makeEntries(2), makeTranslated(2));
-  assert.equal(verdict.valid, true, 'unparseable → fail open');
-  assert.equal(verdict.failOpen, true);
+    const verdict = await inspector.runSemanticInspection(makeEntries(2), makeTranslated(2));
+    assert.equal(verdict.valid, true, 'unparseable → fail open');
+    assert.equal(verdict.failOpen, true);
 });
 
 test('AgentB: runSemanticInspection returns crimes verdict on valid:false response', async () => {
-  const inspector = new AgentBInspector({
-    apiKey: 'test-key',
-    baseUrl: 'https://agentb.example.com/v1'
-  });
-  inspector.translateSubtitle = async () =>
-    JSON.stringify({ valid: false, crimes: [{ type: 'MERGE', ids: [48, 49], note: 'fused' }] });
+    const inspector = new AgentBInspector({
+        apiKey: 'test-key',
+        baseUrl: 'https://agentb.example.com/v1'
+    });
+    inspector.translateSubtitle = async () =>
+        JSON.stringify({ valid: false, crimes: [{ type: 'MERGE', ids: [48, 49], note: 'fused' }] });
 
-  const verdict = await inspector.runSemanticInspection(makeEntries(2), makeTranslated(2));
-  assert.equal(verdict.valid, false);
-  assert.equal(verdict.crimes[0].type, 'MERGE');
+    const verdict = await inspector.runSemanticInspection(makeEntries(2), makeTranslated(2));
+    assert.equal(verdict.valid, false);
+    assert.equal(verdict.crimes[0].type, 'MERGE');
 });
 
 test('AgentB: kejayaan reset kaunter kegagalan berturut-turut', async () => {
-  const inspector = new AgentBInspector({
-    apiKey: 'test-key',
-    baseUrl: 'https://agentb.example.com/v1'
-  });
-  inspector.translateSubtitle = async () => { throw new Error('boom'); };
-  await inspector.runSemanticInspection(makeEntries(1), makeTranslated(1)); // failure 1
-  await inspector.runSemanticInspection(makeEntries(1), makeTranslated(1)); // failure 2
+    const inspector = new AgentBInspector({
+        apiKey: 'test-key',
+        baseUrl: 'https://agentb.example.com/v1'
+    });
+    inspector.translateSubtitle = async () => {
+        throw new Error('boom');
+    };
+    await inspector.runSemanticInspection(makeEntries(1), makeTranslated(1)); // failure 1
+    await inspector.runSemanticInspection(makeEntries(1), makeTranslated(1)); // failure 2
 
-  inspector.translateSubtitle = async () => '{"valid":true}';
-  await inspector.runSemanticInspection(makeEntries(1), makeTranslated(1)); // success → reset
+    inspector.translateSubtitle = async () => '{"valid":true}';
+    await inspector.runSemanticInspection(makeEntries(1), makeTranslated(1)); // success → reset
 
-  inspector.translateSubtitle = async () => { throw new Error('boom'); };
-  await inspector.runSemanticInspection(makeEntries(1), makeTranslated(1)); // failure 1 semula
-  assert.equal(inspector.circuitOpen, false, 'success reset the consecutive counter — circuit still closed');
+    inspector.translateSubtitle = async () => {
+        throw new Error('boom');
+    };
+    await inspector.runSemanticInspection(makeEntries(1), makeTranslated(1)); // failure 1 semula
+    assert.equal(inspector.circuitOpen, false, 'success reset the consecutive counter — circuit still closed');
 });
 
 // ── 5. Muatan Universal (Mandat Seni Bina Universal Payload 2026-09-26) ──
 
 test('AgentB: [PAYLOAD-GODTIER] kimi-k3 muatan 4-kunci streaming — {model, messages, stream, temperature 0.0}; TIADA extra_body/reasoning_effort/max_tokens/response_format; timeout 5 min/5 min', () => {
-  const inspector = new AgentBInspector({
-    apiKey: 'test-key',
-    baseUrl: 'https://agentb.example.com/v1',
-    model: 'kimi-k3'
-  });
+    const inspector = new AgentBInspector({
+        apiKey: 'test-key',
+        baseUrl: 'https://agentb.example.com/v1',
+        model: 'kimi-k3'
+    });
 
-  assert.equal(inspector.isKimiModel(), true, 'kimi detector mesti aktif untuk kimi-k3');
-  assert.equal(inspector.maxRetries, 0, 'fail fast — no provider-level retries');
-  assert.equal(inspector.translationTimeout, AGENT_B_INSPECTION_TIMEOUT_MS, 'inspection timeout = konstanta mandat');
-  assert.equal(inspector.translationTimeout, 300000, 'semakan batch: 5 minit (siling Caddy 300s)');
-  assert.equal(AGENT_B_INSPECTION_TIMEOUT_MS, 300000, 'Fasa 1: 5 minit (siling Caddy 300s)');
-  assert.equal(AGENT_B_PREFLIGHT_TIMEOUT_MS, 300000, 'Fasa 0: 5 minit (siling Caddy 300s)');
+    assert.equal(inspector.isKimiModel(), true, 'kimi detector mesti aktif untuk kimi-k3');
+    assert.equal(inspector.maxRetries, 0, 'fail fast — no provider-level retries');
+    assert.equal(inspector.translationTimeout, AGENT_B_INSPECTION_TIMEOUT_MS, 'inspection timeout = konstanta mandat');
+    assert.equal(inspector.translationTimeout, 300000, 'semakan batch: 5 minit (siling Caddy 300s)');
+    assert.equal(AGENT_B_INSPECTION_TIMEOUT_MS, 300000, 'Fasa 1: 5 minit (siling Caddy 300s)');
+    assert.equal(AGENT_B_PREFLIGHT_TIMEOUT_MS, 300000, 'Fasa 0: 5 minit (siling Caddy 300s)');
 
-  // [PAYLOAD-GODTIER] Muatan 4-kunci TEPAT (ground truth empirikal curl
-  // rootsys.cloud — Kimi K3, SRT 759 baris; muatan 7-kunci lama GAGAL
-  // timeout 300s tanpa streaming).
-  const { body } = inspector.buildChatRequest('preflight prompt', true, {});
-  assert.equal(body.temperature, 0.0, 'kimi: temperature 0.0 wajib (varians 61s → 19s)');
-  assert.equal(body.stream, true, 'kimi: stream WAJIB true — chunk SSE menghidupkan sambungan Caddy');
-  assert.equal(body.model, 'kimi-k3');
-  assert.ok(Array.isArray(body.messages) && body.messages.length === 1, 'kimi: satu mesej user');
-  // PENCETUS OVERTHINKING — DIGUGURKAN SEPENUHNYA:
-  assert.equal('reasoning_effort' in body, false, 'kimi: reasoning_effort DIGUGURKAN (pencetus overthinking +90-110s, tiada kesan terukur)');
-  assert.equal('max_tokens' in body, false, 'kimi: max_tokens DIGUGURKAN (overthinking + istilah kritikal tergugur)');
-  assert.equal('extra_body' in body, false, 'kimi: extra_body DIGUGURKAN (overthinking +90-110s)');
-  assert.equal('response_format' in body, false, 'kimi: response_format DIGUGURKAN (overthinking +110s; JSON dijamin parser tahan lasak)');
-  assert.equal('top_p' in body, false, 'kimi: top_p DILARANG');
-  assert.equal('thinking' in body, false, 'kimi: thinking top-level DILARANG');
-  assert.equal('presence_penalty' in body, false, 'kimi: presence_penalty digugurkan');
-  assert.equal('max_completion_tokens' in body, false, 'kimi: max_completion_tokens digugurkan');
-  assert.deepEqual(
-    Object.keys(body).sort(),
-    ['messages', 'model', 'stream', 'temperature'],
-    'kimi mesti TEPAT muatan 4-kunci god-tier {model, messages, stream, temperature}'
-  );
+    // [PAYLOAD-GODTIER] Muatan 4-kunci TEPAT (ground truth empirikal curl
+    // rootsys.cloud — Kimi K3, SRT 759 baris; muatan 7-kunci lama GAGAL
+    // timeout 300s tanpa streaming).
+    const { body } = inspector.buildChatRequest('preflight prompt', true, {});
+    assert.equal(body.temperature, 0.0, 'kimi: temperature 0.0 wajib (varians 61s → 19s)');
+    assert.equal(body.stream, true, 'kimi: stream WAJIB true — chunk SSE menghidupkan sambungan Caddy');
+    assert.equal(body.model, 'kimi-k3');
+    assert.ok(Array.isArray(body.messages) && body.messages.length === 1, 'kimi: satu mesej user');
+    // PENCETUS OVERTHINKING — DIGUGURKAN SEPENUHNYA:
+    assert.equal(
+        'reasoning_effort' in body,
+        false,
+        'kimi: reasoning_effort DIGUGURKAN (pencetus overthinking +90-110s, tiada kesan terukur)'
+    );
+    assert.equal('max_tokens' in body, false, 'kimi: max_tokens DIGUGURKAN (overthinking + istilah kritikal tergugur)');
+    assert.equal('extra_body' in body, false, 'kimi: extra_body DIGUGURKAN (overthinking +90-110s)');
+    assert.equal(
+        'response_format' in body,
+        false,
+        'kimi: response_format DIGUGURKAN (overthinking +110s; JSON dijamin parser tahan lasak)'
+    );
+    assert.equal('top_p' in body, false, 'kimi: top_p DILARANG');
+    assert.equal('thinking' in body, false, 'kimi: thinking top-level DILARANG');
+    assert.equal('presence_penalty' in body, false, 'kimi: presence_penalty digugurkan');
+    assert.equal('max_completion_tokens' in body, false, 'kimi: max_completion_tokens digugurkan');
+    assert.deepEqual(
+        Object.keys(body).sort(),
+        ['messages', 'model', 'stream', 'temperature'],
+        'kimi mesti TEPAT muatan 4-kunci god-tier {model, messages, stream, temperature}'
+    );
 });
 
 // ── [MODEL-HIERARCHY] FINAL 2026-09-28: kimi-k3 ialah Pre-Flight agent SAHAJA ──
 
 test('AgentB [MODEL-HIERARCHY]: lalai mandat — Pre-Flight kimi-k3 STANDALONE (tiada fallback), Pemeriksa deepseek-v4-pro (fallback v4.1-flash)', () => {
-  assert.equal(AGENT_B_PREFLIGHT_MODEL, 'kimi-k3', 'lalai Fasa 0 kimi-k3');
-  const inspector = new AgentBInspector({ apiKey: 'k', baseUrl: 'https://x.example/v1' });
-  assert.equal(inspector.preflightModel, 'kimi-k3', 'instance lalai Fasa 0 kimi-k3');
-  // [MODEL-HIERARCHY] Fallback Fasa 0 DIGUGURKAN — preflightFallbackModel
-  // sentiasa sama dengan primer (kimi-k3 standalone).
-  assert.equal(inspector.preflightFallbackModel, 'kimi-k3', 'fallback Fasa 0 = primer (standalone, tiada model lain)');
-  assert.deepEqual(
-    inspector.preflightHierarchy,
-    ['kimi-k3'],
-    'hierarki Fasa 0: [kimi-k3] SAHAJA — STANDALONE'
-  );
-  assert.equal(inspector.preflightRetries, 4, 'retry-same-model: 4 retry tambahan bagi kimi-k3');
-  assert.equal(inspector.model, 'deepseek-v4-pro', 'Fasa 1 lalai deepseek-v4-pro');
-  assert.deepEqual(inspector.modelHierarchy, ['deepseek-v4-pro', 'deepseek-v4.1-flash'], 'Fasa 1 kekal');
+    assert.equal(AGENT_B_PREFLIGHT_MODEL, 'kimi-k3', 'lalai Fasa 0 kimi-k3');
+    const inspector = new AgentBInspector({ apiKey: 'k', baseUrl: 'https://x.example/v1' });
+    assert.equal(inspector.preflightModel, 'kimi-k3', 'instance lalai Fasa 0 kimi-k3');
+    // [MODEL-HIERARCHY] Fallback Fasa 0 DIGUGURKAN — preflightFallbackModel
+    // sentiasa sama dengan primer (kimi-k3 standalone).
+    assert.equal(
+        inspector.preflightFallbackModel,
+        'kimi-k3',
+        'fallback Fasa 0 = primer (standalone, tiada model lain)'
+    );
+    assert.deepEqual(inspector.preflightHierarchy, ['kimi-k3'], 'hierarki Fasa 0: [kimi-k3] SAHAJA — STANDALONE');
+    assert.equal(inspector.preflightRetries, 4, 'retry-same-model: 4 retry tambahan bagi kimi-k3');
+    assert.equal(inspector.model, 'deepseek-v4-pro', 'Fasa 1 lalai deepseek-v4-pro');
+    assert.deepEqual(inspector.modelHierarchy, ['deepseek-v4-pro', 'deepseek-v4.1-flash'], 'Fasa 1 kekal');
 });
 
 test('AgentB [MODEL-HIERARCHY]: config/env — preflightFallbackModel lama diabaikan (kimi-k3 standalone)', () => {
-  const { normalizeConfig } = require('../utils/config');
-  const saved = {
-    AGENT_B_PREFLIGHT_MODEL: process.env.AGENT_B_PREFLIGHT_MODEL,
-    AGENT_B_PREFLIGHT_FALLBACK_MODEL: process.env.AGENT_B_PREFLIGHT_FALLBACK_MODEL
-  };
-  try {
-    delete process.env.AGENT_B_PREFLIGHT_MODEL;
-    delete process.env.AGENT_B_PREFLIGHT_FALLBACK_MODEL;
-    const defaults = normalizeConfig({});
-    assert.equal(defaults.agentB.preflightModel, 'kimi-k3', 'lalai env: preflight kimi-k3');
-    // [MODEL-HIERARCHY] fallback lama deepseek-v4-pro TIDAK lagi digunakan.
-    assert.equal(defaults.agentB.preflightFallbackModel, 'kimi-k3', 'fallback Fasa 0 = primer (env lama diabaikan)');
+    const { normalizeConfig } = require('../utils/config');
+    const saved = {
+        AGENT_B_PREFLIGHT_MODEL: process.env.AGENT_B_PREFLIGHT_MODEL,
+        AGENT_B_PREFLIGHT_FALLBACK_MODEL: process.env.AGENT_B_PREFLIGHT_FALLBACK_MODEL
+    };
+    try {
+        delete process.env.AGENT_B_PREFLIGHT_MODEL;
+        delete process.env.AGENT_B_PREFLIGHT_FALLBACK_MODEL;
+        const defaults = normalizeConfig({});
+        assert.equal(defaults.agentB.preflightModel, 'kimi-k3', 'lalai env: preflight kimi-k3');
+        // [MODEL-HIERARCHY] fallback lama deepseek-v4-pro TIDAK lagi digunakan.
+        assert.equal(
+            defaults.agentB.preflightFallbackModel,
+            'kimi-k3',
+            'fallback Fasa 0 = primer (env lama diabaikan)'
+        );
 
-    process.env.AGENT_B_PREFLIGHT_MODEL = 'glm-5.3';
-    // env lama AGENT_B_PREFLIGHT_FALLBACK_MODEL tidak lagi berkesan — nilai
-    // sentiasa menuruti primer.
-    process.env.AGENT_B_PREFLIGHT_FALLBACK_MODEL = 'deepseek-v4-pro';
-    const overridden = normalizeConfig({});
-    assert.equal(overridden.agentB.preflightModel, 'glm-5.3', 'env override preflightModel berfungsi');
-    assert.equal(overridden.agentB.preflightFallbackModel, 'glm-5.3', 'fallback menuruti primer (env lama DIABAIKAN)');
-  } finally {
-    for (const key of Object.keys(saved)) {
-      if (saved[key] === undefined) delete process.env[key];
-      else process.env[key] = saved[key];
+        process.env.AGENT_B_PREFLIGHT_MODEL = 'glm-5.3';
+        // env lama AGENT_B_PREFLIGHT_FALLBACK_MODEL tidak lagi berkesan — nilai
+        // sentiasa menuruti primer.
+        process.env.AGENT_B_PREFLIGHT_FALLBACK_MODEL = 'deepseek-v4-pro';
+        const overridden = normalizeConfig({});
+        assert.equal(overridden.agentB.preflightModel, 'glm-5.3', 'env override preflightModel berfungsi');
+        assert.equal(
+            overridden.agentB.preflightFallbackModel,
+            'glm-5.3',
+            'fallback menuruti primer (env lama DIABAIKAN)'
+        );
+    } finally {
+        for (const key of Object.keys(saved)) {
+            if (saved[key] === undefined) delete process.env[key];
+            else process.env[key] = saved[key];
+        }
     }
-  }
 });
 
 // ── MANDAT v5.1: alias env AGENT_B_INSPECTION_MODEL (.env pengeluaran owner) ──
 
 test('AgentB v5.1: env AGENT_B_INSPECTION_MODEL ialah alias rasmi model semakan', () => {
-  const { normalizeConfig } = require('../utils/config');
-  const saved = {
-    AGENT_B_MODEL: process.env.AGENT_B_MODEL,
-    AGENT_B_INSPECTION_MODEL: process.env.AGENT_B_INSPECTION_MODEL
-  };
-  try {
-    delete process.env.AGENT_B_MODEL;
-    delete process.env.AGENT_B_INSPECTION_MODEL;
+    const { normalizeConfig } = require('../utils/config');
+    const saved = {
+        AGENT_B_MODEL: process.env.AGENT_B_MODEL,
+        AGENT_B_INSPECTION_MODEL: process.env.AGENT_B_INSPECTION_MODEL
+    };
+    try {
+        delete process.env.AGENT_B_MODEL;
+        delete process.env.AGENT_B_INSPECTION_MODEL;
 
-    // Setting .env pengeluaran owner: AGENT_B_INSPECTION_MODEL="deepseek-v4-pro"
-    process.env.AGENT_B_INSPECTION_MODEL = 'deepseek-v4-pro';
-    const cfg = normalizeConfig({});
-    assert.equal(cfg.agentB.model, 'deepseek-v4-pro', 'alias AGENT_B_INSPECTION_MODEL dibaca');
+        // Setting .env pengeluaran owner: AGENT_B_INSPECTION_MODEL="deepseek-v4-pro"
+        process.env.AGENT_B_INSPECTION_MODEL = 'deepseek-v4-pro';
+        const cfg = normalizeConfig({});
+        assert.equal(cfg.agentB.model, 'deepseek-v4-pro', 'alias AGENT_B_INSPECTION_MODEL dibaca');
 
-    // AGENT_B_MODEL lebih diutamakan apabila kedua-duanya wujud
-    process.env.AGENT_B_MODEL = 'deepseek-v4.1-flash';
-    const dual = normalizeConfig({});
-    assert.equal(dual.agentB.model, 'deepseek-v4.1-flash', 'AGENT_B_MODEL menang atas alias');
-  } finally {
-    for (const key of Object.keys(saved)) {
-      if (saved[key] === undefined) delete process.env[key];
-      else process.env[key] = saved[key];
+        // AGENT_B_MODEL lebih diutamakan apabila kedua-duanya wujud
+        process.env.AGENT_B_MODEL = 'deepseek-v4.1-flash';
+        const dual = normalizeConfig({});
+        assert.equal(dual.agentB.model, 'deepseek-v4.1-flash', 'AGENT_B_MODEL menang atas alias');
+    } finally {
+        for (const key of Object.keys(saved)) {
+            if (saved[key] === undefined) delete process.env[key];
+            else process.env[key] = saved[key];
+        }
     }
-  }
 });
 
 // ── [MODEL-HIERARCHY] FINAL: fallback Fasa 0 DIGUGURKAN (kimi-k3 standalone) ──
 
 test('AgentB [MODEL-HIERARCHY]: preflightFallbackModel lama DIABAIKAN — hierarki Fasa 0 sentiasa [kimi-k3] walaupun pemanggil menghantar nilai lama', () => {
-  const inspector = new AgentBInspector({
-    apiKey: 'k', baseUrl: 'https://x.example/v1',
-    preflightModel: 'kimi-k3',
-    preflightFallbackModel: 'deepseek-v4-pro', // nilai lama — DIABAIKAN
-    fallbackModel: 'deepseek-v4.1-flash'
-  });
-  assert.equal(inspector.preflightFallbackModel, 'kimi-k3', 'fallback menuruti primer');
-  assert.deepEqual(
-    inspector.preflightHierarchy,
-    ['kimi-k3'],
-    'hierarki Fasa 0 kekal 1-tingkat walaupun fallback lama dihantar'
-  );
-  // Fasa 1 TIDAK terjejas — kekal 2-tingkat
-  assert.deepEqual(
-    inspector.modelHierarchy,
-    ['deepseek-v4-pro', 'deepseek-v4.1-flash'],
-    'hierarki Fasa 1 kekal tanpa kimi'
-  );
+    const inspector = new AgentBInspector({
+        apiKey: 'k',
+        baseUrl: 'https://x.example/v1',
+        preflightModel: 'kimi-k3',
+        preflightFallbackModel: 'deepseek-v4-pro', // nilai lama — DIABAIKAN
+        fallbackModel: 'deepseek-v4.1-flash'
+    });
+    assert.equal(inspector.preflightFallbackModel, 'kimi-k3', 'fallback menuruti primer');
+    assert.deepEqual(
+        inspector.preflightHierarchy,
+        ['kimi-k3'],
+        'hierarki Fasa 0 kekal 1-tingkat walaupun fallback lama dihantar'
+    );
+    // Fasa 1 TIDAK terjejas — kekal 2-tingkat
+    assert.deepEqual(
+        inspector.modelHierarchy,
+        ['deepseek-v4-pro', 'deepseek-v4.1-flash'],
+        'hierarki Fasa 1 kekal tanpa kimi'
+    );
 });
 
 test('AgentB [MODEL-HIERARCHY]: tanpa override → hierarki mandat (Fasa 0 [kimi-k3], Fasa 1 dua tingkat)', () => {
-  const inspector = new AgentBInspector({ apiKey: 'k', baseUrl: 'https://x.example/v1' });
-  assert.equal(inspector.preflightFallbackModel, 'kimi-k3', 'fallback Fasa 0 = primer');
-  assert.deepEqual(inspector.preflightHierarchy, ['kimi-k3'], 'hierarki Fasa 0 1-tingkat (standalone)');
+    const inspector = new AgentBInspector({ apiKey: 'k', baseUrl: 'https://x.example/v1' });
+    assert.equal(inspector.preflightFallbackModel, 'kimi-k3', 'fallback Fasa 0 = primer');
+    assert.deepEqual(inspector.preflightHierarchy, ['kimi-k3'], 'hierarki Fasa 0 1-tingkat (standalone)');
 });
 
 test('AgentB [MODEL-HIERARCHY]: custom preflightModel — fallback sentiasa menuruti primer (1-tingkat)', () => {
-  const dup = new AgentBInspector({
-    apiKey: 'k', baseUrl: 'https://x.example/v1',
-    preflightModel: 'glm-5.3'
-  });
-  assert.equal(dup.preflightModel, 'glm-5.3', 'custom primer Fasa 0 diterima');
-  assert.equal(dup.preflightFallbackModel, 'glm-5.3', 'fallback menuruti custom primer');
-  assert.deepEqual(dup.preflightHierarchy, ['glm-5.3'], 'hierarki Fasa 0 custom tetap 1-tingkat');
+    const dup = new AgentBInspector({
+        apiKey: 'k',
+        baseUrl: 'https://x.example/v1',
+        preflightModel: 'glm-5.3'
+    });
+    assert.equal(dup.preflightModel, 'glm-5.3', 'custom primer Fasa 0 diterima');
+    assert.equal(dup.preflightFallbackModel, 'glm-5.3', 'fallback menuruti custom primer');
+    assert.deepEqual(dup.preflightHierarchy, ['glm-5.3'], 'hierarki Fasa 0 custom tetap 1-tingkat');
 });
 
 test('AgentB [MODEL-HIERARCHY]: Fasa 0 — kimi-k3 gagal → RETRY kimi-k3 (bukan model lain); 2x gagal → fail-open null', async () => {
-  const inspector = new AgentBInspector({
-    apiKey: 'k', baseUrl: 'https://x.example/v1',
-    preflightModel: 'kimi-k3',
-    preflightRetryBackoffMs: 0 // [UPSTREAM-RESILIENCE] lumpuh backoff — ujian pantas
-  });
+    const inspector = new AgentBInspector({
+        apiKey: 'k',
+        baseUrl: 'https://x.example/v1',
+        preflightModel: 'kimi-k3',
+        preflightRetryBackoffMs: 0 // [UPSTREAM-RESILIENCE] lumpuh backoff — ujian pantas
+    });
 
-  const calls = [];
-  const payloads = [];
-  inspector.translateSubtitle = async function (content, src, tgt, prompt) {
-    calls.push(this.model);
-    payloads.push(this.buildChatRequest(prompt, true, {}).body);
-    throw Object.assign(new Error('gateway 502'), { statusCode: 502 }); // sentiasa gagal
-  };
+    const calls = [];
+    const payloads = [];
+    inspector.translateSubtitle = async function (content, src, tgt, prompt) {
+        calls.push(this.model);
+        payloads.push(this.buildChatRequest(prompt, true, {}).body);
+        throw Object.assign(new Error('gateway 502'), { statusCode: 502 }); // sentiasa gagal
+    };
 
-  const result = await inspector.runPreflightPass(makeEntries(50), 'Malay', 'English');
-  assert.equal(result, null, 'semua percubaan kimi-k3 gagal → fail-open null (kontrak non-blocking)');
-  // [MODEL-HIERARCHY] 1 percubaan + 4 retry pada MODEL YANG SAMA — tiada
-  // peralihan ke deepseek atau flash (fallback merentas model DIGUGURKAN).
-  assert.deepEqual(
-    calls,
-    ['kimi-k3', 'kimi-k3', 'kimi-k3', 'kimi-k3', 'kimi-k3'],
-    'kitaran retry-same-model: kimi-k3 × 5 (1 percubaan + 4 retry)'
-  );
-  // Muatan god-tier konsisten pada setiap percubaan.
-  for (const [i, label] of payloads.entries()) {
-    assert.equal(label.temperature, 0.0, `muatan ${i}: temperature 0.0`);
-    assert.equal(label.stream, true, `muatan ${i}: stream true`);
-    assert.equal('reasoning_effort' in label, false, `muatan ${i}: TIADA reasoning_effort`);
-    assert.equal('max_tokens' in label, false, `muatan ${i}: TIADA max_tokens`);
-    assert.equal('extra_body' in label, false, `muatan ${i}: TIADA extra_body`);
-    assert.equal('response_format' in label, false, `muatan ${i}: TIADA response_format`);
-  }
-  assert.equal(inspector.model, 'deepseek-v4-pro', 'model semakan tidak terjejas oleh Fasa 0');
+    const result = await inspector.runPreflightPass(makeEntries(50), 'Malay', 'English');
+    assert.equal(result, null, 'semua percubaan kimi-k3 gagal → fail-open null (kontrak non-blocking)');
+    // [MODEL-HIERARCHY] 1 percubaan + 4 retry pada MODEL YANG SAMA — tiada
+    // peralihan ke deepseek atau flash (fallback merentas model DIGUGURKAN).
+    assert.deepEqual(
+        calls,
+        ['kimi-k3', 'kimi-k3', 'kimi-k3', 'kimi-k3', 'kimi-k3'],
+        'kitaran retry-same-model: kimi-k3 × 5 (1 percubaan + 4 retry)'
+    );
+    // Muatan god-tier konsisten pada setiap percubaan.
+    for (const [i, label] of payloads.entries()) {
+        assert.equal(label.temperature, 0.0, `muatan ${i}: temperature 0.0`);
+        assert.equal(label.stream, true, `muatan ${i}: stream true`);
+        assert.equal('reasoning_effort' in label, false, `muatan ${i}: TIADA reasoning_effort`);
+        assert.equal('max_tokens' in label, false, `muatan ${i}: TIADA max_tokens`);
+        assert.equal('extra_body' in label, false, `muatan ${i}: TIADA extra_body`);
+        assert.equal('response_format' in label, false, `muatan ${i}: TIADA response_format`);
+    }
+    assert.equal(inspector.model, 'deepseek-v4-pro', 'model semakan tidak terjejas oleh Fasa 0');
 });
 
 test('AgentB [MODEL-HIERARCHY]: config.js normalisasi preflightFallbackModel — sentiasa menuruti primer (env lama diabaikan)', () => {
-  const { normalizeConfig } = require('../utils/config');
-  const saved = process.env.AGENT_B_PREFLIGHT_FALLBACK_MODEL;
-  try {
-    delete process.env.AGENT_B_PREFLIGHT_FALLBACK_MODEL;
-    const defaults = normalizeConfig({});
-    assert.equal(defaults.agentB.preflightFallbackModel, 'kimi-k3', 'lalai: fallback = primer kimi-k3');
+    const { normalizeConfig } = require('../utils/config');
+    const saved = process.env.AGENT_B_PREFLIGHT_FALLBACK_MODEL;
+    try {
+        delete process.env.AGENT_B_PREFLIGHT_FALLBACK_MODEL;
+        const defaults = normalizeConfig({});
+        assert.equal(defaults.agentB.preflightFallbackModel, 'kimi-k3', 'lalai: fallback = primer kimi-k3');
 
-    const cfg = normalizeConfig({
-      agentB: { enabled: true, baseUrl: 'https://c.example/v1', apiKey: 'ck', preflightModel: 'glm-5.3' }
-    });
-    assert.equal(cfg.agentB.preflightFallbackModel, 'glm-5.3', 'fallback menuruti config primer');
+        const cfg = normalizeConfig({
+            agentB: { enabled: true, baseUrl: 'https://c.example/v1', apiKey: 'ck', preflightModel: 'glm-5.3' }
+        });
+        assert.equal(cfg.agentB.preflightFallbackModel, 'glm-5.3', 'fallback menuruti config primer');
 
-    process.env.AGENT_B_PREFLIGHT_FALLBACK_MODEL = 'deepseek-v4-pro';
-    const envCfg = normalizeConfig({});
-    assert.equal(envCfg.agentB.preflightFallbackModel, 'kimi-k3', 'env fallback lama DIABAIKAN — menuruti primer');
-  } finally {
-    if (saved === undefined) delete process.env.AGENT_B_PREFLIGHT_FALLBACK_MODEL;
-    else process.env.AGENT_B_PREFLIGHT_FALLBACK_MODEL = saved;
-  }
+        process.env.AGENT_B_PREFLIGHT_FALLBACK_MODEL = 'deepseek-v4-pro';
+        const envCfg = normalizeConfig({});
+        assert.equal(envCfg.agentB.preflightFallbackModel, 'kimi-k3', 'env fallback lama DIABAIKAN — menuruti primer');
+    } finally {
+        if (saved === undefined) delete process.env.AGENT_B_PREFLIGHT_FALLBACK_MODEL;
+        else process.env.AGENT_B_PREFLIGHT_FALLBACK_MODEL = saved;
+    }
 });
 
 test('AgentB: glm-5.3-flash TIDAK terjejas peraturan frontier glm-5.3 penuh (pembezaan flash)', () => {
-  const provider = new OpenAICompatibleProvider({
-    apiKey: 'k', baseUrl: 'https://x.example/v1', model: 'glm-5.3-flash'
-  });
-  const { body } = provider.buildChatRequest('probe', false, {});
-  assert.notEqual(body.temperature, 0.0, 'flash variant must not inherit full glm-5.3 temperature lock');
-  assert.notEqual(body.top_p, 0.1, 'flash variant must not inherit full glm-5.3 top_p lock');
+    const provider = new OpenAICompatibleProvider({
+        apiKey: 'k',
+        baseUrl: 'https://x.example/v1',
+        model: 'glm-5.3-flash'
+    });
+    const { body } = provider.buildChatRequest('probe', false, {});
+    assert.notEqual(body.temperature, 0.0, 'flash variant must not inherit full glm-5.3 temperature lock');
+    assert.notEqual(body.top_p, 0.1, 'flash variant must not inherit full glm-5.3 top_p lock');
 });
 
 test('AgentB: [PAYLOAD-GODTIER] payload deepseek-v4-pro — muatan 4-kunci streaming sama dengan kimi-k3 (seragam semua enjin Agent B)', () => {
-  const inspector = new AgentBInspector({
-    apiKey: 'test-key',
-    baseUrl: 'https://agentb.example.com/v1',
-    model: 'deepseek-v4-pro'
-  });
+    const inspector = new AgentBInspector({
+        apiKey: 'test-key',
+        baseUrl: 'https://agentb.example.com/v1',
+        model: 'deepseek-v4-pro'
+    });
 
-  // FASA 1 (Pemeriksa Utama) — muatan 4-kunci god-tier seragam (endpoint sama).
-  const { body } = inspector.buildChatRequest('fallback probe', true, {});
-  assert.equal(body.temperature, 0.0, 'temperature 0.0 WAJIB dihantar (deterministik)');
-  assert.equal(body.stream, true, 'stream WAJIB true — siling Caddy 300s (STREAMING MANDATORY)');
-  assert.equal('reasoning_effort' in body, false, 'reasoning_effort DIGUGURKAN (tiada kesan terukur)');
-  assert.equal('max_tokens' in body, false, 'max_tokens DIGUGURKAN (overthinking + istilah tergugur)');
-  assert.equal('extra_body' in body, false, 'extra_body DIGUGURKAN (overthinking +90-110s)');
-  assert.equal('response_format' in body, false, 'response_format DIGUGURKAN (overthinking +110s)');
-  assert.equal('top_p' in body, false, 'top_p DILARANG');
-  assert.equal('thinking' in body, false, 'thinking top-level DILARANG');
-  assert.equal('presence_penalty' in body, false, 'presence_penalty TERLARANG');
-  assert.equal('frequency_penalty' in body, false, 'frequency_penalty TERLARANG');
-  assert.equal('max_completion_tokens' in body, false, 'max_completion_tokens TERLARANG');
-  assert.equal(body.model, 'deepseek-v4-pro');
-  assert.ok(Array.isArray(body.messages) && body.messages.length === 1, 'single user message');
-  assert.deepEqual(
-    Object.keys(body).sort(),
-    ['messages', 'model', 'stream', 'temperature'],
-    'muatan mesti TEPAT {model, messages, stream, temperature} (4-kunci god-tier)'
-  );
+    // FASA 1 (Pemeriksa Utama) — muatan 4-kunci god-tier seragam (endpoint sama).
+    const { body } = inspector.buildChatRequest('fallback probe', true, {});
+    assert.equal(body.temperature, 0.0, 'temperature 0.0 WAJIB dihantar (deterministik)');
+    assert.equal(body.stream, true, 'stream WAJIB true — siling Caddy 300s (STREAMING MANDATORY)');
+    assert.equal('reasoning_effort' in body, false, 'reasoning_effort DIGUGURKAN (tiada kesan terukur)');
+    assert.equal('max_tokens' in body, false, 'max_tokens DIGUGURKAN (overthinking + istilah tergugur)');
+    assert.equal('extra_body' in body, false, 'extra_body DIGUGURKAN (overthinking +90-110s)');
+    assert.equal('response_format' in body, false, 'response_format DIGUGURKAN (overthinking +110s)');
+    assert.equal('top_p' in body, false, 'top_p DILARANG');
+    assert.equal('thinking' in body, false, 'thinking top-level DILARANG');
+    assert.equal('presence_penalty' in body, false, 'presence_penalty TERLARANG');
+    assert.equal('frequency_penalty' in body, false, 'frequency_penalty TERLARANG');
+    assert.equal('max_completion_tokens' in body, false, 'max_completion_tokens TERLARANG');
+    assert.equal(body.model, 'deepseek-v4-pro');
+    assert.ok(Array.isArray(body.messages) && body.messages.length === 1, 'single user message');
+    assert.deepEqual(
+        Object.keys(body).sort(),
+        ['messages', 'model', 'stream', 'temperature'],
+        'muatan mesti TEPAT {model, messages, stream, temperature} (4-kunci god-tier)'
+    );
 
-  // FALLBACK PEMERIKSA (deepseek-v4.1-flash) — muatan YANG SAMA.
-  const flash = new AgentBInspector({
-    apiKey: 'test-key',
-    baseUrl: 'https://agentb.example.com/v1',
-    model: 'deepseek-v4.1-flash'
-  });
-  const flashBody = flash.buildChatRequest('flash probe', true, {}).body;
-  assert.equal(flashBody.temperature, 0.0, 'fallback flash: temperature 0.0');
-  assert.equal(flashBody.stream, true, 'fallback flash: stream true');
-  assert.equal('extra_body' in flashBody, false, 'fallback flash: extra_body DIGUGURKAN');
-  assert.equal('reasoning_effort' in flashBody, false, 'fallback flash: reasoning_effort DIGUGURKAN');
-  assert.equal('max_tokens' in flashBody, false, 'fallback flash: max_tokens DIGUGURKAN');
-  assert.equal('response_format' in flashBody, false, 'fallback flash: response_format DIGUGURKAN');
-  assert.equal('top_p' in flashBody, false, 'fallback flash: top_p digugurkan');
+    // FALLBACK PEMERIKSA (deepseek-v4.1-flash) — muatan YANG SAMA.
+    const flash = new AgentBInspector({
+        apiKey: 'test-key',
+        baseUrl: 'https://agentb.example.com/v1',
+        model: 'deepseek-v4.1-flash'
+    });
+    const flashBody = flash.buildChatRequest('flash probe', true, {}).body;
+    assert.equal(flashBody.temperature, 0.0, 'fallback flash: temperature 0.0');
+    assert.equal(flashBody.stream, true, 'fallback flash: stream true');
+    assert.equal('extra_body' in flashBody, false, 'fallback flash: extra_body DIGUGURKAN');
+    assert.equal('reasoning_effort' in flashBody, false, 'fallback flash: reasoning_effort DIGUGURKAN');
+    assert.equal('max_tokens' in flashBody, false, 'fallback flash: max_tokens DIGUGURKAN');
+    assert.equal('response_format' in flashBody, false, 'fallback flash: response_format DIGUGURKAN');
+    assert.equal('top_p' in flashBody, false, 'fallback flash: top_p digugurkan');
 });
 
 test('AgentB: [PAYLOAD-GODTIER] — lalai modul: timeout 5 min/5 min (siling Caddy) + max_tokens TIDAK lagi dihantar (constant kekal untuk keserasian warisan)', () => {
-  // Lalai mandat modul — timeout di bawah/at siling Caddy 300s.
-  assert.equal(AGENT_B_PREFLIGHT_TIMEOUT_MS, 300000, 'lalai Fasa 0 5 minit');
-  assert.equal(AGENT_B_INSPECTION_TIMEOUT_MS, 300000, 'lalai Fasa 1 5 minit');
-  // [PAYLOAD-GODTIER] Constant 131072 KEKAL untuk keserasian warisan
-  // (config.transport), tetapi TIDAK LAGI dihantar dalam muatan.
-  assert.equal(AGENT_B_MAX_TOKENS, 131072, 'constant warisan dikekalkan (tidak dihantar)');
+    // Lalai mandat modul — timeout di bawah/at siling Caddy 300s.
+    assert.equal(AGENT_B_PREFLIGHT_TIMEOUT_MS, 300000, 'lalai Fasa 0 5 minit');
+    assert.equal(AGENT_B_INSPECTION_TIMEOUT_MS, 300000, 'lalai Fasa 1 5 minit');
+    // [PAYLOAD-GODTIER] Constant 131072 KEKAL untuk keserasian warisan
+    // (config.transport), tetapi TIDAK LAGI dihantar dalam muatan.
+    assert.equal(AGENT_B_MAX_TOKENS, 131072, 'constant warisan dikekalkan (tidak dihantar)');
 
-  // Muatan TIDAK membawa max_tokens/reasoning_effort (pencetus overthinking).
-  const def = new AgentBInspector({ apiKey: 'k', baseUrl: 'https://x.example/v1', model: 'deepseek-v4-pro' });
-  const defBody = def.buildChatRequest('p', true, {}).body;
-  assert.equal('max_tokens' in defBody, false, 'muatan TIDAK membawa max_tokens (god-tier)');
-  assert.equal('reasoning_effort' in defBody, false, 'muatan TIDAK membawa reasoning_effort (god-tier)');
-  assert.equal(defBody.stream, true, 'stream true lalai (god-tier)');
+    // Muatan TIDAK membawa max_tokens/reasoning_effort (pencetus overthinking).
+    const def = new AgentBInspector({ apiKey: 'k', baseUrl: 'https://x.example/v1', model: 'deepseek-v4-pro' });
+    const defBody = def.buildChatRequest('p', true, {}).body;
+    assert.equal('max_tokens' in defBody, false, 'muatan TIDAK membawa max_tokens (god-tier)');
+    assert.equal('reasoning_effort' in defBody, false, 'muatan TIDAK membawa reasoning_effort (god-tier)');
+    assert.equal(defBody.stream, true, 'stream true lalai (god-tier)');
 
-  // [PAYLOAD-GODTIER] Override maxTokens per-instance TIDAK lagi menembusi
-  // muatan — builder 4-kunci mengabaikannya (siasatan muatan, bukan lalai).
-  const capped = new AgentBInspector({ apiKey: 'k', baseUrl: 'https://x.example/v1', model: 'deepseek-v4-pro', maxTokens: 4096 });
-  assert.equal('max_tokens' in capped.buildChatRequest('p', true, {}).body, false, 'override maxTokens DIABAIKAN oleh builder god-tier');
+    // [PAYLOAD-GODTIER] Override maxTokens per-instance TIDAK lagi menembusi
+    // muatan — builder 4-kunci mengabaikannya (siasatan muatan, bukan lalai).
+    const capped = new AgentBInspector({
+        apiKey: 'k',
+        baseUrl: 'https://x.example/v1',
+        model: 'deepseek-v4-pro',
+        maxTokens: 4096
+    });
+    assert.equal(
+        'max_tokens' in capped.buildChatRequest('p', true, {}).body,
+        false,
+        'override maxTokens DIABAIKAN oleh builder god-tier'
+    );
 
-  // Override tidak sah → tiada kesan (builder 4-kunci tiada max_tokens).
-  const invalid = new AgentBInspector({ apiKey: 'k', baseUrl: 'https://x.example/v1', model: 'deepseek-v4-pro', maxTokens: -1 });
-  assert.equal('max_tokens' in invalid.buildChatRequest('p', true, {}).body, false, 'muatan kekal 4-kunci tanpa max_tokens');
+    // Override tidak sah → tiada kesan (builder 4-kunci tiada max_tokens).
+    const invalid = new AgentBInspector({
+        apiKey: 'k',
+        baseUrl: 'https://x.example/v1',
+        model: 'deepseek-v4-pro',
+        maxTokens: -1
+    });
+    assert.equal(
+        'max_tokens' in invalid.buildChatRequest('p', true, {}).body,
+        false,
+        'muatan kekal 4-kunci tanpa max_tokens'
+    );
 });
 
 test('AgentB: runPreflightPass menaikkan timeout kepada 5 min dan memulihkannya selepas Fasa 0 (MANDAT OPERASI MUTLAK v2)', async () => {
-  const inspector = new AgentBInspector({
-    apiKey: 'test-key',
-    baseUrl: 'https://agentb.example.com/v1'
-  });
+    const inspector = new AgentBInspector({
+        apiKey: 'test-key',
+        baseUrl: 'https://agentb.example.com/v1'
+    });
 
-  // Fail kecil (< PREFLIGHT_MIN_ENTRIES) → skip cepat; laluan tetap melalui
-  // kitaran naik/pulih timeout dalam runPreflightPass.
-  assert.equal(inspector.translationTimeout, 300000, 'baseline 5 min sebelum Fasa 0');
-  await inspector.runPreflightPass(makeEntries(3), 'Malay', 'English');
-  assert.equal(inspector.translationTimeout, 300000, 'timeout dipulihkan selepas skip path');
+    // Fail kecil (< PREFLIGHT_MIN_ENTRIES) → skip cepat; laluan tetap melalui
+    // kitaran naik/pulih timeout dalam runPreflightPass.
+    assert.equal(inspector.translationTimeout, 300000, 'baseline 5 min sebelum Fasa 0');
+    await inspector.runPreflightPass(makeEntries(3), 'Malay', 'English');
+    assert.equal(inspector.translationTimeout, 300000, 'timeout dipulihkan selepas skip path');
 
-  // Verifikasi kitaran penuh dengan fail besar (panggilan API di-override)
-  let observedTimeout = null;
-  inspector.translateSubtitle = async () => {
-    observedTimeout = inspector.translationTimeout;
-    return JSON.stringify({ theme: 'Theme.', terms: [] });
-  };
-  const result = await inspector.runPreflightPass(makeEntries(50), 'Malay', 'English');
-  assert.ok(result, 'preflight context returned');
-  assert.equal(observedTimeout, 300000, 'Fasa 0 mesti berjalan pada 5 minit (MANDAT v2)');
-  assert.equal(inspector.translationTimeout, 300000, 'pulih kepada 5 min selepas Fasa 0');
+    // Verifikasi kitaran penuh dengan fail besar (panggilan API di-override)
+    let observedTimeout = null;
+    inspector.translateSubtitle = async () => {
+        observedTimeout = inspector.translationTimeout;
+        return JSON.stringify({ theme: 'Theme.', terms: [] });
+    };
+    const result = await inspector.runPreflightPass(makeEntries(50), 'Malay', 'English');
+    assert.ok(result, 'preflight context returned');
+    assert.equal(observedTimeout, 300000, 'Fasa 0 mesti berjalan pada 5 minit (MANDAT v2)');
+    assert.equal(inspector.translationTimeout, 300000, 'pulih kepada 5 min selepas Fasa 0');
 });
 
 test('AgentB: runPreflightPass memulihkan timeout walaupun panggilan API gagal', async () => {
-  const inspector = new AgentBInspector({
-    apiKey: 'test-key',
-    baseUrl: 'https://agentb.example.com/v1'
-  });
-  inspector.translateSubtitle = async () => { throw new Error('boom'); };
+    const inspector = new AgentBInspector({
+        apiKey: 'test-key',
+        baseUrl: 'https://agentb.example.com/v1'
+    });
+    inspector.translateSubtitle = async () => {
+        throw new Error('boom');
+    };
 
-  const result = await inspector.runPreflightPass(makeEntries(50), 'Malay', 'English');
-  assert.equal(result, null, 'kegagalan Fasa 0 → null (non-blocking, kontrak asal)');
-  assert.equal(inspector.translationTimeout, 300000, 'finally block sentiasa memulihkan 5 minit');
+    const result = await inspector.runPreflightPass(makeEntries(50), 'Malay', 'English');
+    assert.equal(result, null, 'kegagalan Fasa 0 → null (non-blocking, kontrak asal)');
+    assert.equal(inspector.translationTimeout, 300000, 'finally block sentiasa memulihkan 5 minit');
 });
 
 test('AgentB: buildUserPrompt override menghantar prompt inspector verbatim', () => {
-  const inspector = new AgentBInspector({
-    apiKey: 'test-key',
-    baseUrl: 'https://agentb.example.com/v1'
-  });
-  const inspectorPrompt = 'INSPECT INSTRUCTION <en>...</en> <ms>...</ms>';
-  const promptData = inspector.buildUserPrompt('ignored-content', 'en', inspectorPrompt);
-  assert.equal(promptData.userPrompt, inspectorPrompt, 'inspector prompt delivered verbatim');
-  assert.equal(promptData.isSelfContained, true);
+    const inspector = new AgentBInspector({
+        apiKey: 'test-key',
+        baseUrl: 'https://agentb.example.com/v1'
+    });
+    const inspectorPrompt = 'INSPECT INSTRUCTION <en>...</en> <ms>...</ms>';
+    const promptData = inspector.buildUserPrompt('ignored-content', 'en', inspectorPrompt);
+    assert.equal(promptData.userPrompt, inspectorPrompt, 'inspector prompt delivered verbatim');
+    assert.equal(promptData.isSelfContained, true);
 });
 
 // ── 6. Integriti enjin apabila agentB = null ──
 
 test('AgentB: engine dengan agentB=null kekal 100% Gemini — tiada panggilan inspector, stats sifar', async () => {
-  const TranslationEngine = require('./translationEngine');
+    const TranslationEngine = require('./translationEngine');
 
-  const geminiCalls = [];
-  const dummyGemini = {
-    translateSubtitle: async (content) => {
-      geminiCalls.push({ content });
-      // Respons penuh 50/50 — laluan pariti sempurna
-      return Array.from({ length: 50 }, (_, i) => `<s id="${i + 1}">Terjemahan ${i + 1}</s>`).join('\n');
-    },
-    streamTranslateSubtitle: async () => '',
-    estimateTokenCount: () => 10
-  };
+    const geminiCalls = [];
+    const dummyGemini = {
+        translateSubtitle: async (content) => {
+            geminiCalls.push({ content });
+            // Respons penuh 50/50 — laluan pariti sempurna
+            return Array.from({ length: 50 }, (_, i) => `<s id="${i + 1}">Terjemahan ${i + 1}</s>`).join('\n');
+        },
+        streamTranslateSubtitle: async () => '',
+        estimateTokenCount: () => 10
+    };
 
-  const engine = new TranslationEngine(dummyGemini, 'gemini-2.5-flash', {}, {
-    providerName: 'gemini',
-    agentB: null // ← DUAL-AI off
-  });
+    const engine = new TranslationEngine(
+        dummyGemini,
+        'gemini-2.5-flash',
+        {},
+        {
+            providerName: 'gemini',
+            agentB: null // ← DUAL-AI off
+        }
+    );
 
-  assert.equal(engine.agentB, null);
-  assert.equal(engine.translationStats.agentBUsed, false);
-  assert.equal(engine.translationStats.agentBFailures, 0);
-  assert.equal(engine.translationStats.agentBInspections, 0);
-  assert.equal(engine.translationStats.agentBRetries, 0);
+    assert.equal(engine.agentB, null);
+    assert.equal(engine.translationStats.agentBUsed, false);
+    assert.equal(engine.translationStats.agentBFailures, 0);
+    assert.equal(engine.translationStats.agentBInspections, 0);
+    assert.equal(engine.translationStats.agentBRetries, 0);
 
-  // Batch 3 entri kecil (< PREFLIGHT_MIN_ENTRIES) — Fasa 0 skip, terus batch.
-  // Semak gate: tiada panggilan tambahan selepas 3 panggilan penterjemahan.
-  // (blok konteks dipelihara)
-  const batch = makeEntries(3);
-  const result = await engine.translateBatch(batch, 'Malay', null, 0, 1, null, { streaming: false });
-  assert.equal(result.length, 3);
-  assert.equal(geminiCalls.length, 1, 'only ONE provider call — no inspector call when agentB is null');
-  assert.equal(engine.translationStats.agentBFailures, 0);
-  assert.equal(engine.translationStats.agentBInspections, 0);
-  assert.equal(engine.translationStats.agentBRetries, 0);
+    // Batch 3 entri kecil (< PREFLIGHT_MIN_ENTRIES) — Fasa 0 skip, terus batch.
+    // Semak gate: tiada panggilan tambahan selepas 3 panggilan penterjemahan.
+    // (blok konteks dipelihara)
+    const batch = makeEntries(3);
+    const result = await engine.translateBatch(batch, 'Malay', null, 0, 1, null, { streaming: false });
+    assert.equal(result.length, 3);
+    assert.equal(geminiCalls.length, 1, 'only ONE provider call — no inspector call when agentB is null');
+    assert.equal(engine.translationStats.agentBFailures, 0);
+    assert.equal(engine.translationStats.agentBInspections, 0);
+    assert.equal(engine.translationStats.agentBRetries, 0);
 });
 
 // ── 7. Gerbang semantik enjin ──
 
 test('AgentB: gerbang enjin — valid:false mencetus SATU retry beramarah + re-verdict; hasil diganti jika lulus', async () => {
-  const TranslationEngine = require('./translationEngine');
+    const TranslationEngine = require('./translationEngine');
 
-  // Kiraan panggilan: batch asal → inspector (crime) → retry → inspector (lulus)
-  let workerCallCount = 0;
-  let inspectorCallCount = 0;
-  const verdicts = [
-    { valid: false, crimes: [{ type: 'MERGE', ids: [1, 2], note: 'fused' }] }, // semakan pertama
-    { valid: true }                                                              // re-verdict
-  ];
+    // Kiraan panggilan: batch asal → inspector (crime) → retry → inspector (lulus)
+    let workerCallCount = 0;
+    let inspectorCallCount = 0;
+    const verdicts = [
+        { valid: false, crimes: [{ type: 'MERGE', ids: [1, 2], note: 'fused' }] }, // semakan pertama
+        { valid: true } // re-verdict
+    ];
 
-  const dummyGemini = {
-    translateSubtitle: async () => {
-      workerCallCount++;
-      return '<s id="1">Satu</s>\n<s id="2">Dua</s>\n<s id="3">Tiga</s>';
-    },
-    streamTranslateSubtitle: async () => '',
-    estimateTokenCount: () => 10
-  };
+    const dummyGemini = {
+        translateSubtitle: async () => {
+            workerCallCount++;
+            return '<s id="1">Satu</s>\n<s id="2">Dua</s>\n<s id="3">Tiga</s>';
+        },
+        streamTranslateSubtitle: async () => '',
+        estimateTokenCount: () => 10
+    };
 
-  const agentB = {
-    circuitOpen: false,
-    runPreflightPass: null, // tidak dipanggil dalam ujian ini
-    runSemanticInspection: async () => {
-      const v = verdicts[Math.min(inspectorCallCount, verdicts.length - 1)];
-      inspectorCallCount++;
-      return v;
-    }
-  };
+    const agentB = {
+        circuitOpen: false,
+        runPreflightPass: null, // tidak dipanggil dalam ujian ini
+        runSemanticInspection: async () => {
+            const v = verdicts[Math.min(inspectorCallCount, verdicts.length - 1)];
+            inspectorCallCount++;
+            return v;
+        }
+    };
 
-  const engine = new TranslationEngine(dummyGemini, 'gemini-2.5-flash', {}, {
-    providerName: 'gemini',
-    agentB
-  });
+    const engine = new TranslationEngine(
+        dummyGemini,
+        'gemini-2.5-flash',
+        {},
+        {
+            providerName: 'gemini',
+            agentB
+        }
+    );
 
-  const batch = makeEntries(3);
-  const result = await engine.translateBatch(batch, 'Malay', null, 0, 1, null, { streaming: false });
+    const batch = makeEntries(3);
+    const result = await engine.translateBatch(batch, 'Malay', null, 0, 1, null, { streaming: false });
 
-  assert.equal(workerCallCount, 2, 'original + ONE semantic retry');
-  assert.equal(inspectorCallCount, 2, 'initial inspection + single re-verdict');
-  assert.equal(engine.translationStats.agentBRetries, 1);
-  assert.equal(result.length, 3);
+    assert.equal(workerCallCount, 2, 'original + ONE semantic retry');
+    assert.equal(inspectorCallCount, 2, 'initial inspection + single re-verdict');
+    assert.equal(engine.translationStats.agentBRetries, 1);
+    assert.equal(result.length, 3);
 
-  const incident = engine.translationStats.incidents.find(i => i.type === 'AGENT_B_SEMANTIC_RETRY');
-  assert.ok(incident, 'incident must be logged');
-  assert.equal(incident.outcome, 'recovered', 'retry must close incident as recovered');
+    const incident = engine.translationStats.incidents.find((i) => i.type === 'AGENT_B_SEMANTIC_RETRY');
+    assert.ok(incident, 'incident must be logged');
+    assert.equal(incident.outcome, 'recovered', 'retry must close incident as recovered');
 });
 
 test('AgentB: gerbang enjin — failOpen tidak mencetus retry', async () => {
-  const TranslationEngine = require('./translationEngine');
+    const TranslationEngine = require('./translationEngine');
 
-  let workerCallCount = 0;
-  const dummyGemini = {
-    translateSubtitle: async () => {
-      workerCallCount++;
-      return '<s id="1">Satu</s>\n<s id="2">Dua</s>';
-    },
-    streamTranslateSubtitle: async () => '',
-    estimateTokenCount: () => 10
-  };
+    let workerCallCount = 0;
+    const dummyGemini = {
+        translateSubtitle: async () => {
+            workerCallCount++;
+            return '<s id="1">Satu</s>\n<s id="2">Dua</s>';
+        },
+        streamTranslateSubtitle: async () => '',
+        estimateTokenCount: () => 10
+    };
 
-  const agentB = {
-    circuitOpen: false,
-    runSemanticInspection: async () => ({ valid: true, failOpen: true })
-  };
+    const agentB = {
+        circuitOpen: false,
+        runSemanticInspection: async () => ({ valid: true, failOpen: true })
+    };
 
-  const engine = new TranslationEngine(dummyGemini, 'gemini-2.5-flash', {}, {
-    providerName: 'gemini',
-    agentB
-  });
+    const engine = new TranslationEngine(
+        dummyGemini,
+        'gemini-2.5-flash',
+        {},
+        {
+            providerName: 'gemini',
+            agentB
+        }
+    );
 
-  const batch = makeEntries(2);
-  await engine.translateBatch(batch, 'Malay', null, 0, 1, null, { streaming: false });
+    const batch = makeEntries(2);
+    await engine.translateBatch(batch, 'Malay', null, 0, 1, null, { streaming: false });
 
-  assert.equal(workerCallCount, 1, 'no retry on fail-open');
-  assert.equal(engine.translationStats.agentBFailures, 1);
-  assert.equal(engine.translationStats.agentBRetries, 0);
+    assert.equal(workerCallCount, 1, 'no retry on fail-open');
+    assert.equal(engine.translationStats.agentBFailures, 1);
+    assert.equal(engine.translationStats.agentBRetries, 0);
 });
 
 test('AgentB: gerbang enjin — hasil struktur bercacat (mismatch) melangkau semakan semantik', async () => {
-  const TranslationEngine = require('./translationEngine');
+    const TranslationEngine = require('./translationEngine');
 
-  let inspectorCalled = false;
-  const dummyGemini = {
-    // Respons bercacat: hanya 1 daripada 2 entri — laluan mismatch aktif
-    translateSubtitle: async () => '<s id="1">Satu</s>',
-    streamTranslateSubtitle: async () => '',
-    estimateTokenCount: () => 10
-  };
+    let inspectorCalled = false;
+    const dummyGemini = {
+        // Respons bercacat: hanya 1 daripada 2 entri — laluan mismatch aktif
+        translateSubtitle: async () => '<s id="1">Satu</s>',
+        streamTranslateSubtitle: async () => '',
+        estimateTokenCount: () => 10
+    };
 
-  const agentB = {
-    circuitOpen: false,
-    runSemanticInspection: async () => {
-      inspectorCalled = true;
-      return { valid: true };
-    }
-  };
+    const agentB = {
+        circuitOpen: false,
+        runSemanticInspection: async () => {
+            inspectorCalled = true;
+            return { valid: true };
+        }
+    };
 
-  const engine = new TranslationEngine(dummyGemini, 'gemini-2.5-flash', {}, {
-    providerName: 'gemini',
-    agentB
-  });
+    const engine = new TranslationEngine(
+        dummyGemini,
+        'gemini-2.5-flash',
+        {},
+        {
+            providerName: 'gemini',
+            agentB
+        }
+    );
 
-  const batch = makeEntries(2);
-  await engine.translateBatch(batch, 'Malay', null, 0, 1, null, { streaming: false });
+    const batch = makeEntries(2);
+    await engine.translateBatch(batch, 'Malay', null, 0, 1, null, { streaming: false });
 
-  // Gate memerlukan translatedEntries.length === batch.length; hasil bercacat
-  // (1/2 walaupun selepas retry mismatch gagal) → tiada semakan semantik.
-  assert.equal(inspectorCalled, false, 'semantic gate skipped on structurally broken result');
-  assert.equal(engine.translationStats.agentBRetries, 0);
+    // Gate memerlukan translatedEntries.length === batch.length; hasil bercacat
+    // (1/2 walaupun selepas retry mismatch gagal) → tiada semakan semantik.
+    assert.equal(inspectorCalled, false, 'semantic gate skipped on structurally broken result');
+    assert.equal(engine.translationStats.agentBRetries, 0);
 });
 
 test('AgentB: gerbang enjin — circuit breaker terbuka melangkau semakan', async () => {
-  const TranslationEngine = require('./translationEngine');
+    const TranslationEngine = require('./translationEngine');
 
-  let inspectorCalled = false;
-  const dummyGemini = {
-    translateSubtitle: async () => '<s id="1">Satu</s>\n<s id="2">Dua</s>',
-    streamTranslateSubtitle: async () => '',
-    estimateTokenCount: () => 10
-  };
+    let inspectorCalled = false;
+    const dummyGemini = {
+        translateSubtitle: async () => '<s id="1">Satu</s>\n<s id="2">Dua</s>',
+        streamTranslateSubtitle: async () => '',
+        estimateTokenCount: () => 10
+    };
 
-  const agentB = {
-    circuitOpen: true, // litar terbuka
-    runSemanticInspection: async () => {
-      inspectorCalled = true;
-      return { valid: true };
-    }
-  };
+    const agentB = {
+        circuitOpen: true, // litar terbuka
+        runSemanticInspection: async () => {
+            inspectorCalled = true;
+            return { valid: true };
+        }
+    };
 
-  const engine = new TranslationEngine(dummyGemini, 'gemini-2.5-flash', {}, {
-    providerName: 'gemini',
-    agentB
-  });
+    const engine = new TranslationEngine(
+        dummyGemini,
+        'gemini-2.5-flash',
+        {},
+        {
+            providerName: 'gemini',
+            agentB
+        }
+    );
 
-  const batch = makeEntries(2);
-  await engine.translateBatch(batch, 'Malay', null, 0, 1, null, { streaming: false });
-  assert.equal(inspectorCalled, false, 'no inspection while circuit breaker open');
+    const batch = makeEntries(2);
+    await engine.translateBatch(batch, 'Malay', null, 0, 1, null, { streaming: false });
+    assert.equal(inspectorCalled, false, 'no inspection while circuit breaker open');
 });
 
 // ── 8. Normalisasi config agentB ──
 
 test('AgentB: normalizeConfig membina struktur agentB dengan env fallback + hygiene', async () => {
-  const { normalizeConfig } = require('../utils/config');
+    const { normalizeConfig } = require('../utils/config');
 
-  // Simpan + pulihkan env semasa ujian (elak kebocoran antara-ujian)
-  const savedEnv = {
-    AGENT_B_BASE_URL: process.env.AGENT_B_BASE_URL,
-    AGENT_B_API_KEY: process.env.AGENT_B_API_KEY,
-    AGENT_B_MODEL: process.env.AGENT_B_MODEL
-  };
-  try {
-    // Kes 1: config sedia ada menang ke atas env
-    process.env.AGENT_B_BASE_URL = 'https://env.example.com/v1';
-    process.env.AGENT_B_API_KEY = 'env-key';
-    process.env.AGENT_B_MODEL = 'env-model';
+    // Simpan + pulihkan env semasa ujian (elak kebocoran antara-ujian)
+    const savedEnv = {
+        AGENT_B_BASE_URL: process.env.AGENT_B_BASE_URL,
+        AGENT_B_API_KEY: process.env.AGENT_B_API_KEY,
+        AGENT_B_MODEL: process.env.AGENT_B_MODEL
+    };
+    try {
+        // Kes 1: config sedia ada menang ke atas env
+        process.env.AGENT_B_BASE_URL = 'https://env.example.com/v1';
+        process.env.AGENT_B_API_KEY = 'env-key';
+        process.env.AGENT_B_MODEL = 'env-model';
 
-    const withConfig = normalizeConfig({
-      agentB: { enabled: true, baseUrl: 'https://config.example.com/v1', apiKey: 'config-key', model: 'config-model' }
-    });
-    assert.equal(withConfig.agentB.baseUrl, 'https://config.example.com/v1');
-    assert.equal(withConfig.agentB.apiKey, 'config-key');
-    assert.equal(withConfig.agentB.model, 'config-model');
-    assert.equal(withConfig.agentB.enabled, true);
+        const withConfig = normalizeConfig({
+            agentB: {
+                enabled: true,
+                baseUrl: 'https://config.example.com/v1',
+                apiKey: 'config-key',
+                model: 'config-model'
+            }
+        });
+        assert.equal(withConfig.agentB.baseUrl, 'https://config.example.com/v1');
+        assert.equal(withConfig.agentB.apiKey, 'config-key');
+        assert.equal(withConfig.agentB.model, 'config-model');
+        assert.equal(withConfig.agentB.enabled, true);
 
-    // Kes 2: config kosong → env fallback + auto-enable apabila env lengkap
-    const fromEnv = normalizeConfig({});
-    assert.equal(fromEnv.agentB.baseUrl, 'https://env.example.com/v1');
-    assert.equal(fromEnv.agentB.apiKey, 'env-key');
-    assert.equal(fromEnv.agentB.model, 'env-model');
-    assert.equal(fromEnv.agentB.enabled, true, 'env lengkap → auto-enable (Fasa 3 belum wujud)');
+        // Kes 2: config kosong → env fallback + auto-enable apabila env lengkap
+        const fromEnv = normalizeConfig({});
+        assert.equal(fromEnv.agentB.baseUrl, 'https://env.example.com/v1');
+        assert.equal(fromEnv.agentB.apiKey, 'env-key');
+        assert.equal(fromEnv.agentB.model, 'env-model');
+        assert.equal(fromEnv.agentB.enabled, true, 'env lengkap → auto-enable (Fasa 3 belum wujud)');
 
-    // Kes 3: tiada config + tiada env → disabled + default model
-    delete process.env.AGENT_B_BASE_URL;
-    delete process.env.AGENT_B_API_KEY;
-    delete process.env.AGENT_B_MODEL;
-    const disabled = normalizeConfig({});
-    assert.equal(disabled.agentB.enabled, false);
-    assert.equal(disabled.agentB.baseUrl, '');
-    assert.equal(disabled.agentB.model, 'deepseek-v4-pro', 'default pemeriksa utama (TRINITY BETA RUN 9)');
+        // Kes 3: tiada config + tiada env → disabled + default model
+        delete process.env.AGENT_B_BASE_URL;
+        delete process.env.AGENT_B_API_KEY;
+        delete process.env.AGENT_B_MODEL;
+        const disabled = normalizeConfig({});
+        assert.equal(disabled.agentB.enabled, false);
+        assert.equal(disabled.agentB.baseUrl, '');
+        assert.equal(disabled.agentB.model, 'deepseek-v4-pro', 'default pemeriksa utama (TRINITY BETA RUN 9)');
 
-    // Kes 4: enabled:true tetapi kredensial tak lengkap → hygiene melumpuhkan
-    const partial = normalizeConfig({
-      agentB: { enabled: true, baseUrl: 'https://partial.example.com/v1' } // tiada apiKey
-    });
-    assert.equal(partial.agentB.enabled, false, 'incomplete credentials must disable Agent B');
-  } finally {
-    // Pulihkan env
-    for (const [k, v] of Object.entries(savedEnv)) {
-      if (v === undefined) delete process.env[k];
-      else process.env[k] = v;
+        // Kes 4: enabled:true tetapi kredensial tak lengkap → hygiene melumpuhkan
+        const partial = normalizeConfig({
+            agentB: { enabled: true, baseUrl: 'https://partial.example.com/v1' } // tiada apiKey
+        });
+        assert.equal(partial.agentB.enabled, false, 'incomplete credentials must disable Agent B');
+    } finally {
+        // Pulihkan env
+        for (const [k, v] of Object.entries(savedEnv)) {
+            if (v === undefined) delete process.env[k];
+            else process.env[k] = v;
+        }
     }
-  }
 });
 
 // ── 9. Ketahanan pengekstrakan jawapan (Mandat Unthrottle §C) ──
 
 test('AgentB: extractChatMessageText — laluan standard content diutamakan', () => {
-  const provider = new OpenAICompatibleProvider({ apiKey: 'k', baseUrl: 'https://x.example/v1', providerName: 'custom' });
-  assert.equal(
-    provider.extractChatMessageText({ content: '{"valid":true}', reasoning_content: 'thinking noise' }),
-    '{"valid":true}',
-    'content mesti menang ke atas reasoning_content'
-  );
-  assert.equal(provider.extractChatMessageText({ content: 'plain text' }), 'plain text');
-  assert.equal(provider.extractChatMessageText(null), '');
-  assert.equal(provider.extractChatMessageText(undefined), '');
+    const provider = new OpenAICompatibleProvider({
+        apiKey: 'k',
+        baseUrl: 'https://x.example/v1',
+        providerName: 'custom'
+    });
+    assert.equal(
+        provider.extractChatMessageText({ content: '{"valid":true}', reasoning_content: 'thinking noise' }),
+        '{"valid":true}',
+        'content mesti menang ke atas reasoning_content'
+    );
+    assert.equal(provider.extractChatMessageText({ content: 'plain text' }), 'plain text');
+    assert.equal(provider.extractChatMessageText(null), '');
+    assert.equal(provider.extractChatMessageText(undefined), '');
 });
 
 test('AgentB: extractChatMessageText — reasoning_content dipakai bila content kosong', () => {
-  const provider = new OpenAICompatibleProvider({ apiKey: 'k', baseUrl: 'https://x.example/v1', providerName: 'custom' });
+    const provider = new OpenAICompatibleProvider({
+        apiKey: 'k',
+        baseUrl: 'https://x.example/v1',
+        providerName: 'custom'
+    });
 
-  // JSON terus dalam reasoning_content
-  assert.equal(
-    provider.extractChatMessageText({ content: '', reasoning_content: '{"valid":true}' }),
-    '{"valid":true}'
-  );
+    // JSON terus dalam reasoning_content
+    assert.equal(
+        provider.extractChatMessageText({ content: '', reasoning_content: '{"valid":true}' }),
+        '{"valid":true}'
+    );
 
-  // JSON berpagar markdown dalam reasoning_content
-  const fenced = 'analysis...\n```json\n{"valid":true}\n```\nend';
-  assert.equal(
-    provider.extractChatMessageText({ content: '', reasoning_content: fenced }),
-    '{"valid":true}'
-  );
+    // JSON berpagar markdown dalam reasoning_content
+    const fenced = 'analysis...\n```json\n{"valid":true}\n```\nend';
+    assert.equal(provider.extractChatMessageText({ content: '', reasoning_content: fenced }), '{"valid":true}');
 
-  // reasoning_content proza tanpa blok berstruktur → diguna mentah
-  assert.equal(
-    provider.extractChatMessageText({ content: '', reasoning_content: 'just prose, no braces' }),
-    'just prose, no braces'
-  );
+    // reasoning_content proza tanpa blok berstruktur → diguna mentah
+    assert.equal(
+        provider.extractChatMessageText({ content: '', reasoning_content: 'just prose, no braces' }),
+        'just prose, no braces'
+    );
 });
 
 test('AgentB: extractChatMessageText — fallback stringify mesej penuh bila kedua-dua medan kosong', () => {
-  const provider = new OpenAICompatibleProvider({ apiKey: 'k', baseUrl: 'https://x.example/v1', providerName: 'custom' });
+    const provider = new OpenAICompatibleProvider({
+        apiKey: 'k',
+        baseUrl: 'https://x.example/v1',
+        providerName: 'custom'
+    });
 
-  // content bertindih dalam medan luar + braces dalam string mesti tidak pecahkan scanner
-  const message = { role: 'assistant', content: '', note: '{"valid":false,"crimes":[{"type":"MERGE","ids":[1,2],"note":"x{y}z"}]}' };
-  const extracted = provider.extractChatMessageText(message);
-  assert.ok(extracted.includes('"valid":false'), 'blok JSON seimbang mesti diekstrak dari stringify');
+    // content bertindih dalam medan luar + braces dalam string mesti tidak pecahkan scanner
+    const message = {
+        role: 'assistant',
+        content: '',
+        note: '{"valid":false,"crimes":[{"type":"MERGE","ids":[1,2],"note":"x{y}z"}]}'
+    };
+    const extracted = provider.extractChatMessageText(message);
+    assert.ok(extracted.includes('"valid":false'), 'blok JSON seimbang mesti diekstrak dari stringify');
 
-  // Tiada blok langsung → ''
-  assert.equal(provider.extractChatMessageText({ role: 'assistant', content: '' }), '');
+    // Tiada blok langsung → ''
+    assert.equal(provider.extractChatMessageText({ role: 'assistant', content: '' }), '');
 });
 
 test('AgentB: extractStructuredBlock — scanner JSON seimbang tahan braces dalam string', () => {
-  const provider = new OpenAICompatibleProvider({ apiKey: 'k', baseUrl: 'https://x.example/v1', providerName: 'custom' });
+    const provider = new OpenAICompatibleProvider({
+        apiKey: 'k',
+        baseUrl: 'https://x.example/v1',
+        providerName: 'custom'
+    });
 
-  const balanced = 'prefix {"a":"has } brace","b":{"c":1}} suffix';
-  assert.equal(provider.extractStructuredBlock(balanced), '{"a":"has } brace","b":{"c":1}}');
+    const balanced = 'prefix {"a":"has } brace","b":{"c":1}} suffix';
+    assert.equal(provider.extractStructuredBlock(balanced), '{"a":"has } brace","b":{"c":1}}');
 
-  // Bracket dalam prosa tanpa ':' → bukan JSON → ''
-  assert.equal(provider.extractStructuredBlock('text with (parens) and [brackets] but no object'), '');
+    // Bracket dalam prosa tanpa ':' → bukan JSON → ''
+    assert.equal(provider.extractStructuredBlock('text with (parens) and [brackets] but no object'), '');
 
-  // Fenced block dipilih dahulu
-  const fenced = 'x ```json\n{"valid":true}\n``` y {"other":1}';
-  assert.equal(provider.extractStructuredBlock(fenced), '{"valid":true}');
+    // Fenced block dipilih dahulu
+    const fenced = 'x ```json\n{"valid":true}\n``` y {"other":1}';
+    assert.equal(provider.extractStructuredBlock(fenced), '{"valid":true}');
 
-  // JSON tidak seimbang → ''
-  assert.equal(provider.extractStructuredBlock('{"broken": true'), '');
+    // JSON tidak seimbang → ''
+    assert.equal(provider.extractStructuredBlock('{"broken": true'), '');
 });
 
 // ── Kontrak preflight offload (Fasa 0) ──
 
 test('AgentB: runPreflightPass mewarisi kontrak runPreflightSemanticPass (non-blocking)', async () => {
-  const inspector = new AgentBInspector({
-    apiKey: 'test-key',
-    baseUrl: 'https://agentb.example.com/v1'
-  });
+    const inspector = new AgentBInspector({
+        apiKey: 'test-key',
+        baseUrl: 'https://agentb.example.com/v1'
+    });
 
-  // Fail terlalu kecil (< 10 entri) → skip, return null — kontrak Fasa 0 asal
-  const result = await inspector.runPreflightPass(makeEntries(3), 'Malay', 'English');
-  assert.equal(result, null, 'small file must skip preflight (inherited contract)');
+    // Fail terlalu kecil (< 10 entri) → skip, return null — kontrak Fasa 0 asal
+    const result = await inspector.runPreflightPass(makeEntries(3), 'Malay', 'English');
+    assert.equal(result, null, 'small file must skip preflight (inherited contract)');
 
-  // Guard provider: inspector sendiri memenuhi kontrak translateSubtitle
-  assert.equal(typeof inspector.translateSubtitle, 'function');
+    // Guard provider: inspector sendiri memenuhi kontrak translateSubtitle
+    assert.equal(typeof inspector.translateSubtitle, 'function');
 });
 
 // ── 10. Dual-model failover + zero-swallowed-error (Mandat Observabiliti 2026-09-26) ──
 
 test('AgentB: failover automatik — deepseek-v4-pro gagal, deepseek-v4.1-flash menyelamatkan semakan', async () => {
-  const inspector = new AgentBInspector({
-    apiKey: 'test-key',
-    baseUrl: 'https://agentb.example.com/v1'
-  });
-  assert.deepEqual(inspector.modelHierarchy, ['deepseek-v4-pro', 'deepseek-v4.1-flash'], 'hierarki semakan: deepseek-v4-pro + fallback (TRINITY BETA RUN 9)');
-  assert.equal(AGENT_B_FALLBACK_MODEL, 'deepseek-v4.1-flash', 'fallback pemeriksa deepseek-v4.1-flash (Mandat Beta Run 9)');
+    const inspector = new AgentBInspector({
+        apiKey: 'test-key',
+        baseUrl: 'https://agentb.example.com/v1'
+    });
+    assert.deepEqual(
+        inspector.modelHierarchy,
+        ['deepseek-v4-pro', 'deepseek-v4.1-flash'],
+        'hierarki semakan: deepseek-v4-pro + fallback (TRINITY BETA RUN 9)'
+    );
+    assert.equal(
+        AGENT_B_FALLBACK_MODEL,
+        'deepseek-v4.1-flash',
+        'fallback pemeriksa deepseek-v4.1-flash (Mandat Beta Run 9)'
+    );
 
-  const calls = [];
-  inspector.translateSubtitle = async function () {
-    calls.push(this.model);
-    if (this.model === 'deepseek-v4-pro') {
-      throw Object.assign(new Error('HTTP 502 Bad Gateway from upstream'), { statusCode: 502 });
-    }
-    return '{"valid":false,"crimes":[{"type":"MERGE","ids":[3,4],"note":"fused"}]}';
-  };
+    const calls = [];
+    inspector.translateSubtitle = async function () {
+        calls.push(this.model);
+        if (this.model === 'deepseek-v4-pro') {
+            throw Object.assign(new Error('HTTP 502 Bad Gateway from upstream'), { statusCode: 502 });
+        }
+        return '{"valid":false,"crimes":[{"type":"MERGE","ids":[3,4],"note":"fused"}]}';
+    };
 
-  const verdict = await inspector.runSemanticInspection(makeEntries(4), makeTranslated(4), { batchIndex: 0, totalBatches: 2 });
-  assert.deepEqual(calls, ['deepseek-v4-pro', 'deepseek-v4.1-flash'], 'kedua-dua model dipanggil mengikut hierarki');
-  assert.equal(verdict.valid, false, 'verdict dari model sandaran diterima');
-  assert.equal(verdict.crimes[0].type, 'MERGE');
-  assert.equal(verdict.modelUsed, 'deepseek-v4.1-flash', 'model sandaran direkodkan');
-  assert.equal(inspector.model, 'deepseek-v4-pro', 'model dipulihkan kepada primary selepas operasi');
-  assert.equal(inspector.circuitOpen, false, 'kejayaan sandaran tidak membuka litar');
+    const verdict = await inspector.runSemanticInspection(makeEntries(4), makeTranslated(4), {
+        batchIndex: 0,
+        totalBatches: 2
+    });
+    assert.deepEqual(calls, ['deepseek-v4-pro', 'deepseek-v4.1-flash'], 'kedua-dua model dipanggil mengikut hierarki');
+    assert.equal(verdict.valid, false, 'verdict dari model sandaran diterima');
+    assert.equal(verdict.crimes[0].type, 'MERGE');
+    assert.equal(verdict.modelUsed, 'deepseek-v4.1-flash', 'model sandaran direkodkan');
+    assert.equal(inspector.model, 'deepseek-v4-pro', 'model dipulihkan kepada primary selepas operasi');
+    assert.equal(inspector.circuitOpen, false, 'kejayaan sandaran tidak membuka litar');
 });
 
 test('AgentB [MODEL-HIERARCHY]: Fasa 0 — kimi-k3 504 pada percubaan pertama → RETRY kimi-k3 berjaya (tiada peralihan model)', async () => {
-  const inspector = new AgentBInspector({
-    apiKey: 'test-key',
-    baseUrl: 'https://agentb.example.com/v1',
-    preflightRetryBackoffMs: 0 // [UPSTREAM-RESILIENCE] lumpuh backoff — ujian pantas
-  });
-  // [MODEL-HIERARCHY] FINAL: lalai Fasa 0 ialah kimi-k3 SAHAJA.
-  assert.equal(inspector.preflightModel, 'kimi-k3', 'lalai Pre-Flight kimi-k3');
-  assert.deepEqual(inspector.preflightHierarchy, ['kimi-k3'], 'hierarki Fasa 0 [kimi-k3] standalone');
+    const inspector = new AgentBInspector({
+        apiKey: 'test-key',
+        baseUrl: 'https://agentb.example.com/v1',
+        preflightRetryBackoffMs: 0 // [UPSTREAM-RESILIENCE] lumpuh backoff — ujian pantas
+    });
+    // [MODEL-HIERARCHY] FINAL: lalai Fasa 0 ialah kimi-k3 SAHAJA.
+    assert.equal(inspector.preflightModel, 'kimi-k3', 'lalai Pre-Flight kimi-k3');
+    assert.deepEqual(inspector.preflightHierarchy, ['kimi-k3'], 'hierarki Fasa 0 [kimi-k3] standalone');
 
-  const calls = [];
-  inspector.translateSubtitle = async function () {
-    calls.push(this.model);
-    if (calls.length === 1) {
-      throw Object.assign(new Error('gateway timeout'), { statusCode: 504 });
-    }
-    return '{"theme":"Retry analysis.","terms":[]}';
-  };
+    const calls = [];
+    inspector.translateSubtitle = async function () {
+        calls.push(this.model);
+        if (calls.length === 1) {
+            throw Object.assign(new Error('gateway timeout'), { statusCode: 504 });
+        }
+        return '{"theme":"Retry analysis.","terms":[]}';
+    };
 
-  const result = await inspector.runPreflightPass(makeEntries(50), 'Malay', 'English');
-  assert.ok(result, 'konteks dari retry kimi-k3 diterima');
-  assert.equal(result.theme, 'Retry analysis.');
-  // [MODEL-HIERARCHY] 504 → retry kimi-k3 (bukan deepseek!)
-  assert.deepEqual(calls, ['kimi-k3', 'kimi-k3'], 'retry-same-model: kimi-k3 → kimi-k3');
-  assert.equal(inspector.model, 'deepseek-v4-pro', 'model semakan tidak terjejas oleh Fasa 0');
+    const result = await inspector.runPreflightPass(makeEntries(50), 'Malay', 'English');
+    assert.ok(result, 'konteks dari retry kimi-k3 diterima');
+    assert.equal(result.theme, 'Retry analysis.');
+    // [MODEL-HIERARCHY] 504 → retry kimi-k3 (bukan deepseek!)
+    assert.deepEqual(calls, ['kimi-k3', 'kimi-k3'], 'retry-same-model: kimi-k3 → kimi-k3');
+    assert.equal(inspector.model, 'deepseek-v4-pro', 'model semakan tidak terjejas oleh Fasa 0');
 });
 
 test('AgentB: kedua-dua model gagal (rangkaian) → fail-open both_models_failed + 1 kegagalan litar', async () => {
-  const inspector = new AgentBInspector({
-    apiKey: 'test-key',
-    baseUrl: 'https://agentb.example.com/v1'
-  });
-  let calls = 0;
-  inspector.translateSubtitle = async function () { calls++; throw new Error('connection reset by peer'); };
+    const inspector = new AgentBInspector({
+        apiKey: 'test-key',
+        baseUrl: 'https://agentb.example.com/v1'
+    });
+    let calls = 0;
+    inspector.translateSubtitle = async function () {
+        calls++;
+        throw new Error('connection reset by peer');
+    };
 
-  const verdict = await inspector.runSemanticInspection(makeEntries(2), makeTranslated(2), { batchIndex: 0, totalBatches: 1 });
-  assert.equal(calls, 2, 'primary + fallback kedua-duanya dicuba');
-  assert.equal(verdict.valid, true, 'fail-open');
-  assert.equal(verdict.failOpen, true);
-  assert.equal(verdict.error, 'both_models_failed');
-  assert.equal(verdict.detail, 'connection reset by peer', 'punca teknikal sebenar dibawa keluar');
-  assert.equal(inspector._consecutiveFailures, 1, 'satu operasi gagal = satu kegagalan litar sahaja');
+    const verdict = await inspector.runSemanticInspection(makeEntries(2), makeTranslated(2), {
+        batchIndex: 0,
+        totalBatches: 1
+    });
+    assert.equal(calls, 2, 'primary + fallback kedua-duanya dicuba');
+    assert.equal(verdict.valid, true, 'fail-open');
+    assert.equal(verdict.failOpen, true);
+    assert.equal(verdict.error, 'both_models_failed');
+    assert.equal(verdict.detail, 'connection reset by peer', 'punca teknikal sebenar dibawa keluar');
+    assert.equal(inspector._consecutiveFailures, 1, 'satu operasi gagal = satu kegagalan litar sahaja');
 });
 
 test('AgentB: kedua-dua model gagal parse (HTTP 200 sampah) → fail-open selepas raw snippet', async () => {
-  const inspector = new AgentBInspector({
-    apiKey: 'test-key',
-    baseUrl: 'https://agentb.example.com/v1'
-  });
-  let calls = 0;
-  inspector.translateSubtitle = async function () { calls++; return 'garbage not json'; };
+    const inspector = new AgentBInspector({
+        apiKey: 'test-key',
+        baseUrl: 'https://agentb.example.com/v1'
+    });
+    let calls = 0;
+    inspector.translateSubtitle = async function () {
+        calls++;
+        return 'garbage not json';
+    };
 
-  const verdict = await inspector.runSemanticInspection(makeEntries(2), makeTranslated(2));
-  assert.equal(calls, 2, 'failover turut berlaku untuk respons rosak (bukan ralat rangkaian)');
-  assert.equal(verdict.failOpen, true);
-  assert.equal(verdict.error, 'both_models_failed');
+    const verdict = await inspector.runSemanticInspection(makeEntries(2), makeTranslated(2));
+    assert.equal(calls, 2, 'failover turut berlaku untuk respons rosak (bukan ralat rangkaian)');
+    assert.equal(verdict.failOpen, true);
+    assert.equal(verdict.error, 'both_models_failed');
 });
 
 test('AgentB: logging forensik — raw snippet 500 aksara + pengumuman failover pada WARN', async () => {
-  const log = require('../utils/logger');
-  const inspector = new AgentBInspector({
-    apiKey: 'test-key',
-    baseUrl: 'https://agentb.example.com/v1'
-  });
-  inspector.translateSubtitle = async () => 'G'.repeat(1200);
+    const log = require('../utils/logger');
+    const inspector = new AgentBInspector({
+        apiKey: 'test-key',
+        baseUrl: 'https://agentb.example.com/v1'
+    });
+    inspector.translateSubtitle = async () => 'G'.repeat(1200);
 
-  const captured = [];
-  const originalWarn = log.warn;
-  log.warn = (fn) => {
-    try { captured.push(typeof fn === 'function' ? String(fn()) : String(fn)); } catch (_) { /* noop */ }
-  };
-  try {
-    const verdict = await inspector.runSemanticInspection(makeEntries(2), makeTranslated(2), { batchIndex: 0, totalBatches: 1 });
-    assert.equal(verdict.failOpen, true);
+    const captured = [];
+    const originalWarn = log.warn;
+    log.warn = (fn) => {
+        try {
+            captured.push(typeof fn === 'function' ? String(fn()) : String(fn));
+        } catch (_) {
+            /* noop */
+        }
+    };
+    try {
+        const verdict = await inspector.runSemanticInspection(makeEntries(2), makeTranslated(2), {
+            batchIndex: 0,
+            totalBatches: 1
+        });
+        assert.equal(verdict.failOpen, true);
 
-    const snippetLog = captured.find(l => l.includes('Raw snippet'));
-    assert.ok(snippetLog, 'raw snippet mesti dicetak pada WARN semasa parse failure');
-    assert.ok(snippetLog.includes('G'.repeat(500)), 'snippet dipotong kepada tepat 500 aksara pertama');
-    assert.ok(!snippetLog.includes('G'.repeat(501)), 'snippet TIDAK melebihi 500 aksara');
+        const snippetLog = captured.find((l) => l.includes('Raw snippet'));
+        assert.ok(snippetLog, 'raw snippet mesti dicetak pada WARN semasa parse failure');
+        assert.ok(snippetLog.includes('G'.repeat(500)), 'snippet dipotong kepada tepat 500 aksara pertama');
+        assert.ok(!snippetLog.includes('G'.repeat(501)), 'snippet TIDAK melebihi 500 aksara');
 
-    const failoverLog = captured.find(l => l.includes('Failing over to deepseek-v4.1-flash'));
-    assert.ok(failoverLog, 'pengumuman failover kepada model sandaran mesti dicetak');
+        const failoverLog = captured.find((l) => l.includes('Failing over to deepseek-v4.1-flash'));
+        assert.ok(failoverLog, 'pengumuman failover kepada model sandaran mesti dicetak');
 
-    // MANDAT SENI BINA UNIVERSAL PAYLOAD §C: format trigger wajib
-    const triggerLog = captured.find(l => l.includes('[AgentB] Fallback triggered -> [deepseek-v4.1-flash]'));
-    assert.ok(triggerLog, 'format trigger wajib: [AgentB] Fallback triggered -> [deepseek-v4.1-flash]');
-  } finally {
-    log.warn = originalWarn;
-  }
+        // MANDAT SENI BINA UNIVERSAL PAYLOAD §C: format trigger wajib
+        const triggerLog = captured.find((l) => l.includes('[AgentB] Fallback triggered -> [deepseek-v4.1-flash]'));
+        assert.ok(triggerLog, 'format trigger wajib: [AgentB] Fallback triggered -> [deepseek-v4.1-flash]');
+    } finally {
+        log.warn = originalWarn;
+    }
 });
 
 // ── 11. Pembersihan tag penaakulan (Mandat §3A) ──
@@ -1273,100 +1443,106 @@ test('AgentB: logging forensik — raw snippet 500 aksara + pengumuman failover 
 // — corak sama digunakan oleh subfaber-context-regression.test.js).
 
 test('AgentB: stripReasoningTags membuang tag penaakulan (tertutup & terbuka)', () => {
-  const { stripReasoningTags } = require('./subfaberPreflight');
+    const { stripReasoningTags } = require('./subfaberPreflight');
 
-  // Tag GLM sebenar: THINK = U+1F9E0 (🧠) — dibina dari pasangan UTF-16 surrogates
-  const BRAIN = String.fromCharCode(0xD83E, 0xDDE0);          // U+1F9E0
-  const THINK_OPEN = `${BRAIN}`;
-  const THINK_CLOSE = `</think>`;
+    // Tag GLM sebenar: THINK = U+1F9E0 (🧠) — dibina dari pasangan UTF-16 surrogates
+    const BRAIN = String.fromCharCode(0xd83e, 0xdde0); // U+1F9E0
+    const THINK_OPEN = `${BRAIN}`;
+    const THINK_CLOSE = `</think>`;
 
-  // 1. Blok tertutup: THINK... </think> dibuang, jawapan JSON kekal
-  assert.equal(stripReasoningTags(`${THINK_OPEN}chain of thought${THINK_CLOSE}{"valid":true}`), '{"valid":true}');
+    // 1. Blok tertutup: THINK... </think> dibuang, jawapan JSON kekal
+    assert.equal(stripReasoningTags(`${THINK_OPEN}chain of thought${THINK_CLOSE}{"valid":true}`), '{"valid":true}');
 
-  // 2. Blok tidak ditutup (stream terpotong): semuanya selepas THINK dibuang
-  assert.equal(stripReasoningTags(`${THINK_OPEN}truncated reasoning without close`), '');
+    // 2. Blok tidak ditutup (stream terpotong): semuanya selepas THINK dibuang
+    assert.equal(stripReasoningTags(`${THINK_OPEN}truncated reasoning without close`), '');
 
-  // 3. Berbilang blok + kandungan sah di luar blok
-  assert.equal(
-    stripReasoningTags(`${THINK_OPEN}a${THINK_CLOSE}pre ${THINK_OPEN}b${THINK_CLOSE}mid{"valid":true}`),
-    'pre mid{"valid":true}'
-  );
+    // 3. Berbilang blok + kandungan sah di luar blok
+    assert.equal(
+        stripReasoningTags(`${THINK_OPEN}a${THINK_CLOSE}pre ${THINK_OPEN}b${THINK_CLOSE}mid{"valid":true}`),
+        'pre mid{"valid":true}'
+    );
 
-  // 4. <thinking> tertutup & tidak tertutup
-  assert.equal(stripReasoningTags('<thinking>reasoning</thinking>{"valid":true}'), '{"valid":true}');
-  assert.equal(stripReasoningTags('<thinking>truncated'), '');
+    // 4. <thinking> tertutup & tidak tertutup
+    assert.equal(stripReasoningTags('<thinking>reasoning</thinking>{"valid":true}'), '{"valid":true}');
+    assert.equal(stripReasoningTags('<thinking>truncated'), '');
 
-  // 5. Tiada tag → kekal; input kosong/null selamat
-  assert.equal(stripReasoningTags('{"valid":true}'), '{"valid":true}');
-  assert.equal(stripReasoningTags(null), '');
-  assert.equal(stripReasoningTags('   '), '');
+    // 5. Tiada tag → kekal; input kosong/null selamat
+    assert.equal(stripReasoningTags('{"valid":true}'), '{"valid":true}');
+    assert.equal(stripReasoningTags(null), '');
+    assert.equal(stripReasoningTags('   '), '');
 });
 
 test('AgentB: inspection membersihkan tag THINK sebelum parse — verdict bertahan', async () => {
-  const inspector = new AgentBInspector({
-    apiKey: 'test-key',
-    baseUrl: 'https://agentb.example.com/v1'
-  });
-  const BRAIN = String.fromCharCode(0xD83E, 0xDDE0);
-  inspector.translateSubtitle = async () =>
-    `${BRAIN}I need to compare each line carefully... lines 1 and 2 look fine, no merge detected.</think>\n{"valid":true}`;
+    const inspector = new AgentBInspector({
+        apiKey: 'test-key',
+        baseUrl: 'https://agentb.example.com/v1'
+    });
+    const BRAIN = String.fromCharCode(0xd83e, 0xdde0);
+    inspector.translateSubtitle = async () =>
+        `${BRAIN}I need to compare each line carefully... lines 1 and 2 look fine, no merge detected.</think>\n{"valid":true}`;
 
-  const verdict = await inspector.runSemanticInspection(makeEntries(2), makeTranslated(2), { batchIndex: 0, totalBatches: 1 });
-  assert.equal(verdict.valid, true);
-  assert.equal(verdict.failOpen, undefined, 'parse berjaya — bukan fail-open');
-  assert.equal(verdict.modelUsed, 'deepseek-v4-pro', 'primary model cukup — tiada failover diperlukan');
+    const verdict = await inspector.runSemanticInspection(makeEntries(2), makeTranslated(2), {
+        batchIndex: 0,
+        totalBatches: 1
+    });
+    assert.equal(verdict.valid, true);
+    assert.equal(verdict.failOpen, undefined, 'parse berjaya — bukan fail-open');
+    assert.equal(verdict.modelUsed, 'deepseek-v4-pro', 'primary model cukup — tiada failover diperlukan');
 });
 
 test('SubFaberPreflight: pembersihan tag dilaksanakan sebelum parse (provider mentah)', async () => {
-  const { runPreflightSemanticPass } = require('./subfaberPreflight');
-  const BRAIN = String.fromCharCode(0xD83E, 0xDDE0);
-  // Provider mentah yang TIDAK membersihkan THINK (corak bukan-openai) —
-  // tanggungjawab pembersihan kini pada lapisan preflight sendiri.
-  const rawProvider = {
-    model: 'glm-5.3-flashx',
-    translateSubtitle: async () => `${BRAIN}raw reasoning that would leak into a naive parser</think>{"theme":"Theme X.","terms":[]}`
-  };
-  const result = await runPreflightSemanticPass(makeEntries(50), 'Malay', 'English', rawProvider);
-  assert.ok(result, 'tag THINK mesti dibersihkan sebelum parsePreflightResponse');
-  assert.equal(result.theme, 'Theme X.');
+    const { runPreflightSemanticPass } = require('./subfaberPreflight');
+    const BRAIN = String.fromCharCode(0xd83e, 0xdde0);
+    // Provider mentah yang TIDAK membersihkan THINK (corak bukan-openai) —
+    // tanggungjawab pembersihan kini pada lapisan preflight sendiri.
+    const rawProvider = {
+        model: 'glm-5.3-flashx',
+        translateSubtitle: async () =>
+            `${BRAIN}raw reasoning that would leak into a naive parser</think>{"theme":"Theme X.","terms":[]}`
+    };
+    const result = await runPreflightSemanticPass(makeEntries(50), 'Malay', 'English', rawProvider);
+    assert.ok(result, 'tag THINK mesti dibersihkan sebelum parsePreflightResponse');
+    assert.equal(result.theme, 'Theme X.');
 });
 
 test('SubFaberPreflight: hook onParseFailure menghantar teks mentah untuk forensik', async () => {
-  const { runPreflightSemanticPass } = require('./subfaberPreflight');
-  let hookRaw = null;
-  const provider = {
-    model: 'glm-5.3-flashx',
-    translateSubtitle: async () => 'not-json-at-all {broken'
-  };
-  const result = await runPreflightSemanticPass(makeEntries(50), 'Malay', 'English', provider, {
-    onParseFailure: (raw) => { hookRaw = raw; }
-  });
-  assert.equal(result, null, 'parse gagal → null (non-blocking dipelihara)');
-  assert.equal(hookRaw, 'not-json-at-all {broken', 'hook menerima teks mentah yang sama dengan log forensik');
+    const { runPreflightSemanticPass } = require('./subfaberPreflight');
+    let hookRaw = null;
+    const provider = {
+        model: 'glm-5.3-flashx',
+        translateSubtitle: async () => 'not-json-at-all {broken'
+    };
+    const result = await runPreflightSemanticPass(makeEntries(50), 'Malay', 'English', provider, {
+        onParseFailure: (raw) => {
+            hookRaw = raw;
+        }
+    });
+    assert.equal(result, null, 'parse gagal → null (non-blocking dipelihara)');
+    assert.equal(hookRaw, 'not-json-at-all {broken', 'hook menerima teks mentah yang sama dengan log forensik');
 });
 
 // ── 12. Meta batch dari gerbang enjin ──
 
 test('AgentB: gerbang enjin menghantar meta {batchIndex, totalBatches} kepada inspector', async () => {
-  const TranslationEngine = require('./translationEngine');
-  let capturedMeta = null;
-  const dummyGemini = {
-    translateSubtitle: async () => '<s id="1">Satu</s>\n<s id="2">Dua</s>',
-    streamTranslateSubtitle: async () => '',
-    estimateTokenCount: () => 10
-  };
-  const agentB = {
-    circuitOpen: false,
-    runSemanticInspection: async (batch, translated, meta) => {
-      capturedMeta = meta;
-      return { valid: true };
-    }
-  };
-  const engine = new TranslationEngine(dummyGemini, 'gemini-2.5-flash', {}, { providerName: 'gemini', agentB });
-  await engine.translateBatch(makeEntries(2), 'Malay', null, 0, 1, null, { streaming: false });
-  assert.ok(capturedMeta, 'meta mesti dihantar oleh gerbang enjin');
-  assert.equal(capturedMeta.batchIndex, 0);
-  assert.equal(capturedMeta.totalBatches, 1);
+    const TranslationEngine = require('./translationEngine');
+    let capturedMeta = null;
+    const dummyGemini = {
+        translateSubtitle: async () => '<s id="1">Satu</s>\n<s id="2">Dua</s>',
+        streamTranslateSubtitle: async () => '',
+        estimateTokenCount: () => 10
+    };
+    const agentB = {
+        circuitOpen: false,
+        runSemanticInspection: async (batch, translated, meta) => {
+            capturedMeta = meta;
+            return { valid: true };
+        }
+    };
+    const engine = new TranslationEngine(dummyGemini, 'gemini-2.5-flash', {}, { providerName: 'gemini', agentB });
+    await engine.translateBatch(makeEntries(2), 'Malay', null, 0, 1, null, { streaming: false });
+    assert.ok(capturedMeta, 'meta mesti dihantar oleh gerbang enjin');
+    assert.equal(capturedMeta.batchIndex, 0);
+    assert.equal(capturedMeta.totalBatches, 1);
 });
 
 // ── 13. Resilient Pre-Flight JSON Parser (Mandat Pengerasan 2026-09-26 §1) ──
@@ -1374,451 +1550,532 @@ test('AgentB: gerbang enjin menghantar meta {batchIndex, totalBatches} kepada in
 // sintaks biasa LLM — koma tergantung, fences, chatter, control chars.
 
 test('AgentB: parsePreflightResponse selamat dari koma tergantung (trailing comma)', () => {
-  const { parsePreflightResponse } = require('./subfaberPreflight');
+    const { parsePreflightResponse } = require('./subfaberPreflight');
 
-  // Koma tergantung pada entri array terakhir "terms": [...,]
-  const withArrayComma = '{"theme":"Heist drama.","terms":[{"src":"Boss","tgt":"Ketua","note":"n"},]}';
-  const parsedArray = parsePreflightResponse(withArrayComma);
-  assert.ok(parsedArray, 'koma tergantung dalam array mesti dibersihkan');
-  assert.equal(parsedArray.theme, 'Heist drama.');
-  assert.equal(parsedArray.terms.length, 1);
+    // Koma tergantung pada entri array terakhir "terms": [...,]
+    const withArrayComma = '{"theme":"Heist drama.","terms":[{"src":"Boss","tgt":"Ketua","note":"n"},]}';
+    const parsedArray = parsePreflightResponse(withArrayComma);
+    assert.ok(parsedArray, 'koma tergantung dalam array mesti dibersihkan');
+    assert.equal(parsedArray.theme, 'Heist drama.');
+    assert.equal(parsedArray.terms.length, 1);
 
-  // Koma tergantung pada object: {"theme": "...", }
-  const withObjectComma = '{"theme":"T.", "terms":[],}';
-  const parsedObject = parsePreflightResponse(withObjectComma);
-  assert.ok(parsedObject, 'koma tergantung dalam object mesti dibersihkan');
-  assert.equal(parsedObject.theme, 'T.');
+    // Koma tergantung pada object: {"theme": "...", }
+    const withObjectComma = '{"theme":"T.", "terms":[],}';
+    const parsedObject = parsePreflightResponse(withObjectComma);
+    assert.ok(parsedObject, 'koma tergantung dalam object mesti dibersihkan');
+    assert.equal(parsedObject.theme, 'T.');
 
-  // Kedua-dua serentak + berbilang tahap
-  const both = '{"theme":"B.", "terms":[{"src":"A","tgt":"B",},],}';
-  const parsedBoth = parsePreflightResponse(both);
-  assert.ok(parsedBoth, 'koma tergantung berbilang tahap mesti dibersihkan');
-  assert.equal(parsedBoth.terms[0].source, 'A');
+    // Kedua-dua serentak + berbilang tahap
+    const both = '{"theme":"B.", "terms":[{"src":"A","tgt":"B",},],}';
+    const parsedBoth = parsePreflightResponse(both);
+    assert.ok(parsedBoth, 'koma tergantung berbilang tahap mesti dibersihkan');
+    assert.equal(parsedBoth.terms[0].source, 'A');
 });
 
 test('AgentB: parsePreflightResponse selamat dari fences + chatter di luar sempadan', () => {
-  const { parsePreflightResponse } = require('./subfaberPreflight');
-  const fence = String.fromCharCode(0x60, 0x60, 0x60); // dibina supaya literal tidak rosak
+    const { parsePreflightResponse } = require('./subfaberPreflight');
+    const fence = String.fromCharCode(0x60, 0x60, 0x60); // dibina supaya literal tidak rosak
 
-  // ```json ... ``` (fence dibuang sebelum pengekstrakan sempadan)
-  const fenced = `${fence}json\n{"theme":"F.","terms":[]}\n${fence}`;
-  assert.ok(parsePreflightResponse(fenced), 'fences mesti dibuang');
+    // ```json ... ``` (fence dibuang sebelum pengekstrakan sempadan)
+    const fenced = `${fence}json\n{"theme":"F.","terms":[]}\n${fence}`;
+    assert.ok(parsePreflightResponse(fenced), 'fences mesti dibuang');
 
-  // Chatter sebelum DAN selepas JSON
-  const chatty = 'Sure! Here is the analysis:\n{"theme":"C.","terms":[{"src":"X","tgt":"Y","note":""}]}\nHope this helps!';
-  const parsedChatty = parsePreflightResponse(chatty);
-  assert.ok(parsedChatty, 'chatter luar mesti dibuang');
-  assert.equal(parsedChatty.theme, 'C.');
-  assert.equal(parsedChatty.terms[0].source, 'X');
+    // Chatter sebelum DAN selepas JSON
+    const chatty =
+        'Sure! Here is the analysis:\n{"theme":"C.","terms":[{"src":"X","tgt":"Y","note":""}]}\nHope this helps!';
+    const parsedChatty = parsePreflightResponse(chatty);
+    assert.ok(parsedChatty, 'chatter luar mesti dibuang');
+    assert.equal(parsedChatty.theme, 'C.');
+    assert.equal(parsedChatty.terms[0].source, 'X');
 
-  // Kombinasi penuh: chatter + fence + koma tergantung (corak Beta Run 3)
-  const combined = `Absolutely, here you go:\n${fence}json\n{"theme":"K.","terms":[{"src":"Z","tgt":"Z","note":""},]}\n${fence}\nLet me know!`;
-  const parsedCombined = parsePreflightResponse(combined);
-  assert.ok(parsedCombined, 'kombinasi anomali mesti selamat');
-  assert.equal(parsedCombined.theme, 'K.');
+    // Kombinasi penuh: chatter + fence + koma tergantung (corak Beta Run 3)
+    const combined = `Absolutely, here you go:\n${fence}json\n{"theme":"K.","terms":[{"src":"Z","tgt":"Z","note":""},]}\n${fence}\nLet me know!`;
+    const parsedCombined = parsePreflightResponse(combined);
+    assert.ok(parsedCombined, 'kombinasi anomali mesti selamat');
+    assert.equal(parsedCombined.theme, 'K.');
 });
 
 test('AgentB: parsePreflightResponse membersihkan aksara kawalan tidak sah', () => {
-  const { parsePreflightResponse } = require('./subfaberPreflight');
-  // Control chars mentah (0x01, 0x0B) dibina secara programatik — JSON.parse
-  // asli menolaknya ("Unexpected token"); parser tahan lasak mesti membuangnya.
-  const CTRL_01 = String.fromCharCode(0x01);
-  const CTRL_0B = String.fromCharCode(0x0B);
-  const ctrl = `{"theme":"Ctrl${CTRL_01}clean${CTRL_0B}now.","terms":[]}`;
+    const { parsePreflightResponse } = require('./subfaberPreflight');
+    // Control chars mentah (0x01, 0x0B) dibina secara programatik — JSON.parse
+    // asli menolaknya ("Unexpected token"); parser tahan lasak mesti membuangnya.
+    const CTRL_01 = String.fromCharCode(0x01);
+    const CTRL_0B = String.fromCharCode(0x0b);
+    const ctrl = `{"theme":"Ctrl${CTRL_01}clean${CTRL_0B}now.","terms":[]}`;
 
-  // Semakan awal: JSON.parse asli memang gagal dengan input ini
-  let nativeFailed = false;
-  try { JSON.parse(ctrl); } catch (_) { nativeFailed = true; }
-  assert.ok(nativeFailed, 'precondition: JSON.parse asli mesti gagal');
+    // Semakan awal: JSON.parse asli memang gagal dengan input ini
+    let nativeFailed = false;
+    try {
+        JSON.parse(ctrl);
+    } catch (_) {
+        nativeFailed = true;
+    }
+    assert.ok(nativeFailed, 'precondition: JSON.parse asli mesti gagal');
 
-  const parsed = parsePreflightResponse(ctrl);
-  assert.ok(parsed, 'control chars tidak sah mesti dibuang');
-  assert.equal(parsed.theme, 'Ctrlcleannow.', '0x01 dan 0x0B dibuang; teks sah kekal');
-  assert.ok(!parsed.theme.includes(CTRL_01) && !parsed.theme.includes(CTRL_0B), 'tiada control char tersisa');
+    const parsed = parsePreflightResponse(ctrl);
+    assert.ok(parsed, 'control chars tidak sah mesti dibuang');
+    assert.equal(parsed.theme, 'Ctrlcleannow.', '0x01 dan 0x0B dibuang; teks sah kekal');
+    assert.ok(!parsed.theme.includes(CTRL_01) && !parsed.theme.includes(CTRL_0B), 'tiada control char tersisa');
 });
 
 test('AgentB: parse gagal selepas pembersihan → forensik offset + konteks 100 aksara pada WARN', () => {
-  const { parsePreflightResponse } = require('./subfaberPreflight');
-  const log = require('../utils/logger');
-  const captured = [];
-  const originalWarn = log.warn;
-  log.warn = (fn) => {
-    try { captured.push(typeof fn === 'function' ? String(fn()) : String(fn)); } catch (_) { /* noop */ }
-  };
-  try {
-    // JSON rosak yang TIDAK boleh diselamatkan (string tidak ditutup)
-    const result = parsePreflightResponse('{"theme":"broken... no closing quote, "terms":[]}');
-    assert.equal(result, null, 'tetap null untuk JSON yang benar-benar rosak');
+    const { parsePreflightResponse } = require('./subfaberPreflight');
+    const log = require('../utils/logger');
+    const captured = [];
+    const originalWarn = log.warn;
+    log.warn = (fn) => {
+        try {
+            captured.push(typeof fn === 'function' ? String(fn()) : String(fn));
+        } catch (_) {
+            /* noop */
+        }
+    };
+    try {
+        // JSON rosak yang TIDAK boleh diselamatkan (string tidak ditutup)
+        const result = parsePreflightResponse('{"theme":"broken... no closing quote, "terms":[]}');
+        assert.equal(result, null, 'tetap null untuk JSON yang benar-benar rosak');
 
-    const forensic = captured.find(l => l.includes('Resilient parse failed'));
-    assert.ok(forensic, 'kegagalan parse mesti dilog dengan forensik');
-    assert.ok(/Offset \d+/.test(forensic), 'offset kedudukan aksara mesti dipaparkan');
-    assert.ok(forensic.includes('broken'), 'konteks 100 aksara sekitar kawasan bermasalah mesti dipaparkan');
-  } finally {
-    log.warn = originalWarn;
-  }
+        const forensic = captured.find((l) => l.includes('Resilient parse failed'));
+        assert.ok(forensic, 'kegagalan parse mesti dilog dengan forensik');
+        assert.ok(/Offset \d+/.test(forensic), 'offset kedudukan aksara mesti dipaparkan');
+        assert.ok(forensic.includes('broken'), 'konteks 100 aksara sekitar kawasan bermasalah mesti dipaparkan');
+    } finally {
+        log.warn = originalWarn;
+    }
 });
 
 // ── 14. Dynamic Model Swapping — Hot-Swappable (Mandat §2) ──
 
 test('AgentB: hierarki model 100% dinamik — kimi-k3 utama, sandaran custom', async () => {
-  const inspector = new AgentBInspector({
-    apiKey: 'k',
-    baseUrl: 'https://x.example/v1',
-    model: 'kimi-k3',
-    fallbackModel: 'glm-5.3-flashx'
-  });
-  assert.deepEqual(inspector.modelHierarchy, ['kimi-k3', 'glm-5.3-flashx'], 'susunan configurable, bukan hardcoded');
+    const inspector = new AgentBInspector({
+        apiKey: 'k',
+        baseUrl: 'https://x.example/v1',
+        model: 'kimi-k3',
+        fallbackModel: 'glm-5.3-flashx'
+    });
+    assert.deepEqual(inspector.modelHierarchy, ['kimi-k3', 'glm-5.3-flashx'], 'susunan configurable, bukan hardcoded');
 
-  const calls = [];
-  inspector.translateSubtitle = async function () {
-    calls.push(this.model);
-    if (this.model === 'kimi-k3') throw new Error('kimi down');
-    return '{"valid":true}';
-  };
-  const verdict = await inspector.runSemanticInspection(makeEntries(2), makeTranslated(2));
-  assert.deepEqual(calls, ['kimi-k3', 'glm-5.3-flashx'], 'failover mengikut hierarki dinamik');
-  assert.equal(verdict.modelUsed, 'glm-5.3-flashx');
-  assert.equal(verdict.valid, true);
+    const calls = [];
+    inspector.translateSubtitle = async function () {
+        calls.push(this.model);
+        if (this.model === 'kimi-k3') throw new Error('kimi down');
+        return '{"valid":true}';
+    };
+    const verdict = await inspector.runSemanticInspection(makeEntries(2), makeTranslated(2));
+    assert.deepEqual(calls, ['kimi-k3', 'glm-5.3-flashx'], 'failover mengikut hierarki dinamik');
+    assert.equal(verdict.modelUsed, 'glm-5.3-flashx');
+    assert.equal(verdict.valid, true);
 });
 
 test('AgentB: fallbackModel "none" → hierarki model tunggal (tiada failover)', async () => {
-  const inspector = new AgentBInspector({
-    apiKey: 'k',
-    baseUrl: 'https://x.example/v1',
-    model: 'deepseek-v4-pro',
-    fallbackModel: 'none'
-  });
-  assert.deepEqual(inspector.modelHierarchy, ['deepseek-v4-pro'], '"none" = single-model');
-  assert.equal(inspector.fallbackModel, null);
+    const inspector = new AgentBInspector({
+        apiKey: 'k',
+        baseUrl: 'https://x.example/v1',
+        model: 'deepseek-v4-pro',
+        fallbackModel: 'none'
+    });
+    assert.deepEqual(inspector.modelHierarchy, ['deepseek-v4-pro'], '"none" = single-model');
+    assert.equal(inspector.fallbackModel, null);
 
-  let calls = 0;
-  inspector.translateSubtitle = async function () { calls++; throw new Error('primary dead'); };
-  const verdict = await inspector.runSemanticInspection(makeEntries(2), makeTranslated(2));
-  assert.equal(calls, 1, 'tiada panggilan kedua — failover dimatikan');
-  assert.equal(verdict.failOpen, true);
-  assert.equal(verdict.error, 'both_models_failed');
+    let calls = 0;
+    inspector.translateSubtitle = async function () {
+        calls++;
+        throw new Error('primary dead');
+    };
+    const verdict = await inspector.runSemanticInspection(makeEntries(2), makeTranslated(2));
+    assert.equal(calls, 1, 'tiada panggilan kedua — failover dimatikan');
+    assert.equal(verdict.failOpen, true);
+    assert.equal(verdict.error, 'both_models_failed');
 });
 
 test('AgentB: fallbackModel sama dengan utama → dedupe kepada hierarki tunggal', () => {
-  const inspector = new AgentBInspector({
-    apiKey: 'k',
-    baseUrl: 'https://x.example/v1',
-    model: 'glm-5.3-flashx',
-    fallbackModel: 'GLM-5.3-FLASHX' // sama (case-insensitive)
-  });
-  assert.deepEqual(inspector.modelHierarchy, ['glm-5.3-flashx'], 'duplikat mesti didedup');
-  assert.equal(inspector.fallbackModel, null);
+    const inspector = new AgentBInspector({
+        apiKey: 'k',
+        baseUrl: 'https://x.example/v1',
+        model: 'glm-5.3-flashx',
+        fallbackModel: 'GLM-5.3-FLASHX' // sama (case-insensitive)
+    });
+    assert.deepEqual(inspector.modelHierarchy, ['glm-5.3-flashx'], 'duplikat mesti didedup');
+    assert.equal(inspector.fallbackModel, null);
 });
 
 test('AgentB [MODEL-HIERARCHY]: lalai tanpa sebarang options — kimi-k3 Fasa 0 standalone & deepseek-v4-pro semakan + deepseek-v4.1-flash sandaran', () => {
-  const inspector = new AgentBInspector({ apiKey: 'k', baseUrl: 'https://x.example/v1' });
-  assert.equal(inspector.preflightModel, 'kimi-k3', 'lalai Fasa 0 kimi-k3');
-  assert.deepEqual(inspector.preflightHierarchy, ['kimi-k3'], 'hierarki Fasa 0 [kimi-k3] standalone');
-  assert.equal(inspector.preflightRetries, 4, 'retry-same-model Fasa 0 = 4');
-  assert.equal(inspector.model, 'deepseek-v4-pro', 'lalai pemeriksa utama deepseek-v4-pro');
-  assert.deepEqual(inspector.modelHierarchy, ['deepseek-v4-pro', 'deepseek-v4.1-flash'], 'hierarki semakan');
-  assert.equal(inspector.fallbackModel, 'deepseek-v4.1-flash', 'fallback pemeriksa deepseek-v4.1-flash');
-  assert.equal(inspector.inspectionModel, 'deepseek-v4-pro', 'alias inspectionModel menunjuk model semakan');
-  assert.equal(AGENT_B_DEFAULT_MODEL, 'deepseek-v4-pro');
-  assert.equal(AGENT_B_PREFLIGHT_MODEL, 'kimi-k3');
-  assert.equal(AGENT_B_FALLBACK_MODEL, 'deepseek-v4.1-flash');
+    const inspector = new AgentBInspector({ apiKey: 'k', baseUrl: 'https://x.example/v1' });
+    assert.equal(inspector.preflightModel, 'kimi-k3', 'lalai Fasa 0 kimi-k3');
+    assert.deepEqual(inspector.preflightHierarchy, ['kimi-k3'], 'hierarki Fasa 0 [kimi-k3] standalone');
+    assert.equal(inspector.preflightRetries, 4, 'retry-same-model Fasa 0 = 4');
+    assert.equal(inspector.model, 'deepseek-v4-pro', 'lalai pemeriksa utama deepseek-v4-pro');
+    assert.deepEqual(inspector.modelHierarchy, ['deepseek-v4-pro', 'deepseek-v4.1-flash'], 'hierarki semakan');
+    assert.equal(inspector.fallbackModel, 'deepseek-v4.1-flash', 'fallback pemeriksa deepseek-v4.1-flash');
+    assert.equal(inspector.inspectionModel, 'deepseek-v4-pro', 'alias inspectionModel menunjuk model semakan');
+    assert.equal(AGENT_B_DEFAULT_MODEL, 'deepseek-v4-pro');
+    assert.equal(AGENT_B_PREFLIGHT_MODEL, 'kimi-k3');
+    assert.equal(AGENT_B_FALLBACK_MODEL, 'deepseek-v4.1-flash');
 });
 
 test('AgentB: config.js normalisasi agentB — TRINITY FRONTIER (preflight + inspection + fallback)', async () => {
-  const { normalizeConfig } = require('../utils/config');
-  const savedEnv = {
-    AGENT_B_MODEL: process.env.AGENT_B_MODEL,
-    AGENT_B_PREFLIGHT_MODEL: process.env.AGENT_B_PREFLIGHT_MODEL
-  };
-  try {
-    // Kes 1: config menang
-    const cfg = normalizeConfig({
-      agentB: { enabled: true, baseUrl: 'https://c.example/v1', apiKey: 'ck', model: 'm1', preflightModel: 'p1', fallbackModel: 'm2' }
-    });
-    assert.equal(cfg.agentB.model, 'm1', 'model = model semakan');
-    assert.equal(cfg.agentB.preflightModel, 'p1', 'preflightModel = model Fasa 0');
-    assert.equal(cfg.agentB.fallbackModel, 'm2');
+    const { normalizeConfig } = require('../utils/config');
+    const savedEnv = {
+        AGENT_B_MODEL: process.env.AGENT_B_MODEL,
+        AGENT_B_PREFLIGHT_MODEL: process.env.AGENT_B_PREFLIGHT_MODEL
+    };
+    try {
+        // Kes 1: config menang
+        const cfg = normalizeConfig({
+            agentB: {
+                enabled: true,
+                baseUrl: 'https://c.example/v1',
+                apiKey: 'ck',
+                model: 'm1',
+                preflightModel: 'p1',
+                fallbackModel: 'm2'
+            }
+        });
+        assert.equal(cfg.agentB.model, 'm1', 'model = model semakan');
+        assert.equal(cfg.agentB.preflightModel, 'p1', 'preflightModel = model Fasa 0');
+        assert.equal(cfg.agentB.fallbackModel, 'm2');
 
-    // Kes 2: lalai bersih — trinity beta run 8 penuh
-    delete process.env.AGENT_B_MODEL;
-    delete process.env.AGENT_B_PREFLIGHT_MODEL;
-    const defaults = normalizeConfig({});
-    assert.equal(defaults.agentB.model, 'deepseek-v4-pro', 'lalai pemeriksa utama deepseek-v4-pro (BETA RUN 9)');
-    assert.equal(defaults.agentB.preflightModel, 'kimi-k3', 'lalai Fasa 0 kimi-k3');
-    assert.equal(defaults.agentB.preflightFallbackModel, 'kimi-k3', 'fallback Fasa 0 = primer (standalone)');
-    assert.equal(defaults.agentB.fallbackModel, 'deepseek-v4.1-flash', 'lalai fallback pemeriksa deepseek-v4.1-flash');
+        // Kes 2: lalai bersih — trinity beta run 8 penuh
+        delete process.env.AGENT_B_MODEL;
+        delete process.env.AGENT_B_PREFLIGHT_MODEL;
+        const defaults = normalizeConfig({});
+        assert.equal(defaults.agentB.model, 'deepseek-v4-pro', 'lalai pemeriksa utama deepseek-v4-pro (BETA RUN 9)');
+        assert.equal(defaults.agentB.preflightModel, 'kimi-k3', 'lalai Fasa 0 kimi-k3');
+        assert.equal(defaults.agentB.preflightFallbackModel, 'kimi-k3', 'fallback Fasa 0 = primer (standalone)');
+        assert.equal(
+            defaults.agentB.fallbackModel,
+            'deepseek-v4.1-flash',
+            'lalai fallback pemeriksa deepseek-v4.1-flash'
+        );
 
-    // Kes 3: inspectionModel warisan bermigrasi ke 'model'
-    const legacy = normalizeConfig({
-      agentB: { enabled: true, baseUrl: 'https://l.example/v1', apiKey: 'lk', inspectionModel: 'legacy-inspector' }
-    });
-    assert.equal(legacy.agentB.model, 'legacy-inspector', 'inspectionModel warisan kekal sebagai model semakan');
-    assert.equal(legacy.agentB.inspectionModel, undefined, 'alias warisan dilucutkan daripada struktur tersimpan');
-  } finally {
-    for (const key of ['AGENT_B_MODEL', 'AGENT_B_PREFLIGHT_MODEL']) {
-      if (savedEnv[key] === undefined) delete process.env[key];
-      else process.env[key] = savedEnv[key];
+        // Kes 3: inspectionModel warisan bermigrasi ke 'model'
+        const legacy = normalizeConfig({
+            agentB: {
+                enabled: true,
+                baseUrl: 'https://l.example/v1',
+                apiKey: 'lk',
+                inspectionModel: 'legacy-inspector'
+            }
+        });
+        assert.equal(legacy.agentB.model, 'legacy-inspector', 'inspectionModel warisan kekal sebagai model semakan');
+        assert.equal(legacy.agentB.inspectionModel, undefined, 'alias warisan dilucutkan daripada struktur tersimpan');
+    } finally {
+        for (const key of ['AGENT_B_MODEL', 'AGENT_B_PREFLIGHT_MODEL']) {
+            if (savedEnv[key] === undefined) delete process.env[key];
+            else process.env[key] = savedEnv[key];
+        }
     }
-  }
 });
 
 // ── 15. TRINITY POWERHOUSE (Mandat Frontier 2026-09-26) ──
 
 test('AgentB: [MODEL-HIERARCHY] FINAL — Fasa 0 dihalakan ke kimi-k3 (retry-same-model), semakan ke deepseek-v4-pro (dua hierarki berasingan)', async () => {
-  const inspector = new AgentBInspector({
-    apiKey: 'k', baseUrl: 'https://x.example/v1',
-    preflightRetryBackoffMs: 0 // [UPSTREAM-RESILIENCE] lumpuh backoff — ujian pantas
-  });
-  assert.equal(inspector.preflightModel, 'kimi-k3', 'Fasa 0 kimi-k3');
-  assert.equal(inspector.model, 'deepseek-v4-pro', 'semakan deepseek-v4-pro');
+    const inspector = new AgentBInspector({
+        apiKey: 'k',
+        baseUrl: 'https://x.example/v1',
+        preflightRetryBackoffMs: 0 // [UPSTREAM-RESILIENCE] lumpuh backoff — ujian pantas
+    });
+    assert.equal(inspector.preflightModel, 'kimi-k3', 'Fasa 0 kimi-k3');
+    assert.equal(inspector.model, 'deepseek-v4-pro', 'semakan deepseek-v4-pro');
 
-  const calls = [];
-  // Fasa 0: kimi-k3 gagal 5x → fail-open null (tiada model lain menyelamatkan)
-  inspector.translateSubtitle = async function () {
-    calls.push(this.model);
-    throw new Error('primary down');
-  };
-  const preflightContext = await inspector.runPreflightPass(makeEntries(50), 'Malay', 'English');
-  assert.equal(preflightContext, null, 'kimi-k3 standalone: 5x gagal → fail-open tanpa konteks');
-  assert.deepEqual(calls, ['kimi-k3', 'kimi-k3', 'kimi-k3', 'kimi-k3', 'kimi-k3'], 'Fasa 0: hanya kimi-k3 di-retry (×5) — deepseek TIDAK disentuh');
+    const calls = [];
+    // Fasa 0: kimi-k3 gagal 5x → fail-open null (tiada model lain menyelamatkan)
+    inspector.translateSubtitle = async function () {
+        calls.push(this.model);
+        throw new Error('primary down');
+    };
+    const preflightContext = await inspector.runPreflightPass(makeEntries(50), 'Malay', 'English');
+    assert.equal(preflightContext, null, 'kimi-k3 standalone: 5x gagal → fail-open tanpa konteks');
+    assert.deepEqual(
+        calls,
+        ['kimi-k3', 'kimi-k3', 'kimi-k3', 'kimi-k3', 'kimi-k3'],
+        'Fasa 0: hanya kimi-k3 di-retry (×5) — deepseek TIDAK disentuh'
+    );
 
-  // Semakan: hierarki berasingan deepseek-v4-pro → deepseek-v4.1-flash
-  calls.length = 0;
-  inspector.translateSubtitle = async function () {
-    calls.push(this.model);
-    if (this.model === 'deepseek-v4-pro') throw new Error('primary down');
-    return '{"valid":true}';
-  };
-  const verdict = await inspector.runSemanticInspection(makeEntries(2), makeTranslated(2));
-  assert.equal(verdict.valid, true);
-  assert.deepEqual(calls, ['deepseek-v4-pro', 'deepseek-v4.1-flash'], 'Semakan hierarki deepseek-v4-pro → deepseek-v4.1-flash');
+    // Semakan: hierarki berasingan deepseek-v4-pro → deepseek-v4.1-flash
+    calls.length = 0;
+    inspector.translateSubtitle = async function () {
+        calls.push(this.model);
+        if (this.model === 'deepseek-v4-pro') throw new Error('primary down');
+        return '{"valid":true}';
+    };
+    const verdict = await inspector.runSemanticInspection(makeEntries(2), makeTranslated(2));
+    assert.equal(verdict.valid, true);
+    assert.deepEqual(
+        calls,
+        ['deepseek-v4-pro', 'deepseek-v4.1-flash'],
+        'Semakan hierarki deepseek-v4-pro → deepseek-v4.1-flash'
+    );
 });
 
 test('AgentB: TRINITY — hot-swap utama tersuai + sandaran tersuai (Fasa 0 kekal standalone)', () => {
-  const inspector = new AgentBInspector({
-    apiKey: 'k',
-    baseUrl: 'https://x.example/v1',
-    model: 'glm-5.3-flashx',
-    preflightModel: 'kimi-k2.7',
-    fallbackModel: 'deepseek-v4-pro'
-  });
-  assert.equal(inspector.model, 'glm-5.3-flashx');
-  assert.equal(inspector.preflightModel, 'kimi-k2.7');
-  assert.equal(inspector.fallbackModel, 'deepseek-v4-pro');
-  assert.deepEqual(inspector.modelHierarchy, ['glm-5.3-flashx', 'deepseek-v4-pro']);
-  // [MODEL-HIERARCHY] FINAL: Fasa 0 sentiasa 1-tingkat — primer custom,
-  // fallback menuruti primer (tiada deepseek-v4-pro dalam pre-flight).
-  assert.deepEqual(inspector.preflightHierarchy, ['kimi-k2.7']);
+    const inspector = new AgentBInspector({
+        apiKey: 'k',
+        baseUrl: 'https://x.example/v1',
+        model: 'glm-5.3-flashx',
+        preflightModel: 'kimi-k2.7',
+        fallbackModel: 'deepseek-v4-pro'
+    });
+    assert.equal(inspector.model, 'glm-5.3-flashx');
+    assert.equal(inspector.preflightModel, 'kimi-k2.7');
+    assert.equal(inspector.fallbackModel, 'deepseek-v4-pro');
+    assert.deepEqual(inspector.modelHierarchy, ['glm-5.3-flashx', 'deepseek-v4-pro']);
+    // [MODEL-HIERARCHY] FINAL: Fasa 0 sentiasa 1-tingkat — primer custom,
+    // fallback menuruti primer (tiada deepseek-v4-pro dalam pre-flight).
+    assert.deepEqual(inspector.preflightHierarchy, ['kimi-k2.7']);
 });
 
 // ── 16. KETELUSAN LOG + MUATAN HTTP SEBENAR (Mandat Universal Payload §C) ──
 
 test('AgentB: log PASSED berformat mandat — [AgentB] Batch X/Y inspection: PASSED (valid: true) [glm-5.3] (...ms)', async () => {
-  const log = require('../utils/logger');
-  const inspector = new AgentBInspector({
-    apiKey: 'test-key',
-    baseUrl: 'https://agentb.example.com/v1'
-  });
-  inspector.translateSubtitle = async () => '{"valid":true}';
+    const log = require('../utils/logger');
+    const inspector = new AgentBInspector({
+        apiKey: 'test-key',
+        baseUrl: 'https://agentb.example.com/v1'
+    });
+    inspector.translateSubtitle = async () => '{"valid":true}';
 
-  const captured = [];
-  const originalInfo = log.info;
-  log.info = (fn) => {
-    try { captured.push(typeof fn === 'function' ? String(fn()) : String(fn)); } catch (_) { /* noop */ }
-  };
-  try {
-    const verdict = await inspector.runSemanticInspection(makeEntries(2), makeTranslated(2), { batchIndex: 0, totalBatches: 1 });
-    assert.equal(verdict.valid, true);
-    assert.equal(verdict.modelUsed, 'deepseek-v4-pro');
+    const captured = [];
+    const originalInfo = log.info;
+    log.info = (fn) => {
+        try {
+            captured.push(typeof fn === 'function' ? String(fn()) : String(fn));
+        } catch (_) {
+            /* noop */
+        }
+    };
+    try {
+        const verdict = await inspector.runSemanticInspection(makeEntries(2), makeTranslated(2), {
+            batchIndex: 0,
+            totalBatches: 1
+        });
+        assert.equal(verdict.valid, true);
+        assert.equal(verdict.modelUsed, 'deepseek-v4-pro');
 
-    const passedLog = captured.find(l => l.includes('PASSED'));
-    assert.ok(passedLog, 'log PASSED mesti dicetak pada INFO');
-    assert.ok(
-      passedLog.startsWith('[AgentB] Batch 1/1 inspection: PASSED (valid: true) [deepseek-v4-pro] ('),
-      'format mandat: prefix + model deepseek-v4-pro tepat dicatatkan'
-    );
-    assert.ok(/\(\d+ms\)$/.test(passedLog), 'latensi ms mesti dicatatkan dalam kurungan');
-  } finally {
-    log.info = originalInfo;
-  }
+        const passedLog = captured.find((l) => l.includes('PASSED'));
+        assert.ok(passedLog, 'log PASSED mesti dicetak pada INFO');
+        assert.ok(
+            passedLog.startsWith('[AgentB] Batch 1/1 inspection: PASSED (valid: true) [deepseek-v4-pro] ('),
+            'format mandat: prefix + model deepseek-v4-pro tepat dicatatkan'
+        );
+        assert.ok(/\(\d+ms\)$/.test(passedLog), 'latensi ms mesti dicatatkan dalam kurungan');
+    } finally {
+        log.info = originalInfo;
+    }
 });
 
 test('AgentB: log Pre-Flight berformat mandat — [SubFaberPreflight] Running pre-flight semantic pass (N entries) [kimi-k3]', async () => {
-  const log = require('../utils/logger');
-  const inspector = new AgentBInspector({
-    apiKey: 'test-key',
-    baseUrl: 'https://agentb.example.com/v1'
-  });
-  inspector.translateSubtitle = async () => JSON.stringify({ theme: 'Theme.', terms: [] });
+    const log = require('../utils/logger');
+    const inspector = new AgentBInspector({
+        apiKey: 'test-key',
+        baseUrl: 'https://agentb.example.com/v1'
+    });
+    inspector.translateSubtitle = async () => JSON.stringify({ theme: 'Theme.', terms: [] });
 
-  const captured = [];
-  const originalInfo = log.info;
-  log.info = (fn) => {
-    try { captured.push(typeof fn === 'function' ? String(fn()) : String(fn)); } catch (_) { /* noop */ }
-  };
-  try {
-    const context = await inspector.runPreflightPass(makeEntries(50), 'Malay', 'English');
-    assert.ok(context, 'preflight context returned');
+    const captured = [];
+    const originalInfo = log.info;
+    log.info = (fn) => {
+        try {
+            captured.push(typeof fn === 'function' ? String(fn()) : String(fn));
+        } catch (_) {
+            /* noop */
+        }
+    };
+    try {
+        const context = await inspector.runPreflightPass(makeEntries(50), 'Malay', 'English');
+        assert.ok(context, 'preflight context returned');
 
-    const runningLog = captured.find(l => l.includes('Running pre-flight semantic pass'));
-    assert.ok(runningLog, 'log Running pre-flight mesti dicetak');
-    assert.ok(
-      runningLog.includes('Running pre-flight semantic pass (50 entries) [kimi-k3]'),
-      'format mandat: N entries + nama model tepat [kimi-k3] (MANDAT v5)'
-    );
-  } finally {
-    log.info = originalInfo;
-  }
+        const runningLog = captured.find((l) => l.includes('Running pre-flight semantic pass'));
+        assert.ok(runningLog, 'log Running pre-flight mesti dicetak');
+        assert.ok(
+            runningLog.includes('Running pre-flight semantic pass (50 entries) [kimi-k3]'),
+            'format mandat: N entries + nama model tepat [kimi-k3] (MANDAT v5)'
+        );
+    } finally {
+        log.info = originalInfo;
+    }
 });
 
 test('AgentB: [PAYLOAD-GODTIER] muatan HTTP sebenar (axios.post, stream SSE) — payload 4-kunci pada Fasa 1 (temp 0.0 + stream true, TIADA extra_body/reasoning_effort/max_tokens/response_format/top_p)', async () => {
-  const axios = require('axios');
-  const inspector = new AgentBInspector({
-    apiKey: 'test-key',
-    baseUrl: 'https://agentb.example.com/v1'
-  });
-
-  const captured = [];
-  const { EventEmitter } = require('events');
-  const originalPost = axios.post;
-  // [PAYLOAD-GODTIER] translateSubtitle kini MENGDELEGASI ke laluan SSE
-  // (stream:true dalam muatan). Mock memulangkan EventEmitter berisi chunk
-  // data: SSE — memastikan parser SSE sedia ada menghurai jawapan sebenar.
-  axios.post = async (url, body) => {
-    captured.push({ url, body });
-    const stream = new EventEmitter();
-    setImmediate(() => {
-      stream.emit('data', Buffer.from('data: {"choices":[{"delta":{"content":"{\\"valid\\":"}}]}\n\n'));
-      stream.emit('data', Buffer.from('data: {"choices":[{"delta":{"content":"true}"},"finish_reason":"stop"}]}\n\n'));
-      stream.emit('data', Buffer.from('data: [DONE]\n\n'));
-      stream.emit('end');
+    const axios = require('axios');
+    const inspector = new AgentBInspector({
+        apiKey: 'test-key',
+        baseUrl: 'https://agentb.example.com/v1'
     });
-    return { data: stream };
-  };
-  try {
-    const verdict = await inspector.runSemanticInspection(makeEntries(2), makeTranslated(2), { batchIndex: 0, totalBatches: 1 });
-    assert.equal(verdict.valid, true, 'verdict dihuraikan daripada stream SSE');
-    assert.equal(captured.length, 1, 'satu panggilan HTTP sahaja (primary lulus)');
 
-    const { url, body } = captured[0];
-    assert.ok(url.endsWith('/chat/completions'), 'endpoint chat/completions');
-    // [PAYLOAD-GODTIER] — semakan ke atas payload HTTP SEBENAR (4 kunci):
-    assert.equal(body.temperature, 0.0, 'muatan HTTP WAJIB membawa temperature 0.0 (varians 61s → 19s)');
-    assert.equal(body.stream, true, 'muatan HTTP WAJIB membawa stream:true (siling Caddy 300s — STREAMING MANDATORY)');
-    assert.equal(body.model, 'deepseek-v4-pro');
-    assert.ok(Array.isArray(body.messages) && body.messages.length === 1, 'satu mesej user');
-    // PENCETUS OVERTHINKING — DILARANG dalam muatan HTTP:
-    assert.equal('reasoning_effort' in body, false, 'muatan HTTP DILARANG membawa reasoning_effort (tiada kesan terukur)');
-    assert.equal('max_tokens' in body, false, 'muatan HTTP DILARANG membawa max_tokens (overthinking + istilah tergugur)');
-    assert.equal('extra_body' in body, false, 'muatan HTTP DILARANG membawa extra_body (overthinking +90-110s)');
-    assert.equal('response_format' in body, false, 'muatan HTTP DILARANG membawa response_format (overthinking +110s)');
-    assert.equal('top_p' in body, false, 'muatan HTTP DILARANG membawa top_p');
-    assert.equal('thinking' in body, false, 'thinking top-level DILARANG');
-    assert.equal('presence_penalty' in body, false, 'muatan HTTP TIDAK boleh membawa presence_penalty');
-    assert.equal('max_completion_tokens' in body, false, 'muatan HTTP TIDAK boleh membawa max_completion_tokens');
-    assert.deepEqual(
-      Object.keys(body).sort(),
-      ['messages', 'model', 'stream', 'temperature'],
-      'muatan HTTP mesti TEPAT {model, messages, stream, temperature} (4-kunci god-tier)'
-    );
-  } finally {
-    axios.post = originalPost;
-  }
+    const captured = [];
+    const { EventEmitter } = require('events');
+    const originalPost = axios.post;
+    // [PAYLOAD-GODTIER] translateSubtitle kini MENGDELEGASI ke laluan SSE
+    // (stream:true dalam muatan). Mock memulangkan EventEmitter berisi chunk
+    // data: SSE — memastikan parser SSE sedia ada menghurai jawapan sebenar.
+    axios.post = async (url, body) => {
+        captured.push({ url, body });
+        const stream = new EventEmitter();
+        setImmediate(() => {
+            stream.emit('data', Buffer.from('data: {"choices":[{"delta":{"content":"{\\"valid\\":"}}]}\n\n'));
+            stream.emit(
+                'data',
+                Buffer.from('data: {"choices":[{"delta":{"content":"true}"},"finish_reason":"stop"}]}\n\n')
+            );
+            stream.emit('data', Buffer.from('data: [DONE]\n\n'));
+            stream.emit('end');
+        });
+        return { data: stream };
+    };
+    try {
+        const verdict = await inspector.runSemanticInspection(makeEntries(2), makeTranslated(2), {
+            batchIndex: 0,
+            totalBatches: 1
+        });
+        assert.equal(verdict.valid, true, 'verdict dihuraikan daripada stream SSE');
+        assert.equal(captured.length, 1, 'satu panggilan HTTP sahaja (primary lulus)');
+
+        const { url, body } = captured[0];
+        assert.ok(url.endsWith('/chat/completions'), 'endpoint chat/completions');
+        // [PAYLOAD-GODTIER] — semakan ke atas payload HTTP SEBENAR (4 kunci):
+        assert.equal(body.temperature, 0.0, 'muatan HTTP WAJIB membawa temperature 0.0 (varians 61s → 19s)');
+        assert.equal(
+            body.stream,
+            true,
+            'muatan HTTP WAJIB membawa stream:true (siling Caddy 300s — STREAMING MANDATORY)'
+        );
+        assert.equal(body.model, 'deepseek-v4-pro');
+        assert.ok(Array.isArray(body.messages) && body.messages.length === 1, 'satu mesej user');
+        // PENCETUS OVERTHINKING — DILARANG dalam muatan HTTP:
+        assert.equal(
+            'reasoning_effort' in body,
+            false,
+            'muatan HTTP DILARANG membawa reasoning_effort (tiada kesan terukur)'
+        );
+        assert.equal(
+            'max_tokens' in body,
+            false,
+            'muatan HTTP DILARANG membawa max_tokens (overthinking + istilah tergugur)'
+        );
+        assert.equal('extra_body' in body, false, 'muatan HTTP DILARANG membawa extra_body (overthinking +90-110s)');
+        assert.equal(
+            'response_format' in body,
+            false,
+            'muatan HTTP DILARANG membawa response_format (overthinking +110s)'
+        );
+        assert.equal('top_p' in body, false, 'muatan HTTP DILARANG membawa top_p');
+        assert.equal('thinking' in body, false, 'thinking top-level DILARANG');
+        assert.equal('presence_penalty' in body, false, 'muatan HTTP TIDAK boleh membawa presence_penalty');
+        assert.equal('max_completion_tokens' in body, false, 'muatan HTTP TIDAK boleh membawa max_completion_tokens');
+        assert.deepEqual(
+            Object.keys(body).sort(),
+            ['messages', 'model', 'stream', 'temperature'],
+            'muatan HTTP mesti TEPAT {model, messages, stream, temperature} (4-kunci god-tier)'
+        );
+    } finally {
+        axios.post = originalPost;
+    }
 });
 
 // ── 17. BETA RUN 9 — PENYATUAN DEEPSEEK STACK & HIERARKI KEBENARAN ──
 
 test('AgentB: MANDAT v5 — Pre-Flight lalai kimi-k3 dengan timeout 5 minit', () => {
-  const inspector = new AgentBInspector({ apiKey: 'k', baseUrl: 'https://x.example/v1' });
-  // (a) Pre-Flight memanggil kimi-k3 sebagai model lalai utama.
-  assert.equal(inspector.preflightModel, 'kimi-k3', 'Fasa 0 mesti lalai ke kimi-k3 (MANDAT v5)');
-  assert.equal(AGENT_B_PREFLIGHT_MODEL, 'kimi-k3');
-  assert.equal(AGENT_B_PREFLIGHT_TIMEOUT_MS, 300000, 'Fasa 0 timeout 5 minit (MANDAT OPERASI MUTLAK v2)');
-  assert.equal(AGENT_B_INSPECTION_TIMEOUT_MS, 300000, 'Fasa 1 5 minit (MANDAT OPERASI MUTLAK v2)');
-  assert.equal(inspector.translationTimeout, 300000, 'baseline instance 5 minit');
-  // (b) Override env berfungsi (integer ms positif sahaja).
-  const override = new AgentBInspector({
-    apiKey: 'k', baseUrl: 'https://x.example/v1',
-    preflightTimeoutMs: 420000, inspectionTimeoutMs: 330000
-  });
-  assert.equal(override.preflightTimeoutMs, 420000, 'override preflight 420s diterima');
-  assert.equal(override.inspectionTimeoutMs, 330000, 'override inspection 330s diterima');
-  // (c) Override tidak sah → lalai mandat.
-  const invalid = new AgentBInspector({
-    apiKey: 'k', baseUrl: 'https://x.example/v1',
-    preflightTimeoutMs: -5, inspectionTimeoutMs: 'junk'
-  });
-  assert.equal(invalid.preflightTimeoutMs, 300000, 'override tidak sah → lalai 5 minit');
-  assert.equal(invalid.inspectionTimeoutMs, 300000, 'override tidak sah → lalai 5 minit');
+    const inspector = new AgentBInspector({ apiKey: 'k', baseUrl: 'https://x.example/v1' });
+    // (a) Pre-Flight memanggil kimi-k3 sebagai model lalai utama.
+    assert.equal(inspector.preflightModel, 'kimi-k3', 'Fasa 0 mesti lalai ke kimi-k3 (MANDAT v5)');
+    assert.equal(AGENT_B_PREFLIGHT_MODEL, 'kimi-k3');
+    assert.equal(AGENT_B_PREFLIGHT_TIMEOUT_MS, 300000, 'Fasa 0 timeout 5 minit (MANDAT OPERASI MUTLAK v2)');
+    assert.equal(AGENT_B_INSPECTION_TIMEOUT_MS, 300000, 'Fasa 1 5 minit (MANDAT OPERASI MUTLAK v2)');
+    assert.equal(inspector.translationTimeout, 300000, 'baseline instance 5 minit');
+    // (b) Override env berfungsi (integer ms positif sahaja).
+    const override = new AgentBInspector({
+        apiKey: 'k',
+        baseUrl: 'https://x.example/v1',
+        preflightTimeoutMs: 420000,
+        inspectionTimeoutMs: 330000
+    });
+    assert.equal(override.preflightTimeoutMs, 420000, 'override preflight 420s diterima');
+    assert.equal(override.inspectionTimeoutMs, 330000, 'override inspection 330s diterima');
+    // (c) Override tidak sah → lalai mandat.
+    const invalid = new AgentBInspector({
+        apiKey: 'k',
+        baseUrl: 'https://x.example/v1',
+        preflightTimeoutMs: -5,
+        inspectionTimeoutMs: 'junk'
+    });
+    assert.equal(invalid.preflightTimeoutMs, 300000, 'override tidak sah → lalai 5 minit');
+    assert.equal(invalid.inspectionTimeoutMs, 300000, 'override tidak sah → lalai 5 minit');
 });
 
 test('AgentB: [MODEL-HIERARCHY] FINAL — fallback deepseek-v4.1-flash Fasa 1 SAHAJA; Fasa 0 retry kimi-k3', async () => {
-  // Fasa 0: kimi-k3 gagal 5x → fail-open (deepseek-v4.1-flash TIDAK disentuh).
-  const inspector0 = new AgentBInspector({
-    apiKey: 'k', baseUrl: 'https://x.example/v1',
-    preflightRetryBackoffMs: 0 // [UPSTREAM-RESILIENCE] lumpuh backoff — ujian pantas
-  });
-  assert.deepEqual(inspector0.preflightHierarchy, ['kimi-k3'], 'preflightHierarchy = [kimi-k3] SAHAJA');
-  assert.equal(AGENT_B_FALLBACK_MODEL, 'deepseek-v4.1-flash');
+    // Fasa 0: kimi-k3 gagal 5x → fail-open (deepseek-v4.1-flash TIDAK disentuh).
+    const inspector0 = new AgentBInspector({
+        apiKey: 'k',
+        baseUrl: 'https://x.example/v1',
+        preflightRetryBackoffMs: 0 // [UPSTREAM-RESILIENCE] lumpuh backoff — ujian pantas
+    });
+    assert.deepEqual(inspector0.preflightHierarchy, ['kimi-k3'], 'preflightHierarchy = [kimi-k3] SAHAJA');
+    assert.equal(AGENT_B_FALLBACK_MODEL, 'deepseek-v4.1-flash');
 
-  const calls0 = [];
-  inspector0.translateSubtitle = async function () {
-    calls0.push(this.model);
-    throw Object.assign(new Error('HTTP 502 Bad Gateway'), { statusCode: 502 });
-  };
-  const ctx = await inspector0.runPreflightPass(makeEntries(50), 'Malay', 'English');
-  assert.equal(ctx, null, 'Fasa 0: kimi-k3 standalone — kegagalan → fail-open (bukan fallback)');
-  assert.deepEqual(calls0, ['kimi-k3', 'kimi-k3', 'kimi-k3', 'kimi-k3', 'kimi-k3'], 'Fasa 0: kimi-k3 sahaja (×5) — flash TIDAK dipanggil');
+    const calls0 = [];
+    inspector0.translateSubtitle = async function () {
+        calls0.push(this.model);
+        throw Object.assign(new Error('HTTP 502 Bad Gateway'), { statusCode: 502 });
+    };
+    const ctx = await inspector0.runPreflightPass(makeEntries(50), 'Malay', 'English');
+    assert.equal(ctx, null, 'Fasa 0: kimi-k3 standalone — kegagalan → fail-open (bukan fallback)');
+    assert.deepEqual(
+        calls0,
+        ['kimi-k3', 'kimi-k3', 'kimi-k3', 'kimi-k3', 'kimi-k3'],
+        'Fasa 0: kimi-k3 sahaja (×5) — flash TIDAK dipanggil'
+    );
 
-  // Fasa 1: deepseek-v4-pro gagal → deepseek-v4.1-flash menyelamatkan.
-  const inspector1 = new AgentBInspector({ apiKey: 'k', baseUrl: 'https://x.example/v1' });
-  assert.deepEqual(inspector1.modelHierarchy, ['deepseek-v4-pro', 'deepseek-v4.1-flash'], 'modelHierarchy = [deepseek-v4-pro, deepseek-v4.1-flash]');
-  const calls1 = [];
-  inspector1.translateSubtitle = async function () {
-    calls1.push(this.model);
-    if (this.model === 'deepseek-v4-pro') {
-      throw Object.assign(new Error('HTTP 502 Bad Gateway'), { statusCode: 502 });
-    }
-    return '{"valid":true}';
-  };
-  const verdict = await inspector1.runSemanticInspection(makeEntries(2), makeTranslated(2));
-  assert.equal(verdict.valid, true);
-  assert.deepEqual(calls1, ['deepseek-v4-pro', 'deepseek-v4.1-flash'], 'Fasa 1 beralih ke deepseek-v4.1-flash');
+    // Fasa 1: deepseek-v4-pro gagal → deepseek-v4.1-flash menyelamatkan.
+    const inspector1 = new AgentBInspector({ apiKey: 'k', baseUrl: 'https://x.example/v1' });
+    assert.deepEqual(
+        inspector1.modelHierarchy,
+        ['deepseek-v4-pro', 'deepseek-v4.1-flash'],
+        'modelHierarchy = [deepseek-v4-pro, deepseek-v4.1-flash]'
+    );
+    const calls1 = [];
+    inspector1.translateSubtitle = async function () {
+        calls1.push(this.model);
+        if (this.model === 'deepseek-v4-pro') {
+            throw Object.assign(new Error('HTTP 502 Bad Gateway'), { statusCode: 502 });
+        }
+        return '{"valid":true}';
+    };
+    const verdict = await inspector1.runSemanticInspection(makeEntries(2), makeTranslated(2));
+    assert.equal(verdict.valid, true);
+    assert.deepEqual(calls1, ['deepseek-v4-pro', 'deepseek-v4.1-flash'], 'Fasa 1 beralih ke deepseek-v4.1-flash');
 });
 
 test('AgentB: BETA RUN 9 — hierarki kebenaran hadir dalam suntikan konteks kelompok Agent A', () => {
-  const TranslationEngine = require('./translationEngine');
-  const dummyGemini = {
-    translateSubtitle: async () => '',
-    streamTranslateSubtitle: async () => '',
-    estimateTokenCount: () => 10
-  };
-  const engine = new TranslationEngine(dummyGemini, 'gemini-2.5-flash', {}, { providerName: 'gemini' });
-  const batch = [{ id: 1, timecode: 't', text: 'Hello there.' }];
-  const block = engine._formatPreflightForChunk(
-    { theme: 'A drama.', terms: [], characters: [], credits_and_titles: [] },
-    [], batch, []
-  );
-  // (b) HIERARCHY OF TRUTH wajib hadir verbatim dalam suntikan konteks.
-  assert.ok(block.includes('### HIERARCHY OF TRUTH'), 'Seksyen HIERARCHY OF TRUTH mesti wujud');
-  assert.ok(
-    block.includes('HIERARCHY OF TRUTH: Pre-flight context provides macro-guidance. However, the SOURCE DIALOGUE in the current batch is the absolute ground truth.'),
-    'Arahan tegar dialog-sumber-mengatasi mesti hadir verbatim'
-  );
-  // (b2) BARE-NAME FIX (runtime lesson Shine on Me S01E31, 2026-09-30):
-  // gelaran ialah MAPPING bukan mandat — nama kosong mesti kekal kosong,
-  // gelaran tidak boleh disuntik pada baris sumber yang tidak membawanya.
-  assert.ok(
-    block.includes('Character titles are MAPPINGS, not mandates'),
-    'Arahan mapping-bukan-mandat mesti hadir (anti gelaran-hantu)'
-  );
-  assert.ok(
-    block.includes('when the source uses a bare name'),
-    'Peraturan nama-kosong-kekal-kosong mesti hadir'
-  );
-  assert.ok(
-    block.includes('ALWAYS FOLLOW THE SOURCE DIALOGUE.'),
-    'Arahan ikut dialog sumber mesti hadir'
-  );
+    const TranslationEngine = require('./translationEngine');
+    const dummyGemini = {
+        translateSubtitle: async () => '',
+        streamTranslateSubtitle: async () => '',
+        estimateTokenCount: () => 10
+    };
+    const engine = new TranslationEngine(dummyGemini, 'gemini-2.5-flash', {}, { providerName: 'gemini' });
+    const batch = [{ id: 1, timecode: 't', text: 'Hello there.' }];
+    const block = engine._formatPreflightForChunk(
+        { theme: 'A drama.', terms: [], characters: [], credits_and_titles: [] },
+        [],
+        batch,
+        []
+    );
+    // (b) HIERARCHY OF TRUTH wajib hadir verbatim dalam suntikan konteks.
+    assert.ok(block.includes('### HIERARCHY OF TRUTH'), 'Seksyen HIERARCHY OF TRUTH mesti wujud');
+    assert.ok(
+        block.includes(
+            'HIERARCHY OF TRUTH: Pre-flight context provides macro-guidance. However, the SOURCE DIALOGUE in the current batch is the absolute ground truth.'
+        ),
+        'Arahan tegar dialog-sumber-mengatasi mesti hadir verbatim'
+    );
+    // (b2) BARE-NAME FIX (runtime lesson Shine on Me S01E31, 2026-09-30):
+    // gelaran ialah MAPPING bukan mandat — nama kosong mesti kekal kosong,
+    // gelaran tidak boleh disuntik pada baris sumber yang tidak membawanya.
+    assert.ok(
+        block.includes('Character titles are MAPPINGS, not mandates'),
+        'Arahan mapping-bukan-mandat mesti hadir (anti gelaran-hantu)'
+    );
+    assert.ok(block.includes('when the source uses a bare name'), 'Peraturan nama-kosong-kekal-kosong mesti hadir');
+    assert.ok(block.includes('ALWAYS FOLLOW THE SOURCE DIALOGUE.'), 'Arahan ikut dialog sumber mesti hadir');
 });

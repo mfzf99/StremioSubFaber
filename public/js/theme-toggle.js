@@ -57,7 +57,7 @@
             if (persist === true) {
                 localStorage.setItem('theme', normalized);
             }
-        } catch (_) { }
+        } catch (_) {}
         updateSwitchState(normalized);
         return normalized;
     }
@@ -66,8 +66,10 @@
         // DESKTOP: if the page bootstrap forced light (dashboard Rootsys pattern),
         // do NOT re-apply the stored preference — desktop is light-only with no
         // toggle. The theme system stays available for mobile/tablet later.
-        if (document.documentElement.getAttribute('data-theme-pref') === 'light' &&
-            !document.getElementById('themeToggle')) {
+        if (
+            document.documentElement.getAttribute('data-theme-pref') === 'light' &&
+            !document.getElementById('themeToggle')
+        ) {
             return;
         }
 

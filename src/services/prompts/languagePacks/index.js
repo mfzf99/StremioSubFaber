@@ -26,7 +26,9 @@ const PACKS = [malayPack];
 
 /** Normalize a language label/code to comparable lowercase key. */
 function normalizeLangKey(value) {
-  return String(value || '').trim().toLowerCase();
+    return String(value || '')
+        .trim()
+        .toLowerCase();
 }
 
 /**
@@ -35,19 +37,25 @@ function normalizeLangKey(value) {
  * 'may' (ISO-639-2/B for Malay) is included explicitly.
  */
 function isMalayTarget(targetLang) {
-  const raw = normalizeLangKey(targetLang);
-  if (!raw) return false;
+    const raw = normalizeLangKey(targetLang);
+    if (!raw) return false;
 
-  // Display-name match: "Malay", "Bahasa Melayu", "Malay (Jawi script)"...
-  if (raw === 'malay' || raw === 'bahasa melayu' || raw === 'melayu' ||
-      raw.includes('malay') || raw.includes('bahasa melayu') || raw.includes('melayu')) {
-    return true;
-  }
+    // Display-name match: "Malay", "Bahasa Melayu", "Malay (Jawi script)"...
+    if (
+        raw === 'malay' ||
+        raw === 'bahasa melayu' ||
+        raw === 'melayu' ||
+        raw.includes('malay') ||
+        raw.includes('bahasa melayu') ||
+        raw.includes('melayu')
+    ) {
+        return true;
+    }
 
-  // Code match: take the primary subtag before '-'/'_' and test membership.
-  const primary = raw.split(/[-_]/)[0];
-  const malayCodes = new Set(['ms', 'my', 'mya', 'may', 'zsm', 'zzm', 'mly']);
-  return malayCodes.has(primary);
+    // Code match: take the primary subtag before '-'/'_' and test membership.
+    const primary = raw.split(/[-_]/)[0];
+    const malayCodes = new Set(['ms', 'my', 'mya', 'may', 'zsm', 'zzm', 'mly']);
+    return malayCodes.has(primary);
 }
 
 /**
@@ -57,13 +65,13 @@ function isMalayTarget(targetLang) {
  *            creditsExample, fewShot, specificRules, notLockedGuidance}}
  */
 function getLanguagePack(targetLang) {
-  if (isMalayTarget(targetLang)) return malayPack;
-  return genericPack;
+    if (isMalayTarget(targetLang)) return malayPack;
+    return genericPack;
 }
 
 module.exports = {
-  getLanguagePack,
-  isMalayTarget,
-  malayPack,
-  genericPack
+    getLanguagePack,
+    isMalayTarget,
+    malayPack,
+    genericPack
 };

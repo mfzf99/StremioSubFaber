@@ -103,7 +103,11 @@ async function saveSubtitle(videoHash, langCode, srtContent, uploaderHash) {
         if (isOverride) {
             const limit = checkOverrideLimit(uploaderHash);
             if (!limit.allowed) {
-                return { success: false, error: `Override limit reached (${MAX_OVERRIDES_PER_HOUR}/hour). Try again later.`, remaining: limit.remaining };
+                return {
+                    success: false,
+                    error: `Override limit reached (${MAX_OVERRIDES_PER_HOUR}/hour). Try again later.`,
+                    remaining: limit.remaining
+                };
             }
         }
 
@@ -126,7 +130,7 @@ async function saveSubtitle(videoHash, langCode, srtContent, uploaderHash) {
         // Update the per-video index
         const { indexKey, entries } = await loadIndex(adapter, videoHash);
         // Remove existing entry for this language if present, add new one
-        const updatedEntries = entries.filter(e => e.languageCode !== langCode);
+        const updatedEntries = entries.filter((e) => e.languageCode !== langCode);
         updatedEntries.push({
             languageCode: langCode,
             timestamp: entry.timestamp,
@@ -134,7 +138,10 @@ async function saveSubtitle(videoHash, langCode, srtContent, uploaderHash) {
         });
         await persistIndex(adapter, indexKey, updatedEntries);
 
-        log.info(() => `[SMDB] Saved subtitle: hash=${videoHash.slice(0, 8)}..., lang=${langCode}, override=${isOverride}, uploader=${(uploaderHash || '').slice(0, 8)}`);
+        log.info(
+            () =>
+                `[SMDB] Saved subtitle: hash=${videoHash.slice(0, 8)}..., lang=${langCode}, override=${isOverride}, uploader=${(uploaderHash || '').slice(0, 8)}`
+        );
 
         return { success: true, isOverride };
     } catch (error) {
@@ -198,10 +205,12 @@ async function listSubtitlesMultiHash(videoHashes) {
         if (!uniqueHashes.length) return [];
 
         // Fetch indexes for all hashes in parallel
-        const results = await Promise.all(uniqueHashes.map(async (hash) => {
-            const entries = await listSubtitles(hash);
-            return entries.map(e => ({ ...e, videoHash: hash }));
-        }));
+        const results = await Promise.all(
+            uniqueHashes.map(async (hash) => {
+                const entries = await listSubtitles(hash);
+                return entries.map((e) => ({ ...e, videoHash: hash }));
+            })
+        );
 
         // Merge: first hash wins per language (stremioHash should be first)
         const byLang = new Map();
@@ -257,7 +266,7 @@ async function deleteSubtitle(videoHash, langCode) {
 
         // Update index
         const { indexKey, entries } = await loadIndex(adapter, videoHash);
-        const updatedEntries = entries.filter(e => e.languageCode !== langCode);
+        const updatedEntries = entries.filter((e) => e.languageCode !== langCode);
         await persistIndex(adapter, indexKey, updatedEntries);
 
         log.info(() => `[SMDB] Deleted subtitle: hash=${videoHash.slice(0, 8)}..., lang=${langCode}`);
@@ -281,7 +290,7 @@ function checkOverrideLimit(uploaderHash) {
     const timestamps = overrideTracker.get(key) || [];
 
     // Filter to only those within the last hour
-    const recent = timestamps.filter(ts => now - ts <= OVERRIDE_WINDOW_MS);
+    const recent = timestamps.filter((ts) => now - ts <= OVERRIDE_WINDOW_MS);
     overrideTracker.set(key, recent);
 
     const remaining = Math.max(0, MAX_OVERRIDES_PER_HOUR - recent.length);
@@ -300,7 +309,7 @@ function recordOverride(uploaderHash) {
     const now = Date.now();
     const key = sanitizeKey(uploaderHash);
     const timestamps = overrideTracker.get(key) || [];
-    const recent = timestamps.filter(ts => now - ts <= OVERRIDE_WINDOW_MS);
+    const recent = timestamps.filter((ts) => now - ts <= OVERRIDE_WINDOW_MS);
     recent.push(now);
     overrideTracker.set(key, recent);
 }
@@ -346,8 +355,8 @@ async function saveHashMapping(hash1, hash2) {
         const key2 = buildHashMapKey(hash2);
 
         // Load existing mappings, add the new association
-        const existing1 = await adapter.get(key1, CACHE_TYPE) || { hashes: [] };
-        const existing2 = await adapter.get(key2, CACHE_TYPE) || { hashes: [] };
+        const existing1 = (await adapter.get(key1, CACHE_TYPE)) || { hashes: [] };
+        const existing2 = (await adapter.get(key2, CACHE_TYPE)) || { hashes: [] };
 
         const set1 = new Set(existing1.hashes);
         const set2 = new Set(existing2.hashes);

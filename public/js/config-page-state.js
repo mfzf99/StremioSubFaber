@@ -4,15 +4,16 @@
     } else {
         root.SubMakerConfigPageState = factory();
     }
-}(typeof globalThis !== 'undefined' ? globalThis : this, function () {
+})(typeof globalThis !== 'undefined' ? globalThis : this, function () {
     'use strict';
 
     function configHasSubToolboxEnabled(config) {
-        return !!(config && (
-            config.subToolboxEnabled === true
-            || config.fileTranslationEnabled === true
-            || config.syncSubtitlesEnabled === true
-        ));
+        return !!(
+            config &&
+            (config.subToolboxEnabled === true ||
+                config.fileTranslationEnabled === true ||
+                config.syncSubtitlesEnabled === true)
+        );
     }
 
     function getInitialConfigLoadPlan(options = {}) {
@@ -56,8 +57,12 @@
     }
 
     function resolveVisibleInstallToken(options = {}) {
-        const activeToken = String(options.activeToken || '').trim().toLowerCase();
-        const revealedToken = String(options.revealedToken || '').trim().toLowerCase();
+        const activeToken = String(options.activeToken || '')
+            .trim()
+            .toLowerCase();
+        const revealedToken = String(options.revealedToken || '')
+            .trim()
+            .toLowerCase();
         const configDirty = options.configDirty === true;
         const isSessionToken = (token) => /^[a-f0-9]{32}$/.test(String(token || ''));
 
@@ -87,9 +92,9 @@
                     sourceLabel: 'Recovered draft',
                     message: hasCachedFallback
                         ? 'The missing token was replaced with the last local copy until you save again.'
-                        : (loadedFromUrl
-                            ? 'The shared token could not be recovered. You are editing a fresh draft until you save again.'
-                            : 'The saved token could not be recovered. You are editing a fresh draft until you save again.'),
+                        : loadedFromUrl
+                          ? 'The shared token could not be recovered. You are editing a fresh draft until you save again.'
+                          : 'The saved token could not be recovered. You are editing a fresh draft until you save again.',
                     recoveredFromToken: sessionToken,
                     regenerated: true
                 }
@@ -132,7 +137,9 @@
     }
 
     function buildCurrentTokenExportEntry(options = {}) {
-        const targetToken = String(options.targetToken || '').trim().toLowerCase();
+        const targetToken = String(options.targetToken || '')
+            .trim()
+            .toLowerCase();
         const isSessionToken = (token) => /^[a-f0-9]{32}$/.test(String(token || ''));
         if (!isSessionToken(targetToken)) {
             return null;
@@ -140,10 +147,18 @@
 
         const entries = Array.isArray(options.entries) ? options.entries : [];
         const briefMap = options.briefMap && typeof options.briefMap === 'object' ? options.briefMap : {};
-        const activeSessionToken = String(options.activeSessionToken || '').trim().toLowerCase();
+        const activeSessionToken = String(options.activeSessionToken || '')
+            .trim()
+            .toLowerCase();
         const activeSession = options.activeSession || null;
         const now = Number(options.now) || Date.now();
-        const matchingEntry = entries.find(entry => String(entry?.token || '').trim().toLowerCase() === targetToken) || null;
+        const matchingEntry =
+            entries.find(
+                (entry) =>
+                    String(entry?.token || '')
+                        .trim()
+                        .toLowerCase() === targetToken
+            ) || null;
         const brief = briefMap[targetToken] || (activeSessionToken === targetToken ? activeSession : null);
 
         return {
@@ -151,32 +166,44 @@
             label: String(matchingEntry?.label || '').trim(),
             addedAt: Number(matchingEntry?.addedAt) || Number(brief?.createdAt) || now,
             lastOpenedAt: Number(matchingEntry?.lastOpenedAt) || (activeSessionToken === targetToken ? now : 0),
-            lastSavedAt: Number(matchingEntry?.lastSavedAt) || Number(matchingEntry?.lastKnownUpdatedAt) || Number(brief?.updatedAt) || Number(brief?.createdAt) || now,
+            lastSavedAt:
+                Number(matchingEntry?.lastSavedAt) ||
+                Number(matchingEntry?.lastKnownUpdatedAt) ||
+                Number(brief?.updatedAt) ||
+                Number(brief?.createdAt) ||
+                now,
             lastKnownCreatedAt: Number(matchingEntry?.lastKnownCreatedAt) || Number(brief?.createdAt) || 0,
             lastKnownUpdatedAt: Number(matchingEntry?.lastKnownUpdatedAt) || Number(brief?.updatedAt) || 0,
-            lastKnownLastAccessedAt: Number(matchingEntry?.lastKnownLastAccessedAt) || Number(brief?.lastAccessedAt) || 0,
+            lastKnownLastAccessedAt:
+                Number(matchingEntry?.lastKnownLastAccessedAt) || Number(brief?.lastAccessedAt) || 0,
             lastKnownDisabled: matchingEntry?.lastKnownDisabled === true || brief?.disabled === true
         };
     }
 
     function buildTokenVaultImportEntries(payload, options = {}) {
-        const extractToken = typeof options.extractToken === 'function'
-            ? options.extractToken
-            : (value) => {
-                const normalized = String(value || '').trim().toLowerCase();
-                return /^[a-f0-9]{32}$/.test(normalized) ? normalized : '';
-            };
-        const normalizeLabel = typeof options.normalizeLabel === 'function'
-            ? options.normalizeLabel
-            : (_token, label) => String(label || '').trim();
+        const extractToken =
+            typeof options.extractToken === 'function'
+                ? options.extractToken
+                : (value) => {
+                      const normalized = String(value || '')
+                          .trim()
+                          .toLowerCase();
+                      return /^[a-f0-9]{32}$/.test(normalized) ? normalized : '';
+                  };
+        const normalizeLabel =
+            typeof options.normalizeLabel === 'function'
+                ? options.normalizeLabel
+                : (_token, label) => String(label || '').trim();
         const now = Number(options.now) || Date.now();
         const importedEntries = Array.isArray(payload)
             ? payload
-            : (Array.isArray(payload?.entries)
-                ? payload.entries
-                : (Array.isArray(payload?.profiles)
-                    ? payload.profiles
-                    : [payload?.entry, payload?.profile, payload].filter(candidate => candidate && typeof candidate === 'object')));
+            : Array.isArray(payload?.entries)
+              ? payload.entries
+              : Array.isArray(payload?.profiles)
+                ? payload.profiles
+                : [payload?.entry, payload?.profile, payload].filter(
+                      (candidate) => candidate && typeof candidate === 'object'
+                  );
         const prepared = [];
         const clonePlainObject = (value) => {
             if (!value || typeof value !== 'object' || Array.isArray(value)) return null;
@@ -196,7 +223,8 @@
                 label: normalizeLabel(token, entry?.label || ''),
                 addedAt: Number(entry?.addedAt) || now,
                 lastOpenedAt: Number(entry?.lastOpenedAt) || 0,
-                lastSavedAt: Number(entry?.lastSavedAt) || Number(entry?.lastKnownUpdatedAt) || Number(session.updatedAt) || now,
+                lastSavedAt:
+                    Number(entry?.lastSavedAt) || Number(entry?.lastKnownUpdatedAt) || Number(session.updatedAt) || now,
                 lastKnownCreatedAt: Number(entry?.lastKnownCreatedAt) || Number(session.createdAt) || 0,
                 lastKnownUpdatedAt: Number(entry?.lastKnownUpdatedAt) || Number(session.updatedAt) || 0,
                 lastKnownLastAccessedAt: Number(entry?.lastKnownLastAccessedAt) || Number(session.lastAccessedAt) || 0,
@@ -223,21 +251,25 @@
     }
 
     function buildFreshDraftConfig(options = {}) {
-        const defaultConfig = options.defaultConfig && typeof options.defaultConfig === 'object'
-            ? options.defaultConfig
-            : {};
+        const defaultConfig =
+            options.defaultConfig && typeof options.defaultConfig === 'object' ? options.defaultConfig : {};
         const disableSubtitleProviders = options.disableSubtitleProviders === true;
         let freshConfig;
 
         try {
-            freshConfig = typeof structuredClone === 'function'
-                ? structuredClone(defaultConfig)
-                : JSON.parse(JSON.stringify(defaultConfig));
+            freshConfig =
+                typeof structuredClone === 'function'
+                    ? structuredClone(defaultConfig)
+                    : JSON.parse(JSON.stringify(defaultConfig));
         } catch (_) {
             freshConfig = { ...defaultConfig };
         }
 
-        if (disableSubtitleProviders && freshConfig?.subtitleProviders && typeof freshConfig.subtitleProviders === 'object') {
+        if (
+            disableSubtitleProviders &&
+            freshConfig?.subtitleProviders &&
+            typeof freshConfig.subtitleProviders === 'object'
+        ) {
             Object.keys(freshConfig.subtitleProviders).forEach((providerKey) => {
                 const providerConfig = freshConfig.subtitleProviders[providerKey];
                 if (!providerConfig || typeof providerConfig !== 'object') return;
@@ -252,12 +284,12 @@
     }
 
     function resolveTranslationModeRestoreState(options = {}) {
-        const currentConfig = options.currentConfig && typeof options.currentConfig === 'object'
-            ? options.currentConfig
-            : {};
-        const translationModeBackup = options.translationModeBackup && typeof options.translationModeBackup === 'object'
-            ? options.translationModeBackup
-            : null;
+        const currentConfig =
+            options.currentConfig && typeof options.currentConfig === 'object' ? options.currentConfig : {};
+        const translationModeBackup =
+            options.translationModeBackup && typeof options.translationModeBackup === 'object'
+                ? options.translationModeBackup
+                : null;
         const hasTranslationModeBackup = !!translationModeBackup;
 
         const pickArray = (key) => {
@@ -271,12 +303,14 @@
         const learnModeSource = hasTranslationModeBackup
             ? translationModeBackup.learnMode === true
             : currentConfig.learnMode === true;
-        const learnOrder = (hasTranslationModeBackup ? translationModeBackup.learnOrder : '')
-            || currentConfig.learnOrder
-            || 'source-top';
-        const learnItalicTarget = (hasTranslationModeBackup ? translationModeBackup.learnItalicTarget : '')
-            || currentConfig.learnItalicTarget
-            || 'target';
+        const learnOrder =
+            (hasTranslationModeBackup ? translationModeBackup.learnOrder : '') ||
+            currentConfig.learnOrder ||
+            'source-top';
+        const learnItalicTarget =
+            (hasTranslationModeBackup ? translationModeBackup.learnItalicTarget : '') ||
+            currentConfig.learnItalicTarget ||
+            'target';
 
         return {
             hasTranslationModeBackup,
@@ -293,8 +327,12 @@
     }
 
     function resolveTokenVaultSwitchPlan(options = {}) {
-        const targetToken = String(options.targetToken || '').trim().toLowerCase();
-        const activeToken = String(options.activeToken || '').trim().toLowerCase();
+        const targetToken = String(options.targetToken || '')
+            .trim()
+            .toLowerCase();
+        const activeToken = String(options.activeToken || '')
+            .trim()
+            .toLowerCase();
         const isDirty = options.isDirty === true;
         const isSessionToken = (token) => /^[a-f0-9]{32}$/.test(String(token || ''));
 
@@ -313,8 +351,12 @@
     }
 
     function resolveCompleteTokenRemovalPlan(options = {}) {
-        const targetToken = String(options.targetToken || '').trim().toLowerCase();
-        const activeToken = String(options.activeToken || '').trim().toLowerCase();
+        const targetToken = String(options.targetToken || '')
+            .trim()
+            .toLowerCase();
+        const activeToken = String(options.activeToken || '')
+            .trim()
+            .toLowerCase();
         const isSessionToken = (token) => /^[a-f0-9]{32}$/.test(String(token || ''));
         const isActiveToken = isSessionToken(targetToken) && targetToken === activeToken;
 
@@ -323,14 +365,17 @@
             deletedActiveToken: isActiveToken,
             clearStoredToken: isActiveToken,
             nextCacheToken: '',
-            nextContext: isActiveToken ? {
-                token: '',
-                provenance: 'recovered',
-                sourceLabel: 'Recovered draft',
-                message: 'This token was permanently removed. You are editing the last local copy until you save again.',
-                recoveredFromToken: targetToken,
-                regenerated: true
-            } : null
+            nextContext: isActiveToken
+                ? {
+                      token: '',
+                      provenance: 'recovered',
+                      sourceLabel: 'Recovered draft',
+                      message:
+                          'This token was permanently removed. You are editing the last local copy until you save again.',
+                      recoveredFromToken: targetToken,
+                      regenerated: true
+                  }
+                : null
         };
     }
 
@@ -342,10 +387,9 @@
 
         const activeToken = options.activeToken || '';
         const isActiveToken = tokenToCheck === activeToken;
-        const cachedConfig = (options.cachedToken && options.cachedToken !== tokenToCheck)
-            ? null
-            : (options.cachedConfig || null);
-        const effectiveConfig = isActiveToken ? (options.currentConfig || null) : cachedConfig;
+        const cachedConfig =
+            options.cachedToken && options.cachedToken !== tokenToCheck ? null : options.cachedConfig || null;
+        const effectiveConfig = isActiveToken ? options.currentConfig || null : cachedConfig;
         const visible = configHasSubToolboxEnabled(effectiveConfig) && options.tokenDisabled !== true;
 
         return {
@@ -362,9 +406,7 @@
         const loaded = options.loaded === true;
         const tokensKey = String(options.tokensKey || '');
         const lastTokensKey = String(options.lastTokensKey || '');
-        const maxAgeMs = Number.isFinite(options.maxAgeMs) && options.maxAgeMs >= 0
-            ? options.maxAgeMs
-            : 30 * 1000;
+        const maxAgeMs = Number.isFinite(options.maxAgeMs) && options.maxAgeMs >= 0 ? options.maxAgeMs : 30 * 1000;
         const now = Number(options.now) || Date.now();
         const lastRefreshAt = Number(options.lastRefreshAt) || 0;
 
@@ -377,24 +419,24 @@
         if (tokensKey !== lastTokensKey) {
             return true;
         }
-        return (now - lastRefreshAt) > maxAgeMs;
+        return now - lastRefreshAt > maxAgeMs;
     }
 
     function shouldUseCachedTokenVaultBrief(options = {}) {
         const fetchedAt = Number(options.fetchedAt) || 0;
-        const maxAgeMs = Number.isFinite(options.maxAgeMs) && options.maxAgeMs >= 0
-            ? options.maxAgeMs
-            : 30 * 1000;
+        const maxAgeMs = Number.isFinite(options.maxAgeMs) && options.maxAgeMs >= 0 ? options.maxAgeMs : 30 * 1000;
         const now = Number(options.now) || Date.now();
 
         if (fetchedAt <= 0) {
             return false;
         }
-        return (now - fetchedAt) <= maxAgeMs;
+        return now - fetchedAt <= maxAgeMs;
     }
 
     function normalizeBooleanStoragePreference(value) {
-        const normalized = String(value || '').trim().toLowerCase();
+        const normalized = String(value || '')
+            .trim()
+            .toLowerCase();
         if (!normalized) {
             return '';
         }
@@ -452,4 +494,4 @@
         shouldRefreshTokenVaultBriefs,
         shouldUseCachedTokenVaultBrief
     };
-}));
+});

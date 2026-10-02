@@ -46,7 +46,7 @@ async function getAppVersion() {
 }
 
 // Initialize version
-getAppVersion().then(v => {
+getAppVersion().then((v) => {
     APP_VERSION = v;
 });
 
@@ -92,11 +92,13 @@ function responseHasNoStore(response) {
     const pragma = (response.headers.get('Pragma') || '').toLowerCase();
     const surrogate = (response.headers.get('Surrogate-Control') || '').toLowerCase();
 
-    return cacheControl.includes('no-store') ||
+    return (
+        cacheControl.includes('no-store') ||
         cacheControl.includes('no-cache') ||
         cacheControl.includes('private') ||
         pragma.includes('no-cache') ||
-        surrogate.includes('no-store');
+        surrogate.includes('no-store')
+    );
 }
 
 // Cache API rejects responses with "Vary: *" to prevent opaque caching.
@@ -109,9 +111,7 @@ function responseHasVaryStar(response) {
 // Certain routes intentionally send Vary:* and no-store; skip all caching work for them
 function shouldBypassCaching(urlLike) {
     const url = urlLike instanceof URL ? urlLike : new URL(urlLike, self.location.origin);
-    return NON_CACHEABLE_PATH_PREFIXES.some(prefix =>
-        url.pathname === prefix || url.pathname.startsWith(prefix)
-    );
+    return NON_CACHEABLE_PATH_PREFIXES.some((prefix) => url.pathname === prefix || url.pathname.startsWith(prefix));
 }
 
 // Centralized helper to avoid crashing on responses that cannot be cached
@@ -139,62 +139,58 @@ async function purgeSensitiveApiCacheEntries() {
     try {
         const cache = await caches.open(API_CACHE_NAME);
         const requests = await cache.keys();
-        await Promise.all(requests.map(async (req) => {
-            const url = new URL(req.url);
+        await Promise.all(
+            requests.map(async (req) => {
+                const url = new URL(req.url);
 
-            if (isSensitiveApiRequest(url)) {
-                await cache.delete(req);
-                return;
-            }
+                if (isSensitiveApiRequest(url)) {
+                    await cache.delete(req);
+                    return;
+                }
 
-            const cachedResp = await cache.match(req);
-            if (cachedResp && responseHasNoStore(cachedResp)) {
-                await cache.delete(req);
-            }
-        }));
-    } catch (error) {
-    }
+                const cachedResp = await cache.match(req);
+                if (cachedResp && responseHasNoStore(cachedResp)) {
+                    await cache.delete(req);
+                }
+            })
+        );
+    } catch (error) {}
 }
 
 // Assets to cache on install
-const ASSET_URLS = [
-    '/',
-    '/configure',
-    '/config.js',
-    '/configure.html',
-    '/favicon.svg'
-];
+const ASSET_URLS = ['/', '/configure', '/config.js', '/configure.html', '/favicon.svg'];
 
 /**
  * Install event: Cache static assets
  */
 self.addEventListener('install', (event) => {
-
     event.waitUntil(
-        getAppVersion().then(version => {
+        getAppVersion().then((version) => {
             APP_VERSION = version;
             const cacheName = getVersionedCacheName(version);
 
-            return caches.open(cacheName).then(cache => {
-                return Promise.all(ASSET_URLS.map(async (assetUrl) => {
-                    try {
-                        const response = await fetch(assetUrl, { cache: 'no-store' });
-                        if (response && response.ok) {
-                            // Skip caching if upstream adds Vary: *
-                            if (responseHasVaryStar(response)) {
-                                return;
+            return caches.open(cacheName).then((cache) => {
+                return Promise.all(
+                    ASSET_URLS.map(async (assetUrl) => {
+                        try {
+                            const response = await fetch(assetUrl, { cache: 'no-store' });
+                            if (response && response.ok) {
+                                // Skip caching if upstream adds Vary: *
+                                if (responseHasVaryStar(response)) {
+                                    return;
+                                }
+                                try {
+                                    await safeCachePut(cache, assetUrl, response.clone());
+                                } catch (err) {
+                                    // Avoid unhandled rejections when upstream sets Vary: *
+                                    console.warn('Skipping cache put for install asset due to error', assetUrl, err);
+                                }
                             }
-                            try {
-                                await safeCachePut(cache, assetUrl, response.clone());
-                            } catch (err) {
-                                // Avoid unhandled rejections when upstream sets Vary: *
-                                console.warn('Skipping cache put for install asset due to error', assetUrl, err);
-                            }
+                        } catch (err) {
+                            // Ignore individual asset failures to keep install resilient
                         }
-                    } catch (err) {
-                        // Ignore individual asset failures to keep install resilient
-                    }
-                }));
+                    })
+                );
             });
         })
     );
@@ -207,7 +203,6 @@ self.addEventListener('install', (event) => {
  * Activate event: Clean up old cache versions
  */
 self.addEventListener('activate', (event) => {
-
     event.waitUntil(
         (async () => {
             const currentVersion = await getAppVersion();
@@ -217,7 +212,7 @@ self.addEventListener('activate', (event) => {
             // Delete old version caches
             const cacheNames = await caches.keys();
             await Promise.all(
-                cacheNames.map(cacheName => {
+                cacheNames.map((cacheName) => {
                     // Keep current version cache and API cache
                     if (cacheName === currentCacheName || cacheName === API_CACHE_NAME) {
                         return Promise.resolve();
@@ -243,54 +238,59 @@ self.addEventListener('activate', (event) => {
  * Fetch event: Handle requests with appropriate caching strategy
  */
 self.addEventListener('fetch', (event) => {
-    event.respondWith((async () => {
-        const { request } = event;
-        const url = new URL(request.url);
+    event.respondWith(
+        (async () => {
+            const { request } = event;
+            const url = new URL(request.url);
 
-        // Skip cross-origin requests
-        if (url.origin !== self.location.origin) {
-            return fetch(request);
-        }
+            // Skip cross-origin requests
+            if (url.origin !== self.location.origin) {
+                return fetch(request);
+            }
 
-        // If the *page* making this request is a bypass page (file-upload/toolbox/addon),
-        // skip all SW caching for its subresources to avoid Vary:* / no-store noise.
-        try {
-            if (event.clientId) {
-                const client = await self.clients.get(event.clientId);
-                if (client) {
-                    const clientUrl = new URL(client.url);
-                    if (shouldBypassCaching(clientUrl)) {
-                        return fetch(request, { cache: 'no-store' });
+            // If the *page* making this request is a bypass page (file-upload/toolbox/addon),
+            // skip all SW caching for its subresources to avoid Vary:* / no-store noise.
+            try {
+                if (event.clientId) {
+                    const client = await self.clients.get(event.clientId);
+                    if (client) {
+                        const clientUrl = new URL(client.url);
+                        if (shouldBypassCaching(clientUrl)) {
+                            return fetch(request, { cache: 'no-store' });
+                        }
                     }
                 }
+            } catch (_) {}
+
+            // Dynamic pages that deliberately set Vary:* (toolbox, upload, addon) should never be cached
+            if (shouldBypassCaching(url)) {
+                return fetch(request, { cache: 'no-store' }).catch(
+                    () =>
+                        new Response('Offline - dynamic page not cached', {
+                            status: 503,
+                            statusText: 'Service Unavailable'
+                        })
+                );
             }
-        } catch (_) {}
 
-        // Dynamic pages that deliberately set Vary:* (toolbox, upload, addon) should never be cached
-        if (shouldBypassCaching(url)) {
-            return fetch(request, { cache: 'no-store' }).catch(() => new Response(
-                'Offline - dynamic page not cached',
-                { status: 503, statusText: 'Service Unavailable' }
-            ));
-        }
+            // API calls: Network-first strategy
+            if (url.pathname.startsWith('/api/')) {
+                return handleApiRequest(request);
+            }
 
-        // API calls: Network-first strategy
-        if (url.pathname.startsWith('/api/')) {
-            return handleApiRequest(request);
-        }
+            // HTML pages: Network-first strategy
+            if (url.pathname === '/' || url.pathname === '/configure' || url.pathname.endsWith('.html')) {
+                return handleHtmlRequest(request);
+            }
 
-        // HTML pages: Network-first strategy
-        if (url.pathname === '/' || url.pathname === '/configure' || url.pathname.endsWith('.html')) {
-            return handleHtmlRequest(request);
-        }
+            // Static assets: Cache-first strategy
+            if (isStaticAsset(url.pathname)) {
+                return handleStaticAsset(request);
+            }
 
-        // Static assets: Cache-first strategy
-        if (isStaticAsset(url.pathname)) {
-            return handleStaticAsset(request);
-        }
-
-        return fetch(request);
-    })());
+            return fetch(request);
+        })()
+    );
 });
 
 /**
@@ -308,14 +308,11 @@ async function handleApiRequest(request) {
         return response;
     } catch (error) {
         // No cache available (we do not cache API responses anymore), return error response
-        return new Response(
-            JSON.stringify({ error: 'Offline - no cached response available' }),
-            {
-                status: 503,
-                statusText: 'Service Unavailable',
-                headers: { 'Content-Type': 'application/json' }
-            }
-        );
+        return new Response(JSON.stringify({ error: 'Offline - no cached response available' }), {
+            status: 503,
+            statusText: 'Service Unavailable',
+            headers: { 'Content-Type': 'application/json' }
+        });
     }
 }
 
@@ -333,8 +330,7 @@ async function handleHtmlRequest(request) {
             try {
                 const cache = await caches.open(cacheName);
                 await cache.delete(request);
-            } catch (_) {
-            }
+            } catch (_) {}
             return response;
         }
 
@@ -342,7 +338,8 @@ async function handleHtmlRequest(request) {
             // Check if response has no-cache headers
             const cacheControl = response.headers.get('Cache-Control');
             const hasVaryStar = responseHasVaryStar(response);
-            const shouldCache = !hasVaryStar &&
+            const shouldCache =
+                !hasVaryStar &&
                 (!cacheControl || (!cacheControl.includes('no-cache') && !cacheControl.includes('no-store')));
 
             // Only cache HTML if it doesn't have no-cache headers
@@ -365,13 +362,10 @@ async function handleHtmlRequest(request) {
             return cached;
         }
 
-        return new Response(
-            'Offline - no cached response available',
-            {
-                status: 503,
-                statusText: 'Service Unavailable'
-            }
-        );
+        return new Response('Offline - no cached response available', {
+            status: 503,
+            statusText: 'Service Unavailable'
+        });
     }
 }
 
@@ -391,8 +385,7 @@ async function handleStaticAsset(request) {
         try {
             const cache = await caches.open(cacheName);
             await cache.delete(request);
-        } catch (_) {
-        }
+        } catch (_) {}
 
         try {
             return await fetch(request, { cache: 'no-store' });
@@ -401,13 +394,10 @@ async function handleStaticAsset(request) {
             if (cached) {
                 return cached;
             }
-            return new Response(
-                'Offline - asset not cached',
-                {
-                    status: 503,
-                    statusText: 'Service Unavailable'
-                }
-            );
+            return new Response('Offline - asset not cached', {
+                status: 503,
+                statusText: 'Service Unavailable'
+            });
         }
     }
 
@@ -426,8 +416,7 @@ async function handleStaticAsset(request) {
             try {
                 const cache = await caches.open(cacheName);
                 await cache.delete(request);
-            } catch (_) {
-            }
+            } catch (_) {}
             return response;
         }
 
@@ -447,13 +436,10 @@ async function handleStaticAsset(request) {
         return response;
     } catch (error) {
         // Network failed and not in cache
-        return new Response(
-            'Offline - asset not cached',
-            {
-                status: 503,
-                statusText: 'Service Unavailable'
-            }
-        );
+        return new Response('Offline - asset not cached', {
+            status: 503,
+            statusText: 'Service Unavailable'
+        });
     }
 }
 
@@ -461,15 +447,26 @@ async function handleStaticAsset(request) {
  * Check if a path is a static asset
  */
 function isStaticAsset(pathname) {
-    const staticExtensions = ['.js', '.css', '.svg', '.png', '.jpg', '.jpeg', '.gif', '.woff', '.woff2', '.ttf', '.eot'];
-    return staticExtensions.some(ext => pathname.endsWith(ext));
+    const staticExtensions = [
+        '.js',
+        '.css',
+        '.svg',
+        '.png',
+        '.jpg',
+        '.jpeg',
+        '.gif',
+        '.woff',
+        '.woff2',
+        '.ttf',
+        '.eot'
+    ];
+    return staticExtensions.some((ext) => pathname.endsWith(ext));
 }
 
 /**
  * Message handler for cache control from clients
  */
 self.addEventListener('message', (event) => {
-
     if (event.data && event.data.type === 'CLEAR_CACHE') {
         handleClearCache();
     } else if (event.data && event.data.type === 'GET_VERSION') {
@@ -483,7 +480,7 @@ self.addEventListener('message', (event) => {
 async function handleClearCache() {
     try {
         const cacheNames = await caches.keys();
-        const deletePromises = cacheNames.map(cacheName => {
+        const deletePromises = cacheNames.map((cacheName) => {
             if (cacheName.startsWith(CACHE_PREFIX)) {
                 return caches.delete(cacheName);
             }
@@ -491,6 +488,5 @@ async function handleClearCache() {
         });
 
         await Promise.all(deletePromises);
-    } catch (error) {
-    }
+    } catch (error) {}
 }

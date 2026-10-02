@@ -8,9 +8,9 @@
     border: 2px solid var(--border);
     border-radius: 24px;
     box-shadow:
-        inset 0 2px 0 rgba(255,255,255,0.15),
-        inset 0 -3px 0 rgba(0,0,0,0.12),
-        0 6px 0 rgba(0,0,0,0.12),
+        inset 0 2px 0 rgba(255, 255, 255, 0.15),
+        inset 0 -3px 0 rgba(0, 0, 0, 0.12),
+        0 6px 0 rgba(0, 0, 0, 0.12),
         0 20px 60px var(--glow);
 }
 
@@ -23,21 +23,21 @@ h1.mario {
     position: relative;
     padding: 0.75rem 2rem;
     border-radius: 16px;
-    border: 3px solid rgba(0,0,0,0.22);
+    border: 3px solid rgba(0, 0, 0, 0.22);
     background:
-        linear-gradient(180deg, rgba(255,255,255,0.15) 0%, rgba(0,0,0,0.08) 100%),
+        linear-gradient(180deg, rgba(255, 255, 255, 0.15) 0%, rgba(0, 0, 0, 0.08) 100%),
         linear-gradient(135deg, var(--primary) 0%, var(--secondary) 100%);
     box-shadow:
-        inset 0 3px 0 rgba(255,255,255,0.45),
-        inset 0 -4px 0 rgba(0,0,0,0.3),
-        0 8px 0 rgba(0,0,0,0.25),
+        inset 0 3px 0 rgba(255, 255, 255, 0.45),
+        inset 0 -4px 0 rgba(0, 0, 0, 0.3),
+        0 8px 0 rgba(0, 0, 0, 0.25),
         0 12px 40px var(--glow),
         0 0 60px rgba(8, 164, 213, 0.3);
     color: white;
     text-shadow:
-        0 2px 4px rgba(0,0,0,0.4),
-        0 4px 12px rgba(0,0,0,0.2),
-        0 -1px 2px rgba(255,255,255,0.3);
+        0 2px 4px rgba(0, 0, 0, 0.4),
+        0 4px 12px rgba(0, 0, 0, 0.2),
+        0 -1px 2px rgba(255, 255, 255, 0.3);
     transform-style: preserve-3d;
     transition: all 0.3s cubic-bezier(0.16, 1, 0.3, 1);
     animation: titlePulse 3s ease-in-out infinite;
@@ -60,7 +60,7 @@ h1.mario::before {
         135deg,
         transparent 0%,
         transparent 40%,
-        rgba(255,255,255,0.4) 50%,
+        rgba(255, 255, 255, 0.4) 50%,
         transparent 60%,
         transparent 100%
     );
@@ -80,14 +80,13 @@ h1.mario::after {
     border-radius: 50%;
     top: 10px;
     right: 10px;
-    background: rgba(0,0,0,0.25);
+    background: rgba(0, 0, 0, 0.25);
     box-shadow:
-        0 calc(100% - 20px) 0 rgba(255,255,255,0.4),
-        calc(-100% + 20px) calc(100% - 20px) 0 rgba(0,0,0,0.25),
-        /* Inner rivet detail */
-        2px 2px 0 -1px rgba(255,255,255,0.3) inset,
-        2px calc(100% - 22px) 0 -1px rgba(255,255,255,0.3) inset,
-        calc(-100% + 22px) calc(100% - 22px) 0 -1px rgba(255,255,255,0.3) inset;
+        0 calc(100% - 20px) 0 rgba(255, 255, 255, 0.4),
+        calc(-100% + 20px) calc(100% - 20px) 0 rgba(0, 0, 0, 0.25),
+        /* Inner rivet detail */ 2px 2px 0 -1px rgba(255, 255, 255, 0.3) inset,
+        2px calc(100% - 22px) 0 -1px rgba(255, 255, 255, 0.3) inset,
+        calc(-100% + 22px) calc(100% - 22px) 0 -1px rgba(255, 255, 255, 0.3) inset;
     pointer-events: none;
 }
 
@@ -95,28 +94,29 @@ h1.mario::after {
 h1.mario:hover {
     transform: translateY(-3px) scale(1.02);
     box-shadow:
-        inset 0 3px 0 rgba(255,255,255,0.5),
-        inset 0 -4px 0 rgba(0,0,0,0.3),
-        0 10px 0 rgba(0,0,0,0.25),
+        inset 0 3px 0 rgba(255, 255, 255, 0.5),
+        inset 0 -4px 0 rgba(0, 0, 0, 0.3),
+        0 10px 0 rgba(0, 0, 0, 0.25),
         0 16px 48px var(--glow),
         0 0 80px rgba(8, 164, 213, 0.5);
 }
 
 /* Pulsing glow animation */
 @keyframes titlePulse {
-    0%, 100% {
+    0%,
+    100% {
         box-shadow:
-            inset 0 3px 0 rgba(255,255,255,0.45),
-            inset 0 -4px 0 rgba(0,0,0,0.3),
-            0 8px 0 rgba(0,0,0,0.25),
+            inset 0 3px 0 rgba(255, 255, 255, 0.45),
+            inset 0 -4px 0 rgba(0, 0, 0, 0.3),
+            0 8px 0 rgba(0, 0, 0, 0.25),
             0 12px 40px var(--glow),
             0 0 60px rgba(8, 164, 213, 0.3);
     }
     50% {
         box-shadow:
-            inset 0 3px 0 rgba(255,255,255,0.45),
-            inset 0 -4px 0 rgba(0,0,0,0.3),
-            0 8px 0 rgba(0,0,0,0.25),
+            inset 0 3px 0 rgba(255, 255, 255, 0.45),
+            inset 0 -4px 0 rgba(0, 0, 0, 0.3),
+            0 8px 0 rgba(0, 0, 0, 0.25),
             0 12px 40px var(--glow),
             0 0 80px rgba(8, 164, 213, 0.5);
     }
@@ -138,58 +138,58 @@ h1.mario:hover {
 }
 
 /* Dark mode adjustments for h1 */
-[data-theme="dark"] h1.mario {
-    border-color: rgba(0,0,0,0.4);
+[data-theme='dark'] h1.mario {
+    border-color: rgba(0, 0, 0, 0.4);
     background:
-        linear-gradient(180deg, rgba(255,255,255,0.12) 0%, rgba(0,0,0,0.15) 100%),
+        linear-gradient(180deg, rgba(255, 255, 255, 0.12) 0%, rgba(0, 0, 0, 0.15) 100%),
         linear-gradient(135deg, var(--primary) 0%, var(--secondary) 100%);
     box-shadow:
-        inset 0 3px 0 rgba(255,255,255,0.35),
-        inset 0 -4px 0 rgba(0,0,0,0.5),
-        0 8px 0 rgba(0,0,0,0.5),
+        inset 0 3px 0 rgba(255, 255, 255, 0.35),
+        inset 0 -4px 0 rgba(0, 0, 0, 0.5),
+        0 8px 0 rgba(0, 0, 0, 0.5),
         0 12px 40px var(--glow),
         0 0 60px rgba(8, 164, 213, 0.4);
 }
 
-[data-theme="dark"] h1.mario:hover {
+[data-theme='dark'] h1.mario:hover {
     box-shadow:
-        inset 0 3px 0 rgba(255,255,255,0.4),
-        inset 0 -4px 0 rgba(0,0,0,0.5),
-        0 10px 0 rgba(0,0,0,0.5),
+        inset 0 3px 0 rgba(255, 255, 255, 0.4),
+        inset 0 -4px 0 rgba(0, 0, 0, 0.5),
+        0 10px 0 rgba(0, 0, 0, 0.5),
         0 16px 48px var(--glow),
         0 0 90px rgba(8, 164, 213, 0.6);
 }
 
 /* Blackhole mode - MAXIMUM DRAMA */
-[data-theme="true-dark"] h1.mario {
+[data-theme='true-dark'] h1.mario {
     border-color: rgba(8, 164, 213, 0.3);
     background:
-        linear-gradient(180deg, rgba(255,255,255,0.08) 0%, rgba(0,0,0,0.4) 100%),
+        linear-gradient(180deg, rgba(255, 255, 255, 0.08) 0%, rgba(0, 0, 0, 0.4) 100%),
         linear-gradient(135deg, var(--primary) 0%, var(--secondary) 100%);
     box-shadow:
-        inset 0 3px 0 rgba(255,255,255,0.25),
-        inset 0 -4px 0 rgba(0,0,0,0.8),
-        0 8px 0 rgba(0,0,0,0.9),
+        inset 0 3px 0 rgba(255, 255, 255, 0.25),
+        inset 0 -4px 0 rgba(0, 0, 0, 0.8),
+        0 8px 0 rgba(0, 0, 0, 0.9),
         0 12px 40px var(--glow),
         0 0 80px rgba(8, 164, 213, 0.6),
         0 0 120px rgba(51, 185, 225, 0.3);
     text-shadow:
-        0 2px 4px rgba(0,0,0,0.8),
+        0 2px 4px rgba(0, 0, 0, 0.8),
         0 4px 12px rgba(8, 164, 213, 0.4),
-        0 -1px 2px rgba(255,255,255,0.2);
+        0 -1px 2px rgba(255, 255, 255, 0.2);
 }
 
-[data-theme="true-dark"] h1.mario:hover {
+[data-theme='true-dark'] h1.mario:hover {
     box-shadow:
-        inset 0 3px 0 rgba(255,255,255,0.3),
-        inset 0 -4px 0 rgba(0,0,0,0.8),
-        0 10px 0 rgba(0,0,0,0.9),
+        inset 0 3px 0 rgba(255, 255, 255, 0.3),
+        inset 0 -4px 0 rgba(0, 0, 0, 0.8),
+        0 10px 0 rgba(0, 0, 0, 0.9),
         0 16px 48px var(--glow),
         0 0 100px rgba(8, 164, 213, 0.8),
         0 0 150px rgba(51, 185, 225, 0.4);
 }
 
-[data-theme="true-dark"] h1.mario::before {
+[data-theme='true-dark'] h1.mario::before {
     background: linear-gradient(
         135deg,
         transparent 0%,
@@ -211,12 +211,12 @@ h1.mario:hover {
     border: 2px solid var(--border);
     border-radius: 12px;
     position: relative;
-    background: linear-gradient(180deg, rgba(255,255,255,0.03) 0%, rgba(0,0,0,0.03) 100%);
+    background: linear-gradient(180deg, rgba(255, 255, 255, 0.03) 0%, rgba(0, 0, 0, 0.03) 100%);
     box-shadow:
-        inset 0 2px 0 rgba(255,255,255,0.15),
-        inset 0 -3px 0 rgba(0,0,0,0.12),
-        0 4px 0 rgba(0,0,0,0.10);
-    text-shadow: 0 1px 0 rgba(255,255,255,0.25);
+        inset 0 2px 0 rgba(255, 255, 255, 0.15),
+        inset 0 -3px 0 rgba(0, 0, 0, 0.12),
+        0 4px 0 rgba(0, 0, 0, 0.1);
+    text-shadow: 0 1px 0 rgba(255, 255, 255, 0.25);
 }
 
 .subtitle.mario::after {
@@ -225,32 +225,32 @@ h1.mario:hover {
     width: 4px;
     height: 4px;
     border-radius: 50%;
-    opacity: .9;
+    opacity: 0.9;
     top: 6px;
     left: 6px;
-    background: rgba(0,0,0,0.18);
+    background: rgba(0, 0, 0, 0.18);
     box-shadow:
-        calc(100% - 12px) 0 0 rgba(0,0,0,0.18),
-        0 calc(100% - 12px) 0 rgba(255,255,255,0.2),
-        calc(100% - 12px) calc(100% - 12px) 0 rgba(0,0,0,0.18);
+        calc(100% - 12px) 0 0 rgba(0, 0, 0, 0.18),
+        0 calc(100% - 12px) 0 rgba(255, 255, 255, 0.2),
+        calc(100% - 12px) calc(100% - 12px) 0 rgba(0, 0, 0, 0.18);
     pointer-events: none;
 }
 
 /* ===== BUTTON ENHANCEMENTS ===== */
 .btn-primary.mario {
-    border: 2px solid rgba(0,0,0,0.22);
+    border: 2px solid rgba(0, 0, 0, 0.22);
     box-shadow:
-        inset 0 2px 0 rgba(255,255,255,0.35),
-        inset 0 -3px 0 rgba(0,0,0,0.22),
-        0 6px 0 rgba(0,0,0,0.22),
+        inset 0 2px 0 rgba(255, 255, 255, 0.35),
+        inset 0 -3px 0 rgba(0, 0, 0, 0.22),
+        0 6px 0 rgba(0, 0, 0, 0.22),
         0 8px 24px var(--glow);
 }
 
 .btn-secondary.mario {
     box-shadow:
-        inset 0 2px 0 rgba(255,255,255,0.35),
-        inset 0 -3px 0 rgba(0,0,0,0.12),
-        0 6px 0 rgba(0,0,0,0.12);
+        inset 0 2px 0 rgba(255, 255, 255, 0.35),
+        inset 0 -3px 0 rgba(0, 0, 0, 0.12),
+        0 6px 0 rgba(0, 0, 0, 0.12);
 }
 
 /* Rivets for all buttons */
@@ -262,30 +262,30 @@ h1.mario:hover {
     border-radius: 50%;
     top: 6px;
     left: 6px;
-    background: rgba(0,0,0,0.18);
+    background: rgba(0, 0, 0, 0.18);
     box-shadow:
-        calc(100% - 12px) 0 0 rgba(0,0,0,0.18),
-        0 calc(100% - 12px) 0 rgba(255,255,255,0.35),
-        calc(100% - 12px) calc(100% - 12px) 0 rgba(0,0,0,0.18);
+        calc(100% - 12px) 0 0 rgba(0, 0, 0, 0.18),
+        0 calc(100% - 12px) 0 rgba(255, 255, 255, 0.35),
+        calc(100% - 12px) calc(100% - 12px) 0 rgba(0, 0, 0, 0.18);
     pointer-events: none;
 }
 
 /* Reduce prominence for secondary to keep its neutral color */
 .btn-secondary.mario::after {
-    background: rgba(0,0,0,0.12);
+    background: rgba(0, 0, 0, 0.12);
     box-shadow:
-        calc(100% - 12px) 0 0 rgba(0,0,0,0.12),
-        0 calc(100% - 12px) 0 rgba(255,255,255,0.25),
-        calc(100% - 12px) calc(100% - 12px) 0 rgba(0,0,0,0.12);
+        calc(100% - 12px) 0 0 rgba(0, 0, 0, 0.12),
+        0 calc(100% - 12px) 0 rgba(255, 255, 255, 0.25),
+        calc(100% - 12px) calc(100% - 12px) 0 rgba(0, 0, 0, 0.12);
 }
 
 /* ===== VALIDATE API BUTTON ===== */
 .validate-api-btn.mario {
-    border: 2px solid rgba(0,0,0,0.22);
+    border: 2px solid rgba(0, 0, 0, 0.22);
     box-shadow:
-        inset 0 2px 0 rgba(255,255,255,0.35),
-        inset 0 -3px 0 rgba(0,0,0,0.22),
-        0 6px 0 rgba(0,0,0,0.18),
+        inset 0 2px 0 rgba(255, 255, 255, 0.35),
+        inset 0 -3px 0 rgba(0, 0, 0, 0.22),
+        0 6px 0 rgba(0, 0, 0, 0.18),
         0 2px 8px rgba(8, 164, 213, 0.25);
 }
 
@@ -297,19 +297,19 @@ h1.mario:hover {
     border-radius: 50%;
     top: 6px;
     left: 6px;
-    background: rgba(0,0,0,0.18);
+    background: rgba(0, 0, 0, 0.18);
     box-shadow:
-        calc(100% - 12px) 0 0 rgba(0,0,0,0.18),
-        0 calc(100% - 12px) 0 rgba(255,255,255,0.35),
-        calc(100% - 12px) calc(100% - 12px) 0 rgba(0,0,0,0.18);
+        calc(100% - 12px) 0 0 rgba(0, 0, 0, 0.18),
+        0 calc(100% - 12px) 0 rgba(255, 255, 255, 0.35),
+        calc(100% - 12px) calc(100% - 12px) 0 rgba(0, 0, 0, 0.18);
     pointer-events: none;
 }
 
 .validate-api-btn.mario:hover {
     box-shadow:
-        inset 0 2px 0 rgba(255,255,255,0.4),
-        inset 0 -3px 0 rgba(0,0,0,0.22),
-        0 6px 0 rgba(0,0,0,0.18),
+        inset 0 2px 0 rgba(255, 255, 255, 0.4),
+        inset 0 -3px 0 rgba(0, 0, 0, 0.22),
+        0 6px 0 rgba(0, 0, 0, 0.18),
         0 4px 16px rgba(8, 164, 213, 0.4);
 }
 
@@ -321,7 +321,7 @@ h1.mario:hover {
         inset 0 2px 0 #fff3b0,
         inset 0 -3px 0 #b47a11,
         0 6px 0 #7a4d00,
-        0 10px 16px rgba(0,0,0,0.35);
+        0 10px 16px rgba(0, 0, 0, 0.35);
     position: fixed;
 }
 
@@ -338,7 +338,7 @@ h1.mario:hover {
         calc(100% - 12px) 0 0 #b47a11,
         0 calc(100% - 12px) 0 #b47a11,
         calc(100% - 12px) calc(100% - 12px) 0 #b47a11;
-    opacity: .9;
+    opacity: 0.9;
 }
 
 .theme-toggle.mario:active {
@@ -347,7 +347,7 @@ h1.mario:hover {
         inset 0 1px 0 #fff3b0,
         inset 0 -1px 0 #b47a11,
         0 4px 0 #7a4d00,
-        0 8px 14px rgba(0,0,0,0.3);
+        0 8px 14px rgba(0, 0, 0, 0.3);
 }
 
 /* Theme toggle icons - enhanced for Mario theme */
@@ -355,18 +355,18 @@ h1.mario:hover {
     transition: transform 0.25s ease;
     display: grid;
     place-items: center;
-    filter: drop-shadow(0 2px 2px rgba(0,0,0,0.3));
+    filter: drop-shadow(0 2px 2px rgba(0, 0, 0, 0.3));
 }
 
 .theme-toggle.mario .theme-toggle-icon svg {
     display: block;
-    filter: drop-shadow(0 2px 0 rgba(0,0,0,0.2));
+    filter: drop-shadow(0 2px 0 rgba(0, 0, 0, 0.2));
 }
 
 .theme-toggle.mario .theme-toggle-icon.sun,
 .theme-toggle.mario .theme-toggle-icon.moon,
 .theme-toggle.mario .theme-toggle-icon.blackhole {
-    text-shadow: 0 2px 2px rgba(0,0,0,0.3);
+    text-shadow: 0 2px 2px rgba(0, 0, 0, 0.3);
 }
 
 /* ===== COIN ANIMATION ===== */
@@ -390,11 +390,13 @@ h1.mario:hover {
     height: 100%;
     border-radius: 50%;
     background:
-        linear-gradient(90deg, rgba(0,0,0,0) 45%, rgba(0,0,0,0.2) 55%),
-        radial-gradient(40% 40% at 35% 30%, #fff6bf 0%, rgba(255,255,255,0) 70%),
+        linear-gradient(90deg, rgba(0, 0, 0, 0) 45%, rgba(0, 0, 0, 0.2) 55%),
+        radial-gradient(40% 40% at 35% 30%, #fff6bf 0%, rgba(255, 255, 255, 0) 70%),
         linear-gradient(180deg, #ffd24a 0%, #ffc125 50%, #e2a415 100%);
     border: 2px solid #8a5a00;
-    box-shadow: 0 2px 0 #7a4d00, inset 0 1px 0 #fff8c6;
+    box-shadow:
+        0 2px 0 #7a4d00,
+        inset 0 1px 0 #fff8c6;
 }
 
 @keyframes coin-pop {
@@ -406,7 +408,7 @@ h1.mario:hover {
         opacity: 1;
     }
     60% {
-        transform: translate(-50%, -50%) translateY(-52px) scale(1.0) rotateY(360deg);
+        transform: translate(-50%, -50%) translateY(-52px) scale(1) rotateY(360deg);
     }
     100% {
         opacity: 0;
@@ -415,7 +417,7 @@ h1.mario:hover {
 }
 
 .coin.animate {
-    animation: coin-pop 0.7s cubic-bezier(.2,.8,.2,1) forwards;
+    animation: coin-pop 0.7s cubic-bezier(0.2, 0.8, 0.2, 1) forwards;
 }
 
 @media (prefers-reduced-motion: reduce) {
@@ -426,17 +428,17 @@ h1.mario:hover {
 }
 
 /* ===== THEME-BASED VARIANTS FOR MARIO TOGGLE ===== */
-[data-theme="light"] .theme-toggle.mario {
+[data-theme='light'] .theme-toggle.mario {
     background: linear-gradient(180deg, #f7d13e 0%, #e6b526 60%, #d49c1d 100%);
     border-color: #8a5a00;
     box-shadow:
         inset 0 2px 0 #fff3b0,
         inset 0 -3px 0 #b47a11,
         0 6px 0 #7a4d00,
-        0 10px 16px rgba(0,0,0,0.35);
+        0 10px 16px rgba(0, 0, 0, 0.35);
 }
 
-[data-theme="light"] .theme-toggle.mario::before {
+[data-theme='light'] .theme-toggle.mario::before {
     background: #b47a11;
     box-shadow:
         calc(100% - 12px) 0 0 #b47a11,
@@ -444,17 +446,17 @@ h1.mario:hover {
         calc(100% - 12px) calc(100% - 12px) 0 #b47a11;
 }
 
-[data-theme="dark"] .theme-toggle.mario {
+[data-theme='dark'] .theme-toggle.mario {
     background: linear-gradient(180deg, #4c6fff 0%, #2f4ed1 60%, #1e2f8a 100%);
     border-color: #1b2a78;
     box-shadow:
         inset 0 2px 0 #b3c4ff,
         inset 0 -3px 0 #213a9a,
         0 6px 0 #16246a,
-        0 10px 16px rgba(20,25,49,0.6);
+        0 10px 16px rgba(20, 25, 49, 0.6);
 }
 
-[data-theme="dark"] .theme-toggle.mario::before {
+[data-theme='dark'] .theme-toggle.mario::before {
     background: #213a9a;
     box-shadow:
         calc(100% - 12px) 0 0 #213a9a,
@@ -462,17 +464,17 @@ h1.mario:hover {
         calc(100% - 12px) calc(100% - 12px) 0 #213a9a;
 }
 
-[data-theme="true-dark"] .theme-toggle.mario {
+[data-theme='true-dark'] .theme-toggle.mario {
     background: linear-gradient(180deg, #1b1029 0%, #110b1a 60%, #0b0711 100%);
     border-color: #3b2a5d;
     box-shadow:
         inset 0 2px 0 #6b65ff33,
         inset 0 -3px 0 #2b2044,
         0 6px 0 #2a1e43,
-        0 0 18px rgba(107,101,255,0.35);
+        0 0 18px rgba(107, 101, 255, 0.35);
 }
 
-[data-theme="true-dark"] .theme-toggle.mario::before {
+[data-theme='true-dark'] .theme-toggle.mario::before {
     background: #2b2044;
     box-shadow:
         calc(100% - 12px) 0 0 #2b2044,
@@ -489,12 +491,12 @@ h1.mario:hover {
     background: linear-gradient(180deg, #f7d13e 0%, #e6b526 60%, #d49c1d 100%);
     border-radius: 10px;
     color: #3b2a00;
-    text-shadow: 0 1px 0 rgba(255,255,255,0.6);
+    text-shadow: 0 1px 0 rgba(255, 255, 255, 0.6);
     box-shadow:
         inset 0 2px 0 #fff3b0,
         inset 0 -3px 0 #b47a11,
         0 6px 0 #7a4d00,
-        0 10px 16px rgba(0,0,0,0.25);
+        0 10px 16px rgba(0, 0, 0, 0.25);
 }
 
 .card-header:hover .card-icon.mario {
@@ -517,19 +519,19 @@ h1.mario:hover {
         calc(100% - 10px) calc(100% - 10px) 0 #b47a11;
 }
 
-[data-theme="dark"] .card-icon.mario {
+[data-theme='dark'] .card-icon.mario {
     border-color: #1b2a78;
     background: linear-gradient(180deg, #4c6fff 0%, #2f4ed1 60%, #1e2f8a 100%);
     color: #0f1a4a;
-    text-shadow: 0 1px 0 rgba(179,196,255,0.6);
+    text-shadow: 0 1px 0 rgba(179, 196, 255, 0.6);
     box-shadow:
         inset 0 2px 0 #b3c4ff,
         inset 0 -3px 0 #213a9a,
         0 6px 0 #16246a,
-        0 10px 16px rgba(20,25,49,0.6);
+        0 10px 16px rgba(20, 25, 49, 0.6);
 }
 
-[data-theme="dark"] .card-icon.mario::before {
+[data-theme='dark'] .card-icon.mario::before {
     background: #213a9a;
     box-shadow:
         calc(100% - 10px) 0 0 #213a9a,
@@ -537,19 +539,19 @@ h1.mario:hover {
         calc(100% - 10px) calc(100% - 10px) 0 #213a9a;
 }
 
-[data-theme="true-dark"] .card-icon.mario {
+[data-theme='true-dark'] .card-icon.mario {
     border-color: #3b2a5d;
     background: linear-gradient(180deg, #1b1029 0%, #110b1a 60%, #0b0711 100%);
     color: #bdb4ff;
-    text-shadow: 0 1px 0 rgba(107,101,255,0.3);
+    text-shadow: 0 1px 0 rgba(107, 101, 255, 0.3);
     box-shadow:
         inset 0 2px 0 #6b65ff33,
         inset 0 -3px 0 #2b2044,
         0 6px 0 #2a1e43,
-        0 0 18px rgba(107,101,255,0.25);
+        0 0 18px rgba(107, 101, 255, 0.25);
 }
 
-[data-theme="true-dark"] .card-icon.mario::before {
+[data-theme='true-dark'] .card-icon.mario::before {
     background: #2b2044;
     box-shadow:
         calc(100% - 10px) 0 0 #2b2044,
@@ -567,8 +569,8 @@ h1.mario:hover {
         inset 0 2px 0 #fff3b0,
         inset 0 -3px 0 #b47a11,
         0 6px 0 #7a4d00,
-        0 10px 16px rgba(0,0,0,0.35);
-    text-shadow: 0 1px 0 rgba(255,255,255,0.6);
+        0 10px 16px rgba(0, 0, 0, 0.35);
+    text-shadow: 0 1px 0 rgba(255, 255, 255, 0.6);
     position: fixed;
 }
 
@@ -578,14 +580,14 @@ h1.mario:hover {
     width: 5px;
     height: 5px;
     border-radius: 50%;
-    opacity: .9;
+    opacity: 0.9;
     background: #b47a11;
     top: 6px;
     left: 6px;
     box-shadow: calc(100% - 12px) 0 0 #b47a11;
 }
 
-[data-theme="dark"] .help-button.mario {
+[data-theme='dark'] .help-button.mario {
     border-color: #1b2a78;
     background: linear-gradient(180deg, #4c6fff 0%, #2f4ed1 60%, #1e2f8a 100%);
     color: #0f1a4a;
@@ -593,15 +595,15 @@ h1.mario:hover {
         inset 0 2px 0 #b3c4ff,
         inset 0 -3px 0 #213a9a,
         0 6px 0 #16246a,
-        0 10px 16px rgba(20,25,49,0.6);
+        0 10px 16px rgba(20, 25, 49, 0.6);
 }
 
-[data-theme="dark"] .help-button.mario::before {
+[data-theme='dark'] .help-button.mario::before {
     background: #213a9a;
     box-shadow: calc(100% - 12px) 0 0 #213a9a;
 }
 
-[data-theme="true-dark"] .help-button.mario {
+[data-theme='true-dark'] .help-button.mario {
     border-color: #3b2a5d;
     background: linear-gradient(180deg, #1b1029 0%, #110b1a 60%, #0b0711 100%);
     color: #bdb4ff;
@@ -609,10 +611,10 @@ h1.mario:hover {
         inset 0 2px 0 #6b65ff33,
         inset 0 -3px 0 #2b2044,
         0 6px 0 #2a1e43,
-        0 0 18px rgba(107,101,255,0.35);
+        0 0 18px rgba(107, 101, 255, 0.35);
 }
 
-[data-theme="true-dark"] .help-button.mario::before {
+[data-theme='true-dark'] .help-button.mario::before {
     background: #2b2044;
     box-shadow: calc(100% - 12px) 0 0 #2b2044;
 }

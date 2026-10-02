@@ -5,19 +5,14 @@ const log = require('../../utils/logger');
 const { sanitizeApiKeyForHeader } = require('../../utils/security');
 const { DEFAULT_TRANSLATION_PROMPT, composeDefaultTranslationPrompt } = require('../gemini');
 const { splitStructuredPrompt } = require('../utils/structuredPrompt');
-const {
-  findISO6391ByName,
-  getLanguageName,
-  toISO6391,
-  toISO6392
-} = require('../../utils/languages');
+const { findISO6391ByName, getLanguageName, toISO6391, toISO6392 } = require('../../utils/languages');
 const { resolveLanguageDisplayName } = require('../../utils/languageResolver');
 const { normalizeTargetLanguageForPrompt } = require('../utils/normalizeTargetLanguageForPrompt');
 const {
-  getProviderAuthFailureCacheKey,
-  hasCachedProviderAuthFailure,
-  cacheProviderAuthFailure,
-  clearCachedProviderAuthFailure
+    getProviderAuthFailureCacheKey,
+    hasCachedProviderAuthFailure,
+    cacheProviderAuthFailure,
+    clearCachedProviderAuthFailure
 } = require('../../utils/providerAuthFailureCache');
 
 // ═══ MANDAT OPERASI MUTLAK v3 2026-09-27 (pembetulan Project Owner) ═══
@@ -29,17 +24,17 @@ const {
 // disimpan ke this.beastMaxTokens untuk keserasian warisan, tetapi TIDAK
 // dibaca oleh sebarang laluan aktif. Sejarah v3: 131072 (128K).
 const parseAgentBMaxTokens = (raw, fallback) => {
-  const parsed = parseInt(raw, 10);
-  return Number.isFinite(parsed) && parsed > 0 ? parsed : fallback;
+    const parsed = parseInt(raw, 10);
+    return Number.isFinite(parsed) && parsed > 0 ? parsed : fallback;
 };
 const AGENT_B_BEAST_MAX_TOKENS = parseAgentBMaxTokens(process.env.AGENT_B_MAX_TOKENS, 131072);
 // [UPSTREAM-RESILIENCE 2026-09-29] Parser tetapan stall-watchdog aliran SSE.
 // Menerima 0 EKSPLISIT (melumpuhkan watchdog) — dibezakan daripada nilai
 // hilang/tak sah yang jatuh ke fallback. Integer ms >= 0 sahaja.
 const parseStreamStallMs = (raw, fallback) => {
-  if (raw === undefined || raw === null || String(raw).trim() === '') return fallback;
-  const parsed = parseInt(raw, 10);
-  return Number.isFinite(parsed) && parsed >= 0 ? parsed : fallback;
+    if (raw === undefined || raw === null || String(raw).trim() === '') return fallback;
+    const parsed = parseInt(raw, 10);
+    return Number.isFinite(parsed) && parsed >= 0 ? parsed : fallback;
 };
 
 /**
@@ -47,1324 +42,1376 @@ const parseStreamStallMs = (raw, fallback) => {
  * 100% Full Parity with Gemini Engine & 28-Model Smart Payload Registry.
  */
 class OpenAICompatibleProvider {
-  constructor(options = {}) {
-    this.apiKey = options.apiKey || '';
-    this.model = options.model || '';
-    this.baseUrl = (options.baseUrl || 'https://api.openai.com/v1').replace(/\/$/, '');
-    this.providerName = options.providerName || 'custom';
-    this.authFailureCacheKey = getProviderAuthFailureCacheKey(this.providerName, this.apiKey);
-    this.headers = options.headers || {};
-    this.temperature = options.temperature !== undefined ? options.temperature : 0.2;
-    this.maxOutputTokens = options.maxOutputTokens || 65536;
-    this.topP = options.topP !== undefined ? options.topP : 0.95;
-    // [AUDIT-WARISAN 2026-09-29] WARISAN/no-op (dead store): disimpan tetapi
-    // tidak pernah dibaca — builder universal (universalPayload=true) tidak
-    // membawa max_tokens; laluan terjemahan warisan pula menggunakan
-    // maxOutputTokens (getCappedMaxOutputTokens). Dikekalkan untuk
-    // keserasian kontrak AgentBInspector (options.beastMaxTokens).
-    this.beastMaxTokens = parseAgentBMaxTokens(options.beastMaxTokens, AGENT_B_BEAST_MAX_TOKENS);
-    this.presencePenalty = options.presencePenalty;
-    this.reasoningEffort = this.normalizeReasoningEffort(options.reasoningEffort);
-    const timeoutSeconds = options.translationTimeout !== undefined ? options.translationTimeout : 120;
-    this.translationTimeout = Math.max(5000, parseInt(timeoutSeconds * 1000, 10) || 120000);
-    this.maxRetries = Number.isFinite(parseInt(options.maxRetries, 10))
-      ? Math.max(0, parseInt(options.maxRetries, 10))
-      : 2;
-    this.enableJsonOutput = options.enableJsonOutput === true;
-    // ═══ UNIVERSAL PAYLOAD FLAG (Mandat Seni Bina Universal Payload
-    // 2026-09-26): apabila true, buildChatRequest membina muatan seragam
-    // { model, temperature: 0.0, messages } — digunakan oleh Agent B.
-    this.universalPayload = options.universalPayload === true;
-    // [UPSTREAM-RESILIENCE v2 2026-09-29] DUA watchdog aliran SSE berasingan:
-    //
-    //   1. FIRST-BYTE (TTFT) — masa sehingga token PERTAMA tiba. Forensik
-    //      run kedua S01E31: attempt 1 gagal kerana kimi-k3 masuk silent-
-    //      reasoning dan gateway RESET sambungan pada ~44s SEBELUM token
-    //      pertama; attempt 2 (TTFT-laju) BERJAYA 304s. Punca kegagalan =
-    //      variance TTFT vs had idle gateway (~44s). Watchdog first-byte
-    //      LALAI 35000ms (35s) — DI BAWAH had gateway supaya KITA abort
-    //      dulu (bersih, retryable) sebelum gateway reset separuh jalan.
-    //      Digabung dengan retry×5 + backoff: setiap retry cuba tangkap
-    //      tetingkap TTFT-laju.
-    //
-    //   2. INTER-CHUNK STALL — jeda antara chunk SELEPAS token pertama.
-    //      LALAI 75000ms (75s), longgar supaya aliran sihat-tapi-lambat
-    //      (attempt 2 yang mencurah chunk sepanjang 304s) TIDAK di-abort.
-    //
-    // Kedua-dua 0 = dilumpuhkan. Env: OPENAI_COMPAT_FIRST_BYTE_MS,
-    // OPENAI_COMPAT_STREAM_STALL_MS. Timer first-byte aktif dari mula;
-    // sebaik token pertama tiba, ia bertukar kepada timer inter-chunk.
-    this.firstByteTimeoutMs = parseStreamStallMs(
-      options.firstByteTimeoutMs !== undefined
-        ? options.firstByteTimeoutMs
-        : process.env.OPENAI_COMPAT_FIRST_BYTE_MS,
-      35000
-    );
-    this.streamStallTimeoutMs = parseStreamStallMs(
-      options.streamStallTimeoutMs !== undefined
-        ? options.streamStallTimeoutMs
-        : process.env.OPENAI_COMPAT_STREAM_STALL_MS,
-      75000
-    );
-    this._ssrfLookup = options.ssrfLookup || null;
-    if (this._ssrfLookup) {
-      const http = require('http');
-      const https = require('https');
-      this._ssrfHttpAgent = new http.Agent({ keepAlive: true, lookup: this._ssrfLookup });
-      this._ssrfHttpsAgent = new https.Agent({ keepAlive: true, lookup: this._ssrfLookup });
-    }
-  }
-
-  normalizeReasoningEffort(value) {
-    const allowed = ['disabled', 'none', 'minimal', 'low', 'medium', 'high', 'xhigh', 'max', 'no_think'];
-    const normalized = typeof value === 'string' ? value.trim().toLowerCase() : '';
-    return allowed.includes(normalized) ? normalized : undefined;
-  }
-
-  getHttpAgents() {
-    if (this._ssrfLookup) {
-      return { httpAgent: this._ssrfHttpAgent, httpsAgent: this._ssrfHttpsAgent };
-    }
-    return { httpAgent, httpsAgent };
-  }
-
-  isCfTranslationModel() {
-    const model = String(this.model || '').toLowerCase();
-    return model.includes('m2m100') || model.includes('nllb-200');
-  }
-
-  /**
-   * FRONTIER UPGRADE (Mandat Frontier 2026-09-26): Pengesan keluarga model
-   * Kimi/Moonshot AI (case-insensitive).
-   * [AUDIT 2026-09-29] Dakwaan lama "pelayan Kimi K3 mengunci sampling
-   * secara dalaman → HTTP 400" sudah LAPUK — disahkan melalui curl pada
-   * 2026-09-28: pelayan Kimi K3 TIDAK lagi mengunci temperature. Nota
-   * sejarah dikekalkan; lihat applyFrontierModelRules untuk status semasa.
-   * @param {string} [modelName] - Override nama model (lalai model aktif)
-   * @returns {boolean}
-   */
-  isKimiModel(modelName = this.model) {
-    return String(modelName || '').toLowerCase().includes('kimi');
-  }
-
-  /**
-   * FRONTIER UPGRADE (Mandat Frontier 2026-09-26): Pengesan GLM-5.3 versi
-   * penuh (753B flagship) — MENGEKECUALIKAN varian 'flash'. Auditor rigor
-   * Semakan Kelompok dijalankan pada 100% deterministik (temperature 0.0,
-   * top_p 0.1).
-   * @param {string} [modelName] - Override nama model (lalai model aktif)
-   * @returns {boolean}
-   */
-  isGlmFull53Model(modelName = this.model) {
-    const m = String(modelName || '').toLowerCase();
-    return m.includes('glm') && m.includes('5.3') && !m.includes('flash');
-  }
-
-  /**
-   * FRONTIER UPGRADE (Mandat Frontier 2026-09-26): Terapkan peraturan payload
-   * model frontier di atas body yang telah dibina.
-   * [AUDIT 2026-09-29] — KOMEN ASAL LAPUK (OBSOLETE): dakwaan "pelayan Kimi
-   * mengunci sampling secara dalaman → HTTP 400" TIDAK lagi benar; disahkan
-   * melalui curl terus ke pelayan pada 2026-09-28 — pelayan Kimi K3 kini
-   * menerima temperature tanpa ralat. Kelakuan kaedah DIKEKALKAN tanpa
-   * perubahan (jangan ubah kelakuan tanpa pengesahan empirikal baharu):
-   *   - "kimi"   → GUGURKAN temperature/top_p/presence_penalty +
-   *                max_tokens 16384 (konservatif warisan; rationale lapuk).
-   *   - "glm-5.3" (bukan flash) → KUNCI temperature 0.0 + top_p 0.1
-   *                (deterministik mutlak, sifar kreativiti).
-   * PENGGUNA AKTIF: laluan terjemahan warisan sahaja — buildChatRequest
-   * TANPA universalPayload (semua provider kilang: openai/xai/deepseek/
-   * mistral/openrouter/cfworkers/custom). Laluan Agent B
-   * (universalPayload=true) TIDAK melalui kaedah ini (builder 4-kunci
-   * god-tier return awal).
-   * @param {Object} body - Payload chat/completions (dimutasi secara langsung)
-   */
-  applyFrontierModelRules(body) {
-    if (this.isKimiModel()) {
-      delete body.temperature;
-      delete body.top_p;
-      delete body.presence_penalty;
-      body.max_tokens = 16384;
-      return;
-    }
-    if (this.isGlmFull53Model()) {
-      body.temperature = 0.0;
-      body.top_p = 0.1;
-    }
-  }
-
-  normalizeCfModelId() {
-    const raw = String(this.model || '').trim();
-    const lower = raw.toLowerCase();
-    if (lower.startsWith('@cf/')) return raw;
-    if (lower.startsWith('meta/')) return `@cf/${raw}`;
-    return `@cf/meta/${raw}`;
-  }
-
-  normalizeTargetName(name) {
-    const raw = String(name || '').trim();
-    if (!raw) return 'target language';
-
-    const code = this.normalizeLanguageCode(raw);
-    const variantDisplay = this.variantNameFromCode(code);
-    if (variantDisplay) return normalizeTargetLanguageForPrompt(variantDisplay);
-
-    const displayFromUi = resolveLanguageDisplayName(code) || resolveLanguageDisplayName(raw);
-    if (displayFromUi) {
-      return normalizeTargetLanguageForPrompt(this.normalizeVariantDisplayName(displayFromUi));
-    }
-
-    const nameFromCode = getLanguageName(code) || getLanguageName(code.replace(/-/g, ''));
-    if (nameFromCode) {
-      return normalizeTargetLanguageForPrompt(this.normalizeVariantDisplayName(nameFromCode));
-    }
-
-    if (/^[a-z]{2}$/i.test(code)) {
-      const iso2 = toISO6392(code);
-      if (Array.isArray(iso2) && iso2.length > 0) {
-        const display = getLanguageName(iso2[0].code2);
-        if (display) {
-          return normalizeTargetLanguageForPrompt(this.normalizeVariantDisplayName(display));
+    constructor(options = {}) {
+        this.apiKey = options.apiKey || '';
+        this.model = options.model || '';
+        this.baseUrl = (options.baseUrl || 'https://api.openai.com/v1').replace(/\/$/, '');
+        this.providerName = options.providerName || 'custom';
+        this.authFailureCacheKey = getProviderAuthFailureCacheKey(this.providerName, this.apiKey);
+        this.headers = options.headers || {};
+        this.temperature = options.temperature !== undefined ? options.temperature : 0.2;
+        this.maxOutputTokens = options.maxOutputTokens || 65536;
+        this.topP = options.topP !== undefined ? options.topP : 0.95;
+        // [AUDIT-WARISAN 2026-09-29] WARISAN/no-op (dead store): disimpan tetapi
+        // tidak pernah dibaca — builder universal (universalPayload=true) tidak
+        // membawa max_tokens; laluan terjemahan warisan pula menggunakan
+        // maxOutputTokens (getCappedMaxOutputTokens). Dikekalkan untuk
+        // keserasian kontrak AgentBInspector (options.beastMaxTokens).
+        this.beastMaxTokens = parseAgentBMaxTokens(options.beastMaxTokens, AGENT_B_BEAST_MAX_TOKENS);
+        this.presencePenalty = options.presencePenalty;
+        this.reasoningEffort = this.normalizeReasoningEffort(options.reasoningEffort);
+        const timeoutSeconds = options.translationTimeout !== undefined ? options.translationTimeout : 120;
+        this.translationTimeout = Math.max(5000, parseInt(timeoutSeconds * 1000, 10) || 120000);
+        this.maxRetries = Number.isFinite(parseInt(options.maxRetries, 10))
+            ? Math.max(0, parseInt(options.maxRetries, 10))
+            : 2;
+        this.enableJsonOutput = options.enableJsonOutput === true;
+        // ═══ UNIVERSAL PAYLOAD FLAG (Mandat Seni Bina Universal Payload
+        // 2026-09-26): apabila true, buildChatRequest membina muatan seragam
+        // { model, temperature: 0.0, messages } — digunakan oleh Agent B.
+        this.universalPayload = options.universalPayload === true;
+        // [UPSTREAM-RESILIENCE v2 2026-09-29] DUA watchdog aliran SSE berasingan:
+        //
+        //   1. FIRST-BYTE (TTFT) — masa sehingga token PERTAMA tiba. Forensik
+        //      run kedua S01E31: attempt 1 gagal kerana kimi-k3 masuk silent-
+        //      reasoning dan gateway RESET sambungan pada ~44s SEBELUM token
+        //      pertama; attempt 2 (TTFT-laju) BERJAYA 304s. Punca kegagalan =
+        //      variance TTFT vs had idle gateway (~44s). Watchdog first-byte
+        //      LALAI 35000ms (35s) — DI BAWAH had gateway supaya KITA abort
+        //      dulu (bersih, retryable) sebelum gateway reset separuh jalan.
+        //      Digabung dengan retry×5 + backoff: setiap retry cuba tangkap
+        //      tetingkap TTFT-laju.
+        //
+        //   2. INTER-CHUNK STALL — jeda antara chunk SELEPAS token pertama.
+        //      LALAI 75000ms (75s), longgar supaya aliran sihat-tapi-lambat
+        //      (attempt 2 yang mencurah chunk sepanjang 304s) TIDAK di-abort.
+        //
+        // Kedua-dua 0 = dilumpuhkan. Env: OPENAI_COMPAT_FIRST_BYTE_MS,
+        // OPENAI_COMPAT_STREAM_STALL_MS. Timer first-byte aktif dari mula;
+        // sebaik token pertama tiba, ia bertukar kepada timer inter-chunk.
+        this.firstByteTimeoutMs = parseStreamStallMs(
+            options.firstByteTimeoutMs !== undefined
+                ? options.firstByteTimeoutMs
+                : process.env.OPENAI_COMPAT_FIRST_BYTE_MS,
+            35000
+        );
+        this.streamStallTimeoutMs = parseStreamStallMs(
+            options.streamStallTimeoutMs !== undefined
+                ? options.streamStallTimeoutMs
+                : process.env.OPENAI_COMPAT_STREAM_STALL_MS,
+            75000
+        );
+        this._ssrfLookup = options.ssrfLookup || null;
+        if (this._ssrfLookup) {
+            const http = require('http');
+            const https = require('https');
+            this._ssrfHttpAgent = new http.Agent({ keepAlive: true, lookup: this._ssrfLookup });
+            this._ssrfHttpsAgent = new https.Agent({ keepAlive: true, lookup: this._ssrfLookup });
         }
-      }
     }
 
-    return normalizeTargetLanguageForPrompt(this.normalizeVariantDisplayName(raw) || raw);
-  }
-
-  normalizeVariantDisplayName(name) {
-    const n = String(name || '').trim();
-    if (!n) return '';
-    const rules = [
-      [/^brazilian portuguese$/i, 'Portuguese (Brazilian)'],
-      [/^portuguese\s*\(brazil(ian)?\)$/i, 'Portuguese (Brazilian)'],
-      [/^portuguese\s*\(portugal\)$/i, 'Portuguese (Portugal)'],
-      [/^european portuguese$/i, 'Portuguese (Portugal)'],
-      [/^portuguese$/i, 'Portuguese (Portugal)'],
-      [/^spanish\s*\(latin america\)$/i, 'Spanish (Latin America)'],
-      [/^latin american spanish$/i, 'Spanish (Latin America)'],
-      [/^spanish$/i, 'Spanish (Spain)'],
-      [/^chinese\s*\(traditional\)$/i, 'Chinese (Traditional)'],
-      [/^chinese\s*\(simplified\)$/i, 'Chinese (Simplified)'],
-      [/^chinese$/i, 'Chinese (Simplified)']
-    ];
-    for (const [re, out] of rules) {
-      if (re.test(n)) return out;
-    }
-    return n;
-  }
-
-  variantNameFromCode(code) {
-    const normalized = String(code || '').toLowerCase();
-    switch (normalized) {
-      case 'pt-br':
-        return 'Portuguese (Brazilian)';
-      case 'pt-pt':
-        return 'Portuguese (Portugal)';
-      case 'es-419':
-        return 'Spanish (Latin America)';
-      case 'zh-hant':
-        return 'Chinese (Traditional)';
-      case 'zh-hans':
-        return 'Chinese (Simplified)';
-      default:
-        return null;
-    }
-  }
-
-  normalizeCfLanguage(code) {
-    const normalized = this.normalizeLanguageCode(code);
-    if (!normalized || normalized === 'detected' || normalized === 'auto') return '';
-    const base = normalized.split('-')[0];
-    return base || normalized;
-  }
-
-  buildCfTranslationRequest(subtitleContent, sourceLanguage, targetLanguage) {
-    const modelId = this.normalizeCfModelId();
-    const url = `${this.baseUrl.replace(/\/v1$/, '')}/run/${modelId}`;
-    const targetLang = this.normalizeCfLanguage(targetLanguage) || 'en';
-    const sourceLang = this.normalizeCfLanguage(sourceLanguage);
-
-    const body = {
-      text: subtitleContent || '',
-      target_lang: targetLang
-    };
-
-    if (sourceLang) body.source_lang = sourceLang;
-    if (this.temperature !== undefined) body.temperature = this.temperature;
-    if (this.topP !== undefined) body.top_p = this.topP;
-    if (this.maxOutputTokens) body.max_tokens = this.maxOutputTokens;
-
-    return { body, url };
-  }
-
-  /**
-   * 🧠 ENJIN PINTAR BINA PAYLOAD (28-Model Registry & Behavior Engine)
-   * Menyusun struktur JSON body mengikut spesifikasi rasmi setiap model.
-   * [AUDIT 2026-09-29] MASIH AKTIF — BUKAN warisan: dipanggil oleh
-   * buildChatRequest (laluan warisan) bagi SEMUA provider terjemahan kilang
-   * (openai/xai/deepseek/mistral/openrouter/cfworkers/custom) — iaitu enjin
-   * terjemahan utama (Agent A). Laluan Agent B (universalPayload=true)
-   * TIDAK melalui kaedah ini (builder 4-kunci god-tier return awal).
-   * Oleh itu JANGAN tandakan @deprecated.
-   */
-  applySmartModelPayload(body, modelName, rawEffort) {
-    const m = String(modelName || '').toLowerCase();
-    const effort = rawEffort || 'low';
-    const isDisable = effort === 'disabled' || effort === 'none' || effort === 'no_think';
-
-    // 1. DEEPSEEK FAMILY (deepseek-v4-pro, deepseek-v4-flash)
-    if (m.includes('deepseek')) {
-      if (isDisable) {
-        body.thinking = { type: 'disabled' };
-      } else {
-        body.thinking = { type: 'enabled' };
-        let mapped = 'low';
-        if (effort === 'max') mapped = 'max';
-        else if (effort === 'high' || effort === 'xhigh' || effort === 'medium') mapped = 'high';
-        body.reasoning_effort = mapped;
-      }
-      return;
+    normalizeReasoningEffort(value) {
+        const allowed = ['disabled', 'none', 'minimal', 'low', 'medium', 'high', 'xhigh', 'max', 'no_think'];
+        const normalized = typeof value === 'string' ? value.trim().toLowerCase() : '';
+        return allowed.includes(normalized) ? normalized : undefined;
     }
 
-    // 2. GLM / ZHIPU AI FAMILY
-    if (m.includes('glm')) {
-      if (m.includes('5.3')) {
-        // GLM-5.3 & GLM-5.3-flash: Thinking ALWAYS-ON (pantang disabled = 400 error)
-        let mapped = 'low';
-        if (effort === 'max') mapped = 'max';
-        else if (effort === 'high' || effort === 'xhigh' || effort === 'medium') mapped = 'high';
-        body.reasoning_effort = mapped;
-      } else if (m.includes('5.2')) {
-        // GLM-5.2: Boleh disabled, effort cuma ada high / max
-        if (isDisable) {
-          body.thinking = { type: 'disabled' };
-        } else {
-          body.thinking = { type: 'enabled' };
-          body.reasoning_effort = (effort === 'max' || effort === 'xhigh') ? 'max' : 'high';
+    getHttpAgents() {
+        if (this._ssrfLookup) {
+            return { httpAgent: this._ssrfHttpAgent, httpsAgent: this._ssrfHttpsAgent };
         }
-      } else if (m.includes('5.1')) {
-        // GLM-5.1: Tiada reasoning_effort langsung
-        if (isDisable) {
-          body.thinking = { type: 'disabled' };
-        } else {
-          body.thinking = { type: 'enabled' };
+        return { httpAgent, httpsAgent };
+    }
+
+    isCfTranslationModel() {
+        const model = String(this.model || '').toLowerCase();
+        return model.includes('m2m100') || model.includes('nllb-200');
+    }
+
+    /**
+     * FRONTIER UPGRADE (Mandat Frontier 2026-09-26): Pengesan keluarga model
+     * Kimi/Moonshot AI (case-insensitive).
+     * [AUDIT 2026-09-29] Dakwaan lama "pelayan Kimi K3 mengunci sampling
+     * secara dalaman → HTTP 400" sudah LAPUK — disahkan melalui curl pada
+     * 2026-09-28: pelayan Kimi K3 TIDAK lagi mengunci temperature. Nota
+     * sejarah dikekalkan; lihat applyFrontierModelRules untuk status semasa.
+     * @param {string} [modelName] - Override nama model (lalai model aktif)
+     * @returns {boolean}
+     */
+    isKimiModel(modelName = this.model) {
+        return String(modelName || '')
+            .toLowerCase()
+            .includes('kimi');
+    }
+
+    /**
+     * FRONTIER UPGRADE (Mandat Frontier 2026-09-26): Pengesan GLM-5.3 versi
+     * penuh (753B flagship) — MENGEKECUALIKAN varian 'flash'. Auditor rigor
+     * Semakan Kelompok dijalankan pada 100% deterministik (temperature 0.0,
+     * top_p 0.1).
+     * @param {string} [modelName] - Override nama model (lalai model aktif)
+     * @returns {boolean}
+     */
+    isGlmFull53Model(modelName = this.model) {
+        const m = String(modelName || '').toLowerCase();
+        return m.includes('glm') && m.includes('5.3') && !m.includes('flash');
+    }
+
+    /**
+     * FRONTIER UPGRADE (Mandat Frontier 2026-09-26): Terapkan peraturan payload
+     * model frontier di atas body yang telah dibina.
+     * [AUDIT 2026-09-29] — KOMEN ASAL LAPUK (OBSOLETE): dakwaan "pelayan Kimi
+     * mengunci sampling secara dalaman → HTTP 400" TIDAK lagi benar; disahkan
+     * melalui curl terus ke pelayan pada 2026-09-28 — pelayan Kimi K3 kini
+     * menerima temperature tanpa ralat. Kelakuan kaedah DIKEKALKAN tanpa
+     * perubahan (jangan ubah kelakuan tanpa pengesahan empirikal baharu):
+     *   - "kimi"   → GUGURKAN temperature/top_p/presence_penalty +
+     *                max_tokens 16384 (konservatif warisan; rationale lapuk).
+     *   - "glm-5.3" (bukan flash) → KUNCI temperature 0.0 + top_p 0.1
+     *                (deterministik mutlak, sifar kreativiti).
+     * PENGGUNA AKTIF: laluan terjemahan warisan sahaja — buildChatRequest
+     * TANPA universalPayload (semua provider kilang: openai/xai/deepseek/
+     * mistral/openrouter/cfworkers/custom). Laluan Agent B
+     * (universalPayload=true) TIDAK melalui kaedah ini (builder 4-kunci
+     * god-tier return awal).
+     * @param {Object} body - Payload chat/completions (dimutasi secara langsung)
+     */
+    applyFrontierModelRules(body) {
+        if (this.isKimiModel()) {
+            delete body.temperature;
+            delete body.top_p;
+            delete body.presence_penalty;
+            body.max_tokens = 16384;
+            return;
         }
-      }
-      return;
-    }
-
-    // 3. KIMI / MOONSHOT AI FAMILY
-    if (m.includes('kimi')) {
-      if (m.includes('k3')) {
-        // Kimi-k3: Always-on, top-level reasoning_effort
-        let mapped = 'low';
-        if (effort === 'max') mapped = 'max';
-        else if (effort === 'high' || effort === 'xhigh' || effort === 'medium') mapped = 'high';
-        body.reasoning_effort = mapped;
-      }
-      // Kimi-k2.7: Auto-managed, jangan hantar sebarang thinking parameter
-      return;
-    }
-
-    // 4. CLAUDE / ANTHROPIC FAMILY (Claude 4.6, 4.7, 4.8, 5)
-    if (m.includes('claude')) {
-      body.thinking = { type: 'adaptive' };
-      let mapped = 'low';
-      if (effort === 'max') mapped = 'max';
-      else if (effort === 'high') mapped = 'high';
-      else if (effort === 'medium') mapped = 'medium';
-      else if (effort === 'xhigh') {
-        mapped = m.includes('4.6') ? 'high' : 'xhigh'; // 4.6 tidak sokong xhigh
-      }
-      body.output_config = { effort: mapped };
-      return;
-    }
-
-    // 5. TENCENT HUNYUAN (Hy3)
-    if (m.includes('hy3') || m.includes('hunyuan')) {
-      const mapped = isDisable ? 'no_think' : (effort === 'high' || effort === 'max' ? 'high' : 'low');
-      if (!body.extra_body) body.extra_body = {};
-      body.extra_body.chat_template_kwargs = { reasoning_effort: mapped };
-      return;
-    }
-
-    // 6. MINIMAX (MiniMax-M3)
-    if (m.includes('minimax')) {
-      if (isDisable) {
-        body.thinking = { type: 'disabled' };
-      } else {
-        body.thinking = { type: 'adaptive' };
-      }
-      return;
-    }
-
-    // 7. GPT-5.6 / OPENAI GENERIC REASONING MODELS
-    if (this.isOpenAIReasoningModel(m)) {
-      if (isDisable) {
-        body.reasoning_effort = 'none';
-      } else {
-        let mapped = 'low';
-        if (effort === 'max') mapped = 'max';
-        else if (effort === 'xhigh') mapped = 'xhigh';
-        else if (effort === 'high') mapped = 'high';
-        else if (effort === 'medium') mapped = 'medium';
-        body.reasoning_effort = mapped;
-      }
-    }
-  }
-
-  buildChatRequest(userPrompt, stream = false, meta = {}) {
-    const disableStructuredOutput = meta?.disableStructuredOutput === true;
-    const isCfRun = this.isCfWorkersRunModel();
-    const isCfTranslation = isCfRun && this.isCfTranslationModel();
-    const isOpenAI = this.providerName === 'openai';
-    const useResponsesApi = this.shouldUseOpenAIResponsesApi();
-
-    if (isCfTranslation) {
-      const { body, url } = this.buildCfTranslationRequest(
-        meta.subtitleContent,
-        meta.sourceLanguage,
-        meta.targetLanguage
-      );
-      return { body, url, isCfRun: true, isCfTranslation: true };
-    }
-
-    const cappedMaxTokens = this.getCappedMaxOutputTokens();
-    const isReasoning = this.isOpenAIReasoningModel();
-
-    // 🎯 1:1 Pariti Mutlak dengan Gemini (Hantar 1 prompt lengkap dalam mesej user)
-    const messages = [
-      {
-        role: 'user',
-        content: userPrompt
-      }
-    ];
-
-    // ═══ [PAYLOAD-GODTIER] UNIVERSAL PAYLOAD BUILDER (4-KUNCI STREAMING, 2026-09-28) ═══
-    // Payload builder bagi Agent B (Fasa 0 Pre-Flight + Fasa B Inspection —
-    // endpoint yang sama). Ground truth empirikal (curl terus ke gateway
-    // rootsys.cloud, Kimi K3, SRT 759 baris): muatan 7-kunci lama GAGAL
-    // SEPENUHNYA (timeout Caddy 300s — tiada streaming), manakala muatan
-    // 4-kunci ini berjaya:
-    //   { model, messages, stream: true, temperature: 0.0 }
-    //   - stream:true  → chunk SSE menghidupkan sambungan Caddy → siling
-    //     keras 300s gateway tidak lagi membunuh giliran penaakulan panjang.
-    //     STREAMING WAJIB bagi setiap panggilan Agent B (Fasa 0 + Fasa B).
-    //   - temperature:0.0 → varians 61s → 19s (deterministik).
-    //   - extra_body.thinking / reasoning_effort / max_tokens /
-    //     response_format ialah PENCETUS OVERTHINKING terbukti (+90-110s
-    //     setiap satu) — DIGUGURKAN. Penaakulan Kimi K3 berlaku secara
-    //     semula jadi dalam mod stream. max_tokens juga menyebabkan
-    //     istilah kritikal tergugur.
-    //   - Kesahan JSON dijamin oleh lapisan parser tahan lasak
-    //     (stripReasoningTags + resilientParseJson / parseInspectorResponse),
-    //     BUKAN oleh response_format.
-    //   - Siling masa: diuruskan pada lapisan axios (translationTimeout,
-    //     lalai Agent B 300000ms = tepat siling Caddy) — bukan pada muatan.
-    if (this.universalPayload === true) {
-      const universalBody = {
-        model: this.model,
-        messages,
-        // [PAYLOAD-GODTIER] 4-kunci TEPAT: {model, messages, stream, temperature}.
-        // Laluan sebenar Agent B (translateSubtitle → delegasi SSE) sentiasa
-        // memanggil builder ini dengan stream=true — STREAMING WAJIB untuk
-        // mengalahkan siling keras Caddy 300s. Bentuk stream:false hanya
-        // wujud pada laluan fallback apabila endpoint membuktikan ketidak-
-        // sokongan SSE (lebih baik daripada kegagalan total).
-        stream: stream === true,
-        temperature: 0.0
-      };
-      return {
-        body: universalBody,
-        url: `${this.baseUrl}/chat/completions`,
-        isCfRun: false,
-        isCfTranslation: false,
-        useResponsesApi: false
-      };
-    }
-
-    const body = isCfRun
-      ? { prompt: userPrompt, stream }
-      : (isOpenAI && useResponsesApi)
-        ? {
-          model: this.model,
-          input: userPrompt,
-          max_output_tokens: cappedMaxTokens,
-          stream
+        if (this.isGlmFull53Model()) {
+            body.temperature = 0.0;
+            body.top_p = 0.1;
         }
-        : {
-          model: this.model,
-          messages,
-          max_completion_tokens: (isOpenAI && isReasoning) ? cappedMaxTokens : undefined,
-          max_tokens: (isOpenAI && isReasoning) ? undefined : cappedMaxTokens,
-          stream
+    }
+
+    normalizeCfModelId() {
+        const raw = String(this.model || '').trim();
+        const lower = raw.toLowerCase();
+        if (lower.startsWith('@cf/')) return raw;
+        if (lower.startsWith('meta/')) return `@cf/${raw}`;
+        return `@cf/meta/${raw}`;
+    }
+
+    normalizeTargetName(name) {
+        const raw = String(name || '').trim();
+        if (!raw) return 'target language';
+
+        const code = this.normalizeLanguageCode(raw);
+        const variantDisplay = this.variantNameFromCode(code);
+        if (variantDisplay) return normalizeTargetLanguageForPrompt(variantDisplay);
+
+        const displayFromUi = resolveLanguageDisplayName(code) || resolveLanguageDisplayName(raw);
+        if (displayFromUi) {
+            return normalizeTargetLanguageForPrompt(this.normalizeVariantDisplayName(displayFromUi));
+        }
+
+        const nameFromCode = getLanguageName(code) || getLanguageName(code.replace(/-/g, ''));
+        if (nameFromCode) {
+            return normalizeTargetLanguageForPrompt(this.normalizeVariantDisplayName(nameFromCode));
+        }
+
+        if (/^[a-z]{2}$/i.test(code)) {
+            const iso2 = toISO6392(code);
+            if (Array.isArray(iso2) && iso2.length > 0) {
+                const display = getLanguageName(iso2[0].code2);
+                if (display) {
+                    return normalizeTargetLanguageForPrompt(this.normalizeVariantDisplayName(display));
+                }
+            }
+        }
+
+        return normalizeTargetLanguageForPrompt(this.normalizeVariantDisplayName(raw) || raw);
+    }
+
+    normalizeVariantDisplayName(name) {
+        const n = String(name || '').trim();
+        if (!n) return '';
+        const rules = [
+            [/^brazilian portuguese$/i, 'Portuguese (Brazilian)'],
+            [/^portuguese\s*\(brazil(ian)?\)$/i, 'Portuguese (Brazilian)'],
+            [/^portuguese\s*\(portugal\)$/i, 'Portuguese (Portugal)'],
+            [/^european portuguese$/i, 'Portuguese (Portugal)'],
+            [/^portuguese$/i, 'Portuguese (Portugal)'],
+            [/^spanish\s*\(latin america\)$/i, 'Spanish (Latin America)'],
+            [/^latin american spanish$/i, 'Spanish (Latin America)'],
+            [/^spanish$/i, 'Spanish (Spain)'],
+            [/^chinese\s*\(traditional\)$/i, 'Chinese (Traditional)'],
+            [/^chinese\s*\(simplified\)$/i, 'Chinese (Simplified)'],
+            [/^chinese$/i, 'Chinese (Simplified)']
+        ];
+        for (const [re, out] of rules) {
+            if (re.test(n)) return out;
+        }
+        return n;
+    }
+
+    variantNameFromCode(code) {
+        const normalized = String(code || '').toLowerCase();
+        switch (normalized) {
+            case 'pt-br':
+                return 'Portuguese (Brazilian)';
+            case 'pt-pt':
+                return 'Portuguese (Portugal)';
+            case 'es-419':
+                return 'Spanish (Latin America)';
+            case 'zh-hant':
+                return 'Chinese (Traditional)';
+            case 'zh-hans':
+                return 'Chinese (Simplified)';
+            default:
+                return null;
+        }
+    }
+
+    normalizeCfLanguage(code) {
+        const normalized = this.normalizeLanguageCode(code);
+        if (!normalized || normalized === 'detected' || normalized === 'auto') return '';
+        const base = normalized.split('-')[0];
+        return base || normalized;
+    }
+
+    buildCfTranslationRequest(subtitleContent, sourceLanguage, targetLanguage) {
+        const modelId = this.normalizeCfModelId();
+        const url = `${this.baseUrl.replace(/\/v1$/, '')}/run/${modelId}`;
+        const targetLang = this.normalizeCfLanguage(targetLanguage) || 'en';
+        const sourceLang = this.normalizeCfLanguage(sourceLanguage);
+
+        const body = {
+            text: subtitleContent || '',
+            target_lang: targetLang
         };
 
-    // 🚀 Terapkan parameter thinking/reasoning pintar mengikut spesifikasi model
-    if (!isCfRun) {
-      this.applySmartModelPayload(body, this.model, this.reasoningEffort);
+        if (sourceLang) body.source_lang = sourceLang;
+        if (this.temperature !== undefined) body.temperature = this.temperature;
+        if (this.topP !== undefined) body.top_p = this.topP;
+        if (this.maxOutputTokens) body.max_tokens = this.maxOutputTokens;
+
+        return { body, url };
     }
 
-    if (!isCfRun && this.enableJsonOutput && !disableStructuredOutput) {
-      if (this.providerName === 'deepseek') {
-        body.response_format = { type: 'json_object' };
-      } else if (isOpenAI && useResponsesApi) {
-        body.text = { format: this.buildResponsesJsonSchemaFormat() };
-      } else {
-        body.response_format = this.buildChatJsonSchemaResponseFormat();
-      }
+    /**
+     * 🧠 ENJIN PINTAR BINA PAYLOAD (28-Model Registry & Behavior Engine)
+     * Menyusun struktur JSON body mengikut spesifikasi rasmi setiap model.
+     * [AUDIT 2026-09-29] MASIH AKTIF — BUKAN warisan: dipanggil oleh
+     * buildChatRequest (laluan warisan) bagi SEMUA provider terjemahan kilang
+     * (openai/xai/deepseek/mistral/openrouter/cfworkers/custom) — iaitu enjin
+     * terjemahan utama (Agent A). Laluan Agent B (universalPayload=true)
+     * TIDAK melalui kaedah ini (builder 4-kunci god-tier return awal).
+     * Oleh itu JANGAN tandakan @deprecated.
+     */
+    applySmartModelPayload(body, modelName, rawEffort) {
+        const m = String(modelName || '').toLowerCase();
+        const effort = rawEffort || 'low';
+        const isDisable = effort === 'disabled' || effort === 'none' || effort === 'no_think';
+
+        // 1. DEEPSEEK FAMILY (deepseek-v4-pro, deepseek-v4-flash)
+        if (m.includes('deepseek')) {
+            if (isDisable) {
+                body.thinking = { type: 'disabled' };
+            } else {
+                body.thinking = { type: 'enabled' };
+                let mapped = 'low';
+                if (effort === 'max') mapped = 'max';
+                else if (effort === 'high' || effort === 'xhigh' || effort === 'medium') mapped = 'high';
+                body.reasoning_effort = mapped;
+            }
+            return;
+        }
+
+        // 2. GLM / ZHIPU AI FAMILY
+        if (m.includes('glm')) {
+            if (m.includes('5.3')) {
+                // GLM-5.3 & GLM-5.3-flash: Thinking ALWAYS-ON (pantang disabled = 400 error)
+                let mapped = 'low';
+                if (effort === 'max') mapped = 'max';
+                else if (effort === 'high' || effort === 'xhigh' || effort === 'medium') mapped = 'high';
+                body.reasoning_effort = mapped;
+            } else if (m.includes('5.2')) {
+                // GLM-5.2: Boleh disabled, effort cuma ada high / max
+                if (isDisable) {
+                    body.thinking = { type: 'disabled' };
+                } else {
+                    body.thinking = { type: 'enabled' };
+                    body.reasoning_effort = effort === 'max' || effort === 'xhigh' ? 'max' : 'high';
+                }
+            } else if (m.includes('5.1')) {
+                // GLM-5.1: Tiada reasoning_effort langsung
+                if (isDisable) {
+                    body.thinking = { type: 'disabled' };
+                } else {
+                    body.thinking = { type: 'enabled' };
+                }
+            }
+            return;
+        }
+
+        // 3. KIMI / MOONSHOT AI FAMILY
+        if (m.includes('kimi')) {
+            if (m.includes('k3')) {
+                // Kimi-k3: Always-on, top-level reasoning_effort
+                let mapped = 'low';
+                if (effort === 'max') mapped = 'max';
+                else if (effort === 'high' || effort === 'xhigh' || effort === 'medium') mapped = 'high';
+                body.reasoning_effort = mapped;
+            }
+            // Kimi-k2.7: Auto-managed, jangan hantar sebarang thinking parameter
+            return;
+        }
+
+        // 4. CLAUDE / ANTHROPIC FAMILY (Claude 4.6, 4.7, 4.8, 5)
+        if (m.includes('claude')) {
+            body.thinking = { type: 'adaptive' };
+            let mapped = 'low';
+            if (effort === 'max') mapped = 'max';
+            else if (effort === 'high') mapped = 'high';
+            else if (effort === 'medium') mapped = 'medium';
+            else if (effort === 'xhigh') {
+                mapped = m.includes('4.6') ? 'high' : 'xhigh'; // 4.6 tidak sokong xhigh
+            }
+            body.output_config = { effort: mapped };
+            return;
+        }
+
+        // 5. TENCENT HUNYUAN (Hy3)
+        if (m.includes('hy3') || m.includes('hunyuan')) {
+            const mapped = isDisable ? 'no_think' : effort === 'high' || effort === 'max' ? 'high' : 'low';
+            if (!body.extra_body) body.extra_body = {};
+            body.extra_body.chat_template_kwargs = { reasoning_effort: mapped };
+            return;
+        }
+
+        // 6. MINIMAX (MiniMax-M3)
+        if (m.includes('minimax')) {
+            if (isDisable) {
+                body.thinking = { type: 'disabled' };
+            } else {
+                body.thinking = { type: 'adaptive' };
+            }
+            return;
+        }
+
+        // 7. GPT-5.6 / OPENAI GENERIC REASONING MODELS
+        if (this.isOpenAIReasoningModel(m)) {
+            if (isDisable) {
+                body.reasoning_effort = 'none';
+            } else {
+                let mapped = 'low';
+                if (effort === 'max') mapped = 'max';
+                else if (effort === 'xhigh') mapped = 'xhigh';
+                else if (effort === 'high') mapped = 'high';
+                else if (effort === 'medium') mapped = 'medium';
+                body.reasoning_effort = mapped;
+            }
+        }
     }
 
-    if (isCfRun) {
-      if (this.temperature !== undefined) body.temperature = this.temperature;
-      if (this.topP !== undefined) body.top_p = this.topP;
-      if (this.maxOutputTokens) body.max_tokens = cappedMaxTokens;
-    } else {
-      const omitSampling = this.shouldOmitOpenAISamplingParams();
-      if (!omitSampling && this.temperature !== undefined && !useResponsesApi) {
-        body.temperature = this.temperature;
-      }
-      if (!omitSampling && this.topP !== undefined) {
-        body.top_p = this.topP;
-      }
-      if (!omitSampling && this.presencePenalty !== undefined && !useResponsesApi) {
-        body.presence_penalty = this.presencePenalty;
-      }
-      // 🚀 FRONTIER UPGRADE (Mandat Frontier 2026-09-26): Peraturan warisan
-      // kimi-k3 (gugurkan sampling, max_tokens 16384) & glm-5.3 penuh
-      // (kunci temperature 0.0 / top_p 0.1) — dilaksanakan TERAKHIR supaya
-      // sentiasa mengatasi nilai lalai builder.
-      // [AUDIT 2026-09-29] Rationale kimi "server lock" LAPUK (curl
-      // 2026-09-28) — kelakuan dikekalkan untuk laluan terjemahan warisan.
-      if (!isCfTranslation) {
-        this.applyFrontierModelRules(body);
-      }
+    buildChatRequest(userPrompt, stream = false, meta = {}) {
+        const disableStructuredOutput = meta?.disableStructuredOutput === true;
+        const isCfRun = this.isCfWorkersRunModel();
+        const isCfTranslation = isCfRun && this.isCfTranslationModel();
+        const isOpenAI = this.providerName === 'openai';
+        const useResponsesApi = this.shouldUseOpenAIResponsesApi();
+
+        if (isCfTranslation) {
+            const { body, url } = this.buildCfTranslationRequest(
+                meta.subtitleContent,
+                meta.sourceLanguage,
+                meta.targetLanguage
+            );
+            return { body, url, isCfRun: true, isCfTranslation: true };
+        }
+
+        const cappedMaxTokens = this.getCappedMaxOutputTokens();
+        const isReasoning = this.isOpenAIReasoningModel();
+
+        // 🎯 1:1 Pariti Mutlak dengan Gemini (Hantar 1 prompt lengkap dalam mesej user)
+        const messages = [
+            {
+                role: 'user',
+                content: userPrompt
+            }
+        ];
+
+        // ═══ [PAYLOAD-GODTIER] UNIVERSAL PAYLOAD BUILDER (4-KUNCI STREAMING, 2026-09-28) ═══
+        // Payload builder bagi Agent B (Fasa 0 Pre-Flight + Fasa B Inspection —
+        // endpoint yang sama). Ground truth empirikal (curl terus ke gateway
+        // rootsys.cloud, Kimi K3, SRT 759 baris): muatan 7-kunci lama GAGAL
+        // SEPENUHNYA (timeout Caddy 300s — tiada streaming), manakala muatan
+        // 4-kunci ini berjaya:
+        //   { model, messages, stream: true, temperature: 0.0 }
+        //   - stream:true  → chunk SSE menghidupkan sambungan Caddy → siling
+        //     keras 300s gateway tidak lagi membunuh giliran penaakulan panjang.
+        //     STREAMING WAJIB bagi setiap panggilan Agent B (Fasa 0 + Fasa B).
+        //   - temperature:0.0 → varians 61s → 19s (deterministik).
+        //   - extra_body.thinking / reasoning_effort / max_tokens /
+        //     response_format ialah PENCETUS OVERTHINKING terbukti (+90-110s
+        //     setiap satu) — DIGUGURKAN. Penaakulan Kimi K3 berlaku secara
+        //     semula jadi dalam mod stream. max_tokens juga menyebabkan
+        //     istilah kritikal tergugur.
+        //   - Kesahan JSON dijamin oleh lapisan parser tahan lasak
+        //     (stripReasoningTags + resilientParseJson / parseInspectorResponse),
+        //     BUKAN oleh response_format.
+        //   - Siling masa: diuruskan pada lapisan axios (translationTimeout,
+        //     lalai Agent B 300000ms = tepat siling Caddy) — bukan pada muatan.
+        if (this.universalPayload === true) {
+            const universalBody = {
+                model: this.model,
+                messages,
+                // [PAYLOAD-GODTIER] 4-kunci TEPAT: {model, messages, stream, temperature}.
+                // Laluan sebenar Agent B (translateSubtitle → delegasi SSE) sentiasa
+                // memanggil builder ini dengan stream=true — STREAMING WAJIB untuk
+                // mengalahkan siling keras Caddy 300s. Bentuk stream:false hanya
+                // wujud pada laluan fallback apabila endpoint membuktikan ketidak-
+                // sokongan SSE (lebih baik daripada kegagalan total).
+                stream: stream === true,
+                temperature: 0.0
+            };
+            return {
+                body: universalBody,
+                url: `${this.baseUrl}/chat/completions`,
+                isCfRun: false,
+                isCfTranslation: false,
+                useResponsesApi: false
+            };
+        }
+
+        const body = isCfRun
+            ? { prompt: userPrompt, stream }
+            : isOpenAI && useResponsesApi
+              ? {
+                    model: this.model,
+                    input: userPrompt,
+                    max_output_tokens: cappedMaxTokens,
+                    stream
+                }
+              : {
+                    model: this.model,
+                    messages,
+                    max_completion_tokens: isOpenAI && isReasoning ? cappedMaxTokens : undefined,
+                    max_tokens: isOpenAI && isReasoning ? undefined : cappedMaxTokens,
+                    stream
+                };
+
+        // 🚀 Terapkan parameter thinking/reasoning pintar mengikut spesifikasi model
+        if (!isCfRun) {
+            this.applySmartModelPayload(body, this.model, this.reasoningEffort);
+        }
+
+        if (!isCfRun && this.enableJsonOutput && !disableStructuredOutput) {
+            if (this.providerName === 'deepseek') {
+                body.response_format = { type: 'json_object' };
+            } else if (isOpenAI && useResponsesApi) {
+                body.text = { format: this.buildResponsesJsonSchemaFormat() };
+            } else {
+                body.response_format = this.buildChatJsonSchemaResponseFormat();
+            }
+        }
+
+        if (isCfRun) {
+            if (this.temperature !== undefined) body.temperature = this.temperature;
+            if (this.topP !== undefined) body.top_p = this.topP;
+            if (this.maxOutputTokens) body.max_tokens = cappedMaxTokens;
+        } else {
+            const omitSampling = this.shouldOmitOpenAISamplingParams();
+            if (!omitSampling && this.temperature !== undefined && !useResponsesApi) {
+                body.temperature = this.temperature;
+            }
+            if (!omitSampling && this.topP !== undefined) {
+                body.top_p = this.topP;
+            }
+            if (!omitSampling && this.presencePenalty !== undefined && !useResponsesApi) {
+                body.presence_penalty = this.presencePenalty;
+            }
+            // 🚀 FRONTIER UPGRADE (Mandat Frontier 2026-09-26): Peraturan warisan
+            // kimi-k3 (gugurkan sampling, max_tokens 16384) & glm-5.3 penuh
+            // (kunci temperature 0.0 / top_p 0.1) — dilaksanakan TERAKHIR supaya
+            // sentiasa mengatasi nilai lalai builder.
+            // [AUDIT 2026-09-29] Rationale kimi "server lock" LAPUK (curl
+            // 2026-09-28) — kelakuan dikekalkan untuk laluan terjemahan warisan.
+            if (!isCfTranslation) {
+                this.applyFrontierModelRules(body);
+            }
+        }
+
+        const url = isCfRun
+            ? `${this.baseUrl.replace(/\/v1$/, '')}/run/${this.model}`
+            : isOpenAI && useResponsesApi
+              ? `${this.baseUrl}/responses`
+              : `${this.baseUrl}/chat/completions`;
+
+        return { body, url, isCfRun, isCfTranslation: false, useResponsesApi };
     }
 
-    const url = isCfRun
-      ? `${this.baseUrl.replace(/\/v1$/, '')}/run/${this.model}`
-      : (isOpenAI && useResponsesApi)
-        ? `${this.baseUrl}/responses`
-        : `${this.baseUrl}/chat/completions`;
+    shouldUseOpenAIResponsesApi() {
+        if (this.providerName !== 'openai') return false;
+        const model = String(this.model || '')
+            .trim()
+            .toLowerCase();
+        return /^gpt-5(?:\.\d+)?-pro(?:$|-)/.test(model);
+    }
 
-    return { body, url, isCfRun, isCfTranslation: false, useResponsesApi };
-  }
+    shouldOmitOpenAISamplingParams() {
+        if (this.providerName !== 'openai') return false;
+        const model = String(this.model || '')
+            .trim()
+            .toLowerCase();
+        return /^gpt-5(?:[\.-]|$)/.test(model);
+    }
 
-  shouldUseOpenAIResponsesApi() {
-    if (this.providerName !== 'openai') return false;
-    const model = String(this.model || '').trim().toLowerCase();
-    return /^gpt-5(?:\.\d+)?-pro(?:$|-)/.test(model);
-  }
+    isOpenAIReasoningModel(modelName = this.model) {
+        const model = String(modelName || '')
+            .trim()
+            .toLowerCase();
+        return (
+            model.includes('deepseek') ||
+            model.includes('kimi') ||
+            model.includes('glm') ||
+            model.includes('claude') ||
+            model.includes('minimax') ||
+            model.includes('hy3') ||
+            model.includes('hunyuan') ||
+            model.includes('reasoner') ||
+            model.includes('thinking') ||
+            model.startsWith('o1') ||
+            model.startsWith('o3') ||
+            /^gpt-5(?:[\.-]|$)/.test(model)
+        );
+    }
 
-  shouldOmitOpenAISamplingParams() {
-    if (this.providerName !== 'openai') return false;
-    const model = String(this.model || '').trim().toLowerCase();
-    return /^gpt-5(?:[\.-]|$)/.test(model);
-  }
-
-  isOpenAIReasoningModel(modelName = this.model) {
-    const model = String(modelName || '').trim().toLowerCase();
-    return (
-      model.includes('deepseek') ||
-      model.includes('kimi') ||
-      model.includes('glm') ||
-      model.includes('claude') ||
-      model.includes('minimax') ||
-      model.includes('hy3') ||
-      model.includes('hunyuan') ||
-      model.includes('reasoner') ||
-      model.includes('thinking') ||
-      model.startsWith('o1') ||
-      model.startsWith('o3') ||
-      /^gpt-5(?:[\.-]|$)/.test(model)
-    );
-  }
-
-  buildSubtitleEntriesJsonSchema() {
-    return {
-      type: 'object',
-      properties: {
-        entries: {
-          type: 'array',
-          items: {
+    buildSubtitleEntriesJsonSchema() {
+        return {
             type: 'object',
             properties: {
-              id: { type: 'integer' },
-              text: { type: 'string' }
+                entries: {
+                    type: 'array',
+                    items: {
+                        type: 'object',
+                        properties: {
+                            id: { type: 'integer' },
+                            text: { type: 'string' }
+                        },
+                        required: ['id', 'text'],
+                        additionalProperties: false
+                    }
+                }
             },
-            required: ['id', 'text'],
+            required: ['entries'],
             additionalProperties: false
-          }
+        };
+    }
+
+    buildChatJsonSchemaResponseFormat() {
+        return {
+            type: 'json_schema',
+            json_schema: {
+                name: 'subtitle_entries',
+                strict: true,
+                schema: this.buildSubtitleEntriesJsonSchema()
+            }
+        };
+    }
+
+    buildResponsesJsonSchemaFormat() {
+        return {
+            type: 'json_schema',
+            name: 'subtitle_entries',
+            strict: true,
+            schema: this.buildSubtitleEntriesJsonSchema()
+        };
+    }
+
+    getCappedMaxOutputTokens() {
+        const raw = Number.isFinite(Number(this.maxOutputTokens)) ? Number(this.maxOutputTokens) : 65536;
+        const model = String(this.model || '').toLowerCase();
+
+        if (
+            model.includes('deepseek') ||
+            model.includes('kimi') ||
+            model.includes('glm') ||
+            model.includes('claude') ||
+            model.includes('gpt-5') ||
+            model.includes('o1') ||
+            model.includes('o3') ||
+            model.includes('thinking') ||
+            model.includes('reasoner') ||
+            model.includes('minimax') ||
+            model.includes('hy3')
+        ) {
+            return Math.max(raw, 65536);
         }
-      },
-      required: ['entries'],
-      additionalProperties: false
-    };
-  }
 
-  buildChatJsonSchemaResponseFormat() {
-    return {
-      type: 'json_schema',
-      json_schema: {
-        name: 'subtitle_entries',
-        strict: true,
-        schema: this.buildSubtitleEntriesJsonSchema()
-      }
-    };
-  }
-
-  buildResponsesJsonSchemaFormat() {
-    return {
-      type: 'json_schema',
-      name: 'subtitle_entries',
-      strict: true,
-      schema: this.buildSubtitleEntriesJsonSchema()
-    };
-  }
-
-  getCappedMaxOutputTokens() {
-    const raw = Number.isFinite(Number(this.maxOutputTokens))
-      ? Number(this.maxOutputTokens)
-      : 65536;
-    const model = String(this.model || '').toLowerCase();
-
-    if (
-      model.includes('deepseek') ||
-      model.includes('kimi') ||
-      model.includes('glm') ||
-      model.includes('claude') ||
-      model.includes('gpt-5') ||
-      model.includes('o1') ||
-      model.includes('o3') ||
-      model.includes('thinking') ||
-      model.includes('reasoner') ||
-      model.includes('minimax') ||
-      model.includes('hy3')
-    ) {
-      return Math.max(raw, 65536);
+        return Math.max(1024, Math.min(Math.floor(raw), 131072));
     }
 
-    return Math.max(1024, Math.min(Math.floor(raw), 131072));
-  }
+    buildUserPrompt(subtitleContent, targetLanguage, customPrompt = null) {
+        const normalizedTarget = this.normalizeTargetName(targetLanguage);
+        // [UNIVERSAL-FIX] Fallback prompt lalai kini TARGET-CONDITIONAL —
+        // peraturan khusus-Malay hanya apabila sasaran ialah Malay; lain neutral.
+        let systemPrompt = (customPrompt || composeDefaultTranslationPrompt(targetLanguage)).replace(
+            '{target_language}',
+            normalizedTarget
+        );
 
-  buildUserPrompt(subtitleContent, targetLanguage, customPrompt = null) {
-    const normalizedTarget = this.normalizeTargetName(targetLanguage);
-    // [UNIVERSAL-FIX] Fallback prompt lalai kini TARGET-CONDITIONAL —
-    // peraturan khusus-Malay hanya apabila sasaran ialah Malay; lain neutral.
-    let systemPrompt = (customPrompt || composeDefaultTranslationPrompt(targetLanguage)).replace('{target_language}', normalizedTarget);
+        // [PROMPT REBUILD v2 2026-09-29] Structured split: bila SubFaber Agent A
+        // prompt (dengan SUBFABER_PROMPT_BOUNDARY) mengalir ke provider ini sebagai
+        // fallback, pisahkan STATIK (system) daripada DINAMIK (user) supaya arahan
+        // tidak dihantar dua kali dan sempadan tidak bocor ke prompt hidup.
+        const structured = splitStructuredPrompt(systemPrompt);
+        if (structured) {
+            return {
+                userPrompt: structured.user,
+                systemPrompt: structured.system,
+                normalizedTarget,
+                subtitleContent,
+                isSelfContained: true
+            };
+        }
 
-    // [PROMPT REBUILD v2 2026-09-29] Structured split: bila SubFaber Agent A
-    // prompt (dengan SUBFABER_PROMPT_BOUNDARY) mengalir ke provider ini sebagai
-    // fallback, pisahkan STATIK (system) daripada DINAMIK (user) supaya arahan
-    // tidak dihantar dua kali dan sempadan tidak bocor ke prompt hidup.
-    const structured = splitStructuredPrompt(systemPrompt);
-    if (structured) {
-      return {
-        userPrompt: structured.user,
-        systemPrompt: structured.system,
-        normalizedTarget,
-        subtitleContent,
-        isSelfContained: true
-      };
+        let userPrompt;
+        let isSelfContained = false;
+
+        if (
+            systemPrompt.includes('<input>') ||
+            systemPrompt.includes('INPUT (') ||
+            systemPrompt.includes('=== ENTRIES TO TRANSLATE ===') ||
+            systemPrompt.includes('entries_to_translate')
+        ) {
+            userPrompt = systemPrompt;
+            isSelfContained = true;
+        } else {
+            userPrompt = `Content to translate:\n\n${subtitleContent}`;
+        }
+
+        return { userPrompt, systemPrompt, normalizedTarget, subtitleContent, isSelfContained };
     }
 
-    let userPrompt;
-    let isSelfContained = false;
-
-    if (
-      systemPrompt.includes('<input>') ||
-      systemPrompt.includes('INPUT (') ||
-      systemPrompt.includes('=== ENTRIES TO TRANSLATE ===') ||
-      systemPrompt.includes('entries_to_translate')
-    ) {
-      userPrompt = systemPrompt;
-      isSelfContained = true;
-    } else {
-      userPrompt = `Content to translate:\n\n${subtitleContent}`;
-    }
-
-    return { userPrompt, systemPrompt, normalizedTarget, subtitleContent, isSelfContained };
-  }
-
-  estimateTokenCount(text) {
-    if (!text) return 0;
-    const str = String(text);
-    try {
-      const { countTokens } = require('gpt-tokenizer');
-      return countTokens(str);
-    } catch (_) {
-      const approx = Math.ceil(str.length / 3);
-      return Math.ceil(approx * 1.1);
-    }
-  }
-
-  getAuthHeaders() {
-    const sanitizedKey = sanitizeApiKeyForHeader(this.apiKey) || '';
-    if (!sanitizedKey) {
-      return { ...this.headers };
-    }
-    return {
-      Authorization: `Bearer ${sanitizedKey}`,
-      'x-api-key': sanitizedKey,
-      ...this.headers
-    };
-  }
-
-  isCfWorkersRunModel() {
-    return this.providerName === 'cfWorkers';
-  }
-
-  shouldUseAuthFailureCache() {
-    return this.providerName !== 'custom' && !!this.authFailureCacheKey;
-  }
-
-  isAuthFailure(error) {
-    const status = error?.response?.status || error?.statusCode || error?.status;
-    return status === 401 || status === 403;
-  }
-
-  normalizeLanguageCode(code) {
-    const raw = String(code || '').trim();
-    if (!raw) return 'en';
-
-    const fromName = findISO6391ByName(raw);
-    if (fromName) return this.normalizeLanguageCode(fromName);
-
-    let cleaned = raw.toLowerCase().replace(/[\s_]/g, '-');
-    const variantMap = {
-      'pob': 'pt-br',
-      'ptbr': 'pt-br',
-      'pt-br': 'pt-br',
-      'ptbrazil': 'pt-br',
-      'pt-brazil': 'pt-br',
-      'pt-pt': 'pt-pt',
-      'pt_portugal': 'pt-pt',
-      'spn': 'es-419',
-      'es-419': 'es-419',
-      'es_la': 'es-419',
-      'es-la': 'es-419',
-      'es-latam': 'es-419',
-      'zht': 'zh-hant',
-      'zh-hant': 'zh-hant',
-      'zh-tw': 'zh-hant',
-      'zhs': 'zh-hans',
-      'zh-hans': 'zh-hans',
-      'zh-cn': 'zh-hans'
-    };
-    if (variantMap[cleaned]) return variantMap[cleaned];
-
-    cleaned = cleaned.replace(/-tr$/, '');
-    if (/^[a-z]{3}$/.test(cleaned)) {
-      const iso1 = toISO6391(cleaned);
-      if (iso1) cleaned = iso1.toLowerCase();
-    }
-
-    cleaned = cleaned.replace(/[^a-z-]/g, '');
-    if (/^[a-z]{2}(-[a-z0-9]{2,})?$/.test(cleaned)) return cleaned;
-    if (/^[a-z]{2}$/.test(cleaned)) return cleaned;
-
-    return cleaned.slice(0, 2) || 'en';
-  }
-
-  async getAvailableModels() {
-    if (this.shouldUseAuthFailureCache() && await hasCachedProviderAuthFailure(this.authFailureCacheKey)) {
-      log.warn(() => `[${this.providerName}] Fetch models blocked: cached invalid API key detected`);
-      return [];
-    }
-
-    try {
-      const isCfWorkers = this.providerName === 'cfWorkers';
-      const baseModelsUrl = isCfWorkers
-        ? `${this.baseUrl.replace(/\/v1$/, '')}/models`
-        : `${this.baseUrl}/models`;
-
-      const agents = this.getHttpAgents();
-      const requestConfig = {
-        headers: this.getAuthHeaders(),
-        timeout: 10000,
-        httpAgent: agents.httpAgent,
-        httpsAgent: agents.httpsAgent
-      };
-
-      let response;
-      if (isCfWorkers) {
-        const searchUrl = `${this.baseUrl.replace(/\/v1$/, '')}/models/search`;
+    estimateTokenCount(text) {
+        if (!text) return 0;
+        const str = String(text);
         try {
-          response = await axios.get(searchUrl, requestConfig);
+            const { countTokens } = require('gpt-tokenizer');
+            return countTokens(str);
         } catch (_) {
-          response = await axios.get(baseModelsUrl, requestConfig);
+            const approx = Math.ceil(str.length / 3);
+            return Math.ceil(approx * 1.1);
         }
-      } else {
-        response = await axios.get(baseModelsUrl, requestConfig);
-      }
-
-      const data = response.data || {};
-      const modelsRaw = Array.isArray(data?.data)
-        ? data.data
-        : Array.isArray(data?.models)
-          ? data.models
-          : Array.isArray(data?.result)
-            ? data.result
-            : (Array.isArray(data?.result?.models) ? data.result.models : undefined);
-
-      const models = Array.isArray(modelsRaw)
-        ? modelsRaw.map(m => {
-          const isCf = this.providerName === 'cfWorkers';
-          const name = isCf
-            ? (m.name || m.slug || m.id || m.model)
-            : (m.id || m.name || m.model);
-          const displayName = m.display_name
-            || m.displayName
-            || m.name
-            || m.slug
-            || m.id
-            || m.model;
-          return {
-            name,
-            displayName,
-            description: m.description || '',
-            maxTokens: m.max_tokens || m.maxTokens || undefined
-          };
-        }).filter(m => !!m.name)
-        : [];
-
-      if (this.shouldUseAuthFailureCache()) {
-        await clearCachedProviderAuthFailure(this.authFailureCacheKey);
-      }
-      return models;
-    } catch (error) {
-      if (this.shouldUseAuthFailureCache() && this.isAuthFailure(error)) {
-        await cacheProviderAuthFailure(this.authFailureCacheKey);
-      }
-      logApiError(error, this.providerName, 'Fetch models', { skipResponseData: true });
-      return [];
     }
-  }
 
-  isStructuredOutputUnsupportedError(error) {
-    if (!error) return false;
-    const status = error?.response?.status || error?.status || error?.statusCode || 0;
-    const msg = String(
-      error?.response?.data?.error?.message ||
-      error?.response?.data?.message ||
-      error?.message ||
-      ''
-    ).toLowerCase();
-    const requestIssue = status === 400 || status === 404 || status === 405 || status === 415 || status === 422 || status === 501;
-    const mentionsStructuredMode =
-      msg.includes('response_format') ||
-      msg.includes('json_schema') ||
-      msg.includes('json_object') ||
-      msg.includes('unknown parameter') ||
-      msg.includes('unsupported') ||
-      msg.includes('does not support');
-    return requestIssue && mentionsStructuredMode;
-  }
+    getAuthHeaders() {
+        const sanitizedKey = sanitizeApiKeyForHeader(this.apiKey) || '';
+        if (!sanitizedKey) {
+            return { ...this.headers };
+        }
+        return {
+            Authorization: `Bearer ${sanitizedKey}`,
+            'x-api-key': sanitizedKey,
+            ...this.headers
+        };
+    }
 
-  async translateSubtitle(subtitleContent, sourceLanguage, targetLanguage, customPrompt = null, requestOptions = {}) {
-    // ═══ [PAYLOAD-GODTIER] STREAMING PROPAGATION (2026-09-28) ═══
-    // Agent B (universalPayload) membina muatan dengan stream:true secara
-    // MANDATORI (4-kunci god-tier). Respons mesti dihurai melalui laluan SSE
-    // — delegasi ke streamTranslateSubtitle (parser SSE sedia ada: proses
-    // chunk data:, [DONE], delta.content, raw recovery). Bendera
-    // __universalStreamFallback menghalang lelaran tak terhingga apabila
-    // streamTranslateSubtitle melakukan fallback bukan-stream (endpoint
-    // tidak menyokong SSE).
-    if (
-      this.universalPayload === true &&
-      requestOptions?.__universalStreamFallback !== true
-    ) {
-      return this.streamTranslateSubtitle(
+    isCfWorkersRunModel() {
+        return this.providerName === 'cfWorkers';
+    }
+
+    shouldUseAuthFailureCache() {
+        return this.providerName !== 'custom' && !!this.authFailureCacheKey;
+    }
+
+    isAuthFailure(error) {
+        const status = error?.response?.status || error?.statusCode || error?.status;
+        return status === 401 || status === 403;
+    }
+
+    normalizeLanguageCode(code) {
+        const raw = String(code || '').trim();
+        if (!raw) return 'en';
+
+        const fromName = findISO6391ByName(raw);
+        if (fromName) return this.normalizeLanguageCode(fromName);
+
+        let cleaned = raw.toLowerCase().replace(/[\s_]/g, '-');
+        const variantMap = {
+            pob: 'pt-br',
+            ptbr: 'pt-br',
+            'pt-br': 'pt-br',
+            ptbrazil: 'pt-br',
+            'pt-brazil': 'pt-br',
+            'pt-pt': 'pt-pt',
+            pt_portugal: 'pt-pt',
+            spn: 'es-419',
+            'es-419': 'es-419',
+            es_la: 'es-419',
+            'es-la': 'es-419',
+            'es-latam': 'es-419',
+            zht: 'zh-hant',
+            'zh-hant': 'zh-hant',
+            'zh-tw': 'zh-hant',
+            zhs: 'zh-hans',
+            'zh-hans': 'zh-hans',
+            'zh-cn': 'zh-hans'
+        };
+        if (variantMap[cleaned]) return variantMap[cleaned];
+
+        cleaned = cleaned.replace(/-tr$/, '');
+        if (/^[a-z]{3}$/.test(cleaned)) {
+            const iso1 = toISO6391(cleaned);
+            if (iso1) cleaned = iso1.toLowerCase();
+        }
+
+        cleaned = cleaned.replace(/[^a-z-]/g, '');
+        if (/^[a-z]{2}(-[a-z0-9]{2,})?$/.test(cleaned)) return cleaned;
+        if (/^[a-z]{2}$/.test(cleaned)) return cleaned;
+
+        return cleaned.slice(0, 2) || 'en';
+    }
+
+    async getAvailableModels() {
+        if (this.shouldUseAuthFailureCache() && (await hasCachedProviderAuthFailure(this.authFailureCacheKey))) {
+            log.warn(() => `[${this.providerName}] Fetch models blocked: cached invalid API key detected`);
+            return [];
+        }
+
+        try {
+            const isCfWorkers = this.providerName === 'cfWorkers';
+            const baseModelsUrl = isCfWorkers
+                ? `${this.baseUrl.replace(/\/v1$/, '')}/models`
+                : `${this.baseUrl}/models`;
+
+            const agents = this.getHttpAgents();
+            const requestConfig = {
+                headers: this.getAuthHeaders(),
+                timeout: 10000,
+                httpAgent: agents.httpAgent,
+                httpsAgent: agents.httpsAgent
+            };
+
+            let response;
+            if (isCfWorkers) {
+                const searchUrl = `${this.baseUrl.replace(/\/v1$/, '')}/models/search`;
+                try {
+                    response = await axios.get(searchUrl, requestConfig);
+                } catch (_) {
+                    response = await axios.get(baseModelsUrl, requestConfig);
+                }
+            } else {
+                response = await axios.get(baseModelsUrl, requestConfig);
+            }
+
+            const data = response.data || {};
+            const modelsRaw = Array.isArray(data?.data)
+                ? data.data
+                : Array.isArray(data?.models)
+                  ? data.models
+                  : Array.isArray(data?.result)
+                    ? data.result
+                    : Array.isArray(data?.result?.models)
+                      ? data.result.models
+                      : undefined;
+
+            const models = Array.isArray(modelsRaw)
+                ? modelsRaw
+                      .map((m) => {
+                          const isCf = this.providerName === 'cfWorkers';
+                          const name = isCf ? m.name || m.slug || m.id || m.model : m.id || m.name || m.model;
+                          const displayName = m.display_name || m.displayName || m.name || m.slug || m.id || m.model;
+                          return {
+                              name,
+                              displayName,
+                              description: m.description || '',
+                              maxTokens: m.max_tokens || m.maxTokens || undefined
+                          };
+                      })
+                      .filter((m) => !!m.name)
+                : [];
+
+            if (this.shouldUseAuthFailureCache()) {
+                await clearCachedProviderAuthFailure(this.authFailureCacheKey);
+            }
+            return models;
+        } catch (error) {
+            if (this.shouldUseAuthFailureCache() && this.isAuthFailure(error)) {
+                await cacheProviderAuthFailure(this.authFailureCacheKey);
+            }
+            logApiError(error, this.providerName, 'Fetch models', { skipResponseData: true });
+            return [];
+        }
+    }
+
+    isStructuredOutputUnsupportedError(error) {
+        if (!error) return false;
+        const status = error?.response?.status || error?.status || error?.statusCode || 0;
+        const msg = String(
+            error?.response?.data?.error?.message || error?.response?.data?.message || error?.message || ''
+        ).toLowerCase();
+        const requestIssue =
+            status === 400 || status === 404 || status === 405 || status === 415 || status === 422 || status === 501;
+        const mentionsStructuredMode =
+            msg.includes('response_format') ||
+            msg.includes('json_schema') ||
+            msg.includes('json_object') ||
+            msg.includes('unknown parameter') ||
+            msg.includes('unsupported') ||
+            msg.includes('does not support');
+        return requestIssue && mentionsStructuredMode;
+    }
+
+    async translateSubtitle(subtitleContent, sourceLanguage, targetLanguage, customPrompt = null, requestOptions = {}) {
+        // ═══ [PAYLOAD-GODTIER] STREAMING PROPAGATION (2026-09-28) ═══
+        // Agent B (universalPayload) membina muatan dengan stream:true secara
+        // MANDATORI (4-kunci god-tier). Respons mesti dihurai melalui laluan SSE
+        // — delegasi ke streamTranslateSubtitle (parser SSE sedia ada: proses
+        // chunk data:, [DONE], delta.content, raw recovery). Bendera
+        // __universalStreamFallback menghalang lelaran tak terhingga apabila
+        // streamTranslateSubtitle melakukan fallback bukan-stream (endpoint
+        // tidak menyokong SSE).
+        if (this.universalPayload === true && requestOptions?.__universalStreamFallback !== true) {
+            return this.streamTranslateSubtitle(subtitleContent, sourceLanguage, targetLanguage, customPrompt, null, {
+                ...requestOptions,
+                __universalStreamFallback: true
+            });
+        }
+        const promptData = this.buildUserPrompt(subtitleContent, targetLanguage, customPrompt);
+
+        let lastError;
+        let disableStructuredOutput = requestOptions?.disableStructuredOutput === true;
+        let structuredDowngradeUsed = disableStructuredOutput;
+
+        for (let attempt = 0; attempt <= this.maxRetries; attempt++) {
+            try {
+                const { body, url, isCfRun, useResponsesApi } = this.buildChatRequest(promptData.userPrompt, false, {
+                    subtitleContent,
+                    sourceLanguage,
+                    targetLanguage,
+                    systemPrompt: promptData.systemPrompt,
+                    isSelfContained: promptData.isSelfContained,
+                    disableStructuredOutput
+                });
+
+                const agents = this.getHttpAgents();
+                const response = await axios.post(url, body, {
+                    headers: this.getAuthHeaders(),
+                    timeout: this.translationTimeout,
+                    httpAgent: agents.httpAgent,
+                    httpsAgent: agents.httpsAgent
+                });
+
+                let text;
+                if (isCfRun) {
+                    text =
+                        response.data?.result?.translated_text ||
+                        response.data?.result?.output ||
+                        response.data?.result?.response ||
+                        response.data?.result;
+                } else if (useResponsesApi) {
+                    text = this.extractResponsesText(response.data);
+                } else {
+                    text = this.extractChatMessageText(response.data?.choices?.[0]?.message);
+                }
+
+                if (!text) {
+                    // Unthrottle Mandat §C (2026-09-26): log raw pada DEBUG supaya
+                    // respons berhenti di sini mudah disiasat (cth: reasoning sahaja).
+                    log.debug(
+                        () =>
+                            `[${this.providerName}] Empty extraction — raw response (first 800 chars): ${JSON.stringify(response.data || {}).slice(0, 800)}`
+                    );
+                    throw new Error('No translation returned from API');
+                }
+
+                return this.cleanTranslatedSubtitle(text);
+            } catch (error) {
+                lastError = error;
+                if (
+                    this.enableJsonOutput &&
+                    !disableStructuredOutput &&
+                    !structuredDowngradeUsed &&
+                    this.isStructuredOutputUnsupportedError(error)
+                ) {
+                    structuredDowngradeUsed = true;
+                    disableStructuredOutput = true;
+                    log.warn(() => [
+                        `[${this.providerName}] Structured output not supported by this model, retrying without response_format`
+                    ]);
+                    continue;
+                }
+                if (attempt < this.maxRetries) {
+                    log.warn(() => [
+                        `[${this.providerName}] Retry ${attempt + 1}/${this.maxRetries} after error:`,
+                        error.message
+                    ]);
+                    continue;
+                }
+                handleTranslationError(error, this.providerName, { skipResponseData: true });
+            }
+        }
+
+        if (lastError) throw lastError;
+    }
+
+    async streamTranslateSubtitle(
         subtitleContent,
         sourceLanguage,
         targetLanguage,
-        customPrompt,
-        null,
-        { ...requestOptions, __universalStreamFallback: true }
-      );
-    }
-    const promptData = this.buildUserPrompt(subtitleContent, targetLanguage, customPrompt);
-
-    let lastError;
-    let disableStructuredOutput = requestOptions?.disableStructuredOutput === true;
-    let structuredDowngradeUsed = disableStructuredOutput;
-
-    for (let attempt = 0; attempt <= this.maxRetries; attempt++) {
-      try {
-        const { body, url, isCfRun, useResponsesApi } = this.buildChatRequest(
-          promptData.userPrompt,
-          false,
-          {
+        customPrompt = null,
+        onPartial = null,
+        requestOptions = {}
+    ) {
+        const promptData = this.buildUserPrompt(subtitleContent, targetLanguage, customPrompt);
+        const request = this.buildChatRequest(promptData.userPrompt, true, {
             subtitleContent,
             sourceLanguage,
             targetLanguage,
             systemPrompt: promptData.systemPrompt,
             isSelfContained: promptData.isSelfContained,
-            disableStructuredOutput
-          }
-        );
+            disableStructuredOutput: requestOptions?.disableStructuredOutput === true
+        });
 
-        const agents = this.getHttpAgents();
-        const response = await axios.post(
-          url,
-          body,
-          {
-            headers: this.getAuthHeaders(),
-            timeout: this.translationTimeout,
-            httpAgent: agents.httpAgent,
-            httpsAgent: agents.httpsAgent
-          }
-        );
-
-        let text;
-        if (isCfRun) {
-          text =
-            response.data?.result?.translated_text ||
-            response.data?.result?.output ||
-            response.data?.result?.response ||
-            response.data?.result;
-        } else if (useResponsesApi) {
-          text = this.extractResponsesText(response.data);
-        } else {
-          text = this.extractChatMessageText(response.data?.choices?.[0]?.message);
+        if (request.isCfTranslation || request.useResponsesApi) {
+            const full = await this.translateSubtitle(
+                subtitleContent,
+                sourceLanguage,
+                targetLanguage,
+                customPrompt,
+                requestOptions
+            );
+            if (typeof onPartial === 'function') {
+                try {
+                    await onPartial(full);
+                } catch (_) {}
+            }
+            return full;
         }
 
-        if (!text) {
-          // Unthrottle Mandat §C (2026-09-26): log raw pada DEBUG supaya
-          // respons berhenti di sini mudah disiasat (cth: reasoning sahaja).
-          log.debug(() => `[${this.providerName}] Empty extraction — raw response (first 800 chars): ${JSON.stringify(response.data || {}).slice(0, 800)}`);
-          throw new Error('No translation returned from API');
+        const { body, url, isCfRun } = request;
+
+        const executeStream = async () => {
+            const agents = this.getHttpAgents();
+            const response = await axios.post(url, body, {
+                headers: this.getAuthHeaders(),
+                timeout: this.translationTimeout,
+                httpAgent: agents.httpAgent,
+                httpsAgent: agents.httpsAgent,
+                responseType: 'stream'
+            });
+
+            return await new Promise((resolve, reject) => {
+                let buffer = '';
+                let aggregated = '';
+                let finishReason = null;
+                let rawStream = '';
+
+                // [UPSTREAM-RESILIENCE v2 2026-09-29] Watchdog DUA-FASA:
+                //   Fasa A (first-byte/TTFT): timer firstByteMs berjalan sehingga
+                //     token PERTAMA tiba. Abort awal jika TTFT melebihi had gateway
+                //     (~44s forensik) supaya KITA yang tutup sambungan (bersih,
+                //     retryable) sebelum gateway reset separuh jalan.
+                //   Fasa B (inter-chunk): sebaik token pertama tiba, timer bertukar
+                //     kepada stallMs (longgar) yang di-RESET setiap chunk — aliran
+                //     sihat-tapi-lambat (304s dengan chunk berkala) tidak di-abort.
+                // 0 pada mana-mana had = fasa itu dilumpuhkan. settled guard
+                // menghalang resolve/reject berganda.
+                const firstByteMs = Number(this.firstByteTimeoutMs) || 0;
+                const stallMs = Number(this.streamStallTimeoutMs) || 0;
+                let settled = false;
+                let firstChunkSeen = false;
+                let stallTimer = null;
+                const clearStallTimer = () => {
+                    if (stallTimer) {
+                        clearTimeout(stallTimer);
+                        stallTimer = null;
+                    }
+                };
+                const fireStall = (ms, phase) => {
+                    if (settled) return;
+                    settled = true;
+                    log.warn(() => [
+                        `[${this.providerName}] Stream ${phase} — no data for ${ms}ms, aborting for retry`
+                    ]);
+                    try {
+                        response.data.destroy();
+                    } catch (_) {
+                        /* abaikan */
+                    }
+                    const err = new Error(`Stream ${phase}: no data received within ${ms}ms`);
+                    err.code = 'ECONNABORTED';
+                    err.streamStall = true;
+                    reject(err);
+                };
+                const armStallTimer = () => {
+                    clearStallTimer();
+                    // Sebelum token pertama → had first-byte; selepas itu → had inter-chunk.
+                    const ms = firstChunkSeen ? stallMs : firstByteMs;
+                    if (ms <= 0) return; // fasa berkaitan dilumpuhkan
+                    const phase = firstChunkSeen ? 'stalled' : 'first-byte timeout';
+                    stallTimer = setTimeout(() => fireStall(ms, phase), ms);
+                    if (typeof stallTimer.unref === 'function') stallTimer.unref();
+                };
+                const safeResolve = (value) => {
+                    if (settled) return;
+                    settled = true;
+                    clearStallTimer();
+                    resolve(value);
+                };
+                const safeReject = (err) => {
+                    if (settled) return;
+                    settled = true;
+                    clearStallTimer();
+                    reject(err);
+                };
+
+                const processPayload = (payloadStr) => {
+                    if (!payloadStr || !payloadStr.trim()) return;
+                    const cleaned = payloadStr.trim().startsWith('data:')
+                        ? payloadStr.trim().slice(5).trim()
+                        : payloadStr.trim();
+                    if (!cleaned || cleaned === '[DONE]') return;
+
+                    let data;
+                    try {
+                        data = JSON.parse(cleaned);
+                    } catch (_) {
+                        return;
+                    }
+
+                    if (isCfRun && (data.finished || data.done === true)) {
+                        finishReason = finishReason || 'stop';
+                    }
+
+                    const choice = data?.choices?.[0];
+                    if (choice?.finish_reason) {
+                        finishReason = choice.finish_reason;
+                    }
+
+                    const chunkText = isCfRun ? this.extractCfChunkText(data) : this.extractChunkText(choice);
+
+                    if (chunkText) {
+                        aggregated += chunkText;
+                        const cleanedAgg = this.cleanTranslatedSubtitle(aggregated);
+                        if (cleanedAgg && typeof onPartial === 'function') {
+                            try {
+                                onPartial(cleanedAgg);
+                            } catch (_) {}
+                        }
+                    }
+                };
+
+                // Lengan watchdog awal — menutup tetingkap first-byte (TTFT).
+                armStallTimer();
+
+                response.data.on('data', (chunk) => {
+                    if (settled) return;
+                    // Token pertama tiba → tukar fasa watchdog ke had inter-chunk
+                    // (longgar) untuk baki aliran; sebelum ini had first-byte (ketat).
+                    firstChunkSeen = true;
+                    // Reset watchdog: chunk tiba → sambungan hidup semula.
+                    armStallTimer();
+                    try {
+                        const str = chunk.toString('utf8');
+                        rawStream += str;
+                        buffer += str;
+                        const parts = buffer.split(/\r?\n/);
+                        buffer = parts.pop();
+                        parts.forEach(processPayload);
+                    } catch (err) {
+                        log.warn(() => [`[${this.providerName}] Stream chunk processing failed:`, err.message]);
+                    }
+                });
+
+                response.data.on('end', () => {
+                    if (settled) return;
+                    clearStallTimer();
+                    try {
+                        if (buffer && buffer.trim()) {
+                            processPayload(buffer);
+                        }
+
+                        if (!aggregated && rawStream.trim()) {
+                            const recovered = this.recoverStreamPayload(rawStream, isCfRun);
+                            aggregated = recovered.text || aggregated;
+                            finishReason = finishReason || recovered.finishReason;
+                        }
+
+                        const cleaned = this.cleanTranslatedSubtitle(aggregated);
+
+                        if (!cleaned) {
+                            if (finishReason === 'content_filter') {
+                                const err = new Error('PROHIBITED_CONTENT: content_filter');
+                                err.translationErrorType = 'PROHIBITED_CONTENT';
+                                safeReject(err);
+                                return;
+                            }
+                            safeReject(new Error('No content returned from stream'));
+                            return;
+                        }
+
+                        safeResolve(cleaned);
+                    } catch (err) {
+                        safeReject(err);
+                    }
+                });
+
+                response.data.on('error', (err) => safeReject(err));
+            });
+        };
+
+        let lastError;
+        let fallbackUsed = false;
+        for (let attempt = 0; attempt <= this.maxRetries; attempt++) {
+            try {
+                return await executeStream();
+            } catch (error) {
+                lastError = error;
+
+                const status = error?.response?.status;
+                const rawErr = String(
+                    error?.response?.data?.error?.message || error?.response?.data?.message || error?.message || ''
+                ).toLowerCase();
+
+                const looksUnsupported =
+                    status === 404 ||
+                    status === 405 ||
+                    status === 501 ||
+                    (status === 400 &&
+                        (rawErr.includes('stream') || rawErr.includes('sse') || rawErr.includes('event-stream'))) ||
+                    (error.message && /stream/i.test(error.message));
+
+                if (!fallbackUsed && looksUnsupported) {
+                    fallbackUsed = true;
+                    log.warn(() => [`[${this.providerName}] Streaming not supported, falling back to non-stream`]);
+                    const full = await this.translateSubtitle(
+                        subtitleContent,
+                        sourceLanguage,
+                        targetLanguage,
+                        customPrompt,
+                        requestOptions
+                    );
+                    if (typeof onPartial === 'function') {
+                        try {
+                            await onPartial(full);
+                        } catch (_) {}
+                    }
+                    return full;
+                }
+
+                if (attempt < this.maxRetries) {
+                    log.warn(() => [
+                        `[${this.providerName}] Stream retry ${attempt + 1}/${this.maxRetries} after error:`,
+                        error.message
+                    ]);
+                    continue;
+                }
+                handleTranslationError(error, this.providerName, { skipResponseData: true });
+            }
         }
 
-        return this.cleanTranslatedSubtitle(text);
-      } catch (error) {
-        lastError = error;
-        if (
-          this.enableJsonOutput &&
-          !disableStructuredOutput &&
-          !structuredDowngradeUsed &&
-          this.isStructuredOutputUnsupportedError(error)
-        ) {
-          structuredDowngradeUsed = true;
-          disableStructuredOutput = true;
-          log.warn(() => [`[${this.providerName}] Structured output not supported by this model, retrying without response_format`]);
-          continue;
-        }
-        if (attempt < this.maxRetries) {
-          log.warn(() => [`[${this.providerName}] Retry ${attempt + 1}/${this.maxRetries} after error:`, error.message]);
-          continue;
-        }
-        handleTranslationError(error, this.providerName, { skipResponseData: true });
-      }
+        if (lastError) throw lastError;
     }
 
-    if (lastError) throw lastError;
-  }
-
-  async streamTranslateSubtitle(subtitleContent, sourceLanguage, targetLanguage, customPrompt = null, onPartial = null, requestOptions = {}) {
-    const promptData = this.buildUserPrompt(subtitleContent, targetLanguage, customPrompt);
-    const request = this.buildChatRequest(
-      promptData.userPrompt,
-      true,
-      {
-        subtitleContent,
-        sourceLanguage,
-        targetLanguage,
-        systemPrompt: promptData.systemPrompt,
-        isSelfContained: promptData.isSelfContained,
-        disableStructuredOutput: requestOptions?.disableStructuredOutput === true
-      }
-    );
-
-    if (request.isCfTranslation || request.useResponsesApi) {
-      const full = await this.translateSubtitle(subtitleContent, sourceLanguage, targetLanguage, customPrompt, requestOptions);
-      if (typeof onPartial === 'function') {
-        try { await onPartial(full); } catch (_) { }
-      }
-      return full;
+    async countTokensForTranslation() {
+        return null;
     }
 
-    const { body, url, isCfRun } = request;
-
-    const executeStream = async () => {
-      const agents = this.getHttpAgents();
-      const response = await axios.post(
-        url,
-        body,
-        {
-          headers: this.getAuthHeaders(),
-          timeout: this.translationTimeout,
-          httpAgent: agents.httpAgent,
-          httpsAgent: agents.httpsAgent,
-          responseType: 'stream'
+    extractChunkText(choice) {
+        if (!choice) return '';
+        const delta = choice.delta || {};
+        if (typeof delta.content === 'string') return delta.content;
+        if (typeof delta.text === 'string') return delta.text;
+        if (choice.message?.content && typeof choice.message.content === 'string') {
+            return choice.message.content;
         }
-      );
+        return '';
+    }
 
-      return await new Promise((resolve, reject) => {
-        let buffer = '';
-        let aggregated = '';
-        let finishReason = null;
-        let rawStream = '';
+    extractCfChunkText(payload) {
+        if (!payload || typeof payload !== 'object') return '';
+        if (typeof payload.response === 'string') return payload.response;
+        if (payload.result) {
+            if (typeof payload.result.response === 'string') return payload.result.response;
+            if (typeof payload.result.output === 'string') return payload.result.output;
+        }
+        return '';
+    }
 
-        // [UPSTREAM-RESILIENCE v2 2026-09-29] Watchdog DUA-FASA:
-        //   Fasa A (first-byte/TTFT): timer firstByteMs berjalan sehingga
-        //     token PERTAMA tiba. Abort awal jika TTFT melebihi had gateway
-        //     (~44s forensik) supaya KITA yang tutup sambungan (bersih,
-        //     retryable) sebelum gateway reset separuh jalan.
-        //   Fasa B (inter-chunk): sebaik token pertama tiba, timer bertukar
-        //     kepada stallMs (longgar) yang di-RESET setiap chunk — aliran
-        //     sihat-tapi-lambat (304s dengan chunk berkala) tidak di-abort.
-        // 0 pada mana-mana had = fasa itu dilumpuhkan. settled guard
-        // menghalang resolve/reject berganda.
-        const firstByteMs = Number(this.firstByteTimeoutMs) || 0;
-        const stallMs = Number(this.streamStallTimeoutMs) || 0;
-        let settled = false;
-        let firstChunkSeen = false;
-        let stallTimer = null;
-        const clearStallTimer = () => {
-          if (stallTimer) { clearTimeout(stallTimer); stallTimer = null; }
+    /**
+     * Unthrottle Mandat §C (2026-09-26): Ekstraksi respons chat tahan lasak
+     * bagi endpoint reasoning-models (GLM/Zhipu dsb.). Turutan fallback:
+     *   1. choice.message.content            — jawapan akhir standard.
+     *   2. choice.message.reasoning_content  — sesetengah endpoint menukar
+     *      reasoning GLM kepada medan ini; JSON/fenced-block dibuang
+     *      sebelum digunakan.
+     *   3. Stringified message                — content mungkin berpagar
+     *      markdown atau bertindih dalam medan lain; blok JSON/fenced pertama
+     *      diekstrak dengan selamat.
+     * @param {Object|undefined} message - choice.message payload
+     * @returns {string} teks yang diekstrak ('' jika tiada)
+     */
+    extractChatMessageText(message) {
+        if (!message || typeof message !== 'object') return '';
+
+        // 1. Laluan standard: content
+        const content = typeof message.content === 'string' ? message.content.trim() : '';
+        if (content) return content;
+
+        // 2. Reasoning-only endpoint: reasoning_content membawa jawapan
+        const reasoning = typeof message.reasoning_content === 'string' ? message.reasoning_content.trim() : '';
+        if (reasoning) {
+            const extracted = this.extractStructuredBlock(reasoning);
+            if (extracted) return extracted;
+            return reasoning;
+        }
+
+        // 3. Fallback terakhir (Mandat §C): imbas rekursif nilai string mesej
+        //    (RAW — bukan stringify, kerana stringify melepaskan braces dalam
+        //    string dan memusnahkan struktur JSON terbenam) dan tarik blok
+        //    JSON / fenced markdown pertama yang wujud dalam mana-mana medan.
+        const stringValues = [];
+        const collect = (obj, depth) => {
+            if (!obj || typeof obj !== 'object' || depth > 3) return;
+            for (const value of Object.values(obj)) {
+                if (typeof value === 'string' && value.trim()) {
+                    stringValues.push(value);
+                } else if (value && typeof value === 'object') {
+                    collect(value, depth + 1);
+                }
+            }
         };
-        const fireStall = (ms, phase) => {
-          if (settled) return;
-          settled = true;
-          log.warn(() => [`[${this.providerName}] Stream ${phase} — no data for ${ms}ms, aborting for retry`]);
-          try { response.data.destroy(); } catch (_) { /* abaikan */ }
-          const err = new Error(`Stream ${phase}: no data received within ${ms}ms`);
-          err.code = 'ECONNABORTED';
-          err.streamStall = true;
-          reject(err);
-        };
-        const armStallTimer = () => {
-          clearStallTimer();
-          // Sebelum token pertama → had first-byte; selepas itu → had inter-chunk.
-          const ms = firstChunkSeen ? stallMs : firstByteMs;
-          if (ms <= 0) return; // fasa berkaitan dilumpuhkan
-          const phase = firstChunkSeen ? 'stalled' : 'first-byte timeout';
-          stallTimer = setTimeout(() => fireStall(ms, phase), ms);
-          if (typeof stallTimer.unref === 'function') stallTimer.unref();
-        };
-        const safeResolve = (value) => { if (settled) return; settled = true; clearStallTimer(); resolve(value); };
-        const safeReject = (err) => { if (settled) return; settled = true; clearStallTimer(); reject(err); };
+        collect(message, 0);
+        for (const raw of stringValues) {
+            const extracted = this.extractStructuredBlock(raw);
+            if (extracted) return extracted;
+        }
+
+        return '';
+    }
+
+    /**
+     * Ekstrak blok berstruktur pertama daripada teks mentah: samaada blok
+     * berpagar markdown (\x60\x60\x60 ... \x60\x60\x60) atau objek JSON
+     * seimbang { ... }. Pulangkan kandungan dalamnya, dibersihkan.
+     * @param {string} raw - teks mentah
+     * @returns {string} blok yang diekstrak ('' jika tiada)
+     */
+    extractStructuredBlock(raw) {
+        const text = String(raw || '');
+        if (!text) return '';
+
+        // Fenced markdown block (hex escapes — konvensyen projek)
+        const fenceMatch = text.match(new RegExp('\\x60\\x60\\x60[a-z]*\\r?\\n?([\\s\\S]*?)\\x60\\x60\\x60', 'i'));
+        if (fenceMatch && fenceMatch[1] && fenceMatch[1].trim()) {
+            return fenceMatch[1].trim();
+        }
+
+        // JSON object seimbang pertama: scan dari '{' sehingga '}' dengan
+        // pengiraan kedalaman (tahan string nested + braces dalam string).
+        const start = text.indexOf('{');
+        if (start === -1) return '';
+        let depth = 0;
+        let inString = false;
+        let escaped = false;
+        for (let i = start; i < text.length; i++) {
+            const ch = text[i];
+            if (escaped) {
+                escaped = false;
+                continue;
+            }
+            if (ch === '\\') {
+                if (inString) escaped = true;
+                continue;
+            }
+            if (ch === '"') {
+                inString = !inString;
+                continue;
+            }
+            if (inString) continue;
+            if (ch === '{') depth++;
+            else if (ch === '}') {
+                depth--;
+                if (depth === 0) {
+                    const candidate = text.slice(start, i + 1);
+                    // Mesti nampak seperti objek JSON sebenar — bukan bracket dalam prosa
+                    if (candidate.includes(':')) return candidate;
+                    return '';
+                }
+            }
+        }
+        return '';
+    }
+
+    cleanTranslatedSubtitle(text) {
+        let cleaned = String(text || '');
+        cleaned = cleaned.replace(/<think>[\s\S]*?<\/think>/gi, '');
+        cleaned = cleaned.replace(/<think>[\s\S]*$/gi, '');
+        cleaned = cleaned.replace(/```[a-z]*\n?/gi, '').replace(/```/g, '');
+        cleaned = cleaned.replace(/\r\n/g, '\n').replace(/\r/g, '\n');
+        return cleaned.trim();
+    }
+
+    extractResponsesText(payload) {
+        if (!payload || typeof payload !== 'object') return '';
+        const direct = payload.output_text;
+        if (typeof direct === 'string' && direct.trim()) return direct;
+
+        const output = Array.isArray(payload.output) ? payload.output : [];
+        const collect = [];
+        for (const item of output) {
+            if (!item || !Array.isArray(item.content)) continue;
+            for (const part of item.content) {
+                if (!part) continue;
+                if (typeof part === 'string') collect.push(part);
+                else if (typeof part.text === 'string') collect.push(part.text);
+                else if (typeof part.output_text === 'string') collect.push(part.output_text);
+            }
+        }
+        return collect.join('');
+    }
+
+    recoverStreamPayload(rawStream, isCfRun = false) {
+        const result = { text: '', finishReason: null, payloadCount: 0 };
+        if (!rawStream || typeof rawStream !== 'string') return result;
 
         const processPayload = (payloadStr) => {
-          if (!payloadStr || !payloadStr.trim()) return;
-          const cleaned = payloadStr.trim().startsWith('data:')
-            ? payloadStr.trim().slice(5).trim()
-            : payloadStr.trim();
-          if (!cleaned || cleaned === '[DONE]') return;
-
-          let data;
-          try {
-            data = JSON.parse(cleaned);
-          } catch (_) {
-            return;
-          }
-
-          if (isCfRun && (data.finished || data.done === true)) {
-            finishReason = finishReason || 'stop';
-          }
-
-          const choice = data?.choices?.[0];
-          if (choice?.finish_reason) {
-            finishReason = choice.finish_reason;
-          }
-
-          const chunkText = isCfRun
-            ? this.extractCfChunkText(data)
-            : this.extractChunkText(choice);
-
-          if (chunkText) {
-            aggregated += chunkText;
-            const cleanedAgg = this.cleanTranslatedSubtitle(aggregated);
-            if (cleanedAgg && typeof onPartial === 'function') {
-              try { onPartial(cleanedAgg); } catch (_) { }
+            if (!payloadStr) return;
+            let data;
+            try {
+                data = JSON.parse(payloadStr);
+            } catch (_) {
+                return;
             }
-          }
+
+            if (isCfRun) {
+                const chunkText = this.extractCfChunkText(data);
+                if (chunkText) result.text += chunkText;
+                result.payloadCount += 1;
+                return;
+            }
+
+            const choice = data?.choices?.[0];
+            if (choice?.finish_reason && !result.finishReason) {
+                result.finishReason = choice.finish_reason;
+            }
+            const chunkText = this.extractChunkText(choice);
+            if (chunkText) result.text += chunkText;
+            result.payloadCount += 1;
         };
 
-        // Lengan watchdog awal — menutup tetingkap first-byte (TTFT).
-        armStallTimer();
-
-        response.data.on('data', (chunk) => {
-          if (settled) return;
-          // Token pertama tiba → tukar fasa watchdog ke had inter-chunk
-          // (longgar) untuk baki aliran; sebelum ini had first-byte (ketat).
-          firstChunkSeen = true;
-          // Reset watchdog: chunk tiba → sambungan hidup semula.
-          armStallTimer();
-          try {
-            const str = chunk.toString('utf8');
-            rawStream += str;
-            buffer += str;
-            const parts = buffer.split(/\r?\n/);
-            buffer = parts.pop();
-            parts.forEach(processPayload);
-          } catch (err) {
-            log.warn(() => [`[${this.providerName}] Stream chunk processing failed:`, err.message]);
-          }
-        });
-
-        response.data.on('end', () => {
-          if (settled) return;
-          clearStallTimer();
-          try {
-            if (buffer && buffer.trim()) {
-              processPayload(buffer);
-            }
-
-            if (!aggregated && rawStream.trim()) {
-              const recovered = this.recoverStreamPayload(rawStream, isCfRun);
-              aggregated = recovered.text || aggregated;
-              finishReason = finishReason || recovered.finishReason;
-            }
-
-            const cleaned = this.cleanTranslatedSubtitle(aggregated);
-
-            if (!cleaned) {
-              if (finishReason === 'content_filter') {
-                const err = new Error('PROHIBITED_CONTENT: content_filter');
-                err.translationErrorType = 'PROHIBITED_CONTENT';
-                safeReject(err);
-                return;
-              }
-              safeReject(new Error('No content returned from stream'));
-              return;
-            }
-
-            safeResolve(cleaned);
-          } catch (err) {
-            safeReject(err);
-          }
-        });
-
-        response.data.on('error', (err) => safeReject(err));
-      });
-    };
-
-    let lastError;
-    let fallbackUsed = false;
-    for (let attempt = 0; attempt <= this.maxRetries; attempt++) {
-      try {
-        return await executeStream();
-      } catch (error) {
-        lastError = error;
-
-        const status = error?.response?.status;
-        const rawErr = String(
-          error?.response?.data?.error?.message ||
-          error?.response?.data?.message ||
-          error?.message ||
-          ''
-        ).toLowerCase();
-
-        const looksUnsupported = status === 404 || status === 405 || status === 501
-          || (status === 400 && (rawErr.includes('stream') || rawErr.includes('sse') || rawErr.includes('event-stream')))
-          || (error.message && /stream/i.test(error.message));
-
-        if (!fallbackUsed && looksUnsupported) {
-          fallbackUsed = true;
-          log.warn(() => [`[${this.providerName}] Streaming not supported, falling back to non-stream`]);
-          const full = await this.translateSubtitle(subtitleContent, sourceLanguage, targetLanguage, customPrompt, requestOptions);
-          if (typeof onPartial === 'function') {
-            try { await onPartial(full); } catch (_) { }
-          }
-          return full;
+        const blocks = rawStream.split(/\r?\n\r?\n/);
+        for (const block of blocks) {
+            const cleaned = block
+                .split(/\r?\n/)
+                .map((line) => line.replace(/^data:\s*/, '').trim())
+                .filter(Boolean)
+                .join('');
+            processPayload(cleaned);
         }
 
-        if (attempt < this.maxRetries) {
-          log.warn(() => [`[${this.providerName}] Stream retry ${attempt + 1}/${this.maxRetries} after error:`, error.message]);
-          continue;
-        }
-        handleTranslationError(error, this.providerName, { skipResponseData: true });
-      }
+        return result;
     }
-
-    if (lastError) throw lastError;
-  }
-
-  async countTokensForTranslation() {
-    return null;
-  }
-
-  extractChunkText(choice) {
-    if (!choice) return '';
-    const delta = choice.delta || {};
-    if (typeof delta.content === 'string') return delta.content;
-    if (typeof delta.text === 'string') return delta.text;
-    if (choice.message?.content && typeof choice.message.content === 'string') {
-      return choice.message.content;
-    }
-    return '';
-  }
-
-  extractCfChunkText(payload) {
-    if (!payload || typeof payload !== 'object') return '';
-    if (typeof payload.response === 'string') return payload.response;
-    if (payload.result) {
-      if (typeof payload.result.response === 'string') return payload.result.response;
-      if (typeof payload.result.output === 'string') return payload.result.output;
-    }
-    return '';
-  }
-
-  /**
-   * Unthrottle Mandat §C (2026-09-26): Ekstraksi respons chat tahan lasak
-   * bagi endpoint reasoning-models (GLM/Zhipu dsb.). Turutan fallback:
-   *   1. choice.message.content            — jawapan akhir standard.
-   *   2. choice.message.reasoning_content  — sesetengah endpoint menukar
-   *      reasoning GLM kepada medan ini; JSON/fenced-block dibuang
-   *      sebelum digunakan.
-   *   3. Stringified message                — content mungkin berpagar
-   *      markdown atau bertindih dalam medan lain; blok JSON/fenced pertama
-   *      diekstrak dengan selamat.
-   * @param {Object|undefined} message - choice.message payload
-   * @returns {string} teks yang diekstrak ('' jika tiada)
-   */
-  extractChatMessageText(message) {
-    if (!message || typeof message !== 'object') return '';
-
-    // 1. Laluan standard: content
-    const content = typeof message.content === 'string' ? message.content.trim() : '';
-    if (content) return content;
-
-    // 2. Reasoning-only endpoint: reasoning_content membawa jawapan
-    const reasoning = typeof message.reasoning_content === 'string' ? message.reasoning_content.trim() : '';
-    if (reasoning) {
-      const extracted = this.extractStructuredBlock(reasoning);
-      if (extracted) return extracted;
-      return reasoning;
-    }
-
-    // 3. Fallback terakhir (Mandat §C): imbas rekursif nilai string mesej
-    //    (RAW — bukan stringify, kerana stringify melepaskan braces dalam
-    //    string dan memusnahkan struktur JSON terbenam) dan tarik blok
-    //    JSON / fenced markdown pertama yang wujud dalam mana-mana medan.
-    const stringValues = [];
-    const collect = (obj, depth) => {
-      if (!obj || typeof obj !== 'object' || depth > 3) return;
-      for (const value of Object.values(obj)) {
-        if (typeof value === 'string' && value.trim()) {
-          stringValues.push(value);
-        } else if (value && typeof value === 'object') {
-          collect(value, depth + 1);
-        }
-      }
-    };
-    collect(message, 0);
-    for (const raw of stringValues) {
-      const extracted = this.extractStructuredBlock(raw);
-      if (extracted) return extracted;
-    }
-
-    return '';
-  }
-
-  /**
-   * Ekstrak blok berstruktur pertama daripada teks mentah: samaada blok
-   * berpagar markdown (\x60\x60\x60 ... \x60\x60\x60) atau objek JSON
-   * seimbang { ... }. Pulangkan kandungan dalamnya, dibersihkan.
-   * @param {string} raw - teks mentah
-   * @returns {string} blok yang diekstrak ('' jika tiada)
-   */
-  extractStructuredBlock(raw) {
-    const text = String(raw || '');
-    if (!text) return '';
-
-    // Fenced markdown block (hex escapes — konvensyen projek)
-    const fenceMatch = text.match(new RegExp('\\x60\\x60\\x60[a-z]*\\r?\\n?([\\s\\S]*?)\\x60\\x60\\x60', 'i'));
-    if (fenceMatch && fenceMatch[1] && fenceMatch[1].trim()) {
-      return fenceMatch[1].trim();
-    }
-
-    // JSON object seimbang pertama: scan dari '{' sehingga '}' dengan
-    // pengiraan kedalaman (tahan string nested + braces dalam string).
-    const start = text.indexOf('{');
-    if (start === -1) return '';
-    let depth = 0;
-    let inString = false;
-    let escaped = false;
-    for (let i = start; i < text.length; i++) {
-      const ch = text[i];
-      if (escaped) { escaped = false; continue; }
-      if (ch === '\\') { if (inString) escaped = true; continue; }
-      if (ch === '"') { inString = !inString; continue; }
-      if (inString) continue;
-      if (ch === '{') depth++;
-      else if (ch === '}') {
-        depth--;
-        if (depth === 0) {
-          const candidate = text.slice(start, i + 1);
-          // Mesti nampak seperti objek JSON sebenar — bukan bracket dalam prosa
-          if (candidate.includes(':')) return candidate;
-          return '';
-        }
-      }
-    }
-    return '';
-  }
-
-  cleanTranslatedSubtitle(text) {
-    let cleaned = String(text || '');
-    cleaned = cleaned.replace(/<think>[\s\S]*?<\/think>/gi, '');
-    cleaned = cleaned.replace(/<think>[\s\S]*$/gi, '');
-    cleaned = cleaned.replace(/```[a-z]*\n?/gi, '').replace(/```/g, '');
-    cleaned = cleaned.replace(/\r\n/g, '\n').replace(/\r/g, '\n');
-    return cleaned.trim();
-  }
-
-  extractResponsesText(payload) {
-    if (!payload || typeof payload !== 'object') return '';
-    const direct = payload.output_text;
-    if (typeof direct === 'string' && direct.trim()) return direct;
-
-    const output = Array.isArray(payload.output) ? payload.output : [];
-    const collect = [];
-    for (const item of output) {
-      if (!item || !Array.isArray(item.content)) continue;
-      for (const part of item.content) {
-        if (!part) continue;
-        if (typeof part === 'string') collect.push(part);
-        else if (typeof part.text === 'string') collect.push(part.text);
-        else if (typeof part.output_text === 'string') collect.push(part.output_text);
-      }
-    }
-    return collect.join('');
-  }
-
-  recoverStreamPayload(rawStream, isCfRun = false) {
-    const result = { text: '', finishReason: null, payloadCount: 0 };
-    if (!rawStream || typeof rawStream !== 'string') return result;
-
-    const processPayload = (payloadStr) => {
-      if (!payloadStr) return;
-      let data;
-      try { data = JSON.parse(payloadStr); } catch (_) { return; }
-
-      if (isCfRun) {
-        const chunkText = this.extractCfChunkText(data);
-        if (chunkText) result.text += chunkText;
-        result.payloadCount += 1;
-        return;
-      }
-
-      const choice = data?.choices?.[0];
-      if (choice?.finish_reason && !result.finishReason) {
-        result.finishReason = choice.finish_reason;
-      }
-      const chunkText = this.extractChunkText(choice);
-      if (chunkText) result.text += chunkText;
-      result.payloadCount += 1;
-    };
-
-    const blocks = rawStream.split(/\r?\n\r?\n/);
-    for (const block of blocks) {
-      const cleaned = block.split(/\r?\n/).map(line => line.replace(/^data:\s*/, '').trim()).filter(Boolean).join('');
-      processPayload(cleaned);
-    }
-
-    return result;
-  }
 }
 
 module.exports = OpenAICompatibleProvider;

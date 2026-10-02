@@ -63,9 +63,10 @@ test('download handler only renders the quota subtitle for a real quota response
     });
 
     OpenSubtitlesService.prototype.downloadSubtitle = async function (fileId) {
-        const message = fileId === 'real-quota'
-            ? 'You have downloaded the allowed 1000 subtitles in the last 24h. Your quota will be renewed later.'
-            : 'The requested file ID is not available';
+        const message =
+            fileId === 'real-quota'
+                ? 'You have downloaded the allowed 1000 subtitles in the last 24h. Your quota will be renewed later.'
+                : 'The requested file ID is not available';
         handleDownloadError(upstream406(message), 'OpenSubtitles');
     };
 

@@ -1,4 +1,4 @@
-(function() {
+(function () {
     'use strict';
 
     var valueDescriptor = Object.getOwnPropertyDescriptor(HTMLSelectElement.prototype, 'value');
@@ -35,28 +35,22 @@
         if (!select.parentNode) return null;
 
         function isPrintableKey(e) {
-            return (
-                e.key &&
-                e.key.length === 1 &&
-                !e.ctrlKey &&
-                !e.metaKey &&
-                !e.altKey
-            );
+            return e.key && e.key.length === 1 && !e.ctrlKey && !e.metaKey && !e.altKey;
         }
 
         var wrapper = document.createElement('div');
         wrapper.className = 'combo';
-        ['compact-select', 'target-select', 'subtitle-list'].forEach(function(cls) {
+        ['compact-select', 'target-select', 'subtitle-list'].forEach(function (cls) {
             if (select.classList && select.classList.contains(cls)) {
                 wrapper.classList.add(cls);
             }
         });
-        ['width', 'maxWidth', 'minWidth'].forEach(function(prop) {
+        ['width', 'maxWidth', 'minWidth'].forEach(function (prop) {
             if (select.style && select.style[prop]) {
                 wrapper.style[prop] = select.style[prop];
             }
         });
-        var idBase = select.id || ('combo-' + Math.random().toString(36).slice(2));
+        var idBase = select.id || 'combo-' + Math.random().toString(36).slice(2);
         var panelId = idBase + '-panel';
 
         var button = document.createElement('button');
@@ -150,7 +144,7 @@
             var label = selectedOption ? selectedOption.textContent.trim() : getPlaceholder();
             button.textContent = label || translate('common.selectOption', 'Select an option');
 
-            Array.prototype.forEach.call(panel.querySelectorAll('.combo-option'), function(optEl) {
+            Array.prototype.forEach.call(panel.querySelectorAll('.combo-option'), function (optEl) {
                 var isSelected = optEl.dataset.value === value;
                 optEl.setAttribute('aria-selected', isSelected ? 'true' : 'false');
             });
@@ -160,7 +154,7 @@
 
         function buildOptions() {
             panel.innerHTML = '';
-            Array.prototype.forEach.call(select.options || [], function(opt) {
+            Array.prototype.forEach.call(select.options || [], function (opt) {
                 var optEl = document.createElement('div');
                 optEl.className = 'combo-option';
                 optEl.setAttribute('role', 'option');
@@ -243,7 +237,9 @@
             if (focusedIndex >= 0) {
                 targetIndex = Math.min(options.length - 1, Math.max(0, focusedIndex + step));
             } else {
-                var selectedIndex = options.findIndex(function(opt) { return opt.getAttribute('aria-selected') === 'true'; });
+                var selectedIndex = options.findIndex(function (opt) {
+                    return opt.getAttribute('aria-selected') === 'true';
+                });
                 targetIndex = selectedIndex >= 0 ? selectedIndex : 0;
             }
             var target = options[targetIndex];
@@ -269,7 +265,9 @@
 
             var startIndex = options.indexOf(document.activeElement);
             if (startIndex < 0) {
-                startIndex = options.findIndex(function(opt) { return opt.getAttribute('aria-selected') === 'true'; });
+                startIndex = options.findIndex(function (opt) {
+                    return opt.getAttribute('aria-selected') === 'true';
+                });
             }
             if (startIndex < 0) {
                 startIndex = -1;
@@ -301,7 +299,7 @@
             button: button,
             panel: panel,
             select: select,
-            close: function() {
+            close: function () {
                 wrapper.classList.remove('open');
                 button.setAttribute('aria-expanded', 'false');
                 typeBuffer = '';
@@ -317,7 +315,7 @@
                     activeCombo = null;
                 }
             },
-            open: function() {
+            open: function () {
                 if (select.disabled) return;
                 closeActiveCombo(state);
                 activeCombo = state;
@@ -340,7 +338,7 @@
             rebuild: buildOptions
         };
 
-        button.addEventListener('click', function(e) {
+        button.addEventListener('click', function (e) {
             e.preventDefault();
             if (wrapper.classList.contains('open')) {
                 state.close();
@@ -349,7 +347,7 @@
             }
         });
 
-        button.addEventListener('keydown', function(e) {
+        button.addEventListener('keydown', function (e) {
             if (e.key === 'ArrowDown' || e.key === 'ArrowUp') {
                 e.preventDefault();
                 if (!wrapper.classList.contains('open')) {
@@ -368,7 +366,7 @@
             }
         });
 
-        panel.addEventListener('click', function(e) {
+        panel.addEventListener('click', function (e) {
             var optEl = e.target.closest('.combo-option');
             if (!optEl || optEl.getAttribute('aria-disabled') === 'true') return;
             setValue(optEl.dataset.value || '');
@@ -376,7 +374,7 @@
             button.focus({ preventScroll: true });
         });
 
-        panel.addEventListener('keydown', function(e) {
+        panel.addEventListener('keydown', function (e) {
             if (e.key === 'ArrowDown') {
                 e.preventDefault();
                 focusOption(1);
@@ -409,17 +407,17 @@
 
         select.addEventListener('change', syncFromSelect);
 
-        var observer = new MutationObserver(function() {
+        var observer = new MutationObserver(function () {
             buildOptions();
         });
         observer.observe(select, { childList: true, subtree: true, attributes: true, attributeFilter: ['disabled'] });
 
         if (valueDescriptor && !select.__comboValuePatched) {
             Object.defineProperty(select, 'value', {
-                get: function() {
+                get: function () {
                     return valueDescriptor.get.call(this);
                 },
-                set: function(v) {
+                set: function (v) {
                     valueDescriptor.set.call(this, v);
                     syncFromSelect();
                     return v;
@@ -440,20 +438,20 @@
         var scope = root || document;
         var selects = scope.querySelectorAll('select');
         var combos = [];
-        Array.prototype.forEach.call(selects, function(sel) {
+        Array.prototype.forEach.call(selects, function (sel) {
             var combo = enhanceSelect(sel);
             if (combo) combos.push(combo);
         });
         return combos;
     }
 
-    document.addEventListener('click', function(e) {
+    document.addEventListener('click', function (e) {
         if (activeCombo && !activeCombo.wrapper.contains(e.target)) {
             activeCombo.close();
         }
     });
 
-    document.addEventListener('keydown', function(e) {
+    document.addEventListener('keydown', function (e) {
         if (e.key === 'Escape' && activeCombo) {
             var combo = activeCombo;
             combo.close();
@@ -466,6 +464,8 @@
     window.ComboBox = {
         enhanceSelect: enhanceSelect,
         enhanceAll: enhanceAll,
-        closeAll: function() { closeActiveCombo(null); }
+        closeAll: function () {
+            closeActiveCombo(null);
+        }
     };
 })();

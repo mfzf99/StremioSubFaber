@@ -5,7 +5,10 @@ const { getTranslator, loadLocale, DEFAULT_LANG } = require('../utils/i18n');
  * Registers routes for the file-upload translation page.
  * This keeps the page-specific rendering logic out of index.js.
  */
-function registerFileUploadRoutes(app, { log, resolveConfigGuarded, computeConfigHash, setNoStore, respondStorageUnavailable }) {
+function registerFileUploadRoutes(
+    app,
+    { log, resolveConfigGuarded, computeConfigHash, setNoStore, respondStorageUnavailable }
+) {
     if (!app) {
         throw new Error('Express app instance is required to register file upload routes');
     }
@@ -26,12 +29,19 @@ function registerFileUploadRoutes(app, { log, resolveConfigGuarded, computeConfi
 
             // Redirect to the actual upload page
             // Using a separate non-addon route so browser opens it directly
-            res.redirect(302, `/file-upload?config=${encodeURIComponent(configStr)}&videoId=${encodeURIComponent(videoId)}`);
+            res.redirect(
+                302,
+                `/file-upload?config=${encodeURIComponent(configStr)}&videoId=${encodeURIComponent(videoId)}`
+            );
         } catch (error) {
             if (respondStorageUnavailable && respondStorageUnavailable(res, error, '[File Translation]')) return;
             log.error(() => '[File Translation] Error:', error);
             const uiLang = (() => {
-                try { return loadLocale(req.query.lang || req.query.uiLang || DEFAULT_LANG).lang || DEFAULT_LANG; } catch (_) { return DEFAULT_LANG; }
+                try {
+                    return loadLocale(req.query.lang || req.query.uiLang || DEFAULT_LANG).lang || DEFAULT_LANG;
+                } catch (_) {
+                    return DEFAULT_LANG;
+                }
             })();
             const tx = getTranslator(uiLang);
             res.status(500).send(tx('api.fileUpload.loadFailed', {}, 'Failed to load file translation page'));
@@ -70,7 +80,11 @@ function registerFileUploadRoutes(app, { log, resolveConfigGuarded, computeConfi
             if (respondStorageUnavailable && respondStorageUnavailable(res, error, '[File Upload Page]')) return;
             log.error(() => '[File Upload Page] Error:', error);
             const uiLang = (() => {
-                try { return loadLocale(req.query.lang || req.query.uiLang || DEFAULT_LANG).lang || DEFAULT_LANG; } catch (_) { return DEFAULT_LANG; }
+                try {
+                    return loadLocale(req.query.lang || req.query.uiLang || DEFAULT_LANG).lang || DEFAULT_LANG;
+                } catch (_) {
+                    return DEFAULT_LANG;
+                }
             })();
             const tx = getTranslator(uiLang);
             res.status(500).send(tx('api.fileUpload.loadFailed', {}, 'Failed to load file translation page'));
@@ -79,5 +93,5 @@ function registerFileUploadRoutes(app, { log, resolveConfigGuarded, computeConfi
 }
 
 module.exports = {
-    registerFileUploadRoutes,
+    registerFileUploadRoutes
 };

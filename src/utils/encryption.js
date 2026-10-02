@@ -32,96 +32,106 @@ let encryptionKey = null;
  * @returns {Buffer} Encryption key
  */
 function getEncryptionKey() {
-  if (encryptionKey) {
+    if (encryptionKey) {
+        return encryptionKey;
+    }
+
+    // Try to load from environment variable
+    if (process.env.ENCRYPTION_KEY) {
+        try {
+            const keyHex = process.env.ENCRYPTION_KEY;
+            if (keyHex.length !== KEY_LENGTH * 2) {
+                throw new Error(`ENCRYPTION_KEY must be ${KEY_LENGTH * 2} hex characters (${KEY_LENGTH} bytes)`);
+            }
+            encryptionKey = Buffer.from(keyHex, 'hex');
+            log.debug(() => '[Encryption] Using encryption key from environment variable');
+            return encryptionKey;
+        } catch (error) {
+            log.error(() => ['[Encryption] Invalid ENCRYPTION_KEY in environment:', error.message]);
+            throw error;
+        }
+    }
+
+    // Try to load from file
+    log.debug(() => ['[Encryption] Checking for encryption key file:', ENCRYPTION_KEY_FILE]);
+    if (fs.existsSync(ENCRYPTION_KEY_FILE)) {
+        try {
+            log.debug(() => '[Encryption] Encryption key file exists, attempting to load...');
+            const keyHex = fs.readFileSync(ENCRYPTION_KEY_FILE, 'utf8').trim();
+            if (keyHex.length !== KEY_LENGTH * 2) {
+                throw new Error(
+                    `Encryption key file corrupt: expected ${KEY_LENGTH * 2} hex characters, got ${keyHex.length}`
+                );
+            }
+            encryptionKey = Buffer.from(keyHex, 'hex');
+            log.info(() => ['[Encryption] ✓ Successfully loaded encryption key from file:', ENCRYPTION_KEY_FILE]);
+            return encryptionKey;
+        } catch (error) {
+            log.error(() => ['[Encryption] Failed to load encryption key from file:', error.message]);
+            log.error(() => ['[Encryption] CRITICAL: File exists but cannot be read. Manual intervention required.']);
+            log.error(() => ['[Encryption] To fix: Delete the corrupt key file or fix permissions, then restart.']);
+            log.error(() => [
+                '[Encryption] WARNING: Deleting the key file will make existing encrypted data inaccessible!'
+            ]);
+            // IMPORTANT: Do NOT fall through to key generation - this would overwrite the existing key file
+            // and make all previously encrypted data permanently inaccessible
+            throw new Error(`Cannot load existing encryption key from ${ENCRYPTION_KEY_FILE}: ${error.message}`);
+        }
+    } else {
+        log.debug(() => ['[Encryption] Encryption key file does not exist, will generate new one']);
+    }
+
+    // Generate new key and save to file
+    encryptionKey = crypto.randomBytes(KEY_LENGTH);
+    const keyHex = encryptionKey.toString('hex');
+
+    try {
+        // Ensure the directory exists before writing
+        const keyDir = path.dirname(ENCRYPTION_KEY_FILE);
+        if (!fs.existsSync(keyDir)) {
+            log.debug(() => ['[Encryption] Creating encryption key directory:', keyDir]);
+            fs.mkdirSync(keyDir, { recursive: true, mode: 0o755 }); // Changed from 0o700 to allow node user access
+            log.debug(() => ['[Encryption] Created encryption key directory:', keyDir]);
+        }
+
+        // Verify directory is writable before attempting to write key
+        try {
+            fs.accessSync(keyDir, fs.constants.W_OK);
+        } catch (accessError) {
+            throw new Error(`Directory ${keyDir} is not writable: ${accessError.message}`);
+        }
+
+        fs.writeFileSync(ENCRYPTION_KEY_FILE, keyHex, { mode: 0o600 }); // Read/write for owner only
+        log.warn(() => ['[Encryption] ⚠️  Generated NEW encryption key and saved to:', ENCRYPTION_KEY_FILE]);
+        log.warn(() => '[Encryption] ⚠️  IMPORTANT: Back up this file! Loss of this key means loss of encrypted data.');
+        log.warn(() => '[Encryption] ⚠️  For production, use ENCRYPTION_KEY environment variable instead.');
+    } catch (error) {
+        log.error(() => ['[Encryption] Failed to save encryption key to file:', error.message]);
+        log.error(() => ['[Encryption] Key file path:', ENCRYPTION_KEY_FILE]);
+        log.error(() => ['[Encryption] Directory exists:', fs.existsSync(path.dirname(ENCRYPTION_KEY_FILE))]);
+        try {
+            log.error(() => [
+                '[Encryption] Current UID:GID:',
+                process.getuid && process.getuid(),
+                process.getgid && process.getgid()
+            ]);
+        } catch (_) {
+            /* getuid/getgid may not exist on Windows */
+        }
+        log.error(() => ['[Encryption] ──────────────────────────────────────────────────────']);
+        log.error(() => ['[Encryption] FIX: Ensure the keys directory is writable by the user running this process.']);
+        log.error(() => ['[Encryption] If using Docker with "user: PUID:PGID", run on the host:']);
+        log.error(() => ['[Encryption]   chown -R <PUID>:<PGID> <host-path-to-keys-directory>']);
+        log.error(() => ['[Encryption] Or set ENCRYPTION_KEY env var directly instead of using a key file.']);
+        log.error(() => ['[Encryption] ──────────────────────────────────────────────────────']);
+        // Running with an in-memory key makes all encrypted data unrecoverable after
+        // a restart. Fail fast so operators fix the persistence/permissions issue
+        // instead of silently generating a new key on every boot and "losing" all
+        // stored sessions/configs.
+        throw new Error(`Failed to persist encryption key to ${ENCRYPTION_KEY_FILE}; aborting to avoid key loss`);
+    }
+
     return encryptionKey;
-  }
-
-  // Try to load from environment variable
-  if (process.env.ENCRYPTION_KEY) {
-    try {
-      const keyHex = process.env.ENCRYPTION_KEY;
-      if (keyHex.length !== KEY_LENGTH * 2) {
-        throw new Error(`ENCRYPTION_KEY must be ${KEY_LENGTH * 2} hex characters (${KEY_LENGTH} bytes)`);
-      }
-      encryptionKey = Buffer.from(keyHex, 'hex');
-      log.debug(() => '[Encryption] Using encryption key from environment variable');
-      return encryptionKey;
-    } catch (error) {
-      log.error(() => ['[Encryption] Invalid ENCRYPTION_KEY in environment:', error.message]);
-      throw error;
-    }
-  }
-
-  // Try to load from file
-  log.debug(() => ['[Encryption] Checking for encryption key file:', ENCRYPTION_KEY_FILE]);
-  if (fs.existsSync(ENCRYPTION_KEY_FILE)) {
-    try {
-      log.debug(() => '[Encryption] Encryption key file exists, attempting to load...');
-      const keyHex = fs.readFileSync(ENCRYPTION_KEY_FILE, 'utf8').trim();
-      if (keyHex.length !== KEY_LENGTH * 2) {
-        throw new Error(`Encryption key file corrupt: expected ${KEY_LENGTH * 2} hex characters, got ${keyHex.length}`);
-      }
-      encryptionKey = Buffer.from(keyHex, 'hex');
-      log.info(() => ['[Encryption] ✓ Successfully loaded encryption key from file:', ENCRYPTION_KEY_FILE]);
-      return encryptionKey;
-    } catch (error) {
-      log.error(() => ['[Encryption] Failed to load encryption key from file:', error.message]);
-      log.error(() => ['[Encryption] CRITICAL: File exists but cannot be read. Manual intervention required.']);
-      log.error(() => ['[Encryption] To fix: Delete the corrupt key file or fix permissions, then restart.']);
-      log.error(() => ['[Encryption] WARNING: Deleting the key file will make existing encrypted data inaccessible!']);
-      // IMPORTANT: Do NOT fall through to key generation - this would overwrite the existing key file
-      // and make all previously encrypted data permanently inaccessible
-      throw new Error(`Cannot load existing encryption key from ${ENCRYPTION_KEY_FILE}: ${error.message}`);
-    }
-  } else {
-    log.debug(() => ['[Encryption] Encryption key file does not exist, will generate new one']);
-  }
-
-  // Generate new key and save to file
-  encryptionKey = crypto.randomBytes(KEY_LENGTH);
-  const keyHex = encryptionKey.toString('hex');
-
-  try {
-    // Ensure the directory exists before writing
-    const keyDir = path.dirname(ENCRYPTION_KEY_FILE);
-    if (!fs.existsSync(keyDir)) {
-      log.debug(() => ['[Encryption] Creating encryption key directory:', keyDir]);
-      fs.mkdirSync(keyDir, { recursive: true, mode: 0o755 }); // Changed from 0o700 to allow node user access
-      log.debug(() => ['[Encryption] Created encryption key directory:', keyDir]);
-    }
-
-    // Verify directory is writable before attempting to write key
-    try {
-      fs.accessSync(keyDir, fs.constants.W_OK);
-    } catch (accessError) {
-      throw new Error(`Directory ${keyDir} is not writable: ${accessError.message}`);
-    }
-
-    fs.writeFileSync(ENCRYPTION_KEY_FILE, keyHex, { mode: 0o600 }); // Read/write for owner only
-    log.warn(() => ['[Encryption] ⚠️  Generated NEW encryption key and saved to:', ENCRYPTION_KEY_FILE]);
-    log.warn(() => '[Encryption] ⚠️  IMPORTANT: Back up this file! Loss of this key means loss of encrypted data.');
-    log.warn(() => '[Encryption] ⚠️  For production, use ENCRYPTION_KEY environment variable instead.');
-  } catch (error) {
-    log.error(() => ['[Encryption] Failed to save encryption key to file:', error.message]);
-    log.error(() => ['[Encryption] Key file path:', ENCRYPTION_KEY_FILE]);
-    log.error(() => ['[Encryption] Directory exists:', fs.existsSync(path.dirname(ENCRYPTION_KEY_FILE))]);
-    try {
-      log.error(() => ['[Encryption] Current UID:GID:', process.getuid && process.getuid(), process.getgid && process.getgid()]);
-    } catch (_) { /* getuid/getgid may not exist on Windows */ }
-    log.error(() => ['[Encryption] ──────────────────────────────────────────────────────']);
-    log.error(() => ['[Encryption] FIX: Ensure the keys directory is writable by the user running this process.']);
-    log.error(() => ['[Encryption] If using Docker with "user: PUID:PGID", run on the host:']);
-    log.error(() => ['[Encryption]   chown -R <PUID>:<PGID> <host-path-to-keys-directory>']);
-    log.error(() => ['[Encryption] Or set ENCRYPTION_KEY env var directly instead of using a key file.']);
-    log.error(() => ['[Encryption] ──────────────────────────────────────────────────────']);
-    // Running with an in-memory key makes all encrypted data unrecoverable after
-    // a restart. Fail fast so operators fix the persistence/permissions issue
-    // instead of silently generating a new key on every boot and "losing" all
-    // stored sessions/configs.
-    throw new Error(`Failed to persist encryption key to ${ENCRYPTION_KEY_FILE}; aborting to avoid key loss`);
-  }
-
-  return encryptionKey;
 }
 
 /**
@@ -130,30 +140,30 @@ function getEncryptionKey() {
  * @returns {string} Encrypted data as base64 string with format: version:iv:authTag:ciphertext
  */
 function encrypt(data) {
-  try {
-    const key = getEncryptionKey();
-    const iv = crypto.randomBytes(IV_LENGTH);
-    const cipher = crypto.createCipheriv(ALGORITHM, key, iv);
+    try {
+        const key = getEncryptionKey();
+        const iv = crypto.randomBytes(IV_LENGTH);
+        const cipher = crypto.createCipheriv(ALGORITHM, key, iv);
 
-    // Stringify data if it's an object
-    const plaintext = typeof data === 'string' ? data : JSON.stringify(data);
+        // Stringify data if it's an object
+        const plaintext = typeof data === 'string' ? data : JSON.stringify(data);
 
-    // Encrypt
-    let ciphertext = cipher.update(plaintext, 'utf8', 'base64');
-    ciphertext += cipher.final('base64');
+        // Encrypt
+        let ciphertext = cipher.update(plaintext, 'utf8', 'base64');
+        ciphertext += cipher.final('base64');
 
-    // Get authentication tag
-    const authTag = cipher.getAuthTag();
+        // Get authentication tag
+        const authTag = cipher.getAuthTag();
 
-    // Format: version:iv:authTag:ciphertext (all base64 encoded)
-    // Version 1 = AES-256-GCM
-    const encrypted = `1:${iv.toString('base64')}:${authTag.toString('base64')}:${ciphertext}`;
+        // Format: version:iv:authTag:ciphertext (all base64 encoded)
+        // Version 1 = AES-256-GCM
+        const encrypted = `1:${iv.toString('base64')}:${authTag.toString('base64')}:${ciphertext}`;
 
-    return encrypted;
-  } catch (error) {
-    log.error(() => ['[Encryption] Encryption failed:', error.message]);
-    throw new Error('Failed to encrypt data: ' + error.message);
-  }
+        return encrypted;
+    } catch (error) {
+        log.error(() => ['[Encryption] Encryption failed:', error.message]);
+        throw new Error('Failed to encrypt data: ' + error.message);
+    }
 }
 
 /**
@@ -163,81 +173,87 @@ function encrypt(data) {
  * @returns {any} Decrypted data (parsed as JSON if possible)
  */
 function decrypt(encryptedData, returnRawOnError = true) {
-  try {
-    // Check if data is actually encrypted (has our format)
-    if (!encryptedData || typeof encryptedData !== 'string') {
-      if (returnRawOnError) {
-        return encryptedData; // Return as-is (backward compatibility)
-      }
-      throw new Error('Invalid encrypted data format');
-    }
-
-    // Check for encryption format: version:iv:authTag:ciphertext
-    const parts = encryptedData.split(':');
-    if (parts.length !== 4 || parts[0] !== '1') {
-      // Not encrypted or unknown version, return as-is for backward compatibility
-      if (returnRawOnError) {
-        // Try to parse as JSON if it looks like JSON
-        if (encryptedData.trim().startsWith('{') || encryptedData.trim().startsWith('[')) {
-          try {
-            return JSON.parse(encryptedData);
-          } catch {
-            return encryptedData;
-          }
-        }
-        return encryptedData;
-      }
-      throw new Error('Invalid encryption format or version');
-    }
-
-    const [version, ivBase64, authTagBase64, ciphertext] = parts;
-
-    const key = getEncryptionKey();
-    const iv = Buffer.from(ivBase64, 'base64');
-    const authTag = Buffer.from(authTagBase64, 'base64');
-
-    const decipher = crypto.createDecipheriv(ALGORITHM, key, iv);
-    decipher.setAuthTag(authTag);
-
-    // Decrypt
-    let decrypted = decipher.update(ciphertext, 'base64', 'utf8');
-    decrypted += decipher.final('utf8');
-
-    // Try to parse as JSON
     try {
-      return JSON.parse(decrypted);
-    } catch {
-      return decrypted; // Return as string if not JSON
-    }
-  } catch (error) {
-    // SECURITY: If the data matched our encrypted format (1:iv:authTag:ciphertext) but
-    // decryption failed (e.g. key mismatch), NEVER return the raw ciphertext. Returning
-    // it would leak ciphertext into API Authorization headers sent to third-party services.
-    // Instead, return null so callers can detect the failure and handle it gracefully.
-    const looksEncrypted = encryptedData && typeof encryptedData === 'string' && isEncrypted(encryptedData);
-
-    if (looksEncrypted) {
-      log.error(() => ['[Encryption] Decryption failed for encrypted data (key mismatch?). Returning null to prevent ciphertext leak:', error.message]);
-      return null;
-    }
-
-    if (returnRawOnError) {
-      log.warn(() => ['[Encryption] Decryption failed for non-encrypted data, returning as-is (backward compatibility):', error.message]);
-      // Try to parse as JSON if it looks like JSON
-      if (encryptedData && typeof encryptedData === 'string') {
-        if (encryptedData.trim().startsWith('{') || encryptedData.trim().startsWith('[')) {
-          try {
-            return JSON.parse(encryptedData);
-          } catch {
-            return encryptedData;
-          }
+        // Check if data is actually encrypted (has our format)
+        if (!encryptedData || typeof encryptedData !== 'string') {
+            if (returnRawOnError) {
+                return encryptedData; // Return as-is (backward compatibility)
+            }
+            throw new Error('Invalid encrypted data format');
         }
-      }
-      return encryptedData;
+
+        // Check for encryption format: version:iv:authTag:ciphertext
+        const parts = encryptedData.split(':');
+        if (parts.length !== 4 || parts[0] !== '1') {
+            // Not encrypted or unknown version, return as-is for backward compatibility
+            if (returnRawOnError) {
+                // Try to parse as JSON if it looks like JSON
+                if (encryptedData.trim().startsWith('{') || encryptedData.trim().startsWith('[')) {
+                    try {
+                        return JSON.parse(encryptedData);
+                    } catch {
+                        return encryptedData;
+                    }
+                }
+                return encryptedData;
+            }
+            throw new Error('Invalid encryption format or version');
+        }
+
+        const [version, ivBase64, authTagBase64, ciphertext] = parts;
+
+        const key = getEncryptionKey();
+        const iv = Buffer.from(ivBase64, 'base64');
+        const authTag = Buffer.from(authTagBase64, 'base64');
+
+        const decipher = crypto.createDecipheriv(ALGORITHM, key, iv);
+        decipher.setAuthTag(authTag);
+
+        // Decrypt
+        let decrypted = decipher.update(ciphertext, 'base64', 'utf8');
+        decrypted += decipher.final('utf8');
+
+        // Try to parse as JSON
+        try {
+            return JSON.parse(decrypted);
+        } catch {
+            return decrypted; // Return as string if not JSON
+        }
+    } catch (error) {
+        // SECURITY: If the data matched our encrypted format (1:iv:authTag:ciphertext) but
+        // decryption failed (e.g. key mismatch), NEVER return the raw ciphertext. Returning
+        // it would leak ciphertext into API Authorization headers sent to third-party services.
+        // Instead, return null so callers can detect the failure and handle it gracefully.
+        const looksEncrypted = encryptedData && typeof encryptedData === 'string' && isEncrypted(encryptedData);
+
+        if (looksEncrypted) {
+            log.error(() => [
+                '[Encryption] Decryption failed for encrypted data (key mismatch?). Returning null to prevent ciphertext leak:',
+                error.message
+            ]);
+            return null;
+        }
+
+        if (returnRawOnError) {
+            log.warn(() => [
+                '[Encryption] Decryption failed for non-encrypted data, returning as-is (backward compatibility):',
+                error.message
+            ]);
+            // Try to parse as JSON if it looks like JSON
+            if (encryptedData && typeof encryptedData === 'string') {
+                if (encryptedData.trim().startsWith('{') || encryptedData.trim().startsWith('[')) {
+                    try {
+                        return JSON.parse(encryptedData);
+                    } catch {
+                        return encryptedData;
+                    }
+                }
+            }
+            return encryptedData;
+        }
+        log.error(() => ['[Encryption] Decryption failed:', error.message]);
+        throw new Error('Failed to decrypt data: ' + error.message);
     }
-    log.error(() => ['[Encryption] Decryption failed:', error.message]);
-    throw new Error('Failed to decrypt data: ' + error.message);
-  }
 }
 
 /**
@@ -246,137 +262,154 @@ function decrypt(encryptedData, returnRawOnError = true) {
  * @returns {boolean} True if data appears encrypted
  */
 function isEncrypted(data) {
-  if (!data || typeof data !== 'string') {
-    return false;
-  }
-  const parts = data.split(':');
-  return parts.length === 4 && parts[0] === '1';
+    if (!data || typeof data !== 'string') {
+        return false;
+    }
+    const parts = data.split(':');
+    return parts.length === 4 && parts[0] === '1';
 }
 
 function unwrapEncryptedStringLayers(value, fieldName = 'unknown', options = {}) {
-  const {
-    returnOriginalOnFailure = false
-  } = options;
+    const { returnOriginalOnFailure = false } = options;
 
-  if (!value || typeof value !== 'string' || !isEncrypted(value)) {
-    return {
-      value,
-      layersRemoved: 0,
-      failed: false
-    };
-  }
-
-  let current = value;
-  let layersRemoved = 0;
-
-  while (typeof current === 'string' && isEncrypted(current) && layersRemoved < MAX_ENCRYPTION_UNWRAP_LAYERS) {
-    const next = decrypt(current, true);
-    if (next === null || next === current) {
-      return {
-        value: layersRemoved === 0 && returnOriginalOnFailure ? value : current,
-        layersRemoved,
-        failed: layersRemoved === 0
-      };
+    if (!value || typeof value !== 'string' || !isEncrypted(value)) {
+        return {
+            value,
+            layersRemoved: 0,
+            failed: false
+        };
     }
-    current = next;
-    layersRemoved += 1;
-  }
 
-  if (layersRemoved >= MAX_ENCRYPTION_UNWRAP_LAYERS && typeof current === 'string' && isEncrypted(current)) {
-    log.warn(() => `[Encryption] Reached nested encryption unwrap limit for ${fieldName}. Keeping current value to avoid over-processing.`);
-  }
+    let current = value;
+    let layersRemoved = 0;
 
-  return {
-    value: current,
-    layersRemoved,
-    failed: false
-  };
+    while (typeof current === 'string' && isEncrypted(current) && layersRemoved < MAX_ENCRYPTION_UNWRAP_LAYERS) {
+        const next = decrypt(current, true);
+        if (next === null || next === current) {
+            return {
+                value: layersRemoved === 0 && returnOriginalOnFailure ? value : current,
+                layersRemoved,
+                failed: layersRemoved === 0
+            };
+        }
+        current = next;
+        layersRemoved += 1;
+    }
+
+    if (layersRemoved >= MAX_ENCRYPTION_UNWRAP_LAYERS && typeof current === 'string' && isEncrypted(current)) {
+        log.warn(
+            () =>
+                `[Encryption] Reached nested encryption unwrap limit for ${fieldName}. Keeping current value to avoid over-processing.`
+        );
+    }
+
+    return {
+        value: current,
+        layersRemoved,
+        failed: false
+    };
 }
 
 function normalizeSensitiveInputsForStorage(config) {
-  if (!config || typeof config !== 'object') {
-    return config;
-  }
-
-  const normalized = JSON.parse(JSON.stringify(config));
-  const normalizedFields = [];
-
-  const normalizeField = (getter, setter, fieldName) => {
-    const currentValue = getter();
-    if (!currentValue || typeof currentValue !== 'string' || !isEncrypted(currentValue)) {
-      return;
+    if (!config || typeof config !== 'object') {
+        return config;
     }
 
-    const result = unwrapEncryptedStringLayers(currentValue, fieldName, { returnOriginalOnFailure: true });
-    if (result.layersRemoved > 0 && result.value !== currentValue) {
-      setter(result.value);
-      normalizedFields.push(fieldName);
-    }
-  };
+    const normalized = JSON.parse(JSON.stringify(config));
+    const normalizedFields = [];
 
-  normalizeField(
-    () => normalized.geminiApiKey,
-    (value) => { normalized.geminiApiKey = value; },
-    'geminiApiKey'
-  );
+    const normalizeField = (getter, setter, fieldName) => {
+        const currentValue = getter();
+        if (!currentValue || typeof currentValue !== 'string' || !isEncrypted(currentValue)) {
+            return;
+        }
 
-  if (Array.isArray(normalized.geminiApiKeys) && normalized.geminiApiKeys.length > 0) {
-    normalized.geminiApiKeys = normalized.geminiApiKeys.map((key, idx) => {
-      const result = unwrapEncryptedStringLayers(key, `geminiApiKeys[${idx}]`, { returnOriginalOnFailure: true });
-      if (result.layersRemoved > 0 && result.value !== key) {
-        normalizedFields.push(`geminiApiKeys[${idx}]`);
-      }
-      return result.value;
-    });
-  }
+        const result = unwrapEncryptedStringLayers(currentValue, fieldName, { returnOriginalOnFailure: true });
+        if (result.layersRemoved > 0 && result.value !== currentValue) {
+            setter(result.value);
+            normalizedFields.push(fieldName);
+        }
+    };
 
-  normalizeField(
-    () => normalized.assemblyAiApiKey,
-    (value) => { normalized.assemblyAiApiKey = value; },
-    'assemblyAiApiKey'
-  );
-
-  if (normalized.subtitleProviders?.opensubtitles) {
     normalizeField(
-      () => normalized.subtitleProviders.opensubtitles.username,
-      (value) => { normalized.subtitleProviders.opensubtitles.username = value; },
-      'opensubtitles.username'
+        () => normalized.geminiApiKey,
+        (value) => {
+            normalized.geminiApiKey = value;
+        },
+        'geminiApiKey'
     );
-    normalizeField(
-      () => normalized.subtitleProviders.opensubtitles.password,
-      (value) => { normalized.subtitleProviders.opensubtitles.password = value; },
-      'opensubtitles.password'
-    );
-  }
 
-  normalizeField(
-    () => normalized.subtitleProviders?.subdl?.apiKey,
-    (value) => { normalized.subtitleProviders.subdl.apiKey = value; },
-    'subdl.apiKey'
-  );
-
-  normalizeField(
-    () => normalized.subtitleProviders?.subsource?.apiKey,
-    (value) => { normalized.subtitleProviders.subsource.apiKey = value; },
-    'subsource.apiKey'
-  );
-
-  if (normalized.providers && typeof normalized.providers === 'object') {
-    for (const [key, provider] of Object.entries(normalized.providers)) {
-      if (!provider || typeof provider !== 'object') continue;
-      normalizeField(
-        () => normalized.providers[key].apiKey,
-        (value) => { normalized.providers[key].apiKey = value; },
-        `providers.${key}.apiKey`
-      );
+    if (Array.isArray(normalized.geminiApiKeys) && normalized.geminiApiKeys.length > 0) {
+        normalized.geminiApiKeys = normalized.geminiApiKeys.map((key, idx) => {
+            const result = unwrapEncryptedStringLayers(key, `geminiApiKeys[${idx}]`, { returnOriginalOnFailure: true });
+            if (result.layersRemoved > 0 && result.value !== key) {
+                normalizedFields.push(`geminiApiKeys[${idx}]`);
+            }
+            return result.value;
+        });
     }
-  }
 
-  if (normalizedFields.length > 0) {
-    log.warn(() => `[Encryption] Normalized encrypted sensitive input before storage: ${normalizedFields.join(', ')}`);
-  }
+    normalizeField(
+        () => normalized.assemblyAiApiKey,
+        (value) => {
+            normalized.assemblyAiApiKey = value;
+        },
+        'assemblyAiApiKey'
+    );
 
-  return normalized;
+    if (normalized.subtitleProviders?.opensubtitles) {
+        normalizeField(
+            () => normalized.subtitleProviders.opensubtitles.username,
+            (value) => {
+                normalized.subtitleProviders.opensubtitles.username = value;
+            },
+            'opensubtitles.username'
+        );
+        normalizeField(
+            () => normalized.subtitleProviders.opensubtitles.password,
+            (value) => {
+                normalized.subtitleProviders.opensubtitles.password = value;
+            },
+            'opensubtitles.password'
+        );
+    }
+
+    normalizeField(
+        () => normalized.subtitleProviders?.subdl?.apiKey,
+        (value) => {
+            normalized.subtitleProviders.subdl.apiKey = value;
+        },
+        'subdl.apiKey'
+    );
+
+    normalizeField(
+        () => normalized.subtitleProviders?.subsource?.apiKey,
+        (value) => {
+            normalized.subtitleProviders.subsource.apiKey = value;
+        },
+        'subsource.apiKey'
+    );
+
+    if (normalized.providers && typeof normalized.providers === 'object') {
+        for (const [key, provider] of Object.entries(normalized.providers)) {
+            if (!provider || typeof provider !== 'object') continue;
+            normalizeField(
+                () => normalized.providers[key].apiKey,
+                (value) => {
+                    normalized.providers[key].apiKey = value;
+                },
+                `providers.${key}.apiKey`
+            );
+        }
+    }
+
+    if (normalizedFields.length > 0) {
+        log.warn(
+            () => `[Encryption] Normalized encrypted sensitive input before storage: ${normalizedFields.join(', ')}`
+        );
+    }
+
+    return normalized;
 }
 
 /**
@@ -385,86 +418,85 @@ function normalizeSensitiveInputsForStorage(config) {
  * @returns {Object} Config with sensitive fields encrypted
  */
 function encryptUserConfig(config) {
-  if (!config || typeof config !== 'object') {
-    return config;
-  }
-
-  // Clone config to avoid modifying original
-  const encrypted = JSON.parse(JSON.stringify(config));
-
-  try {
-    // Encrypt Gemini API key
-    if (encrypted.geminiApiKey) {
-      encrypted.geminiApiKey = encrypt(encrypted.geminiApiKey);
+    if (!config || typeof config !== 'object') {
+        return config;
     }
 
-    // Encrypt Gemini API keys array (for key rotation feature)
-    if (Array.isArray(encrypted.geminiApiKeys) && encrypted.geminiApiKeys.length > 0) {
-      encrypted.geminiApiKeys = encrypted.geminiApiKeys.map(key => {
-        if (typeof key === 'string' && key.trim()) {
-          return encrypt(key);
+    // Clone config to avoid modifying original
+    const encrypted = JSON.parse(JSON.stringify(config));
+
+    try {
+        // Encrypt Gemini API key
+        if (encrypted.geminiApiKey) {
+            encrypted.geminiApiKey = encrypt(encrypted.geminiApiKey);
         }
-        return key;
-      });
-    }
 
-    // Encrypt AssemblyAI API key
-    if (encrypted.assemblyAiApiKey) {
-      encrypted.assemblyAiApiKey = encrypt(encrypted.assemblyAiApiKey);
-    }
-
-    // Encrypt the Cloudflare Workers ACCOUNT_ID|TOKEN credential. Keep an
-    // already-encrypted value unchanged so a failed legacy normalization (for
-    // example after an encryption-key mismatch) can never add another layer.
-    if (encrypted.cloudflareWorkersApiKey && !isEncrypted(encrypted.cloudflareWorkersApiKey)) {
-      encrypted.cloudflareWorkersApiKey = encrypt(encrypted.cloudflareWorkersApiKey);
-    }
-
-    // Encrypt subtitle provider credentials
-    if (encrypted.subtitleProviders) {
-      // OpenSubtitles username/password
-      if (encrypted.subtitleProviders.opensubtitles) {
-        if (encrypted.subtitleProviders.opensubtitles.username) {
-          encrypted.subtitleProviders.opensubtitles.username =
-            encrypt(encrypted.subtitleProviders.opensubtitles.username);
+        // Encrypt Gemini API keys array (for key rotation feature)
+        if (Array.isArray(encrypted.geminiApiKeys) && encrypted.geminiApiKeys.length > 0) {
+            encrypted.geminiApiKeys = encrypted.geminiApiKeys.map((key) => {
+                if (typeof key === 'string' && key.trim()) {
+                    return encrypt(key);
+                }
+                return key;
+            });
         }
-        if (encrypted.subtitleProviders.opensubtitles.password) {
-          encrypted.subtitleProviders.opensubtitles.password =
-            encrypt(encrypted.subtitleProviders.opensubtitles.password);
+
+        // Encrypt AssemblyAI API key
+        if (encrypted.assemblyAiApiKey) {
+            encrypted.assemblyAiApiKey = encrypt(encrypted.assemblyAiApiKey);
         }
-      }
 
-      // SubDL API key
-      if (encrypted.subtitleProviders.subdl?.apiKey) {
-        encrypted.subtitleProviders.subdl.apiKey =
-          encrypt(encrypted.subtitleProviders.subdl.apiKey);
-      }
-
-      // SubSource API key
-      if (encrypted.subtitleProviders.subsource?.apiKey) {
-        encrypted.subtitleProviders.subsource.apiKey =
-          encrypt(encrypted.subtitleProviders.subsource.apiKey);
-      }
-
-    }
-
-    // Encrypt alternative AI provider API keys
-    if (encrypted.providers && typeof encrypted.providers === 'object') {
-      for (const [key, provider] of Object.entries(encrypted.providers)) {
-        if (provider && provider.apiKey) {
-          encrypted.providers[key].apiKey = encrypt(provider.apiKey);
+        // Encrypt the Cloudflare Workers ACCOUNT_ID|TOKEN credential. Keep an
+        // already-encrypted value unchanged so a failed legacy normalization (for
+        // example after an encryption-key mismatch) can never add another layer.
+        if (encrypted.cloudflareWorkersApiKey && !isEncrypted(encrypted.cloudflareWorkersApiKey)) {
+            encrypted.cloudflareWorkersApiKey = encrypt(encrypted.cloudflareWorkersApiKey);
         }
-      }
+
+        // Encrypt subtitle provider credentials
+        if (encrypted.subtitleProviders) {
+            // OpenSubtitles username/password
+            if (encrypted.subtitleProviders.opensubtitles) {
+                if (encrypted.subtitleProviders.opensubtitles.username) {
+                    encrypted.subtitleProviders.opensubtitles.username = encrypt(
+                        encrypted.subtitleProviders.opensubtitles.username
+                    );
+                }
+                if (encrypted.subtitleProviders.opensubtitles.password) {
+                    encrypted.subtitleProviders.opensubtitles.password = encrypt(
+                        encrypted.subtitleProviders.opensubtitles.password
+                    );
+                }
+            }
+
+            // SubDL API key
+            if (encrypted.subtitleProviders.subdl?.apiKey) {
+                encrypted.subtitleProviders.subdl.apiKey = encrypt(encrypted.subtitleProviders.subdl.apiKey);
+            }
+
+            // SubSource API key
+            if (encrypted.subtitleProviders.subsource?.apiKey) {
+                encrypted.subtitleProviders.subsource.apiKey = encrypt(encrypted.subtitleProviders.subsource.apiKey);
+            }
+        }
+
+        // Encrypt alternative AI provider API keys
+        if (encrypted.providers && typeof encrypted.providers === 'object') {
+            for (const [key, provider] of Object.entries(encrypted.providers)) {
+                if (provider && provider.apiKey) {
+                    encrypted.providers[key].apiKey = encrypt(provider.apiKey);
+                }
+            }
+        }
+
+        // Mark as encrypted for future detection
+        encrypted._encrypted = true;
+
+        return encrypted;
+    } catch (error) {
+        log.error(() => ['[Encryption] Failed to encrypt user config:', error.message]);
+        throw error;
     }
-
-    // Mark as encrypted for future detection
-    encrypted._encrypted = true;
-
-    return encrypted;
-  } catch (error) {
-    log.error(() => ['[Encryption] Failed to encrypt user config:', error.message]);
-    throw error;
-  }
 }
 
 /**
@@ -478,188 +510,235 @@ let nestedEncryptionRecoveredFields = [];
 let plaintextSensitiveFieldsDetected = [];
 
 function decryptUserConfig(config) {
-  if (!config || typeof config !== 'object') {
-    return config;
-  }
-
-  // Reset warnings for this call
-  decryptionWarnings = [];
-  nestedEncryptionRecoveredFields = [];
-  plaintextSensitiveFieldsDetected = [];
-
-  // Clone config to avoid modifying original
-  const decrypted = JSON.parse(JSON.stringify(config));
-
-  // Check if config is marked as encrypted
-  // Note: Individual fields are encrypted (e.g., geminiApiKey), NOT the entire config object
-  // This is NOT double encryption - stored.config is the decrypted config object with encrypted fields inside it
-  const isConfigEncrypted = decrypted._encrypted === true;
-  log.debug(() => `[Encryption] decryptUserConfig called, isConfigEncrypted: ${isConfigEncrypted} (individual fields may be encrypted)`);
-
-  // Helper to decrypt with warning tracking
-  const safeDecrypt = (value, fieldName) => {
-    if (!value) return value;
-    const wasEncrypted = isEncrypted(value);
-    const result = unwrapEncryptedStringLayers(value, fieldName, { returnOriginalOnFailure: false });
-    // decrypt() returns null when encrypted data can't be decrypted (key mismatch)
-    // In that case, clear the field to prevent ciphertext from leaking into API calls
-    if (result.failed && wasEncrypted) {
-      decryptionWarnings.push(fieldName);
-      log.warn(() => `[Encryption] Failed to decrypt ${fieldName} - encryption key mismatch. Field cleared to prevent ciphertext leak.`);
-      return '';
-    }
-    if (result.layersRemoved > 1) {
-      nestedEncryptionRecoveredFields.push(fieldName);
-      log.warn(() => `[Encryption] Detected nested encryption for ${fieldName}. Recovered ${result.layersRemoved} layers using the current key.`);
-    }
-    // Check if decryption actually happened (value changed) or if it returned raw encrypted data
-    if (wasEncrypted && result.value === value) {
-      decryptionWarnings.push(fieldName);
-      log.warn(() => `[Encryption] Failed to decrypt ${fieldName} - encryption key mismatch? Returning raw encrypted data.`);
-    }
-    return result.value;
-  };
-
-  try {
-    // Decrypt Gemini API key
-    if (decrypted.geminiApiKey && (isConfigEncrypted || isEncrypted(decrypted.geminiApiKey))) {
-      log.debug(() => '[Encryption] Decrypting Gemini API key');
-      decrypted.geminiApiKey = safeDecrypt(decrypted.geminiApiKey, 'geminiApiKey');
+    if (!config || typeof config !== 'object') {
+        return config;
     }
 
-    // Decrypt Gemini API keys array (for key rotation feature)
-    if (Array.isArray(decrypted.geminiApiKeys) && decrypted.geminiApiKeys.length > 0) {
-      decrypted.geminiApiKeys = decrypted.geminiApiKeys.map((key, idx) => {
-        if (key && (isConfigEncrypted || isEncrypted(key))) {
-          return safeDecrypt(key, `geminiApiKeys[${idx}]`);
+    // Reset warnings for this call
+    decryptionWarnings = [];
+    nestedEncryptionRecoveredFields = [];
+    plaintextSensitiveFieldsDetected = [];
+
+    // Clone config to avoid modifying original
+    const decrypted = JSON.parse(JSON.stringify(config));
+
+    // Check if config is marked as encrypted
+    // Note: Individual fields are encrypted (e.g., geminiApiKey), NOT the entire config object
+    // This is NOT double encryption - stored.config is the decrypted config object with encrypted fields inside it
+    const isConfigEncrypted = decrypted._encrypted === true;
+    log.debug(
+        () =>
+            `[Encryption] decryptUserConfig called, isConfigEncrypted: ${isConfigEncrypted} (individual fields may be encrypted)`
+    );
+
+    // Helper to decrypt with warning tracking
+    const safeDecrypt = (value, fieldName) => {
+        if (!value) return value;
+        const wasEncrypted = isEncrypted(value);
+        const result = unwrapEncryptedStringLayers(value, fieldName, { returnOriginalOnFailure: false });
+        // decrypt() returns null when encrypted data can't be decrypted (key mismatch)
+        // In that case, clear the field to prevent ciphertext from leaking into API calls
+        if (result.failed && wasEncrypted) {
+            decryptionWarnings.push(fieldName);
+            log.warn(
+                () =>
+                    `[Encryption] Failed to decrypt ${fieldName} - encryption key mismatch. Field cleared to prevent ciphertext leak.`
+            );
+            return '';
         }
-        return key;
-      });
-      log.debug(() => `[Encryption] Decrypted ${decrypted.geminiApiKeys.length} Gemini API keys`);
-    }
-
-    // Decrypt AssemblyAI API key
-    if (decrypted.assemblyAiApiKey && (isConfigEncrypted || isEncrypted(decrypted.assemblyAiApiKey))) {
-      log.debug(() => '[Encryption] Decrypting AssemblyAI API key');
-      decrypted.assemblyAiApiKey = safeDecrypt(decrypted.assemblyAiApiKey, 'assemblyAiApiKey');
-    }
-
-    // cloudflareWorkersApiKey was stored in plaintext by earlier releases
-    // even when the rest of the config carried the encryption marker.
-    // Preserve it for the current request and flag the session manager to
-    // rewrite that legacy payload once with field-level encryption.
-    if (decrypted.cloudflareWorkersApiKey) {
-      const cloudflareKeyEncrypted = isEncrypted(decrypted.cloudflareWorkersApiKey);
-      if (isConfigEncrypted && !cloudflareKeyEncrypted) {
-        plaintextSensitiveFieldsDetected.push('cloudflareWorkersApiKey');
-      }
-      if (isConfigEncrypted || cloudflareKeyEncrypted) {
-        log.debug(() => `[Encryption] Cloudflare Workers credential exists, encrypted: ${cloudflareKeyEncrypted}, will decrypt: ${isConfigEncrypted || cloudflareKeyEncrypted}`);
-        decrypted.cloudflareWorkersApiKey = safeDecrypt(
-          decrypted.cloudflareWorkersApiKey,
-          'cloudflareWorkersApiKey'
-        );
-      }
-    }
-
-    // Decrypt subtitle provider credentials
-    if (decrypted.subtitleProviders) {
-      // OpenSubtitles username/password - use safeDecrypt to track failures
-      if (decrypted.subtitleProviders.opensubtitles) {
-        if (decrypted.subtitleProviders.opensubtitles.username &&
-          (isConfigEncrypted || isEncrypted(decrypted.subtitleProviders.opensubtitles.username))) {
-          log.debug(() => '[Encryption] Decrypting OpenSubtitles username');
-          decrypted.subtitleProviders.opensubtitles.username =
-            safeDecrypt(decrypted.subtitleProviders.opensubtitles.username, 'opensubtitles.username');
+        if (result.layersRemoved > 1) {
+            nestedEncryptionRecoveredFields.push(fieldName);
+            log.warn(
+                () =>
+                    `[Encryption] Detected nested encryption for ${fieldName}. Recovered ${result.layersRemoved} layers using the current key.`
+            );
         }
-        if (decrypted.subtitleProviders.opensubtitles.password &&
-          (isConfigEncrypted || isEncrypted(decrypted.subtitleProviders.opensubtitles.password))) {
-          log.debug(() => '[Encryption] Decrypting OpenSubtitles password');
-          decrypted.subtitleProviders.opensubtitles.password =
-            safeDecrypt(decrypted.subtitleProviders.opensubtitles.password, 'opensubtitles.password');
+        // Check if decryption actually happened (value changed) or if it returned raw encrypted data
+        if (wasEncrypted && result.value === value) {
+            decryptionWarnings.push(fieldName);
+            log.warn(
+                () =>
+                    `[Encryption] Failed to decrypt ${fieldName} - encryption key mismatch? Returning raw encrypted data.`
+            );
         }
-      }
+        return result.value;
+    };
 
-      // SubDL API key
-      if (decrypted.subtitleProviders.subdl?.apiKey) {
-        const subdlKeyEncrypted = isEncrypted(decrypted.subtitleProviders.subdl.apiKey);
-        log.debug(() => `[Encryption] SubDL API key exists, encrypted: ${subdlKeyEncrypted}, will decrypt: ${isConfigEncrypted || subdlKeyEncrypted}`);
-        if (isConfigEncrypted || subdlKeyEncrypted) {
-          decrypted.subtitleProviders.subdl.apiKey =
-            safeDecrypt(decrypted.subtitleProviders.subdl.apiKey, 'subdl.apiKey');
-          const isString = typeof decrypted.subtitleProviders.subdl.apiKey === 'string';
-          log.debug(() => `[Encryption] SubDL key decrypted successfully, type: ${isString ? 'string' : 'NOT_STRING'}`);
+    try {
+        // Decrypt Gemini API key
+        if (decrypted.geminiApiKey && (isConfigEncrypted || isEncrypted(decrypted.geminiApiKey))) {
+            log.debug(() => '[Encryption] Decrypting Gemini API key');
+            decrypted.geminiApiKey = safeDecrypt(decrypted.geminiApiKey, 'geminiApiKey');
         }
-      }
 
-      // SubSource API key
-      if (decrypted.subtitleProviders.subsource?.apiKey) {
-        const subsourceKeyEncrypted = isEncrypted(decrypted.subtitleProviders.subsource.apiKey);
-        log.debug(() => `[Encryption] SubSource API key exists, encrypted: ${subsourceKeyEncrypted}, will decrypt: ${isConfigEncrypted || subsourceKeyEncrypted}`);
-        if (isConfigEncrypted || subsourceKeyEncrypted) {
-          decrypted.subtitleProviders.subsource.apiKey =
-            safeDecrypt(decrypted.subtitleProviders.subsource.apiKey, 'subsource.apiKey');
-          const isString = typeof decrypted.subtitleProviders.subsource.apiKey === 'string';
-          log.debug(() => `[Encryption] SubSource key decrypted successfully, type: ${isString ? 'string' : 'NOT_STRING'}`);
+        // Decrypt Gemini API keys array (for key rotation feature)
+        if (Array.isArray(decrypted.geminiApiKeys) && decrypted.geminiApiKeys.length > 0) {
+            decrypted.geminiApiKeys = decrypted.geminiApiKeys.map((key, idx) => {
+                if (key && (isConfigEncrypted || isEncrypted(key))) {
+                    return safeDecrypt(key, `geminiApiKeys[${idx}]`);
+                }
+                return key;
+            });
+            log.debug(() => `[Encryption] Decrypted ${decrypted.geminiApiKeys.length} Gemini API keys`);
         }
-      }
 
-    }
-
-    // Decrypt alternative AI provider API keys
-    if (decrypted.providers && typeof decrypted.providers === 'object') {
-      for (const [key, provider] of Object.entries(decrypted.providers)) {
-        if (provider && provider.apiKey) {
-          const isEnc = isEncrypted(provider.apiKey);
-          if (isConfigEncrypted || isEnc) {
-            decrypted.providers[key].apiKey = safeDecrypt(provider.apiKey, `providers.${key}.apiKey`);
-          }
+        // Decrypt AssemblyAI API key
+        if (decrypted.assemblyAiApiKey && (isConfigEncrypted || isEncrypted(decrypted.assemblyAiApiKey))) {
+            log.debug(() => '[Encryption] Decrypting AssemblyAI API key');
+            decrypted.assemblyAiApiKey = safeDecrypt(decrypted.assemblyAiApiKey, 'assemblyAiApiKey');
         }
-      }
+
+        // cloudflareWorkersApiKey was stored in plaintext by earlier releases
+        // even when the rest of the config carried the encryption marker.
+        // Preserve it for the current request and flag the session manager to
+        // rewrite that legacy payload once with field-level encryption.
+        if (decrypted.cloudflareWorkersApiKey) {
+            const cloudflareKeyEncrypted = isEncrypted(decrypted.cloudflareWorkersApiKey);
+            if (isConfigEncrypted && !cloudflareKeyEncrypted) {
+                plaintextSensitiveFieldsDetected.push('cloudflareWorkersApiKey');
+            }
+            if (isConfigEncrypted || cloudflareKeyEncrypted) {
+                log.debug(
+                    () =>
+                        `[Encryption] Cloudflare Workers credential exists, encrypted: ${cloudflareKeyEncrypted}, will decrypt: ${isConfigEncrypted || cloudflareKeyEncrypted}`
+                );
+                decrypted.cloudflareWorkersApiKey = safeDecrypt(
+                    decrypted.cloudflareWorkersApiKey,
+                    'cloudflareWorkersApiKey'
+                );
+            }
+        }
+
+        // Decrypt subtitle provider credentials
+        if (decrypted.subtitleProviders) {
+            // OpenSubtitles username/password - use safeDecrypt to track failures
+            if (decrypted.subtitleProviders.opensubtitles) {
+                if (
+                    decrypted.subtitleProviders.opensubtitles.username &&
+                    (isConfigEncrypted || isEncrypted(decrypted.subtitleProviders.opensubtitles.username))
+                ) {
+                    log.debug(() => '[Encryption] Decrypting OpenSubtitles username');
+                    decrypted.subtitleProviders.opensubtitles.username = safeDecrypt(
+                        decrypted.subtitleProviders.opensubtitles.username,
+                        'opensubtitles.username'
+                    );
+                }
+                if (
+                    decrypted.subtitleProviders.opensubtitles.password &&
+                    (isConfigEncrypted || isEncrypted(decrypted.subtitleProviders.opensubtitles.password))
+                ) {
+                    log.debug(() => '[Encryption] Decrypting OpenSubtitles password');
+                    decrypted.subtitleProviders.opensubtitles.password = safeDecrypt(
+                        decrypted.subtitleProviders.opensubtitles.password,
+                        'opensubtitles.password'
+                    );
+                }
+            }
+
+            // SubDL API key
+            if (decrypted.subtitleProviders.subdl?.apiKey) {
+                const subdlKeyEncrypted = isEncrypted(decrypted.subtitleProviders.subdl.apiKey);
+                log.debug(
+                    () =>
+                        `[Encryption] SubDL API key exists, encrypted: ${subdlKeyEncrypted}, will decrypt: ${isConfigEncrypted || subdlKeyEncrypted}`
+                );
+                if (isConfigEncrypted || subdlKeyEncrypted) {
+                    decrypted.subtitleProviders.subdl.apiKey = safeDecrypt(
+                        decrypted.subtitleProviders.subdl.apiKey,
+                        'subdl.apiKey'
+                    );
+                    const isString = typeof decrypted.subtitleProviders.subdl.apiKey === 'string';
+                    log.debug(
+                        () =>
+                            `[Encryption] SubDL key decrypted successfully, type: ${isString ? 'string' : 'NOT_STRING'}`
+                    );
+                }
+            }
+
+            // SubSource API key
+            if (decrypted.subtitleProviders.subsource?.apiKey) {
+                const subsourceKeyEncrypted = isEncrypted(decrypted.subtitleProviders.subsource.apiKey);
+                log.debug(
+                    () =>
+                        `[Encryption] SubSource API key exists, encrypted: ${subsourceKeyEncrypted}, will decrypt: ${isConfigEncrypted || subsourceKeyEncrypted}`
+                );
+                if (isConfigEncrypted || subsourceKeyEncrypted) {
+                    decrypted.subtitleProviders.subsource.apiKey = safeDecrypt(
+                        decrypted.subtitleProviders.subsource.apiKey,
+                        'subsource.apiKey'
+                    );
+                    const isString = typeof decrypted.subtitleProviders.subsource.apiKey === 'string';
+                    log.debug(
+                        () =>
+                            `[Encryption] SubSource key decrypted successfully, type: ${isString ? 'string' : 'NOT_STRING'}`
+                    );
+                }
+            }
+        }
+
+        // Decrypt alternative AI provider API keys
+        if (decrypted.providers && typeof decrypted.providers === 'object') {
+            for (const [key, provider] of Object.entries(decrypted.providers)) {
+                if (provider && provider.apiKey) {
+                    const isEnc = isEncrypted(provider.apiKey);
+                    if (isConfigEncrypted || isEnc) {
+                        decrypted.providers[key].apiKey = safeDecrypt(provider.apiKey, `providers.${key}.apiKey`);
+                    }
+                }
+            }
+        }
+
+        // Remove encryption marker
+        delete decrypted._encrypted;
+
+        // Add warning flag if any decryption failed (helps diagnose encryption key mismatches)
+        if (decryptionWarnings.length > 0) {
+            decrypted.__decryptionWarning = true;
+            decrypted.__decryptionWarningFields = [...decryptionWarnings];
+            log.warn(
+                () =>
+                    `[Encryption] Decryption warnings detected for fields: ${decryptionWarnings.join(', ')}. This may indicate encryption key mismatch between server instances.`
+            );
+        }
+
+        if (nestedEncryptionRecoveredFields.length > 0) {
+            decrypted.__nestedEncryptionRecovered = true;
+            decrypted.__nestedEncryptionRecoveredFields = [...nestedEncryptionRecoveredFields];
+            log.warn(
+                () =>
+                    `[Encryption] Recovered nested encryption for fields: ${nestedEncryptionRecoveredFields.join(', ')}. Session should be re-saved in normalized form.`
+            );
+        }
+
+        if (plaintextSensitiveFieldsDetected.length > 0) {
+            decrypted.__plaintextSensitiveFieldsDetected = true;
+            decrypted.__plaintextSensitiveFieldsDetectedFields = [...plaintextSensitiveFieldsDetected];
+            log.warn(
+                () =>
+                    `[Encryption] Detected legacy plaintext sensitive fields: ${plaintextSensitiveFieldsDetected.join(', ')}. Session should be re-saved with field-level encryption.`
+            );
+        }
+
+        return decrypted;
+    } catch (error) {
+        log.error(() => ['[Encryption] Failed to decrypt user config:', error.message]);
+        // Return original config on error for backward compatibility
+        return config;
     }
-
-    // Remove encryption marker
-    delete decrypted._encrypted;
-
-    // Add warning flag if any decryption failed (helps diagnose encryption key mismatches)
-    if (decryptionWarnings.length > 0) {
-      decrypted.__decryptionWarning = true;
-      decrypted.__decryptionWarningFields = [...decryptionWarnings];
-      log.warn(() => `[Encryption] Decryption warnings detected for fields: ${decryptionWarnings.join(', ')}. This may indicate encryption key mismatch between server instances.`);
-    }
-
-    if (nestedEncryptionRecoveredFields.length > 0) {
-      decrypted.__nestedEncryptionRecovered = true;
-      decrypted.__nestedEncryptionRecoveredFields = [...nestedEncryptionRecoveredFields];
-      log.warn(() => `[Encryption] Recovered nested encryption for fields: ${nestedEncryptionRecoveredFields.join(', ')}. Session should be re-saved in normalized form.`);
-    }
-
-    if (plaintextSensitiveFieldsDetected.length > 0) {
-      decrypted.__plaintextSensitiveFieldsDetected = true;
-      decrypted.__plaintextSensitiveFieldsDetectedFields = [...plaintextSensitiveFieldsDetected];
-      log.warn(() => `[Encryption] Detected legacy plaintext sensitive fields: ${plaintextSensitiveFieldsDetected.join(', ')}. Session should be re-saved with field-level encryption.`);
-    }
-
-    return decrypted;
-  } catch (error) {
-    log.error(() => ['[Encryption] Failed to decrypt user config:', error.message]);
-    // Return original config on error for backward compatibility
-    return config;
-  }
 }
 
 // Get current decryption warnings (useful for debugging)
 function getDecryptionWarnings() {
-  return [...decryptionWarnings];
+    return [...decryptionWarnings];
 }
 
 module.exports = {
-  encrypt,
-  decrypt,
-  isEncrypted,
-  encryptUserConfig,
-  decryptUserConfig,
-  normalizeSensitiveInputsForStorage,
-  getEncryptionKey,
-  getDecryptionWarnings
+    encrypt,
+    decrypt,
+    isEncrypted,
+    encryptUserConfig,
+    decryptUserConfig,
+    normalizeSensitiveInputsForStorage,
+    getEncryptionKey,
+    getDecryptionWarnings
 };

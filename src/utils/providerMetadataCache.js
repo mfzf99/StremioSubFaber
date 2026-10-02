@@ -1,9 +1,9 @@
 /**
  * Provider Metadata Cache
- * 
+ *
  * Redis-backed cache for provider-specific metadata (e.g., IMDB → SubSource movieId mappings).
  * This is CONTENT-based, not user-scoped, so it's safe to share across all users.
- * 
+ *
  * Features:
  * - Redis persistence for cross-instance sharing
  * - In-memory LRU fallback for fast reads and when Redis is unavailable
@@ -45,9 +45,9 @@ async function getStorageAdapter() {
 // In-memory LRU cache for fast reads (acts as L1 cache in front of Redis)
 // Each entry is ~50-100 bytes (key + movieId), so 10k entries ≈ 1MB
 const memoryCache = new LRUCache({
-    max: 10000,                    // 10k entries max
+    max: 10000, // 10k entries max
     ttl: 30 * 24 * 60 * 60 * 1000, // 30 days TTL (sync with Redis)
-    updateAgeOnGet: true           // Keep popular content cached longer
+    updateAgeOnGet: true // Keep popular content cached longer
 });
 
 // Cache type from StorageAdapter
@@ -59,7 +59,7 @@ const REDIS_TTL_SECONDS = 30 * 24 * 60 * 60;
 /**
  * Build a cache key for a provider metadata entry
  * Format: {provider}:{type}:{id}[:season]
- * 
+ *
  * @param {string} provider - Provider name (e.g., 'subsource')
  * @param {string} metadataType - Type of metadata (e.g., 'movieId')
  * @param {string} id - Primary identifier (e.g., IMDB ID)
@@ -74,7 +74,7 @@ function buildKey(provider, metadataType, id, season = null) {
 /**
  * Get a cached value
  * Checks in-memory cache first, then Redis
- * 
+ *
  * @param {string} provider - Provider name
  * @param {string} metadataType - Type of metadata
  * @param {string} id - Primary identifier
@@ -114,7 +114,7 @@ async function get(provider, metadataType, id, season = null) {
 /**
  * Set a cached value
  * Writes to both in-memory cache and Redis
- * 
+ *
  * @param {string} provider - Provider name
  * @param {string} metadataType - Type of metadata
  * @param {string} id - Primary identifier
@@ -150,7 +150,7 @@ async function set(provider, metadataType, id, value, season = null) {
 /**
  * Delete a cached value
  * Removes from both in-memory cache and Redis
- * 
+ *
  * @param {string} provider - Provider name
  * @param {string} metadataType - Type of metadata
  * @param {string} id - Primary identifier

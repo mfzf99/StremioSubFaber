@@ -1,10 +1,10 @@
 /**
  * Quick Setup Wizard - Standalone controller
- * 
+ *
  * Self-contained IIFE that manages the 7-step setup wizard overlay.
  * Does NOT depend on config.js internals - it builds its own config object
  * and POSTs directly to /api/create-session.
- * 
+ *
  * To remove Quick Setup entirely:
  *   1. Delete this file
  *   2. Remove the <script> tag from configure.html
@@ -24,7 +24,7 @@
         maxTargetLanguages: 6,
         maxNoTranslationLanguages: 10
     };
-    const SERVER_LIMITS = (typeof window !== 'undefined' && window.__CONFIG_LIMITS__) ? window.__CONFIG_LIMITS__ : {};
+    const SERVER_LIMITS = typeof window !== 'undefined' && window.__CONFIG_LIMITS__ ? window.__CONFIG_LIMITS__ : {};
     const EXTENDED_LANGUAGES_STORAGE_KEY = 'submaker_extended_languages';
 
     function parseLimit(rawValue, fallbackValue) {
@@ -34,7 +34,10 @@
 
     const MAX_SOURCE_LANGUAGES = parseLimit(SERVER_LIMITS.maxSourceLanguages, DEFAULT_LIMITS.maxSourceLanguages);
     const MAX_TARGET_LANGUAGES = parseLimit(SERVER_LIMITS.maxTargetLanguages, DEFAULT_LIMITS.maxTargetLanguages);
-    const MAX_NO_TRANSLATION_LANGUAGES = parseLimit(SERVER_LIMITS.maxNoTranslationLanguages, DEFAULT_LIMITS.maxNoTranslationLanguages);
+    const MAX_NO_TRANSLATION_LANGUAGES = parseLimit(
+        SERVER_LIMITS.maxNoTranslationLanguages,
+        DEFAULT_LIMITS.maxNoTranslationLanguages
+    );
     // No popular languages - all shown alphabetically
     const POPULAR_LANG_CODES = [];
 
@@ -54,7 +57,7 @@
     // Wizard State
     const state = {
         currentStep: 1,
-        mode: null,           // 'translate' | 'fetch'
+        mode: null, // 'translate' | 'fetch'
         // Sources
         openSubsAuth: false,
         openSubsUsername: '',
@@ -79,7 +82,11 @@
     };
 
     function getConfigPageGeminiUiHelper() {
-        if (typeof window === 'undefined' || !window.SubMakerGeminiModelUi || typeof window.SubMakerGeminiModelUi !== 'object') {
+        if (
+            typeof window === 'undefined' ||
+            !window.SubMakerGeminiModelUi ||
+            typeof window.SubMakerGeminiModelUi !== 'object'
+        ) {
             return null;
         }
         return window.SubMakerGeminiModelUi;
@@ -90,11 +97,11 @@
         if (!select || !select.options) {
             return null;
         }
-        const options = Array.from(select.options).filter(option => {
+        const options = Array.from(select.options).filter((option) => {
             const value = String(option.value || '').trim();
             return !!value && option.disabled !== true && option.hidden !== true;
         });
-        const defaultOption = options.find(option => option.defaultSelected === true);
+        const defaultOption = options.find((option) => option.defaultSelected === true);
         return defaultOption || options[0] || null;
     }
 
@@ -143,13 +150,16 @@
     }
 
     function getQuickSetupGeminiAdvancedDefaults(modelName) {
-        const normalizedModel = String(modelName || '').trim().toLowerCase();
+        const normalizedModel = String(modelName || '')
+            .trim()
+            .toLowerCase();
         const helper = getConfigPageGeminiUiHelper();
         if (helper && typeof helper.getModelSpecificDefaults === 'function') {
             const helperDefaults = helper.getModelSpecificDefaults(normalizedModel);
             if (helperDefaults) {
                 return {
-                    thinkingLevel: typeof helperDefaults.thinkingLevel === 'string' ? helperDefaults.thinkingLevel : 'minimal',
+                    thinkingLevel:
+                        typeof helperDefaults.thinkingLevel === 'string' ? helperDefaults.thinkingLevel : 'minimal',
                     temperature: typeof helperDefaults.temperature === 'number' ? helperDefaults.temperature : 0.2
                 };
             }
@@ -168,7 +178,7 @@
             case 'gemini-3-flash-preview':
             case 'gemini-3-pro-preview':
                 return { thinkingLevel: 'high', temperature: 0.2 };
-           case 'gemini-3.1-flash-lite':
+            case 'gemini-3.1-flash-lite':
             case 'gemini-3.5-flash-lite':
             case 'gemini-flash-lite-latest':
                 return { thinkingLevel: 'minimal', temperature: 0.2 };
@@ -219,7 +229,9 @@
     let languagesLoaded = false;
     // Utility
 
-    function $(id) { return document.getElementById(id); }
+    function $(id) {
+        return document.getElementById(id);
+    }
     /** Quick Setup translation helper - wraps window.t() for the config.quickSetup namespace */
     function tQs(key, vars, fallback) {
         const fullKey = 'config.quickSetup.' + key;
@@ -282,7 +294,7 @@
         const limitedTargets = [];
         const combined = new Set();
 
-        state.selectedLanguages.forEach(code => {
+        state.selectedLanguages.forEach((code) => {
             if (combined.has(code)) {
                 limitedTargets.push(code);
                 return;
@@ -295,7 +307,7 @@
         });
 
         const limitedLearn = [];
-        state.learnTargetLanguages.forEach(code => {
+        state.learnTargetLanguages.forEach((code) => {
             if (combined.has(code)) {
                 limitedLearn.push(code);
                 return;
@@ -334,8 +346,15 @@
     }
 
     function getLanguageDisplayName(code) {
-        const codeKey = String(code || '').trim().toLowerCase();
-        const lang = allLanguages.find(entry => String(entry.code || '').trim().toLowerCase() === codeKey);
+        const codeKey = String(code || '')
+            .trim()
+            .toLowerCase();
+        const lang = allLanguages.find(
+            (entry) =>
+                String(entry.code || '')
+                    .trim()
+                    .toLowerCase() === codeKey
+        );
         return lang ? lang.name : String(code || '').toUpperCase();
     }
 
@@ -357,14 +376,14 @@
     function setExtendedLanguagesEnabled(isEnabled) {
         try {
             localStorage.setItem(EXTENDED_LANGUAGES_STORAGE_KEY, isEnabled ? 'true' : 'false');
-        } catch (_) { }
+        } catch (_) {}
         syncExtendedLanguageToggles(isEnabled);
         renderLangGrid();
         renderLearnLangGrid();
     }
 
     function getQuickSetupTranslationLanguages() {
-        const baseTranslationLanguages = translationLanguages.filter(lang => !lang.extended);
+        const baseTranslationLanguages = translationLanguages.filter((lang) => !lang.extended);
         return getExtendedLanguagesEnabled() ? translationLanguages : baseTranslationLanguages;
     }
 
@@ -377,11 +396,11 @@
         const normalizedExcludeType = excludeType || '';
         const normalizedExcludeCode = String(excludeCode || '');
 
-        state.selectedLanguages.forEach(code => {
+        state.selectedLanguages.forEach((code) => {
             if (normalizedExcludeType === 'target' && code === normalizedExcludeCode) return;
             combined.add(code);
         });
-        state.learnTargetLanguages.forEach(code => {
+        state.learnTargetLanguages.forEach((code) => {
             if (normalizedExcludeType === 'learn' && code === normalizedExcludeCode) return;
             combined.add(code);
         });
@@ -431,9 +450,9 @@
         }
 
         const section = $('languagesSection');
-        const cardId = cardType === 'learn' ? 'learnTargetsCard' : (cardType === 'target' ? 'targetCard' : 'sourceCard');
+        const cardId = cardType === 'learn' ? 'learnTargetsCard' : cardType === 'target' ? 'targetCard' : 'sourceCard';
         const card = $(cardId);
-        const focusId = cardType === 'learn' ? 'learnSearch' : (cardType === 'target' ? 'targetSearch' : 'sourceSearch');
+        const focusId = cardType === 'learn' ? 'learnSearch' : cardType === 'target' ? 'targetSearch' : 'sourceSearch';
         const focusEl = $(focusId);
 
         if (!section || !card) {
@@ -444,9 +463,11 @@
         }
 
         section.classList.remove('collapsed');
-        document.querySelectorAll('[data-collapse-section="languages"], [data-section-close="languages"]').forEach(btn => {
-            btn.classList.remove('collapsed');
-        });
+        document
+            .querySelectorAll('[data-collapse-section="languages"], [data-section-close="languages"]')
+            .forEach((btn) => {
+                btn.classList.remove('collapsed');
+            });
 
         card.classList.remove('collapsed');
         const collapseBtn = card.querySelector('.collapse-btn');
@@ -476,9 +497,11 @@
         const modal = $('qsInstructionsModal');
         if (!modal) return [];
 
-        return Array.from(modal.querySelectorAll(
-            'button:not([disabled]), [href], input:not([disabled]):not([type="hidden"]), select:not([disabled]), textarea:not([disabled]), [tabindex]:not([tabindex="-1"])'
-        )).filter(el => {
+        return Array.from(
+            modal.querySelectorAll(
+                'button:not([disabled]), [href], input:not([disabled]):not([type="hidden"]), select:not([disabled]), textarea:not([disabled]), [tabindex]:not([tabindex="-1"])'
+            )
+        ).filter((el) => {
             if (!el || typeof el.getBoundingClientRect !== 'function') return false;
             const rect = el.getBoundingClientRect();
             return rect.width > 0 && rect.height > 0;
@@ -489,9 +512,10 @@
         const modal = $('qsInstructionsModal');
         if (!modal) return;
 
-        quickSetupInstructionsReturnFocus = document.activeElement && typeof document.activeElement.focus === 'function'
-            ? document.activeElement
-            : null;
+        quickSetupInstructionsReturnFocus =
+            document.activeElement && typeof document.activeElement.focus === 'function'
+                ? document.activeElement
+                : null;
 
         modal.classList.add('show');
         modal.setAttribute('aria-hidden', 'false');
@@ -574,7 +598,7 @@
         const container = $('quickSetupOverlay');
         if (!container || typeof window.t !== 'function') return;
         // Handle data-i18n -> textContent (or innerHTML if value contains HTML tags)
-        container.querySelectorAll('[data-i18n]').forEach(el => {
+        container.querySelectorAll('[data-i18n]').forEach((el) => {
             const key = el.getAttribute('data-i18n');
             if (!key) return;
             const attrMode = el.getAttribute('data-i18n-attr');
@@ -589,7 +613,7 @@
             }
         });
         // Handle data-i18n-placeholder -> placeholder attribute
-        container.querySelectorAll('[data-i18n-placeholder]').forEach(el => {
+        container.querySelectorAll('[data-i18n-placeholder]').forEach((el) => {
             const key = el.getAttribute('data-i18n-placeholder');
             if (!key) return;
             const fallback = el.getAttribute('placeholder') || '';
@@ -597,7 +621,7 @@
             if (value && value !== key) el.setAttribute('placeholder', value);
         });
         // Handle data-i18n-title -> title attribute
-        container.querySelectorAll('[data-i18n-title]').forEach(el => {
+        container.querySelectorAll('[data-i18n-title]').forEach((el) => {
             const key = el.getAttribute('data-i18n-title');
             if (!key) return;
             const fallback = el.getAttribute('title') || '';
@@ -605,7 +629,7 @@
             if (value && value !== key) el.setAttribute('title', value);
         });
 
-        container.querySelectorAll('[data-i18n-aria-label]').forEach(el => {
+        container.querySelectorAll('[data-i18n-aria-label]').forEach((el) => {
             const key = el.getAttribute('data-i18n-aria-label');
             if (!key) return;
             const fallback = el.getAttribute('aria-label') || '';
@@ -639,18 +663,21 @@
         if (window.partialsReady && typeof window.partialsReady.then === 'function') {
             return Promise.race([
                 window.partialsReady,
-                new Promise(resolve => setTimeout(resolve, 5000)) // safety timeout
+                new Promise((resolve) => setTimeout(resolve, 5000)) // safety timeout
             ]);
         }
         // If init.js hasn't run yet, poll for it
-        return new Promise(resolve => {
+        return new Promise((resolve) => {
             const check = setInterval(() => {
                 if (window.partialsReady && typeof window.partialsReady.then === 'function') {
                     clearInterval(check);
                     window.partialsReady.then(resolve);
                 }
             }, 50);
-            setTimeout(() => { clearInterval(check); resolve(); }, 5000);
+            setTimeout(() => {
+                clearInterval(check);
+                resolve();
+            }, 5000);
         });
     }
 
@@ -673,8 +700,11 @@
         // Wire banner click
         if (banner) {
             banner.addEventListener('click', openWizard);
-            banner.addEventListener('keydown', e => {
-                if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); openWizard(); }
+            banner.addEventListener('keydown', (e) => {
+                if (e.key === 'Enter' || e.key === ' ') {
+                    e.preventDefault();
+                    openWizard();
+                }
             });
         }
 
@@ -768,7 +798,9 @@
                     if (data && data.config) {
                         mapConfigToState(data.config);
                         // Clear stale sessionStorage and save fresh state
-                        try { sessionStorage.removeItem(QS_STATE_KEY); } catch (_) { }
+                        try {
+                            sessionStorage.removeItem(QS_STATE_KEY);
+                        } catch (_) {}
                         saveStateToSession();
                         restoreUIFromState();
 
@@ -850,7 +882,7 @@
         state.currentStep = step;
 
         // Hide all steps
-        document.querySelectorAll('.qs-step').forEach(s => {
+        document.querySelectorAll('.qs-step').forEach((s) => {
             s.classList.remove('active');
         });
 
@@ -887,7 +919,7 @@
         if (bar) bar.style.width = pct + '%';
 
         // Update dots
-        document.querySelectorAll('.qs-dot').forEach(dot => {
+        document.querySelectorAll('.qs-dot').forEach((dot) => {
             const dotStep = parseInt(dot.dataset.step, 10);
             dot.classList.remove('active', 'completed', 'skipped');
             if (dotStep === step) {
@@ -935,17 +967,22 @@
 
     function canProceed(step) {
         switch (step) {
-            case 1: return !!state.mode;
+            case 1:
+                return !!state.mode;
             case 2: {
                 return true;
             }
             case 3:
                 if (state.mode === 'fetch') return true; // skipped
                 return state.geminiApiKey.trim().length > 0;
-            case 4: return state.selectedLanguages.length > 0;
-            case 5: return true;
-            case 6: return state.learnTargetLanguages.length > 0;
-            default: return true;
+            case 4:
+                return state.selectedLanguages.length > 0;
+            case 5:
+                return true;
+            case 6:
+                return state.learnTargetLanguages.length > 0;
+            default:
+                return true;
         }
     }
 
@@ -994,10 +1031,10 @@
 
     function wireStep1() {
         const cards = document.querySelectorAll('.qs-mode-card');
-        cards.forEach(card => {
+        cards.forEach((card) => {
             card.addEventListener('click', () => {
                 // Deselect all
-                cards.forEach(c => c.classList.remove('selected'));
+                cards.forEach((c) => c.classList.remove('selected'));
                 card.classList.add('selected');
                 state.mode = card.dataset.mode;
                 updateNav(1);
@@ -1048,7 +1085,11 @@
                 const password = ($('qsOpenSubsPassword') || {}).value?.trim();
                 const statusEl = $('qsOpenSubsStatus');
                 if (!username || !password) {
-                    showQsStatus(statusEl, tQs('status.enterCredentials', null, 'Please enter username and password'), 'error');
+                    showQsStatus(
+                        statusEl,
+                        tQs('status.enterCredentials', null, 'Please enter username and password'),
+                        'error'
+                    );
                     return;
                 }
                 await runQsValidation(osBtn, statusEl, '/api/validate-opensubtitles', { username, password });
@@ -1082,7 +1123,6 @@
                 await runQsValidation(ssBtn, statusEl, '/api/validate-subsource', { apiKey });
             });
         }
-
     }
     // Step 3: AI Translation
 
@@ -1095,7 +1135,10 @@
             keyInput.addEventListener('input', () => {
                 state.geminiApiKey = keyInput.value;
                 state.geminiKeyValid = false;
-                if (statusEl) { statusEl.textContent = ''; statusEl.className = 'qs-key-status'; }
+                if (statusEl) {
+                    statusEl.textContent = '';
+                    statusEl.className = 'qs-key-status';
+                }
                 updateNav(3);
             });
         }
@@ -1123,7 +1166,17 @@
                         state.geminiKeyValid = true;
                         showKeyStatus(tQs('status.keyValid', null, '\u2713 API key is valid!'), 'success');
                     } else {
-                        showKeyStatus(tQs('status.keyInvalidPrefix', null, '\u2717') + ' ' + (result.error || tQs('status.keyInvalidDefault', null, 'Invalid API key \u2014 please double-check')), 'error');
+                        showKeyStatus(
+                            tQs('status.keyInvalidPrefix', null, '\u2717') +
+                                ' ' +
+                                (result.error ||
+                                    tQs(
+                                        'status.keyInvalidDefault',
+                                        null,
+                                        'Invalid API key \u2014 please double-check'
+                                    )),
+                            'error'
+                        );
                     }
                 } catch (err) {
                     showKeyStatus(tQs('status.networkError', null, '\u2717 Network error \u2014 try again'), 'error');
@@ -1191,7 +1244,13 @@
                 btn.classList.add('invalid');
                 if (iconEl) iconEl.textContent = '\u2717';
                 if (textEl) textEl.textContent = tQs('status.failedBtn', null, 'Failed');
-                showQsStatus(statusEl, tQs('status.keyInvalidPrefix', null, '\u2717') + ' ' + (result.error || tQs('status.validationFailed', null, 'Validation failed')), 'error');
+                showQsStatus(
+                    statusEl,
+                    tQs('status.keyInvalidPrefix', null, '\u2717') +
+                        ' ' +
+                        (result.error || tQs('status.validationFailed', null, 'Validation failed')),
+                    'error'
+                );
                 setTimeout(() => {
                     btn.classList.remove('invalid');
                     if (iconEl) iconEl.textContent = origIcon;
@@ -1217,11 +1276,11 @@
                 const [providerResponse, translationResponse] = await Promise.all([
                     fetch('/api/languages', {
                         method: 'GET',
-                        headers: { 'Accept': 'application/json' }
+                        headers: { Accept: 'application/json' }
                     }),
                     fetch('/api/languages/translation', {
                         method: 'GET',
-                        headers: { 'Accept': 'application/json' }
+                        headers: { Accept: 'application/json' }
                     })
                 ]);
 
@@ -1231,12 +1290,16 @@
                 const providerPayload = await providerResponse.json();
                 const translationPayload = await translationResponse.json();
 
-                providerLanguages = dedupeLanguagesForUI(providerPayload.filter(lang => !lang.code.startsWith('___')));
-                translationLanguages = dedupeLanguagesForUI(translationPayload.filter(lang => !lang.code.startsWith('___')));
+                providerLanguages = dedupeLanguagesForUI(
+                    providerPayload.filter((lang) => !lang.code.startsWith('___'))
+                );
+                translationLanguages = dedupeLanguagesForUI(
+                    translationPayload.filter((lang) => !lang.code.startsWith('___'))
+                );
 
                 const combinedMap = new Map();
-                providerLanguages.forEach(lang => combinedMap.set(lang.code, lang));
-                translationLanguages.forEach(lang => combinedMap.set(lang.code, lang));
+                providerLanguages.forEach((lang) => combinedMap.set(lang.code, lang));
+                translationLanguages.forEach((lang) => combinedMap.set(lang.code, lang));
                 allLanguages = Array.from(combinedMap.values()).sort((a, b) => a.name.localeCompare(b.name));
                 languagesLoaded = true;
 
@@ -1248,7 +1311,7 @@
             } catch (err) {
                 lastError = err;
                 if (attempt < maxRetries) {
-                    await new Promise(resolve => setTimeout(resolve, 400 * attempt));
+                    await new Promise((resolve) => setTimeout(resolve, 400 * attempt));
                 }
             }
         }
@@ -1266,13 +1329,23 @@
 
         if (state.mode === 'fetch') {
             if (title) title.textContent = tQs('step4.titleFetch', null, 'Choose Subtitle Languages');
-            if (subtitle) subtitle.textContent = tQs('step4.subtitleFetch', null, 'What languages do you want to fetch subtitles in?');
+            if (subtitle)
+                subtitle.textContent = tQs(
+                    'step4.subtitleFetch',
+                    null,
+                    'What languages do you want to fetch subtitles in?'
+                );
             if (srcInfo) srcInfo.style.display = 'none';
             if (instructionsLinkWrap) instructionsLinkWrap.style.display = 'none';
             if (extendedWrap) extendedWrap.style.display = 'none';
         } else {
             if (title) title.textContent = tQs('step4.titleTranslate', null, 'Choose Your Target Language');
-            if (subtitle) subtitle.textContent = tQs('step4.subtitleTranslate', null, 'What language do you want your subtitles translated to?');
+            if (subtitle)
+                subtitle.textContent = tQs(
+                    'step4.subtitleTranslate',
+                    null,
+                    'What language do you want your subtitles translated to?'
+                );
             if (srcInfo) srcInfo.style.display = '';
             if (instructionsLinkWrap) instructionsLinkWrap.style.display = '';
             if (extendedWrap) extendedWrap.style.display = '';
@@ -1302,16 +1375,15 @@
         // Filter by search
         let filtered = getStep4Languages();
         if (searchTerm) {
-            filtered = filtered.filter(lang =>
-                lang.name.toLowerCase().includes(searchTerm) ||
-                lang.code.toLowerCase().includes(searchTerm)
+            filtered = filtered.filter(
+                (lang) => lang.name.toLowerCase().includes(searchTerm) || lang.code.toLowerCase().includes(searchTerm)
             );
         }
 
         // Sort: popular first, then alphabetical
         const popular = [];
         const rest = [];
-        filtered.forEach(lang => {
+        filtered.forEach((lang) => {
             if (POPULAR_LANG_CODES.includes(lang.code)) {
                 popular.push(lang);
             } else {
@@ -1320,7 +1392,7 @@
         });
 
         // Render popular first
-        [...popular, ...rest].forEach(lang => {
+        [...popular, ...rest].forEach((lang) => {
             const item = document.createElement('div');
             item.className = 'qs-lang-item';
             if (POPULAR_LANG_CODES.includes(lang.code)) {
@@ -1389,14 +1461,14 @@
         }
 
         container.innerHTML = '';
-        state.selectedLanguages.forEach(code => {
-            const lang = allLanguages.find(l => l.code === code);
+        state.selectedLanguages.forEach((code) => {
+            const lang = allLanguages.find((l) => l.code === code);
             appendLanguageChip(container, lang ? lang.name : code, code);
         });
 
         // Wire remove buttons
-        container.querySelectorAll('.qs-lang-chip-remove').forEach(btn => {
-            btn.addEventListener('click', e => {
+        container.querySelectorAll('.qs-lang-chip-remove').forEach((btn) => {
+            btn.addEventListener('click', (e) => {
                 e.stopPropagation();
                 const code = btn.dataset.code;
                 const idx = state.selectedLanguages.indexOf(code);
@@ -1452,15 +1524,21 @@
 
         if (toolboxToggle) {
             toolboxToggle.checked = true;
-            toolboxToggle.addEventListener('change', () => { state.subToolbox = toolboxToggle.checked; });
+            toolboxToggle.addEventListener('change', () => {
+                state.subToolbox = toolboxToggle.checked;
+            });
         }
         if (seasonToggle) {
             seasonToggle.checked = true;
-            seasonToggle.addEventListener('change', () => { state.seasonPacks = seasonToggle.checked; });
+            seasonToggle.addEventListener('change', () => {
+                state.seasonPacks = seasonToggle.checked;
+            });
         }
         if (sdhToggle) {
             sdhToggle.checked = false;
-            sdhToggle.addEventListener('change', () => { state.hideSDH = sdhToggle.checked; });
+            sdhToggle.addEventListener('change', () => {
+                state.hideSDH = sdhToggle.checked;
+            });
         }
         if (learnToggle) {
             learnToggle.checked = false;
@@ -1503,13 +1581,12 @@
         // Filter by search
         let filtered = getQuickSetupTranslationLanguages();
         if (searchTerm) {
-            filtered = filtered.filter(lang =>
-                lang.name.toLowerCase().includes(searchTerm) ||
-                lang.code.toLowerCase().includes(searchTerm)
+            filtered = filtered.filter(
+                (lang) => lang.name.toLowerCase().includes(searchTerm) || lang.code.toLowerCase().includes(searchTerm)
             );
         }
 
-        filtered.forEach(lang => {
+        filtered.forEach((lang) => {
             const item = document.createElement('div');
             item.className = 'qs-lang-item';
             if (state.learnTargetLanguages.includes(lang.code)) {
@@ -1553,14 +1630,14 @@
         }
 
         container.innerHTML = '';
-        state.learnTargetLanguages.forEach(code => {
-            const lang = allLanguages.find(l => l.code === code);
+        state.learnTargetLanguages.forEach((code) => {
+            const lang = allLanguages.find((l) => l.code === code);
             appendLanguageChip(container, lang ? lang.name : code, code);
         });
 
         // Wire remove buttons
-        container.querySelectorAll('.qs-lang-chip-remove').forEach(btn => {
-            btn.addEventListener('click', e => {
+        container.querySelectorAll('.qs-lang-chip-remove').forEach((btn) => {
+            btn.addEventListener('click', (e) => {
                 e.stopPropagation();
                 const code = btn.dataset.code;
                 const idx = state.learnTargetLanguages.indexOf(code);
@@ -1611,23 +1688,38 @@
             {
                 icon: state.mode === 'translate' ? '\uD83C\uDF10' : '\uD83D\uDCE5',
                 label: tQs('summary.mode', null, 'Mode'),
-                value: state.mode === 'translate' ? tQs('summary.modeTranslate', null, 'Translate Subtitles') : tQs('summary.modeFetch', null, 'Just Fetch Subtitles'),
+                value:
+                    state.mode === 'translate'
+                        ? tQs('summary.modeTranslate', null, 'Translate Subtitles')
+                        : tQs('summary.modeFetch', null, 'Just Fetch Subtitles'),
                 cls: 'qs-on'
             },
             {
                 icon: '\uD83C\uDFAC',
                 label: 'OpenSubtitles',
-                value: state.openSubsAuth ? tQs('summary.opensubsAuth', null, 'Auth (logged in)') : tQs('summary.opensubsV3', null, 'V3 (no login)'),
+                value: state.openSubsAuth
+                    ? tQs('summary.opensubsAuth', null, 'Auth (logged in)')
+                    : tQs('summary.opensubsV3', null, 'V3 (no login)'),
                 cls: 'qs-on'
             }
         ];
 
         // Source providers
         if (state.subdlEnabled) {
-            items.push({ icon: '\uD83D\uDCE5', label: 'SubDL', value: tQs('summary.enabled', null, 'Enabled'), cls: 'qs-on' });
+            items.push({
+                icon: '\uD83D\uDCE5',
+                label: 'SubDL',
+                value: tQs('summary.enabled', null, 'Enabled'),
+                cls: 'qs-on'
+            });
         }
         if (state.subsourceEnabled) {
-            items.push({ icon: '\uD83D\uDCE1', label: 'SubSource', value: tQs('summary.enabled', null, 'Enabled'), cls: 'qs-on' });
+            items.push({
+                icon: '\uD83D\uDCE1',
+                label: 'SubSource',
+                value: tQs('summary.enabled', null, 'Enabled'),
+                cls: 'qs-on'
+            });
         }
         // AI
         if (state.mode === 'translate') {
@@ -1656,7 +1748,10 @@
         const langNames = state.selectedLanguages.map(getLanguageDisplayName);
         items.push({
             icon: '\uD83C\uDFAF',
-            label: state.mode === 'translate' ? tQs('summary.targetLanguages', null, 'Target Languages') : tQs('summary.subtitleLanguages', null, 'Subtitle Languages'),
+            label:
+                state.mode === 'translate'
+                    ? tQs('summary.targetLanguages', null, 'Target Languages')
+                    : tQs('summary.subtitleLanguages', null, 'Subtitle Languages'),
             value: langNames.join(', ') || tQs('summary.none', null, 'None'),
             cls: langNames.length > 0 ? 'qs-on' : 'qs-off'
         });
@@ -1665,13 +1760,17 @@
         items.push({
             icon: '\uD83E\uDDF0',
             label: 'Sub Toolbox',
-            value: state.subToolbox ? tQs('summary.enabled', null, 'Enabled') : tQs('summary.disabled', null, 'Disabled'),
+            value: state.subToolbox
+                ? tQs('summary.enabled', null, 'Enabled')
+                : tQs('summary.disabled', null, 'Disabled'),
             cls: state.subToolbox ? 'qs-on' : 'qs-off'
         });
         items.push({
             icon: '\uD83D\uDCE6',
             label: tQs('summary.seasonPacks', null, 'Season Packs'),
-            value: state.seasonPacks ? tQs('summary.enabled', null, 'Enabled') : tQs('summary.disabled', null, 'Disabled'),
+            value: state.seasonPacks
+                ? tQs('summary.enabled', null, 'Enabled')
+                : tQs('summary.disabled', null, 'Disabled'),
             cls: state.seasonPacks ? 'qs-on' : 'qs-off'
         });
         if (state.hideSDH) {
@@ -1694,7 +1793,7 @@
             });
         }
 
-        items.forEach(item => {
+        items.forEach((item) => {
             const row = document.createElement('div');
             row.className = 'qs-summary-item';
             row.innerHTML = `
@@ -1743,7 +1842,10 @@
         }
 
         // Reset status
-        if (statusEl) { statusEl.textContent = ''; statusEl.className = 'qs-install-status'; }
+        if (statusEl) {
+            statusEl.textContent = '';
+            statusEl.className = 'qs-install-status';
+        }
 
         // Hide URL box initially
         const urlBox = $('qsInstallUrlBox');
@@ -1765,7 +1867,7 @@
             sourceLanguages: [...sourceLanguages],
             targetLanguages: isTranslate ? [...state.selectedLanguages] : [],
             learnMode: isTranslate ? state.learnMode : false,
-            learnTargetLanguages: (isTranslate && state.learnMode) ? [...state.learnTargetLanguages] : [],
+            learnTargetLanguages: isTranslate && state.learnMode ? [...state.learnTargetLanguages] : [],
             learnOrder: 'source-top',
             learnPlacement: 'top',
             learnItalic: true,
@@ -1815,7 +1917,7 @@
                 subsource: {
                     enabled: state.subsourceEnabled,
                     apiKey: state.subsourceApiKey
-                },
+                }
             },
             subtitleProviderTimeout: 12,
             translationCache: {
@@ -1896,14 +1998,22 @@
                             // 1. Overlay top-level QS settings
                             // Only include keys that the QS Wizard EXPLICITLY exposes or logically resets
                             const fastOverlayKeys = [
-                                'noTranslationMode', 'noTranslationLanguages', 'sourceLanguages', 'targetLanguages',
-                                'learnMode', 'learnTargetLanguages',
-                                'geminiApiKey', 'geminiKeyRotationEnabled', // Force disable rotation if setting single key
-                                'subToolboxEnabled', 'fileTranslationEnabled', 'syncSubtitlesEnabled',
-                                'excludeHearingImpairedSubtitles', 'enableSeasonPacks'
+                                'noTranslationMode',
+                                'noTranslationLanguages',
+                                'sourceLanguages',
+                                'targetLanguages',
+                                'learnMode',
+                                'learnTargetLanguages',
+                                'geminiApiKey',
+                                'geminiKeyRotationEnabled', // Force disable rotation if setting single key
+                                'subToolboxEnabled',
+                                'fileTranslationEnabled',
+                                'syncSubtitlesEnabled',
+                                'excludeHearingImpairedSubtitles',
+                                'enableSeasonPacks'
                                 // EXCLUDED (Preserve Advanced): learnOrder, learnPlacement, learnItalic, learnItalicTarget, subtitleProviderTimeout
                             ];
-                            fastOverlayKeys.forEach(key => {
+                            fastOverlayKeys.forEach((key) => {
                                 if (qsConfig[key] !== undefined) {
                                     finalConfig[key] = qsConfig[key];
                                 }
@@ -1915,7 +2025,7 @@
                                 ...(finalConfig.subtitleProviders || {}),
                                 opensubtitles: qsConfig.subtitleProviders.opensubtitles,
                                 subdl: qsConfig.subtitleProviders.subdl,
-                                subsource: qsConfig.subtitleProviders.subsource,
+                                subsource: qsConfig.subtitleProviders.subsource
                             };
 
                             // 3. Reset Quick Setup-owned translation behavior to the standard Gemini + database path.
@@ -1928,7 +2038,8 @@
                             finalConfig.multiProviderEnabled = false;
                             finalConfig.secondaryProviderEnabled = false;
                             finalConfig.secondaryProvider = '';
-                            finalConfig.geminiModel = qsConfig.geminiModel || finalConfig.geminiModel || 'gemini-flash-lite-latest';
+                            finalConfig.geminiModel =
+                                qsConfig.geminiModel || finalConfig.geminiModel || 'gemini-flash-lite-latest';
                             finalConfig.advancedSettings = { ...qsConfig.advancedSettings };
                             finalConfig.translationCache = { ...qsConfig.translationCache };
                             finalConfig.bypassCache = false;
@@ -1966,7 +2077,6 @@
 
                 // If update returned a new token (e.g. expired), use it
                 if (data.token) targetToken = data.token;
-
             } else {
                 // Create new session (fallback or first time)
                 const resp = await fetch('/api/create-session', {
@@ -1994,7 +2104,9 @@
             localStorage.setItem(QS_DISMISSED_KEY, 'true');
 
             // Clear session state since save succeeded
-            try { sessionStorage.removeItem(QS_STATE_KEY); } catch (_) { }
+            try {
+                sessionStorage.removeItem(QS_STATE_KEY);
+            } catch (_) {}
 
             // Mark as saved so close/advanced triggers page reload
             hasSaved = true;
@@ -2004,7 +2116,9 @@
                 localStorage.setItem('submaker_config_cache', JSON.stringify(finalConfig));
                 localStorage.setItem('submaker_config_cache_token', targetToken);
                 localStorage.setItem('submaker_config_cache_expiry', String(Date.now() + 24 * 60 * 60 * 1000));
-            } catch (_) { /* ignore storage quota errors */ }
+            } catch (_) {
+                /* ignore storage quota errors */
+            }
 
             // Build install URL
             const baseUrl = isLocalhost ? 'http://localhost:7001' : window.location.origin;
@@ -2043,7 +2157,6 @@
 
             // Keep the banner visible (permanent entry point)
             // No need to toggle - banner always stays shown
-
         } catch (err) {
             if (statusEl) {
                 statusEl.textContent = '\u2717 ' + err.message;
@@ -2058,21 +2171,24 @@
         const url = window.__qsInstallUrl;
         if (!url) return;
 
-        navigator.clipboard.writeText(url).then(() => {
-            const statusEl = $('qsInstallStatus');
-            if (statusEl) {
-                statusEl.textContent = tQs('status.copiedOk', null, '\u2713 Install URL copied to clipboard!');
-                statusEl.className = 'qs-install-status success';
-            }
-        }).catch(() => {
-            // Fallback
-            const input = document.createElement('input');
-            input.value = url;
-            document.body.appendChild(input);
-            input.select();
-            document.execCommand('copy');
-            document.body.removeChild(input);
-        });
+        navigator.clipboard
+            .writeText(url)
+            .then(() => {
+                const statusEl = $('qsInstallStatus');
+                if (statusEl) {
+                    statusEl.textContent = tQs('status.copiedOk', null, '\u2713 Install URL copied to clipboard!');
+                    statusEl.className = 'qs-install-status success';
+                }
+            })
+            .catch(() => {
+                // Fallback
+                const input = document.createElement('input');
+                input.value = url;
+                document.body.appendChild(input);
+                input.select();
+                document.execCommand('copy');
+                document.body.removeChild(input);
+            });
     }
 
     function handleInstallStremio() {
@@ -2124,7 +2240,7 @@
 
     function resetAllStepUIs() {
         // Step 1 - mode cards
-        document.querySelectorAll('.qs-mode-card').forEach(c => c.classList.remove('selected'));
+        document.querySelectorAll('.qs-mode-card').forEach((c) => c.classList.remove('selected'));
         // Step 2 - reset toggles and inputs
         const subdlCheck = $('qsEnableSubDL');
         const ssCheck = $('qsEnableSubSource');
@@ -2141,7 +2257,10 @@
         const keyInput = $('qsGeminiApiKey');
         if (keyInput) keyInput.value = '';
         const keyStatus = $('qsGeminiKeyStatus');
-        if (keyStatus) { keyStatus.textContent = ''; keyStatus.className = 'qs-key-status'; }
+        if (keyStatus) {
+            keyStatus.textContent = '';
+            keyStatus.className = 'qs-key-status';
+        }
         ['qsOpenSubsStatus', 'qsSubDLStatus', 'qsSubSourceStatus'].forEach((id) => {
             const statusEl = $(id);
             if (statusEl) {
@@ -2175,7 +2294,10 @@
         const summaryList = $('qsSummary');
         if (summaryList) summaryList.innerHTML = '';
         const installStatus = $('qsInstallStatus');
-        if (installStatus) { installStatus.textContent = ''; installStatus.className = 'qs-install-status'; }
+        if (installStatus) {
+            installStatus.textContent = '';
+            installStatus.className = 'qs-install-status';
+        }
         hide('qsInstallUrlBox');
 
         // Reset progress
@@ -2187,7 +2309,9 @@
     function saveStateToSession() {
         try {
             sessionStorage.setItem(QS_STATE_KEY, JSON.stringify(state));
-        } catch (_) { /* quota errors */ }
+        } catch (_) {
+            /* quota errors */
+        }
     }
 
     function restoreStateFromSession() {
@@ -2279,7 +2403,7 @@
 
     function restoreUIFromState() {
         // Step 1 - mode cards
-        document.querySelectorAll('.qs-mode-card').forEach(c => {
+        document.querySelectorAll('.qs-mode-card').forEach((c) => {
             c.classList.toggle('selected', c.dataset.mode === state.mode);
         });
         // Step 2 - checkboxes and inputs
@@ -2329,5 +2453,4 @@
     } else {
         init();
     }
-
 })();

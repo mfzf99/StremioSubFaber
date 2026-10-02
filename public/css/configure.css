@@ -7,10 +7,10 @@
 /* Removed global smooth scrolling to reduce perceived lag */
 
 :root {
-    --primary: #08A4D5;
-    --primary-light: #33B9E1;
-    --primary-dark: #068DB7;
-    --secondary: #33B9E1;
+    --primary: #08a4d5;
+    --primary-light: #33b9e1;
+    --primary-dark: #068db7;
+    --secondary: #33b9e1;
     --accent: #0ea5e9;
     --success: #10b981;
     --warning: #f59e0b;
@@ -25,7 +25,7 @@
     --border: #dbe3ea;
     --shadow: rgba(0, 0, 0, 0.08);
     --glow: rgba(8, 164, 213, 0.25);
-    --vault-display-font: "Aptos Display", "Aptos", "Segoe UI Variable Display", "Segoe UI", "Inter", sans-serif;
+    --vault-display-font: 'Aptos Display', 'Aptos', 'Segoe UI Variable Display', 'Segoe UI', 'Inter', sans-serif;
     --floating-bottom-safe-zone: 0px;
 }
 
@@ -34,65 +34,65 @@ html {
     color-scheme: light;
 }
 
-[dir="rtl"] body {
+[dir='rtl'] body {
     direction: rtl;
     text-align: right;
 }
 
-[dir="rtl"] .ui-language-flag-row,
-[dir="rtl"] .ui-lang-flag,
-[dir="rtl"] .version-badge,
-[dir="rtl"] code,
-[dir="rtl"] .kbd,
-[dir="rtl"] .pill,
-[dir="rtl"] .badge {
+[dir='rtl'] .ui-language-flag-row,
+[dir='rtl'] .ui-lang-flag,
+[dir='rtl'] .version-badge,
+[dir='rtl'] code,
+[dir='rtl'] .kbd,
+[dir='rtl'] .pill,
+[dir='rtl'] .badge {
     direction: ltr;
     unicode-bidi: isolate;
     text-align: left;
 }
 
-[dir="rtl"] input,
-[dir="rtl"] textarea,
-[dir="rtl"] select {
+[dir='rtl'] input,
+[dir='rtl'] textarea,
+[dir='rtl'] select {
     text-align: right;
 }
 
-[data-theme="dark"] {
+[data-theme='dark'] {
     color-scheme: dark;
 }
 
-[data-theme="blackhole"] {
+[data-theme='blackhole'] {
     color-scheme: dark;
 }
 
 /* Dark mode color scheme */
-[data-theme="dark"] {
-    --primary: #08A4D5;
-    --primary-light: #33B9E1;
-    --primary-dark: #068DB7;
-    --secondary: #33B9E1;
+[data-theme='dark'] {
+    --primary: #08a4d5;
+    --primary-light: #33b9e1;
+    --primary-dark: #068db7;
+    --secondary: #33b9e1;
     --accent: #0ea5e9;
     --success: #10b981;
     --warning: #f59e0b;
     --danger: #ef4444;
-    --bg-primary: #0A0E27;
+    --bg-primary: #0a0e27;
     --bg-secondary: #141931;
     --bg-tertiary: #1a1f3a;
     --surface: #141931;
-    --surface-light: #1E2539;
-    --text-primary: #E8EAED;
-    --text-secondary: #9AA0A6;
-    --border: #2A3247;
+    --surface-light: #1e2539;
+    --text-primary: #e8eaed;
+    --text-secondary: #9aa0a6;
+    --border: #2a3247;
     --shadow: rgba(0, 0, 0, 0.3);
     --glow: rgba(8, 164, 213, 0.35);
 }
 
 /* True Dark mode (Blackhole) color scheme */
-[data-theme="blackhole"] {
-    --primary: #08A4D5;
-    --primary-light: #33B9E1;
-    --primary-dark: #068DB7;
-    --secondary: #33B9E1;
+[data-theme='blackhole'] {
+    --primary: #08a4d5;
+    --primary-light: #33b9e1;
+    --primary-dark: #068db7;
+    --secondary: #33b9e1;
     --accent: #0ea5e9;
     --success: #10b981;
     --warning: #f59e0b;
@@ -102,70 +102,70 @@ html {
     --bg-tertiary: #111111;
     --surface: #0a0a0a;
     --surface-light: #151515;
-    --text-primary: #E8EAED;
-    --text-secondary: #8A8A8A;
+    --text-primary: #e8eaed;
+    --text-secondary: #8a8a8a;
     --border: #1a1a1a;
     --shadow: rgba(0, 0, 0, 0.8);
     --glow: rgba(8, 164, 213, 0.45);
 }
 
 /* Dark mode specific overrides */
-[data-theme="dark"] body {
+[data-theme='dark'] body {
     background: linear-gradient(135deg, var(--bg-primary) 0%, var(--bg-secondary) 60%, var(--bg-primary) 100%);
 }
 
-[data-theme="dark"] body::before {
+[data-theme='dark'] body::before {
     background:
         radial-gradient(circle at 20% 50%, rgba(8, 164, 213, 0.15) 0%, transparent 50%),
         radial-gradient(circle at 80% 50%, rgba(51, 185, 225, 0.15) 0%, transparent 50%);
 }
 
-[data-theme="dark"] .modal-overlay {
+[data-theme='dark'] .modal-overlay {
     background: rgba(0, 0, 0, 0.7);
 }
 
-[data-theme="dark"] .card {
+[data-theme='dark'] .card {
     background: rgba(20, 25, 49, 0.85);
 }
 
 /* Dark mode modal + components tuning */
-[data-theme="dark"] .modal {
-    background:
-        linear-gradient(180deg, rgba(20, 25, 49, 0.92) 0%, rgba(20, 25, 49, 0.86) 100%),
-        var(--surface);
+[data-theme='dark'] .modal {
+    background: linear-gradient(180deg, rgba(20, 25, 49, 0.92) 0%, rgba(20, 25, 49, 0.86) 100%), var(--surface);
     border-color: var(--border);
-    box-shadow: 0 24px 72px var(--shadow), 0 0 0 1px rgba(8, 164, 213, 0.12);
+    box-shadow:
+        0 24px 72px var(--shadow),
+        0 0 0 1px rgba(8, 164, 213, 0.12);
 }
 
-[data-theme="dark"] .modal-header {
+[data-theme='dark'] .modal-header {
     background: linear-gradient(135deg, rgba(8, 164, 213, 0.06) 0%, rgba(51, 185, 225, 0.06) 100%);
     border-bottom-color: var(--border);
 }
 
-[data-theme="dark"] .modal-footer {
+[data-theme='dark'] .modal-footer {
     background: var(--surface);
     border-top-color: var(--border);
 }
 
-[data-theme="dark"] .reset-bar {
+[data-theme='dark'] .reset-bar {
     background: var(--surface);
     border-color: var(--border);
     box-shadow: 0 8px 24px var(--shadow);
 }
 
-[data-theme="dark"] .alert-info {
+[data-theme='dark'] .alert-info {
     background: rgba(8, 164, 213, 0.16);
     border-color: var(--primary);
     color: var(--primary-light);
 }
 
-[data-theme="dark"] input[type="text"]::placeholder,
-[data-theme="dark"] input[type="password"]::placeholder {
+[data-theme='dark'] input[type='text']::placeholder,
+[data-theme='dark'] input[type='password']::placeholder {
     color: #64748b;
 }
 
 /* Dark mode keyboard hint contrast fix */
-[data-theme="dark"] .keyboard-hint {
+[data-theme='dark'] .keyboard-hint {
     background: rgba(20, 25, 49, 0.9);
     color: var(--text-primary);
     border-color: var(--border);
@@ -173,93 +173,98 @@ html {
 
 /* Fix radio button label backgrounds in dark mode */
 /* Unselected options should be darker */
-[data-theme="dark"] label:has(input[type="radio"]:not(:checked))[style*="background: white"] {
+[data-theme='dark'] label:has(input[type='radio']:not(:checked))[style*='background: white'] {
     background: var(--bg-secondary) !important;
 }
 
 /* Selected option should be lighter/brighter */
-[data-theme="dark"] label:has(input[type="radio"]:checked)[style*="background: white"] {
+[data-theme='dark'] label:has(input[type='radio']:checked)[style*='background: white'] {
     background: var(--surface-light) !important;
     border-color: var(--primary) !important;
 }
 
 /* True Dark mode (Blackhole) specific overrides */
-[data-theme="blackhole"] body {
+[data-theme='blackhole'] body {
     background: linear-gradient(135deg, var(--bg-primary) 0%, var(--bg-secondary) 60%, var(--bg-primary) 100%);
 }
 
-[data-theme="blackhole"] body::before {
+[data-theme='blackhole'] body::before {
     background:
         radial-gradient(circle at 20% 50%, rgba(8, 164, 213, 0.08) 0%, transparent 50%),
         radial-gradient(circle at 80% 50%, rgba(51, 185, 225, 0.08) 0%, transparent 50%);
 }
 
-[data-theme="blackhole"] .modal-overlay {
+[data-theme='blackhole'] .modal-overlay {
     background: rgba(0, 0, 0, 0.9);
 }
 
-[data-theme="blackhole"] .card {
+[data-theme='blackhole'] .card {
     background: rgba(10, 10, 10, 0.95);
 }
 
 /* True Dark mode modal + components tuning */
-[data-theme="blackhole"] .modal {
-    background:
-        linear-gradient(180deg, rgba(10, 10, 10, 0.92) 0%, rgba(10, 10, 10, 0.86) 100%),
-        var(--surface);
+[data-theme='blackhole'] .modal {
+    background: linear-gradient(180deg, rgba(10, 10, 10, 0.92) 0%, rgba(10, 10, 10, 0.86) 100%), var(--surface);
     border-color: var(--border);
-    box-shadow: 0 28px 84px var(--shadow), 0 0 0 1px rgba(8, 164, 213, 0.14);
+    box-shadow:
+        0 28px 84px var(--shadow),
+        0 0 0 1px rgba(8, 164, 213, 0.14);
 }
 
-[data-theme="blackhole"] .modal-header {
+[data-theme='blackhole'] .modal-header {
     background: linear-gradient(135deg, rgba(8, 164, 213, 0.05) 0%, rgba(51, 185, 225, 0.05) 100%);
     border-bottom-color: var(--border);
 }
 
-[data-theme="blackhole"] .modal-footer {
+[data-theme='blackhole'] .modal-footer {
     background: var(--surface);
     border-top-color: var(--border);
 }
 
-[data-theme="blackhole"] .reset-bar {
+[data-theme='blackhole'] .reset-bar {
     background: var(--surface);
     border-color: var(--border);
     box-shadow: 0 10px 28px var(--shadow);
 }
 
-[data-theme="blackhole"] .alert-info {
+[data-theme='blackhole'] .alert-info {
     background: rgba(8, 164, 213, 0.18);
     border-color: var(--primary);
     color: #d6f3ff;
 }
 
-[data-theme="blackhole"] input[type="text"]::placeholder,
-[data-theme="blackhole"] input[type="password"]::placeholder {
+[data-theme='blackhole'] input[type='text']::placeholder,
+[data-theme='blackhole'] input[type='password']::placeholder {
     color: #4a4a4a;
 }
 
-[data-theme="blackhole"] .keyboard-hint {
+[data-theme='blackhole'] .keyboard-hint {
     background: rgba(10, 10, 10, 0.95);
     color: var(--text-primary);
     border-color: var(--border);
 }
 
-[data-theme="blackhole"] label:has(input[type="radio"]:not(:checked))[style*="background: white"] {
+[data-theme='blackhole'] label:has(input[type='radio']:not(:checked))[style*='background: white'] {
     background: var(--bg-secondary) !important;
 }
 
-[data-theme="blackhole"] label:has(input[type="radio"]:checked)[style*="background: white"] {
+[data-theme='blackhole'] label:has(input[type='radio']:checked)[style*='background: white'] {
     background: var(--surface-light) !important;
     border-color: var(--primary) !important;
 }
 
-[data-theme="blackhole"] .theme-toggle {
+[data-theme='blackhole'] .theme-toggle {
     background: rgba(10, 10, 10, 0.95);
     border-color: var(--border);
 }
 
 body {
-    font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+    font-family:
+        'Inter',
+        -apple-system,
+        BlinkMacSystemFont,
+        'Segoe UI',
+        sans-serif;
     background: linear-gradient(135deg, var(--bg-primary) 0%, #ffffff 60%, var(--bg-primary) 100%);
     color: var(--text-primary);
     min-height: 100vh;
@@ -319,11 +324,16 @@ body.modal-open {
     background: rgba(255, 255, 255, 0.92);
     border: 1px solid var(--border);
     border-radius: 14px;
-    box-shadow: 0 12px 28px var(--shadow), 0 0 0 1px rgba(255, 255, 255, 0.25);
+    box-shadow:
+        0 12px 28px var(--shadow),
+        0 0 0 1px rgba(255, 255, 255, 0.25);
     backdrop-filter: blur(12px);
     -webkit-backdrop-filter: blur(12px);
     z-index: 9985;
-    transition: box-shadow 0.18s ease, border-color 0.18s ease, transform 0.18s ease;
+    transition:
+        box-shadow 0.18s ease,
+        border-color 0.18s ease,
+        transform 0.18s ease;
     isolation: isolate;
     cursor: pointer;
 }
@@ -341,33 +351,42 @@ body.modal-open {
     box-shadow: 0 0 0 1px rgba(255, 255, 255, 0.12);
 }
 
-html[data-theme="dark"] .ui-language-dock,
-html[data-theme="blackhole"] .ui-language-dock {
+html[data-theme='dark'] .ui-language-dock,
+html[data-theme='blackhole'] .ui-language-dock {
     background: rgba(12, 17, 36, 0.9);
     border-color: rgba(255, 255, 255, 0.12);
-    box-shadow: 0 14px 30px var(--shadow), 0 0 0 1px rgba(8, 164, 213, 0.16);
+    box-shadow:
+        0 14px 30px var(--shadow),
+        0 0 0 1px rgba(8, 164, 213, 0.16);
 }
 
-html[data-theme="blackhole"] .ui-language-dock {
+html[data-theme='blackhole'] .ui-language-dock {
     background: rgba(4, 6, 10, 0.94);
     border-color: rgba(255, 255, 255, 0.08);
-    box-shadow: 0 16px 34px rgba(0, 0, 0, 0.75), 0 0 0 1px rgba(8, 164, 213, 0.2);
+    box-shadow:
+        0 16px 34px rgba(0, 0, 0, 0.75),
+        0 0 0 1px rgba(8, 164, 213, 0.2);
 }
 
 .ui-language-dock:hover {
     transform: translateY(-1px);
-    box-shadow: 0 16px 36px var(--shadow), 0 0 0 1px rgba(8, 164, 213, 0.25);
+    box-shadow:
+        0 16px 36px var(--shadow),
+        0 0 0 1px rgba(8, 164, 213, 0.25);
 }
 
 .ui-language-dock:focus-within {
     border-color: rgba(8, 164, 213, 0.7);
-    box-shadow: 0 16px 38px var(--shadow), 0 0 0 2px rgba(8, 164, 213, 0.25);
+    box-shadow:
+        0 16px 38px var(--shadow),
+        0 0 0 2px rgba(8, 164, 213, 0.25);
 }
 
 .ui-language-glow {
     position: absolute;
     inset: -30%;
-    background: radial-gradient(circle at 30% 50%, rgba(8, 164, 213, 0.25), transparent 50%),
+    background:
+        radial-gradient(circle at 30% 50%, rgba(8, 164, 213, 0.25), transparent 50%),
         radial-gradient(circle at 80% 40%, rgba(51, 185, 225, 0.2), transparent 55%);
     filter: blur(18px);
     opacity: 0.8;
@@ -404,12 +423,18 @@ html[data-theme="blackhole"] .ui-language-dock {
     font-weight: 800;
     color: var(--text-primary);
     font-family: inherit;
-    background: radial-gradient(circle at 35% 35%, rgba(255, 255, 255, 0.9), rgba(255, 255, 255, 0.7)),
+    background:
+        radial-gradient(circle at 35% 35%, rgba(255, 255, 255, 0.9), rgba(255, 255, 255, 0.7)),
         linear-gradient(145deg, rgba(8, 164, 213, 0.14), rgba(51, 185, 225, 0.12));
     border: 1px solid rgba(0, 0, 0, 0.08);
-    box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.65), 0 10px 20px rgba(0, 0, 0, 0.12);
+    box-shadow:
+        inset 0 1px 0 rgba(255, 255, 255, 0.65),
+        0 10px 20px rgba(0, 0, 0, 0.12);
     cursor: pointer;
-    transition: transform 0.2s ease, box-shadow 0.2s ease, border-color 0.2s ease;
+    transition:
+        transform 0.2s ease,
+        box-shadow 0.2s ease,
+        border-color 0.2s ease;
 }
 
 .ui-lang-flag-icon {
@@ -427,27 +452,33 @@ html[data-theme="blackhole"] .ui-language-dock {
     box-shadow: 0 0 0 1px rgba(0, 0, 0, 0.15);
 }
 
-html[data-theme="dark"] .ui-lang-flag {
+html[data-theme='dark'] .ui-lang-flag {
     color: #e5f6ff;
     background:
         linear-gradient(150deg, rgba(8, 164, 213, 0.24), rgba(51, 185, 225, 0.16)),
         linear-gradient(180deg, rgba(10, 15, 32, 0.95), rgba(13, 20, 38, 0.92));
     border-color: rgba(8, 164, 213, 0.25);
-    box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.12), 0 12px 20px rgba(0, 0, 0, 0.45);
+    box-shadow:
+        inset 0 1px 0 rgba(255, 255, 255, 0.12),
+        0 12px 20px rgba(0, 0, 0, 0.45);
 }
 
-html[data-theme="blackhole"] .ui-lang-flag {
+html[data-theme='blackhole'] .ui-lang-flag {
     color: #dff5ff;
     background:
         linear-gradient(155deg, rgba(8, 164, 213, 0.22), rgba(51, 185, 225, 0.1)),
         linear-gradient(180deg, rgba(4, 6, 10, 0.96), rgba(8, 10, 14, 0.92));
     border-color: rgba(8, 164, 213, 0.22);
-    box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.08), 0 12px 22px rgba(0, 0, 0, 0.65);
+    box-shadow:
+        inset 0 1px 0 rgba(255, 255, 255, 0.08),
+        0 12px 22px rgba(0, 0, 0, 0.65);
 }
 
 .ui-lang-flag:hover {
     transform: translateY(-1px) scale(1.02);
-    box-shadow: 0 14px 26px rgba(0, 0, 0, 0.14), 0 0 0 1px rgba(8, 164, 213, 0.18);
+    box-shadow:
+        0 14px 26px rgba(0, 0, 0, 0.14),
+        0 0 0 1px rgba(8, 164, 213, 0.18);
 }
 
 .ui-lang-flag:focus-visible {
@@ -457,27 +488,34 @@ html[data-theme="blackhole"] .ui-lang-flag {
 
 .ui-lang-flag.active {
     border-color: var(--primary);
-    box-shadow: 0 14px 30px rgba(8, 164, 213, 0.28), 0 0 0 1px rgba(8, 164, 213, 0.35);
-    background: radial-gradient(circle at 35% 35%, rgba(255, 255, 255, 0.95), rgba(255, 255, 255, 0.78)),
+    box-shadow:
+        0 14px 30px rgba(8, 164, 213, 0.28),
+        0 0 0 1px rgba(8, 164, 213, 0.35);
+    background:
+        radial-gradient(circle at 35% 35%, rgba(255, 255, 255, 0.95), rgba(255, 255, 255, 0.78)),
         linear-gradient(145deg, rgba(8, 164, 213, 0.25), rgba(51, 185, 225, 0.2));
 }
 
-html[data-theme="dark"] .ui-lang-flag.active {
+html[data-theme='dark'] .ui-lang-flag.active {
     color: #eaf6ff;
     background:
         linear-gradient(150deg, rgba(8, 164, 213, 0.32), rgba(51, 185, 225, 0.26)),
         linear-gradient(180deg, rgba(10, 17, 35, 0.96), rgba(8, 13, 26, 0.96));
     border-color: rgba(8, 164, 213, 0.6);
-    box-shadow: 0 14px 30px rgba(8, 164, 213, 0.32), 0 0 0 1px rgba(8, 164, 213, 0.45);
+    box-shadow:
+        0 14px 30px rgba(8, 164, 213, 0.32),
+        0 0 0 1px rgba(8, 164, 213, 0.45);
 }
 
-html[data-theme="blackhole"] .ui-lang-flag.active {
+html[data-theme='blackhole'] .ui-lang-flag.active {
     color: #e8f7ff;
     background:
         linear-gradient(155deg, rgba(8, 164, 213, 0.36), rgba(51, 185, 225, 0.22)),
         linear-gradient(180deg, rgba(5, 7, 12, 0.96), rgba(2, 4, 8, 0.96));
     border-color: rgba(8, 164, 213, 0.65);
-    box-shadow: 0 14px 30px rgba(8, 164, 213, 0.38), 0 0 0 1px rgba(8, 164, 213, 0.5);
+    box-shadow:
+        0 14px 30px rgba(8, 164, 213, 0.38),
+        0 0 0 1px rgba(8, 164, 213, 0.5);
 }
 
 @media (max-width: 1024px) {
@@ -590,19 +628,20 @@ h1::before {
     left: 0;
     right: 0;
     bottom: 0;
-    background: linear-gradient(135deg,
-            transparent 0%,
-            transparent 40%,
-            rgba(255, 255, 255, 0.4) 50%,
-            transparent 60%,
-            transparent 100%);
+    background: linear-gradient(
+        135deg,
+        transparent 0%,
+        transparent 40%,
+        rgba(255, 255, 255, 0.4) 50%,
+        transparent 60%,
+        transparent 100%
+    );
     border-radius: 16px;
     opacity: 0;
     animation: shimmer 4s ease-in-out infinite;
     pointer-events: none;
     overflow: hidden;
 }
-
 
 /* Hover effect for interactivity */
 h1:hover {
@@ -617,7 +656,6 @@ h1:hover {
 
 /* Pulsing glow animation */
 @keyframes titlePulse {
-
     0%,
     100% {
         box-shadow:
@@ -656,7 +694,7 @@ h1:hover {
 }
 
 /* Dark mode adjustments for h1 */
-[data-theme="dark"] h1 {
+[data-theme='dark'] h1 {
     border-color: rgba(0, 0, 0, 0.4);
     background:
         linear-gradient(180deg, rgba(255, 255, 255, 0.12) 0%, rgba(0, 0, 0, 0.15) 100%),
@@ -669,7 +707,7 @@ h1:hover {
         0 0 60px rgba(8, 164, 213, 0.4);
 }
 
-[data-theme="dark"] h1:hover {
+[data-theme='dark'] h1:hover {
     box-shadow:
         inset 0 3px 0 rgba(255, 255, 255, 0.4),
         inset 0 -4px 0 rgba(0, 0, 0, 0.5),
@@ -679,7 +717,7 @@ h1:hover {
 }
 
 /* Blackhole mode - MAXIMUM DRAMA */
-[data-theme="blackhole"] h1 {
+[data-theme='blackhole'] h1 {
     border-color: rgba(8, 164, 213, 0.3);
     background:
         linear-gradient(180deg, rgba(255, 255, 255, 0.08) 0%, rgba(0, 0, 0, 0.4) 100%),
@@ -697,7 +735,7 @@ h1:hover {
         0 -1px 2px rgba(255, 255, 255, 0.2);
 }
 
-[data-theme="blackhole"] h1:hover {
+[data-theme='blackhole'] h1:hover {
     box-shadow:
         inset 0 3px 0 rgba(255, 255, 255, 0.3),
         inset 0 -4px 0 rgba(0, 0, 0, 0.8),
@@ -707,13 +745,15 @@ h1:hover {
         0 0 150px rgba(51, 185, 225, 0.4);
 }
 
-[data-theme="blackhole"] h1::before {
-    background: linear-gradient(135deg,
-            transparent 0%,
-            transparent 40%,
-            rgba(8, 164, 213, 0.6) 50%,
-            transparent 60%,
-            transparent 100%);
+[data-theme='blackhole'] h1::before {
+    background: linear-gradient(
+        135deg,
+        transparent 0%,
+        transparent 40%,
+        rgba(8, 164, 213, 0.6) 50%,
+        transparent 60%,
+        transparent 100%
+    );
 }
 
 .subtitle {
@@ -730,7 +770,7 @@ h1:hover {
     box-shadow:
         inset 0 2px 0 rgba(255, 255, 255, 0.15),
         inset 0 -3px 0 rgba(0, 0, 0, 0.12),
-        0 4px 0 rgba(0, 0, 0, 0.10);
+        0 4px 0 rgba(0, 0, 0, 0.1);
     text-shadow: 0 1px 0 rgba(255, 255, 255, 0.25);
 }
 
@@ -758,12 +798,10 @@ h1:hover {
         /* Inner bevel */
         inset 0 1px 0 rgba(255, 255, 255, 0.1),
         inset 0 -1px 0 rgba(0, 0, 0, 0.3),
-        /* Mid frame ring */
-        0 0 0 3px rgba(6, 130, 170, 0.35),
+        /* Mid frame ring */ 0 0 0 3px rgba(6, 130, 170, 0.35),
         0 0 0 5px rgba(0, 10, 25, 0.6),
         0 0 0 7px rgba(8, 164, 213, 0.2),
-        /* Outer glow */
-        0 0 35px rgba(8, 164, 213, 0.2),
+        /* Outer glow */ 0 0 35px rgba(8, 164, 213, 0.2),
         0 0 70px rgba(8, 164, 213, 0.08),
         0 8px 32px rgba(0, 0, 0, 0.25);
 }
@@ -772,7 +810,6 @@ h1:hover {
 .portal-corner {
     display: none;
 }
-
 
 /* ── Enhanced starfield ── */
 .portal-starfield {
@@ -787,13 +824,11 @@ h1:hover {
         radial-gradient(1.5px 1.5px at 78% 32%, rgba(255, 255, 255, 0.75), transparent),
         radial-gradient(1px 1px at 90% 72%, rgba(255, 255, 255, 0.45), transparent),
         radial-gradient(1px 1px at 8% 82%, rgba(255, 255, 255, 0.4), transparent),
-        /* Coloured nebula stars */
-        radial-gradient(2px 2px at 35% 40%, rgba(8, 164, 213, 0.8), transparent),
+        /* Coloured nebula stars */ radial-gradient(2px 2px at 35% 40%, rgba(8, 164, 213, 0.8), transparent),
         radial-gradient(2.5px 2.5px at 72% 80%, rgba(51, 185, 225, 0.65), transparent),
         radial-gradient(1.5px 1.5px at 55% 90%, rgba(100, 200, 255, 0.5), transparent),
         radial-gradient(3px 3px at 88% 12%, rgba(8, 164, 213, 0.55), transparent),
-        /* Nebula clouds */
-        radial-gradient(ellipse 80px 50px at 25% 60%, rgba(8, 164, 213, 0.06), transparent),
+        /* Nebula clouds */ radial-gradient(ellipse 80px 50px at 25% 60%, rgba(8, 164, 213, 0.06), transparent),
         radial-gradient(ellipse 60px 40px at 75% 30%, rgba(100, 50, 200, 0.04), transparent);
     background-size: 200% 200%;
     animation: portalStarDrift 30s linear infinite;
@@ -830,7 +865,6 @@ h1:hover {
 }
 
 @keyframes portalGlowPulse {
-
     0%,
     100% {
         opacity: 0.5;
@@ -896,7 +930,6 @@ h1:hover {
 }
 
 @keyframes cFloat1 {
-
     0%,
     100% {
         transform: translate(0, 0) rotate(5deg);
@@ -916,7 +949,6 @@ h1:hover {
 }
 
 @keyframes cFloat2 {
-
     0%,
     100% {
         transform: translate(0, 0) rotate(-3deg);
@@ -936,7 +968,6 @@ h1:hover {
 }
 
 @keyframes cFloat3 {
-
     0%,
     100% {
         transform: translate(0, 0) rotate(2deg);
@@ -956,7 +987,6 @@ h1:hover {
 }
 
 @keyframes cFloat4 {
-
     0%,
     100% {
         transform: translate(0, 0) rotate(-6deg);
@@ -976,7 +1006,6 @@ h1:hover {
 }
 
 @keyframes cFloat5 {
-
     0%,
     100% {
         transform: translate(0, 0) rotate(4deg);
@@ -998,7 +1027,9 @@ h1:hover {
 /* ── Default dark theme: FIREFLIES (glowing dots, no wings) ── */
 .portal-creature {
     background: rgba(34, 211, 238, 0.85);
-    box-shadow: 0 0 6px rgba(34, 211, 238, 0.7), 0 0 14px rgba(34, 211, 238, 0.3);
+    box-shadow:
+        0 0 6px rgba(34, 211, 238, 0.7),
+        0 0 14px rgba(34, 211, 238, 0.3);
     animation-timing-function: ease-in-out;
 }
 
@@ -1012,27 +1043,36 @@ h1:hover {
 
 /* Firefly twinkle */
 .portal-creature.c1 {
-    animation: cFloat1 14s ease-in-out infinite, fireGlow 2.5s ease-in-out infinite;
+    animation:
+        cFloat1 14s ease-in-out infinite,
+        fireGlow 2.5s ease-in-out infinite;
 }
 
 .portal-creature.c2 {
-    animation: cFloat2 18s ease-in-out infinite, fireGlow 3.2s ease-in-out infinite 0.5s;
+    animation:
+        cFloat2 18s ease-in-out infinite,
+        fireGlow 3.2s ease-in-out infinite 0.5s;
 }
 
 .portal-creature.c3 {
-    animation: cFloat3 12s ease-in-out infinite, fireGlow 2.8s ease-in-out infinite 1s;
+    animation:
+        cFloat3 12s ease-in-out infinite,
+        fireGlow 2.8s ease-in-out infinite 1s;
 }
 
 .portal-creature.c4 {
-    animation: cFloat4 16s ease-in-out infinite, fireGlow 3.5s ease-in-out infinite 0.3s;
+    animation:
+        cFloat4 16s ease-in-out infinite,
+        fireGlow 3.5s ease-in-out infinite 0.3s;
 }
 
 .portal-creature.c5 {
-    animation: cFloat5 20s ease-in-out infinite, fireGlow 2.2s ease-in-out infinite 0.8s;
+    animation:
+        cFloat5 20s ease-in-out infinite,
+        fireGlow 2.2s ease-in-out infinite 0.8s;
 }
 
 @keyframes fireGlow {
-
     0%,
     100% {
         opacity: 0.4;
@@ -1044,7 +1084,7 @@ h1:hover {
 }
 
 /* ── Light theme: ICE BUTTERFLIES ── */
-[data-theme="light"] .portal-creature,
+[data-theme='light'] .portal-creature,
 :root:not([data-theme]) .portal-creature {
     background: rgba(135, 206, 250, 0.9);
     box-shadow: 0 0 4px rgba(135, 206, 250, 0.5);
@@ -1052,19 +1092,21 @@ h1:hover {
     height: 3px;
 }
 
-[data-theme="light"] .portal-creature::before,
-[data-theme="light"] .portal-creature::after,
+[data-theme='light'] .portal-creature::before,
+[data-theme='light'] .portal-creature::after,
 :root:not([data-theme]) .portal-creature::before,
 :root:not([data-theme]) .portal-creature::after {
     display: block;
     width: 9px;
     height: 13px;
     top: -6px;
-    background: radial-gradient(ellipse at 40% 40%,
-            rgba(200, 235, 255, 0.85) 0%,
-            rgba(135, 206, 250, 0.55) 40%,
-            rgba(100, 180, 240, 0.25) 80%,
-            transparent 100%);
+    background: radial-gradient(
+        ellipse at 40% 40%,
+        rgba(200, 235, 255, 0.85) 0%,
+        rgba(135, 206, 250, 0.55) 40%,
+        rgba(100, 180, 240, 0.25) 80%,
+        transparent 100%
+    );
     border-radius: 50% 80% 15% 80%;
     box-shadow:
         inset 0 0 3px rgba(255, 255, 255, 0.5),
@@ -1072,13 +1114,13 @@ h1:hover {
     animation: wingFlap 0.28s ease-in-out infinite alternate;
 }
 
-[data-theme="light"] .portal-creature::before,
+[data-theme='light'] .portal-creature::before,
 :root:not([data-theme]) .portal-creature::before {
     right: 50%;
     transform-origin: right center;
 }
 
-[data-theme="light"] .portal-creature::after,
+[data-theme='light'] .portal-creature::after,
 :root:not([data-theme]) .portal-creature::after {
     left: 50%;
     transform-origin: left center;
@@ -1096,41 +1138,41 @@ h1:hover {
 }
 
 /* Restore float animations for light theme (overriding fireGlow compound) */
-[data-theme="light"] .portal-creature.c1,
+[data-theme='light'] .portal-creature.c1,
 :root:not([data-theme]) .portal-creature.c1 {
     animation: cFloat1 14s ease-in-out infinite;
 }
 
-[data-theme="light"] .portal-creature.c2,
+[data-theme='light'] .portal-creature.c2,
 :root:not([data-theme]) .portal-creature.c2 {
     animation: cFloat2 18s ease-in-out infinite;
 }
 
-[data-theme="light"] .portal-creature.c3,
+[data-theme='light'] .portal-creature.c3,
 :root:not([data-theme]) .portal-creature.c3 {
     animation: cFloat3 12s ease-in-out infinite;
 }
 
-[data-theme="light"] .portal-creature.c4,
+[data-theme='light'] .portal-creature.c4,
 :root:not([data-theme]) .portal-creature.c4 {
     animation: cFloat4 16s ease-in-out infinite;
 }
 
-[data-theme="light"] .portal-creature.c5,
+[data-theme='light'] .portal-creature.c5,
 :root:not([data-theme]) .portal-creature.c5 {
     animation: cFloat5 20s ease-in-out infinite;
 }
 
 /* ── True-dark: GHOST BATS ── */
-[data-theme="blackhole"] .portal-creature {
+[data-theme='blackhole'] .portal-creature {
     background: rgba(120, 60, 180, 0.8);
     box-shadow: 0 0 5px rgba(120, 60, 180, 0.5);
     width: 3px;
     height: 3px;
 }
 
-[data-theme="blackhole"] .portal-creature::before,
-[data-theme="blackhole"] .portal-creature::after {
+[data-theme='blackhole'] .portal-creature::before,
+[data-theme='blackhole'] .portal-creature::after {
     display: block;
     width: 13px;
     height: 9px;
@@ -1142,12 +1184,12 @@ h1:hover {
     animation: batFlap 0.35s ease-in-out infinite alternate;
 }
 
-[data-theme="blackhole"] .portal-creature::before {
+[data-theme='blackhole'] .portal-creature::before {
     right: 50%;
     transform-origin: right center;
 }
 
-[data-theme="blackhole"] .portal-creature::after {
+[data-theme='blackhole'] .portal-creature::after {
     left: 50%;
     transform-origin: left center;
     animation-delay: 0.06s;
@@ -1164,23 +1206,23 @@ h1:hover {
 }
 
 /* Bat float paths (slightly faster, more erratic) */
-[data-theme="blackhole"] .portal-creature.c1 {
+[data-theme='blackhole'] .portal-creature.c1 {
     animation: cFloat1 11s ease-in-out infinite;
 }
 
-[data-theme="blackhole"] .portal-creature.c2 {
+[data-theme='blackhole'] .portal-creature.c2 {
     animation: cFloat2 14s ease-in-out infinite;
 }
 
-[data-theme="blackhole"] .portal-creature.c3 {
+[data-theme='blackhole'] .portal-creature.c3 {
     animation: cFloat3 9s ease-in-out infinite;
 }
 
-[data-theme="blackhole"] .portal-creature.c4 {
+[data-theme='blackhole'] .portal-creature.c4 {
     animation: cFloat4 13s ease-in-out infinite;
 }
 
-[data-theme="blackhole"] .portal-creature.c5 {
+[data-theme='blackhole'] .portal-creature.c5 {
     animation: cFloat5 16s ease-in-out infinite;
 }
 
@@ -1201,26 +1243,43 @@ h1:hover {
     /* Pixel art: tiny astronaut (8w × 10h at 2px/pixel) */
     box-shadow:
         /* Helmet top */
-        6px 0 0 #4ec6e8, 8px 0 0 #4ec6e8,
-        /* Helmet */
-        4px 2px 0 #4ec6e8, 6px 2px 0 #6ed8f4, 8px 2px 0 #6ed8f4, 10px 2px 0 #4ec6e8,
-        /* Visor */
-        4px 4px 0 #3ab0d4, 6px 4px 0 #1a1a3a, 8px 4px 0 #1a1a3a, 10px 4px 0 #3ab0d4,
-        /* Chin */
-        6px 6px 0 #f0c8a0, 8px 6px 0 #f0c8a0,
-        /* Suit top */
-        4px 8px 0 #3498db, 6px 8px 0 #5dade2, 8px 8px 0 #5dade2, 10px 8px 0 #3498db,
-        /* Arms out */
-        2px 10px 0 #f0c8a0, 4px 10px 0 #2e86c1, 6px 10px 0 #2e86c1, 8px 10px 0 #2e86c1, 10px 10px 0 #2e86c1, 12px 10px 0 #f0c8a0,
-        /* Suit bottom */
-        4px 12px 0 #2e86c1, 6px 12px 0 #2e86c1, 8px 12px 0 #2e86c1, 10px 12px 0 #2e86c1,
-        /* Belt */
-        6px 14px 0 #d4ac0d, 8px 14px 0 #d4ac0d,
-        /* Legs */
-        4px 16px 0 #2c3e50, 10px 16px 0 #2c3e50,
-        /* Boots */
-        2px 18px 0 #1a252f, 4px 18px 0 #1a252f, 10px 18px 0 #1a252f, 12px 18px 0 #1a252f;
-    animation: pixelRun 15s linear infinite, pixelBounce 0.45s ease-in-out infinite;
+        6px 0 0 #4ec6e8,
+        8px 0 0 #4ec6e8,
+        /* Helmet */ 4px 2px 0 #4ec6e8,
+        6px 2px 0 #6ed8f4,
+        8px 2px 0 #6ed8f4,
+        10px 2px 0 #4ec6e8,
+        /* Visor */ 4px 4px 0 #3ab0d4,
+        6px 4px 0 #1a1a3a,
+        8px 4px 0 #1a1a3a,
+        10px 4px 0 #3ab0d4,
+        /* Chin */ 6px 6px 0 #f0c8a0,
+        8px 6px 0 #f0c8a0,
+        /* Suit top */ 4px 8px 0 #3498db,
+        6px 8px 0 #5dade2,
+        8px 8px 0 #5dade2,
+        10px 8px 0 #3498db,
+        /* Arms out */ 2px 10px 0 #f0c8a0,
+        4px 10px 0 #2e86c1,
+        6px 10px 0 #2e86c1,
+        8px 10px 0 #2e86c1,
+        10px 10px 0 #2e86c1,
+        12px 10px 0 #f0c8a0,
+        /* Suit bottom */ 4px 12px 0 #2e86c1,
+        6px 12px 0 #2e86c1,
+        8px 12px 0 #2e86c1,
+        10px 12px 0 #2e86c1,
+        /* Belt */ 6px 14px 0 #d4ac0d,
+        8px 14px 0 #d4ac0d,
+        /* Legs */ 4px 16px 0 #2c3e50,
+        10px 16px 0 #2c3e50,
+        /* Boots */ 2px 18px 0 #1a252f,
+        4px 18px 0 #1a252f,
+        10px 18px 0 #1a252f,
+        12px 18px 0 #1a252f;
+    animation:
+        pixelRun 15s linear infinite,
+        pixelBounce 0.45s ease-in-out infinite;
 }
 
 @keyframes pixelRun {
@@ -1234,7 +1293,6 @@ h1:hover {
 }
 
 @keyframes pixelBounce {
-
     0%,
     100% {
         transform: translateY(0);
@@ -1246,17 +1304,17 @@ h1:hover {
 }
 
 /* Dark theme runner: slightly brighter colours */
-[data-theme="dark"] .portal-runner {
+[data-theme='dark'] .portal-runner {
     filter: brightness(1.15);
 }
 
 /* True-dark runner: purple/ghost tint */
-[data-theme="blackhole"] .portal-runner {
+[data-theme='blackhole'] .portal-runner {
     filter: hue-rotate(60deg) brightness(0.9);
 }
 
 /* Light theme runner: darker suit for contrast */
-[data-theme="light"] .portal-runner,
+[data-theme='light'] .portal-runner,
 :root:not([data-theme]) .portal-runner {
     filter: brightness(0.85) saturate(1.3);
 }
@@ -1325,12 +1383,13 @@ h1:hover {
     height: 10px;
     border-radius: 50%;
     background: #22d3ee;
-    box-shadow: 0 0 8px rgba(34, 211, 238, 0.8), 0 0 20px rgba(34, 211, 238, 0.4);
+    box-shadow:
+        0 0 8px rgba(34, 211, 238, 0.8),
+        0 0 20px rgba(34, 211, 238, 0.4);
     animation: portalNewPulse 2s ease-in-out infinite;
 }
 
 @keyframes portalNewPulse {
-
     0%,
     100% {
         transform: scale(1);
@@ -1361,7 +1420,9 @@ h1:hover {
     z-index: 6;
     max-height: 0;
     overflow: hidden;
-    transition: max-height 0.4s cubic-bezier(0.16, 1, 0.3, 1), opacity 0.3s ease;
+    transition:
+        max-height 0.4s cubic-bezier(0.16, 1, 0.3, 1),
+        opacity 0.3s ease;
     opacity: 0;
 }
 
@@ -1403,7 +1464,9 @@ h1:hover {
     border: 1px solid rgba(8, 164, 213, 0.15);
     border-radius: 10px;
     overflow: hidden;
-    transition: border-color 0.2s ease, background 0.2s ease;
+    transition:
+        border-color 0.2s ease,
+        background 0.2s ease;
 }
 
 .portal-entry:hover {
@@ -1455,7 +1518,9 @@ h1:hover {
 .portal-entry-content {
     max-height: 0;
     overflow: hidden;
-    transition: max-height 0.35s cubic-bezier(0.16, 1, 0.3, 1), padding 0.2s ease;
+    transition:
+        max-height 0.35s cubic-bezier(0.16, 1, 0.3, 1),
+        padding 0.2s ease;
     padding: 0 0.75rem;
 }
 
@@ -1518,31 +1583,32 @@ h1:hover {
     border: 1px solid rgba(8, 164, 213, 0.3);
     border-radius: 8px;
     background: rgba(8, 164, 213, 0.08);
-    transition: background 0.2s ease, border-color 0.2s ease;
+    transition:
+        background 0.2s ease,
+        border-color 0.2s ease;
 }
 
 .portal-entry.expanded .portal-gh-link {
     display: block;
 }
 
-[data-theme="light"] .portal-gh-link,
+[data-theme='light'] .portal-gh-link,
 :root:not([data-theme]) .portal-gh-link {
     color: var(--primary-dark);
     border-color: rgba(8, 164, 213, 0.25);
     background: rgba(8, 164, 213, 0.06);
 }
 
-[data-theme="light"] .portal-gh-link:hover,
+[data-theme='light'] .portal-gh-link:hover,
 :root:not([data-theme]) .portal-gh-link:hover {
     background: rgba(8, 164, 213, 0.14);
     border-color: rgba(8, 164, 213, 0.4);
 }
 
-
 /* ==================================================================
    LIGHT THEME overrides
    ================================================================== */
-[data-theme="light"] .portal-frame,
+[data-theme='light'] .portal-frame,
 :root:not([data-theme]) .portal-frame {
     background: linear-gradient(135deg, #e4f2fb 0%, #d8ecf6 30%, #dff0fa 60%, #eef7ff 100%);
     border-color: rgba(8, 164, 213, 0.35);
@@ -1556,12 +1622,12 @@ h1:hover {
         0 8px 28px rgba(0, 0, 0, 0.06);
 }
 
-[data-theme="light"] .portal-corner,
+[data-theme='light'] .portal-corner,
 :root:not([data-theme]) .portal-corner {
     border-color: rgba(8, 164, 213, 0.5) !important;
 }
 
-[data-theme="light"] .portal-starfield,
+[data-theme='light'] .portal-starfield,
 :root:not([data-theme]) .portal-starfield {
     background:
         radial-gradient(1.5px 1.5px at 15% 30%, rgba(8, 164, 213, 0.4), transparent),
@@ -1574,20 +1640,20 @@ h1:hover {
     opacity: 0.5;
 }
 
-[data-theme="light"] .portal-glow,
+[data-theme='light'] .portal-glow,
 :root:not([data-theme]) .portal-glow {
     background:
         radial-gradient(ellipse at 20% 0%, rgba(8, 164, 213, 0.12) 0%, transparent 45%),
         radial-gradient(ellipse at 80% 100%, rgba(51, 185, 225, 0.08) 0%, transparent 45%);
 }
 
-[data-theme="light"] .portal-title,
+[data-theme='light'] .portal-title,
 :root:not([data-theme]) .portal-title {
     color: var(--text-primary);
     text-shadow: none;
 }
 
-[data-theme="light"] .portal-version-badge,
+[data-theme='light'] .portal-version-badge,
 :root:not([data-theme]) .portal-version-badge {
     color: var(--primary-dark);
     text-shadow: none;
@@ -1595,63 +1661,65 @@ h1:hover {
     border-color: rgba(8, 164, 213, 0.3);
 }
 
-[data-theme="light"] .portal-entry,
+[data-theme='light'] .portal-entry,
 :root:not([data-theme]) .portal-entry {
     background: rgba(255, 255, 255, 0.7);
     border-color: rgba(8, 164, 213, 0.15);
 }
 
-[data-theme="light"] .portal-entry:hover,
+[data-theme='light'] .portal-entry:hover,
 :root:not([data-theme]) .portal-entry:hover {
     background: rgba(255, 255, 255, 0.85);
     border-color: rgba(8, 164, 213, 0.3);
 }
 
-[data-theme="light"] .portal-entry-version,
+[data-theme='light'] .portal-entry-version,
 :root:not([data-theme]) .portal-entry-version {
     color: var(--primary-dark);
     text-shadow: none;
 }
 
-[data-theme="light"] .portal-category,
+[data-theme='light'] .portal-category,
 :root:not([data-theme]) .portal-category {
     color: var(--primary);
 }
 
-[data-theme="light"] .portal-item,
+[data-theme='light'] .portal-item,
 :root:not([data-theme]) .portal-item {
     color: var(--text-secondary);
 }
 
-[data-theme="light"] .portal-item strong,
+[data-theme='light'] .portal-item strong,
 :root:not([data-theme]) .portal-item strong {
     color: var(--text-primary);
 }
 
-[data-theme="light"] .portal-toggle-arrow,
+[data-theme='light'] .portal-toggle-arrow,
 :root:not([data-theme]) .portal-toggle-arrow {
     color: var(--text-secondary);
 }
 
-[data-theme="light"] .portal-entry-chevron,
+[data-theme='light'] .portal-entry-chevron,
 :root:not([data-theme]) .portal-entry-chevron {
     color: var(--text-secondary);
 }
 
-[data-theme="light"] .portal-new-dot,
+[data-theme='light'] .portal-new-dot,
 :root:not([data-theme]) .portal-new-dot {
     background: var(--primary);
-    box-shadow: 0 0 8px rgba(8, 164, 213, 0.6), 0 0 16px rgba(8, 164, 213, 0.3);
+    box-shadow:
+        0 0 8px rgba(8, 164, 213, 0.6),
+        0 0 16px rgba(8, 164, 213, 0.3);
 }
 
-[data-theme="light"] .portal-entry-badge.latest,
+[data-theme='light'] .portal-entry-badge.latest,
 :root:not([data-theme]) .portal-entry-badge.latest {
     background: linear-gradient(135deg, rgba(8, 164, 213, 0.15), rgba(51, 185, 225, 0.1));
     color: var(--primary-dark);
     border-color: rgba(8, 164, 213, 0.3);
 }
 
-[data-theme="light"] .portal-item::before,
+[data-theme='light'] .portal-item::before,
 :root:not([data-theme]) .portal-item::before {
     color: var(--primary);
 }
@@ -1659,7 +1727,7 @@ h1:hover {
 /* ==================================================================
    TRUE-DARK (Blackhole) overrides
    ================================================================== */
-[data-theme="blackhole"] .portal-frame {
+[data-theme='blackhole'] .portal-frame {
     background: linear-gradient(135deg, #020408 0%, #040810 30%, #030610 60%, #010204 100%);
     border-color: rgba(8, 164, 213, 0.5);
     box-shadow:
@@ -1673,16 +1741,16 @@ h1:hover {
         0 0 130px rgba(100, 50, 200, 0.06);
 }
 
-[data-theme="blackhole"] .portal-corner {
+[data-theme='blackhole'] .portal-corner {
     border-color: rgba(8, 164, 213, 0.8) !important;
 }
 
-[data-theme="blackhole"] .portal-entry {
+[data-theme='blackhole'] .portal-entry {
     background: rgba(255, 255, 255, 0.02);
     border-color: rgba(8, 164, 213, 0.12);
 }
 
-[data-theme="blackhole"] .portal-entry:hover {
+[data-theme='blackhole'] .portal-entry:hover {
     background: rgba(255, 255, 255, 0.04);
     border-color: rgba(8, 164, 213, 0.25);
 }
@@ -1722,7 +1790,6 @@ h1:hover {
 
 /* Accessibility: disable motion for users who prefer it */
 @media (prefers-reduced-motion: reduce) {
-
     .portal-starfield,
     .portal-glow,
     .portal-creature,
@@ -1737,7 +1804,6 @@ h1:hover {
         display: none;
     }
 }
-
 
 /* Config sections */
 .section-block {
@@ -1813,12 +1879,14 @@ h1:hover {
     content: '';
     position: absolute;
     inset: 0;
-    background: linear-gradient(135deg,
-            transparent 0%,
-            transparent 40%,
-            rgba(255, 255, 255, 0.4) 50%,
-            transparent 60%,
-            transparent 100%);
+    background: linear-gradient(
+        135deg,
+        transparent 0%,
+        transparent 40%,
+        rgba(255, 255, 255, 0.4) 50%,
+        transparent 60%,
+        transparent 100%
+    );
     opacity: 0;
     animation: shimmer 4s ease-in-out infinite;
     pointer-events: none;
@@ -1834,7 +1902,7 @@ h1:hover {
         0 0 70px rgba(8, 164, 213, 0.45);
 }
 
-[data-theme="dark"] .section-icon {
+[data-theme='dark'] .section-icon {
     border-color: rgba(0, 0, 0, 0.4);
     background:
         linear-gradient(180deg, rgba(255, 255, 255, 0.12) 0%, rgba(0, 0, 0, 0.15) 100%),
@@ -1847,7 +1915,7 @@ h1:hover {
         0 0 60px rgba(8, 164, 213, 0.4);
 }
 
-[data-theme="dark"] .section-icon:hover {
+[data-theme='dark'] .section-icon:hover {
     box-shadow:
         inset 0 3px 0 rgba(255, 255, 255, 0.4),
         inset 0 -4px 0 rgba(0, 0, 0, 0.5),
@@ -1856,7 +1924,7 @@ h1:hover {
         0 0 90px rgba(8, 164, 213, 0.55);
 }
 
-[data-theme="blackhole"] .section-icon {
+[data-theme='blackhole'] .section-icon {
     border-color: rgba(8, 164, 213, 0.3);
     background:
         linear-gradient(180deg, rgba(255, 255, 255, 0.08) 0%, rgba(0, 0, 0, 0.4) 100%),
@@ -1874,7 +1942,7 @@ h1:hover {
         0 -1px 2px rgba(255, 255, 255, 0.2);
 }
 
-[data-theme="blackhole"] .section-icon:hover {
+[data-theme='blackhole'] .section-icon:hover {
     box-shadow:
         inset 0 3px 0 rgba(255, 255, 255, 0.3),
         inset 0 -4px 0 rgba(0, 0, 0, 0.8),
@@ -1884,13 +1952,15 @@ h1:hover {
         0 0 140px rgba(51, 185, 225, 0.4);
 }
 
-[data-theme="blackhole"] .section-icon::before {
-    background: linear-gradient(135deg,
-            transparent 0%,
-            transparent 40%,
-            rgba(8, 164, 213, 0.6) 50%,
-            transparent 60%,
-            transparent 100%);
+[data-theme='blackhole'] .section-icon::before {
+    background: linear-gradient(
+        135deg,
+        transparent 0%,
+        transparent 40%,
+        rgba(8, 164, 213, 0.6) 50%,
+        transparent 60%,
+        transparent 100%
+    );
 }
 
 .section-title {
@@ -1936,11 +2006,11 @@ h1:hover {
     transition: all 0.2s ease;
 }
 
-[data-theme="dark"] .section-close-link {
+[data-theme='dark'] .section-close-link {
     background: linear-gradient(135deg, rgba(26, 26, 38, 0.9), rgba(26, 26, 38, 0.6));
 }
 
-[data-theme="blackhole"] .section-close-link {
+[data-theme='blackhole'] .section-close-link {
     background: linear-gradient(135deg, rgba(12, 12, 18, 0.94), rgba(26, 26, 32, 0.78));
     border-color: rgba(255, 255, 255, 0.08);
     box-shadow: 0 10px 24px rgba(0, 0, 0, 0.9);
@@ -2002,7 +2072,8 @@ h1:hover {
     margin-bottom: 1rem;
     border: 1px solid var(--border);
     box-shadow: 0 8px 24px var(--shadow);
-    transition: border-color 0.3s cubic-bezier(0.16, 1, 0.3, 1),
+    transition:
+        border-color 0.3s cubic-bezier(0.16, 1, 0.3, 1),
         box-shadow 0.3s cubic-bezier(0.16, 1, 0.3, 1),
         transform 0.3s cubic-bezier(0.16, 1, 0.3, 1),
         padding 0.2s ease;
@@ -2083,7 +2154,7 @@ h1:hover {
     transform: translateY(-1px);
 }
 
-[data-theme="dark"] .card-icon {
+[data-theme='dark'] .card-icon {
     background: linear-gradient(180deg, #4c6fff 0%, #2f4ed1 60%, #1e2f8a 100%);
     color: #0f1a4a;
     border: none;
@@ -2094,7 +2165,7 @@ h1:hover {
         0 7px 12px rgba(20, 25, 49, 0.35);
 }
 
-[data-theme="blackhole"] .card-icon {
+[data-theme='blackhole'] .card-icon {
     background: linear-gradient(180deg, #1b1029 0%, #110b1a 60%, #0b0711 100%);
     color: #bdb4ff;
     border: none;
@@ -2195,12 +2266,12 @@ h1:hover {
     transition: all 0.3s cubic-bezier(0.16, 1, 0.3, 1);
 }
 
-.toggle-switch input:checked+.toggle-slider {
+.toggle-switch input:checked + .toggle-slider {
     background: linear-gradient(135deg, var(--primary) 0%, var(--secondary) 100%);
     border-color: var(--primary);
 }
 
-.toggle-switch input:checked+.toggle-slider::before {
+.toggle-switch input:checked + .toggle-slider::before {
     transform: translateX(20px);
     background: white;
 }
@@ -2265,11 +2336,14 @@ label {
 /* Enhanced select dropdown styling */
 select.styled-select {
     appearance: none;
-    background-image: linear-gradient(45deg, transparent 50%, var(--text-secondary) 50%),
+    background-image:
+        linear-gradient(45deg, transparent 50%, var(--text-secondary) 50%),
         linear-gradient(135deg, var(--text-secondary) 50%, transparent 50%);
-    background-position: calc(100% - 20px) calc(1em + 2px),
+    background-position:
+        calc(100% - 20px) calc(1em + 2px),
         calc(100% - 15px) calc(1em + 2px);
-    background-size: 5px 5px,
+    background-size:
+        5px 5px,
         5px 5px;
     background-repeat: no-repeat;
     padding-right: 2.5rem;
@@ -2283,13 +2357,14 @@ select.styled-select:hover {
 }
 
 select.styled-select:focus {
-    background-image: linear-gradient(45deg, transparent 50%, var(--primary) 50%),
+    background-image:
+        linear-gradient(45deg, transparent 50%, var(--primary) 50%),
         linear-gradient(135deg, var(--primary) 50%, transparent 50%);
 }
 
-input[type="text"],
-input[type="password"],
-input[type="number"] {
+input[type='text'],
+input[type='password'],
+input[type='number'] {
     width: 100%;
     padding: 0.5rem 0.75rem;
     background: var(--surface);
@@ -2301,13 +2376,13 @@ input[type="number"] {
 }
 
 /* Hide native number spinners for a cleaner look */
-input[type="number"]::-webkit-outer-spin-button,
-input[type="number"]::-webkit-inner-spin-button {
+input[type='number']::-webkit-outer-spin-button,
+input[type='number']::-webkit-inner-spin-button {
     -webkit-appearance: none;
     margin: 0;
 }
 
-input[type="number"] {
+input[type='number'] {
     -moz-appearance: textfield;
     appearance: textfield;
 }
@@ -2325,20 +2400,24 @@ select {
 }
 
 /* Smooth transitions only for border and shadow, NOT background */
-input[type="text"],
-input[type="password"],
-input[type="number"],
+input[type='text'],
+input[type='password'],
+input[type='number'],
 textarea {
-    transition: border-color 0.2s ease, box-shadow 0.2s ease;
+    transition:
+        border-color 0.2s ease,
+        box-shadow 0.2s ease;
 }
 
 select {
-    transition: border-color 0.15s ease, box-shadow 0.15s ease;
+    transition:
+        border-color 0.15s ease,
+        box-shadow 0.15s ease;
 }
 
-input[type="text"]:focus,
-input[type="password"]:focus,
-input[type="number"]:focus,
+input[type='text']:focus,
+input[type='password']:focus,
+input[type='number']:focus,
 textarea:focus,
 select:focus {
     outline: none;
@@ -2381,8 +2460,8 @@ textarea {
     align-items: center;
 }
 
-.password-field-wrapper input[type="password"],
-.password-field-wrapper input[type="text"] {
+.password-field-wrapper input[type='password'],
+.password-field-wrapper input[type='text'] {
     padding-right: 3rem;
 }
 
@@ -2837,7 +2916,6 @@ textarea {
 }
 
 @keyframes float {
-
     0%,
     100% {
         transform: translateY(0);
@@ -2855,7 +2933,6 @@ textarea {
 }
 
 @keyframes shake {
-
     0%,
     100% {
         transform: translateX(0);
@@ -2917,14 +2994,20 @@ textarea {
 
 /* Install URL Display — Rootsys card style.
    Muncul antara 3 beradik dengan Reset bar dalam .app-config-actions.
-   Spacing 24px datang dari parent flex gap; tiada margin perlu di sini. */
+   Visibility is controlled semantically by the hidden attribute; the class is
+   retained as a compatibility hook for existing callers and theme styles. */
 .install-url-box {
     display: none;
     width: 100%;
+    box-sizing: border-box;
     padding: 1rem 1.25rem;
     background: var(--surface);
     border: 1px solid var(--border);
     border-radius: 12px;
+}
+
+.install-url-box[hidden] {
+    display: none !important;
 }
 
 .install-url-box.show {
@@ -2941,15 +3024,19 @@ textarea {
 
 .install-url-box input {
     width: 100%;
+    max-width: 100%;
+    box-sizing: border-box;
     padding: 0.75rem 1rem;
-    background: var(--surface-light, #F7F8FB);
+    background: var(--surface-light, #f7f8fb);
     border: 1px solid var(--border);
     border-radius: 10px;
     color: var(--text-primary);
     font-size: 0.85rem;
     font-family: 'JetBrains Mono', ui-monospace, 'SF Mono', 'Cascadia Mono', Menlo, Consolas, monospace;
     cursor: text;
-    transition: border-color 0.2s ease, box-shadow 0.2s ease;
+    transition:
+        border-color 0.2s ease,
+        box-shadow 0.2s ease;
 }
 
 .install-url-box input:focus {
@@ -2957,7 +3044,6 @@ textarea {
     border-color: var(--primary);
     box-shadow: 0 0 0 3px var(--glow, rgba(79, 70, 229, 0.12));
 }
-
 
 /* Footer */
 .footer {
@@ -2998,7 +3084,6 @@ textarea {
 }
 
 @keyframes heartPulse {
-
     0%,
     100% {
         transform: scale(1);
@@ -3132,7 +3217,10 @@ textarea {
     border-radius: 10px;
     font-weight: 700;
     cursor: pointer;
-    transition: transform 0.15s ease, box-shadow 0.2s ease, background 0.2s ease;
+    transition:
+        transform 0.15s ease,
+        box-shadow 0.2s ease,
+        background 0.2s ease;
 }
 
 .reset-btn:hover {
@@ -3160,7 +3248,9 @@ textarea {
     color: var(--primary-light);
     text-decoration: none;
     margin-left: 0.35rem;
-    transition: color 0.2s ease, opacity 0.2s ease;
+    transition:
+        color 0.2s ease,
+        opacity 0.2s ease;
 }
 
 .support-link-hint a:hover {
@@ -3175,7 +3265,7 @@ textarea {
     opacity: 0.5;
 }
 
-#subToolboxEnabled:disabled+span {
+#subToolboxEnabled:disabled + span {
     color: var(--text-secondary);
 }
 
@@ -3209,11 +3299,8 @@ label:has(#subToolboxEnabled:disabled) {
     display: none;
     align-items: center;
     justify-content: center;
-    padding:
-        max(0.75rem, env(safe-area-inset-top))
-        max(0.75rem, env(safe-area-inset-right))
-        max(0.75rem, env(safe-area-inset-bottom))
-        max(0.75rem, env(safe-area-inset-left));
+    padding: max(0.75rem, env(safe-area-inset-top)) max(0.75rem, env(safe-area-inset-right))
+        max(0.75rem, env(safe-area-inset-bottom)) max(0.75rem, env(safe-area-inset-left));
     overflow-y: auto;
     overscroll-behavior: contain;
     -webkit-overflow-scrolling: touch;
@@ -3261,8 +3348,7 @@ label:has(#subToolboxEnabled:disabled) {
 
 .modal {
     background:
-        linear-gradient(180deg, rgba(255, 255, 255, 0.85) 0%, rgba(255, 255, 255, 0.75) 100%),
-        var(--bg-secondary);
+        linear-gradient(180deg, rgba(255, 255, 255, 0.85) 0%, rgba(255, 255, 255, 0.75) 100%), var(--bg-secondary);
     border-radius: 20px;
     max-width: 640px;
     width: 92%;
@@ -3270,7 +3356,9 @@ label:has(#subToolboxEnabled:disabled) {
     /* Clip scrollbars within rounded corners */
     overflow: hidden;
     border: 1px solid var(--border);
-    box-shadow: 0 24px 72px var(--shadow), 0 0 0 1px rgba(8, 164, 213, 0.14);
+    box-shadow:
+        0 24px 72px var(--shadow),
+        0 0 0 1px rgba(8, 164, 213, 0.14);
     animation: modalSlideIn 0.42s cubic-bezier(0.22, 1, 0.36, 1);
     position: relative;
     display: flex;
@@ -3502,7 +3590,7 @@ label:has(#subToolboxEnabled:disabled) {
     user-select: none;
 }
 
-.modal-checkbox input[type="checkbox"] {
+.modal-checkbox input[type='checkbox'] {
     width: 18px;
     height: 18px;
     cursor: pointer;
@@ -3537,7 +3625,12 @@ label:has(#subToolboxEnabled:disabled) {
 }
 
 .instructions-modal {
-    --instructions-hero-bg: linear-gradient(135deg, rgba(8, 164, 213, 0.18) 0%, rgba(51, 185, 225, 0.08) 48%, rgba(255, 255, 255, 0.22) 100%);
+    --instructions-hero-bg: linear-gradient(
+        135deg,
+        rgba(8, 164, 213, 0.18) 0%,
+        rgba(51, 185, 225, 0.08) 48%,
+        rgba(255, 255, 255, 0.22) 100%
+    );
     --instructions-card-bg: rgba(255, 255, 255, 0.72);
     --instructions-card-border: rgba(15, 23, 42, 0.08);
     --instructions-panel-bg: linear-gradient(135deg, rgba(8, 164, 213, 0.12), rgba(255, 255, 255, 0.85));
@@ -3732,8 +3825,13 @@ label:has(#subToolboxEnabled:disabled) {
     justify-content: center;
 }
 
-[data-theme="dark"] .instructions-modal {
-    --instructions-hero-bg: linear-gradient(135deg, rgba(8, 164, 213, 0.24) 0%, rgba(51, 185, 225, 0.08) 48%, rgba(255, 255, 255, 0.02) 100%);
+[data-theme='dark'] .instructions-modal {
+    --instructions-hero-bg: linear-gradient(
+        135deg,
+        rgba(8, 164, 213, 0.24) 0%,
+        rgba(51, 185, 225, 0.08) 48%,
+        rgba(255, 255, 255, 0.02) 100%
+    );
     --instructions-card-bg: rgba(255, 255, 255, 0.04);
     --instructions-card-border: rgba(255, 255, 255, 0.08);
     --instructions-panel-bg: linear-gradient(135deg, rgba(8, 164, 213, 0.18), rgba(255, 255, 255, 0.04));
@@ -3746,8 +3844,13 @@ label:has(#subToolboxEnabled:disabled) {
     --instructions-callout-warm-border: rgba(245, 158, 11, 0.18);
 }
 
-[data-theme="blackhole"] .instructions-modal {
-    --instructions-hero-bg: linear-gradient(135deg, rgba(8, 164, 213, 0.22) 0%, rgba(255, 255, 255, 0.03) 52%, rgba(0, 0, 0, 0.12) 100%);
+[data-theme='blackhole'] .instructions-modal {
+    --instructions-hero-bg: linear-gradient(
+        135deg,
+        rgba(8, 164, 213, 0.22) 0%,
+        rgba(255, 255, 255, 0.03) 52%,
+        rgba(0, 0, 0, 0.12) 100%
+    );
     --instructions-card-bg: rgba(255, 255, 255, 0.025);
     --instructions-card-border: rgba(255, 255, 255, 0.06);
     --instructions-panel-bg: linear-gradient(135deg, rgba(8, 164, 213, 0.16), rgba(255, 255, 255, 0.02));
@@ -3763,11 +3866,8 @@ label:has(#subToolboxEnabled:disabled) {
 @media (max-width: 700px) {
     #instructionsModal {
         align-items: flex-start;
-        padding:
-            max(0.5rem, env(safe-area-inset-top))
-            max(0.5rem, env(safe-area-inset-right))
-            max(0.5rem, env(safe-area-inset-bottom))
-            max(0.5rem, env(safe-area-inset-left));
+        padding: max(0.5rem, env(safe-area-inset-top)) max(0.5rem, env(safe-area-inset-right))
+            max(0.5rem, env(safe-area-inset-bottom)) max(0.5rem, env(safe-area-inset-left));
     }
 
     .instructions-modal {
@@ -3805,7 +3905,6 @@ label:has(#subToolboxEnabled:disabled) {
     .instructions-modal .modal-footer {
         flex-direction: column;
     }
-
 }
 
 @keyframes fadeIn {
@@ -3868,7 +3967,7 @@ label:has(#subToolboxEnabled:disabled) {
     box-shadow:
         inset 0 2px 0 rgba(255, 255, 255, 0.15),
         inset 0 -3px 0 rgba(0, 0, 0, 0.12),
-        0 4px 0 rgba(0, 0, 0, 0.10);
+        0 4px 0 rgba(0, 0, 0, 0.1);
 }
 
 .version-badge::before {
@@ -4013,9 +4112,7 @@ label:has(#subToolboxEnabled:disabled) {
     padding: 1rem;
     border-radius: 14px;
     border: 1px solid var(--border);
-    background:
-        linear-gradient(135deg, rgba(8, 164, 213, 0.12), rgba(51, 185, 225, 0.08)),
-        var(--surface);
+    background: linear-gradient(135deg, rgba(8, 164, 213, 0.12), rgba(51, 185, 225, 0.08)), var(--surface);
     box-shadow: 0 10px 32px var(--shadow);
     display: flex;
     flex-direction: column;
@@ -4061,8 +4158,6 @@ label:has(#subToolboxEnabled:disabled) {
     width: 100%;
     justify-content: center;
 }
-
-
 
 .validation-feedback {
     margin-top: 0.5rem;
@@ -4129,7 +4224,7 @@ label:has(#subToolboxEnabled:disabled) {
     -webkit-tap-highlight-color: transparent;
 }
 
-[data-theme="dark"] .theme-toggle {
+[data-theme='dark'] .theme-toggle {
     background: rgba(20, 25, 49, 0.9);
     border-color: var(--border);
 }
@@ -4137,7 +4232,9 @@ label:has(#subToolboxEnabled:disabled) {
 .theme-toggle:focus,
 .theme-toggle:focus-visible {
     outline: none;
-    box-shadow: 0 0 0 3px rgba(8, 164, 213, 0.35), 0 8px 20px var(--shadow);
+    box-shadow:
+        0 0 0 3px rgba(8, 164, 213, 0.35),
+        0 8px 20px var(--shadow);
 }
 
 .theme-toggle:hover {
@@ -4172,27 +4269,27 @@ label:has(#subToolboxEnabled:disabled) {
     display: none;
 }
 
-[data-theme="dark"] .theme-toggle-icon.sun {
+[data-theme='dark'] .theme-toggle-icon.sun {
     display: none;
 }
 
-[data-theme="dark"] .theme-toggle-icon.moon {
+[data-theme='dark'] .theme-toggle-icon.moon {
     display: block;
 }
 
-[data-theme="dark"] .theme-toggle-icon.blackhole {
+[data-theme='dark'] .theme-toggle-icon.blackhole {
     display: none;
 }
 
-[data-theme="blackhole"] .theme-toggle-icon.sun {
+[data-theme='blackhole'] .theme-toggle-icon.sun {
     display: none;
 }
 
-[data-theme="blackhole"] .theme-toggle-icon.moon {
+[data-theme='blackhole'] .theme-toggle-icon.moon {
     display: none;
 }
 
-[data-theme="blackhole"] .theme-toggle-icon.blackhole {
+[data-theme='blackhole'] .theme-toggle-icon.blackhole {
     display: block;
 }
 
@@ -4234,7 +4331,7 @@ label:has(#subToolboxEnabled:disabled) {
         calc(100% - 12px) 0 0 #b47a11,
         0 calc(100% - 12px) 0 #b47a11,
         calc(100% - 12px) calc(100% - 12px) 0 #b47a11;
-    opacity: .9;
+    opacity: 0.9;
 }
 
 .theme-toggle.mario:active {
@@ -4279,7 +4376,9 @@ label:has(#subToolboxEnabled:disabled) {
         radial-gradient(40% 40% at 35% 30%, #fff6bf 0%, rgba(255, 255, 255, 0) 70%),
         linear-gradient(180deg, #ffd24a 0%, #ffc125 50%, #e2a415 100%);
     border: 2px solid #8a5a00;
-    box-shadow: 0 2px 0 #7a4d00, inset 0 1px 0 #fff8c6;
+    box-shadow:
+        0 2px 0 #7a4d00,
+        inset 0 1px 0 #fff8c6;
 }
 
 @keyframes coin-pop {
@@ -4293,7 +4392,7 @@ label:has(#subToolboxEnabled:disabled) {
     }
 
     60% {
-        transform: translate(-50%, -50%) translateY(-52px) scale(1.0) rotateY(360deg);
+        transform: translate(-50%, -50%) translateY(-52px) scale(1) rotateY(360deg);
     }
 
     100% {
@@ -4303,7 +4402,7 @@ label:has(#subToolboxEnabled:disabled) {
 }
 
 .coin.animate {
-    animation: coin-pop 0.7s cubic-bezier(.2, .8, .2, 1) forwards;
+    animation: coin-pop 0.7s cubic-bezier(0.2, 0.8, 0.2, 1) forwards;
 }
 
 @media (prefers-reduced-motion: reduce) {
@@ -4314,7 +4413,7 @@ label:has(#subToolboxEnabled:disabled) {
 }
 
 /* Theme-based variants for Mario toggle */
-[data-theme="light"] .theme-toggle.mario {
+[data-theme='light'] .theme-toggle.mario {
     background: linear-gradient(180deg, #f7d13e 0%, #e6b526 60%, #d49c1d 100%);
     border-color: #8a5a00;
     box-shadow:
@@ -4324,7 +4423,7 @@ label:has(#subToolboxEnabled:disabled) {
         0 10px 16px rgba(0, 0, 0, 0.35);
 }
 
-[data-theme="light"] .theme-toggle.mario::before {
+[data-theme='light'] .theme-toggle.mario::before {
     background: #b47a11;
     box-shadow:
         calc(100% - 12px) 0 0 #b47a11,
@@ -4332,7 +4431,7 @@ label:has(#subToolboxEnabled:disabled) {
         calc(100% - 12px) calc(100% - 12px) 0 #b47a11;
 }
 
-[data-theme="dark"] .theme-toggle.mario {
+[data-theme='dark'] .theme-toggle.mario {
     background: linear-gradient(180deg, #4c6fff 0%, #2f4ed1 60%, #1e2f8a 100%);
     border-color: #1b2a78;
     box-shadow:
@@ -4342,7 +4441,7 @@ label:has(#subToolboxEnabled:disabled) {
         0 10px 16px rgba(20, 25, 49, 0.6);
 }
 
-[data-theme="dark"] .theme-toggle.mario::before {
+[data-theme='dark'] .theme-toggle.mario::before {
     background: #213a9a;
     box-shadow:
         calc(100% - 12px) 0 0 #213a9a,
@@ -4350,7 +4449,7 @@ label:has(#subToolboxEnabled:disabled) {
         calc(100% - 12px) calc(100% - 12px) 0 #213a9a;
 }
 
-[data-theme="blackhole"] .theme-toggle.mario {
+[data-theme='blackhole'] .theme-toggle.mario {
     background: linear-gradient(180deg, #1b1029 0%, #110b1a 60%, #0b0711 100%);
     border-color: #3b2a5d;
     box-shadow:
@@ -4360,14 +4459,13 @@ label:has(#subToolboxEnabled:disabled) {
         0 0 18px rgba(107, 101, 255, 0.35);
 }
 
-[data-theme="blackhole"] .theme-toggle.mario::before {
+[data-theme='blackhole'] .theme-toggle.mario::before {
     background: #2b2044;
     box-shadow:
         calc(100% - 12px) 0 0 #2b2044,
         0 calc(100% - 12px) 0 #2b2044,
         calc(100% - 12px) calc(100% - 12px) 0 #2b2044;
 }
-
 
 /* Help button — match toggle style, slightly different (radius, rivets) */
 .help-button {
@@ -4382,7 +4480,9 @@ label:has(#subToolboxEnabled:disabled) {
     font-size: 1.5rem;
     cursor: pointer;
     z-index: 1000;
-    transition: transform 0.2s ease, box-shadow 0.2s ease;
+    transition:
+        transform 0.2s ease,
+        box-shadow 0.2s ease;
 }
 
 .help-button.toolbox-button {
@@ -4415,7 +4515,7 @@ label:has(#subToolboxEnabled:disabled) {
     width: 5px;
     height: 5px;
     border-radius: 50%;
-    opacity: .9;
+    opacity: 0.9;
     background: #b47a11;
     top: 6px;
     left: 6px;
@@ -4490,7 +4590,7 @@ label:has(#subToolboxEnabled:disabled) {
     height: 100%;
 }
 
-[data-theme="dark"] .toolbox-button {
+[data-theme='dark'] .toolbox-button {
     background: radial-gradient(circle at 30% 18%, #ffe8c7 0%, #f9c76c 18%, #ff8c61 44%, #ff5a93 70%, #2a1b4d 100%);
     border-color: #2c1b4a;
     box-shadow:
@@ -4500,7 +4600,7 @@ label:has(#subToolboxEnabled:disabled) {
         inset 0 -3px 0 rgba(30, 19, 66, 0.9);
 }
 
-[data-theme="blackhole"] .toolbox-button {
+[data-theme='blackhole'] .toolbox-button {
     background: radial-gradient(circle at 30% 18%, #ffe8c7 0%, #c57aff 24%, #6d49ff 50%, #281c69 78%, #0c0b1a 100%);
     border-color: #201644;
     box-shadow:
@@ -4541,7 +4641,7 @@ label:has(#subToolboxEnabled:disabled) {
 
 /* Toolbox button visibility is controlled by JS based on feature state, not viewport */
 
-[data-theme="dark"] .help-button.mario {
+[data-theme='dark'] .help-button.mario {
     border-color: #1b2a78;
     background: linear-gradient(180deg, #4c6fff 0%, #2f4ed1 60%, #1e2f8a 100%);
     color: #0f1a4a;
@@ -4552,12 +4652,12 @@ label:has(#subToolboxEnabled:disabled) {
         0 10px 16px rgba(20, 25, 49, 0.6);
 }
 
-[data-theme="dark"] .help-button.mario::before {
+[data-theme='dark'] .help-button.mario::before {
     background: #213a9a;
     box-shadow: calc(100% - 12px) 0 0 #213a9a;
 }
 
-[data-theme="blackhole"] .help-button.mario {
+[data-theme='blackhole'] .help-button.mario {
     border-color: #3b2a5d;
     background: linear-gradient(180deg, #1b1029 0%, #110b1a 60%, #0b0711 100%);
     color: #bdb4ff;
@@ -4568,7 +4668,7 @@ label:has(#subToolboxEnabled:disabled) {
         0 0 18px rgba(107, 101, 255, 0.35);
 }
 
-[data-theme="blackhole"] .help-button.mario::before {
+[data-theme='blackhole'] .help-button.mario::before {
     background: #2b2044;
     box-shadow: calc(100% - 12px) 0 0 #2b2044;
 }
@@ -4602,7 +4702,9 @@ label:has(#subToolboxEnabled:disabled) {
     overflow: visible;
     backdrop-filter: none;
     position: fixed;
-    transition: transform 0.25s cubic-bezier(0.16, 1, 0.3, 1), box-shadow 0.25s ease;
+    transition:
+        transform 0.25s cubic-bezier(0.16, 1, 0.3, 1),
+        box-shadow 0.25s ease;
     animation: titlePulse 3s ease-in-out infinite;
     will-change: transform;
     touch-action: manipulation;
@@ -4703,7 +4805,7 @@ label:has(#subToolboxEnabled:disabled) {
 }
 
 /* ── Launcher state colors ─────────────────────────────────────────── */
-.token-vault-launcher[data-state="draft"] {
+.token-vault-launcher[data-state='draft'] {
     border-color: rgba(133, 77, 14, 0.45);
     background:
         radial-gradient(circle at 28% 22%, rgba(255, 255, 255, 0.74), transparent 28%),
@@ -4715,7 +4817,7 @@ label:has(#subToolboxEnabled:disabled) {
         0 14px 28px rgba(245, 158, 11, 0.24);
 }
 
-.token-vault-launcher[data-state="recovered"] {
+.token-vault-launcher[data-state='recovered'] {
     border-color: rgba(12, 116, 98, 0.42);
     background:
         radial-gradient(circle at 28% 22%, rgba(255, 255, 255, 0.74), transparent 28%),
@@ -4727,7 +4829,7 @@ label:has(#subToolboxEnabled:disabled) {
         0 14px 28px rgba(20, 184, 166, 0.22);
 }
 
-.token-vault-launcher[data-state="disabled"] {
+.token-vault-launcher[data-state='disabled'] {
     border-color: rgba(127, 29, 29, 0.45);
     background:
         radial-gradient(circle at 28% 22%, rgba(255, 255, 255, 0.55), transparent 28%),
@@ -4739,12 +4841,12 @@ label:has(#subToolboxEnabled:disabled) {
         0 14px 28px rgba(239, 68, 68, 0.2);
 }
 
-.token-vault-launcher[data-state="live"] {
+.token-vault-launcher[data-state='live'] {
     /* default cyan gradient — already set above */
 }
 
 /* ── Dark theme launcher ───────────────────────────────────────────── */
-[data-theme="dark"] .token-vault-launcher {
+[data-theme='dark'] .token-vault-launcher {
     border-color: rgba(93, 151, 255, 0.3);
     background:
         radial-gradient(circle at 28% 22%, rgba(255, 255, 255, 0.6), transparent 28%),
@@ -4756,12 +4858,12 @@ label:has(#subToolboxEnabled:disabled) {
         0 14px 28px rgba(37, 99, 235, 0.24);
 }
 
-[data-theme="dark"] .token-vault-launcher-ribbon {
+[data-theme='dark'] .token-vault-launcher-ribbon {
     background: rgba(4, 10, 24, 0.55);
 }
 
 /* ── Blackhole theme launcher ──────────────────────────────────────── */
-[data-theme="blackhole"] .token-vault-launcher {
+[data-theme='blackhole'] .token-vault-launcher {
     border-color: rgba(92, 94, 255, 0.32);
     background:
         radial-gradient(circle at 28% 22%, rgba(255, 255, 255, 0.46), transparent 28%),
@@ -4773,10 +4875,9 @@ label:has(#subToolboxEnabled:disabled) {
         0 14px 28px rgba(92, 94, 255, 0.22);
 }
 
-[data-theme="blackhole"] .token-vault-launcher-ribbon {
+[data-theme='blackhole'] .token-vault-launcher-ribbon {
     background: rgba(8, 4, 18, 0.55);
 }
-
 
 /* ═══════════════════════════════════════════════════════════════════════
    VAULT RAIL (fly-out list)
@@ -4805,13 +4906,15 @@ label:has(#subToolboxEnabled:disabled) {
     pointer-events: none;
     opacity: 0;
     transform: translateX(-50%) translateY(8px) scale(0.97);
-    transition: opacity 0.2s ease, transform 0.2s cubic-bezier(0.16, 1, 0.3, 1);
+    transition:
+        opacity 0.2s ease,
+        transform 0.2s cubic-bezier(0.16, 1, 0.3, 1);
     scrollbar-width: thin;
     scrollbar-color: var(--primary) var(--surface-light);
     will-change: transform, opacity;
 }
 
-[data-theme="dark"] .token-vault-rail {
+[data-theme='dark'] .token-vault-rail {
     background: rgba(10, 16, 30, 0.94);
     border-color: rgba(91, 130, 255, 0.16);
     box-shadow:
@@ -4819,7 +4922,7 @@ label:has(#subToolboxEnabled:disabled) {
         0 0 0 1px rgba(91, 130, 255, 0.1);
 }
 
-[data-theme="blackhole"] .token-vault-rail {
+[data-theme='blackhole'] .token-vault-rail {
     background: rgba(5, 4, 12, 0.95);
     border-color: rgba(92, 94, 255, 0.16);
     box-shadow:
@@ -4839,7 +4942,9 @@ label:has(#subToolboxEnabled:disabled) {
 .token-vault-rail .token-vault-rail-empty {
     opacity: 0;
     transform: translateY(8px) scale(0.97);
-    transition: transform 0.2s cubic-bezier(0.16, 1, 0.3, 1), opacity 0.18s ease;
+    transition:
+        transform 0.2s cubic-bezier(0.16, 1, 0.3, 1),
+        opacity 0.18s ease;
     will-change: transform, opacity;
 }
 
@@ -4851,16 +4956,14 @@ label:has(#subToolboxEnabled:disabled) {
     transition-delay: calc(var(--vault-index, 0) * 35ms);
 }
 
-[data-theme="dark"] .token-vault-rail .token-vault-rail-empty {
-    background:
-        linear-gradient(180deg, rgba(16, 24, 44, 0.97), rgba(20, 30, 52, 0.95));
+[data-theme='dark'] .token-vault-rail .token-vault-rail-empty {
+    background: linear-gradient(180deg, rgba(16, 24, 44, 0.97), rgba(20, 30, 52, 0.95));
     border-color: rgba(91, 130, 255, 0.14);
     color: #e2e8f0;
 }
 
-[data-theme="blackhole"] .token-vault-rail .token-vault-rail-empty {
-    background:
-        linear-gradient(180deg, rgba(14, 10, 28, 0.97), rgba(18, 14, 32, 0.95));
+[data-theme='blackhole'] .token-vault-rail .token-vault-rail-empty {
+    background: linear-gradient(180deg, rgba(14, 10, 28, 0.97), rgba(18, 14, 32, 0.95));
     border-color: rgba(92, 94, 255, 0.12);
     color: #ede9fe;
 }
@@ -4882,8 +4985,7 @@ label:has(#subToolboxEnabled:disabled) {
     border-radius: 11px;
     border: 1.5px solid rgba(8, 164, 213, 0.15);
     border-left: 4px solid #0ea5e9;
-    background:
-        linear-gradient(180deg, rgba(255, 255, 255, 0.95) 0%, rgba(243, 249, 252, 0.9) 100%);
+    background: linear-gradient(180deg, rgba(255, 255, 255, 0.95) 0%, rgba(243, 249, 252, 0.9) 100%);
     cursor: default;
     transition:
         transform 0.2s cubic-bezier(0.16, 1, 0.3, 1),
@@ -4922,19 +5024,23 @@ label:has(#subToolboxEnabled:disabled) {
 
 .token-vault-rail-item.is-active {
     border-color: rgba(8, 164, 213, 0.3);
-    border-left-color: #08A4D5;
-    background:
-        linear-gradient(180deg, rgba(240, 249, 255, 0.97) 0%, rgba(224, 242, 254, 0.92) 100%);
+    border-left-color: #08a4d5;
+    background: linear-gradient(180deg, rgba(240, 249, 255, 0.97) 0%, rgba(224, 242, 254, 0.92) 100%);
 }
 
 /* Status-based left accent on rail items */
-.token-vault-rail-item.disabled { border-left-color: #ef4444; }
-.token-vault-rail-item.draft { border-left-color: #f59e0b; }
-.token-vault-rail-item.recovered { border-left-color: #14b8a6; }
+.token-vault-rail-item.disabled {
+    border-left-color: #ef4444;
+}
+.token-vault-rail-item.draft {
+    border-left-color: #f59e0b;
+}
+.token-vault-rail-item.recovered {
+    border-left-color: #14b8a6;
+}
 
-[data-theme="dark"] .token-vault-rail-item {
-    background:
-        linear-gradient(180deg, rgba(20, 30, 52, 0.95) 0%, rgba(16, 24, 44, 0.9) 100%);
+[data-theme='dark'] .token-vault-rail-item {
+    background: linear-gradient(180deg, rgba(20, 30, 52, 0.95) 0%, rgba(16, 24, 44, 0.9) 100%);
     border-color: rgba(91, 130, 255, 0.14);
     border-left-color: #5b82ff;
     box-shadow:
@@ -4942,7 +5048,7 @@ label:has(#subToolboxEnabled:disabled) {
         inset 0 1px 0 rgba(91, 130, 255, 0.05);
 }
 
-[data-theme="dark"] .token-vault-rail-shortcut {
+[data-theme='dark'] .token-vault-rail-shortcut {
     --vault-rail-shortcut-accent: rgba(91, 130, 255, 0.14);
     --vault-rail-shortcut-border: rgba(91, 130, 255, 0.16);
     --vault-rail-shortcut-border-hover: rgba(147, 197, 253, 0.3);
@@ -4952,13 +5058,11 @@ label:has(#subToolboxEnabled:disabled) {
     --vault-rail-shortcut-text: #e2e8f0;
     --vault-rail-shortcut-glow: rgba(91, 130, 255, 0.16);
     --vault-rail-shortcut-shadow:
-        inset 0 1px 0 rgba(147, 197, 253, 0.08),
-        inset 0 -1px 0 rgba(0, 0, 0, 0.22),
-        0 6px 14px rgba(0, 0, 0, 0.16);
+        inset 0 1px 0 rgba(147, 197, 253, 0.08), inset 0 -1px 0 rgba(0, 0, 0, 0.22), 0 6px 14px rgba(0, 0, 0, 0.16);
     --vault-rail-shortcut-active-shadow: inset 0 2px 4px rgba(0, 0, 0, 0.2);
 }
 
-[data-theme="dark"] .token-vault-rail-shortcut[data-vault-action="switch-token"] {
+[data-theme='dark'] .token-vault-rail-shortcut[data-vault-action='switch-token'] {
     --vault-rail-shortcut-accent: rgba(125, 211, 252, 0.24);
     --vault-rail-shortcut-border: rgba(125, 211, 252, 0.34);
     --vault-rail-shortcut-border-hover: rgba(186, 230, 253, 0.5);
@@ -4968,14 +5072,13 @@ label:has(#subToolboxEnabled:disabled) {
     --vault-rail-shortcut-text: #eff6ff;
     --vault-rail-shortcut-glow: rgba(59, 130, 246, 0.24);
     --vault-rail-shortcut-shadow:
-        inset 0 1px 0 rgba(219, 234, 254, 0.2),
-        inset 0 -1px 0 rgba(30, 64, 175, 0.26),
+        inset 0 1px 0 rgba(219, 234, 254, 0.2), inset 0 -1px 0 rgba(30, 64, 175, 0.26),
         0 6px 14px rgba(37, 99, 235, 0.2);
     --vault-rail-shortcut-active-shadow: inset 0 2px 4px rgba(30, 64, 175, 0.3);
     text-shadow: 0 1px 2px rgba(30, 64, 175, 0.28);
 }
 
-[data-theme="dark"] .token-vault-rail-shortcut[data-vault-action="toggle-state"]:not(.danger) {
+[data-theme='dark'] .token-vault-rail-shortcut[data-vault-action='toggle-state']:not(.danger) {
     --vault-rail-shortcut-accent: rgba(134, 239, 172, 0.22);
     --vault-rail-shortcut-border: rgba(134, 239, 172, 0.34);
     --vault-rail-shortcut-border-hover: rgba(187, 247, 208, 0.48);
@@ -4985,14 +5088,13 @@ label:has(#subToolboxEnabled:disabled) {
     --vault-rail-shortcut-text: #f0fdf4;
     --vault-rail-shortcut-glow: rgba(34, 197, 94, 0.22);
     --vault-rail-shortcut-shadow:
-        inset 0 1px 0 rgba(220, 252, 231, 0.2),
-        inset 0 -1px 0 rgba(20, 83, 45, 0.26),
+        inset 0 1px 0 rgba(220, 252, 231, 0.2), inset 0 -1px 0 rgba(20, 83, 45, 0.26),
         0 6px 14px rgba(22, 163, 74, 0.18);
     --vault-rail-shortcut-active-shadow: inset 0 2px 4px rgba(20, 83, 45, 0.3);
     text-shadow: 0 1px 2px rgba(20, 83, 45, 0.28);
 }
 
-[data-theme="dark"] .token-vault-rail-shortcut[data-vault-action="toggle-state"].danger {
+[data-theme='dark'] .token-vault-rail-shortcut[data-vault-action='toggle-state'].danger {
     --vault-rail-shortcut-accent: rgba(251, 191, 36, 0.24);
     --vault-rail-shortcut-border: rgba(251, 191, 36, 0.34);
     --vault-rail-shortcut-border-hover: rgba(253, 224, 71, 0.5);
@@ -5002,32 +5104,29 @@ label:has(#subToolboxEnabled:disabled) {
     --vault-rail-shortcut-text: #fffbeb;
     --vault-rail-shortcut-glow: rgba(245, 158, 11, 0.24);
     --vault-rail-shortcut-shadow:
-        inset 0 1px 0 rgba(254, 243, 199, 0.18),
-        inset 0 -1px 0 rgba(120, 53, 15, 0.26),
+        inset 0 1px 0 rgba(254, 243, 199, 0.18), inset 0 -1px 0 rgba(120, 53, 15, 0.26),
         0 6px 14px rgba(217, 119, 6, 0.18);
     --vault-rail-shortcut-active-shadow: inset 0 2px 4px rgba(120, 53, 15, 0.3);
     text-shadow: 0 1px 2px rgba(120, 53, 15, 0.28);
 }
 
-[data-theme="dark"] .token-vault-rail-menu-toggle,
-[data-theme="dark"] .token-vault-rail-menu-panel {
-    background:
-        linear-gradient(180deg, rgba(20, 30, 52, 0.95) 0%, rgba(14, 22, 39, 0.92) 100%);
+[data-theme='dark'] .token-vault-rail-menu-toggle,
+[data-theme='dark'] .token-vault-rail-menu-panel {
+    background: linear-gradient(180deg, rgba(20, 30, 52, 0.95) 0%, rgba(14, 22, 39, 0.92) 100%);
     color: #e2e8f0;
     border-color: rgba(91, 130, 255, 0.12);
 }
 
-[data-theme="dark"] .token-vault-rail-menu-item {
+[data-theme='dark'] .token-vault-rail-menu-item {
     color: #e2e8f0;
 }
 
-[data-theme="dark"] .token-vault-rail-menu-item.danger {
+[data-theme='dark'] .token-vault-rail-menu-item.danger {
     color: #fca5a5;
 }
 
-[data-theme="blackhole"] .token-vault-rail-item {
-    background:
-        linear-gradient(180deg, rgba(18, 14, 32, 0.95) 0%, rgba(14, 10, 28, 0.9) 100%);
+[data-theme='blackhole'] .token-vault-rail-item {
+    background: linear-gradient(180deg, rgba(18, 14, 32, 0.95) 0%, rgba(14, 10, 28, 0.9) 100%);
     border-color: rgba(92, 94, 255, 0.12);
     border-left-color: #8b5cf6;
     box-shadow:
@@ -5035,7 +5134,7 @@ label:has(#subToolboxEnabled:disabled) {
         inset 0 1px 0 rgba(107, 101, 255, 0.05);
 }
 
-[data-theme="blackhole"] .token-vault-rail-shortcut {
+[data-theme='blackhole'] .token-vault-rail-shortcut {
     --vault-rail-shortcut-accent: rgba(139, 92, 246, 0.16);
     --vault-rail-shortcut-border: rgba(139, 92, 246, 0.18);
     --vault-rail-shortcut-border-hover: rgba(196, 181, 253, 0.34);
@@ -5045,13 +5144,11 @@ label:has(#subToolboxEnabled:disabled) {
     --vault-rail-shortcut-text: #ede9fe;
     --vault-rail-shortcut-glow: rgba(139, 92, 246, 0.18);
     --vault-rail-shortcut-shadow:
-        inset 0 1px 0 rgba(196, 181, 253, 0.08),
-        inset 0 -1px 0 rgba(0, 0, 0, 0.26),
-        0 8px 18px rgba(0, 0, 0, 0.22);
+        inset 0 1px 0 rgba(196, 181, 253, 0.08), inset 0 -1px 0 rgba(0, 0, 0, 0.26), 0 8px 18px rgba(0, 0, 0, 0.22);
     --vault-rail-shortcut-active-shadow: inset 0 2px 4px rgba(0, 0, 0, 0.24);
 }
 
-[data-theme="blackhole"] .token-vault-rail-shortcut[data-vault-action="switch-token"] {
+[data-theme='blackhole'] .token-vault-rail-shortcut[data-vault-action='switch-token'] {
     --vault-rail-shortcut-accent: rgba(125, 211, 252, 0.24);
     --vault-rail-shortcut-border: rgba(125, 211, 252, 0.36);
     --vault-rail-shortcut-border-hover: rgba(186, 230, 253, 0.54);
@@ -5061,14 +5158,13 @@ label:has(#subToolboxEnabled:disabled) {
     --vault-rail-shortcut-text: #eff6ff;
     --vault-rail-shortcut-glow: rgba(59, 130, 246, 0.26);
     --vault-rail-shortcut-shadow:
-        inset 0 1px 0 rgba(219, 234, 254, 0.18),
-        inset 0 -1px 0 rgba(23, 37, 84, 0.28),
+        inset 0 1px 0 rgba(219, 234, 254, 0.18), inset 0 -1px 0 rgba(23, 37, 84, 0.28),
         0 8px 18px rgba(37, 99, 235, 0.2);
     --vault-rail-shortcut-active-shadow: inset 0 2px 4px rgba(23, 37, 84, 0.32);
     text-shadow: 0 1px 2px rgba(23, 37, 84, 0.32);
 }
 
-[data-theme="blackhole"] .token-vault-rail-shortcut[data-vault-action="toggle-state"]:not(.danger) {
+[data-theme='blackhole'] .token-vault-rail-shortcut[data-vault-action='toggle-state']:not(.danger) {
     --vault-rail-shortcut-accent: rgba(134, 239, 172, 0.22);
     --vault-rail-shortcut-border: rgba(134, 239, 172, 0.34);
     --vault-rail-shortcut-border-hover: rgba(187, 247, 208, 0.5);
@@ -5078,14 +5174,12 @@ label:has(#subToolboxEnabled:disabled) {
     --vault-rail-shortcut-text: #f0fdf4;
     --vault-rail-shortcut-glow: rgba(34, 197, 94, 0.24);
     --vault-rail-shortcut-shadow:
-        inset 0 1px 0 rgba(220, 252, 231, 0.18),
-        inset 0 -1px 0 rgba(5, 46, 22, 0.28),
-        0 8px 18px rgba(21, 128, 61, 0.2);
+        inset 0 1px 0 rgba(220, 252, 231, 0.18), inset 0 -1px 0 rgba(5, 46, 22, 0.28), 0 8px 18px rgba(21, 128, 61, 0.2);
     --vault-rail-shortcut-active-shadow: inset 0 2px 4px rgba(5, 46, 22, 0.32);
     text-shadow: 0 1px 2px rgba(5, 46, 22, 0.32);
 }
 
-[data-theme="blackhole"] .token-vault-rail-shortcut[data-vault-action="toggle-state"].danger {
+[data-theme='blackhole'] .token-vault-rail-shortcut[data-vault-action='toggle-state'].danger {
     --vault-rail-shortcut-accent: rgba(251, 191, 36, 0.24);
     --vault-rail-shortcut-border: rgba(251, 191, 36, 0.34);
     --vault-rail-shortcut-border-hover: rgba(253, 224, 71, 0.52);
@@ -5095,26 +5189,23 @@ label:has(#subToolboxEnabled:disabled) {
     --vault-rail-shortcut-text: #fffbeb;
     --vault-rail-shortcut-glow: rgba(245, 158, 11, 0.26);
     --vault-rail-shortcut-shadow:
-        inset 0 1px 0 rgba(254, 243, 199, 0.18),
-        inset 0 -1px 0 rgba(69, 26, 3, 0.28),
-        0 8px 18px rgba(217, 119, 6, 0.2);
+        inset 0 1px 0 rgba(254, 243, 199, 0.18), inset 0 -1px 0 rgba(69, 26, 3, 0.28), 0 8px 18px rgba(217, 119, 6, 0.2);
     --vault-rail-shortcut-active-shadow: inset 0 2px 4px rgba(69, 26, 3, 0.32);
     text-shadow: 0 1px 2px rgba(69, 26, 3, 0.32);
 }
 
-[data-theme="blackhole"] .token-vault-rail-menu-toggle,
-[data-theme="blackhole"] .token-vault-rail-menu-panel {
-    background:
-        linear-gradient(180deg, rgba(18, 14, 32, 0.96) 0%, rgba(12, 9, 24, 0.94) 100%);
+[data-theme='blackhole'] .token-vault-rail-menu-toggle,
+[data-theme='blackhole'] .token-vault-rail-menu-panel {
+    background: linear-gradient(180deg, rgba(18, 14, 32, 0.96) 0%, rgba(12, 9, 24, 0.94) 100%);
     color: #ede9fe;
     border-color: rgba(92, 94, 255, 0.14);
 }
 
-[data-theme="blackhole"] .token-vault-rail-menu-item {
+[data-theme='blackhole'] .token-vault-rail-menu-item {
     color: #ede9fe;
 }
 
-[data-theme="blackhole"] .token-vault-rail-menu-item.danger {
+[data-theme='blackhole'] .token-vault-rail-menu-item.danger {
     color: #fda4af;
 }
 
@@ -5233,9 +5324,7 @@ label:has(#subToolboxEnabled:disabled) {
     --vault-rail-shortcut-text: #0f172a;
     --vault-rail-shortcut-glow: rgba(8, 164, 213, 0.1);
     --vault-rail-shortcut-hover-shadow: 0 4px 10px var(--vault-rail-shortcut-glow);
-    --vault-rail-shortcut-shadow:
-        inset 0 1px 0 rgba(255, 255, 255, 0.7),
-        0 2px 4px rgba(15, 23, 42, 0.06);
+    --vault-rail-shortcut-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.7), 0 2px 4px rgba(15, 23, 42, 0.06);
     --vault-rail-shortcut-active-shadow: inset 0 2px 3px rgba(15, 23, 42, 0.08);
     border: 1px solid var(--vault-rail-shortcut-border);
     border-radius: 9px;
@@ -5257,9 +5346,10 @@ label:has(#subToolboxEnabled:disabled) {
     isolation: isolate;
     transform: translateZ(0);
     backface-visibility: hidden;
-    transition: transform 0.18s cubic-bezier(0.16, 1, 0.3, 1),
-                opacity 0.18s ease,
-                border-color 0.18s ease;
+    transition:
+        transform 0.18s cubic-bezier(0.16, 1, 0.3, 1),
+        opacity 0.18s ease,
+        border-color 0.18s ease;
 }
 
 .token-vault-rail-shortcut::after {
@@ -5326,8 +5416,7 @@ label:has(#subToolboxEnabled:disabled) {
     border: 1px solid rgba(8, 164, 213, 0.12);
     border-radius: 7px;
     background:
-        linear-gradient(180deg, rgba(255, 255, 255, 0.88) 0%, rgba(243, 249, 252, 0.72) 100%),
-        rgba(8, 164, 213, 0.06);
+        linear-gradient(180deg, rgba(255, 255, 255, 0.88) 0%, rgba(243, 249, 252, 0.72) 100%), rgba(8, 164, 213, 0.06);
     color: #0f172a;
     cursor: pointer;
     position: relative;
@@ -5337,9 +5426,10 @@ label:has(#subToolboxEnabled:disabled) {
     box-shadow:
         inset 0 1px 0 rgba(255, 255, 255, 0.7),
         0 2px 4px rgba(15, 23, 42, 0.06);
-    transition: transform 0.18s cubic-bezier(0.16, 1, 0.3, 1),
-                border-color 0.18s ease,
-                background 0.18s ease;
+    transition:
+        transform 0.18s cubic-bezier(0.16, 1, 0.3, 1),
+        border-color 0.18s ease,
+        background 0.18s ease;
 }
 
 .token-vault-rail-menu-toggle::after {
@@ -5368,8 +5458,7 @@ label:has(#subToolboxEnabled:disabled) {
 }
 
 .token-vault-rail-menu.is-open .token-vault-rail-menu-toggle {
-    background:
-        linear-gradient(180deg, rgba(224, 242, 254, 0.98) 0%, rgba(186, 230, 253, 0.88) 100%);
+    background: linear-gradient(180deg, rgba(224, 242, 254, 0.98) 0%, rgba(186, 230, 253, 0.88) 100%);
     border-color: rgba(8, 164, 213, 0.22);
 }
 
@@ -5401,8 +5490,7 @@ label:has(#subToolboxEnabled:disabled) {
     padding: 0.14rem;
     border-radius: 9px;
     border: 1px solid rgba(8, 164, 213, 0.14);
-    background:
-        linear-gradient(180deg, rgba(255, 255, 255, 0.98) 0%, rgba(244, 250, 253, 0.95) 100%);
+    background: linear-gradient(180deg, rgba(255, 255, 255, 0.98) 0%, rgba(244, 250, 253, 0.95) 100%);
     box-shadow:
         0 10px 18px rgba(15, 23, 42, 0.14),
         0 2px 8px rgba(8, 164, 213, 0.06);
@@ -5424,8 +5512,7 @@ label:has(#subToolboxEnabled:disabled) {
     padding: 0.16rem;
     border-radius: 10px;
     border: 1px solid rgba(8, 164, 213, 0.14);
-    background:
-        linear-gradient(180deg, rgba(255, 255, 255, 0.98) 0%, rgba(244, 250, 253, 0.95) 100%);
+    background: linear-gradient(180deg, rgba(255, 255, 255, 0.98) 0%, rgba(244, 250, 253, 0.95) 100%);
     box-shadow:
         0 10px 18px rgba(15, 23, 42, 0.14),
         0 2px 8px rgba(8, 164, 213, 0.06);
@@ -5435,7 +5522,9 @@ label:has(#subToolboxEnabled:disabled) {
     pointer-events: none;
     transform: translate3d(0, 6px, 0) scale(0.97);
     transform-origin: center;
-    transition: opacity 0.16s ease, transform 0.18s cubic-bezier(0.16, 1, 0.3, 1);
+    transition:
+        opacity 0.16s ease,
+        transform 0.18s cubic-bezier(0.16, 1, 0.3, 1);
 }
 
 .token-vault-rail-floating-menu.show {
@@ -5463,7 +5552,9 @@ label:has(#subToolboxEnabled:disabled) {
     isolation: isolate;
     transform: translateZ(0);
     backface-visibility: hidden;
-    transition: color 0.14s ease, transform 0.14s ease;
+    transition:
+        color 0.14s ease,
+        transform 0.14s ease;
 }
 
 .token-vault-rail-menu-item::before {
@@ -5491,39 +5582,37 @@ label:has(#subToolboxEnabled:disabled) {
     color: #b91c1c;
 }
 
-[data-theme="dark"] .token-vault-rail-menu-toggle,
-[data-theme="dark"] .token-vault-rail-menu-panel,
-[data-theme="dark"] .token-vault-rail-floating-menu {
-    background:
-        linear-gradient(180deg, rgba(20, 30, 52, 0.95) 0%, rgba(14, 22, 39, 0.92) 100%);
+[data-theme='dark'] .token-vault-rail-menu-toggle,
+[data-theme='dark'] .token-vault-rail-menu-panel,
+[data-theme='dark'] .token-vault-rail-floating-menu {
+    background: linear-gradient(180deg, rgba(20, 30, 52, 0.95) 0%, rgba(14, 22, 39, 0.92) 100%);
     color: #e2e8f0;
     border-color: rgba(91, 130, 255, 0.12);
 }
 
-[data-theme="dark"] .token-vault-rail-menu-item {
+[data-theme='dark'] .token-vault-rail-menu-item {
     --vault-rail-menu-item-hover-bg: rgba(91, 130, 255, 0.12);
     color: #e2e8f0;
 }
 
-[data-theme="dark"] .token-vault-rail-menu-item.danger {
+[data-theme='dark'] .token-vault-rail-menu-item.danger {
     color: #fca5a5;
 }
 
-[data-theme="blackhole"] .token-vault-rail-menu-toggle,
-[data-theme="blackhole"] .token-vault-rail-menu-panel,
-[data-theme="blackhole"] .token-vault-rail-floating-menu {
-    background:
-        linear-gradient(180deg, rgba(18, 14, 32, 0.96) 0%, rgba(12, 9, 24, 0.94) 100%);
+[data-theme='blackhole'] .token-vault-rail-menu-toggle,
+[data-theme='blackhole'] .token-vault-rail-menu-panel,
+[data-theme='blackhole'] .token-vault-rail-floating-menu {
+    background: linear-gradient(180deg, rgba(18, 14, 32, 0.96) 0%, rgba(12, 9, 24, 0.94) 100%);
     color: #ede9fe;
     border-color: rgba(92, 94, 255, 0.14);
 }
 
-[data-theme="blackhole"] .token-vault-rail-menu-item {
+[data-theme='blackhole'] .token-vault-rail-menu-item {
     --vault-rail-menu-item-hover-bg: rgba(139, 92, 246, 0.14);
     color: #ede9fe;
 }
 
-[data-theme="blackhole"] .token-vault-rail-menu-item.danger {
+[data-theme='blackhole'] .token-vault-rail-menu-item.danger {
     color: #fda4af;
 }
 
@@ -5548,7 +5637,8 @@ label:has(#subToolboxEnabled:disabled) {
     box-shadow:
         inset 0 1px 0 rgba(255, 255, 255, 0.85),
         0 7px 18px rgba(8, 164, 213, 0.14);
-    transition: transform 0.2s cubic-bezier(0.16, 1, 0.3, 1),
+    transition:
+        transform 0.2s cubic-bezier(0.16, 1, 0.3, 1),
         border-color 0.2s ease;
 }
 
@@ -5640,7 +5730,7 @@ label:has(#subToolboxEnabled:disabled) {
     border: 1px solid rgba(8, 164, 213, 0.14);
 }
 
-[data-theme="dark"] .token-vault-rail-add {
+[data-theme='dark'] .token-vault-rail-add {
     background:
         radial-gradient(circle at 15% 20%, rgba(91, 130, 255, 0.18), transparent 42%),
         linear-gradient(135deg, rgba(16, 24, 44, 0.96), rgba(18, 30, 58, 0.92));
@@ -5650,13 +5740,13 @@ label:has(#subToolboxEnabled:disabled) {
         0 10px 28px rgba(0, 0, 0, 0.28);
 }
 
-[data-theme="dark"] .token-vault-rail-add-cap {
+[data-theme='dark'] .token-vault-rail-add-cap {
     color: #8bb5ff;
     background: rgba(91, 130, 255, 0.12);
     border-color: rgba(91, 130, 255, 0.16);
 }
 
-[data-theme="blackhole"] .token-vault-rail-add {
+[data-theme='blackhole'] .token-vault-rail-add {
     background:
         radial-gradient(circle at 15% 20%, rgba(139, 92, 246, 0.2), transparent 42%),
         linear-gradient(135deg, rgba(14, 10, 28, 0.96), rgba(18, 12, 34, 0.92));
@@ -5666,7 +5756,7 @@ label:has(#subToolboxEnabled:disabled) {
         0 10px 28px rgba(0, 0, 0, 0.34);
 }
 
-[data-theme="blackhole"] .token-vault-rail-add-cap {
+[data-theme='blackhole'] .token-vault-rail-add-cap {
     color: #c4b5fd;
     background: rgba(139, 92, 246, 0.12);
     border-color: rgba(139, 92, 246, 0.16);
@@ -5678,7 +5768,6 @@ label:has(#subToolboxEnabled:disabled) {
     color: var(--text-secondary);
     font-size: 0.82rem;
 }
-
 
 /* ═══════════════════════════════════════════════════════════════════════
    VAULT MODAL — Panel
@@ -5722,11 +5811,11 @@ label:has(#subToolboxEnabled:disabled) {
     position: absolute;
     inset: 0 0 auto 0;
     height: 4px;
-    background: linear-gradient(90deg, #08A4D5, #33B9E1, #0ea5e9);
+    background: linear-gradient(90deg, #08a4d5, #33b9e1, #0ea5e9);
     opacity: 0.95;
 }
 
-.token-vault-override-panel[data-tone="danger"] {
+.token-vault-override-panel[data-tone='danger'] {
     border-color: rgba(239, 68, 68, 0.2);
     background:
         radial-gradient(circle at top left, rgba(239, 68, 68, 0.16), transparent 42%),
@@ -5736,32 +5825,32 @@ label:has(#subToolboxEnabled:disabled) {
         0 0 0 1px rgba(239, 68, 68, 0.08);
 }
 
-.token-vault-override-panel[data-tone="danger"]::before {
+.token-vault-override-panel[data-tone='danger']::before {
     background: linear-gradient(90deg, #ef4444, #f97316, #f43f5e);
 }
 
-[data-theme="dark"] .token-vault-override-panel {
+[data-theme='dark'] .token-vault-override-panel {
     background:
         radial-gradient(circle at top left, rgba(91, 130, 255, 0.16), transparent 42%),
         linear-gradient(180deg, rgba(16, 24, 44, 0.98), rgba(14, 22, 39, 0.94));
     border-color: rgba(91, 130, 255, 0.16);
 }
 
-[data-theme="dark"] .token-vault-override-panel[data-tone="danger"] {
+[data-theme='dark'] .token-vault-override-panel[data-tone='danger'] {
     background:
         radial-gradient(circle at top left, rgba(248, 113, 113, 0.2), transparent 42%),
         linear-gradient(180deg, rgba(40, 12, 18, 0.98), rgba(24, 10, 16, 0.94));
     border-color: rgba(248, 113, 113, 0.22);
 }
 
-[data-theme="blackhole"] .token-vault-override-panel {
+[data-theme='blackhole'] .token-vault-override-panel {
     background:
         radial-gradient(circle at top left, rgba(139, 92, 246, 0.16), transparent 42%),
         linear-gradient(180deg, rgba(14, 10, 28, 0.98), rgba(12, 9, 24, 0.94));
     border-color: rgba(139, 92, 246, 0.14);
 }
 
-[data-theme="blackhole"] .token-vault-override-panel[data-tone="danger"] {
+[data-theme='blackhole'] .token-vault-override-panel[data-tone='danger'] {
     background:
         radial-gradient(circle at top left, rgba(244, 63, 94, 0.18), transparent 42%),
         linear-gradient(180deg, rgba(28, 10, 22, 0.98), rgba(18, 8, 18, 0.94));
@@ -5877,14 +5966,12 @@ label:has(#subToolboxEnabled:disabled) {
     padding: 0.75rem 0.85rem;
     border-radius: 14px;
     border: 1px solid rgba(8, 164, 213, 0.12);
-    background:
-        linear-gradient(180deg, rgba(255, 255, 255, 0.86), rgba(244, 249, 253, 0.74));
+    background: linear-gradient(180deg, rgba(255, 255, 255, 0.86), rgba(244, 249, 253, 0.74));
 }
 
 .token-vault-override-victim.is-active {
     border-color: rgba(245, 158, 11, 0.22);
-    background:
-        linear-gradient(180deg, rgba(255, 251, 235, 0.9), rgba(254, 243, 199, 0.66));
+    background: linear-gradient(180deg, rgba(255, 251, 235, 0.9), rgba(254, 243, 199, 0.66));
 }
 
 .token-vault-override-victim-copy {
@@ -5931,8 +6018,7 @@ label:has(#subToolboxEnabled:disabled) {
     padding: 0.85rem 0.95rem;
     border-radius: 16px;
     border: 1px solid rgba(239, 68, 68, 0.16);
-    background:
-        linear-gradient(180deg, rgba(255, 255, 255, 0.9), rgba(255, 247, 247, 0.82));
+    background: linear-gradient(180deg, rgba(255, 255, 255, 0.9), rgba(255, 247, 247, 0.82));
 }
 
 .token-vault-override-verify-label {
@@ -5954,7 +6040,7 @@ label:has(#subToolboxEnabled:disabled) {
     border-radius: 12px;
     border: 1px solid rgba(239, 68, 68, 0.18);
     background: rgba(127, 29, 29, 0.04);
-    font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", "Courier New", monospace;
+    font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, 'Liberation Mono', 'Courier New', monospace;
     font-size: 0.78rem;
     line-height: 1.45;
     color: #991b1b;
@@ -5969,8 +6055,11 @@ label:has(#subToolboxEnabled:disabled) {
     background: rgba(255, 255, 255, 0.96);
     color: var(--text-primary);
     font-size: 0.85rem;
-    font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", "Courier New", monospace;
-    transition: border-color 0.2s ease, box-shadow 0.2s ease, background 0.2s ease;
+    font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, 'Liberation Mono', 'Courier New', monospace;
+    transition:
+        border-color 0.2s ease,
+        box-shadow 0.2s ease,
+        background 0.2s ease;
 }
 
 .token-vault-override-verify-input:focus {
@@ -5979,7 +6068,7 @@ label:has(#subToolboxEnabled:disabled) {
     box-shadow: 0 0 0 4px rgba(239, 68, 68, 0.12);
 }
 
-.token-vault-override-verify-input[aria-invalid="true"] {
+.token-vault-override-verify-input[aria-invalid='true'] {
     border-color: rgba(220, 38, 38, 0.48);
 }
 
@@ -5990,12 +6079,12 @@ label:has(#subToolboxEnabled:disabled) {
     color: var(--text-secondary);
 }
 
-.token-vault-override-verify-status[data-state="ready"] {
+.token-vault-override-verify-status[data-state='ready'] {
     color: #15803d;
     font-weight: 700;
 }
 
-.token-vault-override-verify-status[data-state="pending"] {
+.token-vault-override-verify-status[data-state='pending'] {
     color: #b91c1c;
 }
 
@@ -6005,52 +6094,50 @@ label:has(#subToolboxEnabled:disabled) {
     gap: 0.45rem;
 }
 
-[data-theme="dark"] .token-vault-override-detail,
-[data-theme="blackhole"] .token-vault-override-detail {
+[data-theme='dark'] .token-vault-override-detail,
+[data-theme='blackhole'] .token-vault-override-detail {
     background: rgba(255, 255, 255, 0.04);
 }
 
-[data-theme="dark"] .token-vault-override-copy-danger .token-vault-override-eyebrow,
-[data-theme="blackhole"] .token-vault-override-copy-danger .token-vault-override-eyebrow {
+[data-theme='dark'] .token-vault-override-copy-danger .token-vault-override-eyebrow,
+[data-theme='blackhole'] .token-vault-override-copy-danger .token-vault-override-eyebrow {
     color: #f87171;
 }
 
-[data-theme="dark"] .token-vault-override-victim {
-    background:
-        linear-gradient(180deg, rgba(20, 30, 52, 0.94), rgba(16, 24, 44, 0.9));
+[data-theme='dark'] .token-vault-override-victim {
+    background: linear-gradient(180deg, rgba(20, 30, 52, 0.94), rgba(16, 24, 44, 0.9));
     border-color: rgba(91, 130, 255, 0.14);
 }
 
-[data-theme="dark"] .token-vault-override-verify,
-[data-theme="blackhole"] .token-vault-override-verify {
+[data-theme='dark'] .token-vault-override-verify,
+[data-theme='blackhole'] .token-vault-override-verify {
     background: rgba(255, 255, 255, 0.04);
 }
 
-[data-theme="dark"] .token-vault-override-verify-token,
-[data-theme="blackhole"] .token-vault-override-verify-token {
+[data-theme='dark'] .token-vault-override-verify-token,
+[data-theme='blackhole'] .token-vault-override-verify-token {
     background: rgba(239, 68, 68, 0.1);
     color: #fecaca;
 }
 
-[data-theme="dark"] .token-vault-override-verify-input,
-[data-theme="blackhole"] .token-vault-override-verify-input {
+[data-theme='dark'] .token-vault-override-verify-input,
+[data-theme='blackhole'] .token-vault-override-verify-input {
     background: rgba(11, 18, 32, 0.92);
     color: #f8fafc;
 }
 
-[data-theme="dark"] .token-vault-override-verify-status[data-state="ready"],
-[data-theme="blackhole"] .token-vault-override-verify-status[data-state="ready"] {
+[data-theme='dark'] .token-vault-override-verify-status[data-state='ready'],
+[data-theme='blackhole'] .token-vault-override-verify-status[data-state='ready'] {
     color: #86efac;
 }
 
-[data-theme="dark"] .token-vault-override-verify-status[data-state="pending"],
-[data-theme="blackhole"] .token-vault-override-verify-status[data-state="pending"] {
+[data-theme='dark'] .token-vault-override-verify-status[data-state='pending'],
+[data-theme='blackhole'] .token-vault-override-verify-status[data-state='pending'] {
     color: #fca5a5;
 }
 
-[data-theme="blackhole"] .token-vault-override-victim {
-    background:
-        linear-gradient(180deg, rgba(18, 14, 32, 0.94), rgba(14, 10, 28, 0.9));
+[data-theme='blackhole'] .token-vault-override-victim {
+    background: linear-gradient(180deg, rgba(18, 14, 32, 0.94), rgba(14, 10, 28, 0.9));
     border-color: rgba(139, 92, 246, 0.12);
 }
 
@@ -6080,8 +6167,7 @@ label:has(#subToolboxEnabled:disabled) {
     inset: 0;
     border-radius: inherit;
     background:
-        linear-gradient(180deg, rgba(255, 255, 255, 0.88) 0%, rgba(255, 255, 255, 0.78) 100%),
-        var(--bg-secondary);
+        linear-gradient(180deg, rgba(255, 255, 255, 0.88) 0%, rgba(255, 255, 255, 0.78) 100%), var(--bg-secondary);
     backdrop-filter: blur(16px);
     -webkit-backdrop-filter: blur(16px);
     pointer-events: none;
@@ -6093,25 +6179,27 @@ label:has(#subToolboxEnabled:disabled) {
     z-index: 1;
 }
 
-[data-theme="dark"] .token-vault-panel::before {
+[data-theme='dark'] .token-vault-panel::before {
     background:
         radial-gradient(circle at top left, rgba(91, 130, 255, 0.14), transparent 40%),
         linear-gradient(180deg, rgba(10, 16, 30, 0.98), rgba(14, 22, 39, 0.96));
 }
 
-[data-theme="blackhole"] .token-vault-panel {
+[data-theme='blackhole'] .token-vault-panel {
     border-color: rgba(92, 94, 255, 0.16);
     box-shadow:
         0 28px 72px rgba(0, 0, 0, 0.5),
         0 0 48px rgba(92, 94, 255, 0.12);
 }
 
-[data-theme="dark"] .token-vault-panel {
+[data-theme='dark'] .token-vault-panel {
     border-color: rgba(91, 130, 255, 0.16);
-    box-shadow: 0 24px 72px var(--shadow), 0 0 0 1px rgba(91, 130, 255, 0.12);
+    box-shadow:
+        0 24px 72px var(--shadow),
+        0 0 0 1px rgba(91, 130, 255, 0.12);
 }
 
-[data-theme="blackhole"] .token-vault-panel::before {
+[data-theme='blackhole'] .token-vault-panel::before {
     background:
         radial-gradient(circle at top left, rgba(92, 94, 255, 0.12), transparent 40%),
         linear-gradient(180deg, rgba(5, 4, 12, 0.98), rgba(11, 8, 20, 0.96));
@@ -6129,24 +6217,24 @@ label:has(#subToolboxEnabled:disabled) {
     z-index: 2;
 }
 
-[data-theme="dark"] .token-vault-panel-header {
+[data-theme='dark'] .token-vault-panel-header {
     background: linear-gradient(135deg, rgba(91, 130, 255, 0.08) 0%, rgba(56, 189, 248, 0.06) 100%);
     border-bottom-color: rgba(91, 130, 255, 0.12);
 }
 
-[data-theme="dark"] .token-vault-panel-header h2 {
+[data-theme='dark'] .token-vault-panel-header h2 {
     background: linear-gradient(135deg, #93bbff, #60a5fa);
     -webkit-background-clip: text;
     -webkit-text-fill-color: transparent;
     background-clip: text;
 }
 
-[data-theme="blackhole"] .token-vault-panel-header {
+[data-theme='blackhole'] .token-vault-panel-header {
     background: linear-gradient(135deg, rgba(92, 94, 255, 0.06) 0%, rgba(139, 92, 246, 0.05) 100%);
     border-bottom-color: rgba(92, 94, 255, 0.12);
 }
 
-[data-theme="blackhole"] .token-vault-panel-header h2 {
+[data-theme='blackhole'] .token-vault-panel-header h2 {
     background: linear-gradient(135deg, #a78bfa, #c4b5fd);
     -webkit-background-clip: text;
     -webkit-text-fill-color: transparent;
@@ -6211,14 +6299,19 @@ label:has(#subToolboxEnabled:disabled) {
     will-change: scroll-position;
 }
 
-.token-vault-panel-body::-webkit-scrollbar { width: 10px; }
-.token-vault-panel-body::-webkit-scrollbar-track { background: var(--surface-light); border-radius: 12px; margin: 8px; }
+.token-vault-panel-body::-webkit-scrollbar {
+    width: 10px;
+}
+.token-vault-panel-body::-webkit-scrollbar-track {
+    background: var(--surface-light);
+    border-radius: 12px;
+    margin: 8px;
+}
 .token-vault-panel-body::-webkit-scrollbar-thumb {
     background: linear-gradient(135deg, var(--primary) 0%, var(--secondary) 100%);
     border-radius: 8px;
     border: 2px solid var(--surface-light);
 }
-
 
 /* ═══════════════════════════════════════════════════════════════════════
    VAULT CONTENT — Grid, Hero, Actions, Import, List
@@ -6291,8 +6384,7 @@ label:has(#subToolboxEnabled:disabled) {
     padding: 0.95rem;
     border-radius: 16px;
     border: 1.5px solid rgba(8, 164, 213, 0.15);
-    background:
-        linear-gradient(180deg, rgba(255, 255, 255, 0.94), rgba(243, 249, 252, 0.88));
+    background: linear-gradient(180deg, rgba(255, 255, 255, 0.94), rgba(243, 249, 252, 0.88));
     box-shadow:
         0 8px 22px rgba(15, 23, 42, 0.08),
         inset 0 1px 0 rgba(255, 255, 255, 0.84);
@@ -6466,30 +6558,29 @@ label:has(#subToolboxEnabled:disabled) {
     padding: 0.85rem 0.9rem;
     border-radius: 14px;
     border: 1px solid rgba(8, 164, 213, 0.14);
-    background:
-        linear-gradient(180deg, rgba(255, 255, 255, 0.9), rgba(243, 249, 252, 0.84));
+    background: linear-gradient(180deg, rgba(255, 255, 255, 0.9), rgba(243, 249, 252, 0.84));
     box-shadow:
         inset 0 1px 0 rgba(255, 255, 255, 0.78),
         0 6px 16px rgba(15, 23, 42, 0.05);
 }
 
-.token-vault-create-preview[data-tone="checking"] {
+.token-vault-create-preview[data-tone='checking'] {
     border-color: rgba(59, 130, 246, 0.2);
     background: rgba(59, 130, 246, 0.08);
 }
 
-.token-vault-create-preview[data-tone="live"] {
+.token-vault-create-preview[data-tone='live'] {
     border-color: rgba(8, 164, 213, 0.18);
     background: rgba(8, 164, 213, 0.07);
 }
 
-.token-vault-create-preview[data-tone="recovered"] {
+.token-vault-create-preview[data-tone='recovered'] {
     border-color: rgba(20, 184, 166, 0.22);
     background: rgba(20, 184, 166, 0.08);
 }
 
-.token-vault-create-preview[data-tone="disabled"],
-.token-vault-create-preview[data-tone="error"] {
+.token-vault-create-preview[data-tone='disabled'],
+.token-vault-create-preview[data-tone='error'] {
     border-color: rgba(239, 68, 68, 0.22);
     background: rgba(239, 68, 68, 0.08);
 }
@@ -6567,7 +6658,7 @@ label:has(#subToolboxEnabled:disabled) {
     display: block;
     height: 100%;
     border-radius: inherit;
-    background: linear-gradient(90deg, #08A4D5, #33B9E1, #0ea5e9);
+    background: linear-gradient(90deg, #08a4d5, #33b9e1, #0ea5e9);
     box-shadow: 0 0 18px rgba(8, 164, 213, 0.25);
 }
 
@@ -6578,115 +6669,111 @@ label:has(#subToolboxEnabled:disabled) {
     color: var(--text-secondary);
 }
 
-[data-theme="dark"] .token-vault-create-hero,
-[data-theme="dark"] .token-vault-create-card {
-    background:
-        linear-gradient(180deg, rgba(16, 24, 44, 0.94), rgba(14, 22, 39, 0.9));
+[data-theme='dark'] .token-vault-create-hero,
+[data-theme='dark'] .token-vault-create-card {
+    background: linear-gradient(180deg, rgba(16, 24, 44, 0.94), rgba(14, 22, 39, 0.9));
     border-color: rgba(91, 130, 255, 0.14);
     box-shadow:
         0 8px 22px rgba(0, 0, 0, 0.22),
         inset 0 1px 0 rgba(91, 130, 255, 0.06);
 }
 
-[data-theme="dark"] .token-vault-create-card-primary,
-[data-theme="dark"] .token-vault-create-hero {
+[data-theme='dark'] .token-vault-create-card-primary,
+[data-theme='dark'] .token-vault-create-hero {
     background:
         radial-gradient(circle at top left, rgba(91, 130, 255, 0.14), transparent 46%),
         linear-gradient(180deg, rgba(16, 24, 44, 0.96), rgba(14, 22, 39, 0.92));
 }
 
-[data-theme="dark"] .token-vault-create-divider::before,
-[data-theme="dark"] .token-vault-create-divider::after {
+[data-theme='dark'] .token-vault-create-divider::before,
+[data-theme='dark'] .token-vault-create-divider::after {
     background: rgba(91, 130, 255, 0.16);
 }
 
-[data-theme="dark"] .token-vault-create-pill {
+[data-theme='dark'] .token-vault-create-pill {
     border-color: rgba(91, 130, 255, 0.16);
     background: rgba(91, 130, 255, 0.1);
 }
 
-[data-theme="dark"] .token-vault-create-spotlight {
+[data-theme='dark'] .token-vault-create-spotlight {
     border-color: rgba(91, 130, 255, 0.14);
     background: rgba(91, 130, 255, 0.08);
 }
 
-[data-theme="dark"] .token-vault-create-spotlight.is-warning {
+[data-theme='dark'] .token-vault-create-spotlight.is-warning {
     border-color: rgba(251, 191, 36, 0.22);
     background: rgba(251, 191, 36, 0.08);
 }
 
-[data-theme="dark"] .token-vault-create-preview {
-    background:
-        linear-gradient(180deg, rgba(20, 30, 52, 0.94), rgba(16, 24, 44, 0.9));
+[data-theme='dark'] .token-vault-create-preview {
+    background: linear-gradient(180deg, rgba(20, 30, 52, 0.94), rgba(16, 24, 44, 0.9));
     border-color: rgba(91, 130, 255, 0.14);
 }
 
-[data-theme="dark"] .token-vault-create-meter {
+[data-theme='dark'] .token-vault-create-meter {
     border-color: rgba(91, 130, 255, 0.14);
     background: rgba(59, 130, 246, 0.14);
 }
 
-[data-theme="blackhole"] .token-vault-create-hero,
-[data-theme="blackhole"] .token-vault-create-card {
-    background:
-        linear-gradient(180deg, rgba(14, 10, 28, 0.96), rgba(12, 9, 24, 0.92));
+[data-theme='blackhole'] .token-vault-create-hero,
+[data-theme='blackhole'] .token-vault-create-card {
+    background: linear-gradient(180deg, rgba(14, 10, 28, 0.96), rgba(12, 9, 24, 0.92));
     border-color: rgba(139, 92, 246, 0.14);
     box-shadow:
         0 10px 26px rgba(0, 0, 0, 0.32),
         inset 0 1px 0 rgba(167, 139, 250, 0.06);
 }
 
-[data-theme="blackhole"] .token-vault-create-card-primary,
-[data-theme="blackhole"] .token-vault-create-hero {
+[data-theme='blackhole'] .token-vault-create-card-primary,
+[data-theme='blackhole'] .token-vault-create-hero {
     background:
         radial-gradient(circle at top left, rgba(139, 92, 246, 0.16), transparent 46%),
         linear-gradient(180deg, rgba(14, 10, 28, 0.98), rgba(12, 9, 24, 0.94));
 }
 
-[data-theme="blackhole"] .token-vault-create-divider::before,
-[data-theme="blackhole"] .token-vault-create-divider::after {
+[data-theme='blackhole'] .token-vault-create-divider::before,
+[data-theme='blackhole'] .token-vault-create-divider::after {
     background: rgba(139, 92, 246, 0.16);
 }
 
-[data-theme="blackhole"] .token-vault-create-pill {
+[data-theme='blackhole'] .token-vault-create-pill {
     border-color: rgba(139, 92, 246, 0.16);
     background: rgba(139, 92, 246, 0.12);
 }
 
-[data-theme="blackhole"] .token-vault-create-spotlight {
+[data-theme='blackhole'] .token-vault-create-spotlight {
     border-color: rgba(139, 92, 246, 0.14);
     background: rgba(139, 92, 246, 0.08);
 }
 
-[data-theme="blackhole"] .token-vault-create-spotlight.is-warning {
+[data-theme='blackhole'] .token-vault-create-spotlight.is-warning {
     border-color: rgba(251, 113, 133, 0.22);
     background: rgba(251, 113, 133, 0.08);
 }
 
-[data-theme="blackhole"] .token-vault-create-preview {
-    background:
-        linear-gradient(180deg, rgba(18, 14, 32, 0.96), rgba(14, 10, 28, 0.92));
+[data-theme='blackhole'] .token-vault-create-preview {
+    background: linear-gradient(180deg, rgba(18, 14, 32, 0.96), rgba(14, 10, 28, 0.92));
     border-color: rgba(139, 92, 246, 0.14);
 }
 
-[data-theme="blackhole"] .token-vault-create-meter {
+[data-theme='blackhole'] .token-vault-create-meter {
     border-color: rgba(139, 92, 246, 0.16);
     background: rgba(139, 92, 246, 0.16);
 }
 
-[data-theme="blackhole"] .token-vault-create-meter-fill {
+[data-theme='blackhole'] .token-vault-create-meter-fill {
     background: linear-gradient(90deg, #8b5cf6, #a78bfa, #6366f1);
     box-shadow: 0 0 18px rgba(139, 92, 246, 0.28);
 }
 
-[data-theme="dark"] .token-vault-create-flow .token-vault-action:not(.token-vault-action-primary) {
+[data-theme='dark'] .token-vault-create-flow .token-vault-action:not(.token-vault-action-primary) {
     background: linear-gradient(180deg, var(--vault-action-top) 0%, var(--vault-action-bottom) 100%);
     box-shadow: var(--vault-action-shadow);
     text-shadow: none;
 }
 
-[data-theme="dark"] .token-vault-create-flow .token-vault-action[data-vault-action="paste-clipboard"],
-[data-theme="dark"] .token-vault-create-flow .token-vault-action[data-vault-action="import-file"] {
+[data-theme='dark'] .token-vault-create-flow .token-vault-action[data-vault-action='paste-clipboard'],
+[data-theme='dark'] .token-vault-create-flow .token-vault-action[data-vault-action='import-file'] {
     --vault-action-accent: rgba(255, 255, 255, 0.02);
     --vault-action-border: rgba(148, 163, 184, 0.18);
     --vault-action-border-hover: rgba(203, 213, 225, 0.3);
@@ -6696,23 +6783,19 @@ label:has(#subToolboxEnabled:disabled) {
     --vault-action-text: #e6f0ff;
     --vault-action-glow: rgba(15, 23, 42, 0.18);
     --vault-action-shadow:
-        inset 0 1px 0 rgba(255, 255, 255, 0.06),
-        inset 0 -1px 0 rgba(0, 0, 0, 0.34),
-        0 1px 0 rgba(0, 0, 0, 0.24),
+        inset 0 1px 0 rgba(255, 255, 255, 0.06), inset 0 -1px 0 rgba(0, 0, 0, 0.34), 0 1px 0 rgba(0, 0, 0, 0.24),
         0 10px 18px rgba(0, 0, 0, 0.22);
-    --vault-action-active-shadow:
-        inset 0 2px 4px rgba(0, 0, 0, 0.3),
-        0 1px 0 rgba(0, 0, 0, 0.12);
+    --vault-action-active-shadow: inset 0 2px 4px rgba(0, 0, 0, 0.3), 0 1px 0 rgba(0, 0, 0, 0.12);
 }
 
-[data-theme="blackhole"] .token-vault-create-flow .token-vault-action:not(.token-vault-action-primary) {
+[data-theme='blackhole'] .token-vault-create-flow .token-vault-action:not(.token-vault-action-primary) {
     background: linear-gradient(180deg, var(--vault-action-top) 0%, var(--vault-action-bottom) 100%);
     box-shadow: var(--vault-action-shadow);
     text-shadow: none;
 }
 
-[data-theme="blackhole"] .token-vault-create-flow .token-vault-action[data-vault-action="paste-clipboard"],
-[data-theme="blackhole"] .token-vault-create-flow .token-vault-action[data-vault-action="import-file"] {
+[data-theme='blackhole'] .token-vault-create-flow .token-vault-action[data-vault-action='paste-clipboard'],
+[data-theme='blackhole'] .token-vault-create-flow .token-vault-action[data-vault-action='import-file'] {
     --vault-action-accent: rgba(255, 255, 255, 0.02);
     --vault-action-border: rgba(134, 143, 190, 0.18);
     --vault-action-border-hover: rgba(196, 181, 253, 0.28);
@@ -6722,13 +6805,9 @@ label:has(#subToolboxEnabled:disabled) {
     --vault-action-text: #f3efff;
     --vault-action-glow: rgba(8, 4, 18, 0.22);
     --vault-action-shadow:
-        inset 0 1px 0 rgba(255, 255, 255, 0.05),
-        inset 0 -1px 0 rgba(0, 0, 0, 0.42),
-        0 1px 0 rgba(0, 0, 0, 0.28),
+        inset 0 1px 0 rgba(255, 255, 255, 0.05), inset 0 -1px 0 rgba(0, 0, 0, 0.42), 0 1px 0 rgba(0, 0, 0, 0.28),
         0 12px 22px rgba(0, 0, 0, 0.32);
-    --vault-action-active-shadow:
-        inset 0 2px 4px rgba(0, 0, 0, 0.38),
-        0 1px 0 rgba(0, 0, 0, 0.16);
+    --vault-action-active-shadow: inset 0 2px 4px rgba(0, 0, 0, 0.38), 0 1px 0 rgba(0, 0, 0, 0.16);
 }
 
 .token-vault-grid {
@@ -6764,8 +6843,7 @@ label:has(#subToolboxEnabled:disabled) {
     border-radius: 14px;
     border: 1.5px solid rgba(245, 158, 11, 0.28);
     border-left: 4px solid #f59e0b;
-    background:
-        linear-gradient(135deg, rgba(245, 158, 11, 0.1), rgba(251, 191, 36, 0.06));
+    background: linear-gradient(135deg, rgba(245, 158, 11, 0.1), rgba(251, 191, 36, 0.06));
     box-shadow:
         0 4px 12px rgba(245, 158, 11, 0.08),
         inset 0 1px 0 rgba(255, 255, 255, 0.7);
@@ -6809,9 +6887,11 @@ label:has(#subToolboxEnabled:disabled) {
 .token-vault-hero::before {
     content: '';
     position: absolute;
-    top: 0; left: 0; right: 0;
+    top: 0;
+    left: 0;
+    right: 0;
     height: 3px;
-    background: linear-gradient(90deg, #08A4D5, #33B9E1, #0ea5e9, #06b6d4);
+    background: linear-gradient(90deg, #08a4d5, #33b9e1, #0ea5e9, #06b6d4);
     border-radius: 16px 16px 0 0;
 }
 
@@ -6833,8 +6913,13 @@ label:has(#subToolboxEnabled:disabled) {
 .token-vault-hero.draft {
     border-color: rgba(245, 158, 11, 0.22);
 }
-.token-vault-hero.draft::before { background: linear-gradient(90deg, #f59e0b, #fbbf24, #d97706); }
-.token-vault-hero.draft::after { background: linear-gradient(180deg, #f59e0b, #d97706); box-shadow: 0 0 8px rgba(245, 158, 11, 0.3); }
+.token-vault-hero.draft::before {
+    background: linear-gradient(90deg, #f59e0b, #fbbf24, #d97706);
+}
+.token-vault-hero.draft::after {
+    background: linear-gradient(180deg, #f59e0b, #d97706);
+    box-shadow: 0 0 8px rgba(245, 158, 11, 0.3);
+}
 
 .token-vault-hero.recovered {
     border-color: rgba(20, 184, 166, 0.22);
@@ -6842,8 +6927,13 @@ label:has(#subToolboxEnabled:disabled) {
         radial-gradient(circle at 15% 20%, rgba(20, 184, 166, 0.12), transparent 45%),
         linear-gradient(180deg, rgba(255, 255, 255, 0.95) 0%, rgba(242, 255, 252, 0.92) 100%);
 }
-.token-vault-hero.recovered::before { background: linear-gradient(90deg, #14b8a6, #2dd4bf, #0f766e); }
-.token-vault-hero.recovered::after { background: linear-gradient(180deg, #14b8a6, #0d9488); box-shadow: 0 0 8px rgba(20, 184, 166, 0.3); }
+.token-vault-hero.recovered::before {
+    background: linear-gradient(90deg, #14b8a6, #2dd4bf, #0f766e);
+}
+.token-vault-hero.recovered::after {
+    background: linear-gradient(180deg, #14b8a6, #0d9488);
+    box-shadow: 0 0 8px rgba(20, 184, 166, 0.3);
+}
 
 .token-vault-hero.disabled {
     border-color: rgba(239, 68, 68, 0.22);
@@ -6851,10 +6941,15 @@ label:has(#subToolboxEnabled:disabled) {
         radial-gradient(circle at 15% 20%, rgba(239, 68, 68, 0.12), transparent 45%),
         linear-gradient(180deg, rgba(255, 255, 255, 0.95) 0%, rgba(255, 245, 246, 0.92) 100%);
 }
-.token-vault-hero.disabled::before { background: linear-gradient(90deg, #ef4444, #f87171, #dc2626); }
-.token-vault-hero.disabled::after { background: linear-gradient(180deg, #ef4444, #dc2626); box-shadow: 0 0 8px rgba(239, 68, 68, 0.3); }
+.token-vault-hero.disabled::before {
+    background: linear-gradient(90deg, #ef4444, #f87171, #dc2626);
+}
+.token-vault-hero.disabled::after {
+    background: linear-gradient(180deg, #ef4444, #dc2626);
+    box-shadow: 0 0 8px rgba(239, 68, 68, 0.3);
+}
 
-[data-theme="dark"] .token-vault-hero {
+[data-theme='dark'] .token-vault-hero {
     background:
         radial-gradient(circle at 15% 20%, rgba(91, 130, 255, 0.16), transparent 45%),
         radial-gradient(circle at 85% 80%, rgba(56, 189, 248, 0.06), transparent 50%),
@@ -6862,21 +6957,21 @@ label:has(#subToolboxEnabled:disabled) {
     border-color: rgba(91, 130, 255, 0.18);
 }
 
-[data-theme="dark"] .token-vault-hero::before {
+[data-theme='dark'] .token-vault-hero::before {
     background: linear-gradient(90deg, #5b82ff, #60a5fa, #2563eb);
 }
 
-[data-theme="dark"] .token-vault-section-title::before {
+[data-theme='dark'] .token-vault-section-title::before {
     background: linear-gradient(180deg, #5b82ff, #60a5fa);
 }
 
-[data-theme="dark"] .token-vault-section-title,
-[data-theme="dark"] .token-vault-eyebrow,
-[data-theme="dark"] .token-vault-panel-eyebrow {
+[data-theme='dark'] .token-vault-section-title,
+[data-theme='dark'] .token-vault-eyebrow,
+[data-theme='dark'] .token-vault-panel-eyebrow {
     color: #8bb5ff;
 }
 
-[data-theme="blackhole"] .token-vault-hero {
+[data-theme='blackhole'] .token-vault-hero {
     background:
         radial-gradient(circle at 15% 20%, rgba(167, 139, 250, 0.16), transparent 45%),
         radial-gradient(circle at 85% 80%, rgba(107, 101, 255, 0.06), transparent 50%),
@@ -6884,21 +6979,21 @@ label:has(#subToolboxEnabled:disabled) {
     border-color: rgba(92, 94, 255, 0.16);
 }
 
-[data-theme="blackhole"] .token-vault-hero::before {
+[data-theme='blackhole'] .token-vault-hero::before {
     background: linear-gradient(90deg, #8b5cf6, #a78bfa, #6366f1);
 }
 
-[data-theme="blackhole"] .token-vault-section-title::before {
+[data-theme='blackhole'] .token-vault-section-title::before {
     background: linear-gradient(180deg, #8b5cf6, #a78bfa);
 }
 
-[data-theme="blackhole"] .token-vault-section-title,
-[data-theme="blackhole"] .token-vault-eyebrow,
-[data-theme="blackhole"] .token-vault-panel-eyebrow {
+[data-theme='blackhole'] .token-vault-section-title,
+[data-theme='blackhole'] .token-vault-eyebrow,
+[data-theme='blackhole'] .token-vault-panel-eyebrow {
     color: #a78bfa;
 }
 
-[data-theme="blackhole"] .token-vault-hero::after {
+[data-theme='blackhole'] .token-vault-hero::after {
     background: linear-gradient(180deg, #8b5cf6, #6366f1);
     box-shadow: 0 0 8px rgba(139, 92, 246, 0.3);
 }
@@ -6945,7 +7040,9 @@ label:has(#subToolboxEnabled:disabled) {
     color: var(--text-primary);
     text-decoration: underline dotted rgba(8, 164, 213, 0.38);
     text-underline-offset: 0.18em;
-    transition: color 0.18s ease, text-decoration-color 0.18s ease;
+    transition:
+        color 0.18s ease,
+        text-decoration-color 0.18s ease;
 }
 
 .token-vault-title-editor {
@@ -6967,7 +7064,9 @@ label:has(#subToolboxEnabled:disabled) {
     font-size: 1rem;
     font-weight: 700;
     font-family: inherit;
-    transition: border-color 0.2s ease, box-shadow 0.2s ease;
+    transition:
+        border-color 0.2s ease,
+        box-shadow 0.2s ease;
 }
 
 .token-vault-title-input:focus {
@@ -7036,8 +7135,7 @@ label:has(#subToolboxEnabled:disabled) {
     text-transform: uppercase;
     border: 1.5px solid rgba(8, 164, 213, 0.2);
     background:
-        linear-gradient(180deg, rgba(255, 255, 255, 0.06) 0%, rgba(0, 0, 0, 0.04) 100%),
-        rgba(8, 164, 213, 0.04);
+        linear-gradient(180deg, rgba(255, 255, 255, 0.06) 0%, rgba(0, 0, 0, 0.04) 100%), rgba(8, 164, 213, 0.04);
     color: var(--text-secondary);
     box-shadow:
         inset 0 1px 0 rgba(255, 255, 255, 0.15),
@@ -7057,8 +7155,8 @@ label:has(#subToolboxEnabled:disabled) {
     color: #b45309;
 }
 
-[data-theme="dark"] .token-vault-status-chip.draft,
-[data-theme="blackhole"] .token-vault-status-chip.draft {
+[data-theme='dark'] .token-vault-status-chip.draft,
+[data-theme='blackhole'] .token-vault-status-chip.draft {
     color: #fbbf24;
 }
 
@@ -7068,8 +7166,8 @@ label:has(#subToolboxEnabled:disabled) {
     color: #0d9488;
 }
 
-[data-theme="dark"] .token-vault-status-chip.recovered,
-[data-theme="blackhole"] .token-vault-status-chip.recovered {
+[data-theme='dark'] .token-vault-status-chip.recovered,
+[data-theme='blackhole'] .token-vault-status-chip.recovered {
     color: #2dd4bf;
 }
 
@@ -7079,8 +7177,8 @@ label:has(#subToolboxEnabled:disabled) {
     color: #dc2626;
 }
 
-[data-theme="dark"] .token-vault-status-chip.disabled,
-[data-theme="blackhole"] .token-vault-status-chip.disabled {
+[data-theme='dark'] .token-vault-status-chip.disabled,
+[data-theme='blackhole'] .token-vault-status-chip.disabled {
     color: #f87171;
 }
 
@@ -7094,8 +7192,7 @@ label:has(#subToolboxEnabled:disabled) {
     border: 1.5px solid rgba(8, 164, 213, 0.16);
     background:
         radial-gradient(circle at 18% 18%, rgba(255, 255, 255, 0.62) 0%, rgba(255, 255, 255, 0) 42%),
-        linear-gradient(180deg, rgba(255, 255, 255, 0.82) 0%, rgba(240, 248, 255, 0.64) 100%),
-        rgba(8, 164, 213, 0.06);
+        linear-gradient(180deg, rgba(255, 255, 255, 0.82) 0%, rgba(240, 248, 255, 0.64) 100%), rgba(8, 164, 213, 0.06);
     color: var(--text-secondary);
     box-shadow:
         inset 0 1px 0 rgba(255, 255, 255, 0.58),
@@ -7103,12 +7200,11 @@ label:has(#subToolboxEnabled:disabled) {
         0 1px 0 rgba(15, 23, 42, 0.04);
 }
 
-[data-theme="dark"] .token-vault-meta-chip {
+[data-theme='dark'] .token-vault-meta-chip {
     border-color: rgba(91, 130, 255, 0.2);
     background:
         radial-gradient(circle at 18% 18%, rgba(191, 219, 254, 0.16) 0%, rgba(191, 219, 254, 0) 42%),
-        linear-gradient(180deg, rgba(31, 46, 80, 0.9) 0%, rgba(17, 25, 46, 0.84) 100%),
-        rgba(96, 165, 250, 0.08);
+        linear-gradient(180deg, rgba(31, 46, 80, 0.9) 0%, rgba(17, 25, 46, 0.84) 100%), rgba(96, 165, 250, 0.08);
     color: #dbeafe;
     box-shadow:
         inset 0 1px 0 rgba(147, 197, 253, 0.1),
@@ -7116,12 +7212,11 @@ label:has(#subToolboxEnabled:disabled) {
         0 1px 0 rgba(0, 0, 0, 0.16);
 }
 
-[data-theme="blackhole"] .token-vault-meta-chip {
+[data-theme='blackhole'] .token-vault-meta-chip {
     border-color: rgba(139, 92, 246, 0.22);
     background:
         radial-gradient(circle at 18% 18%, rgba(196, 181, 253, 0.18) 0%, rgba(196, 181, 253, 0) 42%),
-        linear-gradient(180deg, rgba(33, 23, 61, 0.94) 0%, rgba(14, 10, 28, 0.9) 100%),
-        rgba(139, 92, 246, 0.08);
+        linear-gradient(180deg, rgba(33, 23, 61, 0.94) 0%, rgba(14, 10, 28, 0.9) 100%), rgba(139, 92, 246, 0.08);
     color: #ede9fe;
     box-shadow:
         inset 0 1px 0 rgba(196, 181, 253, 0.08),
@@ -7142,12 +7237,12 @@ label:has(#subToolboxEnabled:disabled) {
     box-shadow: inset 0 2px 4px rgba(0, 0, 0, 0.04);
 }
 
-[data-theme="dark"] .token-vault-token-row {
+[data-theme='dark'] .token-vault-token-row {
     background: rgba(10, 14, 39, 0.6);
     box-shadow: inset 0 2px 4px rgba(0, 0, 0, 0.2);
 }
 
-[data-theme="blackhole"] .token-vault-token-row {
+[data-theme='blackhole'] .token-vault-token-row {
     background: rgba(0, 0, 0, 0.4);
     box-shadow: inset 0 2px 4px rgba(0, 0, 0, 0.5);
 }
@@ -7183,17 +7278,15 @@ label:has(#subToolboxEnabled:disabled) {
     padding: 0.5rem 0.6rem;
     border-radius: 10px;
     border: 1px solid rgba(8, 164, 213, 0.1);
-    background:
-        linear-gradient(180deg, rgba(255, 255, 255, 0.75) 0%, rgba(245, 249, 253, 0.6) 100%);
+    background: linear-gradient(180deg, rgba(255, 255, 255, 0.75) 0%, rgba(245, 249, 253, 0.6) 100%);
     box-shadow:
         inset 0 1px 0 rgba(255, 255, 255, 0.8),
         inset 0 -1px 0 rgba(0, 0, 0, 0.04),
         0 2px 6px rgba(15, 23, 42, 0.04);
 }
 
-[data-theme="dark"] .token-vault-stats div {
-    background:
-        linear-gradient(180deg, rgba(20, 30, 52, 0.92) 0%, rgba(16, 24, 44, 0.88) 100%);
+[data-theme='dark'] .token-vault-stats div {
+    background: linear-gradient(180deg, rgba(20, 30, 52, 0.92) 0%, rgba(16, 24, 44, 0.88) 100%);
     border-color: rgba(91, 130, 255, 0.1);
     box-shadow:
         inset 0 1px 0 rgba(91, 130, 255, 0.05),
@@ -7201,9 +7294,8 @@ label:has(#subToolboxEnabled:disabled) {
         0 2px 6px rgba(0, 0, 0, 0.12);
 }
 
-[data-theme="blackhole"] .token-vault-stats div {
-    background:
-        linear-gradient(180deg, rgba(18, 14, 32, 0.92) 0%, rgba(14, 10, 28, 0.88) 100%);
+[data-theme='blackhole'] .token-vault-stats div {
+    background: linear-gradient(180deg, rgba(18, 14, 32, 0.92) 0%, rgba(14, 10, 28, 0.88) 100%);
     border-color: rgba(92, 94, 255, 0.08);
     box-shadow:
         inset 0 1px 0 rgba(107, 101, 255, 0.05),
@@ -7233,7 +7325,6 @@ label:has(#subToolboxEnabled:disabled) {
     overflow-wrap: normal;
 }
 
-
 /* ═══════════════════════════════════════════════════════════════════════
    VAULT ACTIONS — Buttons
    ═══════════════════════════════════════════════════════════════════════ */
@@ -7250,13 +7341,9 @@ label:has(#subToolboxEnabled:disabled) {
     --vault-action-glow: rgba(8, 164, 213, 0.14);
     --vault-action-hover-shadow: 0 14px 26px var(--vault-action-glow);
     --vault-action-shadow:
-        inset 0 1px 0 rgba(255, 255, 255, 0.85),
-        inset 0 -1px 0 rgba(15, 23, 42, 0.06),
-        0 2px 0 rgba(15, 23, 42, 0.04),
+        inset 0 1px 0 rgba(255, 255, 255, 0.85), inset 0 -1px 0 rgba(15, 23, 42, 0.06), 0 2px 0 rgba(15, 23, 42, 0.04),
         0 10px 18px rgba(15, 23, 42, 0.06);
-    --vault-action-active-shadow:
-        inset 0 2px 3px rgba(0, 0, 0, 0.1),
-        0 1px 0 rgba(0, 0, 0, 0.06);
+    --vault-action-active-shadow: inset 0 2px 3px rgba(0, 0, 0, 0.1), 0 1px 0 rgba(0, 0, 0, 0.06);
     display: inline-flex;
     align-items: center;
     justify-content: center;
@@ -7267,8 +7354,7 @@ label:has(#subToolboxEnabled:disabled) {
     background:
         radial-gradient(circle at 16% 18%, rgba(255, 255, 255, 0.92) 0%, rgba(255, 255, 255, 0) 42%),
         linear-gradient(135deg, var(--vault-action-accent) 0%, transparent 68%),
-        linear-gradient(180deg, var(--vault-action-top) 0%, var(--vault-action-bottom) 100%),
-        var(--vault-action-base);
+        linear-gradient(180deg, var(--vault-action-top) 0%, var(--vault-action-bottom) 100%), var(--vault-action-base);
     color: var(--vault-action-text);
     font-size: 0.76rem;
     font-weight: 700;
@@ -7471,9 +7557,7 @@ label:has(#subToolboxEnabled:disabled) {
     --vault-mini-text: var(--text-secondary);
     --vault-mini-glow: rgba(8, 164, 213, 0.12);
     --vault-mini-hover-shadow: 0 8px 18px var(--vault-mini-glow);
-    --vault-mini-shadow:
-        inset 0 1px 0 rgba(255, 255, 255, 0.8),
-        0 2px 4px rgba(15, 23, 42, 0.06);
+    --vault-mini-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.8), 0 2px 4px rgba(15, 23, 42, 0.06);
     --vault-mini-active-shadow: inset 0 2px 3px rgba(15, 23, 42, 0.08);
     display: inline-flex;
     align-items: center;
@@ -7483,8 +7567,7 @@ label:has(#subToolboxEnabled:disabled) {
     background:
         radial-gradient(circle at 16% 18%, rgba(255, 255, 255, 0.86) 0%, rgba(255, 255, 255, 0) 42%),
         linear-gradient(135deg, var(--vault-mini-accent) 0%, transparent 68%),
-        linear-gradient(180deg, var(--vault-mini-top) 0%, var(--vault-mini-bottom) 100%),
-        var(--vault-mini-base);
+        linear-gradient(180deg, var(--vault-mini-top) 0%, var(--vault-mini-bottom) 100%), var(--vault-mini-base);
     color: var(--vault-mini-text);
     font-size: 0.69rem;
     font-weight: 700;
@@ -7551,7 +7634,7 @@ label:has(#subToolboxEnabled:disabled) {
         0 0 0 1px rgba(255, 255, 255, 0.16);
 }
 
-[data-theme="dark"] .token-vault-action {
+[data-theme='dark'] .token-vault-action {
     --vault-action-accent: rgba(96, 165, 250, 0.12);
     --vault-action-border: rgba(91, 130, 255, 0.22);
     --vault-action-border-hover: rgba(147, 197, 253, 0.4);
@@ -7561,16 +7644,12 @@ label:has(#subToolboxEnabled:disabled) {
     --vault-action-text: #e6f0ff;
     --vault-action-glow: rgba(91, 130, 255, 0.18);
     --vault-action-shadow:
-        inset 0 1px 0 rgba(147, 197, 253, 0.08),
-        inset 0 -1px 0 rgba(0, 0, 0, 0.28),
-        0 2px 0 rgba(0, 0, 0, 0.2),
+        inset 0 1px 0 rgba(147, 197, 253, 0.08), inset 0 -1px 0 rgba(0, 0, 0, 0.28), 0 2px 0 rgba(0, 0, 0, 0.2),
         0 12px 22px rgba(0, 0, 0, 0.18);
-    --vault-action-active-shadow:
-        inset 0 2px 4px rgba(0, 0, 0, 0.24),
-        0 1px 0 rgba(0, 0, 0, 0.12);
+    --vault-action-active-shadow: inset 0 2px 4px rgba(0, 0, 0, 0.24), 0 1px 0 rgba(0, 0, 0, 0.12);
 }
 
-[data-theme="dark"] .token-vault-mini-btn {
+[data-theme='dark'] .token-vault-mini-btn {
     --vault-mini-accent: rgba(96, 165, 250, 0.12);
     --vault-mini-border: rgba(91, 130, 255, 0.18);
     --vault-mini-border-hover: rgba(147, 197, 253, 0.34);
@@ -7579,13 +7658,11 @@ label:has(#subToolboxEnabled:disabled) {
     --vault-mini-base: rgba(12, 18, 36, 0.88);
     --vault-mini-text: #dbeafe;
     --vault-mini-glow: rgba(91, 130, 255, 0.16);
-    --vault-mini-shadow:
-        inset 0 1px 0 rgba(147, 197, 253, 0.08),
-        0 6px 14px rgba(0, 0, 0, 0.16);
+    --vault-mini-shadow: inset 0 1px 0 rgba(147, 197, 253, 0.08), 0 6px 14px rgba(0, 0, 0, 0.16);
     --vault-mini-active-shadow: inset 0 2px 4px rgba(0, 0, 0, 0.2);
 }
 
-[data-theme="blackhole"] .token-vault-action {
+[data-theme='blackhole'] .token-vault-action {
     --vault-action-accent: rgba(167, 139, 250, 0.14);
     --vault-action-border: rgba(139, 92, 246, 0.24);
     --vault-action-border-hover: rgba(196, 181, 253, 0.42);
@@ -7595,16 +7672,12 @@ label:has(#subToolboxEnabled:disabled) {
     --vault-action-text: #f3efff;
     --vault-action-glow: rgba(139, 92, 246, 0.22);
     --vault-action-shadow:
-        inset 0 1px 0 rgba(196, 181, 253, 0.08),
-        inset 0 -1px 0 rgba(0, 0, 0, 0.36),
-        0 2px 0 rgba(0, 0, 0, 0.26),
+        inset 0 1px 0 rgba(196, 181, 253, 0.08), inset 0 -1px 0 rgba(0, 0, 0, 0.36), 0 2px 0 rgba(0, 0, 0, 0.26),
         0 14px 24px rgba(0, 0, 0, 0.28);
-    --vault-action-active-shadow:
-        inset 0 2px 4px rgba(0, 0, 0, 0.32),
-        0 1px 0 rgba(0, 0, 0, 0.16);
+    --vault-action-active-shadow: inset 0 2px 4px rgba(0, 0, 0, 0.32), 0 1px 0 rgba(0, 0, 0, 0.16);
 }
 
-[data-theme="blackhole"] .token-vault-mini-btn {
+[data-theme='blackhole'] .token-vault-mini-btn {
     --vault-mini-accent: rgba(167, 139, 250, 0.14);
     --vault-mini-border: rgba(139, 92, 246, 0.2);
     --vault-mini-border-hover: rgba(196, 181, 253, 0.38);
@@ -7613,13 +7686,11 @@ label:has(#subToolboxEnabled:disabled) {
     --vault-mini-base: rgba(9, 7, 18, 0.94);
     --vault-mini-text: #ede9fe;
     --vault-mini-glow: rgba(139, 92, 246, 0.18);
-    --vault-mini-shadow:
-        inset 0 1px 0 rgba(196, 181, 253, 0.06),
-        0 8px 16px rgba(0, 0, 0, 0.24);
+    --vault-mini-shadow: inset 0 1px 0 rgba(196, 181, 253, 0.06), 0 8px 16px rgba(0, 0, 0, 0.24);
     --vault-mini-active-shadow: inset 0 2px 4px rgba(0, 0, 0, 0.24);
 }
 
-[data-theme="blackhole"] .token-vault-action-primary {
+[data-theme='blackhole'] .token-vault-action-primary {
     background:
         radial-gradient(circle at 30% 20%, rgba(255, 255, 255, 0.08), transparent 50%),
         linear-gradient(180deg, #7c3aed 0%, #5b21b6 100%);
@@ -7631,16 +7702,16 @@ label:has(#subToolboxEnabled:disabled) {
         0 6px 16px rgba(107, 101, 255, 0.25);
 }
 
-[data-theme="blackhole"] .token-vault-action-primary:hover:not(:disabled) {
+[data-theme='blackhole'] .token-vault-action-primary:hover:not(:disabled) {
     box-shadow:
         inset 0 2px 0 rgba(255, 255, 255, 0.2),
         0 4px 0 rgba(49, 10, 101, 0.28),
         0 10px 28px rgba(107, 101, 255, 0.28);
 }
 
-.token-vault-action[data-vault-action="copy-config-url"],
-.token-vault-action[data-vault-action="copy-token"],
-.token-vault-mini-btn[data-vault-action="copy-token"] {
+.token-vault-action[data-vault-action='copy-config-url'],
+.token-vault-action[data-vault-action='copy-token'],
+.token-vault-mini-btn[data-vault-action='copy-token'] {
     --vault-action-accent: rgba(34, 211, 238, 0.18);
     --vault-action-border: rgba(34, 211, 238, 0.24);
     --vault-action-border-hover: rgba(34, 211, 238, 0.38);
@@ -7651,56 +7722,55 @@ label:has(#subToolboxEnabled:disabled) {
     --vault-mini-glow: rgba(34, 211, 238, 0.18);
 }
 
-.token-vault-action[data-vault-action="export-current"],
-.token-vault-action[data-vault-action="export-all"] {
+.token-vault-action[data-vault-action='export-current'],
+.token-vault-action[data-vault-action='export-all'] {
     --vault-action-accent: rgba(168, 85, 247, 0.18);
     --vault-action-border: rgba(168, 85, 247, 0.24);
     --vault-action-border-hover: rgba(168, 85, 247, 0.38);
     --vault-action-glow: rgba(168, 85, 247, 0.18);
 }
 
-.token-vault-action[data-vault-action="install-addon"] {
+.token-vault-action[data-vault-action='install-addon'] {
     --vault-action-accent: rgba(34, 197, 94, 0.18);
     --vault-action-border: rgba(34, 197, 94, 0.24);
     --vault-action-border-hover: rgba(34, 197, 94, 0.38);
     --vault-action-glow: rgba(34, 197, 94, 0.18);
 }
 
-.token-vault-action[data-vault-action="open-toolbox"] {
+.token-vault-action[data-vault-action='open-toolbox'] {
     --vault-action-accent: rgba(59, 130, 246, 0.18);
     --vault-action-border: rgba(59, 130, 246, 0.24);
     --vault-action-border-hover: rgba(59, 130, 246, 0.38);
     --vault-action-glow: rgba(59, 130, 246, 0.18);
 }
 
-.token-vault-action[data-vault-action="open-history"] {
+.token-vault-action[data-vault-action='open-history'] {
     --vault-action-accent: rgba(99, 102, 241, 0.18);
     --vault-action-border: rgba(99, 102, 241, 0.24);
     --vault-action-border-hover: rgba(99, 102, 241, 0.38);
     --vault-action-glow: rgba(99, 102, 241, 0.18);
 }
 
-.token-vault-action[data-vault-action="validate-token"] {
+.token-vault-action[data-vault-action='validate-token'] {
     --vault-action-accent: rgba(245, 158, 11, 0.18);
     --vault-action-border: rgba(245, 158, 11, 0.24);
     --vault-action-border-hover: rgba(245, 158, 11, 0.38);
     --vault-action-glow: rgba(245, 158, 11, 0.18);
 }
 
-.token-vault-mini-btn[data-vault-action="reveal-token"] {
+.token-vault-mini-btn[data-vault-action='reveal-token'] {
     --vault-mini-accent: rgba(148, 163, 184, 0.18);
     --vault-mini-border: rgba(148, 163, 184, 0.22);
     --vault-mini-border-hover: rgba(148, 163, 184, 0.34);
     --vault-mini-glow: rgba(148, 163, 184, 0.16);
 }
 
-
 /* ═══════════════════════════════════════════════════════════════════════
    VAULT SECTIONS — Actions Card, Import Card, List Card
    ═══════════════════════════════════════════════════════════════════════ */
 
-[data-theme="dark"] .token-vault-action[data-vault-action="copy-config-url"],
-[data-theme="dark"] .token-vault-action[data-vault-action="copy-token"] {
+[data-theme='dark'] .token-vault-action[data-vault-action='copy-config-url'],
+[data-theme='dark'] .token-vault-action[data-vault-action='copy-token'] {
     --vault-action-accent: rgba(34, 211, 238, 0.28);
     --vault-action-border: rgba(103, 232, 249, 0.4);
     --vault-action-border-hover: rgba(165, 243, 252, 0.58);
@@ -7710,18 +7780,14 @@ label:has(#subToolboxEnabled:disabled) {
     --vault-action-text: #ecfeff;
     --vault-action-glow: rgba(34, 211, 238, 0.32);
     --vault-action-shadow:
-        inset 0 1px 0 rgba(207, 250, 254, 0.2),
-        inset 0 -1px 0 rgba(8, 47, 73, 0.28),
-        0 3px 0 rgba(8, 47, 73, 0.28),
+        inset 0 1px 0 rgba(207, 250, 254, 0.2), inset 0 -1px 0 rgba(8, 47, 73, 0.28), 0 3px 0 rgba(8, 47, 73, 0.28),
         0 12px 26px rgba(8, 145, 178, 0.24);
-    --vault-action-active-shadow:
-        inset 0 2px 4px rgba(8, 47, 73, 0.32),
-        0 1px 0 rgba(8, 47, 73, 0.18);
+    --vault-action-active-shadow: inset 0 2px 4px rgba(8, 47, 73, 0.32), 0 1px 0 rgba(8, 47, 73, 0.18);
     text-shadow: 0 1px 2px rgba(8, 47, 73, 0.32);
 }
 
-[data-theme="dark"] .token-vault-action[data-vault-action="export-current"],
-[data-theme="dark"] .token-vault-action[data-vault-action="export-all"] {
+[data-theme='dark'] .token-vault-action[data-vault-action='export-current'],
+[data-theme='dark'] .token-vault-action[data-vault-action='export-all'] {
     --vault-action-accent: rgba(216, 180, 254, 0.26);
     --vault-action-border: rgba(216, 180, 254, 0.4);
     --vault-action-border-hover: rgba(233, 213, 255, 0.56);
@@ -7731,17 +7797,13 @@ label:has(#subToolboxEnabled:disabled) {
     --vault-action-text: #faf5ff;
     --vault-action-glow: rgba(168, 85, 247, 0.34);
     --vault-action-shadow:
-        inset 0 1px 0 rgba(245, 208, 254, 0.22),
-        inset 0 -1px 0 rgba(76, 29, 149, 0.3),
-        0 3px 0 rgba(76, 29, 149, 0.3),
+        inset 0 1px 0 rgba(245, 208, 254, 0.22), inset 0 -1px 0 rgba(76, 29, 149, 0.3), 0 3px 0 rgba(76, 29, 149, 0.3),
         0 12px 24px rgba(109, 40, 217, 0.22);
-    --vault-action-active-shadow:
-        inset 0 2px 4px rgba(59, 7, 100, 0.34),
-        0 1px 0 rgba(59, 7, 100, 0.2);
+    --vault-action-active-shadow: inset 0 2px 4px rgba(59, 7, 100, 0.34), 0 1px 0 rgba(59, 7, 100, 0.2);
     text-shadow: 0 1px 2px rgba(59, 7, 100, 0.32);
 }
 
-[data-theme="dark"] .token-vault-action[data-vault-action="install-addon"] {
+[data-theme='dark'] .token-vault-action[data-vault-action='install-addon'] {
     --vault-action-accent: rgba(134, 239, 172, 0.22);
     --vault-action-border: rgba(134, 239, 172, 0.36);
     --vault-action-border-hover: rgba(187, 247, 208, 0.5);
@@ -7751,17 +7813,13 @@ label:has(#subToolboxEnabled:disabled) {
     --vault-action-text: #f0fdf4;
     --vault-action-glow: rgba(34, 197, 94, 0.28);
     --vault-action-shadow:
-        inset 0 1px 0 rgba(220, 252, 231, 0.2),
-        inset 0 -1px 0 rgba(20, 83, 45, 0.28),
-        0 3px 0 rgba(20, 83, 45, 0.28),
+        inset 0 1px 0 rgba(220, 252, 231, 0.2), inset 0 -1px 0 rgba(20, 83, 45, 0.28), 0 3px 0 rgba(20, 83, 45, 0.28),
         0 12px 24px rgba(22, 163, 74, 0.2);
-    --vault-action-active-shadow:
-        inset 0 2px 4px rgba(20, 83, 45, 0.32),
-        0 1px 0 rgba(20, 83, 45, 0.18);
+    --vault-action-active-shadow: inset 0 2px 4px rgba(20, 83, 45, 0.32), 0 1px 0 rgba(20, 83, 45, 0.18);
     text-shadow: 0 1px 2px rgba(20, 83, 45, 0.28);
 }
 
-[data-theme="dark"] .token-vault-action[data-vault-action="open-toolbox"] {
+[data-theme='dark'] .token-vault-action[data-vault-action='open-toolbox'] {
     --vault-action-accent: rgba(147, 197, 253, 0.24);
     --vault-action-border: rgba(147, 197, 253, 0.38);
     --vault-action-border-hover: rgba(191, 219, 254, 0.56);
@@ -7771,17 +7829,13 @@ label:has(#subToolboxEnabled:disabled) {
     --vault-action-text: #eff6ff;
     --vault-action-glow: rgba(59, 130, 246, 0.28);
     --vault-action-shadow:
-        inset 0 1px 0 rgba(219, 234, 254, 0.2),
-        inset 0 -1px 0 rgba(30, 64, 175, 0.28),
-        0 3px 0 rgba(30, 64, 175, 0.3),
+        inset 0 1px 0 rgba(219, 234, 254, 0.2), inset 0 -1px 0 rgba(30, 64, 175, 0.28), 0 3px 0 rgba(30, 64, 175, 0.3),
         0 12px 24px rgba(37, 99, 235, 0.22);
-    --vault-action-active-shadow:
-        inset 0 2px 4px rgba(30, 64, 175, 0.34),
-        0 1px 0 rgba(30, 64, 175, 0.18);
+    --vault-action-active-shadow: inset 0 2px 4px rgba(30, 64, 175, 0.34), 0 1px 0 rgba(30, 64, 175, 0.18);
     text-shadow: 0 1px 2px rgba(30, 64, 175, 0.3);
 }
 
-[data-theme="dark"] .token-vault-action[data-vault-action="open-history"] {
+[data-theme='dark'] .token-vault-action[data-vault-action='open-history'] {
     --vault-action-accent: rgba(165, 180, 252, 0.24);
     --vault-action-border: rgba(165, 180, 252, 0.38);
     --vault-action-border-hover: rgba(199, 210, 254, 0.54);
@@ -7791,17 +7845,13 @@ label:has(#subToolboxEnabled:disabled) {
     --vault-action-text: #eef2ff;
     --vault-action-glow: rgba(99, 102, 241, 0.3);
     --vault-action-shadow:
-        inset 0 1px 0 rgba(224, 231, 255, 0.2),
-        inset 0 -1px 0 rgba(49, 46, 129, 0.3),
-        0 3px 0 rgba(49, 46, 129, 0.3),
+        inset 0 1px 0 rgba(224, 231, 255, 0.2), inset 0 -1px 0 rgba(49, 46, 129, 0.3), 0 3px 0 rgba(49, 46, 129, 0.3),
         0 12px 24px rgba(79, 70, 229, 0.22);
-    --vault-action-active-shadow:
-        inset 0 2px 4px rgba(49, 46, 129, 0.34),
-        0 1px 0 rgba(49, 46, 129, 0.18);
+    --vault-action-active-shadow: inset 0 2px 4px rgba(49, 46, 129, 0.34), 0 1px 0 rgba(49, 46, 129, 0.18);
     text-shadow: 0 1px 2px rgba(49, 46, 129, 0.3);
 }
 
-[data-theme="dark"] .token-vault-action[data-vault-action="validate-token"] {
+[data-theme='dark'] .token-vault-action[data-vault-action='validate-token'] {
     --vault-action-accent: rgba(251, 191, 36, 0.24);
     --vault-action-border: rgba(251, 191, 36, 0.38);
     --vault-action-border-hover: rgba(253, 224, 71, 0.54);
@@ -7811,17 +7861,13 @@ label:has(#subToolboxEnabled:disabled) {
     --vault-action-text: #fffbeb;
     --vault-action-glow: rgba(245, 158, 11, 0.28);
     --vault-action-shadow:
-        inset 0 1px 0 rgba(254, 243, 199, 0.18),
-        inset 0 -1px 0 rgba(120, 53, 15, 0.28),
-        0 3px 0 rgba(120, 53, 15, 0.28),
-        0 12px 24px rgba(217, 119, 6, 0.2);
-    --vault-action-active-shadow:
-        inset 0 2px 4px rgba(120, 53, 15, 0.34),
-        0 1px 0 rgba(120, 53, 15, 0.18);
+        inset 0 1px 0 rgba(254, 243, 199, 0.18), inset 0 -1px 0 rgba(120, 53, 15, 0.28),
+        0 3px 0 rgba(120, 53, 15, 0.28), 0 12px 24px rgba(217, 119, 6, 0.2);
+    --vault-action-active-shadow: inset 0 2px 4px rgba(120, 53, 15, 0.34), 0 1px 0 rgba(120, 53, 15, 0.18);
     text-shadow: 0 1px 2px rgba(120, 53, 15, 0.28);
 }
 
-[data-theme="dark"] .token-vault-mini-btn[data-vault-action="copy-token"] {
+[data-theme='dark'] .token-vault-mini-btn[data-vault-action='copy-token'] {
     --vault-mini-accent: rgba(34, 211, 238, 0.28);
     --vault-mini-border: rgba(103, 232, 249, 0.38);
     --vault-mini-border-hover: rgba(165, 243, 252, 0.54);
@@ -7831,14 +7877,13 @@ label:has(#subToolboxEnabled:disabled) {
     --vault-mini-text: #ecfeff;
     --vault-mini-glow: rgba(34, 211, 238, 0.28);
     --vault-mini-shadow:
-        inset 0 1px 0 rgba(207, 250, 254, 0.22),
-        inset 0 -1px 0 rgba(8, 47, 73, 0.24),
+        inset 0 1px 0 rgba(207, 250, 254, 0.22), inset 0 -1px 0 rgba(8, 47, 73, 0.24),
         0 6px 16px rgba(8, 145, 178, 0.22);
     --vault-mini-active-shadow: inset 0 2px 4px rgba(8, 47, 73, 0.3);
     text-shadow: 0 1px 2px rgba(8, 47, 73, 0.3);
 }
 
-[data-theme="dark"] .token-vault-mini-btn[data-vault-action="reveal-token"] {
+[data-theme='dark'] .token-vault-mini-btn[data-vault-action='reveal-token'] {
     --vault-mini-accent: rgba(148, 163, 184, 0.22);
     --vault-mini-border: rgba(203, 213, 225, 0.34);
     --vault-mini-border-hover: rgba(226, 232, 240, 0.5);
@@ -7848,15 +7893,13 @@ label:has(#subToolboxEnabled:disabled) {
     --vault-mini-text: #f8fafc;
     --vault-mini-glow: rgba(148, 163, 184, 0.24);
     --vault-mini-shadow:
-        inset 0 1px 0 rgba(241, 245, 249, 0.2),
-        inset 0 -1px 0 rgba(30, 41, 59, 0.24),
-        0 6px 14px rgba(30, 41, 59, 0.2);
+        inset 0 1px 0 rgba(241, 245, 249, 0.2), inset 0 -1px 0 rgba(30, 41, 59, 0.24), 0 6px 14px rgba(30, 41, 59, 0.2);
     --vault-mini-active-shadow: inset 0 2px 4px rgba(30, 41, 59, 0.3);
     text-shadow: 0 1px 2px rgba(30, 41, 59, 0.28);
 }
 
-[data-theme="blackhole"] .token-vault-action[data-vault-action="copy-config-url"],
-[data-theme="blackhole"] .token-vault-action[data-vault-action="copy-token"] {
+[data-theme='blackhole'] .token-vault-action[data-vault-action='copy-config-url'],
+[data-theme='blackhole'] .token-vault-action[data-vault-action='copy-token'] {
     --vault-action-accent: rgba(103, 232, 249, 0.28);
     --vault-action-border: rgba(103, 232, 249, 0.4);
     --vault-action-border-hover: rgba(165, 243, 252, 0.58);
@@ -7866,18 +7909,14 @@ label:has(#subToolboxEnabled:disabled) {
     --vault-action-text: #ecfeff;
     --vault-action-glow: rgba(34, 211, 238, 0.34);
     --vault-action-shadow:
-        inset 0 1px 0 rgba(207, 250, 254, 0.18),
-        inset 0 -1px 0 rgba(8, 30, 43, 0.3),
-        0 3px 0 rgba(8, 30, 43, 0.3),
+        inset 0 1px 0 rgba(207, 250, 254, 0.18), inset 0 -1px 0 rgba(8, 30, 43, 0.3), 0 3px 0 rgba(8, 30, 43, 0.3),
         0 12px 28px rgba(6, 182, 212, 0.22);
-    --vault-action-active-shadow:
-        inset 0 2px 4px rgba(8, 30, 43, 0.34),
-        0 1px 0 rgba(8, 30, 43, 0.18);
+    --vault-action-active-shadow: inset 0 2px 4px rgba(8, 30, 43, 0.34), 0 1px 0 rgba(8, 30, 43, 0.18);
     text-shadow: 0 1px 2px rgba(8, 30, 43, 0.34);
 }
 
-[data-theme="blackhole"] .token-vault-action[data-vault-action="export-current"],
-[data-theme="blackhole"] .token-vault-action[data-vault-action="export-all"] {
+[data-theme='blackhole'] .token-vault-action[data-vault-action='export-current'],
+[data-theme='blackhole'] .token-vault-action[data-vault-action='export-all'] {
     --vault-action-accent: rgba(233, 213, 255, 0.26);
     --vault-action-border: rgba(216, 180, 254, 0.42);
     --vault-action-border-hover: rgba(243, 232, 255, 0.62);
@@ -7887,17 +7926,13 @@ label:has(#subToolboxEnabled:disabled) {
     --vault-action-text: #faf5ff;
     --vault-action-glow: rgba(192, 132, 252, 0.36);
     --vault-action-shadow:
-        inset 0 1px 0 rgba(245, 208, 254, 0.2),
-        inset 0 -1px 0 rgba(59, 7, 100, 0.34),
-        0 3px 0 rgba(59, 7, 100, 0.32),
+        inset 0 1px 0 rgba(245, 208, 254, 0.2), inset 0 -1px 0 rgba(59, 7, 100, 0.34), 0 3px 0 rgba(59, 7, 100, 0.32),
         0 12px 28px rgba(126, 34, 206, 0.24);
-    --vault-action-active-shadow:
-        inset 0 2px 4px rgba(45, 12, 72, 0.36),
-        0 1px 0 rgba(45, 12, 72, 0.2);
+    --vault-action-active-shadow: inset 0 2px 4px rgba(45, 12, 72, 0.36), 0 1px 0 rgba(45, 12, 72, 0.2);
     text-shadow: 0 1px 2px rgba(45, 12, 72, 0.34);
 }
 
-[data-theme="blackhole"] .token-vault-action[data-vault-action="install-addon"] {
+[data-theme='blackhole'] .token-vault-action[data-vault-action='install-addon'] {
     --vault-action-accent: rgba(134, 239, 172, 0.22);
     --vault-action-border: rgba(134, 239, 172, 0.36);
     --vault-action-border-hover: rgba(187, 247, 208, 0.52);
@@ -7907,17 +7942,13 @@ label:has(#subToolboxEnabled:disabled) {
     --vault-action-text: #f0fdf4;
     --vault-action-glow: rgba(34, 197, 94, 0.3);
     --vault-action-shadow:
-        inset 0 1px 0 rgba(220, 252, 231, 0.18),
-        inset 0 -1px 0 rgba(5, 46, 22, 0.32),
-        0 3px 0 rgba(5, 46, 22, 0.3),
+        inset 0 1px 0 rgba(220, 252, 231, 0.18), inset 0 -1px 0 rgba(5, 46, 22, 0.32), 0 3px 0 rgba(5, 46, 22, 0.3),
         0 12px 28px rgba(21, 128, 61, 0.22);
-    --vault-action-active-shadow:
-        inset 0 2px 4px rgba(5, 46, 22, 0.36),
-        0 1px 0 rgba(5, 46, 22, 0.2);
+    --vault-action-active-shadow: inset 0 2px 4px rgba(5, 46, 22, 0.36), 0 1px 0 rgba(5, 46, 22, 0.2);
     text-shadow: 0 1px 2px rgba(5, 46, 22, 0.32);
 }
 
-[data-theme="blackhole"] .token-vault-action[data-vault-action="open-toolbox"] {
+[data-theme='blackhole'] .token-vault-action[data-vault-action='open-toolbox'] {
     --vault-action-accent: rgba(147, 197, 253, 0.24);
     --vault-action-border: rgba(125, 211, 252, 0.38);
     --vault-action-border-hover: rgba(186, 230, 253, 0.56);
@@ -7927,17 +7958,13 @@ label:has(#subToolboxEnabled:disabled) {
     --vault-action-text: #eff6ff;
     --vault-action-glow: rgba(59, 130, 246, 0.32);
     --vault-action-shadow:
-        inset 0 1px 0 rgba(219, 234, 254, 0.18),
-        inset 0 -1px 0 rgba(23, 37, 84, 0.32),
-        0 3px 0 rgba(23, 37, 84, 0.32),
+        inset 0 1px 0 rgba(219, 234, 254, 0.18), inset 0 -1px 0 rgba(23, 37, 84, 0.32), 0 3px 0 rgba(23, 37, 84, 0.32),
         0 12px 28px rgba(37, 99, 235, 0.24);
-    --vault-action-active-shadow:
-        inset 0 2px 4px rgba(23, 37, 84, 0.36),
-        0 1px 0 rgba(23, 37, 84, 0.2);
+    --vault-action-active-shadow: inset 0 2px 4px rgba(23, 37, 84, 0.36), 0 1px 0 rgba(23, 37, 84, 0.2);
     text-shadow: 0 1px 2px rgba(23, 37, 84, 0.34);
 }
 
-[data-theme="blackhole"] .token-vault-action[data-vault-action="open-history"] {
+[data-theme='blackhole'] .token-vault-action[data-vault-action='open-history'] {
     --vault-action-accent: rgba(196, 181, 253, 0.26);
     --vault-action-border: rgba(196, 181, 253, 0.42);
     --vault-action-border-hover: rgba(221, 214, 254, 0.62);
@@ -7947,17 +7974,13 @@ label:has(#subToolboxEnabled:disabled) {
     --vault-action-text: #f5f3ff;
     --vault-action-glow: rgba(139, 92, 246, 0.34);
     --vault-action-shadow:
-        inset 0 1px 0 rgba(237, 233, 254, 0.18),
-        inset 0 -1px 0 rgba(46, 16, 101, 0.34),
-        0 3px 0 rgba(46, 16, 101, 0.32),
-        0 12px 28px rgba(109, 40, 217, 0.24);
-    --vault-action-active-shadow:
-        inset 0 2px 4px rgba(32, 12, 73, 0.36),
-        0 1px 0 rgba(32, 12, 73, 0.2);
+        inset 0 1px 0 rgba(237, 233, 254, 0.18), inset 0 -1px 0 rgba(46, 16, 101, 0.34),
+        0 3px 0 rgba(46, 16, 101, 0.32), 0 12px 28px rgba(109, 40, 217, 0.24);
+    --vault-action-active-shadow: inset 0 2px 4px rgba(32, 12, 73, 0.36), 0 1px 0 rgba(32, 12, 73, 0.2);
     text-shadow: 0 1px 2px rgba(32, 12, 73, 0.34);
 }
 
-[data-theme="blackhole"] .token-vault-action[data-vault-action="validate-token"] {
+[data-theme='blackhole'] .token-vault-action[data-vault-action='validate-token'] {
     --vault-action-accent: rgba(251, 191, 36, 0.24);
     --vault-action-border: rgba(251, 191, 36, 0.38);
     --vault-action-border-hover: rgba(253, 224, 71, 0.56);
@@ -7967,17 +7990,13 @@ label:has(#subToolboxEnabled:disabled) {
     --vault-action-text: #fffbeb;
     --vault-action-glow: rgba(245, 158, 11, 0.3);
     --vault-action-shadow:
-        inset 0 1px 0 rgba(254, 243, 199, 0.18),
-        inset 0 -1px 0 rgba(69, 26, 3, 0.32),
-        0 3px 0 rgba(69, 26, 3, 0.32),
+        inset 0 1px 0 rgba(254, 243, 199, 0.18), inset 0 -1px 0 rgba(69, 26, 3, 0.32), 0 3px 0 rgba(69, 26, 3, 0.32),
         0 12px 28px rgba(217, 119, 6, 0.22);
-    --vault-action-active-shadow:
-        inset 0 2px 4px rgba(69, 26, 3, 0.36),
-        0 1px 0 rgba(69, 26, 3, 0.2);
+    --vault-action-active-shadow: inset 0 2px 4px rgba(69, 26, 3, 0.36), 0 1px 0 rgba(69, 26, 3, 0.2);
     text-shadow: 0 1px 2px rgba(69, 26, 3, 0.32);
 }
 
-[data-theme="blackhole"] .token-vault-mini-btn[data-vault-action="copy-token"] {
+[data-theme='blackhole'] .token-vault-mini-btn[data-vault-action='copy-token'] {
     --vault-mini-accent: rgba(103, 232, 249, 0.28);
     --vault-mini-border: rgba(103, 232, 249, 0.38);
     --vault-mini-border-hover: rgba(165, 243, 252, 0.58);
@@ -7987,14 +8006,13 @@ label:has(#subToolboxEnabled:disabled) {
     --vault-mini-text: #ecfeff;
     --vault-mini-glow: rgba(34, 211, 238, 0.3);
     --vault-mini-shadow:
-        inset 0 1px 0 rgba(207, 250, 254, 0.18),
-        inset 0 -1px 0 rgba(8, 30, 43, 0.28),
+        inset 0 1px 0 rgba(207, 250, 254, 0.18), inset 0 -1px 0 rgba(8, 30, 43, 0.28),
         0 8px 18px rgba(6, 182, 212, 0.24);
     --vault-mini-active-shadow: inset 0 2px 4px rgba(8, 30, 43, 0.32);
     text-shadow: 0 1px 2px rgba(8, 30, 43, 0.34);
 }
 
-[data-theme="blackhole"] .token-vault-mini-btn[data-vault-action="reveal-token"] {
+[data-theme='blackhole'] .token-vault-mini-btn[data-vault-action='reveal-token'] {
     --vault-mini-accent: rgba(196, 181, 253, 0.2);
     --vault-mini-border: rgba(221, 214, 254, 0.34);
     --vault-mini-border-hover: rgba(243, 232, 255, 0.52);
@@ -8004,15 +8022,18 @@ label:has(#subToolboxEnabled:disabled) {
     --vault-mini-text: #f5f3ff;
     --vault-mini-glow: rgba(167, 139, 250, 0.28);
     --vault-mini-shadow:
-        inset 0 1px 0 rgba(237, 233, 254, 0.18),
-        inset 0 -1px 0 rgba(30, 10, 60, 0.26),
+        inset 0 1px 0 rgba(237, 233, 254, 0.18), inset 0 -1px 0 rgba(30, 10, 60, 0.26),
         0 8px 18px rgba(91, 33, 182, 0.22);
     --vault-mini-active-shadow: inset 0 2px 4px rgba(30, 10, 60, 0.3);
     text-shadow: 0 1px 2px rgba(30, 10, 60, 0.34);
 }
 
 /* Dark and blackhole manager buttons stay neutral except the modal Enable/Disable action */
-[data-theme="dark"] .token-vault-manager .token-vault-action:not([data-vault-action="toggle-state"]):not([data-vault-action="forget-token"]):not([data-vault-action="complete-removal"]) {
+[data-theme='dark']
+    .token-vault-manager
+    .token-vault-action:not([data-vault-action='toggle-state']):not([data-vault-action='forget-token']):not(
+        [data-vault-action='complete-removal']
+    ) {
     --vault-action-accent: rgba(255, 255, 255, 0.02);
     --vault-action-border: rgba(148, 163, 184, 0.18);
     --vault-action-border-hover: rgba(203, 213, 225, 0.3);
@@ -8022,13 +8043,9 @@ label:has(#subToolboxEnabled:disabled) {
     --vault-action-text: #e6f0ff;
     --vault-action-glow: rgba(15, 23, 42, 0.18);
     --vault-action-shadow:
-        inset 0 1px 0 rgba(255, 255, 255, 0.06),
-        inset 0 -1px 0 rgba(0, 0, 0, 0.34),
-        0 1px 0 rgba(0, 0, 0, 0.24),
+        inset 0 1px 0 rgba(255, 255, 255, 0.06), inset 0 -1px 0 rgba(0, 0, 0, 0.34), 0 1px 0 rgba(0, 0, 0, 0.24),
         0 10px 18px rgba(0, 0, 0, 0.22);
-    --vault-action-active-shadow:
-        inset 0 2px 4px rgba(0, 0, 0, 0.3),
-        0 1px 0 rgba(0, 0, 0, 0.12);
+    --vault-action-active-shadow: inset 0 2px 4px rgba(0, 0, 0, 0.3), 0 1px 0 rgba(0, 0, 0, 0.12);
     border: 1.5px solid var(--vault-action-border);
     background: linear-gradient(180deg, var(--vault-action-top) 0%, var(--vault-action-bottom) 100%);
     color: var(--vault-action-text);
@@ -8036,7 +8053,7 @@ label:has(#subToolboxEnabled:disabled) {
     text-shadow: none;
 }
 
-[data-theme="dark"] .token-vault-manager .token-vault-mini-btn {
+[data-theme='dark'] .token-vault-manager .token-vault-mini-btn {
     --vault-mini-accent: rgba(255, 255, 255, 0.02);
     --vault-mini-border: rgba(148, 163, 184, 0.16);
     --vault-mini-border-hover: rgba(203, 213, 225, 0.28);
@@ -8045,9 +8062,7 @@ label:has(#subToolboxEnabled:disabled) {
     --vault-mini-base: rgba(21, 27, 38, 0.96);
     --vault-mini-text: #dbeafe;
     --vault-mini-glow: rgba(15, 23, 42, 0.16);
-    --vault-mini-shadow:
-        inset 0 1px 0 rgba(255, 255, 255, 0.05),
-        0 6px 14px rgba(0, 0, 0, 0.18);
+    --vault-mini-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.05), 0 6px 14px rgba(0, 0, 0, 0.18);
     --vault-mini-active-shadow: inset 0 2px 4px rgba(0, 0, 0, 0.24);
     border: 1px solid var(--vault-mini-border);
     background: linear-gradient(180deg, var(--vault-mini-top) 0%, var(--vault-mini-bottom) 100%);
@@ -8056,7 +8071,11 @@ label:has(#subToolboxEnabled:disabled) {
     text-shadow: none;
 }
 
-[data-theme="blackhole"] .token-vault-manager .token-vault-action:not([data-vault-action="toggle-state"]):not([data-vault-action="forget-token"]):not([data-vault-action="complete-removal"]) {
+[data-theme='blackhole']
+    .token-vault-manager
+    .token-vault-action:not([data-vault-action='toggle-state']):not([data-vault-action='forget-token']):not(
+        [data-vault-action='complete-removal']
+    ) {
     --vault-action-accent: rgba(255, 255, 255, 0.02);
     --vault-action-border: rgba(134, 143, 190, 0.18);
     --vault-action-border-hover: rgba(196, 181, 253, 0.28);
@@ -8066,13 +8085,9 @@ label:has(#subToolboxEnabled:disabled) {
     --vault-action-text: #f3efff;
     --vault-action-glow: rgba(8, 4, 18, 0.22);
     --vault-action-shadow:
-        inset 0 1px 0 rgba(255, 255, 255, 0.05),
-        inset 0 -1px 0 rgba(0, 0, 0, 0.42),
-        0 1px 0 rgba(0, 0, 0, 0.28),
+        inset 0 1px 0 rgba(255, 255, 255, 0.05), inset 0 -1px 0 rgba(0, 0, 0, 0.42), 0 1px 0 rgba(0, 0, 0, 0.28),
         0 12px 22px rgba(0, 0, 0, 0.32);
-    --vault-action-active-shadow:
-        inset 0 2px 4px rgba(0, 0, 0, 0.38),
-        0 1px 0 rgba(0, 0, 0, 0.16);
+    --vault-action-active-shadow: inset 0 2px 4px rgba(0, 0, 0, 0.38), 0 1px 0 rgba(0, 0, 0, 0.16);
     border: 1.5px solid var(--vault-action-border);
     background: linear-gradient(180deg, var(--vault-action-top) 0%, var(--vault-action-bottom) 100%);
     color: var(--vault-action-text);
@@ -8080,7 +8095,7 @@ label:has(#subToolboxEnabled:disabled) {
     text-shadow: none;
 }
 
-[data-theme="blackhole"] .token-vault-manager .token-vault-mini-btn {
+[data-theme='blackhole'] .token-vault-manager .token-vault-mini-btn {
     --vault-mini-accent: rgba(255, 255, 255, 0.02);
     --vault-mini-border: rgba(134, 143, 190, 0.16);
     --vault-mini-border-hover: rgba(196, 181, 253, 0.26);
@@ -8089,9 +8104,7 @@ label:has(#subToolboxEnabled:disabled) {
     --vault-mini-base: rgba(14, 10, 24, 0.96);
     --vault-mini-text: #ede9fe;
     --vault-mini-glow: rgba(8, 4, 18, 0.2);
-    --vault-mini-shadow:
-        inset 0 1px 0 rgba(255, 255, 255, 0.04),
-        0 8px 16px rgba(0, 0, 0, 0.26);
+    --vault-mini-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.04), 0 8px 16px rgba(0, 0, 0, 0.26);
     --vault-mini-active-shadow: inset 0 2px 4px rgba(0, 0, 0, 0.28);
     border: 1px solid var(--vault-mini-border);
     background: linear-gradient(180deg, var(--vault-mini-top) 0%, var(--vault-mini-bottom) 100%);
@@ -8101,8 +8114,8 @@ label:has(#subToolboxEnabled:disabled) {
 }
 
 /* Dark and blackhole rail Enable/Disable buttons stay neutral like the default shortcut button */
-[data-theme="dark"] .token-vault-rail-shortcut[data-vault-action="toggle-state"]:not(.danger),
-[data-theme="dark"] .token-vault-rail-shortcut[data-vault-action="toggle-state"].danger {
+[data-theme='dark'] .token-vault-rail-shortcut[data-vault-action='toggle-state']:not(.danger),
+[data-theme='dark'] .token-vault-rail-shortcut[data-vault-action='toggle-state'].danger {
     --vault-rail-shortcut-accent: rgba(255, 255, 255, 0.02);
     --vault-rail-shortcut-border: rgba(148, 163, 184, 0.16);
     --vault-rail-shortcut-border-hover: rgba(203, 213, 225, 0.26);
@@ -8112,15 +8125,13 @@ label:has(#subToolboxEnabled:disabled) {
     --vault-rail-shortcut-text: #e2e8f0;
     --vault-rail-shortcut-glow: rgba(15, 23, 42, 0.16);
     --vault-rail-shortcut-shadow:
-        inset 0 1px 0 rgba(255, 255, 255, 0.05),
-        inset 0 -1px 0 rgba(0, 0, 0, 0.26),
-        0 6px 14px rgba(0, 0, 0, 0.18);
+        inset 0 1px 0 rgba(255, 255, 255, 0.05), inset 0 -1px 0 rgba(0, 0, 0, 0.26), 0 6px 14px rgba(0, 0, 0, 0.18);
     --vault-rail-shortcut-active-shadow: inset 0 2px 4px rgba(0, 0, 0, 0.24);
     text-shadow: none;
 }
 
-[data-theme="blackhole"] .token-vault-rail-shortcut[data-vault-action="toggle-state"]:not(.danger),
-[data-theme="blackhole"] .token-vault-rail-shortcut[data-vault-action="toggle-state"].danger {
+[data-theme='blackhole'] .token-vault-rail-shortcut[data-vault-action='toggle-state']:not(.danger),
+[data-theme='blackhole'] .token-vault-rail-shortcut[data-vault-action='toggle-state'].danger {
     --vault-rail-shortcut-accent: rgba(255, 255, 255, 0.02);
     --vault-rail-shortcut-border: rgba(134, 143, 190, 0.16);
     --vault-rail-shortcut-border-hover: rgba(196, 181, 253, 0.24);
@@ -8130,21 +8141,19 @@ label:has(#subToolboxEnabled:disabled) {
     --vault-rail-shortcut-text: #ede9fe;
     --vault-rail-shortcut-glow: rgba(8, 4, 18, 0.18);
     --vault-rail-shortcut-shadow:
-        inset 0 1px 0 rgba(255, 255, 255, 0.04),
-        inset 0 -1px 0 rgba(0, 0, 0, 0.3),
-        0 8px 18px rgba(0, 0, 0, 0.24);
+        inset 0 1px 0 rgba(255, 255, 255, 0.04), inset 0 -1px 0 rgba(0, 0, 0, 0.3), 0 8px 18px rgba(0, 0, 0, 0.24);
     --vault-rail-shortcut-active-shadow: inset 0 2px 4px rgba(0, 0, 0, 0.28);
     text-shadow: none;
 }
 
 /* Remove the glossy glare from rail Use/Live/Enable/Disable buttons in dark themes */
-[data-theme="dark"] .token-vault-rail-shortcut,
-[data-theme="blackhole"] .token-vault-rail-shortcut {
+[data-theme='dark'] .token-vault-rail-shortcut,
+[data-theme='blackhole'] .token-vault-rail-shortcut {
     background: linear-gradient(180deg, var(--vault-rail-shortcut-top) 0%, var(--vault-rail-shortcut-bottom) 100%);
     box-shadow: var(--vault-rail-shortcut-shadow);
 }
 
-[data-theme="dark"] .token-vault-rail-shortcut[data-vault-action="switch-token"] {
+[data-theme='dark'] .token-vault-rail-shortcut[data-vault-action='switch-token'] {
     --vault-rail-shortcut-accent: rgba(255, 255, 255, 0.02);
     --vault-rail-shortcut-border: rgba(125, 145, 194, 0.2);
     --vault-rail-shortcut-border-hover: rgba(191, 204, 235, 0.32);
@@ -8154,14 +8163,12 @@ label:has(#subToolboxEnabled:disabled) {
     --vault-rail-shortcut-text: #eff6ff;
     --vault-rail-shortcut-glow: rgba(15, 23, 42, 0.18);
     --vault-rail-shortcut-shadow:
-        inset 0 1px 0 rgba(255, 255, 255, 0.05),
-        inset 0 -1px 0 rgba(0, 0, 0, 0.3),
-        0 6px 14px rgba(0, 0, 0, 0.18);
+        inset 0 1px 0 rgba(255, 255, 255, 0.05), inset 0 -1px 0 rgba(0, 0, 0, 0.3), 0 6px 14px rgba(0, 0, 0, 0.18);
     --vault-rail-shortcut-active-shadow: inset 0 2px 4px rgba(0, 0, 0, 0.26);
     text-shadow: none;
 }
 
-[data-theme="blackhole"] .token-vault-rail-shortcut[data-vault-action="switch-token"] {
+[data-theme='blackhole'] .token-vault-rail-shortcut[data-vault-action='switch-token'] {
     --vault-rail-shortcut-accent: rgba(255, 255, 255, 0.02);
     --vault-rail-shortcut-border: rgba(143, 132, 191, 0.2);
     --vault-rail-shortcut-border-hover: rgba(206, 195, 244, 0.3);
@@ -8171,9 +8178,7 @@ label:has(#subToolboxEnabled:disabled) {
     --vault-rail-shortcut-text: #f3efff;
     --vault-rail-shortcut-glow: rgba(8, 4, 18, 0.2);
     --vault-rail-shortcut-shadow:
-        inset 0 1px 0 rgba(255, 255, 255, 0.04),
-        inset 0 -1px 0 rgba(0, 0, 0, 0.34),
-        0 8px 18px rgba(0, 0, 0, 0.24);
+        inset 0 1px 0 rgba(255, 255, 255, 0.04), inset 0 -1px 0 rgba(0, 0, 0, 0.34), 0 8px 18px rgba(0, 0, 0, 0.24);
     --vault-rail-shortcut-active-shadow: inset 0 2px 4px rgba(0, 0, 0, 0.3);
     text-shadow: none;
 }
@@ -8197,7 +8202,7 @@ label:has(#subToolboxEnabled:disabled) {
     width: 3px;
     height: 1em;
     border-radius: 999px;
-    background: linear-gradient(180deg, #08A4D5, #33B9E1);
+    background: linear-gradient(180deg, #08a4d5, #33b9e1);
     flex-shrink: 0;
 }
 
@@ -8213,25 +8218,22 @@ label:has(#subToolboxEnabled:disabled) {
     padding: 0.85rem;
     border-radius: 14px;
     border: 1.5px solid rgba(8, 164, 213, 0.15);
-    background:
-        linear-gradient(180deg, rgba(255, 255, 255, 0.92) 0%, rgba(243, 249, 252, 0.88) 100%);
+    background: linear-gradient(180deg, rgba(255, 255, 255, 0.92) 0%, rgba(243, 249, 252, 0.88) 100%);
     box-shadow:
         0 6px 18px rgba(15, 23, 42, 0.08),
         inset 0 1px 0 rgba(255, 255, 255, 0.8);
 }
 
-[data-theme="dark"] .token-vault-actions-card {
-    background:
-        linear-gradient(180deg, rgba(16, 24, 44, 0.92) 0%, rgba(14, 22, 39, 0.88) 100%);
+[data-theme='dark'] .token-vault-actions-card {
+    background: linear-gradient(180deg, rgba(16, 24, 44, 0.92) 0%, rgba(14, 22, 39, 0.88) 100%);
     border-color: rgba(91, 130, 255, 0.14);
     box-shadow:
         0 6px 18px rgba(0, 0, 0, 0.2),
         inset 0 1px 0 rgba(91, 130, 255, 0.06);
 }
 
-[data-theme="blackhole"] .token-vault-actions-card {
-    background:
-        linear-gradient(180deg, rgba(14, 10, 28, 0.94) 0%, rgba(12, 9, 24, 0.9) 100%);
+[data-theme='blackhole'] .token-vault-actions-card {
+    background: linear-gradient(180deg, rgba(14, 10, 28, 0.94) 0%, rgba(12, 9, 24, 0.9) 100%);
     border-color: rgba(92, 94, 255, 0.12);
     box-shadow:
         0 6px 18px rgba(0, 0, 0, 0.3),
@@ -8287,7 +8289,7 @@ label:has(#subToolboxEnabled:disabled) {
     color: #7c2d12;
 }
 
-[data-theme="dark"] .token-vault-security-warning {
+[data-theme='dark'] .token-vault-security-warning {
     border-color: rgba(251, 191, 36, 0.22);
     background:
         radial-gradient(circle at top, rgba(251, 191, 36, 0.14), transparent 58%),
@@ -8298,11 +8300,11 @@ label:has(#subToolboxEnabled:disabled) {
         0 10px 24px rgba(0, 0, 0, 0.2);
 }
 
-[data-theme="dark"] .token-vault-security-warning strong {
+[data-theme='dark'] .token-vault-security-warning strong {
     color: #fde68a;
 }
 
-[data-theme="blackhole"] .token-vault-security-warning {
+[data-theme='blackhole'] .token-vault-security-warning {
     border-color: rgba(251, 191, 36, 0.2);
     background:
         radial-gradient(circle at top, rgba(251, 191, 36, 0.12), transparent 58%),
@@ -8313,7 +8315,7 @@ label:has(#subToolboxEnabled:disabled) {
         0 10px 24px rgba(0, 0, 0, 0.28);
 }
 
-[data-theme="blackhole"] .token-vault-security-warning strong {
+[data-theme='blackhole'] .token-vault-security-warning strong {
     color: #fef3c7;
 }
 
@@ -8343,25 +8345,22 @@ label:has(#subToolboxEnabled:disabled) {
     padding: 0.85rem;
     border-radius: 14px;
     border: 1.5px solid rgba(8, 164, 213, 0.15);
-    background:
-        linear-gradient(180deg, rgba(255, 255, 255, 0.92) 0%, rgba(243, 249, 252, 0.88) 100%);
+    background: linear-gradient(180deg, rgba(255, 255, 255, 0.92) 0%, rgba(243, 249, 252, 0.88) 100%);
     box-shadow:
         0 6px 18px rgba(15, 23, 42, 0.08),
         inset 0 1px 0 rgba(255, 255, 255, 0.8);
 }
 
-[data-theme="dark"] .token-vault-import-card {
-    background:
-        linear-gradient(180deg, rgba(16, 24, 44, 0.92) 0%, rgba(14, 22, 39, 0.88) 100%);
+[data-theme='dark'] .token-vault-import-card {
+    background: linear-gradient(180deg, rgba(16, 24, 44, 0.92) 0%, rgba(14, 22, 39, 0.88) 100%);
     border-color: rgba(91, 130, 255, 0.14);
     box-shadow:
         0 6px 18px rgba(0, 0, 0, 0.2),
         inset 0 1px 0 rgba(91, 130, 255, 0.06);
 }
 
-[data-theme="blackhole"] .token-vault-import-card {
-    background:
-        linear-gradient(180deg, rgba(14, 10, 28, 0.94) 0%, rgba(12, 9, 24, 0.9) 100%);
+[data-theme='blackhole'] .token-vault-import-card {
+    background: linear-gradient(180deg, rgba(14, 10, 28, 0.94) 0%, rgba(12, 9, 24, 0.9) 100%);
     border-color: rgba(92, 94, 255, 0.12);
     box-shadow:
         0 6px 18px rgba(0, 0, 0, 0.3),
@@ -8378,14 +8377,15 @@ label:has(#subToolboxEnabled:disabled) {
     width: 100%;
     min-height: 46px;
     padding: 0.72rem 0.9rem;
-    background:
-        linear-gradient(180deg, rgba(255, 255, 255, 0.94) 0%, rgba(245, 249, 253, 0.88) 100%);
+    background: linear-gradient(180deg, rgba(255, 255, 255, 0.94) 0%, rgba(245, 249, 253, 0.88) 100%);
     border: 1.5px solid rgba(8, 164, 213, 0.16);
     border-radius: 14px;
     color: var(--text-primary);
     font-size: 0.82rem;
     font-family: 'SF Mono', 'Cascadia Code', monospace;
-    transition: border-color 0.2s ease, box-shadow 0.2s ease;
+    transition:
+        border-color 0.2s ease,
+        box-shadow 0.2s ease;
     box-shadow:
         inset 0 1px 0 rgba(255, 255, 255, 0.82),
         0 6px 16px rgba(8, 164, 213, 0.08);
@@ -8400,20 +8400,18 @@ label:has(#subToolboxEnabled:disabled) {
     resize: none;
 }
 
-[data-theme="dark"] .token-vault-import-input,
-[data-theme="dark"] .token-vault-import-row textarea {
-    background:
-        linear-gradient(180deg, rgba(20, 30, 52, 0.94) 0%, rgba(16, 24, 44, 0.9) 100%);
+[data-theme='dark'] .token-vault-import-input,
+[data-theme='dark'] .token-vault-import-row textarea {
+    background: linear-gradient(180deg, rgba(20, 30, 52, 0.94) 0%, rgba(16, 24, 44, 0.9) 100%);
     border-color: rgba(91, 130, 255, 0.14);
     box-shadow:
         inset 0 1px 0 rgba(91, 130, 255, 0.06),
         0 6px 16px rgba(0, 0, 0, 0.18);
 }
 
-[data-theme="blackhole"] .token-vault-import-input,
-[data-theme="blackhole"] .token-vault-import-row textarea {
-    background:
-        linear-gradient(180deg, rgba(18, 14, 32, 0.94) 0%, rgba(14, 10, 28, 0.9) 100%);
+[data-theme='blackhole'] .token-vault-import-input,
+[data-theme='blackhole'] .token-vault-import-row textarea {
+    background: linear-gradient(180deg, rgba(18, 14, 32, 0.94) 0%, rgba(14, 10, 28, 0.9) 100%);
     border-color: rgba(92, 94, 255, 0.14);
     box-shadow:
         inset 0 1px 0 rgba(107, 101, 255, 0.06),
@@ -8445,7 +8443,6 @@ label:has(#subToolboxEnabled:disabled) {
     grid-template-columns: repeat(2, minmax(0, 1fr));
 }
 
-
 /* ═══════════════════════════════════════════════════════════════════════
    LIST CARD & LIST ENTRIES — the most important visual fix
    ═══════════════════════════════════════════════════════════════════════ */
@@ -8453,25 +8450,22 @@ label:has(#subToolboxEnabled:disabled) {
     padding: 0.85rem;
     border-radius: 14px;
     border: 1.5px solid rgba(8, 164, 213, 0.15);
-    background:
-        linear-gradient(180deg, rgba(255, 255, 255, 0.92) 0%, rgba(243, 249, 252, 0.88) 100%);
+    background: linear-gradient(180deg, rgba(255, 255, 255, 0.92) 0%, rgba(243, 249, 252, 0.88) 100%);
     box-shadow:
         0 6px 18px rgba(15, 23, 42, 0.08),
         inset 0 1px 0 rgba(255, 255, 255, 0.8);
 }
 
-[data-theme="dark"] .token-vault-list-card {
-    background:
-        linear-gradient(180deg, rgba(16, 24, 44, 0.92) 0%, rgba(14, 22, 39, 0.88) 100%);
+[data-theme='dark'] .token-vault-list-card {
+    background: linear-gradient(180deg, rgba(16, 24, 44, 0.92) 0%, rgba(14, 22, 39, 0.88) 100%);
     border-color: rgba(91, 130, 255, 0.14);
     box-shadow:
         0 6px 18px rgba(0, 0, 0, 0.2),
         inset 0 1px 0 rgba(91, 130, 255, 0.06);
 }
 
-[data-theme="blackhole"] .token-vault-list-card {
-    background:
-        linear-gradient(180deg, rgba(14, 10, 28, 0.94) 0%, rgba(12, 9, 24, 0.9) 100%);
+[data-theme='blackhole'] .token-vault-list-card {
+    background: linear-gradient(180deg, rgba(14, 10, 28, 0.94) 0%, rgba(12, 9, 24, 0.9) 100%);
     border-color: rgba(92, 94, 255, 0.12);
     box-shadow:
         0 6px 18px rgba(0, 0, 0, 0.3),
@@ -8494,14 +8488,14 @@ label:has(#subToolboxEnabled:disabled) {
     border-radius: 12px;
     border: 1.5px solid rgba(8, 164, 213, 0.15);
     border-left: 4px solid #0ea5e9;
-    background:
-        linear-gradient(180deg, rgba(255, 255, 255, 0.88) 0%, rgba(245, 249, 253, 0.8) 100%);
+    background: linear-gradient(180deg, rgba(255, 255, 255, 0.88) 0%, rgba(245, 249, 253, 0.8) 100%);
     box-shadow:
         0 3px 10px rgba(15, 23, 42, 0.06),
         inset 0 1px 0 rgba(255, 255, 255, 0.7);
-    transition: transform 0.18s cubic-bezier(0.16, 1, 0.3, 1),
-                box-shadow 0.18s cubic-bezier(0.16, 1, 0.3, 1),
-                border-color 0.18s ease;
+    transition:
+        transform 0.18s cubic-bezier(0.16, 1, 0.3, 1),
+        box-shadow 0.18s cubic-bezier(0.16, 1, 0.3, 1),
+        border-color 0.18s ease;
     position: relative;
     overflow: hidden;
     animation: fadeInUp 0.25s ease both;
@@ -8516,16 +8510,23 @@ label:has(#subToolboxEnabled:disabled) {
 }
 
 /* Status-based left accent colors on list entries */
-.token-vault-list-item:has(.token-vault-inline-chip.disabled) { border-left-color: #ef4444; }
-.token-vault-list-item:has(.token-vault-inline-chip.draft) { border-left-color: #f59e0b; }
-.token-vault-list-item:has(.token-vault-inline-chip.recovered) { border-left-color: #14b8a6; }
+.token-vault-list-item:has(.token-vault-inline-chip.disabled) {
+    border-left-color: #ef4444;
+}
+.token-vault-list-item:has(.token-vault-inline-chip.draft) {
+    border-left-color: #f59e0b;
+}
+.token-vault-list-item:has(.token-vault-inline-chip.recovered) {
+    border-left-color: #14b8a6;
+}
 .token-vault-list-item:has(.token-vault-inline-chip.unknown),
-.token-vault-list-item:has(.token-vault-inline-chip.error) { border-left-color: #94a3b8; }
+.token-vault-list-item:has(.token-vault-inline-chip.error) {
+    border-left-color: #94a3b8;
+}
 
 /* Dark theme entries */
-[data-theme="dark"] .token-vault-list-item {
-    background:
-        linear-gradient(180deg, rgba(20, 30, 52, 0.95) 0%, rgba(16, 24, 44, 0.9) 100%);
+[data-theme='dark'] .token-vault-list-item {
+    background: linear-gradient(180deg, rgba(20, 30, 52, 0.95) 0%, rgba(16, 24, 44, 0.9) 100%);
     border-color: rgba(91, 130, 255, 0.14);
     border-left-color: #5b82ff;
     box-shadow:
@@ -8533,9 +8534,8 @@ label:has(#subToolboxEnabled:disabled) {
         inset 0 1px 0 rgba(91, 130, 255, 0.05);
 }
 
-[data-theme="dark"] .token-vault-list-item:hover {
-    background:
-        linear-gradient(180deg, rgba(24, 36, 62, 0.96) 0%, rgba(20, 30, 52, 0.94) 100%);
+[data-theme='dark'] .token-vault-list-item:hover {
+    background: linear-gradient(180deg, rgba(24, 36, 62, 0.96) 0%, rgba(20, 30, 52, 0.94) 100%);
     border-color: rgba(91, 130, 255, 0.25);
     box-shadow:
         0 6px 18px rgba(91, 130, 255, 0.08),
@@ -8543,9 +8543,8 @@ label:has(#subToolboxEnabled:disabled) {
 }
 
 /* Blackhole theme entries */
-[data-theme="blackhole"] .token-vault-list-item {
-    background:
-        linear-gradient(180deg, rgba(18, 14, 32, 0.95) 0%, rgba(14, 10, 28, 0.9) 100%);
+[data-theme='blackhole'] .token-vault-list-item {
+    background: linear-gradient(180deg, rgba(18, 14, 32, 0.95) 0%, rgba(14, 10, 28, 0.9) 100%);
     border-color: rgba(92, 94, 255, 0.12);
     border-left-color: #8b5cf6;
     box-shadow:
@@ -8553,9 +8552,8 @@ label:has(#subToolboxEnabled:disabled) {
         inset 0 1px 0 rgba(107, 101, 255, 0.05);
 }
 
-[data-theme="blackhole"] .token-vault-list-item:hover {
-    background:
-        linear-gradient(180deg, rgba(22, 16, 38, 0.96) 0%, rgba(18, 14, 32, 0.94) 100%);
+[data-theme='blackhole'] .token-vault-list-item:hover {
+    background: linear-gradient(180deg, rgba(22, 16, 38, 0.96) 0%, rgba(18, 14, 32, 0.94) 100%);
     border-color: rgba(92, 94, 255, 0.25);
     box-shadow:
         0 6px 18px rgba(107, 101, 255, 0.08),
@@ -8563,10 +8561,18 @@ label:has(#subToolboxEnabled:disabled) {
 }
 
 /* Stagger animation for list items */
-.token-vault-list-item:nth-child(2) { animation-delay: 0.05s; }
-.token-vault-list-item:nth-child(3) { animation-delay: 0.1s; }
-.token-vault-list-item:nth-child(4) { animation-delay: 0.15s; }
-.token-vault-list-item:nth-child(5) { animation-delay: 0.2s; }
+.token-vault-list-item:nth-child(2) {
+    animation-delay: 0.05s;
+}
+.token-vault-list-item:nth-child(3) {
+    animation-delay: 0.1s;
+}
+.token-vault-list-item:nth-child(4) {
+    animation-delay: 0.15s;
+}
+.token-vault-list-item:nth-child(5) {
+    animation-delay: 0.2s;
+}
 
 .token-vault-list-main {
     flex: 1;
@@ -8667,8 +8673,7 @@ label:has(#subToolboxEnabled:disabled) {
     font-size: 0.82rem;
     border: 2px dashed rgba(8, 164, 213, 0.18);
     border-radius: 12px;
-    background:
-        linear-gradient(180deg, rgba(15, 23, 42, 0.02), rgba(15, 23, 42, 0.04));
+    background: linear-gradient(180deg, rgba(15, 23, 42, 0.02), rgba(15, 23, 42, 0.04));
     line-height: 1.5;
 }
 
@@ -8682,7 +8687,6 @@ label:has(#subToolboxEnabled:disabled) {
         grid-column: auto;
     }
 }
-
 
 /* ═══════════════════════════════════════════════════════════════════════
    RESPONSIVE
@@ -8850,7 +8854,6 @@ label:has(#subToolboxEnabled:disabled) {
     }
 }
 
-
 /* V3 Warning Tooltip - Responsive Design */
 .v3-warning-tooltip {
     position: relative;
@@ -8865,7 +8868,7 @@ label:has(#subToolboxEnabled:disabled) {
     animation: warningPulse 2s ease-in-out infinite;
     user-select: none;
     -webkit-tap-highlight-color: transparent;
-    font-family: "Segoe UI Emoji", "Apple Color Emoji", "Noto Color Emoji", "Twemoji Mozilla", sans-serif;
+    font-family: 'Segoe UI Emoji', 'Apple Color Emoji', 'Noto Color Emoji', 'Twemoji Mozilla', sans-serif;
     line-height: 1;
     display: inline-flex;
     align-items: center;
@@ -8887,7 +8890,9 @@ label:has(#subToolboxEnabled:disabled) {
     visibility: hidden;
     display: none !important;
     pointer-events: none;
-    transition: opacity 0.2s ease, transform 0.2s ease;
+    transition:
+        opacity 0.2s ease,
+        transform 0.2s ease;
     z-index: 10000;
     box-shadow: 0 4px 12px rgba(0, 0, 0, 0.2);
 
@@ -8915,7 +8920,7 @@ label:has(#subToolboxEnabled:disabled) {
 
 /* Show tooltip on hover/focus */
 .v3-warning-tooltip:hover .tooltip-bubble,
-.v3-warning-tooltip .warning-icon:focus+.tooltip-bubble {
+.v3-warning-tooltip .warning-icon:focus + .tooltip-bubble {
     display: block !important;
     opacity: 1;
     visibility: visible;
@@ -8946,7 +8951,7 @@ label:has(#subToolboxEnabled:disabled) {
     }
 
     .v3-warning-tooltip:hover .tooltip-bubble,
-    .v3-warning-tooltip .warning-icon:focus+.tooltip-bubble {
+    .v3-warning-tooltip .warning-icon:focus + .tooltip-bubble {
         display: block !important;
         transform: translateY(-50%) translateX(0);
     }
@@ -8954,7 +8959,6 @@ label:has(#subToolboxEnabled:disabled) {
 
 /* Animation for warning icon */
 @keyframes warningPulse {
-
     0%,
     100% {
         transform: scale(1);
@@ -9115,7 +9119,7 @@ label:has(#subToolboxEnabled:disabled) {
     transition: all 0.2s ease;
 }
 
-.slow-providers-warning span[style*="color: #fff"] {
+.slow-providers-warning span[style*='color: #fff'] {
     color: #7f1d1d !important;
     text-shadow: none !important;
 }
@@ -9128,7 +9132,7 @@ label:has(#subToolboxEnabled:disabled) {
 }
 
 /* Dark mode warning */
-[data-theme="dark"] .slow-providers-warning {
+[data-theme='dark'] .slow-providers-warning {
     background: linear-gradient(135deg, rgba(220, 38, 38, 0.18) 0%, rgba(185, 28, 28, 0.14) 100%);
     border-color: rgba(220, 38, 38, 0.45);
     box-shadow:
@@ -9136,18 +9140,18 @@ label:has(#subToolboxEnabled:disabled) {
         0 1px 4px rgba(0, 0, 0, 0.2);
 }
 
-[data-theme="dark"] .slow-providers-warning span[style*="color: #fff"] {
+[data-theme='dark'] .slow-providers-warning span[style*='color: #fff'] {
     color: #fecaca !important;
     text-shadow: 0 1px 2px rgba(0, 0, 0, 0.3) !important;
 }
 
-[data-theme="dark"] .slow-providers-warning:hover {
+[data-theme='dark'] .slow-providers-warning:hover {
     background: linear-gradient(135deg, rgba(220, 38, 38, 0.22) 0%, rgba(185, 28, 28, 0.18) 100%);
     border-color: rgba(220, 38, 38, 0.55);
 }
 
 /* True Dark mode warning */
-[data-theme="blackhole"] .slow-providers-warning {
+[data-theme='blackhole'] .slow-providers-warning {
     background: linear-gradient(135deg, rgba(220, 38, 38, 0.22) 0%, rgba(185, 28, 28, 0.16) 100%);
     border-color: rgba(239, 68, 68, 0.5);
     box-shadow:
@@ -9155,12 +9159,12 @@ label:has(#subToolboxEnabled:disabled) {
         0 2px 6px rgba(0, 0, 0, 0.35);
 }
 
-[data-theme="blackhole"] .slow-providers-warning span[style*="color: #fff"] {
+[data-theme='blackhole'] .slow-providers-warning span[style*='color: #fff'] {
     color: #fca5a5 !important;
     text-shadow: 0 1px 3px rgba(0, 0, 0, 0.5) !important;
 }
 
-[data-theme="blackhole"] .slow-providers-warning:hover {
+[data-theme='blackhole'] .slow-providers-warning:hover {
     background: linear-gradient(135deg, rgba(220, 38, 38, 0.28) 0%, rgba(185, 28, 28, 0.22) 100%);
     border-color: rgba(239, 68, 68, 0.65);
     box-shadow:
@@ -9191,7 +9195,7 @@ label:has(#subToolboxEnabled:disabled) {
     color: var(--text-secondary);
 }
 
-.provider-advanced-block input[type="number"],
+.provider-advanced-block input[type='number'],
 .provider-advanced-block select {
     padding: 0.4rem 0.6rem;
     font-size: 0.85rem;
@@ -9264,7 +9268,7 @@ label:has(#subToolboxEnabled:disabled) {
 
 .slider::before {
     position: absolute;
-    content: "";
+    content: '';
     height: 18px;
     width: 18px;
     left: 3px;
@@ -9293,7 +9297,7 @@ label:has(#subToolboxEnabled:disabled) {
 }
 
 /* Ensure the hidden number input doesn't take up space when toggled off */
-#advancedTopK[style*="display:none"] {
+#advancedTopK[style*='display:none'] {
     display: none;
 }
 
@@ -9301,7 +9305,7 @@ label:has(#subToolboxEnabled:disabled) {
 #bulkImportTextarea {
     width: 100%;
     box-sizing: border-box;
-    font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, "Liberation Mono", monospace;
+    font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, 'Liberation Mono', monospace;
     font-size: 0.82rem;
     line-height: 1.5;
     padding: 0.7rem 0.85rem;
@@ -9312,7 +9316,9 @@ label:has(#subToolboxEnabled:disabled) {
     resize: vertical;
     min-height: 7rem;
     max-height: 16rem;
-    transition: border-color 0.18s ease, box-shadow 0.18s ease;
+    transition:
+        border-color 0.18s ease,
+        box-shadow 0.18s ease;
 }
 
 #bulkImportTextarea:focus {
@@ -9329,7 +9335,7 @@ label:has(#subToolboxEnabled:disabled) {
     padding: 0.6rem 0.7rem;
     max-height: 9.5rem;
     overflow-y: auto;
-    font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, "Liberation Mono", monospace;
+    font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, 'Liberation Mono', monospace;
     font-size: 0.76rem;
     color: var(--text-secondary);
 }
@@ -9354,7 +9360,7 @@ label:has(#subToolboxEnabled:disabled) {
     padding: 0.15rem 0.55rem;
     border-radius: 999px;
     border: 1px solid var(--primary-light);
-    background: rgba(8, 164, 213, 0.10);
+    background: rgba(8, 164, 213, 0.1);
     color: var(--primary);
     font-weight: 600;
     font-size: 0.72rem;
@@ -9363,7 +9369,7 @@ label:has(#subToolboxEnabled:disabled) {
 
 .bulk-import-badge.bulk-import-badge-crazy {
     border-color: rgba(245, 158, 11, 0.55);
-    background: rgba(245, 158, 11, 0.10);
+    background: rgba(245, 158, 11, 0.1);
     color: var(--warning, #f59e0b);
 }
 
@@ -9398,7 +9404,7 @@ label:has(#subToolboxEnabled:disabled) {
     padding: 0.45rem 0.6rem;
     border-radius: 8px;
     border: 1px solid rgba(245, 158, 11, 0.45);
-    background: rgba(245, 158, 11, 0.10);
+    background: rgba(245, 158, 11, 0.1);
     color: var(--warning, #f59e0b);
     font-family: inherit;
     font-size: 0.74rem;

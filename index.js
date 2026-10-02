@@ -45,18 +45,73 @@ const fs = require('fs');
 const os = require('os');
 const { pipeline } = require('stream/promises');
 
-const { parseConfig, getDefaultConfig, buildManifest, normalizeConfig, getLanguageSelectionLimits, getDefaultProviderParameters, mergeProviderParameters, selectGeminiApiKey, getEffectiveGeminiModel } = require('./src/utils/config');
-const { parseSRT, toSRT, sanitizeSubtitleText, srtPairToWebVTT, ensureSRTForTranslation, detectASSFormat } = require('./src/utils/subtitle');
+const {
+    parseConfig,
+    getDefaultConfig,
+    buildManifest,
+    normalizeConfig,
+    getLanguageSelectionLimits,
+    getDefaultProviderParameters,
+    mergeProviderParameters,
+    selectGeminiApiKey,
+    getEffectiveGeminiModel
+} = require('./src/utils/config');
+const {
+    parseSRT,
+    toSRT,
+    sanitizeSubtitleText,
+    srtPairToWebVTT,
+    ensureSRTForTranslation,
+    detectASSFormat
+} = require('./src/utils/subtitle');
 const { version } = require('./src/utils/version');
 const { redactToken } = require('./src/utils/security');
-const { getAllLanguages, getAllTranslationLanguages, getLanguageName, toISO6392, findISO6391ByName, canonicalSyncLanguageCode } = require('./src/utils/languages');
+const {
+    getAllLanguages,
+    getAllTranslationLanguages,
+    getLanguageName,
+    toISO6392,
+    findISO6391ByName,
+    canonicalSyncLanguageCode
+} = require('./src/utils/languages');
 const { generateCacheKeys } = require('./src/utils/cacheKeys');
-const { getCached: getDownloadCached, saveCached: saveDownloadCached, getCacheStats: getDownloadCacheStats } = require('./src/utils/downloadCache');
+const {
+    getCached: getDownloadCached,
+    saveCached: saveDownloadCached,
+    getCacheStats: getDownloadCacheStats
+} = require('./src/utils/downloadCache');
 const { checkOpenSubtitlesDownloadIntent } = require('./src/utils/openSubtitlesDownloadGuard');
-const { createSubtitleHandler, handleSubtitleDownload, handleTranslation, createLoadingSubtitle, createSessionTokenErrorSubtitle, createOpenSubtitlesAuthErrorSubtitle, createOpenSubtitlesQuotaExceededSubtitle, createCredentialDecryptionErrorSubtitle, createTranslationErrorSubtitle, readFromPartialCache, hasCachedTranslation, purgeTranslationCache, translationStatus, inFlightTranslations, canUserStartTranslation, getHistoryForUser, migrateHistoryNamespace, resolveHistoryUserHash, saveRequestToHistory, resolveHistoryTitle, enrichHistoryEntriesBackground, maybeConvertToSRT } = require('./src/handlers/subtitles');
+const {
+    createSubtitleHandler,
+    handleSubtitleDownload,
+    handleTranslation,
+    createLoadingSubtitle,
+    createSessionTokenErrorSubtitle,
+    createOpenSubtitlesAuthErrorSubtitle,
+    createOpenSubtitlesQuotaExceededSubtitle,
+    createCredentialDecryptionErrorSubtitle,
+    createTranslationErrorSubtitle,
+    readFromPartialCache,
+    hasCachedTranslation,
+    purgeTranslationCache,
+    translationStatus,
+    inFlightTranslations,
+    canUserStartTranslation,
+    getHistoryForUser,
+    migrateHistoryNamespace,
+    resolveHistoryUserHash,
+    saveRequestToHistory,
+    resolveHistoryTitle,
+    enrichHistoryEntriesBackground,
+    maybeConvertToSRT
+} = require('./src/handlers/subtitles');
 const GeminiService = require('./src/services/gemini');
 const TranslationEngine = require('./src/services/translationEngine');
-const { createProviderInstance, createTranslationProvider, resolveCfWorkersCredentials } = require('./src/services/translationProviderFactory');
+const {
+    createProviderInstance,
+    createTranslationProvider,
+    resolveCfWorkersCredentials
+} = require('./src/services/translationProviderFactory');
 const { quickNavScript } = require('./src/utils/quickNav');
 const streamActivity = require('./src/utils/streamActivity');
 // parallelTranslation is now handled internally by TranslationEngine
@@ -64,10 +119,17 @@ const syncCache = require('./src/utils/syncCache');
 const autoSubCache = require('./src/utils/autoSubCache');
 const { warmUpConnections, startKeepAlivePings, stopKeepAlivePings, getPoolStats } = require('./src/utils/httpAgents');
 const embeddedCache = require('./src/utils/embeddedCache');
-const { detectEmbeddedSubtitleFormat, prepareEmbeddedSubtitleDelivery } = require('./src/utils/embeddedSubtitleDelivery');
+const {
+    detectEmbeddedSubtitleFormat,
+    prepareEmbeddedSubtitleDelivery
+} = require('./src/utils/embeddedSubtitleDelivery');
 const { buildEmbeddedHistoryContext, normalizeEmbeddedHistoryValue } = require('./src/utils/embeddedHistoryContext');
 const { generateSubtitleSyncPage } = require('./src/utils/syncPageGenerator');
-const { generateSubToolboxPage, generateEmbeddedSubtitlePage, generateAutoSubtitlePage } = require('./src/utils/toolboxPageGenerator');
+const {
+    generateSubToolboxPage,
+    generateEmbeddedSubtitlePage,
+    generateAutoSubtitlePage
+} = require('./src/utils/toolboxPageGenerator');
 const { generateHistoryPage, renderHistoryContent } = require('./src/utils/historyPageGenerator');
 const { generateSmdbPage } = require('./src/utils/smdbPageGenerator');
 const { generateConfigurePage } = require('./src/utils/configurePageGenerator');
@@ -155,13 +217,14 @@ function normalizeSubtitleQueryExtras(req) {
         .map(([key, value]) => `${encodeURIComponent(key)}=${encodeURIComponent(value)}`)
         .join('&');
     const rebuiltPath = pathPart.replace(/\.json$/i, `/${extraSegment}.json`);
-    const passthroughQuery = passthroughEntries.length
-        ? `?${new URLSearchParams(passthroughEntries).toString()}`
-        : '';
+    const passthroughQuery = passthroughEntries.length ? `?${new URLSearchParams(passthroughEntries).toString()}` : '';
 
     req.url = `${rebuiltPath}${passthroughQuery}`;
     req.__subtitleQueryExtraNormalized = normalizedEntries.map(([key]) => key);
-    log.debug(() => `[Subtitle Extra Normalize] Rewrote query-style subtitle extras for ${pathPart.substring(0, 120)} (keys: ${req.__subtitleQueryExtraNormalized.join(',')})`);
+    log.debug(
+        () =>
+            `[Subtitle Extra Normalize] Rewrote query-style subtitle extras for ${pathPart.substring(0, 120)} (keys: ${req.__subtitleQueryExtraNormalized.join(',')})`
+    );
     return true;
 }
 
@@ -186,14 +249,17 @@ const sessionManager = getSessionManager(sessionOptions);
 
 // Deployment warning: In multi-instance/Redis mode, require stable encryption key
 if ((process.env.STORAGE_TYPE || 'redis') === 'redis' && !process.env.ENCRYPTION_KEY) {
-    log.warn(() => '[Startup] WARNING: STORAGE_TYPE=redis without ENCRYPTION_KEY. Multiple instances must share the same encryption key to read sessions.');
+    log.warn(
+        () =>
+            '[Startup] WARNING: STORAGE_TYPE=redis without ENCRYPTION_KEY. Multiple instances must share the same encryption key to read sessions.'
+    );
 }
 
 // Security: LRU cache for routers to avoid creating them on every request (max 100 entries)
 const routerCache = new LRUCache({
     max: 100, // Max 100 different configs cached
     ttl: 1000 * 60 * 60, // 1 hour TTL
-    updateAgeOnGet: true,
+    updateAgeOnGet: true
 });
 
 // Small LRU for resolved configs to avoid re-normalizing on chatty endpoints (e.g., stream-activity polling)
@@ -320,7 +386,10 @@ function invalidateManifestCache(token) {
         }
     }
     if (removed > 0) {
-        log.debug(() => `[ManifestCache] Invalidated ${removed} manifest cache entr${removed === 1 ? 'y' : 'ies'} for ${redactToken(token)}`);
+        log.debug(
+            () =>
+                `[ManifestCache] Invalidated ${removed} manifest cache entr${removed === 1 ? 'y' : 'ies'} for ${redactToken(token)}`
+        );
     }
 }
 
@@ -388,7 +457,9 @@ function cleanupCachesOnStartup() {
     }
 
     if (routersPurged > 0 || configsPurged > 0) {
-        log.warn(() => `[Security] Startup cache cleanup complete: purged ${routersPurged} routers, ${configsPurged} configs`);
+        log.warn(
+            () => `[Security] Startup cache cleanup complete: purged ${routersPurged} routers, ${configsPurged} configs`
+        );
     } else {
         log.info(() => '[Security] Startup cache cleanup complete: no contamination detected');
     }
@@ -398,7 +469,6 @@ function deriveStreamHashFromUrlServer(streamUrl, fallback = {}) {
     return deriveStreamHashFromUrl(streamUrl, fallback);
 }
 
-
 function formatBytes(value) {
     const bytes = Number(value);
     if (!Number.isFinite(bytes) || bytes <= 0) return '0B';
@@ -407,7 +477,6 @@ function formatBytes(value) {
     const scaled = bytes / Math.pow(1024, idx);
     return `${scaled.toFixed(scaled >= 10 ? 0 : 1)}${units[idx]}`;
 }
-
 
 function formatTimestamp(seconds = 0) {
     const clamped = Math.max(0, Number(seconds) || 0);
@@ -424,7 +493,7 @@ function segmentsToSrt(segments = []) {
     const lines = [];
     segments.forEach((seg, idx) => {
         const start = formatTimestamp(seg.start || seg.start_time || 0);
-        const end = formatTimestamp(seg.end || seg.end_time || (Number(seg.start || 0) + 4));
+        const end = formatTimestamp(seg.end || seg.end_time || Number(seg.start || 0) + 4);
         const text = (seg.text || seg.transcript || '').toString().trim() || '[...]';
         lines.push(String(idx + 1));
         lines.push(`${start} --> ${end}`);
@@ -450,9 +519,13 @@ function stripSpeakerLabelsFromSrt(srt = '') {
 }
 
 function srtTimecodeToMs(tc = '') {
-    const m = /^\s*(\d{1,2}):(\d{2}):(\d{2})[,.](\d{3})\s*-->\s*(\d{1,2}):(\d{2}):(\d{2})[,.](\d{3})/.exec(String(tc || '').trim());
+    const m = /^\s*(\d{1,2}):(\d{2}):(\d{2})[,.](\d{3})\s*-->\s*(\d{1,2}):(\d{2}):(\d{2})[,.](\d{3})/.exec(
+        String(tc || '').trim()
+    );
     if (!m) return null;
-    const toMs = (h, mm, s, ms) => (((parseInt(h, 10) || 0) * 60 + (parseInt(mm, 10) || 0)) * 60 + (parseInt(s, 10) || 0)) * 1000 + (parseInt(ms, 10) || 0);
+    const toMs = (h, mm, s, ms) =>
+        (((parseInt(h, 10) || 0) * 60 + (parseInt(mm, 10) || 0)) * 60 + (parseInt(s, 10) || 0)) * 1000 +
+        (parseInt(ms, 10) || 0);
     return {
         startMs: toMs(m[1], m[2], m[3], m[4]),
         endMs: toMs(m[5], m[6], m[7], m[8])
@@ -505,7 +578,7 @@ function splitLongEntry(entry, opts = {}) {
     const sentences = text.split(/(?<=[.!?])\s+/).filter(Boolean);
     const parts = sentences.length ? sentences : text.split(/\s+(?=[A-Z])/).filter(Boolean);
     const needsSentenceSplit = parts.length > 1 && (duration > 1500 || text.length > 80);
-    if (!text || ((text.length <= maxChars && duration <= maxDuration) && !needsSentenceSplit)) {
+    if (!text || (text.length <= maxChars && duration <= maxDuration && !needsSentenceSplit)) {
         return [entry];
     }
 
@@ -515,7 +588,9 @@ function splitLongEntry(entry, opts = {}) {
     let cursor = entry.startMs || 0;
     segments.forEach((part, idx) => {
         const weight = part.length || 1;
-        let slice = totalWeight ? Math.round((duration || 0) * (weight / totalWeight)) : Math.round((duration || 0) / segments.length);
+        let slice = totalWeight
+            ? Math.round((duration || 0) * (weight / totalWeight))
+            : Math.round((duration || 0) / segments.length);
         slice = Math.max(slice || 0, 800);
         const start = cursor;
         let end = start + slice;
@@ -542,7 +617,9 @@ function normalizeAutoSubSrt(srt = '', opts = {}) {
             .map((entry) => {
                 const times = srtTimecodeToMs(entry.timecode);
                 if (!times) return null;
-                const text = sanitizeSubtitleText(entry.text || '').replace(/\s+/g, ' ').trim();
+                const text = sanitizeSubtitleText(entry.text || '')
+                    .replace(/\s+/g, ' ')
+                    .trim();
                 if (!text) return null;
                 return {
                     startMs: times.startMs,
@@ -551,7 +628,7 @@ function normalizeAutoSubSrt(srt = '', opts = {}) {
                 };
             })
             .filter(Boolean)
-            .sort((a, b) => (a.startMs - b.startMs) || (a.endMs - b.endMs));
+            .sort((a, b) => a.startMs - b.startMs || a.endMs - b.endMs);
 
         if (!entries.length) return stripSpeakerLabelsFromSrt(srt || '').trim();
         if (opts && opts.preserveTiming === true) {
@@ -564,7 +641,7 @@ function normalizeAutoSubSrt(srt = '', opts = {}) {
                 const safeText = wrapSrtText(entry.text, maxLineLength, maxLines);
                 if (!safeText) return;
                 let startMs = Math.max(0, entry.startMs || 0);
-                let endMs = Math.max(startMs + minDurationMs, entry.endMs || (startMs + minDurationMs));
+                let endMs = Math.max(startMs + minDurationMs, entry.endMs || startMs + minDurationMs);
                 if (startMs < lastEndMs) startMs = lastEndMs;
                 if (endMs <= startMs) endMs = startMs + minDurationMs;
                 preservedEntries.push({
@@ -611,9 +688,13 @@ function normalizeAutoSubSrt(srt = '', opts = {}) {
 
 function safeModelKey(model) {
     if (!model) return 'auto';
-    return String(model).toLowerCase().replace(/[^a-z0-9._-]/g, '').slice(0, 64) || 'auto';
+    return (
+        String(model)
+            .toLowerCase()
+            .replace(/[^a-z0-9._-]/g, '')
+            .slice(0, 64) || 'auto'
+    );
 }
-
 
 function normalizeSyncLang(lang) {
     const val = (lang || '').toString().trim().toLowerCase();
@@ -624,11 +705,14 @@ function normalizeSyncLang(lang) {
 async function resolveAutoSubTranslationProvider(config, providerKeyOverride, modelOverride) {
     const providers = (config && config.providers) || {};
     const mergedParams = mergeProviderParameters(getDefaultProviderParameters(), config?.providerParameters || {});
-    const normalizeKey = (key) => String(key || '').trim().toLowerCase();
+    const normalizeKey = (key) =>
+        String(key || '')
+            .trim()
+            .toLowerCase();
     const desiredKey = normalizeKey(providerKeyOverride || config?.mainProvider || 'gemini');
     const maybeBuildProvider = async (key, cfgOverride = null) => {
         const params = mergedParams[key] || mergedParams.default || {};
-        const cfg = cfgOverride || (providers[key] || {});
+        const cfg = cfgOverride || providers[key] || {};
         const provider = await createProviderInstance(key, cfg, params);
         if (!provider) return null;
         return {
@@ -654,7 +738,10 @@ async function resolveAutoSubTranslationProvider(config, providerKeyOverride, mo
     const providerConfig = await findProviderConfig();
     if (providerConfig && providerConfig.enabled !== false) {
         const params = mergedParams[desiredKey] || mergedParams.default || {};
-        const cfg = { ...providerConfig, model: modelOverride || providerConfig.model || getEffectiveGeminiModel(config) };
+        const cfg = {
+            ...providerConfig,
+            model: modelOverride || providerConfig.model || getEffectiveGeminiModel(config)
+        };
         const provider = await createProviderInstance(desiredKey, cfg, params);
         if (provider) {
             return {
@@ -696,14 +783,14 @@ async function resolveAutoSubTranslationProvider(config, providerKeyOverride, mo
 const inFlightRequests = new LRUCache({
     max: 500, // Max 500 in-flight requests
     ttl: 180000, // 3 minutes (translations can take a while)
-    updateAgeOnGet: false,
+    updateAgeOnGet: false
 });
 
 // Security: LRU cache for first-click tracking (max 1000 entries)
 const firstClickTracker = new LRUCache({
     max: 1000, // Max 1000 tracked clicks
     ttl: 300000, // 5 minutes
-    updateAgeOnGet: false,
+    updateAgeOnGet: false
 });
 
 // Configurable rate limits for 3-click cache resets (defaults: 6/15m permanent, 12/15m bypass)
@@ -719,7 +806,7 @@ const CACHE_RESET_LIMIT_BYPASS = (() => {
 const cacheResetHistory = new LRUCache({
     max: 5000, // Track up to 5k users/configs per window
     ttl: CACHE_RESET_WINDOW_MS * 2, // Auto-expire idle counters
-    updateAgeOnGet: false,
+    updateAgeOnGet: false
 });
 
 // Feature toggle: keep embedded original tracks in cache (default ON; set to "false" to opt out)
@@ -748,7 +835,7 @@ const DISABLE_TRANSLATION_BURST_DETECTION = process.env.DISABLE_TRANSLATION_BURS
 const translationBurstTracker = new LRUCache({
     max: 5000, // Track up to 5k users
     ttl: 10000, // 10 second TTL - burst detection window
-    updateAgeOnGet: false,
+    updateAgeOnGet: false
 });
 
 /**
@@ -768,7 +855,7 @@ function checkTranslationBurst(configKey, sourceFileId, targetLang) {
     let entry = translationBurstTracker.get(burstKey) || { requests: [], firstSourceId: null };
 
     // Clean up old requests outside the window
-    entry.requests = entry.requests.filter(r => now - r.timestamp < TRANSLATION_BURST_WINDOW_MS);
+    entry.requests = entry.requests.filter((r) => now - r.timestamp < TRANSLATION_BURST_WINDOW_MS);
 
     // Add this request
     entry.requests.push({ sourceFileId, targetLang, timestamp: now });
@@ -801,7 +888,7 @@ const DISABLE_DOWNLOAD_BURST_DETECTION = process.env.DISABLE_DOWNLOAD_BURST_DETE
 const downloadBurstTracker = new LRUCache({
     max: 5000,
     ttl: 10000,
-    updateAgeOnGet: false,
+    updateAgeOnGet: false
 });
 
 /**
@@ -821,7 +908,7 @@ function checkDownloadBurst(configKey, fileId) {
     let entry = downloadBurstTracker.get(burstKey) || { requests: [], firstFileId: null };
 
     // Clean up old requests outside the window
-    entry.requests = entry.requests.filter(r => now - r.timestamp < DOWNLOAD_BURST_WINDOW_MS);
+    entry.requests = entry.requests.filter((r) => now - r.timestamp < DOWNLOAD_BURST_WINDOW_MS);
 
     // Add this request
     entry.requests.push({ fileId, timestamp: now });
@@ -869,9 +956,9 @@ const DISABLE_STREMIO_COMMUNITY_COOLDOWN = process.env.DISABLE_STREMIO_COMMUNITY
 
 // Track when we served a subtitle list to a Stremio Community client
 const stremioCommunityPrefetchTracker = new LRUCache({
-    max: 10000,    // Track up to 10k config hashes
-    ttl: 10000,    // 10 second TTL (cooldown is typically 2.5s but we keep entry around for debugging)
-    updateAgeOnGet: false,
+    max: 10000, // Track up to 10k config hashes
+    ttl: 10000, // 10 second TTL (cooldown is typically 2.5s but we keep entry around for debugging)
+    updateAgeOnGet: false
 });
 
 /**
@@ -926,7 +1013,10 @@ function setStremioCommunityPrefetchCooldown(configHash, subtitleCount = 0) {
         subtitleCount
     });
 
-    log.debug(() => `[Prefetch Cooldown] Set cooldown for config ${redactToken(configHash)}: ${STREMIO_COMMUNITY_COOLDOWN_MS}ms (${subtitleCount} subtitles served)`);
+    log.debug(
+        () =>
+            `[Prefetch Cooldown] Set cooldown for config ${redactToken(configHash)}: ${STREMIO_COMMUNITY_COOLDOWN_MS}ms (${subtitleCount} subtitles served)`
+    );
 }
 
 /**
@@ -1017,7 +1107,9 @@ async function deduplicate(key, fn) {
     if (cached) {
         log.debug(() => `[Dedup] Returning cached promise for duplicate request: ${shortKey}`);
         const result = await cached.promise;
-        log.debug(() => `[Dedup] Duplicate request completed with result length: ${result ? result.length : 'undefined/null'}`);
+        log.debug(
+            () => `[Dedup] Duplicate request completed with result length: ${result ? result.length : 'undefined/null'}`
+        );
         return result;
     }
 
@@ -1029,7 +1121,10 @@ async function deduplicate(key, fn) {
 
     try {
         const result = await promise;
-        log.debug(() => `[Dedup] Operation completed: ${shortKey}, result length: ${result ? result.length : 'undefined/null'}`);
+        log.debug(
+            () =>
+                `[Dedup] Operation completed: ${shortKey}, result length: ${result ? result.length : 'undefined/null'}`
+        );
         return result;
     } catch (error) {
         log.warn(() => `[Dedup] Operation failed: ${shortKey}`, error.message);
@@ -1049,14 +1144,18 @@ function isDisabledSessionConfig(config) {
 }
 
 function buildConfigRecoveryUrl(req, token = '') {
-    const normalizedToken = /^[a-f0-9]{32}$/.test(String(token || '').trim().toLowerCase())
+    const normalizedToken = /^[a-f0-9]{32}$/.test(
+        String(token || '')
+            .trim()
+            .toLowerCase()
+    )
         ? String(token).trim().toLowerCase()
         : '';
     const host = getSafeHost(req);
     const localhost = isLocalhost(req);
     const protocol = localhost
-        ? (req.get('x-forwarded-proto') || req.protocol || 'http')
-        : (req.get('x-forwarded-proto') || 'https');
+        ? req.get('x-forwarded-proto') || req.protocol || 'http'
+        : req.get('x-forwarded-proto') || 'https';
     const baseUrl = `${protocol}://${host}`;
     return `${baseUrl}/configure${normalizedToken ? `?config=${encodeURIComponent(normalizedToken)}` : ''}`;
 }
@@ -1066,7 +1165,11 @@ function respondDisabledSession(req, res, config, translator = null) {
 
     setNoStore(res);
     const t = translator || res.locals?.t || getTranslatorFromRequest(req, res, config);
-    const message = t('server.errors.sessionDisabled', {}, 'This token is disabled. Open the configuration page to re-enable it.');
+    const message = t(
+        'server.errors.sessionDisabled',
+        {},
+        'This token is disabled. Open the configuration page to re-enable it.'
+    );
     const configureUrl = buildConfigRecoveryUrl(
         req,
         config?.__originalToken || req?.params?.config || req?.query?.config || ''
@@ -1152,7 +1255,10 @@ if (trustProxySetting !== undefined && trustProxySetting !== '') {
     const defaultTrust = isProduction ? 1 : false;
     app.set('trust proxy', defaultTrust);
     if (isProduction) {
-        log.info(() => '[Server] Production mode detected (Redis storage) - defaulting trust proxy to 1. Set TRUST_PROXY=false to disable.');
+        log.info(
+            () =>
+                '[Server] Production mode detected (Redis storage) - defaulting trust proxy to 1. Set TRUST_PROXY=false to disable.'
+        );
     }
 }
 app.disable('x-powered-by'); // Hide framework fingerprint in responses
@@ -1221,7 +1327,12 @@ function computeConfigHash(configStr) {
         let hashSource = serializeConfig(configStr);
 
         // Validate input - empty/undefined configs should get a consistent but identifiable hash
-        if (!hashSource || hashSource === 'undefined' || hashSource === 'null' || String(hashSource).trim().length === 0) {
+        if (
+            !hashSource ||
+            hashSource === 'undefined' ||
+            hashSource === 'null' ||
+            String(hashSource).trim().length === 0
+        ) {
             log.warn(() => '[ConfigHash] Received empty/invalid config payload for hashing');
             // Return a special marker hash for empty configs instead of empty string
             // This ensures they don't collide with failed hash generation
@@ -1248,7 +1359,13 @@ function scopeConfigHash(baseHash, scopeSeed) {
     if (!baseHash) return baseHash;
     if (!scopeSeed) return baseHash;
     try {
-        return crypto.createHash('sha256').update(String(baseHash)).update('|').update(String(scopeSeed)).digest('hex').slice(0, 16);
+        return crypto
+            .createHash('sha256')
+            .update(String(baseHash))
+            .update('|')
+            .update(String(scopeSeed))
+            .digest('hex')
+            .slice(0, 16);
     } catch (error) {
         log.warn(() => ['[ConfigHash] Failed to scope hash:', error.message]);
         return baseHash;
@@ -1273,10 +1390,14 @@ function ensureConfigHash(config, fallbackSeed = '') {
     }
 
     // If the stored hash was computed with the same scope, keep it; otherwise recompute to avoid cross-user collisions.
-    const scopeSeed = (typeof fallbackSeed === 'string' && fallbackSeed.length) ? fallbackSeed : '';
+    const scopeSeed = typeof fallbackSeed === 'string' && fallbackSeed.length ? fallbackSeed : '';
     const scopeTag = computeConfigScope(scopeSeed);
-    const storedHash = (typeof config.__configHash === 'string' && config.__configHash.length > 0) ? config.__configHash : '';
-    const storedScope = (typeof config.__configHashScope === 'string' && config.__configHashScope.length > 0) ? config.__configHashScope : '';
+    const storedHash =
+        typeof config.__configHash === 'string' && config.__configHash.length > 0 ? config.__configHash : '';
+    const storedScope =
+        typeof config.__configHashScope === 'string' && config.__configHashScope.length > 0
+            ? config.__configHashScope
+            : '';
     if (storedHash && (!scopeTag || storedScope === scopeTag)) {
         return storedHash;
     }
@@ -1385,7 +1506,9 @@ function enforceConfigPayloadSize(req, res, next) {
         const size = Buffer.byteLength(serialized, 'utf8');
         if (size > MAX_CONFIG_BYTES) {
             const t = res.locals?.t || getTranslatorFromRequest(req, res);
-            return res.status(413).json({ error: t('server.errors.configPayloadTooLarge', {}, 'Configuration payload too large') });
+            return res
+                .status(413)
+                .json({ error: t('server.errors.configPayloadTooLarge', {}, 'Configuration payload too large') });
         }
     } catch (err) {
         log.warn(() => ['[Security] Failed to measure config payload size:', err.message]);
@@ -1443,7 +1566,7 @@ function normalizeSubtitleFormatParams(req, _res, next) {
         if (req.params && typeof req.params.targetLang === 'string') {
             req.params.targetLang = req.params.targetLang.replace(/\.(srt|vtt|sub|ass|ssa)$/i, '');
         }
-    } catch (_) { }
+    } catch (_) {}
     next();
 }
 
@@ -1455,7 +1578,7 @@ const normalizeOrigin = (origin) => {
 };
 const allowedOrigins = (process.env.ALLOWED_ORIGINS || '')
     .split(',')
-    .map(o => o.trim())
+    .map((o) => o.trim())
     .filter(Boolean);
 const DEFAULT_STREMIO_WEB_ORIGINS = [
     // Official Stremio web app origins
@@ -1480,18 +1603,17 @@ const DEFAULT_STREMIO_WEB_ORIGINS = [
     'https://peario.xyz',
     'https://web.nuvioapp.space'
 ];
-const allowedOriginsNormalized = Array.from(new Set([
-    ...allowedOrigins.map(normalizeOrigin),
-    ...DEFAULT_STREMIO_WEB_ORIGINS.map(normalizeOrigin)
-]));
+const allowedOriginsNormalized = Array.from(
+    new Set([...allowedOrigins.map(normalizeOrigin), ...DEFAULT_STREMIO_WEB_ORIGINS.map(normalizeOrigin)])
+);
 // Explicitly allow official Stremio-hosted subdomains, including *.stremio.com.
 const STREMIO_ORIGIN_WILDCARD_SUFFIXES = ['.strem.io', '.stremio.one', '.stremio.com'];
 // Allow additional wildcard domain suffixes via env (comma-separated, e.g. ".example.com,.other.org")
 const extraWildcardSuffixes = (process.env.ALLOWED_ORIGIN_WILDCARD_SUFFIXES || '')
     .split(',')
-    .map(s => s.trim().toLowerCase())
+    .map((s) => s.trim().toLowerCase())
     .filter(Boolean)
-    .map(s => s.startsWith('.') ? s : `.${s}`);
+    .map((s) => (s.startsWith('.') ? s : `.${s}`));
 // Always allow these hosting domains
 for (const suffix of ['.elfhosted.com', '.midnightignite.me', '.fortheweak.cloud', '.nhyira.dev']) {
     if (!extraWildcardSuffixes.includes(suffix)) extraWildcardSuffixes.push(suffix);
@@ -1500,17 +1622,17 @@ const STREMIO_ORIGIN_PREFIXES = ['stremio://', 'capacitor://', 'app://', 'file:/
 const STREMIO_ORIGIN_EQUALS = ['capacitor://localhost', 'app://strem.io'];
 const DEFAULT_STREMIO_UA_HINTS = [
     'stremio', // Standard Stremio UA on most platforms/forks
-    'needle/'  // Stremio desktop HTTP client (addon fetcher) default UA
+    'needle/' // Stremio desktop HTTP client (addon fetcher) default UA
 ];
 const extraStremioUaHints = (process.env.STREMIO_USER_AGENT_HINTS || '')
     .split(',')
-    .map(h => h.trim().toLowerCase())
+    .map((h) => h.trim().toLowerCase())
     .filter(Boolean);
 const STREMIO_USER_AGENT_HINTS = Array.from(new Set([...DEFAULT_STREMIO_UA_HINTS, ...extraStremioUaHints]));
 function isStremioUserAgent(userAgent) {
     if (!userAgent) return false;
     const ua = userAgent.toLowerCase();
-    return STREMIO_USER_AGENT_HINTS.some(hint => ua.includes(hint));
+    return STREMIO_USER_AGENT_HINTS.some((hint) => ua.includes(hint));
 }
 function isLocalhostOrigin(origin) {
     const host = extractHostnameFromOrigin(origin);
@@ -1546,10 +1668,14 @@ function isStremioOrigin(origin) {
     // Accept any official Stremio-hosted subdomain (e.g., addon edge hosts)
     if (isStremioWildcardDomain(origin)) return true;
     // Allow official Stremio web origins (desktop/mobile shells render web views from these hosts)
-    if (DEFAULT_STREMIO_WEB_ORIGINS.some(o => normalized === normalizeOrigin(o) || normalized.startsWith(`${normalizeOrigin(o)}/`))) {
+    if (
+        DEFAULT_STREMIO_WEB_ORIGINS.some(
+            (o) => normalized === normalizeOrigin(o) || normalized.startsWith(`${normalizeOrigin(o)}/`)
+        )
+    ) {
         return true;
     }
-    return STREMIO_ORIGIN_PREFIXES.some(prefix => normalized.startsWith(prefix));
+    return STREMIO_ORIGIN_PREFIXES.some((prefix) => normalized.startsWith(prefix));
 }
 function isStremioClient(req) {
     const origin = req.get('origin');
@@ -1571,22 +1697,28 @@ function isOriginAllowed(origin, req) {
     if (isStremioOrigin(origin)) return true; // Trust official Stremio app origins (capacitor/app/stremio schemes)
     if (extractHostnameFromOrigin(origin).includes('zarg')) return false;
     // Trust Stremio clients regardless of origin (e.g. StremioShell from self-hosted web instances)
-    if (isStremioUserAgent((req.headers['user-agent'] || ''))) return true;
+    if (isStremioUserAgent(req.headers['user-agent'] || '')) return true;
     // Check extra wildcard domain suffixes (e.g. .elfhosted.com via ALLOWED_ORIGIN_WILDCARD_SUFFIXES env)
     if (extraWildcardSuffixes.length > 0) {
         const host = extractHostnameFromOrigin(origin);
-        if (host && extraWildcardSuffixes.some(suffix => host === suffix.slice(1) || host.endsWith(suffix))) {
+        if (host && extraWildcardSuffixes.some((suffix) => host === suffix.slice(1) || host.endsWith(suffix))) {
             return true;
         }
     }
     const host = getSafeHost(req);
-    return normalizedOrigin === normalizeOrigin(`https://${host}`) || normalizedOrigin === normalizeOrigin(`http://${host}`);
+    return (
+        normalizedOrigin === normalizeOrigin(`https://${host}`) ||
+        normalizedOrigin === normalizeOrigin(`http://${host}`)
+    );
 }
 function applySafeCors(req, res, next) {
     const origin = req.get('origin');
     if (origin && !isOriginAllowed(origin, req)) {
         const userAgent = req.headers['user-agent'] || '';
-        log.error(() => `[Security] Blocked request (origin not allowed) - origin: ${origin}, user-agent: ${userAgent}, path: ${req.path}`);
+        log.error(
+            () =>
+                `[Security] Blocked request (origin not allowed) - origin: ${origin}, user-agent: ${userAgent}, path: ${req.path}`
+        );
         sentry.captureMessage(
             `[Security] Blocked request (origin not allowed) - origin: ${origin}, user-agent: ${userAgent}, path: ${req.path}`,
             'error',
@@ -1651,13 +1783,13 @@ function isLocalhost(req) {
 function resolveCacheType(config) {
     const bypass = config && config.bypassCache === true;
     const bypassCfg = (config && (config.bypassCacheConfig || config.tempCache)) || {};
-    const bypassEnabled = bypass && (bypassCfg.enabled !== false);
+    const bypassEnabled = bypass && bypassCfg.enabled !== false;
     return bypassEnabled ? 'bypass' : 'permanent';
 }
 
 // Helper: consistent config hash for logging/rate limits
 function getConfigHashSafe(config) {
-    return (config && typeof config.__configHash === 'string' && config.__configHash.length > 0)
+    return config && typeof config.__configHash === 'string' && config.__configHash.length > 0
         ? config.__configHash
         : 'anonymous';
 }
@@ -1718,13 +1850,20 @@ async function shouldBlockCacheReset(clickKey, sourceFileId, config, targetLang)
         }
 
         // Determine which cache type the user is using
-        const { cacheKey, bypass, bypassEnabled, userHash, baseKey } = generateCacheKeys(config, sourceFileId, targetLang);
+        const { cacheKey, bypass, bypassEnabled, userHash, baseKey } = generateCacheKeys(
+            config,
+            sourceFileId,
+            targetLang
+        );
         const configHash = userHash || (config && config.__configHash) || '';
 
         // SAFETY CHECK 1: Check if the user is at their concurrency limit
         // If they are, don't allow the 3-click reset because re-translation would fail with rate limit error
         if (!(await canUserStartTranslation(configHash, config))) {
-            log.warn(() => `[SafetyBlock] BLOCKING 3-click reset: User at concurrency limit, re-translation would fail (user: ${configHash || 'anonymous'})`);
+            log.warn(
+                () =>
+                    `[SafetyBlock] BLOCKING 3-click reset: User at concurrency limit, re-translation would fail (user: ${configHash || 'anonymous'})`
+            );
             return true;
         }
 
@@ -1740,15 +1879,20 @@ async function shouldBlockCacheReset(clickKey, sourceFileId, config, targetLang)
             }
 
             if (status && status.inProgress) {
-                log.warn(() => `[SafetyBlock] BLOCKING bypass cache reset: User's translation IN PROGRESS for ${sourceFileId}/${targetLang} (user: ${configHash})`);
+                log.warn(
+                    () =>
+                        `[SafetyBlock] BLOCKING bypass cache reset: User's translation IN PROGRESS for ${sourceFileId}/${targetLang} (user: ${configHash})`
+                );
                 return true;
             }
 
             if (inFlight) {
-                log.warn(() => `[SafetyBlock] BLOCKING bypass cache reset: User's translation IN-FLIGHT for ${sourceFileId}/${targetLang} (user: ${configHash})`);
+                log.warn(
+                    () =>
+                        `[SafetyBlock] BLOCKING bypass cache reset: User's translation IN-FLIGHT for ${sourceFileId}/${targetLang} (user: ${configHash})`
+                );
                 return true;
             }
-
         } else {
             // USER IS USING PERMANENT CACHE (shared between all users)
             // Block if ANY permanent cache translation is in progress
@@ -1760,12 +1904,16 @@ async function shouldBlockCacheReset(clickKey, sourceFileId, config, targetLang)
             }
 
             if (status && status.inProgress) {
-                log.warn(() => `[SafetyBlock] BLOCKING permanent cache reset: Shared translation IN PROGRESS for ${baseKey}`);
+                log.warn(
+                    () => `[SafetyBlock] BLOCKING permanent cache reset: Shared translation IN PROGRESS for ${baseKey}`
+                );
                 return true;
             }
 
             if (inFlight) {
-                log.warn(() => `[SafetyBlock] BLOCKING permanent cache reset: Shared translation IN-FLIGHT for ${baseKey}`);
+                log.warn(
+                    () => `[SafetyBlock] BLOCKING permanent cache reset: Shared translation IN-FLIGHT for ${baseKey}`
+                );
                 return true;
             }
         }
@@ -1802,7 +1950,7 @@ function shouldLogRequestTrace() {
     if (REQUEST_TRACE_SAMPLE_RATE <= 0) return false;
 
     requestTraceCounter++;
-    return (requestTraceCounter % Math.ceil(1 / REQUEST_TRACE_SAMPLE_RATE)) === 0;
+    return requestTraceCounter % Math.ceil(1 / REQUEST_TRACE_SAMPLE_RATE) === 0;
 }
 
 function logRequestTrace(messageFn) {
@@ -1826,9 +1974,7 @@ function formatRequestTraceUrl(req, limit = REQUEST_TRACE_URL_LIMIT) {
 
 function isSubtitleDeliveryPath(pathname) {
     const p = String(pathname || '');
-    return p.includes('/subtitle/')
-        || p.includes('/subtitle-resolve/')
-        || p.includes('/subtitle-content/');
+    return p.includes('/subtitle/') || p.includes('/subtitle-resolve/') || p.includes('/subtitle-content/');
 }
 
 // FIRST-IN-CHAIN request trace: fires BEFORE any middleware (helmet, CORS, compression, etc.)
@@ -1838,8 +1984,7 @@ app.use((req, res, next) => {
     const isSubtitleSearch = p.includes('/subtitles/');
     const isManifestRequest = p.includes('/manifest.json');
     const traceSearchOrManifest =
-        (TRACE_SUBTITLE_SEARCH_REQUESTS && isSubtitleSearch) ||
-        (TRACE_MANIFEST_REQUESTS && isManifestRequest);
+        (TRACE_SUBTITLE_SEARCH_REQUESTS && isSubtitleSearch) || (TRACE_MANIFEST_REQUESTS && isManifestRequest);
     const traceDelivery = isSubtitleDeliveryPath(p);
 
     if (traceSearchOrManifest || (TRACE_SUBTITLE_DELIVERY_REQUESTS && traceDelivery)) {
@@ -1850,7 +1995,10 @@ app.use((req, res, next) => {
         const startedAt = Date.now();
         res.on('finish', () => {
             if (res.statusCode >= 400) {
-                log.warn(() => `[Request Trace] <<< ${res.statusCode} ${req.method} ${formatRequestTraceUrl(req)} (${Date.now() - startedAt}ms)`);
+                log.warn(
+                    () =>
+                        `[Request Trace] <<< ${res.statusCode} ${req.method} ${formatRequestTraceUrl(req)} (${Date.now() - startedAt}ms)`
+                );
             }
         });
     }
@@ -1859,33 +2007,35 @@ app.use((req, res, next) => {
 });
 
 // Security: Add security headers
-app.use(helmet({
-    contentSecurityPolicy: {
-        directives: {
-            defaultSrc: ["'self'"],
-            styleSrc: ["'self'", "'unsafe-inline'", "https://fonts.googleapis.com"], // Allow inline styles and Google Fonts
-            scriptSrc: ["'self'", "'unsafe-inline'", "https://static.cloudflareinsights.com"], // Allow inline scripts for HTML pages + CF beacon
-            connectSrc: [
-                "'self'",
-                "https://v3-cinemeta.strem.io", // Needed for linked title lookup on embedded subtitles page
-                "https://*.strem.io",
-                "https://cloudflareinsights.com",
-                "https://static.cloudflareinsights.com",
-                "https://fonts.googleapis.com",
-                "https://fonts.gstatic.com"
-            ],
-            imgSrc: ["'self'", "data:"],
-            fontSrc: ["'self'", "https://fonts.gstatic.com"], // Allow Google Fonts
-            // Don't upgrade insecure requests for localhost (would break HTTP logo loading)
-            upgradeInsecureRequests: null,
+app.use(
+    helmet({
+        contentSecurityPolicy: {
+            directives: {
+                defaultSrc: ["'self'"],
+                styleSrc: ["'self'", "'unsafe-inline'", 'https://fonts.googleapis.com'], // Allow inline styles and Google Fonts
+                scriptSrc: ["'self'", "'unsafe-inline'", 'https://static.cloudflareinsights.com'], // Allow inline scripts for HTML pages + CF beacon
+                connectSrc: [
+                    "'self'",
+                    'https://v3-cinemeta.strem.io', // Needed for linked title lookup on embedded subtitles page
+                    'https://*.strem.io',
+                    'https://cloudflareinsights.com',
+                    'https://static.cloudflareinsights.com',
+                    'https://fonts.googleapis.com',
+                    'https://fonts.gstatic.com'
+                ],
+                imgSrc: ["'self'", 'data:'],
+                fontSrc: ["'self'", 'https://fonts.gstatic.com'], // Allow Google Fonts
+                // Don't upgrade insecure requests for localhost (would break HTTP logo loading)
+                upgradeInsecureRequests: null
+            }
         },
-    },
-    // Prevent leaking query params (like ?config= tokens) via referrers
-    referrerPolicy: { policy: 'no-referrer' },
-    crossOriginEmbedderPolicy: false, // Disable for Stremio compatibility
-    crossOriginResourcePolicy: false, // Disable to allow Stremio to load logo/images
-    strictTransportSecurity: false, // Disable HSTS for localhost (allows HTTP)
-}));
+        // Prevent leaking query params (like ?config= tokens) via referrers
+        referrerPolicy: { policy: 'no-referrer' },
+        crossOriginEmbedderPolicy: false, // Disable for Stremio compatibility
+        crossOriginResourcePolicy: false, // Disable to allow Stremio to load logo/images
+        strictTransportSecurity: false // Disable HSTS for localhost (allows HTTP)
+    })
+);
 
 // Security: Rate limiting for subtitle searches and translations
 // Uses session ID or config hash instead of IP for better HA deployment support
@@ -1950,7 +2100,10 @@ const addonSubtitleSearchLimiter = rateLimit({
     keyGenerator: getConfigScopedRateLimitKey,
     handler: (req, res, _next, options) => {
         setNoStore(res);
-        log.warn(() => `[RateLimit] Addon subtitle search limited for ${redactToken(req.params?.config || 'unknown')} from ${getClientIp(req)}`);
+        log.warn(
+            () =>
+                `[RateLimit] Addon subtitle search limited for ${redactToken(req.params?.config || 'unknown')} from ${getClientIp(req)}`
+        );
         return res.status(options.statusCode).json({ subtitles: [] });
     }
 });
@@ -2024,7 +2177,9 @@ const autoSubLimiter = rateLimit({
         if (req.body?.configStr) {
             try {
                 return `config:${computeConfigHash(req.body.configStr)}`;
-            } catch (_) { /* fall through */ }
+            } catch (_) {
+                /* fall through */
+            }
         }
         return `ip:${ipKeyGenerator(req.ip)}`;
     }
@@ -2046,7 +2201,9 @@ const userDataWriteLimiter = rateLimit({
         if (req.body?.configStr) {
             try {
                 return `config:${computeConfigHash(req.body.configStr)}`;
-            } catch (_) { /* fall through */ }
+            } catch (_) {
+                /* fall through */
+            }
         }
         return `ip:${ipKeyGenerator(req.ip)}`;
     }
@@ -2134,31 +2291,39 @@ const validationLimiter = rateLimit({
 // Enable gzip compression for all responses. Level 6 keeps nearly all of level
 // 9's size savings while significantly reducing server CPU cycles per request,
 // which matters under high concurrency for SRT/API traffic.
-app.use(compression({
-    threshold: 512, // Compress responses larger than 512 bytes (was 1KB)
-    level: 6, // Balanced compression (SRT files still compress 5-10x)
-    filter: (req, res) => {
-        const accept = req.headers?.accept || '';
-        const contentTypeHeader = res.getHeader('content-type') || '';
+app.use(
+    compression({
+        threshold: 512, // Compress responses larger than 512 bytes (was 1KB)
+        level: 6, // Balanced compression (SRT files still compress 5-10x)
+        filter: (req, res) => {
+            const accept = req.headers?.accept || '';
+            const contentTypeHeader = res.getHeader('content-type') || '';
 
-        // Never compress SSE to avoid proxy buffering and extra CPU
-        if (accept.includes('text/event-stream') || String(contentTypeHeader).includes('text/event-stream')) {
-            return false;
-        }
+            // Never compress SSE to avoid proxy buffering and extra CPU
+            if (accept.includes('text/event-stream') || String(contentTypeHeader).includes('text/event-stream')) {
+                return false;
+            }
 
-        // Only compress text-based responses
-        if (typeof contentTypeHeader === 'string' &&
-            (contentTypeHeader.includes('text/') || contentTypeHeader.includes('application/json') || contentTypeHeader.includes('application/javascript'))) {
-            return true;
+            // Only compress text-based responses
+            if (
+                typeof contentTypeHeader === 'string' &&
+                (contentTypeHeader.includes('text/') ||
+                    contentTypeHeader.includes('application/json') ||
+                    contentTypeHeader.includes('application/javascript'))
+            ) {
+                return true;
+            }
+            // Default compression filter
+            return compression.filter(req, res);
         }
-        // Default compression filter
-        return compression.filter(req, res);
-    }
-}));
+    })
+);
 
 // Expose version on all responses
 app.use((req, res, next) => {
-    try { res.setHeader('X-SubMaker-Version', version); } catch (_) { }
+    try {
+        res.setHeader('X-SubMaker-Version', version);
+    } catch (_) {}
     next();
 });
 
@@ -2210,15 +2375,14 @@ app.use((req, res, next) => {
 
     const stremioClient = isStremioClient(req);
     const isAddonBrowserPage =
-        req.path.startsWith('/addon/') && (
-            req.path.includes('/file-translate/') ||
+        req.path.startsWith('/addon/') &&
+        (req.path.includes('/file-translate/') ||
             req.path.includes('/sync-subtitles/') ||
             req.path.includes('/sub-toolbox/') ||
             req.path.includes('/sub-history/') ||
             req.path.includes('/embedded-subtitles/') ||
             req.path.includes('/auto-subtitles/') ||
-            req.path.includes('/smdb/')
-        );
+            req.path.includes('/smdb/'));
 
     // CRITICAL FIX: Always allow manifest.json requests (needed for Stremio addon installation)
     const isManifestRequest = req.path.includes('/manifest.json');
@@ -2240,7 +2404,7 @@ app.use((req, res, next) => {
         req.path.endsWith('.js') ||
         req.path.endsWith('.html') ||
         isStaticAsset ||
-        browserAllowedRoutes.some(route => req.path === route || req.path.startsWith(route)) ||
+        browserAllowedRoutes.some((route) => req.path === route || req.path.startsWith(route)) ||
         isAddonBrowserPage;
 
     // Manifest requests bypass strict origin checks (use regular CORS)
@@ -2262,7 +2426,10 @@ app.use((req, res, next) => {
         if (isBlockedCommunityV5Request(req)) {
             const blockOrigin = origin || 'none';
             const blockReferer = req.get('referer') || 'none';
-            log.error(() => `[Security] Blocked addon API request (community-v5 origin) - origin: ${blockOrigin}, referer: ${blockReferer}, user-agent: ${userAgent}, path: ${req.path}`);
+            log.error(
+                () =>
+                    `[Security] Blocked addon API request (community-v5 origin) - origin: ${blockOrigin}, referer: ${blockReferer}, user-agent: ${userAgent}, path: ${req.path}`
+            );
             return res.status(403).json({
                 error: t('server.errors.originNotAllowed', {}, 'Origin not allowed')
             });
@@ -2270,34 +2437,53 @@ app.use((req, res, next) => {
 
         // Allow requests with no origin (Stremio native) or "null" origin (Stremio web/sandboxed contexts)
         if (!origin || origin === 'null') {
-            log.debug(() => `[Security] Allowed addon API request: origin=${origin || 'none'}, user-agent=${userAgent}`);
+            log.debug(
+                () => `[Security] Allowed addon API request: origin=${origin || 'none'}, user-agent=${userAgent}`
+            );
             return cors()(req, res, next);
         }
         // Allow requests from known Stremio origins (web app, capacitor, etc.)
         if (isStremioOrigin(origin)) {
-            log.debug(() => `[Security] Allowed addon API request (known origin): origin=${origin}, user-agent=${userAgent}`);
+            log.debug(
+                () => `[Security] Allowed addon API request (known origin): origin=${origin}, user-agent=${userAgent}`
+            );
             return cors()(req, res, next);
         }
         // Allow localhost origins (development/browser on same machine), any port
         if (isLocalhostOrigin(origin)) {
-            log.debug(() => `[Security] Allowed addon API request (localhost origin): origin=${origin}, user-agent=${userAgent}`);
+            log.debug(
+                () =>
+                    `[Security] Allowed addon API request (localhost origin): origin=${origin}, user-agent=${userAgent}`
+            );
             return cors()(req, res, next);
         }
         // Allow extra wildcard domain suffixes (e.g. *.elfhosted.com, *.midnightignite.me)
         if (extraWildcardSuffixes.length > 0) {
             const originHost = extractHostnameFromOrigin(origin);
-            if (originHost && extraWildcardSuffixes.some(suffix => originHost === suffix.slice(1) || originHost.endsWith(suffix))) {
-                log.debug(() => `[Security] Allowed addon API request (wildcard suffix): origin=${origin}, user-agent=${userAgent}`);
+            if (
+                originHost &&
+                extraWildcardSuffixes.some((suffix) => originHost === suffix.slice(1) || originHost.endsWith(suffix))
+            ) {
+                log.debug(
+                    () =>
+                        `[Security] Allowed addon API request (wildcard suffix): origin=${origin}, user-agent=${userAgent}`
+                );
                 return cors()(req, res, next);
             }
         }
         // Allow if user-agent identifies as Stremio (mobile apps, etc.)
         if (stremioClient) {
-            log.debug(() => `[Security] Allowed addon API request (Stremio user-agent): origin=${origin}, user-agent=${userAgent}`);
+            log.debug(
+                () =>
+                    `[Security] Allowed addon API request (Stremio user-agent): origin=${origin}, user-agent=${userAgent}`
+            );
             return cors()(req, res, next);
         }
         // Block other origins to prevent browser-based abuse from arbitrary websites
-        log.error(() => `[Security] Blocked addon API request - origin: ${origin}, user-agent: ${userAgent}, path: ${req.path}`);
+        log.error(
+            () =>
+                `[Security] Blocked addon API request - origin: ${origin}, user-agent: ${userAgent}, path: ${req.path}`
+        );
         sentry.captureMessage(
             `[Security] Blocked addon API request - origin: ${origin}, user-agent: ${userAgent}, path: ${req.path}`,
             'error',
@@ -2314,7 +2500,11 @@ app.use((req, res, next) => {
         );
         return res.status(403).json({
             error: t('server.errors.stremioOnly', {}, 'Access denied. This addon must be accessed through Stremio.'),
-            hint: t('server.errors.stremioHint', {}, 'If you are using Stremio and seeing this error, please report it as a bug.')
+            hint: t(
+                'server.errors.stremioHint',
+                {},
+                'If you are using Stremio and seeing this error, please report it as a bug.'
+            )
         });
     }
 
@@ -2336,7 +2526,10 @@ app.use((req, res, next) => {
     // Block browser-based requests to sensitive API routes (they send Origin header)
     // This prevents cross-site cost abuse attacks from malicious websites
     const blockedUserAgent = req.headers['user-agent'] || '';
-    log.error(() => `[Security] Blocked browser CORS request - origin: ${origin}, user-agent: ${blockedUserAgent}, path: ${req.path}`);
+    log.error(
+        () =>
+            `[Security] Blocked browser CORS request - origin: ${origin}, user-agent: ${blockedUserAgent}, path: ${req.path}`
+    );
     sentry.captureMessage(
         `[Security] Blocked browser CORS request - origin: ${origin}, user-agent: ${blockedUserAgent}, path: ${req.path}`,
         'error',
@@ -2352,7 +2545,11 @@ app.use((req, res, next) => {
         }
     );
     return res.status(403).json({
-        error: t('server.errors.browserCorsBlocked', {}, 'Browser-based cross-origin requests to this API route are not allowed. Please use the Stremio client.')
+        error: t(
+            'server.errors.browserCorsBlocked',
+            {},
+            'Browser-based cross-origin requests to this API route are not allowed. Please use the Stremio client.'
+        )
     });
 });
 
@@ -2369,7 +2566,7 @@ app.use(express.json({ limit: '6mb' }));
 app.use((req, res, next) => {
     try {
         getTranslatorFromRequest(req, res);
-    } catch (_) { }
+    } catch (_) {}
     next();
 });
 
@@ -2421,9 +2618,7 @@ app.use((req, res, next) => {
         '/partials/overlays.html',
         '/partials/quick-setup.html'
     ];
-    const isConfigUiAsset =
-        configUiAssets.includes(req.path) ||
-        configUiPartials.includes(req.path);
+    const isConfigUiAsset = configUiAssets.includes(req.path) || configUiPartials.includes(req.path);
 
     if (isConfigUiAsset) {
         // Force a cache-busting query so stale CDN copies (e.g. elfhosted) are bypassed
@@ -2460,7 +2655,7 @@ app.use((req, res, next) => {
         '/api/translate-embedded',
         '/api/stream-activity',
         '/api/resolve-linked-title',
-        '/addon',  // CRITICAL: Prevent caching of ALL addon routes (manifest, subtitles, translations)
+        '/addon', // CRITICAL: Prevent caching of ALL addon routes (manifest, subtitles, translations)
         '/file-upload',
         '/subtitle-sync',
         '/sub-toolbox',
@@ -2471,7 +2666,7 @@ app.use((req, res, next) => {
         ...configUiAssets
     ];
 
-    if (noStorePaths.some(p => req.path === p || req.path.startsWith(`${p}/`))) {
+    if (noStorePaths.some((p) => req.path === p || req.path.startsWith(`${p}/`))) {
         setNoStore(res);
     }
     // Other static assets (CSS, JS, images) can use long-term caching
@@ -2507,41 +2702,45 @@ app.get('/configure.html', (req, res) => {
     sendConfigurePage(res);
 });
 
-
 // Serve static files with caching enabled
 // CSS and JS files get 1 year cache (bust with version in filename if needed)
 // Other static files get 1 year cache as well
-app.use(express.static('public', {
-    maxAge: '1y',  // 1 year in milliseconds = 31536000000
-    etag: false,   // Keep ETag disabled globally to avoid conditional caching bleed
-    // Respect no-store headers set by earlier middleware for sensitive routes.
-    // Without this, serve-static would overwrite Cache-Control and allow proxies
-    // to cache config-bearing pages or API responses that pass through /public.
-    setHeaders: (res, servedPath) => {
-        // HTML must never be cached to avoid leaking user-specific pages/configs
-        if (servedPath && servedPath.endsWith('.html')) {
-            res.setHeader('Cache-Control', 'no-store, no-cache, must-revalidate, private, max-age=0');
-            res.setHeader('Pragma', 'no-cache');
-            res.setHeader('Expires', '0');
-            return;
+app.use(
+    express.static('public', {
+        maxAge: '1y', // 1 year in milliseconds = 31536000000
+        etag: false, // Keep ETag disabled globally to avoid conditional caching bleed
+        // Respect no-store headers set by earlier middleware for sensitive routes.
+        // Without this, serve-static would overwrite Cache-Control and allow proxies
+        // to cache config-bearing pages or API responses that pass through /public.
+        setHeaders: (res, servedPath) => {
+            // HTML must never be cached to avoid leaking user-specific pages/configs
+            if (servedPath && servedPath.endsWith('.html')) {
+                res.setHeader('Cache-Control', 'no-store, no-cache, must-revalidate, private, max-age=0');
+                res.setHeader('Pragma', 'no-cache');
+                res.setHeader('Expires', '0');
+                return;
+            }
+            if (res.getHeader('Cache-Control')) return; // Preserve explicit no-store
+            res.setHeader('Cache-Control', 'public, max-age=31536000000, immutable');
         }
-        if (res.getHeader('Cache-Control')) return; // Preserve explicit no-store
-        res.setHeader('Cache-Control', 'public, max-age=31536000000, immutable');
-    }
-}));
+    })
+);
 
 // CRITICAL FIX: Ensure session manager is ready before handling requests
 // This prevents "session not found" errors on server startup
 // Applies to ALL routes that may access sessions
 let sessionManagerReady = false;
-sessionManager.waitUntilReady().then(() => {
-    sessionManagerReady = true;
-    log.info(() => '[Server] Session manager is ready to accept requests');
-}).catch(err => {
-    log.error(() => ['[Server] Session manager failed to initialize:', err.message]);
-    // Mark as ready anyway to prevent blocking startup indefinitely
-    sessionManagerReady = true;
-});
+sessionManager
+    .waitUntilReady()
+    .then(() => {
+        sessionManagerReady = true;
+        log.info(() => '[Server] Session manager is ready to accept requests');
+    })
+    .catch((err) => {
+        log.error(() => ['[Server] Session manager failed to initialize:', err.message]);
+        // Mark as ready anyway to prevent blocking startup indefinitely
+        sessionManagerReady = true;
+    });
 
 const SESSION_READINESS_REQUEST_TIMEOUT_MS = (() => {
     const parsed = parseInt(process.env.SESSION_READINESS_REQUEST_TIMEOUT_MS || '5000', 10);
@@ -2552,15 +2751,16 @@ function waitForSessionReadinessRequest() {
     let timeoutId;
     const timeout = new Promise((_, reject) => {
         timeoutId = setTimeout(() => {
-            const error = new Error(`Session manager readiness timed out after ${SESSION_READINESS_REQUEST_TIMEOUT_MS}ms`);
+            const error = new Error(
+                `Session manager readiness timed out after ${SESSION_READINESS_REQUEST_TIMEOUT_MS}ms`
+            );
             error.code = 'SESSION_READINESS_TIMEOUT';
             reject(error);
         }, SESSION_READINESS_REQUEST_TIMEOUT_MS);
         timeoutId.unref?.();
     });
 
-    return Promise.race([sessionManager.waitUntilReady(), timeout])
-        .finally(() => clearTimeout(timeoutId));
+    return Promise.race([sessionManager.waitUntilReady(), timeout]).finally(() => clearTimeout(timeoutId));
 }
 
 // Middleware: Wait for session manager to be ready (for production use)
@@ -2568,14 +2768,16 @@ function waitForSessionReadinessRequest() {
 if (process.env.FORCE_SESSION_READY !== 'false') {
     app.use(async (req, res, next) => {
         // Skip static files, HTML, health checks, and public API endpoints
-        if (req.path.startsWith('/public/') ||
+        if (
+            req.path.startsWith('/public/') ||
             req.path === '/health' ||
             req.path.endsWith('.css') ||
             req.path.endsWith('.js') ||
             req.path.endsWith('.html') ||
             req.path === '/' ||
             req.path === '/configure' ||
-            req.path.startsWith('/configure/')) {
+            req.path.startsWith('/configure/')
+        ) {
             return next();
         }
 
@@ -2590,7 +2792,11 @@ if (process.env.FORCE_SESSION_READY !== 'false') {
                     setNoStore(res);
                     res.setHeader('Retry-After', '5');
                     return res.status(503).json({
-                        error: t('server.errors.serviceInitializing', {}, 'SubMaker is still initializing. Please retry shortly.'),
+                        error: t(
+                            'server.errors.serviceInitializing',
+                            {},
+                            'SubMaker is still initializing. Please retry shortly.'
+                        ),
                         retryable: true
                     });
                 }
@@ -2622,7 +2828,6 @@ app.get('/configure/:config', (req, res) => {
     const qs = params.toString();
     res.redirect(302, `/configure${qs ? `?${qs}` : ''}`);
 });
-
 
 // Health check endpoint for Kubernetes/Docker readiness and liveness probes
 // Startup probes get a simple 200 OK immediately (server is alive).
@@ -2751,7 +2956,7 @@ function parseChangelog() {
 
 app.get('/api/changelog', (req, res) => {
     const now = Date.now();
-    if (!_changelogCache || (now - _changelogCacheTime) > CHANGELOG_CACHE_TTL) {
+    if (!_changelogCache || now - _changelogCacheTime > CHANGELOG_CACHE_TTL) {
         _changelogCache = parseChangelog();
         _changelogCacheTime = now;
     }
@@ -2887,7 +3092,9 @@ app.get('/api/resolve-linked-title', searchLimiter, async (req, res) => {
     } catch (error) {
         if (respondStorageUnavailable(res, error, '[API] resolve-linked-title')) return;
         log.error(() => ['[API] resolve-linked-title error:', error.message]);
-        return res.status(500).json({ error: t('server.errors.metadataFailed', {}, 'Failed to resolve stream metadata') });
+        return res
+            .status(500)
+            .json({ error: t('server.errors.metadataFailed', {}, 'Failed to resolve stream metadata') });
     }
 });
 
@@ -2942,10 +3149,12 @@ app.post('/api/gemini-models', async (req, res) => {
             if (!resolvedConfig) return;
             if (isInvalidSessionConfig(resolvedConfig)) {
                 t = getTranslatorFromRequest(req, res, resolvedConfig);
-                return res.status(401).json({ error: t('server.errors.invalidSessionToken', {}, 'Invalid or expired session token') });
+                return res
+                    .status(401)
+                    .json({ error: t('server.errors.invalidSessionToken', {}, 'Invalid or expired session token') });
             }
             t = getTranslatorFromRequest(req, res, resolvedConfig);
-            geminiApiKey = await selectGeminiApiKey(resolvedConfig) || process.env.GEMINI_API_KEY;
+            geminiApiKey = (await selectGeminiApiKey(resolvedConfig)) || process.env.GEMINI_API_KEY;
         }
 
         if (!geminiApiKey) {
@@ -2966,7 +3175,8 @@ app.post('/api/gemini-models', async (req, res) => {
     } catch (error) {
         log.error(() => '[API] Error fetching Gemini models:', error);
         // Surface upstream error details if available for easier debugging in UI
-        const message = error?.response?.data?.error || error?.response?.data?.message || error.message || 'Failed to fetch models';
+        const message =
+            error?.response?.data?.error || error?.response?.data?.message || error.message || 'Failed to fetch models';
         const t = res.locals?.t || getTranslatorFromRequest(req, res);
         res.status(500).json({ error: t('server.errors.modelsFailed', { reason: message }, message) });
     }
@@ -2987,7 +3197,8 @@ app.post('/api/models/:provider', async (req, res) => {
         // Allow using the user's saved config (session token) instead of passing API keys in the request body
         const getProviderConfigFromSession = async () => {
             if (!configStr) return null;
-            resolvedConfig = resolvedConfig || await resolveConfigGuarded(configStr, req, res, '[API] models config', t);
+            resolvedConfig =
+                resolvedConfig || (await resolveConfigGuarded(configStr, req, res, '[API] models config', t));
             if (!resolvedConfig) return null;
             if (isInvalidSessionConfig(resolvedConfig)) {
                 return { __invalidSession: true };
@@ -2996,14 +3207,14 @@ app.post('/api/models/:provider', async (req, res) => {
 
             if (providerKey === 'gemini') {
                 return {
-                    apiKey: await selectGeminiApiKey(resolvedConfig) || process.env.GEMINI_API_KEY,
+                    apiKey: (await selectGeminiApiKey(resolvedConfig)) || process.env.GEMINI_API_KEY,
                     model: getEffectiveGeminiModel(resolvedConfig),
                     params: resolvedConfig?.advancedSettings || {}
                 };
             }
 
             const providers = resolvedConfig?.providers || {};
-            const matchKey = Object.keys(providers).find(k => String(k).toLowerCase() === providerKey);
+            const matchKey = Object.keys(providers).find((k) => String(k).toLowerCase() === providerKey);
             const providerCfg = matchKey ? providers[matchKey] : null;
             if (!providerCfg) return null;
 
@@ -3021,7 +3232,9 @@ app.post('/api/models/:provider', async (req, res) => {
         const sessionProvider = await getProviderConfigFromSession();
 
         if (sessionProvider?.__invalidSession === true) {
-            return res.status(401).json({ error: t('server.errors.invalidSessionToken', {}, 'Invalid or expired session token') });
+            return res
+                .status(401)
+                .json({ error: t('server.errors.invalidSessionToken', {}, 'Invalid or expired session token') });
         }
 
         let providerApiKey = apiKey || sessionProvider?.apiKey;
@@ -3034,11 +3247,7 @@ app.post('/api/models/:provider', async (req, res) => {
                 return res.status(400).json({ error: t('server.errors.apiKeyRequired', {}, 'API key is required') });
             }
 
-            const gemini = new GeminiService(
-                String(providerApiKey || '').trim(),
-                providerModel,
-                providerParams
-            );
+            const gemini = new GeminiService(String(providerApiKey || '').trim(), providerModel, providerParams);
             const models = await gemini.getAvailableModels({ silent: true });
             return res.json(models);
         }
@@ -3048,7 +3257,9 @@ app.post('/api/models/:provider', async (req, res) => {
         if (providerKey === 'custom') {
             const baseUrl = req.body.baseUrl || sessionProvider?.baseUrl || '';
             if (!baseUrl) {
-                return res.status(400).json({ error: t('server.errors.baseUrlRequired', {}, 'Base URL is required for custom provider') });
+                return res.status(400).json({
+                    error: t('server.errors.baseUrlRequired', {}, 'Base URL is required for custom provider')
+                });
             }
 
             // SSRF protection: validate baseUrl before making external requests
@@ -3069,7 +3280,9 @@ app.post('/api/models/:provider', async (req, res) => {
             );
 
             if (!provider || typeof provider.getAvailableModels !== 'function') {
-                return res.status(400).json({ error: t('server.errors.unsupportedProvider', {}, 'Unsupported provider') });
+                return res
+                    .status(400)
+                    .json({ error: t('server.errors.unsupportedProvider', {}, 'Unsupported provider') });
             }
 
             const models = await provider.getAvailableModels();
@@ -3083,11 +3296,17 @@ app.post('/api/models/:provider', async (req, res) => {
         if (providerKey === 'cfworkers') {
             const creds = resolveCfWorkersCredentials(providerApiKey);
             if (!creds.token) {
-                return res.status(400).json({ error: t('server.errors.cloudflareTokenRequired', {}, 'Cloudflare Workers AI token is required') });
+                return res.status(400).json({
+                    error: t('server.errors.cloudflareTokenRequired', {}, 'Cloudflare Workers AI token is required')
+                });
             }
             if (!creds.accountId) {
                 return res.status(400).json({
-                    error: t('server.errors.cloudflareAccountRequired', {}, 'Cloudflare Workers AI account ID is required. Provide API key as ACCOUNT_ID|TOKEN.')
+                    error: t(
+                        'server.errors.cloudflareAccountRequired',
+                        {},
+                        'Cloudflare Workers AI account ID is required. Provide API key as ACCOUNT_ID|TOKEN.'
+                    )
                 });
             }
             providerApiKey = `${creds.accountId}|${creds.token}`;
@@ -3103,9 +3322,14 @@ app.post('/api/models/:provider', async (req, res) => {
         );
 
         if (!provider || typeof provider.getAvailableModels !== 'function') {
-            const unsupportedMessage = providerKey === 'cfworkers'
-                ? t('server.errors.cloudflareCredentialsMissing', {}, 'Cloudflare Workers AI is missing credentials. Use ACCOUNT_ID|TOKEN.')
-                : t('server.errors.unsupportedProvider', {}, 'Unsupported provider');
+            const unsupportedMessage =
+                providerKey === 'cfworkers'
+                    ? t(
+                          'server.errors.cloudflareCredentialsMissing',
+                          {},
+                          'Cloudflare Workers AI is missing credentials. Use ACCOUNT_ID|TOKEN.'
+                      )
+                    : t('server.errors.unsupportedProvider', {}, 'Unsupported provider');
             return res.status(400).json({ error: unsupportedMessage });
         }
 
@@ -3113,7 +3337,8 @@ app.post('/api/models/:provider', async (req, res) => {
         res.json(models);
     } catch (error) {
         log.error(() => ['[API] Error fetching provider models:', error]);
-        const message = error?.response?.data?.error || error?.response?.data?.message || error.message || 'Failed to fetch models';
+        const message =
+            error?.response?.data?.error || error?.response?.data?.message || error.message || 'Failed to fetch models';
         const t = res.locals?.t || getTranslatorFromRequest(req, res);
         res.status(500).json({ error: t('server.errors.modelsFailed', { reason: message }, message) });
     }
@@ -3149,7 +3374,7 @@ app.post('/api/validate-subsource', validationLimiter, async (req, res) => {
                 responseType: 'json'
             });
 
-            const movies = Array.isArray(resp.data) ? resp.data : (resp.data?.data || []);
+            const movies = Array.isArray(resp.data) ? resp.data : resp.data?.data || [];
 
             return res.json({
                 valid: true,
@@ -3164,21 +3389,34 @@ app.post('/api/validate-subsource', validationLimiter, async (req, res) => {
             // Show a concise, formatted timeout message instead of axios' lowercase default
             const isTimeout = code === 'ECONNABORTED' || /timeout/i.test(msg);
             if (isTimeout) {
-                return res.json({ valid: false, error: t('server.errors.requestTimedOut', {}, 'Request timed out (7s)') });
+                return res.json({
+                    valid: false,
+                    error: t('server.errors.requestTimedOut', {}, 'Request timed out (7s)')
+                });
             }
 
             if (status === 401 || status === 403) {
-                return res.json({ valid: false, error: t('server.errors.invalidApiKeyAuth', {}, 'Invalid API key - authentication failed') });
+                return res.json({
+                    valid: false,
+                    error: t('server.errors.invalidApiKeyAuth', {}, 'Invalid API key - authentication failed')
+                });
             }
 
             // Surface upstream error if present; otherwise the axios message
             const upstream = apiError.response?.data?.error || apiError.response?.data?.message;
-            return res.json({ valid: false, error: upstream || msg || t('server.errors.requestFailed', {}, 'Request failed') });
+            return res.json({
+                valid: false,
+                error: upstream || msg || t('server.errors.requestFailed', {}, 'Request failed')
+            });
         }
     } catch (error) {
         res.json({
             valid: false,
-            error: (res.locals?.t || getTranslatorFromRequest(req, res))('server.validation.apiError', { reason: error.message }, `API error: ${error.message}`)
+            error: (res.locals?.t || getTranslatorFromRequest(req, res))(
+                'server.validation.apiError',
+                { reason: error.message },
+                `API error: ${error.message}`
+            )
         });
     }
 });
@@ -3220,7 +3458,7 @@ app.post('/api/validate-subdl', validationLimiter, async (req, res) => {
                 headers: {
                     'User-Agent': 'StremioSubtitleTranslator v1.0',
                     'Content-Type': 'application/json',
-                    'Accept': 'application/json'
+                    Accept: 'application/json'
                 },
                 timeout: 10000,
                 httpAgent,
@@ -3239,7 +3477,10 @@ app.post('/api/validate-subdl', validationLimiter, async (req, res) => {
                 // API returned error status
                 res.json({
                     valid: false,
-                    error: response.data.error || response.data.message || t('server.errors.invalidApiKey', {}, 'Invalid API key')
+                    error:
+                        response.data.error ||
+                        response.data.message ||
+                        t('server.errors.invalidApiKey', {}, 'Invalid API key')
                 });
             } else {
                 // Unexpected response format
@@ -3269,7 +3510,11 @@ app.post('/api/validate-subdl', validationLimiter, async (req, res) => {
     } catch (error) {
         res.json({
             valid: false,
-            error: (res.locals?.t || getTranslatorFromRequest(req, res))('server.validation.apiError', { reason: error.message }, `API error: ${error.message}`)
+            error: (res.locals?.t || getTranslatorFromRequest(req, res))(
+                'server.validation.apiError',
+                { reason: error.message },
+                `API error: ${error.message}`
+            )
         });
     }
 });
@@ -3294,7 +3539,11 @@ app.post('/api/validate-opensubtitles', validationLimiter, async (req, res) => {
 
         // Fast path: if we already have a valid cached token for these credentials,
         // they were already proven valid — skip OpenSubtitles entirely
-        const { OpenSubtitlesService, getCachedToken, getCredentialsCacheKey } = require('./src/services/opensubtitles');
+        const {
+            OpenSubtitlesService,
+            getCachedToken,
+            getCredentialsCacheKey
+        } = require('./src/services/opensubtitles');
         const cacheKey = getCredentialsCacheKey(username, password);
         if (cacheKey) {
             const cached = await getCachedToken(cacheKey);
@@ -3339,23 +3588,35 @@ app.post('/api/validate-opensubtitles', validationLimiter, async (req, res) => {
         } else if (apiError.statusCode === 429 || apiError.type === 'rate_limit') {
             res.json({
                 valid: false,
-                error: t('server.errors.opensubtitlesRateLimited', {},
-                    'OpenSubtitles login server is rate-limiting requests. This is a temporary server-side issue, not a credentials problem. Please wait 1-2 minutes and try again.')
+                error: t(
+                    'server.errors.opensubtitlesRateLimited',
+                    {},
+                    'OpenSubtitles login server is rate-limiting requests. This is a temporary server-side issue, not a credentials problem. Please wait 1-2 minutes and try again.'
+                )
             });
-        } else if (apiError.message && (apiError.message.includes('queue timeout') || apiError.message.includes('queue congestion'))) {
+        } else if (
+            apiError.message &&
+            (apiError.message.includes('queue timeout') || apiError.message.includes('queue congestion'))
+        ) {
             // Handle internal queue congestion errors from our distributed lock system
             // This is different from OpenSubtitles rate limiting - it's our internal queue being busy
             res.json({
                 valid: false,
-                error: t('server.errors.loginQueueBusy', {},
-                    'Login queue is busy with multiple concurrent requests. Please wait a few seconds and try again.')
+                error: t(
+                    'server.errors.loginQueueBusy',
+                    {},
+                    'Login queue is busy with multiple concurrent requests. Please wait a few seconds and try again.'
+                )
             });
         } else if (apiError.message && apiError.message.includes('rate limit')) {
             // Legacy catch for any other rate limit messages
             res.json({
                 valid: false,
-                error: t('server.errors.opensubtitlesRateLimited', {},
-                    'OpenSubtitles login server is rate-limiting requests. This is a temporary server-side issue, not a credentials problem. Please wait 1-2 minutes and try again.')
+                error: t(
+                    'server.errors.opensubtitlesRateLimited',
+                    {},
+                    'OpenSubtitles login server is rate-limiting requests. This is a temporary server-side issue, not a credentials problem. Please wait 1-2 minutes and try again.'
+                )
             });
         } else if (apiError.response?.data?.message) {
             res.json({
@@ -3438,13 +3699,17 @@ app.post('/api/validate-gemini', validationLimiter, async (req, res) => {
                 const googleModelList = gemini.getCrazyRouterGoogleModelList();
                 if (googleModelList && googleModelList.length > 0) {
                     models = googleModelList;
-                    log.debug(() => `[ValidateGemini] CrazyRouter Google-filtered model list: ${googleModelList.length} models (from ${ids ? ids.size : 0} filtered).`);
+                    log.debug(
+                        () =>
+                            `[ValidateGemini] CrazyRouter Google-filtered model list: ${googleModelList.length} models (from ${ids ? ids.size : 0} filtered).`
+                    );
                 } else {
                     // Fallback: jika senarai ter struktur tiada, kekalkan kosong tetapi key masih sah.
                     models = [];
-                    log.debug(() => '[ValidateGemini] CrazyRouter model list empty after Google filter; key still valid.');
+                    log.debug(
+                        () => '[ValidateGemini] CrazyRouter model list empty after Google filter; key still valid.'
+                    );
                 }
-
             } catch (probeError) {
                 log.debug(() => `[ValidateGemini] CrazyRouter active probe failed: ${probeError.message}`);
                 throw probeError;
@@ -3462,7 +3727,10 @@ app.post('/api/validate-gemini', validationLimiter, async (req, res) => {
                     log.debug(() => '[ValidateGemini] Google model list fetch succeeded.');
                 }
             } catch (listError) {
-                log.debug(() => `[ValidateGemini] Google model list fetch failed: ${listError.message}. Trying fallback probe.`);
+                log.debug(
+                    () =>
+                        `[ValidateGemini] Google model list fetch failed: ${listError.message}. Trying fallback probe.`
+                );
             }
 
             // Try 2: Fallback probe (count tokens) jika senarai model gagal
@@ -3491,9 +3759,9 @@ app.post('/api/validate-gemini', validationLimiter, async (req, res) => {
             valid: false,
             error: t('server.errors.noModelsFound', {}, 'No models available for this API key')
         });
-
     } catch (error) {
-        const isAuthError = error.response?.status === 401 ||
+        const isAuthError =
+            error.response?.status === 401 ||
             error.response?.status === 403 ||
             error.message?.toLowerCase().includes('api key') ||
             error.message?.toLowerCase().includes('invalid') ||
@@ -3507,8 +3775,16 @@ app.post('/api/validate-gemini', validationLimiter, async (req, res) => {
         return res.json({
             valid: false,
             error: isAuthError
-                ? (res.locals?.t || getTranslatorFromRequest(req, res))('server.errors.invalidApiKeyAuth', {}, 'Invalid API key - authentication failed')
-                : (res.locals?.t || getTranslatorFromRequest(req, res))('server.validation.apiError', { reason: error.message || 'Unknown error' }, `Validation failed: ${error.message || 'Unknown error'}`)
+                ? (res.locals?.t || getTranslatorFromRequest(req, res))(
+                      'server.errors.invalidApiKeyAuth',
+                      {},
+                      'Invalid API key - authentication failed'
+                  )
+                : (res.locals?.t || getTranslatorFromRequest(req, res))(
+                      'server.validation.apiError',
+                      { reason: error.message || 'Unknown error' },
+                      `Validation failed: ${error.message || 'Unknown error'}`
+                  )
         });
     }
 });
@@ -3542,7 +3818,11 @@ app.post('/api/validate-assemblyai', async (req, res) => {
             }
             return res.json({
                 valid: false,
-                error: t('server.validation.apiError', { reason: response.statusText || 'Unknown error' }, `API error: ${response.statusText || 'Unknown error'}`)
+                error: t(
+                    'server.validation.apiError',
+                    { reason: response.statusText || 'Unknown error' },
+                    `API error: ${response.statusText || 'Unknown error'}`
+                )
             });
         } catch (apiError) {
             if (apiError.response?.status === 401 || apiError.response?.status === 403) {
@@ -3556,7 +3836,11 @@ app.post('/api/validate-assemblyai', async (req, res) => {
     } catch (error) {
         res.json({
             valid: false,
-            error: (res.locals?.t || getTranslatorFromRequest(req, res))('server.validation.apiError', { reason: error.message }, `API error: ${error.message}`)
+            error: (res.locals?.t || getTranslatorFromRequest(req, res))(
+                'server.validation.apiError',
+                { reason: error.message },
+                `API error: ${error.message}`
+            )
         });
     }
 });
@@ -3647,7 +3931,9 @@ app.post('/api/update-session/:token', sessionUpdateLimiter, enforceConfigPayloa
         if (shouldUseBase64) {
             // For localhost base64, just return new encoded config
             const configStr = toBase64Url(JSON.stringify(config));
-            log.debug(() => '[Session API] Localhost detected and ALLOW_BASE64_CONFIG enabled - creating new base64 token');
+            log.debug(
+                () => '[Session API] Localhost detected and ALLOW_BASE64_CONFIG enabled - creating new base64 token'
+            );
             invalidateRouterCache(token, 'base64 config update');
             return res.json({
                 token: configStr,
@@ -3658,7 +3944,9 @@ app.post('/api/update-session/:token', sessionUpdateLimiter, enforceConfigPayloa
         }
 
         if (isBase64Token) {
-            return res.status(400).json({ error: t('server.errors.sessionTokenFormat', {}, 'Invalid session token format') });
+            return res
+                .status(400)
+                .json({ error: t('server.errors.sessionTokenFormat', {}, 'Invalid session token format') });
         }
 
         // Defensive: strip any internal flags that shouldn't come from client
@@ -3730,7 +4018,9 @@ app.get('/api/validate-session/:token', async (req, res) => {
         const { token } = req.params;
 
         if (!token || !/^[a-f0-9]{32}$/.test(token)) {
-            return res.status(400).json({ error: t('server.errors.sessionTokenFormat', {}, 'Invalid session token format') });
+            return res
+                .status(400)
+                .json({ error: t('server.errors.sessionTokenFormat', {}, 'Invalid session token format') });
         }
 
         const config = await sessionManager.getSession(token);
@@ -3756,7 +4046,10 @@ app.get('/api/validate-session/:token', async (req, res) => {
             session: sessionBrief
         });
 
-        log.info(() => `[Session Validation] Token ${redactToken(token)} validated from IP ${clientIP}, targets: ${JSON.stringify(config.targetLanguages || [])}`);
+        log.info(
+            () =>
+                `[Session Validation] Token ${redactToken(token)} validated from IP ${clientIP}, targets: ${JSON.stringify(config.targetLanguages || [])}`
+        );
     } catch (error) {
         const t = res.locals?.t || getTranslatorFromRequest(req, res);
         if (respondStorageUnavailable(res, error, '[Session API] validate-session', t)) return;
@@ -3772,7 +4065,9 @@ app.get('/api/session-brief/:token', async (req, res) => {
         const { token } = req.params;
 
         if (!token || !/^[a-f0-9]{32}$/.test(token)) {
-            return res.status(400).json({ error: t('server.errors.sessionTokenFormat', {}, 'Invalid session token format') });
+            return res
+                .status(400)
+                .json({ error: t('server.errors.sessionTokenFormat', {}, 'Invalid session token format') });
         }
 
         const brief = await sessionManager.getSessionBrief(token);
@@ -3785,7 +4080,9 @@ app.get('/api/session-brief/:token', async (req, res) => {
         const t = res.locals?.t || getTranslatorFromRequest(req, res);
         if (respondStorageUnavailable(res, error, '[Session API] session-brief', t)) return;
         log.error(() => '[Session API] Error fetching session brief:', error);
-        res.status(500).json({ error: t('server.errors.sessionFetchFailed', {}, 'Failed to fetch session configuration') });
+        res.status(500).json({
+            error: t('server.errors.sessionFetchFailed', {}, 'Failed to fetch session configuration')
+        });
     }
 });
 
@@ -3796,7 +4093,11 @@ app.post('/api/session-briefs', sessionBriefsLimiter, async (req, res) => {
         const tokens = Array.isArray(req.body?.tokens) ? req.body.tokens : [];
         if (tokens.length > MAX_SESSION_BRIEF_BATCH) {
             return res.status(400).json({
-                error: t('server.errors.tooManySessionBriefTokens', { max: MAX_SESSION_BRIEF_BATCH }, `Too many tokens requested at once (max ${MAX_SESSION_BRIEF_BATCH})`)
+                error: t(
+                    'server.errors.tooManySessionBriefTokens',
+                    { max: MAX_SESSION_BRIEF_BATCH },
+                    `Too many tokens requested at once (max ${MAX_SESSION_BRIEF_BATCH})`
+                )
             });
         }
         const sessions = await sessionManager.getSessionBriefs(tokens, { maxTokens: MAX_SESSION_BRIEF_BATCH });
@@ -3805,7 +4106,9 @@ app.post('/api/session-briefs', sessionBriefsLimiter, async (req, res) => {
         const t = res.locals?.t || getTranslatorFromRequest(req, res);
         if (respondStorageUnavailable(res, error, '[Session API] session-briefs', t)) return;
         log.error(() => '[Session API] Error fetching session briefs:', error);
-        res.status(500).json({ error: t('server.errors.sessionFetchFailed', {}, 'Failed to fetch session configuration') });
+        res.status(500).json({
+            error: t('server.errors.sessionFetchFailed', {}, 'Failed to fetch session configuration')
+        });
     }
 });
 
@@ -3817,7 +4120,9 @@ app.post('/api/session-state/:token', async (req, res) => {
         const disabled = req.body?.disabled === true;
 
         if (!token || !/^[a-f0-9]{32}$/.test(token)) {
-            return res.status(400).json({ error: t('server.errors.sessionTokenFormat', {}, 'Invalid session token format') });
+            return res
+                .status(400)
+                .json({ error: t('server.errors.sessionTokenFormat', {}, 'Invalid session token format') });
         }
 
         const brief = await sessionManager.setSessionDisabled(token, disabled);
@@ -3850,7 +4155,9 @@ app.delete('/api/session/:token', async (req, res) => {
         const { token } = req.params;
 
         if (!token || !/^[a-f0-9]{32}$/.test(token)) {
-            return res.status(400).json({ error: t('server.errors.sessionTokenFormat', {}, 'Invalid session token format') });
+            return res
+                .status(400)
+                .json({ error: t('server.errors.sessionTokenFormat', {}, 'Invalid session token format') });
         }
 
         const deleted = await sessionManager.deleteSessionEverywhere(token);
@@ -3881,7 +4188,9 @@ app.get('/api/get-session/:token', async (req, res) => {
         const autoRegenerate = req.query.autoRegenerate === 'true';
 
         if (!token || !/^[a-f0-9]{32}$/.test(token)) {
-            return res.status(400).json({ error: t('server.errors.sessionTokenFormat', {}, 'Invalid session token format') });
+            return res
+                .status(400)
+                .json({ error: t('server.errors.sessionTokenFormat', {}, 'Invalid session token format') });
         }
 
         // CRITICAL: Set aggressive cache prevention headers to avoid cross-user config contamination
@@ -3894,7 +4203,10 @@ app.get('/api/get-session/:token', async (req, res) => {
         if (!cfg) {
             // Session not found - check if we should auto-regenerate
             if (autoRegenerate) {
-                log.info(() => `[Session API] Session not found for ${redactToken(token)}, auto-regenerating fresh default config`);
+                log.info(
+                    () =>
+                        `[Session API] Session not found for ${redactToken(token)}, auto-regenerating fresh default config`
+                );
 
                 const { config: freshConfig, token: freshToken } = await regenerateDefaultConfig();
                 t = getTranslatorFromRequest(req, res, freshConfig);
@@ -3919,7 +4231,9 @@ app.get('/api/get-session/:token', async (req, res) => {
         const configHash = ensureConfigHash(normalized, token);
 
         if (configHash === 'empty_config_00' && autoRegenerate) {
-            log.warn(() => `[Session API] Session ${redactToken(token)} resolved to empty_config_00, auto-regenerating`);
+            log.warn(
+                () => `[Session API] Session ${redactToken(token)} resolved to empty_config_00, auto-regenerating`
+            );
 
             const { config: freshConfig, token: freshToken } = await regenerateDefaultConfig();
             t = getTranslatorFromRequest(req, res, freshConfig);
@@ -3931,7 +4245,11 @@ app.get('/api/get-session/:token', async (req, res) => {
                 config: freshConfig,
                 token: freshToken,
                 regenerated: true,
-                reason: t('server.errors.sessionConfigCorrupted', {}, 'Config payload was empty or corrupted (empty_config_00)'),
+                reason: t(
+                    'server.errors.sessionConfigCorrupted',
+                    {},
+                    'Config payload was empty or corrupted (empty_config_00)'
+                ),
                 session: await sessionManager.getSessionBrief(freshToken)
             });
         }
@@ -3946,415 +4264,464 @@ app.get('/api/get-session/:token', async (req, res) => {
         const t = res.locals?.t || getTranslatorFromRequest(req, res);
         if (respondStorageUnavailable(res, error, '[Session API] get-session', t)) return;
         log.error(() => '[Session API] Error fetching session:', error);
-        res.status(500).json({ error: t('server.errors.sessionFetchFailed', {}, 'Failed to fetch session configuration') });
+        res.status(500).json({
+            error: t('server.errors.sessionFetchFailed', {}, 'Failed to fetch session configuration')
+        });
     }
 });
 
 // API endpoint to translate uploaded subtitle file
-app.post('/api/translate-file', fileTranslationLimiter, validateRequest(fileTranslationBodySchema, 'body'), async (req, res) => {
-    try {
-        // Prevent caching of user-specific translation results
-        setNoStore(res);
-        let t = res.locals?.t || getTranslatorFromRequest(req, res);
+app.post(
+    '/api/translate-file',
+    fileTranslationLimiter,
+    validateRequest(fileTranslationBodySchema, 'body'),
+    async (req, res) => {
+        try {
+            // Prevent caching of user-specific translation results
+            setNoStore(res);
+            let t = res.locals?.t || getTranslatorFromRequest(req, res);
 
-        const { content, targetLanguage, sourceLanguage, configStr, advancedSettings, overrides } = req.body;
+            const { content, targetLanguage, sourceLanguage, configStr, advancedSettings, overrides } = req.body;
 
-        if (!content) {
-            return res.status(400).send(t('server.errors.translateFileMissingContent', {}, 'Subtitle content is required'));
-        }
+            if (!content) {
+                return res
+                    .status(400)
+                    .send(t('server.errors.translateFileMissingContent', {}, 'Subtitle content is required'));
+            }
 
-        if (!targetLanguage) {
-            return res.status(400).send(t('server.errors.translateFileMissingTarget', {}, 'Target language is required'));
-        }
+            if (!targetLanguage) {
+                return res
+                    .status(400)
+                    .send(t('server.errors.translateFileMissingTarget', {}, 'Target language is required'));
+            }
 
-        if (!configStr) {
-            return res.status(400).send(t('server.errors.translateFileMissingConfig', {}, 'Configuration is required'));
-        }
+            if (!configStr) {
+                return res
+                    .status(400)
+                    .send(t('server.errors.translateFileMissingConfig', {}, 'Configuration is required'));
+            }
 
-        log.debug(() => `[File Translation API] Translating to ${targetLanguage}`);
+            log.debug(() => `[File Translation API] Translating to ${targetLanguage}`);
 
-        // Parse config
-        const config = await resolveConfigGuarded(configStr, req, res, '[API] translate-file config', t);
-        if (!config) return;
-        if (isInvalidSessionConfig(config)) {
+            // Parse config
+            const config = await resolveConfigGuarded(configStr, req, res, '[API] translate-file config', t);
+            if (!config) return;
+            if (isInvalidSessionConfig(config)) {
+                t = getTranslatorFromRequest(req, res, config);
+                return res
+                    .status(401)
+                    .send(t('server.errors.invalidSessionToken', {}, 'Invalid or expired session token'));
+            }
             t = getTranslatorFromRequest(req, res, config);
-            return res.status(401).send(t('server.errors.invalidSessionToken', {}, 'Invalid or expired session token'));
-        }
-        t = getTranslatorFromRequest(req, res, config);
-        const providerDefaults = getDefaultProviderParameters();
-        const modelOptionalProviders = new Set(['googletranslate']);
-        const normalizeProviderKey = (key) => String(key || '').toLowerCase();
-        const requestedProvider = normalizeProviderKey(overrides?.provider || advancedSettings?.provider);
-        const requestedProviderModel = (typeof overrides?.providerModel === 'string') ? overrides.providerModel.trim() : '';
-        const enabledProviders = await (async () => {
-            const providers = [];
-            const providerConfigs = config.providers || {};
-            Object.entries(providerConfigs).forEach(([key, cfg]) => {
-                const normalized = normalizeProviderKey(key);
-                if (!cfg || cfg.enabled !== true) return;
-                const hasRequestedModel = requestedProvider === normalized && !!requestedProviderModel;
-                const hasModel = modelOptionalProviders.has(normalized) || !!cfg.model || hasRequestedModel;
-                let hasCreds = false;
-                if (normalized === 'googletranslate') {
-                    hasCreds = true;
-                } else if (normalized === 'custom') {
-                    hasCreds = !!cfg.baseUrl && hasModel;
-                } else {
-                    hasCreds = !!(cfg.apiKey && hasModel);
+            const providerDefaults = getDefaultProviderParameters();
+            const modelOptionalProviders = new Set(['googletranslate']);
+            const normalizeProviderKey = (key) => String(key || '').toLowerCase();
+            const requestedProvider = normalizeProviderKey(overrides?.provider || advancedSettings?.provider);
+            const requestedProviderModel =
+                typeof overrides?.providerModel === 'string' ? overrides.providerModel.trim() : '';
+            const enabledProviders = await (async () => {
+                const providers = [];
+                const providerConfigs = config.providers || {};
+                Object.entries(providerConfigs).forEach(([key, cfg]) => {
+                    const normalized = normalizeProviderKey(key);
+                    if (!cfg || cfg.enabled !== true) return;
+                    const hasRequestedModel = requestedProvider === normalized && !!requestedProviderModel;
+                    const hasModel = modelOptionalProviders.has(normalized) || !!cfg.model || hasRequestedModel;
+                    let hasCreds = false;
+                    if (normalized === 'googletranslate') {
+                        hasCreds = true;
+                    } else if (normalized === 'custom') {
+                        hasCreds = !!cfg.baseUrl && hasModel;
+                    } else {
+                        hasCreds = !!(cfg.apiKey && hasModel);
+                    }
+                    if (hasCreds) {
+                        providers.push(normalized);
+                    }
+                });
+                // Check if Gemini is configured (handles both single key and rotation modes)
+                const geminiKey = await selectGeminiApiKey(config);
+                const geminiModel =
+                    requestedProvider === 'gemini' && requestedProviderModel
+                        ? requestedProviderModel
+                        : getEffectiveGeminiModel(config);
+                if (geminiKey && geminiModel) {
+                    providers.push('gemini');
+                } else if (config.multiProviderEnabled !== true) {
+                    // Legacy single-provider configs default to Gemini
+                    providers.push('gemini');
                 }
-                if (hasCreds) {
-                    providers.push(normalized);
-                }
-            });
-            // Check if Gemini is configured (handles both single key and rotation modes)
-            const geminiKey = await selectGeminiApiKey(config);
-            const geminiModel = (requestedProvider === 'gemini' && requestedProviderModel)
-                ? requestedProviderModel
-                : getEffectiveGeminiModel(config);
-            if (geminiKey && geminiModel) {
-                providers.push('gemini');
-            } else if (config.multiProviderEnabled !== true) {
-                // Legacy single-provider configs default to Gemini
-                providers.push('gemini');
+                return Array.from(new Set(providers));
+            })();
+            let activeProvider =
+                config.multiProviderEnabled === true && config.mainProvider
+                    ? normalizeProviderKey(config.mainProvider)
+                    : 'gemini';
+
+            if (requestedProvider && enabledProviders.includes(requestedProvider)) {
+                activeProvider = requestedProvider;
+                config.multiProviderEnabled = true;
+                config.mainProvider = requestedProvider;
             }
-            return Array.from(new Set(providers));
-        })();
-        let activeProvider = (config.multiProviderEnabled === true && config.mainProvider)
-            ? normalizeProviderKey(config.mainProvider)
-            : 'gemini';
+            if (!enabledProviders.includes(activeProvider) && enabledProviders.length > 0) {
+                activeProvider = enabledProviders[0];
+                config.multiProviderEnabled = true;
+                config.mainProvider = activeProvider;
+            }
+            if (config.multiProviderEnabled === true) {
+                config.bypassCache = true;
+                config.bypassCacheConfig = config.bypassCacheConfig || {};
+                config.bypassCacheConfig.enabled = true;
+            }
 
-        if (requestedProvider && enabledProviders.includes(requestedProvider)) {
-            activeProvider = requestedProvider;
-            config.multiProviderEnabled = true;
-            config.mainProvider = requestedProvider;
-        }
-        if (!enabledProviders.includes(activeProvider) && enabledProviders.length > 0) {
-            activeProvider = enabledProviders[0];
-            config.multiProviderEnabled = true;
-            config.mainProvider = activeProvider;
-        }
-        if (config.multiProviderEnabled === true) {
-            config.bypassCache = true;
-            config.bypassCacheConfig = config.bypassCacheConfig || {};
-            config.bypassCacheConfig.enabled = true;
-        }
+            // Apply advanced settings overrides (Gemini-focused, kept for backward compatibility)
+            const sanitizeAdvancedSettings = (incoming = {}) => {
+                const parsed = {};
+                const clampNumber = (value, min, max) => {
+                    const num = typeof value === 'number' ? value : parseFloat(value);
+                    if (!Number.isFinite(num)) return null;
+                    if (min !== undefined && num < min) return min;
+                    if (max !== undefined && num > max) return max;
+                    return num;
+                };
 
-        // Apply advanced settings overrides (Gemini-focused, kept for backward compatibility)
-        const sanitizeAdvancedSettings = (incoming = {}) => {
-            const parsed = {};
-            const clampNumber = (value, min, max) => {
-                const num = typeof value === 'number' ? value : parseFloat(value);
-                if (!Number.isFinite(num)) return null;
-                if (min !== undefined && num < min) return min;
-                if (max !== undefined && num > max) return max;
-                return num;
+                const thinking = clampNumber(incoming.thinkingBudget, -1, 200000);
+                if (thinking !== null) parsed.thinkingBudget = thinking;
+
+                const thinkingLevel =
+                    typeof incoming.thinkingLevel === 'string' ? incoming.thinkingLevel.trim().toLowerCase() : '';
+                if (['disabled', 'minimal', 'low', 'medium', 'high'].includes(thinkingLevel)) {
+                    parsed.thinkingLevel = thinkingLevel;
+                }
+
+                const temperature = clampNumber(incoming.temperature, 0, 2);
+                if (temperature !== null) parsed.temperature = temperature;
+
+                const topP = clampNumber(incoming.topP, 0, 1);
+                if (topP !== null) parsed.topP = topP;
+
+                const frequencyPenalty = clampNumber(incoming.frequencyPenalty, -2, 2);
+                if (frequencyPenalty !== null) parsed.frequencyPenalty = frequencyPenalty;
+
+                const presencePenalty = clampNumber(incoming.presencePenalty, -2, 2);
+                if (presencePenalty !== null) parsed.presencePenalty = presencePenalty;
+
+                const maxTokens = clampNumber(incoming.maxOutputTokens, 1, 200000);
+                if (maxTokens !== null) parsed.maxOutputTokens = maxTokens;
+
+                const timeout = clampNumber(incoming.translationTimeout, 5, 720);
+                if (timeout !== null) parsed.translationTimeout = timeout;
+
+                const maxRetries = clampNumber(incoming.maxRetries, 0, 5);
+                if (maxRetries !== null) parsed.maxRetries = Math.max(0, Math.min(5, parseInt(maxRetries, 10)));
+
+                return Object.keys(parsed).length ? parsed : null;
             };
 
-            const thinking = clampNumber(incoming.thinkingBudget, -1, 200000);
-            if (thinking !== null) parsed.thinkingBudget = thinking;
-
-            const thinkingLevel = typeof incoming.thinkingLevel === 'string'
-                ? incoming.thinkingLevel.trim().toLowerCase()
-                : '';
-            if (['disabled', 'minimal', 'low', 'medium', 'high'].includes(thinkingLevel)) {
-                parsed.thinkingLevel = thinkingLevel;
-            }
-
-            const temperature = clampNumber(incoming.temperature, 0, 2);
-            if (temperature !== null) parsed.temperature = temperature;
-
-            const topP = clampNumber(incoming.topP, 0, 1);
-            if (topP !== null) parsed.topP = topP;
-
-
-            const frequencyPenalty = clampNumber(incoming.frequencyPenalty, -2, 2);
-            if (frequencyPenalty !== null) parsed.frequencyPenalty = frequencyPenalty;
-
-            const presencePenalty = clampNumber(incoming.presencePenalty, -2, 2);
-            if (presencePenalty !== null) parsed.presencePenalty = presencePenalty;
-
-            const maxTokens = clampNumber(incoming.maxOutputTokens, 1, 200000);
-            if (maxTokens !== null) parsed.maxOutputTokens = maxTokens;
-
-            const timeout = clampNumber(incoming.translationTimeout, 5, 720);
-            if (timeout !== null) parsed.translationTimeout = timeout;
-
-            const maxRetries = clampNumber(incoming.maxRetries, 0, 5);
-            if (maxRetries !== null) parsed.maxRetries = Math.max(0, Math.min(5, parseInt(maxRetries, 10)));
-
-            return Object.keys(parsed).length ? parsed : null;
-        };
-
-        const parsedAdvanced = sanitizeAdvancedSettings(advancedSettings);
-        if (parsedAdvanced) {
-            config.advancedSettings = {
-                ...config.advancedSettings,
-                ...parsedAdvanced
-            };
-        }
-        if (advancedSettings && typeof advancedSettings.geminiModel === 'string' && advancedSettings.geminiModel.trim()) {
-            const requestedGeminiModel = advancedSettings.geminiModel.trim();
-            config.geminiModel = requestedGeminiModel;
-            config.advancedSettings = {
-                ...config.advancedSettings,
-                enabled: true,
-                geminiModel: requestedGeminiModel
-            };
-        }
-        if (advancedSettings && typeof advancedSettings.translationPrompt === 'string') {
-            const prompt = advancedSettings.translationPrompt.trim();
-            if (prompt) {
-                config.translationPrompt = prompt;
-            }
-        }
-
-        // Apply provider-aware overrides (model/parameters/prompt) from the upload page
-        if (overrides && typeof overrides === 'object') {
-            // Prompt override
-            if (typeof overrides.translationPrompt === 'string') {
-                const promptOverride = overrides.translationPrompt.trim();
-                if (promptOverride) {
-                    config.translationPrompt = promptOverride;
-                }
-            }
-
-            // Model override for the active provider
-            if (typeof overrides.providerModel === 'string' && overrides.providerModel.trim()) {
-                const modelOverride = overrides.providerModel.trim();
-                if (activeProvider === 'gemini') {
-                    config.geminiModel = modelOverride;
-                    config.advancedSettings = {
-                        ...config.advancedSettings,
-                        enabled: true,
-                        geminiModel: modelOverride
-                    };
-                } else {
-                    config.providers = config.providers || {};
-                    const current = config.providers[activeProvider] || {};
-                    config.providers[activeProvider] = {
-                        ...current,
-                        model: modelOverride
-                    };
-                }
-            }
-
-            // Advanced settings override (still Gemini-focused; optional)
-            const overrideAdvanced = sanitizeAdvancedSettings(overrides.advancedSettings);
-            if (overrideAdvanced) {
+            const parsedAdvanced = sanitizeAdvancedSettings(advancedSettings);
+            if (parsedAdvanced) {
                 config.advancedSettings = {
                     ...config.advancedSettings,
-                    ...overrideAdvanced
+                    ...parsedAdvanced
                 };
             }
-
-            // Provider parameter overrides (temperature, timeout, etc.) - scoped to active provider
-            if (overrides.providerParameters && typeof overrides.providerParameters === 'object') {
-                const scopedParams = {};
-                Object.keys(overrides.providerParameters).forEach(key => {
-                    if (String(key).toLowerCase() === activeProvider) {
-                        scopedParams[key] = overrides.providerParameters[key];
-                    }
-                });
-
-                if (Object.keys(scopedParams).length > 0) {
-                    const merged = mergeProviderParameters(
-                        providerDefaults,
-                        { ...(config.providerParameters || {}), ...scopedParams }
-                    );
-                    config.providerParameters = merged;
+            if (
+                advancedSettings &&
+                typeof advancedSettings.geminiModel === 'string' &&
+                advancedSettings.geminiModel.trim()
+            ) {
+                const requestedGeminiModel = advancedSettings.geminiModel.trim();
+                config.geminiModel = requestedGeminiModel;
+                config.advancedSettings = {
+                    ...config.advancedSettings,
+                    enabled: true,
+                    geminiModel: requestedGeminiModel
+                };
+            }
+            if (advancedSettings && typeof advancedSettings.translationPrompt === 'string') {
+                const prompt = advancedSettings.translationPrompt.trim();
+                if (prompt) {
+                    config.translationPrompt = prompt;
                 }
             }
-        }
 
-        // Resolve translation workflow/timing options (per-request overrides win over config defaults)
-        const options = req.body.options || {};
-
-        // Single batch mode — per-request override
-        const singleBatchRequested = typeof options.singleBatchMode === 'boolean'
-            ? options.singleBatchMode : false;
-        const singleBatchMode = singleBatchRequested || config.singleBatchMode === true;
-
-        // TOTAL PURGE (Mandat 2026-09-25): Per-request override untuk
-        // 'enableBatchContext' dan 'subfaberEnabled' dibuang — SubFaber ialah
-        // enjin tunggal; sliding context sentiasa aktif di peringkat engine.
-
-        // Translation workflow is locked to XML Tags; legacy values normalize silently.
-        const translationWorkflow = 'xml';
-        const sendTimestampsToAI = false;
-
-        config.singleBatchMode = singleBatchMode;
-        const advanced = { ...(config.advancedSettings || {}) };
-
-        advanced.translationWorkflow = translationWorkflow;
-        delete advanced.sendTimestampsToAI;
-        delete advanced.enableBatchContext;
-        delete advanced.contextSize;
-        delete advanced.subfaberEnabled;
-
-        config.advancedSettings = advanced;
-
-        // Get language names for better translation context
-        const targetLangName = getLanguageName(targetLanguage) || targetLanguage;
-        const sourceLangName = sourceLanguage ? (getLanguageName(sourceLanguage) || sourceLanguage) : 'detected source language';
-
-        // Convert non-SRT uploads (VTT, ASS/SSA) to SRT for translation
-        let workingContent = ensureSRTForTranslation(content, '[File Translation API]');
-
-        // Initialize translation provider (Gemini by default, alternative providers when enabled)
-        const { provider: translationProvider, providerName, model, fallbackProviderName } = await createTranslationProvider(config);
-        if (!translationProvider || typeof translationProvider.translateSubtitle !== 'function') {
-            throw new Error('Translation provider is not configured correctly');
-        }
-        const effectiveModel = model || getEffectiveGeminiModel(config);
-        log.debug(() => `[File Translation API] Using provider=${providerName} model=${effectiveModel}`);
-
-        const effectiveWorkflow = config.advancedSettings?.translationWorkflow || 'xml';
-        let translatedContent = null;
-
-        // --- SubFaber SSE branch (LANGKAH 2, laporan backend §3 / frontend §8) ---
-        // Opt-in: client menghantar header 'Accept: text/event-stream'.
-        // Tanpa header ini, behavior kekal text/plain sepenuhnya (backward
-        // compatible). Compression middleware (index.js atas) sudah skip SSE.
-        const wantsSse = String(req.headers.accept || '').includes('text/event-stream');
-
-        // Helper: emit satu event SSE (safe-write, flush kalau ada).
-        const sseWrite = (event, dataObj) => {
-            if (!wantsSse || res.writableEnded) return;
-            try {
-                if (event) res.write(`event: ${event}\n`);
-                res.write(`data: ${JSON.stringify(dataObj)}\n\n`);
-                if (typeof res.flush === 'function') res.flush();
-            } catch (_) { /* response already closed */ }
-        };
-
-        // --- Keepalive streaming to prevent Cloudflare 524 timeouts ---
-        // Cloudflare kills connections after 100s of no data from origin.
-        // Send periodic newline bytes to reset the timer while translation runs.
-        // SRT parsers ignore leading blank lines, so this is safe.
-        // SSE mode: keepalive sebagai SSE comment (': ka') supaya parser
-        // client tidak salah tafsir.
-        const KEEPALIVE_INTERVAL_MS = parseInt(process.env.FILE_UPLOAD_KEEPALIVE_INTERVAL) || 30000;
-        if (wantsSse) {
-            res.writeHead(200, {
-                'Content-Type': 'text/event-stream; charset=utf-8',
-                'Cache-Control': 'no-cache',
-                'Connection': 'keep-alive'
-            });
-        } else {
-            res.writeHead(200, { 'Content-Type': 'text/plain; charset=utf-8' });
-        }
-        let keepaliveTimer = null;
-        let keepaliveCount = 0;
-        try {
-            keepaliveTimer = setInterval(() => {
-                try {
-                    if (!res.writableEnded) {
-                        res.write(wantsSse ? ': ka\n\n' : '\n');
-                        if (typeof res.flush === 'function') res.flush();
-                        keepaliveCount++;
-                        log.debug(() => `[File Translation API] Keepalive #${keepaliveCount} sent`);
+            // Apply provider-aware overrides (model/parameters/prompt) from the upload page
+            if (overrides && typeof overrides === 'object') {
+                // Prompt override
+                if (typeof overrides.translationPrompt === 'string') {
+                    const promptOverride = overrides.translationPrompt.trim();
+                    if (promptOverride) {
+                        config.translationPrompt = promptOverride;
                     }
-                } catch (_) { /* response already closed */ }
-            }, KEEPALIVE_INTERVAL_MS);
+                }
 
-            // Always use TranslationEngine — it handles batching, parallel translation,
-            // and the XML Tags workflow internally.
-            const engine = new TranslationEngine(
-                translationProvider,
-                effectiveModel,
-                config.advancedSettings || {},
-                { singleBatchMode, providerName, fallbackProviderName, enableStreaming: false }
-            );
-            log.debug(() => `[File Translation API] Using TranslationEngine (workflow=${effectiveWorkflow}, singleBatch=${singleBatchMode}, engine=subfaber, sse=${wantsSse})`);
+                // Model override for the active provider
+                if (typeof overrides.providerModel === 'string' && overrides.providerModel.trim()) {
+                    const modelOverride = overrides.providerModel.trim();
+                    if (activeProvider === 'gemini') {
+                        config.geminiModel = modelOverride;
+                        config.advancedSettings = {
+                            ...config.advancedSettings,
+                            enabled: true,
+                            geminiModel: modelOverride
+                        };
+                    } else {
+                        config.providers = config.providers || {};
+                        const current = config.providers[activeProvider] || {};
+                        config.providers[activeProvider] = {
+                            ...current,
+                            model: modelOverride
+                        };
+                    }
+                }
 
-            // SSE mode: onProgress memancarkan event kontrak §8 laporan frontend:
-            //   {phase:'preflight', status, summary, terms}   — dari Fasa 0
-            //   {phase:'batch', currentBatch, totalBatches, verifiedCount,
-            //    expectedCount, parityRate}                   — dari loop batch
-            // Event streaming per-chunk (streaming:true) ditapis supaya badge
-            // parity tidak banjir — hanya batch-completion yang dihantar.
-            const sseOnProgress = wantsSse ? async (payload) => {
-                if (!payload || typeof payload !== 'object') return;
-                if (payload.phase === 'preflight') {
-                    // Fasa 0: { status, summary?, terms? }
-                    sseWrite(null, {
-                        phase: 'preflight',
-                        status: payload.status,
-                        ...(payload.summary !== undefined ? { summary: payload.summary } : {}),
-                        ...(Array.isArray(payload.terms) ? { terms: payload.terms } : {})
+                // Advanced settings override (still Gemini-focused; optional)
+                const overrideAdvanced = sanitizeAdvancedSettings(overrides.advancedSettings);
+                if (overrideAdvanced) {
+                    config.advancedSettings = {
+                        ...config.advancedSettings,
+                        ...overrideAdvanced
+                    };
+                }
+
+                // Provider parameter overrides (temperature, timeout, etc.) - scoped to active provider
+                if (overrides.providerParameters && typeof overrides.providerParameters === 'object') {
+                    const scopedParams = {};
+                    Object.keys(overrides.providerParameters).forEach((key) => {
+                        if (String(key).toLowerCase() === activeProvider) {
+                            scopedParams[key] = overrides.providerParameters[key];
+                        }
                     });
-                    return;
+
+                    if (Object.keys(scopedParams).length > 0) {
+                        const merged = mergeProviderParameters(providerDefaults, {
+                            ...(config.providerParameters || {}),
+                            ...scopedParams
+                        });
+                        config.providerParameters = merged;
+                    }
                 }
-                // Batch progress: tapis event streaming per-chunk
-                if (payload.streaming === true) return;
-                const expected = Number(payload.totalEntries) || 0;
-                const verified = Number(payload.completedEntries) || 0;
-                const parityRate = expected > 0 ? `${Math.round((verified / expected) * 100)}%` : '0%';
-                sseWrite(null, {
-                    phase: 'batch',
-                    currentBatch: payload.currentBatch,
-                    totalBatches: payload.totalBatches,
-                    verifiedCount: verified,
-                    expectedCount: expected,
-                    parityRate
-                });
-            } : null;
+            }
 
-            translatedContent = await engine.translateSubtitle(
-                workingContent,
-                targetLangName,
-                config.translationPrompt,
-                sseOnProgress,
-                sourceLanguage ? (getLanguageName(sourceLanguage) || sourceLanguage) : null // 🌐 Argumen ke-5
-            );
+            // Resolve translation workflow/timing options (per-request overrides win over config defaults)
+            const options = req.body.options || {};
 
-            log.debug(() => '[File Translation API] Translation completed via TranslationEngine');
+            // Single batch mode — per-request override
+            const singleBatchRequested = typeof options.singleBatchMode === 'boolean' ? options.singleBatchMode : false;
+            const singleBatchMode = singleBatchRequested || config.singleBatchMode === true;
 
-            // Send translated content and end the response
-            log.debug(() => `[File Translation API] Sending result (${keepaliveCount} keepalives sent during translation)`);
+            // TOTAL PURGE (Mandat 2026-09-25): Per-request override untuk
+            // 'enableBatchContext' dan 'subfaberEnabled' dibuang — SubFaber ialah
+            // enjin tunggal; sliding context sentiasa aktif di peringkat engine.
+
+            // Translation workflow is locked to XML Tags; legacy values normalize silently.
+            const translationWorkflow = 'xml';
+            const sendTimestampsToAI = false;
+
+            config.singleBatchMode = singleBatchMode;
+            const advanced = { ...(config.advancedSettings || {}) };
+
+            advanced.translationWorkflow = translationWorkflow;
+            delete advanced.sendTimestampsToAI;
+            delete advanced.enableBatchContext;
+            delete advanced.contextSize;
+            delete advanced.subfaberEnabled;
+
+            config.advancedSettings = advanced;
+
+            // Get language names for better translation context
+            const targetLangName = getLanguageName(targetLanguage) || targetLanguage;
+            const sourceLangName = sourceLanguage
+                ? getLanguageName(sourceLanguage) || sourceLanguage
+                : 'detected source language';
+
+            // Convert non-SRT uploads (VTT, ASS/SSA) to SRT for translation
+            let workingContent = ensureSRTForTranslation(content, '[File Translation API]');
+
+            // Initialize translation provider (Gemini by default, alternative providers when enabled)
+            const {
+                provider: translationProvider,
+                providerName,
+                model,
+                fallbackProviderName
+            } = await createTranslationProvider(config);
+            if (!translationProvider || typeof translationProvider.translateSubtitle !== 'function') {
+                throw new Error('Translation provider is not configured correctly');
+            }
+            const effectiveModel = model || getEffectiveGeminiModel(config);
+            log.debug(() => `[File Translation API] Using provider=${providerName} model=${effectiveModel}`);
+
+            const effectiveWorkflow = config.advancedSettings?.translationWorkflow || 'xml';
+            let translatedContent = null;
+
+            // --- SubFaber SSE branch (LANGKAH 2, laporan backend §3 / frontend §8) ---
+            // Opt-in: client menghantar header 'Accept: text/event-stream'.
+            // Tanpa header ini, behavior kekal text/plain sepenuhnya (backward
+            // compatible). Compression middleware (index.js atas) sudah skip SSE.
+            const wantsSse = String(req.headers.accept || '').includes('text/event-stream');
+
+            // Helper: emit satu event SSE (safe-write, flush kalau ada).
+            const sseWrite = (event, dataObj) => {
+                if (!wantsSse || res.writableEnded) return;
+                try {
+                    if (event) res.write(`event: ${event}\n`);
+                    res.write(`data: ${JSON.stringify(dataObj)}\n\n`);
+                    if (typeof res.flush === 'function') res.flush();
+                } catch (_) {
+                    /* response already closed */
+                }
+            };
+
+            // --- Keepalive streaming to prevent Cloudflare 524 timeouts ---
+            // Cloudflare kills connections after 100s of no data from origin.
+            // Send periodic newline bytes to reset the timer while translation runs.
+            // SRT parsers ignore leading blank lines, so this is safe.
+            // SSE mode: keepalive sebagai SSE comment (': ka') supaya parser
+            // client tidak salah tafsir.
+            const KEEPALIVE_INTERVAL_MS = parseInt(process.env.FILE_UPLOAD_KEEPALIVE_INTERVAL) || 30000;
             if (wantsSse) {
-                // Event 'done' membawa translationStats (untuk badge Dwi-Panel
-                // KIMI K3) + kandungan penuh supaya client tak perlu fetch semula.
-                const stats = engine.translationStats || {};
-                sseWrite('done', {
-                    translationStats: {
-                        subfaberContextUsed: stats.subfaberContextUsed === true,
-                        mismatchDetected: stats.mismatchDetected === true,
-                        totalMismatchesHealed: stats.recoveredEntries || 0,
-                        syncFidelity: '100%',
-                        entryCount: stats.entryCount || 0,
-                        batchCount: stats.batchCount || 0
-                    },
-                    content: translatedContent
+                res.writeHead(200, {
+                    'Content-Type': 'text/event-stream; charset=utf-8',
+                    'Cache-Control': 'no-cache',
+                    Connection: 'keep-alive'
                 });
-                res.end();
             } else {
-                res.end(translatedContent);
+                res.writeHead(200, { 'Content-Type': 'text/plain; charset=utf-8' });
             }
-
-        } finally {
-            if (keepaliveTimer) clearInterval(keepaliveTimer);
-        }
-
-    } catch (error) {
-        log.error(() => '[File Translation API] Error:', error);
-        if (res.headersSent) {
-            // Headers already committed (keepalive started) — send error marker in the body
-            // The client detects [TRANSLATION_ERROR] and extracts the message
+            let keepaliveTimer = null;
+            let keepaliveCount = 0;
             try {
-                const t = res.locals?.t || getTranslatorFromRequest(req, res);
-                const msg = t('server.errors.translateFileError', { reason: error.message }, `Translation failed: ${error.message}`);
-                res.end('\n[TRANSLATION_ERROR]\n' + msg);
-            } catch (_) {
-                try { res.end('\n[TRANSLATION_ERROR]\nTranslation failed: ' + (error.message || 'Unknown error')); } catch (__) { /* response closed */ }
+                keepaliveTimer = setInterval(() => {
+                    try {
+                        if (!res.writableEnded) {
+                            res.write(wantsSse ? ': ka\n\n' : '\n');
+                            if (typeof res.flush === 'function') res.flush();
+                            keepaliveCount++;
+                            log.debug(() => `[File Translation API] Keepalive #${keepaliveCount} sent`);
+                        }
+                    } catch (_) {
+                        /* response already closed */
+                    }
+                }, KEEPALIVE_INTERVAL_MS);
+
+                // Always use TranslationEngine — it handles batching, parallel translation,
+                // and the XML Tags workflow internally.
+                const engine = new TranslationEngine(
+                    translationProvider,
+                    effectiveModel,
+                    config.advancedSettings || {},
+                    { singleBatchMode, providerName, fallbackProviderName, enableStreaming: false }
+                );
+                log.debug(
+                    () =>
+                        `[File Translation API] Using TranslationEngine (workflow=${effectiveWorkflow}, singleBatch=${singleBatchMode}, engine=subfaber, sse=${wantsSse})`
+                );
+
+                // SSE mode: onProgress memancarkan event kontrak §8 laporan frontend:
+                //   {phase:'preflight', status, summary, terms}   — dari Fasa 0
+                //   {phase:'batch', currentBatch, totalBatches, verifiedCount,
+                //    expectedCount, parityRate}                   — dari loop batch
+                // Event streaming per-chunk (streaming:true) ditapis supaya badge
+                // parity tidak banjir — hanya batch-completion yang dihantar.
+                const sseOnProgress = wantsSse
+                    ? async (payload) => {
+                          if (!payload || typeof payload !== 'object') return;
+                          if (payload.phase === 'preflight') {
+                              // Fasa 0: { status, summary?, terms? }
+                              sseWrite(null, {
+                                  phase: 'preflight',
+                                  status: payload.status,
+                                  ...(payload.summary !== undefined ? { summary: payload.summary } : {}),
+                                  ...(Array.isArray(payload.terms) ? { terms: payload.terms } : {})
+                              });
+                              return;
+                          }
+                          // Batch progress: tapis event streaming per-chunk
+                          if (payload.streaming === true) return;
+                          const expected = Number(payload.totalEntries) || 0;
+                          const verified = Number(payload.completedEntries) || 0;
+                          const parityRate = expected > 0 ? `${Math.round((verified / expected) * 100)}%` : '0%';
+                          sseWrite(null, {
+                              phase: 'batch',
+                              currentBatch: payload.currentBatch,
+                              totalBatches: payload.totalBatches,
+                              verifiedCount: verified,
+                              expectedCount: expected,
+                              parityRate
+                          });
+                      }
+                    : null;
+
+                translatedContent = await engine.translateSubtitle(
+                    workingContent,
+                    targetLangName,
+                    config.translationPrompt,
+                    sseOnProgress,
+                    sourceLanguage ? getLanguageName(sourceLanguage) || sourceLanguage : null // 🌐 Argumen ke-5
+                );
+
+                log.debug(() => '[File Translation API] Translation completed via TranslationEngine');
+
+                // Send translated content and end the response
+                log.debug(
+                    () => `[File Translation API] Sending result (${keepaliveCount} keepalives sent during translation)`
+                );
+                if (wantsSse) {
+                    // Event 'done' membawa translationStats (untuk badge Dwi-Panel
+                    // KIMI K3) + kandungan penuh supaya client tak perlu fetch semula.
+                    const stats = engine.translationStats || {};
+                    sseWrite('done', {
+                        translationStats: {
+                            subfaberContextUsed: stats.subfaberContextUsed === true,
+                            mismatchDetected: stats.mismatchDetected === true,
+                            totalMismatchesHealed: stats.recoveredEntries || 0,
+                            syncFidelity: '100%',
+                            entryCount: stats.entryCount || 0,
+                            batchCount: stats.batchCount || 0
+                        },
+                        content: translatedContent
+                    });
+                    res.end();
+                } else {
+                    res.end(translatedContent);
+                }
+            } finally {
+                if (keepaliveTimer) clearInterval(keepaliveTimer);
             }
-        } else {
-            // Headers not sent yet (early failure before keepalive) — use standard error response
-            const t = res.locals?.t || getTranslatorFromRequest(req, res);
-            res.status(500).send(t('server.errors.translateFileError', { reason: error.message }, `Translation failed: ${error.message}`));
+        } catch (error) {
+            log.error(() => '[File Translation API] Error:', error);
+            if (res.headersSent) {
+                // Headers already committed (keepalive started) — send error marker in the body
+                // The client detects [TRANSLATION_ERROR] and extracts the message
+                try {
+                    const t = res.locals?.t || getTranslatorFromRequest(req, res);
+                    const msg = t(
+                        'server.errors.translateFileError',
+                        { reason: error.message },
+                        `Translation failed: ${error.message}`
+                    );
+                    res.end('\n[TRANSLATION_ERROR]\n' + msg);
+                } catch (_) {
+                    try {
+                        res.end('\n[TRANSLATION_ERROR]\nTranslation failed: ' + (error.message || 'Unknown error'));
+                    } catch (__) {
+                        /* response closed */
+                    }
+                }
+            } else {
+                // Headers not sent yet (early failure before keepalive) — use standard error response
+                const t = res.locals?.t || getTranslatorFromRequest(req, res);
+                res.status(500).send(
+                    t(
+                        'server.errors.translateFileError',
+                        { reason: error.message },
+                        `Translation failed: ${error.message}`
+                    )
+                );
+            }
         }
     }
-});
+);
 
 // API endpoint to trigger retranslation (mirrors the 3-click cache reset mechanism)
 // This allows the history page to offer a "Retranslate" button that does exactly
@@ -4377,19 +4744,29 @@ app.get('/api/retranslate', searchLimiter, async (req, res) => {
         } = req.query;
 
         if (!configStr) {
-            return res.status(400).json({ success: false, error: t('server.errors.missingConfig', {}, 'Missing config') });
+            return res
+                .status(400)
+                .json({ success: false, error: t('server.errors.missingConfig', {}, 'Missing config') });
         }
         if (!sourceFileId) {
-            return res.status(400).json({ success: false, error: t('server.errors.missingSourceFileId', {}, 'Missing sourceFileId') });
+            return res
+                .status(400)
+                .json({ success: false, error: t('server.errors.missingSourceFileId', {}, 'Missing sourceFileId') });
         }
         if (!targetLanguage) {
-            return res.status(400).json({ success: false, error: t('server.errors.missingTargetLanguage', {}, 'Missing targetLanguage') });
+            return res.status(400).json({
+                success: false,
+                error: t('server.errors.missingTargetLanguage', {}, 'Missing targetLanguage')
+            });
         }
 
         const config = await resolveConfigGuarded(configStr, req, res, '[Retranslate API] config', t);
         if (!config) return;
         if (isInvalidSessionConfig(config)) {
-            return res.status(401).json({ success: false, error: t('server.errors.invalidSessionToken', {}, 'Invalid or expired session token') });
+            return res.status(401).json({
+                success: false,
+                error: t('server.errors.invalidSessionToken', {}, 'Invalid or expired session token')
+            });
         }
         t = getTranslatorFromRequest(req, res, config);
         ensureConfigHash(config, configStr);
@@ -4402,7 +4779,7 @@ app.get('/api/retranslate', searchLimiter, async (req, res) => {
         const matchProviderKey = (providerName) => {
             if (!providerName || !config?.providers || typeof config.providers !== 'object') return '';
             const target = String(providerName).toLowerCase();
-            return Object.keys(config.providers).find(key => String(key).toLowerCase() === target) || '';
+            return Object.keys(config.providers).find((key) => String(key).toLowerCase() === target) || '';
         };
 
         const normalizedTitle = cleanText(title, 200);
@@ -4414,17 +4791,26 @@ app.get('/api/retranslate', searchLimiter, async (req, res) => {
         const normalizedTargetLanguage = cleanText(targetLanguage, 24).toLowerCase();
         const seasonNumber = parseOptionalInt(season);
         const episodeNumber = parseOptionalInt(episode);
-        const initialProvider = (config.multiProviderEnabled === true ? String(config.mainProvider || '').trim() : 'gemini') || 'gemini';
+        const initialProvider =
+            (config.multiProviderEnabled === true ? String(config.mainProvider || '').trim() : 'gemini') || 'gemini';
         const matchedProviderKey = matchProviderKey(initialProvider);
-        const initialModel = String(initialProvider).toLowerCase() === 'gemini'
-            ? (getEffectiveGeminiModel(config) || 'default')
-            : (matchedProviderKey ? (config.providers?.[matchedProviderKey]?.model || 'default') : 'default');
+        const initialModel =
+            String(initialProvider).toLowerCase() === 'gemini'
+                ? getEffectiveGeminiModel(config) || 'default'
+                : matchedProviderKey
+                  ? config.providers?.[matchedProviderKey]?.model || 'default'
+                  : 'default';
 
         if (!normalizedSourceFileId) {
-            return res.status(400).json({ success: false, error: t('server.errors.missingSourceFileId', {}, 'Missing sourceFileId') });
+            return res
+                .status(400)
+                .json({ success: false, error: t('server.errors.missingSourceFileId', {}, 'Missing sourceFileId') });
         }
         if (!normalizedTargetLanguage) {
-            return res.status(400).json({ success: false, error: t('server.errors.missingTargetLanguage', {}, 'Missing targetLanguage') });
+            return res.status(400).json({
+                success: false,
+                error: t('server.errors.missingTargetLanguage', {}, 'Missing targetLanguage')
+            });
         }
 
         // SAFETY CHECK 1: Block if user is at concurrency limit
@@ -4432,12 +4818,20 @@ app.get('/api/retranslate', searchLimiter, async (req, res) => {
             log.warn(() => `[Retranslate API] BLOCKED: User at concurrency limit (user: ${userHash || 'anonymous'})`);
             return res.status(429).json({
                 success: false,
-                error: t('server.errors.retranslateConcurrencyLimit', {}, 'Cannot retranslate: you have too many translations in progress. Please wait for them to complete.')
+                error: t(
+                    'server.errors.retranslateConcurrencyLimit',
+                    {},
+                    'Cannot retranslate: you have too many translations in progress. Please wait for them to complete.'
+                )
             });
         }
 
         // SAFETY CHECK 2: Block if translation is currently in progress for this subtitle
-        const { cacheKey, runtimeKey, bypass, bypassEnabled } = generateCacheKeys(config, normalizedSourceFileId, normalizedTargetLanguage);
+        const { cacheKey, runtimeKey, bypass, bypassEnabled } = generateCacheKeys(
+            config,
+            normalizedSourceFileId,
+            normalizedTargetLanguage
+        );
         const translationInProgress = (() => {
             if (bypassEnabled && userHash) {
                 const status = translationStatus.get(cacheKey);
@@ -4452,34 +4846,52 @@ app.get('/api/retranslate', searchLimiter, async (req, res) => {
         })();
 
         if (translationInProgress) {
-            log.warn(() => `[Retranslate API] BLOCKED: Translation already in progress for ${normalizedSourceFileId}/${normalizedTargetLanguage} (user: ${userHash})`);
+            log.warn(
+                () =>
+                    `[Retranslate API] BLOCKED: Translation already in progress for ${normalizedSourceFileId}/${normalizedTargetLanguage} (user: ${userHash})`
+            );
             return res.status(409).json({
                 success: false,
-                error: t('server.errors.retranslateInProgress', {}, 'Cannot retranslate: translation is already in progress for this subtitle. Please wait for it to complete.')
+                error: t(
+                    'server.errors.retranslateInProgress',
+                    {},
+                    'Cannot retranslate: translation is already in progress for this subtitle. Please wait for it to complete.'
+                )
             });
         }
 
         // RATE LIMIT CHECK (dry-run first to give user feedback)
         const rateLimitStatus = checkCacheResetRateLimit(config, { consume: false });
         if (rateLimitStatus.blocked) {
-            log.warn(() => `[Retranslate API] BLOCKED: Rate limit reached for ${rateLimitStatus.cacheType} cache (${rateLimitStatus.limit}/${Math.round(CACHE_RESET_WINDOW_MS / 60000)}m) (user: ${userHash})`);
+            log.warn(
+                () =>
+                    `[Retranslate API] BLOCKED: Rate limit reached for ${rateLimitStatus.cacheType} cache (${rateLimitStatus.limit}/${Math.round(CACHE_RESET_WINDOW_MS / 60000)}m) (user: ${userHash})`
+            );
             return res.status(429).json({
                 success: false,
-                error: t('server.errors.retranslateRateLimit', {
-                    limit: rateLimitStatus.limit,
-                    window: Math.round(CACHE_RESET_WINDOW_MS / 60000)
-                }, `Rate limit reached: you can only retranslate ${rateLimitStatus.limit} times per ${Math.round(CACHE_RESET_WINDOW_MS / 60000)} minutes.`)
+                error: t(
+                    'server.errors.retranslateRateLimit',
+                    {
+                        limit: rateLimitStatus.limit,
+                        window: Math.round(CACHE_RESET_WINDOW_MS / 60000)
+                    },
+                    `Rate limit reached: you can only retranslate ${rateLimitStatus.limit} times per ${Math.round(CACHE_RESET_WINDOW_MS / 60000)} minutes.`
+                )
             });
         }
 
         // Check if there's actually something to purge
         const hadCache = await hasCachedTranslation(normalizedSourceFileId, normalizedTargetLanguage, config);
-        const partial = (!hadCache) ? await readFromPartialCache(runtimeKey) : null;
-        const hasResetTarget = hadCache || (partial && typeof partial.content === 'string' && partial.content.length > 0);
+        const partial = !hadCache ? await readFromPartialCache(runtimeKey) : null;
+        const hasResetTarget =
+            hadCache || (partial && typeof partial.content === 'string' && partial.content.length > 0);
         let remainingResets = rateLimitStatus.remaining;
 
         if (!hasResetTarget) {
-            log.debug(() => `[Retranslate API] No cache found for ${normalizedSourceFileId}/${normalizedTargetLanguage} - proceeding without purge`);
+            log.debug(
+                () =>
+                    `[Retranslate API] No cache found for ${normalizedSourceFileId}/${normalizedTargetLanguage} - proceeding without purge`
+            );
         } else {
             // Consume rate limit slot and purge cache
             const consumeStatus = checkCacheResetRateLimit(config);
@@ -4487,15 +4899,22 @@ app.get('/api/retranslate', searchLimiter, async (req, res) => {
                 // Race condition: limit was reached between dry-run and consume
                 return res.status(429).json({
                     success: false,
-                    error: t('server.errors.retranslateRateLimit', {
-                        limit: consumeStatus.limit,
-                        window: Math.round(CACHE_RESET_WINDOW_MS / 60000)
-                    }, `Rate limit reached.`)
+                    error: t(
+                        'server.errors.retranslateRateLimit',
+                        {
+                            limit: consumeStatus.limit,
+                            window: Math.round(CACHE_RESET_WINDOW_MS / 60000)
+                        },
+                        `Rate limit reached.`
+                    )
                 });
             }
 
             remainingResets = consumeStatus.remaining;
-            log.debug(() => `[Retranslate API] Purging cache for ${normalizedSourceFileId}/${normalizedTargetLanguage}. Remaining resets this window: ${consumeStatus.remaining}`);
+            log.debug(
+                () =>
+                    `[Retranslate API] Purging cache for ${normalizedSourceFileId}/${normalizedTargetLanguage}. Remaining resets this window: ${consumeStatus.remaining}`
+            );
             const purged = await purgeTranslationCache(normalizedSourceFileId, normalizedTargetLanguage, config);
             if (!purged) {
                 throw new Error('Failed to clear cached translation');
@@ -4507,9 +4926,8 @@ app.get('/api/retranslate', searchLimiter, async (req, res) => {
         const historyTitle = normalizedTitle || normalizedFilename || normalizedSourceFileId;
         const historyFilename = normalizedFilename || historyTitle || normalizedSourceFileId;
         const historyVideoId = normalizedVideoId || 'unknown';
-        const historySourceLanguage = normalizedSourceLanguage
-            || (Array.isArray(config.sourceLanguages) && config.sourceLanguages[0])
-            || 'auto';
+        const historySourceLanguage =
+            normalizedSourceLanguage || (Array.isArray(config.sourceLanguages) && config.sourceLanguages[0]) || 'auto';
         const historySeed = {
             id: historyRequestId,
             status: 'processing',
@@ -4517,7 +4935,8 @@ app.get('/api/retranslate', searchLimiter, async (req, res) => {
             title: historyTitle,
             filename: historyFilename,
             videoId: historyVideoId,
-            videoHash: normalizedVideoHash || deriveVideoHash(historyFilename, historyVideoId || normalizedSourceFileId || ''),
+            videoHash:
+                normalizedVideoHash || deriveVideoHash(historyFilename, historyVideoId || normalizedSourceFileId || ''),
             sourceFileId: normalizedSourceFileId,
             sourceLanguage: historySourceLanguage,
             targetLanguage: normalizedTargetLanguage,
@@ -4545,11 +4964,17 @@ app.get('/api/retranslate', searchLimiter, async (req, res) => {
             episode: episodeNumber,
             historyRequestId,
             historySeed
-        }).catch(error => {
-            log.warn(() => `[Retranslate API] Background retranslation failed for ${normalizedSourceFileId}/${normalizedTargetLanguage}: ${error.message}`);
+        }).catch((error) => {
+            log.warn(
+                () =>
+                    `[Retranslate API] Background retranslation failed for ${normalizedSourceFileId}/${normalizedTargetLanguage}: ${error.message}`
+            );
         });
 
-        log.info(() => `[Retranslate API] Fresh translation started for ${normalizedSourceFileId}/${normalizedTargetLanguage}, remaining resets: ${remainingResets}`);
+        log.info(
+            () =>
+                `[Retranslate API] Fresh translation started for ${normalizedSourceFileId}/${normalizedTargetLanguage}, remaining resets: ${remainingResets}`
+        );
 
         return res.json({
             success: true,
@@ -4558,14 +4983,17 @@ app.get('/api/retranslate', searchLimiter, async (req, res) => {
             historyEntryId: historyRequestId,
             remaining: Math.max(0, remainingResets)
         });
-
     } catch (error) {
         log.error(() => ['[Retranslate API] Error:', error]);
         const t = res.locals?.t || getTranslatorFromRequest(req, res);
         if (respondStorageUnavailable(res, error, '[Retranslate API]', t)) return;
         res.status(500).json({
             success: false,
-            error: t('server.errors.retranslateFailed', { reason: error.message }, `Retranslation failed: ${error.message}`)
+            error: t(
+                'server.errors.retranslateFailed',
+                { reason: error.message },
+                `Retranslation failed: ${error.message}`
+            )
         });
     }
 });
@@ -4639,7 +5067,10 @@ async function resolveConfigAsync(configStr, req) {
             if (cachedConfig) {
                 // DEFENSE LAYER 2: Verify cached config doesn't contain contamination markers
                 if (cachedConfig.__sessionTokenError || cachedConfig.__originalToken) {
-                    log.error(() => `[SECURITY] Cache contamination detected in resolveConfigCache for key ${redactToken(configStr)} - purging entry`);
+                    log.error(
+                        () =>
+                            `[SECURITY] Cache contamination detected in resolveConfigCache for key ${redactToken(configStr)} - purging entry`
+                    );
                     resolveConfigCache.delete(configStr);
                 } else {
                     // DEFENSE LAYER 3: Deep clone to prevent shared references
@@ -4648,7 +5079,10 @@ async function resolveConfigAsync(configStr, req) {
             }
         } else {
             // SECURITY ALERT: A potential token passed the initial !isToken check
-            log.error(() => `[SECURITY CRITICAL] Potential token ${redactToken(configStr)} passed !isToken check but failed strict validation - REFUSING cache lookup`);
+            log.error(
+                () =>
+                    `[SECURITY CRITICAL] Potential token ${redactToken(configStr)} passed !isToken check but failed strict validation - REFUSING cache lookup`
+            );
         }
     }
 
@@ -4714,15 +5148,22 @@ async function resolveConfigAsync(configStr, req) {
 
             // Persist the corrected config asynchronously (fire-and-forget, don't block the response)
             // This updates the stored session so future requests won't trigger the same warning
-            sessionManager.updateSession(configStr, configForPersistence)
-                .then(updated => {
+            sessionManager
+                .updateSession(configStr, configForPersistence)
+                .then((updated) => {
                     if (updated) {
-                        log.info(() => `[ConfigResolver] Persisted auto-corrected config to session: ${redactToken(configStr)} (reason: ${persistReason})`);
+                        log.info(
+                            () =>
+                                `[ConfigResolver] Persisted auto-corrected config to session: ${redactToken(configStr)} (reason: ${persistReason})`
+                        );
                     } else {
-                        log.warn(() => `[ConfigResolver] Failed to persist auto-corrected config - session not found: ${redactToken(configStr)}`);
+                        log.warn(
+                            () =>
+                                `[ConfigResolver] Failed to persist auto-corrected config - session not found: ${redactToken(configStr)}`
+                        );
                     }
                 })
-                .catch(err => {
+                .catch((err) => {
                     log.error(() => `[ConfigResolver] Error persisting auto-corrected config: ${err?.message || err}`);
                 });
         }
@@ -4735,7 +5176,10 @@ async function resolveConfigAsync(configStr, req) {
                 normalized.__sessionDisabled = true;
             }
         } catch (metaErr) {
-            log.debug(() => `[ConfigResolver] Failed to inspect session state for ${redactToken(configStr)}: ${metaErr.message}`);
+            log.debug(
+                () =>
+                    `[ConfigResolver] Failed to inspect session state for ${redactToken(configStr)}: ${metaErr.message}`
+            );
         }
         // SECURITY: NEVER cache configs retrieved via session tokens
         return deepCloneConfig(normalized);
@@ -4748,7 +5192,10 @@ async function resolveConfigAsync(configStr, req) {
     // Session token not found - return default config with error flag
     // NOTE: We do NOT create a new session here - that should only happen via /api/get-session?autoRegenerate=true
     // Creating tokens here would result in multiple tokens being generated during page load
-    log.warn(() => `[ConfigResolver] Session token not found: ${configStr.substring(0, 8)}..., returning default config with error flag`);
+    log.warn(
+        () =>
+            `[ConfigResolver] Session token not found: ${configStr.substring(0, 8)}..., returning default config with error flag`
+    );
     missingSessionTokenCache.set(configStr, true);
 
     // SECURITY: Do NOT cache error/fallback configs
@@ -4766,7 +5213,7 @@ function detectSubtitlePayloadFormat(content) {
     const detectedAss = detectASSFormat(trimmed);
     const isAss = detectedAss.isASS && detectedAss.format !== 'ssa';
     const isSsa = detectedAss.isASS && detectedAss.format === 'ssa';
-    const ext = isVtt ? 'vtt' : (isSsa ? 'ssa' : (isAss ? 'ass' : 'srt'));
+    const ext = isVtt ? 'vtt' : isSsa ? 'ssa' : isAss ? 'ass' : 'srt';
     return { isVtt, isAss, isSsa, ext };
 }
 
@@ -4783,7 +5230,9 @@ const subtitleDownloadHandler = async (req, res) => {
         const config = await resolveConfigGuarded(configStr, req, res, '[Download] config', t);
         if (!config) return;
         if (isInvalidSessionConfig(config)) {
-            log.warn(() => `[Download] Blocked subtitle download due to invalid session token ${redactToken(configStr)}`);
+            log.warn(
+                () => `[Download] Blocked subtitle download due to invalid session token ${redactToken(configStr)}`
+            );
             const errorSubtitle = createSessionTokenErrorSubtitle(null, null, config?.uiLanguage || 'en');
             res.setHeader('Content-Type', 'text/plain; charset=utf-8');
             res.setHeader('Content-Disposition', 'attachment; filename=\"session-token-not-found.srt\"');
@@ -4792,12 +5241,12 @@ const subtitleDownloadHandler = async (req, res) => {
         }
         t = getTranslatorFromRequest(req, res, config);
         const configKey = ensureConfigHash(config, configStr);
-        const downloadCacheVariant = (config.convertAssToVtt === false && config.forceSRTOutput !== true)
-            ? 'download_raw_ass'
-            : 'download_converted';
-        const assHeaderTestMode = config.devMode === true
-            && config.convertAssToVtt === false
-            && config.forceSRTOutput !== true;
+        const downloadCacheVariant =
+            config.convertAssToVtt === false && config.forceSRTOutput !== true
+                ? 'download_raw_ass'
+                : 'download_converted';
+        const assHeaderTestMode =
+            config.devMode === true && config.convertAssToVtt === false && config.forceSRTOutput !== true;
         const androidCompatMode = String(config.androidSubtitleCompatMode || 'off').toLowerCase();
         const strictSrtHeaders = androidCompatMode === 'aggressive';
 
@@ -4811,14 +5260,23 @@ const subtitleDownloadHandler = async (req, res) => {
         const cachedContent = getDownloadCached(fileId, downloadCacheVariant);
         if (cachedContent) {
             const cacheStats = getDownloadCacheStats();
-            log.debug(() => `[Download Cache] HIT for ${fileId} in ${langCode} (${cachedContent.length} bytes) - Cache: ${cacheStats.size}/${cacheStats.max} entries, ${cacheStats.sizeMB}/${cacheStats.maxSizeMB}MB`);
+            log.debug(
+                () =>
+                    `[Download Cache] HIT for ${fileId} in ${langCode} (${cachedContent.length} bytes) - Cache: ${cacheStats.size}/${cacheStats.max} entries, ${cacheStats.sizeMB}/${cacheStats.maxSizeMB}MB`
+            );
 
             // Validate cached content isn't corrupted (same check as download flow)
             const minSize = Number(config.minSubtitleSizeBytes) || 200;
             if (cachedContent.length < minSize) {
-                log.warn(() => `[Download Cache] Cached content too small (${cachedContent.length} bytes < ${minSize}). Serving corruption warning.`);
+                log.warn(
+                    () =>
+                        `[Download Cache] Cached content too small (${cachedContent.length} bytes < ${minSize}). Serving corruption warning.`
+                );
                 const { createInvalidSubtitleMessage } = require('./src/handlers/subtitles');
-                const errorMessage = createInvalidSubtitleMessage('The subtitle file is too small and seems corrupted.', config?.uiLanguage || 'en');
+                const errorMessage = createInvalidSubtitleMessage(
+                    'The subtitle file is too small and seems corrupted.',
+                    config?.uiLanguage || 'en'
+                );
                 res.setHeader('Content-Type', 'text/plain; charset=utf-8');
                 res.setHeader('Content-Disposition', `attachment; filename="${fileId}.srt"`);
                 setSubtitleCacheHeaders(res, 'loading');
@@ -4859,10 +5317,18 @@ const subtitleDownloadHandler = async (req, res) => {
                     res.setHeader('Content-Disposition', `attachment; filename="${fileId}.srt"`);
                 }
             }
-            const requestExt = ((req.originalUrl || '').match(/\.(srt|sub|vtt|ass|ssa)(?:\?|$)/i)?.[1] || 'none').toLowerCase();
-            const payloadFormat = isVtt ? 'vtt' : isSsa ? 'ssa' : (isAss ? 'ass' : 'srt');
-            if ((requestExt === 'srt' || requestExt === 'sub') && (payloadFormat === 'ass' || payloadFormat === 'ssa')) {
-                log.debug(() => `[Download] Extension/payload mismatch file=${fileId} ext=${requestExt} payload=${payloadFormat} cache=hit`);
+            const requestExt = (
+                (req.originalUrl || '').match(/\.(srt|sub|vtt|ass|ssa)(?:\?|$)/i)?.[1] || 'none'
+            ).toLowerCase();
+            const payloadFormat = isVtt ? 'vtt' : isSsa ? 'ssa' : isAss ? 'ass' : 'srt';
+            if (
+                (requestExt === 'srt' || requestExt === 'sub') &&
+                (payloadFormat === 'ass' || payloadFormat === 'ssa')
+            ) {
+                log.debug(
+                    () =>
+                        `[Download] Extension/payload mismatch file=${fileId} ext=${requestExt} payload=${payloadFormat} cache=hit`
+                );
             }
             setSubtitleCacheHeaders(res, 'final');
             res.send(cachedContent);
@@ -4877,18 +5343,22 @@ const subtitleDownloadHandler = async (req, res) => {
         // file IDs, and immediately allow the file the client requests again
         // as its real selection. Cache hits above never enter this guard.
         const providerPrefixes = ['subdl_', 'subsource_', 'v3_'];
-        const isOpenSubtitlesAuthFile = !providerPrefixes.some(prefix => fileId.startsWith(prefix));
+        const isOpenSubtitlesAuthFile = !providerPrefixes.some((prefix) => fileId.startsWith(prefix));
         const openSubtitlesConfig = config.subtitleProviders?.opensubtitles || {};
-        const usesOpenSubtitlesAuth = openSubtitlesConfig.enabled === true
-            && String(openSubtitlesConfig.implementationType || 'v3').toLowerCase() === 'auth'
-            && !!openSubtitlesConfig.username
-            && !!openSubtitlesConfig.password;
+        const usesOpenSubtitlesAuth =
+            openSubtitlesConfig.enabled === true &&
+            String(openSubtitlesConfig.implementationType || 'v3').toLowerCase() === 'auth' &&
+            !!openSubtitlesConfig.username &&
+            !!openSubtitlesConfig.password;
         if (isOpenSubtitlesAuthFile && usesOpenSubtitlesAuth) {
             const intent = await checkOpenSubtitlesDownloadIntent(configKey, fileId);
             if (!intent.allowed) {
                 log.debug(() => `[Download] Deferred OpenSubtitles prefetch for ${fileId}: ${intent.reason}`);
                 const { createInvalidSubtitleMessage } = require('./src/handlers/subtitles');
-                const prefetchMessage = createInvalidSubtitleMessage('Click again to load this subtitle.', config?.uiLanguage || 'en');
+                const prefetchMessage = createInvalidSubtitleMessage(
+                    'Click again to load this subtitle.',
+                    config?.uiLanguage || 'en'
+                );
                 res.setHeader('Content-Type', 'text/plain; charset=utf-8');
                 res.setHeader('Content-Disposition', `attachment; filename="${fileId}.srt"`);
                 setSubtitleCacheHeaders(res, 'loading');
@@ -4904,7 +5374,10 @@ const subtitleDownloadHandler = async (req, res) => {
         if (prefetchCooldown.blocked) {
             log.debug(() => `[Download] Blocked by prefetch cooldown: ${prefetchCooldown.reason} for ${fileId}`);
             const { createInvalidSubtitleMessage } = require('./src/handlers/subtitles');
-            const cooldownMessage = createInvalidSubtitleMessage('Click again to load this subtitle.', config?.uiLanguage || 'en');
+            const cooldownMessage = createInvalidSubtitleMessage(
+                'Click again to load this subtitle.',
+                config?.uiLanguage || 'en'
+            );
             res.setHeader('Content-Type', 'text/plain; charset=utf-8');
             res.setHeader('Content-Disposition', `attachment; filename="${fileId}.srt"`);
             setSubtitleCacheHeaders(res, 'loading');
@@ -4916,9 +5389,15 @@ const subtitleDownloadHandler = async (req, res) => {
         if (downloadBurst.isBurst) {
             // Stremio is prefetching all subtitles - return empty to save API quota
             // User can click again to actually download
-            log.debug(() => `[Download] Burst detected: ${downloadBurst.count} downloads in ${DOWNLOAD_BURST_WINDOW_MS}ms. Deferring ${fileId} (first was ${downloadBurst.firstFileId})`);
+            log.debug(
+                () =>
+                    `[Download] Burst detected: ${downloadBurst.count} downloads in ${DOWNLOAD_BURST_WINDOW_MS}ms. Deferring ${fileId} (first was ${downloadBurst.firstFileId})`
+            );
             const { createInvalidSubtitleMessage } = require('./src/handlers/subtitles');
-            const deferMessage = createInvalidSubtitleMessage('Click again to load this subtitle.', config?.uiLanguage || 'en');
+            const deferMessage = createInvalidSubtitleMessage(
+                'Click again to load this subtitle.',
+                config?.uiLanguage || 'en'
+            );
             res.setHeader('Content-Type', 'text/plain; charset=utf-8');
             res.setHeader('Content-Disposition', `attachment; filename="${fileId}.srt"`);
             setSubtitleCacheHeaders(res, 'loading');
@@ -4929,15 +5408,16 @@ const subtitleDownloadHandler = async (req, res) => {
         const isAlreadyInFlight = inFlightRequests.has(dedupKey);
 
         if (isAlreadyInFlight) {
-            log.debug(() => `[Download Cache] MISS for ${fileId} in ${langCode} - Duplicate in-flight request detected, waiting...`);
+            log.debug(
+                () =>
+                    `[Download Cache] MISS for ${fileId} in ${langCode} - Duplicate in-flight request detected, waiting...`
+            );
         } else {
             log.debug(() => `[Download Cache] MISS for ${fileId} in ${langCode} - Starting new download`);
         }
 
         // STEP 5: Download with deduplication (prevents concurrent downloads of same subtitle)
-        const content = await deduplicate(dedupKey, () =>
-            handleSubtitleDownload(fileId, langCode, config)
-        );
+        const content = await deduplicate(dedupKey, () => handleSubtitleDownload(fileId, langCode, config));
 
         // STEP 6: Save to cache for future requests (shared with translation flow)
         saveDownloadCached(fileId, content, downloadCacheVariant);
@@ -4975,14 +5455,18 @@ const subtitleDownloadHandler = async (req, res) => {
                 res.setHeader('Content-Disposition', `attachment; filename="${fileId}.srt"`);
             }
         }
-        const requestExt = ((req.originalUrl || '').match(/\.(srt|sub|vtt|ass|ssa)(?:\?|$)/i)?.[1] || 'none').toLowerCase();
-        const payloadFormat = isVtt ? 'vtt' : isSsa ? 'ssa' : (isAss ? 'ass' : 'srt');
+        const requestExt = (
+            (req.originalUrl || '').match(/\.(srt|sub|vtt|ass|ssa)(?:\?|$)/i)?.[1] || 'none'
+        ).toLowerCase();
+        const payloadFormat = isVtt ? 'vtt' : isSsa ? 'ssa' : isAss ? 'ass' : 'srt';
         if ((requestExt === 'srt' || requestExt === 'sub') && (payloadFormat === 'ass' || payloadFormat === 'ssa')) {
-            log.debug(() => `[Download] Extension/payload mismatch file=${fileId} ext=${requestExt} payload=${payloadFormat} cache=miss`);
+            log.debug(
+                () =>
+                    `[Download] Extension/payload mismatch file=${fileId} ext=${requestExt} payload=${payloadFormat} cache=miss`
+            );
         }
         setSubtitleCacheHeaders(res, 'final');
         res.send(content);
-
     } catch (error) {
         const t = res.locals?.t || getTranslatorFromRequest(req, res);
         if (respondStorageUnavailable(res, error, '[Download]', t)) return;
@@ -5009,9 +5493,10 @@ const subtitleResolveHandler = async (req, res) => {
             return res.status(401).send(errorSubtitle);
         }
 
-        const downloadCacheVariant = (config.convertAssToVtt === false && config.forceSRTOutput !== true)
-            ? 'download_raw_ass'
-            : 'download_converted';
+        const downloadCacheVariant =
+            config.convertAssToVtt === false && config.forceSRTOutput !== true
+                ? 'download_raw_ass'
+                : 'download_converted';
         let content = getDownloadCached(fileId, downloadCacheVariant);
         if (!content) {
             content = await handleSubtitleDownload(fileId, language, config);
@@ -5041,11 +5526,31 @@ const subtitleContentHandler = async (req, res) => {
 // Do not put these behind the generic SubMaker search limiter. Stremio clients
 // may retry or probe subtitle URLs aggressively, and download delivery should
 // not create a SubMaker-side 429 before provider/auth handling gets a chance.
-app.get('/addon/:config/subtitle/:fileId/:language.srt', validateRequest(subtitleParamsSchema, 'params'), subtitleDownloadHandler);
-app.get('/addon/:config/subtitle/:fileId/:language.sub', validateRequest(subtitleParamsSchema, 'params'), subtitleDownloadHandler);
-app.get('/addon/:config/subtitle/:fileId/:language', validateRequest(subtitleParamsSchema, 'params'), subtitleDownloadHandler);
-app.get('/addon/:config/subtitle-resolve/:fileId/:language', validateRequest(subtitleParamsSchema, 'params'), subtitleResolveHandler);
-app.get('/addon/:config/subtitle-content/:fileId/:language.:ext', validateRequest(subtitleContentParamsSchema, 'params'), subtitleContentHandler);
+app.get(
+    '/addon/:config/subtitle/:fileId/:language.srt',
+    validateRequest(subtitleParamsSchema, 'params'),
+    subtitleDownloadHandler
+);
+app.get(
+    '/addon/:config/subtitle/:fileId/:language.sub',
+    validateRequest(subtitleParamsSchema, 'params'),
+    subtitleDownloadHandler
+);
+app.get(
+    '/addon/:config/subtitle/:fileId/:language',
+    validateRequest(subtitleParamsSchema, 'params'),
+    subtitleDownloadHandler
+);
+app.get(
+    '/addon/:config/subtitle-resolve/:fileId/:language',
+    validateRequest(subtitleParamsSchema, 'params'),
+    subtitleResolveHandler
+);
+app.get(
+    '/addon/:config/subtitle-content/:fileId/:language.:ext',
+    validateRequest(subtitleContentParamsSchema, 'params'),
+    subtitleContentHandler
+);
 
 // Custom route: Serve error subtitles for config errors (BEFORE SDK router to take precedence)
 app.get('/addon/:config/error-subtitle/:errorType.srt', async (req, res) => {
@@ -5074,7 +5579,10 @@ app.get('/addon/:config/error-subtitle/:errorType.srt', async (req, res) => {
             if (allowRegenerate) {
                 const { token } = await regenerateDefaultConfig();
                 regeneratedToken = token;
-                log.info(() => `[Error Subtitle] Generated fresh token for error subtitle reinstall link: ${redactToken(token)}`);
+                log.info(
+                    () =>
+                        `[Error Subtitle] Generated fresh token for error subtitle reinstall link: ${redactToken(token)}`
+                );
             } else {
                 log.debug(() => `[Error Subtitle] Skipping token regeneration for reinstall link (no regenerate flag)`);
             }
@@ -5104,7 +5612,6 @@ app.get('/addon/:config/error-subtitle/:errorType.srt', async (req, res) => {
         res.setHeader('Content-Type', 'text/plain; charset=utf-8');
         res.setHeader('Content-Disposition', `attachment; filename="${errorType}.srt"`);
         res.send(content);
-
     } catch (error) {
         const t = res.locals?.t || getTranslatorFromRequest(req, res);
         if (respondStorageUnavailable(res, error, '[Error Subtitle]', t)) return;
@@ -5114,452 +5621,597 @@ app.get('/addon/:config/error-subtitle/:errorType.srt', async (req, res) => {
 });
 
 // Custom route: Perform translation (BEFORE SDK router to take precedence)
-app.get('/addon/:config/translate/:sourceFileId/:targetLang', normalizeSubtitleFormatParams, searchLimiter, validateRequest(translationParamsSchema, 'params'), async (req, res) => {
-    try {
-        let t = res.locals?.t || getTranslatorFromRequest(req, res);
-        const { config: configStr, sourceFileId, targetLang } = req.params;
-        const config = await resolveConfigGuarded(configStr, req, res, '[Translation] config', t);
-        if (!config) return;
-        if (isInvalidSessionConfig(config)) {
-            log.warn(() => `[Translation] Blocked translation due to invalid session token ${redactToken(configStr)}`);
-            const errorSubtitle = createSessionTokenErrorSubtitle(null, null, config?.uiLanguage || 'en');
-            res.setHeader('Content-Type', 'text/plain; charset=utf-8');
-            res.setHeader('Content-Disposition', 'attachment; filename=\"session-token-not-found.srt\"');
-            setSubtitleCacheHeaders(res, 'loading');
-            return res.status(401).send(errorSubtitle);
-        }
-        t = getTranslatorFromRequest(req, res, config);
-        const configKey = ensureConfigHash(config, configStr);
-        const mobileQuery = String(req.query.mobileMode || req.query.mobile || '').toLowerCase();
-        const queryForcesMobile = ['1', 'true', 'yes', 'on'].includes(mobileQuery);
-        // Mobile mode is now ONLY enabled when explicitly configured or forced via query string
-        // Automatic Android detection has been removed for consistency across all devices
-        const waitForFullTranslation = (config.mobileMode === true) || queryForcesMobile;
-
-        // Create deduplication key based on source file and target language
-        const dedupKey = `translate:${configKey}:${sourceFileId}:${targetLang}`;
-
-        // Unusual purge: if same translated subtitle is loaded 3 times in < 3s, purge and retrigger
-        // SAFETY BLOCK: Only purge if translation is NOT currently in progress
+app.get(
+    '/addon/:config/translate/:sourceFileId/:targetLang',
+    normalizeSubtitleFormatParams,
+    searchLimiter,
+    validateRequest(translationParamsSchema, 'params'),
+    async (req, res) => {
         try {
-            const clickKey = `translate-click:${configKey}:${sourceFileId}:${targetLang}`;
-            const now = Date.now();
-            const windowMs = 3_000; // FIX: Turunkan ke 3 saat (manusia tak ambil masa 5 saat untuk 3 klik)
-            const entry = firstClickTracker.get(clickKey) || { times: [] };
-            
-            // Keep only clicks within window
-            entry.times = (entry.times || []).filter(t => now - t <= windowMs);
-            
-            // HUMAN CHECK: Prevent 4ms Android spam AND automated 1s+ retries from mobile players
-            const lastClick = entry.times.length > 0 ? entry.times[entry.times.length - 1] : 0;
-            const timeDiff = now - lastClick;
-            
-            // FIX: Abaikan spam terlalu laju (<250ms) DAN auto-retry lambat (>1200ms) dari ExoPlayer/libmpv
-            const isHumanClick = entry.times.length === 0 || (timeDiff > 250 && timeDiff < 1200);
-
-            if (isHumanClick) {
-                entry.times.push(now);
-                firstClickTracker.set(clickKey, entry);
-            } else {
-                log.debug(() => `[PurgeTrigger] Ignoring automated spam/retry from client (Delta: ${timeDiff}ms)`);
+            let t = res.locals?.t || getTranslatorFromRequest(req, res);
+            const { config: configStr, sourceFileId, targetLang } = req.params;
+            const config = await resolveConfigGuarded(configStr, req, res, '[Translation] config', t);
+            if (!config) return;
+            if (isInvalidSessionConfig(config)) {
+                log.warn(
+                    () => `[Translation] Blocked translation due to invalid session token ${redactToken(configStr)}`
+                );
+                const errorSubtitle = createSessionTokenErrorSubtitle(null, null, config?.uiLanguage || 'en');
+                res.setHeader('Content-Type', 'text/plain; charset=utf-8');
+                res.setHeader('Content-Disposition', 'attachment; filename=\"session-token-not-found.srt\"');
+                setSubtitleCacheHeaders(res, 'loading');
+                return res.status(401).send(errorSubtitle);
             }
+            t = getTranslatorFromRequest(req, res, config);
+            const configKey = ensureConfigHash(config, configStr);
+            const mobileQuery = String(req.query.mobileMode || req.query.mobile || '').toLowerCase();
+            const queryForcesMobile = ['1', 'true', 'yes', 'on'].includes(mobileQuery);
+            // Mobile mode is now ONLY enabled when explicitly configured or forced via query string
+            // Automatic Android detection has been removed for consistency across all devices
+            const waitForFullTranslation = config.mobileMode === true || queryForcesMobile;
 
-            if (entry.times.length >= 3) {
-                // CRITICAL FIX: Reset counter SYNCHRONOUSLY before any 'await' to prevent Race Conditions!
-                firstClickTracker.set(clickKey, { times: [] });
+            // Create deduplication key based on source file and target language
+            const dedupKey = `translate:${configKey}:${sourceFileId}:${targetLang}`;
 
-                // SAFETY CHECK: Block cache reset if translation is in progress
-                const shouldBlock = await shouldBlockCacheReset(clickKey, sourceFileId, config, targetLang);
+            // Unusual purge: if same translated subtitle is loaded 3 times in < 3s, purge and retrigger
+            // SAFETY BLOCK: Only purge if translation is NOT currently in progress
+            try {
+                const clickKey = `translate-click:${configKey}:${sourceFileId}:${targetLang}`;
+                const now = Date.now();
+                const windowMs = 3_000; // FIX: Turunkan ke 3 saat (manusia tak ambil masa 5 saat untuk 3 klik)
+                const entry = firstClickTracker.get(clickKey) || { times: [] };
 
-                if (shouldBlock) {
-                    log.debug(() => `[PurgeTrigger] 3 rapid loads detected but BLOCKED: Translation in progress for ${sourceFileId}/${targetLang} (user: ${config.__configHash})`);
+                // Keep only clicks within window
+                entry.times = (entry.times || []).filter((t) => now - t <= windowMs);
+
+                // HUMAN CHECK: Prevent 4ms Android spam AND automated 1s+ retries from mobile players
+                const lastClick = entry.times.length > 0 ? entry.times[entry.times.length - 1] : 0;
+                const timeDiff = now - lastClick;
+
+                // FIX: Abaikan spam terlalu laju (<250ms) DAN auto-retry lambat (>1200ms) dari ExoPlayer/libmpv
+                const isHumanClick = entry.times.length === 0 || (timeDiff > 250 && timeDiff < 1200);
+
+                if (isHumanClick) {
+                    entry.times.push(now);
+                    firstClickTracker.set(clickKey, entry);
                 } else {
-                    const rateLimitStatus = checkCacheResetRateLimit(config, { consume: false });
+                    log.debug(() => `[PurgeTrigger] Ignoring automated spam/retry from client (Delta: ${timeDiff}ms)`);
+                }
 
-                    if (rateLimitStatus.blocked) {
-                        log.warn(() => `[PurgeTrigger] BLOCKING 3-click reset: Rate limit reached for ${rateLimitStatus.cacheType} cache (${rateLimitStatus.limit}/${Math.round(CACHE_RESET_WINDOW_MS / 60000)}m) on ${sourceFileId}/${targetLang} (user: ${getConfigHashSafe(config)})`);
+                if (entry.times.length >= 3) {
+                    // CRITICAL FIX: Reset counter SYNCHRONOUSLY before any 'await' to prevent Race Conditions!
+                    firstClickTracker.set(clickKey, { times: [] });
+
+                    // SAFETY CHECK: Block cache reset if translation is in progress
+                    const shouldBlock = await shouldBlockCacheReset(clickKey, sourceFileId, config, targetLang);
+
+                    if (shouldBlock) {
+                        log.debug(
+                            () =>
+                                `[PurgeTrigger] 3 rapid loads detected but BLOCKED: Translation in progress for ${sourceFileId}/${targetLang} (user: ${config.__configHash})`
+                        );
                     } else {
-                        const { runtimeKey } = generateCacheKeys(config, sourceFileId, targetLang);
-                        const hadCache = await hasCachedTranslation(sourceFileId, targetLang, config);
-                        const partial = (!hadCache) ? await readFromPartialCache(runtimeKey) : null;
-                        const hasResetTarget = hadCache || (partial && typeof partial.content === 'string' && partial.content.length > 0);
+                        const rateLimitStatus = checkCacheResetRateLimit(config, { consume: false });
 
-                        if (!hasResetTarget) {
-                            log.debug(() => `[PurgeTrigger] 3 rapid loads detected but no cached translation or partial found for ${sourceFileId}/${targetLang}. Skipping purge and rate-limit consumption.`);
+                        if (rateLimitStatus.blocked) {
+                            log.warn(
+                                () =>
+                                    `[PurgeTrigger] BLOCKING 3-click reset: Rate limit reached for ${rateLimitStatus.cacheType} cache (${rateLimitStatus.limit}/${Math.round(CACHE_RESET_WINDOW_MS / 60000)}m) on ${sourceFileId}/${targetLang} (user: ${getConfigHashSafe(config)})`
+                            );
                         } else {
-                            // Consume rate-limit slot only when we actually purge
-                            const consumeStatus = checkCacheResetRateLimit(config);
-                            if (consumeStatus.blocked) {
-                                log.warn(() => `[PurgeTrigger] BLOCKING 3-click reset: Rate limit reached for ${consumeStatus.cacheType} cache (${consumeStatus.limit}/${Math.round(CACHE_RESET_WINDOW_MS / 60000)}m) on ${sourceFileId}/${targetLang} (user: ${getConfigHashSafe(config)})`);
+                            const { runtimeKey } = generateCacheKeys(config, sourceFileId, targetLang);
+                            const hadCache = await hasCachedTranslation(sourceFileId, targetLang, config);
+                            const partial = !hadCache ? await readFromPartialCache(runtimeKey) : null;
+                            const hasResetTarget =
+                                hadCache ||
+                                (partial && typeof partial.content === 'string' && partial.content.length > 0);
+
+                            if (!hasResetTarget) {
+                                log.debug(
+                                    () =>
+                                        `[PurgeTrigger] 3 rapid loads detected but no cached translation or partial found for ${sourceFileId}/${targetLang}. Skipping purge and rate-limit consumption.`
+                                );
                             } else {
-                                log.debug(() => `[PurgeTrigger] 3 rapid loads detected (<5s) for ${sourceFileId}/${targetLang}. Purging ${hadCache ? 'cached translation' : 'partial translation cache'} and re-triggering translation. Remaining resets this window: ${consumeStatus.remaining}`);
-                                await purgeTranslationCache(sourceFileId, targetLang, config);
+                                // Consume rate-limit slot only when we actually purge
+                                const consumeStatus = checkCacheResetRateLimit(config);
+                                if (consumeStatus.blocked) {
+                                    log.warn(
+                                        () =>
+                                            `[PurgeTrigger] BLOCKING 3-click reset: Rate limit reached for ${consumeStatus.cacheType} cache (${consumeStatus.limit}/${Math.round(CACHE_RESET_WINDOW_MS / 60000)}m) on ${sourceFileId}/${targetLang} (user: ${getConfigHashSafe(config)})`
+                                    );
+                                } else {
+                                    log.debug(
+                                        () =>
+                                            `[PurgeTrigger] 3 rapid loads detected (<5s) for ${sourceFileId}/${targetLang}. Purging ${hadCache ? 'cached translation' : 'partial translation cache'} and re-triggering translation. Remaining resets this window: ${consumeStatus.remaining}`
+                                    );
+                                    await purgeTranslationCache(sourceFileId, targetLang, config);
+                                }
                             }
                         }
                     }
                 }
+            } catch (e) {
+                log.warn(() => '[PurgeTrigger] Click tracking error:', e.message);
             }
-        } catch (e) {
-            log.warn(() => '[PurgeTrigger] Click tracking error:', e.message);
-        }
-        
-        // Prefetch Cooldown: Block libmpv prefetch requests during cooldown window after subtitle list is served
-        // This is more targeted than burst detection - specifically for Stremio Community clients
-        // NOTE: Use configStr (session token) here, NOT configKey (computed hash) - the cooldown is set
-        // using the session token from req.params.config in the subtitle list response middleware
-        const prefetchCooldown = checkStremioCommunityPrefetchCooldown(configStr, req);
-        if (prefetchCooldown.blocked) {
-            log.debug(() => `[Translation] Blocked by prefetch cooldown: ${prefetchCooldown.reason} for ${sourceFileId}`);
-            const cooldownMsg = createLoadingSubtitle(config?.uiLanguage || 'en');
-            res.setHeader('Content-Type', 'text/plain; charset=utf-8');
-            res.setHeader('Content-Disposition', `attachment; filename="click_to_translate_${targetLang}.srt"`);
-            setSubtitleCacheHeaders(res, 'loading');
-            return res.send(cooldownMsg);
-        }
 
-        // Burst Detection: Detect when Stremio/libmpv prefetches ALL translation URLs at once
-        // This prevents starting multiple expensive translations during prefetch
-        const burstCheck = checkTranslationBurst(configKey, sourceFileId, targetLang);
-        if (burstCheck.isBurst) {
-            // This is part of a prefetch burst - return a "click to translate" message
-            // The first request in the burst (firstSourceId) is allowed through
-            log.debug(() => `[Translation] Burst detected: ${burstCheck.count} requests in ${TRANSLATION_BURST_WINDOW_MS}ms. Blocking prefetch for ${sourceFileId} (first was ${burstCheck.firstSourceId})`);
-            const clickToTranslateMsg = createLoadingSubtitle(config?.uiLanguage || 'en');
-            res.setHeader('Content-Type', 'text/plain; charset=utf-8');
-            res.setHeader('Content-Disposition', `attachment; filename="click_to_translate_${targetLang}.srt"`);
-            setSubtitleCacheHeaders(res, 'loading');
-            return res.send(clickToTranslateMsg);
-        }
+            // Prefetch Cooldown: Block libmpv prefetch requests during cooldown window after subtitle list is served
+            // This is more targeted than burst detection - specifically for Stremio Community clients
+            // NOTE: Use configStr (session token) here, NOT configKey (computed hash) - the cooldown is set
+            // using the session token from req.params.config in the subtitle list response middleware
+            const prefetchCooldown = checkStremioCommunityPrefetchCooldown(configStr, req);
+            if (prefetchCooldown.blocked) {
+                log.debug(
+                    () => `[Translation] Blocked by prefetch cooldown: ${prefetchCooldown.reason} for ${sourceFileId}`
+                );
+                const cooldownMsg = createLoadingSubtitle(config?.uiLanguage || 'en');
+                res.setHeader('Content-Type', 'text/plain; charset=utf-8');
+                res.setHeader('Content-Disposition', `attachment; filename="click_to_translate_${targetLang}.srt"`);
+                setSubtitleCacheHeaders(res, 'loading');
+                return res.send(cooldownMsg);
+            }
 
-        // Check if already in flight BEFORE logging to reduce confusion
-        const isAlreadyInFlight = inFlightRequests.has(dedupKey);
+            // Burst Detection: Detect when Stremio/libmpv prefetches ALL translation URLs at once
+            // This prevents starting multiple expensive translations during prefetch
+            const burstCheck = checkTranslationBurst(configKey, sourceFileId, targetLang);
+            if (burstCheck.isBurst) {
+                // This is part of a prefetch burst - return a "click to translate" message
+                // The first request in the burst (firstSourceId) is allowed through
+                log.debug(
+                    () =>
+                        `[Translation] Burst detected: ${burstCheck.count} requests in ${TRANSLATION_BURST_WINDOW_MS}ms. Blocking prefetch for ${sourceFileId} (first was ${burstCheck.firstSourceId})`
+                );
+                const clickToTranslateMsg = createLoadingSubtitle(config?.uiLanguage || 'en');
+                res.setHeader('Content-Type', 'text/plain; charset=utf-8');
+                res.setHeader('Content-Disposition', `attachment; filename="click_to_translate_${targetLang}.srt"`);
+                setSubtitleCacheHeaders(res, 'loading');
+                return res.send(clickToTranslateMsg);
+            }
 
-        if (isAlreadyInFlight && waitForFullTranslation) {
-            // Don't keep piling up long-held connections in mobile mode; the first request will deliver the final SRT
-            // IMPORTANT: Use 200 (not 202) and NO Retry-After header to prevent Stremio/libmpv from
-            // continuously polling. 202 + Retry-After causes exponential request spam when libmpv
-            // prefetches all translation URLs simultaneously.
-            log.debug(() => `[Translation] Mobile mode duplicate request for ${sourceFileId} to ${targetLang} - returning loading message (primary request in progress)`);
-            setSubtitleCacheHeaders(res, 'loading');
-            return res.send(t('server.errors.translationInProgress', {}, 'Translation already in progress; waiting on primary request.'));
-        } else if (isAlreadyInFlight) {
-            log.debug(() => `[Translation] Duplicate request detected for ${sourceFileId} to ${targetLang} - checking for partial results`);
+            // Check if already in flight BEFORE logging to reduce confusion
+            const isAlreadyInFlight = inFlightRequests.has(dedupKey);
 
-            // Generate cache keys using shared utility (single source of truth for cache key scoping)
-            const { cacheKey, runtimeKey, bypass, bypassEnabled, userHash, allowPermanent } = generateCacheKeys(config, sourceFileId, targetLang);
+            if (isAlreadyInFlight && waitForFullTranslation) {
+                // Don't keep piling up long-held connections in mobile mode; the first request will deliver the final SRT
+                // IMPORTANT: Use 200 (not 202) and NO Retry-After header to prevent Stremio/libmpv from
+                // continuously polling. 202 + Retry-After causes exponential request spam when libmpv
+                // prefetches all translation URLs simultaneously.
+                log.debug(
+                    () =>
+                        `[Translation] Mobile mode duplicate request for ${sourceFileId} to ${targetLang} - returning loading message (primary request in progress)`
+                );
+                setSubtitleCacheHeaders(res, 'loading');
+                return res.send(
+                    t(
+                        'server.errors.translationInProgress',
+                        {},
+                        'Translation already in progress; waiting on primary request.'
+                    )
+                );
+            } else if (isAlreadyInFlight) {
+                log.debug(
+                    () =>
+                        `[Translation] Duplicate request detected for ${sourceFileId} to ${targetLang} - checking for partial results`
+                );
 
-            // For duplicate requests, check partial cache FIRST (in-flight translations)
-            // Partials are saved under runtimeKey (see performTranslation), so read with the same key
-            const partialCached = await readFromPartialCache(runtimeKey);
-            if (partialCached && typeof partialCached.content === 'string' && partialCached.content.length > 0) {
-                log.debug(() => `[Translation] Found in-flight partial in partial cache for ${sourceFileId} (${partialCached.content.length} chars)`);
+                // Generate cache keys using shared utility (single source of truth for cache key scoping)
+                const { cacheKey, runtimeKey, bypass, bypassEnabled, userHash, allowPermanent } = generateCacheKeys(
+                    config,
+                    sourceFileId,
+                    targetLang
+                );
+
+                // For duplicate requests, check partial cache FIRST (in-flight translations)
+                // Partials are saved under runtimeKey (see performTranslation), so read with the same key
+                const partialCached = await readFromPartialCache(runtimeKey);
+                if (partialCached && typeof partialCached.content === 'string' && partialCached.content.length > 0) {
+                    log.debug(
+                        () =>
+                            `[Translation] Found in-flight partial in partial cache for ${sourceFileId} (${partialCached.content.length} chars)`
+                    );
+                    res.setHeader('Content-Type', 'text/plain; charset=utf-8');
+                    res.setHeader('Content-Disposition', `attachment; filename="translating_${targetLang}.srt"`);
+                    setSubtitleCacheHeaders(res, 'loading');
+                    return res.send(partialCached.content);
+                }
+
+                // Then check bypass cache for user-controlled bypass cache behavior
+                const { StorageAdapter } = require('./src/storage');
+                const { getStorageAdapter } = require('./src/storage/StorageFactory');
+                const adapter = await getStorageAdapter();
+                if (bypass && bypassEnabled) {
+                    const bypassCached = await adapter.get(cacheKey, StorageAdapter.CACHE_TYPES.BYPASS);
+                    if (bypassCached && bypassCached.configHash && bypassCached.configHash !== userHash) {
+                        log.warn(
+                            () => `[Translation] Bypass cache configHash mismatch for duplicate request key=${cacheKey}`
+                        );
+                    } else if (bypassCached && !bypassCached.configHash) {
+                        log.warn(
+                            () =>
+                                `[Translation] Bypass cache entry missing configHash for duplicate request key=${cacheKey}`
+                        );
+                    }
+                    if (bypassCached && bypassCached.configHash && bypassCached.configHash === userHash) {
+                        if (bypassCached.isError === true) {
+                            log.debug(() => `[Translation] Found bypass cached error for ${sourceFileId}`);
+                            const errSrt = createTranslationErrorSubtitle(
+                                bypassCached.errorType || 'other',
+                                bypassCached.errorMessage || 'Translation failed',
+                                config?.uiLanguage || 'en',
+                                bypassCached.errorProvider || null
+                            );
+                            res.setHeader('Content-Type', 'text/plain; charset=utf-8');
+                            res.setHeader('Content-Disposition', `attachment; filename="translated_${targetLang}.srt"`);
+                            setSubtitleCacheHeaders(res, 'final');
+                            return res.send(errSrt);
+                        }
+                        if (typeof bypassCached.content === 'string' && bypassCached.content.length > 0) {
+                            log.debug(
+                                () =>
+                                    `[Translation] Found bypass cache result for ${sourceFileId} (${bypassCached.content.length} chars)`
+                            );
+                            const { isAss: bIsAss, isSsa: bIsSsa } = detectSubtitlePayloadFormat(bypassCached.content);
+                            const bExt = bIsSsa ? 'ssa' : bIsAss ? 'ass' : 'srt';
+                            res.setHeader(
+                                'Content-Type',
+                                bIsAss || bIsSsa ? 'text/x-ssa; charset=utf-8' : 'text/plain; charset=utf-8'
+                            );
+                            res.setHeader(
+                                'Content-Disposition',
+                                `attachment; filename="translated_${targetLang}.${bExt}"`
+                            );
+                            setSubtitleCacheHeaders(res, 'final');
+                            return res.send(bypassCached.content);
+                        }
+                    }
+                }
+
+                if (!bypassEnabled && allowPermanent && process.env.ENABLE_PERMANENT_TRANSLATIONS !== 'false') {
+                    const permanentKey = `t2s__${cacheKey}`;
+                    const permanentCached = await adapter.get(permanentKey, StorageAdapter.CACHE_TYPES.TRANSLATION);
+                    if (permanentCached) {
+                        if (permanentCached.isError === true) {
+                            log.debug(() => `[Translation] Found permanent cached error for ${sourceFileId}`);
+                            const errSrt = createTranslationErrorSubtitle(
+                                permanentCached.errorType || 'other',
+                                permanentCached.errorMessage || 'Translation failed',
+                                config?.uiLanguage || 'en',
+                                permanentCached.errorProvider || null
+                            );
+                            res.setHeader('Content-Type', 'text/plain; charset=utf-8');
+                            res.setHeader('Content-Disposition', `attachment; filename="translated_${targetLang}.srt"`);
+                            setSubtitleCacheHeaders(res, 'final');
+                            return res.send(errSrt);
+                        }
+                        if (typeof permanentCached.content === 'string' && permanentCached.content.length > 0) {
+                            log.debug(
+                                () =>
+                                    `[Translation] Found permanent cache result for ${sourceFileId} (${permanentCached.content.length} chars)`
+                            );
+                            const { isAss: pIsAss, isSsa: pIsSsa } = detectSubtitlePayloadFormat(
+                                permanentCached.content
+                            );
+                            const pExt = pIsSsa ? 'ssa' : pIsAss ? 'ass' : 'srt';
+                            res.setHeader(
+                                'Content-Type',
+                                pIsAss || pIsSsa ? 'text/x-ssa; charset=utf-8' : 'text/plain; charset=utf-8'
+                            );
+                            res.setHeader(
+                                'Content-Disposition',
+                                `attachment; filename="translated_${targetLang}.${pExt}"`
+                            );
+                            setSubtitleCacheHeaders(res, 'final');
+                            return res.send(permanentCached.content);
+                        }
+                    }
+                }
+
+                // No partial yet, serve loading message
+                log.debug(
+                    () =>
+                        `[Translation] No partial found yet, serving loading message to duplicate request for ${sourceFileId}`
+                );
+                const loadingMsg = createLoadingSubtitle(config?.uiLanguage || 'en');
                 res.setHeader('Content-Type', 'text/plain; charset=utf-8');
                 res.setHeader('Content-Disposition', `attachment; filename="translating_${targetLang}.srt"`);
                 setSubtitleCacheHeaders(res, 'loading');
-                return res.send(partialCached.content);
+                return res.send(loadingMsg);
+            } else {
+                log.debug(() => `[Translation] New request to translate ${sourceFileId} to ${targetLang}`);
             }
 
-            // Then check bypass cache for user-controlled bypass cache behavior
-            const { StorageAdapter } = require('./src/storage');
-            const { getStorageAdapter } = require('./src/storage/StorageFactory');
-            const adapter = await getStorageAdapter();
-            if (bypass && bypassEnabled) {
-                const bypassCached = await adapter.get(cacheKey, StorageAdapter.CACHE_TYPES.BYPASS);
-                if (bypassCached && bypassCached.configHash && bypassCached.configHash !== userHash) {
-                    log.warn(() => `[Translation] Bypass cache configHash mismatch for duplicate request key=${cacheKey}`);
-                } else if (bypassCached && !bypassCached.configHash) {
-                    log.warn(() => `[Translation] Bypass cache entry missing configHash for duplicate request key=${cacheKey}`);
-                }
-                if (bypassCached && bypassCached.configHash && bypassCached.configHash === userHash) {
-                    if (bypassCached.isError === true) {
-                        log.debug(() => `[Translation] Found bypass cached error for ${sourceFileId}`);
-                        const errSrt = createTranslationErrorSubtitle(
-                            bypassCached.errorType || 'other',
-                            bypassCached.errorMessage || 'Translation failed',
-                            config?.uiLanguage || 'en',
-                            bypassCached.errorProvider || null
-                        );
-                        res.setHeader('Content-Type', 'text/plain; charset=utf-8');
-                        res.setHeader('Content-Disposition', `attachment; filename="translated_${targetLang}.srt"`);
-                        setSubtitleCacheHeaders(res, 'final');
-                        return res.send(errSrt);
-                    }
-                    if (typeof bypassCached.content === 'string' && bypassCached.content.length > 0) {
-                        log.debug(() => `[Translation] Found bypass cache result for ${sourceFileId} (${bypassCached.content.length} chars)`);
-                        const { isAss: bIsAss, isSsa: bIsSsa } = detectSubtitlePayloadFormat(bypassCached.content);
-                        const bExt = bIsSsa ? 'ssa' : (bIsAss ? 'ass' : 'srt');
-                        res.setHeader('Content-Type', (bIsAss || bIsSsa) ? 'text/x-ssa; charset=utf-8' : 'text/plain; charset=utf-8');
-                        res.setHeader('Content-Disposition', `attachment; filename="translated_${targetLang}.${bExt}"`);
-                        setSubtitleCacheHeaders(res, 'final');
-                        return res.send(bypassCached.content);
-                    }
-                }
+            // Deduplicate translation requests - handles the first request
+            const subtitleContent = await deduplicate(dedupKey, () =>
+                handleTranslation(sourceFileId, targetLang, config, {
+                    waitForFullTranslation,
+                    sourceFileId,
+                    targetLanguage: targetLang,
+                    filename: req.query.filename || req.query.file || req.query.name || '',
+                    videoId: req.query.videoId || req.query.id || '',
+                    sourceLanguage: req.query.sourceLanguage || req.query.lang || config.sourceLanguages?.[0] || 'auto',
+                    from: 'addon'
+                })
+            );
+
+            // Validate content before processing
+            if (!subtitleContent || typeof subtitleContent !== 'string') {
+                log.error(
+                    () =>
+                        `[Translation] Invalid subtitle content returned: ${typeof subtitleContent}, value: ${subtitleContent}`
+                );
+                return res
+                    .status(500)
+                    .send(t('server.errors.translationInvalidContent', {}, 'Translation returned invalid content'));
             }
 
-            if (!bypassEnabled && allowPermanent && process.env.ENABLE_PERMANENT_TRANSLATIONS !== 'false') {
-                const permanentKey = `t2s__${cacheKey}`;
-                const permanentCached = await adapter.get(permanentKey, StorageAdapter.CACHE_TYPES.TRANSLATION);
-                if (permanentCached) {
-                    if (permanentCached.isError === true) {
-                        log.debug(() => `[Translation] Found permanent cached error for ${sourceFileId}`);
-                        const errSrt = createTranslationErrorSubtitle(
-                            permanentCached.errorType || 'other',
-                            permanentCached.errorMessage || 'Translation failed',
-                            config?.uiLanguage || 'en',
-                            permanentCached.errorProvider || null
-                        );
-                        res.setHeader('Content-Type', 'text/plain; charset=utf-8');
-                        res.setHeader('Content-Disposition', `attachment; filename="translated_${targetLang}.srt"`);
-                        setSubtitleCacheHeaders(res, 'final');
-                        return res.send(errSrt);
-                    }
-                    if (typeof permanentCached.content === 'string' && permanentCached.content.length > 0) {
-                        log.debug(() => `[Translation] Found permanent cache result for ${sourceFileId} (${permanentCached.content.length} chars)`);
-                        const { isAss: pIsAss, isSsa: pIsSsa } = detectSubtitlePayloadFormat(permanentCached.content);
-                        const pExt = pIsSsa ? 'ssa' : (pIsAss ? 'ass' : 'srt');
-                        res.setHeader('Content-Type', (pIsAss || pIsSsa) ? 'text/x-ssa; charset=utf-8' : 'text/plain; charset=utf-8');
-                        res.setHeader('Content-Disposition', `attachment; filename="translated_${targetLang}.${pExt}"`);
-                        setSubtitleCacheHeaders(res, 'final');
-                        return res.send(permanentCached.content);
-                    }
-                }
+            // Distinguish placeholder loading SRT from in-progress partial SRT.
+            // Partial payloads include a "TRANSLATION IN PROGRESS" tail cue, so that marker
+            // alone is not sufficient to classify as loading.
+            const cueCount = (subtitleContent.match(/(?:^|\n)\d+\n\d{2}:\d{2}:\d{2},\d{3}\s+-->/g) || []).length;
+            const hasProgressTail = subtitleContent.includes('TRANSLATION IN PROGRESS');
+            const isLoadingMessage =
+                subtitleContent.includes('Please wait while the selected subtitle is being translated') ||
+                subtitleContent.includes('Translation is happening in the background') ||
+                subtitleContent.includes('Click this subtitle again to confirm translation') ||
+                (hasProgressTail && cueCount <= 1);
+            const isPartialMessage = hasProgressTail && cueCount > 1;
+            log.debug(
+                () =>
+                    `[Translation] Serving ${isLoadingMessage ? 'loading message' : isPartialMessage ? 'partial content' : 'translated content'} for ${sourceFileId} (was duplicate: ${isAlreadyInFlight})`
+            );
+            log.debug(
+                () =>
+                    `[Translation] Content length: ${subtitleContent.length} characters, first 200 chars: ${subtitleContent.substring(0, 200)}`
+            );
+
+            // Detect payload format for correct headers (ASS/SSA or SRT)
+            const { isAss: tIsAss, isSsa: tIsSsa } = detectSubtitlePayloadFormat(subtitleContent);
+            const tExt = tIsSsa ? 'ssa' : tIsAss ? 'ass' : 'srt';
+            res.setHeader('Content-Type', tIsAss || tIsSsa ? 'text/x-ssa; charset=utf-8' : 'text/plain; charset=utf-8');
+            res.setHeader(
+                'Content-Disposition',
+                `attachment; filename="${isLoadingMessage || isPartialMessage ? 'translating' : 'translated'}_${targetLang}.${tExt}"`
+            );
+
+            // Disable caching for loading/partial messages so Stremio can poll for updates
+            if (isLoadingMessage || isPartialMessage) {
+                setSubtitleCacheHeaders(res, 'loading');
+                log.debug(
+                    () =>
+                        `[Translation] Set no-store headers for ${isPartialMessage ? 'partial message' : 'loading message'}`
+                );
+            } else {
+                // Final translations are no-store to avoid stale subtitle reuse in clients.
+                setSubtitleCacheHeaders(res, 'final');
+                log.debug(() => `[Translation] Set no-store headers for final translation`);
             }
 
-            // No partial yet, serve loading message
-            log.debug(() => `[Translation] No partial found yet, serving loading message to duplicate request for ${sourceFileId}`);
-            const loadingMsg = createLoadingSubtitle(config?.uiLanguage || 'en');
-            res.setHeader('Content-Type', 'text/plain; charset=utf-8');
-            res.setHeader('Content-Disposition', `attachment; filename="translating_${targetLang}.srt"`);
-            setSubtitleCacheHeaders(res, 'loading');
-            return res.send(loadingMsg);
-        } else {
-            log.debug(() => `[Translation] New request to translate ${sourceFileId} to ${targetLang}`);
+            res.send(maybeConvertToSRT(subtitleContent, config));
+            log.debug(() => `[Translation] Response sent successfully for ${sourceFileId}`);
+        } catch (error) {
+            const t = res.locals?.t || getTranslatorFromRequest(req, res);
+            if (respondStorageUnavailable(res, error, '[Translation]', t)) return;
+            log.error(() => ['[Translation] Error:', error]);
+            res.status(500).send(
+                t('server.errors.translationFailed', { reason: error.message }, `Translation failed: ${error.message}`)
+            );
         }
-
-        // Deduplicate translation requests - handles the first request
-        const subtitleContent = await deduplicate(dedupKey, () =>
-            handleTranslation(sourceFileId, targetLang, config, {
-                waitForFullTranslation,
-                sourceFileId,
-                targetLanguage: targetLang,
-                filename: req.query.filename || req.query.file || req.query.name || '',
-                videoId: req.query.videoId || req.query.id || '',
-                sourceLanguage: req.query.sourceLanguage || req.query.lang || (config.sourceLanguages?.[0] || 'auto'),
-                from: 'addon'
-            })
-        );
-
-        // Validate content before processing
-        if (!subtitleContent || typeof subtitleContent !== 'string') {
-            log.error(() => `[Translation] Invalid subtitle content returned: ${typeof subtitleContent}, value: ${subtitleContent}`);
-            return res.status(500).send(t('server.errors.translationInvalidContent', {}, 'Translation returned invalid content'));
-        }
-
-        // Distinguish placeholder loading SRT from in-progress partial SRT.
-        // Partial payloads include a "TRANSLATION IN PROGRESS" tail cue, so that marker
-        // alone is not sufficient to classify as loading.
-        const cueCount = (subtitleContent.match(/(?:^|\n)\d+\n\d{2}:\d{2}:\d{2},\d{3}\s+-->/g) || []).length;
-        const hasProgressTail = subtitleContent.includes('TRANSLATION IN PROGRESS');
-        const isLoadingMessage = subtitleContent.includes('Please wait while the selected subtitle is being translated') ||
-            subtitleContent.includes('Translation is happening in the background') ||
-            subtitleContent.includes('Click this subtitle again to confirm translation') ||
-            (hasProgressTail && cueCount <= 1);
-        const isPartialMessage = hasProgressTail && cueCount > 1;
-        log.debug(() => `[Translation] Serving ${isLoadingMessage ? 'loading message' : (isPartialMessage ? 'partial content' : 'translated content')} for ${sourceFileId} (was duplicate: ${isAlreadyInFlight})`);
-        log.debug(() => `[Translation] Content length: ${subtitleContent.length} characters, first 200 chars: ${subtitleContent.substring(0, 200)}`);
-
-        // Detect payload format for correct headers (ASS/SSA or SRT)
-        const { isAss: tIsAss, isSsa: tIsSsa } = detectSubtitlePayloadFormat(subtitleContent);
-        const tExt = tIsSsa ? 'ssa' : (tIsAss ? 'ass' : 'srt');
-        res.setHeader('Content-Type', (tIsAss || tIsSsa) ? 'text/x-ssa; charset=utf-8' : 'text/plain; charset=utf-8');
-        res.setHeader('Content-Disposition', `attachment; filename="${(isLoadingMessage || isPartialMessage) ? 'translating' : 'translated'}_${targetLang}.${tExt}"`);
-
-        // Disable caching for loading/partial messages so Stremio can poll for updates
-        if (isLoadingMessage || isPartialMessage) {
-            setSubtitleCacheHeaders(res, 'loading');
-            log.debug(() => `[Translation] Set no-store headers for ${isPartialMessage ? 'partial message' : 'loading message'}`);
-        } else {
-            // Final translations are no-store to avoid stale subtitle reuse in clients.
-            setSubtitleCacheHeaders(res, 'final');
-            log.debug(() => `[Translation] Set no-store headers for final translation`);
-        }
-
-        res.send(maybeConvertToSRT(subtitleContent, config));
-        log.debug(() => `[Translation] Response sent successfully for ${sourceFileId}`);
-
-    } catch (error) {
-        const t = res.locals?.t || getTranslatorFromRequest(req, res);
-        if (respondStorageUnavailable(res, error, '[Translation]', t)) return;
-        log.error(() => ['[Translation] Error:', error]);
-        res.status(500).send(t('server.errors.translationFailed', { reason: error.message }, `Translation failed: ${error.message}`));
     }
-});
+);
 
 // Custom route: Learn Mode (dual-language VTT)
-app.get('/addon/:config/learn/:sourceFileId/:targetLang', normalizeSubtitleFormatParams, searchLimiter, validateRequest(translationParamsSchema, 'params'), async (req, res) => {
-    try {
-        // Defense-in-depth: Prevent caching of learn-mode responses
-        setNoStore(res);
-        let t = res.locals?.t || getTranslatorFromRequest(req, res);
-
-        const { config: configStr, sourceFileId, targetLang } = req.params;
-        const baseConfig = await resolveConfigGuarded(configStr, req, res, '[Learn] config', t);
-        if (!baseConfig) return;
-        if (isInvalidSessionConfig(baseConfig)) {
-            log.warn(() => `[Learn] Blocked request due to invalid session token ${redactToken(configStr)}`);
-            const errorSubtitle = createSessionTokenErrorSubtitle(null, null, baseConfig?.uiLanguage || 'en');
-            res.setHeader('Content-Type', 'text/plain; charset=utf-8');
-            res.setHeader('Content-Disposition', 'attachment; filename=\"session-token-not-found.srt\"');
-            setSubtitleCacheHeaders(res, 'loading');
-            return res.status(401).send(errorSubtitle);
-        }
-        t = getTranslatorFromRequest(req, res, baseConfig);
-        const configKey = ensureConfigHash(baseConfig, configStr);
-
-        // Force bypass cache for Learn Mode translations only (does not affect normal translations)
-        // NOTE: normalizeConfig() disables bypassCacheConfig when bypassCache is false, so we must
-        // explicitly re-enable both bypassCacheConfig/tempCache when forcing bypass for Learn mode.
-        const config = {
-            ...baseConfig,
-            bypassCache: true,
-            bypassCacheConfig: {
-                ...(baseConfig.bypassCacheConfig || {}),
-                enabled: true
-            },
-            tempCache: {
-                ...(baseConfig.tempCache || baseConfig.bypassCacheConfig || {}),
-                enabled: true
-            }
-        };
-        const videoId = req.query?.videoId || req.query?.id || config.videoId || config.lastStream?.videoId || '';
-
-        const { cacheKey, runtimeKey } = generateCacheKeys(config, sourceFileId, targetLang);
-
-        // Unusual purge: if same Learn subtitle is loaded 3 times in < 5s, purge cache and retrigger
+app.get(
+    '/addon/:config/learn/:sourceFileId/:targetLang',
+    normalizeSubtitleFormatParams,
+    searchLimiter,
+    validateRequest(translationParamsSchema, 'params'),
+    async (req, res) => {
         try {
-            const clickKey = `learn-click:${configKey}:${sourceFileId}:${targetLang}`;
-            const now = Date.now();
-            const windowMs = 5_000; // 5 seconds
-            const entry = firstClickTracker.get(clickKey) || { times: [] };
-            
-            // Keep only clicks within window
-            entry.times = (entry.times || []).filter(t => now - t <= windowMs);
-            
-            // HUMAN CHECK: Prevent 4ms Android spam
-            const lastClick = entry.times.length > 0 ? entry.times[entry.times.length - 1] : 0;
-            const isHumanClick = entry.times.length === 0 || (now - lastClick) > 250;
+            // Defense-in-depth: Prevent caching of learn-mode responses
+            setNoStore(res);
+            let t = res.locals?.t || getTranslatorFromRequest(req, res);
 
-            if (isHumanClick) {
-                entry.times.push(now);
-                firstClickTracker.set(clickKey, entry);
-            } else {
-                log.debug(() => `[LearnPurgeTrigger] Ignoring automated spam request from client (Delta: ${now - lastClick}ms)`);
+            const { config: configStr, sourceFileId, targetLang } = req.params;
+            const baseConfig = await resolveConfigGuarded(configStr, req, res, '[Learn] config', t);
+            if (!baseConfig) return;
+            if (isInvalidSessionConfig(baseConfig)) {
+                log.warn(() => `[Learn] Blocked request due to invalid session token ${redactToken(configStr)}`);
+                const errorSubtitle = createSessionTokenErrorSubtitle(null, null, baseConfig?.uiLanguage || 'en');
+                res.setHeader('Content-Type', 'text/plain; charset=utf-8');
+                res.setHeader('Content-Disposition', 'attachment; filename=\"session-token-not-found.srt\"');
+                setSubtitleCacheHeaders(res, 'loading');
+                return res.status(401).send(errorSubtitle);
             }
+            t = getTranslatorFromRequest(req, res, baseConfig);
+            const configKey = ensureConfigHash(baseConfig, configStr);
 
-            if (entry.times.length >= 3) {
-                // CRITICAL FIX: Reset counter SYNCHRONOUSLY before any 'await' to prevent Race Conditions!
-                firstClickTracker.set(clickKey, { times: [] });
+            // Force bypass cache for Learn Mode translations only (does not affect normal translations)
+            // NOTE: normalizeConfig() disables bypassCacheConfig when bypassCache is false, so we must
+            // explicitly re-enable both bypassCacheConfig/tempCache when forcing bypass for Learn mode.
+            const config = {
+                ...baseConfig,
+                bypassCache: true,
+                bypassCacheConfig: {
+                    ...(baseConfig.bypassCacheConfig || {}),
+                    enabled: true
+                },
+                tempCache: {
+                    ...(baseConfig.tempCache || baseConfig.bypassCacheConfig || {}),
+                    enabled: true
+                }
+            };
+            const videoId = req.query?.videoId || req.query?.id || config.videoId || config.lastStream?.videoId || '';
 
-                // SAFETY CHECK: Block cache reset if translation is in progress
-                const shouldBlock = await shouldBlockCacheReset(clickKey, sourceFileId, config, targetLang);
+            const { cacheKey, runtimeKey } = generateCacheKeys(config, sourceFileId, targetLang);
 
-                if (shouldBlock) {
-                    log.debug(() => `[LearnPurgeTrigger] 3 rapid loads detected but BLOCKED: Translation in progress for ${sourceFileId}/${targetLang} (user: ${config.__configHash})`);
+            // Unusual purge: if same Learn subtitle is loaded 3 times in < 5s, purge cache and retrigger
+            try {
+                const clickKey = `learn-click:${configKey}:${sourceFileId}:${targetLang}`;
+                const now = Date.now();
+                const windowMs = 5_000; // 5 seconds
+                const entry = firstClickTracker.get(clickKey) || { times: [] };
+
+                // Keep only clicks within window
+                entry.times = (entry.times || []).filter((t) => now - t <= windowMs);
+
+                // HUMAN CHECK: Prevent 4ms Android spam
+                const lastClick = entry.times.length > 0 ? entry.times[entry.times.length - 1] : 0;
+                const isHumanClick = entry.times.length === 0 || now - lastClick > 250;
+
+                if (isHumanClick) {
+                    entry.times.push(now);
+                    firstClickTracker.set(clickKey, entry);
                 } else {
-                    const rateLimitStatus = checkCacheResetRateLimit(config, { consume: false });
+                    log.debug(
+                        () =>
+                            `[LearnPurgeTrigger] Ignoring automated spam request from client (Delta: ${now - lastClick}ms)`
+                    );
+                }
 
-                    if (rateLimitStatus.blocked) {
-                        log.warn(() => `[LearnPurgeTrigger] BLOCKING 3-click reset: Rate limit reached for ${rateLimitStatus.cacheType} cache (${rateLimitStatus.limit}/${Math.round(CACHE_RESET_WINDOW_MS / 60000)}m) on ${sourceFileId}/${targetLang} (user: ${getConfigHashSafe(config)})`);
+                if (entry.times.length >= 3) {
+                    // CRITICAL FIX: Reset counter SYNCHRONOUSLY before any 'await' to prevent Race Conditions!
+                    firstClickTracker.set(clickKey, { times: [] });
+
+                    // SAFETY CHECK: Block cache reset if translation is in progress
+                    const shouldBlock = await shouldBlockCacheReset(clickKey, sourceFileId, config, targetLang);
+
+                    if (shouldBlock) {
+                        log.debug(
+                            () =>
+                                `[LearnPurgeTrigger] 3 rapid loads detected but BLOCKED: Translation in progress for ${sourceFileId}/${targetLang} (user: ${config.__configHash})`
+                        );
                     } else {
-                        const partialKey = runtimeKey || cacheKey;
-                        const hadCache = await hasCachedTranslation(sourceFileId, targetLang, config);
-                        const partial = (!hadCache) ? await readFromPartialCache(partialKey) : null;
-                        const hasResetTarget = hadCache || (partial && typeof partial.content === 'string' && partial.content.length > 0);
+                        const rateLimitStatus = checkCacheResetRateLimit(config, { consume: false });
 
-                        if (!hasResetTarget) {
-                            log.debug(() => `[LearnPurgeTrigger] 3 rapid loads detected but no cached translation or partial found for ${sourceFileId}/${targetLang}. Skipping purge and rate-limit consumption.`);
+                        if (rateLimitStatus.blocked) {
+                            log.warn(
+                                () =>
+                                    `[LearnPurgeTrigger] BLOCKING 3-click reset: Rate limit reached for ${rateLimitStatus.cacheType} cache (${rateLimitStatus.limit}/${Math.round(CACHE_RESET_WINDOW_MS / 60000)}m) on ${sourceFileId}/${targetLang} (user: ${getConfigHashSafe(config)})`
+                            );
                         } else {
-                            const consumeStatus = checkCacheResetRateLimit(config);
-                            if (consumeStatus.blocked) {
-                                log.warn(() => `[LearnPurgeTrigger] BLOCKING 3-click reset: Rate limit reached for ${consumeStatus.cacheType} cache (${consumeStatus.limit}/${Math.round(CACHE_RESET_WINDOW_MS / 60000)}m) on ${sourceFileId}/${targetLang} (user: ${getConfigHashSafe(config)})`);
+                            const partialKey = runtimeKey || cacheKey;
+                            const hadCache = await hasCachedTranslation(sourceFileId, targetLang, config);
+                            const partial = !hadCache ? await readFromPartialCache(partialKey) : null;
+                            const hasResetTarget =
+                                hadCache ||
+                                (partial && typeof partial.content === 'string' && partial.content.length > 0);
+
+                            if (!hasResetTarget) {
+                                log.debug(
+                                    () =>
+                                        `[LearnPurgeTrigger] 3 rapid loads detected but no cached translation or partial found for ${sourceFileId}/${targetLang}. Skipping purge and rate-limit consumption.`
+                                );
                             } else {
-                                log.debug(() => `[LearnPurgeTrigger] 3 rapid loads detected (<5s) for ${sourceFileId}/${targetLang}. Purging ${hadCache ? 'cached translation' : 'partial translation cache'} and re-triggering translation. Remaining resets this window: ${consumeStatus.remaining}`);
-                                await purgeTranslationCache(sourceFileId, targetLang, config);
+                                const consumeStatus = checkCacheResetRateLimit(config);
+                                if (consumeStatus.blocked) {
+                                    log.warn(
+                                        () =>
+                                            `[LearnPurgeTrigger] BLOCKING 3-click reset: Rate limit reached for ${consumeStatus.cacheType} cache (${consumeStatus.limit}/${Math.round(CACHE_RESET_WINDOW_MS / 60000)}m) on ${sourceFileId}/${targetLang} (user: ${getConfigHashSafe(config)})`
+                                    );
+                                } else {
+                                    log.debug(
+                                        () =>
+                                            `[LearnPurgeTrigger] 3 rapid loads detected (<5s) for ${sourceFileId}/${targetLang}. Purging ${hadCache ? 'cached translation' : 'partial translation cache'} and re-triggering translation. Remaining resets this window: ${consumeStatus.remaining}`
+                                    );
+                                    await purgeTranslationCache(sourceFileId, targetLang, config);
+                                }
                             }
                         }
                     }
                 }
+            } catch (e) {
+                log.warn(() => '[LearnPurgeTrigger] Click tracking error:', e.message);
             }
-        } catch (e) {
-            log.warn(() => '[LearnPurgeTrigger] Click tracking error:', e.message);
-        }
-        
-        // Always obtain source content
-        let sourceContent = await getDownloadCached(sourceFileId, 'translate_source');
-        if (!sourceContent) {
-            sourceContent = await handleSubtitleDownload(sourceFileId, 'und', config);
-            saveDownloadCached(sourceFileId, sourceContent, 'translate_source');
-        }
 
-        // Normalize source to SRT for pairing (handles VTT, ASS/SSA, and other formats)
-        sourceContent = ensureSRTForTranslation(sourceContent, '[Learn Mode]');
+            // Always obtain source content
+            let sourceContent = await getDownloadCached(sourceFileId, 'translate_source');
+            if (!sourceContent) {
+                sourceContent = await handleSubtitleDownload(sourceFileId, 'und', config);
+                saveDownloadCached(sourceFileId, sourceContent, 'translate_source');
+            }
 
-        // If we have partial translation, serve partial VTT immediately
-        // Partials are saved under runtimeKey (see performTranslation), so read with the same key
-        const partial = await readFromPartialCache(runtimeKey);
-        if (partial && partial.content) {
-            const vtt = srtPairToWebVTT(sourceContent, partial.content, (config.learnOrder || 'source-top'), (config.learnPlacement || 'stacked'), { learnItalic: config.learnItalic, learnItalicTarget: config.learnItalicTarget });
-            const output = maybeConvertToSRT(vtt, config);
-            const isSrt = config.forceSRTOutput;
-            res.setHeader('Content-Type', isSrt ? 'text/plain; charset=utf-8' : 'text/vtt; charset=utf-8');
-            res.setHeader('Content-Disposition', `attachment; filename="learn_${targetLang}.${isSrt ? 'srt' : 'vtt'}"`);
-            setSubtitleCacheHeaders(res, 'loading');
-            return res.send(output);
-        }
+            // Normalize source to SRT for pairing (handles VTT, ASS/SSA, and other formats)
+            sourceContent = ensureSRTForTranslation(sourceContent, '[Learn Mode]');
 
-        // If we already have cached full translation, fetch it quickly via translation handler
-        const hasCache = await hasCachedTranslation(sourceFileId, targetLang, config);
-        if (hasCache) {
-            const translatedSrt = await handleTranslation(sourceFileId, targetLang, config, {
+            // If we have partial translation, serve partial VTT immediately
+            // Partials are saved under runtimeKey (see performTranslation), so read with the same key
+            const partial = await readFromPartialCache(runtimeKey);
+            if (partial && partial.content) {
+                const vtt = srtPairToWebVTT(
+                    sourceContent,
+                    partial.content,
+                    config.learnOrder || 'source-top',
+                    config.learnPlacement || 'stacked',
+                    { learnItalic: config.learnItalic, learnItalicTarget: config.learnItalicTarget }
+                );
+                const output = maybeConvertToSRT(vtt, config);
+                const isSrt = config.forceSRTOutput;
+                res.setHeader('Content-Type', isSrt ? 'text/plain; charset=utf-8' : 'text/vtt; charset=utf-8');
+                res.setHeader(
+                    'Content-Disposition',
+                    `attachment; filename="learn_${targetLang}.${isSrt ? 'srt' : 'vtt'}"`
+                );
+                setSubtitleCacheHeaders(res, 'loading');
+                return res.send(output);
+            }
+
+            // If we already have cached full translation, fetch it quickly via translation handler
+            const hasCache = await hasCachedTranslation(sourceFileId, targetLang, config);
+            if (hasCache) {
+                const translatedSrt = await handleTranslation(sourceFileId, targetLang, config, {
+                    filename: sourceContent ? `learn_${targetLang}.srt` : 'unknown',
+                    videoId: videoId || 'unknown',
+                    sourceLanguage: 'und',
+                    from: 'learn'
+                });
+                // handleTranslation may return ASS content when ASS passthrough is enabled
+                // srtPairToWebVTT requires SRT input, so ensure conversion
+                const translatedSrtForPairing = ensureSRTForTranslation(translatedSrt, '[Learn Mode]');
+                const vtt = srtPairToWebVTT(
+                    sourceContent,
+                    translatedSrtForPairing,
+                    config.learnOrder || 'source-top',
+                    config.learnPlacement || 'stacked',
+                    { learnItalic: config.learnItalic, learnItalicTarget: config.learnItalicTarget }
+                );
+                const output = maybeConvertToSRT(vtt, config);
+                const isSrt = config.forceSRTOutput;
+                res.setHeader('Content-Type', isSrt ? 'text/plain; charset=utf-8' : 'text/vtt; charset=utf-8');
+                res.setHeader(
+                    'Content-Disposition',
+                    `attachment; filename="learn_${targetLang}.${isSrt ? 'srt' : 'vtt'}"`
+                );
+                return res.send(output);
+            }
+
+            // Start translation in background and serve a loading VTT (source on top, status on bottom)
+            handleTranslation(sourceFileId, targetLang, config, {
                 filename: sourceContent ? `learn_${targetLang}.srt` : 'unknown',
                 videoId: videoId || 'unknown',
                 sourceLanguage: 'und',
                 from: 'learn'
-            });
-            // handleTranslation may return ASS content when ASS passthrough is enabled
-            // srtPairToWebVTT requires SRT input, so ensure conversion
-            const translatedSrtForPairing = ensureSRTForTranslation(translatedSrt, '[Learn Mode]');
-            const vtt = srtPairToWebVTT(sourceContent, translatedSrtForPairing, (config.learnOrder || 'source-top'), (config.learnPlacement || 'stacked'), { learnItalic: config.learnItalic, learnItalicTarget: config.learnItalicTarget });
+            }).catch(() => {});
+
+            const loadingSrt = createLoadingSubtitle(config?.uiLanguage || baseConfig?.uiLanguage || 'en');
+            const vtt = srtPairToWebVTT(
+                sourceContent,
+                loadingSrt,
+                config.learnOrder || 'source-top',
+                config.learnPlacement || 'stacked',
+                { learnItalic: config.learnItalic, learnItalicTarget: config.learnItalicTarget }
+            );
             const output = maybeConvertToSRT(vtt, config);
             const isSrt = config.forceSRTOutput;
             res.setHeader('Content-Type', isSrt ? 'text/plain; charset=utf-8' : 'text/vtt; charset=utf-8');
             res.setHeader('Content-Disposition', `attachment; filename="learn_${targetLang}.${isSrt ? 'srt' : 'vtt'}"`);
             return res.send(output);
+        } catch (error) {
+            const t = res.locals?.t || getTranslatorFromRequest(req, res);
+            if (respondStorageUnavailable(res, error, '[Learn]', t)) return;
+            log.error(() => ['[Learn] Error:', error]);
+            res.status(500).send(t('server.errors.learnFailed', {}, 'Failed to build learning subtitles'));
         }
-
-        // Start translation in background and serve a loading VTT (source on top, status on bottom)
-        handleTranslation(sourceFileId, targetLang, config, {
-            filename: sourceContent ? `learn_${targetLang}.srt` : 'unknown',
-            videoId: videoId || 'unknown',
-            sourceLanguage: 'und',
-            from: 'learn'
-        }).catch(() => { });
-
-        const loadingSrt = createLoadingSubtitle(config?.uiLanguage || baseConfig?.uiLanguage || 'en');
-        const vtt = srtPairToWebVTT(sourceContent, loadingSrt, (config.learnOrder || 'source-top'), (config.learnPlacement || 'stacked'), { learnItalic: config.learnItalic, learnItalicTarget: config.learnItalicTarget });
-        const output = maybeConvertToSRT(vtt, config);
-        const isSrt = config.forceSRTOutput;
-        res.setHeader('Content-Type', isSrt ? 'text/plain; charset=utf-8' : 'text/vtt; charset=utf-8');
-        res.setHeader('Content-Disposition', `attachment; filename="learn_${targetLang}.${isSrt ? 'srt' : 'vtt'}"`);
-        return res.send(output);
-
-    } catch (error) {
-        const t = res.locals?.t || getTranslatorFromRequest(req, res);
-        if (respondStorageUnavailable(res, error, '[Learn]', t)) return;
-        log.error(() => ['[Learn] Error:', error]);
-        res.status(500).send(t('server.errors.learnFailed', {}, 'Failed to build learning subtitles'));
     }
-});
+);
 
 // Register file upload page routes (redirect + standalone page)
 registerFileUploadRoutes(app, { log, resolveConfigGuarded, computeConfigHash, setNoStore, respondStorageUnavailable });
@@ -5577,7 +6229,10 @@ app.get('/addon/:config/sub-toolbox/:videoId', async (req, res) => {
         const resolvedConfig = await resolveConfigGuarded(configStr, req, res, '[Sub Toolbox] config', t);
         if (!resolvedConfig) return;
         log.debug(() => `[Sub Toolbox] Request for video ${videoId}, filename: ${filename || 'n/a'}`);
-        res.redirect(302, `/sub-toolbox?config=${encodeURIComponent(configStr)}&videoId=${encodeURIComponent(videoId)}&filename=${encodeURIComponent(filename || '')}`);
+        res.redirect(
+            302,
+            `/sub-toolbox?config=${encodeURIComponent(configStr)}&videoId=${encodeURIComponent(videoId)}&filename=${encodeURIComponent(filename || '')}`
+        );
     } catch (error) {
         const t = res.locals?.t || getTranslatorFromRequest(req, res);
         if (respondStorageUnavailable(res, error, '[Sub Toolbox]', t)) return;
@@ -5626,7 +6281,10 @@ app.get('/addon/:config/smdb/:videoId', async (req, res) => {
         const { filename } = req.query;
         const resolvedConfig = await resolveConfigGuarded(configStr, req, res, '[SMDB] config', t);
         if (!resolvedConfig) return;
-        res.redirect(302, `/smdb?config=${encodeURIComponent(configStr)}&videoId=${encodeURIComponent(videoId)}&filename=${encodeURIComponent(filename || '')}`);
+        res.redirect(
+            302,
+            `/smdb?config=${encodeURIComponent(configStr)}&videoId=${encodeURIComponent(videoId)}&filename=${encodeURIComponent(filename || '')}`
+        );
     } catch (error) {
         const t = res.locals?.t || getTranslatorFromRequest(req, res);
         if (respondStorageUnavailable(res, error, '[SMDB]', t)) return;
@@ -5677,13 +6335,14 @@ app.get('/api/smdb/list', async (req, res) => {
         if (!resolvedConfig) return;
 
         // Input sanitization
-        const safeVideoHash = (typeof videoHash === 'string' && /^[a-zA-Z0-9_-]{1,64}$/.test(videoHash)) ? videoHash : null;
+        const safeVideoHash =
+            typeof videoHash === 'string' && /^[a-zA-Z0-9_-]{1,64}$/.test(videoHash) ? videoHash : null;
         if (!safeVideoHash) {
             return res.status(400).json({ error: t('server.errors.invalidSmdbParams', {}, 'Invalid SMDB parameters') });
         }
 
         const subtitles = await smdbCache.listSubtitles(safeVideoHash);
-        const enriched = subtitles.map(sub => ({
+        const enriched = subtitles.map((sub) => ({
             ...sub,
             languageName: getLanguageName(sub.languageCode) || sub.languageCode
         }));
@@ -5705,15 +6364,18 @@ app.get('/api/smdb/download', async (req, res) => {
         const { videoHash, lang, config: configStr } = req.query;
 
         if (!videoHash || !lang || !configStr) {
-            return res.status(400).json({ error: t('server.errors.missingFields', {}, 'Missing videoHash, lang, or config') });
+            return res
+                .status(400)
+                .json({ error: t('server.errors.missingFields', {}, 'Missing videoHash, lang, or config') });
         }
 
         const resolvedConfig = await resolveConfigGuarded(configStr, req, res, '[SMDB API Download] config', t);
         if (!resolvedConfig) return;
 
         // Input sanitization
-        const safeVideoHash = (typeof videoHash === 'string' && /^[a-zA-Z0-9_-]{1,64}$/.test(videoHash)) ? videoHash : null;
-        const safeLang = (typeof lang === 'string' && /^[a-zA-Z0-9_-]{1,24}$/.test(lang)) ? lang.toLowerCase() : null;
+        const safeVideoHash =
+            typeof videoHash === 'string' && /^[a-zA-Z0-9_-]{1,64}$/.test(videoHash) ? videoHash : null;
+        const safeLang = typeof lang === 'string' && /^[a-zA-Z0-9_-]{1,24}$/.test(lang) ? lang.toLowerCase() : null;
         if (!safeVideoHash || !safeLang) {
             return res.status(400).json({ error: t('server.errors.invalidSmdbParams', {}, 'Invalid SMDB parameters') });
         }
@@ -5752,7 +6414,9 @@ app.post('/api/smdb/upload', userDataWriteLimiter, async (req, res) => {
         if (resolvedConfig.__sessionTokenError === true) {
             log.warn(() => '[SMDB API Upload] Rejected write due to invalid/missing session token');
             t = getTranslatorFromRequest(req, res, resolvedConfig);
-            return res.status(401).json({ error: t('server.errors.invalidSessionToken', {}, 'Invalid or expired session token') });
+            return res
+                .status(401)
+                .json({ error: t('server.errors.invalidSessionToken', {}, 'Invalid or expired session token') });
         }
         t = getTranslatorFromRequest(req, res, resolvedConfig);
         const configHash = ensureConfigHash(resolvedConfig, configStr);
@@ -5760,12 +6424,18 @@ app.post('/api/smdb/upload', userDataWriteLimiter, async (req, res) => {
         const { videoHash, languageCode, content, forceOverride } = req.body || {};
 
         if (!videoHash || !languageCode || !content) {
-            return res.status(400).json({ error: t('server.errors.missingFields', {}, 'Missing videoHash, languageCode, or content') });
+            return res
+                .status(400)
+                .json({ error: t('server.errors.missingFields', {}, 'Missing videoHash, languageCode, or content') });
         }
 
         // Input sanitization
-        const safeVideoHash = (typeof videoHash === 'string' && /^[a-zA-Z0-9_-]{1,64}$/.test(videoHash)) ? videoHash : null;
-        const safeLangCode = (typeof languageCode === 'string' && /^[a-zA-Z0-9_-]{1,24}$/.test(languageCode)) ? languageCode.toLowerCase() : null;
+        const safeVideoHash =
+            typeof videoHash === 'string' && /^[a-zA-Z0-9_-]{1,64}$/.test(videoHash) ? videoHash : null;
+        const safeLangCode =
+            typeof languageCode === 'string' && /^[a-zA-Z0-9_-]{1,24}$/.test(languageCode)
+                ? languageCode.toLowerCase()
+                : null;
         if (!safeVideoHash || !safeLangCode) {
             return res.status(400).json({ error: t('server.errors.invalidSmdbParams', {}, 'Invalid SMDB parameters') });
         }
@@ -5777,7 +6447,9 @@ app.post('/api/smdb/upload', userDataWriteLimiter, async (req, res) => {
 
         // Content size guard (max 2MB per subtitle)
         if (content.length > 2 * 1024 * 1024) {
-            return res.status(413).json({ error: t('server.errors.embeddedTooLarge', {}, 'Subtitle content too large (max 2MB)') });
+            return res
+                .status(413)
+                .json({ error: t('server.errors.embeddedTooLarge', {}, 'Subtitle content too large (max 2MB)') });
         }
 
         // Check if subtitle already exists
@@ -5824,7 +6496,8 @@ app.get('/api/smdb/resolve-hashes', async (req, res) => {
         if (!resolvedConfig) return;
 
         // Input sanitization
-        const safeVideoHash = (typeof videoHash === 'string' && /^[a-zA-Z0-9_-]{1,64}$/.test(videoHash)) ? videoHash : null;
+        const safeVideoHash =
+            typeof videoHash === 'string' && /^[a-zA-Z0-9_-]{1,64}$/.test(videoHash) ? videoHash : null;
         if (!safeVideoHash) {
             return res.status(400).json({ error: t('server.errors.invalidSmdbParams', {}, 'Invalid SMDB parameters') });
         }
@@ -5857,7 +6530,9 @@ app.post('/api/smdb/translate', userDataWriteLimiter, async (req, res) => {
         if (resolvedConfig.__sessionTokenError === true) {
             log.warn(() => '[SMDB API Translate] Rejected write due to invalid/missing session token');
             t = getTranslatorFromRequest(req, res, resolvedConfig);
-            return res.status(401).json({ error: t('server.errors.invalidSessionToken', {}, 'Invalid or expired session token') });
+            return res
+                .status(401)
+                .json({ error: t('server.errors.invalidSessionToken', {}, 'Invalid or expired session token') });
         }
         t = getTranslatorFromRequest(req, res, resolvedConfig);
         const configHash = ensureConfigHash(resolvedConfig, configStr);
@@ -5865,27 +6540,43 @@ app.post('/api/smdb/translate', userDataWriteLimiter, async (req, res) => {
         const { videoHash, sourceLangCode, targetLangCode, forceOverride } = req.body || {};
 
         if (!videoHash || !sourceLangCode || !targetLangCode) {
-            return res.status(400).json({ error: t('server.errors.missingFields', {}, 'Missing videoHash, sourceLangCode, or targetLangCode') });
+            return res.status(400).json({
+                error: t('server.errors.missingFields', {}, 'Missing videoHash, sourceLangCode, or targetLangCode')
+            });
         }
 
         // Input sanitization
-        const safeVideoHash = (typeof videoHash === 'string' && /^[a-zA-Z0-9_-]{1,64}$/.test(videoHash)) ? videoHash : null;
-        const safeSourceLang = (typeof sourceLangCode === 'string' && /^[a-zA-Z0-9_-]{1,24}$/.test(sourceLangCode)) ? sourceLangCode.toLowerCase() : null;
-        const safeTargetLang = (typeof targetLangCode === 'string' && /^[a-zA-Z0-9_-]{1,24}$/.test(targetLangCode)) ? targetLangCode.toLowerCase() : null;
+        const safeVideoHash =
+            typeof videoHash === 'string' && /^[a-zA-Z0-9_-]{1,64}$/.test(videoHash) ? videoHash : null;
+        const safeSourceLang =
+            typeof sourceLangCode === 'string' && /^[a-zA-Z0-9_-]{1,24}$/.test(sourceLangCode)
+                ? sourceLangCode.toLowerCase()
+                : null;
+        const safeTargetLang =
+            typeof targetLangCode === 'string' && /^[a-zA-Z0-9_-]{1,24}$/.test(targetLangCode)
+                ? targetLangCode.toLowerCase()
+                : null;
         if (!safeVideoHash || !safeSourceLang || !safeTargetLang) {
             return res.status(400).json({ error: t('server.errors.invalidSmdbParams', {}, 'Invalid SMDB parameters') });
         }
 
         if (safeSourceLang === safeTargetLang) {
-            return res.status(400).json({ error: t('server.errors.missingFields', {}, 'Source and target languages must be different') });
+            return res
+                .status(400)
+                .json({ error: t('server.errors.missingFields', {}, 'Source and target languages must be different') });
         }
 
-        log.info(() => `[SMDB Translate] Request: ${safeSourceLang} → ${safeTargetLang} for hash ${safeVideoHash.slice(0, 16)}...`);
+        log.info(
+            () =>
+                `[SMDB Translate] Request: ${safeSourceLang} → ${safeTargetLang} for hash ${safeVideoHash.slice(0, 16)}...`
+        );
 
         // 1. Fetch the source subtitle from SMDB
         const sourceEntry = await smdbCache.getSubtitle(safeVideoHash, safeSourceLang);
         if (!sourceEntry || !sourceEntry.content) {
-            return res.status(404).json({ error: t('server.errors.missingFields', {}, 'Source subtitle not found in SMDB') });
+            return res
+                .status(404)
+                .json({ error: t('server.errors.missingFields', {}, 'Source subtitle not found in SMDB') });
         }
 
         // 2. Check if target language already exists (override check)
@@ -5907,12 +6598,17 @@ app.post('/api/smdb/translate', userDataWriteLimiter, async (req, res) => {
         const { provider, providerName, model, fallbackProviderName } = await createTranslationProvider(resolvedConfig);
         const effectiveModel = model || getEffectiveGeminiModel(resolvedConfig);
 
-        const keyRotationConfig = (resolvedConfig.geminiKeyRotationEnabled === true && providerName === 'gemini') ? {
-            enabled: true,
-            mode: resolvedConfig.geminiKeyRotationMode || 'per-batch',
-            keys: Array.isArray(resolvedConfig.geminiApiKeys) ? resolvedConfig.geminiApiKeys.filter(k => typeof k === 'string' && k.trim()) : [],
-            advancedSettings: resolvedConfig.advancedSettings || {}
-        } : null;
+        const keyRotationConfig =
+            resolvedConfig.geminiKeyRotationEnabled === true && providerName === 'gemini'
+                ? {
+                      enabled: true,
+                      mode: resolvedConfig.geminiKeyRotationMode || 'per-batch',
+                      keys: Array.isArray(resolvedConfig.geminiApiKeys)
+                          ? resolvedConfig.geminiApiKeys.filter((k) => typeof k === 'string' && k.trim())
+                          : [],
+                      advancedSettings: resolvedConfig.advancedSettings || {}
+                  }
+                : null;
 
         const translationEngine = new TranslationEngine(
             provider,
@@ -5929,7 +6625,10 @@ app.post('/api/smdb/translate', userDataWriteLimiter, async (req, res) => {
         // 5. Get target language name for translation context
         const targetLangName = getLanguageName(safeTargetLang) || safeTargetLang;
         const sourceLangName = getLanguageName(safeSourceLang) || safeSourceLang; // 🌐
-        log.debug(() => `[SMDB Translate] Translating ${sourceContent.length} chars to ${targetLangName} using ${providerName}/${effectiveModel}`);
+        log.debug(
+            () =>
+                `[SMDB Translate] Translating ${sourceContent.length} chars to ${targetLangName} using ${providerName}/${effectiveModel}`
+        );
 
         // 6. Perform translation
         const translatedContent = await translationEngine.translateSubtitle(
@@ -5942,7 +6641,9 @@ app.post('/api/smdb/translate', userDataWriteLimiter, async (req, res) => {
 
         if (!translatedContent || typeof translatedContent !== 'string' || translatedContent.length < 10) {
             log.error(() => `[SMDB Translate] Translation returned empty/invalid content`);
-            return res.status(500).json({ error: t('server.errors.translationFailed', {}, 'Translation returned invalid content') });
+            return res
+                .status(500)
+                .json({ error: t('server.errors.translationFailed', {}, 'Translation returned invalid content') });
         }
 
         log.info(() => `[SMDB Translate] Translation complete: ${translatedContent.length} chars`);
@@ -5951,12 +6652,17 @@ app.post('/api/smdb/translate', userDataWriteLimiter, async (req, res) => {
         const result = await smdbCache.saveSubtitle(safeVideoHash, safeTargetLang, translatedContent, configHash);
 
         if (result.success) {
-            log.info(() => `[SMDB Translate] Saved ${safeSourceLang} → ${safeTargetLang} for ${safeVideoHash.slice(0, 16)}... (override: ${result.isOverride})`);
+            log.info(
+                () =>
+                    `[SMDB Translate] Saved ${safeSourceLang} → ${safeTargetLang} for ${safeVideoHash.slice(0, 16)}... (override: ${result.isOverride})`
+            );
             res.json({ success: true, isOverride: result.isOverride });
         } else if (result.error && result.error.includes('Override limit')) {
             res.status(429).json({ error: result.error, remaining: result.remaining || 0 });
         } else {
-            res.status(500).json({ error: result.error || t('server.errors.translationFailed', {}, 'Failed to save translated subtitle') });
+            res.status(500).json({
+                error: result.error || t('server.errors.translationFailed', {}, 'Failed to save translated subtitle')
+            });
         }
     } catch (error) {
         const t = res.locals?.t || getTranslatorFromRequest(req, res);
@@ -5982,8 +6688,10 @@ app.get('/addon/:config/smdb/:videoHash/:langCode.srt', async (req, res) => {
         t = getTranslatorFromRequest(req, res, config);
 
         // Input sanitization (match xsync/xembedded patterns)
-        const safeVideoHash = (typeof videoHash === 'string' && /^[a-zA-Z0-9_-]{1,64}$/.test(videoHash)) ? videoHash : null;
-        const safeLangCode = (typeof langCode === 'string' && /^[a-zA-Z0-9_-]{1,24}$/.test(langCode)) ? langCode.toLowerCase() : null;
+        const safeVideoHash =
+            typeof videoHash === 'string' && /^[a-zA-Z0-9_-]{1,64}$/.test(videoHash) ? videoHash : null;
+        const safeLangCode =
+            typeof langCode === 'string' && /^[a-zA-Z0-9_-]{1,24}$/.test(langCode) ? langCode.toLowerCase() : null;
 
         if (!safeVideoHash || !safeLangCode) {
             return res.status(400).send(t('server.errors.invalidSmdbParams', {}, 'Invalid SMDB subtitle parameters'));
@@ -6041,26 +6749,30 @@ function buildHistoryContentEndpoint(configStr, videoId, filename) {
 
 async function loadHistoryEntriesForPage(config) {
     const historyUserHash = resolveHistoryUserHash(config);
-    const stableHistoryUserHash = (typeof config.__historyUserHash === 'string' && config.__historyUserHash.trim())
-        ? config.__historyUserHash.trim()
-        : '';
+    const stableHistoryUserHash =
+        typeof config.__historyUserHash === 'string' && config.__historyUserHash.trim()
+            ? config.__historyUserHash.trim()
+            : '';
 
     let history = await getHistoryForUser(historyUserHash, {
         allowSlowScan: !(stableHistoryUserHash && historyUserHash === stableHistoryUserHash)
     });
 
     if (
-        history.length === 0
-        && stableHistoryUserHash
-        && historyUserHash === stableHistoryUserHash
-        && typeof config.__configHash === 'string'
-        && config.__configHash.trim()
-        && config.__configHash.trim() !== stableHistoryUserHash
+        history.length === 0 &&
+        stableHistoryUserHash &&
+        historyUserHash === stableHistoryUserHash &&
+        typeof config.__configHash === 'string' &&
+        config.__configHash.trim() &&
+        config.__configHash.trim() !== stableHistoryUserHash
     ) {
         const legacyHistoryUserHash = config.__configHash.trim();
         const legacyHistory = await getHistoryForUser(legacyHistoryUserHash, { allowSlowScan: false });
         if (legacyHistory.length > 0) {
-            log.info(() => `[Sub History Page] Migrating ${legacyHistory.length} legacy history entr${legacyHistory.length === 1 ? 'y' : 'ies'} from ${legacyHistoryUserHash} to ${stableHistoryUserHash}`);
+            log.info(
+                () =>
+                    `[Sub History Page] Migrating ${legacyHistory.length} legacy history entr${legacyHistory.length === 1 ? 'y' : 'ies'} from ${legacyHistoryUserHash} to ${stableHistoryUserHash}`
+            );
             history = await migrateHistoryNamespace(legacyHistoryUserHash, stableHistoryUserHash, legacyHistory);
         }
     }
@@ -6118,7 +6830,9 @@ app.get('/api/sub-history-content', async (req, res) => {
         const historyUserHash = resolveHistoryUserHash(config);
         if (!historyUserHash) {
             log.warn(() => '[Sub History Content] Missing config hash for history request - rejecting');
-            return res.status(400).send(t('server.errors.missingHistoryHash', {}, 'Missing user hash for history requests'));
+            return res
+                .status(400)
+                .send(t('server.errors.missingHistoryHash', {}, 'Missing user hash for history requests'));
         }
 
         log.debug(() => `[Sub History Content] Loading history for user ${historyUserHash}`);
@@ -6128,8 +6842,9 @@ app.get('/api/sub-history-content', async (req, res) => {
         res.setHeader('Content-Type', 'text/html; charset=utf-8');
         res.send(html);
 
-        enrichHistoryEntriesBackground(history, historyUserHash, videoId, filename, config)
-            .catch(e => log.debug(() => ['[Sub History Content] Background enrichment error:', e.message]));
+        enrichHistoryEntriesBackground(history, historyUserHash, videoId, filename, config).catch((e) =>
+            log.debug(() => ['[Sub History Content] Background enrichment error:', e.message])
+        );
     } catch (error) {
         const t = res.locals?.t || getTranslatorFromRequest(req, res);
         if (respondStorageUnavailable(res, error, '[Sub History Content]', t)) return;
@@ -6172,7 +6887,10 @@ app.get('/addon/:config/embedded-subtitles/:videoId', async (req, res) => {
 
         log.debug(() => `[Embedded Subs] Addon redirect for video ${videoId}, filename: ${filename}`);
 
-        res.redirect(302, `/embedded-subtitles?config=${encodeURIComponent(configStr)}&videoId=${encodeURIComponent(videoId)}&filename=${encodeURIComponent(filename || '')}`);
+        res.redirect(
+            302,
+            `/embedded-subtitles?config=${encodeURIComponent(configStr)}&videoId=${encodeURIComponent(videoId)}&filename=${encodeURIComponent(filename || '')}`
+        );
     } catch (error) {
         const t = res.locals?.t || getTranslatorFromRequest(req, res);
         if (respondStorageUnavailable(res, error, '[Embedded Subs Addon Route]', t)) return;
@@ -6224,7 +6942,10 @@ app.get('/addon/:config/auto-subtitles/:videoId', async (req, res) => {
 
         log.debug(() => `[Auto Subs] Addon redirect for video ${videoId}, filename: ${filename}`);
 
-        res.redirect(302, `/auto-subtitles?config=${encodeURIComponent(configStr)}&videoId=${encodeURIComponent(videoId)}&filename=${encodeURIComponent(filename || '')}`);
+        res.redirect(
+            302,
+            `/auto-subtitles?config=${encodeURIComponent(configStr)}&videoId=${encodeURIComponent(videoId)}&filename=${encodeURIComponent(filename || '')}`
+        );
     } catch (error) {
         const t = res.locals?.t || getTranslatorFromRequest(req, res);
         if (respondStorageUnavailable(res, error, '[Auto Subs Addon Route]', t)) return;
@@ -6253,13 +6974,7 @@ app.get('/auto-subtitles', async (req, res) => {
 
         log.debug(() => `[Auto Subs Page] Loading auto-subtitling tool for video ${videoId}`);
 
-        const html = await generateAutoSubtitlePage(
-            configStr,
-            videoId,
-            filename,
-            config,
-            streamUrl
-        );
+        const html = await generateAutoSubtitlePage(configStr, videoId, filename, config, streamUrl);
         res.setHeader('Content-Type', 'text/html; charset=utf-8');
         res.send(html);
     } catch (error) {
@@ -6274,7 +6989,7 @@ app.get('/auto-subtitles', async (req, res) => {
 const LIVE_AUTOSUB_LOG_TTL_MS = 10 * 60 * 1000;
 const liveAutoSubLogChannels = new Map();
 function getAutoSubLogChannel(jobId) {
-    const id = (jobId && String(jobId).trim()) ? String(jobId).trim().slice(0, 128) : null;
+    const id = jobId && String(jobId).trim() ? String(jobId).trim().slice(0, 128) : null;
     if (!id) return null;
     let channel = liveAutoSubLogChannels.get(id);
     if (!channel) {
@@ -6301,7 +7016,11 @@ function broadcastAutoSubLog(jobId, entry) {
             try {
                 res.write('data: ' + JSON.stringify(entry) + '\n\n');
             } catch (_) {
-                try { res.end(); } catch (_) { /* ignore */ }
+                try {
+                    res.end();
+                } catch (_) {
+                    /* ignore */
+                }
                 channel.listeners.delete(res);
             }
         }
@@ -6320,7 +7039,9 @@ function finalizeAutoSubLog(jobId, logTrail = []) {
         try {
             res.write('event: done\ndata: {}\n\n');
             res.end();
-        } catch (_) { /* ignore */ }
+        } catch (_) {
+            /* ignore */
+        }
         channel.listeners.delete(res);
     }
 }
@@ -6334,9 +7055,15 @@ setInterval(() => {
         if (channel.expiresAt && channel.expiresAt < now) {
             try {
                 for (const res of Array.from(channel.listeners || [])) {
-                    try { res.end(); } catch (_) { /* ignore */ }
+                    try {
+                        res.end();
+                    } catch (_) {
+                        /* ignore */
+                    }
                 }
-            } catch (_) { /* ignore */ }
+            } catch (_) {
+                /* ignore */
+            }
             liveAutoSubLogChannels.delete(jobId);
         }
     }
@@ -6351,12 +7078,14 @@ app.get('/api/auto-subtitles/logs', (req, res) => {
         }
         const sinceTs = Number(since);
         const entries = Array.isArray(channel.logs)
-            ? channel.logs.filter((entry) => {
-                const ts = Number(entry?.ts);
-                if (!Number.isFinite(sinceTs)) return true;
-                if (!Number.isFinite(ts)) return false;
-                return ts > sinceTs;
-            }).slice(-250)
+            ? channel.logs
+                  .filter((entry) => {
+                      const ts = Number(entry?.ts);
+                      if (!Number.isFinite(sinceTs)) return true;
+                      if (!Number.isFinite(ts)) return false;
+                      return ts > sinceTs;
+                  })
+                  .slice(-250)
             : [];
         const wantsSse = (req.headers.accept || '').includes('text/event-stream') && format !== 'json';
         if (wantsSse) {
@@ -6432,7 +7161,7 @@ app.post('/api/auto-subtitles/run', autoSubLimiter, async (req, res) => {
             sendFullVideo = false,
             diarization = false
         } = req.body || {};
-        const options = (req.body && typeof req.body.options === 'object' && req.body.options) ? req.body.options : {};
+        const options = req.body && typeof req.body.options === 'object' && req.body.options ? req.body.options : {};
         const hasLegacySendTimestamps = typeof req.body?.sendTimestampsToAI === 'boolean';
         const hasLegacySingleBatch = typeof req.body?.singleBatchMode === 'boolean';
         // Force diarization for all auto-subs modes (labels are stripped from outputs)
@@ -6466,9 +7195,12 @@ app.post('/api/auto-subtitles/run', autoSubLimiter, async (req, res) => {
         // TOTAL PURGE (Mandat 2026-09-25): enableBatchContext dibuang — SubFaber
         // enjin tunggal; sliding context aktif di peringkat engine.
         const translationWorkflow = 'xml';
-        singleBatchMode = (typeof options.singleBatchMode === 'boolean')
-            ? options.singleBatchMode
-            : (hasLegacySingleBatch ? singleBatchMode === true : config.singleBatchMode === true);
+        singleBatchMode =
+            typeof options.singleBatchMode === 'boolean'
+                ? options.singleBatchMode
+                : hasLegacySingleBatch
+                  ? singleBatchMode === true
+                  : config.singleBatchMode === true;
         sendTimestampsToAI = false;
         config.singleBatchMode = singleBatchMode === true;
         config.advancedSettings = { ...(config.advancedSettings || {}) };
@@ -6481,15 +7213,28 @@ app.post('/api/auto-subtitles/run', autoSubLimiter, async (req, res) => {
         const linkedHash = deriveVideoHash(filename || '', videoId || '');
         const streamHashInfo = deriveStreamHashFromUrlServer(streamUrl, { filename, videoId });
         const cacheBlocked = Boolean(streamHashInfo.hash && linkedHash && streamHashInfo.hash !== linkedHash);
-        const videoHash = linkedHash || streamHashInfo.hash || deriveVideoHash(streamHashInfo.filename || filename || '', streamHashInfo.videoId || videoId || '');
-        logStep(`Starting auto-subs run (engine=${engine || 'remote'}, translate=${translate !== false}, diarization=${diarization === true})`, 'info');
-        logStep(`Video hash derived as ${videoHash || 'n/a'} (linked=${linkedHash || 'n/a'}, stream=${streamHashInfo.hash || 'n/a'})`, cacheBlocked ? 'warn' : 'info');
+        const videoHash =
+            linkedHash ||
+            streamHashInfo.hash ||
+            deriveVideoHash(streamHashInfo.filename || filename || '', streamHashInfo.videoId || videoId || '');
+        logStep(
+            `Starting auto-subs run (engine=${engine || 'remote'}, translate=${translate !== false}, diarization=${diarization === true})`,
+            'info'
+        );
+        logStep(
+            `Video hash derived as ${videoHash || 'n/a'} (linked=${linkedHash || 'n/a'}, stream=${streamHashInfo.hash || 'n/a'})`,
+            cacheBlocked ? 'warn' : 'info'
+        );
 
         const engineKey = String(engine || 'remote').toLowerCase();
         if (engineKey === 'local') {
             logStep('Local engine requested but not available in hosted mode', 'warn');
             return respond(400, {
-                error: t('server.errors.autoSubsLocalUnavailable', {}, 'Local Whisper (extension) is not available yet. Use Remote (Cloudflare Workers AI).'),
+                error: t(
+                    'server.errors.autoSubsLocalUnavailable',
+                    {},
+                    'Local Whisper (extension) is not available yet. Use Remote (Cloudflare Workers AI).'
+                ),
                 cacheBlocked,
                 hashes: { linked: linkedHash, stream: streamHashInfo.hash || '' },
                 logTrail
@@ -6499,36 +7244,66 @@ app.post('/api/auto-subtitles/run', autoSubLimiter, async (req, res) => {
         const providerKey = (translationProvider || config.mainProvider || 'gemini').toString().toLowerCase();
         let transcription = null;
         const transcriptDiagnostics = {};
-        const transcriptPayload = (req.body && typeof req.body.transcript === 'object') ? req.body.transcript : {};
-        const transcriptSrtRaw = (typeof transcriptPayload.srt === 'string' && transcriptPayload.srt.trim())
-            ? transcriptPayload.srt
-            : ((typeof req.body?.transcriptSrt === 'string' && req.body.transcriptSrt.trim()) ? req.body.transcriptSrt : '');
-        const preserveAutoSubTiming = engineKey === 'assemblyai'
-            || String(transcriptPayload.model || '').toLowerCase() === 'assemblyai'
-            || String(model || '').toLowerCase() === 'assemblyai';
+        const transcriptPayload = req.body && typeof req.body.transcript === 'object' ? req.body.transcript : {};
+        const transcriptSrtRaw =
+            typeof transcriptPayload.srt === 'string' && transcriptPayload.srt.trim()
+                ? transcriptPayload.srt
+                : typeof req.body?.transcriptSrt === 'string' && req.body.transcriptSrt.trim()
+                  ? req.body.transcriptSrt
+                  : '';
+        const preserveAutoSubTiming =
+            engineKey === 'assemblyai' ||
+            String(transcriptPayload.model || '').toLowerCase() === 'assemblyai' ||
+            String(model || '').toLowerCase() === 'assemblyai';
         const normalizeOpts = preserveAutoSubTiming ? { preserveTiming: true } : {};
         const transcriptSrt = normalizeAutoSubSrt(transcriptSrtRaw, normalizeOpts);
-        const transcriptLang = (transcriptPayload.languageCode || transcriptPayload.language || req.body?.transcriptLanguage || sourceLanguage || '').toString().trim();
-        const cfStatus = Number.isFinite(transcriptPayload.cfStatus) ? transcriptPayload.cfStatus : (Number.isFinite(req.body?.cfStatus) ? req.body.cfStatus : null);
+        const transcriptLang = (
+            transcriptPayload.languageCode ||
+            transcriptPayload.language ||
+            req.body?.transcriptLanguage ||
+            sourceLanguage ||
+            ''
+        )
+            .toString()
+            .trim();
+        const cfStatus = Number.isFinite(transcriptPayload.cfStatus)
+            ? transcriptPayload.cfStatus
+            : Number.isFinite(req.body?.cfStatus)
+              ? req.body.cfStatus
+              : null;
         const cfBody = (transcriptPayload.cfBody || req.body?.cfBody || '').toString();
-        const audioMeta = (typeof transcriptPayload.audio === 'object') ? transcriptPayload.audio : {};
-        const audioBytes = Number.isFinite(transcriptPayload.audioBytes) ? transcriptPayload.audioBytes
-            : Number.isFinite(audioMeta.bytes) ? audioMeta.bytes
-                : (Array.isArray(audioMeta.windows) ? audioMeta.windows.reduce((sum, w) => sum + (Number(w.bytes) || 0), 0) : null);
-        const audioSource = transcriptPayload.audioSource || audioMeta.source || (engineKey === 'assemblyai' ? 'assemblyai-extension' : 'extension');
-        const audioContentType = transcriptPayload.contentType || audioMeta.contentType || (engineKey === 'assemblyai' ? 'audio/wav' : 'audio/wav');
+        const audioMeta = typeof transcriptPayload.audio === 'object' ? transcriptPayload.audio : {};
+        const audioBytes = Number.isFinite(transcriptPayload.audioBytes)
+            ? transcriptPayload.audioBytes
+            : Number.isFinite(audioMeta.bytes)
+              ? audioMeta.bytes
+              : Array.isArray(audioMeta.windows)
+                ? audioMeta.windows.reduce((sum, w) => sum + (Number(w.bytes) || 0), 0)
+                : null;
+        const audioSource =
+            transcriptPayload.audioSource ||
+            audioMeta.source ||
+            (engineKey === 'assemblyai' ? 'assemblyai-extension' : 'extension');
+        const audioContentType =
+            transcriptPayload.contentType ||
+            audioMeta.contentType ||
+            (engineKey === 'assemblyai' ? 'audio/wav' : 'audio/wav');
         const transcriptModel = transcriptPayload.model || model || '@cf/openai/whisper';
         const requestedAssemblySpeechModel = (transcriptPayload.speechModel || req.body?.assemblySpeechModel || '')
             .toString()
             .trim()
             .toLowerCase();
-        const assemblySpeechModel = (requestedAssemblySpeechModel === 'universal-3-pro' || requestedAssemblySpeechModel === 'universal-2')
-            ? requestedAssemblySpeechModel
-            : 'universal-3-pro';
+        const assemblySpeechModel =
+            requestedAssemblySpeechModel === 'universal-3-pro' || requestedAssemblySpeechModel === 'universal-2'
+                ? requestedAssemblySpeechModel
+                : 'universal-3-pro';
 
         if (engineKey === 'assemblyai' && transcriptSrt) {
             const transcriptBytes = Buffer.byteLength(transcriptSrt, 'utf8');
-            logStep(`Using client AssemblyAI transcript (${formatBytes(transcriptBytes)}) from ${audioSource} (speech_model=${assemblySpeechModel})`, 'info');
+            logStep(
+                `Using client AssemblyAI transcript (${formatBytes(transcriptBytes)}) from ${audioSource} (speech_model=${assemblySpeechModel})`,
+                'info'
+            );
             transcription = {
                 srt: transcriptSrt,
                 languageCode: transcriptLang || sourceLanguage || 'und',
@@ -6545,7 +7320,11 @@ app.post('/api/auto-subtitles/run', autoSubLimiter, async (req, res) => {
             // All transcription must happen client-side via the xSync extension
             logStep('AssemblyAI engine requires client-provided transcript (xSync extension)', 'error');
             return respond(400, {
-                error: t('server.errors.autoSubsClientRequired', {}, 'AssemblyAI transcription requires the xSync extension to provide the transcript.'),
+                error: t(
+                    'server.errors.autoSubsClientRequired',
+                    {},
+                    'AssemblyAI transcription requires the xSync extension to provide the transcript.'
+                ),
                 hint: 'The xSync extension handles audio extraction and AssemblyAI API calls client-side.',
                 logTrail
             });
@@ -6554,17 +7333,21 @@ app.post('/api/auto-subtitles/run', autoSubLimiter, async (req, res) => {
             if (!transcriptSrt) {
                 logStep('Client transcript missing; built-in fetch/transcribe is disabled for auto-subs', 'error');
                 return respond(400, {
-                    error: t('server.errors.autoSubsClientRequired', {}, 'Automatic subtitles now require a client-provided transcript (xSync extension).'),
+                    error: t(
+                        'server.errors.autoSubsClientRequired',
+                        {},
+                        'Automatic subtitles now require a client-provided transcript (xSync extension).'
+                    ),
                     logTrail
                 });
             }
             const transcriptBytes = Buffer.byteLength(transcriptSrt, 'utf8');
-            logStep(
-                `Using client transcript (${formatBytes(transcriptBytes)}) from ${audioSource}`,
-                'info'
-            );
+            logStep(`Using client transcript (${formatBytes(transcriptBytes)}) from ${audioSource}`, 'info');
             if (cfStatus) {
-                logStep(`Cloudflare transcription status ${cfStatus}${cfBody ? ' | Snippet: ' + cfBody.toString().slice(0, 200).replace(/\s+/g, ' ') : ''}`, cfStatus >= 500 ? 'warn' : 'info');
+                logStep(
+                    `Cloudflare transcription status ${cfStatus}${cfBody ? ' | Snippet: ' + cfBody.toString().slice(0, 200).replace(/\s+/g, ' ') : ''}`,
+                    cfStatus >= 500 ? 'warn' : 'info'
+                );
             }
             transcription = {
                 srt: transcriptSrt,
@@ -6586,7 +7369,10 @@ app.post('/api/auto-subtitles/run', autoSubLimiter, async (req, res) => {
                 logTrail
             });
         }
-        const originalSrt = normalizeAutoSubSrt((transcription && transcription.srt) ? transcription.srt : '', normalizeOpts);
+        const originalSrt = normalizeAutoSubSrt(
+            transcription && transcription.srt ? transcription.srt : '',
+            normalizeOpts
+        );
         if (!originalSrt || !originalSrt.trim()) {
             logStep('Transcription returned no content', 'error');
             return respond(500, {
@@ -6595,7 +7381,8 @@ app.post('/api/auto-subtitles/run', autoSubLimiter, async (req, res) => {
             });
         }
         const originalLang = normalizeSyncLang(sourceLanguage || transcription.languageCode || 'und');
-        const chosenModel = transcription?.model || model || (engineKey === 'assemblyai' ? 'assemblyai' : '@cf/openai/whisper');
+        const chosenModel =
+            transcription?.model || model || (engineKey === 'assemblyai' ? 'assemblyai' : '@cf/openai/whisper');
         const modelKey = safeModelKey(chosenModel);
         const originalSourceId = `autosub_${modelKey}_orig`;
         logStep('Aligning segments and generating SRT/VTT outputs', 'info');
@@ -6633,7 +7420,7 @@ app.post('/api/auto-subtitles/run', autoSubLimiter, async (req, res) => {
 
         const translations = [];
         const normalizedTargets = Array.isArray(targetLanguages)
-            ? targetLanguages.map(l => normalizeSyncLang(l)).filter(Boolean)
+            ? targetLanguages.map((l) => normalizeSyncLang(l)).filter(Boolean)
             : [];
 
         if (translate !== false && normalizedTargets.length > 0) {
@@ -6645,8 +7432,14 @@ app.post('/api/auto-subtitles/run', autoSubLimiter, async (req, res) => {
                 const providerLabelFull = providerBundle.fallbackProviderName
                     ? `${providerBundle.providerName} (fallback from ${providerBundle.fallbackProviderName})`
                     : providerBundle.providerName;
-                logStep(`Using translation provider ${providerLabelFull} (${providerBundle.providerModel || 'default model'})`, 'info');
-                logStep(`Translation workflow=${translationWorkflow}, singleBatch=${singleBatchMode === true} (SubFaber engine, sliding context always-on)`, 'info');
+                logStep(
+                    `Using translation provider ${providerLabelFull} (${providerBundle.providerModel || 'default model'})`,
+                    'info'
+                );
+                logStep(
+                    `Translation workflow=${translationWorkflow}, singleBatch=${singleBatchMode === true} (SubFaber engine, sliding context always-on)`,
+                    'info'
+                );
                 const translationEngine = new TranslationEngine(
                     providerBundle.provider,
                     providerBundle.providerModel,
@@ -6659,9 +7452,8 @@ app.post('/api/auto-subtitles/run', autoSubLimiter, async (req, res) => {
                     }
                 );
 
-                const sourceLangName = (originalLang && originalLang !== 'und')
-                    ? (getLanguageName(originalLang) || originalLang)
-                    : null;
+                const sourceLangName =
+                    originalLang && originalLang !== 'und' ? getLanguageName(originalLang) || originalLang : null;
 
                 for (const targetLang of normalizedTargets) {
                     try {
@@ -6694,7 +7486,10 @@ app.post('/api/auto-subtitles/run', autoSubLimiter, async (req, res) => {
                                 downloadUrl = `/addon/${encodeURIComponent(configStr)}/auto/${videoHash}/${targetLang}/${sourceId}`;
                                 autoCacheUpdated = true;
                             } catch (error) {
-                                log.warn(() => ['[Auto Subs API] Failed to persist translated Auto subtitle:', error.message]);
+                                log.warn(() => [
+                                    '[Auto Subs API] Failed to persist translated Auto subtitle:',
+                                    error.message
+                                ]);
                             }
                         }
                         translations.push({
@@ -6719,7 +7514,7 @@ app.post('/api/auto-subtitles/run', autoSubLimiter, async (req, res) => {
 
         logStep(
             `Delivering subtitles (${originalLang || 'und'}) with ${translations.length} translation(s)` +
-            (cacheBlocked ? ' [cache upload skipped due to hash mismatch]' : ''),
+                (cacheBlocked ? ' [cache upload skipped due to hash mismatch]' : ''),
             cacheBlocked ? 'warn' : 'success'
         );
 
@@ -6743,7 +7538,10 @@ app.post('/api/auto-subtitles/run', autoSubLimiter, async (req, res) => {
             translations,
             diagnostics: {
                 engine: engineKey === 'assemblyai' ? 'assemblyai' : 'cloudflare',
-                cfStatus: engineKey === 'assemblyai' ? null : (transcription?.cfStatus || transcriptDiagnostics.cfStatus || null),
+                cfStatus:
+                    engineKey === 'assemblyai'
+                        ? null
+                        : transcription?.cfStatus || transcriptDiagnostics.cfStatus || null,
                 model: chosenModel,
                 audioBytes: transcriptDiagnostics.audioBytes || null,
                 audioSource: transcriptDiagnostics.audioSource || '',
@@ -6759,9 +7557,10 @@ app.post('/api/auto-subtitles/run', autoSubLimiter, async (req, res) => {
         log.error(() => '[Auto Subs API] Error:', error);
         respond(500, {
             error: t('server.errors.autoSubsFailed', {}, `Automatic subtitles failed: ${error.message}`),
-            logTrail: (Array.isArray(logTrail) && logTrail.length)
-                ? logTrail
-                : [{ ts: Date.now(), level: 'error', message: error.message || 'Automatic subtitles failed' }]
+            logTrail:
+                Array.isArray(logTrail) && logTrail.length
+                    ? logTrail
+                    : [{ ts: Date.now(), level: 'error', message: error.message || 'Automatic subtitles failed' }]
         });
     } finally {
         finalizeLogs(logTrail);
@@ -6803,8 +7602,10 @@ app.get('/addon/:config/sync-subtitles/:videoId', async (req, res) => {
         log.debug(() => `[Sync Subtitles] Request for video ${videoId}, filename: ${filename}`);
 
         // Redirect to the actual sync page
-        res.redirect(302, `/subtitle-sync?config=${encodeURIComponent(configStr)}&videoId=${encodeURIComponent(videoId)}&filename=${encodeURIComponent(filename || '')}`);
-
+        res.redirect(
+            302,
+            `/subtitle-sync?config=${encodeURIComponent(configStr)}&videoId=${encodeURIComponent(videoId)}&filename=${encodeURIComponent(filename || '')}`
+        );
     } catch (error) {
         const t = res.locals?.t || getTranslatorFromRequest(req, res);
         if (respondStorageUnavailable(res, error, '[Sync Subtitles]', t)) return;
@@ -6838,7 +7639,6 @@ app.get('/subtitle-sync', async (req, res) => {
 
         res.setHeader('Content-Type', 'text/html; charset=utf-8');
         res.send(html);
-
     } catch (error) {
         const t = res.locals?.t || getTranslatorFromRequest(req, res);
         if (respondStorageUnavailable(res, error, '[Subtitle Sync Page]', t)) return;
@@ -6884,7 +7684,6 @@ app.get('/addon/:config/xsync/:videoHash/:lang/:sourceSubId', async (req, res) =
         }
         setSubtitleCacheHeaders(res, 'final');
         res.send(maybeConvertToSRT(syncedSub.content, config));
-
     } catch (error) {
         const t = res.locals?.t || getTranslatorFromRequest(req, res);
         if (respondStorageUnavailable(res, error, '[xSync Download]', t)) return;
@@ -6948,11 +7747,18 @@ app.get('/addon/:config/auto/:videoHash/:lang/:sourceSubId', async (req, res) =>
         }
         t = getTranslatorFromRequest(req, res, config);
 
-        const safeVideoHash = (typeof videoHash === 'string' && /^[a-zA-Z0-9_-]{1,64}$/.test(videoHash)) ? videoHash : null;
-        const safeSourceSubId = (typeof sourceSubId === 'string' || typeof sourceSubId === 'number') && /^[a-zA-Z0-9._-]{1,120}$/.test(String(sourceSubId)) ? String(sourceSubId) : null;
-        const safeLang = (typeof lang === 'string' && /^[a-zA-Z0-9_-]{1,24}$/.test(lang)) ? lang.toLowerCase() : null;
+        const safeVideoHash =
+            typeof videoHash === 'string' && /^[a-zA-Z0-9_-]{1,64}$/.test(videoHash) ? videoHash : null;
+        const safeSourceSubId =
+            (typeof sourceSubId === 'string' || typeof sourceSubId === 'number') &&
+            /^[a-zA-Z0-9._-]{1,120}$/.test(String(sourceSubId))
+                ? String(sourceSubId)
+                : null;
+        const safeLang = typeof lang === 'string' && /^[a-zA-Z0-9_-]{1,24}$/.test(lang) ? lang.toLowerCase() : null;
         if (!safeVideoHash || !safeSourceSubId || !safeLang) {
-            return res.status(400).send(t('server.errors.invalidEmbeddedParams', {}, 'Invalid embedded subtitle parameters'));
+            return res
+                .status(400)
+                .send(t('server.errors.invalidEmbeddedParams', {}, 'Invalid embedded subtitle parameters'));
         }
 
         log.debug(() => `[Auto Download] Request for ${safeVideoHash}_${safeLang}_${safeSourceSubId}`);
@@ -7004,11 +7810,12 @@ function normalizeSyncLanguageCode(raw) {
 
 async function bumpUserSubtitleSearchRevision(config) {
     try {
-        const userHash = (config && typeof config.__configHash === 'string' && config.__configHash.length > 0)
-            ? config.__configHash
-            : 'default';
+        const userHash =
+            config && typeof config.__configHash === 'string' && config.__configHash.length > 0
+                ? config.__configHash
+                : 'default';
         const key = `${CACHE_PREFIXES.SUBTITLE_SEARCH_REV}${userHash}`;
-        await incrementCounter(key, CACHE_TTLS.SUBTITLE_SEARCH_REV || (7 * 24 * 60 * 60));
+        await incrementCounter(key, CACHE_TTLS.SUBTITLE_SEARCH_REV || 7 * 24 * 60 * 60);
     } catch (error) {
         log.warn(() => `[Subtitle Cache] Failed to bump search revision: ${error?.message || error}`);
     }
@@ -7035,14 +7842,16 @@ app.post('/api/save-synced-subtitle', userDataWriteLimiter, async (req, res) => 
         if (!config || config.__sessionTokenError === true) {
             log.warn(() => '[Save Synced] Rejected write due to invalid/missing session token');
             t = getTranslatorFromRequest(req, res, config);
-            return res.status(401).json({ error: t('server.errors.invalidSessionToken', {}, 'Invalid or expired session token') });
+            return res
+                .status(401)
+                .json({ error: t('server.errors.invalidSessionToken', {}, 'Invalid or expired session token') });
         }
         t = getTranslatorFromRequest(req, res, config);
 
         log.debug(() => `[Save Synced] Saving synced subtitle: ${videoHash}_${languageCode}_${sourceSubId}`);
 
         const normalizedLanguage = normalizeSyncLanguageCode(languageCode);
-        const safeMetadata = (metadata && typeof metadata === 'object') ? metadata : {};
+        const safeMetadata = metadata && typeof metadata === 'object' ? metadata : {};
 
         // Save to sync cache
         await syncCache.saveSyncedSubtitle(videoHash, normalizedLanguage, sourceSubId, {
@@ -7059,7 +7868,6 @@ app.post('/api/save-synced-subtitle', userDataWriteLimiter, async (req, res) => 
         await bumpUserSubtitleSearchRevision(config);
 
         res.json({ success: true, message: t('server.sync.saveSuccess', {}, 'Synced subtitle saved successfully') });
-
     } catch (error) {
         const t = res.locals?.t || getTranslatorFromRequest(req, res);
         if (respondStorageUnavailable(res, error, '[Save Synced]', t)) return;
@@ -7083,20 +7891,28 @@ app.get('/addon/:config/xembedded/:videoHash/:lang/:trackId', async (req, res) =
         }
         t = getTranslatorFromRequest(req, res, config);
 
-        const safeVideoHash = (typeof videoHash === 'string' && /^[a-zA-Z0-9_-]{1,64}$/.test(videoHash)) ? videoHash : null;
-        const safeTrackId = (typeof trackId === 'string' || typeof trackId === 'number') && /^[a-zA-Z0-9._-]{1,120}$/.test(String(trackId)) ? String(trackId) : null;
-        const safeLang = (typeof lang === 'string' && /^[a-zA-Z0-9_-]{1,24}$/.test(lang)) ? lang.toLowerCase() : null;
+        const safeVideoHash =
+            typeof videoHash === 'string' && /^[a-zA-Z0-9_-]{1,64}$/.test(videoHash) ? videoHash : null;
+        const safeTrackId =
+            (typeof trackId === 'string' || typeof trackId === 'number') &&
+            /^[a-zA-Z0-9._-]{1,120}$/.test(String(trackId))
+                ? String(trackId)
+                : null;
+        const safeLang = typeof lang === 'string' && /^[a-zA-Z0-9_-]{1,24}$/.test(lang) ? lang.toLowerCase() : null;
 
         if (!safeVideoHash || !safeTrackId || !safeLang) {
-            return res.status(400).send(t('server.errors.invalidEmbeddedParams', {}, 'Invalid embedded subtitle parameters'));
+            return res
+                .status(400)
+                .send(t('server.errors.invalidEmbeddedParams', {}, 'Invalid embedded subtitle parameters'));
         }
 
         log.debug(() => `[xEmbed Download] Request for ${safeVideoHash}_${safeLang}_${safeTrackId}`);
 
         const translations = await embeddedCache.listEmbeddedTranslations(safeVideoHash);
-        const match = translations.find(t =>
-            String(t.trackId) === String(safeTrackId) &&
-            String(t.targetLanguageCode || t.languageCode || '').toLowerCase() === safeLang
+        const match = translations.find(
+            (t) =>
+                String(t.trackId) === String(safeTrackId) &&
+                String(t.targetLanguageCode || t.languageCode || '').toLowerCase() === safeLang
         );
 
         if (!match || !match.content) {
@@ -7109,36 +7925,48 @@ app.get('/addon/:config/xembedded/:videoHash/:lang/:trackId', async (req, res) =
                 const { StorageAdapter } = require('./src/storage');
                 const adapter = await getStorageAdapter();
                 const partial = await adapter.get(runtimeKey, StorageAdapter.CACHE_TYPES.PARTIAL);
-                
+
                 if (partial && partial.content) {
                     res.setHeader('Content-Type', 'text/plain; charset=utf-8');
-                    res.setHeader('Content-Disposition', `attachment; filename="${safeVideoHash}_${safeLang}_xembed.srt"`);
+                    res.setHeader(
+                        'Content-Disposition',
+                        `attachment; filename="${safeVideoHash}_${safeLang}_xembed.srt"`
+                    );
                     setSubtitleCacheHeaders(res, 'loading');
                     return res.send(partial.content);
                 }
-            } catch(e) {
+            } catch (e) {
                 log.debug(() => `[Radar Error] Gagal baca partial cache: ${e.message}`);
             }
             // --- TAMAT KOD PEMBEDAHAN LOKASI 2 ---
 
-            return res.status(404).send(t('server.errors.translatedEmbeddedMissing', {}, 'Translated embedded subtitle not found'));
+            return res
+                .status(404)
+                .send(t('server.errors.translatedEmbeddedMissing', {}, 'Translated embedded subtitle not found'));
         }
 
         const metadata = match.metadata || {};
         const strictSrtHeaders = String(config.androidSubtitleCompatMode || 'off').toLowerCase() === 'aggressive';
-        const prepared = prepareEmbeddedSubtitleDelivery({
-            content: match.content,
-            codec: metadata.codec,
-            mime: metadata.mime,
-            label: metadata.label,
-            originalLabel: metadata.originalLabel,
-            name: metadata.name,
-            sourceFormat: metadata.storedFormat || metadata.sourceFormat,
-            metadata
-        }, config, { logPrefix: '[xEmbed Download]' });
+        const prepared = prepareEmbeddedSubtitleDelivery(
+            {
+                content: match.content,
+                codec: metadata.codec,
+                mime: metadata.mime,
+                label: metadata.label,
+                originalLabel: metadata.originalLabel,
+                name: metadata.name,
+                sourceFormat: metadata.storedFormat || metadata.sourceFormat,
+                metadata
+            },
+            config,
+            { logPrefix: '[xEmbed Download]' }
+        );
 
         if (prepared.conversionFailed) {
-            log.warn(() => `[xEmbed Download] Requested SRT delivery but conversion fell back to ${prepared.sourceFormat || 'original'} for ${safeVideoHash}_${safeLang}_${safeTrackId}`);
+            log.warn(
+                () =>
+                    `[xEmbed Download] Requested SRT delivery but conversion fell back to ${prepared.sourceFormat || 'original'} for ${safeVideoHash}_${safeLang}_${safeTrackId}`
+            );
         }
 
         if (prepared.deliveryFormat === 'vtt') {
@@ -7146,7 +7974,10 @@ app.get('/addon/:config/xembedded/:videoHash/:lang/:trackId', async (req, res) =
             res.setHeader('Content-Disposition', `attachment; filename="${safeVideoHash}_${safeLang}_xembed.vtt"`);
         } else if (prepared.deliveryFormat === 'ass' || prepared.deliveryFormat === 'ssa') {
             res.setHeader('Content-Type', 'text/x-ssa; charset=utf-8');
-            res.setHeader('Content-Disposition', `attachment; filename="${safeVideoHash}_${safeLang}_xembed.${prepared.ext}"`);
+            res.setHeader(
+                'Content-Disposition',
+                `attachment; filename="${safeVideoHash}_${safeLang}_xembed.${prepared.ext}"`
+            );
         } else if (strictSrtHeaders) {
             res.setHeader('Content-Type', 'application/x-subrip; charset=utf-8');
             res.setHeader('Content-Disposition', `inline; filename="${safeVideoHash}_${safeLang}_xembed.srt"`);
@@ -7179,24 +8010,32 @@ app.get('/addon/:config/xembedded/:videoHash/:lang/:trackId/original', async (re
         }
         t = getTranslatorFromRequest(req, res, config);
 
-        const safeVideoHash = (typeof videoHash === 'string' && /^[a-zA-Z0-9_-]{1,64}$/.test(videoHash)) ? videoHash : null;
-        const safeTrackId = (typeof trackId === 'string' || typeof trackId === 'number') && /^[a-zA-Z0-9._-]{1,120}$/.test(String(trackId)) ? String(trackId) : null;
-        const safeLang = (typeof lang === 'string' && /^[a-zA-Z0-9_-]{1,24}$/.test(lang)) ? lang.toLowerCase() : null;
+        const safeVideoHash =
+            typeof videoHash === 'string' && /^[a-zA-Z0-9_-]{1,64}$/.test(videoHash) ? videoHash : null;
+        const safeTrackId =
+            (typeof trackId === 'string' || typeof trackId === 'number') &&
+            /^[a-zA-Z0-9._-]{1,120}$/.test(String(trackId))
+                ? String(trackId)
+                : null;
+        const safeLang = typeof lang === 'string' && /^[a-zA-Z0-9_-]{1,24}$/.test(lang) ? lang.toLowerCase() : null;
 
         if (!safeVideoHash || !safeTrackId || !safeLang) {
-            return res.status(400).send(t('server.errors.invalidEmbeddedParams', {}, 'Invalid embedded subtitle parameters'));
+            return res
+                .status(400)
+                .send(t('server.errors.invalidEmbeddedParams', {}, 'Invalid embedded subtitle parameters'));
         }
 
         log.debug(() => `[xEmbed Original] Request for ${safeVideoHash}_${safeLang}_${safeTrackId}`);
 
         const originals = await embeddedCache.listEmbeddedOriginals(safeVideoHash);
-        const match = originals.find(t =>
-            String(t.trackId) === String(safeTrackId) &&
-            String(t.languageCode || '').toLowerCase() === safeLang
+        const match = originals.find(
+            (t) => String(t.trackId) === String(safeTrackId) && String(t.languageCode || '').toLowerCase() === safeLang
         );
 
         if (!match || !match.content) {
-            return res.status(404).send(t('server.errors.originalEmbeddedMissing', {}, 'Original embedded subtitle not found'));
+            return res
+                .status(404)
+                .send(t('server.errors.originalEmbeddedMissing', {}, 'Original embedded subtitle not found'));
         }
 
         const metadata = match.metadata || {};
@@ -7205,25 +8044,35 @@ app.get('/addon/:config/xembedded/:videoHash/:lang/:trackId/original', async (re
             const binaryMime = metadata.mime || 'application/octet-stream';
             const binaryExt = /matroska/i.test(binaryMime) ? 'mkv' : 'bin';
             res.setHeader('Content-Type', binaryMime);
-            res.setHeader('Content-Disposition', `attachment; filename="${safeVideoHash}_${safeLang}_original.${binaryExt}"`);
+            res.setHeader(
+                'Content-Disposition',
+                `attachment; filename="${safeVideoHash}_${safeLang}_original.${binaryExt}"`
+            );
             setSubtitleCacheHeaders(res, 'final');
             return res.send(Buffer.from(String(match.content || ''), 'base64'));
         }
 
         const strictSrtHeaders = String(config.androidSubtitleCompatMode || 'off').toLowerCase() === 'aggressive';
-        const prepared = prepareEmbeddedSubtitleDelivery({
-            content: match.content,
-            codec: metadata.codec,
-            mime: metadata.mime,
-            label: metadata.label,
-            originalLabel: metadata.originalLabel,
-            name: metadata.name,
-            sourceFormat: metadata.sourceFormat,
-            metadata
-        }, config, { logPrefix: '[xEmbed Original]' });
+        const prepared = prepareEmbeddedSubtitleDelivery(
+            {
+                content: match.content,
+                codec: metadata.codec,
+                mime: metadata.mime,
+                label: metadata.label,
+                originalLabel: metadata.originalLabel,
+                name: metadata.name,
+                sourceFormat: metadata.sourceFormat,
+                metadata
+            },
+            config,
+            { logPrefix: '[xEmbed Original]' }
+        );
 
         if (prepared.conversionFailed) {
-            log.warn(() => `[xEmbed Original] Requested SRT delivery but conversion fell back to ${prepared.sourceFormat || 'original'} for ${safeVideoHash}_${safeLang}_${safeTrackId}`);
+            log.warn(
+                () =>
+                    `[xEmbed Original] Requested SRT delivery but conversion fell back to ${prepared.sourceFormat || 'original'} for ${safeVideoHash}_${safeLang}_${safeTrackId}`
+            );
         }
 
         if (prepared.deliveryFormat === 'vtt') {
@@ -7231,7 +8080,10 @@ app.get('/addon/:config/xembedded/:videoHash/:lang/:trackId/original', async (re
             res.setHeader('Content-Disposition', `attachment; filename="${safeVideoHash}_${safeLang}_original.vtt"`);
         } else if (prepared.deliveryFormat === 'ass' || prepared.deliveryFormat === 'ssa') {
             res.setHeader('Content-Type', 'text/x-ssa; charset=utf-8');
-            res.setHeader('Content-Disposition', `attachment; filename="${safeVideoHash}_${safeLang}_original.${prepared.ext}"`);
+            res.setHeader(
+                'Content-Disposition',
+                `attachment; filename="${safeVideoHash}_${safeLang}_original.${prepared.ext}"`
+            );
         } else if (strictSrtHeaders) {
             res.setHeader('Content-Type', 'application/x-subrip; charset=utf-8');
             res.setHeader('Content-Disposition', `inline; filename="${safeVideoHash}_${safeLang}_original.srt"`);
@@ -7245,7 +8097,9 @@ app.get('/addon/:config/xembedded/:videoHash/:lang/:trackId/original', async (re
         const t = res.locals?.t || getTranslatorFromRequest(req, res);
         if (respondStorageUnavailable(res, error, '[xEmbed Original]', t)) return;
         log.error(() => '[xEmbed Original] Error:', error);
-        res.status(500).send(t('server.errors.downloadEmbeddedOriginalFailed', {}, 'Failed to download original embedded subtitle'));
+        res.status(500).send(
+            t('server.errors.downloadEmbeddedOriginalFailed', {}, 'Failed to download original embedded subtitle')
+        );
     }
 });
 
@@ -7256,10 +8110,14 @@ app.post('/api/prepare-embedded-track-delivery', async (req, res) => {
         const { configStr, tracks } = req.body || {};
 
         if (!configStr || !Array.isArray(tracks) || tracks.length === 0) {
-            return res.status(400).json({ error: t('server.errors.missingOrInvalidFields', {}, 'Missing or invalid required fields') });
+            return res
+                .status(400)
+                .json({ error: t('server.errors.missingOrInvalidFields', {}, 'Missing or invalid required fields') });
         }
         if (tracks.length > 40) {
-            return res.status(413).json({ error: t('server.errors.embeddedTooLarge', {}, 'Embedded subtitle is too large') });
+            return res
+                .status(413)
+                .json({ error: t('server.errors.embeddedTooLarge', {}, 'Embedded subtitle is too large') });
         }
 
         const config = await resolveConfigGuarded(configStr, req, res, '[Embedded Delivery] config', t);
@@ -7267,15 +8125,16 @@ app.post('/api/prepare-embedded-track-delivery', async (req, res) => {
         if (!config || config.__sessionTokenError === true) {
             log.warn(() => '[Embedded Delivery] Rejected due to invalid/missing session token');
             t = getTranslatorFromRequest(req, res, config);
-            return res.status(401).json({ error: t('server.errors.invalidSessionToken', {}, 'Invalid or expired session token') });
+            return res
+                .status(401)
+                .json({ error: t('server.errors.invalidSessionToken', {}, 'Invalid or expired session token') });
         }
         t = getTranslatorFromRequest(req, res, config);
 
         let totalChars = 0;
         const preparedTracks = tracks.map((track, index) => {
-            const safeTrackId = (typeof track?.id === 'string' || typeof track?.id === 'number')
-                ? String(track.id)
-                : String(index);
+            const safeTrackId =
+                typeof track?.id === 'string' || typeof track?.id === 'number' ? String(track.id) : String(index);
             const content = typeof track?.content === 'string' ? track.content : '';
             totalChars += content.length;
             return {
@@ -7291,7 +8150,9 @@ app.post('/api/prepare-embedded-track-delivery', async (req, res) => {
         });
 
         if (totalChars > 8 * 1024 * 1024) {
-            return res.status(413).json({ error: t('server.errors.embeddedTooLarge', {}, 'Embedded subtitle is too large') });
+            return res
+                .status(413)
+                .json({ error: t('server.errors.embeddedTooLarge', {}, 'Embedded subtitle is too large') });
         }
 
         const results = preparedTracks.map((track) => ({
@@ -7303,7 +8164,9 @@ app.post('/api/prepare-embedded-track-delivery', async (req, res) => {
     } catch (error) {
         const t = res.locals?.t || getTranslatorFromRequest(req, res);
         log.error(() => ['[Embedded Delivery] Error:', error]);
-        res.status(500).json({ error: t('server.errors.downloadEmbeddedOriginalFailed', {}, 'Failed to prepare embedded subtitle delivery') });
+        res.status(500).json({
+            error: t('server.errors.downloadEmbeddedOriginalFailed', {}, 'Failed to prepare embedded subtitle delivery')
+        });
     }
 });
 
@@ -7315,20 +8178,27 @@ app.post('/api/save-embedded-subtitle', userDataWriteLimiter, async (req, res) =
         const { configStr, videoHash, trackId, languageCode, content, metadata } = req.body || {};
 
         const normalizedVideoHash = typeof videoHash === 'string' ? videoHash.trim() : '';
-        const normalizedTrackId = (typeof trackId === 'string' || typeof trackId === 'number') ? String(trackId).trim() : '';
+        const normalizedTrackId =
+            typeof trackId === 'string' || typeof trackId === 'number' ? String(trackId).trim() : '';
         const normalizedLang = typeof languageCode === 'string' ? languageCode.trim().toLowerCase() : '';
         const canonicalLang = canonicalSyncLanguageCode(normalizedLang);
         const subtitleContent = typeof content === 'string' ? content : '';
 
-        const hashIsSafe = normalizedVideoHash && normalizedVideoHash.length <= 64 && /^[a-zA-Z0-9_-]+$/.test(normalizedVideoHash);
-        const trackIsSafe = normalizedTrackId && normalizedTrackId.length <= 120 && /^[a-zA-Z0-9._-]+$/.test(normalizedTrackId);
+        const hashIsSafe =
+            normalizedVideoHash && normalizedVideoHash.length <= 64 && /^[a-zA-Z0-9_-]+$/.test(normalizedVideoHash);
+        const trackIsSafe =
+            normalizedTrackId && normalizedTrackId.length <= 120 && /^[a-zA-Z0-9._-]+$/.test(normalizedTrackId);
         const langIsSafe = canonicalLang && canonicalLang.length <= 24;
 
         if (!configStr || !hashIsSafe || !trackIsSafe || !langIsSafe || !subtitleContent) {
-            return res.status(400).json({ error: t('server.errors.missingOrInvalidFields', {}, 'Missing or invalid required fields') });
+            return res
+                .status(400)
+                .json({ error: t('server.errors.missingOrInvalidFields', {}, 'Missing or invalid required fields') });
         }
         if (subtitleContent.length > 5 * 1024 * 1024) {
-            return res.status(413).json({ error: t('server.errors.embeddedTooLarge', {}, 'Embedded subtitle is too large') });
+            return res
+                .status(413)
+                .json({ error: t('server.errors.embeddedTooLarge', {}, 'Embedded subtitle is too large') });
         }
 
         const config = await resolveConfigGuarded(configStr, req, res, '[Save Embedded] config', t);
@@ -7336,13 +8206,15 @@ app.post('/api/save-embedded-subtitle', userDataWriteLimiter, async (req, res) =
         if (!config || config.__sessionTokenError === true) {
             log.warn(() => '[Save Embedded] Rejected write due to invalid/missing session token');
             t = getTranslatorFromRequest(req, res, config);
-            return res.status(401).json({ error: t('server.errors.invalidSessionToken', {}, 'Invalid or expired session token') });
+            return res
+                .status(401)
+                .json({ error: t('server.errors.invalidSessionToken', {}, 'Invalid or expired session token') });
         }
         t = getTranslatorFromRequest(req, res, config);
 
         let kept = false;
         let cacheKey = null;
-        let normalizedMetadata = (metadata && typeof metadata === 'object') ? { ...metadata } : {};
+        let normalizedMetadata = metadata && typeof metadata === 'object' ? { ...metadata } : {};
 
         if (KEEP_EMBEDDED_ORIGINALS) {
             const saveResult = await embeddedCache.saveOriginalEmbedded(
@@ -7357,7 +8229,10 @@ app.post('/api/save-embedded-subtitle', userDataWriteLimiter, async (req, res) =
             normalizedMetadata = saveResult.entry.metadata || normalizedMetadata;
         } else {
             // Respect opt-out, but still acknowledge success
-            log.debug(() => `[Save Embedded] Discarded original for ${normalizedVideoHash}_${normalizedLang}_${normalizedTrackId} (KEEP_EMBEDDED_ORIGINALS disabled)`);
+            log.debug(
+                () =>
+                    `[Save Embedded] Discarded original for ${normalizedVideoHash}_${normalizedLang}_${normalizedTrackId} (KEEP_EMBEDDED_ORIGINALS disabled)`
+            );
         }
 
         if (kept) {
@@ -7393,7 +8268,7 @@ app.post('/api/translate-embedded', embeddedTranslationLimiter, async (req, res)
             }
         }
         historyEntry = nextEntry;
-        return saveRequestToHistory(historyUserHash, nextEntry).catch(err => {
+        return saveRequestToHistory(historyUserHash, nextEntry).catch((err) => {
             log.warn(() => [`[History] Failed to persist embedded translation history:`, err.message]);
         });
     };
@@ -7417,27 +8292,35 @@ app.post('/api/translate-embedded', embeddedTranslationLimiter, async (req, res)
         } = req.body || {};
 
         const normalizedVideoHash = typeof videoHash === 'string' ? videoHash.trim() : '';
-        const normalizedTrackId = (typeof trackId === 'string' || typeof trackId === 'number') ? String(trackId).trim() : '';
+        const normalizedTrackId =
+            typeof trackId === 'string' || typeof trackId === 'number' ? String(trackId).trim() : '';
         const normalizedRequestVideoId = normalizeEmbeddedHistoryValue(requestVideoId, '', 200);
         const normalizedRequestFilename = normalizeEmbeddedHistoryValue(requestFilename, '', 200);
         const normalizedTargetLang = typeof targetLanguage === 'string' ? targetLanguage.trim().toLowerCase() : '';
-        const normalizedSourceLang = typeof sourceLanguageCode === 'string' ? sourceLanguageCode.trim().toLowerCase() : 'und';
+        const normalizedSourceLang =
+            typeof sourceLanguageCode === 'string' ? sourceLanguageCode.trim().toLowerCase() : 'und';
         const subtitleContent = typeof content === 'string' ? content : '';
-        let mergedMetadata = (metadata && typeof metadata === 'object') ? { ...metadata } : {};
+        let mergedMetadata = metadata && typeof metadata === 'object' ? { ...metadata } : {};
         if (normalizedRequestVideoId) mergedMetadata.videoId = normalizedRequestVideoId;
         if (normalizedRequestFilename) mergedMetadata.filename = normalizedRequestFilename;
         const incomingBatchId = Number(mergedMetadata.batchId);
         const skipCacheWrites = skipCache === true;
 
-        const hashIsSafe = normalizedVideoHash && normalizedVideoHash.length <= 64 && /^[a-zA-Z0-9_-]+$/.test(normalizedVideoHash);
-        const trackIsSafe = normalizedTrackId && normalizedTrackId.length <= 120 && /^[a-zA-Z0-9._-]+$/.test(normalizedTrackId);
+        const hashIsSafe =
+            normalizedVideoHash && normalizedVideoHash.length <= 64 && /^[a-zA-Z0-9_-]+$/.test(normalizedVideoHash);
+        const trackIsSafe =
+            normalizedTrackId && normalizedTrackId.length <= 120 && /^[a-zA-Z0-9._-]+$/.test(normalizedTrackId);
         const langIsSafe = normalizedTargetLang && normalizedTargetLang.length <= 24;
 
         if (!configStr || !hashIsSafe || !trackIsSafe || !langIsSafe) {
-            return res.status(400).json({ error: t('server.errors.missingOrInvalidFields', {}, 'Invalid or missing required fields') });
+            return res
+                .status(400)
+                .json({ error: t('server.errors.missingOrInvalidFields', {}, 'Invalid or missing required fields') });
         }
         if (subtitleContent && subtitleContent.length > 5 * 1024 * 1024) {
-            return res.status(413).json({ error: t('server.errors.subtitleTooLarge', {}, 'Subtitle content is too large') });
+            return res
+                .status(413)
+                .json({ error: t('server.errors.subtitleTooLarge', {}, 'Subtitle content is too large') });
         }
 
         const safeVideoHash = normalizedVideoHash;
@@ -7450,7 +8333,9 @@ app.post('/api/translate-embedded', embeddedTranslationLimiter, async (req, res)
         if (!baseConfig || baseConfig.__sessionTokenError === true) {
             log.warn(() => '[Embedded Translate] Rejected due to invalid/missing session token');
             t = getTranslatorFromRequest(req, res, baseConfig);
-            return res.status(401).json({ error: t('server.errors.invalidSessionToken', {}, 'Invalid or expired session token') });
+            return res
+                .status(401)
+                .json({ error: t('server.errors.invalidSessionToken', {}, 'Invalid or expired session token') });
         }
         ensureConfigHash(baseConfig, configStr);
         revisionConfig = baseConfig;
@@ -7464,9 +8349,10 @@ app.post('/api/translate-embedded', embeddedTranslationLimiter, async (req, res)
         // TOTAL PURGE (Mandat 2026-09-25): enableBatchContext dibuang —
         // SubFaber enjin tunggal, sliding context aktif di peringkat engine.
         const translationWorkflow = 'xml';
-        const singleBatchMode = (options && typeof options.singleBatchMode === 'boolean')
-            ? options.singleBatchMode
-            : workingConfig.singleBatchMode === true;
+        const singleBatchMode =
+            options && typeof options.singleBatchMode === 'boolean'
+                ? options.singleBatchMode
+                : workingConfig.singleBatchMode === true;
         const sendTimestampsToAI = false;
 
         workingConfig.singleBatchMode = singleBatchMode;
@@ -7490,9 +8376,8 @@ app.post('/api/translate-embedded', embeddedTranslationLimiter, async (req, res)
             const thinking = clampNumber(incoming.thinkingBudget, -1, 200000);
             if (thinking !== null) parsed.thinkingBudget = thinking;
 
-            const thinkingLevel = typeof incoming.thinkingLevel === 'string'
-                ? incoming.thinkingLevel.trim().toLowerCase()
-                : '';
+            const thinkingLevel =
+                typeof incoming.thinkingLevel === 'string' ? incoming.thinkingLevel.trim().toLowerCase() : '';
             if (['disabled', 'minimal', 'low', 'medium', 'high'].includes(thinkingLevel)) {
                 parsed.thinkingLevel = thinkingLevel;
             }
@@ -7502,7 +8387,6 @@ app.post('/api/translate-embedded', embeddedTranslationLimiter, async (req, res)
 
             const topP = clampNumber(incoming.topP, 0, 1);
             if (topP !== null) parsed.topP = topP;
-
 
             const frequencyPenalty = clampNumber(incoming.frequencyPenalty, -2, 2);
             if (frequencyPenalty !== null) parsed.frequencyPenalty = frequencyPenalty;
@@ -7536,9 +8420,10 @@ app.post('/api/translate-embedded', embeddedTranslationLimiter, async (req, res)
             workingConfig.mainProvider = overrides.providerName.trim();
         }
         if (overrides && typeof overrides.providerModel === 'string' && overrides.providerModel.trim()) {
-            const providerKey = (workingConfig.multiProviderEnabled === true && workingConfig.mainProvider)
-                ? String(workingConfig.mainProvider).toLowerCase()
-                : 'gemini';
+            const providerKey =
+                workingConfig.multiProviderEnabled === true && workingConfig.mainProvider
+                    ? String(workingConfig.mainProvider).toLowerCase()
+                    : 'gemini';
             if (providerKey === 'gemini') {
                 const geminiModelOverride = overrides.providerModel.trim();
                 workingConfig.geminiModel = geminiModelOverride;
@@ -7555,11 +8440,12 @@ app.post('/api/translate-embedded', embeddedTranslationLimiter, async (req, res)
         }
 
         // Resolve requested provider/model for cache compatibility checks
-        const requestedProviderName = (overrides?.providerName && overrides.providerName.trim())
-            ? overrides.providerName.trim().toLowerCase()
-            : ((workingConfig.multiProviderEnabled === true && workingConfig.mainProvider)
-                ? String(workingConfig.mainProvider).toLowerCase()
-                : 'gemini');
+        const requestedProviderName =
+            overrides?.providerName && overrides.providerName.trim()
+                ? overrides.providerName.trim().toLowerCase()
+                : workingConfig.multiProviderEnabled === true && workingConfig.mainProvider
+                  ? String(workingConfig.mainProvider).toLowerCase()
+                  : 'gemini';
         const resolveRequestedModel = () => {
             if (overrides?.providerModel && overrides.providerModel.trim()) {
                 return overrides.providerModel.trim();
@@ -7568,8 +8454,8 @@ app.post('/api/translate-embedded', embeddedTranslationLimiter, async (req, res)
                 return getEffectiveGeminiModel(workingConfig);
             }
             const providers = workingConfig.providers || {};
-            const matchKey = Object.keys(providers).find(k => String(k).toLowerCase() === requestedProviderName);
-            return matchKey ? (providers[matchKey]?.model || '') : '';
+            const matchKey = Object.keys(providers).find((k) => String(k).toLowerCase() === requestedProviderName);
+            return matchKey ? providers[matchKey]?.model || '' : '';
         };
         const requestedModel = resolveRequestedModel();
         const promptSignature = workingConfig.translationPrompt
@@ -7616,9 +8502,8 @@ app.post('/api/translate-embedded', embeddedTranslationLimiter, async (req, res)
         };
 
         const cacheMatchesOptions = (meta = {}) => {
-            const metaWorkflow = typeof meta.translationWorkflow === 'string'
-                ? meta.translationWorkflow.trim().toLowerCase()
-                : '';
+            const metaWorkflow =
+                typeof meta.translationWorkflow === 'string' ? meta.translationWorkflow.trim().toLowerCase() : '';
             if (metaWorkflow) {
                 if (metaWorkflow !== translationWorkflow) {
                     return false;
@@ -7682,12 +8567,18 @@ app.post('/api/translate-embedded', embeddedTranslationLimiter, async (req, res)
                     safeSourceLanguage,
                     safeTargetLanguage
                 );
-                if (!cachedTranslation || !cachedTranslation.content || !cacheMatchesOptions(cachedTranslation.metadata || {})) {
+                if (
+                    !cachedTranslation ||
+                    !cachedTranslation.content ||
+                    !cacheMatchesOptions(cachedTranslation.metadata || {})
+                ) {
                     const translations = await embeddedCache.listEmbeddedTranslations(safeVideoHash);
-                    cachedTranslation = translations.find(t =>
-                        String(t.trackId) === String(safeTrackId) &&
-                        String(t.targetLanguageCode || t.languageCode || '').toLowerCase() === String(safeTargetLanguage).toLowerCase() &&
-                        cacheMatchesOptions(t.metadata || {})
+                    cachedTranslation = translations.find(
+                        (t) =>
+                            String(t.trackId) === String(safeTrackId) &&
+                            String(t.targetLanguageCode || t.languageCode || '').toLowerCase() ===
+                                String(safeTargetLanguage).toLowerCase() &&
+                            cacheMatchesOptions(t.metadata || {})
                     );
                 }
                 if (cachedTranslation && cachedTranslation.content) {
@@ -7711,18 +8602,38 @@ app.post('/api/translate-embedded', embeddedTranslationLimiter, async (req, res)
         let originalEntry = null;
         if (!sourceContent) {
             if (!KEEP_EMBEDDED_ORIGINALS || skipCacheWrites) {
-                persistHistory('failed', { error: t('server.errors.originalEmbeddedRequired', {}, 'Original embedded subtitle required: send content or enable KEEP_EMBEDDED_ORIGINALS=true') });
-                return res.status(400).json({ error: t('server.errors.originalEmbeddedRequired', {}, 'Original embedded subtitle required: send content or enable KEEP_EMBEDDED_ORIGINALS=true') });
+                persistHistory('failed', {
+                    error: t(
+                        'server.errors.originalEmbeddedRequired',
+                        {},
+                        'Original embedded subtitle required: send content or enable KEEP_EMBEDDED_ORIGINALS=true'
+                    )
+                });
+                return res.status(400).json({
+                    error: t(
+                        'server.errors.originalEmbeddedRequired',
+                        {},
+                        'Original embedded subtitle required: send content or enable KEEP_EMBEDDED_ORIGINALS=true'
+                    )
+                });
             }
             originalEntry = await embeddedCache.getOriginalEmbedded(safeVideoHash, safeTrackId, safeSourceLanguage);
             if (!originalEntry || !originalEntry.content) {
-                persistHistory('failed', { error: t('server.errors.originalEmbeddedMissing', {}, 'Original embedded subtitle not found') });
-                return res.status(404).json({ error: t('server.errors.originalEmbeddedMissing', {}, 'Original embedded subtitle not found') });
+                persistHistory('failed', {
+                    error: t('server.errors.originalEmbeddedMissing', {}, 'Original embedded subtitle not found')
+                });
+                return res.status(404).json({
+                    error: t('server.errors.originalEmbeddedMissing', {}, 'Original embedded subtitle not found')
+                });
             }
             sourceContent = originalEntry.content;
         } else if (KEEP_EMBEDDED_ORIGINALS && !skipCacheWrites) {
             try {
-                const existingOriginal = await embeddedCache.getOriginalEmbedded(safeVideoHash, safeTrackId, safeSourceLanguage);
+                const existingOriginal = await embeddedCache.getOriginalEmbedded(
+                    safeVideoHash,
+                    safeTrackId,
+                    safeSourceLanguage
+                );
                 if (!existingOriginal || !existingOriginal.content) {
                     const persisted = await embeddedCache.saveOriginalEmbedded(
                         safeVideoHash,
@@ -7733,7 +8644,9 @@ app.post('/api/translate-embedded', embeddedTranslationLimiter, async (req, res)
                     );
                     embeddedCacheUpdated = true;
                     originalEntry = persisted.entry;
-                    log.debug(() => `[Embedded Translate] Persisted inline original ${safeTrackId} for ${safeVideoHash}`);
+                    log.debug(
+                        () => `[Embedded Translate] Persisted inline original ${safeTrackId} for ${safeVideoHash}`
+                    );
                 } else {
                     originalEntry = existingOriginal;
                 }
@@ -7758,13 +8671,16 @@ app.post('/api/translate-embedded', embeddedTranslationLimiter, async (req, res)
         sourceContent = ensureSRTForTranslation(sourceContent, '[Embedded Translate]');
 
         const targetLangName = getLanguageName(safeTargetLanguage) || safeTargetLanguage;
-        const sourceLangName = (safeSourceLanguage && safeSourceLanguage !== 'und')
-            ? (getLanguageName(safeSourceLanguage) || safeSourceLanguage)
-            : null;
+        const sourceLangName =
+            safeSourceLanguage && safeSourceLanguage !== 'und'
+                ? getLanguageName(safeSourceLanguage) || safeSourceLanguage
+                : null;
         const { provider, providerName, model, fallbackProviderName } = await createTranslationProvider(workingConfig);
         if (historyEntry) {
-            historyEntry.provider = providerName || fallbackProviderName || historyEntry.provider || requestedProviderName || 'unknown';
-            historyEntry.model = model || requestedModel || historyEntry.model || getEffectiveGeminiModel(workingConfig) || 'default';
+            historyEntry.provider =
+                providerName || fallbackProviderName || historyEntry.provider || requestedProviderName || 'unknown';
+            historyEntry.model =
+                model || requestedModel || historyEntry.model || getEffectiveGeminiModel(workingConfig) || 'default';
             persistHistory('processing');
         }
         const engine = new TranslationEngine(
@@ -7775,7 +8691,10 @@ app.post('/api/translate-embedded', embeddedTranslationLimiter, async (req, res)
             { singleBatchMode, providerName, fallbackProviderName, enableStreaming: true }
         );
 
-        log.debug(() => `[Embedded Translate] Translating track ${safeTrackId} to ${targetLangName} (workflow=${translationWorkflow}, singleBatch=${singleBatchMode}, engine=subfaber, timestamps=${sendTimestampsToAI})`);
+        log.debug(
+            () =>
+                `[Embedded Translate] Translating track ${safeTrackId} to ${targetLangName} (workflow=${translationWorkflow}, singleBatch=${singleBatchMode}, engine=subfaber, timestamps=${sendTimestampsToAI})`
+        );
 
         // --- BERMULA KOD PEMBEDAHAN LOKASI 1 (V14.6 FINOPS + STOPWATCH + FULL DIAGNOSTICS) ---
         // 0. MULAKAN STOPWATCH KITA SENDIRI
@@ -7785,7 +8704,7 @@ app.post('/api/translate-embedded', embeddedTranslationLimiter, async (req, res)
         const runtimeKey = `partial:xembed:${safeVideoHash}:${safeTrackId}`;
         const { getStorageAdapter } = require('./src/storage/StorageFactory');
         const { StorageAdapter } = require('./src/storage');
-        
+
         let nextCheckpoint = 10;
         const translatedContent = await engine.translateSubtitle(
             sourceContent,
@@ -7795,8 +8714,8 @@ app.post('/api/translate-embedded', embeddedTranslationLimiter, async (req, res)
                 try {
                     let shouldSave = false;
                     let logMsg = '';
-                    
-                    const current = progress.completedEntries; 
+
+                    const current = progress.completedEntries;
                     const total = progress.totalEntries;
                     const batch = progress.currentBatch || 1;
                     const totalBatches = progress.totalBatches || 1;
@@ -7816,7 +8735,10 @@ app.post('/api/translate-embedded', embeddedTranslationLimiter, async (req, res)
                             logMsg = `[Embedded Translate] Partial SAVED: batch ${batch}/${totalBatches}, ${current}/${total} entries, nextCheckpoint=${nextCheckpoint}`;
                         } else {
                             if (current % 5 === 0) {
-                                log.debug(() => `[Embedded Translate] Streaming progress: batch ${batch}/${totalBatches}, ${current}/${total} entries (not saved: checkpoint not reached (next=${nextCheckpoint}))`);
+                                log.debug(
+                                    () =>
+                                        `[Embedded Translate] Streaming progress: batch ${batch}/${totalBatches}, ${current}/${total} entries (not saved: checkpoint not reached (next=${nextCheckpoint}))`
+                                );
                             }
                         }
                     } else if (!isStreaming) {
@@ -7825,18 +8747,18 @@ app.post('/api/translate-embedded', embeddedTranslationLimiter, async (req, res)
                     }
 
                     if (shouldSave) {
-                        let partialSrt = progress.partialSRT; 
+                        let partialSrt = progress.partialSRT;
                         if (partialSrt) {
                             const lineCount = (partialSrt.match(/\n\n/g) || []).length + 2;
                             const tail = `\n\n${lineCount}\n00:00:00,000 --> 04:00:00,000\nTRANSLATION IN PROGRESS\nReload this subtitle to get more as translation gets ready.`;
                             partialSrt = partialSrt + tail;
                         }
-                        
+
                         const adapter = await getStorageAdapter();
                         await adapter.set(runtimeKey, { content: partialSrt }, StorageAdapter.CACHE_TYPES.PARTIAL);
                         if (logMsg) log.debug(() => logMsg);
                     }
-                } catch(e) {
+                } catch (e) {
                     log.debug(() => `[Radar Error] Gagal tulis partial cache: ${e.message}`);
                 }
             },
@@ -7851,43 +8773,51 @@ app.post('/api/translate-embedded', embeddedTranslationLimiter, async (req, res)
         try {
             const adapter = await getStorageAdapter();
             await adapter.delete(runtimeKey, StorageAdapter.CACHE_TYPES.PARTIAL);
-        } catch(e) {}
+        } catch (e) {}
 
         // 2. Sistem Notifikasi Telegram FinOps God-Tier V14.6
         try {
             const axios = require('axios');
             const botToken = process.env.TELEGRAM_BOT_TOKEN;
             const chatId = process.env.TELEGRAM_CHAT_ID;
-            
+
             if (botToken && chatId) {
                 (async () => {
                     try {
-                        let movieTitle = `Embedded Track ${safeTrackId} (${safeVideoHash.substring(0,8)})`;
+                        let movieTitle = `Embedded Track ${safeTrackId} (${safeVideoHash.substring(0, 8)})`;
                         try {
                             const metaUrl = `https://v3-cinemeta.strem.io/meta/movie/${encodeURIComponent(safeVideoHash)}.json`;
                             const metaResp = await axios.get(metaUrl, { timeout: 3000 });
                             if (metaResp?.data?.meta?.name) movieTitle = metaResp.data.meta.name;
-                        } catch(e) {}
-                        
+                        } catch (e) {}
+
                         movieTitle = movieTitle.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
                         const sourceProv = `Embedded (MKV/MP4)`;
-                        
+
                         const stats = engine.translationStats || {};
-                        
+
                         // KIRAAN MASA MENGGUNAKAN STOPWATCH KITA SENDIRI
                         const durationSec = Math.max(1, Math.round(actualTimeTakenMs / 1000));
                         const mins = Math.floor(durationSec / 60);
                         const secs = durationSec % 60;
                         const timeTaken = mins > 0 ? `${mins}m ${secs}s` : `${secs}s`;
 
-                        const finalTotal = stats.entryCount || (typeof translatedContent === 'string' ? (translatedContent.match(/\n\n/g) || []).length + 1 : 0);
+                        const finalTotal =
+                            stats.entryCount ||
+                            (typeof translatedContent === 'string'
+                                ? (translatedContent.match(/\n\n/g) || []).length + 1
+                                : 0);
                         const totalBatches = stats.batchCount || 1;
                         const mismatchDetected = stats.mismatchDetected ? 'Yes ⚠️' : 'No ✨';
                         const missing = stats.missingEntries || 0;
                         const recovered = stats.recoveredEntries || 0;
                         const failed = Math.max(0, missing - recovered);
                         const success = finalTotal - failed;
-                        const usedModel = (model || getEffectiveGeminiModel(workingConfig) || 'gemini-3.1-flash-lite-preview').toLowerCase();
+                        const usedModel = (
+                            model ||
+                            getEffectiveGeminiModel(workingConfig) ||
+                            'gemini-3.1-flash-lite-preview'
+                        ).toLowerCase();
 
                         // 🕵️‍♂️ DYNAMIC ADVANCED DIAGNOSTICS (SEPENUHNYA SAMA MACAM NORMAL TRANSLATION)
                         let advancedStats = '';
@@ -7900,7 +8830,10 @@ app.post('/api/translate-embedded', embeddedTranslationLimiter, async (req, res)
                         if (stats.usedSecondaryProvider) {
                             advancedStats += `🛟 <b>Fallback Triggered:</b> ${stats.secondaryProviderName || 'Unknown'}\n`;
                             if (stats.primaryFailureReason) {
-                                const shortReason = stats.primaryFailureReason.length > 50 ? stats.primaryFailureReason.substring(0, 50) + '...' : stats.primaryFailureReason;
+                                const shortReason =
+                                    stats.primaryFailureReason.length > 50
+                                        ? stats.primaryFailureReason.substring(0, 50) + '...'
+                                        : stats.primaryFailureReason;
                                 advancedStats += `   └ <i>Reason: ${shortReason}</i>\n`;
                             }
                         }
@@ -7913,7 +8846,8 @@ app.post('/api/translate-embedded', embeddedTranslationLimiter, async (req, res)
                             advancedStats += `📦 <b>Execution:</b> Single Batch Mode\n`;
                         }
 
-                        let diagnosticsSection = advancedStats !== '' ? `\n🔍 <b>Advanced Diagnostics:</b>\n${advancedStats}` : '';
+                        let diagnosticsSection =
+                            advancedStats !== '' ? `\n🔍 <b>Advanced Diagnostics:</b>\n${advancedStats}` : '';
 
                         // --- 🚀 FINOPS: Token aggregation via shared module 🚀 ---
                         // (Previously duplicated inline; see src/utils/telegramFinOps)
@@ -7937,21 +8871,24 @@ app.post('/api/translate-embedded', embeddedTranslationLimiter, async (req, res)
 
                         // 🧮 FINOPS — delegated to shared module (src/utils/telegramFinOps)
                         const { buildCostSection } = require('./src/utils/telegramFinOps');
-                        const _xEmbedKey = (typeof selectGeminiApiKey === 'function') ? (await selectGeminiApiKey(workingConfig) || process.env.GEMINI_API_KEY || '') : '';
+                        const _xEmbedKey =
+                            typeof selectGeminiApiKey === 'function'
+                                ? (await selectGeminiApiKey(workingConfig)) || process.env.GEMINI_API_KEY || ''
+                                : '';
                         const isCrazyRouter = String(_xEmbedKey).trim().startsWith('sk-');
                         const { costSection } = await buildCostSection({ usedModel, isCrazyRouter });
 
                         // Resolve tier badge
-                        const _validKeys = Array.isArray(workingConfig?.geminiApiKeys) ? workingConfig.geminiApiKeys.filter(k => typeof k === 'string' && k.trim()) : [];
+                        const _validKeys = Array.isArray(workingConfig?.geminiApiKeys)
+                            ? workingConfig.geminiApiKeys.filter((k) => typeof k === 'string' && k.trim())
+                            : [];
                         const _keyCount = _validKeys.length > 0 ? _validKeys.length : 1;
                         const tierBadge = _keyCount > 1 ? `${_keyCount} Keys Active` : '1 Key Active';
 
                         // Incident report section (xEmbed)
                         const { renderIncidentSection } = require('./src/utils/telegramFinOps');
                         const _xIncidents = stats.incidents || [];
-                        const incidentSection = _xIncidents.length > 0
-                          ? renderIncidentSection(_xIncidents)
-                          : '';
+                        const incidentSection = _xIncidents.length > 0 ? renderIncidentSection(_xIncidents) : '';
 
                         // Efficiency metrics (xEmbed)
                         const _xEntriesPerMin = Math.round((finalTotal / durationSec) * 60);
@@ -7960,24 +8897,25 @@ app.post('/api/translate-embedded', embeddedTranslationLimiter, async (req, res)
                         // Cache destination (xEmbed always goes to embedded cache)
                         const cacheLine = `💾 <b>Saved:</b> Embedded Cache (original + translated)`;
 
-                        const teleMsg = `✅ <b>Subtitle Translation Report (xEmbed)</b> 🎬\n\n` +
-                                        `🍿 <b>Title:</b> <code>${movieTitle}</code>\n` +
-                                        `📥 <b>Source:</b> ${sourceProv}\n\n` +
-                                        `📊 <b>Status:</b> ${(failed === 0 && finalTotal > 0) ? 'PERFECT ✨' : 'COMPLETED WITH MISSING LINES ⚠️'}\n` +
-                                        `⏱️ <b>Time Taken:</b> ${timeTaken}\n` +
-                                        `🏁 <b>Total Entries:</b> ${finalTotal} (${totalBatches} Batches)\n` +
-                                        `✅ <b>Successful:</b> ${success}\n` +
-                                        `❌ <b>Failed:</b> ${failed}\n` +
-                                        `🔄 <b>Mismatch Event:</b> ${mismatchDetected} (Recovered: ${recovered})\n` +
-                                        `${diagnosticsSection}` +
-                                        `${costSection}\n` +
-                                        `${incidentSection}` +
-                                        `${efficiencyLine}\n` +
-                                        `${cacheLine}\n` +
-                                        `🌐 <b>Target:</b> ${(targetLangName || 'MAY').toUpperCase()}\n` +
-                                        `🔑 <b>Provider:</b> Gemini [${tierBadge}]\n` +
-                                        `🧠 <b>Engine:</b> ${usedModel}\n\n` +
-                                        `🎉 <b>Ready to stream!</b>`;
+                        const teleMsg =
+                            `✅ <b>Subtitle Translation Report (xEmbed)</b> 🎬\n\n` +
+                            `🍿 <b>Title:</b> <code>${movieTitle}</code>\n` +
+                            `📥 <b>Source:</b> ${sourceProv}\n\n` +
+                            `📊 <b>Status:</b> ${failed === 0 && finalTotal > 0 ? 'PERFECT ✨' : 'COMPLETED WITH MISSING LINES ⚠️'}\n` +
+                            `⏱️ <b>Time Taken:</b> ${timeTaken}\n` +
+                            `🏁 <b>Total Entries:</b> ${finalTotal} (${totalBatches} Batches)\n` +
+                            `✅ <b>Successful:</b> ${success}\n` +
+                            `❌ <b>Failed:</b> ${failed}\n` +
+                            `🔄 <b>Mismatch Event:</b> ${mismatchDetected} (Recovered: ${recovered})\n` +
+                            `${diagnosticsSection}` +
+                            `${costSection}\n` +
+                            `${incidentSection}` +
+                            `${efficiencyLine}\n` +
+                            `${cacheLine}\n` +
+                            `🌐 <b>Target:</b> ${(targetLangName || 'MAY').toUpperCase()}\n` +
+                            `🔑 <b>Provider:</b> Gemini [${tierBadge}]\n` +
+                            `🧠 <b>Engine:</b> ${usedModel}\n\n` +
+                            `🎉 <b>Ready to stream!</b>`;
 
                         // Daftarkan token pemadam untuk sarikata xEmbed
                         const { registerDeletionTarget } = require('./src/services/telegramBot');
@@ -8001,7 +8939,8 @@ app.post('/api/translate-embedded', embeddedTranslationLimiter, async (req, res)
                             else if (userConfig?.apiKey) detectedKeys = [userConfig.apiKey];
                         }
                         if (detectedKeys.length === 0) {
-                            if (typeof geminiApiKeys !== 'undefined' && Array.isArray(geminiApiKeys)) detectedKeys = geminiApiKeys;
+                            if (typeof geminiApiKeys !== 'undefined' && Array.isArray(geminiApiKeys))
+                                detectedKeys = geminiApiKeys;
                             else if (typeof geminiApiKey !== 'undefined' && geminiApiKey) detectedKeys = [geminiApiKey];
                             else if (typeof apiKey !== 'undefined' && apiKey) detectedKeys = [apiKey];
                         }
@@ -8071,35 +9010,41 @@ app.post('/api/translate-embedded', embeddedTranslationLimiter, async (req, res)
                         let cubaLagi = 3;
                         while (cubaLagi > 0) {
                             try {
-                                await axios.post(`https://api.telegram.org/bot${botToken}/sendMessage`, {
-                                    chat_id: chatId, 
-                                    text: teleMsg, 
-                                    parse_mode: 'HTML',
-                                    reply_markup: {
-                                        inline_keyboard: [
-                                            [
-                                                {
-                                                    text: '🗑️ Padam Subtitle Ini (Cache)',
-                                                    callback_data: subRegistryId ? `del_reg:${subRegistryId}:1` : 'done'
-                                                }
+                                await axios.post(
+                                    `https://api.telegram.org/bot${botToken}/sendMessage`,
+                                    {
+                                        chat_id: chatId,
+                                        text: teleMsg,
+                                        parse_mode: 'HTML',
+                                        reply_markup: {
+                                            inline_keyboard: [
+                                                [
+                                                    {
+                                                        text: '🗑️ Padam Subtitle Ini (Cache)',
+                                                        callback_data: subRegistryId
+                                                            ? `del_reg:${subRegistryId}:1`
+                                                            : 'done'
+                                                    }
+                                                ]
                                             ]
-                                        ]
-                                    }
-                                }, { timeout: 10000 });
+                                        }
+                                    },
+                                    { timeout: 10000 }
+                                );
                                 break;
                             } catch (e) {
                                 cubaLagi--;
-                                if (cubaLagi > 0) await new Promise(res => setTimeout(res, 2000));
+                                if (cubaLagi > 0) await new Promise((res) => setTimeout(res, 2000));
                             }
                         }
-                    } catch(err) {
+                    } catch (err) {
                         log.debug(() => `[Telegram] Ralat FinOps: ${err.message}`);
                     }
                 })();
             }
-        } catch(e) {}
+        } catch (e) {}
         // --- TAMAT KOD PEMBEDAHAN LOKASI 1 ---
-        
+
         const storedFormat = detectEmbeddedSubtitleFormat({ content: translatedContent });
         const saveMeta = {
             ...(mergedMetadata || {}),
@@ -8124,12 +9069,16 @@ app.post('/api/translate-embedded', embeddedTranslationLimiter, async (req, res)
             );
             embeddedCacheUpdated = true;
         } else {
-            log.debug(() => `[Embedded Translate] Skipped cache write for ${safeVideoHash}_${safeTargetLanguage}_${safeTrackId} (skipCache=true)`);
+            log.debug(
+                () =>
+                    `[Embedded Translate] Skipped cache write for ${safeVideoHash}_${safeTargetLanguage}_${safeTrackId} (skipCache=true)`
+            );
         }
 
         persistHistory('completed', {
             provider: providerName || historyEntry?.provider || 'unknown',
-            model: model || requestedModel || historyEntry?.model || getEffectiveGeminiModel(workingConfig) || 'default',
+            model:
+                model || requestedModel || historyEntry?.model || getEffectiveGeminiModel(workingConfig) || 'default',
             cached: false,
             // Spread engine translationStats so embedded history cards get full diagnostics
             // (secondary provider use, error types, rate limits, batch details, etc.)
@@ -8155,7 +9104,13 @@ app.post('/api/translate-embedded', embeddedTranslationLimiter, async (req, res)
         const t = res.locals?.t || getTranslatorFromRequest(req, res);
         if (respondStorageUnavailable(res, error, '[Embedded Translate]', t)) return;
         log.error(() => ['[Embedded Translate] Error:', error]);
-        res.status(500).json({ error: t('server.errors.translateEmbeddedFailed', { reason: error.message || '' }, error.message || 'Failed to translate embedded subtitle') });
+        res.status(500).json({
+            error: t(
+                'server.errors.translateEmbeddedFailed',
+                { reason: error.message || '' },
+                error.message || 'Failed to translate embedded subtitle'
+            )
+        });
     }
 });
 
@@ -8163,17 +9118,21 @@ app.post('/api/translate-embedded', embeddedTranslationLimiter, async (req, res)
 function escapeHtml(text) {
     if (text == null) return '';
     const str = String(text);
-    const escaped = str.replace(/[&<>"'`=\/]/g, m => ({
-        '&': '&amp;',
-        '<': '&lt;',
-        '>': '&gt;',
-        '"': '&quot;',
-        "'": '&#x27;',
-        '/': '&#x2F;',
-        '`': '&#x60;',
-        '=': '&#x3D;'
-    }[m] || m));
-    return escaped.replace(/[\u0000-\u001F\u007F-\u009F]/g, ch => `&#${ch.charCodeAt(0)};`);
+    const escaped = str.replace(
+        /[&<>"'`=\/]/g,
+        (m) =>
+            ({
+                '&': '&amp;',
+                '<': '&lt;',
+                '>': '&gt;',
+                '"': '&quot;',
+                "'": '&#x27;',
+                '/': '&#x2F;',
+                '`': '&#x60;',
+                '=': '&#x3D;'
+            })[m] || m
+    );
+    return escaped.replace(/[\u0000-\u001F\u007F-\u009F]/g, (ch) => `&#${ch.charCodeAt(0)};`);
 }
 
 // Middleware to replace {{ADDON_URL}} placeholder in responses
@@ -8182,23 +9141,30 @@ app.use('/addon/:config', (req, res, next) => {
     const requestPath = req.originalUrl || req.url || req.path || 'unknown';
     const isSubtitlesRequest = requestPath.includes('/subtitles/');
     const isManifestRequest = requestPath.includes('/manifest.json');
-    const isDownloadRequest = requestPath.includes('/subtitle/')
-        || requestPath.includes('/subtitle-resolve/')
-        || requestPath.includes('/subtitle-content/')
-        || requestPath.includes('/translate/');
+    const isDownloadRequest =
+        requestPath.includes('/subtitle/') ||
+        requestPath.includes('/subtitle-resolve/') ||
+        requestPath.includes('/subtitle-content/') ||
+        requestPath.includes('/translate/');
     const safeRequestPath = redactRequestUrlForLogs(requestPath);
 
     // REQUEST TRACE: Log all incoming addon requests (helps diagnose "Stremio not sending requests" issues)
     // This runs BEFORE any processing, so if this doesn't log, the request never reached the server
     if (isSubtitlesRequest || isManifestRequest) {
-        log.info(() => `[Addon Request] ${req.method} ${safeRequestPath.substring(0, 100)} (UA: ${(req.get('user-agent') || 'none').substring(0, 50)})`);
+        log.info(
+            () =>
+                `[Addon Request] ${req.method} ${safeRequestPath.substring(0, 100)} (UA: ${(req.get('user-agent') || 'none').substring(0, 50)})`
+        );
     } else if (isDownloadRequest) {
         // Log download requests at DEBUG level (these are frequent)
         log.debug(() => `[Addon Request] ${req.method} ${safeRequestPath.substring(0, 100)}`);
     }
 
     if (req.__subtitleQueryExtraNormalized?.length) {
-        log.debug(() => `[Addon Request] Subtitle extras normalized from query string (${req.__subtitleQueryExtraNormalized.join(',')})`);
+        log.debug(
+            () =>
+                `[Addon Request] Subtitle extras normalized from query string (${req.__subtitleQueryExtraNormalized.join(',')})`
+        );
     }
 
     // CRITICAL: Prevent caching to avoid cross-user config contamination
@@ -8210,9 +9176,7 @@ app.use('/addon/:config', (req, res, next) => {
     const host = getSafeHost(req);
     const localhost = isLocalhost(req);
     // For remote hosts, enforce HTTPS unless proxy header specifies otherwise
-    const protocol = localhost
-        ? (req.get('x-forwarded-proto') || req.protocol)
-        : (req.get('x-forwarded-proto') || 'https');
+    const protocol = localhost ? req.get('x-forwarded-proto') || req.protocol : req.get('x-forwarded-proto') || 'https';
     const addonUrl = `${protocol}://${host}/addon/${encodeURIComponent(config)}${CACHE_BUSTER_PATH}`;
 
     // Track if response has ended to prevent double-calling res.end()
@@ -8314,20 +9278,19 @@ app.get('/manifest.json', (req, res) => {
         const host = getSafeHost(req);
         const localhost = isLocalhost(req);
         const protocol = localhost
-            ? (req.get('x-forwarded-proto') || req.protocol)
-            : (req.get('x-forwarded-proto') || 'https');
+            ? req.get('x-forwarded-proto') || req.protocol
+            : req.get('x-forwarded-proto') || 'https';
         const baseUrl = `${protocol}://${host}`;
 
         const isElfHosted = process.env.ELFHOSTED === 'true';
-        const addonName = isElfHosted
-            ? 'SubFaber | ElfHosted'
-            : 'SubFaber - Netflix-Grade Subtitle Engine';
+        const addonName = isElfHosted ? 'SubFaber | ElfHosted' : 'SubFaber - Netflix-Grade Subtitle Engine';
 
         const manifest = {
             id: 'com.stremio.subfaber',
             version: version,
             name: addonName,
-            description: 'High-fidelity Malay subtitle generator powered by Gemini & VideoLingo context architecture. Fetch and translate subtitles from OpenSubtitles, SubScene, and SubDL without ever leaving Stremio.',
+            description:
+                'High-fidelity Malay subtitle generator powered by Gemini & VideoLingo context architecture. Fetch and translate subtitles from OpenSubtitles, SubScene, and SubDL without ever leaving Stremio.',
             logo: `${baseUrl}/logo.png`,
             icon: `${baseUrl}/logo.png`,
             background: `${baseUrl}/background.svg`,
@@ -8363,13 +9326,16 @@ app.get('/addon/:config/manifest.json', async (req, res) => {
         const rawUrl = req.originalUrl || req.url || '';
         const safeRawUrl = redactRequestUrlForLogs(rawUrl);
         const hasVersionSegment = /\/v[0-9.]+(\/|$)/.test(rawUrl);
-        log.info(() => `[Manifest] Request meta ip=${getClientIp(req)} cf=${req.get('cf-connecting-ip') || 'n/a'} xff=${req.get('x-forwarded-for') || 'n/a'} xri=${req.get('x-real-ip') || 'n/a'} ua=${req.get('user-agent') || 'n/a'} origin=${req.get('origin') || 'n/a'} referer=${req.get('referer') || 'n/a'} host=${req.get('host') || 'n/a'} url=${safeRawUrl || 'n/a'} versioned=${hasVersionSegment}`);
+        log.info(
+            () =>
+                `[Manifest] Request meta ip=${getClientIp(req)} cf=${req.get('cf-connecting-ip') || 'n/a'} xff=${req.get('x-forwarded-for') || 'n/a'} xri=${req.get('x-real-ip') || 'n/a'} ua=${req.get('user-agent') || 'n/a'} origin=${req.get('origin') || 'n/a'} referer=${req.get('referer') || 'n/a'} host=${req.get('host') || 'n/a'} url=${safeRawUrl || 'n/a'} versioned=${hasVersionSegment}`
+        );
         const host = getSafeHost(req);
         const localhost = isLocalhost(req);
         // For remote hosts, enforce HTTPS unless proxy header specifies otherwise.
         const protocol = localhost
-            ? (req.get('x-forwarded-proto') || req.protocol)
-            : (req.get('x-forwarded-proto') || 'https');
+            ? req.get('x-forwarded-proto') || req.protocol
+            : req.get('x-forwarded-proto') || 'https';
         const baseUrl = `${protocol}://${host}`;
         const manifestCacheKey = getManifestCacheKey(req.params.config, baseUrl);
         const cachedManifest = manifestResponseCache.get(manifestCacheKey);
@@ -8485,7 +9451,8 @@ app.use('/addon/:config', async (req, res, next) => {
             if (!contaminationDetected && router.__createdAt) {
                 const ageMs = Date.now() - router.__createdAt;
                 const maxAgeMs = 1000 * 60 * 60; // 1 hour (matches cache TTL)
-                if (ageMs > maxAgeMs * 1.1) { // Allow 10% grace period
+                if (ageMs > maxAgeMs * 1.1) {
+                    // Allow 10% grace period
                     contaminationDetected = true;
                     contaminationReason = `router age (${Math.round(ageMs / 1000 / 60)}min) exceeds TTL`;
                 }
@@ -8533,12 +9500,18 @@ app.use('/addon/:config', async (req, res, next) => {
                 config.__fetchedAt = Date.now();
 
                 // Log when creating router (helps debug contamination issues)
-                log.info(() => `[Router] Creating router for ${redactToken(configStr)}: targets=${JSON.stringify(config.targetLanguages || [])}, sources=${JSON.stringify(config.sourceLanguages || [])}`);
+                log.info(
+                    () =>
+                        `[Router] Creating router for ${redactToken(configStr)}: targets=${JSON.stringify(config.targetLanguages || [])}, sources=${JSON.stringify(config.sourceLanguages || [])}`
+                );
 
                 // CRITICAL DEBUG: Log request details to trace contamination
                 const clientIP = req.ip || req.connection?.remoteAddress || 'unknown';
                 const userAgent = req.get('user-agent') || 'unknown';
-                log.info(() => `[Router] Request details - IP: ${clientIP}, UA: ${userAgent.substring(0, 50)}, ConfigHash: ${config.__configHash || 'none'}`);
+                log.info(
+                    () =>
+                        `[Router] Request details - IP: ${clientIP}, UA: ${userAgent.substring(0, 50)}, ConfigHash: ${config.__configHash || 'none'}`
+                );
 
                 // CRITICAL: Deep clone to prevent shared references between router closures
                 const freshConfig = deepCloneConfig(config);
@@ -8547,8 +9520,8 @@ app.use('/addon/:config', async (req, res, next) => {
                 const host = getSafeHost(req);
                 const localhost = isLocalhost(req);
                 const protocol = localhost
-                    ? (req.get('x-forwarded-proto') || req.protocol)
-                    : (req.get('x-forwarded-proto') || 'https');
+                    ? req.get('x-forwarded-proto') || req.protocol
+                    : req.get('x-forwarded-proto') || 'https';
                 const baseUrl = `${protocol}://${host}`;
 
                 const builder = createAddonWithConfig(freshConfig, baseUrl);
@@ -8564,24 +9537,36 @@ app.use('/addon/:config', async (req, res, next) => {
                 // DEFENSE LAYER 1: Must not be a session token
                 // DEFENSE LAYER 2: Config must not have error flags
                 // DEFENSE LAYER 3: Config string must pass strict validation
-                const safeToCache = !isSessionToken
-                    && !(freshConfig && freshConfig.__sessionTokenError === true)
-                    && isDefinitelyNotToken(configStr)
-                    && isSafeToCache(freshConfig);
+                const safeToCache =
+                    !isSessionToken &&
+                    !(freshConfig && freshConfig.__sessionTokenError === true) &&
+                    isDefinitelyNotToken(configStr) &&
+                    isSafeToCache(freshConfig);
 
                 if (safeToCache) {
                     routerCache.set(configStr, newRouter);
-                    log.debug(() => `[Router] Cached router for ${redactToken(configStr)} with targets: ${newRouter.__targetLanguages}, hash: ${newRouter.__configHash}`);
+                    log.debug(
+                        () =>
+                            `[Router] Cached router for ${redactToken(configStr)} with targets: ${newRouter.__targetLanguages}, hash: ${newRouter.__configHash}`
+                    );
                 } else {
                     // SECURITY ALERT: Prevented unsafe router caching
                     if (isSessionToken) {
-                        log.debug(() => `[Router] NOT caching router for session token ${redactToken(configStr)} (expected behavior)`);
+                        log.debug(
+                            () =>
+                                `[Router] NOT caching router for session token ${redactToken(configStr)} (expected behavior)`
+                        );
                     } else if (freshConfig && freshConfig.__sessionTokenError) {
                         log.warn(() => `[SECURITY] NOT caching router for ${redactToken(configStr)} - has error flag`);
                     } else if (!isDefinitelyNotToken(configStr)) {
-                        log.error(() => `[SECURITY] BLOCKED router caching - ${redactToken(configStr)} failed strict token validation`);
+                        log.error(
+                            () =>
+                                `[SECURITY] BLOCKED router caching - ${redactToken(configStr)} failed strict token validation`
+                        );
                     } else {
-                        log.warn(() => `[SECURITY] NOT caching router for ${redactToken(configStr)} - failed safety check`);
+                        log.warn(
+                            () => `[SECURITY] NOT caching router for ${redactToken(configStr)} - failed safety check`
+                        );
                     }
                 }
 
@@ -8589,7 +9574,10 @@ app.use('/addon/:config', async (req, res, next) => {
             });
         } else {
             // Router served from cache - log for debugging
-            log.debug(() => `[Router] Serving cached router for ${redactToken(configStr)}, targets: ${router.__targetLanguages || 'unknown'}, age: ${Date.now() - (router.__createdAt || 0)}ms`);
+            log.debug(
+                () =>
+                    `[Router] Serving cached router for ${redactToken(configStr)}, targets: ${router.__targetLanguages || 'unknown'}, age: ${Date.now() - (router.__createdAt || 0)}ms`
+            );
         }
 
         if (!router) return; // Storage unavailable response already sent upstream
@@ -8606,7 +9594,10 @@ app.use('/addon/:config/subtitles', (req, res, next) => {
         return next();
     }
 
-    log.warn(() => `[Subtitles] Unmatched subtitle route after SDK routing: ${req.method} ${formatRequestTraceUrl(req)} (expected /subtitles/{type}/{id}[/{extra}].json)`);
+    log.warn(
+        () =>
+            `[Subtitles] Unmatched subtitle route after SDK routing: ${req.method} ${formatRequestTraceUrl(req)} (expected /subtitles/{type}/{id}[/{extra}].json)`
+    );
     setNoStore(res);
     return res.status(404).json({ subtitles: [] });
 });
@@ -8636,7 +9627,9 @@ app.use('/addon/:config/file-translate', (error, req, res, next) => {
     log.error(() => ['[Server] File Translation Error:', error]);
     sentry.captureError(error, { module: 'FileTranslateErrorHandler', path: req.path, method: req.method });
     res.setHeader('Content-Type', 'text/html; charset=utf-8');
-    const message = escapeHtml(t('server.errors.fileTranslationPageFailed', {}, 'Failed to load file translation page'));
+    const message = escapeHtml(
+        t('server.errors.fileTranslationPageFailed', {}, 'Failed to load file translation page')
+    );
     res.status(500).end(`<html><body><p>${message}</p></body></html>`);
 });
 
@@ -8708,12 +9701,16 @@ app.use((error, req, res, next) => {
     try {
         log.info(() => '[Startup] Pre-warming connections to subtitle providers...');
         // Run warmup in background, don't block startup
-        warmUpConnections().then(results => {
-            const successCount = results.filter(r => r.success).length;
-            log.info(() => `[Startup] Connection warm-up finished: ${successCount}/${results.length} providers ready`);
-        }).catch(error => {
-            log.warn(() => `[Startup] Connection warm-up encountered errors: ${error.message}`);
-        });
+        warmUpConnections()
+            .then((results) => {
+                const successCount = results.filter((r) => r.success).length;
+                log.info(
+                    () => `[Startup] Connection warm-up finished: ${successCount}/${results.length} providers ready`
+                );
+            })
+            .catch((error) => {
+                log.warn(() => `[Startup] Connection warm-up encountered errors: ${error.message}`);
+            });
     } catch (error) {
         log.warn(() => '[Startup] Failed to start connection warm-up:', error.message);
     }
@@ -8806,7 +9803,7 @@ app.use((error, req, res, next) => {
     // Periodic health monitoring (every 5 minutes)
     // Logs key operational metrics so you can spot pressure before users notice.
     // =========================================================================
-    const HEALTH_LOG_INTERVAL_MS = parseInt(process.env.HEALTH_LOG_INTERVAL_MS, 10) || (5 * 60 * 1000);
+    const HEALTH_LOG_INTERVAL_MS = parseInt(process.env.HEALTH_LOG_INTERVAL_MS, 10) || 5 * 60 * 1000;
     setInterval(() => {
         try {
             const mem = process.memoryUsage();
@@ -8819,8 +9816,9 @@ app.use((error, req, res, next) => {
             const httpSockets = pool?.http?.totalSockets ?? '?';
             const httpsSockets = pool?.https?.totalSockets ?? '?';
 
-            log.warn(() =>
-                `[Health] heap=${heapMB}MB rss=${rssMB}MB inflight=${localInFlight} translations=${localTranslations} sessions=${sessions} sockets=${httpSockets}/${httpsSockets} uptime=${Math.floor(process.uptime())}s`
+            log.warn(
+                () =>
+                    `[Health] heap=${heapMB}MB rss=${rssMB}MB inflight=${localInFlight} translations=${localTranslations} sessions=${sessions} sockets=${httpSockets}/${httpsSockets} uptime=${Math.floor(process.uptime())}s`
             );
         } catch (err) {
             log.warn(() => `[Health] Periodic health log failed: ${err.message}`);

@@ -10,10 +10,19 @@ const log = require('./logger');
 const { shutdownLogger } = require('./logger');
 const sentry = require('./sentry');
 const { handleCaughtError } = require('./errorClassifier');
-const { encryptUserConfig, decryptUserConfig, normalizeSensitiveInputsForStorage, getDecryptionWarnings } = require('./encryption');
+const {
+    encryptUserConfig,
+    decryptUserConfig,
+    normalizeSensitiveInputsForStorage,
+    getDecryptionWarnings
+} = require('./encryption');
 const { redactToken } = require('./security');
 const { getRedisPassword } = require('./redisHelper');
-const { MAX_SESSION_BRIEF_BATCH, SESSION_BRIEF_LOOKUP_CONCURRENCY, normalizeSessionBriefTokens } = require('./sessionBriefBatch');
+const {
+    MAX_SESSION_BRIEF_BATCH,
+    SESSION_BRIEF_LOOKUP_CONCURRENCY,
+    normalizeSessionBriefTokens
+} = require('./sessionBriefBatch');
 const { tryAcquireLock } = require('./sharedCache');
 
 // Cache decrypted configs briefly to avoid redundant decryption on rapid navigation
@@ -43,26 +52,26 @@ const META_KEYS = {
 // or before persisting a config to storage. These are transient flags added during
 // the encrypt/decrypt/normalize cycle and should NEVER affect fingerprint calculation.
 const INTERNAL_FLAGS = [
-    '_encrypted',           // Added by encryptUserConfig()
-    '__decryptionWarning',  // Added by decryptUserConfig() on partial decrypt failure
+    '_encrypted', // Added by encryptUserConfig()
+    '__decryptionWarning', // Added by decryptUserConfig() on partial decrypt failure
     '__decryptionWarningFields',
     '__nestedEncryptionRecovered',
     '__nestedEncryptionRecoveredFields',
-    '__credentialDecryptionFailed',  // Added by normalizeConfig() when credentials look encrypted
+    '__credentialDecryptionFailed', // Added by normalizeConfig() when credentials look encrypted
     '__credentialDecryptionFailedFields',
-    '__credentialWarningEntry',      // Added by subtitles handler for UI warning
-    '__sessionTokenError',  // Added by resolveConfigAsync() when session not found
+    '__credentialWarningEntry', // Added by subtitles handler for UI warning
+    '__sessionTokenError', // Added by resolveConfigAsync() when session not found
     '__originalToken',
-    '__configHash',         // Added by ensureConfigHash()
+    '__configHash', // Added by ensureConfigHash()
     '__configHashScope',
     '__configBaseHash',
-    '__historyUserHash',    // Added from stable session metadata for history namespacing
+    '__historyUserHash', // Added from stable session metadata for history namespacing
     '__needsSessionPersist', // Added by normalizeConfig() for auto-correction
     '__persistReason',
-    '__regenerated',        // Added by regenerateDefaultConfig()
+    '__regenerated', // Added by regenerateDefaultConfig()
     '__regeneratedAt',
-    '__fetchedAt',          // Added during config resolution
-    '__invalidSession'      // Added when session is invalid
+    '__fetchedAt', // Added during config resolution
+    '__invalidSession' // Added when session is invalid
 ];
 
 /**
@@ -104,7 +113,11 @@ function computeConfigFingerprint(config) {
 // cache prefix collisions or mis-keyed storage writes)
 function computeTokenFingerprint(token) {
     try {
-        return crypto.createHash('sha256').update(String(token || '')).digest('hex').slice(0, 16);
+        return crypto
+            .createHash('sha256')
+            .update(String(token || ''))
+            .digest('hex')
+            .slice(0, 16);
     } catch (err) {
         log.warn(() => ['[SessionManager] Failed to compute token fingerprint:', err?.message || String(err)]);
         return 'token_fingerprint_error';
@@ -136,11 +149,7 @@ function buildHistoryEntryKeys(userHash, entryId) {
     const safeHash = sanitizeHistoryComponent(userHash);
     const safeId = sanitizeHistoryComponent(entryId);
     if (!safeHash || !safeId) return [];
-    return [
-        `hist__${safeHash}__${safeId}`,
-        `hist_${safeHash}_${safeId}`,
-        `hist:${safeHash}:${safeId}`
-    ];
+    return [`hist__${safeHash}__${safeId}`, `hist_${safeHash}_${safeId}`, `hist:${safeHash}:${safeId}`];
 }
 
 function buildHistoryIndexKey(userHash) {
@@ -317,9 +326,7 @@ function normalizeSessionLifecycleMetadata(sessionData) {
     }
 
     const updatedAt = Number(sessionData.updatedAt);
-    const normalizedUpdatedAt = Number.isFinite(updatedAt) && updatedAt > 0
-        ? updatedAt
-        : normalizedCreatedAt;
+    const normalizedUpdatedAt = Number.isFinite(updatedAt) && updatedAt > 0 ? updatedAt : normalizedCreatedAt;
     if (sessionData.updatedAt !== normalizedUpdatedAt) {
         sessionData.updatedAt = normalizedUpdatedAt;
         changed = true;
@@ -333,9 +340,7 @@ function normalizeSessionLifecycleMetadata(sessionData) {
 
     if (disabled) {
         const disabledAt = Number(sessionData.disabledAt);
-        const normalizedDisabledAt = Number.isFinite(disabledAt) && disabledAt > 0
-            ? disabledAt
-            : normalizedUpdatedAt;
+        const normalizedDisabledAt = Number.isFinite(disabledAt) && disabledAt > 0 ? disabledAt : normalizedUpdatedAt;
         if (sessionData.disabledAt !== normalizedDisabledAt) {
             sessionData.disabledAt = normalizedDisabledAt;
             changed = true;
@@ -366,7 +371,7 @@ function getPrefixVariants() {
     const configured = process.env.REDIS_KEY_PREFIX || 'stremio';
     const extra = (process.env.REDIS_KEY_PREFIX_VARIANTS || '')
         .split(',')
-        .map(s => s.trim())
+        .map((s) => s.trim())
         .filter(Boolean);
 
     const bases = [configured, ...extra];
@@ -401,10 +406,10 @@ async function getPubSubClient() {
 
         if (sentinelEnabled) {
             const sentinels = process.env.REDIS_SENTINELS
-                ? process.env.REDIS_SENTINELS.split(',').map(s => {
-                    const [host, port] = s.trim().split(':');
-                    return { host, port: parseInt(port, 10) || 26379 };
-                })
+                ? process.env.REDIS_SENTINELS.split(',').map((s) => {
+                      const [host, port] = s.trim().split(':');
+                      return { host, port: parseInt(port, 10) || 26379 };
+                  })
                 : [{ host: 'localhost', port: 26379 }];
 
             const sentinelName = process.env.REDIS_SENTINEL_NAME || 'mymaster';
@@ -462,10 +467,10 @@ async function getPublishClient() {
 
         if (sentinelEnabled) {
             const sentinels = process.env.REDIS_SENTINELS
-                ? process.env.REDIS_SENTINELS.split(',').map(s => {
-                    const [host, port] = s.trim().split(':');
-                    return { host, port: parseInt(port, 10) || 26379 };
-                })
+                ? process.env.REDIS_SENTINELS.split(',').map((s) => {
+                      const [host, port] = s.trim().split(':');
+                      return { host, port: parseInt(port, 10) || 26379 };
+                  })
                 : [{ host: 'localhost', port: 26379 }];
 
             const sentinelName = process.env.REDIS_SENTINEL_NAME || 'mymaster';
@@ -517,9 +522,7 @@ class SessionManager extends EventEmitter {
         this.instanceId = crypto.randomBytes(8).toString('hex');
 
         // If maxSessions is not provided or invalid, leave cache unbounded by count
-        this.maxSessions = (Number.isFinite(options.maxSessions) && options.maxSessions > 0)
-            ? options.maxSessions
-            : null;
+        this.maxSessions = Number.isFinite(options.maxSessions) && options.maxSessions > 0 ? options.maxSessions : null;
         this.maxAge = options.maxAge || 90 * 24 * 60 * 60 * 1000; // 90 days (3 months) default
 
         // TTL Control: Allow disabling Redis TTL expiration via environment variable
@@ -536,9 +539,10 @@ class SessionManager extends EventEmitter {
         this.shutdownTimeout = options.shutdownTimeout || 10 * 1000; // 10 seconds for shutdown save
 
         // Storage session limits (defense-in-depth)
-        this.storageMaxSessions = (Number.isFinite(options.storageMaxSessions) && options.storageMaxSessions > 0)
-            ? options.storageMaxSessions
-            : null; // Default: 60k from index.js
+        this.storageMaxSessions =
+            Number.isFinite(options.storageMaxSessions) && options.storageMaxSessions > 0
+                ? options.storageMaxSessions
+                : null; // Default: 60k from index.js
         this.storageMaxAge = options.storageMaxAge || 90 * 24 * 60 * 60 * 1000; // 90 days default
 
         // Session monitoring and alerting
@@ -634,11 +638,13 @@ class SessionManager extends EventEmitter {
      */
     _trackPersistence(promise) {
         this.pendingPersistence.add(promise);
-        promise.finally(() => {
-            this.pendingPersistence.delete(promise);
-        }).catch(() => {
-            // Errors are already logged by the individual operations
-        });
+        promise
+            .finally(() => {
+                this.pendingPersistence.delete(promise);
+            })
+            .catch(() => {
+                // Errors are already logged by the individual operations
+            });
         return promise;
     }
 
@@ -653,7 +659,10 @@ class SessionManager extends EventEmitter {
             return;
         }
 
-        log.warn(() => `[SessionManager] Waiting for ${this.pendingPersistence.size} pending persistence operation(s) to complete...`);
+        log.warn(
+            () =>
+                `[SessionManager] Waiting for ${this.pendingPersistence.size} pending persistence operation(s) to complete...`
+        );
         try {
             await Promise.allSettled(Array.from(this.pendingPersistence));
             log.warn(() => '[SessionManager] All pending persistence operations completed');
@@ -676,13 +685,21 @@ class SessionManager extends EventEmitter {
             // Log TTL configuration for visibility
             const ttlSeconds = this._calculateTtlSeconds();
             if (ttlSeconds === null) {
-                log.warn(() => '[SessionManager] Redis TTL DISABLED: sessions will persist indefinitely (potential unbounded growth)');
+                log.warn(
+                    () =>
+                        '[SessionManager] Redis TTL DISABLED: sessions will persist indefinitely (potential unbounded growth)'
+                );
             } else {
                 const ttlDays = Math.floor(ttlSeconds / (24 * 60 * 60));
-                log.warn(() => `[SessionManager] Redis TTL enabled: sessions will expire after ${ttlDays} days of inactivity`);
+                log.warn(
+                    () => `[SessionManager] Redis TTL enabled: sessions will expire after ${ttlDays} days of inactivity`
+                );
             }
 
-            log.debug(() => `[SessionManager] Initializing sessions (storage: ${storageType}, preload: ${sessionPreloadEnabled})`);
+            log.debug(
+                () =>
+                    `[SessionManager] Initializing sessions (storage: ${storageType}, preload: ${sessionPreloadEnabled})`
+            );
 
             await this.loadFromDisk();
             if (this.snapshotEnabled) {
@@ -702,17 +719,24 @@ class SessionManager extends EventEmitter {
             }
 
             this.isReady = true;
-            log.debug(() => `[SessionManager] Ready to accept requests (instance: ${this.instanceId}, in-memory sessions: ${this.cache.size})`);
+            log.debug(
+                () =>
+                    `[SessionManager] Ready to accept requests (instance: ${this.instanceId}, in-memory sessions: ${this.cache.size})`
+            );
 
             // In Redis lazy-load mode, add helpful message about cross-instance fallback
             if (storageType === 'redis' && !sessionPreloadEnabled) {
-                log.debug(() => '[SessionManager] Using lazy-load mode: sessions load from Redis on-demand via fallback');
+                log.debug(
+                    () => '[SessionManager] Using lazy-load mode: sessions load from Redis on-demand via fallback'
+                );
             }
 
             if (storageType === 'redis') {
                 this.startSessionIndexVerification();
                 // Kick off an immediate verification at startup so the first scan happens early
-                this.verifySessionIndex().catch(err => log.error(() => ['[SessionManager] Startup session index verify failed:', err.message]));
+                this.verifySessionIndex().catch((err) =>
+                    log.error(() => ['[SessionManager] Startup session index verify failed:', err.message])
+                );
             }
         } catch (err) {
             log.error(() => ['[SessionManager] Failed to load sessions from disk during init:', err.message]);
@@ -734,10 +758,7 @@ class SessionManager extends EventEmitter {
 
         // Subscribe to session invalidation channel (both prefixed and unprefixed to interop across hosts)
         const baseChannel = 'session:invalidate';
-        const channels = Array.from(new Set([
-            baseChannel,
-            ...getPrefixVariants().map(p => `${p}${baseChannel}`)
-        ]));
+        const channels = Array.from(new Set([baseChannel, ...getPrefixVariants().map((p) => `${p}${baseChannel}`)]));
 
         const channelSet = new Set(channels);
 
@@ -751,7 +772,10 @@ class SessionManager extends EventEmitter {
 
                 // Ignore messages from ourselves to prevent self-invalidation
                 if (instanceId === this.instanceId) {
-                    log.debug(() => `[SessionManager] Ignoring own invalidation event: ${redactToken(token)} (action: ${action})`);
+                    log.debug(
+                        () =>
+                            `[SessionManager] Ignoring own invalidation event: ${redactToken(token)} (action: ${action})`
+                    );
                     return;
                 }
 
@@ -763,7 +787,10 @@ class SessionManager extends EventEmitter {
                     this.decryptedCache?.delete(token);
                     this.emit('sessionInvalidated', { token, action, source: 'pubsub' });
                     if (hadSessionCache) {
-                        log.debug(() => `[SessionManager] Invalidated cached session from pub/sub: ${redactToken(token)} (action: ${action}) via ${channel}`);
+                        log.debug(
+                            () =>
+                                `[SessionManager] Invalidated cached session from pub/sub: ${redactToken(token)} (action: ${action}) via ${channel}`
+                        );
                     }
                 }
             } catch (err) {
@@ -797,7 +824,10 @@ class SessionManager extends EventEmitter {
             try {
                 const publisher = await getPublishClient();
                 if (!publisher) {
-                    log.warn(() => `[SessionManager] Pub/sub publish client unavailable for ${redactToken(token)} (${action})`);
+                    log.warn(
+                        () =>
+                            `[SessionManager] Pub/sub publish client unavailable for ${redactToken(token)} (${action})`
+                    );
                     return;
                 }
 
@@ -808,15 +838,17 @@ class SessionManager extends EventEmitter {
                     timestamp: Date.now()
                 });
                 const baseChannel = 'session:invalidate';
-                const channels = Array.from(new Set([
-                    baseChannel,
-                    ...getPrefixVariants().map(p => `${p}${baseChannel}`)
-                ]));
+                const channels = Array.from(
+                    new Set([baseChannel, ...getPrefixVariants().map((p) => `${p}${baseChannel}`)])
+                );
 
                 for (const channel of channels) {
                     await publisher.publish(channel, message);
                 }
-                log.debug(() => `[SessionManager] Published invalidation event: ${redactToken(token)} (${action}) to ${channels.join(', ')}`);
+                log.debug(
+                    () =>
+                        `[SessionManager] Published invalidation event: ${redactToken(token)} (${action}) to ${channels.join(', ')}`
+                );
                 return; // Success
             } catch (err) {
                 lastError = err;
@@ -824,8 +856,11 @@ class SessionManager extends EventEmitter {
 
                 if (isConnectionError && attempt < maxAttempts) {
                     const delay = Math.min(100 * attempt, 500);
-                    log.warn(() => `[SessionManager] Pub/sub publish failed (${err.message}), retrying in ${delay}ms (${attempt}/${maxAttempts})`);
-                    await new Promise(resolve => setTimeout(resolve, delay));
+                    log.warn(
+                        () =>
+                            `[SessionManager] Pub/sub publish failed (${err.message}), retrying in ${delay}ms (${attempt}/${maxAttempts})`
+                    );
+                    await new Promise((resolve) => setTimeout(resolve, delay));
                     continue;
                 }
 
@@ -895,9 +930,15 @@ class SessionManager extends EventEmitter {
             if (!keys || keys.length === 0) {
                 // DIAGNOSTIC: Alert if we have in-memory sessions but storage list returns empty
                 if (this.cache.size > 0) {
-                    log.error(() => `[SessionManager] CRITICAL: Snapshot failed - storage list returned 0 but ${this.cache.size} sessions exist in memory! Redis SCAN may be broken.`);
+                    log.error(
+                        () =>
+                            `[SessionManager] CRITICAL: Snapshot failed - storage list returned 0 but ${this.cache.size} sessions exist in memory! Redis SCAN may be broken.`
+                    );
                 } else {
-                    log.warn(() => `[SessionManager] Snapshot skipped - no sessions in storage${reason ? ` (${reason})` : ''}`);
+                    log.warn(
+                        () =>
+                            `[SessionManager] Snapshot skipped - no sessions in storage${reason ? ` (${reason})` : ''}`
+                    );
                 }
                 return;
             }
@@ -911,14 +952,24 @@ class SessionManager extends EventEmitter {
                         snapshot[token] = sessionData;
                     }
                 } catch (err) {
-                    log.debug(() => `[SessionManager] Failed to include ${redactToken(token)} in snapshot: ${err.message}`);
+                    log.debug(
+                        () => `[SessionManager] Failed to include ${redactToken(token)} in snapshot: ${err.message}`
+                    );
                 }
             }
 
-            await fs.writeFile(this.snapshotPath, JSON.stringify({
-                sessions: snapshot,
-                savedAt: new Date().toISOString()
-            }, null, 2), 'utf8');
+            await fs.writeFile(
+                this.snapshotPath,
+                JSON.stringify(
+                    {
+                        sessions: snapshot,
+                        savedAt: new Date().toISOString()
+                    },
+                    null,
+                    2
+                ),
+                'utf8'
+            );
 
             log.debug(() => `[SessionManager] Snapshot saved to ${this.snapshotPath}${reason ? ` (${reason})` : ''}`);
         } catch (err) {
@@ -950,23 +1001,33 @@ class SessionManager extends EventEmitter {
             const raw = await fs.readFile(this.snapshotPath, 'utf8');
             snapshot = JSON.parse(raw);
         } catch (err) {
-            log.warn(() => [`[SessionManager] Failed to inspect session snapshot during delete for ${redactToken(token)}:`, err?.message || String(err)]);
+            log.warn(() => [
+                `[SessionManager] Failed to inspect session snapshot during delete for ${redactToken(token)}:`,
+                err?.message || String(err)
+            ]);
             return false;
         }
 
-        const sessions = (snapshot && typeof snapshot.sessions === 'object' && snapshot.sessions)
-            ? { ...snapshot.sessions }
-            : null;
+        const sessions =
+            snapshot && typeof snapshot.sessions === 'object' && snapshot.sessions ? { ...snapshot.sessions } : null;
         if (!sessions || !Object.prototype.hasOwnProperty.call(sessions, token)) {
             return false;
         }
 
         delete sessions[token];
-        await fs.writeFile(this.snapshotPath, JSON.stringify({
-            ...(snapshot && typeof snapshot === 'object' ? snapshot : {}),
-            sessions,
-            savedAt: new Date().toISOString()
-        }, null, 2), 'utf8');
+        await fs.writeFile(
+            this.snapshotPath,
+            JSON.stringify(
+                {
+                    ...(snapshot && typeof snapshot === 'object' ? snapshot : {}),
+                    sessions,
+                    savedAt: new Date().toISOString()
+                },
+                null,
+                2
+            ),
+            'utf8'
+        );
 
         log.debug(() => `[SessionManager] Removed ${redactToken(token)} from session snapshot`);
         return true;
@@ -1051,12 +1112,17 @@ class SessionManager extends EventEmitter {
             const adapter = await getStorageAdapter();
             const verification = await adapter.get(token, StorageAdapter.CACHE_TYPES.SESSION);
             if (!verification) {
-                log.error(() => `[SessionManager] CRITICAL: Session ${redactToken(token)} was NOT found in Redis immediately after creation!`);
+                log.error(
+                    () =>
+                        `[SessionManager] CRITICAL: Session ${redactToken(token)} was NOT found in Redis immediately after creation!`
+                );
             } else {
                 log.debug(() => `[SessionManager] Session ${redactToken(token)} verified in Redis after creation`);
             }
         } catch (verifyErr) {
-            log.error(() => `[SessionManager] Verification read failed for ${redactToken(token)}: ${verifyErr?.message}`);
+            log.error(
+                () => `[SessionManager] Verification read failed for ${redactToken(token)}: ${verifyErr?.message}`
+            );
         }
 
         this.emit('sessionCreated', { token, source: 'local' });
@@ -1077,7 +1143,10 @@ class SessionManager extends EventEmitter {
         if (rateLimitEntry) {
             const now = Date.now();
             if (rateLimitEntry.blockedUntil && now < rateLimitEntry.blockedUntil) {
-                log.warn(() => `[SessionManager] Rate limited session lookup for ${redactToken(token)} (${rateLimitEntry.count} failures, blocked for ${Math.ceil((rateLimitEntry.blockedUntil - now) / 1000)}s)`);
+                log.warn(
+                    () =>
+                        `[SessionManager] Rate limited session lookup for ${redactToken(token)} (${rateLimitEntry.count} failures, blocked for ${Math.ceil((rateLimitEntry.blockedUntil - now) / 1000)}s)`
+                );
                 return null;
             }
         }
@@ -1106,7 +1175,10 @@ class SessionManager extends EventEmitter {
 
         const tokenValidation = ensureTokenMetadata(sessionData, token);
         if (tokenValidation.status === 'missing_token') {
-            log.warn(() => `[SessionManager] Missing token metadata for ${redactToken(token)} - deleting session (cannot safely backfill)`);
+            log.warn(
+                () =>
+                    `[SessionManager] Missing token metadata for ${redactToken(token)} - deleting session (cannot safely backfill)`
+            );
             this.deleteSession(token);
             return null;
         } else if (tokenValidation.status === 'missing_fingerprint') {
@@ -1114,14 +1186,20 @@ class SessionManager extends EventEmitter {
             markNeedsPersist('token fingerprint backfill');
             log.warn(() => `[SessionManager] Backfilled missing token fingerprint for ${redactToken(token)}`);
         } else if (tokenValidation.status !== 'ok') {
-            log.warn(() => `[SessionManager] Token validation failed (${tokenValidation.status}) for ${redactToken(token)} - deleting session`);
+            log.warn(
+                () =>
+                    `[SessionManager] Token validation failed (${tokenValidation.status}) for ${redactToken(token)} - deleting session`
+            );
             this.deleteSession(token);
             return null;
         }
 
         const payloadValidation = validateEncryptedSessionPayload(sessionData);
         if (!payloadValidation.valid) {
-            log.warn(() => `[SessionManager] Invalid session payload (${payloadValidation.reason}) for ${redactToken(token)} - deleting session`);
+            log.warn(
+                () =>
+                    `[SessionManager] Invalid session payload (${payloadValidation.reason}) for ${redactToken(token)} - deleting session`
+            );
             this.deleteSession(token);
             return null;
         }
@@ -1149,7 +1227,7 @@ class SessionManager extends EventEmitter {
         const lastTtlRefresh = sessionData._lastTtlRefresh || 0;
         let accessPersistenceScheduled = false;
         const scheduleAccessPersistence = () => {
-            const shouldRefreshTtl = needsPersist || (now - lastTtlRefresh > TTL_REFRESH_DEBOUNCE_MS);
+            const shouldRefreshTtl = needsPersist || now - lastTtlRefresh > TTL_REFRESH_DEBOUNCE_MS;
             if (!shouldRefreshTtl || accessPersistenceScheduled) {
                 return;
             }
@@ -1160,17 +1238,27 @@ class SessionManager extends EventEmitter {
             // Persist touch to refresh persistent TTL and any access-time healing/backfills.
             // This must run after the full read/repair pipeline so cache-hit recoveries are
             // written back immediately instead of surviving until the next restart.
-            this._trackPersistence(Promise.resolve().then(async () => {
-                const adapter = await getStorageAdapter();
-                const ttlSeconds = this._calculateTtlSeconds();
-                await adapter.set(token, sessionData, StorageAdapter.CACHE_TYPES.SESSION, ttlSeconds);
-                if (needsPersist) {
-                    const reasons = Array.from(persistReasons);
-                    log.debug(() => `[SessionManager] Persisted session access changes for ${redactToken(token)}${reasons.length ? ` (${reasons.join(', ')})` : ''}`);
-                }
-            }).catch(err => {
-                log.error(() => ['[SessionManager] Failed to persist session access changes:', err?.message || String(err)]);
-            }));
+            this._trackPersistence(
+                Promise.resolve()
+                    .then(async () => {
+                        const adapter = await getStorageAdapter();
+                        const ttlSeconds = this._calculateTtlSeconds();
+                        await adapter.set(token, sessionData, StorageAdapter.CACHE_TYPES.SESSION, ttlSeconds);
+                        if (needsPersist) {
+                            const reasons = Array.from(persistReasons);
+                            log.debug(
+                                () =>
+                                    `[SessionManager] Persisted session access changes for ${redactToken(token)}${reasons.length ? ` (${reasons.join(', ')})` : ''}`
+                            );
+                        }
+                    })
+                    .catch((err) => {
+                        log.error(() => [
+                            '[SessionManager] Failed to persist session access changes:',
+                            err?.message || String(err)
+                        ]);
+                    })
+            );
         };
 
         // Use cached decrypted config when available to avoid redundant decrypt/log spam on page changes
@@ -1195,7 +1283,10 @@ class SessionManager extends EventEmitter {
             decryptedConfig = result.config;
             metadata = result.metadata || {};
         } catch (err) {
-            log.warn(() => `[SessionManager] Failed to decrypt config for ${redactToken(token)} - keeping stored session for retry (${err?.message || err})`);
+            log.warn(
+                () =>
+                    `[SessionManager] Failed to decrypt config for ${redactToken(token)} - keeping stored session for retry (${err?.message || err})`
+            );
             this.cache.delete(token);
             this.decryptedCache.delete(token);
             return null;
@@ -1207,7 +1298,10 @@ class SessionManager extends EventEmitter {
             return null;
         }
         if (metadata.token && metadata.token !== token) {
-            log.warn(() => `[SessionManager] Session token metadata mismatch for ${redactToken(token)} - expected ${redactToken(metadata.token)} - deleting session`);
+            log.warn(
+                () =>
+                    `[SessionManager] Session token metadata mismatch for ${redactToken(token)} - expected ${redactToken(metadata.token)} - deleting session`
+            );
             this.deleteSession(token);
             return null;
         }
@@ -1220,7 +1314,10 @@ class SessionManager extends EventEmitter {
             sessionData.integrity = computeIntegrityHash(token, fingerprint);
             sessionData.config = encryptUserConfig(embedSessionMetadata(decryptedConfig, token, fingerprint));
             markNeedsPersist('nested encryption heal');
-            log.warn(() => `[SessionManager] Healed nested encryption for ${redactToken(token)} - fields: ${nestedRecoveredFields.join(', ') || 'unknown'}. Session will be re-saved in normalized form.`);
+            log.warn(
+                () =>
+                    `[SessionManager] Healed nested encryption for ${redactToken(token)} - fields: ${nestedRecoveredFields.join(', ') || 'unknown'}. Session will be re-saved in normalized form.`
+            );
         }
 
         // Check if decryption had warnings (indicates encryption key mismatch between server instances)
@@ -1229,7 +1326,10 @@ class SessionManager extends EventEmitter {
         const hasDecryptionWarnings = decryptedConfig.__decryptionWarning === true;
         if (hasDecryptionWarnings) {
             const warningFields = decryptedConfig.__decryptionWarningFields || [];
-            log.warn(() => `[SessionManager] getSession: Decryption warnings detected for ${redactToken(token)} - fields: ${warningFields.join(', ')}. Skipping fingerprint validation. User may need to re-enter credentials.`);
+            log.warn(
+                () =>
+                    `[SessionManager] getSession: Decryption warnings detected for ${redactToken(token)} - fields: ${warningFields.join(', ')}. Skipping fingerprint validation. User may need to re-enter credentials.`
+            );
             // Clean up warning flags before returning
             delete decryptedConfig.__decryptionWarning;
             delete decryptedConfig.__decryptionWarningFields;
@@ -1239,12 +1339,28 @@ class SessionManager extends EventEmitter {
         // (e.g., new fields added, encrypted values differ after decrypt cycle). Token validation
         // is sufficient to detect cross-session contamination. Fingerprint mismatches are now
         // logged at debug level for diagnostics only - sessions are NOT deleted.
-        if (!hasDecryptionWarnings && !sessionPayloadNormalizedOnRead && metadata.fingerprint && metadata.fingerprint !== fingerprint) {
-            log.debug(() => `[SessionManager] Fingerprint mismatch (metadata) for ${redactToken(token)} - stored=${metadata.fingerprint}, computed=${fingerprint}. Session preserved (fingerprint validation disabled).`);
+        if (
+            !hasDecryptionWarnings &&
+            !sessionPayloadNormalizedOnRead &&
+            metadata.fingerprint &&
+            metadata.fingerprint !== fingerprint
+        ) {
+            log.debug(
+                () =>
+                    `[SessionManager] Fingerprint mismatch (metadata) for ${redactToken(token)} - stored=${metadata.fingerprint}, computed=${fingerprint}. Session preserved (fingerprint validation disabled).`
+            );
             // Don't delete - continue with session
         }
-        if (!hasDecryptionWarnings && !sessionPayloadNormalizedOnRead && sessionData.fingerprint && fingerprint !== sessionData.fingerprint) {
-            log.debug(() => `[SessionManager] Fingerprint mismatch (stored) for ${redactToken(token)} - stored=${sessionData.fingerprint}, computed=${fingerprint}. Session preserved (fingerprint validation disabled).`);
+        if (
+            !hasDecryptionWarnings &&
+            !sessionPayloadNormalizedOnRead &&
+            sessionData.fingerprint &&
+            fingerprint !== sessionData.fingerprint
+        ) {
+            log.debug(
+                () =>
+                    `[SessionManager] Fingerprint mismatch (stored) for ${redactToken(token)} - stored=${sessionData.fingerprint}, computed=${fingerprint}. Session preserved (fingerprint validation disabled).`
+            );
             // Don't delete - continue with session
         }
         if (!sessionData.fingerprint) {
@@ -1264,9 +1380,14 @@ class SessionManager extends EventEmitter {
                 const upgradedConfig = encryptUserConfig(embedSessionMetadata(decryptedConfig, token, fingerprint));
                 sessionData.config = upgradedConfig;
                 markNeedsPersist('legacy payload upgrade');
-                log.warn(() => `[SessionManager] Upgraded legacy unencrypted session payload for ${redactToken(token)}`);
+                log.warn(
+                    () => `[SessionManager] Upgraded legacy unencrypted session payload for ${redactToken(token)}`
+                );
             } catch (upgradeErr) {
-                log.error(() => ['[SessionManager] Failed to upgrade legacy session payload:', upgradeErr?.message || String(upgradeErr)]);
+                log.error(() => [
+                    '[SessionManager] Failed to upgrade legacy session payload:',
+                    upgradeErr?.message || String(upgradeErr)
+                ]);
                 this.cache.delete(token);
                 this.decryptedCache.delete(token);
                 return null;
@@ -1279,7 +1400,10 @@ class SessionManager extends EventEmitter {
         if (sessionData.fingerprint) {
             const expectedIntegrity = computeIntegrityHash(token, sessionData.fingerprint);
             if (sessionData.integrity && sessionData.integrity !== expectedIntegrity) {
-                log.warn(() => `[SessionManager] Integrity mismatch for ${redactToken(token)} - discarding contaminated session`);
+                log.warn(
+                    () =>
+                        `[SessionManager] Integrity mismatch for ${redactToken(token)} - discarding contaminated session`
+                );
                 this.deleteSession(token);
                 return null;
             }
@@ -1288,13 +1412,20 @@ class SessionManager extends EventEmitter {
                 sessionData.integrity = expectedIntegrity;
                 this.cache.set(token, sessionData);
                 this.dirty = true;
-                this._trackPersistence(Promise.resolve().then(async () => {
-                    const adapter = await getStorageAdapter();
-                    const ttlSeconds = this._calculateTtlSeconds();
-                    await adapter.set(token, sessionData, StorageAdapter.CACHE_TYPES.SESSION, ttlSeconds);
-                }).catch(err => {
-                    log.error(() => ['[SessionManager] Failed to persist integrity backfill:', err?.message || String(err)]);
-                }));
+                this._trackPersistence(
+                    Promise.resolve()
+                        .then(async () => {
+                            const adapter = await getStorageAdapter();
+                            const ttlSeconds = this._calculateTtlSeconds();
+                            await adapter.set(token, sessionData, StorageAdapter.CACHE_TYPES.SESSION, ttlSeconds);
+                        })
+                        .catch((err) => {
+                            log.error(() => [
+                                '[SessionManager] Failed to persist integrity backfill:',
+                                err?.message || String(err)
+                            ]);
+                        })
+                );
             }
         }
 
@@ -1307,13 +1438,20 @@ class SessionManager extends EventEmitter {
             // Backfill integrity so future checks can detect contamination
             sessionData.integrity = computeIntegrityHash(token, fingerprint);
 
-            this._trackPersistence(Promise.resolve().then(async () => {
-                const adapter = await getStorageAdapter();
-                const ttlSeconds = this._calculateTtlSeconds();
-                await adapter.set(token, sessionData, StorageAdapter.CACHE_TYPES.SESSION, ttlSeconds);
-            }).catch(err => {
-                log.error(() => ['[SessionManager] Failed to persist fingerprint backfill:', err?.message || String(err)]);
-            }));
+            this._trackPersistence(
+                Promise.resolve()
+                    .then(async () => {
+                        const adapter = await getStorageAdapter();
+                        const ttlSeconds = this._calculateTtlSeconds();
+                        await adapter.set(token, sessionData, StorageAdapter.CACHE_TYPES.SESSION, ttlSeconds);
+                    })
+                    .catch((err) => {
+                        log.error(() => [
+                            '[SessionManager] Failed to persist fingerprint backfill:',
+                            err?.message || String(err)
+                        ]);
+                    })
+            );
         }
 
         decryptedConfig.__historyUserHash = sessionData.historyUserHash;
@@ -1334,7 +1472,7 @@ class SessionManager extends EventEmitter {
         const now = Date.now();
         let entry = this.failedLookups.get(token);
 
-        if (!entry || (now - entry.firstFailAt > FAILED_LOOKUP_WINDOW_MS)) {
+        if (!entry || now - entry.firstFailAt > FAILED_LOOKUP_WINDOW_MS) {
             // Start a new window
             entry = { count: 1, firstFailAt: now, blockedUntil: 0 };
         } else {
@@ -1343,7 +1481,10 @@ class SessionManager extends EventEmitter {
 
         if (entry.count >= FAILED_LOOKUP_MAX && !entry.blockedUntil) {
             entry.blockedUntil = now + FAILED_LOOKUP_BLOCK_MS;
-            log.warn(() => `[SessionManager] Token ${redactToken(token)} blocked for ${FAILED_LOOKUP_BLOCK_MS / 1000}s after ${entry.count} failed lookups (possible enumeration attempt)`);
+            log.warn(
+                () =>
+                    `[SessionManager] Token ${redactToken(token)} blocked for ${FAILED_LOOKUP_BLOCK_MS / 1000}s after ${entry.count} failed lookups (possible enumeration attempt)`
+            );
         }
 
         this.failedLookups.set(token, entry);
@@ -1372,10 +1513,15 @@ class SessionManager extends EventEmitter {
 
         // If not in cache, try loading from storage (Redis/filesystem)
         if (!sessionData) {
-            log.debug(() => `[SessionManager] Session not in cache for update, checking storage: ${redactToken(token)}`);
+            log.debug(
+                () => `[SessionManager] Session not in cache for update, checking storage: ${redactToken(token)}`
+            );
             const loadedConfig = await this.loadSessionFromStorage(token);
             if (!loadedConfig) {
-                log.warn(() => `[SessionManager] Cannot update - session not found in cache or storage: ${redactToken(token)}`);
+                log.warn(
+                    () =>
+                        `[SessionManager] Cannot update - session not found in cache or storage: ${redactToken(token)}`
+                );
                 return false;
             }
             // loadSessionFromStorage already added to cache, retrieve it
@@ -1384,27 +1530,43 @@ class SessionManager extends EventEmitter {
 
         const tokenValidation = ensureTokenMetadata(sessionData, token);
         if (tokenValidation.status === 'missing_fingerprint') {
-            log.warn(() => `[SessionManager] Missing token fingerprint during update for ${redactToken(token)} - backfilling instead of deleting session`);
+            log.warn(
+                () =>
+                    `[SessionManager] Missing token fingerprint during update for ${redactToken(token)} - backfilling instead of deleting session`
+            );
             sessionData.tokenFingerprint = tokenValidation.expectedTokenFingerprint;
             this.cache.set(token, sessionData);
             this.dirty = true;
 
-            this._trackPersistence(Promise.resolve().then(async () => {
-                const adapter = await getStorageAdapter();
-                const ttlSeconds = this._calculateTtlSeconds();
-                await adapter.set(token, sessionData, StorageAdapter.CACHE_TYPES.SESSION, ttlSeconds);
-            }).catch(err => {
-                log.error(() => ['[SessionManager] Failed to persist token fingerprint backfill during update:', err?.message || String(err)]);
-            }));
+            this._trackPersistence(
+                Promise.resolve()
+                    .then(async () => {
+                        const adapter = await getStorageAdapter();
+                        const ttlSeconds = this._calculateTtlSeconds();
+                        await adapter.set(token, sessionData, StorageAdapter.CACHE_TYPES.SESSION, ttlSeconds);
+                    })
+                    .catch((err) => {
+                        log.error(() => [
+                            '[SessionManager] Failed to persist token fingerprint backfill during update:',
+                            err?.message || String(err)
+                        ]);
+                    })
+            );
         } else if (tokenValidation.status !== 'ok') {
-            log.warn(() => `[SessionManager] Token validation failed (${tokenValidation.status}) during update for ${redactToken(token)} - deleting session`);
+            log.warn(
+                () =>
+                    `[SessionManager] Token validation failed (${tokenValidation.status}) during update for ${redactToken(token)} - deleting session`
+            );
             this.deleteSession(token);
             return false;
         }
 
         const payloadValidation = validateEncryptedSessionPayload(sessionData);
         if (!payloadValidation.valid) {
-            log.warn(() => `[SessionManager] Invalid session payload (${payloadValidation.reason}) during update for ${redactToken(token)} - deleting session`);
+            log.warn(
+                () =>
+                    `[SessionManager] Invalid session payload (${payloadValidation.reason}) during update for ${redactToken(token)} - deleting session`
+            );
             this.deleteSession(token);
             return false;
         }
@@ -1480,7 +1642,11 @@ class SessionManager extends EventEmitter {
         }
 
         const tokenValidation = ensureTokenMetadata(stored, token);
-        if (tokenValidation.status === 'missing_token' || tokenValidation.status === 'mismatch_token' || tokenValidation.status === 'mismatch_fingerprint') {
+        if (
+            tokenValidation.status === 'missing_token' ||
+            tokenValidation.status === 'mismatch_token' ||
+            tokenValidation.status === 'mismatch_fingerprint'
+        ) {
             return null;
         }
         if (tokenValidation.status === 'missing_fingerprint') {
@@ -1506,7 +1672,8 @@ class SessionManager extends EventEmitter {
         const createdAt = Number(sessionData.createdAt) || 0;
         const updatedAt = Number(sessionData.updatedAt) || createdAt || 0;
         const lastAccessedAt = Number(sessionData.lastAccessedAt) || createdAt || 0;
-        const disabledAt = sessionData.disabled === true ? (Number(sessionData.disabledAt) || updatedAt || createdAt || 0) : null;
+        const disabledAt =
+            sessionData.disabled === true ? Number(sessionData.disabledAt) || updatedAt || createdAt || 0 : null;
 
         return {
             token,
@@ -1538,17 +1705,25 @@ class SessionManager extends EventEmitter {
                     const brief = await this.getSessionBrief(token);
                     briefs[currentIndex] = brief || { token, exists: false, status: 'missing' };
                 } catch (err) {
-                    log.debug(() => `[SessionManager] Failed to inspect session brief for ${redactToken(token)}: ${err.message}`);
+                    log.debug(
+                        () =>
+                            `[SessionManager] Failed to inspect session brief for ${redactToken(token)}: ${err.message}`
+                    );
                     briefs[currentIndex] = { token, exists: false, status: 'error' };
                 }
             }
         };
 
-        await Promise.all(Array.from({
-            length: Math.min(SESSION_BRIEF_LOOKUP_CONCURRENCY, uniqueTokens.length || 1)
-        }, worker));
+        await Promise.all(
+            Array.from(
+                {
+                    length: Math.min(SESSION_BRIEF_LOOKUP_CONCURRENCY, uniqueTokens.length || 1)
+                },
+                worker
+            )
+        );
 
-        return briefs.map(brief => ({
+        return briefs.map((brief) => ({
             exists: brief.status !== 'missing' && brief.status !== 'error',
             ...brief
         }));
@@ -1607,14 +1782,15 @@ class SessionManager extends EventEmitter {
         // was brand-new and had no history.
         try {
             const store = await adapter.get(storeKey, StorageAdapter.CACHE_TYPES.HISTORY);
-            const entries = store && typeof store === 'object' && !Array.isArray(store)
-                ? store.entries
-                : null;
+            const entries = store && typeof store === 'object' && !Array.isArray(store) ? store.entries : null;
             if (entries && typeof entries === 'object') {
                 Object.keys(entries).forEach((id) => entryIds.add(id));
             }
         } catch (err) {
-            log.debug(() => [`[SessionManager] Failed to read history store during purge for ${normalizedHash}:`, err?.message || String(err)]);
+            log.debug(() => [
+                `[SessionManager] Failed to read history store during purge for ${normalizedHash}:`,
+                err?.message || String(err)
+            ]);
         }
 
         const redisClient = StorageFactory.getRedisClient();
@@ -1625,16 +1801,20 @@ class SessionManager extends EventEmitter {
                     indexedIds.forEach((id) => entryIds.add(id));
                 }
             } catch (err) {
-                log.debug(() => [`[SessionManager] Failed to read history index during purge for ${normalizedHash}:`, err?.message || String(err)]);
+                log.debug(() => [
+                    `[SessionManager] Failed to read history index during purge for ${normalizedHash}:`,
+                    err?.message || String(err)
+                ]);
             }
         }
 
-        const keysToDelete = Array.from(new Set([
-            storeKey,
-            ...Array.from(entryIds).flatMap((id) => buildHistoryEntryKeys(normalizedHash, id))
-        ]));
+        const keysToDelete = Array.from(
+            new Set([storeKey, ...Array.from(entryIds).flatMap((id) => buildHistoryEntryKeys(normalizedHash, id))])
+        );
 
-        const deleteResults = await Promise.all(keysToDelete.map((key) => adapter.delete(key, StorageAdapter.CACHE_TYPES.HISTORY)));
+        const deleteResults = await Promise.all(
+            keysToDelete.map((key) => adapter.delete(key, StorageAdapter.CACHE_TYPES.HISTORY))
+        );
         let deletedCount = deleteResults.filter((result) => result === true).length;
 
         if (redisClient) {
@@ -1642,7 +1822,10 @@ class SessionManager extends EventEmitter {
                 const deletedIndex = await redisClient.del(buildHistoryIndexKey(normalizedHash));
                 deletedCount += Number(deletedIndex) || 0;
             } catch (err) {
-                log.warn(() => [`[SessionManager] Failed to purge history index for ${normalizedHash}:`, err?.message || String(err)]);
+                log.warn(() => [
+                    `[SessionManager] Failed to purge history index for ${normalizedHash}:`,
+                    err?.message || String(err)
+                ]);
             }
         }
 
@@ -1666,15 +1849,17 @@ class SessionManager extends EventEmitter {
         const cachedSession = this.cache.get(token) || null;
         const cachedDecrypted = this.decryptedCache.has(token);
         const storedSession = await adapter.get(token, StorageAdapter.CACHE_TYPES.SESSION);
-        const historyNamespaces = Array.from(new Set([
-            cachedSession?.historyUserHash,
-            storedSession?.historyUserHash,
-            computeHistoryUserHash(token)
-        ].map(normalizeHistoryUserHash).filter(Boolean)));
+        const historyNamespaces = Array.from(
+            new Set(
+                [cachedSession?.historyUserHash, storedSession?.historyUserHash, computeHistoryUserHash(token)]
+                    .map(normalizeHistoryUserHash)
+                    .filter(Boolean)
+            )
+        );
 
         let deletedCanonical = false;
         try {
-            deletedCanonical = await adapter.delete(token, StorageAdapter.CACHE_TYPES.SESSION) === true;
+            deletedCanonical = (await adapter.delete(token, StorageAdapter.CACHE_TYPES.SESSION)) === true;
         } catch (err) {
             log.error(() => ['[SessionManager] Failed to delete session from storage:', err?.message || String(err)]);
             throw err;
@@ -1683,9 +1868,15 @@ class SessionManager extends EventEmitter {
         let deletedAlternatePrefixes = 0;
         if (typeof adapter.deleteFromAlternatePrefixes === 'function') {
             try {
-                deletedAlternatePrefixes = await adapter.deleteFromAlternatePrefixes(token, StorageAdapter.CACHE_TYPES.SESSION);
+                deletedAlternatePrefixes = await adapter.deleteFromAlternatePrefixes(
+                    token,
+                    StorageAdapter.CACHE_TYPES.SESSION
+                );
             } catch (err) {
-                log.warn(() => [`[SessionManager] Failed to delete alternate-prefix session variants for ${redactToken(token)}:`, err?.message || String(err)]);
+                log.warn(() => [
+                    `[SessionManager] Failed to delete alternate-prefix session variants for ${redactToken(token)}:`,
+                    err?.message || String(err)
+                ]);
             }
         }
 
@@ -1695,13 +1886,14 @@ class SessionManager extends EventEmitter {
             deletedHistoryEntries += await this._purgeHistoryNamespace(historyNamespace);
         }
 
-        const existed = !!cachedSession
-            || cachedDecrypted
-            || storedSession !== null
-            || deletedCanonical
-            || deletedAlternatePrefixes > 0
-            || deletedSnapshot
-            || deletedHistoryEntries > 0;
+        const existed =
+            !!cachedSession ||
+            cachedDecrypted ||
+            storedSession !== null ||
+            deletedCanonical ||
+            deletedAlternatePrefixes > 0 ||
+            deletedSnapshot ||
+            deletedHistoryEntries > 0;
         if (!existed) {
             return false;
         }
@@ -1735,14 +1927,21 @@ class SessionManager extends EventEmitter {
             log.debug(() => `[SessionManager] Session deleted: ${redactToken(token)}`);
             // Remove from storage immediately
             // Track this async operation so shutdown can wait for it to complete
-            this._trackPersistence(Promise.resolve().then(async () => {
-                const adapter = await getStorageAdapter();
-                await adapter.delete(token, StorageAdapter.CACHE_TYPES.SESSION);
-                // Notify other instances to invalidate their cache
-                await this._publishInvalidation(token, 'delete');
-            }).catch(err => {
-                log.error(() => ['[SessionManager] Failed to delete session from storage:', err?.message || String(err)]);
-            }));
+            this._trackPersistence(
+                Promise.resolve()
+                    .then(async () => {
+                        const adapter = await getStorageAdapter();
+                        await adapter.delete(token, StorageAdapter.CACHE_TYPES.SESSION);
+                        // Notify other instances to invalidate their cache
+                        await this._publishInvalidation(token, 'delete');
+                    })
+                    .catch((err) => {
+                        log.error(() => [
+                            '[SessionManager] Failed to delete session from storage:',
+                            err?.message || String(err)
+                        ]);
+                    })
+            );
             this.emit('sessionDeleted', { token, source: 'local' });
         }
         return existed;
@@ -1761,7 +1960,9 @@ class SessionManager extends EventEmitter {
             maxSessions: this.maxSessions || null,
             storageSessionCount: storageCount,
             storageMaxSessions: this.storageMaxSessions || null,
-            storageUtilization: this.storageMaxSessions ? (storageCount / this.storageMaxSessions * 100).toFixed(2) + '%' : 'N/A',
+            storageUtilization: this.storageMaxSessions
+                ? ((storageCount / this.storageMaxSessions) * 100).toFixed(2) + '%'
+                : 'N/A',
             maxAge: this.maxAge,
             storageMaxAge: this.storageMaxAge,
             storageType: storageType,
@@ -1779,7 +1980,7 @@ class SessionManager extends EventEmitter {
     async getStorageSessionCount(forceRefresh = false) {
         try {
             const now = Date.now();
-            if (!forceRefresh && (now - this.storageCountCache.ts) < STORAGE_COUNT_CACHE_TTL_MS) {
+            if (!forceRefresh && now - this.storageCountCache.ts < STORAGE_COUNT_CACHE_TTL_MS) {
                 return this.storageCountCache.value;
             }
 
@@ -1791,7 +1992,10 @@ class SessionManager extends EventEmitter {
                 try {
                     count = await adapter.getSessionCount();
                 } catch (err) {
-                    log.warn(() => `[SessionManager] Session index count failed, falling back to scan: ${err?.message || err}`);
+                    log.warn(
+                        () =>
+                            `[SessionManager] Session index count failed, falling back to scan: ${err?.message || err}`
+                    );
                     count = null;
                 }
             }
@@ -1799,12 +2003,15 @@ class SessionManager extends EventEmitter {
             // Fallback or forced refresh: scan and rebuild index if supported
             if (count === null || forceRefresh) {
                 const keys = await adapter.list(StorageAdapter.CACHE_TYPES.SESSION, '*');
-                const validKeys = keys.filter(token => /^[a-f0-9]{32}$/.test(token));
+                const validKeys = keys.filter((token) => /^[a-f0-9]{32}$/.test(token));
                 count = validKeys.length;
 
                 // DIAGNOSTIC: Warn if list returns zero when we have in-memory sessions
                 if (count === 0 && this.cache.size > 0) {
-                    log.warn(() => `[SessionManager] ALERT: Storage returned 0 sessions but ${this.cache.size} exist in memory! Check Redis SCAN pattern or connection.`);
+                    log.warn(
+                        () =>
+                            `[SessionManager] ALERT: Storage returned 0 sessions but ${this.cache.size} exist in memory! Check Redis SCAN pattern or connection.`
+                    );
                 }
 
                 if (canUseIndex && typeof adapter.resetSessionIndex === 'function') {
@@ -1842,36 +2049,55 @@ class SessionManager extends EventEmitter {
 
             // Session not found in storage
             if (!stored) {
-                log.debug(() => `[SessionManager] loadSessionFromStorage: session token not found in storage: ${redactToken(token)}`);
+                log.debug(
+                    () =>
+                        `[SessionManager] loadSessionFromStorage: session token not found in storage: ${redactToken(token)}`
+                );
                 return null;
             }
 
             const deleteFromStorage = async () => {
-                try { await adapter.delete(token, StorageAdapter.CACHE_TYPES.SESSION); } catch (_) { }
+                try {
+                    await adapter.delete(token, StorageAdapter.CACHE_TYPES.SESSION);
+                } catch (_) {}
                 if (typeof adapter.deleteFromAlternatePrefixes === 'function') {
-                    try { await adapter.deleteFromAlternatePrefixes(token, StorageAdapter.CACHE_TYPES.SESSION); } catch (_) { }
+                    try {
+                        await adapter.deleteFromAlternatePrefixes(token, StorageAdapter.CACHE_TYPES.SESSION);
+                    } catch (_) {}
                 }
             };
 
             const tokenValidation = ensureTokenMetadata(stored, token);
             let needsPersist = false;
             if (tokenValidation.status === 'missing_token') {
-                log.warn(() => `[SessionManager] loadSessionFromStorage: missing token metadata for ${redactToken(token)} - deleting session (cannot safely backfill)`);
+                log.warn(
+                    () =>
+                        `[SessionManager] loadSessionFromStorage: missing token metadata for ${redactToken(token)} - deleting session (cannot safely backfill)`
+                );
                 await deleteFromStorage();
                 return null;
             } else if (tokenValidation.status === 'missing_fingerprint') {
                 stored.tokenFingerprint = tokenValidation.expectedTokenFingerprint || computeTokenFingerprint(token);
                 needsPersist = true;
-                log.warn(() => `[SessionManager] loadSessionFromStorage: missing token fingerprint for ${redactToken(token)} - backfilling`);
+                log.warn(
+                    () =>
+                        `[SessionManager] loadSessionFromStorage: missing token fingerprint for ${redactToken(token)} - backfilling`
+                );
             } else if (tokenValidation.status !== 'ok') {
-                log.warn(() => `[SessionManager] loadSessionFromStorage: token validation failed (${tokenValidation.status}) for ${redactToken(token)} - deleting session`);
+                log.warn(
+                    () =>
+                        `[SessionManager] loadSessionFromStorage: token validation failed (${tokenValidation.status}) for ${redactToken(token)} - deleting session`
+                );
                 await deleteFromStorage();
                 return null;
             }
 
             const payloadValidation = validateEncryptedSessionPayload(stored);
             if (!payloadValidation.valid) {
-                log.warn(() => `[SessionManager] loadSessionFromStorage: invalid session payload (${payloadValidation.reason}) for ${redactToken(token)} - deleting session`);
+                log.warn(
+                    () =>
+                        `[SessionManager] loadSessionFromStorage: invalid session payload (${payloadValidation.reason}) for ${redactToken(token)} - deleting session`
+                );
                 await deleteFromStorage();
                 return null;
             }
@@ -1888,7 +2114,10 @@ class SessionManager extends EventEmitter {
             const now = Date.now();
             const inactivityAge = now - (stored.lastAccessedAt || stored.createdAt);
             if (Number.isFinite(this.maxAge) && inactivityAge > this.maxAge) {
-                log.warn(() => `[SessionManager] loadSessionFromStorage: session appears expired by ~${Math.round(inactivityAge / 1000 / 3600)} hours but preserving (possible clock skew): ${redactToken(token)}`);
+                log.warn(
+                    () =>
+                        `[SessionManager] loadSessionFromStorage: session appears expired by ~${Math.round(inactivityAge / 1000 / 3600)} hours but preserving (possible clock skew): ${redactToken(token)}`
+                );
             }
             stored.lastAccessedAt = now;
             stored._lastTtlRefresh = now; // Set debounce timestamp for subsequent getSession calls
@@ -1902,7 +2131,10 @@ class SessionManager extends EventEmitter {
                 const ttlSeconds = this._calculateTtlSeconds();
                 await adapter.set(token, stored, StorageAdapter.CACHE_TYPES.SESSION, ttlSeconds);
             } catch (e) {
-                log.error(() => ['[SessionManager] Failed to refresh TTL during load from storage:', e?.message || String(e)]);
+                log.error(() => [
+                    '[SessionManager] Failed to refresh TTL during load from storage:',
+                    e?.message || String(e)
+                ]);
             }
 
             // Decrypt and return config
@@ -1913,7 +2145,10 @@ class SessionManager extends EventEmitter {
                 const { config: decryptedConfig, metadata } = stripSessionMetadata(rawDecrypted);
 
                 if (!decryptedConfig) {
-                    log.warn(() => `[SessionManager] loadSessionFromStorage: decrypted config was empty for token ${redactToken(token)} - keeping session for retry`);
+                    log.warn(
+                        () =>
+                            `[SessionManager] loadSessionFromStorage: decrypted config was empty for token ${redactToken(token)} - keeping session for retry`
+                    );
                     this.cache.delete(token);
                     this.decryptedCache.delete(token);
                     return null;
@@ -1927,7 +2162,10 @@ class SessionManager extends EventEmitter {
                     stored.integrity = computeIntegrityHash(token, fingerprint);
                     stored.config = encryptUserConfig(embedSessionMetadata(decryptedConfig, token, fingerprint));
                     needsPersist = true;
-                    log.warn(() => `[SessionManager] loadSessionFromStorage: healed nested encryption for ${redactToken(token)} - fields: ${nestedRecoveredFields.join(', ') || 'unknown'}. Session will be re-saved in normalized form.`);
+                    log.warn(
+                        () =>
+                            `[SessionManager] loadSessionFromStorage: healed nested encryption for ${redactToken(token)} - fields: ${nestedRecoveredFields.join(', ') || 'unknown'}. Session will be re-saved in normalized form.`
+                    );
                 }
 
                 // Check if decryption had warnings (indicates encryption key mismatch between server instances)
@@ -1936,14 +2174,20 @@ class SessionManager extends EventEmitter {
                 const hasDecryptionWarnings = decryptedConfig.__decryptionWarning === true;
                 if (hasDecryptionWarnings) {
                     const warningFields = decryptedConfig.__decryptionWarningFields || [];
-                    log.warn(() => `[SessionManager] loadSessionFromStorage: Decryption warnings detected for ${redactToken(token)} - fields: ${warningFields.join(', ')}. Skipping fingerprint validation to preserve session. User may need to re-enter credentials.`);
+                    log.warn(
+                        () =>
+                            `[SessionManager] loadSessionFromStorage: Decryption warnings detected for ${redactToken(token)} - fields: ${warningFields.join(', ')}. Skipping fingerprint validation to preserve session. User may need to re-enter credentials.`
+                    );
                     // Clean up warning flags before returning
                     delete decryptedConfig.__decryptionWarning;
                     delete decryptedConfig.__decryptionWarningFields;
                 }
 
                 if (metadata?.token && metadata.token !== token) {
-                    log.warn(() => `[SessionManager] Session token metadata mismatch on storage load for ${redactToken(token)} - deleting session`);
+                    log.warn(
+                        () =>
+                            `[SessionManager] Session token metadata mismatch on storage load for ${redactToken(token)} - deleting session`
+                    );
                     await deleteFromStorage();
                     this.cache.delete(token);
                     this.decryptedCache.delete(token);
@@ -1954,19 +2198,38 @@ class SessionManager extends EventEmitter {
                 // (e.g., new fields added, encrypted values differ after decrypt cycle). Token validation
                 // is sufficient to detect cross-session contamination. Fingerprint mismatches are now
                 // logged at debug level for diagnostics only - sessions are NOT deleted.
-                if (!hasDecryptionWarnings && !sessionPayloadNormalizedOnRead && metadata?.fingerprint && metadata.fingerprint !== fingerprint) {
-                    log.debug(() => `[SessionManager] Fingerprint mismatch (metadata) on storage load for ${redactToken(token)} - stored=${metadata.fingerprint}, computed=${fingerprint}. Session preserved (fingerprint validation disabled).`);
+                if (
+                    !hasDecryptionWarnings &&
+                    !sessionPayloadNormalizedOnRead &&
+                    metadata?.fingerprint &&
+                    metadata.fingerprint !== fingerprint
+                ) {
+                    log.debug(
+                        () =>
+                            `[SessionManager] Fingerprint mismatch (metadata) on storage load for ${redactToken(token)} - stored=${metadata.fingerprint}, computed=${fingerprint}. Session preserved (fingerprint validation disabled).`
+                    );
                     // Don't delete - continue with session
                 }
-                if (!hasDecryptionWarnings && !sessionPayloadNormalizedOnRead && stored.fingerprint && fingerprint !== stored.fingerprint) {
-                    log.debug(() => `[SessionManager] Fingerprint mismatch (stored) on storage load for ${redactToken(token)} - stored=${stored.fingerprint}, computed=${fingerprint}. Session preserved (fingerprint validation disabled).`);
+                if (
+                    !hasDecryptionWarnings &&
+                    !sessionPayloadNormalizedOnRead &&
+                    stored.fingerprint &&
+                    fingerprint !== stored.fingerprint
+                ) {
+                    log.debug(
+                        () =>
+                            `[SessionManager] Fingerprint mismatch (stored) on storage load for ${redactToken(token)} - stored=${stored.fingerprint}, computed=${fingerprint}. Session preserved (fingerprint validation disabled).`
+                    );
                     // Don't delete - continue with session
                 }
                 // Integrity check uses stored fingerprint only (not recomputed) for backwards compatibility
                 if (stored.fingerprint && stored.integrity) {
                     const expectedIntegrity = computeIntegrityHash(token, stored.fingerprint);
                     if (stored.integrity !== expectedIntegrity) {
-                        log.warn(() => `[SessionManager] Integrity mismatch on storage load for ${redactToken(token)} - removing contaminated session`);
+                        log.warn(
+                            () =>
+                                `[SessionManager] Integrity mismatch on storage load for ${redactToken(token)} - removing contaminated session`
+                        );
                         await deleteFromStorage();
                         this.cache.delete(token);
                         this.decryptedCache.delete(token);
@@ -1988,12 +2251,20 @@ class SessionManager extends EventEmitter {
                     try {
                         stored.fingerprint = fingerprint;
                         stored.integrity = computeIntegrityHash(token, fingerprint);
-                        const upgradedConfig = encryptUserConfig(embedSessionMetadata(decryptedConfig, token, fingerprint));
+                        const upgradedConfig = encryptUserConfig(
+                            embedSessionMetadata(decryptedConfig, token, fingerprint)
+                        );
                         stored.config = upgradedConfig;
                         needsPersist = true;
-                        log.warn(() => `[SessionManager] loadSessionFromStorage: upgrading unencrypted session payload for ${redactToken(token)}`);
+                        log.warn(
+                            () =>
+                                `[SessionManager] loadSessionFromStorage: upgrading unencrypted session payload for ${redactToken(token)}`
+                        );
                     } catch (upgradeErr) {
-                        log.error(() => ['[SessionManager] Failed to upgrade unencrypted session payload:', upgradeErr?.message || String(upgradeErr)]);
+                        log.error(() => [
+                            '[SessionManager] Failed to upgrade unencrypted session payload:',
+                            upgradeErr?.message || String(upgradeErr)
+                        ]);
                         this.cache.delete(token);
                         this.decryptedCache.delete(token);
                         return null;
@@ -2006,26 +2277,44 @@ class SessionManager extends EventEmitter {
                         const ttlSeconds = this._calculateTtlSeconds();
                         await adapter.set(token, stored, StorageAdapter.CACHE_TYPES.SESSION, ttlSeconds);
                     } catch (persistErr) {
-                        log.error(() => ['[SessionManager] Failed to persist metadata upgrade during storage load:', persistErr?.message || String(persistErr)]);
+                        log.error(() => [
+                            '[SessionManager] Failed to persist metadata upgrade during storage load:',
+                            persistErr?.message || String(persistErr)
+                        ]);
                     }
                 }
 
                 decryptedConfig.__historyUserHash = stored.historyUserHash;
                 this.decryptedCache.set(token, cloneConfig(decryptedConfig));
-                log.debug(() => `[SessionManager] loadSessionFromStorage: successfully loaded session ${redactToken(token)} from Redis`);
+                log.debug(
+                    () =>
+                        `[SessionManager] loadSessionFromStorage: successfully loaded session ${redactToken(token)} from Redis`
+                );
                 return cloneConfig(decryptedConfig);
             } catch (decryptErr) {
-                log.error(() => ['[SessionManager] loadSessionFromStorage: failed to decrypt config, keeping session for retry:', decryptErr?.message || String(decryptErr)]);
+                log.error(() => [
+                    '[SessionManager] loadSessionFromStorage: failed to decrypt config, keeping session for retry:',
+                    decryptErr?.message || String(decryptErr)
+                ]);
                 this.cache.delete(token);
                 this.decryptedCache.delete(token);
                 return null;
             }
         } catch (err) {
             if (err instanceof StorageUnavailableError) {
-                log.error(() => ['[SessionManager] loadSessionFromStorage: storage unavailable while loading session:', redactToken(token), err?.message || String(err)]);
+                log.error(() => [
+                    '[SessionManager] loadSessionFromStorage: storage unavailable while loading session:',
+                    redactToken(token),
+                    err?.message || String(err)
+                ]);
                 throw err;
             }
-            log.error(() => ['[SessionManager] loadSessionFromStorage: unexpected error while loading from storage:', err?.message || String(err), 'stack:', err?.stack || 'N/A']);
+            log.error(() => [
+                '[SessionManager] loadSessionFromStorage: unexpected error while loading from storage:',
+                err?.message || String(err),
+                'stack:',
+                err?.stack || 'N/A'
+            ]);
             return null;
         }
     }
@@ -2103,14 +2392,23 @@ class SessionManager extends EventEmitter {
                     const ttlSeconds = this._calculateTtlSeconds();
                     for (const [token, sessionData] of Object.entries(legacy.sessions)) {
                         if (!/^[a-f0-9]{32}$/.test(token)) continue;
-                        const ok = await adapter.set(token, sessionData, StorageAdapter.CACHE_TYPES.SESSION, ttlSeconds);
+                        const ok = await adapter.set(
+                            token,
+                            sessionData,
+                            StorageAdapter.CACHE_TYPES.SESSION,
+                            ttlSeconds
+                        );
                         if (ok) {
                             migrated++;
                         } else {
-                            log.error(() => [`[SessionManager] Failed to persist migrated legacy session token ${token}`]);
+                            log.error(() => [
+                                `[SessionManager] Failed to persist migrated legacy session token ${token}`
+                            ]);
                         }
                     }
-                    try { await adapter.delete('sessions', StorageAdapter.CACHE_TYPES.SESSION); } catch (_) { }
+                    try {
+                        await adapter.delete('sessions', StorageAdapter.CACHE_TYPES.SESSION);
+                    } catch (_) {}
                     if (migrated > 0) {
                         log.warn(() => `[SessionManager] Migrated ${migrated} legacy sessions to per-token storage`);
                     }
@@ -2131,37 +2429,58 @@ class SessionManager extends EventEmitter {
             let invalidTokenCount = 0;
 
             for (const token of keys) {
-                if (!/^[a-f0-9]{32}$/.test(token)) { invalidTokenCount++; continue; }
+                if (!/^[a-f0-9]{32}$/.test(token)) {
+                    invalidTokenCount++;
+                    continue;
+                }
                 const sessionData = await adapter.get(token, StorageAdapter.CACHE_TYPES.SESSION);
                 if (!sessionData) continue;
 
                 const tokenValidation = ensureTokenMetadata(sessionData, token);
                 if (tokenValidation.status === 'missing_fingerprint') {
-                    log.warn(() => `[SessionManager] loadFromDisk: missing token fingerprint for ${redactToken(token)} - backfilling instead of deleting session`);
+                    log.warn(
+                        () =>
+                            `[SessionManager] loadFromDisk: missing token fingerprint for ${redactToken(token)} - backfilling instead of deleting session`
+                    );
                     sessionData.tokenFingerprint = tokenValidation.expectedTokenFingerprint;
                     try {
                         const ttlSeconds = this._calculateTtlSeconds();
                         await adapter.set(token, sessionData, StorageAdapter.CACHE_TYPES.SESSION, ttlSeconds);
                     } catch (persistErr) {
-                        log.error(() => ['[SessionManager] Failed to persist token fingerprint backfill during preload:', persistErr?.message || String(persistErr)]);
+                        log.error(() => [
+                            '[SessionManager] Failed to persist token fingerprint backfill during preload:',
+                            persistErr?.message || String(persistErr)
+                        ]);
                     }
                 } else if (tokenValidation.status !== 'ok') {
-                    log.warn(() => `[SessionManager] loadFromDisk: token validation failed (${tokenValidation.status}) for ${redactToken(token)} - deleting session`);
-                    try { await adapter.delete(token, StorageAdapter.CACHE_TYPES.SESSION); } catch (_) { }
+                    log.warn(
+                        () =>
+                            `[SessionManager] loadFromDisk: token validation failed (${tokenValidation.status}) for ${redactToken(token)} - deleting session`
+                    );
+                    try {
+                        await adapter.delete(token, StorageAdapter.CACHE_TYPES.SESSION);
+                    } catch (_) {}
                     continue;
                 }
 
                 const payloadValidation = validateEncryptedSessionPayload(sessionData);
                 if (!payloadValidation.valid) {
-                    log.warn(() => `[SessionManager] loadFromDisk: invalid session payload (${payloadValidation.reason}) for ${redactToken(token)} - deleting session`);
-                    try { await adapter.delete(token, StorageAdapter.CACHE_TYPES.SESSION); } catch (_) { }
+                    log.warn(
+                        () =>
+                            `[SessionManager] loadFromDisk: invalid session payload (${payloadValidation.reason}) for ${redactToken(token)} - deleting session`
+                    );
+                    try {
+                        await adapter.delete(token, StorageAdapter.CACHE_TYPES.SESSION);
+                    } catch (_) {}
                     continue;
                 }
 
                 const inactivityAge = now - (sessionData.lastAccessedAt || sessionData.createdAt);
                 if (Number.isFinite(this.maxAge) && inactivityAge > this.maxAge) {
                     expiredCount++;
-                    try { await adapter.delete(token, StorageAdapter.CACHE_TYPES.SESSION); } catch (_) { }
+                    try {
+                        await adapter.delete(token, StorageAdapter.CACHE_TYPES.SESSION);
+                    } catch (_) {}
                     continue;
                 }
 
@@ -2173,7 +2492,10 @@ class SessionManager extends EventEmitter {
                 log.warn(() => `[SessionManager] Skipped ${invalidTokenCount} non-token session keys`);
             }
 
-            log.debug(() => `[SessionManager] Loaded ${loadedCount} sessions from storage (${expiredCount} expired, ${invalidTokenCount} invalid)`);
+            log.debug(
+                () =>
+                    `[SessionManager] Loaded ${loadedCount} sessions from storage (${expiredCount} expired, ${invalidTokenCount} invalid)`
+            );
         } catch (err) {
             if (err.code === 'ENOENT') {
                 log.debug(() => '[SessionManager] No existing sessions file found, starting fresh');
@@ -2204,7 +2526,9 @@ class SessionManager extends EventEmitter {
             try {
                 await fs.access(this.snapshotPath);
             } catch (_) {
-                log.warn(() => `[SessionManager] Redis session store is empty and no snapshot found at ${this.snapshotPath}`);
+                log.warn(
+                    () => `[SessionManager] Redis session store is empty and no snapshot found at ${this.snapshotPath}`
+                );
                 return;
             }
 
@@ -2217,9 +2541,7 @@ class SessionManager extends EventEmitter {
                 return;
             }
 
-            const sessions = snapshot?.sessions && typeof snapshot.sessions === 'object'
-                ? snapshot.sessions
-                : {};
+            const sessions = snapshot?.sessions && typeof snapshot.sessions === 'object' ? snapshot.sessions : {};
 
             let restored = 0;
             for (const [token, sessionData] of Object.entries(sessions)) {
@@ -2245,7 +2567,10 @@ class SessionManager extends EventEmitter {
             }
 
             if (restored > 0) {
-                log.warn(() => `[SessionManager] Restored ${restored} session(s) from snapshot into Redis after detecting empty storage`);
+                log.warn(
+                    () =>
+                        `[SessionManager] Restored ${restored} session(s) from snapshot into Redis after detecting empty storage`
+                );
             }
         } catch (err) {
             log.error(() => ['[SessionManager] Snapshot restore failed:', err.message]);
@@ -2273,11 +2598,17 @@ class SessionManager extends EventEmitter {
                     // consecutiveSaveFailures is reset in saveToDisk on success
                 } catch (err) {
                     this.consecutiveSaveFailures++;
-                    log.error(() => [`[SessionManager] Auto-save failed (${this.consecutiveSaveFailures} consecutive):`, err.message]);
+                    log.error(() => [
+                        `[SessionManager] Auto-save failed (${this.consecutiveSaveFailures} consecutive):`,
+                        err.message
+                    ]);
 
                     // CRITICAL ALERT: Alert after 5 consecutive failures (25 minutes with 5min interval)
                     if (this.consecutiveSaveFailures >= 5) {
-                        log.error(() => `[SessionManager] CRITICAL: ${this.consecutiveSaveFailures} consecutive save failures! Sessions may be lost on restart!`);
+                        log.error(
+                            () =>
+                                `[SessionManager] CRITICAL: ${this.consecutiveSaveFailures} consecutive save failures! Sessions may be lost on restart!`
+                        );
                         // This critical error will be visible in logs for monitoring/alerting systems
                     }
                 }
@@ -2299,7 +2630,7 @@ class SessionManager extends EventEmitter {
             const keys = await adapter.list(StorageAdapter.CACHE_TYPES.SESSION, '*');
 
             // Filter to valid session tokens only
-            const validTokens = keys.filter(token => /^[a-f0-9]{32}$/.test(token));
+            const validTokens = keys.filter((token) => /^[a-f0-9]{32}$/.test(token));
 
             if (validTokens.length === 0) {
                 return 0;
@@ -2322,7 +2653,10 @@ class SessionManager extends EventEmitter {
                             });
                         }
                     } catch (err) {
-                        log.debug(() => `[SessionManager] Failed to load session metadata for ${redactToken(token)}: ${err.message}`);
+                        log.debug(
+                            () =>
+                                `[SessionManager] Failed to load session metadata for ${redactToken(token)}: ${err.message}`
+                        );
                     }
                 }
             };
@@ -2373,17 +2707,26 @@ class SessionManager extends EventEmitter {
 
             // Alert if approaching limit (>80%)
             if (utilizationPercent > 80) {
-                log.warn(() => `[SessionManager] Storage session count approaching limit: ${storageCount} / ${this.storageMaxSessions} (${utilizationPercent.toFixed(1)}%)`);
+                log.warn(
+                    () =>
+                        `[SessionManager] Storage session count approaching limit: ${storageCount} / ${this.storageMaxSessions} (${utilizationPercent.toFixed(1)}%)`
+                );
             }
 
             // Run cleanup if at or above 90% of limit
             if (utilizationPercent >= 90) {
-                const sessionsToRemove = Math.max(100, Math.floor(storageCount - (this.storageMaxSessions * 0.85))); // Target 85% utilization
-                log.warn(() => `[SessionManager] Storage limit reached (${utilizationPercent.toFixed(1)}%), purging ${sessionsToRemove} oldest sessions`);
+                const sessionsToRemove = Math.max(100, Math.floor(storageCount - this.storageMaxSessions * 0.85)); // Target 85% utilization
+                log.warn(
+                    () =>
+                        `[SessionManager] Storage limit reached (${utilizationPercent.toFixed(1)}%), purging ${sessionsToRemove} oldest sessions`
+                );
                 const purged = await this.purgeOldestSessions(sessionsToRemove);
 
                 if (purged < sessionsToRemove) {
-                    log.error(() => `[SessionManager] ALERT: Only purged ${purged} / ${sessionsToRemove} sessions - storage may be exhausted!`);
+                    log.error(
+                        () =>
+                            `[SessionManager] ALERT: Only purged ${purged} / ${sessionsToRemove} sessions - storage may be exhausted!`
+                    );
                 }
             }
 
@@ -2394,7 +2737,10 @@ class SessionManager extends EventEmitter {
 
                 // Alert on abnormal growth (>20% increase in 1 hour)
                 if (growthPercent > 20) {
-                    log.warn(() => `[SessionManager] ALERT: Abnormal session growth detected: +${growth} sessions (+${growthPercent.toFixed(1)}%) in the last hour`);
+                    log.warn(
+                        () =>
+                            `[SessionManager] ALERT: Abnormal session growth detected: +${growth} sessions (+${growthPercent.toFixed(1)}%) in the last hour`
+                    );
                 }
             }
 
@@ -2414,7 +2760,9 @@ class SessionManager extends EventEmitter {
         }
 
         this.sessionIndexVerifyTimer = setInterval(() => {
-            this.verifySessionIndex().catch(err => log.error(() => ['[SessionManager] Session index verify failed:', err.message]));
+            this.verifySessionIndex().catch((err) =>
+                log.error(() => ['[SessionManager] Session index verify failed:', err.message])
+            );
         }, SESSION_INDEX_VERIFY_INTERVAL_MS);
 
         // Allow process exit
@@ -2438,7 +2786,9 @@ class SessionManager extends EventEmitter {
                 Math.max(60_000, SESSION_INDEX_VERIFY_INTERVAL_MS - 60_000)
             );
             if (!maintenanceLock.acquired) {
-                log.debug(() => '[SessionManager] Session index verification already running on another replica; skipping');
+                log.debug(
+                    () => '[SessionManager] Session index verification already running on another replica; skipping'
+                );
                 return;
             }
 
@@ -2449,12 +2799,15 @@ class SessionManager extends EventEmitter {
 
             const indexedCount = await adapter.getSessionCount();
             const keys = await adapter.list(StorageAdapter.CACHE_TYPES.SESSION, '*');
-            const validKeys = keys.filter(token => /^[a-f0-9]{32}$/.test(token));
+            const validKeys = keys.filter((token) => /^[a-f0-9]{32}$/.test(token));
             const actualCount = validKeys.length;
 
             if (indexedCount !== actualCount) {
                 const logFn = SESSION_INDEX_MISMATCH_LOG_LEVEL === 'error' ? log.error : log.warn;
-                logFn(() => `[SessionManager] Session index mismatch: index=${indexedCount} storage=${actualCount}. Rebuilding index.`);
+                logFn(
+                    () =>
+                        `[SessionManager] Session index mismatch: index=${indexedCount} storage=${actualCount}. Rebuilding index.`
+                );
                 try {
                     await adapter.resetSessionIndex(validKeys);
                     this.storageCountCache = { value: actualCount, ts: Date.now() };
@@ -2502,8 +2855,14 @@ class SessionManager extends EventEmitter {
                 }
 
                 if (memoryEvictedCount > 0) {
-                    log.info(() => `[SessionManager] Memory cleanup: evicted ${memoryEvictedCount} old sessions from memory (${initialSize} → ${this.cache.size})`);
-                    log.debug(() => '[SessionManager] Evicted sessions remain in persistent storage and will reload if accessed');
+                    log.info(
+                        () =>
+                            `[SessionManager] Memory cleanup: evicted ${memoryEvictedCount} old sessions from memory (${initialSize} → ${this.cache.size})`
+                    );
+                    log.debug(
+                        () =>
+                            '[SessionManager] Evicted sessions remain in persistent storage and will reload if accessed'
+                    );
                 }
 
                 // Track eviction history for spike detection
@@ -2517,9 +2876,14 @@ class SessionManager extends EventEmitter {
 
                 // Detect eviction spikes (current evictions > 3x average)
                 if (this.evictionHistory.length >= 3) {
-                    const avgEvictions = this.evictionHistory.slice(0, -1).reduce((sum, val) => sum + val, 0) / (this.evictionHistory.length - 1);
+                    const avgEvictions =
+                        this.evictionHistory.slice(0, -1).reduce((sum, val) => sum + val, 0) /
+                        (this.evictionHistory.length - 1);
                     if (totalEvictionsSinceLastCheck > avgEvictions * 3 && totalEvictionsSinceLastCheck > 100) {
-                        log.warn(() => `[SessionManager] ALERT: Eviction spike detected! ${totalEvictionsSinceLastCheck} evictions (avg: ${avgEvictions.toFixed(0)})`);
+                        log.warn(
+                            () =>
+                                `[SessionManager] ALERT: Eviction spike detected! ${totalEvictionsSinceLastCheck} evictions (avg: ${avgEvictions.toFixed(0)})`
+                        );
                     }
                 }
 
@@ -2571,7 +2935,10 @@ class SessionManager extends EventEmitter {
             try {
                 await this._flushPendingPersistence();
             } catch (err) {
-                log.error(() => ['[SessionManager] Error flushing pending persistence during shutdown:', err?.message || String(err)]);
+                log.error(() => [
+                    '[SessionManager] Error flushing pending persistence during shutdown:',
+                    err?.message || String(err)
+                ]);
             }
 
             // Save with generous timeout to prevent data loss
@@ -2585,20 +2952,29 @@ class SessionManager extends EventEmitter {
                     // Use configurable timeout (default 10 seconds)
                     const savePromise = this.saveToDisk();
                     const timeoutPromise = new Promise((_, reject) => {
-                        setTimeout(() => reject(new Error(`Save operation timed out after ${this.shutdownTimeout}ms`)), this.shutdownTimeout);
+                        setTimeout(
+                            () => reject(new Error(`Save operation timed out after ${this.shutdownTimeout}ms`)),
+                            this.shutdownTimeout
+                        );
                     });
 
                     await Promise.race([savePromise, timeoutPromise]);
-                    log.warn(() => `[SessionManager] Sessions saved successfully (attempt ${saveAttempts}/${maxSaveAttempts})`);
+                    log.warn(
+                        () =>
+                            `[SessionManager] Sessions saved successfully (attempt ${saveAttempts}/${maxSaveAttempts})`
+                    );
                     saveFailed = false;
                     break; // Success - exit retry loop
                 } catch (err) {
-                    log.error(() => [`[SessionManager] Save attempt ${saveAttempts}/${maxSaveAttempts} failed:`, err.message]);
+                    log.error(() => [
+                        `[SessionManager] Save attempt ${saveAttempts}/${maxSaveAttempts} failed:`,
+                        err.message
+                    ]);
                     saveFailed = true;
 
                     // If we have more attempts, wait a bit before retrying
                     if (saveAttempts < maxSaveAttempts) {
-                        await new Promise(resolve => setTimeout(resolve, 500));
+                        await new Promise((resolve) => setTimeout(resolve, 500));
                     }
                 }
             }
@@ -2667,15 +3043,17 @@ class SessionManager extends EventEmitter {
             // Send to Sentry (bypass filters for uncaught exceptions)
             sentry.captureErrorForced(err, { module: 'SessionManager', type: 'uncaughtException' });
             if (!isShuttingDown) {
-                shutdown('uncaughtException').then(async () => {
-                    await sentry.flush(2000);
-                    shutdownLogger();
-                    process.exit(1);
-                }).catch(async () => {
-                    await sentry.flush(2000);
-                    shutdownLogger();
-                    process.exit(1);
-                });
+                shutdown('uncaughtException')
+                    .then(async () => {
+                        await sentry.flush(2000);
+                        shutdownLogger();
+                        process.exit(1);
+                    })
+                    .catch(async () => {
+                        await sentry.flush(2000);
+                        shutdownLogger();
+                        process.exit(1);
+                    });
             }
         });
 

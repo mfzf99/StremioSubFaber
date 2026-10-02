@@ -736,10 +736,13 @@
       "groupExplore": "Explore",
       "groupHelp": "Help",
       "configuration": "Configuration",
+      "configurationSubtitle": "Everything about your SubFaber setup — keys, languages, and behaviour.",
       "apiKeys": "API Keys",
       "languages": "Languages",
       "settings": "Settings",
       "toolbox": "Sub Toolbox",
+      "toolboxSubtitle": "Install SubFaber into Stremio and open the embedded toolbox.",
+      "toolboxDescription": "The Sub Toolbox bundles file translation, embedded subtitle tools, and sync utilities for Stremio.",
       "actionHint": "Settings save across every page — no need to switch back."
     },
     "config": {

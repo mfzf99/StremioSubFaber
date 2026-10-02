@@ -47,14 +47,16 @@ function positiveInt(value, fallback, minimum = 1) {
 }
 
 function hashValue(value) {
-    return crypto.createHash('sha256').update(String(value || '')).digest('hex').slice(0, 32);
+    return crypto
+        .createHash('sha256')
+        .update(String(value || ''))
+        .digest('hex')
+        .slice(0, 32);
 }
 
 function evaluateLocal(configHash, fileHash, now, windowMs, repeatDelayMs) {
     const existing = localWindows.get(configHash);
-    const entry = existing && existing.expiresAt > now
-        ? existing
-        : { files: new Map(), expiresAt: now + windowMs };
+    const entry = existing && existing.expiresAt > now ? existing : { files: new Map(), expiresAt: now + windowMs };
     const previous = entry.files.get(fileHash);
     entry.expiresAt = now + windowMs;
 
@@ -104,9 +106,14 @@ async function evaluateRedis(configHash, fileHash, now, windowMs, repeatDelayMs)
         const count = Math.max(0, Number(result[2]) || 0);
         return {
             allowed: decision === 1 || decision === 2,
-            reason: decision === 1
-                ? 'first-request'
-                : decision === 2 ? 'repeated-selection' : (elapsedMs > 0 ? 'duplicate-prefetch' : 'distinct-file-prefetch'),
+            reason:
+                decision === 1
+                    ? 'first-request'
+                    : decision === 2
+                      ? 'repeated-selection'
+                      : elapsedMs > 0
+                        ? 'duplicate-prefetch'
+                        : 'distinct-file-prefetch',
             repeated: elapsedMs > 0 || decision === 2,
             count,
             retryAfterMs: decision === 0 ? Math.max(0, repeatDelayMs - elapsedMs) : 0
@@ -132,11 +139,14 @@ async function checkOpenSubtitlesDownloadIntent(configKey, fileId, options = {})
         DEFAULT_WINDOW_MS,
         1_000
     );
-    const repeatDelayMs = Math.min(windowMs - 1, positiveInt(
-        options.repeatDelayMs ?? process.env.OPENSUBTITLES_PREFETCH_REPEAT_DELAY_MS,
-        DEFAULT_REPEAT_DELAY_MS,
-        0
-    ));
+    const repeatDelayMs = Math.min(
+        windowMs - 1,
+        positiveInt(
+            options.repeatDelayMs ?? process.env.OPENSUBTITLES_PREFETCH_REPEAT_DELAY_MS,
+            DEFAULT_REPEAT_DELAY_MS,
+            0
+        )
+    );
     const now = typeof options.now === 'function' ? options.now() : Date.now();
     const configHash = hashValue(configKey);
     const fileHash = hashValue(fileId);

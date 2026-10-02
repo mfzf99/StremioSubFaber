@@ -33,10 +33,10 @@ function escapeHtml(text) {
     };
 
     // Escape basic HTML entities
-    text = text.replace(/[&<>"'`=\/]/g, m => map[m]);
+    text = text.replace(/[&<>"'`=\/]/g, (m) => map[m]);
 
     // Additional protection: Escape unicode control characters
-    text = text.replace(/[\u0000-\u001F\u007F-\u009F]/g, ch => {
+    text = text.replace(/[\u0000-\u001F\u007F-\u009F]/g, (ch) => {
         return '&#' + ch.charCodeAt(0) + ';';
     });
 
@@ -44,7 +44,7 @@ function escapeHtml(text) {
 }
 
 function resolveUiLang(config) {
-    const lang = (config && config.uiLanguage) ? String(config.uiLanguage).toLowerCase() : 'en';
+    const lang = config && config.uiLanguage ? String(config.uiLanguage).toLowerCase() : 'en';
     return escapeHtml(lang || 'en');
 }
 
@@ -55,15 +55,17 @@ function buildFileTranslationClientConfig(config) {
     const effectiveGeminiModel = getEffectiveGeminiModel(config);
     const hasGeminiApiKey = (() => {
         if (config?.geminiKeyRotationEnabled === true) {
-            return Array.isArray(config?.geminiApiKeys)
-                && config.geminiApiKeys.some(key => typeof key === 'string' && key.trim());
+            return (
+                Array.isArray(config?.geminiApiKeys) &&
+                config.geminiApiKeys.some((key) => typeof key === 'string' && key.trim())
+            );
         }
         return typeof config?.geminiApiKey === 'string' && config.geminiApiKey.trim();
     })();
 
     const safeProviders = {};
     if (config?.providers && typeof config.providers === 'object') {
-        Object.keys(config.providers).forEach(key => {
+        Object.keys(config.providers).forEach((key) => {
             const cfg = config.providers[key] || {};
             const clone = {
                 ...cfg,
@@ -91,7 +93,7 @@ function buildFileTranslationClientConfig(config) {
         providers: safeProviders,
         providerParameters: mergedParams,
         fileTranslationEnabled: config?.fileTranslationEnabled !== false,
-        translationWorkflow: config?.advancedSettings?.translationWorkflow || 'xml',
+        translationWorkflow: config?.advancedSettings?.translationWorkflow || 'xml'
     };
 }
 
@@ -110,7 +112,7 @@ function buildProviderSummary(config) {
         if (!key) return '';
         const providers = config?.providers || {};
         if (key === 'gemini') return effectiveGeminiModel;
-        const matchKey = Object.keys(providers).find(k => String(k).toLowerCase() === key);
+        const matchKey = Object.keys(providers).find((k) => String(k).toLowerCase() === key);
         return matchKey ? providers[matchKey]?.model || '' : '';
     };
 
@@ -152,7 +154,7 @@ function generateFileTranslationPage(videoId, configStr, config, filename = '') 
     const maxConcurrency = Math.max(1, Math.min(parseInt(process.env.FILE_UPLOAD_MAX_CONCURRENCY, 10) || 1, 5));
     const uploadQueueDefaults = { maxFiles: maxBatchFiles, maxConcurrent: maxConcurrency };
     const translationWorkflowDefaults = {
-        translationWorkflow: config?.advancedSettings?.translationWorkflow || 'xml',
+        translationWorkflow: config?.advancedSettings?.translationWorkflow || 'xml'
     };
     const MAX_OUTPUT_TOKEN_LIMIT = 200000;
     const DEFAULT_MAX_OUTPUT_TOKENS = 65536;
@@ -163,7 +165,7 @@ function generateFileTranslationPage(videoId, configStr, config, filename = '') 
     let languageDisplayNames = null;
     try {
         languageDisplayNames = new Intl.DisplayNames([uiLang], { type: 'language' });
-    } catch (_) { }
+    } catch (_) {}
     const lookupLanguageName = (code) => {
         if (!code) return '';
         const normalized = String(code).trim().toLowerCase();
@@ -176,14 +178,15 @@ function generateFileTranslationPage(videoId, configStr, config, filename = '') 
         const fallbackName = fallback || lookupLanguageName(code);
         const normalized = String(code).replace('_', '-');
         const localized = languageDisplayNames
-            ? (languageDisplayNames.of(normalized) || languageDisplayNames.of(normalized.split('-')[0]))
+            ? languageDisplayNames.of(normalized) || languageDisplayNames.of(normalized.split('-')[0])
             : '';
 
         // Some Intl.DisplayNames implementations echo back the code for unknown/custom languages
         // (e.g., 'pob' -> 'pob'), which would hide our friendly fallback. Treat those as missing.
         const normalizedCode = normalized.toLowerCase();
         const localizedValue = (localized || '').toString().trim();
-        const isCodeEcho = localizedValue &&
+        const isCodeEcho =
+            localizedValue &&
             (localizedValue.toLowerCase() === normalizedCode ||
                 localizedValue.toLowerCase() === normalizedCode.replace('-', '_'));
 
@@ -192,21 +195,25 @@ function generateFileTranslationPage(videoId, configStr, config, filename = '') 
         return code;
     };
 
-    const targetLangs = clientConfig.targetLanguages.map(lang => {
+    const targetLangs = clientConfig.targetLanguages.map((lang) => {
         const langName = formatLanguageLabel(lang);
         return { code: lang, name: langName };
     });
 
-    const languageOptions = targetLangs.map(lang => {
-        const label = formatLanguageLabel(lang.code, lang.name);
-        return `<option value="${escapeHtml(lang.code)}">${escapeHtml(label)}</option>`;
-    }).join('');
+    const languageOptions = targetLangs
+        .map((lang) => {
+            const label = formatLanguageLabel(lang.code, lang.name);
+            return `<option value="${escapeHtml(lang.code)}">${escapeHtml(label)}</option>`;
+        })
+        .join('');
 
     // Comprehensive language list for Gemini (shared with allLanguages util)
-    const allLanguageOptions = allLanguages.map(lang => {
-        const label = formatLanguageLabel(lang.code, lang.name);
-        return `<option value="${escapeHtml(lang.code)}">${escapeHtml(label)}</option>`;
-    }).join('');
+    const allLanguageOptions = allLanguages
+        .map((lang) => {
+            const label = formatLanguageLabel(lang.code, lang.name);
+            return `<option value="${escapeHtml(lang.code)}">${escapeHtml(label)}</option>`;
+        })
+        .join('');
 
     const targetPlaceholderText = t('fileUpload.target.placeholder', {}, 'Choose a language...');
     const sourceAutoDetectText = t('fileUpload.source.auto', {}, 'Auto-detect (recommended)');
@@ -215,7 +222,11 @@ function generateFileTranslationPage(videoId, configStr, config, filename = '') 
     const toastUpdate = t('fileUpload.toast.update', {}, 'Update');
     const toastDismiss = t('fileUpload.toast.dismiss', {}, 'Dismiss notification');
     const progressTitle = t('fileUpload.progress.headline', {}, 'Translating your subtitle...');
-    const progressSubtext = t('fileUpload.progress.subtext', {}, 'Queued translations run one at a time to respect rate limits.');
+    const progressSubtext = t(
+        'fileUpload.progress.subtext',
+        {},
+        'Queued translations run one at a time to respect rate limits.'
+    );
     const queueTitle = t('fileUpload.queue.title', {}, 'Upload queue');
     const queueSubtitle = t('fileUpload.queue.subtitle', {}, 'Files run sequentially to avoid translation throttling.');
     const queueEmpty = t('fileUpload.queue.empty', {}, 'No files queued');
@@ -228,44 +239,112 @@ function generateFileTranslationPage(videoId, configStr, config, filename = '') 
     const startTranslationCta = t('fileUpload.actions.start', {}, '🚀 Start Translation');
     const translationOptionsTitle = t('fileUpload.options.title', {}, 'Translation Options');
     const translationProviderLabel = t('fileUpload.options.provider.label', {}, 'Translation Provider');
-    const translationProviderHelper = t('fileUpload.options.provider.helper', {}, 'Choose which configured provider to use for this translation.');
+    const translationProviderHelper = t(
+        'fileUpload.options.provider.helper',
+        {},
+        'Choose which configured provider to use for this translation.'
+    );
     const advancedSettingsTitle = t('fileUpload.advanced.title', {}, 'Advanced Settings');
-    const advancedHighlightTitle = t('fileUpload.advanced.highlightTitle', {}, 'Fine-tune AI behavior for this translation only:');
+    const advancedHighlightTitle = t(
+        'fileUpload.advanced.highlightTitle',
+        {},
+        'Fine-tune AI behavior for this translation only:'
+    );
     const advancedHighlightBody = t('fileUpload.advanced.highlightBody', {}, 'Override model and parameters.');
-    const advancedHighlightNote = t('fileUpload.advanced.highlightNote', {}, "These settings are temporary and won't be saved to your config.");
+    const advancedHighlightNote = t(
+        'fileUpload.advanced.highlightNote',
+        {},
+        "These settings are temporary and won't be saved to your config."
+    );
     const advancedModelLabel = t('fileUpload.advanced.model.label', {}, 'Translation Model Override');
-    const advancedModelHelper = t('fileUpload.advanced.model.helper', {}, 'Override the default model for this translation only.');
+    const advancedModelHelper = t(
+        'fileUpload.advanced.model.helper',
+        {},
+        'Override the default model for this translation only.'
+    );
     const thinkingBudgetLabel = t('fileUpload.advanced.thinking.label', {}, 'Thinking Budget (Extended Reasoning)');
-    const thinkingBudgetHelper = t('fileUpload.advanced.thinking.helper', {}, '0 = disabled, -1 = dynamic (auto-adjust), or fixed token count (1-32768).');
+    const thinkingBudgetHelper = t(
+        'fileUpload.advanced.thinking.helper',
+        {},
+        '0 = disabled, -1 = dynamic (auto-adjust), or fixed token count (1-32768).'
+    );
     const thinkingLevelLabel = t('fileUpload.advanced.thinkingLevel.label', {}, 'Thinking Level');
-    const thinkingLevelHelper = t('fileUpload.advanced.thinkingLevel.helper', {}, 'Controls Gemini reasoning intensity (Minimal, Low, Medium, High).');
+    const thinkingLevelHelper = t(
+        'fileUpload.advanced.thinkingLevel.helper',
+        {},
+        'Controls Gemini reasoning intensity (Minimal, Low, Medium, High).'
+    );
     const temperatureLabel = t('fileUpload.advanced.temperature.label', {}, 'Temperature (Creativity)');
-    const temperatureHelper = t('fileUpload.advanced.temperature.helper', {}, 'Controls randomness (0.0-2.0). Lower = deterministic, Higher = creative. Default: 0.2');
+    const temperatureHelper = t(
+        'fileUpload.advanced.temperature.helper',
+        {},
+        'Controls randomness (0.0-2.0). Lower = deterministic, Higher = creative. Default: 0.2'
+    );
     const reasoningEffortLabel = t('fileUpload.advanced.reasoning.label', {}, 'Reasoning Effort');
-    const reasoningEffortHelper = t('fileUpload.advanced.reasoning.helper', {}, 'Applies to reasoning-capable OpenAI-style models. Leave blank for default.');
+    const reasoningEffortHelper = t(
+        'fileUpload.advanced.reasoning.helper',
+        {},
+        'Applies to reasoning-capable OpenAI-style models. Leave blank for default.'
+    );
     const topPLabel = t('fileUpload.advanced.topP.label', {}, 'Top-P (Nucleus Sampling)');
-    const topPHelper = t('fileUpload.advanced.topP.helper', {}, 'Probability threshold (0.0-1.0). Lower = focused, Higher = diverse. Default: 0.95');
+    const topPHelper = t(
+        'fileUpload.advanced.topP.helper',
+        {},
+        'Probability threshold (0.0-1.0). Lower = focused, Higher = diverse. Default: 0.95'
+    );
     const maxTokensLabel = t('fileUpload.advanced.maxTokens.label', {}, 'Max Output Tokens');
-    const maxTokensHelper = t('fileUpload.advanced.maxTokens.helper', {}, 'Maximum tokens in output (1-200000). Defaults follow your selected provider.');
+    const maxTokensHelper = t(
+        'fileUpload.advanced.maxTokens.helper',
+        {},
+        'Maximum tokens in output (1-200000). Defaults follow your selected provider.'
+    );
     const formalityLabel = t('fileUpload.advanced.formality.label', {}, 'Formality');
     const formalityHelper = t('fileUpload.advanced.formality.helper', {}, 'DeepL-only setting to control tone.');
     const preserveFormattingLabel = t('fileUpload.advanced.preserveFormatting.label', {}, 'Preserve Formatting');
-    const preserveFormattingHelper = t('fileUpload.advanced.preserveFormatting.helper', {}, 'Keep line breaks, casing, and tags intact (DeepL only).');
+    const preserveFormattingHelper = t(
+        'fileUpload.advanced.preserveFormatting.helper',
+        {},
+        'Keep line breaks, casing, and tags intact (DeepL only).'
+    );
     const preserveFormattingToggle = t('fileUpload.advanced.preserveFormatting.toggle', {}, 'Preserve formatting');
     const translationTimeoutLabel = t('fileUpload.advanced.timeout.label', {}, 'Translation Timeout (seconds)');
-    const translationTimeoutHelper = t('fileUpload.advanced.timeout.helper', {}, 'Maximum time to wait for translation (5-720). Defaults follow your selected provider.');
+    const translationTimeoutHelper = t(
+        'fileUpload.advanced.timeout.helper',
+        {},
+        'Maximum time to wait for translation (5-720). Defaults follow your selected provider.'
+    );
     const maxRetriesLabel = t('fileUpload.advanced.retries.label', {}, 'Max Retries');
-    const maxRetriesHelper = t('fileUpload.advanced.retries.helper', {}, 'Number of retry attempts for this translation (0-5). Default: 2');
+    const maxRetriesHelper = t(
+        'fileUpload.advanced.retries.helper',
+        {},
+        'Number of retry attempts for this translation (0-5). Default: 2'
+    );
     const resetDefaultsText = t('fileUpload.advanced.reset', {}, '🔄 Reset to Defaults');
     const resetConfirmTitle = t('fileUpload.resetModal.title', {}, 'Reset File Translation');
     const resetConfirmLead = t('fileUpload.resetModal.lead', {}, 'This will reset everything for this tool:');
-    const resetConfirmBullet1 = t('fileUpload.resetModal.bullet1', {}, 'Clear queued jobs, selections, and any downloaded results');
-    const resetConfirmBullet2 = t('fileUpload.resetModal.bullet2', {}, 'Remove saved preferences (themes, dismissed tips) for this page');
-    const resetConfirmBullet3 = t('fileUpload.resetModal.bullet3', {}, "You'll be reloaded on the same file translation page afterward.");
+    const resetConfirmBullet1 = t(
+        'fileUpload.resetModal.bullet1',
+        {},
+        'Clear queued jobs, selections, and any downloaded results'
+    );
+    const resetConfirmBullet2 = t(
+        'fileUpload.resetModal.bullet2',
+        {},
+        'Remove saved preferences (themes, dismissed tips) for this page'
+    );
+    const resetConfirmBullet3 = t(
+        'fileUpload.resetModal.bullet3',
+        {},
+        "You'll be reloaded on the same file translation page afterward."
+    );
     const resetConfirmCancel = t('fileUpload.resetModal.cancel', {}, 'Cancel');
     const resetConfirmAction = t('fileUpload.resetModal.action', {}, 'Reset Everything');
     const resetConfirmBusy = t('fileUpload.resetModal.busy', {}, 'Resetting...');
-    const modelStatusUnavailable = t('fileUpload.advanced.modelStatus.unavailable', {}, 'Model override not available for Google Translate');
+    const modelStatusUnavailable = t(
+        'fileUpload.advanced.modelStatus.unavailable',
+        {},
+        'Model override not available for Google Translate'
+    );
     const modelStatusFetching = t('fileUpload.advanced.modelStatus.fetching', {}, 'Fetching models...');
     const modelStatusLoaded = t('fileUpload.advanced.modelStatus.loaded', {}, 'Models loaded!');
     const modelStatusEmpty = t('fileUpload.advanced.modelStatus.empty', {}, 'No provider models returned');
@@ -4647,7 +4726,6 @@ function generateFileTranslationPage(videoId, configStr, config, filename = '') 
 </html>
     `;
 }
-
 
 module.exports = {
     escapeHtml,

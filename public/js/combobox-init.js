@@ -1,4 +1,4 @@
-(function() {
+(function () {
     'use strict';
 
     function initCombos() {
@@ -8,7 +8,7 @@
         window.ComboBox.enhanceAll(document);
     }
 
-    (window.partialsReady || Promise.resolve()).then(initCombos).catch(function(err) {
+    (window.partialsReady || Promise.resolve()).then(initCombos).catch(function (err) {
         console.error(err);
     });
 })();

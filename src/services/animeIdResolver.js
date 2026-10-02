@@ -21,8 +21,7 @@ const log = require('../utils/logger');
 // ── constants ────────────────────────────────────────────────────────
 const DATA_DIR = path.join(__dirname, '..', '..', 'data');
 const LOCAL_FILE = path.join(DATA_DIR, 'anime-list-full.json');
-const REMOTE_URL =
-    'https://raw.githubusercontent.com/Fribb/anime-lists/master/anime-list-full.json';
+const REMOTE_URL = 'https://raw.githubusercontent.com/Fribb/anime-lists/master/anime-list-full.json';
 
 const REFRESH_INTERVAL_MS = 7 * 24 * 60 * 60 * 1000; // 7 days
 const DOWNLOAD_TIMEOUT_MS = 60_000; // 60 s
@@ -50,9 +49,7 @@ let _loadedAt = 0;
 let _refreshTimer = null;
 let _readOnlyFilesystem = false; // Detected when write fails
 
-const KNOWN_INVALID_TARGET_PAIRS = new Set([
-    'tmdb:987654|tvdb:123456'
-]);
+const KNOWN_INVALID_TARGET_PAIRS = new Set(['tmdb:987654|tvdb:123456']);
 
 // ── helpers ──────────────────────────────────────────────────────────
 
@@ -175,11 +172,7 @@ function collapseVariants(variants) {
     const collapsed = {};
 
     for (const field of fields) {
-        const values = [...new Set(
-            variants
-                .map(variant => variant?.[field])
-                .filter(value => value != null)
-        )];
+        const values = [...new Set(variants.map((variant) => variant?.[field]).filter((value) => value != null))];
         collapsed[field] = values.length === 1 ? values[0] : null;
     }
 
@@ -204,15 +197,17 @@ function backfillMetaFromSharedTvdb(meta) {
 }
 
 function finalizeResolvedMeta(meta, aggregate = null) {
-    return publicMeta(backfillMetaFromSharedTvdb({
-        imdbId: meta?.imdbId ?? aggregate?.imdbId ?? null,
-        tmdbId: meta?.tmdbId ?? aggregate?.tmdbId ?? null,
-        tvdbId: meta?.tvdbId ?? aggregate?.tvdbId ?? null,
-        type: meta?.type ?? aggregate?.type ?? null,
-        season: meta?.season ?? aggregate?.season ?? null,
-        seasonTvdb: meta?.seasonTvdb ?? aggregate?.seasonTvdb ?? null,
-        seasonTmdb: meta?.seasonTmdb ?? aggregate?.seasonTmdb ?? null
-    }));
+    return publicMeta(
+        backfillMetaFromSharedTvdb({
+            imdbId: meta?.imdbId ?? aggregate?.imdbId ?? null,
+            tmdbId: meta?.tmdbId ?? aggregate?.tmdbId ?? null,
+            tvdbId: meta?.tvdbId ?? aggregate?.tvdbId ?? null,
+            type: meta?.type ?? aggregate?.type ?? null,
+            season: meta?.season ?? aggregate?.season ?? null,
+            seasonTvdb: meta?.seasonTvdb ?? aggregate?.seasonTvdb ?? null,
+            seasonTmdb: meta?.seasonTmdb ?? aggregate?.seasonTmdb ?? null
+        })
+    );
 }
 
 /**
@@ -246,7 +241,13 @@ function buildMaps(entries) {
         }
 
         const { season, seasonTvdb, seasonTmdb } = extractSeasonHints(e.season);
-        if (!parsePositiveInteger(e.season) && season && e.season && typeof e.season === 'object' && !Array.isArray(e.season)) {
+        if (
+            !parsePositiveInteger(e.season) &&
+            season &&
+            e.season &&
+            typeof e.season === 'object' &&
+            !Array.isArray(e.season)
+        ) {
             structuredSeasonEntries++;
         }
         const meta = { imdbId, tmdbId, tvdbId, type: e.type || null, season, seasonTvdb, seasonTmdb };
@@ -326,8 +327,8 @@ async function downloadList() {
             responseType: 'arraybuffer',
             headers: {
                 'User-Agent': 'StremioSubMaker/1.0',
-                Accept: 'application/json',
-            },
+                Accept: 'application/json'
+            }
         });
         fs.writeFileSync(LOCAL_FILE, resp.data);
         const sizeMB = (resp.data.length / (1024 * 1024)).toFixed(1);
@@ -376,11 +377,12 @@ function loadFromDisk() {
         _loadedAt = Date.now();
         _ready = true;
 
-        log.info(() =>
-            `[AnimeIdResolver] Loaded ${entries.length} entries → ` +
-            `kitsu:${kMap.size} mal:${mMap.size} anidb:${adbMap.size} anilist:${alMap.size} tvdb:${tvMap.size} tmdb:${tmMap.size} simkl:${skMap.size} livechart:${lcMap.size} anisearch:${asMap.size}` +
-            (stats.structuredSeasonEntries > 0 ? ` structuredSeason:${stats.structuredSeasonEntries}` : '') +
-            (stats.skippedSuspiciousEntries > 0 ? ` skippedSuspicious:${stats.skippedSuspiciousEntries}` : '')
+        log.info(
+            () =>
+                `[AnimeIdResolver] Loaded ${entries.length} entries → ` +
+                `kitsu:${kMap.size} mal:${mMap.size} anidb:${adbMap.size} anilist:${alMap.size} tvdb:${tvMap.size} tmdb:${tmMap.size} simkl:${skMap.size} livechart:${lcMap.size} anisearch:${asMap.size}` +
+                (stats.structuredSeasonEntries > 0 ? ` structuredSeason:${stats.structuredSeasonEntries}` : '') +
+                (stats.skippedSuspiciousEntries > 0 ? ` skippedSuspicious:${stats.skippedSuspiciousEntries}` : '')
         );
         return true;
     } catch (err) {
@@ -405,13 +407,7 @@ async function tryAcquireRefreshLock() {
         if (redisClient) {
             const adapter = await StorageFactory.getStorageAdapter();
             const fullKey = adapter._getKey(REDIS_LOCK_KEY, StorageAdapter.CACHE_TYPES.PROVIDER_METADATA);
-            const result = await redisClient.set(
-                fullKey,
-                String(Date.now()),
-                'EX',
-                REDIS_LOCK_TTL_SECONDS,
-                'NX'
-            );
+            const result = await redisClient.set(fullKey, String(Date.now()), 'EX', REDIS_LOCK_TTL_SECONDS, 'NX');
             return result === 'OK';
         }
 
@@ -419,7 +415,12 @@ async function tryAcquireRefreshLock() {
         const { getShared, setShared } = require('../utils/sharedCache');
         const existing = await getShared(REDIS_LOCK_KEY, StorageAdapter.CACHE_TYPES.PROVIDER_METADATA);
         if (existing) return false;
-        await setShared(REDIS_LOCK_KEY, String(Date.now()), StorageAdapter.CACHE_TYPES.PROVIDER_METADATA, REDIS_LOCK_TTL_SECONDS);
+        await setShared(
+            REDIS_LOCK_KEY,
+            String(Date.now()),
+            StorageAdapter.CACHE_TYPES.PROVIDER_METADATA,
+            REDIS_LOCK_TTL_SECONDS
+        );
         return true;
     } catch (err) {
         // If Redis is not available, allow this instance to refresh (standalone mode)
@@ -436,13 +437,10 @@ async function releaseRefreshLock() {
         const { StorageAdapter } = require('../storage');
         const { setShared } = require('../utils/sharedCache');
         // Set to expired value (1s TTL effectively deletes it)
-        await setShared(
-            REDIS_LOCK_KEY,
-            '',
-            StorageAdapter.CACHE_TYPES.PROVIDER_METADATA,
-            1
-        );
-    } catch (_) { /* best effort */ }
+        await setShared(REDIS_LOCK_KEY, '', StorageAdapter.CACHE_TYPES.PROVIDER_METADATA, 1);
+    } catch (_) {
+        /* best effort */
+    }
 }
 
 /**
@@ -458,7 +456,9 @@ async function publishUpdateTimestamp() {
             StorageAdapter.CACHE_TYPES.PROVIDER_METADATA,
             REFRESH_INTERVAL_MS / 1000 + 3600 // keep a bit longer than refresh interval
         );
-    } catch (_) { /* best effort */ }
+    } catch (_) {
+        /* best effort */
+    }
 }
 
 /**
@@ -504,7 +504,9 @@ async function initialize() {
         _refreshTimer = setInterval(refresh, REFRESH_INTERVAL_MS);
         // Ensure the timer doesn't prevent process exit
         if (_refreshTimer.unref) _refreshTimer.unref();
-        log.debug(() => `[AnimeIdResolver] Weekly refresh scheduled (every ${REFRESH_INTERVAL_MS / (1000 * 60 * 60)} hours)`);
+        log.debug(
+            () => `[AnimeIdResolver] Weekly refresh scheduled (every ${REFRESH_INTERVAL_MS / (1000 * 60 * 60)} hours)`
+        );
     } else if (_readOnlyFilesystem && _ready) {
         log.info(() => '[AnimeIdResolver] Using bundled anime-list data (read-only filesystem, refresh disabled)');
     }
@@ -592,12 +594,10 @@ function resolveImdbId(platform, rawId, options = {}) {
 
     const seasonHint = parsePositiveInteger(options?.seasonHint);
     if (seasonHint && Array.isArray(result._variants) && result._variants.length > 1) {
-        const seasonField = p === 'tvdb'
-            ? 'seasonTvdb'
-            : p === 'tmdb'
-                ? 'seasonTmdb'
-                : 'season';
-        const matchingVariants = result._variants.filter(variant => parsePositiveInteger(variant?.[seasonField]) === seasonHint);
+        const seasonField = p === 'tvdb' ? 'seasonTvdb' : p === 'tmdb' ? 'seasonTmdb' : 'season';
+        const matchingVariants = result._variants.filter(
+            (variant) => parsePositiveInteger(variant?.[seasonField]) === seasonHint
+        );
         if (matchingVariants.length === 1) {
             return finalizeResolvedMeta(matchingVariants[0], result);
         }
@@ -629,8 +629,8 @@ function getStats() {
             tmdb: tmdbAnimeMap.size,
             simkl: simklMap.size,
             livechart: livechartMap.size,
-            anisearch: anisearchMap.size,
-        },
+            anisearch: anisearchMap.size
+        }
     };
 }
 
@@ -639,5 +639,5 @@ module.exports = {
     refresh,
     resolveImdbId,
     isReady,
-    getStats,
+    getStats
 };

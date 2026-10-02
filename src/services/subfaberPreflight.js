@@ -68,11 +68,11 @@ const PREFLIGHT_MIN_ENTRIES = 10;
  * @returns {string} Raw dialogue text (satu baris per entry)
  */
 function buildPreflightRawText(entries) {
-  if (!Array.isArray(entries) || entries.length === 0) return '';
-  return entries
-    .map(e => String(e?.text || '').trim())
-    .filter(Boolean)
-    .join('\n');
+    if (!Array.isArray(entries) || entries.length === 0) return '';
+    return entries
+        .map((e) => String(e?.text || '').trim())
+        .filter(Boolean)
+        .join('\n');
 }
 
 /**
@@ -82,17 +82,20 @@ function buildPreflightRawText(entries) {
  * @returns {Array} Sampled entries (atau entries asal jika kecil)
  */
 function sampleEntriesForPreflight(entries) {
-  if (!Array.isArray(entries) || entries.length === 0) return [];
-  const totalChars = entries.reduce((sum, e) => sum + String(e?.text || '').length, 0);
-  if (totalChars <= PREFLIGHT_MAX_INPUT_CHARS) {
-    return entries; // Kecil — hantar semua
-  }
-  // Sampling merata: kekal k-th entry supaya plot arc tersebar
-  // (HANYA melebihi siling 250k — fail sehingga 2,500 entri diserahkan penuh)
-  const k = Math.ceil(totalChars / MAX_PREFLIGHT_CHARS);
-  const sampled = entries.filter((_, idx) => idx % k === 0);
-  log.debug(() => `[SubFaberPreflight] Large file (${entries.length} entries, ${totalChars} chars) sampled to ${sampled.length} entries (k=${k})`);
-  return sampled;
+    if (!Array.isArray(entries) || entries.length === 0) return [];
+    const totalChars = entries.reduce((sum, e) => sum + String(e?.text || '').length, 0);
+    if (totalChars <= PREFLIGHT_MAX_INPUT_CHARS) {
+        return entries; // Kecil — hantar semua
+    }
+    // Sampling merata: kekal k-th entry supaya plot arc tersebar
+    // (HANYA melebihi siling 250k — fail sehingga 2,500 entri diserahkan penuh)
+    const k = Math.ceil(totalChars / MAX_PREFLIGHT_CHARS);
+    const sampled = entries.filter((_, idx) => idx % k === 0);
+    log.debug(
+        () =>
+            `[SubFaberPreflight] Large file (${entries.length} entries, ${totalChars} chars) sampled to ${sampled.length} entries (k=${k})`
+    );
+    return sampled;
 }
 
 /**
@@ -120,25 +123,25 @@ function sampleEntriesForPreflight(entries) {
  * @returns {string} Prompt lengkap
  */
 function buildPreflightPrompt(rawText, targetLanguage, sourceLanguage) {
-  const src = sourceLanguage || 'the source language';
-  const tgt = targetLanguage || 'the target language';
-  // [UNIVERSAL-FIX] {{PLACEHOLDER}} injection: pack mengikut bahasa sasaran.
-  const pack = getLanguagePack(targetLanguage);
-  const honorificMatrix = pack.honorificMatrix.replaceAll('${tgt}', tgt);
-  const canonicalAddressMatrix = pack.canonicalAddressMatrix.replaceAll('${tgt}', tgt);
-  const creditsExample = pack.creditsExample.replaceAll('${tgt}', tgt);
-  // [PREFLIGHT-SLIM 2026-09-29] Ground-truth curl (kimi-k3, SRT 759 baris)
-  // membuktikan medan 'pronoun_register' + 'direct_address' (SOCIOLINGUISTIC
-  // v2) mencetuskan deliberation subjektif meleret: kimi-k3 membakar ~80%
-  // token output (9182/11512 reasoning tokens) teragak-agak antara aku/kau vs
-  // saya/awak dan meneka jantina, menaikkan jumlah masa ke 98-407s dengan
-  // varians liar. Membuang kedua-dua medan + menambah DECISION DISCIPLINE
-  // (satu-laluan, null-bila-kabur) menurunkan reasoning tokens 55-78%, masa
-  // ~3x (325s -> ~108s), varians runtuh — SAMBIL mengekalkan kualiti Bible
-  // (43-44 terms, 14-15 characters, canonical_address Puan/Encik/Cik terkunci
-  // 9/14 setiap run). canonical_address KEKAL (gelaran = FAKTA); register kata
-  // ganti kini diputuskan Agent A dari konteks chunk (bukan lock global goyah).
-  return `## Role
+    const src = sourceLanguage || 'the source language';
+    const tgt = targetLanguage || 'the target language';
+    // [UNIVERSAL-FIX] {{PLACEHOLDER}} injection: pack mengikut bahasa sasaran.
+    const pack = getLanguagePack(targetLanguage);
+    const honorificMatrix = pack.honorificMatrix.replaceAll('${tgt}', tgt);
+    const canonicalAddressMatrix = pack.canonicalAddressMatrix.replaceAll('${tgt}', tgt);
+    const creditsExample = pack.creditsExample.replaceAll('${tgt}', tgt);
+    // [PREFLIGHT-SLIM 2026-09-29] Ground-truth curl (kimi-k3, SRT 759 baris)
+    // membuktikan medan 'pronoun_register' + 'direct_address' (SOCIOLINGUISTIC
+    // v2) mencetuskan deliberation subjektif meleret: kimi-k3 membakar ~80%
+    // token output (9182/11512 reasoning tokens) teragak-agak antara aku/kau vs
+    // saya/awak dan meneka jantina, menaikkan jumlah masa ke 98-407s dengan
+    // varians liar. Membuang kedua-dua medan + menambah DECISION DISCIPLINE
+    // (satu-laluan, null-bila-kabur) menurunkan reasoning tokens 55-78%, masa
+    // ~3x (325s -> ~108s), varians runtuh — SAMBIL mengekalkan kualiti Bible
+    // (43-44 terms, 14-15 characters, canonical_address Puan/Encik/Cik terkunci
+    // 9/14 setiap run). canonical_address KEKAL (gelaran = FAKTA); register kata
+    // ganti kini diputuskan Agent A dari konteks chunk (bukan lock global goyah).
+    return `## Role
 You are a video translation expert and terminology consultant, specializing in ${src} comprehension and ${tgt} expression optimization.
 
 You are performing PRE-FLIGHT CONTEXT EXTRACTION ONLY. You are NOT translating the subtitle file, NOT rewriting dialogue, NOT choosing final translator pronouns or register, and NOT optimizing subtitle style — those are downstream translator decisions.
@@ -208,20 +211,20 @@ Note: Start your answer with { and end with }, do not add any other text.`;
  * @returns {string} Teks tanpa blok penaakulan
  */
 function stripReasoningTags(text) {
-  // Tag pembuka GLM 5.3 ialah emoji otak (U+1F9E0) — dibina daripada pasangan
-  // UTF-16 surrogates supaya literal tidak rosak oleh pipeline penghantaran.
-  const GLM_BRAIN = String.fromCharCode(0xD83E, 0xDDE0);
-  const brainOpen = new RegExp(GLM_BRAIN + '[\\s\\S]*?<\\/think>', 'gi');
-  const brainUnclosed = new RegExp(GLM_BRAIN + '[\\s\\S]*$', 'gi');
+    // Tag pembuka GLM 5.3 ialah emoji otak (U+1F9E0) — dibina daripada pasangan
+    // UTF-16 surrogates supaya literal tidak rosak oleh pipeline penghantaran.
+    const GLM_BRAIN = String.fromCharCode(0xd83e, 0xdde0);
+    const brainOpen = new RegExp(GLM_BRAIN + '[\\s\\S]*?<\\/think>', 'gi');
+    const brainUnclosed = new RegExp(GLM_BRAIN + '[\\s\\S]*$', 'gi');
 
-  let cleaned = String(text || '');
-  cleaned = cleaned.replace(/<think>[\s\S]*?<\/think>/gi, '');
-  cleaned = cleaned.replace(/<think>[\s\S]*$/gi, '');          // tag tidak ditutup (stream terpotong)
-  cleaned = cleaned.replace(/<thinking>[\s\S]*?<\/thinking>/gi, '');
-  cleaned = cleaned.replace(/<thinking>[\s\S]*$/gi, '');        // tag tidak ditutup
-  cleaned = cleaned.replace(brainOpen, '');                     // 🧠... </think> (GLM 5.3)
-  cleaned = cleaned.replace(brainUnclosed, '');                 // 🧠 tanpa penutup
-  return cleaned.trim();
+    let cleaned = String(text || '');
+    cleaned = cleaned.replace(/<think>[\s\S]*?<\/think>/gi, '');
+    cleaned = cleaned.replace(/<think>[\s\S]*$/gi, ''); // tag tidak ditutup (stream terpotong)
+    cleaned = cleaned.replace(/<thinking>[\s\S]*?<\/thinking>/gi, '');
+    cleaned = cleaned.replace(/<thinking>[\s\S]*$/gi, ''); // tag tidak ditutup
+    cleaned = cleaned.replace(brainOpen, ''); // 🧠... </think> (GLM 5.3)
+    cleaned = cleaned.replace(brainUnclosed, ''); // 🧠 tanpa penutup
+    return cleaned.trim();
 }
 
 /**
@@ -241,50 +244,50 @@ function stripReasoningTags(text) {
  * @returns {Object|null} Objek JS terhurai, atau null jika tidak boleh diselamatkan
  */
 function resilientParseJson(text) {
-  let candidate = String(text || '');
+    let candidate = String(text || '');
 
-  // 3. Buang markdown fences SEBELUM pengekstrakan sempadan supaya
-  // fence yang membingkai JSON tidak menghalang pengesanan '{' pertama.
-  // (Konstruktor RegExp + string '\\x60' = escape heks 0x60 yang betul —
-  // regex literal berganda-backslash TIDAK memadankan backtick sebenar.)
-  const fenceOpen = new RegExp('\\x60\\x60\\x60[a-z]*(?:\\r?\\n)?', 'gi');
-  candidate = candidate.replace(fenceOpen, '');
-  candidate = candidate.replace(new RegExp('\\x60\\x60\\x60', 'g'), '');
+    // 3. Buang markdown fences SEBELUM pengekstrakan sempadan supaya
+    // fence yang membingkai JSON tidak menghalang pengesanan '{' pertama.
+    // (Konstruktor RegExp + string '\\x60' = escape heks 0x60 yang betul —
+    // regex literal berganda-backslash TIDAK memadankan backtick sebenar.)
+    const fenceOpen = new RegExp('\\x60\\x60\\x60[a-z]*(?:\\r?\\n)?', 'gi');
+    candidate = candidate.replace(fenceOpen, '');
+    candidate = candidate.replace(new RegExp('\\x60\\x60\\x60', 'g'), '');
 
-  // 1. Ekstrak sempadan: '{' pertama → '}' terakhir (buang perbualan luar).
-  const jsonStart = candidate.indexOf('{');
-  const jsonEnd = candidate.lastIndexOf('}');
-  if (jsonStart === -1 || jsonEnd === -1 || jsonEnd <= jsonStart) {
-    log.warn(() => `[SubFaberPreflight] Resilient parse: no JSON object boundary found`);
-    return null;
-  }
-  if (jsonStart > 0 || jsonEnd < candidate.length - 1) {
-    candidate = candidate.slice(jsonStart, jsonEnd + 1);
-  }
-
-  // 4. Buang aksara kawalan tidak sah (JSON melarang 0x00–0x1F mentah
-  //    kecuali \n \r \t — punca biasa ralat "Unexpected token" LLM).
-  candidate = candidate.replace(/[\x00-\x08\x0B\x0C\x0E-\x1F]/g, '');
-
-  // 2. Koma tergantung pada array dan object:
-  //    {...,}  →  {...}    /    [...,]  →  [...]
-  candidate = candidate.replace(/,\s*([}\]])/g, '$1');
-
-  try {
-    return JSON.parse(candidate);
-  } catch (err) {
-    // FORENSIK: kedudukan aksara + 100 aksara sekitar kawasan bermasalah.
-    const posMatch = String(err?.message || '').match(/position (\d+)/i);
-    const pos = posMatch ? parseInt(posMatch[1], 10) : null;
-    let context = '';
-    if (Number.isFinite(pos)) {
-      const from = Math.max(0, pos - 50);
-      const to = Math.min(candidate.length, pos + 50);
-      context = ` Offset ${pos} (${from}–${to}): "${candidate.slice(from, to).replace(/\n/g, '\\n')}"`;
+    // 1. Ekstrak sempadan: '{' pertama → '}' terakhir (buang perbualan luar).
+    const jsonStart = candidate.indexOf('{');
+    const jsonEnd = candidate.lastIndexOf('}');
+    if (jsonStart === -1 || jsonEnd === -1 || jsonEnd <= jsonStart) {
+        log.warn(() => `[SubFaberPreflight] Resilient parse: no JSON object boundary found`);
+        return null;
     }
-    log.warn(() => `[SubFaberPreflight] Resilient parse failed even after cleaning: ${err?.message}.${context}`);
-    return null;
-  }
+    if (jsonStart > 0 || jsonEnd < candidate.length - 1) {
+        candidate = candidate.slice(jsonStart, jsonEnd + 1);
+    }
+
+    // 4. Buang aksara kawalan tidak sah (JSON melarang 0x00–0x1F mentah
+    //    kecuali \n \r \t — punca biasa ralat "Unexpected token" LLM).
+    candidate = candidate.replace(/[\x00-\x08\x0B\x0C\x0E-\x1F]/g, '');
+
+    // 2. Koma tergantung pada array dan object:
+    //    {...,}  →  {...}    /    [...,]  →  [...]
+    candidate = candidate.replace(/,\s*([}\]])/g, '$1');
+
+    try {
+        return JSON.parse(candidate);
+    } catch (err) {
+        // FORENSIK: kedudukan aksara + 100 aksara sekitar kawasan bermasalah.
+        const posMatch = String(err?.message || '').match(/position (\d+)/i);
+        const pos = posMatch ? parseInt(posMatch[1], 10) : null;
+        let context = '';
+        if (Number.isFinite(pos)) {
+            const from = Math.max(0, pos - 50);
+            const to = Math.min(candidate.length, pos + 50);
+            context = ` Offset ${pos} (${from}–${to}): "${candidate.slice(from, to).replace(/\n/g, '\\n')}"`;
+        }
+        log.warn(() => `[SubFaberPreflight] Resilient parse failed even after cleaning: ${err?.message}.${context}`);
+        return null;
+    }
 }
 
 /**
@@ -295,14 +298,14 @@ function resilientParseJson(text) {
  * @returns {string} Nilai pertama yang tidak kosong (trimmed), atau ''
  */
 function pickField(obj, ...keys) {
-  if (!obj || typeof obj !== 'object') return '';
-  for (const key of keys) {
-    const value = obj[key];
-    if (value !== undefined && value !== null && String(value).trim() !== '') {
-      return String(value).trim();
+    if (!obj || typeof obj !== 'object') return '';
+    for (const key of keys) {
+        const value = obj[key];
+        if (value !== undefined && value !== null && String(value).trim() !== '') {
+            return String(value).trim();
+        }
     }
-  }
-  return '';
+    return '';
 }
 
 /**
@@ -319,80 +322,81 @@ function pickField(obj, ...keys) {
  *            credits_and_titles:Array<{source:string,target:string}>}|null}
  */
 function parsePreflightResponse(responseText) {
-  if (!responseText || typeof responseText !== 'string') return null;
+    if (!responseText || typeof responseText !== 'string') return null;
 
-  // RESILIENT PARSER (Mandat §1): semua pembersihan + forensik dijalankan
-  // oleh resilientParseJson — parsePreflightResponse hanya mengesahkan struktur.
-  const parsed = resilientParseJson(responseText);
+    // RESILIENT PARSER (Mandat §1): semua pembersihan + forensik dijalankan
+    // oleh resilientParseJson — parsePreflightResponse hanya mengesahkan struktur.
+    const parsed = resilientParseJson(responseText);
 
-  // Validasi struktur
-  if (!parsed || typeof parsed !== 'object') return null;
+    // Validasi struktur
+    if (!parsed || typeof parsed !== 'object') return null;
 
-  const theme = typeof parsed.theme === 'string' ? parsed.theme.trim() : '';
-  if (!theme) return null;
+    const theme = typeof parsed.theme === 'string' ? parsed.theme.trim() : '';
+    if (!theme) return null;
 
-  // ── TIANG 2: terms [{source, target}] (kunci warisan src/tgt diterima) ──
-  const terms = [];
-  if (Array.isArray(parsed.terms)) {
-    for (const term of parsed.terms) {
-      if (!term || typeof term !== 'object') continue;
-      const source = pickField(term, 'source', 'src');
-      if (!source) continue;
-      terms.push({
-        source,
-        target: pickField(term, 'target', 'tgt') || source,
-        note: pickField(term, 'note')
-      });
+    // ── TIANG 2: terms [{source, target}] (kunci warisan src/tgt diterima) ──
+    const terms = [];
+    if (Array.isArray(parsed.terms)) {
+        for (const term of parsed.terms) {
+            if (!term || typeof term !== 'object') continue;
+            const source = pickField(term, 'source', 'src');
+            if (!source) continue;
+            terms.push({
+                source,
+                target: pickField(term, 'target', 'tgt') || source,
+                note: pickField(term, 'note')
+            });
+        }
     }
-  }
 
-  // ── TIANG 3: characters [{name, canonical_address, role}] ──
-  const characters = [];
-  if (Array.isArray(parsed.characters)) {
-    for (const character of parsed.characters) {
-      if (!character || typeof character !== 'object') continue;
-      const name = pickField(character, 'name');
-      if (!name) continue;
-      // MANDAT SOSIOLINGUISTIK 2026-09-27: nilai null dikekalkan SEBAGAI null
-      // (fallback lama `|| name` memadam isyarat "tidak dikunci" — punca akar
-      // ketirisan gelaran Ms.→Cik; Agent A kini menerima isyarat NOT LOCKED).
-      const rawAddress = character['canonical_address'];
-      const legacyAddress = character['canonicalAddress'];
-      const resolvedAddress = (rawAddress !== undefined && rawAddress !== null && String(rawAddress).trim() !== '')
-        ? rawAddress
-        : ((legacyAddress !== undefined && legacyAddress !== null && String(legacyAddress).trim() !== '')
-          ? legacyAddress
-          : null);
-      // MANDAT SOSIOLINGUISTIK v2 2026-09-29: direct_address (vocative) +
-      // pronoun_register. Null dikekalkan SEBAGAI null (isyarat "tidak
-      // dikunci" — konsisten dengan rawatan canonical_address).
-      const directRaw = pickField(character, 'direct_address', 'directAddress');
-      const pronounRaw = pickField(character, 'pronoun_register', 'pronounRegister');
-      characters.push({
-        name,
-        canonical_address: resolvedAddress,
-        direct_address: directRaw || null,
-        pronoun_register: pronounRaw || null,
-        role: pickField(character, 'role')
-      });
+    // ── TIANG 3: characters [{name, canonical_address, role}] ──
+    const characters = [];
+    if (Array.isArray(parsed.characters)) {
+        for (const character of parsed.characters) {
+            if (!character || typeof character !== 'object') continue;
+            const name = pickField(character, 'name');
+            if (!name) continue;
+            // MANDAT SOSIOLINGUISTIK 2026-09-27: nilai null dikekalkan SEBAGAI null
+            // (fallback lama `|| name` memadam isyarat "tidak dikunci" — punca akar
+            // ketirisan gelaran Ms.→Cik; Agent A kini menerima isyarat NOT LOCKED).
+            const rawAddress = character['canonical_address'];
+            const legacyAddress = character['canonicalAddress'];
+            const resolvedAddress =
+                rawAddress !== undefined && rawAddress !== null && String(rawAddress).trim() !== ''
+                    ? rawAddress
+                    : legacyAddress !== undefined && legacyAddress !== null && String(legacyAddress).trim() !== ''
+                      ? legacyAddress
+                      : null;
+            // MANDAT SOSIOLINGUISTIK v2 2026-09-29: direct_address (vocative) +
+            // pronoun_register. Null dikekalkan SEBAGAI null (isyarat "tidak
+            // dikunci" — konsisten dengan rawatan canonical_address).
+            const directRaw = pickField(character, 'direct_address', 'directAddress');
+            const pronounRaw = pickField(character, 'pronoun_register', 'pronounRegister');
+            characters.push({
+                name,
+                canonical_address: resolvedAddress,
+                direct_address: directRaw || null,
+                pronoun_register: pronounRaw || null,
+                role: pickField(character, 'role')
+            });
+        }
     }
-  }
 
-  // ── TIANG 4: credits_and_titles [{source, target}] ──
-  const creditsAndTitles = [];
-  if (Array.isArray(parsed.credits_and_titles)) {
-    for (const credit of parsed.credits_and_titles) {
-      if (!credit || typeof credit !== 'object') continue;
-      const source = pickField(credit, 'source', 'src');
-      if (!source) continue;
-      creditsAndTitles.push({
-        source,
-        target: pickField(credit, 'target', 'tgt') || source
-      });
+    // ── TIANG 4: credits_and_titles [{source, target}] ──
+    const creditsAndTitles = [];
+    if (Array.isArray(parsed.credits_and_titles)) {
+        for (const credit of parsed.credits_and_titles) {
+            if (!credit || typeof credit !== 'object') continue;
+            const source = pickField(credit, 'source', 'src');
+            if (!source) continue;
+            creditsAndTitles.push({
+                source,
+                target: pickField(credit, 'target', 'tgt') || source
+            });
+        }
     }
-  }
 
-  return { theme, terms, characters, credits_and_titles: creditsAndTitles };
+    return { theme, terms, characters, credits_and_titles: creditsAndTitles };
 }
 
 /**
@@ -401,73 +405,74 @@ function parsePreflightResponse(responseText) {
  * @returns {string} Blok teks "Content Summary + Technical Glossary + Character Hierarchy + Opening Credits / Titles"
  */
 function formatPreflightForPrompt(preflightContext, targetLanguage) {
-  if (!preflightContext || !preflightContext.theme) return '';
-  // [UNIVERSAL-FIX] NOT-LOCKED guidance mengikut pack bahasa sasaran.
-  // Lalai 'Malay' mengekalkan tingkah laku lama (matriks BM) bagi pemanggil
-  // warisan yang tidak menghantar targetLanguage; pemanggil enjin menghantar
-  // bahasa sasaran sebenar supaya bukan-Malay dapat panduan neutral.
-  const notLockedPack = getLanguagePack(targetLanguage || 'Malay');
-  let block = `### Content Summary\n${preflightContext.theme}`;
+    if (!preflightContext || !preflightContext.theme) return '';
+    // [UNIVERSAL-FIX] NOT-LOCKED guidance mengikut pack bahasa sasaran.
+    // Lalai 'Malay' mengekalkan tingkah laku lama (matriks BM) bagi pemanggil
+    // warisan yang tidak menghantar targetLanguage; pemanggil enjin menghantar
+    // bahasa sasaran sebenar supaya bukan-Malay dapat panduan neutral.
+    const notLockedPack = getLanguagePack(targetLanguage || 'Malay');
+    let block = `### Content Summary\n${preflightContext.theme}`;
 
-  // TIANG 2: Technical Glossary
-  if (Array.isArray(preflightContext.terms) && preflightContext.terms.length > 0) {
-    const termLines = preflightContext.terms
-      .map(t => {
-        const source = pickField(t, 'source', 'src');
-        const target = pickField(t, 'target', 'tgt') || source;
-        const note = pickField(t, 'note');
-        return `- ${source}: ${target}${note ? ` (${note})` : ''}`;
-      })
-      .filter(line => !line.startsWith('- :'))
-      .join('\n');
-    if (termLines) {
-      block += `\n\n### Technical Glossary\n${termLines}`;
+    // TIANG 2: Technical Glossary
+    if (Array.isArray(preflightContext.terms) && preflightContext.terms.length > 0) {
+        const termLines = preflightContext.terms
+            .map((t) => {
+                const source = pickField(t, 'source', 'src');
+                const target = pickField(t, 'target', 'tgt') || source;
+                const note = pickField(t, 'note');
+                return `- ${source}: ${target}${note ? ` (${note})` : ''}`;
+            })
+            .filter((line) => !line.startsWith('- :'))
+            .join('\n');
+        if (termLines) {
+            block += `\n\n### Technical Glossary\n${termLines}`;
+        }
     }
-  }
 
-  // TIANG 3: Character Hierarchy
-  if (Array.isArray(preflightContext.characters) && preflightContext.characters.length > 0) {
-    const charLines = preflightContext.characters
-      .map(c => {
-        const name = pickField(c, 'name');
-        if (!name) return '';
-        // MANDAT SOSIOLINGUISTIK 2026-09-27: null canonical_address mesti
-        // dirender sebagai isyarat NOT LOCKED (bukan nama mentah) supaya
-        // Agent A boleh menilai gelaran daripada konteks dialog chunk itu.
-        const rawAddress = (c && typeof c === 'object') ? c.canonical_address : undefined;
-        const legacyAddress = (c && typeof c === 'object') ? c.canonicalAddress : undefined;
-        const hasAddress = (rawAddress !== undefined && rawAddress !== null && String(rawAddress).trim() !== '')
-          || (legacyAddress !== undefined && legacyAddress !== null && String(legacyAddress).trim() !== '');
-        const address = hasAddress
-          ? (pickField(c, 'canonical_address', 'canonicalAddress') || name)
-          : notLockedPack.notLockedGuidance; // [UNIVERSAL-FIX] pack-driven (Malay / generic)
-        const role = pickField(c, 'role');
-        return `- ${name} → ${address}${role ? ` (${role})` : ''}`;
-      })
-      .filter(Boolean)
-      .join('\n');
-    if (charLines) {
-      block += `\n\n### Character Hierarchy\n${charLines}`;
+    // TIANG 3: Character Hierarchy
+    if (Array.isArray(preflightContext.characters) && preflightContext.characters.length > 0) {
+        const charLines = preflightContext.characters
+            .map((c) => {
+                const name = pickField(c, 'name');
+                if (!name) return '';
+                // MANDAT SOSIOLINGUISTIK 2026-09-27: null canonical_address mesti
+                // dirender sebagai isyarat NOT LOCKED (bukan nama mentah) supaya
+                // Agent A boleh menilai gelaran daripada konteks dialog chunk itu.
+                const rawAddress = c && typeof c === 'object' ? c.canonical_address : undefined;
+                const legacyAddress = c && typeof c === 'object' ? c.canonicalAddress : undefined;
+                const hasAddress =
+                    (rawAddress !== undefined && rawAddress !== null && String(rawAddress).trim() !== '') ||
+                    (legacyAddress !== undefined && legacyAddress !== null && String(legacyAddress).trim() !== '');
+                const address = hasAddress
+                    ? pickField(c, 'canonical_address', 'canonicalAddress') || name
+                    : notLockedPack.notLockedGuidance; // [UNIVERSAL-FIX] pack-driven (Malay / generic)
+                const role = pickField(c, 'role');
+                return `- ${name} → ${address}${role ? ` (${role})` : ''}`;
+            })
+            .filter(Boolean)
+            .join('\n');
+        if (charLines) {
+            block += `\n\n### Character Hierarchy\n${charLines}`;
+        }
     }
-  }
 
-  // TIANG 4: Opening Credits / Titles
-  if (Array.isArray(preflightContext.credits_and_titles) && preflightContext.credits_and_titles.length > 0) {
-    const creditLines = preflightContext.credits_and_titles
-      .map(c => {
-        const source = pickField(c, 'source', 'src');
-        if (!source) return '';
-        const target = pickField(c, 'target', 'tgt') || source;
-        return `- ${source}: ${target}`;
-      })
-      .filter(Boolean)
-      .join('\n');
-    if (creditLines) {
-      block += `\n\n### Opening Credits / Titles\n${creditLines}`;
+    // TIANG 4: Opening Credits / Titles
+    if (Array.isArray(preflightContext.credits_and_titles) && preflightContext.credits_and_titles.length > 0) {
+        const creditLines = preflightContext.credits_and_titles
+            .map((c) => {
+                const source = pickField(c, 'source', 'src');
+                if (!source) return '';
+                const target = pickField(c, 'target', 'tgt') || source;
+                return `- ${source}: ${target}`;
+            })
+            .filter(Boolean)
+            .join('\n');
+        if (creditLines) {
+            block += `\n\n### Opening Credits / Titles\n${creditLines}`;
+        }
     }
-  }
 
-  return block;
+    return block;
 }
 
 /**
@@ -487,113 +492,133 @@ function formatPreflightForPrompt(preflightContext, targetLanguage) {
  * @returns {Promise<{theme:string, terms:Array, characters:Array, credits_and_titles:Array}|null>} Konteks Fasa 0 atau null
  */
 async function runPreflightSemanticPass(entries, targetLanguage, sourceLanguage, geminiService, options = {}) {
-  const onProgress = typeof options.onProgress === 'function' ? options.onProgress : null;
+    const onProgress = typeof options.onProgress === 'function' ? options.onProgress : null;
 
-  const emit = async (payload) => {
-    if (!onProgress) return;
-    try {
-      await onProgress({ phase: 'preflight', ...payload });
-    } catch (err) {
-      log.debug(() => `[SubFaberPreflight] Progress callback error: ${err.message}`);
-    }
-  };
+    const emit = async (payload) => {
+        if (!onProgress) return;
+        try {
+            await onProgress({ phase: 'preflight', ...payload });
+        } catch (err) {
+            log.debug(() => `[SubFaberPreflight] Progress callback error: ${err.message}`);
+        }
+    };
 
-  // Guard: fail terlalu kecil — skip Fasa 0
-  if (!Array.isArray(entries) || entries.length < PREFLIGHT_MIN_ENTRIES) {
-    log.info(() => `[SubFaberPreflight] Skipping pre-flight (${Array.isArray(entries) ? entries.length : 0} entries < ${PREFLIGHT_MIN_ENTRIES} minimum)`);
-    await emit({ status: 'skipped' });
-    return null;
-  }
-
-  // Guard: tiada provider
-  if (!geminiService || typeof geminiService.translateSubtitle !== 'function') {
-    log.warn(() => '[SubFaberPreflight] No provider available, skipping pre-flight');
-    await emit({ status: 'skipped' });
-    return null;
-  }
-
-  await emit({ status: 'running' });
-  // Mandat Seni Bina Universal Payload §C: nama model tepat dicatatkan
-  // semasa log — [kimi-k3] (Fasa 0) / [deepseek-v4.1-flash] (fallback).
-  const preflightModel = (geminiService && geminiService.model) ? geminiService.model : 'unknown';
-  log.info(() => `[SubFaberPreflight] Running pre-flight semantic pass (${entries.length} entries) [${preflightModel}]`);
-
-  try {
-    // 1. Sample + ekstrak teks mentah (tanpa timecode)
-    const sampled = sampleEntriesForPreflight(entries);
-    const rawText = buildPreflightRawText(sampled);
-    if (!rawText) {
-      log.warn(() => '[SubFaberPreflight] No dialogue text extracted, skipping pre-flight');
-      await emit({ status: 'skipped' });
-      return null;
+    // Guard: fail terlalu kecil — skip Fasa 0
+    if (!Array.isArray(entries) || entries.length < PREFLIGHT_MIN_ENTRIES) {
+        log.info(
+            () =>
+                `[SubFaberPreflight] Skipping pre-flight (${Array.isArray(entries) ? entries.length : 0} entries < ${PREFLIGHT_MIN_ENTRIES} minimum)`
+        );
+        await emit({ status: 'skipped' });
+        return null;
     }
 
-    // 2. Bina prompt 4-tiang + panggil AI (flat user prompt, JSON output)
-    const prompt = buildPreflightPrompt(rawText, targetLanguage, sourceLanguage);
-    const callStartedAt = Date.now();
-    const responseText = await geminiService.translateSubtitle(
-      rawText,
-      'detected',
-      targetLanguage,
-      prompt
+    // Guard: tiada provider
+    if (!geminiService || typeof geminiService.translateSubtitle !== 'function') {
+        log.warn(() => '[SubFaberPreflight] No provider available, skipping pre-flight');
+        await emit({ status: 'skipped' });
+        return null;
+    }
+
+    await emit({ status: 'running' });
+    // Mandat Seni Bina Universal Payload §C: nama model tepat dicatatkan
+    // semasa log — [kimi-k3] (Fasa 0) / [deepseek-v4.1-flash] (fallback).
+    const preflightModel = geminiService && geminiService.model ? geminiService.model : 'unknown';
+    log.info(
+        () => `[SubFaberPreflight] Running pre-flight semantic pass (${entries.length} entries) [${preflightModel}]`
     );
-    const callDuration = Date.now() - callStartedAt;
-    const modelUsed = (geminiService && geminiService.model) ? geminiService.model : 'unknown';
 
-    // ZERO-SWALLOWED-ERROR §3A: observability penuh — saiz + durasi + model
-    // setiap respons Fasa 0 wajib dipaparkan supaya runtime boleh diper-
-    // diagnosis tanpa menebing (isu "blind log" beta 2).
-    log.info(() => `[SubFaberPreflight] Raw response received (${String(responseText || '').length} chars) in ${callDuration}ms [${modelUsed}]`);
+    try {
+        // 1. Sample + ekstrak teks mentah (tanpa timecode)
+        const sampled = sampleEntriesForPreflight(entries);
+        const rawText = buildPreflightRawText(sampled);
+        if (!rawText) {
+            log.warn(() => '[SubFaberPreflight] No dialogue text extracted, skipping pre-flight');
+            await emit({ status: 'skipped' });
+            return null;
+        }
 
-    // Mandat §3A: bersihkan tag penaakulan GLM/DeepSeek SEBELUM parse.
-    const cleanedResponse = stripReasoningTags(responseText);
+        // 2. Bina prompt 4-tiang + panggil AI (flat user prompt, JSON output)
+        const prompt = buildPreflightPrompt(rawText, targetLanguage, sourceLanguage);
+        const callStartedAt = Date.now();
+        const responseText = await geminiService.translateSubtitle(rawText, 'detected', targetLanguage, prompt);
+        const callDuration = Date.now() - callStartedAt;
+        const modelUsed = geminiService && geminiService.model ? geminiService.model : 'unknown';
 
-    // 3. Parse + sanitize
-    const parsed = parsePreflightResponse(cleanedResponse);
-    if (!parsed) {
-      // FORENSIK §B: 500 aksara pertama respons mentah wajib dipaparkan —
-      // kita tidak lagi buta terhadap apa yang dipulangkan endpoint.
-      const rawForLog = String(cleanedResponse || responseText || '');
-      log.warn(() => `[SubFaberPreflight] Parse failure. Raw snippet (first 500 chars): "${rawForLog.slice(0, 500)}..."`);
-      if (typeof options.onParseFailure === 'function') {
-        try { options.onParseFailure(rawForLog); } catch (_) { /* hook tidak boleh menggagalkan Fasa 0 */ }
-      }
-      await emit({ status: 'skipped' });
-      return null;
+        // ZERO-SWALLOWED-ERROR §3A: observability penuh — saiz + durasi + model
+        // setiap respons Fasa 0 wajib dipaparkan supaya runtime boleh diper-
+        // diagnosis tanpa menebing (isu "blind log" beta 2).
+        log.info(
+            () =>
+                `[SubFaberPreflight] Raw response received (${String(responseText || '').length} chars) in ${callDuration}ms [${modelUsed}]`
+        );
+
+        // Mandat §3A: bersihkan tag penaakulan GLM/DeepSeek SEBELUM parse.
+        const cleanedResponse = stripReasoningTags(responseText);
+
+        // 3. Parse + sanitize
+        const parsed = parsePreflightResponse(cleanedResponse);
+        if (!parsed) {
+            // FORENSIK §B: 500 aksara pertama respons mentah wajib dipaparkan —
+            // kita tidak lagi buta terhadap apa yang dipulangkan endpoint.
+            const rawForLog = String(cleanedResponse || responseText || '');
+            log.warn(
+                () =>
+                    `[SubFaberPreflight] Parse failure. Raw snippet (first 500 chars): "${rawForLog.slice(0, 500)}..."`
+            );
+            if (typeof options.onParseFailure === 'function') {
+                try {
+                    options.onParseFailure(rawForLog);
+                } catch (_) {
+                    /* hook tidak boleh menggagalkan Fasa 0 */
+                }
+            }
+            await emit({ status: 'skipped' });
+            return null;
+        }
+
+        log.info(
+            () =>
+                `[SubFaberPreflight] Pre-flight complete: theme="${parsed.theme.slice(0, 80)}...", ${parsed.terms.length} terms, ${parsed.characters.length} characters, ${parsed.credits_and_titles.length} credits/titles locked`
+        );
+        await emit({
+            status: 'done',
+            summary: parsed.theme,
+            terms: parsed.terms,
+            characters: parsed.characters,
+            credits_and_titles: parsed.credits_and_titles
+        });
+        return parsed;
+    } catch (err) {
+        // NON-BLOCKING: kegagalan Fasa 0 tidak menggagalkan terjemahan.
+        // ZERO-SWALLOWED-ERROR §A: status + punca teknikal sebenar wajib dicetak.
+        const status = err?.statusCode || err?.response?.status || err?.status || 'N/A';
+        log.warn(
+            () =>
+                `[SubFaberPreflight] Pre-flight API call failed (non-blocking, Status: ${status}): ${err?.message || err}`
+        );
+        if (typeof options.onCallError === 'function') {
+            try {
+                options.onCallError(err);
+            } catch (_) {
+                /* hook tidak boleh menggagalkan Fasa 0 */
+            }
+        }
+        await emit({ status: 'skipped' });
+        return null;
     }
-
-    log.info(() => `[SubFaberPreflight] Pre-flight complete: theme="${parsed.theme.slice(0, 80)}...", ${parsed.terms.length} terms, ${parsed.characters.length} characters, ${parsed.credits_and_titles.length} credits/titles locked`);
-    await emit({
-      status: 'done',
-      summary: parsed.theme,
-      terms: parsed.terms,
-      characters: parsed.characters,
-      credits_and_titles: parsed.credits_and_titles
-    });
-    return parsed;
-  } catch (err) {
-    // NON-BLOCKING: kegagalan Fasa 0 tidak menggagalkan terjemahan.
-    // ZERO-SWALLOWED-ERROR §A: status + punca teknikal sebenar wajib dicetak.
-    const status = err?.statusCode || err?.response?.status || err?.status || 'N/A';
-    log.warn(() => `[SubFaberPreflight] Pre-flight API call failed (non-blocking, Status: ${status}): ${err?.message || err}`);
-    if (typeof options.onCallError === 'function') {
-      try { options.onCallError(err); } catch (_) { /* hook tidak boleh menggagalkan Fasa 0 */ }
-    }
-    await emit({ status: 'skipped' });
-    return null;
-  }
 }
 
 module.exports = {
-  runPreflightSemanticPass,
-  buildPreflightRawText,
-  sampleEntriesForPreflight,
-  buildPreflightPrompt,
-  parsePreflightResponse,
-  resilientParseJson,
-  stripReasoningTags,
-  formatPreflightForPrompt,
-  MAX_PREFLIGHT_CHARS,
-  PREFLIGHT_MAX_INPUT_CHARS,
-  PREFLIGHT_MIN_ENTRIES
+    runPreflightSemanticPass,
+    buildPreflightRawText,
+    sampleEntriesForPreflight,
+    buildPreflightPrompt,
+    parsePreflightResponse,
+    resilientParseJson,
+    stripReasoningTags,
+    formatPreflightForPrompt,
+    MAX_PREFLIGHT_CHARS,
+    PREFLIGHT_MAX_INPUT_CHARS,
+    PREFLIGHT_MIN_ENTRIES
 };

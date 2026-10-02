@@ -12,18 +12,18 @@ const { getEffectiveGeminiModel } = require('./config');
 const { streamFilenameSelectorClientScript } = require('./streamUrlIdentity');
 
 function escapeHtml(value) {
-  if (value === undefined || value === null) return '';
-  return String(value)
-    .replace(/&/g, '&amp;')
-    .replace(/</g, '&lt;')
-    .replace(/>/g, '&gt;')
-    .replace(/"/g, '&quot;')
-    .replace(/'/g, '&#039;');
+    if (value === undefined || value === null) return '';
+    return String(value)
+        .replace(/&/g, '&amp;')
+        .replace(/</g, '&lt;')
+        .replace(/>/g, '&gt;')
+        .replace(/"/g, '&quot;')
+        .replace(/'/g, '&#039;');
 }
 
 function resolveUiLang(config) {
-  const lang = (config && config.uiLanguage) ? String(config.uiLanguage).toLowerCase() : 'en';
-  return escapeHtml(lang || 'en');
+    const lang = config && config.uiLanguage ? String(config.uiLanguage).toLowerCase() : 'en';
+    return escapeHtml(lang || 'en');
 }
 
 /**
@@ -34,39 +34,37 @@ function resolveUiLang(config) {
  * @returns {string} - Safe JavaScript code to parse the object
  */
 function safeJsonSerialize(obj) {
-  // First JSON.stringify to get JSON string
-  const jsonString = JSON.stringify(obj);
-  // Second JSON.stringify to escape it for embedding in JavaScript
-  // This prevents </script> tag injection and other escaping issues
-  const doubleEncoded = JSON.stringify(jsonString);
-  return `JSON.parse(${doubleEncoded})`;
+    // First JSON.stringify to get JSON string
+    const jsonString = JSON.stringify(obj);
+    // Second JSON.stringify to escape it for embedding in JavaScript
+    // This prevents </script> tag injection and other escaping issues
+    const doubleEncoded = JSON.stringify(jsonString);
+    return `JSON.parse(${doubleEncoded})`;
 }
 
 function formatLanguageLabel(code, fallback) {
-  if (!code) return fallback || '';
-  const normalized = String(code).replace('_', '-');
-  const base =
-    getLanguageName(normalized) ||
-    getLanguageName(normalized.replace('-', '')) ||
-    fallback ||
-    code;
-  const regionMatch = normalized.match(/^[a-z]{2}-([a-z]{2})$/i);
-  if (regionMatch) {
-    const region = regionMatch[1].toUpperCase();
-    const trimmed = base.replace(/\s*\([^)]+\)\s*$/, '').trim();
-    return `${trimmed} (${region})`;
-  }
-  return base;
+    if (!code) return fallback || '';
+    const normalized = String(code).replace('_', '-');
+    const base = getLanguageName(normalized) || getLanguageName(normalized.replace('-', '')) || fallback || code;
+    const regionMatch = normalized.match(/^[a-z]{2}-([a-z]{2})$/i);
+    if (regionMatch) {
+        const region = regionMatch[1].toUpperCase();
+        const trimmed = base.replace(/\s*\([^)]+\)\s*$/, '').trim();
+        return `${trimmed} (${region})`;
+    }
+    return base;
 }
 
 function buildQuery(params) {
-  const defined = Object.entries(params || {}).filter(([, v]) => v !== undefined && v !== null);
-  return defined.length === 0 ? '' : `?${defined.map(([k, v]) => `${encodeURIComponent(k)}=${encodeURIComponent(String(v))}`).join('&')}`;
+    const defined = Object.entries(params || {}).filter(([, v]) => v !== undefined && v !== null);
+    return defined.length === 0
+        ? ''
+        : `?${defined.map(([k, v]) => `${encodeURIComponent(k)}=${encodeURIComponent(String(v))}`).join('&')}`;
 }
 
 function themeToggleMarkup(label) {
-  const aria = escapeHtml(label || 'Toggle theme');
-  return `
+    const aria = escapeHtml(label || 'Toggle theme');
+    return `
   <button class="theme-toggle mario" id="themeToggle" aria-label="${aria}">
     <span class="theme-toggle-icon sun" aria-hidden="true">
         <svg viewBox="0 0 64 64" width="28" height="28" role="img">
@@ -127,57 +125,60 @@ function themeToggleMarkup(label) {
 }
 
 function cleanDisplayName(raw) {
-  if (!raw) return '';
-  const lastSegment = String(raw).split(/[/\\]/).pop() || '';
-  const withoutExt = lastSegment.replace(/\.[^.]+$/, '');
-  const spaced = withoutExt.replace(/[_\\.]+/g, ' ').replace(/\s+/g, ' ').trim();
-  return spaced || withoutExt || lastSegment;
+    if (!raw) return '';
+    const lastSegment = String(raw).split(/[/\\]/).pop() || '';
+    const withoutExt = lastSegment.replace(/\.[^.]+$/, '');
+    const spaced = withoutExt
+        .replace(/[_\\.]+/g, ' ')
+        .replace(/\s+/g, ' ')
+        .trim();
+    return spaced || withoutExt || lastSegment;
 }
 
 function buildLinkedMetaSubtitleHtml(topLine, fileLine, fallbackLine) {
-  const parts = [];
-  if (topLine) parts.push(escapeHtml(topLine));
-  if (fileLine) parts.push(`<strong class="meta-file-line">${escapeHtml(fileLine)}</strong>`);
-  if (parts.length) return parts.join('<br>');
-  return escapeHtml(fallbackLine || '');
+    const parts = [];
+    if (topLine) parts.push(escapeHtml(topLine));
+    if (fileLine) parts.push(`<strong class="meta-file-line">${escapeHtml(fileLine)}</strong>`);
+    if (parts.length) return parts.join('<br>');
+    return escapeHtml(fallbackLine || '');
 }
 
 function formatEpisodeTag(parsed) {
-  if (!parsed) return '';
-  const s = Number.isFinite(parsed.season) ? 'S' + String(parsed.season).padStart(2, '0') : '';
-  const e = Number.isFinite(parsed.episode) ? 'E' + String(parsed.episode).padStart(2, '0') : '';
-  return (s || e) ? (s + e) : '';
+    if (!parsed) return '';
+    const s = Number.isFinite(parsed.season) ? 'S' + String(parsed.season).padStart(2, '0') : '';
+    const e = Number.isFinite(parsed.episode) ? 'E' + String(parsed.episode).padStart(2, '0') : '';
+    return s || e ? s + e : '';
 }
 
 function buildLinkedVideoLabel(videoId, streamFilename, resolvedTitle, t) {
-  const parsed = parseStremioId(videoId);
-  const cleanedFilename = streamFilename ? cleanDisplayName(streamFilename) : '';
-  const movieTitle = resolvedTitle || cleanedFilename || parsed?.imdbId || parsed?.animeId || streamFilename;
-  const fallbackTitle = (t ? t('sync.meta.linkedFallback', {}, 'linked stream') : 'linked stream');
-  const baseTitle = movieTitle || fallbackTitle;
+    const parsed = parseStremioId(videoId);
+    const cleanedFilename = streamFilename ? cleanDisplayName(streamFilename) : '';
+    const movieTitle = resolvedTitle || cleanedFilename || parsed?.imdbId || parsed?.animeId || streamFilename;
+    const fallbackTitle = t ? t('sync.meta.linkedFallback', {}, 'linked stream') : 'linked stream';
+    const baseTitle = movieTitle || fallbackTitle;
 
-  if (parsed && (parsed.type === 'episode' || parsed.type === 'anime-episode')) {
-    const suffix = formatEpisodeTag(parsed) || (t ? t('sync.meta.episodeFallback', {}, 'Episode') : 'Episode');
-    if (!suffix) return baseTitle;
-    if (baseTitle && suffix && baseTitle.toUpperCase().includes(suffix.toUpperCase())) return baseTitle;
-    return `${baseTitle} - ${suffix}`;
-  }
+    if (parsed && (parsed.type === 'episode' || parsed.type === 'anime-episode')) {
+        const suffix = formatEpisodeTag(parsed) || (t ? t('sync.meta.episodeFallback', {}, 'Episode') : 'Episode');
+        if (!suffix) return baseTitle;
+        if (baseTitle && suffix && baseTitle.toUpperCase().includes(suffix.toUpperCase())) return baseTitle;
+        return `${baseTitle} - ${suffix}`;
+    }
 
-  return baseTitle;
+    return baseTitle;
 }
 
 async function fetchLinkedTitleServer(videoId) {
-  try {
-    const resolved = await resolveHistoryTitle(videoId, '');
-    const title = String(resolved?.title || '').trim();
-    return title && title !== String(videoId).trim() ? title : null;
-  } catch (_) {
-    return null;
-  }
+    try {
+        const resolved = await resolveHistoryTitle(videoId, '');
+        const title = String(resolved?.title || '').trim();
+        return title && title !== String(videoId).trim() ? title : null;
+    } catch (_) {
+        return null;
+    }
 }
 
 function themeToggleStyles() {
-  return `
+    return `
     /* Theme Toggle Button (configure copy) */
     .theme-toggle {
       position: fixed;
@@ -344,24 +345,24 @@ function themeToggleStyles() {
 }
 
 function buildToolLinks(configStr, videoId, filename) {
-  const shared = { config: configStr, videoId };
-  const withFile = { ...shared, filename: filename || '' };
-  const historyParams = {
-    config: configStr,
-    videoId: videoId || 'Stream and Refresh',
-    filename: filename || 'Stream and Refresh'
-  };
+    const shared = { config: configStr, videoId };
+    const withFile = { ...shared, filename: filename || '' };
+    const historyParams = {
+        config: configStr,
+        videoId: videoId || 'Stream and Refresh',
+        filename: filename || 'Stream and Refresh'
+    };
 
-  return {
-    translateFiles: `/file-upload${buildQuery(withFile)}`,
-    syncSubtitles: `/subtitle-sync${buildQuery(withFile)}`,
-    embeddedSubs: `/embedded-subtitles${buildQuery(withFile)}`,
-    automaticSubs: `/auto-subtitles${buildQuery(withFile)}`,
-    subToolbox: `/sub-toolbox${buildQuery(withFile)}`,
-    smdb: `/smdb${buildQuery(withFile)}`,
-    configure: `/configure${buildQuery({ config: configStr })}`,
-    history: `/sub-history${buildQuery(historyParams)}`
-  };
+    return {
+        translateFiles: `/file-upload${buildQuery(withFile)}`,
+        syncSubtitles: `/subtitle-sync${buildQuery(withFile)}`,
+        embeddedSubs: `/embedded-subtitles${buildQuery(withFile)}`,
+        automaticSubs: `/auto-subtitles${buildQuery(withFile)}`,
+        subToolbox: `/sub-toolbox${buildQuery(withFile)}`,
+        smdb: `/smdb${buildQuery(withFile)}`,
+        configure: `/configure${buildQuery({ config: configStr })}`,
+        history: `/sub-history${buildQuery(historyParams)}`
+    };
 }
 
 // quickNavStyles is imported from ./quickNav
@@ -371,106 +372,110 @@ function buildToolLinks(configStr, videoId, filename) {
 // quickNavScript is imported from ./quickNav
 
 function formatProviderName(name) {
-  const raw = String(name || '').trim();
-  if (!raw) return '';
-  const lower = raw.toLowerCase();
-  const map = {
-    gemini: 'Gemini',
-    deepl: 'DeepL',
-    'google-translate': 'Google Translate',
-    googletranslate: 'Google Translate',
-    google: 'Google',
-    openai: 'OpenAI',
-    'azure-openai': 'Azure OpenAI',
-    azureopenai: 'Azure OpenAI',
-    anthropic: 'Anthropic',
-    claude: 'Claude',
-    groq: 'Groq',
-    mistral: 'Mistral',
-    together: 'Together',
-    xai: 'xAI',
-    ollama: 'Ollama',
-    localai: 'LocalAI',
-    cfworkers: 'Cloudflare',
-    cloudflare: 'Cloudflare'
-  };
-  if (map[lower]) return map[lower];
-  return raw
-    .replace(/[_-]+/g, ' ')
-    .split(' ')
-    .filter(Boolean)
-    .map(part => part.charAt(0).toUpperCase() + part.slice(1))
-    .join(' ');
+    const raw = String(name || '').trim();
+    if (!raw) return '';
+    const lower = raw.toLowerCase();
+    const map = {
+        gemini: 'Gemini',
+        deepl: 'DeepL',
+        'google-translate': 'Google Translate',
+        googletranslate: 'Google Translate',
+        google: 'Google',
+        openai: 'OpenAI',
+        'azure-openai': 'Azure OpenAI',
+        azureopenai: 'Azure OpenAI',
+        anthropic: 'Anthropic',
+        claude: 'Claude',
+        groq: 'Groq',
+        mistral: 'Mistral',
+        together: 'Together',
+        xai: 'xAI',
+        ollama: 'Ollama',
+        localai: 'LocalAI',
+        cfworkers: 'Cloudflare',
+        cloudflare: 'Cloudflare'
+    };
+    if (map[lower]) return map[lower];
+    return raw
+        .replace(/[_-]+/g, ' ')
+        .split(' ')
+        .filter(Boolean)
+        .map((part) => part.charAt(0).toUpperCase() + part.slice(1))
+        .join(' ');
 }
 
 function getLanguageSummary(config, translator) {
-  try {
-    const fallback = translator ? translator('toolbox.summary.notSet', {}, 'Not set yet') : 'Not set yet';
-    const sources = (config.sourceLanguages || []).map(getLanguageName).filter(Boolean);
-    const targets = (config.targetLanguages || []).map(getLanguageName).filter(Boolean);
-    return {
-      sources: sources.length ? sources.join(', ') : fallback,
-      targets: targets.length ? targets.join(', ') : fallback
-    };
-  } catch (_) {
-    const fallback = translator ? translator('toolbox.summary.notSet', {}, 'Not set yet') : 'Not set yet';
-    return { sources: fallback, targets: fallback };
-  }
+    try {
+        const fallback = translator ? translator('toolbox.summary.notSet', {}, 'Not set yet') : 'Not set yet';
+        const sources = (config.sourceLanguages || []).map(getLanguageName).filter(Boolean);
+        const targets = (config.targetLanguages || []).map(getLanguageName).filter(Boolean);
+        return {
+            sources: sources.length ? sources.join(', ') : fallback,
+            targets: targets.length ? targets.join(', ') : fallback
+        };
+    } catch (_) {
+        const fallback = translator ? translator('toolbox.summary.notSet', {}, 'Not set yet') : 'Not set yet';
+        return { sources: fallback, targets: fallback };
+    }
 }
 
 function getProviderSummary(config, translator) {
-  try {
-    const providers = config.providers || {};
-    const names = [];
-    const seen = new Set();
-    const add = (name, enabled, front) => {
-      const norm = String(name || '').trim();
-      if (!norm || enabled !== true) return;
-      const key = norm.toLowerCase();
-      if (seen.has(key)) return;
-      seen.add(key);
-      if (front) names.unshift(norm);
-      else names.push(norm);
-    };
-    const geminiConfigured = Boolean(getEffectiveGeminiModel(config) || config.geminiKey || config.geminiApiKey || providers.gemini);
-    const geminiEnabled = providers.gemini ? providers.gemini.enabled !== false : geminiConfigured;
-    // Always show Gemini first when present
-    if (geminiConfigured) add(formatProviderName('Gemini'), geminiEnabled, true);
-    if (config.multiProviderEnabled && config.mainProvider) {
-      add(formatProviderName(config.mainProvider), providers[config.mainProvider]?.enabled === true);
+    try {
+        const providers = config.providers || {};
+        const names = [];
+        const seen = new Set();
+        const add = (name, enabled, front) => {
+            const norm = String(name || '').trim();
+            if (!norm || enabled !== true) return;
+            const key = norm.toLowerCase();
+            if (seen.has(key)) return;
+            seen.add(key);
+            if (front) names.unshift(norm);
+            else names.push(norm);
+        };
+        const geminiConfigured = Boolean(
+            getEffectiveGeminiModel(config) || config.geminiKey || config.geminiApiKey || providers.gemini
+        );
+        const geminiEnabled = providers.gemini ? providers.gemini.enabled !== false : geminiConfigured;
+        // Always show Gemini first when present
+        if (geminiConfigured) add(formatProviderName('Gemini'), geminiEnabled, true);
+        if (config.multiProviderEnabled && config.mainProvider) {
+            add(formatProviderName(config.mainProvider), providers[config.mainProvider]?.enabled === true);
+        }
+        if (config.secondaryProviderEnabled && config.secondaryProvider) {
+            add(formatProviderName(config.secondaryProvider), providers[config.secondaryProvider]?.enabled === true);
+        }
+        Object.keys(providers).forEach((key) => {
+            add(formatProviderName(key), providers[key]?.enabled);
+        });
+        const fallback = translator ? translator('toolbox.summary.notSet', {}, 'Not set yet') : 'Not set yet';
+        return names.length ? names.join(', ') : fallback;
+    } catch (_) {
+        return translator ? translator('toolbox.summary.notSet', {}, 'Not set yet') : 'Not set yet';
     }
-    if (config.secondaryProviderEnabled && config.secondaryProvider) {
-      add(formatProviderName(config.secondaryProvider), providers[config.secondaryProvider]?.enabled === true);
-    }
-    Object.keys(providers).forEach(key => {
-      add(formatProviderName(key), providers[key]?.enabled);
-    });
-    const fallback = translator ? translator('toolbox.summary.notSet', {}, 'Not set yet') : 'Not set yet';
-    return names.length ? names.join(', ') : fallback;
-  } catch (_) {
-    return translator ? translator('toolbox.summary.notSet', {}, 'Not set yet') : 'Not set yet';
-  }
 }
 
 function generateSubToolboxPage(configStr, videoId, filename, config) {
-  const links = buildToolLinks(configStr, videoId, filename);
-  const t = getTranslator(config?.uiLanguage || 'en');
-  const themeToggleLabel = t('fileUpload.themeToggle', {}, 'Toggle theme');
-  const languageSummary = getLanguageSummary(config || {}, t);
-  const providerSummary = getProviderSummary(config || {}, t);
-  const streamHint = filename ? escapeHtml(filename) : t('toolbox.streamUnknown', {}, 'Stream filename not detected (still works)');
-  const videoHash = deriveVideoHash(filename, videoId);
-  const devMode = (config || {}).devMode === true;
-  const devDisabledClass = devMode ? '' : ' dev-disabled';
-  const devOnlyLink = (href) => devMode ? href : '#';
-  const languageMaps = buildLanguageLookupMaps();
-  const localeBootstrap = buildClientBootstrap(loadLocale(config?.uiLanguage || 'en'));
-  const subtitleMenuTargets = (config?.targetLanguages || []).map(code => ({
-    code,
-    name: getLanguageName(code) || code
-  }));
+    const links = buildToolLinks(configStr, videoId, filename);
+    const t = getTranslator(config?.uiLanguage || 'en');
+    const themeToggleLabel = t('fileUpload.themeToggle', {}, 'Toggle theme');
+    const languageSummary = getLanguageSummary(config || {}, t);
+    const providerSummary = getProviderSummary(config || {}, t);
+    const streamHint = filename
+        ? escapeHtml(filename)
+        : t('toolbox.streamUnknown', {}, 'Stream filename not detected (still works)');
+    const videoHash = deriveVideoHash(filename, videoId);
+    const devMode = (config || {}).devMode === true;
+    const devDisabledClass = devMode ? '' : ' dev-disabled';
+    const devOnlyLink = (href) => (devMode ? href : '#');
+    const languageMaps = buildLanguageLookupMaps();
+    const localeBootstrap = buildClientBootstrap(loadLocale(config?.uiLanguage || 'en'));
+    const subtitleMenuTargets = (config?.targetLanguages || []).map((code) => ({
+        code,
+        name: getLanguageName(code) || code
+    }));
 
-  return `
+    return `
 <!DOCTYPE html>
 <html lang="${resolveUiLang(config)}" data-third-theme="true-dark">
 <head>
@@ -1438,11 +1443,11 @@ function generateSubToolboxPage(configStr, videoId, filename, config) {
   <script src="/js/subtitle-menu.js?v=${escapeHtml(appVersion || 'dev')}&_cb=${escapeHtml(appVersion || 'dev')}"></script>
   <script>
     const TOOLBOX = ${safeJsonSerialize({
-    configStr,
-    videoId,
-    filename: filename || '',
-    videoHash
-  })};
+        configStr,
+        videoId,
+        filename: filename || '',
+        videoHash
+    })};
     const SUBTITLE_MENU_TARGETS = ${JSON.stringify(subtitleMenuTargets)};
     const SUBTITLE_MENU_SOURCES = ${JSON.stringify(config.sourceLanguages || [])};
     const SUBTITLE_MENU_TARGET_CODES = ${JSON.stringify(config.targetLanguages || [])};
@@ -1668,286 +1673,407 @@ function generateSubToolboxPage(configStr, videoId, filename, config) {
 }
 
 async function generateEmbeddedSubtitlePage(configStr, videoId, filename) {
-  const links = buildToolLinks(configStr, videoId, filename);
-  const videoHash = deriveVideoHash(filename, videoId);
-  const parsedVideo = parseStremioId(videoId);
-  const episodeTag = formatEpisodeTag(parsedVideo);
-  const config = arguments[3] || {};
-  const targetLanguages = (Array.isArray(config.targetLanguages) ? config.targetLanguages : [])
-    .map(code => ({ code, name: getLanguageName(code) || code }));
-  const sourceLanguages = Array.isArray(config.sourceLanguages) ? config.sourceLanguages : [];
-  const targetLanguageCodes = Array.isArray(config.targetLanguages) ? config.targetLanguages : [];
-  const languageMaps = buildLanguageLookupMaps();
-  const devMode = config.devMode === true;
-  const localeBootstrap = buildClientBootstrap(loadLocale(config?.uiLanguage || 'en'));
-  const t = getTranslator(config?.uiLanguage || 'en');
-  const metaSeparator = ' • ';
-  const linkedTitle = await fetchLinkedTitleServer(videoId);
-  const linkedVideoDisplay = buildLinkedVideoLabel(videoId, filename, linkedTitle, t);
-  const themeToggleLabel = t('fileUpload.themeToggle', {}, 'Toggle theme');
-  const copy = {
-    meta: {
-      documentTitle: t('toolbox.embedded.meta.documentTitle', {}, 'Translate Embedded Subtitles - SubFaber'),
-      pageHeading: t('toolbox.embedded.meta.pageHeading', {}, 'Embedded Subtitles Studio'),
-      pageSubtitle: t('toolbox.embedded.meta.pageSubtitle', {}, 'Extract embedded tracks from your current stream and translate them instantly.')
-    },
-    instructions: {
-      title: t('toolbox.embedded.instructions.title', {}, 'Embedded Subtitles Instructions'),
-      help: t('toolbox.embedded.instructions.help', {}, 'Show instructions'),
-      close: t('toolbox.embedded.instructions.close', {}, 'Close instructions'),
-      extractionTitle: t('toolbox.embedded.instructions.extractionTitle', {}, 'Subtitles Extraction:'),
-      extractionSteps: [
-        t('toolbox.embedded.instructions.extractionSteps.1', {}, 'Make sure the xSync extension is installed and detected.'),
-        t('toolbox.embedded.instructions.extractionSteps.2', {}, 'Make sure the linked stream is the movie/episode you want to extract/translate.'),
-        t('toolbox.embedded.instructions.extractionSteps.3', {}, 'Right-click Stremio\'s stream and click "Copy stream link".'),
-        t('toolbox.embedded.instructions.extractionSteps.4', {}, 'Paste the stream URL in the corresponding box.'),
-        t('toolbox.embedded.instructions.extractionSteps.5', {}, 'Use "Complete" for MKV streams (non-MKV links auto-switch to Smart).'),
-        t('toolbox.embedded.instructions.extractionSteps.6', {}, 'Click "Extract Subtitles"')
-      ],
-      translationTitle: t('toolbox.embedded.instructions.translationTitle', {}, 'Translating Extracted Subtitles:'),
-      translationSteps: [
-        t('toolbox.embedded.instructions.translationSteps.1', {}, 'Verify and select the desired subtitles.'),
-        t('toolbox.embedded.instructions.translationSteps.2', {}, 'Select target language.'),
-        t('toolbox.embedded.instructions.translationSteps.3', {}, 'Select translation settings and translation provider.'),
-        t('toolbox.embedded.instructions.translationSteps.4', {}, 'Click "Translate Subtitles".')
-      ],
-      download: t('toolbox.embedded.instructions.downloadDelivery', {}, 'You can download extracted originals in their delivered format (ASS/SSA passthrough or converted SRT) and translated subtitles as SRT.'),
-      upload: t('toolbox.embedded.instructions.upload', {}, 'Translated subtitles are automatically uploaded to the database, matching the video hash, under the "xEmbed (Language)" entry (reload the stream on Stremio to see it).'),
-      retry: t('toolbox.embedded.instructions.retry', {}, 'If translation/sync problems happen, simply retranslate the subtitle to overwrite the xEmbed database cache.'),
-      originals: t('toolbox.embedded.instructions.originalsDelivery', {}, 'Extracted subtitles are saved to xEmbed originals using your current ASS/SSA delivery setting and show up under their source language (no separate label).'),
-      ocrNote: t('toolbox.embedded.instructions.ocrNote', {}, "Currently doesn't work with image-based subtitles - OCR may be implemented."),
-      dontShow: t('toolbox.embedded.instructions.dontShow', {}, "Don't show this again"),
-      gotIt: t('toolbox.embedded.instructions.gotIt', {}, 'Got it')
-    },
-    videoMeta: {
-      label: t('toolbox.embedded.videoMeta.label', {}, 'Linked Stream'),
-      none: t('toolbox.embedded.videoMeta.none', {}, 'No stream linked'),
-      unavailable: t('toolbox.embedded.videoMeta.unavailable', {}, 'Video ID unavailable'),
-      waiting: t('toolbox.embedded.videoMeta.waiting', {}, 'Waiting for a linked stream...'),
-      refreshTitle: t('toolbox.embedded.videoMeta.refreshTitle', {}, 'Refresh linked stream')
-    },
-    step1: {
-      chip: t('toolbox.embedded.step1.chip', {}, 'Step 1'),
-      title: t('toolbox.embedded.step1.title', {}, 'Provide Stream Information'),
-      helper: t('toolbox.embedded.step1.helper', {}, ''),
-      helperTip: t('toolbox.embedded.step1.helperTip', {}, ''),
-      streamLabel: t('toolbox.embedded.step1.streamLabel', {}, 'Stream URL:'),
-      streamPlaceholder: t('toolbox.embedded.step1.streamPlaceholder', {}, 'Paste the video/stream URL from Stremio or your browser'),
-      modeLabel: t('toolbox.embedded.step1.modeLabel', {}, 'Mode'),
-      modeSmart: t('toolbox.embedded.step1.modeSmart', {}, 'Smart (fast)'),
-      modeComplete: t('toolbox.embedded.step1.modeComplete', {}, 'Complete (full file)'),
-      modeChunkedProgressiveOpfsDemux: t('toolbox.embedded.step1.modeChunkedProgressiveOpfsDemux', {}, 'Chunked Progressive OPFS Demux'),
-      modeHelper: t('toolbox.embedded.step1.modeHelper', {}, 'In Complete mode, the whole file will be fetched for extraction.\nComplete mode is needed for MKV files.'),
-      modeExperimentalHelper: t('toolbox.embedded.step1.modeExperimentalHelper', {}, 'Dev mode exposes experimental extraction modes below. These modes are intended for live testing and large-file diagnostics.'),
-      extractButton: t('toolbox.embedded.step1.extractButton', {}, 'Extract Subtitles'),
-      extractBlocked: t('toolbox.embedded.step1.extractBlocked', {}, ''),
-      hashMismatchInline: t(
-        'toolbox.embedded.step1.hashMismatchInline',
-        {},
-        'Hashes do not match. Extraction stays blocked until the pasted URL matches your linked stream.'
-      ),
-      hashMismatchLine1: t(
-        'toolbox.embedded.step1.hashMismatchLine1',
-        {},
-        'Hashes must match (Linked Stream and Stream URL) before extraction can start.'
-      ),
-      hashMismatchLine2: t(
-        'toolbox.embedded.step1.hashMismatchLine2',
-        {},
-        'Stream something and refresh the linked stream, then copy and paste the Stream URL.'
-      ),
-      logHeader: t('toolbox.embedded.step1.logHeader', {}, 'Live log'),
-      logSub: t('toolbox.embedded.step1.logSub', {}, 'Auto-filled while extraction runs.'),
-      outputsEyebrow: t('toolbox.embedded.step1.outputsEyebrow', {}, 'Outputs'),
-      outputsTitle: t('toolbox.embedded.step1.outputsTitle', {}, 'Extracted files'),
-      outputsEmpty: t('toolbox.embedded.step1.outputsEmpty', {}, 'No tracks extracted yet. Run extraction above to see them here.')
-    },
-    step2: {
-      chip: t('toolbox.embedded.step2.chip', {}, 'Step 2'),
-      title: t('toolbox.embedded.step2.title', {}, 'Tracks & Translation'),
-      helper: t('toolbox.embedded.step2.helper', {}, ''),
-      selectedLabel: t('toolbox.embedded.step2.selectedLabel', {}, 'Selected subtitle'),
-      selectedPlaceholder: t('toolbox.embedded.step2.selectedPlaceholder', {}, 'Select a subtitle in Step 1 outputs to unlock this step.'),
-      targetLabel: t('toolbox.embedded.step2.targetLabel', {}, 'Target language'),
-      settingsTitle: t('toolbox.embedded.step2.settingsTitle', {}, 'Translation Settings'),
-      settingsMeta: t('toolbox.embedded.step2.settingsMeta', {}, 'Provider, workflow, batching, context'),
-      providerLabel: t('toolbox.embedded.step2.providerLabel', {}, 'Provider'),
-      providerHelper: t('toolbox.embedded.step2.providerHelper', {}, 'Uses your configured model for the selected provider.'),
-      translationContext: t('toolbox.embedded.step2.translationContext', { label: '{label}' }, "You're translating subtitles for {label}"),
-      translationContextFallback: t('toolbox.embedded.step2.translationContextFallback', {}, 'your linked stream'),
-      translateButton: t('toolbox.embedded.step2.translateButton', {}, 'Translate Subtitles'),
-      logHeader: t('toolbox.embedded.step2.logHeader', {}, 'Live log'),
-      logSub: t('toolbox.embedded.step2.logSub', {}, 'Auto-filled while translations run.'),
-      outputsEyebrow: t('toolbox.embedded.step2.outputsEyebrow', {}, 'Outputs'),
-      outputsTitle: t('toolbox.embedded.step2.outputsTitle', {}, 'Translated subtitles'),
-      outputsEmpty: t('toolbox.embedded.step2.outputsEmpty', {}, 'No translations yet. Pick a track and translate to see them here.'),
-      reloadHint: t('toolbox.embedded.step2.reloadHint', {}, 'Done! Reload the stream subtitle list in Stremio to see xEmbed (Language) entries.'),
-      reloadHintManual: t('toolbox.embedded.step2.reloadHintManual', {}, 'Hash mismatch detected; translations were saved locally. Download the SRT above and drag it into Stremio manually.')
-    },
-    locks: {
-      needExtraction: t('toolbox.embedded.locks.needExtraction', {}, 'Run Step 1 extraction to unlock translation.'),
-      needTrack: t('toolbox.embedded.locks.needTrack', {}, 'Select an extracted subtitle to unlock translation.')
-    },
-    status: {
-      queued: t('toolbox.embedded.status.queued', {}, 'queued'),
-      running: t('toolbox.embedded.status.running', {}, 'running'),
-      done: t('toolbox.embedded.status.done', {}, 'done'),
-      failed: t('toolbox.embedded.status.failed', {}, 'failed')
-    },
-    buttons: {
-      extracting: t('toolbox.embedded.buttons.extracting', {}, 'Extracting...')
-    }
-  };
-  const translationContextLabel = linkedVideoDisplay || copy.step2.translationContextFallback;
-  const metaTop = [];
-  if (videoId) metaTop.push(t('toolbox.embedded.meta.videoId', { id: videoId }, `Video ID: ${videoId}`));
-  if (linkedTitle) metaTop.push(t('toolbox.embedded.meta.title', { title: linkedTitle }, `Title: ${linkedTitle}`));
-  if (videoId || filename || linkedTitle) metaTop.push(t('toolbox.embedded.meta.episode', { episode: episodeTag || '-' }, `Episode: ${episodeTag || '-'}`));
-  const metaFile = filename ? t('toolbox.embedded.meta.file', { file: cleanDisplayName(filename) }, `File: ${cleanDisplayName(filename)}`) : '';
-  const initialVideoTitle = escapeHtml(linkedVideoDisplay || copy.videoMeta.none);
-  const initialVideoSubtitle = buildLinkedMetaSubtitleHtml(metaTop.join(' | '), metaFile, copy.videoMeta.unavailable);
-  const initialTranslationContext = escapeHtml(
-    t(
-      'toolbox.embedded.step2.translationContext',
-      { label: translationContextLabel },
-      (copy.step2.translationContext || "You're translating subtitles for {label}").replace('{label}', translationContextLabel)
-    )
-  );
-  const modeHelperHtml = escapeHtml(copy.step1.modeHelper).replace(/\n/g, '<br>');
-  const step1Helper = (copy.step1.helper && copy.step1.helper !== 'toolbox.embedded.step1.helper')
-    ? copy.step1.helper
-    : '';
-  const step1HelperTip = (copy.step1.helperTip && copy.step1.helperTip !== 'toolbox.embedded.step1.helperTip')
-    ? copy.step1.helperTip
-    : '';
-  const hashAlertLines = [copy.step1.hashMismatchLine1, copy.step1.hashMismatchLine2].filter(Boolean);
-  const providerOptions = (() => {
-    const options = [];
-    const providers = config.providers || {};
-    const seen = new Set();
-    const resolveProviderEntry = (key) => {
-      const normalized = String(key || '').trim().toLowerCase();
-      const matchKey = Object.keys(providers || {}).find(k => String(k).toLowerCase() === normalized);
-      return matchKey ? { key: matchKey, config: providers[matchKey] || {} } : null;
+    const links = buildToolLinks(configStr, videoId, filename);
+    const videoHash = deriveVideoHash(filename, videoId);
+    const parsedVideo = parseStremioId(videoId);
+    const episodeTag = formatEpisodeTag(parsedVideo);
+    const config = arguments[3] || {};
+    const targetLanguages = (Array.isArray(config.targetLanguages) ? config.targetLanguages : []).map((code) => ({
+        code,
+        name: getLanguageName(code) || code
+    }));
+    const sourceLanguages = Array.isArray(config.sourceLanguages) ? config.sourceLanguages : [];
+    const targetLanguageCodes = Array.isArray(config.targetLanguages) ? config.targetLanguages : [];
+    const languageMaps = buildLanguageLookupMaps();
+    const devMode = config.devMode === true;
+    const localeBootstrap = buildClientBootstrap(loadLocale(config?.uiLanguage || 'en'));
+    const t = getTranslator(config?.uiLanguage || 'en');
+    const metaSeparator = ' • ';
+    const linkedTitle = await fetchLinkedTitleServer(videoId);
+    const linkedVideoDisplay = buildLinkedVideoLabel(videoId, filename, linkedTitle, t);
+    const themeToggleLabel = t('fileUpload.themeToggle', {}, 'Toggle theme');
+    const copy = {
+        meta: {
+            documentTitle: t('toolbox.embedded.meta.documentTitle', {}, 'Translate Embedded Subtitles - SubFaber'),
+            pageHeading: t('toolbox.embedded.meta.pageHeading', {}, 'Embedded Subtitles Studio'),
+            pageSubtitle: t(
+                'toolbox.embedded.meta.pageSubtitle',
+                {},
+                'Extract embedded tracks from your current stream and translate them instantly.'
+            )
+        },
+        instructions: {
+            title: t('toolbox.embedded.instructions.title', {}, 'Embedded Subtitles Instructions'),
+            help: t('toolbox.embedded.instructions.help', {}, 'Show instructions'),
+            close: t('toolbox.embedded.instructions.close', {}, 'Close instructions'),
+            extractionTitle: t('toolbox.embedded.instructions.extractionTitle', {}, 'Subtitles Extraction:'),
+            extractionSteps: [
+                t(
+                    'toolbox.embedded.instructions.extractionSteps.1',
+                    {},
+                    'Make sure the xSync extension is installed and detected.'
+                ),
+                t(
+                    'toolbox.embedded.instructions.extractionSteps.2',
+                    {},
+                    'Make sure the linked stream is the movie/episode you want to extract/translate.'
+                ),
+                t(
+                    'toolbox.embedded.instructions.extractionSteps.3',
+                    {},
+                    'Right-click Stremio\'s stream and click "Copy stream link".'
+                ),
+                t(
+                    'toolbox.embedded.instructions.extractionSteps.4',
+                    {},
+                    'Paste the stream URL in the corresponding box.'
+                ),
+                t(
+                    'toolbox.embedded.instructions.extractionSteps.5',
+                    {},
+                    'Use "Complete" for MKV streams (non-MKV links auto-switch to Smart).'
+                ),
+                t('toolbox.embedded.instructions.extractionSteps.6', {}, 'Click "Extract Subtitles"')
+            ],
+            translationTitle: t(
+                'toolbox.embedded.instructions.translationTitle',
+                {},
+                'Translating Extracted Subtitles:'
+            ),
+            translationSteps: [
+                t('toolbox.embedded.instructions.translationSteps.1', {}, 'Verify and select the desired subtitles.'),
+                t('toolbox.embedded.instructions.translationSteps.2', {}, 'Select target language.'),
+                t(
+                    'toolbox.embedded.instructions.translationSteps.3',
+                    {},
+                    'Select translation settings and translation provider.'
+                ),
+                t('toolbox.embedded.instructions.translationSteps.4', {}, 'Click "Translate Subtitles".')
+            ],
+            download: t(
+                'toolbox.embedded.instructions.downloadDelivery',
+                {},
+                'You can download extracted originals in their delivered format (ASS/SSA passthrough or converted SRT) and translated subtitles as SRT.'
+            ),
+            upload: t(
+                'toolbox.embedded.instructions.upload',
+                {},
+                'Translated subtitles are automatically uploaded to the database, matching the video hash, under the "xEmbed (Language)" entry (reload the stream on Stremio to see it).'
+            ),
+            retry: t(
+                'toolbox.embedded.instructions.retry',
+                {},
+                'If translation/sync problems happen, simply retranslate the subtitle to overwrite the xEmbed database cache.'
+            ),
+            originals: t(
+                'toolbox.embedded.instructions.originalsDelivery',
+                {},
+                'Extracted subtitles are saved to xEmbed originals using your current ASS/SSA delivery setting and show up under their source language (no separate label).'
+            ),
+            ocrNote: t(
+                'toolbox.embedded.instructions.ocrNote',
+                {},
+                "Currently doesn't work with image-based subtitles - OCR may be implemented."
+            ),
+            dontShow: t('toolbox.embedded.instructions.dontShow', {}, "Don't show this again"),
+            gotIt: t('toolbox.embedded.instructions.gotIt', {}, 'Got it')
+        },
+        videoMeta: {
+            label: t('toolbox.embedded.videoMeta.label', {}, 'Linked Stream'),
+            none: t('toolbox.embedded.videoMeta.none', {}, 'No stream linked'),
+            unavailable: t('toolbox.embedded.videoMeta.unavailable', {}, 'Video ID unavailable'),
+            waiting: t('toolbox.embedded.videoMeta.waiting', {}, 'Waiting for a linked stream...'),
+            refreshTitle: t('toolbox.embedded.videoMeta.refreshTitle', {}, 'Refresh linked stream')
+        },
+        step1: {
+            chip: t('toolbox.embedded.step1.chip', {}, 'Step 1'),
+            title: t('toolbox.embedded.step1.title', {}, 'Provide Stream Information'),
+            helper: t('toolbox.embedded.step1.helper', {}, ''),
+            helperTip: t('toolbox.embedded.step1.helperTip', {}, ''),
+            streamLabel: t('toolbox.embedded.step1.streamLabel', {}, 'Stream URL:'),
+            streamPlaceholder: t(
+                'toolbox.embedded.step1.streamPlaceholder',
+                {},
+                'Paste the video/stream URL from Stremio or your browser'
+            ),
+            modeLabel: t('toolbox.embedded.step1.modeLabel', {}, 'Mode'),
+            modeSmart: t('toolbox.embedded.step1.modeSmart', {}, 'Smart (fast)'),
+            modeComplete: t('toolbox.embedded.step1.modeComplete', {}, 'Complete (full file)'),
+            modeChunkedProgressiveOpfsDemux: t(
+                'toolbox.embedded.step1.modeChunkedProgressiveOpfsDemux',
+                {},
+                'Chunked Progressive OPFS Demux'
+            ),
+            modeHelper: t(
+                'toolbox.embedded.step1.modeHelper',
+                {},
+                'In Complete mode, the whole file will be fetched for extraction.\nComplete mode is needed for MKV files.'
+            ),
+            modeExperimentalHelper: t(
+                'toolbox.embedded.step1.modeExperimentalHelper',
+                {},
+                'Dev mode exposes experimental extraction modes below. These modes are intended for live testing and large-file diagnostics.'
+            ),
+            extractButton: t('toolbox.embedded.step1.extractButton', {}, 'Extract Subtitles'),
+            extractBlocked: t('toolbox.embedded.step1.extractBlocked', {}, ''),
+            hashMismatchInline: t(
+                'toolbox.embedded.step1.hashMismatchInline',
+                {},
+                'Hashes do not match. Extraction stays blocked until the pasted URL matches your linked stream.'
+            ),
+            hashMismatchLine1: t(
+                'toolbox.embedded.step1.hashMismatchLine1',
+                {},
+                'Hashes must match (Linked Stream and Stream URL) before extraction can start.'
+            ),
+            hashMismatchLine2: t(
+                'toolbox.embedded.step1.hashMismatchLine2',
+                {},
+                'Stream something and refresh the linked stream, then copy and paste the Stream URL.'
+            ),
+            logHeader: t('toolbox.embedded.step1.logHeader', {}, 'Live log'),
+            logSub: t('toolbox.embedded.step1.logSub', {}, 'Auto-filled while extraction runs.'),
+            outputsEyebrow: t('toolbox.embedded.step1.outputsEyebrow', {}, 'Outputs'),
+            outputsTitle: t('toolbox.embedded.step1.outputsTitle', {}, 'Extracted files'),
+            outputsEmpty: t(
+                'toolbox.embedded.step1.outputsEmpty',
+                {},
+                'No tracks extracted yet. Run extraction above to see them here.'
+            )
+        },
+        step2: {
+            chip: t('toolbox.embedded.step2.chip', {}, 'Step 2'),
+            title: t('toolbox.embedded.step2.title', {}, 'Tracks & Translation'),
+            helper: t('toolbox.embedded.step2.helper', {}, ''),
+            selectedLabel: t('toolbox.embedded.step2.selectedLabel', {}, 'Selected subtitle'),
+            selectedPlaceholder: t(
+                'toolbox.embedded.step2.selectedPlaceholder',
+                {},
+                'Select a subtitle in Step 1 outputs to unlock this step.'
+            ),
+            targetLabel: t('toolbox.embedded.step2.targetLabel', {}, 'Target language'),
+            settingsTitle: t('toolbox.embedded.step2.settingsTitle', {}, 'Translation Settings'),
+            settingsMeta: t('toolbox.embedded.step2.settingsMeta', {}, 'Provider, workflow, batching, context'),
+            providerLabel: t('toolbox.embedded.step2.providerLabel', {}, 'Provider'),
+            providerHelper: t(
+                'toolbox.embedded.step2.providerHelper',
+                {},
+                'Uses your configured model for the selected provider.'
+            ),
+            translationContext: t(
+                'toolbox.embedded.step2.translationContext',
+                { label: '{label}' },
+                "You're translating subtitles for {label}"
+            ),
+            translationContextFallback: t(
+                'toolbox.embedded.step2.translationContextFallback',
+                {},
+                'your linked stream'
+            ),
+            translateButton: t('toolbox.embedded.step2.translateButton', {}, 'Translate Subtitles'),
+            logHeader: t('toolbox.embedded.step2.logHeader', {}, 'Live log'),
+            logSub: t('toolbox.embedded.step2.logSub', {}, 'Auto-filled while translations run.'),
+            outputsEyebrow: t('toolbox.embedded.step2.outputsEyebrow', {}, 'Outputs'),
+            outputsTitle: t('toolbox.embedded.step2.outputsTitle', {}, 'Translated subtitles'),
+            outputsEmpty: t(
+                'toolbox.embedded.step2.outputsEmpty',
+                {},
+                'No translations yet. Pick a track and translate to see them here.'
+            ),
+            reloadHint: t(
+                'toolbox.embedded.step2.reloadHint',
+                {},
+                'Done! Reload the stream subtitle list in Stremio to see xEmbed (Language) entries.'
+            ),
+            reloadHintManual: t(
+                'toolbox.embedded.step2.reloadHintManual',
+                {},
+                'Hash mismatch detected; translations were saved locally. Download the SRT above and drag it into Stremio manually.'
+            )
+        },
+        locks: {
+            needExtraction: t(
+                'toolbox.embedded.locks.needExtraction',
+                {},
+                'Run Step 1 extraction to unlock translation.'
+            ),
+            needTrack: t('toolbox.embedded.locks.needTrack', {}, 'Select an extracted subtitle to unlock translation.')
+        },
+        status: {
+            queued: t('toolbox.embedded.status.queued', {}, 'queued'),
+            running: t('toolbox.embedded.status.running', {}, 'running'),
+            done: t('toolbox.embedded.status.done', {}, 'done'),
+            failed: t('toolbox.embedded.status.failed', {}, 'failed')
+        },
+        buttons: {
+            extracting: t('toolbox.embedded.buttons.extracting', {}, 'Extracting...')
+        }
     };
-    const formatLabel = (name, model) => {
-      const base = formatProviderName(name);
-      const modelLabel = model ? ` (${model})` : '';
-      return `${base}${modelLabel}`;
+    const translationContextLabel = linkedVideoDisplay || copy.step2.translationContextFallback;
+    const metaTop = [];
+    if (videoId) metaTop.push(t('toolbox.embedded.meta.videoId', { id: videoId }, `Video ID: ${videoId}`));
+    if (linkedTitle) metaTop.push(t('toolbox.embedded.meta.title', { title: linkedTitle }, `Title: ${linkedTitle}`));
+    if (videoId || filename || linkedTitle)
+        metaTop.push(
+            t('toolbox.embedded.meta.episode', { episode: episodeTag || '-' }, `Episode: ${episodeTag || '-'}`)
+        );
+    const metaFile = filename
+        ? t('toolbox.embedded.meta.file', { file: cleanDisplayName(filename) }, `File: ${cleanDisplayName(filename)}`)
+        : '';
+    const initialVideoTitle = escapeHtml(linkedVideoDisplay || copy.videoMeta.none);
+    const initialVideoSubtitle = buildLinkedMetaSubtitleHtml(metaTop.join(' | '), metaFile, copy.videoMeta.unavailable);
+    const initialTranslationContext = escapeHtml(
+        t(
+            'toolbox.embedded.step2.translationContext',
+            { label: translationContextLabel },
+            (copy.step2.translationContext || "You're translating subtitles for {label}").replace(
+                '{label}',
+                translationContextLabel
+            )
+        )
+    );
+    const modeHelperHtml = escapeHtml(copy.step1.modeHelper).replace(/\n/g, '<br>');
+    const step1Helper =
+        copy.step1.helper && copy.step1.helper !== 'toolbox.embedded.step1.helper' ? copy.step1.helper : '';
+    const step1HelperTip =
+        copy.step1.helperTip && copy.step1.helperTip !== 'toolbox.embedded.step1.helperTip' ? copy.step1.helperTip : '';
+    const hashAlertLines = [copy.step1.hashMismatchLine1, copy.step1.hashMismatchLine2].filter(Boolean);
+    const providerOptions = (() => {
+        const options = [];
+        const providers = config.providers || {};
+        const seen = new Set();
+        const resolveProviderEntry = (key) => {
+            const normalized = String(key || '')
+                .trim()
+                .toLowerCase();
+            const matchKey = Object.keys(providers || {}).find((k) => String(k).toLowerCase() === normalized);
+            return matchKey ? { key: matchKey, config: providers[matchKey] || {} } : null;
+        };
+        const formatLabel = (name, model) => {
+            const base = formatProviderName(name);
+            const modelLabel = model ? ` (${model})` : '';
+            return `${base}${modelLabel}`;
+        };
+        const effectiveGeminiModel = getEffectiveGeminiModel(config);
+        const geminiConfigured = Boolean(
+            effectiveGeminiModel || config.geminiKey || config.geminiApiKey || providers.gemini
+        );
+        const geminiEnabled = providers.gemini ? providers.gemini.enabled !== false : geminiConfigured;
+        const addIfEnabled = (key, label, model) => {
+            const norm = String(key || '')
+                .trim()
+                .toLowerCase();
+            if (!norm || seen.has(norm)) return;
+            let enabled = false;
+            if (norm === 'gemini') {
+                enabled = geminiEnabled;
+            } else {
+                const entry = resolveProviderEntry(norm);
+                enabled = entry?.config?.enabled === true;
+            }
+            if (!enabled) return;
+            seen.add(norm);
+            options.push({ key: norm, label: label || formatLabel(key, model), model: model || '' });
+        };
+        if (geminiEnabled) {
+            const geminiLabel = formatLabel('Gemini', effectiveGeminiModel || providers.gemini?.model || '');
+            addIfEnabled('gemini', geminiLabel, effectiveGeminiModel || providers.gemini?.model || '');
+        }
+        if (config.multiProviderEnabled && config.mainProvider) {
+            const entry = resolveProviderEntry(config.mainProvider);
+            const model =
+                entry?.config?.model || (config.mainProvider.toLowerCase() === 'gemini' ? effectiveGeminiModel : '');
+            addIfEnabled(config.mainProvider, `Main: ${formatLabel(config.mainProvider, model)}`, model);
+        }
+        if (config.secondaryProviderEnabled && config.secondaryProvider) {
+            const entry = resolveProviderEntry(config.secondaryProvider);
+            const model =
+                entry?.config?.model ||
+                (config.secondaryProvider.toLowerCase() === 'gemini' ? effectiveGeminiModel : '');
+            addIfEnabled(config.secondaryProvider, `Secondary: ${formatLabel(config.secondaryProvider, model)}`, model);
+        }
+        Object.keys(providers || {}).forEach((key) => {
+            const model = providers[key]?.model || '';
+            addIfEnabled(key, `Provider: ${formatLabel(key, model)}`, model);
+        });
+        return options;
+    })();
+    const parseCfCreds = (rawKey) => {
+        const cleaned = typeof rawKey === 'string' ? rawKey.trim() : '';
+        if (!cleaned) return { accountId: '', token: '' };
+        const delimiters = ['|', ':'];
+        for (const delim of delimiters) {
+            if (cleaned.includes(delim)) {
+                const [account, ...rest] = cleaned.split(delim);
+                return { accountId: (account || '').trim(), token: rest.join(delim).trim() };
+            }
+        }
+        return { accountId: '', token: cleaned };
     };
-    const effectiveGeminiModel = getEffectiveGeminiModel(config);
-    const geminiConfigured = Boolean(effectiveGeminiModel || config.geminiKey || config.geminiApiKey || providers.gemini);
-    const geminiEnabled = providers.gemini ? providers.gemini.enabled !== false : geminiConfigured;
-    const addIfEnabled = (key, label, model) => {
-      const norm = String(key || '').trim().toLowerCase();
-      if (!norm || seen.has(norm)) return;
-      let enabled = false;
-      if (norm === 'gemini') {
-        enabled = geminiEnabled;
-      } else {
-        const entry = resolveProviderEntry(norm);
-        enabled = entry?.config?.enabled === true;
-      }
-      if (!enabled) return;
-      seen.add(norm);
-      options.push({ key: norm, label: label || formatLabel(key, model), model: model || '' });
-    };
-    if (geminiEnabled) {
-      const geminiLabel = formatLabel('Gemini', effectiveGeminiModel || providers.gemini?.model || '');
-      addIfEnabled('gemini', geminiLabel, effectiveGeminiModel || providers.gemini?.model || '');
-    }
-    if (config.multiProviderEnabled && config.mainProvider) {
-      const entry = resolveProviderEntry(config.mainProvider);
-      const model = entry?.config?.model || (config.mainProvider.toLowerCase() === 'gemini' ? effectiveGeminiModel : '');
-      addIfEnabled(config.mainProvider, `Main: ${formatLabel(config.mainProvider, model)}`, model);
-    }
-    if (config.secondaryProviderEnabled && config.secondaryProvider) {
-      const entry = resolveProviderEntry(config.secondaryProvider);
-      const model = entry?.config?.model || (config.secondaryProvider.toLowerCase() === 'gemini' ? effectiveGeminiModel : '');
-      addIfEnabled(config.secondaryProvider, `Secondary: ${formatLabel(config.secondaryProvider, model)}`, model);
-    }
-    Object.keys(providers || {}).forEach(key => {
-      const model = providers[key]?.model || '';
-      addIfEnabled(key, `Provider: ${formatLabel(key, model)}`, model);
-    });
-    return options;
-  })();
-  const parseCfCreds = (rawKey) => {
-    const cleaned = typeof rawKey === 'string' ? rawKey.trim() : '';
-    if (!cleaned) return { accountId: '', token: '' };
-    const delimiters = ['|', ':'];
-    for (const delim of delimiters) {
-      if (cleaned.includes(delim)) {
-        const [account, ...rest] = cleaned.split(delim);
-        return { accountId: (account || '').trim(), token: rest.join(delim).trim() };
-      }
-    }
-    return { accountId: '', token: cleaned };
-  };
-  const cfKey = (config.cloudflareWorkersApiKey || '').toString();
-  const cfClient = (() => {
-    const creds = parseCfCreds(cfKey);
-    return creds.accountId && creds.token ? creds : null;
-  })();
-  const assemblyEnabled = Boolean(config.assemblyAiApiKey);
+    const cfKey = (config.cloudflareWorkersApiKey || '').toString();
+    const cfClient = (() => {
+        const creds = parseCfCreds(cfKey);
+        return creds.accountId && creds.token ? creds : null;
+    })();
+    const assemblyEnabled = Boolean(config.assemblyAiApiKey);
 
-  const bootstrap = {
-    configStr,
-    videoId,
-    filename,
-    videoHash,
-    targetLanguages,
-    sourceLanguages,
-    targetLanguageCodes,
-    languageMaps,
-    providerOptions,
-    defaults: {
-      translationWorkflow: 'xml',
-      sendTimestampsToAI: false,
-      translationPrompt: config.translationPrompt || '',
-      forceSRTOutput: config.forceSRTOutput === true,
-      assPassthroughEnabled: config.forceSRTOutput !== true && config.convertAssToVtt === false
-    },
-    links,
-    linkedTitle,
-    strings: {
-      translationContextTemplate: copy.step2.translationContext,
-      translationContextFallback: copy.step2.translationContextFallback,
-      reloadHints: {
-        normal: copy.step2.reloadHint,
-        manual: copy.step2.reloadHintManual
-      },
-      videoMeta: {
-        separator: metaSeparator,
-        waiting: copy.videoMeta.waiting,
-        none: copy.videoMeta.none,
-        unavailable: copy.videoMeta.unavailable,
-        title: t('toolbox.embedded.meta.title', { title: '{title}' }, 'Title: {title}'),
-        videoId: t('toolbox.embedded.meta.videoId', { id: '{id}' }, 'Video ID: {id}'),
-        episode: t('toolbox.embedded.meta.episode', { episode: '{episode}' }, 'Episode: {episode}'),
-        file: t('toolbox.embedded.meta.file', { file: '{file}' }, 'File: {file}')
-      },
-      statusLabels: copy.status,
-      buttons: {
-        extract: copy.step1.extractButton,
-        translate: copy.step2.translateButton,
-        extracting: copy.buttons.extracting
-      },
-      hashMismatch: {
-        inline: copy.step1.hashMismatchInline,
-        alertLines: hashAlertLines
-      },
-      locks: {
-        needExtraction: copy.locks.needExtraction,
-        needTrack: copy.locks.needTrack
-      },
-      errors: {
-        metaFetchFailed: t('toolbox.errors.metaFetchFailed', {}, 'Failed to fetch metadata')
-      }
-    }
-  };
+    const bootstrap = {
+        configStr,
+        videoId,
+        filename,
+        videoHash,
+        targetLanguages,
+        sourceLanguages,
+        targetLanguageCodes,
+        languageMaps,
+        providerOptions,
+        defaults: {
+            translationWorkflow: 'xml',
+            sendTimestampsToAI: false,
+            translationPrompt: config.translationPrompt || '',
+            forceSRTOutput: config.forceSRTOutput === true,
+            assPassthroughEnabled: config.forceSRTOutput !== true && config.convertAssToVtt === false
+        },
+        links,
+        linkedTitle,
+        strings: {
+            translationContextTemplate: copy.step2.translationContext,
+            translationContextFallback: copy.step2.translationContextFallback,
+            reloadHints: {
+                normal: copy.step2.reloadHint,
+                manual: copy.step2.reloadHintManual
+            },
+            videoMeta: {
+                separator: metaSeparator,
+                waiting: copy.videoMeta.waiting,
+                none: copy.videoMeta.none,
+                unavailable: copy.videoMeta.unavailable,
+                title: t('toolbox.embedded.meta.title', { title: '{title}' }, 'Title: {title}'),
+                videoId: t('toolbox.embedded.meta.videoId', { id: '{id}' }, 'Video ID: {id}'),
+                episode: t('toolbox.embedded.meta.episode', { episode: '{episode}' }, 'Episode: {episode}'),
+                file: t('toolbox.embedded.meta.file', { file: '{file}' }, 'File: {file}')
+            },
+            statusLabels: copy.status,
+            buttons: {
+                extract: copy.step1.extractButton,
+                translate: copy.step2.translateButton,
+                extracting: copy.buttons.extracting
+            },
+            hashMismatch: {
+                inline: copy.step1.hashMismatchInline,
+                alertLines: hashAlertLines
+            },
+            locks: {
+                needExtraction: copy.locks.needExtraction,
+                needTrack: copy.locks.needTrack
+            },
+            errors: {
+                metaFetchFailed: t('toolbox.errors.metaFetchFailed', {}, 'Failed to fetch metadata')
+            }
+        }
+    };
 
-  return `
+    return `
 <!DOCTYPE html>
 <html lang="${resolveUiLang(config)}" data-third-theme="true-dark">
 <head>
@@ -3143,12 +3269,12 @@ async function generateEmbeddedSubtitlePage(configStr, videoId, filename) {
       <div class="modal-content">
         <h3>${escapeHtml(copy.instructions.extractionTitle)}</h3>
         <ol>
-          ${copy.instructions.extractionSteps.map(step => `<li>${escapeHtml(step)}</li>`).join('')}
+          ${copy.instructions.extractionSteps.map((step) => `<li>${escapeHtml(step)}</li>`).join('')}
         </ol>
 
         <h3>${escapeHtml(copy.instructions.translationTitle)}</h3>
         <ol>
-          ${copy.instructions.translationSteps.map(step => `<li>${escapeHtml(step)}</li>`).join('')}
+          ${copy.instructions.translationSteps.map((step) => `<li>${escapeHtml(step)}</li>`).join('')}
         </ol>
 
         <p>${escapeHtml(copy.instructions.download)}</p>
@@ -3219,11 +3345,15 @@ async function generateEmbeddedSubtitlePage(configStr, videoId, filename) {
               <span class="step-chip">${escapeHtml(copy.step1.chip)}</span>
               <h3>${escapeHtml(copy.step1.title)}</h3>
             </div>
-            ${(step1Helper || step1HelperTip) ? `
+            ${
+                step1Helper || step1HelperTip
+                    ? `
             <div class="step-helper-block">
               ${step1Helper ? `<p class="muted step-helper">${escapeHtml(step1Helper)}</p>` : ''}
               ${step1HelperTip ? `<p class="muted step-helper-tip">${escapeHtml(step1HelperTip)}</p>` : ''}
-            </div>` : ''}
+            </div>`
+                    : ''
+            }
           </div>
         </div>
         <div class="step-stack">
@@ -6051,2593 +6181,3103 @@ async function generateEmbeddedSubtitlePage(configStr, videoId, filename) {
 }
 
 async function generateAutoSubtitlePage(configStr, videoId, filename, config = {}, streamUrl = '') {
-  const links = buildToolLinks(configStr, videoId, filename);
-  const devMode = config.devMode === true;
-  const t = getTranslator(config?.uiLanguage || 'en');
-  const targetLanguages = Array.from(new Set([...(config.targetLanguages || []), ...(config.sourceLanguages || [])]));
-  const targetOptions = targetLanguages.length
-    ? targetLanguages.map(code => `<option value="${escapeHtml(code)}">${escapeHtml(getLanguageName(code) || code)}</option>`).join('')
-    : `<option value="">${escapeHtml(t('toolbox.autoSubs.options.addTargets', {}, 'Add target languages in Configure'))}</option>`;
-  const sourceLanguageOptions = allLanguages.map(lang => {
-    const label = formatLanguageLabel(lang.code, lang.name);
-    return `<option value="${escapeHtml(lang.code)}">${escapeHtml(label)}</option>`;
-  }).join('');
-  const videoHash = deriveVideoHash(filename, videoId);
-  const urlSchemePattern = new RegExp('^[a-z][a-z0-9+.-]*://', 'i');
-  const isLikelyUrl = (val) => urlSchemePattern.test(val || '');
-  const initialStreamUrl = isLikelyUrl(streamUrl) ? streamUrl : (isLikelyUrl(filename) ? filename : '');
-  const languageMaps = buildLanguageLookupMaps();
-  const localeBootstrap = buildClientBootstrap(loadLocale(config?.uiLanguage || 'en'));
-  const subtitleMenuTargets = targetLanguages.map(code => ({
-    code,
-    name: getLanguageName(code) || code
-  }));
-  const parsedVideo = parseStremioId(videoId);
-  const episodeTag = formatEpisodeTag(parsedVideo);
-  const linkedTitle = await fetchLinkedTitleServer(videoId);
-  const parseCfCreds = (rawKey) => {
-    const cleaned = typeof rawKey === 'string' ? rawKey.trim() : '';
-    if (!cleaned) return { accountId: '', token: '' };
-    const delimiters = ['|', ':'];
-    for (const delim of delimiters) {
-      if (cleaned.includes(delim)) {
-        const [account, ...rest] = cleaned.split(delim);
-        return { accountId: (account || '').trim(), token: rest.join(delim).trim() };
-      }
-    }
-    return { accountId: '', token: cleaned };
-  };
-  const providerOptions = (() => {
-    const options = [];
-    const providers = config.providers || {};
-    const seen = new Set();
-    const resolveProviderEntry = (key) => {
-      const normalized = String(key || '').trim().toLowerCase();
-      const matchKey = Object.keys(providers || {}).find(k => String(k).toLowerCase() === normalized);
-      return matchKey ? { key: matchKey, config: providers[matchKey] || {} } : null;
-    };
-    const formatLabel = (name, model) => {
-      const base = formatProviderName(name);
-      const modelLabel = model ? ` (${model})` : '';
-      return `${base}${modelLabel}`;
-    };
-    const effectiveGeminiModel = getEffectiveGeminiModel(config);
-    const geminiConfigured = Boolean(effectiveGeminiModel || config.geminiKey || config.geminiApiKey || providers.gemini);
-    const geminiEnabled = providers.gemini ? providers.gemini.enabled !== false : geminiConfigured;
-    const addIfEnabled = (key, label, model) => {
-      const norm = String(key || '').trim().toLowerCase();
-      if (!norm || seen.has(norm)) return;
-      let enabled = false;
-      if (norm === 'gemini') {
-        enabled = geminiEnabled;
-      } else {
-        const entry = resolveProviderEntry(norm);
-        enabled = entry?.config?.enabled === true;
-      }
-      if (!enabled) return;
-      seen.add(norm);
-      options.push({ key: norm, label: label || formatLabel(key, model) });
-    };
-    if (geminiEnabled) {
-      const geminiLabel = formatLabel('Gemini', effectiveGeminiModel || providers.gemini?.model || '');
-      addIfEnabled('gemini', geminiLabel, effectiveGeminiModel || providers.gemini?.model || '');
-    }
-    if (config.multiProviderEnabled && config.mainProvider) {
-      const entry = resolveProviderEntry(config.mainProvider);
-      const model = entry?.config?.model || (config.mainProvider.toLowerCase() === 'gemini' ? effectiveGeminiModel : '');
-      addIfEnabled(config.mainProvider, `Main: ${formatLabel(config.mainProvider, model)}`, model);
-    }
-    if (config.secondaryProviderEnabled && config.secondaryProvider) {
-      const entry = resolveProviderEntry(config.secondaryProvider);
-      const model = entry?.config?.model || (config.secondaryProvider.toLowerCase() === 'gemini' ? effectiveGeminiModel : '');
-      addIfEnabled(config.secondaryProvider, `Secondary: ${formatLabel(config.secondaryProvider, model)}`, model);
-    }
-    Object.keys(providers || {}).forEach(key => {
-      const model = providers[key]?.model || '';
-      addIfEnabled(key, `Provider: ${formatLabel(key, model)}`, model);
-    });
-    return options;
-  })();
-  const cfKey = (config.cloudflareWorkersApiKey || '').toString();
-  const cfClient = (() => {
-    const creds = parseCfCreds(cfKey);
-    return creds.accountId && creds.token ? creds : null;
-  })();
-  const cloudflareEnabled = Boolean(cfClient);
-  // AssemblyAI mode should only be selectable when a key is configured
-  const assemblyEnabled = Boolean(config.providers?.assemblyai?.apiKey || config.assemblyAiApiKey);
-  const assemblyApiKey = config.providers?.assemblyai?.apiKey || config.assemblyAiApiKey || '';
-
-  function autoSubsRuntime(copy, selectStreamFilename) {
-    (function () {
-      const els = {
-        startBtn: document.getElementById('startAutoSubs'),
-        status: document.getElementById('statusText'),
-        progress: document.getElementById('progressFill'),
-        log: document.getElementById('logArea'),
-        streamUrl: document.getElementById('streamUrl'),
-        hashStatus: document.getElementById('hashStatus'),
-        hashMismatchAlert: document.getElementById('auto-hash-mismatch'),
-        modeSelect: document.getElementById('autoSubsMode'),
-        modeDetails: document.getElementById('modeDetails'),
-        sourceLang: document.getElementById('detectedLang'),
-        targetLang: document.getElementById('targetLang'),
-        model: document.getElementById('whisperModel'),
-        assemblyModel: document.getElementById('assemblySpeechModel'),
-        translateToggle: document.getElementById('translateOutput'),
-        targetLangWrapper: document.getElementById('targetLangWrapper'),
-        translationSettings: document.getElementById('autoTranslationSettings'),
-        translationSettingsToggle: document.getElementById('autoTranslationSettingsToggle'),
-        translationProvider: document.getElementById('autoTranslationProvider'),
-        srtPreview: document.getElementById('srtPreview'),
-        dlSrt: document.getElementById('downloadSrt'),
-        dlRaw: document.getElementById('downloadRawTranscript'),
-        translations: document.getElementById('translationDownloads'),
-        stremioDeliveryWarning: document.getElementById('stremioDeliveryWarning'),
-        videoMetaTitle: document.getElementById('video-meta-title'),
-        videoMetaSubtitle: document.getElementById('video-meta-subtitle'),
-        extDot: document.getElementById('ext-dot'),
-        extLabel: document.getElementById('ext-label'),
-        extStatus: document.getElementById('ext-status'),
-        xsyncVersionWarning: document.getElementById('xsync-version-warning'),
-        hashBadge: document.getElementById('hashBadge'),
-        hashBadgeDot: document.getElementById('hashBadgeDot'),
-        hashBadgeValue: document.getElementById('hashBadgeValue'),
-        continueBtn: document.getElementById('autoContinue'),
-        step2ContinueBtn: document.getElementById('autoStep2Continue'),
-        step2Card: document.getElementById('autoStep2Card'),
-
-        step3Card: document.getElementById('autoStep3Card'),
-        step4Card: document.getElementById('autoStep4Card'),
-        assemblySendFullVideo: document.getElementById('assemblySendFullVideo'),
-        assemblyOptions: document.getElementById('assemblyOptions'),
-        assemblyModeHelper: document.getElementById('assemblyModeHelper'),
-        decodeBadge: document.getElementById('decodeBadge'),
-        decodeBadgeDot: document.getElementById('decodeBadgeDot'),
-        decodeBadgeValue: document.getElementById('decodeBadgeValue'),
-        audioTrackPrompt: document.getElementById('autoTrackPrompt'),
-        audioTrackSelect: document.getElementById('autoAudioTrack'),
-        audioTrackContinue: document.getElementById('autoTrackContinue'),
-        linkedStreamRefresh: document.getElementById('linkedStreamRefresh')
-      };
-      const stepPills = {
-        fetch: document.getElementById('stepFetch'),
-        transcribe: document.getElementById('stepTranscribe'),
-        align: document.getElementById('stepAlign'),
-        translate: document.getElementById('stepTranslate'),
-        deliver: document.getElementById('stepDeliver')
-      };
-      const startBtnLabel = els.startBtn
-        ? els.startBtn.textContent
-        : tt('toolbox.autoSubs.actions.start', {}, copy.steps.start || 'Start');
-      const state = {
-        extensionReady: false,
-        cacheBlocked: false,
-        streamHashInfo: null,
-        streamHashCandidates: [],
-        decodeStatus: 'pending',
-        autoSubsInFlight: false,
-        step1Confirmed: false,
-        step2Confirmed: false,
-        autoSubsCompleted: false,
-        autoSubsMessageId: null,
-        autoSubsResolver: null,
-        autoSubsReject: null,
-        autoSubsTimer: null,
-        lastAutoSubStatus: null,
-        lastDebugLog: null,
-        serverLogKeys: new Set(),
-        lastServerLogTs: 0,
-        liveLogSource: null,
-        liveLogPoll: null,
-        liveLogJobId: null,
-        audioTracks: [],
-        selectedAudioTrack: null,
-        awaitingTrackChoice: false,
-        rawTranscript: null,
-        originalOutput: null,
-        translationOutputs: []
-      };
-      const AUTO_SUB_TIMEOUT_MS = 15 * 60 * 1000;
-      const escapeHtmlClient = (value) => {
-        if (value === undefined || value === null) return '';
-        return String(value)
-          .replace(/&/g, '&amp;')
-          .replace(/</g, '&lt;')
-          .replace(/>/g, '&gt;')
-          .replace(/\"/g, '&quot;')
-          .replace(/'/g, '&#39;');
-      };
-      function buildMetaSubtitleHtml(topLine, fileLine, fallbackLine) {
-        const parts = [];
-        if (topLine) parts.push(escapeHtmlClient(topLine));
-        if (fileLine) parts.push('<strong class="meta-file-line">' + escapeHtmlClient(fileLine) + '</strong>');
-        if (parts.length) return parts.join('<br>');
-        return escapeHtmlClient(fallbackLine || '');
-      }
-      const HASH_MISMATCH_LINES = [
-        tt('toolbox.embedded.step1.hashMismatchLine1', {}, 'Hashes must match (Linked Stream and Stream URL) before extraction can start.')
-      ];
-      function primeHashMismatchSpace() {
-        const alertEl = els.hashMismatchAlert;
-        if (!alertEl) return;
-        const placeholder = buildHashMismatchAlert('0'.repeat(64), '0'.repeat(64));
-        const prevHtml = alertEl.innerHTML;
-        const prevVisibility = alertEl.style.visibility;
-        alertEl.innerHTML = placeholder;
-        alertEl.classList.add('is-visible');
-        alertEl.style.visibility = 'hidden';
-        const { height } = alertEl.getBoundingClientRect();
-        if (height) {
-          alertEl.style.setProperty('--hash-alert-min-height', Math.ceil(height) + 'px');
-        }
-        alertEl.classList.remove('is-visible');
-        alertEl.style.visibility = prevVisibility;
-        alertEl.innerHTML = prevHtml;
-        alertEl.setAttribute('aria-hidden', 'true');
-      }
-      function buildHashMismatchAlert(linkedHash, streamHash) {
-        const safeLinked = escapeHtmlClient(linkedHash || 'unknown');
-        const safeStream = escapeHtmlClient(streamHash || 'unknown');
-        const head = 'Hash mismatch detected: linked stream (' + safeLinked + ') vs pasted URL (' + safeStream + ').';
-        const body = HASH_MISMATCH_LINES
-          .filter(Boolean)
-          .map(line => '<div>' + escapeHtmlClient(line) + '</div>')
-          .join('');
-        return '<div class="alert-head">' + head + '</div>' + (body ? '<div class="alert-body">' + body + '</div>' : '');
-      }
-      function setHashMismatchAlert(message) {
-        if (!els.hashMismatchAlert) return;
-        if (!message) {
-          els.hashMismatchAlert.classList.remove('is-visible');
-          els.hashMismatchAlert.innerHTML = '';
-          els.hashMismatchAlert.setAttribute('aria-hidden', 'true');
-          return;
-        }
-        els.hashMismatchAlert.innerHTML = message;
-        els.hashMismatchAlert.classList.add('is-visible');
-        els.hashMismatchAlert.removeAttribute('aria-hidden');
-      }
-      const runtimeCopy = (typeof copy !== 'undefined' && copy) ? copy : null;
-      const lockReasons = {
-        needContinue: (runtimeCopy?.locks && runtimeCopy.locks.needContinue) || tt('toolbox.autoSubs.locks.needContinue', {}, 'Click Continue to unlock the next steps.'),
-        needTarget: (runtimeCopy?.locks && runtimeCopy.locks.needTarget) || tt('toolbox.autoSubs.locks.needTarget', {}, 'Select a target or disable translation to unlock Run.'),
-        needStep2: (runtimeCopy?.locks && runtimeCopy.locks.needStep2) || tt('toolbox.autoSubs.locks.needStep2', {}, 'Complete Step 2 and press Continue to proceed.'),
-        needRun: (runtimeCopy?.locks && runtimeCopy.locks.needRun) || tt('toolbox.autoSubs.locks.needRun', {}, 'Run auto-subs to unlock downloads.')
-      };
-      const decodeLabels = {
-        pending: runtimeCopy?.badges?.pending || tt('toolbox.autoSubs.badges.pending', {}, 'WAITING'),
-        working: runtimeCopy?.badges?.decodeWorking || tt('toolbox.autoSubs.badges.decodeWorking', {}, 'FFmpeg decoding'),
-        ready: tt('toolbox.autoSubs.badges.decodeReady', {}, 'OK'),
-        error: runtimeCopy?.badges?.decodeError || tt('toolbox.autoSubs.badges.decodeError', {}, 'Decode failed')
-      };
-      function setDecodeBadge(tone, text, pulsing = false) {
-        if (els.decodeBadge) {
-          els.decodeBadge.classList.remove('check', 'warn', 'danger');
-          const toneClass = tone === 'ok' ? 'check' : tone === 'bad' ? 'danger' : 'warn';
-          els.decodeBadge.classList.add(toneClass);
-        }
-        if (els.decodeBadgeDot) {
-          const pulseClass = pulsing ? ' pulse' : '';
-          els.decodeBadgeDot.className = 'status-dot ' + (tone || 'warn') + pulseClass;
-        }
-        if (els.decodeBadgeValue) {
-          els.decodeBadgeValue.textContent = text || decodeLabels.pending;
-        }
-      }
-      function resetDecodeBadge() {
-        state.decodeStatus = 'pending';
-        setDecodeBadge('warn', decodeLabels.pending, false);
-      }
-      function markDecodeWorking(text) {
-        if (state.decodeStatus === 'done' || state.decodeStatus === 'error') return;
-        state.decodeStatus = 'working';
-        setDecodeBadge('warn', text || decodeLabels.working, true);
-      }
-      function markDecodeDone(text) {
-        state.decodeStatus = 'done';
-        setDecodeBadge('ok', text || decodeLabels.ready, false);
-      }
-      function markDecodeError(text) {
-        state.decodeStatus = 'error';
-        setDecodeBadge('bad', text || decodeLabels.error, false);
-      }
-      function maybeUpdateDecodeFromLog(message, tone = '') {
-        if (!state.autoSubsInFlight) return;
-        const text = (message || '').toString();
-        if (!text) return;
-        const lower = text.toLowerCase();
-        const toneLower = (tone || '').toString().toLowerCase();
-        const successHit =
-          lower.includes('audio extraction complete') ||
-          lower.includes('audio ready') ||
-          lower.includes('ffmpeg produced') ||
-          lower.includes('ffmpeg demux: completed') ||
-          lower.includes('demux: completed');
-        if (successHit) {
-          markDecodeDone(runtimeCopy?.badges?.decodeReady || decodeLabels.ready);
-          return;
-        }
-        const errorHit =
-          lower.includes('audio extraction failed') ||
-          (lower.includes('ffmpeg') && (lower.includes('fail') || lower.includes('error'))) ||
-          (lower.includes('decode') && lower.includes('audio') && lower.includes('fail'));
-        if (errorHit || toneLower === 'error') {
-          markDecodeError(runtimeCopy?.badges?.decodeError || decodeLabels.error);
-          return;
-        }
-        const workingHit =
-          lower.includes('ffmpeg') ||
-          lower.includes('audio extraction') ||
-          lower.includes('audio windows') ||
-          lower.includes('demux') ||
-          (lower.includes('decode') && lower.includes('audio'));
-        if (workingHit) {
-          markDecodeWorking(runtimeCopy?.badges?.decodeWorking || decodeLabels.working);
-        }
-      }
-      function lockSection(el, label) {
-        if (!el) return;
-        if (label) el.setAttribute('data-locked-label', label);
-        el.classList.add('locked');
-        el.setAttribute('aria-disabled', 'true');
-        el.inert = true;
-      }
-      function unlockSection(el) {
-        if (!el) return;
-        el.classList.remove('locked');
-        el.removeAttribute('aria-disabled');
-        el.inert = false;
-        el.removeAttribute('inert');
-      }
-      function isTranslationReady() {
-        const translateEnabled = els.translateToggle?.checked === true;
-        const hasTarget = !!(els.targetLang && (els.targetLang.value || '').trim());
-        return !translateEnabled || hasTarget;
-      }
-      function isStep3Ready() {
-        return state.step1Confirmed && state.step2Confirmed && isTranslationReady();
-      }
-      function applyStartDisabled(ready) {
-        if (!els.startBtn) return;
-        const allow = ready && !state.autoSubsInFlight;
-        els.startBtn.disabled = !allow;
-      }
-      function refreshStepLocks(reason) {
-        const needContinueLabel = reason || lockReasons.needContinue;
-        const needStep2Label = lockReasons.needStep2 || needContinueLabel;
-        const needRunLabel = lockReasons.needRun || needContinueLabel;
-        if (!state.step1Confirmed) {
-          lockSection(els.step2Card, needContinueLabel);
-          lockSection(els.step3Card, needContinueLabel);
-          lockSection(els.step4Card, needContinueLabel);
-          applyStartDisabled(false);
-          return;
-        }
-        unlockSection(els.step2Card);
-        if (!state.step2Confirmed) {
-          lockSection(els.step3Card, needStep2Label);
-          lockSection(els.step4Card, needStep2Label);
-          applyStartDisabled(false);
-          return;
-        }
-        const step3Ready = isStep3Ready();
-        if (step3Ready) {
-          unlockSection(els.step3Card);
-        } else {
-          lockSection(els.step3Card, lockReasons.needTarget);
-        }
-        if (state.autoSubsCompleted) {
-          unlockSection(els.step4Card);
-        } else {
-          const lockLabel = step3Ready ? needRunLabel : lockReasons.needTarget;
-          lockSection(els.step4Card, lockLabel);
-        }
-        applyStartDisabled(step3Ready);
-      }
-      function resetStepFlow(reason) {
-        state.step1Confirmed = false;
-        state.step2Confirmed = false;
-        state.autoSubsCompleted = false;
-        resetOutputs();
-        resetPills();
-        refreshStepLocks(reason || lockReasons.needContinue);
-      }
-      function renderAudioTrackOptions(tracks = [], preferredIdx = null, extractedIdx = null) {
-        if (!els.audioTrackSelect) return;
-        const options = Array.isArray(tracks) ? tracks : [];
-        els.audioTrackSelect.innerHTML = '';
-        options.forEach((track, idx) => {
-          const option = document.createElement('option');
-          const trackId = Number.isInteger(track?.trackNumber) ? track.trackNumber : (Number.isInteger(track?.index) ? track.index + 1 : idx + 1);
-          const langLabel = (track?.language || 'und').toString().toUpperCase();
-          const name = track?.name ? ` - ${track.name}` : '';
-          const codec = track?.codec ? ` [${track.codec}]` : '';
-          option.value = Number.isInteger(track?.index) ? track.index : idx;
-          option.textContent = `Track ${trackId} (${langLabel})${name}${codec}`;
-          els.audioTrackSelect.appendChild(option);
-        });
-        const desired = Number.isInteger(preferredIdx) ? preferredIdx : (Number.isInteger(extractedIdx) ? extractedIdx : null);
-        if (desired !== null) {
-          els.audioTrackSelect.value = String(desired);
-        } else if (!els.audioTrackSelect.value && options.length) {
-          const first = options[0];
-          const fallbackVal = Number.isInteger(first?.index) ? first.index : 0;
-          els.audioTrackSelect.value = String(fallbackVal);
-        }
-      }
-      function showAudioTrackPrompt(tracks = [], preferredIdx = null, extractedIdx = null) {
-        if (!els.audioTrackPrompt || !els.audioTrackSelect) return;
-        state.awaitingTrackChoice = true;
-        state.audioTracks = Array.isArray(tracks) ? tracks : [];
-        const desiredTrack = Number.isInteger(preferredIdx) ? preferredIdx : (Number.isInteger(extractedIdx) ? extractedIdx : null);
-        state.selectedAudioTrack = desiredTrack !== null ? desiredTrack : 0;
-        const helper = document.getElementById('autoTrackHelper');
-        if (helper) {
-          helper.textContent = runtimeCopy?.steps?.audioTrackHelper || 'Multiple audio tracks detected. Choose one, then continue.';
-        }
-        renderAudioTrackOptions(state.audioTracks, preferredIdx, extractedIdx);
-        els.audioTrackPrompt.classList.add('show');
-        if (els.audioTrackContinue) {
-          els.audioTrackContinue.disabled = false;
-        }
-        pauseAutoSubTimeout();
-      }
-      function hideAudioTrackPrompt() {
-        state.awaitingTrackChoice = false;
-        state.audioTracks = [];
-        state.selectedAudioTrack = null;
-        if (els.audioTrackPrompt) {
-          els.audioTrackPrompt.classList.remove('show');
-        }
-        if (els.audioTrackContinue) {
-          els.audioTrackContinue.disabled = false;
-        }
-      }
-      let videoMetaRequestId = 0;
-      const linkedTitleCache = new Map();
-      const urlSchemePattern = new RegExp('^[a-z][a-z0-9+.-]*://', 'i');
-      const isLikelyStreamUrl = (val) => urlSchemePattern.test(val || '');
-      const bootstrapStreamUrl = BOOTSTRAP.streamUrl || '';
-      const fallbackStreamUrl = !bootstrapStreamUrl && isLikelyStreamUrl(BOOTSTRAP.filename) ? BOOTSTRAP.filename : '';
-      const initialStreamUrl = bootstrapStreamUrl || fallbackStreamUrl;
-      if (els.streamUrl && initialStreamUrl) {
-        els.streamUrl.value = initialStreamUrl;
-      }
-
-      function md5hex(str) {
-        function rotateLeft(lValue, iShiftBits) { return (lValue << iShiftBits) | (lValue >>> (32 - iShiftBits)); }
-        function addUnsigned(lX, lY) {
-          const lX4 = lX & 0x40000000;
-          const lY4 = lY & 0x40000000;
-          const lX8 = lX & 0x80000000;
-          const lY8 = lY & 0x80000000;
-          const lResult = (lX & 0x3FFFFFFF) + (lY & 0x3FFFFFFF);
-          if (lX4 & lY4) return lResult ^ 0x80000000 ^ lX8 ^ lY8;
-          if (lX4 | lY4) {
-            if (lResult & 0x40000000) return lResult ^ 0xC0000000 ^ lX8 ^ lY8;
-            return lResult ^ 0x40000000 ^ lX8 ^ lY8;
-          }
-          return lResult ^ lX8 ^ lY8;
-        }
-        function F(x, y, z) { return (x & y) | (~x & z); }
-        function G(x, y, z) { return (x & z) | (y & ~z); }
-        function H(x, y, z) { return x ^ y ^ z; }
-        function I(x, y, z) { return y ^ (x | ~z); }
-        function FF(a, b, c, d, x, s, ac) { a = addUnsigned(a, addUnsigned(addUnsigned(F(b, c, d), x), ac)); return addUnsigned(rotateLeft(a, s), b); }
-        function GG(a, b, c, d, x, s, ac) { a = addUnsigned(a, addUnsigned(addUnsigned(G(b, c, d), x), ac)); return addUnsigned(rotateLeft(a, s), b); }
-        function HH(a, b, c, d, x, s, ac) { a = addUnsigned(a, addUnsigned(addUnsigned(H(b, c, d), x), ac)); return addUnsigned(rotateLeft(a, s), b); }
-        function II(a, b, c, d, x, s, ac) { a = addUnsigned(a, addUnsigned(addUnsigned(I(b, c, d), x), ac)); return addUnsigned(rotateLeft(a, s), b); }
-        function convertToWordArray(strVal) {
-          const lWordCount = [];
-          let lMessageLength = strVal.length;
-          let lNumberOfWordsTempOne = lMessageLength + 8;
-          const lNumberOfWordsTempTwo = (lNumberOfWordsTempOne - (lNumberOfWordsTempOne % 64)) / 64;
-          const lNumberOfWords = (lNumberOfWordsTempTwo + 1) * 16;
-          for (let i = 0; i < lNumberOfWords; i++) lWordCount[i] = 0;
-          let lBytePosition = 0;
-          let lByteCount = 0;
-          while (lByteCount < lMessageLength) {
-            const lWordCountIndex = (lByteCount - (lByteCount % 4)) / 4;
-            lBytePosition = (lByteCount % 4) * 8;
-            lWordCount[lWordCountIndex] |= strVal.charCodeAt(lByteCount) << lBytePosition;
-            lByteCount++;
-          }
-          const lWordCountIndex = (lByteCount - (lByteCount % 4)) / 4;
-          lBytePosition = (lByteCount % 4) * 8;
-          lWordCount[lWordCountIndex] |= 0x80 << lBytePosition;
-          lWordCount[lNumberOfWords - 2] = lMessageLength << 3;
-          lWordCount[lNumberOfWords - 1] = lMessageLength >>> 29;
-          return lWordCount;
-        }
-        function wordToHex(lValue) {
-          let wordToHexValue = '';
-          for (let lCount = 0; lCount <= 3; lCount++) {
-            const lByte = (lValue >>> (lCount * 8)) & 255;
-            const wordToHexValueTemp = '0' + lByte.toString(16);
-            wordToHexValue += wordToHexValueTemp.substr(wordToHexValueTemp.length - 2, 2);
-          }
-          return wordToHexValue;
-        }
-        function utf8Encode(string) {
-          string = string.replace(/\\r\\n/g, '\\n');
-          let utftext = '';
-          for (let n = 0; n < string.length; n++) {
-            const c = string.charCodeAt(n);
-            if (c < 128) utftext += String.fromCharCode(c);
-            else if (c < 2048) {
-              utftext += String.fromCharCode((c >> 6) | 192);
-              utftext += String.fromCharCode((c & 63) | 128);
-            } else {
-              utftext += String.fromCharCode((c >> 12) | 224);
-              utftext += String.fromCharCode(((c >> 6) & 63) | 128);
-              utftext += String.fromCharCode((c & 63) | 128);
+    const links = buildToolLinks(configStr, videoId, filename);
+    const devMode = config.devMode === true;
+    const t = getTranslator(config?.uiLanguage || 'en');
+    const targetLanguages = Array.from(new Set([...(config.targetLanguages || []), ...(config.sourceLanguages || [])]));
+    const targetOptions = targetLanguages.length
+        ? targetLanguages
+              .map(
+                  (code) => `<option value="${escapeHtml(code)}">${escapeHtml(getLanguageName(code) || code)}</option>`
+              )
+              .join('')
+        : `<option value="">${escapeHtml(t('toolbox.autoSubs.options.addTargets', {}, 'Add target languages in Configure'))}</option>`;
+    const sourceLanguageOptions = allLanguages
+        .map((lang) => {
+            const label = formatLanguageLabel(lang.code, lang.name);
+            return `<option value="${escapeHtml(lang.code)}">${escapeHtml(label)}</option>`;
+        })
+        .join('');
+    const videoHash = deriveVideoHash(filename, videoId);
+    const urlSchemePattern = new RegExp('^[a-z][a-z0-9+.-]*://', 'i');
+    const isLikelyUrl = (val) => urlSchemePattern.test(val || '');
+    const initialStreamUrl = isLikelyUrl(streamUrl) ? streamUrl : isLikelyUrl(filename) ? filename : '';
+    const languageMaps = buildLanguageLookupMaps();
+    const localeBootstrap = buildClientBootstrap(loadLocale(config?.uiLanguage || 'en'));
+    const subtitleMenuTargets = targetLanguages.map((code) => ({
+        code,
+        name: getLanguageName(code) || code
+    }));
+    const parsedVideo = parseStremioId(videoId);
+    const episodeTag = formatEpisodeTag(parsedVideo);
+    const linkedTitle = await fetchLinkedTitleServer(videoId);
+    const parseCfCreds = (rawKey) => {
+        const cleaned = typeof rawKey === 'string' ? rawKey.trim() : '';
+        if (!cleaned) return { accountId: '', token: '' };
+        const delimiters = ['|', ':'];
+        for (const delim of delimiters) {
+            if (cleaned.includes(delim)) {
+                const [account, ...rest] = cleaned.split(delim);
+                return { accountId: (account || '').trim(), token: rest.join(delim).trim() };
             }
-          }
-          return utftext;
         }
-        let x = [];
-        let k, AA, BB, CC, DD, a, b, c, d;
-        const S11 = 7, S12 = 12, S13 = 17, S14 = 22;
-        const S21 = 5, S22 = 9, S23 = 14, S24 = 20;
-        const S31 = 4, S32 = 11, S33 = 16, S34 = 23;
-        const S41 = 6, S42 = 10, S43 = 15, S44 = 21;
-        str = utf8Encode(str);
-        x = convertToWordArray(str);
-        a = 0x67452301; b = 0xEFCDAB89; c = 0x98BADCFE; d = 0x10325476;
-        for (k = 0; k < x.length; k += 16) {
-          AA = a; BB = b; CC = c; DD = d;
-          a = FF(a, b, c, d, x[k + 0], S11, 0xD76AA478);
-          d = FF(d, a, b, c, x[k + 1], S12, 0xE8C7B756);
-          c = FF(c, d, a, b, x[k + 2], S13, 0x242070DB);
-          b = FF(b, c, d, a, x[k + 3], S14, 0xC1BDCEEE);
-          a = FF(a, b, c, d, x[k + 4], S11, 0xF57C0FAF);
-          d = FF(d, a, b, c, x[k + 5], S12, 0x4787C62A);
-          c = FF(c, d, a, b, x[k + 6], S13, 0xA8304613);
-          b = FF(b, c, d, a, x[k + 7], S14, 0xFD469501);
-          a = FF(a, b, c, d, x[k + 8], S11, 0x698098D8);
-          d = FF(d, a, b, c, x[k + 9], S12, 0x8B44F7AF);
-          c = FF(c, d, a, b, x[k + 10], S13, 0xFFFF5BB1);
-          b = FF(b, c, d, a, x[k + 11], S14, 0x895CD7BE);
-          a = FF(a, b, c, d, x[k + 12], S11, 0x6B901122);
-          d = FF(d, a, b, c, x[k + 13], S12, 0xFD987193);
-          c = FF(c, d, a, b, x[k + 14], S13, 0xA679438E);
-          b = FF(b, c, d, a, x[k + 15], S14, 0x49B40821);
-          a = GG(a, b, c, d, x[k + 1], S21, 0xF61E2562);
-          d = GG(d, a, b, c, x[k + 6], S22, 0xC040B340);
-          c = GG(c, d, a, b, x[k + 11], S23, 0x265E5A51);
-          b = GG(b, c, d, a, x[k + 0], S24, 0xE9B6C7AA);
-          a = GG(a, b, c, d, x[k + 5], S21, 0xD62F105D);
-          d = GG(d, a, b, c, x[k + 10], S22, 0x02441453);
-          c = GG(c, d, a, b, x[k + 15], S23, 0xD8A1E681);
-          b = GG(b, c, d, a, x[k + 4], S24, 0xE7D3FBC8);
-          a = GG(a, b, c, d, x[k + 9], S21, 0x21E1CDE6);
-          d = GG(d, a, b, c, x[k + 14], S22, 0xC33707D6);
-          c = GG(c, d, a, b, x[k + 3], S23, 0xF4D50D87);
-          b = GG(b, c, d, a, x[k + 8], S24, 0x455A14ED);
-          a = GG(a, b, c, d, x[k + 13], S21, 0xA9E3E905);
-          d = GG(d, a, b, c, x[k + 2], S22, 0xFCEFA3F8);
-          c = GG(c, d, a, b, x[k + 7], S23, 0x676F02D9);
-          b = GG(b, c, d, a, x[k + 12], S24, 0x8D2A4C8A);
-          a = HH(a, b, c, d, x[k + 5], S31, 0xFFFA3942);
-          d = HH(d, a, b, c, x[k + 8], S32, 0x8771F681);
-          c = HH(c, d, a, b, x[k + 11], S33, 0x6D9D6122);
-          b = HH(b, c, d, a, x[k + 14], S34, 0xFDE5380C);
-          a = HH(a, b, c, d, x[k + 1], S31, 0xA4BEEA44);
-          d = HH(d, a, b, c, x[k + 4], S32, 0x4BDECFA9);
-          c = HH(c, d, a, b, x[k + 7], S33, 0xF6BB4B60);
-          b = HH(b, c, d, a, x[k + 10], S34, 0xBEBFBC70);
-          a = HH(a, b, c, d, x[k + 13], S31, 0x289B7EC6);
-          d = HH(d, a, b, c, x[k + 0], S32, 0xEAA127FA);
-          c = HH(c, d, a, b, x[k + 3], S33, 0xD4EF3085);
-          b = HH(b, c, d, a, x[k + 6], S34, 0x04881D05);
-          a = HH(a, b, c, d, x[k + 9], S31, 0xD9D4D039);
-          d = HH(d, a, b, c, x[k + 12], S32, 0xE6DB99E5);
-          c = HH(c, d, a, b, x[k + 15], S33, 0x1FA27CF8);
-          b = HH(b, c, d, a, x[k + 2], S34, 0xC4AC5665);
-          a = II(a, b, c, d, x[k + 0], S41, 0xF4292244);
-          d = II(d, a, b, c, x[k + 7], S42, 0x432AFF97);
-          c = II(c, d, a, b, x[k + 14], S43, 0xAB9423A7);
-          b = II(b, c, d, a, x[k + 5], S44, 0xFC93A039);
-          a = II(a, b, c, d, x[k + 12], S41, 0x655B59C3);
-          d = II(d, a, b, c, x[k + 3], S42, 0x8F0CCC92);
-          c = II(c, d, a, b, x[k + 10], S43, 0xFFEFF47D);
-          b = II(b, c, d, a, x[k + 1], S44, 0x85845DD1);
-          a = II(a, b, c, d, x[k + 8], S41, 0x6FA87E4F);
-          d = II(d, a, b, c, x[k + 15], S42, 0xFE2CE6E0);
-          c = II(c, d, a, b, x[k + 6], S43, 0xA3014314);
-          b = II(b, c, d, a, x[k + 13], S44, 0x4E0811A1);
-          a = II(a, b, c, d, x[k + 4], S41, 0xF7537E82);
-          d = II(d, a, b, c, x[k + 11], S42, 0xBD3AF235);
-          c = II(c, d, a, b, x[k + 2], S43, 0x2AD7D2BB);
-          b = II(b, c, d, a, x[k + 9], S44, 0xEB86D391);
-          a = addUnsigned(a, AA); b = addUnsigned(b, BB); c = addUnsigned(c, CC); d = addUnsigned(d, DD);
-        }
-        const temp = wordToHex(a) + wordToHex(b) + wordToHex(c) + wordToHex(d);
-        return temp.toLowerCase();
-      }
-
-      function deriveVideoHashFromParts(filename, fallbackId) {
-        const name = (filename && String(filename).trim()) || '';
-        const fallback = (fallbackId && String(fallbackId).trim()) || '';
-        const base = [name, fallback].filter(Boolean).join('::');
-        if (!base) return '';
-        return md5hex(base).substring(0, 16);
-      }
-
-      function extractStreamVideoId(streamUrl) {
-        try {
-          const url = new URL(streamUrl);
-          const paramKeys = ['videoId', 'video', 'id', 'mediaid', 'imdb', 'tmdb', 'kitsu', 'anidb', 'mal', 'myanimelist', 'anilist', 'tvdb', 'simkl', 'livechart', 'anisearch'];
-          for (const key of paramKeys) {
-            const val = url.searchParams.get(key);
-            if (val && val.trim()) return val.trim();
-          }
-          const parts = (url.pathname || '').split('/').filter(Boolean);
-          const directId = parts.find(p => /^tt\\d+/i.test(p) || p.includes(':'));
-          if (directId) return directId.trim();
-          return '';
-        } catch (_) {
-          return '';
-        }
-      }
-
-      function deriveStreamHashFromUrl(streamUrl, fallback = {}) {
-        const filename = selectStreamFilename(streamUrl, fallback.filename || '');
-        const streamVideoId = extractStreamVideoId(streamUrl) || fallback.videoId || '';
-        const hash = deriveVideoHashFromParts(filename, streamVideoId);
-        return { hash, filename, videoId: streamVideoId, source: 'stream-url' };
-      }
-
-      function collectAutoHashCandidates(values = []) {
+        return { accountId: '', token: cleaned };
+    };
+    const providerOptions = (() => {
+        const options = [];
+        const providers = config.providers || {};
         const seen = new Set();
-        const out = [];
-        values.forEach((value) => {
-          const normalized = (value || '').toString().trim().toLowerCase();
-          if (!normalized || seen.has(normalized)) return;
-          seen.add(normalized);
-          out.push(normalized);
-        });
-        return out;
-      }
-
-      function getAutoLinkedHashCandidates() {
-        return collectAutoHashCandidates([
-          PAGE.videoHash || '',
-          deriveVideoHashFromParts(PAGE.filename, PAGE.videoId)
-        ]);
-      }
-
-      function compareAutoHashSets(linkedHashes = [], streamHashes = []) {
-        const linkedSet = new Set(collectAutoHashCandidates(linkedHashes));
-        const streamSet = new Set(collectAutoHashCandidates(streamHashes));
-        const matches = [];
-        streamSet.forEach((hash) => {
-          if (linkedSet.has(hash)) matches.push(hash);
-        });
-        return {
-          hasLinked: linkedSet.size > 0,
-          hasStream: streamSet.size > 0,
-          match: matches.length > 0,
-          matches,
-          linkedHash: linkedSet.values().next().value || '',
-          streamHash: streamSet.values().next().value || ''
+        const resolveProviderEntry = (key) => {
+            const normalized = String(key || '')
+                .trim()
+                .toLowerCase();
+            const matchKey = Object.keys(providers || {}).find((k) => String(k).toLowerCase() === normalized);
+            return matchKey ? { key: matchKey, config: providers[matchKey] || {} } : null;
         };
-      }
-
-      async function resolveAutoStreamHashCandidates(streamUrl, fallback = {}) {
-        const immediate = deriveStreamHashFromUrl(streamUrl, fallback);
-        let resolved = null;
-        try {
-          const resolvedUrl = await resolveStreamUrlRedirect(streamUrl);
-          resolved = deriveStreamHashFromUrl(resolvedUrl, fallback);
-        } catch (_) {
-          resolved = null;
-        }
-        const hashes = collectAutoHashCandidates([immediate.hash, resolved?.hash]);
-        return {
-          immediate,
-          resolved,
-          hashes,
-          preferred: resolved?.hash ? resolved : (immediate.hash ? immediate : null)
+        const formatLabel = (name, model) => {
+            const base = formatProviderName(name);
+            const modelLabel = model ? ` (${model})` : '';
+            return `${base}${modelLabel}`;
         };
-      }
-
-      const LOG_LIMIT = 250;
-      function appendLog(message, tone = 'muted') {
-        if (!els.log || !message) return;
-        const entry = document.createElement('div');
-        entry.className = 'log-entry ' + (tone ? `log-${tone}` : 'log-muted');
-
-        const time = document.createElement('span');
-        time.className = 'log-time';
-        time.textContent = new Date().toLocaleTimeString();
-
-        const text = document.createElement('span');
-        text.className = 'log-text';
-        text.textContent = message;
-
-        entry.appendChild(time);
-        entry.appendChild(text);
-        els.log.insertBefore(entry, els.log.firstChild);
-
-        maybeUpdateDecodeFromLog(message, tone);
-
-        while (els.log.childNodes.length > LOG_LIMIT) {
-          els.log.removeChild(els.log.lastChild);
-        }
-      }
-
-      function resetServerLogState() {
-        if (state.serverLogKeys?.clear) state.serverLogKeys.clear();
-        state.lastServerLogTs = 0;
-      }
-
-      function stopAssemblyLiveLogs() {
-        if (state.liveLogSource) {
-          try { state.liveLogSource.close(); } catch (_) { /* ignore close errors */ }
-          state.liveLogSource = null;
-        }
-        if (state.liveLogPoll) {
-          clearInterval(state.liveLogPoll);
-          state.liveLogPoll = null;
-        }
-        state.liveLogJobId = null;
-      }
-
-      function handleServerLogEntry(entry) {
-        if (!entry) return;
-        const level = (entry.level || entry.tone || '').toString().toLowerCase();
-        const tone = level === 'error' ? 'error' : (level === 'warn' ? 'warn' : (level === 'success' ? 'success' : 'info'));
-        const msg = entry.message || entry.msg || '';
-        if (!msg) return;
-        const ts = Number(entry.ts) || Date.now();
-        const key = `${ts}|${tone}|${msg}`;
-        if (state.serverLogKeys?.has(key)) return;
-        if (state.serverLogKeys) state.serverLogKeys.add(key);
-        state.lastServerLogTs = Math.max(state.lastServerLogTs || 0, ts);
-        appendLog(msg, tone);
-      }
-
-      function appendServerLogs(logs) {
-        if (!Array.isArray(logs)) return;
-        logs.forEach((entry) => handleServerLogEntry(entry));
-      }
-
-      function startAssemblyLogPoll(jobId) {
-        if (!jobId) return () => { };
-        if (state.liveLogPoll) clearInterval(state.liveLogPoll);
-        const poll = async () => {
-          try {
-            const resp = await fetch('/api/auto-subtitles/logs?jobId=' + encodeURIComponent(jobId) + '&format=json&since=' + encodeURIComponent(state.lastServerLogTs || ''), { cache: 'no-store' });
-            if (!resp.ok) return;
-            const data = await resp.json().catch(() => null);
-            if (data && Array.isArray(data.logs)) {
-              appendServerLogs(data.logs);
+        const effectiveGeminiModel = getEffectiveGeminiModel(config);
+        const geminiConfigured = Boolean(
+            effectiveGeminiModel || config.geminiKey || config.geminiApiKey || providers.gemini
+        );
+        const geminiEnabled = providers.gemini ? providers.gemini.enabled !== false : geminiConfigured;
+        const addIfEnabled = (key, label, model) => {
+            const norm = String(key || '')
+                .trim()
+                .toLowerCase();
+            if (!norm || seen.has(norm)) return;
+            let enabled = false;
+            if (norm === 'gemini') {
+                enabled = geminiEnabled;
+            } else {
+                const entry = resolveProviderEntry(norm);
+                enabled = entry?.config?.enabled === true;
             }
-            if (data && data.done) {
-              stopAssemblyLiveLogs();
-            }
-          } catch (_) { /* ignore polling errors */ }
+            if (!enabled) return;
+            seen.add(norm);
+            options.push({ key: norm, label: label || formatLabel(key, model) });
         };
-        poll();
-        state.liveLogPoll = setInterval(poll, 1500);
-        return () => {
-          if (state.liveLogPoll) clearInterval(state.liveLogPoll);
-          state.liveLogPoll = null;
-        };
-      }
-
-      function startAssemblyLiveLogStream(jobId) {
-        stopAssemblyLiveLogs();
-        if (!jobId) return () => { };
-        state.liveLogJobId = jobId;
-        if (typeof EventSource === 'function') {
-          const source = new EventSource('/api/auto-subtitles/logs?jobId=' + encodeURIComponent(jobId) + '&replay=0');
-          state.liveLogSource = source;
-          source.onmessage = (event) => {
-            try {
-              const entry = JSON.parse(event.data);
-              if (entry) appendServerLogs([entry]);
-            } catch (_) { /* ignore parse errors */ }
-          };
-          source.addEventListener('done', () => {
-            stopAssemblyLiveLogs();
-          });
-          source.onerror = () => {
-            stopAssemblyLiveLogs();
-            startAssemblyLogPoll(jobId);
-          };
-          return () => stopAssemblyLiveLogs();
+        if (geminiEnabled) {
+            const geminiLabel = formatLabel('Gemini', effectiveGeminiModel || providers.gemini?.model || '');
+            addIfEnabled('gemini', geminiLabel, effectiveGeminiModel || providers.gemini?.model || '');
         }
-        startAssemblyLogPoll(jobId);
-        return () => stopAssemblyLiveLogs();
-      }
-
-      function clearLog() {
-        if (!els.log) return;
-        els.log.innerHTML = '';
-      }
-
-      function setStatus(text) {
-        if (els.status) els.status.textContent = text;
-      }
-
-      function enableDownloadLink(el, href, filename) {
-        if (!el) return;
-        if (href) el.href = href;
-        if (filename) el.download = filename;
-        el.classList.remove('disabled');
-        el.removeAttribute('aria-disabled');
-        el.style.pointerEvents = '';
-        el.style.opacity = '';
-      }
-
-      function disableDownloadLink(el) {
-        if (!el) return;
-        el.removeAttribute('href');
-        el.removeAttribute('download');
-        el.classList.add('disabled');
-        el.setAttribute('aria-disabled', 'true');
-        el.style.pointerEvents = 'none';
-        el.style.opacity = '0.6';
-      }
-
-      function setProgress(pct) {
-        if (els.progress) els.progress.style.width = Math.min(100, Math.max(0, pct || 0)) + '%';
-      }
-
-      function cleanDisplayNameClient(raw) {
-        if (!raw) return '';
-        const lastSegment = String(raw).split(/[/\\]/).pop() || '';
-        const withoutExt = lastSegment.replace(/\.[^.]+$/, '');
-        const spaced = withoutExt.replace(/[_\\.]+/g, ' ').replace(/\s+/g, ' ').trim();
-        return spaced || withoutExt || lastSegment;
-      }
-
-      function formatEpisodeTagDisplay(videoId) {
-        const parts = (videoId || '').split(':');
-        // Handle anime IDs (anidb, kitsu, mal, anilist)
-        // Format: platform:id:episode or platform:id:season:episode
-        if (/^(anidb|kitsu|mal|myanimelist|anilist|tvdb|simkl|livechart|anisearch)/.test(parts[0])) {
-          if (parts.length === 3) {
-            // platform:id:episode (seasonless)
-            const episode = parseInt(parts[2], 10);
-            return Number.isFinite(episode) ? 'E' + String(episode).padStart(2, '0') : '';
-          }
-          if (parts.length === 4) {
-            // platform:id:season:episode
-            const season = parseInt(parts[2], 10);
-            const episode = parseInt(parts[3], 10);
-            const s = Number.isFinite(season) ? 'S' + String(season).padStart(2, '0') : '';
-            const e = Number.isFinite(episode) ? 'E' + String(episode).padStart(2, '0') : '';
-            return (s || e) ? (s + e).trim() : '';
-          }
-          return '';
+        if (config.multiProviderEnabled && config.mainProvider) {
+            const entry = resolveProviderEntry(config.mainProvider);
+            const model =
+                entry?.config?.model || (config.mainProvider.toLowerCase() === 'gemini' ? effectiveGeminiModel : '');
+            addIfEnabled(config.mainProvider, `Main: ${formatLabel(config.mainProvider, model)}`, model);
         }
-        // Handle TMDB and IMDB IDs
-        if (parts.length >= 3) {
-          const seasonIdx = parts[0] === 'tmdb' ? 2 : 1;
-          const episodeIdx = parts[0] === 'tmdb' ? 3 : 2;
-          const season = parseInt(parts[seasonIdx], 10);
-          const episode = parseInt(parts[episodeIdx], 10);
-          const s = Number.isFinite(season) ? 'S' + String(season).padStart(2, '0') : '';
-          const e = Number.isFinite(episode) ? 'E' + String(episode).padStart(2, '0') : '';
-          if (s || e) return (s + e).trim();
+        if (config.secondaryProviderEnabled && config.secondaryProvider) {
+            const entry = resolveProviderEntry(config.secondaryProvider);
+            const model =
+                entry?.config?.model ||
+                (config.secondaryProvider.toLowerCase() === 'gemini' ? effectiveGeminiModel : '');
+            addIfEnabled(config.secondaryProvider, `Secondary: ${formatLabel(config.secondaryProvider, model)}`, model);
         }
-        return '';
-      }
-
-
-      async function fetchLinkedTitle(videoId) {
-        const trimmed = (videoId || '').trim();
-        if (!trimmed) return '';
-        const parts = trimmed.split(':');
-
-        // Handle anime IDs through server-side resolver (supports all platforms)
-        if (/^(anidb|kitsu|mal|myanimelist|anilist|tvdb|simkl|livechart|anisearch)/.test(parts[0])) {
-          const cacheKey = 'anime:' + trimmed.toLowerCase();
-          if (linkedTitleCache.has(cacheKey)) {
-            return linkedTitleCache.get(cacheKey) || '';
-          }
-          try {
-            const url = '/api/resolve-linked-title?config=' + encodeURIComponent(PAGE.configStr) + '&videoId=' + encodeURIComponent(trimmed);
-            const resp = await fetch(url, { cache: 'no-store' });
-            if (resp.ok) {
-              const data = await resp.json();
-              const title = (typeof data?.title === 'string' ? data.title.trim() : '') || '';
-              linkedTitleCache.set(cacheKey, title || null);
-              return title;
-            }
-          } catch (_) {
-            // Fall through
-          }
-          linkedTitleCache.set(cacheKey, null);
-          return '';
-        }
-
-        // Handle TMDB/IMDB IDs
-        let metaId = '';
-        if (parts[0] === 'tmdb' && parts[1]) {
-          metaId = 'tmdb:' + parts[1];
-        } else {
-          const imdbId = (parts[0] || '').replace(/^tt/i, 'tt');
-          if (/^tt\\d{3,}$/i.test(imdbId)) metaId = imdbId.toLowerCase();
-        }
-        if (!metaId) return '';
-        const metaType = parts.length >= 3 ? 'series' : 'movie';
-        const metaUrl = 'https://v3-cinemeta.strem.io/meta/' + metaType + '/' + encodeURIComponent(metaId) + '.json';
-        try {
-          const resp = await fetch(metaUrl);
-          if (!resp.ok) throw new Error('meta fetch failed');
-          const data = await resp.json();
-          return data?.meta?.name || data?.meta?.english_name || data?.meta?.nameTranslated?.en || '';
-        } catch (_) {
-          return '';
-        }
-      }
-
-      function renderVideoMeta(source = {}) {
-        if (!els.videoMetaTitle || !els.videoMetaSubtitle) return;
-        const episodeLabel = formatEpisodeTagDisplay(source.videoId);
-        const fallbackTitle = cleanDisplayNameClient(source.filename) || cleanDisplayNameClient(source.videoId) || copy.videoMeta.none;
-        const resolvedTitle = source.title || fallbackTitle || copy.videoMeta.none;
-        // Detect if this is episode content (has episode tag means it's an episode)
-        const isEpisode = !!episodeLabel;
-        // Append episode tag to main title for episodes (if not already present)
-        const displayTitle = (isEpisode && episodeLabel && !resolvedTitle.toUpperCase().includes(episodeLabel.toUpperCase()))
-          ? resolvedTitle + ' - ' + episodeLabel
-          : resolvedTitle;
-        const details = [];
-        if (source.videoId) details.push('Video ID: ' + source.videoId);
-        if (source.title) details.push('Title: ' + source.title);
-        if (source.videoId || source.filename || source.title) details.push('Episode: ' + (episodeLabel || '-'));
-        const fileLine = source.filename ? ('File: ' + cleanDisplayNameClient(source.filename)) : '';
-        els.videoMetaTitle.textContent = displayTitle;
-        els.videoMetaSubtitle.innerHTML = buildMetaSubtitleHtml(details.join(' | '), fileLine, copy.videoMeta.waiting);
-      }
-
-      async function hydrateVideoMeta(source = {}) {
-        renderVideoMeta(source);
-        if (!source.videoId || source.title) return;
-        const requestId = ++videoMetaRequestId;
-        const fetched = await fetchLinkedTitle(source.videoId);
-        if (requestId !== videoMetaRequestId || !fetched) return;
-        renderVideoMeta({ ...source, title: fetched });
-      }
-
-      function getPillParts(pill) {
-        if (!pill) return {};
-        const valueEl = pill.querySelector('.pill-value') || pill.querySelector('strong') || pill;
-        const dotEl = pill.querySelector('.status-dot');
-        const baseLabel =
-          pill.getAttribute('data-label') ||
-          (valueEl ? valueEl.textContent.replace(/^(OK|-)/, '').trim() : '');
-        return { valueEl, dotEl, baseLabel };
-      }
-
-      function setPillLabel(step, label) {
-        if (!label) return;
-        const pill = stepPills[step];
-        if (!pill) return;
-        const { valueEl } = getPillParts(pill);
-        if (valueEl) valueEl.textContent = label;
-      }
-
-      function applyPillState(pill, state = 'warn') {
-        const { valueEl, dotEl, baseLabel } = getPillParts(pill);
-        pill.classList.remove('check', 'warn', 'danger');
-        pill.classList.add(state);
-        const okLabel = tt('toolbox.autoSubs.status.ok', {}, 'OK');
-        const waitingLabel = runtimeCopy?.badges?.pending || tt('toolbox.autoSubs.badges.pending', {}, 'WAITING');
-        if (valueEl && baseLabel) {
-          if (state === 'check') {
-            valueEl.textContent = okLabel;
-          } else if (state === 'warn') {
-            valueEl.textContent = waitingLabel;
-          } else {
-            valueEl.textContent = baseLabel;
-          }
-        }
-        if (dotEl) {
-          const tone = state === 'check' ? 'ok' : state === 'danger' ? 'bad' : 'warn';
-          const pulse = state === 'warn' ? ' pulse' : '';
-          dotEl.className = 'status-dot ' + tone + pulse;
-        }
-      }
-
-      function resetPills() {
-        Object.values(stepPills).forEach((pill) => {
-          if (!pill) return;
-          applyPillState(pill, 'warn');
+        Object.keys(providers || {}).forEach((key) => {
+            const model = providers[key]?.model || '';
+            addIfEnabled(key, `Provider: ${formatLabel(key, model)}`, model);
         });
-      }
+        return options;
+    })();
+    const cfKey = (config.cloudflareWorkersApiKey || '').toString();
+    const cfClient = (() => {
+        const creds = parseCfCreds(cfKey);
+        return creds.accountId && creds.token ? creds : null;
+    })();
+    const cloudflareEnabled = Boolean(cfClient);
+    // AssemblyAI mode should only be selectable when a key is configured
+    const assemblyEnabled = Boolean(config.providers?.assemblyai?.apiKey || config.assemblyAiApiKey);
+    const assemblyApiKey = config.providers?.assemblyai?.apiKey || config.assemblyAiApiKey || '';
 
-      function markStep(step, state = 'check') {
-        const pill = stepPills[step];
-        if (!pill) return;
-        applyPillState(pill, state);
-      }
+    function autoSubsRuntime(copy, selectStreamFilename) {
+        (function () {
+            const els = {
+                startBtn: document.getElementById('startAutoSubs'),
+                status: document.getElementById('statusText'),
+                progress: document.getElementById('progressFill'),
+                log: document.getElementById('logArea'),
+                streamUrl: document.getElementById('streamUrl'),
+                hashStatus: document.getElementById('hashStatus'),
+                hashMismatchAlert: document.getElementById('auto-hash-mismatch'),
+                modeSelect: document.getElementById('autoSubsMode'),
+                modeDetails: document.getElementById('modeDetails'),
+                sourceLang: document.getElementById('detectedLang'),
+                targetLang: document.getElementById('targetLang'),
+                model: document.getElementById('whisperModel'),
+                assemblyModel: document.getElementById('assemblySpeechModel'),
+                translateToggle: document.getElementById('translateOutput'),
+                targetLangWrapper: document.getElementById('targetLangWrapper'),
+                translationSettings: document.getElementById('autoTranslationSettings'),
+                translationSettingsToggle: document.getElementById('autoTranslationSettingsToggle'),
+                translationProvider: document.getElementById('autoTranslationProvider'),
+                srtPreview: document.getElementById('srtPreview'),
+                dlSrt: document.getElementById('downloadSrt'),
+                dlRaw: document.getElementById('downloadRawTranscript'),
+                translations: document.getElementById('translationDownloads'),
+                stremioDeliveryWarning: document.getElementById('stremioDeliveryWarning'),
+                videoMetaTitle: document.getElementById('video-meta-title'),
+                videoMetaSubtitle: document.getElementById('video-meta-subtitle'),
+                extDot: document.getElementById('ext-dot'),
+                extLabel: document.getElementById('ext-label'),
+                extStatus: document.getElementById('ext-status'),
+                xsyncVersionWarning: document.getElementById('xsync-version-warning'),
+                hashBadge: document.getElementById('hashBadge'),
+                hashBadgeDot: document.getElementById('hashBadgeDot'),
+                hashBadgeValue: document.getElementById('hashBadgeValue'),
+                continueBtn: document.getElementById('autoContinue'),
+                step2ContinueBtn: document.getElementById('autoStep2Continue'),
+                step2Card: document.getElementById('autoStep2Card'),
 
-      function markFetchComplete() {
-        markStep('fetch', 'check');
-        const pill = stepPills.fetch;
-        if (!pill) return;
-        const { valueEl } = getPillParts(pill);
-        const okLabel = tt('toolbox.autoSubs.status.ok', {}, 'OK');
-        if (valueEl) valueEl.textContent = okLabel;
-      }
-
-      function getSelectedModelLabel() {
-        const selected = (els.model && els.model.selectedOptions && els.model.selectedOptions[0])
-          ? (els.model.selectedOptions[0].textContent || els.model.selectedOptions[0].value || '')
-          : '';
-        const fallback = (els.model && (els.model.value || '')) || '';
-        return (selected || fallback || 'Whisper').toString().trim() || 'Whisper';
-      }
-
-      function getSelectedAssemblyModelLabel() {
-        const selected = (els.assemblyModel && els.assemblyModel.selectedOptions && els.assemblyModel.selectedOptions[0])
-          ? (els.assemblyModel.selectedOptions[0].textContent || els.assemblyModel.selectedOptions[0].value || '')
-          : '';
-        const fallback = (els.assemblyModel && (els.assemblyModel.value || '')) || '';
-        return (selected || fallback || 'Universal-2').toString().trim() || 'Universal-2';
-      }
-
-      function getTranscribeStatusLabel(statusText) {
-        if (statusText) return statusText;
-        const mode = (els.modeSelect?.value || '').toLowerCase();
-        if (mode === 'assemblyai') {
-          const assemblyModelLabel = getSelectedAssemblyModelLabel();
-          return tt(
-            'toolbox.autoSubs.status.transcribingAssembly',
-            { model: 'AssemblyAI (' + assemblyModelLabel + ')' },
-            'Transcribing with AssemblyAI (' + assemblyModelLabel + ')'
-          );
-        }
-        const modelLabel = getSelectedModelLabel();
-        return tt('toolbox.autoSubs.status.transcribing', { model: modelLabel }, 'Transcribing with Whisper (' + modelLabel + ')');
-      }
-
-      function setInFlight(active) {
-        state.autoSubsInFlight = !!active;
-        if (els.startBtn) {
-          els.startBtn.textContent = active ? tt('toolbox.autoSubs.status.running', {}, 'Running...') : startBtnLabel;
-        }
-        applyStartDisabled(isStep3Ready());
-      }
-
-      function getSelectedTargets() {
-        if (!els.targetLang) return [];
-        const val = (els.targetLang.value || '').trim();
-        return val ? [val] : [];
-      }
-
-      const normalizeProviderKey = (key) => String(key || '').trim().toLowerCase();
-
-      function renderTranslationProviders() {
-        if (!els.translationProvider) return '';
-        const providerOpts = Array.isArray(BOOTSTRAP.providerOptions) ? BOOTSTRAP.providerOptions : [];
-        const desired = providerOpts
-          .map((opt) => {
-            const value = normalizeProviderKey(opt && (opt.key || opt.value || opt.name || ''));
-            if (!value) return null;
-            return {
-              value,
-              text: String(opt.label || opt.text || opt.key || opt.value || value).trim() || value
+                step3Card: document.getElementById('autoStep3Card'),
+                step4Card: document.getElementById('autoStep4Card'),
+                assemblySendFullVideo: document.getElementById('assemblySendFullVideo'),
+                assemblyOptions: document.getElementById('assemblyOptions'),
+                assemblyModeHelper: document.getElementById('assemblyModeHelper'),
+                decodeBadge: document.getElementById('decodeBadge'),
+                decodeBadgeDot: document.getElementById('decodeBadgeDot'),
+                decodeBadgeValue: document.getElementById('decodeBadgeValue'),
+                audioTrackPrompt: document.getElementById('autoTrackPrompt'),
+                audioTrackSelect: document.getElementById('autoAudioTrack'),
+                audioTrackContinue: document.getElementById('autoTrackContinue'),
+                linkedStreamRefresh: document.getElementById('linkedStreamRefresh')
             };
-          })
-          .filter(Boolean);
+            const stepPills = {
+                fetch: document.getElementById('stepFetch'),
+                transcribe: document.getElementById('stepTranscribe'),
+                align: document.getElementById('stepAlign'),
+                translate: document.getElementById('stepTranslate'),
+                deliver: document.getElementById('stepDeliver')
+            };
+            const startBtnLabel = els.startBtn
+                ? els.startBtn.textContent
+                : tt('toolbox.autoSubs.actions.start', {}, copy.steps.start || 'Start');
+            const state = {
+                extensionReady: false,
+                cacheBlocked: false,
+                streamHashInfo: null,
+                streamHashCandidates: [],
+                decodeStatus: 'pending',
+                autoSubsInFlight: false,
+                step1Confirmed: false,
+                step2Confirmed: false,
+                autoSubsCompleted: false,
+                autoSubsMessageId: null,
+                autoSubsResolver: null,
+                autoSubsReject: null,
+                autoSubsTimer: null,
+                lastAutoSubStatus: null,
+                lastDebugLog: null,
+                serverLogKeys: new Set(),
+                lastServerLogTs: 0,
+                liveLogSource: null,
+                liveLogPoll: null,
+                liveLogJobId: null,
+                audioTracks: [],
+                selectedAudioTrack: null,
+                awaitingTrackChoice: false,
+                rawTranscript: null,
+                originalOutput: null,
+                translationOutputs: []
+            };
+            const AUTO_SUB_TIMEOUT_MS = 15 * 60 * 1000;
+            const escapeHtmlClient = (value) => {
+                if (value === undefined || value === null) return '';
+                return String(value)
+                    .replace(/&/g, '&amp;')
+                    .replace(/</g, '&lt;')
+                    .replace(/>/g, '&gt;')
+                    .replace(/\"/g, '&quot;')
+                    .replace(/'/g, '&#39;');
+            };
+            function buildMetaSubtitleHtml(topLine, fileLine, fallbackLine) {
+                const parts = [];
+                if (topLine) parts.push(escapeHtmlClient(topLine));
+                if (fileLine) parts.push('<strong class="meta-file-line">' + escapeHtmlClient(fileLine) + '</strong>');
+                if (parts.length) return parts.join('<br>');
+                return escapeHtmlClient(fallbackLine || '');
+            }
+            const HASH_MISMATCH_LINES = [
+                tt(
+                    'toolbox.embedded.step1.hashMismatchLine1',
+                    {},
+                    'Hashes must match (Linked Stream and Stream URL) before extraction can start.'
+                )
+            ];
+            function primeHashMismatchSpace() {
+                const alertEl = els.hashMismatchAlert;
+                if (!alertEl) return;
+                const placeholder = buildHashMismatchAlert('0'.repeat(64), '0'.repeat(64));
+                const prevHtml = alertEl.innerHTML;
+                const prevVisibility = alertEl.style.visibility;
+                alertEl.innerHTML = placeholder;
+                alertEl.classList.add('is-visible');
+                alertEl.style.visibility = 'hidden';
+                const { height } = alertEl.getBoundingClientRect();
+                if (height) {
+                    alertEl.style.setProperty('--hash-alert-min-height', Math.ceil(height) + 'px');
+                }
+                alertEl.classList.remove('is-visible');
+                alertEl.style.visibility = prevVisibility;
+                alertEl.innerHTML = prevHtml;
+                alertEl.setAttribute('aria-hidden', 'true');
+            }
+            function buildHashMismatchAlert(linkedHash, streamHash) {
+                const safeLinked = escapeHtmlClient(linkedHash || 'unknown');
+                const safeStream = escapeHtmlClient(streamHash || 'unknown');
+                const head =
+                    'Hash mismatch detected: linked stream (' + safeLinked + ') vs pasted URL (' + safeStream + ').';
+                const body = HASH_MISMATCH_LINES.filter(Boolean)
+                    .map((line) => '<div>' + escapeHtmlClient(line) + '</div>')
+                    .join('');
+                return (
+                    '<div class="alert-head">' +
+                    head +
+                    '</div>' +
+                    (body ? '<div class="alert-body">' + body + '</div>' : '')
+                );
+            }
+            function setHashMismatchAlert(message) {
+                if (!els.hashMismatchAlert) return;
+                if (!message) {
+                    els.hashMismatchAlert.classList.remove('is-visible');
+                    els.hashMismatchAlert.innerHTML = '';
+                    els.hashMismatchAlert.setAttribute('aria-hidden', 'true');
+                    return;
+                }
+                els.hashMismatchAlert.innerHTML = message;
+                els.hashMismatchAlert.classList.add('is-visible');
+                els.hashMismatchAlert.removeAttribute('aria-hidden');
+            }
+            const runtimeCopy = typeof copy !== 'undefined' && copy ? copy : null;
+            const lockReasons = {
+                needContinue:
+                    (runtimeCopy?.locks && runtimeCopy.locks.needContinue) ||
+                    tt('toolbox.autoSubs.locks.needContinue', {}, 'Click Continue to unlock the next steps.'),
+                needTarget:
+                    (runtimeCopy?.locks && runtimeCopy.locks.needTarget) ||
+                    tt(
+                        'toolbox.autoSubs.locks.needTarget',
+                        {},
+                        'Select a target or disable translation to unlock Run.'
+                    ),
+                needStep2:
+                    (runtimeCopy?.locks && runtimeCopy.locks.needStep2) ||
+                    tt('toolbox.autoSubs.locks.needStep2', {}, 'Complete Step 2 and press Continue to proceed.'),
+                needRun:
+                    (runtimeCopy?.locks && runtimeCopy.locks.needRun) ||
+                    tt('toolbox.autoSubs.locks.needRun', {}, 'Run auto-subs to unlock downloads.')
+            };
+            const decodeLabels = {
+                pending: runtimeCopy?.badges?.pending || tt('toolbox.autoSubs.badges.pending', {}, 'WAITING'),
+                working:
+                    runtimeCopy?.badges?.decodeWorking ||
+                    tt('toolbox.autoSubs.badges.decodeWorking', {}, 'FFmpeg decoding'),
+                ready: tt('toolbox.autoSubs.badges.decodeReady', {}, 'OK'),
+                error:
+                    runtimeCopy?.badges?.decodeError || tt('toolbox.autoSubs.badges.decodeError', {}, 'Decode failed')
+            };
+            function setDecodeBadge(tone, text, pulsing = false) {
+                if (els.decodeBadge) {
+                    els.decodeBadge.classList.remove('check', 'warn', 'danger');
+                    const toneClass = tone === 'ok' ? 'check' : tone === 'bad' ? 'danger' : 'warn';
+                    els.decodeBadge.classList.add(toneClass);
+                }
+                if (els.decodeBadgeDot) {
+                    const pulseClass = pulsing ? ' pulse' : '';
+                    els.decodeBadgeDot.className = 'status-dot ' + (tone || 'warn') + pulseClass;
+                }
+                if (els.decodeBadgeValue) {
+                    els.decodeBadgeValue.textContent = text || decodeLabels.pending;
+                }
+            }
+            function resetDecodeBadge() {
+                state.decodeStatus = 'pending';
+                setDecodeBadge('warn', decodeLabels.pending, false);
+            }
+            function markDecodeWorking(text) {
+                if (state.decodeStatus === 'done' || state.decodeStatus === 'error') return;
+                state.decodeStatus = 'working';
+                setDecodeBadge('warn', text || decodeLabels.working, true);
+            }
+            function markDecodeDone(text) {
+                state.decodeStatus = 'done';
+                setDecodeBadge('ok', text || decodeLabels.ready, false);
+            }
+            function markDecodeError(text) {
+                state.decodeStatus = 'error';
+                setDecodeBadge('bad', text || decodeLabels.error, false);
+            }
+            function maybeUpdateDecodeFromLog(message, tone = '') {
+                if (!state.autoSubsInFlight) return;
+                const text = (message || '').toString();
+                if (!text) return;
+                const lower = text.toLowerCase();
+                const toneLower = (tone || '').toString().toLowerCase();
+                const successHit =
+                    lower.includes('audio extraction complete') ||
+                    lower.includes('audio ready') ||
+                    lower.includes('ffmpeg produced') ||
+                    lower.includes('ffmpeg demux: completed') ||
+                    lower.includes('demux: completed');
+                if (successHit) {
+                    markDecodeDone(runtimeCopy?.badges?.decodeReady || decodeLabels.ready);
+                    return;
+                }
+                const errorHit =
+                    lower.includes('audio extraction failed') ||
+                    (lower.includes('ffmpeg') && (lower.includes('fail') || lower.includes('error'))) ||
+                    (lower.includes('decode') && lower.includes('audio') && lower.includes('fail'));
+                if (errorHit || toneLower === 'error') {
+                    markDecodeError(runtimeCopy?.badges?.decodeError || decodeLabels.error);
+                    return;
+                }
+                const workingHit =
+                    lower.includes('ffmpeg') ||
+                    lower.includes('audio extraction') ||
+                    lower.includes('audio windows') ||
+                    lower.includes('demux') ||
+                    (lower.includes('decode') && lower.includes('audio'));
+                if (workingHit) {
+                    markDecodeWorking(runtimeCopy?.badges?.decodeWorking || decodeLabels.working);
+                }
+            }
+            function lockSection(el, label) {
+                if (!el) return;
+                if (label) el.setAttribute('data-locked-label', label);
+                el.classList.add('locked');
+                el.setAttribute('aria-disabled', 'true');
+                el.inert = true;
+            }
+            function unlockSection(el) {
+                if (!el) return;
+                el.classList.remove('locked');
+                el.removeAttribute('aria-disabled');
+                el.inert = false;
+                el.removeAttribute('inert');
+            }
+            function isTranslationReady() {
+                const translateEnabled = els.translateToggle?.checked === true;
+                const hasTarget = !!(els.targetLang && (els.targetLang.value || '').trim());
+                return !translateEnabled || hasTarget;
+            }
+            function isStep3Ready() {
+                return state.step1Confirmed && state.step2Confirmed && isTranslationReady();
+            }
+            function applyStartDisabled(ready) {
+                if (!els.startBtn) return;
+                const allow = ready && !state.autoSubsInFlight;
+                els.startBtn.disabled = !allow;
+            }
+            function refreshStepLocks(reason) {
+                const needContinueLabel = reason || lockReasons.needContinue;
+                const needStep2Label = lockReasons.needStep2 || needContinueLabel;
+                const needRunLabel = lockReasons.needRun || needContinueLabel;
+                if (!state.step1Confirmed) {
+                    lockSection(els.step2Card, needContinueLabel);
+                    lockSection(els.step3Card, needContinueLabel);
+                    lockSection(els.step4Card, needContinueLabel);
+                    applyStartDisabled(false);
+                    return;
+                }
+                unlockSection(els.step2Card);
+                if (!state.step2Confirmed) {
+                    lockSection(els.step3Card, needStep2Label);
+                    lockSection(els.step4Card, needStep2Label);
+                    applyStartDisabled(false);
+                    return;
+                }
+                const step3Ready = isStep3Ready();
+                if (step3Ready) {
+                    unlockSection(els.step3Card);
+                } else {
+                    lockSection(els.step3Card, lockReasons.needTarget);
+                }
+                if (state.autoSubsCompleted) {
+                    unlockSection(els.step4Card);
+                } else {
+                    const lockLabel = step3Ready ? needRunLabel : lockReasons.needTarget;
+                    lockSection(els.step4Card, lockLabel);
+                }
+                applyStartDisabled(step3Ready);
+            }
+            function resetStepFlow(reason) {
+                state.step1Confirmed = false;
+                state.step2Confirmed = false;
+                state.autoSubsCompleted = false;
+                resetOutputs();
+                resetPills();
+                refreshStepLocks(reason || lockReasons.needContinue);
+            }
+            function renderAudioTrackOptions(tracks = [], preferredIdx = null, extractedIdx = null) {
+                if (!els.audioTrackSelect) return;
+                const options = Array.isArray(tracks) ? tracks : [];
+                els.audioTrackSelect.innerHTML = '';
+                options.forEach((track, idx) => {
+                    const option = document.createElement('option');
+                    const trackId = Number.isInteger(track?.trackNumber)
+                        ? track.trackNumber
+                        : Number.isInteger(track?.index)
+                          ? track.index + 1
+                          : idx + 1;
+                    const langLabel = (track?.language || 'und').toString().toUpperCase();
+                    const name = track?.name ? ` - ${track.name}` : '';
+                    const codec = track?.codec ? ` [${track.codec}]` : '';
+                    option.value = Number.isInteger(track?.index) ? track.index : idx;
+                    option.textContent = `Track ${trackId} (${langLabel})${name}${codec}`;
+                    els.audioTrackSelect.appendChild(option);
+                });
+                const desired = Number.isInteger(preferredIdx)
+                    ? preferredIdx
+                    : Number.isInteger(extractedIdx)
+                      ? extractedIdx
+                      : null;
+                if (desired !== null) {
+                    els.audioTrackSelect.value = String(desired);
+                } else if (!els.audioTrackSelect.value && options.length) {
+                    const first = options[0];
+                    const fallbackVal = Number.isInteger(first?.index) ? first.index : 0;
+                    els.audioTrackSelect.value = String(fallbackVal);
+                }
+            }
+            function showAudioTrackPrompt(tracks = [], preferredIdx = null, extractedIdx = null) {
+                if (!els.audioTrackPrompt || !els.audioTrackSelect) return;
+                state.awaitingTrackChoice = true;
+                state.audioTracks = Array.isArray(tracks) ? tracks : [];
+                const desiredTrack = Number.isInteger(preferredIdx)
+                    ? preferredIdx
+                    : Number.isInteger(extractedIdx)
+                      ? extractedIdx
+                      : null;
+                state.selectedAudioTrack = desiredTrack !== null ? desiredTrack : 0;
+                const helper = document.getElementById('autoTrackHelper');
+                if (helper) {
+                    helper.textContent =
+                        runtimeCopy?.steps?.audioTrackHelper ||
+                        'Multiple audio tracks detected. Choose one, then continue.';
+                }
+                renderAudioTrackOptions(state.audioTracks, preferredIdx, extractedIdx);
+                els.audioTrackPrompt.classList.add('show');
+                if (els.audioTrackContinue) {
+                    els.audioTrackContinue.disabled = false;
+                }
+                pauseAutoSubTimeout();
+            }
+            function hideAudioTrackPrompt() {
+                state.awaitingTrackChoice = false;
+                state.audioTracks = [];
+                state.selectedAudioTrack = null;
+                if (els.audioTrackPrompt) {
+                    els.audioTrackPrompt.classList.remove('show');
+                }
+                if (els.audioTrackContinue) {
+                    els.audioTrackContinue.disabled = false;
+                }
+            }
+            let videoMetaRequestId = 0;
+            const linkedTitleCache = new Map();
+            const urlSchemePattern = new RegExp('^[a-z][a-z0-9+.-]*://', 'i');
+            const isLikelyStreamUrl = (val) => urlSchemePattern.test(val || '');
+            const bootstrapStreamUrl = BOOTSTRAP.streamUrl || '';
+            const fallbackStreamUrl =
+                !bootstrapStreamUrl && isLikelyStreamUrl(BOOTSTRAP.filename) ? BOOTSTRAP.filename : '';
+            const initialStreamUrl = bootstrapStreamUrl || fallbackStreamUrl;
+            if (els.streamUrl && initialStreamUrl) {
+                els.streamUrl.value = initialStreamUrl;
+            }
 
-        const previous = normalizeProviderKey(els.translationProvider.value || '');
-        els.translationProvider.innerHTML = '';
+            function md5hex(str) {
+                function rotateLeft(lValue, iShiftBits) {
+                    return (lValue << iShiftBits) | (lValue >>> (32 - iShiftBits));
+                }
+                function addUnsigned(lX, lY) {
+                    const lX4 = lX & 0x40000000;
+                    const lY4 = lY & 0x40000000;
+                    const lX8 = lX & 0x80000000;
+                    const lY8 = lY & 0x80000000;
+                    const lResult = (lX & 0x3fffffff) + (lY & 0x3fffffff);
+                    if (lX4 & lY4) return lResult ^ 0x80000000 ^ lX8 ^ lY8;
+                    if (lX4 | lY4) {
+                        if (lResult & 0x40000000) return lResult ^ 0xc0000000 ^ lX8 ^ lY8;
+                        return lResult ^ 0x40000000 ^ lX8 ^ lY8;
+                    }
+                    return lResult ^ lX8 ^ lY8;
+                }
+                function F(x, y, z) {
+                    return (x & y) | (~x & z);
+                }
+                function G(x, y, z) {
+                    return (x & z) | (y & ~z);
+                }
+                function H(x, y, z) {
+                    return x ^ y ^ z;
+                }
+                function I(x, y, z) {
+                    return y ^ (x | ~z);
+                }
+                function FF(a, b, c, d, x, s, ac) {
+                    a = addUnsigned(a, addUnsigned(addUnsigned(F(b, c, d), x), ac));
+                    return addUnsigned(rotateLeft(a, s), b);
+                }
+                function GG(a, b, c, d, x, s, ac) {
+                    a = addUnsigned(a, addUnsigned(addUnsigned(G(b, c, d), x), ac));
+                    return addUnsigned(rotateLeft(a, s), b);
+                }
+                function HH(a, b, c, d, x, s, ac) {
+                    a = addUnsigned(a, addUnsigned(addUnsigned(H(b, c, d), x), ac));
+                    return addUnsigned(rotateLeft(a, s), b);
+                }
+                function II(a, b, c, d, x, s, ac) {
+                    a = addUnsigned(a, addUnsigned(addUnsigned(I(b, c, d), x), ac));
+                    return addUnsigned(rotateLeft(a, s), b);
+                }
+                function convertToWordArray(strVal) {
+                    const lWordCount = [];
+                    let lMessageLength = strVal.length;
+                    let lNumberOfWordsTempOne = lMessageLength + 8;
+                    const lNumberOfWordsTempTwo = (lNumberOfWordsTempOne - (lNumberOfWordsTempOne % 64)) / 64;
+                    const lNumberOfWords = (lNumberOfWordsTempTwo + 1) * 16;
+                    for (let i = 0; i < lNumberOfWords; i++) lWordCount[i] = 0;
+                    let lBytePosition = 0;
+                    let lByteCount = 0;
+                    while (lByteCount < lMessageLength) {
+                        const lWordCountIndex = (lByteCount - (lByteCount % 4)) / 4;
+                        lBytePosition = (lByteCount % 4) * 8;
+                        lWordCount[lWordCountIndex] |= strVal.charCodeAt(lByteCount) << lBytePosition;
+                        lByteCount++;
+                    }
+                    const lWordCountIndex = (lByteCount - (lByteCount % 4)) / 4;
+                    lBytePosition = (lByteCount % 4) * 8;
+                    lWordCount[lWordCountIndex] |= 0x80 << lBytePosition;
+                    lWordCount[lNumberOfWords - 2] = lMessageLength << 3;
+                    lWordCount[lNumberOfWords - 1] = lMessageLength >>> 29;
+                    return lWordCount;
+                }
+                function wordToHex(lValue) {
+                    let wordToHexValue = '';
+                    for (let lCount = 0; lCount <= 3; lCount++) {
+                        const lByte = (lValue >>> (lCount * 8)) & 255;
+                        const wordToHexValueTemp = '0' + lByte.toString(16);
+                        wordToHexValue += wordToHexValueTemp.substr(wordToHexValueTemp.length - 2, 2);
+                    }
+                    return wordToHexValue;
+                }
+                function utf8Encode(string) {
+                    string = string.replace(/\\r\\n/g, '\\n');
+                    let utftext = '';
+                    for (let n = 0; n < string.length; n++) {
+                        const c = string.charCodeAt(n);
+                        if (c < 128) utftext += String.fromCharCode(c);
+                        else if (c < 2048) {
+                            utftext += String.fromCharCode((c >> 6) | 192);
+                            utftext += String.fromCharCode((c & 63) | 128);
+                        } else {
+                            utftext += String.fromCharCode((c >> 12) | 224);
+                            utftext += String.fromCharCode(((c >> 6) & 63) | 128);
+                            utftext += String.fromCharCode((c & 63) | 128);
+                        }
+                    }
+                    return utftext;
+                }
+                let x = [];
+                let k, AA, BB, CC, DD, a, b, c, d;
+                const S11 = 7,
+                    S12 = 12,
+                    S13 = 17,
+                    S14 = 22;
+                const S21 = 5,
+                    S22 = 9,
+                    S23 = 14,
+                    S24 = 20;
+                const S31 = 4,
+                    S32 = 11,
+                    S33 = 16,
+                    S34 = 23;
+                const S41 = 6,
+                    S42 = 10,
+                    S43 = 15,
+                    S44 = 21;
+                str = utf8Encode(str);
+                x = convertToWordArray(str);
+                a = 0x67452301;
+                b = 0xefcdab89;
+                c = 0x98badcfe;
+                d = 0x10325476;
+                for (k = 0; k < x.length; k += 16) {
+                    AA = a;
+                    BB = b;
+                    CC = c;
+                    DD = d;
+                    a = FF(a, b, c, d, x[k + 0], S11, 0xd76aa478);
+                    d = FF(d, a, b, c, x[k + 1], S12, 0xe8c7b756);
+                    c = FF(c, d, a, b, x[k + 2], S13, 0x242070db);
+                    b = FF(b, c, d, a, x[k + 3], S14, 0xc1bdceee);
+                    a = FF(a, b, c, d, x[k + 4], S11, 0xf57c0faf);
+                    d = FF(d, a, b, c, x[k + 5], S12, 0x4787c62a);
+                    c = FF(c, d, a, b, x[k + 6], S13, 0xa8304613);
+                    b = FF(b, c, d, a, x[k + 7], S14, 0xfd469501);
+                    a = FF(a, b, c, d, x[k + 8], S11, 0x698098d8);
+                    d = FF(d, a, b, c, x[k + 9], S12, 0x8b44f7af);
+                    c = FF(c, d, a, b, x[k + 10], S13, 0xffff5bb1);
+                    b = FF(b, c, d, a, x[k + 11], S14, 0x895cd7be);
+                    a = FF(a, b, c, d, x[k + 12], S11, 0x6b901122);
+                    d = FF(d, a, b, c, x[k + 13], S12, 0xfd987193);
+                    c = FF(c, d, a, b, x[k + 14], S13, 0xa679438e);
+                    b = FF(b, c, d, a, x[k + 15], S14, 0x49b40821);
+                    a = GG(a, b, c, d, x[k + 1], S21, 0xf61e2562);
+                    d = GG(d, a, b, c, x[k + 6], S22, 0xc040b340);
+                    c = GG(c, d, a, b, x[k + 11], S23, 0x265e5a51);
+                    b = GG(b, c, d, a, x[k + 0], S24, 0xe9b6c7aa);
+                    a = GG(a, b, c, d, x[k + 5], S21, 0xd62f105d);
+                    d = GG(d, a, b, c, x[k + 10], S22, 0x02441453);
+                    c = GG(c, d, a, b, x[k + 15], S23, 0xd8a1e681);
+                    b = GG(b, c, d, a, x[k + 4], S24, 0xe7d3fbc8);
+                    a = GG(a, b, c, d, x[k + 9], S21, 0x21e1cde6);
+                    d = GG(d, a, b, c, x[k + 14], S22, 0xc33707d6);
+                    c = GG(c, d, a, b, x[k + 3], S23, 0xf4d50d87);
+                    b = GG(b, c, d, a, x[k + 8], S24, 0x455a14ed);
+                    a = GG(a, b, c, d, x[k + 13], S21, 0xa9e3e905);
+                    d = GG(d, a, b, c, x[k + 2], S22, 0xfcefa3f8);
+                    c = GG(c, d, a, b, x[k + 7], S23, 0x676f02d9);
+                    b = GG(b, c, d, a, x[k + 12], S24, 0x8d2a4c8a);
+                    a = HH(a, b, c, d, x[k + 5], S31, 0xfffa3942);
+                    d = HH(d, a, b, c, x[k + 8], S32, 0x8771f681);
+                    c = HH(c, d, a, b, x[k + 11], S33, 0x6d9d6122);
+                    b = HH(b, c, d, a, x[k + 14], S34, 0xfde5380c);
+                    a = HH(a, b, c, d, x[k + 1], S31, 0xa4beea44);
+                    d = HH(d, a, b, c, x[k + 4], S32, 0x4bdecfa9);
+                    c = HH(c, d, a, b, x[k + 7], S33, 0xf6bb4b60);
+                    b = HH(b, c, d, a, x[k + 10], S34, 0xbebfbc70);
+                    a = HH(a, b, c, d, x[k + 13], S31, 0x289b7ec6);
+                    d = HH(d, a, b, c, x[k + 0], S32, 0xeaa127fa);
+                    c = HH(c, d, a, b, x[k + 3], S33, 0xd4ef3085);
+                    b = HH(b, c, d, a, x[k + 6], S34, 0x04881d05);
+                    a = HH(a, b, c, d, x[k + 9], S31, 0xd9d4d039);
+                    d = HH(d, a, b, c, x[k + 12], S32, 0xe6db99e5);
+                    c = HH(c, d, a, b, x[k + 15], S33, 0x1fa27cf8);
+                    b = HH(b, c, d, a, x[k + 2], S34, 0xc4ac5665);
+                    a = II(a, b, c, d, x[k + 0], S41, 0xf4292244);
+                    d = II(d, a, b, c, x[k + 7], S42, 0x432aff97);
+                    c = II(c, d, a, b, x[k + 14], S43, 0xab9423a7);
+                    b = II(b, c, d, a, x[k + 5], S44, 0xfc93a039);
+                    a = II(a, b, c, d, x[k + 12], S41, 0x655b59c3);
+                    d = II(d, a, b, c, x[k + 3], S42, 0x8f0ccc92);
+                    c = II(c, d, a, b, x[k + 10], S43, 0xffeff47d);
+                    b = II(b, c, d, a, x[k + 1], S44, 0x85845dd1);
+                    a = II(a, b, c, d, x[k + 8], S41, 0x6fa87e4f);
+                    d = II(d, a, b, c, x[k + 15], S42, 0xfe2ce6e0);
+                    c = II(c, d, a, b, x[k + 6], S43, 0xa3014314);
+                    b = II(b, c, d, a, x[k + 13], S44, 0x4e0811a1);
+                    a = II(a, b, c, d, x[k + 4], S41, 0xf7537e82);
+                    d = II(d, a, b, c, x[k + 11], S42, 0xbd3af235);
+                    c = II(c, d, a, b, x[k + 2], S43, 0x2ad7d2bb);
+                    b = II(b, c, d, a, x[k + 9], S44, 0xeb86d391);
+                    a = addUnsigned(a, AA);
+                    b = addUnsigned(b, BB);
+                    c = addUnsigned(c, CC);
+                    d = addUnsigned(d, DD);
+                }
+                const temp = wordToHex(a) + wordToHex(b) + wordToHex(c) + wordToHex(d);
+                return temp.toLowerCase();
+            }
 
-        if (!desired.length) {
-          const optionEl = document.createElement('option');
-          optionEl.value = '';
-          optionEl.textContent = tt('toolbox.autoSubs.logs.noProviders', {}, 'No translation providers configured');
-          els.translationProvider.appendChild(optionEl);
-          els.translationProvider.disabled = true;
-          return '';
-        }
+            function deriveVideoHashFromParts(filename, fallbackId) {
+                const name = (filename && String(filename).trim()) || '';
+                const fallback = (fallbackId && String(fallbackId).trim()) || '';
+                const base = [name, fallback].filter(Boolean).join('::');
+                if (!base) return '';
+                return md5hex(base).substring(0, 16);
+            }
 
-        desired.forEach((opt) => {
-          const optionEl = document.createElement('option');
-          optionEl.value = opt.value;
-          optionEl.textContent = opt.text;
-          els.translationProvider.appendChild(optionEl);
-        });
+            function extractStreamVideoId(streamUrl) {
+                try {
+                    const url = new URL(streamUrl);
+                    const paramKeys = [
+                        'videoId',
+                        'video',
+                        'id',
+                        'mediaid',
+                        'imdb',
+                        'tmdb',
+                        'kitsu',
+                        'anidb',
+                        'mal',
+                        'myanimelist',
+                        'anilist',
+                        'tvdb',
+                        'simkl',
+                        'livechart',
+                        'anisearch'
+                    ];
+                    for (const key of paramKeys) {
+                        const val = url.searchParams.get(key);
+                        if (val && val.trim()) return val.trim();
+                    }
+                    const parts = (url.pathname || '').split('/').filter(Boolean);
+                    const directId = parts.find((p) => /^tt\\d+/i.test(p) || p.includes(':'));
+                    if (directId) return directId.trim();
+                    return '';
+                } catch (_) {
+                    return '';
+                }
+            }
 
-        const defaultValue = normalizeProviderKey(BOOTSTRAP.defaults?.provider || desired[0].value);
-        const nextValue = desired.some((opt) => opt.value === previous)
-          ? previous
-          : (desired.some((opt) => opt.value === defaultValue) ? defaultValue : desired[0].value);
+            function deriveStreamHashFromUrl(streamUrl, fallback = {}) {
+                const filename = selectStreamFilename(streamUrl, fallback.filename || '');
+                const streamVideoId = extractStreamVideoId(streamUrl) || fallback.videoId || '';
+                const hash = deriveVideoHashFromParts(filename, streamVideoId);
+                return { hash, filename, videoId: streamVideoId, source: 'stream-url' };
+            }
 
-        els.translationProvider.value = nextValue;
-        els.translationProvider.disabled = false;
-        return nextValue;
-      }
+            function collectAutoHashCandidates(values = []) {
+                const seen = new Set();
+                const out = [];
+                values.forEach((value) => {
+                    const normalized = (value || '').toString().trim().toLowerCase();
+                    if (!normalized || seen.has(normalized)) return;
+                    seen.add(normalized);
+                    out.push(normalized);
+                });
+                return out;
+            }
 
-      function getTranslationSettings() {
-        return {
-          translationProvider: normalizeProviderKey(els.translationProvider?.value || BOOTSTRAP.defaults?.provider || ''),
-          translationWorkflow: 'xml',
-          sendTimestampsToAI: false
-        };
-      }
+            function getAutoLinkedHashCandidates() {
+                return collectAutoHashCandidates([
+                    PAGE.videoHash || '',
+                    deriveVideoHashFromParts(PAGE.filename, PAGE.videoId)
+                ]);
+            }
 
-      function setTranslationSettingsExpanded(expanded) {
-        if (!els.translationSettings) return;
-        const open = expanded === true;
-        els.translationSettings.classList.toggle('open', open);
-        if (els.translationSettingsToggle) {
-          els.translationSettingsToggle.setAttribute('aria-expanded', open ? 'true' : 'false');
-          const caret = els.translationSettingsToggle.querySelector('.caret');
-          if (caret) caret.textContent = open ? '-' : '+';
-        }
-      }
+            function compareAutoHashSets(linkedHashes = [], streamHashes = []) {
+                const linkedSet = new Set(collectAutoHashCandidates(linkedHashes));
+                const streamSet = new Set(collectAutoHashCandidates(streamHashes));
+                const matches = [];
+                streamSet.forEach((hash) => {
+                    if (linkedSet.has(hash)) matches.push(hash);
+                });
+                return {
+                    hasLinked: linkedSet.size > 0,
+                    hasStream: streamSet.size > 0,
+                    match: matches.length > 0,
+                    matches,
+                    linkedHash: linkedSet.values().next().value || '',
+                    streamHash: streamSet.values().next().value || ''
+                };
+            }
 
-      function hydrateTargets() {
-        if (!els.targetLang) return;
-        const preferred = Array.isArray(BOOTSTRAP.targetLanguages) ? BOOTSTRAP.targetLanguages : [];
-        const desired = preferred.find(Boolean) || '';
-        const hasDesired = desired && Array.from(els.targetLang.options || []).some(opt => opt.value === desired);
-        if (hasDesired) {
-          els.targetLang.value = desired;
-        } else if (els.targetLang.options.length) {
-          els.targetLang.selectedIndex = 0;
-        }
-      }
+            async function resolveAutoStreamHashCandidates(streamUrl, fallback = {}) {
+                const immediate = deriveStreamHashFromUrl(streamUrl, fallback);
+                let resolved = null;
+                try {
+                    const resolvedUrl = await resolveStreamUrlRedirect(streamUrl);
+                    resolved = deriveStreamHashFromUrl(resolvedUrl, fallback);
+                } catch (_) {
+                    resolved = null;
+                }
+                const hashes = collectAutoHashCandidates([immediate.hash, resolved?.hash]);
+                return {
+                    immediate,
+                    resolved,
+                    hashes,
+                    preferred: resolved?.hash ? resolved : immediate.hash ? immediate : null
+                };
+            }
 
+            const LOG_LIMIT = 250;
+            function appendLog(message, tone = 'muted') {
+                if (!els.log || !message) return;
+                const entry = document.createElement('div');
+                entry.className = 'log-entry ' + (tone ? `log-${tone}` : 'log-muted');
 
+                const time = document.createElement('span');
+                time.className = 'log-time';
+                time.textContent = new Date().toLocaleTimeString();
 
+                const text = document.createElement('span');
+                text.className = 'log-text';
+                text.textContent = message;
 
+                entry.appendChild(time);
+                entry.appendChild(text);
+                els.log.insertBefore(entry, els.log.firstChild);
 
-      function toggleModeDetails() {
-        const mode = (els.modeSelect?.value || '').toString().toLowerCase();
-        const isAssembly = mode === 'assemblyai';
-        const isCloudflare = mode === 'cloudflare';
-        // Show modeDetails for cloudflare (model only) and non-local/non-assembly modes
-        const showDetails = mode !== 'local' && !isAssembly;
-        if (els.modeDetails) {
-          els.modeDetails.style.display = (showDetails || isCloudflare) ? '' : 'none';
-        }
-        const langAudioRow = els.modeDetails ? els.modeDetails.querySelector('.row') : null;
-        const sourceLangRow = els.sourceLang ? els.sourceLang.closest('div') : null;
-        const modelRow = els.model ? els.model.closest('div') : null;
-        const assemblyOptions = els.assemblyOptions || null;
-        // For Cloudflare: show the row but hide source lang, show model only
-        if (langAudioRow) langAudioRow.style.display = isAssembly ? 'none' : '';
-        if (sourceLangRow) sourceLangRow.style.display = (isAssembly || isCloudflare) ? 'none' : '';
-        if (modelRow) modelRow.style.display = (isAssembly) ? 'none' : '';
-        if (assemblyOptions) assemblyOptions.style.display = isAssembly ? 'flex' : 'none';
-        if (els.sourceLang) els.sourceLang.disabled = isAssembly || isCloudflare;
-        if (els.model) els.model.disabled = isAssembly;
-        if (els.assemblyModel) els.assemblyModel.disabled = !isAssembly;
-        // Default to turbo for Cloudflare
-        if (isCloudflare && els.model && !els.model.value) {
-          els.model.value = '@cf/openai/whisper-large-v3-turbo';
-        }
-      }
+                maybeUpdateDecodeFromLog(message, tone);
 
+                while (els.log.childNodes.length > LOG_LIMIT) {
+                    els.log.removeChild(els.log.lastChild);
+                }
+            }
 
+            function resetServerLogState() {
+                if (state.serverLogKeys?.clear) state.serverLogKeys.clear();
+                state.lastServerLogTs = 0;
+            }
 
-      function toggleTranslationStep() {
-        const enabled = els.translateToggle?.checked === true;
-        if (els.targetLangWrapper) {
-          els.targetLangWrapper.style.display = enabled ? '' : 'none';
-        }
-        if (els.translationSettings) {
-          els.translationSettings.style.display = enabled ? '' : 'none';
-        }
-        if (els.targetLang) els.targetLang.disabled = !enabled;
-        if (els.translationProvider) {
-          const hasProviderOptions = Array.from(els.translationProvider.options || [])
-            .some((opt) => (opt.value || '').toString().trim());
-          const providerDisabled = !enabled || !hasProviderOptions;
-          els.translationProvider.disabled = providerDisabled;
-        }
-        refreshStepLocks();
-      }
+            function stopAssemblyLiveLogs() {
+                if (state.liveLogSource) {
+                    try {
+                        state.liveLogSource.close();
+                    } catch (_) {
+                        /* ignore close errors */
+                    }
+                    state.liveLogSource = null;
+                }
+                if (state.liveLogPoll) {
+                    clearInterval(state.liveLogPoll);
+                    state.liveLogPoll = null;
+                }
+                state.liveLogJobId = null;
+            }
 
-      function setDownloads(original, translations, rawTranscript) {
-        const raw = rawTranscript || state.rawTranscript;
-        if (els.dlSrt) {
-          if (original?.srt) {
-            const blob = new Blob([original.srt], { type: 'text/plain' });
-            enableDownloadLink(
-              els.dlSrt,
-              original.downloadUrl || URL.createObjectURL(blob),
-              (PAGE.videoHash || 'video') + '_' + (original.languageCode || 'und') + '_autosub.srt'
-            );
-          } else {
-            disableDownloadLink(els.dlSrt);
-          }
-        }
-        if (els.dlRaw) {
-          if (raw?.srt) {
-            const blob = new Blob([raw.srt], { type: 'text/plain' });
-            const langCode = raw.languageCode || raw.language || original?.languageCode || 'und';
-            enableDownloadLink(
-              els.dlRaw,
-              raw.downloadUrl || URL.createObjectURL(blob),
-              (PAGE.videoHash || 'video') + '_' + (langCode || 'und') + '_autosub_raw.srt'
-            );
-          } else {
-            disableDownloadLink(els.dlRaw);
-          }
-        }
+            function handleServerLogEntry(entry) {
+                if (!entry) return;
+                const level = (entry.level || entry.tone || '').toString().toLowerCase();
+                const tone =
+                    level === 'error' ? 'error' : level === 'warn' ? 'warn' : level === 'success' ? 'success' : 'info';
+                const msg = entry.message || entry.msg || '';
+                if (!msg) return;
+                const ts = Number(entry.ts) || Date.now();
+                const key = `${ts}|${tone}|${msg}`;
+                if (state.serverLogKeys?.has(key)) return;
+                if (state.serverLogKeys) state.serverLogKeys.add(key);
+                state.lastServerLogTs = Math.max(state.lastServerLogTs || 0, ts);
+                appendLog(msg, tone);
+            }
 
-        if (els.translations) {
-          els.translations.innerHTML = '';
-          if (Array.isArray(translations) && translations.length) {
-            translations.forEach((entry) => {
-              const card = document.createElement('div');
-              card.className = 'card';
-              const title = document.createElement('div');
-              title.style.fontWeight = '700';
-              const langLabel = entry.languageCode || '';
-              title.textContent = langLabel
-                ? tt('toolbox.autoSubs.steps.translationCardTitle', { lang: langLabel }, 'Translated ' + langLabel)
-                : tt('toolbox.autoSubs.steps.translationCardFallback', {}, 'Translated subtitle');
-              card.appendChild(title);
-              if (entry.error) {
-                const err = document.createElement('div');
-                err.style.color = 'var(--danger)';
-                err.textContent = entry.error;
-                card.appendChild(err);
-              }
-              if (entry.srt || entry.error) {
-                const actions = document.createElement('div');
-                actions.className = 'controls';
-                const btn = document.createElement('a');
-                if (entry.srt) {
-                  btn.className = 'btn secondary';
-                  const blob = new Blob([entry.srt], { type: 'text/plain' });
-                  btn.href = entry.downloadUrl || URL.createObjectURL(blob);
-                  btn.download = (PAGE.videoHash || 'video') + '_' + (entry.languageCode || 'lang') + '_autosub.srt';
-                  btn.textContent = tt('toolbox.autoSubs.actions.downloadTranslation', { lang: entry.languageCode || 'subtitle' }, 'Download ' + (entry.languageCode || 'subtitle'));
-                  actions.appendChild(btn);
+            function appendServerLogs(logs) {
+                if (!Array.isArray(logs)) return;
+                logs.forEach((entry) => handleServerLogEntry(entry));
+            }
+
+            function startAssemblyLogPoll(jobId) {
+                if (!jobId) return () => {};
+                if (state.liveLogPoll) clearInterval(state.liveLogPoll);
+                const poll = async () => {
+                    try {
+                        const resp = await fetch(
+                            '/api/auto-subtitles/logs?jobId=' +
+                                encodeURIComponent(jobId) +
+                                '&format=json&since=' +
+                                encodeURIComponent(state.lastServerLogTs || ''),
+                            { cache: 'no-store' }
+                        );
+                        if (!resp.ok) return;
+                        const data = await resp.json().catch(() => null);
+                        if (data && Array.isArray(data.logs)) {
+                            appendServerLogs(data.logs);
+                        }
+                        if (data && data.done) {
+                            stopAssemblyLiveLogs();
+                        }
+                    } catch (_) {
+                        /* ignore polling errors */
+                    }
+                };
+                poll();
+                state.liveLogPoll = setInterval(poll, 1500);
+                return () => {
+                    if (state.liveLogPoll) clearInterval(state.liveLogPoll);
+                    state.liveLogPoll = null;
+                };
+            }
+
+            function startAssemblyLiveLogStream(jobId) {
+                stopAssemblyLiveLogs();
+                if (!jobId) return () => {};
+                state.liveLogJobId = jobId;
+                if (typeof EventSource === 'function') {
+                    const source = new EventSource(
+                        '/api/auto-subtitles/logs?jobId=' + encodeURIComponent(jobId) + '&replay=0'
+                    );
+                    state.liveLogSource = source;
+                    source.onmessage = (event) => {
+                        try {
+                            const entry = JSON.parse(event.data);
+                            if (entry) appendServerLogs([entry]);
+                        } catch (_) {
+                            /* ignore parse errors */
+                        }
+                    };
+                    source.addEventListener('done', () => {
+                        stopAssemblyLiveLogs();
+                    });
+                    source.onerror = () => {
+                        stopAssemblyLiveLogs();
+                        startAssemblyLogPoll(jobId);
+                    };
+                    return () => stopAssemblyLiveLogs();
+                }
+                startAssemblyLogPoll(jobId);
+                return () => stopAssemblyLiveLogs();
+            }
+
+            function clearLog() {
+                if (!els.log) return;
+                els.log.innerHTML = '';
+            }
+
+            function setStatus(text) {
+                if (els.status) els.status.textContent = text;
+            }
+
+            function enableDownloadLink(el, href, filename) {
+                if (!el) return;
+                if (href) el.href = href;
+                if (filename) el.download = filename;
+                el.classList.remove('disabled');
+                el.removeAttribute('aria-disabled');
+                el.style.pointerEvents = '';
+                el.style.opacity = '';
+            }
+
+            function disableDownloadLink(el) {
+                if (!el) return;
+                el.removeAttribute('href');
+                el.removeAttribute('download');
+                el.classList.add('disabled');
+                el.setAttribute('aria-disabled', 'true');
+                el.style.pointerEvents = 'none';
+                el.style.opacity = '0.6';
+            }
+
+            function setProgress(pct) {
+                if (els.progress) els.progress.style.width = Math.min(100, Math.max(0, pct || 0)) + '%';
+            }
+
+            function cleanDisplayNameClient(raw) {
+                if (!raw) return '';
+                const lastSegment = String(raw).split(/[/\\]/).pop() || '';
+                const withoutExt = lastSegment.replace(/\.[^.]+$/, '');
+                const spaced = withoutExt
+                    .replace(/[_\\.]+/g, ' ')
+                    .replace(/\s+/g, ' ')
+                    .trim();
+                return spaced || withoutExt || lastSegment;
+            }
+
+            function formatEpisodeTagDisplay(videoId) {
+                const parts = (videoId || '').split(':');
+                // Handle anime IDs (anidb, kitsu, mal, anilist)
+                // Format: platform:id:episode or platform:id:season:episode
+                if (/^(anidb|kitsu|mal|myanimelist|anilist|tvdb|simkl|livechart|anisearch)/.test(parts[0])) {
+                    if (parts.length === 3) {
+                        // platform:id:episode (seasonless)
+                        const episode = parseInt(parts[2], 10);
+                        return Number.isFinite(episode) ? 'E' + String(episode).padStart(2, '0') : '';
+                    }
+                    if (parts.length === 4) {
+                        // platform:id:season:episode
+                        const season = parseInt(parts[2], 10);
+                        const episode = parseInt(parts[3], 10);
+                        const s = Number.isFinite(season) ? 'S' + String(season).padStart(2, '0') : '';
+                        const e = Number.isFinite(episode) ? 'E' + String(episode).padStart(2, '0') : '';
+                        return s || e ? (s + e).trim() : '';
+                    }
+                    return '';
+                }
+                // Handle TMDB and IMDB IDs
+                if (parts.length >= 3) {
+                    const seasonIdx = parts[0] === 'tmdb' ? 2 : 1;
+                    const episodeIdx = parts[0] === 'tmdb' ? 3 : 2;
+                    const season = parseInt(parts[seasonIdx], 10);
+                    const episode = parseInt(parts[episodeIdx], 10);
+                    const s = Number.isFinite(season) ? 'S' + String(season).padStart(2, '0') : '';
+                    const e = Number.isFinite(episode) ? 'E' + String(episode).padStart(2, '0') : '';
+                    if (s || e) return (s + e).trim();
+                }
+                return '';
+            }
+
+            async function fetchLinkedTitle(videoId) {
+                const trimmed = (videoId || '').trim();
+                if (!trimmed) return '';
+                const parts = trimmed.split(':');
+
+                // Handle anime IDs through server-side resolver (supports all platforms)
+                if (/^(anidb|kitsu|mal|myanimelist|anilist|tvdb|simkl|livechart|anisearch)/.test(parts[0])) {
+                    const cacheKey = 'anime:' + trimmed.toLowerCase();
+                    if (linkedTitleCache.has(cacheKey)) {
+                        return linkedTitleCache.get(cacheKey) || '';
+                    }
+                    try {
+                        const url =
+                            '/api/resolve-linked-title?config=' +
+                            encodeURIComponent(PAGE.configStr) +
+                            '&videoId=' +
+                            encodeURIComponent(trimmed);
+                        const resp = await fetch(url, { cache: 'no-store' });
+                        if (resp.ok) {
+                            const data = await resp.json();
+                            const title = (typeof data?.title === 'string' ? data.title.trim() : '') || '';
+                            linkedTitleCache.set(cacheKey, title || null);
+                            return title;
+                        }
+                    } catch (_) {
+                        // Fall through
+                    }
+                    linkedTitleCache.set(cacheKey, null);
+                    return '';
                 }
 
-                const reBtn = document.createElement('button');
-                reBtn.type = 'button';
-                reBtn.className = 'btn ghost';
-                const safeLang = (entry.languageCode || '').toString().trim();
-                reBtn.textContent = safeLang
-                  ? tt('toolbox.autoSubs.actions.retranslate', { lang: safeLang }, 'Retry translation ' + safeLang)
-                  : tt('toolbox.autoSubs.actions.retranslate', { lang: '' }, 'Retry translation');
-                reBtn.addEventListener('click', (ev) => {
-                  ev.preventDefault();
-                  ev.stopPropagation();
-                  if (!safeLang) return;
-                  retranslateLanguage(safeLang);
+                // Handle TMDB/IMDB IDs
+                let metaId = '';
+                if (parts[0] === 'tmdb' && parts[1]) {
+                    metaId = 'tmdb:' + parts[1];
+                } else {
+                    const imdbId = (parts[0] || '').replace(/^tt/i, 'tt');
+                    if (/^tt\\d{3,}$/i.test(imdbId)) metaId = imdbId.toLowerCase();
+                }
+                if (!metaId) return '';
+                const metaType = parts.length >= 3 ? 'series' : 'movie';
+                const metaUrl =
+                    'https://v3-cinemeta.strem.io/meta/' + metaType + '/' + encodeURIComponent(metaId) + '.json';
+                try {
+                    const resp = await fetch(metaUrl);
+                    if (!resp.ok) throw new Error('meta fetch failed');
+                    const data = await resp.json();
+                    return data?.meta?.name || data?.meta?.english_name || data?.meta?.nameTranslated?.en || '';
+                } catch (_) {
+                    return '';
+                }
+            }
+
+            function renderVideoMeta(source = {}) {
+                if (!els.videoMetaTitle || !els.videoMetaSubtitle) return;
+                const episodeLabel = formatEpisodeTagDisplay(source.videoId);
+                const fallbackTitle =
+                    cleanDisplayNameClient(source.filename) ||
+                    cleanDisplayNameClient(source.videoId) ||
+                    copy.videoMeta.none;
+                const resolvedTitle = source.title || fallbackTitle || copy.videoMeta.none;
+                // Detect if this is episode content (has episode tag means it's an episode)
+                const isEpisode = !!episodeLabel;
+                // Append episode tag to main title for episodes (if not already present)
+                const displayTitle =
+                    isEpisode && episodeLabel && !resolvedTitle.toUpperCase().includes(episodeLabel.toUpperCase())
+                        ? resolvedTitle + ' - ' + episodeLabel
+                        : resolvedTitle;
+                const details = [];
+                if (source.videoId) details.push('Video ID: ' + source.videoId);
+                if (source.title) details.push('Title: ' + source.title);
+                if (source.videoId || source.filename || source.title)
+                    details.push('Episode: ' + (episodeLabel || '-'));
+                const fileLine = source.filename ? 'File: ' + cleanDisplayNameClient(source.filename) : '';
+                els.videoMetaTitle.textContent = displayTitle;
+                els.videoMetaSubtitle.innerHTML = buildMetaSubtitleHtml(
+                    details.join(' | '),
+                    fileLine,
+                    copy.videoMeta.waiting
+                );
+            }
+
+            async function hydrateVideoMeta(source = {}) {
+                renderVideoMeta(source);
+                if (!source.videoId || source.title) return;
+                const requestId = ++videoMetaRequestId;
+                const fetched = await fetchLinkedTitle(source.videoId);
+                if (requestId !== videoMetaRequestId || !fetched) return;
+                renderVideoMeta({ ...source, title: fetched });
+            }
+
+            function getPillParts(pill) {
+                if (!pill) return {};
+                const valueEl = pill.querySelector('.pill-value') || pill.querySelector('strong') || pill;
+                const dotEl = pill.querySelector('.status-dot');
+                const baseLabel =
+                    pill.getAttribute('data-label') ||
+                    (valueEl ? valueEl.textContent.replace(/^(OK|-)/, '').trim() : '');
+                return { valueEl, dotEl, baseLabel };
+            }
+
+            function setPillLabel(step, label) {
+                if (!label) return;
+                const pill = stepPills[step];
+                if (!pill) return;
+                const { valueEl } = getPillParts(pill);
+                if (valueEl) valueEl.textContent = label;
+            }
+
+            function applyPillState(pill, state = 'warn') {
+                const { valueEl, dotEl, baseLabel } = getPillParts(pill);
+                pill.classList.remove('check', 'warn', 'danger');
+                pill.classList.add(state);
+                const okLabel = tt('toolbox.autoSubs.status.ok', {}, 'OK');
+                const waitingLabel =
+                    runtimeCopy?.badges?.pending || tt('toolbox.autoSubs.badges.pending', {}, 'WAITING');
+                if (valueEl && baseLabel) {
+                    if (state === 'check') {
+                        valueEl.textContent = okLabel;
+                    } else if (state === 'warn') {
+                        valueEl.textContent = waitingLabel;
+                    } else {
+                        valueEl.textContent = baseLabel;
+                    }
+                }
+                if (dotEl) {
+                    const tone = state === 'check' ? 'ok' : state === 'danger' ? 'bad' : 'warn';
+                    const pulse = state === 'warn' ? ' pulse' : '';
+                    dotEl.className = 'status-dot ' + tone + pulse;
+                }
+            }
+
+            function resetPills() {
+                Object.values(stepPills).forEach((pill) => {
+                    if (!pill) return;
+                    applyPillState(pill, 'warn');
                 });
-                actions.appendChild(reBtn);
+            }
 
-                card.appendChild(actions);
-              }
-              els.translations.appendChild(card);
+            function markStep(step, state = 'check') {
+                const pill = stepPills[step];
+                if (!pill) return;
+                applyPillState(pill, state);
+            }
+
+            function markFetchComplete() {
+                markStep('fetch', 'check');
+                const pill = stepPills.fetch;
+                if (!pill) return;
+                const { valueEl } = getPillParts(pill);
+                const okLabel = tt('toolbox.autoSubs.status.ok', {}, 'OK');
+                if (valueEl) valueEl.textContent = okLabel;
+            }
+
+            function getSelectedModelLabel() {
+                const selected =
+                    els.model && els.model.selectedOptions && els.model.selectedOptions[0]
+                        ? els.model.selectedOptions[0].textContent || els.model.selectedOptions[0].value || ''
+                        : '';
+                const fallback = (els.model && (els.model.value || '')) || '';
+                return (selected || fallback || 'Whisper').toString().trim() || 'Whisper';
+            }
+
+            function getSelectedAssemblyModelLabel() {
+                const selected =
+                    els.assemblyModel && els.assemblyModel.selectedOptions && els.assemblyModel.selectedOptions[0]
+                        ? els.assemblyModel.selectedOptions[0].textContent ||
+                          els.assemblyModel.selectedOptions[0].value ||
+                          ''
+                        : '';
+                const fallback = (els.assemblyModel && (els.assemblyModel.value || '')) || '';
+                return (selected || fallback || 'Universal-2').toString().trim() || 'Universal-2';
+            }
+
+            function getTranscribeStatusLabel(statusText) {
+                if (statusText) return statusText;
+                const mode = (els.modeSelect?.value || '').toLowerCase();
+                if (mode === 'assemblyai') {
+                    const assemblyModelLabel = getSelectedAssemblyModelLabel();
+                    return tt(
+                        'toolbox.autoSubs.status.transcribingAssembly',
+                        { model: 'AssemblyAI (' + assemblyModelLabel + ')' },
+                        'Transcribing with AssemblyAI (' + assemblyModelLabel + ')'
+                    );
+                }
+                const modelLabel = getSelectedModelLabel();
+                return tt(
+                    'toolbox.autoSubs.status.transcribing',
+                    { model: modelLabel },
+                    'Transcribing with Whisper (' + modelLabel + ')'
+                );
+            }
+
+            function setInFlight(active) {
+                state.autoSubsInFlight = !!active;
+                if (els.startBtn) {
+                    els.startBtn.textContent = active
+                        ? tt('toolbox.autoSubs.status.running', {}, 'Running...')
+                        : startBtnLabel;
+                }
+                applyStartDisabled(isStep3Ready());
+            }
+
+            function getSelectedTargets() {
+                if (!els.targetLang) return [];
+                const val = (els.targetLang.value || '').trim();
+                return val ? [val] : [];
+            }
+
+            const normalizeProviderKey = (key) =>
+                String(key || '')
+                    .trim()
+                    .toLowerCase();
+
+            function renderTranslationProviders() {
+                if (!els.translationProvider) return '';
+                const providerOpts = Array.isArray(BOOTSTRAP.providerOptions) ? BOOTSTRAP.providerOptions : [];
+                const desired = providerOpts
+                    .map((opt) => {
+                        const value = normalizeProviderKey(opt && (opt.key || opt.value || opt.name || ''));
+                        if (!value) return null;
+                        return {
+                            value,
+                            text: String(opt.label || opt.text || opt.key || opt.value || value).trim() || value
+                        };
+                    })
+                    .filter(Boolean);
+
+                const previous = normalizeProviderKey(els.translationProvider.value || '');
+                els.translationProvider.innerHTML = '';
+
+                if (!desired.length) {
+                    const optionEl = document.createElement('option');
+                    optionEl.value = '';
+                    optionEl.textContent = tt(
+                        'toolbox.autoSubs.logs.noProviders',
+                        {},
+                        'No translation providers configured'
+                    );
+                    els.translationProvider.appendChild(optionEl);
+                    els.translationProvider.disabled = true;
+                    return '';
+                }
+
+                desired.forEach((opt) => {
+                    const optionEl = document.createElement('option');
+                    optionEl.value = opt.value;
+                    optionEl.textContent = opt.text;
+                    els.translationProvider.appendChild(optionEl);
+                });
+
+                const defaultValue = normalizeProviderKey(BOOTSTRAP.defaults?.provider || desired[0].value);
+                const nextValue = desired.some((opt) => opt.value === previous)
+                    ? previous
+                    : desired.some((opt) => opt.value === defaultValue)
+                      ? defaultValue
+                      : desired[0].value;
+
+                els.translationProvider.value = nextValue;
+                els.translationProvider.disabled = false;
+                return nextValue;
+            }
+
+            function getTranslationSettings() {
+                return {
+                    translationProvider: normalizeProviderKey(
+                        els.translationProvider?.value || BOOTSTRAP.defaults?.provider || ''
+                    ),
+                    translationWorkflow: 'xml',
+                    sendTimestampsToAI: false
+                };
+            }
+
+            function setTranslationSettingsExpanded(expanded) {
+                if (!els.translationSettings) return;
+                const open = expanded === true;
+                els.translationSettings.classList.toggle('open', open);
+                if (els.translationSettingsToggle) {
+                    els.translationSettingsToggle.setAttribute('aria-expanded', open ? 'true' : 'false');
+                    const caret = els.translationSettingsToggle.querySelector('.caret');
+                    if (caret) caret.textContent = open ? '-' : '+';
+                }
+            }
+
+            function hydrateTargets() {
+                if (!els.targetLang) return;
+                const preferred = Array.isArray(BOOTSTRAP.targetLanguages) ? BOOTSTRAP.targetLanguages : [];
+                const desired = preferred.find(Boolean) || '';
+                const hasDesired =
+                    desired && Array.from(els.targetLang.options || []).some((opt) => opt.value === desired);
+                if (hasDesired) {
+                    els.targetLang.value = desired;
+                } else if (els.targetLang.options.length) {
+                    els.targetLang.selectedIndex = 0;
+                }
+            }
+
+            function toggleModeDetails() {
+                const mode = (els.modeSelect?.value || '').toString().toLowerCase();
+                const isAssembly = mode === 'assemblyai';
+                const isCloudflare = mode === 'cloudflare';
+                // Show modeDetails for cloudflare (model only) and non-local/non-assembly modes
+                const showDetails = mode !== 'local' && !isAssembly;
+                if (els.modeDetails) {
+                    els.modeDetails.style.display = showDetails || isCloudflare ? '' : 'none';
+                }
+                const langAudioRow = els.modeDetails ? els.modeDetails.querySelector('.row') : null;
+                const sourceLangRow = els.sourceLang ? els.sourceLang.closest('div') : null;
+                const modelRow = els.model ? els.model.closest('div') : null;
+                const assemblyOptions = els.assemblyOptions || null;
+                // For Cloudflare: show the row but hide source lang, show model only
+                if (langAudioRow) langAudioRow.style.display = isAssembly ? 'none' : '';
+                if (sourceLangRow) sourceLangRow.style.display = isAssembly || isCloudflare ? 'none' : '';
+                if (modelRow) modelRow.style.display = isAssembly ? 'none' : '';
+                if (assemblyOptions) assemblyOptions.style.display = isAssembly ? 'flex' : 'none';
+                if (els.sourceLang) els.sourceLang.disabled = isAssembly || isCloudflare;
+                if (els.model) els.model.disabled = isAssembly;
+                if (els.assemblyModel) els.assemblyModel.disabled = !isAssembly;
+                // Default to turbo for Cloudflare
+                if (isCloudflare && els.model && !els.model.value) {
+                    els.model.value = '@cf/openai/whisper-large-v3-turbo';
+                }
+            }
+
+            function toggleTranslationStep() {
+                const enabled = els.translateToggle?.checked === true;
+                if (els.targetLangWrapper) {
+                    els.targetLangWrapper.style.display = enabled ? '' : 'none';
+                }
+                if (els.translationSettings) {
+                    els.translationSettings.style.display = enabled ? '' : 'none';
+                }
+                if (els.targetLang) els.targetLang.disabled = !enabled;
+                if (els.translationProvider) {
+                    const hasProviderOptions = Array.from(els.translationProvider.options || []).some((opt) =>
+                        (opt.value || '').toString().trim()
+                    );
+                    const providerDisabled = !enabled || !hasProviderOptions;
+                    els.translationProvider.disabled = providerDisabled;
+                }
+                refreshStepLocks();
+            }
+
+            function setDownloads(original, translations, rawTranscript) {
+                const raw = rawTranscript || state.rawTranscript;
+                if (els.dlSrt) {
+                    if (original?.srt) {
+                        const blob = new Blob([original.srt], { type: 'text/plain' });
+                        enableDownloadLink(
+                            els.dlSrt,
+                            original.downloadUrl || URL.createObjectURL(blob),
+                            (PAGE.videoHash || 'video') + '_' + (original.languageCode || 'und') + '_autosub.srt'
+                        );
+                    } else {
+                        disableDownloadLink(els.dlSrt);
+                    }
+                }
+                if (els.dlRaw) {
+                    if (raw?.srt) {
+                        const blob = new Blob([raw.srt], { type: 'text/plain' });
+                        const langCode = raw.languageCode || raw.language || original?.languageCode || 'und';
+                        enableDownloadLink(
+                            els.dlRaw,
+                            raw.downloadUrl || URL.createObjectURL(blob),
+                            (PAGE.videoHash || 'video') + '_' + (langCode || 'und') + '_autosub_raw.srt'
+                        );
+                    } else {
+                        disableDownloadLink(els.dlRaw);
+                    }
+                }
+
+                if (els.translations) {
+                    els.translations.innerHTML = '';
+                    if (Array.isArray(translations) && translations.length) {
+                        translations.forEach((entry) => {
+                            const card = document.createElement('div');
+                            card.className = 'card';
+                            const title = document.createElement('div');
+                            title.style.fontWeight = '700';
+                            const langLabel = entry.languageCode || '';
+                            title.textContent = langLabel
+                                ? tt(
+                                      'toolbox.autoSubs.steps.translationCardTitle',
+                                      { lang: langLabel },
+                                      'Translated ' + langLabel
+                                  )
+                                : tt('toolbox.autoSubs.steps.translationCardFallback', {}, 'Translated subtitle');
+                            card.appendChild(title);
+                            if (entry.error) {
+                                const err = document.createElement('div');
+                                err.style.color = 'var(--danger)';
+                                err.textContent = entry.error;
+                                card.appendChild(err);
+                            }
+                            if (entry.srt || entry.error) {
+                                const actions = document.createElement('div');
+                                actions.className = 'controls';
+                                const btn = document.createElement('a');
+                                if (entry.srt) {
+                                    btn.className = 'btn secondary';
+                                    const blob = new Blob([entry.srt], { type: 'text/plain' });
+                                    btn.href = entry.downloadUrl || URL.createObjectURL(blob);
+                                    btn.download =
+                                        (PAGE.videoHash || 'video') +
+                                        '_' +
+                                        (entry.languageCode || 'lang') +
+                                        '_autosub.srt';
+                                    btn.textContent = tt(
+                                        'toolbox.autoSubs.actions.downloadTranslation',
+                                        { lang: entry.languageCode || 'subtitle' },
+                                        'Download ' + (entry.languageCode || 'subtitle')
+                                    );
+                                    actions.appendChild(btn);
+                                }
+
+                                const reBtn = document.createElement('button');
+                                reBtn.type = 'button';
+                                reBtn.className = 'btn ghost';
+                                const safeLang = (entry.languageCode || '').toString().trim();
+                                reBtn.textContent = safeLang
+                                    ? tt(
+                                          'toolbox.autoSubs.actions.retranslate',
+                                          { lang: safeLang },
+                                          'Retry translation ' + safeLang
+                                      )
+                                    : tt('toolbox.autoSubs.actions.retranslate', { lang: '' }, 'Retry translation');
+                                reBtn.addEventListener('click', (ev) => {
+                                    ev.preventDefault();
+                                    ev.stopPropagation();
+                                    if (!safeLang) return;
+                                    retranslateLanguage(safeLang);
+                                });
+                                actions.appendChild(reBtn);
+
+                                card.appendChild(actions);
+                            }
+                            els.translations.appendChild(card);
+                        });
+                    } else {
+                        const empty = document.createElement('div');
+                        empty.style.color = 'var(--text-secondary)';
+                        empty.textContent = tt('toolbox.autoSubs.steps.translationsEmpty', {}, 'No translations yet.');
+                        els.translations.appendChild(empty);
+                    }
+                }
+                updateStremioDeliveryWarning(translations);
+            }
+
+            function updateStremioDeliveryWarning(translations) {
+                if (!els.stremioDeliveryWarning) return;
+                const translatedOkCount = Array.isArray(translations)
+                    ? translations.filter((entry) => entry && !entry.error && entry.srt).length
+                    : 0;
+                if (translatedOkCount <= 0) {
+                    els.stremioDeliveryWarning.style.display = 'none';
+                    els.stremioDeliveryWarning.textContent = '';
+                    return;
+                }
+
+                const blocked = state.cacheBlocked === true;
+                const toneClass = blocked ? 'warn' : 'info';
+                const message = blocked
+                    ? runtimeCopy?.steps?.sentToStremioBlocked ||
+                      tt(
+                          'toolbox.autoSubs.steps.sentToStremioBlocked',
+                          {},
+                          'Translated subtitles were not sent to Stremio Auto for this run because of hash mismatch.'
+                      )
+                    : runtimeCopy?.steps?.sentToStremio ||
+                      tt(
+                          'toolbox.autoSubs.steps.sentToStremio',
+                          {},
+                          'Translated subtitles were sent to Stremio under the Auto entry.'
+                      );
+                els.stremioDeliveryWarning.className = 'step4-warning ' + toneClass;
+                els.stremioDeliveryWarning.textContent = message;
+                els.stremioDeliveryWarning.style.display = 'block';
+            }
+
+            function processAutoSubResult(data, transcript, translateEnabled, targets, serverLogs = []) {
+                appendServerLogs(serverLogs);
+                handleHashStatus(data?.hashes || {}, data?.cacheBlocked);
+                state.rawTranscript = transcript || state.rawTranscript || null;
+                state.originalOutput = data?.original || null;
+                state.translationOutputs = Array.isArray(data?.translations) ? data.translations.slice() : [];
+                markStep('align', 'check');
+                const okLabel = tt('toolbox.autoSubs.status.ok', {}, 'OK');
+                setPillLabel('align', okLabel);
+                setProgress(80);
+                appendLog(
+                    tt('toolbox.autoSubs.logs.alignmentDone', {}, 'Alignment and timestamp generation complete.'),
+                    'info'
+                );
+                setPreview((data?.original && data.original.srt) || transcript?.srt || '');
+                setDownloads(data?.original, data?.translations || [], transcript);
+                state.autoSubsCompleted = true;
+                if (translateEnabled && targets.length) {
+                    const hasTranslationErrors = (data.translations || []).some((t) => t.error);
+                    markStep('translate', hasTranslationErrors ? 'warn' : 'check');
+                    const successCount = (data.translations || []).filter((t) => !t.error).length;
+                    const failedCount = (data.translations || []).filter((t) => t.error).length;
+                    const translateSummary = tt(
+                        'toolbox.autoSubs.logs.translationSummary',
+                        {},
+                        'Translation finished.'
+                    );
+                    const translateParts = [];
+                    if (successCount)
+                        translateParts.push(
+                            tt(
+                                'toolbox.autoSubs.logs.translationSuccess',
+                                { count: successCount },
+                                `${successCount} ready`
+                            )
+                        );
+                    if (failedCount)
+                        translateParts.push(
+                            tt(
+                                'toolbox.autoSubs.logs.translationFailed',
+                                { count: failedCount },
+                                `${failedCount} failed`
+                            )
+                        );
+                    const translateLog = [translateSummary, translateParts.join(', ')].filter(Boolean).join(' ');
+                    appendLog(translateLog, failedCount ? 'warn' : 'success');
+                    if (hasTranslationErrors) {
+                        setPillLabel('translate', translateParts.join(', ') || translateSummary);
+                    } else {
+                        setPillLabel('translate', okLabel);
+                    }
+                } else {
+                    markStep('translate', 'check');
+                    setPillLabel('translate', okLabel);
+                }
+                markStep('deliver', 'check');
+                setPillLabel('deliver', okLabel);
+                if (state.decodeStatus !== 'done') {
+                    markDecodeDone(runtimeCopy?.badges?.decodeReady || decodeLabels.ready);
+                }
+                setProgress(100);
+                setStatus(tt('toolbox.autoSubs.status.done', {}, 'Done. Ready to download.'));
+                const finishedMsg = tt('toolbox.autoSubs.logs.finished', {}, 'Finished. Downloads are ready.');
+                const cacheSkipped = data?.cacheBlocked
+                    ? ' ' +
+                      tt('toolbox.autoSubs.logs.cacheSkipped', {}, 'Cache uploads were skipped due to hash mismatch.')
+                    : '';
+                appendLog(finishedMsg + cacheSkipped, 'success');
+                const totalTracks = 1 + (data?.translations || []).filter((t) => !t.error).length;
+                appendLog(
+                    tt(
+                        'toolbox.autoSubs.logs.readyToDeliver',
+                        { count: totalTracks },
+                        `Ready to deliver ${totalTracks} track(s).`
+                    ),
+                    'success'
+                );
+            }
+
+            function resetOutputs() {
+                state.autoSubsCompleted = false;
+                state.rawTranscript = null;
+                state.selectedAudioTrack = null;
+                state.originalOutput = null;
+                state.translationOutputs = [];
+                hideAudioTrackPrompt();
+                resetDecodeBadge();
+                setPreview('');
+                disableDownloadLink(els.dlSrt);
+                disableDownloadLink(els.dlRaw);
+                if (els.stremioDeliveryWarning) {
+                    els.stremioDeliveryWarning.style.display = 'none';
+                    els.stremioDeliveryWarning.textContent = '';
+                    els.stremioDeliveryWarning.className = 'step4-warning info';
+                }
+                if (els.translations) {
+                    els.translations.innerHTML = '';
+                }
+            }
+
+            function setPreview(content) {
+                if (els.srtPreview) {
+                    const maxLines = 80;
+                    const maxChars = 4000;
+                    const text = (content || '').toString();
+                    const lines = text.split(/\r?\n/);
+                    let display = text;
+                    if (lines.length > maxLines) {
+                        display = lines.slice(0, maxLines).join('\n') + `\n... (${lines.length - maxLines} more lines)`;
+                    }
+                    if (display.length > maxChars) {
+                        display = display.slice(0, maxChars) + '\n... (preview truncated)';
+                    }
+                    els.srtPreview.textContent =
+                        display || tt('toolbox.autoSubs.status.noOutput', {}, 'No output yet.');
+                }
+            }
+
+            function handleHashStatus(hashes = {}, cacheBlocked = false) {
+                const hashEl = els.hashStatus;
+                const linkedHashes = collectAutoHashCandidates([
+                    ...(Array.isArray(hashes.linkedHashes) ? hashes.linkedHashes : []),
+                    hashes.linked,
+                    PAGE.videoHash,
+                    deriveVideoHashFromParts(PAGE.filename, PAGE.videoId)
+                ]);
+                const streamHashes = collectAutoHashCandidates([
+                    ...(Array.isArray(hashes.streamHashes) ? hashes.streamHashes : []),
+                    hashes.stream
+                ]);
+                const compared = compareAutoHashSets(linkedHashes, streamHashes);
+                const linked = compared.linkedHash || linkedHashes[0] || '';
+                const streamHash = compared.match
+                    ? compared.matches[0] || compared.streamHash || ''
+                    : compared.streamHash || streamHashes[0] || '';
+                const hasMismatch = compared.hasLinked && compared.hasStream && !compared.match;
+                const cacheFlag = cacheBlocked || hasMismatch;
+                state.cacheBlocked = cacheFlag;
+                state.streamHashCandidates = streamHashes;
+                state.streamHashInfo = streamHash
+                    ? { hash: streamHash, filename: '', videoId: '', source: 'stream-url' }
+                    : null;
+                if (els.hashBadgeValue) {
+                    const fallback = tt('toolbox.autoSubs.badges.pending', {}, 'WAITING');
+                    const badgeValue = linked || streamHash || fallback;
+                    els.hashBadgeValue.textContent = badgeValue;
+                }
+                if (els.hashBadge) {
+                    els.hashBadge.classList.remove('warn');
+                }
+                if (els.hashBadgeDot) {
+                    els.hashBadgeDot.className = 'status-dot ok';
+                }
+                if (hashEl) {
+                    hashEl.classList.remove('warn', 'danger', 'success');
+                    if (hasMismatch) {
+                        hashEl.textContent = tt('toolbox.autoSubs.hash.statusMismatch', {}, 'Hash mismatch detected.');
+                        hashEl.classList.add('danger');
+                    } else if (streamHash) {
+                        hashEl.textContent = tt('toolbox.autoSubs.hash.statusMatch', {}, 'Hashes match.');
+                        hashEl.classList.add('success');
+                    } else {
+                        hashEl.textContent = tt('toolbox.autoSubs.hash.waiting', {}, 'Waiting for stream hash...');
+                        hashEl.classList.add('warn');
+                    }
+                }
+                if (hasMismatch) {
+                    setHashMismatchAlert(buildHashMismatchAlert(linked, streamHash));
+                } else {
+                    setHashMismatchAlert('');
+                }
+            }
+
+            // Track pending hash resolution to debounce and avoid races
+            let hashResolutionPending = null;
+
+            async function updateHashStatusFromInput() {
+                if (!els.streamUrl) return;
+                const url = (els.streamUrl.value || '').trim();
+                const linkedHashes = getAutoLinkedHashCandidates();
+                if (!url) {
+                    state.streamHashInfo = null;
+                    state.streamHashCandidates = [];
+                    handleHashStatus({ linkedHashes, streamHashes: [], stream: '' }, false);
+                    return;
+                }
+
+                // Generate a unique ID for this resolution to handle races
+                const resolutionId = Date.now() + Math.random();
+                hashResolutionPending = resolutionId;
+
+                // First, immediately compute hash from the input URL as-is
+                // This gives instant feedback while we resolve redirects
+                const immediateDerived = deriveStreamHashFromUrl(url, {
+                    filename: PAGE.filename,
+                    videoId: PAGE.videoId
+                });
+                const immediateHashes = collectAutoHashCandidates([immediateDerived.hash]);
+                const immediateCompared = compareAutoHashSets(linkedHashes, immediateHashes);
+
+                // If immediate hash matches, no need to resolve redirects
+                if (immediateCompared.match) {
+                    handleHashStatus(
+                        {
+                            linkedHashes,
+                            streamHashes: immediateHashes,
+                            stream:
+                                immediateCompared.matches[0] || immediateCompared.streamHash || immediateDerived.hash
+                        },
+                        state.cacheBlocked
+                    );
+                    return;
+                }
+
+                // Show a "resolving" state while we fetch the redirect
+                if (els.hashStatus) {
+                    els.hashStatus.textContent = tt('toolbox.autoSubs.hash.resolving', {}, 'Resolving stream URL...');
+                    els.hashStatus.classList.remove('success', 'danger');
+                    els.hashStatus.classList.add('warn');
+                }
+
+                try {
+                    const resolvedData = await resolveAutoStreamHashCandidates(url, {
+                        filename: PAGE.filename,
+                        videoId: PAGE.videoId
+                    });
+
+                    // Check if this resolution is still current (no newer input)
+                    if (hashResolutionPending !== resolutionId) return;
+                    const compared = compareAutoHashSets(linkedHashes, resolvedData.hashes);
+                    const finalHash = compared.match
+                        ? compared.matches[0] || resolvedData.preferred?.hash || ''
+                        : resolvedData.preferred?.hash || resolvedData.immediate?.hash || '';
+                    handleHashStatus(
+                        {
+                            linkedHashes,
+                            streamHashes: resolvedData.hashes,
+                            stream: finalHash
+                        },
+                        state.cacheBlocked
+                    );
+                } catch (err) {
+                    // Check if this resolution is still current
+                    if (hashResolutionPending !== resolutionId) return;
+
+                    // On error, use the immediate hash
+                    console.warn('[updateHashStatusFromInput] Redirect resolution failed:', err);
+                    handleHashStatus(
+                        {
+                            linkedHashes,
+                            streamHashes: immediateHashes,
+                            stream: immediateDerived.hash
+                        },
+                        state.cacheBlocked
+                    );
+                }
+            }
+
+            function getCfCredentials() {
+                const cf = BOOTSTRAP.cfClient || {};
+                if (cf.accountId && cf.token) return { accountId: cf.accountId, token: cf.token };
+                return null;
+            }
+
+            function clearAutoSubTimeout() {
+                if (state.autoSubsTimer) {
+                    clearTimeout(state.autoSubsTimer);
+                    state.autoSubsTimer = null;
+                }
+            }
+
+            function failAutoSubTimeout() {
+                clearAutoSubTimeout();
+                hideAudioTrackPrompt();
+                state.awaitingTrackChoice = false;
+                const rejecter = state.autoSubsReject;
+                state.autoSubsMessageId = null;
+                state.autoSubsResolver = null;
+                state.autoSubsReject = null;
+                const err = new Error('Extension did not return a transcript in time');
+                if (state.decodeStatus !== 'done') {
+                    markDecodeError(runtimeCopy?.badges?.decodeError || decodeLabels.error);
+                }
+                if (typeof rejecter === 'function') rejecter(err);
+                else appendLog(err.message, 'error');
+            }
+
+            function refreshAutoSubTimeout() {
+                clearAutoSubTimeout();
+                state.autoSubsTimer = setTimeout(failAutoSubTimeout, AUTO_SUB_TIMEOUT_MS);
+            }
+
+            function pauseAutoSubTimeout() {
+                clearAutoSubTimeout();
+            }
+
+            function resetAutoSubWait() {
+                clearAutoSubTimeout();
+                state.autoSubsMessageId = null;
+                state.autoSubsResolver = null;
+                state.autoSubsReject = null;
+            }
+
+            function waitForAutoSubResponse(messageId) {
+                return new Promise((resolve, reject) => {
+                    state.autoSubsMessageId = messageId;
+                    state.autoSubsResolver = resolve;
+                    state.autoSubsReject = reject;
+                    refreshAutoSubTimeout();
+                });
+            }
+
+            function handleTrackOptionsMessage(msg) {
+                if (!state.autoSubsInFlight) return;
+                if (!msg || !state.autoSubsMessageId || (msg.messageId && msg.messageId !== state.autoSubsMessageId))
+                    return;
+                state.audioTracks = Array.isArray(msg.tracks) ? msg.tracks : [];
+                const suggested = Number.isInteger(msg.suggestedIndex) ? msg.suggestedIndex : msg.extractedIndex;
+                const extracted = Number.isInteger(msg.extractedIndex) ? msg.extractedIndex : null;
+                showAudioTrackPrompt(state.audioTracks, suggested, extracted);
+                const promptStatus =
+                    runtimeCopy?.steps?.audioTrackHelper ||
+                    tt(
+                        'toolbox.autoSubs.status.audioTrackPrompt',
+                        {},
+                        'Multiple audio tracks detected. Choose one to continue.'
+                    );
+                setStatus(promptStatus);
+                appendLog(promptStatus, 'info');
+                markDecodeDone(runtimeCopy?.badges?.decodeReady || decodeLabels.ready);
+            }
+
+            function submitAudioTrackSelection() {
+                if (!state.awaitingTrackChoice || !state.autoSubsMessageId) return;
+                const rawValue = els.audioTrackSelect ? parseInt(els.audioTrackSelect.value, 10) : NaN;
+                const choice = Number.isInteger(rawValue) && rawValue >= 0 ? rawValue : 0;
+                state.selectedAudioTrack = choice;
+                state.awaitingTrackChoice = false;
+                if (els.audioTrackContinue) {
+                    els.audioTrackContinue.disabled = true;
+                }
+                const status = tt(
+                    'toolbox.autoSubs.status.continuingTrack',
+                    { track: choice + 1 },
+                    `Continuing with audio track ${choice + 1}...`
+                );
+                appendLog(status, 'info');
+                setStatus(status);
+                window.postMessage(
+                    {
+                        type: 'SUBMAKER_AUTOSUB_SELECT_TRACK',
+                        source: 'webpage',
+                        messageId: state.autoSubsMessageId,
+                        trackIndex: choice
+                    },
+                    '*'
+                );
+                refreshAutoSubTimeout();
+                hideAudioTrackPrompt();
+            }
+
+            async function submitTranscriptToServer(transcript, stream, targets, translateEnabled, overrides = {}) {
+                const engine = overrides.engine || 'remote';
+                const assemblySpeechModel = (
+                    overrides.assemblySpeechModel ||
+                    els.assemblyModel?.value ||
+                    BOOTSTRAP.defaults?.assemblySpeechModel ||
+                    'universal-3-pro'
+                )
+                    .toString()
+                    .trim()
+                    .toLowerCase();
+                const translationSettings = getTranslationSettings();
+                const payload = {
+                    configStr: PAGE.configStr,
+                    streamUrl: stream,
+                    videoId: PAGE.videoId,
+                    filename: PAGE.filename,
+                    engine,
+                    model:
+                        (transcript && (transcript.model || transcript.modelOverride)) ||
+                        overrides.modelOverride ||
+                        els.model?.value ||
+                        '@cf/openai/whisper',
+                    sourceLanguage:
+                        (transcript && (transcript.languageCode || transcript.language)) ||
+                        overrides.sourceLanguageOverride ||
+                        els.sourceLang?.value ||
+                        '',
+                    targetLanguages: targets,
+                    translate: translateEnabled,
+                    translationProvider: overrides.translationProvider || translationSettings.translationProvider || '',
+                    sendTimestampsToAI: false,
+                    options: {
+                        translationWorkflow: 'xml',
+                        sendTimestampsToAI: false
+                    },
+                    translationPrompt: overrides.translationPrompt || ''
+                };
+                if (overrides.translationModel) {
+                    payload.translationModel = String(overrides.translationModel).trim();
+                }
+                if (engine === 'assemblyai') {
+                    delete payload.model;
+                    payload.assemblySpeechModel = assemblySpeechModel;
+                    // sourceLanguage is kept - server normalizes to AssemblyAI format (e.g., 'jpn' -> 'ja')
+                }
+                if (transcript && transcript.srt) {
+                    const transcriptPayload = {
+                        srt: transcript.srt || '',
+                        languageCode: transcript.languageCode || transcript.language || '',
+                        cfStatus: transcript.cfStatus || transcript.status || null,
+                        cfBody: transcript.cfBody || '',
+                        model: transcript.model || (engine === 'assemblyai' ? assemblySpeechModel : ''),
+                        audioBytes: transcript.audioBytes,
+                        audioSource: transcript.audioSource || 'extension',
+                        contentType: transcript.contentType || 'audio/wav'
+                    };
+                    if (engine === 'assemblyai') {
+                        transcriptPayload.speechModel = assemblySpeechModel;
+                    }
+                    payload.transcript = transcriptPayload;
+                }
+
+                const resp = await fetch('/api/auto-subtitles/run', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify(payload)
+                });
+                const clone = resp.clone();
+                let data = {};
+                try {
+                    data = await clone.json();
+                } catch (_) {
+                    try {
+                        const text = await clone.text();
+                        if (text) data = { message: text.slice(0, 400) };
+                    } catch (_) {
+                        data = {};
+                    }
+                }
+                return { resp, data };
+            }
+
+            async function retranslateLanguage(languageCode) {
+                const lang = (languageCode || '').toString().trim();
+                if (!lang) return;
+                if (state.autoSubsInFlight) {
+                    const message = tt(
+                        'toolbox.autoSubs.logs.retranslateInFlight',
+                        {},
+                        'Automatic subtitles are already running. Please wait for them to finish.'
+                    );
+                    appendLog(message, 'warn');
+                    setStatus(message);
+                    return;
+                }
+                if (!state.rawTranscript || !state.rawTranscript.srt) {
+                    const message = tt(
+                        'toolbox.autoSubs.logs.retranslateMissingTranscript',
+                        {},
+                        'Cannot retranslate: transcript unavailable. Run auto-subtitles first.'
+                    );
+                    appendLog(message, 'warn');
+                    setStatus(message);
+                    return;
+                }
+                const stream = (els.streamUrl?.value || '').trim();
+                if (!stream) {
+                    const message = tt('toolbox.autoSubs.logs.noStream', {}, 'Paste a stream URL first.');
+                    appendLog(message, 'warn');
+                    setStatus(message);
+                    return;
+                }
+
+                const targets = [lang];
+                const translateEnabled = true;
+                const startMsg = tt(
+                    'toolbox.autoSubs.logs.retranslateStart',
+                    { target: lang },
+                    'Retranslating to ' + lang + '...'
+                );
+                appendLog(startMsg, 'info');
+                setStatus(startMsg);
+                setInFlight(true);
+                markStep('translate', 'warn');
+
+                let serverLogs = [];
+                try {
+                    const { resp, data } = await submitTranscriptToServer(
+                        state.rawTranscript,
+                        stream,
+                        targets,
+                        translateEnabled
+                    );
+                    serverLogs = Array.isArray(data?.logTrail) ? data.logTrail : [];
+                    appendServerLogs(serverLogs);
+                    if (!resp.ok || data.success !== true) {
+                        const msg = data?.error || data?.message || data?.details || `Request failed (${resp.status})`;
+                        throw new Error(msg);
+                    }
+
+                    const freshTranslations = Array.isArray(data.translations) ? data.translations : [];
+                    if (!freshTranslations.length) {
+                        const warnMsg = tt(
+                            'toolbox.autoSubs.logs.retranslateEmpty',
+                            { target: lang },
+                            'No translated output was returned for ' + lang + '.'
+                        );
+                        appendLog(warnMsg, 'warn');
+                        setStatus(warnMsg);
+                    } else {
+                        const updated = Array.isArray(state.translationOutputs) ? state.translationOutputs.slice() : [];
+                        freshTranslations.forEach((t) => {
+                            if (!t || !t.languageCode) return;
+                            const idx = updated.findIndex(
+                                (existing) => existing && existing.languageCode === t.languageCode
+                            );
+                            if (idx >= 0) {
+                                updated[idx] = t;
+                            } else {
+                                updated.push(t);
+                            }
+                        });
+                        state.translationOutputs = updated;
+                        const original = state.originalOutput || data.original || null;
+                        if (original) state.originalOutput = original;
+                        setDownloads(original, updated, state.rawTranscript);
+
+                        const okLabel = tt('toolbox.autoSubs.status.ok', {}, 'OK');
+                        markStep('translate', 'check');
+                        setPillLabel('translate', okLabel);
+                        const doneMsg = tt(
+                            'toolbox.autoSubs.logs.retranslateDone',
+                            { target: lang },
+                            'Retranslation finished for ' + lang + '.'
+                        );
+                        appendLog(doneMsg, 'success');
+                        setStatus(tt('toolbox.autoSubs.status.done', {}, 'Done. Ready to download.'));
+                    }
+                    state.autoSubsCompleted = true;
+                    refreshStepLocks();
+                } catch (error) {
+                    const failMsg =
+                        tt(
+                            'toolbox.autoSubs.logs.retranslateFailed',
+                            { target: lang },
+                            'Retranslation failed for ' + lang + ': '
+                        ) + (error.message || error);
+                    appendLog(failMsg, 'error');
+                    setStatus(failMsg);
+                    markStep('translate', 'danger');
+                    setPillLabel('translate', failMsg);
+                    appendServerLogs(serverLogs);
+                } finally {
+                    setInFlight(false);
+                }
+            }
+
+            function handleAutoSubProgressMessage(msg) {
+                if (!state.autoSubsInFlight) return;
+                if (!msg || !state.autoSubsMessageId || (msg.messageId && msg.messageId !== state.autoSubsMessageId))
+                    return;
+                refreshAutoSubTimeout();
+                const tone = (msg.level || '').toString().toLowerCase();
+                const logTone = tone === 'error' ? 'error' : tone === 'warn' ? 'warn' : 'info';
+                const statusText = msg.status ? String(msg.status) : '';
+                const stageKey = msg.stage || '';
+                const prev = state.lastAutoSubStatus;
+                const isExactRepeat =
+                    statusText && prev && prev.text === statusText && prev.stage === stageKey && prev.level === logTone;
+                if (statusText) {
+                    if (!isExactRepeat) {
+                        appendLog(statusText, logTone);
+                    }
+                    setStatus(statusText);
+                    state.lastAutoSubStatus = { text: statusText, stage: stageKey, level: logTone, ts: Date.now() };
+                }
+                if (typeof msg.progress === 'number') {
+                    const current = Number((els.progress?.style?.width || '0').replace('%', '')) || 0;
+                    setProgress(Math.max(current, Math.min(95, msg.progress)));
+                }
+                if (msg.stage === 'fetch') {
+                    markStep('fetch', logTone === 'error' ? 'danger' : 'warn');
+                    if (statusText) setPillLabel('fetch', statusText);
+                } else if (msg.stage === 'transcribe') {
+                    markFetchComplete();
+                    markStep('transcribe', logTone === 'error' ? 'danger' : 'warn');
+                    setPillLabel('transcribe', getTranscribeStatusLabel(statusText));
+                } else if (msg.stage === 'package') {
+                    markFetchComplete();
+                    markStep('align', 'warn');
+                    if (statusText) setPillLabel('align', statusText);
+                } else if (msg.stage === 'select-track') {
+                    markFetchComplete();
+                    if (statusText) setPillLabel('fetch', statusText);
+                } else if (msg.stage === 'error') {
+                    markStep('fetch', 'danger');
+                    markStep('transcribe', 'danger');
+                    if (statusText) {
+                        setPillLabel('fetch', statusText);
+                        setPillLabel('transcribe', statusText);
+                    }
+                }
+            }
+
+            function handleAutoSubResponseMessage(msg) {
+                if (!msg || !state.autoSubsMessageId || (msg.messageId && msg.messageId !== state.autoSubsMessageId))
+                    return;
+                clearAutoSubTimeout();
+                hideAudioTrackPrompt();
+                state.awaitingTrackChoice = false;
+                state.audioTracks = [];
+                state.selectedAudioTrack = null;
+                const resolver = state.autoSubsResolver;
+                const rejecter = state.autoSubsReject;
+                state.autoSubsResolver = null;
+                state.autoSubsReject = null;
+                state.autoSubsMessageId = null;
+                if (msg.success) {
+                    if (typeof resolver === 'function') {
+                        resolver(msg.transcript || {});
+                    }
+                } else {
+                    const error = new Error(msg.error || 'Auto-subtitles failed');
+                    if (typeof rejecter === 'function') rejecter(error);
+                    else appendLog(error.message, 'error');
+                }
+            }
+
+            async function runAutoSubs() {
+                if (state.autoSubsInFlight) return;
+                const mode = (els.modeSelect?.value || '').toLowerCase();
+                const isAssembly = mode === 'assemblyai';
+                if (!state.step1Confirmed) {
+                    const message = lockReasons.needContinue;
+                    appendLog(message, 'warn');
+                    setStatus(message);
+                    refreshStepLocks(message);
+                    return;
+                }
+                if (!state.step2Confirmed) {
+                    const message = lockReasons.needStep2 || lockReasons.needContinue;
+                    appendLog(message, 'warn');
+                    setStatus(message);
+                    refreshStepLocks(message);
+                    return;
+                }
+                const stream = (els.streamUrl?.value || '').trim();
+                if (!stream) {
+                    appendLog(tt('toolbox.autoSubs.logs.noStream', {}, 'Paste a stream URL first.'), 'warn');
+                    setStatus(tt('toolbox.autoSubs.status.awaiting', {}, 'Awaiting input...'));
+                    return;
+                }
+                if (!isAssembly) {
+                    const cfCreds = getCfCredentials();
+                    if (!cfCreds) {
+                        const msg =
+                            'Cloudflare Workers AI key missing (Configure > Other API Keys); extension cannot transcribe.';
+                        appendLog(msg, 'error');
+                        setStatus(msg);
+                        return;
+                    }
+                    if (!state.extensionReady) {
+                        const msg = tt('toolbox.autoSubs.extension.notDetected', {}, 'Extension not detected');
+                        appendLog(msg, 'warn');
+                        setStatus(msg);
+                        return;
+                    }
+                } else if (!BOOTSTRAP.assemblyEnabled) {
+                    const msg = tt(
+                        'toolbox.autoSubs.logs.assemblyMissingKey',
+                        {},
+                        'AssemblyAI mode requires an API key. Add it in Configure.'
+                    );
+                    appendLog(msg, 'error');
+                    setStatus(msg);
+                    return;
+                } else if (!state.extensionReady) {
+                    const msg = tt('toolbox.autoSubs.extension.notDetected', {}, 'Extension not detected');
+                    appendLog(msg, 'warn');
+                    setStatus(msg);
+                    return;
+                } else if (!BOOTSTRAP.assemblyApiKey) {
+                    const msg = tt(
+                        'toolbox.autoSubs.logs.assemblyMissingKey',
+                        {},
+                        'AssemblyAI mode requires an API key. Add it in Configure.'
+                    );
+                    appendLog(msg, 'error');
+                    setStatus(msg);
+                    return;
+                }
+
+                const translateEnabled = els.translateToggle?.checked === true;
+                const targets = translateEnabled ? getSelectedTargets() : [];
+                if (translateEnabled && targets.length === 0) {
+                    const message =
+                        lockReasons.needTarget ||
+                        tt(
+                            'toolbox.autoSubs.logs.noTargets',
+                            {},
+                            'Select at least one target language or disable translation.'
+                        );
+                    appendLog(message, 'warn');
+                    setStatus(message);
+                    refreshStepLocks(message);
+                    return;
+                }
+
+                resetOutputs();
+                resetServerLogState();
+                stopAssemblyLiveLogs();
+                state.autoSubsCompleted = false;
+                state.lastAutoSubStatus = null;
+                state.lastDebugLog = null;
+                resetAutoSubWait();
+                refreshStepLocks(lockReasons.needRun);
+                clearLog();
+                appendLog(
+                    tt(
+                        'toolbox.autoSubs.logs.previewPlan',
+                        {},
+                        'Pipeline: fetch -> transcribe -> align -> translate -> deliver.'
+                    ),
+                    'info'
+                );
+                setInFlight(true);
+                resetPills();
+                markStep('fetch', 'warn');
+                markStep('transcribe', 'warn');
+                markStep('align', 'warn');
+                markStep('translate', 'warn');
+                if (!translateEnabled) {
+                    const skipLabel = tt('toolbox.autoSubs.status.skipTranslate', {}, 'Skipping translation');
+                    setPillLabel('translate', skipLabel);
+                }
+                const fetchLabel = tt('toolbox.autoSubs.status.fetching', {}, 'Fetching stream...');
+                setStatus(fetchLabel);
+                setPillLabel('fetch', fetchLabel);
+                setProgress(8);
+
+                const assemblyJobId = isAssembly
+                    ? 'autosub_' + Date.now() + '_' + Math.random().toString(16).slice(2, 10)
+                    : '';
+                let transcript = null;
+                let serverLogs = [];
+                let stopLiveLogs = () => {};
+                try {
+                    if (isAssembly) {
+                        stopLiveLogs = startAssemblyLiveLogStream(assemblyJobId);
+                        markStep('fetch', 'warn');
+                        markStep('transcribe', 'warn');
+                        const messageId = assemblyJobId || 'autosub_' + Date.now();
+                        const assemblySpeechModel = (
+                            els.assemblyModel?.value ||
+                            BOOTSTRAP.defaults?.assemblySpeechModel ||
+                            'universal-3-pro'
+                        )
+                            .toString()
+                            .trim()
+                            .toLowerCase();
+                        const waitForTranscript = waitForAutoSubResponse(messageId);
+                        window.postMessage(
+                            {
+                                type: 'SUBMAKER_AUTOSUB_REQUEST',
+                                source: 'webpage',
+                                messageId,
+                                data: {
+                                    streamUrl: stream,
+                                    filename: PAGE.filename || '',
+                                    sourceLanguage: els.sourceLang?.value || '', // Extension normalizes to AssemblyAI format
+                                    diarization: true,
+                                    useAssembly: true,
+                                    assemblyApiKey: BOOTSTRAP.assemblyApiKey || '',
+                                    speech_model: assemblySpeechModel,
+                                    speechModel: assemblySpeechModel
+                                }
+                            },
+                            '*'
+                        );
+                        appendLog(
+                            'Sent auto-sub request to extension (AssemblyAI path, model=' + assemblySpeechModel + ')',
+                            'info'
+                        );
+
+                        transcript = await waitForTranscript;
+                        if (!transcript || transcript === true) {
+                            throw new Error('Extension returned no transcript');
+                        }
+                        state.rawTranscript = transcript || null;
+                        markStep('fetch', 'check');
+                        markStep('transcribe', 'check');
+                        if (state.decodeStatus !== 'done') {
+                            markDecodeDone(runtimeCopy?.badges?.decodeReady || decodeLabels.ready);
+                        }
+                        setProgress(60);
+                        const transcriptionDoneLog = translateEnabled
+                            ? `${tt('toolbox.autoSubs.logs.transcriptionDone', {}, 'Transcription completed.')} ${tt('toolbox.autoSubs.logs.translatingNow', {}, 'Translating...')}`
+                            : tt('toolbox.autoSubs.logs.transcriptionDone', {}, 'Transcription completed.');
+                        appendLog(transcriptionDoneLog, 'success');
+                        setPreview(transcript.srt || '');
+                        setStatus(
+                            tt(
+                                'toolbox.autoSubs.status.transcriptionDone',
+                                {},
+                                'Transcription complete. Preparing downloads...'
+                            )
+                        );
+
+                        const { resp, data } = await submitTranscriptToServer(
+                            transcript,
+                            stream,
+                            targets,
+                            translateEnabled,
+                            {
+                                engine: 'assemblyai',
+                                assemblySpeechModel,
+                                sendFullVideo: els.assemblySendFullVideo?.checked === true,
+                                diarization: true,
+                                jobId: assemblyJobId
+                            }
+                        );
+                        serverLogs = Array.isArray(data?.logTrail) ? data.logTrail : [];
+                        if (!resp.ok || data.success !== true) {
+                            const msg =
+                                data?.error || data?.message || data?.details || `Request failed (${resp.status})`;
+                            const err = new Error(msg);
+                            err.serverLogs = serverLogs;
+                            throw err;
+                        }
+                        processAutoSubResult(data, transcript, translateEnabled, targets, serverLogs);
+                    } else {
+                        const cfCreds = getCfCredentials();
+                        const messageId = 'autosub_' + Date.now();
+                        const waitForTranscript = waitForAutoSubResponse(messageId);
+                        window.postMessage(
+                            {
+                                type: 'SUBMAKER_AUTOSUB_REQUEST',
+                                source: 'webpage',
+                                messageId,
+                                data: {
+                                    streamUrl: stream,
+                                    filename: PAGE.filename || '',
+                                    model: els.model?.value || '@cf/openai/whisper',
+                                    sourceLanguage: els.sourceLang?.value || '',
+                                    diarization: true,
+                                    vadFilter: true,
+                                    cfAccountId: cfCreds.accountId,
+                                    cfToken: cfCreds.token
+                                }
+                            },
+                            '*'
+                        );
+                        appendLog('Sent auto-sub request to extension (Cloudflare path)', 'info');
+
+                        transcript = await waitForTranscript;
+                        if (!transcript || transcript === true) {
+                            throw new Error('Extension returned no transcript');
+                        }
+                        state.rawTranscript = transcript || null;
+                        markStep('fetch', 'check');
+                        markStep('transcribe', 'check');
+                        if (state.decodeStatus !== 'done') {
+                            markDecodeDone(runtimeCopy?.badges?.decodeReady || decodeLabels.ready);
+                        }
+                        setProgress(60);
+                        const transcriptionDoneLog = translateEnabled
+                            ? `${tt('toolbox.autoSubs.logs.transcriptionDone', {}, 'Transcription completed.')} ${tt('toolbox.autoSubs.logs.translatingNow', {}, 'Translating...')}`
+                            : tt('toolbox.autoSubs.logs.transcriptionDone', {}, 'Transcription completed.');
+                        appendLog(transcriptionDoneLog, 'success');
+                        setPreview(transcript.srt || '');
+                        setStatus(
+                            tt(
+                                'toolbox.autoSubs.status.transcriptionDone',
+                                {},
+                                'Transcription complete. Preparing downloads...'
+                            )
+                        );
+
+                        const { resp, data } = await submitTranscriptToServer(
+                            transcript,
+                            stream,
+                            targets,
+                            translateEnabled
+                        );
+                        serverLogs = Array.isArray(data?.logTrail) ? data.logTrail : [];
+                        if (!resp.ok || data.success !== true) {
+                            const cfStatusLabel = data?.cfStatus ? ` [Cloudflare ${data.cfStatus}]` : '';
+                            const msg =
+                                data?.error || data?.message || data?.details || `Request failed (${resp.status})`;
+                            const err = new Error(
+                                [
+                                    msg + cfStatusLabel,
+                                    data?.cfBody ? `Cloudflare response: ${String(data.cfBody).slice(0, 200)}` : ''
+                                ]
+                                    .filter(Boolean)
+                                    .join(' ')
+                            );
+                            err.serverLogs = serverLogs;
+                            err.cfBody = data?.cfBody || '';
+                            err.cfStatus = data?.cfStatus;
+                            throw err;
+                        }
+                        processAutoSubResult(data, transcript, translateEnabled, targets, serverLogs);
+                    }
+                } catch (error) {
+                    markStep('transcribe', 'danger');
+                    markStep('align', 'danger');
+                    markStep('translate', 'danger');
+                    const failMsg =
+                        tt('toolbox.autoSubs.status.failedPrefix', {}, 'Failed: ') + (error.message || error);
+                    setPillLabel('transcribe', failMsg);
+                    setPillLabel('align', failMsg);
+                    setPillLabel('translate', failMsg);
+                    setStatus(failMsg);
+                    appendServerLogs(error?.serverLogs || serverLogs);
+                    if (error?.cfStatus) {
+                        appendLog(
+                            tt(
+                                'toolbox.autoSubs.logs.cfStatus',
+                                { status: error.cfStatus },
+                                `Cloudflare status: ${error.cfStatus}`
+                            ),
+                            'warn'
+                        );
+                    }
+                    if (error?.cfBody) {
+                        appendLog(
+                            tt('toolbox.autoSubs.logs.cfBody', {}, 'Cloudflare response: ') +
+                                String(error.cfBody).slice(0, 400),
+                            'warn'
+                        );
+                    }
+                    appendLog(
+                        tt('toolbox.autoSubs.logs.errorPrefix', {}, 'Error: ') + (error.message || error),
+                        'error'
+                    );
+                    if (state.decodeStatus !== 'done') {
+                        markDecodeError(runtimeCopy?.badges?.decodeError || decodeLabels.error);
+                    }
+                } finally {
+                    stopLiveLogs();
+                    state.autoSubsCompleted = state.autoSubsCompleted === true;
+                    refreshStepLocks(lockReasons.needRun);
+                    resetAutoSubWait();
+                    setInFlight(false);
+                }
+            }
+
+            function initDefaults() {
+                primeHashMismatchSpace();
+                state.step1Confirmed = false;
+                state.step2Confirmed = false;
+                state.autoSubsCompleted = false;
+                resetOutputs();
+                resetPills();
+                const preferredMode = (BOOTSTRAP.defaults?.mode || 'cloudflare').toLowerCase();
+                if (els.modeSelect) {
+                    const options = Array.from(els.modeSelect.options || []);
+                    const hasPreferred = options.some(
+                        (opt) => opt.value.toLowerCase() === preferredMode && !opt.disabled
+                    );
+                    if (hasPreferred) {
+                        els.modeSelect.value = preferredMode;
+                    } else if (options.length) {
+                        const firstEnabled = options.find((opt) => !opt.disabled);
+                        if (firstEnabled) els.modeSelect.value = firstEnabled.value;
+                    }
+                    toggleModeDetails();
+                }
+                if (els.model) {
+                    const desiredModel = BOOTSTRAP.defaults?.whisperModel;
+                    const opts = Array.from(els.model.options || []);
+                    const hasDesired = desiredModel && opts.some((opt) => opt.value === desiredModel);
+                    if (hasDesired) {
+                        els.model.value = desiredModel;
+                    } else if (!els.model.value && opts.length) {
+                        const firstEnabled = opts.find((o) => !o.disabled);
+                        if (firstEnabled) els.model.value = firstEnabled.value;
+                    }
+                }
+                if (els.assemblyModel) {
+                    const desiredAssemblyModel = (
+                        BOOTSTRAP.defaults?.assemblySpeechModel || 'universal-3-pro'
+                    ).toLowerCase();
+                    const opts = Array.from(els.assemblyModel.options || []);
+                    const hasDesired = desiredAssemblyModel && opts.some((opt) => opt.value === desiredAssemblyModel);
+                    if (hasDesired) {
+                        els.assemblyModel.value = desiredAssemblyModel;
+                    } else if (!els.assemblyModel.value && opts.length) {
+                        els.assemblyModel.value = opts[0].value;
+                    }
+                }
+                if (els.translateToggle) {
+                    els.translateToggle.checked = BOOTSTRAP.defaults?.translateToTarget !== false;
+                }
+                renderTranslationProviders();
+                setTranslationSettingsExpanded(false);
+                hydrateVideoMeta({
+                    title: BOOTSTRAP.linkedTitle || '',
+                    videoId: PAGE.videoId,
+                    filename: PAGE.filename
+                });
+                hydrateTargets();
+                toggleModeDetails(); // Sets mode details visibility
+                toggleTranslationStep();
+                updateHashStatusFromInput();
+                refreshStepLocks(lockReasons.needContinue);
+            }
+
+            function bindEvents() {
+                els.startBtn?.addEventListener('click', runAutoSubs);
+                if (els.streamUrl) {
+                    const handleEdit = () => {
+                        if (state.step1Confirmed) resetStepFlow(lockReasons.needContinue);
+                        updateHashStatusFromInput();
+                    };
+                    els.streamUrl.addEventListener('input', handleEdit);
+                }
+                els.streamUrl?.addEventListener('blur', updateHashStatusFromInput);
+                els.streamUrl?.addEventListener('change', updateHashStatusFromInput);
+                els.translateToggle?.addEventListener('change', () => {
+                    toggleTranslationStep();
+                    refreshStepLocks();
+                });
+                els.translationSettingsToggle?.addEventListener('click', () => {
+                    const open = !els.translationSettings?.classList.contains('open');
+                    setTranslationSettingsExpanded(open);
+                });
+                els.modeSelect?.addEventListener('change', toggleModeDetails);
+                els.assemblyModel?.addEventListener('change', () => refreshStepLocks());
+                els.targetLang?.addEventListener('change', () => refreshStepLocks());
+                els.audioTrackSelect?.addEventListener('change', () => {
+                    const raw = els.audioTrackSelect ? parseInt(els.audioTrackSelect.value, 10) : NaN;
+                    if (Number.isInteger(raw) && raw >= 0) {
+                        state.selectedAudioTrack = raw;
+                    }
+                });
+                els.audioTrackContinue?.addEventListener('click', submitAudioTrackSelection);
+                els.continueBtn?.addEventListener('click', async () => {
+                    const stream = (els.streamUrl?.value || '').trim();
+                    const linkedHashes = getAutoLinkedHashCandidates();
+                    const invalidMsg = tt(
+                        'toolbox.logs.invalidUrl',
+                        {},
+                        'Invalid stream URL. Paste a full http/https link.'
+                    );
+                    const missingMsg = tt('toolbox.autoSubs.logs.noStream', {}, 'Paste a stream URL first.');
+                    const mismatchMsg =
+                        HASH_MISMATCH_LINES[0] ||
+                        tt(
+                            'toolbox.embedded.step1.hashMismatchLine1',
+                            {},
+                            'Hashes must match (Linked Stream and Stream URL) before extraction can start.'
+                        );
+
+                    const resetWithReason = (reason) => {
+                        resetStepFlow(reason || lockReasons.needContinue);
+                        if (reason) setStatus(reason);
+                    };
+
+                    if (!stream) {
+                        appendLog(missingMsg, 'warn');
+                        resetWithReason(missingMsg);
+                        updateHashStatusFromInput();
+                        return;
+                    }
+                    if (!isLikelyStreamUrl(stream)) {
+                        appendLog(invalidMsg, 'warn');
+                        resetWithReason(invalidMsg);
+                        updateHashStatusFromInput();
+                        return;
+                    }
+
+                    await updateHashStatusFromInput();
+                    const streamHashes = collectAutoHashCandidates([
+                        ...(Array.isArray(state.streamHashCandidates) ? state.streamHashCandidates : []),
+                        state.streamHashInfo?.hash
+                    ]);
+                    const compared = compareAutoHashSets(linkedHashes, streamHashes);
+                    if (compared.hasLinked && compared.hasStream && !compared.match) {
+                        const alert = buildHashMismatchAlert(compared.linkedHash, compared.streamHash);
+                        setHashMismatchAlert(alert);
+                        appendLog(mismatchMsg, 'warn');
+                        resetWithReason(mismatchMsg);
+                        updateHashStatusFromInput();
+                        return;
+                    }
+
+                    state.step1Confirmed = true;
+                    state.step2Confirmed = false;
+                    state.autoSubsCompleted = false;
+                    resetOutputs();
+                    refreshStepLocks();
+                    updateHashStatusFromInput();
+                });
+                els.step2ContinueBtn?.addEventListener('click', () => {
+                    if (!state.step1Confirmed) {
+                        const message = lockReasons.needContinue;
+                        appendLog(message, 'warn');
+                        setStatus(message);
+                        refreshStepLocks(message);
+                        return;
+                    }
+                    state.step2Confirmed = true;
+                    state.autoSubsCompleted = false;
+                    refreshStepLocks();
+                });
+
+                // Linked stream refresh button handler
+                els.linkedStreamRefresh?.addEventListener('click', async () => {
+                    const btn = els.linkedStreamRefresh;
+                    if (btn.disabled || btn.classList.contains('spinning')) return;
+                    btn.disabled = true;
+                    btn.classList.add('spinning');
+                    try {
+                        const resp = await fetch('/api/stream-activity?config=' + encodeURIComponent(PAGE.configStr), {
+                            cache: 'no-store'
+                        });
+                        if (resp.status === 204) {
+                            btn.classList.remove('spinning');
+                            btn.disabled = false;
+                            return;
+                        }
+                        if (!resp.ok) throw new Error('Bad response');
+                        const data = await resp.json();
+                        if (!data || !data.videoId) {
+                            btn.classList.remove('spinning');
+                            btn.disabled = false;
+                            return;
+                        }
+                        const currentSig = [PAGE.videoHash || '', PAGE.videoId || '', PAGE.filename || ''].join('::');
+                        const newSig = [data.videoHash || '', data.videoId || '', data.filename || ''].join('::');
+                        if (newSig !== currentSig && newSig.trim()) {
+                            const targetUrl =
+                                '/auto-subtitles?config=' +
+                                encodeURIComponent(PAGE.configStr) +
+                                '&videoId=' +
+                                encodeURIComponent(data.videoId || '') +
+                                '&filename=' +
+                                encodeURIComponent(data.filename || '');
+                            window.location.href = targetUrl;
+                            return;
+                        }
+                    } catch (e) {
+                        console.warn('Linked stream refresh failed:', e);
+                    }
+                    btn.classList.remove('spinning');
+                    btn.disabled = false;
+                });
+            }
+
+            // Extension messaging (status only)
+            (function initExtensionPing() {
+                let pingRetries = 0;
+                let pingTimer = null;
+                const MAX_PING_RETRIES = 5;
+                const EXT_INSTALL_URL =
+                    (els.extLabel && els.extLabel.getAttribute('href')) ||
+                    'https://chromewebstore.google.com/detail/submaker-xsync/lpocanpndchjkkpgchefobjionncknjn';
+                const REQUIRED_XSYNC_VERSION = window.__SUBMAKER_REQUIRED_XSYNC_VERSION || '1.0.0';
+                const VERSION_WARNING_TEMPLATE = tt(
+                    'toolbox.extension.versionOutdated',
+                    { detected: '{detected}', required: '{required}' },
+                    'SubFaber xSync {detected} detected. This toolbox expects {required} or newer, so some sync and subtitle tools may behave unpredictably until you update.'
+                );
+                function parseVersionParts(version) {
+                    if (!version) return null;
+                    const cleaned = String(version).trim().replace(/^v/i, '').split('-')[0];
+                    if (!cleaned) return null;
+                    const parts = cleaned
+                        .split('.')
+                        .slice(0, 3)
+                        .map((part) => Number.parseInt(part, 10));
+                    if (!parts.length || parts.some((part) => !Number.isFinite(part))) return null;
+                    while (parts.length < 3) parts.push(0);
+                    return parts;
+                }
+                function compareVersions(a, b) {
+                    const aParts = parseVersionParts(a);
+                    const bParts = parseVersionParts(b);
+                    if (!aParts || !bParts) return null;
+                    for (let i = 0; i < 3; i += 1) {
+                        if (aParts[i] > bParts[i]) return 1;
+                        if (aParts[i] < bParts[i]) return -1;
+                    }
+                    return 0;
+                }
+                function updateVersionWarning(installedVersion) {
+                    if (!els.xsyncVersionWarning) return;
+                    const cmp = compareVersions(installedVersion, REQUIRED_XSYNC_VERSION);
+                    if (cmp !== null && cmp < 0) {
+                        const detectedLabel = 'v' + String(installedVersion || '').replace(/^v/i, '');
+                        els.xsyncVersionWarning.textContent = VERSION_WARNING_TEMPLATE.replace(
+                            '{detected}',
+                            detectedLabel
+                        ).replace('{required}', 'v' + REQUIRED_XSYNC_VERSION);
+                        els.xsyncVersionWarning.style.display = 'block';
+                        return;
+                    }
+                    els.xsyncVersionWarning.style.display = 'none';
+                    els.xsyncVersionWarning.textContent = '';
+                }
+                function updateExtensionStatus(ready, text, tone) {
+                    state.extensionReady = ready;
+                    const dotTone = ready ? 'ok' : tone || 'bad';
+                    if (els.extDot) els.extDot.className = 'status-dot ' + dotTone;
+                    if (els.extLabel) {
+                        const readyText = text || tt('toolbox.status.ready', {}, 'Ready');
+                        const missingText =
+                            text || tt('toolbox.autoSubs.extension.notDetected', {}, 'Extension not detected');
+                        els.extLabel.textContent = ready ? readyText : missingText;
+                        if (ready) {
+                            els.extLabel.classList.add('ready');
+                            els.extLabel.removeAttribute('href');
+                            els.extLabel.removeAttribute('target');
+                            els.extLabel.removeAttribute('rel');
+                        } else {
+                            els.extLabel.classList.remove('ready');
+                            els.extLabel.setAttribute('href', EXT_INSTALL_URL);
+                            els.extLabel.setAttribute('target', '_blank');
+                            els.extLabel.setAttribute('rel', 'noopener noreferrer');
+                        }
+                    }
+                    if (els.extStatus) els.extStatus.title = text || '';
+                }
+                window.addEventListener('message', (event) => {
+                    const msg = event.data || {};
+                    if (msg.source !== 'extension') return;
+                    if (msg.type === 'SUBMAKER_PONG') {
+                        pingRetries = 0;
+                        if (pingTimer) {
+                            clearTimeout(pingTimer);
+                            pingTimer = null;
+                        }
+                        const readyLabel = msg.version
+                            ? tt(
+                                  'toolbox.autoSubs.extension.readyWithVersion',
+                                  { version: msg.version || '-' },
+                                  'Ready (v' + (msg.version || '-') + ')'
+                              )
+                            : tt('toolbox.autoSubs.extension.ready', {}, 'Ready');
+                        updateExtensionStatus(true, readyLabel);
+                        updateVersionWarning(msg.version || '');
+                    }
+                    if (msg.type === 'SUBMAKER_AUTOSUB_PROGRESS') {
+                        handleAutoSubProgressMessage(msg);
+                    } else if (msg.type === 'SUBMAKER_AUTOSUB_TRACKS') {
+                        handleTrackOptionsMessage(msg);
+                    } else if (msg.type === 'SUBMAKER_AUTOSUB_RESPONSE') {
+                        handleAutoSubResponseMessage(msg);
+                    } else if (msg.type === 'SUBMAKER_DEBUG_LOG' && state.autoSubsInFlight) {
+                        const logTone = (msg.level || '').toString().toLowerCase();
+                        const text = msg.text || 'Extension log event';
+                        const prev = state.lastDebugLog;
+                        const isRepeat = prev && prev.text === text && prev.level === logTone;
+                        if (!isRepeat) {
+                            appendLog(text, logTone === 'error' ? 'error' : logTone === 'warn' ? 'warn' : 'info');
+                        }
+                        state.lastDebugLog = { text, level: logTone };
+                    }
+                });
+                function sendPing() {
+                    if (pingTimer) {
+                        clearTimeout(pingTimer);
+                        pingTimer = null;
+                    }
+                    pingRetries = 0;
+                    const tick = () => {
+                        if (state.extensionReady) return;
+                        pingRetries += 1;
+                        const label = tt('toolbox.status.pinging', {}, 'Pinging extension...');
+                        updateExtensionStatus(false, label, 'warn');
+                        window.postMessage({ type: 'SUBMAKER_PING', source: 'webpage' }, '*');
+                        if (pingRetries >= MAX_PING_RETRIES && !state.extensionReady) {
+                            const notDetected = tt(
+                                'toolbox.autoSubs.extension.notDetected',
+                                {},
+                                'Extension not detected'
+                            );
+                            updateExtensionStatus(false, notDetected, 'bad');
+                            return;
+                        }
+                        pingTimer = setTimeout(tick, 5000);
+                    };
+                    tick();
+                }
+                setTimeout(sendPing, 500);
+            })();
+
+            bindEvents();
+            initDefaults();
+
+            // Episode change watcher (toast + manual update)
+            initStreamWatcher({
+                configStr: PAGE.configStr,
+                current: { videoId: PAGE.videoId, filename: PAGE.filename, videoHash: PAGE.videoHash },
+                buildUrl: (payload) => {
+                    return (
+                        '/auto-subtitles?config=' +
+                        encodeURIComponent(PAGE.configStr) +
+                        '&videoId=' +
+                        encodeURIComponent(payload.videoId || '') +
+                        '&filename=' +
+                        encodeURIComponent(payload.filename || '')
+                    );
+                },
+                onEpisode: handleStreamUpdate,
+                notify: forwardMenuNotification
             });
-          } else {
-            const empty = document.createElement('div');
-            empty.style.color = 'var(--text-secondary)';
-            empty.textContent = tt('toolbox.autoSubs.steps.translationsEmpty', {}, 'No translations yet.');
-            els.translations.appendChild(empty);
-          }
+        })();
+    }
+
+    const preferredMode = (config?.autoSubs?.defaultMode || 'cloudflare').toLowerCase();
+    const allowedAssemblySpeechModels = new Set(['universal-2', 'universal-3-pro']);
+    const requestedAssemblySpeechModel = (config?.autoSubs?.assemblySpeechModel || 'universal-3-pro')
+        .toString()
+        .trim()
+        .toLowerCase();
+    const defaultAssemblySpeechModel = allowedAssemblySpeechModels.has(requestedAssemblySpeechModel)
+        ? requestedAssemblySpeechModel
+        : 'universal-3-pro';
+    const defaultMode = (() => {
+        if (preferredMode === 'cloudflare' && !cloudflareEnabled) {
+            return assemblyEnabled ? 'assemblyai' : preferredMode;
         }
-        updateStremioDeliveryWarning(translations);
-      }
-
-      function updateStremioDeliveryWarning(translations) {
-        if (!els.stremioDeliveryWarning) return;
-        const translatedOkCount = Array.isArray(translations)
-          ? translations.filter((entry) => entry && !entry.error && entry.srt).length
-          : 0;
-        if (translatedOkCount <= 0) {
-          els.stremioDeliveryWarning.style.display = 'none';
-          els.stremioDeliveryWarning.textContent = '';
-          return;
+        if (preferredMode === 'assemblyai' && !assemblyEnabled && cloudflareEnabled) {
+            return 'cloudflare';
         }
-
-        const blocked = state.cacheBlocked === true;
-        const toneClass = blocked ? 'warn' : 'info';
-        const message = blocked
-          ? (runtimeCopy?.steps?.sentToStremioBlocked || tt('toolbox.autoSubs.steps.sentToStremioBlocked', {}, 'Translated subtitles were not sent to Stremio Auto for this run because of hash mismatch.'))
-          : (runtimeCopy?.steps?.sentToStremio || tt('toolbox.autoSubs.steps.sentToStremio', {}, 'Translated subtitles were sent to Stremio under the Auto entry.'));
-        els.stremioDeliveryWarning.className = 'step4-warning ' + toneClass;
-        els.stremioDeliveryWarning.textContent = message;
-        els.stremioDeliveryWarning.style.display = 'block';
-      }
-
-      function processAutoSubResult(data, transcript, translateEnabled, targets, serverLogs = []) {
-        appendServerLogs(serverLogs);
-        handleHashStatus(data?.hashes || {}, data?.cacheBlocked);
-        state.rawTranscript = transcript || state.rawTranscript || null;
-        state.originalOutput = data?.original || null;
-        state.translationOutputs = Array.isArray(data?.translations) ? data.translations.slice() : [];
-        markStep('align', 'check');
-        const okLabel = tt('toolbox.autoSubs.status.ok', {}, 'OK');
-        setPillLabel('align', okLabel);
-        setProgress(80);
-        appendLog(tt('toolbox.autoSubs.logs.alignmentDone', {}, 'Alignment and timestamp generation complete.'), 'info');
-        setPreview((data?.original && data.original.srt) || transcript?.srt || '');
-        setDownloads(data?.original, data?.translations || [], transcript);
-        state.autoSubsCompleted = true;
-        if (translateEnabled && targets.length) {
-          const hasTranslationErrors = (data.translations || []).some(t => t.error);
-          markStep('translate', hasTranslationErrors ? 'warn' : 'check');
-          const successCount = (data.translations || []).filter(t => !t.error).length;
-          const failedCount = (data.translations || []).filter(t => t.error).length;
-          const translateSummary = tt('toolbox.autoSubs.logs.translationSummary', {}, 'Translation finished.');
-          const translateParts = [];
-          if (successCount) translateParts.push(tt('toolbox.autoSubs.logs.translationSuccess', { count: successCount }, `${successCount} ready`));
-          if (failedCount) translateParts.push(tt('toolbox.autoSubs.logs.translationFailed', { count: failedCount }, `${failedCount} failed`));
-          const translateLog = [translateSummary, translateParts.join(', ')].filter(Boolean).join(' ');
-          appendLog(translateLog, failedCount ? 'warn' : 'success');
-          if (hasTranslationErrors) {
-            setPillLabel('translate', translateParts.join(', ') || translateSummary);
-          } else {
-            setPillLabel('translate', okLabel);
-          }
-        } else {
-          markStep('translate', 'check');
-          setPillLabel('translate', okLabel);
-        }
-        markStep('deliver', 'check');
-        setPillLabel('deliver', okLabel);
-        if (state.decodeStatus !== 'done') {
-          markDecodeDone(runtimeCopy?.badges?.decodeReady || decodeLabels.ready);
-        }
-        setProgress(100);
-        setStatus(tt('toolbox.autoSubs.status.done', {}, 'Done. Ready to download.'));
-        const finishedMsg = tt('toolbox.autoSubs.logs.finished', {}, 'Finished. Downloads are ready.');
-        const cacheSkipped = data?.cacheBlocked ? ' ' + tt('toolbox.autoSubs.logs.cacheSkipped', {}, 'Cache uploads were skipped due to hash mismatch.') : '';
-        appendLog(finishedMsg + cacheSkipped, 'success');
-        const totalTracks = 1 + (((data?.translations || []).filter(t => !t.error)).length);
-        appendLog(tt('toolbox.autoSubs.logs.readyToDeliver', { count: totalTracks }, `Ready to deliver ${totalTracks} track(s).`), 'success');
-      }
-
-      function resetOutputs() {
-        state.autoSubsCompleted = false;
-        state.rawTranscript = null;
-        state.selectedAudioTrack = null;
-        state.originalOutput = null;
-        state.translationOutputs = [];
-        hideAudioTrackPrompt();
-        resetDecodeBadge();
-        setPreview('');
-        disableDownloadLink(els.dlSrt);
-        disableDownloadLink(els.dlRaw);
-        if (els.stremioDeliveryWarning) {
-          els.stremioDeliveryWarning.style.display = 'none';
-          els.stremioDeliveryWarning.textContent = '';
-          els.stremioDeliveryWarning.className = 'step4-warning info';
-        }
-        if (els.translations) {
-          els.translations.innerHTML = '';
-        }
-      }
-
-      function setPreview(content) {
-        if (els.srtPreview) {
-          const maxLines = 80;
-          const maxChars = 4000;
-          const text = (content || '').toString();
-          const lines = text.split(/\r?\n/);
-          let display = text;
-          if (lines.length > maxLines) {
-            display = lines.slice(0, maxLines).join('\n') + `\n... (${lines.length - maxLines} more lines)`;
-          }
-          if (display.length > maxChars) {
-            display = display.slice(0, maxChars) + '\n... (preview truncated)';
-          }
-          els.srtPreview.textContent = display || tt('toolbox.autoSubs.status.noOutput', {}, 'No output yet.');
-        }
-      }
-
-      function handleHashStatus(hashes = {}, cacheBlocked = false) {
-        const hashEl = els.hashStatus;
-        const linkedHashes = collectAutoHashCandidates([
-          ...(Array.isArray(hashes.linkedHashes) ? hashes.linkedHashes : []),
-          hashes.linked,
-          PAGE.videoHash,
-          deriveVideoHashFromParts(PAGE.filename, PAGE.videoId)
-        ]);
-        const streamHashes = collectAutoHashCandidates([
-          ...(Array.isArray(hashes.streamHashes) ? hashes.streamHashes : []),
-          hashes.stream
-        ]);
-        const compared = compareAutoHashSets(linkedHashes, streamHashes);
-        const linked = compared.linkedHash || linkedHashes[0] || '';
-        const streamHash = compared.match
-          ? (compared.matches[0] || compared.streamHash || '')
-          : (compared.streamHash || streamHashes[0] || '');
-        const hasMismatch = compared.hasLinked && compared.hasStream && !compared.match;
-        const cacheFlag = cacheBlocked || hasMismatch;
-        state.cacheBlocked = cacheFlag;
-        state.streamHashCandidates = streamHashes;
-        state.streamHashInfo = streamHash ? { hash: streamHash, filename: '', videoId: '', source: 'stream-url' } : null;
-        if (els.hashBadgeValue) {
-          const fallback = tt('toolbox.autoSubs.badges.pending', {}, 'WAITING');
-          const badgeValue = linked || streamHash || fallback;
-          els.hashBadgeValue.textContent = badgeValue;
-        }
-        if (els.hashBadge) {
-          els.hashBadge.classList.remove('warn');
-        }
-        if (els.hashBadgeDot) {
-          els.hashBadgeDot.className = 'status-dot ok';
-        }
-        if (hashEl) {
-          hashEl.classList.remove('warn', 'danger', 'success');
-          if (hasMismatch) {
-            hashEl.textContent = tt('toolbox.autoSubs.hash.statusMismatch', {}, 'Hash mismatch detected.');
-            hashEl.classList.add('danger');
-          } else if (streamHash) {
-            hashEl.textContent = tt('toolbox.autoSubs.hash.statusMatch', {}, 'Hashes match.');
-            hashEl.classList.add('success');
-          } else {
-            hashEl.textContent = tt('toolbox.autoSubs.hash.waiting', {}, 'Waiting for stream hash...');
-            hashEl.classList.add('warn');
-          }
-        }
-        if (hasMismatch) {
-          setHashMismatchAlert(buildHashMismatchAlert(linked, streamHash));
-        } else {
-          setHashMismatchAlert('');
-        }
-      }
-
-      // Track pending hash resolution to debounce and avoid races
-      let hashResolutionPending = null;
-
-      async function updateHashStatusFromInput() {
-        if (!els.streamUrl) return;
-        const url = (els.streamUrl.value || '').trim();
-        const linkedHashes = getAutoLinkedHashCandidates();
-        if (!url) {
-          state.streamHashInfo = null;
-          state.streamHashCandidates = [];
-          handleHashStatus({ linkedHashes, streamHashes: [], stream: '' }, false);
-          return;
-        }
-
-        // Generate a unique ID for this resolution to handle races
-        const resolutionId = Date.now() + Math.random();
-        hashResolutionPending = resolutionId;
-
-        // First, immediately compute hash from the input URL as-is
-        // This gives instant feedback while we resolve redirects
-        const immediateDerived = deriveStreamHashFromUrl(url, { filename: PAGE.filename, videoId: PAGE.videoId });
-        const immediateHashes = collectAutoHashCandidates([immediateDerived.hash]);
-        const immediateCompared = compareAutoHashSets(linkedHashes, immediateHashes);
-
-        // If immediate hash matches, no need to resolve redirects
-        if (immediateCompared.match) {
-          handleHashStatus({
-            linkedHashes,
-            streamHashes: immediateHashes,
-            stream: immediateCompared.matches[0] || immediateCompared.streamHash || immediateDerived.hash
-          }, state.cacheBlocked);
-          return;
-        }
-
-        // Show a "resolving" state while we fetch the redirect
-        if (els.hashStatus) {
-          els.hashStatus.textContent = tt('toolbox.autoSubs.hash.resolving', {}, 'Resolving stream URL...');
-          els.hashStatus.classList.remove('success', 'danger');
-          els.hashStatus.classList.add('warn');
-        }
-
-        try {
-          const resolvedData = await resolveAutoStreamHashCandidates(url, { filename: PAGE.filename, videoId: PAGE.videoId });
-
-          // Check if this resolution is still current (no newer input)
-          if (hashResolutionPending !== resolutionId) return;
-          const compared = compareAutoHashSets(linkedHashes, resolvedData.hashes);
-          const finalHash = compared.match
-            ? (compared.matches[0] || resolvedData.preferred?.hash || '')
-            : (resolvedData.preferred?.hash || resolvedData.immediate?.hash || '');
-          handleHashStatus({
-            linkedHashes,
-            streamHashes: resolvedData.hashes,
-            stream: finalHash
-          }, state.cacheBlocked);
-        } catch (err) {
-          // Check if this resolution is still current
-          if (hashResolutionPending !== resolutionId) return;
-
-          // On error, use the immediate hash
-          console.warn('[updateHashStatusFromInput] Redirect resolution failed:', err);
-          handleHashStatus({
-            linkedHashes,
-            streamHashes: immediateHashes,
-            stream: immediateDerived.hash
-          }, state.cacheBlocked);
-        }
-      }
-
-      function getCfCredentials() {
-        const cf = BOOTSTRAP.cfClient || {};
-        if (cf.accountId && cf.token) return { accountId: cf.accountId, token: cf.token };
-        return null;
-      }
-
-      function clearAutoSubTimeout() {
-        if (state.autoSubsTimer) {
-          clearTimeout(state.autoSubsTimer);
-          state.autoSubsTimer = null;
-        }
-      }
-
-      function failAutoSubTimeout() {
-        clearAutoSubTimeout();
-        hideAudioTrackPrompt();
-        state.awaitingTrackChoice = false;
-        const rejecter = state.autoSubsReject;
-        state.autoSubsMessageId = null;
-        state.autoSubsResolver = null;
-        state.autoSubsReject = null;
-        const err = new Error('Extension did not return a transcript in time');
-        if (state.decodeStatus !== 'done') {
-          markDecodeError(runtimeCopy?.badges?.decodeError || decodeLabels.error);
-        }
-        if (typeof rejecter === 'function') rejecter(err);
-        else appendLog(err.message, 'error');
-      }
-
-      function refreshAutoSubTimeout() {
-        clearAutoSubTimeout();
-        state.autoSubsTimer = setTimeout(failAutoSubTimeout, AUTO_SUB_TIMEOUT_MS);
-      }
-
-      function pauseAutoSubTimeout() {
-        clearAutoSubTimeout();
-      }
-
-      function resetAutoSubWait() {
-        clearAutoSubTimeout();
-        state.autoSubsMessageId = null;
-        state.autoSubsResolver = null;
-        state.autoSubsReject = null;
-      }
-
-      function waitForAutoSubResponse(messageId) {
-        return new Promise((resolve, reject) => {
-          state.autoSubsMessageId = messageId;
-          state.autoSubsResolver = resolve;
-          state.autoSubsReject = reject;
-          refreshAutoSubTimeout();
-        });
-      }
-
-      function handleTrackOptionsMessage(msg) {
-        if (!state.autoSubsInFlight) return;
-        if (!msg || !state.autoSubsMessageId || (msg.messageId && msg.messageId !== state.autoSubsMessageId)) return;
-        state.audioTracks = Array.isArray(msg.tracks) ? msg.tracks : [];
-        const suggested = Number.isInteger(msg.suggestedIndex) ? msg.suggestedIndex : msg.extractedIndex;
-        const extracted = Number.isInteger(msg.extractedIndex) ? msg.extractedIndex : null;
-        showAudioTrackPrompt(state.audioTracks, suggested, extracted);
-        const promptStatus = runtimeCopy?.steps?.audioTrackHelper || tt('toolbox.autoSubs.status.audioTrackPrompt', {}, 'Multiple audio tracks detected. Choose one to continue.');
-        setStatus(promptStatus);
-        appendLog(promptStatus, 'info');
-        markDecodeDone(runtimeCopy?.badges?.decodeReady || decodeLabels.ready);
-      }
-
-      function submitAudioTrackSelection() {
-        if (!state.awaitingTrackChoice || !state.autoSubsMessageId) return;
-        const rawValue = els.audioTrackSelect ? parseInt(els.audioTrackSelect.value, 10) : NaN;
-        const choice = Number.isInteger(rawValue) && rawValue >= 0 ? rawValue : 0;
-        state.selectedAudioTrack = choice;
-        state.awaitingTrackChoice = false;
-        if (els.audioTrackContinue) {
-          els.audioTrackContinue.disabled = true;
-        }
-        const status = tt('toolbox.autoSubs.status.continuingTrack', { track: choice + 1 }, `Continuing with audio track ${choice + 1}...`);
-        appendLog(status, 'info');
-        setStatus(status);
-        window.postMessage({
-          type: 'SUBMAKER_AUTOSUB_SELECT_TRACK',
-          source: 'webpage',
-          messageId: state.autoSubsMessageId,
-          trackIndex: choice
-        }, '*');
-        refreshAutoSubTimeout();
-        hideAudioTrackPrompt();
-      }
-
-      async function submitTranscriptToServer(transcript, stream, targets, translateEnabled, overrides = {}) {
-        const engine = overrides.engine || 'remote';
-        const assemblySpeechModel = (overrides.assemblySpeechModel || els.assemblyModel?.value || BOOTSTRAP.defaults?.assemblySpeechModel || 'universal-3-pro')
-          .toString()
-          .trim()
-          .toLowerCase();
-        const translationSettings = getTranslationSettings();
-        const payload = {
-          configStr: PAGE.configStr,
-          streamUrl: stream,
-          videoId: PAGE.videoId,
-          filename: PAGE.filename,
-          engine,
-          model: (transcript && (transcript.model || transcript.modelOverride)) || overrides.modelOverride || els.model?.value || '@cf/openai/whisper',
-          sourceLanguage: (transcript && (transcript.languageCode || transcript.language)) || overrides.sourceLanguageOverride || els.sourceLang?.value || '',
-          targetLanguages: targets,
-          translate: translateEnabled,
-          translationProvider: overrides.translationProvider || translationSettings.translationProvider || '',
-          sendTimestampsToAI: false,
-          options: {
-            translationWorkflow: 'xml',
-            sendTimestampsToAI: false
-          },
-          translationPrompt: overrides.translationPrompt || ''
-        };
-        if (overrides.translationModel) {
-          payload.translationModel = String(overrides.translationModel).trim();
-        }
-        if (engine === 'assemblyai') {
-          delete payload.model;
-          payload.assemblySpeechModel = assemblySpeechModel;
-          // sourceLanguage is kept - server normalizes to AssemblyAI format (e.g., 'jpn' -> 'ja')
-        }
-        if (transcript && transcript.srt) {
-          const transcriptPayload = {
-            srt: transcript.srt || '',
-            languageCode: transcript.languageCode || transcript.language || '',
-            cfStatus: transcript.cfStatus || transcript.status || null,
-            cfBody: transcript.cfBody || '',
-            model: transcript.model || (engine === 'assemblyai' ? assemblySpeechModel : ''),
-            audioBytes: transcript.audioBytes,
-            audioSource: transcript.audioSource || 'extension',
-            contentType: transcript.contentType || 'audio/wav'
-          };
-          if (engine === 'assemblyai') {
-            transcriptPayload.speechModel = assemblySpeechModel;
-          }
-          payload.transcript = transcriptPayload;
-        }
-
-        const resp = await fetch('/api/auto-subtitles/run', {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify(payload)
-        });
-        const clone = resp.clone();
-        let data = {};
-        try {
-          data = await clone.json();
-        } catch (_) {
-          try {
-            const text = await clone.text();
-            if (text) data = { message: text.slice(0, 400) };
-          } catch (_) {
-            data = {};
-          }
-        }
-        return { resp, data };
-      }
-
-      async function retranslateLanguage(languageCode) {
-        const lang = (languageCode || '').toString().trim();
-        if (!lang) return;
-        if (state.autoSubsInFlight) {
-          const message = tt('toolbox.autoSubs.logs.retranslateInFlight', {}, 'Automatic subtitles are already running. Please wait for them to finish.');
-          appendLog(message, 'warn');
-          setStatus(message);
-          return;
-        }
-        if (!state.rawTranscript || !state.rawTranscript.srt) {
-          const message = tt('toolbox.autoSubs.logs.retranslateMissingTranscript', {}, 'Cannot retranslate: transcript unavailable. Run auto-subtitles first.');
-          appendLog(message, 'warn');
-          setStatus(message);
-          return;
-        }
-        const stream = (els.streamUrl?.value || '').trim();
-        if (!stream) {
-          const message = tt('toolbox.autoSubs.logs.noStream', {}, 'Paste a stream URL first.');
-          appendLog(message, 'warn');
-          setStatus(message);
-          return;
-        }
-
-        const targets = [lang];
-        const translateEnabled = true;
-        const startMsg = tt('toolbox.autoSubs.logs.retranslateStart', { target: lang }, 'Retranslating to ' + lang + '...');
-        appendLog(startMsg, 'info');
-        setStatus(startMsg);
-        setInFlight(true);
-        markStep('translate', 'warn');
-
-        let serverLogs = [];
-        try {
-          const { resp, data } = await submitTranscriptToServer(state.rawTranscript, stream, targets, translateEnabled);
-          serverLogs = Array.isArray(data?.logTrail) ? data.logTrail : [];
-          appendServerLogs(serverLogs);
-          if (!resp.ok || data.success !== true) {
-            const msg = data?.error || data?.message || data?.details || `Request failed (${resp.status})`;
-            throw new Error(msg);
-          }
-
-          const freshTranslations = Array.isArray(data.translations) ? data.translations : [];
-          if (!freshTranslations.length) {
-            const warnMsg = tt('toolbox.autoSubs.logs.retranslateEmpty', { target: lang }, 'No translated output was returned for ' + lang + '.');
-            appendLog(warnMsg, 'warn');
-            setStatus(warnMsg);
-          } else {
-            const updated = Array.isArray(state.translationOutputs) ? state.translationOutputs.slice() : [];
-            freshTranslations.forEach((t) => {
-              if (!t || !t.languageCode) return;
-              const idx = updated.findIndex((existing) => existing && existing.languageCode === t.languageCode);
-              if (idx >= 0) {
-                updated[idx] = t;
-              } else {
-                updated.push(t);
-              }
-            });
-            state.translationOutputs = updated;
-            const original = state.originalOutput || data.original || null;
-            if (original) state.originalOutput = original;
-            setDownloads(original, updated, state.rawTranscript);
-
-            const okLabel = tt('toolbox.autoSubs.status.ok', {}, 'OK');
-            markStep('translate', 'check');
-            setPillLabel('translate', okLabel);
-            const doneMsg = tt('toolbox.autoSubs.logs.retranslateDone', { target: lang }, 'Retranslation finished for ' + lang + '.');
-            appendLog(doneMsg, 'success');
-            setStatus(tt('toolbox.autoSubs.status.done', {}, 'Done. Ready to download.'));
-          }
-          state.autoSubsCompleted = true;
-          refreshStepLocks();
-        } catch (error) {
-          const failMsg = tt('toolbox.autoSubs.logs.retranslateFailed', { target: lang }, 'Retranslation failed for ' + lang + ': ') + (error.message || error);
-          appendLog(failMsg, 'error');
-          setStatus(failMsg);
-          markStep('translate', 'danger');
-          setPillLabel('translate', failMsg);
-          appendServerLogs(serverLogs);
-        } finally {
-          setInFlight(false);
-        }
-      }
-
-      function handleAutoSubProgressMessage(msg) {
-        if (!state.autoSubsInFlight) return;
-        if (!msg || !state.autoSubsMessageId || (msg.messageId && msg.messageId !== state.autoSubsMessageId)) return;
-        refreshAutoSubTimeout();
-        const tone = (msg.level || '').toString().toLowerCase();
-        const logTone = tone === 'error' ? 'error' : (tone === 'warn' ? 'warn' : 'info');
-        const statusText = msg.status ? String(msg.status) : '';
-        const stageKey = msg.stage || '';
-        const prev = state.lastAutoSubStatus;
-        const isExactRepeat = statusText
-          && prev
-          && prev.text === statusText
-          && prev.stage === stageKey
-          && prev.level === logTone;
-        if (statusText) {
-          if (!isExactRepeat) {
-            appendLog(statusText, logTone);
-          }
-          setStatus(statusText);
-          state.lastAutoSubStatus = { text: statusText, stage: stageKey, level: logTone, ts: Date.now() };
-        }
-        if (typeof msg.progress === 'number') {
-          const current = Number((els.progress?.style?.width || '0').replace('%', '')) || 0;
-          setProgress(Math.max(current, Math.min(95, msg.progress)));
-        }
-        if (msg.stage === 'fetch') {
-          markStep('fetch', logTone === 'error' ? 'danger' : 'warn');
-          if (statusText) setPillLabel('fetch', statusText);
-        } else if (msg.stage === 'transcribe') {
-          markFetchComplete();
-          markStep('transcribe', logTone === 'error' ? 'danger' : 'warn');
-          setPillLabel('transcribe', getTranscribeStatusLabel(statusText));
-        } else if (msg.stage === 'package') {
-          markFetchComplete();
-          markStep('align', 'warn');
-          if (statusText) setPillLabel('align', statusText);
-        } else if (msg.stage === 'select-track') {
-          markFetchComplete();
-          if (statusText) setPillLabel('fetch', statusText);
-        } else if (msg.stage === 'error') {
-          markStep('fetch', 'danger');
-          markStep('transcribe', 'danger');
-          if (statusText) {
-            setPillLabel('fetch', statusText);
-            setPillLabel('transcribe', statusText);
-          }
-        }
-      }
-
-      function handleAutoSubResponseMessage(msg) {
-        if (!msg || !state.autoSubsMessageId || (msg.messageId && msg.messageId !== state.autoSubsMessageId)) return;
-        clearAutoSubTimeout();
-        hideAudioTrackPrompt();
-        state.awaitingTrackChoice = false;
-        state.audioTracks = [];
-        state.selectedAudioTrack = null;
-        const resolver = state.autoSubsResolver;
-        const rejecter = state.autoSubsReject;
-        state.autoSubsResolver = null;
-        state.autoSubsReject = null;
-        state.autoSubsMessageId = null;
-        if (msg.success) {
-          if (typeof resolver === 'function') {
-            resolver(msg.transcript || {});
-          }
-        } else {
-          const error = new Error(msg.error || 'Auto-subtitles failed');
-          if (typeof rejecter === 'function') rejecter(error);
-          else appendLog(error.message, 'error');
-        }
-      }
-
-      async function runAutoSubs() {
-        if (state.autoSubsInFlight) return;
-        const mode = (els.modeSelect?.value || '').toLowerCase();
-        const isAssembly = mode === 'assemblyai';
-        if (!state.step1Confirmed) {
-          const message = lockReasons.needContinue;
-          appendLog(message, 'warn');
-          setStatus(message);
-          refreshStepLocks(message);
-          return;
-        }
-        if (!state.step2Confirmed) {
-          const message = lockReasons.needStep2 || lockReasons.needContinue;
-          appendLog(message, 'warn');
-          setStatus(message);
-          refreshStepLocks(message);
-          return;
-        }
-        const stream = (els.streamUrl?.value || '').trim();
-        if (!stream) {
-          appendLog(tt('toolbox.autoSubs.logs.noStream', {}, 'Paste a stream URL first.'), 'warn');
-          setStatus(tt('toolbox.autoSubs.status.awaiting', {}, 'Awaiting input...'));
-          return;
-        }
-        if (!isAssembly) {
-          const cfCreds = getCfCredentials();
-          if (!cfCreds) {
-            const msg = 'Cloudflare Workers AI key missing (Configure > Other API Keys); extension cannot transcribe.';
-            appendLog(msg, 'error');
-            setStatus(msg);
-            return;
-          }
-          if (!state.extensionReady) {
-            const msg = tt('toolbox.autoSubs.extension.notDetected', {}, 'Extension not detected');
-            appendLog(msg, 'warn');
-            setStatus(msg);
-            return;
-          }
-        } else if (!BOOTSTRAP.assemblyEnabled) {
-          const msg = tt('toolbox.autoSubs.logs.assemblyMissingKey', {}, 'AssemblyAI mode requires an API key. Add it in Configure.');
-          appendLog(msg, 'error');
-          setStatus(msg);
-          return;
-        } else if (!state.extensionReady) {
-          const msg = tt('toolbox.autoSubs.extension.notDetected', {}, 'Extension not detected');
-          appendLog(msg, 'warn');
-          setStatus(msg);
-          return;
-        } else if (!BOOTSTRAP.assemblyApiKey) {
-          const msg = tt('toolbox.autoSubs.logs.assemblyMissingKey', {}, 'AssemblyAI mode requires an API key. Add it in Configure.');
-          appendLog(msg, 'error');
-          setStatus(msg);
-          return;
-        }
-
-        const translateEnabled = els.translateToggle?.checked === true;
-        const targets = translateEnabled ? getSelectedTargets() : [];
-        if (translateEnabled && targets.length === 0) {
-          const message = lockReasons.needTarget || tt('toolbox.autoSubs.logs.noTargets', {}, 'Select at least one target language or disable translation.');
-          appendLog(message, 'warn');
-          setStatus(message);
-          refreshStepLocks(message);
-          return;
-        }
-
-        resetOutputs();
-        resetServerLogState();
-        stopAssemblyLiveLogs();
-        state.autoSubsCompleted = false;
-        state.lastAutoSubStatus = null;
-        state.lastDebugLog = null;
-        resetAutoSubWait();
-        refreshStepLocks(lockReasons.needRun);
-        clearLog();
-        appendLog(tt('toolbox.autoSubs.logs.previewPlan', {}, 'Pipeline: fetch -> transcribe -> align -> translate -> deliver.'), 'info');
-        setInFlight(true);
-        resetPills();
-        markStep('fetch', 'warn');
-        markStep('transcribe', 'warn');
-        markStep('align', 'warn');
-        markStep('translate', 'warn');
-        if (!translateEnabled) {
-          const skipLabel = tt('toolbox.autoSubs.status.skipTranslate', {}, 'Skipping translation');
-          setPillLabel('translate', skipLabel);
-        }
-        const fetchLabel = tt('toolbox.autoSubs.status.fetching', {}, 'Fetching stream...');
-        setStatus(fetchLabel);
-        setPillLabel('fetch', fetchLabel);
-        setProgress(8);
-
-        const assemblyJobId = isAssembly ? ('autosub_' + Date.now() + '_' + Math.random().toString(16).slice(2, 10)) : '';
-        let transcript = null;
-        let serverLogs = [];
-        let stopLiveLogs = () => { };
-        try {
-          if (isAssembly) {
-            stopLiveLogs = startAssemblyLiveLogStream(assemblyJobId);
-            markStep('fetch', 'warn');
-            markStep('transcribe', 'warn');
-            const messageId = assemblyJobId || ('autosub_' + Date.now());
-            const assemblySpeechModel = (els.assemblyModel?.value || BOOTSTRAP.defaults?.assemblySpeechModel || 'universal-3-pro')
-              .toString()
-              .trim()
-              .toLowerCase();
-            const waitForTranscript = waitForAutoSubResponse(messageId);
-            window.postMessage({
-              type: 'SUBMAKER_AUTOSUB_REQUEST',
-              source: 'webpage',
-              messageId,
-              data: {
-                streamUrl: stream,
-                filename: PAGE.filename || '',
-                sourceLanguage: els.sourceLang?.value || '', // Extension normalizes to AssemblyAI format
-                diarization: true,
-                useAssembly: true,
-                assemblyApiKey: BOOTSTRAP.assemblyApiKey || '',
-                speech_model: assemblySpeechModel,
-                speechModel: assemblySpeechModel
-              }
-            }, '*');
-            appendLog('Sent auto-sub request to extension (AssemblyAI path, model=' + assemblySpeechModel + ')', 'info');
-
-            transcript = await waitForTranscript;
-            if (!transcript || transcript === true) {
-              throw new Error('Extension returned no transcript');
-            }
-            state.rawTranscript = transcript || null;
-            markStep('fetch', 'check');
-            markStep('transcribe', 'check');
-            if (state.decodeStatus !== 'done') {
-              markDecodeDone(runtimeCopy?.badges?.decodeReady || decodeLabels.ready);
-            }
-            setProgress(60);
-            const transcriptionDoneLog = translateEnabled
-              ? `${tt('toolbox.autoSubs.logs.transcriptionDone', {}, 'Transcription completed.')} ${tt('toolbox.autoSubs.logs.translatingNow', {}, 'Translating...')}`
-              : tt('toolbox.autoSubs.logs.transcriptionDone', {}, 'Transcription completed.');
-            appendLog(transcriptionDoneLog, 'success');
-            setPreview(transcript.srt || '');
-            setStatus(tt('toolbox.autoSubs.status.transcriptionDone', {}, 'Transcription complete. Preparing downloads...'));
-
-            const { resp, data } = await submitTranscriptToServer(transcript, stream, targets, translateEnabled, {
-              engine: 'assemblyai',
-              assemblySpeechModel,
-              sendFullVideo: els.assemblySendFullVideo?.checked === true,
-              diarization: true,
-              jobId: assemblyJobId
-            });
-            serverLogs = Array.isArray(data?.logTrail) ? data.logTrail : [];
-            if (!resp.ok || data.success !== true) {
-              const msg = data?.error || data?.message || data?.details || `Request failed (${resp.status})`;
-              const err = new Error(msg);
-              err.serverLogs = serverLogs;
-              throw err;
-            }
-            processAutoSubResult(data, transcript, translateEnabled, targets, serverLogs);
-          } else {
-            const cfCreds = getCfCredentials();
-            const messageId = 'autosub_' + Date.now();
-            const waitForTranscript = waitForAutoSubResponse(messageId);
-            window.postMessage({
-              type: 'SUBMAKER_AUTOSUB_REQUEST',
-              source: 'webpage',
-              messageId,
-              data: {
-                streamUrl: stream,
-                filename: PAGE.filename || '',
-                model: els.model?.value || '@cf/openai/whisper',
-                sourceLanguage: els.sourceLang?.value || '',
-                diarization: true,
-                vadFilter: true,
-                cfAccountId: cfCreds.accountId,
-                cfToken: cfCreds.token
-              }
-            }, '*');
-            appendLog('Sent auto-sub request to extension (Cloudflare path)', 'info');
-
-            transcript = await waitForTranscript;
-            if (!transcript || transcript === true) {
-              throw new Error('Extension returned no transcript');
-            }
-            state.rawTranscript = transcript || null;
-            markStep('fetch', 'check');
-            markStep('transcribe', 'check');
-            if (state.decodeStatus !== 'done') {
-              markDecodeDone(runtimeCopy?.badges?.decodeReady || decodeLabels.ready);
-            }
-            setProgress(60);
-            const transcriptionDoneLog = translateEnabled
-              ? `${tt('toolbox.autoSubs.logs.transcriptionDone', {}, 'Transcription completed.')} ${tt('toolbox.autoSubs.logs.translatingNow', {}, 'Translating...')}`
-              : tt('toolbox.autoSubs.logs.transcriptionDone', {}, 'Transcription completed.');
-            appendLog(transcriptionDoneLog, 'success');
-            setPreview(transcript.srt || '');
-            setStatus(tt('toolbox.autoSubs.status.transcriptionDone', {}, 'Transcription complete. Preparing downloads...'));
-
-            const { resp, data } = await submitTranscriptToServer(transcript, stream, targets, translateEnabled);
-            serverLogs = Array.isArray(data?.logTrail) ? data.logTrail : [];
-            if (!resp.ok || data.success !== true) {
-              const cfStatusLabel = data?.cfStatus ? ` [Cloudflare ${data.cfStatus}]` : '';
-              const msg = data?.error || data?.message || data?.details || `Request failed (${resp.status})`;
-              const err = new Error([msg + cfStatusLabel, data?.cfBody ? `Cloudflare response: ${String(data.cfBody).slice(0, 200)}` : ''].filter(Boolean).join(' '));
-              err.serverLogs = serverLogs;
-              err.cfBody = data?.cfBody || '';
-              err.cfStatus = data?.cfStatus;
-              throw err;
-            }
-            processAutoSubResult(data, transcript, translateEnabled, targets, serverLogs);
-          }
-        } catch (error) {
-          markStep('transcribe', 'danger');
-          markStep('align', 'danger');
-          markStep('translate', 'danger');
-          const failMsg = tt('toolbox.autoSubs.status.failedPrefix', {}, 'Failed: ') + (error.message || error);
-          setPillLabel('transcribe', failMsg);
-          setPillLabel('align', failMsg);
-          setPillLabel('translate', failMsg);
-          setStatus(failMsg);
-          appendServerLogs(error?.serverLogs || serverLogs);
-          if (error?.cfStatus) {
-            appendLog(tt('toolbox.autoSubs.logs.cfStatus', { status: error.cfStatus }, `Cloudflare status: ${error.cfStatus}`), 'warn');
-          }
-          if (error?.cfBody) {
-            appendLog(tt('toolbox.autoSubs.logs.cfBody', {}, 'Cloudflare response: ') + String(error.cfBody).slice(0, 400), 'warn');
-          }
-          appendLog(tt('toolbox.autoSubs.logs.errorPrefix', {}, 'Error: ') + (error.message || error), 'error');
-          if (state.decodeStatus !== 'done') {
-            markDecodeError(runtimeCopy?.badges?.decodeError || decodeLabels.error);
-          }
-        } finally {
-          stopLiveLogs();
-          state.autoSubsCompleted = state.autoSubsCompleted === true;
-          refreshStepLocks(lockReasons.needRun);
-          resetAutoSubWait();
-          setInFlight(false);
-        }
-      }
-
-      function initDefaults() {
-        primeHashMismatchSpace();
-        state.step1Confirmed = false;
-        state.step2Confirmed = false;
-        state.autoSubsCompleted = false;
-        resetOutputs();
-        resetPills();
-        const preferredMode = (BOOTSTRAP.defaults?.mode || 'cloudflare').toLowerCase();
-        if (els.modeSelect) {
-          const options = Array.from(els.modeSelect.options || []);
-          const hasPreferred = options.some(opt => opt.value.toLowerCase() === preferredMode && !opt.disabled);
-          if (hasPreferred) {
-            els.modeSelect.value = preferredMode;
-          } else if (options.length) {
-            const firstEnabled = options.find(opt => !opt.disabled);
-            if (firstEnabled) els.modeSelect.value = firstEnabled.value;
-          }
-          toggleModeDetails();
-        }
-        if (els.model) {
-          const desiredModel = BOOTSTRAP.defaults?.whisperModel;
-          const opts = Array.from(els.model.options || []);
-          const hasDesired = desiredModel && opts.some(opt => opt.value === desiredModel);
-          if (hasDesired) {
-            els.model.value = desiredModel;
-          } else if (!els.model.value && opts.length) {
-            const firstEnabled = opts.find(o => !o.disabled);
-            if (firstEnabled) els.model.value = firstEnabled.value;
-          }
-        }
-        if (els.assemblyModel) {
-          const desiredAssemblyModel = (BOOTSTRAP.defaults?.assemblySpeechModel || 'universal-3-pro').toLowerCase();
-          const opts = Array.from(els.assemblyModel.options || []);
-          const hasDesired = desiredAssemblyModel && opts.some(opt => opt.value === desiredAssemblyModel);
-          if (hasDesired) {
-            els.assemblyModel.value = desiredAssemblyModel;
-          } else if (!els.assemblyModel.value && opts.length) {
-            els.assemblyModel.value = opts[0].value;
-          }
-        }
-        if (els.translateToggle) {
-          els.translateToggle.checked = BOOTSTRAP.defaults?.translateToTarget !== false;
-        }
-        renderTranslationProviders();
-        setTranslationSettingsExpanded(false);
-        hydrateVideoMeta({
-          title: BOOTSTRAP.linkedTitle || '',
-          videoId: PAGE.videoId,
-          filename: PAGE.filename
-        });
-        hydrateTargets();
-        toggleModeDetails(); // Sets mode details visibility
-        toggleTranslationStep();
-        updateHashStatusFromInput();
-        refreshStepLocks(lockReasons.needContinue);
-      }
-
-      function bindEvents() {
-        els.startBtn?.addEventListener('click', runAutoSubs);
-        if (els.streamUrl) {
-          const handleEdit = () => {
-            if (state.step1Confirmed) resetStepFlow(lockReasons.needContinue);
-            updateHashStatusFromInput();
-          };
-          els.streamUrl.addEventListener('input', handleEdit);
-        }
-        els.streamUrl?.addEventListener('blur', updateHashStatusFromInput);
-        els.streamUrl?.addEventListener('change', updateHashStatusFromInput);
-        els.translateToggle?.addEventListener('change', () => {
-          toggleTranslationStep();
-          refreshStepLocks();
-        });
-        els.translationSettingsToggle?.addEventListener('click', () => {
-          const open = !els.translationSettings?.classList.contains('open');
-          setTranslationSettingsExpanded(open);
-        });
-        els.modeSelect?.addEventListener('change', toggleModeDetails);
-        els.assemblyModel?.addEventListener('change', () => refreshStepLocks());
-        els.targetLang?.addEventListener('change', () => refreshStepLocks());
-        els.audioTrackSelect?.addEventListener('change', () => {
-          const raw = els.audioTrackSelect ? parseInt(els.audioTrackSelect.value, 10) : NaN;
-          if (Number.isInteger(raw) && raw >= 0) {
-            state.selectedAudioTrack = raw;
-          }
-        });
-        els.audioTrackContinue?.addEventListener('click', submitAudioTrackSelection);
-        els.continueBtn?.addEventListener('click', async () => {
-          const stream = (els.streamUrl?.value || '').trim();
-          const linkedHashes = getAutoLinkedHashCandidates();
-          const invalidMsg = tt('toolbox.logs.invalidUrl', {}, 'Invalid stream URL. Paste a full http/https link.');
-          const missingMsg = tt('toolbox.autoSubs.logs.noStream', {}, 'Paste a stream URL first.');
-          const mismatchMsg = HASH_MISMATCH_LINES[0] || tt('toolbox.embedded.step1.hashMismatchLine1', {}, 'Hashes must match (Linked Stream and Stream URL) before extraction can start.');
-
-          const resetWithReason = (reason) => {
-            resetStepFlow(reason || lockReasons.needContinue);
-            if (reason) setStatus(reason);
-          };
-
-          if (!stream) {
-            appendLog(missingMsg, 'warn');
-            resetWithReason(missingMsg);
-            updateHashStatusFromInput();
-            return;
-          }
-          if (!isLikelyStreamUrl(stream)) {
-            appendLog(invalidMsg, 'warn');
-            resetWithReason(invalidMsg);
-            updateHashStatusFromInput();
-            return;
-          }
-
-          await updateHashStatusFromInput();
-          const streamHashes = collectAutoHashCandidates([
-            ...(Array.isArray(state.streamHashCandidates) ? state.streamHashCandidates : []),
-            state.streamHashInfo?.hash
-          ]);
-          const compared = compareAutoHashSets(linkedHashes, streamHashes);
-          if (compared.hasLinked && compared.hasStream && !compared.match) {
-            const alert = buildHashMismatchAlert(compared.linkedHash, compared.streamHash);
-            setHashMismatchAlert(alert);
-            appendLog(mismatchMsg, 'warn');
-            resetWithReason(mismatchMsg);
-            updateHashStatusFromInput();
-            return;
-          }
-
-          state.step1Confirmed = true;
-          state.step2Confirmed = false;
-          state.autoSubsCompleted = false;
-          resetOutputs();
-          refreshStepLocks();
-          updateHashStatusFromInput();
-        });
-        els.step2ContinueBtn?.addEventListener('click', () => {
-          if (!state.step1Confirmed) {
-            const message = lockReasons.needContinue;
-            appendLog(message, 'warn');
-            setStatus(message);
-            refreshStepLocks(message);
-            return;
-          }
-          state.step2Confirmed = true;
-          state.autoSubsCompleted = false;
-          refreshStepLocks();
-        });
-
-        // Linked stream refresh button handler
-        els.linkedStreamRefresh?.addEventListener('click', async () => {
-          const btn = els.linkedStreamRefresh;
-          if (btn.disabled || btn.classList.contains('spinning')) return;
-          btn.disabled = true;
-          btn.classList.add('spinning');
-          try {
-            const resp = await fetch('/api/stream-activity?config=' + encodeURIComponent(PAGE.configStr), { cache: 'no-store' });
-            if (resp.status === 204) {
-              btn.classList.remove('spinning');
-              btn.disabled = false;
-              return;
-            }
-            if (!resp.ok) throw new Error('Bad response');
-            const data = await resp.json();
-            if (!data || !data.videoId) {
-              btn.classList.remove('spinning');
-              btn.disabled = false;
-              return;
-            }
-            const currentSig = [PAGE.videoHash || '', PAGE.videoId || '', PAGE.filename || ''].join('::');
-            const newSig = [data.videoHash || '', data.videoId || '', data.filename || ''].join('::');
-            if (newSig !== currentSig && newSig.trim()) {
-              const targetUrl = '/auto-subtitles?config=' + encodeURIComponent(PAGE.configStr) +
-                '&videoId=' + encodeURIComponent(data.videoId || '') +
-                '&filename=' + encodeURIComponent(data.filename || '');
-              window.location.href = targetUrl;
-              return;
-            }
-          } catch (e) {
-            console.warn('Linked stream refresh failed:', e);
-          }
-          btn.classList.remove('spinning');
-          btn.disabled = false;
-        });
-      }
-
-      // Extension messaging (status only)
-      (function initExtensionPing() {
-        let pingRetries = 0;
-        let pingTimer = null;
-        const MAX_PING_RETRIES = 5;
-        const EXT_INSTALL_URL = (els.extLabel && els.extLabel.getAttribute('href')) || 'https://chromewebstore.google.com/detail/submaker-xsync/lpocanpndchjkkpgchefobjionncknjn';
-        const REQUIRED_XSYNC_VERSION = window.__SUBMAKER_REQUIRED_XSYNC_VERSION || '1.0.0';
-        const VERSION_WARNING_TEMPLATE = tt(
-          'toolbox.extension.versionOutdated',
-          { detected: '{detected}', required: '{required}' },
-          'SubFaber xSync {detected} detected. This toolbox expects {required} or newer, so some sync and subtitle tools may behave unpredictably until you update.'
-        );
-        function parseVersionParts(version) {
-          if (!version) return null;
-          const cleaned = String(version).trim().replace(/^v/i, '').split('-')[0];
-          if (!cleaned) return null;
-          const parts = cleaned.split('.').slice(0, 3).map(part => Number.parseInt(part, 10));
-          if (!parts.length || parts.some(part => !Number.isFinite(part))) return null;
-          while (parts.length < 3) parts.push(0);
-          return parts;
-        }
-        function compareVersions(a, b) {
-          const aParts = parseVersionParts(a);
-          const bParts = parseVersionParts(b);
-          if (!aParts || !bParts) return null;
-          for (let i = 0; i < 3; i += 1) {
-            if (aParts[i] > bParts[i]) return 1;
-            if (aParts[i] < bParts[i]) return -1;
-          }
-          return 0;
-        }
-        function updateVersionWarning(installedVersion) {
-          if (!els.xsyncVersionWarning) return;
-          const cmp = compareVersions(installedVersion, REQUIRED_XSYNC_VERSION);
-          if (cmp !== null && cmp < 0) {
-            const detectedLabel = 'v' + String(installedVersion || '').replace(/^v/i, '');
-            els.xsyncVersionWarning.textContent = VERSION_WARNING_TEMPLATE
-              .replace('{detected}', detectedLabel)
-              .replace('{required}', 'v' + REQUIRED_XSYNC_VERSION);
-            els.xsyncVersionWarning.style.display = 'block';
-            return;
-          }
-          els.xsyncVersionWarning.style.display = 'none';
-          els.xsyncVersionWarning.textContent = '';
-        }
-        function updateExtensionStatus(ready, text, tone) {
-          state.extensionReady = ready;
-          const dotTone = ready ? 'ok' : (tone || 'bad');
-          if (els.extDot) els.extDot.className = 'status-dot ' + dotTone;
-          if (els.extLabel) {
-            const readyText = text || tt('toolbox.status.ready', {}, 'Ready');
-            const missingText = text || tt('toolbox.autoSubs.extension.notDetected', {}, 'Extension not detected');
-            els.extLabel.textContent = ready ? readyText : missingText;
-            if (ready) {
-              els.extLabel.classList.add('ready');
-              els.extLabel.removeAttribute('href');
-              els.extLabel.removeAttribute('target');
-              els.extLabel.removeAttribute('rel');
-            } else {
-              els.extLabel.classList.remove('ready');
-              els.extLabel.setAttribute('href', EXT_INSTALL_URL);
-              els.extLabel.setAttribute('target', '_blank');
-              els.extLabel.setAttribute('rel', 'noopener noreferrer');
-            }
-          }
-          if (els.extStatus) els.extStatus.title = text || '';
-        }
-        window.addEventListener('message', (event) => {
-          const msg = event.data || {};
-          if (msg.source !== 'extension') return;
-          if (msg.type === 'SUBMAKER_PONG') {
-            pingRetries = 0;
-            if (pingTimer) {
-              clearTimeout(pingTimer);
-              pingTimer = null;
-            }
-            const readyLabel = msg.version
-              ? tt('toolbox.autoSubs.extension.readyWithVersion', { version: msg.version || '-' }, 'Ready (v' + (msg.version || '-') + ')')
-              : tt('toolbox.autoSubs.extension.ready', {}, 'Ready');
-            updateExtensionStatus(true, readyLabel);
-            updateVersionWarning(msg.version || '');
-          }
-          if (msg.type === 'SUBMAKER_AUTOSUB_PROGRESS') {
-            handleAutoSubProgressMessage(msg);
-          } else if (msg.type === 'SUBMAKER_AUTOSUB_TRACKS') {
-            handleTrackOptionsMessage(msg);
-          } else if (msg.type === 'SUBMAKER_AUTOSUB_RESPONSE') {
-            handleAutoSubResponseMessage(msg);
-          } else if (msg.type === 'SUBMAKER_DEBUG_LOG' && state.autoSubsInFlight) {
-            const logTone = (msg.level || '').toString().toLowerCase();
-            const text = msg.text || 'Extension log event';
-            const prev = state.lastDebugLog;
-            const isRepeat = prev && prev.text === text && prev.level === logTone;
-            if (!isRepeat) {
-              appendLog(text, logTone === 'error' ? 'error' : (logTone === 'warn' ? 'warn' : 'info'));
-            }
-            state.lastDebugLog = { text, level: logTone };
-          }
-        });
-        function sendPing() {
-          if (pingTimer) {
-            clearTimeout(pingTimer);
-            pingTimer = null;
-          }
-          pingRetries = 0;
-          const tick = () => {
-            if (state.extensionReady) return;
-            pingRetries += 1;
-            const label = tt('toolbox.status.pinging', {}, 'Pinging extension...');
-            updateExtensionStatus(false, label, 'warn');
-            window.postMessage({ type: 'SUBMAKER_PING', source: 'webpage' }, '*');
-            if (pingRetries >= MAX_PING_RETRIES && !state.extensionReady) {
-              const notDetected = tt('toolbox.autoSubs.extension.notDetected', {}, 'Extension not detected');
-              updateExtensionStatus(false, notDetected, 'bad');
-              return;
-            }
-            pingTimer = setTimeout(tick, 5000);
-          };
-          tick();
-        }
-        setTimeout(sendPing, 500);
-      })();
-
-      bindEvents();
-      initDefaults();
-
-      // Episode change watcher (toast + manual update)
-      initStreamWatcher({
-        configStr: PAGE.configStr,
-        current: { videoId: PAGE.videoId, filename: PAGE.filename, videoHash: PAGE.videoHash },
-        buildUrl: (payload) => {
-          return '/auto-subtitles?config=' + encodeURIComponent(PAGE.configStr) +
-            '&videoId=' + encodeURIComponent(payload.videoId || '') +
-            '&filename=' + encodeURIComponent(payload.filename || '');
-        },
-        onEpisode: handleStreamUpdate,
-        notify: forwardMenuNotification
-      });
+        return preferredMode;
     })();
-  }
+    const defaults = {
+        mode: defaultMode,
+        whisperModel: config?.whisperModel || '@cf/openai/whisper-large-v3-turbo',
+        translateToTarget: true,
+        streamFilename: filename || '',
+        provider:
+            (config?.mainProvider && String(config.mainProvider).toLowerCase()) || providerOptions[0]?.key || 'gemini',
+        translationModel: (() => {
+            const activeProvider =
+                (config?.mainProvider && String(config.mainProvider).toLowerCase()) ||
+                providerOptions[0]?.key ||
+                'gemini';
+            if (activeProvider === 'gemini') {
+                return getEffectiveGeminiModel(config);
+            }
+            const providers = config?.providers || {};
+            const matchKey = Object.keys(providers).find((key) => String(key).toLowerCase() === activeProvider);
+            return matchKey ? providers[matchKey]?.model || '' : '';
+        })(),
+        translationWorkflow: 'xml',
+        sendTimestampsToAI: false,
+        assemblySendFullVideo: config?.autoSubs?.sendFullVideoToAssembly === true,
+        assemblySpeechModel: defaultAssemblySpeechModel
+    };
 
-  const preferredMode = (config?.autoSubs?.defaultMode || 'cloudflare').toLowerCase();
-  const allowedAssemblySpeechModels = new Set(['universal-2', 'universal-3-pro']);
-  const requestedAssemblySpeechModel = (config?.autoSubs?.assemblySpeechModel || 'universal-3-pro')
-    .toString()
-    .trim()
-    .toLowerCase();
-  const defaultAssemblySpeechModel = allowedAssemblySpeechModels.has(requestedAssemblySpeechModel)
-    ? requestedAssemblySpeechModel
-    : 'universal-3-pro';
-  const defaultMode = (() => {
-    if (preferredMode === 'cloudflare' && !cloudflareEnabled) {
-      return assemblyEnabled ? 'assemblyai' : preferredMode;
-    }
-    if (preferredMode === 'assemblyai' && !assemblyEnabled && cloudflareEnabled) {
-      return 'cloudflare';
-    }
-    return preferredMode;
-  })();
-  const defaults = {
-    mode: defaultMode,
-    whisperModel: config?.whisperModel || '@cf/openai/whisper-large-v3-turbo',
-    translateToTarget: true,
-    streamFilename: filename || '',
-    provider: (config?.mainProvider && String(config.mainProvider).toLowerCase()) || providerOptions[0]?.key || 'gemini',
-    translationModel: (() => {
-      const activeProvider = (config?.mainProvider && String(config.mainProvider).toLowerCase()) || providerOptions[0]?.key || 'gemini';
-      if (activeProvider === 'gemini') {
-        return getEffectiveGeminiModel(config);
-      }
-      const providers = config?.providers || {};
-      const matchKey = Object.keys(providers).find(key => String(key).toLowerCase() === activeProvider);
-      return matchKey ? (providers[matchKey]?.model || '') : '';
-    })(),
-    translationWorkflow: 'xml',
-    sendTimestampsToAI: false,
-    assemblySendFullVideo: config?.autoSubs?.sendFullVideoToAssembly === true,
-    assemblySpeechModel: defaultAssemblySpeechModel
-  };
+    const themeToggleLabel = t('fileUpload.themeToggle', {}, 'Toggle theme');
+    const copy = {
+        meta: {
+            title: t('toolbox.autoSubs.documentTitle', {}, 'Automatic Subtitles - SubFaber')
+        },
+        toast: {
+            title: t('toolbox.toast.title', {}, 'New stream detected'),
+            meta: t('toolbox.toast.meta', {}, 'A different episode is playing in Stremio.'),
+            dismiss: t('toolbox.toast.dismiss', {}, 'Dismiss notification'),
+            update: t('toolbox.toast.update', {}, 'Update')
+        },
+        hero: {
+            title: t('toolbox.autoSubs.heroTitle', {}, 'Automatic Subtitles'),
+            subtitle: t('toolbox.autoSubs.heroSubtitle', {}, 'Generate subtitles with Whisper then translate')
+        },
+        log: {
+            header: t('toolbox.autoSubs.log.header', {}, 'Live log'),
+            sub: t('toolbox.autoSubs.log.sub', {}, 'Watch each pipeline step, errors, and upstream responses here.')
+        },
+        badges: {
+            addon: t('toolbox.status.addon', {}, 'Addon'),
+            extension: t('toolbox.status.extension', {}, 'Extension'),
+            waitingExtension: t('toolbox.autoSubs.extension.waiting', {}, 'Waiting for extension...'),
+            hash: t('toolbox.autoSubs.badges.hash', {}, 'Hash'),
+            decode: t('toolbox.autoSubs.badges.decode', {}, 'Decode'),
+            decodeWorking: t('toolbox.autoSubs.badges.decodeWorking', {}, 'FFmpeg decoding'),
+            decodeReady: t('toolbox.autoSubs.badges.decodeReady', {}, 'OK'),
+            decodeError: t('toolbox.autoSubs.badges.decodeError', {}, 'Decode failed'),
+            versionFallback: t('toolbox.autoSubs.badges.versionFallback', {}, 'n/a'),
+            pending: t('toolbox.autoSubs.badges.pending', {}, 'WAITING')
+        },
+        hash: {
+            waiting: t('toolbox.autoSubs.hash.waiting', {}, 'Waiting for stream hash...'),
+            cacheDisabled: t('toolbox.autoSubs.hash.cacheDisabled', {}, 'Cache disabled for this run.')
+        },
+        videoMeta: {
+            label: t('toolbox.embedded.videoMeta.label', {}, 'Linked Stream'),
+            none: t('toolbox.embedded.videoMeta.none', {}, 'No stream linked'),
+            unavailable: t('toolbox.embedded.videoMeta.unavailable', {}, 'Video ID unavailable'),
+            waiting: t('toolbox.embedded.videoMeta.waiting', {}, 'Waiting for a linked stream...'),
+            refreshTitle: t('toolbox.embedded.videoMeta.refreshTitle', {}, 'Refresh linked stream')
+        },
+        sections: {
+            linkAndPrep: t('toolbox.autoSubs.sections.setup', {}, 'Link a stream & prep the model'),
+            runAndReview: t('toolbox.autoSubs.sections.run', {}, 'Run pipeline & review output')
+        },
+        steps: {
+            one: t('toolbox.autoSubs.steps.step1Chip', {}, 'Step 1'),
+            two: t('toolbox.autoSubs.steps.step2Chip', {}, 'Step 2'),
+            three: t('toolbox.autoSubs.steps.step3Chip', {}, 'Step 3'),
+            four: t('toolbox.autoSubs.steps.step4Chip', {}, 'Step 4'),
+            inputTitle: t('toolbox.autoSubs.steps.step1Title', {}, 'Input audio or video'),
+            streamLabel: t(
+                'toolbox.embedded.step1.streamLabel',
+                {},
+                t('toolbox.autoSubs.steps.streamLabel', {}, 'Stream URL:')
+            ),
+            streamPlaceholder: t(
+                'toolbox.embedded.step1.streamPlaceholder',
+                {},
+                t(
+                    'toolbox.autoSubs.steps.streamPlaceholder',
+                    {},
+                    'Paste the video/stream URL from Stremio or your browser'
+                )
+            ),
+            englishRecommended: t('toolbox.autoSubs.steps.englishRecommended', {}, 'English audio source recommended.'),
+            localDecodeWarning: t(
+                'toolbox.autoSubs.steps.localDecodeWarning',
+                {},
+                'Avoid large files when possible. The stream file is downloaded and audio is decoded locally for transcription, so smaller files are recommended.'
+            ),
+            langModelTitle: t('toolbox.autoSubs.steps.step2Title', {}, 'Mode & audio'),
+            modeLabel: t('toolbox.autoSubs.steps.modeLabel', {}, 'Auto-subtitles mode'),
+            modeLocal: t('toolbox.autoSubs.steps.modeLocal', {}, 'Local (xSync)'),
+            modeRemote: t('toolbox.autoSubs.steps.modeRemote', {}, 'Cloudflare Workers AI'),
+            modeAssembly: t('toolbox.autoSubs.steps.modeAssembly', {}, 'AssemblyAI'),
+            assemblyModelLabel: t('toolbox.autoSubs.steps.assemblyModelLabel', {}, 'AssemblyAI speech model'),
+            sourceLabel: t('toolbox.autoSubs.steps.sourceLabel', {}, 'Source audio language'),
+            autoDetect: t('toolbox.autoSubs.steps.autoDetect', {}, 'Auto-detect'),
+            modelLabel: t('toolbox.autoSubs.steps.modelLabel', {}, 'Whisper model'),
+            model: {
+                standard: t('toolbox.autoSubs.steps.modelStandard', {}, 'Whisper'),
+                turbo: t('toolbox.autoSubs.steps.modelTurbo', {}, 'Whisper Large V3 Turbo')
+            },
+            assemblyModel: {
+                universal2: t('toolbox.autoSubs.steps.assemblyModelUniversal2', {}, 'Universal-2'),
+                universal3Pro: t('toolbox.autoSubs.steps.assemblyModelUniversal3Pro', {}, 'Universal-3 Pro')
+            },
+            translateOutput: t('toolbox.autoSubs.steps.translateOutput', {}, 'Translate to target language'),
+            assemblySendFullVideo: t(
+                'toolbox.autoSubs.steps.sendFullVideo',
+                {},
+                'Send full video to AssemblyAI (≤5GB)'
+            ),
+            assemblySendFullVideoHelper: t(
+                'toolbox.autoSubs.steps.sendFullVideoHelper',
+                {},
+                'If the stream is larger than 5GB, we will fall back to audio extraction automatically.'
+            ),
+            vadFilter: t('toolbox.autoSubs.steps.vadFilter', {}, 'Enable VAD filter (Turbo model)'),
+            vadFilterHelper: t(
+                'toolbox.autoSubs.steps.vadFilterHelper',
+                {},
+                'Preprocess audio with a voice activity detection model to remove silence. Recommended for cleaner transcription.'
+            ),
+            translationStepChip: t('toolbox.autoSubs.steps.stepTwoFiveChip', {}, 'Step 2.5'),
+            translationStepTitle: t('toolbox.autoSubs.steps.stepTwoFiveTitle', {}, 'Translation targets'),
+            translationSettingsTitle: t('toolbox.autoSubs.steps.translationSettings', {}, 'Translation settings'),
+            translationSettingsMeta: t(
+                'toolbox.embedded.step2.settingsMeta',
+                {},
+                'Provider, workflow, batching, context'
+            ),
+            targetLabel: t('toolbox.autoSubs.steps.targetLabel', {}, 'Target language'),
+            targetWorkflowHelper: t(
+                'toolbox.autoSubs.steps.targetWorkflowHelper',
+                {},
+                'Uses the same translation workflow configured for Stremio.'
+            ),
+            providerLabel: t('toolbox.autoSubs.steps.providerLabel', {}, 'Translation provider'),
+            providerHelper: t(
+                'toolbox.embedded.step2.providerHelper',
+                {},
+                'Uses your configured model for the selected provider.'
+            ),
+            runPipelineTitle: t('toolbox.autoSubs.steps.step3Title', {}, 'Run pipeline'),
+            pipelineDesc: t(
+                'toolbox.autoSubs.steps.pipeline',
+                {},
+                "We'll stitch: fetch -> segment -> transcribe -> align -> translate (optional) -> deliver SRT."
+            ),
+            start: t('toolbox.autoSubs.actions.start', {}, 'Start auto-subtitles'),
+            previewPlan: t('toolbox.autoSubs.actions.preview', {}, 'Preview plan'),
+            progressAria: t('toolbox.autoSubs.actions.progress', {}, 'Progress'),
+            awaiting: t('toolbox.autoSubs.status.awaiting', {}, 'Awaiting input...'),
+            audioTrackLabel: t('toolbox.autoSubs.steps.audioTrackLabel', {}, 'Audio track for transcription'),
+            audioTrackHelper: t(
+                'toolbox.autoSubs.steps.audioTrackHelper',
+                {},
+                'Multiple audio tracks detected. Choose one, then continue.'
+            ),
+            pills: {
+                fetch: t('toolbox.autoSubs.steps.fetchPill', {}, 'Fetch stream'),
+                transcribe: t('toolbox.autoSubs.steps.transcribePill', {}, 'Transcribe'),
+                align: t('toolbox.autoSubs.steps.alignPill', {}, 'Align + timestamps'),
+                translate: t('toolbox.autoSubs.steps.translatePill', {}, 'Translate'),
+                deliver: t('toolbox.autoSubs.steps.deliverPill', {}, 'Ready to deliver')
+            },
+            outputTitle: t('toolbox.autoSubs.steps.step4Title', {}, 'Output'),
+            generated: t('toolbox.autoSubs.steps.generatedSrt', {}, 'Generated SRT'),
+            noOutput: t('toolbox.autoSubs.status.noOutput', {}, 'No output yet.'),
+            downloads: t('toolbox.autoSubs.steps.downloads', {}, 'Downloads'),
+            downloadSrt: t('toolbox.autoSubs.actions.downloadSrt', {}, 'Download SRT'),
+            downloadRawTranscript: t('toolbox.autoSubs.actions.downloadRawTranscript', {}, 'Download raw transcript'),
+            translationsEmpty: t('toolbox.autoSubs.steps.translationsEmpty', {}, 'No translations yet.'),
+            translationCardTitle: t(
+                'toolbox.autoSubs.steps.translationCardTitle',
+                { lang: '{lang}' },
+                'Translated {lang}'
+            ),
+            translationCardFallback: t('toolbox.autoSubs.steps.translationCardFallback', {}, 'Translated subtitle'),
+            enableAfter: t(
+                'toolbox.autoSubs.steps.downloadsNote',
+                {},
+                "We'll enable downloads after the pipeline finishes."
+            ),
+            sentToStremio: t(
+                'toolbox.autoSubs.steps.sentToStremio',
+                {},
+                'Translated subtitles were sent to Stremio under the Auto entry.'
+            ),
+            sentToStremioBlocked: t(
+                'toolbox.autoSubs.steps.sentToStremioBlocked',
+                {},
+                'Translated subtitles were not sent to Stremio Auto for this run because of hash mismatch.'
+            )
+        },
+        locks: {
+            needContinue: t('toolbox.autoSubs.locks.needContinue', {}, 'Click Continue to unlock the next steps.'),
+            needTarget: t(
+                'toolbox.autoSubs.locks.needTarget',
+                {},
+                'Select a target or disable translation to unlock Run.'
+            ),
+            needStep2: t('toolbox.autoSubs.locks.needStep2', {}, 'Complete Step 2 and press Continue to proceed.'),
+            needRun: t('toolbox.autoSubs.locks.needRun', {}, 'Run auto-subs to unlock downloads.')
+        },
+        actions: {
+            continue: t('toolbox.autoSubs.actions.continue', {}, 'Continue'),
+            useTrack: t('toolbox.autoSubs.actions.useTrack', {}, 'Continue with track')
+        },
+        options: {
+            addTargets: t('toolbox.autoSubs.options.addTargets', {}, 'Add target languages in Configure')
+        },
+        simulation: {
+            startLabel: t('toolbox.autoSubs.actions.start', {}, 'Start auto-subtitles'),
+            running: t('toolbox.autoSubs.status.running', {}, 'Running...'),
+            fetching: t('toolbox.autoSubs.status.fetching', {}, 'Fetching stream...'),
+            transcribing: t('toolbox.autoSubs.status.transcribing', {}, 'Transcribing with Whisper ({model})'),
+            aligning: t('toolbox.autoSubs.status.aligning', {}, 'Aligning and cleaning timestamps'),
+            translating: t('toolbox.autoSubs.status.translating', {}, 'Translating to {target}'),
+            skippingTranslation: t('toolbox.autoSubs.status.skipTranslate', {}, 'Skipping translation'),
+            preparing: t('toolbox.autoSubs.status.preparing', {}, 'Preparing downloads'),
+            done: t('toolbox.autoSubs.status.done', {}, 'Done. Ready to download.'),
+            previewPlan: t(
+                'toolbox.autoSubs.status.previewPlan',
+                {},
+                'Pipeline: fetch -> transcribe -> align -> translate -> deliver.'
+            ),
+            sampleSubtitle: t('toolbox.autoSubs.status.sample', {}, '[Sample subtitle generated by Whisper]'),
+            translateFallbackTarget: t('toolbox.autoSubs.status.translateFallbackTarget', {}, 'targets')
+        },
+        refresh: {
+            loading: t('toolbox.refresh.loading', {}, 'Refreshing...'),
+            empty: t('toolbox.refresh.empty', {}, 'No stream yet'),
+            error: t('toolbox.refresh.error', {}, 'Refresh failed'),
+            current: t('toolbox.refresh.current', {}, 'Already latest')
+        },
+        extension: {
+            ready: t('toolbox.status.ready', {}, 'Ready'),
+            notDetected: t('toolbox.autoSubs.extension.notDetected', {}, 'Extension not detected'),
+            readyWithVersion: t('toolbox.autoSubs.extension.readyVersion', {}, 'Ready (v{version})')
+        }
+    };
+    const metaDetailsTop = [];
+    if (videoId) metaDetailsTop.push(t('toolbox.embedded.meta.videoId', { id: videoId }, `Video ID: ${videoId}`));
+    if (linkedTitle)
+        metaDetailsTop.push(t('toolbox.embedded.meta.title', { title: linkedTitle }, `Title: ${linkedTitle}`));
+    if (videoId || filename || linkedTitle)
+        metaDetailsTop.push(
+            t('toolbox.embedded.meta.episode', { episode: episodeTag || '-' }, `Episode: ${episodeTag || '-'}`)
+        );
+    const cleanedFile = filename ? cleanDisplayName(filename) : '';
+    const metaFileLine = cleanedFile
+        ? t('toolbox.embedded.meta.file', { file: cleanedFile }, `File: ${cleanedFile}`)
+        : '';
+    const baseInitialTitle =
+        linkedTitle || cleanDisplayName(filename) || cleanDisplayName(videoId) || copy.videoMeta.none;
+    const initialVideoTitleValue =
+        episodeTag && !String(baseInitialTitle).toUpperCase().includes(String(episodeTag).toUpperCase())
+            ? baseInitialTitle + ' - ' + episodeTag
+            : baseInitialTitle;
+    const initialVideoTitle = escapeHtml(initialVideoTitleValue);
+    const initialVideoSubtitle = buildLinkedMetaSubtitleHtml(
+        metaDetailsTop.join(' | '),
+        metaFileLine,
+        copy.videoMeta.unavailable
+    );
 
-  const themeToggleLabel = t('fileUpload.themeToggle', {}, 'Toggle theme');
-  const copy = {
-    meta: {
-      title: t('toolbox.autoSubs.documentTitle', {}, 'Automatic Subtitles - SubFaber')
-    },
-    toast: {
-      title: t('toolbox.toast.title', {}, 'New stream detected'),
-      meta: t('toolbox.toast.meta', {}, 'A different episode is playing in Stremio.'),
-      dismiss: t('toolbox.toast.dismiss', {}, 'Dismiss notification'),
-      update: t('toolbox.toast.update', {}, 'Update')
-    },
-    hero: {
-      title: t('toolbox.autoSubs.heroTitle', {}, 'Automatic Subtitles'),
-      subtitle: t('toolbox.autoSubs.heroSubtitle', {}, 'Generate subtitles with Whisper then translate')
-    },
-    log: {
-      header: t('toolbox.autoSubs.log.header', {}, 'Live log'),
-      sub: t('toolbox.autoSubs.log.sub', {}, 'Watch each pipeline step, errors, and upstream responses here.')
-    },
-    badges: {
-      addon: t('toolbox.status.addon', {}, 'Addon'),
-      extension: t('toolbox.status.extension', {}, 'Extension'),
-      waitingExtension: t('toolbox.autoSubs.extension.waiting', {}, 'Waiting for extension...'),
-      hash: t('toolbox.autoSubs.badges.hash', {}, 'Hash'),
-      decode: t('toolbox.autoSubs.badges.decode', {}, 'Decode'),
-      decodeWorking: t('toolbox.autoSubs.badges.decodeWorking', {}, 'FFmpeg decoding'),
-      decodeReady: t('toolbox.autoSubs.badges.decodeReady', {}, 'OK'),
-      decodeError: t('toolbox.autoSubs.badges.decodeError', {}, 'Decode failed'),
-      versionFallback: t('toolbox.autoSubs.badges.versionFallback', {}, 'n/a'),
-      pending: t('toolbox.autoSubs.badges.pending', {}, 'WAITING')
-    },
-    hash: {
-      waiting: t('toolbox.autoSubs.hash.waiting', {}, 'Waiting for stream hash...'),
-      cacheDisabled: t('toolbox.autoSubs.hash.cacheDisabled', {}, 'Cache disabled for this run.')
-    },
-    videoMeta: {
-      label: t('toolbox.embedded.videoMeta.label', {}, 'Linked Stream'),
-      none: t('toolbox.embedded.videoMeta.none', {}, 'No stream linked'),
-      unavailable: t('toolbox.embedded.videoMeta.unavailable', {}, 'Video ID unavailable'),
-      waiting: t('toolbox.embedded.videoMeta.waiting', {}, 'Waiting for a linked stream...'),
-      refreshTitle: t('toolbox.embedded.videoMeta.refreshTitle', {}, 'Refresh linked stream')
-    },
-    sections: {
-      linkAndPrep: t('toolbox.autoSubs.sections.setup', {}, 'Link a stream & prep the model'),
-      runAndReview: t('toolbox.autoSubs.sections.run', {}, 'Run pipeline & review output')
-    },
-    steps: {
-      one: t('toolbox.autoSubs.steps.step1Chip', {}, 'Step 1'),
-      two: t('toolbox.autoSubs.steps.step2Chip', {}, 'Step 2'),
-      three: t('toolbox.autoSubs.steps.step3Chip', {}, 'Step 3'),
-      four: t('toolbox.autoSubs.steps.step4Chip', {}, 'Step 4'),
-      inputTitle: t('toolbox.autoSubs.steps.step1Title', {}, 'Input audio or video'),
-      streamLabel: t('toolbox.embedded.step1.streamLabel', {}, t('toolbox.autoSubs.steps.streamLabel', {}, 'Stream URL:')),
-      streamPlaceholder: t('toolbox.embedded.step1.streamPlaceholder', {}, t('toolbox.autoSubs.steps.streamPlaceholder', {}, 'Paste the video/stream URL from Stremio or your browser')),
-      englishRecommended: t('toolbox.autoSubs.steps.englishRecommended', {}, 'English audio source recommended.'),
-      localDecodeWarning: t('toolbox.autoSubs.steps.localDecodeWarning', {}, 'Avoid large files when possible. The stream file is downloaded and audio is decoded locally for transcription, so smaller files are recommended.'),
-      langModelTitle: t('toolbox.autoSubs.steps.step2Title', {}, 'Mode & audio'),
-      modeLabel: t('toolbox.autoSubs.steps.modeLabel', {}, 'Auto-subtitles mode'),
-      modeLocal: t('toolbox.autoSubs.steps.modeLocal', {}, 'Local (xSync)'),
-      modeRemote: t('toolbox.autoSubs.steps.modeRemote', {}, 'Cloudflare Workers AI'),
-      modeAssembly: t('toolbox.autoSubs.steps.modeAssembly', {}, 'AssemblyAI'),
-      assemblyModelLabel: t('toolbox.autoSubs.steps.assemblyModelLabel', {}, 'AssemblyAI speech model'),
-      sourceLabel: t('toolbox.autoSubs.steps.sourceLabel', {}, 'Source audio language'),
-      autoDetect: t('toolbox.autoSubs.steps.autoDetect', {}, 'Auto-detect'),
-      modelLabel: t('toolbox.autoSubs.steps.modelLabel', {}, 'Whisper model'),
-      model: {
-        standard: t('toolbox.autoSubs.steps.modelStandard', {}, 'Whisper'),
-        turbo: t('toolbox.autoSubs.steps.modelTurbo', {}, 'Whisper Large V3 Turbo')
-      },
-      assemblyModel: {
-        universal2: t('toolbox.autoSubs.steps.assemblyModelUniversal2', {}, 'Universal-2'),
-        universal3Pro: t('toolbox.autoSubs.steps.assemblyModelUniversal3Pro', {}, 'Universal-3 Pro')
-      },
-      translateOutput: t('toolbox.autoSubs.steps.translateOutput', {}, 'Translate to target language'),
-      assemblySendFullVideo: t('toolbox.autoSubs.steps.sendFullVideo', {}, 'Send full video to AssemblyAI (≤5GB)'),
-      assemblySendFullVideoHelper: t('toolbox.autoSubs.steps.sendFullVideoHelper', {}, 'If the stream is larger than 5GB, we will fall back to audio extraction automatically.'),
-      vadFilter: t('toolbox.autoSubs.steps.vadFilter', {}, 'Enable VAD filter (Turbo model)'),
-      vadFilterHelper: t('toolbox.autoSubs.steps.vadFilterHelper', {}, 'Preprocess audio with a voice activity detection model to remove silence. Recommended for cleaner transcription.'),
-      translationStepChip: t('toolbox.autoSubs.steps.stepTwoFiveChip', {}, 'Step 2.5'),
-      translationStepTitle: t('toolbox.autoSubs.steps.stepTwoFiveTitle', {}, 'Translation targets'),
-      translationSettingsTitle: t('toolbox.autoSubs.steps.translationSettings', {}, 'Translation settings'),
-      translationSettingsMeta: t('toolbox.embedded.step2.settingsMeta', {}, 'Provider, workflow, batching, context'),
-      targetLabel: t('toolbox.autoSubs.steps.targetLabel', {}, 'Target language'),
-      targetWorkflowHelper: t('toolbox.autoSubs.steps.targetWorkflowHelper', {}, 'Uses the same translation workflow configured for Stremio.'),
-      providerLabel: t('toolbox.autoSubs.steps.providerLabel', {}, 'Translation provider'),
-      providerHelper: t('toolbox.embedded.step2.providerHelper', {}, 'Uses your configured model for the selected provider.'),
-      runPipelineTitle: t('toolbox.autoSubs.steps.step3Title', {}, 'Run pipeline'),
-      pipelineDesc: t('toolbox.autoSubs.steps.pipeline', {}, 'We\'ll stitch: fetch -> segment -> transcribe -> align -> translate (optional) -> deliver SRT.'),
-      start: t('toolbox.autoSubs.actions.start', {}, 'Start auto-subtitles'),
-      previewPlan: t('toolbox.autoSubs.actions.preview', {}, 'Preview plan'),
-      progressAria: t('toolbox.autoSubs.actions.progress', {}, 'Progress'),
-      awaiting: t('toolbox.autoSubs.status.awaiting', {}, 'Awaiting input...'),
-      audioTrackLabel: t('toolbox.autoSubs.steps.audioTrackLabel', {}, 'Audio track for transcription'),
-      audioTrackHelper: t('toolbox.autoSubs.steps.audioTrackHelper', {}, 'Multiple audio tracks detected. Choose one, then continue.'),
-      pills: {
-        fetch: t('toolbox.autoSubs.steps.fetchPill', {}, 'Fetch stream'),
-        transcribe: t('toolbox.autoSubs.steps.transcribePill', {}, 'Transcribe'),
-        align: t('toolbox.autoSubs.steps.alignPill', {}, 'Align + timestamps'),
-        translate: t('toolbox.autoSubs.steps.translatePill', {}, 'Translate'),
-        deliver: t('toolbox.autoSubs.steps.deliverPill', {}, 'Ready to deliver')
-      },
-      outputTitle: t('toolbox.autoSubs.steps.step4Title', {}, 'Output'),
-      generated: t('toolbox.autoSubs.steps.generatedSrt', {}, 'Generated SRT'),
-      noOutput: t('toolbox.autoSubs.status.noOutput', {}, 'No output yet.'),
-      downloads: t('toolbox.autoSubs.steps.downloads', {}, 'Downloads'),
-      downloadSrt: t('toolbox.autoSubs.actions.downloadSrt', {}, 'Download SRT'),
-      downloadRawTranscript: t('toolbox.autoSubs.actions.downloadRawTranscript', {}, 'Download raw transcript'),
-      translationsEmpty: t('toolbox.autoSubs.steps.translationsEmpty', {}, 'No translations yet.'),
-      translationCardTitle: t('toolbox.autoSubs.steps.translationCardTitle', { lang: '{lang}' }, 'Translated {lang}'),
-      translationCardFallback: t('toolbox.autoSubs.steps.translationCardFallback', {}, 'Translated subtitle'),
-      enableAfter: t('toolbox.autoSubs.steps.downloadsNote', {}, 'We\'ll enable downloads after the pipeline finishes.'),
-      sentToStremio: t('toolbox.autoSubs.steps.sentToStremio', {}, 'Translated subtitles were sent to Stremio under the Auto entry.'),
-      sentToStremioBlocked: t('toolbox.autoSubs.steps.sentToStremioBlocked', {}, 'Translated subtitles were not sent to Stremio Auto for this run because of hash mismatch.')
-    },
-    locks: {
-      needContinue: t('toolbox.autoSubs.locks.needContinue', {}, 'Click Continue to unlock the next steps.'),
-      needTarget: t('toolbox.autoSubs.locks.needTarget', {}, 'Select a target or disable translation to unlock Run.'),
-      needStep2: t('toolbox.autoSubs.locks.needStep2', {}, 'Complete Step 2 and press Continue to proceed.'),
-      needRun: t('toolbox.autoSubs.locks.needRun', {}, 'Run auto-subs to unlock downloads.')
-    },
-    actions: {
-      continue: t('toolbox.autoSubs.actions.continue', {}, 'Continue'),
-      useTrack: t('toolbox.autoSubs.actions.useTrack', {}, 'Continue with track')
-    },
-    options: {
-      addTargets: t('toolbox.autoSubs.options.addTargets', {}, 'Add target languages in Configure')
-    },
-    simulation: {
-      startLabel: t('toolbox.autoSubs.actions.start', {}, 'Start auto-subtitles'),
-      running: t('toolbox.autoSubs.status.running', {}, 'Running...'),
-      fetching: t('toolbox.autoSubs.status.fetching', {}, 'Fetching stream...'),
-      transcribing: t('toolbox.autoSubs.status.transcribing', {}, 'Transcribing with Whisper ({model})'),
-      aligning: t('toolbox.autoSubs.status.aligning', {}, 'Aligning and cleaning timestamps'),
-      translating: t('toolbox.autoSubs.status.translating', {}, 'Translating to {target}'),
-      skippingTranslation: t('toolbox.autoSubs.status.skipTranslate', {}, 'Skipping translation'),
-      preparing: t('toolbox.autoSubs.status.preparing', {}, 'Preparing downloads'),
-      done: t('toolbox.autoSubs.status.done', {}, 'Done. Ready to download.'),
-      previewPlan: t('toolbox.autoSubs.status.previewPlan', {}, 'Pipeline: fetch -> transcribe -> align -> translate -> deliver.'),
-      sampleSubtitle: t('toolbox.autoSubs.status.sample', {}, '[Sample subtitle generated by Whisper]'),
-      translateFallbackTarget: t('toolbox.autoSubs.status.translateFallbackTarget', {}, 'targets')
-    },
-    refresh: {
-      loading: t('toolbox.refresh.loading', {}, 'Refreshing...'),
-      empty: t('toolbox.refresh.empty', {}, 'No stream yet'),
-      error: t('toolbox.refresh.error', {}, 'Refresh failed'),
-      current: t('toolbox.refresh.current', {}, 'Already latest')
-    },
-    extension: {
-      ready: t('toolbox.status.ready', {}, 'Ready'),
-      notDetected: t('toolbox.autoSubs.extension.notDetected', {}, 'Extension not detected'),
-      readyWithVersion: t('toolbox.autoSubs.extension.readyVersion', {}, 'Ready (v{version})')
-    }
-  };
-  const metaDetailsTop = [];
-  if (videoId) metaDetailsTop.push(t('toolbox.embedded.meta.videoId', { id: videoId }, `Video ID: ${videoId}`));
-  if (linkedTitle) metaDetailsTop.push(t('toolbox.embedded.meta.title', { title: linkedTitle }, `Title: ${linkedTitle}`));
-  if (videoId || filename || linkedTitle) metaDetailsTop.push(t('toolbox.embedded.meta.episode', { episode: episodeTag || '-' }, `Episode: ${episodeTag || '-'}`));
-  const cleanedFile = filename ? cleanDisplayName(filename) : '';
-  const metaFileLine = cleanedFile ? t('toolbox.embedded.meta.file', { file: cleanedFile }, `File: ${cleanedFile}`) : '';
-  const baseInitialTitle = linkedTitle || cleanDisplayName(filename) || cleanDisplayName(videoId) || copy.videoMeta.none;
-  const initialVideoTitleValue = (episodeTag && !String(baseInitialTitle).toUpperCase().includes(String(episodeTag).toUpperCase()))
-    ? (baseInitialTitle + ' - ' + episodeTag)
-    : baseInitialTitle;
-  const initialVideoTitle = escapeHtml(initialVideoTitleValue);
-  const initialVideoSubtitle = buildLinkedMetaSubtitleHtml(metaDetailsTop.join(' | '), metaFileLine, copy.videoMeta.unavailable);
-
-  return `
+    return `
 <!DOCTYPE html>
 <html lang="${resolveUiLang(config)}" data-third-theme="true-dark">
 <head>
@@ -9876,20 +10516,20 @@ async function generateAutoSubtitlePage(configStr, videoId, filename, config = {
   <script>
     ${quickNavScript()}
     const BOOTSTRAP = ${safeJsonSerialize({
-    configStr,
-    videoId,
-    filename: filename || '',
-    streamUrl: initialStreamUrl,
-    videoHash,
-    linkedTitle,
-    cfClient,
-    assemblyEnabled,
-    defaults,
-    providerOptions,
-    targetLanguages,
-    sourceLanguages: config.sourceLanguages || [],
-    assemblyApiKey
-  })};
+        configStr,
+        videoId,
+        filename: filename || '',
+        streamUrl: initialStreamUrl,
+        videoHash,
+        linkedTitle,
+        cfClient,
+        assemblyEnabled,
+        defaults,
+        providerOptions,
+        targetLanguages,
+        sourceLanguages: config.sourceLanguages || [],
+        assemblyApiKey
+    })};
     const PAGE = { configStr: BOOTSTRAP.configStr, videoId: BOOTSTRAP.videoId, filename: BOOTSTRAP.filename || '', videoHash: BOOTSTRAP.videoHash || '' };
     const SUBTITLE_MENU_TARGETS = ${JSON.stringify(subtitleMenuTargets)};
     const SUBTITLE_MENU_SOURCES = ${JSON.stringify(config.sourceLanguages || [])};
@@ -9997,7 +10637,7 @@ async function generateAutoSubtitlePage(configStr, videoId, filename, config = {
 }
 
 module.exports = {
-  generateSubToolboxPage,
-  generateEmbeddedSubtitlePage,
-  generateAutoSubtitlePage
+    generateSubToolboxPage,
+    generateEmbeddedSubtitlePage,
+    generateAutoSubtitlePage
 };

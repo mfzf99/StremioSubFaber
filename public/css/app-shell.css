@@ -50,7 +50,7 @@ body.app-shell .qs-entry-banner {
     left: 0;
     top: 0;
     z-index: 900;
-    display: none;                       /* shown on lg+ */
+    display: none; /* shown on lg+ */
     flex-direction: column;
     width: 240px;
     height: 100vh;
@@ -58,8 +58,10 @@ body.app-shell .qs-entry-banner {
     border-right: 1px solid var(--border);
 }
 
-@media (min-width: 1024px) {
-    .app-sidebar { display: flex; }
+@media (min-width: 900px) {
+    .app-sidebar {
+        display: flex;
+    }
 }
 
 .app-sidebar-brand {
@@ -100,7 +102,11 @@ body.app-shell .qs-entry-banner {
     gap: 16px;
 }
 
-.app-nav-group { display: flex; flex-direction: column; gap: 2px; }
+.app-nav-group {
+    display: flex;
+    flex-direction: column;
+    gap: 2px;
+}
 
 .app-nav-label {
     margin-bottom: 4px;
@@ -123,11 +129,17 @@ body.app-shell .qs-entry-banner {
     font-weight: 500;
     color: var(--text-secondary);
     text-decoration: none;
-    transition: background 0.15s ease, color 0.15s ease;
+    transition:
+        background 0.15s ease,
+        color 0.15s ease;
     cursor: pointer;
 }
 
-.app-nav-pill svg { width: 18px; height: 18px; flex-shrink: 0; }
+.app-nav-pill svg {
+    width: 18px;
+    height: 18px;
+    flex-shrink: 0;
+}
 
 .app-nav-pill:hover {
     background: var(--surface-tint);
@@ -135,25 +147,30 @@ body.app-shell .qs-entry-banner {
 }
 
 .app-nav-pill.active,
-.app-nav-pill[aria-current="page"] {
+.app-nav-pill[aria-current='page'] {
     background: var(--accent-soft);
     color: var(--primary);
     font-weight: 600;
 }
 
-[data-theme="dark"] .app-nav-pill.active,
-[data-theme="dark"] .app-nav-pill[aria-current="page"],
-[data-theme="blackhole"] .app-nav-pill.active,
-[data-theme="true-dark"] .app-nav-pill.active {
+[data-theme='dark'] .app-nav-pill.active,
+[data-theme='dark'] .app-nav-pill[aria-current='page'],
+[data-theme='blackhole'] .app-nav-pill.active,
+[data-theme='true-dark'] .app-nav-pill.active {
     color: var(--primary-light);
 }
 
 /* ---------------------------------------------------------------------------
    5a. Hierarchical sidebar — Configuration parent with collapsible children
    --------------------------------------------------------------------------- */
-.app-nav-parent { display: flex; flex-direction: column; }
+.app-nav-parent {
+    display: flex;
+    flex-direction: column;
+}
 
-.app-nav-parent .app-nav-pill { position: relative; }
+.app-nav-parent .app-nav-pill {
+    position: relative;
+}
 
 .app-nav-caret {
     margin-left: auto;
@@ -164,21 +181,28 @@ body.app-shell .qs-entry-banner {
     flex-shrink: 0;
 }
 
-.app-nav-caret svg { width: 14px; height: 14px; }
+.app-nav-caret svg {
+    width: 14px;
+    height: 14px;
+}
 
-.app-nav-parent.expanded .app-nav-caret { transform: rotate(90deg); }
+.app-nav-parent.expanded .app-nav-caret {
+    transform: rotate(90deg);
+}
 
 .app-nav-children {
     display: none;
     flex-direction: column;
     gap: 1px;
     margin: 2px 0 4px;
-    padding-left: 14px;                /* indent under the parent */
+    padding-left: 14px; /* indent under the parent */
     border-left: 1px solid var(--border);
     margin-left: 22px;
 }
 
-.app-nav-parent.expanded .app-nav-children { display: flex; }
+.app-nav-parent.expanded .app-nav-children {
+    display: flex;
+}
 
 .app-nav-child {
     display: flex;
@@ -190,7 +214,9 @@ body.app-shell .qs-entry-banner {
     font-weight: 500;
     color: var(--text-secondary);
     text-decoration: none;
-    transition: background 0.15s ease, color 0.15s ease;
+    transition:
+        background 0.15s ease,
+        color 0.15s ease;
     cursor: pointer;
 }
 
@@ -207,16 +233,16 @@ body.app-shell .qs-entry-banner {
 }
 
 .app-nav-child.active,
-.app-nav-child[aria-current="page"] {
+.app-nav-child[aria-current='page'] {
     background: var(--accent-soft);
     color: var(--primary);
     font-weight: 600;
 }
 
-[data-theme="dark"] .app-nav-child.active,
-[data-theme="dark"] .app-nav-child[aria-current="page"],
-[data-theme="blackhole"] .app-nav-child.active,
-[data-theme="true-dark"] .app-nav-child.active {
+[data-theme='dark'] .app-nav-child.active,
+[data-theme='dark'] .app-nav-child[aria-current='page'],
+[data-theme='blackhole'] .app-nav-child.active,
+[data-theme='true-dark'] .app-nav-child.active {
     color: var(--primary-light);
 }
 
@@ -244,15 +270,21 @@ body.app-shell .qs-entry-banner {
     scrollbar-width: none;
 }
 
-.app-sidebar-footer .ui-language-flag-row::-webkit-scrollbar { display: none; }
+.app-sidebar-footer .ui-language-flag-row::-webkit-scrollbar {
+    display: none;
+}
 
 .app-sidebar-footer .ui-lang-flag {
     width: 26px;
     height: 26px;
 }
 
-.app-sidebar-footer .theme-switch { flex: 1; }
-.app-sidebar-footer .theme-switch-option { flex: 1; }
+.app-sidebar-footer .theme-switch {
+    flex: 1;
+}
+.app-sidebar-footer .theme-switch-option {
+    flex: 1;
+}
 
 .app-sidebar-docs {
     display: inline-flex;
@@ -265,7 +297,9 @@ body.app-shell .qs-entry-banner {
     font-weight: 500;
     color: var(--text-secondary);
     text-decoration: none;
-    transition: background 0.15s ease, color 0.15s ease;
+    transition:
+        background 0.15s ease,
+        color 0.15s ease;
 }
 
 .app-sidebar-docs:hover {
@@ -284,8 +318,16 @@ body.app-shell .qs-entry-banner {
     flex-direction: column;
 }
 
-@media (min-width: 1024px) {
-    .app-main { padding-left: 240px; }
+@media (min-width: 900px) {
+    .app-main {
+        padding-left: 208px;
+    }
+}
+
+@media (min-width: 1200px) {
+    .app-main {
+        padding-left: 240px;
+    }
 }
 
 /* Mobile header (hidden on desktop) */
@@ -304,11 +346,16 @@ body.app-shell .qs-entry-banner {
     border-bottom: 1px solid var(--border);
 }
 
-@media (min-width: 1024px) {
-    .app-mobile-header { display: none; }
+@media (min-width: 900px) {
+    .app-mobile-header {
+        display: none;
+    }
 }
 
-.app-mobile-header .app-sidebar-logo { width: 26px; height: 26px; }
+.app-mobile-header .app-sidebar-logo {
+    width: 26px;
+    height: 26px;
+}
 .app-mobile-header-title {
     flex: 1;
     font-weight: 700;
@@ -326,13 +373,15 @@ body.app-shell .qs-entry-banner {
 .app-content {
     flex: 1;
     width: 100%;
-    max-width: 1024px;
+    max-width: 1120px;
     margin: 0 auto;
-    padding: 24px 20px 120px;            /* bottom space for action bar / bottom nav */
+    padding: 24px 20px 120px; /* bottom space for action bar / bottom nav */
 }
 
 @media (min-width: 640px) {
-    .app-content { padding: 32px 32px 140px; }
+    .app-content {
+        padding: 32px 32px 140px;
+    }
 }
 
 /* Page header (per virtual page) — sits directly above the quick-stack.
@@ -357,7 +406,6 @@ body.app-shell .qs-entry-banner {
     margin-bottom: 0;
 }
 
-
 .app-page-title {
     margin: 0;
     font-size: 28px;
@@ -373,17 +421,25 @@ body.app-shell .qs-entry-banner {
 }
 
 /* Virtual pages — hidden with [hidden] until routed */
-.app-page[hidden] { display: none !important; }
+.app-page[hidden] {
+    display: none !important;
+}
 
-/* ONE WORLD: every child of .app-page shares the same 40px rhythm.
-   No per-section margins, no stacked gaps — just one gap for all. */
+/* Virtual pages use an explicit layout contract. Configuration owns the
+   section rhythm below; other pages keep their own component spacing. */
 .app-page {
     display: flex;
     flex-direction: column;
+    gap: 0;
+}
+
+/* Configuration sections share the established 40px vertical rhythm without
+   imposing that spacing on unrelated virtual pages or future children. */
+.app-page[data-page='configuration'] {
     gap: 40px;
 }
 
-/* Sections give up their own margin so they follow the world gap */
+/* Sections give up their own margin so they follow the Configuration rhythm. */
 body.app-shell .section-block {
     margin-bottom: 0;
 }
@@ -401,12 +457,8 @@ body.app-shell .section-block {
    --------------------------------------------------------------------------- */
 /* The 3 action buttons are the CLOSER of the settings family:
    API Keys → Languages → Settings → 3 beradik. They sit at the very END of
-   the Configuration page, after every card including hidden ones.
-
-   PHANTOM GAP: display:none elements still count as flex items — the page
-   gap (40px) renders between them and their neighbours, creating phantom
-   space. We cancel the phantom so the buttons sit 40px under the last
-   VISIBLE card, matching the rhythm between sections. */
+   the Configuration page, after every card. Elements with display:none are
+   removed from flex layout, so no hidden-item gap compensation is needed. */
 .app-config-actions {
     margin-top: 0;
     margin-bottom: 0;
@@ -416,27 +468,23 @@ body.app-shell .section-block {
     gap: 12px;
 }
 
-/* Cancel phantom gaps from hidden cards before .app-config-actions.
-   With page gap 40px, N hidden cards inject N×40px phantom space.
-   margin-top: 0 keeps the base 40px; negative values cancel stacked phantoms. */
-.app-page > [style*="display: none"] + .app-config-actions,
-.app-page > [style*="display:none"] + .app-config-actions {
-    margin-top: 0;   /* base 40px from page gap only */
+@media (min-width: 900px) {
+    .app-config-actions {
+        position: sticky;
+        bottom: 16px;
+        z-index: 700;
+        padding: 12px 16px;
+        border: 1px solid var(--border);
+        border-radius: var(--radius-card);
+        background: color-mix(in srgb, var(--surface) 94%, transparent);
+        box-shadow: 0 8px 24px rgba(15, 23, 42, 0.12);
+        -webkit-backdrop-filter: blur(10px);
+        backdrop-filter: blur(10px);
+    }
 }
 
-.app-page > [style*="display: none"] + [style*="display: none"] + .app-config-actions,
-.app-page > [style*="display:none"] + [style*="display:none"] + .app-config-actions {
-    margin-top: -40px;   /* cancel 1 phantom gap */
-}
-
-.app-page > [style*="display: none"] + [style*="display: none"] + [style*="display: none"] + .app-config-actions,
-.app-page > [style*="display:none"] + [style*="display:none"] + [style*="display:none"] + .app-config-actions {
-    margin-top: -80px;   /* cancel 2 phantom gaps */
-}
-
-/* The 3 action buttons belong to the Settings flow — keep them tight under
-   the Settings section. Override configure.css .btn-group margin-top: 1.25rem
-   (20px) so the group doesn't inject phantom space before the buttons. */
+/* The 3 action buttons belong to the Settings flow. Override configure.css
+   .btn-group margin-top: 1.25rem so the group does not add a second gap. */
 .app-config-actions .btn-group {
     display: flex;
     align-items: center;
@@ -446,7 +494,9 @@ body.app-shell .section-block {
     margin-top: 0;
 }
 
-.app-config-actions .btn-group .btn { flex-shrink: 0; }
+.app-config-actions .btn-group .btn {
+    flex-shrink: 0;
+}
 
 /* Install URL box sits between the 3 beradik and the Reset bar. The parent
    gap is 12px, so 12px margins on each side produce a symmetric 24px visual
@@ -455,13 +505,9 @@ body.app-shell .section-block {
     margin: 12px 0 !important;
 }
 
-/* Reset bar shares the same 24px rhythm with the URL box. Its old 40px top
-   margin would make the lower spacing 52px (12px parent gap + 40px margin). */
+/* Reset bar uses the base reset-bar margin contract; the parent gap supplies
+   its spacing from the preceding action or URL card. */
 .app-config-actions .reset-bar {
-    margin-top: 0 !important;
-    margin-right: 0;
-    margin-bottom: 0;
-    margin-left: 0;
     display: flex;
     align-items: center;
     gap: 10px;
@@ -479,10 +525,16 @@ body.app-shell .footer {
     text-align: center;
 }
 
-@media (min-width: 1024px) {
+@media (min-width: 900px) {
+    body.app-shell .footer {
+        padding-left: 208px;
+        box-sizing: border-box;
+    }
+}
+
+@media (min-width: 1200px) {
     body.app-shell .footer {
         padding-left: 240px;
-        box-sizing: border-box;
     }
 }
 
@@ -501,8 +553,10 @@ body.app-shell .footer {
     padding-bottom: env(safe-area-inset-bottom, 0);
 }
 
-@media (min-width: 1024px) {
-    .app-bottom-nav { display: none; }
+@media (min-width: 900px) {
+    .app-bottom-nav {
+        display: none;
+    }
 }
 
 .app-bottom-nav-item {
@@ -519,29 +573,76 @@ body.app-shell .footer {
     transition: color 0.15s ease;
 }
 
-.app-bottom-nav-item svg { width: 20px; height: 20px; }
+.app-bottom-nav-item svg {
+    width: 20px;
+    height: 20px;
+}
 
 .app-bottom-nav-item.active,
-.app-bottom-nav-item[aria-current="page"] {
+.app-bottom-nav-item[aria-current='page'] {
     color: var(--primary);
 }
 
-[data-theme="dark"] .app-bottom-nav-item.active,
-[data-theme="blackhole"] .app-bottom-nav-item.active,
-[data-theme="true-dark"] .app-bottom-nav-item.active {
+[data-theme='dark'] .app-bottom-nav-item.active,
+[data-theme='blackhole'] .app-bottom-nav-item.active,
+[data-theme='true-dark'] .app-bottom-nav-item.active {
     color: var(--primary-light);
 }
 
-/* On mobile, config actions stack vertically */
-@media (max-width: 1023.98px) {
-    .app-config-actions .btn-group { justify-content: stretch; }
-    .app-config-actions .btn-group .btn { flex: 1; justify-content: center; }
+/* On mobile, config actions stack vertically and remain within the viewport. */
+@media (max-width: 899.98px) {
+    .app-config-actions .btn-group {
+        justify-content: stretch;
+    }
+    .app-config-actions .btn-group .btn {
+        flex: 1 1 12rem;
+        justify-content: center;
+    }
+}
+
+@media (min-width: 900px) and (max-width: 1199.98px) {
+    .app-sidebar {
+        width: 208px;
+    }
+    .app-sidebar-brand {
+        padding-inline: 12px;
+    }
+    .app-sidebar-nav {
+        padding: 10px;
+        gap: 10px;
+    }
+    .app-nav-pill {
+        min-height: 36px;
+        padding-inline: 10px;
+    }
+    .app-nav-child {
+        min-height: 32px;
+        padding-inline: 8px;
+    }
+    .app-content {
+        padding-inline: 24px;
+    }
+    .app-page[data-page='configuration'] {
+        gap: 28px;
+    }
+    .section-grid {
+        grid-template-columns: minmax(0, 1fr);
+    }
+}
+
+.app-page[data-page='configuration'] > *,
+.app-page[data-page='toolbox'] > * {
+    scroll-margin-top: 24px;
 }
 
 /* ---------------------------------------------------------------------------
    7. Retire the old macOS window frame when app-shell is active
    --------------------------------------------------------------------------- */
-body.app-shell .rootify-desktop { padding: 0; background: var(--bg-primary); background-image: none; }
+body.app-shell .rootify-desktop {
+    padding: 0;
+    background: var(--bg-primary);
+    background-image: none;
+}
 body.app-shell .rootify-window {
     max-width: none;
     margin: 0;
@@ -550,8 +651,12 @@ body.app-shell .rootify-window {
     box-shadow: none;
     background: transparent;
 }
-body.app-shell .rootify-titlebar { display: none; }
-body.app-shell .app-navbar { display: none; }   /* old navbar replaced by sidebar */
+body.app-shell .rootify-titlebar {
+    display: none;
+}
+body.app-shell .app-navbar {
+    display: none;
+} /* old navbar replaced by sidebar */
 
 /* Old container keeps its width inside the new content column */
 body.app-shell .container {
@@ -573,11 +678,14 @@ body.app-shell .container {
     transition: opacity 0.22s ease;
 }
 
-.app-changelog-overlay.open { opacity: 1; pointer-events: auto; }
+.app-changelog-overlay.open {
+    opacity: 1;
+    pointer-events: auto;
+}
 
-[data-theme="dark"] .app-changelog-overlay,
-[data-theme="blackhole"] .app-changelog-overlay,
-[data-theme="true-dark"] .app-changelog-overlay {
+[data-theme='dark'] .app-changelog-overlay,
+[data-theme='blackhole'] .app-changelog-overlay,
+[data-theme='true-dark'] .app-changelog-overlay {
     background: rgba(0, 0, 0, 0.5);
 }
 
@@ -597,7 +705,9 @@ body.app-shell .container {
     flex-direction: column;
 }
 
-.app-changelog-panel.open { transform: translateX(0); }
+.app-changelog-panel.open {
+    transform: translateX(0);
+}
 
 .app-changelog-header {
     display: flex;
@@ -621,9 +731,15 @@ body.app-shell .container {
     flex-shrink: 0;
 }
 
-.app-changelog-header-icon svg { width: 16px; height: 16px; }
+.app-changelog-header-icon svg {
+    width: 16px;
+    height: 16px;
+}
 
-.app-changelog-header-text { flex: 1; min-width: 0; }
+.app-changelog-header-text {
+    flex: 1;
+    min-width: 0;
+}
 
 .app-changelog-title {
     margin: 0;
@@ -651,7 +767,9 @@ body.app-shell .container {
     color: var(--text-tertiary);
     cursor: pointer;
     flex-shrink: 0;
-    transition: background 0.15s ease, color 0.15s ease;
+    transition:
+        background 0.15s ease,
+        color 0.15s ease;
 }
 
 .app-changelog-close:hover {
@@ -706,7 +824,10 @@ body.app-shell .container {
     color: var(--text-secondary);
 }
 
-.app-changelog-entry-content strong { color: var(--text-primary); font-weight: 600; }
+.app-changelog-entry-content strong {
+    color: var(--text-primary);
+    font-weight: 600;
+}
 
 .app-changelog-entry-content code {
     font-family: 'JetBrains Mono', ui-monospace, monospace;
@@ -718,9 +839,14 @@ body.app-shell .container {
 }
 
 .app-changelog-entry-content ul,
-.app-changelog-entry-content ol { margin: 6px 0; padding-left: 18px; }
+.app-changelog-entry-content ol {
+    margin: 6px 0;
+    padding-left: 18px;
+}
 
-.app-changelog-entry-content li { margin: 4px 0; }
+.app-changelog-entry-content li {
+    margin: 4px 0;
+}
 
 .app-changelog-footer {
     flex-shrink: 0;
@@ -742,7 +868,9 @@ body.app-shell .container {
     text-decoration: none;
 }
 
-.app-changelog-footer-link:hover { text-decoration: underline; }
+.app-changelog-footer-link:hover {
+    text-decoration: underline;
+}
 
 /* Version badge becomes a button */
 .version-badge-button {
@@ -753,7 +881,9 @@ body.app-shell .container {
     cursor: pointer;
     padding: 0;
     border-radius: 999px;
-    transition: border-color 0.15s ease, background 0.15s ease;
+    transition:
+        border-color 0.15s ease,
+        background 0.15s ease;
 }
 
 .version-badge-button:hover {
@@ -773,11 +903,19 @@ body.app-shell .container {
     white-space: nowrap;
 }
 
-.version-badge-button:hover .version-badge { color: var(--primary); }
+.version-badge-button:hover .version-badge {
+    color: var(--primary);
+}
 
 /* ---------------------------------------------------------------------------
    9. Reduced motion
    --------------------------------------------------------------------------- */
 @media (prefers-reduced-motion: reduce) {
-    .app-nav-pill, .app-bottom-nav-item, .app-sidebar-docs, .app-changelog-panel, .app-changelog-overlay { transition: none !important; }
+    .app-nav-pill,
+    .app-bottom-nav-item,
+    .app-sidebar-docs,
+    .app-changelog-panel,
+    .app-changelog-overlay {
+        transition: none !important;
+    }
 }

@@ -30,7 +30,7 @@ function escapeHtml(text) {
 }
 
 function resolveUiLang(config) {
-    const lang = (config && config.uiLanguage) ? String(config.uiLanguage).toLowerCase() : 'en';
+    const lang = config && config.uiLanguage ? String(config.uiLanguage).toLowerCase() : 'en';
     return escapeHtml(lang || 'en');
 }
 
@@ -126,7 +126,10 @@ function cleanDisplayName(raw) {
     if (!raw) return '';
     const lastSegment = String(raw).split(/[/\\]/).pop() || '';
     const withoutExt = lastSegment.replace(/\.[^.]+$/, '');
-    const spaced = withoutExt.replace(/[_\\.]+/g, ' ').replace(/\s+/g, ' ').trim();
+    const spaced = withoutExt
+        .replace(/[_\\.]+/g, ' ')
+        .replace(/\s+/g, ' ')
+        .trim();
     return spaced || withoutExt || lastSegment;
 }
 
@@ -140,11 +143,19 @@ function buildLinkedMetaSubtitleHtml(topLine, fileLine, fallbackLine) {
 
 // Language helpers (mirrors subtitle-menu logic to keep naming consistent)
 function normalizeLangKey(val) {
-    return (val || '').toString().trim().toLowerCase().replace(/[^a-z]/g, '');
+    return (val || '')
+        .toString()
+        .trim()
+        .toLowerCase()
+        .replace(/[^a-z]/g, '');
 }
 
 function normalizeNameKey(val) {
-    return (val || '').toString().trim().toLowerCase().replace(/[^a-z0-9]/g, '');
+    return (val || '')
+        .toString()
+        .trim()
+        .toLowerCase()
+        .replace(/[^a-z0-9]/g, '');
 }
 
 function lookupLanguageName(languageMaps, raw) {
@@ -154,7 +165,7 @@ function lookupLanguageName(languageMaps, raw) {
     const normCode = normalizeLangKey(raw);
     if (byCode[normCode]) return byCode[normCode];
     const nameKey = normalizeNameKey(raw);
-    return nameKey ? (byNameKey[nameKey] || null) : null;
+    return nameKey ? byNameKey[nameKey] || null : null;
 }
 
 function extractLanguageCode(value) {
@@ -172,7 +183,9 @@ function extractLanguageCode(value) {
 }
 
 function resolveSubtitleLanguage(sub, languageMaps) {
-    const rawLabel = (sub?.language || sub?.lang || sub?.langName || sub?.title || sub?.name || sub?.label || '').toString().trim();
+    const rawLabel = (sub?.language || sub?.lang || sub?.langName || sub?.title || sub?.name || sub?.label || '')
+        .toString()
+        .trim();
     const code =
         extractLanguageCode(sub?.languageCode) ||
         extractLanguageCode(sub?.lang) ||
@@ -432,7 +445,11 @@ async function generateSubtitleSyncPage(subtitles, videoId, streamFilename, conf
             startBusy: t('sync.step3.startBusy', {}, 'Syncing...'),
             progress: t('sync.step3.progress', {}, 'Syncing subtitles...'),
             audioTrackLabel: t('toolbox.autoSubs.steps.audioTrackLabel', {}, 'Audio track for transcription'),
-            audioTrackHelper: t('toolbox.autoSubs.steps.audioTrackHelper', {}, 'Multiple audio tracks detected. Choose one, then continue.'),
+            audioTrackHelper: t(
+                'toolbox.autoSubs.steps.audioTrackHelper',
+                {},
+                'Multiple audio tracks detected. Choose one, then continue.'
+            ),
             useTrack: t('toolbox.autoSubs.actions.useTrack', {}, 'Continue with track')
         },
         locks: {
@@ -449,13 +466,37 @@ async function generateSubtitleSyncPage(subtitles, videoId, streamFilename, conf
             title: t('sync.instructions.title', {}, 'Subtitle Sync Instructions'),
             methods: t('sync.instructions.methods', {}, 'Sync Methods'),
             items: {
-                fingerprint: t('sync.instructions.items.fingerprint', {}, 'Fast Fingerprint Pre-pass: Coarse ffsubsync fingerprint check to lock the big offset before deeper scans (on by default).'),
-                alass: t('sync.instructions.items.alass', {}, 'ALASS (audio -> subtitle): Fast wasm anchors against the audio; pick Rapid/Balanced/Deep/Complete profiles for coverage.'),
-                ffsubsync: t('sync.instructions.items.ffsubsync', {}, 'FFSubSync (audio -> subtitle): Drift-aware audio alignment via ffsubsync-wasm; choose a light, balanced, deep, or complete scan.'),
-                vosk: t('sync.instructions.items.vosk', {}, 'Vosk CTC/DTW (text -> audio): Force-align your subtitle text directly to audio with Vosk logits + DTW, great for broken timings or big offsets.'),
-                whisper: t('sync.instructions.items.whisper', {}, 'Whisper + ALASS (subtitle -> subtitle): Whisper transcript alignment with an ALASS refinement pass; use light/balanced/deep/complete profiles to control scan size.')
+                fingerprint: t(
+                    'sync.instructions.items.fingerprint',
+                    {},
+                    'Fast Fingerprint Pre-pass: Coarse ffsubsync fingerprint check to lock the big offset before deeper scans (on by default).'
+                ),
+                alass: t(
+                    'sync.instructions.items.alass',
+                    {},
+                    'ALASS (audio -> subtitle): Fast wasm anchors against the audio; pick Rapid/Balanced/Deep/Complete profiles for coverage.'
+                ),
+                ffsubsync: t(
+                    'sync.instructions.items.ffsubsync',
+                    {},
+                    'FFSubSync (audio -> subtitle): Drift-aware audio alignment via ffsubsync-wasm; choose a light, balanced, deep, or complete scan.'
+                ),
+                vosk: t(
+                    'sync.instructions.items.vosk',
+                    {},
+                    'Vosk CTC/DTW (text -> audio): Force-align your subtitle text directly to audio with Vosk logits + DTW, great for broken timings or big offsets.'
+                ),
+                whisper: t(
+                    'sync.instructions.items.whisper',
+                    {},
+                    'Whisper + ALASS (subtitle -> subtitle): Whisper transcript alignment with an ALASS refinement pass; use light/balanced/deep/complete profiles to control scan size.'
+                )
             },
-            note: t('sync.instructions.note', {}, 'Select a primary engine first, then pick its scan profile. Coverage adapts to the detected runtime so heavy cases can get deeper scans.'),
+            note: t(
+                'sync.instructions.note',
+                {},
+                'Select a primary engine first, then pick its scan profile. Coverage adapts to the detected runtime so heavy cases can get deeper scans.'
+            ),
             dontShow: t('sync.instructions.dontShow', {}, "Don't show this again"),
             gotIt: t('sync.instructions.gotIt', {}, 'Got it'),
             closeAria: t('sync.instructions.closeAria', {}, 'Close instructions')
@@ -494,7 +535,11 @@ async function generateSubtitleSyncPage(subtitles, videoId, streamFilename, conf
     if (linkedTitle) subtitleDetailsTop.push(`${copy.meta.titleLabel}: ${linkedTitle}`);
     if (hasInitialContext) subtitleDetailsTop.push(`${copy.meta.episodeLabel}: ${episodeTag || '-'}`);
     const subtitleDetailsBottom = streamFilename ? `${copy.meta.fileLabel}: ${cleanDisplayName(streamFilename)}` : '';
-    const initialVideoSubtitle = buildLinkedMetaSubtitleHtml(subtitleDetailsTop.join(' | '), subtitleDetailsBottom, copy.meta.videoIdUnavailable);
+    const initialVideoSubtitle = buildLinkedMetaSubtitleHtml(
+        subtitleDetailsTop.join(' | '),
+        subtitleDetailsBottom,
+        copy.meta.videoIdUnavailable
+    );
     const links = {
         translateFiles: `/file-upload?config=${encodeURIComponent(configStr || '')}&videoId=${encodeURIComponent(videoId || '')}`,
         syncSubtitles: `/subtitle-sync?config=${encodeURIComponent(configStr || '')}&videoId=${encodeURIComponent(videoId || '')}&filename=${encodeURIComponent(streamFilename || '')}`,
@@ -510,14 +555,16 @@ async function generateSubtitleSyncPage(subtitles, videoId, streamFilename, conf
 
     // Filter out action buttons and cached entries to show only fetchable provider subtitles
     // Filter out action buttons (legacy and new Sub Toolbox) so only real subtitles are selectable
-    const fetchableSubtitles = subtitles.filter(sub => {
+    const fetchableSubtitles = subtitles.filter((sub) => {
         const id = sub?.id || '';
-        return id !== 'sync_subtitles' &&
+        return (
+            id !== 'sync_subtitles' &&
             id !== 'file_upload' &&
             id !== 'sub_toolbox' &&
             !id.startsWith('translate_') &&
             !id.startsWith('xsync_') &&
-            !id.startsWith('auto_');
+            !id.startsWith('auto_')
+        );
     });
 
     // Group subtitles by language
@@ -547,7 +594,11 @@ async function generateSubtitleSyncPage(subtitles, videoId, streamFilename, conf
             for (let i = 0; i < items.length; i++) {
                 const sub = items[i].entry;
                 const langCode = items[i].langInfo?.code || code || langLabel || 'unknown';
-                const displayName = t('sync.step2.subtitleOption', { language: langLabel, index: i + 1 }, `${langLabel} - Subtitle #${i + 1}`);
+                const displayName = t(
+                    'sync.step2.subtitleOption',
+                    { language: langLabel, index: i + 1 },
+                    `${langLabel} - Subtitle #${i + 1}`
+                );
                 subtitleOptionsHTML += `
                     <option value="${escapeHtml(sub.id)}" data-lang="${escapeHtml(langCode)}" data-url="${escapeHtml(sub.url)}">${escapeHtml(displayName)}</option>`;
             }
@@ -573,8 +624,15 @@ async function generateSubtitleSyncPage(subtitles, videoId, streamFilename, conf
         const langName = getLanguageName(lang);
         targetLangOptionsHTML += `<option value="${escapeHtml(lang)}">${escapeHtml(langName)}</option>`;
     }
-    const selectLabelText = t('sync.step2.selectLabel', { title: linkedVideoDisplay }, `Choose from ${linkedVideoDisplay} fetched subtitles:`);
-    const selectLabelHtml = escapeHtml(selectLabelText).replace(escapeHtml(linkedVideoDisplay), `<strong>${linkedVideoLabel}</strong>`);
+    const selectLabelText = t(
+        'sync.step2.selectLabel',
+        { title: linkedVideoDisplay },
+        `Choose from ${linkedVideoDisplay} fetched subtitles:`
+    );
+    const selectLabelHtml = escapeHtml(selectLabelText).replace(
+        escapeHtml(linkedVideoDisplay),
+        `<strong>${linkedVideoLabel}</strong>`
+    );
 
     // Preserve backslashes when embedding regex literals inside the generated page script
     const pathSplitRegex = String.raw`/[\\/]/`;
@@ -2225,16 +2283,16 @@ async function generateSubtitleSyncPage(subtitles, videoId, streamFilename, conf
 
         // Configuration and state
         const CONFIG = ${safeJsonSerialize({
-        configStr,
-        videoId,
-        streamFilename,
-        videoHash,
-        linkedTitle,
-        languageMaps,
-        geminiApiKey: config.geminiApiKey || '',
-        sourceLanguages: config.sourceLanguages || [],
-        targetLanguages: config.targetLanguages || []
-    })};
+            configStr,
+            videoId,
+            streamFilename,
+            videoHash,
+            linkedTitle,
+            languageMaps,
+            geminiApiKey: config.geminiApiKey || '',
+            sourceLanguages: config.sourceLanguages || [],
+            targetLanguages: config.targetLanguages || []
+        })};
         const PAGE = {
             configStr: CONFIG.configStr || '',
             videoId: CONFIG.videoId || '',
@@ -2244,7 +2302,7 @@ async function generateSubtitleSyncPage(subtitles, videoId, streamFilename, conf
         // Runtime copy object for safe client-side fallback strings.
         // Prevents ReferenceError if any client code path references copy.*.
         const copy = ${safeJsonSerialize(copy)};
-        const subtitleMenuTargets = ${JSON.stringify(targetLanguages.map(lang => ({ code: lang, name: getLanguageName(lang) || lang })))};
+        const subtitleMenuTargets = ${JSON.stringify(targetLanguages.map((lang) => ({ code: lang, name: getLanguageName(lang) || lang })))};
         const hashStatusEl = document.getElementById('hashStatus');
         const hashMismatchEl = document.getElementById('hashMismatchAlert');
         const lockReasons = {

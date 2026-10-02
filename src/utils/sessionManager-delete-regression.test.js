@@ -43,19 +43,24 @@ test('session history purge uses the bounded store/index path without Redis SCAN
 
     const previous = StorageFactory.instance;
     StorageFactory.instance = fakeAdapter;
-    t.after(() => { StorageFactory.instance = previous; });
+    t.after(() => {
+        StorageFactory.instance = previous;
+    });
 
     const manager = Object.create(SessionManager.prototype);
     const deletedCount = await manager._purgeHistoryNamespace('sesshist_example');
 
     assert.equal(deletedCount, 8);
-    assert.deepEqual(new Set(deletedKeys), new Set([
-        'histset__sesshist_example',
-        'hist__sesshist_example__stored-entry',
-        'hist_sesshist_example_stored-entry',
-        'hist:sesshist_example:stored-entry',
-        'hist__sesshist_example__indexed-entry',
-        'hist_sesshist_example_indexed-entry',
-        'hist:sesshist_example:indexed-entry'
-    ]));
+    assert.deepEqual(
+        new Set(deletedKeys),
+        new Set([
+            'histset__sesshist_example',
+            'hist__sesshist_example__stored-entry',
+            'hist_sesshist_example_stored-entry',
+            'hist:sesshist_example:stored-entry',
+            'hist__sesshist_example__indexed-entry',
+            'hist_sesshist_example_indexed-entry',
+            'hist:sesshist_example:indexed-entry'
+        ])
+    );
 });

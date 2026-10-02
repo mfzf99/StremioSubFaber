@@ -59,9 +59,7 @@
         const text = String(rawText == null ? '' : rawText);
         const existing = new Set(
             Array.isArray(options.existingKeys)
-                ? options.existingKeys
-                    .map(k => (typeof k === 'string' ? k.trim() : ''))
-                    .filter(Boolean)
+                ? options.existingKeys.map((k) => (typeof k === 'string' ? k.trim() : '')).filter(Boolean)
                 : []
         );
         const maxKeys = Number.isFinite(options.maxKeys) ? Math.max(0, options.maxKeys) : Infinity;
@@ -73,7 +71,7 @@
             duplicatesInText: 0,
             duplicatesExisting: 0,
             truncated: false,
-            byType: { 'google-legacy': 0, 'google-new': 0, 'crazyrouter': 0 }
+            byType: { 'google-legacy': 0, 'google-new': 0, crazyrouter: 0 }
         };
 
         if (!text) {

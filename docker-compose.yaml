@@ -9,7 +9,7 @@ services:
     # Give container 30 seconds to gracefully shutdown and save sessions
     stop_grace_period: 30s
     ports:
-      - "127.0.0.1:${PORT:-7001}:7001"
+      - '127.0.0.1:${PORT:-7001}:7001'
     # Load ALL environment variables from .env file
     # Optional: set TZ in .env (for example TZ=America/New_York) to localize log timestamps.
     # Leave TZ unset to preserve the existing UTC log format.
@@ -31,7 +31,7 @@ services:
       - REDIS_DB=0
       # Keep prefix identical (including trailing colon) across all pods
       # to share sessions/configs and avoid namespace splits.
-      - "REDIS_KEY_PREFIX=stremio:"
+      - 'REDIS_KEY_PREFIX=stremio:'
 
       # Encryption key file path (persisted in volume)
       - ENCRYPTION_KEY_FILE=/app/keys/.encryption-key
@@ -88,14 +88,14 @@ services:
       --requirepass "$$REDIS_PASSWORD"
       '
     ports:
-      - "127.0.0.1:6379:6379"
+      - '127.0.0.1:6379:6379'
     volumes:
       - redis-data:/data
       - encryption-key:/app/keys
     environment:
       - REDIS_PASSWORD=${REDIS_PASSWORD}
     healthcheck:
-      test: ["CMD-SHELL", "redis-cli -a \"$$(cat /app/keys/.redis-password)\" ping | grep PONG"]
+      test: ['CMD-SHELL', 'redis-cli -a "$$(cat /app/keys/.redis-password)" ping | grep PONG']
       interval: 10s
       timeout: 5s
       retries: 5

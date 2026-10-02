@@ -4,41 +4,43 @@ const { quickNavStyles, quickNavScript, renderQuickNav } = require('./quickNav')
 const { buildClientBootstrap, loadLocale, getTranslator } = require('./i18n');
 
 function buildQuery(params) {
-  const entries = Object.entries(params || {}).filter(([, value]) => value !== undefined && value !== null && value !== '');
-  if (!entries.length) return '';
-  const query = entries
-    .map(([key, value]) => `${encodeURIComponent(key)}=${encodeURIComponent(String(value))}`)
-    .join('&');
-  return query ? `?${query}` : '';
+    const entries = Object.entries(params || {}).filter(
+        ([, value]) => value !== undefined && value !== null && value !== ''
+    );
+    if (!entries.length) return '';
+    const query = entries
+        .map(([key, value]) => `${encodeURIComponent(key)}=${encodeURIComponent(String(value))}`)
+        .join('&');
+    return query ? `?${query}` : '';
 }
 
 function escapeHtml(value) {
-  if (value === undefined || value === null) return '';
-  return String(value)
-    .replace(/&/g, '&amp;')
-    .replace(/</g, '&lt;')
-    .replace(/>/g, '&gt;')
-    .replace(/"/g, '&quot;')
-    .replace(/'/g, '&#039;');
+    if (value === undefined || value === null) return '';
+    return String(value)
+        .replace(/&/g, '&amp;')
+        .replace(/</g, '&lt;')
+        .replace(/>/g, '&gt;')
+        .replace(/"/g, '&quot;')
+        .replace(/'/g, '&#039;');
 }
 
 function truncateText(value, max = 64) {
-  const raw = value === undefined || value === null ? '' : String(value).trim();
-  if (!raw) return '';
-  if (raw.length <= max) return raw;
-  if (max <= 3) return raw.slice(0, max);
-  return `${raw.slice(0, max - 3)}...`;
+    const raw = value === undefined || value === null ? '' : String(value).trim();
+    if (!raw) return '';
+    if (raw.length <= max) return raw;
+    if (max <= 3) return raw.slice(0, max);
+    return `${raw.slice(0, max - 3)}...`;
 }
 
 function resolveUiLang(config) {
-  const lang = (config && config.uiLanguage) ? String(config.uiLanguage).toLowerCase() : 'en';
-  return escapeHtml(lang || 'en');
+    const lang = config && config.uiLanguage ? String(config.uiLanguage).toLowerCase() : 'en';
+    return escapeHtml(lang || 'en');
 }
 
 function themeToggleMarkup(label) {
-  // Reusing existing theme toggle markup
-  const aria = escapeHtml(label || 'Toggle theme');
-  return `
+    // Reusing existing theme toggle markup
+    const aria = escapeHtml(label || 'Toggle theme');
+    return `
    <button class="theme-toggle mario" id="themeToggle" aria-label="${aria}">
      <span class="theme-toggle-icon sun" aria-hidden="true">
          <svg viewBox="0 0 64 64" width="28" height="28" role="img">
@@ -99,7 +101,7 @@ function themeToggleMarkup(label) {
 }
 
 function themeToggleStyles() {
-  return `
+    return `
     /* Theme Toggle Button (configure copy) */
     .theme-toggle {
       position: fixed;
@@ -266,174 +268,203 @@ function themeToggleStyles() {
 }
 
 function buildToolLinks(configStr, videoId, filename) {
-  const query = buildQuery({
-    config: configStr,
-    videoId: videoId || 'Stream and Refresh',
-    filename: filename || 'Stream and Refresh'
-  });
-  return {
-    translateFiles: `/file-upload${query}`,
-    syncSubtitles: `/subtitle-sync${query}`,
-    embeddedSubs: `/embedded-subtitles${query}`,
-    automaticSubs: `/auto-subtitles${query}`,
-    subToolbox: `/sub-toolbox${query}`,
-    smdb: `/smdb${query}`,
-    configure: `/configure${query}`,
-    history: `/sub-history${query}`
-  };
+    const query = buildQuery({
+        config: configStr,
+        videoId: videoId || 'Stream and Refresh',
+        filename: filename || 'Stream and Refresh'
+    });
+    return {
+        translateFiles: `/file-upload${query}`,
+        syncSubtitles: `/subtitle-sync${query}`,
+        embeddedSubs: `/embedded-subtitles${query}`,
+        automaticSubs: `/auto-subtitles${query}`,
+        subToolbox: `/sub-toolbox${query}`,
+        smdb: `/smdb${query}`,
+        configure: `/configure${query}`,
+        history: `/sub-history${query}`
+    };
 }
 
 function renderHistoryContent(configStr, historyEntries, config, videoId, filename, options = {}) {
-  const links = buildToolLinks(configStr, videoId, filename);
-  const t = getTranslator(config?.uiLanguage || 'en');
-  const state = options.state === 'loading'
-    ? 'loading'
-    : (options.state === 'error' ? 'error' : 'loaded');
-  const errorMessage = options.errorMessage
-    ? escapeHtml(options.errorMessage)
-    : escapeHtml(t('history.loading.errorBody', {}, 'The history request failed. You can retry without leaving the page.'));
+    const links = buildToolLinks(configStr, videoId, filename);
+    const t = getTranslator(config?.uiLanguage || 'en');
+    const state = options.state === 'loading' ? 'loading' : options.state === 'error' ? 'error' : 'loaded';
+    const errorMessage = options.errorMessage
+        ? escapeHtml(options.errorMessage)
+        : escapeHtml(
+              t('history.loading.errorBody', {}, 'The history request failed. You can retry without leaving the page.')
+          );
 
-  // Sort history: newest first
-  const sortedHistory = [...(historyEntries || [])].sort((a, b) => (b.createdAt || 0) - (a.createdAt || 0));
+    // Sort history: newest first
+    const sortedHistory = [...(historyEntries || [])].sort((a, b) => (b.createdAt || 0) - (a.createdAt || 0));
 
-  const historyRows = sortedHistory.map(entry => {
-    const statusClass = entry.status === 'completed' ? 'success' : (entry.status === 'failed' ? 'error' : 'processing');
-    const statusLabel = entry.status === 'completed'
-      ? t('history.status.completed', {}, 'Completed')
-      : (entry.status === 'failed'
-        ? t('history.status.failed', {}, 'Failed')
-        : t('history.status.processing', {}, 'Processing'));
-    const dateStr = new Date(entry.createdAt).toLocaleString();
-    const sourceName = getLanguageName(entry.sourceLanguage) || entry.sourceLanguage || 'Auto';
-    const targetName = getLanguageName(entry.targetLanguage) || entry.targetLanguage;
+    const historyRows = sortedHistory
+        .map((entry) => {
+            const statusClass =
+                entry.status === 'completed' ? 'success' : entry.status === 'failed' ? 'error' : 'processing';
+            const statusLabel =
+                entry.status === 'completed'
+                    ? t('history.status.completed', {}, 'Completed')
+                    : entry.status === 'failed'
+                      ? t('history.status.failed', {}, 'Failed')
+                      : t('history.status.processing', {}, 'Processing');
+            const dateStr = new Date(entry.createdAt).toLocaleString();
+            const sourceName = getLanguageName(entry.sourceLanguage) || entry.sourceLanguage || 'Auto';
+            const targetName = getLanguageName(entry.targetLanguage) || entry.targetLanguage;
 
-    const providerLabel = entry.provider ? escapeHtml(entry.provider) : 'Unknown';
-    const modelLabel = entry.model ? escapeHtml(entry.model) : 'Default';
-    const cacheLabel = entry.cached === true
-      ? `<span class="history-chip cached">${t('history.cachedLabel', {}, 'Cached')}</span>`
-      : '';
+            const providerLabel = entry.provider ? escapeHtml(entry.provider) : 'Unknown';
+            const modelLabel = entry.model ? escapeHtml(entry.model) : 'Default';
+            const cacheLabel =
+                entry.cached === true
+                    ? `<span class="history-chip cached">${t('history.cachedLabel', {}, 'Cached')}</span>`
+                    : '';
 
-    // --- Translation diagnostics (Tier 1-3) ---
-    // Tier 1: Critical diagnostics
-    //
-    // Main provider diagnostics
-    const rateLimitChip = (typeof entry.rateLimitErrors === 'number' && entry.rateLimitErrors > 0)
-      ? `<span class="history-chip danger" title="Rate limit (429) errors encountered during main provider retries">429 ×${entry.rateLimitErrors}</span>`
-      : '';
-    const keyRotationChip = (typeof entry.keyRotationRetries === 'number' && entry.keyRotationRetries > 0)
-      ? `<span class="history-tag" style="border-color:var(--provider-main-border);color:var(--provider-main);background:var(--provider-main-bg)" title="API key rotations during translation">🔑 ${entry.keyRotationRetries} rotation${entry.keyRotationRetries > 1 ? 's' : ''}</span>`
-      : '';
-    const errorTypePills = Array.isArray(entry.errorTypes) && entry.errorTypes.length > 0
-      ? entry.errorTypes.map(et => `<span class="history-tag error-type" title="Error type encountered on the main provider">${escapeHtml(et)}</span>`).join('')
-      : '';
-    // Whether main provider had any diagnostic chips worth grouping
-    const hasMainDiagnostics = !!(rateLimitChip || keyRotationChip || errorTypePills);
+            // --- Translation diagnostics (Tier 1-3) ---
+            // Tier 1: Critical diagnostics
+            //
+            // Main provider diagnostics
+            const rateLimitChip =
+                typeof entry.rateLimitErrors === 'number' && entry.rateLimitErrors > 0
+                    ? `<span class="history-chip danger" title="Rate limit (429) errors encountered during main provider retries">429 ×${entry.rateLimitErrors}</span>`
+                    : '';
+            const keyRotationChip =
+                typeof entry.keyRotationRetries === 'number' && entry.keyRotationRetries > 0
+                    ? `<span class="history-tag" style="border-color:var(--provider-main-border);color:var(--provider-main);background:var(--provider-main-bg)" title="API key rotations during translation">🔑 ${entry.keyRotationRetries} rotation${entry.keyRotationRetries > 1 ? 's' : ''}</span>`
+                    : '';
+            const errorTypePills =
+                Array.isArray(entry.errorTypes) && entry.errorTypes.length > 0
+                    ? entry.errorTypes
+                          .map(
+                              (et) =>
+                                  `<span class="history-tag error-type" title="Error type encountered on the main provider">${escapeHtml(et)}</span>`
+                          )
+                          .join('')
+                    : '';
+            // Whether main provider had any diagnostic chips worth grouping
+            const hasMainDiagnostics = !!(rateLimitChip || keyRotationChip || errorTypePills);
 
-    // Secondary provider diagnostics
-    const hasSecondary = entry.usedSecondaryProvider === true;
-    const secondaryName = escapeHtml(entry.secondaryProviderName || 'fallback');
-    const secondaryChip = hasSecondary
-      ? (() => {
-        const primaryReason = entry.primaryFailureReason
-          ? `: ${escapeHtml(String(entry.primaryFailureReason).slice(0, 120))}`
-          : '';
-        return `<span class="history-chip secondary-warning" title="Primary provider failed${primaryReason}. Secondary (${secondaryName}) was used as fallback.">⚠ Secondary: ${secondaryName}</span>`;
-      })()
-      : '';
-    // Secondary error types (errors from the secondary provider itself)
-    const secondaryErrorTypePills = Array.isArray(entry.secondaryErrorTypes) && entry.secondaryErrorTypes.length > 0
-      ? entry.secondaryErrorTypes.map(et => `<span class="history-tag secondary-error-type" title="Error type encountered on the secondary provider">${escapeHtml(et)}</span>`).join('')
-      : '';
-    // Secondary provider failure reason (shown only when secondary also failed)
-    const secondaryFailedChip = entry.secondaryFailureReason
-      ? (() => {
-        const reason = escapeHtml(String(entry.secondaryFailureReason).slice(0, 120));
-        return `<span class="history-chip secondary-danger" title="Secondary provider also failed: ${reason}">✕ Also failed: ${escapeHtml(String(entry.secondaryFailureReason).slice(0, 48))}${entry.secondaryFailureReason.length > 48 ? '…' : ''}</span>`;
-      })()
-      : '';
-    const hasSecondaryDiagnostics = !!(secondaryErrorTypePills || secondaryFailedChip);
+            // Secondary provider diagnostics
+            const hasSecondary = entry.usedSecondaryProvider === true;
+            const secondaryName = escapeHtml(entry.secondaryProviderName || 'fallback');
+            const secondaryChip = hasSecondary
+                ? (() => {
+                      const primaryReason = entry.primaryFailureReason
+                          ? `: ${escapeHtml(String(entry.primaryFailureReason).slice(0, 120))}`
+                          : '';
+                      return `<span class="history-chip secondary-warning" title="Primary provider failed${primaryReason}. Secondary (${secondaryName}) was used as fallback.">⚠ Secondary: ${secondaryName}</span>`;
+                  })()
+                : '';
+            // Secondary error types (errors from the secondary provider itself)
+            const secondaryErrorTypePills =
+                Array.isArray(entry.secondaryErrorTypes) && entry.secondaryErrorTypes.length > 0
+                    ? entry.secondaryErrorTypes
+                          .map(
+                              (et) =>
+                                  `<span class="history-tag secondary-error-type" title="Error type encountered on the secondary provider">${escapeHtml(et)}</span>`
+                          )
+                          .join('')
+                    : '';
+            // Secondary provider failure reason (shown only when secondary also failed)
+            const secondaryFailedChip = entry.secondaryFailureReason
+                ? (() => {
+                      const reason = escapeHtml(String(entry.secondaryFailureReason).slice(0, 120));
+                      return `<span class="history-chip secondary-danger" title="Secondary provider also failed: ${reason}">✕ Also failed: ${escapeHtml(String(entry.secondaryFailureReason).slice(0, 48))}${entry.secondaryFailureReason.length > 48 ? '…' : ''}</span>`;
+                  })()
+                : '';
+            const hasSecondaryDiagnostics = !!(secondaryErrorTypePills || secondaryFailedChip);
 
-    // Tier 2: Quality/performance
-    const mismatchChip = entry.mismatchDetected === true
-      ? `<span class="history-chip warning" title="AI returned wrong entry count, recovery attempted">⚠ Mismatch: ${entry.missingEntries || 0} missing, ${entry.recoveredEntries || 0} recovered</span>`
-      : '';
-    const entryCountTag = (typeof entry.entryCount === 'number' && entry.entryCount > 0)
-      ? `<span class="history-tag">${entry.entryCount} entries</span>`
-      : '';
-    const durationTag = (() => {
-      if (!entry.createdAt || !entry.completedAt) return '';
-      const ms = entry.completedAt - entry.createdAt;
-      if (ms <= 0) return '';
-      const secs = Math.floor(ms / 1000);
-      if (secs < 60) return `<span class="history-tag" title="Translation duration">⏱ ${secs}s</span>`;
-      const mins = Math.floor(secs / 60);
-      const remSecs = secs % 60;
-      return `<span class="history-tag" title="Translation duration">⏱ ${mins}m ${remSecs}s</span>`;
-    })();
-    const subtitleSourceTag = entry.subtitleSource
-      ? `<span class="history-tag" title="Subtitle source provider">📥 ${escapeHtml(entry.subtitleSource)}</span>`
-      : '';
+            // Tier 2: Quality/performance
+            const mismatchChip =
+                entry.mismatchDetected === true
+                    ? `<span class="history-chip warning" title="AI returned wrong entry count, recovery attempted">⚠ Mismatch: ${entry.missingEntries || 0} missing, ${entry.recoveredEntries || 0} recovered</span>`
+                    : '';
+            const entryCountTag =
+                typeof entry.entryCount === 'number' && entry.entryCount > 0
+                    ? `<span class="history-tag">${entry.entryCount} entries</span>`
+                    : '';
+            const durationTag = (() => {
+                if (!entry.createdAt || !entry.completedAt) return '';
+                const ms = entry.completedAt - entry.createdAt;
+                if (ms <= 0) return '';
+                const secs = Math.floor(ms / 1000);
+                if (secs < 60) return `<span class="history-tag" title="Translation duration">⏱ ${secs}s</span>`;
+                const mins = Math.floor(secs / 60);
+                const remSecs = secs % 60;
+                return `<span class="history-tag" title="Translation duration">⏱ ${mins}m ${remSecs}s</span>`;
+            })();
+            const subtitleSourceTag = entry.subtitleSource
+                ? `<span class="history-tag" title="Subtitle source provider">📥 ${escapeHtml(entry.subtitleSource)}</span>`
+                : '';
 
-    // Tier 3: Configuration context
-    const tier3Tags = [];
-    if (entry.workflow && entry.workflow !== 'original') {
-      const wfLabels = { xml: 'XML', json: 'JSON', ai: 'AI Timestamps' };
-      tier3Tags.push(`<span class="history-tag">${wfLabels[entry.workflow] || escapeHtml(entry.workflow)}</span>`);
-    }
-    if (entry.jsonXmlFallback === true) {
-      tier3Tags.push('<span class="history-chip warning" title="Structured output failed, fell back to XML">XML fallback</span>');
-    }
-    if (typeof entry.batchCount === 'number' && entry.batchCount > 0) {
-      tier3Tags.push(`<span class="history-tag">${entry.batchCount} batch${entry.batchCount > 1 ? 'es' : ''}</span>`);
-    }
-    if (entry.keyRotationMode && entry.keyRotationMode !== 'disabled') {
-      tier3Tags.push(`<span class="history-tag">🔑 ${escapeHtml(entry.keyRotationMode)}</span>`);
-    }
-    if (entry.batchContextEnabled === true) tier3Tags.push('<span class="history-tag">Context</span>');
-    if (entry.singleBatchMode === true) tier3Tags.push('<span class="history-tag">Single-batch</span>');
-    if (entry.parallelBatchesUsed === true) tier3Tags.push('<span class="history-tag">Parallel</span>');
-    if (entry.streaming === true) tier3Tags.push('<span class="history-tag">Streaming</span>');
-    const tier3Html = tier3Tags.length > 0 ? tier3Tags.join('') : '';
-    const downloadQueryParts = [];
-    if (entry.videoId) downloadQueryParts.push(`videoId=${encodeURIComponent(entry.videoId)}`);
-    if (entry.filename) downloadQueryParts.push(`filename=${encodeURIComponent(entry.filename)}`);
-    const downloadQuery = downloadQueryParts.length ? `?${downloadQueryParts.join('&')}` : '';
-    const downloadLink = (entry.scope !== 'embedded' && entry.sourceFileId && entry.targetLanguage && entry.status === 'completed')
-      ? `<span class="history-download-wrap"><a class="history-download" href="/addon/${encodeURIComponent(configStr)}/translate/${encodeURIComponent(entry.sourceFileId)}/${encodeURIComponent(entry.targetLanguage)}${downloadQuery}" title="Download translated subtitle">Download</a><span class="history-download-hint"> - or reload the subtitle in Stremio!</span></span>`
-      : '';
-    // Format season/episode tag - only show season if it's actually a number
-    const hasSeason = typeof entry.season === 'number' && Number.isFinite(entry.season);
-    const hasEpisode = typeof entry.episode === 'number' && Number.isFinite(entry.episode);
-    let seasonEpisode = '';
-    if (hasSeason && hasEpisode) {
-      seasonEpisode = `S${String(entry.season).padStart(2, '0')}E${String(entry.episode).padStart(2, '0')}`;
-    } else if (hasEpisode) {
-      seasonEpisode = `E${String(entry.episode).padStart(2, '0')}`; // Anime-style seasonless
-    }
-    const rawTitle = entry.title || entry.filename || entry.videoId || 'Unknown title';
-    const titleText = escapeHtml(rawTitle);
-    const displayTitle = escapeHtml(truncateText(rawTitle, 96));
-    const titleLine = seasonEpisode ? `${displayTitle} · ${seasonEpisode}` : displayTitle;
-    const filenameFull = entry.filename ? escapeHtml(entry.filename) : '';
-    const filenameDisplay = entry.filename ? escapeHtml(truncateText(entry.filename, 80)) : '';
-    const fileIsId = entry.filename && entry.sourceFileId && entry.filename === entry.sourceFileId;
-    const idFull = entry.sourceFileId ? escapeHtml(entry.sourceFileId) : '';
-    const idDisplay = entry.sourceFileId ? escapeHtml(truncateText(entry.sourceFileId, 48)) : '';
-    const hashFull = entry.videoHash ? escapeHtml(entry.videoHash) : '';
-    const hashDisplay = entry.videoHash ? escapeHtml(truncateText(entry.videoHash, 32)) : '';
-    const subMetaParts = [
-      entry.filename && !fileIsId ? `File: <span title="${filenameFull}">${filenameDisplay}</span>` : '',
-      entry.sourceFileId ? `ID: <span title="${idFull}">${idDisplay}</span>` : '',
-      entry.videoHash ? `Hash: <span title="${hashFull}">${hashDisplay}</span>` : ''
-    ].filter(Boolean).join(' • ');
+            // Tier 3: Configuration context
+            const tier3Tags = [];
+            if (entry.workflow && entry.workflow !== 'original') {
+                const wfLabels = { xml: 'XML', json: 'JSON', ai: 'AI Timestamps' };
+                tier3Tags.push(
+                    `<span class="history-tag">${wfLabels[entry.workflow] || escapeHtml(entry.workflow)}</span>`
+                );
+            }
+            if (entry.jsonXmlFallback === true) {
+                tier3Tags.push(
+                    '<span class="history-chip warning" title="Structured output failed, fell back to XML">XML fallback</span>'
+                );
+            }
+            if (typeof entry.batchCount === 'number' && entry.batchCount > 0) {
+                tier3Tags.push(
+                    `<span class="history-tag">${entry.batchCount} batch${entry.batchCount > 1 ? 'es' : ''}</span>`
+                );
+            }
+            if (entry.keyRotationMode && entry.keyRotationMode !== 'disabled') {
+                tier3Tags.push(`<span class="history-tag">🔑 ${escapeHtml(entry.keyRotationMode)}</span>`);
+            }
+            if (entry.batchContextEnabled === true) tier3Tags.push('<span class="history-tag">Context</span>');
+            if (entry.singleBatchMode === true) tier3Tags.push('<span class="history-tag">Single-batch</span>');
+            if (entry.parallelBatchesUsed === true) tier3Tags.push('<span class="history-tag">Parallel</span>');
+            if (entry.streaming === true) tier3Tags.push('<span class="history-tag">Streaming</span>');
+            const tier3Html = tier3Tags.length > 0 ? tier3Tags.join('') : '';
+            const downloadQueryParts = [];
+            if (entry.videoId) downloadQueryParts.push(`videoId=${encodeURIComponent(entry.videoId)}`);
+            if (entry.filename) downloadQueryParts.push(`filename=${encodeURIComponent(entry.filename)}`);
+            const downloadQuery = downloadQueryParts.length ? `?${downloadQueryParts.join('&')}` : '';
+            const downloadLink =
+                entry.scope !== 'embedded' && entry.sourceFileId && entry.targetLanguage && entry.status === 'completed'
+                    ? `<span class="history-download-wrap"><a class="history-download" href="/addon/${encodeURIComponent(configStr)}/translate/${encodeURIComponent(entry.sourceFileId)}/${encodeURIComponent(entry.targetLanguage)}${downloadQuery}" title="Download translated subtitle">Download</a><span class="history-download-hint"> - or reload the subtitle in Stremio!</span></span>`
+                    : '';
+            // Format season/episode tag - only show season if it's actually a number
+            const hasSeason = typeof entry.season === 'number' && Number.isFinite(entry.season);
+            const hasEpisode = typeof entry.episode === 'number' && Number.isFinite(entry.episode);
+            let seasonEpisode = '';
+            if (hasSeason && hasEpisode) {
+                seasonEpisode = `S${String(entry.season).padStart(2, '0')}E${String(entry.episode).padStart(2, '0')}`;
+            } else if (hasEpisode) {
+                seasonEpisode = `E${String(entry.episode).padStart(2, '0')}`; // Anime-style seasonless
+            }
+            const rawTitle = entry.title || entry.filename || entry.videoId || 'Unknown title';
+            const titleText = escapeHtml(rawTitle);
+            const displayTitle = escapeHtml(truncateText(rawTitle, 96));
+            const titleLine = seasonEpisode ? `${displayTitle} · ${seasonEpisode}` : displayTitle;
+            const filenameFull = entry.filename ? escapeHtml(entry.filename) : '';
+            const filenameDisplay = entry.filename ? escapeHtml(truncateText(entry.filename, 80)) : '';
+            const fileIsId = entry.filename && entry.sourceFileId && entry.filename === entry.sourceFileId;
+            const idFull = entry.sourceFileId ? escapeHtml(entry.sourceFileId) : '';
+            const idDisplay = entry.sourceFileId ? escapeHtml(truncateText(entry.sourceFileId, 48)) : '';
+            const hashFull = entry.videoHash ? escapeHtml(entry.videoHash) : '';
+            const hashDisplay = entry.videoHash ? escapeHtml(truncateText(entry.videoHash, 32)) : '';
+            const subMetaParts = [
+                entry.filename && !fileIsId ? `File: <span title="${filenameFull}">${filenameDisplay}</span>` : '',
+                entry.sourceFileId ? `ID: <span title="${idFull}">${idDisplay}</span>` : '',
+                entry.videoHash ? `Hash: <span title="${hashFull}">${hashDisplay}</span>` : ''
+            ]
+                .filter(Boolean)
+                .join(' • ');
 
-    // Retranslate button (available for all entries that have sourceFileId and targetLanguage)
-    const canRetranslate = entry.sourceFileId && entry.targetLanguage && entry.scope !== 'embedded';
-    const retranslateBtn = canRetranslate
-      ? `<button class="history-retranslate" data-source-file-id="${escapeHtml(entry.sourceFileId)}" data-target-language="${escapeHtml(entry.targetLanguage)}" data-title="${escapeHtml(entry.title || '')}" data-filename="${escapeHtml(entry.filename || '')}" data-video-id="${escapeHtml(entry.videoId || '')}" data-video-hash="${escapeHtml(entry.videoHash || '')}" data-source-language="${escapeHtml(entry.sourceLanguage || '')}" data-season="${Number.isFinite(Number(entry.season)) ? escapeHtml(entry.season) : ''}" data-episode="${Number.isFinite(Number(entry.episode)) ? escapeHtml(entry.episode) : ''}" title="${t('history.retranslate.tooltip', {}, 'Start a fresh translation for this subtitle')}">${t('history.retranslate.button', {}, 'Retranslate')}</button>`
-      : '';
+            // Retranslate button (available for all entries that have sourceFileId and targetLanguage)
+            const canRetranslate = entry.sourceFileId && entry.targetLanguage && entry.scope !== 'embedded';
+            const retranslateBtn = canRetranslate
+                ? `<button class="history-retranslate" data-source-file-id="${escapeHtml(entry.sourceFileId)}" data-target-language="${escapeHtml(entry.targetLanguage)}" data-title="${escapeHtml(entry.title || '')}" data-filename="${escapeHtml(entry.filename || '')}" data-video-id="${escapeHtml(entry.videoId || '')}" data-video-hash="${escapeHtml(entry.videoHash || '')}" data-source-language="${escapeHtml(entry.sourceLanguage || '')}" data-season="${Number.isFinite(Number(entry.season)) ? escapeHtml(entry.season) : ''}" data-episode="${Number.isFinite(Number(entry.episode)) ? escapeHtml(entry.episode) : ''}" title="${t('history.retranslate.tooltip', {}, 'Start a fresh translation for this subtitle')}">${t('history.retranslate.button', {}, 'Retranslate')}</button>`
+                : '';
 
-    return `
+            return `
       <div class="history-card">
         <div class="history-header">
           <div class="history-title" title="${titleText}">${titleLine}</div>
@@ -446,7 +477,7 @@ function renderHistoryContent(configStr, historyEntries, config, videoId, filena
           <span>${dateStr}</span>
         </div>
         <div class="history-details">
-          ${/* Main provider tag — always shown with main provider accent */''}
+          ${/* Main provider tag — always shown with main provider accent */ ''}
           <span class="history-tag" style="border-color:var(--provider-main-border);color:var(--provider-main);background:var(--provider-main-bg);font-weight:600">${providerLabel}</span>
           <span class="history-tag">${modelLabel}</span>
           ${cacheLabel}
@@ -456,30 +487,39 @@ function renderHistoryContent(configStr, historyEntries, config, videoId, filena
           ${retranslateBtn}
           ${downloadLink}
         </div>
-        ${/* Main provider diagnostic cluster — only shown when there are main-side errors/warnings */''}
-        ${hasMainDiagnostics || mismatchChip ? `
+        ${/* Main provider diagnostic cluster — only shown when there are main-side errors/warnings */ ''}
+        ${
+            hasMainDiagnostics || mismatchChip
+                ? `
         <div class="history-provider-group main">
           <span class="history-provider-label main" title="Diagnostics from the main translation provider">${providerLabel}</span>
           ${rateLimitChip}
           ${keyRotationChip}
           ${errorTypePills}
           ${mismatchChip}
-        </div>` : ''}
-        ${/* Secondary provider diagnostic cluster — only shown when secondary was involved */''}
-        ${hasSecondary ? `
+        </div>`
+                : ''
+        }
+        ${/* Secondary provider diagnostic cluster — only shown when secondary was involved */ ''}
+        ${
+            hasSecondary
+                ? `
         <div class="history-provider-group secondary">
           <span class="history-provider-label secondary" title="Secondary provider was used as fallback">${secondaryName}</span>
           ${secondaryChip}
           ${hasSecondaryDiagnostics ? secondaryErrorTypePills : ''}
           ${hasSecondaryDiagnostics ? secondaryFailedChip : ''}
-        </div>` : ''}
+        </div>`
+                : ''
+        }
         ${tier3Html ? `<div class="history-config">${tier3Html}</div>` : ''}
         ${entry.error ? `<div class="history-error">${escapeHtml(entry.error)}</div>` : ''}
       </div>
     `;
-  }).join('');
+        })
+        .join('');
 
-  const emptyState = `
+    const emptyState = `
     <div class="empty-state">
       <div class="empty-icon">📜</div>
       <h3>No history yet</h3>
@@ -488,7 +528,7 @@ function renderHistoryContent(configStr, historyEntries, config, videoId, filena
     </div>
   `;
 
-  const loadingState = `
+    const loadingState = `
     <div class="history-loading" role="status" aria-live="polite">
       <div class="history-loading-head">
         <div class="history-loading-badge" aria-hidden="true">
@@ -516,7 +556,7 @@ function renderHistoryContent(configStr, historyEntries, config, videoId, filena
     </div>
   `;
 
-  const errorState = `
+    const errorState = `
     <div class="history-load-error" role="alert">
       <div class="history-load-error-head">
         <div class="history-load-error-badge" aria-hidden="true">!</div>
@@ -529,13 +569,16 @@ function renderHistoryContent(configStr, historyEntries, config, videoId, filena
     </div>
   `;
 
-  const historyBody = state === 'loading'
-    ? loadingState
-    : (state === 'error'
-      ? errorState
-      : (sortedHistory.length ? `<div class="history-list">${historyRows}</div>` : emptyState));
+    const historyBody =
+        state === 'loading'
+            ? loadingState
+            : state === 'error'
+              ? errorState
+              : sortedHistory.length
+                ? `<div class="history-list">${historyRows}</div>`
+                : emptyState;
 
-  return `
+    return `
     <div class="history-shell" data-history-state="${escapeHtml(state)}">
       ${historyBody}
       <div class="history-limit-note">Showing the newest 20 requests. Older history rolls off automatically.</div>
@@ -544,20 +587,19 @@ function renderHistoryContent(configStr, historyEntries, config, videoId, filena
 }
 
 function generateHistoryPage(configStr, historyEntries, config, videoId, filename, options = {}) {
-  const links = buildToolLinks(configStr, videoId, filename);
-  const t = getTranslator(config?.uiLanguage || 'en');
-  const devMode = (config || {}).devMode === true;
-  const themeToggleLabel = t('fileUpload.themeToggle', {}, 'Toggle theme');
-  const localeBootstrap = buildClientBootstrap(loadLocale(config?.uiLanguage || 'en'));
-  const historyContentEndpoint = typeof options.historyContentEndpoint === 'string'
-    ? options.historyContentEndpoint
-    : '';
-  const deferHistoryLoad = options.deferHistoryLoad === true && !!historyContentEndpoint;
-  const initialHistoryContent = deferHistoryLoad
-    ? renderHistoryContent(configStr, [], config, videoId, filename, { state: 'loading' })
-    : renderHistoryContent(configStr, historyEntries, config, videoId, filename);
+    const links = buildToolLinks(configStr, videoId, filename);
+    const t = getTranslator(config?.uiLanguage || 'en');
+    const devMode = (config || {}).devMode === true;
+    const themeToggleLabel = t('fileUpload.themeToggle', {}, 'Toggle theme');
+    const localeBootstrap = buildClientBootstrap(loadLocale(config?.uiLanguage || 'en'));
+    const historyContentEndpoint =
+        typeof options.historyContentEndpoint === 'string' ? options.historyContentEndpoint : '';
+    const deferHistoryLoad = options.deferHistoryLoad === true && !!historyContentEndpoint;
+    const initialHistoryContent = deferHistoryLoad
+        ? renderHistoryContent(configStr, [], config, videoId, filename, { state: 'loading' })
+        : renderHistoryContent(configStr, historyEntries, config, videoId, filename);
 
-  return `
+    return `
 <!DOCTYPE html>
 <html lang="${resolveUiLang(config)}" data-third-theme="true-dark">
 <head>

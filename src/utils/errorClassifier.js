@@ -1,8 +1,8 @@
 /**
  * Error Classifier Utility
- * 
+ *
  * Properly distinguishes programming bugs from operational/expected errors.
- * Programming bugs (TypeError, ReferenceError, etc.) should NEVER be silently 
+ * Programming bugs (TypeError, ReferenceError, etc.) should NEVER be silently
  * swallowed as warnings - they indicate broken code that needs fixing.
  */
 
@@ -15,7 +15,7 @@ const log = require('./logger');
 const BUG_PATTERNS = [
     /is not a function/i,
     /is not defined/i,
-    /cannot read propert/i,           // "Cannot read property 'x' of undefined/null"
+    /cannot read propert/i, // "Cannot read property 'x' of undefined/null"
     /cannot set propert/i,
     /cannot access.*before initialization/i,
     /is not iterable/i,
@@ -39,13 +39,13 @@ const BUG_PATTERNS = [
     /radix must be/i,
     /repeat count must be/i,
     /cannot use import/i,
-    /unexpected end of/i,
+    /unexpected end of/i
 ];
 
 /**
  * Detects if an error is a programming bug vs an operational/expected error.
  * Programming bugs should NEVER be silently swallowed — they indicate broken code.
- * 
+ *
  * @param {Error} error - The error to classify
  * @returns {boolean} - true if this is a programming bug, false if operational
  */
@@ -53,14 +53,14 @@ function isProgrammingBug(error) {
     if (!error) return false;
 
     // JavaScript built-in error types that indicate code bugs
-    if (error instanceof TypeError) return true;      // "X is not a function", "Cannot read property of undefined"
-    if (error instanceof ReferenceError) return true; // "X is not defined"  
-    if (error instanceof SyntaxError) return true;    // Parsing errors
-    if (error instanceof RangeError) return true;     // Invalid array length, stack overflow
+    if (error instanceof TypeError) return true; // "X is not a function", "Cannot read property of undefined"
+    if (error instanceof ReferenceError) return true; // "X is not defined"
+    if (error instanceof SyntaxError) return true; // Parsing errors
+    if (error instanceof RangeError) return true; // Invalid array length, stack overflow
 
     // Check error message patterns
     const msg = error.message || '';
-    if (BUG_PATTERNS.some(p => p.test(msg))) return true;
+    if (BUG_PATTERNS.some((p) => p.test(msg))) return true;
 
     // Check error name as fallback (some environments use custom names)
     const name = error.name || '';
@@ -72,14 +72,14 @@ function isProgrammingBug(error) {
 /**
  * Wrapper for catch blocks that properly escalates programming bugs.
  * Use this instead of raw catch blocks to ensure bugs don't get swallowed.
- * 
+ *
  * USAGE:
  * ```javascript
  * } catch (error) {
  *     return handleCaughtError(error, '[SharedCache] DECR', log, { fallbackValue: -1 });
  * }
  * ```
- * 
+ *
  * @param {Error} error - The caught error
  * @param {string} context - Context string for logging (e.g., "[SharedCache] DECR")
  * @param {Object} logger - Logger instance with error() and warn() methods
@@ -90,11 +90,7 @@ function isProgrammingBug(error) {
  * @returns {any} - fallbackValue for operational errors, or throws for bugs if rethrowBugs=true
  */
 function handleCaughtError(error, context, logger, options = {}) {
-    const {
-        fallbackValue = null,
-        rethrowBugs = false,
-        includeStack = true
-    } = options;
+    const { fallbackValue = null, rethrowBugs = false, includeStack = true } = options;
 
     // Use module-level logger as fallback if not provided
     const logInstance = logger || log;
@@ -119,17 +115,17 @@ function handleCaughtError(error, context, logger, options = {}) {
 /**
  * Creates a scoped error handler for a specific module/component.
  * This reduces repetition when multiple catch blocks need the same context prefix.
- * 
+ *
  * USAGE:
  * ```javascript
  * const handleError = createScopedErrorHandler('[SharedCache]', log);
- * 
+ *
  * // Then in catch blocks:
  * } catch (error) {
  *     return handleError(error, 'DECR', { fallbackValue: -1 });
  * }
  * ```
- * 
+ *
  * @param {string} scopePrefix - Prefix for all error messages (e.g., "[SharedCache]")
  * @param {Object} logger - Logger instance with error() and warn() methods
  * @param {Object} defaultOptions - Default options for all handleCaughtError calls

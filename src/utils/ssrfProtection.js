@@ -10,11 +10,7 @@ const dns = require('node:dns');
 const ipaddr = require('ipaddr.js');
 const log = require('./logger');
 
-const INTERNAL_HOSTNAMES = new Set([
-    'localhost',
-    'localhost.localdomain',
-    'local'
-]);
+const INTERNAL_HOSTNAMES = new Set(['localhost', 'localhost.localdomain', 'local']);
 
 // ipaddr.js classifies most special-purpose space for us. Keep explicit checks
 // for ranges whose treatment has varied across library/IANA revisions.
@@ -78,7 +74,7 @@ function isInternalIp(ip) {
             return isInternalIp(parsed.toIPv4Address().toString());
         }
 
-        if (ALWAYS_NON_GLOBAL_IPV6_CIDRS.some(cidr => parsed.match(cidr))) {
+        if (ALWAYS_NON_GLOBAL_IPV6_CIDRS.some((cidr) => parsed.match(cidr))) {
             return true;
         }
     }
@@ -118,9 +114,7 @@ function isInternalHost(host) {
         return true;
     }
 
-    return normalized.endsWith('.local') ||
-        normalized.endsWith('.internal') ||
-        normalized.endsWith('.localhost');
+    return normalized.endsWith('.local') || normalized.endsWith('.internal') || normalized.endsWith('.localhost');
 }
 
 function createSsrfError(message, code = 'ESSRF_UNSAFE_URL') {
@@ -145,9 +139,10 @@ function shouldAllowInternal(options = {}) {
  */
 function assertSafeRequestUrl(rawUrl, options = {}) {
     const context = options.context || 'request';
-    const allowedProtocols = Array.isArray(options.allowedProtocols) && options.allowedProtocols.length > 0
-        ? options.allowedProtocols
-        : ['http:', 'https:'];
+    const allowedProtocols =
+        Array.isArray(options.allowedProtocols) && options.allowedProtocols.length > 0
+            ? options.allowedProtocols
+            : ['http:', 'https:'];
     let parsed;
     try {
         parsed = new URL(rawUrl);
@@ -168,10 +163,7 @@ function assertSafeRequestUrl(rawUrl, options = {}) {
     }
 
     if (!shouldAllowInternal(options) && isInternalHost(parsed.hostname)) {
-        throw createSsrfError(
-            `Destination ${parsed.hostname} is internal or non-global`,
-            'ESSRF_INTERNAL_IP'
-        );
+        throw createSsrfError(`Destination ${parsed.hostname} is internal or non-global`, 'ESSRF_INTERNAL_IP');
     }
 
     return parsed;
@@ -229,9 +221,7 @@ function resolveAndValidateHost(hostname) {
                 });
             }
 
-            const resolvedIps = addresses.map(entry =>
-                typeof entry === 'string' ? entry : entry.address
-            );
+            const resolvedIps = addresses.map((entry) => (typeof entry === 'string' ? entry : entry.address));
 
             const unsafeIp = resolvedIps.find(isInternalIp);
             if (unsafeIp) {
@@ -277,7 +267,10 @@ async function validateCustomBaseUrl(baseUrl) {
     const dnsResult = await resolveAndValidateHost(hostname);
     if (!dnsResult.safe) {
         if (areInternalEndpointsAllowed()) {
-            log.debug(() => `[SSRF] Allowing ${hostname} -> ${dnsResult.resolvedIps?.join(', ')} (ALLOW_INTERNAL_CUSTOM_ENDPOINTS=true)`);
+            log.debug(
+                () =>
+                    `[SSRF] Allowing ${hostname} -> ${dnsResult.resolvedIps?.join(', ')} (ALLOW_INTERNAL_CUSTOM_ENDPOINTS=true)`
+            );
             return { valid: true, sanitized: parsed.toString() };
         }
 
@@ -315,10 +308,9 @@ function createSsrfSafeLookup(policyOptions = {}) {
         const allowInternal = shouldAllowInternal(policyOptions);
 
         if (!allowInternal && isInternalHost(hostname)) {
-            return callback(createSsrfError(
-                `Blocked connection to internal or non-global host ${hostname}`,
-                'ESSRF_INTERNAL_IP'
-            ));
+            return callback(
+                createSsrfError(`Blocked connection to internal or non-global host ${hostname}`, 'ESSRF_INTERNAL_IP')
+            );
         }
 
         const dnsLookupOptions = {
@@ -332,10 +324,7 @@ function createSsrfSafeLookup(policyOptions = {}) {
             if (error) return callback(error);
 
             if (!Array.isArray(addresses) || addresses.length === 0) {
-                return callback(createSsrfError(
-                    `DNS lookup returned no addresses for ${hostname}`,
-                    'ESSRF_DNS_EMPTY'
-                ));
+                return callback(createSsrfError(`DNS lookup returned no addresses for ${hostname}`, 'ESSRF_DNS_EMPTY'));
             }
 
             if (!allowInternal) {
@@ -343,10 +332,12 @@ function createSsrfSafeLookup(policyOptions = {}) {
                     const ip = typeof entry === 'string' ? entry : entry.address;
                     if (isInternalIp(ip)) {
                         log.warn(() => `[SSRF] Connection-time block: ${hostname} -> ${ip}`);
-                        return callback(createSsrfError(
-                            `Blocked connection to ${hostname}: resolved to internal or non-global IP ${ip}`,
-                            'ESSRF_INTERNAL_IP'
-                        ));
+                        return callback(
+                            createSsrfError(
+                                `Blocked connection to ${hostname}: resolved to internal or non-global IP ${ip}`,
+                                'ESSRF_INTERNAL_IP'
+                            )
+                        );
                     }
                 }
             }

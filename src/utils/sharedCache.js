@@ -1,10 +1,10 @@
 /**
  * Shared Cache Utility for Multi-Instance Deployments
- * 
+ *
  * This module provides Redis-backed caching utilities that work across
  * multiple pods in a distributed deployment. It uses the existing
  * StorageAdapter infrastructure for Redis access.
- * 
+ *
  * Key Features:
  * - Cross-pod cache sharing via Redis
  * - TTL-based expiry for automatic cleanup
@@ -104,7 +104,7 @@ async function deleteShared(key, cacheType) {
 /**
  * Atomically increment a counter in Redis with TTL refresh
  * Used for cross-pod concurrency tracking with automatic cleanup
- * 
+ *
  * @param {string} key - Counter key (will be prefixed with session:)
  * @param {number} ttlSeconds - TTL in seconds (refreshed on each increment)
  * @returns {Promise<number>} New counter value, or -1 on failure
@@ -159,7 +159,7 @@ async function incrementCounter(key, ttlSeconds = 1800) {
 
 /**
  * Atomically decrement a counter in Redis (minimum 0)
- * 
+ *
  * @param {string} key - Counter key
  * @returns {Promise<number>} New counter value, or -1 on failure
  */
@@ -189,7 +189,6 @@ async function decrementCounter(key) {
         const newCount = await adapter.client.eval(luaScript, 1, fullKey);
         log.debug(() => `[SharedCache] DECR ${key} = ${newCount}`);
         return Math.max(0, newCount);
-
     } catch (error) {
         return handleCaughtError(error, `[SharedCache] DECR failed for ${key}`, log, { fallbackValue: -1 });
     }
@@ -197,7 +196,7 @@ async function decrementCounter(key) {
 
 /**
  * Get current counter value without modifying it
- * 
+ *
  * @param {string} key - Counter key
  * @returns {Promise<number>} Current count, or 0 on failure/missing
  */
@@ -232,7 +231,7 @@ const KEY_HEALTH_COOLDOWN_SECONDS = 60 * 60; // 1 hour
 /**
  * Record an error for an API key in Redis (distributed key health tracking)
  * Keys with >= threshold errors within cooldown period are skipped across all pods.
- * 
+ *
  * @param {string} apiKey - The API key that errored
  * @returns {Promise<{count: number, coolingDown: boolean}>} Current error state
  */
@@ -263,10 +262,10 @@ async function recordKeyError(apiKey) {
         const coolingDown = newCount >= KEY_HEALTH_ERROR_THRESHOLD;
 
         if (coolingDown) {
-            const redactedKey = apiKey.length > 10
-                ? `${apiKey.slice(0, 4)}...${apiKey.slice(-4)}`
-                : '[REDACTED]';
-            log.warn(() => `[SharedCache] Key ${redactedKey} reached ${newCount} errors, cooling down for ~1h (cross-pod)`);
+            const redactedKey = apiKey.length > 10 ? `${apiKey.slice(0, 4)}...${apiKey.slice(-4)}` : '[REDACTED]';
+            log.warn(
+                () => `[SharedCache] Key ${redactedKey} reached ${newCount} errors, cooling down for ~1h (cross-pod)`
+            );
         } else {
             log.debug(() => `[SharedCache] Key health: ${keyHash.slice(0, 8)}... = ${newCount} errors`);
         }
@@ -280,7 +279,7 @@ async function recordKeyError(apiKey) {
 
 /**
  * Check if an API key is currently in cooldown (unhealthy) across all pods
- * 
+ *
  * @param {string} apiKey - The API key to check
  * @returns {Promise<boolean>} True if key should be skipped
  */
@@ -312,7 +311,7 @@ async function isKeyCoolingDown(apiKey) {
 
 /**
  * Get current error count for an API key (for debugging/monitoring)
- * 
+ *
  * @param {string} apiKey - The API key to check
  * @returns {Promise<number>} Current error count
  */
@@ -339,7 +338,7 @@ async function getKeyErrorCount(apiKey) {
 
 /**
  * Reset error count for an API key (e.g., after successful use)
- * 
+ *
  * @param {string} apiKey - The API key to reset
  * @returns {Promise<boolean>} True if reset successfully
  */
@@ -372,7 +371,7 @@ async function resetKeyHealth(apiKey) {
 /**
  * Get the next rotation index atomically across all pods
  * This ensures consistent round-robin key selection in multi-instance deployments.
- * 
+ *
  * @param {string} counterId - Identifier for the counter (e.g., 'gemini')
  * @param {number} keyCount - Total number of keys for modulo operation
  * @returns {Promise<number>} Next key index (0 to keyCount-1), or -1 on failure
@@ -421,7 +420,7 @@ async function getNextRotationIndex(counterId, keyCount) {
 
 /**
  * Get current rotation counter value without incrementing
- * 
+ *
  * @param {string} counterId - Identifier for the counter
  * @returns {Promise<number>} Current counter value, or 0 if not found
  */
@@ -528,8 +527,11 @@ async function executeRedisLockOperation(lockKey, operationName, fn) {
             }
 
             const delayMs = 25 * attempt;
-            log.debug(() => `[SharedCache] Redis lock ${operationName} retry ${attempt}/3 for ${lockKey} in ${delayMs}ms: ${error.message}`);
-            await new Promise(resolve => setTimeout(resolve, delayMs));
+            log.debug(
+                () =>
+                    `[SharedCache] Redis lock ${operationName} retry ${attempt}/3 for ${lockKey} in ${delayMs}ms: ${error.message}`
+            );
+            await new Promise((resolve) => setTimeout(resolve, delayMs));
         }
     }
 
@@ -569,7 +571,10 @@ async function tryAcquireLock(lockKey, ttlMs = 5000) {
         const acquired = result === 'OK';
 
         if (acquired) {
-            log.debug(() => `[SharedCache] Acquired lock ${lockKey} (TTL: ${ttlMs}ms, owner: ${LOCK_OWNER_ID.slice(0, 12)}...)`);
+            log.debug(
+                () =>
+                    `[SharedCache] Acquired lock ${lockKey} (TTL: ${ttlMs}ms, owner: ${LOCK_OWNER_ID.slice(0, 12)}...)`
+            );
         }
 
         return { acquired, ownerId: acquired ? LOCK_OWNER_ID : null };
@@ -656,9 +661,7 @@ async function getLockTTL(lockKey) {
         const fullKey = adapter._getKey(`lock:${lockKey}`, StorageAdapter.CACHE_TYPES.SESSION);
 
         // PTTL returns TTL in milliseconds, -2 if key doesn't exist, -1 if no TTL
-        const ttl = await executeRedisLockOperation(lockKey, 'ttl', () =>
-            adapter.client.pttl(fullKey)
-        );
+        const ttl = await executeRedisLockOperation(lockKey, 'ttl', () => adapter.client.pttl(fullKey));
 
         if (ttl < 0) {
             return 0; // Key doesn't exist or has no TTL
@@ -670,7 +673,6 @@ async function getLockTTL(lockKey) {
         return getLocalFallbackLockTTL(lockKey);
     }
 }
-
 
 // ============================================================================
 // CACHE KEY PREFIXES
@@ -704,12 +706,12 @@ const CACHE_PREFIXES = {
 
 // TTL values in seconds
 const CACHE_TTLS = {
-    ANIME_POSITIVE: 24 * 60 * 60,  // 24 hours for successful lookups
-    ANIME_NEGATIVE: 10 * 60,       // 10 minutes for failed lookups
-    TMDB_POSITIVE: 24 * 60 * 60,   // 24 hours for successful lookups
-    TMDB_NEGATIVE: 10 * 60,        // 10 minutes for failed lookups
-    USER_CONCURRENCY: 30 * 60,     // 30 minutes (safety net for orphaned counts)
-    OS_TOKEN: 23 * 60 * 60,        // 23 hours (token valid for 24h, 1h buffer)
+    ANIME_POSITIVE: 24 * 60 * 60, // 24 hours for successful lookups
+    ANIME_NEGATIVE: 10 * 60, // 10 minutes for failed lookups
+    TMDB_POSITIVE: 24 * 60 * 60, // 24 hours for successful lookups
+    TMDB_NEGATIVE: 10 * 60, // 10 minutes for failed lookups
+    USER_CONCURRENCY: 30 * 60, // 30 minutes (safety net for orphaned counts)
+    OS_TOKEN: 23 * 60 * 60, // 23 hours (token valid for 24h, 1h buffer)
     SUBTITLE_SEARCH_REV: 7 * 24 * 60 * 60 // 7 days; refreshed on each xSync/Auto/xEmbed write
 };
 

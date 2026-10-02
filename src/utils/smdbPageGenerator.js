@@ -11,27 +11,25 @@ const { quickNavStyles, quickNavScript, renderQuickNav } = require('./quickNav')
 const { version: appVersion } = require('./version');
 
 function escapeHtml(value) {
-  if (value === null || value === undefined) return '';
-  return String(value)
-    .replace(/&/g, '&amp;')
-    .replace(/</g, '&lt;')
-    .replace(/>/g, '&gt;')
-    .replace(/"/g, '&quot;');
+    if (value === null || value === undefined) return '';
+    return String(value).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;');
 }
 
 function cleanDisplayName(raw) {
-  if (!raw) return '';
-  try { return decodeURIComponent(raw); } catch (_) { }
-  return raw;
+    if (!raw) return '';
+    try {
+        return decodeURIComponent(raw);
+    } catch (_) {}
+    return raw;
 }
 
 function resolveUiLang(config) {
-  return (config?.uiLanguage || 'en').replace(/[^a-zA-Z-]/g, '').slice(0, 10) || 'en';
+    return (config?.uiLanguage || 'en').replace(/[^a-zA-Z-]/g, '').slice(0, 10) || 'en';
 }
 
 function themeToggleMarkup(label) {
-  const aria = escapeHtml(label || 'Toggle theme');
-  return `
+    const aria = escapeHtml(label || 'Toggle theme');
+    return `
   <button class="theme-toggle mario" id="themeToggle" aria-label="${aria}">
     <span class="theme-toggle-icon sun" aria-hidden="true">
         <svg viewBox="0 0 64 64" width="28" height="28" role="img">
@@ -92,7 +90,7 @@ function themeToggleMarkup(label) {
 }
 
 function themeToggleStyles() {
-  return `
+    return `
     /* Theme Toggle Button */
     .theme-toggle {
       position: fixed;
@@ -271,53 +269,56 @@ function themeToggleStyles() {
  * @param {Object} config - Resolved user config
  */
 async function generateSmdbPage(configStr, videoId, filename, config = {}) {
-  const uiLang = resolveUiLang(config);
-  const t = getTranslator(uiLang);
-  const localeBootstrap = buildClientBootstrap(loadLocale(uiLang));
-  const videoHash = deriveVideoHash(filename, videoId);
-  const parsed = parseStremioId(videoId);
-  const cleanFilename = cleanDisplayName(filename);
-  const devMode = (config || {}).devMode === true;
-  const languageMaps = buildLanguageLookupMaps();
-  const subtitleMenuTargets = (config?.targetLanguages || []).map(code => ({
-    code,
-    name: getLanguageName(code) || code
-  }));
+    const uiLang = resolveUiLang(config);
+    const t = getTranslator(uiLang);
+    const localeBootstrap = buildClientBootstrap(loadLocale(uiLang));
+    const videoHash = deriveVideoHash(filename, videoId);
+    const parsed = parseStremioId(videoId);
+    const cleanFilename = cleanDisplayName(filename);
+    const devMode = (config || {}).devMode === true;
+    const languageMaps = buildLanguageLookupMaps();
+    const subtitleMenuTargets = (config?.targetLanguages || []).map((code) => ({
+        code,
+        name: getLanguageName(code) || code
+    }));
 
-  // Build nav links (matching the pattern from other page generators)
-  const links = {
-    translateFiles: `/file-upload?config=${encodeURIComponent(configStr || '')}&videoId=${encodeURIComponent(videoId || '')}`,
-    syncSubtitles: `/subtitle-sync?config=${encodeURIComponent(configStr || '')}&videoId=${encodeURIComponent(videoId || '')}&filename=${encodeURIComponent(filename || '')}`,
-    embeddedSubs: `/embedded-subtitles?config=${encodeURIComponent(configStr || '')}&videoId=${encodeURIComponent(videoId || '')}&filename=${encodeURIComponent(filename || '')}`,
-    automaticSubs: `/auto-subtitles?config=${encodeURIComponent(configStr || '')}&videoId=${encodeURIComponent(videoId || '')}&filename=${encodeURIComponent(filename || '')}`,
-    subToolbox: `/sub-toolbox?config=${encodeURIComponent(configStr || '')}&videoId=${encodeURIComponent(videoId || '')}&filename=${encodeURIComponent(filename || '')}`,
-    smdb: `/smdb?config=${encodeURIComponent(configStr || '')}&videoId=${encodeURIComponent(videoId || '')}&filename=${encodeURIComponent(filename || '')}`,
-    configure: `/configure?config=${encodeURIComponent(configStr || '')}`,
-    history: `/sub-history?config=${encodeURIComponent(configStr || '')}&videoId=${encodeURIComponent(videoId || '')}&filename=${encodeURIComponent(filename || '')}`
-  };
+    // Build nav links (matching the pattern from other page generators)
+    const links = {
+        translateFiles: `/file-upload?config=${encodeURIComponent(configStr || '')}&videoId=${encodeURIComponent(videoId || '')}`,
+        syncSubtitles: `/subtitle-sync?config=${encodeURIComponent(configStr || '')}&videoId=${encodeURIComponent(videoId || '')}&filename=${encodeURIComponent(filename || '')}`,
+        embeddedSubs: `/embedded-subtitles?config=${encodeURIComponent(configStr || '')}&videoId=${encodeURIComponent(videoId || '')}&filename=${encodeURIComponent(filename || '')}`,
+        automaticSubs: `/auto-subtitles?config=${encodeURIComponent(configStr || '')}&videoId=${encodeURIComponent(videoId || '')}&filename=${encodeURIComponent(filename || '')}`,
+        subToolbox: `/sub-toolbox?config=${encodeURIComponent(configStr || '')}&videoId=${encodeURIComponent(videoId || '')}&filename=${encodeURIComponent(filename || '')}`,
+        smdb: `/smdb?config=${encodeURIComponent(configStr || '')}&videoId=${encodeURIComponent(videoId || '')}&filename=${encodeURIComponent(filename || '')}`,
+        configure: `/configure?config=${encodeURIComponent(configStr || '')}`,
+        history: `/sub-history?config=${encodeURIComponent(configStr || '')}&videoId=${encodeURIComponent(videoId || '')}&filename=${encodeURIComponent(filename || '')}`
+    };
 
-  // Build user language options from config
-  const userLanguages = [];
-  const seenLangs = new Set();
-  const addLang = (code) => {
-    if (!code || seenLangs.has(code)) return;
-    seenLangs.add(code);
-    const name = getLanguageName(code);
-    if (name) userLanguages.push({ code, name });
-  };
-  (config.sourceLanguages || []).forEach(addLang);
-  (config.targetLanguages || []).forEach(addLang);
-  (config.noTranslationLanguages || []).forEach(addLang);
-  userLanguages.sort((a, b) => a.name.localeCompare(b.name));
+    // Build user language options from config
+    const userLanguages = [];
+    const seenLangs = new Set();
+    const addLang = (code) => {
+        if (!code || seenLangs.has(code)) return;
+        seenLangs.add(code);
+        const name = getLanguageName(code);
+        if (name) userLanguages.push({ code, name });
+    };
+    (config.sourceLanguages || []).forEach(addLang);
+    (config.targetLanguages || []).forEach(addLang);
+    (config.noTranslationLanguages || []).forEach(addLang);
+    userLanguages.sort((a, b) => a.name.localeCompare(b.name));
 
-  // All languages for "all languages" mode
-  const allLanguages = getAllLanguages();
+    // All languages for "all languages" mode
+    const allLanguages = getAllLanguages();
 
-  const episodeTag = parsed && parsed.season ? `S${String(parsed.season).padStart(2, '0')}E${String(parsed.episode).padStart(2, '0')}` : '';
+    const episodeTag =
+        parsed && parsed.season
+            ? `S${String(parsed.season).padStart(2, '0')}E${String(parsed.episode).padStart(2, '0')}`
+            : '';
 
-  const themeToggleLabel = t('fileUpload.themeToggle', {}, 'Toggle theme');
+    const themeToggleLabel = t('fileUpload.themeToggle', {}, 'Toggle theme');
 
-  return `<!DOCTYPE html>
+    return `<!DOCTYPE html>
 <html lang="${escapeHtml(uiLang)}" data-third-theme="true-dark">
 <head>
   <meta charset="UTF-8">
@@ -1005,7 +1006,7 @@ async function generateSmdbPage(configStr, videoId, filename, config = {}) {
             <label class="form-label" for="lang-select">Language</label>
             <select class="form-select" id="lang-select">
               <option value="">Select language...</option>
-              ${userLanguages.map(l => `<option value="${escapeHtml(l.code)}">${escapeHtml(l.name)}</option>`).join('\n              ')}
+              ${userLanguages.map((l) => `<option value="${escapeHtml(l.code)}">${escapeHtml(l.name)}</option>`).join('\n              ')}
             </select>
             <label class="all-langs-toggle">
               <input type="checkbox" id="all-langs-check"> Show all languages

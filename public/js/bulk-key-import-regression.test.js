@@ -11,7 +11,7 @@ const api = require('./bulk-key-import.js');
 // string concatenation so no real (or realistic-looking) credential ever
 // appears as a contiguous literal in this file — GitHub push protection and
 // secret scanners must never flag test fixtures here.
-const LEGACY = 'AIzaSy' + 'a'.repeat(33);   // 39 chars, valid shape
+const LEGACY = 'AIzaSy' + 'a'.repeat(33); // 39 chars, valid shape
 const LEGACY2 = 'AIzaSy' + 'b'.repeat(33);
 const NEWFMT = 'AQ.Ab8' + 'c'.repeat(38);
 const CRAZY = 'sk-' + 'd'.repeat(48);
@@ -19,7 +19,7 @@ const CRAZY = 'sk-' + 'd'.repeat(48);
 test('detects all three key formats', () => {
     const out = api.parseBulkKeys([LEGACY, NEWFMT, CRAZY].join('\n'));
     assert.equal(out.keys.length, 3);
-    assert.deepEqual(out.stats.byType, { 'google-legacy': 1, 'google-new': 1, 'crazyrouter': 1 });
+    assert.deepEqual(out.stats.byType, { 'google-legacy': 1, 'google-new': 1, crazyrouter: 1 });
 });
 
 test('parses numbered, CSV, JSON, and prose-mixed input without pre-splitting', () => {
@@ -40,10 +40,10 @@ test('parses numbered, CSV, JSON, and prose-mixed input without pre-splitting', 
 
 test('rejects malformed / truncated keys', () => {
     const bad = [
-        'AIzaSyTOOSHORT',                 // legacy too short
-        'AIzaSy' + 'A'.repeat(40),        // legacy too long (33 expected)
-        'sk-short',                       // crazy too short
-        'AQ.Ab8short'                     // new-format too short
+        'AIzaSyTOOSHORT', // legacy too short
+        'AIzaSy' + 'A'.repeat(40), // legacy too long (33 expected)
+        'sk-short', // crazy too short
+        'AQ.Ab8short' // new-format too short
     ].join('\n');
     const out = api.parseBulkKeys(bad);
     assert.equal(out.keys.length, 0, 'no malformed key should be accepted: ' + JSON.stringify(out.keys));
@@ -104,7 +104,10 @@ test('parseBulkKeys performs no network / fetch usage (AST-based, comment-proof)
     // by ensuring no global fetch is invoked during a parse (stub + observe).
     let fetchCalled = false;
     const originalFetch = globalThis.fetch;
-    globalThis.fetch = () => { fetchCalled = true; throw new Error('network forbidden'); };
+    globalThis.fetch = () => {
+        fetchCalled = true;
+        throw new Error('network forbidden');
+    };
     try {
         api.parseBulkKeys([LEGACY, NEWFMT, CRAZY].join('\n'));
     } finally {

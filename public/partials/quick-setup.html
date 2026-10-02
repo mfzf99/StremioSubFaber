@@ -9,7 +9,9 @@
                     <span class="qs-logo-icon">⚡</span>
                     <span class="qs-logo-text" data-i18n="config.quickSetup.title">Quick Setup</span>
                 </div>
-                <button class="qs-close-btn" id="qsCloseBtn" title="Close" data-i18n-title="config.quickSetup.close">&times;</button>
+                <button class="qs-close-btn" id="qsCloseBtn" title="Close" data-i18n-title="config.quickSetup.close">
+                    &times;
+                </button>
             </div>
             <div class="qs-progress" id="qsProgress">
                 <div class="qs-progress-bar">
@@ -21,53 +23,101 @@
 
         <!-- Step Container -->
         <div class="qs-steps-wrapper" id="qsStepsWrapper">
-
             <!-- ===== STEP 1: Mode Selection ===== -->
             <div class="qs-step" data-step="1" id="qsStep1">
                 <div class="qs-step-content">
                     <div class="qs-step-header">
-                        <h2 class="qs-step-title" data-i18n="config.quickSetup.step1.title">What would you like to do?</h2>
-                        <p class="qs-step-subtitle" data-i18n="config.quickSetup.step1.subtitle">Choose how SubFaber should handle your subtitles</p>
+                        <h2 class="qs-step-title" data-i18n="config.quickSetup.step1.title">
+                            What would you like to do?
+                        </h2>
+                        <p class="qs-step-subtitle" data-i18n="config.quickSetup.step1.subtitle">
+                            Choose how SubFaber should handle your subtitles
+                        </p>
                     </div>
 
                     <div class="qs-mode-cards">
                         <button class="qs-mode-card" data-mode="translate" id="qsModeTranslate">
                             <div class="qs-mode-icon">
                                 <svg viewBox="0 0 48 48" fill="none">
-                                    <rect x="4" y="8" width="18" height="24" rx="3" stroke="currentColor"
-                                        stroke-width="2.5" opacity="0.5" />
-                                    <rect x="26" y="16" width="18" height="24" rx="3" stroke="currentColor"
-                                        stroke-width="2.5" />
-                                    <path d="M10 16h6M10 20h8M10 24h5" stroke="currentColor" stroke-width="2"
-                                        stroke-linecap="round" opacity="0.5" />
-                                    <path d="M32 24h6M32 28h8M32 32h5" stroke="currentColor" stroke-width="2"
-                                        stroke-linecap="round" />
-                                    <path d="M22 22l4 4" stroke="currentColor" stroke-width="2.5"
-                                        stroke-linecap="round" />
+                                    <rect
+                                        x="4"
+                                        y="8"
+                                        width="18"
+                                        height="24"
+                                        rx="3"
+                                        stroke="currentColor"
+                                        stroke-width="2.5"
+                                        opacity="0.5"
+                                    />
+                                    <rect
+                                        x="26"
+                                        y="16"
+                                        width="18"
+                                        height="24"
+                                        rx="3"
+                                        stroke="currentColor"
+                                        stroke-width="2.5"
+                                    />
+                                    <path
+                                        d="M10 16h6M10 20h8M10 24h5"
+                                        stroke="currentColor"
+                                        stroke-width="2"
+                                        stroke-linecap="round"
+                                        opacity="0.5"
+                                    />
+                                    <path
+                                        d="M32 24h6M32 28h8M32 32h5"
+                                        stroke="currentColor"
+                                        stroke-width="2"
+                                        stroke-linecap="round"
+                                    />
+                                    <path
+                                        d="M22 22l4 4"
+                                        stroke="currentColor"
+                                        stroke-width="2.5"
+                                        stroke-linecap="round"
+                                    />
                                     <circle cx="28" cy="28" r="2" fill="currentColor" opacity="0.7" />
                                 </svg>
                             </div>
                             <div class="qs-mode-info">
                                 <h3 data-i18n="config.quickSetup.step1.modeTranslateTitle">Translate Subtitles</h3>
-                                <p data-i18n="config.quickSetup.step1.modeTranslateDesc">Fetch subtitles and translate them to your language using AI</p>
+                                <p data-i18n="config.quickSetup.step1.modeTranslateDesc">
+                                    Fetch subtitles and translate them to your language using AI
+                                </p>
                             </div>
-                            <div class="qs-mode-badge" data-i18n="config.quickSetup.step1.modeTranslateBadge">Recommended</div>
+                            <div class="qs-mode-badge" data-i18n="config.quickSetup.step1.modeTranslateBadge">
+                                Recommended
+                            </div>
                         </button>
 
                         <button class="qs-mode-card" data-mode="fetch" id="qsModeFetch">
                             <div class="qs-mode-icon">
                                 <svg viewBox="0 0 48 48" fill="none">
-                                    <rect x="10" y="8" width="28" height="32" rx="3" stroke="currentColor"
-                                        stroke-width="2.5" />
-                                    <path d="M16 18h16M16 24h12M16 30h14" stroke="currentColor" stroke-width="2"
-                                        stroke-linecap="round" />
+                                    <rect
+                                        x="10"
+                                        y="8"
+                                        width="28"
+                                        height="32"
+                                        rx="3"
+                                        stroke="currentColor"
+                                        stroke-width="2.5"
+                                    />
+                                    <path
+                                        d="M16 18h16M16 24h12M16 30h14"
+                                        stroke="currentColor"
+                                        stroke-width="2"
+                                        stroke-linecap="round"
+                                    />
                                     <path d="M24 6v6" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" />
                                     <circle cx="24" cy="4" r="2" fill="currentColor" opacity="0.7" />
                                 </svg>
                             </div>
                             <div class="qs-mode-info">
                                 <h3 data-i18n="config.quickSetup.step1.modeFetchTitle">Just Fetch Subtitles</h3>
-                                <p data-i18n="config.quickSetup.step1.modeFetchDesc">Download subtitles as-is, no AI translation needed</p>
+                                <p data-i18n="config.quickSetup.step1.modeFetchDesc">
+                                    Download subtitles as-is, no AI translation needed
+                                </p>
                             </div>
                         </button>
                     </div>
@@ -79,7 +129,9 @@
                 <div class="qs-step-content">
                     <div class="qs-step-header">
                         <h2 class="qs-step-title" data-i18n="config.quickSetup.step2.title">Subtitle Sources</h2>
-                        <p class="qs-step-subtitle" data-i18n="config.quickSetup.step2.subtitle">Where should SubFaber fetch subtitles from?</p>
+                        <p class="qs-step-subtitle" data-i18n="config.quickSetup.step2.subtitle">
+                            Where should SubFaber fetch subtitles from?
+                        </p>
                     </div>
 
                     <div class="qs-sources-list">
@@ -90,27 +142,73 @@
                                     <span class="qs-source-emoji">🎬</span>
                                     <span>OpenSubtitles</span>
                                 </div>
-                                <span class="qs-source-badge-auto" data-i18n="config.quickSetup.step2.autoEnabled">Auto-enabled</span>
+                                <span class="qs-source-badge-auto" data-i18n="config.quickSetup.step2.autoEnabled"
+                                    >Auto-enabled</span
+                                >
                             </div>
-                            <p class="qs-source-desc" data-i18n="config.quickSetup.step2.opensubsDesc">The largest subtitle database — no API key needed</p>
-                            <button type="button" class="qs-auth-toggle" id="qsOpenSubsAuthToggle" data-i18n="config.quickSetup.step2.opensubsAuthToggle">
-                                🔓 I have an OpenSubtitles account <span class="qs-optional-tag" data-i18n="config.quickSetup.step2.optional">optional</span>
+                            <p class="qs-source-desc" data-i18n="config.quickSetup.step2.opensubsDesc">
+                                The largest subtitle database — no API key needed
+                            </p>
+                            <button
+                                type="button"
+                                class="qs-auth-toggle"
+                                id="qsOpenSubsAuthToggle"
+                                data-i18n="config.quickSetup.step2.opensubsAuthToggle"
+                            >
+                                🔓 I have an OpenSubtitles account
+                                <span class="qs-optional-tag" data-i18n="config.quickSetup.step2.optional"
+                                    >optional</span
+                                >
                             </button>
-                            <div class="qs-auth-fields" id="qsOpenSubsAuthFields" style="display: none;">
-                                <input type="text" id="qsOpenSubsUsername" class="qs-input"
-                                    placeholder="OpenSubtitles username" data-i18n-placeholder="config.quickSetup.step2.opensubsUsernamePlaceholder" autocomplete="off" spellcheck="false">
-                                <input type="password" id="qsOpenSubsPassword" class="qs-input"
-                                    placeholder="OpenSubtitles password" data-i18n-placeholder="config.quickSetup.step2.opensubsPasswordPlaceholder" autocomplete="off" spellcheck="false">
-                                <button type="button" class="qs-btn-validate qs-btn-validate-wide"
-                                    id="qsValidateOpenSubs" title="Test credentials">
+                            <div class="qs-auth-fields" id="qsOpenSubsAuthFields" style="display: none">
+                                <input
+                                    type="text"
+                                    id="qsOpenSubsUsername"
+                                    class="qs-input"
+                                    placeholder="OpenSubtitles username"
+                                    data-i18n-placeholder="config.quickSetup.step2.opensubsUsernamePlaceholder"
+                                    autocomplete="off"
+                                    spellcheck="false"
+                                />
+                                <input
+                                    type="password"
+                                    id="qsOpenSubsPassword"
+                                    class="qs-input"
+                                    placeholder="OpenSubtitles password"
+                                    data-i18n-placeholder="config.quickSetup.step2.opensubsPasswordPlaceholder"
+                                    autocomplete="off"
+                                    spellcheck="false"
+                                />
+                                <button
+                                    type="button"
+                                    class="qs-btn-validate qs-btn-validate-wide"
+                                    id="qsValidateOpenSubs"
+                                    title="Test credentials"
+                                >
                                     <span class="qs-validate-icon">✓</span>
-                                    <span class="qs-validate-text" data-i18n="config.quickSetup.step2.testBtn">Test</span>
+                                    <span class="qs-validate-text" data-i18n="config.quickSetup.step2.testBtn"
+                                        >Test</span
+                                    >
                                 </button>
                                 <div class="qs-key-status" id="qsOpenSubsStatus"></div>
-                                <p class="qs-rate-note"><span data-i18n="config.quickSetup.step2.opensubsRateNote">20 subtitles a day.</span> <a
-                                        href="https://www.opensubtitles.com/en/users/sign_up" target="_blank"
-                                        rel="noopener noreferrer" data-i18n="config.quickSetup.step2.opensubsCreateAccount">Create a free account</a> <span data-i18n="config.quickSetup.step2.opensubsCreateAccountSuffix">if you don't have one.</span></p>
-                                <p class="qs-auth-hint" data-i18n="config.quickSetup.step2.opensubsAuthHint">Logged-in users get higher rate limits and VIP features.</p>
+                                <p class="qs-rate-note">
+                                    <span data-i18n="config.quickSetup.step2.opensubsRateNote"
+                                        >20 subtitles a day.</span
+                                    >
+                                    <a
+                                        href="https://www.opensubtitles.com/en/users/sign_up"
+                                        target="_blank"
+                                        rel="noopener noreferrer"
+                                        data-i18n="config.quickSetup.step2.opensubsCreateAccount"
+                                        >Create a free account</a
+                                    >
+                                    <span data-i18n="config.quickSetup.step2.opensubsCreateAccountSuffix"
+                                        >if you don't have one.</span
+                                    >
+                                </p>
+                                <p class="qs-auth-hint" data-i18n="config.quickSetup.step2.opensubsAuthHint">
+                                    Logged-in users get higher rate limits and VIP features.
+                                </p>
                             </div>
                         </div>
 
@@ -120,26 +218,48 @@
                                 <div class="qs-source-name">
                                     <span class="qs-source-emoji">📥</span>
                                     <span>SubDL</span>
-                                    <span class="qs-optional-tag" data-i18n="config.quickSetup.step2.optionalLabel">Optional</span>
+                                    <span class="qs-optional-tag" data-i18n="config.quickSetup.step2.optionalLabel"
+                                        >Optional</span
+                                    >
                                 </div>
                                 <label class="qs-toggle">
-                                    <input type="checkbox" id="qsEnableSubDL">
+                                    <input type="checkbox" id="qsEnableSubDL" />
                                     <span class="qs-toggle-slider"></span>
                                 </label>
                             </div>
-                            <p class="qs-source-desc" data-i18n="config.quickSetup.step2.subdlDesc">Additional subtitle source for wider coverage</p>
-                            <div class="qs-source-key-wrap" id="qsSubdlKeyWrap" style="display: none;">
+                            <p class="qs-source-desc" data-i18n="config.quickSetup.step2.subdlDesc">
+                                Additional subtitle source for wider coverage
+                            </p>
+                            <div class="qs-source-key-wrap" id="qsSubdlKeyWrap" style="display: none">
                                 <div class="qs-key-input-row">
-                                    <input type="text" id="qsSubdlApiKey" class="qs-input qs-input-key"
-                                        placeholder="Enter SubDL API key" data-i18n-placeholder="config.quickSetup.step2.subdlKeyPlaceholder" autocomplete="off" spellcheck="false">
-                                    <button type="button" class="qs-btn-validate" id="qsValidateSubDL"
-                                        title="Test API key">
+                                    <input
+                                        type="text"
+                                        id="qsSubdlApiKey"
+                                        class="qs-input qs-input-key"
+                                        placeholder="Enter SubDL API key"
+                                        data-i18n-placeholder="config.quickSetup.step2.subdlKeyPlaceholder"
+                                        autocomplete="off"
+                                        spellcheck="false"
+                                    />
+                                    <button
+                                        type="button"
+                                        class="qs-btn-validate"
+                                        id="qsValidateSubDL"
+                                        title="Test API key"
+                                    >
                                         <span class="qs-validate-icon">✓</span>
                                     </button>
                                 </div>
                                 <div class="qs-key-status" id="qsSubDLStatus"></div>
-                                <p class="qs-rate-note"><a href="https://subdl.com" target="_blank"
-                                        rel="noopener noreferrer" data-i18n="config.quickSetup.step2.subdlGetKey">Get your free API key at SubDL.com</a></p>
+                                <p class="qs-rate-note">
+                                    <a
+                                        href="https://subdl.com"
+                                        target="_blank"
+                                        rel="noopener noreferrer"
+                                        data-i18n="config.quickSetup.step2.subdlGetKey"
+                                        >Get your free API key at SubDL.com</a
+                                    >
+                                </p>
                             </div>
                         </div>
 
@@ -149,29 +269,50 @@
                                 <div class="qs-source-name">
                                     <span class="qs-source-emoji">📡</span>
                                     <span>SubSource</span>
-                                    <span class="qs-optional-tag" data-i18n="config.quickSetup.step2.optionalLabel">Optional</span>
+                                    <span class="qs-optional-tag" data-i18n="config.quickSetup.step2.optionalLabel"
+                                        >Optional</span
+                                    >
                                 </div>
                                 <label class="qs-toggle">
-                                    <input type="checkbox" id="qsEnableSubSource">
+                                    <input type="checkbox" id="qsEnableSubSource" />
                                     <span class="qs-toggle-slider"></span>
                                 </label>
                             </div>
-                            <p class="qs-source-desc" data-i18n="config.quickSetup.step2.subsourceDesc">Community-driven subtitle provider</p>
-                            <div class="qs-source-key-wrap" id="qsSubsourceKeyWrap" style="display: none;">
+                            <p class="qs-source-desc" data-i18n="config.quickSetup.step2.subsourceDesc">
+                                Community-driven subtitle provider
+                            </p>
+                            <div class="qs-source-key-wrap" id="qsSubsourceKeyWrap" style="display: none">
                                 <div class="qs-key-input-row">
-                                    <input type="text" id="qsSubsourceApiKey" class="qs-input qs-input-key"
-                                        placeholder="Enter SubSource API key" data-i18n-placeholder="config.quickSetup.step2.subsourceKeyPlaceholder" autocomplete="off" spellcheck="false">
-                                    <button type="button" class="qs-btn-validate" id="qsValidateSubSource"
-                                        title="Test API key">
+                                    <input
+                                        type="text"
+                                        id="qsSubsourceApiKey"
+                                        class="qs-input qs-input-key"
+                                        placeholder="Enter SubSource API key"
+                                        data-i18n-placeholder="config.quickSetup.step2.subsourceKeyPlaceholder"
+                                        autocomplete="off"
+                                        spellcheck="false"
+                                    />
+                                    <button
+                                        type="button"
+                                        class="qs-btn-validate"
+                                        id="qsValidateSubSource"
+                                        title="Test API key"
+                                    >
                                         <span class="qs-validate-icon">✓</span>
                                     </button>
                                 </div>
                                 <div class="qs-key-status" id="qsSubSourceStatus"></div>
-                                <p class="qs-rate-note"><a href="https://subsource.net/" target="_blank"
-                                        rel="noopener noreferrer" data-i18n="config.quickSetup.step2.subsourceGetKey">Get your free API key at SubSource.net</a></p>
+                                <p class="qs-rate-note">
+                                    <a
+                                        href="https://subsource.net/"
+                                        target="_blank"
+                                        rel="noopener noreferrer"
+                                        data-i18n="config.quickSetup.step2.subsourceGetKey"
+                                        >Get your free API key at SubSource.net</a
+                                    >
+                                </p>
                             </div>
                         </div>
-
                     </div>
                 </div>
             </div>
@@ -181,7 +322,9 @@
                 <div class="qs-step-content">
                     <div class="qs-step-header">
                         <h2 class="qs-step-title" data-i18n="config.quickSetup.step3.title">AI Translation</h2>
-                        <p class="qs-step-subtitle" data-i18n="config.quickSetup.step3.subtitle">Set up Gemini AI for translating your subtitles</p>
+                        <p class="qs-step-subtitle" data-i18n="config.quickSetup.step3.subtitle">
+                            Set up Gemini AI for translating your subtitles
+                        </p>
                     </div>
 
                     <div class="qs-ai-setup">
@@ -189,8 +332,10 @@
                             <div class="qs-ai-info-icon">✨</div>
                             <div class="qs-ai-info-text">
                                 <strong data-i18n="config.quickSetup.step3.poweredBy">Powered by Google Gemini</strong>
-                                <p id="qsQuickSetupPoweredByDesc" data-i18n="config.quickSetup.step3.poweredByDesc">SubFaber uses the default Gemini translation model for fast, accurate subtitle translations. You'll need
-                                    a free API key from Google AI Studio.</p>
+                                <p id="qsQuickSetupPoweredByDesc" data-i18n="config.quickSetup.step3.poweredByDesc">
+                                    SubFaber uses the default Gemini translation model for fast, accurate subtitle
+                                    translations. You'll need a free API key from Google AI Studio.
+                                </p>
                             </div>
                         </div>
 
@@ -200,16 +345,32 @@
                                 <span class="qs-required" data-i18n="config.quickSetup.step3.required">*</span>
                             </label>
                             <div class="qs-key-input-row">
-                                <input type="password" id="qsGeminiApiKey" class="qs-input qs-input-key"
-                                    placeholder="Enter your Gemini API key" data-i18n-placeholder="config.quickSetup.step3.geminiKeyPlaceholder" autocomplete="off" spellcheck="false">
-                                <button type="button" class="qs-btn-validate" id="qsValidateGemini"
-                                    title="Validate key">
+                                <input
+                                    type="password"
+                                    id="qsGeminiApiKey"
+                                    class="qs-input qs-input-key"
+                                    placeholder="Enter your Gemini API key"
+                                    data-i18n-placeholder="config.quickSetup.step3.geminiKeyPlaceholder"
+                                    autocomplete="off"
+                                    spellcheck="false"
+                                />
+                                <button
+                                    type="button"
+                                    class="qs-btn-validate"
+                                    id="qsValidateGemini"
+                                    title="Validate key"
+                                >
                                     <span class="qs-validate-icon">✓</span>
                                 </button>
                             </div>
                             <div class="qs-key-status" id="qsGeminiKeyStatus"></div>
-                            <a href="https://aistudio.google.com/apikey" target="_blank" rel="noopener noreferrer"
-                                class="qs-get-key-link" data-i18n="config.quickSetup.step3.getKeyLink">
+                            <a
+                                href="https://aistudio.google.com/apikey"
+                                target="_blank"
+                                rel="noopener noreferrer"
+                                class="qs-get-key-link"
+                                data-i18n="config.quickSetup.step3.getKeyLink"
+                            >
                                 🔑 Get a free API key from Google AI Studio →
                             </a>
                         </div>
@@ -217,7 +378,14 @@
                         <div class="qs-ai-defaults">
                             <div class="qs-ai-default-item">
                                 <span class="qs-check-icon">✓</span>
-                                <span><span data-i18n="config.quickSetup.step3.defaultModel">Model:</span> <strong id="qsQuickSetupDefaultModelValue" data-i18n="config.quickSetup.step3.defaultModelValue">Default Gemini model</strong></span>
+                                <span
+                                    ><span data-i18n="config.quickSetup.step3.defaultModel">Model:</span>
+                                    <strong
+                                        id="qsQuickSetupDefaultModelValue"
+                                        data-i18n="config.quickSetup.step3.defaultModelValue"
+                                        >Default Gemini model</strong
+                                    ></span
+                                >
                             </div>
                         </div>
                     </div>
@@ -228,12 +396,25 @@
             <div class="qs-step" data-step="4" id="qsStep4">
                 <div class="qs-step-content">
                     <div class="qs-step-header">
-                        <h2 class="qs-step-title" id="qsLangTitle" data-i18n="config.quickSetup.step4.titleTranslate">Choose Your Target Language</h2>
-                        <p class="qs-step-subtitle" id="qsLangSubtitle" data-i18n="config.quickSetup.step4.subtitleTranslate">What language do you want your subtitles in?</p>
+                        <h2 class="qs-step-title" id="qsLangTitle" data-i18n="config.quickSetup.step4.titleTranslate">
+                            Choose Your Target Language
+                        </h2>
+                        <p
+                            class="qs-step-subtitle"
+                            id="qsLangSubtitle"
+                            data-i18n="config.quickSetup.step4.subtitleTranslate"
+                        >
+                            What language do you want your subtitles in?
+                        </p>
                     </div>
 
                     <div class="qs-step-link-row" id="qsInstructionsLinkWrap">
-                        <button type="button" class="qs-step-link" id="qsOpenInstructionsBtn" data-i18n="config.quickSetup.instructions.link">
+                        <button
+                            type="button"
+                            class="qs-step-link"
+                            id="qsOpenInstructionsBtn"
+                            data-i18n="config.quickSetup.instructions.link"
+                        >
                             SubFaber Instructions
                         </button>
                     </div>
@@ -242,10 +423,19 @@
                     <div class="qs-source-lang-info" id="qsSourceLangInfo">
                         <span class="qs-check-icon">✓</span>
                         <span class="qs-source-lang-copy">
-                            <span id="qsSourceLangLabel" data-i18n="config.quickSetup.step4.sourceLangLabel">Source language:</span>
+                            <span id="qsSourceLangLabel" data-i18n="config.quickSetup.step4.sourceLangLabel"
+                                >Source language:</span
+                            >
                             <strong id="qsSourceLangValue">English</strong>
                             <span>(</span>
-                            <button type="button" class="qs-inline-link" id="qsSourceLangChange" data-i18n="config.quickSetup.step4.sourceLangChange">change</button>
+                            <button
+                                type="button"
+                                class="qs-inline-link"
+                                id="qsSourceLangChange"
+                                data-i18n="config.quickSetup.step4.sourceLangChange"
+                            >
+                                change
+                            </button>
                             <span>)</span>
                         </span>
                     </div>
@@ -253,24 +443,35 @@
                     <!-- Language search -->
                     <div class="qs-lang-search-wrap">
                         <span class="qs-lang-search-icon">🔍</span>
-                        <input type="text" id="qsLangSearch" class="qs-input qs-lang-search"
-                            placeholder="Search languages..." data-i18n-placeholder="config.quickSetup.step4.searchPlaceholder" autocomplete="off" spellcheck="false">
+                        <input
+                            type="text"
+                            id="qsLangSearch"
+                            class="qs-input qs-lang-search"
+                            placeholder="Search languages..."
+                            data-i18n-placeholder="config.quickSetup.step4.searchPlaceholder"
+                            autocomplete="off"
+                            spellcheck="false"
+                        />
                     </div>
 
                     <!-- Selected languages chips -->
                     <div class="qs-selected-langs" id="qsSelectedLangs"></div>
 
-                    <div class="qs-extended-toggle" id="qsExtendedLanguagesWrap" style="display: none;">
+                    <div class="qs-extended-toggle" id="qsExtendedLanguagesWrap" style="display: none">
                         <label class="qs-extended-toggle-label">
-                            <input type="checkbox" id="qsExtendedLanguagesToggle">
+                            <input type="checkbox" id="qsExtendedLanguagesToggle" />
                             <span data-i18n="config.languageCards.extendedToggle">Extended languages list</span>
-                            <span class="qs-extended-toggle-hint" data-i18n="config.languageCards.extendedHint">Adds ~100 rare, ancient, and regional languages (AI translation only)</span>
+                            <span class="qs-extended-toggle-hint" data-i18n="config.languageCards.extendedHint"
+                                >Adds ~100 rare, ancient, and regional languages (AI translation only)</span
+                            >
                         </label>
                     </div>
 
                     <!-- Language grid -->
                     <div class="qs-lang-grid" id="qsLangGrid">
-                        <div class="qs-lang-loading" data-i18n="config.quickSetup.step4.loading">Loading languages...</div>
+                        <div class="qs-lang-loading" data-i18n="config.quickSetup.step4.loading">
+                            Loading languages...
+                        </div>
                     </div>
                 </div>
             </div>
@@ -280,7 +481,9 @@
                 <div class="qs-step-content">
                     <div class="qs-step-header">
                         <h2 class="qs-step-title" data-i18n="config.quickSetup.step5.title">Extras</h2>
-                        <p class="qs-step-subtitle" data-i18n="config.quickSetup.step5.subtitle">Optional features to enhance your experience</p>
+                        <p class="qs-step-subtitle" data-i18n="config.quickSetup.step5.subtitle">
+                            Optional features to enhance your experience
+                        </p>
                     </div>
 
                     <div class="qs-extras-list">
@@ -290,12 +493,14 @@
                                     <div class="qs-extra-icon">🧰</div>
                                     <div>
                                         <h3 data-i18n="config.quickSetup.step5.toolboxTitle">Sub Toolbox</h3>
-                                        <p data-i18n="config.quickSetup.step5.toolboxDesc">Translate files, extract embedded subtitles, sync subtitles, and more — right
-                                            on your browser</p>
+                                        <p data-i18n="config.quickSetup.step5.toolboxDesc">
+                                            Translate files, extract embedded subtitles, sync subtitles, and more —
+                                            right on your browser
+                                        </p>
                                     </div>
                                 </div>
                                 <label class="qs-toggle">
-                                    <input type="checkbox" id="qsSubToolbox" checked>
+                                    <input type="checkbox" id="qsSubToolbox" checked />
                                     <span class="qs-toggle-slider"></span>
                                 </label>
                             </div>
@@ -306,12 +511,16 @@
                                 <div class="qs-extra-info">
                                     <div class="qs-extra-icon">📦</div>
                                     <div>
-                                        <h3 data-i18n="config.quickSetup.step5.seasonPacksTitle">Season Pack Subtitles</h3>
-                                        <p data-i18n="config.quickSetup.step5.seasonPacksDesc">Fetch and extract subtitles from full season packs for bigger coverage</p>
+                                        <h3 data-i18n="config.quickSetup.step5.seasonPacksTitle">
+                                            Season Pack Subtitles
+                                        </h3>
+                                        <p data-i18n="config.quickSetup.step5.seasonPacksDesc">
+                                            Fetch and extract subtitles from full season packs for bigger coverage
+                                        </p>
                                     </div>
                                 </div>
                                 <label class="qs-toggle">
-                                    <input type="checkbox" id="qsSeasonPacks" checked>
+                                    <input type="checkbox" id="qsSeasonPacks" checked />
                                     <span class="qs-toggle-slider"></span>
                                 </label>
                             </div>
@@ -323,29 +532,33 @@
                                     <div class="qs-extra-icon">🚫</div>
                                     <div>
                                         <h3 data-i18n="config.quickSetup.step5.hideSdhTitle">Hide SDH/HI Subtitles</h3>
-                                        <p data-i18n="config.quickSetup.step5.hideSdhDesc">Exclude subtitles with hearing-impaired annotations (SDH/HI)</p>
+                                        <p data-i18n="config.quickSetup.step5.hideSdhDesc">
+                                            Exclude subtitles with hearing-impaired annotations (SDH/HI)
+                                        </p>
                                     </div>
                                 </div>
                                 <label class="qs-toggle">
-                                    <input type="checkbox" id="qsExcludeHI">
+                                    <input type="checkbox" id="qsExcludeHI" />
                                     <span class="qs-toggle-slider"></span>
                                 </label>
                             </div>
                         </div>
 
                         <!-- Learn Languages (translate mode only) -->
-                        <div class="qs-extra-item" id="qsLearnModeItem" style="display: none;">
+                        <div class="qs-extra-item" id="qsLearnModeItem" style="display: none">
                             <div class="qs-extra-header">
                                 <div class="qs-extra-info">
                                     <div class="qs-extra-icon">📖</div>
                                     <div>
                                         <h3 data-i18n="config.quickSetup.step5.learnTitle">Learn Languages</h3>
-                                        <p data-i18n="config.quickSetup.step5.learnDesc">Add dual-language subtitle entries for language learning — shows both source
-                                            and translated lines side by side</p>
+                                        <p data-i18n="config.quickSetup.step5.learnDesc">
+                                            Add dual-language subtitle entries for language learning — shows both source
+                                            and translated lines side by side
+                                        </p>
                                     </div>
                                 </div>
                                 <label class="qs-toggle">
-                                    <input type="checkbox" id="qsLearnMode">
+                                    <input type="checkbox" id="qsLearnMode" />
                                     <span class="qs-toggle-slider"></span>
                                 </label>
                             </div>
@@ -359,15 +572,23 @@
                 <div class="qs-step-content">
                     <div class="qs-step-header">
                         <h2 class="qs-step-title" data-i18n="config.quickSetup.step6.title">Choose Learn Languages</h2>
-                        <p class="qs-step-subtitle" data-i18n="config.quickSetup.step6.subtitle">Which languages do you want to learn? Dual-language subtitles will
-                            be created for each.</p>
+                        <p class="qs-step-subtitle" data-i18n="config.quickSetup.step6.subtitle">
+                            Which languages do you want to learn? Dual-language subtitles will be created for each.
+                        </p>
                     </div>
 
                     <!-- Learn Language search -->
                     <div class="qs-lang-search-wrap">
                         <span class="qs-lang-search-icon">🔍</span>
-                        <input type="text" id="qsLearnLangSearch" class="qs-input qs-lang-search"
-                            placeholder="Search languages..." data-i18n-placeholder="config.quickSetup.step4.searchPlaceholder" autocomplete="off" spellcheck="false">
+                        <input
+                            type="text"
+                            id="qsLearnLangSearch"
+                            class="qs-input qs-lang-search"
+                            placeholder="Search languages..."
+                            data-i18n-placeholder="config.quickSetup.step4.searchPlaceholder"
+                            autocomplete="off"
+                            spellcheck="false"
+                        />
                     </div>
 
                     <!-- Selected learn languages chips -->
@@ -375,15 +596,19 @@
 
                     <div class="qs-extended-toggle" id="qsExtendedLanguagesWrapLearn">
                         <label class="qs-extended-toggle-label">
-                            <input type="checkbox" id="qsExtendedLanguagesToggleLearn">
+                            <input type="checkbox" id="qsExtendedLanguagesToggleLearn" />
                             <span data-i18n="config.languageCards.extendedToggle">Extended languages list</span>
-                            <span class="qs-extended-toggle-hint" data-i18n="config.languageCards.extendedHint">Adds ~100 rare, ancient, and regional languages (AI translation only)</span>
+                            <span class="qs-extended-toggle-hint" data-i18n="config.languageCards.extendedHint"
+                                >Adds ~100 rare, ancient, and regional languages (AI translation only)</span
+                            >
                         </label>
                     </div>
 
                     <!-- Learn language grid -->
                     <div class="qs-lang-grid" id="qsLearnLangGrid">
-                        <div class="qs-lang-loading" data-i18n="config.quickSetup.step4.loading">Loading languages...</div>
+                        <div class="qs-lang-loading" data-i18n="config.quickSetup.step4.loading">
+                            Loading languages...
+                        </div>
                     </div>
                 </div>
             </div>
@@ -393,7 +618,9 @@
                 <div class="qs-step-content">
                     <div class="qs-step-header">
                         <h2 class="qs-step-title" data-i18n="config.quickSetup.step7.title">You're All Set! 🎉</h2>
-                        <p class="qs-step-subtitle" data-i18n="config.quickSetup.step7.subtitle">Here's a summary of your configuration</p>
+                        <p class="qs-step-subtitle" data-i18n="config.quickSetup.step7.subtitle">
+                            Here's a summary of your configuration
+                        </p>
                     </div>
 
                     <div class="qs-summary" id="qsSummary">
@@ -403,10 +630,12 @@
                     <div class="qs-install-section">
                         <div class="qs-install-status" id="qsInstallStatus"></div>
 
-                        <div class="qs-install-url-box" id="qsInstallUrlBox" style="display: none;">
-                            <label class="qs-label" data-i18n="config.quickSetup.step7.installUrlLabel">Install URL</label>
+                        <div class="qs-install-url-box" id="qsInstallUrlBox" style="display: none">
+                            <label class="qs-label" data-i18n="config.quickSetup.step7.installUrlLabel"
+                                >Install URL</label
+                            >
                             <div class="qs-url-row">
-                                <input type="text" id="qsInstallUrlDisplay" class="qs-input qs-url-input" readonly>
+                                <input type="text" id="qsInstallUrlDisplay" class="qs-input qs-url-input" readonly />
                                 <button type="button" class="qs-btn-copy" id="qsCopyUrlBtn" title="Copy URL">📋</button>
                             </div>
                         </div>
@@ -416,19 +645,23 @@
                                 <span class="qs-btn-icon">🚀</span>
                                 <span data-i18n="config.quickSetup.step7.saveInstall">Save & Install on Stremio</span>
                             </button>
-                            <button type="button" class="qs-btn qs-btn-secondary" id="qsCopyBtn" style="display: none;">
+                            <button type="button" class="qs-btn qs-btn-secondary" id="qsCopyBtn" style="display: none">
                                 <span class="qs-btn-icon">📋</span>
                                 <span data-i18n="config.quickSetup.step7.copyInstallUrl">Copy Install URL</span>
                             </button>
                         </div>
 
-                        <button type="button" class="qs-btn-advanced" id="qsGoAdvanced" data-i18n="config.quickSetup.step7.openAdvanced">
+                        <button
+                            type="button"
+                            class="qs-btn-advanced"
+                            id="qsGoAdvanced"
+                            data-i18n="config.quickSetup.step7.openAdvanced"
+                        >
                             ⚙️ Open Advanced Settings
                         </button>
                     </div>
                 </div>
             </div>
-
         </div>
 
         <!-- Navigation Footer -->
@@ -448,32 +681,70 @@
         <div class="qs-modal-card" role="dialog" aria-modal="true" aria-labelledby="qsInstructionsTitle">
             <div class="qs-modal-card-header">
                 <div class="qs-modal-card-heading">
-                    <div class="qs-modal-eyebrow" data-i18n="config.quickSetup.instructions.eyebrow">Quick Setup guide</div>
-                    <h3 class="qs-modal-title" id="qsInstructionsTitle" data-i18n="config.quickSetup.instructions.title">What SubFaber does</h3>
+                    <div class="qs-modal-eyebrow" data-i18n="config.quickSetup.instructions.eyebrow">
+                        Quick Setup guide
+                    </div>
+                    <h3
+                        class="qs-modal-title"
+                        id="qsInstructionsTitle"
+                        data-i18n="config.quickSetup.instructions.title"
+                    >
+                        What SubFaber does
+                    </h3>
                 </div>
-                <button type="button" class="qs-modal-close" id="qsCloseInstructionsBtn"
-                    title="Close instructions" aria-label="Close instructions"
+                <button
+                    type="button"
+                    class="qs-modal-close"
+                    id="qsCloseInstructionsBtn"
+                    title="Close instructions"
+                    aria-label="Close instructions"
                     data-i18n-title="config.quickSetup.instructions.closeAria"
-                    data-i18n-aria-label="config.quickSetup.instructions.closeAria">&times;</button>
+                    data-i18n-aria-label="config.quickSetup.instructions.closeAria"
+                >
+                    &times;
+                </button>
             </div>
             <div class="qs-modal-card-body">
                 <div class="qs-info-card qs-info-card-primary">
                     <ol class="qs-instructions-list">
-                        <li data-i18n="config.quickSetup.instructions.item1" data-i18n-attr="innerHTML">Fetches and shows all <strong>Source</strong> and <strong>Target</strong> language subtitles from subtitle sources.</li>
-                        <li data-i18n="config.quickSetup.instructions.item2" data-i18n-attr="innerHTML">Creates <strong>"Make [Target Language]"</strong> translation lists inside Stremio's subtitles list.</li>
-                        <li data-i18n="config.quickSetup.instructions.item3" data-i18n-attr="innerHTML"><strong>All "Make" translation lists keep the same order as the selected Source language subtitles list.</strong></li>
+                        <li data-i18n="config.quickSetup.instructions.item1" data-i18n-attr="innerHTML">
+                            Fetches and shows all <strong>Source</strong> and <strong>Target</strong> language subtitles
+                            from subtitle sources.
+                        </li>
+                        <li data-i18n="config.quickSetup.instructions.item2" data-i18n-attr="innerHTML">
+                            Creates <strong>"Make [Target Language]"</strong> translation lists inside Stremio's
+                            subtitles list.
+                        </li>
+                        <li data-i18n="config.quickSetup.instructions.item3" data-i18n-attr="innerHTML">
+                            <strong
+                                >All "Make" translation lists keep the same order as the selected Source language
+                                subtitles list.</strong
+                            >
+                        </li>
                     </ol>
                 </div>
 
                 <div class="qs-info-card">
                     <h4 data-i18n="config.quickSetup.instructions.clickTitle">How translation starts</h4>
-                    <p data-i18n="config.quickSetup.instructions.clickBody" data-i18n-attr="innerHTML">When you click a subtitle inside a <strong>"Make"</strong> translation list, SubFaber starts translating it from the selected source subtitle.<br>After 20-30 seconds, reload the same subtitle entry.<br>It should load <strong>translated</strong>.</p>
+                    <p data-i18n="config.quickSetup.instructions.clickBody" data-i18n-attr="innerHTML">
+                        When you click a subtitle inside a <strong>"Make"</strong> translation list, SubFaber starts
+                        translating it from the selected source subtitle.<br />After 20-30 seconds, reload the same
+                        subtitle entry.<br />It should load <strong>translated</strong>.
+                    </p>
                 </div>
 
                 <div class="qs-info-card qs-info-card-warm">
                     <h4 data-i18n="config.quickSetup.instructions.sourceTitle">Only 1 source language recommended</h4>
-                    <p data-i18n="config.quickSetup.instructions.sourceBody" data-i18n-attr="innerHTML">When <strong>"Make"</strong> translation lists are created, they follow the same subtitle order as the source language.<br>That lets you test the source subtitles for sync first, then choose the matching entry in the translation list instead of translating a source subtitle that is already out of sync.</p>
-                    <p class="qs-info-tip" data-i18n="config.quickSetup.instructions.tip" data-i18n-attr="innerHTML"><strong>Tip:</strong> Check for sync drift around the middle and end of the source subtitles before translating.</p>
+                    <p data-i18n="config.quickSetup.instructions.sourceBody" data-i18n-attr="innerHTML">
+                        When <strong>"Make"</strong> translation lists are created, they follow the same subtitle order
+                        as the source language.<br />That lets you test the source subtitles for sync first, then choose
+                        the matching entry in the translation list instead of translating a source subtitle that is
+                        already out of sync.
+                    </p>
+                    <p class="qs-info-tip" data-i18n="config.quickSetup.instructions.tip" data-i18n-attr="innerHTML">
+                        <strong>Tip:</strong> Check for sync drift around the middle and end of the source subtitles
+                        before translating.
+                    </p>
                 </div>
             </div>
             <div class="qs-modal-card-footer">

@@ -2,12 +2,19 @@
 
 All notable changes to this project will be documented in this file.
 
+## SubMaker v3.7.6 (2026-10-02) — Frontend audit corrections
+
+- Corrected the flexbox explanation: `display: none` elements are removed from flex layout and do not create `gap`; the old phantom-gap cancellation selectors and related comments were removed.
+- Scoped the 40px Configuration rhythm to `.app-page[data-page="configuration"]` instead of imposing it on every virtual page child.
+- Kept `#installUrlBox` state semantic with `hidden` and `aria-hidden` during both reveal and clear flows, and hardened URL-box sizing for narrow viewports.
+- Consolidated reset-bar layout responsibility by keeping its base reset in `configure.css` and removing the redundant app-shell margin overrides.
+
 ## SubMaker v3.7.5 (2026-10-02) — Fix: Spacing Install URL box simetri 24px atas dan bawah
 
 **Visual seimbang 100% — jarak atas dan bawah kad URL kini seragam:**
 
 - **Masalah:** Jarak Butang → Kad URL cuma 12px (tersepit) manakala Kad URL → Kad Reset 52px (parent gap 12px + margin-top 40px reset bar) — UI nampak senget.
-- **Fix simetri 24px:** `.install-url-box` diberi `margin: 12px 0 !important` — parent flex gap 12px + margin 12px = **24px visual** pada kedua-dua sisi. `.reset-bar` `margin-top: 0 !important` menghapuskan 40px lama yang buat jarak bawah 52px.
+- **Fix simetri 24px:** `.install-url-box` diberi `margin: 12px 0 !important` — parent flex gap 12px + margin 12px = **24px visual** pada kedua-dua sisi. Reset bar menggunakan margin asas `0`, jadi tiada margin-top 40px tambahan.
 - **Fail diubah:** `public/css/app-shell.css`, `package.json` (3.7.5).
 - **Ujian:** `npm test` — **287 PASS / 0 FAIL**.
 
@@ -18,7 +25,7 @@ All notable changes to this project will be documented in this file.
 - **Root cause:** Kotak Install URL (`#installUrlBox`) tersangkut di dalam `.app-page[data-page="toolbox"]` — page yang `hidden` secara default. Markup dan JS (`classList.add('show')` dalam `config.js`) kekal wujud dan berfungsi, tapi parent page Toolbox tak pernah visible bila user save dari Configuration — jadi kotak tak nampak walau class `.show` ditambah.
 - **Markup dipindah:** `#installUrlBox` kini duduk dalam `.app-config-actions` di Configuration page — tepat antara button 3 beradik (`.btn-group`) dengan kad Reset (`.reset-bar`), ikut susunan zaman SubMaker asal.
 - **Styling Rootsys:** Kotak input URL diberikan gaya kad bersih — background putih `var(--surface)`, border `1px solid var(--border)`, border-radius 12px, padding `1rem 1.25rem`, input monospace (`JetBrains Mono`) dengan focus ring lembut. Border 2px `var(--primary)` lama yang kasar digantikan dengan gaya hairline yang konsisten dengan kad lain.
-- **Spacing One World:** Kotak ikut parent flex gap 12px dari 3 beradik (satu family, rapat); Reset bar kekal zon 40px di bawahnya — kotak tak bertindih dengan kad Reset. Tiada margin sendiri (`.app-config-actions .install-url-box { margin: 0; }`).
+- **Spacing One World:** Kotak menggunakan parent flex gap 12px dan margin 12px pada kedua-dua sisi untuk menghasilkan **24px visual**; Reset bar tiada margin-top tambahan.
 - **JS tak berubah:** `getElementById('installUrlBox')` / `getElementById('installUrlDisplay')` guna ID unik — lokasi baru tak jejas selector. `clearActiveInstallState()` masih buang `.show` bila reset.
 - **Fail diubah:** `public/partials/main.html` (pindah markup), `public/css/configure.css` (styling Rootsys), `public/css/app-shell.css` (margin rule), `package.json` (3.7.4).
 - **Ujian:** `npm test` — **287 PASS / 0 FAIL**.
@@ -27,13 +34,13 @@ All notable changes to this project will be documented in this file.
 
 **Akhirnya — satu dunia, satu irama. Semua elemen belah kanan kongsi gap 40px yang sama:**
 
-- **One World spacing:** `.app-page` kini flex column dengan `gap: 40px` seragam untuk SEMUA children — Quick Setup, No Translation, API Keys, Languages, Settings, hidden cards, dan config actions. Tiada lagi margin per-section yang bertindih; satu gap mengatur semua.
-- **Phantom gap cancellation:** Elemen `display:none` masih dikira flex item — page gap render antara mereka dan jiran. Rules `[style*="display: none"] + .app-config-actions` dengan `margin-top: 0 / -40px / -80px` membatalkan phantom gap supaya 3 beradik sentiasa 40px di bawah card VISIBLE terakhir.
+- **One World spacing:** `.app-page` menggunakan flex column; Configuration menggunakan `gap: 40px` untuk rhythm section tanpa mengenakan kontrak itu pada virtual page lain atau future children yang tidak berkaitan.
+- **Correction:** `display:none` tidak dikira sebagai flex item dan tidak menghasilkan gap. Sebarang spacing tambahan datang daripada margin/padding elemen yang visible atau struktur layout lain, bukan hidden flex items.
 - **`.btn-group` margin-top fix (PUNCA TERAKHIR):** `configure.css` line 2683 `margin-top: 1.25rem` (20px) pada `.btn-group` diwarisi oleh first child `.app-config-actions` — menyebabkan jarak Settings → 3 beradik jadi 60px bukan 40px. Override `margin-top: 0` dalam `app-shell.css` menyelesaikan masalah ini.
-- **Duplicate rules purge:** Dua set lengkap rules `.app-config-actions` wujud dalam `app-shell.css` — Set 1 (dead code) dibuang, Set 2 diperbetulkan dengan nilai phantom margin yang betul (negatif, bukan positif).
+- **Duplicate rules purge:** Dua set lengkap rules `.app-config-actions` wujud dalam `app-shell.css` — Set 1 (dead code) dibuang; hidden-flex-item compensation tidak diperlukan.
 - **Dead code cleanup:** `devSettingsCard` orphan element (tiada JS reference) dibuang dari `main.html`.
-- **Reset bar rhythm:** `.app-config-actions .reset-bar { margin: 40px 0 0 0; }` — jarak 3 beradik → Reset sama besar dengan jarak antara section (40px).
-- **Fail diubah:** `public/css/app-shell.css` (One World gap, phantom cancellation, `.btn-group` override), `public/partials/main.html` (devSettingsCard dibuang), `public/css/configure.css` (sumber `.btn-group` margin-top dikenalpasti).
+- **Reset bar rhythm:** Reset bar menggunakan margin asas `0`; parent action gap dan margin URL box yang eksplisit mengawal rhythm tanpa cascade override tambahan.
+- **Fail diubah:** `public/css/app-shell.css` (Configuration gap dan `.btn-group` override), `public/partials/main.html` (devSettingsCard dibuang), `public/css/configure.css` (sumber `.btn-group` margin-top dikenalpasti).
 - **Ujian:** `npm test` — **287 PASS / 0 FAIL**.
 
 ## SubMaker v3.5.1–v3.6.2 (2026-10-02) — Spacing Saga — Iterasi spacing Configuration page
@@ -48,8 +55,8 @@ All notable changes to this project will be documented in this file.
 - **v3.5.6 Duplicate selector:** Buang duplicate `.reset-bar` yang block `margin-top`.
 - **v3.5.7 Family-spacing:** 3 beradik jadi sebahagian family spacing yang seragam.
 - **v3.5.8 Family-rhythm:** `margin-bottom: 20px` pada section, spacing 40px seragam.
-- **v3.5.9 Phantom-gap:** 3 beradik dipindah sebelum hidden cards — elak phantom gap.
-- **v3.6.0 Phantom-collapse:** 3 beradik kekal di hujung page + negative margin untuk cancel phantom.
+- **v3.5.9 Layout cleanup:** 3 beradik dipindah untuk memastikan susunan DOM dan spacing visible lebih mudah difahami.
+- **v3.6.0 Layout cleanup:** 3 beradik kekal di hujung page; negative-margin compensation bukan lagi sebahagian daripada layout contract.
 - **v3.6.1 Reset-gap:** 3 beradik → Reset 40px — destructive action dapat ruang sendiri.
 - **v3.6.2 Spacing-cleanup:** Buang margin bertindih, 40px seragam untuk semua.
 - **Fail diubah:** `public/css/app-shell.css`, `public/partials/main.html`.

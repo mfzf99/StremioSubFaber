@@ -29,15 +29,15 @@ const SUBFABER_PROMPT_BOUNDARY = '<<<SUBFABER_SYSTEM_USER_BOUNDARY>>>';
  * @returns {{system:string, user:string}|null} null when not structured.
  */
 function splitStructuredPrompt(prompt) {
-  const str = String(prompt || '');
-  const idx = str.indexOf(SUBFABER_PROMPT_BOUNDARY);
-  if (idx === -1) return null;
-  return {
-    system: str.slice(0, idx).replace(/\s+$/, ''),
-    // Preserve the trailing anchor exactly (do NOT trim the end — the prefill
-    // anchor `<s id="N">` must survive verbatim for the parser's scrubber).
-    user: str.slice(idx + SUBFABER_PROMPT_BOUNDARY.length).replace(/^\s+/, '')
-  };
+    const str = String(prompt || '');
+    const idx = str.indexOf(SUBFABER_PROMPT_BOUNDARY);
+    if (idx === -1) return null;
+    return {
+        system: str.slice(0, idx).replace(/\s+$/, ''),
+        // Preserve the trailing anchor exactly (do NOT trim the end — the prefill
+        // anchor `<s id="N">` must survive verbatim for the parser's scrubber).
+        user: str.slice(idx + SUBFABER_PROMPT_BOUNDARY.length).replace(/^\s+/, '')
+    };
 }
 
 /**
@@ -47,15 +47,19 @@ function splitStructuredPrompt(prompt) {
  * @returns {string}
  */
 function stripStructuredBoundary(prompt) {
-  const str = String(prompt || '');
-  if (!str.includes(SUBFABER_PROMPT_BOUNDARY)) return str;
-  // Join the two halves back with a blank line so a non-splitting provider
-  // still receives a coherent single prompt.
-  return str.split(SUBFABER_PROMPT_BOUNDARY).map(s => s.trim()).filter(Boolean).join('\n\n');
+    const str = String(prompt || '');
+    if (!str.includes(SUBFABER_PROMPT_BOUNDARY)) return str;
+    // Join the two halves back with a blank line so a non-splitting provider
+    // still receives a coherent single prompt.
+    return str
+        .split(SUBFABER_PROMPT_BOUNDARY)
+        .map((s) => s.trim())
+        .filter(Boolean)
+        .join('\n\n');
 }
 
 module.exports = {
-  SUBFABER_PROMPT_BOUNDARY,
-  splitStructuredPrompt,
-  stripStructuredBoundary
+    SUBFABER_PROMPT_BOUNDARY,
+    splitStructuredPrompt,
+    stripStructuredBoundary
 };

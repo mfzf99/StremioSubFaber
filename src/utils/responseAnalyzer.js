@@ -16,46 +16,60 @@ function analyzeResponseContent(buffer) {
     }
 
     // Check for common file signatures
-    const isZip = buffer.length >= 4 &&
-        buffer[0] === 0x50 && buffer[1] === 0x4B &&
-        buffer[2] === 0x03 && buffer[3] === 0x04;
+    const isZip =
+        buffer.length >= 4 && buffer[0] === 0x50 && buffer[1] === 0x4b && buffer[2] === 0x03 && buffer[3] === 0x04;
     if (isZip) return { type: 'zip', hint: 'Valid ZIP file', isRetryable: false };
 
     // Check for RAR archive - "Rar!" signature (52 61 72 21)
-    const isRar = buffer.length >= 7 &&
-        buffer[0] === 0x52 && buffer[1] === 0x61 &&
-        buffer[2] === 0x72 && buffer[3] === 0x21;
+    const isRar =
+        buffer.length >= 7 && buffer[0] === 0x52 && buffer[1] === 0x61 && buffer[2] === 0x72 && buffer[3] === 0x21;
     if (isRar) return { type: 'rar', hint: 'Valid RAR file', isRetryable: false };
 
     // Check for Gzip (compressed content) - 1f 8b
     // We can now decompress gzip content, so it's a valid archive type
-    const isGzip = buffer.length >= 2 && buffer[0] === 0x1F && buffer[1] === 0x8B;
+    const isGzip = buffer.length >= 2 && buffer[0] === 0x1f && buffer[1] === 0x8b;
     if (isGzip) return { type: 'gzip', hint: 'Gzip-compressed content', isRetryable: false };
 
     // Check for 7-Zip archive - 37 7A BC AF 27 1C
-    if (buffer.length >= 6 &&
-        buffer[0] === 0x37 && buffer[1] === 0x7A && buffer[2] === 0xBC &&
-        buffer[3] === 0xAF && buffer[4] === 0x27 && buffer[5] === 0x1C) {
+    if (
+        buffer.length >= 6 &&
+        buffer[0] === 0x37 &&
+        buffer[1] === 0x7a &&
+        buffer[2] === 0xbc &&
+        buffer[3] === 0xaf &&
+        buffer[4] === 0x27 &&
+        buffer[5] === 0x1c
+    ) {
         return { type: '7z', hint: 'Valid 7-Zip archive', isRetryable: false };
     }
 
     // Check for XZ compressed - FD 37 7A 58 5A 00
-    if (buffer.length >= 6 &&
-        buffer[0] === 0xFD && buffer[1] === 0x37 && buffer[2] === 0x7A &&
-        buffer[3] === 0x58 && buffer[4] === 0x5A && buffer[5] === 0x00) {
+    if (
+        buffer.length >= 6 &&
+        buffer[0] === 0xfd &&
+        buffer[1] === 0x37 &&
+        buffer[2] === 0x7a &&
+        buffer[3] === 0x58 &&
+        buffer[4] === 0x5a &&
+        buffer[5] === 0x00
+    ) {
         return { type: 'xz', hint: 'XZ-compressed content', isRetryable: false };
     }
 
     // Check for Bzip2 compressed - 42 5A 68 ("BZh")
-    if (buffer.length >= 3 &&
-        buffer[0] === 0x42 && buffer[1] === 0x5A && buffer[2] === 0x68) {
+    if (buffer.length >= 3 && buffer[0] === 0x42 && buffer[1] === 0x5a && buffer[2] === 0x68) {
         return { type: 'bz2', hint: 'Bzip2-compressed content', isRetryable: false };
     }
 
     // Check for Tar archive - 'ustar' at offset 257
-    if (buffer.length >= 263 &&
-        buffer[257] === 0x75 && buffer[258] === 0x73 && buffer[259] === 0x74 &&
-        buffer[260] === 0x61 && buffer[261] === 0x72) {
+    if (
+        buffer.length >= 263 &&
+        buffer[257] === 0x75 &&
+        buffer[258] === 0x73 &&
+        buffer[259] === 0x74 &&
+        buffer[260] === 0x61 &&
+        buffer[261] === 0x72
+    ) {
         return { type: 'tar', hint: 'Valid Tar archive', isRetryable: false };
     }
 
@@ -74,7 +88,12 @@ function analyzeResponseContent(buffer) {
         if (textContent.includes('cloudflare') || textContent.includes('cf-ray')) {
             return { type: 'html_cloudflare', hint: 'Cloudflare challenge/block page', isRetryable: true };
         }
-        if (textContent.includes('captcha') || textContent.includes('recaptcha') || textContent.includes('hcaptcha') || textContent.includes('challenge')) {
+        if (
+            textContent.includes('captcha') ||
+            textContent.includes('recaptcha') ||
+            textContent.includes('hcaptcha') ||
+            textContent.includes('challenge')
+        ) {
             return { type: 'html_captcha', hint: 'CAPTCHA challenge page', isRetryable: true };
         }
         if (textContent.includes('404') || textContent.includes('not found')) {
@@ -86,7 +105,11 @@ function analyzeResponseContent(buffer) {
         if (textContent.includes('503') || textContent.includes('service unavailable')) {
             return { type: 'html_503', hint: 'HTML 503 Service Unavailable page', isRetryable: true };
         }
-        if (textContent.includes('429') || textContent.includes('too many requests') || textContent.includes('rate limit')) {
+        if (
+            textContent.includes('429') ||
+            textContent.includes('too many requests') ||
+            textContent.includes('rate limit')
+        ) {
             return { type: 'html_429', hint: 'HTML 429 Rate Limit page', isRetryable: true };
         }
         return { type: 'html_error', hint: 'HTML page instead of subtitle file', isRetryable: true };
@@ -100,7 +123,11 @@ function analyzeResponseContent(buffer) {
             // Check for various API error patterns: explicit error/message fields, boolean false status, or string 'error' status
             if (json.error || json.message || json.status === false || json.status === 'error') {
                 const errorHint = json.error || json.message || 'Unknown error';
-                return { type: 'json_error', hint: `JSON error: ${String(errorHint).slice(0, 100)}`, isRetryable: true };
+                return {
+                    type: 'json_error',
+                    hint: `JSON error: ${String(errorHint).slice(0, 100)}`,
+                    isRetryable: true
+                };
             }
         } catch (_) {
             // Not valid JSON, might be truncated
@@ -130,7 +157,8 @@ function analyzeResponseContent(buffer) {
     // happens to contain words like "terror", "mirror", etc.
     // Also require either a short response (typical API error) or multiple error signals
     // to avoid misclassifying longer subtitle-like content that slipped past the format checks above.
-    const errorWordPattern = /\b(error|failed|denied|forbidden|unauthorized|not found|bad request|service unavailable|internal server)\b/;
+    const errorWordPattern =
+        /\b(error|failed|denied|forbidden|unauthorized|not found|bad request|service unavailable|internal server)\b/;
     const errorWordMatches = textContent.match(new RegExp(errorWordPattern.source, 'g'));
     const errorWordCount = errorWordMatches ? errorWordMatches.length : 0;
 
@@ -142,7 +170,11 @@ function analyzeResponseContent(buffer) {
 
         if (isShortResponse || startsWithError) {
             const matchedWords = [...new Set(errorWordMatches)].join(', ');
-            return { type: 'text_error', hint: `Text error message received (matched: ${matchedWords})`, isRetryable: true };
+            return {
+                type: 'text_error',
+                hint: `Text error message received (matched: ${matchedWords})`,
+                isRetryable: true
+            };
         }
     }
 
@@ -163,7 +195,10 @@ function analyzeResponseContent(buffer) {
  */
 function createInvalidResponseSubtitle(providerName, analysis, responseSize = 0) {
     const sizeInfo = responseSize > 0 ? ` (${responseSize} bytes)` : '';
-    const isSubDL = String(providerName || '').trim().toLowerCase() === 'subdl';
+    const isSubDL =
+        String(providerName || '')
+            .trim()
+            .toLowerCase() === 'subdl';
 
     let mainMessage = `${providerName} download failed: ${analysis.hint}${sizeInfo}`;
     let suggestion = analysis.isRetryable

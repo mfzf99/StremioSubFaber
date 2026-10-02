@@ -21,10 +21,7 @@
  */
 
 const fs = require('fs');
-const {
-  buildPreflightRawText,
-  sampleEntriesForPreflight
-} = require('./src/services/subfaberPreflight');
+const { buildPreflightRawText, sampleEntriesForPreflight } = require('./src/services/subfaberPreflight');
 const { getLanguagePack } = require('./src/services/prompts/languagePacks');
 
 const arg0 = process.argv[2] || '--synthetic';
@@ -32,33 +29,33 @@ const targetLanguage = process.argv[3] || 'may';
 const model = process.argv[4] || 'kimi-k3';
 
 function synthesizeEntries(count = 759) {
-  const samples = [
-    'I never thought it would come to this.',
-    'The solar panel shipment is delayed again.',
-    'Engineer Lin, please review the contract terms.',
-    'We cannot afford another supplier failure.',
-    'She looked at him without saying a word.',
-    'The quarterly targets are impossible to meet.',
-    'Grandfather always said hard work pays off.',
-    'Are you sure about the voltage specifications?',
-    'This partnership means everything to our company.',
-    'He walked away before she could explain.'
-  ];
-  const entries = [];
-  for (let i = 0; i < count; i++) {
-    entries.push({ id: i + 1, timecode: '00:00:00,000 --> 00:00:01,000', text: samples[i % samples.length] });
-  }
-  return entries;
+    const samples = [
+        'I never thought it would come to this.',
+        'The solar panel shipment is delayed again.',
+        'Engineer Lin, please review the contract terms.',
+        'We cannot afford another supplier failure.',
+        'She looked at him without saying a word.',
+        'The quarterly targets are impossible to meet.',
+        'Grandfather always said hard work pays off.',
+        'Are you sure about the voltage specifications?',
+        'This partnership means everything to our company.',
+        'He walked away before she could explain.'
+    ];
+    const entries = [];
+    for (let i = 0; i < count; i++) {
+        entries.push({ id: i + 1, timecode: '00:00:00,000 --> 00:00:01,000', text: samples[i % samples.length] });
+    }
+    return entries;
 }
 
 let entries;
 if (arg0 === '--synthetic') {
-  entries = synthesizeEntries(759);
-  console.error(`[probe-slim] Synthetic mode: ${entries.length} entries`);
+    entries = synthesizeEntries(759);
+    console.error(`[probe-slim] Synthetic mode: ${entries.length} entries`);
 } else {
-  const { parseSRT } = require('./src/utils/subtitle');
-  entries = parseSRT(fs.readFileSync(arg0, 'utf8'));
-  console.error(`[probe-slim] Parsed SRT "${arg0}": ${entries.length} entries`);
+    const { parseSRT } = require('./src/utils/subtitle');
+    entries = parseSRT(fs.readFileSync(arg0, 'utf8'));
+    console.error(`[probe-slim] Parsed SRT "${arg0}": ${entries.length} entries`);
 }
 
 const sampled = sampleEntriesForPreflight(entries);

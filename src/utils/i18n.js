@@ -6,14 +6,14 @@ const localeCache = new Map();
 const DEFAULT_LANG = 'en';
 
 function deepFreeze(obj) {
-  if (!obj || typeof obj !== 'object') return obj;
-  Object.getOwnPropertyNames(obj).forEach((key) => {
-    const value = obj[key];
-    if (value && typeof value === 'object') {
-      deepFreeze(value);
-    }
-  });
-  return Object.freeze(obj);
+    if (!obj || typeof obj !== 'object') return obj;
+    Object.getOwnPropertyNames(obj).forEach((key) => {
+        const value = obj[key];
+        if (value && typeof value === 'object') {
+            deepFreeze(value);
+        }
+    });
+    return Object.freeze(obj);
 }
 
 /**
@@ -23,40 +23,33 @@ function deepFreeze(obj) {
  * @returns {{ lang: string, messages: Object }}
  */
 function loadLocale(lang) {
-  const normalized = (lang || DEFAULT_LANG)
-    .toString()
-    .trim()
-    .toLowerCase()
-    .replace(/_/g, '-') || DEFAULT_LANG;
-  // Allow alphanumeric BCP-47 tags with dashes (reject anything else to keep paths safe)
-  const safeLang = /^[a-z0-9-]+$/i.test(normalized) ? normalized : DEFAULT_LANG;
+    const normalized = (lang || DEFAULT_LANG).toString().trim().toLowerCase().replace(/_/g, '-') || DEFAULT_LANG;
+    // Allow alphanumeric BCP-47 tags with dashes (reject anything else to keep paths safe)
+    const safeLang = /^[a-z0-9-]+$/i.test(normalized) ? normalized : DEFAULT_LANG;
 
-  if (localeCache.has(safeLang)) {
-    return localeCache.get(safeLang);
-  }
-
-  const localesDir = path.join(__dirname, '..', '..', 'locales');
-  const readLocale = (code) => {
-    const filePath = path.join(localesDir, `${code}.json`);
-    try {
-      const raw = fs.readFileSync(filePath, 'utf8');
-      return JSON.parse(raw);
-    } catch (_) {
-      return null;
+    if (localeCache.has(safeLang)) {
+        return localeCache.get(safeLang);
     }
-  };
 
-  const messages =
-    readLocale(safeLang) ||
-    (safeLang === 'pt-pt' ? readLocale('pt-br') : null) ||
-    readLocale(DEFAULT_LANG) ||
-    {};
-  const payload = { lang: messages.lang || safeLang, messages: messages.messages || {} };
+    const localesDir = path.join(__dirname, '..', '..', 'locales');
+    const readLocale = (code) => {
+        const filePath = path.join(localesDir, `${code}.json`);
+        try {
+            const raw = fs.readFileSync(filePath, 'utf8');
+            return JSON.parse(raw);
+        } catch (_) {
+            return null;
+        }
+    };
 
-  // Freeze to prevent accidental cross-request mutation of cached locale objects
-  const frozen = deepFreeze(payload);
-  localeCache.set(safeLang, frozen);
-  return frozen;
+    const messages =
+        readLocale(safeLang) || (safeLang === 'pt-pt' ? readLocale('pt-br') : null) || readLocale(DEFAULT_LANG) || {};
+    const payload = { lang: messages.lang || safeLang, messages: messages.messages || {} };
+
+    // Freeze to prevent accidental cross-request mutation of cached locale objects
+    const frozen = deepFreeze(payload);
+    localeCache.set(safeLang, frozen);
+    return frozen;
 }
 
 /**
@@ -65,35 +58,37 @@ function loadLocale(lang) {
  * @returns {(key: string, vars?: Object, fallback?: string) => string}
  */
 function getTranslator(lang) {
-  const { messages } = loadLocale(lang);
-  const enMessages = loadLocale(DEFAULT_LANG).messages || {};
+    const { messages } = loadLocale(lang);
+    const enMessages = loadLocale(DEFAULT_LANG).messages || {};
 
-  const interpolate = (tpl, vars = {}) => {
-    if (!tpl || typeof tpl !== 'string') return tpl;
-    return tpl.replace(/\{(\w+)\}/g, (match, key) => {
-      return Object.prototype.hasOwnProperty.call(vars, key) ? String(vars[key]) : match;
-    }).replace(/\\n/g, '\n');
-  };
-
-  return function t(key, vars = {}, fallback = '') {
-    if (!key) return typeof fallback === 'string' && fallback ? fallback : key;
-
-    const lookup = (table) => {
-      const parts = key.split('.');
-      let current = table;
-      for (const part of parts) {
-        if (current && typeof current === 'object' && part in current) {
-          current = current[part];
-        } else {
-          return null;
-        }
-      }
-      return typeof current === 'string' ? current : null;
+    const interpolate = (tpl, vars = {}) => {
+        if (!tpl || typeof tpl !== 'string') return tpl;
+        return tpl
+            .replace(/\{(\w+)\}/g, (match, key) => {
+                return Object.prototype.hasOwnProperty.call(vars, key) ? String(vars[key]) : match;
+            })
+            .replace(/\\n/g, '\n');
     };
 
-    const value = lookup(messages) || lookup(enMessages) || fallback || key;
-    return interpolate(value, vars);
-  };
+    return function t(key, vars = {}, fallback = '') {
+        if (!key) return typeof fallback === 'string' && fallback ? fallback : key;
+
+        const lookup = (table) => {
+            const parts = key.split('.');
+            let current = table;
+            for (const part of parts) {
+                if (current && typeof current === 'object' && part in current) {
+                    current = current[part];
+                } else {
+                    return null;
+                }
+            }
+            return typeof current === 'string' ? current : null;
+        };
+
+        const value = lookup(messages) || lookup(enMessages) || fallback || key;
+        return interpolate(value, vars);
+    };
 }
 
 /**
@@ -102,9 +97,9 @@ function getTranslator(lang) {
  * @returns {string}
  */
 function buildClientBootstrap(localePayload) {
-  const safePayload = localePayload || loadLocale(DEFAULT_LANG);
-  const json = JSON.stringify(safePayload);
-  return `
+    const safePayload = localePayload || loadLocale(DEFAULT_LANG);
+    const json = JSON.stringify(safePayload);
+    return `
     <script>
       (function() {
         try {
@@ -153,8 +148,8 @@ function buildClientBootstrap(localePayload) {
 }
 
 module.exports = {
-  loadLocale,
-  getTranslator,
-  buildClientBootstrap,
-  DEFAULT_LANG,
+    loadLocale,
+    getTranslator,
+    buildClientBootstrap,
+    DEFAULT_LANG
 };

@@ -24,30 +24,33 @@ const MAX_CACHE_SIZE_BYTES = MAX_CACHE_SIZE_GB * 1024 * 1024 * 1024;
 // Storage adapter (lazy loaded)
 let storageAdapter = null;
 async function getStorageAdapter() {
-  if (!storageAdapter) {
-    storageAdapter = await StorageFactory.getStorageAdapter();
-  }
-  return storageAdapter;
+    if (!storageAdapter) {
+        storageAdapter = await StorageFactory.getStorageAdapter();
+    }
+    return storageAdapter;
 }
 
 /**
  * Initialize sync cache directory
  */
 async function initSyncCache() {
-  try {
-    await fs.mkdir(SYNC_CACHE_DIR, { recursive: true });
-    log.debug(() => ['[Sync Cache] Initialized at:', SYNC_CACHE_DIR]);
-  } catch (error) {
-    // Don't throw on permission errors — the actual sync cache operations use the
-    // storage adapter (which manages its own isolation-aware directories). This
-    // legacy directory is only needed for backwards compatibility.
-    if (error.code === 'EACCES' || error.code === 'EPERM') {
-      log.warn(() => ['[Sync Cache] Cannot create legacy cache directory (permission denied). Sync cache will use storage adapter paths instead:', SYNC_CACHE_DIR]);
-    } else {
-      log.error(() => ['[Sync Cache] Failed to initialize:', error.message]);
-      throw error;
+    try {
+        await fs.mkdir(SYNC_CACHE_DIR, { recursive: true });
+        log.debug(() => ['[Sync Cache] Initialized at:', SYNC_CACHE_DIR]);
+    } catch (error) {
+        // Don't throw on permission errors — the actual sync cache operations use the
+        // storage adapter (which manages its own isolation-aware directories). This
+        // legacy directory is only needed for backwards compatibility.
+        if (error.code === 'EACCES' || error.code === 'EPERM') {
+            log.warn(() => [
+                '[Sync Cache] Cannot create legacy cache directory (permission denied). Sync cache will use storage adapter paths instead:',
+                SYNC_CACHE_DIR
+            ]);
+        } else {
+            log.error(() => ['[Sync Cache] Failed to initialize:', error.message]);
+            throw error;
+        }
     }
-  }
 }
 
 /**
@@ -58,40 +61,40 @@ async function initSyncCache() {
  * @returns {string} Cache key
  */
 function generateSyncCacheKey(videoHash, languageCode, sourceSubId) {
-  // Format: videoHash_lang_sourceSubId
-  // Example: abc123def456_eng_subdl_12345
-  return `${videoHash}_${languageCode}_${sourceSubId}`;
+    // Format: videoHash_lang_sourceSubId
+    // Example: abc123def456_eng_subdl_12345
+    return `${videoHash}_${languageCode}_${sourceSubId}`;
 }
 
 function normalizeIndexSegment(value, fallback = 'unknown') {
-  const str = String(value || fallback);
-  let normalized = str.replace(/[\s\*\?\[\]\\]/g, '_');
-  if (normalized.length > 64) {
-    const hash = crypto.createHash('md5').update(str).digest('hex').slice(0, 8);
-    normalized = normalized.slice(0, 40) + '_' + hash;
-  }
-  return normalized || fallback;
+    const str = String(value || fallback);
+    let normalized = str.replace(/[\s\*\?\[\]\\]/g, '_');
+    if (normalized.length > 64) {
+        const hash = crypto.createHash('md5').update(str).digest('hex').slice(0, 8);
+        normalized = normalized.slice(0, 40) + '_' + hash;
+    }
+    return normalized || fallback;
 }
 
 function getIndexKey(videoHash, languageCode) {
-  const safeVideo = normalizeIndexSegment(videoHash);
-  const safeLang = normalizeIndexSegment(languageCode);
-  return `__index_sync__${safeVideo}__${safeLang}`;
+    const safeVideo = normalizeIndexSegment(videoHash);
+    const safeLang = normalizeIndexSegment(languageCode);
+    return `__index_sync__${safeVideo}__${safeLang}`;
 }
 
 async function loadIndex(adapter, videoHash, languageCode) {
-  const indexKey = getIndexKey(videoHash, languageCode);
-  const index = await adapter.get(indexKey, StorageAdapter.CACHE_TYPES.SYNC);
-  if (index && index.version === INDEX_VERSION && Array.isArray(index.keys)) {
-    return { indexKey, keys: index.keys, valid: true, present: true };
-  }
+    const indexKey = getIndexKey(videoHash, languageCode);
+    const index = await adapter.get(indexKey, StorageAdapter.CACHE_TYPES.SYNC);
+    if (index && index.version === INDEX_VERSION && Array.isArray(index.keys)) {
+        return { indexKey, keys: index.keys, valid: true, present: true };
+    }
 
-  return {
-    indexKey,
-    keys: [],
-    valid: false,
-    present: index !== null && index !== undefined
-  };
+    return {
+        indexKey,
+        keys: [],
+        valid: false,
+        present: index !== null && index !== undefined
+    };
 }
 
 /**
@@ -101,56 +104,56 @@ async function loadIndex(adapter, videoHash, languageCode) {
  * @returns {Promise<boolean>} True if index exists (has cached entries)
  */
 async function indexExists(videoHash, languageCode) {
-  try {
-    const adapter = await getStorageAdapter();
-    const indexKey = getIndexKey(videoHash, languageCode);
-    return await adapter.exists(indexKey, StorageAdapter.CACHE_TYPES.SYNC);
-  } catch (error) {
-    handleCaughtError(error, `[Sync Cache] indexExists check failed`, log);
-    return false; // Assume no index on error (will fallback to normal lookup)
-  }
+    try {
+        const adapter = await getStorageAdapter();
+        const indexKey = getIndexKey(videoHash, languageCode);
+        return await adapter.exists(indexKey, StorageAdapter.CACHE_TYPES.SYNC);
+    } catch (error) {
+        handleCaughtError(error, `[Sync Cache] indexExists check failed`, log);
+        return false; // Assume no index on error (will fallback to normal lookup)
+    }
 }
 
 async function persistIndex(adapter, indexKey, keys, previousKeys = []) {
-  const unique = Array.from(new Set(keys)).slice(-MAX_INDEX_ENTRIES);
-  const trimmed = Array.isArray(keys) ? keys.filter(k => k && !unique.includes(k)) : [];
-  const removed = Array.isArray(previousKeys) ? previousKeys.filter(k => k && !unique.includes(k)) : [];
-  const toDelete = Array.from(new Set([...trimmed, ...removed]));
+    const unique = Array.from(new Set(keys)).slice(-MAX_INDEX_ENTRIES);
+    const trimmed = Array.isArray(keys) ? keys.filter((k) => k && !unique.includes(k)) : [];
+    const removed = Array.isArray(previousKeys) ? previousKeys.filter((k) => k && !unique.includes(k)) : [];
+    const toDelete = Array.from(new Set([...trimmed, ...removed]));
 
-  await adapter.set(indexKey, { version: INDEX_VERSION, keys: unique }, StorageAdapter.CACHE_TYPES.SYNC);
+    await adapter.set(indexKey, { version: INDEX_VERSION, keys: unique }, StorageAdapter.CACHE_TYPES.SYNC);
 
-  if (toDelete.length) {
-    for (const key of toDelete) {
-      try {
-        await adapter.delete(key, StorageAdapter.CACHE_TYPES.SYNC);
-      } catch (error) {
-        handleCaughtError(error, `[Sync Cache] Failed to delete pruned key ${key}`, log);
-      }
+    if (toDelete.length) {
+        for (const key of toDelete) {
+            try {
+                await adapter.delete(key, StorageAdapter.CACHE_TYPES.SYNC);
+            } catch (error) {
+                handleCaughtError(error, `[Sync Cache] Failed to delete pruned key ${key}`, log);
+            }
+        }
     }
-  }
 
-  return unique;
+    return unique;
 }
 
 async function addToIndex(adapter, videoHash, languageCode, cacheKey) {
-  const { indexKey, keys: previousKeys } = await loadIndex(adapter, videoHash, languageCode);
-  if (previousKeys.includes(cacheKey)) {
-    return previousKeys;
-  }
-  const updated = [...previousKeys, cacheKey];
-  return persistIndex(adapter, indexKey, updated, previousKeys);
+    const { indexKey, keys: previousKeys } = await loadIndex(adapter, videoHash, languageCode);
+    if (previousKeys.includes(cacheKey)) {
+        return previousKeys;
+    }
+    const updated = [...previousKeys, cacheKey];
+    return persistIndex(adapter, indexKey, updated, previousKeys);
 }
 
 async function removeFromIndex(adapter, videoHash, languageCode, cacheKey) {
-  const { indexKey, keys: previousKeys } = await loadIndex(adapter, videoHash, languageCode);
-  if (!previousKeys.length) {
-    return;
-  }
-  const filtered = previousKeys.filter(k => k !== cacheKey);
-  if (filtered.length === previousKeys.length) {
-    return;
-  }
-  await persistIndex(adapter, indexKey, filtered, previousKeys);
+    const { indexKey, keys: previousKeys } = await loadIndex(adapter, videoHash, languageCode);
+    if (!previousKeys.length) {
+        return;
+    }
+    const filtered = previousKeys.filter((k) => k !== cacheKey);
+    if (filtered.length === previousKeys.length) {
+        return;
+    }
+    await persistIndex(adapter, indexKey, filtered, previousKeys);
 }
 
 /**
@@ -159,9 +162,9 @@ async function removeFromIndex(adapter, videoHash, languageCode, cacheKey) {
  * @returns {string} Full path to cache file
  */
 function getSyncCachePath(cacheKey) {
-  // Use first 2 chars of cache key as subdirectory to avoid too many files in one directory
-  const subdir = cacheKey.substring(0, 2);
-  return path.join(SYNC_CACHE_DIR, subdir, `${cacheKey}.json`);
+    // Use first 2 chars of cache key as subdirectory to avoid too many files in one directory
+    const subdir = cacheKey.substring(0, 2);
+    return path.join(SYNC_CACHE_DIR, subdir, `${cacheKey}.json`);
 }
 
 /**
@@ -176,38 +179,37 @@ function getSyncCachePath(cacheKey) {
  * @returns {Promise<void>}
  */
 async function saveSyncedSubtitle(videoHash, languageCode, sourceSubId, syncData) {
-  try {
-    const cacheKey = generateSyncCacheKey(videoHash, languageCode, sourceSubId);
-    const adapter = await getStorageAdapter();
-
-    // Prepare cache entry
-    const cacheEntry = {
-      videoHash,
-      languageCode,
-      sourceSubId,
-      content: syncData.content,
-      originalSubId: syncData.originalSubId,
-      metadata: syncData.metadata || {},
-      timestamp: Date.now(),
-      version: '1.0'
-    };
-
-    // Save to storage
-    await adapter.set(cacheKey, cacheEntry, StorageAdapter.CACHE_TYPES.SYNC);
-
-    // Maintain per-video/lang index to avoid SCAN on reads
     try {
-      await addToIndex(adapter, videoHash, languageCode, cacheKey);
+        const cacheKey = generateSyncCacheKey(videoHash, languageCode, sourceSubId);
+        const adapter = await getStorageAdapter();
+
+        // Prepare cache entry
+        const cacheEntry = {
+            videoHash,
+            languageCode,
+            sourceSubId,
+            content: syncData.content,
+            originalSubId: syncData.originalSubId,
+            metadata: syncData.metadata || {},
+            timestamp: Date.now(),
+            version: '1.0'
+        };
+
+        // Save to storage
+        await adapter.set(cacheKey, cacheEntry, StorageAdapter.CACHE_TYPES.SYNC);
+
+        // Maintain per-video/lang index to avoid SCAN on reads
+        try {
+            await addToIndex(adapter, videoHash, languageCode, cacheKey);
+        } catch (error) {
+            handleCaughtError(error, `[Sync Cache] Failed to update index for ${cacheKey}`, log);
+        }
+
+        log.debug(() => `[Sync Cache] Saved: ${cacheKey}`);
     } catch (error) {
-      handleCaughtError(error, `[Sync Cache] Failed to update index for ${cacheKey}`, log);
+        log.error(() => ['[Sync Cache] Failed to save:', error.message]);
+        throw error;
     }
-
-    log.debug(() => `[Sync Cache] Saved: ${cacheKey}`);
-
-  } catch (error) {
-    log.error(() => ['[Sync Cache] Failed to save:', error.message]);
-    throw error;
-  }
 }
 
 /**
@@ -219,56 +221,62 @@ async function saveSyncedSubtitle(videoHash, languageCode, sourceSubId, syncData
  * @returns {Promise<Array>} Array of synced subtitle entries
  */
 async function getSyncedSubtitles(videoHash, languageCode) {
-  try {
-    const adapter = await getStorageAdapter();
-    const { keys, valid, present } = await loadIndex(adapter, videoHash, languageCode);
+    try {
+        const adapter = await getStorageAdapter();
+        const { keys, valid, present } = await loadIndex(adapter, videoHash, languageCode);
 
-    if (!valid) {
-      if (present) {
-        log.warn(() => `[Sync Cache] Ignoring invalid index for ${normalizeIndexSegment(videoHash)}_${normalizeIndexSegment(languageCode)}`);
-      }
-      return [];
-    }
-
-    if (!keys.length) {
-      return [];
-    }
-
-    const results = [];
-
-    for (const cacheKey of keys) {
-      try {
-        const entry = await adapter.get(cacheKey, StorageAdapter.CACHE_TYPES.SYNC);
-        if (!entry) {
-          try { await removeFromIndex(adapter, videoHash, languageCode, cacheKey); } catch (_) { }
-          continue;
+        if (!valid) {
+            if (present) {
+                log.warn(
+                    () =>
+                        `[Sync Cache] Ignoring invalid index for ${normalizeIndexSegment(videoHash)}_${normalizeIndexSegment(languageCode)}`
+                );
+            }
+            return [];
         }
 
-        results.push({
-          cacheKey,
-          sourceSubId: entry.sourceSubId,
-          originalSubId: entry.originalSubId,
-          content: entry.content,
-          metadata: entry.metadata,
-          timestamp: entry.timestamp || Date.now()
-        });
-      } catch (error) {
-        handleCaughtError(error, `[Sync Cache] Failed to fetch entry for ${cacheKey}`, log);
-        // On failure, drop the key from index to avoid repeat hits
-        try { await removeFromIndex(adapter, videoHash, languageCode, cacheKey); } catch (_) { }
-      }
+        if (!keys.length) {
+            return [];
+        }
+
+        const results = [];
+
+        for (const cacheKey of keys) {
+            try {
+                const entry = await adapter.get(cacheKey, StorageAdapter.CACHE_TYPES.SYNC);
+                if (!entry) {
+                    try {
+                        await removeFromIndex(adapter, videoHash, languageCode, cacheKey);
+                    } catch (_) {}
+                    continue;
+                }
+
+                results.push({
+                    cacheKey,
+                    sourceSubId: entry.sourceSubId,
+                    originalSubId: entry.originalSubId,
+                    content: entry.content,
+                    metadata: entry.metadata,
+                    timestamp: entry.timestamp || Date.now()
+                });
+            } catch (error) {
+                handleCaughtError(error, `[Sync Cache] Failed to fetch entry for ${cacheKey}`, log);
+                // On failure, drop the key from index to avoid repeat hits
+                try {
+                    await removeFromIndex(adapter, videoHash, languageCode, cacheKey);
+                } catch (_) {}
+            }
+        }
+
+        // Sort by timestamp (newest first)
+        results.sort((a, b) => (b.timestamp || 0) - (a.timestamp || 0));
+
+        log.debug(() => `[Sync Cache] Found ${results.length} synced subtitles for ${videoHash}_${languageCode}`);
+        return results;
+    } catch (error) {
+        log.error(() => ['[Sync Cache] Failed to retrieve:', error.message]);
+        return [];
     }
-
-    // Sort by timestamp (newest first)
-    results.sort((a, b) => (b.timestamp || 0) - (a.timestamp || 0));
-
-    log.debug(() => `[Sync Cache] Found ${results.length} synced subtitles for ${videoHash}_${languageCode}`);
-    return results;
-
-  } catch (error) {
-    log.error(() => ['[Sync Cache] Failed to retrieve:', error.message]);
-    return [];
-  }
 }
 
 /**
@@ -278,24 +286,24 @@ async function getSyncedSubtitles(videoHash, languageCode) {
  * @returns {Promise<Array<string>>} - Array of language codes (normalized as stored)
  */
 async function listSyncedLanguages(videoHash) {
-  try {
-    const adapter = await getStorageAdapter();
-    const pattern = `${videoHash}_*_`;
-    const keys = await adapter.list(StorageAdapter.CACHE_TYPES.SYNC, pattern);
-    const langs = new Set();
+    try {
+        const adapter = await getStorageAdapter();
+        const pattern = `${videoHash}_*_`;
+        const keys = await adapter.list(StorageAdapter.CACHE_TYPES.SYNC, pattern);
+        const langs = new Set();
 
-    (keys || []).forEach((key) => {
-      const parts = (key || '').toString().split('_');
-      if (parts.length >= 3 && parts[0] === videoHash && parts[1]) {
-        langs.add(parts[1]);
-      }
-    });
+        (keys || []).forEach((key) => {
+            const parts = (key || '').toString().split('_');
+            if (parts.length >= 3 && parts[0] === videoHash && parts[1]) {
+                langs.add(parts[1]);
+            }
+        });
 
-    return Array.from(langs);
-  } catch (error) {
-    handleCaughtError(error, `[Sync Cache] Failed to list languages for hash ${videoHash}`, log);
-    return [];
-  }
+        return Array.from(langs);
+    } catch (error) {
+        handleCaughtError(error, `[Sync Cache] Failed to list languages for hash ${videoHash}`, log);
+        return [];
+    }
 }
 
 /**
@@ -306,29 +314,33 @@ async function listSyncedLanguages(videoHash) {
  * @returns {Promise<Object|null>} Synced subtitle entry or null
  */
 async function getSyncedSubtitle(videoHash, languageCode, sourceSubId) {
-  try {
-    const cacheKey = generateSyncCacheKey(videoHash, languageCode, sourceSubId);
-    const adapter = await getStorageAdapter();
+    try {
+        const cacheKey = generateSyncCacheKey(videoHash, languageCode, sourceSubId);
+        const adapter = await getStorageAdapter();
 
-    const entry = await adapter.get(cacheKey, StorageAdapter.CACHE_TYPES.SYNC);
+        const entry = await adapter.get(cacheKey, StorageAdapter.CACHE_TYPES.SYNC);
 
-    if (!entry) {
-      return null;
+        if (!entry) {
+            return null;
+        }
+
+        log.debug(() => `[Sync Cache] Retrieved: ${cacheKey}`);
+        return {
+            cacheKey,
+            sourceSubId: entry.sourceSubId,
+            originalSubId: entry.originalSubId,
+            content: entry.content,
+            metadata: entry.metadata,
+            timestamp: entry.timestamp
+        };
+    } catch (error) {
+        return handleCaughtError(
+            error,
+            `[Sync Cache] Failed to retrieve ${videoHash}_${languageCode}_${sourceSubId}`,
+            log,
+            { fallbackValue: null }
+        );
     }
-
-    log.debug(() => `[Sync Cache] Retrieved: ${cacheKey}`);
-    return {
-      cacheKey,
-      sourceSubId: entry.sourceSubId,
-      originalSubId: entry.originalSubId,
-      content: entry.content,
-      metadata: entry.metadata,
-      timestamp: entry.timestamp
-    };
-
-  } catch (error) {
-    return handleCaughtError(error, `[Sync Cache] Failed to retrieve ${videoHash}_${languageCode}_${sourceSubId}`, log, { fallbackValue: null });
-  }
 }
 
 /**
@@ -339,25 +351,24 @@ async function getSyncedSubtitle(videoHash, languageCode, sourceSubId) {
  * @returns {Promise<boolean>} True if deleted
  */
 async function deleteSyncedSubtitle(videoHash, languageCode, sourceSubId) {
-  try {
-    const cacheKey = generateSyncCacheKey(videoHash, languageCode, sourceSubId);
-    const adapter = await getStorageAdapter();
+    try {
+        const cacheKey = generateSyncCacheKey(videoHash, languageCode, sourceSubId);
+        const adapter = await getStorageAdapter();
 
-    const deleted = await adapter.delete(cacheKey, StorageAdapter.CACHE_TYPES.SYNC);
-    if (deleted) {
-      try {
-        await removeFromIndex(adapter, videoHash, languageCode, cacheKey);
-      } catch (error) {
-        handleCaughtError(error, `[Sync Cache] Failed to update index on delete for ${cacheKey}`, log);
-      }
-      log.debug(() => `[Sync Cache] Deleted: ${cacheKey}`);
+        const deleted = await adapter.delete(cacheKey, StorageAdapter.CACHE_TYPES.SYNC);
+        if (deleted) {
+            try {
+                await removeFromIndex(adapter, videoHash, languageCode, cacheKey);
+            } catch (error) {
+                handleCaughtError(error, `[Sync Cache] Failed to update index on delete for ${cacheKey}`, log);
+            }
+            log.debug(() => `[Sync Cache] Deleted: ${cacheKey}`);
+        }
+        return deleted;
+    } catch (error) {
+        log.error(() => ['[Sync Cache] Failed to delete:', error.message]);
+        return false;
     }
-    return deleted;
-
-  } catch (error) {
-    log.error(() => ['[Sync Cache] Failed to delete:', error.message]);
-    return false;
-  }
 }
 
 /**
@@ -365,23 +376,22 @@ async function deleteSyncedSubtitle(videoHash, languageCode, sourceSubId) {
  * @returns {Promise<Object>} Cache statistics
  */
 async function getCacheStats() {
-  try {
-    const adapter = await getStorageAdapter();
-    const totalSize = await adapter.size(StorageAdapter.CACHE_TYPES.SYNC);
-    const keys = await adapter.list(StorageAdapter.CACHE_TYPES.SYNC, '*');
-    const fileCount = Array.isArray(keys) ? keys.length : 0;
+    try {
+        const adapter = await getStorageAdapter();
+        const totalSize = await adapter.size(StorageAdapter.CACHE_TYPES.SYNC);
+        const keys = await adapter.list(StorageAdapter.CACHE_TYPES.SYNC, '*');
+        const fileCount = Array.isArray(keys) ? keys.length : 0;
 
-    return {
-      totalSize,
-      totalSizeMB: (totalSize / (1024 * 1024)).toFixed(2),
-      fileCount,
-      maxSizeGB: MAX_CACHE_SIZE_GB
-    };
-
-  } catch (error) {
-    log.error(() => ['[Sync Cache] Failed to get stats:', error.message]);
-    return { totalSize: 0, totalSizeMB: '0.00', fileCount: 0, maxSizeGB: MAX_CACHE_SIZE_GB };
-  }
+        return {
+            totalSize,
+            totalSizeMB: (totalSize / (1024 * 1024)).toFixed(2),
+            fileCount,
+            maxSizeGB: MAX_CACHE_SIZE_GB
+        };
+    } catch (error) {
+        log.error(() => ['[Sync Cache] Failed to get stats:', error.message]);
+        return { totalSize: 0, totalSizeMB: '0.00', fileCount: 0, maxSizeGB: MAX_CACHE_SIZE_GB };
+    }
 }
 
 /**
@@ -389,15 +399,17 @@ async function getCacheStats() {
  * @returns {Promise<void>}
  */
 async function enforceCacheSizeLimit() {
-  try {
-    const adapter = await getStorageAdapter();
-    const result = await adapter.cleanup(StorageAdapter.CACHE_TYPES.SYNC);
-    if (result && (result.deleted > 0 || result.bytesFreed > 0)) {
-      log.debug(() => `[Sync Cache] Cleanup: deleted ${result.deleted} entries, freed ${result.bytesFreed} bytes`);
+    try {
+        const adapter = await getStorageAdapter();
+        const result = await adapter.cleanup(StorageAdapter.CACHE_TYPES.SYNC);
+        if (result && (result.deleted > 0 || result.bytesFreed > 0)) {
+            log.debug(
+                () => `[Sync Cache] Cleanup: deleted ${result.deleted} entries, freed ${result.bytesFreed} bytes`
+            );
+        }
+    } catch (error) {
+        log.error(() => ['[Sync Cache] Failed to enforce size limit:', error.message]);
     }
-  } catch (error) {
-    log.error(() => ['[Sync Cache] Failed to enforce size limit:', error.message]);
-  }
 }
 
 /**
@@ -405,30 +417,34 @@ async function enforceCacheSizeLimit() {
  * @returns {Promise<void>}
  */
 async function clearSyncCache() {
-  try {
-    const adapter = await getStorageAdapter();
-    const keys = await adapter.list(StorageAdapter.CACHE_TYPES.SYNC, '*');
+    try {
+        const adapter = await getStorageAdapter();
+        const keys = await adapter.list(StorageAdapter.CACHE_TYPES.SYNC, '*');
 
-    for (const key of keys) {
-      try { await adapter.delete(key, StorageAdapter.CACHE_TYPES.SYNC); } catch (_) { /* ignore */ }
+        for (const key of keys) {
+            try {
+                await adapter.delete(key, StorageAdapter.CACHE_TYPES.SYNC);
+            } catch (_) {
+                /* ignore */
+            }
+        }
+
+        log.debug(() => '[Sync Cache] Cleared all cached synced subtitles');
+    } catch (error) {
+        log.error(() => ['[Sync Cache] Failed to clear cache:', error.message]);
+        throw error;
     }
-
-    log.debug(() => '[Sync Cache] Cleared all cached synced subtitles');
-  } catch (error) {
-    log.error(() => ['[Sync Cache] Failed to clear cache:', error.message]);
-    throw error;
-  }
 }
 
 module.exports = {
-  initSyncCache,
-  generateSyncCacheKey,
-  saveSyncedSubtitle,
-  getSyncedSubtitles,
-  indexExists,
-  listSyncedLanguages,
-  getSyncedSubtitle,
-  deleteSyncedSubtitle,
-  getCacheStats,
-  clearSyncCache
+    initSyncCache,
+    generateSyncCacheKey,
+    saveSyncedSubtitle,
+    getSyncedSubtitles,
+    indexExists,
+    listSyncedLanguages,
+    getSyncedSubtitle,
+    deleteSyncedSubtitle,
+    getCacheStats,
+    clearSyncCache
 };

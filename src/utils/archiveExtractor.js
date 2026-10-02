@@ -21,18 +21,17 @@ class ArchiveLimitError extends Error {
 }
 
 function resolveArchiveLimits(options = {}) {
-    const custom = options.archiveLimits && typeof options.archiveLimits === 'object'
-        ? options.archiveLimits
-        : {};
-    const resolvePositiveInteger = (value, fallback) => (
-        Number.isSafeInteger(value) && value > 0 ? value : fallback
-    );
+    const custom = options.archiveLimits && typeof options.archiveLimits === 'object' ? options.archiveLimits : {};
+    const resolvePositiveInteger = (value, fallback) => (Number.isSafeInteger(value) && value > 0 ? value : fallback);
 
     return {
         maxEntries: resolvePositiveInteger(custom.maxEntries, DEFAULT_ARCHIVE_LIMITS.maxEntries),
         maxEntryBytes: resolvePositiveInteger(custom.maxEntryBytes, DEFAULT_ARCHIVE_LIMITS.maxEntryBytes),
         maxTotalBytes: resolvePositiveInteger(custom.maxTotalBytes, DEFAULT_ARCHIVE_LIMITS.maxTotalBytes),
-        maxCompressionRatio: resolvePositiveInteger(custom.maxCompressionRatio, DEFAULT_ARCHIVE_LIMITS.maxCompressionRatio),
+        maxCompressionRatio: resolvePositiveInteger(
+            custom.maxCompressionRatio,
+            DEFAULT_ARCHIVE_LIMITS.maxCompressionRatio
+        ),
         minRatioBytes: resolvePositiveInteger(custom.minRatioBytes, DEFAULT_ARCHIVE_LIMITS.minRatioBytes),
         maxDepth: resolvePositiveInteger(custom.maxDepth, DEFAULT_ARCHIVE_LIMITS.maxDepth)
     };
@@ -98,13 +97,13 @@ function assertCompressionRatio(compressedBytes, expandedBytes, limits) {
 
 // Magic byte signatures for archive detection
 const ARCHIVE_SIGNATURES = {
-    ZIP: [0x50, 0x4B, 0x03, 0x04],  // PK..
-    RAR4: [0x52, 0x61, 0x72, 0x21, 0x1A, 0x07, 0x00],  // Rar!...  (RAR 4.x)
-    RAR5: [0x52, 0x61, 0x72, 0x21, 0x1A, 0x07, 0x01, 0x00],  // Rar!.... (RAR 5.x)
-    GZIP: [0x1F, 0x8B],  // Gzip compressed
-    SEVENZ: [0x37, 0x7A, 0xBC, 0xAF, 0x27, 0x1C],  // 7z archive
-    XZ: [0xFD, 0x37, 0x7A, 0x58, 0x5A, 0x00],  // XZ compressed
-    BZIP2: [0x42, 0x5A, 0x68],  // BZh (Bzip2)
+    ZIP: [0x50, 0x4b, 0x03, 0x04], // PK..
+    RAR4: [0x52, 0x61, 0x72, 0x21, 0x1a, 0x07, 0x00], // Rar!...  (RAR 4.x)
+    RAR5: [0x52, 0x61, 0x72, 0x21, 0x1a, 0x07, 0x01, 0x00], // Rar!.... (RAR 5.x)
+    GZIP: [0x1f, 0x8b], // Gzip compressed
+    SEVENZ: [0x37, 0x7a, 0xbc, 0xaf, 0x27, 0x1c], // 7z archive
+    XZ: [0xfd, 0x37, 0x7a, 0x58, 0x5a, 0x00], // XZ compressed
+    BZIP2: [0x42, 0x5a, 0x68] // BZh (Bzip2)
     // Tar has no fixed header magic at offset 0, but 'ustar' at offset 257
     // Brotli has no reliable magic bytes — detected by exclusion + trial decompression
 };
@@ -116,7 +115,9 @@ const ARCHIVE_SIGNATURES = {
  */
 function detectArchiveType(buffer) {
     if (!buffer || buffer.length < 4) {
-        log.debug(() => `[ArchiveExtractor] detectArchiveType: buffer is null or too small (${buffer?.length || 0} bytes)`);
+        log.debug(
+            () => `[ArchiveExtractor] detectArchiveType: buffer is null or too small (${buffer?.length || 0} bytes)`
+        );
         return null;
     }
 
@@ -125,53 +126,77 @@ function detectArchiveType(buffer) {
     log.debug(() => `[ArchiveExtractor] detectArchiveType: first 8 bytes: ${hexBytes}`);
 
     // Check ZIP signature (PK\x03\x04)
-    if (buffer[0] === 0x50 && buffer[1] === 0x4B && buffer[2] === 0x03 && buffer[3] === 0x04) {
+    if (buffer[0] === 0x50 && buffer[1] === 0x4b && buffer[2] === 0x03 && buffer[3] === 0x04) {
         log.debug(() => `[ArchiveExtractor] Detected ZIP archive (PK signature)`);
         return 'zip';
     }
 
     // Check RAR signatures (both RAR4 and RAR5)
-    if (buffer.length >= 7 &&
-        buffer[0] === 0x52 && buffer[1] === 0x61 && buffer[2] === 0x72 && buffer[3] === 0x21 &&
-        buffer[4] === 0x1A && buffer[5] === 0x07) {
+    if (
+        buffer.length >= 7 &&
+        buffer[0] === 0x52 &&
+        buffer[1] === 0x61 &&
+        buffer[2] === 0x72 &&
+        buffer[3] === 0x21 &&
+        buffer[4] === 0x1a &&
+        buffer[5] === 0x07
+    ) {
         const isRar5 = buffer.length >= 8 && buffer[6] === 0x01 && buffer[7] === 0x00;
-        log.debug(() => `[ArchiveExtractor] Detected RAR archive (Rar! signature, version: ${isRar5 ? 'RAR5' : 'RAR4'})`);
+        log.debug(
+            () => `[ArchiveExtractor] Detected RAR archive (Rar! signature, version: ${isRar5 ? 'RAR5' : 'RAR4'})`
+        );
         return 'rar';
     }
 
     // Check Gzip signature (1F 8B)
-    if (buffer.length >= 2 && buffer[0] === 0x1F && buffer[1] === 0x8B) {
+    if (buffer.length >= 2 && buffer[0] === 0x1f && buffer[1] === 0x8b) {
         log.debug(() => `[ArchiveExtractor] Detected Gzip compressed content`);
         return 'gzip';
     }
 
     // Check 7z signature (37 7A BC AF 27 1C)
-    if (buffer.length >= 6 &&
-        buffer[0] === 0x37 && buffer[1] === 0x7A && buffer[2] === 0xBC &&
-        buffer[3] === 0xAF && buffer[4] === 0x27 && buffer[5] === 0x1C) {
+    if (
+        buffer.length >= 6 &&
+        buffer[0] === 0x37 &&
+        buffer[1] === 0x7a &&
+        buffer[2] === 0xbc &&
+        buffer[3] === 0xaf &&
+        buffer[4] === 0x27 &&
+        buffer[5] === 0x1c
+    ) {
         log.debug(() => `[ArchiveExtractor] Detected 7-Zip archive`);
         return '7z';
     }
 
     // Check XZ signature (FD 37 7A 58 5A 00)
-    if (buffer.length >= 6 &&
-        buffer[0] === 0xFD && buffer[1] === 0x37 && buffer[2] === 0x7A &&
-        buffer[3] === 0x58 && buffer[4] === 0x5A && buffer[5] === 0x00) {
+    if (
+        buffer.length >= 6 &&
+        buffer[0] === 0xfd &&
+        buffer[1] === 0x37 &&
+        buffer[2] === 0x7a &&
+        buffer[3] === 0x58 &&
+        buffer[4] === 0x5a &&
+        buffer[5] === 0x00
+    ) {
         log.debug(() => `[ArchiveExtractor] Detected XZ compressed content`);
         return 'xz';
     }
 
     // Check Bzip2 signature (42 5A 68) - "BZh"
-    if (buffer.length >= 3 &&
-        buffer[0] === 0x42 && buffer[1] === 0x5A && buffer[2] === 0x68) {
+    if (buffer.length >= 3 && buffer[0] === 0x42 && buffer[1] === 0x5a && buffer[2] === 0x68) {
         log.debug(() => `[ArchiveExtractor] Detected Bzip2 compressed content`);
         return 'bz2';
     }
 
     // Check Tar archive - 'ustar' at offset 257
-    if (buffer.length >= 263 &&
-        buffer[257] === 0x75 && buffer[258] === 0x73 && buffer[259] === 0x74 &&
-        buffer[260] === 0x61 && buffer[261] === 0x72) {
+    if (
+        buffer.length >= 263 &&
+        buffer[257] === 0x75 &&
+        buffer[258] === 0x73 &&
+        buffer[259] === 0x74 &&
+        buffer[260] === 0x61 &&
+        buffer[261] === 0x72
+    ) {
         log.debug(() => `[ArchiveExtractor] Detected Tar archive (ustar signature)`);
         return 'tar';
     }
@@ -211,11 +236,12 @@ Please pick another subtitle or provider.`;
 
 function createArchiveSafetyLimitSubtitle(error) {
     const reason = error?.reason || 'safe processing limit';
-    const detail = reason === 'entry count'
-        ? `The pack contains too many files (${error.actualBytes}; limit: ${error.limitBytes}).`
-        : reason.includes('compression ratio')
-            ? 'The pack expands far beyond its compressed size.'
-            : reason === 'recursion depth'
+    const detail =
+        reason === 'entry count'
+            ? `The pack contains too many files (${error.actualBytes}; limit: ${error.limitBytes}).`
+            : reason.includes('compression ratio')
+              ? 'The pack expands far beyond its compressed size.'
+              : reason === 'recursion depth'
                 ? `The pack contains too many nested compression layers (limit: ${error.limitBytes}).`
                 : 'The pack expands beyond the safe processing limit.';
 
@@ -243,10 +269,12 @@ function createEpisodeNotFoundSubtitle(episode, season, entries = []) {
 
         // Try to extract episode numbers from filenames for helpful message
         const foundEpisodes = (entries || [])
-            .map(filename => {
+            .map((filename) => {
                 // Match explicit episode labels (Episode 12, Ep12, Cap 12, OVA 3, etc.)
                 // Supports: episode, episodio, capitulo, cap, ep, e, ova, oad, x
-                const labeled = String(filename || '').match(/(?:episode|episodio|capitulo|cap|ep|e|ova|oad|x)\s*0*(\d{1,4})/i);
+                const labeled = String(filename || '').match(
+                    /(?:episode|episodio|capitulo|cap|ep|e|ova|oad|x)\s*0*(\d{1,4})/i
+                );
                 if (labeled && labeled[1]) return parseInt(labeled[1], 10);
 
                 // Fallback: any standalone 1-4 digit number not obviously a resolution/year
@@ -261,13 +289,14 @@ function createEpisodeNotFoundSubtitle(episode, season, entries = []) {
                 }
                 return null;
             })
-            .filter(ep => ep !== null && ep > 0 && ep < 4000)
+            .filter((ep) => ep !== null && ep > 0 && ep < 4000)
             .sort((a, b) => a - b);
 
         const uniqueEpisodes = [...new Set(foundEpisodes)];
-        const availableInfo = uniqueEpisodes.length > 0
-            ? `Pack contains ~${uniqueEpisodes.length} files, episodes ${uniqueEpisodes[0]}-${uniqueEpisodes[uniqueEpisodes.length - 1]}`
-            : 'No episode numbers detected in pack.';
+        const availableInfo =
+            uniqueEpisodes.length > 0
+                ? `Pack contains ~${uniqueEpisodes.length} files, episodes ${uniqueEpisodes[0]}-${uniqueEpisodes[uniqueEpisodes.length - 1]}`
+                : 'No episode numbers detected in pack.';
 
         const message = `1
 00:00:00,000 --> 04:00:00,000
@@ -335,17 +364,23 @@ async function extractRar(buffer, selectionOptions = {}, limits = DEFAULT_ARCHIV
 
         const list = extractor.getFileList();
         const fileHeaders = [...list.fileHeaders];
-        log.debug(() => `[ArchiveExtractor] extractRar: found ${fileHeaders.length} total entries (including directories)`);
+        log.debug(
+            () => `[ArchiveExtractor] extractRar: found ${fileHeaders.length} total entries (including directories)`
+        );
 
-        const nonDirectoryHeaders = fileHeaders.filter(h => !h.flags.directory);
-        assertArchiveMetadata(nonDirectoryHeaders.map(header => ({
-            expandedBytes: header.unpSize,
-            compressedBytes: header.packSize
-        })), buffer.length, limits);
+        const nonDirectoryHeaders = fileHeaders.filter((h) => !h.flags.directory);
+        assertArchiveMetadata(
+            nonDirectoryHeaders.map((header) => ({
+                expandedBytes: header.unpSize,
+                compressedBytes: header.packSize
+            })),
+            buffer.length,
+            limits
+        );
 
         const entries = nonDirectoryHeaders
-            .map(h => h.name)
-            .filter(name => {
+            .map((h) => h.name)
+            .filter((name) => {
                 // Reject entries with path traversal sequences or absolute paths
                 // Check for '..' as a path component, not just any '..' substring (avoids false positives for ellipses like "Cloudy...")
                 const normalized = name.replace(/\\/g, '/');
@@ -359,7 +394,10 @@ async function extractRar(buffer, selectionOptions = {}, limits = DEFAULT_ARCHIV
         log.debug(() => `[ArchiveExtractor] extractRar: ${entries.length} files (excluding directories)`);
 
         if (entries.length > 0) {
-            log.debug(() => `[ArchiveExtractor] extractRar: files in RAR: ${entries.slice(0, 10).join(', ')}${entries.length > 10 ? ` ... and ${entries.length - 10} more` : ''}`);
+            log.debug(
+                () =>
+                    `[ArchiveExtractor] extractRar: files in RAR: ${entries.slice(0, 10).join(', ')}${entries.length > 10 ? ` ... and ${entries.length - 10} more` : ''}`
+            );
         }
 
         const files = new Map();
@@ -455,7 +493,9 @@ async function decompressBzip2(buffer) {
         return Buffer.from(decompressed);
     } catch (err) {
         if (err.code === 'MODULE_NOT_FOUND') {
-            log.warn(() => `[ArchiveExtractor] decompressBzip2: seek-bzip not installed, Bzip2 decompression unavailable`);
+            log.warn(
+                () => `[ArchiveExtractor] decompressBzip2: seek-bzip not installed, Bzip2 decompression unavailable`
+            );
             throw new Error('Bzip2 decompression not available (seek-bzip not installed)');
         }
         log.error(() => [`[ArchiveExtractor] decompressBzip2: Bzip2 decompression failed:`, err.message]);
@@ -525,16 +565,17 @@ async function extract7z(buffer, limits = DEFAULT_ARCHIVE_LIMITS) {
                 throw new ArchiveLimitError('entry count', limits.maxEntries, entries.length);
             }
 
-            const declaredSize = normalizeArchiveSize(
-                entry.size ?? entry.uncompressedSize ?? entry.unpackedSize,
-                null
-            );
+            const declaredSize = normalizeArchiveSize(entry.size ?? entry.uncompressedSize ?? entry.unpackedSize, null);
             if (declaredSize !== null) {
                 if (declaredSize > limits.maxEntryBytes) {
                     throw new ArchiveLimitError('single entry bytes', limits.maxEntryBytes, declaredSize);
                 }
                 if (totalBytes + declaredSize > limits.maxTotalBytes) {
-                    throw new ArchiveLimitError('cumulative expanded bytes', limits.maxTotalBytes, totalBytes + declaredSize);
+                    throw new ArchiveLimitError(
+                        'cumulative expanded bytes',
+                        limits.maxTotalBytes,
+                        totalBytes + declaredSize
+                    );
                 }
             }
 
@@ -600,7 +641,13 @@ async function extractTar(buffer, limits = DEFAULT_ARCHIVE_LIMITS) {
                     return;
                 }
                 if (totalBytes + declaredSize > limits.maxTotalBytes) {
-                    extract.destroy(new ArchiveLimitError('cumulative expanded bytes', limits.maxTotalBytes, totalBytes + declaredSize));
+                    extract.destroy(
+                        new ArchiveLimitError(
+                            'cumulative expanded bytes',
+                            limits.maxTotalBytes,
+                            totalBytes + declaredSize
+                        )
+                    );
                     return;
                 }
 
@@ -622,7 +669,9 @@ async function extractTar(buffer, limits = DEFAULT_ARCHIVE_LIMITS) {
                         assertCompressionRatio(buffer.length, totalBytes, limits);
                         entries.push(name);
                         files.set(name, fileBuffer);
-                        log.debug(() => `[ArchiveExtractor] extractTar: extracted ${name} (${fileBuffer.length} bytes)`);
+                        log.debug(
+                            () => `[ArchiveExtractor] extractTar: extracted ${name} (${fileBuffer.length} bytes)`
+                        );
                         next();
                     } catch (err) {
                         extract.destroy(err);
@@ -668,13 +717,17 @@ async function extractZip(buffer, limits = DEFAULT_ARCHIVE_LIMITS) {
     try {
         const zip = await JSZip.loadAsync(buffer, { base64: false });
         const allEntries = Object.keys(zip.files);
-        const fileEntries = allEntries.filter(name => !zip.files[name].dir);
-        assertArchiveMetadata(fileEntries.map(name => ({
-            expandedBytes: zip.files[name]?._data?.uncompressedSize,
-            compressedBytes: zip.files[name]?._data?.compressedSize
-        })), buffer.length, limits);
+        const fileEntries = allEntries.filter((name) => !zip.files[name].dir);
+        assertArchiveMetadata(
+            fileEntries.map((name) => ({
+                expandedBytes: zip.files[name]?._data?.uncompressedSize,
+                compressedBytes: zip.files[name]?._data?.compressedSize
+            })),
+            buffer.length,
+            limits
+        );
 
-        const entries = allEntries.filter(name => {
+        const entries = allEntries.filter((name) => {
             if (zip.files[name].dir) return false;
             // Reject entries with path traversal sequences or absolute paths
             // Check for '..' as a path component, not just any '..' substring (avoids false positives for ellipses like "Cloudy...")
@@ -687,9 +740,15 @@ async function extractZip(buffer, limits = DEFAULT_ARCHIVE_LIMITS) {
             return true;
         });
 
-        log.debug(() => `[ArchiveExtractor] extractZip: ${allEntries.length} total entries, ${entries.length} files (excluding directories and unsafe entries)`);
+        log.debug(
+            () =>
+                `[ArchiveExtractor] extractZip: ${allEntries.length} total entries, ${entries.length} files (excluding directories and unsafe entries)`
+        );
         if (entries.length > 0) {
-            log.debug(() => `[ArchiveExtractor] extractZip: files in ZIP: ${entries.slice(0, 10).join(', ')}${entries.length > 10 ? ` ... and ${entries.length - 10} more` : ''}`);
+            log.debug(
+                () =>
+                    `[ArchiveExtractor] extractZip: files in ZIP: ${entries.slice(0, 10).join(', ')}${entries.length > 10 ? ` ... and ${entries.length - 10} more` : ''}`
+            );
         }
 
         return { zip, entries };
@@ -700,7 +759,6 @@ async function extractZip(buffer, limits = DEFAULT_ARCHIVE_LIMITS) {
         throw err;
     }
 }
-
 
 /**
  * Helper function to find episode file in season pack (regular TV shows)
@@ -725,7 +783,7 @@ function findEpisodeFile(files, season, episode) {
 
     for (const filename of files) {
         const lowerName = filename.toLowerCase();
-        if (seasonEpisodePatterns.some(pattern => pattern.test(lowerName))) {
+        if (seasonEpisodePatterns.some((pattern) => pattern.test(lowerName))) {
             return filename;
         }
     }
@@ -741,7 +799,10 @@ function findEpisodeFile(files, season, episode) {
  */
 function findEpisodeFileAnime(files, episode) {
     const animeEpisodePatterns = [
-        new RegExp(`(?<=\\b|\\s|\\[|\\(|-|_)e(?:p(?:isode)?)?[\\s._-]*0*${episode}(?:v\\d+)?(?=\\b|\\s|\\]|\\)|\\.|-|_|$)`, 'i'),
+        new RegExp(
+            `(?<=\\b|\\s|\\[|\\(|-|_)e(?:p(?:isode)?)?[\\s._-]*0*${episode}(?:v\\d+)?(?=\\b|\\s|\\]|\\)|\\.|-|_|$)`,
+            'i'
+        ),
         new RegExp(`(?:^|[\\s\\[\\(\\-_.])0*${episode}(?:v\\d+)?(?=$|[\\s\\[\\]\\(\\)\\-_.])`, 'i'),
         new RegExp(`(?:^|[\\s\\[\\(\\-_])0*${episode}(?:v\\d+)?[a-z]{2,3}(?=\\.|[\\s\\[\\]\\(\\)\\-_.]|$)`, 'i'),
         new RegExp(`(?:episode|episodio|ep|cap(?:itulo)?)\\s*0*${episode}(?![0-9])`, 'i'),
@@ -773,7 +834,7 @@ function findEpisodeFileAnime(files, episode) {
             }
         }
 
-        if (animeEpisodePatterns.some(pattern => pattern.test(lowerName))) {
+        if (animeEpisodePatterns.some((pattern) => pattern.test(lowerName))) {
             return filename;
         }
     }
@@ -794,7 +855,10 @@ function findEpisodeFileAnime(files, episode) {
 function findSubtitleFile(entries, options = {}) {
     const { isSeasonPack, season, episode, skipAssConversion = false } = options;
 
-    log.debug(() => `[ArchiveExtractor] findSubtitleFile: searching ${entries.length} entries, isSeasonPack=${isSeasonPack}, season=${season}, episode=${episode}, preferAss=${skipAssConversion}`);
+    log.debug(
+        () =>
+            `[ArchiveExtractor] findSubtitleFile: searching ${entries.length} entries, isSeasonPack=${isSeasonPack}, season=${season}, episode=${episode}, preferAss=${skipAssConversion}`
+    );
 
     // Some providers ship valid SubRip files with a trailing transport/storage
     // suffix (for example `release.srt.txt`). Treat those as SRT without
@@ -803,16 +867,19 @@ function findSubtitleFile(entries, options = {}) {
 
     // Filter by extension type
     const srtFiles = entries.filter(isSrtFilename);
-    const assFiles = entries.filter(f => {
+    const assFiles = entries.filter((f) => {
         const lower = f.toLowerCase();
         return lower.endsWith('.ass') || lower.endsWith('.ssa');
     });
-    const altFiles = entries.filter(f => {
+    const altFiles = entries.filter((f) => {
         const lower = f.toLowerCase();
         return lower.endsWith('.vtt') || lower.endsWith('.ass') || lower.endsWith('.ssa') || lower.endsWith('.sub');
     });
 
-    log.debug(() => `[ArchiveExtractor] findSubtitleFile: found ${srtFiles.length} SRT files, ${assFiles.length} ASS/SSA files, ${altFiles.length} alternate format files`);
+    log.debug(
+        () =>
+            `[ArchiveExtractor] findSubtitleFile: found ${srtFiles.length} SRT files, ${assFiles.length} ASS/SSA files, ${altFiles.length} alternate format files`
+    );
 
     // When ASS passthrough is enabled, prefer ASS/SSA files; otherwise prefer SRT
     const primaryFiles = skipAssConversion ? assFiles : srtFiles;
@@ -821,7 +888,10 @@ function findSubtitleFile(entries, options = {}) {
     const secondaryLabel = skipAssConversion ? 'SRT' : 'alternate format';
 
     if (isSeasonPack && season && episode) {
-        log.debug(() => `[ArchiveExtractor] findSubtitleFile: searching for S${String(season).padStart(2, '0')}E${String(episode).padStart(2, '0')} in season pack`);
+        log.debug(
+            () =>
+                `[ArchiveExtractor] findSubtitleFile: searching for S${String(season).padStart(2, '0')}E${String(episode).padStart(2, '0')} in season pack`
+        );
 
         // Season pack: find specific episode
         // Try preferred format first with anime patterns, then TV patterns
@@ -850,7 +920,10 @@ function findSubtitleFile(entries, options = {}) {
             return { filename: target, isSrt: isSrtFilename(target) };
         }
 
-        log.warn(() => `[ArchiveExtractor] findSubtitleFile: episode not found in season pack. Available files: ${entries.join(', ')}`);
+        log.warn(
+            () =>
+                `[ArchiveExtractor] findSubtitleFile: episode not found in season pack. Available files: ${entries.join(', ')}`
+        );
         return { filename: null, isSrt: false };
     } else {
         // Not a season pack: find first subtitle file (prefer ASS/SSA when passthrough enabled)
@@ -909,11 +982,14 @@ async function convertSubtitleToVtt(content, filename, providerName, options = {
     const lower = filename.toLowerCase();
     const contentLength = content?.length || 0;
 
-    log.debug(() => `[${providerName}] convertSubtitleToVtt: converting ${filename} (${contentLength} chars, skipAss=${skipAssConversion})`);
+    log.debug(
+        () =>
+            `[${providerName}] convertSubtitleToVtt: converting ${filename} (${contentLength} chars, skipAss=${skipAssConversion})`
+    );
 
     // Strip UTF-8 BOM if present
     if (content && typeof content === 'string') {
-        const hadBom = content.charCodeAt(0) === 0xFEFF;
+        const hadBom = content.charCodeAt(0) === 0xfeff;
         content = content.replace(/^\uFEFF/, '');
         if (hadBom) log.debug(() => `[${providerName}] Stripped UTF-8 BOM from ${filename}`);
     }
@@ -921,7 +997,10 @@ async function convertSubtitleToVtt(content, filename, providerName, options = {
     // If skipAssConversion is enabled, return ASS/SSA files as-is with format info
     if (skipAssConversion && (lower.endsWith('.ass') || lower.endsWith('.ssa'))) {
         const format = lower.endsWith('.ass') ? 'ass' : 'ssa';
-        log.debug(() => `[${providerName}] ASS/SSA conversion disabled, returning original ${format.toUpperCase()}: ${filename}`);
+        log.debug(
+            () =>
+                `[${providerName}] ASS/SSA conversion disabled, returning original ${format.toUpperCase()}: ${filename}`
+        );
         return { content, format };
     }
 
@@ -942,7 +1021,10 @@ async function convertSubtitleToVtt(content, filename, providerName, options = {
                 const fps = 25; // Default PAL framerate
                 const converted = subsrt.convert(content, { to: 'vtt', from: 'sub', fps });
                 if (converted && typeof converted === 'string' && converted.trim().length > 0) {
-                    log.debug(() => `[${providerName}] Successfully converted MicroDVD .sub to VTT (fps=${fps}, ${converted.length} chars)`);
+                    log.debug(
+                        () =>
+                            `[${providerName}] Successfully converted MicroDVD .sub to VTT (fps=${fps}, ${converted.length} chars)`
+                    );
                     return converted;
                 }
                 log.warn(() => `[${providerName}] MicroDVD conversion returned empty result`);
@@ -969,7 +1051,10 @@ async function convertSubtitleToVtt(content, filename, providerName, options = {
             const format = lower.endsWith('.ass') ? 'ass' : 'ssa';
             const result = assConverter.convertASSToVTT(content, format);
             if (result.success) {
-                log.debug(() => `[${providerName}] Enhanced converter succeeded: ${filename} -> VTT (${result.content.length} chars)`);
+                log.debug(
+                    () =>
+                        `[${providerName}] Enhanced converter succeeded: ${filename} -> VTT (${result.content.length} chars)`
+                );
                 return result.content;
             }
             log.warn(() => `[${providerName}] Enhanced converter failed: ${result.error}, trying subsrt-ts fallback`);
@@ -985,7 +1070,9 @@ async function convertSubtitleToVtt(content, filename, providerName, options = {
         const subsrt = require('subsrt-ts');
         const assConverterMod = require('./assConverter');
         const isAss = lower.endsWith('.ass') || lower.endsWith('.ssa');
-        const preprocessed = isAss ? assConverterMod.preprocessASS(content, lower.endsWith('.ass') ? 'ass' : 'ssa') : content;
+        const preprocessed = isAss
+            ? assConverterMod.preprocessASS(content, lower.endsWith('.ass') ? 'ass' : 'ssa')
+            : content;
         let converted;
         if (lower.endsWith('.ass')) {
             converted = subsrt.convert(preprocessed, { to: 'vtt', from: 'ass' });
@@ -996,7 +1083,9 @@ async function convertSubtitleToVtt(content, filename, providerName, options = {
         }
 
         if (!converted || typeof converted !== 'string' || converted.trim().length === 0) {
-            log.debug(() => `[${providerName}] subsrt-ts returned empty, trying with sanitized content (removing null chars)`);
+            log.debug(
+                () => `[${providerName}] subsrt-ts returned empty, trying with sanitized content (removing null chars)`
+            );
             const sanitized = (preprocessed || '').replace(/\u0000/g, '');
             if (sanitized && sanitized !== preprocessed) {
                 if (lower.endsWith('.ass')) {
@@ -1013,14 +1102,23 @@ async function convertSubtitleToVtt(content, filename, providerName, options = {
             if (isAss) {
                 const postprocessed = assConverterMod.postprocessVTT(converted);
                 if (assConverterMod.validateVTT(postprocessed)) {
-                    log.debug(() => `[${providerName}] subsrt-ts conversion succeeded: ${filename} -> VTT (${postprocessed.length} chars)`);
+                    log.debug(
+                        () =>
+                            `[${providerName}] subsrt-ts conversion succeeded: ${filename} -> VTT (${postprocessed.length} chars)`
+                    );
                     return postprocessed;
                 }
 
                 const preview = postprocessed.trim().slice(0, 120).replace(/\s+/g, ' ');
-                log.warn(() => `[${providerName}] subsrt-ts conversion produced invalid VTT, rejecting result: ${preview || '<empty>'}`);
+                log.warn(
+                    () =>
+                        `[${providerName}] subsrt-ts conversion produced invalid VTT, rejecting result: ${preview || '<empty>'}`
+                );
             } else {
-                log.debug(() => `[${providerName}] subsrt-ts conversion succeeded: ${filename} -> VTT (${converted.length} chars)`);
+                log.debug(
+                    () =>
+                        `[${providerName}] subsrt-ts conversion succeeded: ${filename} -> VTT (${converted.length} chars)`
+                );
                 return converted;
             }
         }
@@ -1050,21 +1148,41 @@ async function convertSubtitleToVtt(content, filename, providerName, options = {
     // Detect specific unsupported formats for better messaging
     const ext = lower.split('.').pop();
     if (ext === 'idx') {
-        return createUnsupportedFormatSubtitle(providerName, 'VobSub Index (.idx)', filename, 'This is a VobSub index file, not a text subtitle.');
+        return createUnsupportedFormatSubtitle(
+            providerName,
+            'VobSub Index (.idx)',
+            filename,
+            'This is a VobSub index file, not a text subtitle.'
+        );
     }
     if (ext === 'sup') {
-        return createUnsupportedFormatSubtitle(providerName, 'PGS/SUP (.sup)', filename, 'This is a Blu-ray image-based subtitle.\nIt cannot be converted to text.');
+        return createUnsupportedFormatSubtitle(
+            providerName,
+            'PGS/SUP (.sup)',
+            filename,
+            'This is a Blu-ray image-based subtitle.\nIt cannot be converted to text.'
+        );
     }
 
     // Check if content looks like binary (high ratio of non-printable chars)
     const nonPrintable = (content.match(/[\x00-\x08\x0B\x0C\x0E-\x1F]/g) || []).length;
-    const isBinary = contentLength > 0 && (nonPrintable / contentLength) > 0.1;
+    const isBinary = contentLength > 0 && nonPrintable / contentLength > 0.1;
     if (isBinary) {
-        return createUnsupportedFormatSubtitle(providerName, `Unknown binary format (.${ext})`, filename, 'This subtitle appears to be in an image-based or binary format.');
+        return createUnsupportedFormatSubtitle(
+            providerName,
+            `Unknown binary format (.${ext})`,
+            filename,
+            'This subtitle appears to be in an image-based or binary format.'
+        );
     }
 
     // Generic conversion failure
-    return createUnsupportedFormatSubtitle(providerName, `${ext.toUpperCase()} format`, filename, 'Could not convert this subtitle to a displayable format.');
+    return createUnsupportedFormatSubtitle(
+        providerName,
+        `${ext.toUpperCase()} format`,
+        filename,
+        'Could not convert this subtitle to a displayable format.'
+    );
 }
 
 /**
@@ -1088,7 +1206,10 @@ function manualAssToVtt(input) {
         if (!inEvents) continue;
         if (/^\[.*\]/.test(l)) break;
         if (/^format\s*:/i.test(l)) {
-            format = l.split(':')[1].split(',').map(s => s.trim().toLowerCase());
+            format = l
+                .split(':')[1]
+                .split(',')
+                .map((s) => s.trim().toLowerCase());
         }
     }
 
@@ -1176,13 +1297,12 @@ async function extractSubtitleFromArchive(buffer, options = {}) {
     } = options;
     const archiveLimits = resolveArchiveLimits(options);
     let archiveDepth = _archiveDepth;
-    const maxCompressionOutputBytes = Math.min(
-        maxBytes,
-        archiveLimits.maxEntryBytes,
-        archiveLimits.maxTotalBytes
-    );
+    const maxCompressionOutputBytes = Math.min(maxBytes, archiveLimits.maxEntryBytes, archiveLimits.maxTotalBytes);
 
-    log.debug(() => `[${providerName}] extractSubtitleFromArchive: starting (buffer=${buffer?.length || 0} bytes, isSeasonPack=${isSeasonPack}, season=${season}, episode=${episode})`);
+    log.debug(
+        () =>
+            `[${providerName}] extractSubtitleFromArchive: starting (buffer=${buffer?.length || 0} bytes, isSeasonPack=${isSeasonPack}, season=${season}, episode=${episode})`
+    );
 
     // Validate buffer
     if (!buffer || buffer.length === 0) {
@@ -1201,22 +1321,18 @@ async function extractSubtitleFromArchive(buffer, options = {}) {
     }
 
     if (archiveDepth > archiveLimits.maxDepth) {
-        return createArchiveSafetyLimitSubtitle(new ArchiveLimitError(
-            'recursion depth',
-            archiveLimits.maxDepth,
-            archiveDepth
-        ));
+        return createArchiveSafetyLimitSubtitle(
+            new ArchiveLimitError('recursion depth', archiveLimits.maxDepth, archiveDepth)
+        );
     }
 
     // Detect archive type
     let archiveType = detectArchiveType(buffer);
     if (!archiveType) {
         if (archiveDepth >= archiveLimits.maxDepth) {
-            return createArchiveSafetyLimitSubtitle(new ArchiveLimitError(
-                'recursion depth',
-                archiveLimits.maxDepth,
-                archiveDepth + 1
-            ));
+            return createArchiveSafetyLimitSubtitle(
+                new ArchiveLimitError('recursion depth', archiveLimits.maxDepth, archiveDepth + 1)
+            );
         }
         // Try Brotli decompression as last resort (no reliable magic bytes)
         try {
@@ -1229,13 +1345,14 @@ async function extractSubtitleFromArchive(buffer, options = {}) {
                 if (innerType) {
                     archiveDepth++;
                     if (archiveDepth > archiveLimits.maxDepth) {
-                        return createArchiveSafetyLimitSubtitle(new ArchiveLimitError(
-                            'recursion depth',
-                            archiveLimits.maxDepth,
-                            archiveDepth
-                        ));
+                        return createArchiveSafetyLimitSubtitle(
+                            new ArchiveLimitError('recursion depth', archiveLimits.maxDepth, archiveDepth)
+                        );
                     }
-                    log.debug(() => `[${providerName}] Brotli decompressed to ${innerType.toUpperCase()} (${decompressed.length} bytes)`);
+                    log.debug(
+                        () =>
+                            `[${providerName}] Brotli decompressed to ${innerType.toUpperCase()} (${decompressed.length} bytes)`
+                    );
                     buffer = decompressed;
                     archiveType = innerType;
                 }
@@ -1245,14 +1362,19 @@ async function extractSubtitleFromArchive(buffer, options = {}) {
                 return createArchiveSafetyLimitSubtitle(
                     err instanceof ArchiveLimitError
                         ? err
-                        : new ArchiveLimitError('expanded bytes', maxCompressionOutputBytes, maxCompressionOutputBytes + 1)
+                        : new ArchiveLimitError(
+                              'expanded bytes',
+                              maxCompressionOutputBytes,
+                              maxCompressionOutputBytes + 1
+                          )
                 );
             }
             // Not Brotli — continue to error
         }
 
         if (!archiveType) {
-            const hexBytes = buffer.slice(0, Math.min(20, buffer.length)).toString('hex').match(/.{2}/g)?.join(' ') || '';
+            const hexBytes =
+                buffer.slice(0, Math.min(20, buffer.length)).toString('hex').match(/.{2}/g)?.join(' ') || '';
             log.error(() => `[${providerName}] Not a valid archive file. First 20 bytes: ${hexBytes}`);
             throw new Error('Not a valid archive file (not a recognized archive format)');
         }
@@ -1264,11 +1386,9 @@ async function extractSubtitleFromArchive(buffer, options = {}) {
     // then re-detecting the inner content (may be tar, another archive, or plain subtitle)
     if (archiveType === 'gzip' || archiveType === 'bz2' || archiveType === 'xz') {
         if (archiveDepth >= archiveLimits.maxDepth) {
-            return createArchiveSafetyLimitSubtitle(new ArchiveLimitError(
-                'recursion depth',
-                archiveLimits.maxDepth,
-                archiveDepth + 1
-            ));
+            return createArchiveSafetyLimitSubtitle(
+                new ArchiveLimitError('recursion depth', archiveLimits.maxDepth, archiveDepth + 1)
+            );
         }
         try {
             let decompressed;
@@ -1286,14 +1406,20 @@ async function extractSubtitleFromArchive(buffer, options = {}) {
 
             // Check size limit on decompressed content
             if (decompressed.length > maxBytes) {
-                log.warn(() => `[${providerName}] Decompressed content too large: ${(decompressed.length / (1024 * 1024)).toFixed(2)} MB`);
+                log.warn(
+                    () =>
+                        `[${providerName}] Decompressed content too large: ${(decompressed.length / (1024 * 1024)).toFixed(2)} MB`
+                );
                 return createArchiveTooLargeSubtitle(maxBytes, decompressed.length);
             }
 
             // Re-detect the inner content type
             const innerType = detectArchiveType(decompressed);
             if (innerType) {
-                log.debug(() => `[${providerName}] ${archiveType.toUpperCase()} decompressed to ${innerType.toUpperCase()} archive, extracting recursively...`);
+                log.debug(
+                    () =>
+                        `[${providerName}] ${archiveType.toUpperCase()} decompressed to ${innerType.toUpperCase()} archive, extracting recursively...`
+                );
                 // Recursively extract the inner archive (e.g., tar.gz → tar → files)
                 return await extractSubtitleFromArchive(decompressed, {
                     ...options,
@@ -1302,7 +1428,10 @@ async function extractSubtitleFromArchive(buffer, options = {}) {
             }
 
             // Not an archive — treat as plain subtitle content
-            log.debug(() => `[${providerName}] ${archiveType.toUpperCase()} decompressed to plain content (${decompressed.length} bytes)`);
+            log.debug(
+                () =>
+                    `[${providerName}] ${archiveType.toUpperCase()} decompressed to plain content (${decompressed.length} bytes)`
+            );
             const content = detectAndConvertEncoding(decompressed, providerName, languageHint);
             if (content && content.trim().length > 0) {
                 return content;
@@ -1313,7 +1442,11 @@ async function extractSubtitleFromArchive(buffer, options = {}) {
                 return createArchiveSafetyLimitSubtitle(
                     err instanceof ArchiveLimitError
                         ? err
-                        : new ArchiveLimitError('expanded bytes', maxCompressionOutputBytes, maxCompressionOutputBytes + 1)
+                        : new ArchiveLimitError(
+                              'expanded bytes',
+                              maxCompressionOutputBytes,
+                              maxCompressionOutputBytes + 1
+                          )
                 );
             }
             if (err.message && (err.message.includes('not available') || err.message.includes('not installed'))) {
@@ -1338,12 +1471,16 @@ async function extractSubtitleFromArchive(buffer, options = {}) {
             archive = result.zip;
             entries = result.entries;
         } else if (archiveType === 'rar') {
-            const result = await extractRar(buffer, {
-                isSeasonPack,
-                season,
-                episode,
-                skipAssConversion
-            }, archiveLimits);
+            const result = await extractRar(
+                buffer,
+                {
+                    isSeasonPack,
+                    season,
+                    episode,
+                    skipAssConversion
+                },
+                archiveLimits
+            );
             filesMap = result.files;
             entries = result.entries;
         } else if (archiveType === '7z') {
@@ -1378,7 +1515,10 @@ async function extractSubtitleFromArchive(buffer, options = {}) {
 
     if (!filename) {
         if (isSeasonPack && season && episode) {
-            log.warn(() => `[${providerName}] Episode S${String(season).padStart(2, '0')}E${String(episode).padStart(2, '0')} not found in archive`);
+            log.warn(
+                () =>
+                    `[${providerName}] Episode S${String(season).padStart(2, '0')}E${String(episode).padStart(2, '0')} not found in archive`
+            );
             log.warn(() => `[${providerName}] Available files: ${entries.join(', ')}`);
             return createEpisodeNotFoundSubtitle(episode, season, entries);
         }

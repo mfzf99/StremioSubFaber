@@ -1,4 +1,4 @@
-(function() {
+(function () {
     'use strict';
 
     function wireProWarningToggle() {
@@ -18,7 +18,7 @@
         wireProWarningToggle();
     }
 
-    (window.partialsReady || Promise.resolve()).then(initWidgets).catch(function(err) {
+    (window.partialsReady || Promise.resolve()).then(initWidgets).catch(function (err) {
         console.error(err);
     });
 })();

@@ -41,10 +41,12 @@ function parseChangelogMarkdown(raw, maxEntries = DEFAULT_MAX_ENTRIES) {
 function createFallbackChangelog(currentVersion) {
     return {
         currentVersion,
-        entries: [{
-            version: currentVersion,
-            content: FALLBACK_CONTENT
-        }],
+        entries: [
+            {
+                version: currentVersion,
+                content: FALLBACK_CONTENT
+            }
+        ],
         isFallback: true
     };
 }
@@ -67,10 +69,9 @@ function loadChangelog(options = {}) {
         fsImpl = fs
     } = options;
 
-    const candidatePaths = Array.from(new Set([
-        path.resolve(baseDir, 'CHANGELOG.md'),
-        path.resolve(cwd, 'CHANGELOG.md')
-    ]));
+    const candidatePaths = Array.from(
+        new Set([path.resolve(baseDir, 'CHANGELOG.md'), path.resolve(cwd, 'CHANGELOG.md')])
+    );
 
     let lastError = null;
 
@@ -80,7 +81,11 @@ function loadChangelog(options = {}) {
             const entries = parseChangelogMarkdown(raw, maxEntries);
 
             if (!entries.length) {
-                logMessage(logger, 'warn', `[Changelog] No release entries found in ${candidatePath}. Serving fallback release note.`);
+                logMessage(
+                    logger,
+                    'warn',
+                    `[Changelog] No release entries found in ${candidatePath}. Serving fallback release note.`
+                );
                 return createFallbackChangelog(currentVersion);
             }
 

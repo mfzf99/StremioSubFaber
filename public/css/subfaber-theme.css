@@ -20,41 +20,41 @@
    "blackhole" token is aliased to dark for safety.
    --------------------------------------------------------------------------- */
 :root,
-[data-theme="light"] {
+[data-theme='light'] {
     /* Rootsys violet accent (flat, no gloss) */
-    --primary: #7C3AED;
-    --primary-light: #8B5CF6;
-    --primary-dark: #6D28D9;
-    --secondary: #7C3AED;
-    --accent: #7C3AED;
+    --primary: #7c3aed;
+    --primary-light: #8b5cf6;
+    --primary-dark: #6d28d9;
+    --secondary: #7c3aed;
+    --accent: #7c3aed;
 
     /* Soft violet container for active / accented surfaces (Violet-100) */
-    --accent-soft: #EDE9FE;
+    --accent-soft: #ede9fe;
 
     --success: #16a34a;
     --warning: #d97706;
     --danger: #dc2626;
 
     /* Category badge palette (soft container tints for icon badges) */
-    --badge-sky-bg: #E0F2FE;
-    --badge-sky-fg: #0284C7;
-    --badge-teal-bg: #CCFBF1;
-    --badge-teal-fg: #0D9488;
-    --badge-slate-bg: #E2E8F0;
+    --badge-sky-bg: #e0f2fe;
+    --badge-sky-fg: #0284c7;
+    --badge-teal-bg: #ccfbf1;
+    --badge-teal-fg: #0d9488;
+    --badge-slate-bg: #e2e8f0;
     --badge-slate-fg: #475569;
 
     /* Slate surface system — light (Rootsys) */
-    --bg-primary: #F8FAFC;
-    --bg-secondary: #FFFFFF;
-    --bg-tertiary: #F8FAFC;
-    --surface: #FFFFFF;
-    --surface-light: #F8FAFC;
+    --bg-primary: #f8fafc;
+    --bg-secondary: #ffffff;
+    --bg-tertiary: #f8fafc;
+    --surface: #ffffff;
+    --surface-light: #f8fafc;
 
-    --text-primary: #0F172A;
-    --text-secondary: #64748B;
+    --text-primary: #0f172a;
+    --text-secondary: #64748b;
 
-    --border: #F1F5F9;
-    --border-strong: #E2E8F0;
+    --border: #f1f5f9;
+    --border-strong: #e2e8f0;
     --shadow: rgba(15, 23, 42, 0.06);
     --glow: rgba(124, 58, 237, 0.16);
 
@@ -66,15 +66,15 @@
     color-scheme: light;
 }
 
-[data-theme="dark"],
-[data-theme="blackhole"],
-[data-theme="true-dark"] {
+[data-theme='dark'],
+[data-theme='blackhole'],
+[data-theme='true-dark'] {
     /* Rootsys violet accent — kept identical in dark for brand consistency */
-    --primary: #7C3AED;
-    --primary-light: #A78BFA;
-    --primary-dark: #8B5CF6;
-    --secondary: #7C3AED;
-    --accent: #A78BFA;
+    --primary: #7c3aed;
+    --primary-light: #a78bfa;
+    --primary-dark: #8b5cf6;
+    --secondary: #7c3aed;
+    --accent: #a78bfa;
 
     --success: #22c55e;
     --warning: #f59e0b;
@@ -82,11 +82,11 @@
 
     /* Category badge palette — dark (soft translucent container tints) */
     --badge-sky-bg: rgba(3, 105, 161, 0.32);
-    --badge-sky-fg: #7DD3FC;
-    --badge-teal-bg: rgba(13, 148, 136, 0.30);
-    --badge-teal-fg: #5EEAD4;
+    --badge-sky-fg: #7dd3fc;
+    --badge-teal-bg: rgba(13, 148, 136, 0.3);
+    --badge-teal-fg: #5eead4;
     --badge-slate-bg: rgba(71, 85, 105, 0.35);
-    --badge-slate-fg: #CBD5E1;
+    --badge-slate-fg: #cbd5e1;
 
     /* Slate surface system — dark (body slate-950, cards slate-900) */
     --bg-primary: #020617;
@@ -110,9 +110,9 @@ html {
     color-scheme: light;
 }
 
-[data-theme="dark"],
-[data-theme="blackhole"],
-[data-theme="true-dark"] {
+[data-theme='dark'],
+[data-theme='blackhole'],
+[data-theme='true-dark'] {
     color-scheme: dark;
 }
 
@@ -120,7 +120,14 @@ html {
    2. Canvas — flat, calm background (no pastel washes or radial glows)
    --------------------------------------------------------------------------- */
 body {
-    font-family: 'Inter', 'Segoe UI Variable Text', -apple-system, BlinkMacSystemFont, 'Segoe UI', system-ui, sans-serif;
+    font-family:
+        'Inter',
+        'Segoe UI Variable Text',
+        -apple-system,
+        BlinkMacSystemFont,
+        'Segoe UI',
+        system-ui,
+        sans-serif;
     background: var(--bg-primary) !important;
     background-attachment: initial !important;
     color: var(--text-primary);
@@ -230,7 +237,10 @@ body::-webkit-scrollbar-thumb {
     font-size: 0.85rem;
     font-weight: 500;
     text-decoration: none;
-    transition: color 0.15s ease, border-color 0.15s ease, background 0.15s ease;
+    transition:
+        color 0.15s ease,
+        border-color 0.15s ease,
+        background 0.15s ease;
 }
 
 .app-navbar-docs:hover {
@@ -268,7 +278,10 @@ body::-webkit-scrollbar-thumb {
     background: transparent;
     color: var(--text-secondary);
     cursor: pointer;
-    transition: color 0.15s ease, background 0.15s ease, box-shadow 0.15s ease;
+    transition:
+        color 0.15s ease,
+        background 0.15s ease,
+        box-shadow 0.15s ease;
 }
 
 .theme-switch-option:hover {
@@ -281,7 +294,7 @@ body::-webkit-scrollbar-thumb {
     box-shadow: 0 1px 2px var(--shadow);
 }
 
-[data-theme="dark"] .theme-switch-option.active {
+[data-theme='dark'] .theme-switch-option.active {
     background: #334155;
     color: #fff;
 }
@@ -363,7 +376,9 @@ body::-webkit-scrollbar-thumb {
     background: transparent;
     cursor: pointer;
     opacity: 0.7;
-    transition: opacity 0.15s ease, background 0.15s ease;
+    transition:
+        opacity 0.15s ease,
+        background 0.15s ease;
 }
 
 .ui-lang-flag:hover {
@@ -377,7 +392,7 @@ body::-webkit-scrollbar-thumb {
     box-shadow: 0 1px 2px var(--shadow);
 }
 
-[data-theme="dark"] .ui-lang-flag.active {
+[data-theme='dark'] .ui-lang-flag.active {
     background: #334155;
 }
 
@@ -441,13 +456,15 @@ body::-webkit-scrollbar-thumb {
 }
 
 .card,
-[data-theme="dark"] .card,
-[data-theme="blackhole"] .card {
+[data-theme='dark'] .card,
+[data-theme='blackhole'] .card {
     background: var(--surface) !important;
     border: 1px solid var(--border) !important;
     border-radius: var(--radius-card) !important;
     box-shadow: none !important;
-    transition: border-color 0.15s ease, box-shadow 0.15s ease;
+    transition:
+        border-color 0.15s ease,
+        box-shadow 0.15s ease;
 }
 
 /* Nested cards inside a section get a subtle inner surface for separation */
@@ -471,8 +488,8 @@ body::-webkit-scrollbar-thumb {
    classes already on the markup (.language-emoji, .settings-emoji); the
    default (API Keys) uses the sky tint. */
 .section-icon,
-[data-theme="dark"] .section-icon,
-[data-theme="blackhole"] .section-icon {
+[data-theme='dark'] .section-icon,
+[data-theme='blackhole'] .section-icon {
     background: var(--badge-sky-bg) !important;
     border: none !important;
     color: var(--badge-sky-fg) !important;
@@ -494,16 +511,16 @@ body::-webkit-scrollbar-thumb {
 
 /* Languages → teal badge */
 .section-icon.language-emoji,
-[data-theme="dark"] .section-icon.language-emoji,
-[data-theme="blackhole"] .section-icon.language-emoji {
+[data-theme='dark'] .section-icon.language-emoji,
+[data-theme='blackhole'] .section-icon.language-emoji {
     background: var(--badge-teal-bg) !important;
     color: var(--badge-teal-fg) !important;
 }
 
 /* Settings → slate badge */
 .section-icon.settings-emoji,
-[data-theme="dark"] .section-icon.settings-emoji,
-[data-theme="blackhole"] .section-icon.settings-emoji {
+[data-theme='dark'] .section-icon.settings-emoji,
+[data-theme='blackhole'] .section-icon.settings-emoji {
     background: var(--badge-slate-bg) !important;
     color: var(--badge-slate-fg) !important;
 }
@@ -539,8 +556,8 @@ body::-webkit-scrollbar-thumb {
 }
 
 .card-icon,
-[data-theme="dark"] .card-icon,
-[data-theme="blackhole"] .card-icon {
+[data-theme='dark'] .card-icon,
+[data-theme='blackhole'] .card-icon {
     background: var(--surface-light) !important;
     border: 1px solid var(--border) !important;
     color: var(--primary) !important;
@@ -575,11 +592,11 @@ body::-webkit-scrollbar-thumb {
 /* ---------------------------------------------------------------------------
    8. Inputs / selects / textareas → flat fields
    --------------------------------------------------------------------------- */
-input[type="text"],
-input[type="password"],
-input[type="number"],
-input[type="email"],
-input[type="url"],
+input[type='text'],
+input[type='password'],
+input[type='number'],
+input[type='email'],
+input[type='url'],
 textarea,
 select {
     background: var(--surface) !important;
@@ -589,19 +606,19 @@ select {
     box-shadow: none !important;
 }
 
-.section-grid .card input[type="text"],
-.section-grid .card input[type="password"],
-.section-grid .card input[type="number"],
+.section-grid .card input[type='text'],
+.section-grid .card input[type='password'],
+.section-grid .card input[type='number'],
 .section-grid .card textarea,
 .section-grid .card select {
     background: var(--surface) !important;
 }
 
-input[type="text"]:focus,
-input[type="password"]:focus,
-input[type="number"]:focus,
-input[type="email"]:focus,
-input[type="url"]:focus,
+input[type='text']:focus,
+input[type='password']:focus,
+input[type='number']:focus,
+input[type='email']:focus,
+input[type='url']:focus,
 textarea:focus,
 select:focus {
     border-color: var(--primary) !important;
@@ -616,22 +633,22 @@ textarea::placeholder {
 }
 
 /* Radio / option tiles that used inline white backgrounds */
-label[style*="background: white"],
-label[style*="background:#fff"],
-label[style*="background: #fff"] {
+label[style*='background: white'],
+label[style*='background:#fff'],
+label[style*='background: #fff'] {
     background: var(--surface-light) !important;
     border-color: var(--border) !important;
     color: var(--text-primary) !important;
     border-radius: var(--radius-control) !important;
 }
 
-label:has(input[type="radio"]:checked)[style*="background: white"] {
+label:has(input[type='radio']:checked)[style*='background: white'] {
     background: var(--accent-soft, color-mix(in srgb, var(--primary) 8%, var(--surface))) !important;
     border-color: var(--primary) !important;
 }
 
 /* Inline surface-light chips used across the form */
-[style*="var(--surface-light)"] {
+[style*='var(--surface-light)'] {
     color: var(--text-primary);
     border-radius: var(--radius-control);
 }
@@ -644,7 +661,7 @@ label:has(input[type="radio"]:checked)[style*="background: white"] {
     box-shadow: none !important;
 }
 
-.toggle-switch input:checked+.toggle-slider {
+.toggle-switch input:checked + .toggle-slider {
     background: var(--primary) !important;
     box-shadow: none !important;
 }
@@ -653,7 +670,10 @@ label:has(input[type="radio"]:checked)[style*="background: white"] {
 .btn {
     border-radius: var(--radius-control) !important;
     box-shadow: none !important;
-    transition: background 0.15s ease, border-color 0.15s ease, opacity 0.15s ease !important;
+    transition:
+        background 0.15s ease,
+        border-color 0.15s ease,
+        opacity 0.15s ease !important;
 }
 
 .btn-primary {
@@ -669,13 +689,13 @@ label:has(input[type="radio"]:checked)[style*="background: white"] {
     transform: none !important;
 }
 
-[data-theme="dark"] .btn-primary {
+[data-theme='dark'] .btn-primary {
     background: var(--primary) !important;
     border-color: var(--primary) !important;
     color: #ffffff !important;
 }
 
-[data-theme="dark"] .btn-primary:hover {
+[data-theme='dark'] .btn-primary:hover {
     background: var(--primary-light) !important;
     border-color: var(--primary-light) !important;
 }
@@ -735,7 +755,7 @@ label:has(input[type="radio"]:checked)[style*="background: white"] {
 /* ---------------------------------------------------------------------------
    10. Range sliders → thin minimalist track + clean thumb
    --------------------------------------------------------------------------- */
-input[type="range"] {
+input[type='range'] {
     -webkit-appearance: none;
     appearance: none;
     height: 4px;
@@ -745,19 +765,19 @@ input[type="range"] {
     cursor: pointer;
 }
 
-input[type="range"]::-webkit-slider-runnable-track {
+input[type='range']::-webkit-slider-runnable-track {
     height: 4px;
     border-radius: 999px;
     background: transparent;
 }
 
-input[type="range"]::-moz-range-track {
+input[type='range']::-moz-range-track {
     height: 4px;
     border-radius: 999px;
     background: var(--border-strong);
 }
 
-input[type="range"]::-webkit-slider-thumb {
+input[type='range']::-webkit-slider-thumb {
     -webkit-appearance: none;
     appearance: none;
     width: 16px;
@@ -769,7 +789,7 @@ input[type="range"]::-webkit-slider-thumb {
     box-shadow: 0 1px 2px var(--shadow);
 }
 
-input[type="range"]::-moz-range-thumb {
+input[type='range']::-moz-range-thumb {
     width: 16px;
     height: 16px;
     border-radius: 50%;
@@ -783,8 +803,8 @@ input[type="range"]::-moz-range-thumb {
    high-contrast readable text (fixes the "sunken red" warning problem)
    --------------------------------------------------------------------------- */
 .alert-info,
-[data-theme="dark"] .alert-info,
-[data-theme="blackhole"] .alert-info {
+[data-theme='dark'] .alert-info,
+[data-theme='blackhole'] .alert-info {
     background: color-mix(in srgb, var(--primary) 10%, var(--surface)) !important;
     border: 1px solid color-mix(in srgb, var(--primary) 35%, transparent) !important;
     color: var(--text-primary) !important;
@@ -882,7 +902,9 @@ input[type="range"]::-moz-range-thumb {
     box-shadow: none !important;
     cursor: pointer;
     z-index: auto !important;
-    transition: border-color 0.15s ease, background 0.15s ease;
+    transition:
+        border-color 0.15s ease,
+        background 0.15s ease;
 }
 
 .token-vault-launcher:hover {
@@ -929,7 +951,9 @@ input[type="range"]::-moz-range-thumb {
     border: 1px solid var(--border) !important;
     border-radius: var(--radius-card) !important;
     box-shadow: none !important;
-    transition: max-height 0.2s ease, opacity 0.2s ease;
+    transition:
+        max-height 0.2s ease,
+        opacity 0.2s ease;
 }
 
 .token-vault-rail.show {
@@ -989,8 +1013,8 @@ input[type="range"]::-moz-range-thumb {
    14. Modals + quick setup → flat surfaces, subtle borders
    --------------------------------------------------------------------------- */
 .modal,
-[data-theme="dark"] .modal,
-[data-theme="blackhole"] .modal {
+[data-theme='dark'] .modal,
+[data-theme='blackhole'] .modal {
     background: var(--surface) !important;
     border: 1px solid var(--border) !important;
     border-radius: var(--radius-card) !important;
@@ -998,8 +1022,8 @@ input[type="range"]::-moz-range-thumb {
 }
 
 .modal-header,
-[data-theme="dark"] .modal-header,
-[data-theme="blackhole"] .modal-header {
+[data-theme='dark'] .modal-header,
+[data-theme='blackhole'] .modal-header {
     background: var(--surface) !important;
     border-bottom-color: var(--border) !important;
 }
@@ -1101,7 +1125,6 @@ input[type="range"]::-moz-range-thumb {
    17. Reduced motion — keep the dashboard calm
    --------------------------------------------------------------------------- */
 @media (prefers-reduced-motion: reduce) {
-
     *,
     .card,
     .btn,

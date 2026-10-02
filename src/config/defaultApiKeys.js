@@ -11,25 +11,25 @@
  */
 
 const DEFAULT_API_KEYS = {
-  // Sub-DL API Key
-  // Get your own at: https://subdl.com/
-  SUBDL: '',
+    // Sub-DL API Key
+    // Get your own at: https://subdl.com/
+    SUBDL: '',
 
-  // SubSource API Key (if you have one)
-  // Get your own at: https://subsource.net/
-  SUBSOURCE: '',
+    // SubSource API Key (if you have one)
+    // Get your own at: https://subsource.net/
+    SUBSOURCE: '',
 
-  // Gemini API Key
-  // Get your own at: https://makersuite.google.com/app/apikey
-  GEMINI: '',
+    // Gemini API Key
+    // Get your own at: https://makersuite.google.com/app/apikey
+    GEMINI: '',
 
-  // AssemblyAI API Key
-  // Get your own at: https://www.assemblyai.com/dashboard
-  ASSEMBLYAI: '',
+    // AssemblyAI API Key
+    // Get your own at: https://www.assemblyai.com/dashboard
+    ASSEMBLYAI: '',
 
-  // Cloudflare Workers AI (auto-subs via xSync extension)
-  // Format: ACCOUNT_ID|TOKEN
-  CF_WORKERS_AUTOSUBS: ''
+    // Cloudflare Workers AI (auto-subs via xSync extension)
+    // Format: ACCOUNT_ID|TOKEN
+    CF_WORKERS_AUTOSUBS: ''
 };
 
 module.exports = DEFAULT_API_KEYS;

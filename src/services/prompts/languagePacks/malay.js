@@ -18,40 +18,42 @@
  */
 
 const malayPack = {
-  code: 'ms',
-  aliases: ['ms', 'my', 'mya', 'zsm', 'zzm', 'malay', 'bahasa melayu', 'melayu'],
+    code: 'ms',
+    aliases: ['ms', 'my', 'mya', 'zsm', 'zzm', 'malay', 'bahasa melayu', 'melayu'],
 
-  /**
-   * P1 pillar-2/3 injection: MANDATORY sociolinguistic honorific matrix.
-   * Injected into buildPreflightPrompt() when target = Malay.
-   */
-  honorificMatrix: [
-    'In the \'terms\' list, you MUST include and lock the official ${tgt} titles/honorifics for recurring entities using this MANDATORY sociolinguistic matrix (Malay honorifics):',
-    '* "Ms." / "Mrs." for an adult woman — married, mature, an auntie/mak cik figure, or holding a corporate/management position — MUST map to "Puan" (e.g. "Ms. [Surname]" -> "Puan [Surname]", NEVER "Cik [Surname]").',
-    '* "Miss" / "Ms." for a young unmarried woman -> "Cik".',
-    '* "Mr." -> "Encik". "Aunt" / "Auntie" -> "Mak Cik". "Uncle" -> "Pak Cik".',
-    '* "Director" -> "Pengarah". "GM" / "General Manager" -> "Pengurus Besar".',
-    'Cross-reference titles: if the same character is addressed as "Aunt" in dialogue AND called "Ms. [Surname]", lock the formal address as "Puan [Surname]" (NOT "Cik [Surname]") — one canonical title per character, never alternate.'
-  ].join('\n   '),
+    /**
+     * P1 pillar-2/3 injection: MANDATORY sociolinguistic honorific matrix.
+     * Injected into buildPreflightPrompt() when target = Malay.
+     */
+    honorificMatrix: [
+        "In the 'terms' list, you MUST include and lock the official ${tgt} titles/honorifics for recurring entities using this MANDATORY sociolinguistic matrix (Malay honorifics):",
+        '* "Ms." / "Mrs." for an adult woman — married, mature, an auntie/mak cik figure, or holding a corporate/management position — MUST map to "Puan" (e.g. "Ms. [Surname]" -> "Puan [Surname]", NEVER "Cik [Surname]").',
+        '* "Miss" / "Ms." for a young unmarried woman -> "Cik".',
+        '* "Mr." -> "Encik". "Aunt" / "Auntie" -> "Mak Cik". "Uncle" -> "Pak Cik".',
+        '* "Director" -> "Pengarah". "GM" / "General Manager" -> "Pengurus Besar".',
+        'Cross-reference titles: if the same character is addressed as "Aunt" in dialogue AND called "Ms. [Surname]", lock the formal address as "Puan [Surname]" (NOT "Cik [Surname]") — one canonical title per character, never alternate.'
+    ].join('\n   '),
 
-  /**
-   * P1 pillar-3 injection: canonical_address instruction for the Malay matrix.
-   */
-  canonicalAddressMatrix: 'Apply the SAME mandatory Malay honorific matrix from the \'terms\' pillar (Ms./Mrs./mature/auntie/manager -> Puan; young unmarried -> Cik; Mr. -> Encik; Auntie -> Mak Cik; Uncle -> Pak Cik; Director -> Pengarah; GM -> Pengurus Besar)',
+    /**
+     * P1 pillar-3 injection: canonical_address instruction for the Malay matrix.
+     */
+    canonicalAddressMatrix:
+        "Apply the SAME mandatory Malay honorific matrix from the 'terms' pillar (Ms./Mrs./mature/auntie/manager -> Puan; young unmarried -> Cik; Mr. -> Encik; Auntie -> Mak Cik; Uncle -> Pak Cik; Director -> Pengarah; GM -> Pengurus Besar)",
 
-  /**
-   * P1 pillar-4 injection: official media/publishing credit translation example.
-   */
-  creditsExample: 'provide the official ${tgt} media/publishing translation for each line (e.g. "Adapted from" -> "Diadaptasi daripada")',
+    /**
+     * P1 pillar-4 injection: official media/publishing credit translation example.
+     */
+    creditsExample:
+        'provide the official ${tgt} media/publishing translation for each line (e.g. "Adapted from" -> "Diadaptasi daripada")',
 
-  /**
-   * P2 injection: Malay few-shot examples — 2 contoh PARITY-CRITICAL.
-   * [PROMPT-SLIM 2026-09-30] 6 → 2 contoh: hanya MERGE + SHIFT (dua
-   * jenayah yang merosakkan struktur fail; PHANTOM/DROP/UNTRANSLATED/
-   * REGISTER sudah dilindungi rules + inspection Agent B). Ini memangkas
-   * ~350 BPE tok daripada system statik tanpa hilang kuasa parity.
-   */
-  fewShot: `[EXAMPLE 1 — MERGE: keep split sentences and question tags isolated]
+    /**
+     * P2 injection: Malay few-shot examples — 2 contoh PARITY-CRITICAL.
+     * [PROMPT-SLIM 2026-09-30] 6 → 2 contoh: hanya MERGE + SHIFT (dua
+     * jenayah yang merosakkan struktur fail; PHANTOM/DROP/UNTRANSLATED/
+     * REGISTER sudah dilindungi rules + inspection Agent B). Ini memangkas
+     * ~350 BPE tok daripada system statik tanpa hilang kuasa parity.
+     */
+    fewShot: `[EXAMPLE 1 — MERGE: keep split sentences and question tags isolated]
 Input:
 <s id="1">You are coming with us,</s>
 <s id="2">aren't you?</s>
@@ -77,15 +79,17 @@ Wrong (slots skipped):
 <s id="1">Maaf saya lewat.</s>
 <s id="2">Tak apa, duduklah.</s>`,
 
-  /**
-   * P8 injection: DEFAULT_TRANSLATION_PROMPT rule (target-conditional).
-   */
-  specificRules: '6. For Malay (ms/my/mya/zsm): use natural Bahasa Melayu Malaysia, keep common English loanwords used in daily speech (okay, confirm, check, settle, try, call, parking, boss, etc.), and choose self-reference based on context: default saya/awak, close aku/kau, formal saya/anda. Strictly avoid Indonesianisms (bisa, banget, gimana, cewek/cowok, kalian, ngomong, kok, dong, sih). Never translate literally word-by-word.',
+    /**
+     * P8 injection: DEFAULT_TRANSLATION_PROMPT rule (target-conditional).
+     */
+    specificRules:
+        '6. For Malay (ms/my/mya/zsm): use natural Bahasa Melayu Malaysia, keep common English loanwords used in daily speech (okay, confirm, check, settle, try, call, parking, boss, etc.), and choose self-reference based on context: default saya/awak, close aku/kau, formal saya/anda. Strictly avoid Indonesianisms (bisa, banget, gimana, cewek/cowok, kalian, ngomong, kok, dong, sih). Never translate literally word-by-word.',
 
-  /**
-   * NOT-LOCKED guidance (P1 formatter + translationEngine._formatPreflightForChunk).
-   */
-  notLockedGuidance: 'address NOT LOCKED — infer the correct honorific from the dialogue context (Malay matrix: Puan for adult/married/auntie/manager women, Cik for young unmarried women)'
+    /**
+     * NOT-LOCKED guidance (P1 formatter + translationEngine._formatPreflightForChunk).
+     */
+    notLockedGuidance:
+        'address NOT LOCKED — infer the correct honorific from the dialogue context (Malay matrix: Puan for adult/married/auntie/manager women, Cik for young unmarried women)'
 };
 
 module.exports = malayPack;
