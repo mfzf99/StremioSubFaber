@@ -2,6 +2,38 @@
 
 All notable changes to this project will be documented in this file.
 
+## SubMaker v3.7.3 (2026-10-02) — "One World" — Spacing 40px seragam di seluruh Configuration page
+
+**Akhirnya — satu dunia, satu irama. Semua elemen belah kanan kongsi gap 40px yang sama:**
+
+- **One World spacing:** `.app-page` kini flex column dengan `gap: 40px` seragam untuk SEMUA children — Quick Setup, No Translation, API Keys, Languages, Settings, hidden cards, dan config actions. Tiada lagi margin per-section yang bertindih; satu gap mengatur semua.
+- **Phantom gap cancellation:** Elemen `display:none` masih dikira flex item — page gap render antara mereka dan jiran. Rules `[style*="display: none"] + .app-config-actions` dengan `margin-top: 0 / -40px / -80px` membatalkan phantom gap supaya 3 beradik sentiasa 40px di bawah card VISIBLE terakhir.
+- **`.btn-group` margin-top fix (PUNCA TERAKHIR):** `configure.css` line 2683 `margin-top: 1.25rem` (20px) pada `.btn-group` diwarisi oleh first child `.app-config-actions` — menyebabkan jarak Settings → 3 beradik jadi 60px bukan 40px. Override `margin-top: 0` dalam `app-shell.css` menyelesaikan masalah ini.
+- **Duplicate rules purge:** Dua set lengkap rules `.app-config-actions` wujud dalam `app-shell.css` — Set 1 (dead code) dibuang, Set 2 diperbetulkan dengan nilai phantom margin yang betul (negatif, bukan positif).
+- **Dead code cleanup:** `devSettingsCard` orphan element (tiada JS reference) dibuang dari `main.html`.
+- **Reset bar rhythm:** `.app-config-actions .reset-bar { margin: 40px 0 0 0; }` — jarak 3 beradik → Reset sama besar dengan jarak antara section (40px).
+- **Fail diubah:** `public/css/app-shell.css` (One World gap, phantom cancellation, `.btn-group` override), `public/partials/main.html` (devSettingsCard dibuang), `public/css/configure.css` (sumber `.btn-group` margin-top dikenalpasti).
+- **Ujian:** `npm test` — **287 PASS / 0 FAIL**.
+
+## SubMaker v3.5.1–v3.6.2 (2026-10-02) — Spacing Saga — Iterasi spacing Configuration page
+
+**Perjalanan mencari spacing yang sempurna — dari centering ke family rhythm:**
+
+- **v3.5.1 Centering:** Reset bar + footer center dengan `align-items: center` + `justify-content: center`.
+- **v3.5.2 Footer:** Footer center ikut content area kanan — `padding-left: 240px` pada desktop.
+- **v3.5.3 Quick-stack:** Quick Setup + No Translation dibungkus dalam `.app-quick-stack` supaya rapat.
+- **v3.5.4 Quick-stack gap:** Gap 8px → 14px — pernafasan lebih selesa.
+- **v3.5.5 Action-spacing:** 3 beradik rapat dengan Settings section; jarak sebelum Reset.
+- **v3.5.6 Duplicate selector:** Buang duplicate `.reset-bar` yang block `margin-top`.
+- **v3.5.7 Family-spacing:** 3 beradik jadi sebahagian family spacing yang seragam.
+- **v3.5.8 Family-rhythm:** `margin-bottom: 20px` pada section, spacing 40px seragam.
+- **v3.5.9 Phantom-gap:** 3 beradik dipindah sebelum hidden cards — elak phantom gap.
+- **v3.6.0 Phantom-collapse:** 3 beradik kekal di hujung page + negative margin untuk cancel phantom.
+- **v3.6.1 Reset-gap:** 3 beradik → Reset 40px — destructive action dapat ruang sendiri.
+- **v3.6.2 Spacing-cleanup:** Buang margin bertindih, 40px seragam untuk semua.
+- **Fail diubah:** `public/css/app-shell.css`, `public/partials/main.html`.
+- **Ujian:** `npm test` — **287 PASS / 0 FAIL** (setiap iterasi).
+
 ## SubMaker v3.5.0 (2026-10-02) — "Inline Actions" — Button 3 beradik kembali ke dalam Configuration page
 
 **Aliran semula jadi dipulihkan — configure dulu, baru save/install/copy:**
