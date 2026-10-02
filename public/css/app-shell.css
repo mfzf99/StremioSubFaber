@@ -390,6 +390,13 @@ body.app-shell .qs-entry-banner {
     gap: 12px;
 }
 
+/* The 3 action buttons belong to the Settings flow — keep them tight under
+   the Settings section, then add breathing room before the Reset bar so the
+   destructive action is visually separated from the save/install actions. */
+.app-config-actions .reset-bar {
+    margin-top: 20px;
+}
+
 .app-config-actions .btn-group {
     display: flex;
     align-items: center;
