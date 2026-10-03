@@ -506,11 +506,14 @@ body.app-shell .section-block {
 }
 
 /* Reset bar uses the base reset-bar margin contract; the parent gap supplies
-   its spacing from the preceding action or URL card. */
+   its spacing from the preceding action or URL card. Extra top margin keeps
+   the dashed reset card from looking glued to the 3 beradik when the sticky
+   panel is the only thing visible (all cards collapsed). */
 .app-config-actions .reset-bar {
     display: flex;
     align-items: center;
     gap: 10px;
+    margin-top: 12px;
 }
 
 .app-config-actions .support-link-hint {
