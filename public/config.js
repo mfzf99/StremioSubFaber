@@ -12741,6 +12741,13 @@ Translate to {target_language}.`;
             translationPrompt = NATURAL_TRANSLATION_PROMPT;
         }
 
+        // Resolve the selected model BEFORE the object literal so nested
+        // computed properties (advancedSettings.thinkingBudget) can read it
+        // without touching the not-yet-initialized `config` binding (TDZ).
+        const selectedGeminiModel = normalizeGeminiModelForBaseSelect(
+            document.getElementById('geminiModel')?.value || ''
+        );
+
         const config = {
             noTranslationMode: currentConfig.noTranslationMode,
             noTranslationLanguages: currentConfig.noTranslationLanguages,
@@ -12766,10 +12773,7 @@ Translate to {target_language}.`;
             },
             // Save the selected model from the dropdown
             // Advanced settings can override this if enabled
-            geminiModel: (function () {
-                const el = document.getElementById('geminiModel');
-                return normalizeGeminiModelForBaseSelect(el ? el.value : '');
-            })(),
+            geminiModel: selectedGeminiModel,
             promptStyle: promptStyle,
             translationPrompt: translationPrompt,
             betaModeEnabled: isBetaModeEnabled(),
@@ -12919,7 +12923,7 @@ Translate to {target_language}.`;
                 thinkingBudget: (function () {
                     const el = document.getElementById('advancedThinkingBudget');
                     if (!el) return -1;
-                    return clampGeminiThinkingBudget(el.value, config.geminiModel, -1);
+                    return clampGeminiThinkingBudget(el.value, selectedGeminiModel, -1);
                 })(),
                 temperature: (function () {
                     const el = document.getElementById('advancedTemperature');
