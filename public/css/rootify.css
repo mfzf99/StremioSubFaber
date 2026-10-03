@@ -170,7 +170,7 @@ pre,
 .rootify-traffic {
     display: inline-flex;
     align-items: center;
-    gap: 7px;
+    gap: 6px;
     flex-shrink: 0;
 }
 
@@ -179,7 +179,7 @@ pre,
     height: 12px;
     border-radius: 50%;
     display: inline-block;
-    box-shadow: inset 0 0 0 1px rgba(0, 0, 0, 0.08);
+    box-shadow: none;
 }
 
 .rootify-tl-red {

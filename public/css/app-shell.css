@@ -86,7 +86,8 @@ body.app-shell .qs-entry-banner {
 .app-sidebar-name {
     font-weight: 700;
     font-size: 15px;
-    letter-spacing: -0.01em;
+    letter-spacing: -0.025em;
+    line-height: 22.5px;
     color: var(--text-primary);
     white-space: nowrap;
     overflow: hidden;
@@ -361,7 +362,8 @@ body.app-shell .qs-entry-banner {
     flex: 1;
     font-weight: 700;
     font-size: 15px;
-    letter-spacing: -0.01em;
+    letter-spacing: -0.025em;
+    line-height: 22.5px;
     color: var(--text-primary);
     white-space: nowrap;
     overflow: hidden;
