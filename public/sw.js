@@ -158,7 +158,7 @@ async function purgeSensitiveApiCacheEntries() {
 }
 
 // Assets to cache on install
-const ASSET_URLS = ['/', '/configure', '/config.js', '/configure.html', '/favicon.svg'];
+const ASSET_URLS = ['/', '/configure', '/config.js', '/configure.html', '/favicon.svg', '/assets/subfaber-mark-v1.png'];
 
 /**
  * Install event: Cache static assets
