@@ -468,20 +468,8 @@ body.app-shell .section-block {
     gap: 12px;
 }
 
-@media (min-width: 900px) {
-    .app-config-actions {
-        position: sticky;
-        bottom: 16px;
-        z-index: 700;
-        padding: 12px 16px;
-        border: 1px solid var(--border);
-        border-radius: var(--radius-card);
-        background: color-mix(in srgb, var(--surface) 94%, transparent);
-        box-shadow: 0 8px 24px rgba(15, 23, 42, 0.12);
-        -webkit-backdrop-filter: blur(10px);
-        backdrop-filter: blur(10px);
-    }
-}
+/* Rollback: no sticky/fixed white card wrapper around the action buttons.
+   Buttons sit neutrally on the page background at the end of the form. */
 
 /* The 3 action buttons belong to the Settings flow. Override configure.css
    .btn-group margin-top: 1.25rem so the group does not add a second gap. */
@@ -505,15 +493,14 @@ body.app-shell .section-block {
     margin: 12px 0 !important;
 }
 
-/* Reset bar uses the base reset-bar margin contract; the parent gap supplies
-   its spacing from the preceding action or URL card. Extra top margin keeps
-   the dashed reset card from looking glued to the 3 beradik when the sticky
-   panel is the only thing visible (all cards collapsed). */
+/* Reset bar sits BELOW the 3 beradik as a separate element on the page
+   background. 2rem top margin keeps it visually detached from the button
+   row above (per spec: margin-top: 2rem / 32px). */
 .app-config-actions .reset-bar {
     display: flex;
     align-items: center;
     gap: 10px;
-    margin-top: 12px;
+    margin-top: 2rem;
 }
 
 .app-config-actions .support-link-hint {
