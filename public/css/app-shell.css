@@ -75,8 +75,8 @@ body.app-shell .qs-entry-banner {
 }
 
 .app-sidebar-logo {
-    width: 28px;
-    height: 28px;
+    width: 22px;
+    height: 22px;
     border-radius: 8px;
     display: block;
     flex-shrink: 0;
@@ -353,8 +353,8 @@ body.app-shell .qs-entry-banner {
 }
 
 .app-mobile-header .app-sidebar-logo {
-    width: 26px;
-    height: 26px;
+    width: 20px;
+    height: 20px;
 }
 .app-mobile-header-title {
     flex: 1;
