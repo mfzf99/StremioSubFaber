@@ -486,21 +486,22 @@ body.app-shell .section-block {
     flex-shrink: 0;
 }
 
-/* Install URL box sits between the 3 beradik and the Reset bar. The parent
-   gap is 12px, so 12px margins on each side produce a symmetric 24px visual
-   separation above and below the card. */
+/* Install URL box sits between the 3 beradik and the Reset bar. Keep only a
+   top margin: above = 12px parent gap + 12px margin = 24px; below = 12px
+   parent gap + 12px reset-bar margin-top = 24px — symmetric rhythm. */
 .app-config-actions .install-url-box {
-    margin: 12px 0 !important;
+    margin: 12px 0 0 0 !important;
 }
 
-/* Reset bar sits BELOW the 3 beradik as a separate element on the page
-   background. 2rem top margin keeps it visually detached from the button
-   row above (per spec: margin-top: 2rem / 32px). */
+/* Reset bar sits BELOW the action row / install URL box as a separate
+   element. 12px margin-top + 12px parent gap = 24px separation, matching the
+   24px gap above the install URL box so top and bottom spacing stay balanced
+   when the URL box is visible. */
 .app-config-actions .reset-bar {
     display: flex;
     align-items: center;
     gap: 10px;
-    margin-top: 2rem;
+    margin-top: 12px;
 }
 
 .app-config-actions .support-link-hint {
