@@ -495,13 +495,20 @@ body.app-shell .section-block {
 }
 
 /* Reset bar sits BELOW the action row / install URL box as a separate
-   element. 12px margin-top + 12px parent gap = 24px separation, matching the
+   element. Keep 24px separation from whatever is above it — matching the
    24px gap above the install URL box so top and bottom spacing stay balanced
-   when the URL box is visible. */
+   in BOTH states (collapsed and expanded). */
 .app-config-actions .reset-bar {
     display: flex;
     align-items: center;
     gap: 10px;
+    margin-top: 24px;
+}
+
+/* When the install URL box is visible, reduce reset-bar margin so the
+   spacing between install-url-box and reset-bar stays at 24px
+   (12px parent gap + 12px margin). */
+.app-config-actions .install-url-box:not([hidden]) + .reset-bar {
     margin-top: 12px;
 }
 
