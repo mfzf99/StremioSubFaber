@@ -75,13 +75,13 @@ body.app-shell .qs-entry-banner {
     flex-shrink: 0;
 }
 
-/* Single lockup (mark + wordmark in one transparent PNG, aspect 5:1) */
+/* Single lockup (mark + wordmark in one transparent PNG, aspect ~6:1) */
 .app-sidebar-lockup {
     display: block;
     flex-shrink: 0;
     object-fit: contain;
     width: 144px;
-    height: 29px;
+    height: 24px;
     /* Belt-and-braces: keep the lockup optically centered even if a future
        rule accidentally overrides justify-content on the parent. */
     margin-inline: auto;
@@ -350,7 +350,7 @@ body.app-shell .qs-entry-banner {
 
 .app-mobile-header .app-sidebar-lockup {
     width: 120px;
-    height: 24px;
+    height: 20px;
     /* Same centering guarantee for the mobile top-bar lockup. */
     margin-inline: auto;
 }

@@ -2,6 +2,17 @@
 
 All notable changes to this project will be documented in this file.
 
+## SubMaker v3.8.12 (2026-10-04) — Brand logo v4 (subfaber-mark-v4)
+
+**Logo header baru — subfaber-lockup-v4.png:**
+
+- **Aset baru:** `public/assets/subfaber-lockup-v4.png` (1726×285, aspek ~6.06:1) dijana daripada `subfaber-mark-v4.png` (2134×1984) — wordmark pelbagai warna dipotong ketat daripada kanvas putih (bounding box 1726×285) dan latar putih ditukar kepada telus (alpha), mengikut pendekatan yang sama seperti v3.
+- **Rujukan dikemaskini:** `public/configure.html` (logo sidebar desktop + header mobile) dan `public/sw.js` (senarai precache `ASSET_URLS`) beralih daripada `subfaber-lockup-v3.png` kepada `subfaber-lockup-v4.png`.
+- **Dimensi CSS diselaraskan:** aspek baharu ~6:1 (v3 ialah 5:1) memerlukan ketinggian dikurangkan supaya lebar kekal — `.app-sidebar-lockup` desktop `144×29` → `144×24` dan mobile `120×24` → `120×20`; atribut `width`/`height` pada kedua-dua `<img>` dalam `configure.html` turut dikemaskini supaya nisbah intrinsik tepat (elak layout shift).
+- **Penjajaran tengah dikekalkan:** `justify-content: center` pada `.app-sidebar-brand` / `.app-mobile-header` + `margin-inline: auto` pada `.app-sidebar-lockup` memastikan lockup baharu kekal optically center — disahkan melalui pemeriksaan browser (Playwright).
+- **Cache-buster dikekalkan:** query `?_cb=__APP_VERSION_QUERY__` kekal pada kedua-dua `<img>`; bump versi 3.8.11 → 3.8.12 menjana URL baharu supaya Service Worker tidak menyajikan logo lama daripada cache. SW juga mendaftar semula dengan tag versi + bucket jam dalam `sw-register.js`.
+- **Ujian:** `npm test` — **287 PASS / 0 FAIL / 1 skipped**.
+
 ## SubMaker v3.8.11 (2026-10-04) — Brand logo v3 (subfaber-mark-v3)
 
 **Logo header baru — subfaber-lockup-v3.png:**
