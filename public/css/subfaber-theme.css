@@ -1167,7 +1167,19 @@ input[type='range']::-moz-range-thumb {
 }
 
 /* ---------------------------------------------------------------------------
-   18. Reduced motion — keep the dashboard calm
+   18. Reduced transparency — honor prefers-reduced-transparency
+   --------------------------------------------------------------------------- */
+@media (prefers-reduced-transparency: reduce) {
+    .app-navbar,
+    .app-mobile-header {
+        backdrop-filter: none !important;
+        -webkit-backdrop-filter: none !important;
+        background: var(--surface) !important;
+    }
+}
+
+/* ---------------------------------------------------------------------------
+   19. Reduced motion — keep the dashboard calm
    --------------------------------------------------------------------------- */
 @media (prefers-reduced-motion: reduce) {
     *,
