@@ -165,7 +165,7 @@ const ASSET_URLS = [
     '/config.js',
     '/configure.html',
     '/favicon.svg',
-    '/assets/subfaber-lockup-v2.png'
+    '/assets/subfaber-lockup-v3.png'
 ];
 
 /**

@@ -2,6 +2,16 @@
 
 All notable changes to this project will be documented in this file.
 
+## SubMaker v3.8.11 (2026-10-04) — Brand logo v3 (subfaber-mark-v3)
+
+**Logo header baru — subfaber-lockup-v3.png:**
+
+- **Aset baru:** `public/assets/subfaber-lockup-v3.png` (480×96, aspek 5:1) dijana daripada `subfaber-mark-v3.png` (2134×1984) — kandungan logo (ikon + wordmark pelbagai warna) dipotong ketat (1725×284) dan dipadatkan ke kanvas 480×96 dengan padding atas/bawah seragam 9px, menyamai dimensi lockup asal v2.
+- **Rujukan dikemaskini:** `public/configure.html` (logo sidebar desktop + header mobile) dan `public/sw.js` (senarai precache `ASSET_URLS`) beralih daripada `subfaber-lockup-v2.png` kepada `subfaber-lockup-v3.png`.
+- **Cache-buster dikekalkan:** query `?_cb=__APP_VERSION_QUERY__` kekal pada kedua-dua `<img>`; bump versi 3.8.10 → 3.8.11 menjana URL baharu supaya Service Worker tidak menyajikan logo lama daripada cache. SW juga mendaftar semula dengan tag versi + bucket jam dalam `sw-register.js`.
+- **CSS tiada perubahan:** dimensi 5:1 sama dengan lockup asal; peraturan `justify-content: center` + `margin-inline: auto` sedia ada memastikan penjajaran tengah menegak & mendatar (desktop 144×29, mobile 120×24 — disahkan melalui pemeriksaan browser).
+- **Ujian:** `npm test` — **287 PASS / 0 FAIL / 1 skipped**.
+
 ## SubMaker v3.7.6 (2026-10-02) — Frontend audit corrections
 
 - Corrected the flexbox explanation: `display: none` elements are removed from flex layout and do not create `gap`; the old phantom-gap cancellation selectors and related comments were removed.
