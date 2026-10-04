@@ -53,8 +53,8 @@
     --text-primary: #0f172a;
     --text-secondary: #64748b;
 
-    --border: #f1f5f9;
-    --border-strong: #e2e8f0;
+    --border: #e2e8f0; /* Apple HIG: raise light-theme border contrast from ~1.1:1 to ~1.4:1 */
+    --border-strong: #cbd5e1;
     --shadow: rgba(15, 23, 42, 0.06);
     --glow: rgba(124, 58, 237, 0.16);
 
@@ -670,12 +670,20 @@ label:has(input[type='radio']:checked)[style*='background: white'] {
    --------------------------------------------------------------------------- */
 .toggle-slider {
     background: var(--border-strong) !important;
-    box-shadow: none !important;
+    box-shadow: inset 0 1px 3px rgba(0, 0, 0, 0.08) !important;
+}
+
+.toggle-slider::before {
+    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.22) !important;
 }
 
 .toggle-switch input:checked + .toggle-slider {
     background: var(--primary) !important;
-    box-shadow: none !important;
+    box-shadow: 0 2px 6px var(--glow) !important;
+}
+
+.toggle-switch input:checked + .toggle-slider::before {
+    box-shadow: 0 1px 4px rgba(0, 0, 0, 0.3) !important;
 }
 
 /* Primary button: sky/azure accent in both themes. Flat, no gloss. */

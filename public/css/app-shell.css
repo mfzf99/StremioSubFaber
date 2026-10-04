@@ -106,7 +106,7 @@ body.app-shell .qs-entry-banner {
 .app-nav-label {
     margin-bottom: 4px;
     padding: 0 14px;
-    font-size: 10px;
+    font-size: 11px; /* Apple HIG: Caption 2 floor — 10px is below the legibility threshold */
     font-weight: 600;
     text-transform: uppercase;
     letter-spacing: 0.06em;
