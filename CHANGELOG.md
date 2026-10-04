@@ -2,6 +2,19 @@
 
 All notable changes to this project will be documented in this file.
 
+## SubMaker v3.8.19 (2026-10-04) — Icons: Section icons 3D penuh (API Keys / Languages / Settings)
+
+**Ikon seksyen utama ditukar daripada SVG monoline 2D kepada emoji penuh 3D — konsisten dengan Quick Setup:**
+
+- **Isu:** Ikon Quick Setup (⚡) dan Just Fetch Subtitles (⏸️) menggunakan emoji penuh yang kelihatan 3D dan menarik, manakala API Keys, Languages, dan Settings masih menggunakan SVG monoline 2D yang basic — tidak konsisten dari segi gaya visual.
+- **Fix:** Ketiga-tiga ikon seksyen ditukar kepada emoji penuh dalam `public/partials/main.html`:
+  - **API Keys:** SVG monoline (kunci) → **🔑** (emoji kunci penuh)
+  - **Languages:** SVG monoline (globus) → **🌐** (emoji globus penuh)
+  - **Settings:** SVG monoline (gear) → **⚙️** (emoji gear penuh)
+- **Konsistensi 3D penuh:** Dengan emoji, ketiga-tiga ikon kini mendapat manfaat daripada gaya `.section-icon` yang direka untuk teks/emoji — gradient 3D, `text-shadow` berlapis, `box-shadow` dengan glow, animasi `titlePulse` dan `shimmer` — sama seperti Quick Setup dan Just Fetch.
+- **Pengesahan DOM live:** `querySelector('#apiKeysSection .section-icon').textContent` = `🔑`, `.language-emoji` = `🌐`, `.settings-emoji` = `⚙️`, semua `hasSvg: false` — disahkan melalui Playwright `getComputedStyle`.
+- **Ujian:** `npm test` — **287 PASS / 0 FAIL / 1 skipped**.
+
 ## SubMaker v3.8.18 (2026-10-04) — Theme: Apple Blue #0071e3 (apple.com ground truth)
 
 **Tema SubFaber bertukar daripada ungu Rootsys kepada biru Apple sebijik apple.com:**
