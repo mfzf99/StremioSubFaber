@@ -2,6 +2,56 @@
 
 All notable changes to this project will be documented in this file.
 
+## SubMaker v3.8.17 (2026-10-04) — Fix: Footer heart merah #dc2626
+
+**Pembetulan warna ikon hati footer mengikut prinsip Apple HIG "use color purposefully":**
+
+- **Isu:** SVG hati footer menggunakan `fill="currentColor"` lalu mewarisi warna teks ungu sekeliling — pelik untuk simbol cinta/kasih.
+- **Fix:** `style="color: #dc2626"` (merah `--danger` SubFaber) ditambah pada `<span class="footer-heart">` supaya SVG mewarisi merah yang bermakna, kontras baik pada tema light dan dark.
+- **Liputan penuh i18n:** pembeturan dibuat dalam `public/partials/footer.html` + 5 fail locale (`en`, `ar`, `es`, `pt-br`, `pt-pt`) kerana sistem i18n menggantikan innerHTML footer daripada fail locale — fail locale adalah source of truth.
+- **Ujian:** `npm test` — **287 PASS / 0 FAIL / 1 skipped**.
+
+## SubMaker v3.8.16 (2026-10-04) — Apple HIG Fasa 4 (P3): Kemasan & polish
+
+**Audit Apple HIG — 4/4 item P3 selesai (audit keseluruhan 17/17 = 100%):**
+
+- **P3-1 — SVG × menggantikan `&times;`:** 7 butang tutup modal dalam `public/partials/overlays.html` (instructions, toolbox, bulk import, reset, 3× token vault) kini menggunakan SVG × monoline 16px (stroke 2, `currentColor`, `aria-hidden`) — konsisten dengan ikon kad dan chevron.
+- **P3-2 — `prefers-reduced-transparency: reduce`:** blok media baharu dalam `public/css/subfaber-theme.css` melumpuhkan `backdrop-filter` pada `.app-navbar` / `.app-mobile-header` dan menggantinya dengan latar `var(--surface)` legap.
+- **P3-3 — SVG heart footer:** emoji `❤️` digantikan dengan SVG hati 14px (`fill="currentColor"`) merentas `footer.html` + 5 fail locale. Penemuan teknikal: elemen dengan `data-i18n-attr="innerHTML"` mengambil kandungan daripada fail locale, bukan HTML — locale adalah source of truth.
+- **P3-4 — `aria-live="polite"`:** `#installUrlBox` dalam `public/partials/main.html` kini mengumumkan kemunculan Install URL kepada pembaca skrin selepas Save berjaya.
+- **Ujian:** `npm test` — **287 PASS / 0 FAIL / 1 skipped**.
+
+## SubMaker v3.8.15 (2026-10-04) — Apple HIG Fasa 3 (P2): Motion, kontras & taktil
+
+**Audit Apple HIG — 5/5 item P2 selesai:**
+
+- **P2-1 — Spring motion curves:** semua transition interaktif (nav pills, butang, hover, collapse, toggle) ditukar daripada `ease` kepada `cubic-bezier(0.16, 1, 0.3, 1)` — fast attack, gentle settle — dalam `app-shell.css`, `subfaber-theme.css` dan `configure.css`.
+- **P2-2 — `prefers-contrast: more`:** blok media baharu menaikkan `--border` → `#cbd5e1`/`#475569` dan `--text-secondary` untuk kedua-dua tema light/dark.
+- **P2-3 — Butang taktil:** `.btn-primary:hover` kini `translateY(-1px)` + `box-shadow: 0 2px 8px var(--glow)`; `:active` menekan semula ke bawah.
+- **P2-4 — Banner taktil:** `.qs-entry-banner:active` dalam `quick-setup.css` ditambah `scale(0.98)` untuk maklum balas sentuhan segera.
+- **P2-5 — Deference ikon hiasan:** `.section-icon:hover` (bounce + shadow berlapis) dibuang sepenuhnya — ikon hiasan tidak bersaing dengan kandungan.
+- **Ujian:** `npm test` — **287 PASS / 0 FAIL / 1 skipped**.
+
+## SubMaker v3.8.14 (2026-10-04) — Apple HIG Fasa 2 (P1): Affordance, kontras & konsistensi
+
+**Audit Apple HIG — 5/5 item P1 selesai:**
+
+- **P1-1 — Chevron SVG:** glyph teks `▼/▲` pada `.collapse-btn` digantikan dengan SVG chevron monoline 14px melalui CSS `mask` (data-URI) — animasi putaran 180°, hover `currentColor`, `:active scale(0.96)`, butang dinaikkan 32→40px. Tiada perubahan HTML/JS.
+- **P1-2 — Label sidebar:** `.app-nav-label` `font-size: 10px` → `11px` (Apple Caption 2 floor).
+- **P1-3 — Kontras border:** light theme `--border` `#f1f5f9` → `#e2e8f0` (~1.1:1 → ~1.4:1), `--border-strong` → `#cbd5e1`.
+- **P1-4 — Kedalaman toggle:** off-track `inset 0 1px 3px rgba(0,0,0,0.08)`, off-thumb lift shadow, on-track `0 2px 6px var(--glow)`, on-thumb shadow putih — selari HIG Switches.
+- **P1-5 — Penyatuan ikon:** emoji `⭐ ✓ ✗` pada 9 quick-btn (3 kad × 3 butang) digantikan dengan SVG monoline 16px (stroke 2, `currentColor`) dalam `main.html`.
+- **Ujian:** `npm test` — **287 PASS / 0 FAIL / 1 skipped**.
+
+## SubMaker v3.8.13 (2026-10-04) — Apple HIG Fasa 1 (P0): Kontrak aksesibiliti
+
+**Audit Apple HIG bermula — 3/3 item P0 (kritikal aksesibiliti) selesai:**
+
+- **P0-1 — Hit target 44pt:** `.app-nav-child` 34px→44px, `.app-nav-grandchild` 30px→44px, dan breakpoint tablet (900–1200px) `.app-nav-pill`/`.app-nav-child` 36px/32px→44px dalam `app-shell.css` — menepati had minimum pointer Apple HIG / WCAG 2.5.5.
+- **P0-2 — Zon sentuh bottom-nav:** `.app-bottom-nav-item` `padding: 10px 4px` (≈38px) → `min-height: 48px` + `justify-content: center` — melebihi 44pt dengan margin selesa.
+- **P0-3 — Focus-visible outline:** rule `:focus-visible` baharu dengan `outline: 2px solid var(--primary) !important; outline-offset: 2px !important` ditambah dalam 3 lapisan CSS (`configure.css`, `subfaber-theme.css`, `rootify.css`) — pengguna papan kekunci mendapat penunjuk fokus jelas manakala pengguna tetikus kekal dengan glow bersih (WCAG 2.4.7).
+- **Ujian:** `npm test` — **287 PASS / 0 FAIL / 1 skipped**.
+
 ## SubMaker v3.8.12 (2026-10-04) — Brand logo v4 (subfaber-mark-v4)
 
 **Logo header baru — subfaber-lockup-v4.png:**
