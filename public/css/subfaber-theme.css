@@ -21,15 +21,15 @@
    --------------------------------------------------------------------------- */
 :root,
 [data-theme='light'] {
-    /* Rootsys violet accent (flat, no gloss) */
-    --primary: #7c3aed;
-    --primary-light: #8b5cf6;
-    --primary-dark: #6d28d9;
-    --secondary: #7c3aed;
-    --accent: #7c3aed;
+    /* Apple Blue accent (flat, no gloss) — apple.com ground truth 2026 */
+    --primary: #0071e3;
+    --primary-light: #2997ff;
+    --primary-dark: #0060c4;
+    --secondary: #0071e3;
+    --accent: #0071e3;
 
-    /* Soft violet container for active / accented surfaces (Violet-100) */
-    --accent-soft: #ede9fe;
+    /* Soft blue container for active / accented surfaces (Apple Blue tint) */
+    --accent-soft: #e3effc;
 
     --success: #16a34a;
     --warning: #d97706;
@@ -56,7 +56,7 @@
     --border: #e2e8f0; /* Apple HIG: raise light-theme border contrast from ~1.1:1 to ~1.4:1 */
     --border-strong: #cbd5e1;
     --shadow: rgba(15, 23, 42, 0.06);
-    --glow: rgba(124, 58, 237, 0.16);
+    --glow: rgba(0, 113, 227, 0.16);
 
     --radius-card: 16px;
     --radius-control: 10px;
@@ -69,12 +69,13 @@
 [data-theme='dark'],
 [data-theme='blackhole'],
 [data-theme='true-dark'] {
-    /* Rootsys violet accent — kept identical in dark for brand consistency */
-    --primary: #7c3aed;
-    --primary-light: #a78bfa;
-    --primary-dark: #8b5cf6;
-    --secondary: #7c3aed;
-    --accent: #a78bfa;
+    /* Apple Blue accent — kept identical in dark for brand consistency */
+    --primary: #0071e3;
+    --primary-light: #2997ff;
+    --primary-dark: #2997ff;
+    --secondary: #0071e3;
+    --accent: #2997ff;
+    --accent-soft: rgba(0, 113, 227, 0.2);
 
     --success: #22c55e;
     --warning: #f59e0b;
@@ -101,7 +102,7 @@
     --border: #1e293b;
     --border-strong: #334155;
     --shadow: rgba(0, 0, 0, 0.5);
-    --glow: rgba(14, 165, 233, 0.22);
+    --glow: rgba(41, 151, 255, 0.22);
 
     color-scheme: dark;
 }
@@ -671,6 +672,13 @@ label:has(input[type='radio']:checked)[style*='background: white'] {
 .toggle-slider {
     background: var(--border-strong) !important;
     box-shadow: inset 0 1px 3px rgba(0, 0, 0, 0.08) !important;
+}
+
+[data-theme='dark'] .toggle-slider,
+[data-theme='blackhole'] .toggle-slider,
+[data-theme='true-dark'] .toggle-slider {
+    background: #334155 !important;
+    border-color: #475569 !important;
 }
 
 .toggle-slider::before {

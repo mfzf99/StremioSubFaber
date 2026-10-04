@@ -7,11 +7,11 @@
 /* Removed global smooth scrolling to reduce perceived lag */
 
 :root {
-    --primary: #08a4d5;
-    --primary-light: #33b9e1;
-    --primary-dark: #068db7;
-    --secondary: #33b9e1;
-    --accent: #0ea5e9;
+    --primary: #0071e3;
+    --primary-light: #2997ff;
+    --primary-dark: #0060c4;
+    --secondary: #2997ff;
+    --accent: #0071e3;
     --success: #10b981;
     --warning: #f59e0b;
     --danger: #ef4444;
@@ -24,7 +24,7 @@
     --text-secondary: #475569;
     --border: #dbe3ea;
     --shadow: rgba(0, 0, 0, 0.08);
-    --glow: rgba(8, 164, 213, 0.25);
+    --glow: rgba(0, 113, 227, 0.25);
     --vault-display-font: 'Aptos Display', 'Aptos', 'Segoe UI Variable Display', 'Segoe UI', 'Inter', sans-serif;
     --floating-bottom-safe-zone: 0px;
 }
@@ -67,11 +67,11 @@ html {
 
 /* Dark mode color scheme */
 [data-theme='dark'] {
-    --primary: #08a4d5;
-    --primary-light: #33b9e1;
-    --primary-dark: #068db7;
-    --secondary: #33b9e1;
-    --accent: #0ea5e9;
+    --primary: #0071e3;
+    --primary-light: #2997ff;
+    --primary-dark: #0060c4;
+    --secondary: #2997ff;
+    --accent: #0071e3;
     --success: #10b981;
     --warning: #f59e0b;
     --danger: #ef4444;
@@ -84,16 +84,16 @@ html {
     --text-secondary: #9aa0a6;
     --border: #2a3247;
     --shadow: rgba(0, 0, 0, 0.3);
-    --glow: rgba(8, 164, 213, 0.35);
+    --glow: rgba(41, 151, 255, 0.35);
 }
 
 /* True Dark mode (Blackhole) color scheme */
 [data-theme='blackhole'] {
-    --primary: #08a4d5;
-    --primary-light: #33b9e1;
-    --primary-dark: #068db7;
-    --secondary: #33b9e1;
-    --accent: #0ea5e9;
+    --primary: #0071e3;
+    --primary-light: #2997ff;
+    --primary-dark: #0060c4;
+    --secondary: #2997ff;
+    --accent: #0071e3;
     --success: #10b981;
     --warning: #f59e0b;
     --danger: #ef4444;
@@ -490,7 +490,7 @@ html[data-theme='blackhole'] .ui-lang-flag {
     border-color: var(--primary);
     box-shadow:
         0 14px 30px rgba(8, 164, 213, 0.28),
-        0 0 0 1px rgba(8, 164, 213, 0.35);
+        0 0 0 1px rgba(0, 113, 227, 0.35);
     background:
         radial-gradient(circle at 35% 35%, rgba(255, 255, 255, 0.95), rgba(255, 255, 255, 0.78)),
         linear-gradient(145deg, rgba(8, 164, 213, 0.25), rgba(51, 185, 225, 0.2));
@@ -856,7 +856,7 @@ h1:hover {
     inset: -3px;
     border-radius: 20px;
     background:
-        radial-gradient(ellipse at 20% 0%, rgba(8, 164, 213, 0.35) 0%, transparent 45%),
+        radial-gradient(ellipse at 20% 0%, rgba(0, 113, 227, 0.35) 0%, transparent 45%),
         radial-gradient(ellipse at 80% 100%, rgba(51, 185, 225, 0.25) 0%, transparent 45%),
         radial-gradient(ellipse at 50% 50%, rgba(100, 50, 200, 0.08) 0%, transparent 60%);
     pointer-events: none;
@@ -1372,7 +1372,7 @@ h1:hover {
     font-weight: 700;
     letter-spacing: 0.02em;
     color: #e8f4fd;
-    background: linear-gradient(135deg, rgba(8, 164, 213, 0.35), rgba(51, 185, 225, 0.2));
+    background: linear-gradient(135deg, rgba(0, 113, 227, 0.35), rgba(51, 185, 225, 0.2));
     border: 1px solid rgba(8, 164, 213, 0.4);
     text-shadow: 0 1px 2px rgba(0, 0, 0, 0.4);
 }
@@ -1611,7 +1611,7 @@ h1:hover {
 [data-theme='light'] .portal-frame,
 :root:not([data-theme]) .portal-frame {
     background: linear-gradient(135deg, #e4f2fb 0%, #d8ecf6 30%, #dff0fa 60%, #eef7ff 100%);
-    border-color: rgba(8, 164, 213, 0.35);
+    border-color: rgba(0, 113, 227, 0.35);
     box-shadow:
         inset 0 1px 0 rgba(255, 255, 255, 0.9),
         inset 0 -1px 0 rgba(0, 0, 0, 0.05),
@@ -1632,7 +1632,7 @@ h1:hover {
     background:
         radial-gradient(1.5px 1.5px at 15% 30%, rgba(8, 164, 213, 0.4), transparent),
         radial-gradient(1px 1px at 35% 65%, rgba(51, 185, 225, 0.25), transparent),
-        radial-gradient(2px 2px at 55% 18%, rgba(8, 164, 213, 0.35), transparent),
+        radial-gradient(2px 2px at 55% 18%, rgba(0, 113, 227, 0.35), transparent),
         radial-gradient(1px 1px at 80% 55%, rgba(100, 180, 240, 0.2), transparent),
         radial-gradient(1.5px 1.5px at 70% 82%, rgba(51, 185, 225, 0.3), transparent),
         radial-gradient(2px 2px at 90% 15%, rgba(8, 164, 213, 0.3), transparent);
@@ -1853,7 +1853,7 @@ h1:hover {
         inset 0 -3px 0 rgba(0, 0, 0, 0.3),
         0 5px 0 rgba(0, 0, 0, 0.25),
         0 8px 24px var(--glow),
-        0 0 40px rgba(8, 164, 213, 0.35);
+        0 0 40px rgba(0, 113, 227, 0.35);
     position: relative;
     overflow: hidden;
     animation: titlePulse 3s cubic-bezier(0.16, 1, 0.3, 1)-in-out infinite;
@@ -1931,7 +1931,7 @@ h1:hover {
         0 0 120px rgba(51, 185, 225, 0.3);
     text-shadow:
         0 2px 4px rgba(0, 0, 0, 0.8),
-        0 4px 12px rgba(8, 164, 213, 0.35),
+        0 4px 12px rgba(0, 113, 227, 0.35),
         0 -1px 2px rgba(255, 255, 255, 0.2);
 }
 
@@ -3652,7 +3652,7 @@ label:has(#subToolboxEnabled:disabled) {
 
 .info-box {
     background: rgba(8, 164, 213, 0.08);
-    border: 1px solid rgba(8, 164, 213, 0.35);
+    border: 1px solid rgba(0, 113, 227, 0.35);
     border-radius: 12px;
     padding: 0.9rem 1rem;
     margin: 1rem 0;
@@ -4273,7 +4273,7 @@ label:has(#subToolboxEnabled:disabled) {
 .theme-toggle:focus-visible {
     outline: none;
     box-shadow:
-        0 0 0 3px rgba(8, 164, 213, 0.35),
+        0 0 0 3px rgba(0, 113, 227, 0.35),
         0 8px 20px var(--shadow);
 }
 

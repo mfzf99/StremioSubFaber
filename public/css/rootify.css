@@ -24,13 +24,13 @@
    --------------------------------------------------------------------------- */
 :root,
 [data-theme='light'] {
-    /* Rootsys violet accent (matches dashboard ground truth) */
-    --primary: #7c3aed;
-    --primary-light: #8b5cf6;
-    --primary-dark: #6d28d9;
-    --secondary: #7c3aed;
-    --accent: #7c3aed;
-    --accent-soft: #ede7fe; /* Rootsys violet tint (exact) */
+    /* Apple Blue accent (apple.com ground truth 2026) */
+    --primary: #0071e3;
+    --primary-light: #2997ff;
+    --primary-dark: #0060c4;
+    --secondary: #0071e3;
+    --accent: #0071e3;
+    --accent-soft: #e3effc; /* Apple Blue tint */
 
     /* Rootsys light surfaces */
     --bg-primary: #f7f8fb; /* Rootsys app background (exact) */
@@ -49,12 +49,12 @@
     --border: #eceff4; /* Rootsys card border (exact) */
     --border-strong: #e2e8f0;
     --shadow: rgba(16, 24, 40, 0.06); /* Rootsys card shadow (exact) */
-    --glow: rgba(124, 58, 237, 0.16);
+    --glow: rgba(0, 113, 227, 0.16);
 
     /* Rootsys desktop "wallpaper" behind the window */
     --desktop-bg: #e9ecf3;
     --desktop-bg-image:
-        radial-gradient(1200px 600px at 15% -10%, rgba(124, 58, 237, 0.1), transparent 60%),
+        radial-gradient(1200px 600px at 15% -10%, rgba(0, 113, 227, 0.1), transparent 60%),
         radial-gradient(1000px 500px at 110% 10%, rgba(14, 165, 233, 0.08), transparent 55%);
 
     /* Rootsys traffic lights (exact macOS values) */
@@ -72,13 +72,13 @@
 [data-theme='dark'],
 [data-theme='blackhole'],
 [data-theme='true-dark'] {
-    /* Keep violet accent in dark (Rootsys dashboard keeps #7C3AED / #A78BFA) */
-    --primary: #7c3aed;
-    --primary-light: #a78bfa; /* Rootsys dark violet text (exact) */
-    --primary-dark: #8b5cf6;
-    --secondary: #7c3aed;
-    --accent: #a78bfa;
-    --accent-soft: rgba(124, 58, 237, 0.2); /* Rootsys dark active nav tint */
+    /* Apple Blue accent in dark (apple.com keeps #0071E3 / #2997FF) */
+    --primary: #0071e3;
+    --primary-light: #2997ff; /* Apple Blue light for dark backgrounds */
+    --primary-dark: #2997ff;
+    --secondary: #0071e3;
+    --accent: #2997ff;
+    --accent-soft: rgba(0, 113, 227, 0.2); /* Apple Blue dark active nav tint */
 
     /* Rootsys dark surfaces (ground truth) */
     --bg-primary: #14161f; /* Rootsys dark app bg (exact) */
@@ -97,12 +97,12 @@
     --border: #2a2c3a; /* exact */
     --border-strong: #3a3d4e;
     --shadow: rgba(0, 0, 0, 0.45);
-    --glow: rgba(124, 58, 237, 0.28);
+    --glow: rgba(41, 151, 255, 0.28);
 
     /* Dark desktop wallpaper */
     --desktop-bg: #0c0e15;
     --desktop-bg-image:
-        radial-gradient(1200px 600px at 15% -10%, rgba(124, 58, 237, 0.16), transparent 60%),
+        radial-gradient(1200px 600px at 15% -10%, rgba(0, 113, 227, 0.16), transparent 60%),
         radial-gradient(1000px 500px at 110% 10%, rgba(14, 165, 233, 0.1), transparent 55%);
 
     color-scheme: dark;
@@ -537,7 +537,7 @@ textarea:focus-visible {
 [data-theme='dark'] .rootify-stat-chip-violet,
 [data-theme='blackhole'] .rootify-stat-chip-violet,
 [data-theme='true-dark'] .rootify-stat-chip-violet {
-    background: rgba(124, 58, 237, 0.2);
+    background: rgba(0, 113, 227, 0.2);
     color: var(--primary-light);
 }
 

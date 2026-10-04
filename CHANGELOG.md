@@ -2,6 +2,18 @@
 
 All notable changes to this project will be documented in this file.
 
+## SubMaker v3.8.18 (2026-10-04) — Theme: Apple Blue #0071e3 (apple.com ground truth)
+
+**Tema SubFaber bertukar daripada ungu Rootsys kepada biru Apple sebijik apple.com:**
+
+- **Palet Apple Blue (ground truth 2026):** warna diekstrak secara langsung daripada apple.com menggunakan Playwright `getComputedStyle` — butang "Learn more" `rgb(0, 113, 227)` = **#0071e3** (primary), butang "Buy" `rgb(41, 151, 255)` = **#2997ff** (primary-light), dan **#0060c4** (primary-dark).
+- **Token utama ditukar dalam 3 lapisan CSS:** `subfaber-theme.css`, `rootify.css`, `configure.css` — `--primary` `#7c3aed` → `#0071e3`, `--primary-light` `#8b5cf6` → `#2997ff`, `--primary-dark` `#6d28d9` → `#0060c4`, `--accent-soft` `#ede9fe` → `#e3effc` (light) / `rgba(0,113,227,0.2)` (dark), `--glow` violet → Apple Blue rgba.
+- **Pendekatan token-first (bukan regex global):** menggantikan custom properties yang mengawal ratusan komponen melalui `var(--primary)` — lebih selamat daripada usaha regex global pada 9,000+ baris yang terperangkap dalam loop sebelumnya. Pengesahan dibuat melalui **computed style DOM live**, bukan kiraan teks dalam fail.
+- **Pengesahan 4 tema (computed style DOM live):** light/dark/blackhole/true-dark semuanya membawa `--primary: #0071e3`, `--primary-light: #2997ff`, `.btn-primary` background `rgb(0,113,227)`, `.app-nav-pill.active` color `rgb(0,113,227)`.
+- **Override komponen dark:** active nav dark kini menggunakan `rgba(0,113,227,0.2)` + `color: var(--primary-light)` dalam `app-shell.css`; toggle off dark menggunakan `#334155` neutral gelap; Quick Setup toggle on `linear-gradient(135deg, #0071e3, #2997ff)`.
+- **Nilai legacy dikekalkan:** warna semantik (`--success`, `--warning`, `--danger`), kategori badge, dan gradient hiasan portal/nebula tidak diubah — ia membawa maksud fungsian berbeza daripada accent utama.
+- **Ujian:** `npm test` — **287 PASS / 0 FAIL / 1 skipped**.
+
 ## SubMaker v3.8.17 (2026-10-04) — Fix: Footer heart merah #dc2626
 
 **Pembetulan warna ikon hati footer mengikut prinsip Apple HIG "use color purposefully":**

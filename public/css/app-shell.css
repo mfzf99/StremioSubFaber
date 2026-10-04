@@ -152,6 +152,7 @@ body.app-shell .qs-entry-banner {
 [data-theme='dark'] .app-nav-pill[aria-current='page'],
 [data-theme='blackhole'] .app-nav-pill.active,
 [data-theme='true-dark'] .app-nav-pill.active {
+    background: rgba(0, 113, 227, 0.2);
     color: var(--primary-light);
 }
 

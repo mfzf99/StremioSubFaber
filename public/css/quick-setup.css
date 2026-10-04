@@ -825,7 +825,7 @@
 }
 
 .qs-toggle input:checked + .qs-toggle-slider {
-    background: linear-gradient(135deg, #08a4d5, #33b9e1);
+    background: linear-gradient(135deg, #0071e3, #2997ff);
 }
 
 .qs-toggle input:checked + .qs-toggle-slider::before {
