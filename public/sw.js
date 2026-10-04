@@ -62,6 +62,7 @@ const NON_CACHEABLE_PATH_PREFIXES = [
     '/addon/'
 ];
 const NON_CACHEABLE_ASSETS = new Set([
+    '/css/app-shell.css',
     '/css/configure.css',
     '/css/combobox.css',
     '/css/quick-setup.css',
