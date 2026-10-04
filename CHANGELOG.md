@@ -2,6 +2,20 @@
 
 All notable changes to this project will be documented in this file.
 
+## SubMaker v3.8.20 (2026-10-04) — Icons: Section icons SVG monoline konsisten Quick Setup
+
+**Ikon seksyen utama kembali kepada SVG vektor stroke-based, kali ini mengikut gaya ikon Quick Setup wizard:**
+
+- **Isu:** Selepas eksperimen emoji 3D (v3.8.19), gaya emoji didapati tidak menepati citarasa akhir — ikon Quick Setup wizard (Translate/Fetch) sebenarnya menggunakan SVG vektor stroke-based yang kemas, bukan emoji.
+- **Fix:** Ketiga-tiga ikon seksyen dalam `public/partials/main.html` ditukar daripada emoji kepada SVG inline mengikut gaya Quick Setup:
+  - **API Keys:** emoji kunci → SVG kunci (bulatan kepala + batang + gigi, `stroke-width="2.5"`)
+  - **Languages:** emoji globus → SVG glob (bulatan luar + elips menegak + garis khatulistiwa + garis latitud, `opacity="0.6"`)
+  - **Settings:** emoji gear → SVG gear (bulatan tengah + 4 jejari utama + 4 jejari condong, `opacity="0.7"`)
+- **Gaya konsisten Quick Setup wizard:** semua SVG menggunakan `viewBox="0 0 48 48"`, `fill="none"`, `stroke="currentColor"`, `stroke-linecap="round"` — sama seperti `.qs-mode-icon svg` dalam `quick-setup.html` — lalu mewarisi warna kategori badge (sky/teal/slate) sedia ada melalui rule `.section-icon svg` dalam `subfaber-theme.css`.
+- **Sifar kebergantungan JS pada emoji:** disahkan tiada JavaScript yang membaca `textContent`/`innerHTML` emoji `.section-icon` (gelintar `public/js` kosong) — penukaran markup selamat.
+- **Aksesibiliti kekal:** `aria-hidden="true"` dan kelas `.section-icon section-emoji` (termasuk `.language-emoji`/`.settings-emoji`) dikekalkan — tiada kesan sampingan pada CSS badge kategori atau screen reader.
+- **Ujian:** `npm test` — **287 PASS / 0 FAIL / 1 skipped**.
+
 ## SubMaker v3.8.19 (2026-10-04) — Icons: Section icons 3D penuh (API Keys / Languages / Settings)
 
 **Ikon seksyen utama ditukar daripada SVG monoline 2D kepada emoji penuh 3D — konsisten dengan Quick Setup:**
