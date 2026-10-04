@@ -202,7 +202,7 @@ body.app-shell .qs-entry-banner {
 .app-nav-child {
     display: flex;
     align-items: center;
-    min-height: 34px;
+    min-height: 44px; /* Apple HIG: minimum pointer hit target 44pt */
     padding: 0 12px 0 10px;
     border-radius: 8px;
     font-size: 13px;
@@ -224,7 +224,7 @@ body.app-shell .qs-entry-banner {
     padding-left: 22px;
     font-size: 12.5px;
     color: var(--text-tertiary);
-    min-height: 30px;
+    min-height: 44px; /* Apple HIG: minimum pointer hit target 44pt */
 }
 
 .app-nav-child.active,
@@ -550,8 +550,10 @@ body.app-shell .footer {
     display: flex;
     flex-direction: column;
     align-items: center;
+    justify-content: center;
     gap: 4px;
-    padding: 10px 4px;
+    min-height: 48px; /* Apple HIG: exceed the 44pt pointer minimum with margin */
+    padding: 6px 4px;
     font-size: 11px;
     font-weight: 500;
     color: var(--text-tertiary);
@@ -598,11 +600,11 @@ body.app-shell .footer {
         gap: 10px;
     }
     .app-nav-pill {
-        min-height: 36px;
+        min-height: 44px; /* Apple HIG: keep tablet hit target at 44pt */
         padding-inline: 10px;
     }
     .app-nav-child {
-        min-height: 32px;
+        min-height: 44px; /* Apple HIG: keep tablet hit target at 44pt */
         padding-inline: 8px;
     }
     .app-content {

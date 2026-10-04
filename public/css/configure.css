@@ -2425,6 +2425,17 @@ select:focus {
     box-shadow: 0 0 0 4px var(--glow);
 }
 
+/* Apple HIG / WCAG 2.4.7: visible focus indicator for keyboard users.
+   Mouse users keep the clean glow; keyboard users get a solid outline. */
+input[type='text']:focus-visible,
+input[type='password']:focus-visible,
+input[type='number']:focus-visible,
+textarea:focus-visible,
+select:focus-visible {
+    outline: 2px solid var(--primary) !important;
+    outline-offset: 2px !important;
+}
+
 input.invalid,
 select.invalid {
     border-color: var(--danger);
