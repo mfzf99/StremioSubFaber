@@ -331,9 +331,9 @@ body.modal-open {
     -webkit-backdrop-filter: blur(12px);
     z-index: 9985;
     transition:
-        box-shadow 0.18s ease,
-        border-color 0.18s ease,
-        transform 0.18s ease;
+        box-shadow 0.18s cubic-bezier(0.16, 1, 0.3, 1),
+        border-color 0.18s cubic-bezier(0.16, 1, 0.3, 1),
+        transform 0.18s cubic-bezier(0.16, 1, 0.3, 1);
     isolation: isolate;
     cursor: pointer;
 }
@@ -432,9 +432,9 @@ html[data-theme='blackhole'] .ui-language-dock {
         0 10px 20px rgba(0, 0, 0, 0.12);
     cursor: pointer;
     transition:
-        transform 0.2s ease,
-        box-shadow 0.2s ease,
-        border-color 0.2s ease;
+        transform 0.2s cubic-bezier(0.16, 1, 0.3, 1),
+        box-shadow 0.2s cubic-bezier(0.16, 1, 0.3, 1),
+        border-color 0.2s cubic-bezier(0.16, 1, 0.3, 1);
 }
 
 .ui-lang-flag-icon {
@@ -557,7 +557,7 @@ html[data-theme='blackhole'] .ui-lang-flag.active {
     align-items: center;
     justify-content: center;
     box-shadow: 0 20px 60px var(--glow);
-    animation: float 3s ease-in-out infinite;
+    animation: float 3s cubic-bezier(0.16, 1, 0.3, 1)-in-out infinite;
     /* Hint compositing to keep animation smooth */
     will-change: transform;
     transform: translateZ(0);
@@ -615,7 +615,7 @@ h1 {
         0 -1px 2px rgba(255, 255, 255, 0.3);
     transform-style: preserve-3d;
     transition: all 0.3s cubic-bezier(0.16, 1, 0.3, 1);
-    animation: titlePulse 3s ease-in-out infinite;
+    animation: titlePulse 3s cubic-bezier(0.16, 1, 0.3, 1)-in-out infinite;
     width: fit-content;
     overflow: hidden;
 }
@@ -638,7 +638,7 @@ h1::before {
     );
     border-radius: 16px;
     opacity: 0;
-    animation: shimmer 4s ease-in-out infinite;
+    animation: shimmer 4s cubic-bezier(0.16, 1, 0.3, 1)-in-out infinite;
     pointer-events: none;
     overflow: hidden;
 }
@@ -860,7 +860,7 @@ h1:hover {
         radial-gradient(ellipse at 80% 100%, rgba(51, 185, 225, 0.25) 0%, transparent 45%),
         radial-gradient(ellipse at 50% 50%, rgba(100, 50, 200, 0.08) 0%, transparent 60%);
     pointer-events: none;
-    animation: portalGlowPulse 4s ease-in-out infinite;
+    animation: portalGlowPulse 4s cubic-bezier(0.16, 1, 0.3, 1)-in-out infinite;
     z-index: 0;
 }
 
@@ -902,31 +902,31 @@ h1:hover {
 .portal-creature.c1 {
     top: 20%;
     left: 10%;
-    animation: cFloat1 14s ease-in-out infinite;
+    animation: cFloat1 14s cubic-bezier(0.16, 1, 0.3, 1)-in-out infinite;
 }
 
 .portal-creature.c2 {
     top: 55%;
     left: 75%;
-    animation: cFloat2 18s ease-in-out infinite;
+    animation: cFloat2 18s cubic-bezier(0.16, 1, 0.3, 1)-in-out infinite;
 }
 
 .portal-creature.c3 {
     top: 35%;
     left: 40%;
-    animation: cFloat3 12s ease-in-out infinite;
+    animation: cFloat3 12s cubic-bezier(0.16, 1, 0.3, 1)-in-out infinite;
 }
 
 .portal-creature.c4 {
     top: 70%;
     left: 20%;
-    animation: cFloat4 16s ease-in-out infinite;
+    animation: cFloat4 16s cubic-bezier(0.16, 1, 0.3, 1)-in-out infinite;
 }
 
 .portal-creature.c5 {
     top: 15%;
     left: 85%;
-    animation: cFloat5 20s ease-in-out infinite;
+    animation: cFloat5 20s cubic-bezier(0.16, 1, 0.3, 1)-in-out infinite;
 }
 
 @keyframes cFloat1 {
@@ -1030,7 +1030,7 @@ h1:hover {
     box-shadow:
         0 0 6px rgba(34, 211, 238, 0.7),
         0 0 14px rgba(34, 211, 238, 0.3);
-    animation-timing-function: ease-in-out;
+    animation-timing-function: cubic-bezier(0.16, 1, 0.3, 1)-in-out;
 }
 
 .portal-creature::before,
@@ -1044,32 +1044,32 @@ h1:hover {
 /* Firefly twinkle */
 .portal-creature.c1 {
     animation:
-        cFloat1 14s ease-in-out infinite,
-        fireGlow 2.5s ease-in-out infinite;
+        cFloat1 14s cubic-bezier(0.16, 1, 0.3, 1)-in-out infinite,
+        fireGlow 2.5s cubic-bezier(0.16, 1, 0.3, 1)-in-out infinite;
 }
 
 .portal-creature.c2 {
     animation:
-        cFloat2 18s ease-in-out infinite,
-        fireGlow 3.2s ease-in-out infinite 0.5s;
+        cFloat2 18s cubic-bezier(0.16, 1, 0.3, 1)-in-out infinite,
+        fireGlow 3.2s cubic-bezier(0.16, 1, 0.3, 1)-in-out infinite 0.5s;
 }
 
 .portal-creature.c3 {
     animation:
-        cFloat3 12s ease-in-out infinite,
-        fireGlow 2.8s ease-in-out infinite 1s;
+        cFloat3 12s cubic-bezier(0.16, 1, 0.3, 1)-in-out infinite,
+        fireGlow 2.8s cubic-bezier(0.16, 1, 0.3, 1)-in-out infinite 1s;
 }
 
 .portal-creature.c4 {
     animation:
-        cFloat4 16s ease-in-out infinite,
-        fireGlow 3.5s ease-in-out infinite 0.3s;
+        cFloat4 16s cubic-bezier(0.16, 1, 0.3, 1)-in-out infinite,
+        fireGlow 3.5s cubic-bezier(0.16, 1, 0.3, 1)-in-out infinite 0.3s;
 }
 
 .portal-creature.c5 {
     animation:
-        cFloat5 20s ease-in-out infinite,
-        fireGlow 2.2s ease-in-out infinite 0.8s;
+        cFloat5 20s cubic-bezier(0.16, 1, 0.3, 1)-in-out infinite,
+        fireGlow 2.2s cubic-bezier(0.16, 1, 0.3, 1)-in-out infinite 0.8s;
 }
 
 @keyframes fireGlow {
@@ -1111,7 +1111,7 @@ h1:hover {
     box-shadow:
         inset 0 0 3px rgba(255, 255, 255, 0.5),
         0 0 5px rgba(135, 206, 250, 0.35);
-    animation: wingFlap 0.28s ease-in-out infinite alternate;
+    animation: wingFlap 0.28s cubic-bezier(0.16, 1, 0.3, 1)-in-out infinite alternate;
 }
 
 [data-theme='light'] .portal-creature::before,
@@ -1140,27 +1140,27 @@ h1:hover {
 /* Restore float animations for light theme (overriding fireGlow compound) */
 [data-theme='light'] .portal-creature.c1,
 :root:not([data-theme]) .portal-creature.c1 {
-    animation: cFloat1 14s ease-in-out infinite;
+    animation: cFloat1 14s cubic-bezier(0.16, 1, 0.3, 1)-in-out infinite;
 }
 
 [data-theme='light'] .portal-creature.c2,
 :root:not([data-theme]) .portal-creature.c2 {
-    animation: cFloat2 18s ease-in-out infinite;
+    animation: cFloat2 18s cubic-bezier(0.16, 1, 0.3, 1)-in-out infinite;
 }
 
 [data-theme='light'] .portal-creature.c3,
 :root:not([data-theme]) .portal-creature.c3 {
-    animation: cFloat3 12s ease-in-out infinite;
+    animation: cFloat3 12s cubic-bezier(0.16, 1, 0.3, 1)-in-out infinite;
 }
 
 [data-theme='light'] .portal-creature.c4,
 :root:not([data-theme]) .portal-creature.c4 {
-    animation: cFloat4 16s ease-in-out infinite;
+    animation: cFloat4 16s cubic-bezier(0.16, 1, 0.3, 1)-in-out infinite;
 }
 
 [data-theme='light'] .portal-creature.c5,
 :root:not([data-theme]) .portal-creature.c5 {
-    animation: cFloat5 20s ease-in-out infinite;
+    animation: cFloat5 20s cubic-bezier(0.16, 1, 0.3, 1)-in-out infinite;
 }
 
 /* ── True-dark: GHOST BATS ── */
@@ -1181,7 +1181,7 @@ h1:hover {
     border-radius: 0;
     clip-path: polygon(0% 50%, 15% 0%, 35% 35%, 50% 10%, 65% 35%, 85% 0%, 100% 50%, 70% 80%, 50% 100%, 30% 80%);
     box-shadow: 0 0 4px rgba(120, 60, 180, 0.3);
-    animation: batFlap 0.35s ease-in-out infinite alternate;
+    animation: batFlap 0.35s cubic-bezier(0.16, 1, 0.3, 1)-in-out infinite alternate;
 }
 
 [data-theme='blackhole'] .portal-creature::before {
@@ -1207,23 +1207,23 @@ h1:hover {
 
 /* Bat float paths (slightly faster, more erratic) */
 [data-theme='blackhole'] .portal-creature.c1 {
-    animation: cFloat1 11s ease-in-out infinite;
+    animation: cFloat1 11s cubic-bezier(0.16, 1, 0.3, 1)-in-out infinite;
 }
 
 [data-theme='blackhole'] .portal-creature.c2 {
-    animation: cFloat2 14s ease-in-out infinite;
+    animation: cFloat2 14s cubic-bezier(0.16, 1, 0.3, 1)-in-out infinite;
 }
 
 [data-theme='blackhole'] .portal-creature.c3 {
-    animation: cFloat3 9s ease-in-out infinite;
+    animation: cFloat3 9s cubic-bezier(0.16, 1, 0.3, 1)-in-out infinite;
 }
 
 [data-theme='blackhole'] .portal-creature.c4 {
-    animation: cFloat4 13s ease-in-out infinite;
+    animation: cFloat4 13s cubic-bezier(0.16, 1, 0.3, 1)-in-out infinite;
 }
 
 [data-theme='blackhole'] .portal-creature.c5 {
-    animation: cFloat5 16s ease-in-out infinite;
+    animation: cFloat5 16s cubic-bezier(0.16, 1, 0.3, 1)-in-out infinite;
 }
 
 /* ==================================================================
@@ -1279,7 +1279,7 @@ h1:hover {
         12px 18px 0 #1a252f;
     animation:
         pixelRun 15s linear infinite,
-        pixelBounce 0.45s ease-in-out infinite;
+        pixelBounce 0.45s cubic-bezier(0.16, 1, 0.3, 1)-in-out infinite;
 }
 
 @keyframes pixelRun {
@@ -1331,7 +1331,7 @@ h1:hover {
     padding: 0.7rem 1rem;
     cursor: pointer;
     user-select: none;
-    transition: background 0.2s ease;
+    transition: background 0.2s cubic-bezier(0.16, 1, 0.3, 1);
 }
 
 .portal-header:hover {
@@ -1386,7 +1386,7 @@ h1:hover {
     box-shadow:
         0 0 8px rgba(34, 211, 238, 0.8),
         0 0 20px rgba(34, 211, 238, 0.4);
-    animation: portalNewPulse 2s ease-in-out infinite;
+    animation: portalNewPulse 2s cubic-bezier(0.16, 1, 0.3, 1)-in-out infinite;
 }
 
 @keyframes portalNewPulse {
@@ -1422,7 +1422,7 @@ h1:hover {
     overflow: hidden;
     transition:
         max-height 0.4s cubic-bezier(0.16, 1, 0.3, 1),
-        opacity 0.3s ease;
+        opacity 0.3s cubic-bezier(0.16, 1, 0.3, 1);
     opacity: 0;
 }
 
@@ -1465,8 +1465,8 @@ h1:hover {
     border-radius: 10px;
     overflow: hidden;
     transition:
-        border-color 0.2s ease,
-        background 0.2s ease;
+        border-color 0.2s cubic-bezier(0.16, 1, 0.3, 1),
+        background 0.2s cubic-bezier(0.16, 1, 0.3, 1);
 }
 
 .portal-entry:hover {
@@ -1508,7 +1508,7 @@ h1:hover {
 .portal-entry-chevron {
     font-size: 0.65rem;
     color: rgba(165, 216, 243, 0.5);
-    transition: transform 0.25s ease;
+    transition: transform 0.25s cubic-bezier(0.16, 1, 0.3, 1);
 }
 
 .portal-entry.expanded .portal-entry-chevron {
@@ -1520,7 +1520,7 @@ h1:hover {
     overflow: hidden;
     transition:
         max-height 0.35s cubic-bezier(0.16, 1, 0.3, 1),
-        padding 0.2s ease;
+        padding 0.2s cubic-bezier(0.16, 1, 0.3, 1);
     padding: 0 0.75rem;
 }
 
@@ -1584,8 +1584,8 @@ h1:hover {
     border-radius: 8px;
     background: rgba(8, 164, 213, 0.08);
     transition:
-        background 0.2s ease,
-        border-color 0.2s ease;
+        background 0.2s cubic-bezier(0.16, 1, 0.3, 1),
+        border-color 0.2s cubic-bezier(0.16, 1, 0.3, 1);
 }
 
 .portal-entry.expanded .portal-gh-link {
@@ -1856,7 +1856,7 @@ h1:hover {
         0 0 40px rgba(8, 164, 213, 0.35);
     position: relative;
     overflow: hidden;
-    animation: titlePulse 3s ease-in-out infinite;
+    animation: titlePulse 3s cubic-bezier(0.16, 1, 0.3, 1)-in-out infinite;
     transition: all 0.25s cubic-bezier(0.16, 1, 0.3, 1);
 }
 
@@ -1888,19 +1888,12 @@ h1:hover {
         transparent 100%
     );
     opacity: 0;
-    animation: shimmer 4s ease-in-out infinite;
+    animation: shimmer 4s cubic-bezier(0.16, 1, 0.3, 1)-in-out infinite;
     pointer-events: none;
 }
 
-.section-icon:hover {
-    transform: translateY(-2px) scale(1.02);
-    box-shadow:
-        inset 0 3px 0 rgba(255, 255, 255, 0.5),
-        inset 0 -4px 0 rgba(0, 0, 0, 0.3),
-        0 10px 0 rgba(0, 0, 0, 0.25),
-        0 16px 40px var(--glow),
-        0 0 70px rgba(8, 164, 213, 0.45);
-}
+/* Apple HIG Deference: decorative icons must not compete for attention.
+   Remove the bounce hover; the section header (interactive) owns the feedback. */
 
 [data-theme='dark'] .section-icon {
     border-color: rgba(0, 0, 0, 0.4);
@@ -2003,7 +1996,7 @@ h1:hover {
     font-size: 0.9rem;
     letter-spacing: -0.01em;
     text-decoration: none;
-    transition: all 0.2s ease;
+    transition: all 0.2s cubic-bezier(0.16, 1, 0.3, 1);
 }
 
 [data-theme='dark'] .section-close-link {
@@ -2076,7 +2069,7 @@ h1:hover {
         border-color 0.3s cubic-bezier(0.16, 1, 0.3, 1),
         box-shadow 0.3s cubic-bezier(0.16, 1, 0.3, 1),
         transform 0.3s cubic-bezier(0.16, 1, 0.3, 1),
-        padding 0.2s ease;
+        padding 0.2s cubic-bezier(0.16, 1, 0.3, 1);
 }
 
 .card:hover {
@@ -2211,9 +2204,9 @@ h1:hover {
     border-radius: 8px;
     cursor: pointer;
     transition:
-        background 0.18s ease,
-        border-color 0.18s ease,
-        transform 0.18s ease;
+        background 0.18s cubic-bezier(0.16, 1, 0.3, 1),
+        border-color 0.18s cubic-bezier(0.16, 1, 0.3, 1),
+        transform 0.18s cubic-bezier(0.16, 1, 0.3, 1);
     margin-left: 0.5rem;
     position: relative;
 }
@@ -2246,8 +2239,8 @@ h1:hover {
         center / contain no-repeat;
     color: var(--text-secondary);
     transition:
-        transform 0.18s ease,
-        color 0.18s ease;
+        transform 0.18s cubic-bezier(0.16, 1, 0.3, 1),
+        color 0.18s cubic-bezier(0.16, 1, 0.3, 1);
 }
 
 .collapse-btn:hover::before {
@@ -2441,14 +2434,14 @@ input[type='password'],
 input[type='number'],
 textarea {
     transition:
-        border-color 0.2s ease,
-        box-shadow 0.2s ease;
+        border-color 0.2s cubic-bezier(0.16, 1, 0.3, 1),
+        box-shadow 0.2s cubic-bezier(0.16, 1, 0.3, 1);
 }
 
 select {
     transition:
-        border-color 0.15s ease,
-        box-shadow 0.15s ease;
+        border-color 0.15s cubic-bezier(0.16, 1, 0.3, 1),
+        box-shadow 0.15s cubic-bezier(0.16, 1, 0.3, 1);
 }
 
 input[type='text']:focus,
@@ -2475,7 +2468,7 @@ select:focus-visible {
 input.invalid,
 select.invalid {
     border-color: var(--danger);
-    animation: shake 0.3s ease;
+    animation: shake 0.3s cubic-bezier(0.16, 1, 0.3, 1);
 }
 
 input.valid,
@@ -2488,7 +2481,7 @@ select.valid {
     font-size: 0.875rem;
     margin-top: 0.25rem;
     display: none;
-    animation: fadeInUp 0.3s ease;
+    animation: fadeInUp 0.3s cubic-bezier(0.16, 1, 0.3, 1);
 }
 
 .field-error.show {
@@ -2526,7 +2519,7 @@ textarea {
     cursor: pointer;
     font-size: 1.25rem;
     color: var(--text-secondary);
-    transition: all 0.2s ease;
+    transition: all 0.2s cubic-bezier(0.16, 1, 0.3, 1);
     user-select: none;
     z-index: 10;
 }
@@ -2565,7 +2558,7 @@ textarea {
     border: 2px solid var(--border);
     border-radius: 12px;
     margin-bottom: 1rem;
-    transition: all 0.3s ease;
+    transition: all 0.3s cubic-bezier(0.16, 1, 0.3, 1);
 }
 
 .selected-languages.empty {
@@ -2589,7 +2582,7 @@ textarea {
     font-weight: 500;
     animation: chipIn 0.3s cubic-bezier(0.16, 1, 0.3, 1);
     cursor: pointer;
-    transition: all 0.2s ease;
+    transition: all 0.2s cubic-bezier(0.16, 1, 0.3, 1);
 }
 
 .language-chip:hover {
@@ -2606,7 +2599,7 @@ textarea {
     background: rgba(255, 255, 255, 0.2);
     border-radius: 50%;
     font-size: 0.75rem;
-    transition: all 0.2s ease;
+    transition: all 0.2s cubic-bezier(0.16, 1, 0.3, 1);
 }
 
 .language-chip .remove:hover {
@@ -2685,7 +2678,7 @@ textarea {
     font-size: 0.875rem;
     font-weight: 500;
     cursor: pointer;
-    transition: all 0.2s ease;
+    transition: all 0.2s cubic-bezier(0.16, 1, 0.3, 1);
 }
 
 .quick-btn:hover {
@@ -2720,7 +2713,7 @@ textarea {
     inset: 0;
     background: linear-gradient(135deg, rgba(255, 255, 255, 0.1) 0%, transparent 100%);
     opacity: 0;
-    transition: opacity 0.3s ease;
+    transition: opacity 0.3s cubic-bezier(0.16, 1, 0.3, 1);
 }
 
 .btn:hover::before {
@@ -3018,7 +3011,7 @@ textarea {
     font-size: 0.875rem;
     color: var(--text-primary);
     opacity: 0;
-    transition: opacity 0.3s ease;
+    transition: opacity 0.3s cubic-bezier(0.16, 1, 0.3, 1);
     pointer-events: none;
     z-index: 1000;
 }
@@ -3082,8 +3075,8 @@ textarea {
     font-family: 'JetBrains Mono', ui-monospace, 'SF Mono', 'Cascadia Mono', Menlo, Consolas, monospace;
     cursor: text;
     transition:
-        border-color 0.2s ease,
-        box-shadow 0.2s ease;
+        border-color 0.2s cubic-bezier(0.16, 1, 0.3, 1),
+        box-shadow 0.2s cubic-bezier(0.16, 1, 0.3, 1);
 }
 
 .install-url-box input:focus {
@@ -3109,10 +3102,10 @@ textarea {
 
 .footer-heart {
     color: var(--danger);
-    animation: heartPulse 3s ease-in-out infinite;
+    animation: heartPulse 3s cubic-bezier(0.16, 1, 0.3, 1)-in-out infinite;
     display: inline-block;
     text-shadow: 0 0 0 transparent;
-    transition: all 0.3s ease;
+    transition: all 0.3s cubic-bezier(0.16, 1, 0.3, 1);
 }
 
 .footer p {
@@ -3123,7 +3116,7 @@ textarea {
 .footer a {
     color: var(--primary-light);
     text-decoration: none;
-    transition: color 0.2s ease;
+    transition: color 0.2s cubic-bezier(0.16, 1, 0.3, 1);
 }
 
 .footer a:hover {
@@ -3265,9 +3258,9 @@ textarea {
     font-weight: 700;
     cursor: pointer;
     transition:
-        transform 0.15s ease,
-        box-shadow 0.2s ease,
-        background 0.2s ease;
+        transform 0.15s cubic-bezier(0.16, 1, 0.3, 1),
+        box-shadow 0.2s cubic-bezier(0.16, 1, 0.3, 1),
+        background 0.2s cubic-bezier(0.16, 1, 0.3, 1);
 }
 
 .reset-btn:hover {
@@ -3296,8 +3289,8 @@ textarea {
     text-decoration: none;
     margin-left: 0.35rem;
     transition:
-        color 0.2s ease,
-        opacity 0.2s ease;
+        color 0.2s cubic-bezier(0.16, 1, 0.3, 1),
+        opacity 0.2s cubic-bezier(0.16, 1, 0.3, 1);
 }
 
 .support-link-hint a:hover {
@@ -3323,7 +3316,7 @@ label:has(#subToolboxEnabled:disabled) {
 
 /* Section reveal — clean uniform fade when expanding a collapsed section */
 .section-grid.section-reveal {
-    animation: sectionReveal 0.22s ease-out;
+    animation: sectionReveal 0.22s cubic-bezier(0.16, 1, 0.3, 1)-out;
 }
 
 @keyframes sectionReveal {
@@ -3352,7 +3345,7 @@ label:has(#subToolboxEnabled:disabled) {
     overscroll-behavior: contain;
     -webkit-overflow-scrolling: touch;
     z-index: 10000;
-    animation: fadeIn 0.3s ease;
+    animation: fadeIn 0.3s cubic-bezier(0.16, 1, 0.3, 1);
 }
 
 .modal-overlay.show {
@@ -3503,7 +3496,7 @@ label:has(#subToolboxEnabled:disabled) {
     align-items: center;
     justify-content: center;
     cursor: pointer;
-    transition: all 0.2s ease;
+    transition: all 0.2s cubic-bezier(0.16, 1, 0.3, 1);
     font-size: 1.25rem;
     color: var(--text-secondary);
     padding: 0;
@@ -4296,7 +4289,7 @@ label:has(#subToolboxEnabled:disabled) {
 
 .theme-toggle-icon {
     font-size: 1.5rem;
-    transition: all 0.3s ease;
+    transition: all 0.3s cubic-bezier(0.16, 1, 0.3, 1);
     user-select: none;
     -webkit-user-drag: none;
     pointer-events: none;
@@ -4528,8 +4521,8 @@ label:has(#subToolboxEnabled:disabled) {
     cursor: pointer;
     z-index: 1000;
     transition:
-        transform 0.2s ease,
-        box-shadow 0.2s ease;
+        transform 0.2s cubic-bezier(0.16, 1, 0.3, 1),
+        box-shadow 0.2s cubic-bezier(0.16, 1, 0.3, 1);
 }
 
 .help-button.toolbox-button {
@@ -4596,7 +4589,7 @@ label:has(#subToolboxEnabled:disabled) {
     opacity: 0.65;
     filter: blur(6px);
     z-index: -1;
-    animation: toolbox-breathe 3.2s ease-in-out infinite;
+    animation: toolbox-breathe 3.2s cubic-bezier(0.16, 1, 0.3, 1)-in-out infinite;
 }
 
 .toolbox-button::after {
@@ -4619,7 +4612,7 @@ label:has(#subToolboxEnabled:disabled) {
 }
 
 .toolbox-button.show {
-    animation: toolbox-pop 0.24s ease-out;
+    animation: toolbox-pop 0.24s cubic-bezier(0.16, 1, 0.3, 1)-out;
 }
 
 .toolbox-button .toolbox-icon {
@@ -4751,8 +4744,8 @@ label:has(#subToolboxEnabled:disabled) {
     position: fixed;
     transition:
         transform 0.25s cubic-bezier(0.16, 1, 0.3, 1),
-        box-shadow 0.25s ease;
-    animation: titlePulse 3s ease-in-out infinite;
+        box-shadow 0.25s cubic-bezier(0.16, 1, 0.3, 1);
+    animation: titlePulse 3s cubic-bezier(0.16, 1, 0.3, 1)-in-out infinite;
     will-change: transform;
     touch-action: manipulation;
     -webkit-tap-highlight-color: transparent;
@@ -4768,7 +4761,7 @@ label:has(#subToolboxEnabled:disabled) {
     opacity: 0;
     z-index: -1;
     filter: blur(8px);
-    transition: opacity 0.3s ease;
+    transition: opacity 0.3s cubic-bezier(0.16, 1, 0.3, 1);
     pointer-events: none;
 }
 
@@ -4954,7 +4947,7 @@ label:has(#subToolboxEnabled:disabled) {
     opacity: 0;
     transform: translateX(-50%) translateY(8px) scale(0.97);
     transition:
-        opacity 0.2s ease,
+        opacity 0.2s cubic-bezier(0.16, 1, 0.3, 1),
         transform 0.2s cubic-bezier(0.16, 1, 0.3, 1);
     scrollbar-width: thin;
     scrollbar-color: var(--primary) var(--surface-light);
@@ -4991,7 +4984,7 @@ label:has(#subToolboxEnabled:disabled) {
     transform: translateY(8px) scale(0.97);
     transition:
         transform 0.2s cubic-bezier(0.16, 1, 0.3, 1),
-        opacity 0.18s ease;
+        opacity 0.18s cubic-bezier(0.16, 1, 0.3, 1);
     will-change: transform, opacity;
 }
 
@@ -5036,7 +5029,7 @@ label:has(#subToolboxEnabled:disabled) {
     cursor: default;
     transition:
         transform 0.2s cubic-bezier(0.16, 1, 0.3, 1),
-        border-color 0.2s ease;
+        border-color 0.2s cubic-bezier(0.16, 1, 0.3, 1);
     position: relative;
     isolation: isolate;
     box-shadow:
@@ -5052,7 +5045,7 @@ label:has(#subToolboxEnabled:disabled) {
     box-shadow: var(--vault-rail-item-hover-shadow);
     opacity: 0;
     pointer-events: none;
-    transition: opacity 0.2s ease;
+    transition: opacity 0.2s cubic-bezier(0.16, 1, 0.3, 1);
     will-change: opacity;
 }
 
@@ -5280,7 +5273,7 @@ label:has(#subToolboxEnabled:disabled) {
     color: inherit;
     font-family: inherit;
     border-radius: 8px;
-    transition: background 0.15s ease;
+    transition: background 0.15s cubic-bezier(0.16, 1, 0.3, 1);
 }
 
 .token-vault-rail-main:hover {
@@ -5395,8 +5388,8 @@ label:has(#subToolboxEnabled:disabled) {
     backface-visibility: hidden;
     transition:
         transform 0.18s cubic-bezier(0.16, 1, 0.3, 1),
-        opacity 0.18s ease,
-        border-color 0.18s ease;
+        opacity 0.18s cubic-bezier(0.16, 1, 0.3, 1),
+        border-color 0.18s cubic-bezier(0.16, 1, 0.3, 1);
 }
 
 .token-vault-rail-shortcut::after {
@@ -5407,7 +5400,7 @@ label:has(#subToolboxEnabled:disabled) {
     box-shadow: var(--vault-rail-shortcut-hover-shadow);
     opacity: 0;
     pointer-events: none;
-    transition: opacity 0.18s ease;
+    transition: opacity 0.18s cubic-bezier(0.16, 1, 0.3, 1);
     will-change: opacity;
 }
 
@@ -5475,8 +5468,8 @@ label:has(#subToolboxEnabled:disabled) {
         0 2px 4px rgba(15, 23, 42, 0.06);
     transition:
         transform 0.18s cubic-bezier(0.16, 1, 0.3, 1),
-        border-color 0.18s ease,
-        background 0.18s ease;
+        border-color 0.18s cubic-bezier(0.16, 1, 0.3, 1),
+        background 0.18s cubic-bezier(0.16, 1, 0.3, 1);
 }
 
 .token-vault-rail-menu-toggle::after {
@@ -5487,7 +5480,7 @@ label:has(#subToolboxEnabled:disabled) {
     box-shadow: var(--vault-rail-menu-toggle-hover-shadow);
     opacity: 0;
     pointer-events: none;
-    transition: opacity 0.18s ease;
+    transition: opacity 0.18s cubic-bezier(0.16, 1, 0.3, 1);
     will-change: opacity;
 }
 
@@ -5570,7 +5563,7 @@ label:has(#subToolboxEnabled:disabled) {
     transform: translate3d(0, 6px, 0) scale(0.97);
     transform-origin: center;
     transition:
-        opacity 0.16s ease,
+        opacity 0.16s cubic-bezier(0.16, 1, 0.3, 1),
         transform 0.18s cubic-bezier(0.16, 1, 0.3, 1);
 }
 
@@ -5600,8 +5593,8 @@ label:has(#subToolboxEnabled:disabled) {
     transform: translateZ(0);
     backface-visibility: hidden;
     transition:
-        color 0.14s ease,
-        transform 0.14s ease;
+        color 0.14s cubic-bezier(0.16, 1, 0.3, 1),
+        transform 0.14s cubic-bezier(0.16, 1, 0.3, 1);
 }
 
 .token-vault-rail-menu-item::before {
@@ -5612,7 +5605,7 @@ label:has(#subToolboxEnabled:disabled) {
     background: var(--vault-rail-menu-item-hover-bg);
     opacity: 0;
     pointer-events: none;
-    transition: opacity 0.14s ease;
+    transition: opacity 0.14s cubic-bezier(0.16, 1, 0.3, 1);
     will-change: opacity;
 }
 
@@ -5686,7 +5679,7 @@ label:has(#subToolboxEnabled:disabled) {
         0 7px 18px rgba(8, 164, 213, 0.14);
     transition:
         transform 0.2s cubic-bezier(0.16, 1, 0.3, 1),
-        border-color 0.2s ease;
+        border-color 0.2s cubic-bezier(0.16, 1, 0.3, 1);
 }
 
 .token-vault-rail-add::after {
@@ -5697,7 +5690,7 @@ label:has(#subToolboxEnabled:disabled) {
     box-shadow: var(--vault-rail-add-hover-shadow);
     opacity: 0;
     pointer-events: none;
-    transition: opacity 0.2s ease;
+    transition: opacity 0.2s cubic-bezier(0.16, 1, 0.3, 1);
     will-change: opacity;
 }
 
@@ -6104,9 +6097,9 @@ label:has(#subToolboxEnabled:disabled) {
     font-size: 0.85rem;
     font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, 'Liberation Mono', 'Courier New', monospace;
     transition:
-        border-color 0.2s ease,
-        box-shadow 0.2s ease,
-        background 0.2s ease;
+        border-color 0.2s cubic-bezier(0.16, 1, 0.3, 1),
+        box-shadow 0.2s cubic-bezier(0.16, 1, 0.3, 1),
+        background 0.2s cubic-bezier(0.16, 1, 0.3, 1);
 }
 
 .token-vault-override-verify-input:focus {
@@ -6319,7 +6312,7 @@ label:has(#subToolboxEnabled:disabled) {
     align-items: center;
     justify-content: center;
     cursor: pointer;
-    transition: all 0.2s ease;
+    transition: all 0.2s cubic-bezier(0.16, 1, 0.3, 1);
     font-size: 1.25rem;
     color: var(--text-secondary);
     flex-shrink: 0;
@@ -6894,7 +6887,7 @@ label:has(#subToolboxEnabled:disabled) {
     box-shadow:
         0 4px 12px rgba(245, 158, 11, 0.08),
         inset 0 1px 0 rgba(255, 255, 255, 0.7);
-    animation: fadeInDown 0.3s ease;
+    animation: fadeInDown 0.3s cubic-bezier(0.16, 1, 0.3, 1);
 }
 
 .token-vault-confirm strong {
@@ -7088,8 +7081,8 @@ label:has(#subToolboxEnabled:disabled) {
     text-decoration: underline dotted rgba(8, 164, 213, 0.38);
     text-underline-offset: 0.18em;
     transition:
-        color 0.18s ease,
-        text-decoration-color 0.18s ease;
+        color 0.18s cubic-bezier(0.16, 1, 0.3, 1),
+        text-decoration-color 0.18s cubic-bezier(0.16, 1, 0.3, 1);
 }
 
 .token-vault-title-editor {
@@ -7112,8 +7105,8 @@ label:has(#subToolboxEnabled:disabled) {
     font-weight: 700;
     font-family: inherit;
     transition:
-        border-color 0.2s ease,
-        box-shadow 0.2s ease;
+        border-color 0.2s cubic-bezier(0.16, 1, 0.3, 1),
+        box-shadow 0.2s cubic-bezier(0.16, 1, 0.3, 1);
 }
 
 .token-vault-title-input:focus {
@@ -7410,9 +7403,9 @@ label:has(#subToolboxEnabled:disabled) {
     cursor: pointer;
     transition:
         transform 0.2s cubic-bezier(0.16, 1, 0.3, 1),
-        border-color 0.2s ease,
-        color 0.2s ease,
-        opacity 0.2s ease;
+        border-color 0.2s cubic-bezier(0.16, 1, 0.3, 1),
+        color 0.2s cubic-bezier(0.16, 1, 0.3, 1),
+        opacity 0.2s cubic-bezier(0.16, 1, 0.3, 1);
     white-space: nowrap;
     position: relative;
     isolation: isolate;
@@ -7429,7 +7422,7 @@ label:has(#subToolboxEnabled:disabled) {
     box-shadow: var(--vault-action-hover-shadow);
     opacity: 0;
     pointer-events: none;
-    transition: opacity 0.2s ease;
+    transition: opacity 0.2s cubic-bezier(0.16, 1, 0.3, 1);
     will-change: opacity;
 }
 
@@ -7623,9 +7616,9 @@ label:has(#subToolboxEnabled:disabled) {
     cursor: pointer;
     transition:
         transform 0.18s cubic-bezier(0.16, 1, 0.3, 1),
-        border-color 0.18s ease,
-        color 0.18s ease,
-        opacity 0.18s ease;
+        border-color 0.18s cubic-bezier(0.16, 1, 0.3, 1),
+        color 0.18s cubic-bezier(0.16, 1, 0.3, 1),
+        opacity 0.18s cubic-bezier(0.16, 1, 0.3, 1);
     white-space: nowrap;
     position: relative;
     isolation: isolate;
@@ -7642,7 +7635,7 @@ label:has(#subToolboxEnabled:disabled) {
     box-shadow: var(--vault-mini-hover-shadow);
     opacity: 0;
     pointer-events: none;
-    transition: opacity 0.18s ease;
+    transition: opacity 0.18s cubic-bezier(0.16, 1, 0.3, 1);
     will-change: opacity;
 }
 
@@ -8431,8 +8424,8 @@ label:has(#subToolboxEnabled:disabled) {
     font-size: 0.82rem;
     font-family: 'SF Mono', 'Cascadia Code', monospace;
     transition:
-        border-color 0.2s ease,
-        box-shadow 0.2s ease;
+        border-color 0.2s cubic-bezier(0.16, 1, 0.3, 1),
+        box-shadow 0.2s cubic-bezier(0.16, 1, 0.3, 1);
     box-shadow:
         inset 0 1px 0 rgba(255, 255, 255, 0.82),
         0 6px 16px rgba(8, 164, 213, 0.08);
@@ -8542,10 +8535,10 @@ label:has(#subToolboxEnabled:disabled) {
     transition:
         transform 0.18s cubic-bezier(0.16, 1, 0.3, 1),
         box-shadow 0.18s cubic-bezier(0.16, 1, 0.3, 1),
-        border-color 0.18s ease;
+        border-color 0.18s cubic-bezier(0.16, 1, 0.3, 1);
     position: relative;
     overflow: hidden;
-    animation: fadeInUp 0.25s ease both;
+    animation: fadeInUp 0.25s cubic-bezier(0.16, 1, 0.3, 1) both;
 }
 
 .token-vault-list-item:hover {
@@ -8912,7 +8905,7 @@ label:has(#subToolboxEnabled:disabled) {
     font-size: 1rem;
     color: var(--warning);
     cursor: help;
-    animation: warningPulse 2s ease-in-out infinite;
+    animation: warningPulse 2s cubic-bezier(0.16, 1, 0.3, 1)-in-out infinite;
     user-select: none;
     -webkit-tap-highlight-color: transparent;
     font-family: 'Segoe UI Emoji', 'Apple Color Emoji', 'Noto Color Emoji', 'Twemoji Mozilla', sans-serif;
@@ -8938,8 +8931,8 @@ label:has(#subToolboxEnabled:disabled) {
     display: none !important;
     pointer-events: none;
     transition:
-        opacity 0.2s ease,
-        transform 0.2s ease;
+        opacity 0.2s cubic-bezier(0.16, 1, 0.3, 1),
+        transform 0.2s cubic-bezier(0.16, 1, 0.3, 1);
     z-index: 10000;
     box-shadow: 0 4px 12px rgba(0, 0, 0, 0.2);
 
@@ -9163,7 +9156,7 @@ label:has(#subToolboxEnabled:disabled) {
     box-shadow:
         inset 0 1px 0 rgba(255, 255, 255, 0.08),
         0 1px 3px rgba(0, 0, 0, 0.08);
-    transition: all 0.2s ease;
+    transition: all 0.2s cubic-bezier(0.16, 1, 0.3, 1);
 }
 
 .slow-providers-warning span[style*='color: #fff'] {
@@ -9310,7 +9303,7 @@ label:has(#subToolboxEnabled:disabled) {
     bottom: 0;
     background-color: var(--border);
     border-radius: 24px;
-    transition: background-color 0.2s ease;
+    transition: background-color 0.2s cubic-bezier(0.16, 1, 0.3, 1);
 }
 
 .slider::before {
@@ -9322,7 +9315,7 @@ label:has(#subToolboxEnabled:disabled) {
     bottom: 3px;
     background-color: white;
     border-radius: 50%;
-    transition: transform 0.2s ease;
+    transition: transform 0.2s cubic-bezier(0.16, 1, 0.3, 1);
     box-shadow: 0 1px 3px rgba(0, 0, 0, 0.2);
 }
 
@@ -9364,8 +9357,8 @@ label:has(#subToolboxEnabled:disabled) {
     min-height: 7rem;
     max-height: 16rem;
     transition:
-        border-color 0.18s ease,
-        box-shadow 0.18s ease;
+        border-color 0.18s cubic-bezier(0.16, 1, 0.3, 1),
+        box-shadow 0.18s cubic-bezier(0.16, 1, 0.3, 1);
 }
 
 #bulkImportTextarea:focus {

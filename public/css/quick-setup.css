@@ -1821,7 +1821,7 @@
 }
 
 .qs-entry-banner:active {
-    transform: translateY(0);
+    transform: translateY(0) scale(0.98); /* Apple HIG: immediate tactile feedback on press */
     box-shadow: var(--_banner-glow);
 }
 

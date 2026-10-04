@@ -238,9 +238,9 @@ body::-webkit-scrollbar-thumb {
     font-weight: 500;
     text-decoration: none;
     transition:
-        color 0.15s ease,
-        border-color 0.15s ease,
-        background 0.15s ease;
+        color 0.15s cubic-bezier(0.16, 1, 0.3, 1),
+        border-color 0.15s cubic-bezier(0.16, 1, 0.3, 1),
+        background 0.15s cubic-bezier(0.16, 1, 0.3, 1);
 }
 
 .app-navbar-docs:hover {
@@ -279,9 +279,9 @@ body::-webkit-scrollbar-thumb {
     color: var(--text-secondary);
     cursor: pointer;
     transition:
-        color 0.15s ease,
-        background 0.15s ease,
-        box-shadow 0.15s ease;
+        color 0.15s cubic-bezier(0.16, 1, 0.3, 1),
+        background 0.15s cubic-bezier(0.16, 1, 0.3, 1),
+        box-shadow 0.15s cubic-bezier(0.16, 1, 0.3, 1);
 }
 
 .theme-switch-option:hover {
@@ -377,8 +377,8 @@ body::-webkit-scrollbar-thumb {
     cursor: pointer;
     opacity: 0.7;
     transition:
-        opacity 0.15s ease,
-        background 0.15s ease;
+        opacity 0.15s cubic-bezier(0.16, 1, 0.3, 1),
+        background 0.15s cubic-bezier(0.16, 1, 0.3, 1);
 }
 
 .ui-lang-flag:hover {
@@ -463,8 +463,8 @@ body::-webkit-scrollbar-thumb {
     border-radius: var(--radius-card) !important;
     box-shadow: none !important;
     transition:
-        border-color 0.15s ease,
-        box-shadow 0.15s ease;
+        border-color 0.15s cubic-bezier(0.16, 1, 0.3, 1),
+        box-shadow 0.15s cubic-bezier(0.16, 1, 0.3, 1);
 }
 
 /* Nested cards inside a section get a subtle inner surface for separation */
@@ -691,9 +691,9 @@ label:has(input[type='radio']:checked)[style*='background: white'] {
     border-radius: var(--radius-control) !important;
     box-shadow: none !important;
     transition:
-        background 0.15s ease,
-        border-color 0.15s ease,
-        opacity 0.15s ease !important;
+        background 0.15s cubic-bezier(0.16, 1, 0.3, 1),
+        border-color 0.15s cubic-bezier(0.16, 1, 0.3, 1),
+        opacity 0.15s cubic-bezier(0.16, 1, 0.3, 1) !important;
 }
 
 .btn-primary {
@@ -705,8 +705,13 @@ label:has(input[type='radio']:checked)[style*='background: white'] {
 .btn-primary:hover {
     background: var(--primary-dark) !important;
     border-color: var(--primary-dark) !important;
-    box-shadow: none !important;
-    transform: none !important;
+    box-shadow: 0 2px 8px var(--glow) !important;
+    transform: translateY(-1px) !important;
+}
+
+.btn-primary:active {
+    transform: translateY(0) !important;
+    box-shadow: 0 1px 2px var(--glow) !important;
 }
 
 [data-theme='dark'] .btn-primary {
@@ -749,7 +754,7 @@ label:has(input[type='radio']:checked)[style*='background: white'] {
     border: 1px solid var(--primary) !important;
     border-radius: var(--radius-control) !important;
     box-shadow: none !important;
-    transition: background 0.15s ease !important;
+    transition: background 0.15s cubic-bezier(0.16, 1, 0.3, 1) !important;
 }
 
 .validate-api-btn:hover {
@@ -923,8 +928,8 @@ input[type='range']::-moz-range-thumb {
     cursor: pointer;
     z-index: auto !important;
     transition:
-        border-color 0.15s ease,
-        background 0.15s ease;
+        border-color 0.15s cubic-bezier(0.16, 1, 0.3, 1),
+        background 0.15s cubic-bezier(0.16, 1, 0.3, 1);
 }
 
 .token-vault-launcher:hover {
@@ -1142,7 +1147,27 @@ input[type='range']::-moz-range-thumb {
 }
 
 /* ---------------------------------------------------------------------------
-   17. Reduced motion — keep the dashboard calm
+   17. Increased contrast — honor prefers-contrast: more
+   --------------------------------------------------------------------------- */
+@media (prefers-contrast: more) {
+    :root,
+    [data-theme='light'] {
+        --border: #cbd5e1;
+        --border-strong: #94a3b8;
+        --text-secondary: #475569;
+    }
+
+    [data-theme='dark'],
+    [data-theme='blackhole'],
+    [data-theme='true-dark'] {
+        --border: #475569;
+        --border-strong: #64748b;
+        --text-secondary: #cbd5e1;
+    }
+}
+
+/* ---------------------------------------------------------------------------
+   18. Reduced motion — keep the dashboard calm
    --------------------------------------------------------------------------- */
 @media (prefers-reduced-motion: reduce) {
     *,
