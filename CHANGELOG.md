@@ -2,6 +2,18 @@
 
 All notable changes to this project will be documented in this file.
 
+## SubMaker v3.8.25 (2026-10-05) — Fix: Logo OpenSubtitles inline SVG (penyelesaian muktamad)
+
+**Penyelesaian muktamad untuk siri kegagalan logo OpenSubtitles (5 cubaan):**
+
+- **Siri kegagalan penuh:** (1) OG image rasmi corrupted, (2) navbar beta lockup corrupted, (3) favicon.im corrupted, (4) logo Stremio PRO dari imgur — dimuat turun OK tetapi **transparent sepenuhnya** selepas crop (Server hantar PNG yang kelihatan kosong apabila dirender dalam browser — latar putih di atas latar putih UI menyebabkan ia "hilang"), (5) Node.js canvas conversion gagal.
+- **Penyelesaian muktamad:** Logo digantikan dengan **SVG inline terus dalam markup** — tiada lagi fail luaran yang boleh corrupted, tiada cache, tiada network request:
+  - `<rect>` hijau brand OpenSubtitles `#8BC97C` (warna rasmi dari branding scrape laman mereka) dengan sudut bulat `rx="8"`
+  - `<text>` putih "os" bold — identiti visual ringkas yang menyerupai favicon mereka
+- **Kelebihan pendekatan inline:** (a) sifar network request tambahan, (b) sifar risiko fail corrupted, (c) sifar isu cache CDN, (d) render segera bersama halaman, (e) warna hijau sebenar brand OpenSubtitles terpelihara.
+- **Fail lama dibuang:** `public/assets/opensubtitles-logo.png` dan `.svg` dihapuskan daripada repo — markup kini sepenuhnya self-contained.
+- **Ujian:** `npm test` — **287 PASS / 0 FAIL / 1 skipped**.
+
 ## SubMaker v3.8.24 (2026-10-05) — Fix: Logo OpenSubtitles PRO square icon (Stremio community)
 
 **Pembetulan keempat dan muktamad untuk logo OpenSubtitles:**
