@@ -2,6 +2,22 @@
 
 All notable changes to this project will be documented in this file.
 
+## SubMaker v3.8.28 (2026-10-05) — Fix: Logo OpenSubtitles ditukar kepada PNG tulen (gugurkan GIF)
+
+**Aset GIF akhirnya ditukar kepada PNG sebenar — siri penyempurnaan logo tamat:**
+
+- **Konteks:** v3.8.27 menyelesaikan isu render browser dengan menamakan semula fail kepada `.gif` supaya Content-Type sepadan dengan kandungan GIF89a sebenar. Walau bagaimanapun, GIF kekal tidak sesuai sebagai format aset web moden (saiz lebih besar, tiada alpha penuh, dan pernah menjadi punca kegagalan muat naik ke alat AI yang hanya menerima png/jpeg/webp).
+- **Fix:** `public/assets/opensubtitles-logo.gif` (180×50, GIF89a palette, 1 frame statik) dikonversi secara programatik kepada `public/assets/opensubtitles-logo.png` — PNG tulen RGBA 180×50 (magic bytes `89 50 4E 47` disahkan), 5.3 KB. Konversi dijalankan skrip Python Pillow di luar konteks AI (GIF tidak pernah dibaca ke dalam konteks model — mengelakkan ralat "image format (gif) is not supported").
+- **Rujukan dikemaskini:** markup `src` dalam `public/partials/main.html` (slot `.provider-glyph` kad OpenSubtitles) beralih daripada `/assets/opensubtitles-logo.gif` kepada `/assets/opensubtitles-logo.png`.
+- **Fail GIF dihapuskan:** `opensubtitles-logo.gif` dibuang daripada `public/assets/` — tiada lagi aset GIF dalam projek; gelintar `opensubtitles-logo.gif` pada kod aktif pulangkan sifar hasil.
+- **Pengesahan berperingkat (bukan tekaan):**
+  1. **Magic bytes:** output PNG `89 50 4E 47 0D 0A 1A 0A` — PNG sebenar (bukan sekadar GIF ditukar nama seperti v3.8.26).
+  2. **Server:** `HEAD /assets/opensubtitles-logo.png` → `200 OK, Content-Type: image/png` — extension kini jujur terhadap kandungan.
+  3. **DOM render proof:** Playwright `browser_evaluate` → `complete: true, naturalWidth: 180, naturalHeight: 50, rendered: true` pada 24×24 (`object-fit: contain`) — browser benar-benar decode dan render.
+  4. **Screenshot visual:** `opensubtitles-png-verified.png` — logo hijau "OpenSubtitles" lockup penuh kelihatan dalam slot provider.
+- **Bump versi 3.8.27 → 3.8.28** menjana URL cache-buster baharu (`?_cb=__APP_VERSION_QUERY__`) supaya Service Worker tidak menyajikan aset lama daripada cache.
+- **Ujian:** `npm test` — **287 PASS / 0 FAIL / 1 skipped**.
+
 ## SubMaker v3.8.27 (2026-10-05) — Fix: Logo OpenSubtitles — pembetulan Content-Type mismatch (GIF89a)
 
 **Punca sebenar siri kegagalan logo akhirnya ditemui dan diperbaiki:**
