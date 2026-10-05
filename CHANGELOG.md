@@ -2,6 +2,19 @@
 
 All notable changes to this project will be documented in this file.
 
+## SubMaker v3.8.22 (2026-10-05) — Icons: Logo sebenar provider (OpenSubtitles / SubDL / SubSource)
+
+**Ikon provider dalam seksyen Subtitles API Keys ditukar kepada logo sebenar brand, diambil terus daripada laman rasmi setiap provider:**
+
+- **Isu:** Ikon generik SVG (dokumen, gelombang, muat turun) tidak mewakili identiti brand provider sebenar — pengguna meminta logo rasmi.
+- **Fix:** Logo rasmi dimuat turun daripada laman utama setiap provider melalui branding scrape dan disimpan dalam `public/assets/`:
+  - **OpenSubtitles:** `opensubtitles-logo.png` — logo "os" rasmi daripada `opensubtitles.com` (aset OG image laman mereka)
+  - **SubDL:** `subdl-logo.png` — favicon brand kuning `#FFEE2B` daripada `subdl.com`
+  - **SubSource:** `subsource-logo.png` — apple-icon rasmi daripada `subsource.net`
+- **Markup:** `<span class="provider-glyph">` dalam `public/partials/main.html` kini memuatkan `<img src="/assets/...">` (24×24, `border-radius: 4px`, `object-fit: contain`) menggantikan SVG generik lama — kelas `.provider-glyph` dan `aria-hidden="true"` dikekalkan supaya CSS monochrome badge sedia ada terus berfungsi.
+- **Pengesahan kebergantungan JS:** gelintar `public/js` mengesahkan sifar JavaScript membaca `provider-glyph`/SVG markup — penukaran selamat tanpa kesan sampingan.
+- **Ujian:** `npm test` — **287 PASS / 0 FAIL / 1 skipped**.
+
 ## SubMaker v3.8.21 (2026-10-05) — Icons: Material Design filled (vpn_key / language / settings)
 
 **Ikon seksyen dinaik taraf daripada SVG monoline lakar sendiri kepada Material Design filled icons — path sebenar daripada design system Google:**
