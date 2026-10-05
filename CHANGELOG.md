@@ -2,6 +2,15 @@
 
 All notable changes to this project will be documented in this file.
 
+## SubMaker v3.8.23 (2026-10-05) — Fix: Logo OpenSubtitles (beta lockup sebenar)
+
+**Pembetulan logo OpenSubtitles yang gagal dipaparkan:**
+
+- **Isu:** Logo OpenSubtitles v3.8.22 menggunakan aset OG image laman mereka (`os_logo-...png`) — aset tersebut rupanya bukan imej PNG yang boleh dipaparkan terus (dipapar sebagai broken image / ikon placeholder dokumen biru dalam UI).
+- **Fix:** Logo digantikan dengan **beta lockup sebenar** yang digunakan dalam navbar laman utama mereka: `opensubtitles-beta-logo-8f6b...png` — diekstrak secara langsung daripada markup HTML `<a class="navbar-brand">` opensubtitles.com.
+- **Saiz fail:** 5.7 KB — konsisten dengan logo navbar asal, dipapar pada 24×24 dalam `.provider-glyph`.
+- **Ujian:** `npm test` — **287 PASS / 0 FAIL / 1 skipped**.
+
 ## SubMaker v3.8.22 (2026-10-05) — Icons: Logo sebenar provider (OpenSubtitles / SubDL / SubSource)
 
 **Ikon provider dalam seksyen Subtitles API Keys ditukar kepada logo sebenar brand, diambil terus daripada laman rasmi setiap provider:**
