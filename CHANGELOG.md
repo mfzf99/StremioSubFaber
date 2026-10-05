@@ -2,6 +2,21 @@
 
 All notable changes to this project will be documented in this file.
 
+## SubMaker v3.8.21 (2026-10-05) — Icons: Material Design filled (vpn_key / language / settings)
+
+**Ikon seksyen dinaik taraf daripada SVG monoline lakar sendiri kepada Material Design filled icons — path sebenar daripada design system Google:**
+
+- **Isu:** SVG monoline v3.8.20 (lakar stroke sendiri) kelihatan basic dan tidak menepati standard ikon profesional industri — pengguna mempertikaikan tahap "real" ikon tersebut.
+- **Fix:** Ketiga-tiga ikon seksyen dalam `public/partials/main.html` diganti dengan path sebenar Material Design (Apache 2.0) dalam modus **filled/solid**:
+  - **API Keys:** lakar kunci monoline → **Material `vpn_key`** (kunci pepejal dengan kepala bulat, batang, dan gigi — siluet penuh, bukan garisan)
+  - **Languages:** lakar globus monoline → **Material `language`** (glob pepejal dengan mercator grid lines — benua digantikan grid supaya skala kecil kekal jelas)
+  - **Settings:** lakar gear monoline → **Material `settings`** (gear pepejal penuh dengan 8 lug dan lubang tengah — siluet standard industri)
+- **Kenapa filled bukan monoline:** ikon filled/solid ialah gaya "real icon" standard industri (Material Design Google, Fluent Microsoft, SF Symbols Apple) — jisim pepejal yang jelas pada saiz kecil, tidak seperti garisan nipis yang hampir hilang dalam badge 22px.
+- **Viewbox 24:** beralih daripada `viewBox="0 0 48 48"` (custom) kepada `viewBox="0 0 24 24"` (grid standard Material) — path diambil terus daripada set ikon rasmi tanpa pengubahsuaian geometri.
+- **Pewaris warna kekal:** `fill="currentColor"` — warna ikut kategori badge sedia ada (sky untuk API Keys, teal untuk Languages, slate untuk Settings) melalui rule `.section-icon svg` dalam `subfaber-theme.css`.
+- **Aksesibiliti kekal:** `aria-hidden="true"` dan kelas `.section-icon section-emoji` (termasuk `.language-emoji`/`.settings-emoji`) tidak diubah.
+- **Ujian:** `npm test` — **287 PASS / 0 FAIL / 1 skipped**.
+
 ## SubMaker v3.8.20 (2026-10-04) — Icons: Section icons SVG monoline konsisten Quick Setup
 
 **Ikon seksyen utama kembali kepada SVG vektor stroke-based, kali ini mengikut gaya ikon Quick Setup wizard:**
