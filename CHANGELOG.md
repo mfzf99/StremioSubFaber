@@ -2,6 +2,17 @@
 
 All notable changes to this project will be documented in this file.
 
+## SubMaker v3.8.24 (2026-10-05) — Fix: Logo OpenSubtitles PRO square icon (Stremio community)
+
+**Pembetulan keempat dan muktamad untuk logo OpenSubtitles:**
+
+- **Isu (siri):** Tiga cubaan sebelumnya gagal — (1) aset OG image laman rasmi corrupted, (2) navbar beta lockup juga corrupted, (3) favicon.im masih corrupted. Pelayan opensubtitles.com kelihatan menghalang muat turun aset mentah melalui curl.
+- **Fix:** Logo **opensubtitles PRO** (ikon square rasmi yang digunakan dalam katalog komuniti Stremio — `stremio-addons.net/addons/opensubtitles-pro`, ikon imgur `cGc1DXB.png`) dimuat turun dan dipotong kepada **ikon square 64×64** menggunakan System.Drawing (crop bahagian ikon + resize bicubic berkualiti tinggi) — menggantikan lockup landscape yang tidak sesuai untuk slot ikon 24×24.
+- **Sumber yang dipercayai:** imgur CDN — berfungsi dengan curl tanpa halangan, saiz fail 6.9 KB selepas pemprosesan.
+- **Fail SVG sementara dibuang:** `opensubtitles-logo.svg` (percubaan teks "os" buatan sendiri) dihapuskan — PNG square kini satu-satunya aset.
+- **Markup kekal:** `<img src="/assets/opensubtitles-logo.png">` dalam `public/partials/main.html` — tiada perubahan struktur.
+- **Ujian:** `npm test` — **287 PASS / 0 FAIL / 1 skipped**.
+
 ## SubMaker v3.8.23 (2026-10-05) — Fix: Logo OpenSubtitles (beta lockup sebenar)
 
 **Pembetulan logo OpenSubtitles yang gagal dipaparkan:**
