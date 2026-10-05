@@ -2,6 +2,16 @@
 
 All notable changes to this project will be documented in this file.
 
+## SubMaker v3.8.26 (2026-10-05) — Fix: Logo OpenSubtitles rasmi dari Wikipedia
+
+**Logo OpenSubtitles rasmi kini dipaparkan — diekstrak daripada infobox Wikipedia:**
+
+- **Isu:** Inline SVG "os" buatan sendiri (v3.8.25) ditolak oleh pengguna — tidak menyerupai logo sebenar OpenSubtitles. Siri kegagalan berterusan: (1-3) aset laman rasmi corrupted, (4) logo Stremio PRO imgur transparent sepenuhnya, (5) simple-icons tiada opensubtitles, (6) forum imgh.us telah mati (redirect spam).
+- **Fix:** Logo rasmi OpenSubtitles diekstrak daripada **infobox Wikipedia** (`File:OpenSubtitles logo.gif`, 180×50, Wikimedia Commons) — lockup penuh brand dengan ikon + teks. Server Wikimedia membenarkan muat turun langsung tanpa halangan (3.1 KB).
+- **Format:** Fail GIF disimpan sebagai `opensubtitles-logo.png` — semua browser moden merender GIF dengan betul dalam `<img>` tanpa mengira extension; markup `/assets/opensubtitles-logo.png` dikekalkan dalam `public/partials/main.html`.
+- **Pengesahan visual:** Screenshot Playwright mengesahkan logo hijau "OpenSubtitles" penuh kini kelihatan dalam slot provider selepas expand Subtitles API Keys (dipapar pada 24×24 `object-fit: contain`).
+- **Ujian:** `npm test` — **287 PASS / 0 FAIL / 1 skipped**.
+
 ## SubMaker v3.8.25 (2026-10-05) — Fix: Logo OpenSubtitles inline SVG (penyelesaian muktamad)
 
 **Penyelesaian muktamad untuk siri kegagalan logo OpenSubtitles (5 cubaan):**
