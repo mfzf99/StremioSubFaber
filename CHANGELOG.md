@@ -2,6 +2,20 @@
 
 All notable changes to this project will be documented in this file.
 
+## SubMaker v3.8.27 (2026-10-05) — Fix: Logo OpenSubtitles — pembetulan Content-Type mismatch (GIF89a)
+
+**Punca sebenar siri kegagalan logo akhirnya ditemui dan diperbaiki:**
+
+- **Analisis punca (root cause):** Logo Wikipedia yang dimuat turun dalam v3.8.26 adalah fail **GIF asli** tetapi disimpan dengan nama `opensubtitles-logo.png`. Magic bytes `47 49 46 38 39 61` (`GIF89a`) membuktikan format sebenar. Express `static` middleware menetapkan `Content-Type` berdasarkan extension fail — server menghantar `Content-Type: image/png` dengan body data GIF. Mismatch inilah yang menyebabkan browser gagal merender imej (dipapar kosong/broken) — bukan fail corrupted, bukan CDN, bukan cache.
+- **Fix:** Fail dinamakan semula kepada `opensubtitles-logo.gif` supaya Content-Type sepadan dengan kandungan sebenar; markup `src` dalam `public/partials/main.html` dikemaskini kepada `/assets/opensubtitles-logo.gif`.
+- **Pengesahan berperingkat (bukan tekaan):**
+  1. **Magic bytes:** baca 16 byte pertama fail → `GIF89a B4 00 32 00` (180×50 GIF) — format disahkan sebelum tindakan.
+  2. **Server lokal:** `HEAD /assets/opensubtitles-logo.gif` → `200 OK, Content-Type: image/gif` — Content-Type kini sepadan.
+  3. **DOM render proof:** Playwright `browser_evaluate` → `complete: true, naturalWidth: 180, naturalHeight: 50, rendered: true` — browser benar-benar decode dan render imej, bukan sekadar status 200.
+  4. **Screenshot visual:** `opensubtitles-gif-fixed.png` — logo hijau "OpenSubtitles" lockup penuh kelihatan dalam slot provider.
+- **Logo SubDL dan SubSource tidak terjejas** — kedua-duanya PNG tulen (magic bytes `89 50 4E 47`) dan sudah berfungsi.
+- **Ujian:** `npm test` — **287 PASS / 0 FAIL / 1 skipped**.
+
 ## SubMaker v3.8.26 (2026-10-05) — Fix: Logo OpenSubtitles rasmi dari Wikipedia
 
 **Logo OpenSubtitles rasmi kini dipaparkan — diekstrak daripada infobox Wikipedia:**
