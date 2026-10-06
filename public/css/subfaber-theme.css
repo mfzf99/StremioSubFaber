@@ -483,21 +483,21 @@ body::-webkit-scrollbar-thumb {
     border-bottom-color: var(--border) !important;
 }
 
-/* Section header icon tiles → solid category "badge" containers (rounded-xl).
-   Soft category-tinted background with a matching solid glyph — mirrors the
-   Quick Setup mode-icon badge style. Category is derived from the marker
-   classes already on the markup (.language-emoji, .settings-emoji); the
-   default (API Keys) uses the sky tint. */
+/* Section header icon tiles → transparent, badge-free containers.
+   The native Unicode color emoji glyph (🔑 / 🌍 / ⚙️) now stands alone,
+   matching the "Provider Timeout" ⏱️ style — no tinted rounded badge,
+   no forced category color. The OS color emoji font renders its own
+   full-color 3D glyph. */
 .section-icon,
 [data-theme='dark'] .section-icon,
 [data-theme='blackhole'] .section-icon {
-    background: var(--badge-sky-bg) !important;
+    background: transparent !important;
     border: none !important;
-    color: var(--badge-sky-fg) !important;
+    color: inherit !important;
     text-shadow: none !important;
     box-shadow: none !important;
     animation: none !important;
-    border-radius: 14px !important;
+    border-radius: 0 !important;
 }
 
 .section-icon::before {
@@ -510,28 +510,24 @@ body::-webkit-scrollbar-thumb {
     box-shadow: none !important;
 }
 
-/* Languages → teal badge */
+/* Category marker classes retained for potential future hooks, but no
+   longer apply any badge tint — the emoji glyph is self-colored. */
 .section-icon.language-emoji,
 [data-theme='dark'] .section-icon.language-emoji,
-[data-theme='blackhole'] .section-icon.language-emoji {
-    background: var(--badge-teal-bg) !important;
-    color: var(--badge-teal-fg) !important;
-}
-
-/* Settings → slate badge */
+[data-theme='blackhole'] .section-icon.language-emoji,
 .section-icon.settings-emoji,
 [data-theme='dark'] .section-icon.settings-emoji,
 [data-theme='blackhole'] .section-icon.settings-emoji {
-    background: var(--badge-slate-bg) !important;
-    color: var(--badge-slate-fg) !important;
+    background: transparent !important;
+    color: inherit !important;
 }
 
-/* The badge glyph inherits the category foreground color */
-.section-icon svg {
-    width: 22px;
-    height: 22px;
+/* Native emoji glyph inside the section icon — let the OS color emoji
+   font render its own colors; do not inherit any category tint. */
+.section-icon span {
     display: block;
     color: inherit;
+    filter: none;
 }
 
 /* Provider sub-menu glyphs (OpenSubtitles / SubSource / SubDL) → uniform

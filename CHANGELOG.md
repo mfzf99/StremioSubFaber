@@ -2,6 +2,20 @@
 
 All notable changes to this project will be documented in this file.
 
+## SubMaker v3.8.33 (2026-10-06) — Changed: Ikon section header ditukar kepada native emoji 3D
+
+**Ikon section header (API Keys / Languages / Settings) kini native Unicode color emoji — menyamai gaya "Provider Timeout" ⏱️:**
+
+- **Changed (API Keys):** [`public/partials/main.html`](public/partials/main.html) — SVG Material "Key" 2D monokrom digantikan dengan emoji 🔑 (`U+1F511`) pada saiz `font-size: 1.75rem`.
+- **Changed (Languages):** SVG Material "Globe" digantikan dengan emoji 🌍 (`U+1F30D`, Globe Showing Europe-Africa) — bumi spherical 3D dengan laut biru & daratan hijau, dipilih pengguna kerana lebih "smart" berbanding grid meridian 🌐.
+- **Changed (Settings):** SVG Material "Gear" digantikan dengan emoji ⚙️ (`U+2699` + `U+FE0F` variation selector — wajib bagi memaksa Windows render versi berwarna, bukan glyph teks B/W).
+- **Changed (badge dibuang):** Badge kategori rounded berwarna (sky/teal/slate) dibuang sepenuhnya mengikut permintaan pengguna untuk "gaya ⏱️ tulen" — emoji berdiri sendiri tanpa container. [`public/css/subfaber-theme.css`](public/css/subfaber-theme.css) (rules `.section-icon` & `.language-emoji`/`.settings-emoji` tint → `transparent`) dan [`public/css/configure.css`](public/css/configure.css) (gradient background, border 2px, 3D box-shadow bertingkat, `titlePulse` animation → semua `none`/`transparent`; tema `dark` & `blackhole` turut diselaraskan).
+- **Marker class dikekalkan:** `.section-emoji`, `.language-emoji`, `.settings-emoji` kekal dalam markup sebagai hook CSS masa depan; variable `--badge-*` tidak dihapus kerana masih digunakan oleh elemen lain (`.provider-glyph` dsb.).
+- **Kenapa emoji native:** Direrender oleh emoji font warna OS (Segoe UI Emoji Fluent di Windows 11, Apple Color Emoji di macOS, Noto Color Emoji di Android) — glyph 3D glossy dengan shading & highlight secara percuma, sifar asset, sifar HTTP request, auto-adaptif merentas tema light/dark tanpa CSS tambahan.
+- **Pengesahan:** Playwright render preview dalam tema light & dark — 🔑 emas glossy, 🌍 bumi spherical, ⚙️ gear 3D semuanya dipaparkan penuh warna tanpa badge; emoji kekal berwarna pada kad gelap (auto-adaptif).
+- **Bump versi 3.8.32 → 3.8.33** — tiada aset baharu (emoji adalah teks), jadi cache buster tidak kritikal, tetapi bump tetap dijalankan bagi mengekalkan disiplin versi SemVer.
+- **Ujian:** `npm test` — **287 PASS / 0 FAIL / 1 skipped**.
+
 ## SubMaker v3.8.31 (2026-10-06) — Fix: Background provider-glyph ditukar kepada putih
 
 **Tile latar logo provider kini putih bersih menggantikan tint biru sky:**
