@@ -2,6 +2,16 @@
 
 All notable changes to this project will be documented in this file.
 
+## SubMaker v3.8.36 (2026-10-06) — Changed: Enhanced translation prompt style with streaming-grade quality anchor
+
+**Bahagian `## Style` dalam prompt Agent A kini membawa penanda kualiti "professional streaming-grade quality" secara neutral:**
+
+- **Changed:** [`src/services/translationEngine.js`](src/services/translationEngine.js) — baris `Write living ...` dalam `## Style` disuntik frasa `Aim for professional streaming-grade quality — adapt idioms, never calque.` bagi menandakan standard kualiti tinggi tanpa menanam identiti jenama (mis. "Netflix") dalam `## Role`.
+- **Kenapa bukan dalam Role:** `## Role` kekal khusus kepada dua mandat sahaja — (1) pari/ID slot suci, (2) ayat macam penutur jati. Isyarat kualiti diletakkan dalam `## Style` supaya tidak mengubah identiti/fungsi model dan tidak memecahkan kontrak universal 400+ bahasa (tiada hardcode khusus-bahasa/platform).
+- **Kenapa "streaming-grade" bukan "Netflix":** Istilah generik mengelak bias house-style platform yang boleh melanggar ANTI-DROP / ANTI-UNTRANSLATED; pemetaan 1:1 jenayah Agent B (MERGE/SHIFT/PHANTOM/DROP/UNTRANSLATED/REGISTER) kekal tidak terganggu.
+- **Skop ketat:** Hanya baris Style berubah — `## Role`, `## Rules`, dan `## Output Format` tidak disentuh.
+- **Bump versi 3.8.35 → 3.8.36** — `npm test` — **290 PASS / 0 FAIL / 1 skipped**.
+
 ## SubMaker v3.8.35 (2026-10-06) — Fix: Deterministic provider token IV untuk kestabilan cache OpenSubtitles V3
 
 **Subtitle terjemahan OpenSubtitles V3 kini boleh ditemui semula daripada bypass cache (Redis) tanpa terjemah ulang:**
