@@ -140,7 +140,7 @@ const CACHE_TRANSLATIONS = process.env.CACHE_TRANSLATIONS === 'true'; // Enable/
  * Enjin SubFaber adalah enjin TUNGGAL — tiada env override, tiada mod
  * legacy 200-baris (Total Purge Mandat 2026-09-25).
  */
-const SUBFABER_BATCH_SIZE = 30;
+const SUBFABER_BATCH_SIZE = 50;
 
 // Module-level shared key health tracking across engine instances.
 // MULTI-INSTANCE: Now backed by Redis via sharedCache utilities.
