@@ -2,6 +2,17 @@
 
 All notable changes to this project will be documented in this file.
 
+## SubMaker v3.8.34 (2026-10-06) — Fix: Spacing halaman Sub Toolbox (header tidak lagi melekat dengan kad launcher)
+
+**Kad "The Sub Toolbox bundles…" kini berjarak selesa daripada subtitle halaman toolbox:**
+
+- **Isu:** Pada halaman Sub Toolbox (`data-page="toolbox"`), kotak "The Sub Toolbox bundles file translation, embedded subtitle tools, and sync utilities for Stremio." terlalu rapat / melekat dengan ayat subtitle "Install SubFaber into Stremio and open the embedded toolbox." di atasnya.
+- **Punca:** [`public/css/app-shell.css`](public/css/app-shell.css) — kontrak layout `.app-page` menggunakan `gap: 0` secara lalai; hanya `.app-page[data-page='configuration']` diberi `gap: 40px`. Sementara itu `.app-page-header` sengaja `margin-bottom: 0` (reka bentuk untuk mengelakkan double-margin pada halaman configuration). Gabungan kedua-duanya menyebabkan halaman toolbox tiada sebarang ruang vertikal antara header dan kad.
+- **Fix:** Peraturan baharu `.app-page[data-page='toolbox'] { gap: 24px; }` ditambah selepas blok `configuration` — ritme vertikal diuruskan oleh flex gap pada kontena halaman (konsisten dengan kontrak layout projek), memberikan 24px ruang selesa antara subtitle dan kad launcher.
+- **Skop ketat:** Hanya halaman toolbox terjejas — halaman `configuration` kekal 40px, halaman virtual lain kekal `gap: 0`; tiada perubahan markup HTML atau JavaScript, sifar risiko layout shift.
+- **Bump versi 3.8.33 → 3.8.34** — cache buster `_cb` automatik memastikan semua instance mendapat CSS baharu memintas cache `immutable`.
+- **Ujian:** `npm test` — **287 PASS / 0 FAIL / 1 skipped**.
+
 ## SubMaker v3.8.33 (2026-10-06) — Changed: Ikon section header ditukar kepada native emoji 3D
 
 **Ikon section header (API Keys / Languages / Settings) kini native Unicode color emoji — menyamai gaya "Provider Timeout" ⏱️:**

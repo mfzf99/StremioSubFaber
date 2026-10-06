@@ -428,6 +428,12 @@ body.app-shell .qs-entry-banner {
     gap: 40px;
 }
 
+/* Toolbox page: keep a comfortable gap between the page header (title +
+   subtitle) and the launcher card below, so the two never look glued. */
+.app-page[data-page='toolbox'] {
+    gap: 24px;
+}
+
 /* Sections give up their own margin so they follow the Configuration rhythm. */
 body.app-shell .section-block {
     margin-bottom: 0;
