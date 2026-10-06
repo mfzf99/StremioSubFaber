@@ -2,6 +2,18 @@
 
 All notable changes to this project will be documented in this file.
 
+## SubMaker v3.8.35 (2026-10-06) — Fix: Deterministic provider token IV untuk kestabilan cache OpenSubtitles V3
+
+**Subtitle terjemahan OpenSubtitles V3 kini boleh ditemui semula daripada bypass cache (Redis) tanpa terjemah ulang:**
+
+- **Isu:** Subtitle yang berjaya diterjemah tidak muncul semula pada refresh senarai, dan cache sentiasa `MISS` walaupun entri sudah tersimpan dalam Redis. Log menunjukkan `sourceFileId` (`v3_e1_...`) berubah setiap kali senarai dipanggil untuk URL yang sama.
+- **Punca:** [`src/utils/providerUrlToken.js`](src/utils/providerUrlToken.js) — `encodeProviderUrl` menggunakan `crypto.randomBytes(IV_BYTES)` sebagai IV AES-GCM. IV rawak menghasilkan `fileId` berbeza setiap panggilan walaupun URL sumber sama, menyebabkan kunci bypass cache (`sourceFileId + targetLang + userHash`) tidak pernah sepadan antara simpan dan baca.
+- **Fix:** IV digantikan dengan nonce deterministik `HMAC-SHA256(encryptionKey, plaintextUrl)` yang dipotong kepada 12 bait. Untuk URL yang sama, `fileId` kini sentiasa serupa (kunci cache stabil); untuk URL berbeza, nonce kekal unik — mengekalkan jaminan keselamatan AES-GCM (tiada nonce reuse).
+- **Keserasian round-trip:** Logik `decodeProviderUrl` kekal membaca IV daripada struktur token sedia ada — `encode → decode` masih memulangkan URL asal tanpa ralat GCM tag.
+- **Skop:** Terhad kepada OpenSubtitles V3 (pembekal lain menggunakan static database ID dan sudah stabil).
+- **Ujian:** Ujian regresi baharu [`src/utils/providerUrlToken-regression.test.js`](src/utils/providerUrlToken-regression.test.js) mengesahkan determinisme (`token1 === token2`), keunikan merentas URL berbeza, dan round-trip decode tanpa ralat GCM tag.
+- **Bump versi 3.8.34 → 3.8.35** — `npm test` — **290 PASS / 0 FAIL / 1 skipped**.
+
 ## SubMaker v3.8.34 (2026-10-06) — Fix: Spacing halaman Sub Toolbox (header tidak lagi melekat dengan kad launcher)
 
 **Kad "The Sub Toolbox bundles…" kini berjarak selesa daripada subtitle halaman toolbox:**

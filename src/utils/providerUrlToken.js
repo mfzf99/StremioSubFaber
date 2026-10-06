@@ -40,7 +40,14 @@ function encodeProviderUrl(providerPrefix, rawUrl) {
     const plaintext = Buffer.from(rawUrl, 'utf8');
     assertUrlPayloadSize(plaintext);
 
-    const iv = crypto.randomBytes(IV_BYTES);
+    // Deterministic nonce derived from the plaintext URL via HMAC-SHA256.
+    // This keeps the provider file ID stable for the same URL (so bypass cache
+    // keys in Redis no longer drift between subtitle-list refreshes), while the
+    // nonce remains unique per distinct plaintext — which is exactly what AES-GCM
+    // requires to avoid nonce reuse. Deriving from the same plaintext bytes that
+    // are encrypted (not a separately trimmed value) guarantees the nonce never
+    // repeats with a different plaintext.
+    const iv = crypto.createHmac('sha256', getEncryptionKey()).update(plaintext).digest().subarray(0, IV_BYTES);
     const cipher = crypto.createCipheriv('aes-256-gcm', getEncryptionKey(), iv);
     cipher.setAAD(Buffer.from(getTokenContext(providerPrefix), 'utf8'), {
         plaintextLength: plaintext.length
