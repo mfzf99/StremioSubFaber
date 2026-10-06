@@ -2,6 +2,42 @@
 
 All notable changes to this project will be documented in this file.
 
+## SubMaker v3.8.31 (2026-10-06) — Fix: Background provider-glyph ditukar kepada putih
+
+**Tile latar logo provider kini putih bersih menggantikan tint biru sky:**
+
+- **Isu:** Latar `.provider-glyph` menggunakan `var(--badge-sky-bg)` (`#e0f2fe`, biru sky muda) — pengguna meminta latar putih supaya logo PNG ketiga-tiga provider (OpenSubtitles/SubSource/SubDL) dipaparkan di atas permukaan putih bersih.
+- **Fix:** [`public/css/subfaber-theme.css`](public/css/subfaber-theme.css) — `.provider-glyph` `background` ditukar daripada `var(--badge-sky-bg)` kepada `#ffffff` tetap, dengan `border: 1px solid var(--border, #e2e8f0)` tambahan supaya tile putih tidak "hilang" pada card putih dalam theme light (border bertukar `#1e293b` secara automatik dalam theme dark).
+- **Perubahan terpencil:** Variable `--badge-sky-bg` dikekalkan tanpa perubahan — masih digunakan oleh `.section-icon` dan elemen badge kategori yang lain.
+- **Pengesahan:** Playwright computed style mengesahkan ketiga-tiga glyph `background: rgb(255, 255, 255)`, `border-top: rgb(236, 239, 244)` selepas CSS refresh.
+- **Bump versi 3.8.30 → 3.8.31** menjana cache-buster `_cb=3.8.31` supaya browser semua pengguna mendapat CSS putih baharu memintas cache `immutable` 1 tahun.
+- **Ujian:** `npm test` — **287 PASS / 0 FAIL / 1 skipped**.
+
+## SubMaker v3.8.30 (2026-10-06) — Fix: Logo OpenSubtitles digantikan dengan avatar GitHub rasmi
+
+**Logo OpenSubtitles akhirnya menggunakan imej rasmi yang stabil — avatar organisasi GitHub:**
+
+- **Konteks:** v3.8.29 menyelesaikan isu nisbah aspek (1:1) dan cache buster, tetapi imej digunakan ketika itu adalah crop letterbox daripada banner lama. Pengguna memilih sumber muktamad: `https://github.com/opensubtitles.png`.
+- **Fix:** [`public/assets/opensubtitles-logo.png`](public/assets/opensubtitles-logo.png) digantikan dengan avatar organisasi GitHub rasmi OpenSubtitles — PNG sah **460×460** (nisbah aspek 1:1 semula jadi, tiada pemprosesan diperlukan), 18.6 KB, magic bytes `89 50 4E 47` disahkan.
+- **Tiada perubahan markup:** [`public/partials/main.html`](public/partials/main.html) kekal `src="/assets/opensubtitles-logo.png?_cb=__APP_VERSION_QUERY__"` — hanya fail aset diganti.
+- **Pengesahan:** Endpoint `GET /assets/opensubtitles-logo.png` → `200 OK, Content-Type: image/png`; Playwright `naturalWidth: 460, naturalHeight: 460` — logo bulatan hijau avatar GitHub dipaparkan dalam slot 24×24 seimbang dengan SubSource dan SubDL.
+- **Bump versi 3.8.29 → 3.8.30** — cache buster automatik memaksa semua instance mendapat aset baharu.
+- **Ujian:** `npm test` — **287 PASS / 0 FAIL / 1 skipped**.
+
+## SubMaker v3.8.29 (2026-10-06) — Fix: Logo 1:1, cache buster logo provider & patch audit dependencies
+
+**Tiga pembetulan kritikal dalam satu versi — nisbah aspek logo, perlindungan cache 1 tahun, dan vulnerability dependencies:**
+
+- **Fix (nisbah aspek):** Logo OpenSubtitles yang diwarisi daripada banner Wikipedia adalah 180×50 (landskap). Dalam kontena 24×24 dengan `object-fit: contain`, ia mengecut kepada 24×6.6px — garis halus tidak boleh dibaca. Logo di-letterbox kepada kanvas square **180×180** (node-canvas, latar transparan) supaya selari dengan ikon petak SubSource (180×180) dan SubDL (256×257).
+- **Fix (cache buster):** [`public/partials/main.html`](public/partials/main.html) — ketiga-tiga `<img>` logo provider ditambah `?_cb=__APP_VERSION_QUERY__` (sebelum ini tiada cache buster). Ini bug kritikal: [`index.js`](index.js) menyajikan `/assets/*.png` dengan `Cache-Control: public, max-age=31536000000, immutable` (cache 1 tahun tanpa revalidation) — pengguna yang pernah memuat halaman sebelum penggantian logo akan terpekak dengan logo lama selama setahun tanpa hard refresh. Token dalam partial digantikan pada runtime oleh [`src/utils/configurePageGenerator.js`](src/utils/configurePageGenerator.js) kerana inline partial diproses sebelum token replacement.
+- **Fix (audit CI):** CI untuk commit pertama versi ini gagal pada step "Audit production dependencies" — 2 vulnerability dijangka oleh `npm audit --omit=dev`:
+  - `compression` < 1.8.2 — **high** (GHSA-vc2v-76pw-4v95, DoS memory leak on premature response close) → dinaikkan kepada `^1.8.2`.
+  - `proxy-addr` 1.1.0–2.0.7 — **critical** (GHSA-jqcg-44mw-7w3h, IP spoofing via IPv4-mapped IPv6 trust subnet) → dinaikkan kepada `^2.0.8`.
+  - `npm audit fix --omit=dev` → **0 vulnerabilities**; hanya [`package-lock.json`](package-lock.json) berubah (+17/-8).
+- **Pengesahan:** Rendered HTML mengandungi `?_cb=3.8.29` pada ketiga-tiga logo; endpoint 200 `image/png`; `npm test` diulang selepas audit fix — kekal hijau.
+- **Bump versi 3.8.28 → 3.8.29.**
+- **Ujian:** `npm test` — **287 PASS / 0 FAIL / 1 skipped** (dijalankan 2× — sebelum dan selepas patch dependencies).
+
 ## SubMaker v3.8.28 (2026-10-05) — Fix: Logo OpenSubtitles ditukar kepada PNG tulen (gugurkan GIF)
 
 **Aset GIF akhirnya ditukar kepada PNG sebenar — siri penyempurnaan logo tamat:**
