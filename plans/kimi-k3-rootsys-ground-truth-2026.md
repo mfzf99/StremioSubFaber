@@ -323,13 +323,92 @@ Nota prestasi: pembedahan ini menukar KONTRAK, bukan parameter (H2 — rootsys s
 - (b) System message berasingan + `<text>` di KEPALA messages + arahan di EKOR (panduan penempatan rasmi Moonshot)
 - (c) Scope fence eksplisit (anti excessive-proactiveness — ubat rasmi Moonshot)
 - (d) Quote-then-claim grounding untuk terms/characters (cookbook rasmi: potong output ~⅓ + anti-halusinasi)
-- Fasa F: validasi empirikal kualiti Bible pasca-KNP pada kandungan sebenar (ulang metodologi Fasa D).
+
+---
+
+## 6.1 FASA F — VALIDASI EMPIRIKAL PASCA-KNP (2026-10-07, dilaksanakan)
+
+Metodologi: sama dengan Fasa D (SRT sebenar sama, 3 run, payload god-tier, kunci daripada .env VPS). CI v3.8.40 hijau disahkan dahulu (GitHub Actions run #211: completed/success). Skrip: `.tmp-kimi-gen-f.js` (payload 32,269 chars prompt KNP), `.tmp-kimi-f-run.sh`, `.tmp-kimi-analyze-f.js` — semua di VPS, TIDAK di-commit.
+
+### 6.1.1 Data mentah
+| Metrik | F1 | F2 | F3 | D-baseline (avg) |
+|---|---|---|---|---|
+| HTTP / TOTAL | 200 / 68.9s | 200 / 166.8s | 200 / 103.6s | 200 / ~139s |
+| reasoning | 2303 | 7015 | 3943 | 4514 |
+| credit | 12.31 | 20.22 | 12.93 | 15.9 |
+| terms | 16 | 15 | 18 | 29 (24/29/34) |
+| characters | 10 | 10 | 9 | 9-10 |
+| **POLLUTION** | **0 ✓** | **0 ✓** | **0 ✓** | 3+ (gelaran watak dalam terms) |
+| type valid | 16/16 | 15/15 | 18/18 | — (medan tiada) |
+| null canonical | 6/10 (60%) | 4/10 (40%) | 5/9 (56%) | 22-40% |
+| credits | 1 | 1 | 1 | 1 |
+
+### 6.1.2 KPI vs sasaran §5.7
+1. **Pollution sifar — SASARAN DICAPAI sepenuhnya.** Bedah #1 membunuh punca akar: SEMUA gelaran watak kini hanya dalam characters. terms sample F tulen: seyang, le ciel, cdschq, sou, next, mad human disease, myungwon rice cake shop — 100% kosakata dunia cerita.
+2. **type 100% compliance — SASARAN DICAPAI.** Setiap term dikategorikan (taburan sihat: location/organization/object/technical/phrase).
+3. **Terms Jaccard 0.38-0.55 — TIDAK capai ≥0.75.** TAPI interpretasi berubah: senarai kini lebih ketat (16 vs 29 avg — pollution dibuang) dan TERAS berulang (seyang/le ciel/cdschq/sou/next/mad human disease/competitiveness reinforcement team) hadir dalam SEMUA run — varians datang daripada istilah periferi sekali-muncul (kedai/lokasi one-off), bukan kesilapan. Kesan produksi rendah: Agent A hanya menerima term yang MATCH chunk semasa (dynamic matching) — istilah periferi jarang padan.
+4. **Null-rate spread 20pt (40/56/60%) — TIDAK capai ≤10pt.** Null-rate LEBIH TINGGI daripada D (22-40%) = model lebih konservatif mengunci canonical_address (kontradiksi MUST-include dibuang → disiplin null menang). Ini SELAMAT: HIERARCHY OF TRUTH + NOT-LOCKED guidance membolehkan Agent A infer per-chunk.
+5. **Characters Jaccard 0.90-1.00 — kekal muktamad stabil.**
+6. **Theme — kualiti tinggi konsisten** (fakta sama merentas run: kontrak kahwin, Le Ciel, Mad Human Disease, Next, Han Tae-seok).
+7. **Masa avg 113s vs 139s D — ~19% lebih laju** (variance kimi kekal: 68.9-166.8s).
+
+### 6.1.3 Kesimpulan Fasa F
+Pembedahan KNP berjaya pada objektif utamanya: **Bible kini tulen ikut doktrin** (tiada pencemaran silang-tiang, kategori lengkap, watak stabil). Dua KPI stabiliti (terms Jaccard, null spread) tidak capai sasaran ketat — had fizikal kimi-k3 @ temp 1.0 tetap (parameter di-strip rootsys — H2): keputusan borderline (istilah periferi mana nak dimasukkan; bila bukti "cukup jelas") kekal sampling. Ubat lanjut (jika owner mahu): cadangan Moonshot (b)(c)(d) — system message berasingan + scope fence + quote-then-claim — yang belum dilaksanakan.
+
+---
+
+## 6.2 FASA G — EKSPERIMEN MOONSHOT (2026-10-07, diluluskan owner: "Teruskan berkesksperimen, yang penting kau deliver result yang akan buat aku tersenyum")
+
+Metodologi: 3 varian payload dijana daripada prompt produksi v3.8.40 SAMA (split statik/dinamik automatik pada penanda `## INPUT` / `</text>` — tiada duplikasi manual, tiada drift), SRT sebenar sama (745 baris), 3 run setiap varian = 9 panggilan (semua HTTP 200; G3-R3 terpotong pada siling curl 290s). Baseline perbandingan = Fasa F (single user message). Skrip probe di VPS (tidak di-commit): `.tmp-kimi-gen-g.js`, `.tmp-kimi-g-run.sh`, `.tmp-kimi-analyze-g.js`.
+
+- **G1** = teknik (b): arahan statik (Role→FINAL CHECK, 7,120 chars) di saluran `system`; input dinamik `<text>` (25,399 chars) di saluran `user`.
+- **G2** = G1 + teknik (c): blok SCOPE FENCE (IN/OUT-OF-SCOPE + PRECISION OVER RECALL + larangan padding).
+- **G3** = G2 + teknik (d): QUOTE-THEN-CLAIM — setiap entri terms/characters WAJIB medan `evidence` (petikan VERBATIM 5-15 patah perkataan); NO QUOTE = NO ENTRY.
+
+### 6.2.1 Jadual KPI (F = baseline Fasa F)
+
+| KPI (sasaran) | F | G1 system | G2 +fence | G3 +QTC |
+|---|---|---|---|---|
+| terms Jaccard avg (≥0.75) | 0.47 | **0.72** | 0.72 | 0.69 (2 run sahaja) |
+| null spread (≤10pt) | 20pt | **7pt ✓** | 16pt | **0pt ✓** (2 run) |
+| POLLUTION (0) | 0 ✓ | 0 ✓ | 0 ✓ | 0 ✓ |
+| type compliance (100%) | 100% ✓ | 100% ✓ | 100% ✓ | 100% ✓ |
+| chars Jaccard min (≥0.90) | 0.90 ✓ | **0.90 ✓** | **0.67 ✗✗** | 1.00 ✓ (2 run) |
+| evidence verbatim (≥95%) | n/a | n/a | n/a | **97% ✓** (33/34) |
+| masa avg | 113.1s | 162.0s | 239.1s | 241.6s (R3 timeout) |
+| credit avg | 15.2 | 19.2 | 27.7 | 29.0 |
+| reasoning avg | 4,420 | 6,177 | 9,766 | 9,834 |
+
+### 6.2.2 Temuan per teknik
+
+1. **G1 (system message berasingan) — PEMENANG JELAS.**
+   - terms Jaccard 0.47 → 0.72 (+53% relatif) — hampir sasaran 0.75; senarai lebih ketat (11-13 vs 15-18) dengan TERAS stabil.
+   - **null spread 20pt → 7pt — sasaran ≤10pt DICAPAI buat kali pertama** (33/33/40%). Kontradiksi mandat pada keputusan canonical_address selesai: arahan di saluran system diberi bobot lebih tinggi, keputusan konsisten merentasi run.
+   - Semua KPI lain KEKAL HIJAU: pollution 0, type 100%, chars 0.90, theme berkualiti.
+   - Kos: +43% masa (113→162s), +27% credit (15.2→19.2), reasoning +40%. MASIH jauh bawah siling 290s — selamat produksi.
+   - Bonus: prompt cache berfungsi merentas panggilan (cacheHit 8,192 tokens pada R2/R3 — saluran system 7,120 chars di-cache; panggilan preflight berikutnya lebih murah).
+2. **G2 (scope fence) — BAHAYA, JANGAN GUNA pada preflight.**
+   - chars Jaccard RUNTUH 0.90 → 0.67: "PRECISION OVER RECALL" membuat kimi memotong watak sebenar (7-8 vs 9-10 baseline) — terlalu konservatif. Pelanggan akan hilang watak sekunder daripada Bible.
+   - null-rate turun (13-29%) bukan kerana lebih yakin — tapi kerana senarai pendek. reasoning +58% vs G1 tanpa ganjaran.
+   - Kesimpulan: scope fence direka Moonshot untuk tugasan GENERATIF (anti proactiveness penulisan) — BUKAN untuk tugasan EKSTRAKSI yang kita perlukan recall.
+3. **G3 (quote-then-claim) — disiplin sempurna, tidak praktikal.**
+   - Evidence 97% verbatim (1/33 hampir — "-are you leaving the public official dorm?" punca: sempang pembuka yang dinormalisasi tak padan); chars J=1.00; null spread 0pt — teknik ini benar-benar menjadikan keputusan borderline binari seperti diramal.
+   - TAPI: reasoning ~2x lipat F (9.8k vs 4.4k), masa 242s avg, dan **G3-R3 TIMEOUT pada 290s** (stream terpotong tengah JSON — parse gagal). Untuk SRT 745 baris ini sempit; SRT lebih besar pasti melebihi siling Caddy 300s.
+   - Kesimpulan: kos/risiko terlalu tinggi untuk Bible; sesuai (jika mahu) untuk tugasan kecil kritikal sahaja.
+
+### 6.2.3 Keputusan & cadangan integrasi (Fasa H — menunggu kelulusan owner)
+
+**Integrasi produksi dicadangkan: G1 SAHAJA.**
+1. Pecahkan `buildPreflightPrompt()` kepada dua: arahan statik (system) + pembalut input dinamik (user) — struktur data dikembalikan { systemPrompt, userPrompt }.
+2. Lulusan `runPreflightSemanticPass` menghantar `messages: [{role:'system'...}, {role:'user'...}]` melalui buildChatRequest.
+3. Fence (G2) & QTC (G3) TIDAK diintegrasikan — G2 merosakkan pillar characters; G3 terlalu mahal + risiko timeout.
+4. Kos G1 diterima: +43% masa preflight (satu kali setiap fail) untuk stabiliti Bible yang jauh lebih baik + cache prefix pada panggilan berikut.
 
 ---
 
 ## 7. ARAHAN TETAP UNTUK SESI SAMBUNGAN (jika context reset)
 
-1. Kita dalam **mode sembang/eksperimen** — dilarang ubah kod produksi sehingga owner luluskan Fasa E secara eksplisit.
+1. Kita dalam **mode eksperimen** — Fasa E (v3.8.40) & Fasa G (eksperimen Moonshot) selesai. Dilarang ubah kod produksi sehingga owner luluskan **Fasa H** (integrasi G1 system-split ke buildPreflightPrompt/buildChatRequest) secara eksplisit.
 2. Semua ujian curl dijalankan **di VPS `root@subfaber:~/StremioSubFaber`** (bukan PC tempatan) — folder kerja `.tmp-kimi/` di VPS. PC tempatan juga ada `.tmp-kimi/` (Fasa A sahaja).
 3. Key API rootsys & buyerToken dipegang owner (dalam sejarah sembang); jangan simpan dalam fail yang di-commit.
 4. Payload Fasa B di VPS dijana semula dengan blok `gen-phaseB.js` (heredoc) — guna kod produksi `buildPreflightPrompt()` sebenar.
