@@ -2,6 +2,16 @@
 
 All notable changes to this project will be documented in this file.
 
+## SubMaker v3.8.38 (2026-10-07) — Changed: Formula (4+50+2) — videolingo + owner's special tweak
+
+**Sliding window context SubFaber dinaikkan: previous 3 → 4 baris (formula 4+50+2):**
+
+- **Changed:** [`src/services/translationEngine.js`](src/services/translationEngine.js) — `PREV_W` 3 → **4** dalam `_prepareSubfaberContext()` (sliding window asimetris kini prev 4 / next 2). `PREV_W_CHUNK` dalam Fix #7 (konteks separuh kedua semasa streaming) turut diselaraskan 3 → 4 supaya formula konsisten merentas laluan. Batch size 50 & subsequent 2 dikekalkan.
+- **Kekal:** Pre-Flight (Fasa 0) dan Agent B Inspector/inspection TIDAK diubah — hanya sliding window Agent A.
+- **Changed:** [subfaber-context-regression.test.js](src/services/subfaber-context-regression.test.js) — 5 test window (middle batch, last batch, clamp boundary, previousMemory, single-engine path) diselaraskan: assertion prev 3 → 4, verifikasi ID (7..10), memory window start (ID 7), dan larangan ID luar window (ID 6).
+- **Changed:** [config.js](src/utils/config.js) — komen dokumentasi window hardcode dikemas kini (3/2 → 4/2).
+- **Bump versi 3.8.37 → 3.8.38** — `npm test` — **290 PASS / 0 FAIL / 1 SKIP**.
+
 ## SubMaker v3.8.37 (2026-10-07) — Changed: Batch size 50 + prompt Agent A diperketat (pemilihan kata tegas)
 
 **Setup terjemahan baharu dimulakan mulai versi ini (keputusan owner, 2026-10-07):**

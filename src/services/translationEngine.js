@@ -135,7 +135,8 @@ const CACHE_TRANSLATIONS = process.env.CACHE_TRANSLATIONS === 'true'; // Enable/
  * (naik semula daripada 30 Prompt-Slim Mandate — keputusan owner:
  * keseimbangan throughput panggilan vs beban token). Bersama slim
  * system prompt (~450 BPE) + BPE tokenizer guard. Sliding window
- * kekal 3/2; previousMemory membawa coherence antara batch.
+ * 4/2 (formula 4+50+2 — videolingo + owner's special tweak);
+ * previousMemory membawa coherence antara batch.
  * Enjin SubFaber adalah enjin TUNGGAL — tiada env override, tiada mod
  * legacy 200-baris (Total Purge Mandat 2026-09-25).
  */
@@ -1187,17 +1188,19 @@ class TranslationEngine {
      * satu batch. Pembina konteks TUNGGAL (Total Purge Mandat 2026-09-25).
      *
      * GOLDEN STANDARD (Mandat 2026-09-26, ground truth VideoLingo):
-     * Sliding window ASIMETRIS — previousContent = 3 baris terakhir sebelum
-     * batch (chunk sebelumnya `.split('\n')[-3:]`), subsequentContent = 2 baris
-     * pertama selepas batch (chunk berikutnya `[:2]`). previousMemory
-     * diselaraskan kepada 3 baris lalu yang sama. Konteks global Fasa 0
-     * (theme + term-matching dinamik) membawa beban koherens utama.
+     * Sliding window ASIMETRIS — previousContent = 4 baris terakhir sebelum
+     * batch, subsequentContent = 2 baris pertama selepas batch (chunk
+     * berikutnya `[:2]`). previousMemory diselaraskan kepada 4 baris lalu
+     * yang sama. Konteks global Fasa 0 (theme + term-matching dinamik)
+     * membawa beban koherens utama.
+     * [OWNER SPECIAL TWEAK 2026-10-07] previous dinaikkan 3 → 4
+     * (formula 4+50+2 — videolingo + owner's special tweak).
      *
      * Struktur return (kontrak laporan backend §3.2 Pembedahan C):
      *   {
-     *     previousContent: entries[],   // source-only, 3 baris sebelum batch
+     *     previousContent: entries[],   // source-only, 4 baris sebelum batch
      *     subsequentContent: entries[], // source-only, 2 baris selepas batch
-     *     previousMemory: entries[],    // terjemahan disahkan (3 baris lalu)
+     *     previousMemory: entries[],    // terjemahan disahkan (4 baris lalu)
      *     preflight: {theme, terms}|null // konteks global Fasa 0
      *   }
      *
@@ -1217,8 +1220,9 @@ class TranslationEngine {
         }
         const batchEndIdx = batchStartIdx + batch.length - 1;
 
-        // 2. Sliding window ASIMETRIS (VideoLingo ground truth: prev 3 / next 2)
-        const PREV_W = 3;
+        // 2. Sliding window ASIMETRIS (4+50+2 — videolingo + owner's
+        //    special tweak: prev 4 / next 2; VideoLingo asal 3/2)
+        const PREV_W = 4;
         const NEXT_W = 2;
         const prevStart = Math.max(0, batchStartIdx - PREV_W);
         const prevEnd = batchStartIdx - 1; // -1 bermakna tiada previous (batch 1)
@@ -1589,9 +1593,9 @@ class TranslationEngine {
             }
 
             // Fix #7: Build SubFaber sliding-window context for the second half from
-            // the first half's translations (TOTAL PURGE 2026-09-25 — prev 3 lines,
-            // asymmetric window per Golden Standard; <m> legacy memory format removed).
-            const PREV_W_CHUNK = 3;
+            // the first half's translations (TOTAL PURGE 2026-09-25 — prev 4 lines
+            // per formula 4+50+2; <m> legacy memory format removed).
+            const PREV_W_CHUNK = 4;
             const contextCount = Math.min(PREV_W_CHUNK, firstHalf.length);
             const targetEntries = firstHalf.slice(-contextCount);
             const startIndex = firstHalf.length - contextCount;
