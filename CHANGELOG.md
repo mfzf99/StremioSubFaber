@@ -2,6 +2,15 @@
 
 All notable changes to this project will be documented in this file.
 
+## SubMaker v3.8.39 (2026-10-07) — Fixed: Dua bug enjin hasil Deep Scan #2 (auto-chunk context + anchor retry Agent B)
+
+**Sapu bersih bug dari audit forensik kedua enjin SubFaber:**
+
+- **Fixed — Bug #1 (auto-chunk Fix #7):** [translationEngine.js](src/services/translationEngine.js) — konteks separuh kedua auto-chunk dibina oleh pembina tunggal `_prepareSubfaberContext()` menggantikan pembinaan manual yang menjatuhkan `subsequentContent` (window ke hadapan) dan `preflight` (bible Fasa 0). Skop sintetik menggabungkan konteks batch asal + kedua-dua separuh; terjemahan separuh pertama dipetakan sebagai `translatedSoFar` supaya `previousMemory` betul. Formula 4+50+2 kini satu sumber kebenaran merentas laluan normal dan auto-chunk — separuh kedua fail berat tidak lagi diterjemah tanpa panduan global.
+- **Fixed — Bug #2 (crime retry Agent B):** amaran `CRITICAL SEMANTIC ALERT` kini disisip **sebelum** blok `<answer>` (bukan dilekat di hujung) — anchor `<s id="N">` kekal sebagai token terakhir prompt retry, memelihara kontrak Smart Preamble Scrubber v1.6.1 + prefill Gemini. Fallback defensif: prompt warisan tanpa `<answer>` kekal append di hujung (backward-compat).
+- **Added:** [translationEngine-bugfix2-regression.test.js](src/services/translationEngine-bugfix2-regression.test.js) — 4 ujian regresi (disahkan MERAH sebelum patch melalui TAP, HIJAU selepas): pewarisan subsequent + preflight + previous dalam second-half, window 4 penuh, anchor token terakhir, dan warning dalam USER part (tidak bocor ke SYSTEM). Fail didaftarkan dalam `test:tracked`.
+- **Bump versi 3.8.38 → 3.8.39** — `npm test` — **294 PASS / 0 FAIL / 1 SKIP** (295 tests; baseline baharu).
+
 ## SubMaker v3.8.38 (2026-10-07) — Changed: Formula (4+50+2) — videolingo + owner's special tweak
 
 **Sliding window context SubFaber dinaikkan: previous 3 → 4 baris (formula 4+50+2):**

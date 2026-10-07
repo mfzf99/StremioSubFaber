@@ -1592,52 +1592,43 @@ class TranslationEngine {
                 } catch (_) {}
             }
 
-            // Fix #7: Build SubFaber sliding-window context for the second half from
-            // the first half's translations (TOTAL PURGE 2026-09-25 — prev 4 lines
-            // per formula 4+50+2; <m> legacy memory format removed).
-            const PREV_W_CHUNK = 4;
-            const contextCount = Math.min(PREV_W_CHUNK, firstHalf.length);
-            const targetEntries = firstHalf.slice(-contextCount);
-            const startIndex = firstHalf.length - contextCount;
+            // Fix #7 [BUG#1 PATCH 2026-10-07, deep scan #2]: context separuh
+            // kedua kini dibina oleh PEMBINA TUNGGAL _prepareSubfaberContext —
+            // buang salinan manual yang menjatuhkan subsequentContent (window
+            // ke hadapan) dan preflight (bible Fasa 0), menyebabkan separuh
+            // kedua diterjemah tanpa panduan global. Skop sintetik menggabungkan
+            // konteks batch asal (prev/subsequent file-scoped) + kedua-dua
+            // separuh supaya formula 4+50+2 kekal satu sumber kebenaran.
+            const scopeEntries = [
+                ...(Array.isArray(context?.previousContent) ? context.previousContent : []),
+                ...firstHalf,
+                ...secondHalf,
+                ...(Array.isArray(context?.subsequentContent) ? context.subsequentContent : [])
+            ];
 
-            // 1. Map first-half translations by their actual indices
-            const transMapByIndex = new Map();
-            if (Array.isArray(firstTranslated)) {
-                for (let i = 0; i < firstTranslated.length; i++) {
-                    const item = firstTranslated[i];
-                    const idx = item && typeof item.index === 'number' ? item.index : i;
-                    if (item && typeof item.text === 'string') {
-                        transMapByIndex.set(idx, item.text);
+            // Terjemahan disahkan untuk translatedSoFar: gabungkan memory
+            // konteks asal ({id, translation}) + hasil separuh pertama
+            // (parser {index, text} → global {id, text}). Penapis [⚠️]
+            // placeholder diuruskan oleh pembina konteks (kontrak sedia ada).
+            const translatedSoFarForScope = [];
+            if (Array.isArray(context?.previousMemory)) {
+                for (const m of context.previousMemory) {
+                    if (m && m.id !== undefined && typeof m.translation === 'string') {
+                        translatedSoFarForScope.push({ id: m.id, timecode: m.timecode, text: m.translation });
                     }
                 }
             }
-
-            // 2. Build previousContent/previousMemory matching exact indices in firstHalf
-            const previousContent = [];
-            const previousMemory = [];
-            for (let i = 0; i < targetEntries.length; i++) {
-                const orig = targetEntries[i];
-                const actualIndexInFirstHalf = startIndex + i;
-                const transText = transMapByIndex.get(actualIndexInFirstHalf);
-
-                previousContent.push(orig);
-                // Only store valid translations; exclude [⚠️] warning placeholders
-                if (transText && !transText.startsWith('[⚠️]')) {
-                    previousMemory.push({
-                        id: orig.id,
-                        source: orig.text,
-                        translation: transText
-                    });
-                }
+            if (Array.isArray(firstTranslated)) {
+                firstTranslated.forEach((item, fallbackIdx) => {
+                    const idx = item && typeof item.index === 'number' ? item.index : fallbackIdx;
+                    const orig = firstHalf[idx];
+                    if (item && orig && typeof item.text === 'string') {
+                        translatedSoFarForScope.push({ id: orig.id, timecode: orig.timecode, text: item.text });
+                    }
+                });
             }
 
-            const secondHalfContext =
-                previousContent.length > 0 || previousMemory.length > 0
-                    ? {
-                          previousContent,
-                          previousMemory
-                      }
-                    : null;
+            const secondHalfContext = this._prepareSubfaberContext(secondHalf, scopeEntries, translatedSoFarForScope);
 
             const secondTranslated = await this.translateBatch(
                 secondHalf,
@@ -2469,12 +2460,25 @@ CRITICAL SEMANTIC ALERT (from independent inspector):
 ${crimeLines}
 You MUST translate each numbered line 1:1. NEVER merge two source lines into one output slot. NEVER invent dialogue.`;
 
+                    // [BUG#2 PATCH 2026-10-07, deep scan #2] Amaran jenayah
+                    // disisip SEBELUM blok <answer> — anchor '<s id="N">' mesti
+                    // kekal token terakhir prompt (kontrak Smart Preamble
+                    // Scrubber + prefill Gemini). Concat lama
+                    // `prompt + warningBlock` menolak anchor ke tengah prompt
+                    // dan berisiko merosakkan pemulihan slot pertama.
+                    const answerMarker = '\n\n<answer>';
+                    const answerIdx = prompt.lastIndexOf(answerMarker);
+                    const retryPrompt =
+                        answerIdx !== -1
+                            ? `${prompt.slice(0, answerIdx)}\n${warningBlock}${prompt.slice(answerIdx)}`
+                            : prompt + warningBlock; // prompt warisan tanpa <answer> — append di hujung
+
                     try {
                         await new Promise((resolve) => setTimeout(resolve, 500));
                         const retryText = await this._translateCall(
                             batchText,
                             targetLanguage,
-                            prompt + warningBlock,
+                            retryPrompt,
                             false,
                             null
                         );
