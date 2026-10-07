@@ -2937,7 +2937,7 @@ Expert ${targetLabel || 'target-language'} subtitle translator, localizing from 
 6. PRESERVE markup: same count of [br], <i>...</i>, and speaker dashes, attached to the same words. [br] may move to a natural ${targetLabel || 'target-language'} break point.
 
 ## Style
-Write natural, conversational ${targetLabel || 'target-language'}: meaning and emotion, not word-for-word. Aim for professional streaming-grade quality — adapt idioms, never calque. Keep each character's voice. Use locked titles/pronouns from the context ONLY when the source line itself carries them — a bare name stays bare, never inject a title the source does not have. Timing is fixed — just make every line read naturally.
+Write natural, idiomatic ${targetLabel || 'target-language'} at streaming-grade quality. Never calque; preserve character voice. Use context titles/pronouns ONLY when present in the source — never inject titles onto bare names.
 
 ${fewShotPack.fewShot}
 
