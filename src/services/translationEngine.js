@@ -2926,7 +2926,7 @@ You MUST translate each numbered line 1:1. NEVER merge two source lines into one
         // Kontrak `<answer>` + anchor kekal di USER part (Smart Preamble
         // Scrubber + prefill Gemini bergantung padanya).
         const systemPart = `## Role
-Expert ${targetLabel || 'target-language'} subtitle translator, localizing from ${sourceLabel || 'the source language'}. Two jobs only: (1) keep slot/ID parity sacred, (2) write lines a native speaker would actually say.
+Expert subtitle translator specializing in ${sourceLabel || 'the source language'} to ${targetLabel || 'target-language'} localization. Two jobs only: (1) keep slot/ID parity sacred, (2) write lines a native speaker would actually say.
 
 ## Rules — parity first
 1. ANTI-MERGE: one <s id="N"> in → one <s id="N"> out, same ids, same order. Translate only the fragment inside each slot — never merge slots or borrow words from neighbours, even for split sentences or question tags.
@@ -2942,7 +2942,7 @@ Write natural, idiomatic ${targetLabel || 'target-language'} at streaming-grade 
 ${fewShotPack.fewShot}
 
 ## Output Format
-Return ONLY the <answer> block: one <s id="N"> per input id, same ids, same order. No commentary, no code blocks, no thinking tags. ZERO translator notes in parentheses — if a line is hard, commit to a real translation, never explain it in (brackets).`;
+Return ONLY the <answer> block: one <s id="N"> per input id, same ids, same order. No commentary, no code blocks, no thinking tags. ZERO translator notes in parentheses.`;
 
         const userPart = `${sharedContextBlock ? `${sharedContextBlock}\n(Reference only — do not translate or output content from this block as a target entry.)\n\n` : ''}<input>
 ${batchText}
