@@ -60,6 +60,13 @@
 const OpenAICompatibleProvider = require('./providers/openaiCompatible');
 const { runPreflightSemanticPass, stripReasoningTags } = require('./subfaberPreflight');
 const log = require('../utils/logger');
+// [FASA H 2026-10-07] Split statik/dinamik untuk prompt Pre-Flight (varian G1
+// Fasa G — system message berasingan): buildPreflightPrompt kini membawa
+// SUBFABER_PROMPT_BOUNDARY; bahagian STATIK dihantar sebagai saluran system
+// (bobot arahan lebih tinggi — terms Jaccard 0.47→0.72, null spread 20pt→7pt),
+// input DINAMIK sebagai saluran user. Prompt pemeriksaan (Fasa B) tanpa
+// sempadan kekal laluan lama (satu user message).
+const { splitStructuredPrompt } = require('./utils/structuredPrompt');
 
 // ── [MODEL-HIERARCHY] Konfigurasi tetap Agent B (FINAL 2026-09-28) ──
 // Hierarki model MUKTAMAD (empirikal curl gateway rootsys.cloud):
@@ -665,6 +672,20 @@ class AgentBInspector extends OpenAICompatibleProvider {
      */
     buildUserPrompt(subtitleContent, targetLanguage, customPrompt = null) {
         const userPrompt = String(customPrompt || subtitleContent || '');
+        // [FASA H] Pre-Flight prompt membawa SUBFABER_PROMPT_BOUNDARY —
+        // pisahkan STATIK (system: Role → FINAL CHECK) daripada DINAMIK
+        // (user: <text> dialog + arahan guna tugas). Laluan inspection
+        // (tiada sempadan) tidak berubah: satu user message sahaja.
+        const structured = splitStructuredPrompt(userPrompt);
+        if (structured) {
+            return {
+                userPrompt: structured.user,
+                systemPrompt: structured.system,
+                normalizedTarget: '',
+                subtitleContent,
+                isSelfContained: true
+            };
+        }
         return {
             userPrompt,
             systemPrompt: '',

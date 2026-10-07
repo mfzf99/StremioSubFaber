@@ -406,9 +406,27 @@ Metodologi: 3 varian payload dijana daripada prompt produksi v3.8.40 SAMA (split
 
 ---
 
+## 6.3 FASA H — PELAKSANAAN INTEGRASI G1 (2026-10-07, diluluskan owner: "Teruskan fasa H")
+
+Seni bina yang dipilih BUKAN { systemPrompt, userPrompt } return baru (cadangan asal §6.2.3 poin 1) — sebaliknya **konvensyen sempadan sedia ada projek** (`SUBFABER_PROMPT_BOUNDARY`, structuredPrompt.js — sama seperti Agent A PROMPT REBUILD v2) dipanjangkan kepada Pre-Flight. Sebab: kontrak string tunggal prompt yang mengalir melalui cache-key/token-count/retry-path kekal TIDAK BERUBAH; split hanya berlaku di sempadan API. Laluan Gemini + Anthropic mendapat split secara PERCUMA (buildUserPrompt masing-masing sudah memanggil splitStructuredPrompt).
+
+**4 pembedahan (v3.8.41):**
+1. **subfaberPreflight.js** — import sempadan; templat prompt: `## INPUT` diganti `## INPUT FORMAT` (nota "dialogue arrives in your NEXT message"); selepas FINAL CHECK → `${SUBFABER_PROMPT_BOUNDARY}` → blok user `<text>…</text>` + "Apply the tasks above to this subtitle dialogue and return ONLY the JSON object." (replika tepat struktur G1 yang diuji).
+2. **agentBInspector.js** — override `buildUserPrompt()` melakukan splitStructuredPrompt pada customPrompt bersempadan (Pre-Flight) → { systemPrompt: statik, userPrompt: dinamik }; tanpa sempadan (inspection) → laluan lama systemPrompt:'' + satu user message.
+3. **openaiCompatible.js buildChatRequest()** — `messages` = `[system, user]` bila `meta.systemPrompt` tidak kosong; `[user]` tunggal tanpanya. Ini turut MEMBAIKI bug pra-wujud: laluan legacy menerima `meta.systemPrompt` (dihantar oleh translateSubtitle/streamTranslateSubtitle) tetapi tidak pernah menggunakannya — arahan statik Agent A fallback hilang sepenuhnya selama ini. God-tier 4-kunci kekal suci.
+4. **make-preflight-payload.js + -slim.js** — probe TTFT mencerminkan struktur runtime baharu (payload [system, user] melalui splitStructuredPrompt).
+
+**Ujian (subfaber-fasah-regression.test.js, 8 baharu, didaftarkan test:tracked):** sempadan + split bersih (system: Role→FINAL CHECK tanpa dialog; user: `<text>` tanpa arahan), backward-compat tanpa sempadan, split Agent B vs legacy inspection, messages [system,user] + kekalaman god-tier 4-kunci, [user] tunggal tanpa meta, dan end-to-end (prompt produksi → Agent B buildUserPrompt → buildChatRequest). Dua iterasi MERAH→HIJAU (pecahan: destructure `{ AgentBInspector }` — module.exports ialah objek; assertion `<text>` dipersempit kepada blok `'<text>\n'` kerana nota INPUT FORMAT menyebut tag secara inline).
+
+**Pengesahan:** 305 tests / 304 PASS / 0 FAIL / 1 SKIP (baseline 297 → 304) · Prettier bersih · ESLint 0 error (1 warning pra-wujud `DEFAULT_TRANSLATION_PROMPT` di openaiCompatible.js — bukan daripada Fasa H).
+
+**Nota runtime:** payload kimi-k3 Fasa 0 kini `{model, messages:[system,user], stream:true, temperature:0.0}` — SAHIH dengan 4-kunci god-tier (kunci `messages` sahaja berubah isi, bukan struktur). Saluran system ~7.1k aksara statik → calon kuat prompt-cache rootsys (Fasa G membuktikan cacheHit 8,192 tok pada R2/R3). Kos diterima: ~+43% masa preflight sekali setiap fail (162s vs 113s avg) untuk terms J 0.72 + null spread 7pt.
+
+---
+
 ## 7. ARAHAN TETAP UNTUK SESI SAMBUNGAN (jika context reset)
 
-1. Kita dalam **mode eksperimen** — Fasa E (v3.8.40) & Fasa G (eksperimen Moonshot) selesai. Dilarang ubah kod produksi sehingga owner luluskan **Fasa H** (integrasi G1 system-split ke buildPreflightPrompt/buildChatRequest) secara eksplisit.
+1. **Fasa H SELESAI (v3.8.41)** — G1 system-split berintegrasi penuh dalam produksi. Fasa berikutnya (jika owner mahu): validasi empirikal pasca-integrasi (3 run SRT sebenar di VPS, sama seperti Fasa F) untuk mengesahkan KPI KNP kekal; atau tugasan lain mengikut arahan owner.
 2. Semua ujian curl dijalankan **di VPS `root@subfaber:~/StremioSubFaber`** (bukan PC tempatan) — folder kerja `.tmp-kimi/` di VPS. PC tempatan juga ada `.tmp-kimi/` (Fasa A sahaja).
 3. Key API rootsys & buyerToken dipegang owner (dalam sejarah sembang); jangan simpan dalam fail yang di-commit.
 4. Payload Fasa B di VPS dijana semula dengan blok `gen-phaseB.js` (heredoc) — guna kod produksi `buildPreflightPrompt()` sebenar.

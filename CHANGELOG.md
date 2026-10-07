@@ -2,6 +2,23 @@
 
 All notable changes to this project will be documented in this file.
 
+## SubMaker v3.8.41 (2026-10-07) — Changed: Fasa H — Pre-Flight system/user split (integrasi varian G1 Moonshot)
+
+### Changed
+
+- **Pre-Flight kini bersempadan `SUBFABER_PROMPT_BOUNDARY`** ([subfaberPreflight.js](src/services/subfaberPreflight.js)): arahan statik (Role → DECISION DISCIPLINE → FACT VS INFERENCE → Task → INPUT FORMAT → skema JSON → FINAL CHECK) dihantar sebagai **saluran system**; input dinamik SRT (`<text>` + arahan guna tugas) sebagai **saluran user** — replika tepat varian G1 yang divalidasi Fasa G. Ground truth empirikal (9 panggilan kimi-k3, SRT drama sebenar, prompt v3.8.40 sama): terms Jaccard 0.47 → 0.72, null-rate spread 20pt → 7pt (sasaran ≤10pt dicapai), pollution 0 / type 100% / characters 0.90 kekal, prompt-cache rootsys kini aktif pada saluran system (~8k tok di-cache).
+- **`AgentBInspector.buildUserPrompt`** ([agentBInspector.js](src/services/agentBInspector.js)): prompt bersempadan (Pre-Flight) dipecahkan { system, user }; prompt pemeriksaan tanpa sempadan kekal satu user message (tingkah laku lama dipelihara).
+- **`OpenAICompatibleProvider.buildChatRequest`** ([openaiCompatible.js](src/services/providers/openaiCompatible.js)): `messages` kini `[system, user]` bila `meta.systemPrompt` tidak kosong — memanfaatkan Pre-Flight Agent B (kimi-k3) DAN laluan legacy Agent A fallback (bug lama: `systemPrompt` diterima tetapi tidak pernah dihantar). Tanpa `systemPrompt` → satu user message. God-tier 4-kunci kekal suci: `stream:true`, `temperature:0.0`, tiada max_tokens/reasoning_effort.
+- **Probe TTFT** ([make-preflight-payload.js](make-preflight-payload.js) + [make-preflight-payload-slim.js](make-preflight-payload-slim.js)): muatan probe mencerminkan struktur runtime baharu `[system, user]`.
+
+### Added
+
+- [subfaber-fasah-regression.test.js](src/services/subfaber-fasah-regression.test.js) — 8 ujian regresi kontrak Fasa H: sempadan prompt + split bersih (system tanpa dialog, user tanpa arahan), split Agent B vs laluan legacy inspection, messages `[system, user]` vs `[user]`, dan ujian end-to-end (prompt produksi → Agent B → buildChatRequest). Didaftarkan dalam `test:tracked`.
+
+### Kesimpulan pengesahan
+
+305 tests / 304 PASS / 0 FAIL / 1 SKIP (baseline 297 → 304) · Prettier bersih · ESLint 0 error.
+
 ## SubMaker v3.8.40 (2026-10-07) — Changed: Pembedahan KNP — prompt Pre-Flight dipatuhtadbir mengikut doktrin Netflix KNP
 
 **"Kitab suci mesti betul" — Pre-Flight (Fasa 0) diselaraskan penuh dengan standard industri Netflix KNP (Key Names and Phrases) selepas audit ground truth §5.9/§5.10 (plans/kimi-k3-rootsys-ground-truth-2026.md):**

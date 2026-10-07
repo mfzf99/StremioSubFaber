@@ -6,8 +6,11 @@
  * TTFT (time-to-first-token) kimi-k3 melalui curl di VPS.
  *
  * Muatan runtime (4-kunci god-tier, sama seperti buildChatRequest universal):
- *   { model, messages: [{ role:'user', content: <preflight prompt> }],
- *     stream: true, temperature: 0.0 }
+ * [FASA H 2026-10-07] Pre-Flight kini bersempadan SUBFABER_PROMPT_BOUNDARY —
+ * runtime menghantar [{ role:'system', content: <arahan statik> },
+ * { role:'user', content: <text> + arahan guna tugas }]; probe ini
+ * mencerminkan struktur sama melalui splitStructuredPrompt.
+ *   { model, messages: [{ system }, { user }], stream: true, temperature: 0.0 }
  * Prompt dibina oleh buildPreflightPrompt() SEBENAR — jadi honorific matrix,
  * arahan canonical_address, dan skema JSON adalah 100% sama dengan runtime.
  *
@@ -29,6 +32,7 @@ const {
     buildPreflightRawText,
     sampleEntriesForPreflight
 } = require('./src/services/subfaberPreflight');
+const { splitStructuredPrompt } = require('./src/services/utils/structuredPrompt');
 
 const arg0 = process.argv[2] || '--synthetic';
 const targetLanguage = process.argv[3] || 'may';
@@ -74,9 +78,19 @@ const rawText = buildPreflightRawText(sampled);
 const prompt = buildPreflightPrompt(rawText, targetLanguage, 'detected');
 
 // Muatan 4-kunci god-tier — sama dengan buildChatRequest(universalPayload).
+// [FASA H] Struktur [system, user] — sama dengan runtime pasca-pemisahan
+// saluran (varian G1 Fasa G). Prompt tanpa sempadan (warisan) fallback
+// kepada satu user message.
+const structured = splitStructuredPrompt(prompt);
+const messages = structured
+    ? [
+          { role: 'system', content: structured.system },
+          { role: 'user', content: structured.user }
+      ]
+    : [{ role: 'user', content: prompt }];
 const payload = {
     model,
-    messages: [{ role: 'user', content: prompt }],
+    messages,
     stream: true,
     temperature: 0.0
 };
@@ -85,4 +99,5 @@ fs.writeFileSync('preflight-payload.json', JSON.stringify(payload));
 console.error(`[probe] Wrote preflight-payload.json`);
 console.error(`[probe]   model=${model} target=${targetLanguage}`);
 console.error(`[probe]   rawText chars=${rawText.length}  prompt chars=${prompt.length}`);
+console.error(`[probe]   messages=${messages.length} (${messages.map((m) => m.role).join('+')})`);
 console.error(`[probe]   payload bytes=${fs.statSync('preflight-payload.json').size}`);

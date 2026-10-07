@@ -23,6 +23,7 @@
 const fs = require('fs');
 const { buildPreflightRawText, sampleEntriesForPreflight } = require('./src/services/subfaberPreflight');
 const { getLanguagePack } = require('./src/services/prompts/languagePacks');
+const { SUBFABER_PROMPT_BOUNDARY, splitStructuredPrompt } = require('./src/services/utils/structuredPrompt');
 
 const arg0 = process.argv[2] || '--synthetic';
 const targetLanguage = process.argv[3] || 'may';
@@ -95,10 +96,8 @@ For the provided ${src} subtitle dialogue, build the pre-flight context:
    If it starts directly with dialogue, return an empty array [] for 'credits_and_titles'.
    Each 'credits_and_titles' entry has exactly two keys: "source" and "target".
 
-## INPUT
-<text>
-${rawText}
-</text>
+## INPUT FORMAT
+The subtitle dialogue arrives in your NEXT message, wrapped in <text></text> tags. When it arrives, apply the tasks above to it and return ONLY the JSON object.
 
 ## Output in only JSON format and no other text
 {
@@ -108,10 +107,27 @@ ${rawText}
   "credits_and_titles": [ { "source": "Opening credit/title text", "target": "Official ${tgt} translation" } ]
 }
 
-You must respond ONLY with a raw JSON object matching the schema. Start with { and end with }, no other text.`;
+You must respond ONLY with a raw JSON object matching the schema. Start with { and end with }, no other text.
 
-const payload = { model, messages: [{ role: 'user', content: prompt }], stream: true, temperature: 0.0 };
+${SUBFABER_PROMPT_BOUNDARY}
+
+<text>
+${rawText}
+</text>
+
+Apply the tasks above to this subtitle dialogue and return ONLY the JSON object.`;
+
+// [FASA H] Struktur [system, user] — selari runtime pasca-pemisahan saluran.
+const structured = splitStructuredPrompt(prompt);
+const messages = structured
+    ? [
+          { role: 'system', content: structured.system },
+          { role: 'user', content: structured.user }
+      ]
+    : [{ role: 'user', content: prompt }];
+const payload = { model, messages, stream: true, temperature: 0.0 };
 fs.writeFileSync('preflight-payload-slim.json', JSON.stringify(payload));
 console.error(`[probe-slim] Wrote preflight-payload-slim.json`);
 console.error(`[probe-slim]   rawText chars=${rawText.length}  prompt chars=${prompt.length}`);
+console.error(`[probe-slim]   messages=${messages.length} (${messages.map((m) => m.role).join('+')})`);
 console.error(`[probe-slim]   payload bytes=${fs.statSync('preflight-payload-slim.json').size}`);

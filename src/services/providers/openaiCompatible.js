@@ -430,13 +430,27 @@ class OpenAICompatibleProvider {
         const cappedMaxTokens = this.getCappedMaxOutputTokens();
         const isReasoning = this.isOpenAIReasoningModel();
 
-        // 🎯 1:1 Pariti Mutlak dengan Gemini (Hantar 1 prompt lengkap dalam mesej user)
-        const messages = [
-            {
-                role: 'user',
-                content: userPrompt
-            }
-        ];
+        // 🎯 1:1 Pariti Mutlak dengan Gemini — DAN [FASA H 2026-10-07] pemisahan
+        // saluran system/user (varian G1 Fasa G, ground truth empirikal kimi-k3):
+        // bila pemanggil membawa meta.systemPrompt (prompt bersempadan
+        // SUBFABER_PROMPT_BOUNDARY — Pre-Flight Agent B, atau Agent A fallback
+        // melalui splitStructuredPrompt), arahan STATIK dihantar sebagai mesej
+        // system (bobot arahan lebih tinggi: terms Jaccard 0.47→0.72, null
+        // spread 20pt→7pt) dan hanya data DINAMIK sebagai mesej user. Tanpa
+        // systemPrompt (prompt warisan / inspection) — satu mesej user sahaja
+        // (tingkah laku sedia ada dipelihara).
+        const systemPrompt = typeof meta?.systemPrompt === 'string' ? meta.systemPrompt.trim() : '';
+        const messages = systemPrompt
+            ? [
+                  { role: 'system', content: systemPrompt },
+                  { role: 'user', content: userPrompt }
+              ]
+            : [
+                  {
+                      role: 'user',
+                      content: userPrompt
+                  }
+              ];
 
         // ═══ [PAYLOAD-GODTIER] UNIVERSAL PAYLOAD BUILDER (4-KUNCI STREAMING, 2026-09-28) ═══
         // Payload builder bagi Agent B (Fasa 0 Pre-Flight + Fasa B Inspection —

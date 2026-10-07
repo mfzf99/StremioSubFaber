@@ -43,6 +43,15 @@ const log = require('../utils/logger');
 // [UNIVERSAL-FIX] Target-conditional prompt composition — pack di-resolve
 // mengikut bahasa sasaran (Malay → malay.js; lain → generic.js).
 const { getLanguagePack } = require('./prompts/languagePacks');
+// [FASA H 2026-10-07] Sempadan statik/dinamik — sama seperti Agent A
+// (PROMPT REBUILD v2). Bahagian STATIK (Role → Task + nota format input +
+// skema output + FINAL CHECK) dibawa sebagai saluran system; input DINAMIK
+// (<text> SRT) sebagai saluran user. Ground truth Fasa G (eksperimen
+// Moonshot, 9 panggilan kimi-k3, SRT sebenar): pemisahan saluran ini
+// (varian G1) menaikkan terms Jaccard 0.47 → 0.72, menguncup null-rate
+// spread 20pt → 7pt (sasaran ≤10pt DICAPAI), kekal pollution 0 / type
+// 100% / chars 0.90 — dengan prompt v3.8.40 SAMA (tiada perubahan teks).
+const { SUBFABER_PROMPT_BOUNDARY } = require('./utils/structuredPrompt');
 
 // HEADROOM PRINSIP (Mandat Penghapusan 48k 2026-09-26): fail drama boleh
 // mencecah 1,500–2,500 baris (150k–200k aksara). Siling 48k lama memaksa
@@ -175,10 +184,8 @@ For the provided ${src} subtitle dialogue, build the 4-pillar pre-flight context
    If the file starts directly with normal dialogue, return an empty array [] for 'credits_and_titles'.
    Each 'credits_and_titles' entry is an object with exactly two keys: "source" (original opening text) and "target" (official ${tgt} translation).
 
-## INPUT
-<text>
-${rawText}
-</text>
+## INPUT FORMAT
+The subtitle dialogue arrives in your NEXT message, wrapped in <text></text> tags. When it arrives, apply the tasks above to it and return ONLY the JSON object.
 
 ## Output in only JSON format and no other text
 {
@@ -199,7 +206,15 @@ You must respond ONLY with a raw JSON object matching the schema. Do not write a
 ## FINAL CHECK (mechanical, not re-analysis)
 Before answering, verify mechanically: valid JSON; exactly the specified keys; no text outside the JSON; no alternative candidates anywhere; null for every unresolved field.
 
-Note: Start your answer with { and end with }, do not add any other text.`;
+Note: Start your answer with { and end with }, do not add any other text.
+
+${SUBFABER_PROMPT_BOUNDARY}
+
+<text>
+${rawText}
+</text>
+
+Apply the tasks above to this subtitle dialogue and return ONLY the JSON object.`;
 }
 
 /**
