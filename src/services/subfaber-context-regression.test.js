@@ -58,7 +58,7 @@ test('SubFaberContext: subfaberEnabled flag REMOVED — SubFaber is the only eng
         undefined,
         'Legacy subfaberEnabled:false ignored — engine stays SubFaber'
     );
-    assert.equal(engineLegacy.batchSize, 30, 'Batch size stays 30 regardless of legacy flags');
+    assert.equal(engineLegacy.batchSize, 50, 'Batch size stays 50 regardless of legacy flags');
 });
 
 test('SubFaberContext: context builder runs WITHOUT any flag (single engine path)', () => {
@@ -127,14 +127,15 @@ test('SubFaberContext: window clamps at file boundaries', () => {
     assert.equal(ctx.subsequentContent.length, 2, 'Clamped next: only 2 entries requested (of 4 available)');
 });
 
-// --- PROMPT-SLIM MANDATE 2026-09-30: batch size SubFaber = 30 (hardcoded,
-// tiada env override — diturunkan semula untuk kawalan token/attention) ---
-test('SubFaberContext: batch size = 30 ALWAYS (SUBFABER_BATCH_SIZE hardcoded)', () => {
+// --- OWNER MANUAL EDIT 2026-10-07: batch size SubFaber = 50 (hardcoded,
+// tiada env override — naik semula daripada 30 untuk keseimbangan
+// throughput panggilan vs beban token) ---
+test('SubFaberContext: batch size = 50 ALWAYS (SUBFABER_BATCH_SIZE hardcoded)', () => {
     const engine = makeEngine({});
-    assert.equal(engine.batchSize, 30, 'SubFaber batch size = 30 (Prompt-Slim Mandate 2026-09-30, enjin tunggal)');
+    assert.equal(engine.batchSize, 50, 'SubFaber batch size = 50 (Owner Manual Edit 2026-10-07, enjin tunggal)');
     // Env TRANSLATION_BATCH_SIZE tidak lagi berkesan — nilai diabaikan
     const engineEnv = makeEngine({ TRANSLATION_BATCH_SIZE: 200 });
-    assert.equal(engineEnv.batchSize, 30, 'Env override REMOVED — always 30');
+    assert.equal(engineEnv.batchSize, 50, 'Env override REMOVED — always 50');
 });
 
 test('SubFaberContext: previousMemory includes verified translations, excludes placeholders', () => {
@@ -365,10 +366,18 @@ test('SubFaberPrompt V4: slim sharp prompt, split system/user, no double-send', 
     assert.ok(system.includes('same count of [br]'), '[br] count locked');
     assert.ok(system.includes('may move to a natural'), '[br] reposition adaptif');
     // Style padat — ayat hidup, anti-calque
+    // [OWNER MANUAL EDIT 2026-10-07] Style diketatkan: "natural, idiomatic"
+    // menggantikan "living"; register lock kini "context titles/pronouns"
+    // dengan larangan keras suntikan gelaran pada nama kosong.
     assert.ok(system.includes('## Style'), 'Style section present');
-    assert.ok(system.includes('living'), 'Living-language directive in style');
-    assert.ok(system.includes('never calque'), 'Anti-calque in style');
-    assert.ok(system.includes('locked titles/pronouns'), 'Style references locked register (harmony with Bible)');
+    assert.ok(system.includes('natural, idiomatic'), 'Natural idiomatic directive in style');
+    // [OWNER MANUAL EDIT 2026-10-07] "never calque" → "Never calque" (kini
+    // membuka ayat sendiri — huruf besar N; includes() case-sensitive).
+    assert.ok(system.includes('Never calque'), 'Anti-calque in style');
+    assert.ok(
+        system.includes('never inject titles onto bare names'),
+        'Style forbids injecting titles onto bare names (register lock tightened)'
+    );
     // Few-shot 2 contoh parity-critical sahaja (PROMPT-SLIM)
     assert.ok(system.includes('[EXAMPLE 1 — MERGE:'), 'Few-shot EXAMPLE 1 in system');
     assert.ok(system.includes('[EXAMPLE 2 — SHIFT:'), 'Few-shot EXAMPLE 2 in system');

@@ -2,6 +2,17 @@
 
 All notable changes to this project will be documented in this file.
 
+## SubMaker v3.8.37 (2026-10-07) — Changed: Batch size 50 + prompt Agent A diperketat (pemilihan kata tegas)
+
+**Setup terjemahan baharu dimulakan mulai versi ini (keputusan owner, 2026-10-07):**
+
+- **Changed:** [`src/services/translationEngine.js`](src/services/translationEngine.js) — `SUBFABER_BATCH_SIZE` dinaikkan semula 30 → **50** baris/batch (keseimbangan throughput panggilan vs beban token). Env override masih dilarang — nilai hardcoded, enjin tunggal SubFaber.
+- **Changed:** `## Role` dalam `systemPart` prompt Agent A kini berbunyi "Expert subtitle translator specializing in {source} to {target} localization" (menggantikan frasa lama "localizing from") — lebih tegas dan khusus.
+- **Changed:** `## Style` diketatkan kepada "Write natural, idiomatic {target} at streaming-grade quality. Never calque; preserve character voice. Use context titles/pronouns ONLY when present in the source — never inject titles onto bare names." — larangan suntikan gelaran pada nama kosong kini eksplisit.
+- **Changed:** `## Output Format` dipendekkan — klausa "if a line is hard, commit to a real translation, never explain it in (brackets)" dibuang; kekal "ZERO translator notes in parentheses."
+- **Fixed:** [`src/services/subfaber-context-regression.test.js`](src/services/subfaber-context-regression.test.js) — 3 assertion regresi diselaraskan dengan setup baharu: `batchSize` 30 → 50 (2 lokasi), directive Style "living" → "natural, idiomatic", dan register lock "locked titles/pronouns" → "never inject titles onto bare names". Komen dokumentasi lapuk dalam enjin (masih menyebut 30/60) turut dibetulkan.
+- **Bump versi 3.8.36 → 3.8.37** — `npm test` — **290 PASS / 0 FAIL / 1 SKIP**.
+
 ## SubMaker v3.8.36 (2026-10-06) — Changed: Enhanced translation prompt style with streaming-grade quality anchor
 
 **Bahagian `## Style` dalam prompt Agent A kini membawa penanda kualiti "professional streaming-grade quality" secara neutral:**

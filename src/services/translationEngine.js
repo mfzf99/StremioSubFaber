@@ -131,12 +131,11 @@ const NATIVE_BATCH_PROVIDER_NAMES = new Set(['deepl', 'googletranslate']);
 const CACHE_TRANSLATIONS = process.env.CACHE_TRANSLATIONS === 'true'; // Enable/disable entry caching
 
 /**
- * PROMPT-SLIM MANDATE 2026-09-30: Batch size SubFaber = 30 baris
- * (diturunkan semula daripada 60 — keputusan owner + nasihat model:
- * kurangkan beban token per panggilan, elak attention dilution &
- * ID-parity drift). Bersama slim system prompt (~450 BPE) + BPE
- * tokenizer guard, sasaran jumlah input ~1,000-1,100 BPE tok/panggilan.
- * Sliding window kekal 3/2; previousMemory membawa coherence antara batch.
+ * OWNER MANUAL EDIT 2026-10-07: Batch size SubFaber = 50 baris
+ * (naik semula daripada 30 Prompt-Slim Mandate — keputusan owner:
+ * keseimbangan throughput panggilan vs beban token). Bersama slim
+ * system prompt (~450 BPE) + BPE tokenizer guard. Sliding window
+ * kekal 3/2; previousMemory membawa coherence antara batch.
  * Enjin SubFaber adalah enjin TUNGGAL — tiada env override, tiada mod
  * legacy 200-baris (Total Purge Mandat 2026-09-25).
  */
@@ -160,7 +159,7 @@ class TranslationEngine {
         }
         this.model = model;
         // TOTAL PURGE (Mandat 2026-09-25): SubFaber ialah enjin tunggal.
-        // Batch size dihardcode 60 (MANDAT 2026-09-27: dinaikkan daripada 50) —
+        // Batch size dihardcode 50 (OWNER MANUAL EDIT 2026-10-07) —
         // tiada env override.
         this.batchSize = SUBFABER_BATCH_SIZE;
         // SINGLE-BATCH PURGE (2026-09-29): mod single-batch dibuang sepenuhnya —
