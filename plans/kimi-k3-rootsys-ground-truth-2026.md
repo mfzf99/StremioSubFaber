@@ -427,6 +427,7 @@ Seni bina yang dipilih BUKAN { systemPrompt, userPrompt } return baru (cadangan 
 ## 7. ARAHAN TETAP UNTUK SESI SAMBUNGAN (jika context reset)
 
 1. **Fasa H SELESAI (v3.8.41)** — G1 system-split berintegrasi penuh dalam produksi. Fasa berikutnya (jika owner mahu): validasi empirikal pasca-integrasi (3 run SRT sebenar di VPS, sama seperti Fasa F) untuk mengesahkan KPI KNP kekal; atau tugasan lain mengikut arahan owner.
+1b. **TEST BASELINE BAHARU: 305 tests / 304 PASS / 0 FAIL / 1 SKIP** (naik daripada 297; +8 ujian Fasa H dalam test:tracked). Angka ini mengatasi baseline lama "287/297" dalam arahan tetapan.
 2. Semua ujian curl dijalankan **di VPS `root@subfaber:~/StremioSubFaber`** (bukan PC tempatan) — folder kerja `.tmp-kimi/` di VPS. PC tempatan juga ada `.tmp-kimi/` (Fasa A sahaja).
 3. Key API rootsys & buyerToken dipegang owner (dalam sejarah sembang); jangan simpan dalam fail yang di-commit.
 4. Payload Fasa B di VPS dijana semula dengan blok `gen-phaseB.js` (heredoc) — guna kod produksi `buildPreflightPrompt()` sebenar.
