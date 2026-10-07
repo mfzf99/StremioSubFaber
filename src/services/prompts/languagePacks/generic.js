@@ -18,22 +18,26 @@ const genericPack = {
     aliases: [],
 
     /**
-     * P1 pillar-2/3 injection: language-neutral honorific locking directive.
+     * P1 pillar-3 injection: language-neutral honorific locking directive.
      * Keeps the "lock one canonical title per recurring entity" discipline
      * (needed for Agent B SHIFT/consistency audits) without any Malay mapping.
+     * [KNP-ALIGNMENT 2026-10-07] Directive dipindah ke tiang characters —
+     * sifar arahan gelaran watak dalam terms (doktrin Netflix KNP).
      */
     honorificMatrix: [
-        "In the 'terms' list, you MUST include and lock the official ${tgt} titles/honorifics for recurring entities using the standard sociolinguistic conventions of ${tgt}:",
+        "When locking character addresses in the 'characters' pillar, apply the standard sociolinguistic conventions of ${tgt} for official ${tgt} titles/honorifics:",
         '* Map adult/parental/authority figures, professional titles, and formal addresses to their official ${tgt} equivalents.',
         '* Map young unmarried women, men, and familial terms (aunt/uncle) to their official ${tgt} equivalents.',
         '* Map organizational roles (Director, General Manager, etc.) to their official ${tgt} equivalents.',
-        'Cross-reference titles: if the same character is addressed two different ways in dialogue, lock the ONE formal ${tgt} address implied by the strongest contextual evidence — one canonical title per character, never alternate.'
+        'Cross-reference titles: if the same character is addressed two different ways in dialogue, lock the ONE formal ${tgt} address implied by the strongest contextual evidence — one canonical title per character, never alternate.',
+        'These title mappings are recorded EXCLUSIVELY as character addresses (canonical_address / direct_address) — never as terms entries.'
     ].join('\n   '),
 
     /**
      * P1 pillar-3 injection: neutral canonical_address instruction.
      */
-    canonicalAddressMatrix: "Apply the SAME sociolinguistic title conventions for ${tgt} from the 'terms' pillar",
+    canonicalAddressMatrix:
+        'Apply the standard sociolinguistic title conventions for ${tgt} (professional, familial, and formal titles map to their official ${tgt} equivalents)',
 
     /**
      * P1 pillar-4 injection: neutral credits directive (no hardcoded translation).

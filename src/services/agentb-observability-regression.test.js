@@ -54,15 +54,15 @@ test('AgentBObs T1: translationStats carries all 10 new fields with safe default
     assert.equal(s.agentBBatchesSkippedAfterOpen, 0, 'agentBBatchesSkippedAfterOpen default 0');
     assert.deepEqual(
         s.crimesDetectedByType,
-        { MERGE: 0, DROP: 0, PHANTOM: 0, SHIFT: 0, UNTRANSLATED: 0, REGISTER: 0 },
-        'crimesDetectedByType zeroed 6 types'
+        { MERGE: 0, DROP: 0, PHANTOM: 0, SHIFT: 0, UNTRANSLATED: 0, REGISTER: 0, TERM: 0 },
+        'crimesDetectedByType zeroed 7 types (KNP-ALIGNMENT: +TERM)'
     );
     assert.equal(s.crimesResolvedByRetry, 0, 'crimesResolvedByRetry default 0');
     assert.equal(s.crimePatternDetected, null, 'crimePatternDetected default null');
     assert.deepEqual(
         s.crimeBatchIndices,
-        { MERGE: [], DROP: [], PHANTOM: [], SHIFT: [], UNTRANSLATED: [], REGISTER: [] },
-        'crimeBatchIndices empty arrays'
+        { MERGE: [], DROP: [], PHANTOM: [], SHIFT: [], UNTRANSLATED: [], REGISTER: [], TERM: [] },
+        'crimeBatchIndices empty arrays (KNP-ALIGNMENT: +TERM)'
     );
     // Legacy additive contract — tiada rename, tiada buang
     for (const legacy of ['agentBUsed', 'agentBFailures', 'agentBInspections', 'agentBRetries']) {

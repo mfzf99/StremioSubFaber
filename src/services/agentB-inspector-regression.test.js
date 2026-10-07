@@ -218,9 +218,37 @@ test('AgentB: inspector instruction locks the SHIFT golden clause verbatim', () 
         'MERGE TIADA lagi klausa "fabricated filler" (pertindihan PHANTOM dibuang)'
     );
     assert.ok(
-        INSPECTOR_INSTRUCTION.includes('MERGE|DROP|PHANTOM|SHIFT|UNTRANSLATED|REGISTER'),
-        'output contract mesti menyenaraikan 6 jenayah'
+        INSPECTOR_INSTRUCTION.includes('MERGE|DROP|PHANTOM|SHIFT|UNTRANSLATED|REGISTER|TERM'),
+        'output contract mesti menyenaraikan 7 jenayah (KNP-ALIGNMENT: +TERM)'
     );
+    assert.ok(
+        INSPECTOR_INSTRUCTION.includes('Detect ONLY these seven violations'),
+        'Task header mesti 7 violations (KNP-ALIGNMENT 2026-10-07)'
+    );
+});
+
+// [KNP-ALIGNMENT 2026-10-07] TERM crime: pelanggaran locked term kini boleh
+// dilaporkan — penguatkuasaan doktrin Netflix KNP (jenayah ke-7).
+test('AgentB: TERM crime definition + guardrails (locked-term violation)', () => {
+    assert.ok(
+        INSPECTOR_INSTRUCTION.includes('TERM: A locked term in the Locked Terms glossary below'),
+        'TERM definition (locked-glossary violation) mesti hadir'
+    );
+    assert.ok(
+        INSPECTOR_INSTRUCTION.includes('Do NOT flag legitimate grammatical inflection'),
+        'TERM guardrail: infleksi tatabahasa sahaja tidak boleh di-flag'
+    );
+});
+
+test('AgentB: parseInspectorResponse accepts TERM crime (locked-term violation)', () => {
+    const response = JSON.stringify({
+        valid: false,
+        crimes: [{ type: 'TERM', ids: [31], note: 'Le Ciel rendered differently' }]
+    });
+    const verdict = parseInspectorResponse(response);
+    assert.equal(verdict.valid, false);
+    assert.equal(verdict.crimes[0].type, 'TERM');
+    assert.deepEqual(verdict.crimes[0].ids, [31]);
 });
 
 // ── 1C. UNTRANSLATED + REGISTER crimes (SOCIOLINGUISTIC v2 2026-09-29) ──

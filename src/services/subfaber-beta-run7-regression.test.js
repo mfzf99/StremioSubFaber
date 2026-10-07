@@ -54,20 +54,32 @@ test('BetaRun7/Run8: theme lock appears in the JSON schema contract itself', () 
 });
 
 // --- A.2: Matriks Gelaran Watak (kini TIANG 3 "characters" — canonical_address) ---
-test('BetaRun7/Run8: preflight prompt mandates honorific locking in the terms list (MATRIKS SOSIOLINGUISTIK 2026-09-27)', () => {
+// [KNP-ALIGNMENT 2026-10-07] Matriks honorifik berpindah dari terms → characters
+// (doktrin Netflix KNP — gelaran watak TIDAK PERNAH berada dalam senarai istilah).
+// Arahan lama "terms WAJIB mengunci gelaran" adalah punca akar terms-pollution.
+test('BetaRun7/Run8: preflight prompt mandates honorific locking in the characters pillar (MATRIKS SOSIOLINGUISTIK + KNP-ALIGNMENT 2026-10-07)', () => {
     const prompt = buildPreflightPrompt('Some dialogue.', 'Malay', 'English');
     assert.ok(
-        prompt.includes("In the 'terms' list, you MUST include and lock the official"),
-        'Prompt must contain the verbatim honorific-lock directive'
+        prompt.includes("When locking character addresses in the 'characters' pillar"),
+        'Prompt must contain the characters-pillar honorific directive (KNP-aligned)'
     );
     assert.ok(
-        prompt.includes('titles/honorifics for recurring entities using this MANDATORY sociolinguistic matrix'),
+        prompt.includes('titles/honorifics (Malay honorifics)'),
         'Prompt must reference titles/honorifics via the mandatory sociolinguistic matrix'
     );
     assert.ok(prompt.includes('"Ms." / "Mrs." for an adult woman'), 'Prompt must enumerate the Ms./Mrs. -> Puan rule');
     assert.ok(
         prompt.includes('never alternate'),
         'Prompt must forbid alternating between competing titles for one character'
+    );
+    // KNP: larangan silang-tiang — sifar gelaran watak dalam terms.
+    assert.ok(
+        prompt.includes("NEVER place character names, personal titles, or honorifics in 'terms'"),
+        'Prompt must carry the explicit cross-pillar prohibition (KNP doctrine)'
+    );
+    assert.ok(
+        !prompt.includes("In the 'terms' list, you MUST include and lock"),
+        'Legacy terms-pillar honorific directive must be GONE (pollution root cause)'
     );
 });
 
@@ -89,6 +101,29 @@ test('BetaRun7/Run8: honorific directive adapts to the target language label', (
     );
 });
 
+// --- A.2b: Kontrak KNP terms (medan type + definisi bukan-watak) ---
+test('KNP-ALIGNMENT: terms pillar carries type field + non-character scope (2026-10-07)', () => {
+    const prompt = buildPreflightPrompt('Some dialogue.', 'Malay', 'English');
+    assert.ok(
+        prompt.includes('vocabulary of the story world ONLY'),
+        'Terms scope must be story-world vocabulary (non-character) — KNP doctrine'
+    );
+    assert.ok(
+        prompt.includes('exactly three keys: "source" (original text), "type"'),
+        'Terms entries must declare {source, type, target} contract'
+    );
+    assert.ok(
+        prompt.includes('"type" (exactly one of: location, organization, object, technical, phrase)'),
+        'Terms type enum must be enumerated in the task contract'
+    );
+    assert.ok(
+        prompt.includes(
+            "A human's name (with or without a title like Ms./Corporal/Lawyer) is a character entry, never a term"
+        ),
+        'Human-name prohibition must be explicit (anti-pollution)'
+    );
+});
+
 // --- A.3: Skema 4-TIANG (Mandat Beta Run 8) ---
 test('BetaRun8: preflight prompt produces the full 4-pillar JSON contract', () => {
     const prompt = buildPreflightPrompt('Some dialogue.', 'Malay', 'English');
@@ -96,8 +131,10 @@ test('BetaRun8: preflight prompt produces the full 4-pillar JSON contract', () =
         assert.ok(prompt.includes(pillar), `JSON contract must declare pillar ${pillar}`);
     }
     assert.ok(
-        prompt.includes('{ "source": "Original term", "target":'),
-        'terms pillar must use {source, target} entries'
+        prompt.includes(
+            '{ "source": "Original term", "type": "location|organization|object|technical|phrase", "target":'
+        ),
+        'terms pillar must use {source, type, target} entries (KNP-ALIGNMENT)'
     );
     assert.ok(
         prompt.includes('{ "name": "Character name", "canonical_address":'),

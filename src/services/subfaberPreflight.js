@@ -159,15 +159,17 @@ Only lock a canonical_address in 'characters' if there is EXPLICIT, UNAMBIGUOUS 
 For the provided ${src} subtitle dialogue, build the 4-pillar pre-flight context:
 1. Summarize the main topic.
    The 'theme' field MUST be written strictly in clear, precise English (2-3 sentences), summarizing the narrative arc (plot), setting, and central conflict/stakes.
-2. Extract technical terms, location names, and industry entities with ${tgt} translations.
-   Each 'terms' entry is an object with exactly two keys: "source" (original text) and "target" (${tgt} translation or original).
-   ${honorificMatrix}
+2. Extract recurring non-character terminology with ${tgt} translations.
+   'terms' are the vocabulary of the story world ONLY: locations, organizations, objects, technical jargon, and distinctive recurring phrases. A term is anything that is NOT a person.
+   Each 'terms' entry is an object with exactly three keys: "source" (original text), "type" (exactly one of: location, organization, object, technical, phrase), and "target" (${tgt} translation or original).
+   NEVER place character names, personal titles, or honorifics in 'terms' — they belong ONLY in the 'characters' pillar. A human's name (with or without a title like Ms./Corporal/Lawyer) is a character entry, never a term.
 3. Build profiles for the main recurring characters.
    Each 'characters' entry is an object with exactly four keys:
    - "name": the character's name exactly as it appears in the dialogue.
    - "canonical_address": the ONE locked ${tgt} THIRD-PERSON reference/title used when talking ABOUT this character (narrative reference — one canonical address per character, never alternate). ${canonicalAddressMatrix}. Lock ONLY with explicit, unambiguous textual evidence per the FACT VS INFERENCE DISCIPLINE; if gender, social hierarchy, or formal title is unclear, set null instead of guessing.
    - "direct_address": the ${tgt} VOCATIVE form used when this character is spoken TO face-to-face (e.g. an English line that addresses them as "Aunt" maps to the familial vocative, which differs from the third-person title). This is a FACTUAL mapping from the honorific matrix, NOT a subjective choice — map it directly and quickly. If it is identical to canonical_address, or the source never addresses this character face-to-face, set null.
    - "role": a short description of their narrative role (e.g. female lead, antagonist, mentor, butler).
+   ${honorificMatrix}
 4. Scan the EARLIEST lines of the file (lines 1-5) for NON-DIALOGUE opening text.
    If the file opens with production credits (e.g. "Adapted from..."), the work's title, or a studio name card, ${creditsExample}.
    If the file starts directly with normal dialogue, return an empty array [] for 'credits_and_titles'.
@@ -182,7 +184,7 @@ ${rawText}
 {
   "theme": "Summary of the content — strictly in English (2-3 sentences: narrative arc, setting, conflict)",
   "terms": [
-    { "source": "Original term", "target": "${tgt} translation or original" }
+    { "source": "Original term", "type": "location|organization|object|technical|phrase", "target": "${tgt} translation or original" }
   ],
   "characters": [
     { "name": "Character name", "canonical_address": "Locked ${tgt} third-person reference/title, or null if unclear", "direct_address": "${tgt} vocative form used when spoken to face-to-face (e.g. Aunt), or null if same/absent", "role": "Narrative role" }
@@ -334,15 +336,22 @@ function parsePreflightResponse(responseText) {
     const theme = typeof parsed.theme === 'string' ? parsed.theme.trim() : '';
     if (!theme) return null;
 
-    // ── TIANG 2: terms [{source, target}] (kunci warisan src/tgt diterima) ──
+    // ── TIANG 2: terms [{source, type, target}] (kunci warisan src/tgt diterima) ──
+    // [KNP-ALIGNMENT 2026-10-07] medan 'type' baharu (location/organization/
+    // object/technical/phrase) — doktrin Netflix KNP: istilah dikategorikan.
+    // Clamp enum: nilai luar senarai → '' (formatter mengabaikan label tidak
+    // dikenali tanpa memecahkan Bible warisan tanpa type).
+    const VALID_TERM_TYPES = new Set(['location', 'organization', 'object', 'technical', 'phrase']);
     const terms = [];
     if (Array.isArray(parsed.terms)) {
         for (const term of parsed.terms) {
             if (!term || typeof term !== 'object') continue;
             const source = pickField(term, 'source', 'src');
             if (!source) continue;
+            const rawType = pickField(term, 'type').toLowerCase();
             terms.push({
                 source,
+                type: VALID_TERM_TYPES.has(rawType) ? rawType : '',
                 target: pickField(term, 'target', 'tgt') || source,
                 note: pickField(term, 'note')
             });
@@ -419,8 +428,14 @@ function formatPreflightForPrompt(preflightContext, targetLanguage) {
             .map((t) => {
                 const source = pickField(t, 'source', 'src');
                 const target = pickField(t, 'target', 'tgt') || source;
+                // [KNP-ALIGNMENT 2026-10-07] label kategori KNP (location/
+                // organization/object/technical/phrase) — '' bila tiada/warisan.
+                const type = pickField(t, 'type').toLowerCase();
+                const typeTag = ['location', 'organization', 'object', 'technical', 'phrase'].includes(type)
+                    ? ` [${type}]`
+                    : '';
                 const note = pickField(t, 'note');
-                return `- ${source}: ${target}${note ? ` (${note})` : ''}`;
+                return `- ${source}: ${target}${typeTag}${note ? ` (${note})` : ''}`;
             })
             .filter((line) => !line.startsWith('- :'))
             .join('\n');

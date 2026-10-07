@@ -22,23 +22,30 @@ const malayPack = {
     aliases: ['ms', 'my', 'mya', 'zsm', 'zzm', 'malay', 'bahasa melayu', 'melayu'],
 
     /**
-     * P1 pillar-2/3 injection: MANDATORY sociolinguistic honorific matrix.
-     * Injected into buildPreflightPrompt() when target = Malay.
+     * P1 pillar-3 injection: MANDATORY sociolinguistic honorific matrix.
+     * [KNP-ALIGNMENT 2026-10-07] Matriks dipindah ke TIANG 3 (characters) —
+     * arahan lama "terms WAJIB mengunci gelaran watak" adalah PUNCA AKAR
+     * terms-pollution (audit KNP §5.10: Fasa D membuktikan "ms. yoon sae-bom"
+     * dsb. bocor masuk terms, Jaccard terms 0.51-0.62). Netflix KNP tidak
+     * pernah meletakkan gelaran watak dalam senarai istilah. Mandat "MUST"
+     * kini terletak pada PEMETAAN (bila mengunci), bukan pada pemasukan —
+     * menghapuskan kontradiksi MANDATORY vs null-discipline.
      */
     honorificMatrix: [
-        "In the 'terms' list, you MUST include and lock the official ${tgt} titles/honorifics for recurring entities using this MANDATORY sociolinguistic matrix (Malay honorifics):",
+        "When locking character addresses in the 'characters' pillar, apply this MANDATORY sociolinguistic matrix of official ${tgt} titles/honorifics (Malay honorifics):",
         '* "Ms." / "Mrs." for an adult woman — married, mature, an auntie/mak cik figure, or holding a corporate/management position — MUST map to "Puan" (e.g. "Ms. [Surname]" -> "Puan [Surname]", NEVER "Cik [Surname]").',
         '* "Miss" / "Ms." for a young unmarried woman -> "Cik".',
         '* "Mr." -> "Encik". "Aunt" / "Auntie" -> "Mak Cik". "Uncle" -> "Pak Cik".',
         '* "Director" -> "Pengarah". "GM" / "General Manager" -> "Pengurus Besar".',
-        'Cross-reference titles: if the same character is addressed as "Aunt" in dialogue AND called "Ms. [Surname]", lock the formal address as "Puan [Surname]" (NOT "Cik [Surname]") — one canonical title per character, never alternate.'
+        'Cross-reference titles: if the same character is addressed as "Aunt" in dialogue AND called "Ms. [Surname]", lock the formal address as "Puan [Surname]" (NOT "Cik [Surname]") — one canonical title per character, never alternate.',
+        'These title mappings are recorded EXCLUSIVELY as character addresses (canonical_address / direct_address) — never as terms entries.'
     ].join('\n   '),
 
     /**
      * P1 pillar-3 injection: canonical_address instruction for the Malay matrix.
      */
     canonicalAddressMatrix:
-        "Apply the SAME mandatory Malay honorific matrix from the 'terms' pillar (Ms./Mrs./mature/auntie/manager -> Puan; young unmarried -> Cik; Mr. -> Encik; Auntie -> Mak Cik; Uncle -> Pak Cik; Director -> Pengarah; GM -> Pengurus Besar)",
+        'Apply the Malay honorific matrix below (Ms./Mrs./mature/auntie/manager -> Puan; young unmarried -> Cik; Mr. -> Encik; Auntie -> Mak Cik; Uncle -> Pak Cik; Director -> Pengarah; GM -> Pengurus Besar)',
 
     /**
      * P1 pillar-4 injection: official media/publishing credit translation example.

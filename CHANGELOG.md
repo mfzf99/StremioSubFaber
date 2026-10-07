@@ -2,6 +2,18 @@
 
 All notable changes to this project will be documented in this file.
 
+## SubMaker v3.8.40 (2026-10-07) — Changed: Pembedahan KNP — prompt Pre-Flight dipatuhtadbir mengikut doktrin Netflix KNP
+
+**"Kitab suci mesti betul" — Pre-Flight (Fasa 0) diselaraskan penuh dengan standard industri Netflix KNP (Key Names and Phrases) selepas audit ground truth §5.9/§5.10 (plans/kimi-k3-rootsys-ground-truth-2026.md):**
+
+- **Changed — Bedah #1 (punca akar pollution):** [malay.js](src/services/prompts/languagePacks/malay.js) + [generic.js](src/services/prompts/languagePacks/generic.js) — arahan lama "In the 'terms' list, you MUST include and lock... titles/honorifics" (gelaran watak DIMINTA masuk terms) DIGUGURKAN. Matriks honorifik kini diarahkan kepada tiang `characters` sahaja + klausa baharu "recorded EXCLUSIVELY as character addresses — never as terms entries". Forensik Fasa D membuktikan arahan lama punca terms-pollution ("ms. yoon sae-bom", "corporal jung yi-hyun" bocor masuk terms, Jaccard 0.51-0.62). Netflix KNP tidak pernah meletakkan Character dan Organization dalam senarai yang sama.
+- **Changed — Bedah #2 (kategori KNP):** [subfaberPreflight.js](src/services/subfaberPreflight.js) — Task 2 ditulis semula: terms kini "vocabulary of the story world ONLY... A term is anything that is NOT a person" + medan `type` baharu pada setiap term (enum: location/organization/object/technical/phrase) + larangan eksplisit "A human's name (with or without a title like Ms./Corporal/Lawyer) is a character entry, never a term". Parser menyimpan + clamp `type` (nilai luar enum → '', Bible warisan tanpa type kekal sah).
+- **Changed — Bedah #3 (kontradiksi mandat):** `canonicalAddressMatrix` tidak lagi merujuk "the SAME mandatory... matrix from the 'terms' pillar" (dua arahan bertentangan pada medan sama = punca canonical null-rate variance 22%/33%/40%). Matriks kini berdiri sendiri pada tiang characters; satu suara sahaja.
+- **Changed — Bedah #4 (penguatkuasaan Agent B):** [agentBInspector.js](src/services/agentBInspector.js) — jenayah ke-7 **TERM** ditambah: pelanggaran locked term kini boleh dilaporkan (sebelum ini Locked Terms disuntik tetapi tiada saluran laporan). Header "### Locked Terms" kini memerintah "render locked targets exactly — deviations are TERM violations". Taksonomi 6→7 jenayah merentas `VALID_CRIME_TYPES`, kontrak output inspector, dan [translationEngine.js](src/services/translationEngine.js) telemetry (`crimesDetectedByType` + `crimeBatchIndices` + pattern loop).
+- **Changed — Bedah #5 (label KNP Agent A):** kedua-dua formatter (`_formatPreflightForChunk` + `formatPreflightForPrompt`) merender tag kategori `[location]`/`[organization]`/`[object]`/`[technical]`/`[phrase]` pada setiap term + header "Technical Glossary (use the locked rendering for each term)" — istilah terkunci kini arahan eksplisit kepada Agent A.
+- **Changed — ujian regresi dipatuhtadbir:** 6 anchor lama (verbatim honorific-lock directive, {source, target} 2-kunci, 6-jenayah kontrak, telemetry 6-jenis) diselaraskan + **3 ujian baharu**: kontrak KNP terms (type enum + non-person scope + larangan silang-tiang), definisi jenayah TERM + guardrail, dan parse TERM crime. Semua merah-sebelum/hijau-selepas melalui TAP.
+- **Bump versi 3.8.39 → 3.8.40** — `npm test` — **297 PASS / 0 FAIL / 1 SKIP** (298 tests; baseline baharu — naik daripada 294).
+
 ## SubMaker v3.8.39 (2026-10-07) — Fixed: Dua bug enjin hasil Deep Scan #2 (auto-chunk context + anchor retry Agent B)
 
 **Sapu bersih bug dari audit forensik kedua enjin SubFaber:**

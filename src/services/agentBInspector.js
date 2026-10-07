@@ -138,7 +138,10 @@ const AGENT_B_MAX_NOTE_CHARS = 120; // Cap panjang nota jenayah (sanity)
 // MANDAT OPERASI MUTLAK 2026-09-27: SHIFT dikunci sebagai jenayah ke-4 —
 // kandungan dialog berpindah merentasi indeks (dialog baris 5 muncul di
 // baris 6). Klausa emas pengurang token di dalam arahan pemeriksa.
-const VALID_CRIME_TYPES = new Set(['MERGE', 'DROP', 'PHANTOM', 'SHIFT', 'UNTRANSLATED', 'REGISTER']);
+// [KNP-ALIGNMENT 2026-10-07] TERM ditambah sebagai jenayah ke-7: pelanggaran
+// locked term (glosari Fasa 0) — penguatkuasaan doktrin Netflix KNP. Sebelum
+// ini Locked Terms disuntik tetapi TIADA saluran laporan pelanggarannya.
+const VALID_CRIME_TYPES = new Set(['MERGE', 'DROP', 'PHANTOM', 'SHIFT', 'UNTRANSLATED', 'REGISTER', 'TERM']);
 // [UNBOUNDED-CONTEXT 2026-09-29] Siling konteks Pre-Flight (10 istilah /
 // 12 watak / 400 aksara tema) DIGUGURKAN sepenuhnya. Sebab: rantaian
 // pemotongan — preflight mengekstrak 50 istilah → siling lama memotong
@@ -165,7 +168,7 @@ const INSPECTOR_INSTRUCTION = `## Role
 You are a subtitle integrity inspector. You compare source lines with their translations, line by line.
 
 ## Task
-Detect ONLY these six violations:
+Detect ONLY these seven violations:
 - MERGE: Two source lines merged into ONE output slot, displacing subsequent lines (off-by-one drift).
 - DROP: Source line's specific meaning is missing or replaced by a generic substitute that erases it.
 - PHANTOM: Output slot contains fabricated content with no basis in its source line (invented dialogue, elaboration, hallucinated detail).
@@ -173,16 +176,17 @@ Detect ONLY these six violations:
   NOTE: Ignore minor millisecond timecode differences; audit solely whether the dialogue text matches the corresponding line index.
 - UNTRANSLATED: Output slot still carries the source-language sentence verbatim (or near-verbatim) when it clearly should have been translated. This is a LAZY-COPY leak. EXCEPTION — do NOT flag: proper nouns, character/brand/company names, creative-work titles, on-screen credits, or symbol/number/music-note-only lines that are legitimately kept as-is.
 - REGISTER: A recurring character's locked form in the Character Address Reference below is contradicted by the translation. This covers BOTH (a) honorific/title mismatch (the reference locks one title but the output uses a different one for the same character) AND (b) pronoun-register mismatch (the reference locks a self/other pronoun pairing but the output switches to a different register for that character). Only flag when the Character Address Reference provides the locked value AND the contradiction is unambiguous.
+- TERM: A locked term in the Locked Terms glossary below appears in the output with a DIFFERENT rendering than the locked target (e.g. the glossary locks "Le Ciel → Le Ciel" but the output uses a translated variant for the same entity). Flag ONLY when the source line clearly references the locked entity AND the output rendering visibly differs from the locked target. Do NOT flag legitimate grammatical inflection, article/connector differences, or partial matches inside larger proper names.
 
 The translator is REQUIRED to produce natural, idiomatic phrasing: condensing wordy lines, trimming redundant filler, and replacing source idioms with target-language equivalents are all CORRECT and must NOT be flagged. Only flag DROP when a line's core meaning is genuinely lost, and PHANTOM when content is genuinely fabricated — not when the translation is simply shorter, reworded, or idiomatically adapted.
 
-Ignore: translation style, word choice, grammar, tone, cultural adaptation, length reduction, idiomatic rephrasing, and minor omissions — EXCEPT the six violations above.
+Ignore: translation style, word choice, grammar, tone, cultural adaptation, length reduction, idiomatic rephrasing, and minor omissions — EXCEPT the seven violations above.
 
 ## Output Contract
 Respond with ONLY this JSON and nothing else — no explanations, no markdown:
 {"valid":true}
 If any violation exists:
-{"valid":false,"crimes":[{"type":"MERGE|DROP|PHANTOM|SHIFT|UNTRANSLATED|REGISTER","ids":[line ids],"note":"max 10 words"}]}`;
+{"valid":false,"crimes":[{"type":"MERGE|DROP|PHANTOM|SHIFT|UNTRANSLATED|REGISTER|TERM","ids":[line ids],"note":"max 10 words"}]}`;
 
 /**
  * Format ringkasan konteks Pre-Flight (Fasa 0) untuk suntikan ke prompt
@@ -212,7 +216,10 @@ function formatPreflightContextForInspection(preflightContext) {
             })
             .filter(Boolean)
             .join('\n');
-        if (termLines) sections.push(`### Locked Terms (use for consistency judgement)\n${termLines}`);
+        if (termLines)
+            sections.push(
+                `### Locked Terms (render locked targets exactly — deviations are TERM violations)\n${termLines}`
+            );
     }
 
     if (Array.isArray(preflightContext.characters) && preflightContext.characters.length > 0) {

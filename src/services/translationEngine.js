@@ -320,10 +320,11 @@ class TranslationEngine {
             agentBBatchesInspected: 0, // penyebut (semua semakan lengkap — bukan PASS-only; beza dgn agentBInspections legasi)
             agentBBatchesSkippedAfterOpen: 0, // batch tanpa perlindungan selepas open
             // [AGENTB-OBS P3] Crime pattern tracking (observation-only)
-            crimesDetectedByType: { MERGE: 0, DROP: 0, PHANTOM: 0, SHIFT: 0, UNTRANSLATED: 0, REGISTER: 0 },
+            // [KNP-ALIGNMENT 2026-10-07] TERM ditambah ke taksonomi telemetry.
+            crimesDetectedByType: { MERGE: 0, DROP: 0, PHANTOM: 0, SHIFT: 0, UNTRANSLATED: 0, REGISTER: 0, TERM: 0 },
             crimesResolvedByRetry: 0, // hanya re-verdict LULUS yang disahkan (K3)
             crimePatternDetected: null, // → array string (K2)
-            crimeBatchIndices: { MERGE: [], DROP: [], PHANTOM: [], SHIFT: [], UNTRANSLATED: [], REGISTER: [] } // cap 50/type
+            crimeBatchIndices: { MERGE: [], DROP: [], PHANTOM: [], SHIFT: [], UNTRANSLATED: [], REGISTER: [], TERM: [] } // cap 50/type
         };
     }
 
@@ -412,7 +413,7 @@ class TranslationEngine {
         // [AGENTB-OBS P3/BS#4] Corak dievaluasi SEKALI di hujung fail —
         // mengelakkan warn pramatang daripada kluster panas awal (3 batch
         // berturut yang akhirnya di-dilute di bawah 15%).
-        for (const t of ['MERGE', 'DROP', 'PHANTOM', 'SHIFT', 'UNTRANSLATED', 'REGISTER']) {
+        for (const t of ['MERGE', 'DROP', 'PHANTOM', 'SHIFT', 'UNTRANSLATED', 'REGISTER', 'TERM']) {
             if (s.crimesDetectedByType[t] > 0) this._checkCrimePattern(t);
         }
         const totalCrimes = Object.values(s.crimesDetectedByType).reduce((a, b) => a + b, 0);
@@ -1353,11 +1354,17 @@ class TranslationEngine {
                     .map((t) => {
                         const src = resolvePillarText(t, 'source', 'src');
                         const tgt = resolvePillarText(t, 'target', 'tgt') || src;
+                        // [KNP-ALIGNMENT 2026-10-07] label kategori KNP — ''
+                        // bila Bible warisan tanpa medan type.
+                        const type = resolvePillarText(t, 'type').toLowerCase();
+                        const typeTag = ['location', 'organization', 'object', 'technical', 'phrase'].includes(type)
+                            ? ` [${type}]`
+                            : '';
                         const note = resolvePillarText(t, 'note');
-                        return `- ${src}: ${tgt}${note ? ` (${note})` : ''}`;
+                        return `- ${src}: ${tgt}${typeTag}${note ? ` (${note})` : ''}`;
                     })
                     .join('\n');
-                block += `\n\n### Technical Glossary\n${termLines}`;
+                block += `\n\n### Technical Glossary (use the locked rendering for each term)\n${termLines}`;
             }
             // Tiada padanan → tiada Technical Glossary (seksyen dikosongkan)
         }
