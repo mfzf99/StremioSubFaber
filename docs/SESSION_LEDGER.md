@@ -13,7 +13,8 @@
 ## 2026-10-08 (later) — Imbasan topologi kod pertama (Graphify) — MANDAT SELESAI
 
 - **Tarikh:** 2026-10-08 (18:43–18:50 MYT)
-- **Komit SHA:** (dijana selepas entri ini dikomit — baseline build `5d0274f`)
+- **Komit SHA:** `425dff6` (entri ini) + `91dd8d4` (skill `.codebuddy/` dikomit arahan owner — 10 fail, +1,589 baris) + `394ed84` (rule SESSION LEDGER dalam `.roomodes`: backend #7 + frontend #6, YAML disahkan sah via js-yaml parser)
+- **NOTA INSIDEN (jujur):** Percubaan pertama menambah rule (`40aeefa`, `0ed9e6a`) MEROSAKKAN indentation YAML `.roomodes` — modes Backend/Frontend hilang dari zoo code owner ("Invalid YAML at line 21"). Punca: SEARCH block apply_diff disalin dari versi HEAD yang sudah rosak, mewarisi indentation salah. Pemulihan: `git reset --hard` ke `425dff6` → tulis semula fail PENUH via write_to_file → validasi objektif (js-yaml parser: SAH; backend 7 rules + frontend 6 rules lengkap) → force-push `394ed84`. **PELAJARAN KEKAL: `.roomodes` sensitif-indentation — DILARANG guna apply_diff untuk fail ini; mesti tulis penuh selepas baca penuh + validasi parser sebelum komit.**
 - **Keputusan Owner (mandat AI owner):**
   1. Imbasan topologi `graphify . --code-only` dijalankan — exit code 0, sifar kos API (AST tempatan).
   2. Integriti fail disahkan: `graphify-out/GRAPH_REPORT.md` (36.7KB) + `graph.json` (4.96MB, 3,697 nodes / 9,004 edges / 149 communities) + `graph.html` (3.83MB) wujud; `git status` membuktikan sifar fail output terlepas ke staged/untracked — `.gitignore` (rule `:62-63`) bekerja seperti dijangka.
