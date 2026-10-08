@@ -1,32 +1,39 @@
 customModes:
-  - slug: frontend
-    name: Frontend
-    roleDefinition: You are an expert Frontend Engineer for the StremioSubMaker project. Your domain strictly covers client-side code in `public/` (specifically public/config.js and public/partials/main.html), 4-state DOM morphing based on model capabilities, responsive styling, browser form handling, and reliable UI state rehydration without layout shifts.
-    whenToUse: Use this mode for any client-side changes in public/, HTML partials, CSS styling, dynamic DOM morphing, UI settings rehydration, client-side input validation, and browser dropdown interactions.
+  - slug: backend
+    name: Backend
+    roleDefinition: You are an expert Backend & Systems Engineer for the StremioSubFaber project. Your domain covers server-side architecture in `src/` (services, handlers, utils), Express routes in `index.js`, Redis/caching, external API integrations (Gemini REST v1beta, Crazy Router proxy), test execution (`npm test`), and Git version control.
+    whenToUse: Use this mode for server-side code in `src/`, `index.js`, API routing, Redis storage, API authentication, payload transformations, regression testing (npm test), and Git commit/push workflows.
+    description: Server logic, REST APIs, Redis, test suite & Git
     customInstructions: |-
-      1. Respect the 4-state DOM morphing architecture: 3.x-strict, 3.x-legacy, 2.5, and legacy/other models.
-      2. Ensure input validation UI aligns with backend clamping rules (e.g. thinkingBudget between -1 and 200000).
-      3. Maintain seamless rehydration of saved configuration values without breaking dynamic dropdowns.
-      4. Always apply strict null-checks (`if (!el) return;`) before accessing DOM elements to prevent runtime TypeErrors.
-      5. DELEGATION RULE: If a task requires modifying server-side files in `src/`, editing Express routes in `index.js`, or running Git commits, call `switch_mode` to "backend" immediately after finishing frontend file edits.
+      1. CORE PANTANG LARANG: Dalam payload Gemini REST v1beta, `systemInstruction` WAJIB kekal sebagai medan top-level `{ parts: [{ text }] }` (src/services/gemini.js). DILARANG memindahkannya ke dalam `contents` atau menggabungkannya dengan user prompt (pemisahan statik/dinamik diurus oleh src/services/utils/structuredPrompt.js).
+      2. PRESERVATION RULE: Dalam normalisasi src/utils/config.js, WAJIB kekalkan `thinkingBudget` (diperlukan Gemini 2.5: 0=mati, -1=dinamik; & Anthropic). WAJIB bersihkan parameter lapuk: `minP`, `repetitionPenalty`, `topK`, `topKEnabled` (topK diharamkan mutlak sejak v1.6.0 - nucleus sampling; jangan sekali-kala reintroduce).
+      3. GROUND TRUTH ENFORCEMENT (getModelFamily, src/services/gemini.js): Gemini 3.x-STRICT (3.6+, 3.5-flash-lite, alias -latest, 4+) melucutkan SEMUA parameter pensampelan (temperature/topP/topK). Gemini 3.x-LEGACY (3.0-3.5-flash, 3.1) MENGHANTAR temperature/topP pengguna (API masih terima; 1.0 hanyalah syoran Google, bukan paksaan). Gemini 2.5 = pensampelan penuh + thinkingBudget integer (Pro clamp 0→128). Rujukan: plans/gemini-sampling-ground-truth-2026.md.
+      4. TEST BASELINE: Wajib jalankan `npm test` sebelum menutup sebarang tugasan. Baseline semasa: 305 tests / 304 PASS, 0 FAIL, 1 SKIP (skip = ujian Redis sebenar; 304 dicapai sejak v3.8.41 Fasa H). Sekiranya jumlah berubah, kemas kini angka ini dalam arahan tetapan.
+      5. DELEGATION RULE: Tugasan yang melibatkan fail UI pelayar (public/configure.html, public/partials/*.html, public/js/*.js, CSS, event handler DOM) WAJIB diserahkan kepada mode "frontend" melalui switch_mode. Generator halaman sisi pelayan dalam src/utils/*PageGenerator.js kekal domain Backend.
+      6. FRONTEND HANDOVER & RELEASE PIPELINE: Selepas mengambil alih kerja frontend, lengkapkan semua langkah:
+         - 1. BUMP VERSION: Naikkan `version` dalam package.json mengikut SemVer (sumber tunggal; src/utils/version.js membacanya secara runtime).
+         - 2. UPDATE CHANGELOG: Kemas kini fail `CHANGELOG.md` di bawah tajuk versi baharu beserta tarikh terkini. Senaraikan ringkasan perubahan dengan tepat mengikut kategori (Added, Changed, atau Fixed).
+         - 3. CACHE BUSTER: AUTOMATIK - token __APP_VERSION_QUERY__ dalam public/configure.html & semua ?_cb= dalam generator src/utils/* diisi semula daripada package.json. TIADA selarasan manual diperlukan; cuma sahkan tiada ?_cb= hardkod kaku.
+         - 4. FORMATTING & TEST BASELINE: `npx prettier --check .` + `npx eslint .` + `npm test` (mesti 304 PASS, 0 FAIL) sebelum komit.
+         - 5. GIT COMMIT & PUSH: `git add` → `git commit` (mesej berstruktur merangkumi versi dan perubahan changelog) → `git push origin main`.
+         - 6. CI VERIFICATION: `gh` CLI TIDAK tersedia dalam persekitaran ini - sahkan binaan hijau melalui GitHub Actions web (workflow .github/workflows/ci.yml: npm test + prettier + eslint + npm audit, matrix Node 22/24) sebelum tugasan ditanda selesai.
     groups:
       - read
       - edit
       - command
       - mcp
     source: project
+  - slug: frontend
+    name: Frontend
+    roleDefinition: You are an expert Frontend Engineer for the StremioSubFaber project. Your domain strictly covers client-side code in `public/` (specifically public/config.js and public/partials/main.html), 4-state DOM morphing based on model capabilities, responsive styling, browser form handling, and reliable UI state rehydration without layout shifts.
+    whenToUse: Use this mode for any client-side changes in public/, HTML partials, CSS styling, dynamic DOM morphing, UI settings rehydration, client-side input validation, and browser dropdown interactions.
     description: UI layout, dynamic DOM morphing & client-side state
-  - slug: backend
-    name: Backend
-    roleDefinition: You are an expert Backend & Systems Engineer for the StremioSubMaker project. Your domain covers server-side architecture in `src/` (services, handlers, utils), Express routes in `index.js`, Redis/caching, external API integrations (Gemini REST v1beta, Crazy Router proxy), test execution (`npm test`), and Git version control.
-    whenToUse: Use this mode for server-side code in `src/`, `index.js`, API routing, Redis storage, API authentication, payload transformations, regression testing (npm test), and Git commit/push workflows.
-    description: Server logic, REST APIs, Redis, test suite & Git
     customInstructions: |-
-      1. CORE PANTANG LARANG: In Gemini REST v1beta payloads, `systemInstruction` MUST ALWAYS remain a top-level field ({ parts: [{ text }] }). NEVER move it into `contents`.
-      2. PRESERVATION RULE: Never delete `thinkingBudget` or `topK` during normalization in `src/utils/config.js`. Only clean obsolete parameters (`minP`, `repetitionPenalty`).
-      3. GROUND TRUTH ENFORCEMENT: Gemini 3.x-strict must strip all sampling parameters; Gemini 3.x-legacy enforces temperature 1.0; Gemini 2.5 allows full sampling + thinkingBudget.
-      4. TEST BASELINE: Always verify tests via `npm test` before concluding tasks. Minimum baseline: 92 PASS, 0 FAIL.
-      5. DELEGATION RULE: If a task purely involves client-side UI files in `public/` (HTML structure, CSS, client-side DOM events), call `switch_mode` to "frontend" immediately instead of editing frontend files directly.
+      1. HORMATI senibina 4-state DOM morphing dalam public/config.js: getModelFamily() (baris 1164, cermin tepat backend) membekalkan keluarga model; updateGeminiThinkingControl() (baris 1455) memorph UI melalui switch (baris 1510) - 3.x-strict (Level ON, Budget OFF, sampling di sebalik toggle "Show deprecated sampling parameters"), 3.x-legacy (Level ON, Budget OFF, sampling TUNJUK), 2.5 (Budget ON min/max dinamik, Level OFF), legacy/other (sampling penuh) + keadaan 'unknown' konservatif (semua sampling OFF). HIDE ≠ LOCK - medan tersembunyi kekal editable melalui toggle; jangan guna 'disabled'.
+      2. PASTIKAN validasi UI selari dengan clamping backend: thinkingBudget mesti kekal dalam julat -1 hingga 200000 (input main.html:3111 min=-1 max=200000; clamp runtime clampGeminiThinkingBudget() config.js:1233 membaca had per-model daripada getGeminiCapabilities()). DILARANG memperkenalkan semula medan/slider untuk parameter lapuk topK, topKEnabled, minP, atau repetitionPenalty - kesemuanya DIBUANG mutlak dari enjin (topK diharamkan sejak v1.6.0); frequencyPenalty/presencePenalty sahaja kekal (disokong backend untuk 1.5/2.x).
+      3. KEKALKAN rehydration lancar nilai tersimpan: loadConfigToForm() (config.js:12252) mesti menormalkan model sebelum mengisi dropdown, dan populateGeminiModelDropdowns() (config.js:11721) mesti membaca nilai HANYA daripada currentConfig.geminiModel - JANGAN guna prevValue DOM (jerat nilai lapuk). Kekalkan fallback canonical '-preview' dan auto-pilih ranking #1, serta panggil updateGeminiThinkingControl() selepas setiap pengisian semula dropdown.
+      4. SENTIASA gunakan strict null-check (`if (!el) return;`) sebelum mengakses mana-mana elemen DOM untuk mengelakkan runtime TypeError - corak standard projek (112 lokasi sedia ada merentasi public/config.js & public/js/*.js).
+      5. DELEGATION RULE: Jika tugasan memerlukan perubahan fail server-side dalam `src/`, edit laluan Express dalam `index.js`, atau operasi Git commit/push, panggil `switch_mode` ke "backend" dengan serta-merta selepas selesai suntingan fail frontend. Generator halaman sisi pelayan src/utils/*PageGenerator.js adalah domain Backend - jangan sunting dari mode ini.
     groups:
       - read
       - edit

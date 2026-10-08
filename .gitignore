@@ -58,6 +58,10 @@ build/
 preflight-payload.json
 preflight-payload-slim.json
 
+# Graphify topology scan output (mandat owner 2026-10-08 — never commit)
+graphify-out/
+graph.json
+
 #-
 nul
 .sidedocs/
