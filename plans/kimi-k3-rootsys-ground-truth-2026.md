@@ -170,7 +170,7 @@ Payload SINTETIK berulang TIDAK mewakili beban sebenar: LLM kesan pattern berula
 ## 5.7 FASA D — SRT SEBENAR (SELESAI 2026-10-07, 3 panggilan di VPS)
 
 **Korpus:** `real-srt.srt` (owner download sendiri) — K-drama "Happiness" (tvN 2021): watak Yoon Sae-bom, Jung Yi-hyun, Han Tae-seok; plot "Mad Human Disease" + dadah "Next" + kontrak kahwin + apartment Seyang Forest Le Ciel. 745 entri, 3,248 baris, 51KB. Prompt 31,653 aksara (~8k token), payload 33KB.
-**Metodologi (mandat owner, selari kolaborasi ChatGPT lama):** token/masa SAHAJA tak cukup — mesti ukur KUALITI Bible 4-tiang + stabiliti antara run. Akaun: SCP bantuan AI (ssh alias `stremiosubmaker` → root@51.79.242.80, key id_ed25519 sedia di ~/.ssh) — owner telah dimaklumkan dan faham rantaian akses.
+**Metodologi (mandat owner, selari kolaborasi ChatGPT lama):** token/masa SAHAJA tak cukup — mesti ukur KUALITI Bible 4-tiang + stabiliti antara run. Akaun: SCP bantuan AI (ssh alias `stremiosubmaker` → root@51.79.242.80, key id_ed25519 sedia di ~/.ssh) — owner telah dimaklumkan dan faham rantaian akses. [Kemas kini 2026-10-08: alias canonical `stremiosubfaber` kini wujud dalam `~/.ssh/config` (alias lama `stremiosubmaker` dikekalkan sebagai legacy semasa tempoh peralihan — digunakan sepanjang Fasa A-H; backup config di `~/.ssh/config.bak-stremiosubfaber`).]
 
 ### 5.7.0 Konfigurasi payload D + bukti muktamad temperature NO-OP (jawapan soalan owner)
 
