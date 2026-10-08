@@ -10,6 +10,21 @@
 
 ---
 
+## 2026-10-08 (final++) — Rule SESSION LEDGER diperluas kepada condensation/compression oleh owner
+
+- **Tarikh:** 2026-10-08 (22:07 MYT)
+- **Komit SHA:** `f372502`
+- **Keputusan Owner:** Ayat baharu untuk backend rule #7 dan frontend rule #6 — menutup loophol condensing manual yang owner tanya ("kalau aku tekan butang context condesing secara manual sebab dah rasa berat"). Owner paste manual, AI sahkan & komit.
+- **Butiran perubahan (owner-mandated):**
+  - Trigger baharu: `context reset, new session, OR context condensation/compression (conversation history replaced by a summary)`
+  - Anti-PALATAU: `a summary is not a memory: never trust condensed recall for commit SHAs, test baselines, or task state; always verify against the ledger`
+  - Prosedur baharu: `If the owner announces an upcoming manual condensation, append current task status to ledger BEFORE proceeding` (backend sahaja)
+- **Pengesahan AI sebelum komit (protokol insiden):** PyYAML SAH — customModes 2; backend 7 rules + frontend 6 rules; `condensation: True`, `summary is not a memory: True`, `upcoming manual condensation: True` (backend); groups+source lengkap; diff seimbang 19/19 = penukaran teks tulen.
+- **Status npm test:** Tak dijalankan semula (tiada kod produksi disentuh).
+- **Next Steps:** Tiada tindakan berbaki — sistem Trinity kini lengkap dengan trigger condensation.
+
+---
+
 ## 2026-10-08 (final+) — Skill Graphify dipulihkan semula (dangling 91dd8d4)
 
 - **Tarikh:** 2026-10-08 (21:39 MYT)
