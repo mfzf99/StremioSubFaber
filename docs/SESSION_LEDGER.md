@@ -10,6 +10,18 @@
 
 ---
 
+## 2026-10-08 (final) — .roomodes diseragamkan English oleh owner
+
+- **Tarikh:** 2026-10-08 (20:06 MYT)
+- **Komit SHA:** `91813bd` (entri ini — .roomodes English) + `2371db0` (nota insiden 856da99)
+- **Keputusan Owner:** Arahan modes Backend & Frontend diseragamkan kepada Bahasa English sepenuhnya oleh owner sendiri (tiada lagi bahasa rojak) — perubahan dibuat tangan owner, AI hanya mengesahkan & mengomit.
+- **Fail Terlibat:** `.roomodes` (29 baris ditukar, struktur + bilangan rule kekal)
+- **Pengesahan AI sebelum komit (protokol insiden):** PyYAML SAH — customModes 2; backend 7 rules (CORE PROHIBITION, PRESERVATION, GROUND TRUTH, TEST BASELINE 305/304, DELEGATION, RELEASE PIPELINE, SESSION LEDGER) + frontend 6 rules (semua kekal, termasuk SESSION LEDGER); groups [read,edit,command,mcp] + source project lengkap; diff seimbang 29/29 = penukaran bahasa tulen, tiada rule hilang.
+- **Status npm test:** 305 / 304 PASS / 0 FAIL / 1 SKIP (diaturkan selepas pemulihan insiden — kekal hijau)
+- **Next Steps:** Tiada tindakan berbaki. `npm test` baseline stabil; CI hijau dijangka pada 91813bd.
+
+---
+
 ## 2026-10-08 (later) — Imbasan topologi kod pertama (Graphify) — MANDAT SELESAI
 
 - **Tarikh:** 2026-10-08 (18:43–18:50 MYT)
