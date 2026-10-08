@@ -10,6 +10,18 @@
 
 ---
 
+## 2026-10-08 (final+) — Skill Graphify dipulihkan semula (dangling 91dd8d4)
+
+- **Tarikh:** 2026-10-08 (21:39 MYT)
+- **Komit SHA:** `f70a627`
+- **Keputusan Owner:** Soalan owner "benda pertama AI akan buat adalah tengok map graphify?" membuka forensik — didapati komit `91dd8d4` (skill Graphify 10 fail) HILANG dari main: ia jadi mangsa `git reset --hard HEAD~2` semasa pemulihan insiden .roomodes (reset melangkau 2 komit). Komit masih wujud (dangling) → dipulihkan verbatim via `git checkout 91dd8d4 -- .codebuddy/` (protokol: checkout, bukan tulis semula).
+- **Fail Terlibat:** `.codebuddy/skills/graphify/` (10 fail, +1,589 baris)
+- **Demo live query Graphify:** query "what connects runPreflightSemanticPass to buildChatRequest" pulangkan topology sebenar (Community 17→19, melalui AgentBInspector/OpenAICompatibleProvider, termasuk splitStructuredPrompt + fail test) — bukti nilai query-first discipline.
+- **Status npm test:** Tak dijalankan semula (tiada kod produksi disentuh — hanya restore fail skill yang sama dari komit sedia ada).
+- **Next Steps:** Tiada tindakan berbaki.
+
+---
+
 ## 2026-10-08 (final) — .roomodes diseragamkan English oleh owner
 
 - **Tarikh:** 2026-10-08 (20:06 MYT)
