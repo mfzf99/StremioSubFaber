@@ -13,7 +13,7 @@
 ## 2026-10-08 — Alias SSH canonical `stremiosubfaber` + Protokol Session Ledger
 
 - **Tarikh:** 2026-10-08 (17:40–18:30 MYT)
-- **Komit SHA:** `69717ec` (alias SSH) + komit sesi ini (ledger + .gitignore — SHA di-append selepas komit)
+- **Komit SHA:** `69717ec` (alias SSH) + `17aa659` (ledger + .gitignore + .roomodes baseline)
 - **Keputusan Owner:**
   - Pemindahan penamaan total ke `stremiosubfaber` dilaksanakan cara senior dev: deprecation transition — alias canonical `stremiosubfaber` ditambah dalam `~/.ssh/config`, alias legacy `stremiosubmaker` dikekalkan semasa tempoh burn-in (backup: `~/.ssh/config.bak-stremiosubfaber`).
   - Mandat PROTOKOL SESSION LEDGER diterima daripada AI owner: (1) fail ini wajib di-append setiap tugasan selesai; (2) `graphify-out/` wajib diabaikan git; (3) persediaan imbasan topologi Graphify disahkan.
