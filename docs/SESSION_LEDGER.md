@@ -10,6 +10,27 @@
 
 ---
 
+## 2026-10-09 (SELESAI) — GROUND TRUTH A/B: Kimi K3 vs Gemini 3 Flash — Agent Preflight
+
+- **Tarikh:** 2026-10-09 (19:45 MYT)
+- **Komit SHA:** `af10fca`
+- **Keputusan Owner:** Owner minta ground truth empirikal "siapa lebih padu untuk kerja agent preflight" antara Kimi K3 vs Gemini 3 Flash; kelulusan metodologi kesamarataan didelegasikan ("kau buat lah keputusan sendiri"). 10 key Gemini free-tier diserahkan untuk benchmark; SRT Happiness E1 (Downloads) diberikan sebagai korpus.
+- **Metodologi:** Harness `.tmp-bench-run.js` (probe, tidak di-commit) — prompt laluan produksi VERBATIM (buildPreflightPrompt + splitStructuredPrompt, system 7,119ch + user 25,399ch, bait identik kedua-dua model); Kimi = muatan god-tier 4-kunci (temp 0.0, SSE stream); Gemini = REST v1beta generateContent (systemInstruction top-level, temp 0.0, thinkingLevel low ×3 + high ×2); validator = parsePreflightResponse() produksi; 3 run per model.
+- **Keputusan empirikal (korpus 745 entri / 25,302 aksara):**
+  - Latency: Gemini-low **6.4s avg** vs Kimi **207.4s avg** (32×); Kimi TTFT 110-247s.
+  - Gemini-high: **DQ — 2/2 timeout 300s** (siling Caddy). thinkingLevel low WAJIB jika Gemini dipilih.
+  - Kesahan JSON: seri 3/3 vs 3/3 (parser produksi).
+  - Stabiliti terms: Gemini 0.75-1.00 vs Kimi 0.44-0.58 Jaccard; characters: Kimi 1.00 vs Gemini 0.82-1.00.
+  - Kekayaan: Kimi terms union 29 vs Gemini 12; theme Kimi spesifik (nama entiti) vs Gemini generik.
+  - **Halusinasi forensik: Gemini 1/30 entri watak ("Park Seo-yoon" — 0 bukti tekstual, kebocoran training data); Kimi 0/30.** Gemini juga mengisi canonical_address 100% (termasuk tekaan "Cik Min-ji" atas 1 vocative); Kimi NULL 20-40%.
+  - Temp 0.0 disahkan selamat empirikal kedua-dua model (tiada gelung; determinisme R1≡R3 Gemini).
+- **VERDICT:** Operasi Agent Preflight = **Gemini 3 Flash low lebih padu** (32× laju, stabil, 100% sah). Kualiti bible 4-tiang = **Kimi K3 masih lebih baik** (istilah kaya, theme spesifik, disiplin NULL). Rekomendasi berstrata di dokumen: status quo kimi-k3 kekal jika bible quality diutamakan; pertukaran Gemini wajib disertai post-filter halusinasi watak + kunci thinkingLevel low.
+- **Fail Terlibat:** `plans/kimi-k3-vs-gemini-3-flash-preflight-ground-truth.md` (BAHARU, 133 baris — laporan penuh + papan skor + rekomendasi). Probe `.tmp-bench*` tidak di-commit. TIADA perubahan kod produksi.
+- **Status npm test:** 313 tests / 312 PASS / 0 FAIL / 1 SKIP (baseline dipelihara; docs-only commit).
+- **Next Steps:** Owner buat keputusan strategik (kekal kimi-k3 / migrasi Gemini low + post-filter halusinasi); jika migrasi — rancang filter bukti-textual dalam parsePreflightResponse dan kunci thinkingLevel default.
+
+---
+
 ## 2026-10-09 (SELESAI) — ARCHITECTURAL TAXONOMY STANDARDIZATION: nama rasmi 3 komponen enjin
 
 - **Tarikh:** 2026-10-09 (16:23 MYT)
