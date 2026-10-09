@@ -10,6 +10,23 @@
 
 ---
 
+## 2026-10-09 (SELESAI) — VALIDASI PRODUKSI PENUH: Trinity pipeline ALL-GREEN + format rasmi Moonshot disahkan
+
+- **Tarikh:** 2026-10-10 (00:28 MYT)
+- **Komit SHA:** (docs-only, commit susulan)
+- **Keputusan Owner:** Sambungan sesi ground truth. Owner sahkan 3 mazhab payload rasmi (OpenAI/Anthropic/Google) dan minta verifikasi SubFaber terhadap skema rasmi; kemudian minta contoh rasmi Moonshot untuk kimi-k3, test curl sendiri di VPS, dan akhirnya jalankan translation penuh untuk validasi hujung-ke-hujung.
+- **Keputusan penting sesi ini:**
+  1. Audit compliance: SubFaber 100% patuh ketiga-tiga mazhab skema rasmi (gemini.js / openaiCompatible.js / anthropic.js) — tiada penyimpangan, hanya penggunaan parameter optional yang disengajakan.
+  2. Docs rasmi Moonshot (platform.kimi.ai) dis scrape: skema kimi-k3 menyatakan reasoning_effort top-level rasmi (low/high/max, lalai max); temperature TIDAK dalam skema kimi-k3; role system sah; multi-turn rasmi mengesahkan format.
+  3. Owner curl 3 varian payload (A=minimal rasmi, B=god-tier semasa, C=rasmi+reasoning_effort:low) di VPS: SEMUA HTTP 200, masa 30-38s (vs benchmark pagi 135-275s muatan sama) — kesimpulan: latensi kimi-k3 tidak menentu, faktor beban pelayan Moonshot, bukan payload. Gateway menerima reasoning_effort (tiada 400).
+  4. Kualiti Bible (parser produksi): Varian B juara — 20 terms (A=13, C=14), gelaran paling tepat (Koperal Jung, Peguam Kook), theme paling lengkap, characters Jaccard 1.00 merentas semua varian. KEPUTUSAN: kekal Varian B (muatan god-tier semara) — tiada perubahan kod.
+  5. VALIDASI PRODUKSI PENUH (VPS, 16:05-16:10 UTC): Shine on Me S01E30, 646 entri/13 batch — Preflight kimi-k3 selesai 44s (20 terms, 18 characters, 1 credits); Translation gemini-3.5-flash 89-key rotation sifar mismatch; Inspector deepseek-v4-pro 13/13 PASSED, SEMUA jenayah sifar; credits Bible diaplikasikan (entry pertama = DIADAPTASI DARIPADA NOVEL GU MAN); 4m46s, $0.18, 136 entri/min. TRINITY ALL-GREEN.
+- **Fail Terlibat:** Tiada perubahan kod produksi (sesi 100% verifikasi). Probe: .tmp-bench/make-official-variants.js, .tmp-bench/analyze-official.js, .tmp-bench/KIMI-OFFICIAL-TEST-GUIDE.md (tidak di-commit, gitignored). VPS diselaraskan git pull ke 292491c.
+- **Status npm test:** Tidak diulang (tiada perubahan kod; baseline 313/312/0/1 berkuat kuasa).
+- **Next Steps:** Sesi ditutup oleh owner. Nota untuk sesi akan datang: (a) reasoning_effort:low terbuka sebagai eksperimen waktu-puncak jika latensi kimi kronik lambat; (b) ground truth Q3 dua-dalam-satu sebaharnya tercapai pada waktu pelayan murah hati — faktor waktu Moonshot > parameter; (c) pembersihan fail .tmp-* lapuk boleh dipertimbangkan tugasan kecil.
+
+---
+
 ## 2026-10-09 (SELESAI) — GROUND TRUTH SUSULAN Q1-Q3: streaming, model baru 3.5/3.8, dua-dalam-satu
 
 - **Tarikh:** 2026-10-09 (20:09 MYT)
