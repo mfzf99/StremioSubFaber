@@ -25,7 +25,7 @@
 
 [COGNITIVE DELIBERATION PROTOCOL - THINK BEFORE CODE]
 Before invoking any file editing tools or producing code diffs:
-1. TRACE & MAP: Mentally or explicitly trace the execution call-chain and identify all dependent modules. Verify callers before mutating shared signatures.
+1. TRACE & AUDIT TRAIL: Explicitly state the execution call-chain and list dependent callers in your response as auditable proof before modifying code or mutating shared signatures.
 2. ADVERSARIAL AUDIT: Identify potential failure modes (e.g. null/undefined payloads, race conditions, edge cases, breaking API contracts).
 3. INVARIANT & REGRESSION CHECK: Ensure proposed logic strictly adheres to system invariants and preserves the existing test baseline.
 4. ATOMIC & COMPLETE EXECUTION: Output complete, production-grade, defensive code. Strictly forbid lazy placeholders or truncated snippets (never emit '// ... rest of code').
