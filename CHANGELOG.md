@@ -2,6 +2,26 @@
 
 All notable changes to this project will be documented in this file.
 
+## SubMaker v3.8.42 (2026-10-09) — Fixed: Pariti Retry-Backoff 1:1 Gemini merentas semua provider
+
+**"37ms untuk 3 retry" — titik forensik yang membunuh job 69% siap.** Log live owner (rootsys.cloud, deepseek-v4-pro, SRT 648 entry): batch 10/13 gagal HTTP 502 transient; gelung retry custom provider meluru 3 percubaan dalam 37ms tanpa sebarang delay, membunuh terjemahan yang sudah 69% lengkap. Gemini mempunyai retryWithBackoff() exponential 3s → 6s → 12s + jitter 0.8x–1.2x (anti thundering-herd) — provider lain tiada. Mandat owner: SEMUA LLM wajib kongsi setup 1:1 dengan main provider Gemini. Gap terakhir pariti kini ditutup.
+
+### Fixed
+
+- **[retryBackoff.js](src/services/providers/retryBackoff.js) (baharu)** — SATU sumber kebenaran formula backoff: `delay = base × 2^attempt` (3000ms lalai = Gemini), jitter `0.8 + random()×0.4`, floor 50ms. Keutamaan konfigurasi: `options.retryBackoffBaseMs` > env `PROVIDER_RETRY_BACKOFF_BASE_MS` > lalai 3000. Nilai `0` eksplisit melumpuhkan delay (test/CI) — dibezakan daripada nilai hilang yang jatuh ke lalai.
+- **[openaiCompatible.js](src/services/providers/openaiCompatible.js)** — kedua-dua gelung retry (non-stream `translateSubtitle` + stream `streamTranslateSubtitle`) kini `await sleepRetryBackoff(attempt)` sebelum `continue`. Menerangi keluarga OpenAI/xAI/DeepSeek/Mistral/OpenRouter/cfWorkers/Custom (API key bos Afiq). Laluan forensik 502: 37ms → 3s/6s/12s.
+- **[anthropic.js](src/services/providers/anthropic.js)** — kedua-dua gelung retry (stream & non-stream) menerima backoff sama.
+- **[deepl.js](src/services/providers/deepl.js)** — gelung retry tunggal menerima backoff sama (pariti penuh walaupun DeepL bukan LLM).
+- GoogleTranslate tidak dipatch — kelasnya mempunyai `sleep()` + exponential backoff sendiri (`BACKOFF_BASE_MS` 4s/8s) sejak asal, sudah selari semangat Gemini.
+
+### Added
+
+- [provider-retry-backoff-regression.test.js](src/services/provider-retry-backoff-regression.test.js) — 8 ujian regresi: keutamaan options > env > lalai 3000 (pariti kontrak Gemini), growth exponential 2^attempt + floor 50ms, gelung non-stream & stream BERDELAY untuk OpenAICompatible/Anthropic/DeepL, pemeliharaan tingkah laku lama bila `retryBackoffBaseMs=0`, dan ujian pariti formula provider ≡ formula Gemini baris-demi-baris. Didaftarkan dalam `test:tracked`.
+
+### Kesimpulan pengesahan
+
+313 tests / 312 PASS / 0 FAIL / 1 SKIP (baseline 304 → 312) · Prettier bersih · ESLint 0 error.
+
 ## SubMaker v3.8.41 (2026-10-07) — Changed: Fasa H — Pre-Flight system/user split (integrasi varian G1 Moonshot)
 
 ### Changed

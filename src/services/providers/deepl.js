@@ -6,6 +6,7 @@ const { httpAgent, httpsAgent } = require('../../utils/httpAgents');
 const { findISO6391ByName, toISO6391 } = require('../../utils/languages');
 const log = require('../../utils/logger');
 const { sanitizeApiKeyForHeader } = require('../../utils/security');
+const { resolveBackoffBaseMs, sleepRetryBackoff } = require('./retryBackoff');
 
 const SUPPORTED_SOURCE_LANGS = new Set([
     'AR',
@@ -405,6 +406,9 @@ class DeepLProvider {
         this.maxRetries = Number.isFinite(parseInt(options.maxRetries, 10))
             ? Math.max(0, parseInt(options.maxRetries, 10))
             : 2;
+        // [PARITI-RETRY 2026-10-09] Backoff exponential 1:1 dengan Gemini
+        // retryWithBackoff (3s → 6s → 12s, jitter 0.8x-1.2x). 0 = melumpuhkan.
+        this.retryBackoffBaseMs = resolveBackoffBaseMs(options.retryBackoffBaseMs);
 
         const envBase = process.env.DEEPL_API_BASE;
         if (envBase) {
@@ -558,6 +562,8 @@ class DeepLProvider {
                         `[${this.providerName}] Retry ${attempt + 1}/${this.maxRetries} after error:`,
                         error.message
                     ]);
+                    // [PARITI-RETRY] Backoff 1:1 Gemini sebelum percubaan seterusnya.
+                    await sleepRetryBackoff(attempt, this.retryBackoffBaseMs);
                     continue;
                 }
                 logApiError(error, this.providerName, 'Translate', {

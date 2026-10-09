@@ -5,6 +5,7 @@ const log = require('../../utils/logger');
 const { sanitizeApiKeyForHeader } = require('../../utils/security');
 const { DEFAULT_TRANSLATION_PROMPT, composeDefaultTranslationPrompt } = require('../gemini');
 const { splitStructuredPrompt } = require('../utils/structuredPrompt');
+const { resolveBackoffBaseMs, sleepRetryBackoff } = require('./retryBackoff');
 const { findISO6391ByName, getLanguageName, toISO6391, toISO6392 } = require('../../utils/languages');
 const { resolveLanguageDisplayName } = require('../../utils/languageResolver');
 const { normalizeTargetLanguageForPrompt } = require('../utils/normalizeTargetLanguageForPrompt');
@@ -60,6 +61,11 @@ class OpenAICompatibleProvider {
         this.beastMaxTokens = parseAgentBMaxTokens(options.beastMaxTokens, AGENT_B_BEAST_MAX_TOKENS);
         this.presencePenalty = options.presencePenalty;
         this.reasoningEffort = this.normalizeReasoningEffort(options.reasoningEffort);
+        // [PARITI-RETRY 2026-10-09] Backoff exponential antara percubaan retry —
+        // formula 1:1 dengan Gemini retryWithBackoff (3s → 6s → 12s, jitter 0.8x-
+        // 1.2x). Forensik log live: 3 retry dalam 37ms gagal pulih 502 transient.
+        // 0 eksplisit = melumpuhkan (test/CI).
+        this.retryBackoffBaseMs = resolveBackoffBaseMs(options.retryBackoffBaseMs);
         const timeoutSeconds = options.translationTimeout !== undefined ? options.translationTimeout : 120;
         this.translationTimeout = Math.max(5000, parseInt(timeoutSeconds * 1000, 10) || 120000);
         this.maxRetries = Number.isFinite(parseInt(options.maxRetries, 10))
@@ -959,6 +965,10 @@ class OpenAICompatibleProvider {
                         `[${this.providerName}] Retry ${attempt + 1}/${this.maxRetries} after error:`,
                         error.message
                     ]);
+                    // [PARITI-RETRY] Backoff 1:1 Gemini — menunggu 3s/6s/12s
+                    // (jittered) sebelum meluru semula, memberi window pemulihan
+                    // kepada gateway yang mengalami 502/503 transient.
+                    await sleepRetryBackoff(attempt, this.retryBackoffBaseMs);
                     continue;
                 }
                 handleTranslationError(error, this.providerName, { skipResponseData: true });
@@ -1218,6 +1228,9 @@ class OpenAICompatibleProvider {
                         `[${this.providerName}] Stream retry ${attempt + 1}/${this.maxRetries} after error:`,
                         error.message
                     ]);
+                    // [PARITI-RETRY] Backoff 1:1 Gemini — inilah titik forensik 502
+                    // rootsys.cloud (3 retry dalam 37ms); kini 3s/6s/12s jittered.
+                    await sleepRetryBackoff(attempt, this.retryBackoffBaseMs);
                     continue;
                 }
                 handleTranslationError(error, this.providerName, { skipResponseData: true });

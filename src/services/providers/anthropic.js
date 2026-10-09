@@ -6,6 +6,7 @@ const { sanitizeApiKeyForHeader } = require('../../utils/security');
 const { DEFAULT_TRANSLATION_PROMPT, composeDefaultTranslationPrompt } = require('../gemini');
 const { normalizeTargetLanguageForPrompt } = require('../utils/normalizeTargetLanguageForPrompt');
 const { splitStructuredPrompt } = require('../utils/structuredPrompt');
+const { resolveBackoffBaseMs, sleepRetryBackoff } = require('./retryBackoff');
 
 const ANTHROPIC_API_URL = process.env.ANTHROPIC_API_BASE || 'https://api.anthropic.com/v1';
 const ANTHROPIC_VERSION = process.env.ANTHROPIC_VERSION || '2023-06-01';
@@ -29,6 +30,9 @@ class AnthropicProvider {
         this.maxRetries = Number.isFinite(parseInt(options.maxRetries, 10))
             ? Math.max(0, parseInt(options.maxRetries, 10))
             : 2;
+        // [PARITI-RETRY 2026-10-09] Backoff exponential 1:1 dengan Gemini
+        // retryWithBackoff (3s → 6s → 12s, jitter 0.8x-1.2x). 0 = melumpuhkan.
+        this.retryBackoffBaseMs = resolveBackoffBaseMs(options.retryBackoffBaseMs);
         // JSON structured output mode
         this.enableJsonOutput = options.enableJsonOutput === true;
     }
@@ -300,6 +304,8 @@ class AnthropicProvider {
                         `[${this.providerName}] Retry ${attempt + 1}/${this.maxRetries} after error:`,
                         error.message
                     ]);
+                    // [PARITI-RETRY] Backoff 1:1 Gemini sebelum percubaan seterusnya.
+                    await sleepRetryBackoff(attempt, this.retryBackoffBaseMs);
                     continue;
                 }
                 handleTranslationError(error, this.providerName, { skipResponseData: true });
@@ -554,6 +560,8 @@ class AnthropicProvider {
                         `[${this.providerName}] Stream retry ${attempt + 1}/${this.maxRetries} after error:`,
                         error.message
                     ]);
+                    // [PARITI-RETRY] Backoff 1:1 Gemini sebelum percubaan seterusnya.
+                    await sleepRetryBackoff(attempt, this.retryBackoffBaseMs);
                     continue;
                 }
                 handleTranslationError(error, this.providerName, { skipResponseData: true });
