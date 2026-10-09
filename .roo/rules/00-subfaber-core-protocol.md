@@ -22,3 +22,10 @@
 - The .roomodes file is indentation-sensitive: NEVER edit it via apply_diff, write_to_file, or inline node -e - all three corrupted it in the incident.
 - Safe procedure ONLY: git checkout <clean-commit> -- .roomodes + programmatic insert via script file + PyYAML validation BEFORE commit.
 - Validation gate before every .roomodes commit: parse with PyYAML, confirm customModes count, per-mode rule count, groups=[read,edit,command,mcp], source=project.
+
+[COGNITIVE DELIBERATION PROTOCOL - THINK BEFORE CODE]
+Before invoking any file editing tools or producing code diffs:
+1. TRACE & MAP: Mentally or explicitly trace the execution call-chain and identify all dependent modules. Verify callers before mutating shared signatures.
+2. ADVERSARIAL AUDIT: Identify potential failure modes (e.g. null/undefined payloads, race conditions, edge cases, breaking API contracts).
+3. INVARIANT & REGRESSION CHECK: Ensure proposed logic strictly adheres to system invariants and preserves the existing test baseline.
+4. ATOMIC & COMPLETE EXECUTION: Output complete, production-grade, defensive code. Strictly forbid lazy placeholders or truncated snippets (never emit '// ... rest of code').
