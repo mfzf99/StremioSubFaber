@@ -10,6 +10,21 @@
 
 ---
 
+## 2026-10-09 (SELESAI) — GROUND TRUTH SUSULAN Q1-Q3: streaming, model baru 3.5/3.8, dua-dalam-satu
+
+- **Tarikh:** 2026-10-09 (20:09 MYT)
+- **Komit SHA:** `a16e60e`
+- **Keputusan Owner:** 3 soalan susulan pasca-laporan A/B: (1) stream on/off untuk Gemini Fasa 0? (2) adakah model baru 3.5+ fix overthinking? (3) boleh ke dua-dalam-satu (laju + bible padu)?
+- **Keputusan empirikal (harness .tmp-bench-followup.js, korpus/prompt identik):**
+  - Q1: **OFF** — TTFT dikuasai thinking server-side (3.5-med stream TTFT 13.6s ≈ total 15.4s; 3fp-high+stream TTFT 179.9s, hampir sama buruk dengan Kimi). Preflight = satu JSON, tiada nilai UX partial. Kimi produksi guna stream hanya untuk hidupkan sambungan Caddy gateway, bukan UX.
+  - Q2: **YA, disahkan** — 3.5-flash high 23.1s / 3.8-flash high 33.5s (tiada DQ 300s seperti 3.0); thoughts 1.5k-5k token terkawal; nullCanon muncul semula (1/7 pada 3.5 high). TAPI kekayaan bible JATUH: terms 5-7 / chars 5-7 (vs 3.0-low 10-11/10, Kimi 16-21/10). Rotation key teruji real-world (2× 503 → key#1).
+  - Q3: **TIDAK pada prompt P1 semasa** — tiada konfigurasi Gemini menyentuh kekayaan Kimi; model baru bergerak menjauh. Bottleneck = prompt bukan model: P1 menghalang overthinking tetapi tidak mendorong kekayaan (tiada kuota istilah, tiada few-shot, tiada arahan sweep vocabulary). Laluan: tweak P1 (kuota 15-30 istilah domain + few-shot + kekal REASONING-DISCIPLINE) → ulang harness → barulah nilai sama ada dua-dalam-satu tercapai.
+- **Fail Terlibat:** plans/kimi-k3-vs-gemini-3-flash-preflight-ground-truth.md (seksyen 6 baharu, +57 baris). TIADA perubahan kod produksi.
+- **Status npm test:** Tidak diulang (docs-only; baseline 313/312/0/1 dari commit sebelumnya masih berkuat kuasa — tiada fail ujian/kod berubah).
+- **Next Steps:** Jika owner mahu dua-dalam-satu: tugasan berasingan tweak P1 di src/services/subfaberPreflight.js + update regresi; keputusan interim = kekal kimi-k3.
+
+---
+
 ## 2026-10-09 (SELESAI) — GROUND TRUTH A/B: Kimi K3 vs Gemini 3 Flash — Agent Preflight
 
 - **Tarikh:** 2026-10-09 (19:45 MYT)
