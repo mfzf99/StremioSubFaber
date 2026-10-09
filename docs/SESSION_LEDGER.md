@@ -10,6 +10,18 @@
 
 ---
 
+## 2026-10-09 (SELESAI) — ARCHITECTURAL TAXONOMY STANDARDIZATION: nama rasmi 3 komponen enjin
+
+- **Tarikh:** 2026-10-09 (16:23 MYT)
+- **Komit SHA:** `7d0864f`
+- **Keputusan Owner:** Mandat taksonomi — selaraskan nama panggilan 3 komponen enjin SubFaber bagi menghapuskan kekeliruan istilah. Nama rasmi berkuat kuasa serta-merta: (1) Preflight → **Agent Preflight**; (2) Enginetranslation / Agent A → **Agent Translation**; (3) Inspection / Agent B → **Agent Inspector**. Semua perbincangan seni bina, log, dan interaksi ejen seterusnya wajib guna nama rasmi.
+- **Fail Terlibat:** `docs/ENGINE_COMPONENT_TAXONOMY.md` (BAHARU, 71 baris — single source of truth taksonomi: jadual 3 komponen + peranan, pemetaan alias deprecated → rasmi, peraturan penggunaan 5 item, nota seni bina dual-role Agent Inspector sebagai pelaksana fizikal Fasa 0).
+- **KEKALAN KOD (mandat eksplisit):** TIADA nama fail fizikal atau signature fungsi dalam `src/` diubah — `src/services/subfaberPreflight.js` (= Agent Preflight), `src/services/translationEngine.js` (= Agent Translation), `src/services/agentBInspector.js` (= Agent Inspector) kekal verbatim; entri sejarah `plans/*.md` & ledger lama kekal verbatim (arkib — tafsir via pemetaan §2 dokumen taksonomi).
+- **Status npm test:** 313 tests / 312 PASS / 0 FAIL / 1 SKIP (baseline dipelihara; docs-only commit). Prettier --check . PASS · ESLint 0 error (warning no-unused-vars pre-existing).
+- **Next Steps:** Semua sesi/dokumen/log baharu guna nama rasmi; dokumen taksonomi dikemas kini sekiranya komponen enjin baharu ditambah. CI dijangka hijau (docs-only).
+
+---
+
 ## 2026-10-09 (SELESAI) — Core Protocol seksyen 5 refine: rule #1 TRACE & MAP → TRACE & AUDIT TRAIL
 
 - **Tarikh:** 2026-10-09 (15:43 MYT)
