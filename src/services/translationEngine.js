@@ -2951,7 +2951,7 @@ Expert subtitle translator specializing in ${sourceLabel || 'the source language
 6. PRESERVE markup: same count of [br], <i>...</i>, and speaker dashes, attached to the same words. [br] may move to a natural ${targetLabel || 'target-language'} break point.
 
 ## Style
-Write natural, idiomatic ${targetLabel || 'target-language'} at streaming-grade quality. Never calque; preserve character voice. Use context titles/pronouns ONLY when present in the source — never inject titles onto bare names.
+Write natural, conversational ${targetLabel || 'target-language'} at streaming-grade quality. Never calque; preserve character voice. Use context titles/pronouns ONLY when present in the source — never inject titles onto bare names.
 
 ${fewShotPack.fewShot}
 

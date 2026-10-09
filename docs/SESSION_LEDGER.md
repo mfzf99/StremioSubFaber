@@ -10,6 +10,19 @@
 
 ---
 
+## 2026-10-09 (SELESAI) — EDIT PROMPT AGENT A: Blok Style "natural, idiomatic" → "natural, conversational"
+
+- **Tarikh:** 2026-10-10 (00:55 MYT)
+- **Komit SHA:** (belum di-commit — edit prompt kecil, commit susulan)
+- **Keputusan Owner:** Ayat blok `## Style` dalam system prompt Agent A diperhalus: "natural, idiomatic" diganti "natural, conversational" (arah gaya lebih mesra/perbualan). Baki ayat (streaming-grade, Never calque, preserve character voice, register lock titles/pronouns) dikekalkan verbatim.
+- **Fail Terlibat:**
+  - `src/services/translationEngine.js` (baris ~2954, blok `## Style` system prompt Agent A)
+  - `src/services/subfaber-context-regression.test.js` (assertion `natural, idiomatic` → `natural, conversational`, line 375-376, dengan anotasi OWNER MANUAL EDIT 2026-10-09)
+- **Status npm test:** 313 tests / 312 PASS / 0 FAIL / 1 SKIP (skip = live Redis). Prettier: lulus kedua-dua fail. ESLint: 0 error, 6 warning pra-wujud (bukan dari edit ini).
+- **Next Steps:** Commit & push bersama perubahan lain sesi ini jika ada; CI (Node 22/24 matrix) perlu hijau. Baseline test dikemas kini 305→313 (termasuk test baru dari sesi sebelumnya).
+
+---
+
 ## 2026-10-09 (SELESAI) — VALIDASI PRODUKSI PENUH: Trinity pipeline ALL-GREEN + format rasmi Moonshot disahkan
 
 - **Tarikh:** 2026-10-10 (00:28 MYT)

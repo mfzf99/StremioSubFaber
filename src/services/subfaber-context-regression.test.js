@@ -372,7 +372,8 @@ test('SubFaberPrompt V4: slim sharp prompt, split system/user, no double-send', 
     // menggantikan "living"; register lock kini "context titles/pronouns"
     // dengan larangan keras suntikan gelaran pada nama kosong.
     assert.ok(system.includes('## Style'), 'Style section present');
-    assert.ok(system.includes('natural, idiomatic'), 'Natural idiomatic directive in style');
+    // [OWNER MANUAL EDIT 2026-10-09] "natural, idiomatic" → "natural, conversational"
+    assert.ok(system.includes('natural, conversational'), 'Natural conversational directive in style');
     // [OWNER MANUAL EDIT 2026-10-07] "never calque" → "Never calque" (kini
     // membuka ayat sendiri — huruf besar N; includes() case-sensitive).
     assert.ok(system.includes('Never calque'), 'Anti-calque in style');
