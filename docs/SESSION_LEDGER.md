@@ -13,7 +13,7 @@
 ## 2026-10-09 (SELESAI) — GROUND TRUTH A/B: Kimi K3 vs Gemini 3 Flash — Agent Preflight
 
 - **Tarikh:** 2026-10-09 (19:45 MYT)
-- **Komit SHA:** `af10fca`
+- **Komit SHA:** `ebfbc7d`
 - **Keputusan Owner:** Owner minta ground truth empirikal "siapa lebih padu untuk kerja agent preflight" antara Kimi K3 vs Gemini 3 Flash; kelulusan metodologi kesamarataan didelegasikan ("kau buat lah keputusan sendiri"). 10 key Gemini free-tier diserahkan untuk benchmark; SRT Happiness E1 (Downloads) diberikan sebagai korpus.
 - **Metodologi:** Harness `.tmp-bench-run.js` (probe, tidak di-commit) — prompt laluan produksi VERBATIM (buildPreflightPrompt + splitStructuredPrompt, system 7,119ch + user 25,399ch, bait identik kedua-dua model); Kimi = muatan god-tier 4-kunci (temp 0.0, SSE stream); Gemini = REST v1beta generateContent (systemInstruction top-level, temp 0.0, thinkingLevel low ×3 + high ×2); validator = parsePreflightResponse() produksi; 3 run per model.
 - **Keputusan empirikal (korpus 745 entri / 25,302 aksara):**
