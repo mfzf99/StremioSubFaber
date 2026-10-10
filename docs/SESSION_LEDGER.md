@@ -10,6 +10,24 @@
 
 ---
 
+## 2026-10-10 (FASA A+B SELESAI) — PEMBEDAHAN MAJOR TRI-DOOR: keyDetector + openaiChannel (Trinity Engine 3 pintu format)
+
+- **Tarikh:** 2026-10-10 (14:05 MYT)
+- **Komit SHA:** (belum di-commit — Fasa A+B siap, Fasa C menyusul)
+- **Keputusan Owner:** Laporan plans/tri-door-provider-surgery-plan.md DILULUSKAN. Kelulusan: (1) struktur `src/services/channels/`; (2) Fasa B komposisi dibenarkan dengan syarat 40+ regresi AgentB kekal hijau TANPA edit assertion; (3) fallback default = openai-compatible bila tiada padanan; (4) non-stream dibenarkan untuk channel Gemini & Anthropic rasmi (stream kekal eksklusif rootsys/Caddy). Penemuan utama laporan: Agent Translation sudah 3 pintu; barah sebenar ialah Agent Preflight + Agent Inspector terkurung pada OpenAI sahaja (AgentBInspector extends OpenAICompatibleProvider universalPayload) + tiada autodetect key.
+- **Fail Terlibat:**
+  - `src/services/channels/keyDetector.js` (BAHARU — detectAgentChannelFormat: override > key-prefix (AIza/sk-ant-) > baseUrl > model > default openai; ber-source untuk log telus; defensif null/undefined)
+  - `src/services/channels/agentChannel.js` (BAHARU — kontrak duck-typed resolveChannelFormat/defaultChannelFormat)
+  - `src/services/channels/openaiChannel.js` (BAHARU — ekstraksi 1:1 super-options AgentB: providerName agentb, universalPayload god-tier 4-kunci, maxRetries 0, enableJsonOutput false, SSRF passthrough)
+  - `src/services/agentBInspector.js` (MODIFIKASI MINIMAL — super() kini melalui openaiChannel.buildSuperOptions; tingkah laku 1:1; require openaiChannel ditambah)
+  - `src/services/channels-keyDetector-regression.test.js` (BAHARU — 18 test: prefix kuat, sk- generik tidak memilih vendor, keutamaan berperingkat, hygiene input, normalizeFormatOverride, integrasi agentChannel)
+  - `package.json` (test:tracked + channels-keyDetector-regression.test.js)
+  - `plans/tri-door-provider-surgery-plan.md` (BAHARU — laporan pembedahan penuh, diluluskan owner)
+- **Status npm test:** 331 tests / 330 PASS / 0 FAIL / 1 SKIP (skip = live Redis). +18 test baharu; 40+ regresi AgentB HIJAU tanpa satu assertion diubah (syarat Fasa B dipenuhi). Prettier: lulus. ESLint: 0 error (217 warning pra-wujud). Baseline dikemas kini 313→331. Graphify: tiada graphify-out/ wujud (graf belum dibina di workspace ini) — update no-op, tiada API cost.
+- **Next Steps:** FASA C — geminiChannel.js + anthropicChannel.js (payload systemInstruction top-level / system top-level, thinkingLevel low default, non-stream dibenarkan) + wiring config.agentB.format (autodetect via keyDetector) + regresi payload per pintu; kemudian Fasa D (UI dropdown format, delegasi Frontend) & Fasa E (validasi produksi VPS). Commit Fasa A+B bersama Fasa C atau atas arahan owner.
+
+---
+
 ## 2026-10-09 (SELESAI) — EDIT PROMPT AGENT A: Blok Style "natural, idiomatic" → "natural, conversational"
 
 - **Tarikh:** 2026-10-10 (00:55 MYT)

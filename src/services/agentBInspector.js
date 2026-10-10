@@ -58,6 +58,8 @@
  */
 
 const OpenAICompatibleProvider = require('./providers/openaiCompatible');
+// [TRI-DOOR FASA B] Channel pengangkutan Trinity — super-options diekstrak.
+const openaiChannel = require('./channels/openaiChannel');
 const { runPreflightSemanticPass, stripReasoningTags } = require('./subfaberPreflight');
 const log = require('../utils/logger');
 // [FASA H 2026-10-07] Split statik/dinamik untuk prompt Pre-Flight (varian G1
@@ -427,18 +429,16 @@ class AgentBInspector extends OpenAICompatibleProvider {
         // Fasa 1 60s / Fasa 0 150s.
         const inspectionTimeoutMs = parseAgentBTimeout(options.inspectionTimeoutMs, AGENT_B_INSPECTION_TIMEOUT_MS);
         const preflightTimeoutMs = parseAgentBTimeout(options.preflightTimeoutMs, AGENT_B_PREFLIGHT_TIMEOUT_MS);
-        super({
-            apiKey: options.apiKey || '',
-            model: options.inspectionModel || options.model || AGENT_B_DEFAULT_MODEL,
-            baseUrl: options.baseUrl || 'https://api.openai.com/v1',
-            providerName: 'agentb',
-            universalPayload: true, // Muatan BEAST sejagat (Mandat §A + BETA RUN 10)
-            beastMaxTokens: parseAgentBTimeout(options.maxTokens, AGENT_B_MAX_TOKENS), // [AUDIT-WARISAN 2026-09-29] no-op — builder 4-kunci god-tier tidak membaca beastMaxTokens
-            translationTimeout: inspectionTimeoutMs / 1000,
-            maxRetries: 0, // Fail fast — satu percubaan sahaja per model
-            enableJsonOutput: false, // Parse JSON manual (kompatibilitas maksimum endpoint)
-            ssrfLookup: options.ssrfLookup || null
-        });
+        // [TRI-DOOR FASA B 2026-10-10] Super-options diekstrak ke
+        // channels/openaiChannel.js (ekstraksi 1:1, tingkah laku kekal).
+        // Fasa C: channel disuntik penuh; pewarisan digantikan komposisi.
+        super(
+            openaiChannel.buildSuperOptions(
+                options,
+                inspectionTimeoutMs,
+                parseAgentBTimeout(options.maxTokens, AGENT_B_MAX_TOKENS)
+            )
+        );
 
         this.inspectionTimeoutMs = inspectionTimeoutMs;
         this.preflightTimeoutMs = preflightTimeoutMs;
