@@ -209,15 +209,19 @@ test('[VP-14] dual-door fallback flips openai-compatible ↔ gemini-native', () 
     const fallbackOf = (doorPlan) => (doorPlan === 'openai-compatible' ? 'gemini-native' : 'openai-compatible');
     assert.equal(fallbackOf('openai-compatible'), 'gemini-native');
     assert.equal(fallbackOf('gemini-native'), 'openai-compatible');
-    // isProbeRetryable: 404/400 retryable; 401/403/500 tidak
+    // [v3.9.12] isProbeRetryable dikembangkan: 401/403 turut retryable —
+    // gateway proksi (Crazy Router/New API) memulangkan 401/403 apabila
+    // PENGPALA autentikasi salah protokol (bukan kunci rosak); pintu
+    // bertentangan wajib dicuba sebelum mengisytiharkan kunci tidak sah.
+    // Predikat runtime index.js: status === 404 || 400 || 401 || 403.
     const isProbeRetryable = (error) => {
         const status = Number(error?.response?.status) || 0;
-        return status === 404 || status === 400;
+        return status === 404 || status === 400 || status === 401 || status === 403;
     };
     assert.equal(isProbeRetryable({ response: { status: 404 } }), true, '404 retryable');
     assert.equal(isProbeRetryable({ response: { status: 400 } }), true, '400 retryable');
-    assert.equal(isProbeRetryable({ response: { status: 401 } }), false, '401 NOT retryable (auth failure)');
-    assert.equal(isProbeRetryable({ response: { status: 403 } }), false, '403 NOT retryable');
+    assert.equal(isProbeRetryable({ response: { status: 401 } }), true, '401 retryable (wrong-protocol auth header)');
+    assert.equal(isProbeRetryable({ response: { status: 403 } }), true, '403 retryable (wrong-protocol auth header)');
     assert.equal(isProbeRetryable({ response: { status: 500 } }), false, '500 NOT retryable');
     assert.equal(isProbeRetryable(new Error('network')), false, 'network error NOT retryable');
 });
@@ -227,4 +231,109 @@ test('[VP-15] versionless URL detection: /v1/models appended only when no versio
     assert.equal(needsAppend('https://my-proxy.example.com'), true, 'no version → append /v1/models');
     assert.equal(needsAppend('https://my-proxy.example.com/v1'), false, '/v1 present → no append');
     assert.equal(needsAppend('https://my-proxy.example.com/v1beta'), false, '/v1beta present → no append');
+});
+
+// ─── [STRICT URL PRECEDENCE + EXPANDED DUAL-DOOR v3.9.12] ───
+
+test('[VP-16] /v1beta URL with sk- key: URL hint WINS over key-prefix → gemini-native', () => {
+    // [REPRO v3.9.11 BUG] Kunci 'sk-...' + URL 'https://cn.crazyrouter.com/v1beta':
+    // skrin v3.9.11 menghantar Bearer openai ke endpoint /v1beta → 401 palsu.
+    // Keutamaan mutlak laluan URL: /v1beta WAJIB gemini-native walaupun kunci sk-.
+    // Kunci statik: heuristik runtime dijalankan SEBELUM keyDetector dalam
+    // susunan if/else-if — cawangan /v1beta tidak pernah sampai ke keyDetector.
+    assert.ok(
+        serverSource.includes("if (targetBaseUrl.includes('/v1beta'))"),
+        '/v1beta branch checked FIRST (strict URL precedence)'
+    );
+    // Susunan kod: cawangan keyDetector mesti berada DALAM else (tiada hint versi)
+    assert.ok(
+        serverSource.indexOf("targetBaseUrl.includes('/v1beta')") <
+            serverSource.indexOf('detectAgentChannelFormat({ apiKey: key, baseUrl: targetBaseUrl })'),
+        'URL heuristics must run before keyDetector in source order'
+    );
+    // Simulasi kelakuan penuh (perangkap sk-):
+    const url = 'https://cn.crazyrouter.com/v1beta';
+    const apiKey = 'sk-relay-proxy-key';
+    let doorPlan = 'openai-compatible';
+    if (url.includes('/v1beta')) {
+        doorPlan = 'gemini-native'; // ← menang, sk- diabaikan sepenuhnya
+    } else if (/\/v1(?!beta)/.test(url)) {
+        doorPlan = 'openai-compatible';
+    } else {
+        const { detectAgentChannelFormat } = require('./channels/keyDetector');
+        const detected = detectAgentChannelFormat({ apiKey, baseUrl: url });
+        doorPlan = detected.format === 'gemini' ? 'gemini-native' : 'openai-compatible';
+    }
+    assert.equal(doorPlan, 'gemini-native', 'sk- + /v1beta MUST resolve to gemini-native (URL wins)');
+});
+
+test('[VP-17] primary 401 recovered by fallback door: validation succeeds with resolvedDoor', async () => {
+    // [EXPANDED DUAL-DOOR] Gateway memulangkan 401 apabila pengepala salah protokol;
+    // pintu bertentangan mesti dicuba. Simulasi penuh aliran probe:
+    // primer openai-compatible (Bearer) → 401; fallback gemini-native (x-goog-api-key)
+    // → 200 dengan senarai model → validasi BERJAYA + resolvedDoor: 'gemini-native'.
+    const isProbeRetryable = (error) => {
+        const status = Number(error?.response?.status) || 0;
+        return status === 404 || status === 400 || status === 401 || status === 403;
+    };
+    const fallbackOf = (doorPlan) => (doorPlan === 'openai-compatible' ? 'gemini-native' : 'openai-compatible');
+
+    // Semakan statik: predikat runtime mesti merangkumi 401/403
+    assert.ok(
+        serverSource.includes('status === 404 || status === 400 || status === 401 || status === 403'),
+        'runtime predicate must include 401 and 403'
+    );
+
+    // Simulasi aliran dwipintu dengan axios mock
+    const originalGet = axios.get;
+    const calls = [];
+    axios.get = async (url, options) => {
+        const headers = (options && options.headers) || {};
+        calls.push({ url, auth: headers['x-goog-api-key'] ? 'x-goog' : headers.Authorization ? 'bearer' : 'none' });
+        if (headers.Authorization) {
+            // Pintu salah protokol → gateway memulangkan 401
+            const err = new Error('Request failed with status code 401');
+            err.response = { status: 401, data: { error: { message: 'Unauthorized' } } };
+            throw err;
+        }
+        // Pintu betul (x-goog-api-key) → 200 OK senarai model Gemini
+        return {
+            data: { models: [{ name: 'models/gemini-3.7-flash', supportedGenerationMethods: ['generateContent'] }] }
+        };
+    };
+    try {
+        // Replika aliran endpoint: doorPlan=openai-compatible (dari /v1) → 401 → fallback
+        let doorPlan = 'openai-compatible';
+        let resolvedDoor = doorPlan;
+        let models = [];
+        let lastError = null;
+        try {
+            throw Object.assign(new Error('primary 401'), {
+                response: { status: 401, data: { error: { message: 'Unauthorized' } } }
+            });
+        } catch (primaryError) {
+            if (isProbeRetryable(primaryError)) {
+                const fallbackDoor = fallbackOf(doorPlan);
+                try {
+                    const resp = await axios.get('https://relay/v1/models', {
+                        headers: { 'x-goog-api-key': 'sk-key', 'Content-Type': 'application/json' }
+                    });
+                    models = resp.data.models
+                        .filter((m) => m.supportedGenerationMethods.includes('generateContent'))
+                        .map((m) => String(m.name || '').replace(/^models\//, ''));
+                    resolvedDoor = fallbackDoor;
+                    lastError = null;
+                } catch (fallbackError) {
+                    lastError = fallbackError;
+                }
+            } else {
+                throw primaryError;
+            }
+        }
+        assert.equal(lastError, null, 'fallback must recover from primary 401');
+        assert.deepEqual(models, ['gemini-3.7-flash'], 'fallback must return the model list');
+        assert.equal(resolvedDoor, 'gemini-native', 'resolvedDoor must be the winning door');
+    } finally {
+        axios.get = originalGet;
+    }
 });

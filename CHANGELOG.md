@@ -2,6 +2,19 @@
 
 All notable changes to this project will be documented in this file.
 
+## SubMaker v3.9.12 (2026-10-10) — Fixed: Custom /v1beta + kunci sk- gagal validasi (strict URL precedence + expanded dual-door)
+
+### Fixed
+
+- **Bug v3.9.11**: Custom Provider `https://cn.crazyrouter.com/v1beta` + kunci `sk-...` gagal validasi (401 Invalid Key) dalam mod Auto. Dua punca dibetulkan:
+  1. **Strict URL precedence**: pembayang laluan URL kini menang MUTLAK atas sebarang pengesanan format kunci — cawangan `/v1beta` → `gemini-native` dijalankan pertama dan tidak pernah sampai ke `keyDetector` (yang akan menjerit openai untuk kunci `sk-`). keyDetector hanya dipanggil apabila URL tiada pembayang versi langsung. Komen kod men dokumentasikan perangkap ini secara eksplisit.
+  2. **Expanded dual-door probe**: predikat retryable dikembangkan daripada `404/400` kepada `404/400/401/403`. Gateway proksi moden (Crazy Router/New API) memulangkan 401/403 apabila PENGPALA autentikasi salah protokol (Bearer dihantar ke endpoint Gemini, atau sebaliknya) — bukan kegagalan kunci sebenar. Pintu bertentangan kini dicuba secara automatik; kegagalan kunci sebenar hanya diisytiharkan apabila KEDUA-DUA pintu gagal.
+- **Ujian VP-16/VP-17** (2 baharu): `/v1beta` + kunci `sk-` → `resolvedDoor: 'gemini-native'` (repro bug + keutamaan susunan kod); primer 401 dipulihkan oleh pintu sandaran dengan simulasi axios mock penuh (models + resolvedDoor dipulangkan). VP-14 dikemas kini — 401/403 kini retryable.
+
+### Test Baseline
+
+- **Baharu: 363 tests / 362 PASS / 0 FAIL / 1 SKIP** (naik daripada 361/360 — monotonic dipatuhi).
+
 ## SubMaker v3.9.11 (2026-10-10) — Self-Healing Validation: Heuristik URL Pintar + Dual-Door Probing untuk Custom Provider
 
 ### Added

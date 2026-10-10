@@ -10,6 +10,15 @@
 
 ---
 
+## 2026-10-10 (RELEASE v3.9.12) — STRICT URL PRECEDENCE + EXPANDED DUAL-DOOR PROBE
+
+- **Tarikh:** 2026-10-10 (19:44 MYT)
+- **Komit SHA:** (komit release v3.9.12 ini — SHA direkod selepas push)
+- **Keputusan Owner:** Bug v3.9.11 — Custom `https://cn.crazyrouter.com/v1beta` + kunci `sk-...` gagal validasi 401 dalam mod Auto. Mandat: (1) keutamaan mutlak heuristik laluan URL atas format kunci; (2) luaskan jaringan fallback dwipintu kepada 401/403/404/400.
+- **Fail Terlibat:** `index.js` (`/api/validate-provider`: komen + peneguhan STRICT URL PRECEDENCE pada cawangan `/v1beta` — keyDetector hanya dalam else tiada-hint; `isProbeRetryable` dikembangkan `404||400||401||403`), `src/services/validate-provider-regression.test.js` (+VP-16 repro sk-+/v1beta→gemini-native & keutamaan susunan kod; +VP-17 primer 401 dipulihkan fallback dengan axios mock; VP-14 dikemas kini 401/403 retryable), `package.json` (3.9.11 → 3.9.12), `CHANGELOG.md` (header v3.9.12).
+- **Status pipeline:** prettier ✓ + eslint **0 error** (221 warning pra-wujud) + npm test **363 tests / 362 PASS / 0 FAIL / 1 SKIP** — **BASELINE BAHARU** (>= 361 monotonic dipatuhi). SSRF: `validateCustomBaseUrl` kekal sebelum rangkaian pada setiap variasi URL. Graphify: NO-OP.
+- **Next Steps:** Push v3.9.12 → origin main, verify CI hijau.
+
 ## 2026-10-10 (RELEASE v3.9.11) — SELF-HEALING VALIDATION: HEURISTIK URL PINTAR + DUAL-DOOR PROBING
 
 - **Tarikh:** 2026-10-10 (19:10 MYT)

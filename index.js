@@ -3710,10 +3710,13 @@ app.post('/api/validate-provider', validationLimiter, async (req, res) => {
         throw new Error('Unsupported door');
     };
 
-    // Adakah ralat boleh dicuba semula dengan pintu/URL lain? (404/400 = endpoint tiada)
+    // Adakah ralat boleh dicuba semula dengan pintu/URL lain?
+    // [v3.9.12] 401/403 turut retryable: gateway proksi memulangkan kod-kod
+    // ini apabila pengepala autentikasi salah protokol (bukan kunci rosak) —
+    // pintu bertentangan wajib dicuba sebelum mengisytiharkan kunci tidak sah.
     const isProbeRetryable = (error) => {
         const status = Number(error?.response?.status) || 0;
-        return status === 404 || status === 400;
+        return status === 404 || status === 400 || status === 401 || status === 403;
     };
 
     try {
@@ -3778,8 +3781,14 @@ app.post('/api/validate-provider', validationLimiter, async (req, res) => {
         let doorPlan = effectiveDoor;
         let autoResolved = false;
         if (isAuto) {
+            // [STRICT URL PRECEDENCE v3.9.12] Pembayang laluan URL WAJIB menang
+            // mutlak atas sebarang pengesanan format kunci. Contoh perangkap:
+            // kunci 'sk-...' + URL 'https://relay/v1beta' — keyDetector akan
+            // menjerit openai-compatible, tetapi endpoint /v1beta hanyalah
+            // Gemini Native; menghantar Bearer ke sana = 401 palsu. keyDetector
+            // hanya layak dipanggil jika URL TIADA pembayang versi langsung.
             if (targetBaseUrl.includes('/v1beta')) {
-                doorPlan = 'gemini-native';
+                doorPlan = 'gemini-native'; // /v1beta menang walaupun kunci sk-
             } else if (/\/v1(?!beta)/.test(targetBaseUrl)) {
                 doorPlan = 'openai-compatible';
             } else {
@@ -3800,7 +3809,14 @@ app.post('/api/validate-provider', validationLimiter, async (req, res) => {
         } catch (primaryError) {
             lastError = primaryError;
             if (isAuto || providerEntry.isCustom) {
-                // Dual-door probing: hanya untuk ralat endpoint-not-found (404/400)
+                // [EXPANDED DUAL-DOOR PROBE v3.9.12] Gateway proksi moden
+                // (Crazy Router/New API) memulangkan 401/403 apabila PENGEPALA
+                // autentikasi salah protokol (Bearer dihantar ke endpoint
+                // Gemini, atau x-goog-api-key ke endpoint OpenAI) — ralat ini
+                // BUKAN kegagalan kunci sebenar. Jaringan fallback dikembangkan
+                // daripada 404/400 kepada 401/403/404/400: cuba pintu
+                // bertentangan sebelum mengalah. Kegagalan kunci sebenar hanya
+                // diisytiharkan apabila KEDUA-DUA pintu gagal.
                 if (isProbeRetryable(primaryError)) {
                     const fallbackDoor = doorPlan === 'openai-compatible' ? 'gemini-native' : 'openai-compatible';
                     try {
