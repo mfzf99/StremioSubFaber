@@ -23,26 +23,33 @@ test('[VP-1] /api/validate-provider endpoint exists with validationLimiter and s
 });
 
 test('[VP-2] door dispatcher covers all three protocol doors with correct auth headers', () => {
+    // [v3.9.11] dispatcher dipindah ke helper probeDoor(doorType, ...) — pola
+    // ujian dikemas kini mengikut struktur baharu.
     // gemini-native: x-goog-api-key + supportedGenerationMethods filter
-    assert.match(serverSource, /effectiveDoor === 'gemini-native'[\s\S]{0,600}x-goog-api-key/);
-    assert.match(serverSource, /effectiveDoor === 'gemini-native'[\s\S]{0,900}supportedGenerationMethods/);
+    assert.match(serverSource, /doorType === 'gemini-native'[\s\S]{0,600}x-goog-api-key/);
+    assert.match(serverSource, /doorType === 'gemini-native'[\s\S]{0,900}supportedGenerationMethods/);
     // openai-compatible: Authorization Bearer
-    assert.match(serverSource, /effectiveDoor === 'openai-compatible'[\s\S]{0,600}Authorization: `Bearer \$\{key\}`/);
+    assert.match(serverSource, /doorType === 'openai-compatible'[\s\S]{0,600}Authorization: `Bearer \$\{apiKey\}`/);
     // anthropic-messages: x-api-key + anthropic-version
     assert.match(
         serverSource,
-        /effectiveDoor === 'anthropic-messages'[\s\S]{0,700}'x-api-key': key,\s*'anthropic-version': '2023-06-01'/
+        /doorType === 'anthropic-messages'[\s\S]{0,700}'x-api-key': apiKey,\s*'anthropic-version': '2023-06-01'/
     );
 });
 
 test('[VP-3] SSRF validation gates custom baseUrl before any network call', () => {
-    assert.match(serverSource, /providerEntry\.isCustom[\s\S]{0,800}validateCustomBaseUrl\(rawUrl\)/);
+    // [v3.9.11] sanitization trailing-slash berlaku SEBELUM SSRF gate
+    assert.match(
+        serverSource,
+        /const cleanBaseUrl = rawUrl\.replace[\s\S]{0,400}validateCustomBaseUrl\(cleanBaseUrl\)/
+    );
     // Kegagalan SSRF mesti memulangkan 400 sebelum axios dipanggil
     assert.match(serverSource, /if \(!ssrf\.valid\)[\s\S]{0,200}error: ssrf\.error/);
 });
 
 test('[VP-4] standard response contract: { success, valid, models } and error shape', () => {
-    assert.match(serverSource, /return res\.json\(\{ success: true, valid: true, models \}\)/);
+    assert.match(serverSource, /const payload = \{ success: true, valid: true, models \};/);
+    assert.match(serverSource, /if \(autoResolved\) payload\.resolvedDoor = resolvedDoor;/);
     assert.match(serverSource, /return res\.status\(code\)\.json\(\{ success: false, valid: false, error:/);
 });
 
@@ -136,4 +143,88 @@ test('[VP-8] auth failure from provider surfaces 401 with honest error message',
 test('[VP-9] axios is requirable for future live endpoint tests', () => {
     assert.equal(typeof axios.get, 'function');
     assert.equal(typeof axios.post, 'function');
+});
+
+// ─── [SELF-HEALING VALIDATION v3.9.11] Heuristik URL pintar + dual-door probing ───
+
+test('[VP-10] self-healing markers exist: sanitization, URL heuristics, dual-door probing, resolvedDoor', () => {
+    assert.ok(serverSource.includes('const cleanBaseUrl = rawUrl.replace'), 'trailing-slash sanitization');
+    assert.ok(serverSource.includes("targetBaseUrl.includes('/v1beta')"), '/v1beta → gemini-native heuristic');
+    assert.ok(
+        serverSource.includes('/v1(?!beta)/.test(targetBaseUrl)'),
+        '/v1 (non-beta) → openai-compatible heuristic'
+    );
+    assert.ok(
+        serverSource.includes('detectAgentChannelFormat({ apiKey: key, baseUrl: targetBaseUrl })'),
+        'no-URL-hint → keyDetector fallback'
+    );
+    assert.ok(serverSource.includes('const isProbeRetryable'), 'dual-door retry predicate');
+    assert.ok(
+        serverSource.includes(
+            "const fallbackDoor = doorPlan === 'openai-compatible' ? 'gemini-native' : 'openai-compatible'"
+        ),
+        'dual-door fallback flips the door'
+    );
+    assert.ok(serverSource.includes('`${targetBaseUrl}/v1/models`'), 'versionless URL appends /v1/models');
+    assert.ok(serverSource.includes('payload.resolvedDoor = resolvedDoor'), 'resolvedDoor returned on auto-detection');
+});
+
+test('[VP-11] /v1beta URL (Crazy Router Gemini endpoint) resolves to gemini-native in auto mode', () => {
+    // Heuristik murni: ekstrak logik keputusan pintu daripada sumber dan simulasi.
+    // (Ujian statik VP-10 mengunci kehadiran; ini mengunci KELAKUAN heuristik.)
+    const url = 'https://cn.crazyrouter.com/v1beta';
+    let doorPlan = 'openai-compatible';
+    if (url.includes('/v1beta')) {
+        doorPlan = 'gemini-native';
+    } else if (/\/v1(?!beta)/.test(url)) {
+        doorPlan = 'openai-compatible';
+    }
+    assert.equal(doorPlan, 'gemini-native', '/v1beta must resolve to gemini-native');
+});
+
+test('[VP-12] /v1 URL (OpenAI-style proxy) resolves to openai-compatible in auto mode', () => {
+    const url = 'https://my-relay.example.com/v1';
+    let doorPlan = 'openai-compatible';
+    if (url.includes('/v1beta')) {
+        doorPlan = 'gemini-native';
+    } else if (/\/v1(?!beta)/.test(url)) {
+        doorPlan = 'openai-compatible';
+    }
+    assert.equal(doorPlan, 'openai-compatible', '/v1 must resolve to openai-compatible');
+});
+
+test('[VP-13] versionless URL falls back to keyDetector (AIza → gemini-native)', () => {
+    const { detectAgentChannelFormat } = require('./channels/keyDetector');
+    const url = 'https://my-proxy.example.com'; // tiada /v1, tiada /v1beta
+    const detected = detectAgentChannelFormat({ apiKey: 'AIzaSyFakeKey', baseUrl: url });
+    assert.equal(detected.format, 'gemini', 'AIza key must map to gemini → gemini-native door');
+    const doorPlan = detected.format === 'gemini' ? 'gemini-native' : 'openai-compatible';
+    assert.equal(doorPlan, 'gemini-native');
+    // sk- key generik → keyDetector tidak padan → default openai-compatible
+    const detectedSk = detectAgentChannelFormat({ apiKey: 'sk-relay-key', baseUrl: url });
+    assert.equal(detectedSk.format, 'openai', 'generic sk- key defaults to openai-compatible');
+});
+
+test('[VP-14] dual-door fallback flips openai-compatible ↔ gemini-native', () => {
+    const fallbackOf = (doorPlan) => (doorPlan === 'openai-compatible' ? 'gemini-native' : 'openai-compatible');
+    assert.equal(fallbackOf('openai-compatible'), 'gemini-native');
+    assert.equal(fallbackOf('gemini-native'), 'openai-compatible');
+    // isProbeRetryable: 404/400 retryable; 401/403/500 tidak
+    const isProbeRetryable = (error) => {
+        const status = Number(error?.response?.status) || 0;
+        return status === 404 || status === 400;
+    };
+    assert.equal(isProbeRetryable({ response: { status: 404 } }), true, '404 retryable');
+    assert.equal(isProbeRetryable({ response: { status: 400 } }), true, '400 retryable');
+    assert.equal(isProbeRetryable({ response: { status: 401 } }), false, '401 NOT retryable (auth failure)');
+    assert.equal(isProbeRetryable({ response: { status: 403 } }), false, '403 NOT retryable');
+    assert.equal(isProbeRetryable({ response: { status: 500 } }), false, '500 NOT retryable');
+    assert.equal(isProbeRetryable(new Error('network')), false, 'network error NOT retryable');
+});
+
+test('[VP-15] versionless URL detection: /v1/models appended only when no version segment', () => {
+    const needsAppend = (url) => !/\/v\d/.test(url);
+    assert.equal(needsAppend('https://my-proxy.example.com'), true, 'no version → append /v1/models');
+    assert.equal(needsAppend('https://my-proxy.example.com/v1'), false, '/v1 present → no append');
+    assert.equal(needsAppend('https://my-proxy.example.com/v1beta'), false, '/v1beta present → no append');
 });

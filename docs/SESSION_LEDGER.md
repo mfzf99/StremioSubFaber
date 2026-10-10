@@ -10,6 +10,15 @@
 
 ---
 
+## 2026-10-10 (RELEASE v3.9.11) — SELF-HEALING VALIDATION: HEURISTIK URL PINTAR + DUAL-DOOR PROBING
+
+- **Tarikh:** 2026-10-10 (19:10 MYT)
+- **Komit SHA:** (komit release v3.9.11 ini — SHA direkod selepas push)
+- **Keputusan Owner:** Mandat heuristik URL pintar & self-healing validation untuk Custom Provider: mode 'auto' tidak lagi memerlukan pengguna menukar Format/Door manual — Crazy Router & proksi New API/One API disahkan automatik.
+- **Fail Terlibat:** `index.js` (refactor `/api/validate-provider`: helper `probeDoor`, sanitization `cleanBaseUrl`, heuristik `/v1beta`→gemini-native / `/v1`→openai-compatible / tiada hint→keyDetector `detectAgentChannelFormat`, dual-door fallback 404/400, append `/v1/models` untuk URL versionless, respons `resolvedDoor`), `src/services/validate-provider-regression.test.js` (+VP-10..VP-15; VP-2/3/4 dikemas kini struktur helper), `package.json` (3.9.10 → 3.9.11), `CHANGELOG.md` (header v3.9.11).
+- **Status pipeline:** prettier ✓ + eslint **0 error** (221 warning pra-wujud) + npm test **361 tests / 360 PASS / 0 FAIL / 1 SKIP** — **BASELINE BAHARU** (naik daripada 355/354; monotonic >= 355 dipatuhi). SSRF: setiap variasi URL melalui `validateCustomBaseUrl` sebelum rangkaian. Graphify: NO-OP (runtime tiada).
+- **Next Steps:** Push v3.9.11 → origin main, verify CI hijau.
+
 ## 2026-10-10 (RELEASE v3.9.10) — BUG FIX: VISIBILITY CUSTOM PROVIDER (DUA PUNCA AKAR)
 
 - **Tarikh:** 2026-10-10 (18:14 MYT)

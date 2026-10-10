@@ -3651,10 +3651,71 @@ app.post('/api/validate-opensubtitles', validationLimiter, async (req, res) => {
 // [UNIVERSAL PROVIDER VALIDATION 2026-10-10] Endpoint sejagat — menggantikan
 // had /api/validate-gemini (Gemini sahaja). Menyokong ketiga-tiga pintu
 // protokol: gemini-native | openai-compatible | anthropic-messages.
+// [SELF-HEALING 2026-10-10 v3.9.11] Mode 'auto' untuk Custom Provider kini
+// menggunakan heuristik URL pintar (/v1beta → gemini-native; /v1 → openai-
+// compatible) + dual-door probing (fallback pintu kedua apabila pintu
+// pertama 404/400) + append '/v1/models' untuk URL tanpa versi — menyokong
+// proksi New API/One API (cth: Crazy Router) tanpa pilihan Format manual.
 // Payload: { provider, apiKey, door, baseUrl? } — baseUrl pilihan (Custom);
 // bagi pembekal rasmi, baseUrl diambil daripada providerRegistry.
+// Respons: { success, valid, models, resolvedDoor? } — resolvedDoor dipulangkan
+// apabila pintu ditentukan secara automatik (auto-detect/fallback).
 app.post('/api/validate-provider', validationLimiter, async (req, res) => {
     setNoStore(res); // kredensial dalam body — jangan cache
+    const axios = require('axios');
+
+    // ── Helper: satu percubaan probe mengikut pintu (memulangkan models) ──
+    const probeDoor = async (doorType, url, apiKey, agents) => {
+        if (doorType === 'gemini-native') {
+            const resp = await axios.get(`${url}/models`, {
+                headers: { 'x-goog-api-key': apiKey, 'Content-Type': 'application/json' },
+                timeout: 10000,
+                httpAgent: agents.httpAgent,
+                httpsAgent: agents.httpsAgent
+            });
+            const list = resp?.data?.models;
+            if (!Array.isArray(list)) throw new Error('Unexpected response shape from Gemini models endpoint');
+            return list
+                .filter(
+                    (m) =>
+                        Array.isArray(m?.supportedGenerationMethods) &&
+                        m.supportedGenerationMethods.includes('generateContent')
+                )
+                .map((m) => String(m.name || '').replace(/^models\//, ''))
+                .filter(Boolean);
+        }
+        if (doorType === 'openai-compatible') {
+            const resp = await axios.get(`${url}/models`, {
+                headers: { Authorization: `Bearer ${apiKey}`, 'Content-Type': 'application/json' },
+                timeout: 10000,
+                httpAgent: agents.httpAgent,
+                httpsAgent: agents.httpsAgent
+            });
+            const list = resp?.data?.data;
+            if (!Array.isArray(list))
+                throw new Error('Unexpected response shape from OpenAI-compatible models endpoint');
+            return list.map((m) => String(m?.id || m?.name || '').trim()).filter(Boolean);
+        }
+        if (doorType === 'anthropic-messages') {
+            const resp = await axios.get(`${url}/models`, {
+                headers: { 'x-api-key': apiKey, 'anthropic-version': '2023-06-01', 'Content-Type': 'application/json' },
+                timeout: 10000,
+                httpAgent: agents.httpAgent,
+                httpsAgent: agents.httpsAgent
+            });
+            const list = resp?.data?.data || resp?.data?.models;
+            if (!Array.isArray(list)) throw new Error('Unexpected response shape from Anthropic models endpoint');
+            return list.map((m) => String(m?.id || m?.name || '').trim()).filter(Boolean);
+        }
+        throw new Error('Unsupported door');
+    };
+
+    // Adakah ralat boleh dicuba semula dengan pintu/URL lain? (404/400 = endpoint tiada)
+    const isProbeRetryable = (error) => {
+        const status = Number(error?.response?.status) || 0;
+        return status === 404 || status === 400;
+    };
+
     try {
         const { provider, apiKey, door, baseUrl } = req.body || {};
         const key = typeof apiKey === 'string' ? apiKey.trim() : '';
@@ -3674,15 +3735,21 @@ app.post('/api/validate-provider', validationLimiter, async (req, res) => {
         const requestedDoor = String(door || '')
             .trim()
             .toLowerCase();
-        const effectiveDoor = providerEntry.isCustom ? requestedDoor || 'openai-compatible' : providerEntry.door;
-        if (!isValidProviderDoor(providerId, effectiveDoor)) {
+        const isAuto = providerEntry.isCustom && (!requestedDoor || requestedDoor === 'auto');
+        const effectiveDoor = providerEntry.isCustom
+            ? isAuto
+                ? 'openai-compatible' // sementara — heuristik URL akan menimpa
+                : requestedDoor
+            : providerEntry.door;
+        if (!isValidProviderDoor(providerId, effectiveDoor) && !isAuto) {
             return res.status(400).json({ success: false, valid: false, error: 'Invalid door for this provider' });
         }
 
         const { validateCustomBaseUrl } = require('./src/utils/ssrfProtection');
-        const axios = require('axios');
         const { httpAgent, httpsAgent } = require('./src/utils/httpAgents');
+        const agents = { httpAgent, httpsAgent };
 
+        // ── [1] Pembersihan URL + SSRF gate ──
         let targetBaseUrl = '';
         if (providerEntry.isCustom) {
             const rawUrl = String(baseUrl || '').trim();
@@ -3691,7 +3758,9 @@ app.post('/api/validate-provider', validationLimiter, async (req, res) => {
                     .status(400)
                     .json({ success: false, valid: false, error: 'Base URL is required for custom provider' });
             }
-            const ssrf = await validateCustomBaseUrl(rawUrl);
+            // [SANITIZATION] buang trailing slash + whitespace
+            const cleanBaseUrl = rawUrl.replace(/\/+$/, '');
+            const ssrf = await validateCustomBaseUrl(cleanBaseUrl);
             if (!ssrf.valid) {
                 return res.status(400).json({ success: false, valid: false, error: ssrf.error });
             }
@@ -3705,51 +3774,73 @@ app.post('/api/validate-provider', validationLimiter, async (req, res) => {
             }
         }
 
-        // ── Door dispatcher ──
-        let models = [];
-        if (effectiveDoor === 'gemini-native') {
-            const resp = await axios.get(`${targetBaseUrl}/models`, {
-                headers: { 'x-goog-api-key': key, 'Content-Type': 'application/json' },
-                timeout: 10000,
-                httpAgent,
-                httpsAgent
-            });
-            const list = resp?.data?.models;
-            if (!Array.isArray(list)) throw new Error('Unexpected response shape from Gemini models endpoint');
-            models = list
-                .filter(
-                    (m) =>
-                        Array.isArray(m?.supportedGenerationMethods) &&
-                        m.supportedGenerationMethods.includes('generateContent')
-                )
-                .map((m) => String(m.name || '').replace(/^models\//, ''))
-                .filter(Boolean);
-        } else if (effectiveDoor === 'openai-compatible') {
-            const resp = await axios.get(`${targetBaseUrl}/models`, {
-                headers: { Authorization: `Bearer ${key}`, 'Content-Type': 'application/json' },
-                timeout: 10000,
-                httpAgent,
-                httpsAgent
-            });
-            const list = resp?.data?.data;
-            if (!Array.isArray(list))
-                throw new Error('Unexpected response shape from OpenAI-compatible models endpoint');
-            models = list.map((m) => String(m?.id || m?.name || '').trim()).filter(Boolean);
-        } else if (effectiveDoor === 'anthropic-messages') {
-            const resp = await axios.get(`${targetBaseUrl}/models`, {
-                headers: { 'x-api-key': key, 'anthropic-version': '2023-06-01', 'Content-Type': 'application/json' },
-                timeout: 10000,
-                httpAgent,
-                httpsAgent
-            });
-            const list = resp?.data?.data || resp?.data?.models;
-            if (!Array.isArray(list)) throw new Error('Unexpected response shape from Anthropic models endpoint');
-            models = list.map((m) => String(m?.id || m?.name || '').trim()).filter(Boolean);
-        } else {
-            return res.status(400).json({ success: false, valid: false, error: 'Unsupported door' });
+        // ── [2] Heuristik pintar berasaskan laluan (auto sahaja) ──
+        let doorPlan = effectiveDoor;
+        let autoResolved = false;
+        if (isAuto) {
+            if (targetBaseUrl.includes('/v1beta')) {
+                doorPlan = 'gemini-native';
+            } else if (/\/v1(?!beta)/.test(targetBaseUrl)) {
+                doorPlan = 'openai-compatible';
+            } else {
+                // Tiada pembayang URL → pengesanan asal keyDetector (key-prefix > baseUrl > model)
+                const { detectAgentChannelFormat } = require('./src/services/channels/keyDetector');
+                const detected = detectAgentChannelFormat({ apiKey: key, baseUrl: targetBaseUrl });
+                doorPlan = detected.format === 'gemini' ? 'gemini-native' : 'openai-compatible';
+            }
+            autoResolved = true;
         }
 
-        return res.json({ success: true, valid: true, models });
+        // ── [3] Probe pintu utama + dual-door fallback ──
+        let models = [];
+        let resolvedDoor = doorPlan;
+        let lastError = null;
+        try {
+            models = await probeDoor(doorPlan, targetBaseUrl, key, agents);
+        } catch (primaryError) {
+            lastError = primaryError;
+            if (isAuto || providerEntry.isCustom) {
+                // Dual-door probing: hanya untuk ralat endpoint-not-found (404/400)
+                if (isProbeRetryable(primaryError)) {
+                    const fallbackDoor = doorPlan === 'openai-compatible' ? 'gemini-native' : 'openai-compatible';
+                    try {
+                        models = await probeDoor(fallbackDoor, targetBaseUrl, key, agents);
+                        resolvedDoor = fallbackDoor;
+                        autoResolved = true;
+                        lastError = null;
+                    } catch (fallbackError) {
+                        // URL tanpa versi: cuba append '/v1/models' (proksi New API/One API)
+                        if (!/\/v\d/.test(targetBaseUrl)) {
+                            try {
+                                const appended = await axios.get(`${targetBaseUrl}/v1/models`, {
+                                    headers: { Authorization: `Bearer ${key}`, 'Content-Type': 'application/json' },
+                                    timeout: 10000,
+                                    httpAgent,
+                                    httpsAgent
+                                });
+                                const list = appended?.data?.data;
+                                if (Array.isArray(list)) {
+                                    models = list.map((m) => String(m?.id || m?.name || '').trim()).filter(Boolean);
+                                    resolvedDoor = 'openai-compatible';
+                                    autoResolved = true;
+                                    lastError = null;
+                                }
+                            } catch (appendError) {
+                                lastError = appendError;
+                            }
+                        } else {
+                            lastError = fallbackError;
+                        }
+                    }
+                }
+            }
+        }
+
+        if (lastError) throw lastError;
+
+        const payload = { success: true, valid: true, models };
+        if (autoResolved) payload.resolvedDoor = resolvedDoor;
+        return res.json(payload);
     } catch (error) {
         const status = Number(error?.response?.status) || 502;
         const detail =

@@ -2,6 +2,19 @@
 
 All notable changes to this project will be documented in this file.
 
+## SubMaker v3.9.11 (2026-10-10) — Self-Healing Validation: Heuristik URL Pintar + Dual-Door Probing untuk Custom Provider
+
+### Added
+
+- **Smart URL heuristics (mode 'auto' Custom Provider)** dalam `POST /api/validate-provider`: sanitization trailing-slash (`cleanBaseUrl`), pengesanan pintu berasaskan laluan — `/v1beta` → `gemini-native` (cth: endpoint Gemini Crazy Router); `/v1` (bukan beta) → `openai-compatible` (proksi New API/One API); tiada pembayang URL → fallback pengesanan asal `keyDetector.detectAgentChannelFormat` (AIza → gemini-native; sk- generik → openai-compatible).
+- **Dual-door probing & auto-fallback:** apabila pintu utama gagal dengan 404/400 (endpoint tidak wujud), endpoint mencuba pintu kedua secara automatik (openai-compatible ↔ gemini-native); jika URL tiada segmen versi dan kedua-duanya gagal, ia mencuba append `/v1/models`. Respons baharu memulangkan `resolvedDoor` (pintu yang menang) apabila pengesanan automatik berlaku — membolehkan Frontend memaparkan pintu sebenar tanpa pilihan manual.
+- **Ujian VP-10..VP-15** (6 baharu): penanda kontrak self-healing, heuristik /v1beta → gemini-native, /v1 → openai-compatible, fallback keyDetector (AIza/sk-), predikat retryable (404/400 ya; 401/403/500/network tidak), deteksi versionless `/v1/models`.
+
+### Changed
+
+- **Refactor dispatcher** `POST /api/validate-provider`: logik probe per pintu dipindahkan ke helper `probeDoor(doorType, url, apiKey, agents)` (digunakan semula oleh pintu utama + fallback). Setiap variasi URL masih melalui gate SSRF `validateCustomBaseUrl` sebelum panggilan rangkaian. Ujian VP-2/3/4 dikemas kini mengikut struktur helper baharu.
+- **Test baseline baharu: 361 tests / 360 PASS / 0 FAIL / 1 SKIP** (naik daripada 355/354 — monotonic baseline dipatuhi).
+
 ## SubMaker v3.9.10 (2026-10-10) — Fixed: Bug Visibility Custom Provider Trinity (dua punca akar)
 
 ### Fixed
