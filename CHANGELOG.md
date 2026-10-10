@@ -2,6 +2,21 @@
 
 All notable changes to this project will be documented in this file.
 
+## SubMaker v3.9.13 (2026-10-10) — Trinity Fasa H: Reaktif URL-to-Door + Sinkronisasi resolvedDoor
+
+### Added
+
+- **Real-time URL-to-Door reactivity** (`public/js/trinity-agents.js`): pendengar `input`/`change` pada medan Base URL — menaip/menampal `/v1beta` menukar dropdown Format/Door automatik kepada Gemini Native; `/v1` (bukan beta) kepada OpenAI-Compatible. Hanya aktif untuk Custom/Proxy (medan tersembunyi untuk rasmi); penukaran berlaku sekali setiap input tanpa watcher berterusan — pilihan manual pengguna selepasnya tidak diganggu.
+- **Post-validation resolvedDoor sync**: selepas Validate berjaya, `data.resolvedDoor` daripada backend (pintu yang menang melalui auto-detect/dual-door fallback v3.9.12) dipetakan ke dropdown Format/Door supaya pengguna melihat pintu sebenar yang disahkan (cth: Crazy Router `/v1beta` + kunci `sk-` → `gemini-native`).
+
+### Fixed
+
+- **[INTEGRATION AUDIT v3.9.13]** `collectConfigPatch()` Custom path: dropdown Format membawa nilai door penuh sejak Fasa E — kini dipetakan kepada nilai legacy pendek (`gemini`/`openai`/`anthropic`) melalui `doorToFormat()` SEBELU dihantar; `'auto'` dikekalkan untuk autodetect backend. Mencegah `normalizeFormatOverride` keyDetector membuang override manual secara senyap (regresi kelas Fasa E dicegah sekali lagi).
+
+### Verification
+
+- E2E Playwright: taip `/v1beta` → Format auto `gemini-native` ✓; taip `/v1` → Format auto `openai-compatible` ✓; medan Custom muncul ✓. npm test **363 tests / 362 PASS / 0 FAIL / 1 SKIP** (baseline kekal).
+
 ## SubMaker v3.9.12 (2026-10-10) — Fixed: Custom /v1beta + kunci sk- gagal validasi (strict URL precedence + expanded dual-door)
 
 ### Fixed

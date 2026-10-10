@@ -10,6 +10,26 @@
 
 ---
 
+## 2026-10-10 (RELEASE v3.9.13) — TRINITY FASA H: REAKTIF URL-TO-DOOR + SINKRONISASI RESOLVEDDOOR
+
+- **Tarikh:** 2026-10-10 (20:00 MYT)
+- **Komit SHA:** (komit release v3.9.13 ini — SHA direkod selepas push)
+- **Keputusan Owner:** Mandat Fasa H: dropdown Format/Door bertindak balas serta-merta pada input Base URL (`/v1beta` → Gemini Native; `/v1` → OpenAI-Compatible) + sync `resolvedDoor` backend selepas Validate berjaya.
+- **Langkah 0 Integration Audit (Backend):** **REGRESI KRITIKAL DICEGAH** — `collectConfigPatch()` Custom path menghantar nilai dropdown mentah; sejak Fasa E dropdown membawa nilai door penuh (`gemini-native` dll) dan Fasa H (reaktif/resolvedDoor) menetapkannya — `normalizeFormatOverride` keyDetector akan MEMBUANG override secara senyap (VALID_FORMATS = legacy pendek). Fix: Custom path kini melalui `doorToFormat(format)` dengan `'auto'` dikekalkan.
+- **Fail Terlibat:** `public/js/trinity-agents.js` (Fasa H Frontend: `DOOR_TO_FORMAT_VALUE`, listener input/change Base URL Custom-sahaja, resolvedDoor sync; Audit fix: `effectiveFormat` Custom mapped), `package.json` (3.9.12 → 3.9.13), `CHANGELOG.md` (header v3.9.13).
+- **Verifikasi:** E2E Playwright 2/2 (URL `/v1beta` → `gemini-native`; `/v1` → `openai-compatible`); node --check + prettier ✓ + eslint **0 error**; npm test **363 tests / 362 PASS / 0 FAIL / 1 SKIP** — baseline kekal. Graphify: NO-OP.
+- **Next Steps:** Push v3.9.13 → origin main, verify CI hijau.
+
+## 2026-10-10 (FASA H — FRONTEND HANDOVER) — REAKTIF URL-TO-DOOR & SINKRONISASI RESOLVEDDOOR
+
+- **Tarikh:** 2026-10-10 (19:55 MYT)
+- **Komit SHA:** (menunggu serahan Backend — handover Frontend)
+- **Keputusan Owner:** Mandat frontend Fasa H: (1) dropdown Format/Door bertindak balas serta-merta apabila pengguna menaip/menampal Base URL (`/v1beta` → Gemini Native; `/v1` → OpenAI-Compatible); (2) sync `resolvedDoor` selepas Validate berjaya supaya pengguna melihat pintu sebenar yang berjaya disahkan.
+- **Fail Terlibat:** `public/js/trinity-agents.js` sahaja — (a) `DOOR_TO_FORMAT_VALUE` pemetaan door backend → nilai dropdown; (b) `wireAutodetect()` + listener `input`/`change` pada `.trinity-baseurl-input` (hanya aktif untuk Custom/Proxy; tiada watcher berterusan — pengguna bebas menukar semula selepasnya); (c) `runAgentValidate()` sync `data.resolvedDoor` → `fmtSelect.value` selepas valid berjaya.
+- **Verifikasi:** `node --check` + Prettier ✓ + ESLint **0 error**. E2E Playwright (localhost:7001): taip `/v1beta` → Format auto `gemini-native` ✓; taip `/v1` → Format auto `openai-compatible` ✓; medan Custom muncul ✓. TIADA npm test/git (peraturan #5).
+- **Kontrak DOM:** `resolvedDoor` backend dipetakan selari dengan nilai option Fasa E (`gemini-native`/`openai-compatible`/`anthropic-messages`) — tiada konflik format legacy.
+- **Next Steps:** Backend Integration Audit → release v3.9.13.
+
 ## 2026-10-10 (RELEASE v3.9.12) — STRICT URL PRECEDENCE + EXPANDED DUAL-DOOR PROBE
 
 - **Tarikh:** 2026-10-10 (19:44 MYT)

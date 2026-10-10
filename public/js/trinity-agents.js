@@ -435,6 +435,18 @@
                         PROVIDER_MODEL_CATALOG[providerId] || MODEL_CATALOG[door] || MODEL_CATALOG['openai-compatible'];
                     populateModelDropdown(agentKey, providerModels, true);
                 }
+                // [RESOLVEDDOOR SYNC 2026-10-10] Backend memulangkan resolvedDoor
+                // apabila pintu ditentukan secara automatik (auto-detect/fallback).
+                // Petakan ke nilai dropdown Format frontend supaya pengguna melihat
+                // pintu sebenar yang berjaya disahkan — contoh: Crazy Router /v1beta
+                // disahkan sebagai gemini-native walaupun kunci sk-.
+                if (data.resolvedDoor) {
+                    var fmtSelect = $('trinity-' + agentKey + '-format');
+                    if (fmtSelect) {
+                        var mapped = doorToDropdownValue(data.resolvedDoor);
+                        if (mapped) fmtSelect.value = mapped;
+                    }
+                }
             } else {
                 var errMsg = data && data.error ? String(data.error).slice(0, 60) : 'Invalid key';
                 badge.textContent = 'Invalid: ' + errMsg;
@@ -449,7 +461,19 @@
         }
     }
 
-    // --- Autodetect badge update ---
+    // --- Autodetect badge update + reaktif URL-to-Door ---
+
+    // [URL-TO-DOOR SYNC 2026-10-10] Pemetaan door backend → nilai dropdown
+    // Format frontend. Kekal selari dengan DOOR_TO_FORMAT (legacy pendek).
+    var DOOR_TO_FORMAT_VALUE = {
+        'gemini-native': 'gemini',
+        'openai-compatible': 'openai',
+        'anthropic-messages': 'anthropic'
+    };
+
+    function doorToDropdownValue(door) {
+        return DOOR_TO_FORMAT_VALUE[door] || null;
+    }
 
     function wireAutodetect(agentKey) {
         var keyInput = $('trinity-' + agentKey + '-key');
@@ -476,6 +500,32 @@
                 PROVIDER_MODEL_CATALOG[providerSel.value] || MODEL_CATALOG[door] || MODEL_CATALOG['openai-compatible'];
             populateModelDropdown(agentKey, providerModels, true);
         });
+
+        // [REAL-TIME URL-TO-DOOR 2026-10-10] Pendengar input/change pada Base URL:
+        // menaip/menampal '/v1beta' → Format auto gemini-native; '/v1' (bukan beta)
+        // → openai-compatible. Hanya aktif untuk Custom/Proxy (medan ini memang
+        // tersembunyi untuk rasmi). Tidak merosakkan pilihan manual pengguna —
+        // penukaran berlaku SEKALI setiap input, pengguna bebas menukar semula
+        // kemudian (tiada watcher berterusan).
+        var urlInput = $('trinity-' + agentKey + '-baseurl');
+        var fmtSelect = $('trinity-' + agentKey + '-format');
+        if (urlInput && fmtSelect) {
+            var syncDoorFromUrl = function () {
+                var providers = _registryCache || FALLBACK_PROVIDERS;
+                var provider = getProviderById(providers, providerSel.value);
+                if (!isCustomProvider(provider)) return;
+                var url = String(urlInput.value || '').trim();
+                if (!url) return;
+                if (url.includes('/v1beta')) {
+                    fmtSelect.value = 'gemini-native';
+                } else if (/\/v1(?!beta)/.test(url)) {
+                    fmtSelect.value = 'openai-compatible';
+                }
+            };
+            urlInput.addEventListener('input', syncDoorFromUrl);
+            urlInput.addEventListener('change', syncDoorFromUrl);
+        }
+
         refresh();
     }
 
@@ -698,9 +748,13 @@
             var isCustom = isCustomProvider(providerEntry);
 
             // Untuk pembekal rasmi, format di-derive daripada pintu (tidak disimpan)
-            // [INTEGRATION AUDIT FIX] format payload mesti nilai LEGACY pendek
+            // [INTEGRATION AUDIT FIX v3.9.7] format payload mesti nilai LEGACY pendek
             // (keyDetector VALID_FORMATS), bukan door penuh.
-            var effectiveFormat = isCustom ? format : doorToFormat(door);
+            // [INTEGRATION AUDIT FIX v3.9.13 — Fasa H] Dropdown Format Custom kini
+            // membawa nilai DOOR PENUH (Fasa E) dan listener reaktif/resolvedDoor
+            // (Fasa H) menetapkannya — 'gemini-native' dll. Mapped kepada nilai
+            // legacy pendek SEBELU dihantar; 'auto' dikekalkan untuk autodetect backend.
+            var effectiveFormat = format === 'auto' ? 'auto' : doorToFormat(format);
             var effectiveBaseUrl = isCustom ? baseUrl.trim() : '';
 
             trinity[agent.key] = {
