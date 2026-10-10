@@ -29,3 +29,16 @@ Before invoking any file editing tools or producing code diffs:
 2. ADVERSARIAL AUDIT: Identify potential failure modes (e.g. null/undefined payloads, race conditions, edge cases, breaking API contracts).
 3. INVARIANT & REGRESSION CHECK: Ensure proposed logic strictly adheres to system invariants and preserves the existing test baseline.
 4. ATOMIC & COMPLETE EXECUTION: Output complete, production-grade, defensive code. Strictly forbid lazy placeholders or truncated snippets (never emit '// ... rest of code').
+
+[MANDATORY COMMIT & RELEASE PROTOCOL (ZERO EXCEPTIONS)]
+1. STRICT PIPELINE COUPLING: No agent is permitted to execute a bare `git commit` or `git push`. A commit request is an atomic release event, NOT a single git command.
+2. SEQUENTIAL EXECUTION GATE: Every commit instruction (whether backend, frontend handover, or hotfix) MUST execute the full 8-step pipeline in order:
+   - 1. SemVer Version bump in package.json
+   - 2. CHANGELOG.md update under new version header
+   - 3. Cache-buster verification (__APP_VERSION_QUERY__ and ?_cb=)
+   - 4. Code quality & test verification (Prettier + ESLint + npm test 100% green)
+   - 5. Code topology sync (graphify update .)
+   - 6. Session ledger append in docs/SESSION_LEDGER.md
+   - 7. Structured Git commit and push to origin main
+   - 8. GitHub Actions CI verification (must conclude with Success)
+3. VIOLATION AUDIT: Skipping any single step in this sequence constitutes a direct protocol violation.

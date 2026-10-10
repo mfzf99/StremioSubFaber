@@ -2,6 +2,17 @@
 
 All notable changes to this project will be documented in this file.
 
+## SubMaker v3.9.1 (2026-10-10) — Protokol Release Universal: Penyegerakan Arahan Mod & Core Protocol
+
+### Changed
+
+- `.roomodes` (Backend mode-specific Custom Instructions): baseline ujian dikemas kini 305/304 → **346 tests / 345 PASS / 0 FAIL / 1 SKIP** (v3.8.42+ Trinity Tri-Door); peraturan #6 ditulis semula sebagai **Universal Release & Commit Pipeline** — paip 8 langkah wajib (bump versi → changelog → cache-buster → prettier/eslint/npm test → graphify → session ledger → commit/push → CI verification) untuk SEMUA komit (backend, hotfix, frontend handover); peraturan #7 distrukturkan semula sebagai Session Continuity & Context Resets (baca ledger dahulu selepas reset/kondensasi konteks).
+- `.roo/rules/00-subfaber-core-protocol.md`: blok **Mandatory Commit & Release Protocol (Zero Exceptions)** ditambah — paip 8 langkah sebagai atomic release event; larangan keras komit/push terasing; audit pelanggaran bagi mana-mana langkah yang dilangkau.
+
+### Fixed
+
+- `public/css/configure.css`: komen penanda `/* TRINITY FASA D 2026-10-10 */` ditambah pada hujung fail (penjajaran Fasa D; sifar perubahan peraturan).
+
 ## SubMaker v3.9.0 (2026-10-10) — Tri-Door Surgery: 3 pintu format API untuk Trinity Engine
 
 ### Added

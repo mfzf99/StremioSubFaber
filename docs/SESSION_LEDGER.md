@@ -10,6 +10,23 @@
 
 ---
 
+---
+
+## 2026-10-10 (RELEASE v3.9.1) — PENYEGERAKAN PROTOKOL RELEASE UNIVERSAL (Arahan Mod & Core Protocol)
+
+- **Tarikh:** 2026-10-10 (16:36 MYT)
+- **Komit SHA:** (komit release v3.9.1 ini — SHA direkod selepas push)
+- **Keputusan Owner:** Kemaskini Backend Mode-specific Custom Instructions + Workspace Rules — baseline ujian dikemas kini kepada 346/345/0/1 (Trinity Tri-Door); peraturan #6 ditulis semula sebagai Universal Release & Commit Pipeline 8-langkah (wajib untuk SEMUA komit: backend/hotfix/frontend handover; larangan keras komit terasing); peraturan #7 sebagai Session Continuity & Context Resets. Core protocol (00-subfaber-core-protocol.md) menerima blok Mandatory Commit & Release Protocol (Zero Exceptions).
+- **Fail Terlibat:**
+  - `.roomodes` (rule #4 baseline 305/304 → 346/345; rule #6 rewrite Universal Pipeline; rule #7 restructure Session Continuity)
+  - `.roo/rules/00-subfaber-core-protocol.md` (+ blok Mandatory Commit & Release Protocol)
+  - `public/css/configure.css` (+ komen penanda `/* TRINITY FASA D 2026-10-10 */` sahaja, sifar perubahan peraturan)
+  - `package.json` (3.9.0 → 3.9.1, patch — protokol/docs sahaja) + `CHANGELOG.md` (header v3.9.1)
+- **Validasi .roomodes (gate PyYAML insiden 2026-10-08):** parse OK; 2 modes (Frontend 2767 chars / Backend 3750 chars customInstructions); groups=[read,edit,command,mcp] kedua-dua mode; source=project. PASS.
+- **Status pipeline:** prettier ✓ (All matched files use Prettier code style) + eslint 0 error (221 warning pra-wujud) + npm test **346 tests / 345 PASS / 0 FAIL / 1 SKIP** — baseline tepat. Cache buster: 23 token `__APP_VERSION_QUERY__` auto, 0 rigid `?_cb=`, 0 rujukan 3.9.0 lapuk.
+- **Kelainan Langkah 5 (graphify):** Runtime graphify TIADA dalam environment ini (tiada `graphify-out/.graphify_python`, tiada modul Python `graphify` — hanya rujukan skill di `.codebuddy/skills/graphify/`). Oleh sebab perubahan v3.9.1 adalah docs/config sahaja (sifar fail kod), peta topologi tidak terjejas — langkah dilangkau dengan justifikasi direkod. Untuk release masa depan yang melibatkan fail kod, runtime graphify perlu dipasang/dilokasi dahulu.
+- **Next Steps:** Push v3.9.1 ke origin main + verify CI hijau (workflow ci.yml, matrix Node 22/24). Nota environment: pelbagai fail .tmp-*/artefak untracked masih ada di working tree (pra-wujud, bukan skop tugasan ini — tidak di-add dalam komit release ini melainkan owner arahkan pembersihan berasingan).
+
 ## 2026-10-10 (RELEASE v3.9.0 — TRI-DOOR FASA A+B+C+D) — UI TRINITY: Dual Mode Toggle + Modular Trinity Cards
 
 - **Tarikh:** 2026-10-10 (16:08 MYT)
