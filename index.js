@@ -3133,6 +3133,20 @@ app.get('/api/test-opensubtitles', async (req, res) => {
     }
 });
 
+// [PROVIDER REGISTRY 2026-10-10] Passthrough read-only: senarai pembekal LLM
+// rasmi global (15 rasmi + Custom) untuk penggunaan dinamik Frontend. Tiada
+// kredensial terlibat — selamat di-cache.
+app.get('/api/providers/registry', (req, res) => {
+    setNoStore(res);
+    try {
+        const { getOfficialProviders, DOOR_TYPES } = require('./src/utils/providerRegistry');
+        return res.json({ success: true, doors: DOOR_TYPES, providers: getOfficialProviders() });
+    } catch (error) {
+        log.error(() => `[API] Provider registry passthrough failed: ${error.message}`);
+        return res.status(500).json({ success: false, error: 'Failed to load provider registry' });
+    }
+});
+
 // API endpoint to fetch Gemini models
 app.post('/api/gemini-models', async (req, res) => {
     // CRITICAL: Prevent caching to avoid cross-user config contamination (user credentials in request body)
@@ -3661,7 +3675,10 @@ app.post('/api/validate-gemini', validationLimiter, async (req, res) => {
             });
         }
 
-        // 🔥 Use GeminiService (hybrid) instead of hardcoding Google endpoint
+        // 🔥 [PROVIDER PURGE 2026-10-10] GeminiService kini 100% Google Gemini
+        // Native (REST v1beta rasmi). Proksi persendirian (cth: Crazy Router)
+        // hanya melalui Custom Provider (Base URL pengguna) — tiada lagi cabang
+        // auto-detect key 'sk-' di laluan rasmi ini.
         const GeminiService = require('./src/services/gemini');
         const gemini = new GeminiService(geminiApiKey);
         const validateWithGoogleModelList = () => gemini.getAvailableModels({ silent: true, throwOnError: true });
@@ -3669,81 +3686,28 @@ app.post('/api/validate-gemini', validationLimiter, async (req, res) => {
         let validationPassed = false;
         let models = [];
 
-        // =====================================================================
-        // 🟡 CABANG 1: STRATEGI VALIDASI ACTIVE PROBE UNTUK CRAZYROUTER (sk-)
-        // =====================================================================
-        if (gemini.keyType === 'crazyrouter') {
-            try {
-                const axios = require('axios');
-                const { httpAgent, httpsAgent } = require('./src/utils/httpAgents');
-
-                log.debug(() => '[ValidateGemini] Initiating active endpoint check for CrazyRouter key...');
-
-                // Ketukan ringan: generateContent 1 token ("Ping") untuk test keaktifan key & kredit proxy
-                await axios.post(
-                    `${gemini.baseUrl}/models/gemini-2.5-flash:generateContent`,
-                    { contents: [{ parts: [{ text: 'Ping' }] }] },
-                    {
-                        headers: gemini.getAuthHeaders(),
-                        timeout: 7000,
-                        httpAgent,
-                        httpsAgent
-                    }
-                );
-
+        // 🟢 LALUAN RASMI GOOGLE GEMINI NATIVE
+        // Try 1: Dapatkan senarai model terus dari Google
+        try {
+            models = await validateWithGoogleModelList();
+            if (models && models.length > 0) {
                 validationPassed = true;
-                log.debug(() => '[ValidateGemini] CrazyRouter active probe successful. Key is ALIVE.');
-
-                // Crazy Router: model discovery mesti melalui endpoint OpenAI-compatible
-                // (GET /v1/models), BUKAN /v1beta/models (format Google). getCrazyRouterAvailableModels()
-                // akan menapis senarai ~605 model kepada model Google sahaja melalui isGoogleModel().
-                const ids = await gemini.getCrazyRouterAvailableModels();
-                const googleModelList = gemini.getCrazyRouterGoogleModelList();
-                if (googleModelList && googleModelList.length > 0) {
-                    models = googleModelList;
-                    log.debug(
-                        () =>
-                            `[ValidateGemini] CrazyRouter Google-filtered model list: ${googleModelList.length} models (from ${ids ? ids.size : 0} filtered).`
-                    );
-                } else {
-                    // Fallback: jika senarai ter struktur tiada, kekalkan kosong tetapi key masih sah.
-                    models = [];
-                    log.debug(
-                        () => '[ValidateGemini] CrazyRouter model list empty after Google filter; key still valid.'
-                    );
-                }
-            } catch (probeError) {
-                log.debug(() => `[ValidateGemini] CrazyRouter active probe failed: ${probeError.message}`);
-                throw probeError;
+                log.debug(() => '[ValidateGemini] Google model list fetch succeeded.');
             }
+        } catch (listError) {
+            log.debug(
+                () => `[ValidateGemini] Google model list fetch failed: ${listError.message}. Trying fallback probe.`
+            );
         }
-        // =====================================================================
-        // 🟢 CABANG 2: LALUAN RASMI GOOGLE OFFICIAL
-        // =====================================================================
-        else {
-            // Try 1: Dapatkan senarai model terus dari Google
-            try {
-                models = await validateWithGoogleModelList();
-                if (models && models.length > 0) {
-                    validationPassed = true;
-                    log.debug(() => '[ValidateGemini] Google model list fetch succeeded.');
-                }
-            } catch (listError) {
-                log.debug(
-                    () =>
-                        `[ValidateGemini] Google model list fetch failed: ${listError.message}. Trying fallback probe.`
-                );
-            }
 
-            // Try 2: Fallback probe (count tokens) jika senarai model gagal
-            if (!validationPassed) {
-                try {
-                    await gemini.countTokensForTranslation('Hi', 'en', 'Translate this');
-                    validationPassed = true;
-                    log.debug(() => '[ValidateGemini] Google fallback probe succeeded.');
-                } catch (probeError) {
-                    log.debug(() => `[ValidateGemini] Google fallback probe failed: ${probeError.message}`);
-                }
+        // Try 2: Fallback probe (count tokens) jika senarai model gagal
+        if (!validationPassed) {
+            try {
+                await gemini.countTokensForTranslation('Hi', 'en', 'Translate this');
+                validationPassed = true;
+                log.debug(() => '[ValidateGemini] Google fallback probe succeeded.');
+            } catch (probeError) {
+                log.debug(() => `[ValidateGemini] Google fallback probe failed: ${probeError.message}`);
             }
         }
 

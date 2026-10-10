@@ -2,6 +2,22 @@
 
 All notable changes to this project will be documented in this file.
 
+## SubMaker v3.9.6 (2026-10-10) — Pemisahan Enjin Rasmi: Pure Google Gemini Native + Registri Pembekal LLM Sejagat (16 Pembekal)
+
+### Changed
+
+- **[PROVIDER PURGE] `src/services/gemini.js` kini 100% Google Gemini Native** (REST v1beta rasmi Google AI Studio, `https://generativelanguage.googleapis.com/v1beta`): seluruh logik hardcoded Crazy Router dibuang — `detectKeyType()`/`keyType` (auto-detect key `sk-`), URL statik proksi `https://cn.crazyrouter.com/v1beta` + env `CRAZYROUTER_API_BASE`, `getCrazyRouterAvailableModels()`, `getCrazyRouterGoogleModelList()`, `warnIfModelUnavailable()`, `_canonicalModelCandidates()`/`_isCanonicalModelListed()`, `isGoogleModel()`, `CRAZYROUTER_GEMINI_MODELS`, intercept `getModelLimits()` proksi, pintu `countTokensForTranslation()`, tagging `providerRoute='crazyrouter'`, dan header `Authorization: Bearer` (kini sentiasa `x-goog-api-key`). Proksi persendirian kini HANYA disokong melalui Custom Provider (Base URL pengguna + validasi SSRF sedia ada). Invariant dipelihara: `systemInstruction` kekal medan top-level, ground truth pensampelan 3.x-STRICT/LEGACY, `thinkingBudget` (0/-1), `topK` kekal diharamkan.
+- **`index.js`**: cabang validasi aktif proksi (`gemini.keyType === 'crazyrouter'`) digugurkan — endpoint `/api/validate-gemini-key` kini laluan Google Native tunggal (senarai model → fallback countTokens).
+
+### Added
+
+- **`src/utils/providerRegistry.js` (baharu)**: Registri Pembekal Teras berpusat — 15 pembekal rasmi global + Custom/Proxy: Google Gemini (`gemini-native`), OpenAI, Anthropic Claude (`anthropic-messages`), DeepSeek, Groq, Mistral AI, xAI (Grok), OpenRouter, Together AI, Cerebras, SambaNova, Perplexity, Moonshot/Kimi, Zhipu AI/GLM, Qwen/DashScope (semua `openai-compatible`), dan Custom (`isCustom: true` — Base URL bebas + pilihan pintu manual). API: `getOfficialProviders()`, `getProviderById()`, `getProviderBaseUrl()`, `isValidProviderDoor()`, `DOOR_TYPES`; snapshot immutable untuk kontrak Frontend.
+- **Endpoint passthrough `GET /api/providers/registry`** (`index.js`): read-only, tiada kredensial — respons `{ success, doors, providers }` untuk penggunaan dinamik Frontend.
+
+### Fixed
+
+- **Ujian regresi ditulis semula mengikut kontrak native** (`src/services/gemini-auth-model-regression.test.js`): CR-B1..B4 kini mengunci key `sk-` TIDAK lagi dirawat sebagai proksi (baseUrl rasmi + `x-goog-api-key`, sifar rujukan crazyrouter dalam sumber, `providerRoute` dibuang, `countTokens` tanpa bypass); WF-2 menjadi ujian registri 16 pembekal (pintu, Base URL, immutability). Jumlah ujian kekal 346 — **345 PASS / 0 FAIL / 1 SKIP** (sifar regresi baseline).
+
 ## SubMaker v3.9.5 (2026-10-10) — Fixed: Trinity UI bahasa English penuh + kedudukan kad (Subtitles API Keys kekal atas)
 
 ### Fixed

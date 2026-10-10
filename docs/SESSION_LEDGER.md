@@ -10,6 +10,16 @@
 
 ---
 
+## 2026-10-10 (RELEASE v3.9.6) — PEMISAHAN ENJIN RASMI: PURE GOOGLE GEMINI NATIVE + REGISTRI PEMBEKAL LLM SEJAGAT (16 PEMBEKAL)
+
+- **Tarikh:** 2026-10-10 (23:30 MYT)
+- **Komit SHA:** (komit release v3.9.6 ini — SHA direkod selepas push)
+- **Keputusan Owner:** Mandat backend diterima 100%: (1) Purge seluruh logik hardcoded Crazy Router daripada `src/services/gemini.js` — perkhidmatan kembali kepada Google Gemini Native REST v1beta rasmi; proksi persendirian hanya melalui Custom Provider (Base URL pengguna); (2) Bina Provider Registry berpusat 16 pembekal (15 rasmi global + Custom/Proxy); (3) Endpoint passthrough `GET /api/providers/registry` untuk Frontend dinamik; (4) Jangan sentuh fail `public/` — asas backend bersih dahulu.
+- **Fail Terlibat:** `src/services/gemini.js` (buang: `detectKeyType`/`keyType`, URL `cn.crazyrouter.com` + env `CRAZYROUTER_API_BASE`, `getCrazyRouterAvailableModels`, `getCrazyRouterGoogleModelList`, `warnIfModelUnavailable`, `_canonicalModelCandidates`/`_isCanonicalModelListed`, `isGoogleModel`, `CRAZYROUTER_GEMINI_MODELS`, intercept `getModelLimits`, pintu `countTokens`, `providerRoute` tagging, header Bearer → sentiasa `x-goog-api-key`), `src/utils/providerRegistry.js` (BAHARU — 16 entri: gemini-native/openai/anthropic-messages/openai-compatible ×12 + Custom isCustom), `index.js` (buang cabang validasi proksi `/api/validate-gemini-key`; tambah `GET /api/providers/registry`), `src/services/gemini-auth-model-regression.test.js` (CR-B1..B4 + WF-2 ditulis semula kontrak native/registri — kiraan kekal), `package.json` (3.9.5 → 3.9.6), `CHANGELOG.md` (header v3.9.6).
+- **Status pipeline:** prettier ✓ (All matched files use Prettier code style) + eslint **0 error** (221 warning pra-wujud — sepadan baseline) + npm test **346 tests / 345 PASS / 0 FAIL / 1 SKIP** — baseline tepat, sifar regresi. Cache buster: 23 token `__APP_VERSION_QUERY__` auto (configure.html 23 + configurePageGenerator 1), sifar rigid `?_cb=` versi lapuk.
+- **Langkah 5 (graphify):** `graphify-out/` wujud TAPI runtime tetap TIADA (`import graphify` → ModuleNotFoundError). Mengikut protokol v3.9.2: **NO-OP serta-merta direkod** — sifar skrip ad-hoc. Nota: perubahan melibatkan fail kod (gemini.js/providerRegistry.js/index.js); peta topologi tidak disegerakkan sehingga runtime dipasang (tindakan berasingan).
+- **Next Steps:** Push v3.9.6 → origin main, verify CI hijau (ci.yml, Node 22/24). Selepas CI Success, owner boleh alihkan mod ke Frontend untuk integrasi dinamik dengan `GET /api/providers/registry` (dropdown pembekal 16 entri).
+
 ## 2026-10-10 (HOTFIX SUSULAN) — Trinity UI: bahasa English penuh + kedudukan kad (Subtitles API Keys atas)
 
 - **Tarikh:** 2026-10-10 (18:46 MYT)

@@ -443,118 +443,112 @@ test('[CR-A2] genuine 403 auth failure still classified as authentication (not u
     assert.match(thrown.message, /Authentication failed/i);
 });
 
-test('[CR-B1] CrazyRouter unavailable model triggers warn; available model does not', async () => {
-    const log = require('../utils/logger');
-    const originalPost = axios.post;
+// [PROVIDER PURGE 2026-10-10] GeminiService kini 100% Google Gemini Native.
+// Ujian warisan CR-B1..B4 (pengesanan proksi 'sk-' + warnIfModelUnavailable)
+// digantikan dengan kontrak native: key 'sk-' TIDAK lagi dilayan sebagai
+// proksi dalam perkhidmatan rasmi — ia hanya sah melalui Custom Provider.
+
+test('[CR-B1] sk- keys are no longer routed to a proxy: native baseUrl + x-goog-api-key header', async () => {
     const originalGet = axios.get;
-    const originalWarn = log.warn;
-    const warnings = [];
+    let request = null;
 
-    log.warn = (fn) => {
-        warnings.push(typeof fn === 'function' ? fn() : String(fn));
-    };
-
-    axios.get = async (url) => {
-        if (String(url).endsWith('/v1/models')) {
-            return { data: { data: [{ id: 'gemini-3.6-flash' }, { id: 'gemini-2.5-flash' }] } };
-        }
-        throw new Error('unexpected GET ' + url);
+    axios.get = async (url, options) => {
+        request = { url, options };
+        return {
+            data: {
+                models: [
+                    {
+                        name: 'models/gemini-3.6-flash',
+                        displayName: 'Gemini 3.6 Flash',
+                        supportedGenerationMethods: ['generateContent']
+                    }
+                ]
+            }
+        };
     };
 
     try {
-        const unavailable = new GeminiService('sk-test-key', 'gemini-3-flash-preview', { maxRetries: 0 });
-        await unavailable.warnIfModelUnavailable();
-        assert.equal(warnings.length, 1, 'expected one unavailable-model warning');
-        assert.match(String(warnings[0]), /NOT listed among the models callable/i);
+        const service = new GeminiService('sk-relay-style-key', 'gemini-3.6-flash', { maxRetries: 0 });
+        assert.equal(
+            service.baseUrl,
+            'https://generativelanguage.googleapis.com/v1beta',
+            'sk- key must use the official Google endpoint'
+        );
+        assert.equal('keyType' in service, false, 'keyType auto-detection must be fully removed');
+        assert.equal(
+            typeof service.getCrazyRouterAvailableModels,
+            'undefined',
+            'proxy model fetch must be removed from the native service'
+        );
+        assert.equal(
+            typeof service.warnIfModelUnavailable,
+            'undefined',
+            'proxy availability warning must be removed from the native service'
+        );
 
-        warnings.length = 0;
-        const available = new GeminiService('sk-test-key', 'gemini-3.6-flash', { maxRetries: 0 });
-        await available.warnIfModelUnavailable();
-        assert.equal(warnings.length, 0, 'no warning expected for a callable model');
+        await service.getAvailableModels({ silent: true, throwOnError: true });
+        assert.equal(request.url, 'https://generativelanguage.googleapis.com/v1beta/models');
+        assert.equal(
+            request.options.headers['x-goog-api-key'],
+            'sk-relay-style-key',
+            'native service always sends x-goog-api-key'
+        );
+        assert.equal('Authorization' in request.options.headers, false, 'Bearer proxy header must not be sent');
     } finally {
-        log.warn = originalWarn;
         axios.get = originalGet;
+    }
+});
+
+test('[CR-B2] gemini.js source contains no hardcoded Crazy Router logic', () => {
+    const source = fs.readFileSync(path.join(projectRoot, 'src', 'services', 'gemini.js'), 'utf8');
+    assert.doesNotMatch(source, /crazyrouter/i, 'no crazyrouter references allowed in the native service');
+    assert.doesNotMatch(source, /cn\.crazyrouter\.com/, 'no hardcoded proxy URL allowed');
+    assert.doesNotMatch(source, /detectKeyType/, 'key-type detection must be purged');
+    assert.doesNotMatch(source, /CRAZYROUTER_API_BASE/, 'proxy env override must be purged');
+});
+
+test('[CR-B3] providerRoute tagging is removed from translation error paths', async () => {
+    const originalPost = axios.post;
+    const service = new GeminiService('sk-relay-style-key', 'gemini-2.5-flash', { maxRetries: 0 });
+    service.getModelLimits = async () => ({ inputTokenLimit: 1048576, outputTokenLimit: 65536 });
+
+    axios.post = async () => {
+        const err = new Error('Request failed with status code 401');
+        err.response = { status: 401, data: { error: { message: 'API key not valid.' } } };
+        throw err;
+    };
+
+    try {
+        let thrown = null;
+        try {
+            await service.translateSubtitle('Hello', 'English', 'Portuguese');
+        } catch (err) {
+            thrown = err;
+        }
+        assert.ok(thrown, 'translation should throw');
+        assert.equal(thrown.providerRoute, undefined, 'providerRoute proxy tagging must be removed');
+    } finally {
         axios.post = originalPost;
     }
 });
 
-test('[CR-B2] model availability check is a no-op for Google Direct and when disabled', async () => {
-    const direct = new GeminiService('AQ.test-key', 'gemini-3.6-flash', { maxRetries: 0 });
-    const ids = await direct.getCrazyRouterAvailableModels();
-    assert.equal(ids, null, 'Google Direct should skip CrazyRouter model fetch');
-    // warnIfModelUnavailable resolves without side effects for Google Direct
-    await direct.warnIfModelUnavailable();
+test('[CR-B4] countTokensForTranslation runs for all keys (no proxy bypass)', async () => {
+    const originalPost = axios.post;
+    let called = false;
 
-    process.env.GEMINI_DISABLE_MODEL_AVAILABILITY_CHECK = 'true';
-    try {
-        const cr = new GeminiService('sk-test-key', 'gemini-3-flash-preview', { maxRetries: 0 });
-        await cr.warnIfModelUnavailable();
-        assert.equal(cr._crazyRouterModelIds, undefined, 'disabled check must not fetch the model list');
-    } finally {
-        delete process.env.GEMINI_DISABLE_MODEL_AVAILABILITY_CHECK;
-    }
-});
-
-test('[CR-B3] canonical/alias variants do NOT trigger a false-positive warning', async () => {
-    const log = require('../utils/logger');
-    const originalGet = axios.get;
-    const originalWarn = log.warn;
-    const warnings = [];
-    log.warn = (fn) => {
-        warnings.push(typeof fn === 'function' ? fn() : String(fn));
-    };
-
-    // Catalog lists only canonical names, mirroring the real CrazyRouter /v1/models.
-    axios.get = async (url) => {
-        if (String(url).endsWith('/v1/models')) {
-            return {
-                data: { data: [{ id: 'gemini-3-flash' }, { id: 'gemini-2.5-flash' }, { id: 'gemini-3.6-flash' }] }
-            };
-        }
-        throw new Error('unexpected GET ' + url);
+    axios.post = async (url) => {
+        assert.match(url, /:countTokens$/);
+        called = true;
+        return { data: { totalTokens: 42 } };
     };
 
     try {
-        // 'gemini-3-flash-preview' is served by the relay but not listed; its canonical
-        // form 'gemini-3-flash' IS listed, so no warning should be emitted.
-        const aliasModel = new GeminiService('sk-test-key', 'gemini-3-flash-preview', { maxRetries: 0 });
-        await aliasModel.warnIfModelUnavailable();
-        assert.equal(warnings.length, 0, 'canonical alias must not warn (false-positive guard)');
-
-        warnings.length = 0;
-        const datedVariant = new GeminiService('sk-test-key', 'gemini-2.5-flash-preview-09-2025', { maxRetries: 0 });
-        await datedVariant.warnIfModelUnavailable();
-        assert.equal(warnings.length, 0, 'dated variant reducing to a listed canonical must not warn');
+        const service = new GeminiService('sk-relay-style-key', 'gemini-2.5-flash', { maxRetries: 0 });
+        const total = await service.countTokensForTranslation('Hello', 'en', 'Translate this');
+        assert.equal(total, 42);
+        assert.equal(called, true, 'countTokens must not be bypassed for any key shape');
     } finally {
-        log.warn = originalWarn;
-        axios.get = originalGet;
-    }
-});
-
-test('[CR-B4] genuinely unlisted model STILL warns after canonicalization', async () => {
-    const log = require('../utils/logger');
-    const originalGet = axios.get;
-    const originalWarn = log.warn;
-    const warnings = [];
-    log.warn = (fn) => {
-        warnings.push(typeof fn === 'function' ? fn() : String(fn));
-    };
-
-    axios.get = async (url) => {
-        if (String(url).endsWith('/v1/models')) {
-            return { data: { data: [{ id: 'gemini-3-flash' }, { id: 'gemini-2.5-flash' }] } };
-        }
-        throw new Error('unexpected GET ' + url);
-    };
-
-    try {
-        const bogus = new GeminiService('sk-test-key', 'gemini-9-xyz', { maxRetries: 0 });
-        await bogus.warnIfModelUnavailable();
-        assert.equal(warnings.length, 1, 'genuinely unlisted model should still warn');
-        assert.match(String(warnings[0]), /NOT listed among the models callable/i);
-    } finally {
-        log.warn = originalWarn;
-        axios.get = originalGet;
+        axios.post = originalPost;
     }
 });
 
@@ -599,24 +593,60 @@ test('[WF-1] whitelist sanitizer keeps only core text families, sorted Lite > Fl
     );
 });
 
-test('[WF-2] CrazyRouter fixed catalog lists exactly the 8 sanctioned models in official order', () => {
+test('[WF-2] provider registry exposes the 16 official providers with correct doors and base URLs', () => {
+    const { getOfficialProviders } = require('../utils/providerRegistry');
+    const providers = getOfficialProviders();
+    assert.equal(providers.length, 16, 'registry must list exactly 16 providers (15 official + Custom)');
+
     assert.deepEqual(
-        GeminiService.CRAZYROUTER_GEMINI_MODELS.map((m) => m.name),
+        providers.map((p) => [p.id, p.door]),
         [
-            'gemini-3.1-flash-lite',
-            'gemini-2.5-flash-lite',
-            'gemini-3.8-flash',
-            'gemini-3.5-flash',
-            'gemini-3-flash',
-            'gemini-2.5-flash',
-            'gemini-3.1-pro',
-            'gemini-2.5-pro'
+            ['gemini', 'gemini-native'],
+            ['openai', 'openai-compatible'],
+            ['anthropic', 'anthropic-messages'],
+            ['deepseek', 'openai-compatible'],
+            ['groq', 'openai-compatible'],
+            ['mistral', 'openai-compatible'],
+            ['xai', 'openai-compatible'],
+            ['openrouter', 'openai-compatible'],
+            ['together', 'openai-compatible'],
+            ['cerebras', 'openai-compatible'],
+            ['sambanova', 'openai-compatible'],
+            ['perplexity', 'openai-compatible'],
+            ['moonshot', 'openai-compatible'],
+            ['zhipu', 'openai-compatible'],
+            ['qwen', 'openai-compatible'],
+            ['custom', 'openai-compatible']
         ]
     );
-    // Senarai tetap mesti sudah tersusun mengikut comparator hierarki yang sama.
-    const { compareGeminiModelsForDropdown } = GeminiService;
-    const sorted = [...GeminiService.CRAZYROUTER_GEMINI_MODELS].sort(compareGeminiModelsForDropdown);
-    assert.deepEqual(sorted, GeminiService.CRAZYROUTER_GEMINI_MODELS);
+
+    const byId = Object.fromEntries(providers.map((p) => [p.id, p]));
+    assert.equal(byId.gemini.baseUrl, 'https://generativelanguage.googleapis.com/v1beta');
+    assert.equal(byId.openai.baseUrl, 'https://api.openai.com/v1');
+    assert.equal(byId.anthropic.baseUrl, 'https://api.anthropic.com/v1');
+    assert.equal(byId.deepseek.baseUrl, 'https://api.deepseek.com/v1');
+    assert.equal(byId.groq.baseUrl, 'https://api.groq.com/openai/v1');
+    assert.equal(byId.mistral.baseUrl, 'https://api.mistral.ai/v1');
+    assert.equal(byId.xai.baseUrl, 'https://api.x.ai/v1');
+    assert.equal(byId.openrouter.baseUrl, 'https://openrouter.ai/api/v1');
+    assert.equal(byId.together.baseUrl, 'https://api.together.xyz/v1');
+    assert.equal(byId.cerebras.baseUrl, 'https://api.cerebras.ai/v1');
+    assert.equal(byId.sambanova.baseUrl, 'https://api.sambanova.ai/v1');
+    assert.equal(byId.perplexity.baseUrl, 'https://api.perplexity.ai');
+    assert.equal(byId.moonshot.baseUrl, 'https://api.moonshot.cn/v1');
+    assert.equal(byId.zhipu.baseUrl, 'https://open.bigmodel.cn/api/paas/v4');
+    assert.equal(byId.qwen.baseUrl, 'https://dashscope-intl.aliyuncs.com/compatible-mode/v1');
+
+    // Hanya entri Custom yang isCustom — pintu manual + Base URL bebas.
+    assert.equal(byId.custom.isCustom, true);
+    assert.equal(byId.custom.baseUrl, '');
+    for (const p of providers.filter((x) => x.id !== 'custom')) {
+        assert.equal(p.isCustom, false, `${p.id} must not be custom`);
+    }
+
+    // Registry snapshot tidak boleh dimutasi dari luar (immutable contract).
+    providers[0].label = 'TAMPERED';
+    assert.equal(getOfficialProviders()[0].label, 'Google Gemini');
 });
 
 test('[WF-3] whitelist predicate rejects blacklisted/foreign/tuned models and accepts sanctioned forms', () => {

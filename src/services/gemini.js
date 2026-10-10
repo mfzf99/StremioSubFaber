@@ -117,40 +117,17 @@ function getModelFamily(model) {
     return { family: 'unknown', sampling: 'full', thinking: 'none' };
 }
 
-/**
- * Smart filter untuk mengekstrak hanya model Google/Gemini/Gemma daripada
- * respons senarai model Crazy Router (GET /v1/models).
- *
- * Crazy Router mengembalikan ~605 model pelbagai jenama (OpenAI, Anthropic,
- * DeepSeek, Google, dll). Fungsi ini menggunakan penapisan dwi-lapis yang
- * bersifat future-proof:
- *   1. Semakan owned_by === 'google' (paling dipercayai)
- *   2. Fallback semakan awalan ID: 'gemini-' atau 'gemma-'
- *
- * @param {object} modelEntry - Entry model dari respons /v1/models
- * @param {string} modelEntry.id - ID model (cth: 'gemini-3.1-pro')
- * @param {string} [modelEntry.owned_by] - Pemilik model (cth: 'google')
- * @returns {boolean} true jika model adalah Google/Gemini/Gemma
- */
-function isGoogleModel(modelEntry) {
-    if (!modelEntry || typeof modelEntry !== 'object') return false;
-
-    // Sumber 1: owned_by field (paling dipercayai)
-    if (modelEntry.owned_by === 'google') return true;
-
-    // Sumber 2: Awalan ID model (fallback jika owned_by tidak hadir)
-    const id = String(modelEntry.id || '').toLowerCase();
-    if (id.startsWith('gemini-') || id.startsWith('gemma-')) return true;
-
-    return false;
-}
-
 // ─────────────────────────────────────────────────────────────────────────────
 // MODEL FILTERING & WHITELIST SANITIZER (dropdown penterjemahan subtitle)
 // ─────────────────────────────────────────────────────────────────────────────
-// Endpoint Google /v1beta/models dan Crazy Router /v1/models memulangkan
-// katalog bercampur (audio, visi, embedding, robotik, eksperimental) yang
-// tidak relevan untuk penterjemahan teks subtitle. Penapis 3-lapis:
+// [PROVIDER PURGE 2026-10-10] Perkhidmatan ini kini 100% Google Gemini Native
+// (REST v1beta rasmi Google AI Studio). Proksi persendirian (cth: Crazy Router)
+// HANYA disokong melalui Custom Provider (Base URL pengguna) — lihat
+// src/utils/providerRegistry.js untuk katalog pembekal rasmi global.
+//
+// Endpoint Google /v1beta/models memulangkan katalog bercampur (audio, visi,
+// embedding, robotik, eksperimental) yang tidak relevan untuk penterjemahan
+// teks subtitle. Penapis 3-lapis:
 //   1. Capabilities check — supportedGenerationMethods mesti ada 'generateContent'.
 //   2. Blacklist tegar    — bukan-Gemini (gemma, nano, antigravity, deep-research,
 //                            lyria) + varian bukan-teks/khusus ditolak.
@@ -177,21 +154,6 @@ const SUBTITLE_MODEL_BLACKLIST_KEYWORDS = [
 // alias rasmi '-latest' disokong melalui corak berasingan.
 const GEMINI_TEXT_MODEL_WHITELIST_PATTERN = /^gemini-(\d+(?:\.\d+)?)-(flash-lite|flash|pro)(-preview)?$/;
 const GEMINI_LATEST_ALIAS_PATTERN = /^gemini-(flash-lite|flash|pro)-latest$/;
-
-// Senarai tetap 8 model Gemini sah pada endpoint CrazyRouter (key jenis 'sk-'),
-// telah tersusun mengikut hierarki rasmi dropdown:
-//   Lapisan 1 (Family Tier): Flash-Lite > Flash > Pro
-//   Lapisan 2 (Version Descending): 3.8 > 3.5 > 3.1 > 3 > 2.5
-const CRAZYROUTER_GEMINI_MODELS = [
-    { name: 'gemini-3.1-flash-lite' }, // 1. Flash-Lite (tertinggi)
-    { name: 'gemini-2.5-flash-lite' }, // 2. Flash-Lite
-    { name: 'gemini-3.8-flash' }, // 3. Flash (tertinggi)
-    { name: 'gemini-3.5-flash' }, // 4. Flash
-    { name: 'gemini-3-flash' }, // 5. Flash
-    { name: 'gemini-2.5-flash' }, // 6. Flash
-    { name: 'gemini-3.1-pro' }, // 7. Pro (tertinggi)
-    { name: 'gemini-2.5-pro' } // 8. Pro
-];
 
 function modelSortName(model) {
     const raw = typeof model === 'string' ? model : String(model?.name || model?.id || '');
@@ -521,14 +483,10 @@ class GeminiService {
                 ? isGemini3Model(this.model)
                 : String(this.model).toLowerCase().includes('gemini-3');
 
-        // Auto-detect key type (Google Direct vs CrazyRouter Proxy)
-        this.keyType = this.detectKeyType(this.apiKey);
-
-        if (this.keyType === 'crazyrouter') {
-            this.baseUrl = process.env.CRAZYROUTER_API_BASE || 'https://cn.crazyrouter.com/v1beta';
-        } else {
-            this.baseUrl = process.env.GEMINI_API_BASE || GEMINI_API_URL;
-        }
+        // [PROVIDER PURGE 2026-10-10] Gemini Native sahaja: Google Gemini REST
+        // v1beta rasmi (AI Studio). Proksi persendirian mesti melalui Custom
+        // Provider (Base URL pengguna) — tiada lagi auto-detect key 'sk-'.
+        this.baseUrl = process.env.GEMINI_API_BASE || GEMINI_API_URL;
 
         // FinOps Usage Ledger
         this.usageStats = {
@@ -623,18 +581,8 @@ class GeminiService {
         this.enableJsonOutput = advancedSettings.enableJsonOutput === true;
     }
 
-    detectKeyType(apiKey) {
-        if (!apiKey) return 'google';
-        const key = String(apiKey).trim();
-        if (key.startsWith('sk-')) return 'crazyrouter';
-        return 'google';
-    }
-
     getAuthHeaders() {
         const sanitizedKey = sanitizeApiKeyForHeader(this.apiKey) || '';
-        if (this.keyType === 'crazyrouter') {
-            return { Authorization: `Bearer ${sanitizedKey}`, 'Content-Type': 'application/json' };
-        }
         return { 'x-goog-api-key': sanitizedKey, 'Content-Type': 'application/json' };
     }
 
@@ -872,151 +820,6 @@ class GeminiService {
         }
     }
 
-    /**
-     * Fetch the model IDs callable by THIS CrazyRouter token from the relay's
-     * OpenAI-compatible endpoint (GET /v1/models). CrazyRouter documents the token's
-     * available models there (not under /v1beta). Result is cached per-instance.
-     *
-     * The raw ~605-model catalog is filtered through isGoogleModel() so only
-     * Google/Gemini/Gemma models are retained (~11 models). This keeps the Set
-     * focused on models SubFaber can actually use via the Gemini Native endpoint.
-     *
-     * Defensive: returns null on any failure so the translation flow is unaffected.
-     * @returns {Promise<Set<string>|null>} Set of Google model IDs, or null if unavailable.
-     */
-    async getCrazyRouterAvailableModels() {
-        if (this.keyType !== 'crazyrouter') return null;
-        if (this._crazyRouterModelIds instanceof Set) return this._crazyRouterModelIds;
-        if (this._crazyRouterModelsFailed) return null;
-
-        try {
-            const url = `${String(this.baseUrl).replace(/\/v1beta\/?$/, '/v1')}/models`;
-            const response = await axios.get(url, {
-                headers: this.getAuthHeaders(),
-                timeout: 10000,
-                httpAgent,
-                httpsAgent
-            });
-            const list = response?.data?.data;
-            if (!Array.isArray(list)) {
-                this._crazyRouterModelsFailed = true;
-                return null;
-            }
-            // Smart filter: only retain Google/Gemini/Gemma models from the ~605-model
-            // catalog. isGoogleModel() uses dual-layer detection (owned_by + prefix).
-            // displayName dibiarkan kosong — Crazy Router /v1/models hanya mengembalikan ID
-            // mentah (cth: 'gemini-3.1-flash-lite') tanpa displayName rasmi. Frontend
-            // akan memformatnya melalui formatModelDisplayName() menjadi "Gemini 3.1 Flash Lite".
-            const googleModels = list.filter((m) => isGoogleModel(m));
-            this._crazyRouterGoogleModels = googleModels
-                .map((m) => ({
-                    id: String(m.id || '').trim(),
-                    name: String(m.id || '').trim(),
-                    displayName: '',
-                    ownedBy: String(m.owned_by || 'google').trim()
-                }))
-                .filter((m) => m.id);
-            this._crazyRouterModelIds = new Set(this._crazyRouterGoogleModels.map((m) => m.id));
-            return this._crazyRouterModelIds;
-        } catch (_) {
-            this._crazyRouterModelsFailed = true;
-            return null;
-        }
-    }
-
-    /**
-     * Returns the structured list of Google models available on this CrazyRouter
-     * token, suitable for dropdown population. Each entry contains {id, name,
-     * displayName, ownedBy}. Returns null if getCrazyRouterAvailableModels() has
-     * not been called or failed.
-     * @returns {Array<{id: string, name: string, displayName: string, ownedBy: string}>|null}
-     */
-    getCrazyRouterGoogleModelList() {
-        if (!Array.isArray(this._crazyRouterGoogleModels)) return null;
-        return this._crazyRouterGoogleModels;
-    }
-
-    /**
-     * Warn (once per instance) if the configured model is NOT in the set of models
-     * this CrazyRouter token may call. Helps users self-diagnose "why won't it run"
-     * without guessing. No-op for Google Direct and when the model list is unknown.
-     * Set GEMINI_DISABLE_MODEL_AVAILABILITY_CHECK=true to silence this check.
-     * @returns {Promise<void>}
-     */
-    async warnIfModelUnavailable() {
-        if (this.keyType !== 'crazyrouter') return;
-        if (this._modelAvailabilityChecked) return;
-        if (String(process.env.GEMINI_DISABLE_MODEL_AVAILABILITY_CHECK || '').toLowerCase() === 'true') {
-            this._modelAvailabilityChecked = true;
-            return;
-        }
-        this._modelAvailabilityChecked = true;
-
-        const ids = await this.getCrazyRouterAvailableModels();
-        if (!ids || ids.size === 0) return;
-        if (ids.has(this.model)) return;
-
-        // CrazyRouter's /v1/models catalog lists only canonical names (e.g.
-        // 'gemini-3-flash') even though it also serves alias/variant names
-        // (e.g. 'gemini-3-flash-preview'). Exact-matching alone therefore produces
-        // false-positive warnings for valid aliased models. Check canonical forms too.
-        if (this._isCanonicalModelListed(ids)) return;
-
-        const sample = Array.from(ids)
-            .filter((id) => id.toLowerCase().includes('gemini'))
-            .slice(0, 10);
-        const sampleText = sample.length ? sample.join(', ') : Array.from(ids).slice(0, 10).join(', ');
-        log.warn(
-            () =>
-                `[Gemini] Model '${this.model}' is NOT listed among the models callable by this CrazyRouter key. Translation may fail or be routed to an exhausted upstream. Available Gemini models include: ${sampleText}${ids.size > 10 ? ' …' : ''}. Consider switching model in Advanced Settings.`
-        );
-    }
-
-    /**
-     * Build candidate canonical names for a model so that alias/variant slugs map
-     * to the form the relay actually lists. Handles:
-     *  - '-preview' suffix          (gemini-3-flash-preview -> gemini-3-flash)
-     *  - dated/numeric suffixes     (gemini-3.7-flash-001 -> gemini-3.7-flash,
-     *                                gemini-2.5-flash-preview-09-2025 -> gemini-2.5-flash)
-     * @param {string} model
-     * @returns {string[]} ordered candidate names, most specific first
-     */
-    _canonicalModelCandidates(model) {
-        const raw = String(model || '').trim();
-        const candidates = [raw];
-        let m = raw.toLowerCase();
-
-        // Strip suffixes in sequence so combined variants like
-        // 'gemini-2.5-flash-preview-09-2025' reduce to 'gemini-2.5-flash'.
-        // 1) trailing date/numeric stamp: -09-2025 / -2025 / -001 / -02-05
-        m = m.replace(/-(?:\d{2}-\d{4}|\d{4}|\d{3}|\d{2}-\d{2})$/, '');
-        // 2) '-preview' suffix (possibly revealed after step 1)
-        m = m.replace(/-preview$/, '');
-        // 3) a second date/numeric stamp that may sit before '-preview'
-        m = m.replace(/-(?:\d{2}-\d{4}|\d{4}|\d{3}|\d{2}-\d{2})$/, '');
-
-        if (m && m !== raw.toLowerCase()) candidates.push(m);
-        return candidates;
-    }
-
-    /**
-     * Returns true if the configured model (or any of its canonical variants) is
-     * present in the provided set of callable model IDs.
-     * @param {Set<string>} ids
-     * @returns {boolean}
-     */
-    _isCanonicalModelListed(ids) {
-        for (const candidate of this._canonicalModelCandidates(this.model)) {
-            if (ids.has(candidate)) return true;
-            // Also try a case-insensitive match against the catalog entries.
-            const lower = candidate.toLowerCase();
-            for (const id of ids) {
-                if (String(id).toLowerCase() === lower) return true;
-            }
-        }
-        return false;
-    }
-
     async getModelLimits() {
         if (this._modelLimits) {
             return this._modelLimits;
@@ -1024,32 +827,7 @@ class GeminiService {
 
         const modelName = String(this.model).toLowerCase();
 
-        // 🚀 INTERCEPT UNTUK PROXY CRAZYROUTER (1:1 DENGAN GOOGLE DIRECT)
-        if (this.keyType === 'crazyrouter') {
-            let outputLimit = 8192;
-            if (modelName.includes('2.5') || modelName.includes('gemini-3') || modelName.includes('gemini-4')) {
-                outputLimit = 65535;
-            }
-            const limits = {
-                inputTokenLimit: undefined,
-                outputTokenLimit: outputLimit
-            };
-            log.debug(
-                () =>
-                    `[Gemini] CrazyRouter proxy bypass applied for ${this.model}. Output limit forced to: ${limits.outputTokenLimit}`
-            );
-
-            const thinkingDisplay = `thinkingLevel=${this.getEffectiveThinkingLevel()}`;
-            log.debug(
-                () =>
-                    `[Gemini] API config (Bypass Mode): temperature=${this.temperature}, topP=${this.topP}, ${thinkingDisplay}, maxOutputTokens=${this.maxOutputTokens}, timeout=${this.timeout / 1000}s, maxRetries=${this.maxRetries}`
-            );
-
-            this._modelLimits = limits;
-            return limits;
-        }
-
-        // 🌐 LALUAN GOOGLE DIRECT SDK
+        // 🌐 LALUAN RASMI GOOGLE GEMINI NATIVE (REST v1beta)
         try {
             const response = await axios.get(`${this.baseUrl}/models/${this.model}`, {
                 headers: this.getAuthHeaders(),
@@ -1211,10 +989,6 @@ class GeminiService {
     }
 
     async countTokensForTranslation(subtitleContent, targetLanguage, customPrompt = null) {
-        if (this.keyType === 'crazyrouter') {
-            return null;
-        }
-
         const { userPrompt } = this.buildUserPrompt(subtitleContent, targetLanguage, customPrompt);
 
         try {
@@ -1255,10 +1029,6 @@ class GeminiService {
                     targetLanguage,
                     customPrompt
                 );
-
-                // Warn early (once) if the configured model is not callable by this
-                // CrazyRouter token — no-op for Google Direct. Never blocks translation.
-                await this.warnIfModelUnavailable();
 
                 const estimatedSubtitleTokens = this.estimateTokenCount(subtitleContent);
 
@@ -1442,11 +1212,6 @@ class GeminiService {
                 const translatedText = aggregatedText.length > 0 ? aggregatedText : candidate.content.parts[0].text;
                 return this.cleanTranslatedSubtitle(translatedText);
             } catch (error) {
-                // Attach route context so the error handler can distinguish relay/upstream
-                // quota exhaustion (CrazyRouter) from genuine auth failures.
-                if (this.keyType === 'crazyrouter' && error && typeof error === 'object') {
-                    error.providerRoute = 'crazyrouter';
-                }
                 const normalized = handleTranslationError(error, 'Gemini', { skipResponseData: true });
                 throw normalized;
             }
@@ -1467,10 +1232,6 @@ class GeminiService {
                     targetLanguage,
                     customPrompt
                 );
-
-                // Warn early (once) if the configured model is not callable by this
-                // CrazyRouter token — no-op for Google Direct. Never blocks translation.
-                await this.warnIfModelUnavailable();
 
                 const estimatedSubtitleTokens = this.estimateTokenCount(subtitleContent);
 
@@ -1793,11 +1554,6 @@ class GeminiService {
                     response.data.on('error', (err) => reject(err));
                 });
             } catch (error) {
-                // Attach route context so the error handler can distinguish relay/upstream
-                // quota exhaustion (CrazyRouter) from genuine auth failures.
-                if (this.keyType === 'crazyrouter' && error && typeof error === 'object') {
-                    error.providerRoute = 'crazyrouter';
-                }
                 const normalized = handleTranslationError(error, 'Gemini', { skipResponseData: true });
                 throw normalized;
             }
@@ -1938,17 +1694,14 @@ module.exports.DEFAULT_TRANSLATION_PROMPT_TEMPLATE = DEFAULT_TRANSLATION_PROMPT_
 module.exports.composeDefaultTranslationPrompt = composeDefaultTranslationPrompt;
 module.exports.getModelFamily = getModelFamily;
 module.exports.getModelThinkingProfile = getModelThinkingProfile;
-module.exports.isGoogleModel = isGoogleModel;
 module.exports.isWhitelistedGeminiTextModel = isWhitelistedGeminiTextModel;
 module.exports.compareGeminiModelsForDropdown = compareGeminiModelsForDropdown;
 module.exports.sanitizeGeminiModelCatalog = sanitizeGeminiModelCatalog;
-module.exports.CRAZYROUTER_GEMINI_MODELS = CRAZYROUTER_GEMINI_MODELS;
 module.exports.__testing = {
     getGeminiErrorMessage,
     isGeminiAuthFailure,
     getModelFamily,
     getModelThinkingProfile,
-    isGoogleModel,
     isWhitelistedGeminiTextModel,
     compareGeminiModelsForDropdown,
     sanitizeGeminiModelCatalog
