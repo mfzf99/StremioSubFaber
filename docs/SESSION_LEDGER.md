@@ -13,7 +13,7 @@
 ## 2026-10-10 (RELEASE v3.9.9) — PROTOCOL: PERATURAN #4 MONOTONIC BASELINE (edit owner .roomodes)
 
 - **Tarikh:** 2026-10-10 (17:10 MYT)
-- **Komit SHA:** (komit release v3.9.9 ini — SHA direkod selepas push)
+- **Komit SHA:** `5537770` (push 3d38c3e..5537770 ke origin main; CI run #38070698389 — **SUCCESS** hijau)
 - **Keputusan Owner:** Edit manual owner pada `.roomodes` — peraturan #4 TEST BASELINE ditulis semula daripada angka statik (346/345) kepada **MONOTONIC BASELINE**: invariant 0 FAIL / max 1 SKIP; jumlah ujian mesti monotonik (>= baseline terkini dalam docs/SESSION_LEDGER.md; tidak boleh berkurang tanpa kelulusan bertulis owner). Lebih tahan lasak — tiada lagi angka lapuk untuk dikemas kini setiap kali jumlah berubah.
 - **Validasi .roomodes (gate PyYAML insiden 2026-10-08):** parse OK; 2 modes (frontend 3097 chars / backend 4301 chars); groups=[read,edit,command,mcp] kedua-dua mode; source=project. `.roo/rules/*.md` disahkan tiada angka baseline lapuk. PASS.
 - **Fail Terlibat:** `.roomodes` (sahaja) + `package.json` (3.9.8 → 3.9.9, patch — protokol) + `package-lock.json` (sync) + `CHANGELOG.md` (header v3.9.9).
