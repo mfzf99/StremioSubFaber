@@ -12,6 +12,15 @@
 
 ---
 
+## 2026-10-10 (HOTFIX v3.9.3) — Trinity UI gagal mount: insertBefore anchor defensif
+
+- **Tarikh:** 2026-10-10 (17:56 MYT)
+- **Komit SHA:** (komit hotfix ini — SHA direkod selepas push)
+- **Keputusan Owner:** Owner laporkan UI configure masih "zaman lama". Forensik Playwright tempatan (localhost:7001) menemui punca sebenar: `trinity-agents.js` mount gagal SENYAP dengan `NotFoundError: insertBefore` — anchor `.card[data-card="subtitle-api"]` bersarang dalam struktur main.html dan BUKAN anak langsung `#apiKeysSection`. (Nota: tangkapan skrin owner menunjukkan deployment workers.dev versi lama — kod Fasa D memang belum sampai ke deployment itu; tetapi bug mount tempatan ini juga nyata dan telah dibetulkan.)
+- **Fail Terlibat:** `public/js/trinity-agents.js` (anchor resolution defensif: anak langsung pertama yang memenuhi kriteria; fallback insertBefore section.firstChild). `package.json` (3.9.2 → 3.9.3) + `CHANGELOG.md` (header v3.9.3).
+- **Verifikasi:** Playwright E2E — Basic: 1 kad translation + `#geminiCard` display:none; Pro: 3 kad (preflight/translation/inspector) lengkap dengan dropdown Format/BaseURL/Model/Test/Load; badge autodetect `AIza…` → "Google Gemini Native (auto)" tone-blue. npm test 346/345/0/1 hijau; prettier lulus; eslint 0 error.
+- **Next Steps:** Deployment (VPS/workers.dev) perlu `git pull` ke HEAD untuk melihat UI Trinity; Fasa E mengikut pelan.
+
 ---
 
 ## 2026-10-10 (RELEASE v3.9.2) — PROTOKOL GRAPHIFY NO-OP BERSYARAT + PEMBETULAN TYPO PIPELINE

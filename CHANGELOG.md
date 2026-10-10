@@ -2,6 +2,12 @@
 
 All notable changes to this project will be documented in this file.
 
+## SubMaker v3.9.3 (2026-10-10) — Fixed: Trinity UI gagal mount (insertBefore anchor bukan anak langsung #apiKeysSection)
+
+### Fixed
+
+- **Hotfix Trinity UI Fasa D**: `trinity-agents.js` mount gagal senyap dengan `NotFoundError: insertBefore` — kad `.card[data-card="subtitle-api"]` dalam struktur `main.html` bersarang lebih dalam dan bukan anak langsung `#apiKeysSection`. Fix: anchor kini diselesaikan secara defensif (anak langsung pertama yang memenuhi kriteria; fallback sispan di awal seksyen). Diverifikasi end-to-end dengan Playwright pada server tempatan: kad mount, togol Basic(1 kad)/Pro(3 kad Preflight/Translation/Inspector) berfungsi, badge autodetect masa nyata (`AIza…` → "Google Gemini Native (auto)" biru), kad legasi `#geminiCard` disembunyikan. npm test 346/345/0/1 hijau.
+
 ## SubMaker v3.9.2 (2026-10-10) — Protokol Graphify NO-OP Bersyarat + Pembetulan Typo Pipeline
 
 ### Changed

@@ -374,7 +374,28 @@
         });
 
         renderCards();
-        section.insertBefore(root, section.querySelector('.card[data-card="subtitle-api"]'));
+        // [HOTFIX 2026-10-10] insertBefore rujukan mesti ANAK LANGSUNG
+        // #apiKeysSection — kad subtitle-api mungkin bersarang lebih dalam
+        // (struktur main.html). Ambil anak langsung pertama yang memenuhi
+        // kriteria; jika tiada, sispan di awal seksyen.
+        var anchor = null;
+        for (var i = 0; i < section.children.length; i++) {
+            var child = section.children[i];
+            if (
+                child.classList &&
+                (child.classList.contains('card') ||
+                    child.matches('.card') ||
+                    (child.querySelector && child.querySelector('.card[data-card="subtitle-api"]')))
+            ) {
+                anchor = child;
+                break;
+            }
+        }
+        if (anchor && anchor.parentNode === section) {
+            section.insertBefore(root, anchor);
+        } else {
+            section.insertBefore(root, section.firstChild);
+        }
 
         // Sembunyikan kad legasi gemini (borang hardcoded + multi-providers beta).
         var legacyCard = $('geminiCard');
