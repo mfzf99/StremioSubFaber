@@ -10,6 +10,29 @@
 
 ---
 
+## 2026-10-10 (FASA D SELESAI + ULASAN BACKEND) — UI TRINITY: Dual Mode Toggle + Modular Trinity Cards
+
+- **Tarikh:** 2026-10-10 (15:40 MYT)
+- **Komit SHA:** (belum di-commit — menunggu arahan owner; ulasan Backend selesai, semua hijau)
+- **Keputusan Owner:** Mandat Frontend Fasa D — rombakan besar UI: togol dwimod (Basic=1 kad Translation + formula legasi 4/50/2; Pro=3 kad modular Preflight/Translation/Inspector), autodetect badge masa nyata (AIza→Gemini blue, sk-ant-→Anthropic orange, sk-/lain→OpenAI green), dropdown Format/Pintu, Base URL editable, butang Test Key. Pembersihan legasi: borang Gemini hardcoded + multi-providers (beta) disembunyikan (kad #geminiCard display:none — input kekal dalam DOM untuk keserasian simpanan).
+- **Fail Terlibat (Frontend):**
+  - `public/js/trinity-agents.js` (BAHARU — modul penuh: mount/collectConfigPatch/rehydrate; kad modular programatik defensif)
+  - `public/css/trinity-agents.css` (BAHARU — togol suis, kad, badge tone)
+  - `public/js/config-loader.js` (muat trinity-agents.js selepas config.js + mount pada partialsReady)
+  - `public/configure.html` (link CSS trinity)
+  - `public/config.js` (3 titik suntikan: buildConfigFromForm patch, payload literal, loadConfigToForm rehydrate)
+- **Fail Terlibat (Backend — atas keputusan owner "kekalkan perubahan"):**
+  - `index.js` (senarai cache-bust + /css/trinity-agents.css + /js/trinity-agents.js)
+  - `src/utils/config.js` (passthrough blok mergedConfig.trinity — agentB.format Fasa C sedia membaca)
+- **ULASAN BACKEND (3 fix kritikal dikenal pasti & dilaksana):**
+  1. **Payload race FIXED** — literal payload config dibina SEGAR dari input borang; patch currentConfig tidak mengalir. Fix: geminiApiKey Trinity Translation kini mengatasi input legasi (disegerak balik ke #geminiApiKey supaya validasi/rotation baca nilai sama); blok trinity + agentB disalin eksplisit ke payload (deep-copy JSON).
+  2. **Rehydration race FIXED** — mount awal berlaku sebelum config server tiba. Fix: loadConfigToForm memanggil TrinityAgents.rehydrate(currentConfig) di hujung.
+  3. **Mode toggle sync FIXED** — applyAgentValues kini menyegerak trinityModeToggle dengan trinity.mode tersimpan (dispatch change → renderCards semula).
+- **Status npm test:** 346 tests / 345 PASS / 0 FAIL / 1 SKIP (skip = live Redis). Prettier lulus; ESLint 0 error (warning pra-wujud). Tiada regresi.
+- **Next Steps:** Komit Fasa D atas arahan owner (cadangan: `feat(ui): Trinity dual-mode toggle + modular agent cards (Phase D)`); smoke test manual di /configure (mount kad, togol mod, autodetect badge, simpan/muat semula round-trip); Fasa E (validasi produksi VPS). Nota: butang Test Key guna endpoint /api/validate-gemini sedia ada — endpoint validasi format-agnostik per pintu boleh dipertimbangkan dalam Fasa E.
+
+---
+
 ## 2026-10-10 (FASA C SELESAI) — TRI-DOOR: geminiChannel + anthropicChannel + wiring config.agentB.format
 
 - **Tarikh:** 2026-10-10 (14:20 MYT)

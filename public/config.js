@@ -12701,6 +12701,17 @@ Translate to {target_language}.`;
         if (parallelBatchesCountEl) {
             parallelBatchesCountEl.value = currentConfig.parallelBatchesCount || 3;
         }
+
+        // [TRINITY FASA D — Ulasan Backend 2026-10-10] Rehydrate kad Trinity
+        // SETELAH konfigurasi server mengalir ke currentConfig. Ini menutup
+        // race: mount awal (config-loader) berlaku sebelum fetch config siap.
+        try {
+            if (window.TrinityAgents && typeof window.TrinityAgents.rehydrate === 'function') {
+                window.TrinityAgents.rehydrate(currentConfig);
+            }
+        } catch (e) {
+            /* defensif — UI Trinity tidak boleh menghalang pemuatan borang */
+        }
     }
 
     async function handleSubmit(e) {
@@ -12713,6 +12724,27 @@ Translate to {target_language}.`;
     function buildConfigFromForm() {
         ensureProvidersInState();
         ensureAutoSubsDefaults();
+
+        // [TRINITY FASA D 2026-10-10] Suntik blok konfigurasi Trinity modular
+        // (togol dwimod + kad 3 ejen) ke dalam currentConfig sebelum objek
+        // payload dibina. Patch kekal bersih — tiada sentuhan pada laluan
+        // legasi jika modul Trinity tidak dimuatkan.
+        try {
+            if (
+                typeof window !== 'undefined' &&
+                window.TrinityAgents &&
+                typeof window.TrinityAgents.collectConfigPatch === 'function'
+            ) {
+                var trinityPatch = window.TrinityAgents.collectConfigPatch();
+                if (trinityPatch && typeof trinityPatch === 'object') {
+                    Object.keys(trinityPatch).forEach(function (k) {
+                        currentConfig[k] = trinityPatch[k];
+                    });
+                }
+            }
+        } catch (e) {
+            /* defensif — jangan sesekali ganggu simpanan jika patch gagal */
+        }
 
         // Sync mobile mode state into currentConfig before building payload
         try {
@@ -12748,11 +12780,30 @@ Translate to {target_language}.`;
             document.getElementById('geminiModel')?.value || ''
         );
 
+        // [TRINITY FASA D — Ulasan Backend 2026-10-10] Literal payload di
+        // bawah dibina SEGAR daripada input borang — patch currentConfig di
+        // atas TIDAK automatik mengalir masuk. Selesaikan di sini:
+        //   1. geminiApiKey Trinity Translation MENGATASI input legasi
+        //      #geminiApiKey (kad legasi disembunyikan oleh Trinity UI).
+        //   2. Blok trinity + agentB disalin terus ke payload.
+        const trinityPayload =
+            currentConfig.trinity && typeof currentConfig.trinity === 'object' ? currentConfig.trinity : null;
+        const trinityTranslationKey =
+            trinityPayload && trinityPayload.translation ? String(trinityPayload.translation.apiKey || '').trim() : '';
+        const legacyGeminiKey = document.getElementById('geminiApiKey').value.trim();
+        const effectiveGeminiKey = trinityTranslationKey || legacyGeminiKey;
+        // Sinkronkan input legasi supaya laluan validasi (validateGeminiApiKey)
+        // dan key-rotation membaca nilai yang sama dengan Trinity.
+        const legacyGeminiInput = document.getElementById('geminiApiKey');
+        if (legacyGeminiInput && trinityTranslationKey && legacyGeminiInput.value.trim() !== trinityTranslationKey) {
+            legacyGeminiInput.value = trinityTranslationKey;
+        }
+
         const config = {
             noTranslationMode: currentConfig.noTranslationMode,
             noTranslationLanguages: currentConfig.noTranslationLanguages,
             uiLanguage: (currentConfig.uiLanguage || navigator.language || 'en').toString().toLowerCase(),
-            geminiApiKey: document.getElementById('geminiApiKey').value.trim(),
+            geminiApiKey: effectiveGeminiKey,
             geminiKeyRotationEnabled: document.getElementById('geminiKeyRotationEnabled')?.checked === true,
             geminiApiKeys: getGeminiApiKeys(),
             geminiKeyRotationMode: document.getElementById('geminiKeyRotationMode')?.value || 'per-batch',
@@ -12950,7 +13001,14 @@ Translate to {target_language}.`;
             advancedSettingsByModel:
                 currentConfig.advancedSettingsByModel && typeof currentConfig.advancedSettingsByModel === 'object'
                     ? { ...currentConfig.advancedSettingsByModel }
-                    : {}
+                    : {},
+            // [TRINITY FASA D — Ulasan Backend 2026-10-10] Blok Trinity UI
+            // modular (kad 3 ejen + dwimod) & agentB (Fasa 0/1) dialirkan ke
+            // payload — tanpa ini, simpanan akan MENGUGURKAN tetapan Trinity.
+            ...(trinityPayload ? { trinity: JSON.parse(JSON.stringify(trinityPayload)) } : {}),
+            ...(currentConfig.agentB && typeof currentConfig.agentB === 'object'
+                ? { agentB: JSON.parse(JSON.stringify(currentConfig.agentB)) }
+                : {})
         };
         config.multiProviderEnabled = multiProviderToggleChecked;
         if (!config.multiProviderEnabled) {

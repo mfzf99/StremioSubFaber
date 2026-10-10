@@ -625,6 +625,12 @@ function normalizeConfig(config) {
         const parsed = parseInt(raw, 10);
         return Number.isFinite(parsed) && parsed > 0 ? parsed : fallbackMs;
     };
+
+    // [TRINITY FASA D 2026-10-10] Passthrough blok trinity UI modular
+    // (togol dwimod + kad 3 ejen). Passthrough penuh — backend pembina
+    // (Fasa C keyDetector/AgentChannel) sudah tahu cara membaca format/auto.
+    mergedConfig.trinity = mergedConfig.trinity && typeof mergedConfig.trinity === 'object' ? mergedConfig.trinity : {};
+
     mergedConfig.agentB = {
         enabled:
             mergedConfig.agentB?.enabled === true || (!!process.env.AGENT_B_API_KEY && !!process.env.AGENT_B_BASE_URL),

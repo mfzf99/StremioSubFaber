@@ -5,9 +5,40 @@
     const PARTIALS_TIMEOUT_MS = 10000;
 
     function loadConfigJs(versionQuery) {
+        // [TRINITY FASA D 2026-10-10] Muat modul Trinity Agents SELEPAS
+        // config.js — trinity-agents.js bergantung pada global yang config.js
+        // tetapkan (currentConfig, fungsi simpan) dan mount pada partialsReady.
         var script = document.createElement('script');
         script.src = '/config.js' + versionQuery;
         script.defer = false;
+        script.onload = function () {
+            try {
+                var tri = document.createElement('script');
+                tri.src = '/js/trinity-agents.js' + versionQuery;
+                tri.defer = false;
+                tri.onload = function () {
+                    try {
+                        var mount = function () {
+                            if (window.TrinityAgents && typeof window.TrinityAgents.mount === 'function') {
+                                window.TrinityAgents.mount(typeof currentConfig !== 'undefined' ? currentConfig : null);
+                            }
+                        };
+                        if (window.partialsReady && typeof window.partialsReady.then === 'function') {
+                            window.partialsReady.then(mount).catch(function () {
+                                mount();
+                            });
+                        } else {
+                            mount();
+                        }
+                    } catch (e) {
+                        /* defensif — tiada peranan jika gagal */
+                    }
+                };
+                document.body.appendChild(tri);
+            } catch (e) {
+                /* defensif */
+            }
+        };
         document.body.appendChild(script);
     }
 
