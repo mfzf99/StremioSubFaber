@@ -13,7 +13,7 @@
 ## 2026-10-10 (RELEASE v3.9.10) — BUG FIX: VISIBILITY CUSTOM PROVIDER (DUA PUNCA AKAR)
 
 - **Tarikh:** 2026-10-10 (18:14 MYT)
-- **Komit SHA:** (komit release v3.9.10 ini — SHA direkod selepas push)
+- **Komit SHA:** `1b19813` (push c3f996d..1b19813 ke origin main; CI run #38074985823 — **SUCCESS** hijau)
 - **Keputusan Owner:** Bug kritikal v3.9.9 — memilih "Custom / Proxy" gagal memaparkan medan Base URL & Format/Door. Handover Frontend Fasa G (susunan panggilan) diserahkan kepada Backend Integration Audit; forensik Backend menemui DUA punca akar sebenar:
   1. **Detached-DOM race (KRITIKAL):** `renderCards()` dipanggil SEBELUM `trinityRoot` disisip ke document. `wireAutodetect()`/`wireValidate()` guna `document.getElementById()` → NULL pada pokok detached → return awal → SIFAR listener dipasang (change/input/Validate; hanya eye button berfungsi kerana closure). Fix: susunan `mount()` diterbalik — sisip root SEBELUM renderCards.
   2. **CSS specificity:** `style.display = ''` tidak mengatasi rule `.trinity-custom-only { display: none }`. Fix: `updateVisibility()` set `'grid'` (nilai asal .trinity-field) untuk SHOW.
