@@ -12,8 +12,8 @@
 
 ## 2026-10-10 (FASA D SELESAI + ULASAN BACKEND) — UI TRINITY: Dual Mode Toggle + Modular Trinity Cards
 
-- **Tarikh:** 2026-10-10 (15:40 MYT)
-- **Komit SHA:** (belum di-commit — menunggu arahan owner; ulasan Backend selesai, semua hijau)
+- **Tarikh:** 2026-10-10 (15:46 MYT)
+- **Komit SHA:** `e11f816` (push origin/main; CI #255 HIJAU — Success, 2 jobs Node 22+24, 1m 20s, sifar error)
 - **Keputusan Owner:** Mandat Frontend Fasa D — rombakan besar UI: togol dwimod (Basic=1 kad Translation + formula legasi 4/50/2; Pro=3 kad modular Preflight/Translation/Inspector), autodetect badge masa nyata (AIza→Gemini blue, sk-ant-→Anthropic orange, sk-/lain→OpenAI green), dropdown Format/Pintu, Base URL editable, butang Test Key. Pembersihan legasi: borang Gemini hardcoded + multi-providers (beta) disembunyikan (kad #geminiCard display:none — input kekal dalam DOM untuk keserasian simpanan).
 - **Fail Terlibat (Frontend):**
   - `public/js/trinity-agents.js` (BAHARU — modul penuh: mount/collectConfigPatch/rehydrate; kad modular programatik defensif)
