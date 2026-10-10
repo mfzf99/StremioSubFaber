@@ -10,10 +10,11 @@
 
 ---
 
-## 2026-10-10 (FASA D SELESAI + ULASAN BACKEND) — UI TRINITY: Dual Mode Toggle + Modular Trinity Cards
+## 2026-10-10 (RELEASE v3.9.0 — TRI-DOOR FASA A+B+C+D) — UI TRINITY: Dual Mode Toggle + Modular Trinity Cards
 
-- **Tarikh:** 2026-10-10 (15:46 MYT)
-- **Komit SHA:** `e11f816` (push origin/main; CI #255 HIJAU — Success, 2 jobs Node 22+24, 1m 20s, sifar error)
+- **Tarikh:** 2026-10-10 (16:08 MYT)
+- **Komit SHA:** `e11f816` (Fasa D) + `93f58aa` (ledger) + `b6a9016` (pelan E) + komit release v3.9.0 ini; CI #255 HIJAU — Success, 2 jobs Node 22+24, 1m 20s, sifar error
+- **Release pipeline (koreksi owner):** BUMP 3.8.42 → **3.9.0** (SemVer minor — feature tri-door) + CHANGELOG.md baharu di bawah header v3.9.0 (Added/Changed/Fixed) + cache buster auto (`__APP_VERSION_QUERY__` token, sifar hardcoded rigid) + prettier ✓ + eslint 0 error ✓ + npm test 346/345/0/1 ✓ sebelum komit.
 - **Keputusan Owner:** Mandat Frontend Fasa D — rombakan besar UI: togol dwimod (Basic=1 kad Translation + formula legasi 4/50/2; Pro=3 kad modular Preflight/Translation/Inspector), autodetect badge masa nyata (AIza→Gemini blue, sk-ant-→Anthropic orange, sk-/lain→OpenAI green), dropdown Format/Pintu, Base URL editable, butang Test Key. Pembersihan legasi: borang Gemini hardcoded + multi-providers (beta) disembunyikan (kad #geminiCard display:none — input kekal dalam DOM untuk keserasian simpanan).
 - **Fail Terlibat (Frontend):**
   - `public/js/trinity-agents.js` (BAHARU — modul penuh: mount/collectConfigPatch/rehydrate; kad modular programatik defensif)

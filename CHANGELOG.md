@@ -2,6 +2,33 @@
 
 All notable changes to this project will be documented in this file.
 
+## SubMaker v3.9.0 (2026-10-10) — Tri-Door Surgery: 3 pintu format API untuk Trinity Engine
+
+### Added
+
+- **Tiga pintu format API untuk Trinity Engine** (Agent Preflight / Agent Translation / Agent Inspector) — sebelum ini Agent Preflight & Inspector terkurung pada pintu OpenAI sahaja:
+  - `keyDetector` — autodetect format daripada API key / baseUrl / model (prefix kuat `AIza`→Gemini, `sk-ant-`→Anthropic; default selamat OpenAI-compatible; override manual sentiasa menang; keputusan ber-source untuk log telus).
+  - `geminiChannel` — pintu Gemini Native (systemInstruction top-level; generationConfig mengikut getModelFamily ground truth; non-stream; thinkingLevel low default).
+  - `anthropicChannel` — pintu Anthropic Messages (system top-level; max_tokens mandatori clamp 64000; kekangan temperature/thinking dikekalkan).
+  - `openaiChannel` — ekstraksi super-options AgentB (muatan god-tier 4-kunci + SSE watchdog terpelihara; laluan rootsys 100% tidak berubah).
+  - `config.agentB.format` ('auto' lalai + env `AGENT_B_FORMAT`) + delegasi channel dalam AgentBInspector dengan log `[AgentB][AgentChannel] format=… source=…`.
+  - 33 ujian regresi baharu (18 keyDetector + 15 payload/delegasi per pintu); baseline 313 → 346 tests.
+
+- **UI Trinity — Dual Mode Toggle + Modular Trinity Cards** (Fasa D):
+  - Togol dwimod di seksyen API Keys: **Basic Mode** (1 kad Agent Translation sahaja + formula kelompok legasi 4 prev / 50 batch / 2 future) vs **Pro Mode** (3 kad modular: Agent Preflight, Agent Translation, Agent Inspector).
+  - Anatomi kad seragam: input kunci (butang intip/sembunyi), **lencana autodetect masa nyata** (`AIza`→"Google Gemini Native" biru, `sk-ant-`→"Anthropic Messages" jingga, `sk-`/lain→"OpenAI-Compatible" hijau), dropdown Format/Pintu (Auto disyorkan), dropdown Model, Base URL boleh sunting (laluan proksi), butang Test Key.
+  - Pembersihan legasi: borang Gemini hardcoded + blok "Multiple providers (beta)" disembunyikan (input kekal dalam DOM untuk keserasian simpanan).
+  - 3 fix integrasi kritikal (ulasan Backend): payload race (kunci Trinity mengatasi input legasi + blok trinity/agentB dialirkan ke payload), rehydration race (loadConfigToForm → rehydrate), segerak togol mod dengan `trinity.mode` tersimpan.
+
+### Changed
+
+- `index.js`: senarai cache-bust UI config diperluaskan (`/css/trinity-agents.css`, `/js/trinity-agents.js`).
+- `src/utils/config.js`: passthrough blok `trinity` + normalisasi `agentB.format`.
+
+### Fixed
+
+- Sifar regresi laluan produksi rootsys: format openai (autodetect default) meneruskan pewarisan `OpenAICompatibleProvider` 1:1 — muatan universal god-tier, watchdog SSE, hierarki model, circuit breaker, timeout berfasa semua terpelihara.
+
 ## SubMaker v3.8.42 (2026-10-09) — Fixed: Pariti Retry-Backoff 1:1 Gemini merentas semua provider
 
 **"37ms untuk 3 retry" — titik forensik yang membunuh job 69% siap.** Log live owner (rootsys.cloud, deepseek-v4-pro, SRT 648 entry): batch 10/13 gagal HTTP 502 transient; gelung retry custom provider meluru 3 percubaan dalam 37ms tanpa sebarang delay, membunuh terjemahan yang sudah 69% lengkap. Gemini mempunyai retryWithBackoff() exponential 3s → 6s → 12s + jitter 0.8x–1.2x (anti thundering-herd) — provider lain tiada. Mandat owner: SEMUA LLM wajib kongsi setup 1:1 dengan main provider Gemini. Gap terakhir pariti kini ditutup.
