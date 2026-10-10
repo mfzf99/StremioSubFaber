@@ -2,6 +2,14 @@
 
 All notable changes to this project will be documented in this file.
 
+## SubMaker v3.9.4 (2026-10-10) — Protokol Integrasi Dua-Pihak: Two-Man Integration Gate + Integration Audit Langkah 0
+
+### Changed
+
+- `.roomodes` (Frontend mode): peraturan #5 ditulis semula sebagai **MANDATORY HANDOVER & ZERO-COMMIT ENFORCEMENT** — mod Frontend diharamkan keras menjalankan `npm test`/`git commit`/`git push` atau menawarkan komit langsung; selepas edit UI wajib append blok progress ke `docs/SESSION_LEDGER.md` dan segera `switch_mode` ke backend dengan laporan handover berstruktur (fail disentuh, perubahan DOM, kontrak payload borang).
+- `.roomodes` (Backend mode): peraturan #6 Universal Release & Commit Pipeline menerima **Langkah 0 — FRONTEND INTEGRATION AUDIT** (wajib bila menerima handover frontend): audit payload serialization, rehydration & state persistence, race conditions & DOM lifecycle timing; `git add .` diperketat kepada `git add <specific-files>`.
+- `.roo/rules/00-subfaber-core-protocol.md`: item #4 baharu **MANDATORY TWO-MAN INTEGRATION GATE (ZERO STANDALONE FRONTEND RELEASES)**; item #5 baharu **BACKEND AS TECH LEAD & INTEGRATION GATEKEEPER** (Backend pegang autoriti release tunggal + Integration Review wajib sebelum paip 8-langkah); item #6 (Mode-Activation Awareness) diperketat daripada "flag & await confirmation" kepada "refuse & trigger handover". Indentasi item #6 dibetulkan ke peringkat atas.
+
 ## SubMaker v3.9.3 (2026-10-10) — Fixed: Trinity UI gagal mount (insertBefore anchor bukan anak langsung #apiKeysSection)
 
 ### Fixed

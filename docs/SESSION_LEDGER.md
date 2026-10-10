@@ -12,6 +12,17 @@
 
 ---
 
+## 2026-10-10 (RELEASE v3.9.4) — PROTOKOL INTEGRASI DUA-PIHAK: TWO-MAN INTEGRATION GATE + LANGKAH 0 INTEGRATION AUDIT
+
+- **Tarikh:** 2026-10-10 (18:18 MYT)
+- **Komit SHA:** (komit release v3.9.4 ini — SHA direkod selepas push)
+- **Keputusan Owner:** Edit manual owner pada Mode-specific Custom Instructions (.roomodes) + .roo/rules/00-subfaber-core-protocol.md: (1) Frontend rule #5 ditulis semula sebagai MANDATORY HANDOVER & ZERO-COMMIT ENFORCEMENT (Frontend diharamkan npm test/git commit/push; wajib append ledger + switch_mode ke backend dengan laporan handover berstruktur); (2) Backend rule #6 pipeline menerima Langkah 0 FRONTEND INTEGRATION AUDIT (payload serialization, rehydration & state persistence, race conditions & DOM lifecycle) + `git add` diperketat kepada specific-files; (3) Core protocol items #4 (Two-Man Integration Gate, zero standalone frontend releases) + #5 (Backend as Tech Lead & Integration Gatekeeper) + #6 (Mode-Activation diperketat: refuse & handover). Backend membetulkan indentasi item #6 core protocol yang tersasar sebagai sub-bullet item 5.
+- **Fail Terlibat:** `.roomodes` (Frontend rule #5 rewrite + Backend rule #6 Langkah 0), `.roo/rules/00-subfaber-core-protocol.md` (items #4/#5 baharu, #6 tighten + indent fix), `package.json` (3.9.3 → 3.9.4, patch — protokol sahaja) + `package-lock.json` (sync) + `CHANGELOG.md` (header v3.9.4).
+- **Validasi .roomodes (gate PyYAML insiden 2026-10-08):** parse OK; 2 modes (Frontend 3097 chars / Backend 4262 chars customInstructions); groups=[read,edit,command,mcp] kedua-dua mode; source=project. PASS.
+- **Status pipeline:** prettier ✓ (All matched files use Prettier code style) + eslint 0 error (221 warning pra-wujud) + npm test **346 tests / 345 PASS / 0 FAIL / 1 SKIP** — baseline tepat. Cache buster: 23 token `__APP_VERSION_QUERY__` auto, sifar rigid `?_cb=` versi lapuk.
+- **Langkah 5 (graphify):** Runtime graphify TIADA (`import graphify` gagal — ModuleNotFoundError). Mengikut protokol v3.9.2: **NO-OP serta-merta direkod** — sifar fail kod berubah dalam v3.9.4 (docs/config sahaja), peta topologi tidak terjejas.
+- **Next Steps:** Push v3.9.4 ke origin main + verify CI hijau (workflow ci.yml, matrix Node 22/24). Pelbagai fail .tmp-*/artefak untracked pra-wujud di working tree kekal di luar skop (tidak di-add).
+
 ## 2026-10-10 (HOTFIX v3.9.3) — Trinity UI gagal mount: insertBefore anchor defensif
 
 - **Tarikh:** 2026-10-10 (17:56 MYT)

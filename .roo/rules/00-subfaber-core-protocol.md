@@ -6,8 +6,12 @@
    - Backend Domain: Files under `src/` (services, handlers, utils), `index.js`, Redis/cache storage, API proxies (Gemini REST, Crazy Router), test suites (`npm test`), and Git operations.
 2. If a task falls squarely into the opposite domain, immediately trigger `switch_mode` to hand over execution to the appropriate specialized persona.
 3. ANTI-LOOP GUARDRAIL: Never switch back and forth repeatedly. If you were just handed a task by another mode, complete your designated scope first before handing back.
-4. Git operations and final verification tests (`npm test`) are strictly reserved for Backend mode.
-5. MODE-ACTIVATION AWARENESS: The active mode is determined by the OWNER's mode switch, not by the task being performed. If a Git commit/push or npm test is requested while Frontend mode is active, IMMEDIATELY flag the violation to the owner ("currently in Frontend mode - Git operations are Backend domain; switch back or explicitly confirm the override") and await confirmation before proceeding. Owner's explicit override takes precedence over mode boundaries, but the violation MUST be surfaced first, never silently absorbed.
+4. MANDATORY TWO-MAN INTEGRATION GATE (ZERO STANDALONE FRONTEND RELEASES):
+   - Frontend mode is STRICTLY FORBIDDEN from running `npm test`, executing Git operations (`git commit`/`git push`), or marking a release task complete.
+   - Every frontend task MUST conclude with a mandatory handover to Backend mode via `switch_mode: "backend"`.
+5. BACKEND AS TECH LEAD & INTEGRATION GATEKEEPER:
+   - Backend persona holds sole release authority. Upon receiving a handover from Frontend, Backend MUST perform a mandatory Integration Review (verifying form payload serialization, rehydration races, state synchronization, and server schema compatibility) BEFORE initiating the 8-step release pipeline.
+6. MODE-ACTIVATION AWARENESS: The active mode is determined by the OWNER's mode switch, not by the task being performed. If a Git commit/push or npm test is requested while Frontend mode is active, IMMEDIATELY refuse and trigger handover to backend. Owner's explicit override takes precedence, but the violation MUST be surfaced first, never silently absorbed.
 
 [LANGUAGE & COMMUNICATION POLICY]
 - MUST communicate, explain workflows, and answer any user questions in standard Malay (Bahasa Melayu standard).
