@@ -664,7 +664,14 @@ function normalizeConfig(config) {
         // [AUDIT-WARISAN 2026-09-29] WARISAN/no-op: AGENT_B_MAX_TOKENS TIDAK lagi
         // dihantar dalam muatan (builder god-tier tiada max_tokens). Dikekalkan
         // untuk keserasian warisan sahaja — JANGAN set (tiada kesan runtime).
-        maxTokens: normalizeAgentBTimeoutMs(mergedConfig.agentB?.maxTokens ?? process.env.AGENT_B_MAX_TOKENS, 131072)
+        maxTokens: normalizeAgentBTimeoutMs(mergedConfig.agentB?.maxTokens ?? process.env.AGENT_B_MAX_TOKENS, 131072),
+        // [TRI-DOOR FASA C 2026-10-10] Format pintu Trinity Agent B:
+        // 'auto' (autodetect keyDetector) | 'gemini' | 'openai' | 'anthropic'.
+        // Lalai 'auto' — bagi deployment rootsys sedia ada, autodetect
+        // (sk- + baseUrl) menghasilkan 'openai' ⇒ zero behavior change.
+        format: String(mergedConfig.agentB?.format || process.env.AGENT_B_FORMAT || 'auto')
+            .trim()
+            .toLowerCase()
     };
     // Hygiene: inspectionModel adalah alias warisan bagi 'model' (Semakan) —
     // dilucutkan daripada struktur tersimpan selepas migrasi.

@@ -59,7 +59,11 @@
 
 const OpenAICompatibleProvider = require('./providers/openaiCompatible');
 // [TRI-DOOR FASA B] Channel pengangkutan Trinity — super-options diekstrak.
+// [TRI-DOOR FASA C] geminiChannel + anthropicChannel + autodetect keyDetector.
 const openaiChannel = require('./channels/openaiChannel');
+const geminiChannel = require('./channels/geminiChannel');
+const anthropicChannel = require('./channels/anthropicChannel');
+const { detectAgentChannelFormat } = require('./channels/keyDetector');
 const { runPreflightSemanticPass, stripReasoningTags } = require('./subfaberPreflight');
 const log = require('../utils/logger');
 // [FASA H 2026-10-07] Split statik/dinamik untuk prompt Pre-Flight (varian G1
@@ -521,6 +525,77 @@ class AgentBInspector extends OpenAICompatibleProvider {
         this._consecutiveFailures = 0;
         this._circuitOpen = false;
         this.circuitThreshold = AGENT_B_CIRCUIT_THRESHOLD;
+
+        // ── [TRI-DOOR FASA C] Format pintu pengangkutan ──
+        // 'auto' (lalai) → autodetect keyDetector (override > key-prefix >
+        // baseUrl > model > default openai). Deployment rootsys sedia ada
+        // (sk- + baseUrl gateway) → 'openai' ⇒ laluan super() 1:1, zero
+        // behavior change. 'gemini'/'anthropic' → delegasi translateSubtitle
+        // kepada transport channel berkenaan (kontrak duck-typed sama).
+        const detected = detectAgentChannelFormat({
+            apiKey: options.apiKey || '',
+            baseUrl: options.baseUrl || '',
+            model: options.model || options.preflightModel || '',
+            override: options.format || ''
+        });
+        this.channelFormat = detected.format;
+        this.channelFormatSource = detected.source;
+        this._channelProvider = null; // lazy: dibina pada panggilan pertama
+
+        log.info(
+            () =>
+                `[AgentB][AgentChannel] format=${this.channelFormat} source=${this.channelFormatSource}` +
+                (this.channelFormat === 'openai' ? '' : ' — delegasi channel bukan-openai aktif')
+        );
+    }
+
+    /**
+     * [TRI-DOOR FASA C] Transport provider bukan-openai (lazy single-instance).
+     * Laluan openai TIDAK menggunakan ini — ia mewarisi super() (universalPayload
+     * god-tier + SSE watchdog) — supaya laluan produksi rootsys 100% terpelihara.
+     * @returns {Object|null} instance provider duck-typed atau null (openai)
+     */
+    _getChannelProvider() {
+        if (this.channelFormat === 'openai') return null;
+        if (this._channelProvider) return this._channelProvider;
+        const opts = {
+            apiKey: this.apiKey,
+            model: this.model,
+            preflightModel: this.preflightModel,
+            thinkingLevel: 'low', // gemini: empirikal Fasa 0 (6.4s, elak DQ 300s)
+            thinking: { type: 'adaptive' } // anthropic: kekangan temp/thinking provider
+        };
+        this._channelProvider =
+            this.channelFormat === 'gemini'
+                ? geminiChannel.buildProvider(opts)
+                : this.channelFormat === 'anthropic'
+                  ? anthropicChannel.buildProvider(opts)
+                  : null;
+        return this._channelProvider;
+    }
+
+    /**
+     * [TRI-DOOR FASA C] Delegasi pintu: bila format ialah gemini/anthropic,
+     * panggilan diarahkan kepada transport channel (non-stream, format rasmi
+     * masing-masing). Format openai (termasuk laluan rootsys produksi) terus
+     * kepada super() — universalPayload god-tier + SSE watchdog 100% terpelihara.
+     */
+    async translateSubtitle(subtitleContent, sourceLanguage, targetLanguage, customPrompt = null, requestOptions = {}) {
+        const channelProvider = this._getChannelProvider();
+        if (!channelProvider) {
+            return super.translateSubtitle(
+                subtitleContent,
+                sourceLanguage,
+                targetLanguage,
+                customPrompt,
+                requestOptions
+            );
+        }
+        // Kedua-dua GeminiService & AnthropicProvider melakukan split
+        // SUBFABER_PROMPT_BOUNDARY dalam buildUserPrompt masing-masing —
+        // customPrompt bersempadan dihantar sekali, system/user dipisah di
+        // sempadan API mengikut format rasmi pintu.
+        return channelProvider.translateSubtitle(subtitleContent, sourceLanguage, targetLanguage, customPrompt);
     }
 
     /**

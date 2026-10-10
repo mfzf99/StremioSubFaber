@@ -6272,6 +6272,9 @@ async function performTranslation(
                         fallbackModel: config.agentB.fallbackModel || 'deepseek-v4.1-flash',
                         preflightTimeoutMs: config.agentB.preflightTimeoutMs,
                         inspectionTimeoutMs: config.agentB.inspectionTimeoutMs,
+                        // [TRI-DOOR FASA C] Format pintu: 'auto' (autodetect
+                        // keyDetector) | 'gemini' | 'openai' | 'anthropic'.
+                        format: config.agentB.format,
                         // BEAST MODE BETA RUN 10: siling token 131072 (128K rasmi DeepSeek
                         // apabila reasoning_effort="max") — dinormalisasi oleh config.js.
                         maxTokens: config.agentB.maxTokens,

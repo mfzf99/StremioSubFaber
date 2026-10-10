@@ -10,6 +10,24 @@
 
 ---
 
+## 2026-10-10 (FASA C SELESAI) — TRI-DOOR: geminiChannel + anthropicChannel + wiring config.agentB.format
+
+- **Tarikh:** 2026-10-10 (14:20 MYT)
+- **Komit SHA:** (Fasa A+B komited `6eafdbf`; Fasa C komit menyusul serta-merta)
+- **Keputusan Owner:** Mandat Fasa C — geminiChannel (systemInstruction top-level, hormati getModelFamily, non-stream default), anthropicChannel (system top-level, max_tokens mandatori, kekangan temperature/thinking), wiring config.agentB.format + autodetect keyDetector, regresi payload kedua pintu. npm test mesti hijau penuh.
+- **Fail Terlibat:**
+  - `src/services/channels/geminiChannel.js` (BAHARU — buildRequest: systemInstruction TOP-LEVEL {parts:[{text}]}, contents user tunggal, generationConfig via GeminiService.buildGenerationConfig = satu sumber kebenaran getModelFamily; default thinkingLevel 'low' (empirikal Fasa 0: 6.4s vs DQ 300s); buildProvider: GeminiService maxRetries 0 duck-typed)
+  - `src/services/channels/anthropicChannel.js` (BAHARU — buildRequest: system string top-level, max_tokens MANDATORI clamp cap 64000, messages user tunggal, endpoint /v1/messages + anthropic-version 2023-06-01; buildProvider: AnthropicProvider thinking adaptive, kekangan temp/thinking terpelihara oleh provider)
+  - `src/services/agentBInspector.js` (constructor: detectAgentChannelFormat → channelFormat/channelFormatSource + log telus [AgentB][AgentChannel]; _getChannelProvider() lazy; translateSubtitle() override — format gemini/anthropic didelegasikan ke channel transport, format openai kekal super() 1:1 laluan rootsys)
+  - `src/utils/config.js` (agentB.format: 'auto' lalai + env AGENT_B_FORMAT + lowercase)
+  - `src/handlers/subtitles.js` (suntikan format: config.agentB.format ke AgentBInspector)
+  - `src/services/channels-triDoor-phaseC-regression.test.js` (BAHARU — 15 test: payload Gemini [systemInstruction top-level haram-dalam-contents, :generateContent non-stream, 3.7 strict strip sampling + thinkingLevel low, 2.5 legacy sampling], payload Anthropic [system top-level, max_tokens mandatori + clamp, header version], delegasi AgentB per pintu [openai super() 1:1, gemini/anthropic via channel stub], override mengatasi autodetect, split sempadan prompt pada kedua channel, config normalize)
+  - `package.json` (test:tracked + channels-triDoor-phaseC-regression.test.js)
+- **Status npm test:** 346 tests / 345 PASS / 0 FAIL / 1 SKIP (skip = live Redis). +15 test Fasa C; 40+ regresi AgentB + semua baseline kekal HIJAU. Prettier lulus; ESLint 0 error (warning pra-wujud). Baseline 331→346.
+- **Next Steps:** Fasa D (UI dropdown format Agent B + paparan keputusan autodetect — delegasi Frontend mode); Fasa E (validasi produksi VPS Trinity pada pintu bukan-rootsys). Komit Fasa C push ke origin + CI verify.
+
+---
+
 ## 2026-10-10 (FASA A+B SELESAI) — PEMBEDAHAN MAJOR TRI-DOOR: keyDetector + openaiChannel (Trinity Engine 3 pintu format)
 
 - **Tarikh:** 2026-10-10 (14:05 MYT)
