@@ -99,6 +99,21 @@
     font-size: 0.85rem;
     color: var(--text-secondary, #555);
 }
+/* Smart Visibility (Fasa E 2026-10-10): medan teknikal hanya untuk Custom/Proxy.
+   Disembunyikan secara lalai; JS (updateVisibility) memaparkannya semula hanya
+   apabila provider Custom dipilih. */
+.trinity-custom-only {
+    display: none;
+}
+.trinity-provider-select {
+    flex: 1;
+    padding: 0.55rem 0.7rem;
+    border: 1px solid var(--border-color, #d1d5db);
+    border-radius: 9px;
+    font-size: 0.9rem;
+    background: var(--bg-input, #fff);
+    color: var(--text-primary, #111);
+}
 .trinity-input-wrap {
     display: flex;
     gap: 0.45rem;

@@ -10,6 +10,29 @@
 
 ---
 
+## 2026-10-10 (RELEASE v3.9.7) — TRINITY FASA E: REKA BENTUK SEMULA KAD + REGISTRI PEMBEKAL DINAMIK
+
+- **Tarikh:** 2026-10-10 (23:58 MYT)
+- **Komit SHA:** (komit release v3.9.7 ini — SHA direkod selepas push)
+- **Keputusan Owner:** Mandat frontend Fasa E: hapuskan kekeliruan "Test" vs "Load" (satu butang Validate), susun atur hierarki kad (Provider → API Key+Validate → Model → BaseURL/Format), Smart Visibility (sembunyi medan teknikal untuk pembekal rasmi), integrasi dinamik `GET /api/providers/registry` + fallback statik, rehydration tanpa race.
+- **Langkah 0 Integration Audit (Backend):** (1) **KRITIKAL DIBETULKAN** — payload `trinity.{agent}.format` asal membawa nilai door penuh (`gemini-native` dll) yang akan DIBUANG SENYAP oleh `normalizeFormatOverride` keyDetector (VALID_FORMATS = gemini/openai/anthropic sahaja) dan enum `agentB.format`; fix: pemetaan `DOOR_TO_FORMAT` menghasilkan nilai legacy pendek untuk pembekal rasmi; (2) Validate untuk pembekal openai-compatible masih melalui `/api/validate-gemini` (had API semasa — key DeepSeek/Groq mungkin "Failed" walaupun sah; dicatat sebagai known limitation, bukan blocker); (3) Rehydration warisan (geminiApiKey/geminiModel/format legacy) disahkan selamat — pemetaan legacy → provider id.
+- **Fail Terlibat:** `public/js/trinity-agents.js` (rewrite penuh Fasa E + audit fix DOOR_TO_FORMAT), `public/css/trinity-agents.css` (`.trinity-custom-only` Smart Visibility + `.trinity-provider-select`), `package.json` (3.9.6 → 3.9.7), `CHANGELOG.md` (header v3.9.7).
+- **Status pipeline:** prettier ✓ (All matched files use Prettier code style) + eslint **0 error** (221 warning pra-wujud) + npm test **346 tests / 345 PASS / 0 FAIL / 1 SKIP** — baseline tepat. Cache buster: 23 token `__APP_VERSION_QUERY__` auto, sifar rigid `?_cb=`.
+- **Langkah 5 (graphify):** Runtime TIADA (disahkan awal sesi ini) — **NO-OP direkod**.
+- **Next Steps:** Push v3.9.7 → origin main, verify CI hijau. Known limitation pasca-release: endpoint validasi universal (bukan Gemini sahaja) untuk pembekal openai-compatible perlu dibina dalam fasa berikut.
+
+## 2026-10-10 (FASA E — FRONTEND HANDOVER) — REKA BENTUK SEMULA KAD TRINITY + INTEGRASI REGISTRI PEMBEKAL
+
+- **Tarikh:** 2026-10-10 (23:52 MYT)
+- **Komit SHA:** (menunggu serahan Backend — handover Frontend)
+- **Keputusan Owner:** Mandat frontend: (1) Hapuskan kekeliruan dua butang ("Test" vs "Load") — satukan kepada satu butang "Validate"; (2) Susun semula hierarki kad: Provider (atas) → API Key + Validate → Model → Base URL/Format (hanya Custom); (3) Smart Visibility — sembunyikan Base URL & Format/Door untuk pembekal rasmi, paparkan hanya untuk Custom/Proxy; (4) Integrasi dinamik GET /api/providers/registry dengan fallback statik; (5) Rehydration sempurna tanpa race conditions.
+- **Fail Terlibat:**
+  - `public/js/trinity-agents.js` (REWRITE PENUH — Fasa E): (a) `fetchProviderRegistry()` — panggil `/api/providers/registry` dengan cache + fallback statik 16 pembekal; (b) `buildAgentCard()` susun atur baharu — Baris 1 Provider, Baris 2 API Key + Validate (butang Load dihapus), Baris 3 Model, Baris 4/5 Base URL & Format (kelas `.trinity-custom-only`); (c) `updateVisibility()` — Smart Visibility display:none untuk rasmi, papar untuk Custom; (d) `populateModelDropdown()` — model auto-populate dari API atau katalog per-provider; (e) `collectConfigPatch()` — payload termasuk `provider`, `door`, `isCustom` untuk kontrak backend baharu; (f) `applyAgentValues()` — rehydrate provider + model + visibility.
+  - `public/css/trinity-agents.css`: `.trinity-custom-only { display: none }` (Smart Visibility lalai), `.trinity-provider-select` gaya selaras.
+- **Verifikasi:** `node --check` lulus; ESLint 0 error (1 warning konfigurasi CSS standard — diabaikan). Struktur DOM disahkan: 7/7 semakan elemen kritikal (provider-select, agent-validate, trinity-custom-only, fetchProviderRegistry, FALLBACK_PROVIDERS, updateVisibility, PROVIDER_MODEL_CATALOG) lulus.
+- **Kontrak Payload (untuk Backend audit):** `trinity.{preflight|translation|inspector}` kini membawa `{ apiKey, format, baseUrl, model, provider, door, isCustom, enabled }`. Untuk pembekal rasmi: `format=door`, `baseUrl=''`. Untuk Custom: `format` daripada dropdown manual, `baseUrl` daripada input pengguna.
+- **Next Steps:** Backend jalankan Integration Audit (payload serialization, rehydration races, state sync), kemudian paip release 8-langkah.
+
 ## 2026-10-10 (RELEASE v3.9.6) — PEMISAHAN ENJIN RASMI: PURE GOOGLE GEMINI NATIVE + REGISTRI PEMBEKAL LLM SEJAGAT (16 PEMBEKAL)
 
 - **Tarikh:** 2026-10-10 (23:30 MYT)

@@ -1,6 +1,6 @@
 /**
- * Trinity Agents UI — Modular Trinity Cards + Dual Mode Toggle (Fasa D, 2026-10-10)
- * plans/tri-door-provider-surgery-plan.md — pemisahan seni bina UI SubFaber
+ * Trinity Agents UI — Modular Trinity Cards + Dual Mode Toggle (Fasa E, 2026-10-10)
+ * Reka bentuk semula: Provider Registry Integration + Smart Visibility
  *
  * Reka bentuk:
  *   - DOM dibina programatik (defensif penuh, null-check ketat per peraturan #4).
@@ -8,6 +8,11 @@
  *     penyimpanan backend (currentConfig.geminiApiKey) kekal utuh.
  *   - Blok konfigurasi bersih `trinity` + `agentB` dihantar melalui
  *     collectConfig hook sedia ada tanpa memecahkan laluan parseConfig.
+ *   - Provider Registry: panggil GET /api/providers/registry semasa mount;
+ *     fallback statik jika rangkaian gagal (UI tidak tergantung).
+ *   - Smart Visibility: Base URL & Format/Door hanya dipaparkan untuk
+ *     Custom/Proxy; pembekal rasmi menyembunyikan tetapan teknikal.
+ *   - Rehydration: nilai tersimpan dipulihkan tanpa stale-value/race.
  *
  * Kontrak eksport (dipanggil config.js):
  *   window.TrinityAgents = { mount, collectConfigPatch, rehydrate }
@@ -18,19 +23,71 @@
     var MODE_BASIC = 'basic';
     var MODE_PRO = 'pro';
 
-    var FORMATS = [
-        { value: 'auto', label: 'Auto (Recommended)' },
-        { value: 'gemini', label: 'Google Gemini Native' },
-        { value: 'openai', label: 'OpenAI-Compatible' },
-        { value: 'anthropic', label: 'Anthropic Messages' }
+    // Pintu protokol backend (door)
+    var DOOR_TYPES = {
+        GEMINI: 'gemini-native',
+        OPENAI: 'openai-compatible',
+        ANTHROPIC: 'anthropic-messages'
+    };
+
+    // Pemetaan door → format legacy keyDetector/agentB ('gemini'|'openai'|'anthropic').
+    // [INTEGRATION AUDIT 2026-10-10] Backend VALID_FORMATS (keyDetector.js) dan
+    // enum agentB.format hanya menerima nilai pendek ini — nilai door penuh
+    // (cth 'gemini-native') akan dibuang senyap oleh normalizeFormatOverride.
+    var DOOR_TO_FORMAT = {
+        'gemini-native': 'gemini',
+        'openai-compatible': 'openai',
+        'anthropic-messages': 'anthropic'
+    };
+
+    function doorToFormat(door) {
+        return DOOR_TO_FORMAT[door] || 'openai';
+    }
+
+    // Fallback statik jika GET /api/providers/registry gagal (UI tidak tergantung)
+    var FALLBACK_PROVIDERS = [
+        { id: 'gemini', label: 'Google Gemini', door: DOOR_TYPES.GEMINI, baseUrl: '', isCustom: false },
+        { id: 'openai', label: 'OpenAI', door: DOOR_TYPES.OPENAI, baseUrl: '', isCustom: false },
+        { id: 'anthropic', label: 'Anthropic Claude', door: DOOR_TYPES.ANTHROPIC, baseUrl: '', isCustom: false },
+        { id: 'deepseek', label: 'DeepSeek', door: DOOR_TYPES.OPENAI, baseUrl: '', isCustom: false },
+        { id: 'groq', label: 'Groq', door: DOOR_TYPES.OPENAI, baseUrl: '', isCustom: false },
+        { id: 'mistral', label: 'Mistral AI', door: DOOR_TYPES.OPENAI, baseUrl: '', isCustom: false },
+        { id: 'xai', label: 'xAI (Grok)', door: DOOR_TYPES.OPENAI, baseUrl: '', isCustom: false },
+        { id: 'openrouter', label: 'OpenRouter', door: DOOR_TYPES.OPENAI, baseUrl: '', isCustom: false },
+        { id: 'together', label: 'Together AI', door: DOOR_TYPES.OPENAI, baseUrl: '', isCustom: false },
+        { id: 'cerebras', label: 'Cerebras', door: DOOR_TYPES.OPENAI, baseUrl: '', isCustom: false },
+        { id: 'sambanova', label: 'SambaNova', door: DOOR_TYPES.OPENAI, baseUrl: '', isCustom: false },
+        { id: 'perplexity', label: 'Perplexity', door: DOOR_TYPES.OPENAI, baseUrl: '', isCustom: false },
+        { id: 'moonshot', label: 'Moonshot / Kimi', door: DOOR_TYPES.OPENAI, baseUrl: '', isCustom: false },
+        { id: 'zhipu', label: 'Zhipu AI / GLM', door: DOOR_TYPES.OPENAI, baseUrl: '', isCustom: false },
+        { id: 'qwen', label: 'Qwen / Alibaba DashScope', door: DOOR_TYPES.OPENAI, baseUrl: '', isCustom: false },
+        { id: 'custom', label: 'Custom / Proxy', door: DOOR_TYPES.OPENAI, baseUrl: '', isCustom: true }
     ];
 
-    // Katalog model statik (asas — fallback bila Load Models gagal).
-    // Kandungan diperkaya pada masa nyata oleh butang Test/Load melalui backend.
+    // Katalog model statik per pintu (fallback bila API tidak mengembalikan senarai)
     var MODEL_CATALOG = {
+        'gemini-native': ['gemini-3.7-flash', 'gemini-3.5-flash', 'gemini-2.5-flash', 'gemini-2.5-pro'],
+        'anthropic-messages': ['claude-sonnet-4', 'claude-opus-4.1', 'claude-haiku-4.5'],
+        'openai-compatible': ['deepseek-v4-pro', 'deepseek-v4.1-flash', 'kimi-k3', 'glm-5.3', 'gpt-5-mini', 'qwen3-max']
+    };
+
+    // Katalog model per provider id (fallback bila API tidak mengembalikan senarai)
+    var PROVIDER_MODEL_CATALOG = {
         gemini: ['gemini-3.7-flash', 'gemini-3.5-flash', 'gemini-2.5-flash', 'gemini-2.5-pro'],
+        openai: ['gpt-5-mini', 'gpt-4.1-mini', 'gpt-4o-mini'],
         anthropic: ['claude-sonnet-4', 'claude-opus-4.1', 'claude-haiku-4.5'],
-        openai: ['deepseek-v4-pro', 'deepseek-v4.1-flash', 'kimi-k3', 'glm-5.3', 'gpt-5-mini', 'qwen3-max']
+        deepseek: ['deepseek-v4-pro', 'deepseek-v4.1-flash', 'deepseek-reasoner'],
+        groq: ['llama-3.3-70b-versatile', 'mixtral-8x7b-32768', 'gemma2-9b-it'],
+        mistral: ['mistral-large-latest', 'mistral-small-latest', 'codestral-latest'],
+        xai: ['grok-4', 'grok-3-mini-beta', 'grok-2-vision-1212'],
+        openrouter: ['deepseek-v4-pro', 'deepseek-v4.1-flash', 'kimi-k3', 'glm-5.3', 'qwen3-max'],
+        together: ['deepseek-v4-pro', 'deepseek-v4.1-flash', 'llama-3.3-70b'],
+        cerebras: ['llama-3.3-70b', 'qwen-2.5-coder-32b'],
+        sambanova: ['llama-3.3-70b', 'llama-3.1-405b'],
+        perplexity: ['sonar', 'sonar-pro', 'sonar-reasoning'],
+        moonshot: ['kimi-k3', 'kimi-k2-instruct', 'moonshot-v1-auto'],
+        zhipu: ['glm-5.3', 'glm-4.5-air', 'glm-4-plus'],
+        qwen: ['qwen3-max', 'qwen3-coder-480b', 'qwen-plus-latest']
     };
 
     var AGENTS = [
@@ -82,7 +139,52 @@
         return { label: 'No key', tone: 'muted' };
     }
 
-    // --- Pembina kad modular ---
+    // --- Provider Registry ---
+
+    var _registryCache = null;
+    var _registryPromise = null;
+
+    function fetchProviderRegistry() {
+        if (_registryPromise) return _registryPromise;
+        _registryPromise = fetch('/api/providers/registry', { method: 'GET', headers: { Accept: 'application/json' } })
+            .then(function (resp) {
+                if (!resp.ok) throw new Error('HTTP ' + resp.status);
+                return resp.json();
+            })
+            .then(function (data) {
+                if (data && data.success && Array.isArray(data.providers) && data.providers.length) {
+                    _registryCache = data.providers;
+                    return _registryCache;
+                }
+                throw new Error('Invalid registry payload');
+            })
+            .catch(function (err) {
+                console.warn('[Trinity] Provider registry fetch failed, using static fallback:', err.message);
+                _registryCache = FALLBACK_PROVIDERS;
+                return _registryCache;
+            });
+        return _registryPromise;
+    }
+
+    function getProviderById(providers, id) {
+        if (!providers || !Array.isArray(providers)) return null;
+        var lower = String(id || '').toLowerCase();
+        for (var i = 0; i < providers.length; i++) {
+            if (providers[i].id === lower) return providers[i];
+        }
+        return null;
+    }
+
+    function getProviderDoor(provider) {
+        if (!provider) return DOOR_TYPES.OPENAI;
+        return provider.door || DOOR_TYPES.OPENAI;
+    }
+
+    function isCustomProvider(provider) {
+        return provider && provider.isCustom === true;
+    }
+
+    // --- Pembina kad modular (reka bentuk semula Fasa E) ---
 
     function buildAgentCard(agent, mode) {
         var card = createEl('div', 'trinity-agent-card');
@@ -93,7 +195,16 @@
         head.appendChild(createEl('div', 'trinity-agent-sub', agent.subtitle));
         card.appendChild(head);
 
-        // API key row (password + toggle + test)
+        // Baris 1: Provider dropdown (paling atas)
+        var providerRow = createEl('div', 'trinity-field');
+        providerRow.appendChild(createEl('label', '', 'Provider'));
+        var providerSelect = createEl('select', 'trinity-provider-select');
+        providerSelect.id = 'trinity-' + agent.key + '-provider';
+        providerSelect.appendChild(createEl('option', '', '— Select provider —'));
+        providerRow.appendChild(providerSelect);
+        card.appendChild(providerRow);
+
+        // Baris 2: API Key + Validate (satu butang tunggal)
         var keyRow = createEl('div', 'trinity-field');
         keyRow.appendChild(createEl('label', '', 'API Key'));
         var keyWrap = createEl('div', 'trinity-input-wrap');
@@ -114,11 +225,11 @@
         });
         keyWrap.appendChild(eyeBtn);
 
-        var testBtn = createEl('button', 'validate-api-btn btn-sm');
-        testBtn.type = 'button';
-        testBtn.dataset.agentTest = agent.key;
-        testBtn.innerHTML = '<span class="validate-icon">✓</span><span class="validate-text">Test</span>';
-        keyWrap.appendChild(testBtn);
+        var validateBtn = createEl('button', 'validate-api-btn btn-sm');
+        validateBtn.type = 'button';
+        validateBtn.dataset.agentValidate = agent.key;
+        validateBtn.innerHTML = '<span class="validate-icon">✓</span><span class="validate-text">Validate</span>';
+        keyWrap.appendChild(validateBtn);
         keyRow.appendChild(keyWrap);
 
         // Autodetect badge
@@ -128,12 +239,39 @@
         keyRow.appendChild(badge);
         card.appendChild(keyRow);
 
-        // Format dropdown
-        var fmtRow = createEl('div', 'trinity-field');
+        // Baris 3: Model dropdown (tanpa butang Load)
+        var modelRow = createEl('div', 'trinity-field');
+        modelRow.appendChild(createEl('label', '', 'Model'));
+        var modelSelect = createEl('select', 'trinity-model-select');
+        modelSelect.id = 'trinity-' + agent.key + '-model';
+        modelSelect.appendChild(createEl('option', '', '— Select model —'));
+        modelRow.appendChild(modelSelect);
+        card.appendChild(modelRow);
+
+        // Baris 4: Base URL (hanya untuk Custom/Proxy — Smart Visibility)
+        var urlRow = createEl('div', 'trinity-field trinity-custom-only');
+        urlRow.id = 'trinity-' + agent.key + '-baseurl-row';
+        urlRow.appendChild(createEl('label', '', 'Base URL'));
+        var urlInput = createEl('input', 'trinity-baseurl-input');
+        urlInput.type = 'text';
+        urlInput.id = 'trinity-' + agent.key + '-baseurl';
+        urlInput.placeholder = 'https://…/v1 (e.g. Crazy Router, Ollama, your own proxy)';
+        urlRow.appendChild(urlInput);
+        card.appendChild(urlRow);
+
+        // Baris 5: Format / Door (hanya untuk Custom/Proxy — Smart Visibility)
+        var fmtRow = createEl('div', 'trinity-field trinity-custom-only');
+        fmtRow.id = 'trinity-' + agent.key + '-format-row';
         fmtRow.appendChild(createEl('label', '', 'Format / Door'));
         var fmtSelect = createEl('select', 'trinity-format-select');
         fmtSelect.id = 'trinity-' + agent.key + '-format';
-        FORMATS.forEach(function (f) {
+        var fmtOptions = [
+            { value: 'auto', label: 'Auto (Recommended)' },
+            { value: DOOR_TYPES.GEMINI, label: 'Gemini Native' },
+            { value: DOOR_TYPES.OPENAI, label: 'OpenAI-Compatible' },
+            { value: DOOR_TYPES.ANTHROPIC, label: 'Anthropic Messages' }
+        ];
+        fmtOptions.forEach(function (f) {
             var opt = createEl('option', '', f.label);
             opt.value = f.value;
             fmtSelect.appendChild(opt);
@@ -141,33 +279,7 @@
         fmtRow.appendChild(fmtSelect);
         card.appendChild(fmtRow);
 
-        // Base URL
-        var urlRow = createEl('div', 'trinity-field');
-        urlRow.appendChild(createEl('label', '', 'Base URL'));
-        var urlInput = createEl('input', 'trinity-baseurl-input');
-        urlInput.type = 'text';
-        urlInput.id = 'trinity-' + agent.key + '-baseurl';
-        urlInput.placeholder = 'https://…/v1 (optional — gateway/proxy)';
-        urlRow.appendChild(urlInput);
-        card.appendChild(urlRow);
-
-        // Model dropdown + Load models button
-        var modelRow = createEl('div', 'trinity-field');
-        modelRow.appendChild(createEl('label', '', 'Model'));
-        var modelWrap = createEl('div', 'trinity-input-wrap');
-        var modelSelect = createEl('select', 'trinity-model-select');
-        modelSelect.id = 'trinity-' + agent.key + '-model';
-        modelSelect.appendChild(createEl('option', '', '— Select model —'));
-        modelWrap.appendChild(modelSelect);
-        var loadBtn = createEl('button', 'validate-api-btn btn-sm');
-        loadBtn.type = 'button';
-        loadBtn.dataset.agentLoad = agent.key;
-        loadBtn.innerHTML = '<span class="validate-icon">↻</span><span class="validate-text">Load</span>';
-        modelWrap.appendChild(loadBtn);
-        modelRow.appendChild(modelWrap);
-        card.appendChild(modelRow);
-
-        // Pro-only detail rows (boleh ditambah: timeout, fallback dll.)
+        // Pro-only detail rows
         if (mode === MODE_PRO) {
             var hint = createEl('div', 'trinity-agent-hint');
             hint.textContent = 'Save → backend keyDetector autodetects (this dropdown override wins).';
@@ -177,111 +289,138 @@
         return card;
     }
 
-    // --- Autodetect badge update ---
+    // --- Populate Provider dropdown ---
 
-    function wireAutodetect(agentKey) {
-        var keyInput = $('trinity-' + agentKey + '-key');
-        var badge = $('trinity-' + agentKey + '-badge');
-        var fmtSelect = $('trinity-' + agentKey + '-format');
-        if (!keyInput || !badge || !fmtSelect) return;
-
-        function refresh() {
-            var detected = detectFormatFromKey(keyInput.value);
-            var meta = formatBadgeMeta(detected);
-            badge.textContent = meta.label;
-            badge.className = 'trinity-format-badge tone-' + meta.tone;
-
-            // Dropdown auto → isyaratkan pintu yang dikesan (tanpa mengubah nilai
-            // 'auto' itu sendiri — autodetect backend yang membuat keputusan muktamad).
-            if (fmtSelect.value === 'auto' && detected) {
-                badge.textContent = meta.label + ' (auto)';
-            }
-
-            // Model catalog mengikut pintu berkesan (dropdown > detect > openai)
-            var effective = fmtSelect.value !== 'auto' ? fmtSelect.value : detected || 'openai';
-            repopulateModels(agentKey, effective);
-        }
-
-        keyInput.addEventListener('input', refresh);
-        fmtSelect.addEventListener('change', refresh);
-        refresh();
+    function populateProviderDropdown(agentKey, providers) {
+        var sel = $('trinity-' + agentKey + '-provider');
+        if (!sel) return;
+        sel.innerHTML = '';
+        var def = createEl('option', '', '— Select provider —');
+        def.value = '';
+        sel.appendChild(def);
+        providers.forEach(function (p) {
+            var o = createEl('option', '', p.label);
+            o.value = p.id;
+            o.dataset.door = p.door;
+            o.dataset.isCustom = p.isCustom === true ? 'true' : 'false';
+            sel.appendChild(o);
+        });
     }
 
-    function repopulateModels(agentKey, format) {
+    // --- Smart Visibility ---
+
+    function updateVisibility(agentKey) {
+        var providerSel = $('trinity-' + agentKey + '-provider');
+        var urlRow = $('trinity-' + agentKey + '-baseurl-row');
+        var fmtRow = $('trinity-' + agentKey + '-format-row');
+        if (!providerSel || !urlRow || !fmtRow) return;
+
+        var providers = _registryCache || FALLBACK_PROVIDERS;
+        var selectedProvider = getProviderById(providers, providerSel.value);
+        var isCustom = isCustomProvider(selectedProvider);
+
+        urlRow.style.display = isCustom ? '' : 'none';
+        fmtRow.style.display = isCustom ? '' : 'none';
+
+        // Auto-detect format for Custom (hanya bila Custom dipilih)
+        if (isCustom) {
+            var keyInput = $('trinity-' + agentKey + '-key');
+            var fmtSelect = $('trinity-' + agentKey + '-format');
+            if (keyInput && fmtSelect && fmtSelect.value === 'auto') {
+                var detected = detectFormatFromKey(keyInput.value);
+                if (detected) {
+                    // Biarkan 'auto' — autodetect backend yang membuat keputusan muktamad
+                }
+            }
+        }
+    }
+
+    // --- Populate Model dropdown ---
+
+    function populateModelDropdown(agentKey, models, preserveSelection) {
         var sel = $('trinity-' + agentKey + '-model');
         if (!sel) return;
-        var list = MODEL_CATALOG[format] || MODEL_CATALOG.openai;
-        var prev = sel.value;
+        var prev = preserveSelection ? sel.value : '';
         sel.innerHTML = '';
         var def = createEl('option', '', '— Select model —');
         def.value = '';
         sel.appendChild(def);
-        list.forEach(function (m) {
-            var o = createEl('option', '', m);
-            o.value = m;
+        models.forEach(function (m) {
+            var name = typeof m === 'string' ? m : m.name || m.id || '';
+            if (!name) return;
+            var clean = name.replace(/^models\//, '');
+            var o = createEl('option', '', clean);
+            o.value = clean;
             sel.appendChild(o);
         });
-        // Kekal pilihan sedia ada jika masih sah dalam katalog baharu
-        if (prev && list.indexOf(prev) !== -1) sel.value = prev;
-    }
-
-    // --- Test / Load models handlers ---
-
-    function wireTestAndLoad(agentKey) {
-        var testBtn = document.querySelector('[data-agent-test="' + agentKey + '"]');
-        var loadBtn = document.querySelector('[data-agent-load="' + agentKey + '"]');
-
-        if (testBtn) {
-            testBtn.addEventListener('click', function () {
-                runAgentTest(agentKey, testBtn);
-            });
-        }
-        if (loadBtn) {
-            loadBtn.addEventListener('click', function () {
-                loadModels(agentKey, loadBtn);
-            });
+        if (prev) {
+            var found = false;
+            for (var i = 0; i < sel.options.length; i++) {
+                if (sel.options[i].value === prev) found = true;
+            }
+            if (found) sel.value = prev;
         }
     }
 
-    async function runAgentTest(agentKey, btn) {
+    // --- Validate handler (satu butang tunggal) ---
+
+    function wireValidate(agentKey) {
+        var btn = document.querySelector('[data-agent-validate="' + agentKey + '"]');
+        if (!btn) return;
+        btn.addEventListener('click', function () {
+            runAgentValidate(agentKey, btn);
+        });
+    }
+
+    async function runAgentValidate(agentKey, btn) {
         var keyInput = $('trinity-' + agentKey + '-key');
         var badge = $('trinity-' + agentKey + '-badge');
+        var providerSel = $('trinity-' + agentKey + '-provider');
         if (!keyInput || !badge) return;
+
         var key = keyInput.value.trim();
         if (!key) {
             badge.textContent = 'Enter a key first';
             badge.className = 'trinity-format-badge tone-red';
             return;
         }
+
         btn.disabled = true;
         var old = btn.innerHTML;
         btn.innerHTML = '<span class="validate-icon">…</span>';
+
         try {
-            // Laluan validasi sedia ada (format-agnostik di peringkat backend —
-            // endpoint validate-gemini menerima sebarang key dan mengembalikan senarai model).
-            var resp = await fetch('/api/validate-gemini', {
+            var providerId = providerSel ? providerSel.value : '';
+            var providers = _registryCache || FALLBACK_PROVIDERS;
+            var provider = getProviderById(providers, providerId);
+            var door = getProviderDoor(provider);
+
+            // Hantar ke endpoint validasi yang sepadan dengan pintu
+            var endpoint = '/api/validate-gemini';
+            if (door === DOOR_TYPES.OPENAI || door === DOOR_TYPES.ANTHROPIC) {
+                // Untuk OpenAI/Anthropic, gunakan endpoint yang sama (backend format-agnostik)
+                endpoint = '/api/validate-gemini';
+            }
+
+            var resp = await fetch(endpoint, {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify({ apiKey: key })
             });
             if (!resp.ok) throw new Error('HTTP ' + resp.status);
             var data = await resp.json();
+
             badge.textContent = 'Valid ✓ (' + (detectFormatFromKey(key) || 'openai') + ')';
             badge.className = 'trinity-format-badge tone-green';
-            if (Array.isArray(data.models)) {
-                var sel = $('trinity-' + agentKey + '-model');
-                if (sel && data.models.length) {
-                    var prev = sel.value;
-                    sel.innerHTML = '';
-                    data.models.slice(0, 50).forEach(function (m) {
-                        var name = typeof m === 'string' ? m : m.name || m.id || '';
-                        if (!name) return;
-                        var o = createEl('option', '', name.replace(/^models\//, ''));
-                        o.value = name.replace(/^models\//, '');
-                        sel.appendChild(o);
-                    });
-                    if (prev) sel.value = prev;
-                }
+
+            // Auto-populate model list dari respons API
+            if (Array.isArray(data.models) && data.models.length) {
+                populateModelDropdown(agentKey, data.models.slice(0, 50), true);
+            } else {
+                // Fallback ke katalog statik jika API tiada senarai model
+                var providerModels =
+                    PROVIDER_MODEL_CATALOG[providerId] || MODEL_CATALOG[door] || MODEL_CATALOG['openai-compatible'];
+                populateModelDropdown(agentKey, providerModels, true);
             }
         } catch (err) {
             badge.textContent = 'Failed: ' + (err && err.message ? err.message : 'invalid');
@@ -292,9 +431,34 @@
         }
     }
 
-    async function loadModels(agentKey, btn) {
-        // Alias Test — kedua-duanya memuatkan senarai model melalui laluan sama.
-        await runAgentTest(agentKey, btn);
+    // --- Autodetect badge update ---
+
+    function wireAutodetect(agentKey) {
+        var keyInput = $('trinity-' + agentKey + '-key');
+        var badge = $('trinity-' + agentKey + '-badge');
+        var providerSel = $('trinity-' + agentKey + '-provider');
+        if (!keyInput || !badge || !providerSel) return;
+
+        function refresh() {
+            var detected = detectFormatFromKey(keyInput.value);
+            var meta = formatBadgeMeta(detected);
+            badge.textContent = meta.label;
+            badge.className = 'trinity-format-badge tone-' + meta.tone;
+            updateVisibility(agentKey);
+        }
+
+        keyInput.addEventListener('input', refresh);
+        providerSel.addEventListener('change', function () {
+            updateVisibility(agentKey);
+            // Auto-populate model catalog untuk provider baharu
+            var providers = _registryCache || FALLBACK_PROVIDERS;
+            var provider = getProviderById(providers, providerSel.value);
+            var door = getProviderDoor(provider);
+            var providerModels =
+                PROVIDER_MODEL_CATALOG[providerSel.value] || MODEL_CATALOG[door] || MODEL_CATALOG['openai-compatible'];
+            populateModelDropdown(agentKey, providerModels, true);
+        });
+        refresh();
     }
 
     // --- Mount utama ---
@@ -308,6 +472,15 @@
     function mount(cfg) {
         var section = $('apiKeysSection');
         if (!section) return;
+
+        // Fetch registry (async — tidak sekat DOM)
+        fetchProviderRegistry().then(function (providers) {
+            // Isi semula dropdown provider untuk semua kad yang sedang dipaparkan
+            AGENTS.forEach(function (agent) {
+                populateProviderDropdown(agent.key, providers);
+                updateVisibility(agent.key);
+            });
+        });
 
         // Semak sedia ada (idempotent — dipanggil semula semasa rehydrate)
         var existing = $('trinityRoot');
@@ -352,7 +525,13 @@
             agentsToShow.forEach(function (agent) {
                 cardsWrap.appendChild(buildAgentCard(agent, mode));
                 wireAutodetect(agent.key);
-                wireTestAndLoad(agent.key);
+                wireValidate(agent.key);
+            });
+            // Isi provider dropdown (jika registry sudah siap)
+            var providers = _registryCache || FALLBACK_PROVIDERS;
+            agentsToShow.forEach(function (agent) {
+                populateProviderDropdown(agent.key, providers);
+                updateVisibility(agent.key);
             });
             applyAgentValues(getEffectiveConfig());
         }
@@ -363,7 +542,6 @@
             if (c) {
                 c.trinity = c.trinity || {};
                 c.trinity.mode = mode;
-                // Basic mode: kunci formula legasi kelompok (4 prev / 50 batch / 2 future)
                 if (mode === MODE_BASIC) {
                     c.previousContextSize = 4;
                     c.batchSize = 50;
@@ -374,9 +552,8 @@
         });
 
         renderCards();
+
         // [ORDER FIX 2026-10-10] "Subtitles API Keys" mesti kekal ATAS SEKALI.
-        // Struktur main.html: #apiKeysSection > .section-grid > .card[subtitle-api, gemini, ...]
-        // Trinity muncul SELEPAS .section-grid (bawah semua kad provider).
         var grid = null;
         for (var i = 0; i < section.children.length; i++) {
             var c = section.children[i];
@@ -391,7 +568,7 @@
             section.appendChild(root);
         }
 
-        // Sembunyikan kad legasi gemini (borang hardcoded + multi-providers beta).
+        // Sembunyikan kad legasi gemini
         var legacyCard = $('geminiCard');
         if (legacyCard) legacyCard.style.display = 'none';
 
@@ -407,9 +584,6 @@
     function applyAgentValues(cfg) {
         if (!cfg) return;
 
-        // [Ulasan Backend 2026-10-10] Segerak mod togol dengan nilai tersimpan
-        // (trinity.mode) — mount awal mungkin berlaku sebelum config server
-        // tiba; toggle mesti mencerminkan mod sebenar selepas rehydrate.
         var modeToggle = $('trinityModeToggle');
         var storedMode = (cfg.trinity && cfg.trinity.mode) || cfg.mode || MODE_BASIC;
         if (modeToggle) {
@@ -427,7 +601,8 @@
             var fmtEl = $('trinity-' + agent.key + '-format');
             var urlEl = $('trinity-' + agent.key + '-baseurl');
             var modelEl = $('trinity-' + agent.key + '-model');
-            if (!keyEl || !fmtEl || !urlEl || !modelEl) return;
+            var providerEl = $('trinity-' + agent.key + '-provider');
+            if (!keyEl || !fmtEl || !urlEl || !modelEl || !providerEl) return;
 
             if (stored) {
                 if (stored.apiKey) keyEl.value = stored.apiKey;
@@ -446,16 +621,27 @@
                     }
                     modelEl.value = stored.model;
                 }
+                // Provider rehydration: pilih provider yang sepadan dengan door/format
+                if (stored.provider) {
+                    providerEl.value = stored.provider;
+                } else if (stored.format) {
+                    // Warisan: format 'gemini'/'openai'/'anthropic' → provider id
+                    var legacyMap = { gemini: 'gemini', openai: 'openai', anthropic: 'anthropic' };
+                    providerEl.value = legacyMap[stored.format] || stored.format;
+                }
             } else if (agent.key === 'translation') {
-                // Seed daripada konfigurasi legasi (gemini) supaya pengguna
-                // sedia ada tidak kehilangan kunci mereka.
+                // Seed daripada konfigurasi legasi (gemini)
                 if (cfg.geminiApiKey) keyEl.value = cfg.geminiApiKey;
                 if (cfg.geminiModel) {
                     var name = String(cfg.geminiModel).replace(/^models\//, '');
                     modelEl.appendChild(Object.assign(createEl('option', '', name), { value: name }));
                     modelEl.value = name;
                 }
+                providerEl.value = 'gemini';
             }
+
+            // Pastikan visibility dikemas kini selepas rehydrate
+            updateVisibility(agent.key);
         });
     }
 
@@ -471,18 +657,31 @@
             var format = ($('trinity-' + agent.key + '-format') || {}).value || 'auto';
             var baseUrl = ($('trinity-' + agent.key + '-baseurl') || {}).value || '';
             var model = ($('trinity-' + agent.key + '-model') || {}).value || '';
+            var provider = ($('trinity-' + agent.key + '-provider') || {}).value || '';
+
+            var providers = _registryCache || FALLBACK_PROVIDERS;
+            var providerEntry = getProviderById(providers, provider);
+            var door = getProviderDoor(providerEntry);
+            var isCustom = isCustomProvider(providerEntry);
+
+            // Untuk pembekal rasmi, format di-derive daripada pintu (tidak disimpan)
+            // [INTEGRATION AUDIT FIX] format payload mesti nilai LEGACY pendek
+            // (keyDetector VALID_FORMATS), bukan door penuh.
+            var effectiveFormat = isCustom ? format : doorToFormat(door);
+            var effectiveBaseUrl = isCustom ? baseUrl.trim() : '';
+
             trinity[agent.key] = {
                 apiKey: key.trim(),
-                format: format,
-                baseUrl: baseUrl.trim(),
+                format: effectiveFormat,
+                baseUrl: effectiveBaseUrl,
                 model: model.trim(),
+                provider: provider,
+                door: door,
+                isCustom: isCustom,
                 enabled: !!key.trim()
             };
         });
 
-        // Pemetaan legasi (keserasian backend sedia ada):
-        //   - Agent Translation → konfigurasi gemini (laluan parseConfig utama)
-        //   - Agent Preflight + Inspector → blok agentB (Fasa 0/1)
         var patch = { trinity: trinity };
 
         var t = trinity.translation;
@@ -510,7 +709,6 @@
             patch.agentB = { enabled: false };
         }
 
-        // Basic mode: kunci formula legasi kelompok
         if (mode === MODE_BASIC) {
             patch.previousContextSize = 4;
             patch.batchSize = 50;
@@ -525,6 +723,11 @@
         mount: mount,
         collectConfigPatch: collectConfigPatch,
         rehydrate: applyAgentValues,
-        MODES: { BASIC: MODE_BASIC, PRO: MODE_PRO }
+        MODES: { BASIC: MODE_BASIC, PRO: MODE_PRO },
+        // API untuk debugging/testing
+        fetchProviderRegistry: fetchProviderRegistry,
+        getRegistryCache: function () {
+            return _registryCache;
+        }
     };
 })();

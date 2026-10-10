@@ -2,6 +2,19 @@
 
 All notable changes to this project will be documented in this file.
 
+## SubMaker v3.9.7 (2026-10-10) — Trinity Fasa E: Reka Bentuk Semula Kad Trinity + Integrasi Registri Pembekal Dinamik
+
+### Changed
+
+- **`public/js/trinity-agents.js` (rewrite penuh — Fasa E)**: Susun atur hierarki kad baharu mengikut amalan industri — Baris 1: dropdown **Provider** (16 pembekal rasmi + Custom/Proxy di hujung senarai); Baris 2: **API Key + satu butang tunggal "Validate"** (butang "Load" yang mengelirukan dihapuskan — senarai model dimuatkan automatik apabila validasi sah); Baris 3: dropdown **Model**. Integrasi dinamik `GET /api/providers/registry` dengan cache + fallback statik 16 pembekal sekiranya rangkaian gagal (UI tidak tergantung).
+- **Smart Visibility (hide ≠ delete)**: medan Base URL & Format/Door disembunyikan (`display: none`, kelas `.trinity-custom-only`) untuk semua pembekal rasmi; hanya dipaparkan apabila Custom/Proxy dipilih — pengguna awam tidak perlu lihat tetapan teknikal.
+- **Payload kontrak baharu**: `trinity.{agent}` kini membawa `{ apiKey, format, baseUrl, model, provider, door, isCustom, enabled }`. [INTEGRATION AUDIT FIX] `format` pembekal rasmi di-derive daripada door melalui pemetaan `DOOR_TO_FORMAT` kepada nilai legacy pendek (`gemini`/`openai`/`anthropic`) — sepadan `VALID_FORMATS` keyDetector.js & enum `agentB.format`, mencegah override dibuang senyap.
+- **Rehydration provider-aware**: nilai tersimpan (termasuk konfigurasi warisan `geminiApiKey`/`geminiModel` dan format legacy) dipulihkan ke dropdown provider/model tanpa stale-value; `updateVisibility()` dipanggil selepas setiap rehydrate; katalog model per-provider (15 pembekal) sebagai fallback.
+
+### Added
+
+- **`public/css/trinity-agents.css`**: kelas `.trinity-custom-only` (Smart Visibility lalai tersembunyi) + gaya `.trinity-provider-select` selarus medan sedia ada.
+
 ## SubMaker v3.9.6 (2026-10-10) — Pemisahan Enjin Rasmi: Pure Google Gemini Native + Registri Pembekal LLM Sejagat (16 Pembekal)
 
 ### Changed
