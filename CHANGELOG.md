@@ -2,6 +2,15 @@
 
 All notable changes to this project will be documented in this file.
 
+## SubMaker v3.9.10 (2026-10-10) — Fixed: Bug Visibility Custom Provider Trinity (dua punca akar)
+
+### Fixed
+
+- **Bug kritikal v3.9.9**: memilih "Custom / Proxy" pada dropdown Provider gagal memaparkan medan Base URL dan Format / Door. Forensik Backend Integration Audit menemui **DUA punca akar**:
+  1. **Listener tidak dipasang (detached-DOM race)**: `renderCards()` dipanggil SEBELUM `trinityRoot` disisip ke dalam document — `wireAutodetect()`/`wireValidate()` menggunakan `document.getElementById()` yang memulangkan NULL untuk elemen dalam pokok detached, menyebabkan kedua-duanya return awal → sifar listener `change`/`input`/Validate dipasang (eye button sahaja berfungsi kerana ia dipasang melalui closure dalam `buildAgentCard()`). **Fix:** susunan `mount()` diterbalik — sisipan `root` ke section SEBELUM `renderCards()`.
+  2. **CSS specificity override**: `style.display = ''` (kosong) TIDAK mengatasi rule CSS `.trinity-custom-only { display: none }` — medan kekal tersembunyi walaupun visibility toggle berjalan. **Fix:** `updateVisibility()` kini set `'grid'` (nilai asal `.trinity-field`) untuk SHOW; `'none'` untuk HIDE.
+- Verifikasi E2E Playwright (localhost:7001): (1) badge autodetect `AIza…` → "Google Gemini Native" ✓; (2) Custom dipilih → Base URL + Format muncul (`display: grid`, `offsetParent !== null`) ✓; (3) tukar semula ke Gemini → medan hilang ✓. Bug fix Fasa G Frontend (susunan panggilan) diperkaya dengan dua punca akar tambahan oleh Backend.
+
 ## SubMaker v3.9.9 (2026-10-10) — Protokol: Peraturan #4 Monotonic Baseline
 
 ### Changed

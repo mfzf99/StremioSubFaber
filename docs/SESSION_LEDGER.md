@@ -10,6 +10,31 @@
 
 ---
 
+## 2026-10-10 (RELEASE v3.9.10) — BUG FIX: VISIBILITY CUSTOM PROVIDER (DUA PUNCA AKAR)
+
+- **Tarikh:** 2026-10-10 (18:14 MYT)
+- **Komit SHA:** (komit release v3.9.10 ini — SHA direkod selepas push)
+- **Keputusan Owner:** Bug kritikal v3.9.9 — memilih "Custom / Proxy" gagal memaparkan medan Base URL & Format/Door. Handover Frontend Fasa G (susunan panggilan) diserahkan kepada Backend Integration Audit; forensik Backend menemui DUA punca akar sebenar:
+  1. **Detached-DOM race (KRITIKAL):** `renderCards()` dipanggil SEBELUM `trinityRoot` disisip ke document. `wireAutodetect()`/`wireValidate()` guna `document.getElementById()` → NULL pada pokok detached → return awal → SIFAR listener dipasang (change/input/Validate; hanya eye button berfungsi kerana closure). Fix: susunan `mount()` diterbalik — sisip root SEBELUM renderCards.
+  2. **CSS specificity:** `style.display = ''` tidak mengatasi rule `.trinity-custom-only { display: none }`. Fix: `updateVisibility()` set `'grid'` (nilai asal .trinity-field) untuk SHOW.
+- **Fail Terlibat:** `public/js/trinity-agents.js` (susunan mount + updateVisibility grid), `package.json` (3.9.9 → 3.9.10), `CHANGELOG.md` (header v3.9.10).
+- **Verifikasi E2E Playwright (localhost:7001):** (1) badge AIza → "Google Gemini Native" ✓; (2) Custom → Base URL + Format muncul `display: grid` ✓; (3) tukar balik Gemini → medan hilang ✓. `node --check` + prettier ✓ + eslint **0 error** (221 warning pra-wujud) + npm test **355 tests / 354 PASS / 0 FAIL / 1 SKIP** — baseline kekal.
+- **Langkah 5 (graphify):** Runtime TIADA — NO-OP direkod.
+- **Next Steps:** Push v3.9.10 → origin main, verify CI hijau.
+
+## 2026-10-10 (FASA G — FRONTEND HANDOVER) — BUG FIX: VISIBILITY CUSTOM PROVIDER GAGAL PAPAR
+
+- **Tarikh:** 2026-10-10 (17:52 MYT)
+- **Komit SHA:** (menunggu serahan Backend — handover Frontend)
+- **Keputusan Owner:** Bug kritikal dalam v3.9.9 — memilih "Custom / Proxy" pada dropdown Provider gagal memaparkan medan Base URL dan Format / Door (Smart Visibility tidak berfungsi).
+- **Punca Bug:** `updateVisibility()` dipanggil **SEBELUM** `applyAgentValues()` dalam `renderCards()` dan sebelum populate dropdown dalam `fetchProviderRegistry().then()`. Apabila `applyAgentValues()` menetapkan `providerEl.value = stored.provider` (cth: 'custom') daripada config, tiada lagi panggilan `updateVisibility()` — medan kekal `display: none` walaupun provider Custom dipilih.
+- **Fail Terlibat:** `public/js/trinity-agents.js` sahaja — 2 lokasi perubahan:
+  1. `renderCards()` (baris 545): `updateVisibility()` dipindah SELEPAS `applyAgentValues(getEffectiveConfig())` — visibility kini mencerminkan nilai provider yang telah direhydrate.
+  2. `mount()` `fetchProviderRegistry().then()` (baris 490): `updateVisibility()` dipanggil SELEPAS `populateProviderDropdown()` — registry sudah wujud, visibility dikemas kini dengan data penuh.
+- **Verifikasi:** `node --check` lulus; Prettier lulus; ESLint 0 error. TIADA npm test/git (peraturan Frontend #5).
+- **Kontrak DOM:** Tiada perubahan struktur — hanya susunan panggilan fungsi (race condition fix). Event listener `change` pada provider dropdown kekal dalam `wireAutodetect()` (tidak disentuh).
+- **Next Steps:** Backend Integration Audit → paip release 8-langkah (v3.9.10).
+
 ## 2026-10-10 (RELEASE v3.9.9) — PROTOCOL: PERATURAN #4 MONOTONIC BASELINE (edit owner .roomodes)
 
 - **Tarikh:** 2026-10-10 (17:10 MYT)

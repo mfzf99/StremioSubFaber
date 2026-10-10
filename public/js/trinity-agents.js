@@ -319,8 +319,11 @@
         var selectedProvider = getProviderById(providers, providerSel.value);
         var isCustom = isCustomProvider(selectedProvider);
 
-        urlRow.style.display = isCustom ? '' : 'none';
-        fmtRow.style.display = isCustom ? '' : 'none';
+        // [ROOT-CAUSE FIX 2 2026-10-10] inline display:'' TIDAK mengatasi rule CSS
+        // .trinity-custom-only { display: none } — untuk SHOW mesti set nilai eksplisit
+        // 'grid' (nilai asal .trinity-field). Hide kekal 'none' (inline mengatasi class).
+        urlRow.style.display = isCustom ? 'grid' : 'none';
+        fmtRow.style.display = isCustom ? 'grid' : 'none';
 
         // Auto-detect format for Custom (hanya bila Custom dipilih)
         if (isCustom) {
@@ -493,6 +496,10 @@
             // Isi semula dropdown provider untuk semua kad yang sedang dipaparkan
             AGENTS.forEach(function (agent) {
                 populateProviderDropdown(agent.key, providers);
+            });
+            // [BUG FIX 2026-10-10] Panggil updateVisibility SELEPAS populate —
+            // registry sudah ada, nilai provider mungkin sudah direhydrate.
+            AGENTS.forEach(function (agent) {
                 updateVisibility(agent.key);
             });
         });
@@ -546,9 +553,14 @@
             var providers = _registryCache || FALLBACK_PROVIDERS;
             agentsToShow.forEach(function (agent) {
                 populateProviderDropdown(agent.key, providers);
-                updateVisibility(agent.key);
             });
             applyAgentValues(getEffectiveConfig());
+            // [BUG FIX 2026-10-10] Panggil updateVisibility SELEPAS applyAgentValues
+            // (rehydration menetapkan providerEl.value daripada config — visibility
+            // mesti mencerminkan nilai sebenar, bukan nilai kosong lalai).
+            agentsToShow.forEach(function (agent) {
+                updateVisibility(agent.key);
+            });
         }
 
         toggleInput.addEventListener('change', function () {
@@ -566,9 +578,13 @@
             renderCards();
         });
 
-        renderCards();
-
-        // [ORDER FIX 2026-10-10] "Subtitles API Keys" mesti kekal ATAS SEKALI.
+        // [ROOT-CAUSE FIX 2026-10-10 — Integration Audit Fasa G]
+        // "Subtitles API Keys" mesti kekal ATAS SEKALI. Sisipan root ke document
+        // mesti berlaku SEBELUM renderCards(): wireAutodetect()/wireValidate()
+        // menggunakan document.getElementById() — yang memulangkan NULL untuk
+        // elemen dalam pokok detached. Susunan lama (renderCards dahulu)
+        // menyebabkan SEMUA listener (change/input/click Validate) tidak
+        // dipasang — punca sebenar Smart Visibility gagal berfungsi.
         var grid = null;
         for (var i = 0; i < section.children.length; i++) {
             var c = section.children[i];
@@ -582,6 +598,8 @@
         } else {
             section.appendChild(root);
         }
+
+        renderCards();
 
         // Sembunyikan kad legasi gemini
         var legacyCard = $('geminiCard');
