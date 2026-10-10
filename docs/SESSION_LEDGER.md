@@ -13,7 +13,7 @@
 ## 2026-10-10 (RELEASE v3.9.7) — TRINITY FASA E: REKA BENTUK SEMULA KAD + REGISTRI PEMBEKAL DINAMIK
 
 - **Tarikh:** 2026-10-10 (23:58 MYT)
-- **Komit SHA:** (komit release v3.9.7 ini — SHA direkod selepas push)
+- **Komit SHA:** `04f69d5` (push 1df5447..04f69d5 ke origin main; CI run #38065764663 — **SUCCESS**, Node 22 + Node 24 hijau)
 - **Keputusan Owner:** Mandat frontend Fasa E: hapuskan kekeliruan "Test" vs "Load" (satu butang Validate), susun atur hierarki kad (Provider → API Key+Validate → Model → BaseURL/Format), Smart Visibility (sembunyi medan teknikal untuk pembekal rasmi), integrasi dinamik `GET /api/providers/registry` + fallback statik, rehydration tanpa race.
 - **Langkah 0 Integration Audit (Backend):** (1) **KRITIKAL DIBETULKAN** — payload `trinity.{agent}.format` asal membawa nilai door penuh (`gemini-native` dll) yang akan DIBUANG SENYAP oleh `normalizeFormatOverride` keyDetector (VALID_FORMATS = gemini/openai/anthropic sahaja) dan enum `agentB.format`; fix: pemetaan `DOOR_TO_FORMAT` menghasilkan nilai legacy pendek untuk pembekal rasmi; (2) Validate untuk pembekal openai-compatible masih melalui `/api/validate-gemini` (had API semasa — key DeepSeek/Groq mungkin "Failed" walaupun sah; dicatat sebagai known limitation, bukan blocker); (3) Rehydration warisan (geminiApiKey/geminiModel/format legacy) disahkan selamat — pemetaan legacy → provider id.
 - **Fail Terlibat:** `public/js/trinity-agents.js` (rewrite penuh Fasa E + audit fix DOOR_TO_FORMAT), `public/css/trinity-agents.css` (`.trinity-custom-only` Smart Visibility + `.trinity-provider-select`), `package.json` (3.9.6 → 3.9.7), `CHANGELOG.md` (header v3.9.7).
