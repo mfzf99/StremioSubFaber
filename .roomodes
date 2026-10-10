@@ -28,13 +28,13 @@ customModes:
       3. GROUND TRUTH ENFORCEMENT (getModelFamily, src/services/gemini.js): Gemini 3.x-STRICT (3.6+, 3.5-flash-lite, alias -latest, 4+) strips ALL sampling parameters (temperature/topP/topK). Gemini 3.x-LEGACY (3.0-3.5-flash, 3.1) SENDS user temperature/topP (API still accepts them; 1.0 is merely Google's recommendation, not an enforcement). Gemini 2.5 = full sampling + integer thinkingBudget (Pro clamped 0→128). Reference: plans/gemini-sampling-ground-truth-2026.md.
       4. TEST BASELINE: Mandatory to run npm test before closing any task. Current baseline: 346 tests / 345 PASS, 0 FAIL, 1 SKIP (skip = live Redis test; updated v3.8.42+ Trinity Tri-Door). If the total count changes, update this figure in the configuration instructions immediately.
       5. DELEGATION RULE: Tasks involving browser UI files (public/configure.html, public/partials/*.html, public/js/*.js, CSS, DOM event handlers) MUST be delegated to "frontend" mode via switch_mode. Server-side page generators in src/utils/*PageGenerator.js remain strictly Backend domain.
-      6. 6. UNIVERSAL RELEASE & COMMIT PIPELINE (MANDATORY ON ALL COMMITS):
+      6. UNIVERSAL RELEASE & COMMIT PIPELINE (MANDATORY ON ALL COMMITS):
       Whenever instructed to commit, push, or finalize work (regardless of whether it originates from backend tasks, hotfixes, or frontend handovers), you are STRICTLY FORBIDDEN from running an isolated `git commit/push`. You MUST execute this exact 8-step pipeline sequentially:
          - 1. BUMP VERSION: Increment version in package.json following SemVer (src/utils/version.js reads it at runtime).
          - 2. UPDATE CHANGELOG: Update CHANGELOG.md under the new version header with the current date and an accurate summary of changes (Added, Changed, Fixed).
          - 3. CACHE BUSTER: Verify __APP_VERSION_QUERY__ in public/configure.html and all ?_cb= in src/utils/* generators reflect package.json.
          - 4. FORMATTING & TEST BASELINE: Run `npx prettier --check .` + `npx eslint .` + `npm test`. All tests MUST strictly match the baseline (345 PASS, 0 FAIL) before touching Git.
-         - 5. CODE TOPOLOGY UPDATE: Run `graphify update .` to synchronize architectural maps with zero API cost.
+         - 5. CODE TOPOLOGY UPDATE: Check if `graphify-out/` exists and graphify runtime is available. If YES, run `graphify update .`. If NO (absent/uninitialized), log as NO-OP immediately. STRICTLY FORBIDDEN to create ad-hoc Python scripts (.tmp-*) or attempt manual workarounds when the runtime is not installed.
          - 6. SESSION LEDGER: Append a log block to docs/SESSION_LEDGER.md (Date, Commit SHA, Owner Decisions, Files Involved, npm test Status, Next Steps - latest on top).
          - 7. GIT COMMIT & PUSH: Execute `git add .` -> `git commit -m "<structured message including version and changes>"` -> `git push origin main`.
          - 8. CI VERIFICATION: Verify green builds via GitHub Actions web/API (.github/workflows/ci.yml workflow: npm test + prettier + eslint + npm audit, Node 22/24 matrix). Confirm status is Success before declaring task completion.

@@ -12,6 +12,22 @@
 
 ---
 
+---
+
+## 2026-10-10 (RELEASE v3.9.2) — PROTOKOL GRAPHIFY NO-OP BERSYARAT + PEMBETULAN TYPO PIPELINE
+
+- **Tarikh:** 2026-10-10 (16:57 MYT)
+- **Komit SHA:** (komit release v3.9.2 ini — SHA direkod selepas push)
+- **Keputusan Owner:** Penambahbaikan protokol selepas insiden v3.9.1 — Langkah 5 pipeline kini BERSYARAT: `graphify update .` hanya jika runtime graphify ada + `graphify-out/` wujud; jika tiada, NO-OP serta-merta. Larangan keras skrip Python ad-hoc (`.tmp-*`) / workaround manual. Typo dwi-nombor `6. 6.` pada header peraturan #6 `.roomodes` dibetulkan.
+- **Fail Terlibat:**
+  - `.roomodes` (rule #6 Langkah 5 conditional NO-OP + typo fix; rule #6 header)
+  - `.roo/rules/00-subfaber-core-protocol.md` (Langkah 5 selari — NO-OP segera runtime/direktori tiada)
+  - `package.json` (3.9.1 → 3.9.2, patch — protokol sahaja) + `package-lock.json` (sync) + `CHANGELOG.md` (header v3.9.2)
+- **Validasi .roomodes (gate PyYAML):** parse OK; 2 modes; groups=[read,edit,command,mcp] kedua-dua; source=project. PASS.
+- **Status pipeline:** prettier ✓ (All matched files use Prettier code style) + eslint 0 error (warning pra-wujud) + npm test **346 tests / 345 PASS / 0 FAIL / 1 SKIP** — baseline tepat. Cache buster: 0 rigid `?_cb=`.
+- **Langkah 5 (graphify):** `graphify-out/` kini WUJUD (output topologi dari sesi lain ada: graph.json, manifest.json, GRAPH_REPORT.md) TAPI runtime tetap TIADA (tiada `.graphify_python` marker, `import graphify` gagal pada interpreter python). Mengikut protokol baharu: **NO-OP serta-merta direkod** — sifar fail kod berubah dalam v3.9.2 (docs/config sahaja), peta tidak terjejas.
+- **Next Steps:** Push v3.9.2 ke origin main + verify CI hijau. Runtime graphify perlu dipasang/dilokasi untuk release masa depan yang melibatkan fail kod (tindakan berasingan).
+
 ## 2026-10-10 (RELEASE v3.9.1) — PENYEGERAKAN PROTOKOL RELEASE UNIVERSAL (Arahan Mod & Core Protocol)
 
 - **Tarikh:** 2026-10-10 (16:36 MYT)

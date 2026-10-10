@@ -2,6 +2,13 @@
 
 All notable changes to this project will be documented in this file.
 
+## SubMaker v3.9.2 (2026-10-10) — Protokol Graphify NO-OP Bersyarat + Pembetulan Typo Pipeline
+
+### Changed
+
+- `.roomodes` (Backend Custom Instructions): Langkah 5 Universal Release & Commit Pipeline kini **bersyarat** — `graphify update .` hanya dijalankan JIKA runtime graphify ada DAN `graphify-out/` wujud; jika tiada, log sebagai NO-OP serta-merta. Larangan keras mencipta skrip Python ad-hoc (`.tmp-*`) atau workaround manual. Typo dwi-nombor `6. 6.` pada header peraturan #6 dibetulkan.
+- `.roo/rules/00-subfaber-core-protocol.md`: Langkah 5 Mandatory Commit & Release Protocol selari — graphify sebagai NO-OP segera apabila runtime/direktori tiada; dilarang menjana skrip runner ad-hoc / fail sementara.
+
 ## SubMaker v3.9.1 (2026-10-10) — Protokol Release Universal: Penyegerakan Arahan Mod & Core Protocol
 
 ### Changed

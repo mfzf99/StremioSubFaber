@@ -37,7 +37,7 @@ Before invoking any file editing tools or producing code diffs:
    - 2. CHANGELOG.md update under new version header
    - 3. Cache-buster verification (__APP_VERSION_QUERY__ and ?_cb=)
    - 4. Code quality & test verification (Prettier + ESLint + npm test 100% green)
-   - 5. Code topology sync (graphify update .)
+   - 5. Code topology sync: Run `graphify update .` ONLY IF the graphify runtime is present and `graphify-out/` exists. If the runtime or directory is absent, treat as an immediate NO-OP (strictly forbidden to generate ad-hoc Python runner scripts or temporary files).
    - 6. Session ledger append in docs/SESSION_LEDGER.md
    - 7. Structured Git commit and push to origin main
    - 8. GitHub Actions CI verification (must conclude with Success)
