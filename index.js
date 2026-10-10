@@ -3648,6 +3648,120 @@ app.post('/api/validate-opensubtitles', validationLimiter, async (req, res) => {
     }
 });
 
+// [UNIVERSAL PROVIDER VALIDATION 2026-10-10] Endpoint sejagat — menggantikan
+// had /api/validate-gemini (Gemini sahaja). Menyokong ketiga-tiga pintu
+// protokol: gemini-native | openai-compatible | anthropic-messages.
+// Payload: { provider, apiKey, door, baseUrl? } — baseUrl pilihan (Custom);
+// bagi pembekal rasmi, baseUrl diambil daripada providerRegistry.
+app.post('/api/validate-provider', validationLimiter, async (req, res) => {
+    setNoStore(res); // kredensial dalam body — jangan cache
+    try {
+        const { provider, apiKey, door, baseUrl } = req.body || {};
+        const key = typeof apiKey === 'string' ? apiKey.trim() : '';
+        if (!key) {
+            return res.status(400).json({ success: false, valid: false, error: 'API key is required' });
+        }
+
+        const { getProviderById, isValidProviderDoor } = require('./src/utils/providerRegistry');
+        const providerId = String(provider || '')
+            .trim()
+            .toLowerCase();
+        const providerEntry = getProviderById(providerId);
+        if (!providerEntry) {
+            return res.status(400).json({ success: false, valid: false, error: 'Unknown provider' });
+        }
+
+        const requestedDoor = String(door || '')
+            .trim()
+            .toLowerCase();
+        const effectiveDoor = providerEntry.isCustom ? requestedDoor || 'openai-compatible' : providerEntry.door;
+        if (!isValidProviderDoor(providerId, effectiveDoor)) {
+            return res.status(400).json({ success: false, valid: false, error: 'Invalid door for this provider' });
+        }
+
+        const { validateCustomBaseUrl } = require('./src/utils/ssrfProtection');
+        const axios = require('axios');
+        const { httpAgent, httpsAgent } = require('./src/utils/httpAgents');
+
+        let targetBaseUrl = '';
+        if (providerEntry.isCustom) {
+            const rawUrl = String(baseUrl || '').trim();
+            if (!rawUrl) {
+                return res
+                    .status(400)
+                    .json({ success: false, valid: false, error: 'Base URL is required for custom provider' });
+            }
+            const ssrf = await validateCustomBaseUrl(rawUrl);
+            if (!ssrf.valid) {
+                return res.status(400).json({ success: false, valid: false, error: ssrf.error });
+            }
+            targetBaseUrl = ssrf.sanitized.replace(/\/+$/, '');
+        } else {
+            targetBaseUrl = String(providerEntry.baseUrl || '').replace(/\/+$/, '');
+            if (!targetBaseUrl) {
+                return res
+                    .status(400)
+                    .json({ success: false, valid: false, error: 'Provider has no official base URL' });
+            }
+        }
+
+        // ── Door dispatcher ──
+        let models = [];
+        if (effectiveDoor === 'gemini-native') {
+            const resp = await axios.get(`${targetBaseUrl}/models`, {
+                headers: { 'x-goog-api-key': key, 'Content-Type': 'application/json' },
+                timeout: 10000,
+                httpAgent,
+                httpsAgent
+            });
+            const list = resp?.data?.models;
+            if (!Array.isArray(list)) throw new Error('Unexpected response shape from Gemini models endpoint');
+            models = list
+                .filter(
+                    (m) =>
+                        Array.isArray(m?.supportedGenerationMethods) &&
+                        m.supportedGenerationMethods.includes('generateContent')
+                )
+                .map((m) => String(m.name || '').replace(/^models\//, ''))
+                .filter(Boolean);
+        } else if (effectiveDoor === 'openai-compatible') {
+            const resp = await axios.get(`${targetBaseUrl}/models`, {
+                headers: { Authorization: `Bearer ${key}`, 'Content-Type': 'application/json' },
+                timeout: 10000,
+                httpAgent,
+                httpsAgent
+            });
+            const list = resp?.data?.data;
+            if (!Array.isArray(list))
+                throw new Error('Unexpected response shape from OpenAI-compatible models endpoint');
+            models = list.map((m) => String(m?.id || m?.name || '').trim()).filter(Boolean);
+        } else if (effectiveDoor === 'anthropic-messages') {
+            const resp = await axios.get(`${targetBaseUrl}/models`, {
+                headers: { 'x-api-key': key, 'anthropic-version': '2023-06-01', 'Content-Type': 'application/json' },
+                timeout: 10000,
+                httpAgent,
+                httpsAgent
+            });
+            const list = resp?.data?.data || resp?.data?.models;
+            if (!Array.isArray(list)) throw new Error('Unexpected response shape from Anthropic models endpoint');
+            models = list.map((m) => String(m?.id || m?.name || '').trim()).filter(Boolean);
+        } else {
+            return res.status(400).json({ success: false, valid: false, error: 'Unsupported door' });
+        }
+
+        return res.json({ success: true, valid: true, models });
+    } catch (error) {
+        const status = Number(error?.response?.status) || 502;
+        const detail =
+            error?.response?.data?.error?.message ||
+            error?.response?.data?.message ||
+            error?.message ||
+            'Provider validation failed';
+        const code = status === 401 || status === 403 ? status : status >= 500 ? 502 : 400;
+        return res.status(code).json({ success: false, valid: false, error: String(detail).slice(0, 300) });
+    }
+});
+
 // API endpoint to validate Gemini API key
 app.post('/api/validate-gemini', validationLimiter, async (req, res) => {
     // CRITICAL: Prevent caching to avoid cross-user config contamination (user credentials in request body)

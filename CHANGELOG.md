@@ -2,6 +2,21 @@
 
 All notable changes to this project will be documented in this file.
 
+## SubMaker v3.9.8 (2026-10-10) — Universal Provider Validation Endpoint + Trinity Fasa F: Butang Validate Sejagat
+
+### Added
+
+- **`POST /api/validate-provider` (index.js)** — endpoint validasi sejagat menggantikan had `/api/validate-gemini` (Gemini sahaja). Door dispatcher 3 pintu: `gemini-native` (`GET {baseUrl}/models`, header `x-goog-api-key`, filter `supportedGenerationMethods` mengandungi `generateContent`), `openai-compatible` (`Authorization: Bearer`, pengekstrakan `data[].id`), `anthropic-messages` (`x-api-key` + `anthropic-version: 2023-06-01`). Payload `{ provider, apiKey, door, baseUrl }` — pembekal rasmi mengambil baseUrl daripada providerRegistry; Custom menjalani validasi SSRF (`validateCustomBaseUrl`) SEBELUM sebarang panggilan rangkaian. Respons standard: `{ success: true, valid: true, models }` / `{ success: false, valid: false, error }` (401/403 dari provider → kod sama; 5xx → 502; input tidak sah → 400). Dilindungi `validationLimiter` + `setNoStore()`.
+- **`src/services/validate-provider-regression.test.js` (baharu, VP-1..VP-9)** — ujian kontrak endpoint (dispatcher statik, gate SSRF, respons standard), unit registry (door mismatch/match, baseUrl rasmi), simulasi pengekstrakan model 3 pintu, dan pengelasan status ralat. Didaftarkan dalam `test:tracked`.
+
+### Changed
+
+- **`public/js/trinity-agents.js` (Fasa F)** — [`runAgentValidate()`](public/js/trinity-agents.js:375) kini memanggil `POST /api/validate-provider` (panggilan legasi `/api/validate-gemini` dibuang): payload `{ provider, apiKey, door, baseUrl }` (Custom: door/baseUrl manual, door 'auto' → door registry); `valid === true` → lencana HIJAU `Valid ✓ (provider-id)` + `models` diisi automatik ke dropdown Model (fallback katalog statik); `valid === false` → lencana MERAH dengan `res.error`; ralat rangkaian → `Failed`. Respons bukan-JSON dilindungi try/catch parse.
+
+### Test Baseline
+
+- **Baharu: 355 tests / 354 PASS / 0 FAIL / 1 SKIP** (naik daripada 346/345/0/1 — 9 ujian VP baharu).
+
 ## SubMaker v3.9.7 (2026-10-10) — Trinity Fasa E: Reka Bentuk Semula Kad Trinity + Integrasi Registri Pembekal Dinamik
 
 ### Changed

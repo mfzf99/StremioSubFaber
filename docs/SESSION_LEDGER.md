@@ -10,6 +10,27 @@
 
 ---
 
+## 2026-10-10 (RELEASE v3.9.8) — UNIVERSAL PROVIDER VALIDATION ENDPOINT + TRINITY FASA F
+
+- **Tarikh:** 2026-10-10 (17:00 MYT)
+- **Komit SHA:** (komit release v3.9.8 ini — SHA direkod selepas push)
+- **Keputusan Owner:** Mandat backend: bina endpoint sejagat `POST /api/validate-provider` menggantikan had `/api/validate-gemini` — door dispatcher 3 pintu (gemini-native | openai-compatible | anthropic-messages) + SSRF. Mandat frontend Fasa F: sambungkan butang Validate Trinity ke endpoint baharu.
+- **Langkah 0 Integration Audit (Backend):** LULUS — payload `{ provider, apiKey, door, baseUrl }` konsisten dua lapis (frontend derive door dari registry; backend re-derive); Custom door 'auto' → door registry; respons `valid` boolean sentiasa JSON; parse bukan-JSON dilindungi try/catch; tiada stale trap/race baharu.
+- **Fail Terlibat:** `index.js` (+endpoint `POST /api/validate-provider`: validationLimiter + setNoStore + SSRF gate `validateCustomBaseUrl` sebelum rangkaian + dispatcher 3 pintu + respons standard), `src/services/validate-provider-regression.test.js` (BAHARU VP-1..VP-9), `package.json` (3.9.7 → 3.9.8 + daftar test:tracked), `public/js/trinity-agents.js` (Fasa F: runAgentValidate → /api/validate-provider), `CHANGELOG.md` (header v3.9.8).
+- **Status pipeline:** prettier ✓ + eslint **0 error** (221 warning pra-wujud) + npm test **355 tests / 354 PASS / 0 FAIL / 1 SKIP** — **BASELINE BAHARU** (naik daripada 346/345; 9 ujian VP). Cache buster: sifar rigid `?_cb=`, token auto tidak berubah.
+- **Langkah 5 (graphify):** Runtime TIADA — **NO-OP direkod** (perubahan melibatkan fail kod; peta tidak disegerakkan sehingga runtime dipasang).
+- **Next Steps:** Push v3.9.8 → origin main, verify CI hijau. **Arahan mod baseline perlu dikemas kini kepada 355/354/0/1 oleh owner (peraturan #4).**
+
+## 2026-10-10 (FASA F — FRONTEND HANDOVER) — BUTANG VALIDATE SAMBUNG KE /api/validate-provider
+
+- **Tarikh:** 2026-10-10 (16:53 MYT)
+- **Komit SHA:** (menunggu serahan Backend — handover Frontend)
+- **Keputusan Owner:** Sambungkan butang Validate Trinity ke endpoint sejagat backend `POST /api/validate-provider` (siap Fasa F backend: door dispatcher 3 pintu + SSRF). Buang panggilan legasi `/api/validate-gemini`.
+- **Fail Terlibat:** `public/js/trinity-agents.js` sahaja — `runAgentValidate()`: (1) payload baharu `{ provider, apiKey, door, baseUrl }` — untuk Custom, door/baseUrl diambil daripada medan manual (door 'auto' → door registry); untuk rasmi, door daripada registry, baseUrl kosong; (2) kontrak respons baharu — `data.valid === true` → lencana HIJAU `Valid ✓ (provider-id)` + isi `data.models` automatik ke dropdown Model (fallback katalog statik jika kosong); `valid === false` → lencana MERAH `Invalid: <res.error>` (60 aksara); ralat rangkaian → `Failed: network error`.
+- **Verifikasi:** `node --check` lulus; Prettier lulus; ESLint 0 error. TIADA npm test/git (peraturan Frontend #5).
+- **Kontrak DOM:** tiada perubahan struktur kad — hanya endpoint + pengendalian respons. `data.success` tidak disemak (backend sentiasa kembalikan `valid` boolean); respons bukan-JSON dilindungi try/catch parse.
+- **Next Steps:** Backend Integration Audit → paip release 8-langkah (kemas kini baseline arahan mod kepada 355/354/0/1 mengikut peraturan #4).
+
 ## 2026-10-10 (RELEASE v3.9.7) — TRINITY FASA E: REKA BENTUK SEMULA KAD + REGISTRI PEMBEKAL DINAMIK
 
 - **Tarikh:** 2026-10-10 (23:58 MYT)

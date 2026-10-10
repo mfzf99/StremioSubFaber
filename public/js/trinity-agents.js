@@ -395,35 +395,50 @@
             var provider = getProviderById(providers, providerId);
             var door = getProviderDoor(provider);
 
-            // Hantar ke endpoint validasi yang sepadan dengan pintu
-            var endpoint = '/api/validate-gemini';
-            if (door === DOOR_TYPES.OPENAI || door === DOOR_TYPES.ANTHROPIC) {
-                // Untuk OpenAI/Anthropic, gunakan endpoint yang sama (backend format-agnostik)
-                endpoint = '/api/validate-gemini';
-            }
+            // Custom: door + baseUrl manual daripada medan yang dipaparkan
+            var isCustom = isCustomProvider(provider);
+            var fmtSelect = $('trinity-' + agentKey + '-format');
+            var baseUrlInput = $('trinity-' + agentKey + '-baseurl');
+            var payloadDoor = isCustom && fmtSelect && fmtSelect.value !== 'auto' ? fmtSelect.value : door;
+            var payloadBaseUrl = isCustom && baseUrlInput ? baseUrlInput.value.trim() : '';
 
-            var resp = await fetch(endpoint, {
+            // [MANDAT FRONTEND 2026-10-10] Universal endpoint — gantikan legasi /api/validate-gemini
+            var resp = await fetch('/api/validate-provider', {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ apiKey: key })
+                body: JSON.stringify({
+                    provider: providerId,
+                    apiKey: key,
+                    door: payloadDoor,
+                    baseUrl: payloadBaseUrl
+                })
             });
-            if (!resp.ok) throw new Error('HTTP ' + resp.status);
-            var data = await resp.json();
+            var data = null;
+            try {
+                data = await resp.json();
+            } catch (_) {
+                data = null;
+            }
 
-            badge.textContent = 'Valid ✓ (' + (detectFormatFromKey(key) || 'openai') + ')';
-            badge.className = 'trinity-format-badge tone-green';
-
-            // Auto-populate model list dari respons API
-            if (Array.isArray(data.models) && data.models.length) {
-                populateModelDropdown(agentKey, data.models.slice(0, 50), true);
+            if (data && data.valid === true) {
+                badge.textContent = 'Valid ✓ (' + providerId + ')';
+                badge.className = 'trinity-format-badge tone-green';
+                // Isi senarai model terus ke dropdown Model
+                if (Array.isArray(data.models) && data.models.length) {
+                    populateModelDropdown(agentKey, data.models.slice(0, 50), true);
+                } else {
+                    // Fallback ke katalog statik jika API tiada senarai model
+                    var providerModels =
+                        PROVIDER_MODEL_CATALOG[providerId] || MODEL_CATALOG[door] || MODEL_CATALOG['openai-compatible'];
+                    populateModelDropdown(agentKey, providerModels, true);
+                }
             } else {
-                // Fallback ke katalog statik jika API tiada senarai model
-                var providerModels =
-                    PROVIDER_MODEL_CATALOG[providerId] || MODEL_CATALOG[door] || MODEL_CATALOG['openai-compatible'];
-                populateModelDropdown(agentKey, providerModels, true);
+                var errMsg = data && data.error ? String(data.error).slice(0, 60) : 'Invalid key';
+                badge.textContent = 'Invalid: ' + errMsg;
+                badge.className = 'trinity-format-badge tone-red';
             }
         } catch (err) {
-            badge.textContent = 'Failed: ' + (err && err.message ? err.message : 'invalid');
+            badge.textContent = 'Failed: ' + (err && err.message ? err.message : 'network error');
             badge.className = 'trinity-format-badge tone-red';
         } finally {
             btn.disabled = false;
