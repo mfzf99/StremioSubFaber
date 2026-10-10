@@ -13,7 +13,7 @@
 ## 2026-10-10 (RELEASE v3.9.13) — TRINITY FASA H: REAKTIF URL-TO-DOOR + SINKRONISASI RESOLVEDDOOR
 
 - **Tarikh:** 2026-10-10 (20:00 MYT)
-- **Komit SHA:** (komit release v3.9.13 ini — SHA direkod selepas push)
+- **Komit SHA:** `8e759a3` (push ddc957e..8e759a3 ke origin main; CI run #38082136296 — **SUCCESS** hijau)
 - **Keputusan Owner:** Mandat Fasa H: dropdown Format/Door bertindak balas serta-merta pada input Base URL (`/v1beta` → Gemini Native; `/v1` → OpenAI-Compatible) + sync `resolvedDoor` backend selepas Validate berjaya.
 - **Langkah 0 Integration Audit (Backend):** **REGRESI KRITIKAL DICEGAH** — `collectConfigPatch()` Custom path menghantar nilai dropdown mentah; sejak Fasa E dropdown membawa nilai door penuh (`gemini-native` dll) dan Fasa H (reaktif/resolvedDoor) menetapkannya — `normalizeFormatOverride` keyDetector akan MEMBUANG override secara senyap (VALID_FORMATS = legacy pendek). Fix: Custom path kini melalui `doorToFormat(format)` dengan `'auto'` dikekalkan.
 - **Fail Terlibat:** `public/js/trinity-agents.js` (Fasa H Frontend: `DOOR_TO_FORMAT_VALUE`, listener input/change Base URL Custom-sahaja, resolvedDoor sync; Audit fix: `effectiveFormat` Custom mapped), `package.json` (3.9.12 → 3.9.13), `CHANGELOG.md` (header v3.9.13).
