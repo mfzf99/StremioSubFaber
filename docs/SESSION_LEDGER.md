@@ -13,7 +13,7 @@
 ## 2026-10-10 (RELEASE v3.9.8) — UNIVERSAL PROVIDER VALIDATION ENDPOINT + TRINITY FASA F
 
 - **Tarikh:** 2026-10-10 (17:00 MYT)
-- **Komit SHA:** (komit release v3.9.8 ini — SHA direkod selepas push)
+- **Komit SHA:** `9f59def` (push 186af14..9f59def ke origin main; CI run #38069717358 — **SUCCESS** hijau)
 - **Keputusan Owner:** Mandat backend: bina endpoint sejagat `POST /api/validate-provider` menggantikan had `/api/validate-gemini` — door dispatcher 3 pintu (gemini-native | openai-compatible | anthropic-messages) + SSRF. Mandat frontend Fasa F: sambungkan butang Validate Trinity ke endpoint baharu.
 - **Langkah 0 Integration Audit (Backend):** LULUS — payload `{ provider, apiKey, door, baseUrl }` konsisten dua lapis (frontend derive door dari registry; backend re-derive); Custom door 'auto' → door registry; respons `valid` boolean sentiasa JSON; parse bukan-JSON dilindungi try/catch; tiada stale trap/race baharu.
 - **Fail Terlibat:** `index.js` (+endpoint `POST /api/validate-provider`: validationLimiter + setNoStore + SSRF gate `validateCustomBaseUrl` sebelum rangkaian + dispatcher 3 pintu + respons standard), `src/services/validate-provider-regression.test.js` (BAHARU VP-1..VP-9), `package.json` (3.9.7 → 3.9.8 + daftar test:tracked), `public/js/trinity-agents.js` (Fasa F: runAgentValidate → /api/validate-provider), `CHANGELOG.md` (header v3.9.8).
