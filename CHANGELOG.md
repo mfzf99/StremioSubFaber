@@ -2,6 +2,13 @@
 
 All notable changes to this project will be documented in this file.
 
+## SubMaker v3.9.9 (2026-10-10) — Protokol: Peraturan #4 Monotonic Baseline
+
+### Changed
+
+- **`.roomodes` (edit owner)**: peraturan #4 TEST BASELINE ditulis semula daripada angka statik (346/345) kepada **monotonic baseline** — invariant kekal 0 FAIL / max 1 SKIP (live Redis); jumlah ujian mesti monotonik (>= baseline terkini dalam `docs/SESSION_LEDGER.md`, tidak boleh berkurang tanpa kelulusan bertulis owner). Mencegah angka lapuk dalam arahan mod. Validasi PyYAML: parse OK, 2 modes, groups=[read,edit,command,mcp] kedua-duanya, source=project — PASS.
+- `package.json` (3.9.8 → 3.9.9, patch — protokol sahaja) + `CHANGELOG.md` (header ini). Sifar perubahan fail kod.
+
 ## SubMaker v3.9.8 (2026-10-10) — Universal Provider Validation Endpoint + Trinity Fasa F: Butang Validate Sejagat
 
 ### Added
