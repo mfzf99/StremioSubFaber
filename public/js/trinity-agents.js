@@ -19,7 +19,7 @@
     var MODE_PRO = 'pro';
 
     var FORMATS = [
-        { value: 'auto', label: 'Auto (Disyorkan)' },
+        { value: 'auto', label: 'Auto (Recommended)' },
         { value: 'gemini', label: 'Google Gemini Native' },
         { value: 'openai', label: 'OpenAI-Compatible' },
         { value: 'anthropic', label: 'Anthropic Messages' }
@@ -37,19 +37,19 @@
         {
             key: 'preflight',
             title: 'Agent Preflight',
-            subtitle: 'Fasa 0 — bina Bible konteks (terms, watak, credits) sebelum terjemahan',
+            subtitle: 'Phase 0 — builds the context Bible (terms, characters, credits) before translation',
             configPath: 'trinity.preflight'
         },
         {
             key: 'translation',
             title: 'Agent Translation',
-            subtitle: 'Enjin terjemahan utama (batch XML → SRT)',
+            subtitle: 'Core translation engine (batch XML → SRT)',
             configPath: 'trinity.translation'
         },
         {
             key: 'inspector',
             title: 'Agent Inspector',
-            subtitle: 'Fasa 1 — audit semantik per-batch (split/merge/drop/phantom crimes)',
+            subtitle: 'Phase 1 — per-batch semantic audit (split/merge/drop/phantom crimes)',
             configPath: 'trinity.inspector'
         }
     ];
@@ -79,7 +79,7 @@
         if (format === 'gemini') return { label: 'Google Gemini Native', tone: 'blue' };
         if (format === 'anthropic') return { label: 'Anthropic Messages', tone: 'orange' };
         if (format === 'openai') return { label: 'OpenAI-Compatible', tone: 'green' };
-        return { label: 'Tiada kunci', tone: 'muted' };
+        return { label: 'No key', tone: 'muted' };
     }
 
     // --- Pembina kad modular ---
@@ -102,12 +102,12 @@
         keyInput.id = 'trinity-' + agent.key + '-key';
         keyInput.autocomplete = 'off';
         keyInput.spellcheck = false;
-        keyInput.placeholder = 'Masukkan API key…';
+        keyInput.placeholder = 'Enter your API key…';
         keyWrap.appendChild(keyInput);
 
         var eyeBtn = createEl('button', 'trinity-eye-btn');
         eyeBtn.type = 'button';
-        eyeBtn.setAttribute('aria-label', 'Tunjuk/sembunyi kunci');
+        eyeBtn.setAttribute('aria-label', 'Show/hide API key');
         eyeBtn.textContent = '👁';
         eyeBtn.addEventListener('click', function () {
             keyInput.type = keyInput.type === 'password' ? 'text' : 'password';
@@ -124,13 +124,13 @@
         // Autodetect badge
         var badge = createEl('span', 'trinity-format-badge tone-muted');
         badge.id = 'trinity-' + agent.key + '-badge';
-        badge.textContent = 'Tiada kunci';
+        badge.textContent = 'No key';
         keyRow.appendChild(badge);
         card.appendChild(keyRow);
 
         // Format dropdown
         var fmtRow = createEl('div', 'trinity-field');
-        fmtRow.appendChild(createEl('label', '', 'Format / Pintu'));
+        fmtRow.appendChild(createEl('label', '', 'Format / Door'));
         var fmtSelect = createEl('select', 'trinity-format-select');
         fmtSelect.id = 'trinity-' + agent.key + '-format';
         FORMATS.forEach(function (f) {
@@ -147,7 +147,7 @@
         var urlInput = createEl('input', 'trinity-baseurl-input');
         urlInput.type = 'text';
         urlInput.id = 'trinity-' + agent.key + '-baseurl';
-        urlInput.placeholder = 'https://…/v1 (pilihan — gateway/proksi)';
+        urlInput.placeholder = 'https://…/v1 (optional — gateway/proxy)';
         urlRow.appendChild(urlInput);
         card.appendChild(urlRow);
 
@@ -157,7 +157,7 @@
         var modelWrap = createEl('div', 'trinity-input-wrap');
         var modelSelect = createEl('select', 'trinity-model-select');
         modelSelect.id = 'trinity-' + agent.key + '-model';
-        modelSelect.appendChild(createEl('option', '', '— Pilih model —'));
+        modelSelect.appendChild(createEl('option', '', '— Select model —'));
         modelWrap.appendChild(modelSelect);
         var loadBtn = createEl('button', 'validate-api-btn btn-sm');
         loadBtn.type = 'button';
@@ -170,7 +170,7 @@
         // Pro-only detail rows (boleh ditambah: timeout, fallback dll.)
         if (mode === MODE_PRO) {
             var hint = createEl('div', 'trinity-agent-hint');
-            hint.textContent = 'Simpan → autodetect keyDetector backend mengambil alih (override dropdown ini menang).';
+            hint.textContent = 'Save → backend keyDetector autodetects (this dropdown override wins).';
             card.appendChild(hint);
         }
 
@@ -213,7 +213,7 @@
         var list = MODEL_CATALOG[format] || MODEL_CATALOG.openai;
         var prev = sel.value;
         sel.innerHTML = '';
-        var def = createEl('option', '', '— Pilih model —');
+        var def = createEl('option', '', '— Select model —');
         def.value = '';
         sel.appendChild(def);
         list.forEach(function (m) {
@@ -249,7 +249,7 @@
         if (!keyInput || !badge) return;
         var key = keyInput.value.trim();
         if (!key) {
-            badge.textContent = 'Masukkan kunci dahulu';
+            badge.textContent = 'Enter a key first';
             badge.className = 'trinity-format-badge tone-red';
             return;
         }
@@ -266,7 +266,7 @@
             });
             if (!resp.ok) throw new Error('HTTP ' + resp.status);
             var data = await resp.json();
-            badge.textContent = 'Sah ✓ (' + (detectFormatFromKey(key) || 'openai') + ')';
+            badge.textContent = 'Valid ✓ (' + (detectFormatFromKey(key) || 'openai') + ')';
             badge.className = 'trinity-format-badge tone-green';
             if (Array.isArray(data.models)) {
                 var sel = $('trinity-' + agentKey + '-model');
@@ -284,7 +284,7 @@
                 }
             }
         } catch (err) {
-            badge.textContent = 'Gagal: ' + (err && err.message ? err.message : 'tidak sah');
+            badge.textContent = 'Failed: ' + (err && err.message ? err.message : 'invalid');
             badge.className = 'trinity-format-badge tone-red';
         } finally {
             btn.disabled = false;
@@ -320,7 +320,7 @@
 
         // ── Togol dwimod ──
         var toggleBar = createEl('div', 'trinity-mode-bar');
-        toggleBar.appendChild(createEl('span', 'trinity-mode-label', 'Mod Asas'));
+        toggleBar.appendChild(createEl('span', 'trinity-mode-label', 'Basic Mode'));
 
         var switchWrap = createEl('label', 'trinity-switch');
         var toggleInput = createEl('input');
@@ -331,7 +331,7 @@
         switchWrap.appendChild(toggleInput);
         switchWrap.appendChild(slider);
         toggleBar.appendChild(switchWrap);
-        toggleBar.appendChild(createEl('span', 'trinity-mode-label', 'Mod Lanjutan'));
+        toggleBar.appendChild(createEl('span', 'trinity-mode-label', 'Pro Mode'));
         root.appendChild(toggleBar);
 
         // ── Bekas kad ──
@@ -374,27 +374,21 @@
         });
 
         renderCards();
-        // [HOTFIX 2026-10-10] insertBefore rujukan mesti ANAK LANGSUNG
-        // #apiKeysSection — kad subtitle-api mungkin bersarang lebih dalam
-        // (struktur main.html). Ambil anak langsung pertama yang memenuhi
-        // kriteria; jika tiada, sispan di awal seksyen.
-        var anchor = null;
+        // [ORDER FIX 2026-10-10] "Subtitles API Keys" mesti kekal ATAS SEKALI.
+        // Struktur main.html: #apiKeysSection > .section-grid > .card[subtitle-api, gemini, ...]
+        // Trinity muncul SELEPAS .section-grid (bawah semua kad provider).
+        var grid = null;
         for (var i = 0; i < section.children.length; i++) {
-            var child = section.children[i];
-            if (
-                child.classList &&
-                (child.classList.contains('card') ||
-                    child.matches('.card') ||
-                    (child.querySelector && child.querySelector('.card[data-card="subtitle-api"]')))
-            ) {
-                anchor = child;
+            var c = section.children[i];
+            if (c.classList && c.classList.contains('section-grid')) {
+                grid = c;
                 break;
             }
         }
-        if (anchor && anchor.parentNode === section) {
-            section.insertBefore(root, anchor);
+        if (grid && grid.parentNode === section) {
+            section.insertBefore(root, grid.nextSibling);
         } else {
-            section.insertBefore(root, section.firstChild);
+            section.appendChild(root);
         }
 
         // Sembunyikan kad legasi gemini (borang hardcoded + multi-providers beta).

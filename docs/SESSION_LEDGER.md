@@ -10,6 +10,17 @@
 
 ---
 
+## 2026-10-10 (HOTFIX SUSULAN) — Trinity UI: bahasa English penuh + kedudukan kad (Subtitles API Keys atas)
+
+- **Tarikh:** 2026-10-10 (18:46 MYT)
+- **Komit SHA:** (menunggu serahan Backend — handover Frontend)
+- **Keputusan Owner:** (1) Bahasa UI Trinity dikesan bahasa Melayu pada skrin configure — owner mahu 100% English mengikut selekoh UI sedia ada; (2) "Subtitles API Keys" mesti kekal atas sekali — togol + kad Trinity dipindah SELEPAS kad provider.
+- **Fail Terlibat:** `public/js/trinity-agents.js` (semua teks skrin → English: Basic/Pro Mode, placeholder key/baseurl, badge "No key"/"Valid ✓"/"Failed", aria-label, hint, dropdown Auto (Recommended), model select "— Select model —"; mount: insert SELEPAS .section-grid dalam #apiKeysSection). Bukti visual: trinity-final-clean.png (Subtitles API Keys atas; Basic/Pro Mode English).
+- **Verifikasi:** Playwright E2E — rootAfterGrid=true, subtitleCardBeforeTrinity=true, modeLabels English, placeholders English, badge English, `#geminiCard` display:none kekal. Prettier lulus; ESLint 0 error.
+- **Next Steps:** Backend jalankan pipeline release (prettier+eslint+npm test, bump patch, komit, push, CI). Fasa E menyusul.
+
+---
+
 ---
 
 ## 2026-10-10 (RELEASE v3.9.4) — PROTOKOL INTEGRASI DUA-PIHAK: TWO-MAN INTEGRATION GATE + LANGKAH 0 INTEGRATION AUDIT

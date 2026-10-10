@@ -2,6 +2,14 @@
 
 All notable changes to this project will be documented in this file.
 
+## SubMaker v3.9.5 (2026-10-10) — Fixed: Trinity UI bahasa English penuh + kedudukan kad (Subtitles API Keys kekal atas)
+
+### Fixed
+
+- **Bahasa UI Trinity (Fasa D hotfix susulan)**: semua teks skrin Trinity dalam `public/js/trinity-agents.js` ditukar Melayu → English penuh mengikut konvensyen UI configure sedia ada — "Basic Mode"/"Pro Mode" (togol dwimod), placeholder "Enter your API key…", Base URL "https://…/v1 (optional — gateway/proxy)", badge "No key"/"Valid ✓"/"Failed", aria-label butang intip, dropdown "Auto (Recommended)", model select "— Select model —", subtitle kad 3 ejen.
+- **Kedudukan kad**: `#trinityRoot` kini disisip SELEPAS `.section-grid` dalam `#apiKeysSection` — "Subtitles API Keys" kekal atas sekali seperti sebelumnya; Trinity (togol + kad modular) muncul di bawah kad provider. Fallback: `appendChild` di hujung seksyen.
+- Verifikasi Playwright E2E: rootAfterGrid=true, subtitleCardBeforeTrinity=true, semua label/placeholder/badge English, `#geminiCard` kekal display:none. Kontrak payload tidak berubah (Langkah 0 Integration Audit lulus).
+
 ## SubMaker v3.9.4 (2026-10-10) — Protokol Integrasi Dua-Pihak: Two-Man Integration Gate + Integration Audit Langkah 0
 
 ### Changed
