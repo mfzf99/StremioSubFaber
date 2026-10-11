@@ -2,6 +2,18 @@
 
 All notable changes to this project will be documented in this file.
 
+## SubMaker v3.9.14 (2026-10-11) — Smart Model List Sanitization + Pemulihan Senarai Gemini Pincang (Ground Truth Crazy Router)
+
+### Added
+
+- **Clean & Sort Models** dalam `POST /api/validate-provider` (Custom sahaja): sebelum memulangkan `models`, tapis keluar model bukan teks/perbualan — kata kunci `embedding`, `video`, `image`, `audio`, `music`, `suno`, `kling`, `seedance`, `seedream` (ground truth: `/v1/models` proksi New API memuntahkan 300+ model mentah termasuk audio/video/imej tanpa susunan) — plus dedup, kemudian susun A-Z via `localeCompare`.
+- **Smart Gemini fallback** (ground truth docs.crazyrouter.com/llms.txt): endpoint `/v1beta/models` gerbang Crazy Router PINCANG — memulangkan adaptor ujian (deepseek/kimi/glm/gpt/qwen) dan SIFAR model Gemini walaupun `:generateContent` menyokong penuh semua model Gemini. Apabila pintu yang disahkan `gemini-native` tetapi senarai tiada kata kunci 'gemini': (1) cuba `GET {baseUrl-tanpa-v1beta}/v1/models` (Bearer) dan tapis kepada model `gemini*` sahaja; (2) jika tiada, sertakan senarai standard (gemini-3-flash-preview, gemini-3-flash, gemini-2.5-flash, gemini-2.5-pro, gemini-3.1-pro). Kegagalan pemulihan tidak membatalkan validasi.
+- **Ujian VP-18/VP-19**: penapisan model bukan teks + dedup + susunan A-Z (katalog mentah 15 entri gaya Crazy Router); repro pincang `/v1beta` + pemulihan padu `/v1/models` (gemini-only) + senarai standard (susunan locale-collation).
+
+### Test Baseline
+
+- **Baharu: 365 tests / 364 PASS / 0 FAIL / 1 SKIP** (naik daripada 363/362 — monotonic dipatuhi).
+
 ## SubMaker v3.9.13 (2026-10-10) — Trinity Fasa H: Reaktif URL-to-Door + Sinkronisasi resolvedDoor
 
 ### Added

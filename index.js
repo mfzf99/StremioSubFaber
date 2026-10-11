@@ -3719,6 +3719,75 @@ app.post('/api/validate-provider', validationLimiter, async (req, res) => {
         return status === 404 || status === 400 || status === 401 || status === 403;
     };
 
+    // [CLEAN & SORT MODELS v3.9.14] Tapis keluar model bukan teks/perbualan dan
+    // susun A-Z. Ground truth (docs.crazyrouter.com/llms.txt + pricing): endpoint
+    // /v1/models proksi New API memuntahkan 300+ model mentah — audio (suno),
+    // video (kling/seedance/seedream), imej, embedding — tanpa susunan, menyebabkan
+    // model Gemini sah tertimbus. Hanya model teks/perbualan relevan untuk
+    // penterjemahan subtitle.
+    const NON_TEXT_MODEL_KEYWORDS = [
+        'embedding',
+        'video',
+        'image',
+        'audio',
+        'music',
+        'suno',
+        'kling',
+        'seedance',
+        'seedream'
+    ];
+    const cleanAndSortModels = (models) =>
+        Array.from(new Set((Array.isArray(models) ? models : []).map((m) => String(m || '').trim()).filter(Boolean)))
+            .filter((m) => {
+                const lower = m.toLowerCase();
+                return !NON_TEXT_MODEL_KEYWORDS.some((kw) => lower.includes(kw));
+            })
+            .sort((a, b) => a.localeCompare(b));
+
+    // [SMART GEMINI FALLBACK v3.9.14] Endpoint /v1beta/models pada gerbang
+    // Crazy Router (dan kebanyakan proksi New API) PINCANG: ia memulangkan
+    // senarai adaptor ujian (deepseek/kimi/glm/gpt/qwen) dan SIFAR model
+    // Gemini — walaupun titik akhir inferens :generateContent menyokong penuh
+    // semua model Gemini. Apabila pintu yang disahkan ialah gemini-native
+    // tetapi senarai tiada sebarang kata kunci 'gemini':
+    //   1. Cuba GET {baseUrl-tanpa-v1beta}/v1/models (Bearer) untuk senarai
+    //      penuh model token tersebut, ditapis kepada model gemini sahaja.
+    //   2. Jika tiada, sertakan model Gemini standard sebagai cadangan supaya
+    //      dropdown pengguna tetap berguna.
+    const STANDARD_GEMINI_MODELS = [
+        'gemini-3-flash-preview',
+        'gemini-3-flash',
+        'gemini-2.5-flash',
+        'gemini-2.5-pro',
+        'gemini-3.1-pro'
+    ];
+    const smartGeminiFallback = async (resolvedDoor, targetBaseUrl, apiKey) => {
+        if (resolvedDoor !== 'gemini-native') return null;
+        const list = await probeDoor('gemini-native', targetBaseUrl, apiKey, agents);
+        if (list.some((m) => m.toLowerCase().includes('gemini'))) return list; // senarai sihat
+        // Pincang — cuba padu endpoint /v1/models proksi
+        const openaiBase = targetBaseUrl.replace(/\/v1beta\/?$/, '');
+        try {
+            const resp = await axios.get(`${openaiBase}/v1/models`, {
+                headers: { Authorization: `Bearer ${apiKey}`, 'Content-Type': 'application/json' },
+                timeout: 10000,
+                httpAgent,
+                httpsAgent
+            });
+            const raw = resp?.data?.data;
+            if (Array.isArray(raw)) {
+                const geminiOnly = raw
+                    .map((m) => String(m?.id || m?.name || '').trim())
+                    .filter(Boolean)
+                    .filter((m) => m.toLowerCase().startsWith('gemini'));
+                if (geminiOnly.length > 0) return geminiOnly;
+            }
+        } catch (_) {
+            // Endpoint /v1 tidak tersedia — jatuh kepada senarai standard
+        }
+        return STANDARD_GEMINI_MODELS;
+    };
+
     try {
         const { provider, apiKey, door, baseUrl } = req.body || {};
         const key = typeof apiKey === 'string' ? apiKey.trim() : '';
@@ -3853,6 +3922,20 @@ app.post('/api/validate-provider', validationLimiter, async (req, res) => {
         }
 
         if (lastError) throw lastError;
+
+        // ── [4] Sanitasi senarai model Custom + smart Gemini fallback ──
+        if (providerEntry.isCustom) {
+            // Pintu gemini-native pada proksi: semak sama ada senarai pincang
+            // (sifar model Gemini) dan pulihkan melalui /v1/models + standard.
+            try {
+                const healed = await smartGeminiFallback(resolvedDoor, targetBaseUrl, key);
+                if (healed) models = healed;
+            } catch (_) {
+                // Kegagalan pemulihan tidak membatalkan validasi — senarai
+                // sedia ada tetap dipulangkan (melalui cleanAndSortModels).
+            }
+            models = cleanAndSortModels(models);
+        }
 
         const payload = { success: true, valid: true, models };
         if (autoResolved) payload.resolvedDoor = resolvedDoor;

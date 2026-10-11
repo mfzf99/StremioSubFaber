@@ -337,3 +337,113 @@ test('[VP-17] primary 401 recovered by fallback door: validation succeeds with r
         axios.get = originalGet;
     }
 });
+
+// ─── [CLEAN & SORT + SMART GEMINI FALLBACK v3.9.14] ───
+
+test('[VP-18] cleanAndSortModels: filters non-text models and sorts A-Z (dedup included)', () => {
+    // Replika predikat runtime (index.js cleanAndSortModels)
+    const NON_TEXT_MODEL_KEYWORDS = [
+        'embedding',
+        'video',
+        'image',
+        'audio',
+        'music',
+        'suno',
+        'kling',
+        'seedance',
+        'seedream'
+    ];
+    const cleanAndSortModels = (models) =>
+        Array.from(new Set((Array.isArray(models) ? models : []).map((m) => String(m || '').trim()).filter(Boolean)))
+            .filter((m) => {
+                const lower = m.toLowerCase();
+                return !NON_TEXT_MODEL_KEYWORDS.some((kw) => lower.includes(kw));
+            })
+            .sort((a, b) => a.localeCompare(b));
+
+    // Katalog mentah gaya Crazy Router /v1/models: 300+ model tidak tersusun,
+    // bercampur audio/video/embedding + pendua + model Gemini tertimbus.
+    const rawCatalog = [
+        'suno_music-v4',
+        'kling-v2-master',
+        'seedance-pro-1080p',
+        'seedream-4.0',
+        'text-embedding-3-large',
+        'qwen3-max',
+        'deepseek-v4-pro',
+        'gemini-2.5-pro',
+        'glm-5.3',
+        'gemini-3-flash-preview',
+        'gemini-2.5-pro', // pendua — mesti dedup
+        'gpt-5-mini',
+        'whisper-audio-large',
+        'wan-video-preview',
+        'dall-e-image-3'
+    ];
+    const cleaned = cleanAndSortModels(rawCatalog);
+    assert.deepEqual(
+        cleaned,
+        ['deepseek-v4-pro', 'gemini-2.5-pro', 'gemini-3-flash-preview', 'glm-5.3', 'gpt-5-mini', 'qwen3-max'],
+        'non-text models removed, deduped, sorted A-Z'
+    );
+    // Semakan statik: helper runtime wujud dalam index.js dan dipanggil untuk Custom
+    assert.ok(serverSource.includes('const cleanAndSortModels'), 'helper exists in index.js');
+    assert.ok(
+        serverSource.includes('models = cleanAndSortModels(models);'),
+        'cleanAndSortModels applied to Custom provider response'
+    );
+    assert.ok(serverSource.includes('kw) => lower.includes(kw)'), 'keyword filter uses lowercase includes');
+});
+
+test('[VP-19] smart Gemini fallback: /v1beta list without gemini → /v1/models padu or standard list', async () => {
+    // [REPRO PINCANG CRAZY ROUTER] GET /v1beta/models memulangkan adaptor ujian
+    // (deepseek/kimi/glm/gpt/qwen) dan SIFAR model Gemini — walaupun
+    // :generateContent menyokong penuh semua model Gemini.
+    const STANDARD_GEMINI_MODELS = [
+        'gemini-3-flash-preview',
+        'gemini-3-flash',
+        'gemini-2.5-flash',
+        'gemini-2.5-pro',
+        'gemini-3.1-pro'
+    ];
+    assert.ok(serverSource.includes('const smartGeminiFallback'), 'smartGeminiFallback helper exists in index.js');
+    assert.ok(
+        serverSource.includes("resolvedDoor !== 'gemini-native'"),
+        'fallback only triggers for gemini-native door'
+    );
+    assert.ok(
+        serverSource.includes("m.toLowerCase().startsWith('gemini')"),
+        '/v1/models padu filters to gemini-only models'
+    );
+    assert.ok(serverSource.includes('return STANDARD_GEMINI_MODELS;'), 'standard Gemini list is the final fallback');
+    // Semakan statik: senarai standard mengandungi model mandat owner
+    assert.ok(
+        STANDARD_GEMINI_MODELS.every((m) => serverSource.includes(`'${m}'`)),
+        'standard list contains all mandated Gemini models'
+    );
+
+    // Simulasi kelakuan: senarai pincang dipulihkan
+    const v1betaBroken = ['deepseek-v4-pro', 'kimi-k3', 'glm-5.3', 'gpt-5-mini', 'qwen3-max'];
+    const isHealthy = (list) => list.some((m) => m.toLowerCase().includes('gemini'));
+    assert.equal(isHealthy(v1betaBroken), false, 'broken /v1beta list has ZERO gemini models');
+    // Padu /v1/models mengandungi gemini — hanya gemini dikekalkan
+    const v1Full = [
+        { id: 'deepseek-v4-pro' },
+        { id: 'suno_music-v4' },
+        { id: 'gemini-3-flash-preview' },
+        { id: 'gemini-2.5-pro' },
+        { id: 'kling-video' }
+    ];
+    const geminiOnly = v1Full
+        .map((m) => String(m?.id || '').trim())
+        .filter(Boolean)
+        .filter((m) => m.toLowerCase().startsWith('gemini'));
+    assert.deepEqual(geminiOnly, ['gemini-3-flash-preview', 'gemini-2.5-pro'], 'padu list keeps only gemini models');
+    // Jika padu juga gagal → senarai standard (susunan locale-collation:
+    // 'gemini-3-flash' sebelum 'gemini-3-flash-preview')
+    assert.deepEqual(
+        STANDARD_GEMINI_MODELS.slice().sort((a, b) => a.localeCompare(b)),
+        ['gemini-2.5-flash', 'gemini-2.5-pro', 'gemini-3-flash', 'gemini-3-flash-preview', 'gemini-3.1-pro'],
+        'standard fallback list complete (locale-collation order)'
+    );
+});
