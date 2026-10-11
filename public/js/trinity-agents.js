@@ -132,6 +132,17 @@
         return 'openai';
     }
 
+    // [SVG EYE ICONS v3.9.23] Ikon mata profesional (bukan emoji monyet) —
+    // eye (kelihatan) / eye-slash (tersembunyi), stroke semasa mengikut
+    // currentColor supaya seiring warna teks butang.
+    function eyeIconSvg(hidden) {
+        var open =
+            '<svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"></path><circle cx="12" cy="12" r="3"></circle></svg>';
+        var slash =
+            '<svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M17.94 17.94A10.07 10.07 0 0 1 12 20c-7 0-11-8-11-8a18.45 18.45 0 0 1 5.06-5.94"></path><path d="M9.9 4.24A9.12 9.12 0 0 1 12 4c7 0 11 8 11 8a18.5 18.5 0 0 1-2.16 3.19"></path><path d="M14.12 14.12A3 3 0 1 1 9.88 9.88"></path><line x1="1" y1="1" x2="23" y2="23"></line></svg>';
+        return hidden ? slash : open;
+    }
+
     function formatBadgeMeta(format) {
         if (format === 'gemini') return { label: 'Google Gemini Native', tone: 'blue' };
         if (format === 'anthropic') return { label: 'Anthropic Messages', tone: 'orange' };
@@ -218,17 +229,20 @@
 
         var eyeBtn = createEl('button', 'trinity-eye-btn');
         eyeBtn.type = 'button';
-        eyeBtn.setAttribute('aria-label', 'Show/hide API key');
-        eyeBtn.textContent = '👁';
+        eyeBtn.setAttribute('aria-label', 'Show API key');
+        eyeBtn.innerHTML = eyeIconSvg(true);
         eyeBtn.addEventListener('click', function () {
-            keyInput.type = keyInput.type === 'password' ? 'text' : 'password';
+            var showing = keyInput.type === 'text';
+            keyInput.type = showing ? 'password' : 'text';
+            eyeBtn.innerHTML = eyeIconSvg(showing);
+            eyeBtn.setAttribute('aria-label', showing ? 'Show API key' : 'Hide API key');
         });
         keyWrap.appendChild(eyeBtn);
 
         var validateBtn = createEl('button', 'validate-api-btn btn-sm');
         validateBtn.type = 'button';
         validateBtn.dataset.agentValidate = agent.key;
-        validateBtn.innerHTML = '<span class="validate-icon">✓</span><span class="validate-text">Validate</span>';
+        validateBtn.innerHTML = '<span class="validate-icon">✓</span><span class="validate-text">Test</span>';
         keyWrap.appendChild(validateBtn);
         keyRow.appendChild(keyWrap);
 
@@ -474,20 +488,31 @@
         input.value = value || '';
         input.placeholder = 'AIzaSy… or AQ.Ab8… or sk-…';
         wrap.appendChild(input);
-        // [BUTANG MATA v3.9.22] Toggle visibility sepadan medan API Key utama:
-        // password → 👁 (tersembunyi); text → 🙈 (kelihatan).
-        var eyeBtn = createEl('button', 'trinity-eye-btn');
+        // [BUTANG MATA v3.9.23] SVG eye/eye-slash profesional (bukan emoji).
+        var eyeBtn = createEl('button', 'trinity-eye-btn trinity-key-icon-btn');
         eyeBtn.type = 'button';
-        eyeBtn.setAttribute('aria-label', 'Show/hide API key');
-        eyeBtn.textContent = '👁';
+        eyeBtn.setAttribute('aria-label', 'Show API key');
+        eyeBtn.innerHTML = eyeIconSvg(true);
         eyeBtn.addEventListener('click', function () {
             var showing = input.type === 'text';
             input.type = showing ? 'password' : 'text';
-            eyeBtn.textContent = showing ? '👁' : '🙈';
+            eyeBtn.innerHTML = eyeIconSvg(showing);
             eyeBtn.setAttribute('aria-label', showing ? 'Show API key' : 'Hide API key');
         });
         wrap.appendChild(eyeBtn);
-        var removeBtn = createEl('button', 'trinity-key-remove');
+        // [BUTANG TEST PER-BARIS v3.9.23] Uji kunci individu terus ke endpoint
+        // /api/validate-provider dengan konteks agent (provider + door + baseUrl
+        // custom). Hasil: border input hijau (sah) / merah (tidak sah) +
+        // ikon butang ✓/✕ sepadan; spinner '…' semasa ujian berjalan.
+        var testBtn = createEl('button', 'trinity-key-icon-btn trinity-key-test-btn');
+        testBtn.type = 'button';
+        testBtn.setAttribute('aria-label', 'Test API key');
+        testBtn.textContent = '✓';
+        testBtn.addEventListener('click', function () {
+            testRotationKey(agentKey, input, testBtn);
+        });
+        wrap.appendChild(testBtn);
+        var removeBtn = createEl('button', 'trinity-key-remove trinity-key-icon-btn');
         removeBtn.type = 'button';
         removeBtn.textContent = '×';
         removeBtn.setAttribute('aria-label', 'Remove key');
@@ -496,6 +521,74 @@
         });
         wrap.appendChild(removeBtn);
         keysList.appendChild(wrap);
+    }
+
+    // [TEST KUNCI PER-BARIS v3.9.23] Mengesahkan satu kunci tambahan menggunakan
+    // konteks provider/door/baseUrl kad agent yang sama (Universal endpoint).
+    async function testRotationKey(agentKey, input, testBtn) {
+        if (!input || !testBtn) return;
+        var key = String(input.value || '').trim();
+        input.classList.remove('is-valid', 'is-invalid');
+        testBtn.classList.remove('is-valid', 'is-invalid');
+        if (!key) {
+            input.classList.add('is-invalid');
+            testBtn.classList.add('is-invalid');
+            testBtn.textContent = '✕';
+            return;
+        }
+        var providerSel = $('trinity-' + agentKey + '-provider');
+        var fmtSelect = $('trinity-' + agentKey + '-format');
+        var baseUrlInput = $('trinity-' + agentKey + '-baseurl');
+        var providerId = providerSel ? providerSel.value : '';
+        var providers = _registryCache || FALLBACK_PROVIDERS;
+        var provider = getProviderById(providers, providerId);
+        var door = getProviderDoor(provider);
+        var isCustom = isCustomProvider(provider);
+        var payloadDoor = isCustom && fmtSelect && fmtSelect.value !== 'auto' ? fmtSelect.value : door;
+        var payloadBaseUrl = isCustom && baseUrlInput ? baseUrlInput.value.trim() : '';
+
+        testBtn.disabled = true;
+        testBtn.textContent = '…';
+        try {
+            var resp = await fetch('/api/validate-provider', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({
+                    provider: providerId,
+                    apiKey: key,
+                    door: payloadDoor,
+                    baseUrl: payloadBaseUrl
+                })
+            });
+            var data = null;
+            try {
+                data = await resp.json();
+            } catch (_) {
+                data = null;
+            }
+            if (data && data.valid === true) {
+                input.classList.add('is-valid');
+                testBtn.classList.add('is-valid');
+                testBtn.textContent = '✓';
+            } else {
+                input.classList.add('is-invalid');
+                testBtn.classList.add('is-invalid');
+                testBtn.textContent = '✕';
+                if (typeof showAlert === 'function') {
+                    var msg = data && data.error ? String(data.error).slice(0, 80) : 'authentication failed';
+                    showAlert('Invalid API key — ' + msg, 'error');
+                }
+            }
+        } catch (err) {
+            input.classList.add('is-invalid');
+            testBtn.classList.add('is-invalid');
+            testBtn.textContent = '✕';
+            if (typeof showAlert === 'function') {
+                showAlert('Invalid API key — ' + (err && err.message ? err.message : 'network error'), 'error');
+            }
+        } finally {
+            testBtn.disabled = false;
+        }
     }
 
     // --- Populate Model <select> dropdown ---

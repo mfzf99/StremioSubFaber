@@ -209,6 +209,61 @@
     padding: 0.4rem 0.55rem;
     border-radius: 6px;
 }
+
+/* Butang ikon padat baris kunci + status ujian (v3.9.23) */
+.trinity-key-icon-btn {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 32px;
+    height: 32px;
+    padding: 0;
+    flex: 0 0 32px;
+    border: 1px solid var(--border-color, #d1d5db);
+    border-radius: 6px;
+    background: var(--bg-secondary, #f3f4f6);
+    color: var(--text-primary, #374151);
+    cursor: pointer;
+    font-size: 0.95rem;
+    line-height: 1;
+    transition:
+        background 0.15s ease,
+        border-color 0.15s ease,
+        color 0.15s ease;
+}
+.trinity-key-icon-btn svg {
+    display: block;
+}
+.trinity-key-icon-btn:hover {
+    background: #e5e7eb;
+    border-color: #c3cbd6;
+}
+.trinity-key-icon-btn:disabled {
+    opacity: 0.55;
+    cursor: wait;
+}
+.trinity-key-test-btn.is-valid {
+    color: #15803d;
+    border-color: #15803d;
+    background: #dcfce7;
+}
+.trinity-key-test-btn.is-invalid {
+    color: #b91c1c;
+    border-color: #b91c1c;
+    background: #fee2e2;
+}
+
+/* Status sempadan input kunci selepas ujian.
+   !important diperlukan: subfaber-theme.css & rootify.css menetapkan
+   border + box-shadow generik input dengan !important. */
+.trinity-key-entry .trinity-key-input.is-valid {
+    border-color: #15803d !important;
+    box-shadow: 0 0 0 2px rgba(21, 128, 61, 0.18) !important;
+}
+.trinity-key-entry .trinity-key-input.is-invalid {
+    border-color: #b91c1c !important;
+    box-shadow: 0 0 0 2px rgba(185, 28, 28, 0.18) !important;
+}
 .trinity-key-remove {
     background: var(--bg-secondary, #f3f4f6);
     border: 1px solid var(--border-color, #d1d5db);

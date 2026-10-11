@@ -10,6 +10,18 @@
 
 ---
 
+## 2026-10-11 (RELEASE v3.9.23) — TRINITY FASA IV: BUTANG TEST PER-KUNCI + BORDER STATUS + SVG EYE + SERAGAM 'TEST'
+
+- **Tarikh:** 2026-10-11 (14:42 MYT)
+- **Komit SHA:** (diisi selepas push)
+- **Keputusan Owner:** (1) Buang emoji monyet 🙈 — ikon mata SVG profesional (eye/eye-slash, stroke currentColor). (2) Kembalikan butang Test per-baris Additional API Keys — susunan [input][mata][test][padam]; klik → POST /api/validate-provider dengan konteks agent (provider/door/baseUrl custom); spinner '…' semasa menguji; sah → border input HIJAU + butang ✓ hijau; tidak sah → border MERAH + butang ✕ merah + toast "Invalid API key — <mesej>". (3) Seragamkan butang utama "Validate" → "Test" (ikon ✓ kekal). (4) Butang ikon padat petak seragam 32px.
+- **Fail Terlibat:**
+  - `public/js/trinity-agents.js`: (a) helper `eyeIconSvg(hidden)` — dua varian SVG (open/slash) digunakan di medan API Key utama DAN setiap baris kunci (emoji 👁/🙈 dibuang sepenuhnya); (b) label butang utama `Validate` → `Test` (dataset.agentValidate kekal untuk wireValidate); (c) `addRotationKeyInput` — tambah butang `.trinity-key-test-btn` (✓) antara mata dan padam; (d) fungsi baharu `testRotationKey(agentKey, input, testBtn)` — baca konteks provider/door/baseUrl kad (sama seperti runAgentValidate), fetch `/api/validate-provider`, kelas `.is-valid`/`.is-invalid` pada input + butang, kunci kosong → invalid serta-merta tanpa rangkaian, `showAlert` toast bila tersedia; butang disabled semasa ujian (spinner '…').
+  - `public/css/trinity-agents.css`: (a) `.trinity-key-icon-btn` — petak 32×32 flex, radius 6px, border subtle, hover; (b) `.trinity-key-test-btn.is-valid` (hijau #15803d) / `.is-invalid` (merah #b91c1c); (c) status border `.trinity-key-entry .trinity-key-input.is-valid/.is-invalid` dengan **!important** — WAJIB kerana `subfaber-theme.css` & `rootify.css` menetapkan border + `box-shadow:none` generik input dengan `!important` (punca sebenar border tidak berubah dikesan semasa E2E: computed kekal rgb(236,239,244) walaupun kekhususan (0,3,0)).
+- **Verifikasi E2E Playwright (localhost:7001/configure):** struktur baris [INPUT][BUTTON eye][BUTTON test][BUTTON ×] ✓; label utama "✓Test" ✓; **tiada emoji 🙈 dalam DOM** ✓; eye = SVG ✓; kunci kosong → is-invalid/✕ tanpa rangkaian ✓; kunci palsu → spinner '…' semasa fetch → is-invalid/✕ (satu log rangkaian HTTP 400 — maklumat DevTools standard untuk respons 4xx ujian kunci tidak sah, BUKAN pengecualian JS; 0 ralat JavaScript) ✓; computed border: invalid `rgb(185,28,28)` + shadow merah, valid `rgb(21,128,61)` + shadow hijau ✓; tangkapan skrin `v3923-key-test-borders.png`. `node --check` ✓ + Prettier ✓ + ESLint **0 error**. TIADA npm test/git (peraturan #5).
+- **Kontrak Payload:** TIADA BERUBAH — ujian per-baris bersifat baca-sahaja (POST /api/validate-provider); tiada medan config baharu; endpoint sedia ada menerima {provider, apiKey, door, baseUrl} (skema sejak v3.9.7).
+- **Next Steps:** Backend Integration Audit → release v3.9.23.
+
 ## 2026-10-11 (RELEASE v3.9.22) — TRINITY FASA III: DEDUPLIKASI KUNCI PINTAR + BUTANG MATA PER-BARIS + POLISH 4 BUTANG
 
 - **Tarikh:** 2026-10-11 (13:54 MYT)

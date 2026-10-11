@@ -2,6 +2,22 @@
 
 All notable changes to this project will be documented in this file.
 
+## SubMaker v3.9.23 (2026-10-11) — Trinity Fasa IV: Butang Test Per-Kunci, Border Status Hijau/Merah, Ikon Mata SVG
+
+### Added
+
+- **Butang ujian (Test) pada setiap baris Additional API Keys** ([public/js/trinity-agents.js](public/js/trinity-agents.js)): susunan per-baris kini `[Kotak Input Kunci] + [Butang Mata] + [Butang Test ✓] + [Butang Padam ×]`. Fungsi baharu `testRotationKey()` menghantar POST ke endpoint universal `/api/validate-provider` dengan konteks penuh kad agent (provider, door, baseUrl Custom) — semasa menguji butang memaparkan spinner `…` (disabled); **sah** → border input bertukar **HIJAU pekat** (#15803d) + ikon butang ✓ hijau; **tidak sah** → border **MERAH** (#b91c1c) + ikon ✕ merah + toast "Invalid API key — <mesej ralat>" (via `showAlert` bila tersedia); kunci kosong ditandakan invalid serta-merta tanpa panggilan rangkaian. Gaya status border menggunakan `!important` — diperlukan kerana `subfaber-theme.css` & `rootify.css` mengatasi border/box-shadow input generik dengan `!important` sendiri.
+
+### Changed
+
+- **Ikon mata SVG profesional menggantikan emoji monyet 🙈**: helper `eyeIconSvg(hidden)` menghasilkan ikon SVG eye (tersembunyi) / eye-slash (kelihatan) dengan stroke `currentColor` — digunakan serentak pada medan API Key utama dan setiap baris kunci tambahan; semua emoji 👁/🙈 dibuang sepenuhnya daripada DOM.
+- **Terminologi diseragamkan kepada 'Test'**: label butang pengesahan utama kad agent ditukar daripada "Validate" kepada "Test" (ikon ✓ kekal; `data-agent-validate` kekal sebagai pengikat dalaman) — selari standard asal SubMaker.
+- **Butang padat gaya legacy SubMaker** ([public/css/trinity-agents.css](public/css/trinity-agents.css)): `.trinity-key-icon-btn` — petak seragam 32×32, border-radius 6px, hover state, disabled state untuk spinner; jarak antara input dan butang tersusun rapi tanpa limpahan.
+
+### Verification
+
+- E2E Playwright (localhost:7001/configure): struktur baris `[INPUT][EYE][TEST][REMOVE]` ✓; label utama "✓Test" ✓; **tiada emoji 🙈 dalam DOM**, eye = SVG sebenar ✓; kunci kosong → `is-invalid`/✕ tanpa rangkaian ✓; kunci palsu berformat sah → spinner '…' → POST sebenar → `is-invalid`/✕ ✓; computed border invalid `rgb(185,28,28)` + shadow merah, valid `rgb(21,128,61)` + shadow hijau ✓; **0 ralat JavaScript konsol** (satu log rangkaian HTTP 400 DevTools standard bagi respons ujian kunci tidak sah) ✓. Kontrak payload tidak berubah (ujian baca-sahaja; tiada medan config baharu).
+
 ## SubMaker v3.9.22 (2026-10-11) — Trinity Fasa III: Deduplikasi Kunci Pintar, Butang Mata Per-Baris, Polish 4 Butang
 
 ### Added
