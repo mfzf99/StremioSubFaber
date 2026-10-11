@@ -2,6 +2,21 @@
 
 All notable changes to this project will be documented in this file.
 
+## SubMaker v3.9.22 (2026-10-11) — Trinity Fasa III: Deduplikasi Kunci Pintar, Butang Mata Per-Baris, Polish 4 Butang
+
+### Added
+
+- **Saringan kunci pendua pintar (Smart Deduplication) dalam modal Bulk Import Trinity** ([public/js/trinity-agents.js](public/js/trinity-agents.js)): callback import kini menyaring kunci sebelum menambah baris — (1) kunci yang sama persis dengan API Key utama (`#trinity-{agent}-key`); (2) kunci yang sudah wujud dalam senarai Additional API Keys (`.trinity-key-input`); (3) pendua dalam tampal dikendalikan parser (Set). Hanya kunci unik dimasukkan (cth: 89 ditampal, 1 sama dengan kunci utama → 88 masuk). Mesej status dalam modal: "Imported X keys · Y duplicates filtered out." (hijau `is-success`); modal kekal terbuka selepas import berjaya dan textarea dikosongkan (anti re-import ganda); status ralat kekal merah `is-error`; `closeBulkImportModal` menetap semula kelas status.
+- **Butang mata (visibility toggle) untuk setiap baris Additional API Keys** dalam `addRotationKeyInput`: input bertopeng `type="password"` + butang ikon mata sebelum butang padam (×) — klik menogol antara password/👁 dan text/🙈 dengan `aria-label` dinamik, konsisten dengan medan API Key utama.
+
+### Changed
+
+- **Polish profesional 4 butang** ([public/css/trinity-agents.css](public/css/trinity-agents.css)): `+ Add Key` & `Bulk Import…` dalam bekas `.trinity-keys-actions` (`gap: 10px; margin-top: 10px`) bergaya `.trinity-btn-secondary` moden (padding `6px 14px`, border-radius `6px`, border subtle, hover/active state). Modal footer `.trinity-bulk-actions` (`justify-content: flex-end; gap: 12px; margin-top: 16px`): butang `Cancel` neutral sekunder (padding `8px 16px`, border kelabu) dan butang `Import` primer biru jenama SubFaber `#2563eb` (teks putih, padding `8px 18px`, border-radius `6px`, bayang lembut, hover jelas) — kelas generik `btn-sm` digantikan dengan `.trinity-btn-secondary`/`.trinity-btn-primary` berdedikasi.
+
+### Verification
+
+- E2E Playwright (localhost:7001/configure): primary + 1 kunci existing disediakan; tampal 5 baris (primary-dup, existing-dup, 2 baharu, 1 dup dalaman) → status **"Imported 2 keys · 2 duplicates filtered out."** ✓; baris akhir = existing + 2 baharu ✓; butang mata password/👁 → text/🙈 → password/👁 ✓; computed style bekas `gap:10px; margin-top:10px` + butang `padding:6px 14px; border-radius:6px` ✓; **0 ralat konsol** ✓. Kontrak payload tidak berubah (`geminiApiKeys: string[]`; backend `normalizeConfig` kekal dedup sebagai lapisan kedua).
+
 ## SubMaker v3.9.21 (2026-10-11) — Trinity Fasa II: Pulihan <select> Model + Modal Bulk Import Berfungsi
 
 ### Changed

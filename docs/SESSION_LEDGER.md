@@ -10,6 +10,18 @@
 
 ---
 
+## 2026-10-11 (RELEASE v3.9.22) — TRINITY FASA III: DEDUPLIKASI KUNCI PINTAR + BUTANG MATA PER-BARIS + POLISH 4 BUTANG
+
+- **Tarikh:** 2026-10-11 (13:54 MYT)
+- **Komit SHA:** (diisi selepas push)
+- **Keputusan Owner:** (1) Smart deduplication dalam modal Bulk Import — saring kunci pendua terhadap API Key utama + senarai Additional API Keys sedia ada + dedup dalaman tampal; mesej status bilangan diimport/disaring. (2) Butang mata (visibility toggle) untuk setiap baris Additional API Keys (password/text + ikon sepadan). (3) Polish profesional 4 butang: + Add Key & Bulk Import… (bekas flex gap 10px/margin-top 10px, butang sekunder moden 6px 14px/radius 6px/hover); Cancel & Import modal (footer justify-end gap 12px/margin-top 16px; Cancel neutral 8px 16px; Import primer biru SubFaber 8px 18px + bayang lembut + hover).
+- **Fail Terlibat:**
+  - `public/js/trinity-agents.js`: (a) callback `window.BulkKeyImport.open` dalam `buildKeyRotationRow` kini melakukan **dedup silang** — Set diisi dengan nilai `#trinity-{agent}-key` (primary) + semua `.trinity-key-input` sedia ada; hanya kunci unik baharu dipanggil `addRotationKeyInput`; callback memulangkan `{imported, skipped}`; (b) modal Import handler — modal **kekal terbuka** selepas import berjaya dengan status `is-success` hijau "Imported X keys · Y duplicates filtered out.", textarea dikosongkan (anti re-import ganda); status error kekal merah `is-error`; `closeBulkImportModal` menetap semula kelas status; (c) `addRotationKeyInput` — setiap baris kini menyertakan butang mata `.trinity-eye-btn` (👁 password / 🙈 text, aria-label dinamik) sebelum butang × padam; (d) kelas butang + Add Key/Bulk Import…/Cancel/Import ditukar daripada `btn-sm btn-secondary/btn-primary` generik kepada `.trinity-btn-secondary`/`.trinity-btn-primary` berdedikasi.
+  - `public/css/trinity-agents.css`: `.trinity-keys-actions` (gap 10px, margin-top 10px); `.trinity-btn-secondary` (padding 6px 14px, radius 6px, border subtle, hover/active); `.trinity-btn-primary` (biru #2563eb jenama, teks putih, padding 8px 18px, radius 6px, bayang lembut, hover/active); `.trinity-bulk-actions` (justify-end, gap 12px, margin-top 16px); `.trinity-bulk-status` dipecah `.is-error` (merah) / `.is-success` (hijau); `.trinity-key-entry .trinity-eye-btn` (padding/radius seragam baris).
+- **Verifikasi E2E Playwright (localhost:7001/configure):** primary P + existing E disediakan; tampal 5 baris (P, E, N1, M, N1) → **"Imported 2 keys · 2 duplicates filtered out."** (parser menapis dup dalaman N1; callback menapis P+E; baris akhir E/N/M = 3) ✓; modal kekal terbuka dengan status `is-success` ✓; butang mata: password/👁 → text/🙈 → password/👁 ✓; computed style bekas butang `gap:10px; margin-top:10px`, butang `padding:6px 14px; border-radius:6px` ✓; **0 ralat konsol** ✓; tangkapan skrin `v3922-bulk-modal-polish.png`. `node --check` ✓ + Prettier ✓ + ESLint **0 error**. TIADA npm test/git (peraturan #5).
+- **Kontrak Payload:** TIDAK BERUBAH — `geminiApiKeys` kekal string[] daripada `.trinity-key-input`; dedup hanya menapis kemasukan UI (backend `normalizeConfig` turut dedup — pertahanan dua lapisan selari).
+- **Next Steps:** Backend Integration Audit → release v3.9.22.
+
 ## 2026-10-11 (RELEASE v3.9.21) — TRINITY FASA II: PULIHAN <select> MODEL + MODAL BULK IMPORT BERFUNGSI
 
 - **Tarikh:** 2026-10-11 (09:48 MYT)

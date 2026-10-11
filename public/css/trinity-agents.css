@@ -166,12 +166,18 @@
 .trinity-bulk-status {
     min-height: 1.1rem;
     font-size: 0.8rem;
+}
+.trinity-bulk-status.is-error {
     color: #b91c1c;
+}
+.trinity-bulk-status.is-success {
+    color: #15803d;
 }
 .trinity-bulk-actions {
     display: flex;
     justify-content: flex-end;
-    gap: 0.5rem;
+    gap: 12px;
+    margin-top: 16px;
 }
 /* Key Rotation (v3.9.19 — Tugasan 3) */
 .trinity-rotation-toggle {
@@ -199,6 +205,10 @@
 .trinity-key-entry .trinity-key-input {
     flex: 1;
 }
+.trinity-key-entry .trinity-eye-btn {
+    padding: 0.4rem 0.55rem;
+    border-radius: 6px;
+}
 .trinity-key-remove {
     background: var(--bg-secondary, #f3f4f6);
     border: 1px solid var(--border-color, #d1d5db);
@@ -214,8 +224,51 @@
 }
 .trinity-keys-actions {
     display: flex;
-    gap: 0.4rem;
-    margin-top: 0.35rem;
+    gap: 10px;
+    margin-top: 10px;
+}
+
+/* Butang sekunder/primer moden (v3.9.22 — polish UI profesional) */
+.trinity-btn-secondary {
+    padding: 6px 14px;
+    border: 1px solid var(--border-color, #d1d5db);
+    border-radius: 6px;
+    background: var(--bg-secondary, #f9fafb);
+    color: var(--text-primary, #111827);
+    font-size: 0.85rem;
+    font-weight: 600;
+    cursor: pointer;
+    transition:
+        background 0.15s ease,
+        border-color 0.15s ease;
+}
+.trinity-btn-secondary:hover {
+    background: #eef2f7;
+    border-color: #c3cbd6;
+}
+.trinity-btn-secondary:active {
+    background: #e2e8f0;
+}
+.trinity-btn-primary {
+    padding: 8px 18px;
+    border: 1px solid #1d4ed8;
+    border-radius: 6px;
+    background: #2563eb;
+    color: #ffffff;
+    font-size: 0.85rem;
+    font-weight: 700;
+    cursor: pointer;
+    box-shadow: 0 1px 3px rgba(37, 99, 235, 0.35);
+    transition:
+        background 0.15s ease,
+        box-shadow 0.15s ease;
+}
+.trinity-btn-primary:hover {
+    background: #1d4ed8;
+    box-shadow: 0 2px 6px rgba(37, 99, 235, 0.45);
+}
+.trinity-btn-primary:active {
+    background: #1e40af;
 }
 .trinity-input-wrap {
     display: flex;

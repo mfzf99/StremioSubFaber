@@ -400,7 +400,7 @@
         keysRow.appendChild(keysList);
 
         var btnWrap = createEl('div', 'trinity-keys-actions');
-        var addBtn = createEl('button', 'btn-sm btn-secondary');
+        var addBtn = createEl('button', 'trinity-btn-secondary');
         addBtn.type = 'button';
         addBtn.textContent = '+ Add Key';
         addBtn.addEventListener('click', function () {
@@ -408,18 +408,44 @@
         });
         btnWrap.appendChild(addBtn);
 
-        var bulkBtn = createEl('button', 'btn-sm btn-secondary');
+        var bulkBtn = createEl('button', 'trinity-btn-secondary');
         bulkBtn.type = 'button';
         bulkBtn.textContent = 'Bulk Import…';
         bulkBtn.addEventListener('click', function () {
             // Sambung semula modal import pukal sedia ada
             if (window.BulkKeyImport && typeof window.BulkKeyImport.open === 'function') {
                 window.BulkKeyImport.open(function (importedKeys) {
-                    if (Array.isArray(importedKeys)) {
-                        importedKeys.forEach(function (k) {
-                            addRotationKeyInput(agentKey, k);
+                    // [SMART DEDUPLICATION v3.9.22] Saring kunci pendua sebelum
+                    // memasukkan baris baharu:
+                    //   1. kunci yang sama persis dengan API Key utama di atas;
+                    //   2. kunci yang sudah wujud dalam senarai Additional API Keys;
+                    //   3. (dedup dalaman tampal sudah dikendalikan parser — Set).
+                    var primaryInput = $('trinity-' + agentKey + '-key');
+                    var seen = {};
+                    if (primaryInput && primaryInput.value.trim()) {
+                        seen[primaryInput.value.trim()] = true;
+                    }
+                    var keysList = $('trinity-' + agentKey + '-rotation-keys-list');
+                    if (keysList) {
+                        var existing = keysList.querySelectorAll('.trinity-key-input');
+                        existing.forEach(function (el) {
+                            var v = el.value.trim();
+                            if (v) seen[v] = true;
                         });
                     }
+                    var imported = 0;
+                    var skipped = 0;
+                    (Array.isArray(importedKeys) ? importedKeys : []).forEach(function (k) {
+                        var v = String(k || '').trim();
+                        if (!v || seen[v]) {
+                            skipped++;
+                            return;
+                        }
+                        seen[v] = true;
+                        addRotationKeyInput(agentKey, v);
+                        imported++;
+                    });
+                    return { imported: imported, skipped: skipped };
                 });
             } else {
                 console.warn('[Trinity] Bulk key import modal not loaded');
@@ -448,6 +474,19 @@
         input.value = value || '';
         input.placeholder = 'AIzaSy… or AQ.Ab8… or sk-…';
         wrap.appendChild(input);
+        // [BUTANG MATA v3.9.22] Toggle visibility sepadan medan API Key utama:
+        // password → 👁 (tersembunyi); text → 🙈 (kelihatan).
+        var eyeBtn = createEl('button', 'trinity-eye-btn');
+        eyeBtn.type = 'button';
+        eyeBtn.setAttribute('aria-label', 'Show/hide API key');
+        eyeBtn.textContent = '👁';
+        eyeBtn.addEventListener('click', function () {
+            var showing = input.type === 'text';
+            input.type = showing ? 'password' : 'text';
+            eyeBtn.textContent = showing ? '👁' : '🙈';
+            eyeBtn.setAttribute('aria-label', showing ? 'Show API key' : 'Hide API key');
+        });
+        wrap.appendChild(eyeBtn);
         var removeBtn = createEl('button', 'trinity-key-remove');
         removeBtn.type = 'button';
         removeBtn.textContent = '×';
@@ -538,13 +577,13 @@
         box.appendChild(status);
 
         var actions = createEl('div', 'trinity-bulk-actions');
-        var cancelBtn = createEl('button', 'btn-sm btn-secondary');
+        var cancelBtn = createEl('button', 'trinity-btn-secondary');
         cancelBtn.type = 'button';
         cancelBtn.textContent = 'Cancel';
         cancelBtn.addEventListener('click', closeBulkImportModal);
         actions.appendChild(cancelBtn);
 
-        var confirmBtn = createEl('button', 'btn-sm btn-primary');
+        var confirmBtn = createEl('button', 'trinity-btn-primary');
         confirmBtn.type = 'button';
         confirmBtn.id = 'trinityBulkImportConfirm';
         confirmBtn.textContent = 'Import';
@@ -570,7 +609,10 @@
         var ta = $('trinityBulkImportTextarea');
         if (ta) ta.value = '';
         var status = $('trinityBulkImportStatus');
-        if (status) status.textContent = '';
+        if (status) {
+            status.className = 'trinity-bulk-status';
+            status.textContent = '';
+        }
     }
 
     function openBulkImportModal(onKeys) {
@@ -592,16 +634,40 @@
                     ? window.SubMakerBulkKeyImport.parseBulkKeys
                     : null;
             if (!parser) {
-                if (status) status.textContent = 'Parser module not loaded.';
+                if (status) {
+                    status.className = 'trinity-bulk-status is-error';
+                    status.textContent = 'Parser module not loaded.';
+                }
                 return;
             }
             var result = parser(ta.value || '', {});
             if (!result.keys.length) {
-                if (status) status.textContent = 'No valid API keys detected.';
+                if (status) {
+                    status.className = 'trinity-bulk-status is-error';
+                    status.textContent = 'No valid API keys detected.';
+                }
                 return;
             }
-            closeBulkImportModal();
-            if (typeof onKeys === 'function') onKeys(result.keys);
+            var summary = null;
+            if (typeof onKeys === 'function') summary = onKeys(result.keys);
+            // [STATUS IMPORT v3.9.22] Modal kekal terbuka dengan mesej status —
+            // bilangan kunci berjaya diimport + bilangan disaring keluar
+            // (pendua kunci utama / senarai sedia ada). Textarea dikosongkan
+            // supaya tampal semula tidak mengimport ganda.
+            var imported = summary && typeof summary.imported === 'number' ? summary.imported : result.keys.length;
+            var skipped = summary && typeof summary.skipped === 'number' ? summary.skipped : 0;
+            if (status) {
+                status.className = 'trinity-bulk-status is-success';
+                status.textContent =
+                    'Imported ' +
+                    imported +
+                    ' key' +
+                    (imported === 1 ? '' : 's') +
+                    (skipped > 0
+                        ? ' · ' + skipped + ' duplicate' + (skipped === 1 ? '' : 's') + ' filtered out.'
+                        : '.');
+            }
+            ta.value = '';
         });
 
         modal.classList.add('show');
