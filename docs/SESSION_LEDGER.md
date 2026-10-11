@@ -13,7 +13,7 @@
 ## 2026-10-11 (RELEASE v3.9.21) — TRINITY FASA II: PULIHAN <select> MODEL + MODAL BULK IMPORT BERFUNGSI
 
 - **Tarikh:** 2026-10-11 (09:48 MYT)
-- **Komit SHA:** (diisi selepas push)
+- **Komit SHA:** `06026f9` (push 8c05936..06026f9 ke origin main; CI run #298 id 38129678487 — **SUCCESS** hijau)
 - **Keputusan Owner:** (1) Kembalikan dropdown Model `<select>` piawai (buang input+datalist v3.9.20); nilai disimpan/disegerakkan ke config payload. (2) Selesaikan butang "Bulk Import…" yang tidak berfungsi — modal textarea + import kunci automatik ke baris "Additional API Keys".
 - **Langkah 0 Integration Audit (Backend):** LULUS — (a) Payload: `collectConfigPatch` membaca `.value` `#trinity-{agent}-model` (API seragam select/input); rotation patch (`geminiKeyRotationEnabled`/`geminiKeyRotationMode`/`geminiApiKeys`) tak berubah, disahkan E2E 3 kunci. (b) Rehydration: `ensureModelOption` menjamin nilai stored melekat pada `<select>`; anti-duplikasi keysList v3.9.20 kekal. (c) Race/lifecycle: modal dijana sekali (guard `document.body.contains`), butang confirm di-clone setiap pembukaan (anti-listener-belonggok), modal dalam `document.body` (selamat daripada `renderCards()` reset), `window.BulkKeyImport` dipasang pada load IIFE.
 - **Fail Terlibat:** `public/js/trinity-agents.js` (Model `<select>` + `populateModelDropdown` option-based + `ensureModelOption` + modal bulk import dinamik + bridge `window.BulkKeyImport`), `public/css/trinity-agents.css` (gaya `.trinity-bulk-*`; `.trinity-model-input` digantikan), `package.json` (3.9.20 → 3.9.21), `CHANGELOG.md` (header v3.9.21), `docs/SESSION_LEDGER.md` (blok ini).
