@@ -10,6 +10,16 @@
 
 ---
 
+## 2026-10-12 (RELEASE v3.9.28) — HOTFIX: STREAM CIRCULAR JSON + PROXY ROOT-FORM baseUrl + MISCONFIG GUARD
+
+- **Tarikh:** 2026-10-12 (03:19 MYT)
+- **Komit SHA:** (diisi selepas push)
+- **Keputusan Owner (forensik log produksi v3.9.27):** Log debug baharu membongkar dua punca: (1) payload 400 `domain: googleapis.com` — kunci `sk-` gateway dihantar ke Google rasmi kerana `GEMINI_API_BASE` tidak diset; (2) `Converting circular structure to JSON` — `JSON.stringify` pada `error.response.data` ReadableStream (laluan stream) throw TypeError yang menelan ralat 400 asal. Contoh curl admin gateway disahkan: root `https://crazyrouter.com` + `/v1beta/...` + `?key=`.
+- **Fail Terlibat:** `src/services/gemini.js` — `logGemini400Debug()` dibungkus try/catch safe-stringify (fallback teks ringkas, ralat asal kekal); `sanitizeGeminiBaseUrl()` append `/v1beta` automatik untuk root-form URL; constructor guard — amaran jelas bila kunci `sk-` + baseUrl googleapis.com (misconfiguration). `.env.example` — dokumentasi `GEMINI_API_BASE` baharu untuk gateway Gemini-native. `package.json` (3.9.27 → 3.9.28), `CHANGELOG.md`, `docs/SESSION_LEDGER.md`, `graphify-out/`.
+- **Kontrak Payload:** TIADA BERUBAH — hanya pertahanan logging/sanitasi; systemInstruction top-level kekal; tiada parameter pensampelan disentuh.
+- **Status npm test:** **368 tests — 367 PASS, 0 FAIL, 1 SKIP** (live Redis) — selari baseline ✓. Prettier ✓; ESLint 0 error ✓; graphify update (5024 nodes, 10899 edges) ✓.
+- **Next Steps:** Git commit + push + CI verify. NOTA OPERASI: owner mesti set `GEMINI_API_BASE=https://crazyrouter.com` (dan kunci `sk-` gateway) dalam env deployment — tanpa itu, token gateway akan terus ditolak oleh Google.
+
 ## 2026-10-11 (RELEASE v3.9.27) — GEMINI NATIVE 400 BAD REQUEST: DEBUG PAYLOAD, SANITASI baseUrl, DEFENSIVE countTokens, BEARER PROKSI
 
 - **Tarikh:** 2026-10-12 (02:57 MYT)

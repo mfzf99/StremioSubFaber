@@ -43,6 +43,14 @@ function sanitizeGeminiBaseUrl(url) {
         .replace(/\/+$/, ''); // buang semua trailing slash
     // Runtuhkan '/v1beta' berganda di hujung (proksi + nilai lalai dipangkung)
     base = base.replace(/(\/v1beta)(?:\/v1beta)+$/i, '$1');
+    // PROXY ROOT-FORM: gateway Gemini-native mengharapkan laluan '/v1beta/...'
+    // (ground truth: POST /v1beta/models/{model}:generateContent). Pengguna kerap
+    // memberikan root domain sahaja (cth: 'https://gateway.example.com') —
+    // append '/v1beta' automatik supaya URL akhir tidak menjadi
+    // 'https://gateway.example.com/models/...' (404 di gateway).
+    if (!/\/v1(beta)?$/.test(base)) {
+        base += '/v1beta';
+    }
     return base;
 }
 
@@ -58,7 +66,21 @@ function sanitizeGeminiBaseUrl(url) {
 function logGemini400Debug(error, operation) {
     const status = Number(error?.response?.status || 0);
     if (status !== 400) return;
-    console.error(`[Gemini API 400 Debug] (${operation}):`, JSON.stringify(error.response?.data || error.message));
+    // SAFE-STRINGIFY: pada laluan stream (responseType: 'stream'), error.response.data
+    // ialah ReadableStream circular — JSON.stringify terus throw TypeError
+    // 'Converting circular structure to JSON' yang MENELAN ralat 400 asal.
+    // Bungkus dengan try/catch dan fallback kepada mesej ringkas.
+    let payload;
+    try {
+        payload = JSON.stringify(error.response?.data || error.message);
+    } catch (_) {
+        payload = JSON.stringify({
+            note: 'response body not serializable (stream/binary)',
+            status,
+            message: error?.message || 'unknown 400 error'
+        });
+    }
+    console.error(`[Gemini API 400 Debug] (${operation}):`, payload);
 }
 
 function isGemini3Model(model) {
@@ -529,6 +551,18 @@ class GeminiService {
         // env pengguna (trailing slash / '/v1beta' berganda) tidak membina URL
         // bertindih '.../v1beta//models' yang ditolak gateway proksi (400).
         this.baseUrl = sanitizeGeminiBaseUrl(process.env.GEMINI_API_BASE || GEMINI_API_URL);
+
+        // [GEMINI-NATIVE 400 FIX v2] Misconfiguration guard: kunci 'sk-' ialah
+        // token gateway proksi, BUKAN kunci Google AI Studio (format 'AIza...').
+        // Jika ia dihantar ke host Google rasmi, Google membalas 400
+        // 'API key not valid' pada SEMUA endpoint — seperti forensik produksi
+        // 2026-10-12. Amaran jelas supaya owner tahu GEMINI_API_BASE belum diset.
+        if (/^sk-/.test(String(this.apiKey || '').trim()) && this.baseUrl.includes('googleapis.com')) {
+            log.warn(
+                () =>
+                    "[Gemini] API key looks like a proxy gateway token (sk-...) but GEMINI_API_BASE is not set to a proxy — requests will hit the official Google endpoint and be rejected (400 'API key not valid'). Set GEMINI_API_BASE to your gateway's Gemini-native base URL."
+            );
+        }
 
         // FinOps Usage Ledger
         this.usageStats = {

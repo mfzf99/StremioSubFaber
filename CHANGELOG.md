@@ -2,6 +2,18 @@
 
 All notable changes to this project will be documented in this file.
 
+## SubMaker v3.9.28 (2026-10-11) — Hotfix: Stream-Path Circular JSON + Proxy Root-Form baseUrl + Misconfiguration Guard
+
+### Fixed
+
+- **[HOTFIX forensik produksi v3.9.27] `Converting circular structure to JSON` menelan ralat 400 sebenar ([src/services/gemini.js](src/services/gemini.js), `logGemini400Debug()`):** pada laluan stream (`responseType: 'stream'`), `error.response.data` ialah ReadableStream circular — `JSON.stringify()` terus throw TypeError yang MENGANTIKAN ralat 400 asal sebagai `error.message` di seluruh TranslationEngine. Pembungkusan try/catch + fallback teks ringkas memulihkan payload diagnosis tanpa menelan ralat asal.
+- **Sanitasi baseUrl root-form proksi:** pengguna yang set `GEMINI_API_BASE` kepada root domain gateway sahaja (cth: `https://crazyrouter.com`, seperti contoh curl rasmi admin) kini mendapat `/v1beta` di-append automatik — URL `.../models/{model}:generateContent` (404 di gateway) tidak lagi terhasil.
+- **Misconfiguration guard (kunci proksi → Google rasmi):** forensik log v3.9.27 membongkar punca sebenar 400 produksi — token `sk-` gateway dihantar ke `generativelanguage.googleapis.com` kerana `GEMINI_API_BASE` tidak diset; Google membalas 400 `API_KEY_INVALID` pada semua endpoint. Kini constructor memancarkan amaran jelas sebelum request pertama gagal. Dokumentasi env baharu dalam `.env.example`.
+
+### Verification
+
+- `npm test`: **368 tests — 367 PASS, 0 FAIL, 1 SKIP** — selari baseline; monotonic ✓. Prettier ✓; ESLint 0 error ✓.
+
 ## SubMaker v3.9.27 (2026-10-11) — Gemini Native 400 Bad Request: Debug Payload, Sanitasi baseUrl, Defensive countTokens, Bearer Proksi
 
 ### Fixed
