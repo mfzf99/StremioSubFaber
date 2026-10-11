@@ -253,14 +253,19 @@
     background: #fee2e2;
 }
 
-/* Status sempadan input kunci selepas ujian.
-   !important diperlukan: subfaber-theme.css & rootify.css menetapkan
-   border + box-shadow generik input dengan !important. */
-.trinity-key-entry .trinity-key-input.is-valid {
+/* Status sempadan input kunci selepas ujian — seragam untuk baris Additional
+   API Keys (.trinity-key-entry) DAN kotak kunci utama (.trinity-input-wrap).
+   !important + rantai .trinity-field diperlukan: subfaber-theme.css &
+   rootify.css menetapkan border + box-shadow generik input dengan !important
+   (disahkan empirikal — kekhususan .trinity-field (0,7,0) adalah tahap
+   minimum yang mengatasi peraturan tersebut pada input kunci utama). */
+.trinity-field .trinity-key-entry .trinity-key-input.is-valid,
+.trinity-field .trinity-input-wrap .trinity-key-input.is-valid {
     border-color: #15803d !important;
     box-shadow: 0 0 0 2px rgba(21, 128, 61, 0.18) !important;
 }
-.trinity-key-entry .trinity-key-input.is-invalid {
+.trinity-field .trinity-key-entry .trinity-key-input.is-invalid,
+.trinity-field .trinity-input-wrap .trinity-key-input.is-invalid {
     border-color: #b91c1c !important;
     box-shadow: 0 0 0 2px rgba(185, 28, 28, 0.18) !important;
 }

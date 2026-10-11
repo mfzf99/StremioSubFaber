@@ -10,6 +10,18 @@
 
 ---
 
+## 2026-10-11 (RELEASE v3.9.24) — TRINITY FASA V: IKON MANGGA/MATA & GELUNG HIJAU KUNCI UTAMA
+
+- **Tarikh:** 2026-10-11 (15:25 MYT)
+- **Komit SHA:** (diisi selepas push)
+- **Keputusan Owner:** (1) Togol ikon mangga semasa password & mata semasa text (buang eye-slash generik) pada kunci utama DAN semua baris Additional API Keys — auto-switch apabila diklik. (2) Konsistensi gelung hijau/merah pada kotak kunci utama — `.is-valid`/`.is-invalid` disapukan dalam `runAgentValidate` (valid/invalid/catch) dan dibersihkan semula apabila nilai ditaip.
+- **Fail Terlibat:**
+  - `public/js/trinity-agents.js`: (a) `eyeIconSvg(hidden)` kini memulangkan **Lock SVG** (rect+shackle) semasa `hidden=true` (password) dan **Eye SVG** semasa kelihatan — eye-slash dibuang sepenuhnya; digunakan di kunci utama + baris; (b) `runAgentValidate` — `keyInput.classList` `.is-valid` (cabang valid) / `.is-invalid` (cabang invalid + catch), kelas bertentangan dibuang dahulu; (c) `wireAutodetect.refresh` — reset `is-valid/is-invalid` pada setiap input (menaip/kosong membatalkan status ujian terdahulu).
+  - `public/css/trinity-agents.css`: pemilih status border diluaskan + dinaikkan kekhususan kepada rantai `.trinity-field` (0,7,0) dengan `!important` — `.trinity-field .trinity-key-entry .trinity-key-input.is-valid/.is-invalid, .trinity-field .trinity-input-wrap .trinity-key-input.is-valid/.is-invalid`. NOTA AUDIT: tahap (0,3,0) TIDAK mencukupi pada input kunci utama — `rootify.css`/`subfaber-theme.css` menetapkan shorthand `border: var(--border) !important` generik; (0,7,0) adalah tahap minimum yang terbukti menang (ujian empirikal suntikan).
+- **Verifikasi E2E Playwright (localhost:7001/configure):** ikon utama: password/rect(mangga) → klik → text/circle(mata) → klik → password/rect ✓; baris kunci: peralihan sama ✓; kunci utama `is-valid` → computed `rgb(21,128,61)` + `rgba(21,128,61,0.18) 0 0 0 2px` ✓; `is-invalid` → `rgb(185,28,28)` + shadow merah ✓; **`uniform: true`** — kunci utama & baris sepadan tepat ✓; taip semula → kelas dibersihkan ✓; **0 ralat konsol** ✓; tangkapan skrin `v3924-lock-eye-green-loop.png`. Pelayan dimulakan semula (kill-port 7001) untuk cache in-memory templat — peraturan #20 dipatuhi (tiada taskkill global). `node --check` ✓ + Prettier ✓ + ESLint **0 error**. TIADA npm test/git (peraturan #5).
+- **Kontrak Payload:** TIADA BERUBAH — kelas CSS status semata-mata; tiada medan config baharu; `collectConfigPatch` tidak terjejas.
+- **Next Steps:** Backend Integration Audit → release v3.9.24.
+
 ## 2026-10-11 (RELEASE v3.9.23) — TRINITY FASA IV: BUTANG TEST PER-KUNCI + BORDER STATUS + SVG EYE + SERAGAM 'TEST'
 
 - **Tarikh:** 2026-10-11 (14:42 MYT)

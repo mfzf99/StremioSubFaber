@@ -132,15 +132,16 @@
         return 'openai';
     }
 
-    // [SVG EYE ICONS v3.9.23] Ikon mata profesional (bukan emoji monyet) —
-    // eye (kelihatan) / eye-slash (tersembunyi), stroke semasa mengikut
-    // currentColor supaya seiring warna teks butang.
+    // [LOCK/EYE ICONS v3.9.24] Togol penglihatan kunci — semasa medan
+    // bertopeng (password, hidden=true) papar IKON MANGGA (Lock); semasa
+    // medan dibuka (text, hidden=false) papar IKON MATA (Eye). Stroke
+    // currentColor supaya seiring warna teks butang (gaya legasi SubMaker).
     function eyeIconSvg(hidden) {
-        var open =
+        var eye =
             '<svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"></path><circle cx="12" cy="12" r="3"></circle></svg>';
-        var slash =
-            '<svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M17.94 17.94A10.07 10.07 0 0 1 12 20c-7 0-11-8-11-8a18.45 18.45 0 0 1 5.06-5.94"></path><path d="M9.9 4.24A9.12 9.12 0 0 1 12 4c7 0 11 8 11 8a18.5 18.5 0 0 1-2.16 3.19"></path><path d="M14.12 14.12A3 3 0 1 1 9.88 9.88"></path><line x1="1" y1="1" x2="23" y2="23"></line></svg>';
-        return hidden ? slash : open;
+        var lock =
+            '<svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="3" y="11" width="18" height="11" rx="2" ry="2"></rect><path d="M7 11V7a5 5 0 0 1 10 0v4"></path></svg>';
+        return hidden ? lock : eye;
     }
 
     function formatBadgeMeta(format) {
@@ -833,6 +834,10 @@
             if (data && data.valid === true) {
                 badge.textContent = 'Valid ✓ (' + providerId + ')';
                 badge.className = 'trinity-format-badge tone-green';
+                // [GELUNG HIJAU KUNCI UTAMA v3.9.24] Sempadan/gelung hijau pekat
+                // seragam dengan baris Additional API Keys.
+                keyInput.classList.remove('is-invalid');
+                keyInput.classList.add('is-valid');
                 // Isi senarai model terus ke dropdown Model
                 if (Array.isArray(data.models) && data.models.length) {
                     populateModelDropdown(agentKey, data.models.slice(0, 50), true);
@@ -858,10 +863,14 @@
                 var errMsg = data && data.error ? String(data.error).slice(0, 60) : 'Invalid key';
                 badge.textContent = 'Invalid: ' + errMsg;
                 badge.className = 'trinity-format-badge tone-red';
+                keyInput.classList.remove('is-valid');
+                keyInput.classList.add('is-invalid');
             }
         } catch (err) {
             badge.textContent = 'Failed: ' + (err && err.message ? err.message : 'network error');
             badge.className = 'trinity-format-badge tone-red';
+            keyInput.classList.remove('is-valid');
+            keyInput.classList.add('is-invalid');
         } finally {
             btn.disabled = false;
             btn.innerHTML = old;
@@ -893,6 +902,9 @@
             var meta = formatBadgeMeta(detected);
             badge.textContent = meta.label;
             badge.className = 'trinity-format-badge tone-' + meta.tone;
+            // [RESET GELUNG v3.9.24] Sebarang perubahan nilai kunci membatalkan
+            // status ujian terdahulu — sempadan hijau/merah dibersihkan semula.
+            keyInput.classList.remove('is-valid', 'is-invalid');
             updateVisibility(agentKey);
         }
 

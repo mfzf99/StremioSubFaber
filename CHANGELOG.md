@@ -2,6 +2,21 @@
 
 All notable changes to this project will be documented in this file.
 
+## SubMaker v3.9.24 (2026-10-11) — Trinity Fasa V: Ikon Mangga/Mata & Gelung Hijau/Merah Kunci Utama
+
+### Changed
+
+- **Togol ikon mangga semasa tutup & mata semasa buka** ([public/js/trinity-agents.js](public/js/trinity-agents.js)): `eyeIconSvg()` kini memulangkan **Lock SVG** (mangga — rect + shackle) semasa medan bertopeng (`type="password"`) dan **Eye SVG** semasa medan dibuka (`type="text"`); varian eye-slash generik dibuang sepenuhnya. Peralihan ikon bertukar automatik apabila butang diklik — pada medan API Key utama DAN semua baris Additional API Keys (gaya konsisten bahagian legasi SubMaker).
+- **Konsistensi gelung hijau/merah pada kotak kunci utama**: `runAgentValidate` kini menyapukan `.is-valid` (sempadan + gelung hijau pekat `#15803d`) pada `#trinity-{agent}-key` apabila kunci SAH — dengan `.is-invalid` dibuang — dan `.is-invalid` (sempadan merah pekat `#b91c1c`) apabila TIDAK SAH atau ralat rangkaian. Sebarang pengetikan semula / pengosongan nilai membersihkan kedua-dua kelas secara automatik (reset dalam pendengar `input` `wireAutodetect`).
+
+### Fixed
+
+- **Gelung status tidak terpakai pada input kunci utama** ([public/css/trinity-agents.css](public/css/trinity-agents.css)): pemilih status dinaikkan kepada rantai `.trinity-field .trinity-key-entry/.trinity-input-wrap .trinity-key-input.is-valid/.is-invalid` (kekhususan 0,7,0 + `!important`) — tahap (0,3,0) terbukti tidak mencukupi untuk input kunci utama kerana `rootify.css` & `subfaber-theme.css` menetapkan shorthand `border` generik input dengan `!important` sendiri; (0,7,0) disahkan empirikal sebagai tahap minimum yang menang. Gelung kunci utama kini **seragam tepat** (border + box-shadow) dengan baris Additional API Keys.
+
+### Verification
+
+- E2E Playwright (localhost:7001/configure): ikon utama password/rect(mangga) → klik → text/circle(mata) → klik → password/rect ✓; baris kunci peralihan sama ✓; kunci utama `is-valid` → computed `rgb(21,128,61)` + shadow hijau; `is-invalid` → `rgb(185,28,28)` + shadow merah; **`uniform: true`** — seragam dengan baris ✓; taip semula → kelas dibersihkan ✓; **0 ralat konsol** ✓. Kontrak payload tidak berubah (kelas CSS visual sahaja).
+
 ## SubMaker v3.9.23 (2026-10-11) — Trinity Fasa IV: Butang Test Per-Kunci, Border Status Hijau/Merah, Ikon Mata SVG
 
 ### Added
