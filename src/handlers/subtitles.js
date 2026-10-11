@@ -6304,7 +6304,16 @@ async function performTranslation(
                           keys: Array.isArray(config.geminiApiKeys)
                               ? config.geminiApiKeys.filter((k) => typeof k === 'string' && k.trim())
                               : [],
-                          advancedSettings: config.advancedSettings || {}
+                          // [DYNAMIC BASE URL v3.9.29] bawa geminiBaseUrl per-pengguna
+                          // supaya setiap instance GeminiService semasa rotasi kunci
+                          // menghantar permintaan ke gateway yang dikonfigurasi pengguna
+                          // (bukan .env global pelayan).
+                          advancedSettings: {
+                              ...(config.advancedSettings || {}),
+                              ...(typeof config.geminiBaseUrl === 'string' && config.geminiBaseUrl.trim()
+                                  ? { baseUrl: config.geminiBaseUrl.trim() }
+                                  : {})
+                          }
                       }
                     : null;
 

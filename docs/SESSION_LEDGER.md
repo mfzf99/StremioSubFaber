@@ -10,6 +10,20 @@
 
 ---
 
+## 2026-10-12 (RELEASE v3.9.29) — DYNAMIC BASE URL INJECTION: USER CONFIG → GEMINI SERVICE
+
+- **Tarikh:** 2026-10-12 (03:35 MYT)
+- **Komit SHA:** (diisi selepas push)
+- **Keputusan Owner (mandat seni bina):** v3.9.28 membuktikan baseUrl Web UI (Custom/Proxy) TIDAK disuntik ke GeminiService — permintaan pergi ke Google rasmi melainkan env global diset. Mandat: suntik baseUrl pengguna secara dinamik; keutamaan `userConfig.baseUrl` → `process.env.GEMINI_API_BASE` → Google rasmi; multi-user mesra (tiada kunci pada .env global).
+- **Fail Terlibat:**
+  - `src/utils/config.js` — medan baharu `geminiBaseUrl` (sumber: medan langsung ATAU `trinity.translation.baseUrl` UI), sanitasi SSRF-lite (`http(s)` sahaja, nilai lain dibuang senyap).
+  - `src/services/gemini.js` — constructor menerima `advancedSettings.baseUrl`; keutamaan tiga lapis; melalui `sanitizeGeminiBaseUrl()` (trailing-slash, `/v1beta` berganda, auto-append root-form).
+  - `src/services/translationProviderFactory.js` — `getGeminiAdvancedSettings()` menyuntik `config.geminiBaseUrl`; `createProviderInstance('gemini')` menerima `providerConfig.baseUrl`/`providerParams.baseUrl`; `findSecondaryConfig('gemini')` membawa baseUrl (fallback secondary).
+  - `src/handlers/subtitles.js` — `keyRotationConfig.advancedSettings` membawa `baseUrl` supaya setiap instance GeminiService semasa rotasi kunci menghormati gateway pengguna.
+- **Kontrak Payload:** TIADA BERUBAH — medan `baseUrl` hanya dalam advancedSettings (bukan payload Gemini REST); systemInstruction top-level kekal; tiada parameter pensampelan disentuh; tiada fail `public/` disentuh.
+- **Status npm test:** **368 tests — 367 PASS, 0 FAIL, 1 SKIP** (live Redis) — selari baseline ✓. Prettier ✓; ESLint 0 error (warning pra-wujud) ✓; graphify update (5029 nodes, 10907 edges) ✓.
+- **Next Steps:** Git commit + push + CI verify.
+
 ## 2026-10-12 (RELEASE v3.9.28) — HOTFIX: STREAM CIRCULAR JSON + PROXY ROOT-FORM baseUrl + MISCONFIG GUARD
 
 - **Tarikh:** 2026-10-12 (03:19 MYT)

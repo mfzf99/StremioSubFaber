@@ -2,6 +2,22 @@
 
 All notable changes to this project will be documented in this file.
 
+## SubMaker v3.9.29 (2026-10-11) — Dynamic Base URL Injection: User Config → GeminiService
+
+### Added
+
+- **[DYNAMIC BASE URL] Suntikan baseUrl per-pengguna ke GeminiService:** nilai Base URL yang dimasukkan pengguna di Web UI (Custom/Proxy → pintu Gemini-native; disimpan sebagai `trinity.translation.baseUrl`) kini mengalir ke atas setiap permintaan terjemahan — konfigurasi seorang pengguna tidak lagi bergantung pada `.env` global pelayan (multi-user / multi-config mesra).
+
+### Changed
+
+- **Keutamaan URL tiga lapis ([src/services/gemini.js](src/services/gemini.js), constructor):** `advancedSettings.baseUrl` (per-pengguna, Web UI) → `process.env.GEMINI_API_BASE` (fallback statik pelayan) → `https://generativelanguage.googleapis.com/v1beta` (Google rasmi). Nilai melalui `sanitizeGeminiBaseUrl()` (trailing-slash, `/v1beta` berganda, auto-append `/v1beta` untuk root-form gateway).
+- **Normalisasi medan baharu `geminiBaseUrl` ([src/utils/config.js](src/utils/config.js)):** sumber keutamaan — medan langsung `geminiBaseUrl` atau `trinity.translation.baseUrl`; sanitasi SSRF-lite (skema `http(s)` sahaja; nilai lain dibuang senyap).
+- **Suntikan penuh merentasi laluan terjemahan ([src/services/translationProviderFactory.js](src/services/translationProviderFactory.js), [src/handlers/subtitles.js](src/handlers/subtitles.js)):** `getGeminiAdvancedSettings()` (provider utama), `createProviderInstance('gemini')` (instance langsung + fallback secondary), dan `keyRotationConfig.advancedSettings` (setiap rotasi kunci membina instance GeminiService baharu) — semuanya membawa baseUrl pengguna.
+
+### Verification
+
+- `npm test`: **368 tests — 367 PASS, 0 FAIL, 1 SKIP** — selari baseline; monotonic ✓. Prettier ✓; ESLint 0 error ✓. Kontrak payload tidak berubah (systemInstruction top-level; tiada parameter pensampelan disentuh).
+
 ## SubMaker v3.9.28 (2026-10-11) — Hotfix: Stream-Path Circular JSON + Proxy Root-Form baseUrl + Misconfiguration Guard
 
 ### Fixed

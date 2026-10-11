@@ -257,6 +257,10 @@ async function createProviderInstance(providerKey, providerConfig = {}, provider
                 thinkingLevel: providerParams.thinkingLevel,
                 temperature: providerParams.temperature,
                 topP: providerParams.topP,
+                // [DYNAMIC BASE URL v3.9.29] baseUrl per-pengguna (providerConfig
+                // boleh membawa baseUrl langsung; getGeminiAdvancedSettings juga
+                // menyuntik config.geminiBaseUrl melalui providerParams factory).
+                baseUrl: typeof providerConfig.baseUrl === 'string' ? providerConfig.baseUrl : providerParams.baseUrl,
                 enableJsonOutput
             });
         case 'openai':
@@ -451,6 +455,12 @@ async function createTranslationProvider(config) {
                       temperature: modelDefaults.temperature,
                       topP: settings.topP
                   };
+        // [DYNAMIC BASE URL v3.9.29] Suntik baseUrl per-pengguna (sudah
+        // ternormalisasi + SSRF-lite oleh config.js). Keutamaan dalam
+        // GeminiService: nilai ini > env GEMINI_API_BASE > Google rasmi.
+        if (typeof config?.geminiBaseUrl === 'string' && config.geminiBaseUrl.trim()) {
+            base.baseUrl = config.geminiBaseUrl.trim();
+        }
         // XML Tags is the only workflow; structured JSON output is intentionally disabled.
         base.enableJsonOutput = false;
         return base;
@@ -462,7 +472,10 @@ async function createTranslationProvider(config) {
             return {
                 enabled: true,
                 apiKey: await selectGeminiApiKey(config),
-                model: config?.geminiModel
+                model: config?.geminiModel,
+                // [DYNAMIC BASE URL v3.9.29] bawa baseUrl per-pengguna supaya
+                // createProviderInstance('gemini') fallback turut menghormatinya.
+                baseUrl: typeof config?.geminiBaseUrl === 'string' ? config.geminiBaseUrl : ''
             };
         }
         const matchKey = Object.keys(providersConfig || {}).find((k) => String(k).toLowerCase() === normalized);

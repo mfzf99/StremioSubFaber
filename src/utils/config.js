@@ -631,6 +631,23 @@ function normalizeConfig(config) {
     // (Fasa C keyDetector/AgentChannel) sudah tahu cara membaca format/auto.
     mergedConfig.trinity = mergedConfig.trinity && typeof mergedConfig.trinity === 'object' ? mergedConfig.trinity : {};
 
+    // [DYNAMIC BASE URL v3.9.29] Normalisasi geminiBaseUrl per-pengguna.
+    // Sumber (keutamaan): (1) medan langsung geminiBaseUrl; (2) blok
+    // trinity.translation.baseUrl (UI Custom/Proxy Gemini-native door).
+    // SSRF-lite: skema http/https sahaja; nilai tidak sah dibuang senyap.
+    // Medan ini mengalir ke advancedSettings.baseUrl → GeminiService,
+    // mengatasi process.env.GEMINI_API_BASE (multi-user mesra — tiada lagi
+    // pergantungan pada .env global pelayan untuk pengguna proksi).
+    const sanitizeGeminiUserBaseUrl = (raw) => {
+        const trimmed = typeof raw === 'string' ? raw.trim() : '';
+        if (!trimmed) return '';
+        if (!/^https?:\/\//i.test(trimmed)) return '';
+        return trimmed;
+    };
+    mergedConfig.geminiBaseUrl = sanitizeGeminiUserBaseUrl(
+        mergedConfig.geminiBaseUrl || mergedConfig.trinity?.translation?.baseUrl || ''
+    );
+
     mergedConfig.agentB = {
         enabled:
             mergedConfig.agentB?.enabled === true || (!!process.env.AGENT_B_API_KEY && !!process.env.AGENT_B_BASE_URL),

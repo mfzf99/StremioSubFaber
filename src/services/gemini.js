@@ -550,7 +550,18 @@ class GeminiService {
         // [GEMINI-NATIVE 400 FIX 2026-10-11] baseUrl DISANITASI supaya nilai
         // env pengguna (trailing slash / '/v1beta' berganda) tidak membina URL
         // bertindih '.../v1beta//models' yang ditolak gateway proksi (400).
-        this.baseUrl = sanitizeGeminiBaseUrl(process.env.GEMINI_API_BASE || GEMINI_API_URL);
+        // [DYNAMIC BASE URL v3.9.29] Keutamaan TIGA LAPIS (multi-user mesra):
+        //   1. advancedSettings.baseUrl — nilai per-pengguna daripada Web UI
+        //      (Custom/Proxy → Gemini-native door; trinity.translation.baseUrl)
+        //   2. process.env.GEMINI_API_BASE — fallback statik pelayan
+        //   3. https://generativelanguage.googleapis.com/v1beta (Google rasmi)
+        // Ini memastikan konfigurasi seorang pengguna TIDAK bergantung pada .env
+        // global — setiap permintaan terjemahan membawa baseUrl session masing-masing.
+        this.baseUrl = sanitizeGeminiBaseUrl(
+            (typeof advancedSettings.baseUrl === 'string' && advancedSettings.baseUrl.trim()) ||
+                process.env.GEMINI_API_BASE ||
+                GEMINI_API_URL
+        );
 
         // [GEMINI-NATIVE 400 FIX v2] Misconfiguration guard: kunci 'sk-' ialah
         // token gateway proksi, BUKAN kunci Google AI Studio (format 'AIza...').
