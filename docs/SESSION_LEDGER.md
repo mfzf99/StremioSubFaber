@@ -13,7 +13,7 @@
 ## 2026-10-11 (RELEASE v3.9.14) — SMART MODEL LIST SANITIZATION + PEMULIHAN SENARAI GEMINI PINCANG
 
 - **Tarikh:** 2026-10-11 (02:26 MYT)
-- **Komit SHA:** (komit release v3.9.14 ini — SHA direkod selepas push)
+- **Komit SHA:** `e7c8fff` (push 7d39701..e7c8fff ke origin main; CI run #38105228311 — **SUCCESS** hijau)
 - **Keputusan Owner:** Ground truth audit Crazy Router (docs.crazyrouter.com/llms.txt + pricing): (1) `/v1beta/models` gerbang pincang — adaptor ujian sahaja, SIFAR Gemini, walaupun `:generateContent` menyokong penuh; (2) `/v1/models` memuntahkan 300+ model mentah (suno/kling/seedance/seedream/embedding) tanpa susunan — Gemini tertimbus. Mandat: clean & sort + smart fallback.
 - **Fail Terlibat:** `index.js` (`/api/validate-provider`: helper `cleanAndSortModels` — tapis 9 kata kunci bukan-teks + dedup + `localeCompare` A-Z; helper `smartGeminiFallback` — pintu gemini-native + senarai sifar 'gemini' → padu `{base}/v1/models` Bearer tapis `gemini*` → fallback senarai standard 5 model; kedua-duanya digunakan hanya untuk Custom), `src/services/validate-provider-regression.test.js` (+VP-18 penapisan/susunan/dedup; +VP-19 repro pincang + padu + standard), `package.json` (3.9.13 → 3.9.14), `CHANGELOG.md` (header v3.9.14).
 - **Status pipeline:** prettier ✓ + eslint **0 error** (221 warning pra-wujud) + npm test **365 tests / 364 PASS / 0 FAIL / 1 SKIP** — **BASELINE BAHARU** (>= 363 monotonic dipatuhi). Fail `public/` TIDAK disentuh. Graphify: NO-OP.
