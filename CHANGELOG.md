@@ -2,6 +2,16 @@
 
 All notable changes to this project will be documented in this file.
 
+## SubMaker v3.9.26 (2026-10-11) — Prompt Agent A: "streaming-grade" → "cinema-grade"
+
+### Changed
+
+- **Arahan kualiti bahasa dalam prompt Agent A dinaik taraf** ([src/services/translationEngine.js](src/services/translationEngine.js), seksyen `## Style`): "Write natural, conversational {target-language} at **streaming-grade** quality" → "…at **cinema-grade** quality". Perubahan leksikal satu frasa dalam templat prompt terjemahan — menaikkan siling jangkaan kualiti output terjemahan kepada tahap pawagam; semua klausa lain (anti-calque, pemeliharaan suara watak, larangan suntikan gelaran pada nama kosong) tidak berubah. Tiada perubahan kontrak payload, parameter pensampelan, atau struktur prompt.
+
+### Verification
+
+- `npm test`: **368 tests — 367 PASS, 0 FAIL, 1 SKIP** (live Redis) — selari baseline; jumlah ujian monotonic ✓. Prettier + ESLint hijau.
+
 ## SubMaker v3.9.25 (2026-10-11) — Hotfix: Save Gagal "Please select a Gemini model" Walaupun Model Trinity Dipilih
 
 ### Fixed
