@@ -278,18 +278,15 @@
         fmtRow.appendChild(fmtSelect);
         card.appendChild(fmtRow);
 
-        // Baris 5: Model — SEARCHABLE / EDITABLE INPUT (datalist)
+        // Baris 5: Model — STANDARD <select> DROPDOWN
         var modelRow = createEl('div', 'trinity-field');
         modelRow.appendChild(createEl('label', '', 'Model'));
-        var modelInput = createEl('input', 'trinity-model-input');
-        modelInput.type = 'text';
-        modelInput.id = 'trinity-' + agent.key + '-model';
-        modelInput.placeholder = 'Type to search or enter any model…';
-        modelInput.setAttribute('list', 'trinity-' + agent.key + '-model-list');
-        var datalist = createEl('datalist', '');
-        datalist.id = 'trinity-' + agent.key + '-model-list';
-        modelRow.appendChild(modelInput);
-        modelRow.appendChild(datalist);
+        var modelSelect = createEl('select', 'trinity-model-select');
+        modelSelect.id = 'trinity-' + agent.key + '-model';
+        var modelPlaceholder = createEl('option', '', '— Select model —');
+        modelPlaceholder.value = '';
+        modelSelect.appendChild(modelPlaceholder);
+        modelRow.appendChild(modelSelect);
         card.appendChild(modelRow);
 
         // Key Rotation (hanya untuk Gemini — Smart Visibility)
@@ -462,23 +459,158 @@
         keysList.appendChild(wrap);
     }
 
-    // --- Populate Model datalist (searchable input) ---
+    // --- Populate Model <select> dropdown ---
 
     function populateModelDropdown(agentKey, models, preserveSelection) {
-        var input = $('trinity-' + agentKey + '-model');
-        var datalist = $('trinity-' + agentKey + '-model-list');
-        if (!input || !datalist) return;
-        var prev = preserveSelection ? input.value : '';
-        datalist.innerHTML = '';
+        var select = $('trinity-' + agentKey + '-model');
+        if (!select) return;
+        var prev = preserveSelection ? select.value : '';
+        select.innerHTML = '';
+        var placeholder = createEl('option', '', '— Select model —');
+        placeholder.value = '';
+        select.appendChild(placeholder);
+        var seen = {};
         models.forEach(function (m) {
             var name = typeof m === 'string' ? m : m.name || m.id || '';
             if (!name) return;
             var clean = name.replace(/^models\//, '');
+            if (!clean || seen[clean]) return;
+            seen[clean] = true;
             var o = createEl('option', '', clean);
             o.value = clean;
-            datalist.appendChild(o);
+            select.appendChild(o);
         });
-        if (prev) input.value = prev;
+        // Pastikan nilai sedia ada (stored/current) kekal sebagai <option> supaya
+        // penetapan .value melekat — walaupun model tiada dalam katalog baharu.
+        if (prev && !seen[prev]) {
+            var extra = createEl('option', '', prev);
+            extra.value = prev;
+            select.appendChild(extra);
+        }
+        if (prev) select.value = prev;
+    }
+
+    // Pastikan nilai model wujud sebagai <option> dalam <select> — penetapan
+    // .value pada <select> diabaikan oleh pelayan jika tiada option sepadan.
+    function ensureModelOption(select, value) {
+        if (!select || !value) return;
+        for (var i = 0; i < select.options.length; i++) {
+            if (select.options[i].value === value) return;
+        }
+        var o = createEl('option', '', value);
+        o.value = value;
+        select.appendChild(o);
+    }
+
+    // --- Bulk Import Modal (Trinity) ---
+    //
+    // Bridge yang menjana modal secara dinamik (zero-network — parser daripada
+    // window.SubMakerBulkKeyImport). Dieksport sebagai window.BulkKeyImport supaya
+    // butang "Bulk Import…" pada kad Trinity membukanya; kunci yang diimport
+    // disalurkan terus ke baris "Additional API Keys" melalui addRotationKeyInput.
+
+    var _bulkModalEl = null;
+
+    function ensureBulkImportModal() {
+        if (_bulkModalEl && document.body.contains(_bulkModalEl)) return _bulkModalEl;
+        var modal = createEl('div', 'trinity-bulk-modal');
+        modal.id = 'trinityBulkImportModal';
+
+        var box = createEl('div', 'trinity-bulk-box');
+        box.appendChild(createEl('div', 'trinity-bulk-title', 'Bulk Import API Keys'));
+        box.appendChild(
+            createEl(
+                'div',
+                'trinity-bulk-hint',
+                'Paste keys in any format — one per line, numbered lists, CSV or JSON. Keys are detected automatically.'
+            )
+        );
+
+        var ta = createEl('textarea', 'trinity-bulk-textarea');
+        ta.id = 'trinityBulkImportTextarea';
+        ta.placeholder = 'AIzaSy…\nAQ.Ab8…\nsk-…';
+        ta.spellcheck = false;
+        ta.autocomplete = 'off';
+        box.appendChild(ta);
+
+        var status = createEl('div', 'trinity-bulk-status');
+        status.id = 'trinityBulkImportStatus';
+        box.appendChild(status);
+
+        var actions = createEl('div', 'trinity-bulk-actions');
+        var cancelBtn = createEl('button', 'btn-sm btn-secondary');
+        cancelBtn.type = 'button';
+        cancelBtn.textContent = 'Cancel';
+        cancelBtn.addEventListener('click', closeBulkImportModal);
+        actions.appendChild(cancelBtn);
+
+        var confirmBtn = createEl('button', 'btn-sm btn-primary');
+        confirmBtn.type = 'button';
+        confirmBtn.id = 'trinityBulkImportConfirm';
+        confirmBtn.textContent = 'Import';
+        actions.appendChild(confirmBtn);
+        box.appendChild(actions);
+
+        modal.appendChild(box);
+        modal.addEventListener('click', function (e) {
+            if (e.target === modal) closeBulkImportModal();
+        });
+        document.addEventListener('keydown', function (e) {
+            if (e.key === 'Escape' && modal.classList.contains('show')) closeBulkImportModal();
+        });
+
+        document.body.appendChild(modal);
+        _bulkModalEl = modal;
+        return modal;
+    }
+
+    function closeBulkImportModal() {
+        if (!_bulkModalEl) return;
+        _bulkModalEl.classList.remove('show');
+        var ta = $('trinityBulkImportTextarea');
+        if (ta) ta.value = '';
+        var status = $('trinityBulkImportStatus');
+        if (status) status.textContent = '';
+    }
+
+    function openBulkImportModal(onKeys) {
+        var modal = ensureBulkImportModal();
+        if (!modal) return;
+        var ta = $('trinityBulkImportTextarea');
+        var status = $('trinityBulkImportStatus');
+        var confirmBtn = $('trinityBulkImportConfirm');
+        if (!ta || !confirmBtn) return;
+
+        if (status) status.textContent = '';
+
+        // Ganti listener confirm lama (anti-pendengar-berlonggok antara panggilan).
+        var freshConfirm = confirmBtn.cloneNode(true);
+        confirmBtn.parentNode.replaceChild(freshConfirm, confirmBtn);
+        freshConfirm.addEventListener('click', function () {
+            var parser =
+                typeof window !== 'undefined' && window.SubMakerBulkKeyImport
+                    ? window.SubMakerBulkKeyImport.parseBulkKeys
+                    : null;
+            if (!parser) {
+                if (status) status.textContent = 'Parser module not loaded.';
+                return;
+            }
+            var result = parser(ta.value || '', {});
+            if (!result.keys.length) {
+                if (status) status.textContent = 'No valid API keys detected.';
+                return;
+            }
+            closeBulkImportModal();
+            if (typeof onKeys === 'function') onKeys(result.keys);
+        });
+
+        modal.classList.add('show');
+        ta.focus();
+    }
+
+    // Bridge global untuk butang "Bulk Import…" Trinity.
+    if (typeof window !== 'undefined') {
+        window.BulkKeyImport = { open: openBulkImportModal };
     }
 
     // --- Validate handler (satu butang tunggal) ---
@@ -807,7 +939,10 @@
                 if (stored.apiKey) keyEl.value = stored.apiKey;
                 if (stored.format) fmtEl.value = stored.format;
                 if (stored.baseUrl) urlEl.value = stored.baseUrl;
-                if (stored.model) modelEl.value = stored.model;
+                if (stored.model) {
+                    ensureModelOption(modelEl, stored.model);
+                    modelEl.value = stored.model;
+                }
                 // Provider rehydration: pilih provider yang sepadan dengan door/format
                 if (stored.provider) {
                     providerEl.value = stored.provider;
@@ -841,6 +976,7 @@
                 if (cfg.geminiApiKey) keyEl.value = cfg.geminiApiKey;
                 if (cfg.geminiModel) {
                     var name = String(cfg.geminiModel).replace(/^models\//, '');
+                    ensureModelOption(modelEl, name);
                     modelEl.value = name;
                 }
                 providerEl.value = 'gemini';

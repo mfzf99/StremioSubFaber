@@ -117,15 +117,61 @@
     background: var(--bg-input, #fff);
     color: var(--text-primary, #111);
 }
-/* Searchable Model Input (v3.9.19 — Tugasan 2) */
-.trinity-model-input {
-    flex: 1;
-    padding: 0.55rem 0.7rem;
+/* Bulk Import Modal (Trinity — dijana dinamik oleh trinity-agents.js) */
+.trinity-bulk-modal {
+    display: none;
+    position: fixed;
+    inset: 0;
+    background: rgba(15, 23, 42, 0.55);
+    z-index: 10000;
+    align-items: center;
+    justify-content: center;
+    padding: 1rem;
+}
+.trinity-bulk-modal.show {
+    display: flex;
+}
+.trinity-bulk-box {
+    background: var(--bg-primary, #fff);
+    color: var(--text-primary, #111);
+    border-radius: 12px;
+    box-shadow: 0 20px 50px rgba(0, 0, 0, 0.25);
+    width: 100%;
+    max-width: 560px;
+    padding: 1.25rem;
+    display: grid;
+    gap: 0.7rem;
+}
+.trinity-bulk-title {
+    font-size: 1.05rem;
+    font-weight: 700;
+}
+.trinity-bulk-hint {
+    font-size: 0.8rem;
+    color: var(--text-secondary, #6b7280);
+}
+.trinity-bulk-textarea {
+    width: 100%;
+    min-height: 160px;
+    resize: vertical;
+    padding: 0.6rem 0.7rem;
     border: 1px solid var(--border-color, #d1d5db);
     border-radius: 9px;
-    font-size: 0.9rem;
+    font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
+    font-size: 0.82rem;
     background: var(--bg-input, #fff);
     color: var(--text-primary, #111);
+    box-sizing: border-box;
+}
+.trinity-bulk-status {
+    min-height: 1.1rem;
+    font-size: 0.8rem;
+    color: #b91c1c;
+}
+.trinity-bulk-actions {
+    display: flex;
+    justify-content: flex-end;
+    gap: 0.5rem;
 }
 /* Key Rotation (v3.9.19 — Tugasan 3) */
 .trinity-rotation-toggle {

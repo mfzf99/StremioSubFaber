@@ -2,6 +2,21 @@
 
 All notable changes to this project will be documented in this file.
 
+## SubMaker v3.9.21 (2026-10-11) — Trinity Fasa II: Pulihan <select> Model + Modal Bulk Import Berfungsi
+
+### Changed
+
+- **Medan Model dikembalikan kepada `<select>` piawai** ([public/js/trinity-agents.js](public/js/trinity-agents.js)): implementasi `<input type="text" list>` + `<datalist>` (v3.9.20) digantikan semula atas mandat owner dengan elemen `<select class="trinity-model-select">` bersih dengan placeholder "— Select model —". `populateModelDropdown` kini memasukkan pilihan `<option value="...">` (dedup + strip awalan `models/`); nilai sedia ada dipelihara sebagai option tambahan supaya pemilihan tidak hilang semasa repopulate. Helper baharu `ensureModelOption(select, value)` dipanggil dalam `applyAgentValues` (stored.model + legacy `cfg.geminiModel`) — menjamin rehydrate `<select>` melekat walaupun model tersimpan tiada dalam katalog semasa. Nilai model terus disegerakkan ke config payload melalui `collectConfigPatch` (`trinity.*.model` + `geminiModel`).
+
+### Fixed
+
+- **Butang "Bulk Import…" Trinity tidak memberi sebarang tindak balas**: punca akar — kod butang (v3.9.20) merujuk `window.BulkKeyImport.open()` yang tidak pernah wujud (modal legacy dalam `config.js` mensasarkan DOM `#geminiApiKeysList` yang disembunyikan oleh Trinity, dan skrip [public/js/bulk-key-import.js](public/js/bulk-key-import.js) hanya mengeksport parser `window.SubMakerBulkKeyImport` tanpa sebarang DOM). **Fix:** modal import pukal dinamik baharu dijana dalam `trinity-agents.js` (`ensureBulkImportModal` / `openBulkImportModal` / `closeBulkImportModal`) — overlay + textarea tampal pukal + status + butang Import/Cancel; tutup melalui Escape / klik overlay; parser zero-network `SubMakerBulkKeyImport.parseBulkKeys` (corak AIzaSy / AQ.Ab8 / sk-); butang Import di-clone setiap pembukaan (anti-pendengar-berlonggok); bridge global `window.BulkKeyImport = { open }` memenuhi kontrak butang sedia ada. Setiap kunci yang diimport disalurkan terus ke baris input "Additional API Keys" melalui `addRotationKeyInput` dan dikutip oleh `collectConfigPatch` sebagai `geminiApiKeys: string[]`.
+- **CSS** ([public/css/trinity-agents.css](public/css/trinity-agents.css)): blok `.trinity-model-input` (lapuk) digantikan dengan gaya modal `.trinity-bulk-modal[.show]` / `.trinity-bulk-box` / `.trinity-bulk-textarea` / `.trinity-bulk-status` / `.trinity-bulk-actions`.
+
+### Verification
+
+- E2E Playwright (localhost:7001/configure): Model = tag SELECT tanpa datalist ✓; bridge `window.BulkKeyImport.open` + parser wujud ✓; rotation ON → Bulk Import… → modal `.show` + textarea fokus ✓; tampal 3 kunci (AIzaSy×2 + sk-) → Import → modal tutup + 3 baris Additional API Keys terisi ✓; `collectConfigPatch` → `geminiKeyRotationEnabled:true` + `geminiApiKeys` (3) + `trinity.translation.model` mencerminkan pilihan ✓; **0 ralat konsol** ✓. Integration Audit Backend LULUS (payload serialization / rehydration / race DOM lifecycle).
+
 ## SubMaker v3.9.20 (2026-10-11) — Trinity Fasa I: Susunan Medan Custom, Searchable Model, Pemulihan Key Rotation
 
 ### Added
