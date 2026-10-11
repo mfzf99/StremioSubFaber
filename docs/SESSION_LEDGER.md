@@ -13,7 +13,7 @@
 ## 2026-10-11 (HOTFIX v3.9.18) — REFERENCEERROR 'agents is not defined' DALAM fetchGeminiCatalogFromV1
 
 - **Tarikh:** 2026-10-11 (07:30 MYT)
-- **Komit SHA:** (komit hotfix v3.9.18 ini — SHA direkod selepas push)
+- **Komit SHA:** `99a95e1` (push f911738..99a95e1 ke origin main; CI run #38121684011 — **SUCCESS** hijau)
 - **Keputusan Owner:** Bukti log produksi v3.9.17: `[validate-provider] Gagal override katalog Gemini dari /v1: agents is not defined` — ReferenceError serta-merta memaksa kecemasan statik pada semua validasi /v1beta.
 - **Punca:** `agents` ialah `const` **block-scoped** dalam blok `try {}` utama endpoint, tetapi `fetchGeminiCatalogFromV1` (ditakrifkan SEBELUM blok tersebut) merujuknya melalui closure merentas sempadan blok — gagal pada runtime.
 - **Fix:** `agents` dihantar sebagai **parameter eksplisit** merentasi rantai: `smartGeminiFallback(…, agents)` → `fetchGeminiCatalogFromV1(…, networkAgents)` → `probeDoor('openai-compatible', v1Url, apiKey, networkAgents)`. Sifar rujukan closure merentas blok.
