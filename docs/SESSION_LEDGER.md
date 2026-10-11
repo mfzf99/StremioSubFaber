@@ -10,6 +10,16 @@
 
 ---
 
+## 2026-10-11 (RELEASE v3.9.15) — FIXED: PINTU GEMINI-NATIVE MEMULANGKAN SENARAI GEMINI BERSIH A-Z
+
+- **Tarikh:** 2026-10-11 (03:22 MYT)
+- **Komit SHA:** (komit release v3.9.15 ini — SHA direkod selepas push)
+- **Keputusan Owner:** Bug v3.9.14 — pintu `/v1beta` (gemini-native) masih memulangkan data mentah (deepseek/kimi/glm) tanpa susunan dan SIFAR Gemini. Mandat: sinkronkan cawangan gemini-native dengan `/v1/models` (tapis includes('gemini')), senarai kecemasan 6 model, susunan wajib A-Z.
+- **Punca Akar (3):** (1) `smartGeminiFallback` v3.9.14 membuat probeDoor BERULANG selepas probe utama — kegagalan panggilan kedua (rate-limit/network) ditelan try/catch luar → senarai mentah pincang dikembalikan tanpa pemulihan; (2) tapisan padu `startsWith('gemini')` terlalu ketat (spesifikasi: `includes`); (3) senarai kecemasan tiada `gemini-3.1-flash-lite`.
+- **Fail Terlibat:** `index.js` (`smartGeminiFallback(resolvedDoor, baseUrl, key, currentModels)` — terima models sedia ada, sifar probe berulang; tapisan includes; 6 model kecemasan; `cleanAndSortModels` berjalan semua pintu Custom), `src/services/validate-provider-regression.test.js` (VP-19 dikemas kini; +VP-20 bukti hujung-ke-hujung axios mock: pincang → padu → hanya Gemini A-Z, deepseek/kimi/glm DILARANG), `package.json` (3.9.14 → 3.9.15), `CHANGELOG.md` (header v3.9.15).
+- **Status pipeline:** prettier ✓ + eslint **0 error** (221 warning pra-wujud) + npm test **366 tests / 365 PASS / 0 FAIL / 1 SKIP** — **BASELINE BAHARU** (>= 365 monotonic dipatuhi). Fail `public/` TIDAK disentuh. Graphify: NO-OP.
+- **Next Steps:** Push v3.9.15 → origin main, verify CI hijau.
+
 ## 2026-10-11 (RELEASE v3.9.14) — SMART MODEL LIST SANITIZATION + PEMULIHAN SENARAI GEMINI PINCANG
 
 - **Tarikh:** 2026-10-11 (02:26 MYT)

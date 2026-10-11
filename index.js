@@ -3744,7 +3744,7 @@ app.post('/api/validate-provider', validationLimiter, async (req, res) => {
             })
             .sort((a, b) => a.localeCompare(b));
 
-    // [SMART GEMINI FALLBACK v3.9.14] Endpoint /v1beta/models pada gerbang
+    // [SMART GEMINI FALLBACK v3.9.15] Endpoint /v1beta/models pada gerbang
     // Crazy Router (dan kebanyakan proksi New API) PINCANG: ia memulangkan
     // senarai adaptor ujian (deepseek/kimi/glm/gpt/qwen) dan SIFAR model
     // Gemini — walaupun titik akhir inferens :generateContent menyokong penuh
@@ -3752,20 +3752,25 @@ app.post('/api/validate-provider', validationLimiter, async (req, res) => {
     // tetapi senarai tiada sebarang kata kunci 'gemini':
     //   1. Cuba GET {baseUrl-tanpa-v1beta}/v1/models (Bearer) untuk senarai
     //      penuh model token tersebut, ditapis kepada model gemini sahaja.
-    //   2. Jika tiada, sertakan model Gemini standard sebagai cadangan supaya
-    //      dropdown pengguna tetap berguna.
+    //   2. Jika tiada, gunakan senarai kecemasan model Gemini standard.
+    // [FIX v3.9.15] Helper kini menerima `models` yang SEDIA ADA daripada probe
+    // utama (tiada panggilan rangkaian berulang — v3.9.14 memanggil probeDoor
+    // sekali lagi; kegagalannya ditelan try/catch luar menyebabkan senarai
+    // mentah pincang terus dikembalikan tanpa pemulihan). Tapisan padu
+    // menggunakan includes('gemini') mengikut spesifikasi, bukan startsWith.
     const STANDARD_GEMINI_MODELS = [
         'gemini-3-flash-preview',
         'gemini-3-flash',
         'gemini-2.5-flash',
         'gemini-2.5-pro',
-        'gemini-3.1-pro'
+        'gemini-3.1-pro',
+        'gemini-3.1-flash-lite'
     ];
-    const smartGeminiFallback = async (resolvedDoor, targetBaseUrl, apiKey) => {
+    const smartGeminiFallback = async (resolvedDoor, targetBaseUrl, apiKey, currentModels) => {
         if (resolvedDoor !== 'gemini-native') return null;
-        const list = await probeDoor('gemini-native', targetBaseUrl, apiKey, agents);
-        if (list.some((m) => m.toLowerCase().includes('gemini'))) return list; // senarai sihat
-        // Pincang — cuba padu endpoint /v1/models proksi
+        const list = Array.isArray(currentModels) ? currentModels : [];
+        if (list.some((m) => String(m).toLowerCase().includes('gemini'))) return list; // senarai sihat
+        // Pincang — buang /v1beta, panggil endpoint /v1/models proksi (Bearer)
         const openaiBase = targetBaseUrl.replace(/\/v1beta\/?$/, '');
         try {
             const resp = await axios.get(`${openaiBase}/v1/models`, {
@@ -3779,11 +3784,11 @@ app.post('/api/validate-provider', validationLimiter, async (req, res) => {
                 const geminiOnly = raw
                     .map((m) => String(m?.id || m?.name || '').trim())
                     .filter(Boolean)
-                    .filter((m) => m.toLowerCase().startsWith('gemini'));
+                    .filter((m) => m.toLowerCase().includes('gemini'));
                 if (geminiOnly.length > 0) return geminiOnly;
             }
         } catch (_) {
-            // Endpoint /v1 tidak tersedia — jatuh kepada senarai standard
+            // Endpoint /v1 tidak tersedia — jatuh kepada senarai kecemasan
         }
         return STANDARD_GEMINI_MODELS;
     };
@@ -3927,13 +3932,16 @@ app.post('/api/validate-provider', validationLimiter, async (req, res) => {
         if (providerEntry.isCustom) {
             // Pintu gemini-native pada proksi: semak sama ada senarai pincang
             // (sifar model Gemini) dan pulihkan melalui /v1/models + standard.
+            // [FIX v3.9.15] models sedia ada dihantar terus — tiada probe berulang.
             try {
-                const healed = await smartGeminiFallback(resolvedDoor, targetBaseUrl, key);
+                const healed = await smartGeminiFallback(resolvedDoor, targetBaseUrl, key, models);
                 if (healed) models = healed;
             } catch (_) {
                 // Kegagalan pemulihan tidak membatalkan validasi — senarai
                 // sedia ada tetap dipulangkan (melalui cleanAndSortModels).
             }
+            // [SUSUNAN WAJIB A-Z v3.9.15] Semua pintu Custom (termasuk
+            // gemini-native) mesti melalui pembersihan + susunan sebelum respons.
             models = cleanAndSortModels(models);
         }
 

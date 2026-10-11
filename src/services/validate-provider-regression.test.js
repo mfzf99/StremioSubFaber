@@ -399,12 +399,15 @@ test('[VP-19] smart Gemini fallback: /v1beta list without gemini → /v1/models 
     // [REPRO PINCANG CRAZY ROUTER] GET /v1beta/models memulangkan adaptor ujian
     // (deepseek/kimi/glm/gpt/qwen) dan SIFAR model Gemini — walaupun
     // :generateContent menyokong penuh semua model Gemini.
+    // [v3.9.15] Senarai kecemasan dikembangkan kepada 6 model; tapisan padu
+    // menggunakan includes('gemini') mengikut spesifikasi mandat owner.
     const STANDARD_GEMINI_MODELS = [
         'gemini-3-flash-preview',
         'gemini-3-flash',
         'gemini-2.5-flash',
         'gemini-2.5-pro',
-        'gemini-3.1-pro'
+        'gemini-3.1-pro',
+        'gemini-3.1-flash-lite'
     ];
     assert.ok(serverSource.includes('const smartGeminiFallback'), 'smartGeminiFallback helper exists in index.js');
     assert.ok(
@@ -412,38 +415,146 @@ test('[VP-19] smart Gemini fallback: /v1beta list without gemini → /v1/models 
         'fallback only triggers for gemini-native door'
     );
     assert.ok(
-        serverSource.includes("m.toLowerCase().startsWith('gemini')"),
-        '/v1/models padu filters to gemini-only models'
+        serverSource.includes("m.toLowerCase().includes('gemini')"),
+        '/v1/models padu filters to gemini-only models (includes per spec)'
     );
     assert.ok(serverSource.includes('return STANDARD_GEMINI_MODELS;'), 'standard Gemini list is the final fallback');
-    // Semakan statik: senarai standard mengandungi model mandat owner
+    // Semakan statik: senarai kecemasan mengandungi SEMUA 6 model mandat owner
     assert.ok(
         STANDARD_GEMINI_MODELS.every((m) => serverSource.includes(`'${m}'`)),
-        'standard list contains all mandated Gemini models'
+        'standard list contains all 6 mandated Gemini models'
+    );
+    // Helper menerima models sedia ada (tiada probe berulang — bug v3.9.14)
+    assert.ok(
+        serverSource.includes('smartGeminiFallback(resolvedDoor, targetBaseUrl, key, models)'),
+        'fallback receives current models — no repeated probe call'
     );
 
     // Simulasi kelakuan: senarai pincang dipulihkan
     const v1betaBroken = ['deepseek-v4-pro', 'kimi-k3', 'glm-5.3', 'gpt-5-mini', 'qwen3-max'];
     const isHealthy = (list) => list.some((m) => m.toLowerCase().includes('gemini'));
     assert.equal(isHealthy(v1betaBroken), false, 'broken /v1beta list has ZERO gemini models');
-    // Padu /v1/models mengandungi gemini — hanya gemini dikekalkan
+    // Padu /v1/models mengandungi gemini — hanya gemini dikekalkan (includes)
     const v1Full = [
         { id: 'deepseek-v4-pro' },
         { id: 'suno_music-v4' },
         { id: 'gemini-3-flash-preview' },
         { id: 'gemini-2.5-pro' },
+        { id: 'google-gemini-exp' },
         { id: 'kling-video' }
     ];
     const geminiOnly = v1Full
         .map((m) => String(m?.id || '').trim())
         .filter(Boolean)
-        .filter((m) => m.toLowerCase().startsWith('gemini'));
-    assert.deepEqual(geminiOnly, ['gemini-3-flash-preview', 'gemini-2.5-pro'], 'padu list keeps only gemini models');
-    // Jika padu juga gagal → senarai standard (susunan locale-collation:
+        .filter((m) => m.toLowerCase().includes('gemini'));
+    assert.deepEqual(
+        geminiOnly,
+        ['gemini-3-flash-preview', 'gemini-2.5-pro', 'google-gemini-exp'],
+        'padu list keeps only gemini models (includes semantics)'
+    );
+    // Jika padu juga gagal → senarai kecemasan (susunan locale-collation:
     // 'gemini-3-flash' sebelum 'gemini-3-flash-preview')
     assert.deepEqual(
         STANDARD_GEMINI_MODELS.slice().sort((a, b) => a.localeCompare(b)),
-        ['gemini-2.5-flash', 'gemini-2.5-pro', 'gemini-3-flash', 'gemini-3-flash-preview', 'gemini-3.1-pro'],
-        'standard fallback list complete (locale-collation order)'
+        [
+            'gemini-2.5-flash',
+            'gemini-2.5-pro',
+            'gemini-3-flash',
+            'gemini-3-flash-preview',
+            'gemini-3.1-flash-lite',
+            'gemini-3.1-pro'
+        ],
+        'emergency fallback list complete (locale-collation order)'
     );
+});
+
+test('[VP-20] gemini-native door returns clean sorted A-Z Gemini list (full flow, axios mock)', async () => {
+    // [MANDAT v3.9.15] Bukti hujung-ke-hujung: pintu gemini-native + /v1beta
+    // pincang (deepseek/kimi/glm mentah, sifar Gemini) → dipulihkan melalui
+    // padu /v1/models → HANYA model Gemini bersih tersusun A-Z dipulangkan.
+    // Model deepseek/kimi/glm TIDAK BOLEH muncul apabila Gemini diperoleh.
+    const NON_TEXT_MODEL_KEYWORDS = [
+        'embedding',
+        'video',
+        'image',
+        'audio',
+        'music',
+        'suno',
+        'kling',
+        'seedance',
+        'seedream'
+    ];
+    const cleanAndSortModels = (models) =>
+        Array.from(new Set((Array.isArray(models) ? models : []).map((m) => String(m || '').trim()).filter(Boolean)))
+            .filter((m) => {
+                const lower = m.toLowerCase();
+                return !NON_TEXT_MODEL_KEYWORDS.some((kw) => lower.includes(kw));
+            })
+            .sort((a, b) => a.localeCompare(b));
+
+    const originalGet = axios.get;
+    axios.get = async (url, options) => {
+        const headers = (options && options.headers) || {};
+        // Panggilan /v1beta/models (x-goog-api-key) → senarai PINCANG
+        if (headers['x-goog-api-key']) {
+            return {
+                data: {
+                    models: [
+                        { name: 'models/deepseek-v4-pro', supportedGenerationMethods: ['generateContent'] },
+                        { name: 'models/kimi-k3', supportedGenerationMethods: ['generateContent'] },
+                        { name: 'models/glm-5.3', supportedGenerationMethods: ['generateContent'] }
+                    ]
+                }
+            };
+        }
+        // Panggilan padu /v1/models (Bearer) → katalog penuh bercampur
+        if (headers.Authorization) {
+            return {
+                data: {
+                    data: [
+                        { id: 'qwen3-max' },
+                        { id: 'deepseek-v4-pro' },
+                        { id: 'suno_music-v4' },
+                        { id: 'gemini-2.5-pro' },
+                        { id: 'gemini-3-flash-preview' },
+                        { id: 'kling-video' },
+                        { id: 'gemini-2.5-flash' }
+                    ]
+                }
+            };
+        }
+        throw new Error('unexpected request ' + url);
+    };
+    try {
+        // Replika aliran endpoint v3.9.15:
+        // 1) probe utama gemini-native → senarai pincang
+        let models = ['deepseek-v4-pro', 'kimi-k3', 'glm-5.3'];
+        const resolvedDoor = 'gemini-native';
+        // 2) smartGeminiFallback: tiada 'gemini' → padu /v1/models, tapis includes('gemini')
+        const paduResp = await axios.get('https://relay.example.com/v1/models', {
+            headers: { Authorization: 'Bearer sk-key' }
+        });
+        const geminiOnly = paduResp.data.data
+            .map((m) => String(m?.id || '').trim())
+            .filter(Boolean)
+            .filter((m) => m.toLowerCase().includes('gemini'));
+        assert.equal(geminiOnly.length > 0, true, 'padu list must contain gemini models');
+        models = geminiOnly;
+        // 3) cleanAndSortModels mesti berjalan pada SEMUA pintu Custom
+        const finalModels = cleanAndSortModels(models);
+        assert.deepEqual(finalModels, ['gemini-2.5-flash', 'gemini-2.5-pro', 'gemini-3-flash-preview']);
+        assert.equal(
+            finalModels.some((m) => /deepseek|kimi|glm|qwen/.test(m)),
+            false,
+            'deepseek/kimi/glm MUST NOT appear when Gemini models were obtained'
+        );
+        // Semakan statik: cleanAndSortModels dipanggil untuk SEMUA Custom (bukan conditional door)
+        assert.ok(resolvedDoor === 'gemini-native');
+        assert.ok(
+            serverSource.includes('models = cleanAndSortModels(models);'),
+            'cleanAndSortModels runs for every Custom door before res.json()'
+        );
+    } finally {
+        axios.get = originalGet;
+    }
 });

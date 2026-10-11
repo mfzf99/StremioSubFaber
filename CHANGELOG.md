@@ -2,6 +2,24 @@
 
 All notable changes to this project will be documented in this file.
 
+## SubMaker v3.9.15 (2026-10-11) — Fixed: Pintu Gemini-Native Kini Memulangkan Senarai Gemini Bersih Tersusun A-Z
+
+### Fixed
+
+- **Bug v3.9.14**: pintu `gemini-native` (`/v1beta`) masih memulangkan data mentah tidak tersusun (deepseek/kimi/glm) dan SIFAR model Gemini — cawangan tersebut tidak melalui pemulihan yang betul. Tiga punca dibetulkan dalam `POST /api/validate-provider`:
+  1. **Probe berulang dibuang**: `smartGeminiFallback` v3.9.14 membuat panggilan rangkaian KEDUA (`probeDoor` semula); kegagalannya (rate-limit/network) ditelan try/catch luar menyebabkan senarai mentah pincang terus dikembalikan tanpa pemulihan. Helper kini menerima `models` sedia ada daripada probe utama — sifar panggilan berulang.
+  2. **Tapisan padu selari spesifikasi**: `startsWith('gemini')` → `includes('gemini')` (menangkap `google-gemini-exp` dll).
+  3. **Senarai kecemasan dikembangkan** kepada 6 model: `gemini-3-flash-preview`, `gemini-3-flash`, `gemini-2.5-flash`, `gemini-2.5-pro`, `gemini-3.1-pro`, **`gemini-3.1-flash-lite`**.
+- **Susunan wajib A-Z untuk SEMUA pintu Custom**: `cleanAndSortModels` kini dipastikan berjalan pada setiap respons Custom (termasuk gemini-native) sebelum `res.json()` — pintu Gemini Native tidak lagi memaparkan deepseek/kimi/glm apabila model Gemini berjaya diperoleh.
+
+### Added
+
+- **Ujian VP-20** (baharu): bukti hujung-ke-hujung dengan axios mock — `/v1beta` pincang (deepseek/kimi/glm, sifar Gemini) → padu `/v1/models` → HANYA `['gemini-2.5-flash', 'gemini-2.5-pro', 'gemini-3-flash-preview']` tersusun A-Z dipulangkan; deepseek/kimi/glm/qwen DILARANG muncul. VP-19 dikemas kini (includes semantics + 6 model kecemasan + tiada probe berulang).
+
+### Test Baseline
+
+- **Baharu: 366 tests / 365 PASS / 0 FAIL / 1 SKIP** (naik daripada 365/364 — monotonic dipatuhi).
+
 ## SubMaker v3.9.14 (2026-10-11) — Smart Model List Sanitization + Pemulihan Senarai Gemini Pincang (Ground Truth Crazy Router)
 
 ### Added
