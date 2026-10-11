@@ -13,7 +13,7 @@
 ## 2026-10-12 (RELEASE v3.9.29) — DYNAMIC BASE URL INJECTION: USER CONFIG → GEMINI SERVICE
 
 - **Tarikh:** 2026-10-12 (03:35 MYT)
-- **Komit SHA:** (diisi selepas push)
+- **Komit SHA:** `8e21b23` (push 52588c9..8e21b23 ke origin main; CI run id 38168653588 — **SUCCESS** hijau)
 - **Keputusan Owner (mandat seni bina):** v3.9.28 membuktikan baseUrl Web UI (Custom/Proxy) TIDAK disuntik ke GeminiService — permintaan pergi ke Google rasmi melainkan env global diset. Mandat: suntik baseUrl pengguna secara dinamik; keutamaan `userConfig.baseUrl` → `process.env.GEMINI_API_BASE` → Google rasmi; multi-user mesra (tiada kunci pada .env global).
 - **Fail Terlibat:**
   - `src/utils/config.js` — medan baharu `geminiBaseUrl` (sumber: medan langsung ATAU `trinity.translation.baseUrl` UI), sanitasi SSRF-lite (`http(s)` sahaja, nilai lain dibuang senyap).
