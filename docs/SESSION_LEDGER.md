@@ -13,7 +13,7 @@
 ## 2026-10-11 (RELEASE v3.9.23) — TRINITY FASA IV: BUTANG TEST PER-KUNCI + BORDER STATUS + SVG EYE + SERAGAM 'TEST'
 
 - **Tarikh:** 2026-10-11 (14:42 MYT)
-- **Komit SHA:** (diisi selepas push)
+- **Komit SHA:** `03b12d2` (push 419c6dd..03b12d2 ke origin main; CI run id 38148342499 — **SUCCESS** hijau)
 - **Keputusan Owner:** (1) Buang emoji monyet 🙈 — ikon mata SVG profesional (eye/eye-slash, stroke currentColor). (2) Kembalikan butang Test per-baris Additional API Keys — susunan [input][mata][test][padam]; klik → POST /api/validate-provider dengan konteks agent (provider/door/baseUrl custom); spinner '…' semasa menguji; sah → border input HIJAU + butang ✓ hijau; tidak sah → border MERAH + butang ✕ merah + toast "Invalid API key — <mesej>". (3) Seragamkan butang utama "Validate" → "Test" (ikon ✓ kekal). (4) Butang ikon padat petak seragam 32px.
 - **Fail Terlibat:**
   - `public/js/trinity-agents.js`: (a) helper `eyeIconSvg(hidden)` — dua varian SVG (open/slash) digunakan di medan API Key utama DAN setiap baris kunci (emoji 👁/🙈 dibuang sepenuhnya); (b) label butang utama `Validate` → `Test` (dataset.agentValidate kekal untuk wireValidate); (c) `addRotationKeyInput` — tambah butang `.trinity-key-test-btn` (✓) antara mata dan padam; (d) fungsi baharu `testRotationKey(agentKey, input, testBtn)` — baca konteks provider/door/baseUrl kad (sama seperti runAgentValidate), fetch `/api/validate-provider`, kelas `.is-valid`/`.is-invalid` pada input + butang, kunci kosong → invalid serta-merta tanpa rangkaian, `showAlert` toast bila tersedia; butang disabled semasa ujian (spinner '…').
