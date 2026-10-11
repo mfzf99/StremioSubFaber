@@ -13,7 +13,7 @@
 ## 2026-10-11 (RELEASE v3.9.26) — PROMPT AGENT A: "STREAMING-GRADE" → "CINEMA-GRADE"
 
 - **Tarikh:** 2026-10-11 (19:19 MYT)
-- **Komit SHA:** (diisi selepas push)
+- **Komit SHA:** `be52fdd` (push ac40744..be52fdd ke origin main; CI run id 38163355501 — **SUCCESS** hijau)
 - **Keputusan Owner:** Tukar arahan kualiti bahasa dalam seksyen `## Style` prompt Agent A — "at streaming-grade quality" → "at cinema-grade quality" — menaik taraf siling jangkaan kualiti terjemahan kepada tahap pawagam.
 - **Fail Terlibat:** `src/services/translationEngine.js` (satu-satunya kemunculan "streaming-grade" dalam `src/` — perubahan leksikal satu frasa dalam templat prompt; klausa lain tak tersentuh), `package.json` (bump 3.9.25 → 3.9.26), `CHANGELOG.md`, `docs/SESSION_LEDGER.md`, `graphify-out/` (topologi).
 - **Kontrak Payload:** TIADA BERUBAH — literal teks prompt sahaja; systemInstruction kekal top-level; tiada parameter pensampelan/thinkingBudget diubah; no test fixture bergantung pada frasa tersebut (dipahkan oleh regresi penuh).
