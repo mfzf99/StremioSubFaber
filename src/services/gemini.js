@@ -17,9 +17,48 @@ const {
 const GEMINI_API_URL = process.env.GEMINI_API_BASE || 'https://generativelanguage.googleapis.com/v1beta';
 
 function normalizeGeminiModelId(model) {
-    return String(model || '')
+    return (
+        String(model || '')
+            .trim()
+            // Collapse BERULANG prefix — 'models/models/gemini-3-flash' (input
+            // berganda daripada proksi/pengguna) mesti dibersihkan sepenuhnya,
+            // bukan satu lapisan sahaja.
+            .replace(/^(?:models\/)+/i, '')
+    );
+}
+
+/**
+ * [GEMINI-NATIVE 400 FIX 2026-10-11] Sanitasi baseUrl untuk Gemini Native.
+ * Env GEMINI_API_BASE pengguna (gateway proksi pihak ketiga) kadangkala
+ * dibekalkan dengan trailing slash atau suffix '/v1beta' berganda. Semua
+ * endpoint dibina sebagai `${baseUrl}/models/...` — tanpa sanitasi, URL
+ * rangkaian menjadi '.../v1beta//models' atau '.../v1beta/v1beta/models'
+ * yang ditolak gateway dengan 400 Bad Request.
+ * @param {string} url - baseUrl mentah (env atau lalai Google)
+ * @returns {string} baseUrl bersih dengan paling banyak SATU '/v1beta'
+ */
+function sanitizeGeminiBaseUrl(url) {
+    let base = String(url || '')
         .trim()
-        .replace(/^models\//, '');
+        .replace(/\/+$/, ''); // buang semua trailing slash
+    // Runtuhkan '/v1beta' berganda di hujung (proksi + nilai lalai dipangkung)
+    base = base.replace(/(\/v1beta)(?:\/v1beta)+$/i, '$1');
+    return base;
+}
+
+/**
+ * [GEMINI-NATIVE 400 FIX 2026-10-11] Cetak penuh response body ralat 400
+ * daripada pelayan proksi pihak ketiga supaya punca spesifik
+ * (payload error sebenar) terpapar jelas di terminal produksi. Handler
+ * pusat menyembunyikan response data (skipResponseData) — log ini adalah
+ * laluan penyiasatan khusus status 400 sahaja bagi mengelakkan spam.
+ * @param {Error} error - ralat axios
+ * @param {string} operation - nama operasi (countTokens/getModel/generateContent)
+ */
+function logGemini400Debug(error, operation) {
+    const status = Number(error?.response?.status || 0);
+    if (status !== 400) return;
+    console.error(`[Gemini API 400 Debug] (${operation}):`, JSON.stringify(error.response?.data || error.message));
 }
 
 function isGemini3Model(model) {
@@ -486,7 +525,10 @@ class GeminiService {
         // [PROVIDER PURGE 2026-10-10] Gemini Native sahaja: Google Gemini REST
         // v1beta rasmi (AI Studio). Proksi persendirian mesti melalui Custom
         // Provider (Base URL pengguna) — tiada lagi auto-detect key 'sk-'.
-        this.baseUrl = process.env.GEMINI_API_BASE || GEMINI_API_URL;
+        // [GEMINI-NATIVE 400 FIX 2026-10-11] baseUrl DISANITASI supaya nilai
+        // env pengguna (trailing slash / '/v1beta' berganda) tidak membina URL
+        // bertindih '.../v1beta//models' yang ditolak gateway proksi (400).
+        this.baseUrl = sanitizeGeminiBaseUrl(process.env.GEMINI_API_BASE || GEMINI_API_URL);
 
         // FinOps Usage Ledger
         this.usageStats = {
@@ -581,9 +623,33 @@ class GeminiService {
         this.enableJsonOutput = advancedSettings.enableJsonOutput === true;
     }
 
+    isProxyBaseUrl() {
+        // Custom / proxy baseUrl = apa-apa selain host Google rasmi (host
+        // gateway proksi pengguna). Pengesanan melalui hostname supaya laluan
+        // ('/v1beta', dsb.) tidak menjejaskan klasifikasi.
+        try {
+            const host = String(new URL(this.baseUrl).hostname || '').toLowerCase();
+            return !!host && !/(^|\.)googleapis\.com$/.test(host);
+        } catch (_) {
+            return false;
+        }
+    }
+
     getAuthHeaders() {
         const sanitizedKey = sanitizeApiKeyForHeader(this.apiKey) || '';
-        return { 'x-goog-api-key': sanitizedKey, 'Content-Type': 'application/json' };
+        const headers = { 'x-goog-api-key': sanitizedKey, 'Content-Type': 'application/json' };
+
+        // [GEMINI-NATIVE 400 FIX 2026-10-11] Gateway proksi pihak ketiga
+        // menolak permintaan yang hanya membawa x-goog-api-key — API gateway
+        // mereka menjangka Authorization: Bearer (separa skema OpenAI-style).
+        // Hantar KEDUA-DUA header apabila baseUrl custom/proksi, supaya kedua-dua
+        // pintu auth diterima; Google rasmi mengabaikan header Bearer asing.
+        // Ground truth (docs rasmi gateway): endpoint Gemini-native proksi
+        // menerima '?key=' URL param; gateway turut menerima Bearer 'sk-'.
+        if (this.isProxyBaseUrl() && /^sk-/.test(String(sanitizedKey))) {
+            headers.Authorization = `Bearer ${sanitizedKey}`;
+        }
+        return headers;
     }
 
     updateUsageStats(usage, streamId = 'default') {
@@ -803,6 +869,8 @@ class GeminiService {
                 .filter((model) => isWhitelistedGeminiTextModel(model.name))
                 .sort(compareGeminiModelsForDropdown);
         } catch (error) {
+            // [GEMINI-NATIVE 400 FIX] Uncover payload ralat 400 proksi di terminal
+            logGemini400Debug(error, 'getModel (fetch models)');
             if (isGeminiAuthFailure(error)) {
                 if (bypassAuthFailureCache) {
                     await clearCachedProviderAuthFailure(this.authFailureCacheKey);
@@ -867,6 +935,11 @@ class GeminiService {
             this._modelLimits = limits;
             return limits;
         } catch (error) {
+            // [GEMINI-NATIVE 400 FIX] Endpoint /models/{model} kerap tidak
+            // disokong oleh proksi — cetak payload 400 penuh, kemudian JATUH
+            // SENYAP kepada had konservatif (fallback). Kegagalan metadata model
+            // TIDAK PERNAH membatalkan terjemahan.
+            logGemini400Debug(error, 'getModel (model limits)');
             log.warn(() => ['[Gemini] Could not fetch model limits, using conservative defaults:', error.message]);
             const limits = {
                 inputTokenLimit: undefined,
@@ -1016,6 +1089,12 @@ class GeminiService {
             log.warn(() => '[Gemini] Token count response missing totalTokens, falling back to estimate');
             return null;
         } catch (error) {
+            // [GEMINI-NATIVE 400 FIX] countTokens kerap TIDAK disokong oleh
+            // proksi pihak ketiga (hanya :generateContent / :streamGenerateContent
+            // yang dilalui gateway). Cetak payload 400 untuk diagnosis, tetapi
+            // GAGAL SENYAP — pulangkan null supaya engine jatuh kepada anggaran
+            // token tempatan (estimateTokenCount) dan teruskan terjemahan.
+            logGemini400Debug(error, 'countTokens');
             logApiError(error, 'Gemini', 'Count tokens', { skipResponseData: true });
             return null;
         }
@@ -1212,6 +1291,9 @@ class GeminiService {
                 const translatedText = aggregatedText.length > 0 ? aggregatedText : candidate.content.parts[0].text;
                 return this.cleanTranslatedSubtitle(translatedText);
             } catch (error) {
+                // [GEMINI-NATIVE 400 FIX] Uncover payload 400 penuh daripada
+                // gateway proksi pihak ketiga bagi panggilan :generateContent.
+                logGemini400Debug(error, 'generateContent');
                 const normalized = handleTranslationError(error, 'Gemini', { skipResponseData: true });
                 throw normalized;
             }
@@ -1554,6 +1636,9 @@ class GeminiService {
                     response.data.on('error', (err) => reject(err));
                 });
             } catch (error) {
+                // [GEMINI-NATIVE 400 FIX] Uncover payload 400 penuh daripada
+                // gateway proksi pihak ketiga bagi panggilan :streamGenerateContent.
+                logGemini400Debug(error, 'streamGenerateContent');
                 const normalized = handleTranslationError(error, 'Gemini', { skipResponseData: true });
                 throw normalized;
             }

@@ -2,6 +2,19 @@
 
 All notable changes to this project will be documented in this file.
 
+## SubMaker v3.9.27 (2026-10-11) — Gemini Native 400 Bad Request: Debug Payload, Sanitasi baseUrl, Defensive countTokens, Bearer Proksi
+
+### Fixed
+
+- **[GEMINI-NATIVE 400 FIX] Log penuh response body 400 ([src/services/gemini.js](src/services/gemini.js), `logGemini400Debug()`):** setiap blok catch untuk `countTokens`, `getModel` (fetch models + model limits), `generateContent`, dan `streamGenerateContent` kini mencetak payload ralat penuh (`JSON.stringify(err.response?.data || err.message)`) ke konsol pelayan apabila status 400 — handler pusat sebelum ini menyembunyikan response data (`skipResponseData: true`), menjadikan punca sebenar penolakan gateway proksi tidak kelihatan di terminal produksi.
+- **Sanitasi baseUrl ([src/services/gemini.js](src/services/gemini.js), `sanitizeGeminiBaseUrl()`):** nilai `GEMINI_API_BASE` pengguna dibersihkan daripada trailing slash dan suffix `/v1beta` berganda sebelum digunakan — menghapuskan URL bertindih `.../v1beta//models` / `.../v1beta/v1beta/models` yang ditolak gateway dengan 400 Bad Request. `normalizeGeminiModelId()` turut meruntuhkan prefix `models/` berganda (`models/models/gemini-3-flash` → `gemini-3-flash`).
+- **Kegagalan countTokens tidak lagi menghalang terjemahan:** endpoint `:countTokens` dan `/models/{model}` kerap tidak disokong oleh proksi pihak ketiga (gateway hanya melalui `:generateContent`/`:streamGenerateContent`); kedua-dua laluan sudah jatuh senyap kepada fallback (anggaran token tempatan / had konservatif), dan kini payload 400 dicetak untuk diagnosis — terjemahan diteruskan tanpa gangguan.
+- **Header `Authorization: Bearer` untuk gateway proksi:** apabila baseUrl custom/proksi (host bukan `googleapis.com`) dan kunci bermula `sk-`, request menghantar `Authorization: Bearer <key>` BERSAMA `x-goog-api-key` — mengelakkan penolakan auth oleh API gateway yang menjangka skema Bearer (ground truth: dokumen rasmi gateway Gemini-native menerima `?key=` URL param dan Bearer).
+
+### Verification
+
+- `npm test`: **368 tests — 367 PASS, 0 FAIL, 1 SKIP** (live Redis) — selari baseline; jumlah ujian monotonic ✓. Prettier ✓; ESLint 0 error (warning pra-wujud sahaja) ✓. Kontrak payload tidak berubah: systemInstruction kekal top-level, tiada parameter pensampelan/thinkingBudget disentuh, ujian purge `no crazyrouter references` kekal hijau.
+
 ## SubMaker v3.9.26 (2026-10-11) — Prompt Agent A: "streaming-grade" → "cinema-grade"
 
 ### Changed
