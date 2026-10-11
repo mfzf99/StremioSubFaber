@@ -10,6 +10,28 @@
 
 ---
 
+## 2026-10-11 (RELEASE v3.9.20) — TRINITY FASA I: SUSUNAN MEDAN CUSTOM + SEARCHABLE MODEL + PEMULIHAN KEY ROTATION
+
+- **Tarikh:** 2026-10-11 (09:02 MYT)
+- **Komit SHA:** (komit release v3.9.20 ini — SHA direkod selepas push)
+- **Keputusan Owner:** Mandat Fasa I: (1) susun semula medan Custom mengikut hierarki (Model di bawah Base URL & Format); (2) Model naik taraf kepada searchable/editable input (datalist); (3) pulihkan UI putaran kunci Gemini (checkbox + frequency + additional keys + bulk import modal).
+- **Langkah 0 Integration Audit (Backend):** LULUS — payload rotation selari skema backend (`geminiKeyRotationEnabled` boolean, `geminiKeyRotationMode` enum, `geminiApiKeys` string[] — semua diterima normalizeConfig terus); model input mentah diterima (Custom model bebas); **FIX ANTI-DUPLIKASI** — `applyAgentValues` kini mengosongkan senarai keys (`keysList.innerHTML = ''`) sebelum rehydrate (config.js boleh memanggil rehydrate berulang kali — tanpa ini, kunci duplikasi pada setiap panggilan).
+- **Fail Terlibat:** `public/js/trinity-agents.js` (susunan DOM baharu; `<input list>` + `<datalist>` untuk Model; `buildKeyRotationRow` + `addRotationKeyInput`; `updateVisibility` mengurus `.trinity-gemini-only`; rotation rehydration + collectConfigPatch rotation patch; audit fix anti-duplikasi), `public/css/trinity-agents.css` (`.trinity-gemini-only`, `.trinity-model-input`, gaya rotation/keys), `package.json` (3.9.19 → 3.9.20), `CHANGELOG.md` (header v3.9.20).
+- **Verifikasi:** E2E Playwright 3/3 (Custom: URL idx 3 < Format idx 4 < Model idx 5; Model = INPUT + DATALIST; Gemini: rotation row + toggle → freq + keys). `node --check` + prettier ✓ + eslint **0 error** (221 warning pra-wujud) + npm test **368 tests / 367 PASS / 0 FAIL / 1 SKIP** — baseline kekal. Graphify: NO-OP.
+- **Next Steps:** Push v3.9.20 → origin main, verify CI hijau.
+
+## 2026-10-11 (FASA I — FRONTEND HANDOVER) — SUSUNAN MEDAN CUSTOM, SEARCHABLE MODEL, PEMULIHAN KEY ROTATION
+
+- **Tarikh:** 2026-10-11 (08:56 MYT)
+- **Komit SHA:** (menunggu serahan Backend — handover Frontend)
+- **Keputusan Owner:** (1) Susun semula medan Custom: Provider → API Key → Base URL → Format/Door → Model (Model sentiasa di bawah); (2) Naik taraf Model kepada searchable/editable input (`<input list>` + `<datalist>` — taip untuk tapis masa nyata + input bebas tersuai); (3) Kembalikan UI putaran kunci Gemini (checkbox Enable + frequency per-batch/per-request + additional keys + bulk import modal).
+- **Fail Terlibat:**
+  - `public/js/trinity-agents.js`: (a) susunan DOM baharu dalam `buildAgentCard` — Model dipindah ke hujung (idx 5) selepas Format/Door (idx 4); (b) Model kini `<input type="text" list="...">` + `<datalist id="...">` dengan placeholder "Type to search or enter any model…"; `populateModelDropdown` dikemas kini untuk datalist (dedup + preserve nilai); (c) `buildKeyRotationRow` baharu — checkbox Enable Gemini API key rotation (ikat `geminiKeyRotationEnabled`), frequency select (ikat `geminiKeyRotationMode`), senarai keys dinamik (`addRotationKeyInput`) dengan butang + Add Key / × remove, butang Bulk Import… (sambung `window.BulkKeyImport.open` callback ke `addRotationKeyInput`); (d) `updateVisibility` kini juga mengurus `.trinity-gemini-only` (rotation row hanya untuk provider gemini); (e) `applyAgentValues` — rotation rehydration (toggle checked + mode + keys array) untuk stored provider gemini DAN legacy translation; (f) `collectConfigPatch` — rotation patch (`geminiKeyRotationEnabled`, `geminiKeyRotationMode`, `geminiApiKeys` array dari `.trinity-key-input`) dengan fallback false/[] apabila disabled.
+  - `public/css/trinity-agents.css`: `.trinity-gemini-only { display: none }`, `.trinity-model-input` (gaya input model), `.trinity-rotation-toggle`, `.trinity-keys-list/.trinity-key-entry/.trinity-key-remove`, `.trinity-keys-actions`.
+- **Verifikasi E2E Playwright (localhost:7001):** (1) Custom → Base URL idx 3 < Format idx 4 < Model idx 5 ✓; (2) Model = INPUT + DATALIST dengan 4 opsyen katalog ✓; (3) Gemini → rotation row muncul; toggle → frequency + keys muncul ✓. `node --check` + Prettier ✓ + ESLint **0 error**. TIADA npm test/git (peraturan #5).
+- **Kontrak Payload:** rotation patch kekal selari skema backend v3.9.19 (`geminiKeyRotationEnabled` boolean, `geminiKeyRotationMode` enum, `geminiApiKeys` string[]). Bulk import callback memanggil `addRotationKeyInput` untuk setiap kunci yang diimport.
+- **Next Steps:** Backend Integration Audit → release v3.9.20.
+
 ## 2026-10-11 (RELEASE v3.9.19) — SOKONGAN KUNCI GEMINI 'AQ.' + LAPORAN AUDIT KEY ROTATION
 
 - **Tarikh:** 2026-10-11 (08:14 MYT)

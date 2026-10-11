@@ -239,16 +239,15 @@
         keyRow.appendChild(badge);
         card.appendChild(keyRow);
 
-        // Baris 3: Model dropdown (tanpa butang Load)
-        var modelRow = createEl('div', 'trinity-field');
-        modelRow.appendChild(createEl('label', '', 'Model'));
-        var modelSelect = createEl('select', 'trinity-model-select');
-        modelSelect.id = 'trinity-' + agent.key + '-model';
-        modelSelect.appendChild(createEl('option', '', '— Select model —'));
-        modelRow.appendChild(modelSelect);
-        card.appendChild(modelRow);
+        // [SUSUNAN MEDAN CUSTOM v3.9.19] Hierarki untuk Custom/Proxy:
+        //   1. Provider (sudah ada di atas)
+        //   2. API Key + Validate (sudah ada di atas)
+        //   3. Base URL
+        //   4. Format / Door
+        //   5. Model (searchable)
+        // Bagi pembekal rasmi, Base URL & Format disembunyikan; Model kekal nampak.
 
-        // Baris 4: Base URL (hanya untuk Custom/Proxy — Smart Visibility)
+        // Baris 3: Base URL (hanya untuk Custom/Proxy — Smart Visibility)
         var urlRow = createEl('div', 'trinity-field trinity-custom-only');
         urlRow.id = 'trinity-' + agent.key + '-baseurl-row';
         urlRow.appendChild(createEl('label', '', 'Base URL'));
@@ -259,7 +258,7 @@
         urlRow.appendChild(urlInput);
         card.appendChild(urlRow);
 
-        // Baris 5: Format / Door (hanya untuk Custom/Proxy — Smart Visibility)
+        // Baris 4: Format / Door (hanya untuk Custom/Proxy — Smart Visibility)
         var fmtRow = createEl('div', 'trinity-field trinity-custom-only');
         fmtRow.id = 'trinity-' + agent.key + '-format-row';
         fmtRow.appendChild(createEl('label', '', 'Format / Door'));
@@ -278,6 +277,24 @@
         });
         fmtRow.appendChild(fmtSelect);
         card.appendChild(fmtRow);
+
+        // Baris 5: Model — SEARCHABLE / EDITABLE INPUT (datalist)
+        var modelRow = createEl('div', 'trinity-field');
+        modelRow.appendChild(createEl('label', '', 'Model'));
+        var modelInput = createEl('input', 'trinity-model-input');
+        modelInput.type = 'text';
+        modelInput.id = 'trinity-' + agent.key + '-model';
+        modelInput.placeholder = 'Type to search or enter any model…';
+        modelInput.setAttribute('list', 'trinity-' + agent.key + '-model-list');
+        var datalist = createEl('datalist', '');
+        datalist.id = 'trinity-' + agent.key + '-model-list';
+        modelRow.appendChild(modelInput);
+        modelRow.appendChild(datalist);
+        card.appendChild(modelRow);
+
+        // Key Rotation (hanya untuk Gemini — Smart Visibility)
+        var rotationRow = buildKeyRotationRow(agent.key);
+        card.appendChild(rotationRow);
 
         // Pro-only detail rows
         if (mode === MODE_PRO) {
@@ -313,17 +330,22 @@
         var providerSel = $('trinity-' + agentKey + '-provider');
         var urlRow = $('trinity-' + agentKey + '-baseurl-row');
         var fmtRow = $('trinity-' + agentKey + '-format-row');
+        var rotationRow = $('trinity-' + agentKey + '-rotation-row');
         if (!providerSel || !urlRow || !fmtRow) return;
 
         var providers = _registryCache || FALLBACK_PROVIDERS;
         var selectedProvider = getProviderById(providers, providerSel.value);
         var isCustom = isCustomProvider(selectedProvider);
+        var isGemini = selectedProvider && selectedProvider.id === 'gemini';
 
         // [ROOT-CAUSE FIX 2 2026-10-10] inline display:'' TIDAK mengatasi rule CSS
         // .trinity-custom-only { display: none } — untuk SHOW mesti set nilai eksplisit
         // 'grid' (nilai asal .trinity-field). Hide kekal 'none' (inline mengatasi class).
         urlRow.style.display = isCustom ? 'grid' : 'none';
         fmtRow.style.display = isCustom ? 'grid' : 'none';
+        if (rotationRow) {
+            rotationRow.style.display = isGemini ? 'grid' : 'none';
+        }
 
         // Auto-detect format for Custom (hanya bila Custom dipilih)
         if (isCustom) {
@@ -338,31 +360,125 @@
         }
     }
 
-    // --- Populate Model dropdown ---
+    // --- Key Rotation Row (Gemini only) ---
+
+    function buildKeyRotationRow(agentKey) {
+        var row = createEl('div', 'trinity-field trinity-gemini-only');
+        row.id = 'trinity-' + agentKey + '-rotation-row';
+
+        var toggleWrap = createEl('div', 'trinity-rotation-toggle');
+        var toggle = createEl('input', 'trinity-rotation-checkbox');
+        toggle.type = 'checkbox';
+        toggle.id = 'trinity-' + agentKey + '-rotation-enabled';
+        toggleWrap.appendChild(toggle);
+        toggleWrap.appendChild(createEl('label', '', 'Enable Gemini API key rotation'));
+        row.appendChild(toggleWrap);
+
+        // Rotation frequency (hidden unless enabled)
+        var freqRow = createEl('div', 'trinity-field trinity-rotation-dependent');
+        freqRow.id = 'trinity-' + agentKey + '-rotation-freq-row';
+        freqRow.style.display = 'none';
+        freqRow.appendChild(createEl('label', '', 'Rotation Frequency'));
+        var freqSelect = createEl('select', 'trinity-rotation-freq');
+        freqSelect.id = 'trinity-' + agentKey + '-rotation-mode';
+        [
+            { v: 'per-batch', label: 'Per batch' },
+            { v: 'per-request', label: 'Per request' }
+        ].forEach(function (f) {
+            var o = createEl('option', '', f.label);
+            o.value = f.v;
+            freqSelect.appendChild(o);
+        });
+        freqRow.appendChild(freqSelect);
+        row.appendChild(freqRow);
+
+        // Additional API Keys list (hidden unless enabled)
+        var keysRow = createEl('div', 'trinity-field trinity-rotation-dependent');
+        keysRow.id = 'trinity-' + agentKey + '-rotation-keys-row';
+        keysRow.style.display = 'none';
+        keysRow.appendChild(createEl('label', '', 'Additional API Keys'));
+
+        var keysList = createEl('div', 'trinity-keys-list');
+        keysList.id = 'trinity-' + agentKey + '-rotation-keys-list';
+        keysRow.appendChild(keysList);
+
+        var btnWrap = createEl('div', 'trinity-keys-actions');
+        var addBtn = createEl('button', 'btn-sm btn-secondary');
+        addBtn.type = 'button';
+        addBtn.textContent = '+ Add Key';
+        addBtn.addEventListener('click', function () {
+            addRotationKeyInput(agentKey, '');
+        });
+        btnWrap.appendChild(addBtn);
+
+        var bulkBtn = createEl('button', 'btn-sm btn-secondary');
+        bulkBtn.type = 'button';
+        bulkBtn.textContent = 'Bulk Import…';
+        bulkBtn.addEventListener('click', function () {
+            // Sambung semula modal import pukal sedia ada
+            if (window.BulkKeyImport && typeof window.BulkKeyImport.open === 'function') {
+                window.BulkKeyImport.open(function (importedKeys) {
+                    if (Array.isArray(importedKeys)) {
+                        importedKeys.forEach(function (k) {
+                            addRotationKeyInput(agentKey, k);
+                        });
+                    }
+                });
+            } else {
+                console.warn('[Trinity] Bulk key import modal not loaded');
+            }
+        });
+        btnWrap.appendChild(bulkBtn);
+        keysRow.appendChild(btnWrap);
+        row.appendChild(keysRow);
+
+        // Toggle listener
+        toggle.addEventListener('change', function () {
+            var enabled = toggle.checked;
+            freqRow.style.display = enabled ? '' : 'none';
+            keysRow.style.display = enabled ? '' : 'none';
+        });
+
+        return row;
+    }
+
+    function addRotationKeyInput(agentKey, value) {
+        var keysList = $('trinity-' + agentKey + '-rotation-keys-list');
+        if (!keysList) return;
+        var wrap = createEl('div', 'trinity-key-entry');
+        var input = createEl('input', 'trinity-key-input');
+        input.type = 'password';
+        input.value = value || '';
+        input.placeholder = 'AIzaSy… or AQ.Ab8… or sk-…';
+        wrap.appendChild(input);
+        var removeBtn = createEl('button', 'trinity-key-remove');
+        removeBtn.type = 'button';
+        removeBtn.textContent = '×';
+        removeBtn.setAttribute('aria-label', 'Remove key');
+        removeBtn.addEventListener('click', function () {
+            wrap.remove();
+        });
+        wrap.appendChild(removeBtn);
+        keysList.appendChild(wrap);
+    }
+
+    // --- Populate Model datalist (searchable input) ---
 
     function populateModelDropdown(agentKey, models, preserveSelection) {
-        var sel = $('trinity-' + agentKey + '-model');
-        if (!sel) return;
-        var prev = preserveSelection ? sel.value : '';
-        sel.innerHTML = '';
-        var def = createEl('option', '', '— Select model —');
-        def.value = '';
-        sel.appendChild(def);
+        var input = $('trinity-' + agentKey + '-model');
+        var datalist = $('trinity-' + agentKey + '-model-list');
+        if (!input || !datalist) return;
+        var prev = preserveSelection ? input.value : '';
+        datalist.innerHTML = '';
         models.forEach(function (m) {
             var name = typeof m === 'string' ? m : m.name || m.id || '';
             if (!name) return;
             var clean = name.replace(/^models\//, '');
             var o = createEl('option', '', clean);
             o.value = clean;
-            sel.appendChild(o);
+            datalist.appendChild(o);
         });
-        if (prev) {
-            var found = false;
-            for (var i = 0; i < sel.options.length; i++) {
-                if (sel.options[i].value === prev) found = true;
-            }
-            if (found) sel.value = prev;
-        }
+        if (prev) input.value = prev;
     }
 
     // --- Validate handler (satu butang tunggal) ---
@@ -691,19 +807,7 @@
                 if (stored.apiKey) keyEl.value = stored.apiKey;
                 if (stored.format) fmtEl.value = stored.format;
                 if (stored.baseUrl) urlEl.value = stored.baseUrl;
-                if (stored.model) {
-                    // Masukkan sebagai option kalau tiada dalam katalog
-                    var found = false;
-                    for (var i = 0; i < modelEl.options.length; i++) {
-                        if (modelEl.options[i].value === stored.model) found = true;
-                    }
-                    if (!found) {
-                        var o = createEl('option', '', stored.model);
-                        o.value = stored.model;
-                        modelEl.appendChild(o);
-                    }
-                    modelEl.value = stored.model;
-                }
+                if (stored.model) modelEl.value = stored.model;
                 // Provider rehydration: pilih provider yang sepadan dengan door/format
                 if (stored.provider) {
                     providerEl.value = stored.provider;
@@ -712,15 +816,50 @@
                     var legacyMap = { gemini: 'gemini', openai: 'openai', anthropic: 'anthropic' };
                     providerEl.value = legacyMap[stored.format] || stored.format;
                 }
+                // Key rotation rehydration (hanya untuk Gemini)
+                if (stored.provider === 'gemini' || (stored.provider === '' && agent.key === 'translation')) {
+                    var rotToggle = $('trinity-' + agent.key + '-rotation-enabled');
+                    var rotMode = $('trinity-' + agent.key + '-rotation-mode');
+                    var keysList = $('trinity-' + agent.key + '-rotation-keys-list');
+                    if (rotToggle) {
+                        rotToggle.checked = cfg.geminiKeyRotationEnabled === true;
+                        rotToggle.dispatchEvent(new Event('change'));
+                    }
+                    if (rotMode && cfg.geminiKeyRotationMode) rotMode.value = cfg.geminiKeyRotationMode;
+                    if (keysList && Array.isArray(cfg.geminiApiKeys)) {
+                        // [AUDIT v3.9.20] Kosongkan senarai dahulu — rehydrate boleh
+                        // dipanggil berulang kali oleh config.js; tanpa ini, kunci
+                        // akan duplikasi pada setiap panggilan.
+                        keysList.innerHTML = '';
+                        cfg.geminiApiKeys.forEach(function (k) {
+                            addRotationKeyInput(agent.key, k);
+                        });
+                    }
+                }
             } else if (agent.key === 'translation') {
                 // Seed daripada konfigurasi legasi (gemini)
                 if (cfg.geminiApiKey) keyEl.value = cfg.geminiApiKey;
                 if (cfg.geminiModel) {
                     var name = String(cfg.geminiModel).replace(/^models\//, '');
-                    modelEl.appendChild(Object.assign(createEl('option', '', name), { value: name }));
                     modelEl.value = name;
                 }
                 providerEl.value = 'gemini';
+                // Key rotation seed untuk legacy
+                var rotToggle = $('trinity-translation-rotation-enabled');
+                var rotMode = $('trinity-translation-rotation-mode');
+                var keysList = $('trinity-translation-rotation-keys-list');
+                if (rotToggle) {
+                    rotToggle.checked = cfg.geminiKeyRotationEnabled === true;
+                    rotToggle.dispatchEvent(new Event('change'));
+                }
+                if (rotMode && cfg.geminiKeyRotationMode) rotMode.value = cfg.geminiKeyRotationMode;
+                if (keysList && Array.isArray(cfg.geminiApiKeys)) {
+                    // [AUDIT v3.9.20] Kosongkan senarai dahulu — anti-duplikasi rehydrate
+                    keysList.innerHTML = '';
+                    cfg.geminiApiKeys.forEach(function (k) {
+                        addRotationKeyInput('translation', k);
+                    });
+                }
             }
 
             // Pastikan visibility dikemas kini selepas rehydrate
@@ -775,6 +914,27 @@
         if (t.apiKey) {
             patch.geminiApiKey = t.apiKey;
             if (t.model) patch.geminiModel = t.model;
+        }
+
+        // Key rotation patch (hanya untuk Gemini)
+        var rotToggle = $('trinity-translation-rotation-enabled');
+        var rotMode = $('trinity-translation-rotation-mode');
+        var keysList = $('trinity-translation-rotation-keys-list');
+        if (rotToggle && rotToggle.checked) {
+            patch.geminiKeyRotationEnabled = true;
+            patch.geminiKeyRotationMode = rotMode ? rotMode.value : 'per-batch';
+            if (keysList) {
+                var keys = [];
+                var inputs = keysList.querySelectorAll('.trinity-key-input');
+                inputs.forEach(function (input) {
+                    var v = input.value.trim();
+                    if (v) keys.push(v);
+                });
+                patch.geminiApiKeys = keys;
+            }
+        } else {
+            patch.geminiKeyRotationEnabled = false;
+            patch.geminiApiKeys = [];
         }
 
         var pf = trinity.preflight;

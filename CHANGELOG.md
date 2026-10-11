@@ -2,6 +2,18 @@
 
 All notable changes to this project will be documented in this file.
 
+## SubMaker v3.9.20 (2026-10-11) — Trinity Fasa I: Susunan Medan Custom, Searchable Model, Pemulihan Key Rotation
+
+### Added
+
+- **Susunan medan Custom/Proxy** (`public/js/trinity-agents.js`): hierarki DOM baharu mengikut mandat — Provider → API Key + Validate → Base URL → Format/Door → Model (Model sentiasa paling bawah). Bagi pembekal rasmi, Base URL & Format disembunyikan (Smart Visibility kekal).
+- **Searchable/Editable Model input**: medan Model dinaik taraf daripada `<select>` tegar kepada `<input type="text" list="...">` + `<datalist>` — pengguna boleh menaip untuk menapis senarai model masa nyata ATAU memasukkan sebarang nama model tersuai secara manual; nilai disegerakkan terus ke config payload. `populateModelDropdown` dikemas kini untuk datalist (dedup + preserve nilai semasa repopulate).
+- **Pemulihan UI Key Rotation Gemini** (hanya apabila Provider = Google Gemini): kotak tanda "Enable Gemini API key rotation" (ikat `geminiKeyRotationEnabled`); apabila ditandakan — pilihan "Rotation Frequency" `per-batch`/`per-request` (ikat `geminiKeyRotationMode`), senarai "Additional API Keys" dinamik (ikat `geminiApiKeys: string[]`) dengan butang "+ Add Key" individu + butang × padam setiap kunci + butang "Bulk Import…" yang menyambung semula modal `bulk-key-import.js` (callback import → `addRotationKeyInput` untuk setiap kunci). Rehydration: toggle/mode/keys dipulihkan daripada config tersimpan; [AUDIT v3.9.20] senarai keys dikosongkan sebelum rehydrate (anti-duplikasi panggilan berulang config.js).
+
+### Verification
+
+- E2E Playwright: Custom → Base URL idx 3 < Format idx 4 < Model idx 5 ✓; Model = INPUT + DATALIST ✓; Gemini → rotation row + toggle → frequency + keys ✓. npm test **368 tests / 367 PASS / 0 FAIL / 1 SKIP** (baseline kekal).
+
 ## SubMaker v3.9.19 (2026-10-11) — Sokongan Format Kunci Gemini 'AQ.' + Laporan Audit Key Rotation
 
 ### Added
