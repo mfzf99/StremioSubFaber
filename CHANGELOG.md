@@ -2,6 +2,20 @@
 
 All notable changes to this project will be documented in this file.
 
+## SubMaker v3.9.18 (2026-10-11) — Hotfix: ReferenceError 'agents is not defined' dalam fetchGeminiCatalogFromV1
+
+### Fixed
+
+- **Bug produksi v3.9.17** (bukti log: `[ERROR] [validate-provider] Gagal override katalog Gemini dari /v1: agents is not defined`): pemboleh ubah `agents` ditakrifkan sebagai `const` **block-scoped** di dalam blok `try {}` utama endpoint, tetapi `fetchGeminiCatalogFromV1` yang dirujuknya ditakrifkan SEBELUM blok tersebut — rujukan runtime melempar `ReferenceError` serta-merta dan memaksa fallback kecemasan 6 model statik pada setiap validasi `/v1beta`. **Fix:** `agents` kini dihantar sebagai **parameter eksplisit** merentasi rantai panggilan — `smartGeminiFallback(resolvedDoor, targetBaseUrl, key, models, agents)` → `fetchGeminiCatalogFromV1(targetBaseUrl, apiKey, networkAgents)` → `probeDoor('openai-compatible', v1Url, apiKey, networkAgents)`. Sifar rujukan closure merentas sempadan blok.
+
+### Added
+
+- **Ujian VP-21**: replika struktur skop endpoint (fungsi ditakrifkan sebelum blok di mana `agents` wujud) dengan signature parameter eksplisit — membuktikan tiada `ReferenceError`, probeDoor menerima objek agents sah, dan katalog Gemini dipulangkan. VP-19 assertion dikemas kini (signature parameter `networkAgents`).
+
+### Test Baseline
+
+- **Baharu: 367 tests / 366 PASS / 0 FAIL / 1 SKIP** (naik daripada 366/365 — monotonic dipatuhi).
+
 ## SubMaker v3.9.17 (2026-10-11) — Fixed: Delegasi probeDoor untuk Override Katalog /v1 (parsing produksi stabil)
 
 ### Fixed

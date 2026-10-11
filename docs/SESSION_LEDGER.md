@@ -10,6 +10,17 @@
 
 ---
 
+## 2026-10-11 (HOTFIX v3.9.18) — REFERENCEERROR 'agents is not defined' DALAM fetchGeminiCatalogFromV1
+
+- **Tarikh:** 2026-10-11 (07:30 MYT)
+- **Komit SHA:** (komit hotfix v3.9.18 ini — SHA direkod selepas push)
+- **Keputusan Owner:** Bukti log produksi v3.9.17: `[validate-provider] Gagal override katalog Gemini dari /v1: agents is not defined` — ReferenceError serta-merta memaksa kecemasan statik pada semua validasi /v1beta.
+- **Punca:** `agents` ialah `const` **block-scoped** dalam blok `try {}` utama endpoint, tetapi `fetchGeminiCatalogFromV1` (ditakrifkan SEBELUM blok tersebut) merujuknya melalui closure merentas sempadan blok — gagal pada runtime.
+- **Fix:** `agents` dihantar sebagai **parameter eksplisit** merentasi rantai: `smartGeminiFallback(…, agents)` → `fetchGeminiCatalogFromV1(…, networkAgents)` → `probeDoor('openai-compatible', v1Url, apiKey, networkAgents)`. Sifar rujukan closure merentas blok.
+- **Fail Terlibat:** `index.js` (signature 3 fungsi + call-site hantar `agents`), `src/services/validate-provider-regression.test.js` (+VP-21 replika struktur skop dengan parameter eksplisit — tiada ReferenceError, agents sah, katalog dipulangkan; VP-19 assertion signature dikemas kini), `package.json` (3.9.17 → 3.9.18), `CHANGELOG.md` (header v3.9.18).
+- **Status pipeline:** prettier ✓ + eslint **0 error** (221 warning pra-wujud) + npm test **367 tests / 366 PASS / 0 FAIL / 1 SKIP** — **BASELINE BAHARU** (>= 366 monotonic dipatuhi). Fail `public/` TIDAK disentuh. Graphify: NO-OP.
+- **Next Steps:** Push v3.9.18 → origin main, verify CI hijau.
+
 ## 2026-10-11 (RELEASE v3.9.17) — FIXED: DELEGASI probeDoor UNTUK OVERRIDE KATALOG /v1
 
 - **Tarikh:** 2026-10-11 (04:38 MYT)

@@ -3772,17 +3772,22 @@ app.post('/api/validate-provider', validationLimiter, async (req, res) => {
     // menyebabkan tatasusunan kosong dan fallback kecemasan statik tercetus.
     // probeDoor telah mengendalikan bentuk respons OpenAI (data[].id + .name +
     // fallback rentetan) sejak v3.9.8 tanpa isu.
-    const fetchGeminiCatalogFromV1 = async (targetBaseUrl, apiKey) => {
+    // [HOTFIX v3.9.18 — ReferenceError produksi 'agents is not defined']
+    // `agents` ditakrifkan DALAM blok try{} utama (block-scoped const) tetapi
+    // fungsi ini ditakrifkan SEBELUM blok tersebut — rujukan runtime gagal
+    // serta-merta dan memaksa fallback kecemasan statik. Fix: agents diambil
+    // sebagai PARAMETER eksplisit daripada pemanggil (dalam blok try).
+    const fetchGeminiCatalogFromV1 = async (targetBaseUrl, apiKey, networkAgents) => {
         const v1Url = targetBaseUrl.replace(/\/v1beta\/?$/, '/v1');
-        const models = await probeDoor('openai-compatible', v1Url, apiKey, agents);
+        const models = await probeDoor('openai-compatible', v1Url, apiKey, networkAgents);
         if (!Array.isArray(models) || models.length === 0) return [];
         return models.filter((m) => String(m).toLowerCase().includes('gemini'));
     };
-    const smartGeminiFallback = async (resolvedDoor, targetBaseUrl, apiKey, currentModels) => {
+    const smartGeminiFallback = async (resolvedDoor, targetBaseUrl, apiKey, currentModels, networkAgents) => {
         if (resolvedDoor !== 'gemini-native') return null;
         // 1) PROACTIVE: katalog Gemini sebenar TERUS daripada /v1/models.
         try {
-            const geminiCatalog = await fetchGeminiCatalogFromV1(targetBaseUrl, apiKey);
+            const geminiCatalog = await fetchGeminiCatalogFromV1(targetBaseUrl, apiKey, networkAgents);
             if (geminiCatalog.length > 0) return geminiCatalog;
         } catch (err) {
             // [v3.9.17] Log eksplisit — kegagalan override tidak lagi senyap.
@@ -3938,7 +3943,7 @@ app.post('/api/validate-provider', validationLimiter, async (req, res) => {
             // (sifar model Gemini) dan pulihkan melalui /v1/models + standard.
             // [FIX v3.9.15] models sedia ada dihantar terus — tiada probe berulang.
             try {
-                const healed = await smartGeminiFallback(resolvedDoor, targetBaseUrl, key, models);
+                const healed = await smartGeminiFallback(resolvedDoor, targetBaseUrl, key, models, agents);
                 if (healed) models = healed;
             } catch (_) {
                 // Kegagalan pemulihan tidak membatalkan validasi — senarai

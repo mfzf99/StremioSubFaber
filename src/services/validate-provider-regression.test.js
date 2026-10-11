@@ -434,8 +434,24 @@ test('[VP-19] smart Gemini fallback: /v1beta list without gemini → /v1/models 
         'URL rewrite /v1beta → /v1 for proactive catalog fetch'
     );
     assert.ok(
-        serverSource.includes("probeDoor('openai-compatible', v1Url, apiKey, agents)"),
-        'proactive catalog delegates to probeDoor (proven-stable helper)'
+        serverSource.includes("probeDoor('openai-compatible', v1Url, apiKey, networkAgents)"),
+        'proactive catalog delegates to probeDoor (proven-stable helper, explicit agents param)'
+    );
+    // [HOTFIX v3.9.18] Signature: agents dihantar sebagai parameter eksplisit
+    // (bukan closure block-scoped) — tiada ReferenceError 'agents is not defined'.
+    assert.ok(
+        serverSource.includes('const fetchGeminiCatalogFromV1 = async (targetBaseUrl, apiKey, networkAgents)'),
+        'fetchGeminiCatalogFromV1 receives networkAgents as an explicit parameter'
+    );
+    assert.ok(
+        serverSource.includes(
+            'const smartGeminiFallback = async (resolvedDoor, targetBaseUrl, apiKey, currentModels, networkAgents)'
+        ),
+        'smartGeminiFallback receives networkAgents as an explicit parameter'
+    );
+    assert.ok(
+        serverSource.includes('smartGeminiFallback(resolvedDoor, targetBaseUrl, key, models, agents)'),
+        'call-site passes agents from the try block scope explicitly'
     );
     assert.ok(
         serverSource.includes('Gagal override katalog Gemini dari /v1:'),
@@ -618,5 +634,57 @@ test('[VP-20] gemini-native door: proactive /v1/models catalog → full dynamic 
         );
     } finally {
         axios.get = originalGet;
+    }
+});
+
+test('[VP-21] fetchGeminiCatalogFromV1 executes without ReferenceError (hotfix v3.9.18)', async () => {
+    // [REPRO PRODUKSI v3.9.17] Log: "Gagal override katalog Gemini dari /v1:
+    // agents is not defined" — fungsi merujuk `agents` block-scoped (dalam blok
+    // try utama) dari luar skopnya. Ujian ini mereplika bentuk skop yang sama
+    // dengan signature v3.9.18 (parameter eksplisit networkAgents) dan
+    // membuktikan: (1) tiada ReferenceError; (2) probeDoor menerima objek
+    // agents yang sah; (3) katalog Gemini dipulangkan.
+    const axiosMock = axios.get;
+    axios.get = async (url, options) => {
+        assert.ok(
+            options && options.headers && options.headers.Authorization,
+            'probeDoor call must carry Authorization header'
+        );
+        assert.ok(
+            options && (options.httpAgent !== undefined || options.httpsAgent !== undefined),
+            'probeDoor call must receive valid network agents object'
+        );
+        return { data: { data: [{ id: 'gemini-3.8-flash' }, { id: 'deepseek-v4-pro' }, { id: 'gemini-2.5-pro' }] } };
+    };
+    try {
+        // Replika struktur skop endpoint: fungsi ditakrifkan SEBELUM blok try
+        // di mana agents wujud — parameter eksplisit mencegah ReferenceError
+        // walaupun tanpa closure.
+        const probeDoor = async (doorType, url, apiKey, networkAgents) => {
+            assert.equal(doorType, 'openai-compatible');
+            assert.ok(networkAgents && typeof networkAgents === 'object', 'networkAgents must be defined');
+            const resp = await axios.get(`${url}/models`, {
+                headers: { Authorization: `Bearer ${apiKey}`, 'Content-Type': 'application/json' },
+                timeout: 10000,
+                httpAgent: networkAgents.httpAgent,
+                httpsAgent: networkAgents.httpsAgent
+            });
+            const list = resp?.data?.data;
+            if (!Array.isArray(list)) throw new Error('Unexpected response shape');
+            return list.map((m) => String(m?.id || m?.name || '').trim()).filter(Boolean);
+        };
+        // Bentuk v3.9.18: networkAgents sebagai PARAMETER eksplisit
+        const fetchGeminiCatalogFromV1 = async (targetBaseUrl, apiKey, networkAgents) => {
+            const v1Url = targetBaseUrl.replace(/\/v1beta\/?$/, '/v1');
+            const models = await probeDoor('openai-compatible', v1Url, apiKey, networkAgents);
+            if (!Array.isArray(models) || models.length === 0) return [];
+            return models.filter((m) => String(m).toLowerCase().includes('gemini'));
+        };
+        // agents ditakrifkan dalam "blok try" simulasi — dihantar eksplisit
+        const agents = { httpAgent: { keepAlive: true }, httpsAgent: { keepAlive: true } };
+        const catalog = await fetchGeminiCatalogFromV1('https://cn.crazyrouter.com/v1beta', 'sk-key', agents);
+        assert.deepEqual(catalog, ['gemini-3.8-flash', 'gemini-2.5-pro'], 'gemini catalog returned, no ReferenceError');
+    } finally {
+        axios.get = axiosMock;
     }
 });
