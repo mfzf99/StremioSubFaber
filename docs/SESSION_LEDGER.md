@@ -13,7 +13,7 @@
 ## 2026-10-11 (RELEASE v3.9.15) — FIXED: PINTU GEMINI-NATIVE MEMULANGKAN SENARAI GEMINI BERSIH A-Z
 
 - **Tarikh:** 2026-10-11 (03:22 MYT)
-- **Komit SHA:** (komit release v3.9.15 ini — SHA direkod selepas push)
+- **Komit SHA:** `2ed04d9` (push 26ed898..2ed04d9 ke origin main; CI run #38108252408 — **SUCCESS** hijau)
 - **Keputusan Owner:** Bug v3.9.14 — pintu `/v1beta` (gemini-native) masih memulangkan data mentah (deepseek/kimi/glm) tanpa susunan dan SIFAR Gemini. Mandat: sinkronkan cawangan gemini-native dengan `/v1/models` (tapis includes('gemini')), senarai kecemasan 6 model, susunan wajib A-Z.
 - **Punca Akar (3):** (1) `smartGeminiFallback` v3.9.14 membuat probeDoor BERULANG selepas probe utama — kegagalan panggilan kedua (rate-limit/network) ditelan try/catch luar → senarai mentah pincang dikembalikan tanpa pemulihan; (2) tapisan padu `startsWith('gemini')` terlalu ketat (spesifikasi: `includes`); (3) senarai kecemasan tiada `gemini-3.1-flash-lite`.
 - **Fail Terlibat:** `index.js` (`smartGeminiFallback(resolvedDoor, baseUrl, key, currentModels)` — terima models sedia ada, sifar probe berulang; tapisan includes; 6 model kecemasan; `cleanAndSortModels` berjalan semua pintu Custom), `src/services/validate-provider-regression.test.js` (VP-19 dikemas kini; +VP-20 bukti hujung-ke-hujung axios mock: pincang → padu → hanya Gemini A-Z, deepseek/kimi/glm DILARANG), `package.json` (3.9.14 → 3.9.15), `CHANGELOG.md` (header v3.9.15).
