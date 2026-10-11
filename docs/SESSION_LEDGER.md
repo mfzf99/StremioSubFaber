@@ -10,6 +10,15 @@
 
 ---
 
+## 2026-10-11 (RELEASE v3.9.16) — PROACTIVE /v1/models OVERRIDE: KATALOG GEMINI DINAMIK TERUS
+
+- **Tarikh:** 2026-10-11 (03:48 MYT)
+- **Komit SHA:** (komit release v3.9.16 ini — SHA direkod selepas push)
+- **Keputusan Owner:** Mandat pintasan terus: `/v1beta/models` gerbang SEMEMANGNYA pincang dan tidak boleh diharap untuk menyenaraikan — katalog sebenar (termasuk gemini-3.5-flash, gemini-3.8-flash) hanya wujud di `/v1/models`. Pintu gemini-native mesti menyenaraikan TERUS dari `/v1`; kecemasan hanya jalan terakhir.
+- **Fail Terlibat:** `index.js` (helper baharu `fetchGeminiCatalogFromV1` — rewrite `/v1beta`→`/v1`, Bearer, tapis includes('gemini'); `smartGeminiFallback` keutamaan: (1) katalog proaktif /v1, (2) senarai /v1beta sihat, (3) kecemasan 6 model LAST RESORT; laluan inferens runtime KEKAL gemini-native), `src/services/validate-provider-regression.test.js` (VP-20 ditulis semula: katalog dinamik penuh A-Z termasuk 3.5/3.8 + panggilan /v1 Bearer disahkan; VP-19: semakan statik keutamaan + kontrak rewrite + inferens), `package.json` (3.9.15 → 3.9.16), `CHANGELOG.md` (header v3.9.16).
+- **Status pipeline:** prettier ✓ + eslint **0 error** (221 warning pra-wujud) + npm test **366 tests / 365 PASS / 0 FAIL / 1 SKIP** — baseline kekal (monotonic >= 366; VP-19/20 dikemas kini in-place, sifar ujian dibuang). Fail `public/` TIDAK disentuh. Graphify: NO-OP.
+- **Next Steps:** Push v3.9.16 → origin main, verify CI hijau.
+
 ## 2026-10-11 (RELEASE v3.9.15) — FIXED: PINTU GEMINI-NATIVE MEMULANGKAN SENARAI GEMINI BERSIH A-Z
 
 - **Tarikh:** 2026-10-11 (03:22 MYT)

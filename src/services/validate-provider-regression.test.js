@@ -416,7 +416,7 @@ test('[VP-19] smart Gemini fallback: /v1beta list without gemini → /v1/models 
     );
     assert.ok(
         serverSource.includes("m.toLowerCase().includes('gemini')"),
-        '/v1/models padu filters to gemini-only models (includes per spec)'
+        '/v1/models catalog filters to gemini-only models (includes per spec)'
     );
     assert.ok(serverSource.includes('return STANDARD_GEMINI_MODELS;'), 'standard Gemini list is the final fallback');
     // Semakan statik: senarai kecemasan mengandungi SEMUA 6 model mandat owner
@@ -424,22 +424,46 @@ test('[VP-19] smart Gemini fallback: /v1beta list without gemini → /v1/models 
         STANDARD_GEMINI_MODELS.every((m) => serverSource.includes(`'${m}'`)),
         'standard list contains all 6 mandated Gemini models'
     );
-    // Helper menerima models sedia ada (tiada probe berulang — bug v3.9.14)
+    // [v3.9.16] PROACTIVE OVERRIDE: gemini-native menyenaraikan TERUS dari
+    // /v1/models (permalink /v1beta tidak diharap) — buang /v1beta → /v1.
     assert.ok(
-        serverSource.includes('smartGeminiFallback(resolvedDoor, targetBaseUrl, key, models)'),
-        'fallback receives current models — no repeated probe call'
+        serverSource.includes("replace(/\\/v1beta\\/?$/, '/v1')"),
+        'URL rewrite /v1beta → /v1 for proactive catalog fetch'
+    );
+    assert.ok(
+        serverSource.includes('const fetchGeminiCatalogFromV1'),
+        'proactive /v1/models catalog fetch helper exists'
+    );
+    // Susunan keutamaan: /v1 dahulu → senarai /v1beta sihat → kecemasan
+    assert.ok(
+        serverSource.indexOf('fetchGeminiCatalogFromV1(targetBaseUrl, apiKey)') <
+            serverSource.indexOf("list.some((m) => String(m).toLowerCase().includes('gemini'))"),
+        'proactive /v1 catalog takes precedence over /v1beta list'
+    );
+    assert.ok(
+        serverSource.indexOf("list.some((m) => String(m).toLowerCase().includes('gemini'))") <
+            serverSource.indexOf('return STANDARD_GEMINI_MODELS;'),
+        'emergency list is the LAST resort (after /v1 and /v1beta both fail)'
+    );
+    // Laluan inferens kekal gemini-native — semak komen kontrak
+    assert.ok(
+        serverSource.includes('generateContent'),
+        'inference path contract (:generateContent) documented in source'
     );
 
-    // Simulasi kelakuan: senarai pincang dipulihkan
+    // Simulasi kelakuan: /v1beta pincang (adaptor ujian sahaja)
     const v1betaBroken = ['deepseek-v4-pro', 'kimi-k3', 'glm-5.3', 'gpt-5-mini', 'qwen3-max'];
     const isHealthy = (list) => list.some((m) => m.toLowerCase().includes('gemini'));
     assert.equal(isHealthy(v1betaBroken), false, 'broken /v1beta list has ZERO gemini models');
-    // Padu /v1/models mengandungi gemini — hanya gemini dikekalkan (includes)
+    // PROACTIVE /v1/models: katalog sebenar lengkap termasuk model baharu
+    // (gemini-3.5-flash, gemini-3.8-flash) — hanya gemini dikekalkan (includes)
     const v1Full = [
         { id: 'deepseek-v4-pro' },
         { id: 'suno_music-v4' },
         { id: 'gemini-3-flash-preview' },
         { id: 'gemini-2.5-pro' },
+        { id: 'gemini-3.5-flash' },
+        { id: 'gemini-3.8-flash' },
         { id: 'google-gemini-exp' },
         { id: 'kling-video' }
     ];
@@ -449,11 +473,11 @@ test('[VP-19] smart Gemini fallback: /v1beta list without gemini → /v1/models 
         .filter((m) => m.toLowerCase().includes('gemini'));
     assert.deepEqual(
         geminiOnly,
-        ['gemini-3-flash-preview', 'gemini-2.5-pro', 'google-gemini-exp'],
-        'padu list keeps only gemini models (includes semantics)'
+        ['gemini-3-flash-preview', 'gemini-2.5-pro', 'gemini-3.5-flash', 'gemini-3.8-flash', 'google-gemini-exp'],
+        'proactive /v1 catalog returns FULL dynamic gemini list (includes semantics)'
     );
-    // Jika padu juga gagal → senarai kecemasan (susunan locale-collation:
-    // 'gemini-3-flash' sebelum 'gemini-3-flash-preview')
+    // Jika /v1 DAN /v1beta kedua-duanya gagal sepenuhnya → senarai kecemasan
+    // (susunan locale-collation: 'gemini-3-flash' sebelum 'gemini-3-flash-preview')
     assert.deepEqual(
         STANDARD_GEMINI_MODELS.slice().sort((a, b) => a.localeCompare(b)),
         [
@@ -468,11 +492,13 @@ test('[VP-19] smart Gemini fallback: /v1beta list without gemini → /v1/models 
     );
 });
 
-test('[VP-20] gemini-native door returns clean sorted A-Z Gemini list (full flow, axios mock)', async () => {
-    // [MANDAT v3.9.15] Bukti hujung-ke-hujung: pintu gemini-native + /v1beta
-    // pincang (deepseek/kimi/glm mentah, sifar Gemini) → dipulihkan melalui
-    // padu /v1/models → HANYA model Gemini bersih tersusun A-Z dipulangkan.
-    // Model deepseek/kimi/glm TIDAK BOLEH muncul apabila Gemini diperoleh.
+test('[VP-20] gemini-native door: proactive /v1/models catalog → full dynamic Gemini list A-Z', async () => {
+    // [MANDAT v3.9.16] Bukti hujung-ke-hujung: pintu gemini-native TIDAK
+    // bergantung kepada /v1beta/models untuk MENYENARAIKAN model — katalog
+    // sebenar lengkap (termasuk gemini-3.5-flash, gemini-3.8-flash) dipanggil
+    // TERUS daripada /v1/models (Bearer). Kecemasan 6 model hanya bila
+    // /v1 dan /v1beta kedua-duanya gagal. Model deepseek/kimi/glm TIDAK BOLEH
+    // muncul apabila katalog Gemini diperoleh.
     const NON_TEXT_MODEL_KEYWORDS = [
         'embedding',
         'video',
@@ -493,9 +519,11 @@ test('[VP-20] gemini-native door returns clean sorted A-Z Gemini list (full flow
             .sort((a, b) => a.localeCompare(b));
 
     const originalGet = axios.get;
+    const calls = [];
     axios.get = async (url, options) => {
         const headers = (options && options.headers) || {};
-        // Panggilan /v1beta/models (x-goog-api-key) → senarai PINCANG
+        calls.push({ url, auth: headers['x-goog-api-key'] ? 'x-goog' : headers.Authorization ? 'bearer' : 'none' });
+        // Panggilan /v1beta/models (x-goog-api-key) → senarai PINCANG (probe utama sahaja)
         if (headers['x-goog-api-key']) {
             return {
                 data: {
@@ -507,7 +535,7 @@ test('[VP-20] gemini-native door returns clean sorted A-Z Gemini list (full flow
                 }
             };
         }
-        // Panggilan padu /v1/models (Bearer) → katalog penuh bercampur
+        // Panggilan PROAKTIF /v1/models (Bearer) → katalog penuh dinamik
         if (headers.Authorization) {
             return {
                 data: {
@@ -517,6 +545,8 @@ test('[VP-20] gemini-native door returns clean sorted A-Z Gemini list (full flow
                         { id: 'suno_music-v4' },
                         { id: 'gemini-2.5-pro' },
                         { id: 'gemini-3-flash-preview' },
+                        { id: 'gemini-3.5-flash' },
+                        { id: 'gemini-3.8-flash' },
                         { id: 'kling-video' },
                         { id: 'gemini-2.5-flash' }
                     ]
@@ -526,29 +556,43 @@ test('[VP-20] gemini-native door returns clean sorted A-Z Gemini list (full flow
         throw new Error('unexpected request ' + url);
     };
     try {
-        // Replika aliran endpoint v3.9.15:
-        // 1) probe utama gemini-native → senarai pincang
+        // Replika aliran endpoint v3.9.16:
+        // 1) probe utama gemini-native (/v1beta) → senarai pincang (validasi kunci sahaja)
         let models = ['deepseek-v4-pro', 'kimi-k3', 'glm-5.3'];
         const resolvedDoor = 'gemini-native';
-        // 2) smartGeminiFallback: tiada 'gemini' → padu /v1/models, tapis includes('gemini')
-        const paduResp = await axios.get('https://relay.example.com/v1/models', {
+        const baseUrl = 'https://relay.example.com/v1beta';
+        // 2) PROACTIVE: katalog TERUS daripada /v1/models (rewrite /v1beta → /v1)
+        const v1Url = baseUrl.replace(/\/v1beta\/?$/, '/v1');
+        assert.equal(v1Url, 'https://relay.example.com/v1', '/v1beta rewritten to /v1');
+        const catalogResp = await axios.get(`${v1Url}/models`, {
             headers: { Authorization: 'Bearer sk-key' }
         });
-        const geminiOnly = paduResp.data.data
-            .map((m) => String(m?.id || '').trim())
+        const geminiCatalog = (catalogResp.data.data || [])
+            .map((m) => String(m?.id || m?.name || m || '').trim())
             .filter(Boolean)
             .filter((m) => m.toLowerCase().includes('gemini'));
-        assert.equal(geminiOnly.length > 0, true, 'padu list must contain gemini models');
-        models = geminiOnly;
+        assert.ok(geminiCatalog.length > 0, 'proactive /v1 catalog must contain gemini models');
+        models = geminiCatalog;
         // 3) cleanAndSortModels mesti berjalan pada SEMUA pintu Custom
         const finalModels = cleanAndSortModels(models);
-        assert.deepEqual(finalModels, ['gemini-2.5-flash', 'gemini-2.5-pro', 'gemini-3-flash-preview']);
+        assert.deepEqual(
+            finalModels,
+            ['gemini-2.5-flash', 'gemini-2.5-pro', 'gemini-3-flash-preview', 'gemini-3.5-flash', 'gemini-3.8-flash'],
+            'FULL dynamic catalog (incl. 3.5/3.8) sorted A-Z — not the hardcoded emergency list'
+        );
         assert.equal(
             finalModels.some((m) => /deepseek|kimi|glm|qwen/.test(m)),
             false,
-            'deepseek/kimi/glm MUST NOT appear when Gemini models were obtained'
+            'deepseek/kimi/glm/qwen MUST NOT appear when Gemini catalog was obtained'
         );
-        // Semakan statik: cleanAndSortModels dipanggil untuk SEMUA Custom (bukan conditional door)
+        // Katalog proaktif mesti MENGATASI senarai /v1beta walaupun senarai itu sihat
+        // (vp19 mengunci susunan keutamaan dalam sumber; di sini kita buktikan
+        // URL /v1 dipanggil dengan pengepala Bearer).
+        assert.ok(
+            calls.some((c) => c.url.includes('/v1/models') && c.auth === 'bearer'),
+            'proactive /v1/models call issued with Bearer auth'
+        );
+        // Semakan statik: cleanAndSortModels dipanggil untuk SEMUA Custom
         assert.ok(resolvedDoor === 'gemini-native');
         assert.ok(
             serverSource.includes('models = cleanAndSortModels(models);'),

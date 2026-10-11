@@ -3744,20 +3744,20 @@ app.post('/api/validate-provider', validationLimiter, async (req, res) => {
             })
             .sort((a, b) => a.localeCompare(b));
 
-    // [SMART GEMINI FALLBACK v3.9.15] Endpoint /v1beta/models pada gerbang
-    // Crazy Router (dan kebanyakan proksi New API) PINCANG: ia memulangkan
-    // senarai adaptor ujian (deepseek/kimi/glm/gpt/qwen) dan SIFAR model
-    // Gemini — walaupun titik akhir inferens :generateContent menyokong penuh
-    // semua model Gemini. Apabila pintu yang disahkan ialah gemini-native
-    // tetapi senarai tiada sebarang kata kunci 'gemini':
-    //   1. Cuba GET {baseUrl-tanpa-v1beta}/v1/models (Bearer) untuk senarai
-    //      penuh model token tersebut, ditapis kepada model gemini sahaja.
-    //   2. Jika tiada, gunakan senarai kecemasan model Gemini standard.
-    // [FIX v3.9.15] Helper kini menerima `models` yang SEDIA ADA daripada probe
-    // utama (tiada panggilan rangkaian berulang — v3.9.14 memanggil probeDoor
-    // sekali lagi; kegagalannya ditelan try/catch luar menyebabkan senarai
-    // mentah pincang terus dikembalikan tanpa pemulihan). Tapisan padu
-    // menggunakan includes('gemini') mengikut spesifikasi, bukan startsWith.
+    // [PROACTIVE /v1/models OVERRIDE v3.9.16] Hakikat seni bina gerbang proksi
+    // (Crazy Router/New API): titik akhir /v1beta/models SEMEMANGNYA pincang
+    // dan tidak boleh diharap untuk menyenaraikan model — katalog sebenar yang
+    // lengkap (termasuk gemini-3.5-flash, gemini-3.8-flash, dll) HANYA wujud
+    // di /v1/models. Justeru, bagi pembekal custom pada pintu gemini-native
+    // (atau URL mengandungi /v1beta):
+    //   1. UNTUK MENYENARAIKAN MODEL: JANGAN bergantung kepada /v1beta/models.
+    //      Gantikan akhiran /v1beta → /v1 dan panggil GET {v1BaseUrl}/models
+    //      (Authorization: Bearer) secara TERUS. Tapis ketat includes('gemini').
+    //   2. Laluan inferens runtime KEKAL gemini-native (/v1beta/models/{model}:
+    //      generateContent) — override ini hanya menyentuh penarikan senarai
+    //      semasa validasi.
+    //   3. Senarai kecemasan 6 model hanya sebagai JALAN TERAKHIR apabila
+    //      /v1/models DAN /v1beta/models kedua-duanya gagal sepenuhnya.
     const STANDARD_GEMINI_MODELS = [
         'gemini-3-flash-preview',
         'gemini-3-flash',
@@ -3766,30 +3766,36 @@ app.post('/api/validate-provider', validationLimiter, async (req, res) => {
         'gemini-3.1-pro',
         'gemini-3.1-flash-lite'
     ];
+    const fetchGeminiCatalogFromV1 = async (targetBaseUrl, apiKey) => {
+        const v1BaseUrl = targetBaseUrl.replace(/\/v1beta\/?$/, '/v1');
+        const resp = await axios.get(`${v1BaseUrl}/models`, {
+            headers: { Authorization: `Bearer ${apiKey}`, 'Content-Type': 'application/json' },
+            timeout: 10000,
+            httpAgent,
+            httpsAgent
+        });
+        const raw = resp?.data?.data || resp?.data;
+        if (!Array.isArray(raw)) return [];
+        return raw
+            .map((m) => String(m?.id || m?.name || m || '').trim())
+            .filter(Boolean)
+            .filter((m) => m.toLowerCase().includes('gemini'));
+    };
     const smartGeminiFallback = async (resolvedDoor, targetBaseUrl, apiKey, currentModels) => {
         if (resolvedDoor !== 'gemini-native') return null;
-        const list = Array.isArray(currentModels) ? currentModels : [];
-        if (list.some((m) => String(m).toLowerCase().includes('gemini'))) return list; // senarai sihat
-        // Pincang — buang /v1beta, panggil endpoint /v1/models proksi (Bearer)
-        const openaiBase = targetBaseUrl.replace(/\/v1beta\/?$/, '');
+        // 1) PROACTIVE: katalog Gemini sebenar TERUS daripada /v1/models.
         try {
-            const resp = await axios.get(`${openaiBase}/v1/models`, {
-                headers: { Authorization: `Bearer ${apiKey}`, 'Content-Type': 'application/json' },
-                timeout: 10000,
-                httpAgent,
-                httpsAgent
-            });
-            const raw = resp?.data?.data;
-            if (Array.isArray(raw)) {
-                const geminiOnly = raw
-                    .map((m) => String(m?.id || m?.name || '').trim())
-                    .filter(Boolean)
-                    .filter((m) => m.toLowerCase().includes('gemini'));
-                if (geminiOnly.length > 0) return geminiOnly;
-            }
+            const geminiCatalog = await fetchGeminiCatalogFromV1(targetBaseUrl, apiKey);
+            if (geminiCatalog.length > 0) return geminiCatalog;
         } catch (_) {
-            // Endpoint /v1 tidak tersedia — jatuh kepada senarai kecemasan
+            // /v1/models gagal — jatuh kepada semakan senarai /v1beta sedia ada
         }
+        // 2) Senarai /v1beta sedia ada (dari probe utama) jika ia sihat
+        //    (mengandungi model gemini) — gerbang mungkin melaksanakannya betul.
+        const list = Array.isArray(currentModels) ? currentModels : [];
+        if (list.some((m) => String(m).toLowerCase().includes('gemini'))) return list;
+        // 3) JALAN TERAKHIR: senarai kecemasan — hanya apabila /v1/models dan
+        //    /v1beta/models kedua-duanya gagal sepenuhnya (cth: tiada internet).
         return STANDARD_GEMINI_MODELS;
     };
 

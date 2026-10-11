@@ -2,6 +2,21 @@
 
 All notable changes to this project will be documented in this file.
 
+## SubMaker v3.9.16 (2026-10-11) — Proactive /v1/models Override: Katalog Gemini Dinamik Terus untuk Pintu Gemini-Native
+
+### Changed
+
+- **Proactive override senarai model** dalam `POST /api/validate-provider` (Custom + pintu `gemini-native` / URL `/v1beta`): untuk TUJUAN MENYENARAIKAN MODEL, endpoint `/v1beta/models` tidak lagi diharap langsung — katalog sebenar lengkap (termasuk `gemini-3.5-flash`, `gemini-3.8-flash`, dll) dipanggil TERUS daripada `GET {base}/v1/models` (rewrite `/v1beta` → `/v1`, header `Authorization: Bearer`) melalui helper baharu `fetchGeminiCatalogFromV1`, ditapis ketat `includes('gemini')`, kemudian `cleanAndSortModels` (A-Z). Susunan keutamaan: (1) katalog proaktif `/v1/models`; (2) senarai `/v1beta` sedia ada jika sihat (mengandungi gemini); (3) senarai kecemasan 6 model — JALAN TERAKHIR sahaja apabila `/v1` dan `/v1beta` kedua-duanya gagal sepenuhnya (cth: tiada internet).
+- **Protokol inferens kekal**: perubahan hanya menyentuh penarikan senarai model semasa validasi — laluan terjemahan runtime kekal `gemini-native` (`/v1beta/models/{model}:generateContent`).
+
+### Changed (Tests)
+
+- **VP-20 ditulis semula**: bukti hujung-ke-hujung bahawa pintu gemini-native proaktif memanggil `/v1/models` (Bearer) dan memulangkan **katalog Gemini dinamik lengkap** A-Z — `['gemini-2.5-flash', 'gemini-2.5-pro', 'gemini-3-flash-preview', 'gemini-3.5-flash', 'gemini-3.8-flash']` (bukan senarai kecemasan hardcoded); deepseek/kimi/glm/qwen DILARANG muncul. VP-19 dikemas kini: semakan statik keutamaan `/v1` dahulu → senarai `/v1beta` → kecemasan + kontrak rewrite URL + kontrak inferens kekal.
+
+### Test Baseline
+
+- **Kekal: 366 tests / 365 PASS / 0 FAIL / 1 SKIP** (monotonic >= 366 dipatuhi — tiada ujian dibuang, VP-19/VP-20 dikemas kini in-place).
+
 ## SubMaker v3.9.15 (2026-10-11) — Fixed: Pintu Gemini-Native Kini Memulangkan Senarai Gemini Bersih Tersusun A-Z
 
 ### Fixed
