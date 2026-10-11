@@ -33,7 +33,7 @@
     "url": "https://github.com/mfzf99/StremioSubFaber.git"
   },
   "dependencies": {
-    "@sentry/node": "^10.34.0",
+    "@sentry/node": "^11.5.0",
     "7z-iterator": "^2.2.5",
     "apify-node-curl-impersonate": "^1.0.29",
     "axios": "^1.20.0",
