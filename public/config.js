@@ -12773,13 +12773,6 @@ Translate to {target_language}.`;
             translationPrompt = NATURAL_TRANSLATION_PROMPT;
         }
 
-        // Resolve the selected model BEFORE the object literal so nested
-        // computed properties (advancedSettings.thinkingBudget) can read it
-        // without touching the not-yet-initialized `config` binding (TDZ).
-        const selectedGeminiModel = normalizeGeminiModelForBaseSelect(
-            document.getElementById('geminiModel')?.value || ''
-        );
-
         // [TRINITY FASA D — Ulasan Backend 2026-10-10] Literal payload di
         // bawah dibina SEGAR daripada input borang — patch currentConfig di
         // atas TIDAK automatik mengalir masuk. Selesaikan di sini:
@@ -12798,6 +12791,42 @@ Translate to {target_language}.`;
         if (legacyGeminiInput && trinityTranslationKey && legacyGeminiInput.value.trim() !== trinityTranslationKey) {
             legacyGeminiInput.value = trinityTranslationKey;
         }
+
+        // Resolve the selected model BEFORE the object literal so nested
+        // computed properties (advancedSettings.thinkingBudget) can read it
+        // without touching the not-yet-initialized `config` binding (TDZ).
+        // [TRINITY MODEL BRIDGE v3.9.25] Model Translation Trinity MENGATASI
+        // dropdown legasi #geminiModel (kad legasi disembunyikan oleh Trinity UI)
+        // — cermin jambatan effectiveGeminiKey di atas. Tanpa jambatan ini,
+        // nilai model yang dipilih pengguna dalam select Trinity
+        // (#trinity-translation-model) ditimpa oleh string kosong dropdown
+        // legasi → save gagal dengan "Please select a Gemini model".
+        const trinityTranslationModel =
+            trinityPayload && trinityPayload.translation ? String(trinityPayload.translation.model || '').trim() : '';
+        const legacyModelInput = document.getElementById('geminiModel');
+        if (legacyModelInput && trinityTranslationModel) {
+            // Sinkronkan dropdown legasi supaya laluan validasi
+            // (validateGeminiModel) membaca nilai yang sama dengan Trinity.
+            // Nilai disuntik sebagai <option> jika tiada dalam senarai —
+            // penetapan .value pada <select> diabaikan tanpa option sepadan.
+            let hasOpt = false;
+            for (let i = 0; i < legacyModelInput.options.length; i++) {
+                if (legacyModelInput.options[i].value === trinityTranslationModel) {
+                    hasOpt = true;
+                    break;
+                }
+            }
+            if (!hasOpt) {
+                const opt = document.createElement('option');
+                opt.value = trinityTranslationModel;
+                opt.textContent = trinityTranslationModel;
+                legacyModelInput.appendChild(opt);
+            }
+            legacyModelInput.value = trinityTranslationModel;
+        }
+        const selectedGeminiModel = normalizeGeminiModelForBaseSelect(
+            trinityTranslationModel || legacyModelInput?.value || ''
+        );
 
         const config = {
             noTranslationMode: currentConfig.noTranslationMode,

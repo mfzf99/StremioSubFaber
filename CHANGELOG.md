@@ -2,6 +2,17 @@
 
 All notable changes to this project will be documented in this file.
 
+## SubMaker v3.9.25 (2026-10-11) — Hotfix: Save Gagal "Please select a Gemini model" Walaupun Model Trinity Dipilih
+
+### Fixed
+
+- **Bug produksi v3.9.24 (laporan pengguna):** Save Configuration gagal dengan banner "⚠️ Please select a Gemini model" walaupun model telah dipilih pada kad Agent Translation Trinity. **Punca akar:** `buildConfigFromForm()` membina `selectedGeminiModel` daripada dropdown **legacy** `#geminiModel` (kad Gemini disembunyikan oleh Trinity UI — nilainya kosong), kemudian `config.geminiModel = selectedGeminiModel` **menimpa** nilai yang telah dikutip oleh `TrinityAgents.collectConfigPatch()` ke dalam `currentConfig.geminiModel`. Pengesahan `validateGeminiModel()` turut membaca `#geminiModel` legacy — kedua-dua laluan gagal serentak. Kunci API tidak terjejas kerana jambatan `effectiveGeminiKey` sedia ada — tetapi tiada jambatan setara untuk model.
+- **Fix — Trinity Model Bridge ([public/config.js](public/config.js), cermin jambatan kunci API):** dalam `buildConfigFromForm`, selepas blok sinkronisasi kunci legasi: (1) baca `trinity.translation.model` daripada `trinityPayload`; (2) sinkronkan dropdown legacy `#geminiModel` — nilai disuntik sebagai `<option>` jika tiada dalam senarai sebelum `.value` ditetapkan (supaya `validateGeminiModel()` membaca nilai sama); (3) `selectedGeminiModel = normalizeGeminiModelForBaseSelect(trinityModel || legacy)`. Pembetulan kedua (dikesan oleh E2E sebelum push): blok asal tersalah letak SEBELUM pengisytiharan `trinityPayload` → `ReferenceError` TDZ — disusun semula selepas blok `effectiveGeminiKey`.
+
+### Verification
+
+- E2E Playwright (localhost:7001/configure): kunci + model Trinity `gemini-3-flash-preview` dipilih, `#geminiModel` legacy sengaja dikosongkan, butang Save Configuration diklik dengan fetch `/api/update-session` dicegat: **payload `geminiModel: "gemini-3-flash-preview"`** ✓; `trinity.translation.model` konsisten ✓; dropdown legacy disinkronkan ✓; **tiada banner ralat "Please select a Gemini model"** ✓; **0 ralat konsol** terkini ✓. Kontrak payload tidak berubah (`geminiModel` string normalized — laluan backend sama seperti sebelum Trinity).
+
 ## SubMaker v3.9.24 (2026-10-11) — Trinity Fasa V: Ikon Mangga/Mata & Gelung Hijau/Merah Kunci Utama
 
 ### Changed

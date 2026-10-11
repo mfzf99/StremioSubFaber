@@ -10,6 +10,18 @@
 
 ---
 
+## 2026-10-11 (RELEASE v3.9.25) — HOTFIX: SAVE GAGAL "Please select a Gemini model" WALAUPUN MODEL TRINITY DIPILIH
+
+- **Tarikh:** 2026-10-11 (16:10 MYT)
+- **Komit SHA:** (diisi selepas push)
+- **Keputusan Owner (laporan pengguna):** Config tidak boleh disimpan walaupun model telah dipilih pada kad Trinity — banner ralat "Please select a Gemini model" muncul semasa Save Configuration.
+- **Punca Akar:** `saveCurrentConfig` → `buildConfigFromForm()` membina `selectedGeminiModel` daripada dropdown **legacy** `#geminiModel` (kad Gemini disembunyikan oleh Trinity UI — nilai kosong). Walaupun `TrinityAgents.collectConfigPatch()` mengisi `currentConfig.geminiModel` dengan betul (baris 12741), nilai itu **ditimpa** oleh `config.geminiModel = selectedGeminiModel` (string kosong) pada literal payload. Pengesahan `validateGeminiModel()` (baris 13141) turut membaca `#geminiModel` legacy — dua-dua laluan gagal serentak. Kunci API tidak terjejas kerana jambatan `effectiveGeminiKey` (baris 12823) wujud — tetapi **tiada jambatan setara untuk model**.
+- **Fix — Trinity Model Bridge (cermin jambatan kunci API):** dalam `buildConfigFromForm`, selepas blok sinkronisasi kunci legasi: (1) baca `trinity.translation.model` daripada `trinityPayload` (sudah digabung daripada `collectConfigPatch`); (2) sinkronkan dropdown legacy `#geminiModel` — nilai disuntik sebagai `<option>` jika tiada dalam senarai, kemudian `.value` ditetapkan (supaya `validateGeminiModel()` membaca nilai sama); (3) `selectedGeminiModel = normalizeGeminiModelForBaseSelect(trinityTranslationModel || legacy)`. **Pembetulan kedua (dikesan oleh E2E):** blok asal diletakkan SEBELUM pengisytiharan `trinityPayload` → `ReferenceError: Cannot access 'trinityPayload' before initialization` — disusun semula SELEPAS blok tersebut.
+- **Fail Terlibat:** `public/config.js` (`buildConfigFromForm` — Trinity Model Bridge selepas blok effectiveGeminiKey; kedudukan TDZ diperbetulkan).
+- **Verifikasi E2E Playwright (localhost:7001/configure):** kunci + model Trinity `gemini-3-flash-preview` dipilih, legacy `#geminiModel` dikosongkan, butang Save Configuration diklik dengan fetch `/api/update-session` dicegat: **payload `geminiModel: "gemini-3-flash-preview"`** ✓, `trinity.translation.model` konsisten ✓, dropdown legacy disinkronkan ✓, **`errorBanner: false`** (tiada mesej ralat) ✓, **0 ralat konsol** terkini ✓ (ralat TDZ lama pada sesi sebelumnya ialah bukti E2E mengesan bug susunan asal sebelum diperbetulkan). `node --check` ✓ + Prettier ✓ + ESLint **0 error** (35 warning pra-wujud). TIADA npm test/git (peraturan #5).
+- **Kontrak Payload:** TIDAK BERUBAH — `geminiModel` kekal string nama model (normalized); backend `normalizeConfig` menerima seadanya. Jambatan hanya memastikan nilai select Trinity sampai ke medan yang sama seperti sebelum Trinity wujud.
+- **Next Steps:** Backend Integration Audit → release v3.9.25.
+
 ## 2026-10-11 (RELEASE v3.9.24) — TRINITY FASA V: IKON MANGGA/MATA & GELUNG HIJAU KUNCI UTAMA
 
 - **Tarikh:** 2026-10-11 (15:25 MYT)
