@@ -10,6 +10,16 @@
 
 ---
 
+## 2026-10-11 (RELEASE v3.9.19) — SOKONGAN KUNCI GEMINI 'AQ.' + LAPORAN AUDIT KEY ROTATION
+
+- **Tarikh:** 2026-10-11 (08:14 MYT)
+- **Komit SHA:** (komit release v3.9.19 ini — SHA direkod selepas push)
+- **Keputusan Owner:** (1) Tugasan 1: kunci Google AI Studio terkini berawalan `AQ.` mesti dikenali sebagai Gemini Native oleh keyDetector; (2) Tugasan 2: audit penuh ciri key rotation (asal-usul, skema, status) untuk laporan Frontend.
+- **Tugasan 1 — Fail Terlibat:** `src/services/channels/keyDetector.js` (`detectFromApiKey`: +corak `^AQ\.[A-Za-z0-9_-]+$` & `^AQ[A-Za-z0-9_-]+$` → FORMAT_GEMINI; AIza kekal diutamakan, sk-ant- anthropic, sk- generik jatuh baseUrl/model), `src/services/channels-keyDetector-regression.test.js` (+ujian AQ.: bentuk berbintik + tanpa bintik → gemini; ketidakrosakan AIza/sk-ant-/sk-; rentetan AQ-like rosak tidak dipadankan).
+- **Tugasan 2 — AUDIT KEY ROTATION (laporan penuh dalam CHANGELOG v3.9.19):** (a) Asal-usul git: diperkenalkan v1.4.49 (2026-02-10) → v1.4.84; bulk import modal v1.5.8 (c7a4b42, 2026-09-22); kekal dalam Rootify v1.9.12; (b) Skema backend UTUH: `geminiApiKeys: string[]` (getDefaultConfig + normalizeConfig dedup/sanitasi), `geminiKeyRotationEnabled` + `geminiKeyRotationMode: per-request|per-batch` (lalai per-batch), `selectGeminiApiKey()` (Redis INCR `keyrotation:{hash}` TTL 24j / fallback memori; call-site handlers/subtitles.js:6691 + statistik batch :6303), `MAX_GEMINI_API_KEYS` env; (c) bulk-key-import.js frontend (korak AIzaSy 39-char + AQ.Ab8 + sk-) tidak disentuh. **Kesimpulan: enjin putaran penuh berfungsi — Frontend boleh memadankan UI terus kepada skema sedia ada tanpa perubahan backend.**
+- **Status pipeline:** prettier ✓ + eslint **0 error** (221 warning pra-wujud) + npm test **368 tests / 367 PASS / 0 FAIL / 1 SKIP** — **BASELINE BAHARU** (>= 367 monotonic dipatuhi). Fail `public/` TIDAK disentuh. Graphify: NO-OP.
+- **Next Steps:** Push v3.9.19 → origin main, verify CI hijau.
+
 ## 2026-10-11 (HOTFIX v3.9.18) — REFERENCEERROR 'agents is not defined' DALAM fetchGeminiCatalogFromV1
 
 - **Tarikh:** 2026-10-11 (07:30 MYT)

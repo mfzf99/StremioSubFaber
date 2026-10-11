@@ -34,6 +34,12 @@ function detectFromApiKey(apiKey) {
     const key = String(apiKey || '').trim();
     if (!key) return null;
     if (key.startsWith('AIza')) return FORMAT_GEMINI;
+    // [v3.9.19] Format kunci Google AI Studio terkini (2024+): "AQ.Ab8…" —
+    // disahkan oleh ujian AQ warisan (gemini-auth-model-regression) dan
+    // pengimpor pukal frontend (bulk-key-import: corak 'AQ.Ab8' berlabuh).
+    // Tanpa cawangan ini, kunci AQ. pada Custom versionless jatuh ke default
+    // openai — pintu salah.
+    if (/^AQ\.[A-Za-z0-9_-]+$/.test(key) || /^AQ[A-Za-z0-9_-]+$/.test(key)) return FORMAT_GEMINI;
     if (key.startsWith('sk-ant-')) return FORMAT_ANTHROPIC;
     // 'sk-' adalah prefix generik OpenAI-style (OpenAI, DeepSeek, Moonshot,
     // rootsys, relay lain) — bukan padanan TEPAT mana-mana vendor tunggal;

@@ -2,6 +2,24 @@
 
 All notable changes to this project will be documented in this file.
 
+## SubMaker v3.9.19 (2026-10-11) — Sokongan Format Kunci Gemini 'AQ.' + Laporan Audit Key Rotation
+
+### Added
+
+- **Sokongan format kunci Google AI Studio terkini (2024+): `AQ.`** dalam [`keyDetector.detectFromApiKey`](src/services/channels/keyDetector.js:33): corak `^AQ\.[A-Za-z0-9_-]+$` (berbintik, cth: `AQ.Ab8RN6IYXH…`) dan `^AQ[A-Za-z0-9_-]+$` (tanpa bintik) kini dikesan sebagai format `gemini` (Gemini Native) — sebelum ini kunci AQ. pada Custom versionless jatuh ke default openai (pintu salah). Keutamaan sedia ada dipelihara: `AIza` tetap diutamakan, `sk-ant-` → anthropic, `sk-` generik kekal jatuh kepada baseUrl/model. Ujian VP-22 (dalam fail keyDetector) mengesahkan kedua-dua bentuk AQ. + ketidakrosakan format lama + rentetan AQ-like rosak tidak dipadankan.
+- **Ujian**: +1 (keyDetector AQ.) — **baseline baharu 368 tests / 367 PASS / 0 FAIL / 1 SKIP**.
+
+### Audit Key Rotation (Laporan Status untuk Fasa Frontend Berikut)
+
+- **Asal-usul (git)**: ciri "Enable Gemini API key rotation" + "Additional API Keys" diperkenalkan bertahap sejak v1.4.49 (2026-02-10) → v1.4.84 (2026-05-14); Bulk Import modal pukal ditambah v1.5.8 (2026-09-22, `c7a4b42` — zero-network, burst-safe, corak `AIzaSy` + `AQ.Ab8`); berterusan dalam Rootify v1.9.12 (2026-09-30).
+- **Status skema backend — KEKAL PENUH disokong, tiada pemusnahan**:
+  - `config.geminiApiKeys: string[]` — tatasusunan kunci dalam payload simpanan config ([src/utils/config.js](src/utils/config.js:1255) `getDefaultConfig`, normalisasi + dedup + sanitasi kunci tersimpan dengan pengesanan kunci tersulit gagal-dekrip dilemparkan dalam `normalizeConfig`).
+  - `config.geminiKeyRotationEnabled: boolean` + `config.geminiKeyRotationMode: 'per-request' | 'per-batch'` ([src/utils/config.js](src/utils/config.js:1254) lalai `per-batch`).
+  - [`selectGeminiApiKey(config)`](src/utils/config.js:1641) — pemilih kunci putaran: kaunter `INCR` Redis (`keyrotation:{configHash}`, TTL 24j) atau fallback kaunter dalam-memori; dipanggil oleh laluan penterjemahan ([src/handlers/subtitles.js:6691](src/handlers/subtitles.js:6691)) dan pengumpulan statistik batch (baris 6303: `mode` + `keys` dihantar kepada Telegram FinOps).
+  - `MAX_GEMINI_API_KEYS` (env, lalai tidak terhad) + `getMaxGeminiApiKeys()` dieksport.
+  - Analisis kunci pukal frontend ([public/js/bulk-key-import.js](public/js/bulk-key-import.js): korak `AIzaSy…` 39 aksara + `AQ.Ab8…` panjang variabel + `sk-…`) — TIDAK disentuh dalam mandat ini.
+- **Kesimpulan**: seluruh enjin putaran (simpanan array, pemilihan round-robin Redis/in-memori, mod per-batch/per-request, import pukal) utuh dan berfungsi; Frontend boleh memadankan semula UI "Enable Key Rotation" + "Additional API Keys" terus kepada skema sedia ada tanpa sebarang perubahan backend.
+
 ## SubMaker v3.9.18 (2026-10-11) — Hotfix: ReferenceError 'agents is not defined' dalam fetchGeminiCatalogFromV1
 
 ### Fixed

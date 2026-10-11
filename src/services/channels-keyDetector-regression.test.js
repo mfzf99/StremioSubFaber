@@ -31,6 +31,29 @@ test('KeyDetector: AIza prefix → gemini (source key-prefix)', () => {
     assert.equal(r.source, 'key-prefix');
 });
 
+// [v3.9.19] Format kunci Google AI Studio terkini (2024+): "AQ.Ab8…" —
+// dipersetujui mandat owner (VP-22). Tanpa cawangan ini, kunci AQ. pada
+// Custom versionless jatuh ke default openai (pintu salah).
+test('KeyDetector: AQ. prefix (Google AI Studio new format) → gemini (source key-prefix)', () => {
+    // Bentuk berbintik — "AQ.Ab8RN6…" (sebenar daripada AI Studio)
+    const dotted = detectAgentChannelFormat({ apiKey: 'AQ.Ab8RN6IYXHkQ1vXyZ0aBcD' });
+    assert.equal(dotted.format, FORMAT_GEMINI, 'AQ. dotted key must map to gemini');
+    assert.equal(dotted.source, 'key-prefix');
+    // Bentuk tanpa bintik — "AQAb8RN6…" (varian warisan)
+    const plain = detectAgentChannelFormat({ apiKey: 'AQAb8RN6IYXHkQ1vXyZ0aBcD' });
+    assert.equal(plain.format, FORMAT_GEMINI, 'AQ (no dot) key must map to gemini');
+    assert.equal(plain.source, 'key-prefix');
+    // Pengesanan tidak merosakkan format sedia ada:
+    const legacy = detectFromApiKey('AIzaSyD-1234567890abcdef');
+    assert.equal(legacy, FORMAT_GEMINI, 'AIza still detected');
+    const anthropic = detectFromApiKey('sk-ant-api03-xxxxxxxxxxxx');
+    assert.equal(anthropic, FORMAT_ANTHROPIC, 'sk-ant- still detected');
+    const genericSk = detectFromApiKey('sk-relay-key');
+    assert.equal(genericSk, null, 'generic sk- still falls through to baseUrl/model');
+    // Rentetan berkaitan AQ yang TIDAK sah tidak dipadankan secara rawak
+    assert.equal(detectFromApiKey('AQX-no-dot-suffix!'), null, 'malformed AQ-like string is not gemini');
+});
+
 test('KeyDetector: sk-ant- prefix → anthropic (source key-prefix)', () => {
     const r = detectAgentChannelFormat({ apiKey: 'sk-ant-api03-xxxxxxxxxxxx' });
     assert.equal(r.format, FORMAT_ANTHROPIC);
