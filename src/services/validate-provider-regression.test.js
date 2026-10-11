@@ -415,8 +415,8 @@ test('[VP-19] smart Gemini fallback: /v1beta list without gemini → /v1/models 
         'fallback only triggers for gemini-native door'
     );
     assert.ok(
-        serverSource.includes("m.toLowerCase().includes('gemini')"),
-        '/v1/models catalog filters to gemini-only models (includes per spec)'
+        serverSource.includes("String(m).toLowerCase().includes('gemini')"),
+        '/v1/models catalog filters to gemini-only models (includes per spec, String-coerced)'
     );
     assert.ok(serverSource.includes('return STANDARD_GEMINI_MODELS;'), 'standard Gemini list is the final fallback');
     // Semakan statik: senarai kecemasan mengandungi SEMUA 6 model mandat owner
@@ -426,13 +426,20 @@ test('[VP-19] smart Gemini fallback: /v1beta list without gemini → /v1/models 
     );
     // [v3.9.16] PROACTIVE OVERRIDE: gemini-native menyenaraikan TERUS dari
     // /v1/models (permalink /v1beta tidak diharap) — buang /v1beta → /v1.
+    // [v3.9.17] Delegasi kepada probeDoor('openai-compatible') yang terbukti
+    // stabil (v3.9.16 guna axios manual — parsing/timeout gagal di produksi)
+    // + log eksplisit console.error apabila override gagal.
     assert.ok(
         serverSource.includes("replace(/\\/v1beta\\/?$/, '/v1')"),
         'URL rewrite /v1beta → /v1 for proactive catalog fetch'
     );
     assert.ok(
-        serverSource.includes('const fetchGeminiCatalogFromV1'),
-        'proactive /v1/models catalog fetch helper exists'
+        serverSource.includes("probeDoor('openai-compatible', v1Url, apiKey, agents)"),
+        'proactive catalog delegates to probeDoor (proven-stable helper)'
+    );
+    assert.ok(
+        serverSource.includes('Gagal override katalog Gemini dari /v1:'),
+        'explicit console.error log on override failure'
     );
     // Susunan keutamaan: /v1 dahulu → senarai /v1beta sihat → kecemasan
     assert.ok(
@@ -523,6 +530,8 @@ test('[VP-20] gemini-native door: proactive /v1/models catalog → full dynamic 
     axios.get = async (url, options) => {
         const headers = (options && options.headers) || {};
         calls.push({ url, auth: headers['x-goog-api-key'] ? 'x-goog' : headers.Authorization ? 'bearer' : 'none' });
+        // [v3.9.17] Bentuk respons OpenAI SEBENAR (data[].id) — persis apa
+        // probeDoor('openai-compatible') baca. Delegasi mesti lulus pintasan ini.
         // Panggilan /v1beta/models (x-goog-api-key) → senarai PINCANG (probe utama sahaja)
         if (headers['x-goog-api-key']) {
             return {
@@ -556,21 +565,30 @@ test('[VP-20] gemini-native door: proactive /v1/models catalog → full dynamic 
         throw new Error('unexpected request ' + url);
     };
     try {
-        // Replika aliran endpoint v3.9.16:
+        // Replika aliran endpoint v3.9.17 (delegasi probeDoor):
         // 1) probe utama gemini-native (/v1beta) → senarai pincang (validasi kunci sahaja)
         let models = ['deepseek-v4-pro', 'kimi-k3', 'glm-5.3'];
         const resolvedDoor = 'gemini-native';
         const baseUrl = 'https://relay.example.com/v1beta';
-        // 2) PROACTIVE: katalog TERUS daripada /v1/models (rewrite /v1beta → /v1)
+        // 2) PROACTIVE melalui probeDoor('openai-compatible'): rewrite /v1beta → /v1
+        //    dan delegasi — inilah laluan v3.9.17 (stabil, parsing betul).
         const v1Url = baseUrl.replace(/\/v1beta\/?$/, '/v1');
         assert.equal(v1Url, 'https://relay.example.com/v1', '/v1beta rewritten to /v1');
-        const catalogResp = await axios.get(`${v1Url}/models`, {
-            headers: { Authorization: 'Bearer sk-key' }
-        });
-        const geminiCatalog = (catalogResp.data.data || [])
-            .map((m) => String(m?.id || m?.name || m || '').trim())
-            .filter(Boolean)
-            .filter((m) => m.toLowerCase().includes('gemini'));
+        // Replika probeDoor openai-compatible: GET {v1Url}/models Bearer → data[].id
+        const probeV1Models = await (async () => {
+            const resp = await axios.get(`${v1Url}/models`, {
+                headers: { Authorization: `Bearer sk-key`, 'Content-Type': 'application/json' }
+            });
+            const list = resp?.data?.data;
+            if (!Array.isArray(list))
+                throw new Error('Unexpected response shape from OpenAI-compatible models endpoint');
+            return list.map((m) => String(m?.id || m?.name || '').trim()).filter(Boolean);
+        })();
+        assert.ok(
+            Array.isArray(probeV1Models) && probeV1Models.length > 0,
+            'probeDoor delegation returns the full catalog'
+        );
+        const geminiCatalog = probeV1Models.filter((m) => String(m).toLowerCase().includes('gemini'));
         assert.ok(geminiCatalog.length > 0, 'proactive /v1 catalog must contain gemini models');
         models = geminiCatalog;
         // 3) cleanAndSortModels mesti berjalan pada SEMUA pintu Custom

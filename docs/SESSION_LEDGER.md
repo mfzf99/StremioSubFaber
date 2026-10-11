@@ -10,6 +10,15 @@
 
 ---
 
+## 2026-10-11 (RELEASE v3.9.17) — FIXED: DELEGASI probeDoor UNTUK OVERRIDE KATALOG /v1
+
+- **Tarikh:** 2026-10-11 (04:38 MYT)
+- **Komit SHA:** (komit release v3.9.17 ini — SHA direkod selepas push)
+- **Keputusan Owner:** Bug produksi v3.9.16 — `/v1beta` Custom masih jatuh ke kecemasan: `fetchGeminiCatalogFromV1` axios manual gagal parsing `res.data.data` / timeout → tatasusunan kosong → fallback statik. Mandat: delegasi kepada `probeDoor('openai-compatible', v1Url)` yang terbukti stabil + log eksplisit kegagalan.
+- **Fail Terlibat:** `index.js` (`fetchGeminiCatalogFromV1` kini `probeDoor('openai-compatible', v1Url, apiKey, agents)` + tapis `String(m).toLowerCase().includes('gemini')`; `smartGeminiFallback` catch → `console.error('[validate-provider] Gagal override katalog Gemini dari /v1:', ...)`), `src/services/validate-provider-regression.test.js` (VP-20: replika delegasi probeDoor penuh + katalog dinamik A-Z; VP-19: assertion String-coerced), `package.json` (3.9.16 → 3.9.17), `CHANGELOG.md` (header v3.9.17).
+- **Status pipeline:** prettier ✓ + eslint **0 error** (221 warning pra-wujud) + npm test **366 tests / 365 PASS / 0 FAIL / 1 SKIP** — baseline kekal (monotonic >= 366). Fail `public/` TIDAK disentuh. Graphify: NO-OP.
+- **Next Steps:** Push v3.9.17 → origin main, verify CI hijau.
+
 ## 2026-10-11 (RELEASE v3.9.16) — PROACTIVE /v1/models OVERRIDE: KATALOG GEMINI DINAMIK TERUS
 
 - **Tarikh:** 2026-10-11 (03:48 MYT)

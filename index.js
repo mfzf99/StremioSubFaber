@@ -3766,20 +3766,17 @@ app.post('/api/validate-provider', validationLimiter, async (req, res) => {
         'gemini-3.1-pro',
         'gemini-3.1-flash-lite'
     ];
+    // [v3.9.17] Delegasi kepada probeDoor('openai-compatible') yang TERBUKTI
+    // stabil di produksi — v3.9.16 membina panggilan axios manual yang
+    // mengalami kegagalan parsing (res.data.data tidak dibaca betul) / timeout,
+    // menyebabkan tatasusunan kosong dan fallback kecemasan statik tercetus.
+    // probeDoor telah mengendalikan bentuk respons OpenAI (data[].id + .name +
+    // fallback rentetan) sejak v3.9.8 tanpa isu.
     const fetchGeminiCatalogFromV1 = async (targetBaseUrl, apiKey) => {
-        const v1BaseUrl = targetBaseUrl.replace(/\/v1beta\/?$/, '/v1');
-        const resp = await axios.get(`${v1BaseUrl}/models`, {
-            headers: { Authorization: `Bearer ${apiKey}`, 'Content-Type': 'application/json' },
-            timeout: 10000,
-            httpAgent,
-            httpsAgent
-        });
-        const raw = resp?.data?.data || resp?.data;
-        if (!Array.isArray(raw)) return [];
-        return raw
-            .map((m) => String(m?.id || m?.name || m || '').trim())
-            .filter(Boolean)
-            .filter((m) => m.toLowerCase().includes('gemini'));
+        const v1Url = targetBaseUrl.replace(/\/v1beta\/?$/, '/v1');
+        const models = await probeDoor('openai-compatible', v1Url, apiKey, agents);
+        if (!Array.isArray(models) || models.length === 0) return [];
+        return models.filter((m) => String(m).toLowerCase().includes('gemini'));
     };
     const smartGeminiFallback = async (resolvedDoor, targetBaseUrl, apiKey, currentModels) => {
         if (resolvedDoor !== 'gemini-native') return null;
@@ -3787,8 +3784,9 @@ app.post('/api/validate-provider', validationLimiter, async (req, res) => {
         try {
             const geminiCatalog = await fetchGeminiCatalogFromV1(targetBaseUrl, apiKey);
             if (geminiCatalog.length > 0) return geminiCatalog;
-        } catch (_) {
-            // /v1/models gagal — jatuh kepada semakan senarai /v1beta sedia ada
+        } catch (err) {
+            // [v3.9.17] Log eksplisit — kegagalan override tidak lagi senyap.
+            console.error('[validate-provider] Gagal override katalog Gemini dari /v1:', err?.message || err);
         }
         // 2) Senarai /v1beta sedia ada (dari probe utama) jika ia sihat
         //    (mengandungi model gemini) — gerbang mungkin melaksanakannya betul.

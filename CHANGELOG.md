@@ -2,6 +2,21 @@
 
 All notable changes to this project will be documented in this file.
 
+## SubMaker v3.9.17 (2026-10-11) — Fixed: Delegasi probeDoor untuk Override Katalog /v1 (parsing produksi stabil)
+
+### Fixed
+
+- **Bug v3.9.16 produksi**: validasi Custom Provider `/v1beta` masih jatuh ke fallback kecemasan 6 model — helper `fetchGeminiCatalogFromV1` membina panggilan axios manual yang mengalami kegagalan parsing (struktur `res.data.data` OpenAI tidak dibaca betul) atau timeout, memulangkan tatasusunan kosong dan mencetuskan fallback statik. **Fix:** helper kini mewakilkan sepenuhnya kepada `probeDoor('openai-compatible', v1Url, apiKey, agents)` — laluan yang terbukti stabil sejak v3.9.8 (parsing bentuk respons OpenAI `data[].id`/`.name` + rentetan, timeout, http/https agents) — kemudian tapis `includes('gemini')`.
+- **Log eksplisit**: kegagalan override katalog tidak lagi senyap — `console.error('[validate-provider] Gagal override katalog Gemini dari /v1:', err.message)` dicetak; kecemasan 6 model hanya tercetus bila probeDoor ke v1Url memulangkan senarai kosong/gagal sepenuhnya.
+
+### Changed (Tests)
+
+- **VP-20 dikemas kini**: aliran delegasi `probeDoor('openai-compatible')` direplika penuh (bentuk respons OpenAI sebenar) dan katalog dinamik lengkap A-Z disahkan; VP-19 assertion tapisan dikemas kini (`String(m).toLowerCase().includes('gemini')`).
+
+### Test Baseline
+
+- **Kekal: 366 tests / 365 PASS / 0 FAIL / 1 SKIP** (monotonic >= 366 dipatuhi).
+
 ## SubMaker v3.9.16 (2026-10-11) — Proactive /v1/models Override: Katalog Gemini Dinamik Terus untuk Pintu Gemini-Native
 
 ### Changed
