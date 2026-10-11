@@ -13,7 +13,7 @@
 ## 2026-10-11 (RELEASE v3.9.24) — TRINITY FASA V: IKON MANGGA/MATA & GELUNG HIJAU KUNCI UTAMA
 
 - **Tarikh:** 2026-10-11 (15:25 MYT)
-- **Komit SHA:** (diisi selepas push)
+- **Komit SHA:** `1283f87` (push 4cfa2a2..1283f87 ke origin main; CI run id 38151217719 — **SUCCESS** hijau)
 - **Keputusan Owner:** (1) Togol ikon mangga semasa password & mata semasa text (buang eye-slash generik) pada kunci utama DAN semua baris Additional API Keys — auto-switch apabila diklik. (2) Konsistensi gelung hijau/merah pada kotak kunci utama — `.is-valid`/`.is-invalid` disapukan dalam `runAgentValidate` (valid/invalid/catch) dan dibersihkan semula apabila nilai ditaip.
 - **Fail Terlibat:**
   - `public/js/trinity-agents.js`: (a) `eyeIconSvg(hidden)` kini memulangkan **Lock SVG** (rect+shackle) semasa `hidden=true` (password) dan **Eye SVG** semasa kelihatan — eye-slash dibuang sepenuhnya; digunakan di kunci utama + baris; (b) `runAgentValidate` — `keyInput.classList` `.is-valid` (cabang valid) / `.is-invalid` (cabang invalid + catch), kelas bertentangan dibuang dahulu; (c) `wireAutodetect.refresh` — reset `is-valid/is-invalid` pada setiap input (menaip/kosong membatalkan status ujian terdahulu).
