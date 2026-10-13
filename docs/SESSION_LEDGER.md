@@ -13,8 +13,8 @@
 ## 2026-10-14 — RELEASE v3.9.38: TRINITY MODE TOGGLE DALAM KAD KELUARGA (PIPELINE 8-LANGKAH)
 
 - **Tarikh:** 2026-10-14 (waktu tempatan KL)
-- **Komit SHA:** (diisi selepas push)
-- **Status CI:** (diisi selepas run)
+- **Komit SHA:** 039ec97 (push a65e676..039ec97 ke origin main)
+- **Status CI:** Run 38467358314 (#347, 039ec97, Node 22 & 24) = **SUCCESS** ✅
 - **Keputusan Owner:** "Button switch mode tak sepatutnya duduk luar, dia kena duduk dalam card family yang sama dengan agent trinity."
 - **Fail Terlibat:** `public/js/trinity-agents.js` (`mount()`: togol + `#trinityCards` dibungkus dalam `div.trinity-card-family`; `#trinityModeToggle` dan semua ID/kontrak kekal), `public/css/trinity-agents.css` (`.trinity-card-family`: flex column, gap/padding 1rem, border, radius 14px, `--bg-card`).
 - **Integration Review Backend (GLM 5.3): LULUS** — diff pembedahan minimum (+27/−2); sifar rujukan luaran kepada `trinityCards`/`trinity-mode-bar`/`trinityRoot`/`trinityModeToggle` (semua dalaman modul); mount() idempotent; `collectConfigPatch()`/`applyAgentValues()` tak tersentuh; DOM verified live (bar + cards dalam family, bar di atas, toggle checkbox berfungsi).
