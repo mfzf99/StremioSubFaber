@@ -2,6 +2,14 @@
 
 All notable changes to this project will be documented in this file.
 
+## SubMaker v3.9.36 (2026-10-14) — Trinity Consistency Follow-up: Section Fonts, Collapse Buttons, English Copy
+
+### Fixed
+
+- **Konsistensi font kad Trinity dengan Languages/Settings ([public/js/trinity-agents.js](public/js/trinity-agents.js), [public/css/trinity-agents.css](public/css/trinity-agents.css)):** tajuk agent kini guna kelas `.section-title` (1.1rem / 700) dan keterangan guna `.section-description` (0.85rem / 400) — token yang sama dengan section utama, menghapuskan saiz ad hoc yang menyebabkan font tidak konsisten.
+- **Butang lipat setiap kad Trinity:** setiap agent card kini mempunyai butang `collapse-btn section-collapse-btn` di hujung kanan header — komponen sama dengan section utama; klik melipat kandungan kad (`aria-expanded` dikemas kini). Tiada konflik dengan listener kad legasi `config.js` (kad Trinity tidak berkelas `.card`).
+- **Bahasa rojak dibuang:** semua teks UI Trinity (description Preflight/Translation/Inspector + hint togol mod) kini English sepenuhnya, selari mandat UI SubFaber.
+
 ## SubMaker v3.9.35 (2026-10-14) — Trinity Card Parity with Main Cards + Segmented Basic/Pro Mode Toggle
 
 ### Changed

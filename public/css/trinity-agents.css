@@ -128,15 +128,21 @@
     padding: 1.1rem 1.15rem;
     background: var(--bg-card, #fff);
 }
-/* Header kad: pariti dengan .card-header kad utama (ikon + tajuk + keterangan) */
+/* Header kad: pariti penuh dengan .section-header kad utama
+   (ikon + tajuk + keterangan + butang lipat di hujung kanan). */
 .trinity-agent-head {
+    display: flex;
+    align-items: center;
+    gap: 0.75rem;
     cursor: default;
     margin-bottom: 0.65rem;
     padding-bottom: 0.5rem;
     border-bottom: 1px solid var(--border-color, rgba(0, 0, 0, 0.08));
 }
 .trinity-agent-head .card-title-group {
-    align-items: flex-start;
+    align-items: center;
+    flex: 1;
+    min-width: 0;
 }
 .trinity-agent-head .card-icon {
     flex-shrink: 0;
@@ -144,24 +150,26 @@
 .trinity-agent-titles {
     display: flex;
     flex-direction: column;
-    gap: 0.2rem;
+    gap: 0.1rem;
     min-width: 0;
 }
+/* Tajuk & keterangan guna token .section-title/.section-description
+   (configure.css) — tiada saiz ad hoc supaya konsisten dengan Languages/Settings. */
 .trinity-agent-title {
     margin: 0;
-    font-weight: 700;
-    font-size: 1.05rem;
 }
 .trinity-agent-sub {
-    font-size: 0.82rem;
-    color: var(--text-secondary, #666);
-    margin-top: 0;
+    margin: 0.1rem 0 0;
 }
 .trinity-agent-desc {
     margin: 0 0 0.75rem;
-    font-size: 0.82rem;
+    font-size: 0.85rem;
     line-height: 1.5;
     color: var(--text-secondary, #666);
+}
+/* Keadaan lipat: sembunyikan semua kandungan selepas header */
+.trinity-agent-card.collapsed > *:not(.trinity-agent-head) {
+    display: none;
 }
 .trinity-agent-hint {
     margin-top: 0.9rem;

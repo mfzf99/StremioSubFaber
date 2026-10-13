@@ -10,6 +10,31 @@
 
 ---
 
+## 2026-10-14 — RELEASE v3.9.36: TRINITY KONSISTENSI — FONT SECTION, BUTANG LIPAT, ENGLISH COPY (PIPELINE 8-LANGKAH)
+
+- **Tarikh:** 2026-10-14 (waktu tempatan KL)
+- **Komit SHA:** (menyusul selepas commit)
+- **Keputusan Owner:** Komen post-release v3.9.35 — (1) butang close/lipat kad Trinity setara Languages/Settings; (2) bahasa rojak → English; (3) font konsisten dengan Languages/Settings. Mandat: konsisten, standard yang sama untuk semua section card.
+- **Integration Review Backend (GLM 5.3): LULUS** — tiada konflik listener (`config.js` `.card-header` dipasang pra-mount Trinity; `closest('.card')` tidak memadankan `.trinity-agent-card`); kelas `.collapsed` selamat (`collapseSectionCards()` mensasarkan `.card` sahaja); kontrak payload sifar perubahan.
+- **Pipeline 8-langkah:** SemVer → 3.9.36; CHANGELOG v3.9.36; cache-buster runtime-driven; `npx prettier --check .` hijau; `npx eslint .` 0 error; `npm test` 368 tests: 367 PASS / 0 FAIL / 1 SKIP (monotonic); `graphify update .` 5138 nodes / 11074 edges / 264 communities; blok ledger ini; commit+push; CI.
+- **Bukti terukur (Playwright):** Trinity title 17.6px/700 = Languages/Settings 17.6px/700; sub 13.6px/400 = 13.6px/400; `.section-collapse-btn` pada 3 kad; teks English.
+- **Next Steps:** Commit + push → CI Success → tutup.
+
+---
+
+## 2026-10-13 (FRONTEND FIX) — TRINITY KONSISTEN DENGAN LANGUAGES/SETTINGS (FONT, BUTANG LIPAT, ENGLISH)
+
+- **Tarikh:** 2026-10-13 (waktu tempatan KL)
+- **Mandat Owner:** Konsisten dengan standard yang sama untuk semua section card — tiada bahasa rojak; font sama; butang close/lipat setara.
+- **Fail Terlibat:** `public/js/trinity-agents.js` (teks description/hint → English; tajuk & keterangan guna `.section-title`/`.section-description`; butang `.collapse-btn.section-collapse-btn` pada setiap kad dengan toggle `.collapsed`), `public/css/trinity-agents.css` (`.trinity-agent-head` flex + `.trinity-agent-card.collapsed` sembunyi kandungan; buang saiz ad hoc).
+- **Pengesahan DOM (Playwright live):** Trinity title 17.6px/700 = Languages/Settings 17.6px/700; sub 13.6px/400 = 13.6px/400; `.section-collapse-btn` ada pada 3 kad Pro; label togol English.
+- **Pengesahan:** `node --check` ✅; prettier --check ✅.
+- **Kontrak Payload:** tiada perubahan.
+- **Status npm test:** belum dijalankan semula untuk pembetulan ini (domain Frontend; perlu gerbang pipeline sebelum release).
+- **Next Steps:** Integration Review Backend → pipeline release (versi/CHANGELOG/npm test/commit/CI).
+
+---
+
 ## 2026-10-14 — RELEASE v3.9.35: TRINITY CARD PARITY + SEGMENTED TOGOL BASIC/PRO (PIPELINE 8-LANGKAH)
 
 - **Tarikh:** 2026-10-14 (waktu tempatan KL)

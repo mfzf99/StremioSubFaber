@@ -106,7 +106,7 @@
             title: 'Agent Preflight',
             subtitle: 'Phase 0 — builds the context Bible (terms, characters, credits) before translation',
             description:
-                'Membina Bible konteks (istilah, watak, kredit) sebelum terjemahan bermula. Output dihantar kepada Agent Translation.',
+                'Builds the context Bible (terms, characters, credits) before translation starts. Output is passed to Agent Translation.',
             configPath: 'trinity.preflight'
         },
         {
@@ -114,7 +114,7 @@
             title: 'Agent Translation',
             subtitle: 'Core translation engine (batch XML → SRT)',
             description:
-                'Enjin terjemahan utama (batch XML → SRT). Memproses setiap batch dan menggunakan Bible daripada Preflight.',
+                'Core translation engine (batch XML → SRT). Processes each batch and uses the Bible from Preflight.',
             configPath: 'trinity.translation'
         },
         {
@@ -122,7 +122,7 @@
             title: 'Agent Inspector',
             subtitle: 'Phase 1 — per-batch semantic audit (split/merge/drop/phantom crimes)',
             description:
-                'Audit semantik setiap batch selepas terjemahan: mengesan split, merge, drop dan phantom entry.',
+                'Semantic audit of each batch after translation: detects split, merge, drop and phantom entries.',
             configPath: 'trinity.inspector'
         }
     ];
@@ -232,10 +232,22 @@
         titleGroup.appendChild(icon);
 
         var titles = createEl('div', 'trinity-agent-titles');
-        titles.appendChild(createEl('h3', 'card-title trinity-agent-title', agent.title));
-        titles.appendChild(createEl('div', 'card-description trinity-agent-sub', agent.subtitle));
+        titles.appendChild(createEl('h3', 'section-title trinity-agent-title', agent.title));
+        titles.appendChild(createEl('p', 'section-description trinity-agent-sub', agent.subtitle));
         titleGroup.appendChild(titles);
         head.appendChild(titleGroup);
+
+        // Butang lipat setara dengan section utama (hujung kanan header)
+        var collapseBtn = createEl('button', 'collapse-btn section-collapse-btn');
+        collapseBtn.type = 'button';
+        collapseBtn.setAttribute('aria-expanded', 'true');
+        collapseBtn.setAttribute('aria-label', 'Collapse ' + agent.title);
+        collapseBtn.addEventListener('click', function () {
+            var collapsed = card.classList.toggle('collapsed');
+            collapseBtn.classList.toggle('collapsed', collapsed);
+            collapseBtn.setAttribute('aria-expanded', collapsed ? 'false' : 'true');
+        });
+        head.appendChild(collapseBtn);
 
         card.appendChild(head);
         if (agent.description) {
@@ -1413,7 +1425,7 @@
             });
             return b;
         }
-        seg.appendChild(modeBtn(MODE_BASIC, 'Basic Mode', 'Agent Translation sahaja'));
+        seg.appendChild(modeBtn(MODE_BASIC, 'Basic Mode', 'Agent Translation only'));
         seg.appendChild(modeBtn(MODE_PRO, 'Pro Mode', 'Preflight + Translation + Inspector'));
         toggleBar.appendChild(seg);
         root.appendChild(toggleBar);
