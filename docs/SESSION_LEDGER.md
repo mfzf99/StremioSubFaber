@@ -13,7 +13,8 @@
 ## 2026-10-14 — RELEASE v3.9.36: TRINITY KONSISTENSI — FONT SECTION, BUTANG LIPAT, ENGLISH COPY (PIPELINE 8-LANGKAH)
 
 - **Tarikh:** 2026-10-14 (waktu tempatan KL)
-- **Komit SHA:** (menyusul selepas commit)
+- **Komit SHA:** 289f9aa (push a6c8fc1..289f9aa ke origin main)
+- **Status CI:** Run 38459729701 (#341, 289f9aa, Node 22 & 24) = **SUCCESS** ✅ (1m 11s)
 - **Keputusan Owner:** Komen post-release v3.9.35 — (1) butang close/lipat kad Trinity setara Languages/Settings; (2) bahasa rojak → English; (3) font konsisten dengan Languages/Settings. Mandat: konsisten, standard yang sama untuk semua section card.
 - **Integration Review Backend (GLM 5.3): LULUS** — tiada konflik listener (`config.js` `.card-header` dipasang pra-mount Trinity; `closest('.card')` tidak memadankan `.trinity-agent-card`); kelas `.collapsed` selamat (`collapseSectionCards()` mensasarkan `.card` sahaja); kontrak payload sifar perubahan.
 - **Pipeline 8-langkah:** SemVer → 3.9.36; CHANGELOG v3.9.36; cache-buster runtime-driven; `npx prettier --check .` hijau; `npx eslint .` 0 error; `npm test` 368 tests: 367 PASS / 0 FAIL / 1 SKIP (monotonic); `graphify update .` 5138 nodes / 11074 edges / 264 communities; blok ledger ini; commit+push; CI.
