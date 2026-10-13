@@ -10,6 +10,20 @@
 
 ---
 
+## 2026-10-14 — RELEASE v3.9.40: TRINITY DIBUNGKUS DALAM KAD "TRANSLATION API KEYS" (STRUKTUR KELUARGA PENUH, PIPELINE 8-LANGKAH)
+
+- **Tarikh:** 2026-10-14 (waktu tempatan KL)
+- **Komit SHA:** (diisi selepas push)
+- **Status CI:** (diisi selepas run)
+- **Keputusan Owner:** Mandat struktur keluarga penuh — API Keys (Bapak) → Anak 1 Subtitles API Keys + Anak 2 Translation API Keys (bungkusan Trinity, collapsed default, tajuk "Translation API Keys", collapse-btn penjuru kanan) + button close section paling bawah. Trinity tidak lagi terpampang; muncul hanya bila expand.
+- **Fail Terlibat:** `public/js/trinity-agents.js` (kad induk `.card`/`.card-header` + `.collapse-btn` collapsed default, kandungan = togol + kad agent; kad induk = `#trinityRoot` tunggal; sisipan DALAM `.section-grid` sebelum footer close), `public/css/trinity-agents.css` (`.trinity-parent-card`/`.trinity-parent-head`/`.trinity-parent-content` token `.card`; padding-right header 0 — pariti pixel gap 0=0 dengan kad Source Languages).
+- **Integration Review Backend (GLM 5.3): LULUS** — tiada double-bind (config-loader.js memuat trinity SELEPAS config.js; handler legacy terikat pra-mount); `collapseSectionCards()` kini juga collapse parent (diingini); kontrak payload sifar perubahan. BUG KRITIKAL dijumpai & difix: ID `#trinityRoot` berganda → state terbalik + HierarchyRequestError → kini satu elemen satu id.
+- **Pengesahan live (Playwright):** rootCount=1; susunan grid (…trinityRoot, section-footer last); parent collapsed default ✓; expand/collapse tunggal + aria sync ✓; togol + kad agent dalam kandungan ✓; Pro 3 kad collapse-btn pinned kanan ✓; `#trinityModeToggle` utuh ✓; section close berfungsi ✓.
+- **Pipeline 8-langkah:** SemVer → 3.9.40; CHANGELOG v3.9.40; cache-buster runtime-driven (pkg 3.9.40 + `__APP_VERSION_QUERY__` ✅); `npx prettier --check .` hijau; `npx eslint .` 0 error; `npm test` 368 tests: **367 PASS / 0 FAIL / 1 SKIP**; `graphify update .` 5151 nodes / 11097 edges / 258 communities; blok ledger ini; commit+push; CI.
+- **Next Steps:** Commit + push → CI Success → tutup.
+
+---
+
 ## 2026-10-14 — RELEASE v3.9.39: KAD TRINITY IKUT STRUKTUR KELUARGA LANGUAGES (BUTANG LIPAT HEADER, SATU CLOSE SECTION, PIPELINE 8-LANGKAH)
 
 - **Tarikh:** 2026-10-14 (waktu tempatan KL)

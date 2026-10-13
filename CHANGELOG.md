@@ -2,6 +2,13 @@
 
 All notable changes to this project will be documented in this file.
 
+## SubMaker v3.9.40 (2026-10-14) — Trinity Wrapped in "Translation API Keys" Parent Card (Full Family Structure)
+
+### Changed
+
+- **Trinity dibungkus dalam kad induk "Translation API Keys" ([public/js/trinity-agents.js](public/js/trinity-agents.js), [public/css/trinity-agents.css](public/css/trinity-agents.css)):** struktur keluarga API Keys kini selari penuh dengan Languages — API Keys (Bapak) → Subtitles API Keys (Anak 1) + Translation API Keys (Anak 2, bungkusan Trinity) + close section paling bawah. Kad induk `.card`/`.card-header` + `.collapse-btn` penjuru kanan, **collapsed default** — kandungan (togol Basic/Pro + kad agent Preflight/Translation/Inspector) hanya muncul selepas expand. Kad induk disisip DALAM `.section-grid` sebelum footer close (sebelumnya terpampang selepas grid). Padding-right header 0 supaya butang lipat memegang tepi kanan — pariti pixel (gap 0=0) dengan kad Source Languages.
+- **Bug fix kritikal:** ID `#trinityRoot` berganda (bekas luar + kad induk) menyebabkan state terbalik dan `HierarchyRequestError` — kini satu elemen satu id (kad induk = root). Sifar perubahan kontrak payload (`#trinityModeToggle`, `collectConfigPatch()`, rehydrate utuh).
+
 ## SubMaker v3.9.39 (2026-10-14) — Trinity Cards Match Languages Family Structure (Header Collapse Buttons, Single Section Close)
 
 ### Changed

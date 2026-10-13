@@ -1402,8 +1402,9 @@
 
         var currentMode = (cfg && cfg.trinity && cfg.trinity.mode) || (cfg && cfg.mode) || MODE_BASIC;
 
-        var root = createEl('div', '');
-        root.id = 'trinityRoot';
+        // Kad induk "Translation API Keys" ialah ROOT itu sendiri (satu elemen,
+        // satu id 'trinityRoot') — tiada bekas luar tambahan.
+        var root = null; // ditetapkan di bawah selepas parentCard dibina
 
         // ── Togol dwimod (segmented control) ──
         // Kontrak kekal: input checkbox #trinityModeToggle disembunyikan dan
@@ -1442,11 +1443,64 @@
         seg.appendChild(modeBtn(MODE_BASIC, 'Basic Mode', 'Agent Translation only'));
         seg.appendChild(modeBtn(MODE_PRO, 'Pro Mode', 'Preflight + Translation + Inspector'));
         toggleBar.appendChild(seg);
-        // Togol + kad Trinity dibungkus dalam SATU kad keluarga (.trinity-card-family)
-        // supaya togol Basic/Pro duduk dalam kumpulan kad yang sama dengan agent.
-        var family = createEl('div', 'trinity-card-family');
-        family.appendChild(toggleBar);
-        root.appendChild(family);
+        // ── Kad induk "Translation API Keys" (Anak 2 dalam keluarga API Keys) ──
+        // Trinity DIBUNGKUS dalam satu kad berstruktur sama dengan kad anak lain
+        // (Source/Target Languages): header + collapse-btn kanan, collapsed default;
+        // kandungan = togol Basic/Pro + kad agent. Expand → baru kandungan muncul.
+        // Kelas 'card'/'card-header' diperlukan supaya helper section config.js
+        // (collapseSectionCards/expandHeaderlessCards) mengenalinya. SELAMAT dari
+        // double-bind: semua listener legacy dipasang pada page load, SEBELUM
+        // Trinity mount (elemen dinamik tidak pernah terikat).
+        var parentCard = createEl('div', 'card trinity-parent-card collapsed');
+        parentCard.id = 'trinityRoot';
+        root = parentCard;
+
+        var pHead = createEl('div', 'card-header trinity-parent-head');
+        var pTitleGroup = createEl('div', 'card-title-group');
+        var pIcon = createEl('div', 'card-icon');
+        pIcon.setAttribute('aria-hidden', 'true');
+        pIcon.innerHTML =
+            '<svg viewBox="0 0 32 32" aria-hidden="true" focusable="false">' +
+            (AGENT_ICON_PATHS.translation || '') +
+            '</svg>';
+        pTitleGroup.appendChild(pIcon);
+        var pTitles = createEl('div', 'trinity-agent-titles');
+        pTitles.appendChild(createEl('h2', 'section-title', 'Translation API Keys'));
+        pTitles.appendChild(
+            createEl('p', 'section-description', 'Trinity agents (Preflight, Translation, Inspector) live here.')
+        );
+        pTitleGroup.appendChild(pTitles);
+        pHead.appendChild(pTitleGroup);
+
+        var pCollapseBtn = createEl('button', 'collapse-btn collapsed');
+        pCollapseBtn.type = 'button';
+        pCollapseBtn.setAttribute('aria-expanded', 'false');
+        pCollapseBtn.setAttribute('aria-label', 'Collapse Translation API Keys');
+        pHead.appendChild(pCollapseBtn);
+        parentCard.appendChild(pHead);
+
+        var pContent = createEl('div', 'card-content trinity-parent-content');
+        pContent.appendChild(toggleBar);
+        parentCard.appendChild(pContent);
+
+        // parentCard ADALAH root (satu elemen, satu id) — tiada append diperlukan.
+
+        function syncParentCollapse() {
+            var collapsed = parentCard.classList.contains('collapsed');
+            pCollapseBtn.classList.toggle('collapsed', collapsed);
+            pCollapseBtn.setAttribute('aria-expanded', collapsed ? 'false' : 'true');
+        }
+        pCollapseBtn.addEventListener('click', function () {
+            parentCard.classList.toggle('collapsed');
+            syncParentCollapse();
+        });
+        pHead.addEventListener('click', function (e) {
+            if (e.target.closest('.collapse-btn')) return;
+            e.stopPropagation();
+            parentCard.classList.toggle('collapsed');
+            syncParentCollapse();
+        });
+        syncParentCollapse();
 
         function syncSegmented() {
             var isPro = toggleInput.checked;
@@ -1463,7 +1517,7 @@
         // ── Bekas kad ──
         var cardsWrap = createEl('div', 'trinity-cards');
         cardsWrap.id = 'trinityCards';
-        family.appendChild(cardsWrap);
+        pContent.appendChild(cardsWrap);
 
         // Render kad mengikut mod
         function renderCards() {
@@ -1516,16 +1570,24 @@
         // elemen dalam pokok detached. Susunan lama (renderCards dahulu)
         // menyebabkan SEMUA listener (change/input/click Validate) tidak
         // dipasang — punca sebenar Smart Visibility gagal berfungsi.
+        // Footer close section berada DALAM .section-grid (main.html) — cari dan
+        // sisip kad induk SEBELUM footer supaya close kekal paling bawah.
         var grid = null;
+        var gridFooter = null;
         for (var i = 0; i < section.children.length; i++) {
             var c = section.children[i];
             if (c.classList && c.classList.contains('section-grid')) {
                 grid = c;
+                gridFooter = grid.querySelector(':scope > .section-footer');
                 break;
             }
         }
-        if (grid && grid.parentNode === section) {
-            section.insertBefore(root, grid.nextSibling);
+        if (grid) {
+            if (gridFooter) {
+                grid.insertBefore(root, gridFooter);
+            } else {
+                grid.appendChild(root);
+            }
         } else {
             section.appendChild(root);
         }

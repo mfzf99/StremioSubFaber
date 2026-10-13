@@ -1,14 +1,37 @@
 /* Trinity Agents UI (Fasa D, 2026-10-10) — togol dwimod + kad modular 3 ejen */
 
-/* Kad keluarga: togol Basic/Pro + kad agent berada dalam satu permukaan kad yang sama */
-.trinity-card-family {
+/* Kad induk "Translation API Keys" — Anak 2 dalam keluarga API Keys. Struktur
+   sama dengan kad anak Languages: header + collapse-btn kanan, collapsed
+   default; kandungan (togol + kad agent) hanya muncul selepas expand.
+   Kelas trinity-scoped sepenuhnya (tiada 'card'/'card-header') supaya handler
+   legacy config.js tidak bertindih; visual disalin daripada token .card. */
+.trinity-parent-card {
+    border: 1px solid var(--border-color, rgba(0, 0, 0, 0.1));
+    border-radius: var(--radius-md, 12px);
+    background: var(--bg-card, #fff);
+    overflow: hidden;
+}
+.trinity-parent-head {
+    display: flex;
+    align-items: center;
+    gap: 0.75rem;
+    /* Salin padding .card-header configure.css tetapi padding-right 0 supaya
+       butang collapse memegang tepi kanan — pariti dengan kad anak Languages. */
+    padding: 0.9rem 0 0.9rem 1rem;
+    cursor: pointer;
+}
+.trinity-parent-head .collapse-btn {
+    margin-left: auto;
+    flex-shrink: 0;
+}
+.trinity-parent-card.collapsed > .trinity-parent-content {
+    display: none;
+}
+.trinity-parent-card .trinity-parent-content {
     display: flex;
     flex-direction: column;
     gap: 1rem;
-    padding: 1rem;
-    border: 1px solid var(--border-color, rgba(0, 0, 0, 0.1));
-    border-radius: 14px;
-    background: var(--bg-card, #fff);
+    padding: 0.75rem 1rem 1rem;
 }
 
 .trinity-mode-bar {
