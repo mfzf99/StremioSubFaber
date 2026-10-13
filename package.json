@@ -1,80 +1,80 @@
 {
-    "name": "stremio-subfaber",
-    "version": "3.9.32",
-    "xsyncMinVersion": "1.0.9",
-    "description": "Automated Netflix-Grade Malay Subtitle Engine for Stremio powered by VideoLingo principles",
-    "main": "index.js",
-    "packageManager": "npm@11.17.0",
-    "engines": {
-        "node": ">=22.9.0",
-        "npm": ">=11.17.0"
-    },
-    "scripts": {
-        "start": "node index.js",
-        "dev": "nodemon index.js",
-        "test": "npm run test:tracked",
-        "test:tracked": "node --test --test-force-exit src/handlers/subtitles-timeout-regression.test.js src/handlers/subtitles-preprocess-regression.test.js src/services/gemini-auth-model-regression.test.js src/services/validate-provider-regression.test.js src/services/opensubtitles-no-backoff-regression.test.js src/services/subdl-plain-response-regression.test.js src/services/subfaber-preflight-regression.test.js src/services/subfaber-context-regression.test.js src/services/translationEngine-bugfix2-regression.test.js src/services/agentB-inspector-regression.test.js src/services/channels-keyDetector-regression.test.js src/services/channels-triDoor-phaseC-regression.test.js src/services/subfaber-beta-run7-regression.test.js src/services/subfaber-fasah-regression.test.js src/services/provider-retry-backoff-regression.test.js src/utils/apiErrorHandler-opensubtitles-regression.test.js src/utils/archiveExtractor-regression.test.js src/utils/embeddedCache-regression.test.js src/utils/encodingDetector-regression.test.js src/utils/localCache-index-regression.test.js src/utils/logger-sampling-regression.test.js src/utils/openSubtitlesDownloadGuard-regression.test.js src/utils/providerUrlToken-regression.test.js src/utils/sessionManager-delete-regression.test.js src/utils/streamUrlIdentity-regression.test.js src/utils/addon-request-hardening-regression.test.js src/storage/redis-command-timeout-regression.test.js public/js/bulk-key-import-regression.test.js",
-        "test:release": "npm run test:tracked && node scripts/run-tests.js --release",
-        "test:manual": "npm run test:tracked && node scripts/run-tests.js --standalone",
-        "update:anime-list": "node update-anime-list.js"
-    },
-    "keywords": [
-        "stremio",
-        "addon",
-        "subtitles",
-        "translation",
-        "opensubtitles",
-        "gemini"
-    ],
-    "author": "Muhammad Faiz",
-    "license": "AGPL-3.0-only",
-    "repository": {
-        "type": "git",
-        "url": "https://github.com/mfzf99/StremioSubFaber.git"
-    },
-    "dependencies": {
-        "@sentry/node": "^10.34.0",
-        "7z-iterator": "^2.2.5",
-        "apify-node-curl-impersonate": "^1.0.29",
-        "axios": "^1.20.0",
-        "cacheable-lookup": "^7.0.0",
-        "chardet": "^2.1.1",
-        "compression": "^1.7.4",
-        "cors": "^2.8.5",
-        "cycletls": "^2.0.5",
-        "dotenv": "^17.4.2",
-        "express": "^5.2.1",
-        "express-rate-limit": "^8.2.1",
-        "express-session": "^1.18.2",
-        "gpt-tokenizer": "^4.0.0",
-        "helmet": "^8.1.0",
-        "iconv-lite": "^0.7.0",
-        "ioredis": "^6.0.0",
-        "ipaddr.js": "^2.5.0",
-        "joi": "^18.0.1",
-        "jszip": "^3.10.1",
-        "lru-cache": "^11.2.2",
-        "node-unrar-js": "^2.0.2",
-        "playwright-core": "^1.57.0",
-        "rate-limit-redis": "^6.0.1",
-        "srt-parser-2": "^1.2.3",
-        "stremio-addon-sdk": "^1.6.10",
-        "subsrt-ts": "^2.1.2",
-        "tar-stream": "^3.1.7",
-        "undici": "^7.18.2"
-    },
-    "devDependencies": {
-        "eslint": "^10.11.0",
-        "nodemon": "^3.0.2",
-        "prettier": "^3.9.9"
-    },
-    "overrides": {
-        "path-to-regexp@0.1.7": "0.1.13",
-        "tmp": "0.2.7",
-        "adm-zip": "0.6.1"
-    },
-    "allowScripts": {
-        "fsevents@2.3.3": true,
-        "thread-sleep-compat": false
-    }
+  "name": "stremio-subfaber",
+  "version": "3.9.32",
+  "xsyncMinVersion": "1.0.9",
+  "description": "Automated Netflix-Grade Malay Subtitle Engine for Stremio powered by VideoLingo principles",
+  "main": "index.js",
+  "packageManager": "npm@11.17.0",
+  "engines": {
+    "node": ">=22.9.0",
+    "npm": ">=11.17.0"
+  },
+  "scripts": {
+    "start": "node index.js",
+    "dev": "nodemon index.js",
+    "test": "npm run test:tracked",
+    "test:tracked": "node --test --test-force-exit src/handlers/subtitles-timeout-regression.test.js src/handlers/subtitles-preprocess-regression.test.js src/services/gemini-auth-model-regression.test.js src/services/validate-provider-regression.test.js src/services/opensubtitles-no-backoff-regression.test.js src/services/subdl-plain-response-regression.test.js src/services/subfaber-preflight-regression.test.js src/services/subfaber-context-regression.test.js src/services/translationEngine-bugfix2-regression.test.js src/services/agentB-inspector-regression.test.js src/services/channels-keyDetector-regression.test.js src/services/channels-triDoor-phaseC-regression.test.js src/services/subfaber-beta-run7-regression.test.js src/services/subfaber-fasah-regression.test.js src/services/provider-retry-backoff-regression.test.js src/utils/apiErrorHandler-opensubtitles-regression.test.js src/utils/archiveExtractor-regression.test.js src/utils/embeddedCache-regression.test.js src/utils/encodingDetector-regression.test.js src/utils/localCache-index-regression.test.js src/utils/logger-sampling-regression.test.js src/utils/openSubtitlesDownloadGuard-regression.test.js src/utils/providerUrlToken-regression.test.js src/utils/sessionManager-delete-regression.test.js src/utils/streamUrlIdentity-regression.test.js src/utils/addon-request-hardening-regression.test.js src/storage/redis-command-timeout-regression.test.js public/js/bulk-key-import-regression.test.js",
+    "test:release": "npm run test:tracked && node scripts/run-tests.js --release",
+    "test:manual": "npm run test:tracked && node scripts/run-tests.js --standalone",
+    "update:anime-list": "node update-anime-list.js"
+  },
+  "keywords": [
+    "stremio",
+    "addon",
+    "subtitles",
+    "translation",
+    "opensubtitles",
+    "gemini"
+  ],
+  "author": "Muhammad Faiz",
+  "license": "AGPL-3.0-only",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/mfzf99/StremioSubFaber.git"
+  },
+  "dependencies": {
+    "@sentry/node": "^10.34.0",
+    "7z-iterator": "^2.2.5",
+    "apify-node-curl-impersonate": "^1.0.29",
+    "axios": "^1.20.0",
+    "cacheable-lookup": "^7.0.0",
+    "chardet": "^2.1.1",
+    "compression": "^1.7.4",
+    "cors": "^2.8.5",
+    "cycletls": "^2.0.5",
+    "dotenv": "^17.4.2",
+    "express": "^5.2.1",
+    "express-rate-limit": "^8.2.1",
+    "express-session": "^1.18.2",
+    "gpt-tokenizer": "^4.0.0",
+    "helmet": "^8.1.0",
+    "iconv-lite": "^0.7.0",
+    "ioredis": "^6.0.0",
+    "ipaddr.js": "^2.5.0",
+    "joi": "^18.0.1",
+    "jszip": "^3.10.1",
+    "lru-cache": "^11.2.2",
+    "node-unrar-js": "^2.0.2",
+    "playwright-core": "^1.57.0",
+    "rate-limit-redis": "^6.0.1",
+    "srt-parser-2": "^1.2.3",
+    "stremio-addon-sdk": "^1.6.10",
+    "subsrt-ts": "^2.1.2",
+    "tar-stream": "^3.1.7",
+    "undici": "^7.18.2"
+  },
+  "devDependencies": {
+    "eslint": "^10.11.0",
+    "nodemon": "^3.0.2",
+    "prettier": "^3.9.9"
+  },
+  "overrides": {
+    "path-to-regexp@0.1.7": "0.1.13",
+    "tmp": "0.2.7",
+    "adm-zip": "0.6.1"
+  },
+  "allowScripts": {
+    "fsevents@2.3.3": true,
+    "thread-sleep-compat": false
+  }
 }
