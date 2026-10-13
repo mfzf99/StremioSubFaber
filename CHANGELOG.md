@@ -2,6 +2,12 @@
 
 All notable changes to this project will be documented in this file.
 
+## SubMaker v3.9.37 (2026-10-14) — Trinity Card Footer Close Section: Scoped Classes (API Keys Duplicate Footer Fix)
+
+### Fixed
+
+- **Footer "Close section" kad Trinity tidak lagi berlanggar dengan footer section utama ([public/js/trinity-agents.js](public/js/trinity-agents.js), [public/css/trinity-agents.css](public/css/trinity-agents.css)):** kad Trinity (dalam section API Keys) sebelum ini "hijack" kelas section-level `.section-footer` / `.section-close-link`, menyebabkan section API Keys memaparkan DUA footer "Close section" (footer utama section + footer dalam kad Trinity) — tidak konsisten dengan Languages & Settings yang hanya satu. Footer kad Trinity kini guna kelas trinity-scoped `.trinity-agent-footer` / `.trinity-agent-close` / `.trinity-agent-close-icon` dengan token style disalin 1:1 daripada `.section-close-link` configure.css (font 0.9rem/700, pill dashed 999px, hover glow, `:focus-visible` ring, tema dark & blackhole). Klik butang tetap melipat kad (`aria-expanded` toggle), dan selector kontrak `data-section-close` dalam config.js tidak disentuh — sifar perubahan skema payload/serialisasi.
+
 ## SubMaker v3.9.36 (2026-10-14) — Trinity Consistency Follow-up: Section Fonts, Collapse Buttons, English Copy
 
 ### Fixed

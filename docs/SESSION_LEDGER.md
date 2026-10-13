@@ -10,6 +10,19 @@
 
 ---
 
+## 2026-10-14 — RELEASE v3.9.37: TRINITY FOOTER CLOSE SECTION — KELAS SCOPED (FIX FOOTER DUPLIKAT API KEYS, PIPELINE 8-LANGKAH)
+
+- **Tarikh:** 2026-10-14 (waktu tempatan KL)
+- **Komit SHA:** (diisi selepas push)
+- **Status CI:** (diisi selepas run)
+- **Keputusan Owner:** "Dua card dah betul kedudukan button close section dia, tinggal nak kena fix card api keys sahaja" — audit sendiri tanpa diberitahu. Root cause: kad Trinity dalam section API Keys hijack kelas section-level `.section-footer`/`.section-close-link`, menyebabkan API Keys papar DUA footer "Close section" (footer utama + footer dalam kad Trinity) — Languages/Settings hanya satu. Footer Trinity tiada `data-section-close` (hanya collision kelas + visual).
+- **Fail Terlibat:** `public/js/trinity-agents.js` (footer kad Trinity → kelas trinity-scoped `.trinity-agent-footer`/`.trinity-agent-close`/`.trinity-agent-close-icon`; klik tetap toggle `.collapsed` + `aria-expanded`), `public/css/trinity-agents.css` (token style `.trinity-agent-close` disalin 1:1 daripada `.section-close-link` configure.css — font 0.9rem/700, pill dashed 999px, hover glow, focus-visible, tema dark/blackhole; state collapsed kekal nampak header+footer).
+- **Integration Review Backend (GLM 5.3): LULUS** — serialisasi payload sifar perubahan (`collectConfigPatch()`/`#trinityModeToggle` utuh); tiada race rehydration; sifar residual `.section-footer`/`.section-close-link` dalam kod Trinity; selector kontrak `data-section-close` config.js tidak disentuh; API Keys kini tepat 1 footer = Languages = Settings (verified live Playwright).
+- **Pipeline 8-langkah:** SemVer → 3.9.37; CHANGELOG v3.9.37; cache-buster runtime-driven (pkg 3.9.37 + `__APP_VERSION_QUERY__` ✅); `npx prettier --check .` hijau; `npx eslint .` 0 error (224 warning pre-existing); `npm test` 368 tests: **367 PASS / 0 FAIL / 1 SKIP** (baseline dipelihara); `graphify update .` 5141 nodes / 11077 edges / 263 communities; blok ledger ini; commit+push; CI.
+- **Next Steps:** Commit + push → CI Success → tutup.
+
+---
+
 ## 2026-10-14 — RELEASE v3.9.36: TRINITY KONSISTENSI — FONT SECTION, BUTANG LIPAT, ENGLISH COPY (PIPELINE 8-LANGKAH)
 
 - **Tarikh:** 2026-10-14 (waktu tempatan KL)

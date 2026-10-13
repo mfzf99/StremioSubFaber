@@ -237,18 +237,6 @@
         titleGroup.appendChild(titles);
         head.appendChild(titleGroup);
 
-        // Butang lipat setara dengan section utama (hujung kanan header)
-        var collapseBtn = createEl('button', 'collapse-btn section-collapse-btn');
-        collapseBtn.type = 'button';
-        collapseBtn.setAttribute('aria-expanded', 'true');
-        collapseBtn.setAttribute('aria-label', 'Collapse ' + agent.title);
-        collapseBtn.addEventListener('click', function () {
-            var collapsed = card.classList.toggle('collapsed');
-            collapseBtn.classList.toggle('collapsed', collapsed);
-            collapseBtn.setAttribute('aria-expanded', collapsed ? 'false' : 'true');
-        });
-        head.appendChild(collapseBtn);
-
         card.appendChild(head);
         if (agent.description) {
             card.appendChild(createEl('p', 'trinity-agent-desc', agent.description));
@@ -366,6 +354,30 @@
             hint.textContent = 'Save → backend keyDetector autodetects (this dropdown override wins).';
             card.appendChild(hint);
         }
+
+        // Card footer — visually mirrors the main section .section-footer /
+        // .section-close-link (API Keys, Languages & Settings) but uses
+        // trinity-scoped class names so it never collides with the section's
+        // own close footer (which is bound via data-section-close in config.js).
+        var footer = createEl('div', 'trinity-agent-footer');
+        var closeBtn = createEl('button', 'trinity-agent-close');
+        closeBtn.type = 'button';
+        closeBtn.setAttribute('aria-expanded', 'true');
+        var closeIcon = createEl('span', 'trinity-agent-close-icon', '×');
+        closeIcon.setAttribute('aria-hidden', 'true');
+        closeBtn.appendChild(closeIcon);
+        closeBtn.appendChild(createEl('span', '', 'Close section'));
+        closeBtn.addEventListener('click', function () {
+            var collapsed = card.classList.toggle('collapsed');
+            closeBtn.setAttribute('aria-expanded', collapsed ? 'false' : 'true');
+            if (collapsed) {
+                card.setAttribute('data-collapsed', 'true');
+            } else {
+                card.removeAttribute('data-collapsed');
+            }
+        });
+        footer.appendChild(closeBtn);
+        card.appendChild(footer);
 
         return card;
     }
