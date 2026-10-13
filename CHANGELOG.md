@@ -2,6 +2,21 @@
 
 All notable changes to this project will be documented in this file.
 
+## SubMaker v3.9.30 (2026-10-13) — VideoLingo-Grade Persona & Reflect-in-One-Pass (Agent A Prompt)
+
+### Changed
+
+- **[PERSONA VIDEOLINGO] Role Agent A dinaik taraf ([src/services/translationEngine.js](src/services/translationEngine.js), `createXmlBatchPrompt()`):** teks Role generik ("Expert subtitle translator...") diganti persona profesional Netflix/VideoLingo — "professional Netflix subtitle translator, fluent in both ${sourceLabel} and ${targetLabel}, as well as their respective cultures", dengan kefahaman mendalam slanga, humor, metafora dan subteks emosi watak. Mandat dua kerja kekal: (1) slot/ID parity sacred, (2) ayat penutur jati bertarap pawagam.
+- **[PRINSIP VIDEOLINGO] Blok `<translation_principles>` baharu:** (1) Idiomatic fidelity — maksud & impak emosi watak mengatasi terjemahan harfiah kata-demi-kata; (2) Natural conversational flow — dialog santai, ringkas, mengikut rentak pertuturan semula jadi manusia.
+
+### Added
+
+- **[REFLECT-IN-ONE-PASS] Teknik refleksi two-pass VideoLingo dalam SATU panggilan API (bahagian Style):** model diarahkan meneliti secara mental draf terjemahan langsung, menilai kelancaran sebagai penutur jati, memurnikan sehingga bertaraf pawagam, dan HANYA memuntahkan hasil akhir dalam tag output — dilarang mengeluarkan draf/teks berfikir. Kelajuan & kos token 4+50+2 dijaga sepenuhnya.
+
+### Verification
+
+- Kontrak integriti XML 100% kekal: `<answer><s id="N">` + prefill anchor, rule PRESERVE [br]/<i>/dash (kiraan terkunci), `SUBFABER_BATCH_SIZE = 50` + window 4/2, Agent B 6-crime inspector — tiada satu pun disentuh. Tiada fail `public/` diubah. `npm test`: **368 tests — 367 PASS, 0 FAIL, 1 SKIP** — selari baseline; monotonic ✓. Prettier ✓; ESLint 0 error ✓.
+
 ## SubMaker v3.9.29 (2026-10-11) — Dynamic Base URL Injection: User Config → GeminiService
 
 ### Added

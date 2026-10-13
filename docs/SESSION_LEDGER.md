@@ -10,6 +10,16 @@
 
 ---
 
+## 2026-10-13 (RELEASE v3.9.30) — VIDEOLINGO-GRADE PERSONA & REFLECT-IN-ONE-PASS (AGENT A PROMPT)
+
+- **Tarikh:** 2026-10-13 (21:24 MYT)
+- **Komit SHA:** (diisi selepas push)
+- **Keputusan Owner (Mandat Backend):** Audit deep-scan nota VideoLingo (`plans/ground-truth-videolingo-vs-srtaitranslator-full.md`, `plans/videolingo-sampling-ground-truth.md`) disusuli mandat Opseyen 2 — integrasi persona VideoLingo + prinsip adaptasi budaya + teknik two-step mental reflection dalam SATU panggilan API (Reflect-in-One-Pass). Dua mandat kekal: ID pariti 100% (no desync) + kualiti ayat Netflix. Verbatim penuh prompt VideoLingo DITOLAK dalam audit (kontrak JSON konflik fatal dengan XML contract SubFaber; tiada [br] preservation; two-pass mahal).
+- **Fail Terlibat:** `src/services/translationEngine.js` — `createXmlBatchPrompt()` systemPart sahaja: (1) Role generik diganti persona "professional Netflix subtitle translator, fluent in both ${sourceLabel} and ${targetLabel}, as well as their respective cultures" + kefahaman slanga/humor/metafora/subteks emosi; (2) blok `<translation_principles>` baharu (idiomatic fidelity + natural conversational flow); (3) bahagian Style "Reflect-in-One-Pass" — mental draft → reflect as native speaker → emit final only, dilarang output draf/teks berfikir. `package.json` (3.9.29 → 3.9.30), `CHANGELOG.md`, `graphify-out/`.
+- **InvariAN 100% kekal:** kontrak `<answer><s id="N">` + prefill anchor `<s id="START">` (tiada JSON); rule PRESERVE [br]/<i>/dash (kiraan terkunci, reposisi adaptif); formula keramat 4+50+2 (`SUBFABER_BATCH_SIZE=50`, window 4/2); Agent B 6-crime inspector; tiada fail `public/` disentuh; assertion regression lama (parity sacred, native speaker, never inject titles) semua dipenuhi tanpa ubah test.
+- **Status npm test:** **368 tests — 367 PASS, 0 FAIL, 1 SKIP** (live Redis) — selari baseline ✓. Prettier ✓; ESLint 0 error (6 warning pra-wujud) ✓; graphify update (5034 nodes, 10913 edges) ✓.
+- **Next Steps:** Git commit + push + CI verify.
+
 ## 2026-10-12 (RELEASE v3.9.29) — DYNAMIC BASE URL INJECTION: USER CONFIG → GEMINI SERVICE
 
 - **Tarikh:** 2026-10-12 (03:35 MYT)
