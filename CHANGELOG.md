@@ -2,6 +2,12 @@
 
 All notable changes to this project will be documented in this file.
 
+## SubMaker v3.9.39 (2026-10-14) — Trinity Cards Match Languages Family Structure (Header Collapse Buttons, Single Section Close)
+
+### Changed
+
+- **Kad agent Trinity kini ikut struktur keluarga Languages ([public/js/trinity-agents.js](public/js/trinity-agents.js), [public/css/trinity-agents.css](public/css/trinity-agents.css)):** footer "Close section" dalam kad Trinity dibuang sepenuhnya — section API Keys kini hanya ada SATU close footer di bawah (pola Bapak/Anak: section = Bapak dengan close di bawah; kad anak = `.collapse-btn` di penjuru kanan header, sama seperti Source/Target Languages). Setiap kad Trinity mendapat `.collapse-btn` (`data-collapse="{agent}"`, `aria-expanded`) 40×40 pinned kanan; klik butang atau klik header melipat kad (kandungan `display:none`, header kekal). Collapsed state CSS dikemas kini: sembunyi SEMUA anak kecuali `.card-header`. Sifar perubahan kontrak payload (`#trinityModeToggle`, `collectConfigPatch()`, rehydrate tidak disentuh).
+
 ## SubMaker v3.9.38 (2026-10-14) — Trinity Mode Toggle Inside Card Family
 
 ### Changed

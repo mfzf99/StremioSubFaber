@@ -10,6 +10,20 @@
 
 ---
 
+## 2026-10-14 — RELEASE v3.9.39: KAD TRINITY IKUT STRUKTUR KELUARGA LANGUAGES (BUTANG LIPAT HEADER, SATU CLOSE SECTION, PIPELINE 8-LANGKAH)
+
+- **Tarikh:** 2026-10-14 (waktu tempatan KL)
+- **Komit SHA:** (diisi selepas push)
+- **Status CI:** (diisi selepas run)
+- **Keputusan Owner:** Mandat pola keluarga — Languages = Bapak dengan anak Source/Target (masing-masing collapse-btn penjuru kanan header); API Keys = Bapak dengan anak Subtitles API Keys + Translation API Keys. Perlu: (1) satu close section sahaja di bawah, bukan dua; (2) kad Trinity ada butang collapsed seperti kad lain — copy struktur Languages.
+- **Fail Terlibat:** `public/js/trinity-agents.js` (footer "Close section" Trinity dibuang sepenuhnya; `.collapse-btn` `data-collapse="{agent}"` + `aria-expanded` ditambah dalam `.card-header` setiap kad Trinity; klik butang/header melipat kad), `public/css/trinity-agents.css` (buang style `.trinity-agent-footer`/`.trinity-agent-close*`; collapsed state sembunyi semua kecuali `.card-header`; `.trinity-agent-head .collapse-btn` pinned kanan).
+- **Integration Review Backend (GLM 5.3): LULUS** — tiada double-bind (legacy `.card-header` handler config.js dipasang pra-mount, tak lihat kad Trinity); `toggleAllSections()` loop `.card` tak padankan `.trinity-agent-card`; NOTA EDGE-CASE: loop global `.collapse-btn` (config.js:10889) boleh reset chevron Trinity tanpa melipat kad (expand-all selepas lipat manual) — desync kosmetik, klik sekali lagi segerak; sifar perubahan kontrak payload.
+- **Pengesahan live (Playwright, Basic + Pro):** section API Keys = 1 close footer (0 footer Trinity berbaki); 3 kad Pro masing-masing ada collapse-btn 40×40 pinned kanan; klik melipat (kandungan display:none, header kekal, aria-expanded sync); section close utama berfungsi.
+- **Pipeline 8-langkah:** SemVer → 3.9.39; CHANGELOG v3.9.39; cache-buster runtime-driven (pkg 3.9.39 + `__APP_VERSION_QUERY__` ✅); `npx prettier --check .` hijau; `npx eslint .` 0 error (224 warning pre-existing); `npm test` 368 tests: **367 PASS / 0 FAIL / 1 SKIP**; `graphify update .` 5147 nodes / 11091 edges / 275 communities; blok ledger ini; commit+push; CI.
+- **Next Steps:** Commit + push → CI Success → tutup.
+
+---
+
 ## 2026-10-14 — RELEASE v3.9.38: TRINITY MODE TOGGLE DALAM KAD KELUARGA (PIPELINE 8-LANGKAH)
 
 - **Tarikh:** 2026-10-14 (waktu tempatan KL)

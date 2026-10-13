@@ -181,76 +181,16 @@
 /* Card footer — mirrors .section-footer / .section-close-link from
    configure.css (token-for-token) but under trinity-scoped names so it can
    never collide with the section-level close footer inside API Keys. */
-.trinity-agent-footer {
-    display: flex;
-    justify-content: center;
-    margin-top: 0.75rem;
-    padding-top: 0.5rem;
-    border-top: 1px solid var(--border-color, rgba(0, 0, 0, 0.08));
-}
-
-.trinity-agent-close {
-    display: inline-flex;
-    align-items: center;
-    gap: 0.4rem;
-    padding: 0.4rem 0.85rem;
-    border-radius: 999px;
-    border: 1px dashed var(--border);
-    background: linear-gradient(135deg, rgba(255, 255, 255, 0.92), rgba(255, 255, 255, 0.7));
-    color: var(--text-secondary);
-    cursor: pointer;
-    font-weight: 700;
-    font-size: 0.9rem;
-    letter-spacing: -0.01em;
-    text-decoration: none;
-    transition: all 0.2s cubic-bezier(0.16, 1, 0.3, 1);
-}
-
-[data-theme='dark'] .trinity-agent-close {
-    background: linear-gradient(135deg, rgba(26, 26, 38, 0.9), rgba(26, 26, 38, 0.6));
-}
-
-[data-theme='blackhole'] .trinity-agent-close {
-    background: linear-gradient(135deg, rgba(12, 12, 18, 0.94), rgba(26, 26, 32, 0.78));
-    border-color: rgba(255, 255, 255, 0.08);
-    box-shadow: 0 10px 24px rgba(0, 0, 0, 0.9);
-}
-
-.trinity-agent-close:hover {
-    color: var(--primary);
-    border-color: var(--primary);
-    box-shadow: 0 8px 20px var(--glow);
-    transform: translateY(-1px);
-}
-
-.trinity-agent-close:focus-visible {
-    outline: 2px solid var(--primary);
-    outline-offset: 2px;
-}
-
-.trinity-agent-close-icon {
-    display: inline-flex;
-    align-items: center;
-    justify-content: center;
-    width: 22px;
-    height: 22px;
-    border-radius: 999px;
-    background: linear-gradient(135deg, var(--primary) 0%, var(--secondary) 100%);
-    color: #fff;
-    box-shadow: 0 4px 12px var(--glow);
-    font-size: 0.95rem;
-    line-height: 1;
-}
-
-/* Collapsed state: hide everything except header + footer, mirroring how
-   Languages/Settings sections keep their close control visible when closed. */
-.trinity-agent-card.collapsed > *:not(.trinity-agent-head):not(.trinity-agent-footer) {
+/* Collapsed state: hide everything except the header — same pattern as child
+   cards in the Languages family (collapse via header .collapse-btn). */
+.trinity-agent-card.collapsed > *:not(.card-header) {
     display: none;
 }
-.trinity-agent-card.collapsed .trinity-agent-footer {
-    border-top: 0;
-    margin-top: 0;
-    padding-top: 0;
+
+/* Pin collapse control to the far right of the card header (Languages pattern) */
+.trinity-agent-head .collapse-btn {
+    margin-left: auto;
+    flex-shrink: 0;
 }
 .trinity-agent-hint {
     margin-top: 0.9rem;
