@@ -13,8 +13,8 @@
 ## 2026-10-14 — RELEASE v3.9.40: TRINITY DIBUNGKUS DALAM KAD "TRANSLATION API KEYS" (STRUKTUR KELUARGA PENUH, PIPELINE 8-LANGKAH)
 
 - **Tarikh:** 2026-10-14 (waktu tempatan KL)
-- **Komit SHA:** (diisi selepas push)
-- **Status CI:** (diisi selepas run)
+- **Komit SHA:** 1ebd2bf (push 064fd5e..1ebd2bf ke origin main)
+- **Status CI:** Run 38477086039 (#353, 1ebd2bf, Node 22 & 24) = **SUCCESS** ✅
 - **Keputusan Owner:** Mandat struktur keluarga penuh — API Keys (Bapak) → Anak 1 Subtitles API Keys + Anak 2 Translation API Keys (bungkusan Trinity, collapsed default, tajuk "Translation API Keys", collapse-btn penjuru kanan) + button close section paling bawah. Trinity tidak lagi terpampang; muncul hanya bila expand.
 - **Fail Terlibat:** `public/js/trinity-agents.js` (kad induk `.card`/`.card-header` + `.collapse-btn` collapsed default, kandungan = togol + kad agent; kad induk = `#trinityRoot` tunggal; sisipan DALAM `.section-grid` sebelum footer close), `public/css/trinity-agents.css` (`.trinity-parent-card`/`.trinity-parent-head`/`.trinity-parent-content` token `.card`; padding-right header 0 — pariti pixel gap 0=0 dengan kad Source Languages).
 - **Integration Review Backend (GLM 5.3): LULUS** — tiada double-bind (config-loader.js memuat trinity SELEPAS config.js; handler legacy terikat pra-mount); `collapseSectionCards()` kini juga collapse parent (diingini); kontrak payload sifar perubahan. BUG KRITIKAL dijumpai & difix: ID `#trinityRoot` berganda → state terbalik + HierarchyRequestError → kini satu elemen satu id.
