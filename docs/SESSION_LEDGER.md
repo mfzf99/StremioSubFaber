@@ -13,7 +13,8 @@
 ## 2026-10-14 — RELEASE v3.9.33: CUSTOM/PROXY SECONDARY FALLBACK — SLOT custom_secondary (PIPELINE 8-LANGKAH)
 
 - **Tarikh:** 2026-10-14 (waktu tempatan KL)
-- **Komit SHA:** (diisi selepas commit)
+- **Komit SHA:** 3973c2b
+- **Status CI:** Run 38443854842 (3973c2b, Node 22 & 24) = **SUCCESS** ✅
 - **Keputusan Owner:** Mandat pembaikan — sokongan Custom/Proxy pada Secondary Fallback; elak data collision Primary Custom vs Secondary Custom; npm test monotonic + ESLint 0 error + Prettier bersih.
 - **Backend (GLM 5.3):**
   - Kontrak: `providers.custom_secondary = { enabled, apiKey, baseUrl, model, door }`; `secondaryProvider: 'custom_secondary'`; door `openai-compatible` (lalai) | `gemini-native` (GeminiService + baseUrl proksi sekunder).
