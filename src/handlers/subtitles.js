@@ -6243,33 +6243,47 @@ async function performTranslation(
             effectiveModel = model || getEffectiveGeminiModel(config);
             log.debug(() => `[Translation] Using provider=${providerName} model=${effectiveModel}`);
 
-            // DUAL-AI (BETA RUN 9 TRINITY — MANDAT PENYATUAN DEEPSEEK STACK 2026-09-27):
-            // Bina Agent B Trinity Dual-Agent (deepseek-v4-pro Fasa 0 & Pemeriksa
-            // Utama + deepseek-v4.1-flash Fallback Universal) apabila
-            // config agentB sah + lengkap. Gagal konfigurasi → null →
-            // enjin jalan 100% Gemini (backwards compatible penuh).
+            // DUAL-AI TRINITY (HARDCODE-PURGE 2026-10-13): Bina Agent B Trinity
+            // Dual-Agent apabila config agentB sah + lengkap. Semua nilai model
+            // kini DINAMIK daripada konfigurasi pengguna (kad Trinity UI) dengan
+            // fallback .env — TIADA lalai statik dalam kod. Gagal konfigurasi →
+            // null → enjin jalan 100% Agent A (backwards compatible penuh).
             let agentBInspector = null;
             if (config.agentB?.enabled === true && config.agentB?.baseUrl && config.agentB?.apiKey) {
+                // [GRACEFUL-BYPASS] Ema per-fasa: fasa tanpa model dikonfigurasi
+                // (user + env kosong) di-skip senyap — aliran kerja utama Agent A
+                // tidak tergugut walau satu pun.
+                if (!config.agentB.preflightModel && !config.agentB.model) {
+                    log.info(
+                        () =>
+                            '[INFO] [Preflight] Skipped (not configured / disabled by user); [AgentB] Inspector skipped (not configured / disabled by user)'
+                    );
+                } else {
+                    if (!config.agentB.preflightModel) {
+                        log.info(() => '[INFO] [Preflight] Skipped (not configured / disabled by user)');
+                    }
+                    if (!config.agentB.model) {
+                        log.info(() => '[INFO] [AgentB] Inspector skipped (not configured / disabled by user)');
+                    }
+                }
                 try {
                     agentBInspector = new AgentBInspector({
                         apiKey: config.agentB.apiKey,
                         baseUrl: config.agentB.baseUrl,
-                        // [MODEL-HIERARCHY] FINAL 2026-09-28 (empirikal gateway rootsys):
-                        //   Fasa 0     : kimi-k3 SAHAJA — STANDALONE (kegagalan → retry
-                        //                kimi-k3 2x → fail-open tanpa konteks; TIADA
-                        //                fallback merentas model — pre-flight lemah dari
-                        //                model sandaran lebih buruk daripada tiada).
-                        //   Fasa 1     : deepseek-v4-pro (Pemeriksa Utama)
-                        //   Fallback   : deepseek-v4.1-flash (mewarisi had masa fasa)
+                        // [MODEL-HIERARCHY] FINAL 2026-09-28: Fasa 0 STANDALONE
+                        // (kegagalan → retry model sama → fail-open tanpa konteks;
+                        // TIADA fallback merentas model — pre-flight lemah dari
+                        // model sandaran lebih buruk daripada tiada).
                         // [PAYLOAD-GODTIER] Muatan 4-kunci streaming dibina oleh builder
                         // universal (openaiCompatible.buildChatRequest):
                         //   { model, messages, stream: true, temperature: 0.0 }
-                        preflightModel: config.agentB.preflightModel || 'kimi-k3',
-                        // [MODEL-HIERARCHY] preflightFallbackModel DIBUANG — nilai lalai
-                        // = primer (kimi-k3); inspector menormalkan kepada 1-tingkat.
-                        preflightFallbackModel: config.agentB.preflightModel || 'kimi-k3',
-                        model: config.agentB.model || 'deepseek-v4-pro',
-                        fallbackModel: config.agentB.fallbackModel || 'deepseek-v4.1-flash',
+                        // [HARDCODE-PURGE 2026-10-13] Lalai statik digugurkan —
+                        // nilai kosong dibenarkan (fasa berkenaan di-skip senyap
+                        // oleh AgentBInspector / enjin).
+                        preflightModel: config.agentB.preflightModel || '',
+                        preflightFallbackModel: config.agentB.preflightModel || '',
+                        model: config.agentB.model || '',
+                        fallbackModel: config.agentB.fallbackModel || '',
                         preflightTimeoutMs: config.agentB.preflightTimeoutMs,
                         inspectionTimeoutMs: config.agentB.inspectionTimeoutMs,
                         // [TRI-DOOR FASA C] Format pintu: 'auto' (autodetect

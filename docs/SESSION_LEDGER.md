@@ -10,6 +10,16 @@
 
 ---
 
+## 2026-10-13 (RELEASE v3.9.31) — HARDCODE PURGE: DYNAMIC 3-TIER AGENT B INJECTION + GRACEFUL BYPASS
+
+- **Tarikh:** 2026-10-13 (22:22 MYT)
+- **Komit SHA:** (diisi selepas push)
+- **Keputusan Owner (Mandat Backend):** Siasatan & pembersihan kod hardcoded bagi Agent Preflight (Kimi-K3) & Agent Inspector (DeepSeek-V4-Pro/rootsys) — saki-baki fasa ujian awal pra-Web UI Trinity. Audit imbasan `src/`: TIADA kunci API mentah (`sk-` sebenar) dalam kod (semua padanan = fixture ujian dummy / heuristik keyDetector); `rootsys.cloud` tinggal dalam komen forensik sahaja. Hardcode sebenar = nama model lalai statik — DIGUGURKAN sepenuhnya.
+- **Fail Terlibat:** `src/utils/config.js` (blok agentB dibina semula: 3-tier trinity UI → agentB langsung → env `AGENT_B_*`/`PREFLIGHT_*`/`INSPECTOR_*` → bypass; flag ema per-fasa `preflightEnabled`/`inspectorEnabled`; hygiene melumpuhkan Agent B tanpa model), `src/handlers/subtitles.js` (pembinaan AgentBInspector tanpa lalai statik + log bypass senyap), `src/services/agentBInspector.js` (konstanta lalai → `''`; guard bypass `runPreflightPass`/`runSemanticInspection` tanpa panggilan rangkaian), `src/services/channels/openaiChannel.js` (fallback statik digugurkan), `src/services/agentB-inspector-regression.test.js` (20+ ujian → kontrak dinamik suntikan eksplisit), `.env.example` (dokumentasi 3-tier + alias env Trinity baharu, tiada kunci sebenar), `package.json` (3.9.30 → 3.9.31), `CHANGELOG.md`, `graphify-out/`.
+- **Graceful bypass:** Preflight kosong → `[INFO] [Preflight] Skipped (not configured / disabled by user)`; Inspector kosong → `[INFO] [AgentB] Inspector skipped (not configured / disabled by user)` — terjemahan Agent A jalan terus, tiada audit paksa.
+- **Status npm test:** **368 tests — 367 PASS, 0 FAIL, 1 SKIP** (live Redis) — selari baseline ✓; monotonic ✓. Prettier ✓; ESLint 0 error (221 warning pra-wujud) ✓. Cache-buster runtime = 3.9.31 ✓. graphify update (5039 nodes, 10920 edges) ✓. Tiada fail `public/` disentuh.
+- **Next Steps:** Git commit + push + CI verify.
+
 ## 2026-10-13 (RELEASE v3.9.30) — VIDEOLINGO-GRADE PERSONA & REFLECT-IN-ONE-PASS (AGENT A PROMPT)
 
 - **Tarikh:** 2026-10-13 (21:24 MYT)

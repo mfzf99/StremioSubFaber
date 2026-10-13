@@ -34,7 +34,9 @@ const { FORMAT_OPENAI } = require('./keyDetector');
 function buildSuperOptions(options = {}, inspectionTimeoutMs = 60000, beastMaxTokens = undefined) {
     return {
         apiKey: options.apiKey || '',
-        model: options.inspectionModel || options.model || 'deepseek-v4-pro',
+        // [HARDCODE-PURGE 2026-10-13] Lalai statik 'deepseek-v4-pro'
+        // digugurkan — model datang daripada konfigurasi pengguna/env.
+        model: options.inspectionModel || options.model || '',
         baseUrl: options.baseUrl || 'https://api.openai.com/v1',
         providerName: 'agentb',
         universalPayload: true, // Muatan BEAST sejagat (Mandat §A + BETA RUN 10)

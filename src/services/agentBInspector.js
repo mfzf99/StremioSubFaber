@@ -87,8 +87,14 @@ const { splitStructuredPrompt } = require('./utils/structuredPrompt');
 // NOTA reka bentuk: pre-flight ialah ASAS analisis. Pre-flight daripada
 // model sandaran (kualiti rendah) LEBIH BURUK daripada tiada pre-flight —
 // itulah sebabnya hierarki Fasa 0 TIDAK MERENTAS keluarga model.
-const AGENT_B_DEFAULT_MODEL = 'deepseek-v4-pro'; // Fasa 1: Pemeriksa Utama
-const AGENT_B_PREFLIGHT_MODEL = 'kimi-k3'; // Fasa 0: kimi-k3 SAHAJA
+// [HARDCODE-PURGE 2026-10-13] Nama model lalai statik DIGUGURKAN — model kini
+// datang 100% daripada konfigurasi pengguna (kad Trinity UI) dengan fallback
+// .env (AGENT_B_* / PREFLIGHT_* / INSPECTOR_*), dinormalisasi oleh config.js.
+// Lalai konstanta = '' — fasa tanpa model di-skip senyap (graceful bypass):
+//   Fasa 0 kosong → [INFO] [Preflight] Skipped (not configured / disabled).
+//   Fasa 1 kosong → [INFO] [AgentB] Inspector skipped (not configured / disabled).
+const AGENT_B_DEFAULT_MODEL = ''; // Fasa 1: Pemeriksa — dinormalisasi config.js
+const AGENT_B_PREFLIGHT_MODEL = ''; // Fasa 0: Preflight — dinormalisasi config.js
 // [MODEL-HIERARCHY] Fallback khusus Fasa 0 DIGUGURKAN — kimi-k3 standalone.
 // env AGENT_B_PREFLIGHT_FALLBACK_MODEL diabaikan sepenuhnya (nilai muktamad
 // sentiasa sama dengan primer supaya hierarki Fasa 0 ialah 1-tingkat).
@@ -103,7 +109,7 @@ const AGENT_B_PREFLIGHT_FALLBACK_MODEL = AGENT_B_PREFLIGHT_MODEL;
 // menangkap tetingkap TTFT-laju. Dipasangkan dengan first-byte watchdog
 // (35s) yang abort attempt TTFT-lambat lebih awal daripada reset gateway.
 const AGENT_B_PREFLIGHT_RETRIES = 4;
-const AGENT_B_FALLBACK_MODEL = 'deepseek-v4.1-flash'; // Fallback Fasa 1 SAHAJA
+const AGENT_B_FALLBACK_MODEL = ''; // Fallback Fasa 1 — konfigurasi pengguna/env sahaja
 // [PAYLOAD-GODTIER] SEJARAH (dikekalkan untuk forensik): muatan lama
 // BETA RUN 10 membawa 7 kunci; keempat-empat parameter tambahan terbukti
 // PENCETUS OVERTHINKING (masing-masing +90-110s) dan digugurkan —
@@ -465,11 +471,19 @@ class AgentBInspector extends OpenAICompatibleProvider {
         //     'none' ATAU kosong ATAU sama dengan model utama → model tunggal.
         // this.model sentiasa menjejak model AKTIF supaya log forensik melaporkan
         // model sebenar yang sedang beroperasi.
-        this.model =
-            String(options.model || options.inspectionModel || AGENT_B_DEFAULT_MODEL).trim() || AGENT_B_DEFAULT_MODEL;
-        this.preflightModel =
-            String(options.preflightModel || AGENT_B_PREFLIGHT_MODEL).trim() || AGENT_B_PREFLIGHT_MODEL;
+        // [HARDCODE-PURGE] Lalai statik digugurkan — nilai kosong dibenarkan
+        // (fasa berkenaan di-skip senyap; lihat graceful-bypass di bawah).
+        this.model = String(options.model || options.inspectionModel || AGENT_B_DEFAULT_MODEL).trim();
+        this.preflightModel = String(options.preflightModel || AGENT_B_PREFLIGHT_MODEL).trim();
         const requestedFallback = String(options.fallbackModel || AGENT_B_FALLBACK_MODEL).trim();
+        // [GRACEFUL-BYPASS] Fasa tanpa model dikonfigurasi → log senyap sekali
+        // sahaja di peringkat instance; aliran kerja Agent A tidak tergugut.
+        if (!this.preflightModel) {
+            log.info(() => '[INFO] [Preflight] Skipped (not configured / disabled by user)');
+        }
+        if (!this.model) {
+            log.info(() => '[INFO] [AgentB] Inspector skipped (not configured / disabled by user)');
+        }
         // [MODEL-HIERARCHY] preflightFallbackModel DINEUTRALKAN — sentiasa sama
         // dengan primer Fasa 0 supaya hierarki pre-flight kekal 1-tingkat
         // (kimi-k3 standalone). Nilai options/env lama diabaikan atas sebab:
@@ -810,6 +824,11 @@ class AgentBInspector extends OpenAICompatibleProvider {
      * konteks global (tingkah laku Fasa 0 sedia ada dipelihara 100%).
      */
     async runPreflightPass(entries, targetLanguage, sourceLanguage, options = {}) {
+        // [GRACEFUL-BYPASS] Preflight tanpa model dikonfigurasi → skip senyap
+        // (non-blocking null; terjemahan Agent A jalan tanpa konteks global).
+        if (!this.preflightModel) {
+            return null;
+        }
         // Fasa 0 membaca teks episod penuh (hingga 250k aksara) dan menjana
         // analisis tema — naikkan had masa axios kepada 150s untuk panggilan
         // ini sahaja (BEAST MODE BETA RUN 10 — di bawah siling 300s Caddy),
@@ -897,6 +916,11 @@ class AgentBInspector extends OpenAICompatibleProvider {
      * @returns {Promise<{valid:boolean, crimes?:Array, failOpen?:boolean, skipped?:string, modelUsed?:string}>}
      */
     async runSemanticInspection(sourceBatch, translatedEntries, meta = {}) {
+        // [GRACEFUL-BYPASS] Inspector tanpa model dikonfigurasi → audit
+        // pasca-terjemahan dilepaskan; terjemahan Agent A diterima terus.
+        if (!this.model) {
+            return { valid: true, skipped: 'inspector_not_configured' };
+        }
         // Circuit breaker terbuka → senyap terus (tiada panggilan rangkaian)
         if (this._circuitOpen) {
             return { valid: true, skipped: 'circuit_open' };

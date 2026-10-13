@@ -648,71 +648,111 @@ function normalizeConfig(config) {
         mergedConfig.geminiBaseUrl || mergedConfig.trinity?.translation?.baseUrl || ''
     );
 
+    // [HARDCODE-PURGE 2026-10-13] Agent B kini 100% dinamik — hierarki
+    // keutamaan TIGA LAPIS (mandat owner):
+    //   1. Konfigurasi pengguna Web UI (kad Trinity: trinity.preflight /
+    //      trinity.inspector + blok agentB langsung) — keutamaan tertinggi.
+    //   2. Fallback pemboleh ubah persekitaran pelayan (.env):
+    //      AGENT_B_* + alias PREFLIGHT_* / INSPECTOR_*.
+    //   3. Tiada nilai → Agent B terlerai (bypass senyap, tiada lalai statik).
+    // Nama model lalai hardcode (deepseek-v4-pro / kimi-k3 /
+    // deepseek-v4.1-flash) DIGUGURKAN sepenuhnya daripada kod sumber.
+    const trinityPreflight = mergedConfig.trinity?.preflight || {};
+    const trinityInspector = mergedConfig.trinity?.inspector || {};
+    const agentBSrc = mergedConfig.agentB || {};
+    const preflightModel = String(
+        agentBSrc.preflightModel ||
+            trinityPreflight.model ||
+            process.env.AGENT_B_PREFLIGHT_MODEL ||
+            process.env.PREFLIGHT_MODEL ||
+            ''
+    ).trim();
+    const inspectorModel = String(
+        agentBSrc.model ||
+            agentBSrc.inspectionModel ||
+            trinityInspector.model ||
+            process.env.AGENT_B_MODEL ||
+            process.env.AGENT_B_INSPECTION_MODEL ||
+            process.env.INSPECTOR_MODEL ||
+            ''
+    ).trim();
+    const agentBBaseUrl = String(
+        agentBSrc.baseUrl ||
+            trinityInspector.baseUrl ||
+            trinityPreflight.baseUrl ||
+            process.env.AGENT_B_BASE_URL ||
+            process.env.INSPECTOR_BASE_URL ||
+            ''
+    ).trim();
+    const agentBApiKey = String(
+        agentBSrc.apiKey ||
+            trinityInspector.apiKey ||
+            trinityPreflight.apiKey ||
+            process.env.AGENT_B_API_KEY ||
+            process.env.INSPECTOR_API_KEY ||
+            process.env.PREFLIGHT_API_KEY ||
+            ''
+    ).trim();
+    const agentBFallbackModel = String(agentBSrc.fallbackModel || process.env.AGENT_B_FALLBACK_MODEL || '').trim();
+
     mergedConfig.agentB = {
-        enabled:
-            mergedConfig.agentB?.enabled === true || (!!process.env.AGENT_B_API_KEY && !!process.env.AGENT_B_BASE_URL),
-        baseUrl: String(mergedConfig.agentB?.baseUrl || process.env.AGENT_B_BASE_URL || '').trim(),
-        apiKey: String(mergedConfig.agentB?.apiKey || process.env.AGENT_B_API_KEY || '').trim(),
-        // env AGENT_B_INSPECTION_MODEL disokong (alias rasmi model semakan —
-        // dipakai dalam .env pengeluaran sejak mandat v5).
-        model: String(
-            mergedConfig.agentB?.model ||
-                mergedConfig.agentB?.inspectionModel ||
-                process.env.AGENT_B_MODEL ||
-                process.env.AGENT_B_INSPECTION_MODEL ||
-                'deepseek-v4-pro'
-        ).trim(),
-        // [MODEL-HIERARCHY] FINAL 2026-09-28: pre-flight agent lalai kimi-k3.
-        preflightModel: String(
-            mergedConfig.agentB?.preflightModel || process.env.AGENT_B_PREFLIGHT_MODEL || 'kimi-k3'
-        ).trim(),
-        // [MODEL-HIERARCHY] Fallback khusus Fasa 0 DIGUGURKAN — kimi-k3
-        // STANDALONE (kegagalan → retry kimi-k3, bukan model lain). Env lama
-        // AGENT_B_PREFLIGHT_FALLBACK_MODEL diabaikan; nilai sentiasa = primer.
-        preflightFallbackModel: String(
-            mergedConfig.agentB?.preflightModel || process.env.AGENT_B_PREFLIGHT_MODEL || 'kimi-k3'
-        ).trim(),
-        fallbackModel: String(
-            mergedConfig.agentB?.fallbackModel || process.env.AGENT_B_FALLBACK_MODEL || 'deepseek-v4.1-flash'
-        ).trim(),
+        enabled: agentBSrc.enabled === true || (!!process.env.AGENT_B_API_KEY && !!process.env.AGENT_B_BASE_URL),
+        baseUrl: agentBBaseUrl,
+        apiKey: agentBApiKey,
+        model: inspectorModel,
+        preflightModel,
+        // [MODEL-HIERARCHY] Fallback khusus Fasa 0 DIGUGURKAN — nilai
+        // sentiasa = primer (standalone; kegagalan → retry model sama).
+        preflightFallbackModel: preflightModel,
+        fallbackModel: agentBFallbackModel,
+        // [GRACEFUL-BYPASS 2026-10-13] Gema per-fasa: pengguna boleh
+        // mengaktifkan Inspector sahaja (Preflight bypass) atau sebaliknya.
+        // Ketiadaan model fasa → fasa berkenaan di-skip senyap oleh enjin.
+        preflightEnabled: !!preflightModel,
+        inspectorEnabled: !!inspectorModel,
         preflightTimeoutMs: normalizeAgentBTimeoutMs(
-            mergedConfig.agentB?.preflightTimeoutMs ?? process.env.AGENT_B_PREFLIGHT_TIMEOUT_MS,
+            agentBSrc.preflightTimeoutMs ?? process.env.AGENT_B_PREFLIGHT_TIMEOUT_MS,
             300000
         ),
         // MANDAT OPERASI MUTLAK v2 2026-09-27: kedua-dua fasa 5 minit (300000ms).
         inspectionTimeoutMs: normalizeAgentBTimeoutMs(
-            mergedConfig.agentB?.inspectionTimeoutMs ?? process.env.AGENT_B_INSPECTION_TIMEOUT_MS,
+            agentBSrc.inspectionTimeoutMs ?? process.env.AGENT_B_INSPECTION_TIMEOUT_MS,
             300000
         ),
         // [AUDIT-WARISAN 2026-09-29] WARISAN/no-op: AGENT_B_MAX_TOKENS TIDAK lagi
         // dihantar dalam muatan (builder god-tier tiada max_tokens). Dikekalkan
         // untuk keserasian warisan sahaja — JANGAN set (tiada kesan runtime).
-        maxTokens: normalizeAgentBTimeoutMs(mergedConfig.agentB?.maxTokens ?? process.env.AGENT_B_MAX_TOKENS, 131072),
+        maxTokens: normalizeAgentBTimeoutMs(agentBSrc.maxTokens ?? process.env.AGENT_B_MAX_TOKENS, 131072),
         // [TRI-DOOR FASA C 2026-10-10] Format pintu Trinity Agent B:
         // 'auto' (autodetect keyDetector) | 'gemini' | 'openai' | 'anthropic'.
-        // Lalai 'auto' — bagi deployment rootsys sedia ada, autodetect
-        // (sk- + baseUrl) menghasilkan 'openai' ⇒ zero behavior change.
-        format: String(mergedConfig.agentB?.format || process.env.AGENT_B_FORMAT || 'auto')
+        // [HARDCODE-PURGE] Format pintu turut membaca kad Trinity UI
+        // (inspector dahulu, kemudian preflight) sebelum env.
+        format: String(
+            agentBSrc.format ||
+                trinityInspector.format ||
+                trinityPreflight.format ||
+                process.env.AGENT_B_FORMAT ||
+                'auto'
+        )
             .trim()
             .toLowerCase()
     };
     // Hygiene: inspectionModel adalah alias warisan bagi 'model' (Semakan) —
     // dilucutkan daripada struktur tersimpan selepas migrasi.
     delete mergedConfig.agentB.inspectionModel;
-    if (!mergedConfig.agentB.model) {
-        mergedConfig.agentB.model = 'deepseek-v4-pro';
-    }
-    if (!mergedConfig.agentB.preflightModel) {
-        mergedConfig.agentB.preflightModel = 'deepseek-v4-pro';
-    }
-    // Hygiene: Agent B tanpa kredensial lengkap mesti terlerai sepenuhnya —
-    // jangan biarkan enabled:true terapung tanpa baseUrl/apiKey (Fasa 0 +
-    // gate akan fallback senyap kepada Gemini).
+    // [HARDCODE-PURGE 2026-10-13] Hygiene diperketat: Agent B mesti mempunyai
+    // kredensial lengkap (baseUrl + apiKey) DAN sekurang-kurangnya satu model
+    // fasa (inspector / preflight). Tiada lalai statik dalam kod —
+    // ketiadaan nilai = bypass senyap (terjemahan Agent A jalan terus).
     if (!mergedConfig.agentB.baseUrl || !mergedConfig.agentB.apiKey) {
         mergedConfig.agentB.enabled = false;
     }
-    if (!mergedConfig.agentB.preflightModel) {
-        mergedConfig.agentB.preflightModel = 'deepseek-v4-pro';
+    if (mergedConfig.agentB.enabled && !mergedConfig.agentB.model && !mergedConfig.agentB.preflightModel) {
+        log.info(
+            () =>
+                '[AgentB] No inspector/preflight model configured (user config + env empty) — Agent B bypassed (Agent A translation continues)'
+        );
+        mergedConfig.agentB.enabled = false;
     }
 
     // 🔄 Migrasi Data: Alihkan advancedSettings.geminiModel ke geminiModel

@@ -2,6 +2,25 @@
 
 All notable changes to this project will be documented in this file.
 
+## SubMaker v3.9.31 (2026-10-13) — Hardcode Purge: Dynamic 3-Tier Agent B Injection + Graceful Bypass
+
+### Changed
+
+- **[HARDCODE-PURGE] Nama model lalai statik Agent B DIGUGURKAN sepenuhnya daripada kod sumber ([src/utils/config.js](src/utils/config.js), [src/handlers/subtitles.js](src/handlers/subtitles.js), [src/services/agentBInspector.js](src/services/agentBInspector.js), [src/services/channels/openaiChannel.js](src/services/channels/openaiChannel.js)):** `deepseek-v4-pro` / `kimi-k3` / `deepseek-v4.1-flash` tidak lagi dijaga sebagai lalai dalam `.js` — hutang teknikal fasa ujian awal (pra-Web UI Trinity) dibersihkan; risiko credential/model leak dikawal; konfigurasi dinamik pengguna kini berfungsi sepenuhnya.
+- **[DYNAMIC 3-TIER] Hierarki keutamaan baharu bagi Preflight (Fasa 0) & Inspector (Fasa 1) ([src/utils/config.js](src/utils/config.js), blok agentB):** (1) Konfigurasi pengguna Web UI — kad Trinity `trinity.preflight` / `trinity.inspector` + blok `agentB` langsung (keutamaan tertinggi); (2) fallback env pelayan — `AGENT_B_*` + alias baharu `PREFLIGHT_API_KEY`, `PREFLIGHT_MODEL`, `INSPECTOR_API_KEY`, `INSPECTOR_BASE_URL`, `INSPECTOR_MODEL`; (3) tiada nilai → **Mod Langkau (Bypass) senyap**.
+- **Format pintu Trinity (`format`) turut membaca kad UI** (inspector → preflight → env) sebelum lalai `'auto'` (autodetect keyDetector kekal).
+- **Ujian regresi ([src/services/agentB-inspector-regression.test.js](src/services/agentB-inspector-regression.test.js)) dikemas kini kepada kontrak dinamik:** hierarki mandat (kimi-k3 standalone / deepseek-v4-pro / v4.1-flash fallback) kini diuji melalui suntikan eksplisit; instance tanpa model diuji sebagai bypass senyap.
+
+### Added
+
+- **[GRACEFUL-BYPASS] Fasa tanpa model/kredensil TIDAK menggagalkan terjemahan utama:** Preflight kosong → log `[INFO] [Preflight] Skipped (not configured / disabled by user)` + `runPreflightPass()` return null (non-blocking); Inspector kosong → log `[INFO] [AgentB] Inspector skipped (not configured / disabled by user)` + `runSemanticInspection()` return `{valid:true, skipped:'inspector_not_configured'}` tanpa panggilan rangkaian — terjemahan Agent A dilepaskan terus tanpa audit pasca-terjemahan.
+- **Flag ema per-fasa `agentB.preflightEnabled` / `agentB.inspectorEnabled` ([src/utils/config.js](src/utils/config.js)):** pengguna boleh mengaktifkan satu fasa sahaja (Inspector tanpa Preflight atau sebaliknya).
+- **Dokumentasi env Trinity ([.env.example](.env.example)):** seksyen Agent B ditulis semula — hierarki 3-lapis + alias env PREFLIGHT_*/INSPECTER_* didokumentasikan tanpa sebarang nilai kunci sebenar.
+
+### Verification
+
+- Audit imbasan `src/`: tiada kunci API mentah (`sk-` sebenar) dalam kod; domain `rootsys.cloud` tinggal dalam komen forensik/sejarah sahaja. `npm test`: **368 tests — 367 PASS, 0 FAIL, 1 SKIP** — selari baseline; monotonic ✓. Prettier ✓; ESLint 0 error (221 warning pra-wujud) ✓. Tiada fail `public/` disentuh.
+
 ## SubMaker v3.9.30 (2026-10-13) — VideoLingo-Grade Persona & Reflect-in-One-Pass (Agent A Prompt)
 
 ### Changed
