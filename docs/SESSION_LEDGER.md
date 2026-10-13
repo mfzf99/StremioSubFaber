@@ -13,8 +13,8 @@
 ## 2026-10-14 — RELEASE v3.9.34: SECONDARY FALLBACK — SUSUNAN MEDAN DISERARASKAN DENGAN KAD UTAMA (PIPELINE 8-LANGKAH)
 
 - **Tarikh:** 2026-10-14 (waktu tempatan KL)
-- **Komit SHA:** d7c21a8
-- **Status CI:** Run 38448766141 (d7c21a8, Node 22 & 24) = **SUCCESS** ✅
+- **Komit SHA:** b656143 (HEAD muktamad; amend d7c21a8 dengan kemas kini ledger)
+- **Status CI:** Run 38449362698 (b656143, Node 22 & 24) = **SUCCESS** ✅
 - **Keputusan Owner:** Mandat pembetulan susunan — sub-kad 🛟 Secondary Fallback Provider tidak mengikut hierarki kad utama (Base URL dihujung selepas Model; URL "duduk bawah"). Pembetulan: Provider → API Key (+ ✓ Test) → Base URL → Format/Door → Model, untuk kedua-dua mode Basic dan Pro.
 - **Integrasi Frontend (Astra):** blok Base URL dipindahkan ke atas Format/Door dalam `buildSecondaryFallbackRow()` ([public/js/trinity-agents.js](public/js/trinity-agents.js:357)). Semua ID medan kekal; `updateFallbackFieldVisibility()` mencari elemen melalui `getElementById` (bukan kedudukan DOM) — tiada race rehidrasi baharu; kontrak `providers.custom_secondary` tidak disentuh.
 - **Integration Review Backend (GLM 5.3): LULUS** — perubahan DOM-order tulen; serialisasi `collectConfigPatch()`, rehidrasi `applyFallbackValues()`, dan skema server tidak berubah.
