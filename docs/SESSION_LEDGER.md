@@ -10,6 +10,17 @@
 
 ---
 
+## 2026-10-14 — RELEASE v3.9.34: SECONDARY FALLBACK — SUSUNAN MEDAN DISERARASKAN DENGAN KAD UTAMA (PIPELINE 8-LANGKAH)
+
+- **Tarikh:** 2026-10-14 (waktu tempatan KL)
+- **Komit SHA:** d7c21a8
+- **Status CI:** Run 38448766141 (d7c21a8, Node 22 & 24) = **SUCCESS** ✅
+- **Keputusan Owner:** Mandat pembetulan susunan — sub-kad 🛟 Secondary Fallback Provider tidak mengikut hierarki kad utama (Base URL dihujung selepas Model; URL "duduk bawah"). Pembetulan: Provider → API Key (+ ✓ Test) → Base URL → Format/Door → Model, untuk kedua-dua mode Basic dan Pro.
+- **Integrasi Frontend (Astra):** blok Base URL dipindahkan ke atas Format/Door dalam `buildSecondaryFallbackRow()` ([public/js/trinity-agents.js](public/js/trinity-agents.js:357)). Semua ID medan kekal; `updateFallbackFieldVisibility()` mencari elemen melalui `getElementById` (bukan kedudukan DOM) — tiada race rehidrasi baharu; kontrak `providers.custom_secondary` tidak disentuh.
+- **Integration Review Backend (GLM 5.3): LULUS** — perubahan DOM-order tulen; serialisasi `collectConfigPatch()`, rehidrasi `applyFallbackValues()`, dan skema server tidak berubah.
+- **Pipeline 8-langkah:** SemVer → 3.9.34; CHANGELOG v3.9.34; cache-buster runtime-driven (tiada tindakan); `npx prettier --check .` hijau; `npx eslint .` 0 error; `npm test` 368 tests: 367 PASS / 0 FAIL / 1 SKIP (monotonic); `graphify update .` 5126 nodes / 11049 edges / 264 communities; ledger ini; commit+push; CI.
+- **Next Steps:** Commit + push → CI Success → tutup.
+
 ## 2026-10-14 — RELEASE v3.9.33: CUSTOM/PROXY SECONDARY FALLBACK — SLOT custom_secondary (PIPELINE 8-LANGKAH)
 
 - **Tarikh:** 2026-10-14 (waktu tempatan KL)
@@ -888,3 +899,15 @@
 - **Fail Terlibat:** `.tmp-kimi-gen-g.js`, `.tmp-kimi-g-run.sh`, `.tmp-kimi-analyze-g.js` (probe — tidak dikomit), `plans/kimi-k3-rootsys-ground-truth-2026.md` (§6.2)
 - **Status npm test:** 298 / 297 PASS / 0 FAIL / 1 SKIP
 - **Next Steps:** Fasa H integrasi G1 (selesai — lihat blok atas).
+
+---
+
+## 2026-10-13 — Frontend: Susunan medan Secondary Fallback diselaraskan dengan kad utama
+
+- **Tarikh:** 2026-10-13
+- **Komit SHA:** (belum dikomit — menunggu audit integrasi backend)
+- **Keputusan Owner:** "kenapa buat kerja cincai? kenapa tak ikut balik susunan yang betul?" — susunan medan sub-kad Secondary Fallback tidak sepadan dengan kad utama (Base URL diletak di hujung selepas Model; Format/Door muncul sebelum Model).
+- **Pembetulan:** Blok Base URL dipindahkan ke atas Format/Door supaya hierarki sub-kad fallback kini sama dengan kad utama: Provider → API Key (+ Test) → Base URL → Format/Door → Model. Berlaku untuk kedua-dua mode Basic dan Pro (sub-kad fallback dibina oleh fungsi yang sama `buildSecondaryFallbackRow()`).
+- **Fail Terlibat:** `public/js/trinity-agents.js` (sahaja — tiada fail backend disentuh)
+- **Status verifikasi:** `node --check public/js/trinity-agents.js` ✅; `npx prettier --check public/js/trinity-agents.js` ✅; `npx eslint public/js/trinity-agents.js --quiet` 0 error ✅. (npm test/graphify akan dijalankan oleh sesi backend penuh.)
+- **Next Steps:** Handover ke Backend mode untuk audit integrasi (form payload serialization, rehydration, server schema) sebelum sebarang commit.

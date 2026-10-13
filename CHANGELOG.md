@@ -2,6 +2,12 @@
 
 All notable changes to this project will be documented in this file.
 
+## SubMaker v3.9.34 (2026-10-14) — Secondary Fallback Field Order Alignment with Primary Card
+
+### Fixed
+
+- **Susunan medan sub-kad 🛟 Secondary Fallback ([public/js/trinity-agents.js](public/js/trinity-agents.js)):** blok Base URL dipindahkan dari kedudukan terakhir (selepas Model) ke atas Format/Door, menyelaraskan hierarki sub-kad fallback dengan kad utama: Provider → API Key (+ ✓ Test) → Base URL → Format/Door → Model. Terpakai untuk kedua-dua mode Basic dan Pro (sub-kad dibina oleh `buildSecondaryFallbackRow()` tanpa gating mode). Semua ID medan, logik visibility (`updateFallbackFieldVisibility()`), serialisasi (`collectConfigPatch()`) dan rehidrasi (`applyFallbackValues()`) tidak berubah.
+
 ## SubMaker v3.9.33 (2026-10-13) — Custom/Proxy Secondary Fallback: Dedicated custom_secondary Slot (Anti-Collision)
 
 ### Added

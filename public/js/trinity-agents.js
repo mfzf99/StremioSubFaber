@@ -429,6 +429,19 @@
         keyRow.appendChild(keyWrap);
         fields.appendChild(keyRow);
 
+        // [SUSUNAN MEDAN FALLBACK] Hierarki sama seperti kad utama:
+        //   1. Provider  2. API Key (+ Test)  3. Base URL  4. Format / Door  5. Model
+        // Base URL (Custom sahaja, smart visibility) diletak SEBELUM Format/Door.
+        var urlRow = createEl('div', 'trinity-field trinity-custom-only');
+        urlRow.id = 'trinity-translation-fallback-baseurl-row';
+        urlRow.appendChild(createEl('label', '', 'Base URL'));
+        var urlInput = createEl('input', 'trinity-baseurl-input');
+        urlInput.type = 'text';
+        urlInput.id = 'trinity-translation-fallback-baseurl';
+        urlInput.placeholder = 'https://.../v1';
+        urlRow.appendChild(urlInput);
+        fields.appendChild(urlRow);
+
         // [CUSTOM SECONDARY v3.9.33] Format / Door — hanya bila fallback = Custom (smart visibility)
         var fmtRow = createEl('div', 'trinity-field trinity-custom-only');
         fmtRow.id = 'trinity-translation-fallback-format-row';
@@ -468,17 +481,6 @@
         modelInput.spellcheck = false;
         modelCustomRow.appendChild(modelInput);
         fields.appendChild(modelCustomRow);
-
-        // Base URL — hanya untuk Custom (smart visibility)
-        var urlRow = createEl('div', 'trinity-field trinity-custom-only');
-        urlRow.id = 'trinity-translation-fallback-baseurl-row';
-        urlRow.appendChild(createEl('label', '', 'Base URL'));
-        var urlInput = createEl('input', 'trinity-baseurl-input');
-        urlInput.type = 'text';
-        urlInput.id = 'trinity-translation-fallback-baseurl';
-        urlInput.placeholder = 'https://.../v1';
-        urlRow.appendChild(urlInput);
-        fields.appendChild(urlRow);
 
         body.appendChild(fields);
         wrap.appendChild(body);
