@@ -6020,14 +6020,12 @@ Translate to {target_language}.`;
         return main !== 'gemini' || secondaryEnabled;
     }
 
+    // [SECONDARY FALLBACK — Option A 2026-10-13] Legasi DOM multi-provider dibuang.
+    // Bacaan kini daripada currentConfig (kontrak), bukan elemen borang.
     function isMultiProviderActiveInForm() {
-        const multiToggle = document.getElementById('enableMultiProviders');
-        const mainSelect = document.getElementById('mainProviderSelect');
-        const secondaryToggle = document.getElementById('enableSecondaryProvider');
-        const multiEnabled = multiToggle ? multiToggle.checked : false;
-        const main = mainSelect ? String(mainSelect.value || 'gemini').toLowerCase() : 'gemini';
-        const secondaryEnabled = secondaryToggle ? secondaryToggle.checked : false;
-        return multiEnabled && (main !== 'gemini' || secondaryEnabled);
+        const main = String(currentConfig.mainProvider || 'gemini').toLowerCase();
+        const secondaryEnabled = currentConfig.secondaryProviderEnabled === true;
+        return currentConfig.multiProviderEnabled === true && (main !== 'gemini' || secondaryEnabled);
     }
 
     async function init() {
@@ -8566,29 +8564,9 @@ Translate to {target_language}.`;
             });
         }
 
-        const multiToggle = document.getElementById('enableMultiProviders');
-        if (multiToggle) {
-            multiToggle.addEventListener('change', (e) => {
-                const enabled = !!e.target.checked;
-                currentConfig.multiProviderEnabled = enabled;
-                toggleMultiProviderUI(enabled);
-                updateMainProviderOptions(currentConfig.mainProvider || 'gemini');
-                updateSecondaryProviderOptions(currentConfig.secondaryProvider || '');
-                toggleProviderAdvancedCard();
-                updateBypassCacheForAdvancedSettings();
-            });
-        }
-
-        const secondaryToggle = document.getElementById('enableSecondaryProvider');
-        if (secondaryToggle) {
-            secondaryToggle.addEventListener('change', (e) => {
-                const enabled = !!e.target.checked;
-                currentConfig.secondaryProviderEnabled = enabled;
-                toggleSecondaryProviderUI(enabled);
-                updateSecondaryProviderOptions(currentConfig.secondaryProvider || '');
-                updateBypassCacheForAdvancedSettings();
-            });
-        }
+        // [SECONDARY FALLBACK — Option A 2026-10-13] Listener #enableMultiProviders /
+        // #enableSecondaryProvider dibuang bersama elemen legasi. Keadaan kini
+        // diuruskan oleh sub-kad Trinity (trinity-agents.js).
 
         getProviderKeys().forEach((key) => {
             const toggle = document.getElementById(`provider-${key}-enabled`);
@@ -8605,8 +8583,6 @@ Translate to {target_language}.`;
                         }
                     }
                     toggleProviderFields(key, e.target.checked);
-                    updateMainProviderOptions(currentConfig.mainProvider || 'gemini');
-                    updateSecondaryProviderOptions(currentConfig.secondaryProvider || '');
                     updateProviderAdvancedVisibility();
                 });
             }
@@ -8665,22 +8641,6 @@ Translate to {target_language}.`;
                 });
             }
         });
-
-        const mainProviderSelect = document.getElementById('mainProviderSelect');
-        if (mainProviderSelect) {
-            mainProviderSelect.addEventListener('change', (e) => {
-                currentConfig.mainProvider = e.target.value || 'gemini';
-                updateSecondaryProviderOptions(currentConfig.secondaryProvider || '');
-                updateBypassCacheForAdvancedSettings();
-            });
-        }
-
-        const secondaryProviderSelect = document.getElementById('secondaryProviderSelect');
-        if (secondaryProviderSelect) {
-            secondaryProviderSelect.addEventListener('change', (e) => {
-                currentConfig.secondaryProvider = e.target.value || '';
-            });
-        }
 
         // Update advanced settings when model changes. Values are cached per model so
         // switching models never silently destroys the user's draft.
@@ -9068,63 +9028,10 @@ Translate to {target_language}.`;
         updateBypassCacheForAdvancedSettings();
     }
 
-    function toggleMultiProviderUI(enabled) {
-        const container = document.getElementById('multiProvidersContainer');
-        const mainGroup = document.getElementById('mainProviderGroup');
-        const secondaryGroup = document.getElementById('secondaryProviderGroup');
-        const mainSelect = document.getElementById('mainProviderSelect');
-        const secondaryToggle = document.getElementById('enableSecondaryProvider');
-        const secondarySelect = document.getElementById('secondaryProviderSelect');
-        const shouldEnable = enabled === true;
-
-        currentConfig.multiProviderEnabled = shouldEnable;
-        if (container) container.style.display = shouldEnable ? 'flex' : 'none';
-        if (mainGroup) mainGroup.style.display = ''; // always visible
-        if (secondaryGroup) secondaryGroup.style.display = ''; // always visible
-
-        if (!shouldEnable) {
-            updateMainProviderOptions(currentConfig.mainProvider || 'gemini');
-            if (mainSelect) mainSelect.disabled = true;
-            if (secondaryToggle) {
-                secondaryToggle.checked = false;
-                secondaryToggle.disabled = true;
-            }
-            if (secondarySelect) {
-                secondarySelect.value = '';
-                secondarySelect.disabled = true;
-            }
-            currentConfig.secondaryProviderEnabled = false;
-            toggleSecondaryProviderUI(false);
-            toggleProviderAdvancedCard();
-            return;
-        }
-
-        if (mainSelect) mainSelect.disabled = false;
-        if (secondaryToggle) {
-            secondaryToggle.disabled = false;
-            // Keep the fallback toggle in sync with saved state before rebuilding options
-            secondaryToggle.checked = currentConfig.secondaryProviderEnabled === true;
-        }
-        updateMainProviderOptions(currentConfig.mainProvider || 'gemini');
-        toggleSecondaryProviderUI(currentConfig.secondaryProviderEnabled === true);
-        updateSecondaryProviderOptions(currentConfig.secondaryProvider || '');
-        toggleProviderAdvancedCard();
-    }
-
-    function toggleSecondaryProviderUI(enabled) {
-        const toggle = document.getElementById('enableSecondaryProvider');
-        const selectRow = document.getElementById('secondaryProviderSelectRow');
-        const select = document.getElementById('secondaryProviderSelect');
-        if (selectRow) selectRow.style.display = enabled ? '' : 'none';
-        if (select) select.disabled = !enabled;
-        if (!enabled) {
-            if (toggle) toggle.checked = false;
-            currentConfig.secondaryProviderEnabled = false;
-            currentConfig.secondaryProvider = '';
-        } else {
-            currentConfig.secondaryProviderEnabled = true;
-        }
-    }
+    // [SECONDARY FALLBACK — Option A 2026-10-13] toggleMultiProviderUI /
+    // toggleSecondaryProviderUI / updateMainProviderOptions / updateSecondaryProviderOptions
+    // dibuang: kesemuanya mengendalikan DOM legasi yang telah dihapus. Keadaan
+    // multi-provider kini diuruskan oleh sub-kad Trinity (trinity-agents.js).
 
     function toggleProviderFields(providerKey, enabled) {
         const fields = document.getElementById(`provider-${providerKey}-fields`);
@@ -9155,91 +9062,6 @@ Translate to {target_language}.`;
         while (select.options.length > desiredOptions.length) {
             select.remove(select.options.length - 1);
         }
-    }
-
-    function updateMainProviderOptions(selectedKey = 'gemini') {
-        const select = document.getElementById('mainProviderSelect');
-        if (!select) return;
-        ensureProvidersInState();
-        const opts = ['gemini'];
-        getProviderKeys().forEach((key) => {
-            if (isProviderEnabled(key)) opts.push(key);
-        });
-        const prevValue = select.value;
-        const desiredOptions = opts.map((key) => ({
-            value: key,
-            text: PROVIDERS[key]?.label || key
-        }));
-        syncSelectOptions(select, desiredOptions);
-        if (opts.includes(selectedKey)) {
-            select.value = selectedKey;
-        } else if (prevValue && opts.includes(prevValue)) {
-            select.value = prevValue;
-        } else {
-            select.value = opts[0] || 'gemini';
-        }
-        currentConfig.mainProvider = select.value;
-    }
-
-    function updateSecondaryProviderOptions(selectedKey = '') {
-        const select = document.getElementById('secondaryProviderSelect');
-        const toggle = document.getElementById('enableSecondaryProvider');
-        const mainSelect = document.getElementById('mainProviderSelect');
-        if (!select || !toggle) return;
-        ensureProvidersInState();
-        // Prefer the live UI value for main to avoid stale state during load
-        const mainKey = (mainSelect?.value || currentConfig.mainProvider || 'gemini').toLowerCase();
-        const opts = ['gemini'];
-        getProviderKeys().forEach((key) => {
-            if (isProviderEnabled(key) && key.toLowerCase() !== mainKey) {
-                opts.push(key);
-            }
-        });
-        const filtered = opts.filter((key) => key.toLowerCase() !== mainKey);
-
-        if (filtered.length === 0) {
-            toggle.disabled = true;
-            syncSelectOptions(select, [
-                {
-                    value: '',
-                    text: tConfig('config.providersUi.noFallbackProviders', {}, 'No fallback providers available')
-                }
-            ]);
-            select.disabled = true;
-            toggle.checked = false;
-            currentConfig.secondaryProviderEnabled = false;
-            currentConfig.secondaryProvider = '';
-            toggleSecondaryProviderUI(false);
-            return;
-        }
-
-        toggle.disabled = false;
-        const placeholderText = tConfig('config.providersUi.selectProvider', {}, 'Select provider');
-        const desiredOptions = [{ value: '', text: placeholderText }].concat(
-            filtered.map((key) => ({
-                value: key,
-                text: PROVIDERS[key]?.label || key
-            }))
-        );
-        syncSelectOptions(select, desiredOptions);
-
-        // Prefer the caller's requested key (case-insensitive), otherwise preserve current selection when valid
-        const lowerFiltered = new Set(filtered.map((f) => f.toLowerCase()));
-        const matchKey = (key) => {
-            const lower = String(key || '').toLowerCase();
-            return filtered.find((f) => f.toLowerCase() === lower);
-        };
-        const chosen = matchKey(selectedKey) || matchKey(select.value) || filtered[0];
-        select.value = chosen;
-
-        // If fallback is enabled but no value was saved (e.g., previous UI bug), default to first available
-        if (toggle.checked && (!select.value || !lowerFiltered.has(select.value.toLowerCase()))) {
-            select.value = filtered[0];
-        }
-
-        currentConfig.secondaryProvider = select.value;
-        select.disabled = !toggle.checked;
-        toggleSecondaryProviderUI(toggle.checked);
     }
 
     function toggleProviderAdvancedCard() {
@@ -9585,40 +9407,16 @@ Translate to {target_language}.`;
                 ...(cfg || {})
             };
         });
-        updateMainProviderOptions(currentConfig.mainProvider || 'gemini');
-        if (currentConfig.multiProviderEnabled) {
-            const secondaryEnabled = currentConfig.secondaryProviderEnabled === true;
-            if (secondaryEnabled) {
-                const toggle = document.getElementById('enableSecondaryProvider');
-                if (toggle) toggle.checked = true;
-            }
-            toggleSecondaryProviderUI(secondaryEnabled);
-            updateSecondaryProviderOptions(currentConfig.secondaryProvider || '');
-        } else {
-            toggleSecondaryProviderUI(false);
-        }
+        // [SECONDARY FALLBACK — Option A 2026-10-13] Ganti UI legasi dengan keadaan kontrak.
         updateProviderAdvancedVisibility();
     }
 
+    // [SECONDARY FALLBACK — Option A 2026-10-13] Input legasi provider-<key>-* telah
+    // dibuang bersama #multiProvidersContainer. Sumber tunggal kini currentConfig.providers
+    // (diisi oleh patch Trinity + rehidrasi session).
     function getProvidersFromForm() {
         ensureProvidersInState();
-        const providers = {};
-        getProviderKeys().forEach((key) => {
-            const toggle = document.getElementById(`provider-${key}-enabled`);
-            const apiKeyInput = document.getElementById(`provider-${key}-key`);
-            const modelSelect = document.getElementById(`provider-${key}-model`);
-            providers[key] = {
-                enabled: toggle ? toggle.checked : false,
-                apiKey: apiKeyInput ? apiKeyInput.value.trim() : '',
-                model: modelSelect ? modelSelect.value : ''
-            };
-            // Include baseUrl for custom provider
-            if (key === 'custom') {
-                const baseUrlInput = document.getElementById('provider-custom-baseUrl');
-                providers[key].baseUrl = baseUrlInput ? baseUrlInput.value.trim() : '';
-            }
-        });
-        return providers;
+        return currentConfig.providers || {};
     }
 
     function parseCfWorkersKey(rawKey) {
@@ -11099,8 +10897,6 @@ Translate to {target_language}.`;
 
     function toggleOtherSettingsVisibilityForNoTranslation(enabled) {
         const groupsToHide = [
-            document.getElementById('mainProviderGroup'),
-            document.getElementById('secondaryProviderGroup'),
             document.getElementById('learnOrderGroup'),
             document.getElementById('learnPlacementGroup'),
             document.getElementById('learnItalicGroup')
@@ -11360,16 +11156,11 @@ Translate to {target_language}.`;
             const shouldRestoreBeta = betaModeLastState?.betaEnabled === true;
             if (shouldRestoreBeta) {
                 toggleBetaModeUI(true, { silent: true });
-                const multiToggle = document.getElementById('enableMultiProviders');
-                if (multiToggle && betaModeLastState?.multiEnabled) {
-                    multiToggle.checked = true;
+                // [SECONDARY FALLBACK — Option A 2026-10-13] Legasi DOM dibuang; pulih keadaan sahaja.
+                if (betaModeLastState?.multiEnabled) {
                     currentConfig.multiProviderEnabled = true;
-                    toggleMultiProviderUI(true);
                     if (betaModeLastState?.secondaryEnabled) {
-                        const secondaryToggle = document.getElementById('enableSecondaryProvider');
-                        if (secondaryToggle) secondaryToggle.checked = true;
-                        toggleSecondaryProviderUI(true);
-                        updateSecondaryProviderOptions(currentConfig.secondaryProvider || '');
+                        currentConfig.secondaryProviderEnabled = true;
                     }
                 }
             } else {
@@ -12357,13 +12148,10 @@ Translate to {target_language}.`;
         toggleOtherApiKeysSection();
 
         ensureProviderParametersInState();
-        const multiToggle = document.getElementById('enableMultiProviders');
-        const multiEnabled = currentConfig.multiProviderEnabled === true;
-        if (multiToggle) multiToggle.checked = multiEnabled;
+        // [SECONDARY FALLBACK — Option A 2026-10-13] Legasi DOM dibuang; keadaan
+        // multi-provider kini dipulihkan oleh sub-kad Trinity (applyAgentValues).
         applyProvidersToForm(currentConfig.providers || {});
         applyProviderParametersToForm(currentConfig.providerParameters || {});
-        // Re-apply multi-provider UI AFTER provider state is hydrated so we don't clear secondary selections
-        toggleMultiProviderUI(multiEnabled);
         updateProviderAdvancedVisibility();
 
         // Load subtitle providers
@@ -12738,7 +12526,19 @@ Translate to {target_language}.`;
                 var trinityPatch = window.TrinityAgents.collectConfigPatch();
                 if (trinityPatch && typeof trinityPatch === 'object') {
                     Object.keys(trinityPatch).forEach(function (k) {
-                        currentConfig[k] = trinityPatch[k];
+                        // [SECONDARY FALLBACK — Option A 2026-10-13] `providers` mesti
+                        // MERGE, bukan ganti: patch Trinity hanya membawa entri pembekal
+                        // fallback; pembekal legasi lain (openai/deepseek/...) dalam
+                        // currentConfig.providers mesti dikekalkan.
+                        if (k === 'providers') {
+                            currentConfig.providers = Object.assign(
+                                {},
+                                currentConfig.providers || {},
+                                trinityPatch.providers || {}
+                            );
+                        } else {
+                            currentConfig[k] = trinityPatch[k];
+                        }
                     });
                 }
             }
@@ -12757,7 +12557,6 @@ Translate to {target_language}.`;
         const promptStyle = document.getElementById('promptStyle').value;
         let translationPrompt = '';
         const hasActiveMultiProvider = isMultiProviderActiveInForm();
-        const multiProviderToggleChecked = document.getElementById('enableMultiProviders')?.checked === true;
 
         const isBypassRequested = () => {
             const advSettingsModified = areAdvancedSettingsModified();
@@ -12895,10 +12694,15 @@ Translate to {target_language}.`;
             learnPlacement: 'top', // Force top-of-screen placement
             learnItalic: currentConfig.learnItalic !== false,
             learnItalicTarget: currentConfig.learnItalicTarget || 'target',
-            multiProviderEnabled: multiProviderToggleChecked,
-            mainProvider: document.getElementById('mainProviderSelect')?.value || 'gemini',
-            secondaryProviderEnabled: document.getElementById('enableSecondaryProvider')?.checked || false,
-            secondaryProvider: document.getElementById('secondaryProviderSelect')?.value || '',
+            // [SECONDARY FALLBACK — Option A 2026-10-13] Legacy multi-provider DOM
+            // (#enableMultiProviders/#mainProviderSelect/#enableSecondaryProvider/
+            // #secondaryProviderSelect) telah dibuang. Nilai kini bersumber daripada
+            // currentConfig, yang diisi oleh patch Trinity (collectConfigPatch) di
+            // atas dan/atau rehidrasi session.
+            multiProviderEnabled: currentConfig.multiProviderEnabled === true,
+            mainProvider: currentConfig.mainProvider || 'gemini',
+            secondaryProviderEnabled: currentConfig.secondaryProviderEnabled === true,
+            secondaryProvider: currentConfig.secondaryProvider || '',
             providers: getProvidersFromForm(),
             providerParameters: getProviderParametersFromForm(),
             subtitleProviders: {
@@ -13039,7 +12843,6 @@ Translate to {target_language}.`;
                 ? { agentB: JSON.parse(JSON.stringify(currentConfig.agentB)) }
                 : {})
         };
-        config.multiProviderEnabled = multiProviderToggleChecked;
         if (!config.multiProviderEnabled) {
             config.mainProvider = 'gemini';
             config.secondaryProviderEnabled = false;

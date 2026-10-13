@@ -2,6 +2,25 @@
 
 All notable changes to this project will be documented in this file.
 
+## SubMaker v3.9.32 (2026-10-13) — Secondary Fallback Provider Rescue: Trinity Sub-Card Option A
+
+### Added
+
+- **[SECONDARY FALLBACK — Option A] Sub-kad collapsible "🛟 Secondary Fallback Provider" dalam kad Agent Translation ([public/js/trinity-agents.js](public/js/trinity-agents.js)):** ciri talian hayat legasi kembali aktif sepenuhnya dalam Trinity UI — togol "Enable fallback rescue", dropdown provider (kecualikan provider utama aktif), medan API Key dengan togol Mangga 🔒 ↔ Mata 👁️, butang ✓ Test (gelang sempadan hijau/merah `is-valid`/`is-invalid`), dropdown model auto-populate daripada `PROVIDER_MODEL_CATALOG` (tanpa butang Load Models berasingan), dan medan Base URL conditional (Custom sahaja).
+- **Rehidrasi backward-compatible `applyFallbackValues()` ([public/js/trinity-agents.js](public/js/trinity-agents.js)):** nilai lama (`secondaryProvider*` + `providers.*`) dipulihkan ke sub-kad semasa load; dipanggil dari `applyAgentValues()` sedia ada (tiada fungsi rehidrasi bersaing).
+
+### Changed
+
+- **Serialisasi kontrak sedia ada (sifar perubahan skema backend):** `collectConfigPatch()` kini menulis `multiProviderEnabled: true` (bersama-sama apabila togol fallback aktif), `secondaryProviderEnabled`, `secondaryProvider`, dan `providers.<key>.{enabled:true, apiKey, model, baseUrl}` — rantaian `FallbackTranslationProvider` + `tryFallback()` backend dikekalkan 100%.
+- **Pembersihan elemen hantu legasi ([public/partials/main.html](public/partials/main.html), [public/config.js](public/config.js)):** `#enableMultiProviders`, `#multiProvidersContainer`, `#mainProviderSelect`, `#secondaryProviderGroup`, `#secondaryProviderSelect` dipadam; fungsi mati `toggleMultiProviderUI()`, `toggleSecondaryProviderUI()`, `updateMainProviderOptions()`, `updateSecondaryProviderOptions()` dibuang; validasi sekunder kekal dibaca dari `currentConfig` (bukan DOM).
+- **Deep-merge `providers` pada aplikasi patch Trinity ([public/config.js](public/config.js)):** `patch.providers` kini digabung dengan `currentConfig.providers` (Object.assign) — kunci provider legasi lain tidak lagi terpadam semasa simpan.
+- **Hardcode `fallbackModel: 'deepseek-v4.1-flash'` dalam blok agentB `collectConfigPatch()` ([public/js/trinity-agents.js](public/js/trinity-agents.js)) DIGUGURKAN** — selari mandat HARDCODE-PURGE v3.9.31.
+
+### Fixed
+
+- **[INTEGRATION BUG — Backend Review] `enabled: true` ditambah pada `patch.providers[fb.providerId]`:** tanpa medan ini, normalizer `config.js` memaksa `enabled: false` → `isConfigured()` dalam `translationProviderFactory.js` melumpuhkan fallback secara senyap ("not fully configured; skipping fallback setup"). Rantaian kegagalan dikenal pasti semasa Integration Review Backend (GLM 5.3) dan dibetulkan oleh Frontend (Astra).
+- **ReferenceError `multiProviderToggleChecked`** selepas pemadaman deklarasi legasi — pembacaan kini bersumber `currentConfig`.
+
 ## SubMaker v3.9.31 (2026-10-13) — Hardcode Purge: Dynamic 3-Tier Agent B Injection + Graceful Bypass
 
 ### Changed

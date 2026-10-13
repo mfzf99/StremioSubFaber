@@ -308,6 +308,11 @@
         var rotationRow = buildKeyRotationRow(agent.key);
         card.appendChild(rotationRow);
 
+        // Secondary Fallback Provider — hanya pada kad Agent Translation (sub-kad collapsible)
+        if (agent.key === 'translation') {
+            card.appendChild(buildSecondaryFallbackRow());
+        }
+
         // Pro-only detail rows
         if (mode === MODE_PRO) {
             var hint = createEl('div', 'trinity-agent-hint');
@@ -316,6 +321,257 @@
         }
 
         return card;
+    }
+
+    // --- Secondary Fallback Provider (sub-kad Agent Translation) ---
+
+    function buildSecondaryFallbackRow() {
+        var wrap = createEl('div', 'trinity-fallback');
+
+        var head = createEl('button', 'trinity-fallback-head', '🛟 Secondary Fallback Provider');
+        head.type = 'button';
+        head.setAttribute('aria-expanded', 'false');
+
+        var body = createEl('div', 'trinity-fallback-body');
+        body.style.display = 'none';
+        head.addEventListener('click', function () {
+            var open = body.style.display === 'none';
+            body.style.display = open ? '' : 'none';
+            head.setAttribute('aria-expanded', open ? 'true' : 'false');
+        });
+        wrap.appendChild(head);
+
+        // Togol utama "Enable fallback rescue"
+        var toggleWrap = createEl('div', 'trinity-rotation-toggle');
+        var toggle = createEl('input', 'trinity-rotation-checkbox');
+        toggle.type = 'checkbox';
+        toggle.id = 'trinity-translation-fallback-enabled';
+        toggleWrap.appendChild(toggle);
+        toggleWrap.appendChild(createEl('label', '', 'Enable fallback rescue'));
+        body.appendChild(toggleWrap);
+        toggle.addEventListener('change', updateFallbackFieldVisibility);
+
+        // Medan-medan (disembunyikan bila togol mati — HIDE, bukan LOCK)
+        var fields = createEl('div', 'trinity-fallback-fields');
+        fields.id = 'trinity-translation-fallback-fields';
+        fields.style.display = 'none';
+
+        var provRow = createEl('div', 'trinity-field');
+        provRow.appendChild(createEl('label', '', 'Fallback provider'));
+        var provSel = createEl('select', 'trinity-provider-select');
+        provSel.id = 'trinity-translation-fallback-provider';
+        provRow.appendChild(provSel);
+        fields.appendChild(provRow);
+        provSel.addEventListener('change', function () {
+            populateFallbackModels(provSel.value, false);
+            updateFallbackFieldVisibility();
+        });
+
+        var keyRow = createEl('div', 'trinity-field');
+        keyRow.appendChild(createEl('label', '', 'Fallback API Key'));
+        var keyWrap = createEl('div', 'trinity-input-wrap');
+        var keyInput = createEl('input', 'trinity-key-input');
+        keyInput.type = 'password';
+        keyInput.id = 'trinity-translation-fallback-key';
+        keyInput.autocomplete = 'off';
+        keyInput.spellcheck = false;
+        keyInput.placeholder = 'Enter fallback API key...';
+        keyWrap.appendChild(keyInput);
+
+        var eyeBtn = createEl('button', 'trinity-eye-btn');
+        eyeBtn.type = 'button';
+        eyeBtn.setAttribute('aria-label', 'Show API key');
+        eyeBtn.innerHTML = eyeIconSvg(true);
+        eyeBtn.addEventListener('click', function () {
+            var showing = keyInput.type === 'text';
+            keyInput.type = showing ? 'password' : 'text';
+            eyeBtn.innerHTML = eyeIconSvg(showing);
+            eyeBtn.setAttribute('aria-label', showing ? 'Show API key' : 'Hide API key');
+        });
+        keyWrap.appendChild(eyeBtn);
+
+        var testBtn = createEl('button', 'trinity-key-icon-btn trinity-key-test-btn', '✓');
+        testBtn.type = 'button';
+        testBtn.setAttribute('aria-label', 'Test fallback API key');
+        testBtn.addEventListener('click', function () {
+            testFallbackKey(keyInput, testBtn);
+        });
+        keyWrap.appendChild(testBtn);
+        keyRow.appendChild(keyWrap);
+        fields.appendChild(keyRow);
+
+        var modelRow = createEl('div', 'trinity-field');
+        modelRow.appendChild(createEl('label', '', 'Fallback model'));
+        var modelSel = createEl('select', 'trinity-model-select');
+        modelSel.id = 'trinity-translation-fallback-model';
+        modelRow.appendChild(modelSel);
+        fields.appendChild(modelRow);
+
+        // Base URL — hanya untuk Custom (smart visibility)
+        var urlRow = createEl('div', 'trinity-field trinity-custom-only');
+        urlRow.id = 'trinity-translation-fallback-baseurl-row';
+        urlRow.appendChild(createEl('label', '', 'Base URL'));
+        var urlInput = createEl('input', 'trinity-baseurl-input');
+        urlInput.type = 'text';
+        urlInput.id = 'trinity-translation-fallback-baseurl';
+        urlInput.placeholder = 'https://.../v1';
+        urlRow.appendChild(urlInput);
+        fields.appendChild(urlRow);
+
+        body.appendChild(fields);
+        wrap.appendChild(body);
+
+        refreshFallbackProviderOptions(true);
+        return wrap;
+    }
+
+    // Isi semula dropdown provider fallback: kecualikan provider utama semasa.
+    function refreshFallbackProviderOptions(keepSelection) {
+        var sel = $('trinity-translation-fallback-provider');
+        if (!sel) return;
+        var primary = $('trinity-translation-provider');
+        var primaryId = primary ? primary.value : '';
+        var current = keepSelection === false ? '' : sel.value;
+        var providers = _registryCache || FALLBACK_PROVIDERS;
+
+        sel.innerHTML = '';
+        var placeholder = createEl('option', '', '— Select provider —');
+        placeholder.value = '';
+        sel.appendChild(placeholder);
+        providers.forEach(function (p) {
+            if (!p || !p.id || p.id === primaryId) return;
+            var o = createEl('option', '', p.label);
+            o.value = p.id;
+            sel.appendChild(o);
+        });
+        sel.value = current && current !== primaryId ? current : '';
+        populateFallbackModels(sel.value, true);
+        updateFallbackFieldVisibility();
+    }
+
+    // Auto-populate model daripada PROVIDER_MODEL_CATALOG (tanpa klik Load Models)
+    function populateFallbackModels(providerId, preserveSelection) {
+        var m = $('trinity-translation-fallback-model');
+        if (!m) return;
+        var prev = preserveSelection ? m.value : '';
+        m.innerHTML = '';
+        var placeholder = createEl('option', '', '— Select model —');
+        placeholder.value = '';
+        m.appendChild(placeholder);
+        if (!providerId) return;
+        var providers = _registryCache || FALLBACK_PROVIDERS;
+        var door = getProviderDoor(getProviderById(providers, providerId));
+        var list = PROVIDER_MODEL_CATALOG[providerId] || MODEL_CATALOG[door] || MODEL_CATALOG['openai-compatible'];
+        list.forEach(function (name) {
+            var o = createEl('option', '', name);
+            o.value = name;
+            m.appendChild(o);
+        });
+        if (prev) ensureModelOption(m, prev);
+        m.value = prev || '';
+    }
+
+    function updateFallbackFieldVisibility() {
+        var fields = $('trinity-translation-fallback-fields');
+        var toggle = $('trinity-translation-fallback-enabled');
+        var sel = $('trinity-translation-fallback-provider');
+        var urlRow = $('trinity-translation-fallback-baseurl-row');
+        if (fields) fields.style.display = toggle && toggle.checked ? '' : 'none';
+        if (urlRow && sel) {
+            var providers = _registryCache || FALLBACK_PROVIDERS;
+            urlRow.style.display = isCustomProvider(getProviderById(providers, sel.value)) ? 'grid' : 'none';
+        }
+    }
+
+    // Baca keadaan fallback semasa dari DOM (medan kontrak sedia ada).
+    function readFallbackState() {
+        var t = $('trinity-translation-fallback-enabled');
+        var p = $('trinity-translation-fallback-provider');
+        var k = $('trinity-translation-fallback-key');
+        var m = $('trinity-translation-fallback-model');
+        var u = $('trinity-translation-fallback-baseurl');
+        var providerId = p ? p.value : '';
+        var providers = _registryCache || FALLBACK_PROVIDERS;
+        var custom = isCustomProvider(getProviderById(providers, providerId));
+        return {
+            enabled: !!(t && t.checked && providerId),
+            providerId: providerId,
+            apiKey: k ? k.value.trim() : '',
+            model: m ? m.value.trim() : '',
+            baseUrl: custom && u ? u.value.trim() : ''
+        };
+    }
+
+    // Uji kunci fallback — sempadan hijau (#15803d) / merah (#b91c1c) seperti kad Trinity.
+    async function testFallbackKey(input, btn) {
+        if (!input || !btn) return;
+        var key = String(input.value || '').trim();
+        input.classList.remove('is-valid', 'is-invalid');
+        btn.classList.remove('is-valid', 'is-invalid');
+        if (!key) {
+            input.classList.add('is-invalid');
+            btn.classList.add('is-invalid');
+            return;
+        }
+        var fb = readFallbackState();
+        var providers = _registryCache || FALLBACK_PROVIDERS;
+        var provider = getProviderById(providers, fb.providerId);
+        var door = getProviderDoor(provider);
+        btn.disabled = true;
+        try {
+            var resp = await fetch('/api/validate-provider', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({
+                    provider: fb.providerId,
+                    apiKey: key,
+                    door: door,
+                    baseUrl: fb.baseUrl
+                })
+            });
+            var data = null;
+            try {
+                data = await resp.json();
+            } catch (_) {
+                data = null;
+            }
+            var ok = !!(data && data.valid === true);
+            input.classList.add(ok ? 'is-valid' : 'is-invalid');
+            btn.classList.add(ok ? 'is-valid' : 'is-invalid');
+        } catch (err) {
+            input.classList.add('is-invalid');
+            btn.classList.add('is-invalid');
+        } finally {
+            btn.disabled = false;
+        }
+    }
+
+    // Rehidrasi nilai fallback (backward-compat: secondaryProvider* + providers.*).
+    function applyFallbackValues(cfg) {
+        if (!cfg) return;
+        var t = $('trinity-translation-fallback-enabled');
+        var p = $('trinity-translation-fallback-provider');
+        var k = $('trinity-translation-fallback-key');
+        var m = $('trinity-translation-fallback-model');
+        var u = $('trinity-translation-fallback-baseurl');
+        if (!t || !p) return;
+
+        var pid = String(cfg.secondaryProvider || '').toLowerCase();
+        var on = cfg.multiProviderEnabled === true && cfg.secondaryProviderEnabled === true && !!pid;
+        t.checked = on;
+        refreshFallbackProviderOptions(false);
+        if (pid) {
+            p.value = pid;
+            populateFallbackModels(pid, false);
+        }
+        var saved = cfg.providers && pid ? cfg.providers[pid] || {} : {};
+        if (k) k.value = saved.apiKey || '';
+        if (saved.model && m) {
+            ensureModelOption(m, saved.model);
+            m.value = saved.model;
+        }
+        if (u) u.value = saved.baseUrl || '';
+        updateFallbackFieldVisibility();
     }
 
     // --- Populate Provider dropdown ---
@@ -358,6 +614,8 @@
         if (rotationRow) {
             rotationRow.style.display = isGemini ? 'grid' : 'none';
         }
+
+        if (agentKey === 'translation') refreshFallbackProviderOptions(true);
 
         // Auto-detect format for Custom (hanya bila Custom dipilih)
         if (isCustom) {
@@ -1169,6 +1427,8 @@
                 }
             }
 
+            if (agent.key === 'translation') applyFallbackValues(cfg);
+
             // Pastikan visibility dikemas kini selepas rehydrate
             updateVisibility(agent.key);
         });
@@ -1244,6 +1504,26 @@
             patch.geminiApiKeys = [];
         }
 
+        // Secondary Fallback — serialisasi ke kontrak sedia ada (multiProviderEnabled/secondaryProvider*/providers.<key>)
+        var fb = readFallbackState();
+        if (fb.enabled) {
+            patch.multiProviderEnabled = true;
+            patch.secondaryProviderEnabled = true;
+            patch.secondaryProvider = fb.providerId;
+            // Merge (bukan ganti): hanya entri pembekal fallback disentuh; pembekal lain
+            // dalam currentConfig.providers dikekalkan oleh pemanggil (buildConfigFromForm).
+            patch.providers = {};
+            patch.providers[fb.providerId] = {
+                enabled: true,
+                apiKey: fb.apiKey,
+                model: fb.model,
+                baseUrl: fb.baseUrl
+            };
+        } else {
+            patch.secondaryProviderEnabled = false;
+            patch.secondaryProvider = '';
+        }
+
         var pf = trinity.preflight;
         var insp = trinity.inspector;
         var hasAgentB = mode === MODE_PRO && (pf.apiKey || insp.apiKey);
@@ -1256,8 +1536,7 @@
                 baseUrl: bUrl,
                 format: insp.format !== 'auto' ? insp.format : pf.format !== 'auto' ? pf.format : 'auto',
                 model: insp.model || 'deepseek-v4-pro',
-                preflightModel: pf.model || 'kimi-k3',
-                fallbackModel: 'deepseek-v4.1-flash'
+                preflightModel: pf.model || 'kimi-k3'
             };
         } else {
             patch.agentB = { enabled: false };

@@ -10,6 +10,58 @@
 
 ---
 
+## 2026-10-14 — RELEASE v3.9.32: SECONDARY FALLBACK PROVIDER (PILIHAN A) — INTEGRATION REVIEW LULUS + PIPELINE 8-LANGKAH
+
+- **Tarikh:** 2026-10-14 (waktu tempatan KL)
+- **Komit SHA:** (diisi selepas commit — langkah 7)
+- **Keputusan Owner:** Mandat pelaksanaan muktamad 3-AI (Astra × GLM 5.3, Kimi K3 direhatkan): Pilihan A diluluskan; kontrak data WAJIB kekal sedia ada (`multiProviderEnabled`/`secondaryProviderEnabled`/`secondaryProvider`/`providers.<key>`), DILARANG ruang nama `trinity.translation.fallback`; baseline ujian monotonic dikekalkan.
+- **Integration Review Backend (GLM 5.3) — DAPATAN & PEMBETULAN:**
+  - **Bug kritikal `enabled: true`**: `patch.providers[fb.providerId]` asal tidak menetapkan `enabled` → normalizer `src/utils/config.js:935-939` memaksa `false` → `isConfigured()` (`src/services/translationProviderFactory.js:484`) melumpuhkan fallback secara senyap. Dibetulkan oleh Frontend (Astra): `enabled: true` ditambah dalam `collectConfigPatch()`.
+  - Audit LULUS untuk: serialisasi kontrak, deep-merge `providers` (pemeliharaan kunci provider lain), rehidrasi backward-compat `applyFallbackValues()` melalui `applyAgentValues()` (tiada race — dipanggil selepas seed kad utama), guard null-check semua elemen fallback, butang ✓ Test endpoint `/api/validate-provider`.
+- **Pipeline 8-langkah (dijalankan oleh Backend GLM 5.3):**
+  1. SemVer: 3.9.31 → **3.9.32** (`package.json`)
+  2. CHANGELOG.md: entri v3.9.32 (Added/Changed/Fixed) ditambah
+  3. Cache-buster: 23× `__APP_VERSION_QUERY__` di `public/configure.html` + `?_cb=` dinamik semua `src/utils/*PageGenerator.js` — semuanya runtime-driven dari package.json ✅
+  4. `npx prettier --check .` ✅ (main.html direformat selepas pemadaman legasi; div seimbang 301/301) + `npx eslint .` **0 error** (224 warning pra-sedia) + `npm test` **368 tests: 367 PASS, 0 FAIL, 1 SKIP** (monotonic ≥ baseline; skip = live Redis) ✅
+  5. `graphify update .` DIJALANKAN (runtime wujud + `graphify-out/` wujud): 5113 nodes, 11019 edges, 248 communities ✅
+  6. Blok ledger ini
+  7. Git commit + push (menyusul)
+  8. CI GitHub Actions — verifikasi hijau (menyusul)
+- **Fail Terlibat:** `public/js/trinity-agents.js`, `public/css/trinity-agents.css`, `public/partials/main.html`, `public/config.js`, `package.json`, `CHANGELOG.md`, `docs/SESSION_LEDGER.md`, `graphify-out/*`
+- **Status npm test:** 367 PASS / 0 FAIL / 1 SKIP (368 total) — HIJAU
+- **Next Steps:** Commit + push → pantau CI (.github/workflows/ci.yml) → sahkan Success → tutup tugasan.
+
+---
+
+## 2026-10-13 — FRONTEND: SECONDARY FALLBACK PROVIDER (PILIHAN A) — IMPLEMENTASI SIAP, MENUNGGU INTEGRATION REVIEW
+
+- **Tarikh:** 2026-10-13
+- **Komit SHA:** (belum dikomit — menunggu Integration Review Backend)
+- **Keputusan Owner:** Mandat ASTRA — laksana Pilihan A penuh: bina sub-kad "🛟 Secondary Fallback Provider" dalam kad Agent Translation, dan buang keseluruhan UI multi-provider legasi (bukan sekadar sembunyikan).
+- **Fail Terlibat:**
+  - `public/js/trinity-agents.js` — sub-kad fallback (`buildSecondaryFallbackRow()`), auto-populate model dari `PROVIDER_MODEL_CATALOG`, togol kunci 🔒/👁️ + butang ✓ Test, Base URL kondisional (custom sahaja), `readFallbackState()`, `applyFallbackValues()` (rehidrasi melalui `applyAgentValues`), serialisasi dalam `collectConfigPatch()`. Hardcode `fallbackModel: 'deepseek-v4.1-flash'` dibuang.
+  - `public/css/trinity-agents.css` — 7 peraturan `.trinity-fallback*` (braces seimbang).
+  - `public/partials/main.html` — dibuang: `#multiProvidersGroup` + `#multiProvidersContainer` (baris 1066–1691, termasuk blok pembekal legasi openai/anthropic/xai/…), `#mainProviderGroup` (2429–2441), `#secondaryProviderGroup` (2443–2465). 3740 baris selepas potongan; div seimbang 301/301.
+  - `public/config.js` — `buildConfigFromForm()` kini membaca `multiProviderEnabled`/`mainProvider`/`secondaryProviderEnabled`/`secondaryProvider` dari `currentConfig`; `isMultiProviderActiveInForm()` dari `currentConfig`; `getProvidersFromForm()` memulangkan `currentConfig.providers`; listener legasi dibuang; `toggleMultiProviderUI`/`toggleSecondaryProviderUI`/`updateMainProviderOptions`/`updateSecondaryProviderOptions` dipadam; rujukan `#mainProviderGroup`/`#secondaryProviderGroup` dibuang dari senarai sembunyi no-translation; blok restore beta + rehidrasi dibersihkan; `multiProviderToggleChecked` (pemboleh ubah yatim) dibuang.
+- **Pembetulan kritikal semasa audit:** (1) `multiProviderToggleChecked` masih dirujuk di `config.js` selepas pemboleh ubahnya dibuang → `ReferenceError`; dibuang. (2) `patch.providers = {}` dalam `collectConfigPatch()` akan MENGGANTI seluruh peta `providers` dan memadam kunci pembekal lain → kini MERGE (`Object.assign`) dalam gelung aplikasi patch `buildConfigFromForm()`.
+- **Kontrak Payload:** TIADA PERUBAHAN SKEMA — medan `multiProviderEnabled`/`mainProvider`/`secondaryProviderEnabled`/`secondaryProvider`/`providers.<key>.{apiKey,model,baseUrl}` kekal sama; hanya sumber nilai berubah (DOM legasi → `currentConfig`).
+- **Status pengesahan:** `node --check` LULUS untuk `public/config.js`, `public/js/trinity-agents.js`, `public/js/quick-setup.js`. Imbasan `public/` — TIADA id legasi tinggal dalam kod. `npm test` TIDAK dijalankan (di luar domain Frontend).
+- **Next Steps:** Integration Review Backend (GLM 5.3) — sahkan serialisasi payload, perlumbaan rehidrasi, dan keserasian skema pelayan sebelum sebarang commit.
+
+---
+
+## 2026-10-13 (BRAINSTORMING) — FRONTEND UI/UX PROPOSAL: SECONDARY FALLBACK PROVIDER
+
+- **Tarikh:** 2026-10-13 (23:02 MYT)
+- **Mod:** Frontend (Kimi K3) — sesi brainstorming Owner-supervised; TIADA kod produksi disentuh
+- **Keputusan Owner (pending):** Menunggu keputusan muktamad Owner + Backend Lead (GLM 5.3)
+- **Fail Terlibat (cadangan sahaja):** `plans/frontend-secondary-fallback-ui-proposal.md` (laporan lengkap)
+- **Ringkasan:** Audit kod legasi (`main.html` ~1067-1148, ~2443-2465; `config.js` ~9071-9243, ~13207-13302) vs Trinity (`public/js/trinity-agents.js`, `public/css/trinity-agents.css`). Dapatan: kotak semak hantu `#enableSecondaryProvider` wujud tetapi tiada medan kunci/model/baseUrl untuk provider sekunder; keseluruhan seksyen digated oleh beta mode. Cadangan: sub-seksyen collapsible "🛟 Secondary Fallback Provider" dalam kad Agent Translation (Pilihan A), mengguna semula pola komponen Trinity (togol, input kunci 🔒/👁️, butang ✓ Test, dropdown model, Base URL kondisional). Pelan pembersihan elemen legacy dan mitigasi rehidrasi/race DOM lifecycle disertakan.
+- **Status npm test:** N/A — brainstorming sahaja
+- **Next Steps:** Owner gabungkan dengan laporan backend untuk keputusan muktamad; jika diluluskan, frontend implementasi + handover ke backend untuk integration review.
+
+---
+
 ## 2026-10-13 (RELEASE v3.9.31) — HARDCODE PURGE: DYNAMIC 3-TIER AGENT B INJECTION + GRACEFUL BYPASS
 
 - **Tarikh:** 2026-10-13 (22:22 MYT)

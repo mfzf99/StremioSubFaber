@@ -179,6 +179,49 @@
     gap: 12px;
     margin-top: 16px;
 }
+/* Secondary Fallback Provider (sub-kad Agent Translation) */
+.trinity-fallback {
+    margin-top: 0.75rem;
+    border: 1px dashed #cbd5e1;
+    border-radius: 8px;
+    padding: 0.6rem 0.75rem;
+}
+.trinity-fallback-head {
+    width: 100%;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    background: transparent;
+    border: 0;
+    padding: 0.2rem 0;
+    font-weight: 600;
+    font-size: 0.9rem;
+    color: inherit;
+    cursor: pointer;
+}
+.trinity-fallback-head:focus-visible {
+    outline: 2px solid #2563eb;
+    outline-offset: 2px;
+    border-radius: 4px;
+}
+.trinity-fallback-body {
+    display: grid;
+    gap: 0.6rem;
+    margin-top: 0.6rem;
+}
+.trinity-fallback-fields {
+    display: grid;
+    gap: 0.6rem;
+}
+.trinity-fallback .trinity-input-wrap {
+    display: flex;
+    gap: 0.4rem;
+    align-items: center;
+}
+.trinity-fallback .trinity-input-wrap .trinity-key-input {
+    flex: 1;
+}
+
 /* Key Rotation (v3.9.19 — Tugasan 3) */
 .trinity-rotation-toggle {
     display: flex;
