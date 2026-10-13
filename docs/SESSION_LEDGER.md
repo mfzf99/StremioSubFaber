@@ -10,6 +10,37 @@
 
 ---
 
+## 2026-10-14 — RELEASE v3.9.33: CUSTOM/PROXY SECONDARY FALLBACK — SLOT custom_secondary (PIPELINE 8-LANGKAH)
+
+- **Tarikh:** 2026-10-14 (waktu tempatan KL)
+- **Komit SHA:** (diisi selepas commit)
+- **Keputusan Owner:** Mandat pembaikan — sokongan Custom/Proxy pada Secondary Fallback; elak data collision Primary Custom vs Secondary Custom; npm test monotonic + ESLint 0 error + Prettier bersih.
+- **Backend (GLM 5.3):**
+  - Kontrak: `providers.custom_secondary = { enabled, apiKey, baseUrl, model, door }`; `secondaryProvider: 'custom_secondary'`; door `openai-compatible` (lalai) | `gemini-native` (GeminiService + baseUrl proksi sekunder).
+  - `translationProviderFactory.js`: `custom_secondary` dalam `KEY_OPTIONAL_PROVIDERS` + kes `createProviderInstance` (builder custom + SSRF, providerName dibezakan) + `isConfigured` (baseUrl + model wajib, key tak wajib).
+  - `config.js`: `KEY_OPTIONAL_PROVIDERS`, `providerIsConfigured`, `firstConfiguredProvider` (slot tidak layak jadi main), normalizer (kekalkan baseUrl + door), 2 blok validateConfig.
+- **Integration Review Backend: LULUS** — jawapan kepada (a)(b)(c) blok FE di atas: (a) kunci `custom_secondary` diterima dalam providers map + enum secondaryProvider ✅; (b) field `door` penuh diterima & dinormalisasi oleh config.js ✅; (c) `/api/validate-provider` dihantar `{ provider: 'custom', door, baseUrl }` oleh frontend — konsisten dengan backend validate sedia ada ✅. Tiada collision `providers.custom`.
+- **Pipeline 8-langkah:** SemVer → 3.9.33; CHANGELOG v3.9.33; cache-buster dinamik (tiada tindakan); prettier --check . hijau; eslint 0 error; `npm test` 367 PASS / 0 FAIL / 1 SKIP (monotonic); `graphify update .` 5122 nodes / 11039 edges; ledger ini; commit+push; CI.
+- **Next Steps:** Commit + push → CI Success → tutup.
+
+## 2026-10-14 — CUSTOM SECONDARY FALLBACK SLOT (v3.9.33-FE): FRONTEND SLOT custom_secondary + MEDAN CUSTOM LENGKAP
+
+- **Tarikh:** 2026-10-14 (waktu tempatan KL)
+- **Komit SHA:** (pending commit)
+- **Keputusan Owner:** Mandat frontend — hapus penapisan Custom daripada dropdown fallback, ganti dengan slot `custom_secondary` berasingan yang SENTIASA tersedia (walaupun Primary = Custom). Medan Custom lengkap: Base URL + Format/Door dropdown (Auto/OpenAI/Gemini) + model input teks bebas.
+- **Fail Terlibat:** `public/js/trinity-agents.js`, `public/css/trinity-agents.css` (sahaja — tiada fail backend disentuh)
+- **Laporan Integration Review Backend (kontrak frontend → backend):**
+  1. **Dropdown fallback:** entri `custom` registry DIGUGURKAN daripada senarai (`refreshFallbackProviderOptions` menapis `isCustom === true || id === 'custom'`); slot `custom_secondary` (label "Custom / Proxy") ditambah sebagai pilihan kekal — tiada collision dengan `providers.custom` milik Primary.
+  2. **Medan Custom (bila fallback = custom_secondary):** Base URL (`trinity-translation-fallback-baseurl`), Format/Door dropdown (`trinity-translation-fallback-format`: `auto` | `openai-compatible` | `gemini-native`; `auto` → openai-compatible), Model input teks bebas (`trinity-translation-fallback-model-custom` — tiada katalog dropdown). Pembekal rasmi kekal dropdown katalog model.
+  3. **Serialisasi (`collectConfigPatch`):** bila fallback aktif + custom → `patch.secondaryProvider = 'custom_secondary'` dan `patch.providers.custom_secondary = { enabled: true, apiKey, baseUrl, model, door }`. Entri `providers.custom` Primary TIDAK disentuh. Fallback rasmi kekal kontrak lama `providers.<id>` tanpa `door`.
+  4. **Rehidrasi (`applyFallbackValues`):** `secondaryProvider: 'custom_secondary'` → slot Custom + baca `providers.custom_secondary`; config LEGASI `secondaryProvider: 'custom'` dipetakan ke slot yang sama dengan fallback bacaan `providers.custom_secondary` → `providers.custom`. `door` direhidrasi hanya jika nilai sah (openai-compatible/gemini-native); selain itu `auto`.
+  5. **✓ Test (custom_secondary):** POST `/api/validate-provider` dengan `{ provider: 'custom', apiKey, door, baseUrl }` — provider dihantar sebagai `'custom'` (backend mungkin tidak mengenali `custom_secondary`), tetapi nilai DISIMPAN sebagai `custom_secondary` dalam config. Door dihantar sudah diformat penuh (`openai-compatible`/`gemini-native`).
+  6. **CSS:** `.trinity-fallback .trinity-field.trinity-custom-only` (grid), `.trinity-fallback .trinity-fallback-model-input` + `:focus` — ikut pola sedia ada (rem unit, warna literal hex, tiada CSS custom property baharu). Show ialah `'grid'` eksplisit dari JS (ROOT-CAUSE FIX 2026-10-10 dikekalkan).
+- **Perkara backend perlu sahkan:** (a) penerimaan kunci `custom_secondary` dalam `providers` map + `secondaryProvider` enum; (b) field `door` dalam entri `providers.custom_secondary` (nilai penuh, bukan format pendek) — frontend menghantar `openai-compatible`/`gemini-native`; (c) `/api/validate-provider` menerima `{ provider: 'custom', door: 'gemini-native'|'openai-compatible', baseUrl }` untuk sasaran Custom Secondary.
+- **Status verifikasi:** `node --check public/js/trinity-agents.js` ✅; `npx prettier --check` kedua-dua fail ✅. (npm test/eslint/graphify akan dijalankan oleh sesi backend penuh.)
+- **Status npm test:** (tidak dijalankan dalam tugas frontend ini — lihat blok seterusnya)
+- **Next Steps:** Integration Review Backend mengesahkan (a)-(c) di atas; ujian E2E Primary=Custom + Secondary=Custom.
+
 ## 2026-10-14 — RELEASE v3.9.32: SECONDARY FALLBACK PROVIDER (PILIHAN A) — INTEGRATION REVIEW LULUS + PIPELINE 8-LANGKAH
 
 - **Tarikh:** 2026-10-14 (waktu tempatan KL)

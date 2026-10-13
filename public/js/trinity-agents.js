@@ -325,6 +325,35 @@
 
     // --- Secondary Fallback Provider (sub-kad Agent Translation) ---
 
+    // [CUSTOM SECONDARY v3.9.33] Slot berasingan untuk Fallback Custom - tiada
+    // collision dengan providers.custom milik Primary (senario Primary Custom +
+    // Secondary Custom disokong). Kontrak backend: providers.custom_secondary
+    // = { enabled, apiKey, baseUrl, model, door }.
+    var CUSTOM_SECONDARY_ID = 'custom_secondary';
+    var CUSTOM_SECONDARY_ENTRY = {
+        id: CUSTOM_SECONDARY_ID,
+        label: 'Custom / Proxy',
+        door: DOOR_TYPES.OPENAI,
+        baseUrl: '',
+        isCustom: true
+    };
+
+    function isFallbackCustom(providerId) {
+        return String(providerId || '').toLowerCase() === CUSTOM_SECONDARY_ID;
+    }
+
+    // Resolve entri pembekal fallback; 'custom_secondary' dipetakan ke entri Custom berasingan.
+    function resolveFallbackProvider(providerId) {
+        if (isFallbackCustom(providerId)) return CUSTOM_SECONDARY_ENTRY;
+        var providers = _registryCache || FALLBACK_PROVIDERS;
+        return getProviderById(providers, providerId);
+    }
+
+    // Door untuk fallback Custom: 'gemini-native' jika dipilih; selain itu openai-compatible (lalai untuk 'auto').
+    function resolveFallbackCustomDoor(fmtValue) {
+        return fmtValue === DOOR_TYPES.GEMINI ? DOOR_TYPES.GEMINI : DOOR_TYPES.OPENAI;
+    }
+
     function buildSecondaryFallbackRow() {
         var wrap = createEl('div', 'trinity-fallback');
 
@@ -400,12 +429,45 @@
         keyRow.appendChild(keyWrap);
         fields.appendChild(keyRow);
 
+        // [CUSTOM SECONDARY v3.9.33] Format / Door — hanya bila fallback = Custom (smart visibility)
+        var fmtRow = createEl('div', 'trinity-field trinity-custom-only');
+        fmtRow.id = 'trinity-translation-fallback-format-row';
+        fmtRow.appendChild(createEl('label', '', 'Format / Door'));
+        var fmtSel = createEl('select', 'trinity-format-select');
+        fmtSel.id = 'trinity-translation-fallback-format';
+        [
+            { value: 'auto', label: 'Auto (Recommended)' },
+            { value: DOOR_TYPES.OPENAI, label: 'OpenAI-Compatible' },
+            { value: DOOR_TYPES.GEMINI, label: 'Gemini Native' }
+        ].forEach(function (f) {
+            var opt = createEl('option', '', f.label);
+            opt.value = f.value;
+            fmtSel.appendChild(opt);
+        });
+        fmtRow.appendChild(fmtSel);
+        fields.appendChild(fmtRow);
+
+        // Model — dropdown katalog (pembekal rasmi)
         var modelRow = createEl('div', 'trinity-field');
+        modelRow.id = 'trinity-translation-fallback-model-row';
         modelRow.appendChild(createEl('label', '', 'Fallback model'));
         var modelSel = createEl('select', 'trinity-model-select');
         modelSel.id = 'trinity-translation-fallback-model';
         modelRow.appendChild(modelSel);
         fields.appendChild(modelRow);
+
+        // Model — input teks bebas (Custom sahaja, smart visibility)
+        var modelCustomRow = createEl('div', 'trinity-field trinity-custom-only');
+        modelCustomRow.id = 'trinity-translation-fallback-model-custom-row';
+        modelCustomRow.appendChild(createEl('label', '', 'Fallback model'));
+        var modelInput = createEl('input', 'trinity-fallback-model-input');
+        modelInput.type = 'text';
+        modelInput.id = 'trinity-translation-fallback-model-custom';
+        modelInput.placeholder = 'e.g. gemini-2.5-flash, deepseek-v4.1-flash';
+        modelInput.autocomplete = 'off';
+        modelInput.spellcheck = false;
+        modelCustomRow.appendChild(modelInput);
+        fields.appendChild(modelCustomRow);
 
         // Base URL — hanya untuk Custom (smart visibility)
         var urlRow = createEl('div', 'trinity-field trinity-custom-only');
@@ -426,11 +488,13 @@
     }
 
     // Isi semula dropdown provider fallback: kecualikan provider utama semasa.
+    // [CUSTOM SECONDARY v3.9.33] Entri 'custom' registry DIGANTI slot berasingan
+    // 'custom_secondary' yang SENTIASA tersedia (walaupun Primary = Custom).
     function refreshFallbackProviderOptions(keepSelection) {
         var sel = $('trinity-translation-fallback-provider');
         if (!sel) return;
         var primary = $('trinity-translation-provider');
-        var primaryId = primary ? primary.value : '';
+        var primaryId = primary ? String(primary.value || '').toLowerCase() : '';
         var current = keepSelection === false ? '' : sel.value;
         var providers = _registryCache || FALLBACK_PROVIDERS;
 
@@ -439,12 +503,20 @@
         placeholder.value = '';
         sel.appendChild(placeholder);
         providers.forEach(function (p) {
-            if (!p || !p.id || p.id === primaryId) return;
+            if (!p || !p.id) return;
+            if (p.isCustom === true || p.id === 'custom') return;
+            if (p.id === primaryId) return;
             var o = createEl('option', '', p.label);
             o.value = p.id;
             sel.appendChild(o);
         });
-        sel.value = current && current !== primaryId ? current : '';
+        var customOpt = createEl('option', '', CUSTOM_SECONDARY_ENTRY.label);
+        customOpt.value = CUSTOM_SECONDARY_ID;
+        customOpt.dataset.isCustom = 'true';
+        sel.appendChild(customOpt);
+
+        sel.value = current || '';
+        if (sel.selectedIndex < 0) sel.value = '';
         populateFallbackModels(sel.value, true);
         updateFallbackFieldVisibility();
     }
@@ -459,8 +531,10 @@
         placeholder.value = '';
         m.appendChild(placeholder);
         if (!providerId) return;
-        var providers = _registryCache || FALLBACK_PROVIDERS;
-        var door = getProviderDoor(getProviderById(providers, providerId));
+        // [CUSTOM SECONDARY v3.9.33] Custom: model = input teks bebas, tiada katalog.
+        if (isFallbackCustom(providerId)) return;
+        var provider = resolveFallbackProvider(providerId);
+        var door = getProviderDoor(provider);
         var list = PROVIDER_MODEL_CATALOG[providerId] || MODEL_CATALOG[door] || MODEL_CATALOG['openai-compatible'];
         list.forEach(function (name) {
             var o = createEl('option', '', name);
@@ -476,11 +550,16 @@
         var toggle = $('trinity-translation-fallback-enabled');
         var sel = $('trinity-translation-fallback-provider');
         var urlRow = $('trinity-translation-fallback-baseurl-row');
+        var fmtRow = $('trinity-translation-fallback-format-row');
+        var modelRow = $('trinity-translation-fallback-model-row');
+        var modelCustomRow = $('trinity-translation-fallback-model-custom-row');
         if (fields) fields.style.display = toggle && toggle.checked ? '' : 'none';
-        if (urlRow && sel) {
-            var providers = _registryCache || FALLBACK_PROVIDERS;
-            urlRow.style.display = isCustomProvider(getProviderById(providers, sel.value)) ? 'grid' : 'none';
-        }
+        var custom = !!sel && isCustomProvider(resolveFallbackProvider(sel.value));
+        // [ROOT-CAUSE FIX 2 2026-10-10] Show mesti 'grid' eksplisit (inline display:'' tidak mengatasi .trinity-custom-only)
+        if (urlRow) urlRow.style.display = custom ? 'grid' : 'none';
+        if (fmtRow) fmtRow.style.display = custom ? 'grid' : 'none';
+        if (modelRow) modelRow.style.display = custom ? 'none' : '';
+        if (modelCustomRow) modelCustomRow.style.display = custom ? 'grid' : 'none';
     }
 
     // Baca keadaan fallback semasa dari DOM (medan kontrak sedia ada).
@@ -489,16 +568,23 @@
         var p = $('trinity-translation-fallback-provider');
         var k = $('trinity-translation-fallback-key');
         var m = $('trinity-translation-fallback-model');
+        var mc = $('trinity-translation-fallback-model-custom');
         var u = $('trinity-translation-fallback-baseurl');
+        var f = $('trinity-translation-fallback-format');
         var providerId = p ? p.value : '';
-        var providers = _registryCache || FALLBACK_PROVIDERS;
-        var custom = isCustomProvider(getProviderById(providers, providerId));
+        var provider = resolveFallbackProvider(providerId);
+        var custom = isCustomProvider(provider);
+        var isCustomSecondary = isFallbackCustom(providerId);
+        var door = isCustomSecondary ? resolveFallbackCustomDoor(f ? f.value : 'auto') : getProviderDoor(provider);
+        var model = custom ? (mc ? mc.value : '') : m ? m.value : '';
         return {
             enabled: !!(t && t.checked && providerId),
             providerId: providerId,
+            isCustomSecondary: isCustomSecondary,
             apiKey: k ? k.value.trim() : '',
-            model: m ? m.value.trim() : '',
-            baseUrl: custom && u ? u.value.trim() : ''
+            model: String(model || '').trim(),
+            baseUrl: custom && u ? u.value.trim() : '',
+            door: door
         };
     }
 
@@ -514,16 +600,14 @@
             return;
         }
         var fb = readFallbackState();
-        var providers = _registryCache || FALLBACK_PROVIDERS;
-        var provider = getProviderById(providers, fb.providerId);
-        var door = getProviderDoor(provider);
+        var door = fb.door;
         btn.disabled = true;
         try {
             var resp = await fetch('/api/validate-provider', {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify({
-                    provider: fb.providerId,
+                    provider: fb.isCustomSecondary ? 'custom' : fb.providerId,
                     apiKey: key,
                     door: door,
                     baseUrl: fb.baseUrl
@@ -547,16 +631,23 @@
     }
 
     // Rehidrasi nilai fallback (backward-compat: secondaryProvider* + providers.*).
+    // [CUSTOM SECONDARY v3.9.33] secondaryProvider 'custom_secondary' → slot Custom berasingan
+    // (providers.custom_secondary). Config lama 'custom' dipetakan ke slot yang sama dan dibaca
+    // dari providers.custom_secondary, dengan fallback ke providers.custom (kompatibiliti legacy).
     function applyFallbackValues(cfg) {
         if (!cfg) return;
         var t = $('trinity-translation-fallback-enabled');
         var p = $('trinity-translation-fallback-provider');
         var k = $('trinity-translation-fallback-key');
         var m = $('trinity-translation-fallback-model');
+        var mc = $('trinity-translation-fallback-model-custom');
         var u = $('trinity-translation-fallback-baseurl');
+        var f = $('trinity-translation-fallback-format');
         if (!t || !p) return;
 
-        var pid = String(cfg.secondaryProvider || '').toLowerCase();
+        var rawPid = String(cfg.secondaryProvider || '').toLowerCase();
+        var isCustomSec = rawPid === CUSTOM_SECONDARY_ID || rawPid === 'custom';
+        var pid = isCustomSec ? CUSTOM_SECONDARY_ID : rawPid;
         var on = cfg.multiProviderEnabled === true && cfg.secondaryProviderEnabled === true && !!pid;
         t.checked = on;
         refreshFallbackProviderOptions(false);
@@ -564,9 +655,20 @@
             p.value = pid;
             populateFallbackModels(pid, false);
         }
-        var saved = cfg.providers && pid ? cfg.providers[pid] || {} : {};
+        var providersMap = cfg.providers || {};
+        var saved = {};
+        if (pid) {
+            saved = isCustomSec
+                ? providersMap[CUSTOM_SECONDARY_ID] || providersMap.custom || {}
+                : providersMap[pid] || {};
+        }
         if (k) k.value = saved.apiKey || '';
-        if (saved.model && m) {
+        if (isCustomSec) {
+            if (mc) mc.value = saved.model || '';
+            if (f) {
+                f.value = saved.door === DOOR_TYPES.GEMINI || saved.door === DOOR_TYPES.OPENAI ? saved.door : 'auto';
+            }
+        } else if (saved.model && m) {
             ensureModelOption(m, saved.model);
             m.value = saved.model;
         }
@@ -1509,16 +1611,27 @@
         if (fb.enabled) {
             patch.multiProviderEnabled = true;
             patch.secondaryProviderEnabled = true;
-            patch.secondaryProvider = fb.providerId;
+            patch.secondaryProvider = fb.isCustomSecondary ? CUSTOM_SECONDARY_ID : fb.providerId;
             // Merge (bukan ganti): hanya entri pembekal fallback disentuh; pembekal lain
             // dalam currentConfig.providers dikekalkan oleh pemanggil (buildConfigFromForm).
             patch.providers = {};
-            patch.providers[fb.providerId] = {
-                enabled: true,
-                apiKey: fb.apiKey,
-                model: fb.model,
-                baseUrl: fb.baseUrl
-            };
+            if (fb.isCustomSecondary) {
+                // [CUSTOM SECONDARY v3.9.33] Slot berasingan — TIDAK menimpa providers.custom (Primary)
+                patch.providers[CUSTOM_SECONDARY_ID] = {
+                    enabled: true,
+                    apiKey: fb.apiKey,
+                    baseUrl: fb.baseUrl,
+                    model: fb.model,
+                    door: fb.door
+                };
+            } else {
+                patch.providers[fb.providerId] = {
+                    enabled: true,
+                    apiKey: fb.apiKey,
+                    model: fb.model,
+                    baseUrl: fb.baseUrl
+                };
+            }
         } else {
             patch.secondaryProviderEnabled = false;
             patch.secondaryProvider = '';

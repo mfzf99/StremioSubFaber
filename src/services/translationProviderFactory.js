@@ -13,7 +13,7 @@ const {
     getEffectiveGeminiModel
 } = require('../utils/config');
 
-const KEY_OPTIONAL_PROVIDERS = new Set(['googletranslate', 'custom']);
+const KEY_OPTIONAL_PROVIDERS = new Set(['googletranslate', 'custom', 'custom_secondary']);
 
 class FallbackTranslationProvider {
     constructor(primaryProvider, fallbackProvider, meta = {}) {
@@ -382,10 +382,16 @@ async function createProviderInstance(providerKey, providerConfig = {}, provider
                 maxRetries: providerParams.maxRetries,
                 enableJsonOutput
             });
-        case 'custom': {
+        case 'custom':
+        // [CUSTOM-SECONDARY v3.9.33] 'custom_secondary' berkongsi builder custom;
+        // providerName dibezakan supaya log/statistik fallback jelas.
+        case 'custom_secondary': {
+            const isSecondary = providerKey === 'custom_secondary';
             const baseUrl = providerConfig.baseUrl;
             if (!baseUrl) {
-                log.warn(() => '[Providers] Custom provider requires a baseUrl');
+                log.warn(
+                    () => `[Providers] ${isSecondary ? 'Custom secondary' : 'Custom'} provider requires a baseUrl`
+                );
                 return null;
             }
 
@@ -397,10 +403,20 @@ async function createProviderInstance(providerKey, providerConfig = {}, provider
                 return null;
             }
 
+            // [CUSTOM-SECONDARY] Pintu Gemini Native disokong pada fallback custom:
+            // door 'gemini-native' membina GeminiService dengan baseUrl proksi sekunder.
+            if (isSecondary && String(providerConfig.door || '').toLowerCase() === 'gemini-native') {
+                return new GeminiService(providerConfig.apiKey || '', providerConfig.model, {
+                    ...providerParams,
+                    baseUrl: validation.sanitized,
+                    enableJsonOutput: false
+                });
+            }
+
             return new OpenAICompatibleProvider({
                 apiKey: providerConfig.apiKey || '',
                 model: providerConfig.model,
-                providerName: 'custom',
+                providerName: isSecondary ? 'custom_secondary' : 'custom',
                 baseUrl: validation.sanitized,
                 temperature: providerParams.temperature,
                 topP: providerParams.topP,
@@ -483,9 +499,11 @@ async function createTranslationProvider(config) {
     };
     const isConfigured = (cfg, key) => {
         if (!cfg || cfg.enabled !== true) return false;
-        const keyOptional = KEY_OPTIONAL_PROVIDERS.has(String(key || '').toLowerCase());
+        const normalizedKey = String(key || '').toLowerCase();
+        const keyOptional = KEY_OPTIONAL_PROVIDERS.has(normalizedKey);
         if (keyOptional) {
-            if (String(key || '').toLowerCase() === 'custom') {
+            // [CUSTOM-SECONDARY v3.9.33] custom & custom_secondary: baseUrl + model wajib
+            if (normalizedKey === 'custom' || normalizedKey === 'custom_secondary') {
                 return !!(cfg.baseUrl && cfg.model);
             }
             return !!cfg.model; // no API key required

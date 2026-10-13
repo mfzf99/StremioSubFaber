@@ -10,7 +10,7 @@ const { redactApiKey } = require('./security');
 const DEFAULT_SOURCE_LANGUAGE_LIMIT = 3;
 const DEFAULT_TARGET_LANGUAGE_LIMIT = 6;
 const DEFAULT_NO_TRANSLATION_LANGUAGE_LIMIT = 9;
-const KEY_OPTIONAL_PROVIDERS = new Set(['googletranslate', 'custom']);
+const KEY_OPTIONAL_PROVIDERS = new Set(['googletranslate', 'custom', 'custom_secondary']);
 const GEMINI_LOG_INTERVAL_MS = parseInt(process.env.GEMINI_CONFIG_LOG_INTERVAL_MS || `${5 * 60 * 1000}`, 10);
 let lastGeminiConfigLog = 0;
 let suppressedGeminiConfigLogs = 0;
@@ -910,8 +910,10 @@ function normalizeConfig(config) {
     const providerIsConfigured = (key) => {
         const resolved = resolveProviderKey(key);
         const cfg = mergedConfig.providers?.[resolved] || {};
-        if (KEY_OPTIONAL_PROVIDERS.has(String(key).toLowerCase())) {
-            if (String(key).toLowerCase() === 'custom') {
+        const normalizedKey = String(key).toLowerCase();
+        if (KEY_OPTIONAL_PROVIDERS.has(normalizedKey)) {
+            // [CUSTOM-SECONDARY v3.9.33] custom & custom_secondary: baseUrl + model wajib
+            if (normalizedKey === 'custom' || normalizedKey === 'custom_secondary') {
                 return !!(cfg.enabled === true && cfg.baseUrl && cfg.model);
             }
             return cfg.enabled === true;
@@ -920,6 +922,8 @@ function normalizeConfig(config) {
     };
     const firstConfiguredProvider = () => {
         const entry = Object.entries(mergedConfig.providers || {}).find(([key, cfg]) => {
+            // [CUSTOM-SECONDARY v3.9.33] slot fallback TIDAK layak jadi main provider
+            if (String(key).toLowerCase() === 'custom_secondary') return false;
             if (!cfg || cfg.enabled !== true) return false;
             const isKeyOptional = KEY_OPTIONAL_PROVIDERS.has(String(key).toLowerCase());
             if (String(key).toLowerCase() === 'custom') {
@@ -937,8 +941,13 @@ function normalizeConfig(config) {
                 apiKey: typeof value?.apiKey === 'string' ? value.apiKey : '',
                 model: typeof value?.model === 'string' ? value.model : ''
             };
-            if (normalizedKey === 'custom') {
+            if (normalizedKey === 'custom' || normalizedKey === 'custom_secondary') {
                 mergedConfig.providers[key].baseUrl = typeof value?.baseUrl === 'string' ? value.baseUrl : '';
+            }
+            // [CUSTOM-SECONDARY v3.9.33] pintu proksi fallback: 'openai-compatible' (lalai) | 'gemini-native'
+            if (normalizedKey === 'custom_secondary') {
+                const door = String(value?.door || '').toLowerCase();
+                mergedConfig.providers[key].door = door === 'gemini-native' ? 'gemini-native' : 'openai-compatible';
             }
         }
     }
@@ -1422,7 +1431,7 @@ function validateConfig(config) {
         const cfg = resolveProviderConfig(key);
         if (!cfg || cfg.enabled !== true) return false;
         if (KEY_OPTIONAL_PROVIDERS.has(String(key).toLowerCase())) {
-            if (String(key).toLowerCase() === 'custom') {
+            if (['custom', 'custom_secondary'].includes(String(key).toLowerCase())) {
                 return !!(
                     cfg.baseUrl &&
                     String(cfg.baseUrl).trim() !== '' &&
@@ -1641,7 +1650,7 @@ function buildManifest(config, baseUrl = '') {
         const cfg = providers[matchKey];
         if (!cfg || cfg.enabled !== true) return false;
         if (KEY_OPTIONAL_PROVIDERS.has(String(key).toLowerCase())) {
-            if (String(key).toLowerCase() === 'custom') {
+            if (['custom', 'custom_secondary'].includes(String(key).toLowerCase())) {
                 return !!(
                     cfg.baseUrl &&
                     String(cfg.baseUrl).trim() !== '' &&

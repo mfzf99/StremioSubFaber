@@ -230,6 +230,32 @@
     font-weight: 600;
     font-size: 0.9rem;
 }
+/* [CUSTOM SECONDARY FALLBACK v3.9.33] Medan Custom/Proxy fallback.
+   - .trinity-custom-only menunjukkan medan secara eksplisit (inline display:'grid'
+     ditetapkan oleh JS); peraturan ini menyediakan layout grid konsisten
+     (ROOT-CAUSE FIX 2026-10-10).
+   - Bidang model Custom guna input teks bebas (bukan dropdown katalog). */
+.trinity-fallback .trinity-field.trinity-custom-only {
+    display: grid;
+    gap: 0.4rem;
+}
+.trinity-fallback .trinity-fallback-model-input {
+    width: 100%;
+    box-sizing: border-box;
+    padding: 0.5rem 0.6rem;
+    border: 1px solid #cbd5e1;
+    border-radius: 0.5rem;
+    background: #ffffff;
+    color: inherit;
+    font-size: 0.9rem;
+    font-family: inherit;
+}
+.trinity-fallback .trinity-fallback-model-input:focus {
+    outline: 2px solid #2563eb;
+    outline-offset: 1px;
+    border-color: #2563eb;
+}
+
 .trinity-rotation-checkbox {
     width: 18px;
     height: 18px;

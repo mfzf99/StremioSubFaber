@@ -2,6 +2,23 @@
 
 All notable changes to this project will be documented in this file.
 
+## SubMaker v3.9.33 (2026-10-13) — Custom/Proxy Secondary Fallback: Dedicated custom_secondary Slot (Anti-Collision)
+
+### Added
+
+- **[CUSTOM-SECONDARY] Slot provider berasingan `providers.custom_secondary` ([src/utils/config.js](src/utils/config.js), [src/services/translationProviderFactory.js](src/services/translationProviderFactory.js)):** senario Primary Custom (Crazy Router) + Secondary Custom (Rootsys) kini disokong tanpa data collision — konfigurasi fallback tidak lagi menimpa `providers.custom` milik Primary. Slot membawa `{ enabled, apiKey, baseUrl, model, door }`; `door` menerima `openai-compatible` (lalai) | `gemini-native` (membina GeminiService dengan baseUrl proksi sekunder).
+- **Medan Custom fallback dalam sub-kad 🛟 ([public/js/trinity-agents.js](public/js/trinity-agents.js)):** apabila Fallback Provider = Custom / Proxy, UI memaparkan Base URL, dropdown Format/Door baharu (`trinity-translation-fallback-format`), dan input model TEKS BEBAS (tidak lagi terikat katalog statik); API Key 🔒/👁️ + ✓ Test kekal. Entri Custom kekal tersedia dalam dropdown fallback walaupun Primary ialah Custom.
+- **Rehidrasi backward-compatible ([public/js/trinity-agents.js](public/js/trinity-agents.js)):** config legasi `secondaryProvider: 'custom'` dipetakan ke slot `custom_secondary` dengan fallback bacaan `providers.custom` lama.
+
+### Changed
+
+- **Validasi & normalisasi `custom_secondary` ([src/utils/config.js](src/utils/config.js)):** `KEY_OPTIONAL_PROVIDERS` + `providerIsConfigured` + `firstConfiguredProvider` (slot tidak layak jadi main provider) + dua blok validateConfig menerima `custom_secondary` (baseUrl + model wajib; API key tidak wajib — local LLM).
+- **`createProviderInstance` kes `custom_secondary` ([src/services/translationProviderFactory.js](src/services/translationProviderFactory.js)):** berkongsi builder custom dengan SSRF validation; `providerName` dibezakan (`custom_secondary`) supaya log/statistik fallback jelas; door `gemini-native` membina GeminiService dengan providerParams penuh.
+
+### Fixed
+
+- **Butang ✓ Test fallback Custom ([public/js/trinity-agents.js](public/js/trinity-agents.js)):** POST `/api/validate-provider` menghantar `{ provider: 'custom', apiKey, door, baseUrl }` (backend validate mengenal 'custom') sementara config disimpan sebagai `custom_secondary`.
+
 ## SubMaker v3.9.32 (2026-10-13) — Secondary Fallback Provider Rescue: Trinity Sub-Card Option A
 
 ### Added
