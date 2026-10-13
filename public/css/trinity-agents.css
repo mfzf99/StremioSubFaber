@@ -2,19 +2,76 @@
 
 .trinity-mode-bar {
     display: flex;
-    align-items: center;
-    gap: 0.75rem;
     justify-content: center;
     margin: 0 0 1.25rem;
-    padding: 0.9rem 1rem;
-    background: var(--bg-secondary, rgba(0, 0, 0, 0.03));
+}
+.trinity-mode-input {
+    position: absolute;
+    width: 1px;
+    height: 1px;
+    opacity: 0;
+    pointer-events: none;
+}
+.trinity-segmented {
+    display: inline-grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 0.25rem;
+    width: 100%;
+    max-width: 34rem;
+    padding: 0.25rem;
     border-radius: 12px;
     border: 1px solid var(--border-color, rgba(0, 0, 0, 0.08));
+    background: var(--bg-secondary, rgba(0, 0, 0, 0.03));
+}
+.trinity-segment-btn {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    gap: 0.15rem;
+    min-height: 44px;
+    padding: 0.5rem 0.75rem;
+    border: 0;
+    border-radius: 9px;
+    background: transparent;
+    color: var(--text-secondary, #555);
+    cursor: pointer;
+    transition:
+        background 0.15s ease,
+        color 0.15s ease,
+        box-shadow 0.15s ease;
+}
+.trinity-segment-btn:hover {
+    color: var(--text-primary, #111827);
+}
+.trinity-segment-btn.active {
+    background: var(--bg-card, #fff);
+    color: var(--text-primary, #111827);
+    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.12);
+}
+.trinity-segment-btn:focus-visible {
+    outline: 2px solid #2563eb;
+    outline-offset: 2px;
+}
+.trinity-segment-label {
+    font-weight: 600;
+    font-size: 0.95rem;
+}
+.trinity-segment-hint {
+    font-size: 0.75rem;
+    color: var(--text-secondary, #6b7280);
 }
 .trinity-mode-label {
     font-weight: 600;
     font-size: 0.95rem;
     color: var(--text-secondary, #555);
+}
+@media (prefers-reduced-motion: reduce) {
+    .trinity-segment-btn,
+    .trinity-slider,
+    .trinity-slider:before {
+        transition: none;
+    }
 }
 
 /* Togol suis */
@@ -71,14 +128,40 @@
     padding: 1.1rem 1.15rem;
     background: var(--bg-card, #fff);
 }
+/* Header kad: pariti dengan .card-header kad utama (ikon + tajuk + keterangan) */
+.trinity-agent-head {
+    cursor: default;
+    margin-bottom: 0.65rem;
+    padding-bottom: 0.5rem;
+    border-bottom: 1px solid var(--border-color, rgba(0, 0, 0, 0.08));
+}
+.trinity-agent-head .card-title-group {
+    align-items: flex-start;
+}
+.trinity-agent-head .card-icon {
+    flex-shrink: 0;
+}
+.trinity-agent-titles {
+    display: flex;
+    flex-direction: column;
+    gap: 0.2rem;
+    min-width: 0;
+}
 .trinity-agent-title {
+    margin: 0;
     font-weight: 700;
     font-size: 1.05rem;
 }
 .trinity-agent-sub {
     font-size: 0.82rem;
     color: var(--text-secondary, #666);
-    margin-top: 0.15rem;
+    margin-top: 0;
+}
+.trinity-agent-desc {
+    margin: 0 0 0.75rem;
+    font-size: 0.82rem;
+    line-height: 1.5;
+    color: var(--text-secondary, #666);
 }
 .trinity-agent-hint {
     margin-top: 0.9rem;

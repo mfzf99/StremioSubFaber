@@ -2,6 +2,17 @@
 
 All notable changes to this project will be documented in this file.
 
+## SubMaker v3.9.35 (2026-10-14) — Trinity Card Parity with Main Cards + Segmented Basic/Pro Mode Toggle
+
+### Changed
+
+- **Header ketiga-tiga kad Trinity dipertingkat kepada standard kad utama ([public/js/trinity-agents.js](public/js/trinity-agents.js)):** Agent Preflight, Agent Translation dan Agent Inspector kini menggunakan struktur `.card-header > .card-title-group` dengan `.card-icon` SVG 32×32 unik per agent (gaya Apple HUD, tema-aware), `h3.card-title`, `.card-description` sub-judul, dan perenggan keterangan penuh `p.trinity-agent-desc` — menutup jurang visual "langit dengan bumi" berbanding 11 kad konfigurasi utama.
+- **Togol dwimod Basic/Pro diganti segmented control ([public/js/trinity-agents.js](public/js/trinity-agents.js), [public/css/trinity-agents.css](public/css/trinity-agents.css)):** butang segmented `role="radiogroup"`/`role="radio"` dengan label + hint per mod ("Agent Translation sahaja" / "Preflight + Translation + Inspector"), sasaran sentuh min-height 44px, `:focus-visible` 2px, state `.active`, dan `prefers-reduced-motion`. Input `#trinityModeToggle` dikekalkan sebagai checkbox tersembunyi — kontrak `collectConfigPatch()`/`applyAgentValues()` 100% tidak berubah (sifar perubahan skema payload).
+
+### Fixed
+
+- **Aksesibiliti togol mod:** label "Basic Mode"/"Pro Mode" kini butang sebenar boleh-fokus (sebelumnya span statik tanpa label berpaut); `aria-checked` dikemas kini segerak dengan keadaan togol.
+
 ## SubMaker v3.9.34 (2026-10-14) — Secondary Fallback Field Order Alignment with Primary Card
 
 ### Fixed

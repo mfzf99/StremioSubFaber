@@ -90,23 +90,39 @@
         qwen: ['qwen3-max', 'qwen3-coder-480b', 'qwen-plus-latest']
     };
 
+    // Ikon SVG 32×32 (stroke currentColor) — gaya sama dengan .card-icon kad utama.
+    var AGENT_ICON_PATHS = {
+        preflight:
+            '<path d="M8 6h12l4 4v16H8z" stroke="currentColor" stroke-width="2" fill="none" stroke-linejoin="round"/><path d="M12 16h8M12 20h6" stroke="currentColor" stroke-width="2" stroke-linecap="round"/>',
+        translation:
+            '<path d="M5 9h13M11 6v3M8 9c1 4 4 7 8 8" stroke="currentColor" stroke-width="2" fill="none" stroke-linecap="round"/><path d="M16 26l5-11 5 11M18 22h6" stroke="currentColor" stroke-width="2" fill="none" stroke-linecap="round" stroke-linejoin="round"/>',
+        inspector:
+            '<circle cx="14" cy="14" r="7" stroke="currentColor" stroke-width="2" fill="none"/><path d="M19 19l7 7" stroke="currentColor" stroke-width="2" stroke-linecap="round"/>'
+    };
+
     var AGENTS = [
         {
             key: 'preflight',
             title: 'Agent Preflight',
             subtitle: 'Phase 0 — builds the context Bible (terms, characters, credits) before translation',
+            description:
+                'Membina Bible konteks (istilah, watak, kredit) sebelum terjemahan bermula. Output dihantar kepada Agent Translation.',
             configPath: 'trinity.preflight'
         },
         {
             key: 'translation',
             title: 'Agent Translation',
             subtitle: 'Core translation engine (batch XML → SRT)',
+            description:
+                'Enjin terjemahan utama (batch XML → SRT). Memproses setiap batch dan menggunakan Bible daripada Preflight.',
             configPath: 'trinity.translation'
         },
         {
             key: 'inspector',
             title: 'Agent Inspector',
             subtitle: 'Phase 1 — per-batch semantic audit (split/merge/drop/phantom crimes)',
+            description:
+                'Audit semantik setiap batch selepas terjemahan: mengesan split, merge, drop dan phantom entry.',
             configPath: 'trinity.inspector'
         }
     ];
@@ -202,10 +218,29 @@
         var card = createEl('div', 'trinity-agent-card');
         card.dataset.agent = agent.key;
 
-        var head = createEl('div', 'trinity-agent-head');
-        head.appendChild(createEl('div', 'trinity-agent-title', agent.title));
-        head.appendChild(createEl('div', 'trinity-agent-sub', agent.subtitle));
+        // Header berstruktur sama dengan kad utama: .card-header > .card-title-group
+        // (.card-icon SVG + tajuk + keterangan).
+        var head = createEl('div', 'card-header trinity-agent-head');
+        var titleGroup = createEl('div', 'card-title-group');
+
+        var icon = createEl('div', 'card-icon');
+        icon.setAttribute('aria-hidden', 'true');
+        icon.innerHTML =
+            '<svg viewBox="0 0 32 32" aria-hidden="true" focusable="false">' +
+            (AGENT_ICON_PATHS[agent.key] || '') +
+            '</svg>';
+        titleGroup.appendChild(icon);
+
+        var titles = createEl('div', 'trinity-agent-titles');
+        titles.appendChild(createEl('h3', 'card-title trinity-agent-title', agent.title));
+        titles.appendChild(createEl('div', 'card-description trinity-agent-sub', agent.subtitle));
+        titleGroup.appendChild(titles);
+        head.appendChild(titleGroup);
+
         card.appendChild(head);
+        if (agent.description) {
+            card.appendChild(createEl('p', 'trinity-agent-desc', agent.description));
+        }
 
         // Baris 1: Provider dropdown (paling atas)
         var providerRow = createEl('div', 'trinity-field');
@@ -1344,21 +1379,56 @@
         var root = createEl('div', '');
         root.id = 'trinityRoot';
 
-        // ── Togol dwimod ──
+        // ── Togol dwimod (segmented control) ──
+        // Kontrak kekal: input checkbox #trinityModeToggle disembunyikan dan
+        // dipacu oleh dua butang segmented. applyAgentValues()/collectConfigPatch()
+        // masih membaca/menulis .checked + event 'change'.
         var toggleBar = createEl('div', 'trinity-mode-bar');
-        toggleBar.appendChild(createEl('span', 'trinity-mode-label', 'Basic Mode'));
 
-        var switchWrap = createEl('label', 'trinity-switch');
         var toggleInput = createEl('input');
         toggleInput.type = 'checkbox';
         toggleInput.id = 'trinityModeToggle';
         toggleInput.checked = currentMode === MODE_PRO;
-        var slider = createEl('span', 'trinity-slider');
-        switchWrap.appendChild(toggleInput);
-        switchWrap.appendChild(slider);
-        toggleBar.appendChild(switchWrap);
-        toggleBar.appendChild(createEl('span', 'trinity-mode-label', 'Pro Mode'));
+        toggleInput.className = 'trinity-mode-input';
+        toggleInput.setAttribute('aria-hidden', 'true');
+        toggleInput.tabIndex = -1;
+        toggleBar.appendChild(toggleInput);
+
+        var seg = createEl('div', 'trinity-segmented');
+        seg.setAttribute('role', 'radiogroup');
+        seg.setAttribute('aria-label', 'Trinity agent mode');
+
+        function modeBtn(modeKey, label, hint) {
+            var b = createEl('button', 'trinity-segment-btn');
+            b.type = 'button';
+            b.dataset.mode = modeKey;
+            b.setAttribute('role', 'radio');
+            b.setAttribute('aria-checked', 'false');
+            b.appendChild(createEl('span', 'trinity-segment-label', label));
+            b.appendChild(createEl('span', 'trinity-segment-hint', hint));
+            b.addEventListener('click', function () {
+                if (toggleInput.checked === (modeKey === MODE_PRO)) return;
+                toggleInput.checked = modeKey === MODE_PRO;
+                toggleInput.dispatchEvent(new Event('change'));
+            });
+            return b;
+        }
+        seg.appendChild(modeBtn(MODE_BASIC, 'Basic Mode', 'Agent Translation sahaja'));
+        seg.appendChild(modeBtn(MODE_PRO, 'Pro Mode', 'Preflight + Translation + Inspector'));
+        toggleBar.appendChild(seg);
         root.appendChild(toggleBar);
+
+        function syncSegmented() {
+            var isPro = toggleInput.checked;
+            Array.prototype.forEach.call(seg.querySelectorAll('.trinity-segment-btn'), function (btn) {
+                var active = (btn.dataset.mode === MODE_PRO) === isPro;
+                btn.classList.toggle('active', active);
+                btn.setAttribute('aria-checked', active ? 'true' : 'false');
+                btn.tabIndex = active ? 0 : -1;
+            });
+        }
+        toggleInput.addEventListener('change', syncSegmented);
+        syncSegmented();
 
         // ── Bekas kad ──
         var cardsWrap = createEl('div', 'trinity-cards');

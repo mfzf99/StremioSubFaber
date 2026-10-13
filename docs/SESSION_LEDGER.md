@@ -10,6 +10,50 @@
 
 ---
 
+## 2026-10-14 — RELEASE v3.9.35: TRINITY CARD PARITY + SEGMENTED TOGOL BASIC/PRO (PIPELINE 8-LANGKAH)
+
+- **Tarikh:** 2026-10-14 (waktu tempatan KL)
+- **Komit SHA:** (menyusul selepas commit)
+- **Keputusan Owner:** Mandat audit penuh UI Trinity (rootsys + Apple HUD standard) — audit 3 agent + togol mod; SEMUA plan pembaikan diluluskan ("Go now"); commit diminta selepas Integration Review LULUS.
+- **Integration Review Backend (GLM 5.3): LULUS** — serialisasi `collectConfigPatch()` baca `#trinityModeToggle.checked` (checkbox kekal wujud, disembunyikan); rehidrasi `applyAgentValues()` set `.checked` + dispatch `change` (tiada race); skema pelayan sifar perubahan.
+- **Pipeline 8-langkah:** SemVer → 3.9.35; CHANGELOG v3.9.35; cache-buster runtime-driven (23× `__APP_VERSION_QUERY__` dari package.json 3.9.35); `npx prettier --check .` hijau; `npx eslint .` 0 error (warning pra-sedia); `npm test` 368 tests: 367 PASS / 0 FAIL / 1 SKIP (monotonic, selari baseline); `graphify update .` 5134 nodes / 11068 edges / 251 communities; blok ledger ini; commit+push; CI.
+- **Next Steps:** Commit + push → CI Success → tutup.
+
+---
+
+## 2026-10-13 (FRONTEND IMPLEMENTASI) — PARITI TRINITY vs KAD STANDARD + SEGMENTED TOGOL BASIC/PRO
+
+- **Tarikh:** 2026-10-13 (waktu tempatan KL)
+- **Komit SHA:** — (belum dikomit; menunggu Integration Review Backend)
+- **Keputusan Owner:** Semua plan pembaikan diluluskan ("Go now").
+- **Fail Terlibat:**
+  - `public/js/trinity-agents.js` — `AGENT_ICON_PATHS` (SVG 32×32 per agent) + `description` per agent dalam `AGENTS`; `buildAgentCard()` header kini `.card-header.trinity-agent-head > .card-title-group > .card-icon + .trinity-agent-titles (h3.card-title + .card-description)` + `p.trinity-agent-desc`; togol mod `mount()` diganti segmented control `.trinity-segmented` (role=radiogroup, `button[role=radio]` Basic/Pro).
+  - `public/css/trinity-agents.css` — `.trinity-mode-bar` dipermudah; `.trinity-mode-input` (sembunyi checkbox); `.trinity-segmented`, `.trinity-segment-btn` (min-height 44px, `.active`, `:focus-visible` 2px); `.trinity-agent-head` / `.trinity-agent-titles` / `.trinity-agent-desc`; `@media (prefers-reduced-motion: reduce)`. Blok `.trinity-switch`/`.trinity-slider` legasi kekal (tidak dirujuk lagi).
+- **Kontrak Payload:** TIADA PERUBAHAN. `#trinityModeToggle` kekal sebagai checkbox (disembunyikan, `aria-hidden`, `tabIndex=-1`); `collectConfigPatch()` masih baca `.checked`; `applyAgentValues()` masih set `.checked` + dispatch `change`. Tiada id/field baharu dalam payload.
+- **Pengesahan Frontend:**
+  - `node --check public/js/trinity-agents.js` ✅
+  - `npx prettier --check` (kedua-dua fail) ✅
+  - Playwright live `/configure`: mod Basic → 1 kad (Translation) dengan `.card-icon svg` ✅; butang segmented 49.6px (≥44px) ✅; mod Pro → 3 kad (Preflight, Translation, Inspector) masing-masing ada `.card-icon svg`, `.trinity-agent-sub`, `.trinity-agent-desc` ✅
+- **Status npm test:** Tidak dijalankan (domain Frontend; larangan Rule #4/#5).
+- **Risiko untuk Backend:** Tiada. Kontrak data tidak berubah; hanya presentasi.
+- **Next Steps:** Handover ke Backend → Integration Review (rehidrasi togol Pro dari config, serialisasi `trinity.mode`) → pipeline 8-langkah.
+
+---
+
+## 2026-10-13 (FRONTEND AUDIT) — DEEP SCAN UI CONFIGURE: TRINITY (3 AGENT) vs KAD STANDARD (TIADA KOD DIUBAH)
+
+- **Tarikh:** 2026-10-13 (waktu tempatan KL)
+- **Komit SHA:** — (tiada komit; audit sahaja)
+- **Keputusan Owner:** Mandat audit penuh UI SubFaber (rootsys + Apple HUD). Laporan dibentang; menunggu kelulusan sebelum sebarang perubahan.
+- **Fail Terlibat (dibaca sahaja):** `public/configure.html`, `public/partials/main.html`, `public/js/trinity-agents.js` (baris 205–207), `public/css/trinity-agents.css` (baris 62–89), `public/css/configure.css` (2063–2118), `public/css/subfaber-theme.css` (556–559), `plans/subfaber-redesign-blueprint.md`, `plans/rootsys-design-audit-ground-truth.md`
+- **Skop Trinity:** 3 agent disemak dalam mod Pro (`#trinityModeToggle`): Agent Preflight (Phase 0 — context Bible), Agent Translation (Core translation engine), Agent Inspector (Phase 1 — semantic audit). Dalam mod Basic hanya Agent Translation dipaparkan.
+- **Dapatan:** 11 `.card` standard mempunyai `.card-icon` (SVG 32×32), `.card-description`, `.card-badge` (Source/Target/Learn), dan collapsible. KESIHIGA-TIGA kad Trinity dibina programatik tanpa `.card-icon`, `.card-description`, badge, atau chevron — hanya `.trinity-agent-title` + `.trinity-agent-sub` (trinity-agents.js:205-207).
+- **Bukti visual:** `audit-trinity-vs-standard.png` (mod Basic) + `audit-trinity-pro-mode-all-agents.png` (mod Pro, 3 agent).
+- **Status npm test:** Tidak dijalankan (frontend; tiada perubahan kod).
+- **Next Steps:** Owner lulus laporan pembedahan → laksana pariti header Trinity (`.card-title-group` + `.card-icon` + `.card-description` + badge) → handover ke backend untuk Integration Review.
+
+---
+
 ## 2026-10-14 — RELEASE v3.9.34: SECONDARY FALLBACK — SUSUNAN MEDAN DISERARASKAN DENGAN KAD UTAMA (PIPELINE 8-LANGKAH)
 
 - **Tarikh:** 2026-10-14 (waktu tempatan KL)
