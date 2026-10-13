@@ -13,8 +13,9 @@
 ## 2026-10-14 — RELEASE v3.9.32: SECONDARY FALLBACK PROVIDER (PILIHAN A) — INTEGRATION REVIEW LULUS + PIPELINE 8-LANGKAH
 
 - **Tarikh:** 2026-10-14 (waktu tempatan KL)
-- **Komit SHA:** d7acf18 (+ hotfix format package.json — prettier)
-- **Hotfix CI:** Run 38436220377 GAGAL pada langkah "Check formatting" (Node 22 & 24) — bump versi package.json via `JSON.stringify(indent 4)` melanggar gaya prettier. Dibetulkan: `npx prettier --write package.json` → semua fail hijau. Commit hotfix menyusul; run CI baharu dipantau sehingga Success.
+- **Komit SHA:** d7acf18 (release) + d1463d6 (hotfix format package.json — HEAD muktamad)
+- **Hotfix CI:** Run 38436220377 (d7acf18) GAGAL pada langkah "Check formatting" (Node 22 & 24) — bump versi package.json via `JSON.stringify(indent 4)` melanggar gaya prettier. Dibetulkan: `npx prettier --write package.json` → semua fail hijau → hotfix d1463d6.
+- **Status CI:** Run 38436687866 (d1463d6, Node 22 & 24) = **SUCCESS** ✅ — pipeline 8-langkah lengkap.
 - **Keputusan Owner:** Mandat pelaksanaan muktamad 3-AI (Astra × GLM 5.3, Kimi K3 direhatkan): Pilihan A diluluskan; kontrak data WAJIB kekal sedia ada (`multiProviderEnabled`/`secondaryProviderEnabled`/`secondaryProvider`/`providers.<key>`), DILARANG ruang nama `trinity.translation.fallback`; baseline ujian monotonic dikekalkan.
 - **Integration Review Backend (GLM 5.3) — DAPATAN & PEMBETULAN:**
   - **Bug kritikal `enabled: true`**: `patch.providers[fb.providerId]` asal tidak menetapkan `enabled` → normalizer `src/utils/config.js:935-939` memaksa `false` → `isConfigured()` (`src/services/translationProviderFactory.js:484`) melumpuhkan fallback secara senyap. Dibetulkan oleh Frontend (Astra): `enabled: true` ditambah dalam `collectConfigPatch()`.
