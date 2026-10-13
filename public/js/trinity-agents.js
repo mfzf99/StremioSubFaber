@@ -1440,7 +1440,11 @@
         seg.appendChild(modeBtn(MODE_BASIC, 'Basic Mode', 'Agent Translation only'));
         seg.appendChild(modeBtn(MODE_PRO, 'Pro Mode', 'Preflight + Translation + Inspector'));
         toggleBar.appendChild(seg);
-        root.appendChild(toggleBar);
+        // Togol + kad Trinity dibungkus dalam SATU kad keluarga (.trinity-card-family)
+        // supaya togol Basic/Pro duduk dalam kumpulan kad yang sama dengan agent.
+        var family = createEl('div', 'trinity-card-family');
+        family.appendChild(toggleBar);
+        root.appendChild(family);
 
         function syncSegmented() {
             var isPro = toggleInput.checked;
@@ -1457,7 +1461,7 @@
         // ── Bekas kad ──
         var cardsWrap = createEl('div', 'trinity-cards');
         cardsWrap.id = 'trinityCards';
-        root.appendChild(cardsWrap);
+        family.appendChild(cardsWrap);
 
         // Render kad mengikut mod
         function renderCards() {

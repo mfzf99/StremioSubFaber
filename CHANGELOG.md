@@ -2,6 +2,12 @@
 
 All notable changes to this project will be documented in this file.
 
+## SubMaker v3.9.38 (2026-10-14) — Trinity Mode Toggle Inside Card Family
+
+### Changed
+
+- **Togol Basic/Pro kini duduk dalam kad keluarga yang sama dengan kad agent Trinity ([public/js/trinity-agents.js](public/js/trinity-agents.js), [public/css/trinity-agents.css](public/css/trinity-agents.css)):** sebelum ini `.trinity-mode-bar` dilekat terus pada `#trinityRoot` tanpa permukaan kad — "duduk luar" berbanding kad agent. `mount()` kini membungkus togol + `#trinityCards` dalam `div.trinity-card-family` (flex column, gap/padding 1rem, border, radius 14px, `--bg-card`) — togol di atas, kad agent di bawah, dalam satu permukaan kad yang sama. `#trinityModeToggle` dan semua ID/kontrak (`collectConfigPatch()`, `applyAgentValues()`, rehydrate) tidak berubah — sifar perubahan skema payload.
+
 ## SubMaker v3.9.37 (2026-10-14) — Trinity Card Footer Close Section: Scoped Classes (API Keys Duplicate Footer Fix)
 
 ### Fixed

@@ -1,5 +1,16 @@
 /* Trinity Agents UI (Fasa D, 2026-10-10) — togol dwimod + kad modular 3 ejen */
 
+/* Kad keluarga: togol Basic/Pro + kad agent berada dalam satu permukaan kad yang sama */
+.trinity-card-family {
+    display: flex;
+    flex-direction: column;
+    gap: 1rem;
+    padding: 1rem;
+    border: 1px solid var(--border-color, rgba(0, 0, 0, 0.1));
+    border-radius: 14px;
+    background: var(--bg-card, #fff);
+}
+
 .trinity-mode-bar {
     display: flex;
     justify-content: center;

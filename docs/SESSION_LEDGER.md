@@ -10,6 +10,19 @@
 
 ---
 
+## 2026-10-14 — RELEASE v3.9.38: TRINITY MODE TOGGLE DALAM KAD KELUARGA (PIPELINE 8-LANGKAH)
+
+- **Tarikh:** 2026-10-14 (waktu tempatan KL)
+- **Komit SHA:** (diisi selepas push)
+- **Status CI:** (diisi selepas run)
+- **Keputusan Owner:** "Button switch mode tak sepatutnya duduk luar, dia kena duduk dalam card family yang sama dengan agent trinity."
+- **Fail Terlibat:** `public/js/trinity-agents.js` (`mount()`: togol + `#trinityCards` dibungkus dalam `div.trinity-card-family`; `#trinityModeToggle` dan semua ID/kontrak kekal), `public/css/trinity-agents.css` (`.trinity-card-family`: flex column, gap/padding 1rem, border, radius 14px, `--bg-card`).
+- **Integration Review Backend (GLM 5.3): LULUS** — diff pembedahan minimum (+27/−2); sifar rujukan luaran kepada `trinityCards`/`trinity-mode-bar`/`trinityRoot`/`trinityModeToggle` (semua dalaman modul); mount() idempotent; `collectConfigPatch()`/`applyAgentValues()` tak tersentuh; DOM verified live (bar + cards dalam family, bar di atas, toggle checkbox berfungsi).
+- **Pipeline 8-langkah:** SemVer → 3.9.38; CHANGELOG v3.9.38; cache-buster runtime-driven (pkg 3.9.38 + `__APP_VERSION_QUERY__` ✅); `npx prettier --check .` hijau; `npx eslint .` 0 error (224 warning pre-existing); `npm test` 368 tests: **367 PASS / 0 FAIL / 1 SKIP** (baseline dipelihara); `graphify update .` 5145 nodes / 11086 edges / 272 communities; blok ledger ini; commit+push; CI.
+- **Next Steps:** Commit + push → CI Success → tutup.
+
+---
+
 ## 2026-10-14 — RELEASE v3.9.37: TRINITY FOOTER CLOSE SECTION — KELAS SCOPED (FIX FOOTER DUPLIKAT API KEYS, PIPELINE 8-LANGKAH)
 
 - **Tarikh:** 2026-10-14 (waktu tempatan KL)
