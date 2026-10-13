@@ -13,7 +13,8 @@
 ## 2026-10-14 — RELEASE v3.9.35: TRINITY CARD PARITY + SEGMENTED TOGOL BASIC/PRO (PIPELINE 8-LANGKAH)
 
 - **Tarikh:** 2026-10-14 (waktu tempatan KL)
-- **Komit SHA:** (menyusul selepas commit)
+- **Komit SHA:** 8fee787 (HEAD; push 9a9ff06..8fee787 ke origin main)
+- **Status CI:** Run 38456035189 (#335, 8fee787, Node 22 & 24) = **SUCCESS** ✅ (1m 12s)
 - **Keputusan Owner:** Mandat audit penuh UI Trinity (rootsys + Apple HUD standard) — audit 3 agent + togol mod; SEMUA plan pembaikan diluluskan ("Go now"); commit diminta selepas Integration Review LULUS.
 - **Integration Review Backend (GLM 5.3): LULUS** — serialisasi `collectConfigPatch()` baca `#trinityModeToggle.checked` (checkbox kekal wujud, disembunyikan); rehidrasi `applyAgentValues()` set `.checked` + dispatch `change` (tiada race); skema pelayan sifar perubahan.
 - **Pipeline 8-langkah:** SemVer → 3.9.35; CHANGELOG v3.9.35; cache-buster runtime-driven (23× `__APP_VERSION_QUERY__` dari package.json 3.9.35); `npx prettier --check .` hijau; `npx eslint .` 0 error (warning pra-sedia); `npm test` 368 tests: 367 PASS / 0 FAIL / 1 SKIP (monotonic, selari baseline); `graphify update .` 5134 nodes / 11068 edges / 251 communities; blok ledger ini; commit+push; CI.
