@@ -13,8 +13,8 @@
 ## 2026-10-14 — RELEASE v3.9.39: KAD TRINITY IKUT STRUKTUR KELUARGA LANGUAGES (BUTANG LIPAT HEADER, SATU CLOSE SECTION, PIPELINE 8-LANGKAH)
 
 - **Tarikh:** 2026-10-14 (waktu tempatan KL)
-- **Komit SHA:** (diisi selepas push)
-- **Status CI:** (diisi selepas run)
+- **Komit SHA:** 19d52c3 (push 0db06dd..19d52c3 ke origin main)
+- **Status CI:** Run 38471622508 (#350, 19d52c3, Node 22 & 24) = **SUCCESS** ✅
 - **Keputusan Owner:** Mandat pola keluarga — Languages = Bapak dengan anak Source/Target (masing-masing collapse-btn penjuru kanan header); API Keys = Bapak dengan anak Subtitles API Keys + Translation API Keys. Perlu: (1) satu close section sahaja di bawah, bukan dua; (2) kad Trinity ada butang collapsed seperti kad lain — copy struktur Languages.
 - **Fail Terlibat:** `public/js/trinity-agents.js` (footer "Close section" Trinity dibuang sepenuhnya; `.collapse-btn` `data-collapse="{agent}"` + `aria-expanded` ditambah dalam `.card-header` setiap kad Trinity; klik butang/header melipat kad), `public/css/trinity-agents.css` (buang style `.trinity-agent-footer`/`.trinity-agent-close*`; collapsed state sembunyi semua kecuali `.card-header`; `.trinity-agent-head .collapse-btn` pinned kanan).
 - **Integration Review Backend (GLM 5.3): LULUS** — tiada double-bind (legacy `.card-header` handler config.js dipasang pra-mount, tak lihat kad Trinity); `toggleAllSections()` loop `.card` tak padankan `.trinity-agent-card`; NOTA EDGE-CASE: loop global `.collapse-btn` (config.js:10889) boleh reset chevron Trinity tanpa melipat kad (expand-all selepas lipat manual) — desync kosmetik, klik sekali lagi segerak; sifar perubahan kontrak payload.
