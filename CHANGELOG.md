@@ -2,6 +2,12 @@
 
 All notable changes to this project will be documented in this file.
 
+## SubMaker v3.9.41 (2026-10-14) — Trinity Rehydrate Race Fix: Settings Lost on Reconfigure
+
+### Fixed
+
+- **Setting Trinity hilang semasa reconfigure config hash sedia ada ([public/js/trinity-agents.js](public/js/trinity-agents.js)):** server menyimpan blok `trinity` dengan betul (disahkan pada `/api/get-session/` sebenar — mode=pro + 3 ejen lengkap), tetapi UI kosong selepas buka semula configure. Punca: `applyAgentValues()` early-`return` pada mode-mismatch (default Basic vs stored Pro) dan bergantung pada `renderCards()` → `applyAgentValues(getEffectiveConfig())` — global `currentConfig` belum siap semasa muat halaman, jadi semua nilai ejen hilang. Bug hanya muncul pada reconfigure (fresh state mode sepadan → tiada early-return). Fix: `modelSyncHook` peringkat modul (diregistri oleh `mount()`) membolehkan rehydrate menghantar **cfg sebenar** untuk bina semula kad + segmented control; pengawal re-entrancy `_rehydratingMode` menghalang gelung dan menghalang handler `change` menimpa kad yang baru diisi; `renderCards(cfgOverride)` menerima config sebenar. Toggle manual Basic↔Pro tidak berubah. `collectConfigPatch()` tidak disentuh — sifar perubahan skema payload; roundtrip rehydrate→DOM→collectConfigPatch verified PASS.
+
 ## SubMaker v3.9.40 (2026-10-14) — Trinity Wrapped in "Translation API Keys" Parent Card (Full Family Structure)
 
 ### Changed

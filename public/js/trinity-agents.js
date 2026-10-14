@@ -171,6 +171,17 @@
 
     var _registryCache = null;
     var _registryPromise = null;
+    // [BUG FIX v3.9.41] Hook diregistri oleh mount(): membenarkan applyAgentValues()
+    // (dipanggil dari config.js sebagai rehydrate) memaksa mount() membina semula
+    // kad + segmented UI untuk mod baharu TANPA kehilangan nilai cfg sebenar.
+    // Sebelum ini applyAgentValues() early-return selepas dispatch 'change',
+    // bergantung pada renderCards() yang membaca global currentConfig yang mungkin
+    // belum siap semasa muat halaman — punca setting Trinity hilang pada
+    // reconfigure (config hash sedia ada).
+    var modelSyncHook = null;
+    // Pengawal re-entrancy: menghalang gelung tak terhingga apabila hook/change
+    // handler memanggil applyAgentValues() semula semasa sync mod.
+    var _rehydratingMode = false;
 
     function fetchProviderRegistry() {
         if (_registryPromise) return _registryPromise;
@@ -1519,8 +1530,10 @@
         cardsWrap.id = 'trinityCards';
         pContent.appendChild(cardsWrap);
 
-        // Render kad mengikut mod
-        function renderCards() {
+        // Render kad mengikut mod. `cfgOverride` = objek config SEBENAR yang
+        // sedang direhydrate (dihantar oleh applyAgentValues melalui hook) supaya
+        // kad diisi dengan nilai betul walaupun global currentConfig belum siap.
+        function renderCards(cfgOverride) {
             var mode = toggleInput.checked ? MODE_PRO : MODE_BASIC;
             cardsWrap.innerHTML = '';
             var agentsToShow =
@@ -1539,7 +1552,7 @@
             agentsToShow.forEach(function (agent) {
                 populateProviderDropdown(agent.key, providers);
             });
-            applyAgentValues(getEffectiveConfig());
+            applyAgentValues(cfgOverride || getEffectiveConfig());
             // [BUG FIX 2026-10-10] Panggil updateVisibility SELEPAS applyAgentValues
             // (rehydration menetapkan providerEl.value daripada config — visibility
             // mesti mencerminkan nilai sebenar, bukan nilai kosong lalai).
@@ -1547,6 +1560,15 @@
                 updateVisibility(agent.key);
             });
         }
+
+        // [BUG FIX v3.9.41] Daftar hook supaya applyAgentValues(cfg) boleh
+        // memaksa bina semula kad + sync segmented untuk mod baharu, sambil
+        // menghantar cfg SEBENAR — bukan global currentConfig yang mungkin
+        // belum siap semasa muat halaman (punca setting Trinity hilang).
+        modelSyncHook = function (realCfg) {
+            syncSegmented();
+            renderCards(realCfg);
+        };
 
         toggleInput.addEventListener('change', function () {
             var mode = toggleInput.checked ? MODE_PRO : MODE_BASIC;
@@ -1560,6 +1582,12 @@
                     c.futureContextSize = 2;
                 }
             }
+            // [BUG FIX v3.9.41] Semasa rehydrate terkawal (_rehydratingMode),
+            // hook (modelSyncHook) sudah pun membina semula kad + mengisi nilai
+            // menggunakan cfg SEBENAR. Jangan bina semula di sini — kalau tidak,
+            // renderCards() akan memanggil applyAgentValues(getEffectiveConfig())
+            // dengan global yang belum siap dan menimpa nilai yang telah diisi.
+            if (_rehydratingMode) return;
             renderCards();
         });
 
@@ -1612,12 +1640,29 @@
 
         var modeToggle = $('trinityModeToggle');
         var storedMode = (cfg.trinity && cfg.trinity.mode) || cfg.mode || MODE_BASIC;
-        if (modeToggle) {
+        if (modeToggle && !_rehydratingMode) {
             var wantPro = storedMode === MODE_PRO;
             if (modeToggle.checked !== wantPro) {
                 modeToggle.checked = wantPro;
-                modeToggle.dispatchEvent(new Event('change'));
-                return; // renderCards() akan memanggil applyAgentValues semula
+                // [BUG FIX v3.9.41] JANGAN early-return di sini.
+                // Sebelum ini: dispatch 'change' → handler dalam mount() panggil
+                // renderCards() → applyAgentValues(getEffectiveConfig()), tetapi
+                // semasa muat halaman currentConfig global BELUM siap, jadi
+                // semua nilai agent hilang. Kini:
+                //   1. hook bina semula kad + segmented untuk mod baharu, dengan
+                //      cfg SEBENAR (bukan global yang belum siap);
+                //   2. kita teruskan ke bawah untuk mengisi nilai agent.
+                // Pengawal _rehydratingMode menghalang gelung tak terhingga
+                // apabila renderCards() → applyAgentValues() dipanggil semula.
+                _rehydratingMode = true;
+                try {
+                    if (typeof modelSyncHook === 'function') {
+                        modelSyncHook(cfg);
+                    }
+                    modeToggle.dispatchEvent(new Event('change'));
+                } finally {
+                    _rehydratingMode = false;
+                }
             }
         }
 

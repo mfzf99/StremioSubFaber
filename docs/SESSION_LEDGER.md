@@ -10,6 +10,21 @@
 
 ---
 
+## 2026-10-14 — RELEASE v3.9.41: TRINITY REHYDRATE RACE FIX — SETTING HILANG SEMASA RECONFIGURE (PIPELINE 8-LANGKAH)
+
+- **Tarikh:** 2026-10-14 (waktu tempatan KL)
+- **Komit SHA:** (diisi selepas push)
+- **Status CI:** (diisi selepas run)
+- **Keputusan Owner:** Bug report — dalam app Stremio, tekan button configure balik ke config hash; setting Trinity tak melekat/hilang, setting lain kekal. Diberi link config sebenar untuk disiasat sendiri.
+- **Diagnosis (dibuktikan pada data sebenar):** `/api/get-session/bd0b2ae9…` (Cloudflare Worker) memulangkan blok `trinity` LENGKAP (mode=pro + 3 ejen custom: apiKey/baseUrl/model/provider) — server/persistence OK. UI kosong. Punca client-side: `applyAgentValues()` early-`return` pada mode-mismatch (default Basic vs stored Pro), bergantung pada `renderCards()` → `applyAgentValues(getEffectiveConfig())` — global `currentConfig` belum siap semasa muat halaman → nilai ejen hilang. Bug hanya pada reconfigure (fresh state mode sepadan → tiada early-return) — padan simptom owner tepat.
+- **Fail Terlibat:** `public/js/trinity-agents.js` sahaja (+51/−6): `modelSyncHook` peringkat modul (diregistri oleh mount(); rehydrate hantar cfg SEBENAR untuk bina semula kad + segmented), pengawal re-entrancy `_rehydratingMode` (halang gelung + halang handler change menimpa kad terisi), `renderCards(cfgOverride)`.
+- **Integration Review Backend (GLM 5.3): LULUS** — call-chain diaudit penuh (hook → renderCards(cfg) → applyAgentValues(cfg) terkawal → change handler early-return semasa rehydrate); toggle manual Basic↔Pro tidak berubah; `collectConfigPatch()` sifar perubahan; ROUNDTRIP rehydrate→DOM→collectConfigPatch = PASS (tk1/pk1/ik1 echo balik, mode=pro); hook diregistri semula setiap mount (tiada hook basi).
+- **Pengesahan live (Playwright):** cfg Pro sebenar → toggle Pro ✓, translationKey/Model/BaseUrl ✓, preflightKey ✓, inspectorKey ✓, 3 kad ✓, segmented "pro" ✓; rehydrate Basic → 1 kad nilai betul ✓; toggle manual berfungsi ✓.
+- **Pipeline 8-langkah:** SemVer → 3.9.41; CHANGELOG v3.9.41; cache-buster runtime-driven (pkg 3.9.41 + `__APP_VERSION_QUERY__` ✅); `npx prettier --check .` hijau; `npx eslint .` 0 error; `npm test` 368 tests: **367 PASS / 0 FAIL / 1 SKIP**; `graphify update .` 5154 nodes / 11104 edges / 254 communities; blok ledger ini; commit+push; CI.
+- **Next Steps:** Commit + push → CI Success → tutup.
+
+---
+
 ## 2026-10-14 — RELEASE v3.9.40: TRINITY DIBUNGKUS DALAM KAD "TRANSLATION API KEYS" (STRUKTUR KELUARGA PENUH, PIPELINE 8-LANGKAH)
 
 - **Tarikh:** 2026-10-14 (waktu tempatan KL)
