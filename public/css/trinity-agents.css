@@ -68,20 +68,26 @@
     border: 0;
     border-radius: 9px;
     background: transparent;
-    color: var(--text-secondary, #555);
+    color: #475569;
     cursor: pointer;
-    transition:
-        background 0.15s ease,
-        color 0.15s ease,
-        box-shadow 0.15s ease;
+    transition: all 0.2s ease;
 }
+/* [BUG FIX v3.9.44] Tab AKTIF mesti mengikut tema rasmi Biru SubFaber — sebelum
+   ini latar putih (--bg-card) di atas trek kelabu pucat menyebabkan tab aktif
+   nyaris tidak kelihatan (tiada kontra). Kini: gradien biru #2563eb → #1d4ed8,
+   teks putih, sub-keterangan putih lembut, bayang biru halus. */
 .trinity-segment-btn:hover {
-    color: var(--text-primary, #111827);
+    color: #1e293b;
+    background: rgba(37, 99, 235, 0.08);
 }
 .trinity-segment-btn.active {
-    background: var(--bg-card, #fff);
-    color: var(--text-primary, #111827);
-    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.12);
+    background: linear-gradient(135deg, #2563eb 0%, #1d4ed8 100%);
+    color: #ffffff;
+    box-shadow: 0 4px 12px rgba(37, 99, 235, 0.25);
+}
+.trinity-segment-btn.active:hover {
+    background: linear-gradient(135deg, #2563eb 0%, #1d4ed8 100%);
+    color: #ffffff;
 }
 .trinity-segment-btn:focus-visible {
     outline: 2px solid #2563eb;
@@ -94,6 +100,14 @@
 .trinity-segment-hint {
     font-size: 0.75rem;
     color: var(--text-secondary, #6b7280);
+}
+/* Teks tab aktif: putih tulen (tajuk) + putih lembut (sub-keterangan) supaya
+   kontra AA terjamin di atas gradien biru. */
+.trinity-segment-btn.active .trinity-segment-label {
+    color: #ffffff;
+}
+.trinity-segment-btn.active .trinity-segment-hint {
+    color: rgba(255, 255, 255, 0.85);
 }
 .trinity-mode-label {
     font-weight: 600;
@@ -155,6 +169,19 @@
     display: grid;
     gap: 1rem;
     margin-bottom: 1rem;
+}
+/* [BUG FIX v3.9.44] 4-STATE DOM MORPH (HIDE ≠ LOCK): kad yang tidak relevan
+   dengan mod semasa disembunyikan — ELEMEN KEKAL DALAM DOM dengan semua nilai
+   input utuh (termasuk Format/Door custom + status Secondary Fallback). Ini
+   menggantikan pemusnahan DOM (innerHTML='') yang memusnahkan nilai pengguna. */
+.trinity-cards .trinity-agent-card.trinity-mode-hidden {
+    display: none;
+}
+/* Hint Pro-only: dibina sentiasa (kad dibina sekali), disembunyikan dalam
+   Basic Mode melalui kelas mod pada bekas kad — supaya pariti visual lama
+   dikekalkan tanpa membina semula DOM. */
+.trinity-cards.trinity-mode-basic .trinity-pro-only {
+    display: none;
 }
 .trinity-agent-card {
     border: 1px solid var(--border-color, rgba(0, 0, 0, 0.1));
@@ -315,12 +342,17 @@
     margin-top: 16px;
 }
 /* Secondary Fallback Provider (sub-kad Agent Translation)
-   [REKA BENTUK 2026-10-14] Premium card: header + toggle switch kanan. */
+   [REKA BENTUK 2026-10-14] Premium card: header + toggle switch kanan.
+   [BUG FIX v3.9.44] Ruang bernafas diluaskan — sebelum ini sub-kad terhimpit
+   dengan medan Model / Enable Gemini API key rotation di atas dan terlalu rapat
+   dengan sempadan bawah kad. Kini: margin atas 24px, margin bawah 8px, padding
+   dalaman 16px 20px pada baris kepala + kandungan. */
 .trinity-fallback {
-    margin-top: 0.75rem;
+    margin-top: 24px;
+    margin-bottom: 8px;
     border: 1px solid #e2e8f0;
     border-radius: 10px;
-    padding: 0.7rem 0.85rem;
+    padding: 0;
     background: linear-gradient(180deg, #f8fafc 0%, #f1f5f9 100%);
     box-shadow: 0 1px 2px rgba(15, 23, 42, 0.06);
 }
@@ -329,7 +361,7 @@
     align-items: center;
     justify-content: space-between;
     gap: 0.5rem;
-    padding: 0.1rem 0;
+    padding: 16px 20px;
 }
 .trinity-fallback-head-left {
     display: flex;
@@ -404,14 +436,20 @@
     border-radius: 999px;
 }
 
+/* Kandungan sub-kad apabila dibuka — padding selaras dengan baris kepala
+   supaya susun atur lega dan tidak melekat pada sempadan kad. Padding diletak
+   pada .trinity-fallback-fields (bukan body) supaya tiada jalur kosong apabila
+   toggle OFF menyembunyikan medan (display:none). */
 .trinity-fallback-body {
     display: grid;
     gap: 0.6rem;
-    margin-top: 0.6rem;
+    margin-top: 0;
+    padding: 0;
 }
 .trinity-fallback-fields {
     display: grid;
     gap: 0.6rem;
+    padding: 0 20px 16px;
 }
 .trinity-fallback .trinity-input-wrap {
     display: flex;

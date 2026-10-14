@@ -10,6 +10,39 @@
 
 ---
 
+## 2026-10-14 — FRONTEND FIX v3.9.44: TRINITY DOM MORPH 4-STATE + FRESH STATE KOSONG + CSS TAB BIRU SUBFABER (HANDOVER KE BACKEND)
+
+- **Tarikh:** 2026-10-14 (waktu tempatan KL)
+- **Komit SHA:** BELUM — menunggu Integration Review Backend + pipeline 8-langkah (ZERO-COMMIT dikuatkuasakan pada mod Frontend).
+- **Status:** FRONTEND SIAP — 4 kecacatan live v3.9.43 diperbaiki; handover kepada Backend (GLM 5.3) untuk audit integrasi.
+- **Keputusan Owner:** Mandat pembaikan tuntas UI/UX + state Trinity v3.9.44 (4 isu serentak, dikesan pada ujian live v3.9.43).
+- **Fail Terlibat (domain Frontend sahaja):**
+    - [`public/js/trinity-agents.js`](public/js/trinity-agents.js:1) — DOM morph + guard fresh state + lencana kunci.
+    - [`public/css/trinity-agents.css`](public/css/trinity-agents.css:1) — suis mod biru SubFaber + ruang bernafas sub-kad fallback + kelas morf.
+    - [`src/services/trinity-mode-switch-regression.test.js`](src/services/trinity-mode-switch-regression.test.js:1) — 5 ujian baharu (A9–A13).
+- **ISU 1 — Format/Door hilang + lencana 'No key' kaku + Secondary Fallback ter-reset:**
+    - Punca: [`renderCards()`](public/js/trinity-agents.js:1694) melakukan `cardsWrap.innerHTML = ''` pada setiap pertukaran mod; pengisian PROGRAMATIK `keyEl.value` oleh `applyAgentValues()` tidak mencetuskan event `input` → lencana kekal 'No key'; penetapan `fmtEl.value = stored.format` (nilai legacy pendek `'openai'`/`'gemini'`) TIDAK padan sebarang `<option>` (nilai option = door penuh) → dropdown Format/Door menjadi KOSONG.
+    - Pembaikan: (a) DOM kad dibina SEKALI oleh [`ensureCardsBuilt()`](public/js/trinity-agents.js:1664) (idempotent); pertukaran mod hanya menogol visibiliti via [`applyModeVisibility()`](public/js/trinity-agents.js:1680) — kelas `.trinity-mode-hidden` (HIDE, bukan LOCK); (b) [`updateKeyBadge()`](public/js/trinity-agents.js:1377) + pemanggilan berpagar dalam `applyAgentValues` (hanya bila lencana masih 'No key' — status Valid/Invalid tidak ditimpa); (c) peta songsang baharu `FORMAT_TO_DOOR_VALUE` + [`formatToDoorValue()`](public/js/trinity-agents.js:1417) memulihkan dropdown daripada kedua-dua `stored.format` legacy DAN `stored.door`; (d) [`resolveEffectiveDoor()`](public/js/trinity-agents.js:234) memastikan `door` yang dirakam (snapshot + patch) sepadan dengan pilihan dropdown Format pengguna.
+- **ISU 2 — Fresh state auto-pilih Google Gemini:**
+    - Punca: [`deriveTranslationFromProviders()`](public/js/trinity-agents.js:1451) memadankan `entry.apiKey || entry.model` → entri lalai `providers.gemini` (mainProvider lalai) memetakan kredential hantu; laluan seed legasi dalam `applyAgentValues` juga dipacu `cfg.geminiModel` lalai + `providerEl.value = 'gemini'`.
+    - Pembaikan: guard kredential SEBENAR — entri dilangkau melainkan `apiKey` tidak kosong ATAU `baseUrl` tidak kosong; lapisan legasi `geminiApiKey` kini digate; blok seed legasi hanya berjalan bila `legacyKey` wujud. Fresh state kekal `— Select provider —` / `— Select model —` / `No key`.
+- **ISU 3 — Sub-kad Secondary Fallback sempit:** `.trinity-fallback` → `margin-top: 24px`, `margin-bottom: 8px`, `padding: 0` (padding dipindah ke baris kepala + kandungan); `.trinity-fallback-head` → `padding: 16px 20px`; `.trinity-fallback-fields` → `padding: 0 20px 16px`. Padding pada `-fields` (bukan `-body`) supaya tiada jalur kosong apabila toggle OFF.
+- **ISU 4 — Tab togol Basic/Pro tanpa kontra:** `.trinity-segment-btn.active` → `linear-gradient(135deg, #2563eb 0%, #1d4ed8 100%)` + teks putih + `box-shadow: 0 4px 12px rgba(37, 99, 235, 0.25)`; tab tidak aktif teks `#475569` + hover lembut `rgba(37, 99, 235, 0.08)`; `transition: all 0.2s ease`; sub-keterangan tab aktif `rgba(255, 255, 255, 0.85)`.
+- **Kontrak payload (untuk audit Backend):** BENTUK TIDAK BERUBAH — `trinity.{preflight,translation,inspector}` kekal `{apiKey,format,baseUrl,model,provider,door,isCustom,enabled}`; **nilai `door` kini konsisten dengan pilihan Format/Door pengguna** (sebelum ini door lalai registry boleh tidak sepadan dengan `format` legacy yang dihantar). Cawangan `!cardPresent` dalam `collectConfigPatch()` kekal memulihkan nilai lama verbatim; `geminiApiKey/geminiModel/geminiKeyRotation*/geminiApiKeys`; `multiProviderEnabled/secondaryProviderEnabled/secondaryProvider/providers.<key>` (MERGE); `agentB` — semua tidak berubah bentuknya.
+- **Ujian regresi baharu (A9–A13):** A9 renderCards tiada `innerHTML` + ensureCardsBuilt + applyModeVisibility; A10 laluan togol manual tiada pemusnahan DOM; A11 guard kredential sebenar dalam `deriveTranslationFromProviders`; A12 pemulihan Format/Door via peta + `updateKeyBadge` + gate `legacyKey`; A13 kontrak CSS (tab biru SubFaber, margin 24px/8px, padding 16px 20px, kelas `trinity-mode-hidden`). Laluan `const trinityCssSrc` ditambah.
+- **Verifikasi live (Playwright, runtime sebenar — port 7001):** LULUS ✅
+    - Fresh state (cfg lalai tanpa kunci): provider `''`, model `''`, key `''`, badge `No key` ✅ (kontra-kes: `providers.gemini.apiKey` sebenar → provider `gemini`, badge `Google Gemini Native` ✅).
+    - Basic (Custom + door `gemini-native` + key + baseUrl + Secondary Fallback groq ON) → Pro → Basic: **9/9 medan identik** (`diffFields: []`), `hidden` kad ketika Pro = 0, 3 kad kekal ✅.
+    - Pro hint `display: block`; Basic hint `display: none` ✅.
+    - `collectConfigPatch()`: translation `door: 'anthropic-messages'` (sepadan format `anthropic`) ✅; merentas Pro → Basic, `preflight.apiKey`/`inspector.apiKey` utuh (non-destructive save) ✅.
+    - Computed style: tab aktif `linear-gradient(135deg, rgb(37,99,235) 0%, rgb(29,78,216) 100%)` + `rgb(255,255,255)` + bayang `rgba(37,99,235,0.25) 0 4px 12px`; tab idle `rgb(71,85,105)` + transition `0.2s`; `.trinity-fallback` margin `24px`/`8px`; kepala padding `16px 20px` ✅.
+- **Semakan kualiti Frontend:** `node --check` (js + test) ✅; `npx prettier --check` ketiga-tiga fail hijau ✅; `npx eslint` pada `trinity-agents.js` + test = **0 error / 0 warning** ✅ (1 warning `mode` tidak digunakan dibuang dengan mengalih keluar parameter `buildAgentCard(agent, mode)`); semakan kendiri regex kontrak (36 assertion) lulus ✅.
+- **Skop DILARANG disentuh (dipatuhi):** tiada `npm test`, tiada operasi Git.
+- **Handover kepada Backend:** audit integrasi (serialisasi payload `door`/`format`, race rehydrate, `applyModeVisibility` vs `collapseSectionCards`), `npm test` monotonic, bump SemVer 3.9.44, CHANGELOG, ledger, commit + push, CI.
+- **Next Steps:** Backend Integration Review → pipeline 8-langkah → CI Success → tutup.
+
+---
+
 ## 2026-10-14 — RELEASE v3.9.43: TRINITY NON-DESTRUCTIVE MODE SWITCH — STATE KEKAL SEMASA TOGOL BASIC <-> PRO (PIPELINE 8-LANGKAH)
 
 - **Tarikh:** 2026-10-14 (waktu tempatan KL)

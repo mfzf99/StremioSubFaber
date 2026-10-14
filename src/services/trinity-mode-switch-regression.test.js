@@ -30,6 +30,7 @@ const path = require('node:path');
 const projectRoot = path.join(__dirname, '..', '..');
 const trinitySrc = fs.readFileSync(path.join(projectRoot, 'public', 'js', 'trinity-agents.js'), 'utf8');
 const configJsSrc = fs.readFileSync(path.join(projectRoot, 'public', 'config.js'), 'utf8');
+const trinityCssSrc = fs.readFileSync(path.join(projectRoot, 'public', 'css', 'trinity-agents.css'), 'utf8');
 
 // ---------------------------------------------------------------------------
 // A. KONTRAK SUMBER FRONTEND
@@ -155,6 +156,145 @@ test('[A8] deriveTranslationFromProviders — fallback rehidrasi providers.<main
         trinitySrc,
         /if \(!stored && agent\.key === 'translation'\) \{\s*\n\s*stored = deriveTranslationFromProviders\(cfg\);/,
         'fallback mesti digunakan dalam applyAgentValues untuk kad translation'
+    );
+});
+
+// ---------------------------------------------------------------------------
+// A2. KONTRAK 4-STATE DOM MORPH v3.9.44
+// ---------------------------------------------------------------------------
+
+test('[A9] renderCards TIDAK memusnahkan DOM kad semasa pertukaran mod (HIDE, bukan destroy)', () => {
+    // Kecacatan v3.9.43: `cardsWrap.innerHTML = ''` dalam renderCards() memusnahkan
+    // SEMUA input pada setiap togol Basic <-> Pro — kesan sampingan: dropdown
+    // Format/Door custom menjadi KOSONG, status Secondary Fallback ter-reset,
+    // dan lencana API key kembali ke 'No key'.
+    const fnMatch = trinitySrc.match(/function renderCards\(cfgOverride\) \{[\s\S]*?\n        \}/);
+    assert.ok(fnMatch, 'fungsi renderCards mesti wujud');
+    const fnSrc = fnMatch[0];
+    assert.doesNotMatch(
+        fnSrc,
+        /cardsWrap\.innerHTML/,
+        'renderCards TIDAK boleh memusnahkan DOM kad (innerHTML) — gunakan applyModeVisibility'
+    );
+    assert.match(fnSrc, /ensureCardsBuilt\(\);/, 'renderCards mesti memastikan kad dibina sekali sahaja');
+    assert.match(fnSrc, /applyModeVisibility\(\);/, 'renderCards mesti menogol visibiliti kad mengikut mod');
+
+    // Pembinaan DOM dikurung dalam ensureCardsBuilt() sahaja (idempotent).
+    const buildMatch = trinitySrc.match(/function ensureCardsBuilt\(\) \{[\s\S]*?\n        \}/);
+    assert.ok(buildMatch, 'fungsi ensureCardsBuilt mesti wujud');
+    assert.match(buildMatch[0], /if \(_cardsBuilt && cardsWrap\.children\.length\) return;/);
+
+    // Togol visibiliti: kelas .trinity-mode-hidden + kelas mod pada bekas kad.
+    const visMatch = trinitySrc.match(/function applyModeVisibility\(\) \{[\s\S]*?\n        \}/);
+    assert.ok(visMatch, 'fungsi applyModeVisibility mesti wujud');
+    assert.match(visMatch[0], /trinity-mode-hidden/, 'kad luar mod mesti disembunyikan via kelas trinity-mode-hidden');
+    assert.match(visMatch[0], /trinity-mode-basic/, 'bekas kad mesti membawa kelas mod untuk hint Pro-only');
+});
+
+test('[A10] handler togol mod tidak memusnahkan DOM dan merakam snapshot dahulu', () => {
+    const handlerMatch = trinitySrc.match(
+        /toggleInput\.addEventListener\('change', function \(\) \{[\s\S]*?\n        \}\);/
+    );
+    assert.ok(handlerMatch, 'handler change togol mod mesti wujud');
+    const handlerSrc = handlerMatch[0];
+    assert.doesNotMatch(handlerSrc, /cardsWrap\.innerHTML/, 'laluan togol manual TIDAK boleh memusnahkan DOM kad');
+});
+
+test('[A11] deriveTranslationFromProviders hanya memetakan pembekal yang BENAR-BENAR dikonfigurasikan (fresh state kekal kosong)', () => {
+    // Kecacatan v3.9.43: `entry.apiKey || entry.model` memadankan entri lalai
+    // (mainProvider: 'gemini') → fresh state AUTO-memilih 'Google Gemini' +
+    // 'gemini-3-flash-preview' walaupun tiada kunci API.
+    const fnMatch = trinitySrc.match(/function deriveTranslationFromProviders\(cfg\) \{[\s\S]*?\n    \}/);
+    assert.ok(fnMatch, 'fungsi deriveTranslationFromProviders mesti wujud');
+    const fnSrc = fnMatch[0];
+    assert.doesNotMatch(fnSrc, /entry\.apiKey \|\| entry\.model/, 'kriteria entry.model (lalai) mesti dibuang');
+    assert.match(
+        fnSrc,
+        /if \(!entryApiKey && !entryBaseUrl\) continue;/,
+        'entri tanpa apiKey DAN tanpa baseUrl mesti dilangkau (fresh state kekal kosong)'
+    );
+    assert.match(
+        fnSrc,
+        /if \(String\(cfg\.geminiApiKey \|\| ''\)\.trim\(\)\) \{/,
+        'lapisan legasi gemini hanya dipakai bila kunci sebenar wujud'
+    );
+});
+
+test('[A12] applyAgentValues memulihkan Format/Door (peta format→door) dan mengemas kini lencana kunci', () => {
+    const fnMatch = trinitySrc.match(/function applyAgentValues\(cfg\) \{[\s\S]*?\n    \}/);
+    assert.ok(fnMatch, 'fungsi applyAgentValues mesti wujud');
+    const fnSrc = fnMatch[0];
+    // Pemulihan Format/Door: nilai legacy ('gemini'|'openai'|'anthropic') mesti
+    // dipetakan kepada nilai <option> penuh, jika tidak dropdown jadi KOSONG.
+    assert.match(fnSrc, /var fmtValue = formatToDoorValue\(stored\.format\);/, 'format legacy mesti dipetakan');
+    assert.match(
+        fnSrc,
+        /if \(fmtValue\) fmtEl\.value = fmtValue;/,
+        'dropdown Format mesti dipulihkan bila peta berjaya'
+    );
+    // Lencana 'No key' kaku selepas pengisian programatik.
+    assert.match(fnSrc, /updateKeyBadge\(agent\.key\)/, 'lencana kunci mesti dikemas kini selepas rehydrate');
+    // Seed legasi hanya bila kunci sebenar wujud (fresh state kekal placeholder).
+    assert.match(
+        fnSrc,
+        /var legacyKey = String\(cfg\.geminiApiKey \|\| ''\)\.trim\(\);/,
+        'seed legasi mesti digate oleh kunci gemini sebenar'
+    );
+    assert.match(fnSrc, /if \(legacyKey\) \{/, 'blok seed legasi mesti bersyarat kepada legacyKey');
+
+    // Peta songsang format→door + pembantu door berkesan mesti wujud.
+    assert.match(trinitySrc, /var FORMAT_TO_DOOR_VALUE = \{/, 'peta FORMAT_TO_DOOR_VALUE mesti wujud');
+    assert.match(trinitySrc, /function formatToDoorValue\(format\)/, 'pembantu formatToDoorValue mesti wujud');
+    assert.match(
+        trinitySrc,
+        /function resolveEffectiveDoor\(providerEntry, fmtValue\)/,
+        'resolveEffectiveDoor mesti wujud'
+    );
+});
+
+test('[A13] CSS — tab aktif Biru SubFaber + sub-kad Secondary Fallback bernafas (v3.9.44)', () => {
+    // Tab aktif sebelum ini putih (tiada kontra).
+    assert.match(
+        trinityCssSrc,
+        /\.trinity-segment-btn\.active \{[\s\S]*?linear-gradient\(135deg, #2563eb 0%, #1d4ed8 100%\)/,
+        'tab aktif mesti menggunakan gradien biru SubFaber'
+    );
+    assert.match(
+        trinityCssSrc,
+        /\.trinity-segment-btn\.active \{[\s\S]*?box-shadow: 0 4px 12px rgba\(37, 99, 235, 0\.25\)/,
+        'tab aktif mesti mempunyai bayang biru halus'
+    );
+    assert.match(
+        trinityCssSrc,
+        /\.trinity-segment-btn \{[\s\S]*?color: #475569;/,
+        'tab tidak aktif mesti menggunakan teks kelabu gelap #475569'
+    );
+    assert.match(
+        trinityCssSrc,
+        /\.trinity-segment-btn\.active \.trinity-segment-hint \{\s*color: rgba\(255, 255, 255, 0\.85\);/,
+        'sub-keterangan tab aktif mesti putih lembut'
+    );
+    // Ruang bernafas sub-kad fallback.
+    assert.match(
+        trinityCssSrc,
+        /\.trinity-fallback \{[\s\S]*?margin-top: 24px;/,
+        'sub-kad fallback mesti margin-top 24px'
+    );
+    assert.match(
+        trinityCssSrc,
+        /\.trinity-fallback \{[\s\S]*?margin-bottom: 8px;/,
+        'sub-kad fallback mesti margin-bottom 8px'
+    );
+    assert.match(
+        trinityCssSrc,
+        /\.trinity-fallback-head \{[\s\S]*?padding: 16px 20px;/,
+        'baris kepala sub-kad fallback mesti padding 16px 20px'
+    );
+    // Kelas morf DOM.
+    assert.match(
+        trinityCssSrc,
+        /\.trinity-cards \.trinity-agent-card\.trinity-mode-hidden \{\s*display: none;/,
+        'kelas trinity-mode-hidden mesti menyembunyikan kad'
     );
 });
 

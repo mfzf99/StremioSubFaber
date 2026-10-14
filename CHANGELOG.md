@@ -2,6 +2,30 @@
 
 All notable changes to this project will be documented in this file.
 
+## SubMaker v3.9.44 (2026-10-14) — Trinity 4-State DOM Morph: Format/Door, Key Badge & Fresh-State Fixes
+
+### Fixed
+
+- **Isu 1 — Format/Door hilang, lencana 'No key' kaku & Secondary Fallback ter-reset selepas togol mod ([public/js/trinity-agents.js](public/js/trinity-agents.js)):** `renderCards()` masih melakukan `cardsWrap.innerHTML = ''` pada setiap pertukaran Basic ↔ Pro. Walaupun snapshot dipulihkan oleh v3.9.43, tiga kesan sampingan kekal: (a) dropdown Format/Door pada Custom tidak dipulihkan kerana `stored.format` bernilai legacy pendek (`'openai'`/`'gemini'`) yang tidak memadankan `<option>` door penuh → dropdown menjadi kosong; (b) lencana API key kekal 'No key' kerana pengisian programatik `.value` tidak mencetuskan event `input`; (c) status Secondary Fallback ter-reset semasa repopulasi. Dibaiki dengan seni bina **4-State DOM Morph**:
+  1. **`ensureCardsBuilt()`:** DOM kad (3 ejen) dibina SEKALI sahaja (idempotent) — tiada lagi pemusnahan DOM pada laluan togol; listener dipasang sekali.
+  2. **`applyModeVisibility()`:** pertukaran Basic ↔ Pro HANYA menogol kelas `.trinity-mode-hidden` pada kad Preflight/Inspector (HIDE, bukan LOCK) dan `.trinity-mode-basic` pada bekas kad (menyembunyikan hint Pro-only `.trinity-pro-only`) — semua nilai input kekal 100% utuh tanpa bina semula.
+  3. **`updateKeyBadge()` + peta `FORMAT_TO_DOOR_VALUE`/`formatToDoorValue()`:** lencana dikemas kini selepas pengisian programatik (berpagar — status ujian Valid/Invalid tidak ditimpa); dropdown Format/Door dipulihkan daripada `stored.format` legacy DAN `stored.door`.
+  4. **`resolveEffectiveDoor()`:** medan `door` dalam snapshot & payload kini konsisten dengan pilihan dropdown Format/Door pengguna (sebelum ini door lalai registry boleh tidak sepadan dengan `format` legacy yang dihantar).
+- **Isu 2 — Fresh state auto-memilih 'Google Gemini' + 'gemini-3-flash-preview' ([public/js/trinity-agents.js](public/js/trinity-agents.js), `deriveTranslationFromProviders()`):** kriteria lama `entry.apiKey || entry.model` memadankan entri lalai `providers.gemini` (daripada `mainProvider: 'gemini'` konfigurasi kosong) walaupun tiada kunci API dimasukkan. Fix: entri HANYA dipetakan apabila `apiKey` tidak kosong ATAU `baseUrl` tidak kosong (Custom/Proxy); lapisan legasi `geminiApiKey` dan blok seed legasi dalam `applyAgentValues()` turut digate kunci sebenar — fresh state `/#/configuration` kini memaparkan '— Select provider —', '— Select model —' dan 'No key' sepenuhnya kosong.
+
+### Changed
+
+- **Isu 3 — Sub-kad Secondary Fallback sempit ([public/css/trinity-agents.css](public/css/trinity-agents.css)):** ruang bernafas diluaskan — `margin-top: 24px`, `margin-bottom: 8px` pada `.trinity-fallback`; baris kepala `.trinity-fallback-head` `padding: 16px 20px`; kandungan `.trinity-fallback-fields` `padding: 0 20px 16px` (padding pada medan supaya tiada jalur kosong bila toggle OFF).
+- **Isu 4 — Tab aktif 'Basic Mode / Pro Mode' tanpa kontra ([public/css/trinity-agents.css](public/css/trinity-agents.css)):** tab aktif kini menggunakan tema rasmi Biru SubFaber — `linear-gradient(135deg, #2563eb 0%, #1d4ed8 100%)`, teks putih `#ffffff`, sub-keterangan putih lembut `rgba(255, 255, 255, 0.85)`, bayang `0 4px 12px rgba(37, 99, 235, 0.25)`; tab tidak aktif teks kelabu gelap `#475569` dengan hover lembut; `transition: all 0.2s ease` pada kedua-dua keadaan.
+
+### Added
+
+- **Regression test 5 kes baharu A9-A13 ([src/services/trinity-mode-switch-regression.test.js](src/services/trinity-mode-switch-regression.test.js)):** A9 renderCards tanpa pemusnahan DOM (ensureCardsBuilt + applyModeVisibility); A10 laluan togol manual tanpa `innerHTML`; A11 guard kredential sebenar dalam `deriveTranslationFromProviders` (fresh state kekal kosong); A12 pemulihan Format/Door + `updateKeyBadge` + gate `legacyKey`; A13 kontrak CSS (gradien biru, margin 24px/8px, padding 16px 20px, kelas `.trinity-mode-hidden`). Jumlah kes: 12 → 17.
+
+### Preserved
+
+- Kontrak payload sifar perubahan bentuk: `trinity.{preflight,translation,inspector}` = `{apiKey,format,baseUrl,model,provider,door,isCustom,enabled}` (format kekal nilai legacy pendek sepadan `VALID_FORMATS` keyDetector); `gemini*`; `multiProviderEnabled`/`secondaryProvider*`/`providers.<key>` (MERGE); `agentB`. Verified live via Playwright: 9/9 medan identik merentas Basic → Pro → Basic (termasuk door `gemini-native`, key, baseUrl, fallback ON + provider + key); fresh state `''`/`''`/`No key`; kontra-kes kunci sebenar tetap dipetakan; `collectConfigPatch()` dalam Basic memelihara `preflight`/`inspector` (non-destructive save).
+
 ## SubMaker v3.9.43 (2026-10-14) — Trinity Non-Destructive Mode Switch: State Preserved Across Basic <-> Pro
 
 ### Fixed

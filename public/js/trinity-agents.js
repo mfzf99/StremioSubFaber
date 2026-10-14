@@ -227,9 +227,21 @@
         return provider && provider.isCustom === true;
     }
 
+    // [BUG FIX v3.9.44] Door BERKESAN satu kad: pilihan Format/Door eksplisit
+    // (Custom/Proxy) menang; 'auto' → door lalai registry pembekal. Digunakan
+    // oleh snapshot + collectConfigPatch supaya medan `door` dalam payload
+    // SENTIASA sepadan dengan pilihan dropdown pengguna (bukan door lalai).
+    function resolveEffectiveDoor(providerEntry, fmtValue) {
+        var baseDoor = getProviderDoor(providerEntry);
+        if (isCustomProvider(providerEntry) && fmtValue && fmtValue !== 'auto') return fmtValue;
+        return baseDoor;
+    }
+
     // --- Pembina kad modular (reka bentuk semula Fasa E) ---
 
-    function buildAgentCard(agent, mode) {
+    // [BUG FIX v3.9.44] Parameter `mode` dibuang: kad dibina SEKALI untuk semua
+    // ejen (mod ditentukan oleh visibiliti, bukan pembinaan semula DOM).
+    function buildAgentCard(agent) {
         var card = createEl('div', 'trinity-agent-card');
         card.dataset.agent = agent.key;
 
@@ -372,12 +384,14 @@
             card.appendChild(buildSecondaryFallbackRow());
         }
 
-        // Pro-only detail rows
-        if (mode === MODE_PRO) {
-            var hint = createEl('div', 'trinity-agent-hint');
-            hint.textContent = 'Save → backend keyDetector autodetects (this dropdown override wins).';
-            card.appendChild(hint);
-        }
+        // [BUG FIX v3.9.44] Hint Pro-only dibina SENTIASA (kad dibina sekali
+        // sahaja), tetapi disembunyikan oleh CSS melalui kelas mod pada bekas
+        // kad (`.trinity-cards.trinity-mode-basic .trinity-pro-only`). Ini
+        // mengekalkan pariti visual lama (hint hanya dalam Pro Mode) TANPA
+        // membina semula DOM semasa pertukaran mod.
+        var hint = createEl('div', 'trinity-agent-hint trinity-pro-only');
+        hint.textContent = 'Save → backend keyDetector autodetects (this dropdown override wins).';
+        card.appendChild(hint);
 
         // Lipat kad via butang collapse header (pola kad anak Languages:
         // Source/Target). Tiada footer "Close section" dalam kad — section API
@@ -1366,6 +1380,21 @@
 
     // --- Autodetect badge update + reaktif URL-to-Door ---
 
+    // [BUG FIX v3.9.44] Kemas kini lencana autodetect untuk SATU ejen tanpa
+    // menyentuh kelas sempadan input (is-valid/is-invalid). Diperlukan kerana
+    // `applyAgentValues()` mengisi `keyInput.value` secara PROGRAMATIK —
+    // penetapan `.value` tidak mencetuskan event 'input', jadi lencana kekal
+    // memaparkan 'No key' walaupun kunci telah diisi (kecacatan v3.9.43).
+    function updateKeyBadge(agentKey) {
+        var keyInput = $('trinity-' + agentKey + '-key');
+        var badge = $('trinity-' + agentKey + '-badge');
+        if (!keyInput || !badge) return;
+        var value = String(keyInput.value || '').trim();
+        var meta = value ? formatBadgeMeta(detectFormatFromKey(value)) : { label: 'No key', tone: 'muted' };
+        badge.textContent = meta.label;
+        badge.className = 'trinity-format-badge tone-' + meta.tone;
+    }
+
     // [URL-TO-DOOR SYNC 2026-10-10] Pemetaan door backend → nilai dropdown
     // Format frontend. Kekal selari dengan DOOR_TO_FORMAT (legacy pendek).
     var DOOR_TO_FORMAT_VALUE = {
@@ -1376,6 +1405,24 @@
 
     function doorToDropdownValue(door) {
         return DOOR_TO_FORMAT_VALUE[door] || null;
+    }
+
+    // [BUG FIX v3.9.44] Pemetaan songsang format legacy ('gemini'|'openai'|
+    // 'anthropic') → nilai penuh dropdown Format/Door. Nilai yang sudah menjadi
+    // door penuh dikekalkan; 'auto' kekal 'auto'. Tanpa peta ini, penetapan
+    // fmtEl.value='openai' TIDAK padan sebarang <option> → dropdown Format/Door
+    // menjadi KOSONG selepas pertukaran mod (kecacatan v3.9.43).
+    var FORMAT_TO_DOOR_VALUE = {
+        gemini: 'gemini-native',
+        openai: 'openai-compatible',
+        anthropic: 'anthropic-messages'
+    };
+
+    function formatToDoorValue(format) {
+        if (!format) return null;
+        if (format === 'auto') return 'auto';
+        if (DOOR_TO_FORMAT_VALUE[format]) return format; // sudah door penuh
+        return FORMAT_TO_DOOR_VALUE[format] || null;
     }
 
     function wireAutodetect(agentKey) {
@@ -1448,6 +1495,12 @@
     // trinity.translation). Tanpa fallback ini, kad Agent Translation dirender
     // kosong walaupun kunci sebenarnya wujud. Utamakan `trinity.translation`,
     // kemudian `providers.<mainProvider>` / `providers.gemini`.
+    // [BUG FIX v3.9.44 — FRESH STATE] Entri pembekal HANYA dipetakan apabila ia
+    // benar-benar dikonfigurasikan (apiKey tidak kosong, atau Custom/Proxy dengan
+    // baseUrl). Sebelum ini `entry.apiKey || entry.model` memadankan entri lalai
+    // (mainProvider: 'gemini' daripada objek konfigurasi kosong) → kad Agent
+    // Translation auto-memilih 'Google Gemini' + 'gemini-3-flash-preview'
+    // walaupun pengguna belum memasukkan sebarang kunci API.
     function deriveTranslationFromProviders(cfg) {
         if (!cfg || typeof cfg !== 'object') return null;
         var providersMap = cfg.providers || {};
@@ -1457,20 +1510,23 @@
         if (candidates.indexOf('gemini') === -1) candidates.push('gemini');
         for (var i = 0; i < candidates.length; i++) {
             var entry = providersMap[candidates[i]];
-            if (entry && typeof entry === 'object' && (entry.apiKey || entry.model)) {
-                return {
-                    apiKey: entry.apiKey || '',
-                    format: entry.door === DOOR_TYPES.GEMINI ? DOOR_TYPES.GEMINI : entry.door || 'auto',
-                    baseUrl: entry.baseUrl || '',
-                    model: entry.model || '',
-                    provider: candidates[i]
-                };
-            }
-        }
-        // Legasi terakhir: medan gemini langsung
-        if (cfg.geminiApiKey || cfg.geminiModel) {
+            if (!entry || typeof entry !== 'object') continue;
+            var entryApiKey = String(entry.apiKey || '').trim();
+            var entryBaseUrl = String(entry.baseUrl || '').trim();
+            // Kredential sebenar sahaja — jangan petakan entri lalai/kosong.
+            if (!entryApiKey && !entryBaseUrl) continue;
             return {
-                apiKey: cfg.geminiApiKey || '',
+                apiKey: entryApiKey,
+                format: entry.door === DOOR_TYPES.GEMINI ? DOOR_TYPES.GEMINI : entry.door || 'auto',
+                baseUrl: entryBaseUrl,
+                model: entry.model || '',
+                provider: candidates[i]
+            };
+        }
+        // Legasi terakhir: medan gemini langsung (kunci sebenar sahaja).
+        if (String(cfg.geminiApiKey || '').trim()) {
+            return {
+                apiKey: String(cfg.geminiApiKey).trim(),
                 format: 'gemini',
                 baseUrl: '',
                 model: String(cfg.geminiModel || '').replace(/^models\//, ''),
@@ -1621,33 +1677,61 @@
         cardsWrap.id = 'trinityCards';
         pContent.appendChild(cardsWrap);
 
-        // Render kad mengikut mod. `cfgOverride` = objek config SEBENAR yang
-        // sedang direhydrate (dihantar oleh applyAgentValues melalui hook) supaya
-        // kad diisi dengan nilai betul walaupun global currentConfig belum siap.
-        function renderCards(cfgOverride) {
-            var mode = toggleInput.checked ? MODE_PRO : MODE_BASIC;
+        // [BUG FIX v3.9.44 — NON-DESTRUCTIVE DOM MORPH]
+        // Kecacatan v3.9.43: `renderCards()` melakukan `cardsWrap.innerHTML = ''`
+        // pada SETIAP pertukaran Basic <-> Pro. Walaupun snapshot dipulihkan,
+        // kesan sampingan kekal: (a) medan format/door pada kad dibina semula
+        // daripada katalog lalai sehinggakan `door` custom tidak dipulihkan
+        // (dropdown Format kembali kosong); (b) status pemilihan dropdown
+        // Secondary Fallback ter-reset; (c) lencana API key kembali ke 'No key'
+        // (badge hanya dikemas kini oleh listener 'input' — pengisian
+        // PROGRAMATIK oleh applyAgentValues tidak mencetuskannya).
+        // Penyelesaian: bina DOM kad SEKALI SAHAJA, kemudian pertukaran mod
+        // HANYA menogol visibiliti kad (HIDE, bukan LOCK — medan kekal editable
+        // dan nilai kekal 100% utuh).
+        var _cardsBuilt = false;
+
+        // Bina semua kad Trinity (3 ejen) + wayar listener input kunci →
+        // lencana. Dipanggil sekali sahaja; idempotent.
+        function ensureCardsBuilt() {
+            if (_cardsBuilt && cardsWrap.children.length) return;
             cardsWrap.innerHTML = '';
-            var agentsToShow =
-                mode === MODE_BASIC
-                    ? AGENTS.filter(function (a) {
-                          return a.key === 'translation';
-                      })
-                    : AGENTS;
-            agentsToShow.forEach(function (agent) {
-                cardsWrap.appendChild(buildAgentCard(agent, mode));
+            var providers = _registryCache || FALLBACK_PROVIDERS;
+            AGENTS.forEach(function (agent) {
+                cardsWrap.appendChild(buildAgentCard(agent));
                 wireAutodetect(agent.key);
                 wireValidate(agent.key);
-            });
-            // Isi provider dropdown (jika registry sudah siap)
-            var providers = _registryCache || FALLBACK_PROVIDERS;
-            agentsToShow.forEach(function (agent) {
                 populateProviderDropdown(agent.key, providers);
             });
+            _cardsBuilt = true;
+        }
+
+        // Togol visibiliti kad mengikut mod semasa — HIDE sahaja, tiada
+        // pembinaan semula DOM. Kad yang tersembunyi kekal dalam DOM dengan
+        // SEMUA nilai input (termasuk door custom + Secondary Fallback) utuh.
+        function applyModeVisibility() {
+            var isBasic = !toggleInput.checked;
+            cardsWrap.classList.toggle('trinity-mode-basic', isBasic);
+            var cards = cardsWrap.querySelectorAll('.trinity-agent-card');
+            Array.prototype.forEach.call(cards, function (card) {
+                var isTranslation = card.dataset.agent === 'translation';
+                var hide = isBasic && !isTranslation;
+                card.classList.toggle('trinity-mode-hidden', hide);
+            });
+        }
+
+        // Muatkan nilai config ke input TANPA memusnahkan DOM. `cfgOverride`
+        // = objek config SEBENAR yang sedang direhydrate (dihantar oleh
+        // applyAgentValues melalui hook) supaya kad diisi dengan nilai betul
+        // walaupun global currentConfig belum siap.
+        function renderCards(cfgOverride) {
+            ensureCardsBuilt();
+            applyModeVisibility();
             applyAgentValues(cfgOverride || getEffectiveConfig());
             // [BUG FIX 2026-10-10] Panggil updateVisibility SELEPAS applyAgentValues
             // (rehydration menetapkan providerEl.value daripada config — visibility
             // mesti mencerminkan nilai sebenar, bukan nilai kosong lalai).
-            agentsToShow.forEach(function (agent) {
+            AGENTS.forEach(function (agent) {
                 updateVisibility(agent.key);
             });
         }
@@ -1674,19 +1758,16 @@
                 }
             }
             // [BUG FIX v3.9.41] Semasa rehydrate terkawal (_rehydratingMode),
-            // hook (modelSyncHook) sudah pun membina semula kad + mengisi nilai
-            // menggunakan cfg SEBENAR. Jangan bina semula di sini — kalau tidak,
-            // renderCards() akan memanggil applyAgentValues(getEffectiveConfig())
-            // dengan global yang belum siap dan menimpa nilai yang telah diisi.
+            // hook (modelSyncHook) sudah pun menogol visibiliti kad + mengisi
+            // nilai menggunakan cfg SEBENAR. Jangan ulang di sini.
             if (_rehydratingMode) return;
-            // [BUG FIX v3.9.43] NON-DESTRUCTIVE MODE SWITCH (Basic <-> Pro):
-            // renderCards() melakukan `cardsWrap.innerHTML = ''` (memusnahkan semua
-            // input DOM) sebelum membina semula kad. Tanpa snapshot, nilai yang
-            // ditaip pengguna tetapi BELUM disimpan hilang sepenuhnya kerana
-            // applyAgentValues() kemudian membaca currentConfig (state lama/kosong).
-            // Rakam DAHULU nilai DOM semasa (non-destruktif: entri ejen yang kadnya
-            // tidak wujud dalam mod semasa DIKEKALKAN) ke currentConfig, kemudian
-            // bina semula kad dengan snapshot itu sebagai sumber nilai tunggal.
+            // [BUG FIX v3.9.44] NON-DESTRUCTIVE MODE SWITCH (Basic <-> Pro):
+            // renderCards() TIDAK lagi memusnahkan DOM (tiada innerHTML='' pada
+            // laluan togol) — kad dibina SEKALI (ensureCardsBuilt) dan pertukaran
+            // mod hanya menogol visibiliti (applyModeVisibility). Semua nilai
+            // input, pilihan Format/Door, dan status Secondary Fallback kekal
+            // 100% utuh. Snapshot DOM → currentConfig dirakam dahulu supaya
+            // nilai yang ditaip tersedia untuk Save tanpa menunggu rehydrate.
             var snapshotCfg = null;
             try {
                 snapshotCfg = snapshotVisibleAgentState(c);
@@ -1806,7 +1887,13 @@
 
             if (stored) {
                 if (stored.apiKey) keyEl.value = stored.apiKey;
-                if (stored.format) fmtEl.value = stored.format;
+                // [BUG FIX v3.9.44] Pulihkan dropdown Format/Door melalui peta
+                // format→door. stored.format mungkin nilai legacy pendek
+                // ('gemini'|'openai'|'anthropic') yang BUKAN nilai <option>
+                // dropdown — menulisnya terus menjadikan dropdown kosong.
+                var fmtValue = formatToDoorValue(stored.format);
+                if (!fmtValue && stored.door) fmtValue = formatToDoorValue(stored.door);
+                if (fmtValue) fmtEl.value = fmtValue;
                 if (stored.baseUrl) urlEl.value = stored.baseUrl;
                 if (stored.model) {
                     ensureModelOption(modelEl, stored.model);
@@ -1841,16 +1928,24 @@
                     }
                 }
             } else if (agent.key === 'translation') {
-                // Seed daripada konfigurasi legasi (gemini)
-                if (cfg.geminiApiKey) keyEl.value = cfg.geminiApiKey;
-                if (cfg.geminiModel) {
-                    var name = String(cfg.geminiModel).replace(/^models\//, '');
-                    ensureModelOption(modelEl, name);
-                    modelEl.value = name;
+                // [BUG FIX v3.9.44 — FRESH STATE] Seed legasi (gemini) HANYA bila
+                // kunci sebenar wujud. Sebelum ini blok ini dipacu oleh
+                // cfg.geminiModel lalai ('gemini-3-flash-preview') dan
+                // providerEl.value='gemini' → kad Agent Translation AUTO-memilih
+                // 'Google Gemini' walaupun pengguna belum memasukkan sebarang kunci.
+                // Fresh state mesti kekal '— Select provider —' / '— Select model —'.
+                var legacyKey = String(cfg.geminiApiKey || '').trim();
+                if (legacyKey) {
+                    keyEl.value = legacyKey;
+                    if (cfg.geminiModel) {
+                        var name = String(cfg.geminiModel).replace(/^models\//, '');
+                        ensureModelOption(modelEl, name);
+                        modelEl.value = name;
+                    }
+                    // Hanya paksa 'gemini' bila tiada nilai provider semasa di DOM
+                    // — elak memadam pilihan pengguna (non-destructive).
+                    if (!providerEl.value) providerEl.value = 'gemini';
                 }
-                // [BUG FIX v3.9.43] Hanya paksa 'gemini' bila tiada nilai provider
-                // semasa di DOM — elak memadam pilihan pengguna (non-destructive).
-                if (!providerEl.value) providerEl.value = 'gemini';
                 // Key rotation seed untuk legacy
                 var rotToggle = $('trinity-translation-rotation-enabled');
                 var rotMode = $('trinity-translation-rotation-mode');
@@ -1867,6 +1962,15 @@
                         addRotationKeyInput('translation', k);
                     });
                 }
+            }
+
+            // [BUG FIX v3.9.44] Lencana 'No key' kaku selepas pengisian
+            // PROGRAMATIK (applyAgentValues menulis keyEl.value tanpa mencetuskan
+            // event 'input'). Kemas kini HANYA bila lencana masih neutral —
+            // jangan timpa status ujian Valid/Invalid yang baru dijalankan.
+            var keyBadge = $('trinity-' + agent.key + '-badge');
+            if (keyBadge && keyBadge.textContent === 'No key' && String(keyEl.value || '').trim()) {
+                updateKeyBadge(agent.key);
             }
 
             if (agent.key === 'translation') applyFallbackValues(cfg);
@@ -1901,9 +2005,12 @@
             var modelEl = $('trinity-' + agent.key + '-model');
             var provider = providerEl.value || '';
             var providerEntry = getProviderById(providers, provider);
-            var door = getProviderDoor(providerEntry);
+            // [BUG FIX v3.9.44] Door direkod melalui resolveEffectiveDoor —
+            // pilihan Format/Door eksplisit Custom dirakam VERBATIM (sebelum ini
+            // door lalai registry ditulis → tidak sepadan dengan format pilihan).
             var isCustom = isCustomProvider(providerEntry);
             var rawFormat = fmtEl ? fmtEl.value : 'auto';
+            var door = resolveEffectiveDoor(providerEntry, rawFormat);
             var apiKey = String(keyEl.value || '').trim();
 
             cfg.trinity[agent.key] = {
@@ -1998,8 +2105,10 @@
 
             var providers = _registryCache || FALLBACK_PROVIDERS;
             var providerEntry = getProviderById(providers, provider);
-            var door = getProviderDoor(providerEntry);
+            // [BUG FIX v3.9.44] Door mesti sepadan dengan pilihan Format/Door
+            // eksplisit Custom (konsisten dengan snapshotVisibleAgentState).
             var isCustom = isCustomProvider(providerEntry);
+            var door = resolveEffectiveDoor(providerEntry, format);
 
             // Untuk pembekal rasmi, format di-derive daripada pintu (tidak disimpan)
             // [INTEGRATION AUDIT FIX v3.9.7] format payload mesti nilai LEGACY pendek
