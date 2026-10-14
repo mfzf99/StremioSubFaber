@@ -14,7 +14,8 @@
 
 - **Tarikh:** 2026-10-14 (waktu tempatan KL)
 - **Status:** RELEASE LENGKAP — Frontend (Astra) → Integration Review Backend (GLM 5.3) → pipeline 8-langkah.
-- **Komit SHA:** (diisi selepas commit)
+- **Komit SHA:** d15f6f3 (push dac4432..d15f6f3 ke origin main)
+- **Status CI:** Run #38623526775 (d15f6f3, Node 22 & 24) = **SUCCESS** ✅
 - **Keputusan Owner:** Laporan Audit & Pelan Induk A–Z diluluskan (rujukan: [`plans/ui-ux-a-z-master-reorg-plan.md`](plans/ui-ux-a-z-master-reorg-plan.md:1)) dengan 3 pelarasan seni bina — kekal 3 seksyen induk + Kad Keluarga; `#geminiCard` KEKAL tersembunyi; satu pipeline pelepasan tunggal.
 - **Fail Terlibat (domain Frontend sahaja):**
     - [`public/partials/main.html`](public/partials/main.html:1) — penyusunan semula DOM A–Z.
