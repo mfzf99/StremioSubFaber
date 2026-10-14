@@ -6361,18 +6361,9 @@ Translate to {target_language}.`;
         });
 
         setupEventListeners();
-        // Keep provider-level advanced controls grouped under Advanced Settings in the UI
-        const advancedCardContent = document.querySelector('#advancedSettingsCard .card-content');
-        const geminiAdvancedCard = document.getElementById('geminiAdvancedCard');
-        const providerAdvancedCard = document.getElementById('providerAdvancedCard');
-        if (advancedCardContent && geminiAdvancedCard && geminiAdvancedCard.parentElement !== advancedCardContent) {
-            advancedCardContent.appendChild(geminiAdvancedCard);
-            geminiAdvancedCard.style.marginTop = '1.25rem';
-        }
-        if (advancedCardContent && providerAdvancedCard && providerAdvancedCard.parentElement !== advancedCardContent) {
-            advancedCardContent.appendChild(providerAdvancedCard);
-            providerAdvancedCard.style.marginTop = '1.25rem';
-        }
+        // [v3.9.45] Reparent JS dibuang: kad parameter lanjutan kini statik
+        // inline dalam accordion #betaModeAccordion (Kad Translation & AI
+        // Parameters) — tiada lagi perpindahan DOM semasa init.
         loadConfigToForm();
         initLocale(currentConfig.uiLanguage || locale.lang || 'en');
         updateToolboxLauncherVisibility();
@@ -7949,6 +7940,28 @@ Translate to {target_language}.`;
         consumePendingTokenVaultLauncherOpenRequest();
     }
 
+    // [v3.9.45 FAMILY CARD] Togol inline disclosure kad keluarga Learn Mode.
+    // Kad #learnTargetsCard KEKAL kelihatan; hanya kumpulan dalaman (Order /
+    // Italic / grid bahasa) dibuka-tutup. Skop modul supaya boleh dipanggil
+    // daripada setupEventListeners(), toggleNoTranslationMode() dan rehydrate.
+    function applyLearnModeVisibility(enabled) {
+        const orderGroup = document.getElementById('learnOrderGroup');
+        const placementGroup = document.getElementById('learnPlacementGroup');
+        const italicGroup = document.getElementById('learnItalicGroup');
+        const gridGroup = document.getElementById('learnLanguagesGroup');
+        if (orderGroup) orderGroup.style.display = enabled ? '' : 'none';
+        if (placementGroup) placementGroup.style.display = enabled ? '' : 'none';
+        if (italicGroup) italicGroup.style.display = enabled ? '' : 'none';
+        if (gridGroup) gridGroup.style.display = enabled ? '' : 'none';
+        if (enabled) {
+            const italicToggle = document.getElementById('learnItalicEnabled');
+            const italicTargetGroup = document.getElementById('learnItalicTargetGroup');
+            if (italicTargetGroup) {
+                italicTargetGroup.style.display = italicToggle && italicToggle.checked === false ? 'none' : 'flex';
+            }
+        }
+    }
+
     function setupEventListeners() {
         // Form submission — partial-safe when a section failed to load.
         const configForm = document.getElementById('configForm');
@@ -8393,20 +8406,16 @@ Translate to {target_language}.`;
             });
         });
 
-        // Learn Mode toggle and order
+        // [v3.9.45 FAMILY CARD] #learnTargetsCard ialah KAD KELUARGA — ia kekal
+        // kelihatan sentiasa (togol Learn Mode berada DI DALAMNYA). Yang ditogol
+        // hanyalah kumpulan dalaman (Order / Italic / grid bahasa) melalui
+        // inline disclosure. Tiada lagi suis di bawah memunculkan kad di atas.
         const learnToggle = document.getElementById('learnModeEnabled');
-        const learnOrderGroup = document.getElementById('learnOrderGroup');
-        const learnPlacementGroup = document.getElementById('learnPlacementGroup');
-        const learnTargetsCard = document.getElementById('learnTargetsCard');
         if (learnToggle) {
             learnToggle.addEventListener('change', (e) => {
                 const enabled = !!e.target.checked;
                 currentConfig.learnMode = enabled;
-                if (learnOrderGroup) learnOrderGroup.style.display = enabled ? '' : 'none';
-                if (learnPlacementGroup) learnPlacementGroup.style.display = enabled ? '' : 'none';
-                if (learnTargetsCard) learnTargetsCard.style.display = enabled ? '' : 'none';
-                const learnItalicGroup = document.getElementById('learnItalicGroup');
-                if (learnItalicGroup) learnItalicGroup.style.display = enabled ? '' : 'none';
+                applyLearnModeVisibility(enabled);
                 validateLanguageSelection('learn');
             });
         }
@@ -9021,7 +9030,10 @@ Translate to {target_language}.`;
             betaToggle.checked = betaEnabled;
         }
 
-        const advancedCard = document.getElementById('advancedSettingsCard');
+        // [v3.9.45 INLINE ACCORDION] Advanced Mode kini mengawal accordion
+        // #betaModeAccordion di dalam kad Translation & AI Parameters — bukan
+        // lagi kad #advancedSettingsCard luar seksyen.
+        const advancedCard = document.getElementById('betaModeAccordion');
         const geminiAdvancedCard = document.getElementById('geminiAdvancedCard');
         if (advancedCard) advancedCard.style.display = betaEnabled ? '' : 'none';
         if (geminiAdvancedCard) geminiAdvancedCard.style.display = betaEnabled ? '' : 'none';
@@ -11070,7 +11082,7 @@ Translate to {target_language}.`;
             if (geminiCard) geminiCard.style.display = 'none';
             if (translationSettingsCard) translationSettingsCard.style.display = 'none';
 
-            // Hide learn mode UI elements in just-fetch mode
+            // Hide learn mode UI elements in just-fetch mode (family card + inner groups)
             if (learnTargetsCard) learnTargetsCard.style.display = 'none';
             if (learnModeCheckbox) {
                 learnModeCheckbox.parentElement.style.display = 'none';
@@ -11079,6 +11091,8 @@ Translate to {target_language}.`;
             if (learnPlacementGroup) learnPlacementGroup.style.display = 'none';
             const learnItalicGroupNoTrans = document.getElementById('learnItalicGroup');
             if (learnItalicGroupNoTrans) learnItalicGroupNoTrans.style.display = 'none';
+            const learnGridGroupNoTrans = document.getElementById('learnLanguagesGroup');
+            if (learnGridGroupNoTrans) learnGridGroupNoTrans.style.display = 'none';
 
             // Clear validation errors for fields that aren't required in no-translation mode
             const geminiApiKeyInput = document.getElementById('geminiApiKey');
@@ -11190,22 +11204,14 @@ Translate to {target_language}.`;
             if (geminiCard) geminiCard.style.display = 'block';
             if (translationSettingsCard) translationSettingsCard.style.display = 'block';
 
-            // Show learn mode checkbox in translation mode
+            // Show learn mode checkbox in translation mode (family card stays visible;
+            // inner groups follow the toggle via inline disclosure)
             if (learnModeCheckbox) {
                 learnModeCheckbox.parentElement.style.display = '';
-                // Show learn targets card only if learn mode is enabled
-                const isLearnModeEnabled = learnModeCheckbox.checked;
                 if (learnTargetsCard) {
-                    learnTargetsCard.style.display = isLearnModeEnabled ? '' : 'none';
+                    learnTargetsCard.style.display = '';
                 }
-                if (learnOrderGroup) {
-                    learnOrderGroup.style.display = isLearnModeEnabled ? '' : 'none';
-                }
-                if (learnPlacementGroup) {
-                    learnPlacementGroup.style.display = isLearnModeEnabled ? '' : 'none';
-                }
-                const learnItalicGroupRestore = document.getElementById('learnItalicGroup');
-                if (learnItalicGroupRestore) learnItalicGroupRestore.style.display = isLearnModeEnabled ? '' : 'none';
+                applyLearnModeVisibility(learnModeCheckbox.checked === true);
             }
 
             // Clear no-translation languages when switching to translation mode
@@ -11245,16 +11251,9 @@ Translate to {target_language}.`;
             }
             const showLearn = learnModeCheckbox ? learnModeCheckbox.checked : currentConfig.learnMode === true;
             if (learnTargetsCard) {
-                learnTargetsCard.style.display = showLearn ? '' : 'none';
+                learnTargetsCard.style.display = '';
             }
-            if (learnOrderGroup) {
-                learnOrderGroup.style.display = showLearn ? '' : 'none';
-            }
-            if (learnPlacementGroup) {
-                learnPlacementGroup.style.display = showLearn ? '' : 'none';
-            }
-            const learnItalicGroupFinal = document.getElementById('learnItalicGroup');
-            if (learnItalicGroupFinal) learnItalicGroupFinal.style.display = showLearn ? '' : 'none';
+            applyLearnModeVisibility(showLearn);
         }
 
         validateNoTranslationSelection();
@@ -11273,12 +11272,15 @@ Translate to {target_language}.`;
         });
     }
 
+    // [v3.9.45 FAMILY CARD] Kad "Other API Keys" lama dibubarkan. Kandungannya
+    // (Cloudflare Workers AI + AssemblyAI) kini ialah accordion INLINE
+    // #subToolboxAutoSubsGroup di dalam kad keluarga Sub Toolbox. Fungsi ini
+    // kini menogol accordion tersebut sahaja — tiada lagi kad muncul di atas.
     function toggleOtherApiKeysSection() {
-        const card = document.getElementById('otherApiKeysCard');
+        const group = document.getElementById('subToolboxAutoSubsGroup');
         const toolboxEnabled = isSubToolboxEnabled();
-        if (card) {
-            card.style.display = toolboxEnabled ? '' : 'none';
-            card.setAttribute('aria-hidden', toolboxEnabled ? 'false' : 'true');
+        if (group) {
+            group.style.display = toolboxEnabled ? '' : 'none';
         }
         if (currentConfig) {
             currentConfig.otherApiKeysEnabled = toolboxEnabled;
@@ -12378,17 +12380,13 @@ Translate to {target_language}.`;
         updateBypassCacheForAdvancedSettings();
 
         // Learn Mode UI state
+        // [v3.9.45 FAMILY CARD] Kad kekal kelihatan; hanya kumpulan dalaman ditogol.
         try {
             const learnToggle = document.getElementById('learnModeEnabled');
-            const learnOrderGroup = document.getElementById('learnOrderGroup');
-            const learnPlacementGroup = document.getElementById('learnPlacementGroup');
             const learnTargetsCard = document.getElementById('learnTargetsCard');
             if (learnToggle) learnToggle.checked = !!currentConfig.learnMode;
-            if (learnOrderGroup) learnOrderGroup.style.display = currentConfig.learnMode ? '' : 'none';
-            if (learnPlacementGroup) learnPlacementGroup.style.display = currentConfig.learnMode ? '' : 'none';
-            if (learnTargetsCard) learnTargetsCard.style.display = currentConfig.learnMode ? '' : 'none';
-            const learnItalicGroup = document.getElementById('learnItalicGroup');
-            if (learnItalicGroup) learnItalicGroup.style.display = currentConfig.learnMode ? '' : 'none';
+            if (learnTargetsCard) learnTargetsCard.style.display = '';
+            applyLearnModeVisibility(currentConfig.learnMode === true);
             const learnItalicToggle = document.getElementById('learnItalicEnabled');
             if (learnItalicToggle) {
                 learnItalicToggle.checked = currentConfig.learnItalic !== false;

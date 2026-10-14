@@ -1313,6 +1313,12 @@
         "label": "مزودون متعددون (بيتا)",
         "description": "Enables multiple AI providers. You can set primary/secondary providers in \"Translation Settings\"."
       },
+      "familyCards": {
+        "filteringTitle": "تصفية واكتشاف الترجمات",
+        "outputTitle": "تنسيق الإخراج وتوافق المشغّل",
+        "toolboxTitle": "Sub Toolbox والترجمات التلقائية",
+        "autoSubsNote": "تعمل الترجمة التلقائية داخل Sub Toolbox. أضف مفتاح المزود لتفعيلها."
+      },
       "otherSettings": {
         "title": "إعدادات أخرى",
         "subToolbox": {

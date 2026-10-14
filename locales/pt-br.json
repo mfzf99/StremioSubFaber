@@ -1313,6 +1313,12 @@
         "label": "Múltiplos provedores (beta)",
         "description": "Habilita múltiplos provedores de IA. Você pode definir provedores principal/secundário em \"Configurações de Tradução\"."
       },
+      "familyCards": {
+        "filteringTitle": "Filtragem e Descoberta de Legendas",
+        "outputTitle": "Formato de Saída e Compatibilidade do Player",
+        "toolboxTitle": "Sub Toolbox e Auto-Subs",
+        "autoSubsNote": "O Auto-Subs roda dentro do Sub Toolbox. Adicione sua chave de provedor para ativá-lo."
+      },
       "otherSettings": {
         "title": "Outras Configurações",
         "subToolbox": {

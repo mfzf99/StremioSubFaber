@@ -1313,6 +1313,12 @@
         "label": "Vários fornecedores (beta)",
         "description": "Ativa vários fornecedores de IA. Pode definir fornecedores primário/secundário em \"Definições de Tradução\"."
       },
+      "familyCards": {
+        "filteringTitle": "Filtragem e Descoberta de Legendas",
+        "outputTitle": "Formato de Saída e Compatibilidade do Leitor",
+        "toolboxTitle": "Sub Toolbox e Auto-Subs",
+        "autoSubsNote": "O Auto-Subs funciona dentro do Sub Toolbox. Adicione a sua chave de fornecedor para o ativar."
+      },
       "otherSettings": {
         "title": "Outras Definições",
         "subToolbox": {

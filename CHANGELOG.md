@@ -2,6 +2,25 @@
 
 All notable changes to this project will be documented in this file.
 
+## SubMaker v3.9.45 (2026-10-14) — UI/UX A–Z Master Reorg: Functional Family Cards ("Satu Keluarga, Satu Rumah")
+
+### Changed
+
+- **F1 — Kad Keluarga Learn Mode ([public/partials/main.html](public/partials/main.html), [public/config.js](public/config.js)):** togol `#learnModeEnabled` + `#learnOrderGroup` + `#learnItalicGroup` dipindahkan dari Other Settings MASUK ke kad `#learnTargetsCard` dalam Seksyen Languages; kad kini sentiasa kelihatan dengan **inline progressive disclosure** — hanya kumpulan Order/Italic/grid bahasa (dibalut `#learnLanguagesGroup`) yang dibuka-tutup melalui helper modul baharu `applyLearnModeVisibility()`. Teks arahan lama "set Target Learn Languages in the 'Languages' section above" dipadamkan. Bug skop dikesan & dibaiki semasa pelaksanaan (definisi helper dialih ke skop modul selepas ReferenceError pada `toggleNoTranslationMode()`).
+- **F2 — Bubar `#otherApiKeysCard` ([public/partials/main.html](public/partials/main.html), [public/config.js](public/config.js)):** kad "Other API Keys" dibuang sepenuhnya daripada Seksyen 1; input Cloudflare Workers AI (Auto-Subs) + AssemblyAI (+ butang Test) kini accordion inline `#subToolboxAutoSubsGroup` BETUL-BETUL di bawah togol Sub Toolbox dalam kad `#otherSettingsCard` (bertajuk semula "Sub Toolbox & Auto-Subs"). `toggleOtherApiKeysSection()` diarah semula untuk menogol accordion sahaja — tiada lagi kad muncul di bahagian atas halaman apabila togol bawah diaktifkan.
+- **F3 — Kad Keluarga baharu ([public/partials/main.html](public/partials/main.html)):** `#subtitleFilteringCard` (Subtitle Filtering & Discovery: Season Packs + Hide SDH/HI) dan `#outputFormatCard` (Output Format & Player Compatibility: Mobile Mode + ASS/SSA Passthrough + Force SRT) dicipta dalam Seksyen Settings; longgokan "Other Settings" dipecahkan mengikut Keluarga Fungsi. Kesemua 5 pasangan varian `*NoTranslation` dipindah bersama kad keluarga masing-masing (kalendar: 14/14 ID `*NoTranslation` kekal).
+- **F4 — Advanced Mode inline ([public/partials/main.html](public/partials/main.html), [public/config.js](public/config.js)):** togol `#betaMode` dipindahkan ke kad Translation & AI Parameters; apabila ON, accordion `#betaModeAccordion` memaparkan `#mismatchRetries` + `#geminiAdvancedCard` + `#providerAdvancedCard` (kandungan penuh dialihkan verbatim) secara INLINE — kad legasi `#advancedSettingsCard` luar seksyen DIBUANG dan reparent JS runtime (`appendChild` semasa init) DIHAPUSKAN sepenuhnya.
+- **F5 — Simetri jarak Secondary Fallback ([public/css/trinity-agents.css](public/css/trinity-agents.css)):** `.trinity-fallback` `margin-bottom: 8px → 24px` (simetri dengan margin-top); `.trinity-agent-hint` (garisan putus-putus) `margin-top: 0.9rem → 1.5rem`, `padding-top: 0.6rem → 0.85rem` — jarak atas-bawah sub-kad kemas sekata dalam Basic & Pro Mode.
+
+### Added
+
+- **Kunci i18n `config.familyCards.*` ([locales/](locales/en.json)):** `filteringTitle`, `outputTitle`, `toolboxTitle`, `autoSubsNote` ditambah ke kesemua 5 locale (en, es, ar, pt-br, pt-pt).
+- **Kontrak CSS A13 dikemas kini ([src/services/trinity-mode-switch-regression.test.js](src/services/trinity-mode-switch-regression.test.js)):** assertion margin-bottom dinaikkan kepada 24px + assertion baharu `.trinity-agent-hint { margin-top: 1.5rem }`.
+
+### Preserved
+
+- **Kontrak payload sifar kerosakan:** kesemua medan JSON kekal nama/rupa sama (`learnMode`, `learnTargetLanguages`, `subToolboxEnabled` + varian, `enableSeasonPacks`, `excludeHearingImpairedSubtitles`, `convertAssToVtt`, `forceSRTOutput`, `mobileMode`, `betaModeEnabled`, `advancedSettings.mismatchRetries`, `cloudflareWorkersApiKey`, `assemblyAiApiKey`, `otherApiKeysEnabled`, `trinity.*`, `providers.*`, `agentB`). Serialization via `getElementById` (lokasi DOM tidak relevan); pautan `?config=` lama 100% serai (normalizeConfig murni JSON→JSON). Verifikasi: ID fungsional 100% kekal (hanya shell legasi dibuang), 0 ID duplikasi, keseimbangan tag identik baseline (div 304/304, span 211/211), `npm test` 385 = 384 PASS / 0 FAIL / 1 SKIP (baseline terpelihara), Playwright live 0 console error dengan F1/F2/F4 toggle + Just-Fetch roundtrip LULUS.
+
 ## SubMaker v3.9.44 (2026-10-14) — Trinity 4-State DOM Morph: Format/Door, Key Badge & Fresh-State Fixes
 
 ### Fixed

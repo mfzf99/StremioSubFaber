@@ -1313,6 +1313,12 @@
         "label": "Múltiples proveedores (beta)",
         "description": "Activa múltiples proveedores de IA. Puedes fijar proveedor principal/secundario en \"Configuración de traducción\"."
       },
+      "familyCards": {
+        "filteringTitle": "Filtrado y Descubrimiento de Subtítulos",
+        "outputTitle": "Formato de Salida y Compatibilidad de Reproductor",
+        "toolboxTitle": "Sub Toolbox y Auto-Subs",
+        "autoSubsNote": "Auto-Subs funciona dentro de Sub Toolbox. Añade tu clave de proveedor para activarlo."
+      },
       "otherSettings": {
         "title": "Otros ajustes",
         "subToolbox": {

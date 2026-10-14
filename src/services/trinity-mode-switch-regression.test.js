@@ -252,7 +252,7 @@ test('[A12] applyAgentValues memulihkan Format/Door (peta format→door) dan men
     );
 });
 
-test('[A13] CSS — tab aktif Biru SubFaber + sub-kad Secondary Fallback bernafas (v3.9.44)', () => {
+test('[A13] CSS — tab aktif Biru SubFaber + sub-kad Secondary Fallback bernafas (v3.9.45)', () => {
     // Tab aktif sebelum ini putih (tiada kontra).
     assert.match(
         trinityCssSrc,
@@ -282,13 +282,19 @@ test('[A13] CSS — tab aktif Biru SubFaber + sub-kad Secondary Fallback bernafa
     );
     assert.match(
         trinityCssSrc,
-        /\.trinity-fallback \{[\s\S]*?margin-bottom: 8px;/,
-        'sub-kad fallback mesti margin-bottom 8px'
+        /\.trinity-fallback \{[\s\S]*?margin-bottom: 24px;/,
+        'sub-kad fallback mesti margin-bottom 24px (simetri dengan margin atas)'
     );
     assert.match(
         trinityCssSrc,
         /\.trinity-fallback-head \{[\s\S]*?padding: 16px 20px;/,
         'baris kepala sub-kad fallback mesti padding 16px 20px'
+    );
+    // [F5 v3.9.45] Garisan putus-putus .trinity-agent-hint mesti bernafas.
+    assert.match(
+        trinityCssSrc,
+        /\.trinity-agent-hint \{[\s\S]*?margin-top: 1\.5rem;/,
+        'garisan putus-putus hint mesti margin-top 1.5rem'
     );
     // Kelas morf DOM.
     assert.match(

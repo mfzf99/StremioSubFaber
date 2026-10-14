@@ -242,12 +242,14 @@
     margin-left: auto;
     flex-shrink: 0;
 }
+/* [F5 v3.9.45] Jarak atas garisan putus-putus diluaskan sedikit supaya simetri
+   dengan margin bawah .trinity-fallback (24px) — Basic & Pro Mode kekal kemas. */
 .trinity-agent-hint {
-    margin-top: 0.9rem;
+    margin-top: 1.5rem;
     font-size: 0.78rem;
     color: var(--text-secondary, #777);
     border-top: 1px dashed var(--border-color, #e5e7eb);
-    padding-top: 0.6rem;
+    padding-top: 0.85rem;
 }
 
 /* Medan borang */
@@ -346,10 +348,13 @@
    [BUG FIX v3.9.44] Ruang bernafas diluaskan — sebelum ini sub-kad terhimpit
    dengan medan Model / Enable Gemini API key rotation di atas dan terlalu rapat
    dengan sempadan bawah kad. Kini: margin atas 24px, margin bawah 8px, padding
-   dalaman 16px 20px pada baris kepala + kandungan. */
+   dalaman 16px 20px pada baris kepala + kandungan.
+   [F5 v3.9.45] Jarak bawah disimetrikan dengan jarak atas (24px) supaya sub-kad
+   Secondary Fallback bernafas sekata dalam Basic mahupun Pro Mode, dan garisan
+   putus-putus .trinity-agent-hint di bawahnya tidak lagi terasa terhimpit. */
 .trinity-fallback {
     margin-top: 24px;
-    margin-bottom: 8px;
+    margin-bottom: 24px;
     border: 1px solid #e2e8f0;
     border-radius: 10px;
     padding: 0;

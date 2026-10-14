@@ -1332,6 +1332,12 @@
         "label": "Multiple providers (beta)",
         "description": "Enables multiple AI providers. You can set primary/secondary providers in \"Translation Settings\"."
       },
+      "familyCards": {
+        "filteringTitle": "Subtitle Filtering & Discovery",
+        "outputTitle": "Output Format & Player Compatibility",
+        "toolboxTitle": "Sub Toolbox & Auto-Subs",
+        "autoSubsNote": "Auto-Subs runs inside the Sub Toolbox. Add your provider key to enable it."
+      },
       "otherSettings": {
         "title": "Other Settings",
         "subToolbox": {

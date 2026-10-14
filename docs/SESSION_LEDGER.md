@@ -10,7 +10,41 @@
 
 ---
 
-## 2026-10-14 — RELEASE v3.9.44: TRINITY DOM MORPH 4-STATE + FRESH STATE KOSONG + CSS TAB BIRU SUBFABER (PIPELINE 8-LANGKAH)
+## 2026-10-14 — RELEASE v3.9.45: UI/UX A–Z MASTER REORG — KAD KELUARGA FUNGSI "SATU KELUARGA, SATU RUMAH" (PIPELINE 8-LANGKAH)
+
+- **Tarikh:** 2026-10-14 (waktu tempatan KL)
+- **Status:** RELEASE LENGKAP — Frontend (Astra) → Integration Review Backend (GLM 5.3) → pipeline 8-langkah.
+- **Komit SHA:** (diisi selepas commit)
+- **Keputusan Owner:** Laporan Audit & Pelan Induk A–Z diluluskan (rujukan: [`plans/ui-ux-a-z-master-reorg-plan.md`](plans/ui-ux-a-z-master-reorg-plan.md:1)) dengan 3 pelarasan seni bina — kekal 3 seksyen induk + Kad Keluarga; `#geminiCard` KEKAL tersembunyi; satu pipeline pelepasan tunggal.
+- **Fail Terlibat (domain Frontend sahaja):**
+    - [`public/partials/main.html`](public/partials/main.html:1) — penyusunan semula DOM A–Z.
+    - [`public/config.js`](public/config.js:1) — `applyLearnModeVisibility()` skop-modul, `toggleOtherApiKeysSection()` diarah semula, buang reparent JS, `toggleBetaModeUI` sasaran baharu.
+    - [`public/css/trinity-agents.css`](public/css/trinity-agents.css:1) — simetri jarak `.trinity-fallback` + `.trinity-agent-hint`.
+    - [`src/services/trinity-mode-switch-regression.test.js`](src/services/trinity-mode-switch-regression.test.js:1) — kontrak A13 dikemas kini.
+    - `locales/*.json` (en, es, ar, pt-br, pt-pt) — kunci `config.familyCards.*`.
+- **F1 (Languages — Kad Keluarga Learn Mode):** togol `#learnModeEnabled` + `#learnOrderGroup` + `#learnItalicGroup` dipindah dari Other Settings MASUK ke [`#learnTargetsCard`](public/partials/main.html:1); kad kini sentiasa kelihatan (bukan `display:none`). Kumpulan grid dibalut `#learnLanguagesGroup`. Inline disclosure melalui helper modul baharu [`applyLearnModeVisibility()`](public/config.js:7947). Teks arahan lintas-seksyen lama dipadam.
+- **F2 (Sub Toolbox & Auto-Subs):** kad `#otherApiKeysCard` DIBUBARKAN sepenuhnya daripada Seksyen 1. Kandungannya (Cloudflare Workers AI + AssemblyAI + butang Test) kini accordion inline `#subToolboxAutoSubsGroup` DI DALAM kad `#otherSettingsCard`, betul-betul di bawah togol Sub Toolbox. [`toggleOtherApiKeysSection()`](public/config.js:1) kini menogol accordion tersebut sahaja.
+- **F3 (Kad Keluarga baharu):** [`#subtitleFilteringCard`](public/partials/main.html:1) (Season Packs + Hide SDH/HI) dan [`#outputFormatCard`](public/partials/main.html:1) (Mobile Mode + ASS/SSA Passthrough + Force SRT) dicipta dalam Seksyen 3. Kesemua pasangan varian `*NoTranslation` (5 kumpulan) DIPINDAH bersama kad keluarga masing-masing — kekal 14 ID `*NoTranslation` (sifar kehilangan).
+- **F4 (Advanced Mode inline):** togol `#betaMode` dipindah ke kad Translation & AI Parameters; accordion `#betaModeAccordion` mengandungi `#mismatchRetries` + `#geminiAdvancedCard` + `#providerAdvancedCard` (kandungan penuh dipindah secara verbatim). Kad legasi `#advancedSettingsCard` DIBUANG; reparent JS [`config.js:6364–6375`](public/config.js:1) DIHAPUSKAN. [`toggleBetaModeUI()`](public/config.js:1) kini menyasarkan `#betaModeAccordion`.
+- **F5 (CSS):** `.trinity-fallback` `margin-bottom: 8px → 24px` (simetri dengan margin-top), `.trinity-agent-hint` `margin-top: 0.9rem → 1.5rem`, `padding-top: 0.6rem → 0.85rem`.
+- **Kontrak payload (untuk audit Backend):** BENTUK TIDAK BERUBAH. Semua medan JSON kekal sama nama/rupa: `learnMode`/`learnTargetLanguages`/`learnOrder`/`learnItalic*`, `subToolboxEnabled` (+varian), `enableSeasonPacks`, `excludeHearingImpairedSubtitles`, `convertAssToVtt`, `forceSRTOutput`, `mobileMode`, `betaModeEnabled`, `devMode`, `advancedSettings.mismatchRetries`, `cloudflareWorkersApiKey`, `assemblyAiApiKey`, `otherApiKeysEnabled` (kekal dihantar; server memaksa `true`), `trinity.*`, `providers.*`, `agentB`. Serialization via `getElementById` (lokasi DOM tidak relevan). Pautan `?config=` kekal 100% serasi (normalizeConfig murni JSON→JSON).
+- **Integriti disahkan (skrip `.tmp-ids-check.js`):** ID fungsional kekal 100%; hanya shell legasi dibuang (`otherApiKeysCard`, `advancedSettingsCard`, `advCore`) dan ID baharu ditambah (`subtitleFilteringCard`, `outputFormatCard`, `subToolboxAutoSubsGroup`, `betaModeAccordion`, `geminiAdvancedFields`, `providerAdvancedFields`, `learnLanguagesGroup`). **Tiada ID duplikasi.** Varian `*NoTranslation` = 14/14 kekal.
+- **Keseimbangan tag HTML:** div 304/304, section 3/3, span 211/211, label 117/117, button 41/41, svg 22/22 — IDENTIK dengan baseline Git (well-formed).
+- **Semakan kualiti Frontend:** `node --check` (config.js, trinity-agents.js, test) ✅; `npx prettier --write/--check` kesemua fail hijau ✅; `npx eslint` pada fail disentuh = **0 error** (37 warning pra-wujud config.js, tiada warning baharu — `learnPlacementGroup` tidak digunakan dibuang) ✅.
+- **Verifikasi live (Playwright, runtime sebenar — port 7001):** LULUS ✅ 0 console error pada muat segar.
+    - F1: Learn Mode OFF → card VISIBLE, Order/Italic/Grid HIDDEN; ON → kesemuanya VISIBLE ✅.
+    - F2: Sub Toolbox OFF → Auto-Subs HIDDEN; ON → VISIBLE + CF/AssemblyAI key VISIBLE ✅.
+    - F4: Advanced Mode OFF → accordion HIDDEN; ON → accordion + mismatchRetries + geminiAdvanced VISIBLE ✅.
+    - F5: computed `.trinity-fallback` margin `24px`/`24px`; `.trinity-agent-hint` margin-top `24px` + padding-top `13.6px` ✅.
+    - Just-Fetch (No Translation) roundtrip ON↔OFF: tiada exception (punca bug skop awal dikesan & dibaiki semasa sesi) ✅.
+    - Struktur grid: API Keys = [subtitle-api, geminiCard(hidden), trinityRoot]; Languages = [noTranslation, source, target, learnTargets]; Settings = [translationSettings, subtitleFiltering, outputFormat, otherSettings] ✅. `#geminiCard` kekal HIDDEN ✅. 0 ID duplikasi ✅.
+- **Bug dikesan & dibaiki semasa sesi:** `applyLearnModeVisibility` mula diisytiharkan di dalam `setupEventListeners()` tetapi dipanggil dari `toggleNoTranslationMode()` (skop berbeza) → ReferenceError pada muat halaman. Dibaiki dengan mengalih definisi ke SKOP MODUL (sebelum `setupEventListeners`). Disahkan 0 error selepas restart pelayan.
+- **Skop DILARANG disentuh (dipatuhi oleh Frontend):** tiada `npm test`, tiada operasi Git.
+- **Integration Review Backend (GLM 5.3): LULUS** — (a) serialization: semua medan payload kekal nama/rupa sama; `buildConfigFromForm()` baca via `getElementById` (lokasi DOM tidak relevan); (b) rehydration race: `applyLearnModeVisibility` di skop modul — tiada lagi rujukan silang skop; (c) skema server: `normalizeConfig` murni JSON→JSON, pautan `?config=` lama 100% serasi; (d) ujian [`gemini-auth-model-regression.test.js:275`](src/services/gemini-auth-model-regression.test.js:275) (satu-satunya yang membaca main.html) masih padan — `geminiModel`/`advancedThinkingLevel` kekal dalam kad yang dialihkan.
+- **Pipeline 8-langkah:** SemVer → 3.9.45; CHANGELOG v3.9.45 (Changed/Added/Preserved); cache-buster runtime-driven (pkg 3.9.45 + `__APP_VERSION_QUERY__` ✅ NO-OP verified); `npx prettier --check .` hijau; `npx eslint .` 0 error; `npm test` 385 tests: **384 PASS / 0 FAIL / 1 SKIP** (monotonic 385=385); `graphify update .` 5207 nodes / 11245 edges / 283 communities; blok ledger ini; commit+push; CI.
+- **Next Steps:** Commit + push → CI Success → tutup.
+
+---
 
 - **Tarikh:** 2026-10-14 (waktu tempatan KL)
 - **Komit SHA:** 34dac6d (release) + ffd4ead (docs ledger); push b8388c7..ffd4ead ke origin main.
