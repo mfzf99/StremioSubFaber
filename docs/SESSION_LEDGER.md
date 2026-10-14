@@ -13,8 +13,8 @@
 ## 2026-10-14 — RELEASE v3.9.41: TRINITY REHYDRATE RACE FIX — SETTING HILANG SEMASA RECONFIGURE (PIPELINE 8-LANGKAH)
 
 - **Tarikh:** 2026-10-14 (waktu tempatan KL)
-- **Komit SHA:** (diisi selepas push)
-- **Status CI:** (diisi selepas run)
+- **Komit SHA:** 894774c (push 35c9bcb..894774c ke origin main)
+- **Status CI:** Run 38566884582 (#356, 894774c, Node 22 & 24) = **SUCCESS** ✅
 - **Keputusan Owner:** Bug report — dalam app Stremio, tekan button configure balik ke config hash; setting Trinity tak melekat/hilang, setting lain kekal. Diberi link config sebenar untuk disiasat sendiri.
 - **Diagnosis (dibuktikan pada data sebenar):** `/api/get-session/bd0b2ae9…` (Cloudflare Worker) memulangkan blok `trinity` LENGKAP (mode=pro + 3 ejen custom: apiKey/baseUrl/model/provider) — server/persistence OK. UI kosong. Punca client-side: `applyAgentValues()` early-`return` pada mode-mismatch (default Basic vs stored Pro), bergantung pada `renderCards()` → `applyAgentValues(getEffectiveConfig())` — global `currentConfig` belum siap semasa muat halaman → nilai ejen hilang. Bug hanya pada reconfigure (fresh state mode sepadan → tiada early-return) — padan simptom owner tepat.
 - **Fail Terlibat:** `public/js/trinity-agents.js` sahaja (+51/−6): `modelSyncHook` peringkat modul (diregistri oleh mount(); rehydrate hantar cfg SEBENAR untuk bina semula kad + segmented), pengawal re-entrancy `_rehydratingMode` (halang gelung + halang handler change menimpa kad terisi), `renderCards(cfgOverride)`.
