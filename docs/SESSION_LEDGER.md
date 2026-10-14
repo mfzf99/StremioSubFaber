@@ -13,7 +13,8 @@
 ## 2026-10-14 — RELEASE v3.9.43: TRINITY NON-DESTRUCTIVE MODE SWITCH — STATE KEKAL SEMASA TOGOL BASIC <-> PRO (PIPELINE 8-LANGKAH)
 
 - **Tarikh:** 2026-10-14 (waktu tempatan KL)
-- **Komit SHA:** (diisi selepas push — lihat blok Next Steps)
+- **Komit SHA:** 4c8bebf (push 2ab9ee3..4c8bebf ke origin main; push pertama gagal senyap — dikesan via `git status -sb` [ahead 1] dan diulang)
+- **Status CI:** Run CI #360 (4c8bebf, Node 22 & 24) = **SUCCESS** ✅
 - **Status:** RELEASE LENGKAP — Frontend (Astra) → Integration Review Backend → regression test → pipeline 8-langkah.
 - **Keputusan Owner:** Bug v3.9.42 — isi Provider/API Key/Model dalam kad Agent Translation (Basic Mode) → tekan Pro Mode → tekan Basic Mode → SEMUA input hilang kepada placeholder ('— Select provider —', 'No key', '— Select model —').
 - **Punca Akar (3 kecacatan berasingan, kesemuanya dijejak pada runtime sebenar):**
