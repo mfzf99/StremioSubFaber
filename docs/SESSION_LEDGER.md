@@ -1065,7 +1065,7 @@
 ## 2026-10-14 - RELEASE v3.9.42: SECONDARY FALLBACK - TOGGLE ON/OFF KANAN + KAD PREMIUM (PIPELINE 8-LANGKAH)  
   
 - **Tarikh:** 2026-10-14 (waktu tempatan KL)  
-- **Komit SHA:** (diisi selepas push)  
+- **Komit SHA:** 40d9fba (push ke origin main)
 - **Keputusan Owner:** Design sub-kad fallback terlalu simple; toggle on/off mesti di sebelah kanan, bukan klik-header-untuk-buka.  
 - **Perubahan:** public/js/trinity-agents.js (buildSecondaryFallbackRow: toggle iOS-switch kanan + status chip ON/OFF + id status; applyFallbackValues: sync status chip programatik) + public/css/trinity-agents.css (kad premium: border solid, gradient, shadow, switch 44x24px, chip pill).  
 - **Integration Review Backend: LULUS** - kontrak payload sifar perubahan (id checkbox kekal; readFallbackState/applyFallbackValues/collectConfigPatch + skema server multiProviderEnabled/secondaryProvider*/providers/custom_secondary utuh); 1 race ditemui dan difix (status chip stale semasa rehydrate kerana .checked programatik tak trigger event change).  
