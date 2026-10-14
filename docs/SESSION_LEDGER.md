@@ -10,6 +10,29 @@
 
 ---
 
+## 2026-10-14 — RELEASE v3.9.43: TRINITY NON-DESTRUCTIVE MODE SWITCH — STATE KEKAL SEMASA TOGOL BASIC <-> PRO (PIPELINE 8-LANGKAH)
+
+- **Tarikh:** 2026-10-14 (waktu tempatan KL)
+- **Komit SHA:** (diisi selepas push — lihat blok Next Steps)
+- **Status:** RELEASE LENGKAP — Frontend (Astra) → Integration Review Backend → regression test → pipeline 8-langkah.
+- **Keputusan Owner:** Bug v3.9.42 — isi Provider/API Key/Model dalam kad Agent Translation (Basic Mode) → tekan Pro Mode → tekan Basic Mode → SEMUA input hilang kepada placeholder ('— Select provider —', 'No key', '— Select model —').
+- **Punca Akar (3 kecacatan berasingan, kesemuanya dijejak pada runtime sebenar):**
+    1. **[KRITIKAL] Rujukan silang skop gagal.** `currentConfig` diisytiharkan dengan `let` SKOP-MODUL di dalam IIFE [`public/config.js`](public/config.js:2) (baris 1796) — TIDAK kelihatan kepada [`public/js/trinity-agents.js`](public/js/trinity-agents.js:1). [`getEffectiveConfig()`](public/js/trinity-agents.js:1741) menggunakan guard `typeof currentConfig !== 'undefined'` yang menelan ReferenceError dan SELALU memulangkan `null` → snapshot/save berundur ke DOM kosong setiap kali togol mod.
+    2. **Pemusnahan DOM tanpa snapshot.** Handler `change` togol mod memanggil [`renderCards()`](public/js/trinity-agents.js:1622) yang melakukan `cardsWrap.innerHTML = ''` (musnah semua input) tanpa merakam nilai DOM dahulu; input yang ditaip tetapi belum disimpan hilang sepenuhnya.
+    3. **Padam senyap merentas mod.** [`populateProviderDropdown()`](public/js/trinity-agents.js:819) & [`applyFallbackValues()`](public/js/trinity-agents.js:730) menulis semula placeholder/'' dan `.innerHTML = ''` tanpa memelihara pilihan semasa; [`collectConfigPatch()`](public/js/trinity-agents.js:1997) menghantar `trinity.preflight`/`trinity.inspector` sebagai `{}` dalam Basic Mode (kad tiada dalam DOM) → Save memusnahkan kredential Pro.
+- **Fail Terlibat:** [`public/js/trinity-agents.js`](public/js/trinity-agents.js:1) (+~180/−25) dan [`public/config.js`](public/config.js:1) (+16) — sifar perubahan kontrak payload.
+- **Perubahan DOM/JS:** (a) getter LIVE [`window.__SUB__getCurrentConfig`](public/config.js:1800) + `_lastKnownConfig` jaring keselamatan; (b) fungsi baharu [`snapshotVisibleAgentState()`](public/js/trinity-agents.js:1923) merakam DOM → cfg dengan SEMANTIK NON-DESTRUKTIF (kad yang tiada dalam mod semasa TIDAK disentuh); (c) `renderCards(snapshotCfg)` selepas snapshot; (d) [`deriveTranslationFromProviders()`](public/js/trinity-agents.js:1427) fallback rehidrasi `providers.<mainProvider>`; (e) `populateProviderDropdown`/`refreshFallbackProviderOptions(true)` kekalkan pilihan; (f) tulis HANYA bila nilai konfigurasi benar-benar ada (tiada lagi padam-dengan-kosong).
+- **Kontrak payload (untuk audit Backend):** `trinity.{preflight,translation,inspector}` kekal `{apiKey,format,baseUrl,model,provider,door,isCustom,enabled}`; `geminiApiKey`/`geminiModel`/`geminiKeyRotation*`/`geminiApiKeys`; `multiProviderEnabled`/`secondaryProviderEnabled`/`secondaryProvider`/`providers.<key>` (MERGE, bukan ganti); `agentB.{enabled,apiKey,baseUrl,format,model,preflightModel}` — kesemuanya TIDAK BERUBAH bentuknya.
+- **Ujian Frontend (Playwright, runtime sebenar — port 7001):** LULUS ✅ — fill Basic (provider=deepseek, key, model) + Secondary Fallback ON (groq + key) → Pro → Basic: kesemua 6 nilai 100% utuh; Pro → isi Preflight/Inspector → Basic → Pro: preflightKey/inspectorKey utuh; `__SUB__getCurrentConfig()` mengembalikan objek LIVE; bilah kad 1 (Basic) ↔ 3 (Pro) betul.
+- **Semakan kualiti Frontend:** `node --check` kedua-dua fail ✅; `npx prettier --check` hijau ✅; `npx eslint` pada `trinity-agents.js` = 0 error / 0 warning ✅; pada `config.js` = 0 error / 37 warning PRA-EXISTING (tiada pada baris baharu).
+- **Integration Review Backend (GLM 5.3): LULUS** — (a) payload serialization: `collectConfigPatch()` kekal bentuk kontrak identik, cawangan `!cardPresent` memulihkan nilai lama verbatim (tiada medan baharu/dibuang); (b) rehydration race: guard `_rehydratingMode` mendahului snapshot — semasa rehydrate terkawal, hook sudah membina kad dengan cfg sebenar, snapshot manual tidak dicampur; getter LIVE `__SUB__getCurrentConfig` mengembalikan objek semasa (bukan salinan) supaya tulis snapshot terus ke currentConfig; (c) skema server: `normalizeConfig` passthrough `trinity` + terbitan `agentB` (keutamaan inspector→preflight) serasi penuh; fallback `deriveTranslationFromProviders` selari kontrak `providers.<mainProvider>`; kontrak `/`?config=` (sessionManager → normalizeConfig) memulangkan trinity + secondaryProvider + providers lengkap (dibuktikan test B1/B2).
+- **Regression test baharu:** `src/services/trinity-mode-switch-regression.test.js` — 12 kes (A1-A8 kontrak sumber frontend; B1-B4 kontrak normalizeConfig termasuk agentB terbitan trinity terselamat merentas pertukaran mod + agentB tidak aktif dalam Basic tulen). Berdaftar dalam `package.json` test:tracked.
+- **Pipeline 8-langkah:** SemVer → 3.9.43; CHANGELOG v3.9.43; cache-buster runtime-driven (pkg 3.9.43 + `__APP_VERSION_QUERY__` ✅); `npx prettier --check .` hijau; `npx eslint .` 0 error; `npm test` 380 tests: **379 PASS / 0 FAIL / 1 SKIP** (monotonic 368→380, +12); `graphify update .` 5177 nodes / 11164 edges / 252 communities; blok ledger ini; commit+push; CI.
+- **Skop DILARANG disentuh (dipatuhi):** tiada `npm test`, tiada sebarang operasi Git — diserahkan kepada Backend.
+- **Next Steps:** Commit + push → CI Success → tutup.
+
+---
+
 ## 2026-10-14 — RELEASE v3.9.41: TRINITY REHYDRATE RACE FIX — SETTING HILANG SEMASA RECONFIGURE (PIPELINE 8-LANGKAH)
 
 - **Tarikh:** 2026-10-14 (waktu tempatan KL)

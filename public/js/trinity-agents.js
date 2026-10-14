@@ -182,6 +182,10 @@
     // Pengawal re-entrancy: menghalang gelung tak terhingga apabila hook/change
     // handler memanggil applyAgentValues() semula semasa sync mod.
     var _rehydratingMode = false;
+    // [BUG FIX v3.9.43] Cache cfg TERAKHIR yang dilihat oleh modul ini (melalui
+    // mount()/rehydrate()). Jaring keselamatan jika getter LIVE
+    // window.__SUB__getCurrentConfig tidak tersedia (cth modul dimuat berasingan).
+    var _lastKnownConfig = null;
 
     function fetchProviderRegistry() {
         if (_registryPromise) return _registryPromise;
@@ -715,7 +719,7 @@
             var ok = !!(data && data.valid === true);
             input.classList.add(ok ? 'is-valid' : 'is-invalid');
             btn.classList.add(ok ? 'is-valid' : 'is-invalid');
-        } catch (err) {
+        } catch (_) {
             input.classList.add('is-invalid');
             btn.classList.add('is-invalid');
         } finally {
@@ -750,10 +754,13 @@
             statusChip.textContent = on ? 'ON' : 'OFF';
             statusChip.classList.toggle('is-on', on);
         }
-        refreshFallbackProviderOptions(false);
+        // [BUG FIX v3.9.43] NON-DESTRUCTIVE: kekalkan pilihan provider/model
+        // fallback semasa merentas repopulasi (dahulunya `false` menetapkan
+        // semula ke placeholder dan memadam pilihan pengguna).
+        refreshFallbackProviderOptions(true);
         if (pid) {
             p.value = pid;
-            populateFallbackModels(pid, false);
+            populateFallbackModels(pid, true);
         }
         var providersMap = cfg.providers || {};
         var saved = {};
@@ -762,17 +769,20 @@
                 ? providersMap[CUSTOM_SECONDARY_ID] || providersMap.custom || {}
                 : providersMap[pid] || {};
         }
-        if (k) k.value = saved.apiKey || '';
+        // [BUG FIX v3.9.43] Tulis HANYA apabila data konfigurasi benar-benar
+        // mempunyai nilai — medan kosong tidak lagi memadam input yang telah
+        // ditaip pengguna (mandat non-destructive rehydrate).
+        if (k && saved.apiKey) k.value = saved.apiKey;
         if (isCustomSec) {
-            if (mc) mc.value = saved.model || '';
-            if (f) {
-                f.value = saved.door === DOOR_TYPES.GEMINI || saved.door === DOOR_TYPES.OPENAI ? saved.door : 'auto';
+            if (mc && saved.model) mc.value = saved.model;
+            if (f && (saved.door === DOOR_TYPES.GEMINI || saved.door === DOOR_TYPES.OPENAI)) {
+                f.value = saved.door;
             }
         } else if (saved.model && m) {
             ensureModelOption(m, saved.model);
             m.value = saved.model;
         }
-        if (u) u.value = saved.baseUrl || '';
+        if (u && saved.baseUrl) u.value = saved.baseUrl;
         updateFallbackFieldVisibility();
     }
 
@@ -781,6 +791,12 @@
     function populateProviderDropdown(agentKey, providers) {
         var sel = $('trinity-' + agentKey + '-provider');
         if (!sel) return;
+        // [BUG FIX v3.9.43] Kekalkan pilihan semasa merentas repopulasi.
+        // Sebelum ini innerHTML='' menetapkan semula ke placeholder
+        // "— Select provider —" — dan kerana registry dimuat secara ASYNC
+        // (mount().fetchProviderRegistry().then), repopulasi boleh berlaku
+        // SELEPAS rehydrate dan memadam provider yang telah dipilih.
+        var prev = sel.value || '';
         sel.innerHTML = '';
         var def = createEl('option', '', '— Select provider —');
         def.value = '';
@@ -792,6 +808,17 @@
             o.dataset.isCustom = p.isCustom === true ? 'true' : 'false';
             sel.appendChild(o);
         });
+        if (prev) {
+            sel.value = prev;
+            if (sel.value !== prev) {
+                // Provider tersimpan tiada dalam senarai registry/fallback semasa —
+                // sisip entri supaya nilai tidak terpadam secara senyap.
+                var extra = createEl('option', '', prev);
+                extra.value = prev;
+                sel.appendChild(extra);
+                sel.value = prev;
+            }
+        }
     }
 
     // --- Smart Visibility ---
@@ -1416,9 +1443,47 @@
         return t[agentKey] || null;
     }
 
+    // [BUG FIX v3.9.43] Fallback kontrak rehidrasi: sesetengah hash config lama
+    // menyimpan kredential hanya dalam `providers.<mainProvider>` (bukan blok
+    // trinity.translation). Tanpa fallback ini, kad Agent Translation dirender
+    // kosong walaupun kunci sebenarnya wujud. Utamakan `trinity.translation`,
+    // kemudian `providers.<mainProvider>` / `providers.gemini`.
+    function deriveTranslationFromProviders(cfg) {
+        if (!cfg || typeof cfg !== 'object') return null;
+        var providersMap = cfg.providers || {};
+        var mainKey = String(cfg.mainProvider || '').toLowerCase();
+        var candidates = [];
+        if (mainKey) candidates.push(mainKey);
+        if (candidates.indexOf('gemini') === -1) candidates.push('gemini');
+        for (var i = 0; i < candidates.length; i++) {
+            var entry = providersMap[candidates[i]];
+            if (entry && typeof entry === 'object' && (entry.apiKey || entry.model)) {
+                return {
+                    apiKey: entry.apiKey || '',
+                    format: entry.door === DOOR_TYPES.GEMINI ? DOOR_TYPES.GEMINI : entry.door || 'auto',
+                    baseUrl: entry.baseUrl || '',
+                    model: entry.model || '',
+                    provider: candidates[i]
+                };
+            }
+        }
+        // Legasi terakhir: medan gemini langsung
+        if (cfg.geminiApiKey || cfg.geminiModel) {
+            return {
+                apiKey: cfg.geminiApiKey || '',
+                format: 'gemini',
+                baseUrl: '',
+                model: String(cfg.geminiModel || '').replace(/^models\//, ''),
+                provider: 'gemini'
+            };
+        }
+        return null;
+    }
+
     function mount(cfg) {
         var section = $('apiKeysSection');
         if (!section) return;
+        if (cfg && typeof cfg === 'object') _lastKnownConfig = cfg;
 
         // Fetch registry (async — tidak sekat DOM)
         fetchProviderRegistry().then(function (providers) {
@@ -1614,7 +1679,21 @@
             // renderCards() akan memanggil applyAgentValues(getEffectiveConfig())
             // dengan global yang belum siap dan menimpa nilai yang telah diisi.
             if (_rehydratingMode) return;
-            renderCards();
+            // [BUG FIX v3.9.43] NON-DESTRUCTIVE MODE SWITCH (Basic <-> Pro):
+            // renderCards() melakukan `cardsWrap.innerHTML = ''` (memusnahkan semua
+            // input DOM) sebelum membina semula kad. Tanpa snapshot, nilai yang
+            // ditaip pengguna tetapi BELUM disimpan hilang sepenuhnya kerana
+            // applyAgentValues() kemudian membaca currentConfig (state lama/kosong).
+            // Rakam DAHULU nilai DOM semasa (non-destruktif: entri ejen yang kadnya
+            // tidak wujud dalam mod semasa DIKEKALKAN) ke currentConfig, kemudian
+            // bina semula kad dengan snapshot itu sebagai sumber nilai tunggal.
+            var snapshotCfg = null;
+            try {
+                snapshotCfg = snapshotVisibleAgentState(c);
+            } catch (_) {
+                snapshotCfg = c;
+            }
+            renderCards(snapshotCfg || c);
         });
 
         // [ROOT-CAUSE FIX 2026-10-10 — Integration Audit Fasa G]
@@ -1655,14 +1734,30 @@
         applyAgentValues(cfg);
     }
 
+    // [BUG FIX v3.9.43] Akses konfigurasi SEMASA yang boleh dipercayai.
+    // `currentConfig` dalam public/config.js ialah pemboleh ubah skop-modul (IIFE),
+    // jadi rujukan langsung dari modul ini SELALU gagal (guard typeof menelan
+    // ReferenceError → null). Ini adalah punca sebenar nilai input hilang semasa
+    // pertukaran mod: snapshot/save membaca null lalu berundur ke DOM kosong.
+    // Keutamaan: (1) getter LIVE yang didedahkan config.js; (2) cache cfg terakhir
+    // yang dihantar melalui mount()/rehydrate() sebagai jaring keselamatan.
     function getEffectiveConfig() {
-        return typeof currentConfig !== 'undefined' ? currentConfig : null;
+        try {
+            if (typeof window !== 'undefined' && typeof window.__SUB__getCurrentConfig === 'function') {
+                var live = window.__SUB__getCurrentConfig();
+                if (live && typeof live === 'object') return live;
+            }
+        } catch (_) {
+            /* defensif — jatuh ke cache di bawah */
+        }
+        return _lastKnownConfig && typeof _lastKnownConfig === 'object' ? _lastKnownConfig : null;
     }
 
     // --- Rehydrate nilai sedia ada ke dalam input baharu ---
 
     function applyAgentValues(cfg) {
         if (!cfg) return;
+        if (typeof cfg === 'object') _lastKnownConfig = cfg;
 
         var modeToggle = $('trinityModeToggle');
         var storedMode = (cfg.trinity && cfg.trinity.mode) || cfg.mode || MODE_BASIC;
@@ -1694,6 +1789,14 @@
 
         AGENTS.forEach(function (agent) {
             var stored = getAgentConfig(cfg, agent.key);
+            // [BUG FIX v3.9.43] Fallback kontrak: sesetengah hash lama tidak
+            // menyimpan blok trinity.translation tetapi menyimpan
+            // providers.<mainProvider> = { apiKey, model, baseUrl }. Tanpa ini,
+            // kad Agent Translation muncul kosong ("— Select provider —",
+            // "No key") walaupun kunci sebenarnya ada.
+            if (!stored && agent.key === 'translation') {
+                stored = deriveTranslationFromProviders(cfg);
+            }
             var keyEl = $('trinity-' + agent.key + '-key');
             var fmtEl = $('trinity-' + agent.key + '-format');
             var urlEl = $('trinity-' + agent.key + '-baseurl');
@@ -1745,7 +1848,9 @@
                     ensureModelOption(modelEl, name);
                     modelEl.value = name;
                 }
-                providerEl.value = 'gemini';
+                // [BUG FIX v3.9.43] Hanya paksa 'gemini' bila tiada nilai provider
+                // semasa di DOM — elak memadam pilihan pengguna (non-destructive).
+                if (!providerEl.value) providerEl.value = 'gemini';
                 // Key rotation seed untuk legacy
                 var rotToggle = $('trinity-translation-rotation-enabled');
                 var rotMode = $('trinity-translation-rotation-mode');
@@ -1771,12 +1876,118 @@
         });
     }
 
+    // --- Snapshot non-destruktif DOM → currentConfig (pertukaran mod) ---
+
+    // [BUG FIX v3.9.43] Rakam nilai input SEMASA dari DOM ke dalam objek
+    // konfigurasi SEBELUM renderCards() membina semula kad. Entri ejen yang
+    // kadnya TIDAK wujud dalam mod semasa (cth Preflight/Inspector dalam Basic
+    // Mode) DILANGKAU — nilai lama dalam `cfg.trinity` dikekalkan supaya
+    // pertukaran Pro → Basic → Pro tidak memadam data yang telah diisi.
+    // Juga tidak menulis nilai kosong ke medan fallback/rotation.
+    function snapshotVisibleAgentState(targetCfg) {
+        var cfg = targetCfg || getEffectiveConfig();
+        if (!cfg) return null;
+        cfg.trinity = cfg.trinity || {};
+        var providers = _registryCache || FALLBACK_PROVIDERS;
+
+        AGENTS.forEach(function (agent) {
+            var keyEl = $('trinity-' + agent.key + '-key');
+            var providerEl = $('trinity-' + agent.key + '-provider');
+            // Kad tiada dalam DOM mod semasa → jangan sentuh entri sedia ada.
+            if (!keyEl || !providerEl) return;
+
+            var fmtEl = $('trinity-' + agent.key + '-format');
+            var urlEl = $('trinity-' + agent.key + '-baseurl');
+            var modelEl = $('trinity-' + agent.key + '-model');
+            var provider = providerEl.value || '';
+            var providerEntry = getProviderById(providers, provider);
+            var door = getProviderDoor(providerEntry);
+            var isCustom = isCustomProvider(providerEntry);
+            var rawFormat = fmtEl ? fmtEl.value : 'auto';
+            var apiKey = String(keyEl.value || '').trim();
+
+            cfg.trinity[agent.key] = {
+                apiKey: apiKey,
+                format: rawFormat === 'auto' ? 'auto' : doorToFormat(rawFormat),
+                baseUrl: isCustom && urlEl ? String(urlEl.value || '').trim() : '',
+                model: modelEl ? String(modelEl.value || '').trim() : '',
+                provider: provider,
+                door: door,
+                isCustom: isCustom,
+                enabled: !!apiKey
+            };
+        });
+
+        // Seed legasi + key rotation (kad translation wujud dalam kedua-dua mod).
+        var t = cfg.trinity.translation;
+        if (t) {
+            if (t.apiKey) {
+                cfg.geminiApiKey = t.apiKey;
+                if (t.model) cfg.geminiModel = t.model;
+            }
+            var rotToggle = $('trinity-translation-rotation-enabled');
+            var rotMode = $('trinity-translation-rotation-mode');
+            var keysList = $('trinity-translation-rotation-keys-list');
+            if (rotToggle) {
+                cfg.geminiKeyRotationEnabled = rotToggle.checked === true;
+                if (rotToggle.checked && rotMode && rotMode.value) {
+                    cfg.geminiKeyRotationMode = rotMode.value;
+                }
+                if (rotToggle.checked && keysList) {
+                    var keys = [];
+                    Array.prototype.forEach.call(keysList.querySelectorAll('.trinity-key-input'), function (input) {
+                        var v = String(input.value || '').trim();
+                        if (v) keys.push(v);
+                    });
+                    cfg.geminiApiKeys = keys;
+                }
+            }
+        }
+
+        // Secondary fallback (sub-kad dalam kad translation — kedua-dua mod).
+        if ($('trinity-translation-fallback-enabled')) {
+            var fb = readFallbackState();
+            if (fb.enabled) {
+                cfg.multiProviderEnabled = true;
+                cfg.secondaryProviderEnabled = true;
+                cfg.secondaryProvider = fb.isCustomSecondary ? CUSTOM_SECONDARY_ID : fb.providerId;
+                cfg.providers = cfg.providers || {};
+                if (fb.isCustomSecondary) {
+                    cfg.providers[CUSTOM_SECONDARY_ID] = {
+                        enabled: true,
+                        apiKey: fb.apiKey,
+                        baseUrl: fb.baseUrl,
+                        model: fb.model,
+                        door: fb.door
+                    };
+                } else {
+                    cfg.providers[fb.providerId] = {
+                        enabled: true,
+                        apiKey: fb.apiKey,
+                        model: fb.model,
+                        baseUrl: fb.baseUrl
+                    };
+                }
+            }
+        }
+
+        return cfg;
+    }
+
     // --- Pengumpulan konfigurasi (disuntik ke saveConfig) ---
 
     function collectConfigPatch() {
         var modeToggle = $('trinityModeToggle');
         var mode = modeToggle && modeToggle.checked ? MODE_PRO : MODE_BASIC;
         var trinity = { mode: mode, preflight: {}, translation: {}, inspector: {} };
+
+        // [BUG FIX v3.9.43] NON-DESTRUCTIVE SAVE merentas mod: dalam Basic Mode
+        // kad Preflight/Inspector TIDAK wujud dalam DOM. Sebelum ini blok
+        // `trinity.preflight`/`trinity.inspector` dihantar sebagai {} dan
+        // memusnahkan kredential Pro yang telah disimpan apabila pengguna
+        // menekan Save semasa berada dalam Basic Mode. Nilai lama dibaca
+        // daripada currentConfig dan dipulihkan untuk ejen yang kadnya tiada.
+        var prevTrinity = (getEffectiveConfig() || {}).trinity || {};
 
         AGENTS.forEach(function (agent) {
             var key = ($('trinity-' + agent.key + '-key') || {}).value || '';
@@ -1799,6 +2010,27 @@
             // legacy pendek SEBELU dihantar; 'auto' dikekalkan untuk autodetect backend.
             var effectiveFormat = format === 'auto' ? 'auto' : doorToFormat(format);
             var effectiveBaseUrl = isCustom ? baseUrl.trim() : '';
+
+            var cardPresent = !!$('trinity-' + agent.key + '-key');
+            if (!cardPresent) {
+                // Kad tiada dalam mod semasa — kekalkan nilai konfigurasi lama
+                // (jangan hantar blok kosong yang akan memadam data Pro).
+                var prev = prevTrinity[agent.key];
+                trinity[agent.key] =
+                    prev && typeof prev === 'object'
+                        ? {
+                              apiKey: prev.apiKey || '',
+                              format: prev.format || 'auto',
+                              baseUrl: prev.baseUrl || '',
+                              model: prev.model || '',
+                              provider: prev.provider || '',
+                              door: prev.door || '',
+                              isCustom: prev.isCustom === true,
+                              enabled: prev.enabled === true
+                          }
+                        : {};
+                return;
+            }
 
             trinity[agent.key] = {
                 apiKey: key.trim(),

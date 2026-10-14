@@ -1794,6 +1794,22 @@ Translate to {target_language}.`;
 
     // State management
     let currentConfig = null;
+    // [BUG FIX v3.9.43] Pendedahan rasmi kepada modul luaran (public/js/trinity-agents.js):
+    // `currentConfig` ialah pemboleh ubah skop-modul (IIFE) — TIDAK kelihatan melalui
+    // rujukan global biasa. Trinity memerlukan akses LIVE (bukan snapshot) untuk
+    // linearisasi pertukaran mod Basic <-> Pro tanpa kehilangan nilai input yang
+    // belum disimpan. Getter ini sentiasa mengembalikan objek semasa.
+    try {
+        Object.defineProperty(window, '__SUB__getCurrentConfig', {
+            value: function () {
+                return currentConfig;
+            },
+            writable: false,
+            configurable: true
+        });
+    } catch (_) {
+        /* defensif — pendedahan gagal tidak boleh menghalang pemuatan */
+    }
     let providerLanguages = []; // Languages for source/no-translation (Stremio/provider-compatible)
     let translationLanguages = []; // Languages for target/learn (AI translation targets with regional variants)
     let allLanguages = []; // Combined lookup (both sets merged for chip display)

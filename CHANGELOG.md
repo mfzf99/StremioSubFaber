@@ -2,6 +2,24 @@
 
 All notable changes to this project will be documented in this file.
 
+## SubMaker v3.9.43 (2026-10-14) — Trinity Non-Destructive Mode Switch: State Preserved Across Basic <-> Pro
+
+### Fixed
+
+- **State loss kritikal semasa pertukaran Basic ↔ Pro Mode ([public/js/trinity-agents.js](public/js/trinity-agents.js), [public/config.js](public/config.js)):** pengguna mengisi Provider, API Key, Model (+ Secondary Fallback) dalam kad Agent Translation pada Basic Mode → tekan Pro Mode → tekan semula Basic Mode → SEMUA input terpadam kepada placeholder ('— Select provider —', 'No key', '— Select model —'). Tiga punca akar dibaiki:
+  1. **Rujukan silang skop gagal:** `currentConfig` diisytiharkan `let` skop-IIFE dalam [public/config.js](public/config.js) — TIDAK kelihatan kepada modul Trinity; guard `typeof currentConfig !== 'undefined'` menelan ReferenceError dan memulangkan `null` setiap masa. Fix: getter LIVE `window.__SUB__getCurrentConfig` didedahkan oleh config.js; `getEffectiveConfig()` mengutamakannya dengan jaring keselamatan `_lastKnownConfig`.
+  2. **Pemusnahan DOM tanpa rakaman:** handler `change` togol mod memanggil `renderCards()` yang melakukan `cardsWrap.innerHTML = ''` tanpa merakam nilai DOM semasa. Fix: fungsi baharu `snapshotVisibleAgentState()` merakam DOM → config SEBELUM bina semula, dengan semantik non-destructive — ejen yang kadnya tiada dalam mod semasa DILANGKAU (nilai lama dikekalkan).
+  3. **Padam senyap merentas mod:** `collectConfigPatch()` menghantar `trinity.preflight`/`trinity.inspector` sebagai `{}` dalam Basic Mode (kad tiada dalam DOM) — Save memusnahkan kredential Pro. Fix: nilai lama dipulihkan daripada `currentConfig.trinity` untuk ejen yang kadnya tiada; `populateProviderDropdown()`/`applyFallbackValues()`/`refreshFallbackProviderOptions(true)` memelihara pilihan semasa dan hanya menulis bila nilai sebenar wujud.
+
+### Added
+
+- **Fallback rehidrasi `providers.<mainProvider>` ([public/js/trinity-agents.js](public/js/trinity-agents.js), `deriveTranslationFromProviders()`):** hash config lama yang menyimpan kredential hanya dalam `providers.<mainProvider>`/`providers.gemini` (bukan `trinity.translation`) kini direhidrasi dengan betul ke kad Agent Translation — menutup simptom kad kosong pada URL `?config=...`.
+- **Regression test 12 kes ([src/services/trinity-mode-switch-regression.test.js](src/services/trinity-mode-switch-regression.test.js)):** kontrak A1-A8 (sumber frontend: getter LIVE, urutan snapshot→renderCards, pemeliharaan preflight/inspector/pilihan provider/fallback, fallback providers) + B1-B4 (backend `normalizeConfig`: roundtrip trinity mode+3 ejen, secondaryProvider+providers, agentB terbitan terselamat merentas pertukaran mod, agentB tidak aktif dalam Basic tulen).
+
+### Preserved
+
+- Kontrak payload sifar perubahan bentuk: `trinity.{preflight,translation,inspector}` = `{apiKey,format,baseUrl,model,provider,door,isCustom,enabled}`; `geminiApiKey`/`geminiModel`/`geminiKeyRotation*`/`geminiApiKeys`; `multiProviderEnabled`/`secondaryProviderEnabled`/`secondaryProvider`/`providers.<key>` (MERGE); `agentB.{enabled,apiKey,baseUrl,format,model,preflightModel}`. Verified live via Playwright: Basic (provider/key/model/fallback ON+provider+key) → Pro → Basic = 100% utuh; Pro (Preflight/Inspector key) → Basic → Pro = utuh.
+
 ## SubMaker v3.9.42 (2026-10-14) — Secondary Fallback Provider: Toggle On/Off + Premium Card Redesign
 
 ### Changed
