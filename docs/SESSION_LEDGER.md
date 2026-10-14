@@ -10,11 +10,11 @@
 
 ---
 
-## 2026-10-14 — FRONTEND FIX v3.9.44: TRINITY DOM MORPH 4-STATE + FRESH STATE KOSONG + CSS TAB BIRU SUBFABER (HANDOVER KE BACKEND)
+## 2026-10-14 — RELEASE v3.9.44: TRINITY DOM MORPH 4-STATE + FRESH STATE KOSONG + CSS TAB BIRU SUBFABER (PIPELINE 8-LANGKAH)
 
 - **Tarikh:** 2026-10-14 (waktu tempatan KL)
-- **Komit SHA:** BELUM — menunggu Integration Review Backend + pipeline 8-langkah (ZERO-COMMIT dikuatkuasakan pada mod Frontend).
-- **Status:** FRONTEND SIAP — 4 kecacatan live v3.9.43 diperbaiki; handover kepada Backend (GLM 5.3) untuk audit integrasi.
+- **Komit SHA:** 34dac6d (main; pipeline 8-langkah penuh dilaksanakan oleh Backend selepas Integration Review LULUS)
+- **Status:** RELEASE LENGKAP — Frontend (Astra) → Integration Review Backend (GLM 5.3) → regression test → pipeline 8-langkah.
 - **Keputusan Owner:** Mandat pembaikan tuntas UI/UX + state Trinity v3.9.44 (4 isu serentak, dikesan pada ujian live v3.9.43).
 - **Fail Terlibat (domain Frontend sahaja):**
     - [`public/js/trinity-agents.js`](public/js/trinity-agents.js:1) — DOM morph + guard fresh state + lencana kunci.
@@ -37,9 +37,10 @@
     - `collectConfigPatch()`: translation `door: 'anthropic-messages'` (sepadan format `anthropic`) ✅; merentas Pro → Basic, `preflight.apiKey`/`inspector.apiKey` utuh (non-destructive save) ✅.
     - Computed style: tab aktif `linear-gradient(135deg, rgb(37,99,235) 0%, rgb(29,78,216) 100%)` + `rgb(255,255,255)` + bayang `rgba(37,99,235,0.25) 0 4px 12px`; tab idle `rgb(71,85,105)` + transition `0.2s`; `.trinity-fallback` margin `24px`/`8px`; kepala padding `16px 20px` ✅.
 - **Semakan kualiti Frontend:** `node --check` (js + test) ✅; `npx prettier --check` ketiga-tiga fail hijau ✅; `npx eslint` pada `trinity-agents.js` + test = **0 error / 0 warning** ✅ (1 warning `mode` tidak digunakan dibuang dengan mengalih keluar parameter `buildAgentCard(agent, mode)`); semakan kendiri regex kontrak (36 assertion) lulus ✅.
-- **Skop DILARANG disentuh (dipatuhi):** tiada `npm test`, tiada operasi Git.
-- **Handover kepada Backend:** audit integrasi (serialisasi payload `door`/`format`, race rehydrate, `applyModeVisibility` vs `collapseSectionCards`), `npm test` monotonic, bump SemVer 3.9.44, CHANGELOG, ledger, commit + push, CI.
-- **Next Steps:** Backend Integration Review → pipeline 8-langkah → CI Success → tutup.
+- **Skop DILARANG disentuh (dipatuhi oleh Frontend):** tiada `npm test`, tiada operasi Git.
+- **Integration Review Backend (GLM 5.3): LULUS** — (a) `collapseSectionCards()` (config.js:8282) mensasar `.card` sahaja; `.trinity-agent-card` TIDAK membawa kelas `card` — kelas baharu `.trinity-mode-hidden` ortogonal kepada `.collapsed`, tiada konflik; (b) `normalizeConfig` passthrough blok `trinity` penuh (B1–B4); pengendalian `door` khusus hanya pada `providers.custom_secondary`; (c) `collectConfigPatch()` kekal menghantar `format` legacy pendek sepadan `VALID_FORMATS` keyDetector; `door` penuh kini konsisten dengan pilihan pengguna (perubahan nilai satu-satunya, bertujuan); (d) race rehydrate: `_rehydratingMode` guard mendahului; `ensureCardsBuilt()` idempotent — hook tidak membina semula DOM (cuma togol visibiliti + isi nilai cfg sebenar).
+- **Pipeline 8-langkah:** SemVer → 3.9.44; CHANGELOG v3.9.44 (Added/Changed/Fixed/Preserved); cache-buster runtime-driven (pkg 3.9.44 + `__APP_VERSION_QUERY__` via version.js — NO-OP verified); `npx prettier --check .` hijau; `npx eslint .` 0 error; `npm test` 385 tests: **384 PASS / 0 FAIL / 1 SKIP** (monotonic 380→385, +5); `graphify update .` 5189 nodes / 11205 edges / 279 communities (graphify-out di-gitignore, tidak ditrek); blok ledger ini; commit+push; CI.
+- **Next Steps:** Push origin main → CI Success → tutup.
 
 ---
 
