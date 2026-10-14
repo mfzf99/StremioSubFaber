@@ -13,7 +13,8 @@
 ## 2026-10-14 — RELEASE v3.9.44: TRINITY DOM MORPH 4-STATE + FRESH STATE KOSONG + CSS TAB BIRU SUBFABER (PIPELINE 8-LANGKAH)
 
 - **Tarikh:** 2026-10-14 (waktu tempatan KL)
-- **Komit SHA:** 34dac6d (main; pipeline 8-langkah penuh dilaksanakan oleh Backend selepas Integration Review LULUS)
+- **Komit SHA:** 34dac6d (release) + ffd4ead (docs ledger); push b8388c7..ffd4ead ke origin main.
+- **Status CI:** Run #362 (ffd4ead, Node 22 & 24) = **SUCCESS** ✅
 - **Status:** RELEASE LENGKAP — Frontend (Astra) → Integration Review Backend (GLM 5.3) → regression test → pipeline 8-langkah.
 - **Keputusan Owner:** Mandat pembaikan tuntas UI/UX + state Trinity v3.9.44 (4 isu serentak, dikesan pada ujian live v3.9.43).
 - **Fail Terlibat (domain Frontend sahaja):**
