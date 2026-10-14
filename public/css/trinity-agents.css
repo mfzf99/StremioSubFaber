@@ -314,31 +314,96 @@
     gap: 12px;
     margin-top: 16px;
 }
-/* Secondary Fallback Provider (sub-kad Agent Translation) */
+/* Secondary Fallback Provider (sub-kad Agent Translation)
+   [REKA BENTUK 2026-10-14] Premium card: header + toggle switch kanan. */
 .trinity-fallback {
     margin-top: 0.75rem;
-    border: 1px dashed #cbd5e1;
-    border-radius: 8px;
-    padding: 0.6rem 0.75rem;
+    border: 1px solid #e2e8f0;
+    border-radius: 10px;
+    padding: 0.7rem 0.85rem;
+    background: linear-gradient(180deg, #f8fafc 0%, #f1f5f9 100%);
+    box-shadow: 0 1px 2px rgba(15, 23, 42, 0.06);
 }
 .trinity-fallback-head {
-    width: 100%;
     display: flex;
     align-items: center;
     justify-content: space-between;
-    background: transparent;
-    border: 0;
-    padding: 0.2rem 0;
+    gap: 0.5rem;
+    padding: 0.1rem 0;
+}
+.trinity-fallback-head-left {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    flex: 1;
+}
+.trinity-fallback-title {
     font-weight: 600;
     font-size: 0.9rem;
     color: inherit;
+}
+.trinity-fallback-status {
+    font-size: 0.7rem;
+    font-weight: 700;
+    letter-spacing: 0.04em;
+    padding: 0.15rem 0.45rem;
+    border-radius: 999px;
+    background: #e2e8f0;
+    color: #475569;
+    text-transform: uppercase;
+}
+.trinity-fallback-status.is-on {
+    background: #dcfce7;
+    color: #166534;
+}
+
+/* Toggle switch (iOS-style) — input disembunyikan, label = track, span = thumb */
+.trinity-fallback-switch-input {
+    position: absolute;
+    opacity: 0;
+    width: 0;
+    height: 0;
+    pointer-events: none;
+}
+.trinity-fallback-switch {
+    position: relative;
+    display: inline-block;
+    width: 44px;
+    height: 24px;
+    flex-shrink: 0;
     cursor: pointer;
 }
-.trinity-fallback-head:focus-visible {
+.trinity-fallback-switch-slider {
+    position: absolute;
+    inset: 0;
+    background: #cbd5e1;
+    border-radius: 999px;
+    transition: background 0.2s ease;
+}
+.trinity-fallback-switch-slider::before {
+    content: '';
+    position: absolute;
+    top: 3px;
+    left: 3px;
+    width: 18px;
+    height: 18px;
+    background: #ffffff;
+    border-radius: 50%;
+    box-shadow: 0 1px 3px rgba(15, 23, 42, 0.2);
+    transition: transform 0.2s ease;
+}
+.trinity-fallback-switch-input:checked + .trinity-fallback-switch .trinity-fallback-switch-slider {
+    background: #2563eb;
+}
+.trinity-fallback-switch-input:checked + .trinity-fallback-switch .trinity-fallback-switch-slider::before {
+    transform: translateX(20px);
+}
+.trinity-fallback-switch-input:focus-visible + .trinity-fallback-switch {
     outline: 2px solid #2563eb;
     outline-offset: 2px;
-    border-radius: 4px;
+    border-radius: 999px;
 }
+
 .trinity-fallback-body {
     display: grid;
     gap: 0.6rem;

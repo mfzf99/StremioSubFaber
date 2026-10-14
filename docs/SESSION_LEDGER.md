@@ -1051,3 +1051,23 @@
 - **Fail Terlibat:** `public/js/trinity-agents.js` (sahaja — tiada fail backend disentuh)
 - **Status verifikasi:** `node --check public/js/trinity-agents.js` ✅; `npx prettier --check public/js/trinity-agents.js` ✅; `npx eslint public/js/trinity-agents.js --quiet` 0 error ✅. (npm test/graphify akan dijalankan oleh sesi backend penuh.)
 - **Next Steps:** Handover ke Backend mode untuk audit integrasi (form payload serialization, rehydration, server schema) sebelum sebarang commit.
+  
+## 2026-10-14 - Frontend: Secondary Fallback Provider - toggle on/off kanan + kad premium  
+  
+- **Tarikh:** 2026-10-14 (waktu tempatan KL)  
+- **Keputusan Owner:** Design terlalu simple; toggle on/off kena di sebelah kanan, bukan klik-header-untuk-buka.  
+- **Perubahan:** Sub-kad fallback dinaik taraf - header sentiasa terlihat, toggle iOS-style switch di penjuru kanan, status chip ON/OFF, medan HIDE (bukan LOCK) bila toggle mati. Tiada lagi klik-header-untuk-buka.  
+- **Fail Terlibat:** public/js/trinity-agents.js (buildSecondaryFallbackRow), public/css/trinity-agents.css (kad premium + toggle switch + status chip)  
+- **Status verifikasi:** node --check ?; prettier --check ?; eslint --quiet 0 error ?.  
+- **Kontrak payload:** Tiada perubahan - checkbox id `trinity-translation-fallback-enabled` kekal, readFallbackState/applyFallbackValues/collectConfigPatch tidak berubah.  
+- **Next Steps:** Handover ke Backend mode untuk audit integrasi (form payload serialization, rehydration, server schema) sebelum sebarang commit. 
+  
+## 2026-10-14 - RELEASE v3.9.42: SECONDARY FALLBACK - TOGGLE ON/OFF KANAN + KAD PREMIUM (PIPELINE 8-LANGKAH)  
+  
+- **Tarikh:** 2026-10-14 (waktu tempatan KL)  
+- **Komit SHA:** (diisi selepas push)  
+- **Keputusan Owner:** Design sub-kad fallback terlalu simple; toggle on/off mesti di sebelah kanan, bukan klik-header-untuk-buka.  
+- **Perubahan:** public/js/trinity-agents.js (buildSecondaryFallbackRow: toggle iOS-switch kanan + status chip ON/OFF + id status; applyFallbackValues: sync status chip programatik) + public/css/trinity-agents.css (kad premium: border solid, gradient, shadow, switch 44x24px, chip pill).  
+- **Integration Review Backend: LULUS** - kontrak payload sifar perubahan (id checkbox kekal; readFallbackState/applyFallbackValues/collectConfigPatch + skema server multiProviderEnabled/secondaryProvider*/providers/custom_secondary utuh); 1 race ditemui dan difix (status chip stale semasa rehydrate kerana .checked programatik tak trigger event change).  
+- **Status npm test:** 368 tests: 367 PASS / 0 FAIL / 1 SKIP (padan baseline); prettier + eslint hijau; graphify update: 5161 nodes / 11119 edges / 252 communities.  
+- **Next Steps:** Commit + push  CI Success  tutup. 

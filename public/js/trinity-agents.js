@@ -426,31 +426,50 @@
         return fmtValue === DOOR_TYPES.GEMINI ? DOOR_TYPES.GEMINI : DOOR_TYPES.OPENAI;
     }
 
+    // [REKA BENTUK 2026-10-14] Sub-kad fallback dinaik taraf:
+    //   - Tiada lagi klik-header-untuk-buka; kandungan sentiasa terlihat.
+    //   - Toggle on/off dipindah ke penjuru kanan header (pola iOS switch).
+    //   - Status ON/OFF teks kecil untuk kejelasan.
+    //   - Medan HIDE (bukan LOCK) bila toggle mati — kekal editable via toggle.
     function buildSecondaryFallbackRow() {
         var wrap = createEl('div', 'trinity-fallback');
 
-        var head = createEl('button', 'trinity-fallback-head', '🛟 Secondary Fallback Provider');
-        head.type = 'button';
-        head.setAttribute('aria-expanded', 'false');
+        // Header: label kiri + status teks + toggle switch kanan
+        var head = createEl('div', 'trinity-fallback-head');
 
-        var body = createEl('div', 'trinity-fallback-body');
-        body.style.display = 'none';
-        head.addEventListener('click', function () {
-            var open = body.style.display === 'none';
-            body.style.display = open ? '' : 'none';
-            head.setAttribute('aria-expanded', open ? 'true' : 'false');
-        });
-        wrap.appendChild(head);
+        var headLeft = createEl('div', 'trinity-fallback-head-left');
+        headLeft.appendChild(createEl('span', 'trinity-fallback-title', '🛟 Secondary Fallback Provider'));
+        var statusChip = createEl('span', 'trinity-fallback-status', 'OFF');
+        statusChip.id = 'trinity-translation-fallback-status';
+        headLeft.appendChild(statusChip);
+        head.appendChild(headLeft);
 
-        // Togol utama "Enable fallback rescue"
-        var toggleWrap = createEl('div', 'trinity-rotation-toggle');
-        var toggle = createEl('input', 'trinity-rotation-checkbox');
+        // Toggle switch (checkbox disembunyikan + label slider)
+        var toggle = createEl('input', 'trinity-fallback-switch-input');
         toggle.type = 'checkbox';
         toggle.id = 'trinity-translation-fallback-enabled';
-        toggleWrap.appendChild(toggle);
-        toggleWrap.appendChild(createEl('label', '', 'Enable fallback rescue'));
-        body.appendChild(toggleWrap);
-        toggle.addEventListener('change', updateFallbackFieldVisibility);
+        toggle.setAttribute('aria-label', 'Enable fallback rescue');
+        var toggleLabel = createEl('label', 'trinity-fallback-switch');
+        toggleLabel.setAttribute('for', toggle.id);
+        toggleLabel.appendChild(createEl('span', 'trinity-fallback-switch-slider'));
+        head.appendChild(toggle);
+        head.appendChild(toggleLabel);
+
+        wrap.appendChild(head);
+
+        // Body sentiasa terlihat (tiada collapse). Medan HIDE bila OFF.
+        var body = createEl('div', 'trinity-fallback-body');
+
+        function syncStatusChip() {
+            statusChip.textContent = toggle.checked ? 'ON' : 'OFF';
+            statusChip.classList.toggle('is-on', toggle.checked);
+        }
+        toggle.addEventListener('change', function () {
+            syncStatusChip();
+            updateFallbackFieldVisibility();
+        });
+        // Sync status awal
+        syncStatusChip();
 
         // Medan-medan (disembunyikan bila togol mati — HIDE, bukan LOCK)
         var fields = createEl('div', 'trinity-fallback-fields');
@@ -724,6 +743,13 @@
         var pid = isCustomSec ? CUSTOM_SECONDARY_ID : rawPid;
         var on = cfg.multiProviderEnabled === true && cfg.secondaryProviderEnabled === true && !!pid;
         t.checked = on;
+        // [INTEGRATION FIX 2026-10-14] Programmatic .checked tidak menyalakan event
+        // 'change' — status chip mesti disegerakkan manual di sini (race rehydrate).
+        var statusChip = $('trinity-translation-fallback-status');
+        if (statusChip) {
+            statusChip.textContent = on ? 'ON' : 'OFF';
+            statusChip.classList.toggle('is-on', on);
+        }
         refreshFallbackProviderOptions(false);
         if (pid) {
             p.value = pid;

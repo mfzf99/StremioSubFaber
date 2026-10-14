@@ -2,6 +2,22 @@
 
 All notable changes to this project will be documented in this file.
 
+## SubMaker v3.9.42 (2026-10-14) — Secondary Fallback Provider: Toggle On/Off + Premium Card Redesign
+
+### Changed
+
+- **Sub-kad Secondary Fallback Provider dinaik taraf dari segi reka bentuk ([public/js/trinity-agents.js](public/js/trinity-agents.js)):** reka bentuk lama "klik header untuk membuka kandungan" dibuang sepenuhnya. Header kini sentiasa terlihat dengan label 🛟 + status chip ON/OFF, dan toggle on/off ala-iOS (pola switch dengan slider biru) dipindah ke penjuru KANAN header — mengikuti arahan owner ("toggle button on off dekat sebelah kanan, bukan kena click lepastu dia keluar"). Kandungan medan (Provider/API Key/Base URL/Format/Model) disembunyikan secara HIDE (bukan LOCK) bila toggle dimatikan; behavior smart visibility medan Custom (`trinity-custom-only`) kekal seperti asal.
+
+- **Kad premium ([public/css/trinity-agents.css](public/css/trinity-agents.css)):** sempadan dashed `#cbd5e1` digantikan dengan kad premium — border solid `#e2e8f0`, radius 10px, gradient background `#f8fafc → #f1f5f9`, box-shadow halus, status chip pill (OFF kelabu `#e2e8f0` / ON hijau `#dcfce7`), toggle switch 44×24px dengan transisi 0.2s dan fokus keyboard (`focus-visible` ring). Fully keyboard accessible (input checkbox disembunyikan, label `for` binding, `aria-label` kekal).
+
+### Fixed
+
+- **Race rehydration status chip ([public/js/trinity-agents.js](public/js/trinity-agents.js), `applyFallbackValues()`):** penetapan `.checked` secara programatik semasa rehydrate TIDAK menyalakan event `change` — status chip ON/OFF dan class `is-on` akan kekal stale selepas konfigurasi disimpan dimuat semula. Fix: status chip (`#trinity-translation-fallback-status`) disegerakkan secara manual dalam laluan rehydrate, selari dengan `updateFallbackFieldVisibility()`.
+
+### Preserved
+
+- Kontrak payload sifar perubahan: checkbox id `trinity-translation-fallback-enabled` dikekalkan, jadi `readFallbackState()` / `applyFallbackValues()` / `collectConfigPatch()` dan skema server (`multiProviderEnabled` / `secondaryProvider*` / `providers.<key>` / slot `custom_secondary`) tidak berubah langsung.
+
 ## SubMaker v3.9.41 (2026-10-14) — Trinity Rehydrate Race Fix: Settings Lost on Reconfigure
 
 ### Fixed
