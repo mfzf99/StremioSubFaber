@@ -10,6 +10,23 @@
 
 ---
 
+## 2026-10-15 — STATUS PENUTUP SESI (BLOK PRA-TUTUP, MANDAT KE SINAMBUNGAN SESI) — v3.9.46 TAMAT, MENUNGGU MISI BARU
+
+- **Tarikh:** 2026-10-15 ~16:25 (waktu tempatan KL) — ditulis sebelum Owner menutup sesi ini.
+- **Komit SHA (HEAD):** `8dbdc7c` (= `eee0d17` + blok audit insiden). Origin/main SELARI. CI run **#38768232558 = SUCCESS** (workflow `ci.yml` sebenar, disahkan terus daripada GitHub API).
+- **Status tugasan:** Fasa 3 (Backend) + Fasa 4 (Frontend) LENGKAP & DIRILIS sebagai v3.9.46 (rantai: `d1dd353` feat → `050d66b` hotfix prettier → `e3964a6`/`eee0d17` ledger → `8dbdc7c` audit insiden). Insiden pelanggaran protokol (sub-tugasan frontend menjalankan pipeline penuh) sudah diaudit bebas, direkod, dan selesai — keputusan gatekeeper: release dikekalkan; lihat blok audit di bawah untuk butaran penuh + koreksi fakta CI (#38761858093 adalah ci.yml SUCCESS sebenar pada eee0d17; #38760908611 adalah run dependabot yang pernah salah dipetik).
+- **Baseline ujian semasa (rujuk selepas reset konteks):** `npm test` = **413 total / 412 PASS / 0 FAIL / 1 SKIP (live Redis)** — monotonic ≥ 385. `npx prettier --check .` PASS; `npx eslint .` 0 error (223 warning pra-wujud); `graphify update .` = 5305 nodes / 11445 edges / 269 communities.
+- **Artefak seni bina utama yang baru (baca dahulu selepas reset):**
+    1. [`src/utils/modelCapabilities.js`](../src/utils/modelCapabilities.js) — capability map berpusat v1.0.0 (punca tunggal kebenaran parameter per-model; 13 keluarga; `resolveCapabilityProfile`/`getAgentDefaultParams`/`sanitizeAgentParams`/`agentParamsDeviateFromDefault`).
+    2. [`src/utils/config.js`](../src/utils/config.js) `normalizeTrinityAgentParams()` — skema `trinity.{preflight|translation|secondary|inspector}.params` + migrasi automatik + auto-bypassCache (`trinity-params-deviated`).
+    3. [`src/utils/trinity-params-regression.test.js`](../src/utils/trinity-params-regression.test.js) — 29 ujian kontrak (terdaftar dalam `test:tracked`).
+    4. Mirror frontend dalam [`public/js/trinity-agents.js`](../public/js/trinity-agents.js) (`MP_*`) — pariti dikunci oleh ujian.
+    5. Keputusan Owner #1 terlaksana: `gemini-3.5-flash`/`gemini-3.7-flash` STRICT reroute ([`src/services/gemini.js`](../src/services/gemini.js) `isSamplingStrictGemini3`).
+- **Item terbuka (bukan blocker):** (1) tambah `.tmp-*` ke `.gitignore` — ≈300 fail diagnostik tidak dikesan mengotorkan `git status`; (2) guna peringkat pelajaran insiden: delegasi `new_task` frontend masa hadapan WAJIB sertakan senarai larangan eksplisit (npm test/Git) sebagai gating keras; (3) verifikasi Playwright live penuh atas v3.9.46 (4 kad + rehidrasi) telah dilaporkan oleh sub-tugasan tetapi tidak diulang oleh Backend — jadikan langkah wajib pada misi UI seterusnya.
+- **Next Steps (misi baru menunggu arahan Owner):** tiada tugasan aktif. Semua Fasa 3+4 selesai. Mula SESI BARU dengan membaca blok ini + blok audit insiden di bawah.
+
+---
+
 ## 2026-10-15 — POST-RELEASE INCIDENT AUDIT v3.9.46 (BACKEND GATEKEEPER) — PELANGGARAN PROTOKOL DIREKOD + KOREKSI FAKTA CI + KEPUTUSAN: RELEASE DIKEKALI
 
 - **Tarikh:** 2026-10-15 (waktu tempatan KL) — audit pasca-release oleh Backend (Tech Lead / Integration Gatekeeper).
