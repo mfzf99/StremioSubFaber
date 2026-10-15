@@ -13,7 +13,7 @@
 ## 2026-10-15 — CORE PROTOCOL CONSOLIDATION v3.9.47 — RULES PROCESS-MANAGEMENT DISERAP KE 00-CORE, REDUNDANCY DIBUANG
 
 - **Tarikh:** 2026-10-15 ~16:40 (waktu tempatan KL).
-- **Komit SHA (HEAD):** (diisi selepas push — blok ini dirujuk sebagai "blok pra-push v3.9.47").
+- **Komit SHA (HEAD):** `85bb9a6` — push `34a38de..85bb9a6` ke origin/main BERJAYA; CI `ci.yml` run **#38770728716 = SUCCESS** (disahkan terus daripada GitHub API, head_sha `85bb9a6`, completed success).
 - **Keputusan Owner:** Edit manual Owner ke [.roo/rules/00-subfaber-core-protocol.md](../.roo/rules/00-subfaber-core-protocol.md): (1) tambah rule #7 VERBATIM MANDATE & LOSSLESS CONTEXT PROPAGATION (anti-information-loss semasa `switch_mode`); (2) tambah seksyen [COGNITIVE DELIBERATION PROTOCOL - THINK BEFORE CODE]; (3) tambah seksyen [PROCESS LIFECYCLE, TERMINAL DISCIPLINE & MCP PRESERVATION]; (4) tambah seksyen [MANDATORY COMMIT & RELEASE PROTOCOL] 8-step (zero exceptions). PENGHAPUSAN [.roo/rules/20-process-management.md](../.roo/rules/20-process-management.md) sepenuhnya — kandungannya diserap ke 00-core, menghapuskan dual-source-of-truth redundancy. Owner mengarahkan Backend sahaja memverifikasi & commit.
 - **Audit Backend (verification pra-release):** diff `git diff` mengesahkan SEMUA rules baharu telah masuk; `ls .roo/rules` mengesahkan tinggal 2 fail (00-core + 10-context7) — tiada lagi 20-process-management; tiada kandungan redundant antara dua fail.
 - **Fail terlibat:** `.roo/rules/00-subfaber-core-protocol.md` (M), `.roo/rules/20-process-management.md` (D), `package.json` (bump 3.9.46→3.9.47), `CHANGELOG.md`, `docs/SESSION_LEDGER.md`, `graphify-out/*` (topologi).
