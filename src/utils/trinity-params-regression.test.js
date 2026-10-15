@@ -540,6 +540,52 @@ test('[E8] Bridge END-TO-END: custom MAIN + door gemini-native (Crazy Router) �
     assert.notEqual(providerCtor, 'OpenAICompatibleProvider', 'SAMA SEKALI BUKAN OpenAICompatibleProvider');
 });
 
+test('[E9] BASIC-MODE PURITY: agentB null → TIADA panggilan pre-flight kepada Agent A (formula 4+50+2 tulen)', async () => {
+    const TranslationEngine = require('../services/translationEngine');
+    let agentACalls = 0;
+    const providerA = {
+        model: 'gemini-3-flash',
+        translateSubtitle: async () => {
+            agentACalls++;
+            return '';
+        }
+    };
+    const engine = new TranslationEngine(providerA, 'gemini-3-flash', {}, { agentB: null });
+    const entries = Array.from({ length: 60 }, (_, i) => ({
+        id: i + 1,
+        startTime: '00:00:01,000',
+        endTime: '00:00:02,000',
+        text: `line ${i + 1}`
+    }));
+    const srt = entries.map((e) => `${e.id}\n${e.startTime} --> ${e.endTime}\n${e.text}\n`).join('\n');
+    await engine.translateSubtitle(srt, 'Malay', 'English', '');
+    assert.equal(engine.preflightContext, null, 'Basic Mode (agentB null) MESTI tanpa pre-flight context');
+    assert.equal(engine.translationStats.agentBUsed, false, 'agentBUsed kekal false — Agent B tidak digunakan');
+    assert.equal(engine.translationStats.subfaberContextUsed, undefined, 'konteks pre-flight tidak wujud');
+});
+
+test('[E10] BASIC-MODE PURITY: _logAgentBFileSummary senyap bila Agent B tidak pernah hidup (0/0 coverage)', () => {
+    const TranslationEngine = require('../services/translationEngine');
+    const provider = { model: 'm', translateSubtitle: async () => '' };
+    const engine = new TranslationEngine(provider, 'm', {}, { agentB: null });
+    // Stats seolah-olah Agent B tidak pernah menyentuh fail ini.
+    engine.translationStats.agentBBatchesInspected = 0;
+    engine.translationStats.agentBBatchesSkippedAfterOpen = 0;
+    engine.translationStats.agentBCircuitOpened = false;
+    // Spy log.debug: fungsi mesti return TANPA memanggil log.
+    let called = false;
+    const origDebug = require('../utils/logger').debug;
+    require('../utils/logger').debug = () => {
+        called = true;
+    };
+    try {
+        engine._logAgentBFileSummary();
+    } finally {
+        require('../utils/logger').debug = origDebug;
+    }
+    assert.equal(called, false, 'FILE SUMMARY TIDAK boleh dicetak bila Agent B tidak hidup');
+});
+
 test('[E7] Bridge END-TO-END: createTranslationProvider membina OpenAICompatibleProvider rootsys, BUKAN GeminiService', async () => {
     const { createTranslationProvider } = require('../services/translationProviderFactory');
     const cfg = normalizeConfig({

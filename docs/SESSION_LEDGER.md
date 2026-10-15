@@ -10,6 +10,16 @@
 
 ---
 
+## 2026-10-15 — v3.9.51 RELEASED: BASIC-MODE PURITY — FASA 0 EKSKLUSIF AGENT B + CLEAN LOG
+
+- **Tarikh:** 2026-10-15 ~19:55 (waktu tempatan KL).
+- **Komit SHA:** (langkah 7 di bawah).
+- **Keputusan Owner (telah & jelas):** (1) "Mode basic, kekalkan mode basic. Apa guna aku buat dual mode kalau mode basic pun ada feature pro?" — Fasa 0 pre-flight (konteks tema/istilah Pro) TIDAK BOLEH menyerap masuk Basic Mode; (2) "Aku nak clean log — dah kalau benda itu tak hidup, kau pergi keluarkan jugak dah kenapa?" — FILE SUMMARY mesti senyap bila Agent B mati.
+- **Pembedahan:** [`translationEngine.js`](../src/services/translationEngine.js) — (a) gate Fasa 0 daripada `!isNativeBatchProvider` kepada `!isNativeBatchProvider && this.agentB && !this.agentB.circuitOpen`; laluan fallback "Agent A pre-flight dirinya sendiri" (mandat 2026-09-25) DIGUGURKAN — Basic Mode kini enjin tulen 1-AI (formula 4+50+2 sahaja); circuit breaker Agent B tidak melata kepada Agent A; (b) `_logAgentBFileSummary()` early-return bila coverage 0/0 + tiada circuit (template kosong "100% protected" tidak dicetak lagi); (c) import orphan `runPreflightSemanticPass` digugurkan (modul kekal untuk AgentBInspector).
+- **Ujian:** E9 (agentB null → preflightContext null + agentBUsed false + subfaberContextUsed undefined, dijana penuh melalui enjin sebenar 60 entri) + E10 (FILE SUMMARY senyap — spy log.debug tidak dipanggil). `npm test` = **423 total / 422 PASS / 0 FAIL / 1 SKIP** (monotonic ≥ 421, +2). Prettier PASS; eslint 0 error; graphify update OK.
+- **Fail terlibat:** `src/services/translationEngine.js` (M), `src/utils/trinity-params-regression.test.js` (M, +E9/E10), `CHANGELOG.md`, `package.json` (bump 3.9.50→3.9.51), `docs/SESSION_LEDGER.md`.
+- **Nota kesan:** Pro Mode dengan kredential Agent B TIDAK terjejas — Fasa 0 masih berjalan oleh Agent B (rootsys). Verifikasi live berikutnya: Basic Mode log MESTI tanpa `[SubFaberPreflight]` dan tanpa `[AgentB] FILE SUMMARY`.
+
 ## 2026-10-15 — v3.9.50 HOTFIX RELEASED: CUSTOM MAIN GEMINI-NATIVE DOOR (CRAZY ROUTER 404) — SYARAT isSecondary DIGUGURKAN
 
 - **Tarikh:** 2026-10-15 ~18:57 (waktu tempatan KL).

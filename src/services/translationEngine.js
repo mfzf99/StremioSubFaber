@@ -19,7 +19,9 @@
 const { parseSRT, toSRT } = require('../utils/subtitle');
 const GeminiService = require('./gemini');
 const { DEFAULT_TRANSLATION_PROMPT } = GeminiService;
-const { runPreflightSemanticPass } = require('./subfaberPreflight');
+// [BASIC-MODE PURITY v3.9.51] runPreflightSemanticPass tidak lagi diperlukan
+// di sini — Fasa 0 kini eksklusif Agent B (agentB.runPreflightPass dalaman
+// menggunakan modul subfaberPreflight sendiri). Import orphan digugurkan.
 // [UNIVERSAL-FIX] Target-conditional few-shot / NOT-LOCKED guidance — pack
 // di-resolve mengikut bahasa sasaran (Malay → malay.js; lain → generic.js).
 const { getLanguagePack } = require('./prompts/languagePacks');
@@ -410,6 +412,15 @@ class TranslationEngine {
      */
     _logAgentBFileSummary() {
         const s = this.translationStats;
+        // [BASIC-MODE PURITY v3.9.51 — kelulusan Owner 2026-10-15]: Agent B
+        // tidak pernah hidup dalam fail ini (0 batch diinspeksi & 0 di-skip)
+        // → JANGAN cetak template kosong "0/0 (100% protected)" — log mesti
+        // bersih: benda yang tak hidup tidak bersuara. (Sebelum ini cetak
+        // DEBUG kosmetik walaupun tiada Agent B.)
+        const totalCoverage = s.agentBBatchesInspected + s.agentBBatchesSkippedAfterOpen;
+        if (totalCoverage === 0 && !s.agentBCircuitOpened) {
+            return;
+        }
         // [AGENTB-OBS P3/BS#4] Corak dievaluasi SEKALI di hujung fail —
         // mengelakkan warn pramatang daripada kluster panas awal (3 batch
         // berturut yang akhirnya di-dilute di bawah 15%).
@@ -896,27 +907,23 @@ class TranslationEngine {
         // global). Emit event { phase: 'preflight', status, summary, terms }
         // untuk Pre-Flight HUD (KIMI K3). Native batch providers (DeepL/Google)
         // tiada keperluan konteks semantik — skip.
-        // TOTAL PURGE (Mandat 2026-09-25): SubFaber enjin tunggal — tiada flag.
-        if (!this.isNativeBatchProvider) {
-            // DUAL-AI FASA 0 OFFLOAD (Mandat Pelaksanaan 2026-09-26): Agent B
-            // mengambil alih Pre-Flight Semantic Pass sepenuhnya apabila aktif —
-            // Gemini 3 Flash dikecualikan (jimat kuota TPM/RPM). Fallback semula
-            // kepada Gemini bila Agent B null / circuit breaker terbuka.
-            const preflightProvider = this.agentB && !this.agentB.circuitOpen ? this.agentB : this.gemini;
-            const preflightRunner =
-                this.agentB && !this.agentB.circuitOpen
-                    ? this.agentB.runPreflightPass.bind(this.agentB)
-                    : runPreflightSemanticPass;
-            this.preflightContext = await preflightRunner(
+        //
+        // [BASIC-MODE PURITY v3.9.51 — kelulusan Owner 2026-10-15]: Fasa 0
+        // kini EKSKLUSIF Agent B. Laluan fallback "Agent A pre-flight dirinya
+        // sendiri" DIGUGURKAN — Basic Mode (Agent B null) bermakna ENJIN TULen
+        // 1-AI: terus ke batch 1 tanpa sebarang panggilan pra-penterjemahan
+        // (formula 4+50+2 sahaja). Tiada lagi feature Pro (konteks tema/istilah)
+        // menyerap masuk mod Basic. Circuit breaker terbuka pun tidak melata
+        // kepada Agent A — kegagalan Agent B dibiarkan pada Agent B.
+        if (!this.isNativeBatchProvider && this.agentB && !this.agentB.circuitOpen) {
+            this.preflightContext = await this.agentB.runPreflightPass(
                 entries,
                 targetLanguage,
                 this.sourceLanguage,
-                preflightProvider,
+                this.agentB,
                 { onProgress }
             );
-            if (this.agentB && preflightProvider === this.agentB) {
-                this.translationStats.agentBUsed = true;
-            }
+            this.translationStats.agentBUsed = true;
             if (this.preflightContext) {
                 this.translationStats.subfaberContextUsed = true;
             }

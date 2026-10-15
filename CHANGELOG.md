@@ -2,6 +2,17 @@
 
 All notable changes to this project will be documented in this file.
 
+## SubMaker v3.9.51 (2026-10-15) — Basic-Mode Purity: Fasa 0 Pre-Flight Eksklusif Agent B + Clean Log
+
+### Changed
+
+- **[BASIC-MODE PURITY — kelulusan Owner 2026-10-15] Fasa 0 Pre-Flight kini EKSKLUSIF Agent B ([src/services/translationEngine.js](src/services/translationEngine.js)):** laluan fallback warisan "Agent A pre-flight dirinya sendiri" (sejak mandat 2026-09-25) DIGUGURKAN. Basic Mode (Agent B null — tiada kredential Trinity Pro / env) kini enjin TULen 1-AI: terus ke batch 1 tanpa sebarang panggilan pra-penterjemahan, formula 4+50+2 sahaja. Konteks tema/istilah (feature Pro) tidak lagi menyerap masuk mod Basic; circuit breaker Agent B juga tidak melata kepada Agent A. Import `runPreflightSemanticPass` yang menjadi orphan dalam translationEngine digugurkan (modul kekal digunakan oleh AgentBInspector).
+- **Clean log — `[AgentB] FILE SUMMARY` tidak dicetak bila Agent B tidak pernah hidup:** sebelum ini template kosong `0/0 (100% protected)` dicetak di hujung SETIAP fail walhal Agent B mati (coverage 0 + tiada circuit) — mengelirukan pemantauan. Kini mesej di-skip sepenuhnya; log hanya bersuara bila Agent B benar-benar menyentuh fail.
+
+### Added
+
+- **Ujian regresi E9–E10 ([src/utils/trinity-params-regression.test.js](src/utils/trinity-params-regression.test.js)):** E9 — agentB null → `preflightContext === null` + `agentBUsed === false` + tiada konteks pre-flight (Basic Mode purity dijana penuh melalui enjin sebenar); E10 — `_logAgentBFileSummary()` senyap (log.debug tidak dipanggil) bila coverage 0/0. Suite: 423 total / 422 PASS / 0 FAIL / 1 SKIP (monotonic ≥ 421).
+
 ## SubMaker v3.9.50 (2026-10-15) — Custom Main Gemini-Native Door Fix (Crazy Router 404)
 
 ### Fixed
