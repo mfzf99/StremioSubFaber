@@ -403,9 +403,15 @@ async function createProviderInstance(providerKey, providerConfig = {}, provider
                 return null;
             }
 
-            // [CUSTOM-SECONDARY] Pintu Gemini Native disokong pada fallback custom:
-            // door 'gemini-native' membina GeminiService dengan baseUrl proksi sekunder.
-            if (isSecondary && String(providerConfig.door || '').toLowerCase() === 'gemini-native') {
+            // [CUSTOM GEMINI-NATIVE DOOR v3.9.50] Pintu Gemini Native kini
+            // disokong SAMA RATA untuk custom MAIN dan custom_secondary.
+            // Insiden 2026-10-15 run ketiga: kad Trinity Translation Custom dengan
+            // door 'gemini-native' (cth Crazy Router https://cn.crazyrouter.com/v1beta)
+            // dipaksa ke OpenAICompatibleProvider → POST {base}/chat/completions
+            // pada proksi Gemini-native → 404 MODEL_NOT_FOUND. door 'gemini-native'
+            // WAJIB membina GeminiService (REST v1beta) tanpa mengira slot.
+            // (Sebelum ini: hanya custom_secondary dihormati — v3.9.33.)
+            if (String(providerConfig.door || '').toLowerCase() === 'gemini-native') {
                 return new GeminiService(providerConfig.apiKey || '', providerConfig.model, {
                     ...providerParams,
                     baseUrl: validation.sanitized,

@@ -10,6 +10,15 @@
 
 ---
 
+## 2026-10-15 — v3.9.50 HOTFIX: CUSTOM MAIN GEMINI-NATIVE DOOR (CRAZY ROUTER 404) — SYARAT isSecondary DIGUGURKAN
+
+- **Tarikh:** 2026-10-15 ~18:44 (waktu tempatan KL).
+- **Insiden run ketiga:** Kad Trinity Translation Custom + door Gemini-Native (`https://cn.crazyrouter.com/v1beta`, model `gemini-3-flash`) — jambatan v3.9.49 berfungsi betul (`provider=custom`, SSRF validated), TETAPI [`createProviderInstance()`](../src/services/translationProviderFactory.js) syarat `isSecondary &&` (v3.9.33) hanya menghormati door `gemini-native` untuk `custom_secondary` — custom MAIN dipaksa ke `OpenAICompatibleProvider` → POST `{base}/chat/completions` pada proksi Gemini-native → 404 MODEL_NOT_FOUND (dengan fallback "Streaming not supported" mengelirukan, sebenarnya 404 path).
+- **Pembaikan:** buang syarat `isSecondary` — door `gemini-native` kini membina `GeminiService` (REST v1beta + sanitasi baseUrl + Bearer sk- proksi sedia ada dalam gemini.js) SAMA RATA untuk custom MAIN dan custom_secondary.
+- **Ujian:** E8 ditambah — custom MAIN + door gemini-native (Crazy Router v1beta) → `GeminiService` baseUrl proksi dikekalkan, BUKAN `OpenAICompatibleProvider`. Suite Trinity 36/36; `npm test` = **421 total / 420 PASS / 0 FAIL / 1 SKIP** (monotonic ≥ 420). Prettier PASS; eslint 0 error; graphify update OK.
+- **Fail terlibat:** `src/services/translationProviderFactory.js` (M), `src/utils/trinity-params-regression.test.js` (M, +E8), `CHANGELOG.md`, `package.json` (bump 3.9.49→3.9.50), `docs/SESSION_LEDGER.md`.
+- **Next Steps:** commit+push + CI hijau; Owner re-test senario Crazy Router Gemini-native.
+
 ## 2026-10-15 — v3.9.49 LIVE VERIFICATION: RUN KEDUA PERFECT — ROUTING JAMBATAN TERBUKTI DI PRODUKSI
 
 - **Tarikh:** 2026-10-15 ~18:29 (waktu tempatan KL).

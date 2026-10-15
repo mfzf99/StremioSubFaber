@@ -2,6 +2,12 @@
 
 All notable changes to this project will be documented in this file.
 
+## SubMaker v3.9.50 (2026-10-15) — Custom Main Gemini-Native Door Fix (Crazy Router 404)
+
+### Fixed
+
+- **Door `gemini-native` pada custom MAIN kini dihormati ([src/services/translationProviderFactory.js](src/services/translationProviderFactory.js)):** insiden run ketiga 2026-10-15 — kad Trinity Translation Custom dengan door Gemini-Native (Crazy Router `https://cn.crazyrouter.com/v1beta`, model `gemini-3-flash`) dirutekan ke `OpenAICompatibleProvider` walaupun pintu Gemini Native dipilih, menyebabkan POST `{base}/chat/completions` pada proksi Gemini-native → 404 MODEL_NOT_FOUND. Punca: syarat `isSecondary &&` (v3.9.33) hanya menghormati door `gemini-native` untuk `custom_secondary`, bukan custom main. Pembaikan: door `gemini-native` membina `GeminiService` (REST v1beta) SAMA RATA untuk kedua-dua slot — jambatan Trinity→Provider (v3.9.49) + SSRF validation + sanitasi baseUrl v1beta sedia berfungsi dan tidak diubah. Ujian regresi E8: custom MAIN + door gemini-native → `GeminiService` (baseUrl proksi v1beta dikekalkan), SAMA SEKALI BUKAN `OpenAICompatibleProvider`.
+
 ## SubMaker v3.9.49 (2026-10-15) — Trinity Translation Agent → Provider Routing Bridge (404 MODEL_NOT_FOUND Fix)
 
 ### Fixed

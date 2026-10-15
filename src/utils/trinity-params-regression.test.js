@@ -512,6 +512,34 @@ test('[E6] Bridge: door gemini-native pada custom dikekalkan dalam entri provide
     assert.equal(cfg.providers.custom.door, 'gemini-native');
 });
 
+test('[E8] Bridge END-TO-END: custom MAIN + door gemini-native (Crazy Router) → GeminiService v1beta, BUKAN OpenAICompatible', async () => {
+    const { createTranslationProvider } = require('../services/translationProviderFactory');
+    const cfg = normalizeConfig({
+        trinity: {
+            translation: {
+                apiKey: 'sk-crazyrouter-key',
+                provider: 'custom',
+                door: 'gemini-native',
+                baseUrl: 'https://cn.crazyrouter.com/v1beta',
+                model: 'gemini-3-flash',
+                isCustom: true,
+                enabled: true
+            }
+        }
+    });
+    const built = await createTranslationProvider(cfg);
+    assert.equal(built.providerName, 'custom', 'providerName MESTI custom');
+    assert.equal(built.model, 'gemini-3-flash', 'model kekal gemini-3-flash');
+    const providerCtor = built.provider?.constructor?.name;
+    assert.equal(
+        providerCtor,
+        'GeminiService',
+        `enjin MESTI GeminiService untuk door gemini-native (dapat: ${providerCtor})`
+    );
+    assert.equal(built.provider?.baseUrl, 'https://cn.crazyrouter.com/v1beta', 'baseUrl proksi v1beta dikekalkan');
+    assert.notEqual(providerCtor, 'OpenAICompatibleProvider', 'SAMA SEKALI BUKAN OpenAICompatibleProvider');
+});
+
 test('[E7] Bridge END-TO-END: createTranslationProvider membina OpenAICompatibleProvider rootsys, BUKAN GeminiService', async () => {
     const { createTranslationProvider } = require('../services/translationProviderFactory');
     const cfg = normalizeConfig({
