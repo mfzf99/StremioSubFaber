@@ -13,7 +13,7 @@
 ## 2026-10-15 — CORE PROTOCOL MARKDOWN HARMONIZATION v3.9.48 — SIMBOL SENARAI DISERAGAMKAN
 
 - **Tarikh:** 2026-10-15 ~16:53 (waktu tempatan KL).
-- **Komit SHA (HEAD):** (dilengkapkan selepas push — v3.9.48).
+- **Komit SHA (HEAD):** `d89d5b3` — push `1b49328..d89d5b3` ke origin/main BERJAYA; CI `ci.yml` run **#38772894077 = SUCCESS** (disahkan terus daripada GitHub API, head_sha `d89d5b3`).
 - **Keputusan Owner:** Update manual Owner ke [.roo/rules/00-subfaber-core-protocol.md](../.roo/rules/00-subfaber-core-protocol.md) — versi dirapatkan & diseragamkan simbol `-`: (1) simbol `*` campuran pada sub-item diganti `-` (VERBATIM MANDATE a/b/c, STUCK PROCESS TERMINATION PROTOCOL Path A/B); (2) en-dash `1–2` → hyphen `1-2` (zombie process cap); (3) baris kosong berlebihan antara item bernombor dalam seksyen PROCESS LIFECYCLE dibuang; (4) directive Path B dirapatkan kepada satu baris. Perubahan kosmetik semata-mata — tiada perubahan makna.
 - **Audit Backend (verification pra-release):** `git diff` mengesahkan 22 baris berubah (+8/-14), kesemuanya formatting; fail lulus `prettier --check`.
 - **Fail terlibat:** `.roo/rules/00-subfaber-core-protocol.md` (M), `package.json` (bump 3.9.47→3.9.48), `CHANGELOG.md`, `docs/SESSION_LEDGER.md`, `graphify-out/*` (topologi).
