@@ -10,6 +10,30 @@
 
 ---
 
+## 2026-10-15 — POST-RELEASE INCIDENT AUDIT v3.9.46 (BACKEND GATEKEEPER) — PELANGGARAN PROTOKOL DIREKOD + KOREKSI FAKTA CI + KEPUTUSAN: RELEASE DIKEKALI
+
+- **Tarikh:** 2026-10-15 (waktu tempatan KL) — audit pasca-release oleh Backend (Tech Lead / Integration Gatekeeper).
+- **INSIDEN (PELANGGARAN PROTOKOL #4 — ZERO STANDALONE FRONTEND RELEASES):** Sub-tugasan Frontend (didelegasi untuk kerja UI sahaja) telah menjalankan hujung pipeline penuh — `npm test`, `git commit`, `git push`, dan verifikasi CI — TANPA handover formal kepada Backend untuk Integration Review pra-release. Ini melanggar Core Protocol Rule 4 & 5. Punca: butiran tugas sub-tugasan tidak menghalang blok "pipeline pelepasan" daripada dilaksanakan oleh persona bukan-pemilik-release. Pembelajaran: delegasi `new_task` MESTI nyatakan secara eksplisit "DILARANG: npm test / git commit / git push / verifikasi CI" sebagai gating keras, bukan amaran bersifat adab sah.
+- **KOREKSI FAKTA CI (ralat ledger sebelumnya):** Blok ledger sebelum ini memetakan "CI SUCCESS" kepada run **#38760908611** — ralat: run tersebut ialah workflow **dependabot "npm_and_yarn"** (event `dynamic`), BUKAN workflow `ci.yml` projek. Fakta yang disahkan terus daripada GitHub API (bukan dakwaan):
+    - CI `ci.yml` pada push e3964a6 (d1dd353): **FAILURE** (15:19, sebelum hotfix prettier).
+    - CI `ci.yml` pada push **050d66b** (hotfix prettier package.json): run **#38760704885 = SUCCESS** (15:28).
+    - CI `ci.yml` pada push **eee0d17** (HEAD ledger docs): run **#38761858093 = SUCCESS** (15:36).
+    - Kesimpulan: HEAD main (`eee0d17`) memang **HIJAU pada workflow CI sebenar**; rujukan ID sahaja yang salah dalam ledger. Tiada penipuan status tersembunyi — hanya salah petik run ID.
+- **AUDIT BEBAS OLEH BACKEND (jangan percaya laporan sub-tugasan — semua dijalankan semula):**
+    - `npm test`: **413 total / 412 PASS / 0 FAIL / 1 SKIP** (monotonic ≥ 385). ✔
+    - `npx prettier --check .`: **PASS**. ✔
+    - `npx eslint .`: **0 error** (223 warning pra-wujud). ✔
+    - `graphify update .`: 5305 nodes / 11445 edges / 269 communities. ✔
+- **INTEGRATION REVIEW PASCA-FAKTA (Backend sahaja, bacaan kod):**
+    - (a) **Payload serialization** — `mpCollectDeviatedParams()` (trinity-agents.js) menghantar HANYA medan deviated per slot; medan `fixed` tidak dihantar; backend `sanitizeAgentParams()` kekal pembersih akhir (clamp/fixed/unsupported-strip). LULUS.
+    - (b) **Rehidrasi** — baca `cfg.trinity.<agent>.params` SEBENAR (bukan DOM prevValue); slot `secondary` dihidrasi daripada `trinity.secondary`; snapshot `_modelParamsState` sebelum toggle mod Basic↔Pro. Tiada stale-value trap. LULUS.
+    - (c) **Schema compatibility** — pautan `?config=` lama: migrasi automatik `advancedSettings`/`providerParameters` → `trinity.translation.params` dengan guard eksplisit (`__advancedSettingsProvided`/`__providerParametersProvided`) menghalang deviasi palsu pada config default. LULUS.
+    - (d) **SemVer/CHANGELOG/cache-buster** — package.json 3.9.46 ✔; CHANGELOG entri v3.9.46 ✔; cache-buster runtime-driven via version.js (46 kunci `_cb=` automatik) ✔.
+- **KEPUTUSAN GATEKEEPER: RELEASE v3.9.46 DIKEKALI (TIADA ROLLBACK).** Alasan: semua kualiti objektif LULUS pada HEAD hijau (CI sebenar #38761858093 SUCCESS); pelanggaran ialah isu tadbir urus proses, bukan isu kualiti kod — rollback akan memusnahkan hasil teknikal yang sahih tanpa faedah. Tindakan pemulihan proses direkodkan di sini sebagai pengajaran kekal.
+- **Next Steps:** (1) Delegasi tugasan frontend masa hadapan WAJIB sertakan senarai larangan eksplisit yang boleh dikuatkuasakan; (2) pertimbangkan tambah `.tmp-*` ke `.gitignore` (≈300 fail diagnostik tidak dikesan dalam `git status`); (3) kunci kontrak trinity params pada docs/pelan seterusnya.
+
+---
+
 ## 2026-10-15 — v3.9.46 RELEASED: FASA 3+4 LENGKAP — TRINITY MODEL PARAMETERS PER-EJEN (CAPABILITY-DRIVEN UI)
 
 - **Tarikh:** 2026-10-15 (waktu tempatan KL)
