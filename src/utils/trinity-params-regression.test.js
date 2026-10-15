@@ -374,3 +374,168 @@ test('[E1] getModelFamily(gemini.js) selari dengan capability map untuk sempadan
         }
     }
 });
+
+// ── E. [TRINITY→PROVIDER BRIDGE v3.9.49] — insiden 404 MODEL_NOT_FOUND ──────
+// Punca: kad Agent Translation (satu-satunya UI enjin utama sejak v3.9.32)
+// menyimpan kredential dalam trinity.translation tanpa jambatan kepada
+// mainProvider/providers → createTranslationProvider() sentiasa membina
+// GeminiService sambil geminiModel tercemar model provider lain
+// (deepseek-v4-pro) → 404 pada endpoint Google.
+// Jambatan normalizeConfig() kini menjadikan trinity.translation sumber
+// kebenaran utama ruting enjin.
+
+test('[E1] Bridge: trinity.translation custom/rootsys → mainProvider=custom, bukan gemini', () => {
+    const cfg = normalizeConfig({
+        trinity: {
+            translation: {
+                apiKey: 'sk-rootsys-test',
+                provider: 'custom',
+                door: 'openai-compatible',
+                baseUrl: 'https://rootsys.cloud/v1',
+                model: 'deepseek-v4-pro',
+                isCustom: true,
+                enabled: true
+            }
+        }
+    });
+    assert.equal(cfg.mainProvider, 'custom', 'mainProvider MESTI custom, bukan gemini');
+    assert.equal(cfg.multiProviderEnabled, true, 'multiProviderEnabled MESTI true');
+    const entry = cfg.providers?.custom;
+    assert.ok(entry, 'providers.custom wujud');
+    assert.equal(entry.enabled, true);
+    assert.equal(entry.apiKey, 'sk-rootsys-test');
+    assert.equal(entry.model, 'deepseek-v4-pro');
+    assert.equal(entry.baseUrl, 'https://rootsys.cloud/v1');
+});
+
+test('[E2] Bridge: provider=gemini → tiada perubahan laluan legasi', () => {
+    const cfg = normalizeConfig({
+        geminiApiKey: 'AIzaTest',
+        geminiModel: 'gemini-3-flash-preview',
+        trinity: {
+            translation: {
+                apiKey: 'AIzaTest',
+                provider: 'gemini',
+                model: 'gemini-3-flash-preview',
+                enabled: true
+            }
+        }
+    });
+    assert.equal(cfg.mainProvider, 'gemini');
+    assert.equal(cfg.multiProviderEnabled, false);
+    const customEntry = cfg.providers?.custom;
+    assert.ok(
+        !customEntry || customEntry.enabled !== true || !customEntry.model,
+        'providers.custom TIDAK dijangkiti kredential Trinity'
+    );
+});
+
+test('[E3] Bridge: slot custom tidak lengkap (tiada baseUrl) → kekal laluan legasi gemini', () => {
+    const cfg = normalizeConfig({
+        geminiApiKey: 'AIzaTest',
+        trinity: {
+            translation: {
+                apiKey: 'sk-x',
+                provider: 'custom',
+                baseUrl: '',
+                model: 'deepseek-v4-pro',
+                enabled: true
+            }
+        }
+    });
+    assert.equal(cfg.mainProvider, 'gemini', 'slot tidak layak → jangan rampas mainProvider');
+    assert.equal(cfg.multiProviderEnabled, false);
+});
+
+test('[E4] Bridge: provider rasmi bukan-gemini (openai) → dirute terus', () => {
+    const cfg = normalizeConfig({
+        trinity: {
+            translation: {
+                apiKey: 'sk-openai-test',
+                provider: 'openai',
+                model: 'gpt-5-mini',
+                enabled: true
+            }
+        }
+    });
+    assert.equal(cfg.mainProvider, 'openai');
+    assert.equal(cfg.multiProviderEnabled, true);
+    assert.equal(cfg.providers?.openai?.apiKey, 'sk-openai-test');
+    assert.equal(cfg.providers?.openai?.model, 'gpt-5-mini');
+    assert.equal(cfg.providers?.openai?.baseUrl, undefined, 'openai rasmi tiada baseUrl');
+});
+
+test('[E5] Bridge: entri providers.custom sedia ada TIDAK ditimpa oleh jambatan', () => {
+    const cfg = normalizeConfig({
+        providers: {
+            custom: {
+                enabled: true,
+                apiKey: 'sk-eksplisit-lama',
+                baseUrl: 'https://lama.example/v1',
+                model: 'model-lama'
+            }
+        },
+        trinity: {
+            translation: {
+                apiKey: 'sk-trinity-baru',
+                provider: 'custom',
+                baseUrl: 'https://rootsys.cloud/v1',
+                model: 'deepseek-v4-pro',
+                isCustom: true,
+                enabled: true
+            }
+        }
+    });
+    // Nilai eksplisit sedia ada menang — jambatan tidak merampas kredential
+    // yang pengguna tetapkan melalui konfigurasi providers langsung.
+    assert.equal(cfg.mainProvider, 'custom');
+    assert.equal(cfg.providers.custom.apiKey, 'sk-eksplisit-lama');
+    assert.equal(cfg.providers.custom.baseUrl, 'https://lama.example/v1');
+    assert.equal(cfg.providers.custom.model, 'model-lama');
+});
+
+test('[E6] Bridge: door gemini-native pada custom dikekalkan dalam entri provider', () => {
+    const cfg = normalizeConfig({
+        trinity: {
+            translation: {
+                apiKey: 'sk-proxy-g',
+                provider: 'custom',
+                door: 'gemini-native',
+                baseUrl: 'https://proxy.example/v1',
+                model: 'gemini-3.6-flash',
+                isCustom: true,
+                enabled: true
+            }
+        }
+    });
+    assert.equal(cfg.mainProvider, 'custom');
+    assert.equal(cfg.providers.custom.door, 'gemini-native');
+});
+
+test('[E7] Bridge END-TO-END: createTranslationProvider membina OpenAICompatibleProvider rootsys, BUKAN GeminiService', async () => {
+    const { createTranslationProvider } = require('../services/translationProviderFactory');
+    const cfg = normalizeConfig({
+        trinity: {
+            translation: {
+                apiKey: 'sk-rootsys-e2e',
+                provider: 'custom',
+                door: 'openai-compatible',
+                baseUrl: 'https://rootsys.cloud/v1',
+                model: 'deepseek-v4-pro',
+                isCustom: true,
+                enabled: true
+            }
+        }
+    });
+    const built = await createTranslationProvider(cfg);
+    assert.equal(built.providerName, 'custom', 'providerName MESTI custom');
+    assert.equal(built.model, 'deepseek-v4-pro', 'model kekal deepseek-v4-pro');
+    const providerCtor = built.provider?.constructor?.name;
+    assert.equal(
+        providerCtor,
+        'OpenAICompatibleProvider',
+        `enjin MESTI OpenAICompatibleProvider (dapat: ${providerCtor})`
+    );
+    assert.equal(built.provider?.baseUrl, 'https://rootsys.cloud/v1', 'baseUrl menghala ke rootsys');
+    assert.notEqual(providerCtor, 'GeminiService', 'SAMA SEKALI BUKAN GeminiService');
+});

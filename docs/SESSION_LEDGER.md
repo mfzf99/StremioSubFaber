@@ -10,6 +10,41 @@
 
 ---
 
+## 2026-10-15 — v3.9.49 RELEASED: BUG ROUTING TRINITY AGENT TRANSLATION (404 MODEL_NOT_FOUND) — JAMBATAN TRINITY→PROVIDER LENGKAP 4 TITIK
+
+- **Tarikh:** 2026-10-15 ~18:03 (waktu tempatan KL).
+- **Komit SHA:** (dijalankan selepas blok ini — pipeline langkah 7).
+- **Keputusan Owner:** Mandat kritikal — diagnosis "salah konfigurasi pengguna" DITOLAK; ini bug kod. Kad Agent Translation ialah satu-satunya UI enjin utama (sejak v3.9.32, togol #enableMultiProviders/#mainProvider lama telah dihapus) — APA SAJA provider yang dipilih pada kad tersebut MESTI menjadi enjin terjemahan utama sebenar; geminiModel tidak boleh dicemari nama model provider lain.
+- **Pembaikan 4 titik (Backend + Frontend, 2 handover):**
+    - **TITIK A** [`public/js/trinity-agents.js`](../public/js/trinity-agents.js) `collectConfigPatch()` — routing provider-aware: geminiApiKey/geminiModel HANYA untuk provider==='gemini'; provider bukan-gemini layak menetapkan patch.mainProvider + multiProviderEnabled + providers[<id>] (custom: baseUrl+model; lain: apiKey+model; door gemini-native dikekalkan). Blok fallback providers GANTI→MERGE.
+    - **TITIK B** [`public/config.js`](../public/config.js) `buildConfigFromForm()` — guard trinityIsGeminiRoute untuk effectiveGeminiKey + trinityTranslationModel (tiada suntikan ke input legasi #geminiApiKey/#geminiModel bagi provider bukan-gemini).
+    - **TITIK C** [`src/utils/config.js`](../src/utils/config.js) `normalizeConfig()` — jambatan baharu syncTrinityTranslationToProvider(): trinity.translation = sumber kebenaran utama ruting (providers.<id> tidak ditimpa nilai eksplisit sedia ada; door custom dikekalkan; slot tidak layak kekal legasi gemini).
+    - **TITIK D** [`src/services/translationProviderFactory.js`](../src/services/translationProviderFactory.js) `createTranslationProvider()` — membina provider betul melalui mainProvider/providers jambatan (OpenAICompatibleProvider untuk rootsys custom).
+- **Integration Review Backend (LULUS):** (a) payload serialization — frontend kini hantar trinity.translation penuh + mainProvider/multiProviderEnabled/providers sekaligus; jambatan backend defense-in-depth (existing tidak ditimpa); (b) rehidrasi — tiada perubahan laluan rehidrasi; blok trinity disalin penuh ke payload (config.js:12887); (c) schema compatibility — laluan gemini legasi 1:1 terpelihara (E2); entri providers sedia ada menang (E5); slot tidak layak tidak merampas mainProvider (E3).
+- **Fail terlibat:** `src/utils/config.js` (M), `src/utils/trinity-params-regression.test.js` (M, +7 ujian E1–E7), `public/js/trinity-agents.js` (M), `public/config.js` (M), `CHANGELOG.md`, `package.json` (bump 3.9.48→3.9.49), `docs/SESSION_LEDGER.md`, `graphify-out/*`.
+- **Status ujian:** `npx prettier --check .` PASS; `npx eslint .` 0 error (223 warning pra-wujud); `npm test` = **420 total / 419 PASS / 0 FAIL / 1 SKIP (live Redis)** — monotonic ≥ baseline 413 (+7). `graphify update .` = OK.
+- **Cache-buster:** `__APP_VERSION_QUERY__` dibaca runtime daripada package.json — auto-propagate v3.9.49.
+- **Next Steps:** commit+push + verifikasi CI `ci.yml` hijau pada HEAD baharu.
+
+## 2026-10-15 — BUG ROUTING TRINITY AGENT TRANSLATION (404 MODEL_NOT_FOUND) — FRONTEND SELESAI, HANDOVER KE BACKEND
+
+- **Tarikh:** 2026-10-15 ~17:50 (waktu tempatan KL).
+- **Komit SHA (HEAD):** `dd98559` (belum ada komit baharu — menunggu Integration Review + pipeline 8-langkah oleh Backend).
+- **Keputusan Owner:** Teguran diagnosis backend (bukan salah konfigurasi pengguna) + mandat baiki bug routing — kad Agent Translation (satu-satunya UI enjin utama sejak v3.9.32) merutekan provider bukan-gemini (`custom`/rootsys, model `deepseek-v4-pro`) ke `provider=gemini` → 404 MODEL_NOT_FOUND pada `GeminiService`.
+- **Rantai punca (4 titik, disahkan audit 2-mode):**
+    - **TITIK A (frontend):** [`collectConfigPatch()`](../public/js/trinity-agents.js:2900) — salinan buta `t.apiKey`/`t.model` → `geminiApiKey`/`geminiModel` tanpa semak `provider`; tiada `mainProvider`/`multiProviderEnabled`/`providers.<id>` untuk slot Translation.
+    - **TITIK B (frontend):** [`buildConfigFromForm()`](../public/config.js:12610) — jambatan `effectiveGeminiKey`/`selectedGeminiModel` memaksa kredential+model Trinity ke `geminiApiKey`/`geminiModel` tanpa syarat provider.
+    - **TITIK C (backend):** [`normalizeConfig()`](../src/utils/config.js:1053) — tiada jambatan `trinity.translation` → `mainProvider`/`providers`; `multiProviderEnabled=false` memaksa `mainProvider='gemini'`.
+    - **TITIK D (backend):** [`createTranslationProvider()`](../src/services/translationProviderFactory.js:553) baca `mainProvider` sahaja → `buildGeminiProvider()` + `geminiModel=deepseek-v4-pro` → 404.
+- **Fail terlibat (frontend, M):**
+    - `public/js/trinity-agents.js` — [`collectConfigPatch()`](../public/js/trinity-agents.js:2900) kini routing provider-aware: `geminiApiKey`/`geminiModel` HANYA ditetapkan bila `t.provider==='gemini'` atau kosong; provider bukan-gemini TIDAK mencemar medan Gemini (ruting diurus jambatan backend).
+    - `public/config.js` — [`buildConfigFromForm()`](../public/config.js:12610) jambatan `effectiveGeminiKey`/`trinityTranslationModel` kini guard `trinityIsGeminiRoute` (`provider==='gemini'||''`); model/key bukan-gemini tidak lagi disuntik ke input legasi #geminiApiKey/#geminiModel. Blok `trinity` kekal disalin ke payload (12887).
+- **Kontrak payload kepada backend:** `trinity.translation = { apiKey, provider, door, baseUrl, model, isCustom, enabled, params }` — medan lengkap, TIDAK disaring; jambatan backend `syncTrinityTranslationToProvider()` ([`src/utils/config.js`](../src/utils/config.js)) membaca slot ini sebagai sumber kebenaran utama dan menjana `providers.<id> + mainProvider + multiProviderEnabled=true` bila provider bukan-gemini & layak (custom: baseUrl+model; lain: apiKey+model).
+- **Delegasi mikro #2 (gap Integration Review Backend):** `collectConfigPatch()` kini TURUT menetapkan `patch.mainProvider`/`patch.multiProviderEnabled`/`patch.providers[<id>]` untuk slot Translation provider bukan-gemini yang layak (custom: baseUrl+model; lain: apiKey+model) — menutup gap di mana pengguna rootsys-sahaja gagal validasi frontend (`mainProvider` literal 'gemini' → "Gemini API key required") sebelum payload sampai ke jambatan backend. Blok fallback diubah daripada `patch.providers = {}` (ganti) kepada `patch.providers = patch.providers || {}` (merge) supaya entri main tidak hilang bila fallback aktif. `buildConfigFromForm` (12562) sudah merge providers — selamat.
+- **Status ujian frontend:** `node --check` (2 fail) PASS (selepas delegasi mikro #2 juga PASS). `npm test` TIDAK DIJALANKAN — larangan protokol frontend (Rule #4); backend WAJIB jalankan suite penuh + integration review.
+- **Pembaikan backend (selesai oleh Backend sebelum delegasi ini):** jambatan `syncTrinityTranslationToProvider()` + kekalkan `door` untuk `providers.custom` + ujian regresi E1–E7 (termasuk E7 end-to-end `createTranslationProvider` → `OpenAICompatibleProvider` rootsys, BUKAN `GeminiService`) — suite Trinity 35/35 PASS.
+- **Next Steps (Backend — WAJIB sebelum release):** Integration Review (payload serialization patch baharu, rehidrasi, schema compat), kemudian pipeline 8-langkah penuh (SemVer v3.9.49, CHANGELOG, prettier/eslint/npm test, graphify, ledger, commit+push, CI hijau).
+
 ## 2026-10-15 — CORE PROTOCOL MARKDOWN HARMONIZATION v3.9.48 — SIMBOL SENARAI DISERAGAMKAN
 
 - **Tarikh:** 2026-10-15 ~16:53 (waktu tempatan KL).

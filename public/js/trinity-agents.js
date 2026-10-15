@@ -2897,10 +2897,48 @@
 
         var patch = { trinity: trinity };
 
+        // [TRINITY→PROVIDER BRIDGE v3.9.49] Routing provider-aware — slot translation
+        // kini menjadi sumber kebenaran utama ruting enjin (insiden 2026-10-15:
+        // 404 MODEL_NOT_FOUND akibat geminiModel tercemar model bukan-gemini,
+        // kerana serialization buta tanpa semak provider). Bila provider bukan
+        // gemini: (1) geminiApiKey/geminiModel DIBIARKAN tidak disentuh, dan
+        // (2) patch.mainProvider/patch.multiProviderEnabled/patch.providers[<id>]
+        // ditetapkan SEGERA supaya validasi frontend (mainProvider literal)
+        // & jambatan backend (syncTrinityTranslationToProvider) melihat enjin
+        // utama yang sama. Slot tidak layak (tiada kredential) → kekal legasi.
         var t = trinity.translation;
         if (t.apiKey) {
-            patch.geminiApiKey = t.apiKey;
-            if (t.model) patch.geminiModel = t.model;
+            if (t.provider === 'gemini' || !t.provider) {
+                // Laluan Gemini legasi: hanya geminiApiKey/geminiModel.
+                patch.geminiApiKey = t.apiKey;
+                if (t.model) patch.geminiModel = t.model;
+            } else {
+                // Provider bukan-gemini → sengaja TIADA patch.geminiModel
+                // (elak pencemaran stale-value). Ruting diurus di sini + disahkan
+                // semula oleh jambatan backend (defense in depth).
+                var tModel = String(t.model || '').trim();
+                var tBaseUrl = String(t.baseUrl || '').trim();
+                var tCustom = t.isCustom === true || t.provider === 'custom';
+                var tEligible = tCustom ? !!(tBaseUrl && tModel) : !!(t.apiKey && tModel);
+                if (tEligible) {
+                    patch.multiProviderEnabled = true;
+                    patch.mainProvider = t.provider;
+                    patch.providers = patch.providers || {};
+                    var mainEntry = {
+                        enabled: true,
+                        apiKey: t.apiKey,
+                        model: tModel
+                    };
+                    if (tCustom) {
+                        mainEntry.baseUrl = tBaseUrl;
+                        mainEntry.door =
+                            String(t.door || '').toLowerCase() === 'gemini-native'
+                                ? 'gemini-native'
+                                : 'openai-compatible';
+                    }
+                    patch.providers[t.provider] = mainEntry;
+                }
+            }
         }
 
         // Key rotation patch (hanya untuk Gemini)
@@ -2930,9 +2968,11 @@
             patch.multiProviderEnabled = true;
             patch.secondaryProviderEnabled = true;
             patch.secondaryProvider = fb.isCustomSecondary ? CUSTOM_SECONDARY_ID : fb.providerId;
-            // Merge (bukan ganti): hanya entri pembekal fallback disentuh; pembekal lain
-            // dalam currentConfig.providers dikekalkan oleh pemanggil (buildConfigFromForm).
-            patch.providers = {};
+            // [TRINITY→PROVIDER BRIDGE v3.9.49] MERGE (bukan ganti) — entri main
+            // provider daripada blok bridge di atas MESTI kekal walaupun fallback
+            // aktif; pembekal legasi lain dikekalkan oleh pemanggil
+            // (buildConfigFromForm merge providers — line 12562).
+            patch.providers = patch.providers || {};
             if (fb.isCustomSecondary) {
                 // [CUSTOM SECONDARY v3.9.33] Slot berasingan — TIDAK menimpa providers.custom (Primary)
                 patch.providers[CUSTOM_SECONDARY_ID] = {

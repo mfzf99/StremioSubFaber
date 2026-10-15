@@ -2,6 +2,21 @@
 
 All notable changes to this project will be documented in this file.
 
+## SubMaker v3.9.49 (2026-10-15) — Trinity Translation Agent → Provider Routing Bridge (404 MODEL_NOT_FOUND Fix)
+
+### Fixed
+
+- **Bug routing kritikal 404 MODEL_NOT_FOUND ([src/utils/config.js](src/utils/config.js), [public/js/trinity-agents.js](public/js/trinity-agents.js), [public/config.js](public/config.js)):** kad Agent Translation (satu-satunya UI enjin utama sejak v3.9.32) yang dikonfigurasi dengan provider bukan-Gemini (cth Custom/rootsys `https://rootsys.cloud/v1`, model `deepseek-v4-pro`) dirutekan salah kepada `provider=gemini` — `createTranslationProvider()` membina `GeminiService` sambil `geminiModel` tercemar nama model provider asing → endpoint Google memulangkan 404 dua kali (countTokens + generateContent) → job terjemahan mati sebelum batch pertama. Rantai punca empat titik telah diperbaiki serentak:
+  - **TITIK A** — `collectConfigPatch()` kini routing provider-aware: `geminiApiKey`/`geminiModel` HANYA ditetapkan bila `trinity.translation.provider === 'gemini'` (atau kosong); bagi provider bukan-gemini yang layak (custom: baseUrl+model; lain: apiKey+model), patch menetapkan `mainProvider` + `multiProviderEnabled: true` + `providers[<id>]` (termasuk baseUrl/door untuk custom — door `gemini-native` dikekalkan, selain itu `openai-compatible`) supaya validasi frontend lulus tanpa kunci Gemini legasi.
+  - **TITIK B** — `buildConfigFromForm()` jambatan `effectiveGeminiKey`/`trinityTranslationModel` kini diguard `trinityIsGeminiRoute`; kredential/model provider bukan-gemini tidak lagi disuntik ke input legasi `#geminiApiKey`/`#geminiModel`.
+  - **TITIK C** — jambatan baharu `syncTrinityTranslationToProvider()` dalam `normalizeConfig()`: `trinity.translation` kini sumber kebenaran utama ruting enjin — provider bukan-gemini yang layak menjana `providers.<id>` (entri sedia ada TIDAK ditimpa — nilai eksplisit pengguna menang) + `mainProvider` + `multiProviderEnabled`; slot tidak layak/tiada kredential kekal laluan legasi Gemini (backward compatible penuh). `door` kini dikekalkan untuk `providers.custom` (sebelum ini hanya `custom_secondary`).
+  - **TITIK D** — `createTranslationProvider()` secara automatik membina provider yang betul melalui `mainProvider`/`providers` daripada jambatan (cth `OpenAICompatibleProvider` menghala rootsys) — `geminiModel` tidak lagi dicemari model provider lain dalam mana-mana laluan.
+  - Blok fallback secondary dalam `collectConfigPatch()` diubah daripada GANTI (`patch.providers = {}`) kepada MERGE (`patch.providers = patch.providers || {}`) supaya entri main provider tidak hilang apabila fallback aktif serentak.
+
+### Added
+
+- **Ujian regresi E1–E7 ([src/utils/trinity-params-regression.test.js](src/utils/trinity-params-regression.test.js)):** tujuh ujian baharu mengunci kontrak jambatan — senario rootsys (custom + baseUrl + door openai-compatible + model deepseek-v4-pro) menghasilkan `mainProvider='custom'` BUKAN gemini; laluan gemini kekal legasi 1:1; slot tidak layak tidak merampas mainProvider; provider rasmi bukan-gemini (openai) dirute terus; entri `providers.custom` sedia ada tidak ditimpa; door `gemini-native` dikekalkan; dan E2E end-to-end `createTranslationProvider()` membina `OpenAICompatibleProvider` (baseUrl rootsys) SAMA SEKALI BUKAN `GeminiService`. Suite: 420 total / 419 PASS / 0 FAIL / 1 SKIP (monotonic ≥ 413).
+
 ## SubMaker v3.9.48 (2026-10-15) — Core Protocol Markdown Style Harmonization
 
 ### Changed

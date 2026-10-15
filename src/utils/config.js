@@ -1049,6 +1049,76 @@ function normalizeConfig(config) {
 
     mergedConfig.bypassCache = mergedConfig.bypassCache === true;
 
+    // ═══ [TRINITY→PROVIDER BRIDGE v3.9.49] ═══
+    // PUNCA 404 MODEL_NOT_FOUND (insiden 2026-10-15): kad Agent Translation
+    // (satu-satunya UI enjin utama sejak v3.9.32) menyimpan kredential dalam
+    // trinity.translation, tetapi tiada jambatan kepada mainProvider/providers
+    // — createTranslationProvider() sentiasa melihat mainProvider='gemini'
+    // sambil geminiModel tercemar model provider lain (cth deepseek-v4-pro)
+    // → GeminiService menghantar nama model asing ke endpoint Google → 404.
+    //
+    // Jambatan ini menjadikan trinity.translation SUMBER KEBENARAN UTAMA:
+    //   - provider==='gemini' (atau slot kosong) → tiada perubahan (laluan legasi).
+    //   - provider lain ('custom', 'openai', 'deepseek', dll.) → isikan
+    //     providers.<id> + mainProvider + multiProviderEnabled=true supaya
+    //     createTranslationProvider() membina provider yang betul.
+    // Keadaan:
+    //   - Hanya aktif bila slot membawa apiKey ATAU (custom: baseUrl+model —
+    //     key-optional). Slot tanpa kredential tidak merampas mainProvider.
+    //   - providers.<id> sedia terisi (konfigurasi fallback/explicit sedia ada)
+    //     TIDAK ditimpa — nilai eksplisit pengguna menang.
+    //   - geminiModel TIDAK dicemari: model provider bukan-gemini kekal dalam
+    //     trinity.translation.model / providers.<id>.model sahaja.
+    (function syncTrinityTranslationToProvider() {
+        const slot = mergedConfig.trinity?.translation;
+        if (!slot || typeof slot !== 'object') return;
+        const provider = String(slot.provider || '').toLowerCase();
+        if (!provider || provider === 'gemini') return;
+
+        const model = typeof slot.model === 'string' ? slot.model.trim() : '';
+        const apiKey = typeof slot.apiKey === 'string' ? slot.apiKey.trim() : '';
+        const baseUrl = typeof slot.baseUrl === 'string' ? slot.baseUrl.trim() : '';
+        const door = String(slot.door || '').toLowerCase();
+        const isCustom = slot.isCustom === true || provider === 'custom';
+
+        // Kriteria kelayakan: kunci wajib hadir (custom: baseUrl+model,
+        // key-optional; provider lain: apiKey+model — selari kontrak
+        // isConfigured() di translationProviderFactory).
+        const eligible = isCustom ? !!(baseUrl && model) : !!(apiKey && model);
+        if (!eligible) {
+            log.debug(
+                () =>
+                    `[Config] [TrinityBridge] trinity.translation provider='${provider}' tidak lengkap (key=${!!apiKey}, baseUrl=${!!baseUrl}, model=${!!model}) — kekal laluan legasi`
+            );
+            return;
+        }
+
+        mergedConfig.providers = mergedConfig.providers || {};
+        const existing = mergedConfig.providers[provider];
+        const entry = existing && typeof existing === 'object' ? existing : {};
+        mergedConfig.providers[provider] = {
+            enabled: true,
+            apiKey: entry.apiKey || apiKey,
+            model: entry.model || model
+        };
+        if (isCustom) {
+            mergedConfig.providers[provider].baseUrl = entry.baseUrl || baseUrl;
+            // door 'gemini-native' dikekalkan untuk routing custom main
+            // (builder custom_secondary sedia membaca; custom main default
+            // openai-compatible).
+            if (door === 'gemini-native') {
+                mergedConfig.providers[provider].door = 'gemini-native';
+            }
+        }
+
+        mergedConfig.multiProviderEnabled = true;
+        mergedConfig.mainProvider = provider;
+        log.debug(
+            () =>
+                `[Config] [TrinityBridge] trinity.translation → mainProvider='${provider}' model='${model}'${isCustom ? ` baseUrl='${baseUrl}'` : ''} (enjin utama dari kad Agent Translation)`
+        );
+    })();
+
     mergedConfig.multiProviderEnabled = mergedConfig.multiProviderEnabled === true;
     mergedConfig.mainProvider = mergedConfig.multiProviderEnabled ? mergedConfig.mainProvider || 'gemini' : 'gemini';
     mergedConfig.mainProvider = String(mergedConfig.mainProvider || 'gemini').toLowerCase();
@@ -1100,7 +1170,10 @@ function normalizeConfig(config) {
                 mergedConfig.providers[key].baseUrl = typeof value?.baseUrl === 'string' ? value.baseUrl : '';
             }
             // [CUSTOM-SECONDARY v3.9.33] pintu proksi fallback: 'openai-compatible' (lalai) | 'gemini-native'
-            if (normalizedKey === 'custom_secondary') {
+            // [TRINITY→PROVIDER BRIDGE v3.9.49] pintu custom MAIN turut
+            // dikekalkan — trinity.translation boleh membawa door 'gemini-native'
+            // (proksi Gemini-native) yang mesti mengalir ke builder custom.
+            if (normalizedKey === 'custom_secondary' || normalizedKey === 'custom') {
                 const door = String(value?.door || '').toLowerCase();
                 mergedConfig.providers[key].door = door === 'gemini-native' ? 'gemini-native' : 'openai-compatible';
             }

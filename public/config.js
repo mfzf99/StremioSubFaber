@@ -12609,8 +12609,22 @@ Translate to {target_language}.`;
         //   2. Blok trinity + agentB disalin terus ke payload.
         const trinityPayload =
             currentConfig.trinity && typeof currentConfig.trinity === 'object' ? currentConfig.trinity : null;
+        // [TRINITY→PROVIDER BRIDGE v3.9.49] Jambatan Gemini HANYA sah untuk
+        // provider='gemini' (atau kosong). Bila provider bukan-gemini (cth
+        // custom/rootsys), kredential + model diuruskan oleh normalizeConfig()
+        // jambatan (providers.<id> + mainProvider) — JANGAN cemarkan
+        // geminiApiKey/geminiModel dengan kredential provider asing, kerana
+        // ia menghasilkan 404 MODEL_NOT_FOUND pada endpoint Gemini.
+        const trinityTranslationSlot =
+            trinityPayload && trinityPayload.translation && typeof trinityPayload.translation === 'object'
+                ? trinityPayload.translation
+                : null;
+        const trinityTranslationProvider = trinityTranslationSlot
+            ? String(trinityTranslationSlot.provider || '').toLowerCase()
+            : '';
+        const trinityIsGeminiRoute = !trinityTranslationProvider || trinityTranslationProvider === 'gemini';
         const trinityTranslationKey =
-            trinityPayload && trinityPayload.translation ? String(trinityPayload.translation.apiKey || '').trim() : '';
+            trinityIsGeminiRoute && trinityTranslationSlot ? String(trinityTranslationSlot.apiKey || '').trim() : '';
         const legacyGeminiKey = document.getElementById('geminiApiKey').value.trim();
         const effectiveGeminiKey = trinityTranslationKey || legacyGeminiKey;
         // Sinkronkan input legasi supaya laluan validasi (validateGeminiApiKey)
@@ -12629,8 +12643,11 @@ Translate to {target_language}.`;
         // nilai model yang dipilih pengguna dalam select Trinity
         // (#trinity-translation-model) ditimpa oleh string kosong dropdown
         // legasi → save gagal dengan "Please select a Gemini model".
+        // [TRINITY→PROVIDER BRIDGE v3.9.49] Model Trinity hanya mengatasi
+        // dropdown legasi untuk laluan gemini — model provider bukan-gemini
+        // (cth deepseek-v4-pro) TIDAK boleh masuk geminiModel (punca 404).
         const trinityTranslationModel =
-            trinityPayload && trinityPayload.translation ? String(trinityPayload.translation.model || '').trim() : '';
+            trinityIsGeminiRoute && trinityTranslationSlot ? String(trinityTranslationSlot.model || '').trim() : '';
         const legacyModelInput = document.getElementById('geminiModel');
         if (legacyModelInput && trinityTranslationModel) {
             // Sinkronkan dropdown legasi supaya laluan validasi
