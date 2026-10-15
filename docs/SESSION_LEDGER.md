@@ -12,8 +12,8 @@
 
 ## 2026-10-15 — v3.9.49 RELEASED: BUG ROUTING TRINITY AGENT TRANSLATION (404 MODEL_NOT_FOUND) — JAMBATAN TRINITY→PROVIDER LENGKAP 4 TITIK
 
-- **Tarikh:** 2026-10-15 ~18:03 (waktu tempatan KL).
-- **Komit SHA:** (dijalankan selepas blok ini — pipeline langkah 7).
+- **Tarikh:** 2026-10-15 ~18:08 (waktu tempatan KL).
+- **Komit SHA (HEAD):** `13c4e25` — push `dd98559..13c4e25` ke origin/main BERJAYA; CI `ci.yml` run **#38782753791 = SUCCESS** (disahkan terus daripada GitHub API, head_sha `13c4e25c2c593280c1c9d3b0ca3f28a13645333c`, polled sehingga completed).
 - **Keputusan Owner:** Mandat kritikal — diagnosis "salah konfigurasi pengguna" DITOLAK; ini bug kod. Kad Agent Translation ialah satu-satunya UI enjin utama (sejak v3.9.32, togol #enableMultiProviders/#mainProvider lama telah dihapus) — APA SAJA provider yang dipilih pada kad tersebut MESTI menjadi enjin terjemahan utama sebenar; geminiModel tidak boleh dicemari nama model provider lain.
 - **Pembaikan 4 titik (Backend + Frontend, 2 handover):**
     - **TITIK A** [`public/js/trinity-agents.js`](../public/js/trinity-agents.js) `collectConfigPatch()` — routing provider-aware: geminiApiKey/geminiModel HANYA untuk provider==='gemini'; provider bukan-gemini layak menetapkan patch.mainProvider + multiProviderEnabled + providers[<id>] (custom: baseUrl+model; lain: apiKey+model; door gemini-native dikekalkan). Blok fallback providers GANTI→MERGE.
