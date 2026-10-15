@@ -12,8 +12,8 @@
 
 ## 2026-10-15 — v3.9.51 RELEASED: BASIC-MODE PURITY — FASA 0 EKSKLUSIF AGENT B + CLEAN LOG
 
-- **Tarikh:** 2026-10-15 ~19:55 (waktu tempatan KL).
-- **Komit SHA:** (langkah 7 di bawah).
+- **Tarikh:** 2026-10-15 ~19:57 (waktu tempatan KL).
+- **Komit SHA (HEAD):** `c09f253` — push `3ea8b75..c09f253` ke origin/main BERJAYA; CI `ci.yml` run **#38797750289 = SUCCESS** (disahkan terus daripada GitHub API, head_sha `c09f253287b4d9ed885505edabfdaee1f7461c5c`).
 - **Keputusan Owner (telah & jelas):** (1) "Mode basic, kekalkan mode basic. Apa guna aku buat dual mode kalau mode basic pun ada feature pro?" — Fasa 0 pre-flight (konteks tema/istilah Pro) TIDAK BOLEH menyerap masuk Basic Mode; (2) "Aku nak clean log — dah kalau benda itu tak hidup, kau pergi keluarkan jugak dah kenapa?" — FILE SUMMARY mesti senyap bila Agent B mati.
 - **Pembedahan:** [`translationEngine.js`](../src/services/translationEngine.js) — (a) gate Fasa 0 daripada `!isNativeBatchProvider` kepada `!isNativeBatchProvider && this.agentB && !this.agentB.circuitOpen`; laluan fallback "Agent A pre-flight dirinya sendiri" (mandat 2026-09-25) DIGUGURKAN — Basic Mode kini enjin tulen 1-AI (formula 4+50+2 sahaja); circuit breaker Agent B tidak melata kepada Agent A; (b) `_logAgentBFileSummary()` early-return bila coverage 0/0 + tiada circuit (template kosong "100% protected" tidak dicetak lagi); (c) import orphan `runPreflightSemanticPass` digugurkan (modul kekal untuk AgentBInspector).
 - **Ujian:** E9 (agentB null → preflightContext null + agentBUsed false + subfaberContextUsed undefined, dijana penuh melalui enjin sebenar 60 entri) + E10 (FILE SUMMARY senyap — spy log.debug tidak dipanggil). `npm test` = **423 total / 422 PASS / 0 FAIL / 1 SKIP** (monotonic ≥ 421, +2). Prettier PASS; eslint 0 error; graphify update OK.
