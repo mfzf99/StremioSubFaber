@@ -15,9 +15,9 @@
 7. VERBATIM MANDATE & LOSSLESS CONTEXT PROPAGATION (ANTI-INFORMATION LOSS):
    - When triggering `switch_mode` to delegate tasks to another persona, the delegating agent is STRICTLY FORBIDDEN from providing compressed, partial, or lossy summaries of the Owner's directives.
    - The initiating/delegating agent MUST forward the complete, VERBATIM Owner mandate (including all specifications, constraints, domain rules, and wireframe expectations) along with:
-     * (a) Full text of the Owner's requirements without truncation.
-     * (b) Current architectural/data state and completed backend contracts.
-     * (c) Concrete file boundaries and clear acceptance criteria for the receiving agent.
+     - (a) Full text of the Owner's requirements without truncation.
+     - (b) Current architectural/data state and completed backend contracts.
+     - (c) Concrete file boundaries and clear acceptance criteria for the receiving agent.
    - The receiving agent must never be left in an information vacuum or forced to ask the Owner for the original mandate that was already delivered to the team.
 
 [LANGUAGE & COMMUNICATION POLICY]
@@ -45,28 +45,22 @@ Before invoking any file editing tools or producing code diffs:
 1. AUTONOMOUS SHELL OWNERSHIP (ZERO MANUAL BABYSITTING):
    - The active agent possesses full shell control and SOLE responsibility for executing, monitoring, inspecting, and debugging commands.
    - STRICTLY FORBIDDEN to ask the Owner to read terminal output, copy-paste terminal logs, inspect hung tabs, or manually intervene in terminal bottlenecks. Diagnose, inspect, and resolve autonomously.
-
 2. MCP & DAEMON PRESERVATION (ZERO TOLERANCE BLANKET KILLS):
    - NEVER execute blanket process termination commands (e.g. `taskkill /IM node.exe`, `taskkill /F /IM node.exe`, `pkill node`, `pkill -f node`, or `killall node`) under ANY circumstances.
    - Reason: Background MCP services (Context7, Playwright, terminal runners, Language Server) operate inside node runtimes. Killing node globally severs MCP connections instantly, resulting in fatal "MCP tool: Not connected" crashes.
-
 3. STUCK PROCESS TERMINATION PROTOCOL (TWO PATHS ONLY):
    - Path A: Port-Bound Services (e.g. App Server on port 7001):
-     * Cross-platform: `npx --yes kill-port <PORT>`
-     * PowerShell (PID specific): `Get-NetTCPConnection -LocalPort <PORT> -ErrorAction SilentlyContinue | Select-Object -ExpandProperty OwningProcess -Unique | Stop-Process -Force`
-     * CMD: `for /f "tokens=5" %a in ('netstat -aon ^| findstr :<PORT>') do taskkill /f /pid %a`
+     - Cross-platform: `npx --yes kill-port <PORT>`
+     - PowerShell (PID specific): `Get-NetTCPConnection -LocalPort <PORT> -ErrorAction SilentlyContinue | Select-Object -ExpandProperty OwningProcess -Unique | Stop-Process -Force`
+     - CMD: `for /f "tokens=5" %a in ('netstat -aon ^| findstr :<PORT>') do taskkill /f /pid %a`
    - Path B: Standalone Scripts, Diagnostics & Test Runners (No Port, e.g. .tmp-f3-diag.js, jest):
-     * ALWAYS execute surgical, targeted process kills identifying the EXACT script or test filename:
-       `pkill -f "<script-name>" || true` (e.g. `pkill -f "tmp-f3-diag" || true`)
-
+     - ALWAYS execute surgical, targeted process kills identifying the EXACT script or test filename: `pkill -f "<script-name>" || true` (e.g. `pkill -f "tmp-f3-diag" || true`).
 4. PROACTIVE TIMEOUT & PTY BUFFER MANAGEMENT:
    - Any diagnostic script, ad-hoc runner, or long test execution MUST be executed with a strict timeout guardrail (e.g. `timeout 60s node script.js`) to prevent runaway infinite loops.
    - Avoid dumping massive unstructured outputs directly into interactive PTY terminals to prevent buffer deadlocks. For deep diagnostics or tests with extensive logs, pipe output cleanly to a temporary log file (e.g. `node script.js > .diag.log 2>&1`), read necessary slices programmatically via `head`/`grep`/file tools, and clean up temporary log artifacts immediately.
-
 5. ZOMBIE PROCESS & TERMINAL CONCURRENCY CAP:
-   - NEVER spawn cascading dangling terminals (limit concurrent active background tasks to at most 1–2).
+   - NEVER spawn cascading dangling terminals (limit concurrent active background tasks to at most 1-2).
    - Before executing a new diagnostic run or test suite, verify and clean up any previously stalled background processes running the same script. Never let zombie processes accumulate.
-
 6. CACHE IN-MEMORY & SERVER RELOAD DISCIPLINE:
    - If changes in templates (e.g. configurePageGenerator / main.html) do not reflect due to in-memory caching, strictly kill the specific server port (7001), verify the port is free, and start the script afresh (`node index.js`). Never kill other background Node runtimes.
 

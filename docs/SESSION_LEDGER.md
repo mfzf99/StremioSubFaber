@@ -10,6 +10,17 @@
 
 ---
 
+## 2026-10-15 — CORE PROTOCOL MARKDOWN HARMONIZATION v3.9.48 — SIMBOL SENARAI DISERAGAMKAN
+
+- **Tarikh:** 2026-10-15 ~16:53 (waktu tempatan KL).
+- **Komit SHA (HEAD):** (dilengkapkan selepas push — v3.9.48).
+- **Keputusan Owner:** Update manual Owner ke [.roo/rules/00-subfaber-core-protocol.md](../.roo/rules/00-subfaber-core-protocol.md) — versi dirapatkan & diseragamkan simbol `-`: (1) simbol `*` campuran pada sub-item diganti `-` (VERBATIM MANDATE a/b/c, STUCK PROCESS TERMINATION PROTOCOL Path A/B); (2) en-dash `1–2` → hyphen `1-2` (zombie process cap); (3) baris kosong berlebihan antara item bernombor dalam seksyen PROCESS LIFECYCLE dibuang; (4) directive Path B dirapatkan kepada satu baris. Perubahan kosmetik semata-mata — tiada perubahan makna.
+- **Audit Backend (verification pra-release):** `git diff` mengesahkan 22 baris berubah (+8/-14), kesemuanya formatting; fail lulus `prettier --check`.
+- **Fail terlibat:** `.roo/rules/00-subfaber-core-protocol.md` (M), `package.json` (bump 3.9.47→3.9.48), `CHANGELOG.md`, `docs/SESSION_LEDGER.md`, `graphify-out/*` (topologi).
+- **Status ujian:** `npx prettier --check .` PASS; `npx eslint .` 0 error; `npm test` = **413 total / 412 PASS / 0 FAIL / 1 SKIP (live Redis)** — monotonic ≥ baseline 413 terpelihara. `graphify update .` = OK.
+- **Cache-buster:** `__APP_VERSION_QUERY__` ([src/utils/configurePageGenerator.js](../src/utils/configurePageGenerator.js)) dibaca runtime dari package.json — auto-propagate v3.9.48; tiada versi hard-coded.
+- **Next Steps:** verifikasi CI `ci.yml` pada HEAD baru selepas push.
+
 ## 2026-10-15 — CORE PROTOCOL CONSOLIDATION v3.9.47 — RULES PROCESS-MANAGEMENT DISERAP KE 00-CORE, REDUNDANCY DIBUANG
 
 - **Tarikh:** 2026-10-15 ~16:40 (waktu tempatan KL).

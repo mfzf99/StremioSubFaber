@@ -2,6 +2,12 @@
 
 All notable changes to this project will be documented in this file.
 
+## SubMaker v3.9.48 (2026-10-15) — Core Protocol Markdown Style Harmonization
+
+### Changed
+
+- **[.roo/rules/00-subfaber-core-protocol.md](.roo/rules/00-subfaber-core-protocol.md)**: Merapikan & menyeragamkan simbol senarai kepada `-` (buang simbol `*` campuran pada sub-item VERBATIM MANDATE dan STUCK PROCESS TERMINATION PROTOCOL), menukar en-dash `1–2` kepada hyphen `1-2` (zombie process cap), memadam baris kosong berlebihan antara item bernombor dalam seksyen PROCESS LIFECYCLE, dan merapatkan directive Path B kepada satu baris. Tiada perubahan makna — kosmetik formatting semata-mata. Lulus `prettier --check`.
+
 ## SubMaker v3.9.47 (2026-10-15) — Core Protocol Consolidation: Process Management Rules Inlined
 
 ### Changed
