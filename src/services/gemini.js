@@ -124,11 +124,17 @@ function gemini3MinorVersion(m) {
  * @returns {boolean}
  */
 function isSamplingStrictGemini3(m) {
+    // [KEPUTUSAN OWNER #1 v3.9.46 — REROUTE WHITELIST] gemini-3.5-flash &
+    // gemini-3.7-flash menerima nama legacy tetapi pelayan Google MEREROUTE
+    // kepada 3.6/3.8 → kelakuan strip. Dilayan sebagai STRICT walaupun nama
+    // legacy (rujukan: plans/trinity-params-ground-truth-2026.md §A1).
+    if (m === 'gemini-3.5-flash' || m === 'gemini-3.7-flash') return true;
     const minor = gemini3MinorVersion(m);
     if (minor === null) return false;
     if (minor >= SAMPLING_DEPRECATION_MINOR) return true;
     // Kes tepi: gemini-3.5-flash-lite (minor 5) di-GA pada hari penamatan →
-    // strict; tetapi gemini-3.5-flash (minor 5, pra-sempadan) kekal legacy.
+    // strict; tetapi gemini-3.5-flash (minor 5, pra-sempadan) kini STRICT
+    // melalui whitelist reroute di atas.
     if (minor === 5 && /flash-lite/.test(m)) return true;
     return false;
 }

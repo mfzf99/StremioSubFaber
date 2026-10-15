@@ -453,6 +453,16 @@ class AgentBInspector extends OpenAICompatibleProvider {
         this.inspectionTimeoutMs = inspectionTimeoutMs;
         this.preflightTimeoutMs = preflightTimeoutMs;
 
+        // [TRINITY PARAMS FASA 3 v3.9.46] Params per-ejen (capability-sanitized
+        // oleh config.js). Null → god-tier 4-kunci kekal (lalai mandat Owner).
+        // Params eksplisit diinjek oleh builder universal sebagai kunci TAMBAHAN
+        // sahaja (tidak menggugurkan model/messages/stream/temperature lalai).
+        this.preflightParams = options.preflightParams || null;
+        this.inspectorParams = options.inspectorParams || null;
+        // Fasa aktif param: laluan Fasa 0 (preflight) guna preflightParams;
+        // laluan semakan guna inspectorParams. Ditoggol oleh runPreflightPass.
+        this.__activeAgentParams = this.inspectorParams;
+
         // Pembina asas clamp translationTimeout kepada >= 5000ms — enforce semula
         // had mandate: 60s bagi semakan batch (lalai instance); Fasa 0 dinaikkan
         // sementara kepada 150s oleh runPreflightPass(). Sandaran (deepseek)
@@ -561,6 +571,36 @@ class AgentBInspector extends OpenAICompatibleProvider {
                 `[AgentB][AgentChannel] format=${this.channelFormat} source=${this.channelFormatSource}` +
                 (this.channelFormat === 'openai' ? '' : ' — delegasi channel bukan-openai aktif')
         );
+    }
+
+    /**
+     * [TRINITY PARAMS FASA 3 v3.9.46] Override nipis di atas builder god-tier:
+     * hasil super() (4-kunci {model, messages, stream, temperature:0.0})
+     * dijadikan asas, kemudian params ejen eksplisit (sudah capability-
+     * sanitized oleh config.js) DIGABUNG sebagai kunci tambahan. Kunci asas
+     * (model/messages/stream) TIDAK boleh ditimpa; `temperature` hanya ditimpa
+     * jika pengguna menetapkannya secara eksplisit dalam params (deviasi →
+     * bypassCache automatik di config.js). Tanpa params → muatan 4-kunci
+     * tulen 1:1 (kontrak PAYLOAD-GODTIER dipelihara sepenuhnya).
+     */
+    buildChatRequest(userPrompt, stream = false, meta = {}) {
+        const result = super.buildChatRequest(userPrompt, stream, meta);
+        const agentParams = this.__activeAgentParams;
+        if (
+            !agentParams ||
+            typeof agentParams !== 'object' ||
+            Object.keys(agentParams).length === 0 ||
+            !result ||
+            !result.body
+        ) {
+            return result;
+        }
+        for (const [key, value] of Object.entries(agentParams)) {
+            if (key === 'model' || key === 'messages' || key === 'stream') continue; // kunci asas terpelihara
+            if (value === undefined || value === null || value === '') continue;
+            result.body[key] = value;
+        }
+        return result;
     }
 
     /**
@@ -840,6 +880,10 @@ class AgentBInspector extends OpenAICompatibleProvider {
         const previousTimeout = this.translationTimeout;
         const previousModel = this.model;
         this.translationTimeout = this.preflightTimeoutMs; // 150s headroom (BETA RUN 10)
+        // [TRINITY PARAMS FASA 3] Fasa 0 → guna preflightParams (di-pulihkan
+        // dalam finally bersama timeout/model — fasa tidak bertindih).
+        const previousAgentParams = this.__activeAgentParams;
+        this.__activeAgentParams = this.preflightParams;
 
         // [MODEL-HIERARCHY] FAILOVER FINAL (2026-09-28): Fasa 0 dihalakan ke
         // preflightHierarchy [kimi-k3] SAHAJA — STANDALONE. Kegagalan kimi-k3
@@ -895,6 +939,7 @@ class AgentBInspector extends OpenAICompatibleProvider {
         } finally {
             this.model = previousModel;
             this.translationTimeout = previousTimeout;
+            this.__activeAgentParams = previousAgentParams; // [TRINITY PARAMS FASA 3]
         }
     }
 

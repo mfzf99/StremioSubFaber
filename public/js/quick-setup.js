@@ -1884,8 +1884,11 @@
                 sendFullVideoToAssembly: false
             },
             geminiModel,
+            // [FASA 4 v3.9.46] Legasi flag (UI Advanced Mode dibubarkan; flag
+            // kekal false untuk kolongan ke atas konfigurasi lama).
             betaModeEnabled: false,
             devMode: false,
+            trinity: { mode: 'basic', preflight: {}, translation: {}, secondary: {}, inspector: {} },
             multiProviderEnabled: false,
             mainProvider: 'gemini',
             secondaryProviderEnabled: false,
@@ -2038,6 +2041,15 @@
                             finalConfig.multiProviderEnabled = false;
                             finalConfig.secondaryProviderEnabled = false;
                             finalConfig.secondaryProvider = '';
+                            // [FASA 4 v3.9.46] Trinity reset ke Basic — params ejen
+                            // dibersihkan bersama kredential (kontrak trinity.<agent>.params).
+                            finalConfig.trinity = {
+                                mode: 'basic',
+                                preflight: {},
+                                translation: {},
+                                secondary: { params: {} },
+                                inspector: {}
+                            };
                             finalConfig.geminiModel =
                                 qsConfig.geminiModel || finalConfig.geminiModel || 'gemini-flash-lite-latest';
                             finalConfig.advancedSettings = { ...qsConfig.advancedSettings };

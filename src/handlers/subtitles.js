@@ -6289,6 +6289,11 @@ async function performTranslation(
                         // [TRI-DOOR FASA C] Format pintu: 'auto' (autodetect
                         // keyDetector) | 'gemini' | 'openai' | 'anthropic'.
                         format: config.agentB.format,
+                        // [TRINITY PARAMS FASA 3 v3.9.46] Params per-ejen
+                        // (sudah tersanitasi capability map oleh config.js).
+                        // Null → builder god-tier 4-kunci kekal (lalai).
+                        preflightParams: config.agentB.preflightParams || null,
+                        inspectorParams: config.agentB.inspectorParams || null,
                         // BEAST MODE BETA RUN 10: siling token 131072 (128K rasmi DeepSeek
                         // apabila reasoning_effort="max") — dinormalisasi oleh config.js.
                         maxTokens: config.agentB.maxTokens,

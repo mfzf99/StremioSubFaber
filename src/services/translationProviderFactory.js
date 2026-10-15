@@ -445,6 +445,19 @@ async function createTranslationProvider(config) {
     const jsonOutputOptions = { enableJsonOutput: false };
     const defaultProviderParams = getDefaultProviderParameters();
     const mergedProviderParams = mergeProviderParameters(defaultProviderParams, config?.providerParameters || {});
+    // [TRINITY PARAMS FASA 3 v3.9.46] Parameter per-ejen daripada kad Trinity:
+    // trinity.translation.params (main) & trinity.secondary.params (fallback
+    // BERDIRI SENDIRI — tidak lagi menumpang parameter main provider).
+    // Params ini diutamakan berbanding providerParameters legasi; medan yang
+    // tidak disokong model telah dibuang oleh normalizeTrinityAgentParams.
+    const trinityTranslationParams =
+        config?.trinity?.translation?.params && typeof config.trinity.translation.params === 'object'
+            ? config.trinity.translation.params
+            : null;
+    const trinitySecondaryParams =
+        config?.trinity?.secondary?.params && typeof config.trinity.secondary.params === 'object'
+            ? config.trinity.secondary.params
+            : null;
     const findProviderConfig = (key) => {
         if (!providersConfig || typeof providersConfig !== 'object') return {};
         if (providersConfig[key]) return providersConfig[key];
@@ -455,6 +468,15 @@ async function createTranslationProvider(config) {
         const lower = String(key || '').toLowerCase();
         const matchKey = Object.keys(mergedProviderParams || {}).find((k) => String(k).toLowerCase() === lower);
         return matchKey ? mergedProviderParams[matchKey] : mergedProviderParams?.[lower] || {};
+    };
+    // [TRINITY PARAMS FASA 3] Gabung params: providerParameters legasi sebagai
+    // asas, DITINDIH oleh trinity.<agent>.params (kad Trinity UI). Slot ejen
+    // menentukan sumber: 'translation' → main; 'secondary' → fallback (terasing).
+    const resolveAgentParams = (agentKey, providerKey) => {
+        const legacy = findProviderParams(providerKey);
+        const agentParams = agentKey === 'secondary' ? trinitySecondaryParams : trinityTranslationParams;
+        if (!agentParams) return legacy;
+        return { ...legacy, ...agentParams };
     };
     const getGeminiAdvancedSettings = () => {
         const settings = config?.advancedSettings || {};
@@ -471,6 +493,9 @@ async function createTranslationProvider(config) {
                       temperature: modelDefaults.temperature,
                       topP: settings.topP
                   };
+        // [TRINITY PARAMS FASA 3] trinity.translation.params mengatasi advancedSettings
+        // (seni bina kad Trinity — parameter model tinggal di kad ejen).
+        if (trinityTranslationParams) Object.assign(base, trinityTranslationParams);
         // [DYNAMIC BASE URL v3.9.29] Suntik baseUrl per-pengguna (sudah
         // ternormalisasi + SSRF-lite oleh config.js). Keutamaan dalam
         // GeminiService: nilai ini > env GEMINI_API_BASE > Google rasmi.
@@ -534,7 +559,9 @@ async function createTranslationProvider(config) {
         if (secondaryEnabled && secondaryProviderKey && secondaryProviderKey !== 'gemini') {
             const secondaryConfig = await findSecondaryConfig(secondaryProviderKey);
             if (isConfigured(secondaryConfig, secondaryProviderKey)) {
-                const secondaryParams = findProviderParams(secondaryProviderKey);
+                // [TRINITY PARAMS FASA 3] Secondary params TERASING daripada
+                // trinity.secondary.params (tidak menumpang main provider).
+                const secondaryParams = resolveAgentParams('secondary', secondaryProviderKey);
                 fallbackProvider = await createProviderInstance(
                     secondaryProviderKey,
                     secondaryConfig,
@@ -583,7 +610,8 @@ async function createTranslationProvider(config) {
         };
     }
 
-    const providerParams = findProviderParams(mainProvider);
+    // [TRINITY PARAMS FASA 3] Main provider membaca trinity.translation.params.
+    const providerParams = resolveAgentParams('translation', mainProvider);
     const provider = await createProviderInstance(mainProvider, selectedConfig, providerParams, jsonOutputOptions);
     if (!provider) {
         log.warn(() => `[Providers] Unsupported provider '${mainProvider}', falling back to Gemini`);
@@ -614,7 +642,9 @@ async function createTranslationProvider(config) {
                 fallbackName = 'gemini';
                 fallbackModel = secondaryConfig.model;
             } else {
-                const secondaryParams = findProviderParams(secondaryProviderKey);
+                // [TRINITY PARAMS FASA 3] Secondary params TERASING (laluan
+                // provider bukan-gemini dalam cabang main!=gemini).
+                const secondaryParams = resolveAgentParams('secondary', secondaryProviderKey);
                 fallbackProvider = await createProviderInstance(
                     secondaryProviderKey,
                     secondaryConfig,

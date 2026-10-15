@@ -65,16 +65,18 @@ test('AQ authorization keys are preserved and sent through the runtime v1beta mo
 });
 
 // [SAMPLING GROUND TRUTH 2026-09-29] Deprecation begins at Gemini 3.6 (changelog
-// 21 Jul 2026). Pre-3.6 models (3.0 preview / 3.1 / 3.5) are 3.x-LEGACY and STILL
+// 21 Jul 2026). Pre-3.6 models (3.0 preview / 3.1) are 3.x-LEGACY and STILL
 // accept temperature/topP. 3.6+ are 3.x-STRICT and strip sampling. topK never sent.
-test('Gemini 3.x-legacy (3.5) keeps sampling; 3.x-strict (3.7) strips it', () => {
-    const legacy = new GeminiService('test-key', 'models/gemini-3.5-flash', {
+// [KEPUTUSAN OWNER #1 v3.9.46] gemini-3.5-flash kini STRICT (server reroute
+// whitelist) — contoh LEGACY ditukar kepada gemini-3.1-pro-preview.
+test('Gemini 3.x-legacy (3.1) keeps sampling; 3.x-strict (3.7) strips it', () => {
+    const legacy = new GeminiService('test-key', 'models/gemini-3.1-pro-preview', {
         thinkingBudget: 1000,
         thinkingLevel: 'high',
         temperature: 0.5,
         topP: 0.95
     });
-    assert.equal(legacy.model, 'gemini-3.5-flash');
+    assert.equal(legacy.model, 'gemini-3.1-pro-preview');
     assert.equal(legacy.getModelFamily().family, '3.x-legacy');
     // LEGACY: sampling IS sent alongside thinkingLevel (fix — dulu di-strip senyap)
     assert.deepEqual(legacy.buildGenerationConfig(4096), {
@@ -147,10 +149,12 @@ test('Gemini 3.5-flash-lite is STRICT (GA on deprecation day) but 3.5-flash is L
         temperature: 0.5,
         topP: 0.95
     });
-    assert.equal(flash.getModelFamily().family, '3.x-legacy', '3.5-flash must stay LEGACY');
+    // [KEPUTUSAN OWNER #1 v3.9.46] gemini-3.5-flash diterima nama legacy tetapi
+    // server reroute → gemini-3.6-flash (kelakuan strip) → DILAYAN SEBAGAI STRICT.
+    assert.equal(flash.getModelFamily().family, '3.x-strict', '3.5-flash is STRICT (server reroute whitelist)');
     const flashCfg = flash.buildGenerationConfig(4096);
-    assert.equal(flashCfg.temperature, 0.5, '3.5-flash keeps temperature');
-    assert.equal(flashCfg.topP, 0.95, '3.5-flash keeps topP');
+    assert.equal('temperature' in flashCfg, false, '3.5-flash strips temperature (reroute)');
+    assert.equal('topP' in flashCfg, false, '3.5-flash strips topP (reroute)');
 
     // 3.1 flash-lite is pre-boundary → still legacy (keeps sampling)
     const lite31 = new GeminiService('test-key', 'gemini-3.1-flash-lite', {
@@ -279,7 +283,18 @@ test('Configure and Toolbox pages expose current Gemini choices and model-aware 
     assert.match(html, /disabled/);
     assert.match(html, /Enter and validate API key to select model/);
     assert.doesNotMatch(html, /value="gemini-3-pro-preview"/);
-    assert.match(html, /id="advancedThinkingLevel"/);
+    // [FASA 4 v3.9.46] Kad Advanced Parameters legasi (#geminiAdvancedCard /
+    // #providerAdvancedCard / #betaMode) DIBUBARKAN — parameter model kini
+    // hidup dalam sub-accordion "Model Parameters" kad ejen Trinity
+    // (public/js/trinity-agents.js, capability-driven). #mismatchRetries
+    // DIPINDAH ke kad Translation Settings.
+    assert.doesNotMatch(html, /id="advancedThinkingLevel"/);
+    assert.doesNotMatch(html, /id="advancedTemperature"/);
+    assert.doesNotMatch(html, /id="betaMode"/);
+    assert.doesNotMatch(html, /id="geminiAdvancedCard"/);
+    assert.doesNotMatch(html, /id="providerAdvancedCard"/);
+    assert.match(html, /id="mismatchRetries"/);
+    assert.match(html, /id="translationSettingsCard"/);
 
     const uploadPage = generateFileTranslationPage(
         'tt-test',

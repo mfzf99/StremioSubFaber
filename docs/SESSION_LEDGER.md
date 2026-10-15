@@ -10,6 +10,82 @@
 
 ---
 
+## 2026-10-15 — v3.9.46 RELEASED: FASA 3+4 LENGKAP — TRINITY MODEL PARAMETERS PER-EJEN (CAPABILITY-DRIVEN UI)
+
+- **Tarikh:** 2026-10-15 (waktu tempatan KL)
+- **Komit SHA:** (diisi selepas push — pipeline 8-langkah selesai)
+- **Keputusan Owner:** Mandat Fasa 4 (bubarkan 3 blok UI legasi + params per-ejen dalam kad Trinity, 100% provider-agnostic)
+- **Integration review backend (LULUS):**
+    - trinity-params-regression.test.js: 29/29 ✔ 0 FAIL (kontrak `trinity.<agent>.params` + sanitasi + deviasi bypass + god-tier Agent B + getModelFamily pariti).
+    - Pariti mirror capability map frontend↔backend disahkan (resolveCapabilityProfile/getAgentDefaultParams/agentParamsDeviateFromDefault verbatim; 13 keluarga model).
+    - gemini-auth-model-regression.test.js: assertion "Configure and Toolbox pages" dikemas kini ke kontrak Fasa 4 — main.html kini MESTI tanpa #advancedThinkingLevel/#advancedTemperature/#betaMode/#geminiAdvancedCard/#providerAdvancedCard + dengan #mismatchRetries dalam #translationSettingsCard (24/24 ✔).
+- **npm test:** 413 total / **412 PASS / 0 FAIL / 1 SKIP** (baseline 385 → 413, monotonic naik; +28 ujian termasuk 29 trinity-params Fasa 3).
+- **Gate lain:** prettier --check . PASS; eslint . 0 error (223 warning pra-wujud); graphify update . BERJAYA (5292 nodes, 11431 edges, 259 communities); cache-buster verifikasi (__APP_VERSION_QUERY__ placeholder + 46 kunci _cb= automatik via version.js runtime).
+- **Fail Terlibat:** public/partials/main.html, public/js/trinity-agents.js, public/css/trinity-agents.css, public/config.js, public/js/quick-setup.js, src/services/gemini-auth-model-regression.test.js, CHANGELOG.md, package.json, docs/SESSION_LEDGER.md, graphify-out/*.
+- **Next Steps:** CI GitHub Actions verification (npm test + prettier + eslint + npm audit, Node 22/24) — mesti Success sebelum tugas dianggap tamat.
+
+## 2026-10-15 — FASA 4 (FRONTEND) SELESAI: BLOK LEGASI DIBUBARKAN + SUB-ACCORDION "MODEL PARAMETERS" CAPABILITY-DRIVEN PADA 4 SLOT EJEN — HANDOVER KE BACKEND
+
+- **Tarikh:** 2026-10-15
+- **Komit SHA:** (belum — menunggu integration review backend + pipeline 8-langkah v3.9.46)
+- **Keputusan Owner:** Mandat Fasa 4 (bubarkan legasi + params per-ejen dalam kad Trinity)
+- **Fail Terlibat (frontend):**
+    - `public/partials/main.html` — 3 blok legasi DIBUBARKAN (1479 baris): `#betaMode` toggle + `#betaModeAccordion` + `#geminiAdvancedCard` + `#providerAdvancedCard`. `#mismatchRetries` DIPINDAH ke kad Translation Settings (`#mismatchRetriesGroup`, null-safe).
+    - `public/js/trinity-agents.js` — sub-accordion `⚙️ Model Parameters` (`#trinity-mp-<agent>`) dibina dinamik pada 4 slot (preflight/translation/secondary/inspector). Mirror front-end `resolveCapabilityProfile`/`getAgentDefaultParams`/`agentParamsDeviateFromDefault` (verbatim `src/utils/modelCapabilities.js`). `collectConfigPatch` kini menghasilkan `trinity.<agent>.params` (HANYA medan deviated); rehidrasi melalui `applyAgentValues` membaca `cfg.trinity.<agent>.params` (BUKAN DOM prevValue); `snapshotVisibleAgentState` mengekal params Basic↔Pro. Listener input dipasang pada nod accordion TERPISAH (bukan `$()` — elak detached-DOM trap).
+    - `public/css/trinity-agents.css` — gaya `.trinity-mp*` (collapsed lalai, nota terkunci, amaran bypass-cache).
+    - `public/config.js` — degradasi selamat: `updateGeminiThinkingControl()` early-return bila DOM legasi tiada; `handleAdvancedSettingsToggle()` null-guard; `toggleBetaModeUI()` no-op selamat (null-guard sedia ada). Semua rujukan `advanced*` lain sudah null-guarded.
+    - `public/js/quick-setup.js` — reset `trinity` ke Basic + params kosong semasa Quick Setup apply.
+- **Kontrak payload `trinity.<agent>.params` (untuk integration review backend):**
+    - Setiap slot ejen (preflight/translation/inspector) kini membawa `params: {}` — HANYA kunci yang DILAWATI pengguna daripada lalai `getAgentDefaultParams(agent, providerOrDoor, model)`; kosong = guna lalai builder god-tier 4-kunci.
+    - Slot ke-4: `trinity.secondary = { params: {} }` (tanpa kredential — kredential fallback diuruskan providers).
+    - Nilai: number (temperature/topP/maxOutputTokens/thinkingBudget), string enum (thinkingLevel/reasoningEffort/modelType/formality), boolean (preserveFormatting). Medan `fixed` (cth Kimi temp 1.0) TIDAK disertakan (sentiasa sama dengan kunci API).
+    - Backend `normalizeTrinityAgentParams` (src/utils/config.js) + `sanitizeAgentParams` (src/utils/modelCapabilities.js) adalah pembersih akhir — frontend mirror adalah subset; backend clamp kekal sumber kebenaran.
+- **Status npm test:** TIDAK DIJALANKAN (larangan frontend mode) — backend WAJIB jalankan `node --test src/utils/trinity-params-regression.test.js` + suite penuh sebelum release.
+- **Verifikasi frontend selesai:** node --check (3 fail) PASS; prettier --check PASS; eslint 0 error (41 warning pra-wujud); Playwright live port 7001: 0 console error, 4 sub-accordion muncul, capability-driven fields disahkan (gemini-2.5 → temperature/topP/maxOutputTokens/thinkingBudget; gemini-3.6 → maxOutputTokens/thinkingLevel sahaja; Kimi k3 → temperature TERKUNCI readOnly 1.0; DeepSeek → maxOutputTokens sahaja), Basic↔Pro toggle KEKALKAN params (0.85 kekal), rehidrasi params tersimpan PASS (0.7/0.8/high dipulihkan), collect hanya deviated PASS.
+- **Next Steps (backend):** Integration review (payload serialization `trinity.<agent>.params`, rehidrasi race, schema compatibility `normalizeTrinityAgentParams`) → pipeline 8-langkah v3.9.46.
+
+## 2026-10-15 — STATUS SEMASA SEBELUM CONDENSATION: FASA 1 & 2 SELESAI, LAPORAN PENUH DISERAHKAN, MENUNGGU PERAKUAN OWNER FASA 3
+
+- **Tarikh:** 2026-10-15 (waktu tempatan KL) — blok pra-condensation (mandat kesinambungan sesi).
+- **Status tugasan:** FASA 1 (Deep Scan) & FASA 2 (Ground Truth MCP per-model) **LENGKAP**. Laporan penuh + Cadangan Seni Bina Fasa 3 (skema JSON `trinity.<agent>.params` + reka bentuk UI kad Trinity) **TELAH BENTANGKAN kepada Owner** — menunggu semakan & perakuan. Tiada kod produksi disentuh setakat ini.
+- **Fail rujukan utama (WAJIB baca selepas reset konteks):**
+    1. [`plans/trinity-params-ground-truth-2026.md`](plans/trinity-params-ground-truth-2026.md:1) — Matriks Ground Truth per-model 17 provider (A1–A17) + cadangan nilai ejen (§B) + mitigasi (§C) + rumusan audit Fasa 1 (§D). PUNCA TUNGGAL KEBENARAN Fasa 3.
+    2. Blok ledger 2026-10-14 di bawah — konteks mandat Owner (3 kelemahan v3.9.45) + tangkapan ralat sempadan sampling Gemini.
+- **Inti cadangan Fasa 3 (ringkas, selepas reset jangan guna ingatan kondensasi — baca fail):**
+    - Skema `trinity.{preflight|translation|secondary|inspector}.params` — subset medan yang diperakui capability map sahaja; migration automatik `advancedSettings.*`/`providerParameters.*` → `trinity.translation.params`; bypass-cache trigger diperluaskan kepada sebarang params menyimpang; god-tier 4-kunci Agent B KEKAL sebagai default Preflight/Inspector (override eksplisit sahaja); `secondary.params` berdiri sendiri.
+    - Capability map = fail data bertanda versi + regression suite mengunci entri; sumber programatik rasmi: Anthropic Models API (`capabilities.thinking.types.disabled`), OpenAI `GET /v1/models` (`shutdown_date`).
+    - UI: accordion "Model Parameters" dinamik DALAM setiap kad ejen Trinity (100% provider-agnostic); `#geminiAdvancedCard`/`#providerAdvancedCard` dibubarkan; `#mismatchRetries` KEKAL dalam kad Translation Settings. Pelaksanaan UI → delegasi Frontend (Astra); Backend integration gate + pipeline 8-langkah seperti biasa.
+- **3 KEPUTUSAN OWNER BELUM DIBUAT (jangan mula pembedahan tanpa ini):**
+    1. Whitelist reroute Gemini: `gemini-3.5-flash` & `gemini-3.7-flash` dilayan sebagai STRICT dalam `getModelFamily` (server reroute → kelakuan strip walaupun nama legacy).
+    2. Audit dropdown model mati ≤3 bulan (gpt-4o/4.1 → 14 Jan 2027; o-series → 23 Okt/11 Dis 2026; deepseek-chat/reasoner → RETIRED; llama-3.3/3.1 Groq free/dev → 16 Ogo 2026).
+    3. Perakuan nilai cadangan optimum ejen (§B fail ground truth) sebagai lalai `trinity.<agent>.params`.
+- **Baseline ujian:** 385 total / 384 PASS / 1 SKIP (live Redis) — kekal; fasa setakat ini baca-sahaja (NO-OP npm test).
+- **Next Steps selepas perakuan:** (1) Bina capability map bertanda versi + regression suite (Backend); (2) skema JSON + normalizer migration (Backend); (3) reka bentuk UI kad Trinity (delegasi Frontend); (4) integration review + pipeline 8-langkah + CI.
+
+---
+
+## 2026-10-14 — FASA 1 & 2: DEEP SCAN PARAMETER AI + GROUND TRUTH MATRIX PER-MODEL (PENYELIDIKAN SAHAJA — TIADA KOD DISENTUH)
+
+- **Tarikh:** 2026-10-14 (waktu tempatan KL)
+- **Status:** FASA PENYELIDIKAN SELESAI — menunggu perakuan Owner untuk Fasa 3 (pembedahan). **Tiada fail produksi diubah**; satu fail dokumentasi baharu dicipta.
+- **Komit SHA:** tiada (fasa baca-sahaja; tiada commit diarahkan).
+- **Keputusan Owner:** Mandat 3 kelemahan v3.9.45 — (1) parameter model mesti berada dalam kad Trinity bersama pemilihan model; (2) haram Gemini-centric bias (100% provider-agnostic, parameter dinamik ikut provider/model); (3) ketidakadilan ejen — Preflight/Inspector/Secondary tiada kawalan parameter. Owner turut MENANGKAP RALAT laporan awal (strip sampling "semua Gemini 3.x" — SALAH) dan mengarah scrape changelog setiap provider + data per-model 100% tepat; data salah dibuang, data betul disimpan.
+- **Fail Terlibat (dokumentasi sahaja):**
+    - [`plans/trinity-params-ground-truth-2026.md`](plans/trinity-params-ground-truth-2026.md:1) — **BARU**: Matriks Ground Truth per-model 17 provider (A1–A17), nilai cadangan ejen Trinity (§B), mitigasi ketidakpastian (§C), rumusan audit Fasa 1 (§D). Punca tunggal kebenaran untuk Fasa 3.
+    - [`docs/SESSION_LEDGER.md`](docs/SESSION_LEDGER.md:1) — blok log ini.
+- **Dapatan kunci Fasa 1 (audit kod):**
+    - Normalizer: [`mergeProviderParameters()`](src/utils/config.js:149) — clamp temp 0–2 / topP 0–1 / maxOutputTokens 1–200000 / thinkingBudget −1–200000 / penalties ±2; topK/topKEnabled haram kekal (v1.6.0). Bypass-cache dipaksa oleh advancedSettings.enabled / parallelBatches / cache-off ([config.js:1037](src/utils/config.js:1037)).
+    - Gemini: [`getModelFamily()`](src/services/gemini.js:149) 3-lapis (2.5 full+budget / 3.x-legacy temp+topP / 3.6+ strict strip) — **SELARI** dengan sempadan rasmi (changelog 21 Jul 2026: strip bermula 3.6-Flash & 3.5-Flash-Lite SAHAJA).
+    - Agent B (Preflight+Inspector): hardcoded god-tier 4-kunci `{model, messages, stream:true, temperature:0.0}` ([agentBInspector.js:422](src/services/agentBInspector.js:422)) — tiada kawalan parameter pengguna (ketidakadilan ejen #3).
+    - Secondary Fallback: mewarisi `providerParameters` provider sama ([translationProviderFactory.js:255](src/services/translationProviderFactory.js:255)) — tiada set berasingan.
+    - Frontend: [`#betaModeAccordion`](public/partials/main.html:1828) = `#mismatchRetries` + `#geminiAdvancedCard` (statik Gemini-centric) + `#providerAdvancedCard` (8 blok provider). Cadangan: mismatchRetries kekal dalam Translation Settings; parameter dipindah ke kad ejen secara dinamik.
+- **Dapatan kunci Fasa 2 (ground truth MCP, scrape langsung docs rasmi):** sempadan sampling Gemini TERKUNCI (bukti: whats-new-gemini-3.6 §sampling-deprecation); OpenAI deprecations penuh (4o/4.1 mati 14 Jan 2027; o-series Okt/Dis 2026; 5.2+/GPT-6 sokong sampling semula); Anthropic 3-era thinking (ext-only 3.7–4.5 → adaptive 4.6 → mandatory 5.5, `type:"enabled"` = 400 pada 5.5); DeepSeek alias chat/reasoner RETIRED 24 Jul 2026 → `deepseek-flash` (sampling tak disokong dalam mod thinking); Kimi k3 temp 1.0/topP 0.95 FIXED (error jika lain); kimi/glm/qwen/groq/mistral/together/cerebras/sambanova/openrouter/perplexity lengkap dalam fail ground truth.
+- **Ketidakpastian diisytiharkan & mitigasi (§C fail ground truth):** def per-snapshot lama OpenAI → baca programatik `GET /v1/models.shutdown_date`; Anthropic Models API `capabilities.thinking.types.disabled`; custom/proxy → capability-check runtime; keputusan Owner belum: whitelist nama reroute Gemini (`3.5-flash`/`3.7-flash` berkelakuan strip di server walaupun nama legacy) + audit dropdown model mati ≤3 bulan.
+- **Status npm test:** NO-OP (tiada kod disentuh — fasa baca-sahaja; baseline 385/384 PASS/1 SKIP kekal).
+- **Next Steps:** (1) Owner peraku matriks ground truth + cadangan Fasa 3 (skema JSON `trinity.<agent>.params`, capability map bertanda versi + regression suite, reka bentuk UI kad Trinity → delegasi Frontend); (2) keputusan 2 item terbuka (whitelist reroute; audit dropdown); (3) barulah pembedahan dimulakan.
+
+---
+
 ## 2026-10-14 — RELEASE v3.9.45: UI/UX A–Z MASTER REORG — KAD KELUARGA FUNGSI "SATU KELUARGA, SATU RUMAH" (PIPELINE 8-LANGKAH)
 
 - **Tarikh:** 2026-10-14 (waktu tempatan KL)

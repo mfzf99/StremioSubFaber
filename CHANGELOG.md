@@ -2,6 +2,26 @@
 
 All notable changes to this project will be documented in this file.
 
+## SubMaker v3.9.46 (2026-10-15) — Trinity Model Parameters per-Agent: Capability-Driven UI (Fasa 3+4 Complete)
+
+### Added
+
+- **Sub-accordion "⚙️ Model Parameters" pada 4 slot ejen Trinity ([public/js/trinity-agents.js](public/js/trinity-agents.js), [public/css/trinity-agents.css](public/css/trinity-agents.css)):** setiap kad ejen Trinity (Preflight/Translation/Inspector) dan sub-kad Secondary Fallback kini membawa sub-accordion tertutup-lalai yang medannya dibina DINAMIK daripada mirror front-end capability map (`resolveCapabilityProfile` / `getAgentDefaultParams` / `agentParamsDeviateFromDefault` — salinan verbatim [src/utils/modelCapabilities.js](src/utils/modelCapabilities.js)). Hanya parameter yang DISOKONG model dipaparkan (provider-agnostic: Gemini 2.5 → temp/topP/thinkingBudget/maxOutputTokens; Gemini 3.x STRICT → thinkingLevel/maxOutputTokens sahaja; Kimi K3 → temp TERKUNCI readOnly 1.0; DeepSeek → maxOutputTokens sahaja; DeepL → modelType/formality/preserveFormatting). Termasuk: nota kunci param (`descriptor.fixed`, `sampling-stripped-by-api`, `server-reroute-stripped`, `thinking-locks-temperature-1.0`, `no-llm-sampling` dsb.), amaran bypass-cache bila params menyimpang daripada lalai ejen, dan butang "Reset to Default". Params KEKAL merentas pertukaran Basic↔Pro (snapshot non-destruktif) dan pertukaran provider/model (cache state). Listener input dipasang pada nod accordion TERPISAH (bukan `getElementById` — elak detached-DOM trap semasa binaan kad).
+- **Kontrak payload `trinity.<agent>.params` ([public/js/trinity-agents.js](public/js/trinity-agents.js)):** `collectConfigPatch()` kini menghasilkan `params` pada setiap slot ejen (preflight/translation/inspector) + slot ke-4 `trinity.secondary = { params }` — HANYA medan yang dilawati pengguna daripada lalai `getAgentDefaultParams()` (kosong = guna lalai god-tier 4-kunci backend; medan `fixed` tidak disertakan). Rehidrasi membaca `cfg.trinity.<agent>.params` SEBENAR (bukan DOM prevValue — elak stale-value trap).
+- **Backend Fasa 3 ([src/utils/modelCapabilities.js](src/utils/modelCapabilities.js), [src/utils/config.js](src/utils/config.js), [src/utils/trinity-params-regression.test.js](src/utils/trinity-params-regression.test.js), [src/services/agentBInspector.js](src/services/agentBInspector.js), [src/handlers/subtitles.js](src/handlers/subtitles.js)):** capability map berpusat v1.0.0 (13 keluarga model), `normalizeTrinityAgentParams()` (4 slot + migrasi automatik advancedSettings/providerParameters lama → trinity.translation.params dengan guard eksplisit), sanitasi + deviasi → bypassCache automatik (reason `trinity-params-deviated`), AgentB/Agent-A payload params.
+
+### Changed
+
+- **Bubarkan 3 blok UI legasi ([public/partials/main.html](public/partials/main.html), −1479 baris):** togol `#betaMode` + `#betaModeAccordion` + kad `#geminiAdvancedCard` + kad `#providerAdvancedCard` DIBUANG (3897 → 2444 baris). Parameter model kini 100% berada dalam kad ejen Trinity — menghapuskan Gemini-centric bias (mandat Owner #2) dan memberikan kawalan parameter kepada semua 4 ejen (mandat Owner #3, ketidakadilan ejen).
+- **`#mismatchRetries` dipindah ke kad Translation Settings ([public/partials/main.html](public/partials/main.html)):** dibungkus `#mismatchRetriesGroup`, `min=0 max=3`, kekal null-safe — serialization via `getElementById` tidak berubah.
+- **Degradasi selamat ([public/config.js](public/config.js)):** `updateGeminiThinkingControl()` early-return bila DOM legasi tiada; `handleAdvancedSettingsToggle()` null-guard; `toggleBetaModeUI()` no-op selamat; semua rujukan `advanced*` lain sudah null-guarded (sahankan audit 78 tapak).
+- **Quick Setup reset Trinity ([public/js/quick-setup.js](public/js/quick-setup.js)):** semasa apply, `finalConfig.trinity` direset ke Basic + params kosong (kontrak `trinity.<agent>.params`).
+- **Ujian kontrak dikemas kini ([src/services/gemini-auth-model-regression.test.js](src/services/gemini-auth-model-regression.test.js)):** assertion "Configure and Toolbox pages expose current Gemini choices" kini menuntut KETIADAAN `#advancedThinkingLevel`/`#advancedTemperature`/`#betaMode`/`#geminiAdvancedCard`/`#providerAdvancedCard` dalam main.html + KEHADIRAN `#mismatchRetries` dalam `#translationSettingsCard` (bahagian upload/toolbox pages tidak disentuh — halaman berasingan).
+
+### Preserved
+
+- **Kontrak payload `trinity.<agent>.params` end-to-end:** frontend hanya menghantar medan DEVIATED; backend `sanitizeAgentParams()` adalah pembersih akhir (clamp julat, kunci fixed, buang tidak disokong). Medan `fixed` (Kimi temp 1.0) tidak dihantar (backend sentiasa menguncinya). God-tier 4-kunci Agent B kekal lalai apabila params kosong. Verifikasi: `npm test` 413 total = 412 PASS / 0 FAIL / 1 SKIP (≥ baseline 385, monotonic); trinity-params-regression 29/29 ✔; prettier PASS; eslint 0 error; Playwright live 0 console error, 4 sub-accordion, capability-driven fields disahkan, Basic↔Pro params kekal, rehidrasi params LULUS.
+
 ## SubMaker v3.9.45 (2026-10-14) — UI/UX A–Z Master Reorg: Functional Family Cards ("Satu Keluarga, Satu Rumah")
 
 ### Changed

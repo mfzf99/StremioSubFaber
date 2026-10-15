@@ -248,6 +248,126 @@ function getDefaultProviderParameters() {
     return JSON.parse(JSON.stringify(PROVIDER_PARAMETER_DEFAULTS));
 }
 
+// ═══ [TRINITY PARAMS FASA 3 v3.9.46] Skema trinity.<agent>.params ═══
+// Empat slot ejen: preflight / translation / secondary / inspector. Setiap slot
+// membawa `params` tersendiri yang ditapis melalui capability map berpusat
+// (src/utils/modelCapabilities.js). Fungsi ini dipanggil oleh normalizeConfig
+// SEBAKALI selepas passthrough blok trinity — tugas:
+//   1. Pastikan keempat-empat slot wujud (objek kosong jika tiada).
+//   2. MIGRASI AUTOMATIK: advancedSettings.* / providerParameters.<main> lama
+//      → trinity.translation.params (tanpa kehilangan data, sekali sahaja).
+//   3. Sanitasi params setiap ejen mengikut provider/door + model kad berkenaan
+//      (clamp julat, kunci nilai fixed, buang parameter tidak disokong).
+//   4. Tandakan deviasi (`__trinityParamsDeviated`) untuk pencetus bypassCache
+//      automatik oleh blok bypassReasons downstream.
+const TRINITY_AGENT_KEYS = ['preflight', 'translation', 'secondary', 'inspector'];
+
+// Peta provider/door ejen daripada slot trinity — format pendek legacy
+// ('gemini'|'openai'|'anthropic') dipetakan kepada id provider; slot tanpa
+// provider (cth: secondary lama) dijana daripada secondaryProvider.
+function resolveTrinityAgentProvider(mergedConfig, agentKey) {
+    const slot = mergedConfig.trinity?.[agentKey] || {};
+    if (slot.provider) return String(slot.provider).toLowerCase();
+    if (slot.format) {
+        const fmt = String(slot.format).toLowerCase();
+        if (fmt === 'gemini') return 'gemini';
+        if (fmt === 'anthropic') return 'anthropic';
+        if (fmt === 'openai') return 'openai';
+        if (fmt === 'deepl') return 'deepl';
+    }
+    if (slot.door) {
+        return String(slot.door).toLowerCase();
+    }
+    return '';
+}
+
+function normalizeTrinityAgentParams(mergedConfig) {
+    const capabilities = require('./modelCapabilities');
+    const trinity = mergedConfig.trinity;
+    if (!trinity || typeof trinity !== 'object') return;
+
+    // (1) Pastikan keempat-empat slot wujud (non-destructive).
+    for (const agentKey of TRINITY_AGENT_KEYS) {
+        if (!trinity[agentKey] || typeof trinity[agentKey] !== 'object') {
+            trinity[agentKey] = trinity[agentKey] || {};
+        }
+    }
+
+    // (2) MIGRASI AUTOMATIK — sekali sahaja, hanya bila translation.params kosong
+    // DAN sumber legasi adalah EKSPLISIT (bukan nilai default yang diinjek oleh
+    // getDefaultConfig). Pautan ?config= lama menyimpan parameter dalam
+    // advancedSettings.* (Gemini) atau providerParameters.<mainProvider>
+    // (provider lain) — dipetakan ke trinity.translation.params supaya UI kad
+    // Trinity baharu boleh membacanya.
+    // [FIX B1 2026-10-15] adv.enabled===true ialah isyarat eksplisit pengguna
+    // menyimpan Advanced Settings; providerParameters pula hanya dibaca bila
+    // pengguna membawa blok tersendiri (bukan default). Tanpa guard ini,
+    // config default semua pengguna akan "termigrasi" palsu → deviasi silap →
+    // bypassCache sentiasa true (regresi berbahaya).
+    const translationSlot = trinity.translation;
+    if (
+        (!translationSlot.params || Object.keys(translationSlot.params).length === 0) &&
+        !translationSlot.__paramsMigrated
+    ) {
+        const mainKey = String(mergedConfig.mainProvider || 'gemini').toLowerCase();
+        const adv = mergedConfig.advancedSettings || {};
+        const provParams = mergedConfig.providerParameters?.[mainKey] || {};
+        const advExplicit = mergedConfig.__advancedSettingsProvided === true;
+        const provExplicit = mergedConfig.__providerParametersProvided === true && Object.keys(provParams).length > 0;
+        if (advExplicit || provExplicit) {
+            const source = mainKey === 'gemini' ? { ...provParams, ...adv } : { ...provParams };
+            const carried = {};
+            for (const field of [
+                'temperature',
+                'topP',
+                'maxOutputTokens',
+                'translationTimeout',
+                'maxRetries',
+                'reasoningEffort',
+                'thinkingBudget',
+                'thinkingLevel',
+                'frequencyPenalty',
+                'presencePenalty',
+                'modelType',
+                'formality',
+                'preserveFormatting'
+            ]) {
+                if (source[field] !== undefined && source[field] !== null && source[field] !== '') {
+                    carried[field] = source[field];
+                }
+            }
+            if (Object.keys(carried).length > 0) {
+                translationSlot.params = carried;
+                translationSlot.__paramsMigrated = true;
+                log.debug(
+                    () =>
+                        `[Config] [TrinityParams] Migrated legacy advancedSettings/providerParameters.${mainKey} → trinity.translation.params (${Object.keys(carried).length} fields)`
+                );
+            }
+        }
+    }
+
+    // (3) Sanitasi params setiap ejen + (4) tanda deviasi untuk bypassCache.
+    let anyDeviation = false;
+    for (const agentKey of TRINITY_AGENT_KEYS) {
+        const slot = trinity[agentKey];
+        const providerOrDoor = resolveTrinityAgentProvider(mergedConfig, agentKey);
+        const modelId = typeof slot.model === 'string' ? slot.model : '';
+        const rawParams = slot.params && typeof slot.params === 'object' ? slot.params : {};
+        if (Object.keys(rawParams).length === 0) continue; // tiada params → lalai ejen (god-tier Agent B kekal)
+        const sanitized = capabilities.sanitizeAgentParams(agentKey, rawParams, providerOrDoor, modelId);
+        const deviates = capabilities.agentParamsDeviateFromDefault(agentKey, rawParams, providerOrDoor, modelId);
+        slot.params = sanitized;
+        if (deviates) {
+            anyDeviation = true;
+            log.debug(() => `[Config] [TrinityParams] ${agentKey} params deviate from defaults → bypass cache armed`);
+        }
+    }
+    if (anyDeviation) {
+        mergedConfig.__trinityParamsDeviated = true;
+    }
+}
+
 const OVERRIDE_DEPRECATED_MODELS = true;
 const GEMINI_31_FLASH_LITE_MODEL = 'gemini-3.1-flash-lite';
 const GEMINI_FLASH_LATEST_MODEL = 'gemini-flash-latest';
@@ -448,6 +568,13 @@ function normalizeConfig(config) {
         config = migrateOldConfig(config);
     }
 
+    // [TRINITY PARAMS FASA 3] Tangkap isyarat input eksplisit pengguna SEBELUM
+    // merge default — digunakan oleh normalizeTrinityAgentParams() untuk
+    // membezakan migrasi legasi tulen daripada nilai default yang diinjek
+    // getDefaultConfig (elak deviasi palsu → bypassCache silap).
+    const __providerParametersProvided = !!(config.providerParameters && typeof config.providerParameters === 'object');
+    const __advancedSettingsProvided = !!(config.advancedSettings && typeof config.advancedSettings === 'object');
+
     const configModel = normalizeGeminiModelName(
         config.geminiModel || process.env.GEMINI_MODEL || DEFAULT_GEMINI_MODEL
     );
@@ -455,6 +582,8 @@ function normalizeConfig(config) {
     const mergedConfig = {
         ...defaults,
         ...config,
+        __providerParametersProvided,
+        __advancedSettingsProvided,
         subtitleProviders: {
             ...defaults.subtitleProviders,
             ...(config.subtitleProviders || {})
@@ -631,6 +760,23 @@ function normalizeConfig(config) {
     // (Fasa C keyDetector/AgentChannel) sudah tahu cara membaca format/auto.
     mergedConfig.trinity = mergedConfig.trinity && typeof mergedConfig.trinity === 'object' ? mergedConfig.trinity : {};
 
+    // ═══ [TRINITY PARAMS FASA 3 v3.9.46] SKEMA trinity.<agent>.params ═══
+    // Keempat-empat slot ejen: preflight / translation / secondary / inspector.
+    // Setiap slot membawa `params` tersendiri (parameter model per-ejen,
+    // provider-agnostic) yang ditapis melalui capability map berpusat
+    // (src/utils/modelCapabilities.js — punca tunggal kebenaran per-model).
+    //
+    // (a) MIGRASI AUTOMATIK (BACKWARD COMPATIBLE): pautan ?config= lama yang
+    //     mempunyai advancedSettings.* ATAU providerParameters.<main> dipetakan
+    //     automatik ke trinity.translation.params TANPA kehilangan data —
+    //     hanya apabila trinity.translation.params masih kosong.
+    // (b) AUTO-FORCE BYPASS CACHE: sebarang params yang menyimpang daripada
+    //     lalai provider/ejen mencetuskan bypassCache (konsisten logik
+    //     keselamatan pangkalan data sedia ada).
+    // (c) PARAMS DIBUANG SENYAP jika tidak disokong model (degrade gracefully
+    //     — proksi legasi tidak crash; lihat KEPUTUSAN OWNER #2).
+    normalizeTrinityAgentParams(mergedConfig);
+
     // [DYNAMIC BASE URL v3.9.29] Normalisasi geminiBaseUrl per-pengguna.
     // Sumber (keutamaan): (1) medan langsung geminiBaseUrl; (2) blok
     // trinity.translation.baseUrl (UI Custom/Proxy Gemini-native door).
@@ -735,7 +881,16 @@ function normalizeConfig(config) {
                 'auto'
         )
             .trim()
-            .toLowerCase()
+            .toLowerCase(),
+        // [TRINITY PARAMS FASA 3 v3.9.46] Params per-ejen Agent B — diambil
+        // daripada trinity.preflight.params / trinity.inspector.params (sudah
+        // tersanitasi oleh normalizeTrinityAgentParams melalui capability
+        // map). Null apabila pengguna tidak menetapkan apa-apa → builder
+        // god-tier 4-kunci KEKAL sebagai tingkah laku lalai (mandat Owner).
+        preflightParams:
+            trinityPreflight.params && Object.keys(trinityPreflight.params).length > 0 ? trinityPreflight.params : null,
+        inspectorParams:
+            trinityInspector.params && Object.keys(trinityInspector.params).length > 0 ? trinityInspector.params : null
     };
     // Hygiene: inspectionModel adalah alias warisan bagi 'model' (Semakan) —
     // dilucutkan daripada struktur tersimpan selepas migrasi.
@@ -1038,6 +1193,10 @@ function normalizeConfig(config) {
     if (mergedConfig.advancedSettings.enabled) bypassReasons.push('advanced-settings');
     if (mergedConfig.parallelBatchesEnabled === true) bypassReasons.push('parallel-batches');
     if (hasActiveMultiProvider) bypassReasons.push('multi-provider');
+    // [TRINITY PARAMS FASA 3 v3.9.46] Sebarang trinity.<agent>.params yang
+    // menyimpang daripada lalai provider/ejen → bypass cache automatik
+    // (konsisten logik keselamatan pangkalan data sedia ada).
+    if (mergedConfig.__trinityParamsDeviated === true) bypassReasons.push('trinity-params-deviated');
     if (bypassReasons.length > 0) {
         log.debug(() => `[Config] Forcing bypass cache (${bypassReasons.join(', ')})`);
         mergedConfig.bypassCache = true;

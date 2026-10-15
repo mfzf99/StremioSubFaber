@@ -1453,6 +1453,15 @@ Translate to {target_language}.`;
     }
 
     function updateGeminiThinkingControl() {
+        // [FASA 4 v3.9.46] Degradasi selamat — kad legasi #geminiAdvancedCard
+        // DIBUBARKAN; semua DOM di bawah kini selalu null. Fungsi kekal sebagai
+        // no-op selamat (pemanggil model-change masih wujud) tanpa TypeError.
+        if (
+            !document.getElementById('advancedThinkingLevelGroup') &&
+            !document.getElementById('advancedThinkingBudgetGroup')
+        ) {
+            return;
+        }
         const model = getAdvancedGeminiModelValue();
         const capabilities = getGeminiCapabilities(model);
         const profile = getModelThinkingProfile(model);
@@ -8884,7 +8893,10 @@ Translate to {target_language}.`;
     }
 
     function handleAdvancedSettingsToggle(e) {
+        // [FASA 4 v3.9.46] Degradasi selamat — kad legasi #advancedSettingsGroup
+        // dibubarkan bersama blok Advanced Mode. Null-guard elak TypeError.
         const advancedSettingsGroup = document.getElementById('advancedSettingsGroup');
+        if (!advancedSettingsGroup) return;
         advancedSettingsGroup.style.display = e.target.checked ? 'block' : 'none';
     }
 
@@ -9033,6 +9045,9 @@ Translate to {target_language}.`;
         // [v3.9.45 INLINE ACCORDION] Advanced Mode kini mengawal accordion
         // #betaModeAccordion di dalam kad Translation & AI Parameters — bukan
         // lagi kad #advancedSettingsCard luar seksyen.
+        // [FASA 4 v3.9.46] Degradasi selamat — kad legasi DIBUBARKAN (DOM=null).
+        // Fungsi kekal sebagai no-op selamat; betaModeEnabled kekal dalam
+        // currentConfig untuk kolongan ke atas (loadConfigToForm, dsb.).
         const advancedCard = document.getElementById('betaModeAccordion');
         const geminiAdvancedCard = document.getElementById('geminiAdvancedCard');
         if (advancedCard) advancedCard.style.display = betaEnabled ? '' : 'none';

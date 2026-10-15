@@ -375,6 +375,14 @@
         modelRow.appendChild(modelSelect);
         card.appendChild(modelRow);
 
+        // [FASA 4 v3.9.46] Sub-accordion "⚙️ Model Parameters" — medan dibina
+        // dinamik daripada capability map (provider-agnostic) setiap kali
+        // provider/model kad berubah. DOM dibina sekali; medan dirender semula.
+        card.appendChild(buildModelParamsAccordion(agent.key));
+        modelSelect.addEventListener('change', function () {
+            refreshModelParams(agent.key);
+        });
+
         // Key Rotation (hanya untuk Gemini — Smart Visibility)
         var rotationRow = buildKeyRotationRow(agent.key);
         card.appendChild(rotationRow);
@@ -411,6 +419,659 @@
         });
 
         return card;
+    }
+
+    // ═══════════════════════════════════════════════════════════════════════════
+    // [FASA 4 v3.9.46] SUB-ACCORDION "⚙️ MODEL PARAMETERS" — capability-driven
+    // ═══════════════════════════════════════════════════════════════════════════
+    // Mirror front-end bagi src/utils/modelCapabilities.js (CAPABILITY_MAP 1.0.0).
+    // Backend TIADA endpoint capability — maka resolver ini disalin VERBATIM
+    // (audit Fasa 3 mengunci pariti melalui trinity-params-regression.test.js).
+    // Medan UI dibina dinamik daripada profil: hanya parameter yang disokong
+    // model dipaparkan; parameter fixed dipaparkan sebagai nota terkunci.
+    // ═══════════════════════════════════════════════════════════════════════════
+
+    // Descriptor: { min, max, default, fixed?, enum? }
+    function mpParam(min, max, def, extra) {
+        var d = { min: min, max: max, default: def };
+        if (extra) {
+            for (var k in extra) {
+                if (Object.prototype.hasOwnProperty.call(extra, k)) d[k] = extra[k];
+            }
+        }
+        return d;
+    }
+
+    var MP_GEMINI_SAMPLING = mpParam(0, 2, 0.3);
+    var MP_GEMINI_TOP_P = mpParam(0, 1, 0.95);
+    var MP_GEMINI_THINKING_LEVELS = ['disabled', 'minimal', 'low', 'medium', 'high'];
+
+    function mpGeminiProfile(modelId) {
+        var m = String(modelId || '')
+            .trim()
+            .toLowerCase();
+        if (/^gemini-2\.5/.test(m)) {
+            return {
+                family: 'gemini-2.5',
+                parameters: {
+                    temperature: MP_GEMINI_SAMPLING,
+                    topP: MP_GEMINI_TOP_P,
+                    thinkingBudget: mpParam(-1, 200000, -1),
+                    maxOutputTokens: mpParam(1, 65535, 32768)
+                },
+                notes: []
+            };
+        }
+        var rerouteStrict = m === 'gemini-3.5-flash' || m === 'gemini-3.7-flash';
+        var minorMatch = m.match(/^gemini-3\.(\d+)/);
+        var minor = minorMatch ? parseInt(minorMatch[1], 10) : /^gemini-3(?:-|$)/.test(m) ? 0 : null;
+        var isStrict =
+            rerouteStrict ||
+            /^gemini-[4-9]/.test(m) ||
+            /^gemini-(flash|flash-lite|pro)-latest$/.test(m) ||
+            (minor !== null && (minor >= 6 || (minor === 5 && /flash-lite/.test(m))));
+        if (isStrict) {
+            return {
+                family: 'gemini-3.x-strict',
+                parameters: {
+                    thinkingLevel: mpParam(0, 0, 'medium', { enum: MP_GEMINI_THINKING_LEVELS }),
+                    maxOutputTokens: mpParam(1, 65536, 32768)
+                },
+                notes: ['sampling-controlled', rerouteStrict ? 'server-reroute-stripped' : 'sampling-stripped-by-api']
+            };
+        }
+        if (minor !== null) {
+            return {
+                family: 'gemini-3.x-legacy',
+                parameters: {
+                    temperature: MP_GEMINI_SAMPLING,
+                    topP: MP_GEMINI_TOP_P,
+                    thinkingLevel: mpParam(0, 0, 'high', { enum: MP_GEMINI_THINKING_LEVELS }),
+                    maxOutputTokens: mpParam(1, 65536, 32768)
+                },
+                notes: ['google-recommends-temperature-1.0']
+            };
+        }
+        return {
+            family: 'gemini-legacy',
+            parameters: {
+                temperature: MP_GEMINI_SAMPLING,
+                topP: MP_GEMINI_TOP_P,
+                maxOutputTokens: mpParam(1, 65535, 32768)
+            },
+            notes: []
+        };
+    }
+
+    function mpAnthropicProfile(modelId) {
+        var m = String(modelId || '')
+            .trim()
+            .toLowerCase();
+        var hasThinking =
+            /claude-(3-7|opus-4|sonnet-4|haiku-4|fable-5|opus-5|sonnet-5|haiku-5)/.test(m) || !/claude/.test(m);
+        var isAdaptiveAlways = /claude-(fable-5|opus-5|sonnet-5|haiku-5)/.test(m);
+        var parameters = {
+            temperature: mpParam(0, 1, 0.3),
+            topP: mpParam(0, 1, 0.95),
+            maxOutputTokens: mpParam(1, 128000, 32768)
+        };
+        if (hasThinking) parameters.thinkingBudget = mpParam(1024, 200000, 0);
+        return {
+            family: isAdaptiveAlways ? 'anthropic-5.x-adaptive' : hasThinking ? 'anthropic-thinking' : 'anthropic-3.5',
+            parameters: parameters,
+            notes: hasThinking ? ['thinking-locks-temperature-1.0'] : []
+        };
+    }
+
+    var MP_DEEPL_PROFILE = {
+        family: 'deepl',
+        parameters: {
+            modelType: mpParam(0, 0, 'quality_optimized', { enum: ['quality_optimized'] }),
+            formality: mpParam(0, 0, 'default', { enum: ['default', 'less', 'more'] }),
+            preserveFormatting: mpParam(0, 0, true)
+        },
+        notes: ['no-llm-sampling']
+    };
+
+    function mpKimiProfile(modelId) {
+        var m = String(modelId || '')
+            .trim()
+            .toLowerCase();
+        if (/kimi-k3|kimi-k2\.7/.test(m)) {
+            return {
+                family: 'kimi-fixed-sampling',
+                parameters: {
+                    temperature: mpParam(1, 1, 1.0, { fixed: 1.0 }),
+                    topP: mpParam(0.95, 0.95, 0.95, { fixed: 0.95 }),
+                    maxOutputTokens: mpParam(1, 131072, 32768)
+                },
+                notes: ['fixed-sampling-temp-1.0-topP-0.95']
+            };
+        }
+        return {
+            family: 'kimi-hybrid',
+            parameters: {
+                temperature: mpParam(0, 1, 1.0),
+                topP: mpParam(0.95, 0.95, 0.95, { fixed: 0.95 }),
+                maxOutputTokens: mpParam(1, 131072, 32768)
+            },
+            notes: ['thinking-mode-temperature-1.0']
+        };
+    }
+
+    function mpOpenaiProfile(modelId) {
+        var m = String(modelId || '')
+            .trim()
+            .toLowerCase();
+        var isReasoningOnly = /^o\d/.test(m) || /^gpt-5$/.test(m) || /^gpt-5-(?!5)/.test(m) || /^gpt-5\.1/.test(m);
+        if (isReasoningOnly) {
+            return {
+                family: 'openai-reasoning-no-sampling',
+                parameters: {
+                    reasoningEffort: mpParam(0, 0, 'medium', { enum: ['low', 'medium', 'high'] }),
+                    maxOutputTokens: mpParam(1, 128000, 32768)
+                },
+                notes: ['sampling-not-supported']
+            };
+        }
+        var modern = /^gpt-(5\.[2-9]|5\.\d\d|6)/.test(m);
+        var parameters = {
+            temperature: mpParam(0, 2, 0.3),
+            topP: mpParam(0, 1, 0.95),
+            maxOutputTokens: mpParam(1, 128000, 32768)
+        };
+        if (modern) {
+            parameters.reasoningEffort = mpParam(0, 0, 'low', { enum: ['none', 'low', 'medium', 'high', 'xhigh'] });
+        }
+        return {
+            family: modern ? 'openai-modern-sampling' : 'openai-legacy-alias',
+            parameters: parameters,
+            notes: modern ? [] : ['legacy-alias-proxy-compatible']
+        };
+    }
+
+    var MP_DOOR_GENERIC_OPENAI = {
+        family: 'openai-compatible-generic',
+        parameters: {
+            temperature: mpParam(0, 2, 0.3),
+            topP: mpParam(0, 1, 0.95),
+            maxOutputTokens: mpParam(1, 200000, 32768),
+            reasoningEffort: mpParam(0, 0, undefined, {
+                enum: ['none', 'minimal', 'low', 'medium', 'high', 'xhigh']
+            })
+        },
+        notes: []
+    };
+
+    // Mirror resolveCapabilityProfile(providerOrDoor, modelId) backend.
+    function resolveCapabilityProfile(providerOrDoor, modelId) {
+        var key = String(providerOrDoor || '')
+            .trim()
+            .toLowerCase();
+        var m = String(modelId || '')
+            .trim()
+            .toLowerCase();
+        switch (key) {
+            case 'gemini':
+            case 'gemini-native':
+                return mpGeminiProfile(m);
+            case 'anthropic':
+            case 'anthropic-messages':
+                return mpAnthropicProfile(m);
+            case 'deepl':
+                return MP_DEEPL_PROFILE;
+            case 'moonshot':
+                return m && !/kimi/.test(m) ? MP_DOOR_GENERIC_OPENAI : mpKimiProfile(m);
+            case 'openai':
+                return mpOpenaiProfile(m);
+            case 'custom':
+            case 'custom_secondary':
+            case 'openai-compatible': {
+                if (/^gemini|^gemma/.test(m)) return mpGeminiProfile(m);
+                if (/^claude|^anthropic/.test(m)) return mpAnthropicProfile(m);
+                if (/kimi/.test(m)) return mpKimiProfile(m);
+                if (/^gpt-|^o\d/.test(m)) return mpOpenaiProfile(m);
+                if (/^glm/.test(m)) {
+                    return {
+                        family: 'glm',
+                        parameters: {
+                            temperature: mpParam(0, 1, 1.0),
+                            topP: mpParam(0, 1, 0.95),
+                            maxOutputTokens: mpParam(1, 131072, 32768)
+                        },
+                        notes: ['thinking-mode-temperature-1.0']
+                    };
+                }
+                if (/^deepseek/.test(m)) {
+                    return {
+                        family: 'deepseek-thinking',
+                        parameters: {
+                            maxOutputTokens: mpParam(1, 384000, 32768)
+                        },
+                        notes: ['sampling-unsupported-in-thinking-mode']
+                    };
+                }
+                return MP_DOOR_GENERIC_OPENAI;
+            }
+            default:
+                return MP_DOOR_GENERIC_OPENAI;
+        }
+    }
+
+    // Lalai per-ejen (diperakui Owner 2026-10-15) — mirror AGENT_TUNING_BASE.
+    var MP_AGENT_TUNING_BASE = {
+        preflight: { temperature: 0.0, topP: 0.9, reasoningEffort: 'medium', thinkingLevel: 'medium' },
+        translation: { temperature: 0.3, topP: 0.95, reasoningEffort: 'low', thinkingLevel: 'low' },
+        secondary: { temperature: 0.3, topP: 0.95, reasoningEffort: 'low', thinkingLevel: 'low' },
+        inspector: { temperature: 0.0, topP: 0.9, reasoningEffort: 'low', thinkingLevel: 'low' }
+    };
+
+    // Mirror getAgentDefaultParams(agent, providerOrDoor, modelId).
+    function getAgentDefaultParams(agent, providerOrDoor, modelId) {
+        var profile = resolveCapabilityProfile(providerOrDoor, modelId);
+        var tuning = MP_AGENT_TUNING_BASE[agent] || MP_AGENT_TUNING_BASE.translation;
+        var defaults = {};
+        for (var name in profile.parameters) {
+            if (!Object.prototype.hasOwnProperty.call(profile.parameters, name)) continue;
+            var descriptor = profile.parameters[name];
+            if (descriptor.fixed !== undefined) {
+                defaults[name] = descriptor.fixed;
+                continue;
+            }
+            if (tuning[name] !== undefined && tuning[name] !== null) {
+                defaults[name] = tuning[name];
+            } else if (descriptor.default !== undefined) {
+                defaults[name] = descriptor.default;
+            }
+        }
+        return defaults;
+    }
+
+    // Mirror agentParamsDeviateFromDefault(agent, params, providerOrDoor, modelId).
+    function agentParamsDeviateFromDefault(agent, params, providerOrDoor, modelId) {
+        if (!params || typeof params !== 'object') return false;
+        var keys = Object.keys(params);
+        if (!keys.length) return false;
+        var defaults = getAgentDefaultParams(agent, providerOrDoor, modelId);
+        var profile = resolveCapabilityProfile(providerOrDoor, modelId);
+        for (var i = 0; i < keys.length; i++) {
+            var name = keys[i];
+            var value = params[name];
+            var descriptor = profile.parameters[name];
+            if (!descriptor) return true;
+            if (descriptor.fixed !== undefined) continue;
+            if (defaults[name] !== value) return true;
+        }
+        return false;
+    }
+
+    // Semantik nota kunci (diselaraskan dengan ground truth matriks §C).
+    var MP_NOTE_TEXT = {
+        'fixed-sampling-temp-1.0-topP-0.95':
+            'Kimi locks temperature to 1.0 and topP to 0.95 for this model — other values are rejected by the API.',
+        'sampling-stripped-by-api':
+            'Sampling parameters (temperature/topP/penalties) are deprecated and stripped by the API for this model.',
+        'server-reroute-stripped':
+            'Server reroute treats this model as Gemini 3.x strict — sampling parameters are stripped before the request.',
+        'thinking-locks-temperature-1.0':
+            'When extended thinking is enabled, Anthropic forces temperature to 1.0 and drops topP.',
+        'sampling-unsupported-in-thinking-mode':
+            'DeepSeek thinking mode does not accept sampling parameters — only maxOutputTokens is configurable.',
+        'no-llm-sampling': 'DeepL is not a generative LLM — model type, formality and formatting controls only.',
+        'sampling-not-supported': 'This reasoning model does not accept sampling parameters — reasoning effort only.',
+        'sampling-controlled':
+            'This Gemini 3 model manages sampling automatically — temperature / topP / penalties are not configurable.',
+        'thinking-mode-temperature-1.0':
+            'Thinking mode forces temperature 1.0 — lower values are ignored while thinking is on.',
+        'google-recommends-temperature-1.0': 'Google recommends temperature 1.0 for Gemini 3.x models.'
+    };
+
+    // Resolve provider/door + model semasa bagi SATU slot params.
+    // agent 'secondary' dibaca daripada dropdown fallback kad translation.
+    function mpResolveAgentContext(agentKey) {
+        if (agentKey === 'secondary') {
+            var fbProviderSel = $('trinity-translation-fallback-provider');
+            var fbProviderId = fbProviderSel ? fbProviderSel.value : '';
+            var fbCustomModel = $('trinity-translation-fallback-model-custom');
+            var fbModelSel = $('trinity-translation-fallback-model');
+            var model = isFallbackCustom(fbProviderId)
+                ? fbCustomModel
+                    ? fbCustomModel.value
+                    : ''
+                : fbModelSel
+                  ? fbModelSel.value
+                  : '';
+            var provider = resolveFallbackProvider(fbProviderId);
+            var fmtSel = $('trinity-translation-fallback-format');
+            var door = isFallbackCustom(fbProviderId)
+                ? resolveFallbackCustomDoor(fmtSel ? fmtSel.value : 'auto')
+                : getProviderDoor(provider);
+            var isCustom = isCustomProvider(provider);
+            // Custom: capability ikut nama model; provider lain: id registry.
+            var providerOrDoor = isCustom
+                ? isFallbackCustom(fbProviderId)
+                    ? 'custom_secondary'
+                    : door
+                : fbProviderId || door;
+            return { providerOrDoor: providerOrDoor, model: String(model || '').trim(), isCustom: isCustom };
+        }
+        var providerSel = $('trinity-' + agentKey + '-provider');
+        var modelSel = $('trinity-' + agentKey + '-model');
+        var providerId = providerSel ? providerSel.value : '';
+        var entry = getProviderById(_registryCache || FALLBACK_PROVIDERS, providerId);
+        var isCustom = isCustomProvider(entry);
+        var fmtEl = $('trinity-' + agentKey + '-format');
+        var baseUrlEl = $('trinity-' + agentKey + '-baseurl');
+        var baseUrl = baseUrlEl ? String(baseUrlEl.value || '').trim() : '';
+        // Custom/Proxy dengan baseUrl /v1beta → capability ikut door gemini-native.
+        var door = resolveEffectiveDoor(entry, fmtEl ? fmtEl.value : 'auto');
+        var providerOrDoor;
+        if (isCustom) {
+            var customModel = modelSel ? modelSel.value : '';
+            if (/\/v1beta/i.test(baseUrl)) {
+                providerOrDoor = DOOR_TYPES.GEMINI;
+            } else if (/^gemini|^gemma|^claude|^anthropic|kimi|^gpt-|^o\d|^glm|^deepseek/i.test(customModel)) {
+                providerOrDoor = 'custom';
+            } else {
+                providerOrDoor = door;
+            }
+        } else {
+            providerOrDoor = providerId || door;
+        }
+        return {
+            providerOrDoor: providerOrDoor,
+            model: modelSel ? String(modelSel.value || '').trim() : '',
+            isCustom: isCustom
+        };
+    }
+
+    // --- UI builder & renderer ---
+
+    function mpFieldLabel(text) {
+        return createEl('label', 'trinity-mp-label', text);
+    }
+
+    function mpBuildNumberField(agentKey, name, label, descriptor, value, fixed) {
+        var wrap = createEl('div', 'trinity-mp-field');
+        wrap.dataset.mpParam = name;
+        wrap.dataset.mpAgent = agentKey;
+        var labelText = label + (fixed ? ' (locked)' : '');
+        wrap.appendChild(mpFieldLabel(labelText));
+        var input = createEl('input', 'trinity-mp-input');
+        input.type = 'number';
+        input.id = 'trinity-mp-' + agentKey + '-' + name;
+        input.min = String(descriptor.min);
+        input.max = String(descriptor.max);
+        input.step = name === 'topP' ? '0.01' : '0.1';
+        input.value = value !== undefined && value !== null ? String(value) : '';
+        input.dataset.mpName = name;
+        input.dataset.mpAgent = agentKey;
+        if (fixed !== undefined) {
+            input.readOnly = true;
+            input.title = 'Locked to ' + fixed + ' by the provider';
+        }
+        wrap.appendChild(input);
+        return wrap;
+    }
+
+    function mpBuildSelectField(agentKey, name, label, descriptor, value) {
+        var wrap = createEl('div', 'trinity-mp-field');
+        wrap.dataset.mpParam = name;
+        wrap.dataset.mpAgent = agentKey;
+        wrap.appendChild(mpFieldLabel(label));
+        var select = createEl('select', 'trinity-mp-input');
+        select.id = 'trinity-mp-' + agentKey + '-' + name;
+        select.dataset.mpName = name;
+        select.dataset.mpAgent = agentKey;
+        (descriptor.enum || []).forEach(function (optVal) {
+            var opt = createEl('option', '', optVal.charAt(0).toUpperCase() + optVal.slice(1));
+            opt.value = optVal;
+            select.appendChild(opt);
+        });
+        if (value !== undefined && value !== null && String(value) !== '') {
+            select.value = String(value);
+        } else if (descriptor.default !== undefined && descriptor.default !== null) {
+            select.value = String(descriptor.default);
+        }
+        if (select.selectedIndex < 0 && select.options.length) select.selectedIndex = 0;
+        wrap.appendChild(select);
+        return wrap;
+    }
+
+    function mpBuildCheckboxField(agentKey, name, label, value) {
+        var wrap = createEl('div', 'trinity-mp-field trinity-mp-field-check');
+        wrap.dataset.mpParam = name;
+        wrap.dataset.mpAgent = agentKey;
+        var labelEl = createEl('label', 'trinity-mp-label trinity-mp-label-check');
+        var input = createEl('input', 'trinity-mp-checkbox');
+        input.type = 'checkbox';
+        input.id = 'trinity-mp-' + agentKey + '-' + name;
+        input.dataset.mpName = name;
+        input.dataset.mpAgent = agentKey;
+        input.checked = value === true;
+        labelEl.appendChild(input);
+        labelEl.appendChild(createEl('span', '', label));
+        wrap.appendChild(labelEl);
+        return wrap;
+    }
+
+    // Susunan medan stabil (capability map iteration order backend preserved
+    // melalui array ini — elak perbezaan peta objek antara pelayar).
+    var MP_FIELD_ORDER = [
+        'temperature',
+        'topP',
+        'maxOutputTokens',
+        'thinkingBudget',
+        'thinkingLevel',
+        'reasoningEffort',
+        'frequencyPenalty',
+        'presencePenalty',
+        'modelType',
+        'formality',
+        'preserveFormatting'
+    ];
+    var MP_FIELD_LABELS = {
+        temperature: 'Temperature',
+        topP: 'Top-P',
+        maxOutputTokens: 'Max output tokens',
+        thinkingBudget: 'Thinking budget',
+        thinkingLevel: 'Thinking level',
+        reasoningEffort: 'Reasoning effort',
+        frequencyPenalty: 'Frequency penalty',
+        presencePenalty: 'Presence penalty',
+        modelType: 'Model type',
+        formality: 'Formality',
+        preserveFormatting: 'Preserve formatting'
+    };
+
+    function mpRenderFields(agentKey, profile, defaults, savedParams) {
+        var container = $('trinity-mp-fields-' + agentKey);
+        if (!container) return;
+        container.innerHTML = '';
+        var params = savedParams && typeof savedParams === 'object' ? savedParams : {};
+        MP_FIELD_ORDER.forEach(function (name) {
+            var descriptor = profile.parameters[name];
+            if (!descriptor) return; // hanya parameter yang disokong model
+            // Nilai FIXED sentiasa papar nilai terkunci provider (cth Kimi 1.0) —
+            // nilai tersimpan dari provider lain tidak boleh menimpa kunci.
+            var saved = descriptor.fixed !== undefined ? descriptor.fixed : params[name];
+            var value = saved !== undefined && saved !== null && saved !== '' ? saved : defaults[name];
+            var field = null;
+            if (descriptor.enum && Array.isArray(descriptor.enum)) {
+                field = mpBuildSelectField(agentKey, name, MP_FIELD_LABELS[name] || name, descriptor, value);
+            } else if (name === 'preserveFormatting') {
+                field = mpBuildCheckboxField(agentKey, name, MP_FIELD_LABELS[name] || name, value === true);
+            } else {
+                field = mpBuildNumberField(
+                    agentKey,
+                    name,
+                    MP_FIELD_LABELS[name] || name,
+                    descriptor,
+                    value,
+                    descriptor.fixed
+                );
+            }
+            if (field) container.appendChild(field);
+        });
+        mpSyncDeviatedWarning(agentKey);
+    }
+
+    // Papar nota kunci: descriptor.fixed !== undefined dan notes yang dikenali.
+    function mpRenderNotes(agentKey, profile) {
+        var notesBox = $('trinity-mp-notes-' + agentKey);
+        if (!notesBox) return;
+        notesBox.innerHTML = '';
+        var seen = {};
+        Object.keys(profile.parameters).forEach(function (name) {
+            var descriptor = profile.parameters[name];
+            if (descriptor && descriptor.fixed !== undefined && !seen['fixed:' + name]) {
+                seen['fixed:' + name] = true;
+                var note = createEl(
+                    'div',
+                    'trinity-mp-note',
+                    (MP_FIELD_LABELS[name] || name) + ' is locked to ' + descriptor.fixed + ' by the provider.'
+                );
+                notesBox.appendChild(note);
+            }
+        });
+        (profile.notes || []).forEach(function (key) {
+            if (seen['note:' + key]) return;
+            seen['note:' + key] = true;
+            var text = MP_NOTE_TEXT[key];
+            if (text) notesBox.appendChild(createEl('div', 'trinity-mp-note', text));
+        });
+        notesBox.style.display = notesBox.children.length ? '' : 'none';
+    }
+
+    // Amaran bypass-cache apabila params menyimpang daripada lalai ejen.
+    function mpSyncDeviatedWarning(agentKey) {
+        var warn = $('trinity-mp-deviated-' + agentKey);
+        if (!warn) return;
+        var ctx = mpResolveAgentContext(agentKey);
+        var params = mpCollectFieldValues(agentKey);
+        var deviated = agentParamsDeviateFromDefault(agentKey, params, ctx.providerOrDoor, ctx.model);
+        warn.style.display = deviated ? '' : 'none';
+    }
+
+    // Kumpul nilai medan semasa → params ringkas (hanya medan yang wujud).
+    function mpCollectFieldValues(agentKey) {
+        var container = $('trinity-mp-fields-' + agentKey);
+        if (!container) return {};
+        var params = {};
+        Array.prototype.forEach.call(container.querySelectorAll('[data-mp-name]'), function (el) {
+            var name = el.dataset.mpName;
+            if (el.type === 'checkbox') {
+                params[name] = el.checked === true;
+            } else {
+                var v = String(el.value || '').trim();
+                if (v === '') return;
+                var num = parseFloat(v);
+                params[name] = Number.isFinite(num) ? num : v;
+            }
+        });
+        return params;
+    }
+
+    // Payload params untuk kontrak trinity.<agent>.params: kembalikan HANYA
+    // medan yang dilawati pengguna daripada lalai ejen (kosong jika semua lalai).
+    function mpCollectDeviatedParams(agentKey) {
+        var ctx = mpResolveAgentContext(agentKey);
+        var params = mpCollectFieldValues(agentKey);
+        var defaults = getAgentDefaultParams(agentKey, ctx.providerOrDoor, ctx.model);
+        var profile = resolveCapabilityProfile(ctx.providerOrDoor, ctx.model);
+        var out = {};
+        Object.keys(params).forEach(function (name) {
+            var descriptor = profile.parameters[name];
+            if (!descriptor) return; // tidak disokong — dibuang senyap
+            if (descriptor.fixed !== undefined) return; // fixed sentiasa sama
+            if (defaults[name] !== params[name]) out[name] = params[name];
+        });
+        return out;
+    }
+
+    function refreshModelParams(agentKey) {
+        var accordion = $('trinity-mp-' + agentKey);
+        if (!accordion) return;
+        var ctx = mpResolveAgentContext(agentKey);
+        var profile = resolveCapabilityProfile(ctx.providerOrDoor, ctx.model);
+        var defaults = getAgentDefaultParams(agentKey, ctx.providerOrDoor, ctx.model);
+        // Params tersimpan KEKAL merentas pertukaran provider/model (famili boleh
+        // berubah; medan yang tidak lagi disokong dibuang oleh collect).
+        var saved = _modelParamsState[agentKey] || {};
+        mpRenderFields(agentKey, profile, defaults, saved);
+        mpRenderNotes(agentKey, profile);
+        // Suntik katalog model baharu selepas render (state kekal).
+        var modelSel =
+            agentKey === 'secondary' ? $('trinity-translation-fallback-model') : $('trinity-' + agentKey + '-model');
+        if (modelSel) ensureModelOption(modelSel, ctx.model);
+    }
+
+    // Cache params medan semasa setiap kali input berubah — membolehkan
+    // pertukaran model kekal memulihkan nilai yang ditaip (state preservation).
+    var _modelParamsState = {};
+
+    function mpSnapshot(agentKey) {
+        _modelParamsState[agentKey] = mpCollectFieldValues(agentKey);
+    }
+
+    // PENTING: pasang listener pada nod accordion (`wrap`) — BUKAN melalui $()
+    // kerana kad dibina TERPISAH sebelum di-append ke DOM (getElementById → null).
+    function mpWireInputs(agentKey, wrap) {
+        if (!wrap) return;
+        var handler = function () {
+            mpSnapshot(agentKey);
+            mpSyncDeviatedWarning(agentKey);
+        };
+        wrap.addEventListener('input', handler);
+        wrap.addEventListener('change', handler);
+    }
+
+    // Sub-accordion: tertutup secara lalai; kad dibina SEKALI per slot ejen.
+    function buildModelParamsAccordion(agentKey) {
+        var wrap = createEl('div', 'trinity-mp collapsed');
+        wrap.id = 'trinity-mp-' + agentKey;
+
+        var head = createEl('div', 'trinity-mp-head');
+        var title = createEl('span', 'trinity-mp-title', '⚙️ Model Parameters');
+        head.appendChild(title);
+        var resetBtn = createEl('button', 'trinity-mp-reset');
+        resetBtn.type = 'button';
+        resetBtn.textContent = 'Reset to Default';
+        resetBtn.setAttribute('aria-label', 'Reset model parameters to agent defaults');
+        head.appendChild(resetBtn);
+        var chevron = createEl('span', 'trinity-mp-chevron', '▾');
+        head.appendChild(chevron);
+        wrap.appendChild(head);
+
+        var body = createEl('div', 'trinity-mp-body');
+        var warn = createEl('div', 'trinity-mp-warning', '⚠️ Custom parameters will bypass the translation cache.');
+        warn.id = 'trinity-mp-deviated-' + agentKey;
+        warn.style.display = 'none';
+        body.appendChild(warn);
+        var notesBox = createEl('div', 'trinity-mp-notes');
+        notesBox.id = 'trinity-mp-notes-' + agentKey;
+        body.appendChild(notesBox);
+        var fields = createEl('div', 'trinity-mp-fields');
+        fields.id = 'trinity-mp-fields-' + agentKey;
+        body.appendChild(fields);
+        wrap.appendChild(body);
+
+        head.addEventListener('click', function (e) {
+            if (e.target === resetBtn || resetBtn.contains(e.target)) return;
+            wrap.classList.toggle('collapsed');
+        });
+        resetBtn.addEventListener('click', function (e) {
+            e.stopPropagation();
+            var ctx = mpResolveAgentContext(agentKey);
+            delete _modelParamsState[agentKey];
+            var defaults = getAgentDefaultParams(agentKey, ctx.providerOrDoor, ctx.model);
+            var profile = resolveCapabilityProfile(ctx.providerOrDoor, ctx.model);
+            mpRenderFields(agentKey, profile, defaults, defaults);
+            mpSyncDeviatedWarning(agentKey);
+        });
+
+        mpWireInputs(agentKey, wrap);
+        return wrap;
     }
 
     // --- Secondary Fallback Provider (sub-kad Agent Translation) ---
@@ -503,6 +1164,10 @@
         provSel.addEventListener('change', function () {
             populateFallbackModels(provSel.value, false);
             updateFallbackFieldVisibility();
+            // [FASA 4 v3.9.46] Capability profile fallback berubah — bina semula
+            // medan Model Parameters slot 'secondary'.
+            mpSnapshot('secondary');
+            refreshModelParams('secondary');
         });
 
         var keyRow = createEl('div', 'trinity-field');
@@ -592,7 +1257,18 @@
         fields.appendChild(modelCustomRow);
 
         body.appendChild(fields);
+        // [FASA 4 v3.9.46] Sub-accordion Model Parameters slot ke-4 ('secondary')
+        // — capability profile dijejak daripada provider/model fallback semasa.
+        body.appendChild(buildModelParamsAccordion('secondary'));
         wrap.appendChild(body);
+        // Event fallback model (dropdown + custom input) mencetuskan render semula
+        // medan params slot secondary.
+        modelSel.addEventListener('change', function () {
+            refreshModelParams('secondary');
+        });
+        modelInput.addEventListener('change', function () {
+            refreshModelParams('secondary');
+        });
 
         refreshFallbackProviderOptions(true);
         return wrap;
@@ -1452,6 +2128,10 @@
             var providerModels =
                 PROVIDER_MODEL_CATALOG[providerSel.value] || MODEL_CATALOG[door] || MODEL_CATALOG['openai-compatible'];
             populateModelDropdown(agentKey, providerModels, true);
+            // [FASA 4 v3.9.46] Capability profile berubah — bina semula medan
+            // Model Parameters (fresh state medan, nilai tersimpan dikekalkan).
+            mpSnapshot(agentKey);
+            refreshModelParams(agentKey);
         });
 
         // [REAL-TIME URL-TO-DOOR 2026-10-10] Pendengar input/change pada Base URL:
@@ -1477,6 +2157,13 @@
             };
             urlInput.addEventListener('input', syncDoorFromUrl);
             urlInput.addEventListener('change', syncDoorFromUrl);
+        }
+        // [FASA 4 v3.9.46] Pertukaran Format/Door Custom (cth gemini-native ↔
+        // openai-compatible) mengubah capability profile — bina semula medan.
+        if (fmtSelect) {
+            fmtSelect.addEventListener('change', function () {
+                refreshModelParams(agentKey);
+            });
         }
 
         refresh();
@@ -1964,6 +2651,29 @@
                 }
             }
 
+            // [FASA 4 v3.9.46] Rehidrasi trinity.<agent>.params — baca cfg
+            // SEBENAR (BUKAN DOM prevValue — elak stale-value trap), simpan ke
+            // cache state, kemudian render medan Model Parameters mengikut
+            // capability profile semasa provider/model.
+            // PENTING: JANGAN panggil mpSnapshot() selepas menetapkan state —
+            // ia akan menimpa nilai cfg dengan DOM lama (stale-value trap).
+            var slot = getAgentConfig(cfg, agent.key);
+            if (slot && slot.params && typeof slot.params === 'object') {
+                _modelParamsState[agent.key] = Object.assign({}, slot.params);
+            }
+            // Rehidrasi slot secondary (slot ejen ke-4) daripada trinity.secondary.
+            if (agent.key === 'translation') {
+                var secSlot = (cfg.trinity && cfg.trinity.secondary) || null;
+                if (secSlot && secSlot.params && typeof secSlot.params === 'object') {
+                    _modelParamsState.secondary = Object.assign({}, secSlot.params);
+                }
+                applyFallbackValues(cfg);
+            }
+            refreshModelParams(agent.key);
+            if (agent.key === 'translation') {
+                refreshModelParams('secondary');
+            }
+
             // [BUG FIX v3.9.44] Lencana 'No key' kaku selepas pengisian
             // PROGRAMATIK (applyAgentValues menulis keyEl.value tanpa mencetuskan
             // event 'input'). Kemas kini HANYA bila lencana masih neutral —
@@ -1972,8 +2682,6 @@
             if (keyBadge && keyBadge.textContent === 'No key' && String(keyEl.value || '').trim()) {
                 updateKeyBadge(agent.key);
             }
-
-            if (agent.key === 'translation') applyFallbackValues(cfg);
 
             // Pastikan visibility dikemas kini selepas rehydrate
             updateVisibility(agent.key);
@@ -1993,6 +2701,26 @@
         if (!cfg) return null;
         cfg.trinity = cfg.trinity || {};
         var providers = _registryCache || FALLBACK_PROVIDERS;
+
+        // [FASA 4 v3.9.46] Simpan params Model Parameters semasa ke cfg.trinity
+        // SEBELUM pertukaran mod — memastikan nilai kekal utuh Basic↔Pro.
+        AGENTS.forEach(function (agent) {
+            var present = !!$('trinity-mp-' + agent.key);
+            if (!present) return;
+            mpSnapshot(agent.key);
+            if (_modelParamsState[agent.key] && Object.keys(_modelParamsState[agent.key]).length) {
+                cfg.trinity[agent.key] = cfg.trinity[agent.key] || {};
+                cfg.trinity[agent.key].params = Object.assign({}, _modelParamsState[agent.key]);
+            }
+        });
+        var secPresent = !!$('trinity-mp-secondary');
+        if (secPresent) {
+            mpSnapshot('secondary');
+            if (_modelParamsState.secondary && Object.keys(_modelParamsState.secondary).length) {
+                cfg.trinity.secondary = cfg.trinity.secondary || {};
+                cfg.trinity.secondary.params = Object.assign({}, _modelParamsState.secondary);
+            }
+        }
 
         AGENTS.forEach(function (agent) {
             var keyEl = $('trinity-' + agent.key + '-key');
@@ -2149,9 +2877,23 @@
                 provider: provider,
                 door: door,
                 isCustom: isCustom,
-                enabled: !!key.trim()
+                enabled: !!key.trim(),
+                // [FASA 4 v3.9.46] Kontrak trinity.<agent>.params — HANYA medan
+                // yang dilawati pengguna daripada lalai ejen (kosong = lalai).
+                params: mpCollectDeviatedParams(agent.key)
             };
         });
+
+        // [FASA 4 v3.9.46] Slot secondary (ejem ke-4) — params diukur terhadap
+        // capability profile fallback semasa; slot disimpan tanpa kredential
+        // (kredential secondary diuruskan providers.custom_secondary / providers.<id>).
+        trinity.secondary = {
+            params: (function () {
+                var fb = readFallbackState();
+                if (!fb.enabled && !_modelParamsState.secondary) return {};
+                return mpCollectDeviatedParams('secondary');
+            })()
+        };
 
         var patch = { trinity: trinity };
 
