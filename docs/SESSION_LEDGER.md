@@ -10,6 +10,20 @@
 
 ---
 
+## 2026-10-15 — STATUS PENUTUP SESI (BLOK PRA-TUTUP, MANDAT KE SINAMBUNGAN SESI) — v3.9.52 TAMAT, MENUNGGU VERIFIKASI LIVE RUN KETUJUH
+
+- **Tarikh:** 2026-10-15 ~20:38 (waktu tempatan KL) — ditulis sebelum Owner menutup sesi ini.
+- **Komit SHA (HEAD):** `ada0958` (= `ff9127b` + ledger close-out). Origin/main SELARI. CI `ci.yml` run **#38801478214 = SUCCESS** pada `ff9127b` (workflow sebenar, disahkan terus daripada GitHub API).
+- **Status tugasan sesi ini (4 release berturut — semua CI hijau):**
+    1. **v3.9.49** (`13c4e25`) — Jambatan Trinity→Provider: empat titik kegagalan routing diperbaiki (collectConfigPatch provider-aware + mainProvider/providers/mainEntry + fallback MERGE; buildConfigFromForm guard trinityIsGeminiRoute; normalizeConfig syncTrinityTranslationToProvider; createTranslationProvider membina provider betul). Ujian E1-E7. Terverifikasi live run kedua: PERFECT 621/621 provider=custom rootsys.
+    2. **v3.9.50** (`0ab0a28`) — Hotfix door gemini-native custom MAIN: syarat isSecondary digugurkan; Crazy Router v1beta → GeminiService, bukan OpenAICompatible. Ujian E8. Terverifikasi live run keempat: PERFECT 621/621 provider=custom gemini-3-flash.
+    3. **v3.9.51** (`c09f253`) — Basic-Mode Purity (kelulusan Owner): Fasa 0 pre-flight EKSKLUSIF Agent B — laluan warisan "Agent A pre-flight dirinya sendiri" DIGUGURKAN; `_logAgentBFileSummary()` senyap bila Agent B mati. Ujian E9/E10. **Terverifikasi live run keenam: tiada SubFaberPreflight, tiada AgentB FILE SUMMARY, enjin terus ke batch (formula 4+50+2 tulen).**
+    4. **v3.9.52** (`ff9127b`) — Proxy 401/403 Resilience (kelulusan Owner "Go now"): `isProxyAuthStatus` — 401/403 + isProxyBaseUrl() jadi retryable (backoff 3s/6s/12s + jitter, label "proxy 401/403 (transient upstream)"); googleapis.com kekal mati segera. Ujian F1-F3. Insiden punca: run keenam job mati sekelip mata akibat 403 Crazy Router transient (batch 1-3 berjaya dengan kunci sama; forensik: "out of credit for this model route... retry later").
+- **Baseline ujian semasa (rujuk selepas reset konteks):** `npm test` = **426 total / 425 PASS / 0 FAIL / 1 SKIP (live Redis)** — monotonic ≥ 421. `npx prettier --check .` PASS; `npx eslint .` 0 error (223 warning pra-wujud). `graphify update .` OK.
+- **Perubahan konfigurasi VPS Owner sesi ini:** `.env` line 108-112 (`AGENT_B_BASE_URL/API_KEY/PREFLIGHT_MODEL/INSPECTION_MODEL/FALLBACK_MODEL`) telah DIKOMEN — Agent B kini hanya hidup melalui kad Trinity Pro Mode UI, bukan env pelayan. Container recreated selepas pembersihan.
+- **Item terbuka (bukan blocker):** (1) **Verifikasi live run ketujuh** — Owner belum pull image Docker v3.9.52 + re-test; jangkaan: 403 proksi → `Attempt N failed (proxy 401/403 (transient upstream)), retrying in 3xxxms...` bukan mati segera; (2) calang pra-wujud — dedup fingerprint tail stream hujung job (~4-21 baris `Partial SAVED: N/N` berulang; calang untuk audit `persistPartial` pada isyarat `completedEntries >= totalEntries` sahaja); (3) katalog harga FinOps tiada entri `gemini-3-flash` (kos dikira murah — kosmetik); (4) `.tmp-*` belum masuk `.gitignore`; (5) countTokens pada proksi tidak stabil (503/timeout/404) — sudah fallback anggun ke estimate, tidak menjejaskan terjemahan.
+- **Next Steps (misi baru menunggu arahan Owner):** mulakan SESI BARU dengan membaca blok ini + blok v3.9.49-v3.9.52 di bawah. Tiada tugasan aktif selepas verifikasi run ketujuh.
+
 ## 2026-10-15 — v3.9.52 RELEASED: PROXY 401/403 RESILIENCE — BACKOFF UNTUK GATEWAY PROKSI
 
 - **Tarikh:** 2026-10-15 ~20:25 (waktu tempatan KL).
