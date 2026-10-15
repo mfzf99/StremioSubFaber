@@ -2,6 +2,16 @@
 
 All notable changes to this project will be documented in this file.
 
+## SubMaker v3.9.47 (2026-10-15) — Core Protocol Consolidation: Process Management Rules Inlined
+
+### Changed
+
+- **[.roo/rules/00-subfaber-core-protocol.md](.roo/rules/00-subfaber-core-protocol.md)**: Menyatukan semua governance rules dalam satu fail core protocol — ditambah rule #7 VERBATIM MANDATE & LOSSLESS CONTEXT PROPAGATION (anti-information-loss semasa `switch_mode`), seksyen [COGNITIVE DELIBERATION PROTOCOL - THINK BEFORE CODE] (trace & audit trail, adversarial audit, invariant check, atomic execution), seksyen [PROCESS LIFECYCLE, TERMINAL DISCIPLINE & MCP PRESERVATION] (autonomous shell ownership, zero-tolerance blanket process kills, dua-path stuck process termination, timeout & PTY buffer management, zombie process cap, server reload discipline), dan seksyen [MANDATORY COMMIT & RELEASE PROTOCOL] 8-step pipeline (zero exceptions).
+
+### Removed
+
+- **[.roo/rules/20-process-management.md](.roo/rules/20-process-management.md)**: Dihapuskan sepenuhnya — kandungannya telah diserap (tanpa redundan) ke dalam `00-subfaber-core-protocol.md` di bawah seksyen PROCESS LIFECYCLE & MCP PRESERVATION. Penghapusan ini mengelakkan dual-source-of-truth redundancy antara dua fail rules.
+
 ## SubMaker v3.9.46 (2026-10-15) — Trinity Model Parameters per-Agent: Capability-Driven UI (Fasa 3+4 Complete)
 
 ### Added
