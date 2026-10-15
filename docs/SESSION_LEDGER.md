@@ -12,8 +12,8 @@
 
 ## 2026-10-15 — v3.9.52 RELEASED: PROXY 401/403 RESILIENCE — BACKOFF UNTUK GATEWAY PROKSI
 
-- **Tarikh:** 2026-10-15 ~20:22 (waktu tempatan KL).
-- **Komit SHA:** (langkah 7 di bawah).
+- **Tarikh:** 2026-10-15 ~20:25 (waktu tempatan KL).
+- **Komit SHA (HEAD):** `ff9127b` — push `e95f4a8..ff9127b` ke origin/main BERJAYA; CI `ci.yml` run **#38801478214 = SUCCESS** (disahkan terus daripada GitHub API, head_sha `ff9127bca61eafcb663e5394d84579e86eb0789b`).
 - **Keputusan Owner (diluluskan "Go now"):** pembedahan `isProxyAuthStatus` — 401/403 daripada baseUrl PROKSI retryable (backoff 3s/6s/12s + jitter); googleapis.com kekal mati segera. Latar: insiden run keenam — job mati sekelip mata pada batch 4/13 akibat 403 Crazy Router walaupun batch 1-3 berjaya dengan kunci sama; forensik run keempat menunjukkan 403 proksi membawa mesej "out of credit for this model route... retry later" (transient, bukan kredential).
 - **Pembedahan:** [`gemini.js`](../src/services/gemini.js) `retryWithBackoff()` — syarat `isProxyAuthStatus` (status 401/403 && `this.isProxyBaseUrl()`) ditambah ke senarai `isRetryable` + label log "proxy 401/403 (transient upstream)".
 - **Ujian:** F1 (403 Crazy Router v1beta → 3 percubaan + 2 backoff, berjaya cubaan ketiga), F2 (403 googleapis.com → mati segera, 1 percubaan — kontrak asal dipelihara), F3 (401 rootsys → retryable). `npm test` = **426 total / 425 PASS / 0 FAIL / 1 SKIP** (monotonic ≥ 423, +3). Prettier PASS; eslint 0 error; graphify OK.
