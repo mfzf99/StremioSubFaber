@@ -13,7 +13,7 @@
 ## 2026-10-15 — v3.9.46 RELEASED: FASA 3+4 LENGKAP — TRINITY MODEL PARAMETERS PER-EJEN (CAPABILITY-DRIVEN UI)
 
 - **Tarikh:** 2026-10-15 (waktu tempatan KL)
-- **Komit SHA:** (diisi selepas push — pipeline 8-langkah selesai)
+- **Komit SHA:** d1dd353 (feat(trinity): v3.9.46 — model parameters per-agent (Fasa 3+4))
 - **Keputusan Owner:** Mandat Fasa 4 (bubarkan 3 blok UI legasi + params per-ejen dalam kad Trinity, 100% provider-agnostic)
 - **Integration review backend (LULUS):**
     - trinity-params-regression.test.js: 29/29 ✔ 0 FAIL (kontrak `trinity.<agent>.params` + sanitasi + deviasi bypass + god-tier Agent B + getModelFamily pariti).
