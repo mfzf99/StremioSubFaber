@@ -10,6 +10,12 @@
 
 ---
 
+## 2026-10-15 — v3.9.49 LIVE VERIFICATION: RUN KEDUA PERFECT — ROUTING JAMBATAN TERBUKTI DI PRODUKSI
+
+- **Tarikh:** 2026-10-15 ~18:29 (waktu tempatan KL).
+- **Verifikasi live (Shine on Me S01E26, 621 entri):** `Using provider=custom model=deepseek-v4-pro` + `[SSRF] Validated external endpoint: rootsys.cloud` — jambatan v3.9.49 berfungsi 1:1 di produksi. Keputusan Telegram: **PERFECT ✨ 621/621, 0 failed, 0 mismatch, 13/13 batch Agent B inspection PASSED [deepseek-v4-pro], Crimes semua 0, coverage 100%, 8m 56s, 70 entries/min, Provider=custom**. Partial streaming delivery + bypass cache + cleanup semuanya rapi.
+- **Nota kecil (bukan blocker, untuk misi masa depan):** hujung stream mengeluarkan ~21 baris `Partial SAVED: batch 13/13, 621/621` berulang dalam <1s — dedup fingerprint (`skippedDuplicatePayload`) nampaknya tidak menangkap delta payload akhir stream (kemungkinan tail berubah antara chunk terakhir). Kos I/O kecil (sama key, overwrite); calang untuk audit `persistPartial`/fingerprint pada isyarat `completedEntries >= totalEntries` sahaja.
+
 ## 2026-10-15 — v3.9.49 RELEASED: BUG ROUTING TRINITY AGENT TRANSLATION (404 MODEL_NOT_FOUND) — JAMBATAN TRINITY→PROVIDER LENGKAP 4 TITIK
 
 - **Tarikh:** 2026-10-15 ~18:08 (waktu tempatan KL).
