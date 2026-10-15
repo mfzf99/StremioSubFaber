@@ -2,6 +2,16 @@
 
 All notable changes to this project will be documented in this file.
 
+## SubMaker v3.9.52 (2026-10-15) — Proxy 401/403 Resilience: Backoff untuk Gateway Proksi
+
+### Fixed
+
+- **401/403 daripada gateway proksi kini RETRYABLE ([src/services/gemini.js](src/services/gemini.js)):** insiden run keenam 2026-10-15 — job terjemahan mati sekelip mata pada batch 4/13 akibat 403 Crazy Router, walaupun batch 1-3 BERJAYA dengan kunci yang sama dan 403 sebelum ini membawa mesej jelas "out of credit for this model route... retry later". Punca: senarai retryable dalam `retryWithBackoff()` (timeout/network/429/503 sahaja) tidak mengandungi 401/403 — klasifikasi yang tepat untuk endpoint Google rasmi tetapi FALSE POSITIVE untuk proksi yang menggunakan 401/403 secara longgar untuk keadaan upstream transient (kuota route seketika, relay down, route tidak aktif sementara). Pembaikan: `isProxyAuthStatus` — 401/403 dengan `isProxyBaseUrl() === true` dianggap retryable dengan backoff eksponen 3s/6s/12s + jitter (log "proxy 401/403 (transient upstream)"); **endpoint Google rasmi (googleapis.com) KECAL mati segera** — kunci AIza yang salah tidak akan pulih dengan retry.
+
+### Added
+
+- **Ujian regresi F1–F3 ([src/utils/trinity-params-regression.test.js](src/utils/trinity-params-regression.test.js)):** F1 — 403 proksi (Crazy Router v1beta) → 3 percubaan dengan 2 backoff, berjaya pada cubaan ketiga; F2 — 403 Google rasmi → mati segera (1 percubaan sahaja, kontrak asal dipelihara); F3 — 401 proksi (rootsys) → retryable. Suite: 426 total / 425 PASS / 0 FAIL / 1 SKIP (monotonic ≥ 423, +3).
+
 ## SubMaker v3.9.51 (2026-10-15) — Basic-Mode Purity: Fasa 0 Pre-Flight Eksklusif Agent B + Clean Log
 
 ### Changed

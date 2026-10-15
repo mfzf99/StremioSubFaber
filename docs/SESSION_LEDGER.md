@@ -10,6 +10,17 @@
 
 ---
 
+## 2026-10-15 — v3.9.52 RELEASED: PROXY 401/403 RESILIENCE — BACKOFF UNTUK GATEWAY PROKSI
+
+- **Tarikh:** 2026-10-15 ~20:22 (waktu tempatan KL).
+- **Komit SHA:** (langkah 7 di bawah).
+- **Keputusan Owner (diluluskan "Go now"):** pembedahan `isProxyAuthStatus` — 401/403 daripada baseUrl PROKSI retryable (backoff 3s/6s/12s + jitter); googleapis.com kekal mati segera. Latar: insiden run keenam — job mati sekelip mata pada batch 4/13 akibat 403 Crazy Router walaupun batch 1-3 berjaya dengan kunci sama; forensik run keempat menunjukkan 403 proksi membawa mesej "out of credit for this model route... retry later" (transient, bukan kredential).
+- **Pembedahan:** [`gemini.js`](../src/services/gemini.js) `retryWithBackoff()` — syarat `isProxyAuthStatus` (status 401/403 && `this.isProxyBaseUrl()`) ditambah ke senarai `isRetryable` + label log "proxy 401/403 (transient upstream)".
+- **Ujian:** F1 (403 Crazy Router v1beta → 3 percubaan + 2 backoff, berjaya cubaan ketiga), F2 (403 googleapis.com → mati segera, 1 percubaan — kontrak asal dipelihara), F3 (401 rootsys → retryable). `npm test` = **426 total / 425 PASS / 0 FAIL / 1 SKIP** (monotonic ≥ 423, +3). Prettier PASS; eslint 0 error; graphify OK.
+- **Fail terlibat:** `src/services/gemini.js` (M), `src/utils/trinity-params-regression.test.js` (M, +F1-F3 PROXY-403), `CHANGELOG.md`, `package.json` (bump 3.9.51→3.9.52), `docs/SESSION_LEDGER.md`.
+- **Nota:** v3.9.51 juga terverifikasi live pada run keenam (Basic-Mode Purity: tiada SubFaberPreflight, tiada AgentB FILE SUMMARY, enjin terus ke batch).
+- **Next Steps:** commit+push + CI hijau; Owner pull image baharu & re-test.
+
 ## 2026-10-15 — v3.9.51 RELEASED: BASIC-MODE PURITY — FASA 0 EKSKLUSIF AGENT B + CLEAN LOG
 
 - **Tarikh:** 2026-10-15 ~19:57 (waktu tempatan KL).

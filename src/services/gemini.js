@@ -1029,6 +1029,22 @@ class GeminiService {
                 const isRateLimit = error.response?.status === 429 || error.statusCode === 429;
                 const isServiceUnavailable = error.response?.status === 503 || error.statusCode === 503;
                 const isMarkedRetryable = error.isRetryable === true;
+                // [PROXY-403 RESILIENCE v3.9.52 — kelulusan Owner 2026-10-15]
+                // Gateway proksi (Crazy Router/rootsys/relay) menggunakan 401/403
+                // secara LONGGAR untuk keadaan upstream transient: kuota route
+                // habis seketika ("out of credit for this model route... retry
+                // later" — forensik run keempat/ketujuh 2026-10-15), relay down,
+                // route tidak aktif buat sementara. Bukti: batch 1-3 berjaya
+                // dengan kunci sama sebelum 403 muncul. Untuk baseUrl PROKSI,
+                // 401/403 layak backoff 3s/6s/12s. Endpoint Google rasmi
+                // (googleapis.com) KECAL mati segera — kunci AIza yang salah
+                // tidak akan pulih dengan retry.
+                const isProxyAuthStatus =
+                    (error.response?.status === 401 ||
+                        error.response?.status === 403 ||
+                        error.statusCode === 401 ||
+                        error.statusCode === 403) &&
+                    this.isProxyBaseUrl();
 
                 const isRetryable =
                     isTimeout ||
@@ -1036,6 +1052,7 @@ class GeminiService {
                     isSocketHangup ||
                     isRateLimit ||
                     isServiceUnavailable ||
+                    isProxyAuthStatus ||
                     isMarkedRetryable;
 
                 if (isLastAttempt || !isRetryable) {
@@ -1053,13 +1070,15 @@ class GeminiService {
                     ? '429 rate limit'
                     : isServiceUnavailable
                       ? '503 service unavailable'
-                      : isSocketHangup
-                        ? 'socket hang up'
-                        : isTimeout
-                          ? 'timeout'
-                          : isMarkedRetryable
-                            ? 'transient error (OTHER)'
-                            : 'network error';
+                      : isProxyAuthStatus
+                        ? 'proxy 401/403 (transient upstream)'
+                        : isSocketHangup
+                          ? 'socket hang up'
+                          : isTimeout
+                            ? 'timeout'
+                            : isMarkedRetryable
+                              ? 'transient error (OTHER)'
+                              : 'network error';
                 log.debug(
                     () => `[Gemini] Attempt ${attempt + 1} failed (${errorType}), retrying in ${jitteredDelay}ms...`
                 );

@@ -586,6 +586,88 @@ test('[E10] BASIC-MODE PURITY: _logAgentBFileSummary senyap bila Agent B tidak p
     assert.equal(called, false, 'FILE SUMMARY TIDAK boleh dicetak bila Agent B tidak hidup');
 });
 
+// ── F. [PROXY-403 RESILIENCE v3.9.52] — insiden run keenam 2026-10-15 ────────
+// Job mati sekelip mata akibat 403 Crazy Router (kuota route transient —
+// batch 1-3 berjaya dengan kunci sama sebelum 403). Kelulusan Owner: 401/403
+// daripada baseUrl PROKSI retryable (backoff 3s/6s/12s); googleapis.com
+// kekal mati segera (kunci AIza salah tidak akan pulih).
+
+test('[F1] PROXY-403: 403 daripada baseUrl proksi → RETRY backoff, bukan mati segera', async () => {
+    const GeminiService = require('../services/gemini');
+    const svc = new GeminiService('sk-crazyrouter-key', 'gemini-3-flash', {
+        baseUrl: 'https://cn.crazyrouter.com/v1beta'
+    });
+    let attempts = 0;
+    const delays = [];
+    const origSetTimeout = global.setTimeout;
+    global.setTimeout = (fn, ms) => {
+        delays.push(ms);
+        return origSetTimeout(fn, 0); // pantas untuk ujian
+    };
+    try {
+        await svc.retryWithBackoff(
+            async () => {
+                attempts++;
+                if (attempts < 3) {
+                    throw Object.assign(new Error('Request failed with status code 403'), {
+                        response: { status: 403 }
+                    });
+                }
+                return 'OK';
+            },
+            3,
+            3000
+        );
+    } finally {
+        global.setTimeout = origSetTimeout;
+    }
+    assert.equal(attempts, 3, '403 proksi MESTI dicuba semula sehingga berjaya');
+    assert.equal(delays.length, 2, 'dua backoff berlaku (3s & 6s lalai, dipantaskan)');
+});
+
+test('[F2] PROXY-403: 403 daripada endpoint Google rasmi → MATI SEGERA (tiada retry)', async () => {
+    const GeminiService = require('../services/gemini');
+    const svc = new GeminiService('AIza-invalid-key', 'gemini-3-flash', {});
+    let attempts = 0;
+    await assert.rejects(
+        () =>
+            svc.retryWithBackoff(
+                async () => {
+                    attempts++;
+                    throw Object.assign(new Error('Request failed with status code 403'), {
+                        response: { status: 403 }
+                    });
+                },
+                3,
+                3000
+            ),
+        (err) => err.response?.status === 403
+    );
+    assert.equal(attempts, 1, '403 googleapis.com tidak boleh di-retry — kunci salah kekal salah');
+});
+
+test('[F3] PROXY-403: 401 proksi turut retryable (proksi kadang guna 401 untuk keadaan transient)', async () => {
+    const GeminiService = require('../services/gemini');
+    const svc = new GeminiService('sk-rootsys-key', 'deepseek-v4-pro', {
+        baseUrl: 'https://rootsys.cloud/v1beta'
+    });
+    let attempts = 0;
+    await svc.retryWithBackoff(
+        async () => {
+            attempts++;
+            if (attempts === 1) {
+                throw Object.assign(new Error('Request failed with status code 401'), {
+                    response: { status: 401 }
+                });
+            }
+            return 'OK';
+        },
+        2,
+        3000
+    );
+    assert.equal(attempts, 2, '401 proksi dicuba semula');
+});
+
 test('[E7] Bridge END-TO-END: createTranslationProvider membina OpenAICompatibleProvider rootsys, BUKAN GeminiService', async () => {
     const { createTranslationProvider } = require('../services/translationProviderFactory');
     const cfg = normalizeConfig({
