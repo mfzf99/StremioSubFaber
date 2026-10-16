@@ -1,7 +1,7 @@
 # Laporan Ground Truth: Prompt Engineering Rasmi Google untuk Gemini 3 Flash Preview
 
 ## Tujuan
-Mengumpul dan menyatukan panduan rasmi Google (`ai.google.dev` / `cloud.google.com`) tentang pembinaan prompt untuk model `gemini-3-flash-preview`, kemudian mencadangkan System Instruction + Critical Rules yang paling sesuai untuk enjin penterjemahan sarikata SubMaker.
+Mengumpul dan menyatukan panduan rasmi Google (`ai.google.dev` / `cloud.google.com`) tentang pembinaan prompt untuk model `gemini-3-flash-preview`, kemudian mencadangkan System Instruction + Critical Rules yang paling sesuai untuk enjin penterjemahan sarikata SubFaber.
 
 ---
 
@@ -65,7 +65,7 @@ Untuk penterjemahan batch berstruktur (mesti tepat bilangan slot & format XML), 
 
 ---
 
-## 2. Penilaian Prompt SubMaker Kini
+## 2. Penilaian Prompt SubFaber Kini
 
 Fail berkaitan:
 - [`src/services/gemini.js`](src/services/gemini.js:264) — `DEFAULT_TRANSLATION_PROMPT` dan penghantaran `systemInstruction`.
@@ -88,12 +88,12 @@ Fail berkaitan:
 
 ---
 
-## 3. System Instruction yang Dicadangkan untuk SubMaker
+## 3. System Instruction yang Dicadangkan untuk SubFaber
 
 Target model: `gemini-3-flash-preview` dan varian Flash 3.x akan datang.
 
 ```
-You are SubMaker, an expert subtitle localization engine. Your job is to translate subtitle dialogue from a source language into a target language while preserving timing, structure, and formatting.
+You are SubFaber, an expert subtitle localization engine. Your job is to translate subtitle dialogue from a source language into a target language while preserving timing, structure, and formatting.
 
 CORE BEHAVIOR:
 - Translate each <s id="N"> slot independently. Never merge, split, reorder, or drop slots.
@@ -118,7 +118,7 @@ SAFETY FALLBACK:
 ### Mengapa struktur ini selari dengan panduan Google
 | Prinsip Google | Bagaimana System Instruction Ini Menggunakannya |
 |----------------|------------------------------------------------|
-| Definisi peranan | "You are SubMaker, an expert subtitle localization engine" |
+| Definisi peranan | "You are SubFaber, an expert subtitle localization engine" |
 | Definisi format output | "Return only raw <s id=\"N\">...</s> tags" |
 | Definisi matlamat/peraturan | Senarai Core behavior, language-specific, safety fallback |
 | Ringkas | Tiada contoh, tiada ulangan, bullet point terus |
@@ -201,7 +201,7 @@ Based on the demonstration and rules above, translate the input into {target}. O
 | `maxOutputTokens` | 65536 | kekalkan; had output model 64k |
 | `frequencyPenalty` / `presencePenalty` | undefined | **buang untuk 3.x** (tidak disokong) |
 
-> Nota: SubMaker sudah ada percabangan per-model dalam [`gemini.js`](src/services/gemini.js:330) yang membuang `temperature`, `topP`, `topK`, dan penalty untuk model 3.x-strict. Cadangan ini ialah untuk **naikkan temperature kepada 1.0 khusus untuk Gemini 3 Flash Preview**, bukan kekalkan 0.2, kerana panduan rasmi Google menyatakan nilai rendah boleh merosakkan reasoning/output berstruktur.
+> Nota: SubFaber sudah ada percabangan per-model dalam [`gemini.js`](src/services/gemini.js:330) yang membuang `temperature`, `topP`, `topK`, dan penalty untuk model 3.x-strict. Cadangan ini ialah untuk **naikkan temperature kepada 1.0 khusus untuk Gemini 3 Flash Preview**, bukan kekalkan 0.2, kerana panduan rasmi Google menyatakan nilai rendah boleh merosakkan reasoning/output berstruktur.
 
 ---
 
@@ -238,7 +238,7 @@ Based on the demonstration and rules above, translate the input into {target}. O
 |--------|----------|
 | `temperature = 1.0` meningkatkan varians / mismatch bilangan slot | Perkukuh System Instruction constraints; kekalkan `topP = 0.95`. |
 | Critical Rules yang lebih pendek mengurangkan kekuatan enforcement | System Instruction kini memikul beban behavioral; user prompt rules hanya ringkasan fokus. |
-| `thinking_level: low` mungkin terlepas konteks antara batch | Sudah ditangani oleh SubMaker dengan tag `<m>` context-memory dan konteks 5 baris per batch. |
+| `thinking_level: low` mungkin terlepas konteks antara batch | Sudah ditangani oleh SubFaber dengan tag `<m>` context-memory dan konteks 5 baris per batch. |
 | `gemini-3-flash-preview` masih preview | Dokumenkan bahawa parameter diselaraskan untuk preview; tukar semula apabila `gemini-3-flash` stabil keluar. |
 
 ---
@@ -247,4 +247,4 @@ Based on the demonstration and rules above, translate the input into {target}. O
 
 Mazhab rasmi Google untuk `gemini-3-flash-preview` boleh dirumuskan: **tepat, ringkas, struktur konsisten, letak batasan kritikal dalam System Instruction, kekalkan temperature pada 1.0, dan guna `thinking_level` untuk mengimbangi latensi/kos dengan kedalaman reasoning.**
 
-Reka bentuk baharu yang dicadangkan mengubah seni bina prompt SubMaker dari model "user prompt besar yang penuh peraturan" kepada model bersih **System Instruction + user prompt fokus**, selari dengan cara Google mengesyorkan pembinaan prompt untuk model reasoning Gemini 3. Hasilnya dijangka lebih teguh untuk penterjemahan per-slot, kurang regresi formatting, dan kurang token dibazirkan oleh ulangan peraturan yang verbose.
+Reka bentuk baharu yang dicadangkan mengubah seni bina prompt SubFaber dari model "user prompt besar yang penuh peraturan" kepada model bersih **System Instruction + user prompt fokus**, selari dengan cara Google mengesyorkan pembinaan prompt untuk model reasoning Gemini 3. Hasilnya dijangka lebih teguh untuk penterjemahan per-slot, kurang regresi formatting, dan kurang token dibazirkan oleh ulangan peraturan yang verbose.

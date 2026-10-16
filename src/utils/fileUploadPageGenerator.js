@@ -3078,7 +3078,7 @@ function generateFileTranslationPage(videoId, configStr, config, filename = '') 
                 const sendPing = () => {
                     if (extensionDetected) return;
                     pingAttempts += 1;
-                    window.postMessage({ type: 'SUBMAKER_PING', source: 'webpage' }, '*');
+                    window.postMessage({ type: 'SUBFABER_PING', source: 'webpage' }, '*');
                     if (pingAttempts >= MAX_PINGS && !extensionDetected) {
                         clearInterval(pingTimer);
                     }
@@ -3089,7 +3089,7 @@ function generateFileTranslationPage(videoId, configStr, config, filename = '') 
 
             window.addEventListener('message', (event) => {
                 const msg = event.data || {};
-                if (!msg || msg.type !== 'SUBMAKER_PONG') return;
+                if (!msg || msg.type !== 'SUBFABER_PONG') return;
                 if (msg.source && msg.source !== 'extension') return;
                 extensionDetected = true;
                 if (pingTimer) clearInterval(pingTimer);
@@ -4042,7 +4042,7 @@ function generateFileTranslationPage(videoId, configStr, config, filename = '') 
         const showInstructionsBtn = document.getElementById('showInstructions');
         const closeInstructionsBtn = document.getElementById('closeInstructions');
         const gotItBtn = document.getElementById('gotItBtn');
-        const INSTRUCTIONS_KEY = 'submaker_file_upload_instructions_visited';
+        const INSTRUCTIONS_KEY = 'subfaber_file_upload_instructions_visited';
 
         function closeInstructionsModal() {
             instructionsOverlay.classList.remove('show');

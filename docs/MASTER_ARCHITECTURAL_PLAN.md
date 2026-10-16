@@ -59,7 +59,7 @@ POST /v1beta/models/{model}:generateContent?key=YOUR_API_KEY
 POST /v1beta/models/{model}:streamGenerateContent?key=YOUR_API_KEY&alt=sse
 ```
 
-Ini bermakna **payload REST v1beta yang sama** yang SubMaker bina untuk Google Direct boleh dihantar 1:1 kepada Crazy Router — tiada keperluan translasi format OpenAI. Ini sudah disahkan dalam kod sedia ada di [`detectKeyType()`](src/services/gemini.js:334) dan [`buildGenerationConfig()`](src/services/gemini.js:390).
+Ini bermakna **payload REST v1beta yang sama** yang SubFaber bina untuk Google Direct boleh dihantar 1:1 kepada Crazy Router — tiada keperluan translasi format OpenAI. Ini sudah disahkan dalam kod sedia ada di [`detectKeyType()`](src/services/gemini.js:334) dan [`buildGenerationConfig()`](src/services/gemini.js:390).
 
 ### 1.4 Smart Filtering Logic (Future-Proof)
 
@@ -90,7 +90,7 @@ const googleModels = response.data.data.filter(isGoogleModel);
 
 ### 1.5 Integrasi Sedia Ada
 
-SubMaker **sudah mempunyai** infrastruktur asas untuk Crazy Router:
+SubFaber **sudah mempunyai** infrastruktur asas untuk Crazy Router:
 - [`detectKeyType()`](src/services/gemini.js:334) — mengesan kekunci `sk-` sebagai `crazyrouter`
 - [`getCrazyRouterAvailableModels()`](src/services/gemini.js:544) — sudah memanggil `GET /v1/models` dan menyimpan Set ID model
 - [`this.baseUrl`](src/services/gemini.js:257) — auto-tukar kepada `https://cn.crazyrouter.com/v1beta` untuk kekunci `sk-`
@@ -145,7 +145,7 @@ Ini disahkan dalam ujian [GT-5] yang menegaskan `systemInstruction` wujud di per
 
 ### 3.1 Keadaan Semasa (Dua Dropdown)
 
-SubMaker kini mempunyai **DUA dropdown model Gemini**:
+SubFaber kini mempunyai **DUA dropdown model Gemini**:
 
 | Dropdown | Lokasi HTML | Lokasi JS | Tujuan |
 |----------|------------|----------|--------|

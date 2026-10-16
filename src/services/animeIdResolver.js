@@ -326,7 +326,7 @@ async function downloadList() {
             timeout: DOWNLOAD_TIMEOUT_MS,
             responseType: 'arraybuffer',
             headers: {
-                'User-Agent': 'StremioSubMaker/1.0',
+                'User-Agent': 'StremioSubFaber/1.0',
                 Accept: 'application/json'
             }
         });

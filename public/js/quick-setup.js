@@ -15,9 +15,9 @@
 (function () {
     'use strict';
     // Constants
-    const TOKEN_KEY = 'submaker_session_token';
-    const QS_DISMISSED_KEY = 'submaker_qs_dismissed';
-    const QS_STATE_KEY = 'submaker_qs_state';
+    const TOKEN_KEY = 'subfaber_session_token';
+    const QS_DISMISSED_KEY = 'subfaber_qs_dismissed';
+    const QS_STATE_KEY = 'subfaber_qs_state';
     const TOTAL_STEPS = 7;
     const DEFAULT_LIMITS = {
         maxSourceLanguages: 3,
@@ -25,7 +25,7 @@
         maxNoTranslationLanguages: 10
     };
     const SERVER_LIMITS = typeof window !== 'undefined' && window.__CONFIG_LIMITS__ ? window.__CONFIG_LIMITS__ : {};
-    const EXTENDED_LANGUAGES_STORAGE_KEY = 'submaker_extended_languages';
+    const EXTENDED_LANGUAGES_STORAGE_KEY = 'subfaber_extended_languages';
 
     function parseLimit(rawValue, fallbackValue) {
         const parsed = parseInt(rawValue, 10);
@@ -84,12 +84,12 @@
     function getConfigPageGeminiUiHelper() {
         if (
             typeof window === 'undefined' ||
-            !window.SubMakerGeminiModelUi ||
-            typeof window.SubMakerGeminiModelUi !== 'object'
+            !window.SubFaberGeminiModelUi ||
+            typeof window.SubFaberGeminiModelUi !== 'object'
         ) {
             return null;
         }
-        return window.SubMakerGeminiModelUi;
+        return window.SubFaberGeminiModelUi;
     }
 
     function getDefaultGeminiModelOption() {
@@ -715,7 +715,7 @@
 
         // Expose globally so other code (help menu, etc.) can trigger it
         window.openQuickSetup = openWizard;
-        window.addEventListener('submaker:locale-updated', () => {
+        window.addEventListener('subfaber:locale-updated', () => {
             applyQsTranslations();
             updateQuickSetupGeminiUi();
             updateSourceLanguageInfo();
@@ -2125,9 +2125,9 @@
 
             // Try to cache the config (same key as config.js)
             try {
-                localStorage.setItem('submaker_config_cache', JSON.stringify(finalConfig));
-                localStorage.setItem('submaker_config_cache_token', targetToken);
-                localStorage.setItem('submaker_config_cache_expiry', String(Date.now() + 24 * 60 * 60 * 1000));
+                localStorage.setItem('subfaber_config_cache', JSON.stringify(finalConfig));
+                localStorage.setItem('subfaber_config_cache_token', targetToken);
+                localStorage.setItem('subfaber_config_cache_expiry', String(Date.now() + 24 * 60 * 60 * 1000));
             } catch (_) {
                 /* ignore storage quota errors */
             }

@@ -1,7 +1,7 @@
-# Ground Truth: Top-K Sampling — Adakah Ia Merosakkan Kualiti Terjemahan SubMaker?
+# Ground Truth: Top-K Sampling — Adakah Ia Merosakkan Kualiti Terjemahan SubFaber?
 
 ## Soalan Kajian
-Adakah top-k sampling mengurangkan kualiti terjemahan sarikata? Patutkah ia dimatikan (default off) untuk SubMaker?
+Adakah top-k sampling mengurangkan kualiti terjemahan sarikata? Patutkah ia dimatikan (default off) untuk SubFaber?
 
 ## Verdict Ringkas
 **Data menyokong keputusan kau mematikan top-k — 3 sumber ground truth selari:**
@@ -41,7 +41,7 @@ Eksperimen Appendix B benchmark (Top-p 0.95):
 ### c) Dokumentasi Google Sendiri (Firebase AI Logic, 2026)
 > "For the latest general-use Gemini models, the following parameters are now unsupported: **temperature, top-K, top-P**, frequency penalty, presence penalty, and candidate count"
 
-Dan untuk Gemini 3.x-strict (3.5+): sampling params di-strip sepenuhnya oleh API — Google secara efektifnya sudah memansuhkan top-k untuk model baharu. Ini selari dengan yang SubMaker buat untuk 3.x-strict (SAMPLING_DEPRECATED_MODELS di [`gemini.js:30`](src/services/gemini.js:30)).
+Dan untuk Gemini 3.x-strict (3.5+): sampling params di-strip sepenuhnya oleh API — Google secara efektifnya sudah memansuhkan top-k untuk model baharu. Ini selari dengan yang SubFaber buat untuk 3.x-strict (SAMPLING_DEPRECATED_MODELS di [`gemini.js:30`](src/services/gemini.js:30)).
 
 ### d) Untuk Translation Khususnya
 Tiada kajian yang terus menguji "top-k vs translation quality", TAPI mekanisme adalah langsung:

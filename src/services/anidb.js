@@ -149,7 +149,7 @@ class AniDBService {
                     timeout: 8000,
                     headers: {
                         Accept: 'application/json',
-                        'User-Agent': 'StremioSubMaker/1.0 (subtitle addon; contact via GitHub)'
+                        'User-Agent': 'StremioSubFaber/1.0 (subtitle addon; contact via GitHub)'
                     }
                 });
 
@@ -211,7 +211,7 @@ class AniDBService {
             try {
                 const response = await axios.get(url, {
                     timeout: 10000,
-                    headers: { 'User-Agent': 'StremioSubMaker/1.0' }
+                    headers: { 'User-Agent': 'StremioSubFaber/1.0' }
                 });
 
                 const metas = response.data?.metas || [];

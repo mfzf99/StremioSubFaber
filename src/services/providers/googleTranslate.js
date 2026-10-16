@@ -238,7 +238,7 @@ class GoogleTranslateProvider {
 
         const response = await axios.post(this.baseUrl, params.toString(), {
             headers: {
-                'User-Agent': 'SubMaker/1.0',
+                'User-Agent': 'SubFaber/1.0',
                 'Content-Type': 'application/x-www-form-urlencoded'
             },
             timeout: this.translationTimeout,

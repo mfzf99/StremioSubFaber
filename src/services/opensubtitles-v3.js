@@ -23,7 +23,7 @@ const {
 } = require('../utils/publicRemoteRequest');
 
 const OPENSUBTITLES_V3_BASE_URL = 'https://opensubtitles-v3.strem.io/subtitles/';
-const USER_AGENT = `SubMaker v${version}`;
+const USER_AGENT = `SubFaber v${version}`;
 const MAX_ZIP_BYTES = MAX_REMOTE_SUBTITLE_BYTES; // shared wire/archive cap (~25MB)
 
 // 🎯 RAM Cache Anti-Spam (30s TTL + Had Siling Memori)

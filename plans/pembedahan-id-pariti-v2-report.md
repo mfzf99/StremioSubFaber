@@ -101,7 +101,7 @@ exactly once and nothing else."
 
 ### 2.3 Kesimpulan Ground Truth
 
-| Amalan | Subtitle Edit / Pro Tools | StremioSubMaker Semasa | Backup (Resipi Rahsia) |
+| Amalan | Subtitle Edit / Pro Tools | StremioSubFaber Semasa | Backup (Resipi Rahsia) |
 |---|---|---|---|
 | System Instruction | ❌ Tiada (biasa) / 3-5 ayat (advanced) | 🔴 SI penuh + user rulebook = konflik | ❌ Tiada — SATU flat prompt |
 | ID parity | Mapping n↔output per-line | 🔴 200 ID literal + SI bercanggah | ID list + NEVER/INSTEAD (berfungsi dulu) |

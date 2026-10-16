@@ -2,7 +2,22 @@
 
 All notable changes to this project will be documented in this file.
 
-## SubMaker v3.10.5 (2026-10-17) — Send-All UI Parity: Presence/Frequency Penalty dalam Trinity Model Parameters
+## SubFaber v3.11.0 (2026-10-17) — Total Purge & Penjenamaan Semula: Sifar Rujukan Jenama Legasi
+
+### Changed
+
+- **[MANDAT OWNER — zero-tolerance total purge]** Semua rujukan jenama legasi (4 varian huruf: PascalCase berprefiks "Stremio", PascalCase, UPPERCASE, lowercase) digantikan berpadanan corak huruf kepada SubFaber merentas **71 fail / 615 baris**: kod sumber (`index.js`, `src/services/*`, `src/storage/*`, `src/utils/*`, `src/handlers/*`), frontend (`public/config.js`, `public/js/*`, `public/partials/main.html`, `public/sw.js`), konfigurasi (`.env.example`, `.dockerignore`, `.gitignore`, `.prettierignore`, `eslint.config.mjs`), locales ×5, dokumentasi (`README.md`, `docs/*`, `plans/*`), dan template issue GitHub.
+- Arahan Lua tersuai Redis dinamakan semula kepada `subfaberAtomicCacheWrite`/`subfaberAtomicCacheDelete` ([RedisStorageAdapter.js](src/storage/RedisStorageAdapter.js)) bersama regresi sepadan (`src/storage/redis-command-timeout-regression.test.js`).
+- Kunci localStorage, saluran stream postMessage (`SUBFABER_*`), pengepala identiti klien Stremio, dan nama cache service worker (`subfaber-static-*`) diseragamkan.
+- Fail audit legasi dalam `plans/` dinamakan semula kepada `plans/subfaber-legacy-purge-audit.md` (nama fail turut ditulenkan).
+- Audit akhir `git grep -i` terhadap jenama legasi: **0 padanan (zero-hit mutlak)**.
+- Versi dinaikkan 3.10.5 → 3.11.0 (cache-buster `?_cb=3.11.0` turut memaksa refresh aset selepas penjenamaan semula UI).
+
+### Verified
+
+- `npx prettier --check .` lulus; `npx eslint .` 0 error; `npm test` = 427 PASS / 0 FAIL / 1 SKIP (skip = ujian Redis integrasi langsung; 428 total, monotonic ≥ baseline).
+
+## SubFaber v3.10.5 (2026-10-17) — Send-All UI Parity: Presence/Frequency Penalty dalam Trinity Model Parameters
 
 ### Fixed
 
@@ -12,13 +27,13 @@ All notable changes to this project will be documented in this file.
 
 - **[SEND-ALL backend parity] `frequencyPenalty`/`presencePenalty` `param(-2, 2, 0)` diisytiharkan dalam 10 profil bersampling ([src/utils/modelCapabilities.js](src/utils/modelCapabilities.js)):** `sanitizeAgentParams()` hanya meluluskan medan yang disenaraikan dalam profil — tanpa descriptor, nilai penalty dari UI Trinity dibuang senyap walaupun pintu provider menghantarnya (Send-All doctrine). Profil tiada-sampling (DeepL, o-series/gpt-5.1, deepseek-thinking) kekal bersih. 2 ujian regresi baharu dalam [src/utils/trinity-params-regression.test.js](src/utils/trinity-params-regression.test.js): (1) 13 kes provider/model bersampling mesti isytihar kedua-dua penalty; 4 kes no-sampling mesti TIDAK; (2) sanitize meluluskan nilai sah + clamp ±2.
 
-## SubMaker v3.10.4 (2026-10-17) — Cache-Buster Force Refresh: Purge Legacy v3.8.x Service Worker/Cache Trap
+## SubFaber v3.10.4 (2026-10-17) — Cache-Buster Force Refresh: Purge Legacy v3.8.x Service Worker/Cache Trap
 
 ### Changed
 
-- **[MANDAT OWNER — cache buster bump] Versi dinaikkan 3.10.3 → 3.10.4 semata-mata untuk memaksa semua klien memuat semula aset:** forensik live di `submaker.mfzf99.workers.dev` mengesahkan server VPS sudah menghidangkan v3.10.3 bersih (tiada parameter lama dalam network), tetapi browser pengguna bukan-incognito terperangkap oleh service worker lama + Cache Storage versi lampau (`submaker-static-v3.8.9/19/20/24`) — `handleStaticAsset()` dalam `public/sw.js` menggunakan `caches.match()` global merentas semua cache, menyebabkan aset era v3.8.x terus dihidangkan selepas upgrade. Bump versi menukar cache buster `?_cb=` pada semua aset dan nama cache versi (`submaker-static-v3.10.4`), memaksa SW lama takluk kepada versi baharu dan pengguna mendapat UI semasa tanpa pembersihan manual.
+- **[MANDAT OWNER — cache buster bump] Versi dinaikkan 3.10.3 → 3.10.4 semata-mata untuk memaksa semua klien memuat semula aset:** forensik live di `subfaber.mfzf99.workers.dev` mengesahkan server VPS sudah menghidangkan v3.10.3 bersih (tiada parameter lama dalam network), tetapi browser pengguna bukan-incognito terperangkap oleh service worker lama + Cache Storage versi lampau (`subfaber-static-v3.8.9/19/20/24`) — `handleStaticAsset()` dalam `public/sw.js` menggunakan `caches.match()` global merentas semua cache, menyebabkan aset era v3.8.x terus dihidangkan selepas upgrade. Bump versi menukar cache buster `?_cb=` pada semua aset dan nama cache versi (`subfaber-static-v3.10.4`), memaksa SW lama takluk kepada versi baharu dan pengguna mendapat UI semasa tanpa pembersihan manual.
 
-## SubMaker v3.10.3 (2026-10-17) — Frontend Zero-Trust Audit Fix: Penalty Input Form Serialization
+## SubFaber v3.10.3 (2026-10-17) — Frontend Zero-Trust Audit Fix: Penalty Input Form Serialization
 
 ### Fixed
 
@@ -30,7 +45,7 @@ All notable changes to this project will be documented in this file.
 - FormData selepas fix: `presencePenalty` & `frequencyPenalty` kedua-duanya terbaca.
 - CSS `.stepper-btn`: render betul, hover/active states berfungsi, hit target 2.5rem; collapsible Advanced Settings interaksi OK.
 
-## SubMaker v3.10.2 (2026-10-17) — Tool Precedence Protocol + Redis Counter Cleanup + Local Redis Integration
+## SubFaber v3.10.2 (2026-10-17) — Tool Precedence Protocol + Redis Counter Cleanup + Local Redis Integration
 
 ### Changed
 
@@ -44,13 +59,13 @@ All notable changes to this project will be documented in this file.
 
 - **Local Redis integration test kini aktif penuh:** container Docker `subfaber-redis` (redis:7-alpine, port 6379, `--restart unless-stopped`) kini berjalan kekal di mesin owner; integration test diaktifkan melalui env `REDIS_INTEGRATION_PORT=6379`. Suite dengan Redis hidup: **426 total / 426 PASS / 0 FAIL / 0 SKIP** (monotonic ≥ 426; test Redis yang dahulu SKIP kini PASS).
 
-## SubMaker v3.10.1 (2026-10-16) — Core Protocol: Functional Concern Domain Boundaries + Bilateral Integration Gate
+## SubFaber v3.10.1 (2026-10-16) — Core Protocol: Functional Concern Domain Boundaries + Bilateral Integration Gate
 
 ### Changed
 
 - **[MANDAT OWNER — .roo/rules/00-subfaber-core-protocol.md] MULTI-AGENT ORCHESTRATION PROTOCOL dikukuhkan:** (1) domain boundaries kini dinilai oleh FUNCTIONAL CONCERN yang mengatasi folder path — Frontend Domain merangkumi semua fail `public/` DAN sebarang UI markup/CSS/DOM/browser event handlers terbenam dalam fail hibrid server seperti `src/utils/*PageGenerator.js`; (2) HYBRID FILE & PRECEDENCE RULE — Backend DIHARAMKAN menulis/menghantar client-side HTML/CSS/DOM scripts dalam PageGenerator secara unilateral; (3) rule #4 dinaikkan kepada BILATERAL TWO-MAN INTEGRATION GATE (zero unilateral releases) — Backend juga wajib delegasi skop UI ke Frontend untuk implementasi + verifikasi Playwright; (4) rule #8 baharu PLAN FIDELITY & ZERO RATIONALIZATION CLAUSE — delegation gate dalam plan yang diluluskan adalah kontrak mengikat; lulus `npm test` Node.js TIDAK PERNAH menggantikan verifikasi DOM/Playwright Frontend.
 
-## SubMaker v3.10.0 (2026-10-16) — Send-All Doctrine: Unified Generation Parameters untuk Ketiga-Tiga Door
+## SubFaber v3.10.0 (2026-10-16) — Send-All Doctrine: Unified Generation Parameters untuk Ketiga-Tiga Door
 
 ### Changed
 
@@ -71,7 +86,7 @@ All notable changes to this project will be documented in this file.
 - **Agent B god-tier payload TIDAK disentuh** — 4-kunci empirikal `{model, messages, stream, temperature:0.0}` kekal lalai (keputusan Owner tertunda sama ada diunlock).
 - **Risiko diterima sedar (Owner):** gemini-3.6+ / Kimi-k3 / Claude-thinking mungkin membalas HTTP 400 bila menerima parameter yang dahulu di-strip — itu data pemerhatian yang dikehendaki.
 
-## SubMaker v3.9.52 (2026-10-15) — Proxy 401/403 Resilience: Backoff untuk Gateway Proksi
+## SubFaber v3.9.52 (2026-10-15) — Proxy 401/403 Resilience: Backoff untuk Gateway Proksi
 
 ### Fixed
 
@@ -81,7 +96,7 @@ All notable changes to this project will be documented in this file.
 
 - **Ujian regresi F1–F3 ([src/utils/trinity-params-regression.test.js](src/utils/trinity-params-regression.test.js)):** F1 — 403 proksi (Crazy Router v1beta) → 3 percubaan dengan 2 backoff, berjaya pada cubaan ketiga; F2 — 403 Google rasmi → mati segera (1 percubaan sahaja, kontrak asal dipelihara); F3 — 401 proksi (rootsys) → retryable. Suite: 426 total / 425 PASS / 0 FAIL / 1 SKIP (monotonic ≥ 423, +3).
 
-## SubMaker v3.9.51 (2026-10-15) — Basic-Mode Purity: Fasa 0 Pre-Flight Eksklusif Agent B + Clean Log
+## SubFaber v3.9.51 (2026-10-15) — Basic-Mode Purity: Fasa 0 Pre-Flight Eksklusif Agent B + Clean Log
 
 ### Changed
 
@@ -92,13 +107,13 @@ All notable changes to this project will be documented in this file.
 
 - **Ujian regresi E9–E10 ([src/utils/trinity-params-regression.test.js](src/utils/trinity-params-regression.test.js)):** E9 — agentB null → `preflightContext === null` + `agentBUsed === false` + tiada konteks pre-flight (Basic Mode purity dijana penuh melalui enjin sebenar); E10 — `_logAgentBFileSummary()` senyap (log.debug tidak dipanggil) bila coverage 0/0. Suite: 423 total / 422 PASS / 0 FAIL / 1 SKIP (monotonic ≥ 421).
 
-## SubMaker v3.9.50 (2026-10-15) — Custom Main Gemini-Native Door Fix (Crazy Router 404)
+## SubFaber v3.9.50 (2026-10-15) — Custom Main Gemini-Native Door Fix (Crazy Router 404)
 
 ### Fixed
 
 - **Door `gemini-native` pada custom MAIN kini dihormati ([src/services/translationProviderFactory.js](src/services/translationProviderFactory.js)):** insiden run ketiga 2026-10-15 — kad Trinity Translation Custom dengan door Gemini-Native (Crazy Router `https://cn.crazyrouter.com/v1beta`, model `gemini-3-flash`) dirutekan ke `OpenAICompatibleProvider` walaupun pintu Gemini Native dipilih, menyebabkan POST `{base}/chat/completions` pada proksi Gemini-native → 404 MODEL_NOT_FOUND. Punca: syarat `isSecondary &&` (v3.9.33) hanya menghormati door `gemini-native` untuk `custom_secondary`, bukan custom main. Pembaikan: door `gemini-native` membina `GeminiService` (REST v1beta) SAMA RATA untuk kedua-dua slot — jambatan Trinity→Provider (v3.9.49) + SSRF validation + sanitasi baseUrl v1beta sedia berfungsi dan tidak diubah. Ujian regresi E8: custom MAIN + door gemini-native → `GeminiService` (baseUrl proksi v1beta dikekalkan), SAMA SEKALI BUKAN `OpenAICompatibleProvider`.
 
-## SubMaker v3.9.49 (2026-10-15) — Trinity Translation Agent → Provider Routing Bridge (404 MODEL_NOT_FOUND Fix)
+## SubFaber v3.9.49 (2026-10-15) — Trinity Translation Agent → Provider Routing Bridge (404 MODEL_NOT_FOUND Fix)
 
 ### Fixed
 
@@ -113,13 +128,13 @@ All notable changes to this project will be documented in this file.
 
 - **Ujian regresi E1–E7 ([src/utils/trinity-params-regression.test.js](src/utils/trinity-params-regression.test.js)):** tujuh ujian baharu mengunci kontrak jambatan — senario rootsys (custom + baseUrl + door openai-compatible + model deepseek-v4-pro) menghasilkan `mainProvider='custom'` BUKAN gemini; laluan gemini kekal legasi 1:1; slot tidak layak tidak merampas mainProvider; provider rasmi bukan-gemini (openai) dirute terus; entri `providers.custom` sedia ada tidak ditimpa; door `gemini-native` dikekalkan; dan E2E end-to-end `createTranslationProvider()` membina `OpenAICompatibleProvider` (baseUrl rootsys) SAMA SEKALI BUKAN `GeminiService`. Suite: 420 total / 419 PASS / 0 FAIL / 1 SKIP (monotonic ≥ 413).
 
-## SubMaker v3.9.48 (2026-10-15) — Core Protocol Markdown Style Harmonization
+## SubFaber v3.9.48 (2026-10-15) — Core Protocol Markdown Style Harmonization
 
 ### Changed
 
 - **[.roo/rules/00-subfaber-core-protocol.md](.roo/rules/00-subfaber-core-protocol.md)**: Merapikan & menyeragamkan simbol senarai kepada `-` (buang simbol `*` campuran pada sub-item VERBATIM MANDATE dan STUCK PROCESS TERMINATION PROTOCOL), menukar en-dash `1–2` kepada hyphen `1-2` (zombie process cap), memadam baris kosong berlebihan antara item bernombor dalam seksyen PROCESS LIFECYCLE, dan merapatkan directive Path B kepada satu baris. Tiada perubahan makna — kosmetik formatting semata-mata. Lulus `prettier --check`.
 
-## SubMaker v3.9.47 (2026-10-15) — Core Protocol Consolidation: Process Management Rules Inlined
+## SubFaber v3.9.47 (2026-10-15) — Core Protocol Consolidation: Process Management Rules Inlined
 
 ### Changed
 
@@ -129,7 +144,7 @@ All notable changes to this project will be documented in this file.
 
 - **[.roo/rules/20-process-management.md](.roo/rules/20-process-management.md)**: Dihapuskan sepenuhnya — kandungannya telah diserap (tanpa redundan) ke dalam `00-subfaber-core-protocol.md` di bawah seksyen PROCESS LIFECYCLE & MCP PRESERVATION. Penghapusan ini mengelakkan dual-source-of-truth redundancy antara dua fail rules.
 
-## SubMaker v3.9.46 (2026-10-15) — Trinity Model Parameters per-Agent: Capability-Driven UI (Fasa 3+4 Complete)
+## SubFaber v3.9.46 (2026-10-15) — Trinity Model Parameters per-Agent: Capability-Driven UI (Fasa 3+4 Complete)
 
 ### Added
 
@@ -149,7 +164,7 @@ All notable changes to this project will be documented in this file.
 
 - **Kontrak payload `trinity.<agent>.params` end-to-end:** frontend hanya menghantar medan DEVIATED; backend `sanitizeAgentParams()` adalah pembersih akhir (clamp julat, kunci fixed, buang tidak disokong). Medan `fixed` (Kimi temp 1.0) tidak dihantar (backend sentiasa menguncinya). God-tier 4-kunci Agent B kekal lalai apabila params kosong. Verifikasi: `npm test` 413 total = 412 PASS / 0 FAIL / 1 SKIP (≥ baseline 385, monotonic); trinity-params-regression 29/29 ✔; prettier PASS; eslint 0 error; Playwright live 0 console error, 4 sub-accordion, capability-driven fields disahkan, Basic↔Pro params kekal, rehidrasi params LULUS.
 
-## SubMaker v3.9.45 (2026-10-14) — UI/UX A–Z Master Reorg: Functional Family Cards ("Satu Keluarga, Satu Rumah")
+## SubFaber v3.9.45 (2026-10-14) — UI/UX A–Z Master Reorg: Functional Family Cards ("Satu Keluarga, Satu Rumah")
 
 ### Changed
 
@@ -168,7 +183,7 @@ All notable changes to this project will be documented in this file.
 
 - **Kontrak payload sifar kerosakan:** kesemua medan JSON kekal nama/rupa sama (`learnMode`, `learnTargetLanguages`, `subToolboxEnabled` + varian, `enableSeasonPacks`, `excludeHearingImpairedSubtitles`, `convertAssToVtt`, `forceSRTOutput`, `mobileMode`, `betaModeEnabled`, `advancedSettings.mismatchRetries`, `cloudflareWorkersApiKey`, `assemblyAiApiKey`, `otherApiKeysEnabled`, `trinity.*`, `providers.*`, `agentB`). Serialization via `getElementById` (lokasi DOM tidak relevan); pautan `?config=` lama 100% serai (normalizeConfig murni JSON→JSON). Verifikasi: ID fungsional 100% kekal (hanya shell legasi dibuang), 0 ID duplikasi, keseimbangan tag identik baseline (div 304/304, span 211/211), `npm test` 385 = 384 PASS / 0 FAIL / 1 SKIP (baseline terpelihara), Playwright live 0 console error dengan F1/F2/F4 toggle + Just-Fetch roundtrip LULUS.
 
-## SubMaker v3.9.44 (2026-10-14) — Trinity 4-State DOM Morph: Format/Door, Key Badge & Fresh-State Fixes
+## SubFaber v3.9.44 (2026-10-14) — Trinity 4-State DOM Morph: Format/Door, Key Badge & Fresh-State Fixes
 
 ### Fixed
 
@@ -192,7 +207,7 @@ All notable changes to this project will be documented in this file.
 
 - Kontrak payload sifar perubahan bentuk: `trinity.{preflight,translation,inspector}` = `{apiKey,format,baseUrl,model,provider,door,isCustom,enabled}` (format kekal nilai legacy pendek sepadan `VALID_FORMATS` keyDetector); `gemini*`; `multiProviderEnabled`/`secondaryProvider*`/`providers.<key>` (MERGE); `agentB`. Verified live via Playwright: 9/9 medan identik merentas Basic → Pro → Basic (termasuk door `gemini-native`, key, baseUrl, fallback ON + provider + key); fresh state `''`/`''`/`No key`; kontra-kes kunci sebenar tetap dipetakan; `collectConfigPatch()` dalam Basic memelihara `preflight`/`inspector` (non-destructive save).
 
-## SubMaker v3.9.43 (2026-10-14) — Trinity Non-Destructive Mode Switch: State Preserved Across Basic <-> Pro
+## SubFaber v3.9.43 (2026-10-14) — Trinity Non-Destructive Mode Switch: State Preserved Across Basic <-> Pro
 
 ### Fixed
 
@@ -210,7 +225,7 @@ All notable changes to this project will be documented in this file.
 
 - Kontrak payload sifar perubahan bentuk: `trinity.{preflight,translation,inspector}` = `{apiKey,format,baseUrl,model,provider,door,isCustom,enabled}`; `geminiApiKey`/`geminiModel`/`geminiKeyRotation*`/`geminiApiKeys`; `multiProviderEnabled`/`secondaryProviderEnabled`/`secondaryProvider`/`providers.<key>` (MERGE); `agentB.{enabled,apiKey,baseUrl,format,model,preflightModel}`. Verified live via Playwright: Basic (provider/key/model/fallback ON+provider+key) → Pro → Basic = 100% utuh; Pro (Preflight/Inspector key) → Basic → Pro = utuh.
 
-## SubMaker v3.9.42 (2026-10-14) — Secondary Fallback Provider: Toggle On/Off + Premium Card Redesign
+## SubFaber v3.9.42 (2026-10-14) — Secondary Fallback Provider: Toggle On/Off + Premium Card Redesign
 
 ### Changed
 
@@ -226,38 +241,38 @@ All notable changes to this project will be documented in this file.
 
 - Kontrak payload sifar perubahan: checkbox id `trinity-translation-fallback-enabled` dikekalkan, jadi `readFallbackState()` / `applyFallbackValues()` / `collectConfigPatch()` dan skema server (`multiProviderEnabled` / `secondaryProvider*` / `providers.<key>` / slot `custom_secondary`) tidak berubah langsung.
 
-## SubMaker v3.9.41 (2026-10-14) — Trinity Rehydrate Race Fix: Settings Lost on Reconfigure
+## SubFaber v3.9.41 (2026-10-14) — Trinity Rehydrate Race Fix: Settings Lost on Reconfigure
 
 ### Fixed
 
 - **Setting Trinity hilang semasa reconfigure config hash sedia ada ([public/js/trinity-agents.js](public/js/trinity-agents.js)):** server menyimpan blok `trinity` dengan betul (disahkan pada `/api/get-session/` sebenar — mode=pro + 3 ejen lengkap), tetapi UI kosong selepas buka semula configure. Punca: `applyAgentValues()` early-`return` pada mode-mismatch (default Basic vs stored Pro) dan bergantung pada `renderCards()` → `applyAgentValues(getEffectiveConfig())` — global `currentConfig` belum siap semasa muat halaman, jadi semua nilai ejen hilang. Bug hanya muncul pada reconfigure (fresh state mode sepadan → tiada early-return). Fix: `modelSyncHook` peringkat modul (diregistri oleh `mount()`) membolehkan rehydrate menghantar **cfg sebenar** untuk bina semula kad + segmented control; pengawal re-entrancy `_rehydratingMode` menghalang gelung dan menghalang handler `change` menimpa kad yang baru diisi; `renderCards(cfgOverride)` menerima config sebenar. Toggle manual Basic↔Pro tidak berubah. `collectConfigPatch()` tidak disentuh — sifar perubahan skema payload; roundtrip rehydrate→DOM→collectConfigPatch verified PASS.
 
-## SubMaker v3.9.40 (2026-10-14) — Trinity Wrapped in "Translation API Keys" Parent Card (Full Family Structure)
+## SubFaber v3.9.40 (2026-10-14) — Trinity Wrapped in "Translation API Keys" Parent Card (Full Family Structure)
 
 ### Changed
 
 - **Trinity dibungkus dalam kad induk "Translation API Keys" ([public/js/trinity-agents.js](public/js/trinity-agents.js), [public/css/trinity-agents.css](public/css/trinity-agents.css)):** struktur keluarga API Keys kini selari penuh dengan Languages — API Keys (Bapak) → Subtitles API Keys (Anak 1) + Translation API Keys (Anak 2, bungkusan Trinity) + close section paling bawah. Kad induk `.card`/`.card-header` + `.collapse-btn` penjuru kanan, **collapsed default** — kandungan (togol Basic/Pro + kad agent Preflight/Translation/Inspector) hanya muncul selepas expand. Kad induk disisip DALAM `.section-grid` sebelum footer close (sebelumnya terpampang selepas grid). Padding-right header 0 supaya butang lipat memegang tepi kanan — pariti pixel (gap 0=0) dengan kad Source Languages.
 - **Bug fix kritikal:** ID `#trinityRoot` berganda (bekas luar + kad induk) menyebabkan state terbalik dan `HierarchyRequestError` — kini satu elemen satu id (kad induk = root). Sifar perubahan kontrak payload (`#trinityModeToggle`, `collectConfigPatch()`, rehydrate utuh).
 
-## SubMaker v3.9.39 (2026-10-14) — Trinity Cards Match Languages Family Structure (Header Collapse Buttons, Single Section Close)
+## SubFaber v3.9.39 (2026-10-14) — Trinity Cards Match Languages Family Structure (Header Collapse Buttons, Single Section Close)
 
 ### Changed
 
 - **Kad agent Trinity kini ikut struktur keluarga Languages ([public/js/trinity-agents.js](public/js/trinity-agents.js), [public/css/trinity-agents.css](public/css/trinity-agents.css)):** footer "Close section" dalam kad Trinity dibuang sepenuhnya — section API Keys kini hanya ada SATU close footer di bawah (pola Bapak/Anak: section = Bapak dengan close di bawah; kad anak = `.collapse-btn` di penjuru kanan header, sama seperti Source/Target Languages). Setiap kad Trinity mendapat `.collapse-btn` (`data-collapse="{agent}"`, `aria-expanded`) 40×40 pinned kanan; klik butang atau klik header melipat kad (kandungan `display:none`, header kekal). Collapsed state CSS dikemas kini: sembunyi SEMUA anak kecuali `.card-header`. Sifar perubahan kontrak payload (`#trinityModeToggle`, `collectConfigPatch()`, rehydrate tidak disentuh).
 
-## SubMaker v3.9.38 (2026-10-14) — Trinity Mode Toggle Inside Card Family
+## SubFaber v3.9.38 (2026-10-14) — Trinity Mode Toggle Inside Card Family
 
 ### Changed
 
 - **Togol Basic/Pro kini duduk dalam kad keluarga yang sama dengan kad agent Trinity ([public/js/trinity-agents.js](public/js/trinity-agents.js), [public/css/trinity-agents.css](public/css/trinity-agents.css)):** sebelum ini `.trinity-mode-bar` dilekat terus pada `#trinityRoot` tanpa permukaan kad — "duduk luar" berbanding kad agent. `mount()` kini membungkus togol + `#trinityCards` dalam `div.trinity-card-family` (flex column, gap/padding 1rem, border, radius 14px, `--bg-card`) — togol di atas, kad agent di bawah, dalam satu permukaan kad yang sama. `#trinityModeToggle` dan semua ID/kontrak (`collectConfigPatch()`, `applyAgentValues()`, rehydrate) tidak berubah — sifar perubahan skema payload.
 
-## SubMaker v3.9.37 (2026-10-14) — Trinity Card Footer Close Section: Scoped Classes (API Keys Duplicate Footer Fix)
+## SubFaber v3.9.37 (2026-10-14) — Trinity Card Footer Close Section: Scoped Classes (API Keys Duplicate Footer Fix)
 
 ### Fixed
 
 - **Footer "Close section" kad Trinity tidak lagi berlanggar dengan footer section utama ([public/js/trinity-agents.js](public/js/trinity-agents.js), [public/css/trinity-agents.css](public/css/trinity-agents.css)):** kad Trinity (dalam section API Keys) sebelum ini "hijack" kelas section-level `.section-footer` / `.section-close-link`, menyebabkan section API Keys memaparkan DUA footer "Close section" (footer utama section + footer dalam kad Trinity) — tidak konsisten dengan Languages & Settings yang hanya satu. Footer kad Trinity kini guna kelas trinity-scoped `.trinity-agent-footer` / `.trinity-agent-close` / `.trinity-agent-close-icon` dengan token style disalin 1:1 daripada `.section-close-link` configure.css (font 0.9rem/700, pill dashed 999px, hover glow, `:focus-visible` ring, tema dark & blackhole). Klik butang tetap melipat kad (`aria-expanded` toggle), dan selector kontrak `data-section-close` dalam config.js tidak disentuh — sifar perubahan skema payload/serialisasi.
 
-## SubMaker v3.9.36 (2026-10-14) — Trinity Consistency Follow-up: Section Fonts, Collapse Buttons, English Copy
+## SubFaber v3.9.36 (2026-10-14) — Trinity Consistency Follow-up: Section Fonts, Collapse Buttons, English Copy
 
 ### Fixed
 
@@ -265,7 +280,7 @@ All notable changes to this project will be documented in this file.
 - **Butang lipat setiap kad Trinity:** setiap agent card kini mempunyai butang `collapse-btn section-collapse-btn` di hujung kanan header — komponen sama dengan section utama; klik melipat kandungan kad (`aria-expanded` dikemas kini). Tiada konflik dengan listener kad legasi `config.js` (kad Trinity tidak berkelas `.card`).
 - **Bahasa rojak dibuang:** semua teks UI Trinity (description Preflight/Translation/Inspector + hint togol mod) kini English sepenuhnya, selari mandat UI SubFaber.
 
-## SubMaker v3.9.35 (2026-10-14) — Trinity Card Parity with Main Cards + Segmented Basic/Pro Mode Toggle
+## SubFaber v3.9.35 (2026-10-14) — Trinity Card Parity with Main Cards + Segmented Basic/Pro Mode Toggle
 
 ### Changed
 
@@ -276,13 +291,13 @@ All notable changes to this project will be documented in this file.
 
 - **Aksesibiliti togol mod:** label "Basic Mode"/"Pro Mode" kini butang sebenar boleh-fokus (sebelumnya span statik tanpa label berpaut); `aria-checked` dikemas kini segerak dengan keadaan togol.
 
-## SubMaker v3.9.34 (2026-10-14) — Secondary Fallback Field Order Alignment with Primary Card
+## SubFaber v3.9.34 (2026-10-14) — Secondary Fallback Field Order Alignment with Primary Card
 
 ### Fixed
 
 - **Susunan medan sub-kad 🛟 Secondary Fallback ([public/js/trinity-agents.js](public/js/trinity-agents.js)):** blok Base URL dipindahkan dari kedudukan terakhir (selepas Model) ke atas Format/Door, menyelaraskan hierarki sub-kad fallback dengan kad utama: Provider → API Key (+ ✓ Test) → Base URL → Format/Door → Model. Terpakai untuk kedua-dua mode Basic dan Pro (sub-kad dibina oleh `buildSecondaryFallbackRow()` tanpa gating mode). Semua ID medan, logik visibility (`updateFallbackFieldVisibility()`), serialisasi (`collectConfigPatch()`) dan rehidrasi (`applyFallbackValues()`) tidak berubah.
 
-## SubMaker v3.9.33 (2026-10-13) — Custom/Proxy Secondary Fallback: Dedicated custom_secondary Slot (Anti-Collision)
+## SubFaber v3.9.33 (2026-10-13) — Custom/Proxy Secondary Fallback: Dedicated custom_secondary Slot (Anti-Collision)
 
 ### Added
 
@@ -299,7 +314,7 @@ All notable changes to this project will be documented in this file.
 
 - **Butang ✓ Test fallback Custom ([public/js/trinity-agents.js](public/js/trinity-agents.js)):** POST `/api/validate-provider` menghantar `{ provider: 'custom', apiKey, door, baseUrl }` (backend validate mengenal 'custom') sementara config disimpan sebagai `custom_secondary`.
 
-## SubMaker v3.9.32 (2026-10-13) — Secondary Fallback Provider Rescue: Trinity Sub-Card Option A
+## SubFaber v3.9.32 (2026-10-13) — Secondary Fallback Provider Rescue: Trinity Sub-Card Option A
 
 ### Added
 
@@ -318,7 +333,7 @@ All notable changes to this project will be documented in this file.
 - **[INTEGRATION BUG — Backend Review] `enabled: true` ditambah pada `patch.providers[fb.providerId]`:** tanpa medan ini, normalizer `config.js` memaksa `enabled: false` → `isConfigured()` dalam `translationProviderFactory.js` melumpuhkan fallback secara senyap ("not fully configured; skipping fallback setup"). Rantaian kegagalan dikenal pasti semasa Integration Review Backend (GLM 5.3) dan dibetulkan oleh Frontend (Astra).
 - **ReferenceError `multiProviderToggleChecked`** selepas pemadaman deklarasi legasi — pembacaan kini bersumber `currentConfig`.
 
-## SubMaker v3.9.31 (2026-10-13) — Hardcode Purge: Dynamic 3-Tier Agent B Injection + Graceful Bypass
+## SubFaber v3.9.31 (2026-10-13) — Hardcode Purge: Dynamic 3-Tier Agent B Injection + Graceful Bypass
 
 ### Changed
 
@@ -337,7 +352,7 @@ All notable changes to this project will be documented in this file.
 
 - Audit imbasan `src/`: tiada kunci API mentah (`sk-` sebenar) dalam kod; domain `rootsys.cloud` tinggal dalam komen forensik/sejarah sahaja. `npm test`: **368 tests — 367 PASS, 0 FAIL, 1 SKIP** — selari baseline; monotonic ✓. Prettier ✓; ESLint 0 error (221 warning pra-wujud) ✓. Tiada fail `public/` disentuh.
 
-## SubMaker v3.9.30 (2026-10-13) — VideoLingo-Grade Persona & Reflect-in-One-Pass (Agent A Prompt)
+## SubFaber v3.9.30 (2026-10-13) — VideoLingo-Grade Persona & Reflect-in-One-Pass (Agent A Prompt)
 
 ### Changed
 
@@ -352,7 +367,7 @@ All notable changes to this project will be documented in this file.
 
 - Kontrak integriti XML 100% kekal: `<answer><s id="N">` + prefill anchor, rule PRESERVE [br]/<i>/dash (kiraan terkunci), `SUBFABER_BATCH_SIZE = 50` + window 4/2, Agent B 6-crime inspector — tiada satu pun disentuh. Tiada fail `public/` diubah. `npm test`: **368 tests — 367 PASS, 0 FAIL, 1 SKIP** — selari baseline; monotonic ✓. Prettier ✓; ESLint 0 error ✓.
 
-## SubMaker v3.9.29 (2026-10-11) — Dynamic Base URL Injection: User Config → GeminiService
+## SubFaber v3.9.29 (2026-10-11) — Dynamic Base URL Injection: User Config → GeminiService
 
 ### Added
 
@@ -368,7 +383,7 @@ All notable changes to this project will be documented in this file.
 
 - `npm test`: **368 tests — 367 PASS, 0 FAIL, 1 SKIP** — selari baseline; monotonic ✓. Prettier ✓; ESLint 0 error ✓. Kontrak payload tidak berubah (systemInstruction top-level; tiada parameter pensampelan disentuh).
 
-## SubMaker v3.9.28 (2026-10-11) — Hotfix: Stream-Path Circular JSON + Proxy Root-Form baseUrl + Misconfiguration Guard
+## SubFaber v3.9.28 (2026-10-11) — Hotfix: Stream-Path Circular JSON + Proxy Root-Form baseUrl + Misconfiguration Guard
 
 ### Fixed
 
@@ -380,7 +395,7 @@ All notable changes to this project will be documented in this file.
 
 - `npm test`: **368 tests — 367 PASS, 0 FAIL, 1 SKIP** — selari baseline; monotonic ✓. Prettier ✓; ESLint 0 error ✓.
 
-## SubMaker v3.9.27 (2026-10-11) — Gemini Native 400 Bad Request: Debug Payload, Sanitasi baseUrl, Defensive countTokens, Bearer Proksi
+## SubFaber v3.9.27 (2026-10-11) — Gemini Native 400 Bad Request: Debug Payload, Sanitasi baseUrl, Defensive countTokens, Bearer Proksi
 
 ### Fixed
 
@@ -393,7 +408,7 @@ All notable changes to this project will be documented in this file.
 
 - `npm test`: **368 tests — 367 PASS, 0 FAIL, 1 SKIP** (live Redis) — selari baseline; jumlah ujian monotonic ✓. Prettier ✓; ESLint 0 error (warning pra-wujud sahaja) ✓. Kontrak payload tidak berubah: systemInstruction kekal top-level, tiada parameter pensampelan/thinkingBudget disentuh, ujian purge `no crazyrouter references` kekal hijau.
 
-## SubMaker v3.9.26 (2026-10-11) — Prompt Agent A: "streaming-grade" → "cinema-grade"
+## SubFaber v3.9.26 (2026-10-11) — Prompt Agent A: "streaming-grade" → "cinema-grade"
 
 ### Changed
 
@@ -403,7 +418,7 @@ All notable changes to this project will be documented in this file.
 
 - `npm test`: **368 tests — 367 PASS, 0 FAIL, 1 SKIP** (live Redis) — selari baseline; jumlah ujian monotonic ✓. Prettier + ESLint hijau.
 
-## SubMaker v3.9.25 (2026-10-11) — Hotfix: Save Gagal "Please select a Gemini model" Walaupun Model Trinity Dipilih
+## SubFaber v3.9.25 (2026-10-11) — Hotfix: Save Gagal "Please select a Gemini model" Walaupun Model Trinity Dipilih
 
 ### Fixed
 
@@ -414,11 +429,11 @@ All notable changes to this project will be documented in this file.
 
 - E2E Playwright (localhost:7001/configure): kunci + model Trinity `gemini-3-flash-preview` dipilih, `#geminiModel` legacy sengaja dikosongkan, butang Save Configuration diklik dengan fetch `/api/update-session` dicegat: **payload `geminiModel: "gemini-3-flash-preview"`** ✓; `trinity.translation.model` konsisten ✓; dropdown legacy disinkronkan ✓; **tiada banner ralat "Please select a Gemini model"** ✓; **0 ralat konsol** terkini ✓. Kontrak payload tidak berubah (`geminiModel` string normalized — laluan backend sama seperti sebelum Trinity).
 
-## SubMaker v3.9.24 (2026-10-11) — Trinity Fasa V: Ikon Mangga/Mata & Gelung Hijau/Merah Kunci Utama
+## SubFaber v3.9.24 (2026-10-11) — Trinity Fasa V: Ikon Mangga/Mata & Gelung Hijau/Merah Kunci Utama
 
 ### Changed
 
-- **Togol ikon mangga semasa tutup & mata semasa buka** ([public/js/trinity-agents.js](public/js/trinity-agents.js)): `eyeIconSvg()` kini memulangkan **Lock SVG** (mangga — rect + shackle) semasa medan bertopeng (`type="password"`) dan **Eye SVG** semasa medan dibuka (`type="text"`); varian eye-slash generik dibuang sepenuhnya. Peralihan ikon bertukar automatik apabila butang diklik — pada medan API Key utama DAN semua baris Additional API Keys (gaya konsisten bahagian legasi SubMaker).
+- **Togol ikon mangga semasa tutup & mata semasa buka** ([public/js/trinity-agents.js](public/js/trinity-agents.js)): `eyeIconSvg()` kini memulangkan **Lock SVG** (mangga — rect + shackle) semasa medan bertopeng (`type="password"`) dan **Eye SVG** semasa medan dibuka (`type="text"`); varian eye-slash generik dibuang sepenuhnya. Peralihan ikon bertukar automatik apabila butang diklik — pada medan API Key utama DAN semua baris Additional API Keys (gaya konsisten bahagian legasi SubFaber).
 - **Konsistensi gelung hijau/merah pada kotak kunci utama**: `runAgentValidate` kini menyapukan `.is-valid` (sempadan + gelung hijau pekat `#15803d`) pada `#trinity-{agent}-key` apabila kunci SAH — dengan `.is-invalid` dibuang — dan `.is-invalid` (sempadan merah pekat `#b91c1c`) apabila TIDAK SAH atau ralat rangkaian. Sebarang pengetikan semula / pengosongan nilai membersihkan kedua-dua kelas secara automatik (reset dalam pendengar `input` `wireAutodetect`).
 
 ### Fixed
@@ -429,7 +444,7 @@ All notable changes to this project will be documented in this file.
 
 - E2E Playwright (localhost:7001/configure): ikon utama password/rect(mangga) → klik → text/circle(mata) → klik → password/rect ✓; baris kunci peralihan sama ✓; kunci utama `is-valid` → computed `rgb(21,128,61)` + shadow hijau; `is-invalid` → `rgb(185,28,28)` + shadow merah; **`uniform: true`** — seragam dengan baris ✓; taip semula → kelas dibersihkan ✓; **0 ralat konsol** ✓. Kontrak payload tidak berubah (kelas CSS visual sahaja).
 
-## SubMaker v3.9.23 (2026-10-11) — Trinity Fasa IV: Butang Test Per-Kunci, Border Status Hijau/Merah, Ikon Mata SVG
+## SubFaber v3.9.23 (2026-10-11) — Trinity Fasa IV: Butang Test Per-Kunci, Border Status Hijau/Merah, Ikon Mata SVG
 
 ### Added
 
@@ -438,14 +453,14 @@ All notable changes to this project will be documented in this file.
 ### Changed
 
 - **Ikon mata SVG profesional menggantikan emoji monyet 🙈**: helper `eyeIconSvg(hidden)` menghasilkan ikon SVG eye (tersembunyi) / eye-slash (kelihatan) dengan stroke `currentColor` — digunakan serentak pada medan API Key utama dan setiap baris kunci tambahan; semua emoji 👁/🙈 dibuang sepenuhnya daripada DOM.
-- **Terminologi diseragamkan kepada 'Test'**: label butang pengesahan utama kad agent ditukar daripada "Validate" kepada "Test" (ikon ✓ kekal; `data-agent-validate` kekal sebagai pengikat dalaman) — selari standard asal SubMaker.
-- **Butang padat gaya legacy SubMaker** ([public/css/trinity-agents.css](public/css/trinity-agents.css)): `.trinity-key-icon-btn` — petak seragam 32×32, border-radius 6px, hover state, disabled state untuk spinner; jarak antara input dan butang tersusun rapi tanpa limpahan.
+- **Terminologi diseragamkan kepada 'Test'**: label butang pengesahan utama kad agent ditukar daripada "Validate" kepada "Test" (ikon ✓ kekal; `data-agent-validate` kekal sebagai pengikat dalaman) — selari standard asal SubFaber.
+- **Butang padat gaya legacy SubFaber** ([public/css/trinity-agents.css](public/css/trinity-agents.css)): `.trinity-key-icon-btn` — petak seragam 32×32, border-radius 6px, hover state, disabled state untuk spinner; jarak antara input dan butang tersusun rapi tanpa limpahan.
 
 ### Verification
 
 - E2E Playwright (localhost:7001/configure): struktur baris `[INPUT][EYE][TEST][REMOVE]` ✓; label utama "✓Test" ✓; **tiada emoji 🙈 dalam DOM**, eye = SVG sebenar ✓; kunci kosong → `is-invalid`/✕ tanpa rangkaian ✓; kunci palsu berformat sah → spinner '…' → POST sebenar → `is-invalid`/✕ ✓; computed border invalid `rgb(185,28,28)` + shadow merah, valid `rgb(21,128,61)` + shadow hijau ✓; **0 ralat JavaScript konsol** (satu log rangkaian HTTP 400 DevTools standard bagi respons ujian kunci tidak sah) ✓. Kontrak payload tidak berubah (ujian baca-sahaja; tiada medan config baharu).
 
-## SubMaker v3.9.22 (2026-10-11) — Trinity Fasa III: Deduplikasi Kunci Pintar, Butang Mata Per-Baris, Polish 4 Butang
+## SubFaber v3.9.22 (2026-10-11) — Trinity Fasa III: Deduplikasi Kunci Pintar, Butang Mata Per-Baris, Polish 4 Butang
 
 ### Added
 
@@ -460,7 +475,7 @@ All notable changes to this project will be documented in this file.
 
 - E2E Playwright (localhost:7001/configure): primary + 1 kunci existing disediakan; tampal 5 baris (primary-dup, existing-dup, 2 baharu, 1 dup dalaman) → status **"Imported 2 keys · 2 duplicates filtered out."** ✓; baris akhir = existing + 2 baharu ✓; butang mata password/👁 → text/🙈 → password/👁 ✓; computed style bekas `gap:10px; margin-top:10px` + butang `padding:6px 14px; border-radius:6px` ✓; **0 ralat konsol** ✓. Kontrak payload tidak berubah (`geminiApiKeys: string[]`; backend `normalizeConfig` kekal dedup sebagai lapisan kedua).
 
-## SubMaker v3.9.21 (2026-10-11) — Trinity Fasa II: Pulihan <select> Model + Modal Bulk Import Berfungsi
+## SubFaber v3.9.21 (2026-10-11) — Trinity Fasa II: Pulihan <select> Model + Modal Bulk Import Berfungsi
 
 ### Changed
 
@@ -468,14 +483,14 @@ All notable changes to this project will be documented in this file.
 
 ### Fixed
 
-- **Butang "Bulk Import…" Trinity tidak memberi sebarang tindak balas**: punca akar — kod butang (v3.9.20) merujuk `window.BulkKeyImport.open()` yang tidak pernah wujud (modal legacy dalam `config.js` mensasarkan DOM `#geminiApiKeysList` yang disembunyikan oleh Trinity, dan skrip [public/js/bulk-key-import.js](public/js/bulk-key-import.js) hanya mengeksport parser `window.SubMakerBulkKeyImport` tanpa sebarang DOM). **Fix:** modal import pukal dinamik baharu dijana dalam `trinity-agents.js` (`ensureBulkImportModal` / `openBulkImportModal` / `closeBulkImportModal`) — overlay + textarea tampal pukal + status + butang Import/Cancel; tutup melalui Escape / klik overlay; parser zero-network `SubMakerBulkKeyImport.parseBulkKeys` (corak AIzaSy / AQ.Ab8 / sk-); butang Import di-clone setiap pembukaan (anti-pendengar-berlonggok); bridge global `window.BulkKeyImport = { open }` memenuhi kontrak butang sedia ada. Setiap kunci yang diimport disalurkan terus ke baris input "Additional API Keys" melalui `addRotationKeyInput` dan dikutip oleh `collectConfigPatch` sebagai `geminiApiKeys: string[]`.
+- **Butang "Bulk Import…" Trinity tidak memberi sebarang tindak balas**: punca akar — kod butang (v3.9.20) merujuk `window.BulkKeyImport.open()` yang tidak pernah wujud (modal legacy dalam `config.js` mensasarkan DOM `#geminiApiKeysList` yang disembunyikan oleh Trinity, dan skrip [public/js/bulk-key-import.js](public/js/bulk-key-import.js) hanya mengeksport parser `window.SubFaberBulkKeyImport` tanpa sebarang DOM). **Fix:** modal import pukal dinamik baharu dijana dalam `trinity-agents.js` (`ensureBulkImportModal` / `openBulkImportModal` / `closeBulkImportModal`) — overlay + textarea tampal pukal + status + butang Import/Cancel; tutup melalui Escape / klik overlay; parser zero-network `SubFaberBulkKeyImport.parseBulkKeys` (corak AIzaSy / AQ.Ab8 / sk-); butang Import di-clone setiap pembukaan (anti-pendengar-berlonggok); bridge global `window.BulkKeyImport = { open }` memenuhi kontrak butang sedia ada. Setiap kunci yang diimport disalurkan terus ke baris input "Additional API Keys" melalui `addRotationKeyInput` dan dikutip oleh `collectConfigPatch` sebagai `geminiApiKeys: string[]`.
 - **CSS** ([public/css/trinity-agents.css](public/css/trinity-agents.css)): blok `.trinity-model-input` (lapuk) digantikan dengan gaya modal `.trinity-bulk-modal[.show]` / `.trinity-bulk-box` / `.trinity-bulk-textarea` / `.trinity-bulk-status` / `.trinity-bulk-actions`.
 
 ### Verification
 
 - E2E Playwright (localhost:7001/configure): Model = tag SELECT tanpa datalist ✓; bridge `window.BulkKeyImport.open` + parser wujud ✓; rotation ON → Bulk Import… → modal `.show` + textarea fokus ✓; tampal 3 kunci (AIzaSy×2 + sk-) → Import → modal tutup + 3 baris Additional API Keys terisi ✓; `collectConfigPatch` → `geminiKeyRotationEnabled:true` + `geminiApiKeys` (3) + `trinity.translation.model` mencerminkan pilihan ✓; **0 ralat konsol** ✓. Integration Audit Backend LULUS (payload serialization / rehydration / race DOM lifecycle).
 
-## SubMaker v3.9.20 (2026-10-11) — Trinity Fasa I: Susunan Medan Custom, Searchable Model, Pemulihan Key Rotation
+## SubFaber v3.9.20 (2026-10-11) — Trinity Fasa I: Susunan Medan Custom, Searchable Model, Pemulihan Key Rotation
 
 ### Added
 
@@ -487,7 +502,7 @@ All notable changes to this project will be documented in this file.
 
 - E2E Playwright: Custom → Base URL idx 3 < Format idx 4 < Model idx 5 ✓; Model = INPUT + DATALIST ✓; Gemini → rotation row + toggle → frequency + keys ✓. npm test **368 tests / 367 PASS / 0 FAIL / 1 SKIP** (baseline kekal).
 
-## SubMaker v3.9.19 (2026-10-11) — Sokongan Format Kunci Gemini 'AQ.' + Laporan Audit Key Rotation
+## SubFaber v3.9.19 (2026-10-11) — Sokongan Format Kunci Gemini 'AQ.' + Laporan Audit Key Rotation
 
 ### Added
 
@@ -505,7 +520,7 @@ All notable changes to this project will be documented in this file.
   - Analisis kunci pukal frontend ([public/js/bulk-key-import.js](public/js/bulk-key-import.js): korak `AIzaSy…` 39 aksara + `AQ.Ab8…` panjang variabel + `sk-…`) — TIDAK disentuh dalam mandat ini.
 - **Kesimpulan**: seluruh enjin putaran (simpanan array, pemilihan round-robin Redis/in-memori, mod per-batch/per-request, import pukal) utuh dan berfungsi; Frontend boleh memadankan semula UI "Enable Key Rotation" + "Additional API Keys" terus kepada skema sedia ada tanpa sebarang perubahan backend.
 
-## SubMaker v3.9.18 (2026-10-11) — Hotfix: ReferenceError 'agents is not defined' dalam fetchGeminiCatalogFromV1
+## SubFaber v3.9.18 (2026-10-11) — Hotfix: ReferenceError 'agents is not defined' dalam fetchGeminiCatalogFromV1
 
 ### Fixed
 
@@ -519,7 +534,7 @@ All notable changes to this project will be documented in this file.
 
 - **Baharu: 367 tests / 366 PASS / 0 FAIL / 1 SKIP** (naik daripada 366/365 — monotonic dipatuhi).
 
-## SubMaker v3.9.17 (2026-10-11) — Fixed: Delegasi probeDoor untuk Override Katalog /v1 (parsing produksi stabil)
+## SubFaber v3.9.17 (2026-10-11) — Fixed: Delegasi probeDoor untuk Override Katalog /v1 (parsing produksi stabil)
 
 ### Fixed
 
@@ -534,7 +549,7 @@ All notable changes to this project will be documented in this file.
 
 - **Kekal: 366 tests / 365 PASS / 0 FAIL / 1 SKIP** (monotonic >= 366 dipatuhi).
 
-## SubMaker v3.9.16 (2026-10-11) — Proactive /v1/models Override: Katalog Gemini Dinamik Terus untuk Pintu Gemini-Native
+## SubFaber v3.9.16 (2026-10-11) — Proactive /v1/models Override: Katalog Gemini Dinamik Terus untuk Pintu Gemini-Native
 
 ### Changed
 
@@ -549,7 +564,7 @@ All notable changes to this project will be documented in this file.
 
 - **Kekal: 366 tests / 365 PASS / 0 FAIL / 1 SKIP** (monotonic >= 366 dipatuhi — tiada ujian dibuang, VP-19/VP-20 dikemas kini in-place).
 
-## SubMaker v3.9.15 (2026-10-11) — Fixed: Pintu Gemini-Native Kini Memulangkan Senarai Gemini Bersih Tersusun A-Z
+## SubFaber v3.9.15 (2026-10-11) — Fixed: Pintu Gemini-Native Kini Memulangkan Senarai Gemini Bersih Tersusun A-Z
 
 ### Fixed
 
@@ -567,7 +582,7 @@ All notable changes to this project will be documented in this file.
 
 - **Baharu: 366 tests / 365 PASS / 0 FAIL / 1 SKIP** (naik daripada 365/364 — monotonic dipatuhi).
 
-## SubMaker v3.9.14 (2026-10-11) — Smart Model List Sanitization + Pemulihan Senarai Gemini Pincang (Ground Truth Crazy Router)
+## SubFaber v3.9.14 (2026-10-11) — Smart Model List Sanitization + Pemulihan Senarai Gemini Pincang (Ground Truth Crazy Router)
 
 ### Added
 
@@ -579,7 +594,7 @@ All notable changes to this project will be documented in this file.
 
 - **Baharu: 365 tests / 364 PASS / 0 FAIL / 1 SKIP** (naik daripada 363/362 — monotonic dipatuhi).
 
-## SubMaker v3.9.13 (2026-10-10) — Trinity Fasa H: Reaktif URL-to-Door + Sinkronisasi resolvedDoor
+## SubFaber v3.9.13 (2026-10-10) — Trinity Fasa H: Reaktif URL-to-Door + Sinkronisasi resolvedDoor
 
 ### Added
 
@@ -594,7 +609,7 @@ All notable changes to this project will be documented in this file.
 
 - E2E Playwright: taip `/v1beta` → Format auto `gemini-native` ✓; taip `/v1` → Format auto `openai-compatible` ✓; medan Custom muncul ✓. npm test **363 tests / 362 PASS / 0 FAIL / 1 SKIP** (baseline kekal).
 
-## SubMaker v3.9.12 (2026-10-10) — Fixed: Custom /v1beta + kunci sk- gagal validasi (strict URL precedence + expanded dual-door)
+## SubFaber v3.9.12 (2026-10-10) — Fixed: Custom /v1beta + kunci sk- gagal validasi (strict URL precedence + expanded dual-door)
 
 ### Fixed
 
@@ -607,7 +622,7 @@ All notable changes to this project will be documented in this file.
 
 - **Baharu: 363 tests / 362 PASS / 0 FAIL / 1 SKIP** (naik daripada 361/360 — monotonic dipatuhi).
 
-## SubMaker v3.9.11 (2026-10-10) — Self-Healing Validation: Heuristik URL Pintar + Dual-Door Probing untuk Custom Provider
+## SubFaber v3.9.11 (2026-10-10) — Self-Healing Validation: Heuristik URL Pintar + Dual-Door Probing untuk Custom Provider
 
 ### Added
 
@@ -620,7 +635,7 @@ All notable changes to this project will be documented in this file.
 - **Refactor dispatcher** `POST /api/validate-provider`: logik probe per pintu dipindahkan ke helper `probeDoor(doorType, url, apiKey, agents)` (digunakan semula oleh pintu utama + fallback). Setiap variasi URL masih melalui gate SSRF `validateCustomBaseUrl` sebelum panggilan rangkaian. Ujian VP-2/3/4 dikemas kini mengikut struktur helper baharu.
 - **Test baseline baharu: 361 tests / 360 PASS / 0 FAIL / 1 SKIP** (naik daripada 355/354 — monotonic baseline dipatuhi).
 
-## SubMaker v3.9.10 (2026-10-10) — Fixed: Bug Visibility Custom Provider Trinity (dua punca akar)
+## SubFaber v3.9.10 (2026-10-10) — Fixed: Bug Visibility Custom Provider Trinity (dua punca akar)
 
 ### Fixed
 
@@ -629,14 +644,14 @@ All notable changes to this project will be documented in this file.
   2. **CSS specificity override**: `style.display = ''` (kosong) TIDAK mengatasi rule CSS `.trinity-custom-only { display: none }` — medan kekal tersembunyi walaupun visibility toggle berjalan. **Fix:** `updateVisibility()` kini set `'grid'` (nilai asal `.trinity-field`) untuk SHOW; `'none'` untuk HIDE.
 - Verifikasi E2E Playwright (localhost:7001): (1) badge autodetect `AIza…` → "Google Gemini Native" ✓; (2) Custom dipilih → Base URL + Format muncul (`display: grid`, `offsetParent !== null`) ✓; (3) tukar semula ke Gemini → medan hilang ✓. Bug fix Fasa G Frontend (susunan panggilan) diperkaya dengan dua punca akar tambahan oleh Backend.
 
-## SubMaker v3.9.9 (2026-10-10) — Protokol: Peraturan #4 Monotonic Baseline
+## SubFaber v3.9.9 (2026-10-10) — Protokol: Peraturan #4 Monotonic Baseline
 
 ### Changed
 
 - **`.roomodes` (edit owner)**: peraturan #4 TEST BASELINE ditulis semula daripada angka statik (346/345) kepada **monotonic baseline** — invariant kekal 0 FAIL / max 1 SKIP (live Redis); jumlah ujian mesti monotonik (>= baseline terkini dalam `docs/SESSION_LEDGER.md`, tidak boleh berkurang tanpa kelulusan bertulis owner). Mencegah angka lapuk dalam arahan mod. Validasi PyYAML: parse OK, 2 modes, groups=[read,edit,command,mcp] kedua-duanya, source=project — PASS.
 - `package.json` (3.9.8 → 3.9.9, patch — protokol sahaja) + `CHANGELOG.md` (header ini). Sifar perubahan fail kod.
 
-## SubMaker v3.9.8 (2026-10-10) — Universal Provider Validation Endpoint + Trinity Fasa F: Butang Validate Sejagat
+## SubFaber v3.9.8 (2026-10-10) — Universal Provider Validation Endpoint + Trinity Fasa F: Butang Validate Sejagat
 
 ### Added
 
@@ -651,7 +666,7 @@ All notable changes to this project will be documented in this file.
 
 - **Baharu: 355 tests / 354 PASS / 0 FAIL / 1 SKIP** (naik daripada 346/345/0/1 — 9 ujian VP baharu).
 
-## SubMaker v3.9.7 (2026-10-10) — Trinity Fasa E: Reka Bentuk Semula Kad Trinity + Integrasi Registri Pembekal Dinamik
+## SubFaber v3.9.7 (2026-10-10) — Trinity Fasa E: Reka Bentuk Semula Kad Trinity + Integrasi Registri Pembekal Dinamik
 
 ### Changed
 
@@ -664,7 +679,7 @@ All notable changes to this project will be documented in this file.
 
 - **`public/css/trinity-agents.css`**: kelas `.trinity-custom-only` (Smart Visibility lalai tersembunyi) + gaya `.trinity-provider-select` selarus medan sedia ada.
 
-## SubMaker v3.9.6 (2026-10-10) — Pemisahan Enjin Rasmi: Pure Google Gemini Native + Registri Pembekal LLM Sejagat (16 Pembekal)
+## SubFaber v3.9.6 (2026-10-10) — Pemisahan Enjin Rasmi: Pure Google Gemini Native + Registri Pembekal LLM Sejagat (16 Pembekal)
 
 ### Changed
 
@@ -680,7 +695,7 @@ All notable changes to this project will be documented in this file.
 
 - **Ujian regresi ditulis semula mengikut kontrak native** (`src/services/gemini-auth-model-regression.test.js`): CR-B1..B4 kini mengunci key `sk-` TIDAK lagi dirawat sebagai proksi (baseUrl rasmi + `x-goog-api-key`, sifar rujukan crazyrouter dalam sumber, `providerRoute` dibuang, `countTokens` tanpa bypass); WF-2 menjadi ujian registri 16 pembekal (pintu, Base URL, immutability). Jumlah ujian kekal 346 — **345 PASS / 0 FAIL / 1 SKIP** (sifar regresi baseline).
 
-## SubMaker v3.9.5 (2026-10-10) — Fixed: Trinity UI bahasa English penuh + kedudukan kad (Subtitles API Keys kekal atas)
+## SubFaber v3.9.5 (2026-10-10) — Fixed: Trinity UI bahasa English penuh + kedudukan kad (Subtitles API Keys kekal atas)
 
 ### Fixed
 
@@ -688,7 +703,7 @@ All notable changes to this project will be documented in this file.
 - **Kedudukan kad**: `#trinityRoot` kini disisip SELEPAS `.section-grid` dalam `#apiKeysSection` — "Subtitles API Keys" kekal atas sekali seperti sebelumnya; Trinity (togol + kad modular) muncul di bawah kad provider. Fallback: `appendChild` di hujung seksyen.
 - Verifikasi Playwright E2E: rootAfterGrid=true, subtitleCardBeforeTrinity=true, semua label/placeholder/badge English, `#geminiCard` kekal display:none. Kontrak payload tidak berubah (Langkah 0 Integration Audit lulus).
 
-## SubMaker v3.9.4 (2026-10-10) — Protokol Integrasi Dua-Pihak: Two-Man Integration Gate + Integration Audit Langkah 0
+## SubFaber v3.9.4 (2026-10-10) — Protokol Integrasi Dua-Pihak: Two-Man Integration Gate + Integration Audit Langkah 0
 
 ### Changed
 
@@ -696,20 +711,20 @@ All notable changes to this project will be documented in this file.
 - `.roomodes` (Backend mode): peraturan #6 Universal Release & Commit Pipeline menerima **Langkah 0 — FRONTEND INTEGRATION AUDIT** (wajib bila menerima handover frontend): audit payload serialization, rehydration & state persistence, race conditions & DOM lifecycle timing; `git add .` diperketat kepada `git add <specific-files>`.
 - `.roo/rules/00-subfaber-core-protocol.md`: item #4 baharu **MANDATORY TWO-MAN INTEGRATION GATE (ZERO STANDALONE FRONTEND RELEASES)**; item #5 baharu **BACKEND AS TECH LEAD & INTEGRATION GATEKEEPER** (Backend pegang autoriti release tunggal + Integration Review wajib sebelum paip 8-langkah); item #6 (Mode-Activation Awareness) diperketat daripada "flag & await confirmation" kepada "refuse & trigger handover". Indentasi item #6 dibetulkan ke peringkat atas.
 
-## SubMaker v3.9.3 (2026-10-10) — Fixed: Trinity UI gagal mount (insertBefore anchor bukan anak langsung #apiKeysSection)
+## SubFaber v3.9.3 (2026-10-10) — Fixed: Trinity UI gagal mount (insertBefore anchor bukan anak langsung #apiKeysSection)
 
 ### Fixed
 
 - **Hotfix Trinity UI Fasa D**: `trinity-agents.js` mount gagal senyap dengan `NotFoundError: insertBefore` — kad `.card[data-card="subtitle-api"]` dalam struktur `main.html` bersarang lebih dalam dan bukan anak langsung `#apiKeysSection`. Fix: anchor kini diselesaikan secara defensif (anak langsung pertama yang memenuhi kriteria; fallback sispan di awal seksyen). Diverifikasi end-to-end dengan Playwright pada server tempatan: kad mount, togol Basic(1 kad)/Pro(3 kad Preflight/Translation/Inspector) berfungsi, badge autodetect masa nyata (`AIza…` → "Google Gemini Native (auto)" biru), kad legasi `#geminiCard` disembunyikan. npm test 346/345/0/1 hijau.
 
-## SubMaker v3.9.2 (2026-10-10) — Protokol Graphify NO-OP Bersyarat + Pembetulan Typo Pipeline
+## SubFaber v3.9.2 (2026-10-10) — Protokol Graphify NO-OP Bersyarat + Pembetulan Typo Pipeline
 
 ### Changed
 
 - `.roomodes` (Backend Custom Instructions): Langkah 5 Universal Release & Commit Pipeline kini **bersyarat** — `graphify update .` hanya dijalankan JIKA runtime graphify ada DAN `graphify-out/` wujud; jika tiada, log sebagai NO-OP serta-merta. Larangan keras mencipta skrip Python ad-hoc (`.tmp-*`) atau workaround manual. Typo dwi-nombor `6. 6.` pada header peraturan #6 dibetulkan.
 - `.roo/rules/00-subfaber-core-protocol.md`: Langkah 5 Mandatory Commit & Release Protocol selari — graphify sebagai NO-OP segera apabila runtime/direktori tiada; dilarang menjana skrip runner ad-hoc / fail sementara.
 
-## SubMaker v3.9.1 (2026-10-10) — Protokol Release Universal: Penyegerakan Arahan Mod & Core Protocol
+## SubFaber v3.9.1 (2026-10-10) — Protokol Release Universal: Penyegerakan Arahan Mod & Core Protocol
 
 ### Changed
 
@@ -720,7 +735,7 @@ All notable changes to this project will be documented in this file.
 
 - `public/css/configure.css`: komen penanda `/* TRINITY FASA D 2026-10-10 */` ditambah pada hujung fail (penjajaran Fasa D; sifar perubahan peraturan).
 
-## SubMaker v3.9.0 (2026-10-10) — Tri-Door Surgery: 3 pintu format API untuk Trinity Engine
+## SubFaber v3.9.0 (2026-10-10) — Tri-Door Surgery: 3 pintu format API untuk Trinity Engine
 
 ### Added
 
@@ -747,7 +762,7 @@ All notable changes to this project will be documented in this file.
 
 - Sifar regresi laluan produksi rootsys: format openai (autodetect default) meneruskan pewarisan `OpenAICompatibleProvider` 1:1 — muatan universal god-tier, watchdog SSE, hierarki model, circuit breaker, timeout berfasa semua terpelihara.
 
-## SubMaker v3.8.42 (2026-10-09) — Fixed: Pariti Retry-Backoff 1:1 Gemini merentas semua provider
+## SubFaber v3.8.42 (2026-10-09) — Fixed: Pariti Retry-Backoff 1:1 Gemini merentas semua provider
 
 **"37ms untuk 3 retry" — titik forensik yang membunuh job 69% siap.** Log live owner (rootsys.cloud, deepseek-v4-pro, SRT 648 entry): batch 10/13 gagal HTTP 502 transient; gelung retry custom provider meluru 3 percubaan dalam 37ms tanpa sebarang delay, membunuh terjemahan yang sudah 69% lengkap. Gemini mempunyai retryWithBackoff() exponential 3s → 6s → 12s + jitter 0.8x–1.2x (anti thundering-herd) — provider lain tiada. Mandat owner: SEMUA LLM wajib kongsi setup 1:1 dengan main provider Gemini. Gap terakhir pariti kini ditutup.
 
@@ -767,7 +782,7 @@ All notable changes to this project will be documented in this file.
 
 313 tests / 312 PASS / 0 FAIL / 1 SKIP (baseline 304 → 312) · Prettier bersih · ESLint 0 error.
 
-## SubMaker v3.8.41 (2026-10-07) — Changed: Fasa H — Pre-Flight system/user split (integrasi varian G1 Moonshot)
+## SubFaber v3.8.41 (2026-10-07) — Changed: Fasa H — Pre-Flight system/user split (integrasi varian G1 Moonshot)
 
 ### Changed
 
@@ -784,7 +799,7 @@ All notable changes to this project will be documented in this file.
 
 305 tests / 304 PASS / 0 FAIL / 1 SKIP (baseline 297 → 304) · Prettier bersih · ESLint 0 error.
 
-## SubMaker v3.8.40 (2026-10-07) — Changed: Pembedahan KNP — prompt Pre-Flight dipatuhtadbir mengikut doktrin Netflix KNP
+## SubFaber v3.8.40 (2026-10-07) — Changed: Pembedahan KNP — prompt Pre-Flight dipatuhtadbir mengikut doktrin Netflix KNP
 
 **"Kitab suci mesti betul" — Pre-Flight (Fasa 0) diselaraskan penuh dengan standard industri Netflix KNP (Key Names and Phrases) selepas audit ground truth §5.9/§5.10 (plans/kimi-k3-rootsys-ground-truth-2026.md):**
 
@@ -796,7 +811,7 @@ All notable changes to this project will be documented in this file.
 - **Changed — ujian regresi dipatuhtadbir:** 6 anchor lama (verbatim honorific-lock directive, {source, target} 2-kunci, 6-jenayah kontrak, telemetry 6-jenis) diselaraskan + **3 ujian baharu**: kontrak KNP terms (type enum + non-person scope + larangan silang-tiang), definisi jenayah TERM + guardrail, dan parse TERM crime. Semua merah-sebelum/hijau-selepas melalui TAP.
 - **Bump versi 3.8.39 → 3.8.40** — `npm test` — **297 PASS / 0 FAIL / 1 SKIP** (298 tests; baseline baharu — naik daripada 294).
 
-## SubMaker v3.8.39 (2026-10-07) — Fixed: Dua bug enjin hasil Deep Scan #2 (auto-chunk context + anchor retry Agent B)
+## SubFaber v3.8.39 (2026-10-07) — Fixed: Dua bug enjin hasil Deep Scan #2 (auto-chunk context + anchor retry Agent B)
 
 **Sapu bersih bug dari audit forensik kedua enjin SubFaber:**
 
@@ -805,7 +820,7 @@ All notable changes to this project will be documented in this file.
 - **Added:** [translationEngine-bugfix2-regression.test.js](src/services/translationEngine-bugfix2-regression.test.js) — 4 ujian regresi (disahkan MERAH sebelum patch melalui TAP, HIJAU selepas): pewarisan subsequent + preflight + previous dalam second-half, window 4 penuh, anchor token terakhir, dan warning dalam USER part (tidak bocor ke SYSTEM). Fail didaftarkan dalam `test:tracked`.
 - **Bump versi 3.8.38 → 3.8.39** — `npm test` — **294 PASS / 0 FAIL / 1 SKIP** (295 tests; baseline baharu).
 
-## SubMaker v3.8.38 (2026-10-07) — Changed: Formula (4+50+2) — videolingo + owner's special tweak
+## SubFaber v3.8.38 (2026-10-07) — Changed: Formula (4+50+2) — videolingo + owner's special tweak
 
 **Sliding window context SubFaber dinaikkan: previous 3 → 4 baris (formula 4+50+2):**
 
@@ -815,7 +830,7 @@ All notable changes to this project will be documented in this file.
 - **Changed:** [config.js](src/utils/config.js) — komen dokumentasi window hardcode dikemas kini (3/2 → 4/2).
 - **Bump versi 3.8.37 → 3.8.38** — `npm test` — **290 PASS / 0 FAIL / 1 SKIP**.
 
-## SubMaker v3.8.37 (2026-10-07) — Changed: Batch size 50 + prompt Agent A diperketat (pemilihan kata tegas)
+## SubFaber v3.8.37 (2026-10-07) — Changed: Batch size 50 + prompt Agent A diperketat (pemilihan kata tegas)
 
 **Setup terjemahan baharu dimulakan mulai versi ini (keputusan owner, 2026-10-07):**
 
@@ -826,7 +841,7 @@ All notable changes to this project will be documented in this file.
 - **Fixed:** [`src/services/subfaber-context-regression.test.js`](src/services/subfaber-context-regression.test.js) — 3 assertion regresi diselaraskan dengan setup baharu: `batchSize` 30 → 50 (2 lokasi), directive Style "living" → "natural, idiomatic", dan register lock "locked titles/pronouns" → "never inject titles onto bare names". Komen dokumentasi lapuk dalam enjin (masih menyebut 30/60) turut dibetulkan.
 - **Bump versi 3.8.36 → 3.8.37** — `npm test` — **290 PASS / 0 FAIL / 1 SKIP**.
 
-## SubMaker v3.8.36 (2026-10-06) — Changed: Enhanced translation prompt style with streaming-grade quality anchor
+## SubFaber v3.8.36 (2026-10-06) — Changed: Enhanced translation prompt style with streaming-grade quality anchor
 
 **Bahagian `## Style` dalam prompt Agent A kini membawa penanda kualiti "professional streaming-grade quality" secara neutral:**
 
@@ -836,7 +851,7 @@ All notable changes to this project will be documented in this file.
 - **Skop ketat:** Hanya baris Style berubah — `## Role`, `## Rules`, dan `## Output Format` tidak disentuh.
 - **Bump versi 3.8.35 → 3.8.36** — `npm test` — **290 PASS / 0 FAIL / 1 skipped**.
 
-## SubMaker v3.8.35 (2026-10-06) — Fix: Deterministic provider token IV untuk kestabilan cache OpenSubtitles V3
+## SubFaber v3.8.35 (2026-10-06) — Fix: Deterministic provider token IV untuk kestabilan cache OpenSubtitles V3
 
 **Subtitle terjemahan OpenSubtitles V3 kini boleh ditemui semula daripada bypass cache (Redis) tanpa terjemah ulang:**
 
@@ -848,7 +863,7 @@ All notable changes to this project will be documented in this file.
 - **Ujian:** Ujian regresi baharu [`src/utils/providerUrlToken-regression.test.js`](src/utils/providerUrlToken-regression.test.js) mengesahkan determinisme (`token1 === token2`), keunikan merentas URL berbeza, dan round-trip decode tanpa ralat GCM tag.
 - **Bump versi 3.8.34 → 3.8.35** — `npm test` — **290 PASS / 0 FAIL / 1 skipped**.
 
-## SubMaker v3.8.34 (2026-10-06) — Fix: Spacing halaman Sub Toolbox (header tidak lagi melekat dengan kad launcher)
+## SubFaber v3.8.34 (2026-10-06) — Fix: Spacing halaman Sub Toolbox (header tidak lagi melekat dengan kad launcher)
 
 **Kad "The Sub Toolbox bundles…" kini berjarak selesa daripada subtitle halaman toolbox:**
 
@@ -859,7 +874,7 @@ All notable changes to this project will be documented in this file.
 - **Bump versi 3.8.33 → 3.8.34** — cache buster `_cb` automatik memastikan semua instance mendapat CSS baharu memintas cache `immutable`.
 - **Ujian:** `npm test` — **287 PASS / 0 FAIL / 1 skipped**.
 
-## SubMaker v3.8.33 (2026-10-06) — Changed: Ikon section header ditukar kepada native emoji 3D
+## SubFaber v3.8.33 (2026-10-06) — Changed: Ikon section header ditukar kepada native emoji 3D
 
 **Ikon section header (API Keys / Languages / Settings) kini native Unicode color emoji — menyamai gaya "Provider Timeout" ⏱️:**
 
@@ -873,7 +888,7 @@ All notable changes to this project will be documented in this file.
 - **Bump versi 3.8.32 → 3.8.33** — tiada aset baharu (emoji adalah teks), jadi cache buster tidak kritikal, tetapi bump tetap dijalankan bagi mengekalkan disiplin versi SemVer.
 - **Ujian:** `npm test` — **287 PASS / 0 FAIL / 1 skipped**.
 
-## SubMaker v3.8.31 (2026-10-06) — Fix: Background provider-glyph ditukar kepada putih
+## SubFaber v3.8.31 (2026-10-06) — Fix: Background provider-glyph ditukar kepada putih
 
 **Tile latar logo provider kini putih bersih menggantikan tint biru sky:**
 
@@ -884,7 +899,7 @@ All notable changes to this project will be documented in this file.
 - **Bump versi 3.8.30 → 3.8.31** menjana cache-buster `_cb=3.8.31` supaya browser semua pengguna mendapat CSS putih baharu memintas cache `immutable` 1 tahun.
 - **Ujian:** `npm test` — **287 PASS / 0 FAIL / 1 skipped**.
 
-## SubMaker v3.8.30 (2026-10-06) — Fix: Logo OpenSubtitles digantikan dengan avatar GitHub rasmi
+## SubFaber v3.8.30 (2026-10-06) — Fix: Logo OpenSubtitles digantikan dengan avatar GitHub rasmi
 
 **Logo OpenSubtitles akhirnya menggunakan imej rasmi yang stabil — avatar organisasi GitHub:**
 
@@ -895,7 +910,7 @@ All notable changes to this project will be documented in this file.
 - **Bump versi 3.8.29 → 3.8.30** — cache buster automatik memaksa semua instance mendapat aset baharu.
 - **Ujian:** `npm test` — **287 PASS / 0 FAIL / 1 skipped**.
 
-## SubMaker v3.8.29 (2026-10-06) — Fix: Logo 1:1, cache buster logo provider & patch audit dependencies
+## SubFaber v3.8.29 (2026-10-06) — Fix: Logo 1:1, cache buster logo provider & patch audit dependencies
 
 **Tiga pembetulan kritikal dalam satu versi — nisbah aspek logo, perlindungan cache 1 tahun, dan vulnerability dependencies:**
 
@@ -909,7 +924,7 @@ All notable changes to this project will be documented in this file.
 - **Bump versi 3.8.28 → 3.8.29.**
 - **Ujian:** `npm test` — **287 PASS / 0 FAIL / 1 skipped** (dijalankan 2× — sebelum dan selepas patch dependencies).
 
-## SubMaker v3.8.28 (2026-10-05) — Fix: Logo OpenSubtitles ditukar kepada PNG tulen (gugurkan GIF)
+## SubFaber v3.8.28 (2026-10-05) — Fix: Logo OpenSubtitles ditukar kepada PNG tulen (gugurkan GIF)
 
 **Aset GIF akhirnya ditukar kepada PNG sebenar — siri penyempurnaan logo tamat:**
 
@@ -925,7 +940,7 @@ All notable changes to this project will be documented in this file.
 - **Bump versi 3.8.27 → 3.8.28** menjana URL cache-buster baharu (`?_cb=__APP_VERSION_QUERY__`) supaya Service Worker tidak menyajikan aset lama daripada cache.
 - **Ujian:** `npm test` — **287 PASS / 0 FAIL / 1 skipped**.
 
-## SubMaker v3.8.27 (2026-10-05) — Fix: Logo OpenSubtitles — pembetulan Content-Type mismatch (GIF89a)
+## SubFaber v3.8.27 (2026-10-05) — Fix: Logo OpenSubtitles — pembetulan Content-Type mismatch (GIF89a)
 
 **Punca sebenar siri kegagalan logo akhirnya ditemui dan diperbaiki:**
 
@@ -939,7 +954,7 @@ All notable changes to this project will be documented in this file.
 - **Logo SubDL dan SubSource tidak terjejas** — kedua-duanya PNG tulen (magic bytes `89 50 4E 47`) dan sudah berfungsi.
 - **Ujian:** `npm test` — **287 PASS / 0 FAIL / 1 skipped**.
 
-## SubMaker v3.8.26 (2026-10-05) — Fix: Logo OpenSubtitles rasmi dari Wikipedia
+## SubFaber v3.8.26 (2026-10-05) — Fix: Logo OpenSubtitles rasmi dari Wikipedia
 
 **Logo OpenSubtitles rasmi kini dipaparkan — diekstrak daripada infobox Wikipedia:**
 
@@ -949,7 +964,7 @@ All notable changes to this project will be documented in this file.
 - **Pengesahan visual:** Screenshot Playwright mengesahkan logo hijau "OpenSubtitles" penuh kini kelihatan dalam slot provider selepas expand Subtitles API Keys (dipapar pada 24×24 `object-fit: contain`).
 - **Ujian:** `npm test` — **287 PASS / 0 FAIL / 1 skipped**.
 
-## SubMaker v3.8.25 (2026-10-05) — Fix: Logo OpenSubtitles inline SVG (penyelesaian muktamad)
+## SubFaber v3.8.25 (2026-10-05) — Fix: Logo OpenSubtitles inline SVG (penyelesaian muktamad)
 
 **Penyelesaian muktamad untuk siri kegagalan logo OpenSubtitles (5 cubaan):**
 
@@ -961,7 +976,7 @@ All notable changes to this project will be documented in this file.
 - **Fail lama dibuang:** `public/assets/opensubtitles-logo.png` dan `.svg` dihapuskan daripada repo — markup kini sepenuhnya self-contained.
 - **Ujian:** `npm test` — **287 PASS / 0 FAIL / 1 skipped**.
 
-## SubMaker v3.8.24 (2026-10-05) — Fix: Logo OpenSubtitles PRO square icon (Stremio community)
+## SubFaber v3.8.24 (2026-10-05) — Fix: Logo OpenSubtitles PRO square icon (Stremio community)
 
 **Pembetulan keempat dan muktamad untuk logo OpenSubtitles:**
 
@@ -972,7 +987,7 @@ All notable changes to this project will be documented in this file.
 - **Markup kekal:** `<img src="/assets/opensubtitles-logo.png">` dalam `public/partials/main.html` — tiada perubahan struktur.
 - **Ujian:** `npm test` — **287 PASS / 0 FAIL / 1 skipped**.
 
-## SubMaker v3.8.23 (2026-10-05) — Fix: Logo OpenSubtitles (beta lockup sebenar)
+## SubFaber v3.8.23 (2026-10-05) — Fix: Logo OpenSubtitles (beta lockup sebenar)
 
 **Pembetulan logo OpenSubtitles yang gagal dipaparkan:**
 
@@ -981,7 +996,7 @@ All notable changes to this project will be documented in this file.
 - **Saiz fail:** 5.7 KB — konsisten dengan logo navbar asal, dipapar pada 24×24 dalam `.provider-glyph`.
 - **Ujian:** `npm test` — **287 PASS / 0 FAIL / 1 skipped**.
 
-## SubMaker v3.8.22 (2026-10-05) — Icons: Logo sebenar provider (OpenSubtitles / SubDL / SubSource)
+## SubFaber v3.8.22 (2026-10-05) — Icons: Logo sebenar provider (OpenSubtitles / SubDL / SubSource)
 
 **Ikon provider dalam seksyen Subtitles API Keys ditukar kepada logo sebenar brand, diambil terus daripada laman rasmi setiap provider:**
 
@@ -994,7 +1009,7 @@ All notable changes to this project will be documented in this file.
 - **Pengesahan kebergantungan JS:** gelintar `public/js` mengesahkan sifar JavaScript membaca `provider-glyph`/SVG markup — penukaran selamat tanpa kesan sampingan.
 - **Ujian:** `npm test` — **287 PASS / 0 FAIL / 1 skipped**.
 
-## SubMaker v3.8.21 (2026-10-05) — Icons: Material Design filled (vpn_key / language / settings)
+## SubFaber v3.8.21 (2026-10-05) — Icons: Material Design filled (vpn_key / language / settings)
 
 **Ikon seksyen dinaik taraf daripada SVG monoline lakar sendiri kepada Material Design filled icons — path sebenar daripada design system Google:**
 
@@ -1009,7 +1024,7 @@ All notable changes to this project will be documented in this file.
 - **Aksesibiliti kekal:** `aria-hidden="true"` dan kelas `.section-icon section-emoji` (termasuk `.language-emoji`/`.settings-emoji`) tidak diubah.
 - **Ujian:** `npm test` — **287 PASS / 0 FAIL / 1 skipped**.
 
-## SubMaker v3.8.20 (2026-10-04) — Icons: Section icons SVG monoline konsisten Quick Setup
+## SubFaber v3.8.20 (2026-10-04) — Icons: Section icons SVG monoline konsisten Quick Setup
 
 **Ikon seksyen utama kembali kepada SVG vektor stroke-based, kali ini mengikut gaya ikon Quick Setup wizard:**
 
@@ -1023,7 +1038,7 @@ All notable changes to this project will be documented in this file.
 - **Aksesibiliti kekal:** `aria-hidden="true"` dan kelas `.section-icon section-emoji` (termasuk `.language-emoji`/`.settings-emoji`) dikekalkan — tiada kesan sampingan pada CSS badge kategori atau screen reader.
 - **Ujian:** `npm test` — **287 PASS / 0 FAIL / 1 skipped**.
 
-## SubMaker v3.8.19 (2026-10-04) — Icons: Section icons 3D penuh (API Keys / Languages / Settings)
+## SubFaber v3.8.19 (2026-10-04) — Icons: Section icons 3D penuh (API Keys / Languages / Settings)
 
 **Ikon seksyen utama ditukar daripada SVG monoline 2D kepada emoji penuh 3D — konsisten dengan Quick Setup:**
 
@@ -1036,7 +1051,7 @@ All notable changes to this project will be documented in this file.
 - **Pengesahan DOM live:** `querySelector('#apiKeysSection .section-icon').textContent` = `🔑`, `.language-emoji` = `🌐`, `.settings-emoji` = `⚙️`, semua `hasSvg: false` — disahkan melalui Playwright `getComputedStyle`.
 - **Ujian:** `npm test` — **287 PASS / 0 FAIL / 1 skipped**.
 
-## SubMaker v3.8.18 (2026-10-04) — Theme: Apple Blue #0071e3 (apple.com ground truth)
+## SubFaber v3.8.18 (2026-10-04) — Theme: Apple Blue #0071e3 (apple.com ground truth)
 
 **Tema SubFaber bertukar daripada ungu Rootsys kepada biru Apple sebijik apple.com:**
 
@@ -1048,7 +1063,7 @@ All notable changes to this project will be documented in this file.
 - **Nilai legacy dikekalkan:** warna semantik (`--success`, `--warning`, `--danger`), kategori badge, dan gradient hiasan portal/nebula tidak diubah — ia membawa maksud fungsian berbeza daripada accent utama.
 - **Ujian:** `npm test` — **287 PASS / 0 FAIL / 1 skipped**.
 
-## SubMaker v3.8.17 (2026-10-04) — Fix: Footer heart merah #dc2626
+## SubFaber v3.8.17 (2026-10-04) — Fix: Footer heart merah #dc2626
 
 **Pembetulan warna ikon hati footer mengikut prinsip Apple HIG "use color purposefully":**
 
@@ -1057,7 +1072,7 @@ All notable changes to this project will be documented in this file.
 - **Liputan penuh i18n:** pembeturan dibuat dalam `public/partials/footer.html` + 5 fail locale (`en`, `ar`, `es`, `pt-br`, `pt-pt`) kerana sistem i18n menggantikan innerHTML footer daripada fail locale — fail locale adalah source of truth.
 - **Ujian:** `npm test` — **287 PASS / 0 FAIL / 1 skipped**.
 
-## SubMaker v3.8.16 (2026-10-04) — Apple HIG Fasa 4 (P3): Kemasan & polish
+## SubFaber v3.8.16 (2026-10-04) — Apple HIG Fasa 4 (P3): Kemasan & polish
 
 **Audit Apple HIG — 4/4 item P3 selesai (audit keseluruhan 17/17 = 100%):**
 
@@ -1067,7 +1082,7 @@ All notable changes to this project will be documented in this file.
 - **P3-4 — `aria-live="polite"`:** `#installUrlBox` dalam `public/partials/main.html` kini mengumumkan kemunculan Install URL kepada pembaca skrin selepas Save berjaya.
 - **Ujian:** `npm test` — **287 PASS / 0 FAIL / 1 skipped**.
 
-## SubMaker v3.8.15 (2026-10-04) — Apple HIG Fasa 3 (P2): Motion, kontras & taktil
+## SubFaber v3.8.15 (2026-10-04) — Apple HIG Fasa 3 (P2): Motion, kontras & taktil
 
 **Audit Apple HIG — 5/5 item P2 selesai:**
 
@@ -1078,7 +1093,7 @@ All notable changes to this project will be documented in this file.
 - **P2-5 — Deference ikon hiasan:** `.section-icon:hover` (bounce + shadow berlapis) dibuang sepenuhnya — ikon hiasan tidak bersaing dengan kandungan.
 - **Ujian:** `npm test` — **287 PASS / 0 FAIL / 1 skipped**.
 
-## SubMaker v3.8.14 (2026-10-04) — Apple HIG Fasa 2 (P1): Affordance, kontras & konsistensi
+## SubFaber v3.8.14 (2026-10-04) — Apple HIG Fasa 2 (P1): Affordance, kontras & konsistensi
 
 **Audit Apple HIG — 5/5 item P1 selesai:**
 
@@ -1089,7 +1104,7 @@ All notable changes to this project will be documented in this file.
 - **P1-5 — Penyatuan ikon:** emoji `⭐ ✓ ✗` pada 9 quick-btn (3 kad × 3 butang) digantikan dengan SVG monoline 16px (stroke 2, `currentColor`) dalam `main.html`.
 - **Ujian:** `npm test` — **287 PASS / 0 FAIL / 1 skipped**.
 
-## SubMaker v3.8.13 (2026-10-04) — Apple HIG Fasa 1 (P0): Kontrak aksesibiliti
+## SubFaber v3.8.13 (2026-10-04) — Apple HIG Fasa 1 (P0): Kontrak aksesibiliti
 
 **Audit Apple HIG bermula — 3/3 item P0 (kritikal aksesibiliti) selesai:**
 
@@ -1098,7 +1113,7 @@ All notable changes to this project will be documented in this file.
 - **P0-3 — Focus-visible outline:** rule `:focus-visible` baharu dengan `outline: 2px solid var(--primary) !important; outline-offset: 2px !important` ditambah dalam 3 lapisan CSS (`configure.css`, `subfaber-theme.css`, `rootify.css`) — pengguna papan kekunci mendapat penunjuk fokus jelas manakala pengguna tetikus kekal dengan glow bersih (WCAG 2.4.7).
 - **Ujian:** `npm test` — **287 PASS / 0 FAIL / 1 skipped**.
 
-## SubMaker v3.8.12 (2026-10-04) — Brand logo v4 (subfaber-mark-v4)
+## SubFaber v3.8.12 (2026-10-04) — Brand logo v4 (subfaber-mark-v4)
 
 **Logo header baru — subfaber-lockup-v4.png:**
 
@@ -1109,7 +1124,7 @@ All notable changes to this project will be documented in this file.
 - **Cache-buster dikekalkan:** query `?_cb=__APP_VERSION_QUERY__` kekal pada kedua-dua `<img>`; bump versi 3.8.11 → 3.8.12 menjana URL baharu supaya Service Worker tidak menyajikan logo lama daripada cache. SW juga mendaftar semula dengan tag versi + bucket jam dalam `sw-register.js`.
 - **Ujian:** `npm test` — **287 PASS / 0 FAIL / 1 skipped**.
 
-## SubMaker v3.8.11 (2026-10-04) — Brand logo v3 (subfaber-mark-v3)
+## SubFaber v3.8.11 (2026-10-04) — Brand logo v3 (subfaber-mark-v3)
 
 **Logo header baru — subfaber-lockup-v3.png:**
 
@@ -1119,14 +1134,14 @@ All notable changes to this project will be documented in this file.
 - **CSS tiada perubahan:** dimensi 5:1 sama dengan lockup asal; peraturan `justify-content: center` + `margin-inline: auto` sedia ada memastikan penjajaran tengah menegak & mendatar (desktop 144×29, mobile 120×24 — disahkan melalui pemeriksaan browser).
 - **Ujian:** `npm test` — **287 PASS / 0 FAIL / 1 skipped**.
 
-## SubMaker v3.7.6 (2026-10-02) — Frontend audit corrections
+## SubFaber v3.7.6 (2026-10-02) — Frontend audit corrections
 
 - Corrected the flexbox explanation: `display: none` elements are removed from flex layout and do not create `gap`; the old phantom-gap cancellation selectors and related comments were removed.
 - Scoped the 40px Configuration rhythm to `.app-page[data-page="configuration"]` instead of imposing it on every virtual page child.
 - Kept `#installUrlBox` state semantic with `hidden` and `aria-hidden` during both reveal and clear flows, and hardened URL-box sizing for narrow viewports.
 - Consolidated reset-bar layout responsibility by keeping its base reset in `configure.css` and removing the redundant app-shell margin overrides.
 
-## SubMaker v3.7.5 (2026-10-02) — Fix: Spacing Install URL box simetri 24px atas dan bawah
+## SubFaber v3.7.5 (2026-10-02) — Fix: Spacing Install URL box simetri 24px atas dan bawah
 
 **Visual seimbang 100% — jarak atas dan bawah kad URL kini seragam:**
 
@@ -1135,19 +1150,19 @@ All notable changes to this project will be documented in this file.
 - **Fail diubah:** `public/css/app-shell.css`, `package.json` (3.7.5).
 - **Ujian:** `npm test` — **287 PASS / 0 FAIL**.
 
-## SubMaker v3.7.4 (2026-10-02) — Fix: Install URL box muncul semula selepas Save — antara 3 beradik dengan Reset
+## SubFaber v3.7.4 (2026-10-02) — Fix: Install URL box muncul semula selepas Save — antara 3 beradik dengan Reset
 
-**Feature SubMaker klasik yang hilang semasa refactoring app-shell dipulihkan:**
+**Feature SubFaber klasik yang hilang semasa refactoring app-shell dipulihkan:**
 
 - **Root cause:** Kotak Install URL (`#installUrlBox`) tersangkut di dalam `.app-page[data-page="toolbox"]` — page yang `hidden` secara default. Markup dan JS (`classList.add('show')` dalam `config.js`) kekal wujud dan berfungsi, tapi parent page Toolbox tak pernah visible bila user save dari Configuration — jadi kotak tak nampak walau class `.show` ditambah.
-- **Markup dipindah:** `#installUrlBox` kini duduk dalam `.app-config-actions` di Configuration page — tepat antara button 3 beradik (`.btn-group`) dengan kad Reset (`.reset-bar`), ikut susunan zaman SubMaker asal.
+- **Markup dipindah:** `#installUrlBox` kini duduk dalam `.app-config-actions` di Configuration page — tepat antara button 3 beradik (`.btn-group`) dengan kad Reset (`.reset-bar`), ikut susunan zaman SubFaber asal.
 - **Styling Rootsys:** Kotak input URL diberikan gaya kad bersih — background putih `var(--surface)`, border `1px solid var(--border)`, border-radius 12px, padding `1rem 1.25rem`, input monospace (`JetBrains Mono`) dengan focus ring lembut. Border 2px `var(--primary)` lama yang kasar digantikan dengan gaya hairline yang konsisten dengan kad lain.
 - **Spacing One World:** Kotak menggunakan parent flex gap 12px dan margin 12px pada kedua-dua sisi untuk menghasilkan **24px visual**; Reset bar tiada margin-top tambahan.
 - **JS tak berubah:** `getElementById('installUrlBox')` / `getElementById('installUrlDisplay')` guna ID unik — lokasi baru tak jejas selector. `clearActiveInstallState()` masih buang `.show` bila reset.
 - **Fail diubah:** `public/partials/main.html` (pindah markup), `public/css/configure.css` (styling Rootsys), `public/css/app-shell.css` (margin rule), `package.json` (3.7.4).
 - **Ujian:** `npm test` — **287 PASS / 0 FAIL**.
 
-## SubMaker v3.7.3 (2026-10-02) — "One World" — Spacing 40px seragam di seluruh Configuration page
+## SubFaber v3.7.3 (2026-10-02) — "One World" — Spacing 40px seragam di seluruh Configuration page
 
 **Akhirnya — satu dunia, satu irama. Semua elemen belah kanan kongsi gap 40px yang sama:**
 
@@ -1160,7 +1175,7 @@ All notable changes to this project will be documented in this file.
 - **Fail diubah:** `public/css/app-shell.css` (Configuration gap dan `.btn-group` override), `public/partials/main.html` (devSettingsCard dibuang), `public/css/configure.css` (sumber `.btn-group` margin-top dikenalpasti).
 - **Ujian:** `npm test` — **287 PASS / 0 FAIL**.
 
-## SubMaker v3.5.1–v3.6.2 (2026-10-02) — Spacing Saga — Iterasi spacing Configuration page
+## SubFaber v3.5.1–v3.6.2 (2026-10-02) — Spacing Saga — Iterasi spacing Configuration page
 
 **Perjalanan mencari spacing yang sempurna — dari centering ke family rhythm:**
 
@@ -1179,7 +1194,7 @@ All notable changes to this project will be documented in this file.
 - **Fail diubah:** `public/css/app-shell.css`, `public/partials/main.html`.
 - **Ujian:** `npm test` — **287 PASS / 0 FAIL** (setiap iterasi).
 
-## SubMaker v3.5.0 (2026-10-02) — "Inline Actions" — Button 3 beradik kembali ke dalam Configuration page
+## SubFaber v3.5.0 (2026-10-02) — "Inline Actions" — Button 3 beradik kembali ke dalam Configuration page
 
 **Aliran semula jadi dipulihkan — configure dulu, baru save/install/copy:**
 
@@ -1191,7 +1206,7 @@ All notable changes to this project will be documented in this file.
 - **Fail diubah:** `public/configure.html` (action bar + Docs dibuang), `public/partials/main.html` (3 beradik + reset + support link masuk Configuration page), `public/css/app-shell.css` (.app-action-bar → .app-config-actions), `public/config.js` (positionResetBar jadi no-op selamat), `CHANGELOG.md`.
 - **Ujian:** `npm test` — **287 PASS / 0 FAIL**.
 
-## SubMaker v3.4.0 (2026-10-02) — "Single Entry" — Overview page dibuang, Configuration jadi pintu mutlak
+## SubFaber v3.4.0 (2026-10-02) — "Single Entry" — Overview page dibuang, Configuration jadi pintu mutlak
 
 **User noob tidak akan keliru lagi — satu sahaja tempat untuk semua settings:**
 
@@ -1205,7 +1220,7 @@ All notable changes to this project will be documented in this file.
 - **Fail diubah:** `public/partials/main.html` (Overview page dibuang, Quick Setup + No Translation dipindah), `public/configure.html` (sidebar + bottom nav), `public/js/panel-nav.js` (PAGES + DEFAULT_PAGE), `public/js/quick-setup.js` (navigate target), `locales/en.json` (keys dibuang).
 - **Ujian:** `npm test` — **287 PASS / 0 FAIL**.
 
-## SubMaker v3.3.0 (2026-10-02) — "Desktop Light" — Theme switch dibuang dari desktop, force cerah sahaja
+## SubFaber v3.3.0 (2026-10-02) — "Desktop Light" — Theme switch dibuang dari desktop, force cerah sahaja
 
 **Dashboard desktop kini bersih macam Rootsys — tiada theme toggle langsung, cerah sahaja:**
 
@@ -1216,11 +1231,11 @@ All notable changes to this project will be documented in this file.
 - **Fail diubah:** `public/configure.html` (theme switch dibuang + bootstrap force light), `public/js/theme-toggle.js` (guard desktop-forced-light).
 - **Ujian:** `npm test` — **287 PASS / 0 FAIL**.
 
-## SubMaker v3.2.1 (2026-10-01) — Fix: Version badge dipindahkan ke footer sidebar (sebelah bendera bahasa)
+## SubFaber v3.2.1 (2026-10-01) — Fix: Version badge dipindahkan ke footer sidebar (sebelah bendera bahasa)
 
 - **UX:** Version badge (clickable changelog) dipindahkan dari brand header atas sidebar ke footer sidebar, duduk sebelah bendera pilih bahasa — lebih seimbang dan tidak bersaing dengan jenama. Badge span `#version-badge` kekal dengan ID sama supaya `config-loader.js` dan `changelog-panel.js` masih berfungsi tanpa perubahan. `npm test`: **287 PASS / 0 FAIL**.
 
-## SubMaker v3.2.0 (2026-10-01) — "Changelog Panel" — Version badge kini hidup dan clickable
+## SubFaber v3.2.0 (2026-10-01) — "Changelog Panel" — Version badge kini hidup dan clickable
 
 **Version badge di sidebar bukan lagi label statik — klik untuk buka slide-out changelog dari sebelah kanan:**
 
@@ -1230,7 +1245,7 @@ All notable changes to this project will be documented in this file.
 - **Frontend sahaja:** Fail baru `public/js/changelog-panel.js`, CSS dalam `app-shell.css`, script wired dalam `configure.html`, keys `changelog.*` dalam `locales/en.json`.
 - **Ujian:** `npm test` — **287 PASS / 0 FAIL**.
 
-## SubMaker v3.1.0 (2026-10-01) — "Hybrid Sidebar" — Hierarchical Configuration Nav
+## SubFaber v3.1.0 (2026-10-01) — "Hybrid Sidebar" — Hierarchical Configuration Nav
 
 **Susunan semula sidebar kepada hierarki yang tidak memeningkan pengguna — Configuration sebagai parent dengan sub-items anchor scroll:**
 
@@ -1240,7 +1255,7 @@ All notable changes to this project will be documented in this file.
 - **Fail diubah:** `panel-nav.js` (3 pages + anchor map + parent toggle + persistence), `configure.html` (hierarchical nav markup), `partials/main.html` (4 pages digabung jadi 1 Configuration), `app-shell.css` (children styles), `locales/en.json` (nav keys baru).
 - **Ujian:** `npm test` — **287 PASS / 0 FAIL**.
 
-## SubMaker v3.0.0 (2026-10-01) — "App Shell" — Sidebar App Navigation ala Rootsys Dashboard
+## SubFaber v3.0.0 (2026-10-01) — "App Shell" — Sidebar App Navigation ala Rootsys Dashboard
 
 **Configure page ditukar daripada single-column centered kepada sidebar app layout sebenar — 5 virtual pages dalam SATU DOM, routing hash, tanpa pecahkan kontrak JS:**
 
@@ -1250,17 +1265,17 @@ All notable changes to this project will be documented in this file.
 - **Fail:** `public/css/app-shell.css` (BARU), `public/js/panel-nav.js` (router baru), `configure.html` + `partials/main.html` (shell + pages), `quick-setup.js` (patch navigate), `locales/en.json` (blok `nav`). Blueprint lengkap dalam `plans/subfaber-sidebar-app-blueprint.md`.
 - **Ujian:** `npm test` — **287 PASS / 0 FAIL** konsisten merentasi semua fasa. Visual verify lulus: active pill, icons, kontras canvas/kad, page header per-page.
 
-## SubMaker v2.0.2 (2026-10-01) — Fix: CI red — axios high-severity audit failure (both Node 22 & 24)
+## SubFaber v2.0.2 (2026-10-01) — Fix: CI red — axios high-severity audit failure (both Node 22 & 24)
 
 - **Root cause:** the CI `npm audit --omit=dev --audit-level=high` step fails (exit 1) on both matrix jobs (Node 22 & 24) because axios sat at **1.19.0** — inside the vulnerable range `1.0.0 – 1.19.0` of a cluster of advisories (prototype-pollution gadgets in default/fetch adapters, ReDoS in `fromDataURI` and `shouldBypassProxy` host normalization, HTTP/2 adapter DNS/proxy bypass, header injection via inherited headers/FormData, CIDR-form `NO_PROXY` bypass, `maxRedirects: 0` not enforced by fetch adapter → redirect SSRF). Not a Node-version-specific bug — both matrix legs fail identically.
 - **Fix:** axios `^1.6.2` → **`^1.20.0`** in [`package.json`](package.json) + [`package-lock.json`](package-lock.json) (installed 1.20.0). `npm audit --omit=dev --audit-level=high`: **0 vulnerabilities**. `npm test`: **287 PASS / 0 FAIL** (1 skipped) — provider surfaces that sit on axios (OpenSubtitles, DeepSeek/AgentB failover, SubDL, download guard) all green post-upgrade.
 
-## SubMaker v2.0.1 (2026-10-01) — Fix: Violet brand consistency in dark mode (Save Configuration button)
+## SubFaber v2.0.1 (2026-10-01) — Fix: Violet brand consistency in dark mode (Save Configuration button)
 
 - **Root cause:** `subfaber-theme.css` kept the old sky-blue accent (`#0EA5E9`) for `--primary` under `[data-theme="dark"]`, so the Save Configuration button (and other primary actions) rendered sky-blue in dark mode instead of the Rootsys violet.
 - **Fix:** dark-mode `--primary`/`--primary-light`/`--primary-dark`/`--secondary`/`--accent` in [`public/css/subfaber-theme.css`](public/css/subfaber-theme.css) now mirror the light-mode violet values (`#7C3AED` / `#A78BFA` / `#8B5CF6`) for brand consistency across both themes, matching the live Rootsys dashboard palette (verified against `rootsys.cloud/buyer/dashboard`: background `#F7F8FB`, accent `#7C3AED`, token-usage gradient `from-[#7C3AED] to-[#A78BFA]`). `npm test`: **287 PASS / 0 FAIL**.
 
-## SubMaker v2.0.0 (2026-09-30) — "Prompt-Slim" — Agent A Payload Diet + Parity Discipline
+## SubFaber v2.0.0 (2026-09-30) — "Prompt-Slim" — Agent A Payload Diet + Parity Discipline
 
 **Era baharu enjin terjemahan: beban token dipotong hampir separuh, disiplin pariti dikukuhkan, pintu malas disekat — tanpa hilang kuasa arahan:**
 
@@ -1280,7 +1295,7 @@ All notable changes to this project will be documented in this file.
 
 - **Keputusan:** input per panggilan **2,688 → 1,551 BPE tok (−42%)**; run pertama pasca-pembedahan: 26/26 batch inspection PASSED, 0 jenayah semua kategori, 0 mismatch, RM0.16/episod (759 entri). `npm test`: **287 PASS / 0 FAIL** (1 skipped).
 
-## SubMaker v1.9.12 (2026-09-30) — "Rootify" — Rootsys-Inspired Visual Overhaul for Both Worlds
+## SubFaber v1.9.12 (2026-09-30) — "Rootify" — Rootsys-Inspired Visual Overhaul for Both Worlds
 
 **Full frontend redesign adopting the Rootsys design language across the public Configure page and the embedded Sub Toolbox — without touching any JS contract:**
 
@@ -1292,7 +1307,7 @@ All notable changes to this project will be documented in this file.
 
 - **Safety:** presentation-only changes — every JS hook, i18n attribute, partial token, theme bootstrap (3-mode light/system/dark preserved), and service-worker flow intact. `npm test`: **283 PASS / 0 FAIL** (1 skipped) after the overhaul, including the `all stream-based toolbox pages embed the shared filename selector` contract test.
 
-## SubMaker v1.9.8 (2026-09-26) — Pre-Flight Payload Ceiling 250k Chars + Headroom Timeouts 180s/45s
+## SubFaber v1.9.8 (2026-09-26) — Pre-Flight Payload Ceiling 250k Chars + Headroom Timeouts 180s/45s
 
 **Sekatan buatan 48k aksara dimansuhkan — jalan cerita penuh diserahkan kepada Inspector:**
 
@@ -1302,7 +1317,7 @@ All notable changes to this project will be documented in this file.
 
 - **Ujian:** suite 71 → **73** ujian preflight+inspector: konstanta siling 250k, kes forensik mandat (mock **2,000 entri / ~210k aksara** diserahkan PENUH tanpa sampling — baris tengah [1,000] dan akhir [2,000] disahkan hadir dalam raw text), sampling keselamatan ekstrem (>250k aktif), kitaran timeout 180s naik/pulih (3 laluan). `npm test`: 203 tests, **202 PASS / 0 FAIL** (1 skipped).
 
-## SubMaker v1.9.7 (2026-09-26) — Clean 2-Model Consolidation: glm-5.3-flash + deepseek-v4.1-flash
+## SubFaber v1.9.7 (2026-09-26) — Clean 2-Model Consolidation: glm-5.3-flash + deepseek-v4.1-flash
 
 **Kerumitan Trinity dimansuhkan — seni bina modular 2 model yang ringkas dan padu:**
 
@@ -1314,7 +1329,7 @@ All notable changes to this project will be documented in this file.
 
 - **Ujian:** suite Agent B 49 → **48** (3 ujian Trinity digugurkan, diganti 2 ujian bersih: satu utama `glm-5.3-flash` untuk KEDUA-DUA fasa dengan hierarki tunggal sama; config bersih tanpa medan trinity + hot-swap custom). Ujian warisan dikemas kini kepada default `glm-5.3-flash`. `npm test`: 201 tests, **200 PASS / 0 FAIL** (1 skipped).
 
-## SubMaker v1.9.6 (2026-09-26) — Holy Trinity: Specialized 3-Model Dual-Agent Architecture
+## SubFaber v1.9.6 (2026-09-26) — Holy Trinity: Specialized 3-Model Dual-Agent Architecture
 
 **Agent B kini mengkhususkan model mengikut kekuatan empirik — tiga peranan, tiga model:**
 
@@ -1328,7 +1343,7 @@ All notable changes to this project will be documented in this file.
 
 - **Ujian:** suite Agent B 42 → **49** (3 baharu + 2 dikemas kini): lalai Trinity (flash/flashx/deepseek + hierarki berasingan), pemisahan operasi sebenar (mock: Pre-Flight flash→deepseek **tanpa** flashx; Semakan flashx→deepseek **tanpa** flash), hot-swap 3 medan bebas (kimi-k3/deepseek/glm), rantai alias legacy config + env khas per operasi. Ujian failover pre-flight lama dikemas kini kepada hierarki Trinity. `npm test`: 202 tests, **201 PASS / 0 FAIL** (1 skipped).
 
-## SubMaker v1.9.5 (2026-09-26) — Resilient Pre-Flight JSON Parser + Dynamic Model Hot-Swap
+## SubFaber v1.9.5 (2026-09-26) — Resilient Pre-Flight JSON Parser + Dynamic Model Hot-Swap
 
 **Pembaikan forensik Beta Run 3 + model Agent B 100% configurable:**
 
@@ -1340,7 +1355,7 @@ All notable changes to this project will be documented in this file.
 
 - **Ujian:** 9 ujian baharu (suite Agent B 37 → **42**): koma tergantung (array/object/berbilang tahap), fences + chatter + kombinasi penuh corak Beta Run 3, control chars (dengan pengesahan precondition `JSON.parse` asli gagal), forensik offset pada WARN, hierarki dinamik (`kimi-k3` utama + sandaran custom melalui failover sebenar), `'none'` → tiada failover, dedupe case-insensitive, lalai backwards-compat, normalisasi config + env. `npm test`: 199 tests, **198 PASS / 0 FAIL** (1 skipped).
 
-## SubMaker v1.9.4 (2026-09-26) — Agent B: Zero-Swallowed-Error Observability + Dual-Model Failover (glm-5.3-flashx → deepseek-v4.1-flash)
+## SubFaber v1.9.4 (2026-09-26) — Agent B: Zero-Swallowed-Error Observability + Dual-Model Failover (glm-5.3-flashx → deepseek-v4.1-flash)
 
 **Kotak hitam dibongkar — tiada lagi ralat ditelan senyap, sandaran automatik dipasang:**
 
@@ -1354,7 +1369,7 @@ All notable changes to this project will be documented in this file.
 
 - **Ujian:** suite 27 → **37 ujian**: failover automatik semakan + Pre-Flight (mock 502/504 → deepseek menyelamatkan), kedua-dua model gagal (rangkaian & HTTP 200 sampah) → fail-open `both_models_failed`, forensik log (raw snippet tepat 500 aksara + pengumuman failover — diassert melalui interception log.warn), strip tag (🧠 tertutup/terbuka, `<thinking>`, berbilang blok), hook `onParseFailure` teks mentah, dan meta batch dari gerbang. `npm test`: 190 tests, **189 PASS / 0 FAIL** (1 skipped).
 
-## SubMaker v1.9.3 (2026-09-26) — Agent B Unthrottled: Siling Token 4096 + Timeout Berfasa 45s/15s (Mandat Pembebasan Penuh)
+## SubFaber v1.9.3 (2026-09-26) — Agent B Unthrottled: Siling Token 4096 + Timeout Berfasa 45s/15s (Mandat Pembebasan Penuh)
 
 **Semua sekatan nafas Agent B dibuang — kuota infiniti (skala 1B token), operasi tanpa throttling:**
 
@@ -1366,7 +1381,7 @@ All notable changes to this project will be documented in this file.
 
 - **Ujian:** suite Agent B berkembang 21 → **27 ujian**: had baharu (4096/15s/45s), kitaran naik-pulih timeout Fasa 0 (laluan skip, kejayaan, dan kegagalan), serta 4 ujian ketahanan pengekstrakan (content vs reasoning_content, fenced-in-reasoning, fallback rekursif, scanner seimbang). `npm test`: 180 tests, **179 PASS / 0 FAIL** (1 skipped).
 
-## SubMaker v1.9.2 (2026-09-26) — Dual-AI Agent B: Semantic Inspector & Pre-Flight Offloader (Fasa 1 & 2 Backend)
+## SubFaber v1.9.2 (2026-09-26) — Dual-AI Agent B: Semantic Inspector & Pre-Flight Offloader (Fasa 1 & 2 Backend)
 
 **Seni Bina 2-Agent diaktifkan — glm-5.3-flashx mengambil alih Fasa 0 dan mengaudit setiap kelompok terjemahan:**
 
@@ -1384,7 +1399,7 @@ All notable changes to this project will be documented in this file.
 
 - **Ujian:** suite baharu [`agentB-inspector-regression.test.js`](src/services/agentB-inspector-regression.test.js) — 21 ujian: parser JSON (sah/rosak/fence/chatter/sanitasi), payload `<en>`/`<ms>`, fail-open, circuit breaker (3→silent→reset), payload GLM (`reasoning_effort:low`, `max_tokens:256`, timeout 4s), integriti `agentB=null` (satu panggilan provider sahaja), gerbang enjin (retry beramarah, failOpen tanpa retry, mismatch melangkau, litar terbuka melangkau), normalisasi config. `npm test`: 174 tests, **173 PASS / 0 FAIL** (1 skipped; baseline 152 dipelihara penuh).
 
-## SubMaker v1.9.1 (2026-09-24) — Purge Fallback Prompt + Relokasi `PROMPT_TEMPLATES`
+## SubFaber v1.9.1 (2026-09-24) — Purge Fallback Prompt + Relokasi `PROMPT_TEMPLATES`
 
 **Pertahanan dua-stage dilucutkan komponen fallback prompt + blok template dipindahkan masuk `createXmlBatchPrompt`:**
 
@@ -1398,9 +1413,9 @@ All notable changes to this project will be documented in this file.
 
 - **Ujian:** `npm test` 106 tests, **105 PASS / 0 FAIL** (1 skipped; baseline terpelihara).
 
-## SubMaker v1.7.0 (2026-09-23)
+## SubFaber v1.7.0 (2026-09-23)
 
-**Parameter Surgery — topK dibuang sepenuhnya dari SubMaker:**
+**Parameter Surgery — topK dibuang sepenuhnya dari SubFaber:**
 
 - **Keputusan ground truth tiga lapis:** (1) Holtzman 2019 ([arXiv:1904.09751](https://arxiv.org/abs/1904.09751)) — adaptive nucleus sampling mengatasi fixed-size top-k truncation untuk teks generatif; (2) spesifikasi Gemini API semasa (update 2026-09-22) — "models running with nucleus sampling don't allow topK setting", Google mempensyenkan topK untuk model moden; (3) pengharaman 3.x-strict sedia ada telah lama strip topK untuk semua model Gemini 3.x. Kesimpulan: topK ialah noise — tiada laluan traffic yang boleh mengaktifkannya secara berfaedah lagi.
 
@@ -1412,7 +1427,7 @@ All notable changes to this project will be documented in this file.
 
 - **Ujian:** [GT-6] dibalik — kini assert `topK`/`topKEnabled` MESTI di-drop oleh `normalizeConfig` (pengunci kekal terhadap kebangkitan semula); ujian legacy 2.5 dikemaskini tanpa topK. `npm test`: 106 tests, 105 PASS / 0 FAIL (baseline terpelihara).
 
-## SubMaker v1.9.0 (2026-09-24)
+## SubFaber v1.9.0 (2026-09-24)
 
 **Register-Matched Exemplar — anchor Melayu dilancarkan ke dalam prompt (private build):**
 
@@ -1429,7 +1444,7 @@ All notable changes to this project will be documented in this file.
 
 - **Ujian:** npm test 106 tests, 105 PASS / 0 FAIL (baseline terpelihara).
 
-## SubMaker v1.8.0 (2026-09-23)
+## SubFaber v1.8.0 (2026-09-23)
 
 **Prompt Keyword Register — lock "natural, conversational":**
 
@@ -1443,7 +1458,7 @@ All notable changes to this project will be documented in this file.
 
 - **Ujian:** npm test 106 tests, 105 PASS / 0 FAIL; parity PASS kedua-dua blok.
 
-## SubMaker v1.7.1 (2026-09-23)
+## SubFaber v1.7.1 (2026-09-23)
 
 **FinOps — token hangus MISMATCH_RETRY kini dikira dalam resit Telegram:**
 
@@ -1457,7 +1472,7 @@ All notable changes to this project will be documented in this file.
 
 - **Ujian:** npm test 106 tests, 105 PASS / 0 FAIL (baseline terpelihara).
 
-## SubMaker v1.6.4 (2026-09-23)
+## SubFaber v1.6.4 (2026-09-23)
 
 **Prompt Ground Truth Restore — verbatim rollback ke commit `b1fca3f` (penamat eksperimen prompt iteratif):**
 
@@ -1473,7 +1488,7 @@ All notable changes to this project will be documented in this file.
 
 - **Ujian:** npm test 105 PASS / 0 FAIL / 1 skipped (baseline 92 diatasi). Laporan pembedahan: `plans/pembedahan-prompt-restore-b1fca3f.md`.
 
-## SubMaker v1.6.3 (2026-09-23)
+## SubFaber v1.6.3 (2026-09-23)
 
 **Configure UI — Advanced Gemini Parameters: jarak 'Enable Top-K' toggle dibaiki:**
 
@@ -1483,7 +1498,7 @@ All notable changes to this project will be documented in this file.
 
 - **Kesan:** spacing menegak seluruh panel Advanced Gemini kini seragam; tiada perubahan tingkah laku atau payload — semata-mata CSS/HTML kosmetik.
 
-## SubMaker v1.6.2 (2026-09-23)
+## SubFaber v1.6.2 (2026-09-23)
 
 **Gemini Model Dropdown — Whitelist Sanitizer + hierarchical sorting:**
 
@@ -1495,7 +1510,7 @@ All notable changes to this project will be documented in this file.
 
 - **Ujian:** regresi WF-1..WF-4 (sanitizer, 8-model CrazyRouter order, predicate, `getAvailableModels`) — npm test 105 PASS / 0 FAIL / 1 skipped.
 
-## SubMaker v1.6.1 (2026-09-23)
+## SubFaber v1.6.1 (2026-09-23)
 
 **Smart Preamble Recovery — off-by-one 4/4 batch disiasat dan dipbaiki (Pilihan A):**
 
@@ -1509,7 +1524,7 @@ All notable changes to this project will be documented in this file.
 
 - **Ujian:** 101 PASS / 0 FAIL / 1 skip. Laporan postmortem: `plans/id-pariti-v2-postmortem-off-by-one.md`.
 
-## SubMaker v1.6.0 (2026-09-23)
+## SubFaber v1.6.0 (2026-09-23)
 
 **ID-Parity Surgery V2 — Revert ke struktur single flat prompt (mazhab Google SI dibersarakan):**
 
@@ -1525,7 +1540,7 @@ All notable changes to this project will be documented in this file.
 
 - **Ujian:** 101 PASS / 0 FAIL / 1 skip (baseline 92 diatasi). Laporan penuh: `plans/pembedahan-id-pariti-v2-report.md`.
 
-## SubMaker v1.5.9 (2026-09-22)
+## SubFaber v1.5.9 (2026-09-22)
 
 **ID-Parity / Sync Surgery — ZERO TOLERANCE rulebook restoration (DESYNC fix):**
 
@@ -1539,7 +1554,7 @@ All notable changes to this project will be documented in this file.
 
 - **Tidak disentuh:** `thinkingBudget`/`topK` normalisasi (`src/utils/config.js`), ground truth sampling 3.x-strict/legacy/2.5, batch size 200, shift detector `isShiftedError`, parser GLOBAL ID mapping.
 
-## SubMaker v1.5.8 (2026-09-22)
+## SubFaber v1.5.8 (2026-09-22)
 
 **Key Vault — Bulk Import (zero-network, burst-safe):**
 
@@ -1559,7 +1574,7 @@ All notable changes to this project will be documented in this file.
 
 - Plan: `plans/bulk-import-key-vault-plan.md`
 
-## SubMaker v1.5.7 (2026-09-22)
+## SubFaber v1.5.7 (2026-09-22)
 
 **Sampling — Top-K is now opt-in (default OFF):**
 
@@ -1571,11 +1586,11 @@ All notable changes to this project will be documented in this file.
 
 - Research: `plans/topk-ground-truth-research.md`
 
-## SubMaker v1.5.6 (2026-09-22)
+## SubFaber v1.5.6 (2026-09-22)
 
 **Prompt Quality — Persona-Free System Instruction (ground-truth backed):**
 
-- **Persona role-play removed from Gemini 3 System Instruction:** Ground-truth research (Zheng et al. 2024, arXiv:2311.10054 — 162 personas × 2,410 MMLU questions × 9 models) shows personas in system prompts have **no or small negative effects** on objective-task accuracy, and role-play can derail reasoning (arXiv:2408.08631 — persona caused wrong answers in 13.78% of cases solvable without one). User's own A/B test confirmed: persona-free prompts produced livelier, more accurate translations. The SI now opens directly with the task definition ("Translate subtitle dialogue from...") instead of "You are SubMaker, an expert...".
+- **Persona role-play removed from Gemini 3 System Instruction:** Ground-truth research (Zheng et al. 2024, arXiv:2311.10054 — 162 personas × 2,410 MMLU questions × 9 models) shows personas in system prompts have **no or small negative effects** on objective-task accuracy, and role-play can derail reasoning (arXiv:2408.08631 — persona caused wrong answers in 13.78% of cases solvable without one). User's own A/B test confirmed: persona-free prompts produced livelier, more accurate translations. The SI now opens directly with the task definition ("Translate subtitle dialogue from...") instead of "You are SubFaber, an expert...".
 
 - **Detailed style directives restored from pre-v1.5.3 backup:** The compression to v1.5.3 had collapsed the rich anti-pattern list into one generic line, degrading dialogue liveliness. Restored into the SI: never mirror foreign syntax/trailing modifiers/literal word order; never use formal copulas, formal conjunctions, dictionary jargon, or literal pronoun calques; preserve intentionally incomplete clauses for synchronization. The paired NEVER→positive-instruction pattern is back, now living in the System Instruction (Google mazhab: behavioral constraints belong in SI).
 
@@ -1583,19 +1598,19 @@ All notable changes to this project will be documented in this file.
 
 - Research: `plans/persona-ground-truth-research.md`
 
-## SubMaker v1.5.5 (2026-09-22)
+## SubFaber v1.5.5 (2026-09-22)
 
 **Bug Fixes:**
 
 - **FinOps ledger 25x token inflation eliminated (streaming SSE chunks):** `updateUsageStats()` accumulated `usageMetadata` values across SSE chunks, but Google's streaming API reports the **cumulative** total on every chunk (not a delta). A 4-batch stream split into ~4 chunks per batch was counted 4x per batch: 44k real tokens reported as 1.13M (25x inflation). The ledger now takes the **maximum** value per stream — equivalent to "last write wins" but robust against out-of-order chunk delivery. For non-streaming `generateContent` (single usageMetadata report), behavior is unchanged. The CrazyRouter wallet only dropped RM0.31 (not RM1.40 as the receipt claimed), confirming the spike was a measurement artifact, not real billing.
 
-## SubMaker v1.5.4 (2026-09-22)
+## SubFaber v1.5.4 (2026-09-22)
 
 **Bug Fixes:**
 
 - **Redis cross-prefix migration error burst eliminated:** When the migration client's Redis connection dropped mid-probe (server `--timeout`, network blip, or container recreate), the probe loop continued issuing commands through the dead socket. With `enableOfflineQueue: false`, every remaining prefix probe rejected immediately with "Stream isn't writeable and enableOfflineQueue options is false", producing 6-10 ERROR lines per cache miss (observed: 8 errors across embedded/sync/auto keys in one request). The probe loop now detects this specific error, closes the stale migration client immediately, and breaks — the next `get()` opens a fresh connection. Genuine per-prefix migration failures (key not found, corrupt data) still log ERROR as before.
 
-## SubMaker v1.5.3 (2026-09-22)
+## SubFaber v1.5.3 (2026-09-22)
 
 **Prompt Engineering Overhaul — Aligned with Google Gemini 3 Official Guidance:**
 
@@ -1609,23 +1624,23 @@ All notable changes to this project will be documented in this file.
 
 - **`DEFAULT_TRANSLATION_PROMPT` preserved for non-Gemini-3 providers:** Anthropic, DeepL, and OpenAI-compatible providers continue to use the legacy combined prompt. Only Gemini 3.x models use the new System Instruction path.
 
-## SubMaker v1.5.2 (2026-09-22)
+## SubFaber v1.5.2 (2026-09-22)
 
 **Bug Fixes:**
 
 - **Telegram notification silently killed by `advancedStats is not defined`:** The FinOps refactor (v1.5.0) that extracted the cost-receipt logic into `src/utils/telegramFinOps.js` accidentally deleted the DYNAMIC ADVANCED DIAGNOSTICS block from the normal translation path in `src/handlers/subtitles.js`, leaving two dangling references — `advancedStats` (used by the incident fallback line) and `diagnosticsSection` (used by the `teleMsg` template). The resulting `ReferenceError` was thrown inside the async notification IIFE before `axios.sendMessage` could run, silently suppressing every Telegram notification after a successful translation ("Ralat dalam blok async FinOps: advancedStats is not defined"). The block has been restored 1:1 from the working xEmbed implementation in `index.js` and the incident fallback now uses a proper string check (`advancedStats !== ''`) consistent with `index.js`.
 
-## SubMaker v1.5.1 (2026-09-22)
+## SubFaber v1.5.1 (2026-09-22)
 
 **Bug Fixes:**
 
-- **SubDL User-Agent corrected:** The hardcoded fake `StremioSubtitleTranslator v1.0` identifier has been replaced with `SubMaker v${version}`, matching every other provider. SubDL now sees the real app identity.
+- **SubDL User-Agent corrected:** The hardcoded fake `StremioSubtitleTranslator v1.0` identifier has been replaced with `SubFaber v${version}`, matching every other provider. SubDL now sees the real app identity.
 - **SubSource orphaned fallback promise cleanup:** The parallel fallback download (details→CDN race) now attaches no-op `.catch()` handlers to losing promises after `Promise.any()` settles, preventing unhandled promise rejections when the primary download wins.
 - **SubSource User-Agent configurable:** The hardcoded Chrome/131 browser UA can now be overridden via the `SUBSOURCE_USER_AGENT` environment variable.
 - **SubDL legacy call pattern deprecation warning:** The old 3-argument `downloadSubtitle(fileId, subdl_id, subtitles_id)` pattern now logs a deprecation warning directing callers to `downloadSubtitle(fileId, { timeout })`.
 - **Unused imports removed:** `appendHiddenInformationalNote` + `isArchive` + `createEpisodeNotFoundSubtitle` + `createZipTooLargeSubtitle` (subdl.js), `toISO6391` (subsource.js, opensubtitles-v3.js).
 
-## SubMaker v1.5.0 (2026-09-22)
+## SubFaber v1.5.0 (2026-09-22)
 
 **New Features:**
 
@@ -1661,7 +1676,7 @@ All notable changes to this project will be documented in this file.
 
 - **Telegram bot hygiene:** Registry capped at 200 entries (was unbounded); registry ids use `crypto.randomBytes` instead of `Math.random`; the long-poll loop uses `setTimeout(poll, 1000)` instead of `setImmediate` (prevents I/O starvation); all `console.error`/`console.log` calls replaced with the structured logger; empty catch blocks on `answerCallbackQuery` acks now log at debug; the magic CrazyRouter quota divisor is now a named constant.
 
-## SubMaker v1.4.91
+## SubFaber v1.4.91
 
 **New Features:**
 
@@ -1685,7 +1700,7 @@ All notable changes to this project will be documented in this file.
 
 - **Removed the SCS, Wyzie Subs, and Subs.ro subtitle providers:** The subtitle source lineup is now OpenSubtitles (Auth + V3), SubDL, and SubSource only. The three removed providers' services, configuration UI, Quick Setup entries, validation endpoints, health probes, credential encryption fields, and locale keys were deleted across backend and frontend, along with the now-empty "More Providers (beta)" section. A migration sweep in `normalizeConfig()` drops orphaned provider keys from previously-saved configs automatically. Regression suite: 83/83 passing.
 
-## SubMaker v1.4.90
+## SubFaber v1.4.90
 
 **Improvements:**
 
@@ -1709,11 +1724,11 @@ All notable changes to this project will be documented in this file.
 
 - **Fixed Stremio local and private-LAN stream URLs being falsely rejected across Sub Toolbox:** Embedded Subtitles, Automatic Subtitles, and Subtitle Sync no longer mistake opaque Stremio streaming-server route segments such as the torrent file index in `http://127.0.0.1:11470/<info-hash>/0` for a media filename. Their shared URL identity check now trusts explicit or extension-bearing filenames, retains the linked Stremio filename when a URL only exposes an opaque route, and prefers that linked metadata over weak resolver `name` or extensionless-path hints. The AutoSubs server-side cache/delivery guard uses the same rule, so a successful xSync fetch from localhost or a LAN streaming server is no longer suppressed as a hash mismatch.
 
-## SubMaker v1.4.89
+## SubFaber v1.4.89
 
 **Improvements:**
 
-- **Expanded the Gemini model list with new models:** SubMaker now lists Gemini 3.5 Flash-Lite, 3.5 Flash, 3.6 Flash, and 3.7 Flash while retaining the supported Gemini 2.5 Flash, 2.5 Flash-Lite, 3 Flash Preview, and 3.1 Flash-Lite choices.
+- **Expanded the Gemini model list with new models:** SubFaber now lists Gemini 3.5 Flash-Lite, 3.5 Flash, 3.6 Flash, and 3.7 Flash while retaining the supported Gemini 2.5 Flash, 2.5 Flash-Lite, 3 Flash Preview, and 3.1 Flash-Lite choices.
 
 - **Added model-aware Gemini 3 thinking-level controls:** Config page and Sub Toolbox file-translation Advanced Settings now switch Gemini 3 models from the legacy numeric Thinking Budget input to Disabled, Minimal, Low, Medium, and High thinking levels.
 
@@ -1721,7 +1736,7 @@ All notable changes to this project will be documented in this file.
 
 - **Moved Wyzie key validation to the quota-free capability endpoint:** The Configure and Quick Setup validation flow now verifies keys through Wyzie's key-scoped `/sources` endpoint instead of spending a subtitle-search request. The backend also reports the key type plus currently available and restricted sources, and the free-key link now uses Wyzie's current `store.wyzie.io/redeem` address across the UI, locales, README, and troubleshooting guide.
 
-- **Coordinated Redis maintenance across Kubernetes replicas:** Session-index verification and the one-time legacy translation-cache sweep now use the shared Redis distributed lock, so a multi-pod SubMaker deployment performs each full-keyspace maintenance pass once per maintenance window instead of once per pod. The unrelated 30-minute cache-metrics path no longer scans the full session namespace at all.
+- **Coordinated Redis maintenance across Kubernetes replicas:** Session-index verification and the one-time legacy translation-cache sweep now use the shared Redis distributed lock, so a multi-pod SubFaber deployment performs each full-keyspace maintenance pass once per maintenance window instead of once per pod. The unrelated 30-minute cache-metrics path no longer scans the full session namespace at all.
 
 **Bug Fixes:**
 
@@ -1731,11 +1746,11 @@ All notable changes to this project will be documented in this file.
 
 - **Stopped non-quota OpenSubtitles errors from being mislabeled as an exhausted daily quota:** The final download handler previously rendered every HTTP 406 as `daily download limit reached`, even though OpenSubtitles also uses 406 for unavailable or rejected file IDs. It now preserves the upstream response through the shared error wrapper and shows the quota subtitle only when the response actually contains quota-exhaustion semantics, so users with downloads remaining are no longer given the false limit warning.
 
-- **Hardened OpenSubtitles Auth against speculative player downloads:** Some clients probe multiple returned subtitle URLs before selection. A single atomic Redis operation now allows one initial request across all SubMaker replicas, defers other distinct files in the short window, and allows the file requested again as the real selection. The guard uses one expiring hash key rather than composing ownership locks and counters, with a bounded process-local fallback when Redis is unavailable.
+- **Hardened OpenSubtitles Auth against speculative player downloads:** Some clients probe multiple returned subtitle URLs before selection. A single atomic Redis operation now allows one initial request across all SubFaber replicas, defers other distinct files in the short window, and allows the file requested again as the real selection. The guard uses one expiring hash key rather than composing ownership locks and counters, with a bounded process-local fallback when Redis is unavailable.
 
 - **Removed obsolete Wyzie sub-source choices from saved and new configurations:** Configure and Quick Setup no longer show the nine legacy source checkboxes that do not match Wyzie's live source API. Existing session configs automatically discard the old `subtitleProviders.wyzie.sources` object and persist the migration while preserving the enabled state and API key; the UI now explains that source selection follows the key's current Wyzie plan.
 
-- **Kept Wyzie downloads working with its current direct-source URLs:** Wyzie may now return HTTPS download links hosted by the selected subtitle provider rather than a `sub.wyzie.io` proxy URL. SubMaker accepts and downloads those current URLs, validates that they use HTTPS, avoids misleading non-Wyzie-host warnings, and keeps the normal encoding/conversion path intact.
+- **Kept Wyzie downloads working with its current direct-source URLs:** Wyzie may now return HTTPS download links hosted by the selected subtitle provider rather than a `sub.wyzie.io` proxy URL. SubFaber accepts and downloads those current URLs, validates that they use HTTPS, avoids misleading non-Wyzie-host warnings, and keeps the normal encoding/conversion path intact.
 
 - **Fixed new Google AI Studio authorization keys failing Gemini validation:** Gemini keys using the new `AQ.` format are now kept intact and validated through the same `v1beta` model-discovery client and `x-goog-api-key` header used by real translations, instead of the validation-only `v1/models` request that rejected keys which otherwise worked.
 
@@ -1749,7 +1764,7 @@ All notable changes to this project will be documented in this file.
 
 - **Accepted provider archives that label SubRip files as `.srt.txt`:** Archive selection now recognizes the real-world double extension as SRT for both individual files and season packs while continuing to reject arbitrary `.txt` readmes and release notes. This fixes valid SubSource downloads that previously failed with `No subtitle file found in archive`.
 
-## SubMaker v1.4.88
+## SubFaber v1.4.88
 
 **Improvements:**
 
@@ -1769,13 +1784,13 @@ All notable changes to this project will be documented in this file.
 
 - **Skipped unconfigured API-key subtitle providers before search fan-out:** Wyzie and Subs.ro are now treated as disabled when they have no usable API key, preventing missing-key provider tasks and warnings from random/public requests.
 
-## SubMaker v1.4.87
+## SubFaber v1.4.87
 
 **Bug Fixes:**
 
-- **Stopped OpenSubtitles Auth download quota errors from causing login storms:** `/download` `406` responses now only trigger a JWT refresh when OpenSubtitles explicitly says the token is invalid. Real daily-quota and invalid-file responses keep the existing JWT, do not clear the Redis token cache, and do not call `/login` again. Internal OpenSubtitles API queue pressure is now surfaced as transient `503` provider unavailability instead of a user-facing `429`, and subtitle download/resolve/content routes are no longer behind SubMaker's generic search limiter.
+- **Stopped OpenSubtitles Auth download quota errors from causing login storms:** `/download` `406` responses now only trigger a JWT refresh when OpenSubtitles explicitly says the token is invalid. Real daily-quota and invalid-file responses keep the existing JWT, do not clear the Redis token cache, and do not call `/login` again. Internal OpenSubtitles API queue pressure is now surfaced as transient `503` provider unavailability instead of a user-facing `429`, and subtitle download/resolve/content routes are no longer behind SubFaber's generic search limiter.
 
-## SubMaker v1.4.86
+## SubFaber v1.4.86
 
 **Bug Fixes:**
 
@@ -1783,13 +1798,13 @@ All notable changes to this project will be documented in this file.
 
 - **Stopped local subtitle cache indexes from rebuilding with Redis SCAN during subtitle requests:** xEmbed, xSync, and Auto now treat valid empty indexes as empty and invalid indexes as unusable instead of scanning the whole Redis keyspace on hot subtitle-list reads. Redis storage commands also have a bounded `REDIS_COMMAND_TIMEOUT_MS` default of 5000ms and do not retry command-timeout failures into long route stalls.
 
-- **Hardened OpenSubtitles Auth login refresh coordination across replicas:** expired or missing Auth JWTs now refresh through a Redis-backed per-credential singleflight lock, so only one SubMaker instance performs `/login` for the same credentials while other requests wait for the shared token. The refreshed JWT is written to Redis before the lock is released, and invalid-credential suppression is now shared across pods.
+- **Hardened OpenSubtitles Auth login refresh coordination across replicas:** expired or missing Auth JWTs now refresh through a Redis-backed per-credential singleflight lock, so only one SubFaber instance performs `/login` for the same credentials while other requests wait for the shared token. The refreshed JWT is written to Redis before the lock is released, and invalid-credential suppression is now shared across pods.
 
 - **Stopped OpenSubtitles Auth transient failures from being cached as complete subtitle results:** login/search rate limits, network failures, and temporary upstream failures now propagate as typed provider failures instead of silently returning an empty OpenSubtitles result set. Subtitle aggregation marks provider failures and skipped providers as partial results, preventing temporary OpenSubtitles outages from poisoning the normal subtitle search cache.
 
 - **Removed OpenSubtitles Auth login cooldown/backoff:** `/login` `429` responses and rate-limit-like `403` responses only advance the next OpenSubtitles reservation according to the parsed retry window. They no longer write or read a separate shared cooldown that can block later searches for minutes, and invalid-credential suppression is back to a short 30-second window.
 
-## SubMaker v1.4.84
+## SubFaber v1.4.84
 
 **Improvements:**
 
@@ -1811,13 +1826,13 @@ All notable changes to this project will be documented in this file.
 
 - **Removed the hard OpenSubtitles post-`429` cooldown:** an unexpected upstream `429` now only advances the next reservation according to OpenSubtitles response headers such as `ratelimit-reset`/`retry-after`; it does not write a internal cooldown and does not skip later searches because of that cooldown.
 
-- **Stopped `/subtitles` searches from creating extra OpenSubtitles traffic through canonical redirects:** OpenSubtitles Auth search now sends alphabetically sorted, lower-cased GET parameters in the request URL instead of letting axios serialize an arbitrary params object. This follows OpenSubtitles' documented redirect-avoidance guidance, so one SubMaker search maps to one upstream `/subtitles` request instead of sometimes becoming request + redirect.
+- **Stopped `/subtitles` searches from creating extra OpenSubtitles traffic through canonical redirects:** OpenSubtitles Auth search now sends alphabetically sorted, lower-cased GET parameters in the request URL instead of letting axios serialize an arbitrary params object. This follows OpenSubtitles' documented redirect-avoidance guidance, so one SubFaber search maps to one upstream `/subtitles` request instead of sometimes becoming request + redirect.
 
 - **Removed the OpenSubtitles Auth provider-level search-result cache from the rate-limit fix:** search calls are paced correctly rather than hidden behind result caching.
 
 - **OpenSubtitles Auth keep-alive now doesn't bypass the API gate:** the Auth REST keep-alive now probes `/infos/formats` through the same shared OpenSubtitles API limiter with no bearer token and no `/login` call. It is opportunistic (`0ms` queue budget), so it skips when real OpenSubtitles traffic is already using the shared budget, and it runs on a slower configurable cadence (`OPENSUBTITLES_AUTH_KEEPALIVE_INTERVAL_MS`, default 120s) instead of spending a slot at every generic keep-alive tick.
 
-## SubMaker v1.4.83
+## SubFaber v1.4.83
 
 **Bug Fixes:**
 
@@ -1827,13 +1842,13 @@ All notable changes to this project will be documented in this file.
 
 - **Removed requests caused by cache-buster redirects:** versioned addon paths such as `/addon/{token}/v1.4.83/subtitles/...` are now accepted as internal aliases, while unversioned addon paths are served directly with `no-store` instead of a `307` hop. Configure and Quick Setup keep generating unversioned manifest install URLs so installed Stremio transports are not pinned to a release-specific path.
 
-## SubMaker v1.4.82
+## SubFaber v1.4.82
 
 **Improvements:**
 
-- **Added SCS Community/Auth modes:** SubMaker now allows an Auth mode where users can provide their own SCS auth key. Auth mode sends SCS the selected SubMaker languages through the upstream `langs` override so requests can avoid the broad all-languages search path (faster), while Community mode preserves the current shared-key behavior for users without an SCS key.
+- **Added SCS Community/Auth modes:** SubFaber now allows an Auth mode where users can provide their own SCS auth key. Auth mode sends SCS the selected SubFaber languages through the upstream `langs` override so requests can avoid the broad all-languages search path (faster), while Community mode preserves the current shared-key behavior for users without an SCS key.
 
-- **Fixed partial provider timeout results becoming sticky in subtitle search cache:** timed-out provider searches can still return the providers that finished in time, but SubMaker now marks those responses as partial and avoids caching them. This prevents a temporary target-only result set from hiding source-backed translation entries such as `Make Serbian` on later refreshes.
+- **Fixed partial provider timeout results becoming sticky in subtitle search cache:** timed-out provider searches can still return the providers that finished in time, but SubFaber now marks those responses as partial and avoids caching them. This prevents a temporary target-only result set from hiding source-backed translation entries such as `Make Serbian` on later refreshes.
 
 - **Fixed Stremio Firebase-hosted web app requests being rejected by the origin policy:** `https://stremio.web.app` is now included in the default known Stremio web frontend origins, and the official `*.stremio.com` wildcard allowlist is explicitly documented in the origin matcher so supported Stremio web clients follow the normal CORS path.
 
@@ -1841,11 +1856,11 @@ All notable changes to this project will be documented in this file.
 
 - **Fixed saved settings changing after refreshing Configure:** the normal page-load path no longer restores translation settings from an empty Just Fetch backup, so saved Learn Mode and other selections stay enabled unless the user is actually returning from Just Fetch mode.
 
-## SubMaker v1.4.81
+## SubFaber v1.4.81
 
 **New Features:**
 
-- **Added complete Token Vault removal for saved sessions:** The Token Vault manager now includes a `Complete Removal` action that permanently deletes a token from SubMaker storage, clears the browser vault copy, and requires rewriting the exact token before deletion. Server-side deletion now removes loaded and storage-only sessions, alternate storage-prefix remnants, on-disk snapshot entries, token-linked history namespaces, and local caches; deleting the active page token detaches the page into a recovered draft so the current form state is kept only until the user saves again.
+- **Added complete Token Vault removal for saved sessions:** The Token Vault manager now includes a `Complete Removal` action that permanently deletes a token from SubFaber storage, clears the browser vault copy, and requires rewriting the exact token before deletion. Server-side deletion now removes loaded and storage-only sessions, alternate storage-prefix remnants, on-disk snapshot entries, token-linked history namespaces, and local caches; deleting the active page token detaches the page into a recovered draft so the current form state is kept only until the user saves again.
 
 **Bug Fixes:**
 
@@ -1855,13 +1870,13 @@ All notable changes to this project will be documented in this file.
 
 - **Fixed empty SubDL/SubSource API-key configs creating noisy no-result searches:** Omitted or keyless SubDL/SubSource configs now normalize to `enabled: false`, subtitle search dispatch skips those providers unless a usable API key is present, and the service-level missing-key fallback now logs at debug level and returns no results instead of producing provider errors.
 
-## SubMaker v1.4.80
+## SubFaber v1.4.80
 
 **Improvements:**
 
 - **Relaxed background keep-alive probing for subtitle providers:** periodic provider keep-alive probes now wait up to `10s` instead of `5s` before timing out, which gives slower hosts more room to respond during idle warm-connection checks. Wyzie and SCS keep using background probes, but failed keep-alive pings for those two providers no longer feed the shared provider circuit breaker, so a slow or flaky idle probe cannot temporarily suppress real user searches for SCS or Wyzie anymore.
 
-- **Fixed Wyzie Subs after the upstream API-key rollout:** Wyzie search requests now target `sub.wyzie.io` and include the required `key` query parameter, while the returned `sub.wyzie.io/c/...` download URLs continue to work through the existing subtitle download flow. SubMaker stores `subtitleProviders.wyzie.apiKey` alongside the other sensitive provider credentials with the normal session encryption/recovery path, adds `/api/validate-wyzie`, and updates both the main Configure page and Quick Setup wizard with a Wyzie API-key input, live validation button, redeem link to `https://sub.wyzie.io/redeem`, and corrected saved-source normalization for legacy `opensubs` configs.
+- **Fixed Wyzie Subs after the upstream API-key rollout:** Wyzie search requests now target `sub.wyzie.io` and include the required `key` query parameter, while the returned `sub.wyzie.io/c/...` download URLs continue to work through the existing subtitle download flow. SubFaber stores `subtitleProviders.wyzie.apiKey` alongside the other sensitive provider credentials with the normal session encryption/recovery path, adds `/api/validate-wyzie`, and updates both the main Configure page and Quick Setup wizard with a Wyzie API-key input, live validation button, redeem link to `https://sub.wyzie.io/redeem`, and corrected saved-source normalization for legacy `opensubs` configs.
 
 **Bug Fixes:**
 
@@ -1871,17 +1886,17 @@ All notable changes to this project will be documented in this file.
 
 - **Fixed the Configure instructions modal overflowing off-screen on mobile:** the rewritten popup could size itself against unstable small-screen viewport height and keep too much internal spacing, which let the dialog extend past the visible viewport and hide the close button on phones. The mobile modal overlay now respects safe-area padding, uses a dynamic viewport height cap where available, aligns the dialog from the top on narrow screens, and trims the mobile header/content spacing so the instructions stay fully reachable and scroll correctly.
 
-## SubMaker v1.4.79
+## SubFaber v1.4.79
 
 **Improvements:**
 
-- **Reworked SubMaker instructions in both Quick Setup and Configure:** Step 4 in Quick Setup now includes a dedicated `SubMaker instructions` link with its own nested popup layered above the wizard, explaining how `Make [Target Language]` lists work, why a single source language is usually best, and when to reload a subtitle after starting translation. The main Configure instructions modal was also rewritten around the same source-order/sync guidance and restyled with a theme-aware hero/card layout for light, dark, and blackhole themes. All supported UI locales were updated with the new copy.
+- **Reworked SubFaber instructions in both Quick Setup and Configure:** Step 4 in Quick Setup now includes a dedicated `SubFaber instructions` link with its own nested popup layered above the wizard, explaining how `Make [Target Language]` lists work, why a single source language is usually best, and when to reload a subtitle after starting translation. The main Configure instructions modal was also rewritten around the same source-order/sync guidance and restyled with a theme-aware hero/card layout for light, dark, and blackhole themes. All supported UI locales were updated with the new copy.
 
 **Bug Fixes:**
 
-- **Fixed SCS subtitle IDs failing validation and downloads when the upstream API returned human-readable `sub.id` values:** live Stremio Community Subtitles responses expose label-like IDs with spaces, colons, or brackets that are not valid SubMaker route params and are also not the real download key. SubMaker now derives its stored `scs_...` `fileId` from the opaque token embedded in `sub.url`, wraps any unsafe upstream identifier into a route-safe base64url payload when needed, keeps legacy `comm_*` downloads working, and falls back to a future sanitized `sub.id` if SCS later normalizes that field upstream. That fixes the current validation failures without relaxing the general `fileId` contract and stays compatible with both current and future SCS payload shapes.
+- **Fixed SCS subtitle IDs failing validation and downloads when the upstream API returned human-readable `sub.id` values:** live Stremio Community Subtitles responses expose label-like IDs with spaces, colons, or brackets that are not valid SubFaber route params and are also not the real download key. SubFaber now derives its stored `scs_...` `fileId` from the opaque token embedded in `sub.url`, wraps any unsafe upstream identifier into a route-safe base64url payload when needed, keeps legacy `comm_*` downloads working, and falls back to a future sanitized `sub.id` if SCS later normalizes that field upstream. That fixes the current validation failures without relaxing the general `fileId` contract and stays compatible with both current and future SCS payload shapes.
 
-- **Fixed SubDL Cloudflare download blocks being misreported as API-key errors:** SubDL download failures that came back as Cloudflare challenge/block pages could previously fall through the generic `403` auth path and show users the wrong `SubDL API key error` guidance, even though the failure was on SubDL's download side. SubMaker now classifies those responses separately, shows a single `0 -> 4h` user-facing subtitle that says Cloudflare is blocking the SubDL download and to try another subtitle or later, and reuses the same copy for HTML challenge pages that arrive as invalid download bodies. SubDL ZIP downloads also now use a dedicated clean download client instead of inheriting JSON API headers from the search API client.
+- **Fixed SubDL Cloudflare download blocks being misreported as API-key errors:** SubDL download failures that came back as Cloudflare challenge/block pages could previously fall through the generic `403` auth path and show users the wrong `SubDL API key error` guidance, even though the failure was on SubDL's download side. SubFaber now classifies those responses separately, shows a single `0 -> 4h` user-facing subtitle that says Cloudflare is blocking the SubDL download and to try another subtitle or later, and reuses the same copy for HTML challenge pages that arrive as invalid download bodies. SubDL ZIP downloads also now use a dedicated clean download client instead of inheriting JSON API headers from the search API client.
 
 - **Fixed translated xEmbed embedded subtitles being served with forced `.srt` semantics even when the cached translation was preserved as ASS/SSA:** addon-path embedded translations could reassemble and persist native ASS/SSA payloads, but the translated `/xembedded/...` download route still treated them like plain SRT downloads. Translated xEmbed deliveries now use the same shared format-aware delivery path as embedded originals, preserving or converting ASS/SSA/VTT according to the active subtitle output settings and returning matching MIME types and filename extensions. The embedded translation cache now also records the actual stored translated format so future readers do not have to guess from stale source metadata.
 
@@ -1889,7 +1904,7 @@ All notable changes to this project will be documented in this file.
 
 - **Hardened the Quick Setup restore path and instructions modal accessibility:** Quick Setup now clamps restored `sourceLanguages`, fetch selections, and combined target/learn selections back to the same server-driven limits enforced in the main Configure flow, so older or hand-edited configs cannot reopen with invalid over-limit language state and get re-saved unchanged. The nested Quick Setup instructions popup now traps `Tab` focus correctly, and the main Configure instructions popup close control is now a real keyboard-focusable button with localized accessibility copy.
 
-## SubMaker v1.4.78
+## SubFaber v1.4.78
 
 **Bug Fixes:**
 
@@ -1897,11 +1912,11 @@ All notable changes to this project will be documented in this file.
 
 - **Fixed misleading Gemini `429` guidance in logs and translation error subtitles:** Gemini rate-limit/usage-limit failures were still reusing the generic "wait a few minutes and try again" copy in the shared API error formatter and in the single-cue `0->4h` translation error subtitle, even though waiting often does not help when the key has simply exhausted its usage/quota. Gemini-specific `429` messaging now tells users to check API key usage/quota or use another key, the localized subtitle strings were updated to match.
 
-- **Fixed OpenSubtitles Auth still hitting `429` on shared-IP multi-instance deployments:** the earlier distributed lock only serialized `/login`, but `/subtitles` and `/download` calls were still gated by a pod-local token bucket, so 2+ SubMaker instances behind one egress IP could still overshoot OpenSubtitles' shared `5 req/sec` cap and surface search-side `429` warnings. OpenSubtitles Auth now uses a Redis-backed cross-pod limiter for its API budget, keeps a small safety buffer at `4 req/sec` cluster-wide, falls back to the local bucket if Redis is unavailable.
+- **Fixed OpenSubtitles Auth still hitting `429` on shared-IP multi-instance deployments:** the earlier distributed lock only serialized `/login`, but `/subtitles` and `/download` calls were still gated by a pod-local token bucket, so 2+ SubFaber instances behind one egress IP could still overshoot OpenSubtitles' shared `5 req/sec` cap and surface search-side `429` warnings. OpenSubtitles Auth now uses a Redis-backed cross-pod limiter for its API budget, keeps a small safety buffer at `4 req/sec` cluster-wide, falls back to the local bucket if Redis is unavailable.
 
 - **Fixed Quick Setup using stale Gemini defaults and copy on the config page:** Quick Setup now reads the main Gemini dropdown's declared default option in `main.html` for its saved model, model-specific advanced defaults, and Step 3/summary labels instead of using separate hardcoded assumptions. Locale strings now use `{model}` placeholders, the wizard refreshes that dynamic copy after locale changes.
 
-## SubMaker v1.4.77
+## SubFaber v1.4.77
 
 **Improvements:**
 
@@ -1941,11 +1956,11 @@ All notable changes to this project will be documented in this file.
 
 **Notes:**
 
-- **Seasonless anime `tvdb:` episode IDs can still be ambiguous when no season signal exists:** When upstream TVDB data reuses one show ID for multiple seasons or specials, `tvdb:{show}:{episode}` does not always identify a single canonical season. If the request also carries a filename with an explicit `SxxExx`, SubMaker can now use that as a disambiguation hint, but otherwise explicit `tvdb:{show}:{season}:{episode}` IDs are still required.
+- **Seasonless anime `tvdb:` episode IDs can still be ambiguous when no season signal exists:** When upstream TVDB data reuses one show ID for multiple seasons or specials, `tvdb:{show}:{episode}` does not always identify a single canonical season. If the request also carries a filename with an explicit `SxxExx`, SubFaber can now use that as a disambiguation hint, but otherwise explicit `tvdb:{show}:{season}:{episode}` IDs are still required.
 
 - **`tmdb:` TV episode support is still provider-dependent:** TMDB-native providers such as Wyzie work correctly with `tmdb:` TV episode IDs, but IMDb-only providers can still miss some TMDB TV requests when TMDB-to-IMDb fallback metadata is incomplete upstream.
 
-## SubMaker v1.4.76
+## SubFaber v1.4.76
 
 **Bug Fixes:**
 
@@ -1955,15 +1970,15 @@ All notable changes to this project will be documented in this file.
 
 - **Fixed Docker deployments shipping without the in-app changelog file:** .dockerignore was excluding all Markdown files except README.md, which stripped CHANGELOG.md from the official image even though /api/changelog reads it from /app/CHANGELOG.md. Docker builds now keep CHANGELOG.md in the image, and the changelog loader now falls back to a small release-note stub that points users to the GitHub release page if the file is missing or malformed, instead of leaving the "What's New" panel blank.
 
-- **Fixed the Embedded Subtitles page getting stuck on "Waiting for extension...":** The embedded page's generated client runtime had several regexes that were escaped for server-side JS instead of the final inline browser script, which produced a browser parse error before the page could schedule its `SUBMAKER_PING` handshake. After correcting that, the same page still had an early init crash because linked-stream metadata rendering called an undefined `cleanDisplayNameClient()` helper before the ping bootstrap ran. The embedded runtime now escapes its `vtt`/`ssa`/`ass`/`srt` format-detection and MIME-filter regexes correctly for generated client code, restores the missing display-name helper, and includes regression coverage so the inline scripts compile cleanly and extension detection can initialize again.
+- **Fixed the Embedded Subtitles page getting stuck on "Waiting for extension...":** The embedded page's generated client runtime had several regexes that were escaped for server-side JS instead of the final inline browser script, which produced a browser parse error before the page could schedule its `SUBFABER_PING` handshake. After correcting that, the same page still had an early init crash because linked-stream metadata rendering called an undefined `cleanDisplayNameClient()` helper before the ping bootstrap ran. The embedded runtime now escapes its `vtt`/`ssa`/`ass`/`srt` format-detection and MIME-filter regexes correctly for generated client code, restores the missing display-name helper, and includes regression coverage so the inline scripts compile cleanly and extension detection can initialize again.
 
 - **Fixed cache-buster drift and redirect-prone shared assets across the tool, SMDB, Sync, and Configure pages:** `sub-toolbox`, `file-upload`, `auto-subtitles`, `sub-history`, `smdb`, and `subtitle-sync` were still emitting some shared UI assets (`sw-register.js`, `theme-toggle.js`, `subtitle-menu.js`, `combobox.css`, `combobox.js`, and toolbox favicons) without the `_cb` cache-buster query that the middleware expects. Most of those pages still appeared to work because the browser followed the resulting `307` redirects, but they were paying extra asset hops on every load and relying on redirect behavior for core JS/CSS. The remaining real runtime failure on the earlier pass was on `/sub-history`: `public/js/sw-register.js` still tried to register `/sw.js` without `_cb`, and browsers reject redirected service-worker scripts, so the page logged `The script resource is behind a redirect, which is disallowed.` and skipped service-worker registration on that load. The standalone `/configure` shell also still hard-coded `1.4.16` asset cache-busters after the app had moved to `1.4.76`, so browsers could stay pinned to stale immutable CSS/JS, and `sw-register.js` had to fall back to `window.__APP_VERSION__ === undefined` there. Tool, history, SMDB, and sync page generators now emit direct cache-busted asset URLs, `sw-register.js` registers `/sw.js?...&_cb=...` directly, the configure page now bootstraps the current app version and matching `_cb` tags again, and added regression coverage now compiles the affected standalone-page runtimes and asserts those cache-busted URLs stay direct and version-aligned.
 
-## SubMaker v1.4.75
+## SubFaber v1.4.75
 
 **New Features:**
 
-- **Token Vault profile manager on the config page:** Saved session tokens now work like browser-local profiles instead of loose strings. The new floating Vault opens both a quick-switch rail and a full profile manager where you can keep up to 5 profiles, rename them, switch away from dirty drafts with save/discard prompts, and see clear states like live, draft, recovered, or disabled. Profiles can be enabled or disabled, copied as manifest/config links, installed in Stremio, opened in History or Sub Toolbox, validated, and imported/exported as raw tokens, URLs, single-profile JSON, or full-vault backups. If the vault is full, SubMaker previews which oldest local profile will be replaced before anything is removed.
+- **Token Vault profile manager on the config page:** Saved session tokens now work like browser-local profiles instead of loose strings. The new floating Vault opens both a quick-switch rail and a full profile manager where you can keep up to 5 profiles, rename them, switch away from dirty drafts with save/discard prompts, and see clear states like live, draft, recovered, or disabled. Profiles can be enabled or disabled, copied as manifest/config links, installed in Stremio, opened in History or Sub Toolbox, validated, and imported/exported as raw tokens, URLs, single-profile JSON, or full-vault backups. If the vault is full, SubFaber previews which oldest local profile will be replaced before anything is removed.
 
 **Improvements:**
 
@@ -1971,29 +1986,29 @@ All notable changes to this project will be documented in this file.
 
 **Bug Fixes:**
 
-- **Fixed the config-page "Reset settings to default" flow:** Reset now clears browser/site data for that SubMaker page, including saved Vault entries, Quick Setup progress, preferences, cookies, service workers, Cache Storage, and IndexedDB, then reloads `/configure` as a fresh blank draft instead of dropping you into another saved profile. The warning text was also rewritten and localized to explain what is cleared, what returns to defaults, and what is **not** deleted: server-side tokens/profiles still exist and can be reopened later if you still have their token URL.
+- **Fixed the config-page "Reset settings to default" flow:** Reset now clears browser/site data for that SubFaber page, including saved Vault entries, Quick Setup progress, preferences, cookies, service workers, Cache Storage, and IndexedDB, then reloads `/configure` as a fresh blank draft instead of dropping you into another saved profile. The warning text was also rewritten and localized to explain what is cleared, what returns to defaults, and what is **not** deleted: server-side tokens/profiles still exist and can be reopened later if you still have their token URL.
 
-- **Fixed the config page instructions modal "Don't show this again":** SubMaker now uses one saved preference for this, migrates older values forward, updates it whether you check or uncheck the box, keeps the checkbox in sync when reopening the modal, and no longer lets app updates or cache migrations silently turn the popup back on.
+- **Fixed the config page instructions modal "Don't show this again":** SubFaber now uses one saved preference for this, migrates older values forward, updates it whether you check or uncheck the box, keeps the checkbox in sync when reopening the modal, and no longer lets app updates or cache migrations silently turn the popup back on.
 
-- **Fixed ASS/SSA subtitle files from archive packs turning into `WEBVTT undefined` or empty output after extraction:** Some fansub files include blank lines inside the `[Events]` section, which made the converter stop reading dialogue too early and sometimes accept garbage output. SubMaker now cleans those lines first, validates converted VTT output before accepting it, falls back to safer recovery paths when needed, and rejects cue-id-only or otherwise malformed output. Successful ASS/VTT-to-SRT conversions are also validated and renumbered before translation, so broken cue numbering from third-party tools does not leak through.
+- **Fixed ASS/SSA subtitle files from archive packs turning into `WEBVTT undefined` or empty output after extraction:** Some fansub files include blank lines inside the `[Events]` section, which made the converter stop reading dialogue too early and sometimes accept garbage output. SubFaber now cleans those lines first, validates converted VTT output before accepting it, falls back to safer recovery paths when needed, and rejects cue-id-only or otherwise malformed output. Successful ASS/VTT-to-SRT conversions are also validated and renumbered before translation, so broken cue numbering from third-party tools does not leak through.
 
 - **Fixed SubDL episode searches keeping multi-episode packs that do not contain the requested episode:** Full-season packs are still kept, but explicit ranges like episodes 5-7 are now filtered out when the user asked for a different episode. That stops obviously wrong packs from surviving until a later "episode not found in this subtitle pack" failure.
 
-- **Fixed Gemini model selection disappearing on the config page after reloads, migrations, and Quick Setup handoffs:** The base Gemini dropdown could be filled with backend-only alias values such as `gemini-flash-latest` that the UI does not list, which made the selector look blank. SubMaker now normalizes those values to the first visible dropdown option during page load, migrations, and Quick Setup, and aligns Quick Setup's Gemini defaults with that same visible model so it no longer saves mismatched advanced defaults.
+- **Fixed Gemini model selection disappearing on the config page after reloads, migrations, and Quick Setup handoffs:** The base Gemini dropdown could be filled with backend-only alias values such as `gemini-flash-latest` that the UI does not list, which made the selector look blank. SubFaber now normalizes those values to the first visible dropdown option during page load, migrations, and Quick Setup, and aligns Quick Setup's Gemini defaults with that same visible model so it no longer saves mismatched advanced defaults.
 
-- **Separated the main Gemini model from the advanced Gemini override across translation runs:** Advanced settings could overwrite the saved base Gemini model, mixing up the two selectors and feeding unsupported values back into the config page. SubMaker now keeps the main saved model unchanged, uses the advanced model only as a runtime override when explicitly enabled, and applies that same effective runtime model consistently across validation, history/cache metadata, toolbox/file-upload bootstrap data, and request handling.
+- **Separated the main Gemini model from the advanced Gemini override across translation runs:** Advanced settings could overwrite the saved base Gemini model, mixing up the two selectors and feeding unsupported values back into the config page. SubFaber now keeps the main saved model unchanged, uses the advanced model only as a runtime override when explicitly enabled, and applies that same effective runtime model consistently across validation, history/cache metadata, toolbox/file-upload bootstrap data, and request handling.
 
-- **Fixed provider search timeout drifting away from the subtitle timeout shown in settings:** Provider searches now follow the timeout you set in SubMaker instead of a separate hidden `PROVIDER_SEARCH_TIMEOUT_MS` override being able to wait longer or cut off sooner.
+- **Fixed provider search timeout drifting away from the subtitle timeout shown in settings:** Provider searches now follow the timeout you set in SubFaber instead of a separate hidden `PROVIDER_SEARCH_TIMEOUT_MS` override being able to wait longer or cut off sooner.
 
-- **Fixed unsupported Stremio ID requests being filtered client-side before SubMaker could log them:** Unsupported or malformed IDs now reach SubMaker, get logged with the rejection reason, and return an empty subtitle list instead of disappearing before the server sees them. That gives consistent behavior and server-side visibility when Stremio sends something unsupported.
+- **Fixed unsupported Stremio ID requests being filtered client-side before SubFaber could log them:** Unsupported or malformed IDs now reach SubFaber, get logged with the rejection reason, and return an empty subtitle list instead of disappearing before the server sees them. That gives consistent behavior and server-side visibility when Stremio sends something unsupported.
 
-- **Improved subtitle matching for query-style subtitle requests that already reach SubMaker:** Some Stremio clients send subtitle details in the URL query string instead of the path format the addon SDK expects. SubMaker now rewrites those subtitle requests into the SDK-compatible form before routing, keeps unrelated query params, and logs when the normalization happens so request-shape issues are easier to spot.
+- **Improved subtitle matching for query-style subtitle requests that already reach SubFaber:** Some Stremio clients send subtitle details in the URL query string instead of the path format the addon SDK expects. SubFaber now rewrites those subtitle requests into the SDK-compatible form before routing, keeps unrelated query params, and logs when the normalization happens so request-shape issues are easier to spot.
 
 - **Fixed weaker subtitle searches polluting stronger retries for the same title/episode:** Cache keys did not include stream details like filename, video hash, or video size, so a weak first request could be reused for a later better-informed one. Search keys now include normalized stream context, keeping low-information searches separate from stronger stream-aware retries.
 
 - **Fixed Sub Toolbox embedded-track language resolution preferring stale guesses over trusted xSync/container metadata:** The toolbox now keeps richer xSync language fields, resolves track language using source-aware priority, and uses that same logic when saving embedded originals to xEmbed. That keeps stronger metadata in charge and improves exact/regional tag handling such as `pt-BR`, `pt-PT`, `es-419`, `zh-Hans`, and `zh-Hant`.
 
-- **Fixed xEmbed, xSync, and AUTO entries disappearing after switching streams and coming back:** Local subtitle lookups used to rebuild from one fresh request hash, so missing or changed filename data could hide cached local entries when you returned to a stream. SubMaker now checks an ordered set of stronger hash candidates built from the current request, remembered stream activity, and persisted hash links, so those local entries survive stream switching more reliably.
+- **Fixed xEmbed, xSync, and AUTO entries disappearing after switching streams and coming back:** Local subtitle lookups used to rebuild from one fresh request hash, so missing or changed filename data could hide cached local entries when you returned to a stream. SubFaber now checks an ordered set of stronger hash candidates built from the current request, remembered stream activity, and persisted hash links, so those local entries survive stream switching more reliably.
 
 - **Fixed xEmbed saves/translations not always showing up on the next subtitle refresh:** Saving embedded originals or creating xEmbed translations now invalidates stale cached subtitle lists immediately by bumping the per-user subtitle-search revision, so new xEmbed entries show up on the next refresh instead of waiting for unrelated cache churn.
 
@@ -2001,7 +2016,7 @@ All notable changes to this project will be documented in this file.
 
 - **Hardened local hash recovery so weak videoId-only fallback hashes do not permanently link unrelated releases:** The videoId-only fallback is still used as a last-resort direct lookup, but it is no longer the main local subtitle hash and is no longer saved into the shared hash-link graph. That preserves SMDB plus local xEmbed/xSync/AUTO recovery while reducing cross-release mix-ups between different files for the same movie or episode.
 
-## SubMaker v1.4.74
+## SubFaber v1.4.74
 
 **Bug Fixes:**
 
@@ -2015,7 +2030,7 @@ All notable changes to this project will be documented in this file.
 
 - **Extended the history fast-path freshness window from 15s to 60s:** The aggregated history store key is now trusted for 1 minute before the page falls back to the bounded Redis index refresh path. This keeps hot history pages on the cheap single-GET path longer and reduces how often users hit the slower indexed recovery path on busy public deployments.
 
-## SubMaker v1.4.73
+## SubFaber v1.4.73
 
 **Improvements:**
 
@@ -2041,7 +2056,7 @@ All notable changes to this project will be documented in this file.
 
 - **Fixed stale ASS/SSA passthrough semantics and workflow copy on the main config surface:** The old config page still rendered the checkbox as "Convert ASS/SSA to VTT" with the box checked by default, even though the JS logic already treated checked as passthrough. Updated `public/partials/main.html` so the control is rendered as `ASS/SSA Passthrough`, unchecked by default, matching the stored config semantics (`convertAssToVtt: true` means conversion enabled; `false` means passthrough). Also updated the main-page description, the URL-extension helper text, and locale workflow copy so they no longer claim translations always auto-convert, and so workflow labels/tooltips consistently describe XML Tags as the default, Original Timestamps as legacy, and JSON as a supported workflow option.
 
-## SubMaker v1.4.72
+## SubFaber v1.4.72
 
 **New Features:**
 
@@ -2059,7 +2074,7 @@ PS: Partial delivery during translation remains SRT (from the translation engine
 
 **Bug Fixes:**
 
-- **Fixed phantom "New stream detected" notifications for streams watched hours/days ago:** The stream activity LRU cache had `updateAgeOnGet: true`, which reset the 6-hour TTL on every SSE connect, heartbeat, or page refresh — old entries essentially never expired as long as a toolbox tab was open. When opening a new toolbox/SMDB page, `subscribe()` would immediately send the cached entry as an `episode` event, triggering a toast for a stream that was watched days ago. Removed `updateAgeOnGet` so entries actually expire after 6 hours. Added a `firstSeenAt` timestamp to stream activity entries (preserved across heartbeat/enrichment updates) so clients can distinguish "stream started 3 hours ago" from "entry refreshed 10 seconds ago." Added a 30-minute age check (configurable via `STREAM_ACTIVITY_SNAPSHOT_MAX_AGE_MS`) in `subscribe()` that suppresses stale cached entries from being sent to new SSE subscribers. Added a matching client-side staleness guard in `quickNav.js` that checks `firstSeenAt` against `window.__SUBMAKER_PAGE_LOAD_TIME` before showing a toast, catching stale data from the polling fallback path that bypasses the server-side SSE check.
+- **Fixed phantom "New stream detected" notifications for streams watched hours/days ago:** The stream activity LRU cache had `updateAgeOnGet: true`, which reset the 6-hour TTL on every SSE connect, heartbeat, or page refresh — old entries essentially never expired as long as a toolbox tab was open. When opening a new toolbox/SMDB page, `subscribe()` would immediately send the cached entry as an `episode` event, triggering a toast for a stream that was watched days ago. Removed `updateAgeOnGet` so entries actually expire after 6 hours. Added a `firstSeenAt` timestamp to stream activity entries (preserved across heartbeat/enrichment updates) so clients can distinguish "stream started 3 hours ago" from "entry refreshed 10 seconds ago." Added a 30-minute age check (configurable via `STREAM_ACTIVITY_SNAPSHOT_MAX_AGE_MS`) in `subscribe()` that suppresses stale cached entries from being sent to new SSE subscribers. Added a matching client-side staleness guard in `quickNav.js` that checks `firstSeenAt` against `window.__SUBFABER_PAGE_LOAD_TIME` before showing a toast, catching stale data from the polling fallback path that bypasses the server-side SSE check.
 
 - **Fixed ghost linked streams with non-matching hashes on the same title:** When Stremio sent multiple subtitle requests for the same `videoId` with slightly different filenames (different stream sources, URL encoding differences, different addons), `deriveVideoHash()` produced different MD5 hashes, and the merge logic in `recordStreamActivity()` allowed the hash to flip — triggering a "new stream" notification for what was really the same stream with a mangled hash. Strengthened the hash drift guard: when the previous entry already has an authoritative filename+hash pair for the same `videoId`, the incoming hash is rejected regardless of whether the incoming payload has a filename or not. Additionally, notifications now only fire when the `videoId` actually changes — field enrichment for the same `videoId` (e.g., empty hash → real hash) is stored silently without broadcasting. The SMDB page's `handleStreamLinked()` also gained a duplicate-videoId guard and uses `firstSeenAt` for its staleness check. The `_handleRemoteStreamEvent` Redis pub/sub handler now applies the same change-detection guards instead of blindly setting LRU entries and notifying listeners.
 
@@ -2073,13 +2088,13 @@ PS: Partial delivery during translation remains SRT (from the translation engine
 
 - **Fixed FFmpeg subtitle extraction silently doing nothing (bare core no-op):** The offscreen FFmpeg bare core's `run()` function checked for `module.exec` then `module.callMain` to invoke FFmpeg, but `ffmpeg-core.js` exports neither symbol. The fallthrough `?: 0` silently returned success without ever executing FFmpeg, causing all subtitle extractions via the bare core path to report "No subtitle streams found" regardless of whether the file contained subtitles. Combined with `forceBareCore = true` (which bypassed the working ffmpeg.wasm wrapper), the offscreen demux path was completely broken. Fixed by setting `forceBareCore = false` to restore the ffmpeg.wasm wrapper path, and replaced the silent fallthrough with an explicit `throw` so a missing entry point is immediately surfaced as an error. Applied the same safety fix to `background.full.js`.
 
-## SubMaker v1.4.71
+## SubFaber v1.4.71
 
 **Improvements:**
 
 - **Translation history page now loads instantly:** The `/sub-history` page previously blocked on a sequential enrichment loop that called external APIs (Cinemeta/Kitsu, 7.5s timeout each) and performed 3 Redis round-trips per entry — all before sending any HTML. With 20 history entries this could take 4–20+ seconds. The page now renders immediately after fetching history data, with enrichment running in the background (fire-and-forget after `res.send()`). Missing titles are resolved in parallel via `Promise.allSettled` and storage writes are batched into a single store-key update instead of per-entry read-modify-write cycles. Entries that already have titles (the common case — titles are resolved at translation time) display normally; entries still showing "unknown" are enriched in the background for the next page load.
 
-## SubMaker v1.4.70
+## SubFaber v1.4.70
 
 **Improvements:**
 
@@ -2095,7 +2110,7 @@ PS: Partial delivery during translation remains SRT (from the translation engine
 
 - **Fixed "Too many session creation requests" error after ~10 config saves:** The `/api/update-session/:token` endpoint was incorrectly using `sessionCreationLimiter` (10/hour, IP-based) — the same strict rate limiter meant only for new session creation. Every config save (even updates to an existing session) counted against the 10/hour creation quota, locking users out with a 429 error after approximately 10 saves in an hour. Created a separate `sessionUpdateLimiter` (60/hour) with its own Redis key prefix (`rl:sessupdate:`) for the update endpoint.
 
-## SubMaker v1.4.69
+## SubFaber v1.4.69
 
 **Improvements:**
 
@@ -2107,7 +2122,7 @@ PS: Partial delivery during translation remains SRT (from the translation engine
 
 - **Fixed Dari and Kurdish Sorani subtitle searches sending garbage codes to providers:** `prs` (Dari) and `ckb` (Kurdish Sorani) are in the 433-language list but had no explicit outgoing mappings in SubDL or OpenSubtitles Auth. Both fell through to fallback logic that derived nonsense codes (`PR`/`CK` for SubDL, raw 3-letter codes for OS Auth) — silently returning 0 results. Added `prs → FA` and `ckb → KU` to SubDL's outgoing map, and `prs → fa` and `ckb → ku` to OpenSubtitles Auth's special cases, mapping them to their parent languages (Persian and Kurdish) which is what providers actually index. Verified via full scan of all 433 languages — these were the only two non-extended languages with broken outgoing codes. The remaining 65 unmapped languages (Acehnese, Balinese, Cantonese, etc.) are translation-only languages with no subtitle content on any provider.
 
-## SubMaker v1.4.68
+## SubFaber v1.4.68
 
 **Bug Fixes:**
 
@@ -2115,7 +2130,7 @@ PS: Partial delivery during translation remains SRT (from the translation engine
 
 - **Fixed Romanian (and 4 other languages) translating to Arabic instead of the correct language:** The `normalizeTargetLanguageForPrompt()` function used bare `nameKey.includes('oman')` to detect Arabic (Oman) regional variants, but `'romanian'.includes('oman')` is `true` — so Romanian, Romani, Aromanian, and Romansh all matched the Oman check and were sent to the AI as "Gulf Arabic". The same substring collision pattern affected 28 regional variant checks across Arabic, English, Korean, Serbian, Dutch, and Italian families (e.g., `'uk'` matched Sukuma/Chuukese/Inuktitut/Tumbuka/Volapük → British English; `'syria'` matched Classical Syriac → Syrian Arabic; `'south'` matched English (South Africa) → Korean). All `nameKey.includes()` checks now require the language family as a compound condition (e.g., `nameKey.includes('arabic') && nameKey.includes('oman')`), preventing cross-language false positives.
 
-## SubMaker v1.4.67
+## SubFaber v1.4.67
 
 **New Features:**
 
@@ -2179,7 +2194,7 @@ PS: Partial delivery during translation remains SRT (from the translation engine
 
 - **Fixed `es-MX` mapped to generic `es-419` in OpenAI provider, losing Mexican specificity:** The `variantMap` in the OpenAI-compatible provider mapped `es-mx` → `es-419` (generic Latin American Spanish), which erased the country-specific information even though `normalizeTargetLanguageForPrompt` already had explicit handling for `es-mx` → "Mexican Spanish (Español de México)". Removed the `es-mx` → `es-419` entry from `variantMap` so regional codes like `es-mx` pass through to the existing per-country prompt logic. Other entries in the variant map that are true aliases (e.g., `pob` → `pt-br`, `spn` → `es-419`, `zht` → `zh-hant`) are unaffected.
 
-## SubMaker v1.4.66
+## SubFaber v1.4.66
 
 **Bug Fixes:**
 
@@ -2189,7 +2204,7 @@ PS: Partial delivery during translation remains SRT (from the translation engine
 
 - **File translation now always uses the `TranslationEngine`**, which already handles batching, parallel translation, and all workflows (xml/json/original/ai) internally.
 
-## SubMaker v1.4.65
+## SubFaber v1.4.65
 
 **Bug Fixes:**
 
@@ -2197,7 +2212,7 @@ PS: Partial delivery during translation remains SRT (from the translation engine
 
 - **Fixed Sentry events not being flushed on forced shutdown:** When Kubernetes sends SIGTERM and the server takes longer than 5 seconds to close gracefully, the force-exit timeout was calling `process.exit()` without first flushing pending Sentry events. This caused errors and crash reports to be lost when pods were forcefully terminated. Added `sentry.flush(2000)` to the force-exit path in `sessionManager.js` to ensure error reports are sent before the process exits.
 
-## SubMaker v1.4.64
+## SubFaber v1.4.64
 
 **Improvements:**
 
@@ -2237,7 +2252,7 @@ PS: Partial delivery during translation remains SRT (from the translation engine
   - Chinese (4 variants): Simplified, Traditional, Hong Kong, Singapore
   - Other: Dutch (Flemish), Italian (Swiss), Swedish (Finland), Korean (South/North), Serbian (Cyrillic/Latin), Bosnian (Cyrillic), Malay (Jawi), Punjabi (Shahmukhi)
 
-## SubMaker v1.4.63
+## SubFaber v1.4.63
 
 **Bug Fixes:**
 
@@ -2255,7 +2270,7 @@ PS: Partial delivery during translation remains SRT (from the translation engine
 
 - **File translation queue summary now shows actual workflow name:** Queue metadata display updated from "Single-batch/Multiple batches • Rebuild timestamps/Send timestamps to AI" to "XML Tags/JSON/Original Timestamps/Send to AI • Single-batch/Multiple batches", accurately reflecting the selected workflow.
 
-## SubMaker v1.4.62
+## SubFaber v1.4.62
 
 **Bug Fixes:**
 
@@ -2289,11 +2304,11 @@ PS: Partial delivery during translation remains SRT (from the translation engine
 
 - **Responsive styles for new provider group rows:** Provider group rows scale to smaller font and tighter padding on mobile (≤920px) viewport, consistent with existing chip/tag responsive behavior.
 
-- **Fixed translation history entries silently lost on multi-instance deployments:** `saveRequestToHistory` used a non-atomic read-modify-write cycle on a single aggregated store key (`histset__{hash}`). With two SubMaker pods running concurrently, both pods could read the store key at the same time, merge their respective new entries independently, then each overwrite the other's write — causing the entry from whichever pod wrote first to be permanently lost. Fixed by writing each history entry to its **own independent key** (`hist__{hash}__{id}`) as a pure atomic SET with no prior read. Concurrent pods now write to different keys and can never clobber each other. The aggregated store key is still updated as a best-effort read-cache immediately after the entry write so the history page fast-path stays warm.
+- **Fixed translation history entries silently lost on multi-instance deployments:** `saveRequestToHistory` used a non-atomic read-modify-write cycle on a single aggregated store key (`histset__{hash}`). With two SubFaber pods running concurrently, both pods could read the store key at the same time, merge their respective new entries independently, then each overwrite the other's write — causing the entry from whichever pod wrote first to be permanently lost. Fixed by writing each history entry to its **own independent key** (`hist__{hash}__{id}`) as a pure atomic SET with no prior read. Concurrent pods now write to different keys and can never clobber each other. The aggregated store key is still updated as a best-effort read-cache immediately after the entry write so the history page fast-path stays warm.
 
 - **History page reads now use a time-gated fast-path to avoid expensive Redis SCANs:** `getHistoryForUser` previously always performed a full Redis SCAN of per-entry keys on every history page load. With thousands of users this created unnecessary SCAN pressure on the Redis cluster. The function now checks the aggregated store key first: if it was refreshed within the last 15 seconds, the result is returned immediately from a single GET without touching SCAN. If the cache is stale or missing, the slow path runs a full SCAN, merges per-entry keys from all pods with any cached store entries (newest version of each entry wins), then rebuilds the store key so subsequent reads within the next 15 seconds use the fast path.
 
-## SubMaker v1.4.61
+## SubFaber v1.4.61
 
 **Improvements:**
 
@@ -2341,7 +2356,7 @@ PS: Partial delivery during translation remains SRT (from the translation engine
 
 - **Removed ~50 lines of redundant error classification in `performTranslation`:** The catch block previously had 4 layers of error type detection: (1) `translationErrorType`, (2) `statusCode` checks, (3) `error.response.status` checks, (4) message-string fallbacks. All layers produced identical results since `handleTranslationError()` in `apiErrorHandler.js` already sets `translationErrorType` before errors reach `performTranslation`. Replaced with a single line: `const errorType = error.translationErrorType || 'other'`.
 
-## SubMaker v1.4.60
+## SubFaber v1.4.60
 
 **New Features:**
 
@@ -2369,7 +2384,7 @@ PS: Partial delivery during translation remains SRT (from the translation engine
 
 - **Numbered-list workflow prompt refined:** `createBatchPrompt()` prompt header updated. Merged the overly verbose rule list into a clean, deduplicated set. Fixed double-escaped newline in context rule (`\\n7` → `\n8`). Removed `customPromptText` interpolation block and consolidated `DO NOT` rules.
 
-## SubMaker v1.4.59
+## SubFaber v1.4.59
 
 **Improvements:**
 
@@ -2403,7 +2418,7 @@ PS: Partial delivery during translation remains SRT (from the translation engine
   - `gemini-flash-lite-latest` → `gemini-2.5-flash-lite`
   Both old IDs now return 404 from the Gemini API; new IDs are confirmed valid. Backward-compatible migration is applied at both the frontend form-load level (users with old saved model values have it silently corrected when the config page loads) and the server-side deprecated model override (old IDs are included in `DEPRECATED_MODEL_NAMES` and replaced with the current default on config resolution).
 
-## SubMaker v1.4.58
+## SubFaber v1.4.58
 
 - **OpenAI model compatibility hotfix (400 errors resolved):** Fixed OpenAI request shaping for modern GPT families. OpenAI chat requests now use `max_completion_tokens` (instead of `max_tokens`), and GPT-5-family requests no longer send unsupported sampling params (`temperature`/`top_p`) that were triggering `400 invalid_request_error` responses.
 
@@ -2431,11 +2446,11 @@ PS: Partial delivery during translation remains SRT (from the translation engine
 
 - **Claude 4.5 verification coverage (30-entry capped tests):** Validated non-stream, stream, and JSON non-stream translation paths against `claude-haiku-4-5-20251001`, `claude-sonnet-4-5-20250929`, and alias forms (`claude-haiku-4-5`, `claude-sonnet-4-5`) with test payloads capped to 30 subtitle entries per request.
 
-## SubMaker v1.4.57
+## SubFaber v1.4.57
 
 - **OpenSubtitles distributed rate limit hotfix:** Fixed v1.4.56 distributed lock not properly throttling across pods—replaced spin-wait polling with TTL-based waiting, added lock refresh after login completion (1.1s cooldown starts after request, not before), and removed redundant retry loop in credential validation endpoint.
 
-## SubMaker v1.4.56
+## SubFaber v1.4.56
 
 - **Strict global rate limiting for OpenSubtitles login:** Implemented a serialized request queue that enforces a strict 1 request/1.2s limit for the `/login` endpoint across the entire process. This prevents the "429 Too Many Requests" errors caused by burst login attempts (e.g., from retries or concurrent users), ensuring compliance with OpenSubtitles' 1 req/sec limit.
 
@@ -2443,11 +2458,11 @@ PS: Partial delivery during translation remains SRT (from the translation engine
 
 - **OpenSubtitles token validity re-check:** Added robust error handling for `500` "invalid token" and `401` unauthorized responses from OpenSubtitles. The addon now automatically invalidates the local/redis token cache and retries the request once with a fresh login, handling server-side token revocations gracefully without user intervention.
 
-## SubMaker v1.4.55
+## SubFaber v1.4.55
 
 **Hotfix for Sentry logs.**
 
-## SubMaker v1.4.54
+## SubFaber v1.4.54
 
 **New Features:**
 
@@ -2517,7 +2532,7 @@ PS: Partial delivery during translation remains SRT (from the translation engine
 
 - **Updated AutoSubs locale keys across supported languages:** added `localDecodeWarning` and aligned `translateOutput` text in `en`, `es`, `pt-br`, `pt-pt`, and added `localDecodeWarning` in `ar`.
 
-## SubMaker v1.4.53
+## SubFaber v1.4.53
 
 **New Features:**
 
@@ -2529,7 +2544,7 @@ PS: Partial delivery during translation remains SRT (from the translation engine
 
 **Improvements:**
 
-- **Expanded supported anime ID schemes in the manifest:** SubMaker now advertises and accepts additional anime ecosystem ID prefixes used by catalog addons: `myanimelist`, `tvdb`, `simkl`, `livechart`, and `anisearch` (alongside `anidb`, `kitsu`, `mal`, and `anilist`).
+- **Expanded supported anime ID schemes in the manifest:** SubFaber now advertises and accepts additional anime ecosystem ID prefixes used by catalog addons: `myanimelist`, `tvdb`, `simkl`, `livechart`, and `anisearch` (alongside `anidb`, `kitsu`, `mal`, and `anilist`).
 
 - **Extended offline resolver maps to additional platforms:** The bundled Fribb/anime-lists resolver now builds O(1) in-memory maps not only for Kitsu/MAL/AniDB/AniList, but also for TVDB, SIMKL, LiveChart, and AniSearch IDs.
 
@@ -2575,7 +2590,7 @@ PS: Partial delivery during translation remains SRT (from the translation engine
 
 - **JSON workflow now drives provider structured mode (not only deprecated toggle):** Fixed provider wiring so selecting `translationWorkflow: 'json'` reliably enables provider-side structured output behavior (with `enableJsonOutput` still accepted for backward compatibility). Previously, some paths only checked the deprecated flag, so JSON workflow could be selected while providers were still running in plain-text mode.
 
-- **OpenAI-compatible structured output aligned to array contract + graceful downgrade:** Replaced `response_format: { type: 'json_object' }` with a strict `json_schema` that matches SubMaker's expected array of `{id,text}` entries. Added automatic one-shot retry without structured `response_format` when the model/base URL rejects structured output parameters.
+- **OpenAI-compatible structured output aligned to array contract + graceful downgrade:** Replaced `response_format: { type: 'json_object' }` with a strict `json_schema` that matches SubFaber's expected array of `{id,text}` entries. Added automatic one-shot retry without structured `response_format` when the model/base URL rejects structured output parameters.
 
 - **Automatic JSON -> XML workflow fallback on hard failures:** Added batch-level XML fallback when JSON structured mode fails in practice (provider structured-capability errors, total JSON parse failure, or mismatch recovery ending with warning placeholders). This keeps translation progress moving with robust ID-based XML parsing instead of returning sparse/placeholder output.
 
@@ -2635,11 +2650,11 @@ PS: Partial delivery during translation remains SRT (from the translation engine
 
 - **Removed dead `enableJsonOutput` UI wiring:** Cleaned up 4 stale references in `public/config.js`: event listener for removed checkbox, `areAdvancedSettingsModified()` comparison, save logic, and simplified-mode hide list.
 
-## SubMaker v1.4.52
+## SubFaber v1.4.52
 
 **New Features:**
 
-- **SubMaker Database (SMDB) — community subtitle sharing:** Introduced a full-featured community subtitle database that lets users upload, browse, download, and translate subtitles linked to specific video streams. SMDB uses a dedicated Redis-backed cache (`SMDB` cache type, 2 GB default, LRU eviction, no TTL) with a new `smdbCache.js` module for storage and a `smdbPageGenerator.js` module for the UI page. Key capabilities:
+- **SubFaber Database (SMDB) — community subtitle sharing:** Introduced a full-featured community subtitle database that lets users upload, browse, download, and translate subtitles linked to specific video streams. SMDB uses a dedicated Redis-backed cache (`SMDB` cache type, 2 GB default, LRU eviction, no TTL) with a new `smdbCache.js` module for storage and a `smdbPageGenerator.js` module for the UI page. Key capabilities:
   - **Upload subtitles** linked to a video hash with language selection, 2 MB content guard, and override support (max 3 overrides per user per hour).
   - **Multi-hash subtitle lookup** — the subtitle handler queries both the real Stremio hash (`extra.videoHash` from streaming addons like Torrentio) and the derived per-stream hash, enabling cross-source subtitle matching. Matching SMDB subtitles appear in Stremio's subtitle list as `SMDB (<language>)` entries.
   - **SRT serving endpoint** (`/smdb/:videoHash/:langCode.srt`) — serves SMDB subtitles directly to the Stremio player with `Access-Control-Allow-Origin: *`.
@@ -2656,7 +2671,7 @@ PS: Partial delivery during translation remains SRT (from the translation engine
 
 - **Sub Toolbox page overhaul:** The hero section is now split into a styled hero-content card (with its own background, border, and border-radius) and a separate `hero-right` column containing the tool shelf. The hero card background gradient was moved from the outer `.hero` grid to the inner `.hero-content` for sharper visual separation. Padding, gaps, and margins throughout the hero and tool tiles were tightened for a more compact layout.
 
-- **"SubMaker Database" button added to Toolbox hero:** A new shimmer-animated SMDB CTA button (📪 SubMaker Database) is placed between "Translation History" and the Configure button. Fully styled for light, dark, and true-dark themes with gradient backgrounds, hover lift/glow animations, and a subtle shimmer sweep.
+- **"SubFaber Database" button added to Toolbox hero:** A new shimmer-animated SMDB CTA button (📪 SubFaber Database) is placed between "Translation History" and the Configure button. Fully styled for light, dark, and true-dark themes with gradient backgrounds, hover lift/glow animations, and a subtle shimmer sweep.
 
 - **"Translation History" button renamed and styled:** The "Translation Status" button was renamed to "Translation History" (📣 icon added) with updated text-transform, font-size, and letter-spacing to match the new SMDB button.
 
@@ -2676,7 +2691,7 @@ PS: Partial delivery during translation remains SRT (from the translation engine
 
 **Localization:**
 
-- Updated `toolbox.hero.body` text across all 5 locales (en, es, ar, pt-br, pt-pt) to "Enjoy SubMaker's Toolbox!".
+- Updated `toolbox.hero.body` text across all 5 locales (en, es, ar, pt-br, pt-pt) to "Enjoy SubFaber's Toolbox!".
 - Added `toolbox.hero.smdbHint` key across all 5 locales for the SMDB upload/translate hint.
 - Renamed `toolbox.hero.primary` from "Translation Status" to "Translation History" across all 5 locales.
 
@@ -2685,7 +2700,7 @@ PS: Partial delivery during translation remains SRT (from the translation engine
 - **`StorageFactory.getRedisClient()` helper:** New static method on `StorageFactory` that returns the underlying ioredis client (or `null` for filesystem deployments), used by the pub/sub initialization.
 - **`RedisStorageAdapter.getClient()` method:** Exposes the initialized ioredis client for creating duplicate connections (needed for Redis Pub/Sub subscriber).
 
-## SubMaker v1.4.51
+## SubFaber v1.4.51
 
 **Bug Fixes:**
 
@@ -2699,7 +2714,7 @@ PS: Partial delivery during translation remains SRT (from the translation engine
 
 - **Multiple other fixes.**
 
-## SubMaker v1.4.50
+## SubFaber v1.4.50
 
 **Bug Fixes:**
 
@@ -2715,7 +2730,7 @@ PS: Partial delivery during translation remains SRT (from the translation engine
 
 - **Removed ~860 lines of dead server-side stream-fetching code:** Removed 7 unused constants and 14+ unused functions from `index.js` related to server-side stream downloading, Cloudflare Workers transcription, and AssemblyAI transcription (`fetchWithRedirects`, `downloadStreamAudio`, `transcribeWithCloudflare`, `downloadFullStreamToFile`, `uploadToAssembly`, `transcribeWithAssemblyAi`, and all their helpers). None of these were called from any active route — the auto-subtitle API already requires client-provided transcripts.
 
-## SubMaker v1.4.49
+## SubFaber v1.4.49
 
 **Changes:**
 
@@ -2733,7 +2748,7 @@ PS: Partial delivery during translation remains SRT (from the translation engine
 
 - **Quick Setup styling improvements:** Adjusted spacing, font sizes, and link colors in the wizard for a more compact and consistent look.
 
-## SubMaker v1.4.48
+## SubFaber v1.4.48
 
 **New Features:**
 
@@ -2757,7 +2772,7 @@ PS: Partial delivery during translation remains SRT (from the translation engine
 
 - **Updated stale archive comments across all providers:** Removed outdated "ZIP or RAR" and "handles both ZIP and RAR" references in `opensubtitles.js`, `opensubtitles-v3.js`, `subdl.js`, and `subsource.js`. JSDoc for `isArchive()` and `readFileFromArchive()` in `archiveExtractor.js` now lists all supported formats.
 
-## SubMaker v1.4.47
+## SubFaber v1.4.47
 
 **Bug Fixes:**
 
@@ -2771,7 +2786,7 @@ PS: Partial delivery during translation remains SRT (from the translation engine
 
 - **Multiple other minor fixes across the addon.**
 
-## SubMaker v1.4.46
+## SubFaber v1.4.46
 
 **New Features:**
 
@@ -2795,7 +2810,7 @@ PS: Partial delivery during translation remains SRT (from the translation engine
 
 - **Updated ASS/SSA conversion toggle description:** Config page tooltip now clarifies that translations always convert automatically regardless of the toggle setting: "Converts ASS/SSA subtitles to VTT format for compatibility. Disable to send ASS/SSA subtitles as-is to Stremio. (Translations always convert automatically)".
 
-## SubMaker v1.4.45
+## SubFaber v1.4.45
 
 **Bug Fixes:**
 
@@ -2805,7 +2820,7 @@ PS: Partial delivery during translation remains SRT (from the translation engine
 
 - **Improved OpenSubtitles 429 error handling:** When OpenSubtitles API returns a rate limit error during credential validation, the addon now returns a user-friendly message instead of passing through the raw API error. Users are informed their credentials may still be valid and can try saving without validation.
 
-## SubMaker v1.4.44
+## SubFaber v1.4.44
 
 **Bug Fixes:**
 
@@ -2815,7 +2830,7 @@ PS: Partial delivery during translation remains SRT (from the translation engine
 
 - **Improved SubDL season pack detection:** Fixed edge cases in SubDL's season pack detection logic. The API's `full_season` field is always `false` (broken), so detection now relies on `episode`, `episode_from`, and `episode_end` fields. Fixed handling where `episode_end=0` is now correctly treated as "not set" (previously caused false negatives). Added `is_multi_episode_pack` flag to distinguish explicit episode ranges (e.g., 1→37) from full season packs. Multi-episode packs now include `episode_range` metadata.
 
-## SubMaker v1.4.43
+## SubFaber v1.4.43
 
 **Improvements:**
 
@@ -2867,7 +2882,7 @@ PS: Partial delivery during translation remains SRT (from the translation engine
 
 - **Fixed handler errors not being sent to Sentry:** The main subtitle handler catch block was only logging the error message, not the Error object itself. Sentry integration only captures errors when the Error object is passed to the logger. Changed to pass both message and Error object, ensuring TypeErrors and other programming bugs are properly reported to Sentry.
 
-## SubMaker v1.4.42
+## SubFaber v1.4.42
 
 **Improvements:**
 
@@ -2881,7 +2896,7 @@ PS: Partial delivery during translation remains SRT (from the translation engine
 
 - **Static assets bypass CORS origin checks:** Image, font, and icon files (`png`, `svg`, `ico`, `jpg`, `woff2`, `ttf`, etc.) are now served to any origin without restriction. Fixes blocks from browser extensions (`chrome-extension://`) and other clients trying to load `/logo.png` or `/favicon.svg`.
 
-## SubMaker v1.4.41
+## SubFaber v1.4.41
 
 **Bug Fixes:**
 
@@ -2897,7 +2912,7 @@ PS: Partial delivery during translation remains SRT (from the translation engine
 
 - **Configurable `trust proxy` setting:** Express `trust proxy` is no longer hardcoded to `1`. It now reads from the `TRUST_PROXY` environment variable, defaulting to `false` (no proxy trust) when unset. This prevents IP spoofing when the server is directly exposed without a reverse proxy. Supports all Express formats: numeric depth (`1`, `2`), boolean (`true`/`false`), named values (`loopback`, `linklocal`, `uniquelocal`), and subnet strings. Docker deployments set `TRUST_PROXY=1` automatically via `docker-compose.yaml`.
 
-## SubMaker v1.4.40
+## SubFaber v1.4.40
 
 **Improvements:**
 
@@ -2937,7 +2952,7 @@ PS: Partial delivery during translation remains SRT (from the translation engine
 
 - **`tryFallbackEncodings` now prioritizes language-hinted encodings:** When chardet fails entirely or produces high replacement ratios, the fallback encoding loop now tries language-specific encodings first (with script validation) before falling back to the general encoding list. This prevents the "lowest replacement ratio" heuristic from silently picking a wrong Latin codepage for Arabic/Hebrew content.
 
-## SubMaker v1.4.39
+## SubFaber v1.4.39
 
 **Improvements:**
 
@@ -3027,7 +3042,7 @@ PS: Partial delivery during translation remains SRT (from the translation engine
 
 - **Fixed `enableStreaming` not re-verified after key rotation:** `_rotateToNextKey()` replaces `this.gemini` with a new `GeminiService` instance but never re-checked whether the new instance supports `streamTranslateSubtitle`. Currently all `GeminiService` instances support it, but this guards against future provider heterogeneity. `enableStreaming` is now re-verified after every rotation.
 
-## SubMaker v1.4.38
+## SubFaber v1.4.38
 
 **New Features:**
 
@@ -3093,7 +3108,7 @@ PS: Partial delivery during translation remains SRT (from the translation engine
 
 - **Final streaming partial always saved:** Fixed a gap where the last streaming partial might not be persisted if the total entry count fell between rebuild checkpoints. The `shouldRebuildPartial` throttle now unconditionally allows saving when all entries are complete, closing the window where neither partial nor permanent cache had data.
 
-## SubMaker v1.4.37
+## SubFaber v1.4.37
 
 **New Features:**
 
@@ -3115,17 +3130,17 @@ PS: Partial delivery during translation remains SRT (from the translation engine
 
 - **Improved encoding fallback order:** The encoding fallback list now includes 20+ encodings grouped by script family (Latin, Central European, Cyrillic, Arabic, Hebrew, Greek, Turkish, Vietnamese, Thai, Baltic) for more efficient detection when primary detection fails.
 
-## SubMaker v1.4.36
+## SubFaber v1.4.36
 
 **New Features:**
 
-- **Added bare manifest for Stremio Community addon list:** Added `/manifest.json` endpoint that returns a generic addon manifest without requiring user configuration. This allows SubMaker to be published to the Stremio Community addon list. When users install from the community list, Stremio will automatically redirect them to the configuration page.
+- **Added bare manifest for Stremio Community addon list:** Added `/manifest.json` endpoint that returns a generic addon manifest without requiring user configuration. This allows SubFaber to be published to the Stremio Community addon list. When users install from the community list, Stremio will automatically redirect them to the configuration page.
 
 **Bug Fixes:**
 
 - **Fixed SCS subtitles crashing Stremio for long filenames:** SCS (Stremio Community Subtitles) uses Base64-encoded JSON as file IDs which include the video filename. Long filenames caused IDs to exceed the 200-character validation limit, returning a JSON error instead of a subtitle. This crashed Stremio's player with `TypeError: list[0] must be Buffer`. Increased fileId limit from 200 to 600 characters.
 
-## SubMaker v1.4.35
+## SubFaber v1.4.35
 
 **Improvements:**
 
@@ -3159,7 +3174,7 @@ PS: Partial delivery during translation remains SRT (from the translation engine
 
 - **Fixed UTF-8 BOM in subtitles.js:** Removed UTF-8 BOM character from the beginning of `src/handlers/subtitles.js` that was causing potential parsing issues.
 
-## SubMaker v1.4.34
+## SubFaber v1.4.34
 
 **Bug Fixes:**
 
@@ -3203,7 +3218,7 @@ PS: Partial delivery during translation remains SRT (from the translation engine
 
 - **Disable Download Cache Option:** Added `DISABLE_DOWNLOAD_CACHE=true` environment variable to completely disable the in-memory download cache if needed.
 
-## SubMaker v1.4.32
+## SubFaber v1.4.32
 
 **New Features:**
 
@@ -3245,7 +3260,7 @@ PS: Partial delivery during translation remains SRT (from the translation engine
 - **Fixed OpenSubtitles timeout errors misreported as invalid credentials:** When the OpenSubtitles API times out during authentication (e.g., `timeout of 12000ms exceeded`), the addon was incorrectly reporting "authentication failed: invalid username/password" even when credentials were valid. The root cause was that `loginWithCredentials()` called `handleAuthError()` for ALL errors (including timeouts/network issues), which returned `null`, and then `searchSubtitles()` interpreted any `null` return as "bad credentials". Now timeout, network, and DNS errors are properly thrown and logged as connection issues, while only actual authentication failures (401/403 responses) trigger the "invalid credentials" message. Additionally, 400 "Bad Request" errors are no longer automatically treated as auth failures - they now require an explicit credential-related message to be classified as such.
 - **LOTS of subtitles providers' improvements.**
 
-## SubMaker v1.4.31
+## SubFaber v1.4.31
 
 **Improvements:**
 
@@ -3255,7 +3270,7 @@ PS: Partial delivery during translation remains SRT (from the translation engine
 
 - **Enhanced Sentry diagnostics:** Added detailed diagnostic logging during Sentry initialization showing DSN presence, environment, and initialization status. Error captures now log event IDs for traceability.
 
-## SubMaker v1.4.30
+## SubFaber v1.4.30
 
 **New Features:**
 
@@ -3286,11 +3301,11 @@ PS: Partial delivery during translation remains SRT (from the translation engine
 
 - **Removed dead code from Subs.ro service:** Removed ~200 lines of unused extraction methods (`_findFirstSubtitleFile`, `_findEpisodeFile`, `_extractAndConvertSubtitle`) that were superseded by the centralized `archiveExtractor.js` utility.
 
-## SubMaker v1.4.29
+## SubFaber v1.4.29
 
 **New Subtitle Providers:**
 
-- **Stremio Community Subtitles (SCS) integration:** Added support for the community-driven subtitle database at [stremio-community-subtitles.top](https://stremio-community-subtitles.top/). When enabled, SubMaker searches SCS alongside other providers (OpenSubtitles, SubDL, SubSource) and can translate community-uploaded subtitles. Includes full language code normalization (ISO 639-2/T to B conversion), Kitsu anime ID support, and automatic fallback token for zero-config usage.
+- **Stremio Community Subtitles (SCS) integration:** Added support for the community-driven subtitle database at [stremio-community-subtitles.top](https://stremio-community-subtitles.top/). When enabled, SubFaber searches SCS alongside other providers (OpenSubtitles, SubDL, SubSource) and can translate community-uploaded subtitles. Includes full language code normalization (ISO 639-2/T to B conversion), Kitsu anime ID support, and automatic fallback token for zero-config usage.
 
 - **Wyzie Subs integration:** Added support for [Wyzie Subs](https://sub.wyzie.io), a free, open-source subtitle aggregator that searches OpenSubtitles and SubDL simultaneously. Wyzie now requires an API key for search requests. Supports both IMDB and TMDB IDs, hearing impaired filtering, and automatic ZIP extraction (handled server-side by Wyzie). Includes comprehensive language code normalization and per-language result limiting to prevent overwhelming results.
 
@@ -3308,7 +3323,7 @@ PS: Partial delivery during translation remains SRT (from the translation engine
 - Config normalization detects OpenSubtitles Auth credentials that still appear encrypted (decryption failed) and silently falls back to OpenSubtitles V3
 - Gemini API keys that failed to decrypt are also detected and cleared with a warning log
 
-## SubMaker v1.4.28
+## SubFaber v1.4.28
 
 **Logging & Monitoring:**
 
@@ -3326,7 +3341,7 @@ PS: Partial delivery during translation remains SRT (from the translation engine
 - `SENTRY_SAMPLE_RATE` - Error sample rate 0-1 (default: 1.0 = 100%)
 - `SENTRY_ENABLED` - Set to 'false' to disable Sentry even with DSN set
 
-## SubMaker v1.4.27
+## SubFaber v1.4.27
 
 **Improvements:**
 
@@ -3360,14 +3375,14 @@ PS: Partial delivery during translation remains SRT (from the translation engine
 - **Model-aware window sizes:** Base Whisper model uses 30s windows (its max), Turbo model uses 90s by default with UI slider support up to 25 minutes.
 - **VAD filter option:** Added "Enable VAD filter" checkbox for Turbo model to remove silence from audio for cleaner transcription. Turbo is now the default model.
 
-## SubMaker v1.4.26
+## SubFaber v1.4.26
 
 - **Linked stream refresh button:** Added a refresh action on Sync, Embedded Subtitles, and Auto-subs pages so users can pull the latest linked stream metadata without leaving the page.
 - **Clearer hash mismatch guidance:** Updated the embedded tools helper copy to instruct users to refresh the linked stream before pasting the Stream URL.
 - **Wikidata TMDB?IMDB fallback:** When Cinemeta doesn't have a TMDB-to-IMDB mapping (previously causing "Could not map TMDB to IMDB" errors), the addon now queries Wikidata as a free, no-API-key fallback. This improves subtitle availability for content that Cinemeta hasn't indexed yet.
 - **OpenSubtitles "Auth" rate limit fix:** Fixed 429 rate limit errors when using OpenSubtitles Auth mode by implementing a static token cache and login mutex. Previously, each request created a new `OpenSubtitlesService` instance with its own token, causing multiple concurrent requests (e.g., Stremio prefetching subtitles) to all call `/login` simultaneously exceeding OpenSubtitles' 1 request/second login limit. Now, JWT tokens are cached per credential and reused across instances, and concurrent login attempts for the same credentials are serialized via a mutex. Also removed the unnecessary global download rate limiter (12/min cap).
 
-## SubMaker v1.4.25
+## SubFaber v1.4.25
 
 
 **Translation History Improvements:**
@@ -3402,20 +3417,20 @@ PS: Partial delivery during translation remains SRT (from the translation engine
 - **Subtitle menu toggle visibility:** The floating toggle button is now much more visible with a vibrant gradient background (blue-to-purple), stronger glow effects, inner/outer highlight rings, and improved contrast against any background.
 - **Fixed IMDB/TMDB title display in subtitle menu:** The floating subtitle menu footer now correctly fetches and displays show/movie titles from Cinemeta for IMDB and TMDB streams. Previously, it was showing the cleaned filename instead of the actual title. Also fixed the episode tag to show "S01E01" format with proper season/episode parsing, and added support for TMDB ID lookups via Cinemeta.
 
-## SubMaker v1.4.24
+## SubFaber v1.4.24
 
 - **Gemini API key rotation:** Config now supports multiple Gemini keys with per-request or per-batch rotation, encrypted storage, and a compact UI for managing extra keys.
 - **Gemini 3.0 Flash and Pro (Preview):** Added the new Gemini 3.0 Flash and Pro preview models to the translation model dropdown. Also updated the Gemini 2.5 Flash option to use the `gemini-2.5-flash-preview-09-2025` model version.
 - **ASS/SSA subtitle first letter fix:** Fixed a bug where converting ASS/SSA subtitles to VTT caused the first letter of each subtitle line to be lost. The issue was in the `subsrt-ts` library's parsing, which consumed the first character of the text field. The fix adds a protective leading space before the text field in Dialogue lines during preprocessing.
 - **Stream hash mismatch fix:** Fixed hash mismatch errors on AutoSubs/Sync pages when pasting Comet, Torrentio, or debrid stream URLs. The issue occurred because the `name` query parameter (used for display) often contained a short title different from the actual filename in the URL pathname. The fix now prioritizes the pathname when it contains a valid filename with extension, falling back to `name` only when needed.
 
-## SubMaker v1.4.23
+## SubFaber v1.4.23
 
 - **Target language prompt normalization:** Translation providers now use consistent, canonical target language labels across config codes (e.g., `por`/`pob` Portuguese variants, `spa`/`spn` Spanish variants, `chi`/`zhs`/`zht` Chinese variants) to reduce dialect mismatches and improve prompt reliability.
 - **Exclude SDH/HI subtitles:** Added an option to filter out SDH/HI subtitles (e.g., captions with hearing-impaired cues) when fetching results, improving subtitle matching for standard dialogue-only tracks.
 - **UI language (pt-PT):** Added Portuguese (Portugal) (`pt-pt`) to the interface language selector.
 
-## SubMaker v1.4.22
+## SubFaber v1.4.22
 
 - **Auto-subs cue splitting:** Long auto-sub entries split more naturally by sentence boundaries with duration weighted by segment length, improving readability and timing stability.
 - **Audio track selection prompt:** When multiple audio tracks are detected for auto-subs, the toolbox now surfaces an inline track picker and a dedicated "Continue with track" action.
@@ -3426,7 +3441,7 @@ PS: Partial delivery during translation remains SRT (from the translation engine
 - **Partial cache busting:** HTML partial includes now append a cache-buster query to avoid stale UI fragments on cached hosts/CDNs.
 - **BOM stripping for providers:** Subtitle downloads from OpenSubtitles (auth/v3), SubDL, and SubSource strip UTF-8 BOMs to prevent first-character/cue corruption, especially in RTL languages.
 
-## SubMaker v1.4.21
+## SubFaber v1.4.21
 
 - **History storage upgrade:** Translation history now stores all entries per user in a single Redis record with pruning (60 retained, 20 shown) instead of many per-entry keys, eliminating keyspace SCANs on history loads.
 - **Legacy migration:** Older per-entry history keys are auto-read and migrated into the new per-user store on first access, keeping existing history visible without manual cleanup.
@@ -3438,19 +3453,19 @@ PS: Partial delivery during translation remains SRT (from the translation engine
 - **Stream update stability:** Placeholder Stremio pings (missing filename/hash or "Stream and Refresh") no longer overwrite a good linked stream snapshot, and QuickNav tracks the latest signature/timestamp so duplicate or stale "Update linked stream" toasts are cleared promptly on toolbox/sync pages.
 - **xSync/xEmbed language scoping:** Synced/embedded subtitle cache entries are only surfaced when their language matches the user's configured source/target (or no-translation) languages, preventing cross-language leakage and unnecessary cache scans.
 
-## SubMaker v1.4.20
+## SubFaber v1.4.20
 
 - **Learn Mode clarity:** Learn-mode validation now surfaces the correct error, and the config description reminds users to pick target learn languages.
 - **Config copy refresh:** Translation workflow/database descriptions and multi-provider help text are clearer across the config UI, with consistent icons and copy updates in all locales (en/es/pt-br/ar).
 - **UI polish:** True-dark themes now restyle section close links for better contrast, and config labels use clearer symbols.
 
-## SubMaker v1.4.19
+## SubFaber v1.4.19
 
 - **Learn mode stability:** Fixes missing `videoId` handling that was causing Learn-mode VTT requests to throw, and logs full error objects for translation/Learn failures to aid debugging.
 - **RTL detection hardening:** RTL language detection now tokenizes language labels (with diacritic stripping) to avoid substring false positives (e.g., Bulgarian/Hungarian) while still wrapping RTL outputs correctly.
 - **Secondary provider persistence:** Config page now keeps the Secondary Provider toggle/selection checked after save + reload, instead of silently clearing the fallback choice.
 
-## SubMaker v1.4.18
+## SubFaber v1.4.18
 
 - **Config page experience:** Config UI copy reorganized (new Cloudflare Workers auto-subs field + validator, refreshed toolbox instructions, advanced settings split, icon/section styling, mobile preview), and Cloudflare/Assembly keys are preserved for auto-subs flows.
 - **Translation history:** Added a `/sub-history` page that shows per-user translation runs (titles, source/target, provider/model, status, download links); it pulls Cinemeta titles when available and is now linked from QuickNav and the Sub Toolbox for all users (no Dev Mode required).
@@ -3462,7 +3477,7 @@ PS: Partial delivery during translation remains SRT (from the translation engine
 - **RTL translations:** Translated subtitles now wrap RTL targets with embedding markers so punctuation renders correctly for Hebrew/Arabic outputs.
 - **Addon localhost access:** Addon API routes now allow localhost origins (any port) so local browser requests including macOS Safari/Chrome can fetch subtitles without being blocked.
 
-## SubMaker v1.4.17
+## SubFaber v1.4.17
 
 - **Auto-subs via xSync:** Auto-subtitles now relies on the xSync extension for Cloudflare transcription; the server only accepts client-provided transcripts, logs CF status/snippets, and uses the official "Whisper" / "Whisper Large V3 Turbo" labels (diarization toggle removed).
 - **Auto-subs gating/resets:** Step 1/2 each require a Continue click, runs are blocked until the extension + CF credentials are detected, hash alerts reserve space to avoid jumps, and downloads stay locked until a run completes with refreshed status/progress logs.
@@ -3471,21 +3486,21 @@ PS: Partial delivery during translation remains SRT (from the translation engine
 - **Stream activity isolation:** Stream activity buckets are scoped per session/token and the poller treats 204s as healthy with the proper failure cap, preventing cross-user collisions and long pauses after idle periods.
 - **Various minor fixes.**
 
-## SubMaker v1.4.16
+## SubFaber v1.4.16
 
 - **Config cache busting:** Config UI assets/partials now force cache-busting redirects and no-store headers to avoid stale CSS/JS on hosts with long-lived CDN caches.
 - **Auto-subs audio pipeline:** Stream audio fetch now detects playlists/HTML/HLS/DASH, falls back to bundled FFmpeg decoding, enforces byte/time limits, and reports the fetch source/type for hosted runs.
 - **Cloudflare diagnostics:** Whisper calls surface CF status/segment counts and return full per-run log trails plus diagnostics so 5xx/502 failures are actionable instead of silent.
 - **Log window parity:** Auto-subs UI displays backend logTrail entries (fetch/FFmpeg/Cloudflare/translation) in the live log so step 3 shows every action and failure inline.
 
-## SubMaker v1.4.15
+## SubFaber v1.4.15
 
 - **Locale/i18n resilience:** `/api/locale` now favors explicit `lang` values, syncs translators to the resolved language, falls back safely to defaults, and reapplies translations after late partial/combobox loads; the UI-language dock self-builds if the partial is missing and flags force emoji-safe fonts.
 - **Safer i18n attributes:** `data-i18n-attr` accepts comma/space lists, filters invalid names, and guards setter errors so broken attributes no longer throw while preserving fallbacks.
 - **Auto-sub log redesign:** Auto-subtitles toolbox log is now a styled live feed with timestamps, severity coloring, capped history, and a pipeline preview to make each run s status readable.
 - **Upstream error clarity:** Cloudflare transcription responses parse non-JSON bodies, return upstream status codes/body snippets, and surface 5xx hints in API/toolbox flows so failures are actionable.
 
-## SubMaker v1.4.14
+## SubFaber v1.4.14
 
 - **xEmbed language grouping:** Embedded originals now surface with canonical language codes, so extracted tracks merge into the same Stremio language bucket instead of creating duplicate language entries.
 - **Make from embedded:**  Make (Language)  entries now include extracted embedded tracks as valid sources, even when no provider subtitles exist, with deduped source lists.
@@ -3495,7 +3510,7 @@ PS: Partial delivery during translation remains SRT (from the translation engine
 - **Cloudflare Whisper path:** Workers AI endpoint keeps model paths unencoded (preserving slashes) so Whisper requests reach Cloudflare successfully.
 - **Other minor fixes.**
 
-## SubMaker v1.4.13
+## SubFaber v1.4.13
 
 - **Subtitle caching:** Final SRT/VTT responses (downloads, xSync, xEmbed) now use device-private caching so user-set subtitle delays are kept instead of resetting when the player reloads the track.
 - **Storage outage handling:** All config-driven routes now bail out early when config storage is unavailable, ensuring the storage-unavailable response is sent instead of double responses or broken redirects.
@@ -3507,7 +3522,7 @@ PS: Partial delivery during translation remains SRT (from the translation engine
 - **Metadata fetch guards:** Cinemeta lookups skip invalid IMDb IDs, normalize them to lowercase, and fall back to TMDB IDs when available to avoid noisy 404s while still filling stream titles.
 - **Accessibility/i18n polish:** UI language dock/help buttons now carry translated aria-labels and Step 1 labels get explicit colons/shortened copy for clearer screen-reader prompts.
 
-## SubMaker v1.4.12
+## SubFaber v1.4.12
 
 - **Extract Subs rollout:** Embedded subtitles extractor is now always enabled in Sub Toolbox and QuickNav.
 - **Subtitle menu UX:** Stream subtitle menu now surfaces source and target tracks together under "Source & Target," with categories collapsed by default (per-locale labels updated), pill counts, and refreshed chrome for quicker scanning.
@@ -3518,7 +3533,7 @@ PS: Partial delivery during translation remains SRT (from the translation engine
 - **Tool pages extension detection:** Fixed inline script escapes and translation helper init on sync/embedded tool pages so scripts parse correctly and the xSync extension status can be detected (no more stuck "Waiting for extension..." badges when the extension is present).
 - **Inline script stability:** Escaped line breaks in the subtitle sync SRT helpers and initialized the embedded-subtitles `tt` helper to prevent inline script parse errors that blocked extension detection.
 
-## SubMaker v1.4.11
+## SubFaber v1.4.11
 
 **New Features:**
 - **Shared translation cache reinstated:** Shared  Make (Language)  translations are re-enabled with a new namespaced storage prefix, automatic legacy purge, and hard bypass of reads/writes when a config hash is missing/invalid.
@@ -3562,7 +3577,7 @@ PS: Partial delivery during translation remains SRT (from the translation engine
 - **Session counting:** Redis sessions now maintain a set-based index for O(1) counts; the index is verified on startup and every 3 hours with automatic rebuild on drift, and session purges fetch metadata with bounded concurrency to reduce spikes.
 - **Locale API + bootstrap:** Pages now embed locale JSON (and set `<html lang>`) via `/api/locale`, enabling toolbox/sync/file-upload/config UIs and subtitle menu to consume translated labels.
 
-## SubMaker v1.4.10
+## SubFaber v1.4.10
 
 **New Features:**
 - **Subtitles Extracting Page:** Added a floating "Stream subtitles" quick menu that loads current source/target/xEmbed/xSync links for the active stream.
@@ -3593,7 +3608,7 @@ PS: Partial delivery during translation remains SRT (from the translation engine
 - **Many other improvements.**
 
 
-## SubMaker v1.4.9
+## SubFaber v1.4.9
 
 - Fixed per-user translation concurrency tracking so the 3-slot cap is enforced reliably even when multiple translations are started at the same time.
 - Subtitle lookups now understand `tmdb:` IDs, map them to IMDB via Cinemeta with a 24h cache, and fall back to TMDB IDs in dedup keys so TMDB-only titles still return subtitles without cache collisions.
@@ -3602,7 +3617,7 @@ PS: Partial delivery during translation remains SRT (from the translation engine
 - Embedded subtitles page moves the MKV caution inline with the stream URL input so the warning is visible while choosing a source.
 - Embedded-subtitles page CSP now explicitly allows Stremio Cinemeta metadata fetches and the hosting Cloudflare beacon script, preventing console CSP blocks for title lookups.
 
-## SubMaker v1.4.8-beta
+## SubFaber v1.4.8-beta
 
 - Instructions modal now appears as a bottom-left peek after the main content loads, auto-tucks into the FAB after ~2.6s, and respects the "don't show again" preference while keeping body scroll unlocked.
 - Modal overlays no longer close when clicking inside the modal content, and reopening via the help FAB clears any pending auto-minimize timer.
@@ -3612,7 +3627,7 @@ PS: Partial delivery during translation remains SRT (from the translation engine
 - File-translation reset modal now just clears page selections/preferences and reloads the page no cache wipes or token regeneration.
 - Session manager now backfills missing token metadata, upgrades legacy unencrypted payloads in place, and keeps sessions for retry on decrypt errors instead of deleting them.
 
-## SubMaker v1.4.7-beta
+## SubFaber v1.4.7-beta
 
 v1.4.6 hotfix.
 
@@ -3623,7 +3638,7 @@ v1.4.6 hotfix.
 - Gemini config button visibility no longer flickers during init; it shows whenever a session token is present for the current origin.
 - Simplified Gemini API key help by removing the inline tooltip widget; translation UI copy clarified for the triple-click retrigger tip.
 
-## SubMaker v1.4.6-beta
+## SubFaber v1.4.6-beta
 
 - Addon origin checks now accept any `*.strem.io` host to prevent false security blocks from Stremio edge domains.
 - Service worker now treats session/token API calls as non-cacheable and honors server no-store headers before caching API responses to avoid persisting sensitive data.
@@ -3639,7 +3654,7 @@ v1.4.6 hotfix.
 - Redis pub/sub invalidation subscribes and publishes on both prefixed and unprefixed channels to keep cache invalidations working across hosts with different prefixes.
 - Startup validation now scans for double-prefixed keys across all configured prefix variants to flag misconfigurations early.
 
-## SubMaker v1.4.5-hotfix
+## SubFaber v1.4.5-hotfix
 
 **Automatic Config Regeneration & Session Recovery:**
 
@@ -3670,7 +3685,7 @@ This release implements comprehensive automatic recovery for corrupted, missing,
 - **Session validation endpoint**: New `/api/validate-session/:token` endpoint allows users to verify their session configuration and check for contamination in real-time
 - **Router metadata tracking**: Routers are tagged with `__configStr`, `__targetLanguages`, and `__createdAt` for contamination detection and debugging
 
-## SubMaker v1.4.4
+## SubFaber v1.4.4
 
 **New Features:**
 - **Stream activity feed:** New `/api/stream-activity` endpoint (SSE + polling) tracks the latest stream per config, keeping toolbox pages in sync with what you're watching
@@ -3714,15 +3729,15 @@ This release implements comprehensive automatic recovery for corrupted, missing,
 - `FILE_UPLOAD_MAX_BATCH_FILES`, `FILE_UPLOAD_MAX_CONCURRENCY` tune the file-upload queue limits for batch translations
 - `ALLOWED_ORIGINS`, `STREMIO_USER_AGENT_HINTS` extend the host/user-agent allowlists for self-hosted or forked Stremio clients
 
-## SubMaker v1.4.3 (unreleased)
+## SubFaber v1.4.3 (unreleased)
 
 **New Features:**
 - Sub Toolbox: Unified hub for all subtitle tools accessible directly from Stremio's subtitle menu (right click>download subtitles opens browser page with all available tools)
 - Video hash utility (`src/utils/videoHash.js`): Centralized video hash generation with `deriveVideoHash()` (stable hash combining filename + video ID), replacing inline MD5 hashing scattered throughout codebase
-- Embedded Subtitle Extraction & Translation (BETA, UNTESTED, NEEDS CHROME EXTENSION): Extract embedded subtitles from video files/streams (HLS, MP4, MKV) with language/codec detection, automatic VTT to SRT conversion, web-based UI for track selection/preview/management, requires integration with "SubMaker xSync" Chrome extension for client-side extraction
+- Embedded Subtitle Extraction & Translation (BETA, UNTESTED, NEEDS CHROME EXTENSION): Extract embedded subtitles from video files/streams (HLS, MP4, MKV) with language/codec detection, automatic VTT to SRT conversion, web-based UI for track selection/preview/management, requires integration with "SubFaber xSync" Chrome extension for client-side extraction
 - xEmbed cache system: Stores both original extracted tracks and translated versions, keyed by video hash (MD5 of filename) + track ID + language codes, shared across all users for same video file, prevents duplicate extraction/translation work, persistent storage with metadata
 - TranslationEngine integration for embedded subtitles: Respects user's configured provider (Gemini, OpenAI, Anthropic, etc.), supports all advanced settings, single-batch mode and timestamps-to-AI toggle support, per-translation provider/model overrides, streaming disabled for embedded translations (batch-only)
-- Chrome Extension Protocol: Message-based communication for subtitle extraction (`SUBMAKER_PING`/`PONG`, `EXTRACT_REQUEST`/`PROGRESS`/`RESPONSE`)
+- Chrome Extension Protocol: Message-based communication for subtitle extraction (`SUBFABER_PING`/`PONG`, `EXTRACT_REQUEST`/`PROGRESS`/`RESPONSE`)
 
 **New Routes & Pages:**
 - `/addon/:config/sub-toolbox/:videoId` - Redirects to standalone Sub Toolbox page with session
@@ -3749,7 +3764,7 @@ This release implements comprehensive automatic recovery for corrupted, missing,
 - Removed "Dev" section entirely - `syncSubtitlesEnabled` toggle no longer shown separately
 - Config migration logic automatically consolidates `subToolboxEnabled`, `fileTranslationEnabled`, and `syncSubtitlesEnabled` flags (if any are true in saved config, all three set to true on load, ensures backward compatibility)
 - Modal renamed from "Translate SRT Instructions" to "Sub Toolbox Instructions" with updated content
-- Visual state localStorage key updated: `submaker_dont_show_sub_toolbox` (preserves legacy key for backward compat)
+- Visual state localStorage key updated: `subfaber_dont_show_sub_toolbox` (preserves legacy key for backward compat)
 - Description updated to mention all four tools: translate files, sync subtitles, extract embedded subs, automatic subs
 
 **UI Improvements:**
@@ -3810,7 +3825,7 @@ This release implements comprehensive automatic recovery for corrupted, missing,
 **Security Audit Summary:**
 - Vulnerabilities fixed by type: XSS (2), NoSQL Injection (1 + defense-in-depth), Information Disclosure (3), Path Traversal (1), Input Validation (4), Security Misconfiguration (6), Caching Gaps (1), Host Header Poisoning (1)
 
-## SubMaker v1.4.2
+## SubFaber v1.4.2
 
 **Critical Bug Fix - Comprehensive Cache Prevention:**
 
@@ -3851,7 +3866,7 @@ This release implements comprehensive automatic recovery for corrupted, missing,
 
 - This comprehensive fix uses a **defense-in-depth strategy** with cache prevention at three layers (early middleware, route-specific headers, and disabled ETags) to ensure no user-specific content is ever cached by proxies, CDNs, or browsers. This should completely resolve all reported cases of "random language in Make button" issues.
 
-## SubMaker v1.4.1
+## SubFaber v1.4.1
 
 **Bug Fixes:**
 
@@ -3861,7 +3876,7 @@ This release implements comprehensive automatic recovery for corrupted, missing,
 - Provider downloads that return 404 or corrupted ZIPs now surface as user-facing subtitles (SubDL, SubSource, OpenSubtitles, OpenSubtitles V3).
 - Added 25 MB ZIP size caps for SubSource, SubDL, OpenSubtitles, and OpenSubtitles V3; oversized packs return a user-facing subtitle instead of being parsed.
 
-## SubMaker v1.4.0
+## SubFaber v1.4.0
 
 **New Features:**
 
@@ -3919,7 +3934,7 @@ This release implements comprehensive automatic recovery for corrupted, missing,
 - Translation error classification retains upstream flags (429/503/MAX_TOKENS/PROHIBITED_CONTENT/INVALID_SOURCE) so user messaging and fallback routing stay accurate.
 - Various minor bug fixes.
 
-## SubMaker v1.3.6 (unreleased)
+## SubFaber v1.3.6 (unreleased)
 
 **Improvements:**
 
@@ -3938,7 +3953,7 @@ This release implements comprehensive automatic recovery for corrupted, missing,
 - SRT Translation UI: Fixed authentication failure in file upload translation page using session tokens configs
 - File Translation API: Added support for advanced settings override, allowing UI customizations to be properly applied during translation
 
-## SubMaker v1.3.5
+## SubFaber v1.3.5
 
 **Improvements:**
 
@@ -3946,11 +3961,11 @@ This release implements comprehensive automatic recovery for corrupted, missing,
 - Config: Coerce OpenSubtitles username/password to strings to prevent `trim()` type errors and manifest crashes when non-string values are saved
 - Subtitle episode matching: Accept `SxxxEyy` / `xx xEyy` season-pack naming (e.g., `S01xE01`) across SubSource, SubDL, and OpenSubtitles to avoid missing episodes inside ZIPs
 
-## SubMaker v1.3.4
+## SubFaber v1.3.4
 
 **Infrastructure & Deployment:**
 
-- Docker Hub Integration: Pre-built multi-platform images now available at [xtremexq/submaker](https://hub.docker.com/r/xtremexq/submaker)
+- Docker Hub Integration: Pre-built multi-platform images now available at [xtremexq/subfaber](https://hub.docker.com/r/xtremexq/subfaber)
 - GitHub Actions: Automated Docker image publishing workflow for AMD64 and ARM64 platforms on release
 - Redis Configuration: Enhanced with connection timeouts (300s) and TCP keepalive (60s) for improved reliability
 - Security: Improved .dockerignore to prevent encryption keys from being copied into Docker images
@@ -3962,7 +3977,7 @@ This release implements comprehensive automatic recovery for corrupted, missing,
 - **Locale key flash fix:** Prevented raw i18n keys from appearing briefly before localized text loads on config pages.
 - Multiple minor bug fixes
 
-## SubMaker v1.3.3
+## SubFaber v1.3.3
 
 **New Features:**
 
@@ -4006,7 +4021,7 @@ This release implements comprehensive automatic recovery for corrupted, missing,
 - Gemini safety handling: Fixed case where Gemini returned `promptFeedback.blockReason` with no candidates. These are now classified as `PROHIBITED_CONTENT`, enabling the correct error subtitle and retry behavior instead of a generic "No response candidates" error.
 - Various minor bug fixes
 
-## SubMaker v1.3.2
+## SubFaber v1.3.2
 
 **Improvements:**
 
@@ -4020,14 +4035,14 @@ This release implements comprehensive automatic recovery for corrupted, missing,
 - **Locale key flash fix:** Prevented raw i18n keys from appearing briefly before localized text loads on config pages.
 - Fixed SubSource API key validation timing out: endpoint now reuses `SubSourceService` client (proper headers, pooled agents, DNS cache) and performs a single lightweight validation request with clearer error messages
 
-## SubMaker v1.3.1
+## SubFaber v1.3.1
 
 **Improvements:**
 
 - Multiple changes and improvements to the config page.
 - Season and episodes pack ZIP extraction: Prefer .srt over .ass/.ssa when both exist (SubSource & SubDL) to avoid unnecessary conversion and pick native SRT first
 
-## SubMaker v1.3.0
+## SubFaber v1.3.0
 
 **New Features:**
 
@@ -4078,7 +4093,7 @@ This release implements comprehensive automatic recovery for corrupted, missing,
 - Updated subsrt-ts from 2.0.1 to 2.1.2 for improved conversion reliability
 - Removed unused advanced configs from install page
 
-## SubMaker v1.2.6
+## SubFaber v1.2.6
 
 **Bug Fixes:**
 
@@ -4087,7 +4102,7 @@ This release implements comprehensive automatic recovery for corrupted, missing,
 - Translation flow now validates source subtitle size before returning loading message to prevent users from waiting indefinitely for corrupted files
 - Fixed purge trigger failing to detect cached translations in bypass cache mode: `hasCachedTranslation` now correctly calls `readFromBypassStorage` instead of non-existent `readFromBypassCache`
 
-## SubMaker v1.2.5
+## SubFaber v1.2.5
 
 **Bug Fixes:**
 
@@ -4096,7 +4111,7 @@ This release implements comprehensive automatic recovery for corrupted, missing,
 - Fixed Spanish (Latin America) language code collision: Changed 'spn' mapping from 'sx' to 'ea' to resolve conflict with Santali language and ensure proper display in Stremio language lists
 - Fixed "just fetch subtitles (no translation)" mode returning zero results: Subtitle handler now properly uses `noTranslationLanguages` from config instead of empty `sourceLanguages`/`targetLanguages` arrays
 
-## SubMaker v1.2.4
+## SubFaber v1.2.4
 
 **New Features:**
 - Anime content support: Added AniDB and Kitsu ID mapping services to resolve anime IDs to IMDB for subtitle searching
@@ -4124,7 +4139,7 @@ This release implements comprehensive automatic recovery for corrupted, missing,
 - Safer API error logging: Guarded parsing/logging of response payloads with essential fields to prevent logging failures
 - SubDL and SubSource API keys now properly redacted in debug logs to prevent credential exposure in debug logs
 
-## SubMaker v1.2.3
+## SubFaber v1.2.3
 
 **New Features:**
 - Native VTT subtitle support: Original VTT files now served directly to Stremio with proper `text/vtt` headers and `.vtt` file extension
@@ -4134,7 +4149,7 @@ This release implements comprehensive automatic recovery for corrupted, missing,
 - Improved loading subtitle messages
 - Simplified partial translation messages
 
-## SubMaker v1.2.2
+## SubFaber v1.2.2
 
 **Performance Improvements:**
 - OpenSubtitles V3 filename extraction now batched (10 concurrent requests per batch) to reduce rate limiting errors
@@ -4157,7 +4172,7 @@ This release implements comprehensive automatic recovery for corrupted, missing,
 - Fixed session lookup after server restart: `getSession()` and `updateSession()` now automatically fall back to Redis/storage when sessions are not in memory cache
 - Fixed Redis pub/sub self-invalidation: instances now ignore their own invalidation events to prevent sessions from expiring immediately after updates
 
-## SubMaker v1.2.0, 1.2.1
+## SubFaber v1.2.0, 1.2.1
 
 **New Features:**
 - Per-token session persistence: Sessions saved individually and immediately for safe multi-instance deployments
@@ -4191,7 +4206,7 @@ This release implements comprehensive automatic recovery for corrupted, missing,
 - Enhanced shutdown handling: Retry logic (3 attempts) with 10-second timeout for session saves
 
 
-## SubMaker v1.1.7
+## SubFaber v1.1.7
 
 **New Features:**
 - Refined error messages: Improved user-facing error descriptions for safety filter blocks, rate limits, authentication failures, and source file issues
@@ -4203,7 +4218,7 @@ This release implements comprehensive automatic recovery for corrupted, missing,
 - Expanded error type mapping: Enhanced error handler to classify all error types (403, 429, 503, MAX_TOKENS, PROHIBITED_CONTENT, RECITATION, SAFETY, INVALID_SOURCE)
 - Fixed 3-click cache reset safety: Now prevents cache deletion when user is at the concurrent translation limit, avoiding abuse and data loss
 
-## SubMaker v1.1.6
+## SubFaber v1.1.6
 
 **New Features:**
 - **Multi-Model Support**: Added Gemini model selection dropdown on config page with two options:
@@ -4211,7 +4226,7 @@ This release implements comprehensive automatic recovery for corrupted, missing,
   - Gemini 2.5 Flash-Lite - Well tested, faster and cheaper alternative (recommended if Flash has issues)
 - Advanced Settings can still override the selected model for per-translation customization
 
-## SubMaker v1.1.5
+## SubFaber v1.1.5
 
 **Bug Fixes:**
 
@@ -4224,7 +4239,7 @@ This release implements comprehensive automatic recovery for corrupted, missing,
 **Translation Engine Improvements:**
 - Better error caching: Translation errors are now properly cached for 15 minutes, allowing users to understand what went wrong and retry appropriately
 
-## SubMaker v1.1.4
+## SubFaber v1.1.4
 
 **Bug Fixes:**
 
@@ -4234,7 +4249,7 @@ This release implements comprehensive automatic recovery for corrupted, missing,
 - Fixed Gemini API key input: Green border now only appears when API key is successfully validated by backend, not just when field is not empty
 - Moved model fetching status messages to Advanced Settings section only (no longer shows in main config area)
 
-## SubMaker v1.1.3
+## SubFaber v1.1.3
 
 **New Features:**
 - **Gemini v1beta endpoint rollback**: Fixing previous change that introduced problems.
@@ -4250,7 +4265,7 @@ This release implements comprehensive automatic recovery for corrupted, missing,
 - Fixed config page: Switching between translation and no-translation modes now clears language selections from the previous mode to prevent unwanted languages from being saved
 - Various minor  fixes.
 
-## SubMaker v1.1.2
+## SubFaber v1.1.2
 
 **New Features:**
 - **Intelligent Subtitle Ranking**: Advanced filename matching algorithm prioritizes exact release group matches (RARBG, YTS, etc.) and rip type compatibility (WEB-DL, BluRay) for optimal sync probability
@@ -4275,7 +4290,7 @@ This release implements comprehensive automatic recovery for corrupted, missing,
 - **RTL Translations**: Added RTL embedding markers for translated subtitles so punctuation renders correctly for Hebrew/Arabic outputs
 - Various major and minor bug fixes.
 
-## SubMaker v1.1.1
+## SubFaber v1.1.1
 
 **Bug Fixes:**
 
@@ -4291,7 +4306,7 @@ This release implements comprehensive automatic recovery for corrupted, missing,
 - Model defaults consolidated to single source of truth (easier to maintain, eliminates redundancy)
 - Deprecated model override system with easy re-enable flag for future user selection
 
-## SubMaker v1.1.0
+## SubFaber v1.1.0
 
 **Translation Engine - Complete Rewrite:**
 - Completely rewrote subtitle translation workflow with structure-first approach to eliminate sync problems
@@ -4329,7 +4344,7 @@ This release implements comprehensive automatic recovery for corrupted, missing,
 - Config hash generation now handles edge cases gracefully with identifiable fallback values instead of silent failures
 - **Various major and minor bug fixes**
 
-## SubMaker v1.0.3
+## SubFaber v1.0.3
 
 **UI Redesign:**
 
@@ -4356,7 +4371,7 @@ This release implements comprehensive automatic recovery for corrupted, missing,
 - Configuration page code cleanup: removed unused files and duplicate code, simplified cache/bypass toggle logic
 - Various small bug fixes.
 
-## SubMaker v1.0.2
+## SubFaber v1.0.2
 
 **UI & Configuration:**
 - Quick Start guide now appears only on first run, hidden after setup
@@ -4378,7 +4393,7 @@ This release implements comprehensive automatic recovery for corrupted, missing,
 - Graceful shutdown: Server properly exits, clears timers, and saves sessions before closing
 - Duplicate translation prevention: In-flight request deduplication allows simultaneous identical requests to share one translation
 
-## SubMaker v1.0.1
+## SubFaber v1.0.1
 
 **Features:**
 - Progressive subtitle updates during translation: partial SRT saved after each chunk and served while translation is in progress

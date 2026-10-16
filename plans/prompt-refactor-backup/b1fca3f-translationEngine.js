@@ -732,7 +732,7 @@ class TranslationEngine {
    * @returns {Promise<string>} - Translated SRT content
    */
   async translateSubtitle(srtContent, targetLanguage, customPrompt = null, onProgress = null, sourceLanguage = null) {
-    // 🌐 Sedut & normalkan apa jua bahasa sumber dari SubMaker
+    // 🌐 Sedut & normalkan apa jua bahasa sumber dari SubFaber
     this.sourceLanguage = sourceLanguage ? normalizeTargetLanguageForPrompt(sourceLanguage) : '';
 
     // Track per-run RTL so all cleanups (including streaming) can apply markers consistently

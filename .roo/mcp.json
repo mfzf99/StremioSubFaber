@@ -1,0 +1,99 @@
+{
+	"mcpServers": {
+		"firecrawl-mcp": {
+			"command": "npx",
+			"args": [
+				"-y",
+				"firecrawl-mcp"
+			],
+			"env": {
+				"FIRECRAWL_API_KEY": "fc-b62bdf88a17748638cd18ce5b4e3b3e3"
+			},
+			"alwaysAllow": [
+				"firecrawl_search",
+				"firecrawl_scrape",
+				"firecrawl_map",
+				"firecrawl_crawl",
+				"firecrawl_check_crawl_status",
+				"firecrawl_developer_search",
+				"firecrawl_find_tools",
+				"firecrawl_search_feedback",
+				"firecrawl_feedback",
+				"firecrawl_extract",
+				"firecrawl_agent",
+				"firecrawl_agent_status",
+				"firecrawl_interact",
+				"firecrawl_interact_stop",
+				"firecrawl_parse",
+				"firecrawl_monitor_create",
+				"firecrawl_monitor_list",
+				"firecrawl_monitor_get",
+				"firecrawl_monitor_update",
+				"firecrawl_monitor_delete",
+				"firecrawl_monitor_run",
+				"firecrawl_monitor_checks",
+				"firecrawl_monitor_check",
+				"firecrawl_research_search_papers",
+				"firecrawl_research_inspect_paper",
+				"firecrawl_research_related_papers",
+				"firecrawl_research_read_paper",
+				"firecrawl_research_search_github",
+				"firecrawl_credit_usage"
+			],
+			"disabledTools": [],
+			"timeout": 300
+		},
+		"playwright": {
+			"command": "npx",
+			"args": [
+				"-y",
+				"@playwright/mcp@latest"
+			],
+			"alwaysAllow": [
+				"browser_close",
+				"browser_resize",
+				"browser_console_messages",
+				"browser_handle_dialog",
+				"browser_emulate_media",
+				"browser_evaluate",
+				"browser_file_upload",
+				"browser_drop",
+				"browser_find",
+				"browser_fill_form",
+				"browser_press_key",
+				"browser_type",
+				"browser_navigate",
+				"browser_navigate_back",
+				"browser_network_requests",
+				"browser_network_request",
+				"browser_take_screenshot",
+				"browser_snapshot",
+				"browser_click",
+				"browser_drag",
+				"browser_hover",
+				"browser_select_option",
+				"browser_tabs",
+				"browser_wait_for"
+			],
+			"disabledTools": [
+				"browser_run_code_unsafe"
+			],
+			"timeout": 300
+		},
+		"context7": {
+			"command": "npx",
+			"args": [
+				"-y",
+				"@upstash/context7-mcp"
+			],
+			"env": {
+				"DEFAULT_MINIMUM_TOKENS": ""
+			},
+			"alwaysAllow": [
+				"resolve-library-id",
+				"query-docs"
+			],
+			"timeout": 300
+		}
+	}
+}

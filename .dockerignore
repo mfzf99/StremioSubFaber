@@ -54,8 +54,8 @@ coverage
 
 # Extensions & temp files
 nul
-SubMaker xSync
-SubMaker xSync/
+SubFaber xSync
+SubFaber xSync/
 nSync
 nSync/
 .claude/

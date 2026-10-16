@@ -91,7 +91,7 @@ Sebelum sebarang kerja, tiga perkara ini **mesti** diambil kira; mengabaikannya 
         <div class="app-nav-group">
           <div class="app-nav-label" data-i18n="nav.groupHelp">Help</div>
           <a class="app-nav-pill" href="#/system"     data-nav="system"     data-i18n="nav.system">System</a>
-          <a class="app-nav-pill app-nav-docs" href="https://github.com/xtremexq/StremioSubMaker#readme" target="_blank" rel="noopener noreferrer" data-i18n="config.support.link">Docs</a>
+          <a class="app-nav-pill app-nav-docs" href="https://github.com/xtremexq/StremioSubFaber#readme" target="_blank" rel="noopener noreferrer" data-i18n="config.support.link">Docs</a>
         </div>
       </nav>
       <div class="app-sidebar-footer">

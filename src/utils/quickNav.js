@@ -394,7 +394,7 @@ function quickNavScript() {
     // Capture page load time for stream staleness guards.
     // initStreamWatcher uses this to suppress toasts for streams first detected
     // before this page was opened (prevents phantom notifications from stale cache).
-    window.__SUBMAKER_PAGE_LOAD_TIME = window.__SUBMAKER_PAGE_LOAD_TIME || Date.now();
+    window.__SUBFABER_PAGE_LOAD_TIME = window.__SUBFABER_PAGE_LOAD_TIME || Date.now();
 
     function quickNavTranslate(customT) {
       const base = (typeof customT === 'function') ? customT : (typeof window !== 'undefined' && typeof window.t === 'function' ? window.t : null);
@@ -530,10 +530,10 @@ function quickNavScript() {
           return 'default';
         }
       })();
-      const channelName = 'submaker-stream-' + configSig;
-      const ownerKey = 'submaker-stream-owner-' + configSig;
+      const channelName = 'subfaber-stream-' + configSig;
+      const ownerKey = 'subfaber-stream-owner-' + configSig;
       const tabId = Date.now() + '-' + Math.random().toString(16).slice(2);
-      const GLOBAL_OWNER_KEY = '__submakerStreamOwners__';
+      const GLOBAL_OWNER_KEY = '__subfaberStreamOwners__';
       const globalOwners = (() => {
         try {
           if (!window[GLOBAL_OWNER_KEY]) window[GLOBAL_OWNER_KEY] = {};
@@ -546,7 +546,7 @@ function quickNavScript() {
       const channel = hasBroadcast ? new BroadcastChannel(channelName) : null;
       const hasLocks = typeof navigator !== 'undefined' &&
         navigator.locks && typeof navigator.locks.request === 'function';
-      const lockName = 'submaker-stream-lock-' + configSig;
+      const lockName = 'subfaber-stream-lock-' + configSig;
       let lockHeld = false;
       let lockRelease = null;
       let lockRequestInFlight = false;
@@ -863,7 +863,7 @@ function quickNavScript() {
           // loaded, absorb it silently as baseline without showing a toast.
           // This catches stale data from the polling fallback that bypasses the
           // server-side SSE snapshot age check.
-          var pageLoadTime = Number(window.__SUBMAKER_PAGE_LOAD_TIME || 0);
+          var pageLoadTime = Number(window.__SUBFABER_PAGE_LOAD_TIME || 0);
           var firstSeen = Number(payload.firstSeenAt || payload.updatedAt || 0);
           if (pageLoadTime && firstSeen && firstSeen < pageLoadTime) return;
           showToast(payload);

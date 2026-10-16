@@ -14,7 +14,7 @@ function parseChangelogMarkdown(raw, maxEntries = DEFAULT_MAX_ENTRIES) {
     }
 
     const entries = [];
-    const versionRegex = /^## SubMaker v([\d.]+)/gm;
+    const versionRegex = /^## SubFaber v([\d.]+)/gm;
     const positions = [];
     let match;
 

@@ -5,7 +5,7 @@ const COMMUNITY_V5_BLOCKED_HOSTS = Object.freeze(['stremio.zarg.me', 'zaarrg.git
 const COMMUNITY_V5_PATH_HINTS = Object.freeze(['stremio-web-shell-fixes']);
 
 const STREMIO_KAI_HEADER = 'x-stremio-kai';
-const STREMIO_KAI_CLIENT_HEADER_NAMES = Object.freeze([STREMIO_KAI_HEADER, 'x-submaker-client', 'x-stremio-client']);
+const STREMIO_KAI_CLIENT_HEADER_NAMES = Object.freeze([STREMIO_KAI_HEADER, 'x-subfaber-client', 'x-stremio-client']);
 
 function getHeader(req, name) {
     if (!req || !name) return '';

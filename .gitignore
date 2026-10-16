@@ -14,7 +14,7 @@ keys/
 
 # Dependencies
 node_modules/
-SubMaker xSync
+SubFaber xSync
 
 # Data and cache (ignore all data/* except bundled files)
 data/*
@@ -29,7 +29,7 @@ agent-docs/
 
 # Extensions
 
-SubMaker xSync/
+SubFaber xSync/
 nSync/
 
 # IDEs

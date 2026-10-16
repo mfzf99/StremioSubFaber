@@ -14,7 +14,7 @@ const { analyzeResponseContent, createInvalidResponseSubtitle } = require('../ut
 
 const OPENSUBTITLES_API_URL = 'https://api.opensubtitles.com/api/v1';
 const OPENSUBTITLES_VIP_API_URL = 'https://vip-api.opensubtitles.com/api/v1';
-const USER_AGENT = `SubMaker v${version}`;
+const USER_AGENT = `SubFaber v${version}`;
 const MAX_ZIP_BYTES = 25 * 1024 * 1024; // hard cap for ZIP downloads (~25MB) to avoid huge packs
 
 // 🎯 RAM Cache Anti-Spam (30s TTL + Had Siling Memori)

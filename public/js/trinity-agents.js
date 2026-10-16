@@ -151,7 +151,7 @@
     // [LOCK/EYE ICONS v3.9.24] Togol penglihatan kunci — semasa medan
     // bertopeng (password, hidden=true) papar IKON MANGGA (Lock); semasa
     // medan dibuka (text, hidden=false) papar IKON MATA (Eye). Stroke
-    // currentColor supaya seiring warna teks butang (gaya legasi SubMaker).
+    // currentColor supaya seiring warna teks butang (gaya legasi SubFaber).
     function eyeIconSvg(hidden) {
         var eye =
             '<svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"></path><circle cx="12" cy="12" r="3"></circle></svg>';
@@ -1844,7 +1844,7 @@
     // --- Bulk Import Modal (Trinity) ---
     //
     // Bridge yang menjana modal secara dinamik (zero-network — parser daripada
-    // window.SubMakerBulkKeyImport). Dieksport sebagai window.BulkKeyImport supaya
+    // window.SubFaberBulkKeyImport). Dieksport sebagai window.BulkKeyImport supaya
     // butang "Bulk Import…" pada kad Trinity membukanya; kunci yang diimport
     // disalurkan terus ke baris "Additional API Keys" melalui addRotationKeyInput.
 
@@ -1930,8 +1930,8 @@
         confirmBtn.parentNode.replaceChild(freshConfirm, confirmBtn);
         freshConfirm.addEventListener('click', function () {
             var parser =
-                typeof window !== 'undefined' && window.SubMakerBulkKeyImport
-                    ? window.SubMakerBulkKeyImport.parseBulkKeys
+                typeof window !== 'undefined' && window.SubFaberBulkKeyImport
+                    ? window.SubFaberBulkKeyImport.parseBulkKeys
                     : null;
             if (!parser) {
                 if (status) {

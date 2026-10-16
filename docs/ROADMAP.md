@@ -1,6 +1,6 @@
 # 🗺️ Roadmap
 
-This document outlines the planned features and improvements for StremioSubMaker.
+This document outlines the planned features and improvements for StremioSubFaber.
 
 ## Upcoming Features
 

@@ -115,7 +115,7 @@ Menggunakan API key sebenar yang disediakan oleh owner:
 
 Semasa pengesahan, saya menemui bahawa **Service Worker** SubFaber menyimpan cache statik yang agresif:
 
-- **8 versi cache** dikesan: `submaker-static-v3.7.5` hingga `submaker-static-v3.8.11`
+- **8 versi cache** dikesan: `subfaber-static-v3.7.5` hingga `subfaber-static-v3.8.11`
 - Semua cache telah saya kosongkan (`caches.delete()`) dan SW telah *unregistered* untuk tujuan ujian
 - Walaupun demikian, *memory cache* Chromium dalam sesi Playwright masih menyajikan stylesheet lama
 - **Kesimpulan:** Perubahan fail adalah betul; pengguna akhir akan menerima versi baharu sebaik sahaja SW mengemas kini cache pada *deploy* seterusnya (atau apabila versi `_cb` berubah)

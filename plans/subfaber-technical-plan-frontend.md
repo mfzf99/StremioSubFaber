@@ -41,7 +41,7 @@ oleh `init.js`/`config-page-state.js`.
 | [`public/config.js`](../public/config.js) | Skrip konfigurasi: rehydration, save, advanced-settings bypass | Daftarkan `subfaberEnabled` dalam load/save state |
 | [`src/utils/fileUploadPageGenerator.js`](../src/utils/fileUploadPageGenerator.js) | HTML+CSS+JS halaman File Upload, server-generated | Host Pre-Flight HUD + Live Parity Monitor |
 | [`public/css/configure.css`](../public/css/configure.css) | Styles konfigurasi | Warisi corak `.form-group`, `.label-description` |
-| [`public/js/config-page-state.js`](../public/js/config-page-state.js) | State partial-loading (`SubMakerConfigPageState`) | Tidak diusik — partial dimuatkan sebelum config.js |
+| [`public/js/config-page-state.js`](../public/js/config-page-state.js) | State partial-loading (`SubFaberConfigPageState`) | Tidak diusik — partial dimuatkan sebelum config.js |
 | [`public/js/init.js`](../public/js/init.js) | Suntik partial ke `#app`, fallback jika fetch gagal | Tidak diusik — toggle dalam partial sedia ada |
 | [`public/js/quick-setup.js`](../public/js/quick-setup.js) | Wizard quick-setup, state module-scoped | Corak state untuk dijadikan rujukan |
 

@@ -8,7 +8,7 @@
 //  - Keys are masked for UI preview so full values are never written to innerHTML
 //    in plaintext, limiting shoulder-surfing and log-scrape exposure.
 //
-// The module is environment-agnostic: it attaches to window.SubMakerBulkKeyImport
+// The module is environment-agnostic: it attaches to window.SubFaberBulkKeyImport
 // in the browser and to module.exports under Node (for regression tests).
 (function (root) {
     'use strict';
@@ -138,5 +138,5 @@
         module.exports = api;
     }
     // Browser export.
-    root.SubMakerBulkKeyImport = api;
+    root.SubFaberBulkKeyImport = api;
 })(typeof window !== 'undefined' ? window : globalThis);

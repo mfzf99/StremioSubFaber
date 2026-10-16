@@ -34,7 +34,7 @@ keys
 
 # Non-tracked working directories (mirrors .gitignore)
 scripts
-SubMaker xSync
+SubFaber xSync
 nSync
 native
 tmp

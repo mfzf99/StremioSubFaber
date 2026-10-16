@@ -94,7 +94,7 @@ class AniListService {
                     {
                         timeout: 10000,
                         headers: {
-                            'User-Agent': 'StremioSubMaker/1.0',
+                            'User-Agent': 'StremioSubFaber/1.0',
                             'Content-Type': 'application/json',
                             Accept: 'application/json'
                         }

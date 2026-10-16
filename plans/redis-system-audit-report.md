@@ -1,4 +1,4 @@
-# Redis System Audit Report — StremioSubMaker VPS
+# Redis System Audit Report — StremioSubFaber VPS
 
 **Date:** 2026-09-22  
 **Auditor:** Zoo (Architect Mode)  
@@ -12,7 +12,7 @@
 
 ```mermaid
 graph TB
-    subgraph App Container submaker
+    subgraph App Container subfaber
         INDEX[index.js] --> SF[StorageFactory]
         SF --> RSA[RedisStorageAdapter]
         RSA --> IOR[ioredis client]
@@ -154,7 +154,7 @@ flowchart TD
 
 ### 6.3 ISSUE: Stale Old Logs with NOAUTH Errors (No Risk — Historical)
 
-**Location:** `/root/StremioSubMaker/logs/app.log` (Aug 29, 2026)
+**Location:** `/root/StremioSubFaber/logs/app.log` (Aug 29, 2026)
 
 - Old log file from a previous deployment shows `NOAUTH HELLO must be called...` errors
 - These are from before the Sep 21 container restart

@@ -2111,7 +2111,7 @@ async function generateSubtitleSyncPage(subtitles, videoId, streamFilename, conf
                     <span class="status-dot warn pulse" id="ext-dot"></span>
                     <div class="status-labels">
                         <span class="label-eyebrow">${escapeHtml(copy.badges.extension)}</span>
-                        <a id="ext-label" class="ext-link" href="https://chromewebstore.google.com/detail/submaker-xsync/lpocanpndchjkkpgchefobjionncknjn" target="_blank" rel="noopener noreferrer">${escapeHtml(copy.badges.extensionWaiting)}</a>
+                        <a id="ext-label" class="ext-link" href="https://chromewebstore.google.com/detail/subfaber-xsync/lpocanpndchjkkpgchefobjionncknjn" target="_blank" rel="noopener noreferrer">${escapeHtml(copy.badges.extensionWaiting)}</a>
                     </div>
                 </div>
                 <div class="status-badge">
@@ -2837,7 +2837,7 @@ async function generateSubtitleSyncPage(subtitles, videoId, streamFilename, conf
             gotIt: document.getElementById('gotItSyncInstructions'),
             dontShow: document.getElementById('dontShowSyncInstructions')
         };
-        const SYNC_INSTRUCTIONS_KEY = 'submaker_sync_instructions_visited';
+        const SYNC_INSTRUCTIONS_KEY = 'subfaber_sync_instructions_visited';
 
         function setInstructionLock(active) {
             document.body.classList.toggle('modal-open', !!active);
@@ -3258,14 +3258,14 @@ async function generateSubtitleSyncPage(subtitles, videoId, streamFilename, conf
             showStatus('syncStatus', status, 'info');
             logSync(status, 'info');
             window.postMessage({
-                type: 'SUBMAKER_SYNC_SELECT_TRACK',
+                type: 'SUBFABER_SYNC_SELECT_TRACK',
                 source: 'webpage',
                 messageId: STATE.activeMessageId,
                 trackIndex
             }, '*');
             // Backward-compat for older content scripts that only forward AUTOSUB_SELECT_TRACK.
             window.postMessage({
-                type: 'SUBMAKER_AUTOSUB_SELECT_TRACK',
+                type: 'SUBFABER_AUTOSUB_SELECT_TRACK',
                 source: 'webpage',
                 messageId: STATE.activeMessageId,
                 trackIndex
@@ -3754,7 +3754,7 @@ async function generateSubtitleSyncPage(subtitles, videoId, streamFilename, conf
         const extLabel = document.getElementById('ext-label');
         const extStatus = document.getElementById('ext-status');
         const xsyncVersionWarning = document.getElementById('xsync-version-warning');
-        const EXT_INSTALL_URL = 'https://chromewebstore.google.com/detail/submaker-xsync/lpocanpndchjkkpgchefobjionncknjn';
+        const EXT_INSTALL_URL = 'https://chromewebstore.google.com/detail/subfaber-xsync/lpocanpndchjkkpgchefobjionncknjn';
         const REQUIRED_XSYNC_VERSION = ${JSON.stringify(REQUIRED_XSYNC_VERSION)};
         const VERSION_WARNING_TEMPLATE = tt(
             'toolbox.extension.versionOutdated',
@@ -3913,7 +3913,7 @@ async function generateSubtitleSyncPage(subtitles, videoId, streamFilename, conf
             const sendPing = () => {
                 if (extensionInstalled) return;
                 pingAttempts += 1;
-                window.postMessage({ type: 'SUBMAKER_PING', source: 'webpage' }, '*');
+                window.postMessage({ type: 'SUBFABER_PING', source: 'webpage' }, '*');
                 if (pingAttempts >= MAX_PINGS && !extensionInstalled) {
                     clearInterval(pingTimer);
                     updateExtensionStatus(false, tt('sync.extension.notDetected', {}, ${JSON.stringify(t('sync.extension.notDetected', {}, 'Extension not detected'))}), 'bad');
@@ -3933,7 +3933,7 @@ async function generateSubtitleSyncPage(subtitles, videoId, streamFilename, conf
             const msg = event.data || {};
             if (!msg || (msg.source && msg.source !== 'extension')) return;
 
-            if (msg.type === 'SUBMAKER_PONG') {
+            if (msg.type === 'SUBFABER_PONG') {
                 extensionInstalled = true;
                 const version = msg.version || '1.0.0';
                 updateExtensionStatus(true, tt('sync.extension.readyVersion', { version }, 'Ready (v' + version + ')'));
@@ -3949,23 +3949,23 @@ async function generateSubtitleSyncPage(subtitles, videoId, streamFilename, conf
                 refreshSyncPlanPreview();
                 return;
             }
-            if (msg.type === 'SUBMAKER_DEBUG_LOG') {
+            if (msg.type === 'SUBFABER_DEBUG_LOG') {
                 if (msg.messageId && STATE?.activeMessageId && msg.messageId !== STATE.activeMessageId) {
                     return;
                 }
                 logSync(msg.text || tt('sync.logs.generic', {}, 'Log event'), msg.level || 'info');
                 return;
             }
-            if (msg.type === 'SUBMAKER_SYNC_TRACKS') {
+            if (msg.type === 'SUBFABER_SYNC_TRACKS') {
                 handleSyncTrackOptionsMessage(msg);
                 return;
             }
-            if (msg.type === 'SUBMAKER_AUTOSUB_TRACKS') {
+            if (msg.type === 'SUBFABER_AUTOSUB_TRACKS') {
                 // Backward-compat for older content scripts forwarding sync track prompts under autosub type.
                 handleSyncTrackOptionsMessage(msg);
                 return;
             }
-            if (msg.type === 'SUBMAKER_SYNC_PROGRESS') {
+            if (msg.type === 'SUBFABER_SYNC_PROGRESS') {
                 // Progress for the active job is handled by the request-specific listener to avoid duplicates.
                 if (!msg.messageId || !STATE?.activeMessageId || msg.messageId !== STATE.activeMessageId) return;
             }
@@ -4009,7 +4009,7 @@ async function generateSubtitleSyncPage(subtitles, videoId, streamFilename, conf
 
                 // Listen for response
                 const responseHandler = (event) => {
-                    if (event.data.type === 'SUBMAKER_SYNC_RESPONSE' &&
+                    if (event.data.type === 'SUBFABER_SYNC_RESPONSE' &&
                         event.data.messageId === messageId) {
                         window.removeEventListener('message', responseHandler);
                         window.removeEventListener('message', progressHandler);
@@ -4023,7 +4023,7 @@ async function generateSubtitleSyncPage(subtitles, videoId, streamFilename, conf
 
                 // Listen for progress updates
                 const progressHandler = (event) => {
-                    if (event.data.type === 'SUBMAKER_SYNC_PROGRESS' &&
+                    if (event.data.type === 'SUBFABER_SYNC_PROGRESS' &&
                         event.data.messageId === messageId) {
                         updateProgress('syncProgressFill', 'syncProgressText', event.data.progress, event.data.status);
                         if (event.data.status) {
@@ -4036,7 +4036,7 @@ async function generateSubtitleSyncPage(subtitles, videoId, streamFilename, conf
 
                 // Send sync request to extension
                 window.postMessage({
-                    type: 'SUBMAKER_SYNC_REQUEST',
+                    type: 'SUBFABER_SYNC_REQUEST',
                     messageId,
                     source: 'webpage',
                     data: {

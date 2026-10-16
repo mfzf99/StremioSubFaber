@@ -50,7 +50,7 @@ getAppVersion().then((v) => {
     APP_VERSION = v;
 });
 
-const CACHE_PREFIX = 'submaker';
+const CACHE_PREFIX = 'subfaber';
 const getVersionedCacheName = (version) => `${CACHE_PREFIX}-static-v${version}`;
 const API_CACHE_NAME = `${CACHE_PREFIX}-api-v2`;
 const NON_CACHEABLE_PATH_PREFIXES = [

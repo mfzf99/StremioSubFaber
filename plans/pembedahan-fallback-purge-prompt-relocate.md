@@ -9,7 +9,7 @@
 
 ## 0. Arahan Pembedahan (dari user)
 
-1. **Buang** fallback prompt (`PROMPT_TEMPLATES.fallback`) daripada sistem submaker — pertahanan PROHIBITED_CONTENT sebenar (Stage 1 + Stage 2) kekal.
+1. **Buang** fallback prompt (`PROMPT_TEMPLATES.fallback`) daripada sistem subfaber — pertahanan PROHIBITED_CONTENT sebenar (Stage 1 + Stage 2) kekal.
 2. **Pindahkan semula** `const PROMPT_TEMPLATES = {` masuk ke dalam blok yang sama dekat *Critical Enforcement Rules* (iaitu ke dalam `createXmlBatchPrompt`).
 3. **Primary prompt yang latest (`5f9c307`) disalin sebijik** — tiada pindaan teks.
 4. Plan disediakan; pelaksanaan hanya selepas kelulusan.

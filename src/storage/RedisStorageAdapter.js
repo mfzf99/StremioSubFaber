@@ -242,11 +242,11 @@ class RedisStorageAdapter extends StorageAdapter {
     }
 
     _defineAtomicCommands(client) {
-        client.defineCommand('submakerAtomicCacheWrite', {
+        client.defineCommand('subfaberAtomicCacheWrite', {
             numberOfKeys: 5,
             lua: ATOMIC_CACHE_WRITE_SCRIPT
         });
-        client.defineCommand('submakerAtomicCacheDelete', {
+        client.defineCommand('subfaberAtomicCacheDelete', {
             numberOfKeys: 5,
             lua: ATOMIC_CACHE_DELETE_SCRIPT
         });
@@ -1086,7 +1086,7 @@ class RedisStorageAdapter extends StorageAdapter {
                 // converge without turning a successful cacheable response into a miss.
                 const maxWriteAttempts = 8;
                 for (let attempt = 0; attempt < maxWriteAttempts; attempt++) {
-                    const result = await this.client.submakerAtomicCacheWrite(
+                    const result = await this.client.subfaberAtomicCacheWrite(
                         redisKey,
                         metaKey,
                         lruKey,
@@ -1185,7 +1185,7 @@ class RedisStorageAdapter extends StorageAdapter {
                     cacheType === StorageAdapter.CACHE_TYPES.SESSION
                         ? isSessionToken && !!this._getSizeLimit(cacheType)
                         : !!this._getSizeLimit(cacheType);
-                await this.client.submakerAtomicCacheDelete(
+                await this.client.subfaberAtomicCacheDelete(
                     redisKey,
                     metaKey,
                     lruKey,

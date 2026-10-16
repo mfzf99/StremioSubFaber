@@ -1,15 +1,15 @@
-# Laporan Analisis: Log Penggunaan CrazyRouter vs Receipt SubMaker (S01E20)
+# Laporan Analisis: Log Penggunaan CrazyRouter vs Receipt SubFaber (S01E20)
 
 ## Data Sumber
-- 4 request log CrazyRouter (model `gemini-3-flash`, token `submaker`, IP 51.79.242.80)
-- Receipt Telegram SubMaker v1.5.3 (pra-fix FinOps)
+- 4 request log CrazyRouter (model `gemini-3-flash`, token `subfaber`, IP 51.79.242.80)
+- Receipt Telegram SubFaber v1.5.3 (pra-fix FinOps)
 - Dokumentasi rasmi CrazyRouter (`docs.crazyrouter.com`)
 
 ---
 
-## 1. Reconciliation: Kos Sebenar vs Receipt SubMaker
+## 1. Reconciliation: Kos Sebenar vs Receipt SubFaber
 
-| Metrik | Log CrazyRouter (kebenaran) | Receipt SubMaker (v1.5.3) | Delta |
+| Metrik | Log CrazyRouter (kebenaran) | Receipt SubFaber (v1.5.3) | Delta |
 |--------|------------------------------|---------------------------|-------|
 | Input tokens | 38,304 | 1,132,958 | **29.6x inflated** |
 | Output tokens | 19,439 | 19,561 | ~0.6% (OK) |
@@ -17,7 +17,7 @@
 | Kos retail | $0.078 | $0.625 | 8x inflated |
 | Kos sebenar (45% off) | $0.0429 | $0.34 | 8x inflated |
 
-**Output tokens dalam receipt SubMaker hampir TEPAT dengan log CrazyRouter** (19,561 vs 19,439 — beza cuma 122 token / 0.6%, kemungkinan 1 retry attempt yang tak lengkap direkod). Ini mengesahkan:
+**Output tokens dalam receipt SubFaber hampir TEPAT dengan log CrazyRouter** (19,561 vs 19,439 — beza cuma 122 token / 0.6%, kemungkinan 1 retry attempt yang tak lengkap direkod). Ini mengesahkan:
 1. Bug `Math.max()` fix (v1.5.5) adalah tepat — hanya `input` yang double-counted kerana `promptTokenCount` adalah nilai kumulatif yang SAMA pada setiap SSE chunk, manakala `candidatesTokenCount` bertambah secara monotonik (jadi accumulation lama tak banyak menjejaskan output — nilai max sudah tepat).
 2. Kos sebenar translation ini adalah **$0.0429 (~RM0.19)**, bukan $0.34 seperti receipt. Selari dengan rekod kau sebelum pembedahan (~$0.03-0.04).
 
@@ -57,7 +57,7 @@ Rantaian bukti:
 
 2. **`thinkingLevel: low` TIDAK bermakna thinking dimatikan sepenuhnya.** Dokumen rasmi Google: "minimal does not guarantee that thinking is off" — apa lagi `low`. Untuk prompt yang NOVEL/kompleks, model masih berfikir.
 
-3. **Kunci teka-teki: `thoughtsTokenCount` tidak dilaporkan.** Google hanya populate `thoughtsTokenCount` bila thought summaries di-return. Pada `thinkingLevel: low`, thought summaries TIDAK dihantar — jadi field kosong/0 — TETAPI token thinking yang dibakar masih dikira dalam `candidatesTokenCount`. Inilah sebab report SubMaker tunjuk "0 thought tokens" padahal model berfikir ~7,000 token.
+3. **Kunci teka-teki: `thoughtsTokenCount` tidak dilaporkan.** Google hanya populate `thoughtsTokenCount` bila thought summaries di-return. Pada `thinkingLevel: low`, thought summaries TIDAK dihantar — jadi field kosong/0 — TETAPI token thinking yang dibakar masih dikira dalam `candidatesTokenCount`. Inilah sebab report SubFaber tunjuk "0 thought tokens" padahal model berfikir ~7,000 token.
 
 4. **Matematik FRT mengesahkan**: 7,000 token ÷ 80 saat = **87.5 tok/s** — tepat dengan kelajuan output biasa Gemini Flash (~90 tok/s). Model memang menjana token selama 80 saat itu; ia cuma bukan teks terjemahan, ia thinking. FRT = masa sehingga token VISIBLE pertama, jadi semua thinking tersembunyi dalam FRT.
 
@@ -81,7 +81,7 @@ Dokumentasi rasmi CrazyRouter (`official-pricing-methods`) mengesahkan struktur 
 - **Output termasuk thinking tokens** (explicitly stated dalam docs: "output... 官方明确写成'包含 thinking tokens'")
 - Log kau menunjukkan `"semantics": "Gemini cache subset"` — bermaksud CrazyRouter sedang membilang subset input sebagai cache (rate lebih rendah), tapi kadar yang ditunjukkan ($0.50 input) adalah standard rate, bukan cache rate ($0.05/1M untuk 3-flash). Ini adalah label laporan mereka, bukan kadar sebenar — `input_rate_per_m: 0.5` mengesahkan yang dibilang pada standard input rate.
 
-**Perbandingan dengan SubMaker FinOps pricing table** ([`telegramFinOps.js:26-39`](src/utils/telegramFinOps.js:26)):
+**Perbandingan dengan SubFaber FinOps pricing table** ([`telegramFinOps.js:26-39`](src/utils/telegramFinOps.js:26)):
 - `'3-flash-preview': { input: 0.50, output: 3.00, cache: 0.05 }` — **TEPAT** dengan log CrazyRouter ($0.50/$3.00). 
 
 ---
@@ -100,7 +100,7 @@ Dari log terminal kau (partial saves), batch 4/4 selesai 604/604 — jadi semua 
 
 ### Yang Sudah Betul
 1. **Fix v1.5.5 (Math.max)** adalah tepat — output tokens dah hampir match dengan billing sebenar
-2. Pricing table SubMaker ($0.50/$3.00) tepat dengan kadar CrazyRouter
+2. Pricing table SubFaber ($0.50/$3.00) tepat dengan kadar CrazyRouter
 3. Kos sebenar translation (~$0.043) selari dengan rekod pra-pembedahan
 
 ### Yang Perlu Dipantau
@@ -152,7 +152,7 @@ Konfigurasi A/B yang diuji pengguna (14:58 UTC, post v1.5.5):
 
 ### Cadangan Konfigurasi Optimum (berdasarkan data)
 
-Untuk `gemini-3-flash-preview` pada task batch terjemahan terstruktur SubMaker:
+Untuk `gemini-3-flash-preview` pada task batch terjemahan terstruktur SubFaber:
 - `thinkingLevel: minimal` — elak first-batch tax, FRT ~4s
 - `temperature: 0.2-1.0` — kedua-duanya berfungsi; 0.2 memberi konsistensi, ikut rekomendasi Google pula 1.0
 - `topP: 0.85-0.95` — tiada perbezaan ketara diperhatikan

@@ -144,7 +144,7 @@ Setiap fasa = satu release berasingan melalui pipeline 8-langkah (SemVer, CHANGE
 ## BAHAGIAN E — UJIAN TAMBAHAN YANG DISYORKAN POST-PELAKSANAAN
 
 1. Roundtrip rehydrate → DOM → `collectConfigPatch()` untuk setiap keluarga baharu (padanan A1–A13 sedia ada).
-2. Kontrak: pautan `?config=` lama (SubMaker era) masih menghasilkan UI yang betul — tiada elemen hilang.
+2. Kontrak: pautan `?config=` lama (SubFaber era) masih menghasilkan UI yang betul — tiada elemen hilang.
 3. Playwright live: togol Sub Toolbox → kunci CF/AssemblyAI muncul INLINE dalam kad sama; togol Learn Mode → grid Learn muncul dalam kad sama; Advanced Mode → parameter muncul inline.
 
 ---

@@ -31,7 +31,7 @@ body:
   - type: input
     id: version
     attributes:
-      label: SubMaker Version
+      label: SubFaber Version
       description: Check your addon configuration page or package.json
       placeholder: "e.g., 1.4.43"
     validations:
@@ -41,9 +41,9 @@ body:
     id: deployment
     attributes:
       label: Deployment Type
-      description: How is SubMaker running?
+      description: How is SubFaber running?
       options:
-        - ElfHosted (submaker.elfhosted.com)
+        - ElfHosted (subfaber.elfhosted.com)
         - Self-hosted
     validations:
       required: true

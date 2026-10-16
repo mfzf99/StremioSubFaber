@@ -754,7 +754,7 @@ async function queryWikidataTmdbToImdb(tmdbId, mediaType) {
             timeout: 8000,
             headers: {
                 Accept: 'application/json',
-                'User-Agent': 'StremioSubMaker/1.0 (subtitle addon; contact via GitHub)'
+                'User-Agent': 'StremioSubFaber/1.0 (subtitle addon; contact via GitHub)'
             }
         });
 
@@ -3650,7 +3650,7 @@ function createSubtitleHandler(config) {
                         radarText += chunks.slice(i, i + 3).join('  •  ') + '\n';
                     }
 
-                    const shieldMsg = `1\n00:00:00,000 --> 04:00:00,000\n🛡️ [PERISAI KUOTA SUBMAKER] 🛡️\nSistem auto-play telah dihalang.${radarText}`;
+                    const shieldMsg = `1\n00:00:00,000 --> 04:00:00,000\n🛡️ [PERISAI KUOTA SUBFABER] 🛡️\nSistem auto-play telah dihalang.${radarText}`;
 
                     // ID super ringkas (kalis Stremio crash)
                     const safeId = String(id || '').replace(/[^a-zA-Z0-9]/g, '');
@@ -4709,7 +4709,7 @@ async function handleTranslation(sourceFileId, targetLanguage, config, options =
             // Tarik balik teks SRT yang dah siap dibina dari Memory
             const shieldMsg =
                 translationSourceMeta.get(sourceFileId) ||
-                `1\n00:00:00,000 --> 04:00:00,000\n🛡️ [PERISAI KUOTA SUBMAKER] 🛡️\nSistem auto-play telah dihalang.\n\n(Data radar terpadam. Sila keluar dari menu player dan masuk semula untuk refresh radar)`;
+                `1\n00:00:00,000 --> 04:00:00,000\n🛡️ [PERISAI KUOTA SUBFABER] 🛡️\nSistem auto-play telah dihalang.\n\n(Data radar terpadam. Sila keluar dari menu player dan masuk semula untuk refresh radar)`;
 
             return ensureInformationalSubtitleSize(shieldMsg, null, config.uiLanguage || 'en');
         }
@@ -7475,7 +7475,7 @@ async function resolveHistoryTitle(videoId, fallbackTitle = '', seasonHint = nul
                             timeout: 7500,
                             headers: {
                                 Accept: 'application/vnd.api+json',
-                                'User-Agent': 'StremioSubMaker/1.0'
+                                'User-Agent': 'StremioSubFaber/1.0'
                             }
                         });
                         const animeData = kitsuResp?.data?.data?.attributes;

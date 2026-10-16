@@ -182,13 +182,13 @@ test('Redis quota scripts declare every touched key and use cached EVALSHA comma
         defineCommand: (name, definition) => commands.set(name, definition)
     });
 
-    assert.equal(commands.get('submakerAtomicCacheWrite').numberOfKeys, 5);
-    assert.match(commands.get('submakerAtomicCacheWrite').lua, /projectedSize > sizeLimit/);
-    assert.match(commands.get('submakerAtomicCacheWrite').lua, /entryCount >= maxEntries/);
-    assert.match(commands.get('submakerAtomicCacheWrite').lua, /createOnly and redis\.call\('EXISTS'/);
-    assert.match(commands.get('submakerAtomicCacheWrite').lua, /redis\.call\('SET', KEYS\[4\], projectedSize\)/);
-    assert.equal(commands.get('submakerAtomicCacheDelete').numberOfKeys, 5);
-    assert.match(commands.get('submakerAtomicCacheDelete').lua, /nextSize < 0/);
+    assert.equal(commands.get('subfaberAtomicCacheWrite').numberOfKeys, 5);
+    assert.match(commands.get('subfaberAtomicCacheWrite').lua, /projectedSize > sizeLimit/);
+    assert.match(commands.get('subfaberAtomicCacheWrite').lua, /entryCount >= maxEntries/);
+    assert.match(commands.get('subfaberAtomicCacheWrite').lua, /createOnly and redis\.call\('EXISTS'/);
+    assert.match(commands.get('subfaberAtomicCacheWrite').lua, /redis\.call\('SET', KEYS\[4\], projectedSize\)/);
+    assert.equal(commands.get('subfaberAtomicCacheDelete').numberOfKeys, 5);
+    assert.match(commands.get('subfaberAtomicCacheDelete').lua, /nextSize < 0/);
 });
 
 test('Redis set evicts and retries only after the atomic quota command rejects growth', async () => {
@@ -202,7 +202,7 @@ test('Redis set evicts and retries only after the atomic quota command rejects g
 
     adapter.initialized = true;
     adapter.client = {
-        submakerAtomicCacheWrite: async (...args) => {
+        subfaberAtomicCacheWrite: async (...args) => {
             writeCalls.push(args);
             return writeCalls.length === 1 ? [0, 9, 2, 13] : [1, 8, 0, 8];
         }
@@ -239,7 +239,7 @@ test('Redis session deletion atomically updates byte and count accounting', asyn
 
     adapter.initialized = true;
     adapter.client = {
-        submakerAtomicCacheDelete: async (...args) => {
+        subfaberAtomicCacheDelete: async (...args) => {
             calls.push(args);
             return [1, 1, 39];
         }
@@ -262,7 +262,7 @@ test('Redis session deletion does not create byte accounting when the session by
 
     adapter.initialized = true;
     adapter.client = {
-        submakerAtomicCacheDelete: async (...args) => {
+        subfaberAtomicCacheDelete: async (...args) => {
             calls.push(args);
             return [1, 1, 39];
         }
@@ -282,7 +282,7 @@ test('Redis session creation passes count and byte limits into one atomic write'
     const token = 'b'.repeat(32);
     adapter.initialized = true;
     adapter.client = {
-        submakerAtomicCacheWrite: async (...args) => {
+        subfaberAtomicCacheWrite: async (...args) => {
             calls.push(args);
             return [-1, 900, 0, 950, 3];
         }
@@ -308,7 +308,7 @@ test('short-lived helper keys do not consume session capacity accounting', async
     const calls = [];
     adapter.initialized = true;
     adapter.client = {
-        submakerAtomicCacheWrite: async (...args) => {
+        subfaberAtomicCacheWrite: async (...args) => {
             calls.push(args);
             return [1, 0, 0, 0, 0];
         }
@@ -344,7 +344,7 @@ test('session-index reconciliation preserves a session admitted after its storag
 });
 
 test('filesystem session creation rejects hard limits without deleting live sessions', async (t) => {
-    const tempDir = fs.mkdtempSync(path.join(os.tmpdir(), 'submaker-session-admission-'));
+    const tempDir = fs.mkdtempSync(path.join(os.tmpdir(), 'subfaber-session-admission-'));
     t.after(() => fs.rmSync(tempDir, { recursive: true, force: true }));
 
     const adapter = new FilesystemStorageAdapter({ baseDir: tempDir });
@@ -385,7 +385,7 @@ test(
     },
     async () => {
         const cacheType = StorageAdapter.CACHE_TYPES.TRANSLATION;
-        const prefix = `submaker-quota-test:${process.pid}:`;
+        const prefix = `subfaber-quota-test:${process.pid}:`;
         const adapter = new RedisStorageAdapter({
             host: '127.0.0.1',
             port: integrationPort,

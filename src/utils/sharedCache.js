@@ -450,7 +450,7 @@ async function getRotationCounter(counterId) {
 // Generate a unique lock owner ID for this process instance.
 // Used to identify who owns a lock for safe refresh operations.
 const LOCK_OWNER_ID = `${process.pid}-${Date.now()}-${Math.random().toString(36).slice(2, 10)}`;
-const LOCAL_FALLBACK_LOCKS_KEY = '__submakerSharedCacheLocalFallbackLocks';
+const LOCAL_FALLBACK_LOCKS_KEY = '__subfaberSharedCacheLocalFallbackLocks';
 
 function getLocalFallbackLocks() {
     if (!globalThis[LOCAL_FALLBACK_LOCKS_KEY]) {

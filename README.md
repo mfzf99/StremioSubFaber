@@ -31,11 +31,11 @@
 
 **No setup required!**
 
-### **[https://submaker.elfhosted.com](https://submaker.elfhosted.com?utm_source=github&utm_medium=readme&utm_campaign=stremiosubmaker-readme)**
+### **[https://subfaber.elfhosted.com](https://subfaber.elfhosted.com?utm_source=github&utm_medium=readme&utm_campaign=stremiosubfaber-readme)**
 
-Configure, install, done. A huge thanks to [ElfHosted](https://elfhosted.com?utm_source=github&utm_medium=readme&utm_campaign=stremiosubmaker-readme) for the free community hosting!
+Configure, install, done. A huge thanks to [ElfHosted](https://elfhosted.com?utm_source=github&utm_medium=readme&utm_campaign=stremiosubfaber-readme) for the free community hosting!
 
-Check their [FREE Stremio Addons Guide](https://stremio-addons-guide.elfhosted.com/?utm_source=github&utm_medium=readme&utm_campaign=stremiosubmaker-readme) for more great addons and features!
+Check their [FREE Stremio Addons Guide](https://stremio-addons-guide.elfhosted.com/?utm_source=github&utm_medium=readme&utm_campaign=stremiosubfaber-readme) for more great addons and features!
 
 > For self-hosting, see [Quick Start](#-quick-start) below.
 
@@ -92,8 +92,8 @@ Check their [FREE Stremio Addons Guide](https://stremio-addons-guide.elfhosted.c
 
 ```bash
 # Clone and install
-git clone https://github.com/xtremexq/StremioSubMaker.git
-cd StremioSubMaker
+git clone https://github.com/xtremexq/StremioSubFaber.git
+cd StremioSubFaber
 npm install
 
 # Create and configure .env
@@ -117,7 +117,7 @@ Visit: **http://localhost:7001**
 ## 🎯 How It Works
 
 ```
-1. Install SubMaker in Stremio
+1. Install SubFaber in Stremio
 2. Play content → Subtitles list shows "Make [Language]" buttons
 3. Click → Select source subtitle to translate
 4. Wait ~1-3 minutes → AI translates in batches
@@ -159,7 +159,7 @@ Visit: **http://localhost:7001**
 | Setting | Recommendation |
 |---------|----------------|
 | Translation Workflow | "XML Tags" for best sync |
-| Database Mode | "Use SubMaker Database" for shared caching |
+| Database Mode | "Use SubFaber Database" for shared caching |
 | Provider Timeout | 12s default, increase to 30s for slow providers |
 | Mobile Mode | Enable for Android/iOS |
 
@@ -235,7 +235,7 @@ Click the **Reset** button at the bottom of the config page.
 - Stremio team for excellent addon SDK
 - Google for free Gemini API access
 - All subtitle communities
-- [ElfHosted](https://elfhosted.com/?utm_source=github&utm_medium=readme&utm_campaign=stremiosubmaker-readme) — Free community hosting
+- [ElfHosted](https://elfhosted.com/?utm_source=github&utm_medium=readme&utm_campaign=stremiosubfaber-readme) — Free community hosting
 
 ---
 
@@ -243,7 +243,7 @@ Click the **Reset** button at the bottom of the config page.
 
 | Channel | Link |
 |---------|------|
-| **Issues & Bugs** | [Open an issue](https://github.com/xtremexq/StremioSubMaker/issues) |
+| **Issues & Bugs** | [Open an issue](https://github.com/xtremexq/StremioSubFaber/issues) |
 | **Documentation** | Open `/configure` for the live interactive config/help page |
 | **Community** | [Stremio Discord](https://discord.gg/stremio) • [r/StremioAddons](https://reddit.com/r/StremioAddons) |
 
@@ -255,7 +255,7 @@ Click the **Reset** button at the bottom of the config page.
 </p>
 
 <p align="center">
-  <a href="https://github.com/xtremexq/StremioSubMaker">⭐ Star this repo</a> •
-  <a href="https://github.com/xtremexq/StremioSubMaker/issues">🐛 Report Bug</a> •
-  <a href="https://github.com/xtremexq/StremioSubMaker/issues">✨ Request Feature</a>
+  <a href="https://github.com/xtremexq/StremioSubFaber">⭐ Star this repo</a> •
+  <a href="https://github.com/xtremexq/StremioSubFaber/issues">🐛 Report Bug</a> •
+  <a href="https://github.com/xtremexq/StremioSubFaber/issues">✨ Request Feature</a>
 </p>

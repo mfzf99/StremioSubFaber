@@ -1,4 +1,4 @@
-# 🕵️ POSTMORTEM FORENSIK: ANOMALI OFF-BY-ONE 4/4 BATCH (SubMaker v1.6.0)
+# 🕵️ POSTMORTEM FORENSIK: ANOMALI OFF-BY-ONE 4/4 BATCH (SubFaber v1.6.0)
 
 **Tarikh:** 23 Sep 2026 · **Kes:** Shine.on.Me.2025.S01E20 — 604/604 PERFECT, 4 recovery, off-by-one konsisten
 **Status:** FORENSIK SELESAI + PLAN FIX (menunggu kelulusan)

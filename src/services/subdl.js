@@ -15,7 +15,7 @@ const {
 } = require('../utils/providerAuthFailureCache');
 
 const SUBDL_API_URL = 'https://api.subdl.com/api/v1';
-const USER_AGENT = `SubMaker v${version}`;
+const USER_AGENT = `SubFaber v${version}`;
 const MAX_ZIP_BYTES = 25 * 1024 * 1024; // hard cap for ZIP downloads (~25MB) to avoid huge packs
 
 // 🎯 RAM Cache dengan Siling Memori (Anti-Memory Leak + 30s Debounce)

@@ -1,7 +1,7 @@
 # Ground Truth: Persona dalam System Prompt — Adakah Ia Merosakkan Prestasi?
 
 ## Soalan Kajian
-Adakah meletakkan persona ("You are SubMaker, an expert...") dalam System Instruction meningkatkan atau merosakkan prestasi model?
+Adakah meletakkan persona ("You are SubFaber, an expert...") dalam System Instruction meningkatkan atau merosakkan prestasi model?
 
 ## Verdict Ringkas
 **KAU BETUL. Persona role-play TIDAK meningkatkan prestasi pada objective tasks — kajian peer-reviewed mengesahkan ia neutral atau NEGATIF.**
@@ -44,15 +44,15 @@ Kajian khusus tentang mitigasi kesan negatif role-playing prompts dalam zero-sho
 
 ---
 
-## Aplikasi kepada SubMaker
+## Aplikasi kepada SubFaber
 
 ### Apa yang kajian kata tentang kes kita:
-1. **"You are SubMaker, an expert subtitle localization engine"** = speaker-specific persona. Kajian Zheng et al.: speaker-specific prompts lebih BURUK daripada audience-specific, dan kedua-duanya tak mengalahkan no-persona control.
+1. **"You are SubFaber, an expert subtitle localization engine"** = speaker-specific persona. Kajian Zheng et al.: speaker-specific prompts lebih BURUK daripada audience-specific, dan kedua-duanya tak mengalahkan no-persona control.
 2. Task kita adalah **objective precision task** (penterjemahan berstruktur dengan enforcement format) — kategori tepat di mana persona tak memberi manfaat dan kadangkala merosakkan.
 3. **A/B test real-world kau**: tanpa persona → hasil "lebih gempak". Konsisten dengan data akademik.
 
 ### Kenapa mazhab Google tetap cakap "define persona"?
-Bahasa dokumentasi Google: *"Defining a persona or role (for a chatbot, for example)"* — contohnya chatbot. Untuk task pipeline seperti SubMaker, Google's own Gemini 3 guidance sebenarnya menekankan: **"Be precise and direct"** dan **"Place behavioral constraints... in the System Instruction"** — behavioral constraints ≠ persona. Role ≠ behavioral constraint.
+Bahasa dokumentasi Google: *"Defining a persona or role (for a chatbot, for example)"* — contohnya chatbot. Untuk task pipeline seperti SubFaber, Google's own Gemini 3 guidance sebenarnya menekankan: **"Be precise and direct"** dan **"Place behavioral constraints... in the System Instruction"** — behavioral constraints ≠ persona. Role ≠ behavioral constraint.
 
 Aku tersilap menganggap "persona" (siapa awak) sama dengan "task definition" (apa tugas awak). Kajian menunjukkan yang penting ialah **task definition dan constraints**, bukan identity role-play.
 
@@ -62,7 +62,7 @@ Aku tersilap menganggap "persona" (siapa awak) sama dengan "task definition" (ap
 
 ### Sebelum (v1.5.3 — ada persona):
 ```
-You are SubMaker, an expert subtitle localization engine. Your job is to translate...
+You are SubFaber, an expert subtitle localization engine. Your job is to translate...
 ```
 
 ### Selepas (persona-free, task-defined):

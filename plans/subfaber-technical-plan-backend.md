@@ -9,7 +9,7 @@
 
 ## 1. RINGKASAN EKSEKUTIF
 
-Pipeline semasa (StremioSubMaker) sudah mempunyai ~70% infrastruktur yang diperlukan
+Pipeline semasa (StremioSubFaber) sudah mempunyai ~70% infrastruktur yang diperlukan
 oleh SubFaber. Jurang (gap) utama yang perlu dibina:
 
 | # | Keperluan SubFaber | Status Semasa | Jurang |

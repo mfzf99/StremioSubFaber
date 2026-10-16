@@ -1,31 +1,31 @@
-# 🔍 LAPORAN AUDIT: PENYINGKIRAN MAZHAB LEGASI SUBMAKER
+# 🔍 LAPORAN AUDIT: PENYINGKIRAN MAZHAB LEGASI SUBFABER
 
 **Status:** AUDIT SELESAI — MENUNGGU KELULUSAN. ZERO KOD DIMODIFIKASI.
 **Tarikh:** 2026-09-25
 **Audiitor:** GLM 5.3 (Backend & Architect Lead)
-**Mandat:** Penyingkiran Mazhab Legasi SubMaker (SubFaber = enjin tunggal)
+**Mandat:** Penyingkiran Mazhab Legasi SubFaber (SubFaber = enjin tunggal)
 
 ---
 
-## 1. RINGKASAN FAIL TERCEMAR MAZHAB SUBMAKER LAMA
+## 1. RINGKASAN FAIL TERCEMAR MAZHAB SUBFABER LAMA
 
 | # | Fail | Tahap Pencemaran | Kategori |
 |---|---|---|---|
 | 1 | [`src/services/translationEngine.js`](../src/services/translationEngine.js) | SEDANG-TINGGI | Cabang dual-engine + prompt legacy dalam komen |
 | 2 | [`src/utils/config.js`](../src/utils/config.js) | SEDANG | Normalisasi dual-flag + env fallback legacy |
 | 3 | [`index.js`](../index.js) | SEDANG | Per-request override untuk kedua-dua flag legacy |
-| 4 | [`public/partials/main.html`](../public/partials/main.html) | TINGGI (UI) | 3 elemen form legasi + label "SubMaker Database" |
+| 4 | [`public/partials/main.html`](../public/partials/main.html) | TINGGI (UI) | 3 elemen form legasi + label "SubFaber Database" |
 | 5 | [`public/config.js`](../public/config.js) | TINGGI (UI) | Rehydration/save untuk 3 elemen legasi |
 | 6 | [`src/utils/fileUploadPageGenerator.js`](../src/utils/fileUploadPageGenerator.js) | SEDANG (UI) | Toggle SubFaber + Batch Context di halaman File Upload |
 | 7 | [`src/utils/toolboxPageGenerator.js`](../src/utils/toolboxPageGenerator.js) | SEDANG (UI) | Toggle Batch Context di Embedded/AutoSubs steps |
 | 8 | [`src/utils/parallelTranslation.js`](../src/utils/parallelTranslation.js) | RENDAH | Guard `enableBatchContext` di 2 lokasi |
 | 9 | [`src/utils/validation.js`](../src/utils/validation.js) | RENDAH | Joi schema `enableBatchContext` legacy |
-| 10 | [`locales/*.json`](../locales/en.json) (5 fail) | SEDANG | i18n keys untuk toggle legasi + "SubMaker Database" |
-| 11 | [`src/utils/smdbPageGenerator.js`](../src/utils/smdbPageGenerator.js) | RENDAH (branding) | Tajuk halaman "SubMaker Database" |
+| 10 | [`locales/*.json`](../locales/en.json) (5 fail) | SEDANG | i18n keys untuk toggle legasi + "SubFaber Database" |
+| 11 | [`src/utils/smdbPageGenerator.js`](../src/utils/smdbPageGenerator.js) | RENDAH (branding) | Tajuk halaman "SubFaber Database" |
 | 12 | [`src/utils/smdbCache.js`](../src/utils/smdbCache.js) | RENDAH (branding) | Komen header |
-| 13 | [`src/storage/StorageAdapter.js`](../src/storage/StorageAdapter.js) | RENDAH (branding) | Komen `SMDB: 'SubMaker Database'` |
-| 14 | [`src/services/telegramBot.js`](../src/services/telegramBot.js) | RENDAH (branding) | 2 mesej "SubMaker" |
-| 15 | [`public/js/panel-nav.js`](../public/js/panel-nav.js), [`public/js/quick-setup.js`](../public/js/quick-setup.js), [`public/js/subtitle-menu.js`](../public/js/subtitle-menu.js), [`public/js/bulk-key-import.js`](../public/js/bulk-key-import.js), [`public/js/config-page-state.js`](../public/js/config-page-state.js) | RENDAH (branding) | Global names + teks "SubMaker" |
+| 13 | [`src/storage/StorageAdapter.js`](../src/storage/StorageAdapter.js) | RENDAH (branding) | Komen `SMDB: 'SubFaber Database'` |
+| 14 | [`src/services/telegramBot.js`](../src/services/telegramBot.js) | RENDAH (branding) | 2 mesej "SubFaber" |
+| 15 | [`public/js/panel-nav.js`](../public/js/panel-nav.js), [`public/js/quick-setup.js`](../public/js/quick-setup.js), [`public/js/subtitle-menu.js`](../public/js/subtitle-menu.js), [`public/js/bulk-key-import.js`](../public/js/bulk-key-import.js), [`public/js/config-page-state.js`](../public/js/config-page-state.js) | RENDAH (branding) | Global names + teks "SubFaber" |
 
 ---
 
@@ -86,7 +86,7 @@
 | Toggle `#subfaberEnabled` | [`main.html:1424-1434`](../public/partials/main.html:1424) | SubFaber ON kekal — toggle jadi placebo |
 | Toggle `#enableBatchContext` | [`main.html:1411-1422`](../public/partials/main.html:1411) | Redundant dengan sliding window SubFaber |
 | Input `#contextSize` + `#contextSizeGroup` | [`main.html:1833-1842`](../public/partials/main.html:1833) | Placebo — SubFaber hardcode prev 3 / next 2 |
-| Label "SubMaker Database" | [`main.html:1436-1457`](../public/partials/main.html:1436) | Rebrand → "SubFaber Database" (databaseMode select kekal) |
+| Label "SubFaber Database" | [`main.html:1436-1457`](../public/partials/main.html:1436) | Rebrand → "SubFaber Database" (databaseMode select kekal) |
 
 **Rujukan JS `public/config.js` untuk dibuang/selaraskan:**
 
@@ -96,7 +96,7 @@
 - [L11523-11535](../public/config.js:11523): rehydration batch context + context size — buang.
 - [L11539-11542](../public/config.js:11539): rehydration subfaber — buang (atau kunci true).
 - [L11875-11877](../public/config.js:11875): save path ketiga-tiga field — buang.
-- [L1599](../public/config.js:1599), [L6444-6445](../public/config.js:6444): localStorage keys `submaker_*` — **kekalkan** (data pengguna sedia ada; rename = kehilangan preferensi).
+- [L1599](../public/config.js:1599), [L6444-6445](../public/config.js:6444): localStorage keys `subfaber_*` — **kekalkan** (data pengguna sedia ada; rename = kehilangan preferensi).
 
 **Halaman File Upload ([`fileUploadPageGenerator.js`](../src/utils/fileUploadPageGenerator.js)):**
 
@@ -111,15 +111,15 @@
 - Toggle `#autoBatchContext` (AutoSubs) [L9807-9810](../src/utils/toolboxPageGenerator.js:9807), [L6195](../src/utils/toolboxPageGenerator.js:6195) — **buang**.
 - Plumbing [L5640-5641](../src/utils/toolboxPageGenerator.js:5640), [L6045-6047](../src/utils/toolboxPageGenerator.js:6045), [L7186-7188](../src/utils/toolboxPageGenerator.js:7186), [L8192-8194](../src/utils/toolboxPageGenerator.js:8192), [L8510-8512](../src/utils/toolboxPageGenerator.js:8510) — selaraskan.
 
-**i18n keys (5 lokal) untuk dibuang:** `config.advancedGemini.subfaber.*`, `config.advancedGemini.batchContext.*`, `config.advancedGemini.contextSize.*`. Untuk rebrand: `config.translationSettings.database.*` ("SubMaker Database" → "SubFaber Database").
+**i18n keys (5 lokal) untuk dibuang:** `config.advancedGemini.subfaber.*`, `config.advancedGemini.batchContext.*`, `config.advancedGemini.contextSize.*`. Untuk rebrand: `config.translationSettings.database.*` ("SubFaber Database" → "SubFaber Database").
 
-### 2.E BRANDING "SubMaker" SISA (tidak memecah fungsi, wajib selaras mandat rebrand)
+### 2.E BRANDING "SubFaber" SISA (tidak memecah fungsi, wajib selaras mandat rebrand)
 
-- [`smdbPageGenerator.js`](../src/utils/smdbPageGenerator.js:326) — title tag + h1 "SubMaker Database".
+- [`smdbPageGenerator.js`](../src/utils/smdbPageGenerator.js:326) — title tag + h1 "SubFaber Database".
 - [`smdbCache.js`](../src/utils/smdbCache.js:2), [`StorageAdapter.js:235`](../src/storage/StorageAdapter.js:235) — komen.
-- [`telegramBot.js:393, 673`](../src/services/telegramBot.js:393) — mesej Telegram "SubMaker".
-- [`public/js/`](../public/js/panel-nav.js): `window.SubMakerConfigPageState`, `window.SubMakerBulkKeyImport`, `window.SubMakerGeminiModelUi`, footer "SubMaker" ([subtitle-menu.js:1228](../public/js/subtitle-menu.js:1228)), changelog parser "## SubMaker v" ([panel-nav.js:360](../public/js/panel-nav.js:360) — **HATI-HATI**: regex ini mem-parse CHANGELOG.md sejarah; menukar ia memecah paparan changelog lama).
-- [`toolboxPageGenerator.js:1380`](../src/utils/toolboxPageGenerator.js:1380) — butang "SubMaker Database".
+- [`telegramBot.js:393, 673`](../src/services/telegramBot.js:393) — mesej Telegram "SubFaber".
+- [`public/js/`](../public/js/panel-nav.js): `window.SubFaberConfigPageState`, `window.SubFaberBulkKeyImport`, `window.SubFaberGeminiModelUi`, footer "SubFaber" ([subtitle-menu.js:1228](../public/js/subtitle-menu.js:1228)), changelog parser "## SubFaber v" ([panel-nav.js:360](../public/js/panel-nav.js:360) — **HATI-HATI**: regex ini mem-parse CHANGELOG.md sejarah; menukar ia memecah paparan changelog lama).
+- [`toolboxPageGenerator.js:1380`](../src/utils/toolboxPageGenerator.js:1380) — butang "SubFaber Database".
 
 ---
 
@@ -149,22 +149,22 @@
 5. `validation.js`: buang `enableBatchContext` dari Joi.
 
 ### Fasa 2 — Frontend (hari 1-2)
-6. `main.html`: buang 3 elemen form legasi, rebrand "SubMaker Database" → "SubFaber Database".
+6. `main.html`: buang 3 elemen form legasi, rebrand "SubFaber Database" → "SubFaber Database".
 7. `config.js` (public): buang rehydration/save/listener untuk 3 elemen, selaraskan `updateBypassCacheForAdvancedSettings()`.
 8. `fileUploadPageGenerator.js`: buang 2 toggle, kunci SSE opt-in aktif.
 9. `toolboxPageGenerator.js`: buang 2 toggle Batch Context + plumbing.
 10. `locales/*.json` (5 fail): buang keys legasi, rebrand database keys.
 
 ### Fasa 3 — Branding sisa + tests (hari 2)
-11. Rebrand teks "SubMaker" → "SubFaber" (smdbPageGenerator, smdbCache, StorageAdapter komen, telegramBot, toolbox button, subtitle-menu footer, quick-setup copy).
+11. Rebrand teks "SubFaber" → "SubFaber" (smdbPageGenerator, smdbCache, StorageAdapter komen, telegramBot, toolbox button, subtitle-menu footer, quick-setup copy).
 12. Tulis semula 3-4 test legacy dalam `subfaber-context-regression.test.js`.
 13. `npm test` — sahkan 100% PASS.
 
 ### Yang DIKEKALKAN
 - `singleBatchMode` (saiz chunk, bukan konteks) + semua UI-nya.
 - `mismatchRetries` + 3-pass retry + Smart Preamble Scrubber + parser `<s id>` + anchor prefill.
-- localStorage keys `submaker_*` (data pengguna).
-- Regex changelog parser `## SubMaker v` (mem-parse sejarah CHANGELOG.md — menukar ia memecah paparan entri lama).
+- localStorage keys `subfaber_*` (data pengguna).
+- Regex changelog parser `## SubFaber v` (mem-parse sejarah CHANGELOG.md — menukar ia memecah paparan entri lama).
 - `databaseMode` select (Use/Bypass) — hanya label di-rebrand.
 - SSE branch + Pre-Flight HUD + Parity Monitor + Dwi-Panel (kini sentiasa aktif).
 
@@ -180,7 +180,7 @@
 | Test `subfaberEnabled defaults OFF` gagal selepas flag dibuang | Pasti berlaku | Tulis semula test dalam Fasa 3 (sudah dirancang) |
 | Toolbox Embedded/AutoSubs JS rujuk `els.batchContext` selepas HTML dibuang | Sederhana | Null-check sedia ada (`if (els.batchContext)`) melindungi, tetapi buang rujukan bersih dalam Fasa 2 |
 | Off-by-one regression berulang (postmortem v2) jika anchor/scrubber diusik | Tinggi | **Pembedahan ini TIDAK menyentuh** parser/scrubber/anchor — hanya context builder + flag plumbing |
-| Telegram bot + halaman SMDB kehilangan identiti jika rebrand terlepas | Rendah | Audit grep akhir `submaker` (case-insensitive) sebelum commit |
+| Telegram bot + halaman SMDB kehilangan identiti jika rebrand terlepas | Rendah | Audit grep akhir `subfaber` (case-insensitive) sebelum commit |
 | `TRANSLATION_BATCH_SIZE` env var di-VPS production tidak lagi berkesan | Sederhana | Kekalkan env var sebagai override sahaja ATAU maklumkan dalam CHANGELOG (keputusan Lead) |
 
 ---
@@ -189,8 +189,8 @@
 
 1. **Field `subfaberEnabled` dalam config:** buang terus (enjin tunggal, tiada flag) ATAU kunci `true` selama satu release untuk transition? → **Syorkan: buang terus** (mandat "set-and-forget").
 2. **`TRANSLATION_BATCH_SIZE` env var:** kekalkan sebagai escape hatch ATAU buang? → **Syorkan: buang** — hardcode 50 (Golden Standard).
-3. **Regex changelog `## SubMaker v`** di panel-nav.js: kekal (mem-parse sejarah) ATAU migrate CHANGELOG.md sepenuhnya? → **Syorkan: kekal** sehingga CHANGELOG di-migrate.
-4. **localStorage keys `submaker_*`:** kekal (data pengguna) ATAU migrate dengan fallback baca-legacy? → **Syorkan: kekal** — kos rename tiada nilai.
+3. **Regex changelog `## SubFaber v`** di panel-nav.js: kekal (mem-parse sejarah) ATAU migrate CHANGELOG.md sepenuhnya? → **Syorkan: kekal** sehingga CHANGELOG di-migrate.
+4. **localStorage keys `subfaber_*`:** kekal (data pengguna) ATAU migrate dengan fallback baca-legacy? → **Syorkan: kekal** — kos rename tiada nilai.
 
 ---
 

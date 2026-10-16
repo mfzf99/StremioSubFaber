@@ -233,7 +233,7 @@
         // Footer
         const footer = el('div', 'app-changelog-footer');
         const ghLink = el('a', 'app-changelog-footer-link', 'View full changelog on GitHub');
-        ghLink.href = 'https://github.com/xtremexq/StremioSubMaker/blob/main/CHANGELOG.md';
+        ghLink.href = 'https://github.com/xtremexq/StremioSubFaber/blob/main/CHANGELOG.md';
         ghLink.target = '_blank';
         ghLink.rel = 'noopener noreferrer';
         ghLink.setAttribute('data-i18n', 'changelog.viewFull');

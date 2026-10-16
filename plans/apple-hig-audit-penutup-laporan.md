@@ -95,7 +95,7 @@ Setiap fasa telah disahkan secara langsung selepas restart server:
 | 3.8.15 | ✅ Disajikan (Fasa 3) |
 | 3.8.16 | ✅ Disajikan (Fasa 4) |
 
-Mekanisme lengkap: `package.json` → [`version.js`](src/utils/version.js) → `_cb` URL aset → SW menjana cache `submaker-static-v3.8.16` dan memadam semua cache lama semasa activate. **Fresh rebuild dijamin menerima CSS/HTML terkini tanpa cache lama.**
+Mekanisme lengkap: `package.json` → [`version.js`](src/utils/version.js) → `_cb` URL aset → SW menjana cache `subfaber-static-v3.8.16` dan memadam semua cache lama semasa activate. **Fresh rebuild dijamin menerima CSS/HTML terkini tanpa cache lama.**
 
 ---
 
@@ -108,7 +108,7 @@ Sistem i18n SubFaber menggunakan `data-i18n` + `data-i18n-attr="innerHTML"` untu
 [`configurePageGenerator.js:80`](src/utils/configurePageGenerator.js:80) menggunakan `const CACHED_CONFIGURE_PAGE = renderConfigurePage()` — template diproses sekali semasa modul dimuat. Restart proses Node.js adalah wajib untuk melihat perubahan partial.
 
 ### 6.3 Service Worker Multi-Cache (Fasa 1)
-SW menyimpan sehingga 8 versi cache (`submaker-static-v3.7.5` → `v3.8.11`) sebelum pembersihan. Bump version memastikan cache lama dipadam automatik semasa SW activate.
+SW menyimpan sehingga 8 versi cache (`subfaber-static-v3.7.5` → `v3.8.11`) sebelum pembersihan. Bump version memastikan cache lama dipadam automatik semasa SW activate.
 
 ---
 

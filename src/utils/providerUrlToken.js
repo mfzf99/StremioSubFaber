@@ -12,7 +12,7 @@ const MAX_URL_BYTES = 4096;
 // version, nonce, and authentication tag are added. Leave bounded room for the
 // provider prefix and season-pack suffix used by route file IDs.
 const MAX_PROVIDER_FILE_ID_CHARS = 6144;
-const TOKEN_CONTEXT_PREFIX = 'SubMaker provider URL';
+const TOKEN_CONTEXT_PREFIX = 'SubFaber provider URL';
 
 function getTokenContext(providerPrefix) {
     const normalized = String(providerPrefix || '').replace(/_+$/, '');

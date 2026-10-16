@@ -2322,7 +2322,7 @@ app.use(
 // Expose version on all responses
 app.use((req, res, next) => {
     try {
-        res.setHeader('X-SubMaker-Version', version);
+        res.setHeader('X-SubFaber-Version', version);
     } catch (_) {}
     next();
 });
@@ -2797,7 +2797,7 @@ if (process.env.FORCE_SESSION_READY !== 'false') {
                         error: t(
                             'server.errors.serviceInitializing',
                             {},
-                            'SubMaker is still initializing. Please retry shortly.'
+                            'SubFaber is still initializing. Please retry shortly.'
                         ),
                         retryable: true
                     });
@@ -5626,7 +5626,7 @@ const subtitleDownloadHandler = async (req, res) => {
         // daily quota when the link is generated. Some players (including
         // Nuvio builds) probe every returned subtitle URL before the user has
         // selected one. Coordinate a short intent window through Redis so two
-        // SubMaker pods allow one initial request, defer the other distinct
+        // SubFaber pods allow one initial request, defer the other distinct
         // file IDs, and immediately allow the file the client requests again
         // as its real selection. Cache hits above never enter this guard.
         const providerPrefixes = ['subdl_', 'subsource_', 'v3_'];
@@ -5810,9 +5810,9 @@ const subtitleContentHandler = async (req, res) => {
 
 // Register subtitle download routes for all supported extensions
 // Route priority: Express matches routes in order of registration
-// Do not put these behind the generic SubMaker search limiter. Stremio clients
+// Do not put these behind the generic SubFaber search limiter. Stremio clients
 // may retry or probe subtitle URLs aggressively, and download delivery should
-// not create a SubMaker-side 429 before provider/auth handling gets a chance.
+// not create a SubFaber-side 429 before provider/auth handling gets a chance.
 app.get(
     '/addon/:config/subtitle/:fileId/:language.srt',
     validateRequest(subtitleParamsSchema, 'params'),
@@ -6558,7 +6558,7 @@ app.get('/sub-toolbox', async (req, res) => {
     }
 });
 
-// ── SMDB (SubMaker Database) Routes ─────────────────────────────────────────
+// ── SMDB (SubFaber Database) Routes ─────────────────────────────────────────
 // Redirect from Stremio addon path to standalone SMDB page
 app.get('/addon/:config/smdb/:videoId', async (req, res) => {
     try {
@@ -9590,7 +9590,7 @@ app.get('/manifest.json', (req, res) => {
                 configurable: true,
                 configurationRequired: true
             },
-            contactEmail: 'support@submaker.example.com'
+            contactEmail: 'support@subfaber.example.com'
         };
 
         log.info(() => `[Manifest] Bare manifest request from ${getClientIp(req)}`);
@@ -9627,7 +9627,7 @@ app.get('/addon/:config/manifest.json', async (req, res) => {
         const manifestCacheKey = getManifestCacheKey(req.params.config, baseUrl);
         const cachedManifest = manifestResponseCache.get(manifestCacheKey);
         if (cachedManifest) {
-            res.setHeader('X-SubMaker-Manifest-Cache', 'hit');
+            res.setHeader('X-SubFaber-Manifest-Cache', 'hit');
             return res.json(deepCloneConfig(cachedManifest));
         }
 
@@ -9657,9 +9657,9 @@ app.get('/addon/:config/manifest.json', async (req, res) => {
         const manifest = payload.manifest;
         if (payload.cacheable && manifest) {
             manifestResponseCache.set(manifestCacheKey, deepCloneConfig(manifest));
-            res.setHeader('X-SubMaker-Manifest-Cache', 'miss-store');
+            res.setHeader('X-SubFaber-Manifest-Cache', 'miss-store');
         } else {
-            res.setHeader('X-SubMaker-Manifest-Cache', 'miss');
+            res.setHeader('X-SubFaber-Manifest-Cache', 'miss');
         }
 
         res.json(manifest);

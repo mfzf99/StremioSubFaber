@@ -18,7 +18,7 @@ export default [
             'temp/**',
             '.cache/**',
             'native/**',
-            'SubMaker xSync/**',
+            'SubFaber xSync/**',
             'nSync/**',
             'scripts/**'
         ]

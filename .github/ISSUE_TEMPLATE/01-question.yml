@@ -1,5 +1,5 @@
 name: ❓ Question
-description: Ask a question about SubMaker
+description: Ask a question about SubFaber
 labels: ["question"]
 body:
   - type: markdown
@@ -8,8 +8,8 @@ body:
         Have a question? We're happy to help!
         
         Before asking, please check:
-        - [README](https://github.com/xtremexq/StremioSubMaker#readme) documentation
-        - [Existing issues](https://github.com/xtremexq/StremioSubMaker/issues?q=is%3Aissue) for similar questions
+        - [README](https://github.com/xtremexq/StremioSubFaber#readme) documentation
+        - [Existing issues](https://github.com/xtremexq/StremioSubFaber/issues?q=is%3Aissue) for similar questions
 
   - type: textarea
     id: question

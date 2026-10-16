@@ -79,7 +79,7 @@ function init() {
         Sentry.init({
             dsn,
             environment: process.env.SENTRY_ENVIRONMENT || process.env.NODE_ENV || 'production',
-            release: `submaker@${version}`,
+            release: `subfaber@${version}`,
 
             // Sample rate for error events (1.0 = 100%)
             sampleRate: parseFloat(process.env.SENTRY_SAMPLE_RATE) || 1.0,
@@ -106,7 +106,7 @@ function init() {
             // Attach extra context to all events
             initialScope: {
                 tags: {
-                    app: 'submaker',
+                    app: 'subfaber',
                     version: version
                 }
             }

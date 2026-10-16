@@ -84,7 +84,7 @@
 
     function notifyLocaleUpdated() {
         try {
-            window.dispatchEvent(new CustomEvent('submaker:locale-updated'));
+            window.dispatchEvent(new CustomEvent('subfaber:locale-updated'));
         } catch (_) {}
     }
 
@@ -374,7 +374,7 @@
         CF_WORKERS_AUTOSUBS: ''
     };
     if (typeof window !== 'undefined') {
-        window.SubMakerDefaultApiKeys = Object.freeze({ ...DEFAULT_API_KEYS });
+        window.SubFaberDefaultApiKeys = Object.freeze({ ...DEFAULT_API_KEYS });
     }
 
     // Popular languages for quick selection
@@ -428,7 +428,7 @@
     ];
     const KEY_OPTIONAL_PROVIDERS = new Set(['googletranslate', 'custom']);
     const configPageState =
-        typeof window !== 'undefined' && window.SubMakerConfigPageState ? window.SubMakerConfigPageState : null;
+        typeof window !== 'undefined' && window.SubFaberConfigPageState ? window.SubFaberConfigPageState : null;
 
     function configHasSubToolboxEnabled(config) {
         if (configPageState && typeof configPageState.configHasSubToolboxEnabled === 'function') {
@@ -1439,7 +1439,7 @@ Translate to {target_language}.`;
     }
 
     if (typeof window !== 'undefined') {
-        window.SubMakerGeminiModelUi = {
+        window.SubFaberGeminiModelUi = {
             getDefaultModelValue: getDefaultGeminiModelOptionValue,
             getDefaultModelLabel: getDefaultGeminiModelOptionLabel,
             getModelSpecificDefaults,
@@ -1848,7 +1848,7 @@ Translate to {target_language}.`;
     const TOKEN_VAULT_MAX_ENTRIES = 5;
     const TOKEN_VAULT_RAIL_LIMIT = 5;
     const TOKEN_VAULT_EXPORT_VERSION = 2;
-    const TOKEN_VAULT_BACKUP_KIND = 'submaker-token-vault-backup';
+    const TOKEN_VAULT_BACKUP_KIND = 'subfaber-token-vault-backup';
     const TOKEN_VAULT_BRIEF_TTL_MS = 30 * 1000;
     const CONFIG_INSTRUCTIONS_PREFERENCE_KEY = 'subfaber_dont_show_instructions';
     const LEGACY_CONFIG_INSTRUCTIONS_PREFERENCE_KEY = 'hideConfigInstructions';
@@ -4788,8 +4788,8 @@ Translate to {target_language}.`;
             link.href = url;
             link.download =
                 mode === 'current' && isValidSessionToken(targetToken)
-                    ? `submaker-profile-backup-${targetToken.slice(-6)}.json`
-                    : `submaker-token-vault-backup-${new Date().toISOString().slice(0, 10)}.json`;
+                    ? `subfaber-profile-backup-${targetToken.slice(-6)}.json`
+                    : `subfaber-token-vault-backup-${new Date().toISOString().slice(0, 10)}.json`;
             document.body.appendChild(link);
             link.click();
             document.body.removeChild(link);
@@ -7995,11 +7995,11 @@ Translate to {target_language}.`;
         bindTokenVaultUiEventListeners();
         syncConfigInstructionsPreferenceUi();
         const dontShowInstructions = document.getElementById('dontShowInstructions');
-        if (dontShowInstructions && !dontShowInstructions.__submakerBound) {
+        if (dontShowInstructions && !dontShowInstructions.__subfaberBound) {
             dontShowInstructions.addEventListener('change', (event) => {
                 persistConfigInstructionsPreference(event.target?.checked === true);
             });
-            dontShowInstructions.__submakerBound = true;
+            dontShowInstructions.__subfaberBound = true;
         }
 
         // Quick Setup → Advanced Settings bridge
@@ -10045,7 +10045,7 @@ Translate to {target_language}.`;
     /* ================= Bulk Import Modal (zero-network) ================= */
 
     function getBulkImportApi() {
-        return (typeof window !== 'undefined' && window.SubMakerBulkKeyImport) || null;
+        return (typeof window !== 'undefined' && window.SubFaberBulkKeyImport) || null;
     }
 
     function openBulkImportModal() {
@@ -13882,7 +13882,7 @@ Translate to {target_language}.`;
                     // "View on GitHub" link (sibling of content, not child — avoids max-height clipping)
                     const ghLink = document.createElement('a');
                     ghLink.className = 'portal-gh-link';
-                    ghLink.href = 'https://github.com/xtremexq/StremioSubMaker/releases/tag/v' + entry.version;
+                    ghLink.href = 'https://github.com/xtremexq/StremioSubFaber/releases/tag/v' + entry.version;
                     ghLink.target = '_blank';
                     ghLink.rel = 'noopener noreferrer';
                     ghLink.textContent = 'View full release on GitHub →';

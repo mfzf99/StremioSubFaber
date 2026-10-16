@@ -1350,7 +1350,7 @@ function generateSubToolboxPage(configStr, videoId, filename, config) {
           <span class="status-dot warn pulse" id="ext-dot"></span>
           <div class="labels">
             <span class="status-label">${t('toolbox.status.extension', {}, 'Extension')}</span>
-            <a class="status-value ext-link" id="ext-value" href="https://chromewebstore.google.com/detail/submaker-xsync/lpocanpndchjkkpgchefobjionncknjn" target="_blank" rel="noopener noreferrer">${t('toolbox.status.checking', {}, 'Checking...')}</a>
+            <a class="status-value ext-link" id="ext-value" href="https://chromewebstore.google.com/detail/subfaber-xsync/lpocanpndchjkkpgchefobjionncknjn" target="_blank" rel="noopener noreferrer">${t('toolbox.status.checking', {}, 'Checking...')}</a>
           </div>
         </div>
         <div class="status-badge">
@@ -1552,7 +1552,7 @@ function generateSubToolboxPage(configStr, videoId, filename, config) {
       let pingTimer = null;
       let pingAttempts = 0;
       const MAX_PINGS = 5;
-      const EXT_INSTALL_URL = 'https://chromewebstore.google.com/detail/submaker-xsync/lpocanpndchjkkpgchefobjionncknjn';
+      const EXT_INSTALL_URL = 'https://chromewebstore.google.com/detail/subfaber-xsync/lpocanpndchjkkpgchefobjionncknjn';
       const REQUIRED_XSYNC_VERSION = ${JSON.stringify(REQUIRED_XSYNC_VERSION)};
       const VERSION_WARNING_TEMPLATE = window.t
         ? window.t(
@@ -1629,7 +1629,7 @@ function generateSubToolboxPage(configStr, videoId, filename, config) {
         const sendPing = () => {
           if (extReady) return;
           pingAttempts += 1;
-          window.postMessage({ type: 'SUBMAKER_PING', source: 'webpage' }, '*');
+          window.postMessage({ type: 'SUBFABER_PING', source: 'webpage' }, '*');
           if (pingAttempts >= MAX_PINGS && !extReady) {
             clearInterval(pingTimer);
             const notDetected = window.t ? window.t('toolbox.status.notDetected', {}, 'Not detected') : 'Not detected';
@@ -1641,7 +1641,7 @@ function generateSubToolboxPage(configStr, videoId, filename, config) {
       }
       window.addEventListener('message', event => {
         const msg = event.data;
-        if (!msg || msg.type !== 'SUBMAKER_PONG') return;
+        if (!msg || msg.type !== 'SUBFABER_PONG') return;
         if (msg.source && msg.source !== 'extension') return;
         const detected = window.t ? window.t('toolbox.status.detected', {}, 'Detected') : 'Detected';
         const version = msg.version ? 'v' + msg.version : detected;
@@ -3187,7 +3187,7 @@ async function generateEmbeddedSubtitlePage(configStr, videoId, filename) {
           <span class="status-dot warn" id="ext-dot"></span>
           <div class="status-labels">
             <span class="label-eyebrow">${t('toolbox.status.extension', {}, 'Extension')}</span>
-            <a id="ext-label" class="ext-link" href="https://chromewebstore.google.com/detail/submaker-xsync/lpocanpndchjkkpgchefobjionncknjn" target="_blank" rel="noopener noreferrer">${t('toolbox.autoSubs.extension.waiting', {}, 'Waiting for extension...')}</a>
+            <a id="ext-label" class="ext-link" href="https://chromewebstore.google.com/detail/subfaber-xsync/lpocanpndchjkkpgchefobjionncknjn" target="_blank" rel="noopener noreferrer">${t('toolbox.autoSubs.extension.waiting', {}, 'Waiting for extension...')}</a>
           </div>
         </div>
         <div class="status-badge">
@@ -3467,10 +3467,10 @@ async function generateEmbeddedSubtitlePage(configStr, videoId, filename) {
       gotIt: document.getElementById('gotItEmbeddedInstructions'),
       dontShow: document.getElementById('dontShowEmbeddedInstructions')
     };
-    const INSTRUCTIONS_KEY = 'submaker_embedded_instructions_visited';
+    const INSTRUCTIONS_KEY = 'subfaber_embedded_instructions_visited';
     const INSTRUCTIONS_ACK = 'ack';
     const INSTRUCTIONS_HIDE = 'hide';
-    const EXTRACT_MODE_KEY = 'submaker_embedded_extract_mode';
+    const EXTRACT_MODE_KEY = 'subfaber_embedded_extract_mode';
     const EXTRACT_WATCHDOG_MS = 5 * 60 * 1000; // keep extraction alive while progress flows
     let subtitleMenuInstance = null;
     let extractWatchdogTimer = null;
@@ -3480,7 +3480,7 @@ async function generateEmbeddedSubtitlePage(configStr, videoId, filename) {
     function requestExtensionReset(reason) {
       try {
         window.postMessage({
-          type: 'SUBMAKER_EMBEDDED_RESET',
+          type: 'SUBFABER_EMBEDDED_RESET',
           source: 'webpage',
           reason: reason || ''
         }, '*');
@@ -4116,7 +4116,7 @@ async function generateEmbeddedSubtitlePage(configStr, videoId, filename) {
       el.inert = false;
       el.removeAttribute('inert');
     }
-    const EXT_INSTALL_URL = 'https://chromewebstore.google.com/detail/submaker-xsync/lpocanpndchjkkpgchefobjionncknjn';
+    const EXT_INSTALL_URL = 'https://chromewebstore.google.com/detail/subfaber-xsync/lpocanpndchjkkpgchefobjionncknjn';
     const REQUIRED_XSYNC_VERSION = ${JSON.stringify(REQUIRED_XSYNC_VERSION)};
     const VERSION_WARNING_TEMPLATE = tt(
       'toolbox.extension.versionOutdated',
@@ -5783,13 +5783,13 @@ async function generateEmbeddedSubtitlePage(configStr, videoId, filename) {
     window.addEventListener('message', (event) => {
       const msg = event.data || {};
       if (msg.source !== 'extension') return;
-      const trackedTypes = ['SUBMAKER_EXTRACT_PROGRESS', 'SUBMAKER_EXTRACT_RESPONSE', 'SUBMAKER_DEBUG_LOG'];
+      const trackedTypes = ['SUBFABER_EXTRACT_PROGRESS', 'SUBFABER_EXTRACT_RESPONSE', 'SUBFABER_DEBUG_LOG'];
       const isExtractEvent = trackedTypes.includes(msg.type);
       if (isExtractEvent) {
         if (!state.extractMessageId) return;
         if (msg.messageId && msg.messageId !== state.extractMessageId) return;
       }
-      if (msg.type === 'SUBMAKER_PONG') {
+      if (msg.type === 'SUBFABER_PONG') {
         pingRetries = 0; // Reset retry counter
         if (pingTimer) {
           clearTimeout(pingTimer);
@@ -5798,12 +5798,12 @@ async function generateEmbeddedSubtitlePage(configStr, videoId, filename) {
         const readyWithVersion = tt('toolbox.autoSubs.extension.readyWithVersion', { version: msg.version || '-' }, 'Ready (v' + (msg.version || '-') + ')');
         updateExtensionStatus(true, readyWithVersion);
         setXsyncVersionWarning(msg.version || '');
-      } else if (msg.type === 'SUBMAKER_DEBUG_LOG') {
+      } else if (msg.type === 'SUBFABER_DEBUG_LOG') {
         refreshExtractionWatchdog();
         const level = (msg.level || 'info').toUpperCase();
         const text = msg.text || (window.t ? window.t('toolbox.logs.event', {}, 'Log event') : 'Log event');
         logExtract('[' + level + '] ' + text);
-      } else if (msg.type === 'SUBMAKER_EXTRACT_PROGRESS') {
+      } else if (msg.type === 'SUBFABER_EXTRACT_PROGRESS') {
         refreshExtractionWatchdog();
         // Deduplicate consecutive identical progress messages to prevent spam
         const currentStatus = msg.status || ('Progress ' + msg.progress + '%');
@@ -5811,7 +5811,7 @@ async function generateEmbeddedSubtitlePage(configStr, videoId, filename) {
           state.lastProgressStatus = currentStatus;
           logExtract(currentStatus);
         }
-      } else if (msg.type === 'SUBMAKER_EXTRACT_RESPONSE') {
+      } else if (msg.type === 'SUBFABER_EXTRACT_RESPONSE') {
         setExtractionInFlight(false);
         setTranslationInFlight(false);
         state.lastProgressStatus = null; // Reset for next extraction
@@ -5848,7 +5848,7 @@ async function generateEmbeddedSubtitlePage(configStr, videoId, filename) {
         pingRetries += 1;
         const label = window.t ? window.t('toolbox.status.pinging', {}, 'Pinging extension...') : 'Pinging extension...';
         updateExtensionStatus(false, label, 'warn');
-        window.postMessage({ type: 'SUBMAKER_PING', source: 'webpage' }, '*');
+        window.postMessage({ type: 'SUBFABER_PING', source: 'webpage' }, '*');
         if (pingRetries >= MAX_PING_RETRIES && !state.extensionReady) {
           const notDetected = window.t ? window.t('toolbox.logs.extensionMissing', {}, 'Extension not detected') : 'Extension not detected';
           updateExtensionStatus(false, notDetected, 'bad');
@@ -5914,7 +5914,7 @@ async function generateEmbeddedSubtitlePage(configStr, videoId, filename) {
       state.extractMessageId = messageId;
       state.lastProgressStatus = null; // Reset progress tracking for new extraction
       window.postMessage({
-        type: 'SUBMAKER_EXTRACT_REQUEST',
+        type: 'SUBFABER_EXTRACT_REQUEST',
         source: 'webpage',
         messageId,
         data: {
@@ -7628,7 +7628,7 @@ async function generateAutoSubtitlePage(configStr, videoId, filename, config = {
         appendLog(status, 'info');
         setStatus(status);
         window.postMessage({
-          type: 'SUBMAKER_AUTOSUB_SELECT_TRACK',
+          type: 'SUBFABER_AUTOSUB_SELECT_TRACK',
           source: 'webpage',
           messageId: state.autoSubsMessageId,
           trackIndex: choice
@@ -7968,7 +7968,7 @@ async function generateAutoSubtitlePage(configStr, videoId, filename, config = {
               .toLowerCase();
             const waitForTranscript = waitForAutoSubResponse(messageId);
             window.postMessage({
-              type: 'SUBMAKER_AUTOSUB_REQUEST',
+              type: 'SUBFABER_AUTOSUB_REQUEST',
               source: 'webpage',
               messageId,
               data: {
@@ -8022,7 +8022,7 @@ async function generateAutoSubtitlePage(configStr, videoId, filename, config = {
             const messageId = 'autosub_' + Date.now();
             const waitForTranscript = waitForAutoSubResponse(messageId);
             window.postMessage({
-              type: 'SUBMAKER_AUTOSUB_REQUEST',
+              type: 'SUBFABER_AUTOSUB_REQUEST',
               source: 'webpage',
               messageId,
               data: {
@@ -8286,8 +8286,8 @@ async function generateAutoSubtitlePage(configStr, videoId, filename, config = {
         let pingRetries = 0;
         let pingTimer = null;
         const MAX_PING_RETRIES = 5;
-        const EXT_INSTALL_URL = (els.extLabel && els.extLabel.getAttribute('href')) || 'https://chromewebstore.google.com/detail/submaker-xsync/lpocanpndchjkkpgchefobjionncknjn';
-        const REQUIRED_XSYNC_VERSION = window.__SUBMAKER_REQUIRED_XSYNC_VERSION || '1.0.0';
+        const EXT_INSTALL_URL = (els.extLabel && els.extLabel.getAttribute('href')) || 'https://chromewebstore.google.com/detail/subfaber-xsync/lpocanpndchjkkpgchefobjionncknjn';
+        const REQUIRED_XSYNC_VERSION = window.__SUBFABER_REQUIRED_XSYNC_VERSION || '1.0.0';
         const VERSION_WARNING_TEMPLATE = tt(
           'toolbox.extension.versionOutdated',
           { detected: '{detected}', required: '{required}' },
@@ -8351,7 +8351,7 @@ async function generateAutoSubtitlePage(configStr, videoId, filename, config = {
         window.addEventListener('message', (event) => {
           const msg = event.data || {};
           if (msg.source !== 'extension') return;
-          if (msg.type === 'SUBMAKER_PONG') {
+          if (msg.type === 'SUBFABER_PONG') {
             pingRetries = 0;
             if (pingTimer) {
               clearTimeout(pingTimer);
@@ -8363,13 +8363,13 @@ async function generateAutoSubtitlePage(configStr, videoId, filename, config = {
             updateExtensionStatus(true, readyLabel);
             updateVersionWarning(msg.version || '');
           }
-          if (msg.type === 'SUBMAKER_AUTOSUB_PROGRESS') {
+          if (msg.type === 'SUBFABER_AUTOSUB_PROGRESS') {
             handleAutoSubProgressMessage(msg);
-          } else if (msg.type === 'SUBMAKER_AUTOSUB_TRACKS') {
+          } else if (msg.type === 'SUBFABER_AUTOSUB_TRACKS') {
             handleTrackOptionsMessage(msg);
-          } else if (msg.type === 'SUBMAKER_AUTOSUB_RESPONSE') {
+          } else if (msg.type === 'SUBFABER_AUTOSUB_RESPONSE') {
             handleAutoSubResponseMessage(msg);
-          } else if (msg.type === 'SUBMAKER_DEBUG_LOG' && state.autoSubsInFlight) {
+          } else if (msg.type === 'SUBFABER_DEBUG_LOG' && state.autoSubsInFlight) {
             const logTone = (msg.level || '').toString().toLowerCase();
             const text = msg.text || 'Extension log event';
             const prev = state.lastDebugLog;
@@ -8391,7 +8391,7 @@ async function generateAutoSubtitlePage(configStr, videoId, filename, config = {
             pingRetries += 1;
             const label = tt('toolbox.status.pinging', {}, 'Pinging extension...');
             updateExtensionStatus(false, label, 'warn');
-            window.postMessage({ type: 'SUBMAKER_PING', source: 'webpage' }, '*');
+            window.postMessage({ type: 'SUBFABER_PING', source: 'webpage' }, '*');
             if (pingRetries >= MAX_PING_RETRIES && !state.extensionReady) {
               const notDetected = tt('toolbox.autoSubs.extension.notDetected', {}, 'Extension not detected');
               updateExtensionStatus(false, notDetected, 'bad');
@@ -9626,7 +9626,7 @@ async function generateAutoSubtitlePage(configStr, videoId, filename, config = {
           <span class="status-dot warn" id="ext-dot"></span>
           <div class="status-labels">
             <span class="label-eyebrow">${escapeHtml(copy.badges.extension)}</span>
-            <a id="ext-label" class="ext-link" href="https://chromewebstore.google.com/detail/submaker-xsync/lpocanpndchjkkpgchefobjionncknjn" target="_blank" rel="noopener noreferrer">${escapeHtml(copy.badges.waitingExtension)}</a>
+            <a id="ext-label" class="ext-link" href="https://chromewebstore.google.com/detail/subfaber-xsync/lpocanpndchjkkpgchefobjionncknjn" target="_blank" rel="noopener noreferrer">${escapeHtml(copy.badges.waitingExtension)}</a>
           </div>
         </div>
         <div class="status-badge" id="hashBadge">
@@ -9891,7 +9891,7 @@ async function generateAutoSubtitlePage(configStr, videoId, filename, config = {
       current: ${JSON.stringify(t('toolbox.refresh.current', {}, 'Already latest'))}
     };
 
-    window.__SUBMAKER_REQUIRED_XSYNC_VERSION = ${JSON.stringify(REQUIRED_XSYNC_VERSION)};
+    window.__SUBFABER_REQUIRED_XSYNC_VERSION = ${JSON.stringify(REQUIRED_XSYNC_VERSION)};
     const copy = ${safeJsonSerialize(copy)};
     ${streamFilenameSelectorClientScript()}
     (${autoSubsRuntime.toString()})(copy, selectStreamFilename);

@@ -81,7 +81,7 @@ class KitsuService {
                     },
                     timeout: 10000,
                     headers: {
-                        'User-Agent': 'StremioSubMaker/1.0',
+                        'User-Agent': 'StremioSubFaber/1.0',
                         Accept: 'application/vnd.api+json',
                         'Content-Type': 'application/vnd.api+json'
                     }
@@ -316,7 +316,7 @@ class KitsuService {
                     {
                         timeout: 10000,
                         headers: {
-                            'User-Agent': 'StremioSubMaker/1.0'
+                            'User-Agent': 'StremioSubFaber/1.0'
                         }
                     }
                 );
@@ -391,7 +391,7 @@ class KitsuService {
                 timeout: 8000,
                 headers: {
                     Accept: 'application/json',
-                    'User-Agent': 'StremioSubMaker/1.0 (subtitle addon; contact via GitHub)'
+                    'User-Agent': 'StremioSubFaber/1.0 (subtitle addon; contact via GitHub)'
                 }
             });
 
@@ -437,7 +437,7 @@ class KitsuService {
                         const response = await axios.get(url, {
                             timeout: 10000,
                             headers: {
-                                'User-Agent': 'StremioSubMaker/1.0'
+                                'User-Agent': 'StremioSubFaber/1.0'
                             }
                         });
 
@@ -530,7 +530,7 @@ class KitsuService {
                     },
                     timeout: 10000,
                     headers: {
-                        'User-Agent': 'StremioSubMaker/1.0',
+                        'User-Agent': 'StremioSubFaber/1.0',
                         Accept: 'application/vnd.api+json',
                         'Content-Type': 'application/vnd.api+json'
                     }

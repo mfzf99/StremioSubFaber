@@ -78,7 +78,7 @@ class MALService {
                 const response = await axios.get(`${this.baseUrl}/anime/${numericId}/external`, {
                     timeout: 10000,
                     headers: {
-                        'User-Agent': 'StremioSubMaker/1.0',
+                        'User-Agent': 'StremioSubFaber/1.0',
                         Accept: 'application/json'
                     }
                 });

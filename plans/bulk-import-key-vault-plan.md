@@ -141,7 +141,7 @@ Modul bebas tanpa kebergantungan supaya **boleh di-unit-test melalui Node** (die
 
     const api = { parseBulkKeys, maskKey, KEY_PATTERNS };
     if (typeof module !== 'undefined' && module.exports) { module.exports = api; } // Node test
-    root.SubMakerBulkKeyImport = api;                                              // Browser
+    root.SubFaberBulkKeyImport = api;                                              // Browser
 })(typeof window !== 'undefined' ? window : globalThis);
 ```
 
@@ -194,7 +194,7 @@ Modul bebas tanpa kebergantungan supaya **boleh di-unit-test melalui Node** (die
 1. **`openBulkImportModal()` / `closeBulkImportModal()`** — toggle `display`, fokus textarea, `Escape` & klik-luar untuk tutup.
 2. **Preview live** (`input` event pada textarea, *debounce 250ms*):
    ```js
-   const result = window.SubMakerBulkKeyImport.parseBulkKeys(text, {
+   const result = window.SubFaberBulkKeyImport.parseBulkKeys(text, {
        existingKeys: getGeminiApiKeys(),
        maxKeys: remainingSlot()   // MAX_GEMINI_API_KEYS - getGeminiApiKeys().length
    });
@@ -248,7 +248,7 @@ Sisip `<script src="/js/bulk-key-import.js"></script>` **sebelum** `/config.js` 
 ## 7. RISIKO & ROLLBACK
 
 - **Risiko hampir sifar pada backend**: tiada fail `src/` atau `index.js` (kecuali 1 baris senarai aset statik, pilihan) disentuh.
-- **Rollback**: buang 1 baris `<script>` + fail `bulk-key-import.js` + blok modal; `config.js` berfungsi seperti asal kerana semua cara baharu berpagar pada kewujudan `window.SubMakerBulkKeyImport` (feature-detect, bukan hard dependency).
+- **Rollback**: buang 1 baris `<script>` + fail `bulk-key-import.js` + blok modal; `config.js` berfungsi seperti asal kerana semua cara baharu berpagar pada kewujudan `window.SubFaberBulkKeyImport` (feature-detect, bukan hard dependency).
 - **Keserasian tokenVault UI**: modal berasingan daripada Token Vault rail; tiada pertindihan ID/selectors.
 
 ---
