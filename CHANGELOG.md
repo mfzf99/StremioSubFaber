@@ -2,6 +2,27 @@
 
 All notable changes to this project will be documented in this file.
 
+## SubMaker v3.10.0 (2026-10-16) — Send-All Doctrine: Unified Generation Parameters untuk Ketiga-Tiga Door
+
+### Changed
+
+- **[MANDAT OWNER 2026-10-16 — SEND-ALL DOCTRINE] Kelima-lima parameter generatif (Thinking, Temperature, Top-P, Presence Penalty, Frequency Penalty) kini WAJIB DIHANTAR oleh ketiga-tiga pintu tanpa client-side strip/drop/lock — pelayan provider tentukan sendiri (terima/abaikan/400).** Tujuan Owner: pemerhatian empirikal behaviour pelayan sebenar. Pembedahan:
+  - **Gemini ([src/services/gemini.js](src/services/gemini.js)):** gate `sampling !== 'stripped'` pada cabang 3.x DIGUGURKAN — temperature/topP/frequencyPenalty/presencePenalty dihantar untuk SEMUA family (STRICT 3.6+ termasuk); routing thinking kekal (2.5 → `thinkingBudget` int, 3.x → `thinkingLevel` enum); topK kekal haram (v1.6.0).
+  - **OpenAI-compatible ([src/services/providers/openaiCompatible.js](src/services/providers/openaiCompatible.js)):** `frequency_penalty` kini diserialisasi (gap lama ditutup — dahulu dinormalisasi config tetapi tidak pernah dihantar); `shouldOmitOpenAISamplingParams()` jadi no-op eksplisit; `applyFrontierModelRules()` (Kimi-k3 drop sampling / GLM-5.3 lock temp 0.0+top_p 0.1) tidak lagi dipanggil dalam builder.
+  - **Anthropic ([src/services/providers/anthropic.js](src/services/providers/anthropic.js)):** auto-force temperature=1.0 & auto-drop top_p semasa thinking aktif DIGUGURKAN (pre-emptive) — hanya override eksplisit laluan auto-compliance retry dihormati; `thinking: { type, budget_tokens }` kekal.
+  - **Schema & routing:** `providerParameterSchema` Joi kini menerima `presencePenalty`/`frequencyPenalty` (-2..2) ([src/utils/validation.js](src/utils/validation.js)); pass-through penalty ke SEMUA pintu openai-compatible (openai/deepseek/mistral/openrouter/cfworkers/custom) dalam factory ([src/services/translationProviderFactory.js](src/services/translationProviderFactory.js)).
+  - **Dokumen ground truth** kedua-duanya ([plans/gemini-sampling-ground-truth-2026.md](plans/gemini-sampling-ground-truth-2026.md), [plans/trinity-params-ground-truth-2026.md](plans/trinity-params-ground-truth-2026.md)) diberi notis doktrin: matriks kekal fakta API, gate stripping dimatikan untuk pemerhatian Owner.
+
+### Added
+
+- **UI Advanced Settings ([src/utils/fileUploadPageGenerator.js](src/utils/fileUploadPageGenerator.js)):** field **Presence Penalty** & **Frequency Penalty** (Julat -2..2, English-only label per mandate) ditambah selepas Top-P; **stepper buttons (−/+)** pada SEMUA input number advanced settings (Thinking Budget, Temperature, Top-P, Penalties, Max Tokens, Timeout, Max Retries) — nilai boleh diisi manual ATAU dilaras dengan satu klik, clamp automatik ke julat min/max; rehydration penalty dari config tersimpan.
+- **Ujian regresi send-all:** 6 assertion strip lama ditulis semula mengikut doktrin ([src/services/gemini-auth-model-regression.test.js](src/services/gemini-auth-model-regression.test.js), [src/services/channels-triDoor-phaseC-regression.test.js](src/services/channels-triDoor-phaseC-regression.test.js)) + assertion baharu lebih ketat (sampling dihantar untuk STRICT bila ditetapkan; lalai service tetap dihantar). Suite: **426 total / 425 PASS / 0 FAIL / 1 SKIP** (monotonic ≥ 426).
+
+### Notes
+
+- **Agent B god-tier payload TIDAK disentuh** — 4-kunci empirikal `{model, messages, stream, temperature:0.0}` kekal lalai (keputusan Owner tertunda sama ada diunlock).
+- **Risiko diterima sedar (Owner):** gemini-3.6+ / Kimi-k3 / Claude-thinking mungkin membalas HTTP 400 bila menerima parameter yang dahulu di-strip — itu data pemerhatian yang dikehendaki.
+
 ## SubMaker v3.9.52 (2026-10-15) — Proxy 401/403 Resilience: Backoff untuk Gateway Proksi
 
 ### Fixed

@@ -77,8 +77,13 @@ class AnthropicProvider {
     buildRequestBody(subtitleContent, targetLanguage, customPrompt = null, stream = false, requestOptions = {}) {
         const { systemPrompt, userPrompt } = this.buildUserPrompt(subtitleContent, targetLanguage, customPrompt);
         const { maxTokens, thinkingBudget, thinkingEnabled } = this.buildTokenBudgets();
-        const forceTemperatureOne = requestOptions.forceTemperatureOne === true || thinkingEnabled;
-        const disableTopP = requestOptions.disableTopP === true || thinkingEnabled;
+        // [MANDAT OWNER 2026-10-16 — SEND-ALL DOCTRINE] Auto-force temperature=1.0
+        // dan auto-drop top_p semasa thinking aktif DIGUGURKAN — nilai user wajib
+        // dihantar apa adanya; pelayan Anthropic tentukan sendiri (terima/400).
+        // requestOptions.forceTemperatureOne / disableTopP kekal dihormati sebagai
+        // override eksplisit laluan auto-compliance retry (bukan pre-emptive).
+        const forceTemperatureOne = requestOptions.forceTemperatureOne === true;
+        const disableTopP = requestOptions.disableTopP === true;
         const disableJsonPrefill = requestOptions.disableJsonPrefill === true;
         const effectiveTemperature = forceTemperatureOne ? 1 : this.temperature;
 

@@ -1,5 +1,14 @@
 # TRINITY PARAMS GROUND TRUTH MATRIX — 2026-10-14 (Fasa 1 & 2, Laporan Deep Scan + MCP)
 
+> **⚠️ NOTIS DOKTRIN OWNER 2026-10-16 (SEND-ALL):** Matriks di bawah kekal
+> benar sebagai fakta capability API setiap provider. Walau bagaimanapun,
+> mandat Owner 2026-10-16 mengatasi kelakuan runtime: kelima-lima parameter
+> generatif (Thinking, Temperature, Top-P, Presence Penalty, Frequency
+> Penalty) kini WAJIB DIHANTAR oleh ketiga-tiga pintu tanpa client-side
+> strip/drop/lock — pelayan provider tentukan sendiri (terima/abaikan/400).
+> Tujuan: pemerhatian empirikal Owner. Capability map (`modelCapabilities.js`)
+> kekal sebagai dokumentasi keupayaan, bukan gate penghantaran.
+
 > STATUS: FASA PENYELIDIKAN — tiada kod produksi disentuh.
 > SUMBER: scrape langsung halaman rasmi setiap provider melalui MCP (deprecations / changelog /
 > model pages / parameter reference). Data per-PROVIDER sahaja; data per-SNAPSHOT lama yang

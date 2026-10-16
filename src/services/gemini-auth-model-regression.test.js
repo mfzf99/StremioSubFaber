@@ -69,7 +69,7 @@ test('AQ authorization keys are preserved and sent through the runtime v1beta mo
 // accept temperature/topP. 3.6+ are 3.x-STRICT and strip sampling. topK never sent.
 // [KEPUTUSAN OWNER #1 v3.9.46] gemini-3.5-flash kini STRICT (server reroute
 // whitelist) — contoh LEGACY ditukar kepada gemini-3.1-pro-preview.
-test('Gemini 3.x-legacy (3.1) keeps sampling; 3.x-strict (3.7) strips it', () => {
+test('[SEND-ALL 2026-10-16] Gemini 3.x-legacy (3.1) keeps sampling; 3.x-strict (3.7) ALSO sends sampling (owner doctrine: server decides)', () => {
     const legacy = new GeminiService('test-key', 'models/gemini-3.1-pro-preview', {
         thinkingBudget: 1000,
         thinkingLevel: 'high',
@@ -98,17 +98,19 @@ test('Gemini 3.x-legacy (3.1) keeps sampling; 3.x-strict (3.7) strips it', () =>
     assert.equal(preview.buildGenerationConfig(4096).temperature, 0.3);
     assert.equal(preview.buildGenerationConfig(4096).topP, 0.9);
 
-    // STRICT 3.7: sampling stripped, thinking level kept
+    // [MANDAT OWNER 2026-10-16 — SEND-ALL] STRICT 3.7: sampling KINI DIHANTAR
+    // bersama thinkingLevel — pelayan tentukan sendiri (terima/abaikan/400).
     const strict = new GeminiService('test-key', 'gemini-3.7-flash', {
         thinkingLevel: 'high',
         temperature: 0.5,
         topP: 0.95
     });
     assert.equal(strict.getModelFamily().family, '3.x-strict');
-    assert.deepEqual(strict.buildGenerationConfig(4096), {
-        maxOutputTokens: 4096,
-        thinkingConfig: { thinkingLevel: 'high' }
-    });
+    const strictCfg = strict.buildGenerationConfig(4096);
+    assert.equal(strictCfg.thinkingConfig.thinkingLevel, 'high');
+    assert.equal(strictCfg.temperature, 0.5, 'SEND-ALL: strict kini hantar temperature');
+    assert.equal(strictCfg.topP, 0.95, 'SEND-ALL: strict kini hantar topP');
+    assert.equal('topK' in strictCfg, false, 'topK kekal haram (v1.6.0)');
 
     const disabled37 = new GeminiService('test-key', 'gemini-3.7-flash', { thinkingLevel: 'disabled' });
     assert.equal(disabled37.buildGenerationConfig(4096).thinkingConfig.thinkingLevel, 'low');
@@ -116,24 +118,23 @@ test('Gemini 3.x-legacy (3.1) keeps sampling; 3.x-strict (3.7) strips it', () =>
     const dated37 = new GeminiService('test-key', 'gemini-3.7-flash-001', { thinkingLevel: 'minimal' });
     assert.equal(dated37.buildGenerationConfig(4096).thinkingConfig.thinkingLevel, 'low');
 
-    // -latest alias resolves to strict (points to newest 3.x) → sampling stripped
+    // -latest alias resolves to strict (points to newest 3.x) → sampling DIHANTAR (send-all)
     const latestLite = new GeminiService('test-key', 'gemini-flash-lite-latest', {
         thinkingBudget: 0,
         thinkingLevel: 'minimal',
         temperature: 0.8
     });
     assert.equal(latestLite.isThinkingEnabled(), true);
-    assert.deepEqual(latestLite.buildGenerationConfig(4096), {
-        maxOutputTokens: 4096,
-        thinkingConfig: { thinkingLevel: 'minimal' }
-    });
+    const latestCfg = latestLite.buildGenerationConfig(4096);
+    assert.equal(latestCfg.thinkingConfig.thinkingLevel, 'minimal');
+    assert.equal(latestCfg.temperature, 0.8, 'SEND-ALL: -latest kini hantar temperature');
 });
 
 // [SAMPLING EDGE CASE 2026-09-29] The boundary is the GA date (21 Jul 2026),
 // NOT the version number. Two minor-5 models split:
 //   gemini-3.5-flash (GA 19 May 2026)      → LEGACY (sampling accepted)
 //   gemini-3.5-flash-lite (GA 21 Jul 2026) → STRICT (stripped, same day as 3.6)
-test('Gemini 3.5-flash-lite is STRICT (GA on deprecation day) but 3.5-flash is LEGACY', () => {
+test('[SEND-ALL 2026-10-16] Gemini 3.5-flash-lite & 3.5-flash STRICT family tetapi sampling DIHANTAR', () => {
     const flashLite = new GeminiService('test-key', 'gemini-3.5-flash-lite', {
         thinkingLevel: 'low',
         temperature: 0.5,
@@ -141,8 +142,8 @@ test('Gemini 3.5-flash-lite is STRICT (GA on deprecation day) but 3.5-flash is L
     });
     assert.equal(flashLite.getModelFamily().family, '3.x-strict', '3.5-flash-lite must be STRICT');
     const liteCfg = flashLite.buildGenerationConfig(4096);
-    assert.equal('temperature' in liteCfg, false, '3.5-flash-lite strips temperature');
-    assert.equal('topP' in liteCfg, false, '3.5-flash-lite strips topP');
+    assert.equal(liteCfg.temperature, 0.5, 'SEND-ALL: 3.5-flash-lite hantar temperature');
+    assert.equal(liteCfg.topP, 0.95, 'SEND-ALL: 3.5-flash-lite hantar topP');
 
     const flash = new GeminiService('test-key', 'gemini-3.5-flash', {
         thinkingLevel: 'low',
@@ -153,8 +154,8 @@ test('Gemini 3.5-flash-lite is STRICT (GA on deprecation day) but 3.5-flash is L
     // server reroute → gemini-3.6-flash (kelakuan strip) → DILAYAN SEBAGAI STRICT.
     assert.equal(flash.getModelFamily().family, '3.x-strict', '3.5-flash is STRICT (server reroute whitelist)');
     const flashCfg = flash.buildGenerationConfig(4096);
-    assert.equal('temperature' in flashCfg, false, '3.5-flash strips temperature (reroute)');
-    assert.equal('topP' in flashCfg, false, '3.5-flash strips topP (reroute)');
+    assert.equal(flashCfg.temperature, 0.5, 'SEND-ALL: 3.5-flash hantar temperature (reroute)');
+    assert.equal(flashCfg.topP, 0.95, 'SEND-ALL: 3.5-flash hantar topP (reroute)');
 
     // 3.1 flash-lite is pre-boundary → still legacy (keeps sampling)
     const lite31 = new GeminiService('test-key', 'gemini-3.1-flash-lite', {
@@ -196,9 +197,9 @@ test('Gemini 3 translation and structured-output paths send the current request 
         assert.equal(requestBody.generationConfig.responseMimeType, 'application/json');
         assert.deepEqual(requestBody.generationConfig.thinkingConfig, { thinkingLevel: 'medium' });
         assert.equal('thinkingBudget' in requestBody.generationConfig.thinkingConfig, false);
-        assert.equal('temperature' in requestBody.generationConfig, false);
-        assert.equal('topK' in requestBody.generationConfig, false);
-        assert.equal('topP' in requestBody.generationConfig, false);
+        // [SEND-ALL 2026-10-16] sampling tidak dihantar HANYA kerana instance ini
+        // tidak menetapkan temperature/topP (undefined) — bukan sebab gate strict.
+        assert.equal('topK' in requestBody.generationConfig, false, 'topK kekal haram (v1.6.0)');
     } finally {
         axios.post = originalPost;
     }
@@ -329,15 +330,27 @@ test('Configure and Toolbox pages expose current Gemini choices and model-aware 
 
 // ─── Fasa 5: Kunci Ground Truth — family-aware payload & schema regression ───
 
-test('[GT-1] gemini-3.8-flash strips sampling and maps disabled -> low (not minimal)', () => {
+test('[GT-1 / SEND-ALL 2026-10-16] gemini-3.8-flash: sampling DIHANTAR bila ditetapkan; disabled -> low mapping kekal', () => {
+    // [SEND-ALL] sampling tiada hanya kerana instance tidak menetapkannya.
     const service = new GeminiService('test-key', 'gemini-3.8-flash', { thinkingLevel: 'disabled' });
     const cfg = service.buildGenerationConfig(4096);
-    assert.equal('temperature' in cfg, false);
-    assert.equal('topP' in cfg, false);
-    assert.equal('topK' in cfg, false);
-    assert.equal('frequencyPenalty' in cfg, false);
-    assert.equal('presencePenalty' in cfg, false);
+    assert.equal('topK' in cfg, false, 'topK kekal haram (v1.6.0)');
     assert.equal(cfg.thinkingConfig.thinkingLevel, 'low'); // BUKAN 'minimal' — elak ralat API 3.7/3.8
+
+    // Instance yang menetapkan sampling/penalty → DIHANTAR (doktrin send-all).
+    const tuned = new GeminiService('test-key', 'gemini-3.8-flash', {
+        thinkingLevel: 'high',
+        temperature: 0.4,
+        topP: 0.9,
+        frequencyPenalty: 0.5,
+        presencePenalty: -0.5
+    });
+    const tunedCfg = tuned.buildGenerationConfig(4096);
+    assert.equal(tunedCfg.temperature, 0.4, 'SEND-ALL: 3.8 hantar temperature');
+    assert.equal(tunedCfg.topP, 0.9, 'SEND-ALL: 3.8 hantar topP');
+    assert.equal(tunedCfg.frequencyPenalty, 0.5, 'SEND-ALL: 3.8 hantar frequencyPenalty');
+    assert.equal(tunedCfg.presencePenalty, -0.5, 'SEND-ALL: 3.8 hantar presencePenalty');
+    assert.equal('topK' in tunedCfg, false);
 });
 
 test('[GT-2] profile matching: 3.5-flash-lite default minimal vs 3.5-flash default medium', () => {

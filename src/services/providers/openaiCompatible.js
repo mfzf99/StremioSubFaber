@@ -60,6 +60,10 @@ class OpenAICompatibleProvider {
         // keserasian kontrak AgentBInspector (options.beastMaxTokens).
         this.beastMaxTokens = parseAgentBMaxTokens(options.beastMaxTokens, AGENT_B_BEAST_MAX_TOKENS);
         this.presencePenalty = options.presencePenalty;
+        // [MANDAT OWNER 2026-10-16 — SEND-ALL DOCTRINE] frequencyPenalty kini
+        // diserialisasi kepada pintu openai-compatible (dahulu gap: dinormalisasi
+        // config tetapi tidak pernah dihantar).
+        this.frequencyPenalty = options.frequencyPenalty;
         this.reasoningEffort = this.normalizeReasoningEffort(options.reasoningEffort);
         // [PARITI-RETRY 2026-10-09] Backoff exponential antara percubaan retry —
         // formula 1:1 dengan Gemini retryWithBackoff (3s → 6s → 12s, jitter 0.8x-
@@ -538,24 +542,22 @@ class OpenAICompatibleProvider {
             if (this.topP !== undefined) body.top_p = this.topP;
             if (this.maxOutputTokens) body.max_tokens = cappedMaxTokens;
         } else {
-            const omitSampling = this.shouldOmitOpenAISamplingParams();
-            if (!omitSampling && this.temperature !== undefined && !useResponsesApi) {
+            // [MANDAT OWNER 2026-10-16 — SEND-ALL DOCTRINE] Gate omitSampling &
+            // applyFrontierModelRules DIGUGURKAN — semua parameter sampling wajib
+            // dihantar; pelayan provider tentukan sendiri (terima/abaikan/400).
+            // Histori: omit untuk gpt-5* + peraturan frontier kimi/glm (drop/lock)
+            // pernah aktif — doktrin pemerhatian empirikal Owner mengatasi.
+            if (this.temperature !== undefined && !useResponsesApi) {
                 body.temperature = this.temperature;
             }
-            if (!omitSampling && this.topP !== undefined) {
+            if (this.topP !== undefined) {
                 body.top_p = this.topP;
             }
-            if (!omitSampling && this.presencePenalty !== undefined && !useResponsesApi) {
+            if (this.presencePenalty !== undefined && !useResponsesApi) {
                 body.presence_penalty = this.presencePenalty;
             }
-            // 🚀 FRONTIER UPGRADE (Mandat Frontier 2026-09-26): Peraturan warisan
-            // kimi-k3 (gugurkan sampling, max_tokens 16384) & glm-5.3 penuh
-            // (kunci temperature 0.0 / top_p 0.1) — dilaksanakan TERAKHIR supaya
-            // sentiasa mengatasi nilai lalai builder.
-            // [AUDIT 2026-09-29] Rationale kimi "server lock" LAPUK (curl
-            // 2026-09-28) — kelakuan dikekalkan untuk laluan terjemahan warisan.
-            if (!isCfTranslation) {
-                this.applyFrontierModelRules(body);
+            if (this.frequencyPenalty !== undefined && !useResponsesApi) {
+                body.frequency_penalty = this.frequencyPenalty;
             }
         }
 
@@ -577,11 +579,10 @@ class OpenAICompatibleProvider {
     }
 
     shouldOmitOpenAISamplingParams() {
-        if (this.providerName !== 'openai') return false;
-        const model = String(this.model || '')
-            .trim()
-            .toLowerCase();
-        return /^gpt-5(?:[\.-]|$)/.test(model);
+        // [MANDAT OWNER 2026-10-16 — SEND-ALL DOCTRINE] Sentiasa false: parameter
+        // sampling tidak lagi digugurkan untuk mana-mana model. Kaedah dikekalkan
+        // (kontrak publik dipanggil test suite lama) sebagai no-op eksplisit.
+        return false;
     }
 
     isOpenAIReasoningModel(modelName = this.model) {

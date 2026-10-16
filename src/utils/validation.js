@@ -67,6 +67,10 @@ const providerParameterSchema = Joi.object({
     maxRetries: Joi.number().integer().min(0).max(5).optional(),
     thinkingBudget: Joi.number().min(-1).max(200000).optional(),
     thinkingLevel: Joi.string().valid('disabled', 'minimal', 'low', 'medium', 'high').optional(),
+    // [MANDAT OWNER 2026-10-16 — SEND-ALL DOCTRINE] kelima-lima parameter generatif
+    // wajib boleh lulus schema (penalty tiada lagi gate provider).
+    presencePenalty: Joi.number().min(-2).max(2).optional(),
+    frequencyPenalty: Joi.number().min(-2).max(2).optional(),
     modelType: Joi.string().max(100).optional(),
     formality: Joi.string().max(50).optional(),
     preserveFormatting: Joi.boolean().optional()

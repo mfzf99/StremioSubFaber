@@ -1,5 +1,15 @@
 # Gemini Sampling Parameter Ground Truth (2026-09-29)
 
+> **⚠️ NOTIS DOKTRIN OWNER 2026-10-16 (SEND-ALL):** Matriks deprecation di bawah
+> kekal benar sebagai FAKTA API Google. Walau bagaimanapun, mandat Owner
+> 2026-10-16 mengatasi kelakuan kod: parameter sampling pengguna WAJIB
+> DIHANTAR untuk SEMUA keluarga (termasuk 3.6+ STRICT) tanpa client-side
+> stripping — tujuan pemerhatian empirikal behaviour pelayan sebenar
+> (terima/abaikan/HTTP 400). Gate strip di `gemini.js buildGenerationConfig()`
+> telah DIMATIKAN. Klasifikasi family (`getModelFamily`) KEKAL digunakan untuk
+> routing bentuk thinking (budget vs level), bukan untuk stripping. topK
+> kekal HARAM sejak v1.6.0 (nucleus sampling).
+
 **Sources (live scrape, maxAge=0):**
 - https://ai.google.dev/gemini-api/docs/models (updated 2026-09-24)
 - https://ai.google.dev/gemini-api/docs/gemini-3 (updated 2026-09-23)

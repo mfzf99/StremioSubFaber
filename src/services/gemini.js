@@ -782,7 +782,9 @@ class GeminiService {
     }
 
     buildGenerationConfig(maxOutputTokens) {
-        const { thinking, sampling } = this.getModelFamily();
+        // [SEND-ALL 2026-10-16] `sampling` kekeluargaan tidak lagi mengetuai
+        // sebarang gate — doktrin send-all menghantar sampling untuk semua family.
+        const { thinking } = this.getModelFamily();
 
         // ── Cabang THINKING LEVEL (semua Gemini 3.x) ──────────────────────────────
         if (thinking === 'level') {
@@ -807,15 +809,21 @@ class GeminiService {
                 thinkingConfig: { thinkingLevel: effectiveLevel }
             };
 
-            // GROUND TRUTH (plans/gemini-sampling-ground-truth-2026.md):
-            // 3.x-STRICT (3.6+) — pensampelan dinyah-guna; JANGAN hantar apa-apa param
-            // pensampelan (boleh cetuskan ralat / diabaikan). 3.x-LEGACY (3.0-3.5,
-            // termasuk gemini-3-flash-preview) — API MASIH menerima temperature/topP;
-            // hantar supaya tetapan pengguna benar-benar berkesan (dahulu di-strip
-            // secara senyap — pepijat yang belum selesai). topK tidak dihantar (nucleus).
-            if (sampling !== 'stripped') {
-                if (this.temperature !== undefined) levelConfig.temperature = this.temperature;
-                if (this.topP !== undefined) levelConfig.topP = this.topP;
+            // [MANDAT OWNER 2026-10-16 — SEND-ALL DOCTRINE] Gate STRICT-stripping
+            // DIGUGURKAN: temperature/topP/penalty WAJIB dihantar untuk SEMUA
+            // keluarga 3.x (STRICT & LEGACY). Tujuan: pemerhatian empirikal
+            // behaviour pelayan sebenar — biar pelayan provider tentukan sendiri
+            // (terima / abaikan / 400). Histori: 3.6+ pernah di-strip senyap
+            // berdasarkan ground truth lama; doktrin baharu mengatasi sementara
+            // sehingga pemerhatian Owner selesai. topK kekal tidak dihantar
+            // (haram sejak v1.6.0 — nucleus sampling).
+            if (this.temperature !== undefined) levelConfig.temperature = this.temperature;
+            if (this.topP !== undefined) levelConfig.topP = this.topP;
+            if (this.frequencyPenalty !== undefined) {
+                levelConfig.frequencyPenalty = this.frequencyPenalty;
+            }
+            if (this.presencePenalty !== undefined) {
+                levelConfig.presencePenalty = this.presencePenalty;
             }
 
             return levelConfig;

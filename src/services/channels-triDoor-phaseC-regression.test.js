@@ -52,11 +52,21 @@ test('geminiChannel: endpoint non-stream :generateContent + header x-goog-api-ke
     assert.equal(headers['x-goog-api-key'], 'CHANNEL_KEY_PLACEHOLDER');
 });
 
-test('geminiChannel: ground truth getModelFamily — 3.7 STRICT strip sampling, thinkingLevel kekal', () => {
-    const { body } = geminiChannel.buildRequest({ model: 'gemini-3.7-flash', userPrompt: 'x' });
-    assert.equal(body.generationConfig.temperature, undefined, '3.x-strict: temperature digugurkan');
-    assert.equal(body.generationConfig.topP, undefined, '3.x-strict: topP digugurkan');
-    assert.equal(body.generationConfig.thinkingConfig.thinkingLevel, 'low', 'default channel thinkingLevel low');
+test('geminiChannel: [SEND-ALL 2026-10-16] 3.7 STRICT — sampling DIHANTAR bila diberikan, thinkingLevel kekal', () => {
+    // Tanpa advancedSettings → lalai service (temperature default 0.2) dihantar,
+    // thinkingLevel low default. Lalai ≠ gate: medan sentiasa wujud (send-all).
+    const bare = geminiChannel.buildRequest({ model: 'gemini-3.7-flash', userPrompt: 'x' });
+    assert.ok(bare.body.generationConfig.temperature !== undefined, 'send-all: temperature lalai tetap dihantar');
+    assert.equal(bare.body.generationConfig.thinkingConfig.thinkingLevel, 'low', 'default channel thinkingLevel low');
+
+    // Dengan advancedSettings → sampling DIHANTAR walaupun strict (doktrin send-all).
+    const tuned = geminiChannel.buildRequest({
+        model: 'gemini-3.7-flash',
+        userPrompt: 'x',
+        advancedSettings: { temperature: 0.4, topP: 0.9 }
+    });
+    assert.equal(tuned.body.generationConfig.temperature, 0.4, 'SEND-ALL: 3.7 hantar temperature');
+    assert.equal(tuned.body.generationConfig.topP, 0.9, 'SEND-ALL: 3.7 hantar topP');
 });
 
 test('geminiChannel: 2.5 LEGACY full sampling dikekalkan', () => {

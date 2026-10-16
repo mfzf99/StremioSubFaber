@@ -275,6 +275,8 @@ async function createProviderInstance(providerKey, providerConfig = {}, provider
                 translationTimeout: providerParams.translationTimeout,
                 maxRetries: providerParams.maxRetries,
                 reasoningEffort: providerParams.reasoningEffort,
+                presencePenalty: providerParams.presencePenalty,
+                frequencyPenalty: providerParams.frequencyPenalty,
                 enableJsonOutput
             });
         case 'xai':
@@ -301,6 +303,8 @@ async function createProviderInstance(providerKey, providerConfig = {}, provider
                 maxOutputTokens: providerParams.maxOutputTokens,
                 translationTimeout: providerParams.translationTimeout,
                 maxRetries: providerParams.maxRetries,
+                presencePenalty: providerParams.presencePenalty,
+                frequencyPenalty: providerParams.frequencyPenalty,
                 enableJsonOutput
             });
         case 'deepl':
@@ -331,6 +335,8 @@ async function createProviderInstance(providerKey, providerConfig = {}, provider
                 maxOutputTokens: providerParams.maxOutputTokens,
                 translationTimeout: providerParams.translationTimeout,
                 maxRetries: providerParams.maxRetries,
+                presencePenalty: providerParams.presencePenalty,
+                frequencyPenalty: providerParams.frequencyPenalty,
                 enableJsonOutput
             });
         case 'openrouter':
@@ -345,6 +351,8 @@ async function createProviderInstance(providerKey, providerConfig = {}, provider
                 maxOutputTokens: providerParams.maxOutputTokens,
                 translationTimeout: providerParams.translationTimeout,
                 maxRetries: providerParams.maxRetries,
+                presencePenalty: providerParams.presencePenalty,
+                frequencyPenalty: providerParams.frequencyPenalty,
                 enableJsonOutput
             });
         case 'cfworkers': {
@@ -366,6 +374,8 @@ async function createProviderInstance(providerKey, providerConfig = {}, provider
                 maxOutputTokens: providerParams.maxOutputTokens,
                 translationTimeout: providerParams.translationTimeout,
                 maxRetries: providerParams.maxRetries,
+                presencePenalty: providerParams.presencePenalty,
+                frequencyPenalty: providerParams.frequencyPenalty,
                 enableJsonOutput
             });
         }
@@ -429,6 +439,8 @@ async function createProviderInstance(providerKey, providerConfig = {}, provider
                 maxOutputTokens: providerParams.maxOutputTokens,
                 translationTimeout: providerParams.translationTimeout,
                 maxRetries: providerParams.maxRetries,
+                presencePenalty: providerParams.presencePenalty,
+                frequencyPenalty: providerParams.frequencyPenalty,
                 enableJsonOutput,
                 ssrfLookup: createSsrfSafeLookup()
             });

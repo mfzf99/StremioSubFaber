@@ -10,6 +10,16 @@
 
 ---
 
+## 2026-10-16 — v3.10.0 SEND-ALL DOCTRINE: UNIFIED GENERATION PARAMETERS KETIGA-TIGA DOOR (FASA A–E LENGKAP)
+
+- **Tarikh:** 2026-10-16 ~21:55 (waktu tempatan KL).
+- **Keputusan Owner (verbatim, muktamad):** (1) "Semua door wajib pakai satu set yang sama, jika model support, dia guna, jika tak support dia abaikan masa masuk pintu API"; (2) "Setting parameter wajib unlocked dan boleh diubah ikut citarasa user"; (3) "NO, wajib hantar semua parameter, jangan sentuh langsung, biar server mereka tentukan. Ini arahan aku. Aku nak tengok sendiri behaviour mereka" — 400 response ialah DATA PEMERHATIAN yang dikehendaki; (4) Thinking perlu translation nama/format ikut pintu & model (budget vs level vs reasoning_effort); (5) UI English seragam + stepper buttons −/+ pada input number. Agent B god-tier payload KEKAL locked (keputusan unlock tertunda).
+- **Pembedahan:** Gate stripping DIMATIKAN serentak tiga pintu: `gemini.js buildGenerationConfig()` (gate STRICT 3.6+ digugurkan; sampling+penalties dihantar semua family; routing thinking budget/level kekal); `openaiCompatible.js` (`frequency_penalty` serialization BARU — gap lama ditutup; `shouldOmitOpenAISamplingParams()` no-op; `applyFrontierModelRules()` tidak dipanggil); `anthropic.js` (auto-force temp 1.0 / auto-drop top_p semasa thinking digugurkan, override retry eksplisit kekal). Pass-through penalty semua pintu factory. Joi schema +penalty (-2..2). UI: field Presence/Frequency Penalty baharu + stepper buttons semua input number advanced settings + rehydration. Dokumen ground truth kedua-duanya diberi notis doktrin (fakta API kekal, gate dimatikan).
+- **Ujian:** 6 assertion strip lama ditulis semula (gemini-auth-model-regression GT-1/legacy-strict/3.5-lite + triDoor-phaseC 3.7) + assertion send-all baharu lebih ketat. `npm test` = **426 total / 425 PASS / 0 FAIL / 1 SKIP** (monotonic ≥ 426 — baseline dipulihkan selepas pembedahan, jumlah kekal). Prettier PASS; eslint 0 error; graphify update OK (5333 nodes).
+- **Fail terlibat:** `src/services/gemini.js` (M), `src/services/providers/openaiCompatible.js` (M), `src/services/providers/anthropic.js` (M), `src/services/translationProviderFactory.js` (M), `src/utils/validation.js` (M), `src/utils/fileUploadPageGenerator.js` (M), `src/services/gemini-auth-model-regression.test.js` (M), `src/services/channels-triDoor-phaseC-regression.test.js` (M), `plans/gemini-sampling-ground-truth-2026.md` (M notis), `plans/trinity-params-ground-truth-2026.md` (M notis), `CHANGELOG.md`, `package.json` (bump 3.9.52→3.10.0), `docs/SESSION_LEDGER.md`.
+- **Risiko diterima sedar:** gemini-3.6+/Kimi-k3/Claude-thinking mungkin balas HTTP 400 — itu tujuan pemerhatian Owner. Config tersimpan pengguna backward compatible (field sama, hanya gate mati).
+- **Next Steps:** commit+push + CI hijau; Owner beri arahan sama ada Agent B god-tier diunlock; pemerhatian empirikal hasil 400/abaikan direkod untuk kemas kini ground truth akan datang.
+
 ## 2026-10-15 — STATUS PENUTUP SESI (BLOK PRA-TUTUP, MANDAT KE SINAMBUNGAN SESI) — v3.9.52 TAMAT, MENUNGGU VERIFIKASI LIVE RUN KETUJUH
 
 - **Tarikh:** 2026-10-15 ~20:38 (waktu tempatan KL) — ditulis sebelum Owner menutup sesi ini.

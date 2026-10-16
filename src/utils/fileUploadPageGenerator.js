@@ -292,6 +292,11 @@ function generateFileTranslationPage(videoId, configStr, config, filename = '') 
         {},
         'Probability threshold (0.0-1.0). Lower = focused, Higher = diverse. Default: 0.95'
     );
+    // [SEND-ALL 2026-10-16] Penalty fields — English-only hard defaults per owner mandate.
+    const presencePenaltyLabel = 'Presence Penalty';
+    const presencePenaltyHelper = 'Penalize repeated topics. Range -2 to 2. Sent to every provider door.';
+    const frequencyPenaltyLabel = 'Frequency Penalty';
+    const frequencyPenaltyHelper = 'Penalize repeated tokens. Range -2 to 2. Sent to every provider door.';
     const maxTokensLabel = t('fileUpload.advanced.maxTokens.label', {}, 'Max Output Tokens');
     const maxTokensHelper = t(
         'fileUpload.advanced.maxTokens.helper',
@@ -1952,6 +1957,40 @@ function generateFileTranslationPage(videoId, configStr, config, filename = '') 
             border-top: 2px solid var(--border);
         }
 
+        /* [SEND-ALL 2026-10-16] Stepper input: number field with +/- buttons */
+        .stepper-field {
+            display: flex;
+            gap: 0.5rem;
+            align-items: stretch;
+        }
+
+        .stepper-field input[type="number"] {
+            flex: 1;
+        }
+
+        .stepper-btn {
+            min-width: 2.5rem;
+            border: 2px solid var(--border);
+            background: var(--surface-light);
+            color: var(--text-primary);
+            border-radius: 10px;
+            font-size: 1.1rem;
+            font-weight: 700;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            transition: background 0.15s ease;
+        }
+
+        .stepper-btn:hover {
+            background: var(--border);
+        }
+
+        .stepper-btn:active {
+            transform: scale(0.94);
+        }
+
         .highlight-box {
             background: rgba(255, 165, 0, 0.1);
             border: 2px solid rgba(255, 165, 0, 0.3);
@@ -2629,7 +2668,11 @@ function generateFileTranslationPage(videoId, configStr, config, filename = '') 
                                     ${escapeHtml(thinkingBudgetLabel)}
                                     <span class="label-description">${escapeHtml(thinkingBudgetHelper)}</span>
                                 </label>
-                                <input type="number" id="advancedThinkingBudget" min="-1" max="32768" step="1" value="0" placeholder="0">
+                                <div class="stepper-field">
+                                    <button type="button" class="stepper-btn" data-step-target="advancedThinkingBudget" data-step-dir="-1" aria-label="Decrease Thinking Budget">−</button>
+                                    <input type="number" id="advancedThinkingBudget" min="-1" max="32768" step="1" value="0" placeholder="0">
+                                    <button type="button" class="stepper-btn" data-step-target="advancedThinkingBudget" data-step-dir="1" aria-label="Increase Thinking Budget">+</button>
+                                </div>
                             </div>
 
                             <div class="form-group" id="thinkingLevelGroup" style="display:none;">
@@ -2650,7 +2693,11 @@ function generateFileTranslationPage(videoId, configStr, config, filename = '') 
                                     ${escapeHtml(temperatureLabel)}
                                     <span class="label-description">${escapeHtml(temperatureHelper)}</span>
                                 </label>
-                                <input type="number" id="advancedTemperature" min="0" max="2" step="0.1" value="0.2" placeholder="0.2">
+                                <div class="stepper-field">
+                                    <button type="button" class="stepper-btn" data-step-target="advancedTemperature" data-step-dir="-1" aria-label="Decrease Temperature">−</button>
+                                    <input type="number" id="advancedTemperature" min="0" max="2" step="0.1" value="0.2" placeholder="0.2">
+                                    <button type="button" class="stepper-btn" data-step-target="advancedTemperature" data-step-dir="1" aria-label="Increase Temperature">+</button>
+                                </div>
                             </div>
 
                             <div class="form-group" id="reasoningEffortGroup">
@@ -2674,7 +2721,35 @@ function generateFileTranslationPage(videoId, configStr, config, filename = '') 
                                     ${escapeHtml(topPLabel)}
                                     <span class="label-description">${escapeHtml(topPHelper)}</span>
                                 </label>
-                                <input type="number" id="advancedTopP" min="0" max="1" step="0.05" value="0.95" placeholder="0.95">
+                                <div class="stepper-field">
+                                    <button type="button" class="stepper-btn" data-step-target="advancedTopP" data-step-dir="-1" aria-label="Decrease Top-P">−</button>
+                                    <input type="number" id="advancedTopP" min="0" max="1" step="0.05" value="0.95" placeholder="0.95">
+                                    <button type="button" class="stepper-btn" data-step-target="advancedTopP" data-step-dir="1" aria-label="Increase Top-P">+</button>
+                                </div>
+                            </div>
+
+                            <div class="form-group">
+                                <label for="advancedPresencePenalty">
+                                    ${escapeHtml(presencePenaltyLabel)}
+                                    <span class="label-description">${escapeHtml(presencePenaltyHelper)}</span>
+                                </label>
+                                <div class="stepper-field">
+                                    <button type="button" class="stepper-btn" data-step-target="advancedPresencePenalty" data-step-dir="-1" aria-label="Decrease Presence Penalty">−</button>
+                                    <input type="number" id="advancedPresencePenalty" min="-2" max="2" step="0.1" value="0" placeholder="0">
+                                    <button type="button" class="stepper-btn" data-step-target="advancedPresencePenalty" data-step-dir="1" aria-label="Increase Presence Penalty">+</button>
+                                </div>
+                            </div>
+
+                            <div class="form-group">
+                                <label for="advancedFrequencyPenalty">
+                                    ${escapeHtml(frequencyPenaltyLabel)}
+                                    <span class="label-description">${escapeHtml(frequencyPenaltyHelper)}</span>
+                                </label>
+                                <div class="stepper-field">
+                                    <button type="button" class="stepper-btn" data-step-target="advancedFrequencyPenalty" data-step-dir="-1" aria-label="Decrease Frequency Penalty">−</button>
+                                    <input type="number" id="advancedFrequencyPenalty" min="-2" max="2" step="0.1" value="0" placeholder="0">
+                                    <button type="button" class="stepper-btn" data-step-target="advancedFrequencyPenalty" data-step-dir="1" aria-label="Increase Frequency Penalty">+</button>
+                                </div>
                             </div>
 
                             <div class="form-group">
@@ -2682,7 +2757,11 @@ function generateFileTranslationPage(videoId, configStr, config, filename = '') 
                                     ${escapeHtml(maxTokensLabel)}
                                     <span class="label-description">${escapeHtml(maxTokensHelper)}</span>
                                 </label>
-                                <input type="number" id="advancedMaxTokens" min="1" max="200000" step="1" value="65536" placeholder="65536">
+                                <div class="stepper-field">
+                                    <button type="button" class="stepper-btn" data-step-target="advancedMaxTokens" data-step-dir="-1" aria-label="Decrease Max Output Tokens">−</button>
+                                    <input type="number" id="advancedMaxTokens" min="1" max="200000" step="1" value="65536" placeholder="65536">
+                                    <button type="button" class="stepper-btn" data-step-target="advancedMaxTokens" data-step-dir="1" aria-label="Increase Max Output Tokens">+</button>
+                                </div>
                             </div>
 
                             <div class="form-group" id="formalityGroup">
@@ -2713,7 +2792,11 @@ function generateFileTranslationPage(videoId, configStr, config, filename = '') 
                                     ${escapeHtml(translationTimeoutLabel)}
                                     <span class="label-description">${escapeHtml(translationTimeoutHelper)}</span>
                                 </label>
-                                <input type="number" id="advancedTimeout" min="5" max="720" step="5" value="720" placeholder="720">
+                                <div class="stepper-field">
+                                    <button type="button" class="stepper-btn" data-step-target="advancedTimeout" data-step-dir="-1" aria-label="Decrease Timeout">−</button>
+                                    <input type="number" id="advancedTimeout" min="5" max="720" step="5" value="720" placeholder="720">
+                                    <button type="button" class="stepper-btn" data-step-target="advancedTimeout" data-step-dir="1" aria-label="Increase Timeout">+</button>
+                                </div>
                             </div>
 
                             <div class="form-group">
@@ -2721,7 +2804,11 @@ function generateFileTranslationPage(videoId, configStr, config, filename = '') 
                                     ${escapeHtml(maxRetriesLabel)}
                                     <span class="label-description">${escapeHtml(maxRetriesHelper)}</span>
                                 </label>
-                                <input type="number" id="advancedMaxRetries" min="0" max="5" step="1" value="2" placeholder="2">
+                                <div class="stepper-field">
+                                    <button type="button" class="stepper-btn" data-step-target="advancedMaxRetries" data-step-dir="-1" aria-label="Decrease Max Retries">−</button>
+                                    <input type="number" id="advancedMaxRetries" min="0" max="5" step="1" value="2" placeholder="2">
+                                    <button type="button" class="stepper-btn" data-step-target="advancedMaxRetries" data-step-dir="1" aria-label="Increase Max Retries">+</button>
+                                </div>
                             </div>
 
                             <button type="button" class="btn btn-secondary" id="resetDefaultsBtn">
@@ -3353,7 +3440,39 @@ function generateFileTranslationPage(videoId, configStr, config, filename = '') 
             if (advancedTemperature) {
                 advancedTemperature.value = params.temperature ?? 0.2;
             }
+            // [SEND-ALL 2026-10-16] Rehydration penalty (jika tersimpan).
+            const presenceInput = document.getElementById('advancedPresencePenalty');
+            if (presenceInput && Number.isFinite(parseFloat(params.presencePenalty))) {
+                presenceInput.value = params.presencePenalty;
+            }
+            const frequencyInput = document.getElementById('advancedFrequencyPenalty');
+            if (frequencyInput && Number.isFinite(parseFloat(params.frequencyPenalty))) {
+                frequencyInput.value = params.frequencyPenalty;
+            }
         }
+
+        // [SEND-ALL 2026-10-16] Stepper buttons: click → step input by its own
+        // min/max/step attributes, clamp to bounds. Event delegation on the form.
+        function initStepperButtons() {
+            document.addEventListener('click', (event) => {
+                const btn = event.target.closest('.stepper-btn');
+                if (!btn) return;
+                const input = document.getElementById(btn.dataset.stepTarget);
+                if (!input) return;
+                const dir = btn.dataset.stepDir === '-1' ? -1 : 1;
+                const min = Number.isFinite(parseFloat(input.min)) ? parseFloat(input.min) : null;
+                const max = Number.isFinite(parseFloat(input.max)) ? parseFloat(input.max) : null;
+                const step = Number.isFinite(parseFloat(input.step)) ? parseFloat(input.step) : 1;
+                const decimals = String(input.step).includes('.') ? String(input.step).split('.')[1].length : 0;
+                let value = Number.isFinite(parseFloat(input.value)) ? parseFloat(input.value) : 0;
+                value += dir * step;
+                if (min !== null) value = Math.max(min, value);
+                if (max !== null) value = Math.min(max, value);
+                input.value = Number(value.toFixed(decimals));
+                input.dispatchEvent(new Event('change', { bubbles: true }));
+            });
+        }
+        initStepperButtons();
         
         function buildProviderOptions() {
             const options = [];
@@ -4314,6 +4433,19 @@ function generateFileTranslationPage(videoId, configStr, config, filename = '') 
             const topP = caps.supportsTopP
                 ? readBoundedNumber(advancedTopP, 0, 1, (v) => parseFloat(v))
                 : null;
+            // [SEND-ALL 2026-10-16] Penalty serialization — sent to every door.
+            const presencePenalty = readBoundedNumber(
+                document.getElementById('advancedPresencePenalty'),
+                -2,
+                2,
+                (v) => parseFloat(v)
+            );
+            const frequencyPenalty = readBoundedNumber(
+                document.getElementById('advancedFrequencyPenalty'),
+                -2,
+                2,
+                (v) => parseFloat(v)
+            );
             const maxTokens = caps.supportsMaxTokens
                 ? readBoundedNumber(advancedMaxTokens, 1, MAX_OUTPUT_TOKEN_LIMIT, (v) => parseInt(v, 10))
                 : null;
@@ -4330,6 +4462,8 @@ function generateFileTranslationPage(videoId, configStr, config, filename = '') 
             const providerOverrides = {};
             if (caps.supportsTemperature && Number.isFinite(temperature)) providerOverrides.temperature = temperature;
             if (caps.supportsTopP && Number.isFinite(topP)) providerOverrides.topP = topP;
+            if (Number.isFinite(presencePenalty)) providerOverrides.presencePenalty = presencePenalty;
+            if (Number.isFinite(frequencyPenalty)) providerOverrides.frequencyPenalty = frequencyPenalty;
             if (caps.supportsMaxTokens && Number.isFinite(maxTokens)) providerOverrides.maxOutputTokens = maxTokens;
             if (caps.supportsTimeout && Number.isFinite(timeout)) providerOverrides.translationTimeout = timeout;
             if (caps.supportsMaxRetries && Number.isFinite(maxRetries)) providerOverrides.maxRetries = maxRetries;
@@ -4350,6 +4484,8 @@ function generateFileTranslationPage(videoId, configStr, config, filename = '') 
                     thinkingLevel: usesThinkingLevel ? thinkingLevel : undefined,
                     temperature: Number.isFinite(temperature) ? temperature : 0.2,
                     topP: Number.isFinite(topP) ? topP : 0.95,
+                    presencePenalty: Number.isFinite(presencePenalty) ? presencePenalty : undefined,
+                    frequencyPenalty: Number.isFinite(frequencyPenalty) ? frequencyPenalty : undefined,
                     maxOutputTokens: Number.isFinite(maxTokens) ? maxTokens : undefined,
                     translationTimeout: Number.isFinite(timeout) ? timeout : undefined,
                     maxRetries: Number.isFinite(maxRetries) ? maxRetries : undefined
