@@ -2,6 +2,12 @@
 
 All notable changes to this project will be documented in this file.
 
+## SubMaker v3.10.4 (2026-10-17) — Cache-Buster Force Refresh: Purge Legacy v3.8.x Service Worker/Cache Trap
+
+### Changed
+
+- **[MANDAT OWNER — cache buster bump] Versi dinaikkan 3.10.3 → 3.10.4 semata-mata untuk memaksa semua klien memuat semula aset:** forensik live di `submaker.mfzf99.workers.dev` mengesahkan server VPS sudah menghidangkan v3.10.3 bersih (tiada parameter lama dalam network), tetapi browser pengguna bukan-incognito terperangkap oleh service worker lama + Cache Storage versi lampau (`submaker-static-v3.8.9/19/20/24`) — `handleStaticAsset()` dalam `public/sw.js` menggunakan `caches.match()` global merentas semua cache, menyebabkan aset era v3.8.x terus dihidangkan selepas upgrade. Bump versi menukar cache buster `?_cb=` pada semua aset dan nama cache versi (`submaker-static-v3.10.4`), memaksa SW lama takluk kepada versi baharu dan pengguna mendapat UI semasa tanpa pembersihan manual.
+
 ## SubMaker v3.10.3 (2026-10-17) — Frontend Zero-Trust Audit Fix: Penalty Input Form Serialization
 
 ### Fixed

@@ -10,6 +10,17 @@
 
 ---
 
+## 2026-10-17 — v3.10.4 CACHE-BUSTER FORCE REFRESH: PURGE LEGACY v3.8.x SW/CACHE TRAP (MANDAT OWNER "BUMP SEKALI LAGI")
+
+- **Tarikh:** 2026-10-17 ~03:55 (waktu tempatan KL).
+- **Komit SHA (HEAD):** (direkod selepas push).
+- **Keputusan Owner:** Selepas rebuild VPS (command bomb pm2+docker no-cache+flushall) Owner melapor UI configure masih paparkan parameter lama di `https://submaker.mfzf99.workers.dev/#/configuration` (proxy Cloudflare Worker ke VPS Docker). Forensik Backend live (Playwright MCP + fetch no-store) mengesahkan: NETWORK dari proxy = v3.10.3 BERSIH (sifar topK/minP/repetitionPenalty; _cb=3.10.3), tetapi browser Owner menyimpan 4 cache versi lampau (`submaker-static-v3.8.9/19/20/24`) + service worker berdaftar — `handleStaticAsset()` dalam `public/sw.js` guna `caches.match()` global merentas SEMUA cache, menyebabkan aset JS era v3.8.x terus dihidangkan walaupun HTML current (HTML baru + skrip lama = UI lama). Owner mengarahkan bump versi/cache-buster untuk memaksa refresh semua klien tanpa pembersihan manual.
+- **Pembedahan:** TIADA perubahan kod fungsi — release cache-buster tulen. `package.json` bump 3.10.3 → 3.10.4 ( [`src/utils/version.js`](../src/utils/version.js) baca runtime = 3.10.4 disahkan); `__APP_VERSION_QUERY__` token di `configure.html` + semua `?_cb=` generator diganti automatik melalui mekanisme token sedia ada; nama cache SW menjadi `submaker-static-v3.10.4` → SW lama takluk kepada versi baharu selepas reload pertama.
+- **Ujian:** `npx prettier --check` PASS (selepas --write package.json untuk line-ending); `npx eslint .` 0 error; `npm test` (REDIS_INTEGRATION_PORT=6379, Redis hidup) = **426 total / 426 PASS / 0 FAIL / 0 SKIP** — monotonic ≥ baseline 426. `graphify update .` OK (5358 nodes, 11549 edges, 272 communities).
+- **Fail terlibat:** `package.json` (bump), `CHANGELOG.md` (header v3.10.4), `docs/SESSION_LEDGER.md`.
+- **Nota**: pembaikan kekal bug laten `caches.match()` global (patut `cache.match(request, { cacheName: getVersionedCacheName(APP_VERSION) })`) dicadangkan sebagai release berikutnya — ditahan menunggu arahan Owner.
+- **Next Steps:** commit+push + CI hijau; Owner jalankan command bomb di VPS sekali lagi; browser Owner (bukan incognito) reload biasa — cache buster baharu memaksa aset segar tanpa DevTools.
+
 ## 2026-10-17 — v3.10.3 FRONTEND ZERO-TRUST AUDIT FIX: PENALTY INPUT FORM SERIALIZATION (MANDAT OPSYON 1 SELESAI)
 
 - **Tarikh:** 2026-10-17 ~02:54 (waktu tempatan KL).
