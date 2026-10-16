@@ -2,6 +2,20 @@
 
 All notable changes to this project will be documented in this file.
 
+## SubMaker v3.10.2 (2026-10-17) — Tool Precedence Protocol + Redis Counter Cleanup + Local Redis Integration
+
+### Changed
+
+- **[MANDAT OWNER — .roo/rules/00-subfaber-core-protocol.md] Seksyen baharu MCP, CLI & TOOL PRECEDENCE PROTOCOL (ZERO REINSTALL & ZERO WASTE):** penyelarasan tingkah laku semua agen merentas model AI — (1) MANDATORY INVENTORY CHECK FIRST: setiap agen wajib semak tool tersedia dalam system prompt (MCP servers `playwright`/`firecrawl-mcp`/`context7` + CLI `gh`/`docker`/`git`) SEBELUM merancang sebarang tindakan; (2) STRICT NO-REINSTALL & NO-REINVENTION RULE: haram memasang/mencipta semula apa yang sudah disediakan (contoh: `npm install playwright`); (3) MANDATORY TOOL MAPPING: browser verification → Playwright MCP, dokumentasi library → Context7 MCP, web search/scrape → Firecrawl MCP, GitHub Actions → `gh` CLI, Redis/container → `docker` CLI; (4) ZERO THROWAWAY SCRIPT WASTE: haram skrip `.tmp-*` ad-hoc untuk tugasan yang `gh`/MCP/npx handle; (5) FAIL-FAST MCP DIAGNOSTIC: probe ringkas sekali, lapor owner hanya jika benar-benar putus. Fail redundant `.roo/rules/10-context7-docs.md` DIBUANG — kandungannya diserap ke dalam item #3 tool mapping protokol baharu.
+
+### Fixed
+
+- **Stale '0' size counter dalam Redis ([src/storage/RedisStorageAdapter.js](src/storage/RedisStorageAdapter.js)):** `ATOMIC_CACHE_DELETE_SCRIPT` selama ini sentiasa `SET KEYS[4], nextSize` walaupun kaunter jatuh ke 0, meninggalkan string `'0'` dalam Redis selepas entri terakhir dibuang. Skrip kini `DEL KEYS[4]` pada sifar (GET null dibaca sebagai 0 oleh write script/`size()`/budget validation — tiada regression). Bug laten ini hanya terdedah selepas integration test Redis diaktifkan.
+
+### Added
+
+- **Local Redis integration test kini aktif penuh:** container Docker `subfaber-redis` (redis:7-alpine, port 6379, `--restart unless-stopped`) kini berjalan kekal di mesin owner; integration test diaktifkan melalui env `REDIS_INTEGRATION_PORT=6379`. Suite dengan Redis hidup: **426 total / 426 PASS / 0 FAIL / 0 SKIP** (monotonic ≥ 426; test Redis yang dahulu SKIP kini PASS).
+
 ## SubMaker v3.10.1 (2026-10-16) — Core Protocol: Functional Concern Domain Boundaries + Bilateral Integration Gate
 
 ### Changed

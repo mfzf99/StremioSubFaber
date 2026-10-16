@@ -120,7 +120,13 @@ if hasSizeLimit then
   if nextSize < 0 then
     nextSize = 0
   end
-  redis.call('SET', KEYS[4], nextSize)
+  if nextSize > 0 then
+    redis.call('SET', KEYS[4], nextSize)
+  else
+    -- Drop the counter entirely at zero so no stale '0' string lingers
+    -- after the last quota-tracked entry is removed (GET nil reads as 0).
+    redis.call('DEL', KEYS[4])
+  end
 end
 
 return {contentDeleted, metadataDeleted, oldSize}

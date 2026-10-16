@@ -10,6 +10,18 @@
 
 ---
 
+## 2026-10-17 — v3.10.2 TOOL PRECEDENCE PROTOCOL + REDIS COUNTER FIX + LOCAL REDIS INTEGRATION
+
+- **Tarikh:** 2026-10-17 ~01:24 (waktu tempatan KL).
+- **Komit SHA (HEAD):** (direkod selepas push).
+- **Keputusan Owner:** (1) Owner mengemas kini [.roo/rules/00-subfaber-core-protocol.md](../.roo/rules/00-subfaber-core-protocol.md) dengan seksyen baharu **MCP, CLI & TOOL PRECEDENCE PROTOCOL (ZERO REINSTALL & ZERO WASTE)** — penyelarasan tingkah laku semua agen merentas model AI selepas insiden agen frontend cuba pasang Playwright sendiri sedangkan MCP tersedia; (2) fail redundant `10-context7-docs.md` dibuang, kandungannya diserap ke dalam item #3 tool mapping; (3) infrastruktur lokal disiapkan: `gh` CLI v2.102.0 dipasang + login (akaun mfzf99, keyring, scopes repo/gist/read:org, `gh auth setup-git` aktif), Docker Desktop fresh install + container `subfaber-redis` (redis:7-alpine, port 6379, `--restart unless-stopped`) berjalan kekal.
+- **Pembedahan Backend:** (1) Integration test Redis diaktifkan (env `REDIS_INTEGRATION_PORT=6379`) mendedahkan bug laten: `ATOMIC_CACHE_DELETE_SCRIPT` dalam [src/storage/RedisStorageAdapter.js](../src/storage/RedisStorageAdapter.js) sentiasa `SET KEYS[4], nextSize` walaupun 0 — meninggalkan string `'0'` selepas entri terakhir dibuang (test menuntut key `null`). Fix: `DEL KEYS[4]` pada sifar; selamat kerana `GET null` dibaca 0 oleh semua call-site (write script/`size()`/budget validation). (2) Fail ujian ketinggalan `public/test-stepper.html` (untracked, gagal prettier) dibuang.
+- **Fail terlibat:** `.roo/rules/00-subfaber-core-protocol.md` (M), `.roo/rules/10-context7-docs.md` (D), `src/storage/RedisStorageAdapter.js` (M), `package.json` (bump 3.10.1→3.10.2), `CHANGELOG.md`, `docs/SESSION_LEDGER.md`.
+- **Status ujian:** `npx prettier --check .` PASS; `npx eslint .` 0 error; `npm test` (REDIS_INTEGRATION_PORT=6379, Redis hidup) = **426 total / 426 PASS / 0 FAIL / 0 SKIP** — monotonic ≥ baseline 426; test Redis yang dahulu SKIP kini PASS penuh. `graphify update .` = OK (graphify-out/ wujud).
+- **Next Steps:** Owner pemerhatian keberkesanan Tool Precedence Protocol merentas pertukaran model; Agent B god-tier unlock tertunda.
+
+---
+
 ## 2026-10-16 — v3.10.1 CORE PROTOCOL: FUNCTIONAL CONCERN DOMAIN BOUNDARIES + BILATERAL INTEGRATION GATE
 
 - **Tarikh:** 2026-10-16 ~22:16 (waktu tempatan KL).

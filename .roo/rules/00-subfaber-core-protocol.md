@@ -39,11 +39,27 @@
 - Validation gate before every .roomodes commit: parse with PyYAML, confirm customModes count, per-mode rule count, groups=[read,edit,command,mcp], source=project.
 
 [COGNITIVE DELIBERATION PROTOCOL - THINK BEFORE CODE]
-Before invoking any file editing tools or producing code diffs:
 1. TRACE & AUDIT TRAIL: Explicitly state the execution call-chain and list dependent callers in your response as auditable proof before modifying code or mutating shared signatures.
 2. ADVERSARIAL AUDIT: Identify potential failure modes (e.g. null/undefined payloads, race conditions, edge cases, breaking API contracts).
 3. INVARIANT & REGRESSION CHECK: Ensure proposed logic strictly adheres to system invariants and preserves the existing test baseline.
 4. ATOMIC & COMPLETE EXECUTION: Output complete, production-grade, defensive code. Strictly forbid lazy placeholders or truncated snippets (never emit '// ... rest of code').
+
+[MCP, CLI & TOOL PRECEDENCE PROTOCOL (ZERO REINSTALL & ZERO WASTE)]
+1. MANDATORY INVENTORY CHECK FIRST:
+   - Every agent MUST inspect the available tools in its system prompt (including all active MCP servers from `.roo/mcp.json`: `playwright`, `firecrawl-mcp`, `context7`) and installed native CLIs (`gh`, `docker`, `git`) BEFORE planning or executing any action.
+2. STRICT NO-REINSTALL & NO-REINVENTION RULE:
+   - STRICTLY FORBIDDEN to install, initialize, or recreate packages/libraries that are already provided as MCP tools, project dependencies, or system CLIs (e.g. NEVER run `npm install playwright`, `npx playwright install`, or build custom scraper/polling scripts).
+3. MANDATORY TOOL MAPPING & OFFICIAL DOCUMENTATION GROUND TRUTH:
+   - Browser & Live UI Verification: MUST use Playwright MCP tools (`browser_navigate`, `browser_snapshot`, `browser_click`, `browser_evaluate`, etc.).
+   - Library, Framework, SDK & API Documentation: MUST use Context7 MCP (`resolve-library-id` + `query-docs`) to retrieve current, up-to-date official documentation before writing code or proposing solutions. Do not rely on stale internal training weights for fast-evolving dependencies or API specifications.
+   - Live Web Search & Scraping: MUST use Firecrawl MCP (`firecrawl_search`, `firecrawl_scrape`).
+   - GitHub Actions & Repository Operations: MUST use the installed `gh` CLI (`gh run list`, `gh run view`, `gh run watch`) directly.
+   - Local Redis & Container Operations: MUST use the installed `docker` CLI against the active local container environment.
+4. ZERO THROWAWAY SCRIPT WASTE (FAST EXECUTION DISCIPLINE):
+   - STRICTLY FORBIDDEN from authoring temporary ad-hoc scripts in the repository root (such as `.tmp-ci-poll*.js`, `.tmp-diag*.js`, or custom one-off test harnesses) for tasks directly handled by `gh` CLI, MCP tools, or `npx jest <specific-test-file>`.
+   - During iterative debugging, run ONLY the targeted test file (`npx jest path/to/file.test.js`) for immediate feedback; reserve the full `npm test` suite for the final release pipeline gate.
+5. FAIL-FAST MCP DIAGNOSTIC:
+   - If an expected MCP tool appears unresponsive, test it once with a minimal probe (e.g. `browser_navigate` to `http://localhost:7001` or `https://example.com`). Only report to the Owner if genuinely disconnected — NEVER attempt proactive reinstallation or fallback script generation.
 
 [PROCESS LIFECYCLE, TERMINAL DISCIPLINE & MCP PRESERVATION]
 1. AUTONOMOUS SHELL OWNERSHIP (ZERO MANUAL BABYSITTING):
@@ -51,20 +67,20 @@ Before invoking any file editing tools or producing code diffs:
    - STRICTLY FORBIDDEN to ask the Owner to read terminal output, copy-paste terminal logs, inspect hung tabs, or manually intervene in terminal bottlenecks. Diagnose, inspect, and resolve autonomously.
 2. MCP & DAEMON PRESERVATION (ZERO TOLERANCE BLANKET KILLS):
    - NEVER execute blanket process termination commands (e.g. `taskkill /IM node.exe`, `taskkill /F /IM node.exe`, `pkill node`, `pkill -f node`, or `killall node`) under ANY circumstances.
-   - Reason: Background MCP services (Context7, Playwright, terminal runners, Language Server) operate inside node runtimes. Killing node globally severs MCP connections instantly, resulting in fatal "MCP tool: Not connected" crashes.
+   - Reason: Background MCP services (Context7, Playwright, Firecrawl, terminal runners, Language Server) operate inside node runtimes. Killing node globally severs MCP connections instantly, resulting in fatal "MCP tool: Not connected" crashes.
 3. STUCK PROCESS TERMINATION PROTOCOL (TWO PATHS ONLY):
    - Path A: Port-Bound Services (e.g. App Server on port 7001):
      - Cross-platform: `npx --yes kill-port <PORT>`
      - PowerShell (PID specific): `Get-NetTCPConnection -LocalPort <PORT> -ErrorAction SilentlyContinue | Select-Object -ExpandProperty OwningProcess -Unique | Stop-Process -Force`
      - CMD: `for /f "tokens=5" %a in ('netstat -aon ^| findstr :<PORT>') do taskkill /f /pid %a`
-   - Path B: Standalone Scripts, Diagnostics & Test Runners (No Port, e.g. .tmp-f3-diag.js, jest):
-     - ALWAYS execute surgical, targeted process kills identifying the EXACT script or test filename: `pkill -f "<script-name>" || true` (e.g. `pkill -f "tmp-f3-diag" || true`).
+   - Path B: Standalone Scripts, Diagnostics & Test Runners (No Port, e.g. jest):
+     - ALWAYS execute surgical, targeted process kills identifying the EXACT script or test filename: `pkill -f "<script-name>" || true`.
 4. PROACTIVE TIMEOUT & PTY BUFFER MANAGEMENT:
-   - Any diagnostic script, ad-hoc runner, or long test execution MUST be executed with a strict timeout guardrail (e.g. `timeout 60s node script.js`) to prevent runaway infinite loops.
-   - Avoid dumping massive unstructured outputs directly into interactive PTY terminals to prevent buffer deadlocks. For deep diagnostics or tests with extensive logs, pipe output cleanly to a temporary log file (e.g. `node script.js > .diag.log 2>&1`), read necessary slices programmatically via `head`/`grep`/file tools, and clean up temporary log artifacts immediately.
+   - Any long command or test execution MUST be executed with a strict timeout guardrail to prevent runaway infinite loops.
+   - Avoid dumping massive unstructured outputs directly into interactive PTY terminals to prevent buffer deadlocks. For extensive logs, pipe output cleanly to a temporary log file (`> .diag.log 2>&1`), inspect necessary slices programmatically, and delete the `.diag.log` artifact immediately before committing.
 5. ZOMBIE PROCESS & TERMINAL CONCURRENCY CAP:
    - NEVER spawn cascading dangling terminals (limit concurrent active background tasks to at most 1-2).
-   - Before executing a new diagnostic run or test suite, verify and clean up any previously stalled background processes running the same script. Never let zombie processes accumulate.
+   - Before executing a new test run, verify and clean up any previously stalled background processes running the same command. Never let zombie processes accumulate.
 6. CACHE IN-MEMORY & SERVER RELOAD DISCIPLINE:
    - If changes in templates (e.g. configurePageGenerator / main.html) do not reflect due to in-memory caching, strictly kill the specific server port (7001), verify the port is free, and start the script afresh (`node index.js`). Never kill other background Node runtimes.
 
@@ -78,5 +94,5 @@ Before invoking any file editing tools or producing code diffs:
    - 5. Code topology sync: Run `graphify update .` ONLY IF the graphify runtime is present and `graphify-out/` exists. If the runtime or directory is absent, treat as an immediate NO-OP (strictly forbidden to generate ad-hoc Python runner scripts or temporary files).
    - 6. Session ledger append in docs/SESSION_LEDGER.md
    - 7. Structured Git commit and push to origin main
-   - 8. GitHub Actions CI verification (must conclude with Success)
+   - 8. GitHub Actions CI verification via native `gh` CLI (`gh run list --limit 1` / `gh run watch` — strictly forbidden to write temporary `.tmp-ci-poll*.js` scripts; must conclude with Success)
 3. VIOLATION AUDIT: Skipping any single step in this sequence constitutes a direct protocol violation.
