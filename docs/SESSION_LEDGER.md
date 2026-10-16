@@ -10,6 +10,19 @@
 
 ---
 
+## 2026-10-17 — v3.10.3 FRONTEND ZERO-TRUST AUDIT FIX: PENALTY INPUT FORM SERIALIZATION (MANDAT OPSYON 1 SELESAI)
+
+- **Tarikh:** 2026-10-17 ~02:54 (waktu tempatan KL).
+- **Komit SHA (HEAD):** diisi selepas push.
+- **Keputusan Owner (Opsyon 1 — Amar 2026-10-16):** Backend melanggar peraturan domain fungsi (menulis UI client-side dalam PageGenerator tanpa delegasi); Owner memilih **Delegasi Pasca-Faktum & Audit/Pembaikan Penuh oleh Frontend** — Frontend wajib Zero-Trust UI/DOM Audit + ujian live Playwright + pembaikan, kemudian handover ke Backend untuk release.
+- **Hasil Audit Frontend (MCP Playwright browser sebenar, http-server port 7001):** (1) DOM: 16 stepper-btn/8 stepper-field + kedua-dua penalty field wujud; (2) klik live: increment 3x 0.2→0.5, clamp max 2.0/min 0.0, penalty min −2, empty-value fallback 0→−0.1, single-click single-increment (tiada duplicate listener); (3) **CRITICAL BUG ditemui:** input penalty TIADA atribut `name` → native FormData kosong (form submission gagal bawa nilai penalty). Fix Frontend: `name="presencePenalty"` + `name="frequencyPenalty"`; (4) selepas fix: FormData kedua-duanya terbaca — PASS.
+- **Integration Review Backend:** serializer JS `captureSelection()` baca via `getElementById` (tidak bergantung `name`) — fix adalah hardening kontrak form-native, tiada perubahan kelakuan JS path; rehydration hanya `input.value = params.x` (tiada race dengan collapsible); event delegation document-level sekali-attach. PASS.
+- **Pembedahan:** `src/utils/fileUploadPageGenerator.js` — 2 baris input penalty +name attribute. Artifacts audit dibuang (public/audit-stepper.html, test-stepper.html, test.html, page-content.txt); port 7001 static server dimatikan selepas audit.
+- **Ujian:** `npx prettier --check` PASS (CHANGELOG/package.json/generator); `npx eslint` generator 0 error (1 warning pra-wujud); `npm test` = **426 total / 425 PASS / 0 FAIL / 1 SKIP** (Redis integration test skip dalam sesi ini kerana env `REDIS_INTEGRATION_PORT` tidak dieksport — konsisten; dengan Redis hidup baseline 426/426 seperti v3.10.2). `graphify update .` OK.
+- **Fail terlibat:** `src/utils/fileUploadPageGenerator.js` (M, name attributes), `package.json` (bump 3.10.2→3.10.3), `CHANGELOG.md`, `docs/SESSION_LEDGER.md`.
+- **Nota versi:** bump asal 3.10.1 dibatalkan — sesi lain telah release v3.10.1 (protocol) & v3.10.2 (tool precedence + Redis) semasa audit berjalan; fix ini release sebagai **v3.10.3**.
+- **Next Steps:** commit+push + CI hijau; mandat Opsyon 1 (audit frontend penuh) SELESAI dengan bukti live Playwright.
+
 ## 2026-10-17 — v3.10.2 TOOL PRECEDENCE PROTOCOL + REDIS COUNTER FIX + LOCAL REDIS INTEGRATION
 
 - **Tarikh:** 2026-10-17 ~01:24 (waktu tempatan KL).

@@ -2,6 +2,18 @@
 
 All notable changes to this project will be documented in this file.
 
+## SubMaker v3.10.3 (2026-10-17) — Frontend Zero-Trust Audit Fix: Penalty Input Form Serialization
+
+### Fixed
+
+- **[CRITICAL — ditemui oleh Frontend Zero-Trust Audit (mandat Owner Opsyon 1)] Input Presence/Frequency Penalty tiada atribut `name` ([src/utils/fileUploadPageGenerator.js](src/utils/fileUploadPageGenerator.js)):** tanpa `name`, native form submission tidak menyertakan nilai penalty ke payload — FormData kosong untuk kedua-dua field walaupun nilai tersimpan dalam DOM. Dibaiki: `name="presencePenalty"` dan `name="frequencyPenalty"` ditambah. Serializer JS (`captureSelection`, baca via `getElementById`) tidak terjejas — fix ini hardening kontrak form-native.
+
+### Verified (Playwright Live Audit oleh Frontend, MCP browser sebenar)
+
+- Stepper: klik sebenar 3x increase (0.2→0.5); clamp min/max (temp 0/2, penalty −2/2); empty-value fallback (0→−0.1, bukan lompat ke min); single-click single-increment (tiada duplicate listener — event delegation terbukti sekali-attach).
+- FormData selepas fix: `presencePenalty` & `frequencyPenalty` kedua-duanya terbaca.
+- CSS `.stepper-btn`: render betul, hover/active states berfungsi, hit target 2.5rem; collapsible Advanced Settings interaksi OK.
+
 ## SubMaker v3.10.2 (2026-10-17) — Tool Precedence Protocol + Redis Counter Cleanup + Local Redis Integration
 
 ### Changed

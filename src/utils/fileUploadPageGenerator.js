@@ -2735,7 +2735,7 @@ function generateFileTranslationPage(videoId, configStr, config, filename = '') 
                                 </label>
                                 <div class="stepper-field">
                                     <button type="button" class="stepper-btn" data-step-target="advancedPresencePenalty" data-step-dir="-1" aria-label="Decrease Presence Penalty">−</button>
-                                    <input type="number" id="advancedPresencePenalty" min="-2" max="2" step="0.1" value="0" placeholder="0">
+                                    <input type="number" id="advancedPresencePenalty" name="presencePenalty" min="-2" max="2" step="0.1" value="0" placeholder="0">
                                     <button type="button" class="stepper-btn" data-step-target="advancedPresencePenalty" data-step-dir="1" aria-label="Increase Presence Penalty">+</button>
                                 </div>
                             </div>
@@ -2747,7 +2747,7 @@ function generateFileTranslationPage(videoId, configStr, config, filename = '') 
                                 </label>
                                 <div class="stepper-field">
                                     <button type="button" class="stepper-btn" data-step-target="advancedFrequencyPenalty" data-step-dir="-1" aria-label="Decrease Frequency Penalty">−</button>
-                                    <input type="number" id="advancedFrequencyPenalty" min="-2" max="2" step="0.1" value="0" placeholder="0">
+                                    <input type="number" id="advancedFrequencyPenalty" name="frequencyPenalty" min="-2" max="2" step="0.1" value="0" placeholder="0">
                                     <button type="button" class="stepper-btn" data-step-target="advancedFrequencyPenalty" data-step-dir="1" aria-label="Increase Frequency Penalty">+</button>
                                 </div>
                             </div>
