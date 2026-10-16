@@ -10,6 +10,16 @@
 
 ---
 
+## 2026-10-16 — v3.10.1 CORE PROTOCOL: FUNCTIONAL CONCERN DOMAIN BOUNDARIES + BILATERAL INTEGRATION GATE
+
+- **Tarikh:** 2026-10-16 ~22:16 (waktu tempatan KL).
+- **Komit SHA (HEAD):** (direkod selepas push).
+- **Keputusan Owner:** Kemaskini manual Owner ke [.roo/rules/00-subfaber-core-protocol.md](../.roo/rules/00-subfaber-core-protocol.md) — seksyen MULTI-AGENT ORCHESTRATION PROTOCOL diperkukuh: (1) item #1 domain boundaries kini dinilai oleh FUNCTIONAL CONCERN yang strictly mengatasi folder path; Frontend Domain merangkumi semua fail `public/` DAN UI markup/CSS/DOM/event handlers terbenam dalam fail hibrid `src/utils/*PageGenerator.js`; (2) HYBRID FILE & PRECEDENCE RULE baharu — Backend DIHARAMKAN menulis/menghantar client-side HTML/CSS/DOM scripts dalam PageGenerator secara unilateral; (3) item #4 dinaikkan kepada BILATERAL TWO-MAN INTEGRATION GATE (zero unilateral releases) — Backend turut wajib delegasi skop UI ke Frontend untuk implementasi + verifikasi Playwright; (4) item #8 baharu PLAN FIDELITY & ZERO RATIONALIZATION CLAUSE — delegation gate dalam plan yang diluluskan adalah kontrak mengikat; lulus `npm test` Node.js TIDAK PERNAH menggantikan verifikasi DOM/Playwright.
+- **Audit Backend (verification pra-release):** `git diff` mengesahkan 18 baris berubah (+11/-7) pada rules file; `npx prettier --check .roo/rules/00-subfaber-core-protocol.md` = PASS.
+- **Fail terlibat:** `.roo/rules/00-subfaber-core-protocol.md` (M), `package.json` (bump 3.10.0→3.10.1), `CHANGELOG.md`, `docs/SESSION_LEDGER.md`.
+- **Status ujian:** `npx prettier --check .` PASS; `npx eslint .` 0 error (224 warning pra-wujud); `npm test` = **426 total / 425 PASS / 0 FAIL / 1 SKIP (live Redis)** — monotonic ≥ baseline 426 terpelihara. `graphify update .` = NO-OP (direktori `graphify-out/` tiada).
+- **Next Steps:** Owner terus pemerhatian empirikal Send-All Doctrine; keputusan unlock Agent B god-tier tertunda.
+
 ## 2026-10-16 — v3.10.0 SEND-ALL DOCTRINE: UNIFIED GENERATION PARAMETERS KETIGA-TIGA DOOR (FASA A–E LENGKAP)
 
 - **Tarikh:** 2026-10-16 ~21:55 (waktu tempatan KL).

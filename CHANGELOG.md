@@ -2,6 +2,12 @@
 
 All notable changes to this project will be documented in this file.
 
+## SubMaker v3.10.1 (2026-10-16) — Core Protocol: Functional Concern Domain Boundaries + Bilateral Integration Gate
+
+### Changed
+
+- **[MANDAT OWNER — .roo/rules/00-subfaber-core-protocol.md] MULTI-AGENT ORCHESTRATION PROTOCOL dikukuhkan:** (1) domain boundaries kini dinilai oleh FUNCTIONAL CONCERN yang mengatasi folder path — Frontend Domain merangkumi semua fail `public/` DAN sebarang UI markup/CSS/DOM/browser event handlers terbenam dalam fail hibrid server seperti `src/utils/*PageGenerator.js`; (2) HYBRID FILE & PRECEDENCE RULE — Backend DIHARAMKAN menulis/menghantar client-side HTML/CSS/DOM scripts dalam PageGenerator secara unilateral; (3) rule #4 dinaikkan kepada BILATERAL TWO-MAN INTEGRATION GATE (zero unilateral releases) — Backend juga wajib delegasi skop UI ke Frontend untuk implementasi + verifikasi Playwright; (4) rule #8 baharu PLAN FIDELITY & ZERO RATIONALIZATION CLAUSE — delegation gate dalam plan yang diluluskan adalah kontrak mengikat; lulus `npm test` Node.js TIDAK PERNAH menggantikan verifikasi DOM/Playwright Frontend.
+
 ## SubMaker v3.10.0 (2026-10-16) — Send-All Doctrine: Unified Generation Parameters untuk Ketiga-Tiga Door
 
 ### Changed
