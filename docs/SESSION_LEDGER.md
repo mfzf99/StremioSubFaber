@@ -13,7 +13,7 @@
 ## 2026-10-17 — v3.11.0 TOTAL PURGE & PENJENAMAAN SEMULA JENAMA LEGASI -> SUBFABER (ZERO-TOLERANCE, 0 BAKI PADANAN)
 
 - **Tarikh:** 2026-10-17 ~05:43 (waktu tempatan KL).
-- **Komit SHA (HEAD):** (direkod selepas push).
+- **Komit SHA (HEAD):** `c2ebd14f` — push `d9077989..c2ebd14f` ke origin/main BERJAYA; CI `ci.yml` run **#38971290245** pada `c2ebd14f` = **SUCCESS** (Node 22: 1m9s / Node 24: 1m7s, disahkan melalui `gh run watch`). Versi release: **v3.11.0** (bump minor; cache-buster `?_cb=3.11.0`).
 - **Keputusan Owner:** Mandat operasi khas zero-tolerance: purge menyeluruh SEMUA rujukan jenama legasi (4 varian huruf, termasuk varian berprefiks "Stremio") di seluruh repositori dan seragamkan kepada "SubFaber"/"StremioSubFaber". Tiada kompromi, zero-hit mutlak diwajibkan.
 - **Fasa 1 (Global Scan):** Imbasan `git grep` case-insensitive terhadap jenama legasi mengesan **71 fail / 615 baris** padanan merentas kod sumber, konfigurasi, skrip, dokumentasi, ujian, locales, dan template GitHub.
 - **Fasa 2 (Case-Matched Refactor):** Penggantian berpadanan corak huruf (urutan panjang-dahulu untuk elak pertindihan) bagi keempat-empat varian jenama lama kepada padanan SubFaber sepadan (PascalCase berprefiks, PascalCase, UPPERCASE, lowercase). Komponen kritikal dikemas kini 100% sepadan: arahan Lua tersuai Redis `subfaberAtomicCacheWrite`/`subfaberAtomicCacheDelete` dalam `src/storage/RedisStorageAdapter.js` + regresi `src/storage/redis-command-timeout-regression.test.js`; kunci localStorage, saluran stream (postMessage `SUBFABER_*`), pengepala identiti klien Stremio, cache SW (`subfaber-static-*`), `.env.example`, template issue GitHub, locales ×5.
