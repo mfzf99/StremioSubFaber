@@ -1018,10 +1018,48 @@
         return out;
     }
 
+    // [BUG FIX] Fresh state gate: semakan provider DAN model mesti dipilih
+    // sebelum parameter boleh dirender. Fallback generik (MP_DOOR_GENERIC_OPENAI)
+    // tidak boleh dipaparkan seolah-olah konfigurasi sudah aktif.
+    function mpHasSelection(ctx) {
+        return (
+            String(ctx.providerOrDoor || '')
+                .trim()
+                .replace(/^-+$/, '') !== '' &&
+            String(ctx.model || '')
+                .trim()
+                .replace(/^-+$/, '') !== ''
+        );
+    }
+
+    // Render placeholder "pilih provider/model dahulu" + bersihkan notes/warning.
+    // Dipanggil oleh refreshModelParams() dan handler Reset to Default.
+    function mpRenderPlaceholder(agentKey) {
+        var fieldsBox = $('trinity-mp-fields-' + agentKey);
+        var notesBox = $('trinity-mp-notes-' + agentKey);
+        if (fieldsBox) {
+            fieldsBox.innerHTML = '';
+            var placeholder = createEl(
+                'div',
+                'trinity-mp-placeholder',
+                'Pilih provider dan model dahulu untuk melaraskan parameter.'
+            );
+            placeholder.id = 'trinity-mp-placeholder-' + agentKey;
+            fieldsBox.appendChild(placeholder);
+        }
+        if (notesBox) notesBox.innerHTML = '';
+        var warn = $('trinity-mp-deviated-' + agentKey);
+        if (warn) warn.style.display = 'none';
+    }
+
     function refreshModelParams(agentKey) {
         var accordion = $('trinity-mp-' + agentKey);
         if (!accordion) return;
         var ctx = mpResolveAgentContext(agentKey);
+        if (!mpHasSelection(ctx)) {
+            mpRenderPlaceholder(agentKey);
+            return;
+        }
         var profile = resolveCapabilityProfile(ctx.providerOrDoor, ctx.model);
         var defaults = getAgentDefaultParams(agentKey, ctx.providerOrDoor, ctx.model);
         // Params tersimpan KEKAL merentas pertukaran provider/model (famili boleh
@@ -1093,6 +1131,13 @@
             e.stopPropagation();
             var ctx = mpResolveAgentContext(agentKey);
             delete _modelParamsState[agentKey];
+            // [BUG FIX] Gate sama seperti refreshModelParams(): dalam fresh state
+            // (provider/model kosong), Reset mesti KEKALKAN placeholder — jangan
+            // render profil generik MP_DOOR_GENERIC_OPENAI menimpa placeholder.
+            if (!mpHasSelection(ctx)) {
+                mpRenderPlaceholder(agentKey);
+                return;
+            }
             var defaults = getAgentDefaultParams(agentKey, ctx.providerOrDoor, ctx.model);
             var profile = resolveCapabilityProfile(ctx.providerOrDoor, ctx.model);
             mpRenderFields(agentKey, profile, defaults, defaults);

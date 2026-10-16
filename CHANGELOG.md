@@ -2,6 +2,22 @@
 
 All notable changes to this project will be documented in this file.
 
+## SubFaber v3.11.1 (2026-10-17) — Fresh-State Gate: Trinity Model Parameters Placeholder
+
+### Fixed
+
+- **[LAPORAN OWNER — "parameter keluar sebelum pilih provider/model"] Trinity "Model Parameters" merender nilai default generik dalam fresh state ([public/js/trinity-agents.js](public/js/trinity-agents.js)):** `refreshModelParams()` dipanggil semasa init tanpa gate; provider/model kosong jatuh ke fallback `default:` dalam `resolveCapabilityProfile()` → `MP_DOOR_GENERIC_OPENAI` (profil generik penuh), lalu `mpRenderFields()` memaparkan temperature 0.3 / topP 0.95 / maxOutputTokens 32768 / penalties 0 seolah-olah konfigurasi sudah aktif — walaupun API key kosong dan tiada pilihan dibuat. Fix: helper `mpHasSelection(ctx)` + `mpRenderPlaceholder(agentKey)` — placeholder "Pilih provider dan model dahulu untuk melaraskan parameter." dipaparkan sehingga provider DAN model dipilih.
+- **[BUG TERSEMBUNYI — ditemui Integration Review Backend] Handler "Reset to Default" melangkau gate:** call-chain audit `mpRenderFields` mendedahkan handler reset dalam `buildModelParamsAccordion()` terus render profil generik dan menimpa placeholder dalam fresh state. Fix: gate `mpHasSelection()` dipasang pada KEDUA-DUA call-site `mpRenderFields` (audit mengesahkan tiada laluan ketiga); `delete _modelParamsState` kekal dijalankan sebelum gate.
+
+### Changed
+
+- Kelas CSS baharu `.trinity-mp-placeholder` ([public/css/trinity-agents.css](public/css/trinity-agents.css)) — kartu dashed span penuh grid, teks tengah, konsisten tema.
+- Kontrak payload `trinity.<agent>.params` TERPELIHARA — gate adalah render-time sahaja; payload fresh state kekal `{}`.
+
+### Verified
+
+- Verifikasi Playwright live (localhost:7001/configure): fresh state = 0 medan + placeholder (4 ejen); provider sahaja → placeholder kekal; provider+model → 6 medan default betul; fresh state + Reset → placeholder kekal; provider+model + Reset → medan default muncul semula. `npx prettier --check` lulus; `npx eslint` 0 error; `npm test` = 428 PASS / 0 FAIL / 0 SKIP (monotonic ≥ baseline).
+
 ## SubFaber v3.11.0 (2026-10-17) — Total Purge & Penjenamaan Semula: Sifar Rujukan Jenama Legasi
 
 ### Changed

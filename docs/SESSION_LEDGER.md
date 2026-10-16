@@ -10,6 +10,29 @@
 
 ---
 
+## 2026-10-17 — v3.11.1 FRESH-STATE GATE: TRINITY MODEL PARAMETERS PLACEHOLDER (FRONTEND+BACKEND SELESAI)
+
+- **Tarikh:** 2026-10-17 ~06:11 (waktu tempatan KL).
+- **Status:** INTEGRATION REVIEW BACKEND SELESAI — PIPELINE RELEASE v3.11.1 DALAM PELAKSANAAN (arahan commit Owner diterima).
+- **Keputusan Owner:** Owner melapor value parameter (0.3 / 0.95 / 32768 / Low / 0 / 0) terpapar dalam accordion Trinity "Model Parameters" pada fresh state — tanpa API key diisi dan tanpa provider/model dipilih. Punca dikesan: [`refreshModelParams()`](public/js/trinity-agents.js:1021) dipanggil semasa init tanpa gate; provider/model kosong jatuh ke fallback `default:` dalam [`resolveCapabilityProfile()`](public/js/trinity-agents.js:634) → [`MP_DOOR_GENERIC_OPENAI`](public/js/trinity-agents.js:618) (profil generik penuh), dan [`mpRenderFields()`](public/js/trinity-agents.js:916) merender nilai default generik seolah-olah konfigurasi sudah aktif. Owner meluluskan opsyen: "gate kosong, render placeholder 'Pilih provider dan model dahulu' bila provider/model kosong".
+- **Pembedahan Frontend (domain UI tulen):**
+  - [`public/js/trinity-agents.js`](public/js/trinity-agents.js) — [`refreshModelParams()`](public/js/trinity-agents.js:1021): tambah gate `hasSelection` (provider DAN model mesti bukan kosong/placeholder `—`). Jika kosong: kosongkan `trinity-mp-fields-<agent>`, suntik `div.trinity-mp-placeholder` ("Pilih provider dan model dahulu untuk melaraskan parameter."), kosongkan notes, sorokkan warning deviation, return awal. Jika lengkap: aliran sedia ada kekal (profil + defaults + saved state).
+  - [`public/css/trinity-agents.css`](public/css/trinity-agents.css:758) — kelas baharu `.trinity-mp-placeholder` (grid span penuh, teks 0.82rem `--text-secondary`, background translucent, border dashed, teks tengah).
+- **Verifikasi Playwright LIVE (localhost:7001/configure, modal instruksi ditutup programatik):**
+  - Fresh state (provider "— Select provider —", model kosong): keempat-empat ejen (preflight/translation/secondary/inspector) = **0 medan `[data-mp-name]` + placeholder dipaparkan** ✅
+  - Provider `gemini` dipilih, model belum dipilih → placeholder **KEKAL** (gate separuh aktif dengan betul) ✅
+  - Model `gemini-2.5-flash` dipilih → 6 medan muncul dengan default betul: `temperature=0.3, topP=0.95, maxOutputTokens=32768, thinkingBudget=-1, frequencyPenalty=0, presencePenalty=0` ✅
+  - Screenshot bukti: `.playwright-mcp/mp-placeholder-live-proof.png`.
+- **Integration Review Backend (pusingan 2) — BUG TERSEMBUNYI DITEMUI:** Call-chain audit `mpRenderFields` mendedahkan handler "Reset to Default" dalam [`buildModelParamsAccordion()`](public/js/trinity-agents.js) TIDAK melalui gate — klik Reset dalam fresh state akan render semula profil generik dan menimpa placeholder. Backend serah balik fix ke Frontend (domain DOM).
+- **Pembedahan Frontend pusingan 2:** Ektrak helper [`mpHasSelection(ctx)`](public/js/trinity-agents.js:1023) + [`mpRenderPlaceholder(agentKey)`](public/js/trinity-agents.js:1036) (tiada duplikasi logik). Gate dipasang dalam handler `resetBtn` — `delete _modelParamsState` tetap dijalankan, kemudian `if (!mpHasSelection(ctx)) { mpRenderPlaceholder(agentKey); return; }`.
+- **Verifikasi Playwright LIVE pusingan 2:** (a) fresh state + klik Reset → placeholder KEKAL, 0 medan; (b) pilih gemini + gemini-2.5-flash + klik Reset → 6 medan default muncul semula (0.3/0.95/32768/-1/0/0). Screenshot: `.playwright-mcp/mp-reset-gate-live-proof.png`.
+- **Semakan statik:** `node --check public/js/trinity-agents.js` OK; `npx prettier --check public/js/trinity-agents.js public/css/trinity-agents.css` PASS; `npx eslint public/js/trinity-agents.js` 0 error.
+- **Fail terlibat:** `public/js/trinity-agents.js` (M), `public/css/trinity-agents.css` (M), `docs/SESSION_LEDGER.md` (M).
+- **Nota Backend:** Perubahan tulen frontend (render gate sahaja). Kontrak payload `trinity.<agent>.params` TIDAK berubah — [`mpCollectDeviatedParams()`](public/js/trinity-agents.js:1006) dan serializer tidak disentuh; nilai default yang sama dihasilkan apabila pengguna memilih provider+model. Backend perlu mengesahkan tiada kesan sampingan pada regresi `trinity-params-regression.test.js` (ujian menyentuh profil/sanitize, bukan DOM gate).
+- **Integration Review Backend (PENUTUP):** (a) Ujian bertarget `node --test src/utils/trinity-params-regression.test.js` = **43/43 PASS** — tiada kesan sampingan pada [`src/utils/modelCapabilities.js`](src/utils/modelCapabilities.js); regresi menyentuh profil/sanitize, bukan DOM gate. (b) `npm test` penuh (REDIS_INTEGRATION_PORT=6379, Redis hidup) = **428 total / 428 PASS / 0 FAIL / 0 SKIP** — monotonic ≥ baseline 428. (c) Audit kontrak: `trinity.<agent>.params` kekal — gate adalah render-time sahaja; `mpCollectDeviatedParams()` mengumpul daripada DOM yang kini hanya wujud selepas provider+model dipilih, jadi payload fresh state kekal `{}` (tiada regresi kontrak).
+- **Pipeline release v3.11.1:** (1) Bump 3.11.0 → 3.11.1 (patch — bug fix UI). (2) CHANGELOG.md header v3.11.1. (3) Cache-buster disahkan runtime (`src/utils/version.js` baca package.json; token `__APP_VERSION_QUERY__` wujud; 6 PageGenerator guna `?_cb=`). (4) `npx prettier --check .` = 1 warn pre-existing `.prettierrc` (bukan scope); `npx eslint .` = 0 error / 223 warnings pre-existing (sama seperti v3.11.0); `npm test` = **428/428 PASS / 0 FAIL / 0 SKIP**. (5) `graphify update` = NO-OP (direktori `graphify-out/` tiada). (6) Ledger blok ini. (7) Commit + push. (8) CI via `gh`.
+- **Next Steps:** Commit + push + CI hijau; Owner command bomb di VPS; UI Trinity Model Parameters kini hanya muncul selepas provider+model dipilih.
+
 ## 2026-10-17 — v3.11.0 TOTAL PURGE & PENJENAMAAN SEMULA JENAMA LEGASI -> SUBFABER (ZERO-TOLERANCE, 0 BAKI PADANAN)
 
 - **Tarikh:** 2026-10-17 ~05:43 (waktu tempatan KL).
