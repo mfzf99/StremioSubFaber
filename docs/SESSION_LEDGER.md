@@ -13,7 +13,7 @@
 ## 2026-10-17 — v3.10.3 FRONTEND ZERO-TRUST AUDIT FIX: PENALTY INPUT FORM SERIALIZATION (MANDAT OPSYON 1 SELESAI)
 
 - **Tarikh:** 2026-10-17 ~02:54 (waktu tempatan KL).
-- **Komit SHA (HEAD):** diisi selepas push.
+- **Komit SHA (HEAD):** `7e8232b` — push `f845f58..7e8232b` ke origin/main BERJAYA; CI `ci.yml` run **#38950983156** pada `7e8232b` = **SUCCESS** (1m13s, disahkan melalui `gh run list`).
 - **Keputusan Owner (Opsyon 1 — Amar 2026-10-16):** Backend melanggar peraturan domain fungsi (menulis UI client-side dalam PageGenerator tanpa delegasi); Owner memilih **Delegasi Pasca-Faktum & Audit/Pembaikan Penuh oleh Frontend** — Frontend wajib Zero-Trust UI/DOM Audit + ujian live Playwright + pembaikan, kemudian handover ke Backend untuk release.
 - **Hasil Audit Frontend (MCP Playwright browser sebenar, http-server port 7001):** (1) DOM: 16 stepper-btn/8 stepper-field + kedua-dua penalty field wujud; (2) klik live: increment 3x 0.2→0.5, clamp max 2.0/min 0.0, penalty min −2, empty-value fallback 0→−0.1, single-click single-increment (tiada duplicate listener); (3) **CRITICAL BUG ditemui:** input penalty TIADA atribut `name` → native FormData kosong (form submission gagal bawa nilai penalty). Fix Frontend: `name="presencePenalty"` + `name="frequencyPenalty"`; (4) selepas fix: FormData kedua-duanya terbaca — PASS.
 - **Integration Review Backend:** serializer JS `captureSelection()` baca via `getElementById` (tidak bergantung `name`) — fix adalah hardening kontrak form-native, tiada perubahan kelakuan JS path; rehydration hanya `input.value = params.x` (tiada race dengan collapsible); event delegation document-level sekali-attach. PASS.
