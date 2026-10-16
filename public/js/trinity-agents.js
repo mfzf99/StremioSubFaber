@@ -445,6 +445,15 @@
     var MP_GEMINI_SAMPLING = mpParam(0, 2, 0.3);
     var MP_GEMINI_TOP_P = mpParam(0, 1, 0.95);
     var MP_GEMINI_THINKING_LEVELS = ['disabled', 'minimal', 'low', 'medium', 'high'];
+    // [SEND-ALL UI GAP FIX v3.10.5] Presence/Frequency Penalty dirender dalam
+    // Model Parameters untuk SEMUA profil bersampling — backend menghantar
+    // penalty ke semua pintu (gemini.js / openaiCompatible.js / anthropic.js);
+    // sanitizeAgentParams hanya meluluskan medan yang disenaraikan dalam profil,
+    // maka UI mesti mengisytihar descriptor mereka. Julat -2..2, step 0.1,
+    // lalai 0 (label sedia ada dalam MP_FIELD_LABELS; susunan selepas
+    // reasoningEffort dalam MP_FIELD_ORDER).
+    var MP_FREQUENCY_PENALTY = mpParam(-2, 2, 0);
+    var MP_PRESENCE_PENALTY = mpParam(-2, 2, 0);
 
     function mpGeminiProfile(modelId) {
         var m = String(modelId || '')
@@ -457,7 +466,9 @@
                     temperature: MP_GEMINI_SAMPLING,
                     topP: MP_GEMINI_TOP_P,
                     thinkingBudget: mpParam(-1, 200000, -1),
-                    maxOutputTokens: mpParam(1, 65535, 32768)
+                    maxOutputTokens: mpParam(1, 65535, 32768),
+                    frequencyPenalty: MP_FREQUENCY_PENALTY,
+                    presencePenalty: MP_PRESENCE_PENALTY
                 },
                 notes: []
             };
@@ -475,7 +486,9 @@
                 family: 'gemini-3.x-strict',
                 parameters: {
                     thinkingLevel: mpParam(0, 0, 'medium', { enum: MP_GEMINI_THINKING_LEVELS }),
-                    maxOutputTokens: mpParam(1, 65536, 32768)
+                    maxOutputTokens: mpParam(1, 65536, 32768),
+                    frequencyPenalty: MP_FREQUENCY_PENALTY,
+                    presencePenalty: MP_PRESENCE_PENALTY
                 },
                 notes: ['sampling-controlled', rerouteStrict ? 'server-reroute-stripped' : 'sampling-stripped-by-api']
             };
@@ -487,7 +500,9 @@
                     temperature: MP_GEMINI_SAMPLING,
                     topP: MP_GEMINI_TOP_P,
                     thinkingLevel: mpParam(0, 0, 'high', { enum: MP_GEMINI_THINKING_LEVELS }),
-                    maxOutputTokens: mpParam(1, 65536, 32768)
+                    maxOutputTokens: mpParam(1, 65536, 32768),
+                    frequencyPenalty: MP_FREQUENCY_PENALTY,
+                    presencePenalty: MP_PRESENCE_PENALTY
                 },
                 notes: ['google-recommends-temperature-1.0']
             };
@@ -497,7 +512,9 @@
             parameters: {
                 temperature: MP_GEMINI_SAMPLING,
                 topP: MP_GEMINI_TOP_P,
-                maxOutputTokens: mpParam(1, 65535, 32768)
+                maxOutputTokens: mpParam(1, 65535, 32768),
+                frequencyPenalty: MP_FREQUENCY_PENALTY,
+                presencePenalty: MP_PRESENCE_PENALTY
             },
             notes: []
         };
@@ -513,7 +530,9 @@
         var parameters = {
             temperature: mpParam(0, 1, 0.3),
             topP: mpParam(0, 1, 0.95),
-            maxOutputTokens: mpParam(1, 128000, 32768)
+            maxOutputTokens: mpParam(1, 128000, 32768),
+            frequencyPenalty: MP_FREQUENCY_PENALTY,
+            presencePenalty: MP_PRESENCE_PENALTY
         };
         if (hasThinking) parameters.thinkingBudget = mpParam(1024, 200000, 0);
         return {
@@ -543,7 +562,9 @@
                 parameters: {
                     temperature: mpParam(1, 1, 1.0, { fixed: 1.0 }),
                     topP: mpParam(0.95, 0.95, 0.95, { fixed: 0.95 }),
-                    maxOutputTokens: mpParam(1, 131072, 32768)
+                    maxOutputTokens: mpParam(1, 131072, 32768),
+                    frequencyPenalty: MP_FREQUENCY_PENALTY,
+                    presencePenalty: MP_PRESENCE_PENALTY
                 },
                 notes: ['fixed-sampling-temp-1.0-topP-0.95']
             };
@@ -553,7 +574,9 @@
             parameters: {
                 temperature: mpParam(0, 1, 1.0),
                 topP: mpParam(0.95, 0.95, 0.95, { fixed: 0.95 }),
-                maxOutputTokens: mpParam(1, 131072, 32768)
+                maxOutputTokens: mpParam(1, 131072, 32768),
+                frequencyPenalty: MP_FREQUENCY_PENALTY,
+                presencePenalty: MP_PRESENCE_PENALTY
             },
             notes: ['thinking-mode-temperature-1.0']
         };
@@ -578,7 +601,9 @@
         var parameters = {
             temperature: mpParam(0, 2, 0.3),
             topP: mpParam(0, 1, 0.95),
-            maxOutputTokens: mpParam(1, 128000, 32768)
+            maxOutputTokens: mpParam(1, 128000, 32768),
+            frequencyPenalty: MP_FREQUENCY_PENALTY,
+            presencePenalty: MP_PRESENCE_PENALTY
         };
         if (modern) {
             parameters.reasoningEffort = mpParam(0, 0, 'low', { enum: ['none', 'low', 'medium', 'high', 'xhigh'] });
@@ -598,7 +623,9 @@
             maxOutputTokens: mpParam(1, 200000, 32768),
             reasoningEffort: mpParam(0, 0, undefined, {
                 enum: ['none', 'minimal', 'low', 'medium', 'high', 'xhigh']
-            })
+            }),
+            frequencyPenalty: MP_FREQUENCY_PENALTY,
+            presencePenalty: MP_PRESENCE_PENALTY
         },
         notes: []
     };
@@ -637,7 +664,9 @@
                         parameters: {
                             temperature: mpParam(0, 1, 1.0),
                             topP: mpParam(0, 1, 0.95),
-                            maxOutputTokens: mpParam(1, 131072, 32768)
+                            maxOutputTokens: mpParam(1, 131072, 32768),
+                            frequencyPenalty: MP_FREQUENCY_PENALTY,
+                            presencePenalty: MP_PRESENCE_PENALTY
                         },
                         notes: ['thinking-mode-temperature-1.0']
                     };

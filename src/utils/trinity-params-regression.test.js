@@ -97,6 +97,70 @@ test('[A7] OpenAI o-series/gpt-5/5.1 — tiada sampling; reasoning_effort sah', 
     assert.ok('temperature' in modern.parameters, 'gpt-5.5+ sokong sampling semula');
 });
 
+test('[SEND-ALL v3.10.5] Penalty diisytiharkan dalam SEMUA profil bersampling (UI parity)', () => {
+    // Mandat Owner (2026-10-16): Model Parameters Trinity mesti papar kelima-lima
+    // parameter (Thinking/Temperature/Top-P/presence/frequency). Backend profile
+    // MENGISYTIHARKAN penalty supaya sanitizeAgentParams tidak membuang nilai
+    // dari UI secara senyap — selari dengan trinity-agents.js (mpParam(-2, 2, 0)).
+    const SAMPLING_CASES = [
+        ['gemini', 'gemini-2.5-flash'],
+        ['gemini', 'gemini-3-flash-preview'],
+        ['gemini', 'gemini-3.1-pro-preview'],
+        ['gemini', 'gemma-3-27b-it'],
+        ['anthropic', 'claude-sonnet-4-5'],
+        ['anthropic', 'claude-3-5-haiku-latest'],
+        ['moonshot', 'kimi-k3'],
+        ['moonshot', 'kimi-k2.5'],
+        ['openai', 'gpt-5.5'],
+        ['openai', 'gpt-4o'],
+        ['custom', 'glm-4.6'],
+        ['custom', 'some-unknown-model'],
+        ['openai-compatible', 'whatever']
+    ];
+    for (const [provider, model] of SAMPLING_CASES) {
+        const p = resolveCapabilityProfile(provider, model);
+        assert.ok('frequencyPenalty' in p.parameters, `${provider}/${model} mesti isytihar frequencyPenalty`);
+        assert.ok('presencePenalty' in p.parameters, `${provider}/${model} mesti isytihar presencePenalty`);
+        assert.equal(p.parameters.frequencyPenalty.min, -2);
+        assert.equal(p.parameters.frequencyPenalty.max, 2);
+        assert.equal(p.parameters.presencePenalty.default, 0);
+    }
+    // Profil TIADA-sampling kekal bersih (penalty tidak diisytihar).
+    const NO_SAMPLING_CASES = [
+        ['deepl', ''],
+        ['openai', 'o3'],
+        ['openai', 'gpt-5.1'],
+        ['custom', 'deepseek-chat']
+    ];
+    for (const [provider, model] of NO_SAMPLING_CASES) {
+        const p = resolveCapabilityProfile(provider, model);
+        assert.ok(!('frequencyPenalty' in p.parameters), `${provider}/${model} TIDAK isytihar frequencyPenalty`);
+        assert.ok(!('presencePenalty' in p.parameters), `${provider}/${model} TIDAK isytihar presencePenalty`);
+    }
+});
+
+test('[SEND-ALL v3.10.5] sanitizeAgentParams meluluskan + clamp penalty (-2..2)', () => {
+    const clean = sanitizeAgentParams(
+        'translation',
+        { frequencyPenalty: 0.5, presencePenalty: -0.5 },
+        'gemini',
+        'gemini-3-flash-preview'
+    );
+    assert.equal(clean.frequencyPenalty, 0.5, 'frequencyPenalty sah melulus');
+    assert.equal(clean.presencePenalty, -0.5, 'presencePenalty sah melulus');
+    const clamped = sanitizeAgentParams(
+        'translation',
+        { frequencyPenalty: 9, presencePenalty: -9 },
+        'gemini',
+        'gemini-2.5-flash'
+    );
+    assert.equal(clamped.frequencyPenalty, 2, 'frequencyPenalty clamp ke max 2');
+    assert.equal(clamped.presencePenalty, -2, 'presencePenalty clamp ke min -2');
+    // Profil tanpa sampling — penalty dibuang senyap (kontrak kekal).
+    const dropped = sanitizeAgentParams('translation', { frequencyPenalty: 0.5 }, 'openai', 'o3');
+    assert.ok(!('frequencyPenalty' in dropped), 'penalty dibuang pada profil no-sampling');
+});
+
 test('[A8] KEPUTUSAN OWNER #2 — ID model legasi proksi dipetakan tanpa ralat', () => {
     // deepseek-chat RETIRED di DeepSeek rasmi, tetapi proksi pihak ketiga masih
     // menggunakannya sebagai alias — mesti resolve kepada profil generik pintu.

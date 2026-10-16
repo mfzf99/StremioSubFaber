@@ -48,6 +48,15 @@ function param(min, max, def, extra = {}) {
 const GEMINI_SAMPLING = param(0, 2, 0.3);
 const GEMINI_TOP_P = param(0, 1, 0.95);
 const GEMINI_THINKING_LEVEL_ENUM = ['disabled', 'minimal', 'low', 'medium', 'high'];
+// [SEND-ALL UI PARITY v3.10.5] Penalty diisytiharkan dalam SEMUA profil
+// bersampling — selari dengan trinity-agents.js (MP_FREQUENCY/PRESENCE_PENALTY
+// mpParam(-2, 2, 0)). sanitizeAgentParams hanya meluluskan medan yang
+// disenaraikan dalam profil; tanpa descriptor, nilai penalty dari UI Trinity
+// dibuang senyap walaupun pintu provider menghantarnya (Send-All doctrine).
+// Medan ini TIDAK bermakna API model menerima penalty (nota sampling tetap
+// berkuasa) — ia hanya membenarkan nilai mengalir tanpa strip senyap.
+const FREQUENCY_PENALTY = param(-2, 2, 0);
+const PRESENCE_PENALTY = param(-2, 2, 0);
 
 function geminiProfile(modelId) {
     const m = String(modelId || '')
@@ -61,7 +70,9 @@ function geminiProfile(modelId) {
                 temperature: GEMINI_SAMPLING,
                 topP: GEMINI_TOP_P,
                 thinkingBudget: param(-1, 200000, -1),
-                maxOutputTokens: param(1, 65535, 32768)
+                maxOutputTokens: param(1, 65535, 32768),
+                frequencyPenalty: FREQUENCY_PENALTY,
+                presencePenalty: PRESENCE_PENALTY
             },
             notes: []
         };
@@ -81,7 +92,9 @@ function geminiProfile(modelId) {
             parameters: {
                 // Sampling deprecated & diabaikan (HTTP 400 pada generasi akan datang)
                 thinkingLevel: param(0, 0, 'medium', { enum: GEMINI_THINKING_LEVEL_ENUM }),
-                maxOutputTokens: param(1, 65536, 32768)
+                maxOutputTokens: param(1, 65536, 32768),
+                frequencyPenalty: FREQUENCY_PENALTY,
+                presencePenalty: PRESENCE_PENALTY
             },
             notes: ['sampling-controlled', rerouteStrict ? 'server-reroute-stripped' : 'sampling-stripped-by-api']
         };
@@ -95,7 +108,9 @@ function geminiProfile(modelId) {
                 temperature: GEMINI_SAMPLING,
                 topP: GEMINI_TOP_P,
                 thinkingLevel: param(0, 0, 'high', { enum: GEMINI_THINKING_LEVEL_ENUM }),
-                maxOutputTokens: param(1, 65536, 32768)
+                maxOutputTokens: param(1, 65536, 32768),
+                frequencyPenalty: FREQUENCY_PENALTY,
+                presencePenalty: PRESENCE_PENALTY
             },
             notes: ['google-recommends-temperature-1.0']
         };
@@ -106,7 +121,9 @@ function geminiProfile(modelId) {
         parameters: {
             temperature: GEMINI_SAMPLING,
             topP: GEMINI_TOP_P,
-            maxOutputTokens: param(1, 65535, 32768)
+            maxOutputTokens: param(1, 65535, 32768),
+            frequencyPenalty: FREQUENCY_PENALTY,
+            presencePenalty: PRESENCE_PENALTY
         },
         notes: []
     };
@@ -128,7 +145,9 @@ function anthropicProfile(modelId) {
             temperature: param(0, 1, 0.3),
             topP: param(0, 1, 0.95),
             maxOutputTokens: param(1, 128000, 32768),
-            ...(hasThinking ? { thinkingBudget: param(1024, 200000, 0) } : {})
+            ...(hasThinking ? { thinkingBudget: param(1024, 200000, 0) } : {}),
+            frequencyPenalty: FREQUENCY_PENALTY,
+            presencePenalty: PRESENCE_PENALTY
         },
         notes: hasThinking ? ['thinking-locks-temperature-1.0'] : []
     };
@@ -157,7 +176,9 @@ function kimiProfile(modelId) {
             parameters: {
                 temperature: param(1, 1, 1.0, { fixed: 1.0 }),
                 topP: param(0.95, 0.95, 0.95, { fixed: 0.95 }),
-                maxOutputTokens: param(1, 131072, 32768)
+                maxOutputTokens: param(1, 131072, 32768),
+                frequencyPenalty: FREQUENCY_PENALTY,
+                presencePenalty: PRESENCE_PENALTY
             },
             notes: ['fixed-sampling-temp-1.0-topP-0.95']
         };
@@ -169,7 +190,9 @@ function kimiProfile(modelId) {
         parameters: {
             temperature: param(0, 1, 1.0),
             topP: param(0.95, 0.95, 0.95, { fixed: 0.95 }),
-            maxOutputTokens: param(1, 131072, 32768)
+            maxOutputTokens: param(1, 131072, 32768),
+            frequencyPenalty: FREQUENCY_PENALTY,
+            presencePenalty: PRESENCE_PENALTY
         },
         notes: ['thinking-mode-temperature-1.0']
     };
@@ -206,7 +229,9 @@ function openaiProfile(modelId) {
             maxOutputTokens: param(1, 128000, 32768),
             ...(modern
                 ? { reasoningEffort: param(0, 0, 'low', { enum: ['none', 'low', 'medium', 'high', 'xhigh'] }) }
-                : {})
+                : {}),
+            frequencyPenalty: FREQUENCY_PENALTY,
+            presencePenalty: PRESENCE_PENALTY
         },
         notes: modern ? [] : ['legacy-alias-proxy-compatible']
     };
@@ -221,7 +246,9 @@ const DOOR_GENERIC_PROFILES = {
             temperature: param(0, 2, 0.3),
             topP: param(0, 1, 0.95),
             maxOutputTokens: param(1, 200000, 32768),
-            reasoningEffort: param(0, 0, undefined, { enum: ['none', 'minimal', 'low', 'medium', 'high', 'xhigh'] })
+            reasoningEffort: param(0, 0, undefined, { enum: ['none', 'minimal', 'low', 'medium', 'high', 'xhigh'] }),
+            frequencyPenalty: FREQUENCY_PENALTY,
+            presencePenalty: PRESENCE_PENALTY
         },
         notes: []
     },
@@ -265,7 +292,9 @@ function resolveCapabilityProfile(providerOrDoor, modelId) {
                     parameters: {
                         temperature: param(0, 1, 1.0),
                         topP: param(0, 1, 0.95),
-                        maxOutputTokens: param(1, 131072, 32768)
+                        maxOutputTokens: param(1, 131072, 32768),
+                        frequencyPenalty: FREQUENCY_PENALTY,
+                        presencePenalty: PRESENCE_PENALTY
                     },
                     notes: ['thinking-mode-temperature-1.0']
                 };

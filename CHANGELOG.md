@@ -2,6 +2,16 @@
 
 All notable changes to this project will be documented in this file.
 
+## SubMaker v3.10.5 (2026-10-17) — Send-All UI Parity: Presence/Frequency Penalty dalam Trinity Model Parameters
+
+### Fixed
+
+- **[MANDAT OWNER — "Parameter sepatutnya tunjuk 5 benda! Thinking, Temperature, Top-p, presence_penalty, frequency_penalty"] Gap UI Trinity Model Parameters ([public/js/trinity-agents.js](public/js/trinity-agents.js)):** sub-accordion "Model Parameters" (Pro mode) tidak merender kedua-dua penalty walaupun `MP_FIELD_ORDER`/`MP_FIELD_LABELS` mengenalinya — punca: TIADA profil provider mengisytiharkan descriptor mereka, dan `mpRenderFields()` menjatuhkan medan tanpa descriptor. Fix: `MP_FREQUENCY_PENALTY`/`MP_PRESENCE_PENALTY` (`mpParam(-2, 2, 0)`) diisytiharkan dalam 10 profil bersampling (gemini-2.5/3.x-strict/3.x-legacy/gemini-legacy, anthropic ×3 keluarga, kimi-fixed/hybrid, openai modern+legacy, glm, openai-compatible-generic). Verifikasi Playwright live: provider `gemini` + model `gemini-3-flash-preview` kini merender `[temperature, topP, maxOutputTokens, thinkingLevel, frequencyPenalty, presencePenalty]` — input number min=-2 max=2 step=0.1, bebas diedit (HIDE ≠ LOCK).
+
+### Changed
+
+- **[SEND-ALL backend parity] `frequencyPenalty`/`presencePenalty` `param(-2, 2, 0)` diisytiharkan dalam 10 profil bersampling ([src/utils/modelCapabilities.js](src/utils/modelCapabilities.js)):** `sanitizeAgentParams()` hanya meluluskan medan yang disenaraikan dalam profil — tanpa descriptor, nilai penalty dari UI Trinity dibuang senyap walaupun pintu provider menghantarnya (Send-All doctrine). Profil tiada-sampling (DeepL, o-series/gpt-5.1, deepseek-thinking) kekal bersih. 2 ujian regresi baharu dalam [src/utils/trinity-params-regression.test.js](src/utils/trinity-params-regression.test.js): (1) 13 kes provider/model bersampling mesti isytihar kedua-dua penalty; 4 kes no-sampling mesti TIDAK; (2) sanitize meluluskan nilai sah + clamp ±2.
+
 ## SubMaker v3.10.4 (2026-10-17) — Cache-Buster Force Refresh: Purge Legacy v3.8.x Service Worker/Cache Trap
 
 ### Changed

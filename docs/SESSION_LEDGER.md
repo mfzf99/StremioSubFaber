@@ -10,6 +10,30 @@
 
 ---
 
+## 2026-10-17 — v3.10.5 SEND-ALL UI PARITY: PRESENCE/FREQUENCY PENALTY DALAM TRINITY MODEL PARAMETERS (FRONTEND+BACKEND SELESAI)
+
+- **Tarikh:** 2026-10-17 ~04:38 (waktu tempatan KL).
+- **Komit SHA (HEAD):** (direkod selepas push).
+- **Keputusan Owner:** "Aku sahkan, memang parameter tiada perubahan!" pada v3.10.4 (cache sudah berkesan — badge server betul) + mandat asal "Parameter sepatutnya tunjuk 5 benda: Thinking, Temperature, Top-p, presence_penalty, frequency_penalty". Forensik mendedahkan gap sebenar: sub-accordion Trinity "Model Parameters" (Pro mode) menjatuhkan kedua-dua penalty kerana tiada profil provider mengisytiharkan descriptor mereka — bukan cache, bukan backend send-all.
+- **Pembedahan Frontend (delegasi domain UI, verifikasi Playwright live):** `public/js/trinity-agents.js` — `MP_FREQUENCY_PENALTY`/`MP_PRESENCE_PENALTY` (`mpParam(-2, 2, 0)`) diisytiharkan dalam 10 profil bersampling. Verifikasi LIVE (provider gemini + model gemini-3-flash-preview, sama seperti skrin Owner): renderedFields = `[temperature, topP, maxOutputTokens, thinkingLevel, frequencyPenalty, presencePenalty]`; input number min=-2 max=2 step=0.1 value=0, tiada disabled (HIDE ≠ LOCK); `dataset.mpName`/`mpAgent` tepat. Screenshot bukti: `.playwright-mcp/penalty-fields-live-proof.png`.
+- **Pembedahan Backend (Integration Review + parity):** `src/utils/modelCapabilities.js` — `FREQUENCY_PENALTY`/`PRESENCE_PENALTY` `param(-2, 2, 0)` diisytiharkan dalam 10 profil bersampling yang sama (gemini ×4 keluarga, anthropic ×3, kimi ×2, openai modern+legacy, glm, generic). `sanitizeAgentParams()` kini meluluskan + clamp penalty daripada UI Trinity (dahulu dibuang senyap). Profil no-sampling (DeepL, o-series/gpt-5.1, deepseek-thinking) kekal bersih. Kontrak `trinity.<agent>.params` kekal (hanya deviation dihantar; `getAgentDefaultParams` lalai penalty=0 → tiada perubahan payload bagi config sedia ada).
+- **Regresi:** 2 ujian baharu dalam `src/utils/trinity-params-regression.test.js`: [SEND-ALL] 13 kes provider/model bersampling mesti isytihar kedua-dua penalty (4 kes no-sampling mesti TIDAK) + sanitize meluluskan nilai sah & clamp ±2 & buang pada profil no-sampling. Kedua-duanya PASS.
+- **Ujian:** `npx prettier --check .` PASS; `npx eslint .` 0 error; `npm test` (REDIS_INTEGRATION_PORT=6379, Redis hidup) = **428 total / 428 PASS / 0 FAIL / 0 SKIP** — monotonic ≥ baseline 426 (+2 ujian baharu). `graphify update .` OK (5365 nodes, 11567 edges).
+- **Fail terlibat:** `public/js/trinity-agents.js` (M, 10 profil), `src/utils/modelCapabilities.js` (M, 10 profil), `src/utils/trinity-params-regression.test.js` (M, +2 ujian), `package.json` (bump 3.10.4→3.10.5), `CHANGELOG.md`, `docs/SESSION_LEDGER.md`.
+- **Next Steps:** commit+push + CI hijau; Owner command bomb di VPS; UI Trinity Model Parameters akan papar kelima-lima parameter mandat.
+
+## 2026-10-17 — FRONTEND GAP FIX: PRESENCE/FREQUENCY PENALTY DALAM TRINITY MODEL PARAMETERS (HANDOVER KE BACKEND)
+
+- **Tarikh:** 2026-10-17 ~04:27 (waktu tempatan KL).
+- **Status:** KERJA FRONTEND SIAP — MENUNGGU INTEGRATION REVIEW + RELEASE BACKEND.
+- **Punca disahkan (live Playwright):** Owner melapor parameter lama/tidak lengkap pada v3.10.4 (skrin menunjukkan badge v3.10.4 — cache sudah berkesan). Forensik: Trinity Pro mode sub-accordion "Model Parameters" TIDAK merender Presence/Frequency Penalty kerana `MP_FIELD_ORDER`/`MP_FIELD_LABELS` di `public/js/trinity-agents.js` mengenali kedua-dua medan, tetapi TIADA satu profil provider (`mpGeminiProfile`, `mpAnthropicProfile`, `mpKimiProfile`, `mpOpenaiProfile`, `MP_DOOR_GENERIC_OPENAI`, `glm`) mengisytiharkan descriptor mereka — [`mpRenderFields()`](public/js/trinity-agents.js:887) menjatuhkan medan tanpa descriptor.
+- **Pembedahan:** `public/js/trinity-agents.js` sahaja. Tambah `MP_FREQUENCY_PENALTY`/`MP_PRESENCE_PENALTY` = `mpParam(-2, 2, 0)` dan isytihar kedua-duanya dalam 10 profil bersampling: gemini-2.5, gemini-3.x-strict, gemini-3.x-legacy, gemini-legacy, anthropic (semua 3 keluarga), kimi-fixed-sampling, kimi-hybrid, openai (modern+legacy), glm, openai-compatible-generic. Tiada perubahan pada serializer ( [`mpCollectFieldValues()`](public/js/trinity-agents.js:986) baca `[data-mp-name]` automatik; [`mpCollectDeviatedParams()`](public/js/trinity-agents.js:1006) hantar hanya menyimpang) — kontrak `trinity.<agent>.params` kekal.
+- **Verifikasi Playwright LIVE (localhost:7001, http://localhost:7001/configure):** Trinity mode, provider `gemini`, model `gemini-3-flash-preview` (seperti screenshot Owner) — `renderedFields` = `[temperature, topP, maxOutputTokens, thinkingLevel, frequencyPenalty, presencePenalty]`; label dipaparkan: "Temperature", "Top-P", "Max output tokens", "Thinking level", "Frequency penalty", "Presence penalty"; atribut penalty: min=-2 max=2 step=0.1 value=0; input bebas (tiada `disabled` — HIDE ≠ LOCK); `dataset.mpName`/`mpAgent` tepat. Screenshot bukti: `.playwright-mcp/penalty-fields-live-proof.png`.
+- **Semakan statik:** `node --check` OK; `npx prettier --check` PASS; `npx eslint` 0 error.
+- **Fail terlibat:** `public/js/trinity-agents.js` (M), `docs/SESSION_LEDGER.md` (M).
+- **Nota Backend:** Profil backend [`src/utils/modelCapabilities.js`](../src/utils/modelCapabilities.js) TIDAK mengisytihar penalty dalam mana-mana profil — [`sanitizeAgentParams()`](src/utils/modelCapabilities.js:342) hanya meluluskan medan yang disenaraikan. Backend MESTI menyelaraskan profil (tambah `frequencyPenalty`/`presencePenalty` `param(-2, 2, 0)`) sebelum/release seiring, supaya nilai penalty yang dihantar dari UI tidak dibuang senyap. Regresi `trinity-params-regression.test.js` mungkin perlu assertion baharu.
+- **Next Steps:** Backend Integration Review → pipeline release 8 langkah (bump patch → CHANGELOG → prettier/eslint/npm test → graphify → ledger → commit/push → CI).
+
 ## 2026-10-17 — v3.10.4 CACHE-BUSTER FORCE REFRESH: PURGE LEGACY v3.8.x SW/CACHE TRAP (MANDAT OWNER "BUMP SEKALI LAGI")
 
 - **Tarikh:** 2026-10-17 ~03:55 (waktu tempatan KL).
