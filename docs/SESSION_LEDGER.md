@@ -13,6 +13,7 @@
 ## 2026-10-17 — v3.12.1 HOTFIX UI: PLACEHOLDER TRINITY MP DITUKAR KE ENGLISH (SELESAI)
 
 - **Tarikh:** 2026-10-17 ~10:19 (waktu tempatan KL).
+- **Komit SHA (HEAD):** `7a8a0538` — push `18c5a4a5..7a8a0538` ke origin/main BERJAYA; CI `ci.yml` run **#38994453316** pada `7a8a0538` = **SUCCESS** (Node 22: 1m8s / Node 24: 1m5s, disahkan melalui `gh run watch --exit-status`). Versi release: **v3.12.1** (bump patch; cache-buster runtime-driven `3.12.1`).
 - **Keputusan Owner:** Owner menegur placeholder Trinity "Model Parameters" yang dirender dalam Bahasa Melayu ("Pilih provider dan model dahulu untuk melaraskan parameter.") — laman web SubFaber sepenuhnya English. Arahan: tukar ke English serta-merta.
 - **Pembedahan Frontend:** [`public/js/trinity-agents.js`](public/js/trinity-agents.js:1045) — rentetan teks dalam [`mpRenderPlaceholder()`](public/js/trinity-agents.js:1037) ditukar kepada `'Select a provider and model first to adjust parameters.'`. Satu-satunya rentetan UI BM dalam `public/` (selebihnya ialah komen dalaman sahaja — tidak dirender ke DOM). Tiada perubahan DOM/CSS/kontrak payload.
 - **Integration Review Backend:** LULUS — audit mengesahkan perubahan terhad kepada satu rentetan teks statik yang dirender ke DOM; tiada impak serialisasi borang (`collectConfigPatch`), rehidrasi, race DOM, atau keserasian skema pelayan. Gate `mpHasSelection` + aliran Reset (v3.11.1) kekal utuh.
