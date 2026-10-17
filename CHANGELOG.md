@@ -2,6 +2,12 @@
 
 All notable changes to this project will be documented in this file.
 
+## SubFaber v3.12.1 (2026-10-17) — Hotfix UI: Placeholder Trinity Model Parameters ditukar ke English
+
+### Fixed
+
+- **[TEGURAN OWNER] Placeholder "Model Parameters" Trinity dirender dalam Bahasa Melayu pada laman web English:** rentetan "Pilih provider dan model dahulu untuk melaraskan parameter." dalam [`mpRenderPlaceholder()`](public/js/trinity-agents.js) ditukar kepada "Select a provider and model first to adjust parameters." — satu-satunya rentetan UI BM dalam `public/` (selebihnya komen dalaman sahaja, tidak dirender ke DOM). Tiada perubahan kontrak serialisasi borang, rehidrasi, atau skema pelayan.
+
 ## SubFaber v3.12.0 (2026-10-17) — TOTAL PURGE: Penyeragaman Taksonomi Trinity (Agent Preflight / Agent Translation / Agent Inspector)
 
 ### Changed

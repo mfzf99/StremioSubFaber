@@ -10,6 +10,18 @@
 
 ---
 
+## 2026-10-17 — v3.12.1 HOTFIX UI: PLACEHOLDER TRINITY MP DITUKAR KE ENGLISH (SELESAI)
+
+- **Tarikh:** 2026-10-17 ~10:19 (waktu tempatan KL).
+- **Keputusan Owner:** Owner menegur placeholder Trinity "Model Parameters" yang dirender dalam Bahasa Melayu ("Pilih provider dan model dahulu untuk melaraskan parameter.") — laman web SubFaber sepenuhnya English. Arahan: tukar ke English serta-merta.
+- **Pembedahan Frontend:** [`public/js/trinity-agents.js`](public/js/trinity-agents.js:1045) — rentetan teks dalam [`mpRenderPlaceholder()`](public/js/trinity-agents.js:1037) ditukar kepada `'Select a provider and model first to adjust parameters.'`. Satu-satunya rentetan UI BM dalam `public/` (selebihnya ialah komen dalaman sahaja — tidak dirender ke DOM). Tiada perubahan DOM/CSS/kontrak payload.
+- **Integration Review Backend:** LULUS — audit mengesahkan perubahan terhad kepada satu rentetan teks statik yang dirender ke DOM; tiada impak serialisasi borang (`collectConfigPatch`), rehidrasi, race DOM, atau keserasian skema pelayan. Gate `mpHasSelection` + aliran Reset (v3.11.1) kekal utuh.
+- **Cache-buster:** runtime-driven via `src/utils/version.js` baca package.json 3.12.1 (token `__APP_VERSION_QUERY__`) — NO-OP verified.
+- **Status ujian:** `npx prettier --check .` PASS (1 warn pra-wujud `.prettierrc`); `npx eslint .` 0 error / 223 warning (pra-wujud, selari baseline); `npm test` = **428 total / 427 PASS / 0 FAIL / 1 SKIP (live Redis)** — monotonic ≥ baseline 428. Log sementara (`.diag.log`, `.eslint.log`, `.test.log`) dihapuskan.
+- **graphify update .:** NO-OP (direktori `graphify-out/` tiada dalam workspace).
+- **Fail terlibat:** `public/js/trinity-agents.js` (1 rentetan), `package.json` (bump 3.12.0→3.12.1), `CHANGELOG.md`, `docs/SESSION_LEDGER.md`.
+- **Next Steps:** commit+push + CI hijau (`gh run watch`); Owner pull image Docker v3.12.1 di VPS.
+
 ## 2026-10-17 — v3.12.0 TOTAL PURGE: PENYERAGAMAN TAKSONOMI TRINITY (AGENT PREFLIGHT / AGENT TRANSLATION / AGENT INSPECTOR)
 
 - **Tarikh:** 2026-10-17 ~09:53 (waktu tempatan KL).

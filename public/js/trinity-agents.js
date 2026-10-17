@@ -1042,7 +1042,7 @@
             var placeholder = createEl(
                 'div',
                 'trinity-mp-placeholder',
-                'Pilih provider dan model dahulu untuk melaraskan parameter.'
+                'Select a provider and model first to adjust parameters.'
             );
             placeholder.id = 'trinity-mp-placeholder-' + agentKey;
             fieldsBox.appendChild(placeholder);
