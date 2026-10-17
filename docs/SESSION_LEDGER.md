@@ -1,7 +1,7 @@
 ## 2026-10-17 — v3.13.3 UX REFRESH KAD "OUTPUT FORMAT & PLAYER COMPATIBILITY" (SELESAI)
 
 - **Tarikh:** 2026-10-17 ~22:08 (waktu tempatan KL).
-- **Komit SHA (HEAD):** (diisi selepas push) + CI run (diisi selepas `gh run watch`).
+- **Komit SHA (HEAD):** `35146fc9` + CI run 39073888534 = **SUCCESS** (Node 22 ✓ 1m2s / Node 24 ✓ 1m3s).
 - **Keputusan Owner:** Owner luluskan Pelan v2 UX refresh kad Output Format & Player Compatibility — copy English rasmi, jujur tentang trade-off satu-config-semua-device, Force SRT disembunyikan dalam collapsible "Advanced".
 - **Integration Review Backend ✅:** payload serialization bersih (mobileMode/convertAssToVtt/forceSRTOutput boolean tanpa field baharu); rehydration path tidak berubah (ID DOM dipelihara: forceSRTOutput, forceSRTOutputNoTranslation, convertAssToVtt, convertAssToVttNoTranslation, mobileMode, forceSRTOutputNoTranslationGroup, convertAssToVttNoTranslationGroup — semuanya rujuk dari public/config.js tanpa perubahan); tiada rehydration race baharu (elemen hanya dibungkus <details>, kitaran hidup sama); interlock forceSRTOutput→convertAssToVtt dipelihara pada kedua-dua client (syncForceSRT) dan server (src/utils/config.js:674).
 - **Fasa Frontend (7 task) ✅:** struktur kad semula (Mobile Mode pertama, Anime Styling (ASS/SSA) kedua, Force SRT dalam <details class="advanced-details" id="forceSRTAdvancedGroup">); copy English baharu + 4 locale; kunci i18n baharu forceSRTAdvanced.label; CSS collapsible; sync logic dipelihara tanpa sentuh public/config.js.
