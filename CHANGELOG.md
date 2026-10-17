@@ -2,6 +2,24 @@
 
 All notable changes to this project will be documented in this file.
 
+## SubFaber v3.13.3 (2026-10-17) — UX Refresh Kad "Output Format & Player Compatibility"
+
+### Changed
+
+- **[MANDAT OWNER — UX REFRESH] Susunan semula kad Output Format & Player Compatibility dalam [public/partials/main.html](public/partials/main.html):** Mobile Mode diletakkan pertama (keputusan berimpak tertinggi), Anime Styling (ASS/SSA) kedua, dan Force SRT Output dipindahkan ke dalam `<details>` collapsible "Advanced" (collapsed secara default) supaya tersembunyi daripada pengguna baharu — ID asal semua elemen dipelihara untuk kestabilan logik sync sedia ada.
+- **[MANDAT OWNER — UX REFRESH] Copywriting baharu berbahasa Inggeris (outcome-first, jujur tentang trade-off) merentas 5 locale ([locales/en.json](locales/en.json), [locales/es.json](locales/es.json), [locales/pt-br.json](locales/pt-br.json), [locales/pt-pt.json](locales/pt-pt.json), [locales/ar.json](locales/ar.json)):** Mobile Mode kini menyatakan dengan jelas bahawa satu config terpakai kepada SEMUA peranti (phone/PC/TV) dan mod ini menahan request di semua peranti tersebut; "ASS/SSA Passthrough" ditukar label kepada "Anime Styling (ASS/SSA)" dengan penerangan mesra pengguna; Force SRT diterangkan sebagai pilihan untuk pemain luar (Smart TV, TV box, VLC) yang gagal memaparkan sari kata, bukan keperluan Stremio biasa.
+- **[MANDAT OWNER — UX REFRESH] Gaya baharu untuk blok collapsible Advanced dalam [public/css/configure.css](public/css/configure.css):** `.card-content details.advanced-details` dengan chevron ▸ berputar pada summary, sempadan dan padding yang selari dengan tema kad sedia ada.
+
+### Added
+
+- Kunci i18n baharu `config.otherSettings.forceSRTAdvanced.label` ("Advanced: Force SRT Output") dalam kelima-lima locale.
+
+### Verified
+
+- Live Playwright verification di `/configure`: kad render betul, `<details>` toggle berfungsi, interlock `syncForceSRT` (Force SRT ON → Anime Styling disabled) dipelihara, mirror NoTranslation sync serentak, tiada layout shift.
+- Prettier `--check .` = PASS; ESLint 0 error; `npm test` = **428 total / 427 PASS / 0 FAIL / 1 SKIP (live Redis)** — baseline terpelihara (monotonic >= 428).
+- Kontrak backend tidak berubah: `mobileMode` / `convertAssToVtt` / `forceSRTOutput` kekal boolean dengan interlock di [src/utils/config.js](src/utils/config.js); tiada field skema baharu.
+
 ## SubFaber v3.13.2 (2026-10-17) — Penambahbaikan Tadbir Urus & Pembersihan Operasi
 
 ### Changed

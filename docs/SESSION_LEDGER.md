@@ -1,3 +1,28 @@
+## 2026-10-17 — v3.13.3 UX REFRESH KAD "OUTPUT FORMAT & PLAYER COMPATIBILITY" (SELESAI)
+
+- **Tarikh:** 2026-10-17 ~22:08 (waktu tempatan KL).
+- **Komit SHA (HEAD):** (diisi selepas push) + CI run (diisi selepas `gh run watch`).
+- **Keputusan Owner:** Owner luluskan Pelan v2 UX refresh kad Output Format & Player Compatibility — copy English rasmi, jujur tentang trade-off satu-config-semua-device, Force SRT disembunyikan dalam collapsible "Advanced".
+- **Integration Review Backend ✅:** payload serialization bersih (mobileMode/convertAssToVtt/forceSRTOutput boolean tanpa field baharu); rehydration path tidak berubah (ID DOM dipelihara: forceSRTOutput, forceSRTOutputNoTranslation, convertAssToVtt, convertAssToVttNoTranslation, mobileMode, forceSRTOutputNoTranslationGroup, convertAssToVttNoTranslationGroup — semuanya rujuk dari public/config.js tanpa perubahan); tiada rehydration race baharu (elemen hanya dibungkus <details>, kitaran hidup sama); interlock forceSRTOutput→convertAssToVtt dipelihara pada kedua-dua client (syncForceSRT) dan server (src/utils/config.js:674).
+- **Fasa Frontend (7 task) ✅:** struktur kad semula (Mobile Mode pertama, Anime Styling (ASS/SSA) kedua, Force SRT dalam <details class="advanced-details" id="forceSRTAdvancedGroup">); copy English baharu + 4 locale; kunci i18n baharu forceSRTAdvanced.label; CSS collapsible; sync logic dipelihara tanpa sentuh public/config.js.
+- **Verifikasi live Playwright ✅:** navigate /configure; label baharu render betul; <details> open/close toggle berfungsi; interlock syncForceSRT disahkan (Force SRT ON → Anime Styling disabled); mirror NoTranslation sync serentak; tiada layout shift.
+- **Nota audit:** Console error `toggleUrlExtensionTestGroup is not defined` (config.js:12257 dalam closure syncForceSRT) adalah PRA-WUJUD — fungsi didefinisikan pada scope berbeza (line 8411); state tetap disimpan kerana syncConvertAssToVttInputs berjalan sebelum throw. Dicatat untuk backlog Owner.
+- **Pipeline 8 langkah:** SemVer bump 3.13.2 → 3.13.3 (patch); CHANGELOG.md entri baharu; cache-buster runtime-driven NO-OP (zero hits `3.13.2` merentas JS/HTML); Prettier PASS (pembetulan format package.json selepas bump); ESLint 0 error / 224 warning (pra-wujud, selari baseline); `npm test` = **428 total / 427 PASS / 0 FAIL / 1 SKIP (live Redis)** — baseline terpelihara; graphify = **NO-OP** (graphify-out/ absent).
+- **Fail Terlibat:** public/partials/main.html, public/css/configure.css, locales/{en,es,pt-br,pt-pt,ar}.json, package.json, CHANGELOG.md, docs/SESSION_LEDGER.md.
+- **Next Steps:** git commit + push origin main → CI verify via gh CLI — mesti **SUCCESS** (Node 22/24).
+
+- **Tarikh:** 2026-10-17 ~22:00 (waktu tempatan KL).
+- **Komit SHA (HEAD):** `6ec77a1f` (belum commit; menunggu Integration Review backend + pipeline 8-langkah).
+- **Keputusan Owner:** Owner luluskan Pelan v2 untuk refresh UX kad Output Format & Player Compatibility — copy dalam English (rasmi), Mobile Mode description diperjelas tentang kesan kepada SEMUA device yang kongsi config sama, ASS/SSA rename "Anime Styling (ASS/SSA)", Force SRT dipindah ke `<details>` collapsible "Advanced" untuk sorokkan daripada user noob.
+- **Fasa Frontend (7 task) ✅:** markup kad distruktur semula (mobileMode dulu, Anime Styling kedua, Force SRT dalam `<details class="advanced-details">` ketiga); copy baru English + 4 locale (es/pt-br/pt-pt/ar); kunci i18n baru `config.otherSettings.forceSRTAdvanced.label`; CSS collapsible `.advanced-details` ditambah; sync logic sedia ada (`syncForceSRT`, `convertAssToVtt` interlock) disahkan KEKAL tanpa perubahan `public/config.js`.
+- **Verifikasi live Playwright ✅:** navigate /configure; kad expanded; label "Mobile Mode (subtitle delivery)" + "Anime Styling (ASS/SSA)" render betul; `<details id="forceSRTAdvancedGroup">` toggle open/close berfungsi; `forceSRTOutput` checkbox di dalam `<details>` kekal functional; toggle ON → `convertAssToVtt` disabled (interlock sedia ada disahkan); toggle OFF → state dipulihkan. Prettier PASS pada semua 7 fail diubah.
+- **Nota:** Error console `toggleUrlExtensionTestGroup is not defined` adalah PRA-WUJUD (bukan dari perubahan ini — `git diff public/config.js` kosong); syncForceSRT masih mengemas kini state sebelum throw. Isu ini dicatat untuk audit backend.
+- **Fail Terlibat:** public/partials/main.html, public/css/configure.css, locales/{en,es,pt-br,pt-pt,ar}.json.
+- **Status npm test:** Belum dijalankan (larangan mode frontend — dipegang oleh backend semasa pipeline release).
+- **Next Steps:** Handover ke backend untuk Integration Review + 8-step release pipeline; CI verify via gh CLI selepas push — mesti **SUCCESS** (Node 22/24).
+
+---
+
 ## 2026-10-17 — v3.13.2 PENAMBAHBAIKAN TADBIR URUS & PEMBERSIHAN OPERASI
 
 - **Tarikh:** 2026-10-17 ~21:01 (waktu tempatan KL).

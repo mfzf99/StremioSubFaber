@@ -1721,66 +1721,77 @@
                             <button type="button" class="collapse-btn collapsed" data-collapse="output-format"></button>
                         </div>
                         <div class="card-content">
+                            <!-- [1] Mobile Mode — highest-impact decision (single config across all devices) -->
                             <div class="form-group">
                                 <label>
                                     <input type="checkbox" id="mobileMode" />
                                     <span data-i18n="config.otherSettings.mobileMode.label"
-                                        >Mobile Mode (fix/workaround)</span
+                                        >Mobile Mode (subtitle delivery)</span
                                     >
                                     <span
                                         class="label-description"
                                         data-i18n="config.otherSettings.mobileMode.description"
-                                        >Stremio makes only 1 request for subtitles and caches it, so subtitles in
-                                        Android can't be partially delivered. Mobile Mode holds translation requests and
-                                        sends the final subtitle only when ready. Use this if you're watching on
-                                        Android/iOS. No partial translations, no loading messages. Might freeze the
-                                        stream until translation is ready. Flash-lite recommended. Wait 1-3 min, if it
-                                        doesn't load automatically switch subtitles back and forth to load the
-                                        translation.</span
+                                        >Your config works across all your devices — phone, PC, and TV. Stremio on
+                                        mobile requests subtitles only once, so partial translations can't update.
+                                        Enable this to wait for the complete subtitle before delivery (1–3 min,
+                                        Flash-lite models recommended). Note: this holds requests on ALL devices using
+                                        this config — on PC/TV you'd normally get subtitles faster.</span
                                     >
                                 </label>
                             </div>
 
-                            <!-- ASS/SSA passthrough option -->
+                            <!-- [2] ASS/SSA passthrough option — anime styling niche -->
                             <div class="form-group" id="convertAssToVttGroup">
                                 <label>
                                     <input type="checkbox" id="convertAssToVtt" />
                                     <span data-i18n="config.otherSettings.convertAssToVtt.label"
-                                        >ASS/SSA Passthrough</span
+                                        >Anime Styling (ASS/SSA)</span
                                     >
                                     <span
                                         class="label-description"
                                         data-i18n="config.otherSettings.convertAssToVtt.description"
-                                        >Enable to send ASS/SSA subtitles as-is to Stremio. Disable to convert ASS/SSA
-                                        for compatibility.</span
+                                        >Anime subtitles often include styled effects (karaoke, positioning, fonts).
+                                        Enable to keep the original styling. Disable to convert to a plain,
+                                        widely-compatible format. Not sure? Leave it off.</span
                                     >
                                 </label>
                             </div>
 
-                            <div class="form-group">
-                                <label>
-                                    <input type="checkbox" id="forceSRTOutput" />
-                                    <span data-i18n="config.otherSettings.forceSRTOutput.label">Force SRT output</span>
-                                    <span
-                                        class="label-description"
-                                        data-i18n="config.otherSettings.forceSRTOutput.description"
-                                        >Convert all subtitle outputs to SRT format for maximum player
-                                        compatibility.</span
-                                    >
-                                </label>
-                            </div>
+                            <!-- [3] Advanced: Force SRT — hidden from noob users by default -->
+                            <details class="advanced-details" id="forceSRTAdvancedGroup">
+                                <summary data-i18n="config.otherSettings.forceSRTAdvanced.label">
+                                    Advanced: Force SRT Output
+                                </summary>
+                                <div class="form-group">
+                                    <label>
+                                        <input type="checkbox" id="forceSRTOutput" />
+                                        <span data-i18n="config.otherSettings.forceSRTOutput.label"
+                                            >Force SRT output</span
+                                        >
+                                        <span
+                                            class="label-description"
+                                            data-i18n="config.otherSettings.forceSRTOutput.description"
+                                            >Converts every subtitle output to SRT — the most universally supported
+                                            format. Only needed if subtitles fail to display on a specific player (some
+                                            Smart TVs, TV boxes, external players). Stremio apps handle the default
+                                            formats fine.</span
+                                        >
+                                    </label>
+                                </div>
+                            </details>
 
                             <div class="form-group" id="convertAssToVttNoTranslationGroup" style="display: none">
                                 <label>
                                     <input type="checkbox" id="convertAssToVttNoTranslation" />
                                     <span data-i18n="config.otherSettings.convertAssToVtt.label"
-                                        >ASS/SSA Passthrough</span
+                                        >Anime Styling (ASS/SSA)</span
                                     >
                                     <span
                                         class="label-description"
                                         data-i18n="config.otherSettings.convertAssToVtt.description"
-                                        >Enable to send ASS/SSA subtitles as-is to Stremio. Disable to convert ASS/SSA
-                                        for compatibility.</span
+                                        >Anime subtitles often include styled effects (karaoke, positioning, fonts).
+                                        Enable to keep the original styling. Disable to convert to a plain,
+                                        widely-compatible format. Not sure? Leave it off.</span
                                     >
                                 </label>
                             </div>
@@ -1792,8 +1803,9 @@
                                     <span
                                         class="label-description"
                                         data-i18n="config.otherSettings.forceSRTOutput.description"
-                                        >Convert all subtitle outputs to SRT format for maximum player
-                                        compatibility.</span
+                                        >Converts every subtitle output to SRT — the most universally supported format.
+                                        Only needed if subtitles fail to display on a specific player (some Smart TVs,
+                                        TV boxes, external players). Stremio apps handle the default formats fine.</span
                                     >
                                 </label>
                             </div>

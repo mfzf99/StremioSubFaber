@@ -1298,8 +1298,8 @@
           "tools": "Ferramentas: Tradução de arquivos SRT, Extração de legendas embutidas, AutoSync e AutoSubbing."
         },
         "mobileMode": {
-          "label": "Modo Móvel (correção/solução alternativa)",
-          "description": "O Stremio faz apenas 1 requisição para legendas e a armazena em cache, então legendas no Android não podem ser parcialmente entregues. O Modo Móvel retém requisições de tradução e envia a legenda final apenas quando pronta. Use isso se estiver assistindo no Android/iOS. Sem traduções parciais, sem mensagens de carregamento. Pode congelar o stream até que a tradução esteja pronta. Flash-lite recomendado. Aguarde 1-3 min, se não carregar automaticamente alterne legendas para frente e para trás para carregar a tradução."
+          "label": "Modo Móvel (entrega de legendas)",
+          "description": "Sua configuração funciona em todos os seus dispositivos: celular, PC e TV. O Stremio no celular solicita legendas apenas uma vez, então traduções parciais não podem ser atualizadas. Ative isto para aguardar a legenda completa antes da entrega (1–3 min, modelos Flash-lite recomendados). Nota: isto retém as solicitações em TODOS os dispositivos que usam esta configuração; no PC/TV você normalmente receberia as legendas mais rápido."
         },
         "excludeHearingImpaired": {
           "label": "Ocultar legendas SDH/HI",
@@ -1309,13 +1309,16 @@
           "label": "Incluir Legendas de Temporada Completa",
           "description": "SubFaber busca e tenta extrair legendas específicas de pacotes de temporada completa para maior cobertura. Útil para Animes. Desative para mostrar apenas legendas específicas de episódio."
         },
+        "forceSRTAdvanced": {
+          "label": "Avançado: Forçar saída SRT"
+        },
         "forceSRTOutput": {
           "label": "Forçar saída SRT",
-          "description": "Converter todas as saídas de legenda para formato SRT para máxima compatibilidade com players."
+          "description": "Converte cada saída de legenda para SRT — o formato com suporte mais universal. Só é necessário se as legendas não aparecerem em um player específico (algumas Smart TVs, TV boxes, players externos). Os apps do Stremio lidam bem com os formatos padrão."
         },
         "convertAssToVtt": {
-          "label": "Passthrough ASS/SSA",
-          "description": "Ative para enviar legendas ASS/SSA como estão para o Stremio e preservar ASS/SSA nas traduções suportadas do addon. Desative para converter ASS/SSA por compatibilidade."
+          "label": "Estilo de Anime (ASS/SSA)",
+          "description": "Legendas de anime costumam incluir efeitos estilizados (karaokê, posicionamento, fontes). Ative para manter o estilo original. Desative para converter para um formato simples e amplamente compatível. Não tem certeza? Deixe desativado."
         },
         "betaMode": {
           "label": "Modo Avançado",

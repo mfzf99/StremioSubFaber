@@ -1321,8 +1321,8 @@
           "tools": "Tools: SRT Files Translation, Embedded Subs Extraction, AutoSync and AutoSubbing."
         },
         "mobileMode": {
-          "label": "Mobile Mode (fix/workaround)",
-          "description": "Stremio makes only 1 request for subtitles and caches it, so subtitles in Android can't be partially delivered. Mobile Mode holds translation requests and sends the final subtitle only when ready. Use this if you're watching on Android/iOS. No partial translations, no loading messages. Might freeze the stream until translation is ready. Flash-lite recommended. Wait 1-3 min, if it doesn't load automatically switch subtitles back and forth to load the translation."
+          "label": "Mobile Mode (subtitle delivery)",
+          "description": "Your config works across all your devices — phone, PC, and TV. Stremio on mobile requests subtitles only once, so partial translations can't update. Enable this to wait for the complete subtitle before delivery (1–3 min, Flash-lite models recommended). Note: this holds requests on ALL devices using this config — on PC/TV you'd normally get subtitles faster."
         },
         "excludeHearingImpaired": {
           "label": "Hide SDH/HI subtitles",
@@ -1332,13 +1332,16 @@
           "label": "Include Season Pack Subtitles",
           "description": "SubFaber fetches and tries to extract specific subtitles from full season packs for better coverage. Useful for Animes. Disable to only show episode-specific subtitles."
         },
+        "forceSRTAdvanced": {
+          "label": "Advanced: Force SRT Output"
+        },
         "forceSRTOutput": {
           "label": "Force SRT output",
-          "description": "Convert all subtitle outputs to SRT format for maximum player compatibility."
+          "description": "Converts every subtitle output to SRT — the most universally supported format. Only needed if subtitles fail to display on a specific player (some Smart TVs, TV boxes, external players). Stremio apps handle the default formats fine."
         },
         "convertAssToVtt": {
-          "label": "ASS/SSA Passthrough",
-          "description": "Enable to send ASS/SSA subtitles as-is to Stremio and preserve ASS/SSA in supported addon translations. Disable to convert ASS/SSA for compatibility."
+          "label": "Anime Styling (ASS/SSA)",
+          "description": "Anime subtitles often include styled effects (karaoke, positioning, fonts). Enable to keep the original styling. Disable to convert to a plain, widely-compatible format. Not sure? Leave it off."
         },
         "betaMode": {
           "label": "Advanced Mode",

@@ -2038,6 +2038,47 @@ h1:hover {
     display: none;
 }
 
+/* Advanced <details> block inside family cards (e.g. Force SRT in Output Format card) */
+.card-content details.advanced-details {
+    margin-top: 0.5rem;
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    padding: 0.65rem 0.85rem;
+    background: rgba(255, 255, 255, 0.02);
+}
+
+.card-content details.advanced-details > summary {
+    cursor: pointer;
+    font-weight: 600;
+    font-size: 0.92rem;
+    color: var(--text-secondary, var(--text));
+    user-select: none;
+    list-style: none;
+    display: flex;
+    align-items: center;
+    gap: 0.45rem;
+}
+
+.card-content details.advanced-details > summary::before {
+    content: '▸';
+    display: inline-block;
+    transition: transform 0.15s ease;
+    color: var(--primary);
+}
+
+.card-content details.advanced-details[open] > summary::before {
+    transform: rotate(90deg);
+}
+
+.card-content details.advanced-details > summary::-webkit-details-marker {
+    display: none;
+}
+
+.card-content details.advanced-details .form-group {
+    margin-top: 0.65rem;
+    margin-bottom: 0;
+}
+
 .card.collapsed {
     padding: 1rem 1.25rem;
     cursor: pointer;
