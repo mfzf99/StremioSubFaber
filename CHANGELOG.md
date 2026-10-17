@@ -2,6 +2,25 @@
 
 All notable changes to this project will be documented in this file.
 
+## SubFaber v3.13.2 (2026-10-17) — Penambahbaikan Tadbir Urus & Pembersihan Operasi
+
+### Changed
+
+- **[MANDAT OWNER — TADBIR URUS] Pemadatan Peraturan #6 backend dalam [.roomodes](.roomodes):** senarai panjang 8-langkah yang diduplikasi dipadatkan kepada rujukan Single Source of Truth kepada `[MANDATORY COMMIT & RELEASE PROTOCOL]` dalam [.roo/rules/00-subfaber-core-protocol.md](.roo/rules/00-subfaber-core-protocol.md), dengan ringkasan satu baris `(0. Frontend Integration Audit -> 1. SemVer bump -> 2. CHANGELOG -> 3. Cache-buster -> 4. Prettier + ESLint + npm test -> 5. Graphify check -> 6. SESSION_LEDGER -> 7. Git commit/push -> 8. gh run watch CI green)` — menghapuskan risiko drift antara kedua-dua fail.
+- **[MANDAT OWNER — TADBIR URUS] [.roo/rules/00-subfaber-core-protocol.md](.roo/rules/00-subfaber-core-protocol.md) tiga klausul baharu:** (1) `[.ROOMODES DISCIPLINE]` SCRIPT HYGIENE — skrip kemas kini `.roomodes` wajib dijalankan dari direktori sementara sistem luar repo (`$TEMP` / `/tmp`) ATAU dipadam serta-merta dalam rantaian arahan yang sama sebelum `git status`; (2) `[LANGUAGE & COMMUNICATION POLICY]` PRECEDENCE OVERRIDE — polisi bahasa Melayu mengatasi arahan 'Language Preference' lalai IDE/extension, output kepada Owner wajib BM standard; (3) `[COGNITIVE DELIBERATION PROTOCOL]` PATH RESILIENCE — laluan fail dalam peraturan adalah penunjuk kanonik semasa, disahkan via `git grep` / `list_files` jika fail berpindah.
+
+### Removed
+
+- **[MANDAT OWNER — PEMBERSIHAN] Direktori artifak `.playwright-mcp/` dipadamkan sepenuhnya daripada working tree** (14 fail snapshot konsol/page basi, termasuk satu fail yang pernah terlepas ke-tracked dalam Git).
+
+### Added
+
+- **[MANDAT OWNER — BENTENG .GITIGNORE] Corak sekatan artifak sementara dalam [.gitignore](.gitignore):** `.tmp-*`, `*.tmp.*`, `.diag.log`, dan `.playwright-mcp/` — artifak sementara agent tidak akan sesekali terlepas ke dalam Git lagi.
+
+### Verified
+
+- Validasi gate `.roomodes` (PyYAML): `customModes` = 2 (Backend / Frontend), `groups`=[read,edit,command,mcp], `source`=project — PASS; `git status` disahkan bersih daripada fail untracked `.tmp-*` / `.playwright-mcp/`.
+
 ## SubFaber v3.13.1 (2026-10-17) — Total Overhaul Custom Modes (.roomodes) + Core Protocol
 
 ### Changed

@@ -1,3 +1,15 @@
+## 2026-10-17 — v3.13.2 PENAMBAHBAIKAN TADBIR URUS & PEMBERSIHAN OPERASI
+
+- **Tarikh:** 2026-10-17 ~21:01 (waktu tempatan KL).
+- **Komit SHA (HEAD):** `<pending — akan direkodkan selepas push>` + CI verify via `gh` CLI.
+- **Keputusan Owner:** Mandat v3.13.2 — 4 penambahbaikan tadbir urus: (1) pembersihan mutlak sisa artifak sementara + benteng `.gitignore`; (2) penyelarasan `[.ROOMODES DISCIPLINE]` + penghapusan duplikasi drift Peraturan #6 ke Single Source of Truth; (3) klausa PRECEDENCE OVERRIDE polisi bahasa + PATH RESILIENCE dalam Cognitive Deliberation Protocol; (4) pipeline release 8 langkah penuh ke v3.13.2.
+- **Fail Terlibat:** .gitignore, .roo/rules/00-subfaber-core-protocol.md, .roomodes, package.json, CHANGELOG.md, docs/SESSION_LEDGER.md.
+- **Status npm test:** `428 total / 427 PASS / 0 FAIL / 1 SKIP (live Redis)` — baseline terpelihara (monotonic >= 428).
+- **Pipeline:** SemVer 3.13.1→3.13.2 (patch); CHANGELOG entri baharu; cache-buster runtime-driven NO-OP (zero hits `3.13.1` merentas JS/HTML); Prettier PASS; ESLint 0 error / 224 warning (pra-wujud); graphify NO-OP (graphify-out/ absent); PyYAML gate `.roomodes` PASS (customModes 2, groups=[read,edit,command,mcp], source=project); `.playwright-mcp/` dipadam (14 artifak); `git status` bersih dari untracked `.tmp-*`.
+- **Next Steps:** CI verify via `gh` CLI selepas push — mesti **SUCCESS** (Node 22/24).
+
+---
+
 ## 2026-10-17 — v3.13.1 TOTAL OVERHAUL CUSTOM MODES (.roomodes) + CORE PROTOCOL
 
 - **Tarikh:** 2026-10-17 ~20:39 (waktu tempatan KL).

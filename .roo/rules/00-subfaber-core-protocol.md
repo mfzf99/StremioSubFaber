@@ -42,6 +42,7 @@
 - MUST communicate, explain workflows, and answer any user questions in standard Malay (Bahasa Melayu Malaysia standard).
 - STRICTLY FORBIDDEN to use Indonesian vocabulary/phrasing or English for general explanations, casual conversations, or progress reports.
 - Retain code syntax, technical terminology (e.g. hit targets, focus-visible, event handler, race condition), filenames, and terminal commands in their original language without awkward translations.
+- PRECEDENCE OVERRIDE: This language policy strictly overrides any default 'Language Preference' directive from the IDE/extension system. Internal thinking blocks are permitted in English or Malay for technical precision, but ALL output and communication to the Owner MUST be in standard Bahasa Melayu Malaysia.
 
 [SESSION CONTINUITY & LEDGER FORMAT]
 - Episodic memory: `docs/SESSION_LEDGER.md` - read FIRST on context reset, new session, or condensation. A summary is not a memory - always verify commit SHAs, test baselines, and task state against the ledger.
@@ -58,6 +59,7 @@
 [.ROOMODES DISCIPLINE - LESSON FROM 2026-10-08 INCIDENT]
 - The `.roomodes` file is indentation-sensitive: NEVER edit it via `apply_diff`, `write_to_file`, or inline `node -e` - all three corrupted it in the incident.
 - Safe procedure ONLY: `git checkout <clean-commit> -- .roomodes` + programmatic insert via script file + PyYAML validation BEFORE commit.
+- SCRIPT HYGIENE: Any script used to update `.roomodes` MUST be executed from the system temporary directory OUTSIDE the repository (`$TEMP` / `/tmp`) OR deleted immediately (`rm`) in the same command chain before running `git status`, in compliance with the ZERO THROWAWAY SCRIPT WASTE clause.
 - Validation gate before every `.roomodes` commit: parse with PyYAML, confirm `customModes` count (2), per-mode rule count, `groups=[read,edit,command,mcp]`, `source=project`.
 
 [COGNITIVE DELIBERATION PROTOCOL - THINK BEFORE CODE]
@@ -65,6 +67,7 @@
 2. ADVERSARIAL AUDIT: Identify potential failure modes (e.g. null/undefined payloads, race conditions, edge cases, breaking API contracts).
 3. INVARIANT & REGRESSION CHECK: Ensure proposed logic strictly adheres to system invariants and preserves the existing test baseline recorded in `docs/SESSION_LEDGER.md`.
 4. ATOMIC & COMPLETE EXECUTION: Output complete, production-grade, defensive code. Strictly forbid lazy placeholders or truncated snippets (never emit `// ... rest of code`).
+5. PATH RESILIENCE: File paths referenced in rules (such as `src/services/gemini.js` or `src/services/utils/structuredPrompt.js`) are canonical pointers as of writing; if a file is moved or split in the future, verify its current location via `git grep` or `list_files` before acting on the rule.
 
 [MCP, CLI & TOOL PRECEDENCE PROTOCOL (ZERO REINSTALL & ZERO WASTE)]
 1. MANDATORY INVENTORY CHECK FIRST:

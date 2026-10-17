@@ -62,6 +62,12 @@ preflight-payload-slim.json
 graphify-out/
 graph.json
 
+# Temporary agent artifacts (mandat owner v3.13.2 — never commit)
+.tmp-*
+*.tmp.*
+.diag.log
+.playwright-mcp/
+
 #-
 nul
 .sidedocs/
