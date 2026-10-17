@@ -1,5 +1,5 @@
 /**
- * Agent B — Semantic Inspector & Pre-Flight Offloader — Regression Tests
+ * Agent Inspector — Semantic Inspector & Pre-Flight Offloader — Regression Tests
  * (Mandat Pelaksanaan 2026-09-26, Fasa 1 & 2 + Mandat Unthrottle)
  *
  * Kontrak yang diuji (parit laporan audit diluluskan):
@@ -15,10 +15,10 @@
  *      timeout berfasa 5 minit (semakan) / 5 minit (Fasa 0);
  *      enjin warisan bukan-DeepSeek kekal muatan universal
  *      {model, temperature: 0.0, messages}.
- *   6. Integriti enjin apabila agentB = null → 100% laluan Gemini asal
+ *   6. Integriti enjin apabila agentInspector = null → 100% laluan Gemini asal
  *   7. Gerbang semantik enjin: valid:false → SATU retry + amaran jenayah;
  *      failOpen → tiada retry; hasil struktur bercacat → tiada semakan
- *   8. Normalisasi config agentB (env fallback + hygiene enabled)
+ *   8. Normalisasi config agentInspector (env fallback + hygiene enabled)
  *   9. Ketahanan pengekstrakan jawapan: content → reasoning_content →
  *      stringify fallback
  *  10. Ketelusan log mandat: [deepseek-v4-pro] / [glm-5.3] / Fallback triggered ->
@@ -34,19 +34,19 @@ const assert = require('node:assert/strict');
 process.env.ENTRY_CACHE_SIZE = '100';
 
 const {
-    AgentBInspector,
+    AgentInspector,
     buildInspectionPayload,
     parseInspectorResponse,
     formatPreflightContextForInspection,
     INSPECTOR_INSTRUCTION,
-    AGENT_B_DEFAULT_MODEL,
-    AGENT_B_PREFLIGHT_TIMEOUT_MS,
-    AGENT_B_INSPECTION_TIMEOUT_MS,
-    AGENT_B_MAX_TOKENS,
-    AGENT_B_PREFLIGHT_MODEL,
-    AGENT_B_FALLBACK_MODEL,
-    AGENT_B_CIRCUIT_THRESHOLD
-} = require('./agentBInspector');
+    AGENT_INSPECTOR_DEFAULT_MODEL,
+    AGENT_INSPECTOR_PREFLIGHT_TIMEOUT_MS,
+    AGENT_INSPECTOR_INSPECTION_TIMEOUT_MS,
+    AGENT_INSPECTOR_MAX_TOKENS,
+    AGENT_INSPECTOR_PREFLIGHT_MODEL,
+    AGENT_INSPECTOR_FALLBACK_MODEL,
+    AGENT_INSPECTOR_CIRCUIT_THRESHOLD
+} = require('./agentInspector');
 const OpenAICompatibleProvider = require('./providers/openaiCompatible');
 
 // Helper: jana entries dummy
@@ -67,12 +67,12 @@ function makeTranslated(count, textFn) {
 
 // ── 1. parseInspectorResponse ──
 
-test('AgentB: parseInspectorResponse accepts valid:true JSON verbatim', () => {
+test('AgentInspector: parseInspectorResponse accepts valid:true JSON verbatim', () => {
     const verdict = parseInspectorResponse('{"valid":true}');
     assert.deepEqual(verdict, { valid: true });
 });
 
-test('AgentB: parseInspectorResponse parses crimes with type/ids/note', () => {
+test('AgentInspector: parseInspectorResponse parses crimes with type/ids/note', () => {
     const response = JSON.stringify({
         valid: false,
         crimes: [
@@ -88,7 +88,7 @@ test('AgentB: parseInspectorResponse parses crimes with type/ids/note', () => {
     assert.equal(verdict.crimes[1].type, 'PHANTOM');
 });
 
-test('AgentB: parseInspectorResponse strips markdown fences and chatter', () => {
+test('AgentInspector: parseInspectorResponse strips markdown fences and chatter', () => {
     const fenced = '```json\n{"valid":true}\n```';
     assert.deepEqual(parseInspectorResponse(fenced), { valid: true });
 
@@ -96,7 +96,7 @@ test('AgentB: parseInspectorResponse strips markdown fences and chatter', () => 
     assert.deepEqual(parseInspectorResponse(chatty), { valid: true });
 });
 
-test('AgentB: parseInspectorResponse returns null on unparseable garbage', () => {
+test('AgentInspector: parseInspectorResponse returns null on unparseable garbage', () => {
     assert.equal(parseInspectorResponse(''), null);
     assert.equal(parseInspectorResponse(null), null);
     assert.equal(parseInspectorResponse('totally not json at all'), null);
@@ -104,7 +104,7 @@ test('AgentB: parseInspectorResponse returns null on unparseable garbage', () =>
     assert.equal(parseInspectorResponse('{"noValidField":1}'), null);
 });
 
-test('AgentB: parseInspectorResponse sanitizes crime fields defensively', () => {
+test('AgentInspector: parseInspectorResponse sanitizes crime fields defensively', () => {
     const response = JSON.stringify({
         valid: false,
         crimes: [
@@ -127,12 +127,12 @@ test('AgentB: parseInspectorResponse sanitizes crime fields defensively', () => 
     );
 });
 
-test('AgentB: parseInspectorResponse valid:false tanpa crimes boleh diperbetulkan → valid:true', () => {
+test('AgentInspector: parseInspectorResponse valid:false tanpa crimes boleh diperbetulkan → valid:true', () => {
     const verdict = parseInspectorResponse('{"valid":false}');
     assert.deepEqual(verdict, { valid: true }, 'no salvageable crimes → treat as valid');
 });
 
-test('AgentB: parseInspectorResponse UNBOUNDED — SEMUA jenayah dipulangkan (siling 5 digugurkan)', () => {
+test('AgentInspector: parseInspectorResponse UNBOUNDED — SEMUA jenayah dipulangkan (siling 5 digugurkan)', () => {
     // Jika batch mengandungi 8 jenayah, SEMUA 8 mesti dipulangkan supaya
     // retry engine memperbaiki semuanya. Siling lama 5 jenayah DIGUGURKAN
     // (UNBOUNDED-CONTEXT 2026-09-29).
@@ -147,8 +147,8 @@ test('AgentB: parseInspectorResponse UNBOUNDED — SEMUA jenayah dipulangkan (si
     assert.equal(verdict.crimes[7].note, 'crime 7', 'Jenayah TERAKHIR hadir');
 });
 
-test('AgentB: sanity caps kekal — id per jenayah 10, nota 120 aksara (UNBOUNDED-CONTEXT 2026-09-29)', () => {
-    // AGENT_B_MAX_IDS_PER_CRIME (10) dan AGENT_B_MAX_NOTE_CHARS (120) KEKAL
+test('AgentInspector: sanity caps kekal — id per jenayah 10, nota 120 aksara (UNBOUNDED-CONTEXT 2026-09-29)', () => {
+    // AGENT_INSPECTOR_MAX_IDS_PER_CRIME (10) dan AGENT_INSPECTOR_MAX_NOTE_CHARS (120) KEKAL
     // sebagai pertahanan sanity (elak 1 jenayah senaraikan 200 id / nota panjang).
     const verdict = parseInspectorResponse(
         JSON.stringify({
@@ -168,7 +168,7 @@ test('AgentB: sanity caps kekal — id per jenayah 10, nota 120 aksara (UNBOUNDE
 
 // ── 1B. SHIFT crime (MANDAT OPERASI MUTLAK 2026-09-27) ──
 
-test('AgentB: parseInspectorResponse accepts SHIFT crime (4th crime type, klausa emas)', () => {
+test('AgentInspector: parseInspectorResponse accepts SHIFT crime (4th crime type, klausa emas)', () => {
     const response = JSON.stringify({
         valid: false,
         crimes: [{ type: 'SHIFT', ids: [5, 6], note: 'line 5 dialogue in line 6' }]
@@ -180,7 +180,7 @@ test('AgentB: parseInspectorResponse accepts SHIFT crime (4th crime type, klausa
     assert.deepEqual(verdict.crimes[0].ids, [5, 6]);
 });
 
-test('AgentB: inspector instruction locks the SHIFT golden clause verbatim', () => {
+test('AgentInspector: inspector instruction locks the SHIFT golden clause verbatim', () => {
     // [HARMONY-FIX] 2026-09-29: taksonomi dipertajam — MERGE = bilangan slot
     // sahaja, PHANTOM = fabrikasi kandungan (tiada lagi pertindihan).
     assert.ok(
@@ -229,7 +229,7 @@ test('AgentB: inspector instruction locks the SHIFT golden clause verbatim', () 
 
 // [KNP-ALIGNMENT 2026-10-07] TERM crime: pelanggaran locked term kini boleh
 // dilaporkan — penguatkuasaan doktrin Netflix KNP (jenayah ke-7).
-test('AgentB: TERM crime definition + guardrails (locked-term violation)', () => {
+test('AgentInspector: TERM crime definition + guardrails (locked-term violation)', () => {
     assert.ok(
         INSPECTOR_INSTRUCTION.includes('TERM: A locked term in the Locked Terms glossary below'),
         'TERM definition (locked-glossary violation) mesti hadir'
@@ -240,7 +240,7 @@ test('AgentB: TERM crime definition + guardrails (locked-term violation)', () =>
     );
 });
 
-test('AgentB: parseInspectorResponse accepts TERM crime (locked-term violation)', () => {
+test('AgentInspector: parseInspectorResponse accepts TERM crime (locked-term violation)', () => {
     const response = JSON.stringify({
         valid: false,
         crimes: [{ type: 'TERM', ids: [31], note: 'Le Ciel rendered differently' }]
@@ -253,7 +253,7 @@ test('AgentB: parseInspectorResponse accepts TERM crime (locked-term violation)'
 
 // ── 1C. UNTRANSLATED + REGISTER crimes (SOCIOLINGUISTIC v2 2026-09-29) ──
 
-test('AgentB: parseInspectorResponse accepts UNTRANSLATED crime (lazy source-copy leak)', () => {
+test('AgentInspector: parseInspectorResponse accepts UNTRANSLATED crime (lazy source-copy leak)', () => {
     const response = JSON.stringify({
         valid: false,
         crimes: [{ type: 'UNTRANSLATED', ids: [12], note: 'english sentence copied verbatim' }]
@@ -264,7 +264,7 @@ test('AgentB: parseInspectorResponse accepts UNTRANSLATED crime (lazy source-cop
     assert.deepEqual(verdict.crimes[0].ids, [12]);
 });
 
-test('AgentB: parseInspectorResponse accepts REGISTER crime (honorific contradiction)', () => {
+test('AgentInspector: parseInspectorResponse accepts REGISTER crime (honorific contradiction)', () => {
     const response = JSON.stringify({
         valid: false,
         crimes: [{ type: 'REGISTER', ids: [7], note: 'Puan Shen became Cik Shen' }]
@@ -274,7 +274,7 @@ test('AgentB: parseInspectorResponse accepts REGISTER crime (honorific contradic
     assert.equal(verdict.crimes[0].type, 'REGISTER');
 });
 
-test('AgentB: inspector instruction defines UNTRANSLATED + REGISTER with guardrails', () => {
+test('AgentInspector: inspector instruction defines UNTRANSLATED + REGISTER with guardrails', () => {
     assert.ok(
         INSPECTOR_INSTRUCTION.includes('UNTRANSLATED: Output slot still carries the source-language sentence'),
         'UNTRANSLATED definition (lazy-copy leak) mesti hadir'
@@ -297,7 +297,7 @@ test('AgentB: inspector instruction defines UNTRANSLATED + REGISTER with guardra
     );
 });
 
-test('AgentB: formatPreflightContextForInspection renders vocative direct-address when it differs', () => {
+test('AgentInspector: formatPreflightContextForInspection renders vocative direct-address when it differs', () => {
     const block = formatPreflightContextForInspection({
         theme: 'Family drama.',
         terms: [],
@@ -313,14 +313,17 @@ test('AgentB: formatPreflightContextForInspection renders vocative direct-addres
     assert.ok(block.includes('- Lin → Encik Lin'), 'character without vocative renders narrative form only');
 });
 
-// [HARMONY v2 2026-09-29] H1: pronoun register must reach Agent B's audit context
-test('AgentB: formatPreflightContextForInspection renders locked pronoun register', () => {
+// [HARMONY v2 2026-09-29] H1: pronoun register must reach Agent Inspector's audit context
+test('AgentInspector: formatPreflightContextForInspection renders locked pronoun register', () => {
     const block = formatPreflightContextForInspection({
         theme: 'Drama.',
         terms: [],
         characters: [{ name: 'Shen', canonical_address: 'Puan Shen', pronoun_register: 'saya/awak', role: 'lead' }]
     });
-    assert.ok(block.includes('[pronouns: saya/awak]'), 'pronoun register surfaced to Agent B (H1 bridge complete)');
+    assert.ok(
+        block.includes('[pronouns: saya/awak]'),
+        'pronoun register surfaced to Agent Inspector (H1 bridge complete)'
+    );
     assert.ok(
         block.includes('locked titles and pronouns must stay consistent'),
         'reference header signals pronoun consistency audit'
@@ -328,7 +331,7 @@ test('AgentB: formatPreflightContextForInspection renders locked pronoun registe
 });
 
 // [HARMONY v2 2026-09-29] H1: REGISTER crime covers BOTH honorific AND pronoun
-test('AgentB: REGISTER definition covers honorific AND pronoun-register mismatch', () => {
+test('AgentInspector: REGISTER definition covers honorific AND pronoun-register mismatch', () => {
     assert.ok(
         INSPECTOR_INSTRUCTION.includes('honorific/title mismatch'),
         'REGISTER must cover honorific/title mismatch'
@@ -339,8 +342,8 @@ test('AgentB: REGISTER definition covers honorific AND pronoun-register mismatch
     );
 });
 
-// [HARMONY v2 2026-09-29] H2: Agent B must NOT punish legitimate craft (compression/idiom)
-test('AgentB: inspector explicitly permits compression + idiomatic adaptation', () => {
+// [HARMONY v2 2026-09-29] H2: Agent Inspector must NOT punish legitimate craft (compression/idiom)
+test('AgentInspector: inspector explicitly permits compression + idiomatic adaptation', () => {
     assert.ok(
         INSPECTOR_INSTRUCTION.includes(
             'condensing wordy lines, trimming redundant filler, and replacing source idioms'
@@ -361,7 +364,7 @@ test('AgentB: inspector explicitly permits compression + idiomatic adaptation', 
 
 // ── 2. buildInspectionPayload ──
 
-test('AgentB: buildInspectionPayload builds compact parallel <en>/<ms> blocks with global ids', () => {
+test('AgentInspector: buildInspectionPayload builds compact parallel <en>/<ms> blocks with global ids', () => {
     const source = makeEntries(3, (i) => `Hello ${i}`);
     const translated = makeTranslated(3, (i) => `Hai ${i}`);
     const payload = buildInspectionPayload(source, translated);
@@ -376,7 +379,7 @@ test('AgentB: buildInspectionPayload builds compact parallel <en>/<ms> blocks wi
     assert.ok(payload.prompt.includes('"valid":true'), 'JSON contract must be present');
 });
 
-test('AgentB: buildInspectionPayload rejects empty input (line truncation DIGUGURKAN — UNBOUNDED-CONTEXT 2026-09-29)', () => {
+test('AgentInspector: buildInspectionPayload rejects empty input (line truncation DIGUGURKAN — UNBOUNDED-CONTEXT 2026-09-29)', () => {
     // Siling lama 200 aksara/baris DIGUGURKAN — baris dialog bersubtitle
     // dengan markup boleh melebihi 200 aksara; inspector mesti melihat
     // baris PENUH untuk mengesan PHANTOM/DROP dengan tepat.
@@ -390,7 +393,7 @@ test('AgentB: buildInspectionPayload rejects empty input (line truncation DIGUGU
     assert.equal(buildInspectionPayload(null, null), null);
 });
 
-test('AgentB: buildInspectionPayload menormalkan whitespace tanpa memotong baris (sanity kekal)', () => {
+test('AgentInspector: buildInspectionPayload menormalkan whitespace tanpa memotong baris (sanity kekal)', () => {
     // Whitespace collapse masih dijalankan (muatan padat) — ini BUKAN pemotongan.
     const source = makeEntries(1, () => 'Hello   \n\t world    with   spaces');
     const translated = makeTranslated(1, () => 'Hai dunia');
@@ -400,7 +403,7 @@ test('AgentB: buildInspectionPayload menormalkan whitespace tanpa memotong baris
     assert.ok(!line.includes('\t'), 'tab dibuang');
 });
 
-test('AgentB: buildInspectionPayload injects preflight context (theme/terms/characters) — CONTEXT-AWARE AUDIT', () => {
+test('AgentInspector: buildInspectionPayload injects preflight context (theme/terms/characters) — CONTEXT-AWARE AUDIT', () => {
     const source = makeEntries(2, (i) => `Hello ${i}`);
     const translated = makeTranslated(2, (i) => `Hai ${i}`);
     const context = {
@@ -427,7 +430,7 @@ test('AgentB: buildInspectionPayload injects preflight context (theme/terms/char
     );
 });
 
-test('AgentB: buildInspectionPayload tanpa preflightContext → tiada blok konteks (backwards compatible)', () => {
+test('AgentInspector: buildInspectionPayload tanpa preflightContext → tiada blok konteks (backwards compatible)', () => {
     const source = makeEntries(1, () => 'Hello');
     const translated = makeTranslated(1, () => 'Hai');
     const payload = buildInspectionPayload(source, translated);
@@ -436,13 +439,13 @@ test('AgentB: buildInspectionPayload tanpa preflightContext → tiada blok konte
     assert.equal(payload.prompt.includes('### Locked Terms'), false, 'tiada konteks → tiada istilah');
 });
 
-test('AgentB: formatPreflightContextForInspection — null/empty context returns empty string', () => {
+test('AgentInspector: formatPreflightContextForInspection — null/empty context returns empty string', () => {
     assert.equal(formatPreflightContextForInspection(null), '');
     assert.equal(formatPreflightContextForInspection({}), '');
     assert.equal(formatPreflightContextForInspection({ theme: '', terms: [], characters: [] }), '');
 });
 
-test('AgentB: formatPreflightContextForInspection UNBOUNDED — SEMUA terms/characters/theme disuntik (UNBOUNDED-CONTEXT 2026-09-29)', () => {
+test('AgentInspector: formatPreflightContextForInspection UNBOUNDED — SEMUA terms/characters/theme disuntik (UNBOUNDED-CONTEXT 2026-09-29)', () => {
     // RANTAIAN PEMOTONGAN DIHAPUS: preflight kini pulangkan 50 istilah /
     // 20 watak; inspector WAJIB melihat SEMUANYA. Siling lama 10 istilah /
     // 12 watak / 400 aksara tema DIGUGURKAN.
@@ -466,9 +469,9 @@ test('AgentB: formatPreflightContextForInspection UNBOUNDED — SEMUA terms/char
     assert.equal(block.split('\n').filter((l) => l.startsWith('- Watak')).length, 20, 'Semua 20 baris watak dirender');
 });
 
-test('AgentB: buildInspectionPayload menyuntik konteks penuh ke prompt inspector (chain-of-truncation dihapus)', () => {
+test('AgentInspector: buildInspectionPayload menyuntik konteks penuh ke prompt inspector (chain-of-truncation dihapus)', () => {
     // Ujian hujung-ke-hujung: 50 istilah preflight → prompt inspector mesti
-    // membawa 50 istilah (bukan 10). Ini kontrak ASAS audit Agent B.
+    // membawa 50 istilah (bukan 10). Ini kontrak ASAS audit Agent Inspector.
     const source = makeEntries(1, () => 'Hello');
     const translated = makeTranslated(1, () => 'Hai');
     const manyTerms = Array.from({ length: 50 }, (_, i) => ({ source: `Term${i}`, target: `Istilah${i}` }));
@@ -488,10 +491,10 @@ test('AgentB: buildInspectionPayload menyuntik konteks penuh ke prompt inspector
 
 // ── 3. Fail-open + 4. Circuit breaker ──
 
-test('AgentB: runSemanticInspection fails open on API error and counts toward circuit breaker', async () => {
-    const inspector = new AgentBInspector({
+test('AgentInspector: runSemanticInspection fails open on API error and counts toward circuit breaker', async () => {
+    const inspector = new AgentInspector({
         apiKey: 'test-key',
-        baseUrl: 'https://agentb.example.com/v1',
+        baseUrl: 'https://agent-inspector.example.com/v1',
         model: 'deepseek-v4-pro'
     });
     // Paksa kegagalan rangkaian: translateSubtitle di-override supaya throw
@@ -511,7 +514,11 @@ test('AgentB: runSemanticInspection fails open on API error and counts toward ci
     assert.equal(inspector.circuitOpen, false, '2 failures — circuit still closed');
 
     await inspector.runSemanticInspection(source, translated);
-    assert.equal(inspector.circuitOpen, true, `3 failures (threshold ${AGENT_B_CIRCUIT_THRESHOLD}) — circuit OPEN`);
+    assert.equal(
+        inspector.circuitOpen,
+        true,
+        `3 failures (threshold ${AGENT_INSPECTOR_CIRCUIT_THRESHOLD}) — circuit OPEN`
+    );
 
     // Litar terbuka → panggilan seterusnya senyap tanpa menyentuh rangkaian
     let called = false;
@@ -529,10 +536,10 @@ test('AgentB: runSemanticInspection fails open on API error and counts toward ci
     assert.equal(inspector.circuitOpen, false);
 });
 
-test('AgentB: runSemanticInspection fails open on unparseable response', async () => {
-    const inspector = new AgentBInspector({
+test('AgentInspector: runSemanticInspection fails open on unparseable response', async () => {
+    const inspector = new AgentInspector({
         apiKey: 'test-key',
-        baseUrl: 'https://agentb.example.com/v1',
+        baseUrl: 'https://agent-inspector.example.com/v1',
         model: 'deepseek-v4-pro'
     });
     inspector.translateSubtitle = async () => 'garbage response <>.';
@@ -542,10 +549,10 @@ test('AgentB: runSemanticInspection fails open on unparseable response', async (
     assert.equal(verdict.failOpen, true);
 });
 
-test('AgentB: runSemanticInspection returns crimes verdict on valid:false response', async () => {
-    const inspector = new AgentBInspector({
+test('AgentInspector: runSemanticInspection returns crimes verdict on valid:false response', async () => {
+    const inspector = new AgentInspector({
         apiKey: 'test-key',
-        baseUrl: 'https://agentb.example.com/v1',
+        baseUrl: 'https://agent-inspector.example.com/v1',
         model: 'deepseek-v4-pro'
     });
     inspector.translateSubtitle = async () =>
@@ -556,10 +563,10 @@ test('AgentB: runSemanticInspection returns crimes verdict on valid:false respon
     assert.equal(verdict.crimes[0].type, 'MERGE');
 });
 
-test('AgentB: kejayaan reset kaunter kegagalan berturut-turut', async () => {
-    const inspector = new AgentBInspector({
+test('AgentInspector: kejayaan reset kaunter kegagalan berturut-turut', async () => {
+    const inspector = new AgentInspector({
         apiKey: 'test-key',
-        baseUrl: 'https://agentb.example.com/v1'
+        baseUrl: 'https://agent-inspector.example.com/v1'
     });
     inspector.translateSubtitle = async () => {
         throw new Error('boom');
@@ -579,19 +586,23 @@ test('AgentB: kejayaan reset kaunter kegagalan berturut-turut', async () => {
 
 // ── 5. Muatan Universal (Mandat Seni Bina Universal Payload 2026-09-26) ──
 
-test('AgentB: [PAYLOAD-GODTIER] kimi-k3 muatan 4-kunci streaming — {model, messages, stream, temperature 0.0}; TIADA extra_body/reasoning_effort/max_tokens/response_format; timeout 5 min/5 min', () => {
-    const inspector = new AgentBInspector({
+test('AgentInspector: [PAYLOAD-GODTIER] kimi-k3 muatan 4-kunci streaming — {model, messages, stream, temperature 0.0}; TIADA extra_body/reasoning_effort/max_tokens/response_format; timeout 5 min/5 min', () => {
+    const inspector = new AgentInspector({
         apiKey: 'test-key',
-        baseUrl: 'https://agentb.example.com/v1',
+        baseUrl: 'https://agent-inspector.example.com/v1',
         model: 'kimi-k3'
     });
 
     assert.equal(inspector.isKimiModel(), true, 'kimi detector mesti aktif untuk kimi-k3');
     assert.equal(inspector.maxRetries, 0, 'fail fast — no provider-level retries');
-    assert.equal(inspector.translationTimeout, AGENT_B_INSPECTION_TIMEOUT_MS, 'inspection timeout = konstanta mandat');
+    assert.equal(
+        inspector.translationTimeout,
+        AGENT_INSPECTOR_INSPECTION_TIMEOUT_MS,
+        'inspection timeout = konstanta mandat'
+    );
     assert.equal(inspector.translationTimeout, 300000, 'semakan batch: 5 minit (siling Caddy 300s)');
-    assert.equal(AGENT_B_INSPECTION_TIMEOUT_MS, 300000, 'Fasa 1: 5 minit (siling Caddy 300s)');
-    assert.equal(AGENT_B_PREFLIGHT_TIMEOUT_MS, 300000, 'Fasa 0: 5 minit (siling Caddy 300s)');
+    assert.equal(AGENT_INSPECTOR_INSPECTION_TIMEOUT_MS, 300000, 'Fasa 1: 5 minit (siling Caddy 300s)');
+    assert.equal(AGENT_INSPECTOR_PREFLIGHT_TIMEOUT_MS, 300000, 'Fasa 0: 5 minit (siling Caddy 300s)');
 
     // [PAYLOAD-GODTIER] Muatan 4-kunci TEPAT (ground truth empirikal curl
     // rootsys.cloud — Kimi K3, SRT 759 baris; muatan 7-kunci lama GAGAL
@@ -631,13 +642,13 @@ test('AgentB: [PAYLOAD-GODTIER] kimi-k3 muatan 4-kunci streaming — {model, mes
 // kod. Instance tanpa model → kedua-dua fasa bypass senyap. Hierarki mandat
 // (kimi-k3 preflight / deepseek-v4-pro pemeriksa / v4.1-flash fallback)
 // diuji melalui suntikan eksplisit — tingkah laku runtime kekal sama.
-test('AgentB [MODEL-HIERARCHY]: dinamik — tanpa model = bypass senyap; dengan model = Pre-Flight STANDALONE, Pemeriksa + fallback', () => {
-    assert.equal(AGENT_B_PREFLIGHT_MODEL, '', 'lalai konstanta kosong (dinamik — konfigurasi pengguna/env)');
-    const bare = new AgentBInspector({ apiKey: 'k', baseUrl: 'https://x.example/v1' });
+test('AgentInspector [MODEL-HIERARCHY]: dinamik — tanpa model = bypass senyap; dengan model = Pre-Flight STANDALONE, Pemeriksa + fallback', () => {
+    assert.equal(AGENT_INSPECTOR_PREFLIGHT_MODEL, '', 'lalai konstanta kosong (dinamik — konfigurasi pengguna/env)');
+    const bare = new AgentInspector({ apiKey: 'k', baseUrl: 'https://x.example/v1' });
     assert.equal(bare.preflightModel, '', 'tiada preflightModel → Fasa 0 bypass');
     assert.equal(bare.model, '', 'tiada model → Fasa 1 bypass');
 
-    const inspector = new AgentBInspector({
+    const inspector = new AgentInspector({
         apiKey: 'k',
         baseUrl: 'https://x.example/v1',
         preflightModel: 'kimi-k3',
@@ -658,33 +669,33 @@ test('AgentB [MODEL-HIERARCHY]: dinamik — tanpa model = bypass senyap; dengan 
     assert.deepEqual(inspector.modelHierarchy, ['deepseek-v4-pro', 'deepseek-v4.1-flash'], 'Fasa 1 kekal');
 });
 
-test('AgentB [MODEL-HIERARCHY]: config/env — preflightFallbackModel lama diabaikan (kimi-k3 standalone)', () => {
+test('AgentInspector [MODEL-HIERARCHY]: config/env — preflightFallbackModel lama diabaikan (kimi-k3 standalone)', () => {
     const { normalizeConfig } = require('../utils/config');
     const saved = {
-        AGENT_B_PREFLIGHT_MODEL: process.env.AGENT_B_PREFLIGHT_MODEL,
-        AGENT_B_PREFLIGHT_FALLBACK_MODEL: process.env.AGENT_B_PREFLIGHT_FALLBACK_MODEL
+        AGENT_INSPECTOR_PREFLIGHT_MODEL: process.env.AGENT_INSPECTOR_PREFLIGHT_MODEL,
+        AGENT_INSPECTOR_PREFLIGHT_FALLBACK_MODEL: process.env.AGENT_INSPECTOR_PREFLIGHT_FALLBACK_MODEL
     };
     try {
-        delete process.env.AGENT_B_PREFLIGHT_MODEL;
-        delete process.env.AGENT_B_PREFLIGHT_FALLBACK_MODEL;
+        delete process.env.AGENT_INSPECTOR_PREFLIGHT_MODEL;
+        delete process.env.AGENT_INSPECTOR_PREFLIGHT_FALLBACK_MODEL;
         const defaults = normalizeConfig({});
         // [HARDCODE-PURGE] tiada lalai statik — env kosong → preflightModel ''
-        assert.equal(defaults.agentB.preflightModel, '', 'lalai env: preflight kosong (bypass senyap)');
+        assert.equal(defaults.agentInspector.preflightModel, '', 'lalai env: preflight kosong (bypass senyap)');
         // [MODEL-HIERARCHY] fallback lama deepseek-v4-pro TIDAK lagi digunakan.
         assert.equal(
-            defaults.agentB.preflightFallbackModel,
+            defaults.agentInspector.preflightFallbackModel,
             '',
             'fallback Fasa 0 = primer kosong (env lama diabaikan)'
         );
 
-        process.env.AGENT_B_PREFLIGHT_MODEL = 'glm-5.3';
-        // env lama AGENT_B_PREFLIGHT_FALLBACK_MODEL tidak lagi berkesan — nilai
+        process.env.AGENT_INSPECTOR_PREFLIGHT_MODEL = 'glm-5.3';
+        // env lama AGENT_INSPECTOR_PREFLIGHT_FALLBACK_MODEL tidak lagi berkesan — nilai
         // sentiasa menuruti primer.
-        process.env.AGENT_B_PREFLIGHT_FALLBACK_MODEL = 'deepseek-v4-pro';
+        process.env.AGENT_INSPECTOR_PREFLIGHT_FALLBACK_MODEL = 'deepseek-v4-pro';
         const overridden = normalizeConfig({});
-        assert.equal(overridden.agentB.preflightModel, 'glm-5.3', 'env override preflightModel berfungsi');
+        assert.equal(overridden.agentInspector.preflightModel, 'glm-5.3', 'env override preflightModel berfungsi');
         assert.equal(
-            overridden.agentB.preflightFallbackModel,
+            overridden.agentInspector.preflightFallbackModel,
             'glm-5.3',
             'fallback menuruti primer (env lama DIABAIKAN)'
         );
@@ -696,27 +707,27 @@ test('AgentB [MODEL-HIERARCHY]: config/env — preflightFallbackModel lama diaba
     }
 });
 
-// ── MANDAT v5.1: alias env AGENT_B_INSPECTION_MODEL (.env pengeluaran owner) ──
+// ── MANDAT v5.1: alias env AGENT_INSPECTOR_INSPECTION_MODEL (.env pengeluaran owner) ──
 
-test('AgentB v5.1: env AGENT_B_INSPECTION_MODEL ialah alias rasmi model semakan', () => {
+test('AgentInspector v5.1: env AGENT_INSPECTOR_INSPECTION_MODEL ialah alias rasmi model semakan', () => {
     const { normalizeConfig } = require('../utils/config');
     const saved = {
-        AGENT_B_MODEL: process.env.AGENT_B_MODEL,
-        AGENT_B_INSPECTION_MODEL: process.env.AGENT_B_INSPECTION_MODEL
+        AGENT_INSPECTOR_MODEL: process.env.AGENT_INSPECTOR_MODEL,
+        AGENT_INSPECTOR_INSPECTION_MODEL: process.env.AGENT_INSPECTOR_INSPECTION_MODEL
     };
     try {
-        delete process.env.AGENT_B_MODEL;
-        delete process.env.AGENT_B_INSPECTION_MODEL;
+        delete process.env.AGENT_INSPECTOR_MODEL;
+        delete process.env.AGENT_INSPECTOR_INSPECTION_MODEL;
 
-        // Setting .env pengeluaran owner: AGENT_B_INSPECTION_MODEL="deepseek-v4-pro"
-        process.env.AGENT_B_INSPECTION_MODEL = 'deepseek-v4-pro';
+        // Setting .env pengeluaran owner: AGENT_INSPECTOR_INSPECTION_MODEL="deepseek-v4-pro"
+        process.env.AGENT_INSPECTOR_INSPECTION_MODEL = 'deepseek-v4-pro';
         const cfg = normalizeConfig({});
-        assert.equal(cfg.agentB.model, 'deepseek-v4-pro', 'alias AGENT_B_INSPECTION_MODEL dibaca');
+        assert.equal(cfg.agentInspector.model, 'deepseek-v4-pro', 'alias AGENT_INSPECTOR_INSPECTION_MODEL dibaca');
 
-        // AGENT_B_MODEL lebih diutamakan apabila kedua-duanya wujud
-        process.env.AGENT_B_MODEL = 'deepseek-v4.1-flash';
+        // AGENT_INSPECTOR_MODEL lebih diutamakan apabila kedua-duanya wujud
+        process.env.AGENT_INSPECTOR_MODEL = 'deepseek-v4.1-flash';
         const dual = normalizeConfig({});
-        assert.equal(dual.agentB.model, 'deepseek-v4.1-flash', 'AGENT_B_MODEL menang atas alias');
+        assert.equal(dual.agentInspector.model, 'deepseek-v4.1-flash', 'AGENT_INSPECTOR_MODEL menang atas alias');
     } finally {
         for (const key of Object.keys(saved)) {
             if (saved[key] === undefined) delete process.env[key];
@@ -727,8 +738,8 @@ test('AgentB v5.1: env AGENT_B_INSPECTION_MODEL ialah alias rasmi model semakan'
 
 // ── [MODEL-HIERARCHY] FINAL: fallback Fasa 0 DIGUGURKAN (kimi-k3 standalone) ──
 
-test('AgentB [MODEL-HIERARCHY]: preflightFallbackModel lama DIABAIKAN — hierarki Fasa 0 kekal 1-tingkat walaupun pemanggil menghantar nilai lama', () => {
-    const inspector = new AgentBInspector({
+test('AgentInspector [MODEL-HIERARCHY]: preflightFallbackModel lama DIABAIKAN — hierarki Fasa 0 kekal 1-tingkat walaupun pemanggil menghantar nilai lama', () => {
+    const inspector = new AgentInspector({
         apiKey: 'k',
         baseUrl: 'https://x.example/v1',
         preflightModel: 'kimi-k3',
@@ -750,14 +761,14 @@ test('AgentB [MODEL-HIERARCHY]: preflightFallbackModel lama DIABAIKAN — hierar
     );
 });
 
-test('AgentB [MODEL-HIERARCHY]: tanpa override → hierarki kosong (bypass); fallback Fasa 0 menuruti primer', () => {
-    const inspector = new AgentBInspector({ apiKey: 'k', baseUrl: 'https://x.example/v1' });
+test('AgentInspector [MODEL-HIERARCHY]: tanpa override → hierarki kosong (bypass); fallback Fasa 0 menuruti primer', () => {
+    const inspector = new AgentInspector({ apiKey: 'k', baseUrl: 'https://x.example/v1' });
     assert.equal(inspector.preflightFallbackModel, '', 'fallback Fasa 0 = primer (kosong → bypass)');
     assert.deepEqual(inspector.preflightHierarchy, [''], 'hierarki Fasa 0 1-tingkat (standalone — kosong)');
 });
 
-test('AgentB [MODEL-HIERARCHY]: custom preflightModel — fallback sentiasa menuruti primer (1-tingkat)', () => {
-    const dup = new AgentBInspector({
+test('AgentInspector [MODEL-HIERARCHY]: custom preflightModel — fallback sentiasa menuruti primer (1-tingkat)', () => {
+    const dup = new AgentInspector({
         apiKey: 'k',
         baseUrl: 'https://x.example/v1',
         preflightModel: 'glm-5.3'
@@ -767,8 +778,8 @@ test('AgentB [MODEL-HIERARCHY]: custom preflightModel — fallback sentiasa menu
     assert.deepEqual(dup.preflightHierarchy, ['glm-5.3'], 'hierarki Fasa 0 custom tetap 1-tingkat');
 });
 
-test('AgentB [MODEL-HIERARCHY]: Fasa 0 — kimi-k3 gagal → RETRY kimi-k3 (bukan model lain); 2x gagal → fail-open null', async () => {
-    const inspector = new AgentBInspector({
+test('AgentInspector [MODEL-HIERARCHY]: Fasa 0 — kimi-k3 gagal → RETRY kimi-k3 (bukan model lain); 2x gagal → fail-open null', async () => {
+    const inspector = new AgentInspector({
         apiKey: 'k',
         baseUrl: 'https://x.example/v1',
         model: 'deepseek-v4-pro',
@@ -805,34 +816,34 @@ test('AgentB [MODEL-HIERARCHY]: Fasa 0 — kimi-k3 gagal → RETRY kimi-k3 (buka
     assert.equal(inspector.model, 'deepseek-v4-pro', 'model semakan tidak terjejas oleh Fasa 0');
 });
 
-test('AgentB [MODEL-HIERARCHY]: config.js normalisasi preflightFallbackModel — sentiasa menuruti primer (env lama diabaikan)', () => {
+test('AgentInspector [MODEL-HIERARCHY]: config.js normalisasi preflightFallbackModel — sentiasa menuruti primer (env lama diabaikan)', () => {
     const { normalizeConfig } = require('../utils/config');
-    const saved = process.env.AGENT_B_PREFLIGHT_FALLBACK_MODEL;
+    const saved = process.env.AGENT_INSPECTOR_PREFLIGHT_FALLBACK_MODEL;
     try {
-        delete process.env.AGENT_B_PREFLIGHT_FALLBACK_MODEL;
+        delete process.env.AGENT_INSPECTOR_PREFLIGHT_FALLBACK_MODEL;
         const defaults = normalizeConfig({});
         // [HARDCODE-PURGE] lalai statik digugurkan — fallback = primer (kosong)
-        assert.equal(defaults.agentB.preflightFallbackModel, '', 'lalai: fallback = primer (kosong — bypass)');
+        assert.equal(defaults.agentInspector.preflightFallbackModel, '', 'lalai: fallback = primer (kosong — bypass)');
 
         const cfg = normalizeConfig({
-            agentB: { enabled: true, baseUrl: 'https://c.example/v1', apiKey: 'ck', preflightModel: 'glm-5.3' }
+            agentInspector: { enabled: true, baseUrl: 'https://c.example/v1', apiKey: 'ck', preflightModel: 'glm-5.3' }
         });
-        assert.equal(cfg.agentB.preflightFallbackModel, 'glm-5.3', 'fallback menuruti config primer');
+        assert.equal(cfg.agentInspector.preflightFallbackModel, 'glm-5.3', 'fallback menuruti config primer');
 
-        process.env.AGENT_B_PREFLIGHT_FALLBACK_MODEL = 'deepseek-v4-pro';
+        process.env.AGENT_INSPECTOR_PREFLIGHT_FALLBACK_MODEL = 'deepseek-v4-pro';
         const envCfg = normalizeConfig({});
         assert.equal(
-            envCfg.agentB.preflightFallbackModel,
+            envCfg.agentInspector.preflightFallbackModel,
             '',
             'env fallback lama DIABAIKAN — menuruti primer (kosong)'
         );
     } finally {
-        if (saved === undefined) delete process.env.AGENT_B_PREFLIGHT_FALLBACK_MODEL;
-        else process.env.AGENT_B_PREFLIGHT_FALLBACK_MODEL = saved;
+        if (saved === undefined) delete process.env.AGENT_INSPECTOR_PREFLIGHT_FALLBACK_MODEL;
+        else process.env.AGENT_INSPECTOR_PREFLIGHT_FALLBACK_MODEL = saved;
     }
 });
 
-test('AgentB: glm-5.3-flash TIDAK terjejas peraturan frontier glm-5.3 penuh (pembezaan flash)', () => {
+test('AgentInspector: glm-5.3-flash TIDAK terjejas peraturan frontier glm-5.3 penuh (pembezaan flash)', () => {
     const provider = new OpenAICompatibleProvider({
         apiKey: 'k',
         baseUrl: 'https://x.example/v1',
@@ -843,10 +854,10 @@ test('AgentB: glm-5.3-flash TIDAK terjejas peraturan frontier glm-5.3 penuh (pem
     assert.notEqual(body.top_p, 0.1, 'flash variant must not inherit full glm-5.3 top_p lock');
 });
 
-test('AgentB: [PAYLOAD-GODTIER] payload deepseek-v4-pro — muatan 4-kunci streaming sama dengan kimi-k3 (seragam semua enjin Agent B)', () => {
-    const inspector = new AgentBInspector({
+test('AgentInspector: [PAYLOAD-GODTIER] payload deepseek-v4-pro — muatan 4-kunci streaming sama dengan kimi-k3 (seragam semua enjin Agent Inspector)', () => {
+    const inspector = new AgentInspector({
         apiKey: 'test-key',
-        baseUrl: 'https://agentb.example.com/v1',
+        baseUrl: 'https://agent-inspector.example.com/v1',
         model: 'deepseek-v4-pro'
     });
 
@@ -872,9 +883,9 @@ test('AgentB: [PAYLOAD-GODTIER] payload deepseek-v4-pro — muatan 4-kunci strea
     );
 
     // FALLBACK PEMERIKSA (deepseek-v4.1-flash) — muatan YANG SAMA.
-    const flash = new AgentBInspector({
+    const flash = new AgentInspector({
         apiKey: 'test-key',
-        baseUrl: 'https://agentb.example.com/v1',
+        baseUrl: 'https://agent-inspector.example.com/v1',
         model: 'deepseek-v4.1-flash'
     });
     const flashBody = flash.buildChatRequest('flash probe', true, {}).body;
@@ -887,16 +898,16 @@ test('AgentB: [PAYLOAD-GODTIER] payload deepseek-v4-pro — muatan 4-kunci strea
     assert.equal('top_p' in flashBody, false, 'fallback flash: top_p digugurkan');
 });
 
-test('AgentB: [PAYLOAD-GODTIER] — lalai modul: timeout 5 min/5 min (siling Caddy) + max_tokens TIDAK lagi dihantar (constant kekal untuk keserasian warisan)', () => {
+test('AgentInspector: [PAYLOAD-GODTIER] — lalai modul: timeout 5 min/5 min (siling Caddy) + max_tokens TIDAK lagi dihantar (constant kekal untuk keserasian warisan)', () => {
     // Lalai mandat modul — timeout di bawah/at siling Caddy 300s.
-    assert.equal(AGENT_B_PREFLIGHT_TIMEOUT_MS, 300000, 'lalai Fasa 0 5 minit');
-    assert.equal(AGENT_B_INSPECTION_TIMEOUT_MS, 300000, 'lalai Fasa 1 5 minit');
+    assert.equal(AGENT_INSPECTOR_PREFLIGHT_TIMEOUT_MS, 300000, 'lalai Fasa 0 5 minit');
+    assert.equal(AGENT_INSPECTOR_INSPECTION_TIMEOUT_MS, 300000, 'lalai Fasa 1 5 minit');
     // [PAYLOAD-GODTIER] Constant 131072 KEKAL untuk keserasian warisan
     // (config.transport), tetapi TIDAK LAGI dihantar dalam muatan.
-    assert.equal(AGENT_B_MAX_TOKENS, 131072, 'constant warisan dikekalkan (tidak dihantar)');
+    assert.equal(AGENT_INSPECTOR_MAX_TOKENS, 131072, 'constant warisan dikekalkan (tidak dihantar)');
 
     // Muatan TIDAK membawa max_tokens/reasoning_effort (pencetus overthinking).
-    const def = new AgentBInspector({ apiKey: 'k', baseUrl: 'https://x.example/v1', model: 'deepseek-v4-pro' });
+    const def = new AgentInspector({ apiKey: 'k', baseUrl: 'https://x.example/v1', model: 'deepseek-v4-pro' });
     const defBody = def.buildChatRequest('p', true, {}).body;
     assert.equal('max_tokens' in defBody, false, 'muatan TIDAK membawa max_tokens (god-tier)');
     assert.equal('reasoning_effort' in defBody, false, 'muatan TIDAK membawa reasoning_effort (god-tier)');
@@ -904,7 +915,7 @@ test('AgentB: [PAYLOAD-GODTIER] — lalai modul: timeout 5 min/5 min (siling Cad
 
     // [PAYLOAD-GODTIER] Override maxTokens per-instance TIDAK lagi menembusi
     // muatan — builder 4-kunci mengabaikannya (siasatan muatan, bukan lalai).
-    const capped = new AgentBInspector({
+    const capped = new AgentInspector({
         apiKey: 'k',
         baseUrl: 'https://x.example/v1',
         model: 'deepseek-v4-pro',
@@ -917,7 +928,7 @@ test('AgentB: [PAYLOAD-GODTIER] — lalai modul: timeout 5 min/5 min (siling Cad
     );
 
     // Override tidak sah → tiada kesan (builder 4-kunci tiada max_tokens).
-    const invalid = new AgentBInspector({
+    const invalid = new AgentInspector({
         apiKey: 'k',
         baseUrl: 'https://x.example/v1',
         model: 'deepseek-v4-pro',
@@ -930,10 +941,10 @@ test('AgentB: [PAYLOAD-GODTIER] — lalai modul: timeout 5 min/5 min (siling Cad
     );
 });
 
-test('AgentB: runPreflightPass menaikkan timeout kepada 5 min dan memulihkannya selepas Fasa 0 (MANDAT OPERASI MUTLAK v2)', async () => {
-    const inspector = new AgentBInspector({
+test('AgentInspector: runPreflightPass menaikkan timeout kepada 5 min dan memulihkannya selepas Fasa 0 (MANDAT OPERASI MUTLAK v2)', async () => {
+    const inspector = new AgentInspector({
         apiKey: 'test-key',
-        baseUrl: 'https://agentb.example.com/v1',
+        baseUrl: 'https://agent-inspector.example.com/v1',
         preflightModel: 'kimi-k3'
     });
 
@@ -955,10 +966,10 @@ test('AgentB: runPreflightPass menaikkan timeout kepada 5 min dan memulihkannya 
     assert.equal(inspector.translationTimeout, 300000, 'pulih kepada 5 min selepas Fasa 0');
 });
 
-test('AgentB: runPreflightPass memulihkan timeout walaupun panggilan API gagal', async () => {
-    const inspector = new AgentBInspector({
+test('AgentInspector: runPreflightPass memulihkan timeout walaupun panggilan API gagal', async () => {
+    const inspector = new AgentInspector({
         apiKey: 'test-key',
-        baseUrl: 'https://agentb.example.com/v1',
+        baseUrl: 'https://agent-inspector.example.com/v1',
         preflightModel: 'kimi-k3'
     });
     inspector.translateSubtitle = async () => {
@@ -970,10 +981,10 @@ test('AgentB: runPreflightPass memulihkan timeout walaupun panggilan API gagal',
     assert.equal(inspector.translationTimeout, 300000, 'finally block sentiasa memulihkan 5 minit');
 });
 
-test('AgentB: buildUserPrompt override menghantar prompt inspector verbatim', () => {
-    const inspector = new AgentBInspector({
+test('AgentInspector: buildUserPrompt override menghantar prompt inspector verbatim', () => {
+    const inspector = new AgentInspector({
         apiKey: 'test-key',
-        baseUrl: 'https://agentb.example.com/v1'
+        baseUrl: 'https://agent-inspector.example.com/v1'
     });
     const inspectorPrompt = 'INSPECT INSTRUCTION <en>...</en> <ms>...</ms>';
     const promptData = inspector.buildUserPrompt('ignored-content', 'en', inspectorPrompt);
@@ -981,9 +992,9 @@ test('AgentB: buildUserPrompt override menghantar prompt inspector verbatim', ()
     assert.equal(promptData.isSelfContained, true);
 });
 
-// ── 6. Integriti enjin apabila agentB = null ──
+// ── 6. Integriti enjin apabila agentInspector = null ──
 
-test('AgentB: engine dengan agentB=null kekal 100% Gemini — tiada panggilan inspector, stats sifar', async () => {
+test('AgentInspector: engine dengan agentInspector=null kekal 100% Gemini — tiada panggilan inspector, stats sifar', async () => {
     const TranslationEngine = require('./translationEngine');
 
     const geminiCalls = [];
@@ -1003,15 +1014,15 @@ test('AgentB: engine dengan agentB=null kekal 100% Gemini — tiada panggilan in
         {},
         {
             providerName: 'gemini',
-            agentB: null // ← DUAL-AI off
+            agentInspector: null // ← DUAL-AI off
         }
     );
 
-    assert.equal(engine.agentB, null);
-    assert.equal(engine.translationStats.agentBUsed, false);
-    assert.equal(engine.translationStats.agentBFailures, 0);
-    assert.equal(engine.translationStats.agentBInspections, 0);
-    assert.equal(engine.translationStats.agentBRetries, 0);
+    assert.equal(engine.agentInspector, null);
+    assert.equal(engine.translationStats.agentInspectorUsed, false);
+    assert.equal(engine.translationStats.agentInspectorFailures, 0);
+    assert.equal(engine.translationStats.agentInspectorInspections, 0);
+    assert.equal(engine.translationStats.agentInspectorRetries, 0);
 
     // Batch 3 entri kecil (< PREFLIGHT_MIN_ENTRIES) — Fasa 0 skip, terus batch.
     // Semak gate: tiada panggilan tambahan selepas 3 panggilan penterjemahan.
@@ -1019,15 +1030,15 @@ test('AgentB: engine dengan agentB=null kekal 100% Gemini — tiada panggilan in
     const batch = makeEntries(3);
     const result = await engine.translateBatch(batch, 'Malay', null, 0, 1, null, { streaming: false });
     assert.equal(result.length, 3);
-    assert.equal(geminiCalls.length, 1, 'only ONE provider call — no inspector call when agentB is null');
-    assert.equal(engine.translationStats.agentBFailures, 0);
-    assert.equal(engine.translationStats.agentBInspections, 0);
-    assert.equal(engine.translationStats.agentBRetries, 0);
+    assert.equal(geminiCalls.length, 1, 'only ONE provider call — no inspector call when agentInspector is null');
+    assert.equal(engine.translationStats.agentInspectorFailures, 0);
+    assert.equal(engine.translationStats.agentInspectorInspections, 0);
+    assert.equal(engine.translationStats.agentInspectorRetries, 0);
 });
 
 // ── 7. Gerbang semantik enjin ──
 
-test('AgentB: gerbang enjin — valid:false mencetus SATU retry beramarah + re-verdict; hasil diganti jika lulus', async () => {
+test('AgentInspector: gerbang enjin — valid:false mencetus SATU retry beramarah + re-verdict; hasil diganti jika lulus', async () => {
     const TranslationEngine = require('./translationEngine');
 
     // Kiraan panggilan: batch asal → inspector (crime) → retry → inspector (lulus)
@@ -1047,7 +1058,7 @@ test('AgentB: gerbang enjin — valid:false mencetus SATU retry beramarah + re-v
         estimateTokenCount: () => 10
     };
 
-    const agentB = {
+    const agentInspector = {
         circuitOpen: false,
         runPreflightPass: null, // tidak dipanggil dalam ujian ini
         runSemanticInspection: async () => {
@@ -1063,7 +1074,7 @@ test('AgentB: gerbang enjin — valid:false mencetus SATU retry beramarah + re-v
         {},
         {
             providerName: 'gemini',
-            agentB
+            agentInspector
         }
     );
 
@@ -1072,15 +1083,15 @@ test('AgentB: gerbang enjin — valid:false mencetus SATU retry beramarah + re-v
 
     assert.equal(workerCallCount, 2, 'original + ONE semantic retry');
     assert.equal(inspectorCallCount, 2, 'initial inspection + single re-verdict');
-    assert.equal(engine.translationStats.agentBRetries, 1);
+    assert.equal(engine.translationStats.agentInspectorRetries, 1);
     assert.equal(result.length, 3);
 
-    const incident = engine.translationStats.incidents.find((i) => i.type === 'AGENT_B_SEMANTIC_RETRY');
+    const incident = engine.translationStats.incidents.find((i) => i.type === 'AGENT_INSPECTOR_SEMANTIC_RETRY');
     assert.ok(incident, 'incident must be logged');
     assert.equal(incident.outcome, 'recovered', 'retry must close incident as recovered');
 });
 
-test('AgentB: gerbang enjin — failOpen tidak mencetus retry', async () => {
+test('AgentInspector: gerbang enjin — failOpen tidak mencetus retry', async () => {
     const TranslationEngine = require('./translationEngine');
 
     let workerCallCount = 0;
@@ -1093,7 +1104,7 @@ test('AgentB: gerbang enjin — failOpen tidak mencetus retry', async () => {
         estimateTokenCount: () => 10
     };
 
-    const agentB = {
+    const agentInspector = {
         circuitOpen: false,
         runSemanticInspection: async () => ({ valid: true, failOpen: true })
     };
@@ -1104,7 +1115,7 @@ test('AgentB: gerbang enjin — failOpen tidak mencetus retry', async () => {
         {},
         {
             providerName: 'gemini',
-            agentB
+            agentInspector
         }
     );
 
@@ -1112,11 +1123,11 @@ test('AgentB: gerbang enjin — failOpen tidak mencetus retry', async () => {
     await engine.translateBatch(batch, 'Malay', null, 0, 1, null, { streaming: false });
 
     assert.equal(workerCallCount, 1, 'no retry on fail-open');
-    assert.equal(engine.translationStats.agentBFailures, 1);
-    assert.equal(engine.translationStats.agentBRetries, 0);
+    assert.equal(engine.translationStats.agentInspectorFailures, 1);
+    assert.equal(engine.translationStats.agentInspectorRetries, 0);
 });
 
-test('AgentB: gerbang enjin — hasil struktur bercacat (mismatch) melangkau semakan semantik', async () => {
+test('AgentInspector: gerbang enjin — hasil struktur bercacat (mismatch) melangkau semakan semantik', async () => {
     const TranslationEngine = require('./translationEngine');
 
     let inspectorCalled = false;
@@ -1127,7 +1138,7 @@ test('AgentB: gerbang enjin — hasil struktur bercacat (mismatch) melangkau sem
         estimateTokenCount: () => 10
     };
 
-    const agentB = {
+    const agentInspector = {
         circuitOpen: false,
         runSemanticInspection: async () => {
             inspectorCalled = true;
@@ -1141,7 +1152,7 @@ test('AgentB: gerbang enjin — hasil struktur bercacat (mismatch) melangkau sem
         {},
         {
             providerName: 'gemini',
-            agentB
+            agentInspector
         }
     );
 
@@ -1151,10 +1162,10 @@ test('AgentB: gerbang enjin — hasil struktur bercacat (mismatch) melangkau sem
     // Gate memerlukan translatedEntries.length === batch.length; hasil bercacat
     // (1/2 walaupun selepas retry mismatch gagal) → tiada semakan semantik.
     assert.equal(inspectorCalled, false, 'semantic gate skipped on structurally broken result');
-    assert.equal(engine.translationStats.agentBRetries, 0);
+    assert.equal(engine.translationStats.agentInspectorRetries, 0);
 });
 
-test('AgentB: gerbang enjin — circuit breaker terbuka melangkau semakan', async () => {
+test('AgentInspector: gerbang enjin — circuit breaker terbuka melangkau semakan', async () => {
     const TranslationEngine = require('./translationEngine');
 
     let inspectorCalled = false;
@@ -1164,7 +1175,7 @@ test('AgentB: gerbang enjin — circuit breaker terbuka melangkau semakan', asyn
         estimateTokenCount: () => 10
     };
 
-    const agentB = {
+    const agentInspector = {
         circuitOpen: true, // litar terbuka
         runSemanticInspection: async () => {
             inspectorCalled = true;
@@ -1178,7 +1189,7 @@ test('AgentB: gerbang enjin — circuit breaker terbuka melangkau semakan', asyn
         {},
         {
             providerName: 'gemini',
-            agentB
+            agentInspector
         }
     );
 
@@ -1187,58 +1198,58 @@ test('AgentB: gerbang enjin — circuit breaker terbuka melangkau semakan', asyn
     assert.equal(inspectorCalled, false, 'no inspection while circuit breaker open');
 });
 
-// ── 8. Normalisasi config agentB ──
+// ── 8. Normalisasi config agentInspector ──
 
-test('AgentB: normalizeConfig membina struktur agentB dengan env fallback + hygiene', async () => {
+test('AgentInspector: normalizeConfig membina struktur agentInspector dengan env fallback + hygiene', async () => {
     const { normalizeConfig } = require('../utils/config');
 
     // Simpan + pulihkan env semasa ujian (elak kebocoran antara-ujian)
     const savedEnv = {
-        AGENT_B_BASE_URL: process.env.AGENT_B_BASE_URL,
-        AGENT_B_API_KEY: process.env.AGENT_B_API_KEY,
-        AGENT_B_MODEL: process.env.AGENT_B_MODEL
+        AGENT_INSPECTOR_BASE_URL: process.env.AGENT_INSPECTOR_BASE_URL,
+        AGENT_INSPECTOR_API_KEY: process.env.AGENT_INSPECTOR_API_KEY,
+        AGENT_INSPECTOR_MODEL: process.env.AGENT_INSPECTOR_MODEL
     };
     try {
         // Kes 1: config sedia ada menang ke atas env
-        process.env.AGENT_B_BASE_URL = 'https://env.example.com/v1';
-        process.env.AGENT_B_API_KEY = 'env-key';
-        process.env.AGENT_B_MODEL = 'env-model';
+        process.env.AGENT_INSPECTOR_BASE_URL = 'https://env.example.com/v1';
+        process.env.AGENT_INSPECTOR_API_KEY = 'env-key';
+        process.env.AGENT_INSPECTOR_MODEL = 'env-model';
 
         const withConfig = normalizeConfig({
-            agentB: {
+            agentInspector: {
                 enabled: true,
                 baseUrl: 'https://config.example.com/v1',
                 apiKey: 'config-key',
                 model: 'config-model'
             }
         });
-        assert.equal(withConfig.agentB.baseUrl, 'https://config.example.com/v1');
-        assert.equal(withConfig.agentB.apiKey, 'config-key');
-        assert.equal(withConfig.agentB.model, 'config-model');
-        assert.equal(withConfig.agentB.enabled, true);
+        assert.equal(withConfig.agentInspector.baseUrl, 'https://config.example.com/v1');
+        assert.equal(withConfig.agentInspector.apiKey, 'config-key');
+        assert.equal(withConfig.agentInspector.model, 'config-model');
+        assert.equal(withConfig.agentInspector.enabled, true);
 
         // Kes 2: config kosong → env fallback + auto-enable apabila env lengkap
         const fromEnv = normalizeConfig({});
-        assert.equal(fromEnv.agentB.baseUrl, 'https://env.example.com/v1');
-        assert.equal(fromEnv.agentB.apiKey, 'env-key');
-        assert.equal(fromEnv.agentB.model, 'env-model');
-        assert.equal(fromEnv.agentB.enabled, true, 'env lengkap → auto-enable (Fasa 3 belum wujud)');
+        assert.equal(fromEnv.agentInspector.baseUrl, 'https://env.example.com/v1');
+        assert.equal(fromEnv.agentInspector.apiKey, 'env-key');
+        assert.equal(fromEnv.agentInspector.model, 'env-model');
+        assert.equal(fromEnv.agentInspector.enabled, true, 'env lengkap → auto-enable (Fasa 3 belum wujud)');
 
         // Kes 3: tiada config + tiada env → disabled + TIADA default model
         // statik ([HARDCODE-PURGE] bypass senyap menggantikan lalai kod).
-        delete process.env.AGENT_B_BASE_URL;
-        delete process.env.AGENT_B_API_KEY;
-        delete process.env.AGENT_B_MODEL;
+        delete process.env.AGENT_INSPECTOR_BASE_URL;
+        delete process.env.AGENT_INSPECTOR_API_KEY;
+        delete process.env.AGENT_INSPECTOR_MODEL;
         const disabled = normalizeConfig({});
-        assert.equal(disabled.agentB.enabled, false);
-        assert.equal(disabled.agentB.baseUrl, '');
-        assert.equal(disabled.agentB.model, '', 'tiada lalai statik — model kosong (bypass)');
+        assert.equal(disabled.agentInspector.enabled, false);
+        assert.equal(disabled.agentInspector.baseUrl, '');
+        assert.equal(disabled.agentInspector.model, '', 'tiada lalai statik — model kosong (bypass)');
 
         // Kes 4: enabled:true tetapi kredensial tak lengkap → hygiene melumpuhkan
         const partial = normalizeConfig({
-            agentB: { enabled: true, baseUrl: 'https://partial.example.com/v1' } // tiada apiKey
+            agentInspector: { enabled: true, baseUrl: 'https://partial.example.com/v1' } // tiada apiKey
         });
-        assert.equal(partial.agentB.enabled, false, 'incomplete credentials must disable Agent B');
+        assert.equal(partial.agentInspector.enabled, false, 'incomplete credentials must disable Agent Inspector');
     } finally {
         // Pulihkan env
         for (const [k, v] of Object.entries(savedEnv)) {
@@ -1250,7 +1261,7 @@ test('AgentB: normalizeConfig membina struktur agentB dengan env fallback + hygi
 
 // ── 9. Ketahanan pengekstrakan jawapan (Mandat Unthrottle §C) ──
 
-test('AgentB: extractChatMessageText — laluan standard content diutamakan', () => {
+test('AgentInspector: extractChatMessageText — laluan standard content diutamakan', () => {
     const provider = new OpenAICompatibleProvider({
         apiKey: 'k',
         baseUrl: 'https://x.example/v1',
@@ -1266,7 +1277,7 @@ test('AgentB: extractChatMessageText — laluan standard content diutamakan', ()
     assert.equal(provider.extractChatMessageText(undefined), '');
 });
 
-test('AgentB: extractChatMessageText — reasoning_content dipakai bila content kosong', () => {
+test('AgentInspector: extractChatMessageText — reasoning_content dipakai bila content kosong', () => {
     const provider = new OpenAICompatibleProvider({
         apiKey: 'k',
         baseUrl: 'https://x.example/v1',
@@ -1290,7 +1301,7 @@ test('AgentB: extractChatMessageText — reasoning_content dipakai bila content 
     );
 });
 
-test('AgentB: extractChatMessageText — fallback stringify mesej penuh bila kedua-dua medan kosong', () => {
+test('AgentInspector: extractChatMessageText — fallback stringify mesej penuh bila kedua-dua medan kosong', () => {
     const provider = new OpenAICompatibleProvider({
         apiKey: 'k',
         baseUrl: 'https://x.example/v1',
@@ -1310,7 +1321,7 @@ test('AgentB: extractChatMessageText — fallback stringify mesej penuh bila ked
     assert.equal(provider.extractChatMessageText({ role: 'assistant', content: '' }), '');
 });
 
-test('AgentB: extractStructuredBlock — scanner JSON seimbang tahan braces dalam string', () => {
+test('AgentInspector: extractStructuredBlock — scanner JSON seimbang tahan braces dalam string', () => {
     const provider = new OpenAICompatibleProvider({
         apiKey: 'k',
         baseUrl: 'https://x.example/v1',
@@ -1333,10 +1344,10 @@ test('AgentB: extractStructuredBlock — scanner JSON seimbang tahan braces dala
 
 // ── Kontrak preflight offload (Fasa 0) ──
 
-test('AgentB: runPreflightPass mewarisi kontrak runPreflightSemanticPass (non-blocking)', async () => {
-    const inspector = new AgentBInspector({
+test('AgentInspector: runPreflightPass mewarisi kontrak runPreflightSemanticPass (non-blocking)', async () => {
+    const inspector = new AgentInspector({
         apiKey: 'test-key',
-        baseUrl: 'https://agentb.example.com/v1'
+        baseUrl: 'https://agent-inspector.example.com/v1'
     });
 
     // Fail terlalu kecil (< 10 entri) → skip, return null — kontrak Fasa 0 asal
@@ -1349,10 +1360,10 @@ test('AgentB: runPreflightPass mewarisi kontrak runPreflightSemanticPass (non-bl
 
 // ── 10. Dual-model failover + zero-swallowed-error (Mandat Observabiliti 2026-09-26) ──
 
-test('AgentB: failover automatik — deepseek-v4-pro gagal, deepseek-v4.1-flash menyelamatkan semakan', async () => {
-    const inspector = new AgentBInspector({
+test('AgentInspector: failover automatik — deepseek-v4-pro gagal, deepseek-v4.1-flash menyelamatkan semakan', async () => {
+    const inspector = new AgentInspector({
         apiKey: 'test-key',
-        baseUrl: 'https://agentb.example.com/v1',
+        baseUrl: 'https://agent-inspector.example.com/v1',
         model: 'deepseek-v4-pro',
         fallbackModel: 'deepseek-v4.1-flash'
     });
@@ -1362,7 +1373,7 @@ test('AgentB: failover automatik — deepseek-v4-pro gagal, deepseek-v4.1-flash 
         'hierarki semakan: deepseek-v4-pro + fallback (TRINITY BETA RUN 9)'
     );
     assert.equal(
-        AGENT_B_FALLBACK_MODEL,
+        AGENT_INSPECTOR_FALLBACK_MODEL,
         '',
         'konstanta fallback kosong — nilai datang daripada konfigurasi ([HARDCODE-PURGE])'
     );
@@ -1388,10 +1399,10 @@ test('AgentB: failover automatik — deepseek-v4-pro gagal, deepseek-v4.1-flash 
     assert.equal(inspector.circuitOpen, false, 'kejayaan sandaran tidak membuka litar');
 });
 
-test('AgentB [MODEL-HIERARCHY]: Fasa 0 — kimi-k3 504 pada percubaan pertama → RETRY kimi-k3 berjaya (tiada peralihan model)', async () => {
-    const inspector = new AgentBInspector({
+test('AgentInspector [MODEL-HIERARCHY]: Fasa 0 — kimi-k3 504 pada percubaan pertama → RETRY kimi-k3 berjaya (tiada peralihan model)', async () => {
+    const inspector = new AgentInspector({
         apiKey: 'test-key',
-        baseUrl: 'https://agentb.example.com/v1',
+        baseUrl: 'https://agent-inspector.example.com/v1',
         model: 'deepseek-v4-pro',
         preflightModel: 'kimi-k3',
         preflightRetryBackoffMs: 0 // [UPSTREAM-RESILIENCE] lumpuh backoff — ujian pantas
@@ -1417,10 +1428,10 @@ test('AgentB [MODEL-HIERARCHY]: Fasa 0 — kimi-k3 504 pada percubaan pertama �
     assert.equal(inspector.model, 'deepseek-v4-pro', 'model semakan tidak terjejas oleh Fasa 0');
 });
 
-test('AgentB: kedua-dua model gagal (rangkaian) → fail-open both_models_failed + 1 kegagalan litar', async () => {
-    const inspector = new AgentBInspector({
+test('AgentInspector: kedua-dua model gagal (rangkaian) → fail-open both_models_failed + 1 kegagalan litar', async () => {
+    const inspector = new AgentInspector({
         apiKey: 'test-key',
-        baseUrl: 'https://agentb.example.com/v1',
+        baseUrl: 'https://agent-inspector.example.com/v1',
         model: 'deepseek-v4-pro',
         fallbackModel: 'deepseek-v4.1-flash'
     });
@@ -1442,10 +1453,10 @@ test('AgentB: kedua-dua model gagal (rangkaian) → fail-open both_models_failed
     assert.equal(inspector._consecutiveFailures, 1, 'satu operasi gagal = satu kegagalan litar sahaja');
 });
 
-test('AgentB: kedua-dua model gagal parse (HTTP 200 sampah) → fail-open selepas raw snippet', async () => {
-    const inspector = new AgentBInspector({
+test('AgentInspector: kedua-dua model gagal parse (HTTP 200 sampah) → fail-open selepas raw snippet', async () => {
+    const inspector = new AgentInspector({
         apiKey: 'test-key',
-        baseUrl: 'https://agentb.example.com/v1',
+        baseUrl: 'https://agent-inspector.example.com/v1',
         model: 'deepseek-v4-pro',
         fallbackModel: 'deepseek-v4.1-flash'
     });
@@ -1461,11 +1472,11 @@ test('AgentB: kedua-dua model gagal parse (HTTP 200 sampah) → fail-open selepa
     assert.equal(verdict.error, 'both_models_failed');
 });
 
-test('AgentB: logging forensik — raw snippet 500 aksara + pengumuman failover pada WARN', async () => {
+test('AgentInspector: logging forensik — raw snippet 500 aksara + pengumuman failover pada WARN', async () => {
     const log = require('../utils/logger');
-    const inspector = new AgentBInspector({
+    const inspector = new AgentInspector({
         apiKey: 'test-key',
-        baseUrl: 'https://agentb.example.com/v1',
+        baseUrl: 'https://agent-inspector.example.com/v1',
         model: 'deepseek-v4-pro',
         fallbackModel: 'deepseek-v4.1-flash'
     });
@@ -1496,8 +1507,10 @@ test('AgentB: logging forensik — raw snippet 500 aksara + pengumuman failover 
         assert.ok(failoverLog, 'pengumuman failover kepada model sandaran mesti dicetak');
 
         // MANDAT SENI BINA UNIVERSAL PAYLOAD §C: format trigger wajib
-        const triggerLog = captured.find((l) => l.includes('[AgentB] Fallback triggered -> [deepseek-v4.1-flash]'));
-        assert.ok(triggerLog, 'format trigger wajib: [AgentB] Fallback triggered -> [deepseek-v4.1-flash]');
+        const triggerLog = captured.find((l) =>
+            l.includes('[AgentInspector] Fallback triggered -> [deepseek-v4.1-flash]')
+        );
+        assert.ok(triggerLog, 'format trigger wajib: [AgentInspector] Fallback triggered -> [deepseek-v4.1-flash]');
     } finally {
         log.warn = originalWarn;
     }
@@ -1508,7 +1521,7 @@ test('AgentB: logging forensik — raw snippet 500 aksara + pengumuman failover 
 // literal Unicode tidak rosak oleh pipeline penghantaran (konvensyen projek
 // — corak sama digunakan oleh subfaber-context-regression.test.js).
 
-test('AgentB: stripReasoningTags membuang tag penaakulan (tertutup & terbuka)', () => {
+test('AgentInspector: stripReasoningTags membuang tag penaakulan (tertutup & terbuka)', () => {
     const { stripReasoningTags } = require('./subfaberPreflight');
 
     // Tag GLM sebenar: THINK = U+1F9E0 (🧠) — dibina dari pasangan UTF-16 surrogates
@@ -1538,10 +1551,10 @@ test('AgentB: stripReasoningTags membuang tag penaakulan (tertutup & terbuka)', 
     assert.equal(stripReasoningTags('   '), '');
 });
 
-test('AgentB: inspection membersihkan tag THINK sebelum parse — verdict bertahan', async () => {
-    const inspector = new AgentBInspector({
+test('AgentInspector: inspection membersihkan tag THINK sebelum parse — verdict bertahan', async () => {
+    const inspector = new AgentInspector({
         apiKey: 'test-key',
-        baseUrl: 'https://agentb.example.com/v1',
+        baseUrl: 'https://agent-inspector.example.com/v1',
         model: 'deepseek-v4-pro'
     });
     const BRAIN = String.fromCharCode(0xd83e, 0xdde0);
@@ -1590,7 +1603,7 @@ test('SubFaberPreflight: hook onParseFailure menghantar teks mentah untuk forens
 
 // ── 12. Meta batch dari gerbang enjin ──
 
-test('AgentB: gerbang enjin menghantar meta {batchIndex, totalBatches} kepada inspector', async () => {
+test('AgentInspector: gerbang enjin menghantar meta {batchIndex, totalBatches} kepada inspector', async () => {
     const TranslationEngine = require('./translationEngine');
     let capturedMeta = null;
     const dummyGemini = {
@@ -1598,14 +1611,19 @@ test('AgentB: gerbang enjin menghantar meta {batchIndex, totalBatches} kepada in
         streamTranslateSubtitle: async () => '',
         estimateTokenCount: () => 10
     };
-    const agentB = {
+    const agentInspector = {
         circuitOpen: false,
         runSemanticInspection: async (batch, translated, meta) => {
             capturedMeta = meta;
             return { valid: true };
         }
     };
-    const engine = new TranslationEngine(dummyGemini, 'gemini-2.5-flash', {}, { providerName: 'gemini', agentB });
+    const engine = new TranslationEngine(
+        dummyGemini,
+        'gemini-2.5-flash',
+        {},
+        { providerName: 'gemini', agentInspector }
+    );
     await engine.translateBatch(makeEntries(2), 'Malay', null, 0, 1, null, { streaming: false });
     assert.ok(capturedMeta, 'meta mesti dihantar oleh gerbang enjin');
     assert.equal(capturedMeta.batchIndex, 0);
@@ -1616,7 +1634,7 @@ test('AgentB: gerbang enjin menghantar meta {batchIndex, totalBatches} kepada in
 // Forensik Beta Run 3: respons 2101 aksara sah gagal parse akibat anomali
 // sintaks biasa LLM — koma tergantung, fences, chatter, control chars.
 
-test('AgentB: parsePreflightResponse selamat dari koma tergantung (trailing comma)', () => {
+test('AgentInspector: parsePreflightResponse selamat dari koma tergantung (trailing comma)', () => {
     const { parsePreflightResponse } = require('./subfaberPreflight');
 
     // Koma tergantung pada entri array terakhir "terms": [...,]
@@ -1639,7 +1657,7 @@ test('AgentB: parsePreflightResponse selamat dari koma tergantung (trailing comm
     assert.equal(parsedBoth.terms[0].source, 'A');
 });
 
-test('AgentB: parsePreflightResponse selamat dari fences + chatter di luar sempadan', () => {
+test('AgentInspector: parsePreflightResponse selamat dari fences + chatter di luar sempadan', () => {
     const { parsePreflightResponse } = require('./subfaberPreflight');
     const fence = String.fromCharCode(0x60, 0x60, 0x60); // dibina supaya literal tidak rosak
 
@@ -1662,7 +1680,7 @@ test('AgentB: parsePreflightResponse selamat dari fences + chatter di luar sempa
     assert.equal(parsedCombined.theme, 'K.');
 });
 
-test('AgentB: parsePreflightResponse membersihkan aksara kawalan tidak sah', () => {
+test('AgentInspector: parsePreflightResponse membersihkan aksara kawalan tidak sah', () => {
     const { parsePreflightResponse } = require('./subfaberPreflight');
     // Control chars mentah (0x01, 0x0B) dibina secara programatik — JSON.parse
     // asli menolaknya ("Unexpected token"); parser tahan lasak mesti membuangnya.
@@ -1685,7 +1703,7 @@ test('AgentB: parsePreflightResponse membersihkan aksara kawalan tidak sah', () 
     assert.ok(!parsed.theme.includes(CTRL_01) && !parsed.theme.includes(CTRL_0B), 'tiada control char tersisa');
 });
 
-test('AgentB: parse gagal selepas pembersihan → forensik offset + konteks 100 aksara pada WARN', () => {
+test('AgentInspector: parse gagal selepas pembersihan → forensik offset + konteks 100 aksara pada WARN', () => {
     const { parsePreflightResponse } = require('./subfaberPreflight');
     const log = require('../utils/logger');
     const captured = [];
@@ -1713,8 +1731,8 @@ test('AgentB: parse gagal selepas pembersihan → forensik offset + konteks 100 
 
 // ── 14. Dynamic Model Swapping — Hot-Swappable (Mandat §2) ──
 
-test('AgentB: hierarki model 100% dinamik — kimi-k3 utama, sandaran custom', async () => {
-    const inspector = new AgentBInspector({
+test('AgentInspector: hierarki model 100% dinamik — kimi-k3 utama, sandaran custom', async () => {
+    const inspector = new AgentInspector({
         apiKey: 'k',
         baseUrl: 'https://x.example/v1',
         model: 'kimi-k3',
@@ -1734,8 +1752,8 @@ test('AgentB: hierarki model 100% dinamik — kimi-k3 utama, sandaran custom', a
     assert.equal(verdict.valid, true);
 });
 
-test('AgentB: fallbackModel "none" → hierarki model tunggal (tiada failover)', async () => {
-    const inspector = new AgentBInspector({
+test('AgentInspector: fallbackModel "none" → hierarki model tunggal (tiada failover)', async () => {
+    const inspector = new AgentInspector({
         apiKey: 'k',
         baseUrl: 'https://x.example/v1',
         model: 'deepseek-v4-pro',
@@ -1755,8 +1773,8 @@ test('AgentB: fallbackModel "none" → hierarki model tunggal (tiada failover)',
     assert.equal(verdict.error, 'both_models_failed');
 });
 
-test('AgentB: fallbackModel sama dengan utama → dedupe kepada hierarki tunggal', () => {
-    const inspector = new AgentBInspector({
+test('AgentInspector: fallbackModel sama dengan utama → dedupe kepada hierarki tunggal', () => {
+    const inspector = new AgentInspector({
         apiKey: 'k',
         baseUrl: 'https://x.example/v1',
         model: 'glm-5.3-flashx',
@@ -1768,15 +1786,15 @@ test('AgentB: fallbackModel sama dengan utama → dedupe kepada hierarki tunggal
 
 // [HARDCODE-PURGE 2026-10-13] Lalai tanpa options = bypass senyap. Hierarki
 // mandat penuh diuji melalui suntikan eksplisit (kontrak baharu).
-test('AgentB [MODEL-HIERARCHY]: suntikan penuh — kimi-k3 Fasa 0 standalone & deepseek-v4-pro semakan + deepseek-v4.1-flash sandaran', () => {
-    const bare = new AgentBInspector({ apiKey: 'k', baseUrl: 'https://x.example/v1' });
+test('AgentInspector [MODEL-HIERARCHY]: suntikan penuh — kimi-k3 Fasa 0 standalone & deepseek-v4-pro semakan + deepseek-v4.1-flash sandaran', () => {
+    const bare = new AgentInspector({ apiKey: 'k', baseUrl: 'https://x.example/v1' });
     assert.equal(bare.preflightModel, '', 'tiada options → Fasa 0 bypass');
     assert.equal(bare.model, '', 'tiada options → Fasa 1 bypass');
-    assert.equal(AGENT_B_DEFAULT_MODEL, '');
-    assert.equal(AGENT_B_PREFLIGHT_MODEL, '');
-    assert.equal(AGENT_B_FALLBACK_MODEL, '');
+    assert.equal(AGENT_INSPECTOR_DEFAULT_MODEL, '');
+    assert.equal(AGENT_INSPECTOR_PREFLIGHT_MODEL, '');
+    assert.equal(AGENT_INSPECTOR_FALLBACK_MODEL, '');
 
-    const inspector = new AgentBInspector({
+    const inspector = new AgentInspector({
         apiKey: 'k',
         baseUrl: 'https://x.example/v1',
         preflightModel: 'kimi-k3',
@@ -1792,16 +1810,16 @@ test('AgentB [MODEL-HIERARCHY]: suntikan penuh — kimi-k3 Fasa 0 standalone & d
     assert.equal(inspector.inspectionModel, 'deepseek-v4-pro', 'alias inspectionModel menunjuk model semakan');
 });
 
-test('AgentB: config.js normalisasi agentB — TRINITY FRONTIER (preflight + inspection + fallback)', async () => {
+test('AgentInspector: config.js normalisasi agentInspector — TRINITY FRONTIER (preflight + inspection + fallback)', async () => {
     const { normalizeConfig } = require('../utils/config');
     const savedEnv = {
-        AGENT_B_MODEL: process.env.AGENT_B_MODEL,
-        AGENT_B_PREFLIGHT_MODEL: process.env.AGENT_B_PREFLIGHT_MODEL
+        AGENT_INSPECTOR_MODEL: process.env.AGENT_INSPECTOR_MODEL,
+        AGENT_INSPECTOR_PREFLIGHT_MODEL: process.env.AGENT_INSPECTOR_PREFLIGHT_MODEL
     };
     try {
         // Kes 1: config menang
         const cfg = normalizeConfig({
-            agentB: {
+            agentInspector: {
                 enabled: true,
                 baseUrl: 'https://c.example/v1',
                 apiKey: 'ck',
@@ -1810,33 +1828,41 @@ test('AgentB: config.js normalisasi agentB — TRINITY FRONTIER (preflight + ins
                 fallbackModel: 'm2'
             }
         });
-        assert.equal(cfg.agentB.model, 'm1', 'model = model semakan');
-        assert.equal(cfg.agentB.preflightModel, 'p1', 'preflightModel = model Fasa 0');
-        assert.equal(cfg.agentB.fallbackModel, 'm2');
+        assert.equal(cfg.agentInspector.model, 'm1', 'model = model semakan');
+        assert.equal(cfg.agentInspector.preflightModel, 'p1', 'preflightModel = model Fasa 0');
+        assert.equal(cfg.agentInspector.fallbackModel, 'm2');
 
         // Kes 2: lalai bersih — [HARDCODE-PURGE] tiada lalai statik: semua
         // model kosong (env bersih) → bypass senyap kedua-dua fasa.
-        delete process.env.AGENT_B_MODEL;
-        delete process.env.AGENT_B_PREFLIGHT_MODEL;
+        delete process.env.AGENT_INSPECTOR_MODEL;
+        delete process.env.AGENT_INSPECTOR_PREFLIGHT_MODEL;
         const defaults = normalizeConfig({});
-        assert.equal(defaults.agentB.model, '', 'tiada lalai statik — model kosong');
-        assert.equal(defaults.agentB.preflightModel, '', 'tiada lalai statik — preflight kosong');
-        assert.equal(defaults.agentB.preflightFallbackModel, '', 'fallback Fasa 0 = primer (standalone)');
-        assert.equal(defaults.agentB.fallbackModel, '', 'tiada lalai statik — fallback kosong');
+        assert.equal(defaults.agentInspector.model, '', 'tiada lalai statik — model kosong');
+        assert.equal(defaults.agentInspector.preflightModel, '', 'tiada lalai statik — preflight kosong');
+        assert.equal(defaults.agentInspector.preflightFallbackModel, '', 'fallback Fasa 0 = primer (standalone)');
+        assert.equal(defaults.agentInspector.fallbackModel, '', 'tiada lalai statik — fallback kosong');
 
         // Kes 3: inspectionModel warisan bermigrasi ke 'model'
         const legacy = normalizeConfig({
-            agentB: {
+            agentInspector: {
                 enabled: true,
                 baseUrl: 'https://l.example/v1',
                 apiKey: 'lk',
                 inspectionModel: 'legacy-inspector'
             }
         });
-        assert.equal(legacy.agentB.model, 'legacy-inspector', 'inspectionModel warisan kekal sebagai model semakan');
-        assert.equal(legacy.agentB.inspectionModel, undefined, 'alias warisan dilucutkan daripada struktur tersimpan');
+        assert.equal(
+            legacy.agentInspector.model,
+            'legacy-inspector',
+            'inspectionModel warisan kekal sebagai model semakan'
+        );
+        assert.equal(
+            legacy.agentInspector.inspectionModel,
+            undefined,
+            'alias warisan dilucutkan daripada struktur tersimpan'
+        );
     } finally {
-        for (const key of ['AGENT_B_MODEL', 'AGENT_B_PREFLIGHT_MODEL']) {
+        for (const key of ['AGENT_INSPECTOR_MODEL', 'AGENT_INSPECTOR_PREFLIGHT_MODEL']) {
             if (savedEnv[key] === undefined) delete process.env[key];
             else process.env[key] = savedEnv[key];
         }
@@ -1845,8 +1871,8 @@ test('AgentB: config.js normalisasi agentB — TRINITY FRONTIER (preflight + ins
 
 // ── 15. TRINITY POWERHOUSE (Mandat Frontier 2026-09-26) ──
 
-test('AgentB: [MODEL-HIERARCHY] FINAL — Fasa 0 dihalakan ke kimi-k3 (retry-same-model), semakan ke deepseek-v4-pro (dua hierarki berasingan)', async () => {
-    const inspector = new AgentBInspector({
+test('AgentInspector: [MODEL-HIERARCHY] FINAL — Fasa 0 dihalakan ke kimi-k3 (retry-same-model), semakan ke deepseek-v4-pro (dua hierarki berasingan)', async () => {
+    const inspector = new AgentInspector({
         apiKey: 'k',
         baseUrl: 'https://x.example/v1',
         model: 'deepseek-v4-pro',
@@ -1888,8 +1914,8 @@ test('AgentB: [MODEL-HIERARCHY] FINAL — Fasa 0 dihalakan ke kimi-k3 (retry-sam
     );
 });
 
-test('AgentB: TRINITY — hot-swap utama tersuai + sandaran tersuai (Fasa 0 kekal standalone)', () => {
-    const inspector = new AgentBInspector({
+test('AgentInspector: TRINITY — hot-swap utama tersuai + sandaran tersuai (Fasa 0 kekal standalone)', () => {
+    const inspector = new AgentInspector({
         apiKey: 'k',
         baseUrl: 'https://x.example/v1',
         model: 'glm-5.3-flashx',
@@ -1907,11 +1933,11 @@ test('AgentB: TRINITY — hot-swap utama tersuai + sandaran tersuai (Fasa 0 keka
 
 // ── 16. KETELUSAN LOG + MUATAN HTTP SEBENAR (Mandat Universal Payload §C) ──
 
-test('AgentB: log PASSED berformat mandat — [AgentB] Batch X/Y inspection: PASSED (valid: true) [glm-5.3] (...ms)', async () => {
+test('AgentInspector: log PASSED berformat mandat — [AgentInspector] Batch X/Y inspection: PASSED (valid: true) [glm-5.3] (...ms)', async () => {
     const log = require('../utils/logger');
-    const inspector = new AgentBInspector({
+    const inspector = new AgentInspector({
         apiKey: 'test-key',
-        baseUrl: 'https://agentb.example.com/v1',
+        baseUrl: 'https://agent-inspector.example.com/v1',
         model: 'deepseek-v4-pro'
     });
     inspector.translateSubtitle = async () => '{"valid":true}';
@@ -1936,7 +1962,7 @@ test('AgentB: log PASSED berformat mandat — [AgentB] Batch X/Y inspection: PAS
         const passedLog = captured.find((l) => l.includes('PASSED'));
         assert.ok(passedLog, 'log PASSED mesti dicetak pada INFO');
         assert.ok(
-            passedLog.startsWith('[AgentB] Batch 1/1 inspection: PASSED (valid: true) [deepseek-v4-pro] ('),
+            passedLog.startsWith('[AgentInspector] Batch 1/1 inspection: PASSED (valid: true) [deepseek-v4-pro] ('),
             'format mandat: prefix + model deepseek-v4-pro tepat dicatatkan'
         );
         assert.ok(/\(\d+ms\)$/.test(passedLog), 'latensi ms mesti dicatatkan dalam kurungan');
@@ -1945,11 +1971,11 @@ test('AgentB: log PASSED berformat mandat — [AgentB] Batch X/Y inspection: PAS
     }
 });
 
-test('AgentB: log Pre-Flight berformat mandat — [SubFaberPreflight] Running pre-flight semantic pass (N entries) [kimi-k3]', async () => {
+test('AgentInspector: log Pre-Flight berformat mandat — [SubFaberPreflight] Running pre-flight semantic pass (N entries) [kimi-k3]', async () => {
     const log = require('../utils/logger');
-    const inspector = new AgentBInspector({
+    const inspector = new AgentInspector({
         apiKey: 'test-key',
-        baseUrl: 'https://agentb.example.com/v1',
+        baseUrl: 'https://agent-inspector.example.com/v1',
         preflightModel: 'kimi-k3'
     });
     inspector.translateSubtitle = async () => JSON.stringify({ theme: 'Theme.', terms: [] });
@@ -1978,11 +2004,11 @@ test('AgentB: log Pre-Flight berformat mandat — [SubFaberPreflight] Running pr
     }
 });
 
-test('AgentB: [PAYLOAD-GODTIER] muatan HTTP sebenar (axios.post, stream SSE) — payload 4-kunci pada Fasa 1 (temp 0.0 + stream true, TIADA extra_body/reasoning_effort/max_tokens/response_format/top_p)', async () => {
+test('AgentInspector: [PAYLOAD-GODTIER] muatan HTTP sebenar (axios.post, stream SSE) — payload 4-kunci pada Fasa 1 (temp 0.0 + stream true, TIADA extra_body/reasoning_effort/max_tokens/response_format/top_p)', async () => {
     const axios = require('axios');
-    const inspector = new AgentBInspector({
+    const inspector = new AgentInspector({
         apiKey: 'test-key',
-        baseUrl: 'https://agentb.example.com/v1',
+        baseUrl: 'https://agent-inspector.example.com/v1',
         model: 'deepseek-v4-pro'
     });
 
@@ -2058,16 +2084,16 @@ test('AgentB: [PAYLOAD-GODTIER] muatan HTTP sebenar (axios.post, stream SSE) —
 
 // ── 17. BETA RUN 9 — PENYATUAN DEEPSEEK STACK & HIERARKI KEBENARAN ──
 
-test('AgentB: MANDAT v5 — Pre-Flight kimi-k3 (suntikan dinamik) dengan timeout 5 minit', () => {
-    const inspector = new AgentBInspector({ apiKey: 'k', baseUrl: 'https://x.example/v1', preflightModel: 'kimi-k3' });
+test('AgentInspector: MANDAT v5 — Pre-Flight kimi-k3 (suntikan dinamik) dengan timeout 5 minit', () => {
+    const inspector = new AgentInspector({ apiKey: 'k', baseUrl: 'https://x.example/v1', preflightModel: 'kimi-k3' });
     // (a) Pre-Flight menerima kimi-k3 melalui suntikan konfigurasi.
     assert.equal(inspector.preflightModel, 'kimi-k3', 'Fasa 0 menerima kimi-k3 (MANDAT v5, dinamik)');
-    assert.equal(AGENT_B_PREFLIGHT_MODEL, '');
-    assert.equal(AGENT_B_PREFLIGHT_TIMEOUT_MS, 300000, 'Fasa 0 timeout 5 minit (MANDAT OPERASI MUTLAK v2)');
-    assert.equal(AGENT_B_INSPECTION_TIMEOUT_MS, 300000, 'Fasa 1 5 minit (MANDAT OPERASI MUTLAK v2)');
+    assert.equal(AGENT_INSPECTOR_PREFLIGHT_MODEL, '');
+    assert.equal(AGENT_INSPECTOR_PREFLIGHT_TIMEOUT_MS, 300000, 'Fasa 0 timeout 5 minit (MANDAT OPERASI MUTLAK v2)');
+    assert.equal(AGENT_INSPECTOR_INSPECTION_TIMEOUT_MS, 300000, 'Fasa 1 5 minit (MANDAT OPERASI MUTLAK v2)');
     assert.equal(inspector.translationTimeout, 300000, 'baseline instance 5 minit');
     // (b) Override env berfungsi (integer ms positif sahaja).
-    const override = new AgentBInspector({
+    const override = new AgentInspector({
         apiKey: 'k',
         baseUrl: 'https://x.example/v1',
         preflightTimeoutMs: 420000,
@@ -2076,7 +2102,7 @@ test('AgentB: MANDAT v5 — Pre-Flight kimi-k3 (suntikan dinamik) dengan timeout
     assert.equal(override.preflightTimeoutMs, 420000, 'override preflight 420s diterima');
     assert.equal(override.inspectionTimeoutMs, 330000, 'override inspection 330s diterima');
     // (c) Override tidak sah → lalai mandat.
-    const invalid = new AgentBInspector({
+    const invalid = new AgentInspector({
         apiKey: 'k',
         baseUrl: 'https://x.example/v1',
         preflightTimeoutMs: -5,
@@ -2086,9 +2112,9 @@ test('AgentB: MANDAT v5 — Pre-Flight kimi-k3 (suntikan dinamik) dengan timeout
     assert.equal(invalid.inspectionTimeoutMs, 300000, 'override tidak sah → lalai 5 minit');
 });
 
-test('AgentB: [MODEL-HIERARCHY] FINAL — fallback deepseek-v4.1-flash Fasa 1 SAHAJA; Fasa 0 retry kimi-k3', async () => {
+test('AgentInspector: [MODEL-HIERARCHY] FINAL — fallback deepseek-v4.1-flash Fasa 1 SAHAJA; Fasa 0 retry kimi-k3', async () => {
     // Fasa 0: kimi-k3 gagal 5x → fail-open (deepseek-v4.1-flash TIDAK disentuh).
-    const inspector0 = new AgentBInspector({
+    const inspector0 = new AgentInspector({
         apiKey: 'k',
         baseUrl: 'https://x.example/v1',
         model: 'deepseek-v4-pro',
@@ -2096,7 +2122,7 @@ test('AgentB: [MODEL-HIERARCHY] FINAL — fallback deepseek-v4.1-flash Fasa 1 SA
         preflightRetryBackoffMs: 0 // [UPSTREAM-RESILIENCE] lumpuh backoff — ujian pantas
     });
     assert.deepEqual(inspector0.preflightHierarchy, ['kimi-k3'], 'preflightHierarchy = [kimi-k3] SAHAJA');
-    assert.equal(AGENT_B_FALLBACK_MODEL, '');
+    assert.equal(AGENT_INSPECTOR_FALLBACK_MODEL, '');
 
     const calls0 = [];
     inspector0.translateSubtitle = async function () {
@@ -2112,7 +2138,7 @@ test('AgentB: [MODEL-HIERARCHY] FINAL — fallback deepseek-v4.1-flash Fasa 1 SA
     );
 
     // Fasa 1: deepseek-v4-pro gagal → deepseek-v4.1-flash menyelamatkan.
-    const inspector1 = new AgentBInspector({
+    const inspector1 = new AgentInspector({
         apiKey: 'k',
         baseUrl: 'https://x.example/v1',
         model: 'deepseek-v4-pro',
@@ -2136,7 +2162,7 @@ test('AgentB: [MODEL-HIERARCHY] FINAL — fallback deepseek-v4.1-flash Fasa 1 SA
     assert.deepEqual(calls1, ['deepseek-v4-pro', 'deepseek-v4.1-flash'], 'Fasa 1 beralih ke deepseek-v4.1-flash');
 });
 
-test('AgentB: BETA RUN 9 — hierarki kebenaran hadir dalam suntikan konteks kelompok Agent A', () => {
+test('AgentInspector: BETA RUN 9 — hierarki kebenaran hadir dalam suntikan konteks kelompok Agent Translation', () => {
     const TranslationEngine = require('./translationEngine');
     const dummyGemini = {
         translateSubtitle: async () => '',

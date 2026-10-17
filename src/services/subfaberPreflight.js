@@ -21,12 +21,12 @@
  *     panggilan Fasa 0 kekal murah (~12k token input max).
  *   - SIFAR PERUBAHAN KOD RAPUH (Mandat Beta Run 8): tiada hardcoding teks
  *     kredit dalam peraturan batch — pengesanan kredit 100% delegasi kepada
- *     enjin Fasa 0 melalui arahan Pre-Flight; Agent A menerima hanya hasil
+ *     enjin Fasa 0 melalui arahan Pre-Flight; Agent Translation menerima hanya hasil
  *     JSON terurai.
  *   - DISIPLIN BUKTI (Mandat BETA RUN 9 — Anti 'Upstream Error Propagation'):
  *     Pre-Flight DILARANG meneka maklumat watak/gelaran tanpa bukti teks
  *     eksplisit (FACT VS INFERENCE DISCIPLINE). Racun tekaan tidak menular
- *     ke Agent A kerana Agent A diikat oleh HIERARCHY OF TRUTH (dialog
+ *     ke Agent Translation kerana Agent Translation diikat oleh HIERARCHY OF TRUTH (dialog
  *     sumber mengatasi andaian Pre-Flight).
  *
  * Formula: VideoLingo get_summary_prompt (Otak/Persona) — diadaptasi untuk
@@ -34,7 +34,7 @@
  *
  * Sejarah penalaan (dikekalkan sebagai kontrak regresi):
  *   - BETA RUN 7 (2026-09-27, Preflight Coherence Tune): medan 'theme' DIKUNCI
- *     kepada Bahasa Inggeris (elak 'framing interference' pada Agent A) —
+ *     kepada Bahasa Inggeris (elak 'framing interference' pada Agent Translation) —
  *     kini digabungkan ke dalam TIANG 1 skema 4-tiang; gelaran watak pula
  *     dinaik taraf menjadi TIANG 3 "characters" (canonical_address lock).
  */
@@ -43,7 +43,7 @@ const log = require('../utils/logger');
 // [UNIVERSAL-FIX] Target-conditional prompt composition — pack di-resolve
 // mengikut bahasa sasaran (Malay → malay.js; lain → generic.js).
 const { getLanguagePack } = require('./prompts/languagePacks');
-// [FASA H 2026-10-07] Sempadan statik/dinamik — sama seperti Agent A
+// [FASA H 2026-10-07] Sempadan statik/dinamik — sama seperti Agent Translation
 // (PROMPT REBUILD v2). Bahagian STATIK (Role → Task + nota format input +
 // skema output + FINAL CHECK) dibawa sebagai saluran system; input DINAMIK
 // (<text> SRT) sebagai saluran user. Ground truth Fasa G (eksperimen
@@ -66,7 +66,7 @@ const PREFLIGHT_MIN_ENTRIES = 10;
 // [UNBOUNDED-CONTEXT 2026-09-29] Siling lama 15 istilah / 12 watak /
 // 10 kredit DIGUGURKAN sepenuhnya — konteks 4-tiang kini TIDAK dihad dari
 // sisi parser. Sebab pembaikan: rantaian pemotongan (preflight 15 ->
-// inspection 10) menyebabkan Agent B mengaudit atas konteks separuh jalan
+// inspection 10) menyebabkan Agent Inspector mengaudit atas konteks separuh jalan
 // sahaja. Model Fasa 0 kini menentukan sendiri kedalaman analisis; SEMUA
 // entri sah dipulangkan.
 
@@ -112,9 +112,9 @@ function sampleEntriesForPreflight(entries) {
  * Prompt ringkas — dihantar sebagai flat user prompt (konsisten v1.6.0 surgery).
  *
  * SIFAR PERUBAHAN KOD RAPUH (Mandat Beta Run 8): tiada teks kredit yang
- * di-hardcode dalam peraturan batch Agent A. Contoh kredit ("Adapted from...")
+ * di-hardcode dalam peraturan batch Agent Translation. Contoh kredit ("Adapted from...")
  * wujud HANYA sebagai arahan pemeriksaan kepada Kimi K3 di sini (Fasa 0) —
- * Agent A menerima terjemahan muktamad melalui data JSON, bukan peraturan.
+ * Agent Translation menerima terjemahan muktamad melalui data JSON, bukan peraturan.
  *
  * [UNIVERSAL-FIX] TARGET-CONDITIONAL ARCHITECTURE (2026-09-28): Prompt ini
  * kini TEMPLATE — matriks honorifik, arahan canonical_address, dan contoh
@@ -149,7 +149,7 @@ function buildPreflightPrompt(rawText, targetLanguage, sourceLanguage) {
     // ~3x (325s -> ~108s), varians runtuh — SAMBIL mengekalkan kualiti Bible
     // (43-44 terms, 14-15 characters, canonical_address Puan/Encik/Cik terkunci
     // 9/14 setiap run). canonical_address KEKAL (gelaran = FAKTA); register kata
-    // ganti kini diputuskan Agent A dari konteks chunk (bukan lock global goyah).
+    // ganti kini diputuskan Agent Translation dari konteks chunk (bukan lock global goyah).
     return `## Role
 You are a video translation expert and terminology consultant, specializing in ${src} comprehension and ${tgt} expression optimization.
 
@@ -382,7 +382,7 @@ function parsePreflightResponse(responseText) {
             if (!name) continue;
             // MANDAT SOSIOLINGUISTIK 2026-09-27: nilai null dikekalkan SEBAGAI null
             // (fallback lama `|| name` memadam isyarat "tidak dikunci" — punca akar
-            // ketirisan gelaran Ms.→Cik; Agent A kini menerima isyarat NOT LOCKED).
+            // ketirisan gelaran Ms.→Cik; Agent Translation kini menerima isyarat NOT LOCKED).
             const rawAddress = character['canonical_address'];
             const legacyAddress = character['canonicalAddress'];
             const resolvedAddress =
@@ -467,7 +467,7 @@ function formatPreflightForPrompt(preflightContext, targetLanguage) {
                 if (!name) return '';
                 // MANDAT SOSIOLINGUISTIK 2026-09-27: null canonical_address mesti
                 // dirender sebagai isyarat NOT LOCKED (bukan nama mentah) supaya
-                // Agent A boleh menilai gelaran daripada konteks dialog chunk itu.
+                // Agent Translation boleh menilai gelaran daripada konteks dialog chunk itu.
                 const rawAddress = c && typeof c === 'object' ? c.canonical_address : undefined;
                 const legacyAddress = c && typeof c === 'object' ? c.canonicalAddress : undefined;
                 const hasAddress =

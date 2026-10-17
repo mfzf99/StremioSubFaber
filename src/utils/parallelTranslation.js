@@ -148,12 +148,12 @@ async function executeParallelTranslation(engine, entries, targetLanguage, custo
                 keyRotationRetries: 0,
                 errorTypes: [],
                 jsonXmlFallback: false,
-                // DUAL-AI (Mandat 2026-09-26): Agent B counters — zeroed supaya
+                // DUAL-AI (Mandat 2026-09-26): Agent Inspector counters — zeroed supaya
                 // merge-back additive ke stats enjin induk.
-                agentBUsed: false,
-                agentBFailures: 0,
-                agentBInspections: 0,
-                agentBRetries: 0
+                agentInspectorUsed: false,
+                agentInspectorFailures: 0,
+                agentInspectorInspections: 0,
+                agentInspectorRetries: 0
             };
         }
 
@@ -189,15 +189,16 @@ async function executeParallelTranslation(engine, entries, targetLanguage, custo
                 es.keyRotationRetries += ws.keyRotationRetries || 0;
                 es.missingEntries += ws.missingEntries || 0;
                 es.recoveredEntries += ws.recoveredEntries || 0;
-                // DUAL-AI: Agent B counters (additive)
-                es.agentBFailures = (es.agentBFailures || 0) + (ws.agentBFailures || 0);
-                es.agentBInspections = (es.agentBInspections || 0) + (ws.agentBInspections || 0);
-                es.agentBRetries = (es.agentBRetries || 0) + (ws.agentBRetries || 0);
+                // DUAL-AI: Agent Inspector counters (additive)
+                es.agentInspectorFailures = (es.agentInspectorFailures || 0) + (ws.agentInspectorFailures || 0);
+                es.agentInspectorInspections =
+                    (es.agentInspectorInspections || 0) + (ws.agentInspectorInspections || 0);
+                es.agentInspectorRetries = (es.agentInspectorRetries || 0) + (ws.agentInspectorRetries || 0);
                 // Merge boolean flags
                 if (ws.usedSecondaryProvider) es.usedSecondaryProvider = true;
                 if (ws.mismatchDetected) es.mismatchDetected = true;
                 if (ws.jsonXmlFallback) es.jsonXmlFallback = true;
-                if (ws.agentBUsed) es.agentBUsed = true;
+                if (ws.agentInspectorUsed) es.agentInspectorUsed = true;
                 if (ws.secondaryProviderName && !es.secondaryProviderName)
                     es.secondaryProviderName = ws.secondaryProviderName;
                 if (ws.primaryFailureReason && !es.primaryFailureReason)

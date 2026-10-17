@@ -4,7 +4,7 @@
  * Menggunakan node:test (corak projek). Kontrak daripada mandat 2026-09-27:
  *   1. Preflight prompt: medan 'theme' DIKUNCI kepada Bahasa Inggeris
  *      (2-3 ayat: narrative arc, setting, stakes) — elak 'framing
- *      interference' pada Agent A yang menerima sistem arahan Inggeris.
+ *      interference' pada Agent Translation yang menerima sistem arahan Inggeris.
  *   2. Preflight prompt: Matriks Gelaran Watak (honorific consistency) —
  *      'terms' WAJIB mengunci gelaran rasmi watak berulang (Puan Shen vs
  *      Cik Shen mesti konsisten; Ms. / Mr. / Uncle / Aunt).
@@ -276,8 +276,8 @@ test('BetaRun7: opening-credit translation rules remain UNTOUCHED (Plan 2 deferr
     );
 });
 
-test('BetaRun8: engine renders all four preflight pillars into the Agent A context block', () => {
-    // Kontrak suntikan konteks Agent A (translationEngine._formatPreflightForChunk):
+test('BetaRun8: engine renders all four preflight pillars into the Agent Translation context block', () => {
+    // Kontrak suntikan konteks Agent Translation (translationEngine._formatPreflightForChunk):
     // Theme + Technical Glossary + Character Hierarchy + Opening Credits / Titles.
     const provider = { translateSubtitle: async () => '', estimateTokenCount: () => 10 };
     const engine = new TranslationEngine(provider, 'gemini-2.5-flash', {}, { providerName: 'gemini' });

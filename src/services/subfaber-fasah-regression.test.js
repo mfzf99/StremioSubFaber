@@ -13,7 +13,7 @@
  * Kontrak yang dikunci ujian ini:
  *   1. buildPreflightPrompt membawa sempadan; split menghasilkan system
  *      bersih (tanpa dialog) + user bersih (tanpa arahan statik).
- *   2. AgentBInspector.buildUserPrompt melakukan split untuk prompt
+ *   2. AgentInspector.buildUserPrompt melakukan split untuk prompt
  *      bersempadan (Pre-Flight) dan memelihara laluan lama (inspection).
  *   3. buildChatRequest (universalPayload) membina messages [system, user]
  *      bila meta.systemPrompt tidak kosong — dan [user] tunggal tanpanya.
@@ -23,7 +23,7 @@ const test = require('node:test');
 const assert = require('node:assert');
 
 const { buildPreflightPrompt, buildPreflightRawText, sampleEntriesForPreflight } = require('./subfaberPreflight');
-const { AgentBInspector } = require('./agentBInspector');
+const { AgentInspector } = require('./agentInspector');
 const OpenAICompatibleProvider = require('./providers/openaiCompatible');
 const { SUBFABER_PROMPT_BOUNDARY, splitStructuredPrompt } = require('./utils/structuredPrompt');
 
@@ -70,16 +70,16 @@ test('FASA H: prompt lama tanpa sempadan tidak dipecah (backward-compat)', () =>
     assert.equal(parts, null, 'unstructured prompt returns null (legacy path intact)');
 });
 
-// ── 2. AgentBInspector.buildUserPrompt: split untuk preflight, legacy untuk inspection ──
+// ── 2. AgentInspector.buildUserPrompt: split untuk preflight, legacy untuk inspection ──
 function makeInspector() {
-    return new AgentBInspector({
+    return new AgentInspector({
         apiKey: 'k',
         baseUrl: 'https://x.example/v1',
         model: 'deepseek-v4-pro'
     });
 }
 
-test('FASA H: AgentBInspector.buildUserPrompt splits structured preflight prompt', () => {
+test('FASA H: AgentInspector.buildUserPrompt splits structured preflight prompt', () => {
     const inspector = makeInspector();
     const preflightPrompt = `STATIC INSTRUCTIONS BLOCK\n${SUBFABER_PROMPT_BOUNDARY}\n<text>\nDialogue.\n</text>\nApply the tasks above.`;
     const data = inspector.buildUserPrompt('unused', 'Malay', preflightPrompt);
@@ -93,7 +93,7 @@ test('FASA H: AgentBInspector.buildUserPrompt splits structured preflight prompt
     assert.equal(data.isSelfContained, true, 'self-contained contract preserved');
 });
 
-test('FASA H: AgentBInspector.buildUserPrompt keeps legacy single-message path for inspection prompts', () => {
+test('FASA H: AgentInspector.buildUserPrompt keeps legacy single-message path for inspection prompts', () => {
     const inspector = makeInspector();
     const inspectionPayload = 'INSPECTOR_INSTRUCTION verbatim — no boundary here';
     const data = inspector.buildUserPrompt('unused', 'Malay', inspectionPayload);
@@ -143,7 +143,7 @@ test('FASA H: universal buildChatRequest keeps single user message without meta.
 });
 
 test('FASA H: end-to-end preflight payload — split → buildChatRequest messages', () => {
-    // Simulasi penuh laluan runtime Fasa 0: prompt produksi → Agent B
+    // Simulasi penuh laluan runtime Fasa 0: prompt produksi → Agent Inspector
     // buildUserPrompt → buildChatRequest(universalPayload).
     const entries = Array.from({ length: 12 }, (_, i) => ({
         id: i + 1,

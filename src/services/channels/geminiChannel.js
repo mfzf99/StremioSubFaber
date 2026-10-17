@@ -37,7 +37,7 @@ function buildRequest({ model, userPrompt, systemPrompt = '', maxOutputTokens = 
     const { thinkingLevel, ...rest } = advancedSettings;
     const svc = new GeminiService('channel-dummy-key', String(model || '').trim() || 'gemini-2.5-flash', {
         // Non-stream + tiada retry pada lapisan channel (retry diuruskan
-        // _callWithFailover AgentB — pariti dengan maxRetries:0 openaiChannel).
+        // _callWithFailover AgentInspector — pariti dengan maxRetries:0 openaiChannel).
         maxRetries: 0,
         ...(thinkingLevel !== undefined ? { thinkingLevel } : { thinkingLevel: 'low' }),
         ...rest
@@ -66,17 +66,17 @@ function buildRequest({ model, userPrompt, systemPrompt = '', maxOutputTokens = 
 }
 
 /**
- * Bina transport GeminiService duck-typed untuk delegasi AgentB.
+ * Bina transport GeminiService duck-typed untuk delegasi AgentInspector.
  * translateSubtitle(content, source, target, customPrompt) menerima customPrompt
  * bersempadan SUBFABER_PROMPT_BOUNDARY → split system/user dijalankan dalaman.
  *
- * @param {Object} options - Constructor options AgentBInspector
+ * @param {Object} options - Constructor options AgentInspector
  * @returns {GeminiService}
  */
 function buildProvider(options = {}) {
     const model = String(options.model || options.preflightModel || 'gemini-2.5-flash').trim();
     return new GeminiService(options.apiKey || '', model, {
-        maxRetries: 0, // Fail fast — retry dikendalikan _callWithFailover AgentB
+        maxRetries: 0, // Fail fast — retry dikendalikan _callWithFailover AgentInspector
         thinkingLevel: options.thinkingLevel || 'low' // empirikal Fasa 0: low = 6.4s, high DQ 300s
     });
 }

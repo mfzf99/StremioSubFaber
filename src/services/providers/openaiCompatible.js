@@ -17,18 +17,18 @@ const {
 } = require('../../utils/providerAuthFailureCache');
 
 // ═══ MANDAT OPERASI MUTLAK v3 2026-09-27 (pembetulan Project Owner) ═══
-// [AUDIT-WARISAN 2026-09-29] env AGENT_B_MAX_TOKENS → constant
-// AGENT_B_BEAST_MAX_TOKENS kini LALAI SAHAJA (legacy-only, no-op):
+// [AUDIT-WARISAN 2026-09-29] env AGENT_INSPECTOR_MAX_TOKENS → constant
+// AGENT_INSPECTOR_BEAST_MAX_TOKENS kini LALAI SAHAJA (legacy-only, no-op):
 // muatan universal [PAYLOAD-GODTIER] 4-kunci TIDAK membawa max_tokens
 // langsung (pencetus overthinking + istilah kritikal tergugur — siling
 // token dikendalikan oleh lalai pelayan). Nilai masih di-parse dan
 // disimpan ke this.beastMaxTokens untuk keserasian warisan, tetapi TIDAK
 // dibaca oleh sebarang laluan aktif. Sejarah v3: 131072 (128K).
-const parseAgentBMaxTokens = (raw, fallback) => {
+const parseAgentInspectorMaxTokens = (raw, fallback) => {
     const parsed = parseInt(raw, 10);
     return Number.isFinite(parsed) && parsed > 0 ? parsed : fallback;
 };
-const AGENT_B_BEAST_MAX_TOKENS = parseAgentBMaxTokens(process.env.AGENT_B_MAX_TOKENS, 131072);
+const AGENT_INSPECTOR_BEAST_MAX_TOKENS = parseAgentInspectorMaxTokens(process.env.AGENT_INSPECTOR_MAX_TOKENS, 131072);
 // [UPSTREAM-RESILIENCE 2026-09-29] Parser tetapan stall-watchdog aliran SSE.
 // Menerima 0 EKSPLISIT (melumpuhkan watchdog) — dibezakan daripada nilai
 // hilang/tak sah yang jatuh ke fallback. Integer ms >= 0 sahaja.
@@ -57,8 +57,8 @@ class OpenAICompatibleProvider {
         // tidak pernah dibaca — builder universal (universalPayload=true) tidak
         // membawa max_tokens; laluan terjemahan warisan pula menggunakan
         // maxOutputTokens (getCappedMaxOutputTokens). Dikekalkan untuk
-        // keserasian kontrak AgentBInspector (options.beastMaxTokens).
-        this.beastMaxTokens = parseAgentBMaxTokens(options.beastMaxTokens, AGENT_B_BEAST_MAX_TOKENS);
+        // keserasian kontrak AgentInspector (options.beastMaxTokens).
+        this.beastMaxTokens = parseAgentInspectorMaxTokens(options.beastMaxTokens, AGENT_INSPECTOR_BEAST_MAX_TOKENS);
         this.presencePenalty = options.presencePenalty;
         // [MANDAT OWNER 2026-10-16 — SEND-ALL DOCTRINE] frequencyPenalty kini
         // diserialisasi kepada pintu openai-compatible (dahulu gap: dinormalisasi
@@ -78,7 +78,7 @@ class OpenAICompatibleProvider {
         this.enableJsonOutput = options.enableJsonOutput === true;
         // ═══ UNIVERSAL PAYLOAD FLAG (Mandat Seni Bina Universal Payload
         // 2026-09-26): apabila true, buildChatRequest membina muatan seragam
-        // { model, temperature: 0.0, messages } — digunakan oleh Agent B.
+        // { model, temperature: 0.0, messages } — digunakan oleh Agent Inspector.
         this.universalPayload = options.universalPayload === true;
         // [UPSTREAM-RESILIENCE v2 2026-09-29] DUA watchdog aliran SSE berasingan:
         //
@@ -181,7 +181,7 @@ class OpenAICompatibleProvider {
      *                (deterministik mutlak, sifar kreativiti).
      * PENGGUNA AKTIF: laluan terjemahan warisan sahaja — buildChatRequest
      * TANPA universalPayload (semua provider kilang: openai/xai/deepseek/
-     * mistral/openrouter/cfworkers/custom). Laluan Agent B
+     * mistral/openrouter/cfworkers/custom). Laluan Agent Inspector
      * (universalPayload=true) TIDAK melalui kaedah ini (builder 4-kunci
      * god-tier return awal).
      * @param {Object} body - Payload chat/completions (dimutasi secara langsung)
@@ -311,7 +311,7 @@ class OpenAICompatibleProvider {
      * [AUDIT 2026-09-29] MASIH AKTIF — BUKAN warisan: dipanggil oleh
      * buildChatRequest (laluan warisan) bagi SEMUA provider terjemahan kilang
      * (openai/xai/deepseek/mistral/openrouter/cfworkers/custom) — iaitu enjin
-     * terjemahan utama (Agent A). Laluan Agent B (universalPayload=true)
+     * terjemahan utama (Agent Translation). Laluan Agent Inspector (universalPayload=true)
      * TIDAK melalui kaedah ini (builder 4-kunci god-tier return awal).
      * Oleh itu JANGAN tandakan @deprecated.
      */
@@ -443,7 +443,7 @@ class OpenAICompatibleProvider {
         // 🎯 1:1 Pariti Mutlak dengan Gemini — DAN [FASA H 2026-10-07] pemisahan
         // saluran system/user (varian G1 Fasa G, ground truth empirikal kimi-k3):
         // bila pemanggil membawa meta.systemPrompt (prompt bersempadan
-        // SUBFABER_PROMPT_BOUNDARY — Pre-Flight Agent B, atau Agent A fallback
+        // SUBFABER_PROMPT_BOUNDARY — Pre-Flight Agent Inspector, atau Agent Translation fallback
         // melalui splitStructuredPrompt), arahan STATIK dihantar sebagai mesej
         // system (bobot arahan lebih tinggi: terms Jaccard 0.47→0.72, null
         // spread 20pt→7pt) dan hanya data DINAMIK sebagai mesej user. Tanpa
@@ -463,7 +463,7 @@ class OpenAICompatibleProvider {
               ];
 
         // ═══ [PAYLOAD-GODTIER] UNIVERSAL PAYLOAD BUILDER (4-KUNCI STREAMING, 2026-09-28) ═══
-        // Payload builder bagi Agent B (Fasa 0 Pre-Flight + Fasa B Inspection —
+        // Payload builder bagi Agent Inspector (Fasa 0 Pre-Flight + Fasa B Inspection —
         // endpoint yang sama). Ground truth empirikal (curl terus ke gateway
         // rootsys.cloud, Kimi K3, SRT 759 baris): muatan 7-kunci lama GAGAL
         // SEPENUHNYA (timeout Caddy 300s — tiada streaming), manakala muatan
@@ -471,7 +471,7 @@ class OpenAICompatibleProvider {
         //   { model, messages, stream: true, temperature: 0.0 }
         //   - stream:true  → chunk SSE menghidupkan sambungan Caddy → siling
         //     keras 300s gateway tidak lagi membunuh giliran penaakulan panjang.
-        //     STREAMING WAJIB bagi setiap panggilan Agent B (Fasa 0 + Fasa B).
+        //     STREAMING WAJIB bagi setiap panggilan Agent Inspector (Fasa 0 + Fasa B).
         //   - temperature:0.0 → varians 61s → 19s (deterministik).
         //   - extra_body.thinking / reasoning_effort / max_tokens /
         //     response_format ialah PENCETUS OVERTHINKING terbukti (+90-110s
@@ -482,13 +482,13 @@ class OpenAICompatibleProvider {
         //     (stripReasoningTags + resilientParseJson / parseInspectorResponse),
         //     BUKAN oleh response_format.
         //   - Siling masa: diuruskan pada lapisan axios (translationTimeout,
-        //     lalai Agent B 300000ms = tepat siling Caddy) — bukan pada muatan.
+        //     lalai Agent Inspector 300000ms = tepat siling Caddy) — bukan pada muatan.
         if (this.universalPayload === true) {
             const universalBody = {
                 model: this.model,
                 messages,
                 // [PAYLOAD-GODTIER] 4-kunci TEPAT: {model, messages, stream, temperature}.
-                // Laluan sebenar Agent B (translateSubtitle → delegasi SSE) sentiasa
+                // Laluan sebenar Agent Inspector (translateSubtitle → delegasi SSE) sentiasa
                 // memanggil builder ini dengan stream=true — STREAMING WAJIB untuk
                 // mengalahkan siling keras Caddy 300s. Bentuk stream:false hanya
                 // wujud pada laluan fallback apabila endpoint membuktikan ketidak-
@@ -679,7 +679,7 @@ class OpenAICompatibleProvider {
             normalizedTarget
         );
 
-        // [PROMPT REBUILD v2 2026-09-29] Structured split: bila SubFaber Agent A
+        // [PROMPT REBUILD v2 2026-09-29] Structured split: bila SubFaber Agent Translation
         // prompt (dengan SUBFABER_PROMPT_BOUNDARY) mengalir ke provider ini sebagai
         // fallback, pisahkan STATIK (system) daripada DINAMIK (user) supaya arahan
         // tidak dihantar dua kali dan sempadan tidak bocor ke prompt hidup.
@@ -884,7 +884,7 @@ class OpenAICompatibleProvider {
 
     async translateSubtitle(subtitleContent, sourceLanguage, targetLanguage, customPrompt = null, requestOptions = {}) {
         // ═══ [PAYLOAD-GODTIER] STREAMING PROPAGATION (2026-09-28) ═══
-        // Agent B (universalPayload) membina muatan dengan stream:true secara
+        // Agent Inspector (universalPayload) membina muatan dengan stream:true secara
         // MANDATORI (4-kunci god-tier). Respons mesti dihurai melalui laluan SSE
         // — delegasi ke streamTranslateSubtitle (parser SSE sedia ada: proses
         // chunk data:, [DONE], delta.content, raw recovery). Bendera

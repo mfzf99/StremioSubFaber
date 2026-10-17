@@ -2,6 +2,24 @@
 
 All notable changes to this project will be documented in this file.
 
+## SubFaber v3.12.0 (2026-10-17) — TOTAL PURGE: Penyeragaman Taksonomi Trinity (Agent Preflight / Agent Translation / Agent Inspector)
+
+### Changed
+
+- **[MANDAT OWNER — TOTAL PURGE] Penamaan ejen Trinity diseragamkan sepenuhnya merentas kod, konfigurasi, ujian & dokumentasi aktif:** "Agent A" → **Agent Translation**; "Agent B" → **Agent Inspector** (selari taksonomi rasmi [docs/ENGINE_COMPONENT_TAXONOMY.md](docs/ENGINE_COMPONENT_TAXONOMY.md)). CLEAN CUT RENAME tanpa lapisan backward-compat legasi (`agentB`) — kelulusan eksplisit Owner atas laporan audit penuh (34 fail).
+- **Nama fail fizikal (git mv, membatalkan sempadan pengecualian taksonomi 2026-10-09):** `src/services/agentBInspector.js` → `src/services/agentInspector.js`; `src/services/agentB-inspector-regression.test.js` → `src/services/agent-inspector-regression.test.js`; `src/services/agentb-observability-regression.test.js` → `src/services/agent-inspector-observability-regression.test.js`. Semua laluan `require()` di seluruh repositori dikemas kini (termasuk entri `test:tracked` package.json).
+- **Kontrak konfigurasi CLEAN CUT (breaking change selaras kelulusan Owner #1):** blok konfig `agentB.*` → `agentInspector.*` ([src/utils/config.js](src/utils/config.js), [src/handlers/subtitles.js](src/handlers/subtitles.js), [src/services/translationEngine.js](src/services/translationEngine.js)); payload HTTP `providerName: 'agentb'` → `'agent-inspector'` ([src/services/channels/openaiChannel.js](src/services/channels/openaiChannel.js)); kontrak payload UI `patch.agentB` → `patch.agentInspector` ([public/js/trinity-agents.js](public/js/trinity-agents.js), [public/config.js](public/config.js) — izin rentas domain Owner).
+- **Pemboleh ubah persekitaran:** `AGENT_B_*` × 10 → `AGENT_INSPECTOR_*` ([src/utils/config.js](src/utils/config.js), [src/services/agentInspector.js](src/services/agentInspector.js), [src/services/providers/openaiCompatible.js](src/services/providers/openaiCompatible.js), [.env.example](.env.example)).
+- **Penamaan runtime:** kelas `AgentBInspector` → `AgentInspector`; konstanta `AGENT_B_*` × 15 → `AGENT_INSPECTOR_*`; telemetri `agentB*` × 11 → `agentInspector*` (translationEngine + parallelTranslation merge-back); insiden `AGENT_B_SEMANTIC_RETRY` → `AGENT_INSPECTOR_SEMANTIC_RETRY`; format log `[AgentB]` → `[AgentInspector]`; instance enjin `this.agentB` → `this.agentInspector`.
+- **Ujian regresi:** ~375 assertion merentas 11 fail ujian diselaraskan serentak dengan penamaan baharu — sifar perubahan semantik (identikal assertion, hanya identifier/string).
+- **Dokumentasi teknikal aktif dikemas kini:** [.env.example](.env.example), [docs/ENGINE_COMPONENT_TAXONOMY.md](docs/ENGINE_COMPONENT_TAXONOMY.md), README (tiada padanan). Arkib sejarah ([CHANGELOG.md](CHANGELOG.md) entri lama, [docs/SESSION_LEDGER.md](docs/SESSION_LEDGER.md), [plans/*.md](plans/)) KEKAL VERBATIM sebagai rekod sejarah — tafsiran melalui pemetaan taksonomi §2.
+
+### Preserved
+
+- **Sifar perubahan tingkah laku runtime** — purge penamaan tulen (identifier/string/komen); logik enjin, hierarki model, payload god-tier 4-kunci, circuit breaker, graceful bypass, dan kontrak Trinity params tidak disentuh strukturnya.
+- **Verifikasi ZERO-HIT:** `git grep -iE "agent[ _-]?[ab]|agentb"` pada `src/ public/ index.js package.json .env.example docs/ENGINE_COMPONENT_TAXONOMY.md README.md` = **0 padanan**.
+- **Baseline ujian terpelihara:** `npm test` = **428 total / 427 PASS / 0 FAIL / 1 SKIP** (monotonic ≥ 428). Prettier PASS (1 warn pra-wujud `.prettierrc`); ESLint 0 error (223 warning pra-wujud).
+
 ## SubFaber v3.11.1 (2026-10-17) — Fresh-State Gate: Trinity Model Parameters Placeholder
 
 ### Fixed

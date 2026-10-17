@@ -20,7 +20,7 @@ const genericPack = {
     /**
      * P1 pillar-3 injection: language-neutral honorific locking directive.
      * Keeps the "lock one canonical title per recurring entity" discipline
-     * (needed for Agent B SHIFT/consistency audits) without any Malay mapping.
+     * (needed for Agent Inspector SHIFT/consistency audits) without any Malay mapping.
      * [KNP-ALIGNMENT 2026-10-07] Directive dipindah ke tiang characters —
      * sifar arahan gelaran watak dalam terms (doktrin Netflix KNP).
      */
@@ -49,7 +49,7 @@ const genericPack = {
      * P2 injection: language-neutral few-shot — 2 contoh PARITY-CRITICAL.
      * [PROMPT-SLIM 2026-09-30] 6 → 2 contoh: hanya MERGE + SHIFT (dua
      * jenayah yang merosakkan struktur; yang lain dilindungi rules +
-     * inspection Agent B). UNIVERSAL COMPLIANCE kekal: sifar teks
+     * inspection Agent Inspector). UNIVERSAL COMPLIANCE kekal: sifar teks
      * khusus-bahasa — placeholder + simbol universal sahaja.
      */
     fewShot: `[EXAMPLE 1 — MERGE: keep split sentences and question tags isolated]

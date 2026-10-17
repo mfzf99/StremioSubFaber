@@ -130,8 +130,8 @@ test('P1 Japanese: generic pack — tiada teks BM', () => {
 // ── 4. P2 (translationEngine) — few-shot 2 jenayah PARITY-CRITICAL, target-conditional ──
 // [PROMPT-SLIM 2026-09-30] few-shot dipangkas 6 → 2 contoh (MERGE/SHIFT
 // sahaja — jenayah struktur; PHANTOM/DROP/UNTRANSLATED/REGISTER kekal
-// dilindungi rules V4 + inspection Agent B). Label jenayah kekal pada
-// header supaya pemetaan 1:1 taksonomi Agent B tidak putus.
+// dilindungi rules V4 + inspection Agent Inspector). Label jenayah kekal pada
+// header supaya pemetaan 1:1 taksonomi Agent Inspector tidak putus.
 
 const CRIME_EXAMPLE_HEADERS = ['[EXAMPLE 1 — MERGE:', '[EXAMPLE 2 — SHIFT:'];
 const REMOVED_CRIME_EXAMPLE_HEADERS = [
@@ -257,9 +257,9 @@ test('NOT-LOCKED: Malay → matriks BM; Vietnamese → panduan neutral', () => {
 
 // ── 8. [PAYLOAD-GODTIER] supplementary: SSE propagation + timeout ceiling ──
 
-test('[PAYLOAD-GODTIER]: translateSubtitle Agent B MENGDELEGASI ke laluan SSE (stream:true propagates to fetch)', async () => {
-    const AgentBInspector = require('./agentBInspector').AgentBInspector;
-    const inspector = new AgentBInspector({ apiKey: 'k', baseUrl: 'https://x.example/v1' });
+test('[PAYLOAD-GODTIER]: translateSubtitle Agent Inspector MENGDELEGASI ke laluan SSE (stream:true propagates to fetch)', async () => {
+    const AgentInspector = require('./agentInspector').AgentInspector;
+    const inspector = new AgentInspector({ apiKey: 'k', baseUrl: 'https://x.example/v1' });
 
     let sseUsed = false;
     const { EventEmitter } = require('events');
@@ -286,7 +286,7 @@ test('[PAYLOAD-GODTIER]: translateSubtitle Agent B MENGDELEGASI ke laluan SSE (s
     try {
         // Laluan langsung translateSubtitle (dipakai Fasa 0 & Fasa B)
         const text = await inspector.translateSubtitle('probe', 'en', 'en', 'probe prompt');
-        assert.ok(sseUsed, 'panggilan Agent B melalui SSE (responseType stream)');
+        assert.ok(sseUsed, 'panggilan Agent Inspector melalui SSE (responseType stream)');
         assert.ok(text.includes('SSE ok.'), 'jawapan dihuraikan daripada stream');
     } finally {
         axios.post = originalPost;
@@ -295,13 +295,13 @@ test('[PAYLOAD-GODTIER]: translateSubtitle Agent B MENGDELEGASI ke laluan SSE (s
 
 test('[PAYLOAD-GODTIER]: timeout config hormati siling Caddy — lalai 300000ms, boleh ditindih, tidak sah → lalai', () => {
     const {
-        AGENT_B_PREFLIGHT_TIMEOUT_MS,
-        AGENT_B_INSPECTION_TIMEOUT_MS,
-        AgentBInspector
-    } = require('./agentBInspector');
-    assert.equal(AGENT_B_PREFLIGHT_TIMEOUT_MS, 300000, 'Fasa 0 = siling Caddy 300s');
-    assert.equal(AGENT_B_INSPECTION_TIMEOUT_MS, 300000, 'Fasa 1 = siling Caddy 300s');
-    const over = new AgentBInspector({
+        AGENT_INSPECTOR_PREFLIGHT_TIMEOUT_MS,
+        AGENT_INSPECTOR_INSPECTION_TIMEOUT_MS,
+        AgentInspector
+    } = require('./agentInspector');
+    assert.equal(AGENT_INSPECTOR_PREFLIGHT_TIMEOUT_MS, 300000, 'Fasa 0 = siling Caddy 300s');
+    assert.equal(AGENT_INSPECTOR_INSPECTION_TIMEOUT_MS, 300000, 'Fasa 1 = siling Caddy 300s');
+    const over = new AgentInspector({
         apiKey: 'k',
         baseUrl: 'https://x.example/v1',
         preflightTimeoutMs: 420000,

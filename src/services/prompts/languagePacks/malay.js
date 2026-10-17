@@ -57,7 +57,7 @@ const malayPack = {
      * P2 injection: Malay few-shot examples — 2 contoh PARITY-CRITICAL.
      * [PROMPT-SLIM 2026-09-30] 6 → 2 contoh: hanya MERGE + SHIFT (dua
      * jenayah yang merosakkan struktur fail; PHANTOM/DROP/UNTRANSLATED/
-     * REGISTER sudah dilindungi rules + inspection Agent B). Ini memangkas
+     * REGISTER sudah dilindungi rules + inspection Agent Inspector). Ini memangkas
      * ~350 BPE tok daripada system statik tanpa hilang kuasa parity.
      */
     fewShot: `[EXAMPLE 1 — MERGE: keep split sentences and question tags isolated]

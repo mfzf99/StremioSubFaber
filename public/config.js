@@ -12606,7 +12606,7 @@ Translate to {target_language}.`;
         // atas TIDAK automatik mengalir masuk. Selesaikan di sini:
         //   1. geminiApiKey Trinity Translation MENGATASI input legasi
         //      #geminiApiKey (kad legasi disembunyikan oleh Trinity UI).
-        //   2. Blok trinity + agentB disalin terus ke payload.
+        //   2. Blok trinity + agentInspector disalin terus ke payload.
         const trinityPayload =
             currentConfig.trinity && typeof currentConfig.trinity === 'object' ? currentConfig.trinity : null;
         // [TRINITY→PROVIDER BRIDGE v3.9.49] Jambatan Gemini HANYA sah untuk
@@ -12882,11 +12882,11 @@ Translate to {target_language}.`;
                     ? { ...currentConfig.advancedSettingsByModel }
                     : {},
             // [TRINITY FASA D — Ulasan Backend 2026-10-10] Blok Trinity UI
-            // modular (kad 3 ejen + dwimod) & agentB (Fasa 0/1) dialirkan ke
+            // modular (kad 3 ejen + dwimod) & agentInspector (Fasa 0/1) dialirkan ke
             // payload — tanpa ini, simpanan akan MENGUGURKAN tetapan Trinity.
             ...(trinityPayload ? { trinity: JSON.parse(JSON.stringify(trinityPayload)) } : {}),
-            ...(currentConfig.agentB && typeof currentConfig.agentB === 'object'
-                ? { agentB: JSON.parse(JSON.stringify(currentConfig.agentB)) }
+            ...(currentConfig.agentInspector && typeof currentConfig.agentInspector === 'object'
+                ? { agentInspector: JSON.parse(JSON.stringify(currentConfig.agentInspector)) }
                 : {})
         };
         if (!config.multiProviderEnabled) {

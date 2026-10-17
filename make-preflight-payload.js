@@ -1,7 +1,7 @@
 /**
  * make-preflight-payload.js — [UPSTREAM-RESILIENCE TTFT PROBE 2026-09-29]
  *
- * Jana preflight-payload.json yang IDENTIK dengan muatan yang runtime Agent B
+ * Jana preflight-payload.json yang IDENTIK dengan muatan yang runtime Agent Inspector
  * hantar ke gateway kimi-k3 (rootsys.cloud) untuk Fasa 0. Guna untuk ukur
  * TTFT (time-to-first-token) kimi-k3 melalui curl di VPS.
  *

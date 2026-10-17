@@ -1,7 +1,7 @@
 /**
- * Structured Prompt Boundary (Agent A Prompt Rebuild v2, 2026-09-29)
+ * Structured Prompt Boundary (Agent Translation Prompt Rebuild v2, 2026-09-29)
  *
- * SubFaber's Agent A prompt is split into a STATIC system portion (Role,
+ * SubFaber's Agent Translation prompt is split into a STATIC system portion (Role,
  * Priority, Rules, Craft, Few-shot, Output Format — identical every batch,
  * cacheable) and a DYNAMIC user portion (per-batch context Bible + <input> +
  * <answer> anchor). To keep the existing single-string contract that flows

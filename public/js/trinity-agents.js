@@ -6,7 +6,7 @@
  *   - DOM dibina programatik (defensif penuh, null-check ketat per peraturan #4).
  *   - Input legasi #geminiApiKey DIPETAHILKAN (tersembunyi) — kontrak
  *     penyimpanan backend (currentConfig.geminiApiKey) kekal utuh.
- *   - Blok konfigurasi bersih `trinity` + `agentB` dihantar melalui
+ *   - Blok konfigurasi bersih `trinity` + `agentInspector` dihantar melalui
  *     collectConfig hook sedia ada tanpa memecahkan laluan parseConfig.
  *   - Provider Registry: panggil GET /api/providers/registry semasa mount;
  *     fallback statik jika rangkaian gagal (UI tidak tergantung).
@@ -30,9 +30,9 @@
         ANTHROPIC: 'anthropic-messages'
     };
 
-    // Pemetaan door → format legacy keyDetector/agentB ('gemini'|'openai'|'anthropic').
+    // Pemetaan door → format legacy keyDetector/agentInspector ('gemini'|'openai'|'anthropic').
     // [INTEGRATION AUDIT 2026-10-10] Backend VALID_FORMATS (keyDetector.js) dan
-    // enum agentB.format hanya menerima nilai pendek ini — nilai door penuh
+    // enum agentInspector.format hanya menerima nilai pendek ini — nilai door penuh
     // (cth 'gemini-native') akan dibuang senyap oleh normalizeFormatOverride.
     var DOOR_TO_FORMAT = {
         'gemini-native': 'gemini',
@@ -3071,11 +3071,11 @@
 
         var pf = trinity.preflight;
         var insp = trinity.inspector;
-        var hasAgentB = mode === MODE_PRO && (pf.apiKey || insp.apiKey);
-        if (hasAgentB) {
+        var hasAgentInspector = mode === MODE_PRO && (pf.apiKey || insp.apiKey);
+        if (hasAgentInspector) {
             var bKey = insp.apiKey || pf.apiKey;
             var bUrl = insp.baseUrl || pf.baseUrl || '';
-            patch.agentB = {
+            patch.agentInspector = {
                 enabled: true,
                 apiKey: bKey,
                 baseUrl: bUrl,
@@ -3084,7 +3084,7 @@
                 preflightModel: pf.model || 'kimi-k3'
             };
         } else {
-            patch.agentB = { enabled: false };
+            patch.agentInspector = { enabled: false };
         }
 
         if (mode === MODE_BASIC) {

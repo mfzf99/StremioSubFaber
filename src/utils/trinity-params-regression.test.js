@@ -335,9 +335,9 @@ test('[D3] Deviasi pada mana-mana ejen (termasuk preflight/inspector) → bypass
     assert.equal(cfg.bypassCache, true);
 });
 
-// ── F. AGENT B — GOD-TIER DEFAULT + OVERRIDE PARAMS ────────────────────────
+// ── F. AGENT INSPECTOR — GOD-TIER DEFAULT + OVERRIDE PARAMS ────────────────────────
 
-test('[F1] agentB.preflightParams/inspectorParams null tanpa params Trinity (god-tier 4-kunci kekal)', () => {
+test('[F1] agentInspector.preflightParams/inspectorParams null tanpa params Trinity (god-tier 4-kunci kekal)', () => {
     const cfg = normalizeConfig({
         trinity: {
             mode: 'pro',
@@ -345,11 +345,11 @@ test('[F1] agentB.preflightParams/inspectorParams null tanpa params Trinity (god
             inspector: { provider: 'openai', model: 'gpt-5.5' }
         }
     });
-    assert.equal(cfg.agentB.preflightParams, null);
-    assert.equal(cfg.agentB.inspectorParams, null);
+    assert.equal(cfg.agentInspector.preflightParams, null);
+    assert.equal(cfg.agentInspector.inspectorParams, null);
 });
 
-test('[F2] agentB membawa params tersanitasi apabila pengguna menetapkannya', () => {
+test('[F2] agentInspector membawa params tersanitasi apabila pengguna menetapkannya', () => {
     const cfg = normalizeConfig({
         trinity: {
             mode: 'pro',
@@ -358,14 +358,14 @@ test('[F2] agentB membawa params tersanitasi apabila pengguna menetapkannya', ()
         }
     });
     // kimi-k3: clamp balik 1.0 (fixed).
-    assert.equal(cfg.agentB.preflightParams.temperature, 1.0);
-    assert.equal(cfg.agentB.inspectorParams.temperature, 0.1);
-    assert.equal(cfg.agentB.inspectorParams.topP, 0.9);
+    assert.equal(cfg.agentInspector.preflightParams.temperature, 1.0);
+    assert.equal(cfg.agentInspector.inspectorParams.temperature, 0.1);
+    assert.equal(cfg.agentInspector.inspectorParams.topP, 0.9);
 });
 
-test('[F3] AgentBInspector: tanpa params → muatan 4-kunci god-tier 1:1 (kontrak PAYLOAD-GODTIER)', () => {
-    const { AgentBInspector } = require('../services/agentBInspector');
-    const inspector = new AgentBInspector({
+test('[F3] AgentInspector: tanpa params → muatan 4-kunci god-tier 1:1 (kontrak PAYLOAD-GODTIER)', () => {
+    const { AgentInspector } = require('../services/agentInspector');
+    const inspector = new AgentInspector({
         apiKey: 'k',
         baseUrl: 'https://x.example/v1',
         model: 'deepseek-v4-pro',
@@ -377,9 +377,9 @@ test('[F3] AgentBInspector: tanpa params → muatan 4-kunci god-tier 1:1 (kontra
     assert.equal(body.stream, true);
 });
 
-test('[F4] AgentBInspector: params eksplisit diinjek sebagai kunci tambahan; model/messages/stream terpelihara', () => {
-    const { AgentBInspector } = require('../services/agentBInspector');
-    const inspector = new AgentBInspector({
+test('[F4] AgentInspector: params eksplisit diinjek sebagai kunci tambahan; model/messages/stream terpelihara', () => {
+    const { AgentInspector } = require('../services/agentInspector');
+    const inspector = new AgentInspector({
         apiKey: 'k',
         baseUrl: 'https://x.example/v1',
         model: 'deepseek-v4-pro',
@@ -392,9 +392,9 @@ test('[F4] AgentBInspector: params eksplisit diinjek sebagai kunci tambahan; mod
     assert.ok(Array.isArray(body.messages));
 });
 
-test('[F5] AgentBInspector: preflightParams diguna semasa Fasa 0 (toggle dalam runPreflightPass finally)', () => {
-    const { AgentBInspector } = require('../services/agentBInspector');
-    const inspector = new AgentBInspector({
+test('[F5] AgentInspector: preflightParams diguna semasa Fasa 0 (toggle dalam runPreflightPass finally)', () => {
+    const { AgentInspector } = require('../services/agentInspector');
+    const inspector = new AgentInspector({
         apiKey: 'k',
         baseUrl: 'https://x.example/v1',
         model: 'deepseek-v4-pro',
@@ -604,7 +604,7 @@ test('[E8] Bridge END-TO-END: custom MAIN + door gemini-native (Crazy Router) �
     assert.notEqual(providerCtor, 'OpenAICompatibleProvider', 'SAMA SEKALI BUKAN OpenAICompatibleProvider');
 });
 
-test('[E9] BASIC-MODE PURITY: agentB null → TIADA panggilan pre-flight kepada Agent A (formula 4+50+2 tulen)', async () => {
+test('[E9] BASIC-MODE PURITY: agentInspector null → TIADA panggilan pre-flight kepada Agent Translation (formula 4+50+2 tulen)', async () => {
     const TranslationEngine = require('../services/translationEngine');
     let agentACalls = 0;
     const providerA = {
@@ -614,7 +614,7 @@ test('[E9] BASIC-MODE PURITY: agentB null → TIADA panggilan pre-flight kepada 
             return '';
         }
     };
-    const engine = new TranslationEngine(providerA, 'gemini-3-flash', {}, { agentB: null });
+    const engine = new TranslationEngine(providerA, 'gemini-3-flash', {}, { agentInspector: null });
     const entries = Array.from({ length: 60 }, (_, i) => ({
         id: i + 1,
         startTime: '00:00:01,000',
@@ -623,19 +623,23 @@ test('[E9] BASIC-MODE PURITY: agentB null → TIADA panggilan pre-flight kepada 
     }));
     const srt = entries.map((e) => `${e.id}\n${e.startTime} --> ${e.endTime}\n${e.text}\n`).join('\n');
     await engine.translateSubtitle(srt, 'Malay', 'English', '');
-    assert.equal(engine.preflightContext, null, 'Basic Mode (agentB null) MESTI tanpa pre-flight context');
-    assert.equal(engine.translationStats.agentBUsed, false, 'agentBUsed kekal false — Agent B tidak digunakan');
+    assert.equal(engine.preflightContext, null, 'Basic Mode (agentInspector null) MESTI tanpa pre-flight context');
+    assert.equal(
+        engine.translationStats.agentInspectorUsed,
+        false,
+        'agentInspectorUsed kekal false — Agent Inspector tidak digunakan'
+    );
     assert.equal(engine.translationStats.subfaberContextUsed, undefined, 'konteks pre-flight tidak wujud');
 });
 
-test('[E10] BASIC-MODE PURITY: _logAgentBFileSummary senyap bila Agent B tidak pernah hidup (0/0 coverage)', () => {
+test('[E10] BASIC-MODE PURITY: _logAgentInspectorFileSummary senyap bila Agent Inspector tidak pernah hidup (0/0 coverage)', () => {
     const TranslationEngine = require('../services/translationEngine');
     const provider = { model: 'm', translateSubtitle: async () => '' };
-    const engine = new TranslationEngine(provider, 'm', {}, { agentB: null });
-    // Stats seolah-olah Agent B tidak pernah menyentuh fail ini.
-    engine.translationStats.agentBBatchesInspected = 0;
-    engine.translationStats.agentBBatchesSkippedAfterOpen = 0;
-    engine.translationStats.agentBCircuitOpened = false;
+    const engine = new TranslationEngine(provider, 'm', {}, { agentInspector: null });
+    // Stats seolah-olah Agent Inspector tidak pernah menyentuh fail ini.
+    engine.translationStats.agentInspectorBatchesInspected = 0;
+    engine.translationStats.agentInspectorBatchesSkippedAfterOpen = 0;
+    engine.translationStats.agentInspectorCircuitOpened = false;
     // Spy log.debug: fungsi mesti return TANPA memanggil log.
     let called = false;
     const origDebug = require('../utils/logger').debug;
@@ -643,11 +647,11 @@ test('[E10] BASIC-MODE PURITY: _logAgentBFileSummary senyap bila Agent B tidak p
         called = true;
     };
     try {
-        engine._logAgentBFileSummary();
+        engine._logAgentInspectorFileSummary();
     } finally {
         require('../utils/logger').debug = origDebug;
     }
-    assert.equal(called, false, 'FILE SUMMARY TIDAK boleh dicetak bila Agent B tidak hidup');
+    assert.equal(called, false, 'FILE SUMMARY TIDAK boleh dicetak bila Agent Inspector tidak hidup');
 });
 
 // ── F. [PROXY-403 RESILIENCE v3.9.52] — insiden run keenam 2026-10-15 ────────

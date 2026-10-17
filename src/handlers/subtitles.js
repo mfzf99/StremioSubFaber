@@ -4,7 +4,7 @@ const SubDLService = require('../services/subdl');
 const SubSourceService = require('../services/subsource');
 const TranslationEngine = require('../services/translationEngine');
 const { createTranslationProvider } = require('../services/translationProviderFactory');
-const { AgentBInspector } = require('../services/agentBInspector');
+const { AgentInspector } = require('../services/agentInspector');
 const { createSsrfSafeLookup } = require('../utils/ssrfProtection');
 const AniDBService = require('../services/anidb');
 const KitsuService = require('../services/kitsu');
@@ -6243,33 +6243,37 @@ async function performTranslation(
             effectiveModel = model || getEffectiveGeminiModel(config);
             log.debug(() => `[Translation] Using provider=${providerName} model=${effectiveModel}`);
 
-            // DUAL-AI TRINITY (HARDCODE-PURGE 2026-10-13): Bina Agent B Trinity
-            // Dual-Agent apabila config agentB sah + lengkap. Semua nilai model
+            // DUAL-AI TRINITY (HARDCODE-PURGE 2026-10-13): Bina Agent Inspector Trinity
+            // Dual-Agent apabila config agentInspector sah + lengkap. Semua nilai model
             // kini DINAMIK daripada konfigurasi pengguna (kad Trinity UI) dengan
             // fallback .env — TIADA lalai statik dalam kod. Gagal konfigurasi →
-            // null → enjin jalan 100% Agent A (backwards compatible penuh).
-            let agentBInspector = null;
-            if (config.agentB?.enabled === true && config.agentB?.baseUrl && config.agentB?.apiKey) {
+            // null → enjin jalan 100% Agent Translation (backwards compatible penuh).
+            let agentInspector = null;
+            if (
+                config.agentInspector?.enabled === true &&
+                config.agentInspector?.baseUrl &&
+                config.agentInspector?.apiKey
+            ) {
                 // [GRACEFUL-BYPASS] Ema per-fasa: fasa tanpa model dikonfigurasi
-                // (user + env kosong) di-skip senyap — aliran kerja utama Agent A
+                // (user + env kosong) di-skip senyap — aliran kerja utama Agent Translation
                 // tidak tergugut walau satu pun.
-                if (!config.agentB.preflightModel && !config.agentB.model) {
+                if (!config.agentInspector.preflightModel && !config.agentInspector.model) {
                     log.info(
                         () =>
-                            '[INFO] [Preflight] Skipped (not configured / disabled by user); [AgentB] Inspector skipped (not configured / disabled by user)'
+                            '[INFO] [Preflight] Skipped (not configured / disabled by user); [AgentInspector] Inspector skipped (not configured / disabled by user)'
                     );
                 } else {
-                    if (!config.agentB.preflightModel) {
+                    if (!config.agentInspector.preflightModel) {
                         log.info(() => '[INFO] [Preflight] Skipped (not configured / disabled by user)');
                     }
-                    if (!config.agentB.model) {
-                        log.info(() => '[INFO] [AgentB] Inspector skipped (not configured / disabled by user)');
+                    if (!config.agentInspector.model) {
+                        log.info(() => '[INFO] [AgentInspector] Inspector skipped (not configured / disabled by user)');
                     }
                 }
                 try {
-                    agentBInspector = new AgentBInspector({
-                        apiKey: config.agentB.apiKey,
-                        baseUrl: config.agentB.baseUrl,
+                    agentInspector = new AgentInspector({
+                        apiKey: config.agentInspector.apiKey,
+                        baseUrl: config.agentInspector.baseUrl,
                         // [MODEL-HIERARCHY] FINAL 2026-09-28: Fasa 0 STANDALONE
                         // (kegagalan → retry model sama → fail-open tanpa konteks;
                         // TIADA fallback merentas model — pre-flight lemah dari
@@ -6279,34 +6283,34 @@ async function performTranslation(
                         //   { model, messages, stream: true, temperature: 0.0 }
                         // [HARDCODE-PURGE 2026-10-13] Lalai statik digugurkan —
                         // nilai kosong dibenarkan (fasa berkenaan di-skip senyap
-                        // oleh AgentBInspector / enjin).
-                        preflightModel: config.agentB.preflightModel || '',
-                        preflightFallbackModel: config.agentB.preflightModel || '',
-                        model: config.agentB.model || '',
-                        fallbackModel: config.agentB.fallbackModel || '',
-                        preflightTimeoutMs: config.agentB.preflightTimeoutMs,
-                        inspectionTimeoutMs: config.agentB.inspectionTimeoutMs,
+                        // oleh AgentInspector / enjin).
+                        preflightModel: config.agentInspector.preflightModel || '',
+                        preflightFallbackModel: config.agentInspector.preflightModel || '',
+                        model: config.agentInspector.model || '',
+                        fallbackModel: config.agentInspector.fallbackModel || '',
+                        preflightTimeoutMs: config.agentInspector.preflightTimeoutMs,
+                        inspectionTimeoutMs: config.agentInspector.inspectionTimeoutMs,
                         // [TRI-DOOR FASA C] Format pintu: 'auto' (autodetect
                         // keyDetector) | 'gemini' | 'openai' | 'anthropic'.
-                        format: config.agentB.format,
+                        format: config.agentInspector.format,
                         // [TRINITY PARAMS FASA 3 v3.9.46] Params per-ejen
                         // (sudah tersanitasi capability map oleh config.js).
                         // Null → builder god-tier 4-kunci kekal (lalai).
-                        preflightParams: config.agentB.preflightParams || null,
-                        inspectorParams: config.agentB.inspectorParams || null,
+                        preflightParams: config.agentInspector.preflightParams || null,
+                        inspectorParams: config.agentInspector.inspectorParams || null,
                         // BEAST MODE BETA RUN 10: siling token 131072 (128K rasmi DeepSeek
                         // apabila reasoning_effort="max") — dinormalisasi oleh config.js.
-                        maxTokens: config.agentB.maxTokens,
+                        maxTokens: config.agentInspector.maxTokens,
                         ssrfLookup: createSsrfSafeLookup()
                     });
                     log.info(
                         () =>
-                            `[Translation] Agent B inspector active: model=${agentBInspector.model} baseUrl=${config.agentB.baseUrl}`
+                            `[Translation] Agent Inspector inspector active: model=${agentInspector.model} baseUrl=${config.agentInspector.baseUrl}`
                     );
                 } catch (err) {
                     log.warn(
                         () =>
-                            `[Translation] Agent B inspector construction failed, continuing Gemini-only: ${err?.message || err}`
+                            `[Translation] Agent Inspector inspector construction failed, continuing Gemini-only: ${err?.message || err}`
                     );
                 }
             }
@@ -6349,7 +6353,7 @@ async function performTranslation(
                     providerName,
                     fallbackProviderName,
                     keyRotationConfig,
-                    agentB: agentBInspector
+                    agentInspector: agentInspector
                 }
             );
 

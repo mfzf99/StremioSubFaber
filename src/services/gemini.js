@@ -1115,7 +1115,7 @@ class GeminiService {
             normalizedTarget
         );
 
-        // [PROMPT REBUILD v2 2026-09-29] Structured split: SubFaber Agent A prompt
+        // [PROMPT REBUILD v2 2026-09-29] Structured split: SubFaber Agent Translation prompt
         // membawa SUBFABER_PROMPT_BOUNDARY yang memisah bahagian STATIK (systemInstruction,
         // cacheable) daripada bahagian DINAMIK (kandungan user: Bible + <input> + anchor).
         // Ini menghapuskan penghantaran-dua-kali (dulu userPrompt = systemPrompt penuh).

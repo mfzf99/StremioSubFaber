@@ -9,10 +9,10 @@
  *   2. anthropicChannel.buildRequest: system TOP-LEVEL string, max_tokens
  *      MANDATORI + clamp cap 64000, messages user tunggal, endpoint
  *      /v1/messages, header anthropic-version.
- *   3. Delegasi AgentBInspector: format gemini/anthropic → translateSubtitle
+ *   3. Delegasi AgentInspector: format gemini/anthropic → translateSubtitle
  *      diarahkan ke channel transport; format openai → super() (laluan
  *      rootsys 1:1, universalPayload god-tier terpelihara).
- *   4. Autodetect: key AIza/sk-ant- + config.agentB.format auto → channel
+ *   4. Autodetect: key AIza/sk-ant- + config.agentInspector.format auto → channel
  *      betul aktif tanpa mengubah tingkah laku laluan openai.
  */
 
@@ -21,7 +21,7 @@ const assert = require('node:assert/strict');
 
 process.env.ENTRY_CACHE_SIZE = '100';
 
-const { AgentBInspector } = require('./agentBInspector');
+const { AgentInspector } = require('./agentInspector');
 const geminiChannel = require('./channels/geminiChannel');
 const anthropicChannel = require('./channels/anthropicChannel');
 
@@ -126,16 +126,16 @@ test('anthropicChannel: tanpa systemPrompt → tiada medan system; temperature o
     assert.equal(withTemp.body.temperature, 0.0);
 });
 
-// ── 3. Delegasi AgentBInspector per pintu ──
+// ── 3. Delegasi AgentInspector per pintu ──
 
-test('AgentB [TRI-DOOR]: format openai (laluan rootsys) → tiada channel provider, super() 1:1', () => {
-    const inspector = new AgentBInspector({ apiKey: 'sk-rootsys-key', baseUrl: 'https://rootsys.cloud/v1' });
+test('AgentInspector [TRI-DOOR]: format openai (laluan rootsys) → tiada channel provider, super() 1:1', () => {
+    const inspector = new AgentInspector({ apiKey: 'sk-rootsys-key', baseUrl: 'https://rootsys.cloud/v1' });
     assert.equal(inspector.channelFormat, 'openai');
     assert.equal(inspector._getChannelProvider(), null, 'laluan openai kekal pewarisan super()');
 });
 
-test('AgentB [TRI-DOOR]: format gemini (key AIza) → delegasi translateSubtitle ke geminiChannel', async () => {
-    const inspector = new AgentBInspector({
+test('AgentInspector [TRI-DOOR]: format gemini (key AIza) → delegasi translateSubtitle ke geminiChannel', async () => {
+    const inspector = new AgentInspector({
         apiKey: 'AIzaSyTRIDOORTEST',
         baseUrl: 'https://generativelanguage.googleapis.com/v1beta',
         model: 'gemini-3.7-flash',
@@ -158,8 +158,8 @@ test('AgentB [TRI-DOOR]: format gemini (key AIza) → delegasi translateSubtitle
     assert.ok(calledViaChannel, 'panggilan diarahkan melalui geminiChannel transport');
 });
 
-test('AgentB [TRI-DOOR]: format anthropic (key sk-ant-) → delegasi translateSubtitle ke anthropicChannel', async () => {
-    const inspector = new AgentBInspector({
+test('AgentInspector [TRI-DOOR]: format anthropic (key sk-ant-) → delegasi translateSubtitle ke anthropicChannel', async () => {
+    const inspector = new AgentInspector({
         apiKey: 'sk-ant-api03-TRIDOORTEST',
         baseUrl: 'https://api.anthropic.com/v1',
         model: 'claude-sonnet-4',
@@ -180,9 +180,9 @@ test('AgentB [TRI-DOOR]: format anthropic (key sk-ant-) → delegasi translateSu
     assert.ok(calledViaChannel, 'panggilan diarahkan melalui anthropicChannel transport');
 });
 
-test('AgentB [TRI-DOOR]: override manual format mengatasi autodetect key', () => {
+test('AgentInspector [TRI-DOOR]: override manual format mengatasi autodetect key', () => {
     // Key gemini tetapi owner override openai (contoh gateway gemini-via-openai)
-    const inspector = new AgentBInspector({
+    const inspector = new AgentInspector({
         apiKey: 'AIzaSyOVERRIDE',
         baseUrl: 'https://gateway.example/v1',
         format: 'openai'
@@ -192,8 +192,8 @@ test('AgentB [TRI-DOOR]: override manual format mengatasi autodetect key', () =>
     assert.equal(inspector._getChannelProvider(), null);
 });
 
-test('AgentB [TRI-DOOR]: prompt bersempadan diterima channel — kedua-dua pintu menyokong split system/user', () => {
-    // Kontrak penting: buildUserPrompt AgentB memecahkan sempadan; channel
+test('AgentInspector [TRI-DOOR]: prompt bersempadan diterima channel — kedua-dua pintu menyokong split system/user', () => {
+    // Kontrak penting: buildUserPrompt AgentInspector memecahkan sempadan; channel
     // transport (Gemini/Anthropic) menjalankan split yang sama dalam
     // buildUserPrompt masing-masing — tiada sentinel bocor.
     const geminiProvider = geminiChannel.buildProvider({ apiKey: 'k', model: 'gemini-2.5-flash' });
@@ -217,17 +217,21 @@ test('AgentB [TRI-DOOR]: prompt bersempadan diterima channel — kedua-dua pintu
 
 // ── 4. Konfigurasi ──
 
-test('config agentB.format: lalai auto + override lowercase + nilai tidak sah kekal verbatim', () => {
+test('config agentInspector.format: lalai auto + override lowercase + nilai tidak sah kekal verbatim', () => {
     const { normalizeConfig } = require('../utils/config');
-    const base = normalizeConfig({ agentB: { baseUrl: 'https://x.example/v1', apiKey: 'k' } });
-    assert.equal(base.agentB.format, 'auto', 'lalai = auto (autodetect keyDetector)');
+    const base = normalizeConfig({ agentInspector: { baseUrl: 'https://x.example/v1', apiKey: 'k' } });
+    assert.equal(base.agentInspector.format, 'auto', 'lalai = auto (autodetect keyDetector)');
 
-    const explicit = normalizeConfig({ agentB: { baseUrl: 'https://x.example/v1', apiKey: 'k', format: 'GEMINI' } });
-    assert.equal(explicit.agentB.format, 'gemini', 'override config dinormalize lowercase');
+    const explicit = normalizeConfig({
+        agentInspector: { baseUrl: 'https://x.example/v1', apiKey: 'k', format: 'GEMINI' }
+    });
+    assert.equal(explicit.agentInspector.format, 'gemini', 'override config dinormalize lowercase');
 
-    const bogus = normalizeConfig({ agentB: { baseUrl: 'https://x.example/v1', apiKey: 'k', format: 'bogus' } });
+    const bogus = normalizeConfig({
+        agentInspector: { baseUrl: 'https://x.example/v1', apiKey: 'k', format: 'bogus' }
+    });
     assert.equal(
-        bogus.agentB.format,
+        bogus.agentInspector.format,
         'bogus',
         'nilai tidak sah kekal — keyDetector menolak override tidak sah → autodetect'
     );

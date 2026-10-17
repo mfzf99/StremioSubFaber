@@ -345,7 +345,7 @@ test('SubFaberPrompt V4: slim sharp prompt, split system/user, no double-send', 
     assert.ok(system.includes('a native speaker would actually say'), 'Role states living-language mandate');
     assert.ok(system.includes('English'), 'Source language in role');
     assert.ok(system.includes('Malay'), 'Target language in role');
-    // Rules — 6 padat, label ANTI-* kekal (pemetaan 1:1 taksonomi 6-jenayah Agent B)
+    // Rules — 6 padat, label ANTI-* kekal (pemetaan 1:1 taksonomi 6-jenayah Agent Inspector)
     assert.ok(system.includes('1. ANTI-MERGE'), 'Rule 1 ANTI-MERGE');
     assert.ok(system.includes('2. ANTI-SHIFT'), 'Rule 2 ANTI-SHIFT');
     // [SFX CONSISTENCY 2026-10-01] Rule 2 mesti berpisah tegas: muzik/simbol
@@ -641,7 +641,7 @@ test('SubFaberGS3: null canonical_address renders NOT LOCKED marker (MANDAT SOSI
         'null → isyarat NOT LOCKED (fallback lama || name DIBUANG)'
     );
     assert.ok(!block.includes('- Mystery Woman → Mystery Woman'), 'nama mentah TIDAK lagi dijadikan gelaran');
-    assert.ok(block.includes('Malay matrix'), 'panduan matriks BM mesti hadir untuk Agent A');
+    assert.ok(block.includes('Malay matrix'), 'panduan matriks BM mesti hadir untuk Agent Translation');
 });
 
 // --- Parser: konteks tidak rosakkan parseXmlBatchResponse ---

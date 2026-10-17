@@ -6,7 +6,7 @@
  * separuh kedua diterjemah tanpa window ke hadapan dan tanpa bible
  * Fasa 0. Patch: bawa semula kedua-dua medan daripada `context` param.
  *
- * BUG #2 (Agent B crime retry): `prompt + warningBlock` menolak anchor
+ * BUG #2 (Agent Inspector crime retry): `prompt + warningBlock` menolak anchor
  * '<s id="N">' dari kedudukan token terakhir → melanggar kontrak Smart
  * Preamble Scrubber + prefill Gemini. Patch: amaran disisip SEBELUM
  * blok <answer>; anchor kekal menghujungi prompt.
@@ -47,7 +47,7 @@ function makeEntries(count, startId = 1) {
     }));
 }
 
-/** Respons sah 1:1 untuk setiap entri dalam <input> — struktur bersih supaya gerbang Agent B aktif. */
+/** Respons sah 1:1 untuk setiap entri dalam <input> — struktur bersih supaya gerbang Agent Inspector aktif. */
 function validResponseFor(content) {
     const ids = [...String(content).matchAll(/<s id="(\d+)">/g)].map((m) => m[1]);
     return ids.map((id) => `<s id="${id}">Terjemahan ${id}</s>`).join('\n');
@@ -156,7 +156,7 @@ test('Bug#1 auto-chunk: split 4+4 — previous window penuh, subsequent dari sko
 });
 
 // ─────────────────────────────────────────────────────────────────────────────
-// BUG #2 — Agent B crime retry: anchor mesti kekal token terakhir prompt
+// BUG #2 — Agent Inspector crime retry: anchor mesti kekal token terakhir prompt
 // ─────────────────────────────────────────────────────────────────────────────
 test('Bug#2 crime retry: warning injected BEFORE <answer>, anchor stays last token', async () => {
     const prompts = [];
@@ -168,7 +168,7 @@ test('Bug#2 crime retry: warning injected BEFORE <answer>, anchor stays last tok
             }
         },
         options: {
-            agentB: {
+            agentInspector: {
                 circuitOpen: false,
                 runSemanticInspection: async () => ({
                     valid: false,
@@ -218,7 +218,7 @@ test('Bug#2 crime retry: split system/user kekal — warning hidup dalam USER pa
             }
         },
         options: {
-            agentB: {
+            agentInspector: {
                 circuitOpen: false,
                 runSemanticInspection: async () => ({
                     valid: false,

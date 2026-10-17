@@ -1,11 +1,11 @@
 /**
- * Agent B — Semantic Inspector & Pre-Flight Offloader
+ * Agent Inspector — Semantic Inspector & Pre-Flight Offloader
  * (Dual-AI Mandat Pelaksanaan 2026-09-26, Fasa 1)
  *
  * Seni Bina 2-Agent ([MODEL-HIERARCHY] + [PAYLOAD-GODTIER] 2026-09-28 —
  * Trinity Dual-Agent, kredensial rootsys.cloud: 1B token quota / 1M context):
- *   AGENT A (Worker): Gemini 3 Flash — penterjemahan kelompok 60 baris.
- *   AGENT B (Inspector): MODEL HIERARCHY FINAL 2026-09-28 (OpenAI-compatible):
+ *   AGENT TRANSLATION (Worker): Gemini 3 Flash — penterjemahan kelompok 60 baris.
+ *   AGENT INSPECTOR (Inspector): MODEL HIERARCHY FINAL 2026-09-28 (OpenAI-compatible):
  *     - PRE-FLIGHT (Fasa 0)   : kimi-k3 SAHAJA (STANDALONE — tiada fallback
  *                               merentas model). Kegagalan → RETRY kimi-k3
  *                               (2x berturut) → gagal juga → pre-flight dihentikan,
@@ -35,13 +35,13 @@
  *
  * Prinsip reka bentuk (diluluskan Lead Architecture, laporan audit 2026-09-26):
  *   - FAIL-OPEN: sebarang ralat rangkaian/timeout/respons rosak → verdict
- *     { valid: true } — Agent B TIDAK PERNAH menggagalkan terjemahan.
+ *     { valid: true } — Agent Inspector TIDAK PERNAH menggagalkan terjemahan.
  *   - CIRCUIT BREAKER: 3 kegagalan berturut-turut dalam satu sesi fail →
- *     Agent B dinyahaktifkan senyap bagi baki fail tersebut.
- *   - UNTHROTTLED (Mandat Pembebasan 2026-09-26): kuota Agent B infiniti
+ *     Agent Inspector dinyahaktifkan senyap bagi baki fail tersebut.
+ *   - UNTHROTTLED (Mandat Pembebasan 2026-09-26): kuota Agent Inspector infiniti
  *     (skala 1B token) — timeout berfasa: Fasa 0 5 minit (baca episod penuh)
- *     / semakan batch 5 minit. Tiada micro-timeout yang membekukan nafas Agent B.
- *   - CONTEXT-AWARE AUDIT (MANDAT OPERASI MUTLAK 2026-09-27): Agent B TIDAK
+ *     / semakan batch 5 minit. Tiada micro-timeout yang membekukan nafas Agent Inspector.
+ *   - CONTEXT-AWARE AUDIT (MANDAT OPERASI MUTLAK 2026-09-27): Agent Inspector TIDAK
  *     lagi mengaudit secara buta — buildInspectionPayload menerima
  *     preflightContext (theme + terms + characters) dan menyuntiknya ke dalam
  *     prompt pemeriksaan. Jenayah SHIFT dikunci dengan klausa emas pengurang
@@ -49,12 +49,12 @@
  *   - ZERO-SWALLOWED-ERROR + TRINITY FAILOVER (Mandat Observabiliti +
  *     Universal Payload 2026-09-26): tiada ralat ditelan senyap — setiap
  *     kegagalan mencetak status + punca teknikal + raw snippet 500 aksara
- *     + format trigger wajib `[AgentB] Fallback triggered -> [model]`.
+ *     + format trigger wajib `[AgentInspector] Fallback triggered -> [model]`.
  *     TRINITY BETA RUN 9: dua hierarki berasingan — preflightHierarchy
  *     [deepseek-v4-pro → deepseek-v4.1-flash] dan modelHierarchy
  *     [deepseek-v4-pro → deepseek-v4.1-flash]. Kegagalan mana-mana model
  *     utama beralih automatik ke deepseek-v4.1-flash.
- *   - 100% BACKWARDS COMPATIBLE: Agent B null → enjin jalan 100% Gemini.
+ *   - 100% BACKWARDS COMPATIBLE: Agent Inspector null → enjin jalan 100% Gemini.
  */
 
 const OpenAICompatibleProvider = require('./providers/openaiCompatible');
@@ -74,11 +74,11 @@ const log = require('../utils/logger');
 // sempadan kekal laluan lama (satu user message).
 const { splitStructuredPrompt } = require('./utils/structuredPrompt');
 
-// ── [MODEL-HIERARCHY] Konfigurasi tetap Agent B (FINAL 2026-09-28) ──
+// ── [MODEL-HIERARCHY] Konfigurasi tetap Agent Inspector (FINAL 2026-09-28) ──
 // Hierarki model MUKTAMAD (empirikal curl gateway rootsys.cloud):
 //   Fasa 0 (Pre-Flight Makro) : kimi-k3 SAHAJA — STANDALONE. Tiada fallback
 //                               merentas model. Kegagalan → retry kimi-k3
-//                               (AGENT_B_PREFLIGHT_RETRIES) → gagal juga →
+//                               (AGENT_INSPECTOR_PREFLIGHT_RETRIES) → gagal juga →
 //                               pre-flight dihentikan, terjemahan TANPA konteks
 //                               (fail-open kontrak sedia ada).
 //   Fasa 1 (Pemeriksa Utama)  : deepseek-v4-pro — Timeout 300,000ms / 5 min
@@ -89,16 +89,16 @@ const { splitStructuredPrompt } = require('./utils/structuredPrompt');
 // itulah sebabnya hierarki Fasa 0 TIDAK MERENTAS keluarga model.
 // [HARDCODE-PURGE 2026-10-13] Nama model lalai statik DIGUGURKAN — model kini
 // datang 100% daripada konfigurasi pengguna (kad Trinity UI) dengan fallback
-// .env (AGENT_B_* / PREFLIGHT_* / INSPECTOR_*), dinormalisasi oleh config.js.
+// .env (AGENT_INSPECTOR_* / PREFLIGHT_* / INSPECTOR_*), dinormalisasi oleh config.js.
 // Lalai konstanta = '' — fasa tanpa model di-skip senyap (graceful bypass):
 //   Fasa 0 kosong → [INFO] [Preflight] Skipped (not configured / disabled).
-//   Fasa 1 kosong → [INFO] [AgentB] Inspector skipped (not configured / disabled).
-const AGENT_B_DEFAULT_MODEL = ''; // Fasa 1: Pemeriksa — dinormalisasi config.js
-const AGENT_B_PREFLIGHT_MODEL = ''; // Fasa 0: Preflight — dinormalisasi config.js
+//   Fasa 1 kosong → [INFO] [AgentInspector] Inspector skipped (not configured / disabled).
+const AGENT_INSPECTOR_DEFAULT_MODEL = ''; // Fasa 1: Pemeriksa — dinormalisasi config.js
+const AGENT_INSPECTOR_PREFLIGHT_MODEL = ''; // Fasa 0: Preflight — dinormalisasi config.js
 // [MODEL-HIERARCHY] Fallback khusus Fasa 0 DIGUGURKAN — kimi-k3 standalone.
-// env AGENT_B_PREFLIGHT_FALLBACK_MODEL diabaikan sepenuhnya (nilai muktamad
+// env AGENT_INSPECTOR_PREFLIGHT_FALLBACK_MODEL diabaikan sepenuhnya (nilai muktamad
 // sentiasa sama dengan primer supaya hierarki Fasa 0 ialah 1-tingkat).
-const AGENT_B_PREFLIGHT_FALLBACK_MODEL = AGENT_B_PREFLIGHT_MODEL;
+const AGENT_INSPECTOR_PREFLIGHT_FALLBACK_MODEL = AGENT_INSPECTOR_PREFLIGHT_MODEL;
 // Bilangan percubaan RETRY-SAME-MODEL bagi Fasa 0: percubaan pertama + 4
 // retry sebelum pre-flight dihentikan (fail-open).
 // [UPSTREAM-RESILIENCE v2 2026-09-29] Dinaikkan 2→4. Forensik run kedua
@@ -108,8 +108,8 @@ const AGENT_B_PREFLIGHT_FALLBACK_MODEL = AGENT_B_PREFLIGHT_MODEL;
 // TTFT, bukan kekal. Lebih banyak percubaan = peluang lebih tinggi
 // menangkap tetingkap TTFT-laju. Dipasangkan dengan first-byte watchdog
 // (35s) yang abort attempt TTFT-lambat lebih awal daripada reset gateway.
-const AGENT_B_PREFLIGHT_RETRIES = 4;
-const AGENT_B_FALLBACK_MODEL = ''; // Fallback Fasa 1 — konfigurasi pengguna/env sahaja
+const AGENT_INSPECTOR_PREFLIGHT_RETRIES = 4;
+const AGENT_INSPECTOR_FALLBACK_MODEL = ''; // Fallback Fasa 1 — konfigurasi pengguna/env sahaja
 // [PAYLOAD-GODTIER] SEJARAH (dikekalkan untuk forensik): muatan lama
 // BETA RUN 10 membawa 7 kunci; keempat-empat parameter tambahan terbukti
 // PENCETUS OVERTHINKING (masing-masing +90-110s) dan digugurkan —
@@ -119,41 +119,50 @@ const AGENT_B_FALLBACK_MODEL = ''; // Fallback Fasa 1 — konfigurasi pengguna/e
 // Fasa 0 5 minit + Semakan 5 minit (300,000ms) — arahan Project Owner:
 // kedua-dua fasa ditetapkan 5 minit penuh bagi menjamin kejayaan panggilan
 // penaakulan max tanpa timeout hulu. Had masa boleh ditindih melalui env
-// AGENT_B_PREFLIGHT_TIMEOUT_MS / AGENT_B_INSPECTION_TIMEOUT_MS
+// AGENT_INSPECTOR_PREFLIGHT_TIMEOUT_MS / AGENT_INSPECTOR_INSPECTION_TIMEOUT_MS
 // (integer ms positif).
-const parseAgentBTimeout = (raw, fallbackMs) => {
+const parseAgentInspectorTimeout = (raw, fallbackMs) => {
     const parsed = parseInt(raw, 10);
     return Number.isFinite(parsed) && parsed > 0 ? parsed : fallbackMs;
 };
-const AGENT_B_PREFLIGHT_TIMEOUT_MS = parseAgentBTimeout(process.env.AGENT_B_PREFLIGHT_TIMEOUT_MS, 300000);
-const AGENT_B_INSPECTION_TIMEOUT_MS = parseAgentBTimeout(process.env.AGENT_B_INSPECTION_TIMEOUT_MS, 300000);
+const AGENT_INSPECTOR_PREFLIGHT_TIMEOUT_MS = parseAgentInspectorTimeout(
+    process.env.AGENT_INSPECTOR_PREFLIGHT_TIMEOUT_MS,
+    300000
+);
+const AGENT_INSPECTOR_INSPECTION_TIMEOUT_MS = parseAgentInspectorTimeout(
+    process.env.AGENT_INSPECTOR_INSPECTION_TIMEOUT_MS,
+    300000
+);
 // [UPSTREAM-RESILIENCE 2026-09-29] Backoff eksponen antara retry-same-model
 // Fasa 0. Forensik run S01E31: kimi-k3 di-reset gateway (ECONNRESET ~221s),
 // lalu 2 retry pukul 502 dalam 200ms TANPA jeda → semua percubaan terbakar
 // serta-merta. 502/reset gateway lazimnya transient; jeda 2s→4s memberi
 // backend hulu masa pulih. Delay = base * 2^r dihadkan pada siling.
-// parseInt kongsi parseAgentBTimeout: integer > 0 sahaja; 0/tak sah → lalai.
+// parseInt kongsi parseAgentInspectorTimeout: integer > 0 sahaja; 0/tak sah → lalai.
 // Nilai 0 EKSPLISIT (melumpuhkan backoff — ujian pantas) diterima melalui
 // pemeriksaan berasingan supaya tidak jatuh ke lalai 2000.
-const parseAgentBBackoff = (raw, fallbackMs) => {
+const parseAgentInspectorBackoff = (raw, fallbackMs) => {
     if (raw === undefined || raw === null || String(raw).trim() === '') return fallbackMs;
     const parsed = parseInt(raw, 10);
     return Number.isFinite(parsed) && parsed >= 0 ? parsed : fallbackMs;
 };
-const AGENT_B_PREFLIGHT_RETRY_BACKOFF_MS = parseAgentBBackoff(process.env.AGENT_B_PREFLIGHT_RETRY_BACKOFF_MS, 2000);
-const AGENT_B_PREFLIGHT_RETRY_BACKOFF_CAP_MS = 15000;
+const AGENT_INSPECTOR_PREFLIGHT_RETRY_BACKOFF_MS = parseAgentInspectorBackoff(
+    process.env.AGENT_INSPECTOR_PREFLIGHT_RETRY_BACKOFF_MS,
+    2000
+);
+const AGENT_INSPECTOR_PREFLIGHT_RETRY_BACKOFF_CAP_MS = 15000;
 // MANDAT v3 (pembetulan owner 2026-09-27): siling token muatan DeepSeek —
-// 131072 (128K); boleh ditindih melalui env AGENT_B_MAX_TOKENS
+// 131072 (128K); boleh ditindih melalui env AGENT_INSPECTOR_MAX_TOKENS
 // (integer positif sahaja).
-const AGENT_B_MAX_TOKENS = parseAgentBTimeout(process.env.AGENT_B_MAX_TOKENS, 131072);
-const AGENT_B_CIRCUIT_THRESHOLD = 3; // 3 kegagalan berturut → silent mode
+const AGENT_INSPECTOR_MAX_TOKENS = parseAgentInspectorTimeout(process.env.AGENT_INSPECTOR_MAX_TOKENS, 131072);
+const AGENT_INSPECTOR_CIRCUIT_THRESHOLD = 3; // 3 kegagalan berturut → silent mode
 // [UNBOUNDED-CONTEXT 2026-09-29] Siling lama 200 aksara/baris dan
 // 5 jenayah DIGUGURKAN — tiada mandat pemotongan baris dialog (dialog
 // bersubtitle boleh melebihi 200 aksara) dan jika batch mengandungi
 // 8 jenayah, SEMUA 8 mesti dipulangkan untuk retry. Hanya siling sanity
 // pertahanan kekal (id-per-crime + nota ringkas).
-const AGENT_B_MAX_IDS_PER_CRIME = 10; // Cap bilangan id per jenayah (sanity)
-const AGENT_B_MAX_NOTE_CHARS = 120; // Cap panjang nota jenayah (sanity)
+const AGENT_INSPECTOR_MAX_IDS_PER_CRIME = 10; // Cap bilangan id per jenayah (sanity)
+const AGENT_INSPECTOR_MAX_NOTE_CHARS = 120; // Cap panjang nota jenayah (sanity)
 // MANDAT OPERASI MUTLAK 2026-09-27: SHIFT dikunci sebagai jenayah ke-4 —
 // kandungan dialog berpindah merentasi indeks (dialog baris 5 muncul di
 // baris 6). Klausa emas pengurang token di dalam arahan pemeriksa.
@@ -164,7 +173,7 @@ const VALID_CRIME_TYPES = new Set(['MERGE', 'DROP', 'PHANTOM', 'SHIFT', 'UNTRANS
 // [UNBOUNDED-CONTEXT 2026-09-29] Siling konteks Pre-Flight (10 istilah /
 // 12 watak / 400 aksara tema) DIGUGURKAN sepenuhnya. Sebab: rantaian
 // pemotongan — preflight mengekstrak 50 istilah → siling lama memotong
-// kepada 15 → inspection memotong kepada 10 → Agent B mengaudit atas
+// kepada 15 → inspection memotong kepada 10 → Agent Inspector mengaudit atas
 // 10/50 istilah jelah. Inspector MELIHAT konteks Pre-Flight PENUH.
 
 /**
@@ -172,16 +181,16 @@ const VALID_CRIME_TYPES = new Set(['MERGE', 'DROP', 'PHANTOM', 'SHIFT', 'UNTRANS
  * (pariti 1:1 dengan kontrak pembawa OpenAI-compatible projek — payload
  * dibake terus ke dalam prompt, bukan dihantar berasingan).
  * [HARMONY-FIX] 2026-09-29: taksonomi 4 jenayah dipertajam selari dengan
- * structural_rules Agent A. MERGE kini semata-mata isu bilangan slot
+ * structural_rules Agent Translation. MERGE kini semata-mata isu bilangan slot
  * (off-by-one drift — klausa "fabricated filler" lama dibuang kerana
  * bertindih dengan PHANTOM), PHANTOM = fabrikasi kandungan, DROP = maksud
  * spesifik diganti substitut generik.
  * [SOCIOLINGUISTIC v2 2026-09-29] Taksonomi dikembang 4→6 (selari dengan 8
- * structural_rules Agent A): + UNTRANSLATED (kebocoran salinan malas sumber)
+ * structural_rules Agent Translation): + UNTRANSLATED (kebocoran salinan malas sumber)
  * + REGISTER (percanggahan gelaran ATAU daftar kata ganti vs Bible Fasa 0).
  * Nota keharmonian: arahan kini eksplisit membenarkan pemampatan &
- * penyesuaian idiom (kerja sah Agent A) supaya tidak tersalah tuduh DROP/
- * PHANTOM — Agent A & Agent B kini berkongsi definisi "terjemahan betul".
+ * penyesuaian idiom (kerja sah Agent Translation) supaya tidak tersalah tuduh DROP/
+ * PHANTOM — Agent Translation & Agent Inspector kini berkongsi definisi "terjemahan betul".
  */
 const INSPECTOR_INSTRUCTION = `## Role
 You are a subtitle integrity inspector. You compare source lines with their translations, line by line.
@@ -209,8 +218,8 @@ If any violation exists:
 
 /**
  * Format ringkasan konteks Pre-Flight (Fasa 0) untuk suntikan ke prompt
- * pemeriksaan Agent B (MANDAT OPERASI MUTLAK 2026-09-27 — CONTEXT-AWARE
- * AUDIT): Agent B tidak boleh lagi mengaudit secara buta. Ringkasan merangkumi
+ * pemeriksaan Agent Inspector (MANDAT OPERASI MUTLAK 2026-09-27 — CONTEXT-AWARE
+ * AUDIT): Agent Inspector tidak boleh lagi mengaudit secara buta. Ringkasan merangkumi
  * theme + istilah padat + profil watak (gelaran canonical_address terkunci —
  * rujukan konsistensi gelaran semasa audit).
  * @param {{theme?:string, terms?:Array, characters?:Array}} preflightContext - Konteks Fasa 0
@@ -388,14 +397,14 @@ function parseInspectorResponse(responseText) {
                 ? crime.ids
                       .map((n) => parseInt(n, 10))
                       .filter((n) => Number.isFinite(n) && n > 0)
-                      .slice(0, AGENT_B_MAX_IDS_PER_CRIME)
+                      .slice(0, AGENT_INSPECTOR_MAX_IDS_PER_CRIME)
                 : [];
             crimes.push({
                 type,
                 ids,
                 note: String(crime.note || '')
                     .trim()
-                    .slice(0, AGENT_B_MAX_NOTE_CHARS)
+                    .slice(0, AGENT_INSPECTOR_MAX_NOTE_CHARS)
             });
             // UNBOUNDED-CONTEXT: tiada siling bilangan jenayah — jika batch
             // mengandungi 8 jenayah, SEMUA 8 mesti dipulangkan untuk retry.
@@ -409,7 +418,7 @@ function parseInspectorResponse(responseText) {
 }
 
 /**
- * Agent B — Inspector Semantik & Pre-Flight Offloader.
+ * Agent Inspector — Inspector Semantik & Pre-Flight Offloader.
  *
  * Wrapper nipis di atas OpenAICompatibleProvider (reuse: SSRF agents,
  * auth headers, retry loop). Override wajib:
@@ -421,7 +430,7 @@ function parseInspectorResponse(responseText) {
  * MUATAN GOD-TIER ([PAYLOAD-GODTIER] 2026-09-28): instance dibina dengan
  * universalPayload=true — buildChatRequest membina muatan 4-kunci streaming
  * TEPAT { model, messages, stream: true, temperature: 0.0 } bagi SEMUA
- * enjin Agent B (deepseek/kimi — endpoint sama). Param tambahan muatan lama
+ * enjin Agent Inspector (deepseek/kimi — endpoint sama). Param tambahan muatan lama
  * digugurkan (pencetus overthinking). Kesahan JSON dijamin parser tahan
  * lasak (stripReasoningTags + parseInspectorResponse), bukan response_format.
  *
@@ -431,14 +440,20 @@ function parseInspectorResponse(responseText) {
  * kegagalan (HTTP/timeout/kosong/rosak) → log WARN berformat mandat dan
  * cuba sandaran → kedua-dua gagal → error terakhir dilempar.
  */
-class AgentBInspector extends OpenAICompatibleProvider {
+class AgentInspector extends OpenAICompatibleProvider {
     constructor(options = {}) {
         // BEAST MODE BETA RUN 10: had masa berfasa boleh ditindih melalui
-        // options (config.agentB.preflightTimeoutMs / inspectionTimeoutMs —
-        // env AGENT_B_*_TIMEOUT_MS dinormalisasi oleh config.js). Lalai mandat:
+        // options (config.agentInspector.preflightTimeoutMs / inspectionTimeoutMs —
+        // env AGENT_INSPECTOR_*_TIMEOUT_MS dinormalisasi oleh config.js). Lalai mandat:
         // Fasa 1 60s / Fasa 0 150s.
-        const inspectionTimeoutMs = parseAgentBTimeout(options.inspectionTimeoutMs, AGENT_B_INSPECTION_TIMEOUT_MS);
-        const preflightTimeoutMs = parseAgentBTimeout(options.preflightTimeoutMs, AGENT_B_PREFLIGHT_TIMEOUT_MS);
+        const inspectionTimeoutMs = parseAgentInspectorTimeout(
+            options.inspectionTimeoutMs,
+            AGENT_INSPECTOR_INSPECTION_TIMEOUT_MS
+        );
+        const preflightTimeoutMs = parseAgentInspectorTimeout(
+            options.preflightTimeoutMs,
+            AGENT_INSPECTOR_PREFLIGHT_TIMEOUT_MS
+        );
         // [TRI-DOOR FASA B 2026-10-10] Super-options diekstrak ke
         // channels/openaiChannel.js (ekstraksi 1:1, tingkah laku kekal).
         // Fasa C: channel disuntik penuh; pewarisan digantikan komposisi.
@@ -446,7 +461,7 @@ class AgentBInspector extends OpenAICompatibleProvider {
             openaiChannel.buildSuperOptions(
                 options,
                 inspectionTimeoutMs,
-                parseAgentBTimeout(options.maxTokens, AGENT_B_MAX_TOKENS)
+                parseAgentInspectorTimeout(options.maxTokens, AGENT_INSPECTOR_MAX_TOKENS)
             )
         );
 
@@ -483,16 +498,16 @@ class AgentBInspector extends OpenAICompatibleProvider {
         // model sebenar yang sedang beroperasi.
         // [HARDCODE-PURGE] Lalai statik digugurkan — nilai kosong dibenarkan
         // (fasa berkenaan di-skip senyap; lihat graceful-bypass di bawah).
-        this.model = String(options.model || options.inspectionModel || AGENT_B_DEFAULT_MODEL).trim();
-        this.preflightModel = String(options.preflightModel || AGENT_B_PREFLIGHT_MODEL).trim();
-        const requestedFallback = String(options.fallbackModel || AGENT_B_FALLBACK_MODEL).trim();
+        this.model = String(options.model || options.inspectionModel || AGENT_INSPECTOR_DEFAULT_MODEL).trim();
+        this.preflightModel = String(options.preflightModel || AGENT_INSPECTOR_PREFLIGHT_MODEL).trim();
+        const requestedFallback = String(options.fallbackModel || AGENT_INSPECTOR_FALLBACK_MODEL).trim();
         // [GRACEFUL-BYPASS] Fasa tanpa model dikonfigurasi → log senyap sekali
-        // sahaja di peringkat instance; aliran kerja Agent A tidak tergugut.
+        // sahaja di peringkat instance; aliran kerja Agent Translation tidak tergugut.
         if (!this.preflightModel) {
             log.info(() => '[INFO] [Preflight] Skipped (not configured / disabled by user)');
         }
         if (!this.model) {
-            log.info(() => '[INFO] [AgentB] Inspector skipped (not configured / disabled by user)');
+            log.info(() => '[INFO] [AgentInspector] Inspector skipped (not configured / disabled by user)');
         }
         // [MODEL-HIERARCHY] preflightFallbackModel DINEUTRALKAN — sentiasa sama
         // dengan primer Fasa 0 supaya hierarki pre-flight kekal 1-tingkat
@@ -525,19 +540,22 @@ class AgentBInspector extends OpenAICompatibleProvider {
         );
 
         // [MODEL-HIERARCHY] Retry-same-model bagi Fasa 0 (kimi-k3 standalone):
-        // 1 percubaan + AGENT_B_PREFLIGHT_RETRIES retry = maksimum 3 panggilan
+        // 1 percubaan + AGENT_INSPECTOR_PREFLIGHT_RETRIES retry = maksimum 3 panggilan
         // berturut-turut pada model yang sama sebelum fail-open.
-        this.preflightRetries = Math.max(0, parseInt(options.preflightRetries, 10) || AGENT_B_PREFLIGHT_RETRIES);
+        this.preflightRetries = Math.max(
+            0,
+            parseInt(options.preflightRetries, 10) || AGENT_INSPECTOR_PREFLIGHT_RETRIES
+        );
 
         // [UPSTREAM-RESILIENCE 2026-09-29] Backoff eksponen retry-same-model.
         // Boleh ditindih per-instance (options.preflightRetryBackoffMs) atau env;
         // 0 melumpuhkan jeda (ujian pantas). _sleep boleh di-stub oleh ujian
         // supaya assertion susunan panggilan kekal deterministik tanpa jeda nyata.
-        this.preflightRetryBackoffMs = parseAgentBBackoff(
+        this.preflightRetryBackoffMs = parseAgentInspectorBackoff(
             options.preflightRetryBackoffMs,
-            AGENT_B_PREFLIGHT_RETRY_BACKOFF_MS
+            AGENT_INSPECTOR_PREFLIGHT_RETRY_BACKOFF_MS
         );
-        this.preflightRetryBackoffCapMs = AGENT_B_PREFLIGHT_RETRY_BACKOFF_CAP_MS;
+        this.preflightRetryBackoffCapMs = AGENT_INSPECTOR_PREFLIGHT_RETRY_BACKOFF_CAP_MS;
 
         this.fallbackModel = this.modelHierarchy.length > 1 ? this.modelHierarchy[1] : null;
         this.inspectionModel = this.model;
@@ -548,7 +566,7 @@ class AgentBInspector extends OpenAICompatibleProvider {
         // kegagalan Fasa 1 (kaunter gabungan per sesi fail).
         this._consecutiveFailures = 0;
         this._circuitOpen = false;
-        this.circuitThreshold = AGENT_B_CIRCUIT_THRESHOLD;
+        this.circuitThreshold = AGENT_INSPECTOR_CIRCUIT_THRESHOLD;
 
         // ── [TRI-DOOR FASA C] Format pintu pengangkutan ──
         // 'auto' (lalai) → autodetect keyDetector (override > key-prefix >
@@ -568,7 +586,7 @@ class AgentBInspector extends OpenAICompatibleProvider {
 
         log.info(
             () =>
-                `[AgentB][AgentChannel] format=${this.channelFormat} source=${this.channelFormatSource}` +
+                `[AgentInspector][AgentChannel] format=${this.channelFormat} source=${this.channelFormatSource}` +
                 (this.channelFormat === 'openai' ? '' : ' — delegasi channel bukan-openai aktif')
         );
     }
@@ -676,9 +694,9 @@ class AgentBInspector extends OpenAICompatibleProvider {
         // RETRY-SAME-MODEL ([MODEL-HIERARCHY]): apabila hierarki hanya memuat
         // SATU model (hierarki Fasa 0), kegagalan TIDAK beralih model — model
         // yang sama di-RETRY sehingga `retrySameModel` kali tambahan sebelum
-        // kegagalan muktamad. Log `[AgentB] Fallback triggered` TIDAK PERNAH
+        // kegagalan muktamad. Log `[AgentInspector] Fallback triggered` TIDAK PERNAH
         // dicetak bagi Fasa 0 (tiada fallback wujud); sebaliknya
-        // `[AgentB] Retry-same-model` yang dicetak.
+        // `[AgentInspector] Retry-same-model` yang dicetak.
         const hierarchy =
             Array.isArray(hierarchyOverride) && hierarchyOverride.length > 0 ? hierarchyOverride : this.modelHierarchy;
         const singleModelRetries = hierarchy.length === 1 && retrySameModel > 0 ? retrySameModel : 0;
@@ -702,7 +720,7 @@ class AgentBInspector extends OpenAICompatibleProvider {
                     if (hasRetry) {
                         log.warn(
                             () =>
-                                `[AgentB] ${operation} on ${model} failed (Status: ${status}): ${err?.message || err}. Retry ${r + 1}/${totalTries - 1} on the SAME model [${model}]...`
+                                `[AgentInspector] ${operation} on ${model} failed (Status: ${status}): ${err?.message || err}. Retry ${r + 1}/${totalTries - 1} on the SAME model [${model}]...`
                         );
                         // [UPSTREAM-RESILIENCE] Backoff eksponen SEBELUM retry berikutnya
                         // (retry-same-model sahaja — Fasa 1 failover tiada singleModelRetries).
@@ -712,15 +730,15 @@ class AgentBInspector extends OpenAICompatibleProvider {
                     if (hasSibling) {
                         log.warn(
                             () =>
-                                `[AgentB] ${operation} on ${model} failed (Status: ${status}): ${err?.message || err}. Failing over to ${hierarchy[i + 1]}...`
+                                `[AgentInspector] ${operation} on ${model} failed (Status: ${status}): ${err?.message || err}. Failing over to ${hierarchy[i + 1]}...`
                         );
                         // Mandat Seni Bina Universal Payload §C: format trigger wajib
-                        log.warn(() => `[AgentB] Fallback triggered -> [${hierarchy[i + 1]}]`);
+                        log.warn(() => `[AgentInspector] Fallback triggered -> [${hierarchy[i + 1]}]`);
                         break;
                     }
                     log.warn(
                         () =>
-                            `[AgentB] ${operation} on ${model} failed (Status: ${status}): ${err?.message || err}. All models exhausted.`
+                            `[AgentInspector] ${operation} on ${model} failed (Status: ${status}): ${err?.message || err}. All models exhausted.`
                     );
                     throw err;
                 }
@@ -735,7 +753,7 @@ class AgentBInspector extends OpenAICompatibleProvider {
                 if (hasRetry) {
                     log.warn(
                         () =>
-                            `[AgentB] ${operation} on ${model} failed (${reason}). Retry ${r + 1}/${totalTries - 1} on the SAME model [${model}]...`
+                            `[AgentInspector] ${operation} on ${model} failed (${reason}). Retry ${r + 1}/${totalTries - 1} on the SAME model [${model}]...`
                     );
                     // [UPSTREAM-RESILIENCE] Backoff eksponen SEBELUM retry berikutnya.
                     await this._retrySameModelBackoff(operation, model, r);
@@ -744,13 +762,13 @@ class AgentBInspector extends OpenAICompatibleProvider {
                 if (hasSibling) {
                     log.warn(
                         () =>
-                            `[AgentB] ${operation} on ${model} failed (${reason}). Failing over to ${hierarchy[i + 1]}...`
+                            `[AgentInspector] ${operation} on ${model} failed (${reason}). Failing over to ${hierarchy[i + 1]}...`
                     );
                     // Mandat Seni Bina Universal Payload §C: format trigger wajib
-                    log.warn(() => `[AgentB] Fallback triggered -> [${hierarchy[i + 1]}]`);
+                    log.warn(() => `[AgentInspector] Fallback triggered -> [${hierarchy[i + 1]}]`);
                     break;
                 }
-                log.warn(() => `[AgentB] ${operation} on ${model} failed (${reason}). All models exhausted.`);
+                log.warn(() => `[AgentInspector] ${operation} on ${model} failed (${reason}). All models exhausted.`);
                 throw new Error(`${operation}: ${reason} on all models`);
             }
         }
@@ -785,14 +803,14 @@ class AgentBInspector extends OpenAICompatibleProvider {
         if (base <= 0) return; // backoff dilumpuhkan
         const cap = Number(this.preflightRetryBackoffCapMs) || base;
         const delay = Math.min(cap, base * Math.pow(2, r));
-        log.debug(() => `[AgentB] ${operation} backoff ${delay}ms before retrying [${model}]`);
+        log.debug(() => `[AgentInspector] ${operation} backoff ${delay}ms before retrying [${model}]`);
         await this._sleep(delay);
     }
 
     // [PAYLOAD-GODTIER] SEJARAH (dikekalkan untuk forensik): muatan BEAST lama
     // membawa siling token 131072 (128K) — kini DIGUGURKAN sepenuhnya daripada
     // muatan 4-kunci god-tier (pencetus overthinking + istilah kritikal
-    // tergugur). Constant AGENT_B_MAX_TOKENS kekal untuk keserasian warisan.
+    // tergugur). Constant AGENT_INSPECTOR_MAX_TOKENS kekal untuk keserasian warisan.
 
     /**
      * Override: prompt inspector ialah arahan lengkap + payload (self-contained)
@@ -824,7 +842,7 @@ class AgentBInspector extends OpenAICompatibleProvider {
         };
     }
 
-    /** Circuit breaker terbuka? (Agent B ditenyapkan bagi sisa fail ini) */
+    /** Circuit breaker terbuka? (Agent Inspector ditenyapkan bagi sisa fail ini) */
     get circuitOpen() {
         return this._circuitOpen === true;
     }
@@ -842,7 +860,7 @@ class AgentBInspector extends OpenAICompatibleProvider {
             this._circuitOpen = true;
             log.warn(
                 () =>
-                    `[AgentB] Circuit breaker OPEN after ${this._consecutiveFailures} consecutive failures — Agent B silenced for the rest of this file`
+                    `[AgentInspector] Circuit breaker OPEN after ${this._consecutiveFailures} consecutive failures — Agent Inspector silenced for the rest of this file`
             );
         }
     }
@@ -853,7 +871,7 @@ class AgentBInspector extends OpenAICompatibleProvider {
     }
 
     /**
-     * TUGASAN 1: Pre-Flight Offload — Fasa 0 dijalankan oleh Agent B sepenuhnya
+     * TUGASAN 1: Pre-Flight Offload — Fasa 0 dijalankan oleh Agent Inspector sepenuhnya
      * (Gemini 3 Flash dikecualikan, jimat kuota TPM/RPM).
      *
      * Guna semula runPreflightSemanticPass() sedia ada dengan menyuntik
@@ -865,7 +883,7 @@ class AgentBInspector extends OpenAICompatibleProvider {
      */
     async runPreflightPass(entries, targetLanguage, sourceLanguage, options = {}) {
         // [GRACEFUL-BYPASS] Preflight tanpa model dikonfigurasi → skip senyap
-        // (non-blocking null; terjemahan Agent A jalan tanpa konteks global).
+        // (non-blocking null; terjemahan Agent Translation jalan tanpa konteks global).
         if (!this.preflightModel) {
             return null;
         }
@@ -933,7 +951,7 @@ class AgentBInspector extends OpenAICompatibleProvider {
             // teknikal telah dipapar oleh _callWithFailover (zero-swallowed).
             log.warn(
                 () =>
-                    `[AgentB] Pre-flight exhausted all attempts on [${this.preflightModel}] — continuing without global context (non-blocking): ${failoverErr?.message || failoverErr}`
+                    `[AgentInspector] Pre-flight exhausted all attempts on [${this.preflightModel}] — continuing without global context (non-blocking): ${failoverErr?.message || failoverErr}`
             );
             return null;
         } finally {
@@ -962,7 +980,7 @@ class AgentBInspector extends OpenAICompatibleProvider {
      */
     async runSemanticInspection(sourceBatch, translatedEntries, meta = {}) {
         // [GRACEFUL-BYPASS] Inspector tanpa model dikonfigurasi → audit
-        // pasca-terjemahan dilepaskan; terjemahan Agent A diterima terus.
+        // pasca-terjemahan dilepaskan; terjemahan Agent Translation diterima terus.
         if (!this.model) {
             return { valid: true, skipped: 'inspector_not_configured' };
         }
@@ -1001,7 +1019,7 @@ class AgentBInspector extends OpenAICompatibleProvider {
                         const rawForLog = String(cleaned || responseText || '');
                         log.warn(
                             () =>
-                                `[AgentB] ${batchLabel} parse failure. Raw snippet (first 500 chars): "${rawForLog.slice(0, 500)}..."`
+                                `[AgentInspector] ${batchLabel} parse failure. Raw snippet (first 500 chars): "${rawForLog.slice(0, 500)}..."`
                         );
                         return { verdict: null };
                     }
@@ -1015,9 +1033,11 @@ class AgentBInspector extends OpenAICompatibleProvider {
             this._recordSuccess();
             if (verdict.valid === false && Array.isArray(verdict.crimes) && verdict.crimes.length > 0) {
                 const types = verdict.crimes.map((c) => c.type).join(', ');
-                log.warn(() => `[AgentB] ${batchLabel}: CRIME DETECTED [${types}] [${modelUsed}] -> Triggering Retry`);
+                log.warn(
+                    () => `[AgentInspector] ${batchLabel}: CRIME DETECTED [${types}] [${modelUsed}] -> Triggering Retry`
+                );
             } else {
-                log.info(() => `[AgentB] ${batchLabel}: PASSED (valid: true) [${modelUsed}] (${latency}ms)`);
+                log.info(() => `[AgentInspector] ${batchLabel}: PASSED (valid: true) [${modelUsed}] (${latency}ms)`);
             }
             return { ...verdict, modelUsed };
         } catch (err) {
@@ -1026,7 +1046,7 @@ class AgentBInspector extends OpenAICompatibleProvider {
             const status = err?.statusCode || err?.response?.status || err?.status || 'N/A';
             log.warn(
                 () =>
-                    `[AgentB] ${batchLabel} failed on ALL models (Status: ${status}): ${err?.message || err} — accepting Agent A output (fail-open)`
+                    `[AgentInspector] ${batchLabel} failed on ALL models (Status: ${status}): ${err?.message || err} — accepting Agent Translation output (fail-open)`
             );
             return { valid: true, failOpen: true, error: 'both_models_failed', detail: err?.message || String(err) };
         } finally {
@@ -1036,20 +1056,20 @@ class AgentBInspector extends OpenAICompatibleProvider {
 }
 
 module.exports = {
-    AgentBInspector,
+    AgentInspector,
     buildInspectionPayload,
     parseInspectorResponse,
     formatPreflightContextForInspection,
     INSPECTOR_INSTRUCTION,
-    AGENT_B_DEFAULT_MODEL,
-    AGENT_B_PREFLIGHT_MODEL,
-    AGENT_B_FALLBACK_MODEL,
-    AGENT_B_PREFLIGHT_FALLBACK_MODEL, // [MODEL-HIERARCHY] sentiasa = primer Fasa 0
-    AGENT_B_PREFLIGHT_RETRIES, // [MODEL-HIERARCHY] retry-same-model Fasa 0
-    AGENT_B_PREFLIGHT_RETRY_BACKOFF_MS, // [UPSTREAM-RESILIENCE] backoff base retry Fasa 0
-    AGENT_B_PREFLIGHT_RETRY_BACKOFF_CAP_MS, // [UPSTREAM-RESILIENCE] siling backoff
-    AGENT_B_PREFLIGHT_TIMEOUT_MS,
-    AGENT_B_INSPECTION_TIMEOUT_MS,
-    AGENT_B_MAX_TOKENS,
-    AGENT_B_CIRCUIT_THRESHOLD
+    AGENT_INSPECTOR_DEFAULT_MODEL,
+    AGENT_INSPECTOR_PREFLIGHT_MODEL,
+    AGENT_INSPECTOR_FALLBACK_MODEL,
+    AGENT_INSPECTOR_PREFLIGHT_FALLBACK_MODEL, // [MODEL-HIERARCHY] sentiasa = primer Fasa 0
+    AGENT_INSPECTOR_PREFLIGHT_RETRIES, // [MODEL-HIERARCHY] retry-same-model Fasa 0
+    AGENT_INSPECTOR_PREFLIGHT_RETRY_BACKOFF_MS, // [UPSTREAM-RESILIENCE] backoff base retry Fasa 0
+    AGENT_INSPECTOR_PREFLIGHT_RETRY_BACKOFF_CAP_MS, // [UPSTREAM-RESILIENCE] siling backoff
+    AGENT_INSPECTOR_PREFLIGHT_TIMEOUT_MS,
+    AGENT_INSPECTOR_INSPECTION_TIMEOUT_MS,
+    AGENT_INSPECTOR_MAX_TOKENS,
+    AGENT_INSPECTOR_CIRCUIT_THRESHOLD
 };

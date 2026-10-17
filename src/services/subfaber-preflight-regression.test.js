@@ -150,7 +150,7 @@ test('SubFaberPreflight: 4-pillar schema stays clean (theme / terms / characters
 // (kimi-k3 curl ground-truth: field itu cetus deliberation meleret 9182
 // reasoning tokens / 80% output — model teragak "aku/kau vs saya/awak"). TAPI
 // direct_address DIPULIHKAN: ia ekstraksi FAKTA (Aunt → Mak Cik dari matriks
-// honorifik), BUKAN pilihan subjektif, dan ketiadaannya menyebabkan Agent A
+// honorifik), BUKAN pilihan subjektif, dan ketiadaannya menyebabkan Agent Translation
 // hentam gelaran third-person (Puan Shen) pada baris vocative (Aunt) — kesan
 // sampingan yang disahkan pada run runtime ke-3. canonical_address + anti-
 // deliberation (pronoun sahaja) KEKAL.
@@ -410,7 +410,7 @@ test('SubFaberPreflight: invalid term entries filtered, missing tgt defaults to 
 test('SubFaberPreflight: terms are UNBOUNDED — SEMUA istilah dipulangkan (UNBOUNDED-CONTEXT 2026-09-29)', () => {
     // Kes produksi: SRT 759 baris → model mengekstrak 30-80 istilah. Siling lama
     // 15 (VideoLingo) DIGUGURKAN — rantaian pemotongan preflight→inspection
-    // menyebabkan Agent B mengaudit atas konteks separuh jelah.
+    // menyebabkan Agent Inspector mengaudit atas konteks separuh jelah.
     const manyTerms = Array.from({ length: 30 }, (_, i) => ({ src: `T${i}`, tgt: `T${i}`, note: 'n' }));
     const response = JSON.stringify({ theme: 'T.', terms: manyTerms });
     const parsed = parsePreflightResponse(response);
@@ -550,7 +550,7 @@ test('SubFaberPreflight: formatPreflightForPrompt renders NOT LOCKED marker for 
     });
     assert.ok(block.includes('- Shen Ruoxin → Puan Shen (female lead)'), 'gelaran terkunci dirender seperti biasa');
     assert.ok(block.includes('- Mystery → address NOT LOCKED'), 'null → isyarat NOT LOCKED (bukan nama mentah)');
-    assert.ok(block.includes('Malay matrix'), 'panduan matriks BM mesti hadir untuk Agent A');
+    assert.ok(block.includes('Malay matrix'), 'panduan matriks BM mesti hadir untuk Agent Translation');
 });
 
 test('SubFaberPreflight: prompt carries the Malay sociolinguistic honorific matrix (Puan/Cik/Encik/Mak Cik/Pak Cik)', () => {

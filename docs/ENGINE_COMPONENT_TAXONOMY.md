@@ -15,7 +15,7 @@
 |---|-----------|---------------------------------------|---------|
 | 1 | **Agent Preflight** | `src/services/subfaberPreflight.js` | Analisis semantik seluruh fail SEBELUM terjemahan bermula (Fasa 0): jana kontrak JSON 4-tiang (theme / terms / characters / credits_and_titles) yang menjadi konteks global "Bible" untuk semua kelompok terjemahan. Best-effort, non-blocking: kegagalan tidak menggagalkan pipeline. |
 | 2 | **Agent Translation** | `src/services/translationEngine.js` | Penterjemah utama (Worker): kelola kelompok baris, suntik konteks Agent Preflight + sliding context, dispatch ke provider (Gemini / OpenAI-compatible / Anthropic / DeepL / Google Translate), stream hasil entri-demi-entri. |
-| 3 | **Agent Inspector** | `src/services/agentBInspector.js` | Askar pertahanan semantik: semak setiap kelompok hasil (sumber vs hasil) bagi mengesan 6 jenayah (MERGE / SHIFT / PHANTOM / DROP / UNTRANSLATED / REGISTER) dan picu retry. Juga pelaksana fizikal offload Fasa 0 (model preflight = model inspector — seni bina Dual-AI). |
+| 3 | **Agent Inspector** | `src/services/agentInspector.js` | Askar pertahanan semantik: semak setiap kelompok hasil (sumber vs hasil) bagi mengesan 6 jenayah (MERGE / SHIFT / PHANTOM / DROP / UNTRANSLATED / REGISTER) dan picu retry. Juga pelaksana fizikal offload Fasa 0 (model preflight = model inspector — seni bina Dual-AI). |
 
 **Aliran enjin:** `Agent Preflight` (Fasa 0, sekali per fail) → `Agent Translation`
 (kelompok demi kelompok) → `Agent Inspector` (audit setiap kelompok; FAIL-OPEN —
@@ -32,8 +32,8 @@ seni bina, log, dan dokumentasi.
 |---------------------------|---------------|
 | Preflight / Pre-Flight / Pre-Flight Semantic Pass / Fasa 0 engine | **Agent Preflight** |
 | Enginetranslation / Engine Translation / Translation Engine | **Agent Translation** |
-| Agent A / AGENT A (Worker) | **Agent Translation** |
-| Inspection / Agent B / AGENT B / Inspector / Agent B Inspector | **Agent Inspector** |
+| Agent Translation / AGENT TRANSLATION (Worker) | **Agent Translation** |
+| Inspection / Agent Inspector / AGENT INSPECTOR / Inspector / Agent Inspector Inspector | **Agent Inspector** |
 
 ## 3. Peraturan Penggunaan (BERKUAT KUASA)
 
@@ -57,13 +57,13 @@ seni bina, log, dan dokumentasi.
   melaksanakan Fasa 0 secara fizikal (payload preflight dihantar melalui laluan
   OpenAI-compatible inspector — model preflight = model inspector, seni bina
   Dual-AI 2026-09-26). Bila log menunjukkan "pre-flight menggunakan model
-  Agent B", itu ialah kelakuan direka, bukan bug.
+  Agent Inspector", itu ialah kelakuan direka, bukan bug.
 - **Hierarki kebenaran:** dialog sumber sebenar mengatasi andaian Agent
   Preflight (HIERARCHY OF TRUTH) — jaring keselamatan Agent Translation.
 - **Rantaian akses fizikal:** `translationEngine.js` (Agent Translation)
   memanggil `runPreflightSemanticPass()` dari `subfaberPreflight.js` (Agent
   Preflight) dan Namespace-import `sentry`-style untuk inspector
-  (`agentBInspector.js`).
+  (`agentInspector.js`).
 
 ---
 

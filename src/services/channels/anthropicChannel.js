@@ -70,11 +70,11 @@ function buildRequest({
 }
 
 /**
- * Bina transport AnthropicProvider duck-typed untuk delegasi AgentB.
+ * Bina transport AnthropicProvider duck-typed untuk delegasi AgentInspector.
  * translateSubtitle() terbina dalam split sempadan + auto-compliance retry
  * (isThinkingTemperatureConstraint → temperature=1 + drop top_p).
  *
- * @param {Object} options - Constructor options AgentBInspector
+ * @param {Object} options - Constructor options AgentInspector
  * @returns {AnthropicProvider}
  */
 function buildProvider(options = {}) {
@@ -85,10 +85,10 @@ function buildProvider(options = {}) {
         providerName: 'anthropic',
         // maxOutputTokens provider melebihi cap API — clamp bawah siling sah.
         maxOutputTokens: ANTHROPIC_MAX_TOKENS_CAP,
-        // Fail fast — retry dikendalikan _callWithFailover AgentB (pariti
+        // Fail fast — retry dikendalikan _callWithFailover AgentInspector (pariti
         // maxRetries:0 dengan openaiChannel/geminiChannel).
         maxRetries: 0,
-        enableJsonOutput: false, // kesahan JSON oleh parser tahan lasak AgentB
+        enableJsonOutput: false, // kesahan JSON oleh parser tahan lasak AgentInspector
         // thinking adaptive mengikut laluan provider; temperature default
         // dikawal provider (kekangan temperature/thinking dikekalkan).
         thinking: options.thinking !== undefined ? options.thinking : { type: 'adaptive' }

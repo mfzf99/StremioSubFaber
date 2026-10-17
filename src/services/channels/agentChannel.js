@@ -9,7 +9,7 @@
  *   3. Anthropic Messages (system top-level, x-api-key)
  *
  * Fasa B (keputusan kelulusan owner 2026-10-10): channel berperanan sebagai
- * PEMBINA provider + sumber maklumat format; pewarisan AgentBInspector kekal
+ * PEMBINA provider + sumber maklumat format; pewarisan AgentInspector kekal
  * (regresi 40+ ujian mesti hijau tanpa edit assertion). Fasa C akan
  * memperkenalkan geminiChannel + anthropicChannel dan suntikan channel
  * sepenuhnya melalui komposisi.

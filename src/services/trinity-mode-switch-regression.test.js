@@ -375,10 +375,10 @@ test('[B2] normalizeConfig memulangkan secondaryProvider + providers untuk rehid
     assert.equal(cfg.providers.openai.apiKey, 'ok-1', 'kredential fallback dipelihara');
 });
 
-test('[B3] Pertukaran mod basic->pro melalui normalizeConfig tidak memadam kredential agentB terbitan trinity', () => {
+test('[B3] Pertukaran mod basic->pro melalui normalizeConfig tidak memadam kredential agentInspector terbitan trinity', () => {
     // Simulasi Save dalam Basic Mode selepas pembaikan: patch membawa
     // trinity.mode='basic' TETAPI mengekalkan preflight/inspector lama.
-    // Backend mesti kekal membina agentB daripada nilai tersebut.
+    // Backend mesti kekal membina agentInspector daripada nilai tersebut.
     const { normalizeConfig } = require('../utils/config');
     const saved = {
         trinity: {
@@ -421,21 +421,25 @@ test('[B3] Pertukaran mod basic->pro melalui normalizeConfig tidak memadam krede
     assert.equal(cfg.trinity.mode, 'basic', 'mod basic dipelihara');
     assert.equal(cfg.trinity.preflight.apiKey, 'pk-1', 'preflight terselamat merentas pertukaran mod');
     assert.equal(cfg.trinity.inspector.apiKey, 'ik-1', 'inspector terselamat merentas pertukaran mod');
-    // agentB terbitan: keutamaan trinity.inspector/preflight (config.js Fasa D).
+    // agentInspector terbitan: keutamaan trinity.inspector/preflight (config.js Fasa D).
     assert.equal(
-        cfg.agentB.apiKey,
+        cfg.agentInspector.apiKey,
         'ik-1',
-        'agentB.apiKey terbit daripada trinity.inspector/preflight yang dipelihara'
+        'agentInspector.apiKey terbit daripada trinity.inspector/preflight yang dipelihara'
     );
     assert.equal(
-        cfg.agentB.preflightModel,
+        cfg.agentInspector.preflightModel,
         'm-p',
-        'agentB.preflightModel terbit daripada trinity.preflight yang dipelihara'
+        'agentInspector.preflightModel terbit daripada trinity.preflight yang dipelihara'
     );
-    assert.equal(cfg.agentB.model, 'm-i', 'agentB.model terbit daripada trinity.inspector yang dipelihara');
+    assert.equal(
+        cfg.agentInspector.model,
+        'm-i',
+        'agentInspector.model terbit daripada trinity.inspector yang dipelihara'
+    );
 });
 
-test('[B4] agentB tidak aktif secara tidak sengaja apabila hanya trinity.translation wujud (Basic Mode tulen)', () => {
+test('[B4] agentInspector tidak aktif secara tidak sengaja apabila hanya trinity.translation wujud (Basic Mode tulen)', () => {
     const { normalizeConfig } = require('../utils/config');
     const cfg = normalizeConfig({
         trinity: {
@@ -455,5 +459,9 @@ test('[B4] agentB tidak aktif secara tidak sengaja apabila hanya trinity.transla
         }
     });
     assert.equal(cfg.trinity.mode, 'basic', 'mod basic');
-    assert.equal(cfg.agentB.enabled, false, 'agentB dilumpuhkan — tiada kredential preflight/inspector');
+    assert.equal(
+        cfg.agentInspector.enabled,
+        false,
+        'agentInspector dilumpuhkan — tiada kredential preflight/inspector'
+    );
 });

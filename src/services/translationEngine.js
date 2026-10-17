@@ -20,14 +20,14 @@ const { parseSRT, toSRT } = require('../utils/subtitle');
 const GeminiService = require('./gemini');
 const { DEFAULT_TRANSLATION_PROMPT } = GeminiService;
 // [BASIC-MODE PURITY v3.9.51] runPreflightSemanticPass tidak lagi diperlukan
-// di sini — Fasa 0 kini eksklusif Agent B (agentB.runPreflightPass dalaman
+// di sini — Fasa 0 kini eksklusif Agent Inspector (agentInspector.runPreflightPass dalaman
 // menggunakan modul subfaberPreflight sendiri). Import orphan digugurkan.
 // [UNIVERSAL-FIX] Target-conditional few-shot / NOT-LOCKED guidance — pack
 // di-resolve mengikut bahasa sasaran (Malay → malay.js; lain → generic.js).
 const { getLanguagePack } = require('./prompts/languagePacks');
 // [PROMPT REBUILD v2] Sempadan split system/user (fix hantar-dua-kali).
 const { SUBFABER_PROMPT_BOUNDARY } = require('./utils/structuredPrompt');
-// [AGENTB-OBS] Namespace import (bukan destructure) — mudah di-stub dalam
+// [AGENT-INSPECTOR-OBS] Namespace import (bukan destructure) — mudah di-stub dalam
 // ujian. Telemetri tulen: tiada panggilan API tambahan.
 const sentry = require('../utils/sentry');
 const crypto = require('crypto');
@@ -179,11 +179,11 @@ class TranslationEngine {
         // Tiada flag, tiada mod legacy batch-context/<m> memory.
         this.preflightContext = null; // Slot state Fasa 0 (theme + terms)
 
-        // DUAL-AI (Mandat Pelaksanaan 2026-09-26): Agent B — Semantic Inspector
+        // DUAL-AI (Mandat Pelaksanaan 2026-09-26): Agent Inspector — Semantic Inspector
         // & Pre-Flight Offloader (glm-5.3-flashx, OpenAI-compatible). null →
         // enjin jalan 100% Gemini (backwards compatible penuh).
-        this.agentB = options.agentB || null;
-        this._agentBSemanticRetries = new Set(); // batchIndex yang sudah guna retry semantik
+        this.agentInspector = options.agentInspector || null;
+        this._agentInspectorSemanticRetries = new Set(); // batchIndex yang sudah guna retry semantik
 
         // Mismatch retry: number of retries when AI returns wrong entry count (default: 1)
         const rawMismatchRetries = parseInt(this.advancedSettings.mismatchRetries);
@@ -305,23 +305,23 @@ class TranslationEngine {
             // Tier 4: FinOps incident log — each entry describes one recovery
             // operation with the tokens burned by the failed attempt(s).
             incidents: [],
-            // DUAL-AI: Agent B telemetry
-            // [BS#1] NOTA PENAMAAN: `agentBInspections` mengira VERDICT LULUS
-            // sahaja (semantik legasi). `agentBBatchesInspected` mengira SEMUA
+            // DUAL-AI: Agent Inspector telemetry
+            // [BS#1] NOTA PENAMAAN: `agentInspectorInspections` mengira VERDICT LULUS
+            // sahaja (semantik legasi). `agentInspectorBatchesInspected` mengira SEMUA
             // semakan yang selesai dipanggil — penyebut nisbah corak & liputan.
             // Kedua-duanya BERBEZA MAKSUD. Jangan dicampur dalam dashboard.
-            agentBUsed: false, // Fasa 0 dijalankan oleh Agent B
-            agentBFailures: 0, // kegagalan API/rosak (fail-open count)
-            agentBInspections: 0, // (LEGASI) verdict LULUS sahaja — lihat NOTA PENAMAAN di atas
-            agentBRetries: 0, // semantic retry dilaksanakan
-            // [AGENTB-OBS P0] Circuit breaker visibility (semua additive, default selamat)
-            agentBCircuitOpened: false, // transisi sekali per fail
-            agentBCircuitOpenAtPhase: null, // 'preflight' | 'inspection'
-            agentBCircuitOpenAtBatch: null, // 1-based; 0 untuk fasa preflight (K1)
-            agentBFailuresBeforeOpen: 0, // snapshot agentBFailures saat transisi
-            agentBBatchesInspected: 0, // penyebut (semua semakan lengkap — bukan PASS-only; beza dgn agentBInspections legasi)
-            agentBBatchesSkippedAfterOpen: 0, // batch tanpa perlindungan selepas open
-            // [AGENTB-OBS P3] Crime pattern tracking (observation-only)
+            agentInspectorUsed: false, // Fasa 0 dijalankan oleh Agent Inspector
+            agentInspectorFailures: 0, // kegagalan API/rosak (fail-open count)
+            agentInspectorInspections: 0, // (LEGASI) verdict LULUS sahaja — lihat NOTA PENAMAAN di atas
+            agentInspectorRetries: 0, // semantic retry dilaksanakan
+            // [AGENT-INSPECTOR-OBS P0] Circuit breaker visibility (semua additive, default selamat)
+            agentInspectorCircuitOpened: false, // transisi sekali per fail
+            agentInspectorCircuitOpenAtPhase: null, // 'preflight' | 'inspection'
+            agentInspectorCircuitOpenAtBatch: null, // 1-based; 0 untuk fasa preflight (K1)
+            agentInspectorFailuresBeforeOpen: 0, // snapshot agentInspectorFailures saat transisi
+            agentInspectorBatchesInspected: 0, // penyebut (semua semakan lengkap — bukan PASS-only; beza dgn agentInspectorInspections legasi)
+            agentInspectorBatchesSkippedAfterOpen: 0, // batch tanpa perlindungan selepas open
+            // [AGENT-INSPECTOR-OBS P3] Crime pattern tracking (observation-only)
             // [KNP-ALIGNMENT 2026-10-07] TERM ditambah ke taksonomi telemetry.
             crimesDetectedByType: { MERGE: 0, DROP: 0, PHANTOM: 0, SHIFT: 0, UNTRANSLATED: 0, REGISTER: 0, TERM: 0 },
             crimesResolvedByRetry: 0, // hanya re-verdict LULUS yang disahkan (K3)
@@ -331,27 +331,27 @@ class TranslationEngine {
     }
 
     /**
-     * [AGENTB-OBS P0] Rekod transisi circuit-open (Sekali per fail).
+     * [AGENT-INSPECTOR-OBS P0] Rekod transisi circuit-open (Sekali per fail).
      * K1: batch=0 untuk fasa preflight. K3 guard tiada di sini — transisi
      * diketahui pasti. Sentry single-point: max 1 panggilan per fail.
      * @param {'preflight'|'inspection'} phase
      * @param {number} batch - 1-based batch number (0 untuk preflight)
      */
-    _recordAgentBCircuitOpen(phase, batch) {
-        if (this.translationStats.agentBCircuitOpened) return;
-        this.translationStats.agentBCircuitOpened = true;
-        this.translationStats.agentBCircuitOpenAtPhase = phase;
-        this.translationStats.agentBCircuitOpenAtBatch = batch;
-        this.translationStats.agentBFailuresBeforeOpen = this.translationStats.agentBFailures;
+    _recordAgentInspectorCircuitOpen(phase, batch) {
+        if (this.translationStats.agentInspectorCircuitOpened) return;
+        this.translationStats.agentInspectorCircuitOpened = true;
+        this.translationStats.agentInspectorCircuitOpenAtPhase = phase;
+        this.translationStats.agentInspectorCircuitOpenAtBatch = batch;
+        this.translationStats.agentInspectorFailuresBeforeOpen = this.translationStats.agentInspectorFailures;
         log.warn(
             () =>
-                `[AgentB] CIRCUIT OPENED at ${phase} (batch ${batch}) after ${this.translationStats.agentBFailures} failures — inspection degrades to observe-only for the rest of this file`
+                `[AgentInspector] CIRCUIT OPENED at ${phase} (batch ${batch}) after ${this.translationStats.agentInspectorFailures} failures — inspection degrades to observe-only for the rest of this file`
         );
         try {
-            sentry.captureMessage('[AgentB] Circuit breaker opened — semantic inspection skipped', 'warning', {
+            sentry.captureMessage('[AgentInspector] Circuit breaker opened — semantic inspection skipped', 'warning', {
                 phase,
                 batch,
-                failuresBeforeOpen: this.translationStats.agentBFailuresBeforeOpen
+                failuresBeforeOpen: this.translationStats.agentInspectorFailuresBeforeOpen
             });
         } catch (_) {
             /* telemetri tak boleh menggugat pipeline */
@@ -359,11 +359,11 @@ class TranslationEngine {
     }
 
     /**
-     * [AGENTB-OBS P3] Rekod satu jenayah terkesan (observation-only).
+     * [AGENT-INSPECTOR-OBS P3] Rekod satu jenayah terkesan (observation-only).
      * K4: jenis tak dikenali → abaikan + warn sekali (taksonomi terlindung).
      * Cap 50 entri batch-index per jenis.
      * [BS#4] Corak TIDAK dievaluasi di sini — dievaluasi SEKALI pada
-     * ringkasan hujung fail (_logAgentBFileSummary) untuk mengelakkan
+     * ringkasan hujung fail (_logAgentInspectorFileSummary) untuk mengelakkan
      * warn pramatang daripada kluster panas awal.
      * @param {string} type - MERGE|DROP|PHANTOM|SHIFT (atau lain-lain)
      * @param {number} batch - 1-based batch number
@@ -373,7 +373,9 @@ class TranslationEngine {
         if (!Object.prototype.hasOwnProperty.call(stats.crimesDetectedByType, type)) {
             if (!stats._unknownCrimeWarned) {
                 stats._unknownCrimeWarned = true;
-                log.warn(() => `[AgentB] Unknown crime type "${type}" detected — ignored from taxonomy counters`);
+                log.warn(
+                    () => `[AgentInspector] Unknown crime type "${type}" detected — ignored from taxonomy counters`
+                );
             }
             return;
         }
@@ -384,10 +386,10 @@ class TranslationEngine {
     }
 
     /**
-     * [AGENTB-OBS P3] Deteksi corak jenayah berulang (observation-only).
+     * [AGENT-INSPECTOR-OBS P3] Deteksi corak jenayah berulang (observation-only).
      * Trigger: ≥3 batch unik DAN ≥15% batch diperiksa (fallback: ≥3 batch
      * untuk fail kecil ≤10 batch). Warn SEKALI per jenis (guard array).
-     * [BS#4] Dipanggil HANYA dari _logAgentBFileSummary (hujung fail) —
+     * [BS#4] Dipanggil HANYA dari _logAgentInspectorFileSummary (hujung fail) —
      * satu titik penilaian, nisbah diukur atas penyebut muktamad.
      * @param {string} type
      */
@@ -395,33 +397,35 @@ class TranslationEngine {
         const stats = this.translationStats;
         const idx = stats.crimeBatchIndices[type];
         const uniqueBatches = new Set(idx).size;
-        const total = stats.agentBBatchesInspected;
+        const total = stats.agentInspectorBatchesInspected;
         const triggered = total > 10 ? uniqueBatches >= 3 && uniqueBatches / total >= 0.15 : uniqueBatches >= 3;
         if (!triggered) return;
         if (!Array.isArray(stats.crimePatternDetected)) stats.crimePatternDetected = [];
         const entry = `${type} in ${uniqueBatches}/${total || '?'} inspected batches${total ? ` (${Math.round((uniqueBatches / total) * 100)}%)` : ''}`;
         if (stats.crimePatternDetected.some((e) => e.startsWith(`${type} `))) return;
         stats.crimePatternDetected.push(entry);
-        log.warn(() => `[AgentB] CRIME PATTERN DETECTED: ${entry} — Agent A prompt may need reinforcement`);
+        log.warn(
+            () => `[AgentInspector] CRIME PATTERN DETECTED: ${entry} — Agent Translation prompt may need reinforcement`
+        );
     }
 
     /**
-     * [AGENTB-OBS] Ringkasan hujung fail. Tier log (owner refinement):
+     * [AGENT-INSPECTOR-OBS] Ringkasan hujung fail. Tier log (owner refinement):
      * WARN  = circuit open ATAU pattern detected ATAU jumlah crime ≥3
      * DEBUG = selainnya (file dengan 1-2 crime minor tidak berbunyi)
      */
-    _logAgentBFileSummary() {
+    _logAgentInspectorFileSummary() {
         const s = this.translationStats;
-        // [BASIC-MODE PURITY v3.9.51 — kelulusan Owner 2026-10-15]: Agent B
+        // [BASIC-MODE PURITY v3.9.51 — kelulusan Owner 2026-10-15]: Agent Inspector
         // tidak pernah hidup dalam fail ini (0 batch diinspeksi & 0 di-skip)
         // → JANGAN cetak template kosong "0/0 (100% protected)" — log mesti
         // bersih: benda yang tak hidup tidak bersuara. (Sebelum ini cetak
-        // DEBUG kosmetik walaupun tiada Agent B.)
-        const totalCoverage = s.agentBBatchesInspected + s.agentBBatchesSkippedAfterOpen;
-        if (totalCoverage === 0 && !s.agentBCircuitOpened) {
+        // DEBUG kosmetik walaupun tiada Agent Inspector.)
+        const totalCoverage = s.agentInspectorBatchesInspected + s.agentInspectorBatchesSkippedAfterOpen;
+        if (totalCoverage === 0 && !s.agentInspectorCircuitOpened) {
             return;
         }
-        // [AGENTB-OBS P3/BS#4] Corak dievaluasi SEKALI di hujung fail —
+        // [AGENT-INSPECTOR-OBS P3/BS#4] Corak dievaluasi SEKALI di hujung fail —
         // mengelakkan warn pramatang daripada kluster panas awal (3 batch
         // berturut yang akhirnya di-dilute di bawah 15%).
         for (const t of ['MERGE', 'DROP', 'PHANTOM', 'SHIFT', 'UNTRANSLATED', 'REGISTER', 'TERM']) {
@@ -429,10 +433,10 @@ class TranslationEngine {
         }
         const totalCrimes = Object.values(s.crimesDetectedByType).reduce((a, b) => a + b, 0);
         const hasPattern = Array.isArray(s.crimePatternDetected) && s.crimePatternDetected.length > 0;
-        const coverage = s.agentBBatchesInspected + s.agentBBatchesSkippedAfterOpen;
-        const pct = coverage > 0 ? Math.round((s.agentBBatchesInspected / coverage) * 100) : 100;
-        const msg = `[AgentB] FILE SUMMARY: Circuit opened at ${s.agentBCircuitOpenAtPhase || '—'}${s.agentBCircuitOpened ? ` batch ${s.agentBCircuitOpenAtBatch}` : ''}. Inspection coverage: ${s.agentBBatchesInspected}/${coverage} (${pct}% protected). Crimes: ${JSON.stringify(s.crimesDetectedByType)}, resolved-by-retry: ${s.crimesResolvedByRetry}.`;
-        if (s.agentBCircuitOpened || hasPattern || totalCrimes >= 3) {
+        const coverage = s.agentInspectorBatchesInspected + s.agentInspectorBatchesSkippedAfterOpen;
+        const pct = coverage > 0 ? Math.round((s.agentInspectorBatchesInspected / coverage) * 100) : 100;
+        const msg = `[AgentInspector] FILE SUMMARY: Circuit opened at ${s.agentInspectorCircuitOpenAtPhase || '—'}${s.agentInspectorCircuitOpened ? ` batch ${s.agentInspectorCircuitOpenAtBatch}` : ''}. Inspection coverage: ${s.agentInspectorBatchesInspected}/${coverage} (${pct}% protected). Crimes: ${JSON.stringify(s.crimesDetectedByType)}, resolved-by-retry: ${s.crimesResolvedByRetry}.`;
+        if (s.agentInspectorCircuitOpened || hasPattern || totalCrimes >= 3) {
             log.warn(() => msg);
         } else {
             log.debug(() => msg);
@@ -909,29 +913,29 @@ class TranslationEngine {
         // tiada keperluan konteks semantik — skip.
         //
         // [BASIC-MODE PURITY v3.9.51 — kelulusan Owner 2026-10-15]: Fasa 0
-        // kini EKSKLUSIF Agent B. Laluan fallback "Agent A pre-flight dirinya
-        // sendiri" DIGUGURKAN — Basic Mode (Agent B null) bermakna ENJIN TULen
+        // kini EKSKLUSIF Agent Inspector. Laluan fallback "Agent Translation pre-flight dirinya
+        // sendiri" DIGUGURKAN — Basic Mode (Agent Inspector null) bermakna ENJIN TULen
         // 1-AI: terus ke batch 1 tanpa sebarang panggilan pra-penterjemahan
         // (formula 4+50+2 sahaja). Tiada lagi feature Pro (konteks tema/istilah)
         // menyerap masuk mod Basic. Circuit breaker terbuka pun tidak melata
-        // kepada Agent A — kegagalan Agent B dibiarkan pada Agent B.
-        if (!this.isNativeBatchProvider && this.agentB && !this.agentB.circuitOpen) {
-            this.preflightContext = await this.agentB.runPreflightPass(
+        // kepada Agent Translation — kegagalan Agent Inspector dibiarkan pada Agent Inspector.
+        if (!this.isNativeBatchProvider && this.agentInspector && !this.agentInspector.circuitOpen) {
+            this.preflightContext = await this.agentInspector.runPreflightPass(
                 entries,
                 targetLanguage,
                 this.sourceLanguage,
-                this.agentB,
+                this.agentInspector,
                 { onProgress }
             );
-            this.translationStats.agentBUsed = true;
+            this.translationStats.agentInspectorUsed = true;
             if (this.preflightContext) {
                 this.translationStats.subfaberContextUsed = true;
             }
-            // [AGENTB-OBS P0] Deteksi circuit-open pada FASA PREFLIGHT — kes
+            // [AGENT-INSPECTOR-OBS P0] Deteksi circuit-open pada FASA PREFLIGHT — kes
             // inspector dikongsi: circuit terbuka pada fail sebelumnya → Fasa 0
             // fail ini senyap jatuh ke Gemini. Sekarang diberi isyarat jelas.
-            if (this.agentB && this.agentB.circuitOpen) {
-                this._recordAgentBCircuitOpen('preflight', 0); // K1: batch=0 untuk preflight
+            if (this.agentInspector && this.agentInspector.circuitOpen) {
+                this._recordAgentInspectorCircuitOpen('preflight', 0); // K1: batch=0 untuk preflight
             }
         }
 
@@ -1129,9 +1133,9 @@ class TranslationEngine {
 
         log.info(() => `[TranslationEngine] Translation completed: ${translatedEntries.length} entries`);
 
-        // [AGENTB-OBS] Ringkasan hujung fail — circuit coverage + crime counts
+        // [AGENT-INSPECTOR-OBS] Ringkasan hujung fail — circuit coverage + crime counts
         // (WARN bila circuit open / pattern detected / crimes >= 3; else DEBUG).
-        this._logAgentBFileSummary();
+        this._logAgentInspectorFileSummary();
 
         // Final safety: strip any timecodes/timeranges that slipped through.
         for (const entry of translatedEntries) {
@@ -1287,7 +1291,7 @@ class TranslationEngine {
      * dan Opening Credits / Titles (credits_and_titles) disuntik penuh (bukan
      * bermusim — watak utama dan kredit permulaan relevan pada SETIAP batch).
      *
-     * HIERARCHY OF TRUTH (JARING KESELAMATAN AGENT A — Mandat Beta Run 9,
+     * HIERARCHY OF TRUTH (JARING KESELAMATAN AGENT TRANSLATION — Mandat Beta Run 9,
      * Penyatuuan DeepSeek Stack & Hierarki Kebenaran 2026-09-27): setiap blok
      * konteks membawa peraturan keselamatan tegar — dialog sumber dalam
      * kelompok aktif ialah ground truth MUTLAK dan sentiasa mengatasi
@@ -1313,7 +1317,7 @@ class TranslationEngine {
         const chunkPack = getLanguagePack(targetLanguage || this.currentTargetLanguage || 'Malay');
         let block = `### Content Summary\n${preflight.theme}`;
 
-        // ── HIERARCHY OF TRUTH (Agent A Safety Net — Mandat Beta Run 9) ──
+        // ── HIERARCHY OF TRUTH (Agent Translation Safety Net — Mandat Beta Run 9) ──
         // Suntikan VERBATIM peraturan hierarki kebenaran: dialog sumber
         // mengatasi apa-apa gelaran/jantina/andaian Pre-Flight yang bertentangan.
         // [BARE-NAME FIX 2026-09-30] Runtime lesson (Shine on Me S01E31): model
@@ -1378,7 +1382,7 @@ class TranslationEngine {
 
         // ── TIANG 3: Character Hierarchy (watak utama — suntik penuh) ──
         // MANDAT SOSIOLINGUISTIK 2026-09-27: canonical_address null kini dirender
-        // sebagai isyarat NOT LOCKED (fallback lama `|| name` menyesatkan Agent A
+        // sebagai isyarat NOT LOCKED (fallback lama `|| name` menyesatkan Agent Translation
         // dengan nama mentah dan memaksa tekaan gelaran Cik/Puan tanpa panduan).
         const characters = Array.isArray(preflight.characters) ? preflight.characters : [];
         if (characters.length > 0) {
@@ -2410,45 +2414,45 @@ class TranslationEngine {
         }
 
         // ── DUAL-AI GERBANG SEMANTIK (Mandat Pelaksanaan 2026-09-26) ──
-        // Agent B menyemak hasil MUKA-AKHIR (selepas semua pemulihan struktur
+        // Agent Inspector menyemak hasil MUKA-AKHIR (selepas semua pemulihan struktur
         // Pass 1/2/3 selesai) — mengesan MERGE/DROP/PHANTOM yang lolos daripada
         // parser kuantiti (tag 50/50 sahaja mengesahkan kuantiti, bukan makna).
         // Lokasi: selepas alignment muktamad, SEBELUM cache/stream commit.
-        // Semua kegagalan Agent B fail-open — pipeline tidak pernah tergugat.
+        // Semua kegagalan Agent Inspector fail-open — pipeline tidak pernah tergugat.
         // Guard struktur: hasil muktamad mesti lengkap tanpa placeholder [⚠️]
         // (alignTranslatedEntries memadamkan slot hilang dengan placeholder —
         // bercacat dari segi struktur, bukan calon semakan semantik).
-        const agentBStructurallyClean =
+        const agentInspectorStructurallyClean =
             translatedEntries.length === batch.length &&
             !translatedEntries.some((e) => typeof e?.text === 'string' && e.text.startsWith('[⚠️]'));
 
         if (
-            this.agentB &&
-            !this.agentB.circuitOpen &&
-            !this._agentBSemanticRetries.has(batchIndex) &&
-            agentBStructurallyClean
+            this.agentInspector &&
+            !this.agentInspector.circuitOpen &&
+            !this._agentInspectorSemanticRetries.has(batchIndex) &&
+            agentInspectorStructurallyClean
         ) {
             try {
                 // CONTEXT-AWARE AUDIT (MANDAT OPERASI MUTLAK 2026-09-27): konteks
-                // Pre-Flight disuntik ke pemeriksa Agent B — tidak lagi mengaudit buta.
-                const verdict = await this.agentB.runSemanticInspection(batch, translatedEntries, {
+                // Pre-Flight disuntik ke pemeriksa Agent Inspector — tidak lagi mengaudit buta.
+                const verdict = await this.agentInspector.runSemanticInspection(batch, translatedEntries, {
                     batchIndex,
                     totalBatches,
                     preflightContext: this.preflightContext || null
                 });
-                // [AGENTB-OBS P0/BS#2] Penyebut dijitok SELEPAS panggilan selesai —
+                // [AGENT-INSPECTOR-OBS P0/BS#2] Penyebut dijitok SELEPAS panggilan selesai —
                 // inspection yang throw TIDAK mengembungkan nisbah corak & liputan
                 // (failOpen masih dikira: panggilan selesai, cuma resolve via fail-open).
-                this.translationStats.agentBBatchesInspected++;
-                // [AGENTB-OBS P0] Deteksi transisi circuit-open pada FASA INSPECTION
+                this.translationStats.agentInspectorBatchesInspected++;
+                // [AGENT-INSPECTOR-OBS P0] Deteksi transisi circuit-open pada FASA INSPECTION
                 // (3 kegagalan berturut-turut sepanjang fail ini).
-                if (verdict?.failOpen && this.agentB.circuitOpen) {
-                    this._recordAgentBCircuitOpen('inspection', batchIndex + 1);
+                if (verdict?.failOpen && this.agentInspector.circuitOpen) {
+                    this._recordAgentInspectorCircuitOpen('inspection', batchIndex + 1);
                 }
                 if (verdict?.failOpen) {
-                    this.translationStats.agentBFailures++;
+                    this.translationStats.agentInspectorFailures++;
                 } else if (verdict && verdict.valid === false && Array.isArray(verdict.crimes)) {
-                    // [AGENTB-OBS P3] Kira jenayah terkesan (semua termasuk selapas
+                    // [AGENT-INSPECTOR-OBS P3] Kira jenayah terkesan (semua termasuk selapas
                     // retry) + simpan batch-index untuk analisis retrospektif.
                     for (const crime of verdict.crimes) {
                         if (crime && crime.type) this._recordCrime(String(crime.type), batchIndex + 1);
@@ -2459,14 +2463,16 @@ class TranslationEngine {
                         .map((c) => `- ${c.type} at line(s) ${c.ids.join(',')}: ${c.note}`)
                         .join('\n');
                     this._logIncident({
-                        type: 'AGENT_B_SEMANTIC_RETRY',
+                        type: 'AGENT_INSPECTOR_SEMANTIC_RETRY',
                         batch: batchIndex + 1,
                         recovery: 'full batch retry with crime warning',
                         outcome: 'in_progress'
                     });
-                    this._agentBSemanticRetries.add(batchIndex);
-                    this.translationStats.agentBRetries++;
-                    log.warn(() => `[AgentB] Semantic crime(s) detected in batch ${batchIndex + 1}:\n${crimeLines}`);
+                    this._agentInspectorSemanticRetries.add(batchIndex);
+                    this.translationStats.agentInspectorRetries++;
+                    log.warn(
+                        () => `[AgentInspector] Semantic crime(s) detected in batch ${batchIndex + 1}:\n${crimeLines}`
+                    );
 
                     const warningBlock = `
 
@@ -2506,22 +2512,22 @@ You MUST translate each numbered line 1:1. NEVER merge two source lines into one
                         // DAN lulus semakan semantik kedua (satu-satunya re-verdict).
                         if (retryMissing.length === 0 && retryEntries.length === batch.length) {
                             const retrySorted = Object.values(retryAligned).sort((a, b) => a.index - b.index);
-                            const reVerdict = await this.agentB.runSemanticInspection(batch, retrySorted, {
+                            const reVerdict = await this.agentInspector.runSemanticInspection(batch, retrySorted, {
                                 batchIndex,
                                 totalBatches,
                                 preflightContext: this.preflightContext || null
                             });
-                            // [AGENTB-OBS P0/BS#3] Transisi circuit-open pada RE-VERDICT —
+                            // [AGENT-INSPECTOR-OBS P0/BS#3] Transisi circuit-open pada RE-VERDICT —
                             // dahulu tak direkod; kini sama seperti verdict pertama
-                            // (helper idempotent — guard agentBCircuitOpened dalaman).
+                            // (helper idempotent — guard agentInspectorCircuitOpened dalaman).
                             if (
                                 reVerdict?.failOpen &&
-                                this.agentB.circuitOpen &&
-                                !this.translationStats.agentBCircuitOpened
+                                this.agentInspector.circuitOpen &&
+                                !this.translationStats.agentInspectorCircuitOpened
                             ) {
-                                this._recordAgentBCircuitOpen('inspection', batchIndex + 1);
+                                this._recordAgentInspectorCircuitOpen('inspection', batchIndex + 1);
                             }
-                            // [AGENTB-OBS P3/K3] Resolved-by-retry hanya bila re-verdict
+                            // [AGENT-INSPECTOR-OBS P3/K3] Resolved-by-retry hanya bila re-verdict
                             // LULUS dan DISAHKAN (bukan failOpen — failOpen bermaksud
                             // TIDAK disemak; mengiranya sebagai resolved ialah telemetry
                             // yang tidak jujur). Pipeline behavior kekal tidak berubah.
@@ -2530,24 +2536,26 @@ You MUST translate each numbered line 1:1. NEVER merge two source lines into one
                                 this.translationStats.crimesResolvedByRetry += Array.isArray(verdict.crimes)
                                     ? verdict.crimes.length
                                     : 0;
-                                this._closeIncident('AGENT_B_SEMANTIC_RETRY', batchIndex + 1, { outcome: 'recovered' });
-                                log.info(() => `[AgentB] Semantic retry succeeded for batch ${batchIndex + 1}`);
+                                this._closeIncident('AGENT_INSPECTOR_SEMANTIC_RETRY', batchIndex + 1, {
+                                    outcome: 'recovered'
+                                });
+                                log.info(() => `[AgentInspector] Semantic retry succeeded for batch ${batchIndex + 1}`);
                             } else {
-                                this._closeIncident('AGENT_B_SEMANTIC_RETRY', batchIndex + 1, {
+                                this._closeIncident('AGENT_INSPECTOR_SEMANTIC_RETRY', batchIndex + 1, {
                                     outcome: 'unsalvageable — best result kept'
                                 });
                                 log.warn(
                                     () =>
-                                        `[AgentB] Semantic retry still failing for batch ${batchIndex + 1} — accepting best result`
+                                        `[AgentInspector] Semantic retry still failing for batch ${batchIndex + 1} — accepting best result`
                                 );
                             }
                         } else {
-                            this._closeIncident('AGENT_B_SEMANTIC_RETRY', batchIndex + 1, {
+                            this._closeIncident('AGENT_INSPECTOR_SEMANTIC_RETRY', batchIndex + 1, {
                                 outcome: 'unsalvageable — structural mismatch on retry'
                             });
                             log.warn(
                                 () =>
-                                    `[AgentB] Semantic retry returned ${retryEntries.length}/${batch.length} entries — keeping original result`
+                                    `[AgentInspector] Semantic retry returned ${retryEntries.length}/${batch.length} entries — keeping original result`
                             );
                         }
                     } catch (retryErr) {
@@ -2556,29 +2564,33 @@ You MUST translate each numbered line 1:1. NEVER merge two source lines into one
                         }
                         // [BS#3 throw path]: kegagalan re-verdict boleh jadi transisi
                         // circuit ke-3 — rekodkan (helper idempotent).
-                        if (this.agentB?.circuitOpen && !this.translationStats.agentBCircuitOpened) {
-                            this._recordAgentBCircuitOpen('inspection', batchIndex + 1);
+                        if (this.agentInspector?.circuitOpen && !this.translationStats.agentInspectorCircuitOpened) {
+                            this._recordAgentInspectorCircuitOpen('inspection', batchIndex + 1);
                         }
-                        this._closeIncident('AGENT_B_SEMANTIC_RETRY', batchIndex + 1, {
+                        this._closeIncident('AGENT_INSPECTOR_SEMANTIC_RETRY', batchIndex + 1, {
                             outcome: 'retry failed — original kept'
                         });
                         log.warn(
-                            () => `[AgentB] Semantic retry call failed for batch ${batchIndex + 1}: ${retryErr.message}`
+                            () =>
+                                `[AgentInspector] Semantic retry call failed for batch ${batchIndex + 1}: ${retryErr.message}`
                         );
                     }
                 } else if (verdict && verdict.valid === true) {
-                    this.translationStats.agentBInspections++;
+                    this.translationStats.agentInspectorInspections++;
                 }
-            } catch (agentBErr) {
+            } catch (agentInspectorErr) {
                 // Fail-open mutlak — jangan sekat pipeline walau apa pun berlaku.
-                this.translationStats.agentBFailures++;
-                log.warn(() => `[AgentB] Semantic gate error (fail-open): ${agentBErr?.message || agentBErr}`);
+                this.translationStats.agentInspectorFailures++;
+                log.warn(
+                    () =>
+                        `[AgentInspector] Semantic gate error (fail-open): ${agentInspectorErr?.message || agentInspectorErr}`
+                );
             }
-        } else if (this.agentB && this.agentB.circuitOpen && agentBStructurallyClean) {
-            // [AGENTB-OBS P0] Batch ini TIDAK dilindungi semakan semantik —
+        } else if (this.agentInspector && this.agentInspector.circuitOpen && agentInspectorStructurallyClean) {
+            // [AGENT-INSPECTOR-OBS P0] Batch ini TIDAK dilindungi semakan semantik —
             // circuit breaker terbuka. Kira skip (tanpa log per-batch — elak
             // spam; ringkasan hujung fail membawa signal).
-            this.translationStats.agentBBatchesSkippedAfterOpen++;
+            this.translationStats.agentInspectorBatchesSkippedAfterOpen++;
         }
 
         // Cache individual entries
@@ -2917,14 +2929,14 @@ You MUST translate each numbered line 1:1. NEVER merge two source lines into one
 
         // ── PROMPT V2 "CRIME-PROOF" (Mandat Pembedahan B 2026-09-27) ──
         // [HARMONY-FIX] Harmonisasi 2026-09-29: structural_rules memetakan 1:1
-        // kepada jenayah Agent B (ANTI-MERGE→MERGE, ANTI-SHIFT→SHIFT,
+        // kepada jenayah Agent Inspector (ANTI-MERGE→MERGE, ANTI-SHIFT→SHIFT,
         // ANTI-PHANTOM→PHANTOM, ANTI-DROP→DROP).
         // [SOCIOLINGUISTIC v2 2026-09-29] structural_rules kini 8 peraturan
         // (+ SLOT-BOUNDARY TIEBREAKER; ESCAPE HATCH dipersempit untuk memetakan
         // ke jenayah UNTRANSLATED; PRESERVE markup dengan [br] reposition adaptif).
-        // Taksonomi Agent B kini 6 jenayah (+ UNTRANSLATED + REGISTER). Blok
+        // Taksonomi Agent Inspector kini 6 jenayah (+ UNTRANSLATED + REGISTER). Blok
         // <translation_craft> (equivalent-effect + compression + anti-calque)
-        // diselaraskan dengan klausa "compression/idiom sah" dalam arahan Agent B
+        // diselaraskan dengan klausa "compression/idiom sah" dalam arahan Agent Inspector
         // supaya tiada retry palsu. SEMUA teks universal (${targetLabel}) — sifar
         // hardcode khusus-bahasa (kontrak 400+ bahasa).
         // Rule 4 (ANTI-DROP) sengaja mengelak perkataan "truncated" (false
@@ -2942,7 +2954,7 @@ You MUST translate each numbered line 1:1. NEVER merge two source lines into one
         //   1. ID PARITI SUCI (slot 1:1, id sama, susunan sama)
         //   2. Ayat HIDUP macam penutur jati (bukan kaku/calque)
         // Label jenayah ANTI-* dikekal dalam rules supaya pemetaan 1:1 dengan
-        // taksonomi 6-jenayah Agent B (MERGE/SHIFT/PHANTOM/DROP/UNTRANSLATED/
+        // taksonomi 6-jenayah Agent Inspector (MERGE/SHIFT/PHANTOM/DROP/UNTRANSLATED/
         // REGISTER) tidak putus. Few-shot dari pack (2 contoh parity-critical).
         // Kontrak `<answer>` + anchor kekal di USER part (Smart Preamble
         // Scrubber + prefill Gemini bergantung padanya).

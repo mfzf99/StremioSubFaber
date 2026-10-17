@@ -49,7 +49,7 @@ class AnthropicProvider {
             normalizedTarget
         );
 
-        // [PROMPT REBUILD v2 2026-09-29] Structured split: SubFaber Agent A prompt
+        // [PROMPT REBUILD v2 2026-09-29] Structured split: SubFaber Agent Translation prompt
         // (dengan SUBFABER_PROMPT_BOUNDARY) → system (statik) + user (dinamik),
         // elak hantar-dua-kali & elak sempadan bocor ke prompt hidup.
         const structured = splitStructuredPrompt(combined);

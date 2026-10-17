@@ -2,8 +2,8 @@
  * OpenAI Channel — pintu OpenAI-compatible bagi Trinity (Tri-Door Fasa B).
  *
  * Membungkus pengetahuan pengangkutan yang sebelum ini terkurung dalam
- * constructor AgentBInspector (super-options OpenAICompatibleProvider):
- *   - providerName 'agentb', universalPayload god-tier 4-kunci
+ * constructor AgentInspector (super-options OpenAICompatibleProvider):
+ *   - providerName 'agent-inspector', universalPayload god-tier 4-kunci
  *     {model, messages, stream:true, temperature:0.0} (PAYLOAD-GODTIER 2026-09-28)
  *   - maxRetries 0 (fail fast; retry dikendalikan _callWithFailover)
  *   - enableJsonOutput false (kesahan JSON oleh parser tahan lasak)
@@ -13,7 +13,7 @@
  * rootsys/Caddy — channel ini pemilik laluan tersebut; geminiChannel &
  * anthropicChannel (Fasa C) dibenarkan non-stream.
  *
- * Fasa B: buildSuperOptions() ialah ekstraksi 1:1 — AgentBInspector
+ * Fasa B: buildSuperOptions() ialah ekstraksi 1:1 — AgentInspector
  * menggunakan keluaran ini untuk super() supaya tingkah laku TIDAK berubah
  * (regresi mesti hijau tanpa edit assertion).
  */
@@ -22,11 +22,11 @@ const OpenAICompatibleProvider = require('../providers/openaiCompatible');
 const { FORMAT_OPENAI } = require('./keyDetector');
 
 /**
- * Bina super-options OpenAICompatibleProvider bagi Agent B.
- * Ekstraksi verbatim daripada agentBInspector.js constructor (Fasa B) —
+ * Bina super-options OpenAICompatibleProvider bagi Agent Inspector.
+ * Ekstraksi verbatim daripada agentInspector.js constructor (Fasa B) —
  * tingkah laku kekal 1:1 dengan laluan pra-refactor.
  *
- * @param {Object} options - Constructor options AgentBInspector
+ * @param {Object} options - Constructor options AgentInspector
  * @param {number} inspectionTimeoutMs - Had masa semakan (ms)
  * @param {number} beastMaxTokens - Legacy no-op (dikekalkan kontrak warisan)
  * @returns {Object} super-options untuk new OpenAICompatibleProvider(...)
@@ -38,7 +38,7 @@ function buildSuperOptions(options = {}, inspectionTimeoutMs = 60000, beastMaxTo
         // digugurkan — model datang daripada konfigurasi pengguna/env.
         model: options.inspectionModel || options.model || '',
         baseUrl: options.baseUrl || 'https://api.openai.com/v1',
-        providerName: 'agentb',
+        providerName: 'agent-inspector',
         universalPayload: true, // Muatan BEAST sejagat (Mandat §A + BETA RUN 10)
         beastMaxTokens, // [AUDIT-WARISAN 2026-09-29] no-op — builder 4-kunci god-tier tidak membaca beastMaxTokens
         translationTimeout: inspectionTimeoutMs / 1000,
