@@ -2,6 +2,18 @@
 
 All notable changes to this project will be documented in this file.
 
+## SubFaber v3.13.1 (2026-10-17) — Total Overhaul Custom Modes (.roomodes) + Core Protocol
+
+### Changed
+
+- **[MANDAT OWNER — TOTAL OVERHAUL] Custom modes Frontend & Backend ditulis semula sepenuhnya dalam [.roomodes](.roomodes):** struktur lama diganti — `roleDefinition` diperkemas, `whenToUse` dijuraskan semula, dan arahan mode kini disatukan sebagai `customInstructions` inline (menggantikan array `rules` lama). `groups` = [read, edit, command, mcp] dan `source: project` dikekalkan. Taksonomi Trinity (Agent Preflight / Agent Translation / Agent Inspector), larangan mode built-in, pipeline 8 langkah, dan semua invarian sistem dikekalkan verbatim.
+- **[MANDAT OWNER — TOTAL OVERHAUL] [.roo/rules/00-subfaber-core-protocol.md](.roo/rules/00-subfaber-core-protocol.md) ditulis semula (+87/−74 baris):** protokol global dipertingkat — penegasan semasa dua-mode universe, delegation verbatim, protokol MCP/CLI precedence, terminal discipline, dan commit pipeline 8 langkah.
+
+### Verified
+
+- Validasi gate `.roomodes` (protokol insiden 2026-10-08): parse PyYAML = PASS — `customModes` count 2 (Backend / Frontend), `groups`=[read,edit,command,mcp], `source`=project; kandungan arahan lengkap tanpa kehilangan.
+- Prettier `--check .` = PASS (termasuk pembetulan pra-wujud `.prettierrc` kepada indent 2-space konsisten override JSON); ESLint 0 error / 224 warning (pra-wujud); `npm test` = **428 total / 427 PASS / 0 FAIL / 1 SKIP (live Redis)** — baseline terpelihara.
+
 ## SubFaber v3.13.0 (2026-10-17) — CLEAN CUT: Penyingkiran Penuh Fitur Learn Target Languages
 
 ### Removed

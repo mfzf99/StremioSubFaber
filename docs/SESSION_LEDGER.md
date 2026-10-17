@@ -1,3 +1,16 @@
+## 2026-10-17 — v3.13.1 TOTAL OVERHAUL CUSTOM MODES (.roomodes) + CORE PROTOCOL
+
+- **Tarikh:** 2026-10-17 ~20:39 (waktu tempatan KL).
+- **Komit SHA (HEAD):** (diisi selepas push) + CI pending.
+- **Keputusan Owner:** Total overhaul `.roomodes` (custom modes Frontend & Backend) beserta `.roo/rules/00-subfaber-core-protocol.md`; arahan verify perubahan masuk, prettier, terus commit.
+- **Verifikasi:** Perubahan kedua-dua fail disahkan modified dalam working tree (+99/−74). Validasi gate `.roomodes` (insiden 2026-10-08): parse PyYAML PASS — customModes 2 (Backend/Frontend), groups=[read,edit,command,mcp], source=project; struktur baharu `customInstructions` inline menggantikan array `rules` tanpa kehilangan kandungan.
+- **Fail Terlibat:** .roomodes, .roo/rules/00-subfaber-core-protocol.md, package.json, CHANGELOG.md, .prettierrc (pembetulan pra-wujud indent 2-space), docs/SESSION_LEDGER.md.
+- **Status npm test:** 428 total / 427 PASS / 0 FAIL / 1 SKIP (live Redis) — baseline terpelihara.
+- **Pipeline:** SemVer 3.13.0→3.13.1 (patch); CHANGELOG entri baharu; cache-buster runtime-driven NO-OP; Prettier PASS; ESLint 0 error / 224 warning (pra-wujud); graphify NO-OP (graphify-out/ absent).
+- **Next Steps:** CI verify via gh CLI selepas push.
+
+---
+
 ## 2026-10-17 — v3.13.0 CLEAN CUT: PENYINGKIRAN PENUH FITUR LEARN TARGET LANGUAGES (SELESAI)
 
 - **Tarikh:** 2026-10-17 ~19:30 (waktu tempatan KL).
