@@ -1,7 +1,7 @@
 ## 2026-10-17 — v3.13.1 TOTAL OVERHAUL CUSTOM MODES (.roomodes) + CORE PROTOCOL
 
 - **Tarikh:** 2026-10-17 ~20:39 (waktu tempatan KL).
-- **Komit SHA (HEAD):** (diisi selepas push) + CI pending.
+- **Komit SHA (HEAD):** `ac02702ee2865cfeb36c4133d55156241fa4a9a3` + CI run 39067654430 = **SUCCESS** (Node 22 ✓ / Node 24 ✓).
 - **Keputusan Owner:** Total overhaul `.roomodes` (custom modes Frontend & Backend) beserta `.roo/rules/00-subfaber-core-protocol.md`; arahan verify perubahan masuk, prettier, terus commit.
 - **Verifikasi:** Perubahan kedua-dua fail disahkan modified dalam working tree (+99/−74). Validasi gate `.roomodes` (insiden 2026-10-08): parse PyYAML PASS — customModes 2 (Backend/Frontend), groups=[read,edit,command,mcp], source=project; struktur baharu `customInstructions` inline menggantikan array `rules` tanpa kehilangan kandungan.
 - **Fail Terlibat:** .roomodes, .roo/rules/00-subfaber-core-protocol.md, package.json, CHANGELOG.md, .prettierrc (pembetulan pra-wujud indent 2-space), docs/SESSION_LEDGER.md.
