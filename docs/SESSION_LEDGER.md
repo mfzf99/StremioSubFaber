@@ -1,3 +1,25 @@
+## 2026-10-17 — v3.13.0 CLEAN CUT: PENYINGKIRAN PENUH FITUR LEARN TARGET LANGUAGES (SELESAI)
+
+- **Tarikh:** 2026-10-17 ~19:30 (waktu tempatan KL).
+- **Keputusan Owner:** Cut off feature Learn Target Languages sepenuhnya — tiada backward-compat, clean cut. Arahan commit dikeluarkan selepas Integration Review lulus.
+
+- **Fasa 1 Backend (7 task) ✅:** route /learn dibuang (index.js); medan learn* dipurge (src/utils/config.js); learnEntries dibuang (src/handlers/subtitles.js); komen dinetralkan (src/utils/subtitle.js); kunci locale learn dibuang (5 fail locales).
+
+- **Fasa 2 Frontend (7 task) ✅:** kad #learnTargetsCard dibuang (main.html); Step 6 + item learn dibuang (quick-setup.html); config.js 189→0 hits (−212 baris; applyLearnModeVisibility dibuang penuh, validateLanguageSelection ditulis semula); config-page-state.js 17→0 hits; quick-setup.js 123→0 hits (−205 baris; seluruh Step 6 wizard 110 baris dibuang); subtitle-menu.js 17→0 hits (CSS chip .learn + case learn + isLearn dibuang).
+
+- **Integration Review Backend ✅:** payload serialization bersih (fastOverlayKeys tanpa learn); tiada rehydration race; skema pelayan tanpa medan learn; normalizeConfig abaikan kunci basi pelanggan lama.
+
+- **Pipeline 8 langkah:** SemVer bump 3.12.2 → 3.13.0 (minor); CHANGELOG.md entri baharu; cache-buster runtime-driven NO-OP; Prettier PASS (1 warn pra-wujud .prettierrc); ESLint 0 error / 224 warning (pra-wujud +1 placement unused dari Fasa 1); npm test = **428 total / 427 PASS / 0 FAIL / 1 SKIP (live Redis)** — baseline terpelihara; graphify = **NO-OP** (graphify-out/ absent).
+
+- **Verifikasi live Playwright ✅:** DOM /configure + quick-setup — semua ID learn (learnTargetsCard, learnModeEnabled, learnLanguages, qsLearnMode, qsLearnLangGrid, dll.) disahkan TIADA.
+
+- **Fail terlibat:** index.js, src/utils/config.js, src/handlers/subtitles.js, src/utils/subtitle.js, locales/{en,es,pt-br,pt-pt,ar}.json, public/config.js, public/js/{config-page-state,quick-setup,subtitle-menu}.js, public/partials/{main,quick-setup}.html, package.json, CHANGELOG.md, docs/SESSION_LEDGER.md.
+
+- **Pendekatan:** Pembedahan manual satu-satu (dry-run + cut helper + exact-string edit) selepas loop skrip besar dihentikan; 1 rollback digunakan (quick-setup.js) apabila syntax rosak; fail sampah (m[0])) dan .tmp-* dibersihkan.
+
+- **Next Steps:** CI verify via gh CLI selepas push; sambung kerja lain mengikut backlog Owner.
+
+---
 # SESSION LEDGER — StremioSubFaber
 
 > Protokol kesinambungan sesi (mandat owner 2026-10-08): Setiap tugasan yang
@@ -1585,3 +1607,15 @@
 - **Integration Review Backend: LULUS** - kontrak payload sifar perubahan (id checkbox kekal; readFallbackState/applyFallbackValues/collectConfigPatch + skema server multiProviderEnabled/secondaryProvider*/providers/custom_secondary utuh); 1 race ditemui dan difix (status chip stale semasa rehydrate kerana .checked programatik tak trigger event change).  
 - **Status npm test:** 368 tests: 367 PASS / 0 FAIL / 1 SKIP (padan baseline); prettier + eslint hijau; graphify update: 5161 nodes / 11119 edges / 252 communities.  
 - **Next Steps:** Commit + push  CI Success  tutup. 
+
+## 2026-10-17 — CUT-OFF FEATURE LEARN TARGET LANGUAGES (FASA 2 FRONTEND SELESAI)
+
+- Fail diubah: public/config.js, public/js/config-page-state.js, public/js/quick-setup.js, public/js/subtitle-menu.js, public/partials/main.html, public/partials/quick-setup.html
+- config.js: 0 hits (dari 189); -212 baris (13947 → 13728)
+- config-page-state.js: 0 hits (dari 17); -19 baris
+- quick-setup.js: 0 hits (dari 123); -205 baris
+- subtitle-menu.js: 0 hits (dari 17); -24 baris
+- Verifikasi: node --check 4/4 lulus; prettier --write dijalankan; eslint 0 errors; npm test 427/427 PASS / 0 FAIL / 1 SKIP
+- Playwright live: /configure dan quick-setup — semua ID learn (learnTargetsCard, learnModeEnabled, learnLanguages, qsLearnMode, qsLearnLangGrid, dll.) disahkan TIADA dalam DOM
+- Pendekatan: manual satu-satu dengan dry-run + cut helper (.tmp-cut.cjs) dan exact-string edit (.tmp-edit.js); rollback digunakan sekali apabila syntax rosak
+- Langkah seterusnya: serah balik ke Backend untuk Integration Review sebelum commit

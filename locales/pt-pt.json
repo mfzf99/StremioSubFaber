@@ -4,9 +4,6 @@
     "Sub Toolbox",
     "Toolbox",
     "Tool shelf",
-    "Learn Mode",
-    "Learn Mode labels (e.g., Learn {language})",
-    "Learn (Language) entries (\"Learn <Language>\")",
     "SubFaber xSync",
     "SubFaber Link",
     "OpenSubtitles",
@@ -81,7 +78,6 @@
         "translationInProgress": "Tradução já em curso; aguardando pedido primário.",
         "translationInvalidContent": "A tradução devolveu conteúdo inválido",
         "translationFailed": "A tradução falhou: {reason}",
-        "learnFailed": "Falhou ao construir legendas de aprendizagem",
         "subToolboxLoadFailed": "Falhou ao carregar Sub Toolbox",
         "missingConfigOrVideo": "Configuração ou videoId em falta",
         "subToolboxPageFailed": "Falhou ao carregar página do Sub Toolbox",
@@ -572,8 +568,7 @@
       "sourceMissing": "Pelo menos um idioma de origem deve ser selecionado",
       "sourceLimit": "Máximo de {limit} idiomas de origem permitidos",
       "targetMissing": "Pelo menos um idioma de destino deve ser selecionado",
-      "targetLimit": "Máximo de {limit} idiomas de destino totais permitidos (incluindo Learn Mode)",
-      "learnTargetMissing": "Learn Mode requer pelo menos um idioma de destino",
+      "targetLimit": "Máximo de {limit} idiomas de destino totais permitidos",
       "sessionTokenError": "Erro de Configuração: Token de sessão não encontrado ou expirado. Por favor, reconfigure o addon para continuar a usá-lo."
     },
     "subtitle": {
@@ -662,7 +657,6 @@
       "refreshTitle": "Atualizar lista de legendas",
       "closeTitle": "Fechar lista de legendas",
       "makeLanguage": "Criar {language}",
-      "learnLanguage": "Aprender {language}",
       "group": {
         "source": "Origem e Destino",
         "target": "Idiomas de Destino",
@@ -670,7 +664,7 @@
         "other": "Outras Entradas",
         "sourceHint": "Legendas originais + destino",
         "translationHint": "Iniciar traduções",
-        "otherHint": "xEmbed, Learn, xSync e ferramentas"
+        "otherHint": "xEmbed, xSync e ferramentas"
       },
       "actions": {
         "translate": "Traduzir",
@@ -839,14 +833,7 @@
           "seasonPacksTitle": "Legendas de Temporada Completa",
           "seasonPacksDesc": "Obtenha e extraia legendas de packs de temporada completa para maior cobertura",
           "hideSdhTitle": "Ocultar Legendas SDH/HI",
-          "hideSdhDesc": "Excluir legendas com anotações para deficientes auditivos (SDH/HI)",
-          "learnTitle": "Aprender Idiomas",
-          "learnDesc": "Adicione entradas de legendas em dois idiomas para aprendizagem — mostra as linhas de origem e traduzidas lado a lado"
-        },
-        "step6": {
-          "title": "Escolha Idiomas para Aprender",
-          "subtitle": "Que idiomas quer aprender? Legendas em dois idiomas serão criadas para cada um.",
-          "noSelection": "Nenhum idioma de aprendizagem selecionado ainda"
+          "hideSdhDesc": "Excluir legendas com anotações para deficientes auditivos (SDH/HI)"
         },
         "step7": {
           "title": "Tudo Pronto! 🎉",
@@ -873,8 +860,7 @@
           "subtitleLanguages": "Idiomas de Legendas",
           "none": "Nenhum",
           "seasonPacks": "Packs de Temporada",
-          "hideSdh": "Ocultar SDH/HI",
-          "learnLanguages": "Idiomas de Aprendizagem"
+          "hideSdh": "Ocultar SDH/HI"
         },
         "status": {
           "saving": "A gravar configuração...",
@@ -1028,7 +1014,6 @@
         "testCredentials": "Testar Credenciais",
         "test": "Testar",
         "targetRequired": "Por favor, selecione pelo menos um idioma de destino",
-        "learnRequired": "Por favor, selecione pelo menos um idioma de aprendizagem",
         "geminiKeyRequired": "Chave API Gemini é obrigatória",
         "geminiModelRequired": "Por favor, selecione um modelo Gemini",
         "assemblyAiKeyRequired": "Chave API AssemblyAI é obrigatória para o modo AssemblyAI",
@@ -1255,22 +1240,7 @@
         "sourceTitle": "Idiomas de Origem",
         "sourceLabel": "* Idiomas de origem para traduções",
         "targetTitle": "Idiomas de Destino",
-        "targetLabel": "* Idiomas de destino para legendas e traduções",
-        "learnTitle": "Idiomas de Destino de Aprendizagem",
-        "learnLabel": "Selecionar Idiomas do Modo Aprendizagem",
-        "learnDescription": "Cria entradas \"Aprender (Idioma)\" que emparelham linhas de origem + traduzidas em WebVTT. Selecione idiomas de destino \"Aprender\" acima após ativar."
-      },
-      "learnMode": {
-        "label": "Modo Aprendizagem",
-        "description": "Adiciona entradas \"Aprender (Idioma)\" que produzem WebVTT de duplo idioma com linhas de origem e traduzidas para aprendizagem de idiomas. Após ativar, defina Idiomas de Destino de Aprendizagem na secção \"Idiomas\" acima.",
-        "orderLabel": "Ordem das Legendas do Modo Aprendizagem",
-        "orderDescription": "Escolha que idioma aparece no topo e fundo do ecrã.",
-        "sourceTop": "Origem em Cima - Destino em Baixo",
-        "targetTop": "Destino em Cima - Origem em Baixo",
-        "italicLabel": "Italicizar um idioma",
-        "italicDescription": "Italicizar uma das linhas de legendas para distinguir visualmente os dois idiomas.",
-        "italicTarget": "Italicizar Destino (idioma aprendido)",
-        "italicSource": "Italicizar Origem (idioma original)"
+        "targetLabel": "* Idiomas de destino para legendas e traduções"
       },
       "translationSettings": {
         "title": "Definições de Tradução",

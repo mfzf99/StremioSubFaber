@@ -2,6 +2,21 @@
 
 All notable changes to this project will be documented in this file.
 
+## SubFaber v3.13.0 (2026-10-17) — CLEAN CUT: Penyingkiran Penuh Fitur Learn Target Languages
+
+### Removed
+
+- **[MANDAT OWNER — CLEAN CUT] Fitur Learn Target Languages dipinggirkan sepenuhnya merentas backend & frontend tanpa backward-compat:** route `/learn` dibuang daripada [index.js](index.js); medan `learnMode` / `learnTargetLanguages` / `learnOrder` / `learnPlacement` / `learnItalic` / `learnItalicTarget` dibuang daripada skema konfigurasi ([src/utils/config.js](src/utils/config.js)); `learnEntries` dibuang daripada pemprosesan sari kata ([src/handlers/subtitles.js](src/handlers/subtitles.js)); komen learn dinetralkan dalam [src/utils/subtitle.js](src/utils/subtitle.js); kunci locale learn dibuang daripada 5 fail terjemahan ([locales/en.json](locales/en.json), [locales/es.json](locales/es.json), [locales/pt-br.json](locales/pt-br.json), [locales/pt-pt.json](locales/pt-pt.json), [locales/ar.json](locales/ar.json)).
+- **Frontend /configure ([public/config.js](public/config.js), −212 baris):** fungsi `applyLearnModeVisibility()` dibuang sepenuhnya; event listeners learn (mode toggle / order / italic / placement / search / extended toggle) dibuang; cabang `type === 'learn'` dibuang daripada `updateSelectedChips()` / `removeLanguage()` / `renderLanguageGrid()` / `toggleLanguage()` / `handleQuickAction()`; `validateLanguageSelection()` ditulis semula tanpa cabang learn; medan learn dibuang daripada `getDefaultConfig()` / `normalizeCurrentConfigForPage()` / `buildConfigFromForm()` / `translationModeBackup` dan validation `saveCurrentConfig()`.
+- **Frontend wizard ([public/js/quick-setup.js](public/js/quick-setup.js), −205 baris):** keseluruhan Step 6 Learn Language Selection dibuang (grid render / toggle / chips / wiring, 110 baris); state default, sanitization, combined targets, summary, payload `buildConfigPayload()`, session restore/reset, dan `fastOverlayKeys` dibersihkan daripada semua medan learn.
+- **Frontend state ([public/js/config-page-state.js](public/js/config-page-state.js), −19 baris):** medan learn dibuang daripada `resolveTranslationModeRestoreState()` (backup pemulihan mod terjemahan).
+- **Frontend menu sari kata ([public/js/subtitle-menu.js](public/js/subtitle-menu.js), −24 baris):** CSS chip `.subtitle-lang-pill-tag.learn` dan `.subtitle-menu-chip.learn` (+`::before`) dibuang; `case 'learn'`, detection `isLearn`, dan entri tag `learn` dibuang daripada order/labels.
+- **UI partials:** kad `#learnTargetsCard` dibuang daripada [public/partials/main.html](public/partials/main.html); Step 6 + item learn dibuang daripada [public/partials/quick-setup.html](public/partials/quick-setup.html).
+
+### Verified
+
+- `git grep -il learn` merentas `public/ src/ index.js locales/` = **ZERO_HITS**; `node --check` 4/4 fail lulus; Prettier format bersih; ESLint 0 error; `npm test` = **428 total / 427 PASS / 0 FAIL / 1 SKIP (live Redis)** — baseline terpelihara; ujian Playwright live mengesahkan semua ID learn (`learnTargetsCard`, `learnModeEnabled`, `learnLanguages`, `qsLearnMode`, `qsLearnLangGrid`, dll.) **tiada dalam DOM** `/configure` dan quick-setup.
+
 ## SubFaber v3.12.2 (2026-10-17) — Modes: Role Definition Upgrade "expert" → "Senior"
 
 ### Changed

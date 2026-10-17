@@ -4,9 +4,6 @@
     "Sub Toolbox",
     "Toolbox",
     "Tool shelf",
-    "Learn Mode",
-    "Learn Mode labels (e.g., Learn {language})",
-    "Learn (Language) entries (\"Learn <Language>\")",
     "SubFaber xSync",
     "SubFaber Link",
     "OpenSubtitles",
@@ -81,7 +78,6 @@
         "translationInProgress": "La traducción ya está en curso; esperando la solicitud principal.",
         "translationInvalidContent": "La traducción devolvió contenido no válido",
         "translationFailed": "La traducción falló: {reason}",
-        "learnFailed": "No se pudieron generar los subtítulos de Learn Mode",
         "subToolboxLoadFailed": "No se pudo cargar Sub Toolbox",
         "missingConfigOrVideo": "Falta la configuración o el ID de video",
         "subToolboxPageFailed": "No se pudo cargar la página de Sub Toolbox",
@@ -572,8 +568,7 @@
       "sourceMissing": "Debes elegir al menos un idioma de origen",
       "sourceLimit": "Máximo {limit} idiomas de origen",
       "targetMissing": "Debes elegir al menos un idioma de destino",
-      "targetLimit": "Máximo {limit} idiomas de destino (incluye Learn Mode)",
-      "learnTargetMissing": "Learn Mode requiere al menos un idioma de destino",
+      "targetLimit": "Máximo {limit} idiomas de destino)",
       "sessionTokenError": "Error de configuración: token de sesión no encontrado o expirado. Reconfigura el addon."
     },
     "subtitle": {
@@ -662,7 +657,6 @@
       "refreshTitle": "Actualizar subtítulos",
       "closeTitle": "Cerrar lista de subtítulos",
       "makeLanguage": "Generar {language}",
-      "learnLanguage": "Aprender {language}",
       "group": {
         "source": "Idiomas de origen y destino",
         "target": "Idiomas destino",
@@ -670,7 +664,7 @@
         "other": "Otras entradas",
         "sourceHint": "Subtítulos originales + destino",
         "translationHint": "Generar traducciones",
-        "otherHint": "xEmbed, Learn, xSync y herramientas"
+        "otherHint": "xEmbed, xSync y herramientas"
       },
       "actions": {
         "translate": "Traducir",
@@ -839,14 +833,7 @@
           "seasonPacksTitle": "Subtítulos de temporada completa",
           "seasonPacksDesc": "Busca y extrae subtítulos de packs de temporada completa para mayor cobertura",
           "hideSdhTitle": "Ocultar subtítulos SDH/HI",
-          "hideSdhDesc": "Excluir subtítulos con anotaciones para personas con discapacidad auditiva (SDH/HI)",
-          "learnTitle": "Aprender idiomas",
-          "learnDesc": "Agrega entradas de subtítulos en dos idiomas para aprender idiomas — muestra las líneas originales y traducidas lado a lado"
-        },
-        "step6": {
-          "title": "Elige idiomas para aprender",
-          "subtitle": "¿Qué idiomas quieres aprender? Se crearán subtítulos en dos idiomas para cada uno.",
-          "noSelection": "No se han seleccionado idiomas de aprendizaje aún"
+          "hideSdhDesc": "Excluir subtítulos con anotaciones para personas con discapacidad auditiva (SDH/HI)"
         },
         "step7": {
           "title": "¡Todo listo! 🎉",
@@ -887,8 +874,7 @@
           "subtitleLanguages": "Idiomas de subtítulos",
           "none": "Ninguno",
           "seasonPacks": "Packs de temporada",
-          "hideSdh": "Ocultar SDH/HI",
-          "learnLanguages": "Idiomas de aprendizaje"
+          "hideSdh": "Ocultar SDH/HI"
         },
         "status": {
           "saving": "Guardando configuración...",
@@ -1004,13 +990,13 @@
       },
       "limits": {
         "sourceDescription": "Puedes seleccionar hasta {max} idioma(s) de origen, pero solo 1 es recomendable. De esta forma tendrás exactamente el mismo orden en la lista de subtítulos \"Make (idioma)\" que en el idioma de origen y podrás verificar los subtítulos originales en busca de problemas de sincronización antes de traducir.<br><br>Todos los subtítulos encontrados en el idioma de origen seleccionado aparecerán en su idioma original Y se usarán como fuente para las listas de traducción \"Make (idioma destino)\".",
-        "targetDescription": "Los subtítulos en idiomas destino se obtendrán (los subtítulos encontrados aparecerán) Y aparecerán botones de traducción (listas \"Make\") para traducir DESDE los subtítulos del idioma de origen HACIA los idiomas destino.<br><br>Puedes elegir hasta {max} idiomas destino en total (incluye Learn Mode).",
+        "targetDescription": "Los subtítulos en idiomas destino se obtendrán (los subtítulos encontrados aparecerán) Y aparecerán botones de traducción (listas \"Make\") para traducir DESDE los subtítulos del idioma de origen HACIA los idiomas destino.<br><br>Puedes elegir hasta {max} idiomas destino en total).",
         "noTranslationDescription": "Elige en qué idiomas quieres obtener subtítulos (hasta {max})."
       },
       "validation": {
         "sourceRequired": "Selecciona al menos un idioma de origen",
         "sourceRange": "Selecciona entre {min} y {max} idiomas de origen",
-        "targetLimitShort": "Selecciona hasta {limit} idiomas destino (incluye Learn Mode)",
+        "targetLimitShort": "Selecciona hasta {limit} idiomas destino)",
         "noTranslationRequired": "Selecciona al menos un idioma en modo Solo obtener",
         "noTranslationLimitShort": "Selecciona hasta {limit} idiomas en modo Solo obtener",
         "opensubsEnable": "Activa OpenSubtitles antes de probar las credenciales.",
@@ -1029,7 +1015,6 @@
         "testCredentials": "Probar credenciales",
         "test": "Probar",
         "targetRequired": "Selecciona al menos un idioma destino",
-        "learnRequired": "Selecciona al menos un idioma de Learn Mode",
         "geminiKeyRequired": "Se requiere la clave de Gemini",
         "geminiModelRequired": "Selecciona un modelo de Gemini",
         "assemblyAiKeyRequired": "Se requiere la clave API de AssemblyAI para el modo AssemblyAI",
@@ -1065,7 +1050,7 @@
         "loadLanguagesFailed": "No se pudieron cargar los idiomas: {reason}",
         "loadLanguagesExhausted": "No se pudieron cargar los idiomas después de {retries} intentos: {reason}. Actualiza la página.",
         "sourceLimit": "Solo puedes elegir hasta {limit} idiomas de origen",
-        "targetLimit": "Solo puedes elegir hasta {limit} idiomas de destino (incluye Learn Mode)",
+        "targetLimit": "Solo puedes elegir hasta {limit} idiomas de destino)",
         "noTranslationLimit": "Solo puedes elegir hasta {limit} idiomas en modo Solo obtener",
         "saveConfigFirst": "Guarda tu configuración antes de abrir Sub Toolbox.",
         "betaOn": "Modo experimental ACTIVADO",
@@ -1085,7 +1070,7 @@
         "sessionExpiredCreating": "La sesión expiró. Creando una nueva...",
         "sessionNetworkError": "Error de red al actualizar la sesión. Creando una nueva...",
         "sessionUpdateFailed": "Error al actualizar la sesión. Creando una nueva...",
-        "targetsTrimmed": "Solo se conservaron los primeros {limit} idiomas de destino (incluido Learn Mode).",
+        "targetsTrimmed": "Solo se conservaron los primeros {limit} idiomas de destino).",
         "maxKeysReached": "Máximo de {max} claves API permitidas",
         "missingCustomBaseUrl": "Introduce una URL base para el proveedor personalizado"
       },
@@ -1255,22 +1240,7 @@
         "sourceTitle": "Idiomas de origen",
         "sourceLabel": "* Idiomas de origen para traducciones",
         "targetTitle": "Idiomas de destino",
-        "targetLabel": "* Idiomas destino para subtítulos y traducciones",
-        "learnTitle": "Idiomas de destino para Learn Mode",
-        "learnLabel": "Selecciona idiomas para Learn Mode",
-        "learnDescription": "Crea entradas \"Learn (Idioma)\" que combinan líneas de origen y traducidas en WebVTT. Selecciona idiomas \"Learn\" arriba tras habilitarlo."
-      },
-      "learnMode": {
-        "label": "Learn Mode",
-        "description": "Agrega entradas \"Learn (Idioma)\" que generan WebVTT bilingüe con líneas de origen y traducción. Después de habilitarlo, define los idiomas Learn en la sección \"Idiomas\" superior.",
-        "orderLabel": "Orden de subtítulos en Learn Mode",
-        "orderDescription": "Elige qué idioma aparece arriba y abajo.",
-        "sourceTop": "Origen arriba - Destino abajo",
-        "targetTop": "Destino arriba - Origen abajo",
-        "italicLabel": "Poner en cursiva un idioma",
-        "italicDescription": "Poner en cursiva una de las líneas de subtítulos para distinguir visualmente los dos idiomas.",
-        "italicTarget": "Cursiva en Destino (idioma aprendido)",
-        "italicSource": "Cursiva en Origen (idioma original)"
+        "targetLabel": "* Idiomas destino para subtítulos y traducciones"
       },
       "translationSettings": {
         "title": "Ajustes de traducción",

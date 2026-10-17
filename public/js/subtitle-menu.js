@@ -26,7 +26,7 @@
     const GROUP_HINTS = {
         primary: tMenu('group.sourceHint', {}, 'Original + target subtitles'),
         translation: tMenu('group.translationHint', {}, 'Spin up translations'),
-        other: tMenu('group.otherHint', {}, 'xEmbed, Learn, xSync & tools')
+        other: tMenu('group.otherHint', {}, 'xEmbed, xSync & tools')
     };
     const STATUS_LABELS = {
         waitingStream: tMenu('status.waitingStream', {}, 'Waiting for a linked stream before loading subtitles.'),
@@ -602,11 +602,6 @@
       color: #ec4899;
     }
 
-    .subtitle-lang-pill-tag.learn {
-      background: rgba(139, 92, 246, 0.1);
-      border-color: rgba(139, 92, 246, 0.15);
-      color: #8b5cf6;
-    }
 
     /* Count Badge */
     .subtitle-lang-count {
@@ -835,15 +830,6 @@
       box-shadow: 0 0 6px rgba(245, 158, 11, 0.5);
     }
 
-    .subtitle-menu-chip.learn {
-      background: linear-gradient(135deg, rgba(139, 92, 246, 0.15) 0%, rgba(139, 92, 246, 0.08) 100%);
-      border-color: rgba(139, 92, 246, 0.2);
-      color: #8b5cf6;
-    }
-    .subtitle-menu-chip.learn::before {
-      background: #8b5cf6;
-      box-shadow: 0 0 6px rgba(139, 92, 246, 0.5);
-    }
 
     .subtitle-menu-chip.synced {
       background: linear-gradient(135deg, rgba(236, 72, 153, 0.15) 0%, rgba(236, 72, 153, 0.08) 100%);
@@ -1372,8 +1358,6 @@
                 return { label: 'Target', cls: 'target' };
             case 'cached':
                 return { label: 'xEmbed', cls: 'cached' };
-            case 'learn':
-                return { label: 'Learn', cls: 'learn' };
             case 'synced':
                 return { label: 'xSync', cls: 'synced' };
             case 'action':
@@ -1612,7 +1596,6 @@
             const lower = fallbackLabel.toLowerCase();
             const isTranslation =
                 lower.startsWith('make ') || idLower.startsWith('translate_') || idLower.includes('_to_');
-            const isLearn = lower.startsWith('learn ') || idLower.startsWith('learn_');
             const isEmbed = lower.startsWith('xembed') || idLower.startsWith('xembed_');
             const isSync = lower.startsWith('xsync') || idLower.startsWith('xsync_');
             const isAction = lower.includes('toolbox') || idLower.includes('toolbox');
@@ -1628,9 +1611,6 @@
                 if (lowerPrefix === 'make') {
                     return translate('subtitleMenu.makeLanguage', { language: stripped }, `Make ${stripped}`);
                 }
-                if (lowerPrefix === 'learn') {
-                    return translate('subtitleMenu.learnLanguage', { language: stripped }, `Learn ${stripped}`);
-                }
                 if (options.wrapInParens) return `${prefix} (${stripped})`;
                 return `${prefix} ${stripped}`;
             };
@@ -1638,8 +1618,6 @@
             let displayLabel = fallbackLabel;
             if (isTranslation && !lower.startsWith('make ')) {
                 displayLabel = ensurePrefix(preferredLabel, 'Make');
-            } else if (isLearn && !lower.startsWith('learn ')) {
-                displayLabel = ensurePrefix(preferredLabel, 'Learn');
             } else if (isEmbed && !lower.startsWith('xembed')) {
                 displayLabel = ensurePrefix(preferredLabel, 'xEmbed', { wrapInParens: true });
             } else if (isSync && !lower.startsWith('xsync')) {
@@ -1652,20 +1630,18 @@
             const inSource = langKey && languageSets.source.has(langKey);
             const type = isTranslation
                 ? 'target'
-                : isLearn
-                  ? 'learn'
-                  : isEmbed
-                    ? 'cached'
-                    : isSync
-                      ? 'synced'
-                      : isAction
-                        ? 'action'
-                        : inTarget && !inSource
-                          ? 'target'
-                          : 'source';
+                : isEmbed
+                  ? 'cached'
+                  : isSync
+                    ? 'synced'
+                    : isAction
+                      ? 'action'
+                      : inTarget && !inSource
+                        ? 'target'
+                        : 'source';
             let group = 'primary';
             if (isTranslation) group = 'translation';
-            else if (isLearn || isEmbed || isSync || isAction) group = 'other';
+            else if (isEmbed || isSync || isAction) group = 'other';
             return {
                 id: entry?.id || displayLabel,
                 label: displayLabel,
@@ -1688,7 +1664,7 @@
                 const map = buckets[bucket];
 
                 // For main group, bucket by language so source+target stack together
-                // For Translation and Other, group by label (e.g. "Make Portuguese", "Learn Spanish")
+                // For Translation and Other, group by label (e.g. "Make Portuguese", "xSync Spanish")
                 let key, label;
 
                 if (bucket === 'translation' || bucket === 'other') {
@@ -1974,8 +1950,8 @@
             }, {});
 
             // Build styled pill tags instead of plain text
-            const tagOrder = ['source', 'target', 'cached', 'synced', 'learn'];
-            const tagLabels = { source: 'Source', target: 'Target', cached: 'xEmbed', synced: 'xSync', learn: 'Learn' };
+            const tagOrder = ['source', 'target', 'cached', 'synced'];
+            const tagLabels = { source: 'Source', target: 'Target', cached: 'xEmbed', synced: 'xSync' };
             let hasTags = false;
             tagOrder.forEach((type) => {
                 if (counts[type]) {

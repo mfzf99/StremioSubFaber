@@ -543,76 +543,11 @@
                                 </label>
                             </div>
                         </div>
-
-                        <!-- Learn Languages (translate mode only) -->
-                        <div class="qs-extra-item" id="qsLearnModeItem" style="display: none">
-                            <div class="qs-extra-header">
-                                <div class="qs-extra-info">
-                                    <div class="qs-extra-icon">📖</div>
-                                    <div>
-                                        <h3 data-i18n="config.quickSetup.step5.learnTitle">Learn Languages</h3>
-                                        <p data-i18n="config.quickSetup.step5.learnDesc">
-                                            Add dual-language subtitle entries for language learning — shows both source
-                                            and translated lines side by side
-                                        </p>
-                                    </div>
-                                </div>
-                                <label class="qs-toggle">
-                                    <input type="checkbox" id="qsLearnMode" />
-                                    <span class="qs-toggle-slider"></span>
-                                </label>
-                            </div>
-                        </div>
                     </div>
                 </div>
             </div>
 
-            <!-- ===== STEP 6: Learn Language Selection (translate + learn mode only) ===== -->
-            <div class="qs-step" data-step="6" id="qsStep6">
-                <div class="qs-step-content">
-                    <div class="qs-step-header">
-                        <h2 class="qs-step-title" data-i18n="config.quickSetup.step6.title">Choose Learn Languages</h2>
-                        <p class="qs-step-subtitle" data-i18n="config.quickSetup.step6.subtitle">
-                            Which languages do you want to learn? Dual-language subtitles will be created for each.
-                        </p>
-                    </div>
-
-                    <!-- Learn Language search -->
-                    <div class="qs-lang-search-wrap">
-                        <span class="qs-lang-search-icon">🔍</span>
-                        <input
-                            type="text"
-                            id="qsLearnLangSearch"
-                            class="qs-input qs-lang-search"
-                            placeholder="Search languages..."
-                            data-i18n-placeholder="config.quickSetup.step4.searchPlaceholder"
-                            autocomplete="off"
-                            spellcheck="false"
-                        />
-                    </div>
-
-                    <!-- Selected learn languages chips -->
-                    <div class="qs-selected-langs" id="qsSelectedLearnLangs"></div>
-
-                    <div class="qs-extended-toggle" id="qsExtendedLanguagesWrapLearn">
-                        <label class="qs-extended-toggle-label">
-                            <input type="checkbox" id="qsExtendedLanguagesToggleLearn" />
-                            <span data-i18n="config.languageCards.extendedToggle">Extended languages list</span>
-                            <span class="qs-extended-toggle-hint" data-i18n="config.languageCards.extendedHint"
-                                >Adds ~100 rare, ancient, and regional languages (AI translation only)</span
-                            >
-                        </label>
-                    </div>
-
-                    <!-- Learn language grid -->
-                    <div class="qs-lang-grid" id="qsLearnLangGrid">
-                        <div class="qs-lang-loading" data-i18n="config.quickSetup.step4.loading">
-                            Loading languages...
-                        </div>
-                    </div>
-                </div>
-            </div>
-
+            <!-- ===== STEP 6: Summary & Install ===== -->
             <!-- ===== STEP 7: Summary & Install ===== -->
             <div class="qs-step" data-step="7" id="qsStep7">
                 <div class="qs-step-content">

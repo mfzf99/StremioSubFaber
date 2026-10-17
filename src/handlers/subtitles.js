@@ -3700,38 +3700,6 @@ function createSubtitleHandler(config) {
                 );
             }
 
-            // Add Learn Mode entries (dual-language VTT output)
-            const learnEntries = [];
-            try {
-                if (config.learnMode === true) {
-                    const normalizedLearnLangs = [
-                        ...new Set((config.learnTargetLanguages || []).map((lang) => normalizeLanguageCode(lang)))
-                    ];
-                    const sourceSubtitles = filteredFoundSubtitles.filter((sub) =>
-                        config.sourceLanguages.some(
-                            (sourceLang) => normalizeLanguageCode(sourceLang) === sub.languageCode
-                        )
-                    );
-
-                    for (const learnLang of normalizedLearnLangs) {
-                        const baseName = getLanguageName(learnLang);
-                        const displayName = `Learn ${baseName}`;
-                        for (const sourceSub of sourceSubtitles) {
-                            learnEntries.push({
-                                id: `learn_${sourceSub.fileId}_to_${learnLang}`,
-                                lang: displayName,
-                                url: `{{ADDON_URL}}/learn/${sourceSub.fileId}/${learnLang}.vtt`
-                            });
-                        }
-                    }
-                    if (learnEntries.length > 0) {
-                        log.debug(() => `[Subtitles] Added ${learnEntries.length} Learn Mode entries`);
-                    }
-                }
-            } catch (e) {
-                log.warn(() => `[Subtitles] Failed to add Learn Mode entries: ${e.message}`);
-            }
-
             // Add xSync entries (synced subtitles from cache) - only for user-configured languages
             // Performance: Execute all sync cache lookups in parallel instead of sequential nested loops
             const xSyncEntries = [];
@@ -4026,7 +3994,6 @@ function createSubtitleHandler(config) {
             let allSubtitles = [
                 ...stremioSubtitles,
                 ...translationEntries,
-                ...learnEntries,
                 ...xSyncEntries,
                 ...autoEntries,
                 ...xEmbedOriginalEntries,

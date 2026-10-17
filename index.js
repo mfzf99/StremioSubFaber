@@ -1179,7 +1179,6 @@ function respondDisabledSession(req, res, config, translator = null) {
     if (
         pathName.includes('/subtitle') ||
         pathName.includes('/translate') ||
-        pathName.includes('/learn') ||
         pathName.includes('/error-subtitle') ||
         pathName.includes('/xsync') ||
         pathName.includes('/auto/') ||
@@ -2412,7 +2411,7 @@ app.use((req, res, next) => {
         return cors()(req, res, next);
     }
 
-    // Addon API routes (subtitle, translate, learn, xsync, xembed, error-subtitle, etc.)
+    // Addon API routes (subtitle, translate, xsync, xembed, error-subtitle, etc.)
     // These are Stremio's core addon routes that must work with Origin: null
     // Security: Allow only if origin is null/missing OR from Stremio client
     const isAddonApiRoute = req.path.startsWith('/addon/') && !isAddonBrowserPage;
@@ -2980,7 +2979,7 @@ app.get('/api/languages', (req, res) => {
 });
 
 // API endpoint to get all translation target languages (includes regional variants and extended languages)
-// Used by config page for target/learn language selection where AI can translate to specific regional variants
+// Used by config page for target language selection where AI can translate to specific regional variants
 app.get('/api/languages/translation', (req, res) => {
     try {
         const languages = getAllTranslationLanguages();
@@ -6281,221 +6280,6 @@ app.get(
             res.status(500).send(
                 t('server.errors.translationFailed', { reason: error.message }, `Translation failed: ${error.message}`)
             );
-        }
-    }
-);
-
-// Custom route: Learn Mode (dual-language VTT)
-app.get(
-    '/addon/:config/learn/:sourceFileId/:targetLang',
-    normalizeSubtitleFormatParams,
-    searchLimiter,
-    validateRequest(translationParamsSchema, 'params'),
-    async (req, res) => {
-        try {
-            // Defense-in-depth: Prevent caching of learn-mode responses
-            setNoStore(res);
-            let t = res.locals?.t || getTranslatorFromRequest(req, res);
-
-            const { config: configStr, sourceFileId, targetLang } = req.params;
-            const baseConfig = await resolveConfigGuarded(configStr, req, res, '[Learn] config', t);
-            if (!baseConfig) return;
-            if (isInvalidSessionConfig(baseConfig)) {
-                log.warn(() => `[Learn] Blocked request due to invalid session token ${redactToken(configStr)}`);
-                const errorSubtitle = createSessionTokenErrorSubtitle(null, null, baseConfig?.uiLanguage || 'en');
-                res.setHeader('Content-Type', 'text/plain; charset=utf-8');
-                res.setHeader('Content-Disposition', 'attachment; filename=\"session-token-not-found.srt\"');
-                setSubtitleCacheHeaders(res, 'loading');
-                return res.status(401).send(errorSubtitle);
-            }
-            t = getTranslatorFromRequest(req, res, baseConfig);
-            const configKey = ensureConfigHash(baseConfig, configStr);
-
-            // Force bypass cache for Learn Mode translations only (does not affect normal translations)
-            // NOTE: normalizeConfig() disables bypassCacheConfig when bypassCache is false, so we must
-            // explicitly re-enable both bypassCacheConfig/tempCache when forcing bypass for Learn mode.
-            const config = {
-                ...baseConfig,
-                bypassCache: true,
-                bypassCacheConfig: {
-                    ...(baseConfig.bypassCacheConfig || {}),
-                    enabled: true
-                },
-                tempCache: {
-                    ...(baseConfig.tempCache || baseConfig.bypassCacheConfig || {}),
-                    enabled: true
-                }
-            };
-            const videoId = req.query?.videoId || req.query?.id || config.videoId || config.lastStream?.videoId || '';
-
-            const { cacheKey, runtimeKey } = generateCacheKeys(config, sourceFileId, targetLang);
-
-            // Unusual purge: if same Learn subtitle is loaded 3 times in < 5s, purge cache and retrigger
-            try {
-                const clickKey = `learn-click:${configKey}:${sourceFileId}:${targetLang}`;
-                const now = Date.now();
-                const windowMs = 5_000; // 5 seconds
-                const entry = firstClickTracker.get(clickKey) || { times: [] };
-
-                // Keep only clicks within window
-                entry.times = (entry.times || []).filter((t) => now - t <= windowMs);
-
-                // HUMAN CHECK: Prevent 4ms Android spam
-                const lastClick = entry.times.length > 0 ? entry.times[entry.times.length - 1] : 0;
-                const isHumanClick = entry.times.length === 0 || now - lastClick > 250;
-
-                if (isHumanClick) {
-                    entry.times.push(now);
-                    firstClickTracker.set(clickKey, entry);
-                } else {
-                    log.debug(
-                        () =>
-                            `[LearnPurgeTrigger] Ignoring automated spam request from client (Delta: ${now - lastClick}ms)`
-                    );
-                }
-
-                if (entry.times.length >= 3) {
-                    // CRITICAL FIX: Reset counter SYNCHRONOUSLY before any 'await' to prevent Race Conditions!
-                    firstClickTracker.set(clickKey, { times: [] });
-
-                    // SAFETY CHECK: Block cache reset if translation is in progress
-                    const shouldBlock = await shouldBlockCacheReset(clickKey, sourceFileId, config, targetLang);
-
-                    if (shouldBlock) {
-                        log.debug(
-                            () =>
-                                `[LearnPurgeTrigger] 3 rapid loads detected but BLOCKED: Translation in progress for ${sourceFileId}/${targetLang} (user: ${config.__configHash})`
-                        );
-                    } else {
-                        const rateLimitStatus = checkCacheResetRateLimit(config, { consume: false });
-
-                        if (rateLimitStatus.blocked) {
-                            log.warn(
-                                () =>
-                                    `[LearnPurgeTrigger] BLOCKING 3-click reset: Rate limit reached for ${rateLimitStatus.cacheType} cache (${rateLimitStatus.limit}/${Math.round(CACHE_RESET_WINDOW_MS / 60000)}m) on ${sourceFileId}/${targetLang} (user: ${getConfigHashSafe(config)})`
-                            );
-                        } else {
-                            const partialKey = runtimeKey || cacheKey;
-                            const hadCache = await hasCachedTranslation(sourceFileId, targetLang, config);
-                            const partial = !hadCache ? await readFromPartialCache(partialKey) : null;
-                            const hasResetTarget =
-                                hadCache ||
-                                (partial && typeof partial.content === 'string' && partial.content.length > 0);
-
-                            if (!hasResetTarget) {
-                                log.debug(
-                                    () =>
-                                        `[LearnPurgeTrigger] 3 rapid loads detected but no cached translation or partial found for ${sourceFileId}/${targetLang}. Skipping purge and rate-limit consumption.`
-                                );
-                            } else {
-                                const consumeStatus = checkCacheResetRateLimit(config);
-                                if (consumeStatus.blocked) {
-                                    log.warn(
-                                        () =>
-                                            `[LearnPurgeTrigger] BLOCKING 3-click reset: Rate limit reached for ${consumeStatus.cacheType} cache (${consumeStatus.limit}/${Math.round(CACHE_RESET_WINDOW_MS / 60000)}m) on ${sourceFileId}/${targetLang} (user: ${getConfigHashSafe(config)})`
-                                    );
-                                } else {
-                                    log.debug(
-                                        () =>
-                                            `[LearnPurgeTrigger] 3 rapid loads detected (<5s) for ${sourceFileId}/${targetLang}. Purging ${hadCache ? 'cached translation' : 'partial translation cache'} and re-triggering translation. Remaining resets this window: ${consumeStatus.remaining}`
-                                    );
-                                    await purgeTranslationCache(sourceFileId, targetLang, config);
-                                }
-                            }
-                        }
-                    }
-                }
-            } catch (e) {
-                log.warn(() => '[LearnPurgeTrigger] Click tracking error:', e.message);
-            }
-
-            // Always obtain source content
-            let sourceContent = await getDownloadCached(sourceFileId, 'translate_source');
-            if (!sourceContent) {
-                sourceContent = await handleSubtitleDownload(sourceFileId, 'und', config);
-                saveDownloadCached(sourceFileId, sourceContent, 'translate_source');
-            }
-
-            // Normalize source to SRT for pairing (handles VTT, ASS/SSA, and other formats)
-            sourceContent = ensureSRTForTranslation(sourceContent, '[Learn Mode]');
-
-            // If we have partial translation, serve partial VTT immediately
-            // Partials are saved under runtimeKey (see performTranslation), so read with the same key
-            const partial = await readFromPartialCache(runtimeKey);
-            if (partial && partial.content) {
-                const vtt = srtPairToWebVTT(
-                    sourceContent,
-                    partial.content,
-                    config.learnOrder || 'source-top',
-                    config.learnPlacement || 'stacked',
-                    { learnItalic: config.learnItalic, learnItalicTarget: config.learnItalicTarget }
-                );
-                const output = maybeConvertToSRT(vtt, config);
-                const isSrt = config.forceSRTOutput;
-                res.setHeader('Content-Type', isSrt ? 'text/plain; charset=utf-8' : 'text/vtt; charset=utf-8');
-                res.setHeader(
-                    'Content-Disposition',
-                    `attachment; filename="learn_${targetLang}.${isSrt ? 'srt' : 'vtt'}"`
-                );
-                setSubtitleCacheHeaders(res, 'loading');
-                return res.send(output);
-            }
-
-            // If we already have cached full translation, fetch it quickly via translation handler
-            const hasCache = await hasCachedTranslation(sourceFileId, targetLang, config);
-            if (hasCache) {
-                const translatedSrt = await handleTranslation(sourceFileId, targetLang, config, {
-                    filename: sourceContent ? `learn_${targetLang}.srt` : 'unknown',
-                    videoId: videoId || 'unknown',
-                    sourceLanguage: 'und',
-                    from: 'learn'
-                });
-                // handleTranslation may return ASS content when ASS passthrough is enabled
-                // srtPairToWebVTT requires SRT input, so ensure conversion
-                const translatedSrtForPairing = ensureSRTForTranslation(translatedSrt, '[Learn Mode]');
-                const vtt = srtPairToWebVTT(
-                    sourceContent,
-                    translatedSrtForPairing,
-                    config.learnOrder || 'source-top',
-                    config.learnPlacement || 'stacked',
-                    { learnItalic: config.learnItalic, learnItalicTarget: config.learnItalicTarget }
-                );
-                const output = maybeConvertToSRT(vtt, config);
-                const isSrt = config.forceSRTOutput;
-                res.setHeader('Content-Type', isSrt ? 'text/plain; charset=utf-8' : 'text/vtt; charset=utf-8');
-                res.setHeader(
-                    'Content-Disposition',
-                    `attachment; filename="learn_${targetLang}.${isSrt ? 'srt' : 'vtt'}"`
-                );
-                return res.send(output);
-            }
-
-            // Start translation in background and serve a loading VTT (source on top, status on bottom)
-            handleTranslation(sourceFileId, targetLang, config, {
-                filename: sourceContent ? `learn_${targetLang}.srt` : 'unknown',
-                videoId: videoId || 'unknown',
-                sourceLanguage: 'und',
-                from: 'learn'
-            }).catch(() => {});
-
-            const loadingSrt = createLoadingSubtitle(config?.uiLanguage || baseConfig?.uiLanguage || 'en');
-            const vtt = srtPairToWebVTT(
-                sourceContent,
-                loadingSrt,
-                config.learnOrder || 'source-top',
-                config.learnPlacement || 'stacked',
-                { learnItalic: config.learnItalic, learnItalicTarget: config.learnItalicTarget }
-            );
-            const output = maybeConvertToSRT(vtt, config);
-            const isSrt = config.forceSRTOutput;
-            res.setHeader('Content-Type', isSrt ? 'text/plain; charset=utf-8' : 'text/vtt; charset=utf-8');
-            res.setHeader('Content-Disposition', `attachment; filename="learn_${targetLang}.${isSrt ? 'srt' : 'vtt'}"`);
-            return res.send(output);
-        } catch (error) {
-            const t = res.locals?.t || getTranslatorFromRequest(req, res);
-            if (respondStorageUnavailable(res, error, '[Learn]', t)) return;
-            log.error(() => ['[Learn] Error:', error]);
-            res.status(500).send(t('server.errors.learnFailed', {}, 'Failed to build learning subtitles'));
         }
     }
 );

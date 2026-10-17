@@ -498,8 +498,8 @@ function srtPairToWebVTT(sourceSrt, targetSrt, order = 'source-top', placement =
         const srcEntries = parseSRT(sourceSrt);
         const trgEntries = parseSRT(targetSrt);
         const srcTop = order === 'source-top';
-        const italic = options.learnItalic !== false; // default true
-        const italicTarget = options.learnItalicTarget || 'target'; // 'target' | 'source'
+        const italic = options.italic !== false; // default true
+        const italicTarget = options.italicTarget || 'target'; // 'target' | 'source'
         const isStatusCue = (text) => /TRANSLATION IN PROGRESS|Reload this subtitle/i.test(String(text || ''));
 
         // When we only have a partial translation, limit cues to what the target has (including the status tail)
@@ -599,7 +599,7 @@ function srtPairToWebVTT(sourceSrt, targetSrt, order = 'source-top', placement =
         return lines.join('\n');
     } catch (_) {
         // Simple fallback VTT
-        return 'WEBVTT\n\n00:00:00.000 --> 04:00:00.000\nLearn Mode: Unable to build VTT';
+        return 'WEBVTT\n\n00:00:00.000 --> 04:00:00.000\nUnable to build VTT';
     }
 }
 

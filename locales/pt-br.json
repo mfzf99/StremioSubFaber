@@ -4,9 +4,6 @@
     "Sub Toolbox",
     "Toolbox",
     "Tool shelf",
-    "Learn Mode",
-    "Learn Mode labels (e.g., Learn {language})",
-    "Learn (Language) entries (\"Learn <Language>\")",
     "SubFaber xSync",
     "SubFaber Link",
     "OpenSubtitles",
@@ -81,7 +78,6 @@
         "translationInProgress": "Tradução já em andamento; aguardando solicitação primária.",
         "translationInvalidContent": "A tradução retornou conteúdo inválido",
         "translationFailed": "Tradução falhou: {reason}",
-        "learnFailed": "Falha ao construir legendas de aprendizado (Learn Mode)",
         "subToolboxLoadFailed": "Falha ao carregar o Sub Toolbox",
         "missingConfigOrVideo": "Configuração ou videoId ausente",
         "subToolboxPageFailed": "Falha ao carregar página do Sub Toolbox",
@@ -572,8 +568,7 @@
       "sourceMissing": "Pelo menos um idioma de origem deve ser selecionado",
       "sourceLimit": "Máximo de {limit} idiomas de origem permitidos",
       "targetMissing": "Pelo menos um idioma de destino deve ser selecionado",
-      "targetLimit": "Máximo de {limit} idiomas de destino totais permitidos (incluindo Learn Mode)",
-      "learnTargetMissing": "Learn Mode requer pelo menos um idioma de destino",
+      "targetLimit": "Máximo de {limit} idiomas de destino totais permitidos",
       "sessionTokenError": "Erro de Configuração: Token de sessão não encontrado ou expirado. Por favor, reconfigure o addon para continuar usando."
     },
     "subtitle": {
@@ -662,7 +657,6 @@
       "refreshTitle": "Atualizar lista de legendas",
       "closeTitle": "Fechar lista de legendas",
       "makeLanguage": "Criar {language}",
-      "learnLanguage": "Aprender {language}",
       "group": {
         "source": "Idiomas de Origem e Destino",
         "target": "Idiomas de Destino",
@@ -670,7 +664,7 @@
         "other": "Outras Entradas",
         "sourceHint": "Legendas originais + destino",
         "translationHint": "Disparar traduções",
-        "otherHint": "xEmbed, Learn, xSync e ferramentas"
+        "otherHint": "xEmbed, xSync e ferramentas"
       },
       "actions": {
         "translate": "Traduzir",
@@ -839,14 +833,7 @@
           "seasonPacksTitle": "Legendas de Temporada Completa",
           "seasonPacksDesc": "Busque e extraia legendas de packs de temporada completa para maior cobertura",
           "hideSdhTitle": "Ocultar Legendas SDH/HI",
-          "hideSdhDesc": "Excluir legendas com anotações para deficientes auditivos (SDH/HI)",
-          "learnTitle": "Aprender Idiomas",
-          "learnDesc": "Adicione entradas de legendas em dois idiomas para aprendizado — mostra as linhas originais e traduzidas lado a lado"
-        },
-        "step6": {
-          "title": "Escolha Idiomas para Aprender",
-          "subtitle": "Quais idiomas você quer aprender? Legendas em dois idiomas serão criadas para cada um.",
-          "noSelection": "Nenhum idioma de aprendizado selecionado ainda"
+          "hideSdhDesc": "Excluir legendas com anotações para deficientes auditivos (SDH/HI)"
         },
         "step7": {
           "title": "Tudo Pronto! 🎉",
@@ -873,8 +860,7 @@
           "subtitleLanguages": "Idiomas de Legendas",
           "none": "Nenhum",
           "seasonPacks": "Packs de Temporada",
-          "hideSdh": "Ocultar SDH/HI",
-          "learnLanguages": "Idiomas de Aprendizado"
+          "hideSdh": "Ocultar SDH/HI"
         },
         "status": {
           "saving": "Salvando configuração...",
@@ -1004,13 +990,13 @@
       },
       "limits": {
         "sourceDescription": "Você pode selecionar até {max} idioma(s) de origem, mas apenas 1 é recomendado. Dessa forma você terá exatamente a mesma ordem na lista de legendas \"Make (idioma)\" que no idioma de origem e poderá verificar as legendas originais em busca de problemas de sincronização antes de traduzir.<br><br>Todas as legendas encontradas no idioma de origem selecionado aparecerão no idioma original E serão usadas como fontes para as listas de tradução \"Make (idioma destino)\".",
-        "targetDescription": "Legendas nos idiomas de destino serão buscadas (legendas encontradas aparecerão) E botões de tradução (listas \"Make\") aparecerão para traduzir DAS legendas do idioma de origem PARA os idiomas de destino.<br><br>Você pode selecionar até {max} idiomas de destino no total (incluindo Learn Mode).",
+        "targetDescription": "Legendas nos idiomas de destino serão buscadas (legendas encontradas aparecerão) E botões de tradução (listas \"Make\") aparecerão para traduzir DAS legendas do idioma de origem PARA os idiomas de destino.<br><br>Você pode selecionar até {max} idiomas de destino no total.",
         "noTranslationDescription": "Selecione em quais idiomas você deseja buscar legendas (até {max})."
       },
       "validation": {
         "sourceRequired": "Por favor, selecione pelo menos um idioma de origem",
         "sourceRange": "Por favor, selecione {min}-{max} idiomas de origem",
-        "targetLimitShort": "Por favor, selecione até {limit} idiomas de destino (incluindo Learn Mode)",
+        "targetLimitShort": "Por favor, selecione até {limit} idiomas de destino",
         "noTranslationRequired": "Por favor, selecione pelo menos um idioma para o modo Apenas Buscar",
         "noTranslationLimitShort": "Por favor, selecione até {limit} idiomas para o modo Apenas Buscar",
         "opensubsEnable": "Habilite o OpenSubtitles antes de testar as credenciais.",
@@ -1029,7 +1015,6 @@
         "testCredentials": "Testar Credenciais",
         "test": "Teste",
         "targetRequired": "Por favor, selecione pelo menos um idioma de destino",
-        "learnRequired": "Por favor, selecione pelo menos um idioma de aprendizado (Learn)",
         "geminiKeyRequired": "Chave da API Gemini é obrigatória",
         "geminiModelRequired": "Por favor, selecione um modelo Gemini",
         "assemblyAiKeyRequired": "A chave da API AssemblyAI é obrigatória para o modo AssemblyAI",
@@ -1065,7 +1050,7 @@
         "loadLanguagesFailed": "Falha ao carregar idiomas: {reason}",
         "loadLanguagesExhausted": "Falha ao carregar idiomas após {retries} tentativas: {reason}. Por favor, atualize a página.",
         "sourceLimit": "Você só pode selecionar até {limit} idiomas de origem",
-        "targetLimit": "Você só pode selecionar até {limit} idiomas de destino no total (incluindo Learn Mode)",
+        "targetLimit": "Você só pode selecionar até {limit} idiomas de destino no total",
         "noTranslationLimit": "Você só pode selecionar até {limit} idiomas no modo Apenas Buscar",
         "saveConfigFirst": "Salve sua configuração primeiro para abrir o Sub Toolbox.",
         "betaOn": "Modo Experimental LIGADO",
@@ -1085,7 +1070,7 @@
         "sessionExpiredCreating": "Sessão expirada. Criando nova sessão...",
         "sessionNetworkError": "Erro de rede ao atualizar sessão. Criando nova sessão...",
         "sessionUpdateFailed": "Atualização de sessão falhou. Criando nova sessão...",
-        "targetsTrimmed": "Apenas os primeiros {limit} idiomas de destino foram mantidos (combinados com Learn Mode).",
+        "targetsTrimmed": "Apenas os primeiros {limit} idiomas de destino foram mantidos.",
         "maxKeysReached": "Máximo de {max} chaves de API permitidas",
         "missingCustomBaseUrl": "Insira uma URL base para o provedor personalizado"
       },
@@ -1255,22 +1240,7 @@
         "sourceTitle": "Idiomas de Origem",
         "sourceLabel": "* Idiomas de origem para traduções",
         "targetTitle": "Idiomas de Destino",
-        "targetLabel": "* Idiomas de destino para legendas e traduções",
-        "learnTitle": "Aprender Idiomas de Destino",
-        "learnLabel": "Selecionar Idiomas do Learn Mode",
-        "learnDescription": "Cria entradas \"Learn (Language)\" que pareiam linhas originais + traduzidas em WebVTT. Selecione idiomas de destino \"Learn\" acima após habilitar."
-      },
-      "learnMode": {
-        "label": "Learn Mode",
-        "description": "Adiciona entradas \"Learn (Language)\" que geram WebVTT bilíngue com linhas de origem e traduzidas. Depois de habilitar, defina os Idiomas de Learn na seção \"Idiomas\" acima.",
-        "orderLabel": "Ordem das Legendas do Learn Mode",
-        "orderDescription": "Escolha qual idioma aparece no topo e na parte inferior da tela.",
-        "sourceTop": "Origem no Topo - Destino na Base",
-        "targetTop": "Destino no Topo - Origem na Base",
-        "italicLabel": "Italicizar um idioma",
-        "italicDescription": "Italicizar uma das linhas de legenda para distinguir visualmente os dois idiomas.",
-        "italicTarget": "Italicizar Destino (idioma aprendido)",
-        "italicSource": "Italicizar Origem (idioma original)"
+        "targetLabel": "* Idiomas de destino para legendas e traduções"
       },
       "translationSettings": {
         "title": "Configurações de Tradução",

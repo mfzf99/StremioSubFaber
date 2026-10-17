@@ -299,30 +299,10 @@
             return Array.isArray(currentValue) ? [...currentValue] : [];
         };
 
-        const learnTargetLanguages = pickArray('learnTargetLanguages');
-        const learnModeSource = hasTranslationModeBackup
-            ? translationModeBackup.learnMode === true
-            : currentConfig.learnMode === true;
-        const learnOrder =
-            (hasTranslationModeBackup ? translationModeBackup.learnOrder : '') ||
-            currentConfig.learnOrder ||
-            'source-top';
-        const learnItalicTarget =
-            (hasTranslationModeBackup ? translationModeBackup.learnItalicTarget : '') ||
-            currentConfig.learnItalicTarget ||
-            'target';
-
         return {
             hasTranslationModeBackup,
             sourceLanguages: pickArray('sourceLanguages'),
-            targetLanguages: pickArray('targetLanguages'),
-            learnTargetLanguages,
-            learnMode: learnModeSource && learnTargetLanguages.length > 0,
-            learnOrder,
-            learnItalic: hasTranslationModeBackup
-                ? translationModeBackup.learnItalic !== false
-                : currentConfig.learnItalic !== false,
-            learnItalicTarget
+            targetLanguages: pickArray('targetLanguages')
         };
     }
 

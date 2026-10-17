@@ -314,7 +314,6 @@
             'config.validation.targetRequired',
             'Please select at least one target language'
         );
-        setText('learnLanguagesError', 'config.validation.learnRequired', 'Please select at least one learn language');
         applyDataI18n();
         refreshComboboxTranslations();
         // Reapply any dynamic copy that depends on runtime values (e.g., language limits)
@@ -478,18 +477,10 @@
             const currentValue = current[key];
             return Array.isArray(currentValue) ? [...currentValue] : [];
         };
-        const learnTargetLanguages = pickArray('learnTargetLanguages');
-        const learnModeSource = hasTranslationModeBackup ? backup.learnMode === true : current.learnMode === true;
         return {
             hasTranslationModeBackup,
             sourceLanguages: pickArray('sourceLanguages'),
-            targetLanguages: pickArray('targetLanguages'),
-            learnTargetLanguages,
-            learnMode: learnModeSource && learnTargetLanguages.length > 0,
-            learnOrder: (hasTranslationModeBackup ? backup.learnOrder : '') || current.learnOrder || 'source-top',
-            learnItalic: hasTranslationModeBackup ? backup.learnItalic !== false : current.learnItalic !== false,
-            learnItalicTarget:
-                (hasTranslationModeBackup ? backup.learnItalicTarget : '') || current.learnItalicTarget || 'target'
+            targetLanguages: pickArray('targetLanguages')
         };
     }
 
@@ -1685,13 +1676,6 @@ Translate to {target_language}.`;
             uiLanguage: getPreferredUiLanguage(),
             sourceLanguages: ['eng'], // Limited by MAX_SOURCE_LANGUAGES
             targetLanguages: [],
-            // Learn mode (dual-language VTT output)
-            learnMode: false,
-            learnTargetLanguages: [],
-            learnOrder: 'source-top', // 'source-top' | 'target-top'
-            learnPlacement: 'top',
-            learnItalic: true, // italicize the second language line
-            learnItalicTarget: 'target', // 'target' | 'source' — which language to italicize
             geminiApiKey: DEFAULT_API_KEYS.GEMINI,
             geminiKeyRotationEnabled: false,
             geminiApiKeys: [],
@@ -1820,7 +1804,7 @@ Translate to {target_language}.`;
         /* defensif — pendedahan gagal tidak boleh menghalang pemuatan */
     }
     let providerLanguages = []; // Languages for source/no-translation (Stremio/provider-compatible)
-    let translationLanguages = []; // Languages for target/learn (AI translation targets with regional variants)
+    let translationLanguages = []; // Languages for target (AI translation targets with regional variants)
     let allLanguages = []; // Combined lookup (both sets merged for chip display)
     let isFirstRun = false;
     let modelsFetchTimeout = null;
@@ -4302,8 +4286,6 @@ Translate to {target_language}.`;
         currentConfig.sourceLanguages = normalizeLanguageCodes(currentConfig.sourceLanguages || []);
         currentConfig.targetLanguages = normalizeLanguageCodes(currentConfig.targetLanguages || []);
         currentConfig.noTranslationLanguages = normalizeLanguageCodes(currentConfig.noTranslationLanguages || []);
-        currentConfig.learnTargetLanguages = normalizeLanguageCodes(currentConfig.learnTargetLanguages || []);
-        currentConfig.learnPlacement = 'top';
         currentConfig.mobileMode = currentConfig.mobileMode === true;
         currentConfig.excludeHearingImpairedSubtitles = currentConfig.excludeHearingImpairedSubtitles === true;
         enforceLanguageLimits();
@@ -6336,8 +6318,6 @@ Translate to {target_language}.`;
         currentConfig.sourceLanguages = normalizeLanguageCodes(currentConfig.sourceLanguages || []);
         currentConfig.targetLanguages = normalizeLanguageCodes(currentConfig.targetLanguages || []);
         currentConfig.noTranslationLanguages = normalizeLanguageCodes(currentConfig.noTranslationLanguages || []);
-        currentConfig.learnTargetLanguages = normalizeLanguageCodes(currentConfig.learnTargetLanguages || []);
-        currentConfig.learnPlacement = 'top';
         currentConfig.mobileMode = currentConfig.mobileMode === true;
         currentConfig.excludeHearingImpairedSubtitles = currentConfig.excludeHearingImpairedSubtitles === true;
         enforceLanguageLimits();
@@ -6451,8 +6431,7 @@ Translate to {target_language}.`;
 
     function getCombinedTargetSet() {
         const targets = Array.isArray(currentConfig?.targetLanguages) ? currentConfig.targetLanguages : [];
-        const learns = Array.isArray(currentConfig?.learnTargetLanguages) ? currentConfig.learnTargetLanguages : [];
-        return new Set([...targets, ...learns]);
+        return new Set(targets);
     }
 
     function getCombinedTargetCount() {
@@ -6478,10 +6457,8 @@ Translate to {target_language}.`;
         }
 
         const targets = Array.isArray(currentConfig.targetLanguages) ? currentConfig.targetLanguages : [];
-        const learns = Array.isArray(currentConfig.learnTargetLanguages) ? currentConfig.learnTargetLanguages : [];
         const combined = new Set();
         const trimmedTargets = [];
-        const trimmedLearns = [];
 
         const pushWithLimit = (code, dest) => {
             if (!code) return;
@@ -6495,10 +6472,8 @@ Translate to {target_language}.`;
         };
 
         targets.forEach((code) => pushWithLimit(code, trimmedTargets));
-        learns.forEach((code) => pushWithLimit(code, trimmedLearns));
 
         currentConfig.targetLanguages = trimmedTargets;
-        currentConfig.learnTargetLanguages = trimmedLearns;
 
         if (
             Array.isArray(currentConfig.noTranslationLanguages) &&
@@ -6532,7 +6507,7 @@ Translate to {target_language}.`;
             targetDesc.innerHTML = tConfig(
                 'config.limits.targetDescription',
                 { max: MAX_TARGET_LANGUAGES },
-                `Subtitles in target languages will be fetched (found subtitles will show up) AND translation buttons (&quot;Make&quot; lists) will appear for translating FROM the Source language subtitles TO the target languages.<br><br>You can select up to ${MAX_TARGET_LANGUAGES} total target languages (including Learn Mode).`
+                `Subtitles in target languages will be fetched (found subtitles will show up) AND translation buttons (&quot;Make&quot; lists) will appear for translating FROM the Source language subtitles TO the target languages.<br><br>You can select up to ${MAX_TARGET_LANGUAGES} total target languages.`
             );
         }
 
@@ -6559,8 +6534,7 @@ Translate to {target_language}.`;
     }
 
     function buildLimitedTargetSelection(candidates, type) {
-        const otherList =
-            type === 'target' ? currentConfig.learnTargetLanguages || [] : currentConfig.targetLanguages || [];
+        const otherList = currentConfig.targetLanguages || [];
         const combined = new Set(otherList);
         const selection = [];
         let truncated = false;
@@ -7405,30 +7379,26 @@ Translate to {target_language}.`;
                 translationLanguages.forEach((lang) => combinedMap.set(lang.code, lang));
                 allLanguages = Array.from(combinedMap.values());
 
-                // For target/learn grids: filter by extended flag
+                // For target grid: filter by extended flag
                 const baseTranslationLanguages = translationLanguages.filter((l) => !l.extended);
 
                 // Restore extended toggle state from localStorage
                 const extToggleSaved = localStorage.getItem('subfaber_extended_languages') === 'true';
                 const extToggleTarget = document.getElementById('extendedLanguagesToggle');
-                const extToggleLearn = document.getElementById('extendedLanguagesToggleLearn');
                 if (extToggleTarget) extToggleTarget.checked = extToggleSaved;
-                if (extToggleLearn) extToggleLearn.checked = extToggleSaved;
 
                 const targetList = extToggleSaved ? translationLanguages : baseTranslationLanguages;
 
                 // Source and no-translation use provider languages (Stremio/subtitle provider compatible)
-                // Target and learn use translation languages (AI can handle regional variants)
+                // Target uses translation languages (AI can handle regional variants)
                 renderLanguageGrid('sourceLanguages', 'selectedSourceLanguages', providerLanguages);
                 renderLanguageGrid('targetLanguages', 'selectedTargetLanguages', targetList);
                 renderLanguageGrid('noTranslationLanguages', 'selectedNoTranslationLanguages', providerLanguages);
-                renderLanguageGrid('learnLanguages', 'selectedLearnLanguages', targetList);
 
                 // Update selected chips
                 updateSelectedChips('source', currentConfig.sourceLanguages);
                 updateSelectedChips('target', currentConfig.targetLanguages);
                 updateSelectedChips('notranslation', currentConfig.noTranslationLanguages);
-                updateSelectedChips('learn', currentConfig.learnTargetLanguages);
 
                 return; // Success - exit function
             } catch (error) {
@@ -7491,24 +7461,20 @@ Translate to {target_language}.`;
     }
 
     /**
-     * Re-render target and learn language grids based on the extended toggle state.
+     * Re-render target language grid based on the extended toggle state.
      * Called when the checkbox is toggled.
      */
     function rerenderExtendedGrids(isExtended) {
         localStorage.setItem('subfaber_extended_languages', isExtended ? 'true' : 'false');
         // Sync both checkboxes
         const extToggleTarget = document.getElementById('extendedLanguagesToggle');
-        const extToggleLearn = document.getElementById('extendedLanguagesToggleLearn');
         if (extToggleTarget) extToggleTarget.checked = isExtended;
-        if (extToggleLearn) extToggleLearn.checked = isExtended;
 
         const baseTranslationLanguages = translationLanguages.filter((l) => !l.extended);
         const targetList = isExtended ? translationLanguages : baseTranslationLanguages;
         renderLanguageGrid('targetLanguages', 'selectedTargetLanguages', targetList);
-        renderLanguageGrid('learnLanguages', 'selectedLearnLanguages', targetList);
         // Re-apply current selections
         updateSelectedChips('target', currentConfig.targetLanguages);
-        updateSelectedChips('learn', currentConfig.learnTargetLanguages);
     }
 
     function renderLanguageGrid(gridId, selectedId, languages) {
@@ -7522,9 +7488,6 @@ Translate to {target_language}.`;
         } else if (gridId === 'noTranslationLanguages') {
             configKey = 'noTranslationLanguages';
             type = 'notranslation';
-        } else if (gridId === 'learnLanguages') {
-            configKey = 'learnTargetLanguages';
-            type = 'learn';
         } else {
             configKey = 'targetLanguages';
             type = 'target';
@@ -7547,8 +7510,6 @@ Translate to {target_language}.`;
             configKey = 'sourceLanguages';
         } else if (type === 'notranslation') {
             configKey = 'noTranslationLanguages';
-        } else if (type === 'learn') {
-            configKey = 'learnTargetLanguages';
         } else {
             configKey = 'targetLanguages';
         }
@@ -7576,13 +7537,13 @@ Translate to {target_language}.`;
                     return;
                 }
                 currentConfig[configKey].push(code);
-            } else if (type === 'target' || type === 'learn') {
+            } else if (type === 'target') {
                 if (!canAddTargetLanguage(code)) {
                     showAlert(
                         tConfig(
                             'config.alerts.targetLimit',
                             { limit: MAX_TARGET_LANGUAGES },
-                            `You can only select up to ${MAX_TARGET_LANGUAGES} total target languages (including Learn Mode)`
+                            `You can only select up to ${MAX_TARGET_LANGUAGES} total target languages`
                         ),
                         'warning',
                         'config.alerts.targetLimit',
@@ -7626,10 +7587,6 @@ Translate to {target_language}.`;
             containerId = 'selectedNoTranslationLanguages';
             badgeId = null; // No badge for no-translation
             configKey = 'noTranslationLanguages';
-        } else if (type === 'learn') {
-            containerId = 'selectedLearnLanguages';
-            badgeId = 'learnBadge';
-            configKey = 'learnTargetLanguages';
         } else {
             containerId = 'selectedTargetLanguages';
             badgeId = 'targetBadge';
@@ -7679,7 +7636,7 @@ Translate to {target_language}.`;
         }
 
         // Live validation
-        if (type === 'source' || type === 'target' || type === 'learn') {
+        if (type === 'source' || type === 'target') {
             validateLanguageSelection(type);
         } else if (type === 'notranslation') {
             validateNoTranslationSelection();
@@ -7711,9 +7668,6 @@ Translate to {target_language}.`;
         } else if (type === 'notranslation') {
             configKey = 'noTranslationLanguages';
             gridId = 'noTranslationLanguages';
-        } else if (type === 'learn') {
-            configKey = 'learnTargetLanguages';
-            gridId = 'learnLanguages';
         } else {
             configKey = 'targetLanguages';
             gridId = 'targetLanguages';
@@ -7949,28 +7903,6 @@ Translate to {target_language}.`;
         consumePendingTokenVaultLauncherOpenRequest();
     }
 
-    // [v3.9.45 FAMILY CARD] Togol inline disclosure kad keluarga Learn Mode.
-    // Kad #learnTargetsCard KEKAL kelihatan; hanya kumpulan dalaman (Order /
-    // Italic / grid bahasa) dibuka-tutup. Skop modul supaya boleh dipanggil
-    // daripada setupEventListeners(), toggleNoTranslationMode() dan rehydrate.
-    function applyLearnModeVisibility(enabled) {
-        const orderGroup = document.getElementById('learnOrderGroup');
-        const placementGroup = document.getElementById('learnPlacementGroup');
-        const italicGroup = document.getElementById('learnItalicGroup');
-        const gridGroup = document.getElementById('learnLanguagesGroup');
-        if (orderGroup) orderGroup.style.display = enabled ? '' : 'none';
-        if (placementGroup) placementGroup.style.display = enabled ? '' : 'none';
-        if (italicGroup) italicGroup.style.display = enabled ? '' : 'none';
-        if (gridGroup) gridGroup.style.display = enabled ? '' : 'none';
-        if (enabled) {
-            const italicToggle = document.getElementById('learnItalicEnabled');
-            const italicTargetGroup = document.getElementById('learnItalicTargetGroup');
-            if (italicTargetGroup) {
-                italicTargetGroup.style.display = italicToggle && italicToggle.checked === false ? 'none' : 'flex';
-            }
-        }
-    }
-
     function setupEventListeners() {
         // Form submission — partial-safe when a section failed to load.
         const configForm = document.getElementById('configForm');
@@ -8031,7 +7963,6 @@ Translate to {target_language}.`;
         const gridMap = [
             ['sourceLanguages', 'source'],
             ['targetLanguages', 'target'],
-            ['learnLanguages', 'learn'],
             ['noTranslationLanguages', 'notranslation']
         ];
         gridMap.forEach(([id, type]) => {
@@ -8052,7 +7983,6 @@ Translate to {target_language}.`;
         const selectedMap = [
             ['selectedSourceLanguages', 'source'],
             ['selectedTargetLanguages', 'target'],
-            ['selectedLearnLanguages', 'learn'],
             ['selectedNoTranslationLanguages', 'notranslation']
         ];
         selectedMap.forEach(([id, type]) => {
@@ -8133,16 +8063,10 @@ Translate to {target_language}.`;
                 filterLanguages('targetLanguages', e.target.value);
             });
 
-        // Extended languages toggle (Target + Learn)
+        // Extended languages toggle (Target)
         const extToggleTarget = document.getElementById('extendedLanguagesToggle');
-        const extToggleLearn = document.getElementById('extendedLanguagesToggleLearn');
         if (extToggleTarget) {
             extToggleTarget.addEventListener('change', (e) => {
-                rerenderExtendedGrids(e.target.checked);
-            });
-        }
-        if (extToggleLearn) {
-            extToggleLearn.addEventListener('change', (e) => {
                 rerenderExtendedGrids(e.target.checked);
             });
         }
@@ -8188,14 +8112,6 @@ Translate to {target_language}.`;
         if (noTranslationSearch) {
             noTranslationSearch.addEventListener('input', (e) => {
                 filterLanguages('noTranslationLanguages', e.target.value);
-            });
-        }
-
-        // Learn language search
-        const learnSearch = document.getElementById('learnSearch');
-        if (learnSearch) {
-            learnSearch.addEventListener('input', (e) => {
-                filterLanguages('learnLanguages', e.target.value);
             });
         }
 
@@ -8414,43 +8330,6 @@ Translate to {target_language}.`;
                 if (collapseBtn) collapseBtn.classList.remove('collapsed');
             });
         });
-
-        // [v3.9.45 FAMILY CARD] #learnTargetsCard ialah KAD KELUARGA — ia kekal
-        // kelihatan sentiasa (togol Learn Mode berada DI DALAMNYA). Yang ditogol
-        // hanyalah kumpulan dalaman (Order / Italic / grid bahasa) melalui
-        // inline disclosure. Tiada lagi suis di bawah memunculkan kad di atas.
-        const learnToggle = document.getElementById('learnModeEnabled');
-        if (learnToggle) {
-            learnToggle.addEventListener('change', (e) => {
-                const enabled = !!e.target.checked;
-                currentConfig.learnMode = enabled;
-                applyLearnModeVisibility(enabled);
-                validateLanguageSelection('learn');
-            });
-        }
-        document.querySelectorAll('input[name="learnOrder"]').forEach((r) => {
-            r.addEventListener('change', (e) => {
-                if (e.target.checked) {
-                    currentConfig.learnOrder = e.target.value;
-                }
-            });
-        });
-        const learnItalicToggle = document.getElementById('learnItalicEnabled');
-        if (learnItalicToggle) {
-            learnItalicToggle.addEventListener('change', (e) => {
-                currentConfig.learnItalic = !!e.target.checked;
-                const targetGroup = document.getElementById('learnItalicTargetGroup');
-                if (targetGroup) targetGroup.style.display = e.target.checked ? 'flex' : 'none';
-            });
-        }
-        document.querySelectorAll('input[name="learnItalicTarget"]').forEach((r) => {
-            r.addEventListener('change', (e) => {
-                if (e.target.checked) {
-                    currentConfig.learnItalicTarget = e.target.value;
-                }
-            });
-        });
-        currentConfig.learnPlacement = 'top';
 
         // Advanced settings toggle (element may not exist in current UI)
         const showAdv = document.getElementById('showAdvancedSettings');
@@ -8901,14 +8780,8 @@ Translate to {target_language}.`;
     }
 
     function validateLanguageSelection(type) {
-        const configKey =
-            type === 'source' ? 'sourceLanguages' : type === 'target' ? 'targetLanguages' : 'learnTargetLanguages';
-        const errorId =
-            type === 'source'
-                ? 'sourceLanguagesError'
-                : type === 'target'
-                  ? 'targetLanguagesError'
-                  : 'learnLanguagesError';
+        const configKey = type === 'source' ? 'sourceLanguages' : 'targetLanguages';
+        const errorId = type === 'source' ? 'sourceLanguagesError' : 'targetLanguagesError';
         const errorDiv = document.getElementById(errorId);
 
         if (type === 'source') {
@@ -8927,44 +8800,26 @@ Translate to {target_language}.`;
             if (errorDiv) errorDiv.classList.remove('show');
             return true;
         } else {
-            // Target and learn languages must have at least one when applicable
-            const requiresSelection = type === 'target' ? true : !!currentConfig.learnMode;
+            // Target languages must have at least one selection
             const combinedCount = getCombinedTargetCount();
-            const learnCount = Array.isArray(currentConfig.learnTargetLanguages)
-                ? currentConfig.learnTargetLanguages.length
-                : 0;
 
-            if (type === 'target') {
-                if (requiresSelection && combinedCount === 0) {
-                    if (errorDiv) {
-                        errorDiv.textContent = tConfig(
-                            'config.validation.targetMissing',
-                            {},
-                            'At least one target language is required'
-                        );
-                        errorDiv.classList.add('show');
-                    }
-                    return false;
+            if (combinedCount === 0) {
+                if (errorDiv) {
+                    errorDiv.textContent = tConfig(
+                        'config.validation.targetMissing',
+                        {},
+                        'At least one target language is required'
+                    );
+                    errorDiv.classList.add('show');
                 }
-            } else {
-                if (requiresSelection && learnCount === 0) {
-                    if (errorDiv) {
-                        errorDiv.textContent = tConfig(
-                            'config.validation.learnRequired',
-                            {},
-                            'Learn Mode requires at least one target language'
-                        );
-                        errorDiv.classList.add('show');
-                    }
-                    return false;
-                }
+                return false;
             }
             if (combinedCount > MAX_TARGET_LANGUAGES) {
                 if (errorDiv) {
                     errorDiv.textContent = tConfig(
                         'config.validation.targetLimitShort',
                         { limit: MAX_TARGET_LANGUAGES },
-                        `Please select up to ${MAX_TARGET_LANGUAGES} target languages (including Learn Mode)`
+                        `Please select up to ${MAX_TARGET_LANGUAGES} target languages`
                     );
                     errorDiv.classList.add('show');
                 }
@@ -10939,11 +10794,7 @@ Translate to {target_language}.`;
     }
 
     function toggleOtherSettingsVisibilityForNoTranslation(enabled) {
-        const groupsToHide = [
-            document.getElementById('learnOrderGroup'),
-            document.getElementById('learnPlacementGroup'),
-            document.getElementById('learnItalicGroup')
-        ];
+        const groupsToHide = [];
         const otherSettingsCard = document.getElementById('otherSettingsCard');
         const subToolboxNoTranslationGroup = document.getElementById('subToolboxNoTranslationGroup');
         const enableSeasonPacksNoTranslationGroup = document.getElementById('enableSeasonPacksNoTranslationGroup');
@@ -10953,7 +10804,7 @@ Translate to {target_language}.`;
         const convertAssToVttNoTranslationGroup = document.getElementById('convertAssToVttNoTranslationGroup');
         const forceSRTOutputNoTranslationGroup = document.getElementById('forceSRTOutputNoTranslationGroup');
 
-        ['databaseMode', 'learnModeEnabled', 'mobileMode', 'betaMode'].forEach((id) => {
+        ['databaseMode', 'mobileMode', 'betaMode'].forEach((id) => {
             const group = document.getElementById(id)?.closest('.form-group');
             if (group) groupsToHide.push(group);
         });
@@ -11045,11 +10896,6 @@ Translate to {target_language}.`;
         const geminiCard = document.getElementById('geminiCard');
         const translationSettingsCard = document.getElementById('translationSettingsCard');
         const betaToggle = document.getElementById('betaMode');
-        const learnTargetsCard = document.getElementById('learnTargetsCard');
-        const learnModeCheckbox = document.getElementById('learnModeEnabled');
-        const learnOrderGroup = document.getElementById('learnOrderGroup');
-        const learnPlacementGroup = document.getElementById('learnPlacementGroup');
-        const learnGrid = document.getElementById('learnLanguages');
         setLanguagesSectionDescriptionKey(
             enabled ? 'config.sections.languagesDescriptionNoTranslation' : 'config.sections.languagesDescription',
             enabled
@@ -11061,14 +10907,7 @@ Translate to {target_language}.`;
         if (enabled) {
             translationModeBackup = {
                 sourceLanguages: Array.isArray(currentConfig.sourceLanguages) ? [...currentConfig.sourceLanguages] : [],
-                targetLanguages: Array.isArray(currentConfig.targetLanguages) ? [...currentConfig.targetLanguages] : [],
-                learnTargetLanguages: Array.isArray(currentConfig.learnTargetLanguages)
-                    ? [...currentConfig.learnTargetLanguages]
-                    : [],
-                learnMode: currentConfig.learnMode === true,
-                learnOrder: currentConfig.learnOrder || 'source-top',
-                learnItalic: currentConfig.learnItalic !== false,
-                learnItalicTarget: currentConfig.learnItalicTarget || 'target'
+                targetLanguages: Array.isArray(currentConfig.targetLanguages) ? [...currentConfig.targetLanguages] : []
             };
             if (
                 (!currentConfig.noTranslationLanguages || currentConfig.noTranslationLanguages.length === 0) &&
@@ -11097,18 +10936,6 @@ Translate to {target_language}.`;
             if (geminiCard) geminiCard.style.display = 'none';
             if (translationSettingsCard) translationSettingsCard.style.display = 'none';
 
-            // Hide learn mode UI elements in just-fetch mode (family card + inner groups)
-            if (learnTargetsCard) learnTargetsCard.style.display = 'none';
-            if (learnModeCheckbox) {
-                learnModeCheckbox.parentElement.style.display = 'none';
-            }
-            if (learnOrderGroup) learnOrderGroup.style.display = 'none';
-            if (learnPlacementGroup) learnPlacementGroup.style.display = 'none';
-            const learnItalicGroupNoTrans = document.getElementById('learnItalicGroup');
-            if (learnItalicGroupNoTrans) learnItalicGroupNoTrans.style.display = 'none';
-            const learnGridGroupNoTrans = document.getElementById('learnLanguagesGroup');
-            if (learnGridGroupNoTrans) learnGridGroupNoTrans.style.display = 'none';
-
             // Clear validation errors for fields that aren't required in no-translation mode
             const geminiApiKeyInput = document.getElementById('geminiApiKey');
             const geminiApiKeyError = document.getElementById('geminiApiKeyError');
@@ -11119,7 +10946,6 @@ Translate to {target_language}.`;
             const assemblyAiFeedback = document.getElementById('assemblyAiValidationFeedback');
             const sourceLanguagesError = document.getElementById('sourceLanguagesError');
             const targetLanguagesError = document.getElementById('targetLanguagesError');
-            const learnLanguagesError = document.getElementById('learnLanguagesError');
 
             if (geminiApiKeyInput) {
                 geminiApiKeyInput.classList.remove('invalid', 'valid');
@@ -11149,16 +10975,11 @@ Translate to {target_language}.`;
             if (targetLanguagesError) {
                 targetLanguagesError.classList.remove('show');
             }
-            if (learnLanguagesError) {
-                learnLanguagesError.classList.remove('show');
-            }
 
             // Clear source and target languages when switching to no-translation mode
             // This prevents translation-mode languages from being saved in no-translation config
             currentConfig.sourceLanguages = [];
             currentConfig.targetLanguages = [];
-            currentConfig.learnTargetLanguages = [];
-            currentConfig.learnMode = false;
 
             // Update UI to reflect cleared languages
             const sourceGrid = document.getElementById('sourceLanguages');
@@ -11174,18 +10995,9 @@ Translate to {target_language}.`;
                     item.classList.remove('selected');
                 });
             }
-            if (learnGrid) {
-                learnGrid.querySelectorAll('.language-item.selected').forEach((item) => {
-                    item.classList.remove('selected');
-                });
-            }
-            if (learnModeCheckbox) {
-                learnModeCheckbox.checked = false;
-            }
 
             updateSelectedChips('source', []);
             updateSelectedChips('target', []);
-            updateSelectedChips('learn', []);
             updateSelectedChips('notranslation', currentConfig.noTranslationLanguages || []);
             syncGridSelection('noTranslationLanguages', currentConfig.noTranslationLanguages || []);
         } else {
@@ -11219,16 +11031,6 @@ Translate to {target_language}.`;
             if (geminiCard) geminiCard.style.display = 'block';
             if (translationSettingsCard) translationSettingsCard.style.display = 'block';
 
-            // Show learn mode checkbox in translation mode (family card stays visible;
-            // inner groups follow the toggle via inline disclosure)
-            if (learnModeCheckbox) {
-                learnModeCheckbox.parentElement.style.display = '';
-                if (learnTargetsCard) {
-                    learnTargetsCard.style.display = '';
-                }
-                applyLearnModeVisibility(learnModeCheckbox.checked === true);
-            }
-
             // Clear no-translation languages when switching to translation mode
             // This prevents no-translation-mode languages from being saved in translation config
             currentConfig.noTranslationLanguages = [];
@@ -11247,28 +11049,10 @@ Translate to {target_language}.`;
             const restored = resolveTranslationModeRestoreState({ currentConfig, translationModeBackup });
             currentConfig.sourceLanguages = normalizeLanguageCodes(restored.sourceLanguages || []);
             currentConfig.targetLanguages = normalizeLanguageCodes(restored.targetLanguages || []);
-            currentConfig.learnTargetLanguages = normalizeLanguageCodes(restored.learnTargetLanguages || []);
-            currentConfig.learnMode = restored.learnMode === true;
-            currentConfig.learnOrder = restored.learnOrder || 'source-top';
-            currentConfig.learnItalic = restored.learnItalic !== false;
-            currentConfig.learnItalicTarget = restored.learnItalicTarget || 'target';
             enforceLanguageLimits();
 
             syncGridSelection('sourceLanguages', currentConfig.sourceLanguages);
             syncGridSelection('targetLanguages', currentConfig.targetLanguages);
-            syncGridSelection('learnLanguages', currentConfig.learnTargetLanguages);
-            updateSelectedChips('source', currentConfig.sourceLanguages);
-            updateSelectedChips('target', currentConfig.targetLanguages);
-            updateSelectedChips('learn', currentConfig.learnTargetLanguages);
-
-            if (learnModeCheckbox) {
-                learnModeCheckbox.checked = currentConfig.learnMode === true;
-            }
-            const showLearn = learnModeCheckbox ? learnModeCheckbox.checked : currentConfig.learnMode === true;
-            if (learnTargetsCard) {
-                learnTargetsCard.style.display = '';
-            }
-            applyLearnModeVisibility(showLearn);
         }
 
         validateNoTranslationSelection();
@@ -11633,9 +11417,6 @@ Translate to {target_language}.`;
         } else if (type === 'notranslation') {
             gridId = 'noTranslationLanguages';
             configKey = 'noTranslationLanguages';
-        } else if (type === 'learn') {
-            gridId = 'learnLanguages';
-            configKey = 'learnTargetLanguages';
         } else {
             gridId = 'targetLanguages';
             configKey = 'targetLanguages';
@@ -11676,7 +11457,7 @@ Translate to {target_language}.`;
                         });
                     }
                 } else {
-                    // Target, learn and no-translation languages
+                    // Target and no-translation languages
                     const candidates = [];
                     items.forEach((item) => {
                         const code = item.dataset.code;
@@ -11691,7 +11472,7 @@ Translate to {target_language}.`;
 
                     let selection = candidates;
                     let truncated = false;
-                    if (type === 'target' || type === 'learn') {
+                    if (type === 'target') {
                         const result = buildLimitedTargetSelection(candidates, type);
                         selection = result.selection;
                         truncated = result.truncated;
@@ -11723,7 +11504,7 @@ Translate to {target_language}.`;
                                 : tConfig(
                                       'config.alerts.targetsTrimmed',
                                       { limit: MAX_TARGET_LANGUAGES },
-                                      `Only the first ${MAX_TARGET_LANGUAGES} target languages were kept (combined with Learn Mode).`
+                                      `Only the first ${MAX_TARGET_LANGUAGES} target languages were kept.`
                                   );
                         showAlert(msg, 'warning');
                     }
@@ -12394,33 +12175,6 @@ Translate to {target_language}.`;
         // Check if advanced settings are modified and update bypass cache accordingly
         updateBypassCacheForAdvancedSettings();
 
-        // Learn Mode UI state
-        // [v3.9.45 FAMILY CARD] Kad kekal kelihatan; hanya kumpulan dalaman ditogol.
-        try {
-            const learnToggle = document.getElementById('learnModeEnabled');
-            const learnTargetsCard = document.getElementById('learnTargetsCard');
-            if (learnToggle) learnToggle.checked = !!currentConfig.learnMode;
-            if (learnTargetsCard) learnTargetsCard.style.display = '';
-            applyLearnModeVisibility(currentConfig.learnMode === true);
-            const learnItalicToggle = document.getElementById('learnItalicEnabled');
-            if (learnItalicToggle) {
-                learnItalicToggle.checked = currentConfig.learnItalic !== false;
-                const italicTargetGroup = document.getElementById('learnItalicTargetGroup');
-                if (italicTargetGroup) italicTargetGroup.style.display = learnItalicToggle.checked ? 'flex' : 'none';
-            }
-            const italicTarget = currentConfig.learnItalicTarget || 'target';
-            const italicTargetInput = document.querySelector(
-                `input[name="learnItalicTarget"][value="${italicTarget}"]`
-            );
-            if (italicTargetInput) italicTargetInput.checked = true;
-            const order = currentConfig.learnOrder || 'source-top';
-            const orderInput = document.querySelector(`input[name=\"learnOrder\"][value=\"${order}\"]`);
-            if (orderInput) orderInput.checked = true;
-            const placement = currentConfig.learnPlacement || 'stacked';
-            const placementInput = document.querySelector(`input[name=\"learnPlacement\"][value=\"${placement}\"]`);
-            if (placementInput) placementInput.checked = true;
-        } catch (_) {}
-
         // Track mobile mode toggle in state
         const mobileToggle = document.getElementById('mobileMode');
         if (mobileToggle) {
@@ -12734,12 +12488,6 @@ Translate to {target_language}.`;
             })(),
             sourceLanguages: currentConfig.sourceLanguages,
             targetLanguages: currentConfig.targetLanguages,
-            learnMode: currentConfig.learnMode === true,
-            learnTargetLanguages: currentConfig.learnTargetLanguages || [],
-            learnOrder: currentConfig.learnOrder || 'source-top',
-            learnPlacement: 'top', // Force top-of-screen placement
-            learnItalic: currentConfig.learnItalic !== false,
-            learnItalicTarget: currentConfig.learnItalicTarget || 'target',
             // [SECONDARY FALLBACK — Option A 2026-10-13] Legacy multi-provider DOM
             // (#enableMultiProviders/#mainProviderSelect/#enableSecondaryProvider/
             // #secondaryProviderSelect) telah dibuang. Nilai kini bersumber daripada
@@ -13160,13 +12908,7 @@ Translate to {target_language}.`;
 
             if (!validateLanguageSelection('target')) {
                 errors.push(
-                    `⚠️ ${tConfig('config.validation.targetLimitShort', { limit: MAX_TARGET_LANGUAGES }, `Please select between 1 and ${MAX_TARGET_LANGUAGES} target languages (including Learn Mode)`)}`
-                );
-            }
-
-            if (config.learnMode && !validateLanguageSelection('learn')) {
-                errors.push(
-                    `⚠️ ${tConfig('config.validation.learnRequired', {}, 'Learn Mode requires at least one target language')}`
+                    `⚠️ ${tConfig('config.validation.targetLimitShort', { limit: MAX_TARGET_LANGUAGES }, `Please select between 1 and ${MAX_TARGET_LANGUAGES} target languages`)}`
                 );
             }
         } else {

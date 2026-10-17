@@ -75,10 +75,7 @@
         // Extras
         subToolbox: true,
         seasonPacks: true,
-        hideSDH: false,
-        // Learn mode (translate only)
-        learnMode: false,
-        learnTargetLanguages: []
+        hideSDH: false
     };
 
     function getConfigPageGeminiUiHelper() {
@@ -305,22 +302,6 @@
             combined.add(code);
             limitedTargets.push(code);
         });
-
-        const limitedLearn = [];
-        state.learnTargetLanguages.forEach((code) => {
-            if (combined.has(code)) {
-                limitedLearn.push(code);
-                return;
-            }
-            if (combined.size >= MAX_TARGET_LANGUAGES) {
-                return;
-            }
-            combined.add(code);
-            limitedLearn.push(code);
-        });
-
-        state.selectedLanguages = limitedTargets;
-        state.learnTargetLanguages = limitedLearn;
     }
 
     function sanitizeQuickSetupLanguageState() {
@@ -330,7 +311,6 @@
         }
 
         state.selectedLanguages = normalizeLanguageCodes(state.selectedLanguages);
-        state.learnTargetLanguages = normalizeLanguageCodes(state.learnTargetLanguages);
 
         if (state.mode === 'fetch') {
             state.selectedLanguages = state.selectedLanguages.slice(0, MAX_NO_TRANSLATION_LANGUAGES);
@@ -368,9 +348,7 @@
 
     function syncExtendedLanguageToggles(isEnabled) {
         const targetToggle = $('qsExtendedLanguagesToggle');
-        const learnToggle = $('qsExtendedLanguagesToggleLearn');
         if (targetToggle) targetToggle.checked = isEnabled;
-        if (learnToggle) learnToggle.checked = isEnabled;
     }
 
     function setExtendedLanguagesEnabled(isEnabled) {
@@ -379,7 +357,6 @@
         } catch (_) {}
         syncExtendedLanguageToggles(isEnabled);
         renderLangGrid();
-        renderLearnLangGrid();
     }
 
     function getQuickSetupTranslationLanguages() {
@@ -398,10 +375,6 @@
 
         state.selectedLanguages.forEach((code) => {
             if (normalizedExcludeType === 'target' && code === normalizedExcludeCode) return;
-            combined.add(code);
-        });
-        state.learnTargetLanguages.forEach((code) => {
-            if (normalizedExcludeType === 'learn' && code === normalizedExcludeCode) return;
             combined.add(code);
         });
 
@@ -450,9 +423,9 @@
         }
 
         const section = $('languagesSection');
-        const cardId = cardType === 'learn' ? 'learnTargetsCard' : cardType === 'target' ? 'targetCard' : 'sourceCard';
+        const cardId = cardType === 'target' ? 'targetCard' : 'sourceCard';
         const card = $(cardId);
-        const focusId = cardType === 'learn' ? 'learnSearch' : cardType === 'target' ? 'targetSearch' : 'sourceSearch';
+        const focusId = cardType === 'target' ? 'targetSearch' : 'sourceSearch';
         const focusEl = $(focusId);
 
         if (!section || !card) {
@@ -766,8 +739,6 @@
         wireStep4();
         wireStep5();
 
-        wireStep6Learn();
-
         // Load languages asynchronously
         loadLanguages();
     }
@@ -853,10 +824,6 @@
         if (step === 3 && state.mode === 'fetch') {
             return null; // skip
         }
-        // Skip step 6 (Learn Language Selection) if learn mode is off or in fetch mode
-        if (step === 6 && (!state.learnMode || state.mode === 'fetch')) {
-            return null; // skip
-        }
         return step;
     }
 
@@ -901,7 +868,6 @@
         // Step-specific enter actions
         if (step === 4) onEnterStep4();
         if (step === 5) onEnterStep5();
-        if (step === 6) onEnterStep6Learn();
         if (step === 7) onEnterStep7();
     }
 
@@ -979,8 +945,6 @@
                 return state.selectedLanguages.length > 0;
             case 5:
                 return true;
-            case 6:
-                return state.learnTargetLanguages.length > 0;
             default:
                 return true;
         }
@@ -1021,9 +985,6 @@
                 break;
             case 3:
                 state.geminiApiKey = ($('qsGeminiApiKey') || {}).value || '';
-                break;
-            case 5:
-                state.learnMode = !!($('qsLearnMode') || {}).checked;
                 break;
         }
     }
@@ -1306,7 +1267,6 @@
                 updateSourceLanguageInfo();
                 syncExtendedLanguageToggles(getExtendedLanguagesEnabled());
                 renderLangGrid();
-                renderLearnLangGrid();
                 return;
             } catch (err) {
                 lastError = err;
@@ -1520,7 +1480,6 @@
         const toolboxToggle = $('qsSubToolbox');
         const seasonToggle = $('qsSeasonPacks');
         const sdhToggle = $('qsExcludeHI');
-        const learnToggle = $('qsLearnMode');
 
         if (toolboxToggle) {
             toolboxToggle.checked = true;
@@ -1540,132 +1499,9 @@
                 state.hideSDH = sdhToggle.checked;
             });
         }
-        if (learnToggle) {
-            learnToggle.checked = false;
-            learnToggle.addEventListener('change', () => {
-                state.learnMode = learnToggle.checked;
-                updateNav(5);
-            });
-        }
     }
 
-    function onEnterStep5() {
-        // Show/hide learn mode toggle based on mode
-        const learnItem = $('qsLearnModeItem');
-        if (learnItem) {
-            learnItem.style.display = state.mode === 'translate' ? '' : 'none';
-        }
-    }
-    // Step 6: Learn Language Selection
-
-    function onEnterStep6Learn() {
-        syncExtendedLanguageToggles(getExtendedLanguagesEnabled());
-        renderLearnLangGrid();
-    }
-
-    function renderLearnLangGrid() {
-        const grid = $('qsLearnLangGrid');
-        if (!grid) return;
-
-        const searchInput = $('qsLearnLangSearch');
-        const searchTerm = searchInput ? searchInput.value.toLowerCase().trim() : '';
-
-        grid.innerHTML = '';
-
-        if (!languagesLoaded) {
-            grid.innerHTML = `<div class="qs-lang-loading">${tQs('step4.loading', null, 'Loading languages...')}</div>`;
-            setTimeout(renderLearnLangGrid, 500);
-            return;
-        }
-
-        // Filter by search
-        let filtered = getQuickSetupTranslationLanguages();
-        if (searchTerm) {
-            filtered = filtered.filter(
-                (lang) => lang.name.toLowerCase().includes(searchTerm) || lang.code.toLowerCase().includes(searchTerm)
-            );
-        }
-
-        filtered.forEach((lang) => {
-            const item = document.createElement('div');
-            item.className = 'qs-lang-item';
-            if (state.learnTargetLanguages.includes(lang.code)) {
-                item.classList.add('selected');
-            }
-            item.dataset.code = lang.code;
-            item.textContent = `${lang.name} (${lang.code.toUpperCase()})`;
-            item.addEventListener('click', () => toggleLearnLang(lang.code, item));
-            grid.appendChild(item);
-        });
-
-        renderLearnLangChips();
-    }
-
-    function toggleLearnLang(code, el) {
-        const idx = state.learnTargetLanguages.indexOf(code);
-
-        if (idx > -1) {
-            state.learnTargetLanguages.splice(idx, 1);
-            el.classList.remove('selected');
-        } else {
-            if (!canAddQuickSetupTargetLanguage(code, 'learn')) {
-                flashLanguageGrid('qsLearnLangGrid');
-                return;
-            }
-            state.learnTargetLanguages.push(code);
-            el.classList.add('selected');
-        }
-
-        renderLearnLangChips();
-        updateNav(6);
-    }
-
-    function renderLearnLangChips() {
-        const container = $('qsSelectedLearnLangs');
-        if (!container) return;
-
-        if (state.learnTargetLanguages.length === 0) {
-            setQuickSetupEmptySelection(container, 'step6.noSelection', 'No learn languages selected yet');
-            return;
-        }
-
-        container.innerHTML = '';
-        state.learnTargetLanguages.forEach((code) => {
-            const lang = allLanguages.find((l) => l.code === code);
-            appendLanguageChip(container, lang ? lang.name : code, code);
-        });
-
-        // Wire remove buttons
-        container.querySelectorAll('.qs-lang-chip-remove').forEach((btn) => {
-            btn.addEventListener('click', (e) => {
-                e.stopPropagation();
-                const code = btn.dataset.code;
-                const idx = state.learnTargetLanguages.indexOf(code);
-                if (idx > -1) state.learnTargetLanguages.splice(idx, 1);
-                const gridItem = document.querySelector(`#qsLearnLangGrid .qs-lang-item[data-code="${code}"]`);
-                if (gridItem) gridItem.classList.remove('selected');
-                renderLearnLangChips();
-                updateNav(6);
-            });
-        });
-    }
-
-    function wireStep6Learn() {
-        const searchInput = $('qsLearnLangSearch');
-        if (searchInput) {
-            searchInput.addEventListener('input', () => {
-                renderLearnLangGrid();
-            });
-        }
-
-        const extendedToggle = $('qsExtendedLanguagesToggleLearn');
-        if (extendedToggle) {
-            extendedToggle.checked = getExtendedLanguagesEnabled();
-            extendedToggle.addEventListener('change', () => {
-                setExtendedLanguagesEnabled(extendedToggle.checked);
-            });
-        }
-    }
+    function onEnterStep5() {}
     // Step 7: Summary & Install
 
     function onEnterStep7() {
@@ -1782,17 +1618,6 @@
             });
         }
 
-        // Learn mode
-        if (state.learnMode && state.mode === 'translate') {
-            const learnNames = state.learnTargetLanguages.map(getLanguageDisplayName);
-            items.push({
-                icon: '\uD83D\uDCD6',
-                label: tQs('summary.learnLanguages', null, 'Learn Languages'),
-                value: learnNames.join(', ') || tQs('summary.none', null, 'None'),
-                cls: learnNames.length > 0 ? 'qs-on' : 'qs-off'
-            });
-        }
-
         items.forEach((item) => {
             const row = document.createElement('div');
             row.className = 'qs-summary-item';
@@ -1866,12 +1691,6 @@
             noTranslationLanguages: !isTranslate ? [...state.selectedLanguages] : [],
             sourceLanguages: [...sourceLanguages],
             targetLanguages: isTranslate ? [...state.selectedLanguages] : [],
-            learnMode: isTranslate ? state.learnMode : false,
-            learnTargetLanguages: isTranslate && state.learnMode ? [...state.learnTargetLanguages] : [],
-            learnOrder: 'source-top',
-            learnPlacement: 'top',
-            learnItalic: true,
-            learnItalicTarget: 'target',
             geminiApiKey: isTranslate ? state.geminiApiKey : '',
             geminiKeyRotationEnabled: false,
             geminiApiKeys: [],
@@ -2005,8 +1824,6 @@
                                 'noTranslationLanguages',
                                 'sourceLanguages',
                                 'targetLanguages',
-                                'learnMode',
-                                'learnTargetLanguages',
                                 'geminiApiKey',
                                 'geminiKeyRotationEnabled', // Force disable rotation if setting single key
                                 'subToolboxEnabled',
@@ -2014,7 +1831,7 @@
                                 'syncSubtitlesEnabled',
                                 'excludeHearingImpairedSubtitles',
                                 'enableSeasonPacks'
-                                // EXCLUDED (Preserve Advanced): learnOrder, learnPlacement, learnItalic, learnItalicTarget, subtitleProviderTimeout
+                                // EXCLUDED (Preserve Advanced): subtitleProviderTimeout
                             ];
                             fastOverlayKeys.forEach((key) => {
                                 if (qsConfig[key] !== undefined) {
@@ -2287,21 +2104,6 @@
         setQuickSetupEmptySelection(selContainer, 'step4.noSelection', 'No languages selected yet');
         syncExtendedLanguageToggles(getExtendedLanguagesEnabled());
         updateSourceLanguageInfo();
-        // Step 5 - reset extras + learn mode
-        const toolbox = $('qsSubToolbox');
-        const season = $('qsSeasonPacks');
-        const sdh = $('qsExcludeHI');
-        const learnToggle = $('qsLearnMode');
-        if (toolbox) toolbox.checked = true;
-        if (season) season.checked = true;
-        if (sdh) sdh.checked = false;
-        if (learnToggle) learnToggle.checked = false;
-        hide('qsLearnModeItem');
-        // Step 6 - clear learn language selection
-        const learnSearch = $('qsLearnLangSearch');
-        if (learnSearch) learnSearch.value = '';
-        const learnChips = $('qsSelectedLearnLangs');
-        setQuickSetupEmptySelection(learnChips, 'step6.noSelection', 'No learn languages selected yet');
         // Step 7 - clear summary
         const summaryList = $('qsSummary');
         if (summaryList) summaryList.innerHTML = '';
@@ -2384,9 +2186,6 @@
         state.seasonPacks = config.enableSeasonPacks !== false;
         state.hideSDH = !!config.excludeHearingImpairedSubtitles;
 
-        // Learn Mode
-        state.learnMode = !!config.learnMode;
-        state.learnTargetLanguages = config.learnTargetLanguages;
         sanitizeQuickSetupLanguageState();
 
         // Current step will be set by caller
@@ -2409,8 +2208,6 @@
         state.subToolbox = true;
         state.seasonPacks = true;
         state.hideSDH = false;
-        state.learnMode = false;
-        state.learnTargetLanguages = [];
     }
 
     function restoreUIFromState() {
@@ -2450,11 +2247,9 @@
         const toolbox = $('qsSubToolbox');
         const season = $('qsSeasonPacks');
         const sdh = $('qsExcludeHI');
-        const learnToggle = $('qsLearnMode');
         if (toolbox) toolbox.checked = state.subToolbox;
         if (season) season.checked = state.seasonPacks;
         if (sdh) sdh.checked = state.hideSDH;
-        if (learnToggle) learnToggle.checked = state.learnMode;
         syncExtendedLanguageToggles(getExtendedLanguagesEnabled());
         updateSourceLanguageInfo();
     }

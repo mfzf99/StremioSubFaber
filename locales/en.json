@@ -4,9 +4,6 @@
     "Sub Toolbox",
     "Toolbox",
     "Tool shelf",
-    "Learn Mode",
-    "Learn Mode labels (e.g., Learn {language})",
-    "Learn (Language) entries (\"Learn <Language>\")",
     "SubFaber xSync",
     "SubFaber Link",
     "OpenSubtitles",
@@ -81,7 +78,6 @@
         "translationInProgress": "Translation already in progress; waiting on primary request.",
         "translationInvalidContent": "Translation returned invalid content",
         "translationFailed": "Translation failed: {reason}",
-        "learnFailed": "Failed to build learning subtitles",
         "subToolboxLoadFailed": "Failed to load Sub Toolbox",
         "missingConfigOrVideo": "Missing config or videoId",
         "subToolboxPageFailed": "Failed to load Sub Toolbox page",
@@ -574,8 +570,7 @@
       "sourceMissing": "At least one source language must be selected",
       "sourceLimit": "Maximum of {limit} source languages allowed",
       "targetMissing": "At least one target language must be selected",
-      "targetLimit": "Maximum of {limit} total target languages allowed (including Learn Mode)",
-      "learnTargetMissing": "Learn Mode requires at least one target language",
+      "targetLimit": "Maximum of {limit} total target languages allowed",
       "sessionTokenError": "Configuration Error: Session token not found or expired. Please reconfigure the addon to continue using it."
     },
     "subtitle": {
@@ -664,7 +659,6 @@
       "refreshTitle": "Refresh subtitle list",
       "closeTitle": "Close subtitle list",
       "makeLanguage": "Make {language}",
-      "learnLanguage": "Learn {language}",
       "group": {
         "source": "Source & Target",
         "target": "Target Languages",
@@ -672,7 +666,7 @@
         "other": "Other Entries",
         "sourceHint": "Original + target subtitles",
         "translationHint": "Spin up translations",
-        "otherHint": "xEmbed, Learn, xSync & tools"
+        "otherHint": "xEmbed, xSync & tools"
       },
       "actions": {
         "translate": "Translate",
@@ -732,18 +726,22 @@
       "open": "Open changelog"
     },
     "nav": {
-      "groupAccount": "Account",
-      "groupExplore": "Explore",
-      "groupHelp": "Help",
-      "configuration": "Configuration",
-      "configurationSubtitle": "Everything about your SubFaber setup — keys, languages, and behaviour.",
-      "apiKeys": "API Keys",
-      "languages": "Languages",
-      "settings": "Settings",
-      "toolbox": "Sub Toolbox",
-      "toolboxSubtitle": "Install SubFaber into Stremio and open the embedded toolbox.",
-      "toolboxDescription": "The Sub Toolbox bundles file translation, embedded subtitle tools, and sync utilities for Stremio.",
-      "actionHint": "Settings save across every page — no need to switch back."
+      "refresh": "Refresh stream",
+      "refreshTitle": "Jump to your latest stream",
+      "refreshLoading": "Refreshing...",
+      "refreshEmpty": "No recent stream",
+      "refreshError": "Refresh failed",
+      "refreshCurrent": "Already latest",
+      "refreshMissing": "Missing stream data",
+      "streamDetected": "New stream detected",
+      "mobileMenu": "Open menu",
+      "subToolbox": "Sub Toolbox",
+      "translateFiles": "Translate files",
+      "embeddedSubs": "Extract Subs",
+      "syncSubtitles": "Sync subtitles",
+      "automaticSubs": "Auto subs",
+      "configure": "Configure",
+      "youAreHere": "You are here"
     },
     "config": {
       "uiLanguageLabel": "Interface",
@@ -862,14 +860,7 @@
           "seasonPacksTitle": "Season Pack Subtitles",
           "seasonPacksDesc": "Fetch and extract subtitles from full season packs for bigger coverage",
           "hideSdhTitle": "Hide SDH/HI Subtitles",
-          "hideSdhDesc": "Exclude subtitles with hearing-impaired annotations (SDH/HI)",
-          "learnTitle": "Learn Languages",
-          "learnDesc": "Add dual-language subtitle entries for language learning — shows both source and translated lines side by side"
-        },
-        "step6": {
-          "title": "Choose Learn Languages",
-          "subtitle": "Which languages do you want to learn? Dual-language subtitles will be created for each.",
-          "noSelection": "No learn languages selected yet"
+          "hideSdhDesc": "Exclude subtitles with hearing-impaired annotations (SDH/HI)"
         },
         "step7": {
           "title": "You're All Set! 🎉",
@@ -908,8 +899,7 @@
           "subtitleLanguages": "Subtitle Languages",
           "none": "None",
           "seasonPacks": "Season Packs",
-          "hideSdh": "Hide SDH/HI",
-          "learnLanguages": "Learn Languages"
+          "hideSdh": "Hide SDH/HI"
         },
         "status": {
           "saving": "Saving configuration...",
@@ -1025,13 +1015,13 @@
       },
       "limits": {
         "sourceDescription": "You can select up to {max} source language(s), but only 1 is recommended. This way you have the exact same \"Make (language)\" subtitles list order as the Source language and can verify the original subtitles for sync issues before translating.<br><br>All subtitles found in the selected Source language will show up in their original language AND will be used as sources for the \"Make (target language)\" translation lists.",
-        "targetDescription": "Subtitles in target languages will be fetched (found subtitles will show up) AND translation buttons (\"Make\" lists) will appear for translating FROM the Source language subtitles TO the target languages.<br><br>You can select up to {max} total target languages (including Learn Mode).",
+        "targetDescription": "Subtitles in target languages will be fetched (found subtitles will show up) AND translation buttons (\"Make\" lists) will appear for translating FROM the Source language subtitles TO the target languages.<br><br>You can select up to {max} total target languages.",
         "noTranslationDescription": "Select which languages you want to fetch subtitles in (up to {max})."
       },
       "validation": {
         "sourceRequired": "Please select at least one source language",
         "sourceRange": "Please select {min}-{max} source languages",
-        "targetLimitShort": "Please select up to {limit} target languages (including Learn Mode)",
+        "targetLimitShort": "Please select up to {limit} target languages",
         "noTranslationRequired": "Please select at least one language for Just Fetch mode",
         "noTranslationLimitShort": "Please select up to {limit} languages for Just Fetch mode",
         "opensubsEnable": "Enable OpenSubtitles before testing credentials.",
@@ -1049,7 +1039,6 @@
         "testCredentials": "Test Credentials",
         "test": "Test",
         "targetRequired": "Please select at least one target language",
-        "learnRequired": "Please select at least one learn language",
         "geminiKeyRequired": "Gemini API key is required",
         "geminiModelRequired": "Please select a Gemini model",
         "assemblyAiKeyRequired": "AssemblyAI API key is required for AssemblyAI mode",
@@ -1086,7 +1075,7 @@
         "loadLanguagesFailed": "Failed to load languages: {reason}",
         "loadLanguagesExhausted": "Failed to load languages after {retries} attempts: {reason}. Please refresh the page.",
         "sourceLimit": "You can only select up to {limit} source languages",
-        "targetLimit": "You can only select up to {limit} total target languages (including Learn Mode)",
+        "targetLimit": "You can only select up to {limit} total target languages",
         "noTranslationLimit": "You can only select up to {limit} languages in Just Fetch mode",
         "saveConfigFirst": "Save your config first to open Sub Toolbox.",
         "betaOn": "Experimental Mode ON",
@@ -1106,7 +1095,7 @@
         "sessionExpiredCreating": "Session expired. Creating new session...",
         "sessionNetworkError": "Network error updating session. Creating new session...",
         "sessionUpdateFailed": "Session update failed. Creating new session...",
-        "targetsTrimmed": "Only the first {limit} target languages were kept (combined with Learn Mode).",
+        "targetsTrimmed": "Only the first {limit} target languages were kept.",
         "maxKeysReached": "Maximum of {max} API keys allowed",
         "missingCustomBaseUrl": "Enter a base URL for the custom provider"
       },
@@ -1276,22 +1265,7 @@
         "sourceTitle": "Source Languages",
         "sourceLabel": "* Source languages for translations",
         "targetTitle": "Target Languages",
-        "targetLabel": "* Target languages for subtitles and translations",
-        "learnTitle": "Learn Target Languages",
-        "learnLabel": "Select Learn Mode Languages",
-        "learnDescription": "Creates \"Learn (Language)\" entries that pair source + translated lines in WebVTT. Select target \"Learn\" languages above after enabling."
-      },
-      "learnMode": {
-        "label": "Learn Mode",
-        "description": "Adds \"Learn (Language)\" entries that output dual-language WebVTT with source and translated lines for language learning. After enabling, set Target Learn Languages in the \"Languages\" section above.",
-        "orderLabel": "Learn Mode Subtitle Order",
-        "orderDescription": "Choose which language appears at the top and bottom of the screen.",
-        "sourceTop": "Source Top - Target Bottom",
-        "targetTop": "Target Top - Source Bottom",
-        "italicLabel": "Italicize one language",
-        "italicDescription": "Italicize one of the subtitle lines to visually distinguish the two languages.",
-        "italicTarget": "Italicize Target (learned language)",
-        "italicSource": "Italicize Source (original language)"
+        "targetLabel": "* Target languages for subtitles and translations"
       },
       "translationSettings": {
         "title": "Translation Settings",
@@ -1486,24 +1460,6 @@
         "hint": "Any problems? Reset settings to default →",
         "cta": "Reset"
       }
-    },
-    "nav": {
-      "refresh": "Refresh stream",
-      "refreshTitle": "Jump to your latest stream",
-      "refreshLoading": "Refreshing...",
-      "refreshEmpty": "No recent stream",
-      "refreshError": "Refresh failed",
-      "refreshCurrent": "Already latest",
-      "refreshMissing": "Missing stream data",
-      "streamDetected": "New stream detected",
-      "mobileMenu": "Open menu",
-      "subToolbox": "Sub Toolbox",
-      "translateFiles": "Translate files",
-      "embeddedSubs": "Extract Subs",
-      "syncSubtitles": "Sync subtitles",
-      "automaticSubs": "Auto subs",
-      "configure": "Configure",
-      "youAreHere": "You are here"
     },
     "fileUpload": {
       "title": "File Translation",

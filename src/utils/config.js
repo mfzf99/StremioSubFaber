@@ -632,12 +632,9 @@ function normalizeConfig(config) {
         mergedConfig.providerParameters.deepseek.maxOutputTokens = getDeepSeekDefaultMaxOutputTokens(deepseekModel);
     }
 
-    mergedConfig.learnPlacement = 'top';
-
     mergedConfig.sourceLanguages = sanitizeLanguages(mergedConfig.sourceLanguages);
     mergedConfig.targetLanguages = sanitizeLanguages(mergedConfig.targetLanguages);
     mergedConfig.noTranslationLanguages = sanitizeLanguages(mergedConfig.noTranslationLanguages);
-    mergedConfig.learnTargetLanguages = sanitizeLanguages(mergedConfig.learnTargetLanguages);
     mergedConfig.uiLanguage = (() => {
         const lang = (config.uiLanguage || defaults.uiLanguage || 'en').toString().trim().toLowerCase();
         return lang || 'en';
@@ -650,7 +647,6 @@ function normalizeConfig(config) {
 
     const seenTargets = new Set();
     const trimmedTargets = [];
-    const trimmedLearns = [];
 
     const pushWithLimit = (code, dest) => {
         if (!code) return;
@@ -664,10 +660,8 @@ function normalizeConfig(config) {
     };
 
     (mergedConfig.targetLanguages || []).forEach((code) => pushWithLimit(code, trimmedTargets));
-    (mergedConfig.learnTargetLanguages || []).forEach((code) => pushWithLimit(code, trimmedLearns));
 
     mergedConfig.targetLanguages = trimmedTargets;
-    mergedConfig.learnTargetLanguages = trimmedLearns;
 
     const legacyToolboxEnabled =
         mergedConfig.fileTranslationEnabled === true || mergedConfig.syncSubtitlesEnabled === true;
@@ -1553,12 +1547,6 @@ function getDefaultConfig(modelName = null) {
         sourceLanguages: [],
         targetLanguages: [],
         uiLanguage: process.env.UI_LANGUAGE_DEFAULT || 'en',
-        learnMode: false,
-        learnTargetLanguages: [],
-        learnOrder: 'source-top',
-        learnPlacement: 'top',
-        learnItalic: true,
-        learnItalicTarget: 'target',
         geminiApiKey: '',
         geminiKeyRotationEnabled: false,
         geminiApiKeys: [],
@@ -1804,13 +1792,13 @@ function validateConfig(config) {
         errors.push(t('validation.targetMissing', {}, 'At least one target language must be selected'));
     }
 
-    const combinedTargets = new Set([...(config.targetLanguages || []), ...(config.learnTargetLanguages || [])]);
+    const combinedTargets = new Set([...(config.targetLanguages || [])]);
     if (combinedTargets.size > maxTargetLanguages) {
         errors.push(
             t(
                 'validation.targetLimit',
                 { limit: maxTargetLanguages },
-                `Maximum of ${maxTargetLanguages} total target languages allowed (including Learn Mode)`
+                `Maximum of ${maxTargetLanguages} total target languages allowed`
             )
         );
     }
