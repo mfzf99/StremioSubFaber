@@ -2,6 +2,14 @@
 
 All notable changes to this project will be documented in this file.
 
+## SubFaber v3.12.2 (2026-10-17) — Modes: Role Definition Upgrade "expert" → "Senior"
+
+### Changed
+
+- **[ARAHAN OWNER] Role Definition custom modes dinaik taraf dalam [.roomodes](.roomodes):** kedua-dua mode Frontend dan Backend ditukar daripada "expert" kepada "Senior" Engineer, ditambah klausa pemeliharaan "Always preserve the existing code formatting, comments, and structure ... unless explicitly asked to refactor" (Frontend untuk `public/`, Backend untuk fail server). `whenToUse`, `customInstructions`, `groups` ([read, edit, command, mcp]) dan `source: project` KEKAL TIDAK DIUBAH.
+- **Validasi gate .roomodes (protokol insiden 2026-10-08):** parse PyYAML = PASS — customModes count 2 (frontend 10 rule lines / backend 22 rule lines), groups=[read,edit,command,mcp], source=project. Perubahan terhad kepada 2 baris `roleDefinition` sahaja.
+- **Nota skop:** working tree masih mengandungi kerja IN PROGRESS Cut-off Learn Target Languages (Fasa 1 Backend selesai, Fasa 2 Frontend 2/6 fail) — perubahan tersebut DIKEKAL TIDAK DI-COMMIT dalam release ini; hanya `.roomodes`, `package.json`, `CHANGELOG.md`, `docs/SESSION_LEDGER.md` masuk commit.
+
 ## SubFaber v3.12.1 (2026-10-17) — Hotfix UI: Placeholder Trinity Model Parameters ditukar ke English
 
 ### Fixed

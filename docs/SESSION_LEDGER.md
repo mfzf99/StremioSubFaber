@@ -8,6 +8,57 @@
 > Format blok: Tarikh / Komit SHA / Keputusan Owner / Fail Terlibat /
 > Status npm test / Next Steps. Terkini di atas.
 
+
+## 2026-10-17 — v3.12.2 ROLE DEFINITION UPGRADE .roomodes "EXPERT" → "SENIOR" (SELESAI)
+
+- **Tarikh:** 2026-10-17 ~17:14 (waktu tempatan KL).
+- **Keputusan Owner:** Owner mengedit Role Definition kedua-dua custom modes (frontend & backend) dalam `.roomodes` — "expert" → "Senior" Engineer + klausa pemeliharaan formatting/komen/struktur ("unless explicitly asked to refactor"). Arahan: verify masuk + commit.
+- **Audit & Validasi:** `git diff .roomodes` = 2 baris `roleDefinition` sahaja berubah (frontend + backend); PyYAML parse PASS — customModes count 2, groups=[read,edit,command,mcp], source=project; `whenToUse`/`customInstructions` kekal verbatim.
+- **Pipeline 8 langkah:** SemVer bump 3.12.1 → 3.12.2 (patch); CHANGELOG.md entri baharu; cache-buster runtime-driven NO-OP (`__APP_VERSION_QUERY__` baca package.json); Prettier PASS (1 warn pra-wujud `.prettierrc`); ESLint 0 error / 223 warning (pra-wujud, selari baseline); `npm test` = **428 total / 427 PASS / 0 FAIL / 1 SKIP (live Redis)** — baseline terpelihara; graphify = **NO-OP** (`graphify-out/` absent).
+- **Fail terlibat:** `.roomodes`, `package.json`, `CHANGELOG.md`, `docs/SESSION_LEDGER.md`.
+- **Skop commit terasing:** Perubahan Cut-off Learn Target Languages (IN PROGRESS) dalam working tree DIKEKAL TIDAK DI-COMMIT — hanya 4 fail di atas masuk release ini.
+- **Next Steps:** Sambung Fasa 2 Frontend Cut-off Learn (config.js manual purge + 3 fail JS) → Integration Review → release v3.13.0.
+
+---
+
+## 2026-10-17 — CUT-OFF FEATURE LEARN TARGET LANGUAGES (IN PROGRESS)
+
+- **Tarikh:** 2026-10-17 ~08:41 (waktu tempatan KL).
+- **Keputusan Owner:** Owner minta cut off feature Learn Target Languages sepenuhnya — tiada backward-compat, clean cut.
+- **Plan diluluskan:** Fasa 1 Backend (7 task) + Fasa 2 Frontend (6 task) + Integration Review + pipeline 8 langkah.
+
+### FASA 1 BACKEND — SELESAI 100% ✅
+- index.js: route `/addon/:config/learn/...` dibuang + rujukan `/learn` dalam guard.
+- src/utils/config.js: purge `learnMode`, `learnTargetLanguages`, `learnOrder`, `learnPlacement`, `learnItalic`, `learnItalicTarget` + cap combined target languages.
+- src/handlers/subtitles.js: blok `learnEntries` dibuang + spread `...learnEntries` dipadam.
+- src/utils/subtitle.js: komen neutralisasi (alias `learnItalic` dibuang).
+- locales/*.json (5 fail): purge semua kunci `learn*` — ZERO-HIT verified.
+- npm test = **428 total / 427 PASS / 0 FAIL / 1 SKIP** — baseline terpelihara.
+- node --check / prettier / eslint = PASS, ZERO-HIT grep pada index.js/src/locales.
+
+### FASA 2 FRONTEND — SEBAGIAN (2/6 siap) ⚠️
+- public/partials/main.html: kad `#learnTargetsCard` dibuang (255 baris) + teks limit dikemas kini.
+- public/partials/quick-setup.html: item `#qsLearnModeItem` + Step 6 (`#qsStep6`) dibuang (64 baris).
+- **public/config.js — BELUM DISENTUH.** Percubaan skrip purge besar (regex/line-filter) 3x gagal (syntax rosak pada ternary separuh/if-chain) → rollback ke git. Keputusan: pembedahan manual satu-satu.
+- config-page-state.js, quick-setup.js, subtitle-menu.js = belum disentuh.
+
+### MASALAH & PENYELESAIAN
+- Anti-pattern loop: cuba skrip purge besar untuk config.js → syntax rosak → rollback. Selesai: pembedahan manual satu-satu (baca blok → edit → node --check).
+- File config.js sangat besar (13986 baris) — learn tersebar dalam ~150 baris merentas 20+ lokasi.
+
+### STATUS SEMASA (belum condense)
+- Backend: DONE. Frontend: 2/6 files done (main.html, quick-setup.html). config.js masih intact (git checkout).
+- npm test tidak dijalankan selepas rollback — tetapi backend lulus sebelum itu.
+
+### NEXT STEPS SELEPAS CONDENSE
+1. Teruskan config.js manual purge (applyLearnModeVisibility, mode-switch, rehidrasi, serializer, validasi).
+2. config-page-state.js, quick-setup.js, subtitle-menu.js.
+3. Verifikasi statik + Playwright live (configure page fresh state + rehidrasi).
+4. Append ledger + serah balik ke Backend untuk Integration Review.
+5. Pipeline 8 langkah (SemVer bump — cadang v3.13.0).
+
+---
+
 ---
 
 ## 2026-10-17 — v3.12.1 HOTFIX UI: PLACEHOLDER TRINITY MP DITUKAR KE ENGLISH (SELESAI)

@@ -1,7 +1,7 @@
 customModes:
   - slug: frontend
     name: Frontend
-    roleDefinition: You are an expert Frontend Engineer for the StremioSubFaber project. Your domain strictly covers client-side code in `public/` (specifically public/config.js and public/partials/main.html), 4-state DOM morphing based on model capabilities, responsive styling, browser form handling, and reliable UI state rehydration without layout shifts.
+    roleDefinition: You are a Senior Frontend Engineer for the StremioSubFaber project. Your domain strictly covers client-side code in `public/` (specifically public/config.js and public/partials/main.html), 4-state DOM morphing based on model capabilities, responsive styling, browser form handling, and reliable UI state rehydration without layout shifts. Always preserve the existing code formatting, comments, and structure inside public/ files unless explicitly asked to refactor.
     whenToUse: Use this mode for any client-side changes in public/, HTML partials, CSS styling, dynamic DOM morphing, UI settings rehydration, client-side input validation, and browser dropdown interactions.
     description: UI layout, dynamic DOM morphing & client-side state
     customInstructions: |-
@@ -23,7 +23,7 @@ customModes:
     source: project
   - slug: backend
     name: Backend
-    roleDefinition: You are an expert Backend & Systems Engineer for the StremioSubFaber project. Your domain covers server-side architecture in `src/` (services, handlers, utils), Express routes in `index.js`, Redis/caching, external API integrations (Gemini REST v1beta, Crazy Router proxy), test execution (`npm test`), and Git version control.
+    roleDefinition: You are a Senior Backend & Systems Engineer for the StremioSubFaber project. Your domain strictly covers server-side architecture in `src/` (services, handlers, utils), Express routes in `index.js`, Redis/caching, external API integrations (Gemini REST v1beta, Crazy Router proxy), test execution (`npm test`), and Git version control. Always preserve the existing code formatting, comments, and structure inside backend files unless explicitly asked to refactor.
     whenToUse: Use this mode for server-side code in `src/`, `index.js`, API routing, Redis storage, API authentication, payload transformations, regression testing (npm test), and Git commit/push workflows.
     description: Server logic, REST APIs, Redis, test suite & Git
     customInstructions: |-
