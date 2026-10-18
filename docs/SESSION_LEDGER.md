@@ -13,6 +13,22 @@
 
 ---
 
+## 2026-10-18 — v3.14.0 CHANGELOG ENGLISH PRO + PORTAL SUBMAKER (SELESAI)
+
+- **Tarikh:** 2026-10-18 ~06:00 (waktu tempatan KL).
+- **Komit SHA (HEAD):** <pending-commit> + CI <pending-run>.
+- **Keputusan Owner:** Owner luluskan pembedahan penuh changelog (Opsyen A — rewrite SEMUA ~190 entri v1.0.1→v3.13.4 ke English profesional) + UI redesign portal changelog mengikut pola SubMaker (diluluskan selepas audit live submaker.elfhosted.com via Playwright).
+- **Fasa 2 (Backend):** CHANGELOG.md ditulis semula penuh ke English profesional — kategori emoji standard (🆕/🚀/⚡/🐛/📌/🔄/🗑️), format `**Title:** description`, semua tag `[MANDAT OWNER]`/`[ARAHAN OWNER]` dan seksyen Verified/Preserved/Test Baseline dibuang (kandungan audit penuh kekal di ledger ini). Sweep grep akhir: SIFAR BM tulen baki.
+- **Fasa 3 (Frontend, delegasi penuh):** changelog-panel.js — helper baharu (CATEGORY_ORDER, groupContentByCategory, renderGroupedContent, makeEntryAccordion, buildGithubLink, inline() diangkat ke skop modul), accordion per-versi (badge + Latest pill + chevron berputar + aria-expanded), pautan "View full release on GitHub" per versi, kategori ber-emoji; app-shell.css — gaya baharu (latest pill, chevron rotate, kategori uppercase, gh-link, hover/expanded border, fokus-visible).
+- **Bug fix integration (Fasa 3):** renderEntries gagal awal (helper inline tersasar dalam closure renderContent) → diangkat ke skop modul; cache-buster lama `_cb=3.13.4` menghidangkan JS basi → bump versi memaksa refresh.
+- **Verifikasi live Playwright ✅:** panel buka via badge versi; 15 entri render; accordion klik #1 & #2 — aria-expanded true/false toggle betul, chevron matrix(-1,0,0,-1) rotate 180°, content muncul, kategori parse; screenshot visual changelog-panel-final.png — layout SubMaker dicapai.
+- **Pipeline 8 langkah:** SemVer 3.13.5 → 3.14.0 (minor — user-facing content overhaul); CHANGELOG entri v3.14.0 baharu (dogfood format baharu); cache-buster runtime-driven (`?_cb=3.14.0`); Prettier PASS; ESLint 0 error / 225 warning (pra-wujud +1 version.js sedia ada); `npm test` = **428 total / 427 PASS / 0 FAIL / 1 SKIP (live Redis)** — baseline terpelihara (monotonic ≥ 428); graphify NO-OP (graphify-out/ absent).
+- **Fail Terlibat:** CHANGELOG.md, public/js/changelog-panel.js, public/css/app-shell.css, package.json, docs/SESSION_LEDGER.md.
+- **Status npm test:** `428 total / 427 PASS / 0 FAIL / 1 SKIP (live Redis)` — baseline terpelihara.
+- **Next Steps:** Langkah 7 Git commit + push origin main → Langkah 8 CI verify via `gh run watch` — mesti **SUCCESS** (Node 22/24).
+
+---
+
 ## 2026-10-17 — v3.13.3 UX REFRESH KAD "OUTPUT FORMAT & PLAYER COMPATIBILITY" (SELESAI)
 
 - **Tarikh:** 2026-10-17 ~22:08 (waktu tempatan KL).

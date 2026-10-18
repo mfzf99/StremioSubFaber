@@ -2,1257 +2,789 @@
 
 All notable changes to this project will be documented in this file.
 
-## SubFaber v3.13.4 (2026-10-18) — Alat Operasi Rasmi: Skrip Patch Zoo Code Two-Mode Lock
+## SubFaber v3.13.4 (2026-10-18) — Official Zoo Code Two-Mode Patch Tooling
 
 ### ⚡ Improvements
 
-- **Tambah skrip penyelenggaraan rasmi Zoo Code ([scripts/patch-zoo-code.js](scripts/patch-zoo-code.js)):** auto-discover sambungan `zoocodeorganization.zoo-code-*` versi tertinggi di bawah `~/.vscode/extensions`, kemudian gantikan tatasusunan lima mod bawaan (architect/code/ask/debug/orchestrator) dengan alam dua-mod projek (backend/frontend) dalam KEDUA-DUA bundle runtime — host Node.js (`dist/extension.js`, pemboleh ubah `xV`) dan Webview UI React (`webview-ui/build/assets/index.js`, pemboleh ubah `oa`). Skrip menggunakan bracket-matching sedar string/backtick, mencipta backup `.bak` sekali, mengesahkan sintaks dengan `node --check`, mengimbas sisa slug legacy, dan menyokong mod `--check` (dry-run).
-- **Dokumen protokol patch Zoo Code ([docs/ZOO_CODE_PATCH_PROTOCOL.md](docs/ZOO_CODE_PATCH_PROTOCOL.md)):** menerangkan seni bina dua-bundle (patch host sahaja menyebabkan dropdown UI masih memaparkan mod legacy "DO NOT USE. DEPRECATED."), tingkah laku default-mode-slug dinamik, cara mematikan auto-update sambungan di VS Code, prosedur selepas kemas kini versi, dan rollback melalui fail `.bak`.
-- **Buka pintu `.gitignore` untuk skrip rasmi:** corak `scripts/` diubah kepada `scripts/*` dengan exception `!scripts/patch-zoo-code.js` supaya alat operasi rasmi boleh di-commit sambil terus menapis sisa `scripts/` lain.
+- **Added the official Zoo Code maintenance script ([scripts/patch-zoo-code.js](scripts/patch-zoo-code.js)):** auto-discovers the highest installed `zoocodeorganization.zoo-code-*` extension under `~/.vscode/extensions`, then surgically replaces the built-in five-mode array (architect/code/ask/debug/orchestrator) with the project's two-mode universe (backend/frontend) in BOTH runtime bundles — the Node.js extension host (`dist/extension.js`, variable `xV`) and the React Webview UI (`webview-ui/build/assets/index.js`, variable `oa`). The script uses string/backtick-aware bracket matching, creates `.bak` backups once, verifies syntax with `node --check`, scans for residual legacy slugs, and supports a read-only `--check` mode.
+- **Documented the Zoo Code patch protocol ([docs/ZOO_CODE_PATCH_PROTOCOL.md](docs/ZOO_CODE_PATCH_PROTOCOL.md)):** explains the two-bundle architecture (patching only the host bundle leaves the UI dropdown showing legacy "DO NOT USE. DEPRECATED." modes), the dynamic default-mode-slug behavior, how to disable extension auto-update in VS Code, post-update procedures, and rollback via the `.bak` files.
+- **Opened `.gitignore` for the official script:** the `scripts/` pattern was changed to `scripts/*` with an exception `!scripts/patch-zoo-code.js` so the official ops tool can be committed while still filtering all other `scripts/` leftovers.
 
-## SubFaber v3.13.3 (2026-10-17) — UX Refresh Kad "Output Format & Player Compatibility"
+### ⚡ Improvements
 
-### Changed
+- **Added the official Zoo Code maintenance script ([scripts/patch-zoo-code.js](scripts/patch-zoo-code.js)):** auto-discovers the highest installed `zoocodeorganization.zoo-code-*` extension under `~/.vscode/extensions`, then surgically replaces the built-in five-mode array (architect/code/ask/debug/orchestrator) with the project's two-mode universe (backend/frontend) in BOTH runtime bundles — the Node.js extension host (`dist/extension.js`, variable `xV`) and the React Webview UI (`webview-ui/build/assets/index.js`, variable `oa`). The script uses string/backtick-aware bracket matching, creates `.bak` backups once, verifies syntax with `node --check`, scans for residual legacy slugs, and supports a read-only `--check` mode.
+- **Documented the Zoo Code patch protocol ([docs/ZOO_CODE_PATCH_PROTOCOL.md](docs/ZOO_CODE_PATCH_PROTOCOL.md)):** explains the two-bundle architecture (patching only the host bundle leaves the UI dropdown showing legacy "DO NOT USE. DEPRECATED." modes), the dynamic default-mode-slug behavior, how to disable extension auto-update in VS Code, post-update procedures, and rollback via the `.bak` files.
 
-- **[MANDAT OWNER — UX REFRESH] Susunan semula kad Output Format & Player Compatibility dalam [public/partials/main.html](public/partials/main.html):** Mobile Mode diletakkan pertama (keputusan berimpak tertinggi), Anime Styling (ASS/SSA) kedua, dan Force SRT Output dipindahkan ke dalam `<details>` collapsible "Advanced" (collapsed secara default) supaya tersembunyi daripada pengguna baharu — ID asal semua elemen dipelihara untuk kestabilan logik sync sedia ada.
-- **[MANDAT OWNER — UX REFRESH] Copywriting baharu berbahasa Inggeris (outcome-first, jujur tentang trade-off) merentas 5 locale ([locales/en.json](locales/en.json), [locales/es.json](locales/es.json), [locales/pt-br.json](locales/pt-br.json), [locales/pt-pt.json](locales/pt-pt.json), [locales/ar.json](locales/ar.json)):** Mobile Mode kini menyatakan dengan jelas bahawa satu config terpakai kepada SEMUA peranti (phone/PC/TV) dan mod ini menahan request di semua peranti tersebut; "ASS/SSA Passthrough" ditukar label kepada "Anime Styling (ASS/SSA)" dengan penerangan mesra pengguna; Force SRT diterangkan sebagai pilihan untuk pemain luar (Smart TV, TV box, VLC) yang gagal memaparkan sari kata, bukan keperluan Stremio biasa.
-- **[MANDAT OWNER — UX REFRESH] Gaya baharu untuk blok collapsible Advanced dalam [public/css/configure.css](public/css/configure.css):** `.card-content details.advanced-details` dengan chevron ▸ berputar pada summary, sempadan dan padding yang selari dengan tema kad sedia ada.
+## SubFaber v3.14.0 (2026-10-18) — Professional English Changelog + SubMaker-Style Changelog Portal
 
-### Added
+### 🆕 New Features
 
-- Kunci i18n baharu `config.otherSettings.forceSRTAdvanced.label` ("Advanced: Force SRT Output") dalam kelima-lima locale.
+- **Rebuilt the changelog portal with a SubMaker-style accordion layout:** every release entry is now a collapsible card with a version badge, a rotating chevron, a "Latest" pill on the current release, category headers parsed from the entry content (New Features / Performance / Improvements / Bug Fixes / Security / Breaking Changes / Removed), and a dedicated "View full release on GitHub" link per version. The first entry auto-expands; all others collapse by default for a clean, scannable history.
 
-### Verified
+### ⚡ Improvements
 
-- Live Playwright verification di `/configure`: kad render betul, `<details>` toggle berfungsi, interlock `syncForceSRT` (Force SRT ON → Anime Styling disabled) dipelihara, mirror NoTranslation sync serentak, tiada layout shift.
-- Prettier `--check .` = PASS; ESLint 0 error; `npm test` = **428 total / 427 PASS / 0 FAIL / 1 SKIP (live Redis)** — baseline terpelihara (monotonic >= 428).
-- Kontrak backend tidak berubah: `mobileMode` / `convertAssToVtt` / `forceSRTOutput` kekal boolean dengan interlock di [src/utils/config.js](src/utils/config.js); tiada field skema baharu.
+- **Rewrote the entire changelog history in professional English:** all ~190 release entries from v1.0.1 through v3.13.4 were translated from Malay into clear, user-facing English following the SubMaker changelog conventions — `**Title:** description` bullet format, standardized emoji category headings, and a global audience tone. Internal governance noise (owner-mandate tags, test baselines, pipeline details) was consolidated into concise release notes; the full audit trail remains in the session ledger.
+- **Upgraded the changelog panel typography and interaction styling:** clickable full-width headers with focus-visible outlines, animated chevron rotation, hover borders, and a highlighted border on the expanded card, all using the existing theme tokens (light/dark/blackhole/true-dark compatible).
 
-## SubFaber v3.13.2 (2026-10-17) — Penambahbaikan Tadbir Urus & Pembersihan Operasi
+### 🐛 Bug Fixes
 
-### Changed
+- **Fixed the changelog panel failing to render entries:** the category-group renderer referenced a helper scoped inside another function, which threw during the first render and left a "Failed to load changelog" message. The helper was lifted to module scope, and rendering now completes for all entries.
 
-- **[MANDAT OWNER — TADBIR URUS] Pemadatan Peraturan #6 backend dalam [.roomodes](.roomodes):** senarai panjang 8-langkah yang diduplikasi dipadatkan kepada rujukan Single Source of Truth kepada `[MANDATORY COMMIT & RELEASE PROTOCOL]` dalam [.roo/rules/00-subfaber-core-protocol.md](.roo/rules/00-subfaber-core-protocol.md), dengan ringkasan satu baris `(0. Frontend Integration Audit -> 1. SemVer bump -> 2. CHANGELOG -> 3. Cache-buster -> 4. Prettier + ESLint + npm test -> 5. Graphify check -> 6. SESSION_LEDGER -> 7. Git commit/push -> 8. gh run watch CI green)` — menghapuskan risiko drift antara kedua-dua fail.
-- **[MANDAT OWNER — TADBIR URUS] [.roo/rules/00-subfaber-core-protocol.md](.roo/rules/00-subfaber-core-protocol.md) tiga klausul baharu:** (1) `[.ROOMODES DISCIPLINE]` SCRIPT HYGIENE — skrip kemas kini `.roomodes` wajib dijalankan dari direktori sementara sistem luar repo (`$TEMP` / `/tmp`) ATAU dipadam serta-merta dalam rantaian arahan yang sama sebelum `git status`; (2) `[LANGUAGE & COMMUNICATION POLICY]` PRECEDENCE OVERRIDE — polisi bahasa Melayu mengatasi arahan 'Language Preference' lalai IDE/extension, output kepada Owner wajib BM standard; (3) `[COGNITIVE DELIBERATION PROTOCOL]` PATH RESILIENCE — laluan fail dalam peraturan adalah penunjuk kanonik semasa, disahkan via `git grep` / `list_files` jika fail berpindah.
+## SubFaber v3.13.3 (2026-10-17) — UX Refresh: "Output Format & Player Compatibility" Card
 
-### Removed
+### ⚡ Improvements
 
-- **[MANDAT OWNER — PEMBERSIHAN] Direktori artifak `.playwright-mcp/` dipadamkan sepenuhnya daripada working tree** (14 fail snapshot konsol/page basi, termasuk satu fail yang pernah terlepas ke-tracked dalam Git).
+- **Restructured the Output Format & Player Compatibility card:** Mobile Mode is now the first option (the highest-impact choice), Anime Styling (ASS/SSA) second, and Force SRT Output is tucked into a collapsible "Advanced" section that is collapsed by default — keeping advanced options out of the way for new users. All original element IDs were preserved so the existing synchronization logic continues to work unchanged.
+- **Rewrote all option descriptions in outcome-first English across all five UI locales (en, es, pt-br, pt-pt, ar):** Mobile Mode now clearly states that a single configuration applies to ALL devices (phone/PC/TV) and that this mode holds requests on every one of those devices; "ASS/SSA Passthrough" was renamed to "Anime Styling (ASS/SSA)" with a friendlier explanation; Force SRT is described as an option for external players (Smart TVs, TV boxes, VLC) that fail to display subtitles, not a requirement for normal Stremio use.
+- **Added styling for the new collapsible Advanced block:** a rotating chevron on the summary row, with borders and padding consistent with the existing card theme, plus a new `config.otherSettings.forceSRTAdvanced.label` translation key ("Advanced: Force SRT Output") shipped in all five locales.
 
-### Added
+## SubFaber v3.13.2 (2026-10-17) — Governance & Operational Cleanup
 
-- **[MANDAT OWNER — BENTENG .GITIGNORE] Corak sekatan artifak sementara dalam [.gitignore](.gitignore):** `.tmp-*`, `*.tmp.*`, `.diag.log`, dan `.playwright-mcp/` — artifak sementara agent tidak akan sesekali terlepas ke dalam Git lagi.
+### ⚡ Improvements
 
-### Verified
+- **Consolidated the backend release-protocol rules into a single source of truth:** the duplicated step-by-step release checklist was replaced with a direct reference to the canonical mandatory commit & release protocol, eliminating drift risk between the two configuration files.
+- **Added three new governance clauses to the core agent protocol:** (1) script hygiene — configuration-update scripts must run from the system temp directory or be deleted in the same command chain before any status check; (2) communication-language precedence — the project's standard language policy overrides any IDE default language preference; (3) path resilience — file paths referenced in rules are canonical pointers and must be re-verified if files move.
+- **Blocked temporary agent artifacts from ever reaching Git:** the ignore patterns `.tmp-*`, `*.tmp.*`, `.diag.log`, and `.playwright-mcp/` were added to [.gitignore](.gitignore), and 14 stale browser-snapshot artifacts were removed from the working tree.
 
-- Validasi gate `.roomodes` (PyYAML): `customModes` = 2 (Backend / Frontend), `groups`=[read,edit,command,mcp], `source`=project — PASS; `git status` disahkan bersih daripada fail untracked `.tmp-*` / `.playwright-mcp/`.
+## SubFaber v3.13.1 (2026-10-17) — Total Overhaul of Agent Mode Definitions & Core Protocol
 
-## SubFaber v3.13.1 (2026-10-17) — Total Overhaul Custom Modes (.roomodes) + Core Protocol
+### ⚡ Improvements
 
-### Changed
+- **Rewrote both agent mode definitions from scratch:** roles were tightened, usage scopes re-clarified, and per-mode instructions were unified into a single inline block. The Trinity agent taxonomy (Agent Preflight / Agent Translation / Agent Inspector), the ban on built-in modes, the 8-step release pipeline, and all system invariants were preserved verbatim.
+- **Rewrote the global core agent protocol (+87/−74 lines):** re-affirmed the two-mode universe, verbatim delegation rules, MCP/CLI tool precedence, terminal discipline, and the mandatory commit & release pipeline.
 
-- **[MANDAT OWNER — TOTAL OVERHAUL] Custom modes Frontend & Backend ditulis semula sepenuhnya dalam [.roomodes](.roomodes):** struktur lama diganti — `roleDefinition` diperkemas, `whenToUse` dijuraskan semula, dan arahan mode kini disatukan sebagai `customInstructions` inline (menggantikan array `rules` lama). `groups` = [read, edit, command, mcp] dan `source: project` dikekalkan. Taksonomi Trinity (Agent Preflight / Agent Translation / Agent Inspector), larangan mode built-in, pipeline 8 langkah, dan semua invarian sistem dikekalkan verbatim.
-- **[MANDAT OWNER — TOTAL OVERHAUL] [.roo/rules/00-subfaber-core-protocol.md](.roo/rules/00-subfaber-core-protocol.md) ditulis semula (+87/−74 baris):** protokol global dipertingkat — penegasan semasa dua-mode universe, delegation verbatim, protokol MCP/CLI precedence, terminal discipline, dan commit pipeline 8 langkah.
+## SubFaber v3.13.0 (2026-10-17) — Removed the Learn Target Languages Feature
 
-### Verified
+### 🗑️ Removed
 
-- Validasi gate `.roomodes` (protokol insiden 2026-10-08): parse PyYAML = PASS — `customModes` count 2 (Backend / Frontend), `groups`=[read,edit,command,mcp], `source`=project; kandungan arahan lengkap tanpa kehilangan.
-- Prettier `--check .` = PASS (termasuk pembetulan pra-wujud `.prettierrc` kepada indent 2-space konsisten override JSON); ESLint 0 error / 224 warning (pra-wujud); `npm test` = **428 total / 427 PASS / 0 FAIL / 1 SKIP (live Redis)** — baseline terpelihara.
+- **Fully removed the Learn Target Languages feature with no backward compatibility:** the `/learn` addon route was removed from [index.js](index.js); the `learnMode` / `learnTargetLanguages` / `learnOrder` / `learnPlacement` / `learnItalic` / `learnItalicTarget` fields were dropped from the configuration schema ([src/utils/config.js](src/utils/config.js)); learn-mode subtitle processing was removed from [src/handlers/subtitles.js](src/handlers/subtitles.js); and all learn translation keys were removed from the five locale files.
+- **Cleaned up the frontend end to end (~460 lines removed):** the Learn Targets card and Quick Setup wizard Step 6 were removed from the UI, along with all learn-mode event listeners, language-grid branches, validation branches, and state/backup fields in the configure page ([public/config.js](public/config.js)), Quick Setup wizard ([public/js/quick-setup.js](public/js/quick-setup.js)), page-state module, subtitle menu (learn chips, tags, and CSS classes), and UI partials.
 
-## SubFaber v3.13.0 (2026-10-17) — CLEAN CUT: Penyingkiran Penuh Fitur Learn Target Languages
+## SubFaber v3.12.2 (2026-10-17) — Agent Role Upgrade to "Senior" Engineer
 
-### Removed
+### ⚡ Improvements
 
-- **[MANDAT OWNER — CLEAN CUT] Fitur Learn Target Languages dipinggirkan sepenuhnya merentas backend & frontend tanpa backward-compat:** route `/learn` dibuang daripada [index.js](index.js); medan `learnMode` / `learnTargetLanguages` / `learnOrder` / `learnPlacement` / `learnItalic` / `learnItalicTarget` dibuang daripada skema konfigurasi ([src/utils/config.js](src/utils/config.js)); `learnEntries` dibuang daripada pemprosesan sari kata ([src/handlers/subtitles.js](src/handlers/subtitles.js)); komen learn dinetralkan dalam [src/utils/subtitle.js](src/utils/subtitle.js); kunci locale learn dibuang daripada 5 fail terjemahan ([locales/en.json](locales/en.json), [locales/es.json](locales/es.json), [locales/pt-br.json](locales/pt-br.json), [locales/pt-pt.json](locales/pt-pt.json), [locales/ar.json](locales/ar.json)).
-- **Frontend /configure ([public/config.js](public/config.js), −212 baris):** fungsi `applyLearnModeVisibility()` dibuang sepenuhnya; event listeners learn (mode toggle / order / italic / placement / search / extended toggle) dibuang; cabang `type === 'learn'` dibuang daripada `updateSelectedChips()` / `removeLanguage()` / `renderLanguageGrid()` / `toggleLanguage()` / `handleQuickAction()`; `validateLanguageSelection()` ditulis semula tanpa cabang learn; medan learn dibuang daripada `getDefaultConfig()` / `normalizeCurrentConfigForPage()` / `buildConfigFromForm()` / `translationModeBackup` dan validation `saveCurrentConfig()`.
-- **Frontend wizard ([public/js/quick-setup.js](public/js/quick-setup.js), −205 baris):** keseluruhan Step 6 Learn Language Selection dibuang (grid render / toggle / chips / wiring, 110 baris); state default, sanitization, combined targets, summary, payload `buildConfigPayload()`, session restore/reset, dan `fastOverlayKeys` dibersihkan daripada semua medan learn.
-- **Frontend state ([public/js/config-page-state.js](public/js/config-page-state.js), −19 baris):** medan learn dibuang daripada `resolveTranslationModeRestoreState()` (backup pemulihan mod terjemahan).
-- **Frontend menu sari kata ([public/js/subtitle-menu.js](public/js/subtitle-menu.js), −24 baris):** CSS chip `.subtitle-lang-pill-tag.learn` dan `.subtitle-menu-chip.learn` (+`::before`) dibuang; `case 'learn'`, detection `isLearn`, dan entri tag `learn` dibuang daripada order/labels.
-- **UI partials:** kad `#learnTargetsCard` dibuang daripada [public/partials/main.html](public/partials/main.html); Step 6 + item learn dibuang daripada [public/partials/quick-setup.html](public/partials/quick-setup.html).
+- **Upgraded both agent role definitions from "expert" to "Senior" Engineer,** adding an explicit clause to always preserve existing code formatting, comments, and structure unless a refactor is explicitly requested. All other mode properties (usage scopes, instructions, permissions, and project source) were left unchanged.
 
-### Verified
+## SubFaber v3.12.1 (2026-10-17) — Hotfix: Trinity Model Parameters Placeholder Language
 
-- `git grep -il learn` merentas `public/ src/ index.js locales/` = **ZERO_HITS**; `node --check` 4/4 fail lulus; Prettier format bersih; ESLint 0 error; `npm test` = **428 total / 427 PASS / 0 FAIL / 1 SKIP (live Redis)** — baseline terpelihara; ujian Playwright live mengesahkan semua ID learn (`learnTargetsCard`, `learnModeEnabled`, `learnLanguages`, `qsLearnMode`, `qsLearnLangGrid`, dll.) **tiada dalam DOM** `/configure` dan quick-setup.
+### 🐛 Bug Fixes
 
-## SubFaber v3.12.2 (2026-10-17) — Modes: Role Definition Upgrade "expert" → "Senior"
+- **Fixed a Malay-language string leaking into the English UI:** the Trinity "Model Parameters" empty-state placeholder now reads "Select a provider and model first to adjust parameters." No changes to form serialization, rehydration, or the server schema.
 
-### Changed
+## SubFaber v3.12.0 (2026-10-17) — Unified Trinity Agent Taxonomy (Agent Preflight / Agent Translation / Agent Inspector)
 
-- **[ARAHAN OWNER] Role Definition custom modes dinaik taraf dalam [.roomodes](.roomodes):** kedua-dua mode Frontend dan Backend ditukar daripada "expert" kepada "Senior" Engineer, ditambah klausa pemeliharaan "Always preserve the existing code formatting, comments, and structure ... unless explicitly asked to refactor" (Frontend untuk `public/`, Backend untuk fail server). `whenToUse`, `customInstructions`, `groups` ([read, edit, command, mcp]) dan `source: project` KEKAL TIDAK DIUBAH.
-- **Validasi gate .roomodes (protokol insiden 2026-10-08):** parse PyYAML = PASS — customModes count 2 (frontend 10 rule lines / backend 22 rule lines), groups=[read,edit,command,mcp], source=project. Perubahan terhad kepada 2 baris `roleDefinition` sahaja.
-- **Nota skop:** working tree masih mengandungi kerja IN PROGRESS Cut-off Learn Target Languages (Fasa 1 Backend selesai, Fasa 2 Frontend 2/6 fail) — perubahan tersebut DIKEKAL TIDAK DI-COMMIT dalam release ini; hanya `.roomodes`, `package.json`, `CHANGELOG.md`, `docs/SESSION_LEDGER.md` masuk commit.
+### 🔄 Breaking Changes
 
-## SubFaber v3.12.1 (2026-10-17) — Hotfix UI: Placeholder Trinity Model Parameters ditukar ke English
+- **Renamed the Trinity agents across all active code, configuration, tests, and documentation:** "Agent A" is now **Agent Translation**, and "Agent B" is now **Agent Inspector**, matching the official taxonomy in [docs/ENGINE_COMPONENT_TAXONOMY.md](docs/ENGINE_COMPONENT_TAXONOMY.md). This is a clean-cut rename with no backward-compatibility layer: the legacy `agentB` configuration block became `agentInspector`, the HTTP provider name `agentb` became `agent-inspector`, and all `AGENT_B_*` environment variables became `AGENT_INSPECTOR_*` ([.env.example](.env.example)). Files were renamed accordingly (`agentBInspector.js` → `agentInspector.js` plus its test files), and every `require()` path and the tracked-test registry were updated.
+- **Synchronized all runtime naming with zero behavioral changes:** the `AgentBInspector` class became `AgentInspector`, along with 15 internal constants, 11 telemetry fields, log prefixes (`[AgentB]` → `[AgentInspector]`), and roughly 375 regression-test assertions updated in lockstep. Engine logic, the model hierarchy, the circuit breaker, and the graceful bypass paths were not touched.
+- **Historical archives keep legacy names verbatim:** older changelog entries, session ledgers, and plan documents are preserved unchanged as audit history and interpreted through the taxonomy mapping.
 
-### Fixed
+## SubFaber v3.11.1 (2026-10-17) — Fresh-State Gate for Trinity Model Parameters
 
-- **[TEGURAN OWNER] Placeholder "Model Parameters" Trinity dirender dalam Bahasa Melayu pada laman web English:** rentetan "Pilih provider dan model dahulu untuk melaraskan parameter." dalam [`mpRenderPlaceholder()`](public/js/trinity-agents.js) ditukar kepada "Select a provider and model first to adjust parameters." — satu-satunya rentetan UI BM dalam `public/` (selebihnya komen dalaman sahaja, tidak dirender ke DOM). Tiada perubahan kontrak serialisasi borang, rehidrasi, atau skema pelayan.
+### 🐛 Bug Fixes
 
-## SubFaber v3.12.0 (2026-10-17) — TOTAL PURGE: Penyeragaman Taksonomi Trinity (Agent Preflight / Agent Translation / Agent Inspector)
+- **Fixed Trinity "Model Parameters" showing default values before any provider or model was selected:** on a fresh configuration page, the panel used to render a full generic profile (temperature, top-p, max output tokens, penalties) as if a configuration were already active — even with an empty API key and nothing selected. A placeholder message is now shown until both a provider AND a model are chosen.
+- **Fixed the "Reset to Default" handler bypassing the same gate:** a hidden second render path was audited and gated as well, so resetting in a fresh state keeps the placeholder instead of resurrecting the generic profile. A new `.trinity-mp-placeholder` style ships with the theme. The `trinity.<agent>.params` payload contract is unchanged — the gate is render-time only, and a fresh state still sends `{}`.
 
-### Changed
+## SubFaber v3.11.0 (2026-10-17) — Complete Brand Purge: Zero Legacy References
 
-- **[MANDAT OWNER — TOTAL PURGE] Penamaan ejen Trinity diseragamkan sepenuhnya merentas kod, konfigurasi, ujian & dokumentasi aktif:** "Agent A" → **Agent Translation**; "Agent B" → **Agent Inspector** (selari taksonomi rasmi [docs/ENGINE_COMPONENT_TAXONOMY.md](docs/ENGINE_COMPONENT_TAXONOMY.md)). CLEAN CUT RENAME tanpa lapisan backward-compat legasi (`agentB`) — kelulusan eksplisit Owner atas laporan audit penuh (34 fail).
-- **Nama fail fizikal (git mv, membatalkan sempadan pengecualian taksonomi 2026-10-09):** `src/services/agentBInspector.js` → `src/services/agentInspector.js`; `src/services/agentB-inspector-regression.test.js` → `src/services/agent-inspector-regression.test.js`; `src/services/agentb-observability-regression.test.js` → `src/services/agent-inspector-observability-regression.test.js`. Semua laluan `require()` di seluruh repositori dikemas kini (termasuk entri `test:tracked` package.json).
-- **Kontrak konfigurasi CLEAN CUT (breaking change selaras kelulusan Owner #1):** blok konfig `agentB.*` → `agentInspector.*` ([src/utils/config.js](src/utils/config.js), [src/handlers/subtitles.js](src/handlers/subtitles.js), [src/services/translationEngine.js](src/services/translationEngine.js)); payload HTTP `providerName: 'agentb'` → `'agent-inspector'` ([src/services/channels/openaiChannel.js](src/services/channels/openaiChannel.js)); kontrak payload UI `patch.agentB` → `patch.agentInspector` ([public/js/trinity-agents.js](public/js/trinity-agents.js), [public/config.js](public/config.js) — izin rentas domain Owner).
-- **Pemboleh ubah persekitaran:** `AGENT_B_*` × 10 → `AGENT_INSPECTOR_*` ([src/utils/config.js](src/utils/config.js), [src/services/agentInspector.js](src/services/agentInspector.js), [src/services/providers/openaiCompatible.js](src/services/providers/openaiCompatible.js), [.env.example](.env.example)).
-- **Penamaan runtime:** kelas `AgentBInspector` → `AgentInspector`; konstanta `AGENT_B_*` × 15 → `AGENT_INSPECTOR_*`; telemetri `agentB*` × 11 → `agentInspector*` (translationEngine + parallelTranslation merge-back); insiden `AGENT_B_SEMANTIC_RETRY` → `AGENT_INSPECTOR_SEMANTIC_RETRY`; format log `[AgentB]` → `[AgentInspector]`; instance enjin `this.agentB` → `this.agentInspector`.
-- **Ujian regresi:** ~375 assertion merentas 11 fail ujian diselaraskan serentak dengan penamaan baharu — sifar perubahan semantik (identikal assertion, hanya identifier/string).
-- **Dokumentasi teknikal aktif dikemas kini:** [.env.example](.env.example), [docs/ENGINE_COMPONENT_TAXONOMY.md](docs/ENGINE_COMPONENT_TAXONOMY.md), README (tiada padanan). Arkib sejarah ([CHANGELOG.md](CHANGELOG.md) entri lama, [docs/SESSION_LEDGER.md](docs/SESSION_LEDGER.md), [plans/*.md](plans/)) KEKAL VERBATIM sebagai rekod sejarah — tafsiran melalui pemetaan taksonomi §2.
+### 🔄 Breaking Changes
 
-### Preserved
+- **Replaced every legacy brand reference with the SubFaber name across 71 files / 615 lines:** all four letter-case variants were swapped case-for-case across source code, frontend scripts and partials, service-worker cache names (`subfaber-static-*`), the custom Redis Lua scripts (`subfaberAtomicCacheWrite` / `subfaberAtomicCacheDelete` in [RedisStorageAdapter.js](src/storage/RedisStorageAdapter.js)), localStorage keys, postMessage channel names, Stremio client identity headers, configuration files, all five locales, documentation, and the GitHub issue templates. A final repository-wide search confirmed zero remaining legacy-brand matches.
 
-- **Sifar perubahan tingkah laku runtime** — purge penamaan tulen (identifier/string/komen); logik enjin, hierarki model, payload god-tier 4-kunci, circuit breaker, graceful bypass, dan kontrak Trinity params tidak disentuh strukturnya.
-- **Verifikasi ZERO-HIT:** `git grep -iE "agent[ _-]?[ab]|agentb"` pada `src/ public/ index.js package.json .env.example docs/ENGINE_COMPONENT_TAXONOMY.md README.md` = **0 padanan**.
-- **Baseline ujian terpelihara:** `npm test` = **428 total / 427 PASS / 0 FAIL / 1 SKIP** (monotonic ≥ 428). Prettier PASS (1 warn pra-wujud `.prettierrc`); ESLint 0 error (223 warning pra-wujud).
+## SubFaber v3.10.5 (2026-10-17) — Presence/Frequency Penalty Fields in Trinity Model Parameters
 
-## SubFaber v3.11.1 (2026-10-17) — Fresh-State Gate: Trinity Model Parameters Placeholder
+### 🐛 Bug Fixes
 
-### Fixed
+- **Fixed the Trinity "Model Parameters" panel omitting the Presence and Frequency Penalty fields:** the five core generation parameters (Thinking, Temperature, Top-P, Presence Penalty, Frequency Penalty) are now all rendered for every sampling-capable model. The two penalty descriptors (range −2..2, default 0) were declared across all ten sampling-capable provider profiles in the central capability map ([src/utils/modelCapabilities.js](src/utils/modelCapabilities.js)), so the server-side sanitizer accepts and clamps them instead of silently dropping values sent by the UI. Non-sampling profiles (DeepL, o-series, DeepSeek-thinking) remain clean. New regression coverage locks the contract for all 13 sampling-capable and 4 non-sampling model cases.
 
-- **[LAPORAN OWNER — "parameter keluar sebelum pilih provider/model"] Trinity "Model Parameters" merender nilai default generik dalam fresh state ([public/js/trinity-agents.js](public/js/trinity-agents.js)):** `refreshModelParams()` dipanggil semasa init tanpa gate; provider/model kosong jatuh ke fallback `default:` dalam `resolveCapabilityProfile()` → `MP_DOOR_GENERIC_OPENAI` (profil generik penuh), lalu `mpRenderFields()` memaparkan temperature 0.3 / topP 0.95 / maxOutputTokens 32768 / penalties 0 seolah-olah konfigurasi sudah aktif — walaupun API key kosong dan tiada pilihan dibuat. Fix: helper `mpHasSelection(ctx)` + `mpRenderPlaceholder(agentKey)` — placeholder "Pilih provider dan model dahulu untuk melaraskan parameter." dipaparkan sehingga provider DAN model dipilih.
-- **[BUG TERSEMBUNYI — ditemui Integration Review Backend] Handler "Reset to Default" melangkau gate:** call-chain audit `mpRenderFields` mendedahkan handler reset dalam `buildModelParamsAccordion()` terus render profil generik dan menimpa placeholder dalam fresh state. Fix: gate `mpHasSelection()` dipasang pada KEDUA-DUA call-site `mpRenderFields` (audit mengesahkan tiada laluan ketiga); `delete _modelParamsState` kekal dijalankan sebelum gate.
+## SubFaber v3.10.4 (2026-10-17) — Force-Refresh: Purged the Legacy v3.8.x Service-Worker Cache Trap
 
-### Changed
+### 🐛 Bug Fixes
 
-- Kelas CSS baharu `.trinity-mp-placeholder` ([public/css/trinity-agents.css](public/css/trinity-agents.css)) — kartu dashed span penuh grid, teks tengah, konsisten tema.
-- Kontrak payload `trinity.<agent>.params` TERPELIHARA — gate adalah render-time sahaja; payload fresh state kekal `{}`.
+- **Fixed browsers serving months-old v3.8.x assets after upgrading:** non-incognito browsers were trapped by an old service worker plus stale versioned Cache Storage entries, because the service worker's static-asset handler matched caches globally across all versions. The version bump rewrites the cache-buster query on every asset and renames the versioned cache, forcing the old service worker to yield so users receive the current UI without any manual cleanup.
 
-### Verified
+## SubFaber v3.10.3 (2026-10-17) — Fixed Penalty Input Form Serialization
 
-- Verifikasi Playwright live (localhost:7001/configure): fresh state = 0 medan + placeholder (4 ejen); provider sahaja → placeholder kekal; provider+model → 6 medan default betul; fresh state + Reset → placeholder kekal; provider+model + Reset → medan default muncul semula. `npx prettier --check` lulus; `npx eslint` 0 error; `npm test` = 428 PASS / 0 FAIL / 0 SKIP (monotonic ≥ baseline).
+### 🐛 Bug Fixes
 
-## SubFaber v3.11.0 (2026-10-17) — Total Purge & Penjenamaan Semula: Sifar Rujukan Jenama Legasi
+- **Fixed the Presence/Frequency Penalty inputs missing their `name` attributes on the file-translation page:** without them, a native form submission sent an empty FormData for both fields even though the values were present in the DOM. The attributes were added, hardening the form-native contract; the JavaScript serializer path was unaffected.
 
-### Changed
+## SubFaber v3.10.2 (2026-10-17) — Tool Precedence Protocol, Redis Counter Cleanup, Local Redis Integration
 
-- **[MANDAT OWNER — zero-tolerance total purge]** Semua rujukan jenama legasi (4 varian huruf: PascalCase berprefiks "Stremio", PascalCase, UPPERCASE, lowercase) digantikan berpadanan corak huruf kepada SubFaber merentas **71 fail / 615 baris**: kod sumber (`index.js`, `src/services/*`, `src/storage/*`, `src/utils/*`, `src/handlers/*`), frontend (`public/config.js`, `public/js/*`, `public/partials/main.html`, `public/sw.js`), konfigurasi (`.env.example`, `.dockerignore`, `.gitignore`, `.prettierignore`, `eslint.config.mjs`), locales ×5, dokumentasi (`README.md`, `docs/*`, `plans/*`), dan template issue GitHub.
-- Arahan Lua tersuai Redis dinamakan semula kepada `subfaberAtomicCacheWrite`/`subfaberAtomicCacheDelete` ([RedisStorageAdapter.js](src/storage/RedisStorageAdapter.js)) bersama regresi sepadan (`src/storage/redis-command-timeout-regression.test.js`).
-- Kunci localStorage, saluran stream postMessage (`SUBFABER_*`), pengepala identiti klien Stremio, dan nama cache service worker (`subfaber-static-*`) diseragamkan.
-- Fail audit legasi dalam `plans/` dinamakan semula kepada `plans/subfaber-legacy-purge-audit.md` (nama fail turut ditulenkan).
-- Audit akhir `git grep -i` terhadap jenama legasi: **0 padanan (zero-hit mutlak)**.
-- Versi dinaikkan 3.10.5 → 3.11.0 (cache-buster `?_cb=3.11.0` turut memaksa refresh aset selepas penjenamaan semula UI).
+### ⚡ Improvements
 
-### Verified
+- **Added a tool-precedence protocol to the agent governance rules:** agents must inventory available tools (MCP servers and native CLIs) before planning any action, must never reinstall or reinvent capabilities that are already provided (e.g. browser automation, web search, documentation lookup, GitHub Actions, Docker), must not author throwaway scripts for tasks those tools already handle, and must fail fast with a minimal probe when a tool appears disconnected. A redundant rules file was removed and its content absorbed into the new protocol.
 
-- `npx prettier --check .` lulus; `npx eslint .` 0 error; `npm test` = 427 PASS / 0 FAIL / 1 SKIP (skip = ujian Redis integrasi langsung; 428 total, monotonic ≥ baseline).
+### 🐛 Bug Fixes
 
-## SubFaber v3.10.5 (2026-10-17) — Send-All UI Parity: Presence/Frequency Penalty dalam Trinity Model Parameters
+- **Fixed a stale `'0'` size counter left in Redis ([src/storage/RedisStorageAdapter.js](src/storage/RedisStorageAdapter.js)):** the atomic cache-delete script always re-wrote the counter even when it reached zero, leaving a leftover `'0'` string after the last entry was removed. The script now deletes the key at zero; a null read is already treated as 0 everywhere else, so there is no regression. This latent bug only surfaced once the live-Redis integration test was activated — the integration test now runs fully against a local Redis container.
 
-### Fixed
+## SubFaber v3.10.1 (2026-10-16) — Core Protocol: Functional-Concern Domain Boundaries & Bilateral Integration Gate
 
-- **[MANDAT OWNER — "Parameter sepatutnya tunjuk 5 benda! Thinking, Temperature, Top-p, presence_penalty, frequency_penalty"] Gap UI Trinity Model Parameters ([public/js/trinity-agents.js](public/js/trinity-agents.js)):** sub-accordion "Model Parameters" (Pro mode) tidak merender kedua-dua penalty walaupun `MP_FIELD_ORDER`/`MP_FIELD_LABELS` mengenalinya — punca: TIADA profil provider mengisytiharkan descriptor mereka, dan `mpRenderFields()` menjatuhkan medan tanpa descriptor. Fix: `MP_FREQUENCY_PENALTY`/`MP_PRESENCE_PENALTY` (`mpParam(-2, 2, 0)`) diisytiharkan dalam 10 profil bersampling (gemini-2.5/3.x-strict/3.x-legacy/gemini-legacy, anthropic ×3 keluarga, kimi-fixed/hybrid, openai modern+legacy, glm, openai-compatible-generic). Verifikasi Playwright live: provider `gemini` + model `gemini-3-flash-preview` kini merender `[temperature, topP, maxOutputTokens, thinkingLevel, frequencyPenalty, presencePenalty]` — input number min=-2 max=2 step=0.1, bebas diedit (HIDE ≠ LOCK).
+### ⚡ Improvements
 
-### Changed
+- **Strengthened the multi-agent orchestration rules:** domain boundaries are now judged by functional concern rather than folder path (client-side markup, styling, and event handlers embedded in hybrid server files belong to the frontend domain); the backend may not unilaterally ship client-side UI inside page generators; releases require a bilateral two-man integration gate with live browser verification; and an approved plan's delegation steps are binding contracts — a passing Node.js test suite never substitutes for real DOM/browser verification.
 
-- **[SEND-ALL backend parity] `frequencyPenalty`/`presencePenalty` `param(-2, 2, 0)` diisytiharkan dalam 10 profil bersampling ([src/utils/modelCapabilities.js](src/utils/modelCapabilities.js)):** `sanitizeAgentParams()` hanya meluluskan medan yang disenaraikan dalam profil — tanpa descriptor, nilai penalty dari UI Trinity dibuang senyap walaupun pintu provider menghantarnya (Send-All doctrine). Profil tiada-sampling (DeepL, o-series/gpt-5.1, deepseek-thinking) kekal bersih. 2 ujian regresi baharu dalam [src/utils/trinity-params-regression.test.js](src/utils/trinity-params-regression.test.js): (1) 13 kes provider/model bersampling mesti isytihar kedua-dua penalty; 4 kes no-sampling mesti TIDAK; (2) sanitize meluluskan nilai sah + clamp ±2.
+## SubFaber v3.10.0 (2026-10-16) — Send-All Doctrine: Unified Generation Parameters Across All Provider Doors
 
-## SubFaber v3.10.4 (2026-10-17) — Cache-Buster Force Refresh: Purge Legacy v3.8.x Service Worker/Cache Trap
+### 🔄 Breaking Changes
 
-### Changed
+- **All five generation parameters (Thinking, Temperature, Top-P, Presence Penalty, Frequency Penalty) are now always sent to every provider door without client-side stripping, dropping, or locking — the provider's own server decides whether to accept, ignore, or reject them.** This enables empirical observation of real upstream behavior:
+  - **Gemini ([src/services/gemini.js](src/services/gemini.js)):** sampling parameters are sent for every model family including strict-mode 3.6+; thinking routing is preserved (2.5 → integer `thinkingBudget`, 3.x → `thinkingLevel` enum); topK remains banned (since v1.6.0).
+  - **OpenAI-compatible ([src/services/providers/openaiCompatible.js](src/services/providers/openaiCompatible.js)):** `frequency_penalty` is now actually serialized (closing an old gap where it was normalized in config but never sent); frontier-model special-case rules are no longer applied in the request builder.
+  - **Anthropic ([src/services/providers/anthropic.js](src/services/providers/anthropic.js)):** the pre-emptive auto-forcing of temperature 1.0 / dropping of top_p while thinking is active was removed — only explicit overrides through the retry path are honored.
+  - **Schema & routing:** the validation schema now accepts `presencePenalty`/`frequencyPenalty` (−2..2) ([src/utils/validation.js](src/utils/validation.js)) and passes them through to every OpenAI-compatible door in the provider factory.
 
-- **[MANDAT OWNER — cache buster bump] Versi dinaikkan 3.10.3 → 3.10.4 semata-mata untuk memaksa semua klien memuat semula aset:** forensik live di `subfaber.mfzf99.workers.dev` mengesahkan server VPS sudah menghidangkan v3.10.3 bersih (tiada parameter lama dalam network), tetapi browser pengguna bukan-incognito terperangkap oleh service worker lama + Cache Storage versi lampau (`subfaber-static-v3.8.9/19/20/24`) — `handleStaticAsset()` dalam `public/sw.js` menggunakan `caches.match()` global merentas semua cache, menyebabkan aset era v3.8.x terus dihidangkan selepas upgrade. Bump versi menukar cache buster `?_cb=` pada semua aset dan nama cache versi (`subfaber-static-v3.10.4`), memaksa SW lama takluk kepada versi baharu dan pengguna mendapat UI semasa tanpa pembersihan manual.
+### 🆕 New Features
 
-## SubFaber v3.10.3 (2026-10-17) — Frontend Zero-Trust Audit Fix: Penalty Input Form Serialization
-
-### Fixed
-
-- **[CRITICAL — ditemui oleh Frontend Zero-Trust Audit (mandat Owner Opsyon 1)] Input Presence/Frequency Penalty tiada atribut `name` ([src/utils/fileUploadPageGenerator.js](src/utils/fileUploadPageGenerator.js)):** tanpa `name`, native form submission tidak menyertakan nilai penalty ke payload — FormData kosong untuk kedua-dua field walaupun nilai tersimpan dalam DOM. Dibaiki: `name="presencePenalty"` dan `name="frequencyPenalty"` ditambah. Serializer JS (`captureSelection`, baca via `getElementById`) tidak terjejas — fix ini hardening kontrak form-native.
-
-### Verified (Playwright Live Audit oleh Frontend, MCP browser sebenar)
-
-- Stepper: klik sebenar 3x increase (0.2→0.5); clamp min/max (temp 0/2, penalty −2/2); empty-value fallback (0→−0.1, bukan lompat ke min); single-click single-increment (tiada duplicate listener — event delegation terbukti sekali-attach).
-- FormData selepas fix: `presencePenalty` & `frequencyPenalty` kedua-duanya terbaca.
-- CSS `.stepper-btn`: render betul, hover/active states berfungsi, hit target 2.5rem; collapsible Advanced Settings interaksi OK.
-
-## SubFaber v3.10.2 (2026-10-17) — Tool Precedence Protocol + Redis Counter Cleanup + Local Redis Integration
-
-### Changed
-
-- **[MANDAT OWNER — .roo/rules/00-subfaber-core-protocol.md] Seksyen baharu MCP, CLI & TOOL PRECEDENCE PROTOCOL (ZERO REINSTALL & ZERO WASTE):** penyelarasan tingkah laku semua agen merentas model AI — (1) MANDATORY INVENTORY CHECK FIRST: setiap agen wajib semak tool tersedia dalam system prompt (MCP servers `playwright`/`firecrawl-mcp`/`context7` + CLI `gh`/`docker`/`git`) SEBELUM merancang sebarang tindakan; (2) STRICT NO-REINSTALL & NO-REINVENTION RULE: haram memasang/mencipta semula apa yang sudah disediakan (contoh: `npm install playwright`); (3) MANDATORY TOOL MAPPING: browser verification → Playwright MCP, dokumentasi library → Context7 MCP, web search/scrape → Firecrawl MCP, GitHub Actions → `gh` CLI, Redis/container → `docker` CLI; (4) ZERO THROWAWAY SCRIPT WASTE: haram skrip `.tmp-*` ad-hoc untuk tugasan yang `gh`/MCP/npx handle; (5) FAIL-FAST MCP DIAGNOSTIC: probe ringkas sekali, lapor owner hanya jika benar-benar putus. Fail redundant `.roo/rules/10-context7-docs.md` DIBUANG — kandungannya diserap ke dalam item #3 tool mapping protokol baharu.
-
-### Fixed
-
-- **Stale '0' size counter dalam Redis ([src/storage/RedisStorageAdapter.js](src/storage/RedisStorageAdapter.js)):** `ATOMIC_CACHE_DELETE_SCRIPT` selama ini sentiasa `SET KEYS[4], nextSize` walaupun kaunter jatuh ke 0, meninggalkan string `'0'` dalam Redis selepas entri terakhir dibuang. Skrip kini `DEL KEYS[4]` pada sifar (GET null dibaca sebagai 0 oleh write script/`size()`/budget validation — tiada regression). Bug laten ini hanya terdedah selepas integration test Redis diaktifkan.
-
-### Added
-
-- **Local Redis integration test kini aktif penuh:** container Docker `subfaber-redis` (redis:7-alpine, port 6379, `--restart unless-stopped`) kini berjalan kekal di mesin owner; integration test diaktifkan melalui env `REDIS_INTEGRATION_PORT=6379`. Suite dengan Redis hidup: **426 total / 426 PASS / 0 FAIL / 0 SKIP** (monotonic ≥ 426; test Redis yang dahulu SKIP kini PASS).
-
-## SubFaber v3.10.1 (2026-10-16) — Core Protocol: Functional Concern Domain Boundaries + Bilateral Integration Gate
-
-### Changed
-
-- **[MANDAT OWNER — .roo/rules/00-subfaber-core-protocol.md] MULTI-AGENT ORCHESTRATION PROTOCOL dikukuhkan:** (1) domain boundaries kini dinilai oleh FUNCTIONAL CONCERN yang mengatasi folder path — Frontend Domain merangkumi semua fail `public/` DAN sebarang UI markup/CSS/DOM/browser event handlers terbenam dalam fail hibrid server seperti `src/utils/*PageGenerator.js`; (2) HYBRID FILE & PRECEDENCE RULE — Backend DIHARAMKAN menulis/menghantar client-side HTML/CSS/DOM scripts dalam PageGenerator secara unilateral; (3) rule #4 dinaikkan kepada BILATERAL TWO-MAN INTEGRATION GATE (zero unilateral releases) — Backend juga wajib delegasi skop UI ke Frontend untuk implementasi + verifikasi Playwright; (4) rule #8 baharu PLAN FIDELITY & ZERO RATIONALIZATION CLAUSE — delegation gate dalam plan yang diluluskan adalah kontrak mengikat; lulus `npm test` Node.js TIDAK PERNAH menggantikan verifikasi DOM/Playwright Frontend.
-
-## SubFaber v3.10.0 (2026-10-16) — Send-All Doctrine: Unified Generation Parameters untuk Ketiga-Tiga Door
-
-### Changed
-
-- **[MANDAT OWNER 2026-10-16 — SEND-ALL DOCTRINE] Kelima-lima parameter generatif (Thinking, Temperature, Top-P, Presence Penalty, Frequency Penalty) kini WAJIB DIHANTAR oleh ketiga-tiga pintu tanpa client-side strip/drop/lock — pelayan provider tentukan sendiri (terima/abaikan/400).** Tujuan Owner: pemerhatian empirikal behaviour pelayan sebenar. Pembedahan:
-  - **Gemini ([src/services/gemini.js](src/services/gemini.js)):** gate `sampling !== 'stripped'` pada cabang 3.x DIGUGURKAN — temperature/topP/frequencyPenalty/presencePenalty dihantar untuk SEMUA family (STRICT 3.6+ termasuk); routing thinking kekal (2.5 → `thinkingBudget` int, 3.x → `thinkingLevel` enum); topK kekal haram (v1.6.0).
-  - **OpenAI-compatible ([src/services/providers/openaiCompatible.js](src/services/providers/openaiCompatible.js)):** `frequency_penalty` kini diserialisasi (gap lama ditutup — dahulu dinormalisasi config tetapi tidak pernah dihantar); `shouldOmitOpenAISamplingParams()` jadi no-op eksplisit; `applyFrontierModelRules()` (Kimi-k3 drop sampling / GLM-5.3 lock temp 0.0+top_p 0.1) tidak lagi dipanggil dalam builder.
-  - **Anthropic ([src/services/providers/anthropic.js](src/services/providers/anthropic.js)):** auto-force temperature=1.0 & auto-drop top_p semasa thinking aktif DIGUGURKAN (pre-emptive) — hanya override eksplisit laluan auto-compliance retry dihormati; `thinking: { type, budget_tokens }` kekal.
-  - **Schema & routing:** `providerParameterSchema` Joi kini menerima `presencePenalty`/`frequencyPenalty` (-2..2) ([src/utils/validation.js](src/utils/validation.js)); pass-through penalty ke SEMUA pintu openai-compatible (openai/deepseek/mistral/openrouter/cfworkers/custom) dalam factory ([src/services/translationProviderFactory.js](src/services/translationProviderFactory.js)).
-  - **Dokumen ground truth** kedua-duanya ([plans/gemini-sampling-ground-truth-2026.md](plans/gemini-sampling-ground-truth-2026.md), [plans/trinity-params-ground-truth-2026.md](plans/trinity-params-ground-truth-2026.md)) diberi notis doktrin: matriks kekal fakta API, gate stripping dimatikan untuk pemerhatian Owner.
-
-### Added
-
-- **UI Advanced Settings ([src/utils/fileUploadPageGenerator.js](src/utils/fileUploadPageGenerator.js)):** field **Presence Penalty** & **Frequency Penalty** (Julat -2..2, English-only label per mandate) ditambah selepas Top-P; **stepper buttons (−/+)** pada SEMUA input number advanced settings (Thinking Budget, Temperature, Top-P, Penalties, Max Tokens, Timeout, Max Retries) — nilai boleh diisi manual ATAU dilaras dengan satu klik, clamp automatik ke julat min/max; rehydration penalty dari config tersimpan.
-- **Ujian regresi send-all:** 6 assertion strip lama ditulis semula mengikut doktrin ([src/services/gemini-auth-model-regression.test.js](src/services/gemini-auth-model-regression.test.js), [src/services/channels-triDoor-phaseC-regression.test.js](src/services/channels-triDoor-phaseC-regression.test.js)) + assertion baharu lebih ketat (sampling dihantar untuk STRICT bila ditetapkan; lalai service tetap dihantar). Suite: **426 total / 425 PASS / 0 FAIL / 1 SKIP** (monotonic ≥ 426).
+- **Added Presence Penalty and Frequency Penalty fields (range −2..2) to the file-translation Advanced Settings,** plus one-click −/+ stepper buttons on every numeric advanced setting (Thinking Budget, Temperature, Top-P, Penalties, Max Tokens, Timeout, Max Retries) with automatic min/max clamping. Saved penalty values are rehydrated from stored configurations.
 
 ### Notes
 
-- **Agent B god-tier payload TIDAK disentuh** — 4-kunci empirikal `{model, messages, stream, temperature:0.0}` kekal lalai (keputusan Owner tertunda sama ada diunlock).
-- **Risiko diterima sedar (Owner):** gemini-3.6+ / Kimi-k3 / Claude-thinking mungkin membalas HTTP 400 bila menerima parameter yang dahulu di-strip — itu data pemerhatian yang dikehendaki.
+- The Inspector agent's battle-tested 4-key payload (`{model, messages, stream, temperature: 0.0}`) was intentionally left unchanged.
+- Accepted risk (deliberate observation): strict models such as gemini-3.6+, Kimi-k3, or Claude-with-thinking may answer HTTP 400 when receiving previously-stripped parameters — that is exactly the data this change was designed to collect.
 
-## SubFaber v3.9.52 (2026-10-15) — Proxy 401/403 Resilience: Backoff untuk Gateway Proksi
+## SubFaber v3.9.52 (2026-10-15) — Proxy 401/403 Resilience: Retryable Backoff for Proxy Gateways
 
-### Fixed
+### 🐛 Bug Fixes
 
-- **401/403 daripada gateway proksi kini RETRYABLE ([src/services/gemini.js](src/services/gemini.js)):** insiden run keenam 2026-10-15 — job terjemahan mati sekelip mata pada batch 4/13 akibat 403 Crazy Router, walaupun batch 1-3 BERJAYA dengan kunci yang sama dan 403 sebelum ini membawa mesej jelas "out of credit for this model route... retry later". Punca: senarai retryable dalam `retryWithBackoff()` (timeout/network/429/503 sahaja) tidak mengandungi 401/403 — klasifikasi yang tepat untuk endpoint Google rasmi tetapi FALSE POSITIVE untuk proksi yang menggunakan 401/403 secara longgar untuk keadaan upstream transient (kuota route seketika, relay down, route tidak aktif sementara). Pembaikan: `isProxyAuthStatus` — 401/403 dengan `isProxyBaseUrl() === true` dianggap retryable dengan backoff eksponen 3s/6s/12s + jitter (log "proxy 401/403 (transient upstream)"); **endpoint Google rasmi (googleapis.com) KECAL mati segera** — kunci AIza yang salah tidak akan pulih dengan retry.
+- **Made 401/403 responses from proxy gateways retryable ([src/services/gemini.js](src/services/gemini.js)):** a translation job previously died instantly on a proxy 403 mid-run even though earlier batches had succeeded with the same key and the error message itself said "out of credit for this model route... retry later". The retry list only covered timeout/network/429/503 — correct for the official Google endpoint, but a false positive for proxies that use 401/403 loosely for transient upstream states (temporary route quotas, downed relays). Now 401/403 on a proxy base URL is retried with exponential backoff (3s/6s/12s + jitter), while the official Google endpoint still fails fast — a genuinely invalid Google key never gets pointlessly retried. Regression coverage locks all three scenarios.
 
-### Added
+## SubFaber v3.9.51 (2026-10-15) — Basic-Mode Purity: Pre-Flight Phase Exclusive to the Inspector Agent
 
-- **Ujian regresi F1–F3 ([src/utils/trinity-params-regression.test.js](src/utils/trinity-params-regression.test.js)):** F1 — 403 proksi (Crazy Router v1beta) → 3 percubaan dengan 2 backoff, berjaya pada cubaan ketiga; F2 — 403 Google rasmi → mati segera (1 percubaan sahaja, kontrak asal dipelihara); F3 — 401 proksi (rootsys) → retryable. Suite: 426 total / 425 PASS / 0 FAIL / 1 SKIP (monotonic ≥ 423, +3).
+### ⚡ Improvements
 
-## SubFaber v3.9.51 (2026-10-15) — Basic-Mode Purity: Fasa 0 Pre-Flight Eksklusif Agent B + Clean Log
+- **Made Basic Mode a pure single-AI engine:** the legacy fallback where the primary translation agent ran its own pre-flight pass was removed. Basic Mode (no Trinity Pro credentials configured) now goes straight to batch 1 with no pre-translation calls at all; theme/terminology context (a Pro feature) no longer leaks into Basic Mode, and the Inspector's circuit breaker no longer cascades onto the primary agent.
+- **Cleaned up the logs:** the Inspector's end-of-file summary is no longer printed when the Inspector never ran, removing the misleading empty `0/0 (100% protected)` template from every file. Logs now only speak when the Inspector actually touched a file.
 
-### Changed
+## SubFaber v3.9.50 (2026-10-15) — Fixed the Gemini-Native Door for Custom Primary Providers
 
-- **[BASIC-MODE PURITY — kelulusan Owner 2026-10-15] Fasa 0 Pre-Flight kini EKSKLUSIF Agent B ([src/services/translationEngine.js](src/services/translationEngine.js)):** laluan fallback warisan "Agent A pre-flight dirinya sendiri" (sejak mandat 2026-09-25) DIGUGURKAN. Basic Mode (Agent B null — tiada kredential Trinity Pro / env) kini enjin TULen 1-AI: terus ke batch 1 tanpa sebarang panggilan pra-penterjemahan, formula 4+50+2 sahaja. Konteks tema/istilah (feature Pro) tidak lagi menyerap masuk mod Basic; circuit breaker Agent B juga tidak melata kepada Agent A. Import `runPreflightSemanticPass` yang menjadi orphan dalam translationEngine digugurkan (modul kekal digunakan oleh AgentBInspector).
-- **Clean log — `[AgentB] FILE SUMMARY` tidak dicetak bila Agent B tidak pernah hidup:** sebelum ini template kosong `0/0 (100% protected)` dicetak di hujung SETIAP fail walhal Agent B mati (coverage 0 + tiada circuit) — mengelirukan pemantauan. Kini mesej di-skip sepenuhnya; log hanya bersuara bila Agent B benar-benar menyentuh fail.
+### 🐛 Bug Fixes
 
-### Added
-
-- **Ujian regresi E9–E10 ([src/utils/trinity-params-regression.test.js](src/utils/trinity-params-regression.test.js)):** E9 — agentB null → `preflightContext === null` + `agentBUsed === false` + tiada konteks pre-flight (Basic Mode purity dijana penuh melalui enjin sebenar); E10 — `_logAgentBFileSummary()` senyap (log.debug tidak dipanggil) bila coverage 0/0. Suite: 423 total / 422 PASS / 0 FAIL / 1 SKIP (monotonic ≥ 421).
-
-## SubFaber v3.9.50 (2026-10-15) — Custom Main Gemini-Native Door Fix (Crazy Router 404)
-
-### Fixed
-
-- **Door `gemini-native` pada custom MAIN kini dihormati ([src/services/translationProviderFactory.js](src/services/translationProviderFactory.js)):** insiden run ketiga 2026-10-15 — kad Trinity Translation Custom dengan door Gemini-Native (Crazy Router `https://cn.crazyrouter.com/v1beta`, model `gemini-3-flash`) dirutekan ke `OpenAICompatibleProvider` walaupun pintu Gemini Native dipilih, menyebabkan POST `{base}/chat/completions` pada proksi Gemini-native → 404 MODEL_NOT_FOUND. Punca: syarat `isSecondary &&` (v3.9.33) hanya menghormati door `gemini-native` untuk `custom_secondary`, bukan custom main. Pembaikan: door `gemini-native` membina `GeminiService` (REST v1beta) SAMA RATA untuk kedua-dua slot — jambatan Trinity→Provider (v3.9.49) + SSRF validation + sanitasi baseUrl v1beta sedia berfungsi dan tidak diubah. Ujian regresi E8: custom MAIN + door gemini-native → `GeminiService` (baseUrl proksi v1beta dikekalkan), SAMA SEKALI BUKAN `OpenAICompatibleProvider`.
+- **Fixed the `gemini-native` door being ignored on a custom primary provider ([src/services/translationProviderFactory.js](src/services/translationProviderFactory.js)):** a Trinity Translation card configured with a custom base URL and the Gemini-Native door was wrongly routed through the OpenAI-compatible path, sending `POST {base}/chat/completions` to a Gemini-native proxy and dying with 404 MODEL_NOT_FOUND. The door now builds a `GeminiService` (REST v1beta) equally for both the primary and secondary slots; the Trinity-to-provider bridge, SSRF validation, and base-URL sanitization were already correct and unchanged. Regression test E8 locks the routing.
 
 ## SubFaber v3.9.49 (2026-10-15) — Trinity Translation Agent → Provider Routing Bridge (404 MODEL_NOT_FOUND Fix)
 
-### Fixed
+### 🐛 Bug Fixes
 
-- **Bug routing kritikal 404 MODEL_NOT_FOUND ([src/utils/config.js](src/utils/config.js), [public/js/trinity-agents.js](public/js/trinity-agents.js), [public/config.js](public/config.js)):** kad Agent Translation (satu-satunya UI enjin utama sejak v3.9.32) yang dikonfigurasi dengan provider bukan-Gemini (cth Custom/rootsys `https://rootsys.cloud/v1`, model `deepseek-v4-pro`) dirutekan salah kepada `provider=gemini` — `createTranslationProvider()` membina `GeminiService` sambil `geminiModel` tercemar nama model provider asing → endpoint Google memulangkan 404 dua kali (countTokens + generateContent) → job terjemahan mati sebelum batch pertama. Rantai punca empat titik telah diperbaiki serentak:
-  - **TITIK A** — `collectConfigPatch()` kini routing provider-aware: `geminiApiKey`/`geminiModel` HANYA ditetapkan bila `trinity.translation.provider === 'gemini'` (atau kosong); bagi provider bukan-gemini yang layak (custom: baseUrl+model; lain: apiKey+model), patch menetapkan `mainProvider` + `multiProviderEnabled: true` + `providers[<id>]` (termasuk baseUrl/door untuk custom — door `gemini-native` dikekalkan, selain itu `openai-compatible`) supaya validasi frontend lulus tanpa kunci Gemini legasi.
-  - **TITIK B** — `buildConfigFromForm()` jambatan `effectiveGeminiKey`/`trinityTranslationModel` kini diguard `trinityIsGeminiRoute`; kredential/model provider bukan-gemini tidak lagi disuntik ke input legasi `#geminiApiKey`/`#geminiModel`.
-  - **TITIK C** — jambatan baharu `syncTrinityTranslationToProvider()` dalam `normalizeConfig()`: `trinity.translation` kini sumber kebenaran utama ruting enjin — provider bukan-gemini yang layak menjana `providers.<id>` (entri sedia ada TIDAK ditimpa — nilai eksplisit pengguna menang) + `mainProvider` + `multiProviderEnabled`; slot tidak layak/tiada kredential kekal laluan legasi Gemini (backward compatible penuh). `door` kini dikekalkan untuk `providers.custom` (sebelum ini hanya `custom_secondary`).
-  - **TITIK D** — `createTranslationProvider()` secara automatik membina provider yang betul melalui `mainProvider`/`providers` daripada jambatan (cth `OpenAICompatibleProvider` menghala rootsys) — `geminiModel` tidak lagi dicemari model provider lain dalam mana-mana laluan.
-  - Blok fallback secondary dalam `collectConfigPatch()` diubah daripada GANTI (`patch.providers = {}`) kepada MERGE (`patch.providers = patch.providers || {}`) supaya entri main provider tidak hilang apabila fallback aktif serentak.
-
-### Added
-
-- **Ujian regresi E1–E7 ([src/utils/trinity-params-regression.test.js](src/utils/trinity-params-regression.test.js)):** tujuh ujian baharu mengunci kontrak jambatan — senario rootsys (custom + baseUrl + door openai-compatible + model deepseek-v4-pro) menghasilkan `mainProvider='custom'` BUKAN gemini; laluan gemini kekal legasi 1:1; slot tidak layak tidak merampas mainProvider; provider rasmi bukan-gemini (openai) dirute terus; entri `providers.custom` sedia ada tidak ditimpa; door `gemini-native` dikekalkan; dan E2E end-to-end `createTranslationProvider()` membina `OpenAICompatibleProvider` (baseUrl rootsys) SAMA SEKALI BUKAN `GeminiService`. Suite: 420 total / 419 PASS / 0 FAIL / 1 SKIP (monotonic ≥ 413).
+- **Fixed a critical 404 MODEL_NOT_FOUND routing bug ([src/utils/config.js](src/utils/config.js), [public/js/trinity-agents.js](public/js/trinity-agents.js), [public/config.js](public/config.js)):** a Trinity Translation card configured with a non-Gemini provider (e.g. a custom OpenAI-compatible endpoint) was wrongly routed to `provider=gemini` — the factory built a `GeminiService` while `geminiModel` was contaminated with the foreign provider's model name, and Google's endpoint answered 404 twice (countTokens + generateContent), killing the job before the first batch. A four-point root-cause chain was fixed simultaneously: (A) the frontend config patch is now provider-routing-aware — legacy Gemini key/model fields are only set when the Trinity provider is actually Gemini, while qualified non-Gemini providers populate the multi-provider structure instead; (B) the legacy-form bridge is guarded so foreign credentials never get injected into the legacy Gemini inputs; (C) a new server-side bridge in `normalizeConfig()` makes `trinity.translation` the single source of truth for engine routing, generating provider entries without overwriting a user's explicit values, fully backward compatible; (D) the provider factory now builds the correct provider class from the bridge, so `geminiModel` can never be contaminated again. The secondary-fallback block was also changed from replace to merge semantics so the primary provider entry survives when a fallback is active. Seven new regression tests (E1–E7) lock the bridge contract end to end.
 
 ## SubFaber v3.9.48 (2026-10-15) — Core Protocol Markdown Style Harmonization
 
-### Changed
+### ⚡ Improvements
 
-- **[.roo/rules/00-subfaber-core-protocol.md](.roo/rules/00-subfaber-core-protocol.md)**: Merapikan & menyeragamkan simbol senarai kepada `-` (buang simbol `*` campuran pada sub-item VERBATIM MANDATE dan STUCK PROCESS TERMINATION PROTOCOL), menukar en-dash `1–2` kepada hyphen `1-2` (zombie process cap), memadam baris kosong berlebihan antara item bernombor dalam seksyen PROCESS LIFECYCLE, dan merapatkan directive Path B kepada satu baris. Tiada perubahan makna — kosmetik formatting semata-mata. Lulus `prettier --check`.
+- **Harmonized the Markdown formatting of the core agent protocol:** unified list bullets, replaced en-dashes with hyphens, removed excess blank lines, and collapsed a multi-line directive to one line. Purely cosmetic — no semantic changes.
 
 ## SubFaber v3.9.47 (2026-10-15) — Core Protocol Consolidation: Process Management Rules Inlined
 
-### Changed
+### ⚡ Improvements
 
-- **[.roo/rules/00-subfaber-core-protocol.md](.roo/rules/00-subfaber-core-protocol.md)**: Menyatukan semua governance rules dalam satu fail core protocol — ditambah rule #7 VERBATIM MANDATE & LOSSLESS CONTEXT PROPAGATION (anti-information-loss semasa `switch_mode`), seksyen [COGNITIVE DELIBERATION PROTOCOL - THINK BEFORE CODE] (trace & audit trail, adversarial audit, invariant check, atomic execution), seksyen [PROCESS LIFECYCLE, TERMINAL DISCIPLINE & MCP PRESERVATION] (autonomous shell ownership, zero-tolerance blanket process kills, dua-path stuck process termination, timeout & PTY buffer management, zombie process cap, server reload discipline), dan seksyen [MANDATORY COMMIT & RELEASE PROTOCOL] 8-step pipeline (zero exceptions).
+- **Consolidated all agent governance rules into a single core-protocol file:** added the verbatim-mandate / lossless-context-propagation rule (anti-information-loss during mode delegation), a think-before-code deliberation protocol, a process-lifecycle & terminal-discipline section, and the mandatory 8-step commit & release pipeline.
 
-### Removed
+### 🗑️ Removed
 
-- **[.roo/rules/20-process-management.md](.roo/rules/20-process-management.md)**: Dihapuskan sepenuhnya — kandungannya telah diserap (tanpa redundan) ke dalam `00-subfaber-core-protocol.md` di bawah seksyen PROCESS LIFECYCLE & MCP PRESERVATION. Penghapusan ini mengelakkan dual-source-of-truth redundancy antara dua fail rules.
+- **Removed the separate process-management rules file:** its content was absorbed without redundancy into the consolidated core protocol, eliminating a dual-source-of-truth risk between the two rule files.
 
-## SubFaber v3.9.46 (2026-10-15) — Trinity Model Parameters per-Agent: Capability-Driven UI (Fasa 3+4 Complete)
+## SubFaber v3.9.46 (2026-10-15) — Per-Agent Trinity Model Parameters: Capability-Driven UI
 
-### Added
+### 🆕 New Features
 
-- **Sub-accordion "⚙️ Model Parameters" pada 4 slot ejen Trinity ([public/js/trinity-agents.js](public/js/trinity-agents.js), [public/css/trinity-agents.css](public/css/trinity-agents.css)):** setiap kad ejen Trinity (Preflight/Translation/Inspector) dan sub-kad Secondary Fallback kini membawa sub-accordion tertutup-lalai yang medannya dibina DINAMIK daripada mirror front-end capability map (`resolveCapabilityProfile` / `getAgentDefaultParams` / `agentParamsDeviateFromDefault` — salinan verbatim [src/utils/modelCapabilities.js](src/utils/modelCapabilities.js)). Hanya parameter yang DISOKONG model dipaparkan (provider-agnostic: Gemini 2.5 → temp/topP/thinkingBudget/maxOutputTokens; Gemini 3.x STRICT → thinkingLevel/maxOutputTokens sahaja; Kimi K3 → temp TERKUNCI readOnly 1.0; DeepSeek → maxOutputTokens sahaja; DeepL → modelType/formality/preserveFormatting). Termasuk: nota kunci param (`descriptor.fixed`, `sampling-stripped-by-api`, `server-reroute-stripped`, `thinking-locks-temperature-1.0`, `no-llm-sampling` dsb.), amaran bypass-cache bila params menyimpang daripada lalai ejen, dan butang "Reset to Default". Params KEKAL merentas pertukaran Basic↔Pro (snapshot non-destruktif) dan pertukaran provider/model (cache state). Listener input dipasang pada nod accordion TERPISAH (bukan `getElementById` — elak detached-DOM trap semasa binaan kad).
-- **Kontrak payload `trinity.<agent>.params` ([public/js/trinity-agents.js](public/js/trinity-agents.js)):** `collectConfigPatch()` kini menghasilkan `params` pada setiap slot ejen (preflight/translation/inspector) + slot ke-4 `trinity.secondary = { params }` — HANYA medan yang dilawati pengguna daripada lalai `getAgentDefaultParams()` (kosong = guna lalai god-tier 4-kunci backend; medan `fixed` tidak disertakan). Rehidrasi membaca `cfg.trinity.<agent>.params` SEBENAR (bukan DOM prevValue — elak stale-value trap).
-- **Backend Fasa 3 ([src/utils/modelCapabilities.js](src/utils/modelCapabilities.js), [src/utils/config.js](src/utils/config.js), [src/utils/trinity-params-regression.test.js](src/utils/trinity-params-regression.test.js), [src/services/agentBInspector.js](src/services/agentBInspector.js), [src/handlers/subtitles.js](src/handlers/subtitles.js)):** capability map berpusat v1.0.0 (13 keluarga model), `normalizeTrinityAgentParams()` (4 slot + migrasi automatik advancedSettings/providerParameters lama → trinity.translation.params dengan guard eksplisit), sanitasi + deviasi → bypassCache automatik (reason `trinity-params-deviated`), AgentB/Agent-A payload params.
+- **Added a "Model Parameters" sub-accordion to all four Trinity agent slots:** each agent card (Preflight/Translation/Inspector) and the Secondary Fallback sub-card now carries a collapsed-by-default panel whose fields are built dynamically from the frontend mirror of the central capability map ([src/utils/modelCapabilities.js](src/utils/modelCapabilities.js)). Only parameters the selected model actually supports are shown (provider-agnostic — e.g. Gemini 2.5 gets temperature/top-p/thinking budget/max output tokens, strict Gemini 3.x gets thinking level and max output tokens only, Kimi K3's temperature is locked read-only at 1.0, DeepL gets its own translation-format options). The panel includes per-field notes (locked-by-API, sampling-stripped-by-API, thinking-locks-temperature, etc.), a cache-bypass warning when parameters deviate from the agent default, and a "Reset to Default" button. Parameters survive Basic↔Pro mode switches and provider/model changes via non-destructive snapshots.
+- **Established the `trinity.<agent>.params` payload contract:** the config patch now emits `params` for each agent slot plus a fourth `trinity.secondary` slot — only fields the user changed from the agent default (empty means the backend's battle-tested defaults apply; locked fields are never sent). Rehydration reads the actual stored params rather than stale DOM values.
+- **Added the backend capability layer:** a centralized capability map (13 model families), a normalizer for the four agent slots (with automatic migration of legacy advanced-settings fields), sanitization with range clamping, and automatic cache bypass when parameters deviate (`trinity-params-deviated`).
 
-### Changed
+### ⚡ Improvements
 
-- **Bubarkan 3 blok UI legasi ([public/partials/main.html](public/partials/main.html), −1479 baris):** togol `#betaMode` + `#betaModeAccordion` + kad `#geminiAdvancedCard` + kad `#providerAdvancedCard` DIBUANG (3897 → 2444 baris). Parameter model kini 100% berada dalam kad ejen Trinity — menghapuskan Gemini-centric bias (mandat Owner #2) dan memberikan kawalan parameter kepada semua 4 ejen (mandat Owner #3, ketidakadilan ejen).
-- **`#mismatchRetries` dipindah ke kad Translation Settings ([public/partials/main.html](public/partials/main.html)):** dibungkus `#mismatchRetriesGroup`, `min=0 max=3`, kekal null-safe — serialization via `getElementById` tidak berubah.
-- **Degradasi selamat ([public/config.js](public/config.js)):** `updateGeminiThinkingControl()` early-return bila DOM legasi tiada; `handleAdvancedSettingsToggle()` null-guard; `toggleBetaModeUI()` no-op selamat; semua rujukan `advanced*` lain sudah null-guarded (sahankan audit 78 tapak).
-- **Quick Setup reset Trinity ([public/js/quick-setup.js](public/js/quick-setup.js)):** semasa apply, `finalConfig.trinity` direset ke Basic + params kosong (kontrak `trinity.<agent>.params`).
-- **Ujian kontrak dikemas kini ([src/services/gemini-auth-model-regression.test.js](src/services/gemini-auth-model-regression.test.js)):** assertion "Configure and Toolbox pages expose current Gemini choices" kini menuntut KETIADAAN `#advancedThinkingLevel`/`#advancedTemperature`/`#betaMode`/`#geminiAdvancedCard`/`#providerAdvancedCard` dalam main.html + KEHADIRAN `#mismatchRetries` dalam `#translationSettingsCard` (bahagian upload/toolbox pages tidak disentuh — halaman berasingan).
+- **Dismantled the three legacy advanced-settings UI blocks (−1,479 lines):** the Advanced Mode toggle, the Gemini-advanced card, and the provider-advanced card were removed; model parameters now live 100% inside the Trinity agent cards, eliminating the Gemini-centric bias and giving parameter control to all four agents equally. The mismatch-retries input moved into the Translation Settings card, all legacy references degrade safely, and Quick Setup resets Trinity to Basic with empty params.
 
-### Preserved
+## SubFaber v3.9.45 (2026-10-14) — UI/UX A–Z Master Reorg: Functional Family Cards
 
-- **Kontrak payload `trinity.<agent>.params` end-to-end:** frontend hanya menghantar medan DEVIATED; backend `sanitizeAgentParams()` adalah pembersih akhir (clamp julat, kunci fixed, buang tidak disokong). Medan `fixed` (Kimi temp 1.0) tidak dihantar (backend sentiasa menguncinya). God-tier 4-kunci Agent B kekal lalai apabila params kosong. Verifikasi: `npm test` 413 total = 412 PASS / 0 FAIL / 1 SKIP (≥ baseline 385, monotonic); trinity-params-regression 29/29 ✔; prettier PASS; eslint 0 error; Playwright live 0 console error, 4 sub-accordion, capability-driven fields disahkan, Basic↔Pro params kekal, rehidrasi params LULUS.
+### ⚡ Improvements
 
-## SubFaber v3.9.45 (2026-10-14) — UI/UX A–Z Master Reorg: Functional Family Cards ("Satu Keluarga, Satu Rumah")
-
-### Changed
-
-- **F1 — Kad Keluarga Learn Mode ([public/partials/main.html](public/partials/main.html), [public/config.js](public/config.js)):** togol `#learnModeEnabled` + `#learnOrderGroup` + `#learnItalicGroup` dipindahkan dari Other Settings MASUK ke kad `#learnTargetsCard` dalam Seksyen Languages; kad kini sentiasa kelihatan dengan **inline progressive disclosure** — hanya kumpulan Order/Italic/grid bahasa (dibalut `#learnLanguagesGroup`) yang dibuka-tutup melalui helper modul baharu `applyLearnModeVisibility()`. Teks arahan lama "set Target Learn Languages in the 'Languages' section above" dipadamkan. Bug skop dikesan & dibaiki semasa pelaksanaan (definisi helper dialih ke skop modul selepas ReferenceError pada `toggleNoTranslationMode()`).
-- **F2 — Bubar `#otherApiKeysCard` ([public/partials/main.html](public/partials/main.html), [public/config.js](public/config.js)):** kad "Other API Keys" dibuang sepenuhnya daripada Seksyen 1; input Cloudflare Workers AI (Auto-Subs) + AssemblyAI (+ butang Test) kini accordion inline `#subToolboxAutoSubsGroup` BETUL-BETUL di bawah togol Sub Toolbox dalam kad `#otherSettingsCard` (bertajuk semula "Sub Toolbox & Auto-Subs"). `toggleOtherApiKeysSection()` diarah semula untuk menogol accordion sahaja — tiada lagi kad muncul di bahagian atas halaman apabila togol bawah diaktifkan.
-- **F3 — Kad Keluarga baharu ([public/partials/main.html](public/partials/main.html)):** `#subtitleFilteringCard` (Subtitle Filtering & Discovery: Season Packs + Hide SDH/HI) dan `#outputFormatCard` (Output Format & Player Compatibility: Mobile Mode + ASS/SSA Passthrough + Force SRT) dicipta dalam Seksyen Settings; longgokan "Other Settings" dipecahkan mengikut Keluarga Fungsi. Kesemua 5 pasangan varian `*NoTranslation` dipindah bersama kad keluarga masing-masing (kalendar: 14/14 ID `*NoTranslation` kekal).
-- **F4 — Advanced Mode inline ([public/partials/main.html](public/partials/main.html), [public/config.js](public/config.js)):** togol `#betaMode` dipindahkan ke kad Translation & AI Parameters; apabila ON, accordion `#betaModeAccordion` memaparkan `#mismatchRetries` + `#geminiAdvancedCard` + `#providerAdvancedCard` (kandungan penuh dialihkan verbatim) secara INLINE — kad legasi `#advancedSettingsCard` luar seksyen DIBUANG dan reparent JS runtime (`appendChild` semasa init) DIHAPUSKAN sepenuhnya.
-- **F5 — Simetri jarak Secondary Fallback ([public/css/trinity-agents.css](public/css/trinity-agents.css)):** `.trinity-fallback` `margin-bottom: 8px → 24px` (simetri dengan margin-top); `.trinity-agent-hint` (garisan putus-putus) `margin-top: 0.9rem → 1.5rem`, `padding-top: 0.6rem → 0.85rem` — jarak atas-bawah sub-kad kemas sekata dalam Basic & Pro Mode.
-
-### Added
-
-- **Kunci i18n `config.familyCards.*` ([locales/](locales/en.json)):** `filteringTitle`, `outputTitle`, `toolboxTitle`, `autoSubsNote` ditambah ke kesemua 5 locale (en, es, ar, pt-br, pt-pt).
-- **Kontrak CSS A13 dikemas kini ([src/services/trinity-mode-switch-regression.test.js](src/services/trinity-mode-switch-regression.test.js)):** assertion margin-bottom dinaikkan kepada 24px + assertion baharu `.trinity-agent-hint { margin-top: 1.5rem }`.
-
-### Preserved
-
-- **Kontrak payload sifar kerosakan:** kesemua medan JSON kekal nama/rupa sama (`learnMode`, `learnTargetLanguages`, `subToolboxEnabled` + varian, `enableSeasonPacks`, `excludeHearingImpairedSubtitles`, `convertAssToVtt`, `forceSRTOutput`, `mobileMode`, `betaModeEnabled`, `advancedSettings.mismatchRetries`, `cloudflareWorkersApiKey`, `assemblyAiApiKey`, `otherApiKeysEnabled`, `trinity.*`, `providers.*`, `agentB`). Serialization via `getElementById` (lokasi DOM tidak relevan); pautan `?config=` lama 100% serai (normalizeConfig murni JSON→JSON). Verifikasi: ID fungsional 100% kekal (hanya shell legasi dibuang), 0 ID duplikasi, keseimbangan tag identik baseline (div 304/304, span 211/211), `npm test` 385 = 384 PASS / 0 FAIL / 1 SKIP (baseline terpelihara), Playwright live 0 console error dengan F1/F2/F4 toggle + Just-Fetch roundtrip LULUS.
+- **Reorganized the entire configuration page into functional family cards:** every setting now lives in the card it logically belongs to, instead of a sprawling catch-all "Other Settings" pile:
+  - The Learn Mode controls moved into the Learn Targets card in the Languages section, with inline progressive disclosure for its order/italic/language options.
+  - The "Other API Keys" card was dissolved; the Cloudflare Workers AI and AssemblyAI inputs now sit in an inline accordion directly under the Sub Toolbox toggle.
+  - Two new family cards were created — Subtitle Filtering & Discovery (season packs, hide SDH/HI) and Output Format & Player Compatibility (Mobile Mode, ASS/SSA passthrough, Force SRT) — and every `*NoTranslation` variant moved alongside its family.
+  - The Advanced Mode toggle moved inside the Translation & AI Parameters card with its content inlined, removing the legacy floating advanced card and all runtime DOM re-parenting.
+  - Secondary Fallback spacing was symmetrized for both Basic and Pro modes.
+- **Shipped new `config.familyCards.*` translation keys in all five locales** and updated the CSS contract tests for the new spacing.
+- **Zero payload breakage:** all JSON field names are unchanged, legacy `?config=` links still load 100%, all functional element IDs preserved with zero duplicates.
 
 ## SubFaber v3.9.44 (2026-10-14) — Trinity 4-State DOM Morph: Format/Door, Key Badge & Fresh-State Fixes
 
-### Fixed
+### 🐛 Bug Fixes
 
-- **Isu 1 — Format/Door hilang, lencana 'No key' kaku & Secondary Fallback ter-reset selepas togol mod ([public/js/trinity-agents.js](public/js/trinity-agents.js)):** `renderCards()` masih melakukan `cardsWrap.innerHTML = ''` pada setiap pertukaran Basic ↔ Pro. Walaupun snapshot dipulihkan oleh v3.9.43, tiga kesan sampingan kekal: (a) dropdown Format/Door pada Custom tidak dipulihkan kerana `stored.format` bernilai legacy pendek (`'openai'`/`'gemini'`) yang tidak memadankan `<option>` door penuh → dropdown menjadi kosong; (b) lencana API key kekal 'No key' kerana pengisian programatik `.value` tidak mencetuskan event `input`; (c) status Secondary Fallback ter-reset semasa repopulasi. Dibaiki dengan seni bina **4-State DOM Morph**:
-  1. **`ensureCardsBuilt()`:** DOM kad (3 ejen) dibina SEKALI sahaja (idempotent) — tiada lagi pemusnahan DOM pada laluan togol; listener dipasang sekali.
-  2. **`applyModeVisibility()`:** pertukaran Basic ↔ Pro HANYA menogol kelas `.trinity-mode-hidden` pada kad Preflight/Inspector (HIDE, bukan LOCK) dan `.trinity-mode-basic` pada bekas kad (menyembunyikan hint Pro-only `.trinity-pro-only`) — semua nilai input kekal 100% utuh tanpa bina semula.
-  3. **`updateKeyBadge()` + peta `FORMAT_TO_DOOR_VALUE`/`formatToDoorValue()`:** lencana dikemas kini selepas pengisian programatik (berpagar — status ujian Valid/Invalid tidak ditimpa); dropdown Format/Door dipulihkan daripada `stored.format` legacy DAN `stored.door`.
-  4. **`resolveEffectiveDoor()`:** medan `door` dalam snapshot & payload kini konsisten dengan pilihan dropdown Format/Door pengguna (sebelum ini door lalai registry boleh tidak sepadan dengan `format` legacy yang dihantar).
-- **Isu 2 — Fresh state auto-memilih 'Google Gemini' + 'gemini-3-flash-preview' ([public/js/trinity-agents.js](public/js/trinity-agents.js), `deriveTranslationFromProviders()`):** kriteria lama `entry.apiKey || entry.model` memadankan entri lalai `providers.gemini` (daripada `mainProvider: 'gemini'` konfigurasi kosong) walaupun tiada kunci API dimasukkan. Fix: entri HANYA dipetakan apabila `apiKey` tidak kosong ATAU `baseUrl` tidak kosong (Custom/Proxy); lapisan legasi `geminiApiKey` dan blok seed legasi dalam `applyAgentValues()` turut digate kunci sebenar — fresh state `/#/configuration` kini memaparkan '— Select provider —', '— Select model —' dan 'No key' sepenuhnya kosong.
+- **Fixed three side effects that survived the mode-switch state preservation:** switching Basic ↔ Pro no longer clears the Custom Format/Door dropdown (legacy short values now map to the full door options), no longer freezes the API-key badge on "No key" (the badge updates after programmatic fills), and no longer resets the Secondary Fallback state during repopulation. The agent-card DOM is now built once and mode switches only toggle visibility classes — every input value stays 100% intact across switches.
+- **Fixed a fresh configuration page auto-selecting 'Google Gemini' + a model with no key entered:** the provider-derivation logic previously matched an empty default provider entry. A provider is now mapped only when an API key or custom base URL actually exists, so a fresh page shows "— Select provider —", "— Select model —", and "No key" cleanly empty.
 
-### Changed
+### ⚡ Improvements
 
-- **Isu 3 — Sub-kad Secondary Fallback sempit ([public/css/trinity-agents.css](public/css/trinity-agents.css)):** ruang bernafas diluaskan — `margin-top: 24px`, `margin-bottom: 8px` pada `.trinity-fallback`; baris kepala `.trinity-fallback-head` `padding: 16px 20px`; kandungan `.trinity-fallback-fields` `padding: 0 20px 16px` (padding pada medan supaya tiada jalur kosong bila toggle OFF).
-- **Isu 4 — Tab aktif 'Basic Mode / Pro Mode' tanpa kontra ([public/css/trinity-agents.css](public/css/trinity-agents.css)):** tab aktif kini menggunakan tema rasmi Biru SubFaber — `linear-gradient(135deg, #2563eb 0%, #1d4ed8 100%)`, teks putih `#ffffff`, sub-keterangan putih lembut `rgba(255, 255, 255, 0.85)`, bayang `0 4px 12px rgba(37, 99, 235, 0.25)`; tab tidak aktif teks kelabu gelap `#475569` dengan hover lembut; `transition: all 0.2s ease` pada kedua-dua keadaan.
+- **Gave the Secondary Fallback sub-card more breathing room** and styled the active Basic/Pro mode tab with the official SubFaber blue gradient, soft-hover inactive tabs, and smooth transitions. Five new regression cases (A9–A13) lock the DOM-morph architecture, fresh-state guard, badge updates, and CSS contract.
 
-### Added
+## SubFaber v3.9.43 (2026-10-14) — Trinity Non-Destructive Mode Switch: State Preserved Across Basic ↔ Pro
 
-- **Regression test 5 kes baharu A9-A13 ([src/services/trinity-mode-switch-regression.test.js](src/services/trinity-mode-switch-regression.test.js)):** A9 renderCards tanpa pemusnahan DOM (ensureCardsBuilt + applyModeVisibility); A10 laluan togol manual tanpa `innerHTML`; A11 guard kredential sebenar dalam `deriveTranslationFromProviders` (fresh state kekal kosong); A12 pemulihan Format/Door + `updateKeyBadge` + gate `legacyKey`; A13 kontrak CSS (gradien biru, margin 24px/8px, padding 16px 20px, kelas `.trinity-mode-hidden`). Jumlah kes: 12 → 17.
+### 🐛 Bug Fixes
 
-### Preserved
-
-- Kontrak payload sifar perubahan bentuk: `trinity.{preflight,translation,inspector}` = `{apiKey,format,baseUrl,model,provider,door,isCustom,enabled}` (format kekal nilai legacy pendek sepadan `VALID_FORMATS` keyDetector); `gemini*`; `multiProviderEnabled`/`secondaryProvider*`/`providers.<key>` (MERGE); `agentB`. Verified live via Playwright: 9/9 medan identik merentas Basic → Pro → Basic (termasuk door `gemini-native`, key, baseUrl, fallback ON + provider + key); fresh state `''`/`''`/`No key`; kontra-kes kunci sebenar tetap dipetakan; `collectConfigPatch()` dalam Basic memelihara `preflight`/`inspector` (non-destructive save).
-
-## SubFaber v3.9.43 (2026-10-14) — Trinity Non-Destructive Mode Switch: State Preserved Across Basic <-> Pro
-
-### Fixed
-
-- **State loss kritikal semasa pertukaran Basic ↔ Pro Mode ([public/js/trinity-agents.js](public/js/trinity-agents.js), [public/config.js](public/config.js)):** pengguna mengisi Provider, API Key, Model (+ Secondary Fallback) dalam kad Agent Translation pada Basic Mode → tekan Pro Mode → tekan semula Basic Mode → SEMUA input terpadam kepada placeholder ('— Select provider —', 'No key', '— Select model —'). Tiga punca akar dibaiki:
-  1. **Rujukan silang skop gagal:** `currentConfig` diisytiharkan `let` skop-IIFE dalam [public/config.js](public/config.js) — TIDAK kelihatan kepada modul Trinity; guard `typeof currentConfig !== 'undefined'` menelan ReferenceError dan memulangkan `null` setiap masa. Fix: getter LIVE `window.__SUB__getCurrentConfig` didedahkan oleh config.js; `getEffectiveConfig()` mengutamakannya dengan jaring keselamatan `_lastKnownConfig`.
-  2. **Pemusnahan DOM tanpa rakaman:** handler `change` togol mod memanggil `renderCards()` yang melakukan `cardsWrap.innerHTML = ''` tanpa merakam nilai DOM semasa. Fix: fungsi baharu `snapshotVisibleAgentState()` merakam DOM → config SEBELUM bina semula, dengan semantik non-destructive — ejen yang kadnya tiada dalam mod semasa DILANGKAU (nilai lama dikekalkan).
-  3. **Padam senyap merentas mod:** `collectConfigPatch()` menghantar `trinity.preflight`/`trinity.inspector` sebagai `{}` dalam Basic Mode (kad tiada dalam DOM) — Save memusnahkan kredential Pro. Fix: nilai lama dipulihkan daripada `currentConfig.trinity` untuk ejen yang kadnya tiada; `populateProviderDropdown()`/`applyFallbackValues()`/`refreshFallbackProviderOptions(true)` memelihara pilihan semasa dan hanya menulis bila nilai sebenar wujud.
-
-### Added
-
-- **Fallback rehidrasi `providers.<mainProvider>` ([public/js/trinity-agents.js](public/js/trinity-agents.js), `deriveTranslationFromProviders()`):** hash config lama yang menyimpan kredential hanya dalam `providers.<mainProvider>`/`providers.gemini` (bukan `trinity.translation`) kini direhidrasi dengan betul ke kad Agent Translation — menutup simptom kad kosong pada URL `?config=...`.
-- **Regression test 12 kes ([src/services/trinity-mode-switch-regression.test.js](src/services/trinity-mode-switch-regression.test.js)):** kontrak A1-A8 (sumber frontend: getter LIVE, urutan snapshot→renderCards, pemeliharaan preflight/inspector/pilihan provider/fallback, fallback providers) + B1-B4 (backend `normalizeConfig`: roundtrip trinity mode+3 ejen, secondaryProvider+providers, agentB terbitan terselamat merentas pertukaran mod, agentB tidak aktif dalam Basic tulen).
+- **Fixed critical state loss when toggling Basic ↔ Pro mode:** filling in Provider, API Key, Model, and Secondary Fallback, then switching to Pro and back to Basic, no longer wipes every input back to its placeholder. Three root causes were fixed: (1) a cross-module config reference that silently swallowed an error and always returned null — a live config getter now feeds the Trinity module with a safety net; (2) the mode-toggle handler rebuilt the card DOM without first recording current values — a non-destructive snapshot is now taken before any rebuild, skipping agents whose cards are hidden in the current mode; (3) saving from Basic Mode used to send empty objects for the Pro-only agents, destroying their stored credentials — previous values are now restored for agents without visible cards.
+- **Added fallback rehydration for configs storing credentials under `providers.<mainProvider>`:** older config links that predate the Trinity structure now hydrate the Agent Translation card correctly, fixing empty cards on `?config=...` URLs. Twelve regression cases (A1–A8 frontend, B1–B4 backend) lock the contract.
 
 ### Preserved
 
 - Kontrak payload sifar perubahan bentuk: `trinity.{preflight,translation,inspector}` = `{apiKey,format,baseUrl,model,provider,door,isCustom,enabled}`; `geminiApiKey`/`geminiModel`/`geminiKeyRotation*`/`geminiApiKeys`; `multiProviderEnabled`/`secondaryProviderEnabled`/`secondaryProvider`/`providers.<key>` (MERGE); `agentB.{enabled,apiKey,baseUrl,format,model,preflightModel}`. Verified live via Playwright: Basic (provider/key/model/fallback ON+provider+key) → Pro → Basic = 100% utuh; Pro (Preflight/Inspector key) → Basic → Pro = utuh.
 
-## SubFaber v3.9.42 (2026-10-14) — Secondary Fallback Provider: Toggle On/Off + Premium Card Redesign
+## SubFaber v3.9.42 (2026-10-14) — Secondary Fallback Provider: On/Off Toggle + Premium Card Redesign
 
-### Changed
+### ⚡ Improvements
 
-- **Sub-kad Secondary Fallback Provider dinaik taraf dari segi reka bentuk ([public/js/trinity-agents.js](public/js/trinity-agents.js)):** reka bentuk lama "klik header untuk membuka kandungan" dibuang sepenuhnya. Header kini sentiasa terlihat dengan label 🛟 + status chip ON/OFF, dan toggle on/off ala-iOS (pola switch dengan slider biru) dipindah ke penjuru KANAN header — mengikuti arahan owner ("toggle button on off dekat sebelah kanan, bukan kena click lepastu dia keluar"). Kandungan medan (Provider/API Key/Base URL/Format/Model) disembunyikan secara HIDE (bukan LOCK) bila toggle dimatikan; behavior smart visibility medan Custom (`trinity-custom-only`) kekal seperti asal.
+- **Redesigned the Secondary Fallback sub-card:** the old click-the-header-to-open design was replaced. The header is now always visible with a status chip and an iOS-style on/off toggle in the top-right corner; the provider/key/base-URL/format/model fields hide (not lock) when the toggle is off, and the custom-field smart visibility is unchanged.
 
-- **Kad premium ([public/css/trinity-agents.css](public/css/trinity-agents.css)):** sempadan dashed `#cbd5e1` digantikan dengan kad premium — border solid `#e2e8f0`, radius 10px, gradient background `#f8fafc → #f1f5f9`, box-shadow halus, status chip pill (OFF kelabu `#e2e8f0` / ON hijau `#dcfce7`), toggle switch 44×24px dengan transisi 0.2s dan fokus keyboard (`focus-visible` ring). Fully keyboard accessible (input checkbox disembunyikan, label `for` binding, `aria-label` kekal).
+- **Premium card styling:** the dashed border was replaced with solid borders, a subtle gradient, soft shadow, a pill status chip (grey OFF / green ON), and a 44×24px toggle switch with keyboard focus rings — fully keyboard accessible.
 
-### Fixed
+### 🐛 Bug Fixes
 
-- **Race rehydration status chip ([public/js/trinity-agents.js](public/js/trinity-agents.js), `applyFallbackValues()`):** penetapan `.checked` secara programatik semasa rehydrate TIDAK menyalakan event `change` — status chip ON/OFF dan class `is-on` akan kekal stale selepas konfigurasi disimpan dimuat semula. Fix: status chip (`#trinity-translation-fallback-status`) disegerakkan secara manual dalam laluan rehydrate, selari dengan `updateFallbackFieldVisibility()`.
+- **Fixed a rehydration race on the status chip:** programmatically setting the checkbox during rehydration does not fire a `change` event, so the ON/OFF chip could stay stale after reloading a saved configuration. The chip is now synced manually in the rehydration path. The payload contract is completely unchanged.
 
-### Preserved
-
-- Kontrak payload sifar perubahan: checkbox id `trinity-translation-fallback-enabled` dikekalkan, jadi `readFallbackState()` / `applyFallbackValues()` / `collectConfigPatch()` dan skema server (`multiProviderEnabled` / `secondaryProvider*` / `providers.<key>` / slot `custom_secondary`) tidak berubah langsung.
 
 ## SubFaber v3.9.41 (2026-10-14) — Trinity Rehydrate Race Fix: Settings Lost on Reconfigure
 
-### Fixed
+### 🐛 Bug Fixes
 
-- **Setting Trinity hilang semasa reconfigure config hash sedia ada ([public/js/trinity-agents.js](public/js/trinity-agents.js)):** server menyimpan blok `trinity` dengan betul (disahkan pada `/api/get-session/` sebenar — mode=pro + 3 ejen lengkap), tetapi UI kosong selepas buka semula configure. Punca: `applyAgentValues()` early-`return` pada mode-mismatch (default Basic vs stored Pro) dan bergantung pada `renderCards()` → `applyAgentValues(getEffectiveConfig())` — global `currentConfig` belum siap semasa muat halaman, jadi semua nilai ejen hilang. Bug hanya muncul pada reconfigure (fresh state mode sepadan → tiada early-return). Fix: `modelSyncHook` peringkat modul (diregistri oleh `mount()`) membolehkan rehydrate menghantar **cfg sebenar** untuk bina semula kad + segmented control; pengawal re-entrancy `_rehydratingMode` menghalang gelung dan menghalang handler `change` menimpa kad yang baru diisi; `renderCards(cfgOverride)` menerima config sebenar. Toggle manual Basic↔Pro tidak berubah. `collectConfigPatch()` tidak disentuh — sifar perubahan skema payload; roundtrip rehydrate→DOM→collectConfigPatch verified PASS.
+- **Fixed Trinity settings disappearing when reconfiguring an existing config link:** the server stored the `trinity` block correctly (verified against the live session API), but the UI came up empty on reopen. The value-application step bailed out early on a mode mismatch (default Basic vs stored Pro) and relied on a global config variable that was not yet ready during page load, so all agent values were lost. The bug only appeared on reconfigure — a fresh page had a matching mode and never hit the early return. A module-level sync hook now lets the rehydration path pass the real config into the card rebuild, with a re-entrancy guard preventing loops and preventing the mode-toggle handler from overwriting freshly filled cards. Manual Basic↔Pro toggling is unchanged, and the payload schema is untouched.
 
-## SubFaber v3.9.40 (2026-10-14) — Trinity Wrapped in "Translation API Keys" Parent Card (Full Family Structure)
+## SubFaber v3.9.40 (2026-10-14) — Trinity Wrapped in a "Translation API Keys" Parent Card
 
-### Changed
+### ⚡ Improvements
 
-- **Trinity dibungkus dalam kad induk "Translation API Keys" ([public/js/trinity-agents.js](public/js/trinity-agents.js), [public/css/trinity-agents.css](public/css/trinity-agents.css)):** struktur keluarga API Keys kini selari penuh dengan Languages — API Keys (Bapak) → Subtitles API Keys (Anak 1) + Translation API Keys (Anak 2, bungkusan Trinity) + close section paling bawah. Kad induk `.card`/`.card-header` + `.collapse-btn` penjuru kanan, **collapsed default** — kandungan (togol Basic/Pro + kad agent Preflight/Translation/Inspector) hanya muncul selepas expand. Kad induk disisip DALAM `.section-grid` sebelum footer close (sebelumnya terpampang selepas grid). Padding-right header 0 supaya butang lipat memegang tepi kanan — pariti pixel (gap 0=0) dengan kad Source Languages.
-- **Bug fix kritikal:** ID `#trinityRoot` berganda (bekas luar + kad induk) menyebabkan state terbalik dan `HierarchyRequestError` — kini satu elemen satu id (kad induk = root). Sifar perubahan kontrak payload (`#trinityModeToggle`, `collectConfigPatch()`, rehydrate utuh).
+- **Wrapped the Trinity cards inside a "Translation API Keys" parent card:** the API Keys section now mirrors the Languages family structure — Subtitles API Keys and Translation API Keys (the Trinity wrapper) as sibling cards with a single section close at the bottom. The parent card is collapsed by default with a collapse button in the top-right corner, pixel-aligned with the Source Languages card.
+- **Fixed a critical duplicate-ID bug:** a duplicated `#trinityRoot` ID (outer container + parent card) caused inverted state and a DOM hierarchy error — one element now carries the ID. Zero payload-contract changes.
 
-## SubFaber v3.9.39 (2026-10-14) — Trinity Cards Match Languages Family Structure (Header Collapse Buttons, Single Section Close)
+## SubFaber v3.9.39 (2026-10-14) — Trinity Cards Match the Languages Family Structure
 
-### Changed
+### ⚡ Improvements
 
-- **Kad agent Trinity kini ikut struktur keluarga Languages ([public/js/trinity-agents.js](public/js/trinity-agents.js), [public/css/trinity-agents.css](public/css/trinity-agents.css)):** footer "Close section" dalam kad Trinity dibuang sepenuhnya — section API Keys kini hanya ada SATU close footer di bawah (pola Bapak/Anak: section = Bapak dengan close di bawah; kad anak = `.collapse-btn` di penjuru kanan header, sama seperti Source/Target Languages). Setiap kad Trinity mendapat `.collapse-btn` (`data-collapse="{agent}"`, `aria-expanded`) 40×40 pinned kanan; klik butang atau klik header melipat kad (kandungan `display:none`, header kekal). Collapsed state CSS dikemas kini: sembunyi SEMUA anak kecuali `.card-header`. Sifar perubahan kontrak payload (`#trinityModeToggle`, `collectConfigPatch()`, rehydrate tidak disentuh).
+- **Aligned the Trinity agent cards with the Languages family structure:** the "Close section" footer inside the Trinity cards was removed — the API Keys section now has a single close footer at the bottom, with each child card carrying its own top-right collapse button exactly like the Source/Target Languages cards. Clicking the button or the header collapses the card (content hidden, header kept). Zero payload-contract changes.
 
-## SubFaber v3.9.38 (2026-10-14) — Trinity Mode Toggle Inside Card Family
+## SubFaber v3.9.38 (2026-10-14) — Trinity Mode Toggle Inside the Card Family
 
-### Changed
+### ⚡ Improvements
 
-- **Togol Basic/Pro kini duduk dalam kad keluarga yang sama dengan kad agent Trinity ([public/js/trinity-agents.js](public/js/trinity-agents.js), [public/css/trinity-agents.css](public/css/trinity-agents.css)):** sebelum ini `.trinity-mode-bar` dilekat terus pada `#trinityRoot` tanpa permukaan kad — "duduk luar" berbanding kad agent. `mount()` kini membungkus togol + `#trinityCards` dalam `div.trinity-card-family` (flex column, gap/padding 1rem, border, radius 14px, `--bg-card`) — togol di atas, kad agent di bawah, dalam satu permukaan kad yang sama. `#trinityModeToggle` dan semua ID/kontrak (`collectConfigPatch()`, `applyAgentValues()`, rehydrate) tidak berubah — sifar perubahan skema payload.
+- **Moved the Basic/Pro toggle onto the same card surface as the Trinity agent cards:** the toggle previously sat bare on the root container, visually detached from the agent cards. It now sits above the cards inside one shared card surface. All element IDs and payload contracts are unchanged.
 
-## SubFaber v3.9.37 (2026-10-14) — Trinity Card Footer Close Section: Scoped Classes (API Keys Duplicate Footer Fix)
+## SubFaber v3.9.37 (2026-10-14) — Trinity Card Footer: Scoped Classes (Duplicate Footer Fix)
 
-### Fixed
+### 🐛 Bug Fixes
 
-- **Footer "Close section" kad Trinity tidak lagi berlanggar dengan footer section utama ([public/js/trinity-agents.js](public/js/trinity-agents.js), [public/css/trinity-agents.css](public/css/trinity-agents.css)):** kad Trinity (dalam section API Keys) sebelum ini "hijack" kelas section-level `.section-footer` / `.section-close-link`, menyebabkan section API Keys memaparkan DUA footer "Close section" (footer utama section + footer dalam kad Trinity) — tidak konsisten dengan Languages & Settings yang hanya satu. Footer kad Trinity kini guna kelas trinity-scoped `.trinity-agent-footer` / `.trinity-agent-close` / `.trinity-agent-close-icon` dengan token style disalin 1:1 daripada `.section-close-link` configure.css (font 0.9rem/700, pill dashed 999px, hover glow, `:focus-visible` ring, tema dark & blackhole). Klik butang tetap melipat kad (`aria-expanded` toggle), dan selector kontrak `data-section-close` dalam config.js tidak disentuh — sifar perubahan skema payload/serialisasi.
+- **Fixed the Trinity cards hijacking section-level footer classes:** the Trinity cards previously reused the section-level footer classes, making the API Keys section render TWO "Close section" footers. The Trinity card footers now use their own scoped classes with styles copied 1:1 from the section close link, including dark-theme support. Zero payload or serialization changes.
 
-## SubFaber v3.9.36 (2026-10-14) — Trinity Consistency Follow-up: Section Fonts, Collapse Buttons, English Copy
+## SubFaber v3.9.36 (2026-10-14) — Trinity Consistency Follow-up: Fonts, Collapse Buttons, English Copy
 
-### Fixed
+### ⚡ Improvements
 
-- **Konsistensi font kad Trinity dengan Languages/Settings ([public/js/trinity-agents.js](public/js/trinity-agents.js), [public/css/trinity-agents.css](public/css/trinity-agents.css)):** tajuk agent kini guna kelas `.section-title` (1.1rem / 700) dan keterangan guna `.section-description` (0.85rem / 400) — token yang sama dengan section utama, menghapuskan saiz ad hoc yang menyebabkan font tidak konsisten.
-- **Butang lipat setiap kad Trinity:** setiap agent card kini mempunyai butang `collapse-btn section-collapse-btn` di hujung kanan header — komponen sama dengan section utama; klik melipat kandungan kad (`aria-expanded` dikemas kini). Tiada konflik dengan listener kad legasi `config.js` (kad Trinity tidak berkelas `.card`).
-- **Bahasa rojak dibuang:** semua teks UI Trinity (description Preflight/Translation/Inspector + hint togol mod) kini English sepenuhnya, selari mandat UI SubFaber.
+- **Unified the Trinity card typography with the main sections** (same title/description classes and sizes), gave every Trinity agent card a collapse button matching the main sections, and translated all remaining mixed-language Trinity UI copy to full English.
 
-## SubFaber v3.9.35 (2026-10-14) — Trinity Card Parity with Main Cards + Segmented Basic/Pro Mode Toggle
+## SubFaber v3.9.35 (2026-10-14) — Trinity Card Parity with Main Cards + Segmented Basic/Pro Toggle
 
-### Changed
+### ⚡ Improvements
 
-- **Header ketiga-tiga kad Trinity dipertingkat kepada standard kad utama ([public/js/trinity-agents.js](public/js/trinity-agents.js)):** Agent Preflight, Agent Translation dan Agent Inspector kini menggunakan struktur `.card-header > .card-title-group` dengan `.card-icon` SVG 32×32 unik per agent (gaya Apple HUD, tema-aware), `h3.card-title`, `.card-description` sub-judul, dan perenggan keterangan penuh `p.trinity-agent-desc` — menutup jurang visual "langit dengan bumi" berbanding 11 kad konfigurasi utama.
-- **Togol dwimod Basic/Pro diganti segmented control ([public/js/trinity-agents.js](public/js/trinity-agents.js), [public/css/trinity-agents.css](public/css/trinity-agents.css)):** butang segmented `role="radiogroup"`/`role="radio"` dengan label + hint per mod ("Agent Translation sahaja" / "Preflight + Translation + Inspector"), sasaran sentuh min-height 44px, `:focus-visible` 2px, state `.active`, dan `prefers-reduced-motion`. Input `#trinityModeToggle` dikekalkan sebagai checkbox tersembunyi — kontrak `collectConfigPatch()`/`applyAgentValues()` 100% tidak berubah (sifar perubahan skema payload).
+- **Upgraded all three Trinity card headers to the main-card standard:** Agent Preflight, Agent Translation, and Agent Inspector now use the same header structure as the main configuration cards, each with a unique theme-aware 32×32 SVG icon, title, subtitle, and full description — closing the visual gap with the 11 main cards.
+- **Replaced the Basic/Pro toggle with a segmented control:** accessible radio-group buttons with per-mode labels and hints, 44px touch targets, visible focus rings, and reduced-motion support. The hidden checkbox input is preserved, so all payload contracts are 100% unchanged.
+- **Accessibility fix:** the "Basic Mode" / "Pro Mode" labels are now real focusable buttons with properly synced `aria-checked` state, instead of static spans.
 
-### Fixed
+## SubFaber v3.9.34 (2026-10-14) — Secondary Fallback Field Order Aligned with the Primary Card
 
-- **Aksesibiliti togol mod:** label "Basic Mode"/"Pro Mode" kini butang sebenar boleh-fokus (sebelumnya span statik tanpa label berpaut); `aria-checked` dikemas kini segerak dengan keadaan togol.
+### 🐛 Bug Fixes
 
-## SubFaber v3.9.34 (2026-10-14) — Secondary Fallback Field Order Alignment with Primary Card
+- **Aligned the Secondary Fallback field order with the primary card:** the Base URL block moved from last place (after Model) to above Format/Door, matching the primary card's hierarchy: Provider → API Key (+ Test) → Base URL → Format/Door → Model. Applies to both Basic and Pro modes. All field IDs, visibility logic, serialization, and rehydration are unchanged.
 
-### Fixed
+## SubFaber v3.9.33 (2026-10-13) — Custom/Proxy Secondary Fallback: Dedicated `custom_secondary` Slot
 
-- **Susunan medan sub-kad 🛟 Secondary Fallback ([public/js/trinity-agents.js](public/js/trinity-agents.js)):** blok Base URL dipindahkan dari kedudukan terakhir (selepas Model) ke atas Format/Door, menyelaraskan hierarki sub-kad fallback dengan kad utama: Provider → API Key (+ ✓ Test) → Base URL → Format/Door → Model. Terpakai untuk kedua-dua mode Basic dan Pro (sub-kad dibina oleh `buildSecondaryFallbackRow()` tanpa gating mode). Semua ID medan, logik visibility (`updateFallbackFieldVisibility()`), serialisasi (`collectConfigPatch()`) dan rehidrasi (`applyFallbackValues()`) tidak berubah.
+### 🆕 New Features
 
-## SubFaber v3.9.33 (2026-10-13) — Custom/Proxy Secondary Fallback: Dedicated custom_secondary Slot (Anti-Collision)
+- **Added a dedicated `custom_secondary` provider slot:** the scenario Primary Custom + Secondary Custom (two different proxy endpoints) is now supported without data collision — the fallback configuration no longer overwrites the primary's `providers.custom` entry. The slot carries `{ enabled, apiKey, baseUrl, model, door }` and accepts both OpenAI-compatible and Gemini-native doors. The fallback UI shows the Base URL, a Format/Door dropdown, and a free-text model input when the fallback provider is Custom, with legacy `secondaryProvider: 'custom'` configs mapped to the new slot for backward compatibility.
 
-### Added
+### ⚡ Improvements
 
-- **[CUSTOM-SECONDARY] Slot provider berasingan `providers.custom_secondary` ([src/utils/config.js](src/utils/config.js), [src/services/translationProviderFactory.js](src/services/translationProviderFactory.js)):** senario Primary Custom (Crazy Router) + Secondary Custom (Rootsys) kini disokong tanpa data collision — konfigurasi fallback tidak lagi menimpa `providers.custom` milik Primary. Slot membawa `{ enabled, apiKey, baseUrl, model, door }`; `door` menerima `openai-compatible` (lalai) | `gemini-native` (membina GeminiService dengan baseUrl proksi sekunder).
-- **Medan Custom fallback dalam sub-kad 🛟 ([public/js/trinity-agents.js](public/js/trinity-agents.js)):** apabila Fallback Provider = Custom / Proxy, UI memaparkan Base URL, dropdown Format/Door baharu (`trinity-translation-fallback-format`), dan input model TEKS BEBAS (tidak lagi terikat katalog statik); API Key 🔒/👁️ + ✓ Test kekal. Entri Custom kekal tersedia dalam dropdown fallback walaupun Primary ialah Custom.
-- **Rehidrasi backward-compatible ([public/js/trinity-agents.js](public/js/trinity-agents.js)):** config legasi `secondaryProvider: 'custom'` dipetakan ke slot `custom_secondary` dengan fallback bacaan `providers.custom` lama.
+- **Validation and normalization accept the new slot** (base URL + model required; API key optional for local LLMs), and the provider factory builds it through the same SSRF-validated custom builder with a distinct provider name for clear fallback logging. The Custom fallback Test button validates through the universal provider-validation endpoint while the config is stored under `custom_secondary`.
 
-### Changed
+## SubFaber v3.9.32 (2026-10-13) — Secondary Fallback Provider Rescue: Trinity Sub-Card
 
-- **Validasi & normalisasi `custom_secondary` ([src/utils/config.js](src/utils/config.js)):** `KEY_OPTIONAL_PROVIDERS` + `providerIsConfigured` + `firstConfiguredProvider` (slot tidak layak jadi main provider) + dua blok validateConfig menerima `custom_secondary` (baseUrl + model wajib; API key tidak wajib — local LLM).
-- **`createProviderInstance` kes `custom_secondary` ([src/services/translationProviderFactory.js](src/services/translationProviderFactory.js)):** berkongsi builder custom dengan SSRF validation; `providerName` dibezakan (`custom_secondary`) supaya log/statistik fallback jelas; door `gemini-native` membina GeminiService dengan providerParams penuh.
+### 🆕 New Features
 
-### Fixed
+- **Brought the secondary fallback rescue feature fully back to life inside the Trinity UI:** a collapsible "Secondary Fallback Provider" sub-card in the Agent Translation card now carries an enable toggle, a provider dropdown (excluding the active primary provider), an API-key field with a show/hide toggle, a Test button with green/red validation rings, an auto-populated model dropdown, and a conditional Base URL field for custom providers. Legacy `secondaryProvider*` and `providers.*` values rehydrate into the sub-card on load.
 
-- **Butang ✓ Test fallback Custom ([public/js/trinity-agents.js](public/js/trinity-agents.js)):** POST `/api/validate-provider` menghantar `{ provider: 'custom', apiKey, door, baseUrl }` (backend validate mengenal 'custom') sementara config disimpan sebagai `custom_secondary`.
+### ⚡ Improvements
 
-## SubFaber v3.9.32 (2026-10-13) — Secondary Fallback Provider Rescue: Trinity Sub-Card Option A
+- **Reused the existing backend fallback chain with zero schema changes:** the config patch writes the existing multi-provider and secondary-provider fields, so the backend `FallbackTranslationProvider` + `tryFallback()` chain is 100% preserved. Legacy multi-provider DOM elements and dead toggle functions were removed; provider patches now deep-merge so other providers' keys are no wiped on save; and a hardcoded fallback model name was purged in line with the v3.9.31 hardcode purge.
 
-### Added
+### 🐛 Bug Fixes
 
-- **[SECONDARY FALLBACK — Option A] Sub-kad collapsible "🛟 Secondary Fallback Provider" dalam kad Agent Translation ([public/js/trinity-agents.js](public/js/trinity-agents.js)):** ciri talian hayat legasi kembali aktif sepenuhnya dalam Trinity UI — togol "Enable fallback rescue", dropdown provider (kecualikan provider utama aktif), medan API Key dengan togol Mangga 🔒 ↔ Mata 👁️, butang ✓ Test (gelang sempadan hijau/merah `is-valid`/`is-invalid`), dropdown model auto-populate daripada `PROVIDER_MODEL_CATALOG` (tanpa butang Load Models berasingan), dan medan Base URL conditional (Custom sahaja).
-- **Rehidrasi backward-compatible `applyFallbackValues()` ([public/js/trinity-agents.js](public/js/trinity-agents.js)):** nilai lama (`secondaryProvider*` + `providers.*`) dipulihkan ke sub-kad semasa load; dipanggil dari `applyAgentValues()` sedia ada (tiada fungsi rehidrasi bersaing).
+- **Fixed the fallback being silently disabled by the config normalizer:** the provider patch now includes `enabled: true`, without which the normalizer forced `enabled: false` and the factory skipped fallback setup with "not fully configured". Also fixed a `ReferenceError` on a deleted legacy variable declaration — the read now sources from the current config.
 
-### Changed
+## SubFaber v3.9.31 (2026-10-13) — Hardcode Purge: Dynamic 3-Tier Inspector Injection + Graceful Bypass
 
-- **Serialisasi kontrak sedia ada (sifar perubahan skema backend):** `collectConfigPatch()` kini menulis `multiProviderEnabled: true` (bersama-sama apabila togol fallback aktif), `secondaryProviderEnabled`, `secondaryProvider`, dan `providers.<key>.{enabled:true, apiKey, model, baseUrl}` — rantaian `FallbackTranslationProvider` + `tryFallback()` backend dikekalkan 100%.
-- **Pembersihan elemen hantu legasi ([public/partials/main.html](public/partials/main.html), [public/config.js](public/config.js)):** `#enableMultiProviders`, `#multiProvidersContainer`, `#mainProviderSelect`, `#secondaryProviderGroup`, `#secondaryProviderSelect` dipadam; fungsi mati `toggleMultiProviderUI()`, `toggleSecondaryProviderUI()`, `updateMainProviderOptions()`, `updateSecondaryProviderOptions()` dibuang; validasi sekunder kekal dibaca dari `currentConfig` (bukan DOM).
-- **Deep-merge `providers` pada aplikasi patch Trinity ([public/config.js](public/config.js)):** `patch.providers` kini digabung dengan `currentConfig.providers` (Object.assign) — kunci provider legasi lain tidak lagi terpadam semasa simpan.
-- **Hardcode `fallbackModel: 'deepseek-v4.1-flash'` dalam blok agentB `collectConfigPatch()` ([public/js/trinity-agents.js](public/js/trinity-agents.js)) DIGUGURKAN** — selari mandat HARDCODE-PURGE v3.9.31.
+### ⚡ Improvements
 
-### Fixed
+- **Purged all static default model names from the source code:** the models previously hard-coded as defaults during the early testing phase were removed, closing the technical debt from before the Trinity web UI existed and letting user configuration fully drive agent selection.
+- **Introduced a dynamic 3-tier preference hierarchy for the Preflight and Inspector phases:** (1) user web-UI configuration (Trinity cards and the direct agent block, highest priority); (2) server environment fallback (the Inspector/Preflight environment variables plus new alias variables); (3) no values at all → a silent bypass mode.
+- **Made missing credentials non-fatal (graceful bypass):** an unconfigured Preflight or Inspector phase skips itself with a single info log and zero network calls — the primary translation is released directly without a post-translation audit. Per-phase enable flags let users activate only one of the two phases, and the environment documentation was rewritten without any real key values.
 
-- **[INTEGRATION BUG — Backend Review] `enabled: true` ditambah pada `patch.providers[fb.providerId]`:** tanpa medan ini, normalizer `config.js` memaksa `enabled: false` → `isConfigured()` dalam `translationProviderFactory.js` melumpuhkan fallback secara senyap ("not fully configured; skipping fallback setup"). Rantaian kegagalan dikenal pasti semasa Integration Review Backend (GLM 5.3) dan dibetulkan oleh Frontend (Astra).
-- **ReferenceError `multiProviderToggleChecked`** selepas pemadaman deklarasi legasi — pembacaan kini bersumber `currentConfig`.
+## SubFaber v3.9.30 (2026-10-13) — VideoLingo-Grade Persona & Reflect-in-One-Pass (Primary Agent Prompt)
 
-## SubFaber v3.9.31 (2026-10-13) — Hardcode Purge: Dynamic 3-Tier Agent B Injection + Graceful Bypass
+### ⚡ Improvements
 
-### Changed
+- **Upgraded the primary translation agent's persona to a professional Netflix/VideoLingo-grade subtitle translator** — fluent in both the source and target languages and their cultures, with deep understanding of slang, humor, metaphor, and character subtext. The two sacred mandates are preserved: slot/ID parity, and native-speaker cinema-grade sentences.
+- **Added a `<translation_principles>` block:** idiomatic fidelity (meaning and emotional impact over word-for-word literalism) and natural conversational flow (casual, concise dialogue that follows real human speech rhythm).
 
-- **[HARDCODE-PURGE] Nama model lalai statik Agent B DIGUGURKAN sepenuhnya daripada kod sumber ([src/utils/config.js](src/utils/config.js), [src/handlers/subtitles.js](src/handlers/subtitles.js), [src/services/agentBInspector.js](src/services/agentBInspector.js), [src/services/channels/openaiChannel.js](src/services/channels/openaiChannel.js)):** `deepseek-v4-pro` / `kimi-k3` / `deepseek-v4.1-flash` tidak lagi dijaga sebagai lalai dalam `.js` — hutang teknikal fasa ujian awal (pra-Web UI Trinity) dibersihkan; risiko credential/model leak dikawal; konfigurasi dinamik pengguna kini berfungsi sepenuhnya.
-- **[DYNAMIC 3-TIER] Hierarki keutamaan baharu bagi Preflight (Fasa 0) & Inspector (Fasa 1) ([src/utils/config.js](src/utils/config.js), blok agentB):** (1) Konfigurasi pengguna Web UI — kad Trinity `trinity.preflight` / `trinity.inspector` + blok `agentB` langsung (keutamaan tertinggi); (2) fallback env pelayan — `AGENT_B_*` + alias baharu `PREFLIGHT_API_KEY`, `PREFLIGHT_MODEL`, `INSPECTOR_API_KEY`, `INSPECTOR_BASE_URL`, `INSPECTOR_MODEL`; (3) tiada nilai → **Mod Langkau (Bypass) senyap**.
-- **Format pintu Trinity (`format`) turut membaca kad UI** (inspector → preflight → env) sebelum lalai `'auto'` (autodetect keyDetector kekal).
-- **Ujian regresi ([src/services/agentB-inspector-regression.test.js](src/services/agentB-inspector-regression.test.js)) dikemas kini kepada kontrak dinamik:** hierarki mandat (kimi-k3 standalone / deepseek-v4-pro / v4.1-flash fallback) kini diuji melalui suntikan eksplisit; instance tanpa model diuji sebagai bypass senyap.
-
-### Added
-
-- **[GRACEFUL-BYPASS] Fasa tanpa model/kredensil TIDAK menggagalkan terjemahan utama:** Preflight kosong → log `[INFO] [Preflight] Skipped (not configured / disabled by user)` + `runPreflightPass()` return null (non-blocking); Inspector kosong → log `[INFO] [AgentB] Inspector skipped (not configured / disabled by user)` + `runSemanticInspection()` return `{valid:true, skipped:'inspector_not_configured'}` tanpa panggilan rangkaian — terjemahan Agent A dilepaskan terus tanpa audit pasca-terjemahan.
-- **Flag ema per-fasa `agentB.preflightEnabled` / `agentB.inspectorEnabled` ([src/utils/config.js](src/utils/config.js)):** pengguna boleh mengaktifkan satu fasa sahaja (Inspector tanpa Preflight atau sebaliknya).
-- **Dokumentasi env Trinity ([.env.example](.env.example)):** seksyen Agent B ditulis semula — hierarki 3-lapis + alias env PREFLIGHT_*/INSPECTER_* didokumentasikan tanpa sebarang nilai kunci sebenar.
-
-### Verification
-
-- Audit imbasan `src/`: tiada kunci API mentah (`sk-` sebenar) dalam kod; domain `rootsys.cloud` tinggal dalam komen forensik/sejarah sahaja. `npm test`: **368 tests — 367 PASS, 0 FAIL, 1 SKIP** — selari baseline; monotonic ✓. Prettier ✓; ESLint 0 error (221 warning pra-wujud) ✓. Tiada fail `public/` disentuh.
-
-## SubFaber v3.9.30 (2026-10-13) — VideoLingo-Grade Persona & Reflect-in-One-Pass (Agent A Prompt)
-
-### Changed
-
-- **[PERSONA VIDEOLINGO] Role Agent A dinaik taraf ([src/services/translationEngine.js](src/services/translationEngine.js), `createXmlBatchPrompt()`):** teks Role generik ("Expert subtitle translator...") diganti persona profesional Netflix/VideoLingo — "professional Netflix subtitle translator, fluent in both ${sourceLabel} and ${targetLabel}, as well as their respective cultures", dengan kefahaman mendalam slanga, humor, metafora dan subteks emosi watak. Mandat dua kerja kekal: (1) slot/ID parity sacred, (2) ayat penutur jati bertarap pawagam.
-- **[PRINSIP VIDEOLINGO] Blok `<translation_principles>` baharu:** (1) Idiomatic fidelity — maksud & impak emosi watak mengatasi terjemahan harfiah kata-demi-kata; (2) Natural conversational flow — dialog santai, ringkas, mengikut rentak pertuturan semula jadi manusia.
-
-### Added
-
-- **[REFLECT-IN-ONE-PASS] Teknik refleksi two-pass VideoLingo dalam SATU panggilan API (bahagian Style):** model diarahkan meneliti secara mental draf terjemahan langsung, menilai kelancaran sebagai penutur jati, memurnikan sehingga bertaraf pawagam, dan HANYA memuntahkan hasil akhir dalam tag output — dilarang mengeluarkan draf/teks berfikir. Kelajuan & kos token 4+50+2 dijaga sepenuhnya.
-
-### Verification
-
-- Kontrak integriti XML 100% kekal: `<answer><s id="N">` + prefill anchor, rule PRESERVE [br]/<i>/dash (kiraan terkunci), `SUBFABER_BATCH_SIZE = 50` + window 4/2, Agent B 6-crime inspector — tiada satu pun disentuh. Tiada fail `public/` diubah. `npm test`: **368 tests — 367 PASS, 0 FAIL, 1 SKIP** — selari baseline; monotonic ✓. Prettier ✓; ESLint 0 error ✓.
+- **Added the VideoLingo reflect-in-one-pass technique inside a single API call:** the model mentally reviews its direct-translation draft, evaluates fluency as a native speaker, polishes it to cinema grade, and outputs only the final result — drafts and thinking text are forbidden. Speed and token cost are fully preserved, and the XML integrity contract (slot/ID anchors, preserve rules, batch size, and the Inspector's audit) was untouched.
 
 ## SubFaber v3.9.29 (2026-10-11) — Dynamic Base URL Injection: User Config → GeminiService
 
-### Added
+### 🆕 New Features
 
-- **[DYNAMIC BASE URL] Suntikan baseUrl per-pengguna ke GeminiService:** nilai Base URL yang dimasukkan pengguna di Web UI (Custom/Proxy → pintu Gemini-native; disimpan sebagai `trinity.translation.baseUrl`) kini mengalir ke atas setiap permintaan terjemahan — konfigurasi seorang pengguna tidak lagi bergantung pada `.env` global pelayan (multi-user / multi-config mesra).
+- **Per-user Base URL injection into the Gemini service:** a Base URL entered in the web UI (Custom/Proxy with the Gemini-native door, stored as `trinity.translation.baseUrl`) now flows into every translation request — one user's configuration no longer depends on a global server `.env`, making the deployment multi-user/multi-config friendly.
 
-### Changed
+### ⚡ Improvements
 
-- **Keutamaan URL tiga lapis ([src/services/gemini.js](src/services/gemini.js), constructor):** `advancedSettings.baseUrl` (per-pengguna, Web UI) → `process.env.GEMINI_API_BASE` (fallback statik pelayan) → `https://generativelanguage.googleapis.com/v1beta` (Google rasmi). Nilai melalui `sanitizeGeminiBaseUrl()` (trailing-slash, `/v1beta` berganda, auto-append `/v1beta` untuk root-form gateway).
-- **Normalisasi medan baharu `geminiBaseUrl` ([src/utils/config.js](src/utils/config.js)):** sumber keutamaan — medan langsung `geminiBaseUrl` atau `trinity.translation.baseUrl`; sanitasi SSRF-lite (skema `http(s)` sahaja; nilai lain dibuang senyap).
-- **Suntikan penuh merentasi laluan terjemahan ([src/services/translationProviderFactory.js](src/services/translationProviderFactory.js), [src/handlers/subtitles.js](src/handlers/subtitles.js)):** `getGeminiAdvancedSettings()` (provider utama), `createProviderInstance('gemini')` (instance langsung + fallback secondary), dan `keyRotationConfig.advancedSettings` (setiap rotasi kunci membina instance GeminiService baharu) — semuanya membawa baseUrl pengguna.
+- **Three-layer URL precedence:** per-user UI setting → server environment fallback → the official Google endpoint. Values pass through a sanitizer (trailing slashes, duplicated `/v1beta` segments, and auto-appended `/v1beta` for root-form gateways). The new `geminiBaseUrl` config field normalizes from the direct field or the Trinity translation slot with light SSRF sanitization (http/https schemes only), and the user's Base URL is injected across every translation path — primary provider, direct and fallback instances, and every API-key rotation.
 
-### Verification
+## SubFaber v3.9.28 (2026-10-11) — Hotfix: Stream-Path Circular JSON, Root-Form Proxy Base URL, Misconfiguration Guard
 
-- `npm test`: **368 tests — 367 PASS, 0 FAIL, 1 SKIP** — selari baseline; monotonic ✓. Prettier ✓; ESLint 0 error ✓. Kontrak payload tidak berubah (systemInstruction top-level; tiada parameter pensampelan disentuh).
+### 🐛 Bug Fixes
 
-## SubFaber v3.9.28 (2026-10-11) — Hotfix: Stream-Path Circular JSON + Proxy Root-Form baseUrl + Misconfiguration Guard
+- **Fixed a `Converting circular structure to JSON` error swallowing the real 400 response:** on the streaming path, the error payload is a circular ReadableStream, and stringifying it threw a TypeError that replaced the original 400 error message throughout the translation engine. A try/catch with a plain-text fallback restores the diagnostic payload without masking the original error.
+- **Root-form proxy base URLs are auto-completed:** setting the base URL to a gateway's bare root domain now appends `/v1beta` automatically, so the invalid `.../models/{model}:generateContent` URL is never produced.
+- **Added a misconfiguration guard (proxy key sent to the official Google endpoint):** log forensics revealed the real production 400 cause — a gateway `sk-` token sent to `generativelanguage.googleapis.com` because the base URL was unset, making Google reject every endpoint with `API_KEY_INVALID`. The constructor now emits a clear warning before the first request can fail.
 
-### Fixed
+## SubFaber v3.9.27 (2026-10-11) — Gemini Native 400 Fixes: Debug Payload, Base-URL Sanitizer, Bearer Auth for Proxies
 
-- **[HOTFIX forensik produksi v3.9.27] `Converting circular structure to JSON` menelan ralat 400 sebenar ([src/services/gemini.js](src/services/gemini.js), `logGemini400Debug()`):** pada laluan stream (`responseType: 'stream'`), `error.response.data` ialah ReadableStream circular — `JSON.stringify()` terus throw TypeError yang MENGANTIKAN ralat 400 asal sebagai `error.message` di seluruh TranslationEngine. Pembungkusan try/catch + fallback teks ringkas memulihkan payload diagnosis tanpa menelan ralat asal.
-- **Sanitasi baseUrl root-form proksi:** pengguna yang set `GEMINI_API_BASE` kepada root domain gateway sahaja (cth: `https://crazyrouter.com`, seperti contoh curl rasmi admin) kini mendapat `/v1beta` di-append automatik — URL `.../models/{model}:generateContent` (404 di gateway) tidak lagi terhasil.
-- **Misconfiguration guard (kunci proksi → Google rasmi):** forensik log v3.9.27 membongkar punca sebenar 400 produksi — token `sk-` gateway dihantar ke `generativelanguage.googleapis.com` kerana `GEMINI_API_BASE` tidak diset; Google membalas 400 `API_KEY_INVALID` pada semua endpoint. Kini constructor memancarkan amaran jelas sebelum request pertama gagal. Dokumentasi env baharu dalam `.env.example`.
+### 🐛 Bug Fixes
 
-### Verification
+- **Full 400 response bodies are now logged:** every catch block for `countTokens`, model listing, `generateContent`, and `streamGenerateContent` prints the full error payload to the server console on HTTP 400 — the central handler previously hid response data, making the real proxy-gateway rejection cause invisible in production terminals.
+- **Base URLs are sanitized before use:** trailing slashes and duplicated `/v1beta` suffixes are cleaned up, eliminating the overlapping `.../v1beta//models` / `.../v1beta/v1beta/models` URLs that gateways reject with 400. Duplicate `models/` prefixes in model IDs are collapsed as well.
+- **countTokens failures no longer block translation:** the `:countTokens` and `/models/{model}` endpoints are frequently unsupported by third-party proxies; both paths already degrade silently to fallbacks (local token estimation / conservative limits) and now also print the 400 payload for diagnosis — translation continues uninterrupted.
+- **`Authorization: Bearer` header for proxy gateways:** when the base URL is a custom/proxy host (not `googleapis.com`) and the key starts with `sk-`, requests send `Authorization: Bearer <key>` alongside `x-goog-api-key`, avoiding auth rejection by gateways that expect the Bearer scheme.
 
-- `npm test`: **368 tests — 367 PASS, 0 FAIL, 1 SKIP** — selari baseline; monotonic ✓. Prettier ✓; ESLint 0 error ✓.
 
-## SubFaber v3.9.27 (2026-10-11) — Gemini Native 400 Bad Request: Debug Payload, Sanitasi baseUrl, Defensive countTokens, Bearer Proksi
+## SubFaber v3.9.26 (2026-10-11) — Primary Agent Prompt: "streaming-grade" → "cinema-grade"
 
-### Fixed
+### ⚡ Improvements
 
-- **[GEMINI-NATIVE 400 FIX] Log penuh response body 400 ([src/services/gemini.js](src/services/gemini.js), `logGemini400Debug()`):** setiap blok catch untuk `countTokens`, `getModel` (fetch models + model limits), `generateContent`, dan `streamGenerateContent` kini mencetak payload ralat penuh (`JSON.stringify(err.response?.data || err.message)`) ke konsol pelayan apabila status 400 — handler pusat sebelum ini menyembunyikan response data (`skipResponseData: true`), menjadikan punca sebenar penolakan gateway proksi tidak kelihatan di terminal produksi.
-- **Sanitasi baseUrl ([src/services/gemini.js](src/services/gemini.js), `sanitizeGeminiBaseUrl()`):** nilai `GEMINI_API_BASE` pengguna dibersihkan daripada trailing slash dan suffix `/v1beta` berganda sebelum digunakan — menghapuskan URL bertindih `.../v1beta//models` / `.../v1beta/v1beta/models` yang ditolak gateway dengan 400 Bad Request. `normalizeGeminiModelId()` turut meruntuhkan prefix `models/` berganda (`models/models/gemini-3-flash` → `gemini-3-flash`).
-- **Kegagalan countTokens tidak lagi menghalang terjemahan:** endpoint `:countTokens` dan `/models/{model}` kerap tidak disokong oleh proksi pihak ketiga (gateway hanya melalui `:generateContent`/`:streamGenerateContent`); kedua-dua laluan sudah jatuh senyap kepada fallback (anggaran token tempatan / had konservatif), dan kini payload 400 dicetak untuk diagnosis — terjemahan diteruskan tanpa gangguan.
-- **Header `Authorization: Bearer` untuk gateway proksi:** apabila baseUrl custom/proksi (host bukan `googleapis.com`) dan kunci bermula `sk-`, request menghantar `Authorization: Bearer <key>` BERSAMA `x-goog-api-key` — mengelakkan penolakan auth oleh API gateway yang menjangka skema Bearer (ground truth: dokumen rasmi gateway Gemini-native menerima `?key=` URL param dan Bearer).
+- **Raised the language-quality bar in the primary agent's prompt:** the Style directive now asks for "cinema-grade" quality instead of "streaming-grade". A single-phrase lexical change that raises the expected translation output ceiling to theatrical level; every other clause (anti-calque, character voice preservation, no injecting titles into empty names) is unchanged.
 
-### Verification
 
-- `npm test`: **368 tests — 367 PASS, 0 FAIL, 1 SKIP** (live Redis) — selari baseline; jumlah ujian monotonic ✓. Prettier ✓; ESLint 0 error (warning pra-wujud sahaja) ✓. Kontrak payload tidak berubah: systemInstruction kekal top-level, tiada parameter pensampelan/thinkingBudget disentuh, ujian purge `no crazyrouter references` kekal hijau.
+## SubFaber v3.9.25 (2026-10-11) — Hotfix: Save Failed with "Please select a Gemini model" Despite a Trinity Model Being Selected
 
-## SubFaber v3.9.26 (2026-10-11) — Prompt Agent A: "streaming-grade" → "cinema-grade"
+### 🐛 Bug Fixes
 
-### Changed
+- **Fixed a production bug reported by a user:** Save Configuration failed with "Please select a Gemini model" even though a model was selected on the Trinity Agent Translation card. Root cause: the form builder read the model from the legacy hidden Gemini dropdown (empty behind the Trinity UI) and then overwrote the value the Trinity module had already collected into the config — and the validation read the same legacy dropdown, so both paths failed together. The API key was unaffected thanks to the existing key bridge, but no equivalent bridge existed for the model.
+- **Added a Trinity model bridge mirroring the API-key bridge:** the form builder now reads `trinity.translation.model`, injects the value into the legacy dropdown as an option when missing (so validation reads the same value), and prefers the Trinity model over the legacy one. A TDZ ordering bug caught by E2E before push was also fixed by moving the bridge after the key-bridge block.
 
-- **Arahan kualiti bahasa dalam prompt Agent A dinaik taraf** ([src/services/translationEngine.js](src/services/translationEngine.js), seksyen `## Style`): "Write natural, conversational {target-language} at **streaming-grade** quality" → "…at **cinema-grade** quality". Perubahan leksikal satu frasa dalam templat prompt terjemahan — menaikkan siling jangkaan kualiti output terjemahan kepada tahap pawagam; semua klausa lain (anti-calque, pemeliharaan suara watak, larangan suntikan gelaran pada nama kosong) tidak berubah. Tiada perubahan kontrak payload, parameter pensampelan, atau struktur prompt.
 
-### Verification
+## SubFaber v3.9.24 (2026-10-11) — Trinity Phase V: Lock/Eye Icons & Green/Red Rings on the Primary Key Field
 
-- `npm test`: **368 tests — 367 PASS, 0 FAIL, 1 SKIP** (live Redis) — selari baseline; jumlah ujian monotonic ✓. Prettier + ESLint hijau.
+### ⚡ Improvements
 
-## SubFaber v3.9.25 (2026-10-11) — Hotfix: Save Gagal "Please select a Gemini model" Walaupun Model Trinity Dipilih
+- **The key-visibility icon is now a lock when masked and an eye when revealed,** swapping automatically on click — on the primary API-key field and every Additional API Key row, consistent with the legacy SubFaber style. The generic eye-slash variant was removed entirely.
+- **Green/red validation rings are now applied to the primary key field too:** validation paints a solid green ring (`.is-valid`) when the key is valid and a solid red ring (`.is-invalid`) when invalid or on network error, with both classes cleared automatically on retyping.
 
-### Fixed
+### 🐛 Bug Fixes
 
-- **Bug produksi v3.9.24 (laporan pengguna):** Save Configuration gagal dengan banner "⚠️ Please select a Gemini model" walaupun model telah dipilih pada kad Agent Translation Trinity. **Punca akar:** `buildConfigFromForm()` membina `selectedGeminiModel` daripada dropdown **legacy** `#geminiModel` (kad Gemini disembunyikan oleh Trinity UI — nilainya kosong), kemudian `config.geminiModel = selectedGeminiModel` **menimpa** nilai yang telah dikutip oleh `TrinityAgents.collectConfigPatch()` ke dalam `currentConfig.geminiModel`. Pengesahan `validateGeminiModel()` turut membaca `#geminiModel` legacy — kedua-dua laluan gagal serentak. Kunci API tidak terjejas kerana jambatan `effectiveGeminiKey` sedia ada — tetapi tiada jambatan setara untuk model.
-- **Fix — Trinity Model Bridge ([public/config.js](public/config.js), cermin jambatan kunci API):** dalam `buildConfigFromForm`, selepas blok sinkronisasi kunci legasi: (1) baca `trinity.translation.model` daripada `trinityPayload`; (2) sinkronkan dropdown legacy `#geminiModel` — nilai disuntik sebagai `<option>` jika tiada dalam senarai sebelum `.value` ditetapkan (supaya `validateGeminiModel()` membaca nilai sama); (3) `selectedGeminiModel = normalizeGeminiModelForBaseSelect(trinityModel || legacy)`. Pembetulan kedua (dikesan oleh E2E sebelum push): blok asal tersalah letak SEBELUM pengisytiharan `trinityPayload` → `ReferenceError` TDZ — disusun semula selepas blok `effectiveGeminiKey`.
+- **Fixed the status rings not applying to the primary key input:** the CSS selector was raised to a higher specificity level with `!important`, because the theme stylesheets set generic input borders with their own `!important` at the lower level. The primary key field's rings are now pixel-identical to the Additional API Keys rows.
 
-### Verification
 
-- E2E Playwright (localhost:7001/configure): kunci + model Trinity `gemini-3-flash-preview` dipilih, `#geminiModel` legacy sengaja dikosongkan, butang Save Configuration diklik dengan fetch `/api/update-session` dicegat: **payload `geminiModel: "gemini-3-flash-preview"`** ✓; `trinity.translation.model` konsisten ✓; dropdown legacy disinkronkan ✓; **tiada banner ralat "Please select a Gemini model"** ✓; **0 ralat konsol** terkini ✓. Kontrak payload tidak berubah (`geminiModel` string normalized — laluan backend sama seperti sebelum Trinity).
+## SubFaber v3.9.23 (2026-10-11) — Trinity Phase IV: Per-Key Test Buttons, Green/Red Status Borders, SVG Eye Icons
 
-## SubFaber v3.9.24 (2026-10-11) — Trinity Fasa V: Ikon Mangga/Mata & Gelung Hijau/Merah Kunci Utama
+### 🆕 New Features
 
-### Changed
+- **Added a Test button to every Additional API Keys row:** each row is now `[Key input] + [Eye button] + [Test ✓ button] + [Remove × button]`. The test posts to the universal `/api/validate-provider` endpoint with the agent card's full context (provider, door, custom base URL). While testing, the button shows a disabled spinner; a valid key turns the input border solid green with a ✓ icon, an invalid key turns it red with an ✕ icon plus an "Invalid API key" toast, and an empty key is marked invalid immediately without a network call. The border styles use `!important` to override the theme's generic input styling.
 
-- **Togol ikon mangga semasa tutup & mata semasa buka** ([public/js/trinity-agents.js](public/js/trinity-agents.js)): `eyeIconSvg()` kini memulangkan **Lock SVG** (mangga — rect + shackle) semasa medan bertopeng (`type="password"`) dan **Eye SVG** semasa medan dibuka (`type="text"`); varian eye-slash generik dibuang sepenuhnya. Peralihan ikon bertukar automatik apabila butang diklik — pada medan API Key utama DAN semua baris Additional API Keys (gaya konsisten bahagian legasi SubFaber).
-- **Konsistensi gelung hijau/merah pada kotak kunci utama**: `runAgentValidate` kini menyapukan `.is-valid` (sempadan + gelung hijau pekat `#15803d`) pada `#trinity-{agent}-key` apabila kunci SAH — dengan `.is-invalid` dibuang — dan `.is-invalid` (sempadan merah pekat `#b91c1c`) apabila TIDAK SAH atau ralat rangkaian. Sebarang pengetikan semula / pengosongan nilai membersihkan kedua-dua kelas secara automatik (reset dalam pendengar `input` `wireAutodetect`).
+### ⚡ Improvements
 
-### Fixed
+- **Professional SVG eye icons replaced the monkey emoji:** a helper renders eye/eye-slash SVGs with `currentColor` strokes, used on the primary API-key field and every additional key row; all eye/monkey emoji were removed from the DOM entirely.
+- **Unified the terminology to "Test":** the agent card's primary validation button label changed from "Validate" to "Test", matching the original SubFaber standard. Compact legacy-style 32×32 icon buttons with hover and disabled (spinner) states keep the rows tidy.
 
-- **Gelung status tidak terpakai pada input kunci utama** ([public/css/trinity-agents.css](public/css/trinity-agents.css)): pemilih status dinaikkan kepada rantai `.trinity-field .trinity-key-entry/.trinity-input-wrap .trinity-key-input.is-valid/.is-invalid` (kekhususan 0,7,0 + `!important`) — tahap (0,3,0) terbukti tidak mencukupi untuk input kunci utama kerana `rootify.css` & `subfaber-theme.css` menetapkan shorthand `border` generik input dengan `!important` sendiri; (0,7,0) disahkan empirikal sebagai tahap minimum yang menang. Gelung kunci utama kini **seragam tepat** (border + box-shadow) dengan baris Additional API Keys.
 
-### Verification
+## SubFaber v3.9.22 (2026-10-11) — Trinity Phase III: Smart Key Deduplication, Per-Row Eye Buttons, Button Polish
 
-- E2E Playwright (localhost:7001/configure): ikon utama password/rect(mangga) → klik → text/circle(mata) → klik → password/rect ✓; baris kunci peralihan sama ✓; kunci utama `is-valid` → computed `rgb(21,128,61)` + shadow hijau; `is-invalid` → `rgb(185,28,28)` + shadow merah; **`uniform: true`** — seragam dengan baris ✓; taip semula → kelas dibersihkan ✓; **0 ralat konsol** ✓. Kontrak payload tidak berubah (kelas CSS visual sahaja).
+### 🆕 New Features
 
-## SubFaber v3.9.23 (2026-10-11) — Trinity Fasa IV: Butang Test Per-Kunci, Border Status Hijau/Merah, Ikon Mata SVG
+- **Smart key deduplication in the Trinity bulk-import modal:** the import callback filters keys before adding rows — duplicates of the primary API key, keys already in the Additional API Keys list, and duplicates within the paste itself are all excluded. Only unique keys are imported (e.g. 89 pasted with 1 matching the primary → 88 imported). The modal shows a green "Imported X keys · Y duplicates filtered out." status, stays open after a successful import with the textarea cleared (preventing accidental double-imports), and resets its status classes on close.
+- **Visibility (eye) toggle on every Additional API Keys row:** masked `password` inputs with an eye-icon button before the remove (×) button, toggling between hidden/visible with a dynamic `aria-label`, consistent with the primary API-key field.
 
-### Added
+### ⚡ Improvements
 
-- **Butang ujian (Test) pada setiap baris Additional API Keys** ([public/js/trinity-agents.js](public/js/trinity-agents.js)): susunan per-baris kini `[Kotak Input Kunci] + [Butang Mata] + [Butang Test ✓] + [Butang Padam ×]`. Fungsi baharu `testRotationKey()` menghantar POST ke endpoint universal `/api/validate-provider` dengan konteks penuh kad agent (provider, door, baseUrl Custom) — semasa menguji butang memaparkan spinner `…` (disabled); **sah** → border input bertukar **HIJAU pekat** (#15803d) + ikon butang ✓ hijau; **tidak sah** → border **MERAH** (#b91c1c) + ikon ✕ merah + toast "Invalid API key — <mesej ralat>" (via `showAlert` bila tersedia); kunci kosong ditandakan invalid serta-merta tanpa panggilan rangkaian. Gaya status border menggunakan `!important` — diperlukan kerana `subfaber-theme.css` & `rootify.css` mengatasi border/box-shadow input generik dengan `!important` sendiri.
+- **Professional polish for the four key-management buttons:** "+ Add Key" and "Bulk Import…" now use modern secondary-button styling, and the modal footer got a neutral Cancel button plus a brand-blue primary Import button with soft shadow and clear hover states.
 
-### Changed
 
-- **Ikon mata SVG profesional menggantikan emoji monyet 🙈**: helper `eyeIconSvg(hidden)` menghasilkan ikon SVG eye (tersembunyi) / eye-slash (kelihatan) dengan stroke `currentColor` — digunakan serentak pada medan API Key utama dan setiap baris kunci tambahan; semua emoji 👁/🙈 dibuang sepenuhnya daripada DOM.
-- **Terminologi diseragamkan kepada 'Test'**: label butang pengesahan utama kad agent ditukar daripada "Validate" kepada "Test" (ikon ✓ kekal; `data-agent-validate` kekal sebagai pengikat dalaman) — selari standard asal SubFaber.
-- **Butang padat gaya legacy SubFaber** ([public/css/trinity-agents.css](public/css/trinity-agents.css)): `.trinity-key-icon-btn` — petak seragam 32×32, border-radius 6px, hover state, disabled state untuk spinner; jarak antara input dan butang tersusun rapi tanpa limpahan.
+## SubFaber v3.9.21 (2026-10-11) — Trinity Phase II: Model `<select>` Restored + Working Bulk-Import Modal
 
-### Verification
+### ⚡ Improvements
 
-- E2E Playwright (localhost:7001/configure): struktur baris `[INPUT][EYE][TEST][REMOVE]` ✓; label utama "✓Test" ✓; **tiada emoji 🙈 dalam DOM**, eye = SVG sebenar ✓; kunci kosong → `is-invalid`/✕ tanpa rangkaian ✓; kunci palsu berformat sah → spinner '…' → POST sebenar → `is-invalid`/✕ ✓; computed border invalid `rgb(185,28,28)` + shadow merah, valid `rgb(21,128,61)` + shadow hijau ✓; **0 ralat JavaScript konsol** (satu log rangkaian HTTP 400 DevTools standard bagi respons ujian kunci tidak sah) ✓. Kontrak payload tidak berubah (ujian baca-sahaja; tiada medan config baharu).
+- **Restored the Model field as a standard `<select>` dropdown** with a clean "— Select model —" placeholder: options are deduplicated with `models/` prefixes stripped, and a stored value missing from the current catalog is preserved as an extra option so rehydration always sticks. The model value continues to sync to the config payload (`trinity.*.model` + `geminiModel`).
 
-## SubFaber v3.9.22 (2026-10-11) — Trinity Fasa III: Deduplikasi Kunci Pintar, Butang Mata Per-Baris, Polish 4 Butang
+### 🐛 Bug Fixes
 
-### Added
+- **Fixed the Trinity "Bulk Import…" button doing nothing:** the button referenced a global API that never existed (the legacy modal targeted a DOM list hidden by the Trinity UI, and the bulk-import script exported only a parser with no UI). A new dynamic bulk-import modal is now generated inside the Trinity module — overlay + paste textarea + status + Import/Cancel buttons, closable via Escape or overlay click, reusing the zero-network key parser (AIzaSy / AQ. / sk- patterns), with the Import button re-cloned on every open to prevent listener pile-ups. Every imported key flows straight into Additional API Keys rows and is collected as `geminiApiKeys`. The stale model-input CSS block was replaced with the modal styles.
 
-- **Saringan kunci pendua pintar (Smart Deduplication) dalam modal Bulk Import Trinity** ([public/js/trinity-agents.js](public/js/trinity-agents.js)): callback import kini menyaring kunci sebelum menambah baris — (1) kunci yang sama persis dengan API Key utama (`#trinity-{agent}-key`); (2) kunci yang sudah wujud dalam senarai Additional API Keys (`.trinity-key-input`); (3) pendua dalam tampal dikendalikan parser (Set). Hanya kunci unik dimasukkan (cth: 89 ditampal, 1 sama dengan kunci utama → 88 masuk). Mesej status dalam modal: "Imported X keys · Y duplicates filtered out." (hijau `is-success`); modal kekal terbuka selepas import berjaya dan textarea dikosongkan (anti re-import ganda); status ralat kekal merah `is-error`; `closeBulkImportModal` menetap semula kelas status.
-- **Butang mata (visibility toggle) untuk setiap baris Additional API Keys** dalam `addRotationKeyInput`: input bertopeng `type="password"` + butang ikon mata sebelum butang padam (×) — klik menogol antara password/👁 dan text/🙈 dengan `aria-label` dinamik, konsisten dengan medan API Key utama.
 
-### Changed
+## SubFaber v3.9.20 (2026-10-11) — Trinity Phase I: Custom Field Order, Searchable Model, Key-Rotation Restoration
 
-- **Polish profesional 4 butang** ([public/css/trinity-agents.css](public/css/trinity-agents.css)): `+ Add Key` & `Bulk Import…` dalam bekas `.trinity-keys-actions` (`gap: 10px; margin-top: 10px`) bergaya `.trinity-btn-secondary` moden (padding `6px 14px`, border-radius `6px`, border subtle, hover/active state). Modal footer `.trinity-bulk-actions` (`justify-content: flex-end; gap: 12px; margin-top: 16px`): butang `Cancel` neutral sekunder (padding `8px 16px`, border kelabu) dan butang `Import` primer biru jenama SubFaber `#2563eb` (teks putih, padding `8px 18px`, border-radius `6px`, bayang lembut, hover jelas) — kelas generik `btn-sm` digantikan dengan `.trinity-btn-secondary`/`.trinity-btn-primary` berdedikasi.
+### 🆕 New Features
 
-### Verification
+- **Custom/Proxy field ordering:** the DOM hierarchy is now Provider → API Key + Validate → Base URL → Format/Door → Model (Model always last). For official providers, Base URL and Format stay hidden (smart visibility preserved).
+- **Searchable/editable Model input:** the Model field was upgraded from a rigid `<select>` to a text input with a datalist — users can type to filter the model list in real time or enter any custom model name manually, with the value syncing straight to the config payload.
+- **Restored the Gemini key-rotation UI** (only when the provider is Google Gemini): an "Enable Gemini API key rotation" checkbox, a per-batch/per-request rotation frequency selector, and a dynamic Additional API Keys list with individual add/remove buttons and a "Bulk Import…" button that reconnects the bulk-key-import modal. Rehydration restores the toggle, frequency, and keys from the saved config, with the key list cleared beforehand to prevent duplication on repeated rehydrations.
 
-- E2E Playwright (localhost:7001/configure): primary + 1 kunci existing disediakan; tampal 5 baris (primary-dup, existing-dup, 2 baharu, 1 dup dalaman) → status **"Imported 2 keys · 2 duplicates filtered out."** ✓; baris akhir = existing + 2 baharu ✓; butang mata password/👁 → text/🙈 → password/👁 ✓; computed style bekas `gap:10px; margin-top:10px` + butang `padding:6px 14px; border-radius:6px` ✓; **0 ralat konsol** ✓. Kontrak payload tidak berubah (`geminiApiKeys: string[]`; backend `normalizeConfig` kekal dedup sebagai lapisan kedua).
+## SubFaber v3.9.19 (2026-10-11) — Support for the Latest 'AQ.' Gemini Key Format
 
-## SubFaber v3.9.21 (2026-10-11) — Trinity Fasa II: Pulihan <select> Model + Modal Bulk Import Berfungsi
+### 🆕 New Features
 
-### Changed
+- **Support for the latest Google AI Studio key format (`AQ.`)** in the key detector: both the dotted form (`AQ.Ab8...`) and the non-dotted form are now detected as Gemini-native keys — previously an AQ. key on a versionless custom endpoint fell through to the OpenAI default (the wrong door). Existing precedence is preserved: `AIza` still wins, `sk-ant-` maps to Anthropic, and generic `sk-` keys still fall through to the base-URL/model heuristic. New test coverage confirms both AQ. forms, the intactness of the older formats, and that broken AQ-like strings do not match.
+- **Key-rotation audit (status report for the upcoming frontend phase):** the whole rotation engine (array storage, Redis/in-memory round-robin selection, per-batch/per-request modes, bulk import) was audited as intact and fully functional — the frontend could remap the rotation UI directly onto the existing schema with zero backend changes.
 
-- **Medan Model dikembalikan kepada `<select>` piawai** ([public/js/trinity-agents.js](public/js/trinity-agents.js)): implementasi `<input type="text" list>` + `<datalist>` (v3.9.20) digantikan semula atas mandat owner dengan elemen `<select class="trinity-model-select">` bersih dengan placeholder "— Select model —". `populateModelDropdown` kini memasukkan pilihan `<option value="...">` (dedup + strip awalan `models/`); nilai sedia ada dipelihara sebagai option tambahan supaya pemilihan tidak hilang semasa repopulate. Helper baharu `ensureModelOption(select, value)` dipanggil dalam `applyAgentValues` (stored.model + legacy `cfg.geminiModel`) — menjamin rehydrate `<select>` melekat walaupun model tersimpan tiada dalam katalog semasa. Nilai model terus disegerakkan ke config payload melalui `collectConfigPatch` (`trinity.*.model` + `geminiModel`).
+## SubFaber v3.9.18 (2026-10-11) — Hotfix: ReferenceError in the /v1 Gemini Catalog Override
 
-### Fixed
+### 🐛 Bug Fixes
 
-- **Butang "Bulk Import…" Trinity tidak memberi sebarang tindak balas**: punca akar — kod butang (v3.9.20) merujuk `window.BulkKeyImport.open()` yang tidak pernah wujud (modal legacy dalam `config.js` mensasarkan DOM `#geminiApiKeysList` yang disembunyikan oleh Trinity, dan skrip [public/js/bulk-key-import.js](public/js/bulk-key-import.js) hanya mengeksport parser `window.SubFaberBulkKeyImport` tanpa sebarang DOM). **Fix:** modal import pukal dinamik baharu dijana dalam `trinity-agents.js` (`ensureBulkImportModal` / `openBulkImportModal` / `closeBulkImportModal`) — overlay + textarea tampal pukal + status + butang Import/Cancel; tutup melalui Escape / klik overlay; parser zero-network `SubFaberBulkKeyImport.parseBulkKeys` (corak AIzaSy / AQ.Ab8 / sk-); butang Import di-clone setiap pembukaan (anti-pendengar-berlonggok); bridge global `window.BulkKeyImport = { open }` memenuhi kontrak butang sedia ada. Setiap kunci yang diimport disalurkan terus ke baris input "Additional API Keys" melalui `addRotationKeyInput` dan dikutip oleh `collectConfigPatch` sebagai `geminiApiKeys: string[]`.
-- **CSS** ([public/css/trinity-agents.css](public/css/trinity-agents.css)): blok `.trinity-model-input` (lapuk) digantikan dengan gaya modal `.trinity-bulk-modal[.show]` / `.trinity-bulk-box` / `.trinity-bulk-textarea` / `.trinity-bulk-status` / `.trinity-bulk-actions`.
+- **Fixed a production `ReferenceError: agents is not defined` in the Gemini catalog override:** a block-scoped `agents` variable was referenced by a helper defined before its block, throwing instantly and forcing the static 6-model emergency fallback on every validation. The agents object is now passed as an explicit parameter through the entire call chain — zero cross-block closure references. A new regression test replicates the exact scoping structure to prove the fix.
 
-### Verification
+## SubFaber v3.9.17 (2026-10-11) — Fixed: probeDoor Delegation for the /v1 Catalog Override
 
-- E2E Playwright (localhost:7001/configure): Model = tag SELECT tanpa datalist ✓; bridge `window.BulkKeyImport.open` + parser wujud ✓; rotation ON → Bulk Import… → modal `.show` + textarea fokus ✓; tampal 3 kunci (AIzaSy×2 + sk-) → Import → modal tutup + 3 baris Additional API Keys terisi ✓; `collectConfigPatch` → `geminiKeyRotationEnabled:true` + `geminiApiKeys` (3) + `trinity.translation.model` mencerminkan pilihan ✓; **0 ralat konsol** ✓. Integration Audit Backend LULUS (payload serialization / rehydration / race DOM lifecycle).
+### 🐛 Bug Fixes
 
-## SubFaber v3.9.20 (2026-10-11) — Trinity Fasa I: Susunan Medan Custom, Searchable Model, Pemulihan Key Rotation
+- **Fixed custom-provider validation on `/v1beta` still falling back to the 6-model emergency list:** the catalog-override helper built a manual axios call that suffered parsing failures (the OpenAI `res.data.data` shape was not read correctly) or timeouts, returning an empty array and triggering the static fallback. The helper now fully delegates to the battle-tested probe path (stable since v3.9.8: OpenAI response parsing, timeouts, HTTP/HTTPS agents) and then filters for Gemini models. Catalog-override failures are no longer silent — an explicit error is logged, and the emergency list only triggers when the probe fails completely.
 
-### Added
+## SubFaber v3.9.16 (2026-10-11) — Proactive /v1/models Override: Full Dynamic Gemini Catalog for the Gemini-Native Door
 
-- **Susunan medan Custom/Proxy** (`public/js/trinity-agents.js`): hierarki DOM baharu mengikut mandat — Provider → API Key + Validate → Base URL → Format/Door → Model (Model sentiasa paling bawah). Bagi pembekal rasmi, Base URL & Format disembunyikan (Smart Visibility kekal).
-- **Searchable/Editable Model input**: medan Model dinaik taraf daripada `<select>` tegar kepada `<input type="text" list="...">` + `<datalist>` — pengguna boleh menaip untuk menapis senarai model masa nyata ATAU memasukkan sebarang nama model tersuai secara manual; nilai disegerakkan terus ke config payload. `populateModelDropdown` dikemas kini untuk datalist (dedup + preserve nilai semasa repopulate).
-- **Pemulihan UI Key Rotation Gemini** (hanya apabila Provider = Google Gemini): kotak tanda "Enable Gemini API key rotation" (ikat `geminiKeyRotationEnabled`); apabila ditandakan — pilihan "Rotation Frequency" `per-batch`/`per-request` (ikat `geminiKeyRotationMode`), senarai "Additional API Keys" dinamik (ikat `geminiApiKeys: string[]`) dengan butang "+ Add Key" individu + butang × padam setiap kunci + butang "Bulk Import…" yang menyambung semula modal `bulk-key-import.js` (callback import → `addRotationKeyInput` untuk setiap kunci). Rehydration: toggle/mode/keys dipulihkan daripada config tersimpan; [AUDIT v3.9.20] senarai keys dikosongkan sebelum rehydrate (anti-duplikasi panggilan berulang config.js).
+### ⚡ Improvements
 
-### Verification
+- **Model listing no longer relies on `/v1beta/models` at all:** for validation purposes, the full live catalog (including newer models) is fetched directly from `GET {base}/v1/models` (rewriting `/v1beta` → `/v1` with a Bearer header) through a new helper, tightly filtered for Gemini models, then cleaned and sorted A-Z. Precedence: (1) the proactive `/v1/models` catalog; (2) the existing `/v1beta` list if healthy; (3) the 6-model emergency list — strictly a last resort when both endpoints fail completely. The runtime translation protocol is unchanged (`gemini-native` generateContent path).
 
-- E2E Playwright: Custom → Base URL idx 3 < Format idx 4 < Model idx 5 ✓; Model = INPUT + DATALIST ✓; Gemini → rotation row + toggle → frequency + keys ✓. npm test **368 tests / 367 PASS / 0 FAIL / 1 SKIP** (baseline kekal).
+## SubFaber v3.9.15 (2026-10-11) — Fixed: Gemini-Native Door Now Returns a Clean A-Z Gemini List
 
-## SubFaber v3.9.19 (2026-10-11) — Sokongan Format Kunci Gemini 'AQ.' + Laporan Audit Key Rotation
+### 🐛 Bug Fixes
 
-### Added
+- **Fixed the gemini-native door still returning raw unsorted data (deepseek/kimi/glm) with zero Gemini models:** three causes were corrected: (1) a duplicated second network probe was removed — its failure was swallowed by an outer try/catch, letting the broken raw list through without recovery; the helper now reuses the primary probe's models with zero repeat calls; (2) the filter was widened from `startsWith('gemini')` to `includes('gemini')` to catch names like `google-gemini-exp`; (3) the emergency list was expanded to 6 models. The clean-and-sort step now runs on every custom-door response (including gemini-native), so the Gemini Native door never displays deepseek/kimi/glm when Gemini models were successfully obtained.
 
-- **Sokongan format kunci Google AI Studio terkini (2024+): `AQ.`** dalam [`keyDetector.detectFromApiKey`](src/services/channels/keyDetector.js:33): corak `^AQ\.[A-Za-z0-9_-]+$` (berbintik, cth: `AQ.Ab8RN6IYXH…`) dan `^AQ[A-Za-z0-9_-]+$` (tanpa bintik) kini dikesan sebagai format `gemini` (Gemini Native) — sebelum ini kunci AQ. pada Custom versionless jatuh ke default openai (pintu salah). Keutamaan sedia ada dipelihara: `AIza` tetap diutamakan, `sk-ant-` → anthropic, `sk-` generik kekal jatuh kepada baseUrl/model. Ujian VP-22 (dalam fail keyDetector) mengesahkan kedua-dua bentuk AQ. + ketidakrosakan format lama + rentetan AQ-like rosak tidak dipadankan.
-- **Ujian**: +1 (keyDetector AQ.) — **baseline baharu 368 tests / 367 PASS / 0 FAIL / 1 SKIP**.
 
-### Audit Key Rotation (Laporan Status untuk Fasa Frontend Berikut)
+## SubFaber v3.9.14 (2026-10-11) — Smart Model-List Sanitization + Broken Gemini-List Recovery
 
-- **Asal-usul (git)**: ciri "Enable Gemini API key rotation" + "Additional API Keys" diperkenalkan bertahap sejak v1.4.49 (2026-02-10) → v1.4.84 (2026-05-14); Bulk Import modal pukal ditambah v1.5.8 (2026-09-22, `c7a4b42` — zero-network, burst-safe, corak `AIzaSy` + `AQ.Ab8`); berterusan dalam Rootify v1.9.12 (2026-09-30).
-- **Status skema backend — KEKAL PENUH disokong, tiada pemusnahan**:
-  - `config.geminiApiKeys: string[]` — tatasusunan kunci dalam payload simpanan config ([src/utils/config.js](src/utils/config.js:1255) `getDefaultConfig`, normalisasi + dedup + sanitasi kunci tersimpan dengan pengesanan kunci tersulit gagal-dekrip dilemparkan dalam `normalizeConfig`).
-  - `config.geminiKeyRotationEnabled: boolean` + `config.geminiKeyRotationMode: 'per-request' | 'per-batch'` ([src/utils/config.js](src/utils/config.js:1254) lalai `per-batch`).
-  - [`selectGeminiApiKey(config)`](src/utils/config.js:1641) — pemilih kunci putaran: kaunter `INCR` Redis (`keyrotation:{configHash}`, TTL 24j) atau fallback kaunter dalam-memori; dipanggil oleh laluan penterjemahan ([src/handlers/subtitles.js:6691](src/handlers/subtitles.js:6691)) dan pengumpulan statistik batch (baris 6303: `mode` + `keys` dihantar kepada Telegram FinOps).
-  - `MAX_GEMINI_API_KEYS` (env, lalai tidak terhad) + `getMaxGeminiApiKeys()` dieksport.
-  - Analisis kunci pukal frontend ([public/js/bulk-key-import.js](public/js/bulk-key-import.js): korak `AIzaSy…` 39 aksara + `AQ.Ab8…` panjang variabel + `sk-…`) — TIDAK disentuh dalam mandat ini.
-- **Kesimpulan**: seluruh enjin putaran (simpanan array, pemilihan round-robin Redis/in-memori, mod per-batch/per-request, import pukal) utuh dan berfungsi; Frontend boleh memadankan semula UI "Enable Key Rotation" + "Additional API Keys" terus kepada skema sedia ada tanpa sebarang perubahan backend.
+### ⚡ Improvements
 
-## SubFaber v3.9.18 (2026-10-11) — Hotfix: ReferenceError 'agents is not defined' dalam fetchGeminiCatalogFromV1
+- **Model lists from custom providers are now cleaned and sorted:** non-text/non-chat models (embedding, video, image, audio, music, and specific generative-media keywords) are filtered out — New API-style proxies can return 300+ raw unsorted models — then deduplicated and sorted A-Z.
+- **Smart Gemini fallback for broken `/v1beta` model listings:** some proxy gateways return only test adapters (deepseek/kimi/glm/gpt/qwen) and zero Gemini models on `/v1beta/models` even though `:generateContent` fully supports every Gemini model. When the validated door is gemini-native but the list contains no Gemini models, the system tries `GET {base}/v1/models` with a Bearer header and filters for Gemini-only models, falling back to a standard 5-model list if nothing is found. A recovery failure never cancels the validation itself.
 
-### Fixed
+## SubFaber v3.9.13 (2026-10-10) — Trinity Phase H: Reactive URL-to-Door Mapping + resolvedDoor Sync
 
-- **Bug produksi v3.9.17** (bukti log: `[ERROR] [validate-provider] Gagal override katalog Gemini dari /v1: agents is not defined`): pemboleh ubah `agents` ditakrifkan sebagai `const` **block-scoped** di dalam blok `try {}` utama endpoint, tetapi `fetchGeminiCatalogFromV1` yang dirujuknya ditakrifkan SEBELUM blok tersebut — rujukan runtime melempar `ReferenceError` serta-merta dan memaksa fallback kecemasan 6 model statik pada setiap validasi `/v1beta`. **Fix:** `agents` kini dihantar sebagai **parameter eksplisit** merentasi rantai panggilan — `smartGeminiFallback(resolvedDoor, targetBaseUrl, key, models, agents)` → `fetchGeminiCatalogFromV1(targetBaseUrl, apiKey, networkAgents)` → `probeDoor('openai-compatible', v1Url, apiKey, networkAgents)`. Sifar rujukan closure merentas sempadan blok.
+### ⚡ Improvements
 
-### Added
+- **The Format/Door dropdown now reacts to the Base URL in real time:** typing or pasting `/v1beta` auto-switches it to Gemini Native, and `/v1` (non-beta) to OpenAI-Compatible. Active only for Custom/Proxy providers, fires once per input without a persistent watcher, and never disturbs a manual choice made afterwards.
+- **After a successful validation, the resolved door is synced back to the dropdown,** so the user sees the actual door the backend verified (e.g. a `/v1beta` proxy with an `sk-` key → `gemini-native`).
 
-- **Ujian VP-21**: replika struktur skop endpoint (fungsi ditakrifkan sebelum blok di mana `agents` wujud) dengan signature parameter eksplisit — membuktikan tiada `ReferenceError`, probeDoor menerima objek agents sah, dan katalog Gemini dipulangkan. VP-19 assertion dikemas kini (signature parameter `networkAgents`).
+### 🐛 Bug Fixes
 
-### Test Baseline
+- **Fixed a silent format-override regression found in integration audit:** the Custom-path config patch maps the full door values back to the legacy short format values before sending, preventing the key detector's normalizer from silently discarding manual overrides (`'auto'` is preserved for backend auto-detection).
 
-- **Baharu: 367 tests / 366 PASS / 0 FAIL / 1 SKIP** (naik daripada 366/365 — monotonic dipatuhi).
+## SubFaber v3.9.12 (2026-10-10) — Fixed: Custom /v1beta + sk- Key Failed Validation (Strict URL Precedence + Expanded Dual-Door)
 
-## SubFaber v3.9.17 (2026-10-11) — Fixed: Delegasi probeDoor untuk Override Katalog /v1 (parsing produksi stabil)
+### 🐛 Bug Fixes
 
-### Fixed
+- **Fixed a custom `/v1beta` endpoint with an `sk-` key failing validation with 401:** two causes were corrected: (1) **strict URL precedence** — URL path hints now absolutely win over key-format detection, so the `/v1beta` branch resolves to gemini-native and never reaches the key detector that would scream openai for an `sk-` key; the detector is only consulted when the URL carries no version hint; (2) **expanded dual-door probing** — 401/403 are now treated as retryable alongside 404/400, because modern proxy gateways return 401/403 when the auth header uses the wrong protocol (Bearer sent to a Gemini endpoint, or vice versa), not because the key is genuinely bad. The opposite door is tried automatically, and a genuine key failure is only declared when BOTH doors fail.
 
-- **Bug v3.9.16 produksi**: validasi Custom Provider `/v1beta` masih jatuh ke fallback kecemasan 6 model — helper `fetchGeminiCatalogFromV1` membina panggilan axios manual yang mengalami kegagalan parsing (struktur `res.data.data` OpenAI tidak dibaca betul) atau timeout, memulangkan tatasusunan kosong dan mencetuskan fallback statik. **Fix:** helper kini mewakilkan sepenuhnya kepada `probeDoor('openai-compatible', v1Url, apiKey, agents)` — laluan yang terbukti stabil sejak v3.9.8 (parsing bentuk respons OpenAI `data[].id`/`.name` + rentetan, timeout, http/https agents) — kemudian tapis `includes('gemini')`.
-- **Log eksplisit**: kegagalan override katalog tidak lagi senyap — `console.error('[validate-provider] Gagal override katalog Gemini dari /v1:', err.message)` dicetak; kecemasan 6 model hanya tercetus bila probeDoor ke v1Url memulangkan senarai kosong/gagal sepenuhnya.
+## SubFaber v3.9.11 (2026-10-10) — Self-Healing Validation: Smart URL Heuristics + Dual-Door Probing for Custom Providers
 
-### Changed (Tests)
+### 🆕 New Features
 
-- **VP-20 dikemas kini**: aliran delegasi `probeDoor('openai-compatible')` direplika penuh (bentuk respons OpenAI sebenar) dan katalog dinamik lengkap A-Z disahkan; VP-19 assertion tapisan dikemas kini (`String(m).toLowerCase().includes('gemini')`).
+- **Smart URL heuristics for custom providers in auto mode:** trailing-slash sanitization plus path-based door detection — `/v1beta` → gemini-native (e.g. Gemini proxy endpoints), `/v1` (non-beta) → openai-compatible (New API/One API proxies), and no URL hint → the original key-format detection fallback (AIza → gemini-native, generic `sk-` → openai-compatible).
+- **Dual-door probing with auto-fallback:** when the primary door fails with 404/400 (endpoint doesn't exist), the validation automatically tries the opposite door (openai-compatible ↔ gemini-native); if the URL has no version segment and both fail, it tries appending `/v1/models`. The response now returns a `resolvedDoor` field (the winning door) whenever automatic detection occurred, letting the frontend display the actual door without manual selection. Six new tests cover the self-healing contract, URL heuristics, key-detector fallback, retryable predicates, and versionless detection.
 
-### Test Baseline
+### ⚡ Improvements
 
-- **Kekal: 366 tests / 365 PASS / 0 FAIL / 1 SKIP** (monotonic >= 366 dipatuhi).
+- **Refactored the validation dispatcher:** the per-door probe logic moved into a shared helper reused by the primary and fallback paths, and every URL variation still passes through the SSRF gate before any network call.
 
-## SubFaber v3.9.16 (2026-10-11) — Proactive /v1/models Override: Katalog Gemini Dinamik Terus untuk Pintu Gemini-Native
+## SubFaber v3.9.10 (2026-10-10) — Fixed: Custom Provider Fields Not Appearing in the Trinity UI
 
-### Changed
+### 🐛 Bug Fixes
 
-- **Proactive override senarai model** dalam `POST /api/validate-provider` (Custom + pintu `gemini-native` / URL `/v1beta`): untuk TUJUAN MENYENARAIKAN MODEL, endpoint `/v1beta/models` tidak lagi diharap langsung — katalog sebenar lengkap (termasuk `gemini-3.5-flash`, `gemini-3.8-flash`, dll) dipanggil TERUS daripada `GET {base}/v1/models` (rewrite `/v1beta` → `/v1`, header `Authorization: Bearer`) melalui helper baharu `fetchGeminiCatalogFromV1`, ditapis ketat `includes('gemini')`, kemudian `cleanAndSortModels` (A-Z). Susunan keutamaan: (1) katalog proaktif `/v1/models`; (2) senarai `/v1beta` sedia ada jika sihat (mengandungi gemini); (3) senarai kecemasan 6 model — JALAN TERAKHIR sahaja apabila `/v1` dan `/v1beta` kedua-duanya gagal sepenuhnya (cth: tiada internet).
-- **Protokol inferens kekal**: perubahan hanya menyentuh penarikan senarai model semasa validasi — laluan terjemahan runtime kekal `gemini-native` (`/v1beta/models/{model}:generateContent`).
+- **Fixed selecting "Custom / Proxy" failing to show the Base URL and Format/Door fields.** The backend integration audit found two root causes: (1) **listeners never attached (detached-DOM race)** — the cards were rendered before the Trinity root was inserted into the document, so the wiring helpers found NULL elements and returned early, leaving zero change/input/validation listeners (only the eye button worked because it was wired through a closure). The mount order was reversed so the root is inserted before rendering. (2) **CSS specificity override** — clearing the inline display style does not beat the CSS rule hiding custom-only fields; the visibility function now explicitly sets `'grid'` to show and `'none'` to hide.
 
-### Changed (Tests)
+## SubFaber v3.9.9 (2026-10-10) — Protocol: Monotonic Test-Baseline Rule
 
-- **VP-20 ditulis semula**: bukti hujung-ke-hujung bahawa pintu gemini-native proaktif memanggil `/v1/models` (Bearer) dan memulangkan **katalog Gemini dinamik lengkap** A-Z — `['gemini-2.5-flash', 'gemini-2.5-pro', 'gemini-3-flash-preview', 'gemini-3.5-flash', 'gemini-3.8-flash']` (bukan senarai kecemasan hardcoded); deepseek/kimi/glm/qwen DILARANG muncul. VP-19 dikemas kini: semakan statik keutamaan `/v1` dahulu → senarai `/v1beta` → kecemasan + kontrak rewrite URL + kontrak inferens kekal.
+### ⚡ Improvements
 
-### Test Baseline
+- **Rewrote the test-baseline rule from static numbers to a monotonic baseline:** the invariants remain 0 FAIL / max 1 SKIP (live Redis), and the total test count must be monotonic (never below the latest recorded baseline without the owner's explicit written approval). This prevents stale numbers from fossilizing in the mode instructions. Zero code changes.
 
-- **Kekal: 366 tests / 365 PASS / 0 FAIL / 1 SKIP** (monotonic >= 366 dipatuhi — tiada ujian dibuang, VP-19/VP-20 dikemas kini in-place).
+## SubFaber v3.9.8 (2026-10-10) — Universal Provider Validation Endpoint + Trinity Phase F: Universal Validate Button
 
-## SubFaber v3.9.15 (2026-10-11) — Fixed: Pintu Gemini-Native Kini Memulangkan Senarai Gemini Bersih Tersusun A-Z
+### 🆕 New Features
 
-### Fixed
+- **Added `POST /api/validate-provider`,** a universal validation endpoint replacing the Gemini-only `/api/validate-gemini`. A three-door dispatcher handles gemini-native (`x-goog-api-key` header, models filtered by `generateContent` support), openai-compatible (Bearer auth, `data[].id` extraction), and anthropic-messages (`x-api-key` + version header). Official providers take their base URLs from the provider registry; custom endpoints pass through SSRF validation before any network call. Standardized responses distinguish provider auth failures, upstream 5xx (→ 502), and invalid input (→ 400), all behind a rate limiter with no-store headers. A new regression suite (9 tests) locks the endpoint contract, registry units, three-door model extraction, and error-status classification.
 
-- **Bug v3.9.14**: pintu `gemini-native` (`/v1beta`) masih memulangkan data mentah tidak tersusun (deepseek/kimi/glm) dan SIFAR model Gemini — cawangan tersebut tidak melalui pemulihan yang betul. Tiga punca dibetulkan dalam `POST /api/validate-provider`:
-  1. **Probe berulang dibuang**: `smartGeminiFallback` v3.9.14 membuat panggilan rangkaian KEDUA (`probeDoor` semula); kegagalannya (rate-limit/network) ditelan try/catch luar menyebabkan senarai mentah pincang terus dikembalikan tanpa pemulihan. Helper kini menerima `models` sedia ada daripada probe utama — sifar panggilan berulang.
-  2. **Tapisan padu selari spesifikasi**: `startsWith('gemini')` → `includes('gemini')` (menangkap `google-gemini-exp` dll).
-  3. **Senarai kecemasan dikembangkan** kepada 6 model: `gemini-3-flash-preview`, `gemini-3-flash`, `gemini-2.5-flash`, `gemini-2.5-pro`, `gemini-3.1-pro`, **`gemini-3.1-flash-lite`**.
-- **Susunan wajib A-Z untuk SEMUA pintu Custom**: `cleanAndSortModels` kini dipastikan berjalan pada setiap respons Custom (termasuk gemini-native) sebelum `res.json()` — pintu Gemini Native tidak lagi memaparkan deepseek/kimi/glm apabila model Gemini berjaya diperoleh.
+### ⚡ Improvements
 
-### Added
+- **The Trinity Validate button now calls the universal endpoint:** a valid key paints a green "Valid ✓" badge and auto-fills the model dropdown from the returned models; an invalid key paints a red badge with the error; network failures show "Failed". Non-JSON responses are safely handled.
 
-- **Ujian VP-20** (baharu): bukti hujung-ke-hujung dengan axios mock — `/v1beta` pincang (deepseek/kimi/glm, sifar Gemini) → padu `/v1/models` → HANYA `['gemini-2.5-flash', 'gemini-2.5-pro', 'gemini-3-flash-preview']` tersusun A-Z dipulangkan; deepseek/kimi/glm/qwen DILARANG muncul. VP-19 dikemas kini (includes semantics + 6 model kecemasan + tiada probe berulang).
+## SubFaber v3.9.7 (2026-10-10) — Trinity Phase E: Card Redesign + Dynamic Provider Registry Integration
 
-### Test Baseline
+### ⚡ Improvements
 
-- **Baharu: 366 tests / 365 PASS / 0 FAIL / 1 SKIP** (naik daripada 365/364 — monotonic dipatuhi).
+- **Rewrote the Trinity cards with an industry-standard layout:** Row 1 the Provider dropdown (16 official providers + Custom/Proxy at the end), row 2 the API key with a single "Validate" button (the confusing separate "Load" button was removed — the model list loads automatically on successful validation), row 3 the Model dropdown. The provider list integrates the registry endpoint dynamically with caching plus a static 16-provider fallback if the network fails.
+- **Smart visibility (hide ≠ delete):** the Base URL and Format/Door fields are hidden for all official providers and shown only when Custom/Proxy is selected — casual users never see technical settings they don't need.
+- **New payload contract:** `trinity.{agent}` now carries `{ apiKey, format, baseUrl, model, provider, door, isCustom, enabled }`, with the official-provider format derived from the door through a mapping to the legacy short values, preventing silent override discards. Rehydration is provider-aware — stored values (including legacy Gemini credentials and formats) restore into the dropdowns without stale values.
 
-## SubFaber v3.9.14 (2026-10-11) — Smart Model List Sanitization + Pemulihan Senarai Gemini Pincang (Ground Truth Crazy Router)
+## SubFaber v3.9.6 (2026-10-10) — Engine Split: Pure Google Gemini Native + Universal LLM Provider Registry (16 Providers)
 
-### Added
+### 🔄 Breaking Changes
 
-- **Clean & Sort Models** dalam `POST /api/validate-provider` (Custom sahaja): sebelum memulangkan `models`, tapis keluar model bukan teks/perbualan — kata kunci `embedding`, `video`, `image`, `audio`, `music`, `suno`, `kling`, `seedance`, `seedream` (ground truth: `/v1/models` proksi New API memuntahkan 300+ model mentah termasuk audio/video/imej tanpa susunan) — plus dedup, kemudian susun A-Z via `localeCompare`.
-- **Smart Gemini fallback** (ground truth docs.crazyrouter.com/llms.txt): endpoint `/v1beta/models` gerbang Crazy Router PINCANG — memulangkan adaptor ujian (deepseek/kimi/glm/gpt/qwen) dan SIFAR model Gemini walaupun `:generateContent` menyokong penuh semua model Gemini. Apabila pintu yang disahkan `gemini-native` tetapi senarai tiada kata kunci 'gemini': (1) cuba `GET {baseUrl-tanpa-v1beta}/v1/models` (Bearer) dan tapis kepada model `gemini*` sahaja; (2) jika tiada, sertakan senarai standard (gemini-3-flash-preview, gemini-3-flash, gemini-2.5-flash, gemini-2.5-pro, gemini-3.1-pro). Kegagalan pemulihan tidak membatalkan validasi.
-- **Ujian VP-18/VP-19**: penapisan model bukan teks + dedup + susunan A-Z (katalog mentah 15 entri gaya Crazy Router); repro pincang `/v1beta` + pemulihan padu `/v1/models` (gemini-only) + senarai standard (susunan locale-collation).
+- **`src/services/gemini.js` is now 100% pure Google Gemini Native** (the official AI Studio REST v1beta endpoint): every piece of hard-coded proxy logic was removed — automatic `sk-` key-type detection, the static proxy URL and env override, the proxy model lists and availability warnings, the proxy model-limit interception, provider-route tagging, and the Bearer header (now always `x-goog-api-key`). Private proxies are now supported exclusively through the Custom Provider (user base URL + existing SSRF validation). System invariants were preserved: `systemInstruction` stays a top-level field, the 3.x sampling ground truth, `thinkingBudget` (0/-1), and the topK ban.
+- **Added a centralized provider registry ([src/utils/providerRegistry.js](src/utils/providerRegistry.js)):** 15 official global providers plus Custom/Proxy — Google Gemini (gemini-native), OpenAI, Anthropic (anthropic-messages), DeepSeek, Groq, Mistral, xAI/Grok, OpenRouter, Together AI, Cerebras, SambaNova, Perplexity, Moonshot/Kimi, Zhipu/GLM, and Qwen (all openai-compatible), plus Custom (free-form base URL + manual door choice). A read-only `GET /api/providers/registry` endpoint serves the immutable snapshot to the frontend with no credentials involved. Regression tests were rewritten to the native contract: `sk-` keys are no longer treated as proxy keys, zero proxy references remain in the source, and the registry test covers all 16 providers' doors, base URLs, and immutability.
 
-### Test Baseline
+## SubFaber v3.9.5 (2026-10-10) — Fixed: Trinity UI Fully in English + Card Placement (Subtitles API Keys Stays on Top)
 
-- **Baharu: 365 tests / 364 PASS / 0 FAIL / 1 SKIP** (naik daripada 363/362 — monotonic dipatuhi).
+### 🐛 Bug Fixes
 
-## SubFaber v3.9.13 (2026-10-10) — Trinity Fasa H: Reaktif URL-to-Door + Sinkronisasi resolvedDoor
+- **Translated all remaining Trinity UI strings from Malay to full English,** matching the existing configure-page conventions — mode toggle labels, placeholders, badges, aria-labels, dropdowns, and all three agent card subtitles. The Trinity root is now inserted after the section grid so the Subtitles API Keys card stays on top as before, with the Trinity cards below it.
 
-### Added
+## SubFaber v3.9.4 (2026-10-10) — Two-Man Integration Gate Protocol
 
-- **Real-time URL-to-Door reactivity** (`public/js/trinity-agents.js`): pendengar `input`/`change` pada medan Base URL — menaip/menampal `/v1beta` menukar dropdown Format/Door automatik kepada Gemini Native; `/v1` (bukan beta) kepada OpenAI-Compatible. Hanya aktif untuk Custom/Proxy (medan tersembunyi untuk rasmi); penukaran berlaku sekali setiap input tanpa watcher berterusan — pilihan manual pengguna selepasnya tidak diganggu.
-- **Post-validation resolvedDoor sync**: selepas Validate berjaya, `data.resolvedDoor` daripada backend (pintu yang menang melalui auto-detect/dual-door fallback v3.9.12) dipetakan ke dropdown Format/Door supaya pengguna melihat pintu sebenar yang disahkan (cth: Crazy Router `/v1beta` + kunci `sk-` → `gemini-native`).
+### ⚡ Improvements
 
-### Fixed
+- **Formalized the two-man integration gate in the agent governance rules:** the frontend role is strictly forbidden from running tests, committing, or pushing, and must hand over to the backend with a structured report after every UI change. The backend release pipeline gained a mandatory step-0 frontend integration audit (payload serialization, rehydration and state persistence, race conditions, DOM lifecycle timing) and file staging was tightened to explicit file lists. The backend role holds sole release authority with a mandatory integration review before the release pipeline, and mode violations now trigger an immediate handover instead of a passive flag.
 
-- **[INTEGRATION AUDIT v3.9.13]** `collectConfigPatch()` Custom path: dropdown Format membawa nilai door penuh sejak Fasa E — kini dipetakan kepada nilai legacy pendek (`gemini`/`openai`/`anthropic`) melalui `doorToFormat()` SEBELU dihantar; `'auto'` dikekalkan untuk autodetect backend. Mencegah `normalizeFormatOverride` keyDetector membuang override manual secara senyap (regresi kelas Fasa E dicegah sekali lagi).
+## SubFaber v3.9.3 (2026-10-10) — Fixed: Trinity UI Failed to Mount (insertBefore Anchor Not a Direct Child)
 
-### Verification
+### 🐛 Bug Fixes
 
-- E2E Playwright: taip `/v1beta` → Format auto `gemini-native` ✓; taip `/v1` → Format auto `openai-compatible` ✓; medan Custom muncul ✓. npm test **363 tests / 362 PASS / 0 FAIL / 1 SKIP** (baseline kekal).
+- **Fixed a silent Trinity UI mount failure (`NotFoundError: insertBefore`):** the anchor card in the page structure is nested deeper than expected and is not a direct child of the section, so the insertion failed quietly. The anchor is now resolved defensively (first direct child matching the criteria, with a fallback insertion at the start of the section). Verified end to end in a live browser: the cards mount, the Basic (1 card) / Pro (3 cards) toggle works, the real-time key-format badge appears, and the legacy Gemini card stays hidden.
 
-## SubFaber v3.9.12 (2026-10-10) — Fixed: Custom /v1beta + kunci sk- gagal validasi (strict URL precedence + expanded dual-door)
+## SubFaber v3.9.2 (2026-10-10) — Conditional Graphify NO-OP Protocol + Pipeline Typo Fix
 
-### Fixed
+### ⚡ Improvements
 
-- **Bug v3.9.11**: Custom Provider `https://cn.crazyrouter.com/v1beta` + kunci `sk-...` gagal validasi (401 Invalid Key) dalam mod Auto. Dua punca dibetulkan:
-  1. **Strict URL precedence**: pembayang laluan URL kini menang MUTLAK atas sebarang pengesanan format kunci — cawangan `/v1beta` → `gemini-native` dijalankan pertama dan tidak pernah sampai ke `keyDetector` (yang akan menjerit openai untuk kunci `sk-`). keyDetector hanya dipanggil apabila URL tiada pembayang versi langsung. Komen kod men dokumentasikan perangkap ini secara eksplisit.
-  2. **Expanded dual-door probe**: predikat retryable dikembangkan daripada `404/400` kepada `404/400/401/403`. Gateway proksi moden (Crazy Router/New API) memulangkan 401/403 apabila PENGPALA autentikasi salah protokol (Bearer dihantar ke endpoint Gemini, atau sebaliknya) — bukan kegagalan kunci sebenar. Pintu bertentangan kini dicuba secara automatik; kegagalan kunci sebenar hanya diisytiharkan apabila KEDUA-DUA pintu gagal.
-- **Ujian VP-16/VP-17** (2 baharu): `/v1beta` + kunci `sk-` → `resolvedDoor: 'gemini-native'` (repro bug + keutamaan susunan kod); primer 401 dipulihkan oleh pintu sandaran dengan simulasi axios mock penuh (models + resolvedDoor dipulangkan). VP-14 dikemas kini — 401/403 kini retryable.
+- **Made the code-topology sync step conditional:** the graph update now only runs when the graphify runtime is present and its output directory exists — otherwise it is logged as an immediate no-op, with a hard ban on generating ad-hoc runner scripts or temporary files as workarounds. A duplicated-number typo in the release-pipeline rule header was also fixed.
 
-### Test Baseline
+## SubFaber v3.9.1 (2026-10-10) — Universal Release Protocol: Mode Instructions & Core Protocol Sync
 
-- **Baharu: 363 tests / 362 PASS / 0 FAIL / 1 SKIP** (naik daripada 361/360 — monotonic dipatuhi).
+### ⚡ Improvements
 
-## SubFaber v3.9.11 (2026-10-10) — Self-Healing Validation: Heuristik URL Pintar + Dual-Door Probing untuk Custom Provider
+- **Synchronized the release protocol across both mode definitions and the core protocol:** the mandatory 8-step release pipeline (version bump → changelog → cache-buster → lint/tests → topology sync → session ledger → commit/push → CI verification) now applies to every commit — backend, hotfix, and frontend handovers alike — as an atomic release event with isolated commits strictly forbidden. Session-continuity rules were also restructured so the ledger is read first after any context reset or condensation.
 
-### Added
+## SubFaber v3.9.0 (2026-10-10) — Tri-Door Surgery: Three API Format Doors for the Trinity Engine
 
-- **Smart URL heuristics (mode 'auto' Custom Provider)** dalam `POST /api/validate-provider`: sanitization trailing-slash (`cleanBaseUrl`), pengesanan pintu berasaskan laluan — `/v1beta` → `gemini-native` (cth: endpoint Gemini Crazy Router); `/v1` (bukan beta) → `openai-compatible` (proksi New API/One API); tiada pembayang URL → fallback pengesanan asal `keyDetector.detectAgentChannelFormat` (AIza → gemini-native; sk- generik → openai-compatible).
-- **Dual-door probing & auto-fallback:** apabila pintu utama gagal dengan 404/400 (endpoint tidak wujud), endpoint mencuba pintu kedua secara automatik (openai-compatible ↔ gemini-native); jika URL tiada segmen versi dan kedua-duanya gagal, ia mencuba append `/v1/models`. Respons baharu memulangkan `resolvedDoor` (pintu yang menang) apabila pengesanan automatik berlaku — membolehkan Frontend memaparkan pintu sebenar tanpa pilihan manual.
-- **Ujian VP-10..VP-15** (6 baharu): penanda kontrak self-healing, heuristik /v1beta → gemini-native, /v1 → openai-compatible, fallback keyDetector (AIza/sk-), predikat retryable (404/400 ya; 401/403/500/network tidak), deteksi versionless `/v1/models`.
+### 🆕 New Features
 
-### Changed
+- **All three Trinity agents (Preflight / Translation / Inspector) can now use any of three API format doors,** where Preflight and Inspector were previously locked to the OpenAI door only:
+  - **Key detection** auto-detects the format from the API key / base URL / model (strong prefixes: `AIza` → Gemini, `sk-ant-` → Anthropic; safe OpenAI-compatible default; manual override always wins; decisions carry their source for transparent logs).
+  - **Gemini door** — native REST with `systemInstruction` top-level, generation config per the model-family ground truth, and a default low thinking level.
+  - **Anthropic door** — Messages API with a top-level system channel, mandatory max-tokens clamped at 64,000, and temperature/thinking constraints preserved.
+  - **OpenAI door** — the battle-tested agent payload and SSE watchdog preserved exactly; the existing production path is 100% unchanged.
+  - A per-agent `format` setting (`'auto'` default plus an environment override) with channel delegation and sourced logging; 33 new regression tests cover the detector and all three doors' payloads.
 
-- **Refactor dispatcher** `POST /api/validate-provider`: logik probe per pintu dipindahkan ke helper `probeDoor(doorType, url, apiKey, agents)` (digunakan semula oleh pintu utama + fallback). Setiap variasi URL masih melalui gate SSRF `validateCustomBaseUrl` sebelum panggilan rangkaian. Ujian VP-2/3/4 dikemas kini mengikut struktur helper baharu.
-- **Test baseline baharu: 361 tests / 360 PASS / 0 FAIL / 1 SKIP** (naik daripada 355/354 — monotonic baseline dipatuhi).
+- **Trinity UI — dual-mode toggle + modular cards:** Basic Mode shows a single Agent Translation card (with the legacy batch formula), while Pro Mode shows all three modular agent cards. Cards share a uniform anatomy — key input with show/hide, a real-time format-detection badge, a Format/Door dropdown, a model dropdown, an editable base URL for proxy routes, and a Test Key button. The legacy hard-coded Gemini form and the beta multi-provider block were hidden (inputs kept in the DOM for save compatibility), and three critical integration races found in backend review were fixed (payload precedence, rehydration order, and mode-toggle sync with the stored `trinity.mode`).
 
-## SubFaber v3.9.10 (2026-10-10) — Fixed: Bug Visibility Custom Provider Trinity (dua punca akar)
+### 🐛 Bug Fixes
 
-### Fixed
+- **Zero regression on the existing production path:** the OpenAI format (auto-detect default) continues to inherit the provider class 1:1 — the universal battle-tested payload, SSE watchdog, model hierarchy, circuit breaker, and phased timeouts are all preserved.
 
-- **Bug kritikal v3.9.9**: memilih "Custom / Proxy" pada dropdown Provider gagal memaparkan medan Base URL dan Format / Door. Forensik Backend Integration Audit menemui **DUA punca akar**:
-  1. **Listener tidak dipasang (detached-DOM race)**: `renderCards()` dipanggil SEBELUM `trinityRoot` disisip ke dalam document — `wireAutodetect()`/`wireValidate()` menggunakan `document.getElementById()` yang memulangkan NULL untuk elemen dalam pokok detached, menyebabkan kedua-duanya return awal → sifar listener `change`/`input`/Validate dipasang (eye button sahaja berfungsi kerana ia dipasang melalui closure dalam `buildAgentCard()`). **Fix:** susunan `mount()` diterbalik — sisipan `root` ke section SEBELUM `renderCards()`.
-  2. **CSS specificity override**: `style.display = ''` (kosong) TIDAK mengatasi rule CSS `.trinity-custom-only { display: none }` — medan kekal tersembunyi walaupun visibility toggle berjalan. **Fix:** `updateVisibility()` kini set `'grid'` (nilai asal `.trinity-field`) untuk SHOW; `'none'` untuk HIDE.
-- Verifikasi E2E Playwright (localhost:7001): (1) badge autodetect `AIza…` → "Google Gemini Native" ✓; (2) Custom dipilih → Base URL + Format muncul (`display: grid`, `offsetParent !== null`) ✓; (3) tukar semula ke Gemini → medan hilang ✓. Bug fix Fasa G Frontend (susunan panggilan) diperkaya dengan dua punca akar tambahan oleh Backend.
+## SubFaber v3.8.42 (2026-10-09) — Fixed: 1:1 Gemini Retry-Backoff Parity Across All Providers
 
-## SubFaber v3.9.9 (2026-10-10) — Protokol: Peraturan #4 Monotonic Baseline
+### 🐛 Bug Fixes
 
-### Changed
+- **Fixed "37ms for 3 retries" — the forensic smoking gun that killed a 69%-complete job:** live logs showed a transient HTTP 502 on batch 10 of 13, and the custom provider's retry loop fired all 3 attempts within 37ms with zero delay, killing a translation that was already 69% done. Gemini alone had exponential backoff (3s → 6s → 12s with anti-thundering-herd jitter); every other provider had none. All providers now share the exact same setup:
+  - **A single source of truth for the backoff formula** ([retryBackoff.js](src/services/providers/retryBackoff.js)): `delay = base × 2^attempt` (3s default, matching Gemini), jitter `0.8 + random()×0.4`, a 50ms floor, and config precedence `options.retryBackoffBaseMs` > environment > default. An explicit `0` disables the delay (for tests/CI) and is distinguished from a missing value that falls back to the default.
+  - **Both retry loops (streaming and non-streaming) of the OpenAI-compatible family** (OpenAI/xAI/DeepSeek/Mistral/OpenRouter/Cloudflare Workers/Custom) now await the backoff before retrying — the forensic 502 path went from 37ms to 3s/6s/12s. The Anthropic and DeepL retry loops received the same backoff. GoogleTranslate already had its own exponential backoff since the beginning and needed no patch.
+- Eight regression tests lock the parity contract: precedence chain, exponential growth with floor, delayed retry loops for all patched providers, legacy behavior when the base is explicitly zero, and a line-by-line formula parity check against Gemini.
 
-- **`.roomodes` (edit owner)**: peraturan #4 TEST BASELINE ditulis semula daripada angka statik (346/345) kepada **monotonic baseline** — invariant kekal 0 FAIL / max 1 SKIP (live Redis); jumlah ujian mesti monotonik (>= baseline terkini dalam `docs/SESSION_LEDGER.md`, tidak boleh berkurang tanpa kelulusan bertulis owner). Mencegah angka lapuk dalam arahan mod. Validasi PyYAML: parse OK, 2 modes, groups=[read,edit,command,mcp] kedua-duanya, source=project — PASS.
-- `package.json` (3.9.8 → 3.9.9, patch — protokol sahaja) + `CHANGELOG.md` (header ini). Sifar perubahan fail kod.
+## SubFaber v3.8.41 (2026-10-07) — Phase H: Pre-Flight System/User Prompt Split
 
-## SubFaber v3.9.8 (2026-10-10) — Universal Provider Validation Endpoint + Trinity Fasa F: Butang Validate Sejagat
+### ⚡ Improvements
 
-### Added
+- **The Pre-Flight prompt is now split into system and user channels:** the static instructions (role, decision discipline, fact-vs-inference rules, task, input format, JSON schema, final checks) are sent as the system channel, while the dynamic SRT input goes as the user channel. Empirical ground truth (9 model calls on a real drama SRT, same prompt otherwise): terminology Jaccard rose 0.47 → 0.72, null-rate spread narrowed from 20 points to 7, pollution stayed at zero, and the provider's prompt cache now activates on the system channel (~8k cached tokens).
+- **The OpenAI-compatible request builder now sends `messages` as `[system, user]` when a system prompt exists** — benefiting both the Inspector pre-flight path and the legacy primary-agent fallback (fixing an old bug where `systemPrompt` was accepted but never sent). The battle-tested 4-key payload stays untouched: `stream: true`, `temperature: 0.0`, no max-tokens or reasoning-effort fields. Eight regression tests lock the split contract end to end.
 
-- **`POST /api/validate-provider` (index.js)** — endpoint validasi sejagat menggantikan had `/api/validate-gemini` (Gemini sahaja). Door dispatcher 3 pintu: `gemini-native` (`GET {baseUrl}/models`, header `x-goog-api-key`, filter `supportedGenerationMethods` mengandungi `generateContent`), `openai-compatible` (`Authorization: Bearer`, pengekstrakan `data[].id`), `anthropic-messages` (`x-api-key` + `anthropic-version: 2023-06-01`). Payload `{ provider, apiKey, door, baseUrl }` — pembekal rasmi mengambil baseUrl daripada providerRegistry; Custom menjalani validasi SSRF (`validateCustomBaseUrl`) SEBELUM sebarang panggilan rangkaian. Respons standard: `{ success: true, valid: true, models }` / `{ success: false, valid: false, error }` (401/403 dari provider → kod sama; 5xx → 502; input tidak sah → 400). Dilindungi `validationLimiter` + `setNoStore()`.
-- **`src/services/validate-provider-regression.test.js` (baharu, VP-1..VP-9)** — ujian kontrak endpoint (dispatcher statik, gate SSRF, respons standard), unit registry (door mismatch/match, baseUrl rasmi), simulasi pengekstrakan model 3 pintu, dan pengelasan status ralat. Didaftarkan dalam `test:tracked`.
+## SubFaber v3.8.40 (2026-10-07) — KNP Surgery: Pre-Flight Prompt Realigned to the Netflix KNP Doctrine
 
-### Changed
+### ⚡ Improvements
 
-- **`public/js/trinity-agents.js` (Fasa F)** — [`runAgentValidate()`](public/js/trinity-agents.js:375) kini memanggil `POST /api/validate-provider` (panggilan legasi `/api/validate-gemini` dibuang): payload `{ provider, apiKey, door, baseUrl }` (Custom: door/baseUrl manual, door 'auto' → door registry); `valid === true` → lencana HIJAU `Valid ✓ (provider-id)` + `models` diisi automatik ke dropdown Model (fallback katalog statik); `valid === false` → lencana MERAH dengan `res.error`; ralat rangkaian → `Failed`. Respons bukan-JSON dilindungi try/catch parse.
+- **Fully realigned the Pre-Flight prompt with the industry-standard Netflix KNP (Key Names and Phrases) doctrine** after a ground-truth audit:
+  - **Surgery #1 (root cause of terminology pollution):** the old instruction that character titles/honorifics MUST be locked in the terms list was removed — the honorific matrix now points exclusively at the characters pillar. Forensics proved the old directive leaked character names into the terms vocabulary.
+  - **Surgery #2 (KNP categories):** terms are now "the vocabulary of the story world ONLY... anything that is NOT a person", each carrying a new `type` field (location/organization/object/technical/phrase), with an explicit ban on human names as terms.
+  - **Surgery #3 (contradictory mandates):** the canonical address matrix no longer references the terms pillar — it stands alone on the characters pillar, eliminating the contradictory dual instructions that caused null-rate variance.
+  - **Surgery #4 (Inspector enforcement):** a seventh violation type, TERM, was added — locked-term deviations can now actually be reported (previously the locked terms were injected with no reporting channel), spanning the crime taxonomy, inspector output contract, and engine telemetry.
+  - **Surgery #5 (primary-agent labels):** both formatters render a category tag on every term plus a "Technical Glossary" header, making locked terms an explicit instruction to the translation agent.
+- **Regression suite updated:** six old anchors realigned and three new tests added (KNP terms contract, TERM violation definition, TERM crime parsing), all red-before/green-after.
 
-### Test Baseline
+## SubFaber v3.8.39 (2026-10-07) — Fixed: Two Engine Bugs from the Second Deep Scan
 
-- **Baharu: 355 tests / 354 PASS / 0 FAIL / 1 SKIP** (naik daripada 346/345/0/1 — 9 ujian VP baharu).
+### 🐛 Bug Fixes
 
-## SubFaber v3.9.7 (2026-10-10) — Trinity Fasa E: Reka Bentuk Semula Kad Trinity + Integrasi Registri Pembekal Dinamik
+- **Fixed the auto-chunk second half losing its context:** the context for the second half of an auto-chunked file was rebuilt by hand and silently dropped the forward-looking window and the Pre-Flight terminology bible. A single shared context builder now handles both the normal and auto-chunk paths — the first half's translation is mapped as prior memory, and the second half of heavy files is no longer translated blind.
+- **Fixed the Inspector's crime-retry prompt breaking the anchor contract:** the `CRITICAL SEMANTIC ALERT` warning is now inserted BEFORE the `<answer>` block instead of appended at the end, keeping the `<s id="N">` anchor as the final token of the retry prompt and preserving the preamble-scrubber and Gemini prefill contracts. Legacy prompts without an `<answer>` block keep the old append behavior for backward compatibility. Four red-before/green-after regression tests lock both fixes.
 
-### Changed
+## SubFaber v3.8.38 (2026-10-07) — Sliding Window Formula 4+50+2
 
-- **`public/js/trinity-agents.js` (rewrite penuh — Fasa E)**: Susun atur hierarki kad baharu mengikut amalan industri — Baris 1: dropdown **Provider** (16 pembekal rasmi + Custom/Proxy di hujung senarai); Baris 2: **API Key + satu butang tunggal "Validate"** (butang "Load" yang mengelirukan dihapuskan — senarai model dimuatkan automatik apabila validasi sah); Baris 3: dropdown **Model**. Integrasi dinamik `GET /api/providers/registry` dengan cache + fallback statik 16 pembekal sekiranya rangkaian gagal (UI tidak tergantung).
-- **Smart Visibility (hide ≠ delete)**: medan Base URL & Format/Door disembunyikan (`display: none`, kelas `.trinity-custom-only`) untuk semua pembekal rasmi; hanya dipaparkan apabila Custom/Proxy dipilih — pengguna awam tidak perlu lihat tetapan teknikal.
-- **Payload kontrak baharu**: `trinity.{agent}` kini membawa `{ apiKey, format, baseUrl, model, provider, door, isCustom, enabled }`. [INTEGRATION AUDIT FIX] `format` pembekal rasmi di-derive daripada door melalui pemetaan `DOOR_TO_FORMAT` kepada nilai legacy pendek (`gemini`/`openai`/`anthropic`) — sepadan `VALID_FORMATS` keyDetector.js & enum `agentB.format`, mencegah override dibuang senyap.
-- **Rehydration provider-aware**: nilai tersimpan (termasuk konfigurasi warisan `geminiApiKey`/`geminiModel` dan format legacy) dipulihkan ke dropdown provider/model tanpa stale-value; `updateVisibility()` dipanggil selepas setiap rehydrate; katalog model per-provider (15 pembekal) sebagai fallback.
+### ⚡ Improvements
 
-### Added
+- **Raised the sliding context window from 3 to 4 previous lines (the 4+50+2 formula):** the primary agent's asymmetric window is now previous 4 / batch 50 / next 2, aligned consistently across both the normal and streaming-chunk context paths. The Pre-Flight phase and the Inspector were not touched. Window regression tests were adjusted accordingly.
 
-- **`public/css/trinity-agents.css`**: kelas `.trinity-custom-only` (Smart Visibility lalai tersembunyi) + gaya `.trinity-provider-select` selarus medan sedia ada.
+## SubFaber v3.8.37 (2026-10-07) — Batch Size 50 + Tightened Primary-Agent Prompt
 
-## SubFaber v3.9.6 (2026-10-10) — Pemisahan Enjin Rasmi: Pure Google Gemini Native + Registri Pembekal LLM Sejagat (16 Pembekal)
+### ⚡ Improvements
 
-### Changed
-
-- **[PROVIDER PURGE] `src/services/gemini.js` kini 100% Google Gemini Native** (REST v1beta rasmi Google AI Studio, `https://generativelanguage.googleapis.com/v1beta`): seluruh logik hardcoded Crazy Router dibuang — `detectKeyType()`/`keyType` (auto-detect key `sk-`), URL statik proksi `https://cn.crazyrouter.com/v1beta` + env `CRAZYROUTER_API_BASE`, `getCrazyRouterAvailableModels()`, `getCrazyRouterGoogleModelList()`, `warnIfModelUnavailable()`, `_canonicalModelCandidates()`/`_isCanonicalModelListed()`, `isGoogleModel()`, `CRAZYROUTER_GEMINI_MODELS`, intercept `getModelLimits()` proksi, pintu `countTokensForTranslation()`, tagging `providerRoute='crazyrouter'`, dan header `Authorization: Bearer` (kini sentiasa `x-goog-api-key`). Proksi persendirian kini HANYA disokong melalui Custom Provider (Base URL pengguna + validasi SSRF sedia ada). Invariant dipelihara: `systemInstruction` kekal medan top-level, ground truth pensampelan 3.x-STRICT/LEGACY, `thinkingBudget` (0/-1), `topK` kekal diharamkan.
-- **`index.js`**: cabang validasi aktif proksi (`gemini.keyType === 'crazyrouter'`) digugurkan — endpoint `/api/validate-gemini-key` kini laluan Google Native tunggal (senarai model → fallback countTokens).
-
-### Added
-
-- **`src/utils/providerRegistry.js` (baharu)**: Registri Pembekal Teras berpusat — 15 pembekal rasmi global + Custom/Proxy: Google Gemini (`gemini-native`), OpenAI, Anthropic Claude (`anthropic-messages`), DeepSeek, Groq, Mistral AI, xAI (Grok), OpenRouter, Together AI, Cerebras, SambaNova, Perplexity, Moonshot/Kimi, Zhipu AI/GLM, Qwen/DashScope (semua `openai-compatible`), dan Custom (`isCustom: true` — Base URL bebas + pilihan pintu manual). API: `getOfficialProviders()`, `getProviderById()`, `getProviderBaseUrl()`, `isValidProviderDoor()`, `DOOR_TYPES`; snapshot immutable untuk kontrak Frontend.
-- **Endpoint passthrough `GET /api/providers/registry`** (`index.js`): read-only, tiada kredensial — respons `{ success, doors, providers }` untuk penggunaan dinamik Frontend.
-
-### Fixed
-
-- **Ujian regresi ditulis semula mengikut kontrak native** (`src/services/gemini-auth-model-regression.test.js`): CR-B1..B4 kini mengunci key `sk-` TIDAK lagi dirawat sebagai proksi (baseUrl rasmi + `x-goog-api-key`, sifar rujukan crazyrouter dalam sumber, `providerRoute` dibuang, `countTokens` tanpa bypass); WF-2 menjadi ujian registri 16 pembekal (pintu, Base URL, immutability). Jumlah ujian kekal 346 — **345 PASS / 0 FAIL / 1 SKIP** (sifar regresi baseline).
-
-## SubFaber v3.9.5 (2026-10-10) — Fixed: Trinity UI bahasa English penuh + kedudukan kad (Subtitles API Keys kekal atas)
-
-### Fixed
-
-- **Bahasa UI Trinity (Fasa D hotfix susulan)**: semua teks skrin Trinity dalam `public/js/trinity-agents.js` ditukar Melayu → English penuh mengikut konvensyen UI configure sedia ada — "Basic Mode"/"Pro Mode" (togol dwimod), placeholder "Enter your API key…", Base URL "https://…/v1 (optional — gateway/proxy)", badge "No key"/"Valid ✓"/"Failed", aria-label butang intip, dropdown "Auto (Recommended)", model select "— Select model —", subtitle kad 3 ejen.
-- **Kedudukan kad**: `#trinityRoot` kini disisip SELEPAS `.section-grid` dalam `#apiKeysSection` — "Subtitles API Keys" kekal atas sekali seperti sebelumnya; Trinity (togol + kad modular) muncul di bawah kad provider. Fallback: `appendChild` di hujung seksyen.
-- Verifikasi Playwright E2E: rootAfterGrid=true, subtitleCardBeforeTrinity=true, semua label/placeholder/badge English, `#geminiCard` kekal display:none. Kontrak payload tidak berubah (Langkah 0 Integration Audit lulus).
-
-## SubFaber v3.9.4 (2026-10-10) — Protokol Integrasi Dua-Pihak: Two-Man Integration Gate + Integration Audit Langkah 0
-
-### Changed
-
-- `.roomodes` (Frontend mode): peraturan #5 ditulis semula sebagai **MANDATORY HANDOVER & ZERO-COMMIT ENFORCEMENT** — mod Frontend diharamkan keras menjalankan `npm test`/`git commit`/`git push` atau menawarkan komit langsung; selepas edit UI wajib append blok progress ke `docs/SESSION_LEDGER.md` dan segera `switch_mode` ke backend dengan laporan handover berstruktur (fail disentuh, perubahan DOM, kontrak payload borang).
-- `.roomodes` (Backend mode): peraturan #6 Universal Release & Commit Pipeline menerima **Langkah 0 — FRONTEND INTEGRATION AUDIT** (wajib bila menerima handover frontend): audit payload serialization, rehydration & state persistence, race conditions & DOM lifecycle timing; `git add .` diperketat kepada `git add <specific-files>`.
-- `.roo/rules/00-subfaber-core-protocol.md`: item #4 baharu **MANDATORY TWO-MAN INTEGRATION GATE (ZERO STANDALONE FRONTEND RELEASES)**; item #5 baharu **BACKEND AS TECH LEAD & INTEGRATION GATEKEEPER** (Backend pegang autoriti release tunggal + Integration Review wajib sebelum paip 8-langkah); item #6 (Mode-Activation Awareness) diperketat daripada "flag & await confirmation" kepada "refuse & trigger handover". Indentasi item #6 dibetulkan ke peringkat atas.
-
-## SubFaber v3.9.3 (2026-10-10) — Fixed: Trinity UI gagal mount (insertBefore anchor bukan anak langsung #apiKeysSection)
-
-### Fixed
-
-- **Hotfix Trinity UI Fasa D**: `trinity-agents.js` mount gagal senyap dengan `NotFoundError: insertBefore` — kad `.card[data-card="subtitle-api"]` dalam struktur `main.html` bersarang lebih dalam dan bukan anak langsung `#apiKeysSection`. Fix: anchor kini diselesaikan secara defensif (anak langsung pertama yang memenuhi kriteria; fallback sispan di awal seksyen). Diverifikasi end-to-end dengan Playwright pada server tempatan: kad mount, togol Basic(1 kad)/Pro(3 kad Preflight/Translation/Inspector) berfungsi, badge autodetect masa nyata (`AIza…` → "Google Gemini Native (auto)" biru), kad legasi `#geminiCard` disembunyikan. npm test 346/345/0/1 hijau.
-
-## SubFaber v3.9.2 (2026-10-10) — Protokol Graphify NO-OP Bersyarat + Pembetulan Typo Pipeline
-
-### Changed
-
-- `.roomodes` (Backend Custom Instructions): Langkah 5 Universal Release & Commit Pipeline kini **bersyarat** — `graphify update .` hanya dijalankan JIKA runtime graphify ada DAN `graphify-out/` wujud; jika tiada, log sebagai NO-OP serta-merta. Larangan keras mencipta skrip Python ad-hoc (`.tmp-*`) atau workaround manual. Typo dwi-nombor `6. 6.` pada header peraturan #6 dibetulkan.
-- `.roo/rules/00-subfaber-core-protocol.md`: Langkah 5 Mandatory Commit & Release Protocol selari — graphify sebagai NO-OP segera apabila runtime/direktori tiada; dilarang menjana skrip runner ad-hoc / fail sementara.
-
-## SubFaber v3.9.1 (2026-10-10) — Protokol Release Universal: Penyegerakan Arahan Mod & Core Protocol
-
-### Changed
-
-- `.roomodes` (Backend mode-specific Custom Instructions): baseline ujian dikemas kini 305/304 → **346 tests / 345 PASS / 0 FAIL / 1 SKIP** (v3.8.42+ Trinity Tri-Door); peraturan #6 ditulis semula sebagai **Universal Release & Commit Pipeline** — paip 8 langkah wajib (bump versi → changelog → cache-buster → prettier/eslint/npm test → graphify → session ledger → commit/push → CI verification) untuk SEMUA komit (backend, hotfix, frontend handover); peraturan #7 distrukturkan semula sebagai Session Continuity & Context Resets (baca ledger dahulu selepas reset/kondensasi konteks).
-- `.roo/rules/00-subfaber-core-protocol.md`: blok **Mandatory Commit & Release Protocol (Zero Exceptions)** ditambah — paip 8 langkah sebagai atomic release event; larangan keras komit/push terasing; audit pelanggaran bagi mana-mana langkah yang dilangkau.
-
-### Fixed
-
-- `public/css/configure.css`: komen penanda `/* TRINITY FASA D 2026-10-10 */` ditambah pada hujung fail (penjajaran Fasa D; sifar perubahan peraturan).
-
-## SubFaber v3.9.0 (2026-10-10) — Tri-Door Surgery: 3 pintu format API untuk Trinity Engine
-
-### Added
-
-- **Tiga pintu format API untuk Trinity Engine** (Agent Preflight / Agent Translation / Agent Inspector) — sebelum ini Agent Preflight & Inspector terkurung pada pintu OpenAI sahaja:
-  - `keyDetector` — autodetect format daripada API key / baseUrl / model (prefix kuat `AIza`→Gemini, `sk-ant-`→Anthropic; default selamat OpenAI-compatible; override manual sentiasa menang; keputusan ber-source untuk log telus).
-  - `geminiChannel` — pintu Gemini Native (systemInstruction top-level; generationConfig mengikut getModelFamily ground truth; non-stream; thinkingLevel low default).
-  - `anthropicChannel` — pintu Anthropic Messages (system top-level; max_tokens mandatori clamp 64000; kekangan temperature/thinking dikekalkan).
-  - `openaiChannel` — ekstraksi super-options AgentB (muatan god-tier 4-kunci + SSE watchdog terpelihara; laluan rootsys 100% tidak berubah).
-  - `config.agentB.format` ('auto' lalai + env `AGENT_B_FORMAT`) + delegasi channel dalam AgentBInspector dengan log `[AgentB][AgentChannel] format=… source=…`.
-  - 33 ujian regresi baharu (18 keyDetector + 15 payload/delegasi per pintu); baseline 313 → 346 tests.
-
-- **UI Trinity — Dual Mode Toggle + Modular Trinity Cards** (Fasa D):
-  - Togol dwimod di seksyen API Keys: **Basic Mode** (1 kad Agent Translation sahaja + formula kelompok legasi 4 prev / 50 batch / 2 future) vs **Pro Mode** (3 kad modular: Agent Preflight, Agent Translation, Agent Inspector).
-  - Anatomi kad seragam: input kunci (butang intip/sembunyi), **lencana autodetect masa nyata** (`AIza`→"Google Gemini Native" biru, `sk-ant-`→"Anthropic Messages" jingga, `sk-`/lain→"OpenAI-Compatible" hijau), dropdown Format/Pintu (Auto disyorkan), dropdown Model, Base URL boleh sunting (laluan proksi), butang Test Key.
-  - Pembersihan legasi: borang Gemini hardcoded + blok "Multiple providers (beta)" disembunyikan (input kekal dalam DOM untuk keserasian simpanan).
-  - 3 fix integrasi kritikal (ulasan Backend): payload race (kunci Trinity mengatasi input legasi + blok trinity/agentB dialirkan ke payload), rehydration race (loadConfigToForm → rehydrate), segerak togol mod dengan `trinity.mode` tersimpan.
-
-### Changed
-
-- `index.js`: senarai cache-bust UI config diperluaskan (`/css/trinity-agents.css`, `/js/trinity-agents.js`).
-- `src/utils/config.js`: passthrough blok `trinity` + normalisasi `agentB.format`.
-
-### Fixed
-
-- Sifar regresi laluan produksi rootsys: format openai (autodetect default) meneruskan pewarisan `OpenAICompatibleProvider` 1:1 — muatan universal god-tier, watchdog SSE, hierarki model, circuit breaker, timeout berfasa semua terpelihara.
-
-## SubFaber v3.8.42 (2026-10-09) — Fixed: Pariti Retry-Backoff 1:1 Gemini merentas semua provider
-
-**"37ms untuk 3 retry" — titik forensik yang membunuh job 69% siap.** Log live owner (rootsys.cloud, deepseek-v4-pro, SRT 648 entry): batch 10/13 gagal HTTP 502 transient; gelung retry custom provider meluru 3 percubaan dalam 37ms tanpa sebarang delay, membunuh terjemahan yang sudah 69% lengkap. Gemini mempunyai retryWithBackoff() exponential 3s → 6s → 12s + jitter 0.8x–1.2x (anti thundering-herd) — provider lain tiada. Mandat owner: SEMUA LLM wajib kongsi setup 1:1 dengan main provider Gemini. Gap terakhir pariti kini ditutup.
-
-### Fixed
-
-- **[retryBackoff.js](src/services/providers/retryBackoff.js) (baharu)** — SATU sumber kebenaran formula backoff: `delay = base × 2^attempt` (3000ms lalai = Gemini), jitter `0.8 + random()×0.4`, floor 50ms. Keutamaan konfigurasi: `options.retryBackoffBaseMs` > env `PROVIDER_RETRY_BACKOFF_BASE_MS` > lalai 3000. Nilai `0` eksplisit melumpuhkan delay (test/CI) — dibezakan daripada nilai hilang yang jatuh ke lalai.
-- **[openaiCompatible.js](src/services/providers/openaiCompatible.js)** — kedua-dua gelung retry (non-stream `translateSubtitle` + stream `streamTranslateSubtitle`) kini `await sleepRetryBackoff(attempt)` sebelum `continue`. Menerangi keluarga OpenAI/xAI/DeepSeek/Mistral/OpenRouter/cfWorkers/Custom (API key bos Afiq). Laluan forensik 502: 37ms → 3s/6s/12s.
-- **[anthropic.js](src/services/providers/anthropic.js)** — kedua-dua gelung retry (stream & non-stream) menerima backoff sama.
-- **[deepl.js](src/services/providers/deepl.js)** — gelung retry tunggal menerima backoff sama (pariti penuh walaupun DeepL bukan LLM).
-- GoogleTranslate tidak dipatch — kelasnya mempunyai `sleep()` + exponential backoff sendiri (`BACKOFF_BASE_MS` 4s/8s) sejak asal, sudah selari semangat Gemini.
-
-### Added
-
-- [provider-retry-backoff-regression.test.js](src/services/provider-retry-backoff-regression.test.js) — 8 ujian regresi: keutamaan options > env > lalai 3000 (pariti kontrak Gemini), growth exponential 2^attempt + floor 50ms, gelung non-stream & stream BERDELAY untuk OpenAICompatible/Anthropic/DeepL, pemeliharaan tingkah laku lama bila `retryBackoffBaseMs=0`, dan ujian pariti formula provider ≡ formula Gemini baris-demi-baris. Didaftarkan dalam `test:tracked`.
-
-### Kesimpulan pengesahan
-
-313 tests / 312 PASS / 0 FAIL / 1 SKIP (baseline 304 → 312) · Prettier bersih · ESLint 0 error.
-
-## SubFaber v3.8.41 (2026-10-07) — Changed: Fasa H — Pre-Flight system/user split (integrasi varian G1 Moonshot)
-
-### Changed
-
-- **Pre-Flight kini bersempadan `SUBFABER_PROMPT_BOUNDARY`** ([subfaberPreflight.js](src/services/subfaberPreflight.js)): arahan statik (Role → DECISION DISCIPLINE → FACT VS INFERENCE → Task → INPUT FORMAT → skema JSON → FINAL CHECK) dihantar sebagai **saluran system**; input dinamik SRT (`<text>` + arahan guna tugas) sebagai **saluran user** — replika tepat varian G1 yang divalidasi Fasa G. Ground truth empirikal (9 panggilan kimi-k3, SRT drama sebenar, prompt v3.8.40 sama): terms Jaccard 0.47 → 0.72, null-rate spread 20pt → 7pt (sasaran ≤10pt dicapai), pollution 0 / type 100% / characters 0.90 kekal, prompt-cache rootsys kini aktif pada saluran system (~8k tok di-cache).
-- **`AgentBInspector.buildUserPrompt`** ([agentBInspector.js](src/services/agentBInspector.js)): prompt bersempadan (Pre-Flight) dipecahkan { system, user }; prompt pemeriksaan tanpa sempadan kekal satu user message (tingkah laku lama dipelihara).
-- **`OpenAICompatibleProvider.buildChatRequest`** ([openaiCompatible.js](src/services/providers/openaiCompatible.js)): `messages` kini `[system, user]` bila `meta.systemPrompt` tidak kosong — memanfaatkan Pre-Flight Agent B (kimi-k3) DAN laluan legacy Agent A fallback (bug lama: `systemPrompt` diterima tetapi tidak pernah dihantar). Tanpa `systemPrompt` → satu user message. God-tier 4-kunci kekal suci: `stream:true`, `temperature:0.0`, tiada max_tokens/reasoning_effort.
-- **Probe TTFT** ([make-preflight-payload.js](make-preflight-payload.js) + [make-preflight-payload-slim.js](make-preflight-payload-slim.js)): muatan probe mencerminkan struktur runtime baharu `[system, user]`.
-
-### Added
-
-- [subfaber-fasah-regression.test.js](src/services/subfaber-fasah-regression.test.js) — 8 ujian regresi kontrak Fasa H: sempadan prompt + split bersih (system tanpa dialog, user tanpa arahan), split Agent B vs laluan legacy inspection, messages `[system, user]` vs `[user]`, dan ujian end-to-end (prompt produksi → Agent B → buildChatRequest). Didaftarkan dalam `test:tracked`.
-
-### Kesimpulan pengesahan
-
-305 tests / 304 PASS / 0 FAIL / 1 SKIP (baseline 297 → 304) · Prettier bersih · ESLint 0 error.
-
-## SubFaber v3.8.40 (2026-10-07) — Changed: Pembedahan KNP — prompt Pre-Flight dipatuhtadbir mengikut doktrin Netflix KNP
-
-**"Kitab suci mesti betul" — Pre-Flight (Fasa 0) diselaraskan penuh dengan standard industri Netflix KNP (Key Names and Phrases) selepas audit ground truth §5.9/§5.10 (plans/kimi-k3-rootsys-ground-truth-2026.md):**
-
-- **Changed — Bedah #1 (punca akar pollution):** [malay.js](src/services/prompts/languagePacks/malay.js) + [generic.js](src/services/prompts/languagePacks/generic.js) — arahan lama "In the 'terms' list, you MUST include and lock... titles/honorifics" (gelaran watak DIMINTA masuk terms) DIGUGURKAN. Matriks honorifik kini diarahkan kepada tiang `characters` sahaja + klausa baharu "recorded EXCLUSIVELY as character addresses — never as terms entries". Forensik Fasa D membuktikan arahan lama punca terms-pollution ("ms. yoon sae-bom", "corporal jung yi-hyun" bocor masuk terms, Jaccard 0.51-0.62). Netflix KNP tidak pernah meletakkan Character dan Organization dalam senarai yang sama.
-- **Changed — Bedah #2 (kategori KNP):** [subfaberPreflight.js](src/services/subfaberPreflight.js) — Task 2 ditulis semula: terms kini "vocabulary of the story world ONLY... A term is anything that is NOT a person" + medan `type` baharu pada setiap term (enum: location/organization/object/technical/phrase) + larangan eksplisit "A human's name (with or without a title like Ms./Corporal/Lawyer) is a character entry, never a term". Parser menyimpan + clamp `type` (nilai luar enum → '', Bible warisan tanpa type kekal sah).
-- **Changed — Bedah #3 (kontradiksi mandat):** `canonicalAddressMatrix` tidak lagi merujuk "the SAME mandatory... matrix from the 'terms' pillar" (dua arahan bertentangan pada medan sama = punca canonical null-rate variance 22%/33%/40%). Matriks kini berdiri sendiri pada tiang characters; satu suara sahaja.
-- **Changed — Bedah #4 (penguatkuasaan Agent B):** [agentBInspector.js](src/services/agentBInspector.js) — jenayah ke-7 **TERM** ditambah: pelanggaran locked term kini boleh dilaporkan (sebelum ini Locked Terms disuntik tetapi tiada saluran laporan). Header "### Locked Terms" kini memerintah "render locked targets exactly — deviations are TERM violations". Taksonomi 6→7 jenayah merentas `VALID_CRIME_TYPES`, kontrak output inspector, dan [translationEngine.js](src/services/translationEngine.js) telemetry (`crimesDetectedByType` + `crimeBatchIndices` + pattern loop).
-- **Changed — Bedah #5 (label KNP Agent A):** kedua-dua formatter (`_formatPreflightForChunk` + `formatPreflightForPrompt`) merender tag kategori `[location]`/`[organization]`/`[object]`/`[technical]`/`[phrase]` pada setiap term + header "Technical Glossary (use the locked rendering for each term)" — istilah terkunci kini arahan eksplisit kepada Agent A.
-- **Changed — ujian regresi dipatuhtadbir:** 6 anchor lama (verbatim honorific-lock directive, {source, target} 2-kunci, 6-jenayah kontrak, telemetry 6-jenis) diselaraskan + **3 ujian baharu**: kontrak KNP terms (type enum + non-person scope + larangan silang-tiang), definisi jenayah TERM + guardrail, dan parse TERM crime. Semua merah-sebelum/hijau-selepas melalui TAP.
-- **Bump versi 3.8.39 → 3.8.40** — `npm test` — **297 PASS / 0 FAIL / 1 SKIP** (298 tests; baseline baharu — naik daripada 294).
-
-## SubFaber v3.8.39 (2026-10-07) — Fixed: Dua bug enjin hasil Deep Scan #2 (auto-chunk context + anchor retry Agent B)
-
-**Sapu bersih bug dari audit forensik kedua enjin SubFaber:**
-
-- **Fixed — Bug #1 (auto-chunk Fix #7):** [translationEngine.js](src/services/translationEngine.js) — konteks separuh kedua auto-chunk dibina oleh pembina tunggal `_prepareSubfaberContext()` menggantikan pembinaan manual yang menjatuhkan `subsequentContent` (window ke hadapan) dan `preflight` (bible Fasa 0). Skop sintetik menggabungkan konteks batch asal + kedua-dua separuh; terjemahan separuh pertama dipetakan sebagai `translatedSoFar` supaya `previousMemory` betul. Formula 4+50+2 kini satu sumber kebenaran merentas laluan normal dan auto-chunk — separuh kedua fail berat tidak lagi diterjemah tanpa panduan global.
-- **Fixed — Bug #2 (crime retry Agent B):** amaran `CRITICAL SEMANTIC ALERT` kini disisip **sebelum** blok `<answer>` (bukan dilekat di hujung) — anchor `<s id="N">` kekal sebagai token terakhir prompt retry, memelihara kontrak Smart Preamble Scrubber v1.6.1 + prefill Gemini. Fallback defensif: prompt warisan tanpa `<answer>` kekal append di hujung (backward-compat).
-- **Added:** [translationEngine-bugfix2-regression.test.js](src/services/translationEngine-bugfix2-regression.test.js) — 4 ujian regresi (disahkan MERAH sebelum patch melalui TAP, HIJAU selepas): pewarisan subsequent + preflight + previous dalam second-half, window 4 penuh, anchor token terakhir, dan warning dalam USER part (tidak bocor ke SYSTEM). Fail didaftarkan dalam `test:tracked`.
-- **Bump versi 3.8.38 → 3.8.39** — `npm test` — **294 PASS / 0 FAIL / 1 SKIP** (295 tests; baseline baharu).
-
-## SubFaber v3.8.38 (2026-10-07) — Changed: Formula (4+50+2) — videolingo + owner's special tweak
-
-**Sliding window context SubFaber dinaikkan: previous 3 → 4 baris (formula 4+50+2):**
-
-- **Changed:** [`src/services/translationEngine.js`](src/services/translationEngine.js) — `PREV_W` 3 → **4** dalam `_prepareSubfaberContext()` (sliding window asimetris kini prev 4 / next 2). `PREV_W_CHUNK` dalam Fix #7 (konteks separuh kedua semasa streaming) turut diselaraskan 3 → 4 supaya formula konsisten merentas laluan. Batch size 50 & subsequent 2 dikekalkan.
-- **Kekal:** Pre-Flight (Fasa 0) dan Agent B Inspector/inspection TIDAK diubah — hanya sliding window Agent A.
-- **Changed:** [subfaber-context-regression.test.js](src/services/subfaber-context-regression.test.js) — 5 test window (middle batch, last batch, clamp boundary, previousMemory, single-engine path) diselaraskan: assertion prev 3 → 4, verifikasi ID (7..10), memory window start (ID 7), dan larangan ID luar window (ID 6).
-- **Changed:** [config.js](src/utils/config.js) — komen dokumentasi window hardcode dikemas kini (3/2 → 4/2).
-- **Bump versi 3.8.37 → 3.8.38** — `npm test` — **290 PASS / 0 FAIL / 1 SKIP**.
-
-## SubFaber v3.8.37 (2026-10-07) — Changed: Batch size 50 + prompt Agent A diperketat (pemilihan kata tegas)
-
-**Setup terjemahan baharu dimulakan mulai versi ini (keputusan owner, 2026-10-07):**
-
-- **Changed:** [`src/services/translationEngine.js`](src/services/translationEngine.js) — `SUBFABER_BATCH_SIZE` dinaikkan semula 30 → **50** baris/batch (keseimbangan throughput panggilan vs beban token). Env override masih dilarang — nilai hardcoded, enjin tunggal SubFaber.
-- **Changed:** `## Role` dalam `systemPart` prompt Agent A kini berbunyi "Expert subtitle translator specializing in {source} to {target} localization" (menggantikan frasa lama "localizing from") — lebih tegas dan khusus.
-- **Changed:** `## Style` diketatkan kepada "Write natural, idiomatic {target} at streaming-grade quality. Never calque; preserve character voice. Use context titles/pronouns ONLY when present in the source — never inject titles onto bare names." — larangan suntikan gelaran pada nama kosong kini eksplisit.
-- **Changed:** `## Output Format` dipendekkan — klausa "if a line is hard, commit to a real translation, never explain it in (brackets)" dibuang; kekal "ZERO translator notes in parentheses."
-- **Fixed:** [`src/services/subfaber-context-regression.test.js`](src/services/subfaber-context-regression.test.js) — 3 assertion regresi diselaraskan dengan setup baharu: `batchSize` 30 → 50 (2 lokasi), directive Style "living" → "natural, idiomatic", dan register lock "locked titles/pronouns" → "never inject titles onto bare names". Komen dokumentasi lapuk dalam enjin (masih menyebut 30/60) turut dibetulkan.
-- **Bump versi 3.8.36 → 3.8.37** — `npm test` — **290 PASS / 0 FAIL / 1 SKIP**.
+- **Raised the batch size back to 50 lines per batch** (balancing call throughput against token load), with environment overrides still forbidden — a hard-coded value for the single engine.
+- **Tightened the primary agent's prompt wording:** the role now reads "Expert subtitle translator specializing in {source} to {target} localization", the style directive demands natural, idiomatic output with an explicit ban on injecting titles onto bare names, and the output format was trimmed while keeping the zero-notes-in-parentheses rule. Three regression assertions were aligned with the new setup.
 
 ## SubFaber v3.8.36 (2026-10-06) — Changed: Enhanced translation prompt style with streaming-grade quality anchor
 
-**Bahagian `## Style` dalam prompt Agent A kini membawa penanda kualiti "professional streaming-grade quality" secara neutral:**
-
-- **Changed:** [`src/services/translationEngine.js`](src/services/translationEngine.js) — baris `Write living ...` dalam `## Style` disuntik frasa `Aim for professional streaming-grade quality — adapt idioms, never calque.` bagi menandakan standard kualiti tinggi tanpa menanam identiti jenama (mis. "Netflix") dalam `## Role`.
-- **Kenapa bukan dalam Role:** `## Role` kekal khusus kepada dua mandat sahaja — (1) pari/ID slot suci, (2) ayat macam penutur jati. Isyarat kualiti diletakkan dalam `## Style` supaya tidak mengubah identiti/fungsi model dan tidak memecahkan kontrak universal 400+ bahasa (tiada hardcode khusus-bahasa/platform).
-- **Kenapa "streaming-grade" bukan "Netflix":** Istilah generik mengelak bias house-style platform yang boleh melanggar ANTI-DROP / ANTI-UNTRANSLATED; pemetaan 1:1 jenayah Agent B (MERGE/SHIFT/PHANTOM/DROP/UNTRANSLATED/REGISTER) kekal tidak terganggu.
-- **Skop ketat:** Hanya baris Style berubah — `## Role`, `## Rules`, dan `## Output Format` tidak disentuh.
-- **Bump versi 3.8.35 → 3.8.36** — `npm test` — **290 PASS / 0 FAIL / 1 skipped**.
-
-## SubFaber v3.8.35 (2026-10-06) — Fix: Deterministic provider token IV untuk kestabilan cache OpenSubtitles V3
-
-**Subtitle terjemahan OpenSubtitles V3 kini boleh ditemui semula daripada bypass cache (Redis) tanpa terjemah ulang:**
-
-- **Isu:** Subtitle yang berjaya diterjemah tidak muncul semula pada refresh senarai, dan cache sentiasa `MISS` walaupun entri sudah tersimpan dalam Redis. Log menunjukkan `sourceFileId` (`v3_e1_...`) berubah setiap kali senarai dipanggil untuk URL yang sama.
-- **Punca:** [`src/utils/providerUrlToken.js`](src/utils/providerUrlToken.js) — `encodeProviderUrl` menggunakan `crypto.randomBytes(IV_BYTES)` sebagai IV AES-GCM. IV rawak menghasilkan `fileId` berbeza setiap panggilan walaupun URL sumber sama, menyebabkan kunci bypass cache (`sourceFileId + targetLang + userHash`) tidak pernah sepadan antara simpan dan baca.
-- **Fix:** IV digantikan dengan nonce deterministik `HMAC-SHA256(encryptionKey, plaintextUrl)` yang dipotong kepada 12 bait. Untuk URL yang sama, `fileId` kini sentiasa serupa (kunci cache stabil); untuk URL berbeza, nonce kekal unik — mengekalkan jaminan keselamatan AES-GCM (tiada nonce reuse).
-- **Keserasian round-trip:** Logik `decodeProviderUrl` kekal membaca IV daripada struktur token sedia ada — `encode → decode` masih memulangkan URL asal tanpa ralat GCM tag.
-- **Skop:** Terhad kepada OpenSubtitles V3 (pembekal lain menggunakan static database ID dan sudah stabil).
-- **Ujian:** Ujian regresi baharu [`src/utils/providerUrlToken-regression.test.js`](src/utils/providerUrlToken-regression.test.js) mengesahkan determinisme (`token1 === token2`), keunikan merentas URL berbeza, dan round-trip decode tanpa ralat GCM tag.
-- **Bump versi 3.8.34 → 3.8.35** — `npm test` — **290 PASS / 0 FAIL / 1 skipped**.
-
-## SubFaber v3.8.34 (2026-10-06) — Fix: Spacing halaman Sub Toolbox (header tidak lagi melekat dengan kad launcher)
-
-**Kad "The Sub Toolbox bundles…" kini berjarak selesa daripada subtitle halaman toolbox:**
-
-- **Isu:** Pada halaman Sub Toolbox (`data-page="toolbox"`), kotak "The Sub Toolbox bundles file translation, embedded subtitle tools, and sync utilities for Stremio." terlalu rapat / melekat dengan ayat subtitle "Install SubFaber into Stremio and open the embedded toolbox." di atasnya.
-- **Punca:** [`public/css/app-shell.css`](public/css/app-shell.css) — kontrak layout `.app-page` menggunakan `gap: 0` secara lalai; hanya `.app-page[data-page='configuration']` diberi `gap: 40px`. Sementara itu `.app-page-header` sengaja `margin-bottom: 0` (reka bentuk untuk mengelakkan double-margin pada halaman configuration). Gabungan kedua-duanya menyebabkan halaman toolbox tiada sebarang ruang vertikal antara header dan kad.
-- **Fix:** Peraturan baharu `.app-page[data-page='toolbox'] { gap: 24px; }` ditambah selepas blok `configuration` — ritme vertikal diuruskan oleh flex gap pada kontena halaman (konsisten dengan kontrak layout projek), memberikan 24px ruang selesa antara subtitle dan kad launcher.
-- **Skop ketat:** Hanya halaman toolbox terjejas — halaman `configuration` kekal 40px, halaman virtual lain kekal `gap: 0`; tiada perubahan markup HTML atau JavaScript, sifar risiko layout shift.
-- **Bump versi 3.8.33 → 3.8.34** — cache buster `_cb` automatik memastikan semua instance mendapat CSS baharu memintas cache `immutable`.
-- **Ujian:** `npm test` — **287 PASS / 0 FAIL / 1 skipped**.
-
-## SubFaber v3.8.33 (2026-10-06) — Changed: Ikon section header ditukar kepada native emoji 3D
-
-**Ikon section header (API Keys / Languages / Settings) kini native Unicode color emoji — menyamai gaya "Provider Timeout" ⏱️:**
-
-- **Changed (API Keys):** [`public/partials/main.html`](public/partials/main.html) — SVG Material "Key" 2D monokrom digantikan dengan emoji 🔑 (`U+1F511`) pada saiz `font-size: 1.75rem`.
-- **Changed (Languages):** SVG Material "Globe" digantikan dengan emoji 🌍 (`U+1F30D`, Globe Showing Europe-Africa) — bumi spherical 3D dengan laut biru & daratan hijau, dipilih pengguna kerana lebih "smart" berbanding grid meridian 🌐.
-- **Changed (Settings):** SVG Material "Gear" digantikan dengan emoji ⚙️ (`U+2699` + `U+FE0F` variation selector — wajib bagi memaksa Windows render versi berwarna, bukan glyph teks B/W).
-- **Changed (badge dibuang):** Badge kategori rounded berwarna (sky/teal/slate) dibuang sepenuhnya mengikut permintaan pengguna untuk "gaya ⏱️ tulen" — emoji berdiri sendiri tanpa container. [`public/css/subfaber-theme.css`](public/css/subfaber-theme.css) (rules `.section-icon` & `.language-emoji`/`.settings-emoji` tint → `transparent`) dan [`public/css/configure.css`](public/css/configure.css) (gradient background, border 2px, 3D box-shadow bertingkat, `titlePulse` animation → semua `none`/`transparent`; tema `dark` & `blackhole` turut diselaraskan).
-- **Marker class dikekalkan:** `.section-emoji`, `.language-emoji`, `.settings-emoji` kekal dalam markup sebagai hook CSS masa depan; variable `--badge-*` tidak dihapus kerana masih digunakan oleh elemen lain (`.provider-glyph` dsb.).
-- **Kenapa emoji native:** Direrender oleh emoji font warna OS (Segoe UI Emoji Fluent di Windows 11, Apple Color Emoji di macOS, Noto Color Emoji di Android) — glyph 3D glossy dengan shading & highlight secara percuma, sifar asset, sifar HTTP request, auto-adaptif merentas tema light/dark tanpa CSS tambahan.
-- **Pengesahan:** Playwright render preview dalam tema light & dark — 🔑 emas glossy, 🌍 bumi spherical, ⚙️ gear 3D semuanya dipaparkan penuh warna tanpa badge; emoji kekal berwarna pada kad gelap (auto-adaptif).
-- **Bump versi 3.8.32 → 3.8.33** — tiada aset baharu (emoji adalah teks), jadi cache buster tidak kritikal, tetapi bump tetap dijalankan bagi mengekalkan disiplin versi SemVer.
-- **Ujian:** `npm test` — **287 PASS / 0 FAIL / 1 skipped**.
-
-## SubFaber v3.8.31 (2026-10-06) — Fix: Background provider-glyph ditukar kepada putih
-
-**Tile latar logo provider kini putih bersih menggantikan tint biru sky:**
+- Added a neutral quality anchor to the primary agent's `## Style` directive ("Aim for professional streaming-grade quality — adapt idioms, never calque.") instead of embedding a brand identity into the role — keeping the role's two sacred mandates (slot/ID parity, native-speaker sentences) and the universal 400+ language contract intact. Only the Style line changed; role, rules, and output format were untouched.
 
-- **Isu:** Latar `.provider-glyph` menggunakan `var(--badge-sky-bg)` (`#e0f2fe`, biru sky muda) — pengguna meminta latar putih supaya logo PNG ketiga-tiga provider (OpenSubtitles/SubSource/SubDL) dipaparkan di atas permukaan putih bersih.
-- **Fix:** [`public/css/subfaber-theme.css`](public/css/subfaber-theme.css) — `.provider-glyph` `background` ditukar daripada `var(--badge-sky-bg)` kepada `#ffffff` tetap, dengan `border: 1px solid var(--border, #e2e8f0)` tambahan supaya tile putih tidak "hilang" pada card putih dalam theme light (border bertukar `#1e293b` secara automatik dalam theme dark).
-- **Perubahan terpencil:** Variable `--badge-sky-bg` dikekalkan tanpa perubahan — masih digunakan oleh `.section-icon` dan elemen badge kategori yang lain.
-- **Pengesahan:** Playwright computed style mengesahkan ketiga-tiga glyph `background: rgb(255, 255, 255)`, `border-top: rgb(236, 239, 244)` selepas CSS refresh.
-- **Bump versi 3.8.30 → 3.8.31** menjana cache-buster `_cb=3.8.31` supaya browser semua pengguna mendapat CSS putih baharu memintas cache `immutable` 1 tahun.
-- **Ujian:** `npm test` — **287 PASS / 0 FAIL / 1 skipped**.
+## SubFaber v3.8.35 (2026-10-06) — Fixed: Deterministic Provider Token IV for Stable OpenSubtitles V3 Caching
 
-## SubFaber v3.8.30 (2026-10-06) — Fix: Logo OpenSubtitles digantikan dengan avatar GitHub rasmi
+### 🐛 Bug Fixes
 
-**Logo OpenSubtitles akhirnya menggunakan imej rasmi yang stabil — avatar organisasi GitHub:**
+- **Fixed translated OpenSubtitles V3 subtitles not reappearing from the Redis bypass cache:** the URL token used a random AES-GCM IV, so the derived file ID changed on every call even for the same source URL — the cache key never matched between save and read. The IV was replaced with a deterministic HMAC-derived nonce: identical URLs now always produce the same file ID (stable cache keys) while different URLs remain unique, preserving the AES-GCM no-nonce-reuse guarantee. Round-trip encoding/decoding still returns the original URL without GCM tag errors. New regression tests cover determinism, cross-URL uniqueness, and clean decoding.
 
-- **Konteks:** v3.8.29 menyelesaikan isu nisbah aspek (1:1) dan cache buster, tetapi imej digunakan ketika itu adalah crop letterbox daripada banner lama. Pengguna memilih sumber muktamad: `https://github.com/opensubtitles.png`.
-- **Fix:** [`public/assets/opensubtitles-logo.png`](public/assets/opensubtitles-logo.png) digantikan dengan avatar organisasi GitHub rasmi OpenSubtitles — PNG sah **460×460** (nisbah aspek 1:1 semula jadi, tiada pemprosesan diperlukan), 18.6 KB, magic bytes `89 50 4E 47` disahkan.
-- **Tiada perubahan markup:** [`public/partials/main.html`](public/partials/main.html) kekal `src="/assets/opensubtitles-logo.png?_cb=__APP_VERSION_QUERY__"` — hanya fail aset diganti.
-- **Pengesahan:** Endpoint `GET /assets/opensubtitles-logo.png` → `200 OK, Content-Type: image/png`; Playwright `naturalWidth: 460, naturalHeight: 460` — logo bulatan hijau avatar GitHub dipaparkan dalam slot 24×24 seimbang dengan SubSource dan SubDL.
-- **Bump versi 3.8.29 → 3.8.30** — cache buster automatik memaksa semua instance mendapat aset baharu.
-- **Ujian:** `npm test` — **287 PASS / 0 FAIL / 1 skipped**.
-
-## SubFaber v3.8.29 (2026-10-06) — Fix: Logo 1:1, cache buster logo provider & patch audit dependencies
+## SubFaber v3.8.34 (2026-10-06) — Fixed: Sub Toolbox Page Spacing
 
-**Tiga pembetulan kritikal dalam satu versi — nisbah aspek logo, perlindungan cache 1 tahun, dan vulnerability dependencies:**
+### 🐛 Bug Fixes
 
-- **Fix (nisbah aspek):** Logo OpenSubtitles yang diwarisi daripada banner Wikipedia adalah 180×50 (landskap). Dalam kontena 24×24 dengan `object-fit: contain`, ia mengecut kepada 24×6.6px — garis halus tidak boleh dibaca. Logo di-letterbox kepada kanvas square **180×180** (node-canvas, latar transparan) supaya selari dengan ikon petak SubSource (180×180) dan SubDL (256×257).
-- **Fix (cache buster):** [`public/partials/main.html`](public/partials/main.html) — ketiga-tiga `<img>` logo provider ditambah `?_cb=__APP_VERSION_QUERY__` (sebelum ini tiada cache buster). Ini bug kritikal: [`index.js`](index.js) menyajikan `/assets/*.png` dengan `Cache-Control: public, max-age=31536000000, immutable` (cache 1 tahun tanpa revalidation) — pengguna yang pernah memuat halaman sebelum penggantian logo akan terpekak dengan logo lama selama setahun tanpa hard refresh. Token dalam partial digantikan pada runtime oleh [`src/utils/configurePageGenerator.js`](src/utils/configurePageGenerator.js) kerana inline partial diproses sebelum token replacement.
-- **Fix (audit CI):** CI untuk commit pertama versi ini gagal pada step "Audit production dependencies" — 2 vulnerability dijangka oleh `npm audit --omit=dev`:
-  - `compression` < 1.8.2 — **high** (GHSA-vc2v-76pw-4v95, DoS memory leak on premature response close) → dinaikkan kepada `^1.8.2`.
-  - `proxy-addr` 1.1.0–2.0.7 — **critical** (GHSA-jqcg-44mw-7w3h, IP spoofing via IPv4-mapped IPv6 trust subnet) → dinaikkan kepada `^2.0.8`.
-  - `npm audit fix --omit=dev` → **0 vulnerabilities**; hanya [`package-lock.json`](package-lock.json) berubah (+17/-8).
-- **Pengesahan:** Rendered HTML mengandungi `?_cb=3.8.29` pada ketiga-tiga logo; endpoint 200 `image/png`; `npm test` diulang selepas audit fix — kekal hijau.
-- **Bump versi 3.8.28 → 3.8.29.**
-- **Ujian:** `npm test` — **287 PASS / 0 FAIL / 1 skipped** (dijalankan 2× — sebelum dan selepas patch dependencies).
-
-## SubFaber v3.8.28 (2026-10-05) — Fix: Logo OpenSubtitles ditukar kepada PNG tulen (gugurkan GIF)
-
-**Aset GIF akhirnya ditukar kepada PNG sebenar — siri penyempurnaan logo tamat:**
-
-- **Konteks:** v3.8.27 menyelesaikan isu render browser dengan menamakan semula fail kepada `.gif` supaya Content-Type sepadan dengan kandungan GIF89a sebenar. Walau bagaimanapun, GIF kekal tidak sesuai sebagai format aset web moden (saiz lebih besar, tiada alpha penuh, dan pernah menjadi punca kegagalan muat naik ke alat AI yang hanya menerima png/jpeg/webp).
-- **Fix:** `public/assets/opensubtitles-logo.gif` (180×50, GIF89a palette, 1 frame statik) dikonversi secara programatik kepada `public/assets/opensubtitles-logo.png` — PNG tulen RGBA 180×50 (magic bytes `89 50 4E 47` disahkan), 5.3 KB. Konversi dijalankan skrip Python Pillow di luar konteks AI (GIF tidak pernah dibaca ke dalam konteks model — mengelakkan ralat "image format (gif) is not supported").
-- **Rujukan dikemaskini:** markup `src` dalam `public/partials/main.html` (slot `.provider-glyph` kad OpenSubtitles) beralih daripada `/assets/opensubtitles-logo.gif` kepada `/assets/opensubtitles-logo.png`.
-- **Fail GIF dihapuskan:** `opensubtitles-logo.gif` dibuang daripada `public/assets/` — tiada lagi aset GIF dalam projek; gelintar `opensubtitles-logo.gif` pada kod aktif pulangkan sifar hasil.
-- **Pengesahan berperingkat (bukan tekaan):**
-  1. **Magic bytes:** output PNG `89 50 4E 47 0D 0A 1A 0A` — PNG sebenar (bukan sekadar GIF ditukar nama seperti v3.8.26).
-  2. **Server:** `HEAD /assets/opensubtitles-logo.png` → `200 OK, Content-Type: image/png` — extension kini jujur terhadap kandungan.
-  3. **DOM render proof:** Playwright `browser_evaluate` → `complete: true, naturalWidth: 180, naturalHeight: 50, rendered: true` pada 24×24 (`object-fit: contain`) — browser benar-benar decode dan render.
-  4. **Screenshot visual:** `opensubtitles-png-verified.png` — logo hijau "OpenSubtitles" lockup penuh kelihatan dalam slot provider.
-- **Bump versi 3.8.27 → 3.8.28** menjana URL cache-buster baharu (`?_cb=__APP_VERSION_QUERY__`) supaya Service Worker tidak menyajikan aset lama daripada cache.
-- **Ujian:** `npm test` — **287 PASS / 0 FAIL / 1 skipped**.
-
-## SubFaber v3.8.27 (2026-10-05) — Fix: Logo OpenSubtitles — pembetulan Content-Type mismatch (GIF89a)
-
-**Punca sebenar siri kegagalan logo akhirnya ditemui dan diperbaiki:**
-
-- **Analisis punca (root cause):** Logo Wikipedia yang dimuat turun dalam v3.8.26 adalah fail **GIF asli** tetapi disimpan dengan nama `opensubtitles-logo.png`. Magic bytes `47 49 46 38 39 61` (`GIF89a`) membuktikan format sebenar. Express `static` middleware menetapkan `Content-Type` berdasarkan extension fail — server menghantar `Content-Type: image/png` dengan body data GIF. Mismatch inilah yang menyebabkan browser gagal merender imej (dipapar kosong/broken) — bukan fail corrupted, bukan CDN, bukan cache.
-- **Fix:** Fail dinamakan semula kepada `opensubtitles-logo.gif` supaya Content-Type sepadan dengan kandungan sebenar; markup `src` dalam `public/partials/main.html` dikemaskini kepada `/assets/opensubtitles-logo.gif`.
-- **Pengesahan berperingkat (bukan tekaan):**
-  1. **Magic bytes:** baca 16 byte pertama fail → `GIF89a B4 00 32 00` (180×50 GIF) — format disahkan sebelum tindakan.
-  2. **Server lokal:** `HEAD /assets/opensubtitles-logo.gif` → `200 OK, Content-Type: image/gif` — Content-Type kini sepadan.
-  3. **DOM render proof:** Playwright `browser_evaluate` → `complete: true, naturalWidth: 180, naturalHeight: 50, rendered: true` — browser benar-benar decode dan render imej, bukan sekadar status 200.
-  4. **Screenshot visual:** `opensubtitles-gif-fixed.png` — logo hijau "OpenSubtitles" lockup penuh kelihatan dalam slot provider.
-- **Logo SubDL dan SubSource tidak terjejas** — kedua-duanya PNG tulen (magic bytes `89 50 4E 47`) dan sudah berfungsi.
-- **Ujian:** `npm test` — **287 PASS / 0 FAIL / 1 skipped**.
-
-## SubFaber v3.8.26 (2026-10-05) — Fix: Logo OpenSubtitles rasmi dari Wikipedia
+- **Fixed the toolbox page header sticking to the launcher cards:** the page layout contract gave only the configuration page a flex gap, leaving the toolbox page with zero vertical space between its header and cards. A new 24px gap rule was added for the toolbox page only — other pages are untouched, with zero HTML/JS changes and no layout-shift risk.
 
-**Logo OpenSubtitles rasmi kini dipaparkan — diekstrak daripada infobox Wikipedia:**
-
-- **Isu:** Inline SVG "os" buatan sendiri (v3.8.25) ditolak oleh pengguna — tidak menyerupai logo sebenar OpenSubtitles. Siri kegagalan berterusan: (1-3) aset laman rasmi corrupted, (4) logo Stremio PRO imgur transparent sepenuhnya, (5) simple-icons tiada opensubtitles, (6) forum imgh.us telah mati (redirect spam).
-- **Fix:** Logo rasmi OpenSubtitles diekstrak daripada **infobox Wikipedia** (`File:OpenSubtitles logo.gif`, 180×50, Wikimedia Commons) — lockup penuh brand dengan ikon + teks. Server Wikimedia membenarkan muat turun langsung tanpa halangan (3.1 KB).
-- **Format:** Fail GIF disimpan sebagai `opensubtitles-logo.png` — semua browser moden merender GIF dengan betul dalam `<img>` tanpa mengira extension; markup `/assets/opensubtitles-logo.png` dikekalkan dalam `public/partials/main.html`.
-- **Pengesahan visual:** Screenshot Playwright mengesahkan logo hijau "OpenSubtitles" penuh kini kelihatan dalam slot provider selepas expand Subtitles API Keys (dipapar pada 24×24 `object-fit: contain`).
-- **Ujian:** `npm test` — **287 PASS / 0 FAIL / 1 skipped**.
-
-## SubFaber v3.8.25 (2026-10-05) — Fix: Logo OpenSubtitles inline SVG (penyelesaian muktamad)
-
-**Penyelesaian muktamad untuk siri kegagalan logo OpenSubtitles (5 cubaan):**
+## SubFaber v3.8.33 (2026-10-06) — Section Header Icons Switched to Native 3D Emoji
 
-- **Siri kegagalan penuh:** (1) OG image rasmi corrupted, (2) navbar beta lockup corrupted, (3) favicon.im corrupted, (4) logo Stremio PRO dari imgur — dimuat turun OK tetapi **transparent sepenuhnya** selepas crop (Server hantar PNG yang kelihatan kosong apabila dirender dalam browser — latar putih di atas latar putih UI menyebabkan ia "hilang"), (5) Node.js canvas conversion gagal.
-- **Penyelesaian muktamad:** Logo digantikan dengan **SVG inline terus dalam markup** — tiada lagi fail luaran yang boleh corrupted, tiada cache, tiada network request:
-  - `<rect>` hijau brand OpenSubtitles `#8BC97C` (warna rasmi dari branding scrape laman mereka) dengan sudut bulat `rx="8"`
-  - `<text>` putih "os" bold — identiti visual ringkas yang menyerupai favicon mereka
-- **Kelebihan pendekatan inline:** (a) sifar network request tambahan, (b) sifar risiko fail corrupted, (c) sifar isu cache CDN, (d) render segera bersama halaman, (e) warna hijau sebenar brand OpenSubtitles terpelihara.
-- **Fail lama dibuang:** `public/assets/opensubtitles-logo.png` dan `.svg` dihapuskan daripada repo — markup kini sepenuhnya self-contained.
-- **Ujian:** `npm test` — **287 PASS / 0 FAIL / 1 skipped**.
+### ⚡ Improvements
 
-## SubFaber v3.8.24 (2026-10-05) — Fix: Logo OpenSubtitles PRO square icon (Stremio community)
+- **Replaced the monochrome SVG section icons with native Unicode color emoji** (🔑 / 🌍 / ⚙️ with the variation selector that forces colored rendering on Windows): the OS emoji font renders glossy 3D glyphs for free — zero assets, zero HTTP requests, and automatic adaptation across light/dark themes. The colored category badges were removed for a pure emoji style, while the marker classes and badge variables were kept as future CSS hooks. Verified in a live browser in both themes.
 
-**Pembetulan keempat dan muktamad untuk logo OpenSubtitles:**
+## SubFaber v3.8.31 (2026-10-06) — Fixed: Provider Logo Tiles Now on Clean White
 
-- **Isu (siri):** Tiga cubaan sebelumnya gagal — (1) aset OG image laman rasmi corrupted, (2) navbar beta lockup juga corrupted, (3) favicon.im masih corrupted. Pelayan opensubtitles.com kelihatan menghalang muat turun aset mentah melalui curl.
-- **Fix:** Logo **opensubtitles PRO** (ikon square rasmi yang digunakan dalam katalog komuniti Stremio — `stremio-addons.net/addons/opensubtitles-pro`, ikon imgur `cGc1DXB.png`) dimuat turun dan dipotong kepada **ikon square 64×64** menggunakan System.Drawing (crop bahagian ikon + resize bicubic berkualiti tinggi) — menggantikan lockup landscape yang tidak sesuai untuk slot ikon 24×24.
-- **Sumber yang dipercayai:** imgur CDN — berfungsi dengan curl tanpa halangan, saiz fail 6.9 KB selepas pemprosesan.
-- **Fail SVG sementara dibuang:** `opensubtitles-logo.svg` (percubaan teks "os" buatan sendiri) dihapuskan — PNG square kini satu-satunya aset.
-- **Markup kekal:** `<img src="/assets/opensubtitles-logo.png">` dalam `public/partials/main.html` — tiada perubahan struktur.
-- **Ujian:** `npm test` — **287 PASS / 0 FAIL / 1 skipped**.
+### 🐛 Bug Fixes
 
-## SubFaber v3.8.23 (2026-10-05) — Fix: Logo OpenSubtitles (beta lockup sebenar)
+- **Changed the provider logo tile background from a light sky-blue tint to clean white**, with a subtle border so the white tile doesn't disappear on white cards in light theme (the border automatically darkens in dark theme). Verified in a live browser; the cache-buster bump pushes the new CSS past the one-year immutable cache.
 
-**Pembetulan logo OpenSubtitles yang gagal dipaparkan:**
+## SubFaber v3.8.30 (2026-10-06) — Fixed: OpenSubtitles Logo Replaced with the Official GitHub Avatar
 
-- **Isu:** Logo OpenSubtitles v3.8.22 menggunakan aset OG image laman mereka (`os_logo-...png`) — aset tersebut rupanya bukan imej PNG yang boleh dipaparkan terus (dipapar sebagai broken image / ikon placeholder dokumen biru dalam UI).
-- **Fix:** Logo digantikan dengan **beta lockup sebenar** yang digunakan dalam navbar laman utama mereka: `opensubtitles-beta-logo-8f6b...png` — diekstrak secara langsung daripada markup HTML `<a class="navbar-brand">` opensubtitles.com.
-- **Saiz fail:** 5.7 KB — konsisten dengan logo navbar asal, dipapar pada 24×24 dalam `.provider-glyph`.
-- **Ujian:** `npm test` — **287 PASS / 0 FAIL / 1 skipped**.
+### 🐛 Bug Fixes
 
-## SubFaber v3.8.22 (2026-10-05) — Icons: Logo sebenar provider (OpenSubtitles / SubDL / SubSource)
+- **Replaced the OpenSubtitles logo with the official GitHub organization avatar** — a genuine 460×460 PNG (natural 1:1 aspect ratio, no processing needed). The markup is unchanged; only the asset file was swapped. Verified via the asset endpoint and live browser dimensions, with the version bump forcing the new asset past the immutable cache.
 
-**Ikon provider dalam seksyen Subtitles API Keys ditukar kepada logo sebenar brand, diambil terus daripada laman rasmi setiap provider:**
+## SubFaber v3.8.29 (2026-10-06) — Fixed: 1:1 Logo, Provider-Logo Cache Busters & Dependency Audit Patch
 
-- **Isu:** Ikon generik SVG (dokumen, gelombang, muat turun) tidak mewakili identiti brand provider sebenar — pengguna meminta logo rasmi.
-- **Fix:** Logo rasmi dimuat turun daripada laman utama setiap provider melalui branding scrape dan disimpan dalam `public/assets/`:
-  - **OpenSubtitles:** `opensubtitles-logo.png` — logo "os" rasmi daripada `opensubtitles.com` (aset OG image laman mereka)
-  - **SubDL:** `subdl-logo.png` — favicon brand kuning `#FFEE2B` daripada `subdl.com`
-  - **SubSource:** `subsource-logo.png` — apple-icon rasmi daripada `subsource.net`
-- **Markup:** `<span class="provider-glyph">` dalam `public/partials/main.html` kini memuatkan `<img src="/assets/...">` (24×24, `border-radius: 4px`, `object-fit: contain`) menggantikan SVG generik lama — kelas `.provider-glyph` dan `aria-hidden="true"` dikekalkan supaya CSS monochrome badge sedia ada terus berfungsi.
-- **Pengesahan kebergantungan JS:** gelintar `public/js` mengesahkan sifar JavaScript membaca `provider-glyph`/SVG markup — penukaran selamat tanpa kesan sampingan.
-- **Ujian:** `npm test` — **287 PASS / 0 FAIL / 1 skipped**.
+### 🐛 Bug Fixes
 
-## SubFaber v3.8.21 (2026-10-05) — Icons: Material Design filled (vpn_key / language / settings)
+- **Letterboxed the OpenSubtitles logo to a square 180×180 canvas** so the fine text stays readable in the 24×24 provider slot instead of shrinking to an unreadable strip.
+- **Added cache busters to all three provider logo images** — a critical fix, because assets are served with a one-year immutable cache: users who loaded the page before a logo swap would otherwise be stuck with the old image for a year without a hard refresh.
+- **Patched two production dependency vulnerabilities flagged by CI audit:** compression (high severity, DoS memory leak) and proxy-addr (critical, IPv6-mapped IP spoofing) were upgraded, bringing `npm audit --omit=dev` to zero findings.
 
-**Ikon seksyen dinaik taraf daripada SVG monoline lakar sendiri kepada Material Design filled icons — path sebenar daripada design system Google:**
+## SubFaber v3.8.28 (2026-10-05) — Fixed: OpenSubtitles Logo Converted to Pure PNG (GIF Dropped)
 
-- **Isu:** SVG monoline v3.8.20 (lakar stroke sendiri) kelihatan basic dan tidak menepati standard ikon profesional industri — pengguna mempertikaikan tahap "real" ikon tersebut.
-- **Fix:** Ketiga-tiga ikon seksyen dalam `public/partials/main.html` diganti dengan path sebenar Material Design (Apache 2.0) dalam modus **filled/solid**:
-  - **API Keys:** lakar kunci monoline → **Material `vpn_key`** (kunci pepejal dengan kepala bulat, batang, dan gigi — siluet penuh, bukan garisan)
-  - **Languages:** lakar globus monoline → **Material `language`** (glob pepejal dengan mercator grid lines — benua digantikan grid supaya skala kecil kekal jelas)
-  - **Settings:** lakar gear monoline → **Material `settings`** (gear pepejal penuh dengan 8 lug dan lubang tengah — siluet standard industri)
-- **Kenapa filled bukan monoline:** ikon filled/solid ialah gaya "real icon" standard industri (Material Design Google, Fluent Microsoft, SF Symbols Apple) — jisim pepejal yang jelas pada saiz kecil, tidak seperti garisan nipis yang hampir hilang dalam badge 22px.
-- **Viewbox 24:** beralih daripada `viewBox="0 0 48 48"` (custom) kepada `viewBox="0 0 24 24"` (grid standard Material) — path diambil terus daripada set ikon rasmi tanpa pengubahsuaian geometri.
-- **Pewaris warna kekal:** `fill="currentColor"` — warna ikut kategori badge sedia ada (sky untuk API Keys, teal untuk Languages, slate untuk Settings) melalui rule `.section-icon svg` dalam `subfaber-theme.css`.
-- **Aksesibiliti kekal:** `aria-hidden="true"` dan kelas `.section-icon section-emoji` (termasuk `.language-emoji`/`.settings-emoji`) tidak diubah.
-- **Ujian:** `npm test` — **287 PASS / 0 FAIL / 1 skipped**.
+### 🐛 Bug Fixes
 
-## SubFaber v3.8.20 (2026-10-04) — Icons: Section icons SVG monoline konsisten Quick Setup
+- **Converted the logo asset from GIF to pure PNG:** the earlier GIF was a valid fix for the content-type mismatch but remained an unsuitable modern web asset (larger, no full alpha). The file was programmatically converted to a genuine RGBA PNG, verified by magic bytes, served with the correct content type, and confirmed to decode and render in a live browser. The GIF file was removed entirely — the project now contains zero GIF assets.
 
-**Ikon seksyen utama kembali kepada SVG vektor stroke-based, kali ini mengikut gaya ikon Quick Setup wizard:**
+## SubFaber v3.8.27 (2026-10-05) — Fixed: OpenSubtitles Logo Content-Type Mismatch (GIF89a)
 
-- **Isu:** Selepas eksperimen emoji 3D (v3.8.19), gaya emoji didapati tidak menepati citarasa akhir — ikon Quick Setup wizard (Translate/Fetch) sebenarnya menggunakan SVG vektor stroke-based yang kemas, bukan emoji.
-- **Fix:** Ketiga-tiga ikon seksyen dalam `public/partials/main.html` ditukar daripada emoji kepada SVG inline mengikut gaya Quick Setup:
-  - **API Keys:** emoji kunci → SVG kunci (bulatan kepala + batang + gigi, `stroke-width="2.5"`)
-  - **Languages:** emoji globus → SVG glob (bulatan luar + elips menegak + garis khatulistiwa + garis latitud, `opacity="0.6"`)
-  - **Settings:** emoji gear → SVG gear (bulatan tengah + 4 jejari utama + 4 jejari condong, `opacity="0.7"`)
-- **Gaya konsisten Quick Setup wizard:** semua SVG menggunakan `viewBox="0 0 48 48"`, `fill="none"`, `stroke="currentColor"`, `stroke-linecap="round"` — sama seperti `.qs-mode-icon svg` dalam `quick-setup.html` — lalu mewarisi warna kategori badge (sky/teal/slate) sedia ada melalui rule `.section-icon svg` dalam `subfaber-theme.css`.
-- **Sifar kebergantungan JS pada emoji:** disahkan tiada JavaScript yang membaca `textContent`/`innerHTML` emoji `.section-icon` (gelintar `public/js` kosong) — penukaran markup selamat.
-- **Aksesibiliti kekal:** `aria-hidden="true"` dan kelas `.section-icon section-emoji` (termasuk `.language-emoji`/`.settings-emoji`) dikekalkan — tiada kesan sampingan pada CSS badge kategori atau screen reader.
-- **Ujian:** `npm test` — **287 PASS / 0 FAIL / 1 skipped**.
+### 🐛 Bug Fixes
 
-## SubFaber v3.8.19 (2026-10-04) — Icons: Section icons 3D penuh (API Keys / Languages / Settings)
+- **Found and fixed the real cause of the logo failure series:** the downloaded file was a genuine GIF stored with a `.png` name, so Express served it with a PNG content type and browsers refused to render it — not a corrupted file, CDN, or cache issue. Renaming the file to match its true format fixed the content type, verified by magic bytes, the server response, and live DOM rendering proof. The SubDL and SubSource logos (pure PNGs) were unaffected.
 
-**Ikon seksyen utama ditukar daripada SVG monoline 2D kepada emoji penuh 3D — konsisten dengan Quick Setup:**
+## SubFaber v3.8.26 (2026-10-05) — Fixed: Official OpenSubtitles Logo from Wikipedia
 
-- **Isu:** Ikon Quick Setup (⚡) dan Just Fetch Subtitles (⏸️) menggunakan emoji penuh yang kelihatan 3D dan menarik, manakala API Keys, Languages, dan Settings masih menggunakan SVG monoline 2D yang basic — tidak konsisten dari segi gaya visual.
-- **Fix:** Ketiga-tiga ikon seksyen ditukar kepada emoji penuh dalam `public/partials/main.html`:
-  - **API Keys:** SVG monoline (kunci) → **🔑** (emoji kunci penuh)
-  - **Languages:** SVG monoline (globus) → **🌐** (emoji globus penuh)
-  - **Settings:** SVG monoline (gear) → **⚙️** (emoji gear penuh)
-- **Konsistensi 3D penuh:** Dengan emoji, ketiga-tiga ikon kini mendapat manfaat daripada gaya `.section-icon` yang direka untuk teks/emoji — gradient 3D, `text-shadow` berlapis, `box-shadow` dengan glow, animasi `titlePulse` dan `shimmer` — sama seperti Quick Setup dan Just Fetch.
-- **Pengesahan DOM live:** `querySelector('#apiKeysSection .section-icon').textContent` = `🔑`, `.language-emoji` = `🌐`, `.settings-emoji` = `⚙️`, semua `hasSvg: false` — disahkan melalui Playwright `getComputedStyle`.
-- **Ujian:** `npm test` — **287 PASS / 0 FAIL / 1 skipped**.
+### 🐛 Bug Fixes
 
-## SubFaber v3.8.18 (2026-10-04) — Theme: Apple Blue #0071e3 (apple.com ground truth)
+- **Extracted the official OpenSubtitles logo from the Wikipedia infobox** (the full brand lockup, 180×50) after a long string of failed sources — corrupted official assets, a fully transparent re-upload, missing icon libraries, and dead forums. Confirmed visible in a live browser screenshot within the provider slot.
 
-**Tema SubFaber bertukar daripada ungu Rootsys kepada biru Apple sebijik apple.com:**
+## SubFaber v3.8.25 (2026-10-05) — Fixed: OpenSubtitles Logo as Inline SVG
 
-- **Palet Apple Blue (ground truth 2026):** warna diekstrak secara langsung daripada apple.com menggunakan Playwright `getComputedStyle` — butang "Learn more" `rgb(0, 113, 227)` = **#0071e3** (primary), butang "Buy" `rgb(41, 151, 255)` = **#2997ff** (primary-light), dan **#0060c4** (primary-dark).
-- **Token utama ditukar dalam 3 lapisan CSS:** `subfaber-theme.css`, `rootify.css`, `configure.css` — `--primary` `#7c3aed` → `#0071e3`, `--primary-light` `#8b5cf6` → `#2997ff`, `--primary-dark` `#6d28d9` → `#0060c4`, `--accent-soft` `#ede9fe` → `#e3effc` (light) / `rgba(0,113,227,0.2)` (dark), `--glow` violet → Apple Blue rgba.
-- **Pendekatan token-first (bukan regex global):** menggantikan custom properties yang mengawal ratusan komponen melalui `var(--primary)` — lebih selamat daripada usaha regex global pada 9,000+ baris yang terperangkap dalam loop sebelumnya. Pengesahan dibuat melalui **computed style DOM live**, bukan kiraan teks dalam fail.
-- **Pengesahan 4 tema (computed style DOM live):** light/dark/blackhole/true-dark semuanya membawa `--primary: #0071e3`, `--primary-light: #2997ff`, `.btn-primary` background `rgb(0,113,227)`, `.app-nav-pill.active` color `rgb(0,113,227)`.
-- **Override komponen dark:** active nav dark kini menggunakan `rgba(0,113,227,0.2)` + `color: var(--primary-light)` dalam `app-shell.css`; toggle off dark menggunakan `#334155` neutral gelap; Quick Setup toggle on `linear-gradient(135deg, #0071e3, #2997ff)`.
-- **Nilai legacy dikekalkan:** warna semantik (`--success`, `--warning`, `--danger`), kategori badge, dan gradient hiasan portal/nebula tidak diubah — ia membawa maksud fungsian berbeza daripada accent utama.
-- **Ujian:** `npm test` — **287 PASS / 0 FAIL / 1 skipped**.
+### 🐛 Bug Fixes
 
-## SubFaber v3.8.17 (2026-10-04) — Fix: Footer heart merah #dc2626
+- **Replaced the logo with an inline SVG directly in the markup** after five failed external-asset attempts (corrupted official images, a fully transparent re-upload, and a failed canvas conversion): a rounded brand-green rectangle with a white "os" wordmark. Zero extra network requests, zero corrupted-file risk, zero CDN cache issues, and instant render with the page. The old external asset files were removed, making the markup fully self-contained.
 
-**Pembetulan warna ikon hati footer mengikut prinsip Apple HIG "use color purposefully":**
+## SubFaber v3.8.24 (2026-10-05) — Fixed: OpenSubtitles PRO Square Icon from the Stremio Community
 
-- **Isu:** SVG hati footer menggunakan `fill="currentColor"` lalu mewarisi warna teks ungu sekeliling — pelik untuk simbol cinta/kasih.
-- **Fix:** `style="color: #dc2626"` (merah `--danger` SubFaber) ditambah pada `<span class="footer-heart">` supaya SVG mewarisi merah yang bermakna, kontras baik pada tema light dan dark.
-- **Liputan penuh i18n:** pembeturan dibuat dalam `public/partials/footer.html` + 5 fail locale (`en`, `ar`, `es`, `pt-br`, `pt-pt`) kerana sistem i18n menggantikan innerHTML footer daripada fail locale — fail locale adalah source of truth.
-- **Ujian:** `npm test` — **287 PASS / 0 FAIL / 1 skipped**.
+### 🐛 Bug Fixes
 
-## SubFaber v3.8.16 (2026-10-04) — Apple HIG Fasa 4 (P3): Kemasan & polish
+- **Downloaded the opensubtitles PRO square icon** (the official icon used in the Stremio community catalog, served from a reliable CDN) and cropped it to a high-quality 64×64 square, replacing the landscape lockup that fit poorly in the 24×24 icon slot. The temporary hand-made SVG attempt was removed; the markup structure is unchanged.
 
-**Audit Apple HIG — 4/4 item P3 selesai (audit keseluruhan 17/17 = 100%):**
+## SubFaber v3.8.23 (2026-10-05) — Fixed: OpenSubtitles Logo (Real Beta Lockup)
 
-- **P3-1 — SVG × menggantikan `&times;`:** 7 butang tutup modal dalam `public/partials/overlays.html` (instructions, toolbox, bulk import, reset, 3× token vault) kini menggunakan SVG × monoline 16px (stroke 2, `currentColor`, `aria-hidden`) — konsisten dengan ikon kad dan chevron.
-- **P3-2 — `prefers-reduced-transparency: reduce`:** blok media baharu dalam `public/css/subfaber-theme.css` melumpuhkan `backdrop-filter` pada `.app-navbar` / `.app-mobile-header` dan menggantinya dengan latar `var(--surface)` legap.
-- **P3-3 — SVG heart footer:** emoji `❤️` digantikan dengan SVG hati 14px (`fill="currentColor"`) merentas `footer.html` + 5 fail locale. Penemuan teknikal: elemen dengan `data-i18n-attr="innerHTML"` mengambil kandungan daripada fail locale, bukan HTML — locale adalah source of truth.
-- **P3-4 — `aria-live="polite"`:** `#installUrlBox` dalam `public/partials/main.html` kini mengumumkan kemunculan Install URL kepada pembaca skrin selepas Save berjaya.
-- **Ujian:** `npm test` — **287 PASS / 0 FAIL / 1 skipped**.
+### 🐛 Bug Fixes
 
-## SubFaber v3.8.15 (2026-10-04) — Apple HIG Fasa 3 (P2): Motion, kontras & taktil
+- **Fixed the OpenSubtitles logo rendering as a broken image:** the previously used OG-image asset turned out not to be a directly displayable PNG. The logo was replaced with the real beta lockup extracted directly from the site's navbar markup, displayed at 24×24 in the provider slot.
 
-**Audit Apple HIG — 5/5 item P2 selesai:**
+## SubFaber v3.8.22 (2026-10-05) — Icons: Real Provider Logos (OpenSubtitles / SubDL / SubSource)
 
-- **P2-1 — Spring motion curves:** semua transition interaktif (nav pills, butang, hover, collapse, toggle) ditukar daripada `ease` kepada `cubic-bezier(0.16, 1, 0.3, 1)` — fast attack, gentle settle — dalam `app-shell.css`, `subfaber-theme.css` dan `configure.css`.
-- **P2-2 — `prefers-contrast: more`:** blok media baharu menaikkan `--border` → `#cbd5e1`/`#475569` dan `--text-secondary` untuk kedua-dua tema light/dark.
-- **P2-3 — Butang taktil:** `.btn-primary:hover` kini `translateY(-1px)` + `box-shadow: 0 2px 8px var(--glow)`; `:active` menekan semula ke bawah.
-- **P2-4 — Banner taktil:** `.qs-entry-banner:active` dalam `quick-setup.css` ditambah `scale(0.98)` untuk maklum balas sentuhan segera.
-- **P2-5 — Deference ikon hiasan:** `.section-icon:hover` (bounce + shadow berlapis) dibuang sepenuhnya — ikon hiasan tidak bersaing dengan kandungan.
-- **Ujian:** `npm test` — **287 PASS / 0 FAIL / 1 skipped**.
+### ⚡ Improvements
 
-## SubFaber v3.8.14 (2026-10-04) — Apple HIG Fasa 2 (P1): Affordance, kontras & konsistensi
+- **Replaced the generic SVG icons in the Subtitles API Keys section with the real brand logos,** downloaded directly from each provider's official site (OpenSubtitles, SubDL, SubSource) and stored locally. The provider-glyph spans now load 24×24 images with rounded corners and contained fit; the existing CSS classes and accessibility attributes were preserved, and a JS-dependency search confirmed the swap is side-effect free.
 
-**Audit Apple HIG — 5/5 item P1 selesai:**
+## SubFaber v3.8.21 (2026-10-05) — Icons: Material Design Filled (vpn_key / language / settings)
 
-- **P1-1 — Chevron SVG:** glyph teks `▼/▲` pada `.collapse-btn` digantikan dengan SVG chevron monoline 14px melalui CSS `mask` (data-URI) — animasi putaran 180°, hover `currentColor`, `:active scale(0.96)`, butang dinaikkan 32→40px. Tiada perubahan HTML/JS.
-- **P1-2 — Label sidebar:** `.app-nav-label` `font-size: 10px` → `11px` (Apple Caption 2 floor).
-- **P1-3 — Kontras border:** light theme `--border` `#f1f5f9` → `#e2e8f0` (~1.1:1 → ~1.4:1), `--border-strong` → `#cbd5e1`.
-- **P1-4 — Kedalaman toggle:** off-track `inset 0 1px 3px rgba(0,0,0,0.08)`, off-thumb lift shadow, on-track `0 2px 6px var(--glow)`, on-thumb shadow putih — selari HIG Switches.
-- **P1-5 — Penyatuan ikon:** emoji `⭐ ✓ ✗` pada 9 quick-btn (3 kad × 3 butang) digantikan dengan SVG monoline 16px (stroke 2, `currentColor`) dalam `main.html`.
-- **Ujian:** `npm test` — **287 PASS / 0 FAIL / 1 skipped**.
+### ⚡ Improvements
 
-## SubFaber v3.8.13 (2026-10-04) — Apple HIG Fasa 1 (P0): Kontrak aksesibiliti
+- **Upgraded the section icons from hand-drawn monoline SVGs to genuine Material Design filled icons** (vpn_key, language, settings) on the standard 24×24 grid, taken directly from the official Google set. Filled/solid icons are the industry-standard "real icon" style — solid silhouettes stay legible at 22px where thin strokes nearly vanish. Color inheritance (`currentColor`) and accessibility attributes are unchanged.
 
-**Audit Apple HIG bermula — 3/3 item P0 (kritikal aksesibiliti) selesai:**
+## SubFaber v3.8.20 (2026-10-04) — Icons: Section Icons Back to Stroke SVGs, Matching Quick Setup
 
-- **P0-1 — Hit target 44pt:** `.app-nav-child` 34px→44px, `.app-nav-grandchild` 30px→44px, dan breakpoint tablet (900–1200px) `.app-nav-pill`/`.app-nav-child` 36px/32px→44px dalam `app-shell.css` — menepati had minimum pointer Apple HIG / WCAG 2.5.5.
-- **P0-2 — Zon sentuh bottom-nav:** `.app-bottom-nav-item` `padding: 10px 4px` (≈38px) → `min-height: 48px` + `justify-content: center` — melebihi 44pt dengan margin selesa.
-- **P0-3 — Focus-visible outline:** rule `:focus-visible` baharu dengan `outline: 2px solid var(--primary) !important; outline-offset: 2px !important` ditambah dalam 3 lapisan CSS (`configure.css`, `subfaber-theme.css`, `rootify.css`) — pengguna papan kekunci mendapat penunjuk fokus jelas manakala pengguna tetikus kekal dengan glow bersih (WCAG 2.4.7).
-- **Ujian:** `npm test` — **287 PASS / 0 FAIL / 1 skipped**.
+### ⚡ Improvements
 
-## SubFaber v3.8.12 (2026-10-04) — Brand logo v4 (subfaber-mark-v4)
+- **Switched the section icons from the 3D emoji experiment back to stroke-based inline SVGs** matching the Quick Setup wizard style (key, globe, gear on a shared 48×48 stroke grid), inheriting the existing badge category colors. A JS-dependency search confirmed nothing reads the emoji text, and all accessibility attributes were preserved.
 
-**Logo header baru — subfaber-lockup-v4.png:**
+## SubFaber v3.8.19 (2026-10-04) — Icons: Full 3D Section Icons (API Keys / Languages / Settings)
 
-- **Aset baru:** `public/assets/subfaber-lockup-v4.png` (1726×285, aspek ~6.06:1) dijana daripada `subfaber-mark-v4.png` (2134×1984) — wordmark pelbagai warna dipotong ketat daripada kanvas putih (bounding box 1726×285) dan latar putih ditukar kepada telus (alpha), mengikut pendekatan yang sama seperti v3.
-- **Rujukan dikemaskini:** `public/configure.html` (logo sidebar desktop + header mobile) dan `public/sw.js` (senarai precache `ASSET_URLS`) beralih daripada `subfaber-lockup-v3.png` kepada `subfaber-lockup-v4.png`.
-- **Dimensi CSS diselaraskan:** aspek baharu ~6:1 (v3 ialah 5:1) memerlukan ketinggian dikurangkan supaya lebar kekal — `.app-sidebar-lockup` desktop `144×29` → `144×24` dan mobile `120×24` → `120×20`; atribut `width`/`height` pada kedua-dua `<img>` dalam `configure.html` turut dikemaskini supaya nisbah intrinsik tepat (elak layout shift).
-- **Penjajaran tengah dikekalkan:** `justify-content: center` pada `.app-sidebar-brand` / `.app-mobile-header` + `margin-inline: auto` pada `.app-sidebar-lockup` memastikan lockup baharu kekal optically center — disahkan melalui pemeriksaan browser (Playwright).
-- **Cache-buster dikekalkan:** query `?_cb=__APP_VERSION_QUERY__` kekal pada kedua-dua `<img>`; bump versi 3.8.11 → 3.8.12 menjana URL baharu supaya Service Worker tidak menyajikan logo lama daripada cache. SW juga mendaftar semula dengan tag versi + bucket jam dalam `sw-register.js`.
-- **Ujian:** `npm test` — **287 PASS / 0 FAIL / 1 skipped**.
+### ⚡ Improvements
 
-## SubFaber v3.8.11 (2026-10-04) — Brand logo v3 (subfaber-mark-v3)
+- **Switched the three main section icons from 2D monoline SVGs to full emoji** (🔑 / 🌐 / ⚙️) for visual consistency with the Quick Setup and Just Fetch cards, inheriting the 3D gradient, layered text-shadow, glow, and pulse/shimmer animations designed for emoji-style icons. Verified live in the DOM.
 
-**Logo header baru — subfaber-lockup-v3.png:**
+## SubFaber v3.8.18 (2026-10-04) — Theme: Apple Blue #0071e3 (apple.com Ground Truth)
 
-- **Aset baru:** `public/assets/subfaber-lockup-v3.png` (480×96, aspek 5:1) dijana daripada `subfaber-mark-v3.png` (2134×1984) — kandungan logo (ikon + wordmark pelbagai warna) dipotong ketat (1725×284) dan dipadatkan ke kanvas 480×96 dengan padding atas/bawah seragam 9px, menyamai dimensi lockup asal v2.
-- **Rujukan dikemaskini:** `public/configure.html` (logo sidebar desktop + header mobile) dan `public/sw.js` (senarai precache `ASSET_URLS`) beralih daripada `subfaber-lockup-v2.png` kepada `subfaber-lockup-v3.png`.
-- **Cache-buster dikekalkan:** query `?_cb=__APP_VERSION_QUERY__` kekal pada kedua-dua `<img>`; bump versi 3.8.10 → 3.8.11 menjana URL baharu supaya Service Worker tidak menyajikan logo lama daripada cache. SW juga mendaftar semula dengan tag versi + bucket jam dalam `sw-register.js`.
-- **CSS tiada perubahan:** dimensi 5:1 sama dengan lockup asal; peraturan `justify-content: center` + `margin-inline: auto` sedia ada memastikan penjajaran tengah menegak & mendatar (desktop 144×29, mobile 120×24 — disahkan melalui pemeriksaan browser).
-- **Ujian:** `npm test` — **287 PASS / 0 FAIL / 1 skipped**.
+### ⚡ Improvements
+
+- **Switched the theme from Rootsys violet to Apple Blue, extracted live from apple.com:** the primary palette (#0071e3 / #2997ff / #0060c4) was sampled from the site's actual buttons via computed styles. The swap was done token-first — replacing the custom properties that control hundreds of components through `var(--primary)` across three CSS layers — far safer than a global regex over 9,000+ lines. All four themes (light/dark/blackhole/true-dark) were verified via live computed styles, dark-mode component overrides were updated, and semantic colors (success/warning/danger) were intentionally preserved.
+
+## SubFaber v3.8.17 (2026-10-04) — Fixed: Red Footer Heart #dc2626
+
+### 🐛 Bug Fixes
+
+- **Fixed the footer heart icon inheriting the surrounding text color** (odd for a love symbol) by giving it a meaningful red with good contrast in both light and dark themes, per the Apple HIG "use color purposefully" principle. The fix was applied in the footer partial plus all five locale files, since the i18n system replaces the footer's inner HTML from the locales — the locale files are the source of truth.
+
+## SubFaber v3.8.16 (2026-10-04) — Apple HIG Phase 4 (P3): Finishing & Polish
+
+### ⚡ Improvements
+
+- **Completed the final 4 items of the Apple HIG audit (17/17 overall):** replaced the HTML `&times;` entities on all seven modal close buttons with 16px monoline SVG × icons; added a `prefers-reduced-transparency` media block that disables navbar backdrop blur in favor of an opaque surface; replaced the footer heart emoji with a 14px SVG heart across the footer and all five locales; and gave the Install URL box an `aria-live="polite"` region so screen readers announce it after a successful save.
+
+## SubFaber v3.8.15 (2026-10-04) — Apple HIG Phase 3 (P2): Motion, Contrast & Tactility
+
+### ⚡ Improvements
+
+- **Completed all 5 P2 items of the Apple HIG audit:** every interactive transition (nav pills, buttons, hovers, collapses, toggles) moved from `ease` to a spring-like cubic-bezier curve; a `prefers-contrast: more` media block strengthens borders and secondary text in both themes; primary buttons gained a tactile hover lift and active press; the Quick Setup entry banner got a touch-feedback scale; and the decorative icon hover bounce was removed entirely so ornaments never compete with content.
+
+## SubFaber v3.8.14 (2026-10-04) — Apple HIG Phase 2 (P1): Affordance, Contrast & Consistency
+
+### ⚡ Improvements
+
+- **Completed all 5 P1 items of the Apple HIG audit:** text-glyph collapse chevrons replaced with a 14px SVG chevron via CSS mask (180° rotation animation, active press, buttons enlarged to 40px, zero HTML/JS changes); sidebar labels raised from 10px to 11px (Apple Caption 2 floor); light-theme border contrast strengthened; toggle switches gained HIG-style track/thumb depth shadows; and the star/check/cross emoji on all nine quick-action buttons unified into 16px monoline SVGs.
+
+## SubFaber v3.8.13 (2026-10-04) — Apple HIG Phase 1 (P0): Accessibility Contract
+
+### ⚡ Improvements
+
+- **Opened the Apple HIG audit by completing all 3 critical P0 accessibility items:** navigation child/grandchild items and tablet-breakpoint pills raised to the 44px minimum hit target (Apple HIG / WCAG 2.5.5); bottom-nav touch zones raised to 48px minimum; and a `:focus-visible` rule with a 2px primary-color outline added across all three CSS layers, giving keyboard users a clear focus indicator while mouse users keep the clean glow (WCAG 2.4.7).
+
+## SubFaber v3.8.12 (2026-10-04) — Brand Logo v4 (subfaber-mark-v4)
+
+### ⚡ Improvements
+
+- **Shipped a new header logo (subfaber-lockup-v4.png):** the multi-color wordmark was tightly cropped from the v4 mark canvas with the white background converted to transparency. References were updated in the page and the service-worker precache list; the new ~6:1 aspect (vs 5:1 previously) required reduced heights so the width stays constant, with intrinsic width/height attributes updated to avoid layout shift. Center alignment was verified in a live browser, and the version bump refreshes the cache-busted URL so the service worker never serves the old logo.
+
+## SubFaber v3.8.11 (2026-10-04) — Brand Logo v3 (subfaber-mark-v3)
+
+### ⚡ Improvements
+
+- **Shipped a new header logo (subfaber-lockup-v3.png, 480×96, 5:1):** the icon and multi-color wordmark were tightly cropped from the v3 mark and packed onto a canvas matching the original v2 lockup's dimensions, so no CSS changes were needed. References in the page and service-worker precache list were updated, and the version bump refreshes the cache-busted URL so the service worker never serves the old logo.
 
 ## SubFaber v3.7.6 (2026-10-02) — Frontend audit corrections
 
@@ -1261,129 +793,71 @@ All notable changes to this project will be documented in this file.
 - Kept `#installUrlBox` state semantic with `hidden` and `aria-hidden` during both reveal and clear flows, and hardened URL-box sizing for narrow viewports.
 - Consolidated reset-bar layout responsibility by keeping its base reset in `configure.css` and removing the redundant app-shell margin overrides.
 
-## SubFaber v3.7.5 (2026-10-02) — Fix: Spacing Install URL box simetri 24px atas dan bawah
+## SubFaber v3.7.5 (2026-10-02) — Fixed: Symmetric 24px Spacing Around the Install URL Box
 
-**Visual seimbang 100% — jarak atas dan bawah kad URL kini seragam:**
+### 🐛 Bug Fixes
 
-- **Masalah:** Jarak Butang → Kad URL cuma 12px (tersepit) manakala Kad URL → Kad Reset 52px (parent gap 12px + margin-top 40px reset bar) — UI nampak senget.
-- **Fix simetri 24px:** `.install-url-box` diberi `margin: 12px 0 !important` — parent flex gap 12px + margin 12px = **24px visual** pada kedua-dua sisi. Reset bar menggunakan margin asas `0`, jadi tiada margin-top 40px tambahan.
-- **Fail diubah:** `public/css/app-shell.css`, `package.json` (3.7.5).
-- **Ujian:** `npm test` — **287 PASS / 0 FAIL**.
+- **Fixed the lopsided spacing around the Install URL box:** the gap above it was only 12px while the gap below was 52px (parent gap plus an extra reset-bar margin). The box now carries a 12px margin on both sides, producing a uniform 24px visual gap above and below, with the reset bar using its base margin.
 
-## SubFaber v3.7.4 (2026-10-02) — Fix: Install URL box muncul semula selepas Save — antara 3 beradik dengan Reset
+## SubFaber v3.7.4 (2026-10-02) — Fixed: Install URL Box Reappears After Save
 
-**Feature SubFaber klasik yang hilang semasa refactoring app-shell dipulihkan:**
+### 🐛 Bug Fixes
 
-- **Root cause:** Kotak Install URL (`#installUrlBox`) tersangkut di dalam `.app-page[data-page="toolbox"]` — page yang `hidden` secara default. Markup dan JS (`classList.add('show')` dalam `config.js`) kekal wujud dan berfungsi, tapi parent page Toolbox tak pernah visible bila user save dari Configuration — jadi kotak tak nampak walau class `.show` ditambah.
-- **Markup dipindah:** `#installUrlBox` kini duduk dalam `.app-config-actions` di Configuration page — tepat antara button 3 beradik (`.btn-group`) dengan kad Reset (`.reset-bar`), ikut susunan zaman SubFaber asal.
-- **Styling Rootsys:** Kotak input URL diberikan gaya kad bersih — background putih `var(--surface)`, border `1px solid var(--border)`, border-radius 12px, padding `1rem 1.25rem`, input monospace (`JetBrains Mono`) dengan focus ring lembut. Border 2px `var(--primary)` lama yang kasar digantikan dengan gaya hairline yang konsisten dengan kad lain.
-- **Spacing One World:** Kotak menggunakan parent flex gap 12px dan margin 12px pada kedua-dua sisi untuk menghasilkan **24px visual**; Reset bar tiada margin-top tambahan.
-- **JS tak berubah:** `getElementById('installUrlBox')` / `getElementById('installUrlDisplay')` guna ID unik — lokasi baru tak jejas selector. `clearActiveInstallState()` masih buang `.show` bila reset.
-- **Fail diubah:** `public/partials/main.html` (pindah markup), `public/css/configure.css` (styling Rootsys), `public/css/app-shell.css` (margin rule), `package.json` (3.7.4).
-- **Ujian:** `npm test` — **287 PASS / 0 FAIL**.
+- **Restored a classic feature lost during the app-shell refactoring:** the Install URL box was stuck inside the hidden Toolbox virtual page, so it never appeared when saving from the Configuration page even though the JS worked. The box now lives in the Configuration page's action area — exactly between the three action buttons and the Reset card, matching the original layout — with clean card styling (soft surface, hairline border, monospace input, gentle focus ring) replacing the old heavy primary border. The JS is untouched (IDs unchanged), and the reset flow still clears the box.
 
-## SubFaber v3.7.3 (2026-10-02) — "One World" — Spacing 40px seragam di seluruh Configuration page
+## SubFaber v3.7.3 (2026-10-02) — "One World": Uniform 40px Spacing Across the Configuration Page
 
-**Akhirnya — satu dunia, satu irama. Semua elemen belah kanan kongsi gap 40px yang sama:**
+### ⚡ Improvements
 
-- **One World spacing:** `.app-page` menggunakan flex column; Configuration menggunakan `gap: 40px` untuk rhythm section tanpa mengenakan kontrak itu pada virtual page lain atau future children yang tidak berkaitan.
-- **Correction:** `display:none` tidak dikira sebagai flex item dan tidak menghasilkan gap. Sebarang spacing tambahan datang daripada margin/padding elemen yang visible atau struktur layout lain, bukan hidden flex items.
-- **`.btn-group` margin-top fix (PUNCA TERAKHIR):** `configure.css` line 2683 `margin-top: 1.25rem` (20px) pada `.btn-group` diwarisi oleh first child `.app-config-actions` — menyebabkan jarak Settings → 3 beradik jadi 60px bukan 40px. Override `margin-top: 0` dalam `app-shell.css` menyelesaikan masalah ini.
-- **Duplicate rules purge:** Dua set lengkap rules `.app-config-actions` wujud dalam `app-shell.css` — Set 1 (dead code) dibuang; hidden-flex-item compensation tidak diperlukan.
-- **Dead code cleanup:** `devSettingsCard` orphan element (tiada JS reference) dibuang dari `main.html`.
-- **Reset bar rhythm:** Reset bar menggunakan margin asas `0`; parent action gap dan margin URL box yang eksplisit mengawal rhythm tanpa cascade override tambahan.
-- **Fail diubah:** `public/css/app-shell.css` (Configuration gap dan `.btn-group` override), `public/partials/main.html` (devSettingsCard dibuang), `public/css/configure.css` (sumber `.btn-group` margin-top dikenalpasti).
-- **Ujian:** `npm test` — **287 PASS / 0 FAIL**.
+- **Unified the Configuration page under a single 40px vertical rhythm:** the page container's flex gap now controls section spacing without imposing the contract on other virtual pages. The last spacing culprit (a 20px inherited margin on the action group that made the Settings-to-buttons gap 60px instead of 40px) was neutralized, a duplicate dead rule set was purged, an orphan card with no JS references was removed, and the reset bar now relies on the parent's rhythm instead of its own margins.
 
-## SubFaber v3.5.1–v3.6.2 (2026-10-02) — Spacing Saga — Iterasi spacing Configuration page
+## SubFaber v3.5.1–v3.6.2 (2026-10-02) — The Spacing Saga: Configuration Page Iterations
 
-**Perjalanan mencari spacing yang sempurna — dari centering ke family rhythm:**
+### ⚡ Improvements
 
-- **v3.5.1 Centering:** Reset bar + footer center dengan `align-items: center` + `justify-content: center`.
-- **v3.5.2 Footer:** Footer center ikut content area kanan — `padding-left: 240px` pada desktop.
-- **v3.5.3 Quick-stack:** Quick Setup + No Translation dibungkus dalam `.app-quick-stack` supaya rapat.
-- **v3.5.4 Quick-stack gap:** Gap 8px → 14px — pernafasan lebih selesa.
-- **v3.5.5 Action-spacing:** 3 beradik rapat dengan Settings section; jarak sebelum Reset.
-- **v3.5.6 Duplicate selector:** Buang duplicate `.reset-bar` yang block `margin-top`.
-- **v3.5.7 Family-spacing:** 3 beradik jadi sebahagian family spacing yang seragam.
-- **v3.5.8 Family-rhythm:** `margin-bottom: 20px` pada section, spacing 40px seragam.
-- **v3.5.9 Layout cleanup:** 3 beradik dipindah untuk memastikan susunan DOM dan spacing visible lebih mudah difahami.
-- **v3.6.0 Layout cleanup:** 3 beradik kekal di hujung page; negative-margin compensation bukan lagi sebahagian daripada layout contract.
-- **v3.6.1 Reset-gap:** 3 beradik → Reset 40px — destructive action dapat ruang sendiri.
-- **v3.6.2 Spacing-cleanup:** Buang margin bertindih, 40px seragam untuk semua.
-- **Fail diubah:** `public/css/app-shell.css`, `public/partials/main.html`.
-- **Ujian:** `npm test` — **287 PASS / 0 FAIL** (setiap iterasi).
+- **A twelve-release iteration journey to find the perfect page rhythm:** centered the reset bar and footer, aligned the footer with the right content area, wrapped Quick Setup and No Translation into a tight stack with a comfortable gap, grouped the three action buttons into the section family rhythm, removed duplicate selectors blocking margins, cleaned up the DOM order, dropped negative-margin compensation from the layout contract, gave the destructive Reset action its own breathing room, and finally unified everything at a uniform 40px spacing.
 
-## SubFaber v3.5.0 (2026-10-02) — "Inline Actions" — Button 3 beradik kembali ke dalam Configuration page
+## SubFaber v3.5.0 (2026-10-02) — "Inline Actions": Action Buttons Back Inside the Configuration Page
 
-**Aliran semula jadi dipulihkan — configure dulu, baru save/install/copy:**
+### ⚡ Improvements
 
-- **Sticky action bar dibuang:** Bar fixed di bahagian bawah skrin yang asingkan Save/Install/Copy dari konteks settings dihapuskan sepenuhnya dari `configure.html` dan CSS `.app-action-bar`.
-- **Button 3 beradik inline:** Save Configuration / Install in Stremio / Copy Install URL kini duduk di hujung Configuration page — selepas Settings section, sebelum footer. Susunan lengkap: Quick Setup → No Translation → API Keys → Languages → Settings → **3 Beradik** → **Reset** → Footer.
-- **Reset rapat, bukan jauh:** Reset bar dipindahkan masuk ke dalam `.app-config-actions` — rapat terus di bawah button 3 beradik dengan spacing kemas (12px gap), bukan lagi jauh ke bawah berhampiran footer. `positionResetBar()` dalam `config.js` ditukar kepada no-op yang selamat — tiada lagi pengiraan margin dinamik yang menyebabkan jarak pelik.
-- **Docs button dibuang:** Link "Docs" di sidebar footer dihapuskan — sidebar kini hanya ada version badge (clickable changelog) + bendera bahasa.
-- **Susunan kemas:** `.app-config-actions` flex column dengan gap 12px; mobile stack button penuh lebar. Spacing antara section seragam dan tersusun.
-- **Fail diubah:** `public/configure.html` (action bar + Docs dibuang), `public/partials/main.html` (3 beradik + reset + support link masuk Configuration page), `public/css/app-shell.css` (.app-action-bar → .app-config-actions), `public/config.js` (positionResetBar jadi no-op selamat), `CHANGELOG.md`.
-- **Ujian:** `npm test` — **287 PASS / 0 FAIL**.
+- **Restored the natural flow — configure first, then save/install/copy:** the fixed sticky action bar that separated the three buttons from their settings context was removed entirely. Save / Install / Copy now sit at the end of the Configuration page after the Settings section, with the Reset bar tucked in directly beneath them (replacing the old dynamic margin calculation with a safe no-op), and the sidebar was decluttered to just the version badge and language flags. Mobile gets a clean full-width button stack.
 
-## SubFaber v3.4.0 (2026-10-02) — "Single Entry" — Overview page dibuang, Configuration jadi pintu mutlak
+## SubFaber v3.4.0 (2026-10-02) — "Single Entry": Overview Page Removed, Configuration Is the Sole Gateway
 
-**User noob tidak akan keliru lagi — satu sahaja tempat untuk semua settings:**
+### 🔄 Breaking Changes
 
-- **Overview page dibuang sepenuhnya:** Page "Overview" yang menyebabkan kekeliruan ("aku nak tekan mana?") dihapuskan dari DOM, sidebar, dan router. Quick Setup banner + No Translation toggle dipindahkan ke dalam Configuration page supaya user terus nampak bila buka app.
-- **Configuration = parent mutlak:** Sidebar kini hanya ada Configuration di bawah Account — tiada Overview, tiada pilihan lain. Klik Configuration = expand + land di scrollable settings page (Quick Setup → API Keys → Languages → Settings).
-- **Sidebar children dipermudah:** 9 sub-items (dulu ada grandchildren) dipermudah kepada 3 sahaja: API Keys, Languages, Settings. Tiada lagi "Subtitles API Keys", "AI Translation API Keys", "Source Languages", "Target Languages", "Translation Settings", "Other Settings" — semua tu kekal dalam page, tapi sidebar tak tunjuk supaya tak pening.
-- **Default page bertukar:** Hash fallback dan initial load kini pergi ke `#/configuration` bukan `#/overview`. User terus nampak settings, takde "home page" yang redundant.
-- **Bottom nav dipermudah:** Dari 3 items (Overview, Configure, Toolbox) kepada 2 sahaja (Configure, Toolbox).
-- **quick-setup.js fix:** `__appNavigate('languages')` ditukar kepada `__appNavigate('configuration')` — Quick Setup wizard kini buka Configuration page dan scroll ke Languages section.
-- **i18n keys dibuang:** `nav.overview`, `nav.subtitlesApi`, `nav.aiTranslationApi`, `nav.sourceLanguages`, `nav.targetLanguages`, `nav.translationSettings`, `nav.otherSettings` dihapuskan dari `locales/en.json`.
-- **Fail diubah:** `public/partials/main.html` (Overview page dibuang, Quick Setup + No Translation dipindah), `public/configure.html` (sidebar + bottom nav), `public/js/panel-nav.js` (PAGES + DEFAULT_PAGE), `public/js/quick-setup.js` (navigate target), `locales/en.json` (keys dibuang).
-- **Ujian:** `npm test` — **287 PASS / 0 FAIL**.
+- **Removed the Overview page entirely to eliminate choice paralysis for new users:** the Quick Setup banner and No Translation toggle moved into the Configuration page, the sidebar now lists only Configuration, its nine sub-items were simplified to three (API Keys, Languages, Settings), the default route lands directly on the settings, the bottom nav shrank to two items, the Quick Setup wizard navigates to Configuration, and the obsolete navigation translation keys were removed.
 
-## SubFaber v3.3.0 (2026-10-02) — "Desktop Light" — Theme switch dibuang dari desktop, force cerah sahaja
+## SubFaber v3.3.0 (2026-10-02) — "Desktop Light": Theme Switch Removed from Desktop, Always Light
 
-**Dashboard desktop kini bersih macam Rootsys — tiada theme toggle langsung, cerah sahaja:**
+### ⚡ Improvements
 
-- **Theme switch dibuang:** Button 3-mode (Light/System/Dark) dibuang sepenuhnya dari sidebar footer desktop — mengikut pattern dashboard Rootsys yang tidak mempunyai theme toggle langsung.
-- **Force light untuk desktop:** Theme bootstrap dalam `<head>` kini force `data-theme="light"` dan `data-theme-pref="light"` — mengabaikan stored preference sepenuhnya untuk desktop, macam dashboard Rootsys yang cerah sahaja.
-- **theme-toggle.js guard:** Modul theme-toggle kini skip re-apply stored preference jika desktop-forced-light (tiada `#themeToggle` dalam DOM dan `data-theme-pref="light"`) — bootstrap force light yang menang, bukan stored preference.
-- **System dark/light kekal dalam kod:** Tema gelap masih tersedia dalam kod untuk kegunaan mobile/tablet nanti; desktop UI kekal bersih tanpa button.
-- **Fail diubah:** `public/configure.html` (theme switch dibuang + bootstrap force light), `public/js/theme-toggle.js` (guard desktop-forced-light).
-- **Ujian:** `npm test` — **287 PASS / 0 FAIL**.
+- **Removed the three-mode theme switch from the desktop sidebar,** following the reference dashboard pattern of an always-light desktop. The head bootstrap forces the light theme and preference on desktop (ignoring stored preferences), and the theme-toggle module gained a guard so the forced light wins over any stored dark preference. Dark themes remain in the code for future mobile/tablet use.
 
-## SubFaber v3.2.1 (2026-10-01) — Fix: Version badge dipindahkan ke footer sidebar (sebelah bendera bahasa)
+## SubFaber v3.2.1 (2026-10-01) — Fixed: Version Badge Moved to the Sidebar Footer
 
-- **UX:** Version badge (clickable changelog) dipindahkan dari brand header atas sidebar ke footer sidebar, duduk sebelah bendera pilih bahasa — lebih seimbang dan tidak bersaing dengan jenama. Badge span `#version-badge` kekal dengan ID sama supaya `config-loader.js` dan `changelog-panel.js` masih berfungsi tanpa perubahan. `npm test`: **287 PASS / 0 FAIL**.
+### ⚡ Improvements
 
-## SubFaber v3.2.0 (2026-10-01) — "Changelog Panel" — Version badge kini hidup dan clickable
+- **Moved the clickable version badge from the sidebar's brand header to its footer,** beside the language flags — better balance, no longer competing with the logo. The badge keeps its original ID, so the config loader and changelog panel work unchanged.
 
-**Version badge di sidebar bukan lagi label statik — klik untuk buka slide-out changelog dari sebelah kanan:**
+## SubFaber v3.2.0 (2026-10-01) — "Changelog Panel": The Version Badge Is Now Live and Clickable
 
-- **Version badge clickable:** Badge `v{version}` di sidebar atas kini dibalut dalam butang yang bila klik akan buka panel changelog.
-- **Slide-out panel dari kanan:** Panel 400px dengan header (ikon + tajuk), body scrollable dengan entries changelog, dan footer dengan link ke GitHub. Overlay gelap di belakang, tutup dengan butang X, klik overlay, atau tekan Escape.
-- **Data dari backend:** Fetch `/api/changelog` (endpoint sedia ada dengan cache 5 minit) — tiada perubahan backend diperlukan. Content markdown ringkas dirender dengan selamat (bold, `code`, bullets, numbered, headings).
-- **Frontend sahaja:** Fail baru `public/js/changelog-panel.js`, CSS dalam `app-shell.css`, script wired dalam `configure.html`, keys `changelog.*` dalam `locales/en.json`.
-- **Ujian:** `npm test` — **287 PASS / 0 FAIL**.
+### 🆕 New Features
 
-## SubFaber v3.1.0 (2026-10-01) — "Hybrid Sidebar" — Hierarchical Configuration Nav
+- **The sidebar version badge is no longer a static label — clicking it opens a slide-out changelog panel** from the right: a 400px panel with a header, scrollable entries body, and a GitHub link footer, behind a dark overlay, closable via the X button, overlay click, or Escape. Data comes from the existing `/api/changelog` endpoint (5-minute cache) with zero backend changes, and simple markdown is rendered safely (bold, code, bullets, numbered lists, headings). Purely frontend: a new panel script, styles, wiring, and translation keys.
 
-**Susunan semula sidebar kepada hierarki yang tidak memeningkan pengguna — Configuration sebagai parent dengan sub-items anchor scroll:**
+## SubFaber v3.1.0 (2026-10-01) — "Hybrid Sidebar": Hierarchical Configuration Navigation
 
-- **3 pages sebenar** (bukan 5): Overview, **Configuration** (SATU page scrollable mengandungi SEMUA settings — apiKeysSection + languagesSection + settingsSection berturut-turut, macam SubFaber asal), Sub Toolbox. Configuration parent tidak dipecahkan — collapse mechanism `config.js` kekal 100% sah.
-- **Hierarchical sidebar:** Configuration adalah parent collapsible dengan caret; sub-items (API Keys → Subtitles API Keys + AI Translation API Keys; Languages → Source + Target; Settings → Translation Settings + Other Settings) adalah **anchor links** — klik scroll + expand card spesifik dalam Configuration page (`panel-nav.js` `navigateToAnchor`).
-- **UX:** State expand/collapse Configuration disimpan dalam `localStorage`; bottom nav mobile dikemas kini kepada 3 item; caret rotate 90° bila expanded.
-- **Fail diubah:** `panel-nav.js` (3 pages + anchor map + parent toggle + persistence), `configure.html` (hierarchical nav markup), `partials/main.html` (4 pages digabung jadi 1 Configuration), `app-shell.css` (children styles), `locales/en.json` (nav keys baru).
-- **Ujian:** `npm test` — **287 PASS / 0 FAIL**.
+### ⚡ Improvements
 
-## SubFaber v3.0.0 (2026-10-01) — "App Shell" — Sidebar App Navigation ala Rootsys Dashboard
+- **Reorganized the sidebar into a non-confusing hierarchy:** three real pages (Overview, one scrollable Configuration page containing all settings like the original design, and Sub Toolbox) instead of five. Configuration is a collapsible parent with a rotating caret; its sub-items (API keys, languages, settings) are anchor links that scroll to and expand the matching card inside the page. The expand/collapse state persists in localStorage and the mobile bottom nav was updated to three items. The page-merge preserved the collapse mechanism contract 100%.
 
-**Configure page ditukar daripada single-column centered kepada sidebar app layout sebenar — 5 virtual pages dalam SATU DOM, routing hash, tanpa pecahkan kontrak JS:**
+## SubFaber v3.0.0 (2026-10-01) — "App Shell": Sidebar App Navigation
 
-- **Layout Rootsys dashboard:** sidebar 240px kiri (traffic-light dots + logo + nav pills dengan ikon outline + active state ungu `#EDE7FE`/`#7C3AED`), content kanan flat `#F7F8FB`, cards dual-tone (putih `#FFFFFF` + border `#ECEFF4` supaya timbul), mobile header + bottom nav 5 item, sticky action bar (Save/Install/Copy sentiasa nampak).
-- **5 virtual pages** (`panel-nav.js` router baru): Overview, API Keys, Languages, Settings, Sub Toolbox — hash routing `#/page`, pages hidden guna `display:none` supaya semua 220 ID `config.js` kekal dalam DOM, auto-expand sections dalam page aktif, fallback `#/overview`, `__appNavigate()` exposed untuk quick-setup.
-- **Keselamatan kontrak:** `settingsSection` dikekalkan UTUH (tidak dipecahkan) supaya collapse mechanism `subfaber_collapsed_sections` sah; butang Save/Install/Copy hanya satu salinan dalam action bar dengan `.btn-group` legacy class; `novalidate` pada form kekal; zero duplicate IDs; quick-setup patched untuk navigate sebelum scroll.
-- **Fail:** `public/css/app-shell.css` (BARU), `public/js/panel-nav.js` (router baru), `configure.html` + `partials/main.html` (shell + pages), `quick-setup.js` (patch navigate), `locales/en.json` (blok `nav`). Blueprint lengkap dalam `plans/subfaber-sidebar-app-blueprint.md`.
-- **Ujian:** `npm test` — **287 PASS / 0 FAIL** konsisten merentasi semua fasa. Visual verify lulus: active pill, icons, kontras canvas/kad, page header per-page.
+### 🔄 Breaking Changes
+
+- **Transformed the configure page from a single centered column into a true sidebar app layout:** a 240px left sidebar (traffic-light dots, logo, nav pills with outline icons and a violet active state), a flat right-hand canvas with dual-tone bordered cards, a mobile header with a five-item bottom nav, and an always-visible sticky action bar. Five virtual pages live in ONE DOM behind hash routing — pages are hidden with `display: none` so every one of the 220 existing element IDs stays intact, with auto-expanding sections, a fallback route, and a navigation helper exposed for the Quick Setup wizard. The settings section stayed whole so the collapse mechanism remained valid, the action buttons kept a single copy with their legacy classes, the form kept its `novalidate`, and there were zero duplicate IDs.
 
 ## SubFaber v2.0.2 (2026-10-01) — Fix: CI red — axios high-severity audit failure (both Node 22 & 24)
 
@@ -1395,25 +869,19 @@ All notable changes to this project will be documented in this file.
 - **Root cause:** `subfaber-theme.css` kept the old sky-blue accent (`#0EA5E9`) for `--primary` under `[data-theme="dark"]`, so the Save Configuration button (and other primary actions) rendered sky-blue in dark mode instead of the Rootsys violet.
 - **Fix:** dark-mode `--primary`/`--primary-light`/`--primary-dark`/`--secondary`/`--accent` in [`public/css/subfaber-theme.css`](public/css/subfaber-theme.css) now mirror the light-mode violet values (`#7C3AED` / `#A78BFA` / `#8B5CF6`) for brand consistency across both themes, matching the live Rootsys dashboard palette (verified against `rootsys.cloud/buyer/dashboard`: background `#F7F8FB`, accent `#7C3AED`, token-usage gradient `from-[#7C3AED] to-[#A78BFA]`). `npm test`: **287 PASS / 0 FAIL**.
 
-## SubFaber v2.0.0 (2026-09-30) — "Prompt-Slim" — Agent A Payload Diet + Parity Discipline
+## SubFaber v2.0.0 (2026-09-30) — "Prompt-Slim": Primary-Agent Payload Diet + Parity Discipline
 
-**Era baharu enjin terjemahan: beban token dipotong hampir separuh, disiplin pariti dikukuhkan, pintu malas disekat — tanpa hilang kuasa arahan:**
+### ⚡ Improvements
 
-- **Batch size 60 → 30 ([`translationEngine.js`](src/services/translationEngine.js)):** selaras mandat owner + nasihat model — kurang slot per nafas mengurangkan risiko ID-parity drift dan attention dilution. Sliding window 3/2 + previousMemory kekal.
-
-- **System prompt V4 "Slim & Sharp" ([`translationEngine.js`](src/services/translationEngine.js)):** 1,266 → **579 BPE tok (−54%)**. Arahan terus-ke-batang-hidung: "keep slot/ID parity sacred" + "lines a native speaker would actually say". 7 rules bertatah prosa → 6 rules satu-baris; label jenayah ANTI-MERGE/SHIFT/PHANTOM/DROP/UNTRANSLATED + PRESERVE kekal untuk pemetaan 1:1 dengan taksonomi 6-jenayah Agent B.
-
-- **Few-shot 6 → 2 ([`malay.js`](src/services/prompts/languagePacks/malay.js) / [`generic.js`](src/services/prompts/languagePacks/generic.js)):** hanya MERGE + SHIFT (jenayah parity-critical); jenayah lain dilindungi rules + inspection Agent B.
-
-- **FIX prefill anchor ([`gemini.js`](src/services/gemini.js)):** check lama `endsWith('<s id="')` tak pernah padankan tag penuh `<s id="N">` — anchor kini regex-match, distrip dari user content dan dipindah ke model prefill (kedua-dua laluan `generateContent` + `streamGenerateContent`). Model sambung isi slot pertama terus.
-
-- **BPE tokenizer guard ([`translationEngine.js`](src/services/translationEngine.js)):** `safeEstimateTokens` kini guna `gpt-tokenizer` (BPE sebenar) ganti heuristik chars/3 yang overestimate ~35% — auto-chunking tidak lagi terpicu palsu.
-
-- **Bare-name title discipline:** pelajaran runtime (Shine on Me S01E31 — sumber "Lin" diterjemah "Encik Lin"): HIERARCHY OF TRUTH kini menyatakan gelaran ialah **MAPPINGS, bukan mandates** — nama kosong kekal kosong; gelaran dipakai hanya bila baris sumber sendiri membawanya. Diperkuat melalui Style section (dua saluran).
-
-- **ZERO translator notes in parentheses:** hack A/B-tested owner — AI cenderung ambil jalan mudah menjelaskan ayat susah dalam (kurungan) berbanding commit kepada terjemahan sebenar; dilarang terus dalam Output Format.
-
-- **Keputusan:** input per panggilan **2,688 → 1,551 BPE tok (−42%)**; run pertama pasca-pembedahan: 26/26 batch inspection PASSED, 0 jenayah semua kategori, 0 mismatch, RM0.16/episod (759 entri). `npm test`: **287 PASS / 0 FAIL** (1 skipped).
+- **A new era for the translation engine — token load cut nearly in half, parity discipline hardened, and lazy escape routes blocked, all without losing command power:**
+  - **Batch size reduced 60 → 30** per the owner's mandate and the model's own advice — fewer slots per breath reduces ID-parity drift and attention dilution. The 3/2 sliding window and prior-line memory were preserved.
+  - **System prompt V4 "Slim & Sharp":** 1,266 → 579 BPE tokens (−54%) — blunt, direct instructions ("keep slot/ID parity sacred", "lines a native speaker would actually say"), seven prose-flavored rules condensed to six one-liners, with the anti-merge/shift/phantom/drop/untranslated crime labels and preserve rules kept for the Inspector's 1:1 crime mapping.
+  - **Few-shot examples cut 6 → 2** (only the parity-critical merge/shift crimes; the rest are covered by rules and the Inspector's audit).
+  - **Fixed the prefill anchor:** the old `endsWith` check never matched the full `<s id="N">` tag — the anchor is now regex-matched, stripped from user content, and moved into the model prefill on both generation paths, so the model resumes filling the first slot immediately.
+  - **Real BPE token estimation replaced the chars/3 heuristic** (which overestimated ~35%), so auto-chunking no longer triggers falsely.
+  - **Bare-name title discipline:** after a real runtime lesson (a source "Lin" became "Mr. Lin"), the hierarchy of truth now declares titles are mappings, not mandates — empty names stay empty unless the source line itself carries the title, reinforced in both style channels.
+  - **Zero translator notes in parentheses:** an owner A/B-tested finding — the model tends to explain hard lines in parentheses instead of committing to a real translation, so it is now forbidden outright in the output format.
+- **Results:** input per call dropped 2,688 → 1,551 BPE tokens (−42%); the first post-surgery run passed 26/26 batch inspections with zero crimes, zero mismatches, at RM0.16/episode for 759 entries.
 
 ## SubFaber v1.9.12 (2026-09-30) — "Rootify" — Rootsys-Inspired Visual Overhaul for Both Worlds
 
@@ -1429,250 +897,130 @@ All notable changes to this project will be documented in this file.
 
 ## SubFaber v1.9.8 (2026-09-26) — Pre-Flight Payload Ceiling 250k Chars + Headroom Timeouts 180s/45s
 
-**Sekatan buatan 48k aksara dimansuhkan — jalan cerita penuh diserahkan kepada Inspector:**
+### ⚡ Improvements
 
-- **Siling penyerapan 250k ([`subfaberPreflight.js`](src/services/subfaberPreflight.js)):** `MAX_PREFLIGHT_CHARS = 250000` menggantikan had 48k yang memaksa sampling pada fail 1,500–2,500 baris (150k–200k aksara) — watak dan plot babak tengah/akhir tercicir. Muatan 250k hanya ~5% kapasiti konteks 1M token GLM-5.3-flash. Fail sehingga 2,500 entri kini diserahkan **penuh tanpa pemotongan**; sampling merata hanya aktif melebihi siling keselamatan 250k (fail ekstrem). Alias warisan `PREFLIGHT_MAX_INPUT_CHARS` sejajar ke 250k.
-
-- **Headroom timeout ([`agentBInspector.js`](src/services/agentBInspector.js)):** `AGENT_B_PREFLIGHT_TIMEOUT_MS` 45s → **180s** (3 minit — baca 2,500 entri penuh tanpa tercekik); `AGENT_B_INSPECTION_TIMEOUT_MS` 15s → **45s** (60% headroom ke atas latensi purata GLM 12–16s bagi beban 50 baris). Model sandaran `deepseek-v4.1-flash` mewarisi kedua-dua had ini semasa failover (timeout dikongsi per-operasi). [`resilientParseJson()`](src/services/subfaberPreflight.js:140) dikekalkan.
-
-- **Ujian:** suite 71 → **73** ujian preflight+inspector: konstanta siling 250k, kes forensik mandat (mock **2,000 entri / ~210k aksara** diserahkan PENUH tanpa sampling — baris tengah [1,000] dan akhir [2,000] disahkan hadir dalam raw text), sampling keselamatan ekstrem (>250k aktif), kitaran timeout 180s naik/pulih (3 laluan). `npm test`: 203 tests, **202 PASS / 0 FAIL** (1 skipped).
+- **Abolished the artificial 48k-character limit so the Inspector receives the full story:** the absorption ceiling rose to 250,000 characters — files up to ~2,500 entries are now handed over whole without truncation (mid- and late-episode characters and plots no longer fall off), and even sampling only activates above the 250k safety ceiling for extreme files; 250k is only ~5% of the model's 1M-token context capacity.
+- **Added headroom timeouts:** the pre-flight timeout tripled to 180 seconds (enough to read 2,500 full entries) and the batch-inspection timeout rose to 45 seconds (60% headroom over the model's observed 12–16s latency for a 50-line batch), with the fallback model inheriting both limits during failover. New tests cover the 250k constant, a forensic 2,000-entry/~210k-char case delivered whole (middle and final lines verified present), extreme-file sampling, and the timeout raise/recovery cycles.
 
 ## SubFaber v1.9.7 (2026-09-26) — Clean 2-Model Consolidation: glm-5.3-flash + deepseek-v4.1-flash
 
-**Kerumitan Trinity dimansuhkan — seni bina modular 2 model yang ringkas dan padu:**
+### 🔄 Breaking Changes
 
-- **[agentBInspector.js](src/services/agentBInspector.js):** `preflightModel`/`inspectionModel` dimansuhkan sepenuhnya — kaedah `_hierarchyFor()` dipadam, `preflightHierarchy` dibuang. Kembali kepada pembolehubah tunggal: `this.model = options.model || 'glm-5.3-flash'` (mengendalikan KEDUA-DUA Fasa 0 dan Semakan Kelompok) + `this.fallbackModel = options.fallbackModel || 'deepseek-v4.1-flash'`. `modelHierarchy` tunggal `[utama, sandaran]` dengan logik penyingkiran duplikasi ('none'/kosong/kesamaan nama case-insensitive). Kedua-dua `runPreflightPass()` dan `runSemanticInspection()` berkongsi hierarki tunggal melalui `_callWithFailover()`.
-
-- **[config.js](src/utils/config.js):** blok `agentB` bersih — `model` (lalai `glm-5.3-flash`) + `fallbackModel` (lalai `deepseek-v4.1-flash`); medan trinity (`preflightModel`/`inspectionModel`) dilucutkan daripada config tersimpan (`delete`) supaya sisa mazhab Trinity tidak terapung dalam Redis.
-
-- **[subtitles.js](src/handlers/subtitles.js:5463):** suntikan pembina kembali kepada `{apiKey, baseUrl, model, fallbackModel}`. [`.env.example`](.env.example): format 2-model bersih — `AGENT_B_MODEL="glm-5.3-flash"`, `AGENT_B_FALLBACK_MODEL="deepseek-v4.1-flash"` (contoh endpoint rootsys.cloud).
-
-- **Ujian:** suite Agent B 49 → **48** (3 ujian Trinity digugurkan, diganti 2 ujian bersih: satu utama `glm-5.3-flash` untuk KEDUA-DUA fasa dengan hierarki tunggal sama; config bersih tanpa medan trinity + hot-swap custom). Ujian warisan dikemas kini kepada default `glm-5.3-flash`. `npm test`: 201 tests, **200 PASS / 0 FAIL** (1 skipped).
+- **Dismantled the three-model Trinity complexity into a simple, tight two-model architecture:** the separate pre-flight and inspection model fields were abolished in favor of a single primary model (`glm-5.3-flash`, handling both Phase 0 and batch inspection) plus one fallback (`deepseek-v4.1-flash`), both phases sharing a single failover hierarchy with deduplication logic. The stored config block was cleaned of the trinity fields so no residue floats in Redis, the handler injection went back to `{apiKey, baseUrl, model, fallbackModel}`, and the environment example documents the clean two-model format. The trinity tests were dropped and replaced with clean single-hierarchy and hot-swap coverage.
 
 ## SubFaber v1.9.6 (2026-09-26) — Holy Trinity: Specialized 3-Model Dual-Agent Architecture
 
-**Agent B kini mengkhususkan model mengikut kekuatan empirik — tiga peranan, tiga model:**
+### 🆕 New Features
 
-- **Pengkhususan ([`agentBInspector.js`](src/services/agentBInspector.js)):** constructor menerima `preflightModel` / `inspectionModel` / `fallbackModel` secara bebas (hot-swap penuh):
-  - Pre-Flight → **glm-5.3-flash** (sintesis makro, baca episod penuh 48k aksara, penjejakan watak tanpa looping);
-  - Semakan Kelompok → **glm-5.3-flashx** (mikro ~200 tok/s — selesai dalam celah pacing delay 5.0s);
-  - Failover → **deepseek-v4.1-flash** (penyelamat ~214 tok/s, struktur JSON tahan lasak).
-  [`_hierarchyFor()`](src/services/agentBInspector.js) memilih hierarki per-operasi (`preflightHierarchy` vs `modelHierarchy`); `_callWithFailover` merujuknya — Pre-Flight tidak pernah menyentuh flashx dan sebaliknya. Konvensyen `'none'`/dedupe dikekalkan.
-
-- **Konfigurasi ([`config.js`](src/utils/config.js), mandat §2A):** rantai `agentB.preflightModel` (`AGENT_B_PREFLIGHT_MODEL`, lalai `glm-5.3-flash`), `agentB.inspectionModel` (rantai 5-peringkat: inspectionModel → **alias legacy `agentB.model`** → `AGENT_B_INSPECTION_MODEL` → **alias `AGENT_B_MODEL`** → lalai `glm-5.3-flashx`), `agentB.fallbackModel` (lalai `deepseek-v4.1-flash`). `agentB.model` dipelihara sebagai mirror `inspectionModel` — config lama dan pembaca warisan terus berfungsi. [`subtitles.js`](src/handlers/subtitles.js:5464) menyuntik ketiga-tiga medan; [`.env.example`](.env.example) mendokumentasikan Trinity.
-
-- **Ujian:** suite Agent B 42 → **49** (3 baharu + 2 dikemas kini): lalai Trinity (flash/flashx/deepseek + hierarki berasingan), pemisahan operasi sebenar (mock: Pre-Flight flash→deepseek **tanpa** flashx; Semakan flashx→deepseek **tanpa** flash), hot-swap 3 medan bebas (kimi-k3/deepseek/glm), rantai alias legacy config + env khas per operasi. Ujian failover pre-flight lama dikemas kini kepada hierarki Trinity. `npm test`: 202 tests, **201 PASS / 0 FAIL** (1 skipped).
+- **The Inspector now specializes models by empirical strength — three roles, three models, each hot-swappable:** pre-flight runs on a macro-synthesis model (full-episode reading, character tracking without loops), batch inspection on a fast micro model (~200 tokens/s, finishing inside the pacing-delay window), and failover on a robust JSON-structure rescuer (~214 tokens/s). A per-operation hierarchy selector keeps the two phases on their own chains, and the config gained a five-level alias chain so legacy fields and environment overrides keep working. New tests cover the trinity defaults, real operational separation, independent three-field hot-swaps, and the legacy alias chains.
 
 ## SubFaber v1.9.5 (2026-09-26) — Resilient Pre-Flight JSON Parser + Dynamic Model Hot-Swap
 
-**Pembaikan forensik Beta Run 3 + model Agent B 100% configurable:**
+### 🐛 Bug Fixes
 
-- **Resilient JSON Parser ([`subfaberPreflight.js`](src/services/subfaberPreflight.js), Mandat §1):** [`resilientParseJson()`](src/services/subfaberPreflight.js:140) membersihkan anomali sintaks biasa LLM SEBELUM `JSON.parse` — (1) ekstrak sempadan `{` pertama → `}` terakhir (buang chatter), (2) koma tergantung `,\s*([}\]])` pada array dan object, (3) markdown fences ( konstruktor RegExp + hex 0x60), (4) aksara kawalan tidak sah (0x00–0x08, 0x0B, 0x0C, 0x0E–0x1F). Parse masih gagal → WARN forensik dengan **position offset + 100 aksara sekitar kawasan bermasalah**. `parsePreflightResponse()` kini menjadi pengesah struktur tulen — semua pembersihan dipusatkan. Respons 2101 aksara sah yang pernah gagal kini dihuraikan.
+- **Added a resilient JSON parser that cleans common LLM syntax anomalies before `JSON.parse`:** boundary extraction (first `{` to last `}`, stripping chatter), dangling commas in arrays and objects, markdown code fences, and invalid control characters. A failed parse now logs a forensic warning with the position offset and 100 characters around the problem area. A previously failing 2,101-character valid response now parses.
 
-- **Dynamic Model Hot-Swap (Mandat §2):** susunan model TIADA lagi hardcoded. `AgentBInspector` menerima `options.fallbackModel` — hierarki dibina dinamik: utama (`options.model`, lalai `glm-5.3-flashx`) + sandaran (`options.fallbackModel`, lalai `deepseek-v4.1-flash`); nilai `'none'`/kosong/sama-dengan-utama (case-insensitive) → hierarki model tunggal. Semua log dan failover merujuk nama model dinamik.
+### 🆕 New Features
 
-- **Konfigurasi ([`config.js`](src/utils/config.js)):** medan `agentB.fallbackModel` dengan env fallback `AGENT_B_FALLBACK_MODEL` (lalai `deepseek-v4.1-flash`); [`handlers/subtitles.js`](src/handlers/subtitles.js:5468) menyuntiknya ke instans inspector.
+- **Made the model lineup 100% configurable (no more hard-coding):** the Inspector accepts a fallback-model option with a dynamically built hierarchy (primary + fallback, with `'none'`/empty/case-insensitive-equal collapsing to a single-model hierarchy), and all logs and failovers reference the dynamic names. A config field with environment fallback was added and injected into the inspector. Nine new tests cover the parser anomalies, the forensic offset warning, and the dynamic hierarchy behaviors.
 
-- **Ujian:** 9 ujian baharu (suite Agent B 37 → **42**): koma tergantung (array/object/berbilang tahap), fences + chatter + kombinasi penuh corak Beta Run 3, control chars (dengan pengesahan precondition `JSON.parse` asli gagal), forensik offset pada WARN, hierarki dinamik (`kimi-k3` utama + sandaran custom melalui failover sebenar), `'none'` → tiada failover, dedupe case-insensitive, lalai backwards-compat, normalisasi config + env. `npm test`: 199 tests, **198 PASS / 0 FAIL** (1 skipped).
+## SubFaber v1.9.4 (2026-09-26) — Inspector: Zero-Swallowed-Error Observability + Dual-Model Failover
 
-## SubFaber v1.9.4 (2026-09-26) — Agent B: Zero-Swallowed-Error Observability + Dual-Model Failover (glm-5.3-flashx → deepseek-v4.1-flash)
+### 🆕 New Features
 
-**Kotak hitam dibongkar — tiada lagi ralat ditelan senyap, sandaran automatik dipasang:**
+- **Opened the black box — no more silently swallowed errors, with an automatic backup model installed:** every pre-flight response now logs its raw length and latency (exposing a previously invisible 28-second "unparseable" failure), a failed parse prints the first 500 characters of raw endpoint text to the server terminal, and new hooks enable dual-model failover. Reasoning tags (`<think>`, `<thinking>`, unclosed variants, and the GLM brain-emoji blocks built from UTF-16 surrogates) are stripped before parsing on both phases, so mixed reasoning+JSON responses now parse successfully.
+- **A dual-model failover engine:** on any failure (HTTP, connection, timeout, empty or malformed response) the inspector warns and falls over to the backup model; if both fail, it fails open with full forensics. Applies to both pre-flight (non-blocking preserved) and batch inspection, with mandate-formatted batch status logs and batch-index metadata. Ten new tests cover automatic failover, both-models-failed fail-open, log forensics, tag stripping, and the raw-text hooks.
 
-- **Observabiliti Pre-Flight ([`subfaberPreflight.js`](src/services/subfaberPreflight.js)):** setiap respons Fasa 0 kini mencetak `[INFO] Raw response received (N chars) in Xms [model]` — punca isu beta 2 (respons 28s "gagal dihuraikan" tanpa bukti) kini kelihatan. Parse gagal → `[WARN] Parse failure. Raw snippet (first 500 chars): "..."` — teks mentah endpoint dipapar ke terminal VPS. Hook `onParseFailure`/`onCallError` baru membenarkan failover dual-model. Catch block mencetak `Status:` + punca sebenar, bukan generik.
+## SubFaber v1.9.3 (2026-09-26) — Inspector Unthrottled: 4096-Token Ceiling + Phased 45s/15s Timeouts
 
-- **Tag penaakulan dibersihkan sebelum parse:** [`stripReasoningTags()`](src/services/subfaberPreflight.js) membuang `<think>...</think>`, `<thinking>...</thinking>`, varian tidak tertutup (stream terpotong), dan blok GLM 5.3 🧠...`</think>` (emoji U+1F9E0 dibina daripada surrogates UTF-16) — dilaksanakan pada kedua-dua Fasa 0 dan semakan kelompok. Respons bercampur reasoning+JSON kini dihuraikan dengan jayanya.
+### ⚡ Improvements
 
-- **Dual-Model Failover Engine ([`agentBInspector.js`](src/services/agentBInspector.js)):** hierarki `modelHierarchy = ['glm-5.3-flashx', 'deepseek-v4.1-flash']`. Core baharu [`_callWithFailover()`](src/services/agentBInspector.js) — cuba utama → sebarang kegagalan (HTTP/sambungan/timeout/respons kosong/format rosak) → `[WARN] ... Failing over to deepseek-v4.1-flash...` → sandaran berjaya → operasi diteruskan; kedua-dua gagal → fail-open forensik penuh. Berkuat kuasa bagi kedua-dua Pre-Flight (non-blocking dipelihara) dan Semakan Kelompok.
+- **Removed every artificial breath limit on the Inspector:** the output-token ceiling rose from 256 to 4,096 for both pre-flight and batch inspection (enough room for reasoning tokens without blocking final content), and the single 4-second timeout was replaced with generous phased timeouts — 45 seconds for the full-episode pre-flight read and 15 seconds for batch inspection, eliminating false timeouts caused by real network latency. The axios limit is raised only for the pre-flight call and restored in a `finally` block.
+- **Hardened answer extraction:** the chat translation path now uses a three-tier fallback ladder — message content, then reasoning content (extracting fenced/embedded JSON), then a recursive string-value scan (deliberately not stringify, which escapes braces and destroys embedded JSON) — with a balanced-brace JSON scanner that tolerates braces inside strings, and an empty extraction logging the first 800 characters at debug level. Six new tests cover the new limits, the timeout raise/restore cycles, and the extraction resilience.
 
-- **Log status kelompok berformat mandat:** LULUS → `[INFO] Batch N/M inspection: PASSED (valid: true) [model] (Xms)`; JENAYAH → `[WARN] ... CRIME DETECTED [MERGE, PHANTOM] [model] -> Triggering Retry`; RALAT → `[WARN] Batch N failed on model (Status: 502): punca sebenar`. Gerbang enjin kini menghantar meta `{batchIndex, totalBatches}`.
+## SubFaber v1.9.2 (2026-09-26) — Dual-AI Inspector: Semantic Inspector & Pre-Flight Offloader (Backend Phases 1 & 2)
 
-- **Ujian:** suite 27 → **37 ujian**: failover automatik semakan + Pre-Flight (mock 502/504 → deepseek menyelamatkan), kedua-dua model gagal (rangkaian & HTTP 200 sampah) → fail-open `both_models_failed`, forensik log (raw snippet tepat 500 aksara + pengumuman failover — diassert melalui interception log.warn), strip tag (🧠 tertutup/terbuka, `<thinking>`, berbilang blok), hook `onParseFailure` teks mentah, dan meta batch dari gerbang. `npm test`: 190 tests, **189 PASS / 0 FAIL** (1 skipped).
+### 🆕 New Features
 
-## SubFaber v1.9.3 (2026-09-26) — Agent B Unthrottled: Siling Token 4096 + Timeout Berfasa 45s/15s (Mandat Pembebasan Penuh)
+- **Activated the two-agent architecture — a second AI takes over Phase 0 and audits every translation batch:** a new Inspector module (inheriting the OpenAI-compatible provider) with three mandatory overrides — a locked 256-token output ceiling (bypassing the family's 65,536 floor), verbatim inspector prompts, and a soft 4-second timeout. The contract is a mini-JSON verdict (`valid: true`, or `valid: false` with typed crimes and IDs), with zero retries and low reasoning effort targeting sub-1.5s latency per batch.
+- **Fully error-proof (fail-open):** any timeout, network error, or broken response is silently caught and treated as a pass — the primary Gemini pipeline is never endangered. A circuit breaker disables the Inspector for the rest of a file after three consecutive failures, resetting on success.
+- **Phase 0 offload:** when the Inspector is active, the pre-flight semantic pass runs entirely through it, fully exempting the primary model (saving TPM/RPM quota); with `null`, the original Gemini path is 100% preserved.
+- **Post-alignment semantic gate:** after structural recovery completes (before caching), the Inspector audits the face-end result; an invalid verdict triggers exactly one angry full-batch retry with a critical-alert block, and a second failure accepts the best result without blocking streaming. Structural garbage or an open circuit skips the gate. Dual-AI statistics were added to the translation stats with worker merge-back, and the config gained an agent block with environment fallbacks (auto-active when both env credentials are present). Twenty-one new regression tests cover the parser, payload, fail-open, circuit breaker, GLM payload shape, null-integrity, engine gate, and config normalization.
 
-**Semua sekatan nafas Agent B dibuang — kuota infiniti (skala 1B token), operasi tanpa throttling:**
+## SubFaber v1.9.1 (2026-09-24) — Fallback Prompt Purge + `PROMPT_TEMPLATES` Relocation
 
-- **Siling token dibuka ([`agentBInspector.js`](src/services/agentBInspector.js)):** `AGENT_B_MAX_OUTPUT_TOKENS` 256 → **4096** bagi kedua-dua Pre-Flight dan Semakan Batch — ruang secukupnya bagi GLM menjana reasoning tokens tanpa menghalang penjanaan content akhir. Override `getCappedMaxOutputTokens()` kekal mengunci nilai ini (lantai 65536 keluarga GLM masih dibypass).
+### 🔄 Breaking Changes
 
-- **Timeout berfasa (generous):** konstanta tunggal 4000ms diganti dengan `AGENT_B_PREFLIGHT_TIMEOUT_MS = 45000` (Fasa 0 membaca episod penuh 48k aksara) dan `AGENT_B_INSPECTION_TIMEOUT_MS = 15000` (semakan batch — tiada lagi timeout palsu akibat latensi rangkaian rootsys.cloud). [`runPreflightPass()`](src/services/agentBInspector.js:286) menaikkan had axios kepada 45s untuk panggilan Fasa 0 sahaja dan memulihkannya dalam blok `finally` (selamat dari race — fasa tidak bertindih, di-await penuh oleh enjin).
+- **Stripped the fallback-prompt component from the two-stage defense:** the fallback template key and its only usage (the stage-2 prompt swap) were deleted. The real prohibited-content defense remains layered — stage 1 (key rotation + fictitious header), stage 2 (rotation + header + full toxic-word masking over the prompt and batch text, with no more prompt swapping), and the untouched provider-fallback tier.
+- **Relocated `PROMPT_TEMPLATES` into the batch-prompt builder** as a single block alongside the zero-tolerance enforcement rules, with the latest primary recipe copied byte-for-byte (including a legacy trailing space) and verified via render sentinel. The parity script was rewritten against the new ground truth with five checks — module-scope purge, single definition, zero fallback residue, exactly two identifier references, and byte-identical primary prompt — all passing.
 
-- **Ketahanan pengekstrakan jawapan ([`openaiCompatible.js`](src/services/providers/openaiCompatible.js), Mandat §C):** `translateSubtitle()` kini menggunakan [`extractChatMessageText()`](src/services/providers/openaiCompatible.js) dengan tangga fallback tiga peringkat — (1) `choice.message.content`, (2) `choice.message.reasoning_content` (endpoint reasoning-models; blok JSON/fenced diekstrak), (3) imbasan rekursif nilai string mesej (bukan stringify — stringify melepaskan braces dan memusnahkan JSON terbenam). [`extractStructuredBlock()`](src/services/providers/openaiCompatible.js) menggunakan scanner JSON seimbang dengan pengiraan kedalaman yang tahan braces dalam string. Ekstraksi kosong → log raw response pada DEBUG (800 aksara pertama) untuk siasatan mudah.
+## SubFaber v1.7.0 (2026-09-23) — Parameter Surgery: topK Fully Removed
 
-- **Ujian:** suite Agent B berkembang 21 → **27 ujian**: had baharu (4096/15s/45s), kitaran naik-pulih timeout Fasa 0 (laluan skip, kejayaan, dan kegagalan), serta 4 ujian ketahanan pengekstrakan (content vs reasoning_content, fenced-in-reasoning, fallback rekursif, scanner seimbang). `npm test`: 180 tests, **179 PASS / 0 FAIL** (1 skipped).
+### 🔄 Breaking Changes
 
-## SubFaber v1.9.2 (2026-09-26) — Dual-AI Agent B: Semantic Inspector & Pre-Flight Offloader (Fasa 1 & 2 Backend)
+- **Removed topK from the product entirely, on three layers of ground truth:** (1) the 2019 nucleus-sampling research showing adaptive top-p beats fixed-size top-k truncation for generative text; (2) the current Gemini API specification — models running nucleus sampling don't allow the topK setting, i.e. Google has retired it for modern models; (3) the existing strict-mode ban had already stripped topK for all Gemini 3.x. Conclusion: topK is pure noise with no traffic path that could ever usefully activate it.
+- **The approved final parameter set:** temperature, top-p, presence penalty, frequency penalty, and thinking level — with the thinking budget kept as a Gemini 2.5-only internal mechanism (2.5 doesn't know the thinking level). Every remaining parameter has scientific support, a vendor specification, and test assertions. The removal spans the config normalizer (legacy stored values now silently dropped), the service constructor and both serialization points, the factory passthrough, both endpoints' parsing, the file-upload page generator, all five locale keys, the environment example, the UI group toggle, and fourteen frontend references. The regression test was inverted to assert that topK MUST be dropped by the normalizer — a permanent lock against any resurgence.
 
-**Seni Bina 2-Agent diaktifkan — glm-5.3-flashx mengambil alih Fasa 0 dan mengaudit setiap kelompok terjemahan:**
+## SubFaber v1.9.0 (2026-09-24) — Register-Matched Exemplars: Malay Anchors Injected into the Prompt (Private Build)
 
-- **Modul baharu [`src/services/agentBInspector.js`](src/services/agentBInspector.js):** kelas `AgentBInspector` (warisan `OpenAICompatibleProvider`) dengan tiga override wajib — `getCappedMaxOutputTokens()` dikunci 256 token (bypass lantai 65536 keluarga GLM, mandat zero-yap), `buildUserPrompt()` menghantar prompt inspector verbatim, dan timeout lembut 4 saat (bukan 30s). Kontrak JSON mini `{"valid":true}` / `{"valid":false,"crimes":[{type:MERGE|DROP|PHANTOM,ids,note}]}`; `maxRetries: 0` + `reasoning_effort: 'low'` (registry GLM 5.3 sedia ada) — sasaran latensi < 1.5s per batch.
+### ⚡ Improvements
 
-- **Kebal ralat penuh (fail-open):** sebarang timeout/ralat rangkaian/respons rosak ditangkap senyap → verdict `{valid:true}`; pipeline Gemini tidak pernah tergugat. **Circuit breaker:** 3 kegagalan berturut-turut → Agent B dinyahaktifkan bagi baki fail tersebut; kejayaan mereset kaunter.
+- **Applied the last untapped insight from the purpose-driven MT research:** instructions *describe* register, but exemplars *show* it — and for a language whose pretraining default leans formal, showing beats describing. Exemplar anchors were placed after the rules as a benchmark, labeled "MATCH THIS AUTHENTIC VIBE". This build stays private for Malay use, so the Malay anchors are injected unconditionally (dual-template routing deferred until the codebase goes public). The template structure was restored to the full four-rule form (the one-sentence compression experiment was abandoned — two unproven variables can't be tested simultaneously) with three approved patches: the locked "natural, conversational" keyword kept per the ground-truth research; a primary anchor of two EN→MS pairs showing spoken skepticism and tone-faithful casualness; and a fallback anchor including profane-neutral pairs demonstrating intensity preserved without censorship. The parity backup was updated in lockstep.
 
-- **Fasa 0 offload ([`translationEngine.js`](src/services/translationEngine.js)):** `translateSubtitle()` kini menjalankan Pre-Flight Semantic Pass melalui `(this.agentB || this.gemini)` — Gemini 3 Flash dikecualikan sepenuhnya apabila Agent B aktif (jimat kuota TPM/RPM). `runPreflightSemanticPass()` asal tidak diubah (suntikan provider murni).
+## SubFaber v1.8.0 (2026-09-23) — Prompt Register Keyword: "natural, conversational" Locked
 
-- **Gerbang semantik post-alignment:** selepas Pass 1/2/3 pemulihan struktur selesai (sebelum cache), Agent B menyemak hasil muka-akhir (blok `<en>`/`<ms>` padat, ID global). `valid:false` → SATU full batch retry dengan blok amaran `CRITICAL SEMANTIC ALERT` disuntik ke hujung prompt + re-verdict tunggal; gagal lagi → hasil terbaik diterima (streaming tidak disekat). Insiden `AGENT_B_SEMANTIC_RETRY` direkod ke FinOps/telemetry; hasil bercacat struktur (placeholder `[⚠️]`) atau litar terbuka melangkau gerbang.
+### ⚡ Improvements
 
-- **Statistik DUAL-AI:** `agentBUsed`, `agentBFailures`, `agentBInspections`, `agentBRetries` ditambah ke `translationStats` (termasuk zeroing + merge-back additive pekerja [`parallelTranslation.js`](src/utils/parallelTranslation.js)).
+- **Locked the register keyword on three sources of ground truth:** (1) the register-steering research showing the most effective meaning-preserving descriptors are informal/conversational/colloquial while affective descriptors (casual, humorous) tend to shift meaning; (2) the purpose-driven MT study (50 languages, 8 domains) where conversation scored the highest adaptedness gain from instructions (+25.6), the mechanism being that instructions nudge the model off the written register of its pretraining default; (3) industry AVT standards whose golden acceptance criterion is dialogue "natural in the target language as spoken dialogue". The rule's directive changed from "spoken, conversational" to "natural, conversational" — two independent axes (industry naturalness + research-verified register), with "spoken" dropped as half-redundant. `colloquial` and `informal` were deliberately NOT used: colloquial risks being too slurred for formal-in-film content, and informal is unsafe for mixed-register files. The parity backup was updated in lockstep.
 
-- **Konfigurasi ([`config.js`](src/utils/config.js)):** struktur `agentB` (enabled/baseUrl/apiKey/model, lalai `glm-5.3-flashx`) dengan env fallback `AGENT_B_BASE_URL` / `AGENT_B_API_KEY` / `AGENT_B_MODEL`; kedua-dua kredensial env lengkap → auto-aktif (Fasa 3 UI belum wujud); kredensial tak lengkap → hygiene melumpuhkan. [`handlers/subtitles.js`](src/handlers/subtitles.js) membina instans (dengan `createSsrfSafeLookup()`) dan menyuntik `options.agentB` — `null` → 100% laluan Gemini asal.
+## SubFaber v1.7.1 (2026-09-23) — FinOps: Mismatch-Retry Burned Tokens Now Counted in the Telegram Receipt
 
-- **Ujian:** suite baharu [`agentB-inspector-regression.test.js`](src/services/agentB-inspector-regression.test.js) — 21 ujian: parser JSON (sah/rosak/fence/chatter/sanitasi), payload `<en>`/`<ms>`, fail-open, circuit breaker (3→silent→reset), payload GLM (`reasoning_effort:low`, `max_tokens:256`, timeout 4s), integriti `agentB=null` (satu panggilan provider sahaja), gerbang enjin (retry beramarah, failOpen tanpa retry, mismatch melangkau, litar terbuka melangkau), normalisasi config. `npm test`: 174 tests, **173 PASS / 0 FAIL** (1 skipped; baseline 152 dipelihara penuh).
+### 🐛 Bug Fixes
 
-## SubFaber v1.9.1 (2026-09-24) — Purge Fallback Prompt + Relokasi `PROMPT_TEMPLATES`
+- **Closed a gap found in a real production run (655 entries, 4 mismatch-retry incidents):** the mismatch path is the only failure path where the original call succeeded with HTTP 200 (truncated/interleaved output) — no error is thrown, no stream ID is captured, so the original stream was never marked wasted, and the Telegram receipt showed all tokens as "Effective" even though ~25k+ tokens were genuinely burned on full-batch retries.
+- **The fix is snapshot-diff accounting:** the ledger's stream list is snapshotted before each batch's first attempt; on a mismatch, every stream recorded after the snapshot is immediately marked wasted, and after the targeted and full-batch retry passes complete, the retry streams are marked too and the incident closes with a final outcome (`recovered`/`failed`) plus the total burned tokens. Three new helpers implement the snapshot, the wasted-marking, and the incident closure, while the key-rotation, prohibited-content, and max-tokens paths remain correct. The receipt's Effective/Wasted split now covers mismatch incidents, with each incident line showing its burned tokens and estimated cost.
 
-**Pertahanan dua-stage dilucutkan komponen fallback prompt + blok template dipindahkan masuk `createXmlBatchPrompt`:**
+## SubFaber v1.6.4 (2026-09-23) — Prompt Ground-Truth Restore: Verbatim Rollback to Commit `b1fca3f`
 
-- **Fallback prompt dibuang sepenuhnya:** kunci `PROMPT_TEMPLATES.fallback` (register BLUNT, LITERAL MALAY) dan satu-satunya penggunaannya — swap `pendingPrompt.replace(primaryIntro, fallbackIntro)` dalam Stage 2 — dipadam. Pertahanan PROHIBITED_CONTENT sebenar kekal berlapis: **Stage 1** (rotate key + fictitious header) → **Stage 2** (rotate key + fictitious header + `maskToxicWords` penuh ke atas prompt & batch text, tanpa swap prompt lagi) → **tier fallback provider** (`tryFallback` — tidak disentuh).
+### 🔄 Breaking Changes
 
-- **`PROMPT_TEMPLATES` direlokasi masuk [`createXmlBatchPrompt`](src/services/translationEngine.js)** — satu blok bersama `CRITICAL ENFORCEMENT RULES (ZERO TOLERANCE)`. Resipi primary latest (`5f9c307`: RULES + WORD FORMATION DBP + REGISTER & CADENCE BENCHMARK) disalin **sebijik byte** (termasuk trailing-space warisan pada baris pembuka) — disahkan render sentinel, 1,168 aksara.
+- **Real-world verdict:** three layers of prompt mutation after `b1fca3f` (the task wrapper, the fourth-rule emphasis bullet, and the markdown headings) proved to degrade translation quality and lengthen processing — the latest run took 12m 43s with a full-batch mismatch retry and four smart recoveries. Every subsequent patch made things worse, so the decision was a full rollback to the original recipe rather than another layered patch.
+- **Both prompt builders were restored verbatim:** the task wrapper removed, the pure source-label guard and original template-zone comment restored, the four markdown headings dropped in favor of the original flat structure, and the meta-cognitive "complete behavioral specification" sentence deleted. Untouched by hard rule: the smart preamble scrubber (kept as a runtime safety net), the top-level `systemInstruction` field, the thinking-budget/topK normalization, persona-free style, and batch size. A new byte-exact parity script compares both blocks against the `b1fca3f` backup copy — including a legacy trailing space — and passes.
 
-- **Skrip pariti baharu:** [`scripts/verify-prompt-parity.js`](scripts/verify-prompt-parity.js) ditulis semula ke ground truth baharu — 5 semakan: (1) purge skop modul, (2) definisi tunggal dalam `createXmlBatchPrompt` sebelum blok CRITICAL, (3) sifar baki fallback, (4) tepat 2 rujukan identifier, (5) prompt primary byte-identical `5f9c307`. Semua **PASS**.
+## SubFaber v1.6.3 (2026-09-23) — Configure UI: Fixed the "Enable Top-K" Toggle Spacing
 
-- **Plan pembedahan + keputusan:** [`plans/pembedahan-fallback-purge-prompt-relocate.md`](plans/pembedahan-fallback-purge-prompt-relocate.md).
+### 🐛 Bug Fixes
 
-- **Ujian:** `npm test` 106 tests, **105 PASS / 0 FAIL** (1 skipped; baseline terpelihara).
+- **Fixed the Top-K toggle sticking to the Top-P input:** the Top-P form group carried an inline `margin-bottom: 0` that killed the standard gap, and the toggle wrapper had no top spacing of its own. The inline style was removed and a scoped margin rule added, restoring uniform vertical rhythm across all four DOM-morphing states — purely cosmetic, with zero behavior or payload changes.
 
-## SubFaber v1.7.0 (2026-09-23)
+## SubFaber v1.6.2 (2026-09-23) — Gemini Model Dropdown: Whitelist Sanitizer + Hierarchical Sorting
 
-**Parameter Surgery — topK dibuang sepenuhnya dari SubFaber:**
+### ⚡ Improvements
 
-- **Keputusan ground truth tiga lapis:** (1) Holtzman 2019 ([arXiv:1904.09751](https://arxiv.org/abs/1904.09751)) — adaptive nucleus sampling mengatasi fixed-size top-k truncation untuk teks generatif; (2) spesifikasi Gemini API semasa (update 2026-09-22) — "models running with nucleus sampling don't allow topK setting", Google mempensyenkan topK untuk model moden; (3) pengharaman 3.x-strict sedia ada telah lama strip topK untuk semua model Gemini 3.x. Kesimpulan: topK ialah noise — tiada laluan traffic yang boleh mengaktifkannya secara berfaedah lagi.
+- **Added model filtering and a strict whitelist sanitizer** to API-key validation and the proxy model list: `generateContent` must appear in the supported methods, non-text model families (image, audio, video, research, robotics, etc.) and tuned models are rejected, and only the three core text families (Flash-Lite/Flash/Pro) pass, with `-preview` the only allowed suffix and the official `-latest` alias kept valid.
+- **Hierarchical sorting:** Flash-Lite > Flash > Pro, versions descending within each tier, canonical before `-preview`, and the top-ranked model auto-selected after the dropdown loads — no more hard-coded lock on a single model. Proxy keys get a fixed zero-network 8-model list, and display names are uniform.
 
-- **Set parameter akhir (diluluskan):** `temperature` · `topP` · `presencePenalty` · `frequencyPenalty` · `thinkingLevel` — dengan `thinkingBudget` dikekalkan sebagai mekanisme dalaman Gemini 2.5 sahaja (2.5 tidak mengenali `thinkingLevel`). Setiap parameter yang tinggal mempunyai sokongan saintifik, spesifikasi vendor, dan assertion ujian.
+## SubFaber v1.6.1 (2026-09-23) — Smart Preamble Recovery: Off-by-One Investigated and Fixed
 
-- **Backend:** normalizer `topK`/`topKEnabled` dibuang ([`src/utils/config.js`](src/utils/config.js)); pembersihan legasi kini memadam `topK`/`topKEnabled` secara mutlak daripada config tersimpan (degrade senyap, tiada error runtime); constructor + dua serialization points dibuang ([`src/services/gemini.js`](src/services/gemini.js)); passthrough dibuang ([`src/services/translationProviderFactory.js`](src/services/translationProviderFactory.js)); parsing dibuang dari dua endpoint ([`index.js`](index.js)); UI generator dibersihkan ([`src/utils/fileUploadPageGenerator.js`](src/utils/fileUploadPageGenerator.js)); kunci i18n dibuang (en/es/pt-br/pt-pt/ar); `GEMINI_TOP_K` dibuang ([`.env.example`](.env.example)).
+### 🐛 Bug Fixes
 
-- **Frontend:** group toggle Top-K dibuang ([`public/partials/main.html`](public/partials/main.html)); defaults, visibility morphing 4-kes, changed-detection, reset/rehydration, save-path, dan event listener dibuang ([`public/config.js`](public/config.js)) — 14 rujukan dikosongkan.
+- **Root cause confirmed by forensics and model triangulation:** Rule 7 tells the model to "continue directly from the prompt boundary by generating the inner content of the first slot" — so a 100% compliant response legitimately begins with the first slot's content plus `</s>` WITHOUT an opening tag (the anchor is already displayed in the prompt). The naive v1.6.0 scrubber classified that legitimate text as "chatter" and discarded it every batch (a deterministic off-by-one: 200→199 lines across 4/4 batches — the model never slipped).
+- **The smart preamble scrubber now classifies three cases before cutting:** (A) a preamble ending with `</s>` is an untagged first slot — recovered by re-attaching the opening tag (no lost entries, no two-pass retry); (B) without `</s>` and ≤200 characters — genuine chatter, discarded per the pro-tool pattern; (C) without `</s>` and longer — a structural anomaly, left intact for the anchor-restoration/regex pipeline. A new telemetry counter and Telegram report line make the fix auditable on the next run; expected effect: a PERFECT report with no mismatch retries, saving retry tokens and 7-10 seconds of latency per affected batch.
 
-- **Ujian:** [GT-6] dibalik — kini assert `topK`/`topKEnabled` MESTI di-drop oleh `normalizeConfig` (pengunci kekal terhadap kebangkitan semula); ujian legacy 2.5 dikemaskini tanpa topK. `npm test`: 106 tests, 105 PASS / 0 FAIL (baseline terpelihara).
+## SubFaber v1.6.0 (2026-09-23) — ID-Parity Surgery V2: Reverted to a Single Flat Prompt
 
-## SubFaber v1.9.0 (2026-09-24)
+### 🔄 Breaking Changes
 
-**Register-Matched Exemplar — anchor Melayu dilancarkan ke dalam prompt (private build):**
+- **Real-world verdict:** v1.5.9 had fully restored the backed-up rulebook recipe AND attached a system instruction — yet the ID desync still occurred. That proved the cause was not the rulebook but the official system-instruction doctrine conflicting with it: a generic "translate each slot independently" SI dilutes the 1-to-1 ID-parity prohibition, and the SI directive "emit only the inner text of the first pre-filled slot" is false for newer models (there is no prefill). Industry ground truth (audited from pro subtitle tools' source code) confirms the pros use ONE flat user prompt plus an ID-mapping protocol and an aggressive parser — not an SI/user split.
+- **Deleted the Gemini 3 system instruction entirely:** one voice, one turn — the XML engine prompt (task + demonstration + the zero-tolerance rules + batch + anchor) is sent exactly once as user content with no competing system channel. The top-level `systemInstruction` REST field remains supported when present.
+- **Scan-friendly prompt headings** were added for reasoning-model navigation (every NEVER/INSTEAD sentence kept 1:1), plus an explicit "this instruction block is the COMPLETE behavioral specification" lock. The parser gained a pro-style preamble scrubber that removes opening chatter before the first slot tag with a warning log, protecting anchor restoration from desync cascades. Untouched by hard rule: thinking-budget/topK normalization (topK stays opt-in off), persona-free style, the sampling ground truths, batch size, the air-gapped memory block, and the anchor prefill.
 
-- **Konsep**: lombong terakhir yang belum digali daripada kajian purpose-driven MT (arXiv:2606.03259) — instruction *memerangkan* register, exemplar *menunjukkan* register. Untuk Melayu yang default pretraining condong ke bahasa baku, menunjukkan > memerangkan. Anchor diletak selepas rules sebagai benchmark, dilabel `MATCH THIS AUTHENTIC VIBE`.
+## SubFaber v1.5.9 (2026-09-22) — ID-Parity / Sync Surgery: Zero-Tolerance Rulebook Restoration
 
-- **Keputusan projek**: build ini private untuk penggunaan Melayu — anchor Melayu tetap disuntik tanpa conditional routing ke bahasa lain (dual-template ditangguhkan sehingga codebase dikongsikan secara awam kelak).
+### 🐛 Bug Fixes
 
-- **PROMPT_TEMPLATES dikembalikan ke struktur 4-rules penuh** (eksperimen kompression satu-ayat commit c7428d2 tidak diteruskan — dua pembolehubah tidak terbukti tidak boleh diuji serentak), dengan tiga patch diluluskan:
-  1. Keyword `natural, conversational` dikekalkan mengikut lock ground truth (arXiv:2505.00679 — top-2 meaning-preserving register descriptor; arXiv:2606.03259 — domain conversation mencatat gain instruction tertinggi; Netflix TTSG — kriteria "natural as spoken dialogue")
-  2. Primary anchor: 2 pasangan EN→MS yang menunjukkan skeptikal lisan + santai setia nada ("Biar betul awak nak cakap...", "Macam inilah, walau apa pun jadi...")
-  3. Fallback anchor: 2 pasangan termasuk **profane-neutral** ("Dah gila ke apa? Diamlah!" dan "Keluar dari rumah aku sekarang!") — menunjukkan intensitas dikekalkan tanpa sensor, sejajar Rule 4 NEUTRAL OBJECTIVITY
-
-- **Parity backup diselaraskan dalam lockstep** ([`plans/prompt-refactor-backup/b1fca3f-translationEngine.js`](plans/prompt-refactor-backup/b1fca3f-translationEngine.js)) — `scripts/verify-prompt-parity.js`: PASS kedua-dua blok (2,943 + 6,011 chars).
-
-- **Ujian:** npm test 106 tests, 105 PASS / 0 FAIL (baseline terpelihara).
-
-## SubFaber v1.8.0 (2026-09-23)
-
-**Prompt Keyword Register — lock "natural, conversational":**
-
-- **Keputusan ground truth tiga sumber**: (1) kertas register-steering (arXiv:2505.00679) — descriptor register paling berkesan & meaning-preserving ialah `informal/conversational/colloquial`, manakala descriptor afektif (casual, humorous) cenderung mengubah makna; (2) kertas purpose-driven MT (arXiv:2606.03259, 50 bahasa/8 domain) — domain conversation mencatat delta adaptedness tertinggi dengan instruction (+25.6), dan mekanismenya ialah "instructions nudge the model off the written register of its pretraining default"; (3) standard industri AVT (Netflix Timed Text Style Guide, Díaz Cintas) — kriteria penerimaan emas ialah dialog yang "natural in the target language as spoken dialogue".
-
-- **Perubahan**: Rule 1 (ISOLATED FREEDOM) dalam `PROMPT_TEMPLATES` dan `createXmlBatchPrompt` ([`src/services/translationEngine.js`](src/services/translationEngine.js)): `spoken, conversational ${targetLabel}` → `natural, conversational ${targetLabel}`. Dua paksi bebas: naturalness (kriteria industri) + register (disahkan kajian). "Spoken" dibuang kerana separuh bertindih dengan "conversational".
-
-- **Parity backup dikemaskini serentak** ([`plans/prompt-refactor-backup/b1fca3f-translationEngine.js`](plans/prompt-refactor-backup/b1fca3f-translationEngine.js)) supaya `scripts/verify-prompt-parity.js` kekal PASS — verifikasi: PASS kedua-dua blok (2,315 + 6,011 chars).
-
-- **Dikekalkan secara sengaja**: `colloquial` dan `informal` TIDAK dipakai — colloquial berisiko terlalu slur untuk konten formal-dalam-filem; informal tidak selamat untuk fail yang bercampur register (adegan upacara, berita, pidato).
-
-- **Ujian:** npm test 106 tests, 105 PASS / 0 FAIL; parity PASS kedua-dua blok.
-
-## SubFaber v1.7.1 (2026-09-23)
-
-**FinOps — token hangus MISMATCH_RETRY kini dikira dalam resit Telegram:**
-
-- **Gap dikenal pasti dari run produksi sebenar** (Shine.on.Me S01E23, 655 entri, 4 incident MISMATCH_RETRY): laluan mismatch ialah **satu-satunya laluan gagal di mana call asal berjaya HTTP 200** (output terpotong/berselang) — tiada error dilempar, tiada `finOpsStreamId` ditangkap, jadi stream asal tidak pernah ditanda wasted. Resit Telegram memaparkan semua token sebagai "Effective" walaupun ~25k+ token sebenarnya hangus akibat retry batch penuh.
-
-- **Fix — snapshot-diff accounting** ([`src/services/translationEngine.js`](src/services/translationEngine.js)): snapshot senarai stream ledger sebelum percubaan pertama setiap batch; apabila mismatch dikesan, semua stream yang direkodkan selepas snapshot ditanda wasted serta-merta; selepas Pass 2 (targeted retry) + Pass 3 (full-batch retry) selesai, stream retry turut ditanda dan insiden ditutup dengan outcome akhir (`recovered`/`failed`) + jumlah token terbakar. Titik penutupan tunggal selepas semua pass meliputi juga kes `recoveredCount === 0`.
-
-- **Helper baharu**: `_snapshotLedgerIds()` (keadaan ledger pre-attempt), `_markWastedSince(snapshot)` (tanda wasted + pulangkan jumlah token terbakar), `_closeIncident(type, batch, patch)` (outcome akhir + tokensBurned untuk battle-log Telegram). Laluan 429/503 key-rotation, PROHIBITED_CONTENT two-stage, dan MAX_TOKENS checkpoint kekal betul (semua melampirkan finOpsStreamId pada error yang dilempar).
-
-- **Kesan pada resit**: pecahan `Total Billed` → `✅ Effective` + `🔥 Wasted (retries)` kini meliputi incident mismatch; setiap baris MISMATCH_RETRY dalam Incident Report menunjukkan `🔥 Burned: N tokens (~$X)`.
-
-- **Ujian:** npm test 106 tests, 105 PASS / 0 FAIL (baseline terpelihara).
-
-## SubFaber v1.6.4 (2026-09-23)
-
-**Prompt Ground Truth Restore — verbatim rollback ke commit `b1fca3f` (penamat eksperimen prompt iteratif):**
-
-- **Verdict real-world:** 3 lapisan mutasi prompt selepas `b1fca3f` (`<task>` wrapper v1.5.6 → bullet Rule 7 ke-4 v1.5.9 → heading markdown v1.6.0) terbukti merosotkan kualiti terjemahan dan memanjangkan masa proses — laporan terkini (Shine.on.Me S01E22, 600 entri) mencatat 12m 43s dengan 1× MISMATCH_RETRY full-batch (78 entri) dan 4× smart-recovery untagged preamble. Setiap tambalan seterusnya menjadikan hasil lebih teruk; diputuskan rollback penuh ke resipi asal, bukan tambal berlapis lagi.
-
-- **`PROMPT_TEMPLATES` dipulihkan verbatim** ([`src/services/translationEngine.js`](src/services/translationEngine.js)): wrapper `<task>...</task>` dibuang; guard `${sourceLabel || 'the source'}` kembali kepada `${sourceLabel}` murni; komen zon asal `🛠️ ZON TEMPLATE PROMPT (100% UNIVERSAL & DYNAMIC)` dipulihkan. Rulebook 3+1 peraturan (ISOLATED FREEDOM / SPOKEN DICTION / DEPENDENT CLAUSES + NEUTRAL OBJECTIVITY) kekal — teks sudah sepadan dengan `b1fca3f` sejak v1.5.9.
-
-- **`createXmlBatchPrompt` dipulihkan verbatim**: 4 heading markdown `## DEMONSTRATION` / `## CRITICAL RULES` / `## INPUT` / `## OUTPUT FORMAT` dibuang (kembali ke bentuk flat `[UNIVERSAL STRUCTURAL DEMONSTRATION...]` → `CRITICAL ENFORCEMENT RULES (ZERO TOLERANCE):` → `<input>` → `[OUTPUT_FORMAT]`); ayat penegas Rule 7 ke-4 ("This instruction block is the COMPLETE behavioral specification...") dibuang — ia bercanggah dengan realiti SI channel dan menambah noise meta-kognitif.
-
-- **Tidak disentuh (peraturan keras):** v1.6.1 Smart Preamble Scrubber (`parseXmlBatchResponse`) kekal sebagai jaring runtime; `systemInstruction` kekal medan top-level REST v1beta; `thinkingBudget`/`topK` normalisasi (`src/utils/config.js`) kekal; persona-free kekal; batch size 200 kekal.
-
-- **Verifikasi parity byte-exact:** script baru [`scripts/verify-prompt-parity.js`](scripts/verify-prompt-parity.js) membandingkan `PROMPT_TEMPLATES` (2,313 chars) + badan `createXmlBatchPrompt` (6,011 chars) dengan salinan `b1fca3f` ([`plans/prompt-refactor-backup/b1fca3f-translationEngine.js`](plans/prompt-refactor-backup/b1fca3f-translationEngine.js)) — PASS kedua-duanya, termasuk trailing-space selepas `=>`.
-
-- **Ujian:** npm test 105 PASS / 0 FAIL / 1 skipped (baseline 92 diatasi). Laporan pembedahan: `plans/pembedahan-prompt-restore-b1fca3f.md`.
-
-## SubFaber v1.6.3 (2026-09-23)
-
-**Configure UI — Advanced Gemini Parameters: jarak 'Enable Top-K' toggle dibaiki:**
-
-- **Punca:** form-group 'Top-P (Nucleus Sampling)' membawa inline `style="margin-bottom: 0;"` yang memansuh gap standard 0.85rem, manakala wrapper `#advancedTopKGroup` tiada spacing atas sendiri — toggle switch meleket terus dengan input Top-P dan jaraknya tak konsisten berbanding field lain dalam panel.
-
-- **Fix:** (1) inline `margin-bottom: 0;` dipadam dari form-group Top-P ([`public/partials/main.html`](public/partials/main.html)) supaya margin standard 0.85rem dipulihkan; (2) rule scoped baharu `#advancedTopKGroup { margin-top: 0.85rem; }` ditambah ([`public/css/configure.css`](public/css/configure.css)) supaya row toggle kekal rhythm atas/bawah seimbang merentas semua 4 state DOM morphing (3.x-strict / 3.x-legacy / 2.5 / legacy), bersandar dengan `.toggle-group { margin-bottom: 0.5rem; }` sedia ada.
-
-- **Kesan:** spacing menegak seluruh panel Advanced Gemini kini seragam; tiada perubahan tingkah laku atau payload — semata-mata CSS/HTML kosmetik.
-
-## SubFaber v1.6.2 (2026-09-23)
-
-**Gemini Model Dropdown — Whitelist Sanitizer + hierarchical sorting:**
-
-- **Model filtering & whitelist sanitizer** pada validasi API Key (Google Direct `/v1beta/models`) dan senarai tetap 8 model CrazyRouter (key `sk-`): `generateContent` wajib dalam `supportedGenerationMethods`; blacklist tegar `gemma`/`nano`/`antigravity`/`deep-research`/`lyria`/`transcribe`/`computer`/`tts`/`omni`/`robotics`/`vision`/`imagen` + `tunedModels/` ditolak; strict whitelist 3 keluarga teks teras sahaja (Flash-Lite/Flash/Pro) dengan suffix dibenarkan hanya `-preview` — alias rasmi `-latest` kekal sah.
-
-- **Sorting hierarki:** Flash-Lite > Flash > Pro; dalam tier versi menurun (3.8 > 3.5 > 3.1 > 3 > 2.5); canonical sebelum `-preview`. Default auto-select ranking #1 selepas dropdown dimuatkan — tiada lagi hardcoded lock `gemini-3-flash-preview`.
-
-- **CrazyRouter zero-network:** `detectGeminiKeyType` (`sk-`) memilih senarai tetap 8 model tanpa panggilan rangkaian; backend `/api/gemini-models` sanitasi di servis ([`src/services/gemini.js`](src/services/gemini.js)). Display name seragam: 'Gemini 3.1 Flash-Lite', 'Gemini 2.5 Pro', dsb.
-
-- **Ujian:** regresi WF-1..WF-4 (sanitizer, 8-model CrazyRouter order, predicate, `getAvailableModels`) — npm test 105 PASS / 0 FAIL / 1 skipped.
-
-## SubFaber v1.6.1 (2026-09-23)
-
-**Smart Preamble Recovery — off-by-one 4/4 batch disiasat dan dipbaiki (Pilihan A):**
-
-- **Punca sebenar disahkan (forensik + triangulasi Gemini):** Rule 7 mengarahkan model "continue directly from the prompt boundary by generating the inner content of slot ${startId}" — jadi respons 100% patuh sahaja BERMULA dengan isi slot pertama + `</s>` TANPA tag pembuka (anchor sudah dipaparkan dalam prompt). Scrubber v1.6.0 yang naif mengklasifikasikan teks sah itu sebagai "chatter" dan membuangnya setiap batch (off-by-one deterministik: 200→199, 4/4 batch, model TIDAK tergelincir).
-
-- **Smart Preamble Scrubber** (`parseXmlBatchResponse()`, [`src/services/translationEngine.js`](src/services/translationEngine.js)): klasifikasi 3-kes sebelum memotong — (A) preamble berakhir `</s>` = untagged first slot → **recover** dengan menampal semula `<s id="${firstId}">` (tiada entri hilang, tiada two-pass retry); (B) tanpa `</s>`, ≤200 chars = chatter sebenar → buang (pattern Subtitle Edit); (C) tanpa `</s>`, >200 chars = anomali struktur → biarkan utuh untuk anchor restoration / regex pipeline.
-
-- **Telemetry:** counter baru `untaggedFirstSlotCount` dalam `translationStats` + baris Telegram report `🎯 Untagged First Slots: N rebuilt inline (Rule 7 continuation)` — kesan fix dapat diaudit pada larian seterusnya.
-
-- **Kesan dijangka:** Laporan Telegram seterusnya berstatus PERFECT tanpa MISMATCH_RETRY; jimat token retry dan ~7-10s latensi per batch yang terlibat. 503 transient batch 4 (v1.6.0 test) disahkan bukan berkaitan.
-
-- **Ujian:** 101 PASS / 0 FAIL / 1 skip. Laporan postmortem: `plans/id-pariti-v2-postmortem-off-by-one.md`.
-
-## SubFaber v1.6.0 (2026-09-23)
-
-**ID-Parity Surgery V2 — Revert ke struktur single flat prompt (mazhab Google SI dibersarakan):**
-
-- **Verdict real-world:** v1.5.9 telah memulihkan resipi rulebook backup sepenuhnya DAN melampirkan `GEMINI3_SYSTEM_INSTRUCTION` — DESYNC tetap berlaku. Ini membuktikan punca bukan rulebook, tetapi mazhab rasmi Google (System Instruction membawa behavioral constraints) yang bercanggah dengan resipi tersebut: SI generik "translate each slot independently" mencairkan larangan 1-to-1 ID parity, dan arahan SI "Emit only the inner text of the first pre-filled slot" adalah PALSU untuk model 3.5+ (tiada prefill). Ground truth industri (Subtitle Edit, GPTSubtitler — source code diaudit melalui MCP) mengesahkan pro tools menggunakan SATU flat user prompt + protocol mapping ID + parser agresif, bukan SI/user split.
-
-- **`GEMINI3_SYSTEM_INSTRUCTION` dipadam sepenuhnya** (`src/services/gemini.js`): constant + module export dibuang. Dua set arahan bercanggah pada dua channel tidak lagi wujud — kini SATU suara, SATU turn: prompt XML engine (task + demonstration + 7 ZERO TOLERANCE rules + batch + anchor) dihantar tepat 1x sebagai user content tanpa system instruction bersaing. `buildUserPrompt()` dipulihkan verbatim kepada struktur backup pre-v1.5.3. `systemInstruction` kekal medan top-level REST v1beta bila wujud (CORE PANTANG dikekalkan).
-
-- **Prompt head scan-friendly** (`src/services/translationEngine.js`): heading kosmetik `## DEMONSTRATION` / `## CRITICAL RULES` / `## INPUT` / `## OUTPUT FORMAT` ditambah untuk navigasi pantas model reasoning — setiap ayat NEVER/INSTEAD resipi backup dikekalkan 1:1. Rule 7 CLEAN PAYLOAD ONLY ditambah satu ayat penegas: "This instruction block is the COMPLETE behavioral specification... there is no system instruction, no persona, and no hidden policy above it."
-
-- **Parser preamble scrubbing** (`parseXmlBatchResponse()`): pattern pro daripada Subtitle Edit `RemovePreamble` — buang chatter pembuka ("Here is the translation:" dsb.) sebelum tag `<s` pertama, dengan log amaran supaya drift boleh diperhatikan dalam produksi. Ini melindungi anchor restoration daripada ID desync cascade.
-
-- **Tidak disentuh (peraturan keras):** `thinkingBudget`/`topK` normalisasi (`src/utils/config.js`) — topK kekal opt-in OFF; persona-free kekal; ground truth sampling 3.x-strict/legacy/2.5 kekal; batch size 200 kekal; `<m>` air-gapped memory kekal; anchor prefill ≤3.1 kekal.
-
-- **Ujian:** 101 PASS / 0 FAIL / 1 skip (baseline 92 diatasi). Laporan penuh: `plans/pembedahan-id-pariti-v2-report.md`.
-
-## SubFaber v1.5.9 (2026-09-22)
-
-**ID-Parity / Sync Surgery — ZERO TOLERANCE rulebook restoration (DESYNC fix):**
-
-- **Punca DESYNC dikenal pasti (3 lapisan):** (1) `buildUserPrompt()` dead-code — cabang Gemini 3 yang memasang `GEMINI3_SYSTEM_INSTRUCTION` dijaga oleh `&& !customPrompt`, tetapi engine batched sentiasa pass prompt penuh sebagai `customPrompt`, jadi SI **tidak pernah aktif** untuk laluan batch Gemini 3 dan prompt XML diduplikasi ke systemInstruction + contents; (2) v1.5.3 mencairkan 7 blok CRITICAL ENFORCEMENT RULES kepada 7 ayat ringkas — pola antithesis NEVER-X-INSTEAD-Y (resipi terbukti jinakkan AI daripada gabung ayat / shift ID) hilang; (3) v1.5.6 membuang INTRA-SLOT LOCALIZATION rules dari `PROMPT_TEMPLATES.primary` (jadi `<task>` kosong).
-
-- **A1 — ZERO TOLERANCE rulebook dipulihkan penuh** (`src/services/translationEngine.js`): `<critical_rules>` ringkas digantikan semula dengan 7 blok penuh dari resipi backup (`plans/prompt-refactor-backup/translationEngine.js.bak`): STRICT 1-TO-1 CARDINALITY & ID PARITY (dengan ID list literal), ABSOLUTE SLOT ISOLATION & ZERO SPLITTING, ZERO SHIFTING / ANTI-HALLUCINATION / SOURCE FIDELITY, AIR-GAPPED `<m>` MEMORY, ESCAPE HATCH EXACT COPY PROTOCOL, SONG LYRICS & INLINE MARKUP, CLEAN PAYLOAD ONLY. `[UNIVERSAL STRUCTURAL DEMONSTRATION]` + `[OUTPUT_FORMAT]` + anchor `<s id="startId">` dipulihkan mengikut struktur asal.
-
-- **A2 — INTRA-SLOT LOCALIZATION (ACTION REPLACEMENT) dipulihkan** dalam `PROMPT_TEMPLATES.primary` dan `fallback`: 3 rules ISOLATED FREEDOM / SPOKEN DICTION / DEPENDENT CLAUSES + rule 4 NEUTRAL OBJECTIVITY untuk emergency prompt. Kekal persona-free (bukti arXiv:2311.10054) — behavioral constraints sahaja.
-
-- **A3 — Dead-code SI routing dibetulkan** (`src/services/gemini.js`): Gemini 3 models kini SENTIASA menerima `GEMINI3_SYSTEM_INSTRUCTION` sebagai top-level `systemInstruction` (kekal di medan peringkat atas — TIDAK digabung dalam `contents`), dan prompt XML engine dihantar tepat 1x sebagai user content. Ini membuang duplikasi 2x input token dan memulangkan lapisan behavioral constraints "processed-first" kepada setiap permintaan batch Gemini 3.
-
-- **Tidak disentuh:** `thinkingBudget`/`topK` normalisasi (`src/utils/config.js`), ground truth sampling 3.x-strict/legacy/2.5, batch size 200, shift detector `isShiftedError`, parser GLOBAL ID mapping.
+- **Identified the ID-desync cause across three layers:** (1) dead code — the Gemini 3 branch that attached the system instruction was guarded by a condition the batched engine always bypassed, so the SI was never active on the batch path and the XML prompt was duplicated into both channels; (2) an earlier version had diluted the seven critical enforcement blocks into seven short sentences, losing the proven NEVER-X-INSTEAD-Y antithesis pattern that tames the model against line-merging and ID-shifting; (3) another version had removed the intra-slot localization rules, leaving the task block empty.
+- **Restored the full zero-tolerance rulebook** from the backup recipe (strict 1-to-1 cardinality and ID parity with the literal ID list, absolute slot isolation, zero shifting/anti-hallucination/source fidelity, air-gapped memory, the escape-hatch copy protocol, song lyrics and inline markup, and clean payload only), restored the intra-slot localization rules (staying persona-free per the research — behavioral constraints only), and fixed the dead-code SI routing so Gemini 3 models always receive the system instruction as a top-level field with the XML prompt sent exactly once as user content — removing the 2x input-token duplication.
 
 ## SubFaber v1.5.8 (2026-09-22)
 
@@ -1712,7 +1060,7 @@ All notable changes to this project will be documented in this file.
 
 - **Persona role-play removed from Gemini 3 System Instruction:** Ground-truth research (Zheng et al. 2024, arXiv:2311.10054 — 162 personas × 2,410 MMLU questions × 9 models) shows personas in system prompts have **no or small negative effects** on objective-task accuracy, and role-play can derail reasoning (arXiv:2408.08631 — persona caused wrong answers in 13.78% of cases solvable without one). User's own A/B test confirmed: persona-free prompts produced livelier, more accurate translations. The SI now opens directly with the task definition ("Translate subtitle dialogue from...") instead of "You are SubFaber, an expert...".
 
-- **Detailed style directives restored from pre-v1.5.3 backup:** The compression to v1.5.3 had collapsed the rich anti-pattern list into one generic line, degrading dialogue liveliness. Restored into the SI: never mirror foreign syntax/trailing modifiers/literal word order; never use formal copulas, formal conjunctions, dictionary jargon, or literal pronoun calques; preserve intentionally incomplete clauses for synchronization. The paired NEVER→positive-instruction pattern is back, now living in the System Instruction (Google mazhab: behavioral constraints belong in SI).
+- **Detailed style directives restored from pre-v1.5.3 backup:** The compression to v1.5.3 had collapsed the rich anti-pattern list into one generic line, degrading dialogue liveliness. Restored into the SI: never mirror foreign syntax/trailing modifiers/literal word order; never use formal copulas, formal conjunctions, dictionary jargon, or literal pronoun calques; preserve intentionally incomplete clauses for synchronization. The paired NEVER→positive-instruction pattern is back, now living in the System Instruction (per the Google doctrine: behavioral constraints belong in SI).
 
 - **`<task>` block simplified to a pure task statement:** Style guidance is no longer duplicated between SI and user prompt — eliminating the double-emphasis duplication that existed pre-v1.5.3 (the old path sent the rulebook twice, inflating input tokens ~2x without measurable benefit).
 

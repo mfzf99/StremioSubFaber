@@ -781,18 +781,39 @@ body.app-shell .container {
     gap: 14px;
 }
 
+/* [FASA 3 — SubMaker pattern] */
 .app-changelog-entry {
     background: var(--bg-primary);
     border: 1px solid var(--border);
     border-radius: 14px;
-    padding: 14px 16px;
+    padding: 12px 14px;
+    transition: border-color 0.18s cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+.app-changelog-entry:hover {
+    border-color: var(--border-strong, var(--border));
+}
+
+.app-changelog-entry.expanded {
+    border-color: var(--primary);
 }
 
 .app-changelog-entry-header {
     display: flex;
     align-items: center;
     gap: 8px;
-    margin-bottom: 8px;
+    width: 100%;
+    padding: 0;
+    border: none;
+    background: transparent;
+    cursor: pointer;
+    text-align: left;
+    border-radius: 8px;
+}
+
+.app-changelog-entry-header:focus-visible {
+    outline: 2px solid var(--primary);
+    outline-offset: 2px;
 }
 
 .app-changelog-version-badge {
@@ -806,11 +827,87 @@ body.app-shell .container {
     font-size: 12px;
     font-weight: 700;
     font-variant-numeric: tabular-nums;
+    flex-shrink: 0;
 }
 
 .app-changelog-version-badge.is-current {
     background: var(--primary);
     color: #fff;
+}
+
+.app-changelog-latest-pill {
+    display: inline-flex;
+    align-items: center;
+    height: 18px;
+    padding: 0 7px;
+    border-radius: 999px;
+    background: var(--accent-soft);
+    color: var(--primary);
+    font-size: 10.5px;
+    font-weight: 700;
+    letter-spacing: 0.03em;
+    text-transform: uppercase;
+    flex-shrink: 0;
+}
+
+.app-changelog-entry-chevron {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 24px;
+    height: 24px;
+    color: var(--text-tertiary);
+    margin-left: auto;
+    flex-shrink: 0;
+    transition: transform 0.2s cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+.app-changelog-entry.expanded .app-changelog-entry-chevron {
+    transform: rotate(180deg);
+    color: var(--primary);
+}
+
+.app-changelog-category {
+    margin: 10px 0 4px;
+    font-size: 11.5px;
+    font-weight: 700;
+    letter-spacing: 0.04em;
+    text-transform: uppercase;
+    color: var(--text-secondary);
+}
+
+.app-changelog-entry-content .app-changelog-category:first-child {
+    margin-top: 4px;
+}
+
+.app-changelog-category-list {
+    margin: 0;
+    padding-left: 18px;
+}
+
+.app-changelog-category-list li {
+    margin: 4px 0;
+}
+
+.app-changelog-github-link {
+    display: inline-flex;
+    align-items: center;
+    gap: 5px;
+    margin-top: 10px;
+    font-size: 12px;
+    font-weight: 600;
+    color: var(--primary);
+    text-decoration: none;
+    border-radius: 6px;
+}
+
+.app-changelog-github-link:hover {
+    text-decoration: underline;
+}
+
+.app-changelog-github-link:focus-visible {
+    outline: 2px solid var(--primary);
+    outline-offset: 2px;
 }
 
 .app-changelog-entry-content {

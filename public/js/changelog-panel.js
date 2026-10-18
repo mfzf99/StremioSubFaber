@@ -24,35 +24,36 @@
         return node;
     }
 
+    // Escape everything first by building nodes manually — shared by
+    // renderContent() and the Fasa 3 category-group renderer.
+    function inline(text, parent) {
+        const parts = [];
+        let rest = text;
+        const pattern = /(\*\*[^*]+\*\*|`[^`]+`)/g;
+        let m;
+        let last = 0;
+        while ((m = pattern.exec(rest)) !== null) {
+            if (m.index > last) parts.push(document.createTextNode(rest.slice(last, m.index)));
+            const token = m[0];
+            if (token.startsWith('**')) {
+                const strong = el('strong', null, token.slice(2, -2));
+                parts.push(strong);
+            } else if (token.startsWith('`')) {
+                const code = el('code', null, token.slice(1, -1));
+                parts.push(code);
+            }
+            last = m.index + token.length;
+        }
+        if (last < rest.length) parts.push(document.createTextNode(rest.slice(last)));
+        parts.forEach((p) => parent.appendChild(p));
+    }
+
     // Minimal, safe markdown-ish renderer for changelog content.
     // Handles: **bold**, `code`, - bullets, 1. numbered, ### headings, line breaks.
     function renderContent(target, raw) {
         target.textContent = ''; // clear
         const lines = String(raw || '').split(/\r?\n/);
         let list = null;
-
-        function inline(text, parent) {
-            // Escape everything first by building nodes manually
-            const parts = [];
-            let rest = text;
-            const pattern = /(\*\*[^*]+\*\*|`[^`]+`)/g;
-            let m;
-            let last = 0;
-            while ((m = pattern.exec(rest)) !== null) {
-                if (m.index > last) parts.push(document.createTextNode(rest.slice(last, m.index)));
-                const token = m[0];
-                if (token.startsWith('**')) {
-                    const strong = el('strong', null, token.slice(2, -2));
-                    parts.push(strong);
-                } else if (token.startsWith('`')) {
-                    const code = el('code', null, token.slice(1, -1));
-                    parts.push(code);
-                }
-                last = m.index + token.length;
-            }
-            if (last < rest.length) parts.push(document.createTextNode(rest.slice(last)));
-            parts.forEach((p) => parent.appendChild(p));
-        }
 
         lines.forEach((line) => {
             const trimmed = line.trim();
@@ -118,6 +119,167 @@
         if (list) target.appendChild(list);
     }
 
+    /* ── [FASA 3 — SubMaker Pattern] helpers ────────────────────────────── */
+    function escapeRegex(s) {
+        return String(s).replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+    }
+
+    // Ordered display: emoji + label + accent color class.
+    // Unrecognised groups fall through to 'other'.
+    const CATEGORY_ORDER = [
+        { key: 'new', match: /^🆕/, label: 'New Features' },
+        { key: 'perf', match: /^🚀/, label: 'Performance' },
+        { key: 'improve', match: /^⚡/, label: 'Improvements' },
+        { key: 'bugs', match: /^🐛/, label: 'Bug Fixes' },
+        { key: 'security', match: /^📌/, label: 'Security' },
+        { key: 'breaking', match: /^🔄/, label: 'Breaking Changes' },
+        { key: 'removed', match: /^🗑️?/, label: 'Removed' }
+    ];
+
+    function getCategoryMeta(headingText) {
+        if (!headingText) return null;
+        const text = String(headingText).trim();
+        for (const cat of CATEGORY_ORDER) {
+            if (cat.match.test(text)) return cat;
+        }
+        return null;
+    }
+
+    // Render a single bullet group (one category) with the SubMaker-style
+    // category header. Mutates out and leaves `list` handled internally.
+    function renderCategoryGroup(out, catKey, lines) {
+        const meta = CATEGORY_ORDER.find((c) => c.key === catKey);
+        if (!meta || !lines.length) return;
+        const catHeader = el('div', 'app-changelog-category', meta.label);
+        catHeader.classList.add(`cat-${catKey}`);
+        out.appendChild(catHeader);
+        const list = el('ul', 'app-changelog-category-list');
+        lines.forEach((line) => {
+            const li = el('li');
+            inline(line, li);
+            list.appendChild(li);
+        });
+        out.appendChild(list);
+    }
+
+    // Parses raw entry content into groups keyed by category.
+    function groupContentByCategory(raw) {
+        const groups = {};
+        let activeKey = null;
+        let activeLines = [];
+        const pushActive = () => {
+            if (activeKey && activeLines.length) {
+                if (!groups[activeKey]) groups[activeKey] = [];
+                groups[activeKey].push(...activeLines);
+            }
+            activeKey = null;
+            activeLines = [];
+        };
+        String(raw || '')
+            .split(/\r?\n/)
+            .forEach((line) => {
+                const trimmed = line.trim();
+                if (!trimmed) return;
+                const headingMatch = trimmed.match(/^#{1,4}\s+(.+)$/);
+                if (headingMatch) {
+                    pushActive();
+                    const meta = getCategoryMeta(headingMatch[1]);
+                    activeKey = meta ? meta.key : null;
+                    return;
+                }
+                const bullet = trimmed.match(/^[-*]\s+(.+)$/);
+                if (bullet) {
+                    if (activeKey) activeLines.push(bullet[1]);
+                    else {
+                        // Untitled bullets under no category
+                        if (!groups.other) groups.other = [];
+                        groups.other.push(bullet[1]);
+                    }
+                    return;
+                }
+                // Non-bullet content (e.g. plain paragraphs) — render as 'other'
+                if (!groups.other) groups.other = [];
+                groups.other.push(trimmed);
+            });
+        pushActive();
+        return groups;
+    }
+
+    // Renders grouped categories in CATEGORY_ORDER, then 'other'.
+    function renderGroupedContent(target, raw) {
+        target.textContent = '';
+        const groups = groupContentByCategory(raw);
+        CATEGORY_ORDER.forEach((cat) => {
+            if (groups[cat.key] && groups[cat.key].length) {
+                renderCategoryGroup(target, cat.key, groups[cat.key]);
+            }
+        });
+        if (groups.other && groups.other.length) {
+            renderContent(target, groups.other.join('\n'));
+        }
+    }
+
+    function buildGithubLink(version) {
+        const a = el('a', 'app-changelog-github-link', 'View full release on GitHub');
+        a.href = `https://github.com/xtremexq/StremioSubFaber/releases/tag/v${version}`;
+        a.target = '_blank';
+        a.rel = 'noopener noreferrer';
+        const svg = document.createElementNS('http://www.w3.org/2000/svg', 'svg');
+        svg.setAttribute('viewBox', '0 0 24 24');
+        svg.setAttribute('width', '11');
+        svg.setAttribute('height', '11');
+        svg.setAttribute('fill', 'none');
+        svg.setAttribute('stroke', 'currentColor');
+        svg.setAttribute('stroke-width', '2');
+        svg.setAttribute('stroke-linecap', 'round');
+        svg.setAttribute('stroke-linejoin', 'round');
+        svg.innerHTML = '<path d="M7 17 17 7M8 7h9v9"/>';
+        a.appendChild(svg);
+        return a;
+    }
+
+    function makeEntryAccordion(version, isLatest, rawContent, card) {
+        const header = el('button', 'app-changelog-entry-header');
+        header.type = 'button';
+        header.setAttribute('aria-expanded', isLatest ? 'true' : 'false');
+        header.setAttribute('aria-controls', `changelog-entry-content-${version}`);
+
+        const badge = el('span', 'app-changelog-version-badge');
+        badge.textContent = 'v' + version;
+        if (isLatest) badge.classList.add('is-current');
+
+        const latestPill = isLatest ? el('span', 'app-changelog-latest-pill', 'Latest') : null;
+
+        const chevron = el('span', 'app-changelog-entry-chevron');
+        chevron.innerHTML =
+            '<svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m6 9 6 6 6-6"/></svg>';
+
+        header.appendChild(badge);
+        if (latestPill) header.appendChild(latestPill);
+        header.appendChild(chevron);
+
+        const content = el('div', 'app-changelog-entry-content');
+        content.id = `changelog-entry-content-${version}`;
+        renderGroupedContent(content, rawContent);
+        if (!isLatest) content.hidden = true;
+
+        const ghLink = buildGithubLink(version);
+
+        header.addEventListener('click', () => {
+            const willOpen = content.hidden;
+            content.hidden = !willOpen;
+            header.setAttribute('aria-expanded', String(willOpen));
+            card.classList.toggle('expanded', willOpen);
+        });
+
+        card.appendChild(header);
+        card.appendChild(content);
+        if (ghLink) card.appendChild(ghLink);
+        if (isLatest) card.classList.add('expanded');
+    }
+
+    /* ── /FASA 3 ─────────────────────────────────────────────────────────── */
+
     function renderEntries(entries, currentVersion) {
         body.textContent = '';
 
@@ -130,31 +292,11 @@
 
         entries.forEach((entry, idx) => {
             const card = el('div', 'app-changelog-entry');
-
-            const header = el('div', 'app-changelog-entry-header');
-            const badge = el(
-                'span',
-                'app-changelog-version-badge' + (idx === 0 && entry.version === currentVersion ? ' is-current' : '')
-            );
-            badge.textContent = 'v' + entry.version;
-            header.appendChild(badge);
-
-            if (idx === 0) {
-                const latest = el('span', null, 'Latest');
-                latest.style.cssText = 'font-size:11px;font-weight:600;color:var(--text-tertiary);';
-                header.appendChild(latest);
-            }
-
-            card.appendChild(header);
-
-            const content = el('div', 'app-changelog-entry-content');
-            renderContent(content, entry.content);
-            card.appendChild(content);
-
+            const isLatest = idx === 0 && entry.version === currentVersion;
+            makeEntryAccordion(entry.version, isLatest, entry.content, card);
             body.appendChild(card);
         });
     }
-
     function loadChangelog() {
         if (loaded || loading) return;
         loading = true;
@@ -179,13 +321,13 @@
             .catch(() => {
                 loading = false;
                 body.textContent = '';
-                const err = el(
+                const errEl = el(
                     'div',
                     'app-changelog-entry',
                     'Failed to load changelog. Check your connection and try again.'
                 );
-                err.style.color = 'var(--danger, #dc2626)';
-                body.appendChild(err);
+                errEl.style.color = 'var(--danger, #dc2626)';
+                body.appendChild(errEl);
             });
     }
 
