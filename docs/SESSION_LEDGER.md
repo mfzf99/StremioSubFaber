@@ -1,7 +1,7 @@
 ## 2026-10-18 — v3.14.1 AUDIT TWO-MODE RULES + SEND-ALL SYNC RULE #3 BACKEND
 
-- **Tarikh:** 2026-10-18 ~14:37 (waktu tempatan KL).
-- **Komit SHA (HEAD):** (akan diisi selepas commit).
+- **Tarikh:** 2026-10-18 ~14:39 (waktu tempatan KL).
+- **Komit SHA (HEAD):** `853d582b` + CI run 39104741471 = **SUCCESS** (Node 22 ✓ 1m4s / Node 24 ✓ 1m3s).
 - **Keputusan Owner:** Owner meluluskan pembetulan penuh hasil audit baris demi baris `.roomodes` (backend & frontend) + `00-subfaber-core-protocol.md` terhadap kod sebenar. Dua konflik kritikal dikesan pada rule #3 backend: (1) deskripsi "STRICT strips ALL sampling parameters" telah BASI — bertentangan dengan SEND-ALL DOCTRINE (Mandat Owner 2026-10-16) yang terimplement dalam `buildGenerationConfig()` (gate stripping DIGUGURKAN, temperature/topP/penalties dihantar untuk SEMUA keluarga 3.x); (2) `gemini-3.5-flash` tersalah klasifikasi sebagai LEGACY — sebenarnya STRICT melalui reroute whitelist v3.9.46 (`isSamplingStrictGemini3`, plans/trinity-params-ground-truth-2026.md §A1). Rujukan ground truth kedua ditambah. Audit turun mengesahkan: 0 sisa `agentB`/`SubMaker` dalam `src/**`, purge `minP`/`repetitionPenalty`/`topK`/`topKEnabled` utuh di `src/utils/config.js`, `thinkingBudget` dikekalkan, cermin `getModelFamily()` frontend/backend selari, mekanisme handover dua-hala lengkap tanpa lubang.
 - **Prosedur selamat `.roomodes` (insiden 2026-10-08):** Edit dilakukan via skrip Python di `$TEMP` (luar repo), padam segera dalam rantaian command sama; PyYAML gate PASS (customModes: 2, groups=[read,edit,command,mcp], source=project).
 - **Pembersihan tambahan:** Blok entri v3.13.4 yang ter-duplikasi dalam CHANGELOG.md dibuang.
