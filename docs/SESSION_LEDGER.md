@@ -1,3 +1,18 @@
+## 2026-10-18 — v3.13.4 ALAT OPERASI RASMI: SKRIP PATCH ZOO CODE TWO-MODE LOCK
+
+- **Tarikh:** 2026-10-18 ~00:08 (waktu tempatan KL).
+- **Komit SHA (HEAD):** (akan diisi selepas commit).
+- **Keputusan Owner:** Mandat kesinambungan operasi — abadikan kaedah pembedahan Zoo Code (Node host + React Webview) sebagai skrip rasmi `scripts/patch-zoo-code.js` + dokumen protokol `docs/ZOO_CODE_PATCH_PROTOCOL.md`, kemudian commit melalui pipeline 8-langkah.
+- **Latar operasi sesi ini (pra-release):** Bundle Zoo Code 3.88.0 dipatch langsung di luar repo — `dist/extension.js` (pemboleh ubah `xV`, double-quote, 7,605 bait diganti) dan selepas forensik dropdown, `webview-ui/build/assets/index.js` (pemboleh ubah `oa`, backtick, 7,567 bait diganti). Punca dropdown "DO NOT USE. DEPRECATED." disahkan: Webview UI membaca salinan tatasusunan mod tersendiri; cache globalState/state.vscdb disahkan BERSIH (bukan punca). Owner restart VS Code dan sahkan dropdown kini hanya Backend + Frontend; pengesahan bebas pihak backend selari (0 sisa slug legacy dalam kedua-dua bundle, `node --check` PASS, `.bak` utuh).
+- **Kandungan skrip:** auto-discover `~/.vscode/extensions/zoocodeorganization.zoo-code-*` (versi tertinggi), bracket-matching sedar string/backtick, backup `.bak` sekali, serialization gaya asal setiap bundle (host double-quote / webview backtick), default mode slug `hs=Xd[0].slug` dinamik → auto `backend`, pengesahan `node --check` + imbasan sisa slug legacy, mod `--check` (dry-run). Diuji live: kedua-dua bundle dikesan `already-patched`, integriti ALL GREEN.
+- **Perubahan `.gitignore`:** `scripts/` → `scripts/*` + exception `!scripts/patch-zoo-code.js` supaya skrip raspi boleh di-commit sambil kekal membuang sisa `scripts/` lain (melanggar komen line 94 atas arahan eksplisit Owner: fail ini alat operasi rasmi).
+- **Pipeline 8 langkah:** SemVer 3.13.3 → 3.13.4 (patch); CHANGELOG entri baharu; cache-buster runtime-driven NO-OP (zero hits `3.13.3` merentas JS/HTML); Prettier PASS; ESLint 0 error / 224 warning (pra-wujud, selari baseline); `npm test` = **428 total / 427 PASS / 0 FAIL / 1 SKIP (live Redis)** — baseline terpelihara (monotonic >= 428); graphify NO-OP (graphify-out/ absent).
+- **Fail Terlibat:** scripts/patch-zoo-code.js (baru), docs/ZOO_CODE_PATCH_PROTOCOL.md (baru), .gitignore, package.json, package-lock.json, CHANGELOG.md, docs/SESSION_LEDGER.md.
+- **Status npm test:** `428 total / 427 PASS / 0 FAIL / 1 SKIP (live Redis)`.
+- **Next Steps:** git commit + push origin main → CI verify via gh CLI — mesti **SUCCESS** (Node 22/24).
+
+---
+
 ## 2026-10-17 — v3.13.3 UX REFRESH KAD "OUTPUT FORMAT & PLAYER COMPATIBILITY" (SELESAI)
 
 - **Tarikh:** 2026-10-17 ~22:08 (waktu tempatan KL).

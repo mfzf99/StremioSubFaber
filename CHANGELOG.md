@@ -2,6 +2,14 @@
 
 All notable changes to this project will be documented in this file.
 
+## SubFaber v3.13.4 (2026-10-18) — Alat Operasi Rasmi: Skrip Patch Zoo Code Two-Mode Lock
+
+### ⚡ Improvements
+
+- **Tambah skrip penyelenggaraan rasmi Zoo Code ([scripts/patch-zoo-code.js](scripts/patch-zoo-code.js)):** auto-discover sambungan `zoocodeorganization.zoo-code-*` versi tertinggi di bawah `~/.vscode/extensions`, kemudian gantikan tatasusunan lima mod bawaan (architect/code/ask/debug/orchestrator) dengan alam dua-mod projek (backend/frontend) dalam KEDUA-DUA bundle runtime — host Node.js (`dist/extension.js`, pemboleh ubah `xV`) dan Webview UI React (`webview-ui/build/assets/index.js`, pemboleh ubah `oa`). Skrip menggunakan bracket-matching sedar string/backtick, mencipta backup `.bak` sekali, mengesahkan sintaks dengan `node --check`, mengimbas sisa slug legacy, dan menyokong mod `--check` (dry-run).
+- **Dokumen protokol patch Zoo Code ([docs/ZOO_CODE_PATCH_PROTOCOL.md](docs/ZOO_CODE_PATCH_PROTOCOL.md)):** menerangkan seni bina dua-bundle (patch host sahaja menyebabkan dropdown UI masih memaparkan mod legacy "DO NOT USE. DEPRECATED."), tingkah laku default-mode-slug dinamik, cara mematikan auto-update sambungan di VS Code, prosedur selepas kemas kini versi, dan rollback melalui fail `.bak`.
+- **Buka pintu `.gitignore` untuk skrip rasmi:** corak `scripts/` diubah kepada `scripts/*` dengan exception `!scripts/patch-zoo-code.js` supaya alat operasi rasmi boleh di-commit sambil terus menapis sisa `scripts/` lain.
+
 ## SubFaber v3.13.3 (2026-10-17) — UX Refresh Kad "Output Format & Player Compatibility"
 
 ### Changed

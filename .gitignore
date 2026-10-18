@@ -83,7 +83,8 @@ temp
 .temp
 agent-docs/
 native/
-scripts/
+scripts/*
+!scripts/patch-zoo-code.js
 .tests
 .tests/
 tests/
