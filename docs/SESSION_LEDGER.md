@@ -15,8 +15,8 @@
 
 ## 2026-10-18 — v3.14.0 CHANGELOG ENGLISH PRO + PORTAL SUBMAKER (SELESAI)
 
-- **Tarikh:** 2026-10-18 ~06:00 (waktu tempatan KL).
-- **Komit SHA (HEAD):** <pending-commit> + CI <pending-run>.
+- **Tarikh:** 2026-10-18 ~06:05 (waktu tempatan KL).
+- **Komit SHA (HEAD):** `fa0d8f5e` + CI run 39102733528 = **SUCCESS** (1m10s).
 - **Keputusan Owner:** Owner luluskan pembedahan penuh changelog (Opsyen A — rewrite SEMUA ~190 entri v1.0.1→v3.13.4 ke English profesional) + UI redesign portal changelog mengikut pola SubMaker (diluluskan selepas audit live submaker.elfhosted.com via Playwright).
 - **Fasa 2 (Backend):** CHANGELOG.md ditulis semula penuh ke English profesional — kategori emoji standard (🆕/🚀/⚡/🐛/📌/🔄/🗑️), format `**Title:** description`, semua tag `[MANDAT OWNER]`/`[ARAHAN OWNER]` dan seksyen Verified/Preserved/Test Baseline dibuang (kandungan audit penuh kekal di ledger ini). Sweep grep akhir: SIFAR BM tulen baki.
 - **Fasa 3 (Frontend, delegasi penuh):** changelog-panel.js — helper baharu (CATEGORY_ORDER, groupContentByCategory, renderGroupedContent, makeEntryAccordion, buildGithubLink, inline() diangkat ke skop modul), accordion per-versi (badge + Latest pill + chevron berputar + aria-expanded), pautan "View full release on GitHub" per versi, kategori ber-emoji; app-shell.css — gaya baharu (latest pill, chevron rotate, kategori uppercase, gh-link, hover/expanded border, fokus-visible).
