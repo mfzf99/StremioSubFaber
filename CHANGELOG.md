@@ -2,6 +2,17 @@
 
 All notable changes to this project will be documented in this file.
 
+## SubFaber v3.14.4 (2026-10-18) — Test Keys Infrastructure: Zero-Secret-Logging Loader for Live Provider Validation
+
+### ⚡ Improvements
+
+- **Added the test keys loader ([src/utils/testKeys.js](src/utils/testKeys.js)):** a quarantined utility that loads live development API keys from `.env.test.local` (rejected by `.gitignore` via the `.env.*.local` pattern) for connectivity validation (ping / model list) and Playwright UI form-injection only — never for bulk translation runs. The module architecturally enforces the Zero Secret Logging contract: it contains zero `console.*` calls that accept raw key values, exposes presence only as booleans or length-only descriptions (`hasTestKey()`, `describeTestKey()` → `present(len=N)` / `absent` / `list(count=N)`), returns a boolean-only snapshot via `getTestKeysSnapshot()`, and provides SHA-256 short fingerprints (`fingerprintTestKey()`) so tests can compare key identity without ever exposing values. A comma-separated multi-key list is supported via `getTestKeyList('GEMINI_KEYS')` (trim + dedup, preserves order). The `SUBFABER_TEST_*` prefix deliberately isolates test keys from production environment variables, and the loader never injects anything into the user-facing `normalizeConfig()` pipeline — test keys live only in the memory of the test process.
+- **Added the test keys template ([.env.test.example](.env.test.example)):** a Git-tracked, forever-empty template documenting the eight supported variables (`SUBFABER_TEST_GEMINI_KEYS` multi-key list, `SUBFABER_TEST_GEMINI_KEY`, Rootsys key + OpenAI `/v1` base URL + Anthropic-compatible base URL, Crazy Router key + Gemini-native `/v1beta` base URL + OpenAI-compatible `/v1` base URL), the copy-to-`.env.test.local` setup procedure, the usage scope (ping/model-list validation + Playwright form automation only), and the Zero Secret Logging prohibitions (no key values in terminal output, log files, screenshots, `docs/SESSION_LEDGER.md`, or any Git-tracked artifact).
+
+### 🔒 Security
+
+- **Hardened the secret-leak surface for development credentials:** the full audit (gitignore coverage, `git check-ignore` verification, `git ls-files` scan, Docker build-context exclusion) confirmed no secret-bearing file can reach the repository or the Docker image; the raw paste area in `.env.test.local` was programmatically parsed and rewritten into structured variables with all leftover raw text removed (verified `leftoverNonVarLines: 0`) without ever printing key values to the terminal, and the file was written with `0600` permissions.
+
 ## SubFaber v3.14.3 (2026-10-18) — DeepSeek Send-All: Open All Sampling Parameters on Custom/Proxy Door
 
 ### 🐛 Bug Fixes
