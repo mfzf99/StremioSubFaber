@@ -2,6 +2,17 @@
 
 All notable changes to this project will be documented in this file.
 
+## SubFaber v3.14.2 (2026-10-18) — OpenAI-Compatible Door: Translation/Inspector Parameter Separation
+
+### 🐛 Bug Fixes
+
+- **Fixed translated-sentence quality degradation on the OpenAI-compatible door (DeepSeek/GLM/Kimi):** the smart payload engine forced thinking/reasoning ON by default for Agent Translation, causing reasoning models to paraphrase subtitle lines instead of translating them. The default reasoning effort for the translation path is now `disabled` — families that support shutoff (DeepSeek, GLM-5.2/5.1, Hunyuan, MiniMax, GPT-reasoning) send `thinking: disabled` / `no_think` / `none`, while always-on families (GLM-5.3, Kimi-k3) fall back naturally to the safe minimum `low` (hard 400-error constraint preserved). An explicit user-set `reasoningEffort` from the config UI is always honored first (SEND-ALL principle).
+- **Restored user sampling authority on the translation path:** removed the dead `applyFrontierModelRules()` and `isGlmFull53Model()` methods (their invocation gate was already dropped by the SEND-ALL doctrine on 2026-10-16) — no code path can silently lock `temperature 0.0 + top_p 0.1` or strip sampling parameters anymore.
+
+### ⚡ Improvements
+
+- **Locked down the Agent Inspector path as untouched:** the `universalPayload` 4-key god-tier builder (deterministic `temperature 0.0`, streaming) returns before the translation payload engine is ever invoked, so audit determinism is fully preserved while translation gains clean sampling semantics.
+
 ## SubFaber v3.14.1 (2026-10-18) — Two-Mode Rules Ground-Truth Audit & Backend Rule #3 Send-All Sync
 
 ### 🐛 Bug Fixes

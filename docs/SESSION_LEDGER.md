@@ -1,3 +1,17 @@
+## 2026-10-18 — v3.14.2 PEMBEDAHAN PENGASINGAN PARAMETER PINTU OPENAI-COMPATIBLE
+
+- **Tarikh:** 2026-10-18 ~18:05 (waktu tempatan KL).
+- **Komit SHA (HEAD):** (akan diisi selepas commit).
+- **Keputusan Owner:** Owner meluluskan [MANDAT PEMBEDAHAN KOD: PENGASINGAN PARAMETER PINTU OPENAI-COMPATIBLE] selepas forensik perbandingan 3 pintu (Gemini/Anthropic/OpenAI) yang mengesahkan punca kualiti terjemahan hampeh pada pintu OpenAI-compatible: enjin payload memaksa reasoning ON untuk Agent Translation (model memparafrasa sari kata) + dead code `applyFrontierModelRules()` (lock temp 0.0/top_p 0.1 GLM, drop sampling Kimi) berbaki sebagai jebakan. Pindaan ulasan backend diluluskan penuh: guna `universalPayload` sedia ada sebagai discriminator peranan, kekangan keras 400-error (GLM-5.3/Kimi-k3 always-on) dikekalkan, hierarki USER-FIRST (override eksplisit reasoningEffort config UI sentiasa dihormati).
+- **Pembedahan (`src/services/providers/openaiCompatible.js` sahaja):** (1) DEAD CODE REMOVAL — `applyFrontierModelRules()` + `isGlmFull53Model()` dipadam (~46 baris; gate pemanggilan telah digugurkan SEND-ALL 2026-10-16; disahkan tiada call-site/test merujuk); `isKimiModel()` dikekalkan (guna test Inspector). (2) Lalai reasoning Translation `'low'` → `'disabled'` dalam `applySmartModelPayload()` — DeepSeek/GLM-5.2/GLM-5.1/MiniMax → `thinking disabled`, Hunyuan → `no_think`, GPT-reasoning → `none`; keluarga ALWAYS-ON (GLM-5.3, Kimi-k3) abaikan `isDisable` dan jatuh semula jadi ke `'low'` minimum selamat. (3) Laluan Inspector (`universalPayload=true`, builder 4-kunci god-tier) KEKAL MATI TERKUNCI — return-awal sebelum `applySmartModelPayload()` dipanggil, determinisme `temperature 0.0` audit terpelihara 100%.
+- **Klausa #4 mandat (kemas kini test):** TIDAK diperlukan — carian menyeluruh mengesahkan tiada test mengunci kelakuan reasoning laluan Translation (semua test god-tier menguji laluan universalPayload yang tak tersentuh).
+- **Pipeline 8 langkah:** Langkah-0 audit Frontend NO-OP (perubahan 100% server-side provider); SemVer 3.14.1 → 3.14.2 (patch); CHANGELOG entri baharu; cache-buster runtime-driven LULUS (`__APP_VERSION_QUERY__` + `?_cb=${appVersion}` parameterized, versi baharu auto-jadi nilai buster); Prettier PASS; ESLint 0 error / 225 warning (pra-wujud, selari baseline); `npm test` = **428 total / 427 PASS / 0 FAIL / 1 SKIP (live Redis)** — baseline terpelihara (monotonic ≥ 428); graphify NO-OP (graphify-out/ absent walaupun runtime hadir — syarat ganda tidak dipenuhi).
+- **Fail Terlibat:** src/services/providers/openaiCompatible.js, package.json, CHANGELOG.md, docs/SESSION_LEDGER.md.
+- **Status npm test:** `428 total / 427 PASS / 0 FAIL / 1 SKIP (live Redis)`.
+- **Next Steps:** git commit + push origin main → CI verify via gh CLI — mesti **SUCCESS** (Node 22/24).
+
+---
+
 ## 2026-10-18 — v3.14.1 AUDIT TWO-MODE RULES + SEND-ALL SYNC RULE #3 BACKEND
 
 - **Tarikh:** 2026-10-18 ~14:39 (waktu tempatan KL).

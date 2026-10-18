@@ -139,12 +139,15 @@ class OpenAICompatibleProvider {
     }
 
     /**
-     * FRONTIER UPGRADE (Mandat Frontier 2026-09-26): Pengesan keluarga model
-     * Kimi/Moonshot AI (case-insensitive).
+     * Pengesan keluarga model Kimi/Moonshot AI (case-insensitive).
      * [AUDIT 2026-09-29] Dakwaan lama "pelayan Kimi K3 mengunci sampling
      * secara dalaman → HTTP 400" sudah LAPUK — disahkan melalui curl pada
-     * 2026-09-28: pelayan Kimi K3 TIDAK lagi mengunci temperature. Nota
-     * sejarah dikekalkan; lihat applyFrontierModelRules untuk status semasa.
+     * 2026-09-28: pelayan Kimi K3 TIDAK lagi mengunci temperature.
+     * [MANDAT OWNER 2026-10-18 — PEMBEDAHAN PENGASINGAN PARAMETER]
+     * applyFrontierModelRules() & isGlmFull53Model() DIPADAM sebagai dead
+     * code (gate pemanggilan telah digugurkan oleh SEND-ALL DOCTRINE
+     * 2026-10-16) — jebakan masa hadapan dihapuskan. Sampling Agent
+     * Translation kini 100% nilai konfigurasi pengguna.
      * @param {string} [modelName] - Override nama model (lalai model aktif)
      * @returns {boolean}
      */
@@ -152,52 +155,6 @@ class OpenAICompatibleProvider {
         return String(modelName || '')
             .toLowerCase()
             .includes('kimi');
-    }
-
-    /**
-     * FRONTIER UPGRADE (Mandat Frontier 2026-09-26): Pengesan GLM-5.3 versi
-     * penuh (753B flagship) — MENGEKECUALIKAN varian 'flash'. Auditor rigor
-     * Semakan Kelompok dijalankan pada 100% deterministik (temperature 0.0,
-     * top_p 0.1).
-     * @param {string} [modelName] - Override nama model (lalai model aktif)
-     * @returns {boolean}
-     */
-    isGlmFull53Model(modelName = this.model) {
-        const m = String(modelName || '').toLowerCase();
-        return m.includes('glm') && m.includes('5.3') && !m.includes('flash');
-    }
-
-    /**
-     * FRONTIER UPGRADE (Mandat Frontier 2026-09-26): Terapkan peraturan payload
-     * model frontier di atas body yang telah dibina.
-     * [AUDIT 2026-09-29] — KOMEN ASAL LAPUK (OBSOLETE): dakwaan "pelayan Kimi
-     * mengunci sampling secara dalaman → HTTP 400" TIDAK lagi benar; disahkan
-     * melalui curl terus ke pelayan pada 2026-09-28 — pelayan Kimi K3 kini
-     * menerima temperature tanpa ralat. Kelakuan kaedah DIKEKALKAN tanpa
-     * perubahan (jangan ubah kelakuan tanpa pengesahan empirikal baharu):
-     *   - "kimi"   → GUGURKAN temperature/top_p/presence_penalty +
-     *                max_tokens 16384 (konservatif warisan; rationale lapuk).
-     *   - "glm-5.3" (bukan flash) → KUNCI temperature 0.0 + top_p 0.1
-     *                (deterministik mutlak, sifar kreativiti).
-     * PENGGUNA AKTIF: laluan terjemahan warisan sahaja — buildChatRequest
-     * TANPA universalPayload (semua provider kilang: openai/xai/deepseek/
-     * mistral/openrouter/cfworkers/custom). Laluan Agent Inspector
-     * (universalPayload=true) TIDAK melalui kaedah ini (builder 4-kunci
-     * god-tier return awal).
-     * @param {Object} body - Payload chat/completions (dimutasi secara langsung)
-     */
-    applyFrontierModelRules(body) {
-        if (this.isKimiModel()) {
-            delete body.temperature;
-            delete body.top_p;
-            delete body.presence_penalty;
-            body.max_tokens = 16384;
-            return;
-        }
-        if (this.isGlmFull53Model()) {
-            body.temperature = 0.0;
-            body.top_p = 0.1;
-        }
     }
 
     normalizeCfModelId() {
@@ -314,10 +271,22 @@ class OpenAICompatibleProvider {
      * terjemahan utama (Agent Translation). Laluan Agent Inspector (universalPayload=true)
      * TIDAK melalui kaedah ini (builder 4-kunci god-tier return awal).
      * Oleh itu JANGAN tandakan @deprecated.
+     *
+     * [MANDAT OWNER 2026-10-18 — PEMBEDAHAN PENGASINGAN PARAMETER PINTU
+     * OPENAI-COMPATIBLE] Hierarki USER-FIRST + reasoning minimum Translation:
+     *   1. reasoningEffort EKSPLISIT pengguna (config UI) sentiasa dihormati
+     *      (prinsip SEND-ALL) — rawEffort dipakai apa adanya.
+     *   2. Tanpa override (lalai Translation): effort = 'disabled' — elak
+     *      model ber-reasoning memparafrasa sari kata. Keluarga yang menyokong
+     *      pematian (DeepSeek/GLM-5.2/GLM-5.1/Hunyuan/MiniMax/GPT-reasoning)
+     *      menghantar thinking disabled/no_think/none.
+     *   3. KEKANGAN KERAS 400-ERROR: keluarga ALWAYS-ON (GLM-5.3, Kimi-k3)
+     *      MENGABAIKAN isDisable dan jatuh semula jadi kepada 'low' — tahap
+     *        minimum selamat (ground truth curl live: disabled = HTTP 400).
      */
     applySmartModelPayload(body, modelName, rawEffort) {
         const m = String(modelName || '').toLowerCase();
-        const effort = rawEffort || 'low';
+        const effort = rawEffort || 'disabled';
         const isDisable = effort === 'disabled' || effort === 'none' || effort === 'no_think';
 
         // 1. DEEPSEEK FAMILY (deepseek-v4-pro, deepseek-v4-flash)
