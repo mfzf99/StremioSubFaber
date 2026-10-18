@@ -1,3 +1,17 @@
+## 2026-10-18 — v3.14.1 AUDIT TWO-MODE RULES + SEND-ALL SYNC RULE #3 BACKEND
+
+- **Tarikh:** 2026-10-18 ~14:37 (waktu tempatan KL).
+- **Komit SHA (HEAD):** (akan diisi selepas commit).
+- **Keputusan Owner:** Owner meluluskan pembetulan penuh hasil audit baris demi baris `.roomodes` (backend & frontend) + `00-subfaber-core-protocol.md` terhadap kod sebenar. Dua konflik kritikal dikesan pada rule #3 backend: (1) deskripsi "STRICT strips ALL sampling parameters" telah BASI — bertentangan dengan SEND-ALL DOCTRINE (Mandat Owner 2026-10-16) yang terimplement dalam `buildGenerationConfig()` (gate stripping DIGUGURKAN, temperature/topP/penalties dihantar untuk SEMUA keluarga 3.x); (2) `gemini-3.5-flash` tersalah klasifikasi sebagai LEGACY — sebenarnya STRICT melalui reroute whitelist v3.9.46 (`isSamplingStrictGemini3`, plans/trinity-params-ground-truth-2026.md §A1). Rujukan ground truth kedua ditambah. Audit turun mengesahkan: 0 sisa `agentB`/`SubMaker` dalam `src/**`, purge `minP`/`repetitionPenalty`/`topK`/`topKEnabled` utuh di `src/utils/config.js`, `thinkingBudget` dikekalkan, cermin `getModelFamily()` frontend/backend selari, mekanisme handover dua-hala lengkap tanpa lubang.
+- **Prosedur selamat `.roomodes` (insiden 2026-10-08):** Edit dilakukan via skrip Python di `$TEMP` (luar repo), padam segera dalam rantaian command sama; PyYAML gate PASS (customModes: 2, groups=[read,edit,command,mcp], source=project).
+- **Pembersihan tambahan:** Blok entri v3.13.4 yang ter-duplikasi dalam CHANGELOG.md dibuang.
+- **Pipeline 8 langkah:** SemVer 3.14.0 → 3.14.1 (patch); CHANGELOG entri baharu; cache-buster NO-OP (zero hits `3.14.0` merentas JS/HTML); Prettier PASS; ESLint 0 error; `npm test` = **428 total / 427 PASS / 0 FAIL / 1 SKIP (live Redis)** — baseline terpelihara (monotonic ≥ 428); graphify NO-OP (graphify-out/ absent).
+- **Fail Terlibat:** .roomodes, CHANGELOG.md, package.json, package-lock.json, docs/SESSION_LEDGER.md.
+- **Status npm test:** `428 total / 427 PASS / 0 FAIL / 1 SKIP (live Redis)`.
+- **Next Steps:** git commit + push origin main → CI verify via gh CLI — mesti **SUCCESS** (Node 22/24).
+
+---
+
 ## 2026-10-18 — v3.13.4 ALAT OPERASI RASMI: SKRIP PATCH ZOO CODE TWO-MODE LOCK
 
 - **Tarikh:** 2026-10-18 ~00:08 (waktu tempatan KL).

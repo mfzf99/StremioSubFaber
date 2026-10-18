@@ -2,6 +2,17 @@
 
 All notable changes to this project will be documented in this file.
 
+## SubFaber v3.14.1 (2026-10-18) — Two-Mode Rules Ground-Truth Audit & Backend Rule #3 Send-All Sync
+
+### 🐛 Bug Fixes
+
+- **Corrected the backend mode's Gemini sampling ground-truth rule ([.roomodes](.roomodes)):** rule #3 still described the pre-2026-10-16 behavior where 3.x-STRICT models stripped all sampling parameters, and misclassified `gemini-3.5-flash` as LEGACY. The rule now matches the live code ([src/services/gemini.js](src/services/gemini.js)) exactly: the SEND-ALL doctrine mandates sending `temperature`/`topP`/penalties for ALL Gemini 3.x families (server decides), `topK` remains banned, STRICT classification includes 3.6+, 3.5-flash, 3.7-flash (reroute whitelist v3.9.46), 3.5-flash-lite, `-latest` aliases, and 4+, LEGACY is 3.0/3.1 only, and the reference list now includes both ground-truth plans. This prevents future sessions from reintroducing the stripped gate that the Owner removed on 2026-10-16.
+
+### ⚡ Improvements
+
+- **Completed a line-by-line audit of the two-mode rules system:** verified `.roomodes` (backend + frontend) and `.roo/rules/00-subfaber-core-protocol.md` against the actual codebase — no legacy identifiers (`agentB`, `SubMaker`) in active code, parameter purge (`minP`/`repetitionPenalty`/`topK`/`topKEnabled`) intact in config normalization, `thinkingBudget` preservation intact, frontend DOM morphing rules aligned with `public/config.js`, and the backend↔frontend handover protocol fully consistent with no gaps.
+- **Removed a duplicated v3.13.4 entry block in the changelog:** the release notes for the Zoo Code patch tooling were accidentally written twice; the duplicate category block has been removed.
+
 ## SubFaber v3.13.4 (2026-10-18) — Official Zoo Code Two-Mode Patch Tooling
 
 ### ⚡ Improvements
@@ -9,11 +20,6 @@ All notable changes to this project will be documented in this file.
 - **Added the official Zoo Code maintenance script ([scripts/patch-zoo-code.js](scripts/patch-zoo-code.js)):** auto-discovers the highest installed `zoocodeorganization.zoo-code-*` extension under `~/.vscode/extensions`, then surgically replaces the built-in five-mode array (architect/code/ask/debug/orchestrator) with the project's two-mode universe (backend/frontend) in BOTH runtime bundles — the Node.js extension host (`dist/extension.js`, variable `xV`) and the React Webview UI (`webview-ui/build/assets/index.js`, variable `oa`). The script uses string/backtick-aware bracket matching, creates `.bak` backups once, verifies syntax with `node --check`, scans for residual legacy slugs, and supports a read-only `--check` mode.
 - **Documented the Zoo Code patch protocol ([docs/ZOO_CODE_PATCH_PROTOCOL.md](docs/ZOO_CODE_PATCH_PROTOCOL.md)):** explains the two-bundle architecture (patching only the host bundle leaves the UI dropdown showing legacy "DO NOT USE. DEPRECATED." modes), the dynamic default-mode-slug behavior, how to disable extension auto-update in VS Code, post-update procedures, and rollback via the `.bak` files.
 - **Opened `.gitignore` for the official script:** the `scripts/` pattern was changed to `scripts/*` with an exception `!scripts/patch-zoo-code.js` so the official ops tool can be committed while still filtering all other `scripts/` leftovers.
-
-### ⚡ Improvements
-
-- **Added the official Zoo Code maintenance script ([scripts/patch-zoo-code.js](scripts/patch-zoo-code.js)):** auto-discovers the highest installed `zoocodeorganization.zoo-code-*` extension under `~/.vscode/extensions`, then surgically replaces the built-in five-mode array (architect/code/ask/debug/orchestrator) with the project's two-mode universe (backend/frontend) in BOTH runtime bundles — the Node.js extension host (`dist/extension.js`, variable `xV`) and the React Webview UI (`webview-ui/build/assets/index.js`, variable `oa`). The script uses string/backtick-aware bracket matching, creates `.bak` backups once, verifies syntax with `node --check`, scans for residual legacy slugs, and supports a read-only `--check` mode.
-- **Documented the Zoo Code patch protocol ([docs/ZOO_CODE_PATCH_PROTOCOL.md](docs/ZOO_CODE_PATCH_PROTOCOL.md)):** explains the two-bundle architecture (patching only the host bundle leaves the UI dropdown showing legacy "DO NOT USE. DEPRECATED." modes), the dynamic default-mode-slug behavior, how to disable extension auto-update in VS Code, post-update procedures, and rollback via the `.bak` files.
 
 ## SubFaber v3.14.0 (2026-10-18) — Professional English Changelog + SubMaker-Style Changelog Portal
 
