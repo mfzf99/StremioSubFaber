@@ -300,15 +300,12 @@ function resolveCapabilityProfile(providerOrDoor, modelId) {
                 };
             }
             if (/^deepseek/.test(m)) {
-                // A4: sampling tidak disokong dalam mod thinking — deepseek-flash
-                // default thinking ON → guna reasoning_effort sahaja.
-                return {
-                    family: 'deepseek-thinking',
-                    parameters: {
-                        maxOutputTokens: param(1, 384000, 32768)
-                    },
-                    notes: ['sampling-unsupported-in-thinking-mode']
-                };
+                // [MANDAT OWNER 2026-10-16 — SEND-ALL DOCTRINE] Dakwaan lama A4
+                // ("sampling tidak disokong dalam mod thinking") sudah LAPUK —
+                // DeepSeek di pintu OpenAI-compatible menerima SEMUA parameter
+                // sampling; pelayan provider tentukan sendiri (terima/abaikan/400).
+                // Mirror frontend MP_DOOR_GENERIC_OPENAI (trinity-agents.js).
+                return DOOR_GENERIC_PROFILES['openai-compatible'];
             }
             return DOOR_GENERIC_PROFILES['openai-compatible'];
         }

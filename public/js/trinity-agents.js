@@ -672,13 +672,10 @@
                     };
                 }
                 if (/^deepseek/.test(m)) {
-                    return {
-                        family: 'deepseek-thinking',
-                        parameters: {
-                            maxOutputTokens: mpParam(1, 384000, 32768)
-                        },
-                        notes: ['sampling-unsupported-in-thinking-mode']
-                    };
+                    // [MANDAT OWNER 2026-10-16 — SEND-ALL DOCTRINE] DeepSeek di pintu
+                    // OpenAI-compatible menerima SEMUA parameter sampling; hanya flag
+                    // `thinking` dikawal server. Mirror backend DOOR_GENERIC_PROFILES.
+                    return MP_DOOR_GENERIC_OPENAI;
                 }
                 return MP_DOOR_GENERIC_OPENAI;
             }

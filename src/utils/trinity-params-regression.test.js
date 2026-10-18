@@ -126,11 +126,12 @@ test('[SEND-ALL v3.10.5] Penalty diisytiharkan dalam SEMUA profil bersampling (U
         assert.equal(p.parameters.presencePenalty.default, 0);
     }
     // Profil TIADA-sampling kekal bersih (penalty tidak diisytihar).
+    // [SEND-ALL 2026-10-16] 'custom/deepseek-chat' DIPINDAH ke SAMPLING_CASES —
+    // DeepSeek kini profil generik pintu openai-compatible (sampling penuh).
     const NO_SAMPLING_CASES = [
         ['deepl', ''],
         ['openai', 'o3'],
-        ['openai', 'gpt-5.1'],
-        ['custom', 'deepseek-chat']
+        ['openai', 'gpt-5.1']
     ];
     for (const [provider, model] of NO_SAMPLING_CASES) {
         const p = resolveCapabilityProfile(provider, model);
@@ -181,7 +182,13 @@ test('[A9] Custom door — keupayaan ikut nama model (gemini/claude/kimi/glm/dee
     assert.equal(resolveCapabilityProfile('custom', 'claude-opus-4-5').family, 'anthropic-thinking');
     assert.equal(resolveCapabilityProfile('custom', 'kimi-k3').family, 'kimi-fixed-sampling');
     assert.equal(resolveCapabilityProfile('custom', 'glm-5.3').family, 'glm');
-    assert.equal(resolveCapabilityProfile('custom', 'deepseek-flash').family, 'deepseek-thinking');
+    // [SEND-ALL 2026-10-16] DeepSeek kini jatuh ke profil generik pintu
+    // openai-compatible — sampling penuh (temp/topP/penalties/reasoningEffort).
+    const ds = resolveCapabilityProfile('custom', 'deepseek-flash');
+    assert.equal(ds.family, 'openai-compatible-generic');
+    assert.ok('temperature' in ds.parameters, 'DeepSeek: temperature mesti terbuka');
+    assert.ok('topP' in ds.parameters, 'DeepSeek: topP mesti terbuka');
+    assert.ok(!('topK' in ds.parameters), 'topK haram (v1.6.0)');
 });
 
 // ── A-B. LALAI PER-EJEN (KEPUTUSAN OWNER #3) ────────────────────────────────

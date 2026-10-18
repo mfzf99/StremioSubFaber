@@ -1,3 +1,32 @@
+## 2026-10-18 — v3.14.3 DEEPSEEK SEND-ALL: BUKA SEMUA PARAMETER SAMPLING PINTU CUSTOM/PROXY
+
+- **Tarikh:** 2026-10-18 ~18:39 (waktu tempatan KL).
+- **Komit SHA (HEAD):** (akan diisi selepas push).
+- **Keputusan Owner:** Owner menegur UI Trinity masih papar banner basi "DeepSeek thinking mode does not accept sampling parameters — only maxOutputTokens is configurable" untuk provider Custom/Proxy model `deepseek-v4-pro`, walaupun SEND-ALL DOCTRINE (Mandat Owner 2026-10-16) telah menggugurkan semua gate sampling dalam enjin OpenAI-compatible sejak v3.14.2. Mirror frontend & backend capability resolver kedua-duanya masih lock DeepSeek kepada keluarga `deepseek-thinking`.
+- **Pembedahan:** (1) Frontend [`resolveCapabilityProfile()`](public/js/trinity-agents.js:674) — cabang `/^deepseek/` kini jatuh ke [`MP_DOOR_GENERIC_OPENAI`](public/js/trinity-agents.js:618) (temperature 0–2, topP 0–1, maxOutputTokens 1–200000, reasoningEffort enum, kedua-dua penalty; `topK` kekal haram v1.6.0). (2) Backend [`resolveCapabilityProfile()`](src/utils/modelCapabilities.js:302) — cabang DeepSeek dipadam, jatuh ke `DOOR_GENERIC_PROFILES['openai-compatible']`. (3) Test [`trinity-params-regression.test.js`](src/utils/trinity-params-regression.test.js:184) — `custom/deepseek-chat` dipindah dari NO_SAMPLING_CASES ke kontrak sampling; A9 kini assert `openai-compatible-generic` + temperature/topP terbuka.
+- **Integration Review Frontend (Langkah-0):** LULUS — perubahan hanya set parameter yang ditawarkan profil; laluan serialization [`mpCollectFieldValues()`](public/js/trinity-agents.js:983), `agentParamsDeviateFromDefault()` & rehydration tidak tersentuh; `sanitizeAgentParams()` backend sentiasa tapis terhadap profil — parameter generik DeepSeek kini disahkan melulus tanpa dibuang senyap (test kini assert frequencyPenalty/presencePenalty diisytihar).
+- **Verifikasi Playwright (frontend):** `/configure` → Provider Translation `Custom / Proxy` + Model `deepseek-v4-pro` → kad Model Parameters render 6 medan (Temperature, Top-P, Max output tokens, Reasoning effort, Frequency penalty, Presence penalty), tiada nota sampling-unsupported. Screenshot `.playwright-mcp/deepseek-params-open-2026-10-18.png`.
+- **Pipeline 8 langkah:** SemVer 3.14.2 → 3.14.3 (patch); CHANGELOG entri baharu; cache-buster runtime-driven NO-OP (`__APP_VERSION_QUERY__` parameterized); Prettier PASS; ESLint 0 error / 225 warning (pra-wujud, selari baseline); `npm test` = **428 total / 427 PASS / 0 FAIL / 1 SKIP (live Redis)** — baseline terpelihara (monotonic ≥ 428); graphify NO-OP (tiada `graphify-out/`).
+- **Fail Terlibat:** public/js/trinity-agents.js, src/utils/modelCapabilities.js, src/utils/trinity-params-regression.test.js, package.json, CHANGELOG.md, docs/SESSION_LEDGER.md.
+- **Status npm test:** `428 total / 427 PASS / 0 FAIL / 1 SKIP (live Redis)`.
+- **Next Steps:** git commit + push origin main → CI verify via `gh` CLI — mesti **SUCCESS** (Node 22/24).
+
+---
+
+## 2026-10-18 — FRONTEND FIX: DEEPSEEK CUSTOM/PROXY EXPOSE SEMUA PARAMETER SAMPLING
+
+- **Tarikh:** 2026-10-18 ~18:29 (waktu tempatan KL)
+- **Komit SHA (HEAD):** (akan diisi selepas commit oleh backend)
+- **Keputusan Owner:** Owner menegur UI masih tunjuk "DeepSeek thinking mode does not accept sampling parameters — only maxOutputTokens is configurable." untuk provider Custom/Proxy model `deepseek-v4-pro`. Mandat Owner 2026-10-16 SEND-ALL DOCTRINE menghendaki SEMUA parameter sampling dihantar; pelayan provider tentukan sendiri (terima/abaikan/400).
+- **Audit forensik:** Mirror frontend [`resolveCapabilityProfile()`](public/js/trinity-agents.js:674) masih lock keluarga `'deepseek-thinking'` (hanya `maxOutputTokens`) walaupun backend [`src/services/providers/openaiCompatible.js`](src/services/providers/openaiCompatible.js:514) telah menggugurkan gate `omitSampling` & `applyFrontierModelRules()` sejak v3.14.2. Backend [`src/utils/modelCapabilities.js`](src/utils/modelCapabilities.js:302) masih kekalkan cabang DeepSeek thinking — perlu diselaraskan backend (TODO backend).
+- **Pembedahan frontend:** Cabang `if (/^deepseek/.test(m))` di dalam [`resolveCapabilityProfile()`](public/js/trinity-agents.js:674) kini jatuh ke [`MP_DOOR_GENERIC_OPENAI`](public/js/trinity-agents.js:618) (temperature 0–2, topP 0–1, maxOutputTokens 1–200000, reasoningEffort enum, frequencyPenalty, presencePenalty). Nota `'sampling-unsupported-in-thinking-mode'` dikekalkan dalam [`MP_NOTE_TEXT`](public/js/trinity-agents.js:747) untuk sejarah audit tetapi tidak lagi dihantar kerana profil tidak lagi mengandungi nota tersebut.
+- **Verifikasi Playwright:** Navigasi ke `http://localhost:7001/configure` → pilih Provider Translation `Custom / Proxy` → Model `deepseek-v4-pro` → `TrinityAgents.refreshModelParams('translation')` → `#trinity-mp-fields-translation` render 6 medan: Temperature, Top-P, Max output tokens, Reasoning effort, Frequency penalty, Presence penalty. Tiada nota "sampling-unsupported-in-thinking-mode". Screenshot disimpan `.playwright-mcp/deepseek-params-open-2026-10-18.png`.
+- **Fail Terlibat:** public/js/trinity-agents.js, docs/SESSION_LEDGER.md
+- **Status npm test:** Belum dijalankan (larangan mode frontend — dipegang oleh backend semasa pipeline release).
+- **Next Steps:** Handover ke backend untuk (1) selaraskan cabang DeepSeek dalam [`src/utils/modelCapabilities.js`](src/utils/modelCapabilities.js:302) supaya konsisten dengan frontend, (2) kemas kini test [`src/utils/trinity-params-regression.test.js`](src/utils/trinity-params-regression.test.js:184) yang masih expect `'deepseek-thinking'`, (3) pipeline 8 langkah release.
+
+---
+
 ## 2026-10-18 — v3.14.2 PEMBEDAHAN PENGASINGAN PARAMETER PINTU OPENAI-COMPATIBLE
 
 - **Tarikh:** 2026-10-18 ~18:05 (waktu tempatan KL).

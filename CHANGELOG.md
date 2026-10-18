@@ -2,6 +2,13 @@
 
 All notable changes to this project will be documented in this file.
 
+## SubFaber v3.14.3 (2026-10-18) — DeepSeek Send-All: Open All Sampling Parameters on Custom/Proxy Door
+
+### 🐛 Bug Fixes
+
+- **Opened all sampling parameters for DeepSeek models on the Custom/Proxy door (frontend + backend parity):** the frontend capability mirror `resolveCapabilityProfile()` in [public/js/trinity-agents.js](public/js/trinity-agents.js) and the backend resolver in [src/utils/modelCapabilities.js](src/utils/modelCapabilities.js) still classified DeepSeek models as `deepseek-thinking` (max output tokens only), which surfaced the stale banner "DeepSeek thinking mode does not accept sampling parameters" in the Trinity agent Model Parameters card even though the SEND-ALL doctrine (Owner mandate 2026-10-16) had already dropped every sampling gate in the OpenAI-compatible engine. Both mirrors now fall through to the generic OpenAI-compatible profile: temperature, top-P, max output tokens, reasoning effort, frequency penalty, and presence penalty all render as configurable fields. `topK` remains banned (v1.6.0).
+- **Updated the regression contract in [src/utils/trinity-params-regression.test.js](src/utils/trinity-params-regression.test.js):** `custom/deepseek-chat` moved from the no-sampling case list to the sampling case list, and the A9 custom-door test now asserts the generic family with open temperature/top-P.
+
 ## SubFaber v3.14.2 (2026-10-18) — OpenAI-Compatible Door: Translation/Inspector Parameter Separation
 
 ### 🐛 Bug Fixes
