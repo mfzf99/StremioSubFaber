@@ -13,7 +13,7 @@
 ## 2026-10-19 — v3.16.1 DOKTRIN REAL-USER VERIFICATION (ANTI BLIND-CODING)
 
 - **Tarikh:** 2026-10-19 ~17:30 (waktu tempatan KL).
-- **Komit SHA (HEAD):** akan direkodkan selepas langkah-7 (CI run ID menyusul langkah-8).
+- **Komit SHA (HEAD):** `5901e35f` + CI run ID 39294373513 = **SUCCESS** (Node 22/24). Push diverifikasi sampai (`origin/main = 5901e35f`; insiden push-senyap KE-3 dikesan via `ahead 1` & ditolak semula sehingga sync — amalan verifikasi wajib kekal kritikal).
 - **Keputusan Owner:** Selepas pelepasan v3.16.0, Owner melaporkan isu pembedahan UI/UX buta (frontend mula ujian tanpa aliran sebenar; hanya selepas teguran Owner barulah jalankan kunci real → URL → door → Validate → model, dan barulah nampak state sebenar). Owner mempersoalkan keperluan rules; Backend bersetuju penuh (Item 8 sedia ada hanya PASCA-pembedahan; doktrin baharu mewajibkan PRA-pembedahan). Pelan `plans/real-user-verification-doctrine.md` diluluskan selepas rujukan AI Owner — [MANDAT PELAKSANAAN v3.16.1] dikeluarkan.
 - **Audit insiden & justifikasi ekonomi token:** Satu teguran Owner = satu kitaran fix berulang yang boleh dielak = token API berbayar Owner terbuang. Infrastruktur kunci real (v3.14.4) sedia lama — yang hilang hanyalah mandat prosedur yang mengikat penggunaannya sebagai langkah PERTAMA pembedahan.
 - **Pembedahan:**
