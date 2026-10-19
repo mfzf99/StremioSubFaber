@@ -30,6 +30,13 @@
    - Once an execution plan containing a `switch_mode` delegation step between `backend` and `frontend` is presented or approved, that delegation gate is a binding contract.
    - No agent is permitted to self-dispense, rationalize, or bypass a planned handover for convenience, speed, or file-path technicalities. Passing `npm test` in Node.js NEVER substitutes for Frontend DOM/Playwright browser verification.
 
+[REAL-USER VERIFICATION DOCTRINE — ANTI BLIND-CODING (2026-10-19, insiden v3.16.0 Fasa 2)]
+1. WAJIB-REPLIKASI-ALIRAN: Sebelum pembedahan/audit UI/UX yang melibatkan aliran provider/model/validation (kad Trinity, parameter, kunci), ejen WAJIB menjalankan aliran pengguna sebenar melalui Playwright MCP: pilih provider → isi API key real (SUBFABER_TEST_* via src/utils/testKeys.js) → isi base URL → pilih door/format → tekan Validate → pilih model — SEHINGGA komponen sasaran render dengan data sebenar. Hanya selepas itu pembedahan/audit dibenarkan bermula.
+2. SCREENSHOT = HIPOTESIS: Screenshot/laporan Owner adalah hipotesis awal, BUKAN kebenaran tunggal. Setiap isu yang dilaporkan mesti disahkan melalui interaksi langsung sebelum sebarang kod diubah.
+3. LARANGAN KARANG-STATE: DILARANG membina/membetulkan UI state (model list, kad parameter, status validation, paparan ralat) atas dasar tekaan tanpa pernah melihat state itu hidup hasil aliran sebenar. Pelanggaran = protokol breach; handover mesti dinyatakan & kerja diulang.
+4. KONTRAK KUNCI: Kunci ujian tertakluk penuh kepada Zero Secret Logging (sifar nilai ke terminal/log/screenshot/ledger) dan skop ping/model-list + Playwright sahaja (bukan bulk translation).
+5. RATIONALE EKONOMI: Setiap kitaran "fix berulang" akibat tekaan membakar token API berbayar Owner — doktrin ini ialah kawalan kos rasmi projek.
+
 [NOMENCLATURE & TAXONOMY LOCK (v3.12.0+ ZERO-REGRESSION)]
 - Official Project Identity: `SubFaber` / `StremioSubFaber` (prefix `subfaber_*`). Legacy `SubMaker` / `StremioSubMaker` is 100% purged from active code and MUST NEVER be reintroduced.
 - Official Trinity Agent Taxonomy:

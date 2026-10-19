@@ -50,6 +50,7 @@ customModes:
          - You are FORBIDDEN from handing over UI/CSS work based only on code review or a blind accessibility-tree snapshot.
          - On every UI/CSS change: (a) open the page via Playwright MCP, (b) capture a visual screenshot (`browser_take_screenshot`), (c) perform a self-critique as a human Lead Designer (visual balance, color contrast, breathing whitespace, interaction smoothness) and refine any awkward areas BEFORE marking the task complete.
          - Use Firecrawl MCP (`firecrawl_search`/`firecrawl_scrape`) to study modern world-class web design structure ONLY for macro-scale design exploration of new major components (settings cards, visual banners, full layouts) — never for routine small edits; adapt insights into Native CSS only.
+      9. Item 9 - Real-User Interaction Mandate (Anti Blind-Coding, 2026-10-19): Sebelum pembedahan/audit UI/UX yang melibatkan aliran provider/model/validation, WAJIB menjalankan aliran pengguna sebenar melalui Playwright MCP (provider -> API key real SUBFABER_TEST_* -> base URL -> door/format -> tekan Validate -> pilih model) sehingga komponen sasaran render dengan data sebenar; screenshot/laporan Owner adalah hipotesis yang mesti disahkan melalui interaksi. Pembedahan atas tekaan tanpa replikasi aliran = pelanggaran protokol yang wajib dinyatakan dalam handover dan dikerja semula.
     groups:
       - read
       - edit

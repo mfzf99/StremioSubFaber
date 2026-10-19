@@ -10,6 +10,24 @@
 - **Status npm test:** `451 total / 450 PASS / 0 FAIL / 1 SKIP (live Redis)`.
 - **Next Steps:** Owner restart penuh VS Code (bukan reload window) dan sahkan dropdown Zoo Code hanya memaparkan Backend + Frontend; cadangan matikan auto-update Zoo Code (§4 protokol) supaya patch tidak lenyap lagi.
 
+## 2026-10-19 — v3.16.1 DOKTRIN REAL-USER VERIFICATION (ANTI BLIND-CODING)
+
+- **Tarikh:** 2026-10-19 ~17:30 (waktu tempatan KL).
+- **Komit SHA (HEAD):** akan direkodkan selepas langkah-7 (CI run ID menyusul langkah-8).
+- **Keputusan Owner:** Selepas pelepasan v3.16.0, Owner melaporkan isu pembedahan UI/UX buta (frontend mula ujian tanpa aliran sebenar; hanya selepas teguran Owner barulah jalankan kunci real → URL → door → Validate → model, dan barulah nampak state sebenar). Owner mempersoalkan keperluan rules; Backend bersetuju penuh (Item 8 sedia ada hanya PASCA-pembedahan; doktrin baharu mewajibkan PRA-pembedahan). Pelan `plans/real-user-verification-doctrine.md` diluluskan selepas rujukan AI Owner — [MANDAT PELAKSANAAN v3.16.1] dikeluarkan.
+- **Audit insiden & justifikasi ekonomi token:** Satu teguran Owner = satu kitaran fix berulang yang boleh dielak = token API berbayar Owner terbuang. Infrastruktur kunci real (v3.14.4) sedia lama — yang hilang hanyalah mandat prosedur yang mengikat penggunaannya sebagai langkah PERTAMA pembedahan.
+- **Pembedahan:**
+  1. **[.roo/rules/00-subfaber-core-protocol.md]** — Suntikan blok baharu `[REAL-USER VERIFICATION DOCTRINE — ANTI BLIND-CODING (2026-10-19, insiden v3.16.0 Fasa 2)]` selepas [MULTI-AGENT ORCHESTRATION PROTOCOL]: 5 klausa (WAJIB-REPLIKASI-ALIRAN via Playwright MCP + testKeys.js sehingga komponen sasaran render dengan data sebenar; SCREENSHOT = HIPOTESIS; LARANGAN KARANG-STATE = protokol breach wajib redo + nyata dalam handover; KONTRAK KUNCI Zero Secret Logging + skop ping/model-list; RATIONALE EKONOMI = kawalan kos rasmi).
+  2. **[.roomodes]** — APPEND `Item 9 - Real-User Interaction Mandate (Anti Blind-Coding, 2026-10-19)` pada customInstructions frontend (anchor: penghujung Item 8 `adapt insights into Native CSS only.`). Prosedur selamat Insiden 2026-10-08 dipatuhi: skrip Python text-splice `.tmp-roomodes-inject.py` ditulis, dijalankan, & dipadam dalam SATU rantaian command (klause "OR deleted immediately"); auto-detect line-ending CRLF; guard idempotency ALREADY_PATCHED.
+  3. **Gate PyYAML LULUS** (`PYYAML_GATE_PASS`): customModes=2, per-mode groups=[read,edit,command,mcp], source=project, item 1–8 frontend verbatim (4 spot-check frasa kritikal), Item 9 hadir, blok backend tidak tersentuh (3 spot-check) & sifar Item 9 dalam backend. Skrip validasi turut dipadam dalam rantaian sama.
+- **Nota forensik:** Anchor pertama yang dijangkaan (`never routine small edits.`) tidak wujud dalam .roomodes sebenar — frasa sebenar Item 8 berakhir `adapt insights into Native CSS only.` (baris 52). Skrip betulkan anchor; INJECTED bersih pada percubaan pertama selepas pembetulan. Sifar kandungan `.roomodes` rosak (validasi YAML parse penuh).
+- **Pipeline 8 langkah:** Langkah-0 Frontend NO-OP (100% peraturan proses, tiada DOM/CSS aplikasi tersentuh); SemVer 3.16.0 → 3.16.1 (patch — peraturan proses); CHANGELOG entri penuh (Behavioral Changes - Process Rules); cache-buster runtime-driven LULUS (sifar pin statik `3.16.0` merentas JS/HTML/CSS); Prettier PASS; ESLint 0 error / 225 warning (pra-wujud, selari baseline); `npm test` = **461 total / 460 PASS / 0 FAIL / 1 SKIP (live Redis)** — baseline monotonik terpelihara; graphify NO-OP (`graphify-out/` absent).
+- **Fail Terlibat:** .roo/rules/00-subfaber-core-protocol.md, .roomodes, plans/real-user-verification-doctrine.md (baharu), package.json, package-lock.json, CHANGELOG.md, docs/SESSION_LEDGER.md.
+- **Status npm test:** `461 total / 460 PASS / 0 FAIL / 1 SKIP (live Redis)`.
+- **Next Steps:** git commit + push origin main (WAJIB verifikasi `git rev-parse origin/main` — insiden push-senyap ×2 direkodkan) → CI via `gh` CLI — mesti **SUCCESS** (Node 22/24).
+
+---
+
 ## 2026-10-19 — v3.16.0 TRINITY TOTAL UNLOCK: KEDAULATAN PARAMETER PENGGUNA 100%
 
 - **Tarikh:** 2026-10-19 ~16:25 (waktu tempatan KL).
