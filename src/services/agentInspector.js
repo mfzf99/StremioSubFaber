@@ -192,29 +192,13 @@ const VALID_CRIME_TYPES = new Set(['MERGE', 'DROP', 'PHANTOM', 'SHIFT', 'UNTRANS
  * penyesuaian idiom (kerja sah Agent Translation) supaya tidak tersalah tuduh DROP/
  * PHANTOM — Agent Translation & Agent Inspector kini berkongsi definisi "terjemahan betul".
  */
-const INSPECTOR_INSTRUCTION = `## Role
-You are a subtitle integrity inspector. You compare source lines with their translations, line by line.
-
-## Task
-Detect ONLY these seven violations:
-- MERGE: Two source lines merged into ONE output slot, displacing subsequent lines (off-by-one drift).
-- DROP: Source line's specific meaning is missing or replaced by a generic substitute that erases it.
-- PHANTOM: Output slot contains fabricated content with no basis in its source line (invented dialogue, elaboration, hallucinated detail).
-- SHIFT: Dialogue content displaced across indices (line 5 text appearing in line 6's slot).
-  NOTE: Ignore minor millisecond timecode differences; audit solely whether the dialogue text matches the corresponding line index.
-- UNTRANSLATED: Output slot still carries the source-language sentence verbatim (or near-verbatim) when it clearly should have been translated. This is a LAZY-COPY leak. EXCEPTION — do NOT flag: proper nouns, character/brand/company names, creative-work titles, on-screen credits, or symbol/number/music-note-only lines that are legitimately kept as-is.
-- REGISTER: A recurring character's locked form in the Character Address Reference below is contradicted by the translation. This covers BOTH (a) honorific/title mismatch (the reference locks one title but the output uses a different one for the same character) AND (b) pronoun-register mismatch (the reference locks a self/other pronoun pairing but the output switches to a different register for that character). Only flag when the Character Address Reference provides the locked value AND the contradiction is unambiguous.
-- TERM: A locked term in the Locked Terms glossary below appears in the output with a DIFFERENT rendering than the locked target (e.g. the glossary locks "Le Ciel → Le Ciel" but the output uses a translated variant for the same entity). Flag ONLY when the source line clearly references the locked entity AND the output rendering visibly differs from the locked target. Do NOT flag legitimate grammatical inflection, article/connector differences, or partial matches inside larger proper names.
-
-The translator is REQUIRED to produce natural, idiomatic phrasing: condensing wordy lines, trimming redundant filler, and replacing source idioms with target-language equivalents are all CORRECT and must NOT be flagged. Only flag DROP when a line's core meaning is genuinely lost, and PHANTOM when content is genuinely fabricated — not when the translation is simply shorter, reworded, or idiomatically adapted.
-
-Ignore: translation style, word choice, grammar, tone, cultural adaptation, length reduction, idiomatic rephrasing, and minor omissions — EXCEPT the seven violations above.
-
-## Output Contract
-Respond with ONLY this JSON and nothing else — no explanations, no markdown:
-{"valid":true}
-If any violation exists:
-{"valid":false,"crimes":[{"type":"MERGE|DROP|PHANTOM|SHIFT|UNTRANSLATED|REGISTER|TERM","ids":[line ids],"note":"max 10 words"}]}`;
+// [TRINITY FASA 1 — Mandat Owner 2026-10-19] Teks INSPECTOR_INSTRUCTION
+// dipindahkan VERBATIM ke Single Source of Truth baharu
+// src/services/prompts/trinity/inspector/core.js — fail ini kini membaca
+// melalui registry. Teks runtime kekal IDENTIK (sifar perubahan perkataan).
+const { INSPECTOR_INSTRUCTION } = require('./prompts/trinity/inspector/core');
+// [TRINITY FASA 3 — Mandat Owner 2026-10-19] Static dispatch builder channel-native.
+const { resolveTrinityPrompt } = require('./prompts/trinity');
 
 /**
  * Format ringkasan konteks Pre-Flight (Fasa 0) untuk suntikan ke prompt
@@ -299,7 +283,11 @@ function formatPreflightContextForInspection(preflightContext) {
  * @param {Array<{index:number, text:string}>} translatedEntries - Hasil sejajar (MS)
  * @returns {{prompt:string}|null} Prompt lengkap inspector atau null (input kosong)
  */
-function buildInspectionPayload(sourceBatch, translatedEntries, preflightContext = null) {
+// [TRINITY FASA 3] buildInspectionPayload menerima builder channel-native
+// optional. null → laluan warisan IDENTIK (satu mesej user verbatim —
+// digunakan oleh unit test warisan dan laluan lama). Instance produksi
+// melwatkan builder statik dari constructor (static dispatch).
+function buildInspectionPayload(sourceBatch, translatedEntries, preflightContext = null, buildWrapper = null) {
     if (!Array.isArray(sourceBatch) || sourceBatch.length === 0) return null;
     if (!Array.isArray(translatedEntries) || translatedEntries.length === 0) return null;
 
@@ -341,6 +329,24 @@ ${msLines.join('\n')}
 
 Respond with ONLY the JSON now.`;
 
+    // [TRINITY FASA 3] Pembungkusan channel-native bila builder dilapurkan:
+    // wrapper menguatkuasakan kontrak pintu (gemini: split system/user;
+    // openai: json_schema strict dalam responseFormat; anthropic: data-first
+    // + tag XML + sifar prefill). Wire-format kekal SATU prompt string +
+    // medan responseFormat tambahan bagi pengaktifan API tahap provider.
+    if (typeof buildWrapper === 'function') {
+        const wrapped = buildWrapper({
+            systemText: INSPECTOR_INSTRUCTION,
+            dataText: contextBlock
+                ? `${contextBlock}## Input\n<en>\n${enLines.join('\n')}\n</en>\n<ms>\n${msLines.join('\n')}\n</ms>`
+                : `## Input\n<en>\n${enLines.join('\n')}\n</en>\n<ms>\n${msLines.join('\n')}\n</ms>`,
+            queryText: 'Respond with ONLY the JSON now.'
+        });
+        return {
+            prompt: `${wrapped.systemPrompt}\n\n${wrapped.userPrompt}`,
+            responseFormat: wrapped.responseFormat || null
+        };
+    }
     return { prompt };
 }
 
@@ -467,6 +473,14 @@ class AgentInspector extends OpenAICompatibleProvider {
 
         this.inspectionTimeoutMs = inspectionTimeoutMs;
         this.preflightTimeoutMs = preflightTimeoutMs;
+
+        // [TRINITY FASA 3 — Mandat Owner 2026-10-19] Static dispatch: builder
+        // prompt channel-native (inspection + preflight) dikunci SEKALI di sini.
+        // Lalai 'openai' — laluan produksi rootsys (payload god-tier 4-kunci +
+        // builder wrapper openai) terpelihara; sifar if-channel dalam gelung.
+        this.trinityChannel = options.trinityChannel || 'openai';
+        this._trinityInspectionBuilder = resolveTrinityPrompt('inspector', this.trinityChannel);
+        this._trinityPreflightChannel = options.trinityPreflightChannel || this.trinityChannel;
 
         // [TRINITY PARAMS FASA 3 v3.9.46] Params per-ejen (capability-sanitized
         // oleh config.js). Null → god-tier 4-kunci kekal (lalai mandat Owner).
@@ -600,9 +614,20 @@ class AgentInspector extends OpenAICompatibleProvider {
      * jika pengguna menetapkannya secara eksplisit dalam params (deviasi →
      * bypassCache automatik di config.js). Tanpa params → muatan 4-kunci
      * tulen 1:1 (kontrak PAYLOAD-GODTIER dipelihara sepenuhnya).
+     *
+     * [TRINITY PROMPTS FASA 3 — Mandat Owner 2026-10-19] MAZHAB RASMI TUNGGAL:
+     * meta.responseFormat (dibina oleh wrapper openai daripada skema kanonik
+     * core — json_schema strict) diaktifkan sebagai response_format pada tahap
+     * API aktif. Laluan tanpa responseFormat (gemini/anthropic/warisan)
+     * kekal 4-kunci god-tier tulen — sifar perubahan kontrak lama.
      */
     buildChatRequest(userPrompt, stream = false, meta = {}) {
         const result = super.buildChatRequest(userPrompt, stream, meta);
+        // Pengaktifan aktif response_format json_schema strict (mazhab rasmi
+        // OpenAI tunggal) — hanya bila pembungkus openi membekalkannya.
+        if (meta && meta.responseFormat && result && result.body && !result.body.response_format) {
+            result.body.response_format = meta.responseFormat;
+        }
         const agentParams = this.__activeAgentParams;
         if (
             !agentParams ||
@@ -921,6 +946,8 @@ class AgentInspector extends OpenAICompatibleProvider {
                     try {
                         inner = await runPreflightSemanticPass(entries, targetLanguage, sourceLanguage, this, {
                             ...options,
+                            // [TRINITY FASA 3] Channel preflight dari instance (static dispatch).
+                            channel: this._trinityPreflightChannel,
                             onCallError: (err) => {
                                 callError = err;
                             },
@@ -991,7 +1018,14 @@ class AgentInspector extends OpenAICompatibleProvider {
 
         // CONTEXT-AWARE AUDIT: konteks Pre-Flight dihantar melalui meta supaya
         // signature lama runSemanticInspection(source, translated) kekal sah.
-        const payload = buildInspectionPayload(sourceBatch, translatedEntries, meta.preflightContext || null);
+        // [TRINITY FASA 3] Builder statik instance dilwarkan — pembungkusan
+        // channel-native aktif (openai: response_format json_schema strict).
+        const payload = buildInspectionPayload(
+            sourceBatch,
+            translatedEntries,
+            meta.preflightContext || null,
+            this._trinityInspectionBuilder
+        );
         if (!payload) {
             return { valid: true, skipped: 'no_input' };
         }
@@ -1009,7 +1043,12 @@ class AgentInspector extends OpenAICompatibleProvider {
                     const startedAt = Date.now();
                     // Payload di-bake ke dalam customPrompt (buildUserPrompt override
                     // menghantarnya verbatim). maxRetries 0 per model + timeout 90s.
-                    const responseText = await this.translateSubtitle(payload.prompt, 'en', 'en', payload.prompt);
+                    const responseText = await this.translateSubtitle(payload.prompt, 'en', 'en', payload.prompt, {
+                        // [TRINITY FASA 3] Aktifkan response_format json_schema
+                        // strict (mazhab rasmi OpenAI tunggal) bila pembungkus
+                        // openai membekalkannya.
+                        responseFormat: payload.responseFormat || undefined
+                    });
                     const latency = Date.now() - startedAt;
                     // Mandat §3A: bersihkan tag penaakulan sebelum parse.
                     const cleaned = stripReasoningTags(responseText);

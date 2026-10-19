@@ -131,7 +131,19 @@ function sampleEntriesForPreflight(entries) {
  * @param {string} sourceLanguage - Bahasa sumber (label, boleh kosong)
  * @returns {string} Prompt lengkap
  */
-function buildPreflightPrompt(rawText, targetLanguage, sourceLanguage) {
+// [TRINITY FASA 1 — Mandat Owner 2026-10-19] Bahagian STATIK prompt Pre-Flight
+// dipindahkan VERBATIM ke Single Source of Truth baharu
+// src/services/prompts/trinity/preflight/core.js (PREFLIGHT_STATIC_TEMPLATE).
+// Fail ini kini membina templat melalui require() + interpolasi runtime;
+// teks runtime kekal IDENTIK (sifar perubahan perkataan).
+const { PREFLIGHT_STATIC_TEMPLATE } = require('./prompts/trinity/preflight/core');
+
+// [TRINITY FASA 3 — Mandat Owner 2026-10-19] Builder channel-native dari
+// registry (static dispatch). Lalai 'gemini' menghasilkan wire IDENTIK dengan
+// pra-Fasa 3; pemanggil (AgentInspector) boleh menetapkan pintu sebenar.
+const { resolveTrinityPrompt } = require('./prompts/trinity');
+
+function buildPreflightPrompt(rawText, targetLanguage, sourceLanguage, channel = 'gemini') {
     const src = sourceLanguage || 'the source language';
     const tgt = targetLanguage || 'the target language';
     // [UNIVERSAL-FIX] {{PLACEHOLDER}} injection: pack mengikut bahasa sasaran.
@@ -150,71 +162,23 @@ function buildPreflightPrompt(rawText, targetLanguage, sourceLanguage) {
     // (43-44 terms, 14-15 characters, canonical_address Puan/Encik/Cik terkunci
     // 9/14 setiap run). canonical_address KEKAL (gelaran = FAKTA); register kata
     // ganti kini diputuskan Agent Translation dari konteks chunk (bukan lock global goyah).
-    return `## Role
-You are a video translation expert and terminology consultant, specializing in ${src} comprehension and ${tgt} expression optimization.
-
-You are performing PRE-FLIGHT CONTEXT EXTRACTION ONLY. You are NOT translating the subtitle file, NOT rewriting dialogue, NOT choosing final translator pronouns or register, and NOT optimizing subtitle style — those are downstream translator decisions.
-
-## DECISION DISCIPLINE (MANDATORY — READ FIRST)
-Work in ONE fast pass. Return ONE answer per field: use the first explicit, evidence-supported answer and never reconsider it. Do NOT deliberate, second-guess, or debate. Do NOT generate, compare, or weigh alternative candidates, competing translations, or multiple interpretations — never output A/B alternatives. For every field: if the evidence is explicit, record it; if it is unclear, ambiguous, incomplete, or conflicting, output null IMMEDIATELY and move on. Never agonize over borderline cases — null is always the correct answer when in doubt. Do NOT optimize wording; this task is factual extraction, not stylistic choice. Do NOT debate pronoun choices, gender, or social nuance; pronoun register is decided later by the translator, not here.
-
-## FACT VS INFERENCE DISCIPLINE (MANDATORY)
-Only lock a canonical_address in 'characters' if there is EXPLICIT, UNAMBIGUOUS textual evidence in the source. If gender, social hierarchy, or formal title is unclear, DO NOT GUESS; mark canonical_address as null or omit the character.
-- Do not infer gender, age, social hierarchy, occupation, relationship, title, or honorific unless the dialogue establishes it explicitly.
-- Every name, title, and relationship you output must be supported by explicit dialogue evidence (how characters address each other in the text).
-- Prefer omission over hallucination: a shorter 'characters' list with only evidenced entries is always safer than an invented one.
-
-## Task
-For the provided ${src} subtitle dialogue, build the 4-pillar pre-flight context:
-1. Summarize the main topic.
-   The 'theme' field MUST be written strictly in clear, precise English (2-3 sentences), summarizing the narrative arc (plot), setting, and central conflict/stakes.
-2. Extract recurring non-character terminology with ${tgt} translations.
-   'terms' are the vocabulary of the story world ONLY: locations, organizations, objects, technical jargon, and distinctive recurring phrases. A term is anything that is NOT a person.
-   Each 'terms' entry is an object with exactly three keys: "source" (original text), "type" (exactly one of: location, organization, object, technical, phrase), and "target" (${tgt} translation or original).
-   NEVER place character names, personal titles, or honorifics in 'terms' — they belong ONLY in the 'characters' pillar. A human's name (with or without a title like Ms./Corporal/Lawyer) is a character entry, never a term.
-3. Build profiles for the main recurring characters.
-   Each 'characters' entry is an object with exactly four keys:
-   - "name": the character's name exactly as it appears in the dialogue.
-   - "canonical_address": the ONE locked ${tgt} THIRD-PERSON reference/title used when talking ABOUT this character (narrative reference — one canonical address per character, never alternate). ${canonicalAddressMatrix}. Lock ONLY with explicit, unambiguous textual evidence per the FACT VS INFERENCE DISCIPLINE; if gender, social hierarchy, or formal title is unclear, set null instead of guessing.
-   - "direct_address": the ${tgt} VOCATIVE form used when this character is spoken TO face-to-face (e.g. an English line that addresses them as "Aunt" maps to the familial vocative, which differs from the third-person title). This is a FACTUAL mapping from the honorific matrix, NOT a subjective choice — map it directly and quickly. If it is identical to canonical_address, or the source never addresses this character face-to-face, set null.
-   - "role": a short description of their narrative role (e.g. female lead, antagonist, mentor, butler).
-   ${honorificMatrix}
-4. Scan the EARLIEST lines of the file (lines 1-5) for NON-DIALOGUE opening text.
-   If the file opens with production credits (e.g. "Adapted from..."), the work's title, or a studio name card, ${creditsExample}.
-   If the file starts directly with normal dialogue, return an empty array [] for 'credits_and_titles'.
-   Each 'credits_and_titles' entry is an object with exactly two keys: "source" (original opening text) and "target" (official ${tgt} translation).
-
-## INPUT FORMAT
-The subtitle dialogue arrives in your NEXT message, wrapped in <text></text> tags. When it arrives, apply the tasks above to it and return ONLY the JSON object.
-
-## Output in only JSON format and no other text
-{
-  "theme": "Summary of the content — strictly in English (2-3 sentences: narrative arc, setting, conflict)",
-  "terms": [
-    { "source": "Original term", "type": "location|organization|object|technical|phrase", "target": "${tgt} translation or original" }
-  ],
-  "characters": [
-    { "name": "Character name", "canonical_address": "Locked ${tgt} third-person reference/title, or null if unclear", "direct_address": "${tgt} vocative form used when spoken to face-to-face (e.g. Aunt), or null if same/absent", "role": "Narrative role" }
-  ],
-  "credits_and_titles": [
-    { "source": "Opening credit/title text", "target": "Official ${tgt} translation" }
-  ]
-}
-
-You must respond ONLY with a raw JSON object matching the schema. Do not write any conversational preamble, introduction, or markdown commentary. Do not include explanations, notes, justification, warnings, or confidence statements.
-
-## FINAL CHECK (mechanical, not re-analysis)
-Before answering, verify mechanically: valid JSON; exactly the specified keys; no text outside the JSON; no alternative candidates anywhere; null for every unresolved field.
-
-Note: Start your answer with { and end with }, do not add any other text.
-
-${SUBFABER_PROMPT_BOUNDARY}
-
-<text>
-${rawText}
-</text>
-
-Apply the tasks above to this subtitle dialogue and return ONLY the JSON object.`;
+    const staticPart = PREFLIGHT_STATIC_TEMPLATE.replaceAll('${src}', src)
+        .replaceAll('${tgt}', tgt)
+        .replaceAll('${honorificMatrix}', honorificMatrix)
+        .replaceAll('${canonicalAddressMatrix}', canonicalAddressMatrix)
+        .replaceAll('${creditsExample}', creditsExample);
+    // [TRINITY FASA 3] Pembungkusan channel-native: builder statik menguatkuasakan
+    // kontrak pintu (gemini: split system/user; openai: json_schema strict dalam
+    // responseFormat; anthropic: data-first + tag XML + sifar prefill). Hasil
+    // diserial-balik ke wire-format sentinel supaya SEMUA provider transport
+    // (split dalaman) terus berfungsi tanpa perubahan.
+    const buildPreflight = resolveTrinityPrompt('preflight', channel);
+    const wrapped = buildPreflight({
+        systemText: staticPart,
+        dataText: `<text>\n${rawText}\n</text>`,
+        queryText: 'Apply the tasks above to this subtitle dialogue and return ONLY the JSON object.'
+    });
+    return `${wrapped.systemPrompt}\n\n${SUBFABER_PROMPT_BOUNDARY}\n\n${wrapped.userPrompt}`;
 }
 
 /**
@@ -569,7 +533,9 @@ async function runPreflightSemanticPass(entries, targetLanguage, sourceLanguage,
         }
 
         // 2. Bina prompt 4-tiang + panggil AI (flat user prompt, JSON output)
-        const prompt = buildPreflightPrompt(rawText, targetLanguage, sourceLanguage);
+        // [TRINITY FASA 3] Channel pintu diambil dari options (dilewatkan oleh
+        // AgentInspector daripada instance — static dispatch, sifar heuristik).
+        const prompt = buildPreflightPrompt(rawText, targetLanguage, sourceLanguage, options.channel);
         const callStartedAt = Date.now();
         const responseText = await geminiService.translateSubtitle(rawText, 'detected', targetLanguage, prompt);
         const callDuration = Date.now() - callStartedAt;

@@ -1,3 +1,45 @@
+## 2026-10-19 — v3.15.0 TRINITY CHANNEL-NATIVE PROMPTS: 3 CORE + 9 WRAPPERS
+
+- **Tarikh:** 2026-10-19 ~19:40 (waktu tempatan KL).
+- **Komit SHA (HEAD):** `603fa009` pra-komit; SHA pelepasan akan direkodkan selepas langkah-7 (CI run ID menyusul langkah-8).
+- **Keputusan Owner:** Rangkaian mandat penuh 2026-10-19: (1) [MANDAT PERANCANGAN] — pelan seni bina 3 Kerangka Core (Single Source of Truth) + 9 Channel-Native Wrappers diluluskan (`plans/trinity-channel-native-prompts.md`); (2) KEPUTUSAN MUKTAMAD ARSITEKTUR OPENAI — Owner MENOLAK sub-mod dwi-cabang (god-tier vs official); MAZHAB RASMI TUNGGAL `response_format: { type: 'json_schema', strict: true }` untuk Preflight & Inspector pada SEMUA endpoint, penalaan masa depan berasaskan data empirikal sebenar sahaja; (3) [FASA 1] Struktur Core verbatim; (4) [FASA 2] 9 wrappers + matriks ujian; (5) [FASA 3] wiring static dispatch; (6) [FASA 4] pipeline pelepasan 8-langkah.
+- **Audit penuh Fasa 1–3:**
+  - **Fasa 1 (Core):** Teks kanonik ketiga-tiga agen dipindahkan VERBATIM ke `src/services/prompts/trinity/{preflight,translation,inspector}/core.js`; fail asal (`subfaberPreflight.js`, `translationEngine.js`, `agentInspector.js`) kini `require()` core — teks runtime IDENTIK (bug template-literal `${}` dikesan semasa ujian pertama & dibaiki ke string literal; 428/427/0/1 hijau tanpa edit assertion).
+  - **Fasa 2 (Wrappers + Matriks):** 9 channel-native wrappers (gemini/openai/anthropic × 3 agen) + `wrapperUtils.js` (fail-fast) + skema kanonik `PREFLIGHT_SCHEMA_CONTRACT`/`INSPECTOR_SCHEMA_CONTRACT` dalam core + registry `resolveTrinityPrompt()` static dispatch (matriks 9 sel `Object.freeze`). Kontrak pintu: Gemini = prefill anchor continuation EKSKLUSIF Translation; OpenAI = json_schema strict (mazhab rasmi tunggal) + anchor eksplisit Translation; Anthropic = data-first XML + SIFAR PREFILL. Suite baharu `trinity-prompt-matrix-regression.test.js` (23 ujian: 10 MATRIX + 9 PARITY + 1 HARMONY + 3 REGISTRY/VALIDATION) didaftarkan dalam `test:tracked`.
+  - **Fasa 3 (Wiring):** Builder di-bind SEKALI pada constructor (engine `trinityChannel` lalai 'gemini'; AgentInspector lalai 'openai'); `createXmlBatchPrompt`/`buildPreflightPrompt`/`buildInspectionPayload` membina payload berstruktur → wrapper → serial-balik ke wire-format sentinel (semua provider transport/cache-key/Smart Preamble Scrubber terpelihara); `response_format` diaktifkan aktif di tahap API melalui meta plumbing `buildChatRequest` override + `translateSubtitle`/`streamTranslateSubtitle` provider. Sifar if-channel dalam gelung terjemahan; laluan custom prompt sentinel bypass registry penuh.
+  - **Penyesuaian mazhab rasmi OpenAI:** konsep `endpointClass` (gateway-reasoner vs openai-official) DIGUGURKAN daripada pelan & pelaksanaan — satu standard sahaja.
+  - **Naik taraf assertion warisan (AUDIT TELEUS):** `agent-inspector-regression.test.js` [PAYLOAD-GODTIER] — larangan lama `response_format` (empirikal overthinking +110s pra-Fasa 3) DIBALIKKAN kepada WAJIB json_schema strict selari Keputusan Muktamad Owner; kontrak kunci 4 → 5 (`{model, messages, stream, temperature, response_format}`); pencetus overthinking lain (reasoning_effort/max_tokens/extra_body/top_p) KEKAL DILARANG. Dokumentasi audit penuh tertanam dalam fail ujian. Satu-satunya fail ujian diubah.
+- **Pipeline 8 langkah:** Langkah-0 Frontend NO-OP (100% backend, tiada DOM/CSS tersentuh); SemVer 3.14.5 → 3.15.0 (minor); CHANGELOG entri penuh; cache-buster runtime-driven LULUS (sifar pin statik `3.14.5` merentas JS/HTML/CSS; `__APP_VERSION_QUERY__` hadir — versi baharu auto-jadi buster); Prettier write+check PASS; ESLint 0 error / 225 warning (pra-wujud, selari baseline, sifar warning baharu); `npm test` = **451 total / 450 PASS / 0 FAIL / 1 SKIP (live Redis)** — baseline monotonik 428 → 451 (+23); graphify NO-OP (runtime hadir, `graphify-out/` absent — syarat ganda tidak dipenuhi).
+- **Nota forensik:** Satu flake timing DeepL backoff (`73ms > 75ms`, jitter 2ms) pada run pertama Fasa 3 — disahkan BUKAN regresi (8/8 hijau bersendirian + hijau pada kedua-dua run `npm test` penuh berikutnya; DeepL tidak tersentuh pembedahan).
+- **Fail Terlibat:** plans/trinity-channel-native-prompts.md (baharu), src/services/prompts/trinity/** (14 fail baharu: 3 core + 9 wrappers + wrapperUtils + index + skema dalam core), src/services/trinity-prompt-matrix-regression.test.js (baharu), src/services/translationEngine.js, src/services/subfaberPreflight.js, src/services/agentInspector.js, src/services/providers/openaiCompatible.js, src/services/agent-inspector-regression.test.js, package.json, CHANGELOG.md, docs/SESSION_LEDGER.md.
+- **Status npm test:** `451 total / 450 PASS / 0 FAIL / 1 SKIP (live Redis)`.
+- **Next Steps:** git commit + push origin main → CI verify via `gh` CLI — mesti **SUCCESS** (Node 22/24). `.env.test.local` disahkan kekal diabaikan Git (`git check-ignore` PASS).
+
+---
+
+## 2026-10-18 — UJIAN SULUNG FRONTEND: VISUAL AUDIT & LIVE PROVIDER VALIDATION
+
+- **Tarikh:** 2026-10-18 ~22:07 (waktu tempatan KL)
+- **Komit SHA (HEAD):** `d40e5e94` (tiada perubahan kod — sesi audit sahaja)
+- **Keputusan Owner:** Ujian sulung mandat baharu Frontend (Principal Design Technologist) — laksanakan audit visual & pengesahan sambungan borang Custom Provider menggunakan Playwright MCP + Visual Critique Loop.
+- **Fail Terlibat:** docs/SESSION_LEDGER.md (catatan ini); subfaber-custom-provider-audit-2026-10-18.png (screenshot bukti)
+- **Penemuan Audit:**
+  1. Zero Secret Logging dipatuhi — snapshot Boolean `getTestKeysSnapshot()` sah 8/8 pemboleh ubah `SUBFABER_TEST_*` hadir; tiada nilai kunci dicetak.
+  2. Server port 7001 aktif; navigasi `/configure` berjaya; modal "instructions" ditutup; seksyen Trinity `collapsed` dibuka.
+  3. Borang Agent Translation diisi: Provider `Custom / Proxy`, Base URL `https://rootsys.cloud/v1`, Format `OpenAI-Compatible`, Model `kimi-k3` (senarai 6 model statik).
+  4. Butang `✓ Test` dicetuskan → `POST /api/validate-provider` → **401 Unauthorized** (dijangka kerana kunci placeholder; endpoint berfungsi).
+  5. **Visual Critique (Lead Designer):**
+     - Hierarki borang baik tetapi deskripsi "Core translation engine..." diulang dua kali (redundansi).
+     - Kontras tema gelap konsisten (palet berlapis, hairline borders); mesej ralat 401 terlalu "merah jambu manis" — cadangan: `rgba(239,68,68,0.12)` + `border-left: 3px solid #ef4444`.
+     - Rhythm grid 4px/8px dihormati; butang Test terlalu kecil (hit target <44px) — cadangan: `min-height: 36-40px`.
+     - Tiada loading state / spinner pada butang Test semasa fetch — pengguna boleh double-submit.
+     - Ikon "⚙️" & "🛟" masih emoji (bukan SVG) — kurang ketajaman profesional.
+  6. **Cadangan Sentuhan Kemasan (Native CSS sahaja):** loading spinner untuk `.trinity-key-test-btn`, ketegasan warna ralat, buang duplikasi deskripsi, naikkan hit target butang.
+- **Status npm test:** N/A (larangan frontend — dipegang backend)
+- **Next Steps:** Handover ke Backend untuk (1) nilai cadangan CSS kemasan, (2) sediakan mekanisme suntikan kunci ujian selamat ke Playwright MCP (cth. env injection atau endpoint sementara), (3) pipeline release jika ada perubahan kod.
+
+---
+
 ## 2026-10-18 — v3.14.5 PENINGKATAN MOD FRONTEND: PROTOKOL PRINCIPAL DESIGN TECHNOLOGIST
 
 - **Tarikh:** 2026-10-18 ~20:27 (waktu tempatan KL).

@@ -27,6 +27,15 @@ const { DEFAULT_TRANSLATION_PROMPT } = GeminiService;
 const { getLanguagePack } = require('./prompts/languagePacks');
 // [PROMPT REBUILD v2] Sempadan split system/user (fix hantar-dua-kali).
 const { SUBFABER_PROMPT_BOUNDARY } = require('./utils/structuredPrompt');
+// [TRINITY FASA 1 — Mandat Owner 2026-10-19] SystemPart statik Agent Translation
+// kini Single Source of Truth di prompts/trinity/translation/core.js (verbatim).
+const { TRANSLATION_SYSTEM_TEMPLATE } = require('./prompts/trinity/translation/core');
+// [TRINITY FASA 3 — Mandat Owner 2026-10-19] Channel-native static dispatch:
+// builder dibungkus (bind) SEKALI pada constructor; prompt batch dibina melalui
+// wrapper pintu (gemini anchor continuation / openai arahan eksplisit /
+// anthropic data-first) — sifar semakan if-channel dalam gelung terjemahan.
+// Wire-format kekal sentinel system+BOUNDARY+user (semua provider split sama).
+const { resolveTrinityPrompt } = require('./prompts/trinity');
 // [AGENT-INSPECTOR-OBS] Namespace import (bukan destructure) — mudah di-stub dalam
 // ujian. Telemetri tulen: tiada panggilan API tambahan.
 const sentry = require('../utils/sentry');
@@ -161,6 +170,13 @@ class TranslationEngine {
             this.fallbackProviderName = this.fallbackProvider.providerName;
         }
         this.model = model;
+        // [TRINITY FASA 3 — Mandat Owner 2026-10-19] Static dispatch: builder
+        // prompt channel-native dikunci SEKALI di sini (default 'gemini' —
+        // wire-format sentinel IDENTIK dengan pra-Fasa 3 untuk laluan Gemini;
+        // option trinityChannel dari factory menetapkan pintu sebenar).
+        // Sifar semakan if-channel dalam gelung terjemahan aktif.
+        this.trinityChannel = options.trinityChannel || 'gemini';
+        this._trinityPromptBuilder = resolveTrinityPrompt('translation', this.trinityChannel);
         // TOTAL PURGE (Mandat 2026-09-25): SubFaber ialah enjin tunggal.
         // Batch size dihardcode 50 (OWNER MANUAL EDIT 2026-10-07) —
         // tiada env override.
@@ -2958,42 +2974,42 @@ You MUST translate each numbered line 1:1. NEVER merge two source lines into one
         // REGISTER) tidak putus. Few-shot dari pack (2 contoh parity-critical).
         // Kontrak `<answer>` + anchor kekal di USER part (Smart Preamble
         // Scrubber + prefill Gemini bergantung padanya).
-        const systemPart = `## Role
-You are a professional Netflix subtitle translator, fluent in both ${sourceLabel || 'the source language'} and ${targetLabel || 'the target language'}, as well as their respective cultures. You understand slang, humor, metaphor, and the emotional subtext of characters at depth. Two jobs only: (1) keep slot/ID parity sacred, (2) write ${targetLabel || 'target-language'} lines a native speaker would actually say on a cinema screen.
+        // [TRINITY FASA 1 — Mandat Owner 2026-10-19] Bahagian STATIK prompt
+        // Agent Translation dipindahkan VERBATIM ke Single Source of Truth
+        // baharu src/services/prompts/trinity/translation/core.js
+        // (TRANSLATION_SYSTEM_TEMPLATE). Interpolasi label + few-shot pack
+        // kekal di sini; teks runtime kekal IDENTIK (sifar perubahan perkataan).
+        // Nota: core menggunakan label TERISIH (fallback 'the source language'
+        // / 'the target language' / 'target-language' dilaksanakan di sini
+        // supaya templat kanonik kekal neutral).
+        const systemPart = TRANSLATION_SYSTEM_TEMPLATE.replaceAll(
+            '${sourceLabel}',
+            sourceLabel || 'the source language'
+        )
+            .replaceAll('${targetLabel}', targetLabel || 'the target language')
+            .replaceAll('${targetLabelShort}', targetLabel || 'target-language')
+            .replaceAll('${fewShot}', fewShotPack.fewShot);
 
-<translation_principles>
-1. Idiomatic fidelity: prioritize the character's meaning and emotional impact over word-for-word literal translation.
-2. Natural conversational flow: casual, concise, easy-to-read dialogue that follows the rhythm of natural human speech.
-</translation_principles>
-
-## Rules — parity first
-1. ANTI-MERGE: one <s id="N"> in → one <s id="N"> out, same ids, same order. Translate only the fragment inside each slot — never merge slots or borrow words from neighbours, even for split sentences or question tags.
-2. ANTI-SHIFT: no skipping, no drifting. Music symbols (♪♪) are copied as-is; bracketed sound effects ([door slams]) are localized.
-3. ANTI-PHANTOM: no invented content beyond the slot's own text.
-4. ANTI-DROP: keep each line's specific meaning — no generic filler.
-5. ANTI-UNTRANSLATED: translate every real sentence into ${targetLabel || 'the target language'}; copy verbatim only proper nouns, brands, titles, or corrupted text.
-6. PRESERVE markup: same count of [br], <i>...</i>, and speaker dashes, attached to the same words. [br] may move to a natural ${targetLabel || 'target-language'} break point.
-
-## Style — Reflect-in-One-Pass (think silently, output only the final line)
-Before writing each slot, mentally draft a direct translation, then reflect on it as a native ${targetLabel || 'target-language'} speaker: is it fluent, natural, and true to the character's voice? Refine until cinema-grade — then emit ONLY the final refined translation inside the tag. NEVER output drafts, reasoning, or thinking text into the output.
-
-Write natural, conversational ${targetLabel || 'target-language'} at cinema-grade quality. Never calque; preserve character voice. Use context titles/pronouns ONLY when present in the source — never inject titles onto bare names.
-
-${fewShotPack.fewShot}
-
-## Output Format
-Return ONLY the <answer> block: one <s id="N"> per input id, same ids, same order. No commentary, no code blocks, no thinking tags. ZERO translator notes in parentheses.`;
-
-        const userPart = `${sharedContextBlock ? `${sharedContextBlock}\n(Reference only — do not translate or output content from this block as a target entry.)\n\n` : ''}<input>
+        // [TRINITY FASA 3 — Mandat Owner 2026-10-19] Pembungkusan channel-native:
+        // payload berstruktur (systemText + dataText + queryText + startId)
+        // dihantar kepada builder statik this._trinityPromptBuilder. Wrapper
+        // menguatkuasakan kontrak pintu (gemini: anchor continuation di hujung
+        // user; openai: arahan eksplisit; anthropic: data-first + sifar
+        // prefill). Hasil diserial-balik ke wire-format sentinel
+        // system+BOUNDARY+user supaya SEMUA provider transport, cache key, dan
+        // Smart Preamble Scrubber terus berfungsi tanpa perubahan.
+        const dataPart = `${sharedContextBlock ? `${sharedContextBlock}\n(Reference only — do not translate or output content from this block as a target entry.)\n\n` : ''}<input>
 ${batchText}
-</input>
-
-<answer>
-<s id="${startId}">`;
-
-        // Gabung dengan sempadan; batch header memimpin bahagian USER (dinamik).
-        const userWithHeader = this.addBatchHeader(userPart, batchIndex, totalBatches);
-        return `${systemPart}\n\n${SUBFABER_PROMPT_BOUNDARY}\n\n${userWithHeader}`;
+</input>`;
+        const wrapped = this._trinityPromptBuilder({
+            systemText: systemPart,
+            dataText: dataPart,
+            queryText: '',
+            startId
+        });
+        // Batch header memimpin bahagian USER (dinamik).
+        const userWithHeader = this.addBatchHeader(wrapped.userPrompt, batchIndex, totalBatches);
+        return `${wrapped.systemPrompt}\n\n${SUBFABER_PROMPT_BOUNDARY}\n\n${userWithHeader}`;
     }
 
     /**

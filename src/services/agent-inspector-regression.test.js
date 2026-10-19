@@ -2063,19 +2063,44 @@ test('AgentInspector: [PAYLOAD-GODTIER] muatan HTTP sebenar (axios.post, stream 
             'muatan HTTP DILARANG membawa max_tokens (overthinking + istilah tergugur)'
         );
         assert.equal('extra_body' in body, false, 'muatan HTTP DILARANG membawa extra_body (overthinking +90-110s)');
+        // ═══ [NAIK TARAF ASSERTION — TRINITY FASA 3, Mandat Owner 2026-10-19] ═══
+        // AUDIT: Sebelum Fasa 3, response_format DILARANG (PAYLOAD-GODTIER
+        // empirikal kimi-k3, overthinking +110s). Keputusan Muktamad Owner
+        // 2026-10-19 (Mazhab Rasmi Tunggal OpenAI) membalikkan larangan ini:
+        // Inspector ialah agent JSON → response_format json_schema strict kini
+        // WAJIB pada muatan HTTP, dijana daripada INSPECTOR_SCHEMA_CONTRACT
+        // kanonik (core.js). Pencetus overthinking lain (reasoning_effort/
+        // max_tokens/extra_body/top_p) KEKAL DILARANG.
+        assert.ok(
+            body.response_format && body.response_format.type === 'json_schema',
+            'muatan HTTP WAJIB membawa response_format json_schema (mazhab rasmi tunggal — Fasa 3)'
+        );
         assert.equal(
-            'response_format' in body,
-            false,
-            'muatan HTTP DILARANG membawa response_format (overthinking +110s)'
+            body.response_format.json_schema.strict,
+            true,
+            'response_format WAJIB strict:true (Structured Outputs rasmi)'
+        );
+        assert.equal(
+            body.response_format.json_schema.name,
+            'subfaber_inspector_verdict',
+            'skema daripada INSPECTOR_SCHEMA_CONTRACT kanonik (core.js)'
+        );
+        assert.deepEqual(
+            body.response_format.json_schema.schema.properties.crimes.items.properties.type.enum,
+            ['MERGE', 'DROP', 'PHANTOM', 'SHIFT', 'UNTRANSLATED', 'REGISTER', 'TERM'],
+            'enum 7 jenayah kekal dalam skema strict (anti-drift taksonomi)'
         );
         assert.equal('top_p' in body, false, 'muatan HTTP DILARANG membawa top_p');
         assert.equal('thinking' in body, false, 'thinking top-level DILARANG');
         assert.equal('presence_penalty' in body, false, 'muatan HTTP TIDAK boleh membawa presence_penalty');
         assert.equal('max_completion_tokens' in body, false, 'muatan HTTP TIDAK boleh membawa max_completion_tokens');
+        // ═══ [NAIK TARAF ASSERTION — Fasa 3] 4-kunci → 5-kunci: kunci asas
+        // god-tier (model/messages/stream/temperature) terpelihara + response_format
+        // json_schema strict tambahan (mazhab rasmi tunggal Owner). ═══
         assert.deepEqual(
             Object.keys(body).sort(),
-            ['messages', 'model', 'stream', 'temperature'],
-            'muatan HTTP mesti TEPAT {model, messages, stream, temperature} (4-kunci god-tier)'
+            ['messages', 'model', 'response_format', 'stream', 'temperature'],
+            'muatan HTTP mesti {model, messages, stream, temperature, response_format} (god-tier + mazhab rasmi Fasa 3)'
         );
     } finally {
         axios.post = originalPost;

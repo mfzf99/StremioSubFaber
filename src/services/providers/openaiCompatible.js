@@ -880,7 +880,10 @@ class OpenAICompatibleProvider {
                     targetLanguage,
                     systemPrompt: promptData.systemPrompt,
                     isSelfContained: promptData.isSelfContained,
-                    disableStructuredOutput
+                    disableStructuredOutput,
+                    // [TRINITY FASA 3] Turunkan responseFormat (json_schema strict
+                    // mazhab rasmi OpenAI tunggal) daripada wrapper kepada builder.
+                    responseFormat: requestOptions?.responseFormat
                 });
 
                 const agents = this.getHttpAgents();
@@ -963,7 +966,10 @@ class OpenAICompatibleProvider {
             targetLanguage,
             systemPrompt: promptData.systemPrompt,
             isSelfContained: promptData.isSelfContained,
-            disableStructuredOutput: requestOptions?.disableStructuredOutput === true
+            disableStructuredOutput: requestOptions?.disableStructuredOutput === true,
+            // [TRINITY FASA 3] Turunkan responseFormat (json_schema strict)
+            // daripada wrapper kepada builder — laluan stream (Inspector).
+            responseFormat: requestOptions?.responseFormat
         });
 
         if (request.isCfTranslation || request.useResponsesApi) {
