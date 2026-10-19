@@ -1,7 +1,7 @@
 ## 2026-10-19 — v3.16.2 KIMI-K3 THINKING RESTORE: reasoningEffort KEMBALI DI PINTU CUSTOM/PROXY
 
 - **Tarikh:** 2026-10-19 ~18:40 (waktu tempatan KL)
-- **Komit SHA (HEAD):** (akan diisi selepas commit + push).
+- **Komit SHA (HEAD):** `699012a5` + CI run ID 39304497845 = **SUCCESS** (Node 22 ✓ 54s / Node 24 ✓ 1m6s — semua step hijau: regression tests, formatting, ESLint, audit dependencies). Push diverifikasi sampai (`origin/main = 699012a5`; insiden push-senyap KE-4 dikesan via `ahead 1` & ditolak semula sehingga sync — amalan verifikasi wajib kekal kritikal).
 - **Keputusan Owner:** Owner melaporkan kehilangan medan "Thinking" dalam Model Parameters untuk Custom/Proxy + kimi-k3 (screenshot v3.16.1 menunjukkan hanya Temperature/Top-P/Max output tokens/Frequency/Presence). Mandat: pulihkan kawalan thinking untuk kimi-k3.
 - **Forensik & punca (doktrin REAL-USER VERIFICATION dipatuhi — aliran sebenar direplikasi dahulu):**
   1. **Aliran sebenar:** Pro Mode → Custom/Proxy → kunci real rootsys (fiq-…, fingerprint 4c5d0019, Zero Secret Logging) → Base URL `https://rootsys.cloud/v1` → door OpenAI-Compatible → Validate → HTTP 200 / valid / 23 model → pilih kimi-k3. DOM disahkan: reasoningEffort = ABSENT sebelum baiki.
