@@ -1,3 +1,17 @@
+## 2026-10-19 — v3.16.4 DOKUMENTASI METADATA MODEL GEMINI NATIVE — GROUND TRUTH KE-2
+
+- **Tarikh:** 2026-10-19 ~19:08 (waktu tempatan KL)
+- **Komit SHA (HEAD):** (akan diisi selepas commit).
+- **Keputusan Owner:** Mandat dokumentasi arkib kedua — simpan spesifikasi mentah pelayan Gemini Native (`GET /v1beta/models?pageSize=100`) sebagai rujukan kekal `docs/GEMINI_MODELS_METADATA_GROUND_TRUTH.md` untuk menyokong ketepatan pemetaan `modelCapabilities.js`. Zero Secret Logging STRICT: kunci ujian `SUBFABER_TEST_GEMINI_KEY` (`.env.test.local`) dimuat via env sahaja — sifar nilai kunci dalam dokumen/log/mesej komit. SIFAR perubahan kod runtime (docs-only).
+- **4 bukti empirikal diarkibkan:** (a) siling output sebenar `outputTokenLimit: 65,536` bagi SEMUA model teks moden (bantah angka lapuk 8,192; input 1,048,576; `gemini-4-argon`/imej = 32,768); (b) keluarga ejen `antigravity-preview-*` memulangkan objek model TANPA kunci `temperature`/`topP`/`topK`/`maxTemperature` langsung (ABSENT, bukan null) — bukti empirikal penolakan parameter suhu keluarga penalaran ialah ketetapan rasmi pelayan (selari `server-strips-for-this-model` + SEND-ALL DOCTRINE); (c) model khas — TTS input 8,192/output 16,384 (5 model), embedding output 1 vektor (3 model), audio Live native output 8,192, Veo input 480; (d) protokol pagination — 63 model dalam SATU halaman (63/100 slot), sifar `nextPageToken`; penapisan dwi-lapis WAJIB (`generateContent` + corak nama/had token kerana TTS turut mengisytiharkan `generateContent`).
+- **Kapturen:** 63 model penuh (35 teks standard, 5 TTS, 6 penalaran/ejen, 3 embedding, 13 Live/muzik/video, 1 legacy AQA); verifikasi kiraan per kategori = 63/63. Imbasan corak `AIza*` terhadap dokumen = sifar padanan; artifak sementara `.diag-models.json`/`.diag-summary.txt` dipadam selepas pemindahan.
+- **Pipeline 8 langkah:** Langkah-0 Frontend NO-OP (100% dokumentasi); SemVer 3.16.3 → 3.16.4 (patch — docs-only); CHANGELOG entri penuh; cache-buster runtime-driven LULUS (sifar pin statik `3.16.3`); Prettier PASS; ESLint 0 error / 225 warning (pra-wujud, selari baseline); `npm test` = **461 total / 460 PASS / 0 FAIL / 1 SKIP (live Redis)** — baseline monotonik terpelihara (≥ 461); graphify NO-OP (`graphify-out/` absent).
+- **Fail Terlibat:** docs/GEMINI_MODELS_METADATA_GROUND_TRUTH.md (baharu), package.json (bump), CHANGELOG.md, docs/SESSION_LEDGER.md (blok ini).
+- **Status npm test:** `461 total / 460 PASS / 0 FAIL / 1 SKIP (live Redis)`.
+- **Next Steps:** git commit + push origin main (WAJIB verifikasi `git rev-parse origin/main` — insiden push-senyap ×5 direkodkan) → CI via `gh` CLI — mesti **SUCCESS** (Node 22/24).
+
+---
+
 ## 2026-10-19 — v3.16.3 DOKUMEN GROUND TRUTH SKEMA API TRINITY
 
 - **Tarikh:** 2026-10-19 ~18:55 (waktu tempatan KL)

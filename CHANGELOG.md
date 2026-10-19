@@ -2,6 +2,13 @@
 
 All notable changes to this project will be documented in this file.
 
+## SubFaber v3.16.4 (2026-10-19) — Gemini Models Metadata Ground Truth Documentation
+
+### 📚 Documentation
+
+- **Added the archived raw server specification [docs/GEMINI_MODELS_METADATA_GROUND_TRUTH.md](docs/GEMINI_MODELS_METADATA_GROUND_TRUTH.md) (docs-only, zero runtime code changes):** captured live from `GET /v1beta/models?pageSize=100` (63 models, single page, zero `nextPageToken`) using the `SUBFABER_TEST_GEMINI_KEY` environment variable under the strict Zero Secret Logging contract — no key value exists anywhere in the document, logs, or Git history (pattern scan clean; temporary raw-data artifacts deleted). The four core empirical proofs archived: (a) **actual output ceilings** — all modern Gemini text models (2.5/3.x/3.5/3.6/3.7/3.8 Flash/Pro/Flash-Lite, `-latest` aliases) return `outputTokenLimit: 65,536` (refuting the stale third-party 8,192 figure); `gemini-4-argon` and the image family cap at 32,768; (b) **STRICT-family evidence** — the `antigravity-preview-*` agent/reasoning family returns model objects with `temperature`/`topP`/`topK`/`maxTemperature` keys ENTIRELY ABSENT (not merely null), empirically proving that temperature-parameter suppression for reasoning families is official Google server policy (aligned with the `server-strips-for-this-model` uiHint and SEND-ALL DOCTRINE); (c) **special-purpose models** — TTS models (input 8,192 / output 16,384), embedding models (output 1 — single vector), native-audio Live (output 8,192), Veo (input 480); (d) **pagination & filtering protocol** — `pageSize=100` suffices (63/100), and text-model isolation requires dual-layer filtering (`supportedGenerationMethods: ["generateContent"]` PLUS name-pattern/token-limit exclusion since TTS models also declare `generateContent`).
+- **Full sanitized 63-model table** categorized per family (35 standard text, 5 TTS, 6 reasoning/agent, 3 embedding, 13 Live/music/video, 1 legacy AQA) with per-model input/output limits and sampling declarations, plus mapping implications for [src/utils/modelCapabilities.js](src/utils/modelCapabilities.js) (vendor ceiling basis, STRICT classification parallel, risky name suffixes to exclude, topK still HARAM per v1.6.0).
+
 ## SubFaber v3.16.3 (2026-10-19) — Trinity API Request Body Ground Truth Documentation
 
 ### 📚 Documentation
