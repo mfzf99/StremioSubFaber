@@ -2,6 +2,17 @@
 
 All notable changes to this project will be documented in this file.
 
+## SubFaber v3.15.1 (2026-10-19) — Zoo Code v3.90.0 Emergency Two-Mode Lock Repatch + Auto-Detect Hardening
+
+### 🐛 Bug Fixes
+
+- **Re-patched the Zoo Code v3.90.0 extension after its auto-update wiped the previous v3.88.0 two-mode patch:** both runtime bundles were surgically restored to the closed two-mode universe (backend + frontend only) — the Node.js extension host bundle `dist/extension.js` (7,605 chars replaced) and the React Webview UI dropdown bundle `webview-ui/build/assets/index.js` (7,567 chars replaced). Integrity verification: `node --check` PASS on both bundles, residual legacy slugs (architect/code/ask/debug/orchestrator) = NONE, and a `--check` re-run confirms `already-patched`.
+- **Fixed the patch script failing on Zoo Code v3.90.0 with `marker-not-found`:** the minifier renamed the extension-host mode-array variable from `xV` to `e6` between releases, breaking the previous hard-coded variable name. The `patchBundle()` engine in [scripts/patch-zoo-code.js](scripts/patch-zoo-code.js) now AUTO-DETECTS the assignment variable via `findAssignmentPrefix()` — a backwards token scan from the mode array's opening `[` that recovers the `identifier=` assignment (tolerating `var xV=[...]`, `xV=[...]`, `,xV=[...]` layouts) — so future minifier renames across Zoo Code versions are tolerated without any script change. The Webview `oa` variable is detected through the same mechanism.
+
+### 📌 Documentation
+
+- **Documented the second Zoo Code patch trap in [docs/ZOO_CODE_PATCH_PROTOCOL.md](docs/ZOO_CODE_PATCH_PROTOCOL.md) (incident 2026-10-19):** minifier variable renames between extension versions cause hard-coded markers to fail; the protocol now records the auto-detection mechanism, the v3.88.0 (`xV`) vs v3.90.0 (`e6`) host variable names, and verification coverage for both versions.
+
 ## SubFaber v3.15.0 (2026-10-19) — Trinity Channel-Native Prompts: 3 Cores + 9 Channel-Native Wrappers
 
 ### ⚡ Improvements

@@ -14,9 +14,11 @@
  *
  *   This script surgically replaces the built-in mode array in BOTH:
  *     1. Node.js Extension Host bundle:  dist/extension.js
- *        (variable `xV=[{slug:"architect",...}]`, double-quoted)
+ *        (double-quoted, e.g. `xV=[{slug:"architect",...}]` in 3.88.0,
+ *         `e6=[{slug:"architect",...}]` in 3.90.0 — variable name is
+ *         AUTO-DETECTED because the minifier renames it per release)
  *     2. React Webview UI bundle:        webview-ui/build/assets/index.js
- *        (variable `oa=[{slug:`architect`,...}]`, backtick-quoted)
+ *        (backtick-quoted, e.g. `oa=[{slug:`architect`,...}]`)
  *
  *   The Webview copy is the one feeding the UI mode dropdown — patching
  *   only the host bundle leaves the dropdown showing legacy modes
@@ -143,37 +145,57 @@ function findArrayEnd(src, arrStart) {
 /* ------------------------------------------------------------------ */
 
 /**
- * Patch one bundle file.
+ * Walk backwards from the array's opening `[` to recover the assignment:
+ * returns { eq: index of '=', varName: identifier } or null when the
+ * preceding tokens do not look like `<identifier>=` (minified bundles
+ * may use `var xV=[...]`, `xV=[...]`, `,xV=[...]` etc.).
+ */
+function findAssignmentPrefix(src, arrStart) {
+	let i = arrStart - 1;
+	while (i >= 0 && /\s/.test(src[i])) i--;
+	if (i < 0 || src[i] !== '=') return null;
+	const eq = i;
+	i--;
+	let end = i;
+	while (i >= 0 && /[A-Za-z0-9_$]/.test(src[i])) i--;
+	const varName = src.slice(i + 1, end + 1);
+	if (!varName || !/^[A-Za-z_$][A-Za-z0-9_$]*$/.test(varName)) return null;
+	return { eq, varName };
+}
+
+/**
+ * Patch one bundle file. The mode-array variable name (xV, e6, oa, ...)
+ * is AUTO-DETECTED from the assignment directly preceding the built-in
+ * mode array literal, so minifier renames across versions are tolerated.
  * @param {string} file        absolute path to the bundle
- * @param {string} varName     array variable name prefix (e.g. "xV" / "oa")
- * @param {string} quote       quote character used by the bundle ("\""` or "`")
- * @param {string} replacement serialized replacement (starts with "=" omitted; full assignment built here)
+ * @param {string} quote       quote character used by the bundle ("\"" or "`")
+ * @param {string} replacement serialized replacement array literal (no assignment)
  * @returns {object} status report
  */
-function patchBundle(file, varName, quote, replacementBody) {
+function patchBundle(file, quote, replacement) {
 	const src = fs.readFileSync(file, 'utf8');
-	const marker = `${varName}=[{slug:${quote}architect${quote}`;
-	const start = src.indexOf(marker);
+	const arrayMarker = `[{slug:${quote}architect${quote}`;
+	const patchedMarker = `[{slug:${quote}backend${quote}`;
+	const arrStart = src.indexOf(arrayMarker);
 
 	// Already-patched fast path: detect our two-mode definition.
-	const patchedMarker = `${varName}=[{slug:${quote}backend${quote}`;
-	if (start < 0) {
+	if (arrStart < 0) {
 		if (src.indexOf(patchedMarker) >= 0) {
 			return { status: 'already-patched' };
 		}
 		return { status: 'marker-not-found' };
 	}
 
-	const arrStart = src.indexOf('[', start);
-	if (arrStart !== start + varName.length + 1) {
-		return { status: 'unexpected-layout', arrStart };
+	const assign = findAssignmentPrefix(src, arrStart);
+	if (!assign) {
+		return { status: 'no-assignment-prefix', arrStart };
 	}
 	const end = findArrayEnd(src, arrStart);
 	if (end < 0) {
 		return { status: 'no-array-end' };
 	}
 	const segLen = end - arrStart + 1;
-	const out = src.slice(0, arrStart) + replacementBody + src.slice(end + 1);
+	const out = src.slice(0, arrStart) + replacement + src.slice(end + 1);
 
 	if (!CHECK_ONLY) {
 		const bak = `${file}.bak`;
@@ -182,7 +204,7 @@ function patchBundle(file, varName, quote, replacementBody) {
 		}
 		fs.writeFileSync(file, out, 'utf8');
 	}
-	return { status: 'patched', segLen, oldLen: src.length, newLen: out.length, after: out.slice(end + 1, end + 61) };
+	return { status: 'patched', varName: assign.varName, segLen, oldLen: src.length, newLen: out.length, after: out.slice(end + 1, end + 61) };
 }
 
 /** Run `node --check` on a file; returns true when syntax is valid. */
@@ -227,16 +249,14 @@ function main() {
 		{
 			label: 'Extension Host (Node.js)',
 			file: path.join(extDir, 'dist', 'extension.js'),
-			varName: 'xV',
 			quote: '"',
-			body: `xV=${serializeHost(MODES_HOST)}`,
+			replacement: serializeHost(MODES_HOST),
 		},
 		{
 			label: 'Webview UI (React dropdown)',
 			file: path.join(extDir, 'webview-ui', 'build', 'assets', 'index.js'),
-			varName: 'oa',
 			quote: '`',
-			body: `oa=${serializeWebview(MODES_HOST)}`,
+			replacement: serializeWebview(MODES_HOST),
 		},
 	];
 
@@ -248,7 +268,7 @@ function main() {
 			failures++;
 			continue;
 		}
-		const result = patchBundle(t.file, t.varName, t.quote, t.body);
+		const result = patchBundle(t.file, t.quote, t.replacement);
 		switch (result.status) {
 			case 'already-patched':
 				console.log('  Already patched (two-mode definition present). Skipping.');
@@ -257,8 +277,8 @@ function main() {
 				console.error('  ERROR: built-in mode array marker not found. Bundle layout may have changed in a new version — manual audit required.');
 				failures++;
 				break;
-			case 'unexpected-layout':
-				console.error(`  ERROR: unexpected layout at arrStart=${result.arrStart}. Manual audit required.`);
+			case 'no-assignment-prefix':
+				console.error(`  ERROR: no identifier= assignment found before the mode array at offset ${result.arrStart}. Manual audit required.`);
 				failures++;
 				break;
 			case 'no-array-end':
@@ -266,7 +286,7 @@ function main() {
 				failures++;
 				break;
 			case 'patched':
-				console.log(`  ${CHECK_ONLY ? '[DRY-RUN] Would patch' : 'Patched'}: segment ${result.segLen} chars, file ${result.oldLen} -> ${result.newLen} bytes.`);
+				console.log(`  ${CHECK_ONLY ? '[DRY-RUN] Would patch' : 'Patched'} (variable ${result.varName}): segment ${result.segLen} chars, file ${result.oldLen} -> ${result.newLen} bytes.`);
 				console.log(`  Post-seam snippet: ${JSON.stringify(result.after)}`);
 				break;
 			default:

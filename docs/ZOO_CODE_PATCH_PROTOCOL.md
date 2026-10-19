@@ -2,7 +2,7 @@
 
 > **Status:** Operational tool of the SubFaber project.
 > **Script:** [`scripts/patch-zoo-code.js`](../scripts/patch-zoo-code.js)
-> **Applies to:** Zoo Code VS Code extension (`zoocodeorganization.zoo-code-*`), verified against v3.88.0.
+> **Applies to:** Zoo Code VS Code extension (`zoocodeorganization.zoo-code-*`), verified against v3.88.0 and v3.90.0 (host bundle variable `e6` instead of `xV` in 3.90.0).
 > **Authority basis:** `.roo/rules/00-subfaber-core-protocol.md` — [CLOSED TWO-MODE UNIVERSE & ANTI-MODE-JUMPING LOCK].
 
 ## 1. Tujuan
@@ -15,10 +15,12 @@ Zoo Code mempunyai **DUA salinan tatasusunan mod** dalam dua runtime berbeza:
 
 | Runtime | Fail | Pemboleh ubah | Gaya string | Kegunaan |
 |---|---|---|---|---|
-| **Node.js Extension Host** | `dist/extension.js` | `xV=[{slug:"architect",...}]` | double-quote `"` | Logik mod, `switch_mode`, default mode slug |
+| **Node.js Extension Host** | `dist/extension.js` | `xV=[{slug:"architect",...}]` (3.88.0) / `e6=[{slug:"architect",...}]` (3.90.0) — **nama pemboleh ubah auto-dikesan oleh skrip** | double-quote `"` | Logik mod, `switch_mode`, default mode slug |
 | **React Webview UI** | `webview-ui/build/assets/index.js` | `oa=[{slug:\`architect\`,...}]` | backtick `` ` `` | **Dropdown UI pemilih mod** |
 
 **Perangkap yang telah ditemui (insiden 2026-10-17):** Patch pada `dist/extension.js` sahaja TIDAK mencukupi — dropdown UI masih memaparkan 5 mod bawaan bertanda "DO NOT USE. DEPRECATED." kerana Webview membaca salinannya sendiri. **Kedua-dua bundle mesti dipatch.**
+
+**Perangkap kedua (insiden 2026-10-19, Zoo Code v3.90.0):** Minifier menukar nama pemboleh ubah host bundle antara versi (`xV` → `e6`), menyebabkan skrip lama hard-coded `xV` gagal dengan `marker-not-found`. Skrip kini AUTO-DETECT nama pemboleh ubah melalui analisis assignment `identifier=[` sebelum tatasusunan mod — tiada lagi hard-coded variable name.
 
 Nota tambahan:
 - Default mode slug dalam host bundle adalah dinamik (`hs=Xd[0].slug` di mana `Xd=xV`) — selepas patch, default automatik menjadi `backend` (elemen pertama). Tiada patch berasingan diperlukan.
