@@ -1,7 +1,7 @@
 ## 2026-10-19 — v3.15.0 TRINITY CHANNEL-NATIVE PROMPTS: 3 CORE + 9 WRAPPERS
 
 - **Tarikh:** 2026-10-19 ~19:40 (waktu tempatan KL).
-- **Komit SHA (HEAD):** `603fa009` pra-komit; SHA pelepasan akan direkodkan selepas langkah-7 (CI run ID menyusul langkah-8).
+- **Komit SHA (HEAD):** `bf862791` + CI run ID 39246684313 = **SUCCESS** (Node 22/24, ~1m8s).
 - **Keputusan Owner:** Rangkaian mandat penuh 2026-10-19: (1) [MANDAT PERANCANGAN] — pelan seni bina 3 Kerangka Core (Single Source of Truth) + 9 Channel-Native Wrappers diluluskan (`plans/trinity-channel-native-prompts.md`); (2) KEPUTUSAN MUKTAMAD ARSITEKTUR OPENAI — Owner MENOLAK sub-mod dwi-cabang (god-tier vs official); MAZHAB RASMI TUNGGAL `response_format: { type: 'json_schema', strict: true }` untuk Preflight & Inspector pada SEMUA endpoint, penalaan masa depan berasaskan data empirikal sebenar sahaja; (3) [FASA 1] Struktur Core verbatim; (4) [FASA 2] 9 wrappers + matriks ujian; (5) [FASA 3] wiring static dispatch; (6) [FASA 4] pipeline pelepasan 8-langkah.
 - **Audit penuh Fasa 1–3:**
   - **Fasa 1 (Core):** Teks kanonik ketiga-tiga agen dipindahkan VERBATIM ke `src/services/prompts/trinity/{preflight,translation,inspector}/core.js`; fail asal (`subfaberPreflight.js`, `translationEngine.js`, `agentInspector.js`) kini `require()` core — teks runtime IDENTIK (bug template-literal `${}` dikesan semasa ujian pertama & dibaiki ke string literal; 428/427/0/1 hijau tanpa edit assertion).
