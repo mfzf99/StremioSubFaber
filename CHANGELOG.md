@@ -2,6 +2,13 @@
 
 All notable changes to this project will be documented in this file.
 
+## SubFaber v3.16.3 (2026-10-19) — Trinity API Request Body Ground Truth Documentation
+
+### 📚 Documentation
+
+- **Added the canonical request-body parameter reference [docs/TRINITY_API_REQUEST_BODY_GROUND_TRUTH.md](docs/TRINITY_API_REQUEST_BODY_GROUND_TRUTH.md) (docs-only, zero runtime code changes):** the full official request body parameter lists for all three Trinity doors, preserved as the project's Single Source of Truth for future payload audits and parameter tuning. (1) Gemini Native v1beta — camelCase `generationConfig` hierarchy (`temperature`, `topP`, `candidateCount`, `maxOutputTokens`, `stopSequences`, `presencePenalty`, `frequencyPenalty`, `responseMimeType`/`responseSchema`, `thinkingConfig`), top-level `systemInstruction`, `contents`, `safetySettings`, `tools`/`toolConfig`, `cachedContent`; (2) OpenAI-Compatible v1/chat/completions — root-level snake_case parameters, the `max_tokens` vs `max_completion_tokens` distinction (the latter preferred for modern reasoning models to account for thinking-token overhead), Structured Outputs `json_schema` via `response_format`, and the `developer`/`system` role; (3) Anthropic Messages v1/messages — the protocol-required `max_tokens`, the `system` field (string or block array for `cache_control`), the strict `thinking { type: "enabled", budget_tokens }` arrangement, and the standard XML framing.
+- **Cross-door comparison matrix and project-invariant overlays:** endpoint/naming-convention/parameter-location/system-instruction/token-cap/thinking/structured-output/safety/cache comparisons across all three doors, plus explicit annotations where project invariants override vendor-legal parameters (topK/top_k HARAM since v1.6.0; `systemInstruction` stays top-level per the Core Protocol; SEND-ALL DOCTRINE for Gemini 3.x; `thinkingBudget` preservation), and cross-references to [src/services/gemini.js](src/services/gemini.js), [src/services/utils/structuredPrompt.js](src/services/utils/structuredPrompt.js), [src/utils/config.js](src/utils/config.js), and the Trinity door channels.
+
 ## SubFaber v3.16.2 (2026-10-19) — Kimi-K3 Thinking Restore: reasoningEffort Field Returns on Custom/Proxy Door
 
 ### 🐛 Bug Fixes

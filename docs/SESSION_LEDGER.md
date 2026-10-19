@@ -1,3 +1,16 @@
+## 2026-10-19 — v3.16.3 DOKUMEN GROUND TRUTH SKEMA API TRINITY
+
+- **Tarikh:** 2026-10-19 ~18:55 (waktu tempatan KL)
+- **Komit SHA (HEAD):** (akan diisi selepas commit).
+- **Keputusan Owner:** Mandat dokumentasi — wujudkan fail rujukan teknikal rasmi `docs/TRINITY_API_REQUEST_BODY_GROUND_TRUTH.md` menyimpan senarai penuh parameter request body rasmi bagi ketiga-tiga pintu Trinity (Gemini Native v1beta, OpenAI-Compatible v1/chat/completions, Anthropic Messages v1/messages) sebagai rujukan kanonik projek untuk audit & penalaan payload masa hadapan. SIFAR perubahan kod runtime (docs-only).
+- **Kandungan dokumen:** (1) Gemini Native — hierarki `generationConfig` camelCase penuh + `systemInstruction`/`contents`/`safetySettings`/`thinkingConfig`; (2) OpenAI-Compatible — parameter root level snake_case, perbezaan `max_tokens` vs `max_completion_tokens`, Structured Outputs `json_schema`, peranan `developer`/`system`; (3) Anthropic Messages — `max_tokens` wajib, `system` string/block-array, susunan ketat `thinking { type, budget_tokens }`, XML framing standard. Nilai tambah: matriks perbandingan merentas pintu + overlay invarian projek (topK/top_k HAARAM v1.6.0, `systemInstruction` top-level, SEND-ALL DOCTRINE, pemeliharaan `thinkingBudget`) + rujukan silat ke `gemini.js`/`structuredPrompt.js`/`config.js`/pintu channels. Sumber asal: `C:\Users\khaty\Downloads\Full list of request body parameters.txt` (Owner-supplied).
+- **Pipeline 8 langkah:** Langkah-0 Frontend NO-OP (100% dokumentasi, sifar DOM/CSS/JS tersentuh); SemVer 3.16.2 → 3.16.3 (patch — docs-only); CHANGELOG entri penuh; cache-buster runtime-driven LULUS (sifar pin statik `3.16.2` merentas JS/HTML/CSS); Prettier PASS; ESLint 0 error / 225 warning (pra-wujud, selari baseline, sifar warning baharu); `npm test` = **461 total / 460 PASS / 0 FAIL / 1 SKIP (live Redis)** — baseline monotonik terpelihara (≥ 461); graphify NO-OP (`graphify-out/` absent).
+- **Fail Terlibat:** docs/TRINITY_API_REQUEST_BODY_GROUND_TRUTH.md (baharu), package.json (bump), CHANGELOG.md, docs/SESSION_LEDGER.md (blok ini).
+- **Status npm test:** `461 total / 460 PASS / 0 FAIL / 1 SKIP (live Redis)`.
+- **Next Steps:** git commit + push origin main (WAJIB verifikasi `git rev-parse origin/main`) → CI via `gh` CLI — mesti **SUCCESS** (Node 22/24).
+
+---
+
 ## 2026-10-19 — v3.16.2 KIMI-K3 THINKING RESTORE: reasoningEffort KEMBALI DI PINTU CUSTOM/PROXY
 
 - **Tarikh:** 2026-10-19 ~18:40 (waktu tempatan KL)
