@@ -133,7 +133,12 @@ function sanitizeReasoningEffort(value, fallback) {
     if (value === '' || value === null || value === undefined) {
         return undefined;
     }
-    const allowed = ['none', 'minimal', 'low', 'medium', 'high', 'xhigh'];
+    // [KIMI-K3 THINKING RESTORE 2026-10-19] 'disabled' + 'max' ditambah —
+    // enum kimi-k3 (modelCapabilities kimiProfile) membenarkan keduanya;
+    // openaiCompatible.applySmartModelPayload() memetakan 'disabled' → tiada
+    // parameter reasoning (model guna lalai semula jadi) dan 'max' →
+    // reasoning_effort:'max'. Tanpa ini, nilai UI dibuang semasa normalisasi.
+    const allowed = ['none', 'minimal', 'disabled', 'low', 'medium', 'high', 'xhigh', 'max'];
     const normalized = typeof value === 'string' ? value.trim().toLowerCase() : '';
     return allowed.includes(normalized) ? normalized : fallback;
 }

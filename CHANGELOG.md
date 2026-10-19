@@ -2,6 +2,18 @@
 
 All notable changes to this project will be documented in this file.
 
+## SubFaber v3.16.2 (2026-10-19) — Kimi-K3 Thinking Restore: reasoningEffort Field Returns on Custom/Proxy Door
+
+### 🐛 Bug Fixes
+
+- **Restored the missing Thinking control (Reasoning effort) for kimi-k3 / kimi-k2.7 on the Custom/Proxy door (Owner report 2026-10-19):** the Model Parameters card showed only Temperature/Top-P/Max output tokens/Frequency/Presence for kimi-k3 because both `mpKimiProfile()` ([public/js/trinity-agents.js](public/js/trinity-agents.js)) and `kimiProfile()` ([src/utils/modelCapabilities.js](src/utils/modelCapabilities.js)) never declared a `reasoningEffort` descriptor in their `parameters` maps — without a descriptor, the field was neither rendered by the UI nor passed by `sanitizeAgentParams()`. Both profiles now declare `reasoningEffort: param(0, 0, undefined, { enum: ['disabled', 'low', 'medium', 'high', 'max'] })`, matching what the backend engine (`openaiCompatible.applySmartModelPayload()`) already supports: `low/medium/high/max` map to `reasoning_effort` on kimi-k3; `disabled` sends NO reasoning parameter (the model uses its natural default); kimi-k2.7 remains auto-managed.
+- **Integration Review gap fix 1 — config normalization ([src/utils/config.js](src/utils/config.js)):** `sanitizeReasoningEffort()` previously allowed only `['none', 'minimal', 'low', 'medium', 'high', 'xhigh']`, which would have silently dropped the new `disabled` and `max` values during config normalization (falling back to `undefined`). The allowed list now includes `disabled` and `max`, keeping the whole chain (UI → config → provider) consistent with `openaiCompatible.normalizeReasoningEffort()`.
+- **Integration Review gap fix 2 — Custom/Proxy provider factory ([src/services/translationProviderFactory.js](src/services/translationProviderFactory.js)):** the `custom`/`custom_secondary` branch of `createProviderInstance()` did NOT forward `reasoningEffort` to `OpenAICompatibleProvider` (the `openai` branch did) — meaning even with the UI field present, the thinking value would have been silently dropped at the Custom/Proxy door. The branch now forwards `reasoningEffort: providerParams.reasoningEffort` in full parity with the official `openai` branch.
+
+### ⚡ Improvements
+
+- **Real-user verification (per the Real-User Verification Doctrine):** the full flow was replicated via Playwright MCP before surgery (Pro Mode → Custom/Proxy → real rootsys key → base URL → OpenAI-Compatible door → Validate → HTTP 200 / valid / 23 models → select kimi-k3); the DOM proof confirmed `reasoningEffort` was ABSENT before the fix and PRESENT after (dropdown with Disabled/Low/Medium/High/Max), and interaction tests (select 'high' → value read back; reset to 'disabled') passed.
+
 ## SubFaber v3.16.1 (2026-10-19) — Real-User Verification Doctrine (Anti Blind-Coding) Rules
 
 ### ⚠️ Behavioral Changes (Process Rules)

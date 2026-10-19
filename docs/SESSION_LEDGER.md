@@ -1,3 +1,27 @@
+## 2026-10-19 — v3.16.2 KIMI-K3 THINKING RESTORE: reasoningEffort KEMBALI DI PINTU CUSTOM/PROXY
+
+- **Tarikh:** 2026-10-19 ~18:40 (waktu tempatan KL)
+- **Komit SHA (HEAD):** (akan diisi selepas commit + push).
+- **Keputusan Owner:** Owner melaporkan kehilangan medan "Thinking" dalam Model Parameters untuk Custom/Proxy + kimi-k3 (screenshot v3.16.1 menunjukkan hanya Temperature/Top-P/Max output tokens/Frequency/Presence). Mandat: pulihkan kawalan thinking untuk kimi-k3.
+- **Forensik & punca (doktrin REAL-USER VERIFICATION dipatuhi — aliran sebenar direplikasi dahulu):**
+  1. **Aliran sebenar:** Pro Mode → Custom/Proxy → kunci real rootsys (fiq-…, fingerprint 4c5d0019, Zero Secret Logging) → Base URL `https://rootsys.cloud/v1` → door OpenAI-Compatible → Validate → HTTP 200 / valid / 23 model → pilih kimi-k3. DOM disahkan: reasoningEffort = ABSENT sebelum baiki.
+  2. **Audit kod:** `mpKimiProfile()` (frontend) dan `kimiProfile()` (backend) TIDAK mengisytiharkan `reasoningEffort` dalam `parameters` — medan tidak dirender UI + tidak diluluskan sanitizeAgentParams.
+  3. **Backend enjin sedia menyokong:** `openaiCompatible.applySmartModelPayload()` memetakan `reasoning_effort` untuk kimi-k3 (`low/medium/high/max`) dan menghormati `disabled` (tiada parameter dihantar); kimi-k2.7 auto-managed.
+- **Pembedahan (Frontend + Backend):**
+  1. **[public/js/trinity-agents.js](public/js/trinity-agents.js:563)** — `mpKimiProfile()`: tambah `reasoningEffort: mpParam(0, 0, undefined, { enum: ['disabled', 'low', 'medium', 'high', 'max'] })` dalam profil `kimi-k3|kimi-k2.7` + komen `[KIMI-K3 THINKING RESTORE 2026-10-19]`.
+  2. **[src/utils/modelCapabilities.js](src/utils/modelCapabilities.js:179)** — `kimiProfile()`: mirror frontend — descriptor `reasoningEffort` dengan enum sama + komen selari.
+  3. **[src/utils/config.js](src/utils/config.js:132)** — (Integration Review Gap 1) `sanitizeReasoningEffort()` allowed list dikembangkan: `+ 'disabled', 'max'` — tanpa ini nilai baharu dibuang semasa normalisasi config (fallback → undefined).
+  4. **[src/services/translationProviderFactory.js](src/services/translationProviderFactory.js:432)** — (Integration Review Gap 2) cabang `custom`/`custom_secondary` `createProviderInstance()` kini menghantar `reasoningEffort: providerParams.reasoningEffort` kepada OpenAICompatibleProvider — pariti penuh dengan cabang `openai` rasmi. Ini punca kedua: walaupun UI menghantar nilai, ia dibuang senyap di pintu Custom/Proxy.
+- **Verifikasi Playwright MCP:**
+  - Screenshot sebelum: `.playwright-mcp/before-kimi-k3.png` (5 medan, tiada Reasoning effort); selepas: `.playwright-mcp/final-kimi-k3-reasoning.png` (6 medan + dropdown Disabled/Low/Medium/High/Max).
+  - Ujian interaksi: pilih 'high' → DOM berubah; reset 'disabled' → neutral. Nota: pelayar perlu muat semula JS selepas server restart (cache-buster `?v=` runtime).
+- **Pipeline 8 langkah:** Langkah-0 Frontend Integration Audit LULUS (2 gap ditemui & dibaiki — sanitizeReasoningEffort + factory custom cabang; rantaian penuh UI → config → provider → applySmartModelPayload kini konsisten); SemVer 3.16.1 → 3.16.2 (patch); CHANGELOG entri penuh; cache-buster runtime-driven LULUS (sifar pin statik `3.16.1` merentas JS/HTML/CSS; token `__APP_VERSION_QUERY__` live); Prettier PASS; ESLint 0 error / 225 warning (pra-wujud, selari baseline, sifar warning baharu); `npm test` = **461 total / 460 PASS / 0 FAIL / 1 SKIP (live Redis)** — baseline monotonik terpelihara (≥ 461); graphify NO-OP (`graphify-out/` absent).
+- **Fail Terlibat:** public/js/trinity-agents.js, src/utils/modelCapabilities.js, src/utils/config.js, src/services/translationProviderFactory.js, package.json (bump), CHANGELOG.md, docs/SESSION_LEDGER.md (blok ini).
+- **Status npm test:** `461 total / 460 PASS / 0 FAIL / 1 SKIP (live Redis)`.
+- **Next Steps:** git commit + push origin main (WAJIB verifikasi `git rev-parse origin/main`) → CI via `gh` CLI — mesti **SUCCESS** (Node 22/24).
+
+---
+
 ## 2026-10-19 — v3.15.1 PEMBEDAHAN KECEMASAN ZOO CODE v3.90.0: RE-PATCH TWO-MODE LOCK + AUTO-DETECT
 
 - **Tarikh:** 2026-10-19 ~21:25 (waktu tempatan KL)

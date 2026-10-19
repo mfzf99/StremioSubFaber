@@ -566,6 +566,10 @@
             .toLowerCase();
         // [TRINITY TOTAL UNLOCK FASA 2 — K2] fixed DIGUGURKAN — nilai pengguna
         // dihantar apa adanya; 1.0/0.95 kekal CADANGAN lalai (placeholder) sahaja.
+        // [KIMI-K3 THINKING RESTORE 2026-10-19] reasoningEffort dikembalikan —
+        // backend applySmartModelPayload() memetakan 'low/medium/high/max' →
+        // reasoning_effort (K3) atau auto-managed (k2.7). 'disabled' dihormati
+        // (tiada parameter dihantar; model guna lalai semula jadi).
         if (/kimi-k3|kimi-k2\.7/.test(m)) {
             return {
                 family: 'kimi-fixed-sampling',
@@ -573,6 +577,9 @@
                     temperature: mpParam(0, 2, 1.0, { uiHint: 'ground-truth-suggests-1.0' }),
                     topP: mpParam(0, 1, 0.95, { uiHint: 'ground-truth-suggests-0.95' }),
                     maxOutputTokens: mpParam(1, 131072, 32768),
+                    reasoningEffort: mpParam(0, 0, undefined, {
+                        enum: ['disabled', 'low', 'medium', 'high', 'max']
+                    }),
                     frequencyPenalty: MP_FREQUENCY_PENALTY,
                     presencePenalty: MP_PRESENCE_PENALTY
                 },

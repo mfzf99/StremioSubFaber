@@ -429,6 +429,10 @@ async function createProviderInstance(providerKey, providerConfig = {}, provider
                 });
             }
 
+            // [KIMI-K3 THINKING RESTORE 2026-10-19] reasoningEffort WAJIB
+            // dihantar pada pintu Custom/Proxy — pariti dengan cabang 'openai'
+            // (baris 277). Tanpa ini, nilai thinking dari kad Trinity dibuang
+            // senyap untuk kimi-k3/deepseek/glm dsb. di door openai-compatible.
             return new OpenAICompatibleProvider({
                 apiKey: providerConfig.apiKey || '',
                 model: providerConfig.model,
@@ -439,6 +443,7 @@ async function createProviderInstance(providerKey, providerConfig = {}, provider
                 maxOutputTokens: providerParams.maxOutputTokens,
                 translationTimeout: providerParams.translationTimeout,
                 maxRetries: providerParams.maxRetries,
+                reasoningEffort: providerParams.reasoningEffort,
                 presencePenalty: providerParams.presencePenalty,
                 frequencyPenalty: providerParams.frequencyPenalty,
                 enableJsonOutput,

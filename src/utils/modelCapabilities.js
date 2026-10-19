@@ -176,6 +176,10 @@ function kimiProfile(modelId) {
     // kimi-k3 / k2.7: [TOTAL UNLOCK FASA 1 — K2] kunci `fixed` DIGUGURKAN —
     // nilai pengguna dihantar apa adanya; 1.0/0.95 kekal sebagai CADANGAN lalai
     // (dipaparkan UI), bukan clamp. Nota memberi amaran pelayan mungkin tolak.
+    // [KIMI-K3 THINKING RESTORE 2026-10-19] reasoningEffort dikembalikan —
+    // openaiCompatible.applySmartModelPayload() memetakan 'low/medium/high/max'
+    // → reasoning_effort (K3) atau auto-managed (k2.7). 'disabled' dihormati
+    // (tiada parameter dihantar; model guna lalai semula jadi).
     if (/kimi-k3|kimi-k2\.7/.test(m)) {
         return {
             family: 'kimi-fixed-sampling',
@@ -183,6 +187,7 @@ function kimiProfile(modelId) {
                 temperature: param(0, 2, 1.0, { uiHint: 'ground-truth-suggests-1.0' }),
                 topP: param(0, 1, 0.95, { uiHint: 'ground-truth-suggests-0.95' }),
                 maxOutputTokens: param(1, 131072, 32768),
+                reasoningEffort: param(0, 0, undefined, { enum: ['disabled', 'low', 'medium', 'high', 'max'] }),
                 frequencyPenalty: FREQUENCY_PENALTY,
                 presencePenalty: PRESENCE_PENALTY
             },
