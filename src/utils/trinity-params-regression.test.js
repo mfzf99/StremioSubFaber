@@ -30,7 +30,12 @@ test('[A1] Gemini 2.5 — full sampling + thinkingBudget int', () => {
     assert.ok(!('thinkingLevel' in p.parameters));
 });
 
-test('[A2] Gemini 3.x-strict (3.6+/3.5-flash-lite/4/-latest) — sampling stripped', () => {
+// ═══ [NAIK TARAF ASSERTION — TRINITY TOTAL UNLOCK FASA 1, Mandat Owner 2026-10-19] ═══
+// AUDIT: Sebelum Total Unlock, keluarga STRICT menyembunyikan descriptor
+// temperature/topP (UI tidak papar medan). Keputusan Rasmi Owner (K8):
+// descriptor DIISYHTARKAN semula dengan uiHint — nilai pengguna dihantar
+// (SEND-ALL); pelayan putuskan sendiri. Assertion dinaik taraf selari.
+test('[A2] Gemini 3.x-strict (3.6+/3.5-flash-lite/4/-latest) — sampling diisytihar dengan uiHint (TOTAL UNLOCK)', () => {
     for (const model of [
         'gemini-3.6-flash',
         'gemini-3.5-flash-lite',
@@ -40,8 +45,13 @@ test('[A2] Gemini 3.x-strict (3.6+/3.5-flash-lite/4/-latest) — sampling stripp
     ]) {
         const p = resolveCapabilityProfile('gemini', model);
         assert.equal(p.family, 'gemini-3.x-strict', `${model} mesti STRICT`);
-        assert.ok(!('temperature' in p.parameters), `${model} tiada temperature`);
-        assert.ok(!('topP' in p.parameters), `${model} tiada topP`);
+        assert.ok('temperature' in p.parameters, `${model} isytihar temperature (uiHint)`);
+        assert.ok('topP' in p.parameters, `${model} isytihar topP (uiHint)`);
+        assert.equal(
+            p.parameters.temperature.uiHint,
+            'server-strips-for-this-model',
+            `${model} uiHint menandakan pelayan mengabaikan`
+        );
         assert.ok('thinkingLevel' in p.parameters, `${model} ada thinkingLevel`);
     }
 });
@@ -50,7 +60,7 @@ test('[A2b] KEPUTUSAN OWNER #1 — gemini-3.5-flash & gemini-3.7-flash STRICT (r
     for (const model of ['gemini-3.5-flash', 'gemini-3.7-flash']) {
         const p = resolveCapabilityProfile('gemini', model);
         assert.equal(p.family, 'gemini-3.x-strict', `${model} reroute STRICT`);
-        assert.ok(!('temperature' in p.parameters));
+        assert.ok('temperature' in p.parameters, 'descriptor diisytihar (TOTAL UNLOCK)');
         assert.ok(p.notes.includes('server-reroute-stripped'), `${model} bawa nota reroute`);
     }
 });
@@ -64,12 +74,17 @@ test('[A3] Gemini 3.x-legacy (3.0/3.1) — sampling diterima + nota syor 1.0', (
     }
 });
 
-test('[A4] Kimi K3 — temp FIXED 1.0 / topP FIXED 0.95 (nilai lain di-clamp balik)', () => {
+// ═══ [NAIK TARAF ASSERTION — TRINITY TOTAL UNLOCK FASA 1, Mandat Owner 2026-10-19] ═══
+// AUDIT: Sebelum Total Unlock, kimi-k3 clamp `fixed` temp 1.0 / topP 0.95
+// secara senyap. Keputusan Rasmi Owner (K2): nilai pengguna dihantar apa
+// adanya; 1.0/0.95 kekal CADANGAN lalai sahaja. Assertion dinaik taraf.
+test('[A4] Kimi K3 — nilai pengguna dihormati; 1.0/0.95 cadangan sahaja (TOTAL UNLOCK)', () => {
     const p = resolveCapabilityProfile('moonshot', 'kimi-k3');
     assert.equal(p.family, 'kimi-fixed-sampling');
+    assert.equal(p.parameters.temperature.uiHint, 'ground-truth-suggests-1.0', 'uiHint cadangan (bukan kunci)');
     const sanitized = sanitizeAgentParams('translation', { temperature: 0.3, topP: 0.8 }, 'moonshot', 'kimi-k3');
-    assert.equal(sanitized.temperature, 1.0, 'temp dikunci 1.0');
-    assert.equal(sanitized.topP, 0.95, 'topP dikunci 0.95');
+    assert.equal(sanitized.temperature, 0.3, 'nilai pengguna dihantar apa adanya');
+    assert.equal(sanitized.topP, 0.8, 'topP pengguna dihantar apa adanya');
 });
 
 test('[A5] Anthropic thinking — temp bebas 0–1; nota kunci thinking', () => {
@@ -205,9 +220,13 @@ test('[AD1] Lalai optimum per-ejen — preflight/inspector deterministik, transl
     assert.equal(sec.temperature, 0.3);
 });
 
-test('[AD2] Lalai ejen hanya medan yang disokong model (STRICT tiada temperature)', () => {
+// ═══ [NAIK TARAF ASSERTION — TRINITY TOTAL UNLOCK FASA 1, K8] ═══
+// AUDIT: Sebelum Total Unlock, STRICT menyembunyikan temperature daripada
+// lalai ejen. Kini descriptor diisytihar (uiHint) — cadangan UI wujud, nilai
+// pengguna dihantar. thinkingLevel kekal sebagai cadangan ejen.
+test('[AD2] Lalai ejen mengandungi descriptor STRICT (temperature diisytihar + uiHint)', () => {
     const tr = getAgentDefaultParams('translation', 'gemini', 'gemini-3.6-flash');
-    assert.ok(!('temperature' in tr), 'STRICT: tiada temperature dalam lalai');
+    assert.ok('temperature' in tr, 'STRICT: temperature kini dalam cadangan lalai (TOTAL UNLOCK)');
     assert.ok('thinkingLevel' in tr);
     assert.equal(tr.thinkingLevel, 'low', 'translation → thinkingLevel low');
 });
@@ -324,9 +343,11 @@ test('[D2] Preflight/Inspector params wujud berasingan + sanitasi berbeza ikut p
             }
         }
     });
-    // Kimi K3 fixed → clamp 1.0.
-    assert.equal(cfg.trinity.preflight.params.temperature, 1.0);
-    // gpt-5.1 reasoning-only → temperature dibuang, reasoningEffort kekal.
+    // ═══ [NAIK TARAF ASSERTION — TOTAL UNLOCK FASA 1, K2] ═══
+    // Kimi K3 fixed-clamp dimansuhkan — nilai pengguna 0.5 dihantar apa adanya.
+    assert.equal(cfg.trinity.preflight.params.temperature, 0.5, 'kimi-k3 nilai pengguna dihormati');
+    // gpt-5.1 reasoning-only → temperature dibuang (bukan keupayaan model),
+    // reasoningEffort kekal — ini validasi kebolehlaksanaan, bukan kunci nilai.
     assert.ok(!('temperature' in cfg.trinity.inspector.params));
     assert.equal(cfg.trinity.inspector.params.reasoningEffort, 'high');
 });
@@ -364,13 +385,19 @@ test('[F2] agentInspector membawa params tersanitasi apabila pengguna menetapkan
             preflight: { provider: 'moonshot', model: 'kimi-k3', params: { temperature: 0.5 } }
         }
     });
-    // kimi-k3: clamp balik 1.0 (fixed).
-    assert.equal(cfg.agentInspector.preflightParams.temperature, 1.0);
+    // ═══ [NAIK TARAF ASSERTION — TOTAL UNLOCK FASA 1, K2] ═══
+    // kimi-k3: nilai pengguna dihormati (fixed-clamp dimansuhkan).
+    assert.equal(cfg.agentInspector.preflightParams.temperature, 0.5, 'kimi-k3 0.5 dihantar apa adanya');
     assert.equal(cfg.agentInspector.inspectorParams.temperature, 0.1);
     assert.equal(cfg.agentInspector.inspectorParams.topP, 0.9);
 });
 
-test('[F3] AgentInspector: tanpa params → muatan 4-kunci god-tier 1:1 (kontrak PAYLOAD-GODTIER)', () => {
+// ═══ [NAIK TARAF ASSERTION — TRINITY TOTAL UNLOCK FASA 1, Mandat Owner 2026-10-19, K1] ═══
+// AUDIT: Sebelum Total Unlock, muatan god-tier membawa temperature 0.0
+// hardcoded walaupun pengguna tidak menetapkan apa-apa. Keputusan Rasmi
+// Owner: medan tidak diset → kunci TIDAK dihantar (pelayan guna lalai
+// asalnya). stream:true KEKAL (invariant pengangkutan, Keputusan §8.1).
+test('[F3] AgentInspector: tanpa params → muatan god-tier sifar-penciptaan (TOTAL UNLOCK)', () => {
     const { AgentInspector } = require('../services/agentInspector');
     const inspector = new AgentInspector({
         apiKey: 'k',
@@ -379,9 +406,9 @@ test('[F3] AgentInspector: tanpa params → muatan 4-kunci god-tier 1:1 (kontrak
         preflightModel: 'kimi-k3'
     });
     const { body } = inspector.buildChatRequest('p', true, {});
-    assert.deepEqual(Object.keys(body).sort(), ['messages', 'model', 'stream', 'temperature']);
-    assert.equal(body.temperature, 0.0);
-    assert.equal(body.stream, true);
+    assert.deepEqual(Object.keys(body).sort(), ['messages', 'model', 'stream'], 'kunci sifar-penciptaan nilai');
+    assert.ok(!('temperature' in body), 'tiada temperature dicipta enjin');
+    assert.equal(body.stream, true, 'stream:true kekal invariant pengangkutan');
 });
 
 test('[F4] AgentInspector: params eksplisit diinjek sebagai kunci tambahan; model/messages/stream terpelihara', () => {

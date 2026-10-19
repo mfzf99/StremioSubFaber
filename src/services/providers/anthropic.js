@@ -19,9 +19,16 @@ class AnthropicProvider {
         this.maxOutputTokens = Number.isFinite(parseInt(options.maxOutputTokens, 10))
             ? Math.max(1, parseInt(options.maxOutputTokens, 10))
             : 4000;
+        // [TRINITY TOTAL UNLOCK FASA 1 — Mandat Owner 2026-10-19, K6]
+        // Clamp buatan constructor DIGUGURKAN — nilai mentah pengguna disimpan
+        // apa adanya (validate nombor sahaja); pelayan Anthropic putuskan
+        // sendiri (terima/abaikan/400). Lalai 0.4/0.95 hanya apabila tidak diset.
         this.temperature =
-            options.temperature !== undefined ? Math.max(0, Math.min(2, parseFloat(options.temperature))) : 0.4;
-        this.topP = options.topP !== undefined ? Math.max(0, Math.min(1, parseFloat(options.topP))) : 0.95;
+            options.temperature !== undefined && Number.isFinite(parseFloat(options.temperature))
+                ? parseFloat(options.temperature)
+                : 0.4;
+        this.topP =
+            options.topP !== undefined && Number.isFinite(parseFloat(options.topP)) ? parseFloat(options.topP) : 0.95;
         this.thinkingBudget = Number.isFinite(parseInt(options.thinkingBudget, 10))
             ? Math.max(0, parseInt(options.thinkingBudget, 10))
             : 0;

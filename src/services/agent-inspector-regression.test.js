@@ -586,7 +586,12 @@ test('AgentInspector: kejayaan reset kaunter kegagalan berturut-turut', async ()
 
 // ── 5. Muatan Universal (Mandat Seni Bina Universal Payload 2026-09-26) ──
 
-test('AgentInspector: [PAYLOAD-GODTIER] kimi-k3 muatan 4-kunci streaming — {model, messages, stream, temperature 0.0}; TIADA extra_body/reasoning_effort/max_tokens/response_format; timeout 5 min/5 min', () => {
+// ═══ [NAIK TARAF ASSERTION — TRINITY TOTAL UNLOCK FASA 1, K1 — 2026-10-19] ═══
+// AUDIT: temperature 0.0 hardcoded dimansuhkan (Keputusan Rasmi Owner §8.3 —
+// medan tidak diset → kunci TIDAK dihantar; pelayan guna lalai asalnya).
+// stream:true KEKAL (invariant pengangkutan, §8.1). Muatan kini 3-kunci
+// sifar-penciptaan bagi Inspector tanpa params eksplisit.
+test('AgentInspector: [TOTAL UNLOCK] kimi-k3 muatan sifar-penciptaan streaming — {model, messages, stream}; TIADA extra_body/reasoning_effort/max_tokens/response_format/temperature; timeout 5 min/5 min', () => {
     const inspector = new AgentInspector({
         apiKey: 'test-key',
         baseUrl: 'https://agent-inspector.example.com/v1',
@@ -608,8 +613,12 @@ test('AgentInspector: [PAYLOAD-GODTIER] kimi-k3 muatan 4-kunci streaming — {mo
     // rootsys.cloud — Kimi K3, SRT 759 baris; muatan 7-kunci lama GAGAL
     // timeout 300s tanpa streaming).
     const { body } = inspector.buildChatRequest('preflight prompt', true, {});
-    assert.equal(body.temperature, 0.0, 'kimi: temperature 0.0 wajib (varians 61s → 19s)');
-    assert.equal(body.stream, true, 'kimi: stream WAJIB true — chunk SSE menghidupkan sambungan Caddy');
+    assert.ok(!('temperature' in body), 'kimi: tiada temperature dicipta enjin (TOTAL UNLOCK K1)');
+    assert.equal(
+        body.stream,
+        true,
+        'kimi: stream WAJIB true — chunk SSE menghidupkan sambungan Caddy (invariant §8.1)'
+    );
     assert.equal(body.model, 'kimi-k3');
     assert.ok(Array.isArray(body.messages) && body.messages.length === 1, 'kimi: satu mesej user');
     // PENCETUS OVERTHINKING — DIGUGURKAN SEPENUHNYA:
@@ -631,8 +640,8 @@ test('AgentInspector: [PAYLOAD-GODTIER] kimi-k3 muatan 4-kunci streaming — {mo
     assert.equal('max_completion_tokens' in body, false, 'kimi: max_completion_tokens digugurkan');
     assert.deepEqual(
         Object.keys(body).sort(),
-        ['messages', 'model', 'stream', 'temperature'],
-        'kimi mesti TEPAT muatan 4-kunci god-tier {model, messages, stream, temperature}'
+        ['messages', 'model', 'stream'],
+        'kimi mesti TEPAT muatan 3-kunci sifar-penciptaan {model, messages, stream} (TOTAL UNLOCK)'
     );
 });
 
@@ -804,9 +813,11 @@ test('AgentInspector [MODEL-HIERARCHY]: Fasa 0 — kimi-k3 gagal → RETRY kimi-
         ['kimi-k3', 'kimi-k3', 'kimi-k3', 'kimi-k3', 'kimi-k3'],
         'kitaran retry-same-model: kimi-k3 × 5 (1 percubaan + 4 retry)'
     );
-    // Muatan god-tier konsisten pada setiap percubaan.
+    // ═══ [NAIK TARAF ASSERTION — TOTAL UNLOCK FASA 1, K1] ═══
+    // Muatan sifar-penciptaan konsisten pada setiap percubaan (tiada temperature
+    // dicipta enjin; stream kekal invariant pengangkutan).
     for (const [i, label] of payloads.entries()) {
-        assert.equal(label.temperature, 0.0, `muatan ${i}: temperature 0.0`);
+        assert.ok(!('temperature' in label), `muatan ${i}: tiada temperature dicipta (TOTAL UNLOCK)`);
         assert.equal(label.stream, true, `muatan ${i}: stream true`);
         assert.equal('reasoning_effort' in label, false, `muatan ${i}: TIADA reasoning_effort`);
         assert.equal('max_tokens' in label, false, `muatan ${i}: TIADA max_tokens`);
@@ -850,8 +861,11 @@ test('AgentInspector: glm-5.3-flash TIDAK terjejas peraturan frontier glm-5.3 pe
         model: 'glm-5.3-flash'
     });
     const { body } = provider.buildChatRequest('probe', false, {});
-    assert.notEqual(body.temperature, 0.0, 'flash variant must not inherit full glm-5.3 temperature lock');
-    assert.notEqual(body.top_p, 0.1, 'flash variant must not inherit full glm-5.3 top_p lock');
+    // [TOTAL UNLOCK FASA 1] frontier rules telah dipadam (v3.14.2) — tiada lagi
+    // lock temperature/top_p untuk sebarang varian glm. Constructor kini juga
+    // sifar-lalai; assertion membuktikan kedua-dua kunci tidak dihasilkan.
+    assert.ok(!('temperature' in body), 'flash variant: tiada temperature dicipta enjin');
+    assert.ok(!('top_p' in body), 'flash variant: tiada top_p dicipta enjin');
 });
 
 test('AgentInspector: [PAYLOAD-GODTIER] payload deepseek-v4-pro — muatan 4-kunci streaming sama dengan kimi-k3 (seragam semua enjin Agent Inspector)', () => {
@@ -861,9 +875,11 @@ test('AgentInspector: [PAYLOAD-GODTIER] payload deepseek-v4-pro — muatan 4-kun
         model: 'deepseek-v4-pro'
     });
 
-    // FASA 1 (Pemeriksa Utama) — muatan 4-kunci god-tier seragam (endpoint sama).
+    // ═══ [NAIK TARAF ASSERTION — TOTAL UNLOCK FASA 1, K1] ═══
+    // FASA 1 (Pemeriksa Utama) — muatan sifar-penciptaan (temperature hanya
+    // bila user set; di sini tiada params → tiada kunci).
     const { body } = inspector.buildChatRequest('fallback probe', true, {});
-    assert.equal(body.temperature, 0.0, 'temperature 0.0 WAJIB dihantar (deterministik)');
+    assert.ok(!('temperature' in body), 'tiada temperature dicipta enjin (TOTAL UNLOCK K1)');
     assert.equal(body.stream, true, 'stream WAJIB true — siling Caddy 300s (STREAMING MANDATORY)');
     assert.equal('reasoning_effort' in body, false, 'reasoning_effort DIGUGURKAN (tiada kesan terukur)');
     assert.equal('max_tokens' in body, false, 'max_tokens DIGUGURKAN (overthinking + istilah tergugur)');
@@ -878,8 +894,8 @@ test('AgentInspector: [PAYLOAD-GODTIER] payload deepseek-v4-pro — muatan 4-kun
     assert.ok(Array.isArray(body.messages) && body.messages.length === 1, 'single user message');
     assert.deepEqual(
         Object.keys(body).sort(),
-        ['messages', 'model', 'stream', 'temperature'],
-        'muatan mesti TEPAT {model, messages, stream, temperature} (4-kunci god-tier)'
+        ['messages', 'model', 'stream'],
+        'muatan mesti TEPAT {model, messages, stream} (3-kunci sifar-penciptaan — TOTAL UNLOCK)'
     );
 
     // FALLBACK PEMERIKSA (deepseek-v4.1-flash) — muatan YANG SAMA.
@@ -889,8 +905,9 @@ test('AgentInspector: [PAYLOAD-GODTIER] payload deepseek-v4-pro — muatan 4-kun
         model: 'deepseek-v4.1-flash'
     });
     const flashBody = flash.buildChatRequest('flash probe', true, {}).body;
-    assert.equal(flashBody.temperature, 0.0, 'fallback flash: temperature 0.0');
-    assert.equal(flashBody.stream, true, 'fallback flash: stream true');
+    // ═══ [NAIK TARAF ASSERTION — TOTAL UNLOCK FASA 1, K1] ═══
+    assert.ok(!('temperature' in flashBody), 'fallback flash: tiada temperature dicipta enjin');
+    assert.equal(flashBody.stream, true, 'fallback flash: stream true (invariant)');
     assert.equal('extra_body' in flashBody, false, 'fallback flash: extra_body DIGUGURKAN');
     assert.equal('reasoning_effort' in flashBody, false, 'fallback flash: reasoning_effort DIGUGURKAN');
     assert.equal('max_tokens' in flashBody, false, 'fallback flash: max_tokens DIGUGURKAN');
@@ -2042,8 +2059,9 @@ test('AgentInspector: [PAYLOAD-GODTIER] muatan HTTP sebenar (axios.post, stream 
 
         const { url, body } = captured[0];
         assert.ok(url.endsWith('/chat/completions'), 'endpoint chat/completions');
-        // [PAYLOAD-GODTIER] — semakan ke atas payload HTTP SEBENAR (4 kunci):
-        assert.equal(body.temperature, 0.0, 'muatan HTTP WAJIB membawa temperature 0.0 (varians 61s → 19s)');
+        // ═══ [NAIK TARAF ASSERTION — TOTAL UNLOCK FASA 1, K1] ═══
+        // Muatan HTTP SEBENAR tanpa params pengguna → sifar-penciptaan temperature.
+        assert.ok(!('temperature' in body), 'muatan HTTP TIDAK membawa temperature dicipta enjin');
         assert.equal(
             body.stream,
             true,
@@ -2094,13 +2112,14 @@ test('AgentInspector: [PAYLOAD-GODTIER] muatan HTTP sebenar (axios.post, stream 
         assert.equal('thinking' in body, false, 'thinking top-level DILARANG');
         assert.equal('presence_penalty' in body, false, 'muatan HTTP TIDAK boleh membawa presence_penalty');
         assert.equal('max_completion_tokens' in body, false, 'muatan HTTP TIDAK boleh membawa max_completion_tokens');
-        // ═══ [NAIK TARAF ASSERTION — Fasa 3] 4-kunci → 5-kunci: kunci asas
-        // god-tier (model/messages/stream/temperature) terpelihara + response_format
-        // json_schema strict tambahan (mazhab rasmi tunggal Owner). ═══
+        // ═══ [NAIK TARAF ASSERTION — Fasa 3 + TOTAL UNLOCK FASA 1 (K1)] ═══
+        // 5-kunci → 4-kunci: temperature hardcoded DIGUGURKAN (sifar-penciptaan);
+        // model/messages/stream + response_format json_schema strict (mazhab
+        // rasmi tunggal Owner) terpelihara.
         assert.deepEqual(
             Object.keys(body).sort(),
-            ['messages', 'model', 'response_format', 'stream', 'temperature'],
-            'muatan HTTP mesti {model, messages, stream, temperature, response_format} (god-tier + mazhab rasmi Fasa 3)'
+            ['messages', 'model', 'response_format', 'stream'],
+            'muatan HTTP mesti {model, messages, stream, response_format} (sifar-penciptaan + mazhab rasmi)'
         );
     } finally {
         axios.post = originalPost;

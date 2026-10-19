@@ -348,16 +348,23 @@ function normalizeTrinityAgentParams(mergedConfig) {
     }
 
     // (3) Sanitasi params setiap ejen + (4) tanda deviasi untuk bypassCache.
+    // [TRINITY TOTAL UNLOCK FASA 1 — Mandat Owner 2026-10-19] Params kosong
+    // dinormalkan kepada null (bukan objek lalai) supaya enjin tahu bila
+    // parameter TIDAK diset — sanitizeAgentParams kini tidak lagi mengisi
+    // lalai ejen secara automatik (K3).
     let anyDeviation = false;
     for (const agentKey of TRINITY_AGENT_KEYS) {
         const slot = trinity[agentKey];
         const providerOrDoor = resolveTrinityAgentProvider(mergedConfig, agentKey);
         const modelId = typeof slot.model === 'string' ? slot.model : '';
         const rawParams = slot.params && typeof slot.params === 'object' ? slot.params : {};
-        if (Object.keys(rawParams).length === 0) continue; // tiada params → lalai ejen (god-tier Agent Inspector kekal)
+        if (Object.keys(rawParams).length === 0) {
+            slot.params = null; // [TOTAL UNLOCK] penanda jelas "tiada parameter eksplisit"
+            continue;
+        }
         const sanitized = capabilities.sanitizeAgentParams(agentKey, rawParams, providerOrDoor, modelId);
         const deviates = capabilities.agentParamsDeviateFromDefault(agentKey, rawParams, providerOrDoor, modelId);
-        slot.params = sanitized;
+        slot.params = Object.keys(sanitized).length > 0 ? sanitized : null;
         if (deviates) {
             anyDeviation = true;
             log.debug(() => `[Config] [TrinityParams] ${agentKey} params deviate from defaults → bypass cache armed`);

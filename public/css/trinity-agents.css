@@ -523,20 +523,22 @@
 }
 
 /* Butang ikon padat baris kunci + status ujian (v3.9.23) */
+/* [TRINITY TOTAL UNLOCK FASA 2] Hit target ergonomik 40px (min WCAG/mobile),
+   naik daripada 32px; butang Test (.trinity-key-test-btn) mewarisinya. */
 .trinity-key-icon-btn {
     display: inline-flex;
     align-items: center;
     justify-content: center;
-    width: 32px;
-    height: 32px;
+    width: 40px;
+    height: 40px;
     padding: 0;
-    flex: 0 0 32px;
+    flex: 0 0 40px;
     border: 1px solid var(--border-color, #d1d5db);
-    border-radius: 6px;
+    border-radius: 8px;
     background: var(--bg-secondary, #f3f4f6);
     color: var(--text-primary, #374151);
     cursor: pointer;
-    font-size: 0.95rem;
+    font-size: 1rem;
     line-height: 1;
     transition:
         background 0.15s ease,
@@ -563,6 +565,48 @@
     color: #b91c1c;
     border-color: #b91c1c;
     background: #fee2e2;
+}
+/* [TRINITY TOTAL UNLOCK FASA 2] (c) Kontras ralat WCAG: latar berlapis +
+   border-left jelas (menggantikan latar merah jambu manis rata). (d) Keadaan
+   memuatkan: denyut butang + spinner sebelah teks. */
+.trinity-bulk-status.is-error {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.4rem;
+    color: var(--danger, #b91c1c);
+    background: rgba(239, 68, 68, 0.1);
+    border-left: 3px solid var(--danger, #ef4444);
+    border-radius: 6px;
+    padding: 0.35rem 0.6rem;
+    margin-top: 0.25rem;
+}
+.trinity-key-test-btn.is-loading {
+    pointer-events: none;
+    opacity: 0.85;
+    animation: trinity-key-pulse 1.2s cubic-bezier(0.4, 0, 0.2, 1) infinite;
+}
+.trinity-key-test-btn.is-loading::before {
+    content: '';
+    width: 12px;
+    height: 12px;
+    border: 2px solid currentColor;
+    border-top-color: transparent;
+    border-radius: 50%;
+    animation: trinity-key-spin 0.7s linear infinite;
+}
+@keyframes trinity-key-spin {
+    to {
+        transform: rotate(360deg);
+    }
+}
+@keyframes trinity-key-pulse {
+    0%,
+    100% {
+        opacity: 0.85;
+    }
+    50% {
+        opacity: 0.6;
+    }
 }
 
 /* Status sempadan input kunci selepas ujian — seragam untuk baris Additional
@@ -755,6 +799,14 @@
     border-radius: 8px;
     padding: 0.45rem 0.6rem;
 }
+/* [TRINITY TOTAL UNLOCK FASA 2] Nota panduan uiHint — mikro, token CSS tema,
+   sifar kod warna keras. Dipapar di bawah medan (di dalam .trinity-mp-field). */
+.trinity-mp-uihint {
+    font-size: 0.72rem;
+    line-height: 1.35;
+    color: var(--text-secondary, #64748b);
+    opacity: 0.82;
+}
 .trinity-mp-fields {
     display: grid;
     grid-template-columns: repeat(auto-fit, minmax(160px, 1fr));
@@ -788,6 +840,13 @@
     background: var(--bg-card, #fff);
     color: inherit;
     box-sizing: border-box;
+}
+/* [TRINITY TOTAL UNLOCK FASA 2] Placeholder cadangan lalai — kelabu lembut,
+   jelas bezakan daripada nilai sebenar pengguna. */
+.trinity-mp-input::placeholder {
+    color: var(--text-secondary, #64748b);
+    opacity: 0.5;
+    font-style: italic;
 }
 .trinity-mp-input[readonly] {
     opacity: 0.75;

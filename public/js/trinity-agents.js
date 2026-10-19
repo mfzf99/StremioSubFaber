@@ -111,10 +111,12 @@
         },
         {
             key: 'translation',
+            // [TOTAL UNLOCK FASA 2] Duplikasi deskripsi dibuang (subtitle ≠
+            // description) — deskripsi kini fokus tingkah laku, bukan ulangan.
             title: 'Agent Translation',
             subtitle: 'Core translation engine (batch XML → SRT)',
             description:
-                'Core translation engine (batch XML → SRT). Processes each batch and uses the Bible from Preflight.',
+                'Processes each batch through the active provider and uses the Bible from Preflight for context.',
             configPath: 'trinity.translation'
         },
         {
@@ -482,9 +484,15 @@
             /^gemini-(flash|flash-lite|pro)-latest$/.test(m) ||
             (minor !== null && (minor >= 6 || (minor === 5 && /flash-lite/.test(m))));
         if (isStrict) {
+            // [TRINITY TOTAL UNLOCK FASA 2 — K8] Descriptor sampling DIISYHTARKAN
+            // semula dengan uiHint (selari backend modelCapabilities.js) supaya
+            // UI memaparkan medan + nota; nilai pengguna dihantar, pelayan
+            // putuskan sendiri.
             return {
                 family: 'gemini-3.x-strict',
                 parameters: {
+                    temperature: mpParam(0, 2, 0.3, { uiHint: 'server-strips-for-this-model' }),
+                    topP: mpParam(0, 1, 0.95, { uiHint: 'server-strips-for-this-model' }),
                     thinkingLevel: mpParam(0, 0, 'medium', { enum: MP_GEMINI_THINKING_LEVELS }),
                     maxOutputTokens: mpParam(1, 65536, 32768),
                     frequencyPenalty: MP_FREQUENCY_PENALTY,
@@ -556,24 +564,26 @@
         var m = String(modelId || '')
             .trim()
             .toLowerCase();
+        // [TRINITY TOTAL UNLOCK FASA 2 — K2] fixed DIGUGURKAN — nilai pengguna
+        // dihantar apa adanya; 1.0/0.95 kekal CADANGAN lalai (placeholder) sahaja.
         if (/kimi-k3|kimi-k2\.7/.test(m)) {
             return {
                 family: 'kimi-fixed-sampling',
                 parameters: {
-                    temperature: mpParam(1, 1, 1.0, { fixed: 1.0 }),
-                    topP: mpParam(0.95, 0.95, 0.95, { fixed: 0.95 }),
+                    temperature: mpParam(0, 2, 1.0, { uiHint: 'ground-truth-suggests-1.0' }),
+                    topP: mpParam(0, 1, 0.95, { uiHint: 'ground-truth-suggests-0.95' }),
                     maxOutputTokens: mpParam(1, 131072, 32768),
                     frequencyPenalty: MP_FREQUENCY_PENALTY,
                     presencePenalty: MP_PRESENCE_PENALTY
                 },
-                notes: ['fixed-sampling-temp-1.0-topP-0.95']
+                notes: ['ground-truth-suggests-temp-1.0-topP-0.95']
             };
         }
         return {
             family: 'kimi-hybrid',
             parameters: {
-                temperature: mpParam(0, 1, 1.0),
-                topP: mpParam(0.95, 0.95, 0.95, { fixed: 0.95 }),
+                temperature: mpParam(0, 2, 1.0),
+                topP: mpParam(0, 1, 0.95, { uiHint: 'ground-truth-suggests-0.95' }),
                 maxOutputTokens: mpParam(1, 131072, 32768),
                 frequencyPenalty: MP_FREQUENCY_PENALTY,
                 presencePenalty: MP_PRESENCE_PENALTY
@@ -697,13 +707,11 @@
         var profile = resolveCapabilityProfile(providerOrDoor, modelId);
         var tuning = MP_AGENT_TUNING_BASE[agent] || MP_AGENT_TUNING_BASE.translation;
         var defaults = {};
+        // [TRINITY TOTAL UNLOCK FASA 2 — K2] Cabang descriptor.fixed dibuang —
+        // tiada lagi nilai dikunci; cadangan lalai sahaja (mirror backend).
         for (var name in profile.parameters) {
             if (!Object.prototype.hasOwnProperty.call(profile.parameters, name)) continue;
             var descriptor = profile.parameters[name];
-            if (descriptor.fixed !== undefined) {
-                defaults[name] = descriptor.fixed;
-                continue;
-            }
             if (tuning[name] !== undefined && tuning[name] !== null) {
                 defaults[name] = tuning[name];
             } else if (descriptor.default !== undefined) {
@@ -720,21 +728,25 @@
         if (!keys.length) return false;
         var defaults = getAgentDefaultParams(agent, providerOrDoor, modelId);
         var profile = resolveCapabilityProfile(providerOrDoor, modelId);
+        // [TRINITY TOTAL UNLOCK FASA 2 — K2] fixed-clamp dibuang — deviasi diukur
+        // terhadap cadangan lalai sahaja.
         for (var i = 0; i < keys.length; i++) {
             var name = keys[i];
             var value = params[name];
             var descriptor = profile.parameters[name];
             if (!descriptor) return true;
-            if (descriptor.fixed !== undefined) continue;
             if (defaults[name] !== value) return true;
         }
         return false;
     }
 
     // Semantik nota kunci (diselaraskan dengan ground truth matriks §C).
+    // [TRINITY TOTAL UNLOCK FASA 2] Teks nota dikemas kini — fixed → cadangan.
     var MP_NOTE_TEXT = {
         'fixed-sampling-temp-1.0-topP-0.95':
-            'Kimi locks temperature to 1.0 and topP to 0.95 for this model — other values are rejected by the API.',
+            'Kimi works best with temperature 1.0 and topP 0.95 — other values may be rejected by the API.',
+        'ground-truth-suggests-temp-1.0-topP-0.95':
+            'Kimi works best with temperature 1.0 and topP 0.95 — other values may be rejected by the API.',
         'sampling-stripped-by-api':
             'Sampling parameters (temperature/topP/penalties) are deprecated and stripped by the API for this model.',
         'server-reroute-stripped':
@@ -817,26 +829,38 @@
         return createEl('label', 'trinity-mp-label', text);
     }
 
-    function mpBuildNumberField(agentKey, name, label, descriptor, value, fixed) {
+    // [TRINITY TOTAL UNLOCK FASA 2] Nilai sebagai PLACEHOLDER (cadangan kelabu
+    // lembut) — bukan nilai input sebenar. Kotak kosong = tiada nilai disimpan;
+    // enjin tidak mencipta nilai (pelayan guna lalai asalnya). placeholderValue
+    // diisi dari cadangan lalai ejen; savedValue diisi dari konfigurasi
+    // pengguna yang sebenar (null/'' → kosong).
+    function mpBuildNumberField(agentKey, name, label, descriptor, savedValue, placeholderValue, uiHint) {
         var wrap = createEl('div', 'trinity-mp-field');
         wrap.dataset.mpParam = name;
         wrap.dataset.mpAgent = agentKey;
-        var labelText = label + (fixed ? ' (locked)' : '');
-        wrap.appendChild(mpFieldLabel(labelText));
+        wrap.appendChild(mpFieldLabel(label));
         var input = createEl('input', 'trinity-mp-input');
         input.type = 'number';
         input.id = 'trinity-mp-' + agentKey + '-' + name;
         input.min = String(descriptor.min);
         input.max = String(descriptor.max);
         input.step = name === 'topP' ? '0.01' : '0.1';
-        input.value = value !== undefined && value !== null ? String(value) : '';
+        // Nilai SEBENAR pengguna hanya bila wujud (bukan lalai auto-isi).
+        input.value =
+            savedValue !== undefined && savedValue !== null && String(savedValue) !== '' ? String(savedValue) : '';
+        // Cadangan lalai dipaparkan sebagai placeholder kelabu (tidak dihantar).
+        if (placeholderValue !== undefined && placeholderValue !== null && String(placeholderValue) !== '') {
+            input.placeholder = String(placeholderValue);
+        }
         input.dataset.mpName = name;
         input.dataset.mpAgent = agentKey;
-        if (fixed !== undefined) {
-            input.readOnly = true;
-            input.title = 'Locked to ' + fixed + ' by the provider';
-        }
         wrap.appendChild(input);
+        // [TOTAL UNLOCK] Nota panduan uiHint (ground-truth-suggests-*, server-strips) —
+        // bersaiz mikro, token CSS tema, tanpa kod warna keras.
+        if (uiHint) {
+            var hint = createEl('div', 'trinity-mp-uihint', MP_UIHINT_TEXT[uiHint] || uiHint);
+            wrap.appendChild(hint);
+        }
         return wrap;
     }
 
@@ -896,6 +920,16 @@
         'formality',
         'preserveFormatting'
     ];
+    // [TRINITY TOTAL UNLOCK FASA 2] Peta teks uiHint — panduan mikro daripada
+    // descriptor.backend (server-strips / ground-truth-suggests). Kekal token
+    // CSS tema (kelas .trinity-mp-uihint), sifar kod warna keras.
+    var MP_UIHINT_TEXT = {
+        'server-strips-for-this-model': 'Server may ignore this value for this model.',
+        'ground-truth-suggests-1.0': 'Suggested value: 1.0 (other values may be rejected by the server).',
+        'ground-truth-suggests-0.95': 'Suggested value: 0.95 (other values may be rejected by the server).',
+        'thinking-locks-temperature-1.0': 'When thinking is enabled, temperature is set to 1.0 by the provider.'
+    };
+
     var MP_FIELD_LABELS = {
         temperature: 'Temperature',
         topP: 'Top-P',
@@ -910,6 +944,10 @@
         preserveFormatting: 'Preserve formatting'
     };
 
+    // [TRINITY TOTAL UNLOCK FASA 2] Paparan medan: nilai SEBENAR pengguna
+    // (savedParams) menjadi input.value; cadangan lalai (defaults) menjadi
+    // placeholder kelabu. descriptor.fixed telah digugurkan di semua profil —
+    // tiada lagi medan read-only terkunci.
     function mpRenderFields(agentKey, profile, defaults, savedParams) {
         var container = $('trinity-mp-fields-' + agentKey);
         if (!container) return;
@@ -918,23 +956,31 @@
         MP_FIELD_ORDER.forEach(function (name) {
             var descriptor = profile.parameters[name];
             if (!descriptor) return; // hanya parameter yang disokong model
-            // Nilai FIXED sentiasa papar nilai terkunci provider (cth Kimi 1.0) —
-            // nilai tersimpan dari provider lain tidak boleh menimpa kunci.
-            var saved = descriptor.fixed !== undefined ? descriptor.fixed : params[name];
-            var value = saved !== undefined && saved !== null && saved !== '' ? saved : defaults[name];
+            // Nilai sebenar pengguna = params[name]; cadangan lalai = defaults[name].
+            var savedValue = params[name];
+            var placeholderValue = defaults[name];
+            var uiHint = descriptor.uiHint;
             var field = null;
             if (descriptor.enum && Array.isArray(descriptor.enum)) {
-                field = mpBuildSelectField(agentKey, name, MP_FIELD_LABELS[name] || name, descriptor, value);
+                // Select: nilai sebenar pengguna dipilih; tanpa nilai → pilihan pertama.
+                var selValue =
+                    savedValue !== undefined && savedValue !== null && String(savedValue) !== ''
+                        ? savedValue
+                        : placeholderValue;
+                field = mpBuildSelectField(agentKey, name, MP_FIELD_LABELS[name] || name, descriptor, selValue);
+                if (field && uiHint)
+                    field.appendChild(createEl('div', 'trinity-mp-uihint', MP_UIHINT_TEXT[uiHint] || uiHint));
             } else if (name === 'preserveFormatting') {
-                field = mpBuildCheckboxField(agentKey, name, MP_FIELD_LABELS[name] || name, value === true);
+                field = mpBuildCheckboxField(agentKey, name, MP_FIELD_LABELS[name] || name, savedValue === true);
             } else {
                 field = mpBuildNumberField(
                     agentKey,
                     name,
                     MP_FIELD_LABELS[name] || name,
                     descriptor,
-                    value,
-                    descriptor.fixed
+                    savedValue,
+                    placeholderValue,
+                    uiHint
                 );
             }
             if (field) container.appendChild(field);
@@ -942,7 +988,9 @@
         mpSyncDeviatedWarning(agentKey);
     }
 
-    // Papar nota kunci: descriptor.fixed !== undefined dan notes yang dikenali.
+    // [TRINITY TOTAL UNLOCK FASA 2] Papar nota panduan: uiHint descriptor +
+    // notes yang dikenali. Nota fixed telah digugurkan (tiada lagi medan
+    // terkunci). Kelas .trinity-mp-note kekal (token CSS tema).
     function mpRenderNotes(agentKey, profile) {
         var notesBox = $('trinity-mp-notes-' + agentKey);
         if (!notesBox) return;
@@ -950,13 +998,10 @@
         var seen = {};
         Object.keys(profile.parameters).forEach(function (name) {
             var descriptor = profile.parameters[name];
-            if (descriptor && descriptor.fixed !== undefined && !seen['fixed:' + name]) {
-                seen['fixed:' + name] = true;
-                var note = createEl(
-                    'div',
-                    'trinity-mp-note',
-                    (MP_FIELD_LABELS[name] || name) + ' is locked to ' + descriptor.fixed + ' by the provider.'
-                );
+            if (descriptor && descriptor.uiHint && !seen['hint:' + name]) {
+                seen['hint:' + name] = true;
+                var text = MP_UIHINT_TEXT[descriptor.uiHint] || descriptor.uiHint;
+                var note = createEl('div', 'trinity-mp-note', (MP_FIELD_LABELS[name] || name) + ' — ' + text);
                 notesBox.appendChild(note);
             }
         });
@@ -1000,19 +1045,25 @@
 
     // Payload params untuk kontrak trinity.<agent>.params: kembalikan HANYA
     // medan yang dilawati pengguna daripada lalai ejen (kosong jika semua lalai).
+    // [TRINITY TOTAL UNLOCK FASA 2] Pulang null apabila tiada deviasi eksplisit
+    // daripada lalai ejen — konfigurasi backend menerima null (bukan objek
+    // kosong) supaya enjin tahu pengguna tidak menetapkan apa-apa.
     function mpCollectDeviatedParams(agentKey) {
         var ctx = mpResolveAgentContext(agentKey);
         var params = mpCollectFieldValues(agentKey);
         var defaults = getAgentDefaultParams(agentKey, ctx.providerOrDoor, ctx.model);
         var profile = resolveCapabilityProfile(ctx.providerOrDoor, ctx.model);
         var out = {};
+        var hasDev = false;
         Object.keys(params).forEach(function (name) {
             var descriptor = profile.parameters[name];
             if (!descriptor) return; // tidak disokong — dibuang senyap
-            if (descriptor.fixed !== undefined) return; // fixed sentiasa sama
-            if (defaults[name] !== params[name]) out[name] = params[name];
+            if (defaults[name] !== params[name]) {
+                out[name] = params[name];
+                hasDev = true;
+            }
         });
-        return out;
+        return hasDev ? out : null;
     }
 
     // [BUG FIX] Fresh state gate: semakan provider DAN model mesti dipilih
@@ -1796,8 +1847,12 @@
         var payloadDoor = isCustom && fmtSelect && fmtSelect.value !== 'auto' ? fmtSelect.value : door;
         var payloadBaseUrl = isCustom && baseUrlInput ? baseUrlInput.value.trim() : '';
 
+        // [TOTAL UNLOCK FASA 2] (d) Keadaan memuatkan: kelas is-loading —
+        // CSS .is-loading::before membekalkan spinner pusingan + denyut (elak
+        // double-submit melalui disabled + pointer-events).
         testBtn.disabled = true;
-        testBtn.textContent = '…';
+        testBtn.textContent = '';
+        testBtn.classList.add('is-loading');
         try {
             var resp = await fetch('/api/validate-provider', {
                 method: 'POST',
@@ -1836,6 +1891,9 @@
                 showAlert('Invalid API key — ' + (err && err.message ? err.message : 'network error'), 'error');
             }
         } finally {
+            // [TOTAL UNLOCK FASA 2] Tanggalkan keadaan memuatkan (spinner + denyut)
+            // selepas ujian tamat; butang kembali interaktif.
+            testBtn.classList.remove('is-loading');
             testBtn.disabled = false;
         }
     }

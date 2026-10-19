@@ -10,6 +10,45 @@
 - **Status npm test:** `451 total / 450 PASS / 0 FAIL / 1 SKIP (live Redis)`.
 - **Next Steps:** Owner restart penuh VS Code (bukan reload window) dan sahkan dropdown Zoo Code hanya memaparkan Backend + Frontend; cadangan matikan auto-update Zoo Code (§4 protokol) supaya patch tidak lenyap lagi.
 
+## 2026-10-19 — v3.16.0 TRINITY TOTAL UNLOCK: KEDAULATAN PARAMETER PENGGUNA 100%
+
+- **Tarikh:** 2026-10-19 ~16:25 (waktu tempatan KL).
+- **Komit SHA (HEAD):** akan direkodkan selepas langkah-7 (CI run ID menyusul langkah-8).
+- **Keputusan Owner:** Rangkaian mandat [TRINITY TOTAL UNLOCK] diluluskan penuh: Fasa 1 Backend Core (bebaskan K1–K6, K9; suite S1–S10; baseline 461), Fasa 2 Frontend (placeholder kedaulatan + uiHint + 4 kecacatan visual + Playwright kunci real 200/valid 22 model), Fasa 3 Pipeline Pelepasan (entri ini). Keputusan Rasmi §8: stream:true kekal invariant; siling mutlak vendor kekal benteng; AGENT_TUNING_BASE kekal cadangan UI sahaja.
+- **Pipeline 8 langkah:** Langkah-0 Frontend Integration Audit LULUS (payload serialization `currentConfig[k] = trinityPatch[k]` menghantar `params: null` verbatim; rehidrasi `applyAgentValues` → medan kosong + placeholder; S6/S10 mengunci); SemVer 3.15.1 → 3.16.0 (minor — perubahan tingkah laku parameter); CHANGELOG entri penuh (Improvements + Behavioral Changes); cache-buster runtime-driven LULUS (sifar pin statik `3.15.1`); Prettier PASS; ESLint 0 error / 225 warning (pra-wujud, selari baseline); `npm test` = **461 total / 460 PASS / 0 FAIL / 1 SKIP (live Redis)** — baseline monotonik 451 → 461 (+S1–S10); graphify NO-OP (`graphify-out/` absent).
+- **Ringkasan pembedahan:** (1) openaiCompatible.js — god-tier sifar-penciptaan (K1), applySmartModelPayload explicit-only (K5), ALWAYS-ON hormati 'disabled' tanpa hantar parameter (K4), getCappedMaxOutputTokens hormati had pengguna (K9), constructor sifar-lalai temp/topP. (2) modelCapabilities.js — buang clamp `fixed` (K2), buang auto-fill lalai ejen (K3), descriptor STRICT + uiHint (K8). (3) anthropic.js — buang clamp constructor (K6). (4) config.js — params kosong → null. (5) Frontend — placeholder kelabu italic + MP_UIHINT_TEXT + `.trinity-mp-uihint` + `.trinity-mp-input::placeholder` + 4 kecacatan visual (duplikasi deskripsi, kontras ralat WCAG border-left, hit target 40px, spinner `.is-loading`). (6) 12 assertion warisan dinaik taraf berdokumen + suite baharu S1–S10.
+- **Verifikasi live:** kunci real rootsys (fiq-…) → `/api/validate-provider` → HTTP 200 / valid:true / 22 model; kimi-k3 dipilih → kad Model Parameters render placeholder + uiHint; DOM proof: kosong → tiada temp dihantar; 0.7 → dihantar 0.7. Zero Secret Logging dipegang (sifar nilai kunci dicetak; snapshot Boolean 8/8).
+- **Fail Terlibat:** src/services/providers/openaiCompatible.js, src/utils/modelCapabilities.js, src/services/providers/anthropic.js, src/utils/config.js, src/utils/user-sovereignty-params-regression.test.js (baharu), src/utils/trinity-params-regression.test.js, src/services/agent-inspector-regression.test.js, src/services/subfaber-fasah-regression.test.js, public/js/trinity-agents.js, public/css/trinity-agents.css, plans/trinity-user-sovereignty-params.md (baharu), package.json, CHANGELOG.md, docs/SESSION_LEDGER.md.
+- **Status npm test:** `461 total / 460 PASS / 0 FAIL / 1 SKIP (live Redis)`.
+- **Next Steps:** git commit + push origin main (verified via `git rev-parse origin/main`) → CI via `gh` CLI — mesti **SUCCESS** (Node 22/24).
+
+---
+
+## 2026-10-19 — TRINITY TOTAL UNLOCK FASA 2: FRONTEND UI & VISUAL REFINEMENT
+
+- **Tarikh:** 2026-10-19 ~16:15 (waktu tempatan KL)
+- **Komit SHA (HEAD):** (akan diisi oleh Backend semasa pipeline release)
+- **Keputusan Owner:** Mandat [TRINITY TOTAL UNLOCK — FASA 2 (FRONTEND UI & VISUAL REFINEMENT)] diluluskan penuh — bebaskan semua kunci hardcoded, papar medan parameter untuk semua model dengan placeholder lalai, nota panduan uiHint, dan 4 pembetulan visual daripada audit sulung.
+- **Pembedahan Frontend:**
+  1. **Kedaulatan medan (public/js/trinity-agents.js):** Mirror backend — kunci `fixed` dibuang daripada mpKimiProfile (kimi-k3 temp/topP kini julat normal + uiHint cadangan); descriptor Gemini STRICT diisytihar semula (temperature/topP dengan uiHint `server-strips-for-this-model`); `mpBuildNumberField` dipecahkan kepada `savedValue` (input.value sebenar pengguna) + `placeholderValue` (placeholder kelabu) + `uiHint` — kotak kosong = tiada nilai dihantar (dibuktikan ujian DOM: kosong → tiada temp; 0.7 → temp=0.7); `mpCollectDeviatedParams` kini pulang `null` apabila tiada deviasi eksplisit; cabang `descriptor.fixed` dibuang daripada `getAgentDefaultParams`/`agentParamsDeviateFromDefault` frontend (mirror backend).
+  2. **Nota panduan (uiHint):** `MP_UIHINT_TEXT` baharu (`server-strips-for-this-model`, `ground-truth-suggests-*`) + `trinity-mp-uihint` CSS kelas (mikro, token tema, opacity 0.82, sifar kod warna keras) + `trinity-mp-input::placeholder` kelabu italic.
+  3. **4 kecacatan visual (hasil audit sulung 2026-10-18):** (a) duplikasi deskripsi Agent Translation dibuang (subtitle ≠ description); (b) kontras ralat WCAG: `.trinity-bulk-status.is-error` kini latar berlapis `rgba(239,68,68,0.1)` + border-left 3px solid (bukan merah jambu manis); (c) hit target butang kunci diperbesar 32px → 40px (ergonomik); (d) keadaan memuatkan: `.trinity-key-test-btn.is-loading` (denyut + spinner ::before pusingan) menggantikan teks '…' — tanggalkan selepas tamat ujian dalam blok finally.
+- **Verifikasi Playwright MCP (MANDATORY VISUAL CRITIQUE LOOP):**
+  - Navigasi `/configure` → tutup modal panduan → expand kad "Translation API Keys" → Provider `Custom / Proxy` + Base URL `https://rootsys.cloud/v1` + API key real (fiq-…, daripada SUBFABER_TEST_ROOTSYS_KEY melalui loader testKeys.js — sifar nilai dicetak ke log; snapshot Boolean 8/8 disahkan) + Format `OpenAI-Compatible` → tekan ✓ Test.
+  - **Hasil: HTTP 200, valid:true, 22 model dikembalikan** (deepseek-v4-pro, glm-5.3, kimi-k3, dll) — pengesahan hujung-ke-hujung kunci real berfungsi; spinner/loading state kini aktif semasa fetch.
+  - Pilih `kimi-k3` → kad Model Parameters render medan Temperature/Top-P/Max output tokens/Frequency/Presence dengan placeholder kelabu (0.3/0.95/32768) + nota uiHint biru ("Suggested value: 1.0…").
+  - Ujian DOM pengumpulan: kosongkan Temperature → params tanpa kunci; isi 0.7 → params.temperature=0.7 — kedaulatan nilai terbukti.
+- **Self-Critique (Lead Designer):**
+  - Ritma 4px/8px dihormati; medan grid minmax(160px) kekal responsif; nota uiHint biru lembut tidak mengganggu hierarki; placeholder italic kelabu jelas bezakan cadangan daripada nilai sebenar.
+  - Hit target 40px kini melepasi ambang WCAG/mobile (daripada 32px); status sah/gagal mempunyai kontras bermakna (border-left + latar berlapis).
+  - Tiada perubahan token CSS tema yang merosakkan `subfaber-theme.css`/`mario.css` — semua kelas baharu meminjam `var(--text-secondary)`/`var(--danger)`/`var(--bg-secondary)` sedia ada.
+  - Kawasan yang diperhatikan: status sah papar "Valid ✓ (custom)" hijau — warna token konsisten; spinner hanya kelihatan semasa fetch (tidak dapat di-screenshotkan statik, tetapi kelas `is-loading` disahkan wujud dalam kod).
+- **Fail Terlibat:** public/js/trinity-agents.js, public/css/trinity-agents.css, docs/SESSION_LEDGER.md (catatan ini)
+- **Status npm test:** N/A (larangan frontend — dipegang backend semasa pipeline release)
+- **Next Steps:** HANDOVER ke Backend untuk Fasa 3 (Pipeline Pelepasan Rasmi v3.16.0): Prettier/ESLint/npm test 461+ hijau, SemVer bump, CHANGELOG, cache-buster, commit/push, CI SUCCESS.
+
+---
+
 ## 2026-10-19 — v3.15.0 TRINITY CHANNEL-NATIVE PROMPTS: 3 CORE + 9 WRAPPERS
 
 - **Tarikh:** 2026-10-19 ~19:40 (waktu tempatan KL).

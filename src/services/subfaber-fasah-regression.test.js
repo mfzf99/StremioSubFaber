@@ -126,9 +126,11 @@ test('FASA H: universal buildChatRequest builds [system, user] when meta.systemP
     assert.equal(body.messages[1].role, 'user', 'second message is user');
     assert.equal(body.messages[1].content, 'dynamic user content', 'user content verbatim');
 
-    // Muatan 4-kunci god-tier kekal suci — tiada kunci lain ditambah.
-    assert.equal(body.stream, true, 'stream:true preserved (Caddy 300s)');
-    assert.equal(body.temperature, 0.0, 'temperature 0.0 preserved (deterministik)');
+    // ═══ [NAIK TARAF ASSERTION — TRINITY TOTAL UNLOCK FASA 1, K1 — 2026-10-19] ═══
+    // AUDIT: temperature 0.0 hardcoded digugurkan; medan tidak diset → kunci
+    // TIDAK dihantar (pelayan guna lalai asalnya). stream:true kekal invariant.
+    assert.equal(body.stream, true, 'stream:true preserved (Caddy 300s — invariant pengangkutan)');
+    assert.ok(!('temperature' in body), 'tiada temperature dicipta enjin (sifar-penciptaan)');
     assert.equal('max_tokens' in body, false, 'no max_tokens (god-tier)');
     assert.equal('reasoning_effort' in body, false, 'no reasoning_effort (overthinking trigger)');
 });

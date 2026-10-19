@@ -90,7 +90,11 @@ function geminiProfile(modelId) {
         return {
             family: 'gemini-3.x-strict',
             parameters: {
-                // Sampling deprecated & diabaikan (HTTP 400 pada generasi akan datang)
+                // [TOTAL UNLOCK FASA 1 — K8] Descriptor sampling DIISYHTARKAR
+                // semula dengan uiHint supaya UI memaparkan medan + nota; enjin
+                // terus menghantar nilai (SEND-ALL) — pelayan putuskan sendiri.
+                temperature: param(0, 2, 0.3, { uiHint: 'server-strips-for-this-model' }),
+                topP: param(0, 1, 0.95, { uiHint: 'server-strips-for-this-model' }),
                 thinkingLevel: param(0, 0, 'medium', { enum: GEMINI_THINKING_LEVEL_ENUM }),
                 maxOutputTokens: param(1, 65536, 32768),
                 frequencyPenalty: FREQUENCY_PENALTY,
@@ -169,27 +173,29 @@ function kimiProfile(modelId) {
     const m = String(modelId || '')
         .trim()
         .toLowerCase();
-    // kimi-k3 / k2.7: FIXED 1.0 / 0.95 (nilai lain → 400).
+    // kimi-k3 / k2.7: [TOTAL UNLOCK FASA 1 — K2] kunci `fixed` DIGUGURKAN —
+    // nilai pengguna dihantar apa adanya; 1.0/0.95 kekal sebagai CADANGAN lalai
+    // (dipaparkan UI), bukan clamp. Nota memberi amaran pelayan mungkin tolak.
     if (/kimi-k3|kimi-k2\.7/.test(m)) {
         return {
             family: 'kimi-fixed-sampling',
             parameters: {
-                temperature: param(1, 1, 1.0, { fixed: 1.0 }),
-                topP: param(0.95, 0.95, 0.95, { fixed: 0.95 }),
+                temperature: param(0, 2, 1.0, { uiHint: 'ground-truth-suggests-1.0' }),
+                topP: param(0, 1, 0.95, { uiHint: 'ground-truth-suggests-0.95' }),
                 maxOutputTokens: param(1, 131072, 32768),
                 frequencyPenalty: FREQUENCY_PENALTY,
                 presencePenalty: PRESENCE_PENALTY
             },
-            notes: ['fixed-sampling-temp-1.0-topP-0.95']
+            notes: ['ground-truth-suggests-temp-1.0-topP-0.95']
         };
     }
     // k2.6 / k2.5: temp mengikut mod (0.6 non-thinking / 1.0 thinking) —
-    // guna 1.0 selamat; topP tetap FIXED 0.95.
+    // [TOTAL UNLOCK FASA 1 — K2] fixed topP digugurkan; 0.95 kekal cadangan.
     return {
         family: 'kimi-hybrid',
         parameters: {
-            temperature: param(0, 1, 1.0),
-            topP: param(0.95, 0.95, 0.95, { fixed: 0.95 }),
+            temperature: param(0, 2, 1.0),
+            topP: param(0, 1, 0.95, { uiHint: 'ground-truth-suggests-0.95' }),
             maxOutputTokens: param(1, 131072, 32768),
             frequencyPenalty: FREQUENCY_PENALTY,
             presencePenalty: PRESENCE_PENALTY
@@ -339,14 +345,15 @@ const AGENT_TUNING_BASE = {
  * @returns {object} params lalai ejen (subset sah keupayaan model)
  */
 function getAgentDefaultParams(agent, providerOrDoor, modelId) {
+    // [TRINITY TOTAL UNLOCK FASA 1 — Keputusan Rasmi Owner §8.3] Fungsi ini
+    // kekal sebagai CADANGAN VISUAL UI sahaja (placeholder). Ia TIDAK lagi
+    // digunakan oleh sanitizeAgentParams untuk mengisi nilai yang pengguna
+    // tidak set — enjin dilarang mencipta nilai. descriptor.fixed tidak wujud
+    // lagi dalam mana-mana profil (semua telah dibebaskan).
     const profile = resolveCapabilityProfile(providerOrDoor, modelId);
     const tuning = AGENT_TUNING_BASE[agent] || AGENT_TUNING_BASE.translation;
     const defaults = {};
     for (const [name, descriptor] of Object.entries(profile.parameters)) {
-        if (descriptor.fixed !== undefined) {
-            defaults[name] = descriptor.fixed;
-            continue;
-        }
         if (tuning[name] !== undefined && tuning[name] !== null) {
             defaults[name] = tuning[name];
         } else if (descriptor.default !== undefined) {
@@ -366,24 +373,24 @@ function getAgentDefaultParams(agent, providerOrDoor, modelId) {
  * @returns {object} params selamat (subset keupayaan model)
  */
 function sanitizeAgentParams(agent, params, providerOrDoor, modelId) {
+    // [TRINITY TOTAL UNLOCK FASA 1 — Mandat Owner 2026-10-19, K2+K3]
+    // USER-SOVEREIGNTY ABSOLUTE:
+    //   K2: clamp `fixed` DIGUGURKAN — nilai eksplisit pengguna dihantar apa
+    //       adanya (log.warn memberi amaran pelayan mungkin menolak).
+    //   K3: auto-fill lalai ejen DIGUGURKAN — medan yang pengguna TIDAK set
+    //       tidak dihantar sama sekali (pelayan guna lalai asalnya).
     const profile = resolveCapabilityProfile(providerOrDoor, modelId);
-    const defaults = getAgentDefaultParams(agent, providerOrDoor, modelId);
     const raw = params && typeof params === 'object' ? params : {};
     const out = {};
     for (const [name, descriptor] of Object.entries(profile.parameters)) {
-        // Nilai FIXED (cth: kimi-k3 temp 1.0) — sentiasa dikunci; percubaan lain
-        // di-clamp kembali secara senyap (API akan tolak 400 jika dihantar).
-        if (descriptor.fixed !== undefined) {
-            out[name] = descriptor.fixed;
-            if (raw[name] !== undefined && raw[name] !== descriptor.fixed) {
-                log.debug(
-                    () =>
-                        `[ModelCapabilities] ${modelId || '(default)'} locks ${name}=${descriptor.fixed}; user value ${raw[name]} clamped`
-                );
-            }
-            continue;
-        }
         if (raw[name] === undefined || raw[name] === null || raw[name] === '') continue;
+        const uiHint = descriptor.uiHint ? ` (hint: ${descriptor.uiHint})` : '';
+        if (descriptor.uiHint) {
+            log.warn(
+                () =>
+                    `[ModelCapabilities] ${modelId || '(default)'}: parameter ${name} dihantar nilai pengguna ${raw[name]}${uiHint} — pelayan mungkin menolak (400)`
+            );
+        }
         if (descriptor.enum) {
             const allowed = descriptor.enum;
             const val = typeof raw[name] === 'string' ? raw[name].trim().toLowerCase() : raw[name];
@@ -402,10 +409,8 @@ function sanitizeAgentParams(agent, params, providerOrDoor, modelId) {
         if (!Number.isFinite(parsed)) continue;
         out[name] = Math.max(descriptor.min, Math.min(descriptor.max, parsed));
     }
-    // Pastikan medan krusial bukan kosong (fallback ke lalai ejen).
-    for (const name of Object.keys(defaults)) {
-        if (out[name] === undefined) out[name] = defaults[name];
-    }
+    // [TOTAL UNLOCK FASA 1 — K3] Auto-fill lalai ejen DIGUGURKAN: medan yang
+    // pengguna tidak set TIDAK dihantar (enjin tidak mencipta nilai).
     return out;
 }
 
@@ -419,13 +424,11 @@ function sanitizeAgentParams(agent, params, providerOrDoor, modelId) {
  * @returns {boolean}
  */
 function agentParamsDeviateFromDefault(agent, params, providerOrDoor, modelId) {
+    // Pencetus bypassCache automatik — kekal (keselamatan cache). descriptor.fixed
+    // tidak wujud lagi; deviasi diukur terhadap cadangan lalai ejen.
     if (!params || typeof params !== 'object' || Object.keys(params).length === 0) return false;
     const defaults = getAgentDefaultParams(agent, providerOrDoor, modelId);
-    const profile = resolveCapabilityProfile(providerOrDoor, modelId);
     for (const [name, value] of Object.entries(params)) {
-        const descriptor = profile.parameters[name];
-        if (!descriptor) return true; // parameter tidak disokong = deviasi eksplisit
-        if (descriptor.fixed !== undefined) continue; // fixed sentiasa sama
         if (defaults[name] !== value) return true;
     }
     return false;

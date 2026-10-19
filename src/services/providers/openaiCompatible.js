@@ -50,9 +50,12 @@ class OpenAICompatibleProvider {
         this.providerName = options.providerName || 'custom';
         this.authFailureCacheKey = getProviderAuthFailureCacheKey(this.providerName, this.apiKey);
         this.headers = options.headers || {};
-        this.temperature = options.temperature !== undefined ? options.temperature : 0.2;
+        // [TRINITY TOTAL UNLOCK FASA 1 — Mandat Owner 2026-10-19] Lalai 0.2/0.95
+        // DIGUGURKAN — undefined apabila pengguna tidak set; enjin menghantar
+        // HANYA nilai eksplisit (pelayan guna lalai asalnya sendiri).
+        this.temperature = options.temperature !== undefined ? options.temperature : undefined;
         this.maxOutputTokens = options.maxOutputTokens || 65536;
-        this.topP = options.topP !== undefined ? options.topP : 0.95;
+        this.topP = options.topP !== undefined ? options.topP : undefined;
         // [AUDIT-WARISAN 2026-09-29] WARISAN/no-op (dead store): disimpan tetapi
         // tidak pernah dibaca — builder universal (universalPayload=true) tidak
         // membawa max_tokens; laluan terjemahan warisan pula menggunakan
@@ -286,7 +289,13 @@ class OpenAICompatibleProvider {
      */
     applySmartModelPayload(body, modelName, rawEffort) {
         const m = String(modelName || '').toLowerCase();
-        const effort = rawEffort || 'disabled';
+        // [TRINITY TOTAL UNLOCK FASA 1 — Mandat Owner 2026-10-19, K5] Tiada nilai
+        // reasoning EKSPLISIT pengguna → JANGAN sentuh body sama sekali (model guna
+        // lalai semula jadi pelayan). Enjin dilarang mencipta nilai reasoning.
+        if (rawEffort === undefined || rawEffort === null || String(rawEffort).trim() === '') {
+            return;
+        }
+        const effort = String(rawEffort).trim().toLowerCase();
         const isDisable = effort === 'disabled' || effort === 'none' || effort === 'no_think';
 
         // 1. DEEPSEEK FAMILY (deepseek-v4-pro, deepseek-v4-flash)
@@ -306,7 +315,13 @@ class OpenAICompatibleProvider {
         // 2. GLM / ZHIPU AI FAMILY
         if (m.includes('glm')) {
             if (m.includes('5.3')) {
-                // GLM-5.3 & GLM-5.3-flash: Thinking ALWAYS-ON (pantang disabled = 400 error)
+                // [TOTAL UNLOCK FASA 1 — K4] GLM-5.3 selalu-on, TETAPI nilai
+                // pengguna dihormati: 'disabled' → JANGAN hantar parameter
+                // reasoning langsung (biar model guna lalai semula jadinya),
+                // BUKAN dipaksa 'low'. Usaha lain dipetakan mengikut dialect vendor.
+                if (isDisable) {
+                    return;
+                }
                 let mapped = 'low';
                 if (effort === 'max') mapped = 'max';
                 else if (effort === 'high' || effort === 'xhigh' || effort === 'medium') mapped = 'high';
@@ -333,7 +348,11 @@ class OpenAICompatibleProvider {
         // 3. KIMI / MOONSHOT AI FAMILY
         if (m.includes('kimi')) {
             if (m.includes('k3')) {
-                // Kimi-k3: Always-on, top-level reasoning_effort
+                // [TOTAL UNLOCK FASA 1 — K4] Kimi-k3 selalu-on, TETAPI 'disabled'
+                // pengguna dihormati: JANGAN hantar parameter (bukan paksa 'low').
+                if (isDisable) {
+                    return;
+                }
                 let mapped = 'low';
                 if (effort === 'max') mapped = 'max';
                 else if (effort === 'high' || effort === 'xhigh' || effort === 'medium') mapped = 'high';
@@ -453,18 +472,32 @@ class OpenAICompatibleProvider {
         //   - Siling masa: diuruskan pada lapisan axios (translationTimeout,
         //     lalai Agent Inspector 300000ms = tepat siling Caddy) — bukan pada muatan.
         if (this.universalPayload === true) {
+            // [TRINITY TOTAL UNLOCK FASA 1 — Mandat Owner 2026-10-19, K1]
+            // temperature 0.0 hardcoded DIGUGURKAN. Hantar HANYA nilai eksplisit
+            // pengguna; medan tidak diset → kunci TIDAK dihantar (pelayan guna
+            // lalai asalnya). stream:true kekal sebagai invariant pengangkutan
+            // (keputusan rasmi Owner §8.1 — elak 504 gateway, bukan parameter
+            // generasi).
             const universalBody = {
                 model: this.model,
                 messages,
-                // [PAYLOAD-GODTIER] 4-kunci TEPAT: {model, messages, stream, temperature}.
-                // Laluan sebenar Agent Inspector (translateSubtitle → delegasi SSE) sentiasa
-                // memanggil builder ini dengan stream=true — STREAMING WAJIB untuk
-                // mengalahkan siling keras Caddy 300s. Bentuk stream:false hanya
-                // wujud pada laluan fallback apabila endpoint membuktikan ketidak-
-                // sokongan SSE (lebih baik daripada kegagalan total).
-                stream: stream === true,
-                temperature: 0.0
+                // [PAYLOAD-GODTIER] STREAMING WAJIB untuk mengalahkan siling keras
+                // Caddy 300s. Bentuk stream:false hanya wujud pada laluan fallback
+                // apabila endpoint membuktikan ketidak-sokongan SSE.
+                stream: stream === true
             };
+            if (this.temperature !== undefined && this.temperature !== null) {
+                universalBody.temperature = this.temperature;
+            }
+            if (this.topP !== undefined && this.topP !== null) {
+                universalBody.top_p = this.topP;
+            }
+            if (this.presencePenalty !== undefined && this.presencePenalty !== null) {
+                universalBody.presence_penalty = this.presencePenalty;
+            }
+            if (this.frequencyPenalty !== undefined && this.frequencyPenalty !== null) {
+                universalBody.frequency_penalty = this.frequencyPenalty;
+            }
             return {
                 body: universalBody,
                 url: `${this.baseUrl}/chat/completions`,
@@ -617,26 +650,13 @@ class OpenAICompatibleProvider {
     }
 
     getCappedMaxOutputTokens() {
+        // [TRINITY TOTAL UNLOCK FASA 1 — Mandat Owner 2026-10-19, K9]
+        // Math.max(raw, 65536) paksa-naik DIGUGURKAN — had yang diminta pengguna
+        // dihormati 100%. Kekal hanya benteng siling mutlak vendor (Keputusan
+        // Rasmi Owner §8.2): clamp atas 131072 + clamp bawah 1 (nilai sah
+        // minimum; 65536 kekal sebagai LALAI apabila pengguna tidak menetapkan).
         const raw = Number.isFinite(Number(this.maxOutputTokens)) ? Number(this.maxOutputTokens) : 65536;
-        const model = String(this.model || '').toLowerCase();
-
-        if (
-            model.includes('deepseek') ||
-            model.includes('kimi') ||
-            model.includes('glm') ||
-            model.includes('claude') ||
-            model.includes('gpt-5') ||
-            model.includes('o1') ||
-            model.includes('o3') ||
-            model.includes('thinking') ||
-            model.includes('reasoner') ||
-            model.includes('minimax') ||
-            model.includes('hy3')
-        ) {
-            return Math.max(raw, 65536);
-        }
-
-        return Math.max(1024, Math.min(Math.floor(raw), 131072));
+        return Math.max(1, Math.min(Math.floor(raw), 131072));
     }
 
     buildUserPrompt(subtitleContent, targetLanguage, customPrompt = null) {
