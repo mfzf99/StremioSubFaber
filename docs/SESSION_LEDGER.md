@@ -1,3 +1,18 @@
+## 2026-10-19 — v3.16.5 DATA KELAYAKAN THINKING GEMINI: KAPTUREN PENUH 63 MODEL (ENDPOINT DETAIL)
+
+- **Tarikh:** 2026-10-19 ~19:20 (waktu tempatan KL)
+- **Komit SHA (HEAD):** (akan diisi selepas commit).
+- **Keputusan Owner:** Susulan soalan Owner ("data thinking level takda dalam metadata itu kan?") — probe mendedahkan medan `thinking` (boolean) TIADA dalam respons senarai `/v1beta/models` tetapi ADA dalam endpoint detail `GET /v1beta/models/{id}`. Owner mengarahkan sedutan penuh semua 63 model + arkib dalam dokumen ground truth sedia ada. SIFAR perubahan kod runtime (docs-only).
+- **Kapturen:** 63 panggilan detail (batch 8-serentak, 0 ralat) = **37 model `thinking: true` / 26 model medan ABSENT**. Keluarga true: semua teks standard (2.5/3.x/3.5/3.6/3.7/3.8/4-argon, `-latest`, Omni, Gemma 4, Computer-Use, Robotics-ER, Deep Research ×3) + Nano Banana 2/Pro 3.x + audio native 2.5 + `gemini-3.8-live-extended-thinking`. Keluarga ABSENT: TTS ×5, antigravity ×3 (dwi-ABSENT bersama kunci sampling), embedding ×3, Veo ×3, Lyria ×4, transcribe/live ×5, `gemini-2.5-flash-image` (gen-1), legacy aqa.
+- **Sekatan penting didokumenkan:** `thinking` hanya boolean kelayakan — TIADA `thinkingBudget` min/max/tahap; angka bajet kekal kontrak `thinkingBudget` projek (integer, `0`=disabled, `-1`=dynamic). Boolean sesuai jadi kunci pengaktifan medan Thinking UI per-model dalam `modelCapabilities.js`.
+- **Zero Secret Logging:** kunci ujian via env sahaja; imbasan corak `AIza*` = sifar padanan; artifak `.diag-thinking.json` dipadam.
+- **Pipeline 8 langkah:** Langkah-0 Frontend NO-OP (100% dokumentasi); SemVer 3.16.4 → 3.16.5 (patch — docs-only); CHANGELOG entri penuh; cache-buster runtime-driven LULUS (sifar pin statik `3.16.4`); Prettier PASS; ESLint 0 error / 225 warning (pra-wujud, selari baseline); `npm test` = **461 total / 460 PASS / 0 FAIL / 1 SKIP (live Redis)** — baseline monotonik terpelihara (≥ 461); graphify NO-OP (`graphify-out/` absent).
+- **Fail Terlibat:** docs/GEMINI_MODELS_METADATA_GROUND_TRUTH.md (seksyen baharu §Data Kelayakan Thinking), package.json (bump), CHANGELOG.md, docs/SESSION_LEDGER.md (blok ini).
+- **Status npm test:** `461 total / 460 PASS / 0 FAIL / 1 SKIP (live Redis)`.
+- **Next Steps:** git commit + push origin main (WAJIB verifikasi `git rev-parse origin/main` — insiden push-senyap ×6 direkodkan) → CI via `gh` CLI — mesti **SUCCESS** (Node 22/24).
+
+---
+
 ## 2026-10-19 — v3.16.4 DOKUMENTASI METADATA MODEL GEMINI NATIVE — GROUND TRUTH KE-2
 
 - **Tarikh:** 2026-10-19 ~19:08 (waktu tempatan KL)

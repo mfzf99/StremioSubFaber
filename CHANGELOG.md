@@ -2,6 +2,13 @@
 
 All notable changes to this project will be documented in this file.
 
+## SubFaber v3.16.5 (2026-10-19) — Gemini Thinking-Eligibility Data: Full 63-Model Detail-Endpoint Capture
+
+### 📚 Documentation
+
+- **Archived the complete per-model `thinking` eligibility data into [docs/GEMINI_MODELS_METADATA_GROUND_TRUTH.md](docs/GEMINI_MODELS_METADATA_GROUND_TRUTH.md) (docs-only, zero runtime code changes):** the `thinking` boolean is NOT announced by the list endpoint `/v1beta/models` — it only appears in the per-model detail endpoint `GET /v1beta/models/{id}`. A full capture of all 63 models (batches of 8 concurrent detail calls, 0 errors) recorded **37 models with `thinking: true`** (all standard text models 2.5/3.x/3.5/3.6/3.7/3.8/4-argon, `-latest` aliases, Omni, Gemma 4, Computer-Use, Robotics-ER, Deep Research ×3, plus the Nano Banana 2/Pro 3.x image family and the 2.5 native-audio family) and **26 models with the field entirely ABSENT** (TTS ×5, the antigravity family ×3 — double-absent together with its sampling keys, embeddings ×3, Veo ×3, Lyria ×4, transcribe/live ×5, first-generation `gemini-2.5-flash-image`, legacy aqa).
+- **Documented the boundary and mapping implications:** the field is a bare eligibility boolean — it carries NO `thinkingBudget` min/max or reasoning levels (actual budget numbers remain the project's `thinkingBudget` integer contract: `0` = disabled, `-1` = dynamic), and it is a suitable per-model key for enabling the Thinking UI field in [src/utils/modelCapabilities.js](src/utils/modelCapabilities.js). Notable empirical quirks recorded: `gemini-3.8-live-extended-thinking` = true while plain `gemini-3.8-live` = ABSENT; the 2.5 native-audio models are thinking-eligible despite not being standard text. Zero Secret Logging maintained throughout (env-loaded test key; `AIza*` pattern scan clean; temporary capture artifact deleted).
+
 ## SubFaber v3.16.4 (2026-10-19) — Gemini Models Metadata Ground Truth Documentation
 
 ### 📚 Documentation
