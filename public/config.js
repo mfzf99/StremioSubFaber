@@ -1100,7 +1100,11 @@ Translate to {target_language}.`;
         'gemini-3.1-flash-lite-image': { default: 'minimal', levels: ['minimal', 'high'] }, // low/medium TIDAK disokong
         'gemini-3.1-flash-lite': { default: 'minimal', levels: ['minimal', 'low', 'medium', 'high'] },
         'gemini-3.1-pro-preview': { default: 'high', levels: ['low', 'medium', 'high'] }, // minimal TIDAK disokong
-        'gemini-3-flash-preview': { default: 'high', levels: ['minimal', 'low', 'medium', 'high'] }
+        // [GEMINI METADATA OVERHAUL 2026-10-19] Alias tanpa '-preview' — dijual
+        // melalui Crazy Router (gemini native door, verified live) & alias rasmi.
+        'gemini-3.1-pro': { default: 'high', levels: ['low', 'medium', 'high'] }, // minimal TIDAK disokong
+        'gemini-3-flash-preview': { default: 'high', levels: ['minimal', 'low', 'medium', 'high'] },
+        'gemini-3-flash': { default: 'high', levels: ['minimal', 'low', 'medium', 'high'] }
         // gemini-3-pro-preview dialih keluar (shutdown 9 Mac 2026)
         // 2.5 models tiada 'level' — guna thinkingBudget (integer) sahaja
     };
@@ -1259,17 +1263,29 @@ Translate to {target_language}.`;
         'gemini-3.1-pro-preview': {
             thinkingLevel: 'high',
             thinkingBudget: -1,
-            temperature: 0.2
+            temperature: 1.0
         },
         'gemini-3.1-flash-lite': {
             thinkingLevel: 'minimal',
             thinkingBudget: -1,
-            temperature: 0.2
+            temperature: 1.0
         },
         'gemini-3-flash-preview': {
             thinkingLevel: 'high',
             thinkingBudget: -1,
-            temperature: 0.5
+            temperature: 1.0
+        },
+        // [GEMINI METADATA OVERHAUL 2026-10-19] Alias tanpa '-preview'
+        // (Crazy Router gemini native door — verified live 2026-10-19).
+        'gemini-3-flash': {
+            thinkingLevel: 'high',
+            thinkingBudget: -1,
+            temperature: 1.0
+        },
+        'gemini-3.1-pro': {
+            thinkingLevel: 'high',
+            thinkingBudget: -1,
+            temperature: 1.0
         },
         'gemini-3-pro-preview': {
             thinkingLevel: 'high',
@@ -1279,7 +1295,7 @@ Translate to {target_language}.`;
         'gemini-3.5-flash': {
             thinkingLevel: 'high',
             thinkingBudget: -1,
-            temperature: 0.5
+            temperature: 1.0
         },
         'gemini-flash-lite-latest': {
             thinkingLevel: 'minimal',
@@ -1331,14 +1347,16 @@ Translate to {target_language}.`;
         const isGemini3 =
             /^gemini-3(?:[.-]|$)/.test(normalized) || /^gemini-(?:flash|flash-lite|pro)-latest$/.test(normalized);
 
+        // [GEMINI METADATA OVERHAUL 2026-10-19] Fallback 3.x-legacy: temperature
+        // cadangan Google = 1.0 (KEPUTUSAN OWNER — placeholder cadangan, bukan lock).
         if (isGemini3 && normalized.includes('flash-lite')) {
-            return { thinkingLevel: 'minimal', thinkingBudget: -1, temperature: 0.2 };
+            return { thinkingLevel: 'minimal', thinkingBudget: -1, temperature: 1.0 };
         }
         if (isGemini3 && normalized.includes('flash')) {
-            return { thinkingLevel: 'high', thinkingBudget: -1, temperature: 0.5 };
+            return { thinkingLevel: 'high', thinkingBudget: -1, temperature: 1.0 };
         }
         if (isGemini3 && normalized.includes('pro')) {
-            return { thinkingLevel: 'high', thinkingBudget: -1, temperature: 0.2 };
+            return { thinkingLevel: 'high', thinkingBudget: -1, temperature: 1.0 };
         }
         if (normalized.includes('gemma')) {
             return { thinkingLevel: 'disabled', thinkingBudget: -1, temperature: 0.2 };

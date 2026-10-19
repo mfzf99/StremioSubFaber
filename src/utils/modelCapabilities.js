@@ -70,7 +70,10 @@ function geminiProfile(modelId) {
                 temperature: GEMINI_SAMPLING,
                 topP: GEMINI_TOP_P,
                 thinkingBudget: param(-1, 200000, -1),
-                maxOutputTokens: param(1, 65535, 32768),
+                // [GEMINI METADATA OVERHAUL 2026-10-19] Siling output sebenar
+                // pelayan = 65,536 (docs/GEMINI_MODELS_METADATA_GROUND_TRUTH.md
+                // §a) — betulkan off-by-one 65535 → 65536 (mirror frontend).
+                maxOutputTokens: param(1, 65536, 32768),
                 frequencyPenalty: FREQUENCY_PENALTY,
                 presencePenalty: PRESENCE_PENALTY
             },
@@ -106,10 +109,13 @@ function geminiProfile(modelId) {
     if (minor !== null) {
         // 3.x LEGACY (3.0 / 3.1 / 3.5-flash pra-reroute dilindungi oleh keputusan
         // #1 — semua 3.5-flash kini STRICT; cabang ini meliputi 3.0/3.1 sahaja).
+        // [GEMINI METADATA OVERHAUL 2026-10-19] Cadangan rasmi Google =
+        // temperature 1.0 (KEPUTUSAN OWNER 2026-10-19 — placeholder cadangan,
+        // bukan clamp; USER-SOVEREIGNTY kekal).
         return {
             family: 'gemini-3.x-legacy',
             parameters: {
-                temperature: GEMINI_SAMPLING,
+                temperature: param(0, 2, 1.0),
                 topP: GEMINI_TOP_P,
                 thinkingLevel: param(0, 0, 'high', { enum: GEMINI_THINKING_LEVEL_ENUM }),
                 maxOutputTokens: param(1, 65536, 32768),
@@ -125,7 +131,7 @@ function geminiProfile(modelId) {
         parameters: {
             temperature: GEMINI_SAMPLING,
             topP: GEMINI_TOP_P,
-            maxOutputTokens: param(1, 65535, 32768),
+            maxOutputTokens: param(1, 65536, 32768),
             frequencyPenalty: FREQUENCY_PENALTY,
             presencePenalty: PRESENCE_PENALTY
         },

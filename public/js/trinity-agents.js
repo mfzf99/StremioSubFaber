@@ -468,7 +468,10 @@
                     temperature: MP_GEMINI_SAMPLING,
                     topP: MP_GEMINI_TOP_P,
                     thinkingBudget: mpParam(-1, 200000, -1),
-                    maxOutputTokens: mpParam(1, 65535, 32768),
+                    // [GEMINI METADATA OVERHAUL 2026-10-19] Siling output sebenar
+                    // pelayan = 65,536 (docs/GEMINI_MODELS_METADATA_GROUND_TRUTH.md
+                    // §a) — betulkan off-by-one 65535 → 65536.
+                    maxOutputTokens: mpParam(1, 65536, 32768),
                     frequencyPenalty: MP_FREQUENCY_PENALTY,
                     presencePenalty: MP_PRESENCE_PENALTY
                 },
@@ -502,10 +505,14 @@
             };
         }
         if (minor !== null) {
+            // [GEMINI METADATA OVERHAUL 2026-10-19] 3.x-legacy (3-flash, 3.1-pro,
+            // 3.1-flash-lite, 3.5-flash pra-reroute): cadangan rasmi Google =
+            // temperature 1.0 (KEPUTUSAN OWNER 2026-10-19 — placeholder cadangan,
+            // kekal boleh ubah; HIDE ≠ LOCK).
             return {
                 family: 'gemini-3.x-legacy',
                 parameters: {
-                    temperature: MP_GEMINI_SAMPLING,
+                    temperature: mpParam(0, 2, 1.0, { uiHint: 'google-recommends-temperature-1.0' }),
                     topP: MP_GEMINI_TOP_P,
                     thinkingLevel: mpParam(0, 0, 'high', { enum: MP_GEMINI_THINKING_LEVELS }),
                     maxOutputTokens: mpParam(1, 65536, 32768),
@@ -520,7 +527,7 @@
             parameters: {
                 temperature: MP_GEMINI_SAMPLING,
                 topP: MP_GEMINI_TOP_P,
-                maxOutputTokens: mpParam(1, 65535, 32768),
+                maxOutputTokens: mpParam(1, 65536, 32768),
                 frequencyPenalty: MP_FREQUENCY_PENALTY,
                 presencePenalty: MP_PRESENCE_PENALTY
             },
@@ -841,17 +848,65 @@
     // enjin tidak mencipta nilai (pelayan guna lalai asalnya). placeholderValue
     // diisi dari cadangan lalai ejen; savedValue diisi dari konfigurasi
     // pengguna yang sebenar (null/'' → kosong).
+    // [GEMINI METADATA OVERHAUL 2026-10-19 — FASA 3 STEPPER] Langkah klik
+    // per-parameter: integer besar (token/bajet) = 1024 (KEPUTUSAN OWNER);
+    // lain-lain ikut `step` descriptor (0.1 / 0.01).
+    function mpStepperStep(name, descriptor) {
+        if (name === 'maxOutputTokens' || name === 'thinkingBudget') return 1024;
+        var s = parseFloat(descriptor && descriptor.step);
+        if (Number.isFinite(s) && s > 0) return s;
+        return name === 'topP' ? 0.01 : 0.1;
+    }
+
+    function mpStepperNudge(input, direction) {
+        if (!input) return;
+        var min = parseFloat(input.min);
+        var max = parseFloat(input.max);
+        var step = parseFloat(input.dataset.mpStep || '0.1');
+        var raw = String(input.value || '').trim();
+        var base;
+        if (raw === '') {
+            // Placeholder doctrine: input kosong = tiada nilai disimpan. Stepper
+            // bermula dari cadangan placeholder sebagai titik mula interaktif.
+            base = parseFloat(input.placeholder);
+            if (!Number.isFinite(base)) base = Number.isFinite(min) ? min : 0;
+        } else {
+            base = parseFloat(raw);
+            if (!Number.isFinite(base)) base = 0;
+        }
+        var next = base + direction * step;
+        if (Number.isFinite(min)) next = Math.max(min, next);
+        if (Number.isFinite(max)) next = Math.min(max, next);
+        // Kekalkan ketepatan perpuluhan mengikut step (elak 0.3000000000004).
+        var decimals = (String(step).split('.')[1] || '').length;
+        input.value = decimals > 0 ? next.toFixed(decimals) : String(Math.round(next));
+        input.dispatchEvent(new Event('input', { bubbles: true }));
+        input.dispatchEvent(new Event('change', { bubbles: true }));
+    }
+
+    function mpBuildStepperButton(input, direction, label) {
+        var btn = createEl('button', 'trinity-mp-step-btn', direction > 0 ? '+' : '−');
+        btn.type = 'button';
+        btn.setAttribute('aria-label', (direction > 0 ? 'Increase ' : 'Decrease ') + label);
+        btn.addEventListener('click', function () {
+            mpStepperNudge(input, direction);
+        });
+        return btn;
+    }
+
     function mpBuildNumberField(agentKey, name, label, descriptor, savedValue, placeholderValue, uiHint) {
         var wrap = createEl('div', 'trinity-mp-field');
         wrap.dataset.mpParam = name;
         wrap.dataset.mpAgent = agentKey;
         wrap.appendChild(mpFieldLabel(label));
+        var stepperWrap = createEl('div', 'trinity-mp-stepper');
         var input = createEl('input', 'trinity-mp-input');
         input.type = 'number';
         input.id = 'trinity-mp-' + agentKey + '-' + name;
         input.min = String(descriptor.min);
         input.max = String(descriptor.max);
         input.step = name === 'topP' ? '0.01' : '0.1';
+        input.dataset.mpStep = String(mpStepperStep(name, descriptor));
         // Nilai SEBENAR pengguna hanya bila wujud (bukan lalai auto-isi).
         input.value =
             savedValue !== undefined && savedValue !== null && String(savedValue) !== '' ? String(savedValue) : '';
@@ -861,7 +916,12 @@
         }
         input.dataset.mpName = name;
         input.dataset.mpAgent = agentKey;
-        wrap.appendChild(input);
+        stepperWrap.appendChild(input);
+        var btnCol = createEl('div', 'trinity-mp-stepper-btns');
+        btnCol.appendChild(mpBuildStepperButton(input, 1, label));
+        btnCol.appendChild(mpBuildStepperButton(input, -1, label));
+        stepperWrap.appendChild(btnCol);
+        wrap.appendChild(stepperWrap);
         // [TOTAL UNLOCK] Nota panduan uiHint (ground-truth-suggests-*, server-strips) —
         // bersaiz mikro, token CSS tema, tanpa kod warna keras.
         if (uiHint) {
@@ -934,7 +994,9 @@
         'server-strips-for-this-model': 'Server may ignore this value for this model.',
         'ground-truth-suggests-1.0': 'Suggested value: 1.0 (other values may be rejected by the server).',
         'ground-truth-suggests-0.95': 'Suggested value: 0.95 (other values may be rejected by the server).',
-        'thinking-locks-temperature-1.0': 'When thinking is enabled, temperature is set to 1.0 by the provider.'
+        'thinking-locks-temperature-1.0': 'When thinking is enabled, temperature is set to 1.0 by the provider.',
+        // [GEMINI METADATA OVERHAUL 2026-10-19] 3.x-legacy — cadangan rasmi Google.
+        'google-recommends-temperature-1.0': 'Google recommends temperature 1.0 for this model.'
     };
 
     var MP_FIELD_LABELS = {
