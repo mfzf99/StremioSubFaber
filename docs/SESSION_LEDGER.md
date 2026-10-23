@@ -1,3 +1,35 @@
+## 2026-10-23 — v3.17.0 [br] PARITY ENFORCEMENT: PENYELARASAN PEMUTUS BARIS PASCA-AI PROGRAMATIK
+
+- **Tarikh:** 2026-10-23 ~18:05 (waktu tempatan KL)
+- **Komit SHA (HEAD):** (diisi selepas push — sesi ini)
+- **Keputusan Owner:** (1) Audit aliran `[br]` mengesahkan kontrak "same count of `[br]`" hanya dipegang system prompt — TIADA enforcement programatik. (2) Plan pembedahan [`plans/br-parity-enforcement-2026-10-23.md`](../plans/br-parity-enforcement-2026-10-23.md) DILULUSKAN: auto-repair ON default; Phase 2 (stat Agent Inspector + kill-switch config) ditangguhkan ke backlog. (3) Pipeline 8-langkah ke `main` diarahkan sebagai v3.17.0 (Minor).
+- **Intipati pembedahan (backend, sifar UI):**
+  - [src/services/translationEngine.js](../src/services/translationEngine.js): konstanta module `BR_MARKER_PATTERN` (SSOT semua bentuk marker: `[br]`, `<br>`, `<br/>`, entity-escaped) — stage 4 `cleanTranslatedText()` kini guna konstanta ini. Method baharu `reconcileBrParity(sourceText, translatedText)`: kiraan sama → passthrough; AI tambah break → dikekalkan; AI kurang break → auto-repair sisip `\n` pada offset nisbah kepanjangan baris sumber, split terbaik ikut keutamaan sempadan ayat > koma > ruang terdekat, SESAHASIA tiada pemotongan perkataan tengah, output tiada `\n\n`. `cleanTranslatedText(text, sourceText = undefined)` — param kedua optional (back-compat penuh), hook stage 4.5 SELEPAS penukaran `[br]` → `\n`. 3 tapak caller merge-loop (~1079, ~1613, ~3371) dihantar teks sumber.
+  - [src/utils/parallelTranslation.js](../src/utils/parallelTranslation.js): 2 tapak caller (streaming callback ~92 dengan mapping `globalId` → `firstBatch`; drain loop ~264) dihantar `original.text`.
+  - [src/services/translationEngine-brparity-regression.test.js](../src/services/translationEngine-brparity-regression.test.js) BAHARU: 9 kes regression (passthrough, repair sempadan ayat, repair penuh multi-baris, no-op AI-tambah, normalisasi varian marker, back-compat sumber kosong, dumb-split tiada potong tengah, tiada `\n\n`, integrasi hook + legacy-path guard). Didaftar dalam `test:tracked` [package.json](../package.json).
+- **Nota debug:** 2 kegagalan awal suite (kes 5 & 7) adalah bug test sendiri (urutan pipeline + kiraan perkataan 15 bukan 12/13), bukan bug enjin — dibaiki tanpa sentuh logik enjin.
+- **Fail Terlibat:** src/services/translationEngine.js (M), src/utils/parallelTranslation.js (M), src/services/translationEngine-brparity-regression.test.js (A), package.json (M: version + test:tracked), CHANGELOG.md (M: entri v3.17.0), plans/br-parity-enforcement-2026-10-23.md (A: plan diluluskan), docs/SESSION_LEDGER.md (blok ini).
+- **Status npm test:** **470 total / 469 PASS / 0 FAIL / 1 SKIP** (baseline naik dari 461, +9 monotonic; 1 SKIP = live Redis integration). Prettier PASS, ESLint 0 error (225 warnings semuanya warisan pre-existing). Graphify NO-OP (`graphify-out/` tiada).
+- **Next Steps:** Pantau CI via `gh run watch` sehingga SUCCESS; SHA komit akan direkodkan dalam blok ini pasca-push. Phase 2 backlog: stat drift `[br]` Agent Inspector + config kill-switch.
+
+---
+
+## 2026-10-22 — PERBINCANGAN PERANCANGAN VPS SUBFABER (TIADA PERUBAHAN KOD)
+
+- **Tarikh:** 2026-10-22 ~16:45 (waktu tempatan KL)
+- **Komit SHA (HEAD):** Tiada — sesi perbincangan/penyelidikan sahaja, sifar perubahan kod (dokumen ini sahaja diappend atas arahan Owner).
+- **Keputusan Owner:** Sesi sembang perancangan infrastruktur: bandingkan kategori plan VPS Vultr (AMD High Performance / Intel High Performance / High Frequency / Regular Cloud Compute) untuk hos SubFaber; kemudian semak spec & kredibiliti provider alternatif Terabix (Johor, MY).
+- **Analisis profil beban SubFaber (ground truth kod):** I/O-bound (menunggu API Gemini/CrazyRouter/OpenSubtitles), single-core critical (event loop Node.js: parsing SRT/ASS, Trinity orchestration — [src/utils/parallelTranslation.js](../src/utils/parallelTranslation.js) 5 batch selari × 150 entri), ceiling memori agresif ([src/utils/resourceLimits.js](../src/utils/resourceLimits.js): archive 256MB total, respons AI 64MB, anime list 128MB). Kesimpulan: RAM & single-core speed > bilangan core; NVMe penting untuk Redis AOF/RDB.
+- **Perbandingan Vultr (data vultr.com/pricing):** AMD HP & Intel HP harga/spec SAMA ($6 → $144). Sweet spot = 2 vCPU/4GB: HF $24 (Xeon 3GHz+, 128GB NVMe, 3TB BW) vs HP $24 (5TB BW, 100GB NVMe). Regular Performance ($20) DITOLAK — CPU legacy + SSD biasa. Verdict awal: High Frequency 2vCPU/4GB untuk single-core terbaik; HP-AMD jika traffic bandwidth tinggi. Tangga: 1vCPU/2GB $12 = minimum praktikal; 2vCPU/4GB $24 = smooth; 4vCPU/8GB $48 = public ramai.
+- **Analisis bandwidth:** 1TB/bulan LEBIH dari cukup — SRT 30–150KB, ASS kompleks 0.5–5MB, kasar ~1–5MB bandwidth keluar/episod; cache hit Redis tidak keluar network. Peribadi <5GB/mo; public addon sederhana ~50–200GB/mo.
+- **Keputusan Terabix MY $7/mo (terabix.net — Johor):** 2 vCPU AMD Genoa (EPYC 9654) / 4GB DDR5 / 30GB NVMe Gen4 RAID-10 / 1TB Premium BW / IPv4 + /64 IPv6. **VERDICT: LAYAK AMBIL** — 3.4x lebih murah dari Vultr $24 dengan hardware lebih baharu. Kredibiliti disemak via Firecrawl: review LowEndTalk Jul-2026 (snappy, support cemerlang, uptime 99.97% Hetrix), YABS sebenar (4K random ~95k IOPS — Redis AOF pantas; ~1Gbps ke SG ping 1.93ms), network sendiri AS137552 (Terabix Technologies Sdn. Bhd., SSM), direct interconnect Equinix SG1 + peer SGIX, coverage LowEndBox/Trustpilot/Facebook developer MY — tiada red flag.
+- **Nota risiko & tindakan pasca-subscribe:** (a) Disk 30GB paling ketat — WAJIB konfigur Redis `maxmemory` (~1.5gb) + `maxmemory-policy allkeys-lru` + disiplin TTL cache subtitle; (b) provider kecil = risiko bisnes lebih tinggi dari hyperscaler — export/backup config SubFaber (tersimpan dalam Redis) berkala di luar VPS; (c) Vultr hanya menang jika perlu global region/snapshot ecosystem matang/addon public besar.
+- **Fail Terlibat:** docs/SESSION_LEDGER.md (blok ini) sahaja.
+- **Status npm test:** Tidak dijalankan — sifar perubahan kod runtime (docs-only ledger append).
+- **Next Steps:** Owner akan tanya susulan konfigurasi Redis di VPS baharu (maxmemory, eviction policy, persistence AOF/RDB) — jawapan bersedia dalam blok ini sebagai rujukan.
+
+---
+
 ## 2026-10-19 — v3.16.6 (CADANGAN) OVERHAUL PARAMETER GEMINI: CRAZY ROUTER + OFFICIAL + STEPPER (+/−)
 
 - **Tarikh:** 2026-10-19 ~20:30 (waktu tempatan KL)

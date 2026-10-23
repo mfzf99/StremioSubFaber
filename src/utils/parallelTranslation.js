@@ -86,10 +86,16 @@ async function executeParallelTranslation(engine, entries, targetLanguage, custo
                     for (const entry of parsed) {
                         const globalId = (entry.id || 0) + offset;
                         if (globalId <= 0) continue;
+                        // [BR-PARITY v3.x] Map balik ke entri sumber firstBatch untuk
+                        // parity enforcement (streaming path).
+                        const sourceOriginal = firstBatch[globalId - firstBatchStartId];
                         streamingBatchEntries.set(globalId, {
                             id: globalId,
                             timecode: entry.timecode,
-                            text: engine.cleanTranslatedText(entry.text || '')
+                            text: engine.cleanTranslatedText(
+                                entry.text || '',
+                                sourceOriginal ? sourceOriginal.text : undefined
+                            )
                         });
                     }
 
@@ -259,7 +265,10 @@ async function executeParallelTranslation(engine, entries, targetLanguage, custo
                         for (let j = 0; j < batchData.length; j++) {
                             const original = batchData[j];
                             const translated = resolvedData[j] || {};
-                            const cleanedText = engine.cleanTranslatedText(translated.text || original.text);
+                            const cleanedText = engine.cleanTranslatedText(
+                                translated.text || original.text,
+                                original.text
+                            );
                             const timecode =
                                 engine.sendTimestampsToAI && translated.timecode
                                     ? translated.timecode

@@ -59,6 +59,12 @@ const { executeParallelTranslation } = require('../utils/parallelTranslation');
 const PACING_DELAY_MS = 0;
 const sleep = (ms) => new Promise((resolve) => setTimeout(resolve, ms));
 
+// [BR-PARITY v3.x — Mandat Owner 2026-10-23] Konstanta module tunggal untuk semua
+// bentuk line-break marker AI ([br], <br>, <br/>, entity-escaped). Dipakai oleh
+// pembinaan payload (source side di-replace terbalik) dan oleh reconcileBrParity()
+// + stage 4 cleanTranslatedText — satu regex, sifar drift definisi.
+const BR_MARKER_PATTERN = /\s*(?:\[br\]|<br\s*\/?>|&(?:lt|#60);br\s*\/?&(?:gt|#62);)\s*/gi;
+
 // Extract normalized tokens from a language label/code (split on common separators)
 function tokenizeLanguageValue(value) {
     return String(value || '')
@@ -1069,7 +1075,8 @@ class TranslationEngine {
                         const translated = translatedBatch[i] || {};
 
                         // Clean translated text
-                        const cleanedText = this.cleanTranslatedText(translated.text || original.text);
+                        // [BR-PARITY v3.x] Hantar teks sumber untuk parity enforcement.
+                        const cleanedText = this.cleanTranslatedText(translated.text || original.text, original.text);
 
                         // Create entry with timing from AI when requested, otherwise preserve original timing
                         const timecode =
@@ -1603,7 +1610,7 @@ class TranslationEngine {
                     return {
                         id: orig.id,
                         timecode: this.sendTimestampsToAI && translated.timecode ? translated.timecode : orig.timecode,
-                        text: this.cleanTranslatedText(translated.text || orig.text)
+                        text: this.cleanTranslatedText(translated.text || orig.text, orig.text)
                     };
                 });
                 const normalized = halfEntries.map((entry, idx) => ({
@@ -3360,7 +3367,8 @@ ${batchText}
             if (!original) continue;
 
             // Clean text in real time
-            const cleanedText = this.cleanTranslatedText(entry.text || original.text);
+            // [BR-PARITY v3.x] Hantar teks sumber untuk parity enforcement.
+            const cleanedText = this.cleanTranslatedText(entry.text || original.text, original.text);
             merged.push({
                 id: original.id,
                 timecode: original.timecode,
@@ -3495,10 +3503,155 @@ ${batchText}
     }
 
     /**
+     * [BR-PARITY v3.x — Mandat Owner 2026-10-23] Enforce kiraan line break AI vs sumber.
+     *
+     * Kontrak: system prompt memerintahkan AI kekalkan jumlah [br] sama (reposition
+     * adaptif dibenarkan), tapi itu arahan sahaja — tiada guarantee LLM patuh. Method
+     * ini ialah enforcement programatik post-AI:
+     *   - Kiraan sama            -> passthrough (sifar kos).
+     *   - AI tambah break        -> kekalkan (lebih break jarang rosak tayangan; log debug).
+     *   - AI kurangkan break     -> auto-repair: sisip '\n' supaya kiraan menyamai sumber.
+     *
+     * Strategi repair (elak bergantung semata-mata pada noktah):
+     *   1. Sasar offset berasaskan NISBAH KEPANJANGAN baris asal sumber.
+     *   2. Pilih titik split terbaik berhampiran offset sasaran dengan keutamaan:
+     *      sempadan ayat (. ? ! …) > koma (, ; :) > ruang terdekat.
+     *   3. SESAHASIA pun jangan potong perkataan di tengah — split mesti pada ruang.
+     *   4. Output akhir tidak mengandungi '\n\n' (konsisten stage 4 collapse).
+     *
+     * Pure function: tiada I/O, tiada panggilan API, deterministik.
+     *
+     * @param {string} sourceText - teks sumber (dengan marker [br]/\n asal)
+     * @param {string} translatedText - output AI (sudah ditukar [br] -> \n oleh stage 4)
+     * @returns {string} teks output dengan kiraan '\n' >= kiraan sumber
+     */
+    reconcileBrParity(sourceText, translatedText) {
+        const src = String(sourceText || '');
+        const out = String(translatedText || '');
+        if (src.length === 0 || out.length === 0) {
+            return out;
+        }
+
+        // Kiraan '\n' kedua-dua belah selepas normalisasi marker -> \n.
+        const countNewlines = (t) => {
+            const normalized = t.replace(BR_MARKER_PATTERN, '\n');
+            return (normalized.match(/\n/g) || []).length;
+        };
+
+        const countSrc = countNewlines(src);
+        const countOut = countNewlines(out);
+
+        if (countOut >= countSrc) {
+            if (countOut > countSrc) {
+                log.debug(
+                    () =>
+                        `[TranslationEngine] brParity: AI menambah line break (${countSrc} -> ${countOut}) — dikekalkan`
+                );
+            }
+            return out;
+        }
+
+        // ---- Auto-repair: countOut < countSrc ----
+        // Nisbah kepanjangan segmen sumber sebagai pemberat titik sisipan.
+        const srcLines = src.replace(BR_MARKER_PATTERN, '\n').split('\n');
+        const weights = srcLines.map((l) => Math.max(String(l || '').trim().length, 1));
+        const totalWeight = weights.reduce((a, b) => a + b, 0);
+        const outLen = out.length;
+        const missing = countSrc - countOut;
+
+        // Titik sasaran: kumulatif nisbah panjang * panjang output.
+        const targets = [];
+        let cumulative = 0;
+        for (let i = 0; i < srcLines.length - 1 && targets.length < missing; i++) {
+            cumulative += weights[i];
+            targets.push(Math.floor((cumulative / totalWeight) * outLen));
+        }
+        while (targets.length < missing) {
+            // Sumber tiada segmen cukup (edge: marker bertindan) — agih sekata.
+            const k = targets.length + 1;
+            targets.push(Math.floor((k / (missing + 1)) * outLen));
+        }
+
+        // Cari titik split terbaik berhampiran sasaran: ayat > koma > ruang terdekat.
+        const findSplitPoint = (text, target) => {
+            const pickBest = (re) => {
+                let best = -1;
+                let bestDist = Infinity;
+                let m;
+                re.lastIndex = 0;
+                while ((m = re.exec(text)) !== null) {
+                    const pos = m.index + m[0].length;
+                    const dist = Math.abs(pos - target);
+                    if (dist < bestDist) {
+                        bestDist = dist;
+                        best = pos;
+                    }
+                }
+                return best;
+            };
+            const sentence = pickBest(/[.!?…]["')\]]?\s/g);
+            const comma = pickBest(/[,;:]\s/g);
+            // Utamakan ayat; koma hanya jika dekat dengan sasaran.
+            let splitAt = -1;
+            if (sentence !== -1) {
+                splitAt = sentence;
+            } else if (comma !== -1 && Math.abs(comma - target) <= Math.max(12, target * 0.3)) {
+                splitAt = comma;
+            }
+            if (splitAt === -1) {
+                // Fallback dumb-split: ruang terdekat kepada offset sasaran.
+                let best = -1;
+                let bestDist = Infinity;
+                for (let i = 0; i < text.length; i++) {
+                    if (text[i] === ' ') {
+                        const dist = Math.abs(i - target);
+                        if (dist < bestDist) {
+                            bestDist = dist;
+                            best = i;
+                        }
+                    }
+                }
+                splitAt = best;
+            }
+            if (splitAt <= 0 || splitAt >= text.length) return -1;
+            return splitAt;
+        };
+
+        let repaired = out;
+        let inserted = 0;
+        for (const rawTarget of targets) {
+            const target = Math.min(Math.max(rawTarget + inserted, 1), repaired.length - 1);
+            const splitAt = findSplitPoint(repaired, target);
+            if (splitAt === -1) continue;
+            repaired = repaired.slice(0, splitAt).trimEnd() + '\n' + repaired.slice(splitAt).trimStart();
+            inserted += 1;
+        }
+
+        repaired = repaired.replace(/\n{2,}/g, '\n');
+
+        if (inserted > 0) {
+            log.debug(
+                () =>
+                    `[TranslationEngine] brParity: auto-repair disisip ${inserted}/${missing} line break (src=${countSrc}, out=${countOut})`
+            );
+        } else {
+            log.debug(
+                () =>
+                    `[TranslationEngine] brParity: repair gagal cari titik split selamat (src=${countSrc}, out=${countOut}) — output dikekalkan`
+            );
+        }
+        return repaired;
+    }
+
+    /**
      * Clean translated text (remove timecodes, normalize line endings)
      * [UPDATED]: Full symbol & emoji restoration + hybrid sanitizer + per-line auto-closer
+     *
+     * [BR-PARITY v3.x] Param kedua `sourceText` optional — bila diberikan, kiraan
+     * '\n' output di-enforce terhadap sumber (reconcileBrParity) selepas stage 4.
+     * Caller tanpa sumber kekal tingkah laku lama (back-compat penuh).
      */
-    cleanTranslatedText(text) {
+    cleanTranslatedText(text, sourceText = undefined) {
         let cleaned = String(text || '').trim();
 
         // 1. Remove embedded timecodes
@@ -3598,7 +3751,14 @@ ${batchText}
             .trim();
 
         // 4. Convert [br] back to newline
-        cleaned = cleaned.replace(/\s*(?:\[br\]|<br\s*\/?>|&lt;br\s*\/?&gt;)\s*/gi, '\n').replace(/\n{2,}/g, '\n'); // Collapse multiple consecutive newlines into one
+        //    [BR-PARITY v3.x] Guna konstanta module BR_MARKER_PATTERN (satu SSOT).
+        cleaned = cleaned.replace(BR_MARKER_PATTERN, '\n').replace(/\n{2,}/g, '\n'); // Collapse multiple consecutive newlines into one
+
+        // 4.5 [BR-PARITY v3.x — Mandat Owner 2026-10-23] Enforce kiraan line break
+        //     vs sumber. WAJIB selepas stage 4 supaya kedua-dua belah unit '\n' sama.
+        if (typeof sourceText === 'string' && sourceText.length > 0) {
+            cleaned = this.reconcileBrParity(sourceText, cleaned);
+        }
 
         // 5. Convert redundant dashes to ellipsis — skip numeric ranges ("2020—2024")
         cleaned = cleaned

@@ -2,6 +2,18 @@
 
 All notable changes to this project will be documented in this file.
 
+## SubFaber v3.17.0 (2026-10-23) — [br] Parity Enforcement: Programmatic Post-AI Line-Break Reconciliation & Balanced Auto-Repair
+
+### ✨ New Features
+
+- **Programmatic `[br]` parity enforcement (Mandat Owner 2026-10-23; closes the prompt-only contract gap):** until now the "same count of `[br]`" contract between source text and AI output was held ONLY by the Trinity system prompt (rule 6) — a request, not a guarantee. This release adds deterministic, zero-API-cost enforcement after the AI replies. New module-level constant `BR_MARKER_PATTERN` ([src/services/translationEngine.js](src/services/translationEngine.js)) is now the single source of truth for every line-break marker form (`[br]`, `<br>`, `<br/>`, entity-escaped `<br>`); stage 4 of `cleanTranslatedText()` consumes it directly (zero regex definition drift).
+- **New method `reconcileBrParity(sourceText, translatedText)`:** counts `\n` on both sides after marker normalization and enforces parity — equal counts pass through untouched (zero cost); when the AI ADDS breaks they are kept (extra breaks rarely harm playback; debug-logged); when the AI DROPS breaks, balanced auto-repair inserts `\n` at offsets computed from the **length ratios of the original source lines** (not just sentence boundaries), choosing the best split point near each target with priority **sentence boundary (. ? ! …) > comma (, ; :) > nearest space** — and never, under any path, truncating a word mid-character. Pure, deterministic, no I/O. Output never contains `\n\n` (consistent with the stage-4 collapse).
+- **Integration into 5 caller sites:** `cleanTranslatedText(text, sourceText = undefined)` gains an optional second parameter (full backward compatibility — callers without a source keep the legacy behavior) with the parity hook running as new stage 4.5, strictly AFTER the `[br]` → `\n` conversion so both sides are counted in the same unit. The three merge loops in [src/services/translationEngine.js](src/services/translationEngine.js) (batch merge ~1079, half-batch streaming ~1613, real-time stream merge ~3371) and both paths in [src/utils/parallelTranslation.js](src/utils/parallelTranslation.js) (streaming callback ~92, mapping `globalId` back to the source `firstBatch` entry; drain loop ~264) now pass the original text through.
+
+### ✅ Verification
+
+- **New 9-case regression suite** [src/services/translationEngine-brparity-regression.test.js](src/services/translationEngine-brparity-regression.test.js): passthrough on equal counts; repair at a sentence boundary with no mid-word truncation; full repair when ALL `[br]` are dropped (3 source lines); AI-added breaks kept as no-op; variant markers (`<br>`/`<br/>`) normalized before parity via the full `cleanTranslatedText` pipeline; back-compat with undefined/empty source; punctuation-free long text repaired by space-split fallback with all tokens intact; no `\n\n` residue; and end-to-end hook activation with legacy-path regression guard. Registered in `test:tracked`, raising the safety baseline from 461 to **470 tests (469 PASS / 0 FAIL / 1 SKIP)**. Phase 2 (Agent Inspector drift statistics + config kill-switch) deferred to backlog per Owner directive.
+
 ## SubFaber v3.16.6 (2026-10-19) — Gemini Parameter Overhaul: Crazy Router Live Capture, 65,536 Ceiling, Google-Recommended 1.0, and Model-Parameter Steppers
 
 ### ✨ New Features
