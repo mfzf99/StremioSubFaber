@@ -2,6 +2,19 @@
 
 All notable changes to this project will be documented in this file.
 
+## SubFaber v3.17.2 (2026-10-23) — README Ground-Truth Sync: ElfHosted Removal, Single XML Workflow, 11 Runtime Providers
+
+### 📌 Documentation
+
+- **Removed the "Try It Now" hosted-instance section (README.md, .github/):** the public ElfHosted endpoint was a SubMaker-era arrangement backed and hosted by ElfHosted for the original project — it is their operation, not SubFaber's, and is no longer referenced. Removed: the Try It Now section and its nav link, the badge for "10+ providers", the Acknowledgments ElfHosted entry, the issue-template contact link (`config.yml`), and the "ElfHosted" deployment-type dropdown option in the bug report (replaced by Self-hosted npm/Docker options). Final sweep: zero ElfHosted references remain in the active docs.
+- **Features table synced to code ground truth (README.md):** **Timestamp Workflow is now documented as the single XML Tags workflow** — the code locks `translationWorkflow: 'xml'` ("Single enterprise workflow: XML Tags", [public/config.js](public/config.js)) and the provider factory comment confirms "XML Tags is the only workflow; structured JSON output is intentionally disabled" ([src/services/translationProviderFactory.js](src/services/translationProviderFactory.js)); the obsolete "XML Tags, JSON, Numbered Timestamps, Send Timestamps to AI" claim was removed, and the Out-of-Sync troubleshooting section was rewritten accordingly (deterministic reconstruction, drift instead traced to source timing / stale cache).
+- **AI Translation Providers table synced to the runtime factory:** the createProviderInstance switch ([src/services/translationProviderFactory.js](src/services/translationProviderFactory.js)) supports exactly 11 providers — Google Gemini (default), OpenAI, Anthropic, DeepSeek, DeepL, Google Translate, Mistral, OpenRouter, xAI (Grok), Cloudflare Workers AI, and Custom/Proxy (incl. the Gemini-native proxy door). The registry's additional catalog entries (Groq, Together, Cerebras, SambaNova, Perplexity, Moonshot, Zhipu, Qwen) have no runtime `case` builders and were removed from the README claims; badges updated to "11 AI Providers"; a note on the secondary fallback provider (multi-provider mode) was added.
+- **Language counts corrected to the code's actual data:** [src/utils/allLanguages.js](src/utils/allLanguages.js) holds 383 translation codes (incl. regional variants); [src/utils/languages.js](src/utils/languages.js) `getAllLanguages()` returns 198 menu languages. README claims and badges updated from the stale "197 supported languages (433 for translation)" to these verified figures.
+
+### ✅ Verification
+
+- Docs-only release: zero runtime code changes. Language/provider/workflow figures verified programmatically (`node -e` counts + source audit) before writing; `npm test` and the formatting/lint gates ran unchanged at the 470-test baseline.
+
 ## SubFaber v3.17.1 (2026-10-23) — VPS Deployment Documentation Audit & Docker Template Security Alignment
 
 ### 📌 Documentation

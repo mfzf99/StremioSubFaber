@@ -13,12 +13,11 @@
   <a href="https://www.gnu.org/licenses/agpl-3.0"><img src="https://img.shields.io/badge/License-AGPL_v3-blue.svg?style=flat-square" alt="License: AGPL v3"/></a>
   <img src="https://img.shields.io/badge/node-%3E%3D22.9.0-brightgreen?style=flat-square" alt="Node 22.9+"/>
   <img src="https://img.shields.io/badge/Stremio-Addon-purple?style=flat-square" alt="Stremio Addon"/>
-  <img src="https://img.shields.io/badge/languages-433-orange?style=flat-square" alt="433 Languages"/>
-  <img src="https://img.shields.io/badge/AI-10%2B%20providers-ff69b4?style=flat-square" alt="10+ AI Providers"/>
+  <img src="https://img.shields.io/badge/languages-383-orange?style=flat-square" alt="383 Translation Codes"/>
+  <img src="https://img.shields.io/badge/AI-11%20providers-ff69b4?style=flat-square" alt="11 AI Providers"/>
 </p>
 
 <p align="center">
-  <a href="#-try-it-now">Try It Now</a> •
   <a href="#-features">Features</a> •
   <a href="#-quick-start">Quick Start</a> •
   <a href="#-how-it-works">How It Works</a> •
@@ -27,29 +26,15 @@
 
 ---
 
-## 🎉 Try It Now
-
-**No setup required!**
-
-### **[https://subfaber.elfhosted.com](https://subfaber.elfhosted.com?utm_source=github&utm_medium=readme&utm_campaign=stremiosubfaber-readme)**
-
-Configure, install, done. A huge thanks to [ElfHosted](https://elfhosted.com?utm_source=github&utm_medium=readme&utm_campaign=stremiosubfaber-readme) for the free community hosting!
-
-Check their [FREE Stremio Addons Guide](https://stremio-addons-guide.elfhosted.com/?utm_source=github&utm_medium=readme&utm_campaign=stremiosubfaber-readme) for more great addons and features!
-
-> For self-hosting, see [Quick Start](#-quick-start) below.
-
----
-
 ## ✨ Features
 
 | Category | Highlights |
 |----------|------------|
-| **Languages** | 197 supported languages (433 for translation) |
+| **Languages** | 198 languages in the subtitle menu (383 translation codes incl. regional variants) |
 | **Subtitle Sources** | OpenSubtitles, SubDL, SubSource |
-| **AI Translation** | 10+ providers: Gemini, OpenAI, Claude, DeepL, DeepSeek, Grok, Mistral, OpenRouter, Cloudflare, Custom/Local |
+| **AI Translation** | 11 providers: Gemini, OpenAI, Claude, DeepSeek, DeepL, Google Translate, Mistral, OpenRouter, xAI Grok, Cloudflare Workers AI, Custom/Proxy |
 | **Smart Caching** | Shared translation database — translate once, benefit everyone |
-| **Timestamp Workflows** | XML Tags, JSON, Numbered Timestamps, Send Timestamps to AI |
+| **Timestamp Workflow** | XML Tags — the single enterprise workflow (deterministic reconstruction) |
 | **No-Translation Mode** | Just fetch subtitles without translation |
 
 ---
@@ -69,14 +54,16 @@ Check their [FREE Stremio Addons Guide](https://stremio-addons-guide.elfhosted.c
 | **Google Gemini** | Default, free tier available, key rotation supported |
 | OpenAI | GPT models |
 | Anthropic | Claude models |
-| DeepL | Traditional translation API |
 | DeepSeek | |
-| XAI (Grok) | |
+| DeepL | Traditional translation API |
+| Google Translate | Unofficial, no key needed |
 | Mistral | |
 | OpenRouter | Access multiple models |
+| xAI (Grok) | |
 | Cloudflare Workers AI | |
-| Google Translate | Unofficial, no key needed |
-| Custom | Ollama, LM Studio, LocalAI, any OpenAI-compatible API |
+| Custom / Proxy | Ollama, LM Studio, LocalAI, any OpenAI-compatible API, or a Gemini-native proxy gateway |
+
+> A secondary fallback provider can be enabled alongside the main provider (multi-provider mode).
 
 ---
 
@@ -85,7 +72,7 @@ Check their [FREE Stremio Addons Guide](https://stremio-addons-guide.elfhosted.c
 ### Prerequisites
 
 - **Node.js** 22.9+ with npm 11.17 or newer — [nodejs.org](https://nodejs.org) (the official Docker image builds on `node:24-alpine`, which satisfies this requirement)
-- An AI translation provider key of your choice — Gemini is only ONE of 10+ supported AI doors (OpenAI, Anthropic, DeepL, DeepSeek, Grok, Mistral, OpenRouter, Cloudflare, or any OpenAI-compatible custom endpoint); for a free tier, [get a Gemini key](https://aistudio.google.com/app/api-keys)
+- An AI translation provider key of your choice — Gemini is only ONE of the 11 supported AI providers (OpenAI, Anthropic, DeepSeek, DeepL, Google Translate, Mistral, OpenRouter, xAI Grok, Cloudflare Workers AI, or any custom endpoint); for a free tier, [get a Gemini key](https://aistudio.google.com/app/api-keys)
 - An OpenSubtitles API key — OpenSubtitles is the primary source-subtitle provider and is recommended for maximum coverage (SubDL and SubSource keys are optional alternatives)
 
 ### Installation
@@ -183,12 +170,11 @@ Enable "Advanced Mode" in Other Settings to unlock:
 
 ### ⏱️ Subtitles Out of Sync?
 
-Test other **Translation Workflow** in Settings:
-| Workflow | Description |
-|----------|-------------|
-| **XML Tags** (default) | Uses XML id tags for reconstruction |
-| **Original Timestamps** | Reattaches original timecodes using numbered entries |
-| **Send Timestamps to AI** | Trusts AI to preserve timecodes |
+SubFaber uses a single deterministic **XML Tags** workflow — original timecodes are preserved by reconstructing entries from XML id tags, so sync drift from the workflow itself is not expected. If subtitles drift:
+
+1. **Try another source subtitle** — the source file itself may be mistimed
+2. **Force re-translation** — Triple-click the subtitle (within 6 seconds)
+3. **Bypass cache** — Enable "Bypass Cache" in Translation Settings
 
 ### 🔄 Bad / Broken Translation?
 
@@ -235,7 +221,6 @@ Click the **Reset** button at the bottom of the config page.
 - Stremio team for excellent addon SDK
 - Google for free Gemini API access
 - All subtitle communities
-- [ElfHosted](https://elfhosted.com/?utm_source=github&utm_medium=readme&utm_campaign=stremiosubfaber-readme) — Free community hosting
 
 ---
 

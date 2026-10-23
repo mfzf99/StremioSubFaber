@@ -43,8 +43,8 @@ body:
       label: Deployment Type
       description: How is SubFaber running?
       options:
-        - ElfHosted (subfaber.elfhosted.com)
-        - Self-hosted
+        - Self-hosted (npm start)
+        - Self-hosted (Docker)
     validations:
       required: true
 

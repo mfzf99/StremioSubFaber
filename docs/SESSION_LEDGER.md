@@ -1,3 +1,22 @@
+## 2026-10-23 — v3.17.2 README GROUND-TRUTH SYNC: GUGUR ELFHOSTED + WORKFLOW TUNGGAL XML + 11 PROVIDER RUNTIME
+
+- **Tarikh:** 2026-10-24 ~06:55 (waktu tempatan KL)
+- **Komit SHA (HEAD):** (direkod selepas push).
+- **Keputusan Owner:** Polish lanjutan README (susulan v3.17.1): (1) Seksyen "Try It Now" WAJIB dibuang — hos ElfHosted ialah urusan SubMaker lama (company itu yang tolong hostkan server SubMaker), tiada kaitan dengan SubFaber; simpan dahulu, nanti jika Owner kaya barulah payung satu server awam dunia. (2) Features WAJIB sync kod: SubFaber hanya ADA SATU Timestamp Workflow iaitu XML Tags. (3) Senarai AI Translation Providers WAJIB diaudit semula supaya tepat dengan code.
+- **Audit ground-truth kod (sebelum penulisan):**
+  - **Workflow:** `translationWorkflow: 'xml'` DIKUNCI ([public/config.js](../public/config.js) "Single enterprise workflow: XML Tags" + [src/services/config.js](../src/utils/config.js) normalize default 'xml' + komen factory [src/services/translationProviderFactory.js](../src/services/translationProviderFactory.js) "XML Tags is the only workflow; structured JSON output is intentionally disabled"). Dakwaan lama "XML Tags, JSON, Numbered Timestamps, Send Timestamps to AI" = BASI sepenuhnya.
+  - **Providers:** switch `createProviderInstance()` factory menyokong TEPAT 11 provider runtime: gemini, openai, xai, deepseek, deepl, googletranslate, mistral, openrouter, cfworkers, anthropic, custom/custom_secondary. Entri katalog registry (groq, together, cerebras, sambanova, perplexity, moonshot, zhipu, qwen) TIADA case builder runtime — dibuang dari dakwaan README.
+  - **Bahasa:** [src/utils/allLanguages.js](../src/utils/allLanguages.js) = 383 kod terjemahan; [src/utils/languages.js](../src/utils/languages.js) `getAllLanguages()` = 198 bahasa menu (dakwaan lama "197/433" BASI).
+- **Pembedahan (docs-only, sifar kod runtime):**
+  - [README.md](../README.md): seksyen 🎉 Try It Now + pautan nav dibuang; badge "433 Languages"/"10+ providers" → "383 Translation Codes"/"11 AI Providers"; Features table — Timestamp Workflow = XML Tags tunggal (deterministic reconstruction), AI Translation = 11 provider sebenar, Languages = 198 menu (383 kod); jadual AI Providers disusun semula mengikut factory + nota secondary fallback (multi-provider mode); prerequisites "10+ doors" → 11 provider sebenar; Acknowledgments entri ElfHosted dibuang; seksyen Troubleshooting "Out of Sync" ditulis semula (tiada lagi jadual 3-workflow basi — drift dikesan ke sumber/cache, bukan workflow).
+  - [.github/ISSUE_TEMPLATE/config.yml](../.github/ISSUE_TEMPLATE/config.yml): contact link "Try SubFaber (ElfHosted)" dibuang. [.github/ISSUE_TEMPLATE/02-bug_report.yml](../.github/ISSUE_TEMPLATE/02-bug_report.yml): dropdown deployment "ElfHosted (subfaber.elfhosted.com)" digantikan "Self-hosted (npm start)" / "Self-hosted (Docker)".
+  - Sweep akhir grep `elfhosted` merentas README/DOCKER/issue-templates = **SIFAR**.
+- **Fail Terlibat:** README.md (M), .github/ISSUE_TEMPLATE/config.yml (M), .github/ISSUE_TEMPLATE/02-bug_report.yml (M), package.json (M: bump 3.17.1 → 3.17.2), CHANGELOG.md (M: entri v3.17.2), docs/SESSION_LEDGER.md (blok ini).
+- **Status npm test:** **470 total / 469 PASS / 0 FAIL / 1 SKIP** (baseline terpelihara; 1 SKIP = live Redis). Prettier PASS; ESLint 0 error / 225 warning (semuanya pre-existing). Cache-buster LULUS: runtime `src/utils/version.js` = 3.17.2; sifar pin statik `3.17.1` dalam aset aktif. Graphify NO-OP (`graphify-out/` tiada).
+- **Next Steps:** git commit + push origin main (verifikasi `git rev-parse` wajib) → CI `gh` CLI mesti **SUCCESS** → SHA direkod dalam blok ini pasca-push.
+
+---
+
 ## 2026-10-23 — v3.17.1 AUDIT DOKUMEN PEMASANGAN VPS & PENJAJARAN KESELAMATAN TEMPLAT DOCKER
 
 - **Tarikh:** 2026-10-23 ~23:27 (waktu tempatan KL)
