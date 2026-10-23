@@ -2,6 +2,18 @@
 
 All notable changes to this project will be documented in this file.
 
+## SubFaber v3.17.1 (2026-10-23) — VPS Deployment Documentation Audit & Docker Template Security Alignment
+
+### 📌 Documentation
+
+- **Repository & identity alignment (README.md, .github/):** all GitHub URLs (clone command, issue links, documentation links) now point to the canonical `mfzf99/StremioSubFaber` repository instead of the legacy `xtremexq/StremioSubFaber` namespace, which no longer reflects the project's origin. Verified via the git remote of this checkout; the two remaining `xtremexq` references in the historical changelog and old plans are retained verbatim per the nomenclature taxonomy lock for audit history.
+- **Prerequisites corrected in the Quick Start (README.md):** removed the misleading "Gemini API Key required" claim — Gemini is only ONE of the 10+ supported AI translation doors of the Trinity era (OpenAI, Anthropic, DeepL, DeepSeek, Grok, Mistral, OpenRouter, Cloudflare, Custom/OpenAI-compatible); the prerequisites now describe an AI provider key of the user's choice. The role of `OPENSUBTITLES_API_KEY` is clarified as the primary source-subtitle provider, recommended for maximum coverage. Node.js guidance now explicitly notes the official Docker image builds on `node:24-alpine`, which satisfies the `>=22.9.0` engine requirement.
+- **docs/DOCKER.md security hardening rewrite:** the obsolete Quick Start compose template — which exposed Redis on all interfaces (`"6379:6379"`), omitted the mandatory trailing colon in `REDIS_KEY_PREFIX` (namespace-split risk), and carried the deprecated `version: "3.9"` tag — was replaced by a guide built directly on the project's gold-standard [`docker-compose.yaml`](docker-compose.yaml): Redis port bound to localhost only, prefix locked to `stremio:`, auto-generated persisted Redis password, `TRUST_PROXY=1`, encryption-key volume persistence, healthchecks, and the explicit directive to never hand-write a replacement compose file. The official deployment method is now unambiguous: **build from source via `docker compose up -d --build`** — live Docker Hub verification (registry API) confirmed that neither `mfzf99/subfaber` nor `xtremexq/subfaber` images exist, so no image reference remains in the docs; the filesystem-only variant now uses the dedicated `docker-compose.local.yaml`, and update instructions switch from image-pull to `git pull` + rebuild.
+
+### ✅ Verification
+
+- Docs-only release: zero runtime code changes; the full regression suite and formatting/lint gates ran unchanged. Docker Hub namespace existence double-checked via the registry v2 API (both namespaces HTTP 404) before finalizing the `--build`-first deployment doctrine.
+
 ## SubFaber v3.17.0 (2026-10-23) — [br] Parity Enforcement: Programmatic Post-AI Line-Break Reconciliation & Balanced Auto-Repair
 
 ### ✨ New Features

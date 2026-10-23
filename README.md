@@ -84,15 +84,15 @@ Check their [FREE Stremio Addons Guide](https://stremio-addons-guide.elfhosted.c
 
 ### Prerequisites
 
-- **Node.js** 22.9+ with npm 11.17 or newer — [nodejs.org](https://nodejs.org)
-- **Gemini API Key** — [Get free](https://aistudio.google.com/app/api-keys)
-- At least one subtitle provider key (optional but recommended)
+- **Node.js** 22.9+ with npm 11.17 or newer — [nodejs.org](https://nodejs.org) (the official Docker image builds on `node:24-alpine`, which satisfies this requirement)
+- An AI translation provider key of your choice — Gemini is only ONE of 10+ supported AI doors (OpenAI, Anthropic, DeepL, DeepSeek, Grok, Mistral, OpenRouter, Cloudflare, or any OpenAI-compatible custom endpoint); for a free tier, [get a Gemini key](https://aistudio.google.com/app/api-keys)
+- An OpenSubtitles API key — OpenSubtitles is the primary source-subtitle provider and is recommended for maximum coverage (SubDL and SubSource keys are optional alternatives)
 
 ### Installation
 
 ```bash
 # Clone and install
-git clone https://github.com/xtremexq/StremioSubFaber.git
+git clone https://github.com/mfzf99/StremioSubFaber.git
 cd StremioSubFaber
 npm install
 
@@ -243,7 +243,7 @@ Click the **Reset** button at the bottom of the config page.
 
 | Channel | Link |
 |---------|------|
-| **Issues & Bugs** | [Open an issue](https://github.com/xtremexq/StremioSubFaber/issues) |
+| **Issues & Bugs** | [Open an issue](https://github.com/mfzf99/StremioSubFaber/issues) |
 | **Documentation** | Open `/configure` for the live interactive config/help page |
 | **Community** | [Stremio Discord](https://discord.gg/stremio) • [r/StremioAddons](https://reddit.com/r/StremioAddons) |
 
@@ -255,7 +255,7 @@ Click the **Reset** button at the bottom of the config page.
 </p>
 
 <p align="center">
-  <a href="https://github.com/xtremexq/StremioSubFaber">⭐ Star this repo</a> •
-  <a href="https://github.com/xtremexq/StremioSubFaber/issues">🐛 Report Bug</a> •
-  <a href="https://github.com/xtremexq/StremioSubFaber/issues">✨ Request Feature</a>
+  <a href="https://github.com/mfzf99/StremioSubFaber">⭐ Star this repo</a> •
+  <a href="https://github.com/mfzf99/StremioSubFaber/issues">🐛 Report Bug</a> •
+  <a href="https://github.com/mfzf99/StremioSubFaber/issues">✨ Request Feature</a>
 </p>

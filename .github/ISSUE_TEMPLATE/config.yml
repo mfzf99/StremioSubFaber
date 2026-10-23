@@ -1,7 +1,7 @@
 blank_issues_enabled: true
 contact_links:
   - name: 📖 Documentation
-    url: https://github.com/xtremexq/StremioSubFaber#readme
+    url: https://github.com/mfzf99/StremioSubFaber#readme
     about: Check the README for setup instructions and troubleshooting
   - name: 🎬 Try SubFaber (ElfHosted)
     url: https://subfaber.elfhosted.com
