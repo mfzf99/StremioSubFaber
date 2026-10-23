@@ -1,7 +1,7 @@
 ## 2026-10-23 — v3.17.2 README GROUND-TRUTH SYNC: GUGUR ELFHOSTED + WORKFLOW TUNGGAL XML + 11 PROVIDER RUNTIME
 
 - **Tarikh:** 2026-10-24 ~06:55 (waktu tempatan KL)
-- **Komit SHA (HEAD):** (direkod selepas push).
+- **Komit SHA (HEAD):** `96a9f9a8` + CI run ID 40036897858 = **SUCCESS** (Node 22 ✓ 1m1s / Node 24 ✓ 1m7s — regression tests, formatting, ESLint, audit dependencies semua hijau; push diverifikasi `git rev-parse` sync, sifar push-senyap).
 - **Keputusan Owner:** Polish lanjutan README (susulan v3.17.1): (1) Seksyen "Try It Now" WAJIB dibuang — hos ElfHosted ialah urusan SubMaker lama (company itu yang tolong hostkan server SubMaker), tiada kaitan dengan SubFaber; simpan dahulu, nanti jika Owner kaya barulah payung satu server awam dunia. (2) Features WAJIB sync kod: SubFaber hanya ADA SATU Timestamp Workflow iaitu XML Tags. (3) Senarai AI Translation Providers WAJIB diaudit semula supaya tepat dengan code.
 - **Audit ground-truth kod (sebelum penulisan):**
   - **Workflow:** `translationWorkflow: 'xml'` DIKUNCI ([public/config.js](../public/config.js) "Single enterprise workflow: XML Tags" + [src/services/config.js](../src/utils/config.js) normalize default 'xml' + komen factory [src/services/translationProviderFactory.js](../src/services/translationProviderFactory.js) "XML Tags is the only workflow; structured JSON output is intentionally disabled"). Dakwaan lama "XML Tags, JSON, Numbered Timestamps, Send Timestamps to AI" = BASI sepenuhnya.
