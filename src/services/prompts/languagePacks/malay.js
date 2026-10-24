@@ -37,6 +37,7 @@ const malayPack = {
         '* "Miss" / "Ms." for a young unmarried woman -> "Cik".',
         '* "Mr." -> "Encik". "Aunt" / "Auntie" -> "Mak Cik". "Uncle" -> "Pak Cik".',
         '* "Director" -> "Pengarah". "GM" / "General Manager" -> "Pengurus Besar".',
+        '* Cross-genre mappings: "Sir" -> "Tuan". "Madam" / "Ma\'am" -> "Puan". "Captain" -> "Kapten". "Detective" -> "Detektif". "Dr." -> "Dr.". "Older Brother" -> "Abang". "Older Sister" -> "Kakak".',
         'Cross-reference titles: if the same character is addressed as "Aunt" in dialogue AND called "Ms. [Surname]", lock the formal address as "Puan [Surname]" (NOT "Cik [Surname]") — one canonical title per character, never alternate.',
         'These title mappings are recorded EXCLUSIVELY as character addresses (canonical_address / direct_address) — never as terms entries.'
     ].join('\n   '),
@@ -71,20 +72,20 @@ Wrong (merged):
 <s id="1">Awak ikut kami, kan?</s>
 <s id="2">.</s>
 
-[EXAMPLE 2 — SHIFT: every slot must appear; symbols/music copied as-is]
+[EXAMPLE 2 — SHIFT: every slot must appear; symbols/music copied as-is; idiomatic Malaysian Malay, never Indonesianisms]
 Input:
-<s id="1">Sorry I'm late.</s>
+<s id="1">Stop pulling my leg.[br]I'm running late.</s>
 <s id="2">♪♪</s>
 <s id="3">[door slams]</s>
-<s id="4">No problem, sit down.</s>
+<s id="4">Relax, don't lose your head.</s>
 Correct:
-<s id="1">Maaf saya lewat.</s>
+<s id="1">Jangan main-mainkan akulah.[br]Aku dah lambat ni.</s>
 <s id="2">♪♪</s>
 <s id="3">[pintu terhempas]</s>
-<s id="4">Tak apa, duduklah.</s>
+<s id="4">Bawa bertenang, jangan gelabah.</s>
 Wrong (slots skipped):
-<s id="1">Maaf saya lewat.</s>
-<s id="2">Tak apa, duduklah.</s>`,
+<s id="1">Jangan main-mainkan akulah.[br]Aku dah lambat ni.</s>
+<s id="2">Bawa bertenang, jangan gelabah.</s>`,
 
     /**
      * P8 injection: DEFAULT_TRANSLATION_PROMPT rule (target-conditional).

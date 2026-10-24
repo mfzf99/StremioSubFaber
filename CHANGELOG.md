@@ -2,6 +2,18 @@
 
 All notable changes to this project will be documented in this file.
 
+## SubFaber v3.18.0 (2026-10-24) — Translation Prompt Quality Sharpening: Scene-Register Principles, ANTI-MERGE Continuity Guidance, Locked-Term Bridge & Malay Cross-Genre Honorifics
+
+### ✨ New Features
+
+- **Translation system prompt sharpened (Zero-Regression Surgical Upgrade, Mandat Owner 2026-10-24):** all edits confined to the forensically-mapped Free Zones of the Trinity Single Source of Truth [src/services/prompts/trinity/translation/core.js](src/services/prompts/trinity/translation/core.js) — every locked-zone string (parity labels, SFX clause, style contracts, Output Format) preserved verbatim, so all 470 regression tests pass untouched on the first run. (1) `<translation_principles>` upgraded: "Idiomatic & Register Fidelity" now prioritizes the character's true intent, emotional impact, and scene register (intimate, street slang, clinical, formal, high-stakes drama); "Subtitle Economy & Flow" mandates concise, punchy dialogue that reads effortlessly at a glance. (2) Rule 1 ANTI-MERGE gains grammatical-continuity guidance for cross-slot sentences: read adjacent slots for continuity, then distribute the translated parts proportionally inside their original slot IDs (in addition to the never-merge / never-empty contract). (3) Rule 2 ANTI-SHIFT extends the locked SFX clause with parenthesized cues — `(as are parenthesized cues like (sighs))`. (4) Rule 5 ANTI-UNTRANSLATED exempts Locked Terms and official translations specified in the read-only context. (5) `## Style` renamed to "Native Cinema Standard": the placebo "mentally draft, then reflect" ritual was replaced with a direct linguistic directive (active phrasing, zero textbook stiffness), and the paragraph now bridges compliance to Locked Terms and locked Character Addresses while separating pronoun choice (fit character relationships and scene register) from title restriction (titles only when present in the source — never injected onto bare names).
+- **Malay pack few-shot EXAMPLE 2 upgraded to idiomatic cinematic Malaysian Malay:** [src/services/prompts/languagePacks/malay.js](src/services/prompts/languagePacks/malay.js) — "Stop pulling my leg.[br]I'm running late." → "Jangan main-mainkan akulah.[br]Aku dah lambat ni." and "Relax, don't lose your head." → "Bawa bertenang, jangan gelabah." — demonstrating register-faithful colloquial BM (aku-register, idiom, no Indonesianisms) while preserving `[br]`, `♪♪`, `[door slams]` → `[pintu terhempas]`, the 4-slot SHIFT structure, and the anti-Indonesianisms reminder on the example header. EXAMPLE 1 (MERGE) remains 100% verbatim (`Awak ikut kami,` / `kan?` / `Wrong (merged):`).
+- **Cross-genre honorific mappings added to the Malay matrix:** one new row appended to `honorificMatrix` (all 7 existing rows kept 100% verbatim) — "Sir" → "Tuan", "Madam"/"Ma'am" → "Puan", "Captain" → "Kapten", "Detective" → "Detektif", "Dr." → "Dr.", "Older Brother" → "Abang", "Older Sister" → "Kakak" — covering police/military/medical/family-genre character addressing.
+
+### ✅ Verification
+
+- Zero test-file modifications: the upgrade was executed strictly within the forensic Free Zones (assertion audit 2026-10-24) and the full gate suite passed on the FIRST attempt — Prettier PASS, ESLint 0 error / 225 pre-existing warnings, `npm test` **470 total / 469 PASS / 0 FAIL / 1 SKIP (live Redis)** — baseline monotonic (≥ 470). `preflight/core.js`, `inspector/core.js`, and the defensive `pronoun_register` reads remain untouched per Owner directive.
+
 ## SubFaber v3.17.2 (2026-10-23) — README Ground-Truth Sync: ElfHosted Removal, Single XML Workflow, 11 Runtime Providers
 
 ### 📌 Documentation
