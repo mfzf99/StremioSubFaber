@@ -2,6 +2,17 @@
 
 All notable changes to this project will be documented in this file.
 
+## SubFaber v3.18.1 (2026-10-24) — Console Debug Repeat-Collapse: Terminal Log Flood Recovery (brParity Per-Entry)
+
+### 🔧 Fixed
+
+- **Terminal log flood after v3.18.0 (Mandat Owner 2026-10-24: "pulihkan log terminal normal, jangan sentuh benda lain"):** the sharpened translation prompt causes the AI to convert/insert line breaks far more often than before, which triggered the per-entry `brParity` debug lines (~14,300 lines for a single 696-entry file: 12,184 "AI menambah line break" + 1,682 "auto-repair" + 461 "repair gagal") — drowning the terminal at `LOG_LEVEL=debug`. Root cause was never an engine defect: the v3.17.0 `reconcileBrParity()` safety net logs once per subtitle entry, and the flood was presentation-level, not behavioral.
+- **Fix: DEBUG repeat-collapse at the console layer of [src/utils/logger.js](src/utils/logger.js) (zero engine changes):** consecutive identical DEBUG console lines are now held; when the pattern breaks (a different line arrives) or a 5-second quiet window closes, a single summary line `… [repeated N times]` is emitted. Guarantees: (1) the FIRST line of every pattern still prints immediately — no diagnostic detail lost; (2) WARN/ERROR/CRITICAL are 100% untouched (existing logger protection doctrine); (3) the FILE log (`app.log`) remains 100% complete — the file is the forensic ground truth, only the terminal presentation is collapsed; (4) the dedup key is the serialized message (timestamp-excluded), and the 5s window timer is `unref()`'d so it never holds the event loop during shutdown; (5) INFO/STARTUP console paths untouched. Verified behavior: 5 identical lines → 1 line + `[repeated 5 times]`; interleaved distinct lines print in full; the final run flushes on window close.
+
+### ✅ Verification
+
+- `node --test src/utils/logger-sampling-regression.test.js` = 3/3 PASS (logger contract suite untouched and green). Full suite: Prettier PASS, ESLint 0 error / 225 pre-existing warnings, `npm test` = **470 total / 469 PASS / 0 FAIL / 1 SKIP (live Redis)** — baseline monotonic (≥ 470), zero test files modified. Zero changes to translationEngine.js, prompts, or any engine logic.
+
 ## SubFaber v3.18.0 (2026-10-24) — Translation Prompt Quality Sharpening: Scene-Register Principles, ANTI-MERGE Continuity Guidance, Locked-Term Bridge & Malay Cross-Genre Honorifics
 
 ### ✨ New Features

@@ -1,3 +1,17 @@
+## 2026-10-24 — v3.18.1 KEBANJIRAN LOG TERMINAL brParity — CONSOLE DEBUG REPEAT-COLLAPSE (PULIH LOG NORMAL)
+
+- **Tarikh:** 2026-10-24 ~20:41 (waktu tempatan KL)
+- **Komit SHA (HEAD):** (direkod pasca-push & CI)
+- **Keputusan Owner:** Laporan forensik VPS: selepas pembedahan prompt v3.18.0, Owner jalankan translation test pertama di Stremio (s1e15, 696 entri) — log terminal "menggila". Mandat: "aku nak tahu details semua benda dalam log supaya senang nak fix kalau ada error, tapi aku taknak banjir macamtu; taknak sentuh benda lain, just fix kebanjiran sahaja."
+- **Forensik (log 6 jam = 15,075 baris via SSH VPS, PTY-discipline: dump /tmp + slice programatik + padam):** `[TranslationEngine]` = 14,328 baris DEBUG — 12,184× `brParity: AI menambah line break (0->1)` + 1,682× `auto-repair` + 461× `repair gagal` (brParity log.debug PER-ENTRY daripada v3.17.0, terpicu ribuan kali kerana prompt v3.18.0 menyebabkan AI menukar/tambah line break jauh lebih kerap). Enjin SIHAT: 14/14 batch PASSED, 1× PHANTOM (batch 4, "seven out of ten rendered as eighty marks") dikesan Inspector + retry berjaya; heap 86MB; sifar kerosakan. PHANTOM retry & ModelCapabilities topP hint = tingkah laku betul, bukan bug.
+- **Pembedahan ([src/utils/logger.js](../src/utils/logger.js) sahaja — sifar sentuh enjin/brParity logic/prompt):** DEBUG-REPEAT-COLLAPSE di lapisan KONSOL fungsi `debug()`: baris DEBUG identik berturut-turut ditahan; bila corak putus (baris berbeza) atau window senyap 5s tamat, SATU baris ringkasan `… [repeated N times]` dikeluarkan. Jaminan: (1) baris PERTAMA setiap corak keluar serta-merta — sifar detail hilang; (2) WARN/ERROR 100% tidak disentuh (doktrin perlindungan sedia ada); (3) FAIL LOG app.log kekal 100% PENUH (ground truth forensik); (4) timer window `unref()`; (5) INFO/STARTUP legacy path tidak disentuh. Kunci dedup = mesej terserialisasi (tanpa timestamp).
+- **Verifikasi tingkah laku (live):** 5× berulang → 1 baris + `[repeated 5 times]` ✓; baris interleaved berbeza penuh ✓; WARN penuh ✓; ringkasan akhir flush pada window close ✓. `node --test logger-sampling-regression` = 3/3 PASS.
+- **Fail Terlibat:** src/utils/logger.js (M: +collapseDebugRepeat/flushDebugRepeatSummary dalam debug()), package.json (M: 3.18.0 → 3.18.1), CHANGELOG.md (M: entri v3.18.1), docs/SESSION_LEDGER.md (blok ini). Graphify NO-OP (`graphify-out/` tiada).
+- **Status npm test:** **470 total / 469 PASS / 0 FAIL / 1 SKIP** (dijalankan 2×: pra-bump + post-bump; sifar fail ujian diubah, baseline monotonik terpelihara). Prettier PASS; ESLint 0 error / 225 warning pre-existing. Cache-buster: runtime 3.18.1, sifar pin statik 3.18.0.
+- **Next Steps:** git commit + push (verifikasi rev-parse) → CI `gh` SUCCESS → SHA direkod → deploy pull di VPS `d88d9160` → `03d7be83` → versi baharu supaya fix live di produksi; Owner uji translation semula untuk sahkan log terminal kembali normal.
+
+---
+
 ## 2026-10-24 — OPERASI DEPLOYMENT VPS VULTR SEMENTARA (139.180.190.229) + RUNBOOK MIGRASI MASA DEPAN
 
 - **Tarikh:** 2026-10-25 ~04:10 (waktu tempatan KL)

@@ -651,7 +651,11 @@ function debug(messageFn) {
 
     const message = typeof messageFn === 'function' ? messageFn() : messageFn;
     const args = Array.isArray(message) ? message : [message];
-    originalLog(`[${getTimestamp()}] [DEBUG]`, ...args);
+    // [DEBUG-REPEAT-COLLAPSE] KONSOL sahaja diringkaskan bila berulang
+    // berturut-turut; fail log kekal penuh (ground truth forensik).
+    if (collapseDebugRepeat(args)) {
+        originalLog(`[${getTimestamp()}] [DEBUG]`, ...args);
+    }
     writeFileLog('DEBUG', args);
 }
 
@@ -719,6 +723,48 @@ function error(messageFn) {
  * These are kept for backward compatibility but still optimized
  * New code should use the lazy log.debug/info/warn/error functions above
  */
+
+// [DEBUG-REPEAT-COLLAPSE 2026-10-24 — Mandat Owner: pulihkan log terminal normal]
+// Kebanjiran v3.18.0: brParity log.debug per-entry (~14k baris/file). Mekanisme:
+// baris DEBUG identik berturut-turut di konsol ditahan; apabila corak putus
+// (baris berbeza) atau window tamat, satu baris ringkasan "… [repeated N times]"
+// dikeluarkan. Kunci dedup = mesej terserialisasi (tanpa timestamp). Sifat:
+//   - HANYA laluan konsol DEBUG (INFO/STARTUP tidak disentuh; WARN/ERROR kekal
+//     100% penuh — doktrin perlindungan logger sedia ada).
+//   - FAIL LOG (writeFileLog) KEKAL PENUH — fail ialah ground truth forensik.
+//   - Sifar perubahan logik enjin; ini lapisan pembentangan konsol sahaja.
+//   - Back-compat penuh: baris pertama setiap corak keluar serta-merta seperti
+//     biasa; hanya pengulangan melebihi 1 yang diringkaskan.
+const DEBUG_REPEAT_WINDOW_MS = 5000;
+let debugRepeatState = null; // { key, count, timer }
+
+function collapseDebugRepeat(args) {
+    const key = args.map(serializeArg).join(' ');
+    if (debugRepeatState && debugRepeatState.key === key) {
+        debugRepeatState.count++;
+        return false; // duplicate — hold (will be summarized when pattern breaks)
+    }
+    // Pattern break: flush summary of the previous run first.
+    flushDebugRepeatSummary();
+    debugRepeatState = { key, count: 1, timer: null };
+    // Window guard: if no new line arrives within the window, close the run.
+    debugRepeatState.timer = setTimeout(() => {
+        flushDebugRepeatSummary();
+    }, DEBUG_REPEAT_WINDOW_MS);
+    // Timer harus tidak pegang event loop semasa shutdown.
+    if (debugRepeatState && debugRepeatState.timer) debugRepeatState.timer.unref();
+    return true; // first occurrence — emit normally
+}
+
+function flushDebugRepeatSummary() {
+    if (!debugRepeatState) return;
+    const { key, count, timer } = debugRepeatState;
+    debugRepeatState = null;
+    if (timer) clearTimeout(timer);
+    if (count > 1) {
+        originalLog(`[${getTimestamp()}] [DEBUG] ${key.slice(0, 120)} … [repeated ${count} times]`);
+    }
+}
 
 console.log = function (...args) {
     if (currentLevel <= LEVELS.debug && shouldSample('debug')) {
