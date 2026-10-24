@@ -9225,10 +9225,11 @@ Translate to {target_language}.`;
             ];
         }
 
-        // 10. DEEPSEEK (V4-pro, V4-flash)
+        // 10. DEEPSEEK — semua model berkongsi tetapan reasoning yang sama.
+        // Label OFF kekal dipetakan ke nilai wire 'disabled' oleh backend.
         if (m.includes('deepseek')) {
             return [
-                { value: 'disabled', label: 'Disabled (No Thinking)' },
+                { value: 'disabled', label: 'Off (No Thinking)' },
                 { value: 'low', label: 'Low (Fastest Reasoning)' },
                 { value: 'high', label: 'High (Deep Reasoning - Default)' },
                 { value: 'max', label: 'Max (Deepest Reasoning)' }

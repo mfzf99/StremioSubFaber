@@ -186,6 +186,12 @@ function kimiProfile(modelId) {
     // openaiCompatible.applySmartModelPayload() memetakan 'low/medium/high/max'
     // → reasoning_effort (K3) atau auto-managed (k2.7). 'disabled' dihormati
     // (tiada parameter dihantar; model guna lalai semula jadi).
+    // [GROUND TRUTH 2026-10-24 — platform.kimi.ai/docs/guide/use-thinking-models
+    // + use-reasoning-effort] K3/K3.1-pro: top-level reasoning_effort menerima
+    // HANYA 'low'/'high'/'max' (lalai pelayan 'max'); thinking sentiasa ON,
+    // parameter `thinking` tidak wujud bagi K3. k2.7-code: reasoning_effort
+    // TIDAK disokong — parameter thinking jangan dihantar (disabled = error).
+    // k2.6: thinking.type enabled/disabled + thinking.keep null/'all'.
     if (/kimi-k3|kimi-k2\.7/.test(m)) {
         return {
             family: 'kimi-fixed-sampling',
@@ -193,7 +199,7 @@ function kimiProfile(modelId) {
                 temperature: param(0, 2, 1.0, { uiHint: 'ground-truth-suggests-1.0' }),
                 topP: param(0, 1, 0.95, { uiHint: 'ground-truth-suggests-0.95' }),
                 maxOutputTokens: param(1, 131072, 32768),
-                reasoningEffort: param(0, 0, undefined, { enum: ['disabled', 'low', 'medium', 'high', 'max'] }),
+                reasoningEffort: param(0, 0, undefined, { enum: ['disabled', 'low', 'high', 'max'] }),
                 frequencyPenalty: FREQUENCY_PENALTY,
                 presencePenalty: PRESENCE_PENALTY
             },
@@ -304,12 +310,20 @@ function resolveCapabilityProfile(providerOrDoor, modelId) {
             if (/^gpt-|^o\d/.test(m)) return openaiProfile(m);
             if (/^glm/.test(m)) {
                 // A9 Zhipu GLM: temp def 1.0 / topP 0.95; thinking kekal temp 1.0.
+                // [GROUND TRUTH 2026-10-24 — docs.z.ai/guides/capabilities/thinking]
+                // GLM-5.3/5.3-FLASH: reasoning_effort HANYA 'low'/'high'/'max'
+                // (lalai pelayan 'max'); input lain = error; thinking.type
+                // 'disabled' = error (forced thinking). GLM-5.2: nilai tambah
+                // 'xhigh'/'medium'/'minimal'/'none' (none/minimal = berhenti
+                // berfikir; low/medium→high; xhigh→max di pelayan). GLM-5.1
+                // dan bawah: tiada reasoning_effort (hanya thinking toggle).
                 return {
                     family: 'glm',
                     parameters: {
                         temperature: param(0, 1, 1.0),
                         topP: param(0, 1, 0.95),
                         maxOutputTokens: param(1, 131072, 32768),
+                        reasoningEffort: param(0, 0, undefined, { enum: ['disabled', 'low', 'high', 'max'] }),
                         frequencyPenalty: FREQUENCY_PENALTY,
                         presencePenalty: PRESENCE_PENALTY
                     },
@@ -327,9 +341,74 @@ function resolveCapabilityProfile(providerOrDoor, modelId) {
             return DOOR_GENERIC_PROFILES['openai-compatible'];
         }
         default:
-            // Provider lain (groq/mistral/xai/openrouter/together/cerebras/
-            // sambanova/perplexity/qwen/zhipu) → pintu openai-compatible generik
-            // (temp 0–2, topP 0–1; n=1; tiada topK — haram sejak v1.6.0).
+            // [SYNC OFFICIAL ↔ CUSTOM/PROXY 2026-10-24 — mirror frontend
+            // trinity-agents.js resolveCapabilityProfile()] Keupayaan ditentukan
+            // oleh NAMA MODEL, bukan ketersediaan kunci official. Semua varian
+            // DeepSeek berkongsi profil reasoning (off/low/high/max, lalai
+            // 'high'); GLM-5.3/5.2 (low/high/max, lalai 'max'); Kimi K3/K3.1-pro
+            // (low/high/max, lalai 'max'). Provider lain (groq/mistral/xai/
+            // openrouter/together/cerebras/sambanova/perplexity/qwen) → pintu
+            // openai-compatible generik (temp 0–2, topP 0–1; n=1; tiada topK —
+            // haram sejak v1.6.0).
+            if (/^deepseek/.test(m)) {
+                // [MANDAT OWNER 2026-10-16 — SEND-ALL DOCTRINE] DeepSeek di pintu
+                // OpenAI-compatible menerima SEMUA parameter sampling; pelayan
+                // provider tentukan sendiri (terima/abaikan/400). Vendor docs:
+                // api-docs.deepseek.com/guides/thinking_mode — reasoning_effort
+                // 'low'/'high'/'max' (lalai pelayan 'high'); thinking.type
+                // 'enabled'/'disabled'.
+                return {
+                    family: 'deepseek-thinking',
+                    parameters: {
+                        temperature: param(0, 2, 0.3),
+                        topP: param(0, 1, 0.95),
+                        maxOutputTokens: param(1, 200000, 32768),
+                        reasoningEffort: param(0, 0, 'high', { enum: ['disabled', 'low', 'high', 'max'] }),
+                        frequencyPenalty: FREQUENCY_PENALTY,
+                        presencePenalty: PRESENCE_PENALTY
+                    },
+                    notes: []
+                };
+            }
+            if (/^glm-5\.3(?:-|$)/.test(m) || /^glm-5\.2(?:-|$)/.test(m)) {
+                return {
+                    family: 'glm',
+                    parameters: {
+                        temperature: param(0, 1, 1.0),
+                        topP: param(0, 1, 0.95),
+                        maxOutputTokens: param(1, 131072, 32768),
+                        // [GROUND TRUTH 2026-10-24 — docs.z.ai] GLM-5.3/5.3-FLASH:
+                        // HANYA low/high/max (lalai 'max'); nilai lain = ERROR;
+                        // thinking.type disabled = ERROR (forced thinking).
+                        // GLM-5.2: sokong 'disabled' (berhenti berfikir).
+                        reasoningEffort: param(0, 0, 'max', {
+                            enum: /^glm-5\.3(?:-|$)/.test(m)
+                                ? ['low', 'high', 'max']
+                                : ['disabled', 'low', 'high', 'max']
+                        }),
+                        frequencyPenalty: FREQUENCY_PENALTY,
+                        presencePenalty: PRESENCE_PENALTY
+                    },
+                    notes: ['thinking-mode-temperature-1.0']
+                };
+            }
+            if (/kimi-k3(?:\.1-pro)?(?:-|$)/.test(m) || /^kimi-k3/.test(m)) {
+                return {
+                    family: 'kimi-fixed-sampling',
+                    parameters: {
+                        temperature: param(0, 2, 1.0, { uiHint: 'ground-truth-suggests-1.0' }),
+                        topP: param(0, 1, 0.95, { uiHint: 'ground-truth-suggests-0.95' }),
+                        maxOutputTokens: param(1, 131072, 32768),
+                        // [GROUND TRUTH 2026-10-24 — platform.kimi.ai] K3/K3.1-pro:
+                        // top-level reasoning_effort 'low'/'high'/'max' (lalai 'max');
+                        // parameter `thinking` TIDAK wujud (sentiasa ON).
+                        reasoningEffort: param(0, 0, 'max', { enum: ['low', 'high', 'max'] }),
+                        frequencyPenalty: FREQUENCY_PENALTY,
+                        presencePenalty: PRESENCE_PENALTY
+                    },
+                    notes: ['ground-truth-suggests-temp-1.0-topP-0.95']
+                };
+            }
             return DOOR_GENERIC_PROFILES['openai-compatible'];
     }
 }
@@ -364,8 +443,21 @@ function getAgentDefaultParams(agent, providerOrDoor, modelId) {
     const profile = resolveCapabilityProfile(providerOrDoor, modelId);
     const tuning = AGENT_TUNING_BASE[agent] || AGENT_TUNING_BASE.translation;
     const defaults = {};
+    // [GROUND TRUTH 2026-10-24 — mirror frontend getAgentDefaultParams()]
+    // Lalai vendor (max/high) diutamakan HANYA bagi reasoningEffort keluarga
+    // yang diperakui Owner (deepseek/glm-5.3/glm-5.2/kimi-k3); semua parameter
+    // dan model lain kekal hierarki AGENT_TUNING_BASE sedia ada.
+    const normalizedModel = String(modelId || '')
+        .trim()
+        .toLowerCase();
+    const hasVendorReasoningDefault =
+        /^deepseek/.test(normalizedModel) ||
+        /^glm-5\.[23](?:-|$)/.test(normalizedModel) ||
+        /kimi-k3/.test(normalizedModel);
     for (const [name, descriptor] of Object.entries(profile.parameters)) {
-        if (tuning[name] !== undefined && tuning[name] !== null) {
+        if (name === 'reasoningEffort' && hasVendorReasoningDefault && descriptor.default !== undefined) {
+            defaults[name] = descriptor.default;
+        } else if (tuning[name] !== undefined && tuning[name] !== null) {
             defaults[name] = tuning[name];
         } else if (descriptor.default !== undefined) {
             defaults[name] = descriptor.default;

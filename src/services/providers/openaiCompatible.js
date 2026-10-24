@@ -279,13 +279,28 @@ class OpenAICompatibleProvider {
      * OPENAI-COMPATIBLE] Hierarki USER-FIRST + reasoning minimum Translation:
      *   1. reasoningEffort EKSPLISIT pengguna (config UI) sentiasa dihormati
      *      (prinsip SEND-ALL) — rawEffort dipakai apa adanya.
-     *   2. Tanpa override (lalai Translation): effort = 'disabled' — elak
-     *      model ber-reasoning memparafrasa sari kata. Keluarga yang menyokong
-     *      pematian (DeepSeek/GLM-5.2/GLM-5.1/Hunyuan/MiniMax/GPT-reasoning)
-     *      menghantar thinking disabled/no_think/none.
-     *   3. KEKANGAN KERAS 400-ERROR: keluarga ALWAYS-ON (GLM-5.3, Kimi-k3)
-     *      MENGABAIKAN isDisable dan jatuh semula jadi kepada 'low' — tahap
-     *        minimum selamat (ground truth curl live: disabled = HTTP 400).
+     *   2. [TOTAL UNLOCK FASA 1 — K5] Tanpa nilai eksplisit: body TIDAK
+     *      disentuh (model guna lalai semula jadi pelayan) — enjin dilarang
+     *      mencipta nilai reasoning.
+     *   3. Keluarga yang menyokong pematian (DeepSeek semua model / GLM-5.2 /
+     *      GLM-5.1 / Hunyuan / MiniMax / GPT-reasoning) menghantar
+     *      thinking disabled/no_think/none.
+     *   4. Keluarga ALWAYS-ON (GLM-5.3, Kimi-k3): 'disabled' pengguna
+     *      dihormati sebagai SENYAP TOTAL (tiada parameter reasoning
+     *      dihantar — biar lalai pelayan), BUKAN dipaksa 'low'.
+     *
+     * [GROUND TRUTH RASMI 2026-10-24 — Firecrawl MCP live scrape]
+     *   - DeepSeek (SEMUA model berkongsi setup sama — v4-pro / v4-flash /
+     *     v4.1-flash): reasoning_effort 'low'/'high'/'max', lalai pelayan
+     *     'high'; boleh OFF penuh (thinking.type disabled). Pemetaan vendor:
+     *     minimal→low, medium/xhigh→high, ultra→max. Rujukan:
+     *     https://api-docs.deepseek.com/guides/thinking_mode
+     *   - GLM-5.3 (docs.z.ai/guides/capabilities/thinking): reasoning_effort
+     *     HANYA 'low'/'high'/'max', lalai 'max'; input lain = ERROR;
+     *     thinking.type disabled = ERROR (forced thinking).
+     *   - Kimi K3/K3.1-pro (platform.kimi.ai use-thinking-models +
+     *     use-reasoning-effort): top-level reasoning_effort 'low'/'high'/'max',
+     *     lalai 'max'; parameter thinking TIDAK wujud (sentiasa ON).
      */
     applySmartModelPayload(body, modelName, rawEffort) {
         const m = String(modelName || '').toLowerCase();

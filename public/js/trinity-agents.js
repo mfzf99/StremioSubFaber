@@ -457,6 +457,52 @@
     var MP_FREQUENCY_PENALTY = mpParam(-2, 2, 0);
     var MP_PRESENCE_PENALTY = mpParam(-2, 2, 0);
 
+    // [GROUND TRUTH 2026-10-24 — rasmi vendor + aliran Rootsys sebenar]
+    // Satu resolver dikongsi semua ejen, Basic/Pro, official + Custom/Proxy,
+    // termasuk Secondary Fallback. Nilai OFF kekal 'disabled' pada wire config.
+    var MP_K3_REASONING_EFFORTS = ['low', 'high', 'max'];
+    var MP_DEEPSEEK_REASONING_EFFORTS = ['disabled', 'low', 'high', 'max'];
+
+    function mpGlmProfile(modelId) {
+        var m = String(modelId || '')
+            .trim()
+            .toLowerCase();
+        var parameters = {
+            temperature: mpParam(0, 1, 1.0),
+            topP: mpParam(0, 1, 0.95),
+            maxOutputTokens: mpParam(1, 131072, 32768),
+            frequencyPenalty: MP_FREQUENCY_PENALTY,
+            presencePenalty: MP_PRESENCE_PENALTY
+        };
+        if (/^glm-5\.3(?:-|$)/.test(m)) {
+            parameters.reasoningEffort = mpParam(0, 0, 'max', { enum: ['low', 'high', 'max'] });
+        } else if (/^glm-5\.2(?:-|$)/.test(m)) {
+            parameters.reasoningEffort = mpParam(0, 0, 'max', { enum: ['disabled', 'low', 'high', 'max'] });
+        } else if (/^glm-5\.1(?:-|$)/.test(m)) {
+            parameters.reasoningEffort = mpParam(0, 0, 'disabled', { enum: ['disabled', 'low'] });
+        }
+        return {
+            family: 'glm',
+            parameters: parameters,
+            notes: ['thinking-mode-temperature-1.0']
+        };
+    }
+
+    function mpDeepseekProfile() {
+        return {
+            family: 'deepseek-thinking',
+            parameters: {
+                temperature: mpParam(0, 2, 0.3),
+                topP: mpParam(0, 1, 0.95),
+                maxOutputTokens: mpParam(1, 200000, 32768),
+                reasoningEffort: mpParam(0, 0, 'high', { enum: MP_DEEPSEEK_REASONING_EFFORTS }),
+                frequencyPenalty: MP_FREQUENCY_PENALTY,
+                presencePenalty: MP_PRESENCE_PENALTY
+            },
+            notes: []
+        };
+    }
+
     function mpGeminiProfile(modelId) {
         var m = String(modelId || '')
             .trim()
@@ -574,9 +620,10 @@
         // [TRINITY TOTAL UNLOCK FASA 2 — K2] fixed DIGUGURKAN — nilai pengguna
         // dihantar apa adanya; 1.0/0.95 kekal CADANGAN lalai (placeholder) sahaja.
         // [KIMI-K3 THINKING RESTORE 2026-10-19] reasoningEffort dikembalikan —
-        // backend applySmartModelPayload() memetakan 'low/medium/high/max' →
-        // reasoning_effort (K3) atau auto-managed (k2.7). 'disabled' dihormati
-        // (tiada parameter dihantar; model guna lalai semula jadi).
+        // backend applySmartModelPayload() memetakan 'low/high/max' →
+        // reasoning_effort (K3/K3.1-pro) atau auto-managed (k2.7). 'disabled'
+        // dihormati (tiada parameter dihantar; model guna lalai semula jadi).
+        // K3 dan K3.1-pro berkongsi profil verbatim: low/high/max, default max.
         if (/kimi-k3|kimi-k2\.7/.test(m)) {
             return {
                 family: 'kimi-fixed-sampling',
@@ -584,8 +631,8 @@
                     temperature: mpParam(0, 2, 1.0, { uiHint: 'ground-truth-suggests-1.0' }),
                     topP: mpParam(0, 1, 0.95, { uiHint: 'ground-truth-suggests-0.95' }),
                     maxOutputTokens: mpParam(1, 131072, 32768),
-                    reasoningEffort: mpParam(0, 0, undefined, {
-                        enum: ['disabled', 'low', 'medium', 'high', 'max']
+                    reasoningEffort: mpParam(0, 0, 'max', {
+                        enum: MP_K3_REASONING_EFFORTS
                     }),
                     frequencyPenalty: MP_FREQUENCY_PENALTY,
                     presencePenalty: MP_PRESENCE_PENALTY
@@ -682,28 +729,16 @@
                 if (/^claude|^anthropic/.test(m)) return mpAnthropicProfile(m);
                 if (/kimi/.test(m)) return mpKimiProfile(m);
                 if (/^gpt-|^o\d/.test(m)) return mpOpenaiProfile(m);
-                if (/^glm/.test(m)) {
-                    return {
-                        family: 'glm',
-                        parameters: {
-                            temperature: mpParam(0, 1, 1.0),
-                            topP: mpParam(0, 1, 0.95),
-                            maxOutputTokens: mpParam(1, 131072, 32768),
-                            frequencyPenalty: MP_FREQUENCY_PENALTY,
-                            presencePenalty: MP_PRESENCE_PENALTY
-                        },
-                        notes: ['thinking-mode-temperature-1.0']
-                    };
-                }
-                if (/^deepseek/.test(m)) {
-                    // [MANDAT OWNER 2026-10-16 — SEND-ALL DOCTRINE] DeepSeek di pintu
-                    // OpenAI-compatible menerima SEMUA parameter sampling; hanya flag
-                    // `thinking` dikawal server. Mirror backend DOOR_GENERIC_PROFILES.
-                    return MP_DOOR_GENERIC_OPENAI;
-                }
+                if (/^glm/.test(m)) return mpGlmProfile(m);
+                if (/^deepseek/.test(m)) return mpDeepseekProfile(m);
                 return MP_DOOR_GENERIC_OPENAI;
             }
             default:
+                // [SYNC OFFICIAL ↔ CUSTOM/PROXY 2026-10-24] Keupayaan ditentukan
+                // oleh nama model, bukan oleh ketersediaan kunci official. Semua
+                // varian DeepSeek berkongsi profil; GLM 5.3 dipisah daripada 5.2.
+                if (/^deepseek/.test(m)) return mpDeepseekProfile(m);
+                if (/^glm/.test(m)) return mpGlmProfile(m);
                 return MP_DOOR_GENERIC_OPENAI;
         }
     }
@@ -723,10 +758,21 @@
         var defaults = {};
         // [TRINITY TOTAL UNLOCK FASA 2 — K2] Cabang descriptor.fixed dibuang —
         // tiada lagi nilai dikunci; cadangan lalai sahaja (mirror backend).
+        var normalizedModel = String(modelId || '')
+            .trim()
+            .toLowerCase();
+        var hasVendorReasoningDefault =
+            /^deepseek/.test(normalizedModel) ||
+            /^glm-5\.[23](?:-|$)/.test(normalizedModel) ||
+            /kimi-k3/.test(normalizedModel);
         for (var name in profile.parameters) {
             if (!Object.prototype.hasOwnProperty.call(profile.parameters, name)) continue;
             var descriptor = profile.parameters[name];
-            if (tuning[name] !== undefined && tuning[name] !== null) {
+            // Lalai vendor hanya untuk keluarga yang diperakui Owner; semua model
+            // lain kekal menggunakan hierarki AGENT_TUNING_BASE sedia ada.
+            if (name === 'reasoningEffort' && hasVendorReasoningDefault && descriptor.default !== undefined) {
+                defaults[name] = descriptor.default;
+            } else if (tuning[name] !== undefined && tuning[name] !== null) {
                 defaults[name] = tuning[name];
             } else if (descriptor.default !== undefined) {
                 defaults[name] = descriptor.default;
@@ -941,7 +987,10 @@
         select.dataset.mpName = name;
         select.dataset.mpAgent = agentKey;
         (descriptor.enum || []).forEach(function (optVal) {
-            var opt = createEl('option', '', optVal.charAt(0).toUpperCase() + optVal.slice(1));
+            var label = optVal.charAt(0).toUpperCase() + optVal.slice(1);
+            if (name === 'reasoningEffort' && optVal === 'disabled') label = 'Off';
+            if (name === 'reasoningEffort' && optVal === descriptor.default) label += ' (Provider default)';
+            var opt = createEl('option', '', label);
             opt.value = optVal;
             select.appendChild(opt);
         });
@@ -1027,6 +1076,17 @@
             if (!descriptor) return; // hanya parameter yang disokong model
             // Nilai sebenar pengguna = params[name]; cadangan lalai = defaults[name].
             var savedValue = params[name];
+            // Legacy K3/GLM-5.3 'disabled' tidak lagi sah dalam enum vendor.
+            // Pulihkan kepada minimum selamat untuk paparan; jangan hantar token
+            // legacy itu semula ke pelayan semasa collect/render seterusnya.
+            if (
+                name === 'reasoningEffort' &&
+                savedValue === 'disabled' &&
+                Array.isArray(descriptor.enum) &&
+                !descriptor.enum.includes('disabled')
+            ) {
+                savedValue = descriptor.enum.includes('low') ? 'low' : descriptor.enum[0];
+            }
             var placeholderValue = defaults[name];
             var uiHint = descriptor.uiHint;
             var field = null;
@@ -1065,18 +1125,19 @@
         if (!notesBox) return;
         notesBox.innerHTML = '';
         var seen = {};
+        // [VISUAL DEDUP 2026-10-24] uiHint per-medan sudah membawa teks penuh di
+        // bawah setiap input; mengulanginya sebagai blok nota di atas menolak
+        // medan sebenar ke bawah lipatan (3 lapisan mesej sama). Hanya nota yang
+        // TIADA perwakilan medan dipaparkan di sini.
         Object.keys(profile.parameters).forEach(function (name) {
             var descriptor = profile.parameters[name];
-            if (descriptor && descriptor.uiHint && !seen['hint:' + name]) {
-                seen['hint:' + name] = true;
-                var text = MP_UIHINT_TEXT[descriptor.uiHint] || descriptor.uiHint;
-                var note = createEl('div', 'trinity-mp-note', (MP_FIELD_LABELS[name] || name) + ' — ' + text);
-                notesBox.appendChild(note);
-            }
+            if (descriptor && descriptor.uiHint && !seen['hint:' + name]) seen['hint:' + name] = true;
         });
         (profile.notes || []).forEach(function (key) {
             if (seen['note:' + key]) return;
             seen['note:' + key] = true;
+            if (/ground-truth-suggests|fixed-sampling|thinking-mode-temperature|thinking-locks-temperature/.test(key))
+                return;
             var text = MP_NOTE_TEXT[key];
             if (text) notesBox.appendChild(createEl('div', 'trinity-mp-note', text));
         });

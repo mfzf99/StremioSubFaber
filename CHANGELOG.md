@@ -2,6 +2,25 @@
 
 All notable changes to this project will be documented in this file.
 
+## SubFaber v3.18.2 (2026-10-24) — Ground-Truth Reasoning Effort: GLM-5.3 / Kimi K3 / DeepSeek UI & Contract Surgery (Trinity Basic + Pro)
+
+### ✨ New Features
+
+- **Official reasoning-effort ground truth for GLM-5.3, Kimi K3/K3.1-pro and all DeepSeek models (Mandat Owner 2026-10-24):** the vendor APIs were scraped live from their official documentation (api-docs.deepseek.com/guides/thinking_mode, docs.z.ai/guides/capabilities/thinking, platform.kimi.ai use-thinking-models + use-reasoning-effort) and the UI capability matrix was rebuilt to match exactly — **GLM-5.3: `low/high/max` (default `max`, thinking always-on, `disabled` = HTTP error); Kimi K3 & kimi-k3.1-pro (profile shared verbatim): `low/high/max` (default `max`, top-level `reasoning_effort`, no `thinking` parameter); all DeepSeek models (shared setup): `off/low/high/max` (default `high`, fully disableable)**. The UI label "Off" maps to the wire value `disabled` — the backend contract shape is unchanged.
+- **Coverage: every Trinity agent, both modes, both doors:** the surgery covers Agent Preflight, Agent Translation, Agent Inspector and the Secondary Fallback provider card in Basic Mode and Pro Mode, for official providers AND Custom/Proxy — one shared model-name-based resolver (`mpGlmProfile()` / `mpDeepseekProfile()` in [public/js/trinity-agents.js](public/js/trinity-agents.js)) feeds all slots so the official and Custom/Proxy doors are always in sync.
+
+### 🔧 Fixed
+
+- **Silent-drop contract break on the official door (Integration Review):** `resolveCapabilityProfile()` in [src/utils/modelCapabilities.js](src/utils/modelCapabilities.js) previously routed official provider IDs (deepseek/zhipu/moonshot/…) to the generic OpenAI-compatible profile whose enum lacked `disabled` — so a UI-selected "Off" for DeepSeek/GLM-5.2 official was dropped silently by `sanitizeAgentParams()`. The `default` branch now matches by model name: DeepSeek `['disabled','low','high','max']` default `high`; GLM-5.3 `['low','high','max']` default `max`; GLM-5.2 `['disabled','low','high','max']` default `max`; Kimi K3/K3.1-pro `['low','high','max']` default `max` — mirroring the frontend resolver exactly.
+- **Vendor-default precedence over generic agent tuning:** `getAgentDefaultParams()` (both backend and frontend) now prefers the vendor-official default (`max`/`high`) for `reasoningEffort` on the targeted families only, so the generic agent suggestions (`medium`/`low`) can no longer mask the provider default; all other parameters and models keep the existing AGENT_TUNING_BASE hierarchy.
+- **Legacy `disabled` recovery for GLM-5.3/K3:** saved configs holding the legacy `disabled` token for always-on families are restored to `low` for display (the token is no longer valid in those vendor enums and would trigger provider 400s).
+- **Visual dedup of stacked Model Parameters notes (Playwright critique):** `mpRenderNotes()` no longer repeats per-field uiHint text as an upper notes block — three stacked duplicate messages were pushing the actual fields below the fold. Only notes with no per-field representation are kept.
+- **DeepSeek label update in [public/config.js](public/config.js):** "Disabled (No Thinking)" → "Off (No Thinking)" (wire value unchanged).
+
+### ✅ Verification
+
+- Real-user doctrine, Rootsys live keys only (`SUBFABER_TEST_*`, Zero Secret Logging respected — no key values in logs, screenshots or ledger; zero official API calls since no official subscriptions): Rootsys validation succeeded (26 models). Fresh-state matrix **21/21 PASS** — Preflight × Translation × Inspector × (deepseek-v4-pro / deepseek-v4-flash / deepseek-v4.1-flash / glm-5.3 / glm-5.3-flash / kimi-k3 / kimi-k3.1-pro) with exact enums + defaults. Cross-family draft preservation PASS (DeepSeek→K3→DeepSeek keeps the user's explicit `low`). Secondary Fallback (`custom_secondary` + `deepseek-v4.1-flash`) renders Off/Low/High/Max default High. `collectConfigPatch()` payload: `params: null` without deviation; `{ reasoningEffort: 'max' }` with an explicit choice. Screenshots: `reasoning-kimi-clean.png`, `reasoning-deepseek-final.png`. `node --check` PASS on all touched files; targeted regression suites green; `npm test` full suite at the 470-test baseline with **0 FAIL**.
+
 ## SubFaber v3.18.1 (2026-10-24) — Console Debug Repeat-Collapse: Terminal Log Flood Recovery (brParity Per-Entry)
 
 ### 🔧 Fixed
