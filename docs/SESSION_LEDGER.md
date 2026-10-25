@@ -1,7 +1,7 @@
 ## 2026-10-25 — v3.19.5 PROTOCOL POLISH: WIRE-VALUE DEEPSEEK reasoning_effort "none" + EKSTRAKSI GROUND TRUTH RASMI TRI-DOOR (FIRECRAWL MCP)
 
 - **Tarikh:** 2026-10-25 ~06:26 (waktu tempatan KL)
-- **Komit SHA (HEAD):** (direkod selepas push + CI)
+- **Komit SHA (HEAD):** `000eac91` + CI run ID 40240290532 = **SUCCESS** (Node 22 ✓ 53s / Node 24 ✓ 1m0s; push diverifikasi `git rev-parse` HEAD = `000eac91a9ab9ac62716f48907937725919889f1` + tag `v3.19.5` ditolak ke origin).
 - **Keputusan Owner:** Tiga mandat berturutan diluluskan — (1) pelaksanaan ekstraksi dokumentasi rasmi Tri-Door (3 mazhab, depth=0, live fetch) ke `plans/ground-truth/`; (2) pemurnian wire-value DeepSeek: input semantik off → `thinking:{type:"disabled"}` + `reasoning_effort:"none"` (enum rasmi semasa, BUKAN "disabled"); (3) 8-step release pipeline penuh.
 - **Penemuan ground truth kritikal:** (a) Anthropic `thinking:{type:"adaptive"}` disahkan RASMI (varian union ThinkingConfigParam pertama-class, API version 2026-10-21; wajib Claude 4.7+, 400 pada model 4.5-awal) — kontrak BEKU `agentInspector.js:663` 100% patuh, sifar pembaikan; (b) DeepSeek enum semaka `none`/`low`/`high`/`max` + penalty frequency/presence DEPRECATED (no-op); (c) Gemini sampling "silently ignored" 3.6+ (bukan 400 — SEND-ALL selamat), `continuationToken` pada v1beta, `responseSchema` deprecated → `responseFormat`, Gemini 4 Argon GA.
 - **Pembedahan ([`src/services/providers/openaiCompatible.js`](../src/services/providers/openaiCompatible.js)):** cabang DeepSeek `applySmartModelPayload()` isDisable kini menghantar kedua-dua suis (`thinking` disabled + `reasoning_effort:"none"`); cabang aktif low/high/max + keluarga GLM/Kimi/Hunyuan tidak disentuh. Header komen ground truth dikemas kini.
