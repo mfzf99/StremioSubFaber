@@ -1,3 +1,13 @@
+## 2026-10-25 — TELEGRAM BOT VPS DIHIDUPKAN (nota operasi, sifar kod repositori)
+
+- **Tarikh:** 2026-10-25 ~12:51 (waktu tempatan KL)
+- **Komit SHA (HEAD):** (docs-only, direkod selepas push).
+- **Keputusan Owner:** Telegram report tidak berfungsi di VPS baharu — Owner minta diagnosis + penghidupan. Punca: `.env` VPS tiada SEBARANG pembolehubah Telegram/CrazyRouter (deployment baharu tak salin) dan kod [`telegramBot.js`](../src/services/telegramBot.js) fail-silent (`if (!botToken || !authorizedChatId) return;`) — bot senyap tanpa log.
+- **Tindakan:** env `TELEGRAM_BOT_TOKEN` + `TELEGRAM_CHAT_ID` + `CRAZYROUTER_ACCESS_TOKEN` + `CRAZYROUTER_USER_ID` dimasukkan ke `.env` VPS dengan KELULUSAN KHAS Owner (special case). Nilai TIDAK direkodkan dalam ledger ini per kontrak Zero Secret Logging — Owner pegang salinan. Container restart `docker compose up -d`.
+- **Verifikasi:** log `[Telegram Bot] 🤖 Enjin bot interaktif Dashboard & 2-Hwa dimulakan...`; ujian `getMe` dari DALAM container = `username=stremiosubmaker_bot` OK (token sah + jaringan container→Telegram berfungsi); polling senyap sifar ralat; container healthy.
+- **Command bot:** `/start` `/menu` `/list` `/server` `/keys`.
+- **NOTA MIGRASI (WAJIB DIPINDAH ke server kekal):** tambah env Telegram (4 kunci di atas) ke runbook langkah 5 bersama `ALLOWED_ORIGINS` dan `LOG_LEVEL`.
+
 ## 2026-10-25 — v3.19.0 PENYATUAN MUTLAK API REQUEST BODY MERENTAS PINTU & EJEN TRINITY (DOOR-CENTRIC ARCHITECTURE)
 
 - **Tarikh:** 2026-10-25 ~11:42 (waktu tempatan KL)
