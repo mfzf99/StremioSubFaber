@@ -1,7 +1,7 @@
 ## 2026-10-25 — v3.19.2 HOTFIX COLLAPSE LOG BRPARITY V2: PER-KEY WINDOWED COUNTERS (SUSULAN v3.18.1 `31561867`)
 
-- **Tarikh:** 2026-10-25 ~16:10 (waktu tempatan KL)
-- **Komit SHA (HEAD):** `<SHA-PENDING>` (diisi selepas push + CI watch)
+- **Tarikh:** 2026-10-25 ~16:12 (waktu tempatan KL)
+- **Komit SHA (HEAD):** `88308f08` + CI run ID 40175619106 = **BERHASIL** (conclusion: success, 1m7s; push diverifikasi `git rev-parse` HEAD = `88308f0852917a6492a3e843e65b6db53ba91784` = origin/main, sifar push-senyap).
 - **Keputusan Owner:** Owner laporkan log terminal MASIH tercemar brParity selepas fix v1 (`31561867`, v3.18.1) dikatakan selesai; Owner arahkan "terus commit" bagi hotfix v2 selepas diagnosis forensik akar punca.
 - **Akar punca v1 gagal:** mekanisme consecutive-only (single-slot `debugRepeatState`) hanya collapse mesej DEBUG berturut-turut identik. Trafik sebenar: 3 varian brParity (`AI menambah` / `auto-repair disisip` / `repair gagal`) berselang-seli pantas — corak "putus" pada setiap baris, key baharu flush key lama dengan count=1 sebelum sempat mengumpul. Mekanisme berfungsi seperti yang ditulis tetapi tidak menangkap corak interleave sebenar.
 - **Pembedahan v2 ([`src/utils/logger.js`](../src/utils/logger.js)):** `collapseDebugRepeat()` ditulis semula kepada per-key windowed counters (`Map` key → `{count, timer}`, window 5s senyap); `shutdownLogger()` kini flush semua summary tertahan via `flushAllDebugRepeatSummaries()` sebelum exit. Sifar perubahan enjin (`translationEngine.js` tidak disentuh); fail log kekal 100% penuh; WARN/ERROR kekal penuh.
