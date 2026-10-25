@@ -94,3 +94,7 @@ tests/*
 
 # AI: REMOVE NOTHING FROM THIS FILE. DO NOT ADD ! EXCEPTIONS.
 # THESE RULES EXIST FOR A REASON. IF NECESSARY, ASK PERMISSION FIRST.
+# [v3.19.3] Artifak tangkapan skrin audit & fail sampah terminal jangan di-track
+.trinity-fasa2-final.png
+subfaber-custom-provider-audit-2026-10-18.png
+console.log(*)

@@ -1,7 +1,7 @@
 ## 2026-10-25 — v3.19.3 HYGIENE RELEASE: RACE PARTIAL-CACHE + WARN UIHINT FALSE-POSITIVE + AREGAT BRPARITY PER-BATCH (PILIHAN A)
 
-- **Tarikh:** 2026-10-25 ~20:59 (waktu tempatan KL)
-- **Komit SHA (HEAD):** (direkod selepas push).
+- **Tarikh:** 2026-10-25 ~21:01 (waktu tempatan KL)
+- **Komit SHA (HEAD):** `2c3e9ce7` + CI run ID 40233359873 = **SUCCESS** (Node 22 ✓ 59s / Node 24 ✓ 56s; push diverifikasi `git rev-parse` HEAD = `2c3e9ce7b0a4f6adaf6ea0976203a9ed3b194919` = origin/main, sifar push-senyap). Nota: `git add -A` terserap 3 fail sampah workspace (2 PNG audit + `console.log('TELEGRAM_API`); dibersihkan dalam commit susulan docs-only (untrack + .gitignore).
 - **Keputusan Owner:** Owner serahkan log terminal terjemahan sebenar (`subdl_3543003_8465067_seasonpack_s1e15`, 696 entri, 14 batch) untuk audit forensik penuh. Audit menemui 4 penemuan; Owner meluluskan plan pembedahan 3 pembaikan dengan keputusan Senior Dev untuk brParity = Pilihan A (benign per-batch counter, repair-events kekal per-entri).
 - **Audit forensik:** Aliran Trinity end-to-end sihat (Preflight kimi-k3 36 terms/15 watak; Translation deepseek-v4.1-flash 14/14; Inspector deepseek-v4-pro 14/14 PASSED 100% perlindungan, sifar jenayah). brParity collapse v2 (v3.19.2) disahkan BERFUNGSI — summary `repeated N times` tepat seperti kontrak.
 - **FIX-1 Race orphan-write partial cache ([`src/handlers/subtitles.js`](../src/handlers/subtitles.js)):** progress callback terakhir enqueue partial-save async selepas `adapter.delete(PARTIAL)` utama — entri orphan Redis TTL 1 jam + log `Partial SAVED` selepas "completed" (dikesan dalam log Owner: 20:40:54 completed vs 20:40:57 masih Partial SAVED). Pembedahan: flag `partialDeliveryDone` + drain `await partialSaveChain` SEBELUM delete.
