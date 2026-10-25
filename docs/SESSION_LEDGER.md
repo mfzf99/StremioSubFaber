@@ -1,7 +1,7 @@
 ## 2026-10-25 — v3.19.4 HOTFIX: HOIST partialSaveChain/partialDeliveryDone KE SCOPE FUNCTION (REFERENCEERROR FIX-1 v3.19.3)
 
-- **Tarikh:** 2026-10-25 ~21:45 (waktu tempatan KL)
-- **Komit SHA (HEAD):** (direkod selepas push).
+- **Tarikh:** 2026-10-25 ~21:47 (waktu tempatan KL)
+- **Komit SHA (HEAD):** `208f48d2` + CI run ID 40237032021 = **SUCCESS** (Node 22 ✓ 58s / Node 24 ✓ 59s; push diverifikasi HEAD = origin/main = `208f48d2d99c4d2bac67adcc7c3c090eff06dc54`).
 - **Keputusan Owner:** Owner jalankan rebuild fresh + test run kedua (`subdl_3543003_8465067_seasonpack_s1e15` semula, deepseek-v4-pro kali ini) dan hantar log untuk penilaian. Verifikasi: FIX-2 (WARN kimi-k3 noise) HILANG ✓; FIX-3A (brParity benign per-batch, `batch 1/14: AI menambah 940 line break`) BERFUNGSI ✓; tapi FIX-1 GAGAL — `Partial save chain drain error: partialSaveChain is not defined` + `Partial SAVED` selepas completion berterusan (repeated 10 times).
 - **Akar punca scope bug:** deklarasi FIX-1 v3.19.3 terperangkap dalam blok `if (agentInspector enabled)` (indent 12) yang tamat sebelum blok cleanup `finalCacheVerified` (indent 8, scope function luar). Assignment `partialDeliveryDone = true` di scope luar menjadi implicit global; closure `persistPartial()` membaca variable blok dalaman — gate tidak pernah aktif. Runtime tidak crash kerana assignment implicit global (non-strict path) tapi `await partialSaveChain` melempar ReferenceError yang ditangkap catch + log WARN.
 - **Pembedahan ([`src/handlers/subtitles.js`](../src/handlers/subtitles.js)):** kedua-dua `let partialSaveChain = Promise.resolve()` + `let partialDeliveryDone = false` dihoist ke scope function (baris 6206-6207, sebelum blok `if (translatedContent === undefined)`); deklarasi lama dalam blok dihapus (komen penanda kekal). `partialDeliveryDisabled` kekal dalam blok (hanya digunakan oleh closure tersebut).
