@@ -1,6 +1,9 @@
 ## 2026-10-25 — v3.19.6 HYGIENE: DEDUP-AT-ENQUEUE PARTIAL SAVES (SAPU 10× TULISAN REDIS IDENTIKAL — AUDIT LOG RUN KETIGA)
 
 - **Tarikh:** 2026-10-25 ~07:26 (waktu tempatan KL)
+- **Komit SHA (HEAD):** `710b2ea7` + CI run ID 40244813376 = **SUCCESS** (Node 22 ✓ 53s / Node 24 ✓ 1m9s; push diverifikasi `git rev-parse` HEAD = `710b2ea77a9747db443ee38fe514e805a5264b6a` = origin/main).
+
+- **Tarikh:** 2026-10-25 ~07:26 (waktu tempatan KL)
 - **Komit SHA (HEAD):** (direkod selepas push)
 - **Keputusan Owner:** Owner jalankan ujian live yang diarahkan (deepseek-v4.1-flash, pintu rootsys, reasoning Off/No Thinking) dan hantar log terminal penuh untuk inspect; Owner tanya dua "anomali" visual dalam log (Partial SAVED selepas Inspector PASSED + `[repeated 10 times]` selepas completed), kemudian meluluskan mandat "teruskan dengan fix tersebut, sapu bersih semua masalah" + arahan commit.
 - **Verifikasi build pra-audit:** VPS `/opt/StremioSubFaber` disahkan HEAD `3461847f`, package.json 3.19.5, kedua-dua container healthy — log sah untuk penilaian v3.19.5.
