@@ -750,12 +750,12 @@ function normalizeConfig(config) {
     //   Fasa 1 (Pemeriksa Utama)   : deepseek-v4-pro     (Timeout 300,000ms / 5 min)
     //   Fallback Universal         : deepseek-v4.1-flash (mewarisi had masa fasa)
     // MANDAT OPERASI MUTLAK v2 (arahan Project Owner 2026-09-27): kedua-dua fasa
-    // 5 minit. [AUDIT 2026-09-29] Muatan kini 4-kunci god-tier
-    // [PAYLOAD-GODTIER 2026-09-28] — TEPAT { model, messages, stream: true,
-    // temperature: 0.0 }, dibina dalam OpenAICompatibleProvider.
-    // buildChatRequest (universalPayload=true). reasoning_effort /
-    // max_tokens / extra_body.thinking / response_format DIGUGURKAN
-    // (pencetus overthinking; kesahan JSON dijamin parser tahan lasak).
+    // 5 minit. [PENYATUAN MUTLAK 2026-10-25 — Mandat Owner] Muatan kini
+    // dibina oleh buildChatRequest() standard OpenAICompatibleProvider bagi
+    // SEMUA ejen (laluan 4-kunci god-tier universalPayload MANSUH) —
+    // reasoning_effort / max_tokens / thinking / response_format mengikut
+    // spesifikasi rasmi pintu OpenAI-compatible; streaming SSE kekal
+    // pengangkutan laluan rootsys/Caddy.
     const normalizeAgentInspectorTimeoutMs = (raw, fallbackMs) => {
         const parsed = parseInt(raw, 10);
         return Number.isFinite(parsed) && parsed > 0 ? parsed : fallbackMs;

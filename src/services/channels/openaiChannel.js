@@ -1,21 +1,19 @@
 /**
  * OpenAI Channel — pintu OpenAI-compatible bagi Trinity (Tri-Door Fasa B).
  *
- * Membungkus pengetahuan pengangkutan yang sebelum ini terkurung dalam
- * constructor AgentInspector (super-options OpenAICompatibleProvider):
- *   - providerName 'agent-inspector', universalPayload god-tier 4-kunci
- *     {model, messages, stream:true, temperature:0.0} (PAYLOAD-GODTIER 2026-09-28)
+ * [PENYATUAN MUTLAK 2026-10-25 — Mandat Owner] Format muatan kini ditentukan
+ * OLEH PROTOKOL PINTU, bukan oleh ejen. Laluan 4-kunci god-tier
+ * (universalPayload) MANSUH — Agent Inspector melalui buildChatRequest()
+ * standard yang sama dengan Agent Translation & Preflight:
+ *   - providerName 'agent-inspector'
  *   - maxRetries 0 (fail fast; retry dikendalikan _callWithFailover)
- *   - enableJsonOutput false (kesahan JSON oleh parser tahan lasak)
+ *   - enableJsonOutput true (kesahan JSON Inspector melalui response_format
+ *     rasmi json_schema/json_object — standard OpenAI)
  *   - SSRF-safe lookup passthrough
  *
  * Streaming policy (kelulusan owner #4): stream KEKAL eksklusif laluan
  * rootsys/Caddy — channel ini pemilik laluan tersebut; geminiChannel &
  * anthropicChannel (Fasa C) dibenarkan non-stream.
- *
- * Fasa B: buildSuperOptions() ialah ekstraksi 1:1 — AgentInspector
- * menggunakan keluaran ini untuk super() supaya tingkah laku TIDAK berubah
- * (regresi mesti hijau tanpa edit assertion).
  */
 
 const OpenAICompatibleProvider = require('../providers/openaiCompatible');
@@ -23,15 +21,17 @@ const { FORMAT_OPENAI } = require('./keyDetector');
 
 /**
  * Bina super-options OpenAICompatibleProvider bagi Agent Inspector.
- * Ekstraksi verbatim daripada agentInspector.js constructor (Fasa B) —
- * tingkah laku kekal 1:1 dengan laluan pra-refactor.
+ *
+ * [PENYATUAN MUTLAK 2026-10-25 — Mandat Owner] Input semantik universal
+ * sahaja disalurkan (temperature, maxOutputTokens, reasoningEffort);
+ * pembinaan muatan sepenuhnya milik lapisan pintu (buildChatRequest
+ * standard). Sifar rujukan universalPayload/beastMaxTokens.
  *
  * @param {Object} options - Constructor options AgentInspector
  * @param {number} inspectionTimeoutMs - Had masa semakan (ms)
- * @param {number} beastMaxTokens - Legacy no-op (dikekalkan kontrak warisan)
  * @returns {Object} super-options untuk new OpenAICompatibleProvider(...)
  */
-function buildSuperOptions(options = {}, inspectionTimeoutMs = 60000, beastMaxTokens = undefined) {
+function buildSuperOptions(options = {}, inspectionTimeoutMs = 60000) {
     return {
         apiKey: options.apiKey || '',
         // [HARDCODE-PURGE 2026-10-13] Lalai statik 'deepseek-v4-pro'
@@ -39,11 +39,25 @@ function buildSuperOptions(options = {}, inspectionTimeoutMs = 60000, beastMaxTo
         model: options.inspectionModel || options.model || '',
         baseUrl: options.baseUrl || 'https://api.openai.com/v1',
         providerName: 'agent-inspector',
-        universalPayload: true, // Muatan BEAST sejagat (Mandat §A + BETA RUN 10)
-        beastMaxTokens, // [AUDIT-WARISAN 2026-09-29] no-op — builder 4-kunci god-tier tidak membaca beastMaxTokens
+        // [PENYATUAN MUTLAK 2026-10-25] Input semantik universal —
+        // parameter standard disalurkan apa adanya; enjin menghantar HANYA
+        // nilai eksplisit (pelayan guna lalai asalnya bila undefined).
+        // maxTokens (kontrak warisan AgentInspector) dipetakan kepada
+        // maxOutputTokens — siling token tunggal pembina standard.
+        temperature: options.temperature,
+        maxOutputTokens: options.maxOutputTokens !== undefined ? options.maxOutputTokens : options.maxTokens,
+        topP: options.topP,
+        presencePenalty: options.presencePenalty,
+        frequencyPenalty: options.frequencyPenalty,
+        reasoningEffort: options.reasoningEffort,
         translationTimeout: inspectionTimeoutMs / 1000,
         maxRetries: 0, // Fail fast — satu percubaan sahaja per model
-        enableJsonOutput: false, // Parse JSON manual (kompatibilitas maksimum endpoint)
+        // enableJsonOutput kekal FALSE: skema enableJsonOutput (subtitle_entries)
+        // ialah kontrak Agent Translation. Kesahan JSON Inspector menggunakan
+        // response_format rasmi melalui meta.responseFormat (INSPECTOR_SCHEMA_
+        // CONTRACT kanonik daripada wrapper prompt) — diaktifkan di DALAM
+        // buildChatRequest() standard pembina pintu (PENYATUAN MUTLAK 2026-10-25).
+        enableJsonOutput: false,
         ssrfLookup: options.ssrfLookup || null
     };
 }
@@ -56,7 +70,7 @@ function buildSuperOptions(options = {}, inspectionTimeoutMs = 60000, beastMaxTo
  */
 function buildProvider(options = {}) {
     const inspectionTimeoutMs = Number(options.inspectionTimeoutMs) || 60000;
-    return new OpenAICompatibleProvider(buildSuperOptions(options, inspectionTimeoutMs, options.beastMaxTokens));
+    return new OpenAICompatibleProvider(buildSuperOptions(options, inspectionTimeoutMs));
 }
 
 module.exports = {

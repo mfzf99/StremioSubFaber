@@ -56,12 +56,9 @@ class OpenAICompatibleProvider {
         this.temperature = options.temperature !== undefined ? options.temperature : undefined;
         this.maxOutputTokens = options.maxOutputTokens || 65536;
         this.topP = options.topP !== undefined ? options.topP : undefined;
-        // [AUDIT-WARISAN 2026-09-29] WARISAN/no-op (dead store): disimpan tetapi
-        // tidak pernah dibaca — builder universal (universalPayload=true) tidak
-        // membawa max_tokens; laluan terjemahan warisan pula menggunakan
-        // maxOutputTokens (getCappedMaxOutputTokens). Dikekalkan untuk
-        // keserasian kontrak AgentInspector (options.beastMaxTokens).
-        this.beastMaxTokens = parseAgentInspectorMaxTokens(options.beastMaxTokens, AGENT_INSPECTOR_BEAST_MAX_TOKENS);
+        // [PENYATUAN MUTLAK 2026-10-25 — Mandat Owner] beastMaxTokens (dead
+        // store warisan laluan god-tier) MANSUH. Siling token kini tunggal
+        // melalui maxOutputTokens (getCappedMaxOutputTokens) bagi SEMUA ejen.
         this.presencePenalty = options.presencePenalty;
         // [MANDAT OWNER 2026-10-16 — SEND-ALL DOCTRINE] frequencyPenalty kini
         // diserialisasi kepada pintu openai-compatible (dahulu gap: dinormalisasi
@@ -79,10 +76,10 @@ class OpenAICompatibleProvider {
             ? Math.max(0, parseInt(options.maxRetries, 10))
             : 2;
         this.enableJsonOutput = options.enableJsonOutput === true;
-        // ═══ UNIVERSAL PAYLOAD FLAG (Mandat Seni Bina Universal Payload
-        // 2026-09-26): apabila true, buildChatRequest membina muatan seragam
-        // { model, temperature: 0.0, messages } — digunakan oleh Agent Inspector.
-        this.universalPayload = options.universalPayload === true;
+        // [PENYATUAN MUTLAK 2026-10-25 — Mandat Owner] Flag universalPayload
+        // (laluan 4-kunci god-tier) MANSUH — SEMUA ejen (Translation,
+        // Preflight, Inspector) kini melalui buildChatRequest() standard
+        // yang sama. Format muatan ditentukan oleh PROTOKOL PINTU, bukan ejen.
         // [UPSTREAM-RESILIENCE v2 2026-09-29] DUA watchdog aliran SSE berasingan:
         //
         //   1. FIRST-BYTE (TTFT) — masa sehingga token PERTAMA tiba. Forensik
@@ -465,63 +462,15 @@ class OpenAICompatibleProvider {
                   }
               ];
 
-        // ═══ [PAYLOAD-GODTIER] UNIVERSAL PAYLOAD BUILDER (4-KUNCI STREAMING, 2026-09-28) ═══
-        // Payload builder bagi Agent Inspector (Fasa 0 Pre-Flight + Fasa B Inspection —
-        // endpoint yang sama). Ground truth empirikal (curl terus ke gateway
-        // rootsys.cloud, Kimi K3, SRT 759 baris): muatan 7-kunci lama GAGAL
-        // SEPENUHNYA (timeout Caddy 300s — tiada streaming), manakala muatan
-        // 4-kunci ini berjaya:
-        //   { model, messages, stream: true, temperature: 0.0 }
-        //   - stream:true  → chunk SSE menghidupkan sambungan Caddy → siling
-        //     keras 300s gateway tidak lagi membunuh giliran penaakulan panjang.
-        //     STREAMING WAJIB bagi setiap panggilan Agent Inspector (Fasa 0 + Fasa B).
-        //   - temperature:0.0 → varians 61s → 19s (deterministik).
-        //   - extra_body.thinking / reasoning_effort / max_tokens /
-        //     response_format ialah PENCETUS OVERTHINKING terbukti (+90-110s
-        //     setiap satu) — DIGUGURKAN. Penaakulan Kimi K3 berlaku secara
-        //     semula jadi dalam mod stream. max_tokens juga menyebabkan
-        //     istilah kritikal tergugur.
-        //   - Kesahan JSON dijamin oleh lapisan parser tahan lasak
-        //     (stripReasoningTags + resilientParseJson / parseInspectorResponse),
-        //     BUKAN oleh response_format.
-        //   - Siling masa: diuruskan pada lapisan axios (translationTimeout,
-        //     lalai Agent Inspector 300000ms = tepat siling Caddy) — bukan pada muatan.
-        if (this.universalPayload === true) {
-            // [TRINITY TOTAL UNLOCK FASA 1 — Mandat Owner 2026-10-19, K1]
-            // temperature 0.0 hardcoded DIGUGURKAN. Hantar HANYA nilai eksplisit
-            // pengguna; medan tidak diset → kunci TIDAK dihantar (pelayan guna
-            // lalai asalnya). stream:true kekal sebagai invariant pengangkutan
-            // (keputusan rasmi Owner §8.1 — elak 504 gateway, bukan parameter
-            // generasi).
-            const universalBody = {
-                model: this.model,
-                messages,
-                // [PAYLOAD-GODTIER] STREAMING WAJIB untuk mengalahkan siling keras
-                // Caddy 300s. Bentuk stream:false hanya wujud pada laluan fallback
-                // apabila endpoint membuktikan ketidak-sokongan SSE.
-                stream: stream === true
-            };
-            if (this.temperature !== undefined && this.temperature !== null) {
-                universalBody.temperature = this.temperature;
-            }
-            if (this.topP !== undefined && this.topP !== null) {
-                universalBody.top_p = this.topP;
-            }
-            if (this.presencePenalty !== undefined && this.presencePenalty !== null) {
-                universalBody.presence_penalty = this.presencePenalty;
-            }
-            if (this.frequencyPenalty !== undefined && this.frequencyPenalty !== null) {
-                universalBody.frequency_penalty = this.frequencyPenalty;
-            }
-            return {
-                body: universalBody,
-                url: `${this.baseUrl}/chat/completions`,
-                isCfRun: false,
-                isCfTranslation: false,
-                useResponsesApi: false
-            };
-        }
-
+        // [PENYATUAN MUTLAK 2026-10-25 — Mandat Owner] Laluan 2b (PAYLOAD-GODTIER
+        // 4-kunci universalPayload) MANSUH sepenuhnya. SEMUA ejen Trinity
+        // (Translation, Preflight, Inspector) kini melalui pembina standard di
+        // bawah — format muatan HANYA ditentukan oleh PROTOKOL PINTU
+        // OpenAI-compatible (model, messages, max_tokens/max_completion_tokens,
+        // temperature, top_p, penalti, reasoning_effort, thinking,
+        // response_format). Kesahan JSON Inspector melalui response_format
+        // rasmi (json_schema/json_object), bukan cantasan rahsia parameter.
+        // Siling masa kekal diuruskan lapisan axios (translationTimeout).
         const body = isCfRun
             ? { prompt: userPrompt, stream }
             : isOpenAI && useResponsesApi
@@ -534,14 +483,31 @@ class OpenAICompatibleProvider {
               : {
                     model: this.model,
                     messages,
-                    max_completion_tokens: isOpenAI && isReasoning ? cappedMaxTokens : undefined,
-                    max_tokens: isOpenAI && isReasoning ? undefined : cappedMaxTokens,
+                    // [PENYATUAN MUTLAK 2026-10-25] max_completion_tokens HANYA
+                    // untuk model reasoning OpenAI rasmi; max_tokens bagi yang
+                    // lain. Kunci tidak berkaitan tidak dihantar langsung
+                    // (sebelum ini tersekat sebagai undefined — kebocoran kunci
+                    // kosong ke muatan provider kompatibel).
+                    ...(isOpenAI && isReasoning
+                        ? { max_completion_tokens: cappedMaxTokens }
+                        : { max_tokens: cappedMaxTokens }),
                     stream
                 };
 
         // 🚀 Terapkan parameter thinking/reasoning pintar mengikut spesifikasi model
         if (!isCfRun) {
             this.applySmartModelPayload(body, this.model, this.reasoningEffort);
+        }
+
+        // [PENYATUAN MUTLAK 2026-10-25 — Mandat Owner] meta.responseFormat
+        // (dibina oleh wrapper prompt Trinity daripada skema kanonik —
+        // json_schema strict) diaktifkan sebagai response_format pada tahap
+        // API DI DALAM pembina standard. Ini parameter pintu sah (standard
+        // rasmi OpenAI), bukan tampalan ejen — SEMUA ejen (Translation,
+        // Preflight, Inspector) melalui laluan tunggal ini, stream mahupun
+        // non-stream.
+        if (!isCfRun && meta?.responseFormat && !body.response_format) {
+            body.response_format = meta.responseFormat;
         }
 
         if (!isCfRun && this.enableJsonOutput && !disableStructuredOutput) {
@@ -887,20 +853,12 @@ class OpenAICompatibleProvider {
     }
 
     async translateSubtitle(subtitleContent, sourceLanguage, targetLanguage, customPrompt = null, requestOptions = {}) {
-        // ═══ [PAYLOAD-GODTIER] STREAMING PROPAGATION (2026-09-28) ═══
-        // Agent Inspector (universalPayload) membina muatan dengan stream:true secara
-        // MANDATORI (4-kunci god-tier). Respons mesti dihurai melalui laluan SSE
-        // — delegasi ke streamTranslateSubtitle (parser SSE sedia ada: proses
-        // chunk data:, [DONE], delta.content, raw recovery). Bendera
-        // __universalStreamFallback menghalang lelaran tak terhingga apabila
-        // streamTranslateSubtitle melakukan fallback bukan-stream (endpoint
-        // tidak menyokong SSE).
-        if (this.universalPayload === true && requestOptions?.__universalStreamFallback !== true) {
-            return this.streamTranslateSubtitle(subtitleContent, sourceLanguage, targetLanguage, customPrompt, null, {
-                ...requestOptions,
-                __universalStreamFallback: true
-            });
-        }
+        // [PENYATUAN MUTLAK 2026-10-25 — Mandat Owner] Gate streaming
+        // universalPayload MANSUH. Ejen yang memerlukan SSE (cth. Agent
+        // Inspector laluan rootsys/Caddy — kelulusan owner #4) menghala
+        // TERUS kepada streamTranslateSubtitle() sebagai pilihan pengangkutan
+        // milik channel; pembina muatan kekal buildChatRequest() standard
+        // tunggal bagi SEMUA ejen. Sifar laluan khas ejen di lapisan provider.
         const promptData = this.buildUserPrompt(subtitleContent, targetLanguage, customPrompt);
 
         let lastError;

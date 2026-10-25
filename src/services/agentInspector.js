@@ -433,12 +433,16 @@ function parseInspectorResponse(responseText) {
  *   2. translationTimeout → 60s (semakan batch) / 150s (Fasa 0, dinaikkan
  *      sementara oleh runPreflightPass — pembina asas clamp >= 5000ms).
  *
- * MUATAN GOD-TIER ([PAYLOAD-GODTIER] 2026-09-28): instance dibina dengan
- * universalPayload=true — buildChatRequest membina muatan 4-kunci streaming
- * TEPAT { model, messages, stream: true, temperature: 0.0 } bagi SEMUA
- * enjin Agent Inspector (deepseek/kimi — endpoint sama). Param tambahan muatan lama
- * digugurkan (pencetus overthinking). Kesahan JSON dijamin parser tahan
- * lasak (stripReasoningTags + parseInspectorResponse), bukan response_format.
+ * [PENYATUAN MUTLAK 2026-10-25 — Mandat Owner] Laluan muatan 4-kunci
+ * god-tier (universalPayload) MANSUH — Agent Inspector kini melalui
+ * buildChatRequest() standard yang sama dengan Agent Translation &
+ * Preflight (max_tokens, temperature, top_p, penalti, reasoning_effort,
+ * thinking, response_format mengikut spesifikasi pintu OpenAI-compatible).
+ * Kesahan JSON Inspector melalui response_format rasmi (json_schema strict
+ * via meta.responseFormat) + parser tahan lasak kekal sebagai jaring
+ * keselamatan. Streaming SSE kekal pilihan PENANGKUTAN channel
+ * (streamTranslateSubtitle) bagi laluan rootsys/Caddy — bukan parameter
+ * muatan khas ejen.
  *
  * DUAL-MODEL FAILOVER (Mandat Observabiliti §4): hierarki model disimpan
  * dalam this.modelHierarchy (utama + sandaran deepseek-v4.1-flash). Setiap
@@ -476,21 +480,17 @@ class AgentInspector extends OpenAICompatibleProvider {
 
         // [TRINITY FASA 3 — Mandat Owner 2026-10-19] Static dispatch: builder
         // prompt channel-native (inspection + preflight) dikunci SEKALI di sini.
-        // Lalai 'openai' — laluan produksi rootsys (payload god-tier 4-kunci +
-        // builder wrapper openai) terpelihara; sifar if-channel dalam gelung.
+        // Lalai 'openai' — builder wrapper openai; sifar if-channel dalam gelung.
         this.trinityChannel = options.trinityChannel || 'openai';
         this._trinityInspectionBuilder = resolveTrinityPrompt('inspector', this.trinityChannel);
         this._trinityPreflightChannel = options.trinityPreflightChannel || this.trinityChannel;
 
-        // [TRINITY PARAMS FASA 3 v3.9.46] Params per-ejen (capability-sanitized
-        // oleh config.js). Null → god-tier 4-kunci kekal (lalai mandat Owner).
-        // Params eksplisit diinjek oleh builder universal sebagai kunci TAMBAHAN
-        // sahaja (tidak menggugurkan model/messages/stream/temperature lalai).
-        this.preflightParams = options.preflightParams || null;
-        this.inspectorParams = options.inspectorParams || null;
-        // Fasa aktif param: laluan Fasa 0 (preflight) guna preflightParams;
-        // laluan semakan guna inspectorParams. Ditoggol oleh runPreflightPass.
-        this.__activeAgentParams = this.inspectorParams;
+        // [PENYATUAN MUTLAK 2026-10-25 — Mandat Owner] Params per-ejen
+        // (preflightParams/inspectorParams/__activeAgentParams) MANSUH —
+        // tampalan khas ejen untuk muatan god-tier. Input semantik Inspector
+        // kini disalurkan sebagai parameter standard (temperature,
+        // maxOutputTokens, reasoningEffort) melalui openaiChannel
+        // buildSuperOptions; pembinaan muatan sepenuhnya milik lapisan pintu.
 
         // Pembina asas clamp translationTimeout kepada >= 5000ms — enforce semula
         // had mandate: 60s bagi semakan batch (lalai instance); Fasa 0 dinaikkan
@@ -606,50 +606,18 @@ class AgentInspector extends OpenAICompatibleProvider {
     }
 
     /**
-     * [TRINITY PARAMS FASA 3 v3.9.46] Override nipis di atas builder god-tier:
-     * hasil super() (4-kunci {model, messages, stream, temperature:0.0})
-     * dijadikan asas, kemudian params ejen eksplisit (sudah capability-
-     * sanitized oleh config.js) DIGABUNG sebagai kunci tambahan. Kunci asas
-     * (model/messages/stream) TIDAK boleh ditimpa; `temperature` hanya ditimpa
-     * jika pengguna menetapkannya secara eksplisit dalam params (deviasi →
-     * bypassCache automatik di config.js). Tanpa params → muatan 4-kunci
-     * tulen 1:1 (kontrak PAYLOAD-GODTIER dipelihara sepenuhnya).
-     *
-     * [TRINITY PROMPTS FASA 3 — Mandat Owner 2026-10-19] MAZHAB RASMI TUNGGAL:
-     * meta.responseFormat (dibina oleh wrapper openai daripada skema kanonik
-     * core — json_schema strict) diaktifkan sebagai response_format pada tahap
-     * API aktif. Laluan tanpa responseFormat (gemini/anthropic/warisan)
-     * kekal 4-kunci god-tier tulen — sifar perubahan kontrak lama.
+     * [PENYATUAN MUTLAK 2026-10-25 — Mandat Owner] Override buildChatRequest()
+     * MANSUH sepenuhnya (tampalan ejen di atas muatan god-tier). SEMUA ejen
+     * kini berkongsi buildChatRequest() standard OpenAICompatibleProvider —
+     * pengaktifan meta.responseFormat (json_schema strict) telah dipindahkan
+     * KE DALAM pembina standard itu sendiri. Agent Inspector tidak lagi
+     * mengubah muatan pada tahap ejen.
      */
-    buildChatRequest(userPrompt, stream = false, meta = {}) {
-        const result = super.buildChatRequest(userPrompt, stream, meta);
-        // Pengaktifan aktif response_format json_schema strict (mazhab rasmi
-        // OpenAI tunggal) — hanya bila pembungkus openi membekalkannya.
-        if (meta && meta.responseFormat && result && result.body && !result.body.response_format) {
-            result.body.response_format = meta.responseFormat;
-        }
-        const agentParams = this.__activeAgentParams;
-        if (
-            !agentParams ||
-            typeof agentParams !== 'object' ||
-            Object.keys(agentParams).length === 0 ||
-            !result ||
-            !result.body
-        ) {
-            return result;
-        }
-        for (const [key, value] of Object.entries(agentParams)) {
-            if (key === 'model' || key === 'messages' || key === 'stream') continue; // kunci asas terpelihara
-            if (value === undefined || value === null || value === '') continue;
-            result.body[key] = value;
-        }
-        return result;
-    }
 
     /**
      * [TRI-DOOR FASA C] Transport provider bukan-openai (lazy single-instance).
-     * Laluan openai TIDAK menggunakan ini — ia mewarisi super() (universalPayload
-     * god-tier + SSE watchdog) — supaya laluan produksi rootsys 100% terpelihara.
+     * Laluan openai TIDAK menggunakan ini — ia terus kepada super() melalui
+     * pembina muatan standard pintu OpenAI-compatible.
      * @returns {Object|null} instance provider duck-typed atau null (openai)
      */
     _getChannelProvider() {
@@ -672,19 +640,28 @@ class AgentInspector extends OpenAICompatibleProvider {
     }
 
     /**
-     * [TRI-DOOR FASA C] Delegasi pintu: bila format ialah gemini/anthropic,
-     * panggilan diarahkan kepada transport channel (non-stream, format rasmi
-     * masing-masing). Format openai (termasuk laluan rootsys produksi) terus
-     * kepada super() — universalPayload god-tier + SSE watchdog 100% terpelihara.
+     * [TRI-DOOR FASA C + PENYATUAN MUTLAK 2026-10-25] Delegasi pintu: bila
+     * format ialah gemini/anthropic, panggilan diarahkan kepada transport
+     * channel (non-stream, format rasmi masing-masing). Format openai
+     * (termasuk laluan rootsys produksi) menggunakan pembina muatan STANDARD
+     * melalui laluan SSE (streamTranslateSubtitle — invariant pengangkutan
+     * kelulusan owner #4 untuk mengalahkan siling Caddy 300s); muatan
+     * dibina oleh buildChatRequest() standard, sifar laluan khas ejen.
      */
     async translateSubtitle(subtitleContent, sourceLanguage, targetLanguage, customPrompt = null, requestOptions = {}) {
         const channelProvider = this._getChannelProvider();
         if (!channelProvider) {
-            return super.translateSubtitle(
+            // [PENYATUAN MUTLAK 2026-10-25] Penghalaan pengangkutan milik
+            // channel: laluan openai/rootsys wajib SSE (stream:true dalam
+            // muatan standard) supaya chunk SSE menghidupkan sambungan Caddy
+            // — kelulusan owner #4. Fallback bukan-stream dikendalikan oleh
+            // streamTranslateSubtitle sendiri apabila endpoint menolak SSE.
+            return this.streamTranslateSubtitle(
                 subtitleContent,
                 sourceLanguage,
                 targetLanguage,
                 customPrompt,
+                null,
                 requestOptions
             );
         }
@@ -923,10 +900,9 @@ class AgentInspector extends OpenAICompatibleProvider {
         const previousTimeout = this.translationTimeout;
         const previousModel = this.model;
         this.translationTimeout = this.preflightTimeoutMs; // 150s headroom (BETA RUN 10)
-        // [TRINITY PARAMS FASA 3] Fasa 0 → guna preflightParams (di-pulihkan
-        // dalam finally bersama timeout/model — fasa tidak bertindih).
-        const previousAgentParams = this.__activeAgentParams;
-        this.__activeAgentParams = this.preflightParams;
+        // [PENYATUAN MUTLAK 2026-10-25 — Mandat Owner] Toggle params ejen
+        // (__activeAgentParams) MANSUH — muatan kini standard merentas fasa;
+        // hanya timeout/model dipulihkan dalam finally (fasa tidak bertindih).
 
         // [MODEL-HIERARCHY] FAILOVER FINAL (2026-09-28): Fasa 0 dihalakan ke
         // preflightHierarchy [kimi-k3] SAHAJA — STANDALONE. Kegagalan kimi-k3
@@ -984,7 +960,6 @@ class AgentInspector extends OpenAICompatibleProvider {
         } finally {
             this.model = previousModel;
             this.translationTimeout = previousTimeout;
-            this.__activeAgentParams = previousAgentParams; // [TRINITY PARAMS FASA 3]
         }
     }
 

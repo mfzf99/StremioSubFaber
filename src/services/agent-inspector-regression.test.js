@@ -7,14 +7,13 @@
  *   2. buildInspectionPayload: blok <en>/<ms> padat, ID global, cap baris
  *   3. Fail-open: panggilan API tergendala → { valid: true, failOpen: true }
  *   4. Circuit breaker: 3 kegagalan berturut → silent mode (tiada panggilan)
- *   5. Muatan (MANDAT OPERASI MUTLAK v2 2026-09-27, arahan Project Owner):
- *      enjin DeepSeek (v4-pro primary + v4.1-flash fallback) membawa
- *      temperature: 0.0 + reasoning_effort:"max" + max_tokens:131072 +
- *      extra_body.thinking:{type:"enabled"} + response_format json_object —
- *      top_p DIGUGURKAN (DILARANG);
- *      timeout berfasa 5 minit (semakan) / 5 minit (Fasa 0);
- *      enjin warisan bukan-DeepSeek kekal muatan universal
- *      {model, temperature: 0.0, messages}.
+ *   5. Muatan (PENYATUAN MUTLAK 2026-10-25 — Mandat Owner):
+ *      SEMUA ejen (Translation/Preflight/Inspector) melalui pembina standard
+ *      buildChatRequest() pintu OpenAI-compatible — {model, messages,
+ *      stream, max_tokens} + response_format json_schema strict (via
+ *      meta.responseFormat INSPECTOR_SCHEMA_CONTRACT); parameter hanya bila
+ *      eksplisit pengguna (sifar-penciptaan temperature/reasoning);
+ *      timeout berfasa 5 minit (semakan) / 5 minit (Fasa 0).
  *   6. Integriti enjin apabila agentInspector = null → 100% laluan Gemini asal
  *   7. Gerbang semantik enjin: valid:false → SATU retry + amaran jenayah;
  *      failOpen → tiada retry; hasil struktur bercacat → tiada semakan
@@ -591,7 +590,11 @@ test('AgentInspector: kejayaan reset kaunter kegagalan berturut-turut', async ()
 // medan tidak diset → kunci TIDAK dihantar; pelayan guna lalai asalnya).
 // stream:true KEKAL (invariant pengangkutan, §8.1). Muatan kini 3-kunci
 // sifar-penciptaan bagi Inspector tanpa params eksplisit.
-test('AgentInspector: [TOTAL UNLOCK] kimi-k3 muatan sifar-penciptaan streaming — {model, messages, stream}; TIADA extra_body/reasoning_effort/max_tokens/response_format/temperature; timeout 5 min/5 min', () => {
+// [PENYATUAN MUTLAK 2026-10-25 — Mandat Owner] Ujian dikunci semula kepada
+// kontrak pembina STANDARD pintu OpenAI-compatible: {model, messages, stream,
+// max_tokens} — laluan 4-kunci god-tier MANSUH. Sifar-penciptaan parameter
+// pengguna (temperature/reasoning) kekal (TOTAL UNLOCK K1/K5).
+test('AgentInspector: [PENYATUAN MUTLAK] kimi-k3 muatan standard streaming — {model, messages, stream, max_tokens}; sifar-penciptaan temperature/reasoning; timeout 5 min/5 min', () => {
     const inspector = new AgentInspector({
         apiKey: 'test-key',
         baseUrl: 'https://agent-inspector.example.com/v1',
@@ -609,11 +612,11 @@ test('AgentInspector: [TOTAL UNLOCK] kimi-k3 muatan sifar-penciptaan streaming �
     assert.equal(AGENT_INSPECTOR_INSPECTION_TIMEOUT_MS, 300000, 'Fasa 1: 5 minit (siling Caddy 300s)');
     assert.equal(AGENT_INSPECTOR_PREFLIGHT_TIMEOUT_MS, 300000, 'Fasa 0: 5 minit (siling Caddy 300s)');
 
-    // [PAYLOAD-GODTIER] Muatan 4-kunci TEPAT (ground truth empirikal curl
-    // rootsys.cloud — Kimi K3, SRT 759 baris; muatan 7-kunci lama GAGAL
-    // timeout 300s tanpa streaming).
+    // [PENYATUAN MUTLAK 2026-10-25] Pembina STANDARD — sama dengan Agent
+    // Translation & Preflight. stream:true kekal invariant pengangkutan SSE
+    // (chunk SSE menghidupkan sambungan Caddy — kelulusan owner #4).
     const { body } = inspector.buildChatRequest('preflight prompt', true, {});
-    assert.ok(!('temperature' in body), 'kimi: tiada temperature dicipta enjin (TOTAL UNLOCK K1)');
+    assert.ok(!('temperature' in body), 'kimi: tiada temperature dicipta enjin (TOTAL UNLOCK K1 kekal)');
     assert.equal(
         body.stream,
         true,
@@ -621,27 +624,27 @@ test('AgentInspector: [TOTAL UNLOCK] kimi-k3 muatan sifar-penciptaan streaming �
     );
     assert.equal(body.model, 'kimi-k3');
     assert.ok(Array.isArray(body.messages) && body.messages.length === 1, 'kimi: satu mesej user');
-    // PENCETUS OVERTHINKING — DIGUGURKAN SEPENUHNYA:
+    // Parameter rasmi pintu — kini DIHANTAR oleh pembina standard:
+    assert.equal(
+        'max_tokens' in body,
+        true,
+        'PENYATUAN: max_tokens DIHANTAR (parameter rasmi pintu — god-tier mansuh)'
+    );
+    // Sifar-penciptaan parameter pengguna — kekal (enjin tidak mencipta nilai):
     assert.equal(
         'reasoning_effort' in body,
         false,
-        'kimi: reasoning_effort DIGUGURKAN (pencetus overthinking +90-110s, tiada kesan terukur)'
+        'kimi: tiada reasoning_effort dicipta enjin (TOTAL UNLOCK K5 sifar-penciptaan)'
     );
-    assert.equal('max_tokens' in body, false, 'kimi: max_tokens DIGUGURKAN (overthinking + istilah kritikal tergugur)');
-    assert.equal('extra_body' in body, false, 'kimi: extra_body DIGUGURKAN (overthinking +90-110s)');
+    assert.equal('extra_body' in body, false, 'kimi: extra_body tidak dicipta (tiada keluarga Hunyuan)');
+    assert.equal('top_p' in body, false, 'kimi: tiada top_p dicipta (medan tidak diset)');
+    assert.equal('thinking' in body, false, 'kimi: parameter thinking TIDAK wujud bagi keluarga kimi-k3');
+    assert.equal('presence_penalty' in body, false, 'kimi: tiada presence_penalty dicipta (medan tidak diset)');
+    assert.equal('max_completion_tokens' in body, false, 'kimi: max_completion_tokens khusus OpenAI rasmi');
     assert.equal(
         'response_format' in body,
         false,
-        'kimi: response_format DIGUGURKAN (overthinking +110s; JSON dijamin parser tahan lasak)'
-    );
-    assert.equal('top_p' in body, false, 'kimi: top_p DILARANG');
-    assert.equal('thinking' in body, false, 'kimi: thinking top-level DILARANG');
-    assert.equal('presence_penalty' in body, false, 'kimi: presence_penalty digugurkan');
-    assert.equal('max_completion_tokens' in body, false, 'kimi: max_completion_tokens digugurkan');
-    assert.deepEqual(
-        Object.keys(body).sort(),
-        ['messages', 'model', 'stream'],
-        'kimi mesti TEPAT muatan 3-kunci sifar-penciptaan {model, messages, stream} (TOTAL UNLOCK)'
+        'kimi: response_format hanya bila enableJsonOutput/meta.responseFormat aktif (sifar-penciptaan)'
     );
 });
 
@@ -813,16 +816,21 @@ test('AgentInspector [MODEL-HIERARCHY]: Fasa 0 — kimi-k3 gagal → RETRY kimi-
         ['kimi-k3', 'kimi-k3', 'kimi-k3', 'kimi-k3', 'kimi-k3'],
         'kitaran retry-same-model: kimi-k3 × 5 (1 percubaan + 4 retry)'
     );
-    // ═══ [NAIK TARAF ASSERTION — TOTAL UNLOCK FASA 1, K1] ═══
-    // Muatan sifar-penciptaan konsisten pada setiap percubaan (tiada temperature
-    // dicipta enjin; stream kekal invariant pengangkutan).
+    // ═══ [PENYATUAN MUTLAK 2026-10-25] ═══
+    // Muatan pembina standard konsisten pada setiap percubaan: max_tokens
+    // dihantar (parameter rasmi pintu), sifar-penciptaan temperature/reasoning,
+    // stream kekal invariant pengangkutan.
     for (const [i, label] of payloads.entries()) {
-        assert.ok(!('temperature' in label), `muatan ${i}: tiada temperature dicipta (TOTAL UNLOCK)`);
+        assert.ok(!('temperature' in label), `muatan ${i}: tiada temperature dicipta (TOTAL UNLOCK kekal)`);
         assert.equal(label.stream, true, `muatan ${i}: stream true`);
-        assert.equal('reasoning_effort' in label, false, `muatan ${i}: TIADA reasoning_effort`);
-        assert.equal('max_tokens' in label, false, `muatan ${i}: TIADA max_tokens`);
-        assert.equal('extra_body' in label, false, `muatan ${i}: TIADA extra_body`);
-        assert.equal('response_format' in label, false, `muatan ${i}: TIADA response_format`);
+        assert.equal('reasoning_effort' in label, false, `muatan ${i}: tiada reasoning_effort dicipta enjin`);
+        assert.equal('max_tokens' in label, true, `muatan ${i}: max_tokens standard DIHANTAR (PENYATUAN)`);
+        assert.equal('extra_body' in label, false, `muatan ${i}: tiada extra_body dicipta`);
+        assert.equal(
+            'response_format' in label,
+            false,
+            `muatan ${i}: response_format hanya bila meta.responseFormat aktif`
+        );
     }
     assert.equal(inspector.model, 'deepseek-v4-pro', 'model semakan tidak terjejas oleh Fasa 0');
 });
@@ -868,34 +876,40 @@ test('AgentInspector: glm-5.3-flash TIDAK terjejas peraturan frontier glm-5.3 pe
     assert.ok(!('top_p' in body), 'flash variant: tiada top_p dicipta enjin');
 });
 
-test('AgentInspector: [PAYLOAD-GODTIER] payload deepseek-v4-pro — muatan 4-kunci streaming sama dengan kimi-k3 (seragam semua enjin Agent Inspector)', () => {
+// [PENYATUAN MUTLAK 2026-10-25 — Mandat Owner] Ujian dikunci semula kepada
+// pembina STANDARD pintu: {model, messages, stream, max_tokens} — god-tier
+// MANSUH. Sifar-penciptaan parameter pengguna kekal (TOTAL UNLOCK K1/K5).
+test('AgentInspector: [PENYATUAN MUTLAK] payload deepseek-v4-pro — muatan standard streaming {model, messages, stream, max_tokens}; sifar-penciptaan temperature/reasoning', () => {
     const inspector = new AgentInspector({
         apiKey: 'test-key',
         baseUrl: 'https://agent-inspector.example.com/v1',
         model: 'deepseek-v4-pro'
     });
 
-    // ═══ [NAIK TARAF ASSERTION — TOTAL UNLOCK FASA 1, K1] ═══
-    // FASA 1 (Pemeriksa Utama) — muatan sifar-penciptaan (temperature hanya
-    // bila user set; di sini tiada params → tiada kunci).
+    // ═══ [PENYATUAN MUTLAK 2026-10-25] ═══
+    // Pembina standard — sifar-penciptaan (temperature hanya bila user set).
     const { body } = inspector.buildChatRequest('fallback probe', true, {});
-    assert.ok(!('temperature' in body), 'tiada temperature dicipta enjin (TOTAL UNLOCK K1)');
-    assert.equal(body.stream, true, 'stream WAJIB true — siling Caddy 300s (STREAMING MANDATORY)');
-    assert.equal('reasoning_effort' in body, false, 'reasoning_effort DIGUGURKAN (tiada kesan terukur)');
-    assert.equal('max_tokens' in body, false, 'max_tokens DIGUGURKAN (overthinking + istilah tergugur)');
-    assert.equal('extra_body' in body, false, 'extra_body DIGUGURKAN (overthinking +90-110s)');
-    assert.equal('response_format' in body, false, 'response_format DIGUGURKAN (overthinking +110s)');
-    assert.equal('top_p' in body, false, 'top_p DILARANG');
-    assert.equal('thinking' in body, false, 'thinking top-level DILARANG');
-    assert.equal('presence_penalty' in body, false, 'presence_penalty TERLARANG');
-    assert.equal('frequency_penalty' in body, false, 'frequency_penalty TERLARANG');
-    assert.equal('max_completion_tokens' in body, false, 'max_completion_tokens TERLARANG');
+    assert.ok(!('temperature' in body), 'tiada temperature dicipta enjin (TOTAL UNLOCK K1 kekal)');
+    assert.equal(body.stream, true, 'stream WAJIB true — siling Caddy 300s (invariant pengangkutan)');
+    assert.equal('max_tokens' in body, true, 'PENYATUAN: max_tokens DIHANTAR (parameter rasmi pintu)');
+    assert.equal('reasoning_effort' in body, false, 'tiada reasoning_effort dicipta enjin (K5 sifar-penciptaan)');
+    assert.equal('extra_body' in body, false, 'extra_body tidak dicipta (bukan keluarga Hunyuan)');
+    assert.equal(
+        'response_format' in body,
+        false,
+        'response_format hanya bila meta.responseFormat aktif (wrapper Inspector)'
+    );
+    assert.equal('top_p' in body, false, 'tiada top_p dicipta (medan tidak diset)');
+    assert.equal('thinking' in body, false, 'thinking tidak dicipta tanpa reasoningEffort eksplisit');
+    assert.equal('presence_penalty' in body, false, 'tiada presence_penalty dicipta (medan tidak diset)');
+    assert.equal('frequency_penalty' in body, false, 'tiada frequency_penalty dicipta (medan tidak diset)');
+    assert.equal('max_completion_tokens' in body, false, 'max_completion_tokens khusus OpenAI rasmi reasoning');
     assert.equal(body.model, 'deepseek-v4-pro');
     assert.ok(Array.isArray(body.messages) && body.messages.length === 1, 'single user message');
     assert.deepEqual(
         Object.keys(body).sort(),
-        ['messages', 'model', 'stream'],
-        'muatan mesti TEPAT {model, messages, stream} (3-kunci sifar-penciptaan — TOTAL UNLOCK)'
+        ['max_tokens', 'messages', 'model', 'stream'],
+        'muatan mesti TEPAT {model, messages, stream, max_tokens} (pembina standard — PENYATUAN MUTLAK)'
     );
 
     // FALLBACK PEMERIKSA (deepseek-v4.1-flash) — muatan YANG SAMA.
@@ -905,33 +919,36 @@ test('AgentInspector: [PAYLOAD-GODTIER] payload deepseek-v4-pro — muatan 4-kun
         model: 'deepseek-v4.1-flash'
     });
     const flashBody = flash.buildChatRequest('flash probe', true, {}).body;
-    // ═══ [NAIK TARAF ASSERTION — TOTAL UNLOCK FASA 1, K1] ═══
     assert.ok(!('temperature' in flashBody), 'fallback flash: tiada temperature dicipta enjin');
     assert.equal(flashBody.stream, true, 'fallback flash: stream true (invariant)');
-    assert.equal('extra_body' in flashBody, false, 'fallback flash: extra_body DIGUGURKAN');
-    assert.equal('reasoning_effort' in flashBody, false, 'fallback flash: reasoning_effort DIGUGURKAN');
-    assert.equal('max_tokens' in flashBody, false, 'fallback flash: max_tokens DIGUGURKAN');
-    assert.equal('response_format' in flashBody, false, 'fallback flash: response_format DIGUGURKAN');
-    assert.equal('top_p' in flashBody, false, 'fallback flash: top_p digugurkan');
+    assert.equal('extra_body' in flashBody, false, 'fallback flash: tiada extra_body dicipta');
+    assert.equal('reasoning_effort' in flashBody, false, 'fallback flash: tiada reasoning_effort dicipta');
+    assert.equal('max_tokens' in flashBody, true, 'PENYATUAN: fallback flash max_tokens DIHANTAR');
+    assert.equal(
+        'response_format' in flashBody,
+        false,
+        'fallback flash: response_format hanya bila meta.responseFormat aktif'
+    );
+    assert.equal('top_p' in flashBody, false, 'fallback flash: tiada top_p dicipta');
 });
 
-test('AgentInspector: [PAYLOAD-GODTIER] — lalai modul: timeout 5 min/5 min (siling Caddy) + max_tokens TIDAK lagi dihantar (constant kekal untuk keserasian warisan)', () => {
+test('AgentInspector: [PENYATUAN MUTLAK] — lalai modul: timeout 5 min/5 min (siling Caddy) + max_tokens standard dihantar (constant kekal untuk keserasian warisan)', () => {
     // Lalai mandat modul — timeout di bawah/at siling Caddy 300s.
     assert.equal(AGENT_INSPECTOR_PREFLIGHT_TIMEOUT_MS, 300000, 'lalai Fasa 0 5 minit');
     assert.equal(AGENT_INSPECTOR_INSPECTION_TIMEOUT_MS, 300000, 'lalai Fasa 1 5 minit');
-    // [PAYLOAD-GODTIER] Constant 131072 KEKAL untuk keserasian warisan
-    // (config.transport), tetapi TIDAK LAGI dihantar dalam muatan.
-    assert.equal(AGENT_INSPECTOR_MAX_TOKENS, 131072, 'constant warisan dikekalkan (tidak dihantar)');
+    assert.equal(AGENT_INSPECTOR_MAX_TOKENS, 131072, 'constant warisan dikekalkan');
 
-    // Muatan TIDAK membawa max_tokens/reasoning_effort (pencetus overthinking).
+    // [PENYATUAN MUTLAK 2026-10-25] Pembina standard menghantar max_tokens
+    // (lalai getCappedMaxOutputTokens 65536, clamp bawah 1 / atas 131072).
     const def = new AgentInspector({ apiKey: 'k', baseUrl: 'https://x.example/v1', model: 'deepseek-v4-pro' });
     const defBody = def.buildChatRequest('p', true, {}).body;
-    assert.equal('max_tokens' in defBody, false, 'muatan TIDAK membawa max_tokens (god-tier)');
-    assert.equal('reasoning_effort' in defBody, false, 'muatan TIDAK membawa reasoning_effort (god-tier)');
-    assert.equal(defBody.stream, true, 'stream true lalai (god-tier)');
+    assert.equal('max_tokens' in defBody, true, 'PENYATUAN: max_tokens DIHANTAR (pembina standard)');
+    assert.ok(defBody.max_tokens > 0, 'max_tokens lalai bernilai sah');
+    assert.equal('reasoning_effort' in defBody, false, 'sifar-penciptaan reasoning_effort kekal (K5)');
+    assert.equal(defBody.stream, true, 'stream true lalai (invariant pengangkutan)');
 
-    // [PAYLOAD-GODTIER] Override maxTokens per-instance TIDAK lagi menembusi
-    // muatan — builder 4-kunci mengabaikannya (siasatan muatan, bukan lalai).
+    // Override maxTokens per-instance kini MENEMBUSI muatan standard —
+    // laluan maxOutputTokens builder biasa (input semantik universal).
     const capped = new AgentInspector({
         apiKey: 'k',
         baseUrl: 'https://x.example/v1',
@@ -939,22 +956,21 @@ test('AgentInspector: [PAYLOAD-GODTIER] — lalai modul: timeout 5 min/5 min (si
         maxTokens: 4096
     });
     assert.equal(
-        'max_tokens' in capped.buildChatRequest('p', true, {}).body,
-        false,
-        'override maxTokens DIABAIKAN oleh builder god-tier'
+        capped.buildChatRequest('p', true, {}).body.max_tokens,
+        4096,
+        'PENYATUAN: override maxTokens menembusi muatan standard'
     );
 
-    // Override tidak sah → tiada kesan (builder 4-kunci tiada max_tokens).
+    // Override tidak sah → fallback lalai pembina (bukan keguguran senyap).
     const invalid = new AgentInspector({
         apiKey: 'k',
         baseUrl: 'https://x.example/v1',
         model: 'deepseek-v4-pro',
         maxTokens: -1
     });
-    assert.equal(
-        'max_tokens' in invalid.buildChatRequest('p', true, {}).body,
-        false,
-        'muatan kekal 4-kunci tanpa max_tokens'
+    assert.ok(
+        invalid.buildChatRequest('p', true, {}).body.max_tokens > 0,
+        'nilai tidak sah → fallback lalai pembina standard (clamp >= 1)'
     );
 });
 
@@ -2021,7 +2037,10 @@ test('AgentInspector: log Pre-Flight berformat mandat — [SubFaberPreflight] Ru
     }
 });
 
-test('AgentInspector: [PAYLOAD-GODTIER] muatan HTTP sebenar (axios.post, stream SSE) — payload 4-kunci pada Fasa 1 (temp 0.0 + stream true, TIADA extra_body/reasoning_effort/max_tokens/response_format/top_p)', async () => {
+// [PENYATUAN MUTLAK 2026-10-25 — Mandat Owner] Muatan HTTP sebenar kini
+// pembina STANDARD: {model, messages, stream, max_tokens, response_format}
+// — god-tier MANSUH; sifar-penciptaan temperature/reasoning kekal (K1/K5).
+test('AgentInspector: [PENYATUAN MUTLAK] muatan HTTP sebenar (axios.post, stream SSE) — pembina standard: stream true + max_tokens + response_format json_schema strict; sifar-penciptaan temperature/reasoning', async () => {
     const axios = require('axios');
     const inspector = new AgentInspector({
         apiKey: 'test-key',
@@ -2059,7 +2078,7 @@ test('AgentInspector: [PAYLOAD-GODTIER] muatan HTTP sebenar (axios.post, stream 
 
         const { url, body } = captured[0];
         assert.ok(url.endsWith('/chat/completions'), 'endpoint chat/completions');
-        // ═══ [NAIK TARAF ASSERTION — TOTAL UNLOCK FASA 1, K1] ═══
+        // ═══ [PENYATUAN MUTLAK 2026-10-25] ═══
         // Muatan HTTP SEBENAR tanpa params pengguna → sifar-penciptaan temperature.
         assert.ok(!('temperature' in body), 'muatan HTTP TIDAK membawa temperature dicipta enjin');
         assert.equal(
@@ -2069,26 +2088,23 @@ test('AgentInspector: [PAYLOAD-GODTIER] muatan HTTP sebenar (axios.post, stream 
         );
         assert.equal(body.model, 'deepseek-v4-pro');
         assert.ok(Array.isArray(body.messages) && body.messages.length === 1, 'satu mesej user');
-        // PENCETUS OVERTHINKING — DILARANG dalam muatan HTTP:
+        // Sifar-penciptaan parameter pengguna (enjin tidak mencipta nilai):
         assert.equal(
             'reasoning_effort' in body,
             false,
-            'muatan HTTP DILARANG membawa reasoning_effort (tiada kesan terukur)'
+            'muatan HTTP: tiada reasoning_effort dicipta enjin (K5 sifar-penciptaan)'
         );
         assert.equal(
             'max_tokens' in body,
-            false,
-            'muatan HTTP DILARANG membawa max_tokens (overthinking + istilah tergugur)'
+            true,
+            'PENYATUAN: muatan HTTP membawa max_tokens standard (parameter rasmi pintu — god-tier mansuh)'
         );
-        assert.equal('extra_body' in body, false, 'muatan HTTP DILARANG membawa extra_body (overthinking +90-110s)');
-        // ═══ [NAIK TARAF ASSERTION — TRINITY FASA 3, Mandat Owner 2026-10-19] ═══
-        // AUDIT: Sebelum Fasa 3, response_format DILARANG (PAYLOAD-GODTIER
-        // empirikal kimi-k3, overthinking +110s). Keputusan Muktamad Owner
-        // 2026-10-19 (Mazhab Rasmi Tunggal OpenAI) membalikkan larangan ini:
-        // Inspector ialah agent JSON → response_format json_schema strict kini
+        assert.equal('extra_body' in body, false, 'muatan HTTP: tiada extra_body dicipta (bukan keluarga Hunyuan)');
+        // ═══ [TRINITY FASA 3 + PENYATUAN MUTLAK 2026-10-25] ═══
+        // Inspector ialah agent JSON → response_format json_schema strict
         // WAJIB pada muatan HTTP, dijana daripada INSPECTOR_SCHEMA_CONTRACT
-        // kanonik (core.js). Pencetus overthinking lain (reasoning_effort/
-        // max_tokens/extra_body/top_p) KEKAL DILARANG.
+        // kanonik (core.js) melalui meta.responseFormat → kini diaktifkan di
+        // DALAM buildChatRequest() standard pembina pintu (bukan override ejen).
         assert.ok(
             body.response_format && body.response_format.type === 'json_schema',
             'muatan HTTP WAJIB membawa response_format json_schema (mazhab rasmi tunggal — Fasa 3)'
@@ -2108,18 +2124,21 @@ test('AgentInspector: [PAYLOAD-GODTIER] muatan HTTP sebenar (axios.post, stream 
             ['MERGE', 'DROP', 'PHANTOM', 'SHIFT', 'UNTRANSLATED', 'REGISTER', 'TERM'],
             'enum 7 jenayah kekal dalam skema strict (anti-drift taksonomi)'
         );
-        assert.equal('top_p' in body, false, 'muatan HTTP DILARANG membawa top_p');
-        assert.equal('thinking' in body, false, 'thinking top-level DILARANG');
-        assert.equal('presence_penalty' in body, false, 'muatan HTTP TIDAK boleh membawa presence_penalty');
-        assert.equal('max_completion_tokens' in body, false, 'muatan HTTP TIDAK boleh membawa max_completion_tokens');
-        // ═══ [NAIK TARAF ASSERTION — Fasa 3 + TOTAL UNLOCK FASA 1 (K1)] ═══
-        // 5-kunci → 4-kunci: temperature hardcoded DIGUGURKAN (sifar-penciptaan);
-        // model/messages/stream + response_format json_schema strict (mazhab
-        // rasmi tunggal Owner) terpelihara.
+        assert.equal('top_p' in body, false, 'muatan HTTP: tiada top_p dicipta (medan tidak diset)');
+        assert.equal('thinking' in body, false, 'muatan HTTP: tiada thinking dicipta tanpa reasoningEffort eksplisit');
+        assert.equal(
+            'presence_penalty' in body,
+            false,
+            'muatan HTTP: tiada presence_penalty dicipta (medan tidak diset)'
+        );
+        assert.equal('max_completion_tokens' in body, false, 'muatan HTTP: max_completion_tokens khusus OpenAI rasmi');
+        // ═══ [PENYATUAN MUTLAK 2026-10-25] ═══
+        // Pembina standard: model/messages/stream/max_tokens + response_format
+        // json_schema strict (parameter rasmi pintu) — sifar-penciptaan temperature.
         assert.deepEqual(
             Object.keys(body).sort(),
-            ['messages', 'model', 'response_format', 'stream'],
-            'muatan HTTP mesti {model, messages, stream, response_format} (sifar-penciptaan + mazhab rasmi)'
+            ['max_tokens', 'messages', 'model', 'response_format', 'stream'],
+            'muatan HTTP mesti {model, messages, stream, max_tokens, response_format} (pembina standard — PENYATUAN MUTLAK)'
         );
     } finally {
         axios.post = originalPost;

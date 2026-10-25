@@ -11,7 +11,7 @@
  *      /v1/messages, header anthropic-version.
  *   3. Delegasi AgentInspector: format gemini/anthropic → translateSubtitle
  *      diarahkan ke channel transport; format openai → super() (laluan
- *      rootsys 1:1, universalPayload god-tier terpelihara).
+ *      rootsys 1:1, pembina muatan standard — PENYATUAN MUTLAK 2026-10-25).
  *   4. Autodetect: key AIza/sk-ant- + config.agentInspector.format auto → channel
  *      betul aktif tanpa mengubah tingkah laku laluan openai.
  */

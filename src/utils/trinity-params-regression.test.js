@@ -392,12 +392,14 @@ test('[F2] agentInspector membawa params tersanitasi apabila pengguna menetapkan
     assert.equal(cfg.agentInspector.inspectorParams.topP, 0.9);
 });
 
-// ═══ [NAIK TARAF ASSERTION — TRINITY TOTAL UNLOCK FASA 1, Mandat Owner 2026-10-19, K1] ═══
-// AUDIT: Sebelum Total Unlock, muatan god-tier membawa temperature 0.0
-// hardcoded walaupun pengguna tidak menetapkan apa-apa. Keputusan Rasmi
-// Owner: medan tidak diset → kunci TIDAK dihantar (pelayan guna lalai
-// asalnya). stream:true KEKAL (invariant pengangkutan, Keputusan §8.1).
-test('[F3] AgentInspector: tanpa params → muatan god-tier sifar-penciptaan (TOTAL UNLOCK)', () => {
+// ═══ [PENYATUAN MUTLAK 2026-10-25 — Mandat Owner] ═══
+// Laluan god-tier (universalPayload) + params ejen (inspectorParams /
+// preflightParams / __activeAgentParams) MANSUH — Agent Inspector kini
+// melalui buildChatRequest() standard (pembina pintu tunggal). Input
+// semantik disalurkan sebagai parameter standard provider (temperature,
+// maxOutputTokens, reasoningEffort). Sifar-penciptaan nilai yang tidak
+// diset pengguna KEKAL (TOTAL UNLOCK K1/K5).
+test('[F3] AgentInspector: tanpa params → pembina standard sifar-penciptaan (PENYATUAN MUTLAK)', () => {
     const { AgentInspector } = require('../services/agentInspector');
     const inspector = new AgentInspector({
         apiKey: 'k',
@@ -406,41 +408,53 @@ test('[F3] AgentInspector: tanpa params → muatan god-tier sifar-penciptaan (TO
         preflightModel: 'kimi-k3'
     });
     const { body } = inspector.buildChatRequest('p', true, {});
-    assert.deepEqual(Object.keys(body).sort(), ['messages', 'model', 'stream'], 'kunci sifar-penciptaan nilai');
+    assert.deepEqual(
+        Object.keys(body).sort(),
+        ['max_tokens', 'messages', 'model', 'stream'],
+        'pembina standard: {model, messages, stream, max_tokens} — parameter rasmi pintu'
+    );
     assert.ok(!('temperature' in body), 'tiada temperature dicipta enjin');
     assert.equal(body.stream, true, 'stream:true kekal invariant pengangkutan');
 });
 
-test('[F4] AgentInspector: params eksplisit diinjek sebagai kunci tambahan; model/messages/stream terpelihara', () => {
+test('[F4] AgentInspector: parameter semantik eksplisit disalurkan melalui input standard pembina', () => {
     const { AgentInspector } = require('../services/agentInspector');
     const inspector = new AgentInspector({
         apiKey: 'k',
         baseUrl: 'https://x.example/v1',
         model: 'deepseek-v4-pro',
-        inspectorParams: { temperature: 0.2, topP: 0.9 }
+        temperature: 0.2,
+        topP: 0.9
     });
     const { body } = inspector.buildChatRequest('p', true, {});
-    assert.equal(body.temperature, 0.2, 'temperature eksplisit menimpa god-tier 0.0');
-    assert.equal(body.topP, 0.9);
+    assert.equal(body.temperature, 0.2, 'temperature eksplisit pengguna dihantar');
+    assert.equal(body.top_p, 0.9, 'top_p eksplisit pengguna dihantar (root snake_case)');
     assert.equal(body.stream, true, 'kunci asas stream kekal');
     assert.ok(Array.isArray(body.messages));
 });
 
-test('[F5] AgentInspector: preflightParams diguna semasa Fasa 0 (toggle dalam runPreflightPass finally)', () => {
+test('[F5] AgentInspector: kontrak params ejen MANSUH — sifar injection pada tahap ejen (PENYATUAN MUTLAK)', () => {
     const { AgentInspector } = require('../services/agentInspector');
     const inspector = new AgentInspector({
         apiKey: 'k',
         baseUrl: 'https://x.example/v1',
         model: 'deepseek-v4-pro',
         preflightModel: 'kimi-k3',
+        // params ejen warisan diabaikan senyap — sifar tampalan ejen
         preflightParams: { topP: 0.7 },
         inspectorParams: { topP: 0.9 }
     });
-    // Laluan semakan (lalai) → inspectorParams.
-    assert.equal(inspector.buildChatRequest('p', true, {}).body.topP, 0.9);
-    // Simulasi toggle Fasa 0 (seperti runPreflightPass).
-    inspector.__activeAgentParams = inspector.preflightParams;
-    assert.equal(inspector.buildChatRequest('p', true, {}).body.topP, 0.7);
+    // Muatan hanya membawa parameter standard pembina — sifar injection ejen.
+    assert.equal(
+        'topP' in inspector.buildChatRequest('p', true, {}).body,
+        false,
+        'tiada kunci topP (injection ejen mansuh)'
+    );
+    assert.equal(
+        inspector.buildChatRequest('p', true, {}).body.top_p,
+        undefined,
+        'top_p hanya daripada input semantik standard — params warisan tidak menembus'
+    );
 });
 
 // ── E. KONSISTENSI getModelFamily ↔ CAPABILITY MAP ──────────────────────────

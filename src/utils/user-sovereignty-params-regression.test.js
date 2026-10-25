@@ -6,8 +6,8 @@
  *   S2  medan tidak set → TIDAK muncul dalam output sanitasi (sifar auto-fill)
  *   S3  applySmartModelPayload: rawEffort kosong → body tidak disentuh
  *   S4  kimi-k3 + 'disabled' → tiada reasoning_effort/thinking dihantar
- *   S5  god-tier universalPayload: user temp 0.8 → body.temperature === 0.8
- *   S6  god-tier universalPayload: temp tidak set → tiada kunci temperature
+ *   S5  pembina standard pintu: user temp 0.8 → body.temperature === 0.8 (PENYATUAN MUTLAK 2026-10-25)
+ *   S6  pembina standard pintu: temp tidak set → tiada kunci temperature
  *   S7  Anthropic provider: temp 1.5 diterima tanpa clamp
  *   S8  getCappedMaxOutputTokens: 4096 → 4096 (bukan dipaksa 65536)
  *   S9  Gemini STRICT: descriptor temperature/topP wujud (UI boleh papar)
@@ -72,28 +72,27 @@ test('S4 [TOTAL UNLOCK]: kimi-k3 + disabled → tiada reasoning parameter dipaks
     assert.ok(!('reasoning_effort' in glmBody), 'GLM-5.3 + none → tiada reasoning_effort');
 });
 
-// ── S5 + S6: god-tier conditional temperature (K1) ──
-test('S5 [TOTAL UNLOCK]: universalPayload menghantar temp eksplisit pengguna', () => {
+// ── S5 + S6: conditional temperature pada pembina standard (K1, PENYATUAN MUTLAK 2026-10-25) ──
+test('S5 [TOTAL UNLOCK]: pembina standard menghantar temp eksplisit pengguna (stream:true)', () => {
     const provider = new OpenAICompatibleProvider({
         apiKey: 'k',
         baseUrl: 'https://x.example/v1',
         model: 'deepseek-v4-pro',
-        universalPayload: true,
         temperature: 0.8,
         topP: 0.9
     });
     const { body } = provider.buildChatRequest('p', true, {});
     assert.equal(body.temperature, 0.8, 'temp pengguna dihantar');
     assert.equal(body.top_p, 0.9, 'top_p pengguna dihantar');
-    assert.equal(body.stream, true, 'stream:true kekal invariant (Keputusan Owner §8.1)');
+    assert.equal(body.stream, true, 'stream:true kekal invariant pengangkutan (Keputusan Owner §8.1)');
+    assert.ok(body.max_tokens > 0, 'PENYATUAN: max_tokens standard kini dihantar (pembina pintu tunggal)');
 });
 
-test('S6 [TOTAL UNLOCK]: universalPayload tanpa temp → tiada kunci temperature', () => {
+test('S6 [TOTAL UNLOCK]: pembina standard tanpa temp → tiada kunci temperature', () => {
     const provider = new OpenAICompatibleProvider({
         apiKey: 'k',
         baseUrl: 'https://x.example/v1',
-        model: 'deepseek-v4-pro',
-        universalPayload: true
+        model: 'deepseek-v4-pro'
     });
     const { body } = provider.buildChatRequest('p', true, {});
     assert.ok(!('temperature' in body), 'medan tidak diset → kunci TIDAK dihantar (pelayan guna lalai asal)');

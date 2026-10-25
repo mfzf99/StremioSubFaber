@@ -2,6 +2,20 @@
 
 All notable changes to this project will be documented in this file.
 
+## SubFaber v3.19.0 (2026-10-25) — Penyatuan Mutlak API Request Body Merentas Pintu & Ejen Trinity (Door-Centric Architecture)
+
+### 🔧 Refactoring — Channel-Centric Payload Unification (Mandat Owner 2026-10-25)
+
+- **Laluan 2b PAYLOAD-GODTIER 4-kunci MANSUH ([openaiCompatible.js](src/services/providers/openaiCompatible.js)):** medan `universalPayload`, blok builder 4-kunci `{model, messages, stream, temperature}`, gate streaming `translateSubtitle()`, dan dead-store `beastMaxTokens` dipadam sepenuhnya. SEMUA ejen Trinity (Agent Translation, Agent Preflight, Agent Inspector) kini melalui `buildChatRequest()` standard TUNGGAL — format muatan HANYA ditentukan oleh PROTOKOL PINTU OpenAI-compatible (`model`, `messages`, `stream`, `max_tokens`/`max_completion_tokens`, `temperature`, `top_p`, penalti, `reasoning_effort`, `thinking`, `response_format`), bukan oleh entiti ejen.
+- **Mekanisma `meta.responseFormat` dipindah KE DALAM pembina standard:** pengaktifan `response_format` json_schema strict (INSPECTOR_SCHEMA_CONTRACT kanonik daripada wrapper prompt Trinity) kini berlaku di tahap API dalam `buildChatRequest()` — berfungsi seragam untuk laluan stream & non-stream semua ejen; bukan lagi tampalan override ejen.
+- **Kebocoran kunci legacy diperbaiki:** `max_completion_tokens`/`max_tokens` tidak lagi tersekat sebagai kunci `undefined` dalam muatan provider kompatibel (kini dihantar secara eksklusif bersyarat melalui spread conditional).
+- **AgentInspector dibersihkan ([agentInspector.js](src/services/agentInspector.js)):** override nipis `buildChatRequest()` + params ejen (`preflightParams`/`inspectorParams`/`__activeAgentParams` + toggle `runPreflightPass`) MANSUH — input semantik universal (`temperature`, `maxOutputTokens`, `reasoningEffort` dsb.) disalurkan melalui parameter standard provider. Laluan openai/rootsys dihalakan kepada `streamTranslateSubtitle()` — invariant SSE (siling Caddy 300s, kelulusan Owner #4) terpelihara sebagai pilihan PENANGKUTAN milik channel.
+- **KIV Owner dikekalkan BEKU:** `thinking: {type:'adaptive'}` pada laluan Anthropic Agent Inspector TIDAK disentuh (menunggu kajian dokumentasi rasmi Anthropic Thinking Steering).
+- **openaiChannel.buildSuperOptions() dikemas kini ([openaiChannel.js](src/services/channels/openaiChannel.js)):** bersih daripada `universalPayload`/`beastMaxTokens`; menyalurkan input semantik standard termasuk pemetaan `maxTokens` warisan → `maxOutputTokens`; `enableJsonOutput` kekal `false` (skema JSON Inspector datang melalui `meta.responseFormat` kanonik, bukan skema `subtitle_entries` Agent Translation).
+- **Kawalan penalaran kekal terkunci:** `applySmartModelPayload()` tidak diubah — DeepSeek/GLM-5.3/GLM-5.2/Kimi-k3 hanya menerima `reasoning_effort` `low`/`high`/`max`; sifar suntikan `medium`.
+- **Sifar-penciptaan parameter pengguna kekal (TOTAL UNLOCK K1/K5):** nilai yang tidak ditetapkan pengguna tetap TIDAK dihantar (pelayan guna lalai asalnya) — kini pada pembina standard.
+- **5 fail ujian regresi dikemas kini:** `agent-inspector-regression.test.js` (assertion god-tier → kontrak standard), `subfaber-fasah-regression.test.js`, `user-sovereignty-params-regression.test.js` (S5/S6), `channels-triDoor-phaseC-regression.test.js`, dan `trinity-params-regression.test.js` (F3/F4/F5 — kontrak params ejen mansuh, ditulis semula kepada input semantik standard).
+
 ## SubFaber v3.18.2 (2026-10-24) — Ground-Truth Reasoning Effort: GLM-5.3 / Kimi K3 / DeepSeek UI & Contract Surgery (Trinity Basic + Pro)
 
 ### ✨ New Features

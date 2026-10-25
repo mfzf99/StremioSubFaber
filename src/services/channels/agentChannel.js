@@ -5,7 +5,7 @@
  * Agent Inspector / Agent Translation. Tujuan akhirnya ialah setiap enjin
  * Trinity boleh berjalan di atas mana-mana daripada 3 pintu format rasmi:
  *   1. Gemini Native (systemInstruction top-level, REST v1beta)
- *   2. OpenAI /chat/completions (messages, universalPayload god-tier)
+ *   2. OpenAI /chat/completions (messages, pembina muatan standard pintu)
  *   3. Anthropic Messages (system top-level, x-api-key)
  *
  * Fasa B (keputusan kelulusan owner 2026-10-10): channel berperanan sebagai

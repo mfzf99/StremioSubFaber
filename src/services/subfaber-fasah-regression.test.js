@@ -15,8 +15,9 @@
  *      bersih (tanpa dialog) + user bersih (tanpa arahan statik).
  *   2. AgentInspector.buildUserPrompt melakukan split untuk prompt
  *      bersempadan (Pre-Flight) dan memelihara laluan lama (inspection).
- *   3. buildChatRequest (universalPayload) membina messages [system, user]
- *      bila meta.systemPrompt tidak kosong — dan [user] tunggal tanpanya.
+ *   3. buildChatRequest standard (pembina pintu tunggal — PENYATUAN MUTLAK
+ *      2026-10-25) membina messages [system, user] bila meta.systemPrompt
+ *      tidak kosong — dan [user] tunggal tanpanya.
  */
 
 const test = require('node:test');
@@ -103,17 +104,19 @@ test('FASA H: AgentInspector.buildUserPrompt keeps legacy single-message path fo
 });
 
 // ── 3. buildChatRequest: messages [system, user] bila meta.systemPrompt wujud ──
+// [PENYATUAN MUTLAK 2026-10-25 — Mandat Owner] Laluan universalPayload god-tier
+// MANSUH — ujian kini mengunci kontrak pembina STANDARD pintu OpenAI-compatible
+// (sama untuk Translation / Preflight / Inspector).
 function makeUniversalProvider() {
     return new OpenAICompatibleProvider({
         apiKey: 'k',
         baseUrl: 'https://x.example/v1',
         model: 'kimi-k3',
-        providerName: 'custom',
-        universalPayload: true
+        providerName: 'custom'
     });
 }
 
-test('FASA H: universal buildChatRequest builds [system, user] when meta.systemPrompt present', () => {
+test('FASA H: standard buildChatRequest builds [system, user] when meta.systemPrompt present', () => {
     const provider = makeUniversalProvider();
     const { body } = provider.buildChatRequest('dynamic user content', true, {
         systemPrompt: 'STATIC SYSTEM CHANNEL'
@@ -126,16 +129,19 @@ test('FASA H: universal buildChatRequest builds [system, user] when meta.systemP
     assert.equal(body.messages[1].role, 'user', 'second message is user');
     assert.equal(body.messages[1].content, 'dynamic user content', 'user content verbatim');
 
-    // ═══ [NAIK TARAF ASSERTION — TRINITY TOTAL UNLOCK FASA 1, K1 — 2026-10-19] ═══
-    // AUDIT: temperature 0.0 hardcoded digugurkan; medan tidak diset → kunci
-    // TIDAK dihantar (pelayan guna lalai asalnya). stream:true kekal invariant.
+    // ═══ [PENYATUAN MUTLAK 2026-10-25 — Mandat Owner] ═══
+    // Pembina standard tunggal: stream:true kekal invariant pengangkutan;
+    // max_tokens standard DIHANTAR (parameter rasmi pintu — god-tier mansuh);
+    // temperature tidak dicipta enjin (sifar-penciptaan, K1 kekal);
+    // kimi-k3 tanpa reasoningEffort eksplisit → tiada reasoning_effort
+    // (enjin tidak mencipta nilai reasoning — TOTAL UNLOCK K5 kekal).
     assert.equal(body.stream, true, 'stream:true preserved (Caddy 300s — invariant pengangkutan)');
     assert.ok(!('temperature' in body), 'tiada temperature dicipta enjin (sifar-penciptaan)');
-    assert.equal('max_tokens' in body, false, 'no max_tokens (god-tier)');
-    assert.equal('reasoning_effort' in body, false, 'no reasoning_effort (overthinking trigger)');
+    assert.equal('max_tokens' in body, true, 'PENYATUAN: max_tokens standard DIHANTAR (parameter rasmi pintu)');
+    assert.equal('reasoning_effort' in body, false, 'tiada reasoning_effort dicipta enjin (K5 sifar-penciptaan)');
 });
 
-test('FASA H: universal buildChatRequest keeps single user message without meta.systemPrompt', () => {
+test('FASA H: standard buildChatRequest keeps single user message without meta.systemPrompt', () => {
     const provider = makeUniversalProvider();
     const { body } = provider.buildChatRequest('plain prompt', true, {});
 
