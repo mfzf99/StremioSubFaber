@@ -1,3 +1,17 @@
+## 2026-10-25 — v3.19.5 PROTOCOL POLISH: WIRE-VALUE DEEPSEEK reasoning_effort "none" + EKSTRAKSI GROUND TRUTH RASMI TRI-DOOR (FIRECRAWL MCP)
+
+- **Tarikh:** 2026-10-25 ~06:26 (waktu tempatan KL)
+- **Komit SHA (HEAD):** (direkod selepas push + CI)
+- **Keputusan Owner:** Tiga mandat berturutan diluluskan — (1) pelaksanaan ekstraksi dokumentasi rasmi Tri-Door (3 mazhab, depth=0, live fetch) ke `plans/ground-truth/`; (2) pemurnian wire-value DeepSeek: input semantik off → `thinking:{type:"disabled"}` + `reasoning_effort:"none"` (enum rasmi semasa, BUKAN "disabled"); (3) 8-step release pipeline penuh.
+- **Penemuan ground truth kritikal:** (a) Anthropic `thinking:{type:"adaptive"}` disahkan RASMI (varian union ThinkingConfigParam pertama-class, API version 2026-10-21; wajib Claude 4.7+, 400 pada model 4.5-awal) — kontrak BEKU `agentInspector.js:663` 100% patuh, sifar pembaikan; (b) DeepSeek enum semaka `none`/`low`/`high`/`max` + penalty frequency/presence DEPRECATED (no-op); (c) Gemini sampling "silently ignored" 3.6+ (bukan 400 — SEND-ALL selamat), `continuationToken` pada v1beta, `responseSchema` deprecated → `responseFormat`, Gemini 4 Argon GA.
+- **Pembedahan ([`src/services/providers/openaiCompatible.js`](../src/services/providers/openaiCompatible.js)):** cabang DeepSeek `applySmartModelPayload()` isDisable kini menghantar kedua-dua suis (`thinking` disabled + `reasoning_effort:"none"`); cabang aktif low/high/max + keluarga GLM/Kimi/Hunyuan tidak disentuh. Header komen ground truth dikemas kini.
+- **Ujian regresi:** S11 [PEMURNIAN] baharu dalam `user-sovereignty-params-regression.test.js` — mengunci 3 invariant (disabled→none, varian none→sama, max aktif kekal). Audit mendapati sifar assertion lama menjangka `reasoning_effort:"disabled"` — tiada ujian diubah, hanya tambah.
+- **Fail Terlibat:** src/services/providers/openaiCompatible.js (M), src/utils/user-sovereignty-params-regression.test.js (M), package.json (M: 3.19.4→3.19.5), CHANGELOG.md (M), plans/ground-truth/anthropic-messages-official-api-ground-truth.md (A), plans/ground-truth/openai-compatible-official-api-ground-truth.md (A), plans/ground-truth/gemini-native-official-api-ground-truth.md (A), docs/SESSION_LEDGER.md (blok ini). Graphify NO-OP (`graphify-out/` tiada).
+- **Status npm test:** **471 total / 470 PASS / 0 FAIL / 1 SKIP** — baseline monotonik +1 (470→471, tambahan ujian kontrak S11). Prettier `--check .` PASS ("All matched files use Prettier code style!"). ESLint 0 error / 226 warning (semuanya pre-existing). Cache-buster: runtime 3.19.5 (dinamik daripada package.json via version.js; sifar pin statik disahkan).
+- **Next Steps:** commit + tag v3.19.5 → push → CI `gh` watch SUCCESS → SHA + run ID direkod dalam blok ini. Owner boleh pantau gelagat DeepSeek "Off (No Thinking)" pada rootsus (jangkaan: sifar penolakan `reasoningEffort` pada laluan flash; jika gateway rootsys masih menolak `none`, fallback tingkah laku lama direkodkan untuk tindakan susulan).
+
+---
+
 ## 2026-10-25 — v3.19.4 HOTFIX: HOIST partialSaveChain/partialDeliveryDone KE SCOPE FUNCTION (REFERENCEERROR FIX-1 v3.19.3)
 
 - **Tarikh:** 2026-10-25 ~21:47 (waktu tempatan KL)

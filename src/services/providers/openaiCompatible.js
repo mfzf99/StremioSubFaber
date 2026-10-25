@@ -286,11 +286,13 @@ class OpenAICompatibleProvider {
      *      dihormati sebagai SENYAP TOTAL (tiada parameter reasoning
      *      dihantar — biar lalai pelayan), BUKAN dipaksa 'low'.
      *
-     * [GROUND TRUTH RASMI 2026-10-24 — Firecrawl MCP live scrape]
+     * [GROUND TRUTH RASMI 2026-10-25 — Firecrawl MCP live scrape, direkod
+     *  plans/ground-truth/openai-compatible-official-api-ground-truth.md]
      *   - DeepSeek (SEMUA model berkongsi setup sama — v4-pro / v4-flash /
-     *     v4.1-flash): reasoning_effort 'low'/'high'/'max', lalai pelayan
-     *     'high'; boleh OFF penuh (thinking.type disabled). Pemetaan vendor:
-     *     minimal→low, medium/xhigh→high, ultra→max. Rujukan:
+     *     v4.1-flash): reasoning_effort enum rasmi 'none'/'low'/'high'/'max',
+     *     lalai pelayan 'high'; boleh OFF penuh (thinking.type disabled +
+     *     reasoning_effort 'none' — "none disables thinking mode"). Pemetaan
+     *     vendor: minimal→low, medium/xhigh→high, ultra→max. Rujukan:
      *     https://api-docs.deepseek.com/guides/thinking_mode
      *   - GLM-5.3 (docs.z.ai/guides/capabilities/thinking): reasoning_effort
      *     HANYA 'low'/'high'/'max', lalai 'max'; input lain = ERROR;
@@ -313,7 +315,11 @@ class OpenAICompatibleProvider {
         // 1. DEEPSEEK FAMILY (deepseek-v4-pro, deepseek-v4-flash)
         if (m.includes('deepseek')) {
             if (isDisable) {
+                // [PEMURNIAN 2026-10-25 — Mandat Owner] Enum rasmi semasa
+                // reasoning_effort ialah 'none' (bukan 'disabled') — hantar
+                // kedua-dua suis: thinking.type disabled + effort 'none'.
                 body.thinking = { type: 'disabled' };
+                body.reasoning_effort = 'none';
             } else {
                 body.thinking = { type: 'enabled' };
                 let mapped = 'low';

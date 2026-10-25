@@ -12,6 +12,8 @@
  *   S8  getCappedMaxOutputTokens: 4096 → 4096 (bukan dipaksa 65536)
  *   S9  Gemini STRICT: descriptor temperature/topP wujud (UI boleh papar)
  *   S10 config normalizeTrinityAgentParams: params kosong → slot.params === null
+ *   S11 DeepSeek + off → thinking.type:'disabled' + reasoning_effort:'none'
+ *       (PEMURNIAN 2026-10-25 — enum rasmi DeepSeek semasa, mandat Owner)
  *
  * Keputusan Rasmi Owner §8: stream:true kekal invariant; siling API keras
  * kekal benteng; AGENT_TUNING_BASE kekal cadangan UI sahaja.
@@ -70,6 +72,30 @@ test('S4 [TOTAL UNLOCK]: kimi-k3 + disabled → tiada reasoning parameter dipaks
     const glmBody = { model: 'glm-5.3', messages: [] };
     provider.applySmartModelPayload(glmBody, 'glm-5.3', 'none');
     assert.ok(!('reasoning_effort' in glmBody), 'GLM-5.3 + none → tiada reasoning_effort');
+});
+
+// ── S11: DeepSeek off → wire-value rasmi 'none' (PEMURNIAN 2026-10-25) ──
+test('S11 [PEMURNIAN]: DeepSeek + off → thinking disabled + reasoning_effort "none" (enum rasmi)', () => {
+    const provider = new OpenAICompatibleProvider({
+        apiKey: 'k',
+        baseUrl: 'https://x.example/v1',
+        model: 'deepseek-v4-pro'
+    });
+    // Varian input semantik 'disabled' (warisan UI)
+    const bodyA = { model: 'deepseek-v4-pro', messages: [] };
+    provider.applySmartModelPayload(bodyA, 'deepseek-v4-pro', 'disabled');
+    assert.deepEqual(bodyA.thinking, { type: 'disabled' }, 'suis thinking.type disabled kekal');
+    assert.equal(bodyA.reasoning_effort, 'none', 'reasoning_effort mesti "none" (BUKAN "disabled")');
+    // Varian input semantik 'none' (rasmi)
+    const bodyB = { model: 'deepseek-v4.1-flash', messages: [] };
+    provider.applySmartModelPayload(bodyB, 'deepseek-v4.1-flash', 'none');
+    assert.deepEqual(bodyB.thinking, { type: 'disabled' }, 'varian none → thinking disabled');
+    assert.equal(bodyB.reasoning_effort, 'none', 'varian none → reasoning_effort none');
+    // Usaha aktif kekal tidak berubah (low/high/max terus)
+    const bodyC = { model: 'deepseek-flash', messages: [] };
+    provider.applySmartModelPayload(bodyC, 'deepseek-flash', 'max');
+    assert.deepEqual(bodyC.thinking, { type: 'enabled' }, 'effort aktif → thinking enabled');
+    assert.equal(bodyC.reasoning_effort, 'max', 'effort aktif dihantar terus');
 });
 
 // ── S5 + S6: conditional temperature pada pembina standard (K1, PENYATUAN MUTLAK 2026-10-25) ──

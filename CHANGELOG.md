@@ -2,6 +2,20 @@
 
 All notable changes to this project will be documented in this file.
 
+## SubFaber v3.19.5 (2026-10-25) — Protocol Polish: Wire-Value DeepSeek `reasoning_effort: "none"` + Ground Truth Rasmi Tri-Door (Mandat Owner 2026-10-25)
+
+### 🔧 Fixed — Pemetaan Enum Rasmi DeepSeek (Mazhab OpenAI-Compatible)
+
+- **Wire-value `reasoning_effort` "none" ([openaiCompatible.js](src/services/providers/openaiCompatible.js)):** cabang DeepSeek `applySmartModelPayload()` kini menghantar KEDUA-DUA suis apabila mod pemikiran dimatikan — `thinking: { type: "disabled" }` + `reasoning_effort: "none"` — selaras dengan enum rasmi semasa api-docs.deepseek.com (sedutan live 2026-10-25: "`none` disables thinking mode; the default effort is `high`"). Sebelum ini hanya suis `thinking` dihantar tanpa medan effort; skema semasa tidak lagi merekodkan `disabled` sebagai nilai `reasoning_effort`. Cabang aktif (`low`/`high`/`max`) dihantar terus tanpa perubahan; keluarga lain (GLM/Kimi/Hunyuan/o-series) tidak disentuh.
+- **Ujian kontrak baharu S11 ([user-sovereignty-params-regression.test.js](src/utils/user-sovereignty-params-regression.test.js)):** mengunci 3 invariant — input `disabled` → `thinking:{type:"disabled"}` + `reasoning_effort:"none"`; varian input `none` → sama; effort aktif `max` → `thinking:{type:"enabled"}` + `reasoning_effort:"max"` tidak berubah. Baseline monotonik 470 → 471 total.
+
+### 📚 Added — Ekstraksi Dokumentasi Rasmi Ground Truth Tri-Door (Firecrawl MCP, `maxAge:0`)
+
+- **`plans/ground-truth/anthropic-messages-official-api-ground-truth.md`:** API version 2026-10-21 — **pengesahan rasmi `thinking:{type:"adaptive"}`** ialah varian union `ThinkingConfigParam` pertama-class (wajib pada Claude 4.7+; `budget_tokens` deprecated pada 4.6; 400 hanya pada model 4.5 dan awal) — kontrak BEKU `agentInspector.js:663` disahkan 100% patuh, tiada pembaikan diperlukan. Peraturan penuh `budget_tokens` (≥1024, < `max_tokens`) + `output_config.effort` (`low`/`medium`/`high`/`xhigh`/`max`).
+- **`plans/ground-truth/openai-compatible-official-api-ground-truth.md`:** skema DeepSeek 2026-10-25 — enum `reasoning_effort` `none`/`low`/`high`/`max`; `frequency_penalty`/`presence_penalty` **deprecated** (diterima tanpa kesan — SEND-ALL selamat); `top_p` model-dependent (flash: 0.95–1.0 dalam thinking mode); OpenAI kanonik: role `developer`, `system_fingerprint` deprecated, CRUD chat completions, `include_obfuscation` stream.
+- **`plans/ground-truth/gemini-native-official-api-ground-truth.md`:** rujukan v1beta updated 2026-10-22 — sampling `temperature`/`topP`/`topK` **"silently ignored" pada 3.6+** (bukan 400 — SEND-ALL selamat); `continuationToken` hadir pada v1beta (request + Candidate, `finishReason: CONTINUATION`, kumulatif); `responseSchema` deprecated → `responseFormat`; jadual `thinkingLevel` per-model; Gemini 4 Argon GA (cap sync 64K, long decode 1M perlu `background:true`).
+- **Audit pematuhan Tri-Door lengkap** direkodkan dalam setiap fail: ketiga-tiga pintu Trinity PATUH spesifikasi rasmi semasa — Hybrid Guard penalty v3.19.1 disahkan tepat (Enterprise doc), `topK` haram disahkan oleh Google sendiri, invariant `systemInstruction` top-level disahkan skema.
+
 ## SubFaber v3.19.4 (2026-10-25) — Hotfix: Hoist partialSaveChain/partialDeliveryDone ke Scope Function (ReferenceError FIX-1 v3.19.3)
 
 ### 🔧 Fixed — Scope Bug FIX-1 v3.19.3 Dikesan dari Log Run Kedua Owner
