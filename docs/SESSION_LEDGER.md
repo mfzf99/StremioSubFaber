@@ -1,3 +1,16 @@
+## 2026-10-25 — v3.19.4 HOTFIX: HOIST partialSaveChain/partialDeliveryDone KE SCOPE FUNCTION (REFERENCEERROR FIX-1 v3.19.3)
+
+- **Tarikh:** 2026-10-25 ~21:45 (waktu tempatan KL)
+- **Komit SHA (HEAD):** (direkod selepas push).
+- **Keputusan Owner:** Owner jalankan rebuild fresh + test run kedua (`subdl_3543003_8465067_seasonpack_s1e15` semula, deepseek-v4-pro kali ini) dan hantar log untuk penilaian. Verifikasi: FIX-2 (WARN kimi-k3 noise) HILANG ✓; FIX-3A (brParity benign per-batch, `batch 1/14: AI menambah 940 line break`) BERFUNGSI ✓; tapi FIX-1 GAGAL — `Partial save chain drain error: partialSaveChain is not defined` + `Partial SAVED` selepas completion berterusan (repeated 10 times).
+- **Akar punca scope bug:** deklarasi FIX-1 v3.19.3 terperangkap dalam blok `if (agentInspector enabled)` (indent 12) yang tamat sebelum blok cleanup `finalCacheVerified` (indent 8, scope function luar). Assignment `partialDeliveryDone = true` di scope luar menjadi implicit global; closure `persistPartial()` membaca variable blok dalaman — gate tidak pernah aktif. Runtime tidak crash kerana assignment implicit global (non-strict path) tapi `await partialSaveChain` melempar ReferenceError yang ditangkap catch + log WARN.
+- **Pembedahan ([`src/handlers/subtitles.js`](../src/handlers/subtitles.js)):** kedua-dua `let partialSaveChain = Promise.resolve()` + `let partialDeliveryDone = false` dihoist ke scope function (baris 6206-6207, sebelum blok `if (translatedContent === undefined)`); deklarasi lama dalam blok dihapus (komen penanda kekal). `partialDeliveryDisabled` kekal dalam blok (hanya digunakan oleh closure tersebut).
+- **Fail Terlibat:** src/handlers/subtitles.js (M), package.json (M: 3.19.3→3.19.4), CHANGELOG.md (M), docs/SESSION_LEDGER.md (blok ini). Graphify NO-OP.
+- **Status npm test:** **470 total / 469 PASS / 0 FAIL / 1 SKIP** — baseline tepat. Prettier `--check .` PASS.
+- **Next Steps:** commit + push → CI SUCCESS → SHA direkodkan. Owner rebuild & run ketiga: jangkaan `Partial save chain drain error` HILANG + sifar `Partial SAVED` selepas `Translation completed`.
+
+---
+
 ## 2026-10-25 — v3.19.3 HYGIENE RELEASE: RACE PARTIAL-CACHE + WARN UIHINT FALSE-POSITIVE + AREGAT BRPARITY PER-BATCH (PILIHAN A)
 
 - **Tarikh:** 2026-10-25 ~21:01 (waktu tempatan KL)

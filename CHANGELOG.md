@@ -2,6 +2,14 @@
 
 All notable changes to this project will be documented in this file.
 
+## SubFaber v3.19.4 (2026-10-25) — Hotfix: Hoist partialSaveChain/partialDeliveryDone ke Scope Function (ReferenceError FIX-1 v3.19.3)
+
+### 🔧 Fixed — Scope Bug FIX-1 v3.19.3 Dikesan dari Log Run Kedua Owner
+
+- **Akar punca ([subtitles.js](src/handlers/subtitles.js)):** deklarasi `partialSaveChain`/`partialDeliveryDone` FIX-1 v3.19.3 terperangkap dalam blok `if (agentInspector enabled)` (indent 12) yang tamat sebelum blok cleanup `finalCacheVerified` (indent 8, scope luar). Keputusan dalam log run kedua Owner: `Partial save chain drain error: partialSaveChain is not defined` — assignment `partialDeliveryDone = true` menjadi implicit global, gate `persistPartial()` tidak pernah aktif, `Partial SAVED` selepas completion berterusan (repeated 10 times).
+- **Pembedahan:** kedua-dua deklarasi dihoist ke scope function (indent 8, sebelum blok `if (translatedContent === undefined)`) — cleanup kini mengakses pembolehubah sama dengan closure `persistPartial()`; sifar implicit global, sifar ReferenceError.
+- **Verifikasi positif run kedua (FIX-2 & FIX-3A v3.19.3 disahkan berfungsi):** WARN noise `kimi-k3 temperature/topP` HILANG sepenuhnya; brParity benign kini 1 baris per batch (`batch 1/14: AI menambah 940 line break (benign, dikekalkan)` — dari ~940 baris kepada 1); varian repair kekal per-entri seperti kontrak Pilihan A.
+
 ## SubFaber v3.19.3 (2026-10-25) — Hygiene Release: Race Partial-Cache, WARN uiHint False-Positive, Agregat brParity Per-Batch (Mandat Owner 2026-10-25)
 
 ### 🔧 Fixed — Tiga pembaikan kebersihan hasil audit forensik log terjemahan `subdl_3543003_8465067_seasonpack_s1e15` (696 entri, 14 batch)

@@ -6198,6 +6198,14 @@ async function performTranslation(
                 ? getLanguageName(detectedSourceCode) || detectedSourceCode
                 : null;
 
+        // [v3.19.4 HOTFIX — susulan FIX-1 v3.19.3] Hoist ke scope function:
+        // deklarasi asal terperangkap dalam blok `if` bawah, menyebabkan blok
+        // cleanup finalCacheVerified (scope luar) mendapat ReferenceError
+        // "partialSaveChain is not defined" dan gate partialDeliveryDone tidak
+        // sampai ke persistPartial() — orphan write berterusan.
+        let partialSaveChain = Promise.resolve();
+        let partialDeliveryDone = false;
+
         // Initialize translation provider (Gemini default, others when enabled)
         if (translatedContent === undefined) {
             const {
@@ -6427,12 +6435,10 @@ async function performTranslation(
             // Serialization guard: prevent concurrent partial saves from racing (Fix #6)
             // If a save is in-flight, the next one waits for it to finish before starting.
             // This prevents an older, slower write from overwriting a newer one.
-            let partialSaveChain = Promise.resolve();
+            // [v3.19.4] partialSaveChain + partialDeliveryDone dihoist ke scope function
+            // (lihat deklarasi atas) supaya cleanup final boleh mengaksesnya.
             // Track whether partial delivery has been permanently disabled for this translation
             let partialDeliveryDisabled = false;
-            // [v3.19.3 FIX-1] Set selepas terjemahan selesai — blok enqueue partial-save
-            // baharu supaya write async tidak jatuh SELEPAS cleanup delete (orphan race).
-            let partialDeliveryDone = false;
 
             try {
                 // 🎣 Pancing data awal-awal sebelum Gemini mula (Baris 4906)
