@@ -6439,6 +6439,13 @@ async function performTranslation(
             // (lihat deklarasi atas) supaya cleanup final boleh mengaksesnya.
             // Track whether partial delivery has been permanently disabled for this translation
             let partialDeliveryDisabled = false;
+            // [v3.19.6 DEDUP-AT-ENQUEUE] Set fingerprint SEGERA pada enqueue, bukan
+            // selepas save async selesai. Tanpa ini, N callback streaming pantas
+            // (log VPS 2026-10-25: 10× "696/696" dalam ~20ms) lulus dedup sebelum
+            // fingerprint pertama dikemas kini → N tulisan Redis identical.
+            // Simpan SET yang sedang in-flight supaya callback serentak skip; kemas
+            // kini lastPartialSavedFingerprint hanya selepas save berjaya.
+            const partialSavesInFlight = new Set();
 
             try {
                 // 🎣 Pancing data awal-awal sebelum Gemini mula (Baris 4906)
@@ -6455,10 +6462,18 @@ async function performTranslation(
                             const partialSrt = buildPartialSrtWithTail(partialText, config.uiLanguage || 'en');
                             if (!partialSrt || partialSrt.length === 0) return false;
                             const partialFingerprint = crypto.createHash('sha1').update(partialSrt).digest('hex');
-                            if (partialFingerprint && partialFingerprint === lastPartialSavedFingerprint) {
+                            // [v3.19.6 DEDUP-AT-ENQUEUE] Periksa SET in-flight SEGERA —
+                            // callback serentak dengan payload sama skip tanpa menunggu
+                            // save async pertama selesai (punca 10× tulisan identical).
+                            if (
+                                partialFingerprint &&
+                                (partialFingerprint === lastPartialSavedFingerprint ||
+                                    partialSavesInFlight.has(partialFingerprint))
+                            ) {
                                 skippedDuplicatePayload = true;
                                 return false;
                             }
+                            if (partialFingerprint) partialSavesInFlight.add(partialFingerprint);
 
                             // Chain saves sequentially to prevent race conditions
                             let saved = false;
@@ -6493,6 +6508,10 @@ async function performTranslation(
                                             partialDeliveryDisabled = true;
                                         }
                                     }
+                                    // [v3.19.6 DEDUP-AT-ENQUEUE] Kosongkan slot in-flight
+                                    // tak kira kejayaan/gagal supaya payload berikutnya
+                                    // dengan fingerprint sama boleh dicuba semula.
+                                    partialSavesInFlight.delete(partialFingerprint);
                                 })
                                 .catch(() => {}); // Prevent unhandled rejection from breaking the chain
                             await partialSaveChain;

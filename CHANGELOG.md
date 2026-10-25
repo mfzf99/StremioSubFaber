@@ -2,6 +2,15 @@
 
 All notable changes to this project will be documented in this file.
 
+## SubFaber v3.19.6 (2026-10-25) — Hygiene: Dedup-at-Enqueue Partial Saves (Sapu 10× Tulisan Redis Identikal dari Log Run Ketiga)
+
+### 🔧 Fixed — Pembaziran I/O Partial Save Dikesan dari Log Run Ketiga Owner (deepseek-v4.1-flash, "Off (No Thinking)")
+
+- **Verifikasi positif run ketiga terlebih dahulu:** wire-value `reasoning_effort: "none"` (v3.19.5) **diterima gateway rootsys tanpa sebarang penolakan** — 14/14 batch, 696 entri, ~4.5 minit; FIX-1 v3.19.4 **dipulihkan sepenuhnya**: file log ground truth membuktikan kesemua 10 tulisan `Partial SAVED: batch 14/14, 696/696` berlaku PADA 22:54:57.755–773 (SEBELUM completion 22:55:00.034 dan cleanup 22:55:00.048) — baris `[repeated 10 times]` pada 22:55:02 hanyalah flush summary logger (window senyap 5s), BUKAN orphan write. Turutan `Partial SAVED` batch-snapshot selepas Inspector PASSED turut disahkan **by design**: Inspector berjalan di dalam `translateBatch()`, batch-completion callback menyusul selepasnya.
+- **Akar punca pembaziran I/O ([subtitles.js](src/handlers/subtitles.js)):** dedup fingerprint `lastPartialSavedFingerprint` hanya dikemas kini ASYNC selepas save pertama selesai — 10 callback streaming pantas (batch terakhir, ~20ms) lulus dedup sebelum fingerprint pertama direkod → 10 tulisan Redis IDENTIK berturutan; snapshot batch-level turut menduplikasi save streaming terakhir dengan mekanisme sama.
+- **Pembedahan (dedup-at-enqueue):** Set `partialSavesInFlight` pada scope callback — `persistPartial()` kini memeriksa & mendaftar fingerprint SEGERA pada enqueue (callback serentak dengan payload sama skip serta-merta tanpa menunggu save async pertama); slot dikosongkan selepas save selesai tak kira kejayaan/gagal supaya payload berikutnya dengan fingerprint sama boleh dicuba semula. `lastPartialSavedFingerprint` kekal sebagai dedup merentas masa (post-save).
+- **Jangkaan pasca-deploy:** setiap checkpoint tulis SEKALI sahaja — sifar `Partial SAVED` berulang dengan kiraan sama; turutan Inspector → snapshot batch kekal seperti sedia ada (by design).
+
 ## SubFaber v3.19.5 (2026-10-25) — Protocol Polish: Wire-Value DeepSeek `reasoning_effort: "none"` + Ground Truth Rasmi Tri-Door (Mandat Owner 2026-10-25)
 
 ### 🔧 Fixed — Pemetaan Enum Rasmi DeepSeek (Mazhab OpenAI-Compatible)

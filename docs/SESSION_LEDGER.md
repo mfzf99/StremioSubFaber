@@ -1,3 +1,17 @@
+## 2026-10-25 — v3.19.6 HYGIENE: DEDUP-AT-ENQUEUE PARTIAL SAVES (SAPU 10× TULISAN REDIS IDENTIKAL — AUDIT LOG RUN KETIGA)
+
+- **Tarikh:** 2026-10-25 ~07:26 (waktu tempatan KL)
+- **Komit SHA (HEAD):** (direkod selepas push)
+- **Keputusan Owner:** Owner jalankan ujian live yang diarahkan (deepseek-v4.1-flash, pintu rootsys, reasoning Off/No Thinking) dan hantar log terminal penuh untuk inspect; Owner tanya dua "anomali" visual dalam log (Partial SAVED selepas Inspector PASSED + `[repeated 10 times]` selepas completed), kemudian meluluskan mandat "teruskan dengan fix tersebut, sapu bersih semua masalah" + arahan commit.
+- **Verifikasi build pra-audit:** VPS `/opt/StremioSubFaber` disahkan HEAD `3461847f`, package.json 3.19.5, kedua-dua container healthy — log sah untuk penilaian v3.19.5.
+- **Forensik (terminal + file app.log VPS):** (a) DeepSeek flash Off **LULUS live** — `reasoning_effort:'none'` diterima rootsys tanpa sebarang penolakan, 14/14 batch, 696 entri, ~4.5 minit; baris `deepseek-v4.1-flash rejects reasoningEffort=disabled (enum); dropped` = sanitizeAgentParams membuang token UI, bukan kegagalan wire. (b) "Partial SAVED selepas Inspector" = **by design** (Inspector berjalan dalam translateBatch(), batch-completion callback menyusul selepas return). (c) `[repeated 10 times]` pada 22:55:02 = **flush summary logger** (window 5s), BUKAN orphan write — file log membuktikan kesemua 10 tulisan berlaku 22:54:57.755–773 SEBELUM completed/cleanup. **FIX-1 v3.19.4 dipulihkan sepenuhnya.** (d) Masalah sebenar: dedup fingerprint dikemas kini ASYNC → 10 callback pantas lulus dedup → 10 tulisan Redis IDENTIK (~20ms) + batch-snapshot menduplikasi save streaming terakhir.
+- **Pembedahan ([`src/handlers/subtitles.js`](../src/handlers/subtitles.js)):** dedup-at-enqueue — Set `partialSavesInFlight` scope callback; `persistPartial()` memeriksa & mendaftar fingerprint SEGERA pada enqueue; slot dikosongkan post-save (jaya/gagal) supaya retry boleh dicuba; `lastPartialSavedFingerprint` kekal dedup merentas masa.
+- **Fail Terlibat:** src/handlers/subtitles.js (M), package.json (M: 3.19.5→3.19.6), CHANGELOG.md (M), docs/SESSION_LEDGER.md (blok ini). Graphify NO-OP (`graphify-out/` tiada).
+- **Status npm test:** **471 total / 470 PASS / 0 FAIL / 1 SKIP** — baseline monotonik dipelihara (padan v3.19.5). Prettier `--check .` PASS. ESLint 0 error / 226 warning (semuanya pre-existing). Cache-buster: runtime 3.19.6 (dinamik daripada package.json via version.js; sifar pin statik).
+- **Next Steps:** commit + push → CI `gh` watch SUCCESS → SHA direkod dalam blok ini. VPS perlu restart untuk pick-up v3.19.6; Owner boleh pantau run keempat (jangkaan: setiap checkpoint tulis SEKALI sahaja — sifar `Partial SAVED` berulang kiraan sama).
+
+---
+
 ## 2026-10-25 — v3.19.5 PROTOCOL POLISH: WIRE-VALUE DEEPSEEK reasoning_effort "none" + EKSTRAKSI GROUND TRUTH RASMI TRI-DOOR (FIRECRAWL MCP)
 
 - **Tarikh:** 2026-10-25 ~06:26 (waktu tempatan KL)
