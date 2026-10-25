@@ -2,6 +2,14 @@
 
 All notable changes to this project will be documented in this file.
 
+## SubFaber v3.19.7 (2026-10-25) — Hotfix: Signature Gate Partial Saves (Sapu Sisa 7× Tulisan 696/696 dari Log Run Keempat)
+
+### 🔧 Fixed — Dedup Fingerprint Tidak Mencukupi; Gate Muktamad oleh Signature Kemajuan
+
+- **Bukti run keempat ([subtitles.js](src/handlers/subtitles.js)):** walaupun dedup-at-enqueue v3.19.6 live dalam container (diverifikasi `grep partialSavesInFlight` dalam `/app`), fail log masih merakam **7× tulisan** `Partial SAVED: batch 14/14, 696/696` dalam ~20ms — kandungan partial SRT **berubah-ubah antara callback** (rebuild auto-chunk) pada kiraan entri sama, jadi fingerprint SHA1 payload berbeza dan dedup kandungan tidak dapat menangkap.
+- **Pembedahan (signature gate):** `persistPartial()` kini digate oleh signature kemajuan `batch:completedEntries` SEBELUM kerja berat — callback dengan kiraan entri sama (tak kira variasi kandungan) skip serta-merta; `lastPartialSaveSignature` dikunci hanya selepas save **berjaya** (retry selepas kegagalan boleh diteruskan); Set `partialSignaturesInFlight` melindungi tetingkap in-flight. Kesan sampingan diingini: batch-snapshot `50/696` selepas Inspector turut tersangkut apabila streaming terakhir sudah menyimpan kiraan sama — kiraan sama tiada maklumat baharu untuk pengguna.
+- **Jangkaan run kelima:** `Partial SAVED` tepat SATU baris per kiraan entri unik; sifar pengulangan `696/696`.
+
 ## SubFaber v3.19.6 (2026-10-25) — Hygiene: Dedup-at-Enqueue Partial Saves (Sapu 10× Tulisan Redis Identikal dari Log Run Ketiga)
 
 ### 🔧 Fixed — Pembaziran I/O Partial Save Dikesan dari Log Run Ketiga Owner (deepseek-v4.1-flash, "Off (No Thinking)")

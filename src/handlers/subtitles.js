@@ -6446,6 +6446,14 @@ async function performTranslation(
             // Simpan SET yang sedang in-flight supaya callback serentak skip; kemas
             // kini lastPartialSavedFingerprint hanya selepas save berjaya.
             const partialSavesInFlight = new Set();
+            // [v3.19.7 SIGNATURE GATE] Run keempat membuktikan payload 696/696 masih
+            // ditulis 7× walaupun dedup fingerprint aktif — kandungan partial SRT
+            // berubah-ubah antara callback (rebuild auto-chunk) pada kiraan entri SAMA.
+            // Kiraan sama = tiada maklumat baharu untuk pengguna → sifar nilai tulis.
+            // Gate oleh signature kemajun "batch:completedEntries" adalah muktamad
+            // tak kira variasi kandungan.
+            const partialSignaturesInFlight = new Set();
+            let lastPartialSaveSignature = '';
 
             try {
                 // 🎣 Pancing data awal-awal sebelum Gemini mula (Baris 4906)
@@ -6459,6 +6467,17 @@ async function performTranslation(
                         let skippedDuplicatePayload = false;
                         const persistPartial = async (partialText) => {
                             if (partialDeliveryDisabled || partialDeliveryDone) return false;
+                            // [v3.19.7 SIGNATURE GATE] Signature kemajuan (batch:kiraan)
+                            // SEBELUM kerja berat — kiraan sama tidak membawa maklumat baru.
+                            const saveSignature = `${progress.currentBatch || 0}:${progress.completedEntries || 0}`;
+                            if (
+                                saveSignature === lastPartialSaveSignature ||
+                                partialSignaturesInFlight.has(saveSignature)
+                            ) {
+                                skippedDuplicatePayload = true;
+                                return false;
+                            }
+                            partialSignaturesInFlight.add(saveSignature);
                             const partialSrt = buildPartialSrtWithTail(partialText, config.uiLanguage || 'en');
                             if (!partialSrt || partialSrt.length === 0) return false;
                             const partialFingerprint = crypto.createHash('sha1').update(partialSrt).digest('hex');
@@ -6471,6 +6490,7 @@ async function performTranslation(
                                     partialSavesInFlight.has(partialFingerprint))
                             ) {
                                 skippedDuplicatePayload = true;
+                                partialSignaturesInFlight.delete(saveSignature);
                                 return false;
                             }
                             if (partialFingerprint) partialSavesInFlight.add(partialFingerprint);
@@ -6492,6 +6512,10 @@ async function performTranslation(
                                                 `[Translation] Partial SAVED: batch ${progress.currentBatch}/${progress.totalBatches}, ${progress.completedEntries}/${progress.totalEntries} entries${progress.streaming ? ' (streaming)' : ''}, nextCheckpoint=${nextPartialRebuildAt}`
                                         );
                                         lastPartialSavedFingerprint = partialFingerprint;
+                                        // [v3.19.7 SIGNATURE GATE] Rekod signature
+                                        // selepas save berjaya sahaja supaya retry kiraan
+                                        // sama (save gagal) boleh dicuba semula.
+                                        lastPartialSaveSignature = saveSignature;
                                         saved = true;
                                     } catch (saveErr) {
                                         consecutivePartialSaveFailures++;
@@ -6512,6 +6536,9 @@ async function performTranslation(
                                     // tak kira kejayaan/gagal supaya payload berikutnya
                                     // dengan fingerprint sama boleh dicuba semula.
                                     partialSavesInFlight.delete(partialFingerprint);
+                                    // [v3.19.7 SIGNATURE GATE] Kosongkan signature slot
+                                    // (lastPartialSaveSignature hanya dikunci bila berjaya).
+                                    partialSignaturesInFlight.delete(saveSignature);
                                 })
                                 .catch(() => {}); // Prevent unhandled rejection from breaking the chain
                             await partialSaveChain;

@@ -1,3 +1,16 @@
+## 2026-10-25 — v3.19.7 HOTFIX: SIGNATURE GATE PARTIAL SAVES (SISA 7× TULISAN 696/696 RUN KEMPAT — DEDUP FINGERPRINT TAK MENCUKUPI)
+
+- **Tarikh:** 2026-10-25 ~07:53 (waktu tempatan KL)
+- **Komit SHA (HEAD):** (direkod selepas push)
+- **Keputusan Owner:** Owner jalankan run keempat selepas deploy v3.19.6 + hantar log; file log VPS masih merakam 7× `Partial SAVED: batch 14/14, 696/696` (~20ms) walaupun kod v3.19.6 disahkan live dalam container (`grep partialSavesInFlight /app/src/handlers/subtitles.js` = 4 padanan). Mandat berterusan "sapu bersih semua masalah".
+- **Forensik susulan:** dedup fingerprint v3.19.6 berkesan untuk payload IDENTIK sahaja — run keempat membuktikan kandungan partial SRT **berubah-ubah antara callback** (rebuild auto-chunk pada kiraan entri sama) → fingerprint SHA1 berbeza → 7 tulisan lolos. Kiraan entri sama = tiada maklumat baharu untuk pengguna = tulisan sifar nilai.
+- **Pembedahan ([`src/handlers/subtitles.js`](../src/handlers/subtitles.js)):** signature gate `batch:completedEntries` di ATAS `persistPartial()` sebelum kerja berat — callback kiraan sama skip serta-merta tak kira variasi kandungan; `lastPartialSaveSignature` dikunci hanya selepas save BERJAYA (retry pasca-kegagalan kekal boleh); Set `partialSignaturesInFlight` melindungi tetingkap in-flight; slot dikosongkan post-save. Kesan diingini: batch-snapshot selepas Inspector turut tersangkut bila streaming terakhir sudah simpan kiraan sama. Dedup fingerprint v3.19.6 kekal sebagai lapisan kedua.
+- **Fail Terlibat:** src/handlers/subtitles.js (M), package.json (M: 3.19.6→3.19.7), CHANGELOG.md (M), docs/SESSION_LEDGER.md (blok ini). Graphify NO-OP (`graphify-out/` tiada).
+- **Status npm test:** **471 total / 470 PASS / 0 FAIL / 1 SKIP** — baseline monotonik dipelihara. Prettier `--check .` PASS. ESLint sifar error. Cache-buster: runtime 3.19.7 (dinamik daripada package.json).
+- **Next Steps:** commit + push → CI `gh` watch SUCCESS → SHA direkod. VPS `git pull && docker compose up -d --build`; run kelima dijangka: SATU `Partial SAVED` per kiraan entri unik — sifar pengulangan 696/696, sifar baris batch-snapshot menduplikasi streaming.
+
+---
+
 ## 2026-10-25 — v3.19.6 HYGIENE: DEDUP-AT-ENQUEUE PARTIAL SAVES (SAPU 10× TULISAN REDIS IDENTIKAL — AUDIT LOG RUN KETIGA)
 
 - **Tarikh:** 2026-10-25 ~07:26 (waktu tempatan KL)
