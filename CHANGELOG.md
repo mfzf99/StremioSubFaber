@@ -2,6 +2,19 @@
 
 All notable changes to this project will be documented in this file.
 
+## SubFaber v3.19.3 (2026-10-25) — Hygiene Release: Race Partial-Cache, WARN uiHint False-Positive, Agregat brParity Per-Batch (Mandat Owner 2026-10-25)
+
+### 🔧 Fixed — Tiga pembaikan kebersihan hasil audit forensik log terjemahan `subdl_3543003_8465067_seasonpack_s1e15` (696 entri, 14 batch)
+
+- **FIX-1 Race orphan-write partial cache ([subtitles.js](src/handlers/subtitles.js)):** progress callback terakhir (696/696) enqueue partial-save async ke `partialSaveChain` tanpa gate; laluan utama sudah pun `adapter.delete(PARTIAL)` — write jatuh SELEPAS delete meninggalkan entri orphan Redis (TTL 1 jam) + log `Partial SAVED` mengelirukan selepas "completed". Pembedahan: flag `partialDeliveryDone` diset sebelum delete; `persistPartial()` menolak enqueue baharu; rantaian in-flight di-drain (`await partialSaveChain`) SEBELUM delete supaya write terakhir selesai dahulu — sifar orphan, sifar kehilangan partial terakhir.
+- **FIX-2 WARN uiHint false-positive ([modelCapabilities.js](src/utils/modelCapabilities.js)):** `sanitizeAgentParams()` mengeluarkan `log.warn` pada SETIAP penghantaran parameter berkait uiHint walaupun nilai pengguna sama persis dengan lalai ground-truth (`0.95 vs hint 0.95`, `1 vs 1.0`) — 2 WARN noise pada setiap request Preflight kimi-k3. Pembedahan: perbandingan `Number(raw[name]) === Number(descriptor.default)`; WARN hanya jika nilai menyeleweng daripada lalai. Intensi asal K2 (Total Unlock) dipulihkan.
+- **FIX-3A Agregat brParity benign per-batch ([translationEngine.js](src/services/translationEngine.js)) — Pilihan Owner A:** varian `AI menambah line break (0 -> 1)` adalah benign (output tidak diubah) tetapi berlaku ~1,000–2,000 kali per fail besar — 14k baris log setiap fail. Varian ini kini dikira dalam `_brParityAddedCount` dan di-flush sebagai SATU baris summary per-batch (`_flushBrParitySummary()`). Varian yang mengubah output (`auto-repair disisip` / `repair gagal`) KEKAL per-entri untuk keupayaan forensik entri-tepat. Konsol dan fail log sama-sama dibersihkan pada sumber isu (volum), bukan simptom (collapse logger).
+- **Dibersihkan (bukan bug):** `deepseek-v4.1-flash rejects reasoningEffort=disabled (enum); dropped` disahkan tingkah laku direka betul — profil DeepSeek flash sengaja mengecualikan `disabled` atas ground truth vendor (reasoning sentiasa ON). Tiada drift daripada mandate v3.18.2.
+
+### 🔒 Invariant Dikekalkan
+
+- Sifar perubahan kontrak payload/pintu/provider; sifar perubahan logger v2 (windowed counters v3.19.2 kekal); fail log kekal ground truth forensik untuk semua varian yang mengubah data; baseline ujian 470/469/0/1 monotonik.
+
 ## SubFaber v3.19.2 (2026-10-25) — Hotfix Collapse Log brParity v2: Per-Key Windowed Counters (Mandat Owner 2026-10-25)
 
 ### 🔧 Fixed — Terminal Log Flood brParity (Susulan v3.18.1 commit `31561867`)

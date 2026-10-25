@@ -1107,6 +1107,9 @@ class TranslationEngine {
                         }
                     }
 
+                    // [v3.19.3 FIX-3A] Flush summary benign brParity pada sempadan batch
+                    this._flushBrParitySummary(batchIndex + 1, batches.length);
+
                     // Log progress only at milestones
                     const progress = Math.floor((translatedEntries.length / entries.length) * 100);
                     if (batchIndex === 0 || batchIndex === batches.length - 1 || progress % 25 === 0) {
@@ -1153,6 +1156,9 @@ class TranslationEngine {
                     `[TranslationEngine] Entry count mismatch: expected ${entries.length}, got ${translatedEntries.length}`
             );
         }
+
+        // [v3.19.3 FIX-3A] Flush sisa benign brParity pada completion (batch terakhir)
+        this._flushBrParitySummary();
 
         log.info(() => `[TranslationEngine] Translation completed: ${translatedEntries.length} entries`);
 
@@ -3543,10 +3549,11 @@ ${batchText}
 
         if (countOut >= countSrc) {
             if (countOut > countSrc) {
-                log.debug(
-                    () =>
-                        `[TranslationEngine] brParity: AI menambah line break (${countSrc} -> ${countOut}) — dikekalkan`
-                );
+                // [v3.19.3 FIX-3A — Pilihan Owner A] Kejadian benign (AI tambah break,
+                // output tidak diubah) tidak lagi log per-entri — dikira sahaja;
+                // summary per-batch di-flush oleh _flushBrParitySummary() di
+                // sempadan batch. Varian repair (mengubah output) kekal per-entri.
+                this._brParityAddedCount = (this._brParityAddedCount || 0) + 1;
             }
             return out;
         }
@@ -3641,6 +3648,23 @@ ${batchText}
             );
         }
         return repaired;
+    }
+
+    /**
+     * [v3.19.3 FIX-3A — Pilihan Owner A] Flush counter benign "AI menambah line break"
+     * sebagai SATU baris debug per-batch. Tanpa counter > 0 = sifar log (senyap).
+     * Varian yang mengubah output (auto-repair / repair gagal) TIDAK terjejas —
+     * kekal per-entri untuk keupayaan forensik entri-tepat.
+     */
+    _flushBrParitySummary(currentBatch, totalBatches) {
+        const count = this._brParityAddedCount || 0;
+        this._brParityAddedCount = 0;
+        if (count > 0) {
+            const batchLabel = currentBatch && totalBatches ? `batch ${currentBatch}/${totalBatches}: ` : 'final: ';
+            log.debug(
+                () => `[TranslationEngine] brParity: ${batchLabel}AI menambah ${count} line break (benign, dikekalkan)`
+            );
+        }
     }
 
     /**

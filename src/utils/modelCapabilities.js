@@ -488,7 +488,11 @@ function sanitizeAgentParams(agent, params, providerOrDoor, modelId) {
     for (const [name, descriptor] of Object.entries(profile.parameters)) {
         if (raw[name] === undefined || raw[name] === null || raw[name] === '') continue;
         const uiHint = descriptor.uiHint ? ` (hint: ${descriptor.uiHint})` : '';
-        if (descriptor.uiHint) {
+        // [v3.19.3 FIX-2] WARN hanya jika nilai pengguna menyeleweng daripada lalai
+        // ground-truth (contoh 0.7 vs hint 0.95). Nilai == lalai = senyap
+        // (1 === 1.0 secara number — bukan lagi false-positive).
+        const numericEq = Number(raw[name]) === Number(descriptor.default);
+        if (descriptor.uiHint && !numericEq) {
             log.warn(
                 () =>
                     `[ModelCapabilities] ${modelId || '(default)'}: parameter ${name} dihantar nilai pengguna ${raw[name]}${uiHint} — pelayan mungkin menolak (400)`

@@ -6430,6 +6430,9 @@ async function performTranslation(
             let partialSaveChain = Promise.resolve();
             // Track whether partial delivery has been permanently disabled for this translation
             let partialDeliveryDisabled = false;
+            // [v3.19.3 FIX-1] Set selepas terjemahan selesai — blok enqueue partial-save
+            // baharu supaya write async tidak jatuh SELEPAS cleanup delete (orphan race).
+            let partialDeliveryDone = false;
 
             try {
                 // 🎣 Pancing data awal-awal sebelum Gemini mula (Baris 4906)
@@ -6442,7 +6445,7 @@ async function performTranslation(
                     async (progress) => {
                         let skippedDuplicatePayload = false;
                         const persistPartial = async (partialText) => {
-                            if (partialDeliveryDisabled) return false;
+                            if (partialDeliveryDisabled || partialDeliveryDone) return false;
                             const partialSrt = buildPartialSrtWithTail(partialText, config.uiLanguage || 'en');
                             if (!partialSrt || partialSrt.length === 0) return false;
                             const partialFingerprint = crypto.createHash('sha1').update(partialSrt).digest('hex');
@@ -7028,6 +7031,14 @@ async function performTranslation(
         // Clean up partial cache now that final translation is confirmed in storage
         // Retry once on failure to reduce orphaned partials (Fix #4)
         if (finalCacheVerified) {
+            // [v3.19.3 FIX-1] Tutup pintu enqueue & drain rantaian save in-flight
+            // SEBELUM delete supaya write terakhir selesai dahulu — sifar orphan.
+            partialDeliveryDone = true;
+            try {
+                await partialSaveChain;
+            } catch (chainErr) {
+                log.warn(() => `[Translation] Partial save chain drain error: ${chainErr.message}`);
+            }
             try {
                 const adapter = await getStorageAdapter();
                 await adapter.delete(runtimeKey, StorageAdapter.CACHE_TYPES.PARTIAL);

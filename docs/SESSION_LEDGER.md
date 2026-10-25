@@ -1,3 +1,20 @@
+## 2026-10-25 — v3.19.3 HYGIENE RELEASE: RACE PARTIAL-CACHE + WARN UIHINT FALSE-POSITIVE + AREGAT BRPARITY PER-BATCH (PILIHAN A)
+
+- **Tarikh:** 2026-10-25 ~20:59 (waktu tempatan KL)
+- **Komit SHA (HEAD):** (direkod selepas push).
+- **Keputusan Owner:** Owner serahkan log terminal terjemahan sebenar (`subdl_3543003_8465067_seasonpack_s1e15`, 696 entri, 14 batch) untuk audit forensik penuh. Audit menemui 4 penemuan; Owner meluluskan plan pembedahan 3 pembaikan dengan keputusan Senior Dev untuk brParity = Pilihan A (benign per-batch counter, repair-events kekal per-entri).
+- **Audit forensik:** Aliran Trinity end-to-end sihat (Preflight kimi-k3 36 terms/15 watak; Translation deepseek-v4.1-flash 14/14; Inspector deepseek-v4-pro 14/14 PASSED 100% perlindungan, sifar jenayah). brParity collapse v2 (v3.19.2) disahkan BERFUNGSI — summary `repeated N times` tepat seperti kontrak.
+- **FIX-1 Race orphan-write partial cache ([`src/handlers/subtitles.js`](../src/handlers/subtitles.js)):** progress callback terakhir enqueue partial-save async selepas `adapter.delete(PARTIAL)` utama — entri orphan Redis TTL 1 jam + log `Partial SAVED` selepas "completed" (dikesan dalam log Owner: 20:40:54 completed vs 20:40:57 masih Partial SAVED). Pembedahan: flag `partialDeliveryDone` + drain `await partialSaveChain` SEBELUM delete.
+- **FIX-2 WARN uiHint false-positive ([`src/utils/modelCapabilities.js`](../src/utils/modelCapabilities.js)):** `sanitizeAgentParams()` WARN pada setiap penghantaran parameter uiHint walaupun nilai == lalai ground-truth (`0.95 vs hint 0.95`). Pembedahan: `Number(raw[name]) === Number(descriptor.default)` — WARN hanya jika menyeleweng.
+- **FIX-3A Agregat brParity benign per-batch ([`src/services/translationEngine.js`](../src/services/translationEngine.js)):** varian `AI menambah line break` (benign, ~1k-2k/fail besar) kini counter `_brParityAddedCount` + flush 1 baris summary per-batch via `_flushBrParitySummary()`; varian repair (mengubah output) KEKAL per-entri untuk forensik entri-tepat.
+- **Insiden semasa ujian:** flush completion pertama merujuk `batches.length` luar scope → `ReferenceError` dikesan oleh `trinity-params-regression.test.js` — dibaiki kepada panggilan tanpa argumen (label `final:`). Demonstrasi pintu regresi berfungsi.
+- **Dibersihkan (bukan bug):** `deepseek-v4.1-flash rejects reasoningEffort=disabled` = tingkah laku direka (profil DeepSeek flash sengaja tiada `disabled` — reasoning sentiasa ON).
+- **Fail Terlibat:** src/handlers/subtitles.js (M), src/utils/modelCapabilities.js (M), src/services/translationEngine.js (M), package.json (M: 3.19.2→3.19.3), CHANGELOG.md (M), docs/SESSION_LEDGER.md (blok ini). Graphify NO-OP (runtime & `graphify-out/` kedua-duanya ABSENT).
+- **Status npm test:** **470 total / 469 PASS / 0 FAIL / 1 SKIP** — baseline tepat dipenuhi (monotonik, padan v3.19.1/3.19.2). Prettier `--check .` PASS; ESLint 0 error / 226 warning semuanya pre-existing. Cache-buster: runtime 3.19.3 (dibaca dinamik daripada package.json).
+- **Next Steps:** git commit + push → CI `gh` watch SUCCESS → SHA direkodkan dalam blok ini. Server produksi (VPS) perlu restart untuk pick-up fix; Owner boleh pantau konsol semasa terjemahan seterusnya (jangkaan: sifar `Partial SAVED` selepas completed; sifar WARN kimi-k3 noise; brParity benign jadi 1 baris/batch).
+
+---
+
 ## 2026-10-25 — v3.19.2 HOTFIX COLLAPSE LOG BRPARITY V2: PER-KEY WINDOWED COUNTERS (SUSULAN v3.18.1 `31561867`)
 
 - **Tarikh:** 2026-10-25 ~16:12 (waktu tempatan KL)
