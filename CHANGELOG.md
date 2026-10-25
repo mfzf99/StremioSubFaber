@@ -2,6 +2,16 @@
 
 All notable changes to this project will be documented in this file.
 
+## SubFaber v3.19.2 (2026-10-25) — Hotfix Collapse Log brParity v2: Per-Key Windowed Counters (Mandat Owner 2026-10-25)
+
+### 🔧 Fixed — Terminal Log Flood brParity (Susulan v3.18.1 commit `31561867`)
+
+- **Akar punca sebenar ([logger.js](src/utils/logger.js)):** mekanisme repeat-collapse v1 (commit `31561867`, v3.18.1) hanya merangkumkan mesej DEBUG **berturut-turut identik** (single-slot `debugRepeatState`). Dalam trafik terjemahan sebenar, tiga varian brParity (`AI menambah line break` / `auto-repair disisip` / `repair gagal cari titik split selamat`) berselang-seli pantas — corak "putus" pada setiap baris dan setiap key baharu flush key lama dengan `count=1` sebelum sempat mengumpul. Konsol kekal banjir walaupun mekanisme berfungsi seperti yang ditulis.
+- **Pembedahan v2 — per-key windowed counters:** `collapseDebugRepeat()` ditulis semula daripada single-slot consecutive dedup kepada `Map` key → `{count, timer}`. Setiap mesej unik mengumpul kiraannya sendiri; summary `… [repeated N times]` hanya dikeluarkan selepas window senyap 5 saat (`DEBUG_REPEAT_WINDOW_MS`). Corak berselang-seli kini collapse dengan betul; baris pertama setiap key tetap keluar serta-merta (back-compat penuh).
+- **Flush shutdown:** `shutdownLogger()` kini memanggil `flushAllDebugRepeatSummaries()` supaya semua summary tertahan dikeluarkan sebelum proses exit — tiada kiraan hilang semasa shutdown gracefully.
+- **Sifar perubahan enjin:** [`translationEngine.js`](src/services/translationEngine.js) TIDAK disentuh; ini lapisan pembentangan konsol sahaja. Fail log (writeFileLog) kekal 100% penuh sebagai ground truth forensik; WARN/ERROR kekal 100% penuh (doktrin perlindungan logger).
+- **Verifikasi langsung:** simulasi trafik sebenar (3 varian interleave ×3 + 50 repetisi) — konsol hanya menunjukkan baris pertama setiap varian + 2 baris summary (`repeated 3 times`, `repeated 53 times`); `logger-sampling-regression.test.js` 3 pass / 0 fail / 0 skipped.
+
 ## SubFaber v3.19.1 (2026-10-25) — Hybrid Guard Parameter Penalty Gemini 3.6+ (Mandat Owner 2026-10-25, Pilihan B)
 
 ### 🔧 Fixed — Gemini Native Sampling & Penalty Doctrine (Ground Truth Google 2026-10-22)

@@ -602,6 +602,10 @@ function writeFileLog(level, args) {
 // Logger shutdown function (exported for graceful shutdown coordination)
 const shutdownLogger = () => {
     try {
+        // Flush semua summary DEBUG tertahan (v2 collapse) sebelum exit.
+        try {
+            flushAllDebugRepeatSummaries();
+        } catch (_) {}
         if (LOG_TO_FILE) {
             if (flushTimer) {
                 clearTimeout(flushTimer);
@@ -736,34 +740,48 @@ function error(messageFn) {
 //   - Back-compat penuh: baris pertama setiap corak keluar serta-merta seperti
 //     biasa; hanya pengulangan melebihi 1 yang diringkaskan.
 const DEBUG_REPEAT_WINDOW_MS = 5000;
-let debugRepeatState = null; // { key, count, timer }
+// [HOTFIX 2026-10-25 — Mandat Owner: log terminal masih tercemar]
+// Versi v1 (consecutive-only) gagal dalam trafik sebenar kerana varian brParity
+// berselang-seli pantas ("AI menambah" / "auto-repair" / "repair gagal") — corak
+// "putus" pada setiap baris dan setiap key baru flush key lama dengan count=1.
+// Versi v2: per-key windowed counters — setiap mesej unik mengumpul kiraannya
+// sendiri; summary hanya dikeluarkan selepas window senyap. Corak berselang-seli
+// kini collapse dengan betal; baris pertama setiap key tetap keluar serta-merta.
+const debugRepeatStates = new Map(); // key -> { count, timer }
+
+function flushDebugRepeatSummary(key) {
+    const state = debugRepeatStates.get(key);
+    if (!state) return;
+    debugRepeatStates.delete(key);
+    if (state.timer) clearTimeout(state.timer);
+    if (state.count > 1) {
+        originalLog(`[${getTimestamp()}] [DEBUG] ${key.slice(0, 120)} … [repeated ${state.count} times]`);
+    }
+}
+
+function flushAllDebugRepeatSummaries() {
+    for (const key of Array.from(debugRepeatStates.keys())) {
+        flushDebugRepeatSummary(key);
+    }
+}
 
 function collapseDebugRepeat(args) {
     const key = args.map(serializeArg).join(' ');
-    if (debugRepeatState && debugRepeatState.key === key) {
-        debugRepeatState.count++;
-        return false; // duplicate — hold (will be summarized when pattern breaks)
+    let state = debugRepeatStates.get(key);
+    if (state) {
+        state.count++;
+        // Slide window: setiap pengulangan lanjutkan senyap.
+        if (state.timer) clearTimeout(state.timer);
+        state.timer = setTimeout(() => flushDebugRepeatSummary(key), DEBUG_REPEAT_WINDOW_MS);
+        state.timer.unref();
+        return false; // duplicate — hold (will be summarized after quiet window)
     }
-    // Pattern break: flush summary of the previous run first.
-    flushDebugRepeatSummary();
-    debugRepeatState = { key, count: 1, timer: null };
-    // Window guard: if no new line arrives within the window, close the run.
-    debugRepeatState.timer = setTimeout(() => {
-        flushDebugRepeatSummary();
-    }, DEBUG_REPEAT_WINDOW_MS);
+    state = { count: 1, timer: null };
+    debugRepeatStates.set(key, state);
+    state.timer = setTimeout(() => flushDebugRepeatSummary(key), DEBUG_REPEAT_WINDOW_MS);
     // Timer harus tidak pegang event loop semasa shutdown.
-    if (debugRepeatState && debugRepeatState.timer) debugRepeatState.timer.unref();
+    state.timer.unref();
     return true; // first occurrence — emit normally
-}
-
-function flushDebugRepeatSummary() {
-    if (!debugRepeatState) return;
-    const { key, count, timer } = debugRepeatState;
-    debugRepeatState = null;
-    if (timer) clearTimeout(timer);
-    if (count > 1) {
-        originalLog(`[${getTimestamp()}] [DEBUG] ${key.slice(0, 120)} … [repeated ${count} times]`);
-    }
 }
 
 console.log = function (...args) {

@@ -1,3 +1,17 @@
+## 2026-10-25 — v3.19.2 HOTFIX COLLAPSE LOG BRPARITY V2: PER-KEY WINDOWED COUNTERS (SUSULAN v3.18.1 `31561867`)
+
+- **Tarikh:** 2026-10-25 ~16:10 (waktu tempatan KL)
+- **Komit SHA (HEAD):** `<SHA-PENDING>` (diisi selepas push + CI watch)
+- **Keputusan Owner:** Owner laporkan log terminal MASIH tercemar brParity selepas fix v1 (`31561867`, v3.18.1) dikatakan selesai; Owner arahkan "terus commit" bagi hotfix v2 selepas diagnosis forensik akar punca.
+- **Akar punca v1 gagal:** mekanisme consecutive-only (single-slot `debugRepeatState`) hanya collapse mesej DEBUG berturut-turut identik. Trafik sebenar: 3 varian brParity (`AI menambah` / `auto-repair disisip` / `repair gagal`) berselang-seli pantas — corak "putus" pada setiap baris, key baharu flush key lama dengan count=1 sebelum sempat mengumpul. Mekanisme berfungsi seperti yang ditulis tetapi tidak menangkap corak interleave sebenar.
+- **Pembedahan v2 ([`src/utils/logger.js`](../src/utils/logger.js)):** `collapseDebugRepeat()` ditulis semula kepada per-key windowed counters (`Map` key → `{count, timer}`, window 5s senyap); `shutdownLogger()` kini flush semua summary tertahan via `flushAllDebugRepeatSummaries()` sebelum exit. Sifar perubahan enjin (`translationEngine.js` tidak disentuh); fail log kekal 100% penuh; WARN/ERROR kekal penuh.
+- **Verifikasi langsung:** simulasi interleave 3-varian ×3 + 50 repetisi → konsol hanya baris pertama setiap varian + 2 summary (`repeated 3 times`, `repeated 53 times`); `logger-sampling-regression.test.js` 3 pass / 0 fail.
+- **Fail Terlibat:** src/utils/logger.js (M), package.json (M: 3.19.1→3.19.2), CHANGELOG.md (M), docs/SESSION_LEDGER.md (blok ini). Graphify NO-OP (runtime & `graphify-out/` kedua-duanya ABSENT).
+- **Status npm test:** **470 total / 469 PASS / 0 FAIL / 1 SKIP** — baseline tepat dipenuhi (monotonik, padan v3.19.1). Prettier `--check .` PASS ("All matched files use Prettier code style!"); ESLint 0 error / 226 warning semuanya pre-existing. Cache-buster: runtime 3.19.2 (dibaca dinamik daripada package.json via version.js).
+- **Next Steps:** git commit + push → CI `gh` watch SUCCESS → SHA direkodkan dalam blok ini. Server produksi (VPS) perlu restart (kill port 7001 → `node index.js`) untuk pick-up fix; Owner boleh pantau konsol semasa terjemahan seterusnya.
+
+---
+
 ## 2026-10-25 — v3.19.1 HYBRID GUARD PENALTY GEMINI 3.6+ (MAZBAB PILIHAN B, GROUND TRUTH GOOGLE 2026-10-22)
 
 - **Tarikh:** 2026-10-25 ~15:28 (waktu tempatan KL)
