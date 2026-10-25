@@ -1,6 +1,9 @@
 ## 2026-10-25 — v3.19.7 HOTFIX: SIGNATURE GATE PARTIAL SAVES (SISA 7× TULISAN 696/696 RUN KEMPAT — DEDUP FINGERPRINT TAK MENCUKUPI)
 
 - **Tarikh:** 2026-10-25 ~07:53 (waktu tempatan KL)
+- **Komit SHA (HEAD):** `7daacd55` + CI run ID 40246761112 = **SUCCESS** (Node 22 ✓ 1m0s / Node 24 ✓ 1m1s; push diverifikasi `git rev-parse` HEAD = `7daacd553f02b6ba87e3794f523e59677019f193` = origin/main).
+
+- **Tarikh:** 2026-10-25 ~07:53 (waktu tempatan KL)
 - **Komit SHA (HEAD):** (direkod selepas push)
 - **Keputusan Owner:** Owner jalankan run keempat selepas deploy v3.19.6 + hantar log; file log VPS masih merakam 7× `Partial SAVED: batch 14/14, 696/696` (~20ms) walaupun kod v3.19.6 disahkan live dalam container (`grep partialSavesInFlight /app/src/handlers/subtitles.js` = 4 padanan). Mandat berterusan "sapu bersih semua masalah".
 - **Forensik susulan:** dedup fingerprint v3.19.6 berkesan untuk payload IDENTIK sahaja — run keempat membuktikan kandungan partial SRT **berubah-ubah antara callback** (rebuild auto-chunk pada kiraan entri sama) → fingerprint SHA1 berbeza → 7 tulisan lolos. Kiraan entri sama = tiada maklumat baharu untuk pengguna = tulisan sifar nilai.
