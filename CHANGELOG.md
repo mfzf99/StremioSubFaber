@@ -2,6 +2,25 @@
 
 All notable changes to this project will be documented in this file.
 
+## SubFaber v3.19.1 (2026-10-25) — Hybrid Guard Parameter Penalty Gemini 3.6+ (Mandat Owner 2026-10-25, Pilihan B)
+
+### 🔧 Fixed — Gemini Native Sampling & Penalty Doctrine (Ground Truth Google 2026-10-22)
+
+- **Hybrid Guard untuk parameter penalty ([gemini.js](src/services/gemini.js)):** ground truth rasmi Google (docs.cloud.google.com, inference reference, last updated 2026-10-22, disedut 2026-10-25) mengesahkan bahawa untuk model **Gemini 3.6 Flash dan kemudian**, parameter sampling (`temperature`/`topP`/`topK`) **diabaikan secara senyap** oleh pelayan manakala parameter penalization (`frequencyPenalty`/`presencePenalty`) **pulangkan ERROR 400**. `buildGenerationConfig()` kini melaksanakan mandat Owner Pilihan B (Hybrid Guard): `temperature`/`topP` KEKAL dihantar untuk SEMUA keluarga Gemini 3.x (doktrin SEND-ALL 2026-10-16 untuk sampling — selamat kerana diabaikan senyap dan memelihara keserasian gateway proksi pihak ketiga), tetapi `frequencyPenalty`/`presencePenalty` **DITEKAN** untuk keluarga `3.x-strict` sahaja (3.6+, 3.5-flash-lite, 3.5-flash & 3.7-flash reroute v3.9.46, alias `-latest`, Gemini 4+) bagi menghalang HTTP 400; amaran debug dicetak jika nilai ditetapkan eksplisit oleh pengguna.
+- **Keluarga LEGACY (3.0, 3.1) & 2.5/2.0/1.5/Gemma kekal tingkah laku sedia ada:** penalty dihantar jika ditetapkan — tiada perubahan.
+- **Ujian regresi [GT-1] dikemas kini ([gemini-auth-model-regression.test.js](src/services/gemini-auth-model-regression.test.js)):** assertion kontrak lama SEND-ALL penalty (dihantar untuk 3.8) ditulis semula kepada kontrak Hybrid Guard (sampling dihantar, penalty ditekan untuk `3.x-strict`, `topK` kekal haram, mapping `disabled → low` kekal).
+
+### 📚 Dokumentasi
+
+- **Ground truth baharu:** [`plans/gemini-enterprise-agent-platform-ground-truth-2026.md`](plans/gemini-enterprise-agent-platform-ground-truth-2026.md) — sedutan penuh 5 halaman rujukan Gemini Enterprise Agent Platform (inference sample-requests, function-calling, grounding, code-execution, tuning) termasuk `thinkingLevel` enum rasmi, `continuationToken` long decode, syarat JSON valid 100% (`responseSchema` wajib bersama `responseMimeType: application/json`), max 128 function declarations, dan limitasi code-execution (30s, tiada file I/O).
+- **Laporan keputusan:** [`plans/sendall-vs-doc-rasmi-laporan-keputusan.md`](plans/sendall-vs-doc-rasmi-laporan-keputusan.md) — perbandingan berimbang SEND-ALL DOCTRINE vs dokumen rasmi dengan 3 pilihan keputusan (A/B/C) untuk Owner; Pilihan B (Hybrid Guard) telah diluluskan dan dilaksanakan dalam release ini.
+
+### 🔒 Invariant Dikekalkan
+
+- Whitelist reroute `gemini-3.5-flash`/`gemini-3.7-flash` (Keputusan Owner #1, v3.9.46) — tidak disentuh.
+- `topK` kekal 100% HARAM (v1.6.0, nucleus sampling).
+- `systemInstruction` kekal top-level `{ parts: [{ text }] }` (REST v1beta rasmi).
+
 ## SubFaber v3.19.0 (2026-10-25) — Penyatuan Mutlak API Request Body Merentas Pintu & Ejen Trinity (Door-Centric Architecture)
 
 ### 🔧 Refactoring — Channel-Centric Payload Unification (Mandat Owner 2026-10-25)

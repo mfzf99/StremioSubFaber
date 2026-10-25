@@ -330,14 +330,17 @@ test('Configure and Toolbox pages expose current Gemini choices and model-aware 
 
 // ─── Fasa 5: Kunci Ground Truth — family-aware payload & schema regression ───
 
-test('[GT-1 / SEND-ALL 2026-10-16] gemini-3.8-flash: sampling DIHANTAR bila ditetapkan; disabled -> low mapping kekal', () => {
+test('[GT-1 / HYBRID GUARD 2026-10-25] gemini-3.8-flash: sampling DIHANTAR bila ditetapkan; penalty DITEKAN (3.x-strict); disabled -> low mapping kekal', () => {
     // [SEND-ALL] sampling tiada hanya kerana instance tidak menetapkannya.
     const service = new GeminiService('test-key', 'gemini-3.8-flash', { thinkingLevel: 'disabled' });
     const cfg = service.buildGenerationConfig(4096);
     assert.equal('topK' in cfg, false, 'topK kekal haram (v1.6.0)');
     assert.equal(cfg.thinkingConfig.thinkingLevel, 'low'); // BUKAN 'minimal' — elak ralat API 3.7/3.8
 
-    // Instance yang menetapkan sampling/penalty → DIHANTAR (doktrin send-all).
+    // Instance yang menetapkan sampling → DIHANTAR (doktrin send-all untuk sampling).
+    // Penalty → DITEKAN untuk keluarga 3.x-strict: dokumen rasmi Google (inference
+    // reference, 2026-10-22) mengesahkan frequencyPenalty/presencePenalty PULANGKAN
+    // ERROR pada Gemini 3.6 Flash dan kemudian (Mandat Owner 2026-10-25, Pilihan B).
     const tuned = new GeminiService('test-key', 'gemini-3.8-flash', {
         thinkingLevel: 'high',
         temperature: 0.4,
@@ -348,8 +351,8 @@ test('[GT-1 / SEND-ALL 2026-10-16] gemini-3.8-flash: sampling DIHANTAR bila dite
     const tunedCfg = tuned.buildGenerationConfig(4096);
     assert.equal(tunedCfg.temperature, 0.4, 'SEND-ALL: 3.8 hantar temperature');
     assert.equal(tunedCfg.topP, 0.9, 'SEND-ALL: 3.8 hantar topP');
-    assert.equal(tunedCfg.frequencyPenalty, 0.5, 'SEND-ALL: 3.8 hantar frequencyPenalty');
-    assert.equal(tunedCfg.presencePenalty, -0.5, 'SEND-ALL: 3.8 hantar presencePenalty');
+    assert.equal('frequencyPenalty' in tunedCfg, false, 'HYBRID GUARD: 3.8 penalty ditekan (elak 400)');
+    assert.equal('presencePenalty' in tunedCfg, false, 'HYBRID GUARD: 3.8 penalty ditekan (elak 400)');
     assert.equal('topK' in tunedCfg, false);
 });
 

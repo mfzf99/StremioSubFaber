@@ -1,3 +1,18 @@
+## 2026-10-25 — v3.19.1 HYBRID GUARD PENALTY GEMINI 3.6+ (MAZBAB PILIHAN B, GROUND TRUTH GOOGLE 2026-10-22)
+
+- **Tarikh:** 2026-10-25 ~15:28 (waktu tempatan KL)
+- **Komit SHA (HEAD):** (direkod selepas push).
+- **Keputusan Owner:** (1) Owner arahkan sedutan 5 halaman ground truth rasmi Gemini Enterprise Agent Platform (inference, function-calling, grounding, code-execution, tuning) untuk rujukan Gemini Native; (2) selepas laporan keputusan berimbang SEND-ALL vs dokumen rasmi dibentangkan, Owner MELULUSKAN **PILIHAN B — HYBRID GUARD**: sampling (`temperature`/`topP`) kekal SEND-ALL untuk semua keluarga 3.x, penalty (`frequencyPenalty`/`presencePenalty`) DITEKAN untuk keluarga `3.x-strict` sahaja bagi menghalang HTTP 400.
+- **Ground truth kritikal (docs.cloud.google.com, last updated 2026-10-22, disedut 2026-10-25):** untuk model **Gemini 3.6 Flash dan kemudian**, sampling params **diabaikan senyap** oleh pelayan manakala penalty params **PULANGKAN ERROR** — Google cadangkan "Remove these parameters". Penemuan lain: `thinkingLevel` enum (MINIMAL/LOW/MEDIUM/HIGH) mekanisme rasmi 3.x; `thinkingBudget` deprecated pada 3.x & 400 pada Gemini 4; `continuationToken` long decode (v1beta1 sahaja, 65,536/32,768 → 1,048,576 token); JSON valid 100% memerlukan `responseSchema` bersama `responseMimeType: application/json`; max 128 function declarations; code-execution 30s/tiada file I/O.
+- **Pembedahan core ([`src/services/gemini.js`](../src/services/gemini.js)):** `buildGenerationConfig()` cabang `thinking === 'level'` kini membaca `family` daripada `getModelFamily()` — sampling dihantar tanpa gate (doktrin SEND-ALL sampling kekal, selamat kerana diabaikan senyap + memelihara keserasian gateway proksi pihak ketiga); `family === '3.x-strict'` (3.6+, 3.5-flash-lite, 3.5-flash & 3.7-flash reroute v3.9.46, alias `-latest`, Gemini 4+) → penalty TIDAK dimasukkan ke `levelConfig` + amaran debug jika ditetapkan eksplisit pengguna; keluarga LEGACY (3.0/3.1) & 2.5/2.0/1.5/Gemma kekal tingkah laku sedia ada (penalty dihantar jika ditetapkan). Invariant dikekalkan: whitelist reroute tidak disentuh, `topK` kekal haram, `systemInstruction` kekal top-level.
+- **Ujian regresi:** `[GT-1]` dalam `gemini-auth-model-regression.test.js` ditulis semula daripada kontrak SEND-ALL lama (penalty dihantar untuk 3.8) kepada kontrak Hybrid Guard (sampling dihantar + `'frequencyPenalty' in tunedCfg === false` + `'presencePenalty' in tunedCfg === false` + topK haram + `disabled → low` kekal).
+- **Dokumentasi baharu:** `plans/gemini-enterprise-agent-platform-ground-truth-2026.md` (sedutan penuh 5 halaman) + `plans/sendall-vs-doc-rasmi-laporan-keputusan.md` (laporan keputusan 3 pilihan A/B/C).
+- **Fail Terlibat:** src/services/gemini.js (M), src/services/gemini-auth-model-regression.test.js (M), package.json (M: 3.19.0→3.19.1), CHANGELOG.md (M), docs/SESSION_LEDGER.md (blok ini), plans/gemini-enterprise-agent-platform-ground-truth-2026.md (A), plans/sendall-vs-doc-rasmi-laporan-keputusan.md (A). Graphify NO-OP (`graphify-out/` tiada).
+- **Status npm test:** **470 total / 469 PASS / 0 FAIL / 1 SKIP** — baseline tepat dipenuhi (monotonik). Prettier `--check .` PASS; ESLint 0 error (2 warning pre-existing luar skop). Cache-buster: runtime 3.19.1 (dibaca dinamik daripada package.json).
+- **Next Steps:** git commit + push → CI `gh` watch SUCCESS → SHA direkodkan dalam blok ini. Owner boleh pantau gelagat pintu Gemini Native pada model 3.6+ (penalty kini ditekan; jika pengguna menetapkan penalty pada model legacy/2.5 ia masih dihantar — tingkah laku sedia ada).
+
+---
+
 ## 2026-10-25 — TELEGRAM BOT VPS DIHIDUPKAN (nota operasi, sifar kod repositori)
 
 - **Tarikh:** 2026-10-25 ~12:51 (waktu tempatan KL)

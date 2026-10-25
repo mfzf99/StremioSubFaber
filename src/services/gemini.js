@@ -782,9 +782,13 @@ class GeminiService {
     }
 
     buildGenerationConfig(maxOutputTokens) {
-        // [SEND-ALL 2026-10-16] `sampling` kekeluargaan tidak lagi mengetuai
-        // sebarang gate — doktrin send-all menghantar sampling untuk semua family.
-        const { thinking } = this.getModelFamily();
+        // [SEND-ALL 2026-10-16 + HYBRID GUARD 2026-10-25] `sampling` kekeluargaan
+        // tidak lagi mengetuai sebarang gate — doktrin send-all menghantar sampling
+        // (temperature/topP) untuk semua family. PENALTY dikecualikan daripada
+        // doktrin untuk keluarga 3.x-strict: dokumen rasmi Google (docs.cloud.google.com,
+        // inference reference, last updated 2026-10-22) mengesahkan frequencyPenalty/
+        // presencePenalty PULANGKAN ERROR pada Gemini 3.6 Flash dan kemudian.
+        const { family, thinking } = this.getModelFamily();
 
         // ── Cabang THINKING LEVEL (semua Gemini 3.x) ──────────────────────────────
         if (thinking === 'level') {
@@ -810,20 +814,35 @@ class GeminiService {
             };
 
             // [MANDAT OWNER 2026-10-16 — SEND-ALL DOCTRINE] Gate STRICT-stripping
-            // DIGUGURKAN: temperature/topP/penalty WAJIB dihantar untuk SEMUA
-            // keluarga 3.x (STRICT & LEGACY). Tujuan: pemerhatian empirikal
-            // behaviour pelayan sebenar — biar pelayan provider tentukan sendiri
-            // (terima / abaikan / 400). Histori: 3.6+ pernah di-strip senyap
-            // berdasarkan ground truth lama; doktrin baharu mengatasi sementara
-            // sehingga pemerhatian Owner selesai. topK kekal tidak dihantar
-            // (haram sejak v1.6.0 — nucleus sampling).
+            // DIGUGURKAN untuk SAMPLING: temperature/topP WAJIB dihantar untuk SEMUA
+            // keluarga 3.x (STRICT & LEGACY). Google mengabaikan parameter ini secara
+            // senyap pada 3.6+ ("ignored if set") — selamat dihantar dan memelihara
+            // keserasian gateway/proksi pihak ketiga yang mungkin memprosesnya.
+            // topK kekal tidak dihantar (haram sejak v1.6.0 — nucleus sampling).
             if (this.temperature !== undefined) levelConfig.temperature = this.temperature;
             if (this.topP !== undefined) levelConfig.topP = this.topP;
-            if (this.frequencyPenalty !== undefined) {
-                levelConfig.frequencyPenalty = this.frequencyPenalty;
-            }
-            if (this.presencePenalty !== undefined) {
-                levelConfig.presencePenalty = this.presencePenalty;
+
+            // [MANDAT OWNER 2026-10-25 — HYBRID GUARD (PILIHAN B)] Penalty params
+            // DITEKAN untuk keluarga 3.x-strict sahaja (3.6+, 3.5-flash-lite,
+            // 3.5-flash & 3.7-flash reroute v3.9.46, alias -latest, Gemini 4+):
+            // dokumen rasmi mengesahkan frequencyPenalty/presencePenalty
+            // PULANGKAN ERROR (bukan diabaikan) pada Gemini 3.6 Flash dan kemudian.
+            // Keluarga LEGACY (3.0, 3.1) & 2.5/2.0 kekal menghantar penalty jika
+            // ditetapkan — tingkah laku sedia ada dikekalkan.
+            if (family === '3.x-strict') {
+                if (this.frequencyPenalty !== undefined || this.presencePenalty !== undefined) {
+                    log.debug(
+                        () =>
+                            '[Gemini] frequencyPenalty/presencePenalty suppressed for 3.x-strict model to prevent HTTP 400'
+                    );
+                }
+            } else {
+                if (this.frequencyPenalty !== undefined) {
+                    levelConfig.frequencyPenalty = this.frequencyPenalty;
+                }
+                if (this.presencePenalty !== undefined) {
+                    levelConfig.presencePenalty = this.presencePenalty;
+                }
             }
 
             return levelConfig;
