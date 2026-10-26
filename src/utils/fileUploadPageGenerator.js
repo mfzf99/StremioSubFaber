@@ -284,7 +284,9 @@ function generateFileTranslationPage(videoId, configStr, config, filename = '') 
     const reasoningEffortHelper = t(
         'fileUpload.advanced.reasoning.helper',
         {},
-        'Applies to reasoning-capable OpenAI-style models. Leave blank for default.'
+        // [FASA 2 C4 2026-10-26] Cakupan diperluas: OpenAI, DeepSeek, GLM, Kimi
+        // dan pintu custom yang menyokong reasoning effort.
+        'Applies to reasoning-capable models (OpenAI, DeepSeek, GLM, Kimi, custom). Options follow the active provider. Leave blank for the provider default.'
     );
     const topPLabel = t('fileUpload.advanced.topP.label', {}, 'Top-P (Nucleus Sampling)');
     const topPHelper = t(
@@ -2713,7 +2715,10 @@ function generateFileTranslationPage(videoId, configStr, config, filename = '') 
                                     <option value="medium">${escapeHtml(t('fileUpload.advanced.reasoning.medium', {}, 'Medium'))}</option>
                                     <option value="high">${escapeHtml(t('fileUpload.advanced.reasoning.high', {}, 'High'))}</option>
                                     <option value="xhigh">${escapeHtml(t('fileUpload.advanced.reasoning.xhigh', {}, 'Extra high'))}</option>
+                                    <option value="max">${escapeHtml(t('fileUpload.advanced.reasoning.max', {}, 'Max'))}</option>
+                                    <option value="disabled">${escapeHtml(t('fileUpload.advanced.reasoning.disabled', {}, 'Off (no thinking)'))}</option>
                                 </select>
+                                <p class="form-hint" id="advancedReasoningEffortHint" style="display: none"></p>
                             </div>
 
                             <div class="form-group">
@@ -3388,13 +3393,102 @@ function generateFileTranslationPage(videoId, configStr, config, filename = '') 
             return { thinkingLevel: 'minimal', temperature: 0.2 };
         }
 
+        // [FASA 2 C4 — MANDAT OWNER 2026-10-26] Dialek reasoning per-pembekal.
+        // Sumber ground truth: src/utils/modelCapabilities.js (glmProfile,
+        // deepseekProfile, kimiProfile, openaiProfile) — cermin TEPAT.
+        // Nota: 'medium'/'xhigh' SAH untuk keluarga OpenAI (o-series/gpt-5.2+)
+        // dan TIDAK boleh dibuang di sana; ia hanya tidak sah untuk GLM/Kimi.
+        function getReasoningEffortOptions(providerKey, modelId) {
+            const normalized = normalizeProviderKey(providerKey);
+            const m = normalizeGeminiModelId(modelId);
+            // GLM: 5.3 = always-on (low/high/max); 5.2 = +disabled; 5.1 = disabled/low
+            if (normalized === 'zhipu' || /^glm/.test(m)) {
+                if (/^glm-5\.3(?:-|$)/.test(m)) return ['low', 'high', 'max'];
+                if (/^glm-5\.2(?:-|$)/.test(m)) return ['disabled', 'low', 'high', 'max'];
+                if (/^glm-5\.1(?:-|$)/.test(m)) return ['disabled', 'low'];
+            }
+            // Kimi K3 / K2.7 — always-on (low/high/max)
+            if (normalized === 'moonshot' || /kimi-k3/.test(m)) {
+                return /k2\.7/.test(m) ? ['low'] : ['low', 'high', 'max'];
+            }
+            // DeepSeek — semua model: disabled (wire 'none') / low / high / max
+            if (normalized === 'deepseek' || /^deepseek/.test(m)) {
+                return ['disabled', 'low', 'high', 'max'];
+            }
+            // Keluarga OpenAI reasoning (o-series / gpt-5.x) — enum rasmi penuh
+            if (normalized === 'openai' || /^gpt-|^o\d/.test(m)) {
+                return /^gpt-5\.[2-9]|^gpt-6/.test(m)
+                    ? ['none', 'low', 'medium', 'high', 'xhigh']
+                    : ['low', 'medium', 'high'];
+            }
+            // Custom/Proxy & pintu generik — ikut dialek model bila dikenali.
+            if (/^gemini|^gemma/.test(m)) return [];
+            return ['disabled', 'low', 'high', 'max'];
+        }
+
+        // [FASA 2 C4] Bina semula pilihan dropdown reasoning mengikut dialek aktif
+        // + tunjuk nota mikro bila enum penuh tidak berkenaan.
+        function refreshReasoningEffortOptions(providerKey) {
+            const select = document.getElementById('advancedReasoningEffort');
+            if (!select) return;
+            const model = getConfiguredModelForProvider(providerKey) || '';
+            const options = getReasoningEffortOptions(providerKey, model);
+            if (!Array.isArray(options) || options.length === 0) return;
+            const previous = String(select.value || '');
+            const labels = {
+                none: 'None',
+                minimal: 'Minimal',
+                disabled: 'Off (no thinking)',
+                low: 'Low',
+                medium: 'Medium',
+                high: 'High',
+                xhigh: 'Extra high',
+                max: 'Max'
+            };
+            select.innerHTML = '';
+            const placeholder = document.createElement('option');
+            placeholder.value = '';
+            placeholder.textContent = 'None (use provider default)';
+            select.appendChild(placeholder);
+            options.forEach((val) => {
+                const opt = document.createElement('option');
+                opt.value = val;
+                opt.textContent = labels[val] || val;
+                select.appendChild(opt);
+            });
+            select.value = options.includes(previous) ? previous : '';
+            const hint = document.getElementById('advancedReasoningEffortHint');
+            if (hint) {
+                const isAlwaysOn = /^(glm-5\.3|kimi-k3)/.test(normalizeGeminiModelId(model));
+                hint.textContent = isAlwaysOn
+                    ? 'This model always thinks — only the effort level is configurable.'
+                    : '';
+                hint.style.display = isAlwaysOn ? 'block' : 'none';
+            }
+        }
+
         function updateThinkingControls(providerKey) {
             const normalized = normalizeProviderKey(providerKey);
             const levelSelect = document.getElementById('advancedThinkingLevel');
             
             if (normalized === 'gemini') {
-                if (thinkingBudgetGroup) thinkingBudgetGroup.style.display = 'none';
-                if (thinkingLevelGroup) thinkingLevelGroup.style.display = '';
+                // [FASA 2 C4 2026-10-26] Bezakan keluarga: Gemini 2.5 guna
+                // thinkingBudget INTEGER (tiada level), Gemini 3.x guna
+                // thinkingLevel ENUM. Sebelum ini 2.5 tersilap dapat level.
+                const selectedModelForFamily = getSelectedGeminiModel();
+                const isGemini25 = /^gemini-2\.5/.test(normalizeGeminiModelId(selectedModelForFamily));
+                if (thinkingBudgetGroup) thinkingBudgetGroup.style.display = isGemini25 ? '' : 'none';
+                if (thinkingLevelGroup) thinkingLevelGroup.style.display = isGemini25 ? 'none' : '';
+                if (isGemini25) {
+                    if (advancedThinkingBudget) {
+                        const isPro = /^gemini-2\.5-pro/.test(normalizeGeminiModelId(selectedModelForFamily));
+                        advancedThinkingBudget.min = isPro ? '128' : '-1';
+                        advancedThinkingBudget.title = isPro
+                            ? 'Gemini 2.5 Pro: min 128 (cannot be disabled)'
+                            : '0 = off, -1 = dynamic';
+                    }
+                    return;
+                }
 
                 const selectedModel = getSelectedGeminiModel();
                 const profile = getModelThinkingProfile(selectedModel);
@@ -3535,9 +3629,31 @@ function generateFileTranslationPage(videoId, configStr, config, filename = '') 
             const normalized = normalizeProviderKey(providerKey);
             const isDeepL = normalized === 'deepl';
             const isGoogle = normalized === 'googletranslate';
+            // [FASA 2 C4 — MANDAT OWNER 2026-10-26] Reasoning dibuka kepada
+            // SEMUA pintu LLM yang menyokongnya (bukan OpenAI sahaja):
+            // DeepSeek / Custom-Proxy / GLM / Kimi / Moonshot / OpenRouter /
+            // Groq / Together / Cerebras / SambaNova / Perplexity / Qwen / xAI.
+            // Cermin capability map src/utils/modelCapabilities.js.
+            const reasoningDoors = [
+                'openai',
+                'deepseek',
+                'custom',
+                'custom_secondary',
+                'zhipu',
+                'moonshot',
+                'openrouter',
+                'groq',
+                'together',
+                'cerebras',
+                'sambanova',
+                'perplexity',
+                'qwen',
+                'xai',
+                'mistral'
+            ];
             return {
                 supportsThinking: normalized === 'gemini' || normalized === 'anthropic',
-                supportsReasoning: normalized === 'openai',
+                supportsReasoning: reasoningDoors.includes(normalized),
                 supportsFormality: isDeepL,
                 supportsTemperature: !isDeepL && !isGoogle,
                 supportsTopP: !isDeepL && !isGoogle,
@@ -3700,6 +3816,11 @@ function generateFileTranslationPage(videoId, configStr, config, filename = '') 
             if (reasoningEffortGroup) {
                 reasoningEffortGroup.style.display = caps.supportsReasoning ? '' : 'none';
             }
+            // [FASA 2 C4 — MANDAT OWNER 2026-10-26] Dropdown reasoning dibina
+            // semula mengikut dialek pembekal/model aktif (bukan enum lapuk).
+            if (caps.supportsReasoning) {
+                refreshReasoningEffortOptions(normalized);
+            }
             if (formalityGroup) {
                 formalityGroup.style.display = caps.supportsFormality ? '' : 'none';
             }
@@ -3753,7 +3874,11 @@ function generateFileTranslationPage(videoId, configStr, config, filename = '') 
                 advancedMaxRetries.value = params.maxRetries ?? baseAdvancedSettings.maxRetries ?? 2;
             }
             if (advancedReasoningEffort && caps.supportsReasoning) {
-                advancedReasoningEffort.value = params.reasoningEffort || '';
+                // [FASA 2 C4] Hanya pulihkan nilai yang SAH dalam dialek aktif;
+                // nilai lapuk (cth 'medium' pada GLM) tidak dipaksa ke dropdown.
+                const dialect = getReasoningEffortOptions(normalized, getSelectedGeminiModel());
+                const desired = String(params.reasoningEffort || '');
+                advancedReasoningEffort.value = dialect.includes(desired) ? desired : '';
             }
             if (advancedFormality && caps.supportsFormality) {
                 advancedFormality.value = params.formality || 'default';

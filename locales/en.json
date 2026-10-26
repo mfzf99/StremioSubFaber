@@ -1538,14 +1538,16 @@
         },
         "reasoning": {
           "label": "Reasoning Effort",
-          "helper": "Applies to reasoning-capable OpenAI-style models. Leave blank for default.",
+          "helper": "Applies to reasoning-capable models (OpenAI, DeepSeek, GLM, Kimi, custom). Options follow the active provider. Leave blank for the provider default.",
           "default": "None (use provider default)",
           "none": "None",
           "minimal": "Minimal",
           "low": "Low",
           "medium": "Medium",
           "high": "High",
-          "xhigh": "Extra high"
+          "xhigh": "Extra high",
+          "max": "Max",
+          "disabled": "Off (no thinking)"
         },
         "topP": {
           "label": "Top-P (Nucleus Sampling)",

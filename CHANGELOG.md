@@ -2,6 +2,26 @@
 
 All notable changes to this project will be documented in this file.
 
+## SubFaber v3.22.0 (2026-10-26) — Fasa 2 Ketepatan Semantik & Penyelarasan Toolbox: Mesej Hybrid Guard, Rehidrasi Parameter, Bajet Gemini 2.5 Pro & Dialek Reasoning (Mandat Owner)
+
+### 🔧 Fixed — 4 Hutang Sederhana Dua-Kepala Dibayar (A1, B1, B2, C4)
+
+- **A1 — Ketepatan Mesej UI Hybrid Guard ([trinity-agents.js](public/js/trinity-agents.js)):** `MP_NOTE_TEXT` dan `MP_UIHINT_TEXT` kini mengasingkan dua semantik berbeza: Temperature/Top-P **DIHANTAR** (dihabaikan senyap oleh Google pada 3.6+, "ignored if set") vs Frequency/Presence Penalty **DISEKAT** oleh enjin (HTTP 400). Kunci `uiHint` baharu `penalties-blocked-3x-strict` dipasang pada descriptor penalty profil `3.x-strict` supaya amaran muncul pada setiap medan.
+- **B1 — Rehidrasi Parameter & Enum Lengkap ([config.js](public/config.js)):** `mergeProviderParameters()` frontend kini mengekalkan `frequencyPenalty`/`presencePenalty` (clamp -2..2) — cermin backend; sebelum ini nilai dibuang senyap semasa rehidrasi. `sanitizeReasoningEffort()` menerima enum penuh backend `['none','minimal','disabled','low','medium','high','xhigh','max']`.
+- **B2 — Had Minimum Thinking Budget Gemini 2.5 Pro ([trinity-agents.js](public/js/trinity-agents.js) + [config.js](public/config.js)):** `mpClampGemini25ProBudget()` + `clampGeminiThinkingBudget()` — bajet tersuai > 0 tetapi < 128 dinaikkan ke 128 (cermin `buildGenerationConfig()` enjin); nilai `-1` (dinamik) dan `0` (mati) kekal sah.
+- **C4 — Seni Bina Toolbox Capability-Driven ([fileUploadPageGenerator.js](src/utils/fileUploadPageGenerator.js)):** `getProviderCapabilities()` membuka kawalan reasoning kepada DeepSeek/Custom/GLM/Kimi/Moonshot/OpenRouter/Groq/Together/Cerebras/SambaNova/Perplexity/Qwen/xAI/Mistral (sebelum ini OpenAI sahaja). Fungsi baharu `getReasoningEffortOptions()` + `refreshReasoningEffortOptions()` membina dropdown mengikut dialek pembekal aktif (DeepSeek `disabled/low/high/max`; GLM-5.3 & Kimi-K3 always-on `low/high/max`; GLM-5.2 `+disabled`; GLM-5.1 `disabled/low`; OpenAI moden kekal `none/low/medium/high/xhigh` — enum rasmi). `updateThinkingControls()` kini membezakan Gemini 2.5 (thinkingBudget integer, min 128 Pro) berbanding Gemini 3.x (thinkingLevel enum). Dropdown statik ditambah pilihan `max`/`disabled` + nod hint; teks bantuan i18n dikemas kini ([locales/en.json](locales/en.json)).
+
+### ✅ Verifikasi Playwright (Gear 2, kunci sintetik sifar rahsia)
+
+- A1: nota + 4 hint per-medan tepat pada `gemini-3.8-flash`.
+- B1: payload `{reasoningEffort:'max', frequencyPenalty:0.7, presencePenalty:-0.3}` kekal; dropdown DeepSeek tanpa `medium`.
+- B2: input `10` → DOM `128`, payload `thinkingBudget:128`; `0` sah.
+- C4: 7 kombinasi dialek diuji tepat; caps `deepl/gemini=false` betul; visual critique lulus.
+
+### 🧪 Tests
+
+- `npm test`: **475 total / 474 PASS / 0 FAIL / 1 SKIP** (baseline monotonik 475 dipelihara; satu kegagalan flaky timing `provider-retry-backoff` disahkan lulus 8/8 secara berasingan dan hijau pada larian semula penuh). Prettier PASS; ESLint 0 error (226 warning pre-existing).
+
 ## SubFaber v3.21.0 (2026-10-26) — Fasa 1 Pembedahan Kritikal Tri-Door: Kedaulatan Pintu Custom Anthropic + Parameter Pro Sebenar + Pengasingan Pengangkutan Preflight/Inspector (Mandat Owner)
 
 ### 🔧 Fixed — 3 Hutang Kritikal Dua-Kepala (Audit Seamless Gearbox) Dibayar Penuh

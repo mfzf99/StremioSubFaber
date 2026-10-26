@@ -1,3 +1,16 @@
+## 2026-10-26 — v3.22.0 FASA 2 KETEPATAN SEMANTIK & PENYELARASAN TOOLBOX: MESEJ HYBRID GUARD, REHIDRASI PARAMETER, BAJET GEMINI 2.5 PRO & DIALEK REASONING (MANDAT OWNER)
+
+- **Tarikh:** 2026-10-26 ~14:20 (waktu tempatan KL)
+- **Komit SHA (HEAD):** (direkod selepas push)
+- **Keputusan Owner:** Mandat Fasa 2 — selesaikan 4 hutang sederhana audit dua-kepala (A1, B1, B2, C4): hapuskan percanggahan semantik UI, betulkan rehidrasi parameter, selaraskan had bajet Gemini 2.5 Pro, naik taraf Toolbox mengikut seni bina keupayaan Configure. Aliran Gear 1 (kontrak src/) → Gear 2 (pembedahan + Playwright) → Gear 3 (audit + npm test + 8-Step).
+- **Pembedahan (4 fail, sifar perubahan runtime src/ kontrak):** (a) A1 — [public/js/trinity-agents.js] MP_NOTE_TEXT/MP_UIHINT_TEXT diasingkan (sampling-dihantar vs penalty-disekat) + uiHint `penalties-blocked-3x-strict` pada descriptor penalty strict. (b) B1 — [public/config.js] mergeProviderParameters kekal frequencyPenalty/presencePenalty + sanitizeReasoningEffort enum penuh cermin backend. (c) B2 — [public/js/trinity-agents.js] mpClampGemini25ProBudget (collect-time clamp) + [public/config.js] clampGeminiThinkingBudget Pro min 128 (-1/0 sah). (d) C4 — [src/utils/fileUploadPageGenerator.js] getProviderCapabilities supportsReasoning 15 pintu, getReasoningEffortOptions + refreshReasoningEffortOptions (dialek per pembekal/model), updateThinkingControls 2.5-budget vs 3.x-level, markup max/disabled + hint; i18n [locales/en.json] helper + label.
+- **Verifikasi Playwright (kunci sintetik):** A1 nota+4 hint tepat (gemini-3.8-flash); B1 payload penalty/effort kekal + dropdown DeepSeek tanpa medium; B2 input 10→128 & payload 128 & 0 sah; C4 7 kombinasi dialek tepat + caps betul + visual critique lulus. Nota: satu larian npm test pertama mengalami 1 FAIL flaky timing (provider-retry-backoff gap 70ms vs 71ms) — lulus 8/8 berasingan + hijau pada larian semula penuh; bukan regresi (fail tiada kaitan dengan perubahan Fasa 2).
+- **Fail Terlibat:** public/js/trinity-agents.js, public/config.js, src/utils/fileUploadPageGenerator.js, locales/en.json, package.json (3.21.0→3.22.0), CHANGELOG.md. Graphify NO-OP (`graphify-out/` tiada).
+- **Status npm test:** **475 total / 474 PASS / 0 FAIL / 1 SKIP** — baseline monotonik 475 dipelihara. Prettier `--check .` PASS; ESLint 0 error (226 warning pre-existing). Cache-buster: runtime 3.22.0 (dinamik daripada package.json).
+- **Next Steps:** commit + push → CI `gh` watch SUCCESS → SHA direkod → deploy VPS. Hutang A2/B3 (kosmetik: cermin getModelFamily legacy, default 0.2/8192) menunggu mandat Owner.
+
+---
+
 ## 2026-10-26 — v3.21.0 FASA 1 PEMBEDAHAN KRITIKAL TRI-DOOR: KEDAULATAN PINTU CUSTOM ANTHROPIC + PARAMETER PRO SEBENAR + PENGASINGAN PENGANGKUTAN PREFLIGHT/INSPECTOR (MANDAT OWNER)
 
 - **Tarikh:** 2026-10-26 ~13:40 (waktu tempatan KL)

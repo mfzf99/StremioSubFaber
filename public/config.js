@@ -1228,7 +1228,18 @@ Translate to {target_language}.`;
         const parsed = parseInt(value, 10);
         const fallbackValue = Number.isFinite(parseInt(fallback, 10)) ? parseInt(fallback, 10) : caps.thinkingBudgetMin;
         const chosen = Number.isFinite(parsed) ? parsed : fallbackValue;
-        return Math.max(caps.thinkingBudgetMin, Math.min(caps.thinkingBudgetMax, chosen));
+        const clamped = Math.max(caps.thinkingBudgetMin, Math.min(caps.thinkingBudgetMax, chosen));
+        // [FASA 2 B2 — MANDAT OWNER 2026-10-26] Cermin clamp enjin
+        // (src/services/gemini.js buildGenerationConfig): Gemini 2.5 Pro tidak
+        // boleh dimatikan — custom > 0 dipaksa minimum 128. -1 (dinamik) dan
+        // 0 (mati) KEKAL sah dan tidak disentuh.
+        const normalizedModel = normalizeGeminiModelName(modelName)
+            .toLowerCase()
+            .replace(/^models\//, '');
+        if (/^gemini-2\.5-pro/.test(normalizedModel) && clamped > 0 && clamped < 128) {
+            return 128;
+        }
+        return clamped;
     }
 
     function sanitizeGeminiThinkingLevel(value, fallback = 'minimal') {
@@ -1638,7 +1649,12 @@ Translate to {target_language}.`;
             if (value === '' || value === null || value === undefined) {
                 return undefined;
             }
-            const allowed = ['none', 'minimal', 'low', 'medium', 'high', 'xhigh'];
+            // [FASA 2 B1 — MANDAT OWNER 2026-10-26] Cermin TEPAT enum backend
+            // (src/utils/config.js sanitizeReasoningEffort, baris ~141):
+            // 'disabled' (DeepSeek/GLM ON-OFF token) dan 'max' (GLM-5.3/Kimi-K3
+            // dialect) WAJIB diterima — tanpa ini nilai sah UI dibuang senyap
+            // semasa rehidrasi/save.
+            const allowed = ['none', 'minimal', 'disabled', 'low', 'medium', 'high', 'xhigh', 'max'];
             const normalized = typeof value === 'string' ? value.trim().toLowerCase() : '';
             return allowed.includes(normalized) ? normalized : fallback;
         };
@@ -1662,6 +1678,24 @@ Translate to {target_language}.`;
                         : 0;
                     const chosen = Number.isFinite(requested) ? requested : fallback;
                     return Math.max(-1, Math.min(200000, chosen));
+                })(),
+                // [FASA 2 B1 — MANDAT OWNER 2026-10-26] Penalty DIPELIHARA —
+                // cermin backend (src/utils/config.js mergeProviderParameters).
+                // Sebelum ini kedua-dua medan dibuang senyap → rehidrasi hilang
+                // nilai pengguna walaupun pintu menyokongnya (Send-All).
+                frequencyPenalty: (() => {
+                    const requested = Number.isFinite(parseFloat(raw?.frequencyPenalty))
+                        ? parseFloat(raw.frequencyPenalty)
+                        : NaN;
+                    if (!Number.isFinite(requested)) return defaults.frequencyPenalty;
+                    return Math.max(-2, Math.min(2, requested));
+                })(),
+                presencePenalty: (() => {
+                    const requested = Number.isFinite(parseFloat(raw?.presencePenalty))
+                        ? parseFloat(raw.presencePenalty)
+                        : NaN;
+                    if (!Number.isFinite(requested)) return defaults.presencePenalty;
+                    return Math.max(-2, Math.min(2, requested));
                 })(),
                 formality:
                     typeof raw?.formality === 'string'
