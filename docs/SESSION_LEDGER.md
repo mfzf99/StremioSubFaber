@@ -1,3 +1,15 @@
+## 2026-10-26 — v3.25.1 THE FINALE PROMPT TRINITY UNIVERSAL EDITION (MANDAT OWNER)
+
+- **Tarikh:** 2026-10-26 ~21:36 (waktu tempatan KL)
+- **Komit SHA (HEAD):** (direkod selepas push + CI SUCCESS)
+- **Keputusan Owner:** Kunci versi akhir ketiga-tiga ejen Trinity dan kedua-dua few-shot: neutralisasi bahasa sumber Preflight, pembacaan skrin dan penyusunan klausa SVO↔SOV Translation, `<answer>` serta placeholder SDH few-shot, pengecualian split-sentence Inspector, dan REGISTER berdasarkan canonical/direct address sahaja; lepaskan melalui 8-Step Release Pipeline penuh.
+- **Integration Self-Audit (Langkah 0):** Rantaian `buildPreflightPrompt()` → `createXmlBatchPrompt()` → `buildInspectionPayload()` dan 9 wrapper Trinity disahkan. Perubahan terhad kepada teks core/language packs + assertion; `systemInstruction` top-level, system/user split, JSON schema, parser, prefill Gemini, dan kontrak 7 jenayah kekal. Audit `public/` membuktikan tiada pendua core prompt, maka sifar perubahan UI/payload serialization/rehidrasi/DOM/server schema. Working tree awal bersih — tiada perubahan Zoo Code tertangguh untuk dirangkumkan.
+- **Fail Terlibat:** src/services/prompts/trinity/preflight/core.js (M), src/services/prompts/trinity/translation/core.js (M), src/services/prompts/trinity/inspector/core.js (M), src/services/prompts/languagePacks/generic.js (M), src/services/prompts/languagePacks/malay.js (M), src/services/agent-inspector-regression.test.js (M), src/services/trinity-prompt-matrix-regression.test.js (M: +4 ujian), package.json/package-lock.json (3.25.0→3.25.1), CHANGELOG.md, docs/SESSION_LEDGER.md (blok ini).
+- **Status npm test:** **489 total / 488 PASS / 0 FAIL / 1 SKIP** — baseline monotonik 484→489. Ujian bersasar 201/201 PASS; Prettier `--check .` PASS; ESLint 0 error (warning pre-existing); `git diff --check` PASS. Cache-buster runtime 3.25.1 dan token `__APP_VERSION_QUERY__` disahkan. Graphify NO-OP (`graphify-out/` tiada).
+- **Next Steps:** Commit + push origin main → `gh run watch` sehingga SUCCESS → rekod SHA + CI run ID dalam blok ini → deploy VPS mengikut prosedur standard projek.
+
+---
+
 ## 2026-10-26 — v3.25.0 POOL KUNCI GEMINI NATIVE PER-EJEN TRINITY + REHIDRASI KANONIK (MANDAT OWNER)
 
 - **Tarikh:** 2026-10-26 ~19:52 (waktu tempatan KL)

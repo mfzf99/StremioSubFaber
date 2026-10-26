@@ -291,8 +291,10 @@ test('AgentInspector: inspector instruction defines UNTRANSLATED + REGISTER with
         'REGISTER definition (percanggahan gelaran/kata ganti) mesti hadir'
     );
     assert.ok(
-        INSPECTOR_INSTRUCTION.includes('Only flag when the Character Address Reference provides the locked value'),
-        'REGISTER mesti hanya trigger bila rujukan alamat wujud (elak audit buta)'
+        INSPECTOR_INSTRUCTION.includes(
+            'Only flag when the Character Address Reference explicitly provides the non-null locked value'
+        ),
+        'REGISTER mesti hanya trigger bila rujukan alamat bukan-null wujud (elak audit buta)'
     );
 });
 
@@ -329,16 +331,32 @@ test('AgentInspector: formatPreflightContextForInspection renders locked pronoun
     );
 });
 
-// [HARMONY v2 2026-09-29] H1: REGISTER crime covers BOTH honorific AND pronoun
-test('AgentInspector: REGISTER definition covers honorific AND pronoun-register mismatch', () => {
+// [FINALE UNIVERSAL 2026-10-26] REGISTER follows fields actually emitted by Preflight.
+test('AgentInspector: REGISTER audits canonical/direct addresses without phantom pronoun pairing', () => {
     assert.ok(
-        INSPECTOR_INSTRUCTION.includes('honorific/title mismatch'),
-        'REGISTER must cover honorific/title mismatch'
+        INSPECTOR_INSTRUCTION.includes('third-person canonical_address mismatch'),
+        'REGISTER must cover third-person canonical_address mismatch'
     );
     assert.ok(
-        INSPECTOR_INSTRUCTION.includes('pronoun-register mismatch'),
-        'REGISTER must ALSO cover pronoun-register mismatch (H1 harmony)'
+        INSPECTOR_INSTRUCTION.includes('face-to-face direct_address mismatch'),
+        'REGISTER must ALSO cover face-to-face direct_address mismatch'
     );
+    assert.ok(
+        INSPECTOR_INSTRUCTION.includes('explicitly provides the non-null locked value'),
+        'REGISTER must require an explicit non-null lock before flagging'
+    );
+    assert.ok(
+        !INSPECTOR_INSTRUCTION.includes('pronoun-register mismatch'),
+        'REGISTER must not audit pronoun pairings absent from the Preflight schema'
+    );
+});
+
+// [FINALE UNIVERSAL 2026-10-26] Split-sentence grammar reordering is not a positional crime.
+test('AgentInspector: adjacent split-sentence clause reordering is exempt from SHIFT and DROP', () => {
+    assert.ok(INSPECTOR_INSTRUCTION.includes('For a single sentence split across adjacent slots'));
+    assert.ok(INSPECTOR_INSTRUCTION.includes('SVO ↔ SOV word order'));
+    assert.ok(INSPECTOR_INSTRUCTION.includes('must NOT be flagged as SHIFT or DROP'));
+    assert.ok(INSPECTOR_INSTRUCTION.includes('both slots remain populated and the combined meaning is complete'));
 });
 
 // [HARMONY v2 2026-09-29] H2: Agent Inspector must NOT punish legitimate craft (compression/idiom)

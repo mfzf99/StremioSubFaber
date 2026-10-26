@@ -2,6 +2,25 @@
 
 All notable changes to this project will be documented in this file.
 
+## SubFaber v3.25.1 (2026-10-26) — The Finale Prompt Trinity Universal Edition (Mandat Owner)
+
+### 🌐 Changed — Kontrak Universal Merentas Bahasa dan Kelas LLM
+
+- **Agent Preflight ([`core.js`](src/services/prompts/trinity/preflight/core.js)):** Contoh `direct_address` kini menggunakan “a source line” dan bebas daripada bias English, selari dengan sokongan ratusan pasangan bahasa sumber/sasaran.
+- **Agent Translation ([`core.js`](src/services/prompts/trinity/translation/core.js)):** Prinsip Subtitle Economy & Flow membenarkan pemampatan untuk tempoh bacaan di skrin tanpa kehilangan maksud atau impak emosi. ANTI-MERGE kini membenarkan penyusunan semula klausa hanya merentas slot bersebelahan bagi ayat bersambung apabila dituntut oleh susunan kata bahasa sasaran, termasuk SVO ↔ SOV, sambil mengekalkan ID, susunan, dan setiap slot berisi.
+- **Agent Inspector ([`core.js`](src/services/prompts/trinity/inspector/core.js)):** Pengecualian selari Translation mengecualikan penyusunan klausa ayat bersambung yang sah daripada SHIFT/DROP. REGISTER kini hanya mengaudit `canonical_address` dan `direct_address` yang benar-benar wujud dalam skema Preflight, tanpa rujukan pasangan pronoun yang tidak dikunci oleh Preflight.
+
+### ✨ Added — Few-Shot yang Konsisten dengan Output Contract
+
+- Kedua-dua pack [`generic.js`](src/services/prompts/languagePacks/generic.js) dan [`malay.js`](src/services/prompts/languagePacks/malay.js) kini membungkus setiap contoh `Correct:` dalam `<answer>...</answer>`.
+- Generic few-shot menggunakan `{translation of ...}` untuk meta-placeholder, manakala kurungan siku `[...]` dikekalkan untuk kesan bunyi SDH; konflik visual placeholder bersarang dihapuskan.
+- Empat ujian baharu dalam [`trinity-prompt-matrix-regression.test.js`](src/services/trinity-prompt-matrix-regression.test.js) mengunci keneutralan bahasa sumber, reading-speed guardrail, penyusunan SVO ↔ SOV, struktur `<answer>` dan pemisahan placeholder SDH. Assertion Inspector dalam [`agent-inspector-regression.test.js`](src/services/agent-inspector-regression.test.js) diselaraskan dengan kontrak REGISTER dan pengecualian split-sentence baharu.
+
+### ✅ Integration & Compatibility
+
+- Sembilan sel matriks tiga ejen × tiga pintu kekal; `systemInstruction` top-level Gemini, system/user split, JSON schema, parser, dan prefill Translation tidak berubah. Tiada perubahan UI, serialization, rehidrasi atau skema storan.
+- Ujian bersasar lima suite prompt: **201 total / 201 PASS / 0 FAIL / 0 SKIP**.
+
 ## SubFaber v3.25.0 (2026-10-26) — Pool Kunci Gemini Native Per-Ejen Trinity + Rehidrasi Kanonik (Mandat Owner)
 
 ### ✨ Added — Pool Kunci Berkongsi untuk Gemini Native Rasmi dan Custom

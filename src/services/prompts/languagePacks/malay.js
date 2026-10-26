@@ -66,8 +66,10 @@ Input:
 <s id="1">You are coming with us,</s>
 <s id="2">aren't you?</s>
 Correct:
+<answer>
 <s id="1">Awak ikut kami,</s>
 <s id="2">kan?</s>
+</answer>
 Wrong (merged):
 <s id="1">Awak ikut kami, kan?</s>
 <s id="2">.</s>
@@ -79,10 +81,12 @@ Input:
 <s id="3">[door slams]</s>
 <s id="4">Relax, don't lose your head.</s>
 Correct:
+<answer>
 <s id="1">Jangan main-mainkan akulah.[br]Aku dah lambat ni.</s>
 <s id="2">♪♪</s>
 <s id="3">[pintu terhempas]</s>
 <s id="4">Bawa bertenang, jangan gelabah.</s>
+</answer>
 Wrong (slots skipped):
 <s id="1">Jangan main-mainkan akulah.[br]Aku dah lambat ni.</s>
 <s id="2">Bawa bertenang, jangan gelabah.</s>`,

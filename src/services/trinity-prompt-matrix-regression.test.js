@@ -265,7 +265,41 @@ test('[HARMONY] label jenayah Inspector memetakan 1:1 kepada rules parity Transl
     }
 });
 
-// ── 4. Fail-fast registry (sifar silent fallback) ──
+// ── 4. Finale Prompt — universal source language, grammar, and few-shot contracts ──
+
+test('[FINALE preflight] direct_address example is source-language neutral', () => {
+    const prompt = interpolatePreflightSystem();
+    assert.ok(prompt.includes('a source line that addresses them as "Aunt"'));
+    assert.ok(!prompt.includes('an English line that addresses them as'));
+});
+
+test('[FINALE translation] reading-speed guardrail and adjacent-slot SVO↔SOV reordering are explicit', () => {
+    const prompt = interpolateTranslationSystem();
+    assert.ok(prompt.includes('within its on-screen duration without losing core meaning or emotional punch'));
+    assert.ok(prompt.includes('Keep every slot strictly populated'));
+    assert.ok(prompt.includes('When a single sentence spans across adjacent slots'));
+    assert.ok(prompt.includes('reordering clauses across the split slots only when required by Malay word order'));
+    assert.ok(!prompt.includes('Translate only the fragment belonging to each slot'));
+});
+
+test('[FINALE few-shot] both language packs wrap Correct examples in <answer> exactly twice', () => {
+    for (const language of ['Malay', 'Japanese']) {
+        const fewShot = getLanguagePack(language).fewShot;
+        assert.equal((fewShot.match(/<answer>/g) || []).length, 2, `${language}: two answer openers`);
+        assert.equal((fewShot.match(/<\/answer>/g) || []).length, 2, `${language}: two answer closers`);
+        assert.equal((fewShot.match(/Correct:\n<answer>\n/g) || []).length, 2, `${language}: Correct uses answer`);
+    }
+});
+
+test('[FINALE generic few-shot] meta placeholders avoid square-bracket SDH collisions', () => {
+    const fewShot = getLanguagePack('Japanese').fewShot;
+    assert.ok(fewShot.includes('{translation of "Sorry I\'m late."}'));
+    assert.ok(fewShot.includes('[{translation of "door slams"}]'));
+    assert.ok(!fewShot.includes('[translation of'));
+    assert.ok(!fewShot.includes('[full merged sentence]'));
+});
+
+// ── 5. Fail-fast registry (sifar silent fallback) ──
 
 test('[REGISTRY] resolveTrinityPrompt fail-fast atas agent/channel tidak dikenali', () => {
     assert.throws(() => resolveTrinityPrompt('agentX', 'gemini'), /Unknown agent/);

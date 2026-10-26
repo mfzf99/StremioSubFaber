@@ -57,10 +57,12 @@ Input:
 <s id="1">You are coming with us,</s>
 <s id="2">aren't you?</s>
 Correct:
-<s id="1">[translation of "You are coming with us,"]</s>
-<s id="2">[translation of "aren't you?" — isolated tag in own slot]</s>
+<answer>
+<s id="1">{translation of "You are coming with us,"}</s>
+<s id="2">{translation of "aren't you?" — isolated tag in own slot}</s>
+</answer>
 Wrong (merged):
-<s id="1">[full merged sentence]</s>
+<s id="1">{full merged sentence}</s>
 <s id="2">.</s>
 
 [EXAMPLE 2 — SHIFT: every slot must appear; symbols/music copied as-is]
@@ -70,13 +72,15 @@ Input:
 <s id="3">[door slams]</s>
 <s id="4">No problem, sit down.</s>
 Correct:
-<s id="1">[translation of "Sorry I'm late."]</s>
+<answer>
+<s id="1">{translation of "Sorry I'm late."}</s>
 <s id="2">♪♪</s>
-<s id="3">[translation of "[door slams]"]</s>
-<s id="4">[translation of "No problem, sit down."]</s>
+<s id="3">[{translation of "door slams"}]</s>
+<s id="4">{translation of "No problem, sit down."}</s>
+</answer>
 Wrong (slots skipped):
-<s id="1">[translation of "Sorry I'm late."]</s>
-<s id="2">[translation of "No problem, sit down."]</s>`,
+<s id="1">{translation of "Sorry I'm late."}</s>
+<s id="2">{translation of "No problem, sit down."}</s>`,
 
     /**
      * P8 injection: neutral rule #6 for DEFAULT_TRANSLATION_PROMPT.
