@@ -1,4 +1,5 @@
 const { DEFAULT_TRANSLATION_PROMPT } = require('../services/gemini');
+const { buildGeminiKeyPool } = require('../../public/js/trinity-key-state');
 const DEFAULT_API_KEYS = require('../config/defaultApiKeys');
 const { getSessionManager } = require('./sessionManager');
 const { StorageUnavailableError } = require('../storage/errors');
@@ -920,7 +921,14 @@ function normalizeConfig(config) {
         preflightParams:
             trinityPreflight.params && Object.keys(trinityPreflight.params).length > 0 ? trinityPreflight.params : null,
         inspectorParams:
-            trinityInspector.params && Object.keys(trinityInspector.params).length > 0 ? trinityInspector.params : null
+            trinityInspector.params && Object.keys(trinityInspector.params).length > 0 ? trinityInspector.params : null,
+        inspectorApiKey: trinityInspector.apiKey || agentInspectorApiKey,
+        inspectorApiKeys: Array.isArray(trinityInspector.apiKeys) ? trinityInspector.apiKeys.slice() : [],
+        inspectorKeyRotationEnabled: trinityInspector.keyRotationEnabled === true,
+        inspectorKeyRotationMode: trinityInspector.keyRotationMode || 'per-batch',
+        preflightApiKeys: Array.isArray(trinityPreflight.apiKeys) ? trinityPreflight.apiKeys.slice() : [],
+        preflightKeyRotationEnabled: trinityPreflight.keyRotationEnabled === true,
+        preflightKeyRotationMode: trinityPreflight.keyRotationMode || 'per-batch'
     };
     // Hygiene: inspectionModel adalah alias warisan bagi 'model' (Semakan) —
     // dilucutkan daripada struktur tersimpan selepas migrasi.
@@ -995,29 +1003,27 @@ function normalizeConfig(config) {
     };
 
     const rawKeys = Array.isArray(mergedConfig.geminiApiKeys) ? mergedConfig.geminiApiKeys : [];
-    const seenKeys = new Set();
-    const sanitizedKeys = [];
     let encryptedGeminiKeysDetected = false;
-    for (const key of rawKeys) {
-        const trimmed = typeof key === 'string' ? key.trim() : '';
-        if (!trimmed) continue;
-
-        if (looksEncrypted(trimmed)) {
+    const rawSingleKey = typeof mergedConfig.geminiApiKey === 'string' ? mergedConfig.geminiApiKey.trim() : '';
+    const canonicalPool = buildGeminiKeyPool({
+        primaryKey: rawSingleKey,
+        storedKeys: rawKeys,
+        keyRotationEnabled: mergedConfig.geminiKeyRotationEnabled,
+        keyRotationMode: mergedConfig.geminiKeyRotationMode
+    });
+    const sanitizedKeys = [];
+    for (const key of canonicalPool.apiKeys) {
+        if (looksEncrypted(key)) {
             encryptedGeminiKeysDetected = true;
             log.warn(
                 () => `[Config] Gemini API key appears to still be encrypted (decryption failed). Skipping this key.`
             );
             continue;
         }
-
-        if (!seenKeys.has(trimmed)) {
-            seenKeys.add(trimmed);
-            sanitizedKeys.push(trimmed);
-            if (sanitizedKeys.length >= MAX_GEMINI_API_KEYS) break;
-        }
+        sanitizedKeys.push(key);
+        if (sanitizedKeys.length >= MAX_GEMINI_API_KEYS) break;
     }
 
-    const rawSingleKey = typeof mergedConfig.geminiApiKey === 'string' ? mergedConfig.geminiApiKey.trim() : '';
     if (rawSingleKey && looksEncrypted(rawSingleKey)) {
         encryptedGeminiKeysDetected = true;
         log.warn(
@@ -1034,25 +1040,45 @@ function normalizeConfig(config) {
         }
     }
 
-    const singleKey = typeof mergedConfig.geminiApiKey === 'string' ? mergedConfig.geminiApiKey.trim() : '';
-    if (sanitizedKeys.length === 0 && singleKey) {
-        sanitizedKeys.push(singleKey);
-    }
-
+    const singleKey = looksEncrypted(rawSingleKey) ? '' : rawSingleKey;
+    if (sanitizedKeys.length === 0 && singleKey) sanitizedKeys.push(singleKey);
     mergedConfig.geminiApiKeys = sanitizedKeys;
+    mergedConfig.geminiApiKey = sanitizedKeys[0] || '';
+    mergedConfig.geminiKeyRotationMode = canonicalPool.keyRotationMode;
 
-    if (mergedConfig.geminiKeyRotationEnabled && sanitizedKeys.length > 0) {
-        mergedConfig.geminiApiKey = sanitizedKeys[0];
-    } else if (!singleKey && sanitizedKeys.length > 0) {
-        mergedConfig.geminiApiKey = sanitizedKeys[0];
-    } else {
-        mergedConfig.geminiApiKey = singleKey;
+    const trinityAgents = ['translation', 'preflight', 'inspector'];
+    for (const agentKey of trinityAgents) {
+        const slot = mergedConfig.trinity?.[agentKey];
+        if (!slot || typeof slot !== 'object') continue;
+        const legacy = agentKey === 'translation';
+        const pool = buildGeminiKeyPool({
+            primaryKey: slot.apiKey || (legacy ? mergedConfig.geminiApiKey : ''),
+            storedKeys: Array.isArray(slot.apiKeys) ? slot.apiKeys : legacy ? mergedConfig.geminiApiKeys : [],
+            keyRotationEnabled:
+                typeof slot.keyRotationEnabled === 'boolean'
+                    ? slot.keyRotationEnabled
+                    : legacy
+                      ? mergedConfig.geminiKeyRotationEnabled
+                      : false,
+            keyRotationMode: slot.keyRotationMode || (legacy ? mergedConfig.geminiKeyRotationMode : 'per-batch')
+        });
+        slot.apiKey = pool.apiKey;
+        slot.apiKeys = pool.apiKeys.slice(0, MAX_GEMINI_API_KEYS);
+        slot.keyRotationEnabled = pool.keyRotationEnabled;
+        slot.keyRotationMode = pool.keyRotationMode;
+        if (slot.keyRotationEnabled && slot.apiKey) slot.enabled = true;
     }
-
-    const validRotationModes = ['per-request', 'per-batch'];
-    if (!validRotationModes.includes(mergedConfig.geminiKeyRotationMode)) {
-        mergedConfig.geminiKeyRotationMode = 'per-batch';
-    }
+    mergedConfig.agentInspector.inspectorApiKey = trinityInspector.apiKey || mergedConfig.agentInspector.apiKey;
+    mergedConfig.agentInspector.inspectorApiKeys = Array.isArray(trinityInspector.apiKeys)
+        ? trinityInspector.apiKeys.slice()
+        : [];
+    mergedConfig.agentInspector.inspectorKeyRotationEnabled = trinityInspector.keyRotationEnabled === true;
+    mergedConfig.agentInspector.inspectorKeyRotationMode = trinityInspector.keyRotationMode || 'per-batch';
+    mergedConfig.agentInspector.preflightApiKeys = Array.isArray(trinityPreflight.apiKeys)
+        ? trinityPreflight.apiKeys.slice()
+        : [];
+    mergedConfig.agentInspector.preflightKeyRotationEnabled = trinityPreflight.keyRotationEnabled === true;
+    mergedConfig.agentInspector.preflightKeyRotationMode = trinityPreflight.keyRotationMode || 'per-batch';
 
     if (!mergedConfig.geminiModel || mergedConfig.geminiModel.trim() === '') {
         mergedConfig.geminiModel = defaults.geminiModel;

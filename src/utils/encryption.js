@@ -310,6 +310,15 @@ function unwrapEncryptedStringLayers(value, fieldName = 'unknown', options = {})
     };
 }
 
+function mapTrinityApiKeys(config, mapper) {
+    if (!config?.trinity || typeof config.trinity !== 'object') return;
+    for (const agentKey of ['translation', 'preflight', 'inspector', 'secondary']) {
+        const slot = config.trinity[agentKey];
+        if (!slot || !Array.isArray(slot.apiKeys)) continue;
+        slot.apiKeys = slot.apiKeys.map((key, index) => mapper(key, `trinity.${agentKey}.apiKeys[${index}]`));
+    }
+}
+
 function normalizeSensitiveInputsForStorage(config) {
     if (!config || typeof config !== 'object') {
         return config;
@@ -348,6 +357,12 @@ function normalizeSensitiveInputsForStorage(config) {
             return result.value;
         });
     }
+
+    mapTrinityApiKeys(normalized, (key, fieldName) => {
+        const result = unwrapEncryptedStringLayers(key, fieldName, { returnOriginalOnFailure: true });
+        if (result.layersRemoved > 0 && result.value !== key) normalizedFields.push(fieldName);
+        return result.value;
+    });
 
     normalizeField(
         () => normalized.assemblyAiApiKey,
@@ -489,6 +504,8 @@ function encryptUserConfig(config) {
             }
         }
 
+        mapTrinityApiKeys(encrypted, (key) => (typeof key === 'string' && key.trim() ? encrypt(key) : key));
+
         // Mark as encrypted for future detection
         encrypted._encrypted = true;
 
@@ -581,6 +598,10 @@ function decryptUserConfig(config) {
             });
             log.debug(() => `[Encryption] Decrypted ${decrypted.geminiApiKeys.length} Gemini API keys`);
         }
+
+        mapTrinityApiKeys(decrypted, (key, fieldName) =>
+            key && (isConfigEncrypted || isEncrypted(key)) ? safeDecrypt(key, fieldName) : key
+        );
 
         // Decrypt AssemblyAI API key
         if (decrypted.assemblyAiApiKey && (isConfigEncrypted || isEncrypted(decrypted.assemblyAiApiKey))) {

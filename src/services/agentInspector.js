@@ -64,6 +64,7 @@ const openaiChannel = require('./channels/openaiChannel');
 const geminiChannel = require('./channels/geminiChannel');
 const anthropicChannel = require('./channels/anthropicChannel');
 const { detectAgentChannelFormat } = require('./channels/keyDetector');
+const { resolveGeminiKeyPool } = require('./geminiKeyResolver');
 const { runPreflightSemanticPass, stripReasoningTags } = require('./subfaberPreflight');
 const log = require('../utils/logger');
 // [FASA H 2026-10-07] Split statik/dinamik untuk prompt Pre-Flight (varian G1
@@ -500,6 +501,21 @@ class AgentInspector extends OpenAICompatibleProvider {
         this.preflightApiKey = options.preflightApiKey || options.apiKey || '';
         this.preflightBaseUrl = options.preflightBaseUrl || options.baseUrl || '';
         this.preflightFormat = options.preflightFormat || options.format || 'auto';
+        this._geminiKeyPools = {
+            preflight: resolveGeminiKeyPool({
+                apiKey: this.preflightApiKey,
+                apiKeys: options.preflightApiKeys,
+                keyRotationEnabled: options.preflightKeyRotationEnabled,
+                keyRotationMode: options.preflightKeyRotationMode
+            }),
+            inspection: resolveGeminiKeyPool({
+                apiKey: options.inspectorApiKey || options.apiKey || '',
+                apiKeys: options.inspectorApiKeys,
+                keyRotationEnabled: options.inspectorKeyRotationEnabled,
+                keyRotationMode: options.inspectorKeyRotationMode
+            })
+        };
+        this._geminiKeyCursor = { preflight: 0, inspection: 0 };
         this._phaseState = null; // snapshot semasa fasa aktif (params + kredensial)
 
         // Pembina asas clamp translationTimeout kepada >= 5000ms — enforce semula
@@ -630,11 +646,27 @@ class AgentInspector extends OpenAICompatibleProvider {
      * pembina muatan standard pintu OpenAI-compatible.
      * @returns {Object|null} instance provider duck-typed atau null (openai)
      */
+    _selectPhaseGeminiKey(phase) {
+        const pool = this._geminiKeyPools[phase];
+        if (!pool?.keyRotationEnabled || pool.apiKeys.length < 2) return '';
+        const index = this._geminiKeyCursor[phase] % pool.apiKeys.length;
+        if (pool.keyRotationMode === 'per-batch') this._geminiKeyCursor[phase]++;
+        return pool.apiKeys[index];
+    }
+
     _getChannelProvider() {
         if (this.channelFormat === 'openai') return null;
-        if (this._channelProvider) return this._channelProvider;
+        const activeKey = this.apiKey;
+        if (this._channelProvider) {
+            if (this.channelFormat === 'gemini' && this._channelProvider.apiKey !== activeKey) {
+                this._channelProvider = null;
+            } else {
+                return this._channelProvider;
+            }
+        }
         const opts = {
-            apiKey: this.apiKey,
+            apiKey: activeKey,
+            baseUrl: this.baseUrl,
             model: this.model,
             preflightModel: this.preflightModel,
             thinkingLevel: 'low', // gemini: empirikal Fasa 0 (6.4s, elak DQ 300s)
@@ -694,7 +726,8 @@ class AgentInspector extends OpenAICompatibleProvider {
             channelFormat: this.channelFormat,
             channelFormatSource: this.channelFormatSource,
             _channelProvider: this._channelProvider,
-            trinityChannel: this.trinityChannel
+            trinityChannel: this.trinityChannel,
+            phase
         };
         if (params && typeof params === 'object') {
             // Sifar-penciptaan: hanya medan yang DITETAPKAN pengguna disuntik.
@@ -721,6 +754,11 @@ class AgentInspector extends OpenAICompatibleProvider {
             this.channelFormat = detected.format;
             this.channelFormatSource = detected.source;
             this._channelProvider = null; // rebuild transport untuk kredensial fasa
+        }
+        const selectedGeminiKey = this.channelFormat === 'gemini' ? this._selectPhaseGeminiKey(phase) : '';
+        if (selectedGeminiKey && selectedGeminiKey !== this.apiKey) {
+            this.apiKey = selectedGeminiKey;
+            this._channelProvider = null;
         }
         // Pembina prompt fasa: preflight guna channel preflight (sedia ada).
         this.trinityChannel = phaseChannel;

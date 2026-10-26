@@ -1,3 +1,15 @@
+## 2026-10-26 — v3.25.0 POOL KUNCI GEMINI NATIVE PER-EJEN TRINITY + REHIDRASI KANONIK (MANDAT OWNER)
+
+- **Tarikh:** 2026-10-26 ~19:52 (waktu tempatan KL)
+- **Komit SHA (HEAD):** (direkod selepas push) + CI run ID & status (direkod selepas Langkah 8)
+- **Keputusan Owner:** Sambung pembaikan modular utiliti state, penyambungan kad Trinity, dan resolver backend yang berkongsi kontrak kunci utama + kunci tambahan untuk Gemini Native rasmi/custom; kemudian laksanakan commit melalui 8-Step Release Pipeline penuh.
+- **Integration Self-Audit (Langkah 0):** Rantaian frontend `readRotationPool()`/`applyRotationPool()` → `collectConfigPatch()`/`snapshotVisibleAgentState()` ↔ backend `normalizeConfig()` → `resolveTranslationGeminiKeyConfig()`/`resolveGeminiKeyPool()` → TranslationEngine/AgentInspector disahkan. Pool per-ejen berasingan; kunci utama indeks 0; alias global Translation dikekalkan; Custom OpenAI/Anthropic ditolak daripada laluan Gemini; `systemInstruction` top-level dan seluruh kontrak sampling/parameter tidak disentuh. Penyulitan/redaction pool Trinity aktif. Playwright aliran sebenar: Gemini rasmi 46 model + dua kunci valid; Custom Gemini Native/Crazy Router 8 model; Basic↔Pro/rehidrasi tanpa duplikasi; OpenAI hide + Gemini show tanpa kehilangan pool; visual critique lulus.
+- **Fail Terlibat:** public/js/trinity-key-state.js (A), src/services/geminiKeyResolver.js (A), src/services/gemini-key-pool-regression.test.js (A: 9 ujian), public/js/trinity-agents.js, public/config.js, public/configure.html, src/utils/config.js, src/handlers/subtitles.js, src/services/agentInspector.js, src/services/channels/geminiChannel.js, src/services/translationEngine.js, src/utils/encryption.js, src/utils/security.js, package.json/package-lock.json (3.24.1→3.25.0), CHANGELOG.md, docs/SESSION_LEDGER.md (blok ini). Graphify NO-OP (`graphify-out/` tiada; runtime tersedia).
+- **Status npm test:** **484 total / 483 PASS / 0 FAIL / 1 SKIP** — baseline monotonik 475→484. Prettier `--check .` PASS; ESLint 0 error (226 warning pre-existing); `git diff --check` PASS. Cache-buster runtime 3.25.0 disahkan `/js/trinity-key-state.js?_cb=3.25.0`, token `__APP_VERSION_QUERY__` selesai diganti.
+- **Next Steps:** Commit + push origin main → `gh run watch` sehingga SUCCESS → rekod SHA + CI run ID dalam blok ini → deploy VPS mengikut prosedur standard projek.
+
+---
+
 ## 2026-10-26 — v3.24.1 KUNCI KEMAS KINI SKRIP PATCH ZOO CODE KEPADA MOD TUNGGAL FULLSTACK (MANDAT OWNER)
 
 - **Tarikh:** 2026-10-26 ~15:42 (waktu tempatan KL)

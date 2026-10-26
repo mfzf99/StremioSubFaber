@@ -2,6 +2,34 @@
 
 All notable changes to this project will be documented in this file.
 
+## SubFaber v3.25.0 (2026-10-26) — Pool Kunci Gemini Native Per-Ejen Trinity + Rehidrasi Kanonik (Mandat Owner)
+
+### ✨ Added — Pool Kunci Berkongsi untuk Gemini Native Rasmi dan Custom
+
+- **Utiliti state modular ([`trinity-key-state.js`](public/js/trinity-key-state.js)):** Satu utiliti UMD tanpa rangkaian untuk browser dan Node menormalkan pool `{apiKey, apiKeys, keyRotationEnabled, keyRotationMode}`. Kunci utama sentiasa indeks 0, dedup stabil, array legacy additional-only diterima, dan mod rotasi disekat kepada `per-batch`/`per-request`.
+- **Pool per-ejen ([`trinity-agents.js`](public/js/trinity-agents.js)):** Agent Translation, Agent Preflight, dan Agent Inspector kini menyimpan kunci utama + kunci tambahan dalam slot masing-masing. Alias global Translation dikekalkan untuk keserasian konfigurasi lama dan enjin sedia ada.
+- **Resolver door backend ([`geminiKeyResolver.js`](src/services/geminiKeyResolver.js)):** Pool hanya aktif untuk Gemini Native rasmi atau Custom/Proxy dengan door berkesan Gemini Native. Custom OpenAI/Anthropic tidak boleh tersalah menggunakan laluan rotasi Gemini walaupun model atau kunci memberi hint bercampur.
+- **Runtime Translation/Preflight/Inspector:** Translation mengaktifkan rotasi berdasarkan instance `GeminiService` sebenar, bukan nama provider; Preflight dan Inspector mempunyai pool serta kaunter fasa berasingan. Base URL custom turut disalurkan ke Gemini Channel tanpa perubahan struktur payload Tri-Door.
+
+### 🔧 Fixed — Roundtrip, Smart Visibility, dan Keselamatan Kredensial
+
+- Rehidrasi tidak lagi memasukkan semula kunci utama ke dalam senarai Additional API Keys; pool kekal merentas Basic↔Pro dan bertukar door.
+- Perubahan Format/Door dan auto-detection Base URL kini menyegarkan Smart Visibility rotation. Row disembunyikan untuk door bukan-Gemini tanpa memadam draft kunci (HIDE ≠ LOCK).
+- Pool Trinity disulitkan sebelum storan, dinyahsulit semasa baca, dan disanitasi untuk log melalui [`encryption.js`](src/utils/encryption.js) serta [`security.js`](src/utils/security.js).
+- Normalisasi [`config.js`](src/utils/config.js) memulihkan kunci utama sebagai indeks 0 dan mengelakkan dedup silang antara ejen.
+
+### ✅ Verifikasi Live Playwright
+
+- Gemini rasmi: Validate berjaya, 46 model diterima; kunci utama dan tambahan sama-sama valid.
+- Custom Gemini Native/Crazy Router: Validate berjaya, 8 model diterima; `gemini-2.5-flash` dipilih.
+- Pool dua kunci kekal selepas Basic→Pro→Basic dan rehidrasi; tiada duplikasi kunci utama. Rotation tersembunyi pada OpenAI dan muncul semula pada Gemini Native tanpa kehilangan pool.
+- Visual critique lulus tanpa perubahan CSS; tiada ralat aplikasi baharu. Sifar nilai rahsia direkodkan.
+
+### 🧪 Tests — Baseline Monotonik 475 → 484
+
+- 9 ujian regresi baharu dalam [`gemini-key-pool-regression.test.js`](src/services/gemini-key-pool-regression.test.js) meliputi utiliti tulen, door resolver, normalisasi, penyulitan/redaction, instance Translation custom, dan giliran pool Preflight/Inspector.
+- `npm test`: **484 total / 483 PASS / 0 FAIL / 1 SKIP**. Prettier PASS; ESLint 0 error; `git diff --check` PASS.
+
 ## SubFaber v3.24.1 (2026-10-26) — Kunci Kemas Kini Skrip Patch Zoo Code kepada Mod Tunggal `fullstack` (Mandat Owner)
 
 ### 🔧 Fixed — Penyelenggaraan Zoo Code Selaras dengan Seni Bina Mod Tunggal

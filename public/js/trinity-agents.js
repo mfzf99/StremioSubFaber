@@ -1820,7 +1820,7 @@
         var providers = _registryCache || FALLBACK_PROVIDERS;
         var selectedProvider = getProviderById(providers, providerSel.value);
         var isCustom = isCustomProvider(selectedProvider);
-        var isGemini = selectedProvider && selectedProvider.id === 'gemini';
+        var isGemini = isGeminiNativeCard(agentKey);
 
         // [ROOT-CAUSE FIX 2 2026-10-10] inline display:'' TIDAK mengatasi rule CSS
         // .trinity-custom-only { display: none } — untuk SHOW mesti set nilai eksplisit
@@ -1846,7 +1846,64 @@
         }
     }
 
-    // --- Key Rotation Row (Gemini only) ---
+    // --- Key Rotation Row (Gemini Native official/custom) ---
+
+    function keyState() {
+        return window.SubFaberTrinityKeyState;
+    }
+
+    function isGeminiNativeCard(agentKey) {
+        var providerSel = $('trinity-' + agentKey + '-provider');
+        var fmtEl = $('trinity-' + agentKey + '-format');
+        var provider = getProviderById(_registryCache || FALLBACK_PROVIDERS, providerSel ? providerSel.value : '');
+        return resolveEffectiveDoor(provider, fmtEl ? fmtEl.value : 'auto') === DOOR_TYPES.GEMINI;
+    }
+
+    function readRotationPool(agentKey, apiKey) {
+        var toggle = $('trinity-' + agentKey + '-rotation-enabled');
+        var mode = $('trinity-' + agentKey + '-rotation-mode');
+        var list = $('trinity-' + agentKey + '-rotation-keys-list');
+        var additionalKeys = [];
+        if (list) {
+            Array.prototype.forEach.call(list.querySelectorAll('.trinity-key-input'), function (input) {
+                additionalKeys.push(input.value);
+            });
+        }
+        return keyState().buildGeminiKeyPool({
+            primaryKey: apiKey,
+            additionalKeys: additionalKeys,
+            keyRotationEnabled: toggle ? toggle.checked === true : false,
+            keyRotationMode: mode ? mode.value : 'per-batch'
+        });
+    }
+
+    function applyRotationPool(agentKey, slot, cfg) {
+        var toggle = $('trinity-' + agentKey + '-rotation-enabled');
+        var mode = $('trinity-' + agentKey + '-rotation-mode');
+        var list = $('trinity-' + agentKey + '-rotation-keys-list');
+        if (!toggle || !mode || !list) return;
+        var legacy = agentKey === 'translation';
+        var pool = keyState().buildGeminiKeyPool({
+            primaryKey: slot.apiKey || (legacy ? cfg.geminiApiKey : ''),
+            storedKeys: Array.isArray(slot.apiKeys) ? slot.apiKeys : legacy ? cfg.geminiApiKeys : [],
+            keyRotationEnabled:
+                typeof slot.keyRotationEnabled === 'boolean'
+                    ? slot.keyRotationEnabled
+                    : legacy
+                      ? cfg.geminiKeyRotationEnabled
+                      : false,
+            keyRotationMode: slot.keyRotationMode || (legacy ? cfg.geminiKeyRotationMode : 'per-batch')
+        });
+        toggle.checked = pool.keyRotationEnabled;
+        toggle.dispatchEvent(new Event('change'));
+        mode.value = pool.keyRotationMode;
+        list.innerHTML = '';
+        keyState()
+            .getAdditionalGeminiKeys(pool.apiKey, pool.apiKeys)
+            .forEach(function (key) {
+                addRotationKeyInput(agentKey, key);
+            });
+    }
 
     function buildKeyRotationRow(agentKey) {
         var row = createEl('div', 'trinity-field trinity-gemini-only');
@@ -2458,14 +2515,17 @@
                 } else if (/\/v1(?!beta)/.test(url)) {
                     fmtSelect.value = 'openai-compatible';
                 }
+                updateVisibility(agentKey);
+                refreshModelParams(agentKey);
             };
             urlInput.addEventListener('input', syncDoorFromUrl);
             urlInput.addEventListener('change', syncDoorFromUrl);
         }
-        // [FASA 4 v3.9.46] Pertukaran Format/Door Custom (cth gemini-native ↔
-        // openai-compatible) mengubah capability profile — bina semula medan.
+        // Pertukaran door turut mengawal Smart Visibility rotation; pool input
+        // kekal dalam DOM walaupun row disembunyikan untuk door bukan-Gemini.
         if (fmtSelect) {
             fmtSelect.addEventListener('change', function () {
+                updateVisibility(agentKey);
                 refreshModelParams(agentKey);
             });
         }
@@ -2898,26 +2958,7 @@
                     var legacyMap = { gemini: 'gemini', openai: 'openai', anthropic: 'anthropic' };
                     providerEl.value = legacyMap[stored.format] || stored.format;
                 }
-                // Key rotation rehydration (hanya untuk Gemini)
-                if (stored.provider === 'gemini' || (stored.provider === '' && agent.key === 'translation')) {
-                    var rotToggle = $('trinity-' + agent.key + '-rotation-enabled');
-                    var rotMode = $('trinity-' + agent.key + '-rotation-mode');
-                    var keysList = $('trinity-' + agent.key + '-rotation-keys-list');
-                    if (rotToggle) {
-                        rotToggle.checked = cfg.geminiKeyRotationEnabled === true;
-                        rotToggle.dispatchEvent(new Event('change'));
-                    }
-                    if (rotMode && cfg.geminiKeyRotationMode) rotMode.value = cfg.geminiKeyRotationMode;
-                    if (keysList && Array.isArray(cfg.geminiApiKeys)) {
-                        // [AUDIT v3.9.20] Kosongkan senarai dahulu — rehydrate boleh
-                        // dipanggil berulang kali oleh config.js; tanpa ini, kunci
-                        // akan duplikasi pada setiap panggilan.
-                        keysList.innerHTML = '';
-                        cfg.geminiApiKeys.forEach(function (k) {
-                            addRotationKeyInput(agent.key, k);
-                        });
-                    }
-                }
+                applyRotationPool(agent.key, stored, cfg);
             } else if (agent.key === 'translation') {
                 // [BUG FIX v3.9.44 — FRESH STATE] Seed legasi (gemini) HANYA bila
                 // kunci sebenar wujud. Sebelum ini blok ini dipacu oleh
@@ -2937,22 +2978,7 @@
                     // — elak memadam pilihan pengguna (non-destructive).
                     if (!providerEl.value) providerEl.value = 'gemini';
                 }
-                // Key rotation seed untuk legacy
-                var rotToggle = $('trinity-translation-rotation-enabled');
-                var rotMode = $('trinity-translation-rotation-mode');
-                var keysList = $('trinity-translation-rotation-keys-list');
-                if (rotToggle) {
-                    rotToggle.checked = cfg.geminiKeyRotationEnabled === true;
-                    rotToggle.dispatchEvent(new Event('change'));
-                }
-                if (rotMode && cfg.geminiKeyRotationMode) rotMode.value = cfg.geminiKeyRotationMode;
-                if (keysList && Array.isArray(cfg.geminiApiKeys)) {
-                    // [AUDIT v3.9.20] Kosongkan senarai dahulu — anti-duplikasi rehydrate
-                    keysList.innerHTML = '';
-                    cfg.geminiApiKeys.forEach(function (k) {
-                        addRotationKeyInput('translation', k);
-                    });
-                }
+                applyRotationPool('translation', { apiKey: legacyKey }, cfg);
             }
 
             // [FASA 4 v3.9.46] Rehidrasi trinity.<agent>.params — baca cfg
@@ -3045,16 +3071,19 @@
             var door = resolveEffectiveDoor(providerEntry, rawFormat);
             var apiKey = String(keyEl.value || '').trim();
 
-            cfg.trinity[agent.key] = {
-                apiKey: apiKey,
-                format: rawFormat === 'auto' ? 'auto' : doorToFormat(rawFormat),
-                baseUrl: isCustom && urlEl ? String(urlEl.value || '').trim() : '',
-                model: modelEl ? String(modelEl.value || '').trim() : '',
-                provider: provider,
-                door: door,
-                isCustom: isCustom,
-                enabled: !!apiKey
-            };
+            cfg.trinity[agent.key] = Object.assign(
+                {
+                    apiKey: apiKey,
+                    format: rawFormat === 'auto' ? 'auto' : doorToFormat(rawFormat),
+                    baseUrl: isCustom && urlEl ? String(urlEl.value || '').trim() : '',
+                    model: modelEl ? String(modelEl.value || '').trim() : '',
+                    provider: provider,
+                    door: door,
+                    isCustom: isCustom,
+                    enabled: !!apiKey
+                },
+                readRotationPool(agent.key, apiKey)
+            );
         });
 
         // Seed legasi + key rotation (kad translation wujud dalam kedua-dua mod).
@@ -3064,23 +3093,9 @@
                 cfg.geminiApiKey = t.apiKey;
                 if (t.model) cfg.geminiModel = t.model;
             }
-            var rotToggle = $('trinity-translation-rotation-enabled');
-            var rotMode = $('trinity-translation-rotation-mode');
-            var keysList = $('trinity-translation-rotation-keys-list');
-            if (rotToggle) {
-                cfg.geminiKeyRotationEnabled = rotToggle.checked === true;
-                if (rotToggle.checked && rotMode && rotMode.value) {
-                    cfg.geminiKeyRotationMode = rotMode.value;
-                }
-                if (rotToggle.checked && keysList) {
-                    var keys = [];
-                    Array.prototype.forEach.call(keysList.querySelectorAll('.trinity-key-input'), function (input) {
-                        var v = String(input.value || '').trim();
-                        if (v) keys.push(v);
-                    });
-                    cfg.geminiApiKeys = keys;
-                }
-            }
+            cfg.geminiKeyRotationEnabled = t.keyRotationEnabled === true;
+            cfg.geminiKeyRotationMode = t.keyRotationMode || 'per-batch';
+            cfg.geminiApiKeys = Array.isArray(t.apiKeys) ? t.apiKeys.slice() : [];
         }
 
         // Secondary fallback (sub-kad dalam kad translation — kedua-dua mod).
@@ -3167,25 +3182,31 @@
                               provider: prev.provider || '',
                               door: prev.door || '',
                               isCustom: prev.isCustom === true,
-                              enabled: prev.enabled === true
+                              enabled: prev.enabled === true,
+                              apiKeys: Array.isArray(prev.apiKeys) ? prev.apiKeys.slice() : [],
+                              keyRotationEnabled: prev.keyRotationEnabled === true,
+                              keyRotationMode: prev.keyRotationMode || 'per-batch'
                           }
                         : {};
                 return;
             }
 
-            trinity[agent.key] = {
-                apiKey: key.trim(),
-                format: effectiveFormat,
-                baseUrl: effectiveBaseUrl,
-                model: model.trim(),
-                provider: provider,
-                door: door,
-                isCustom: isCustom,
-                enabled: !!key.trim(),
-                // [FASA 4 v3.9.46] Kontrak trinity.<agent>.params — HANYA medan
-                // yang dilawati pengguna daripada lalai ejen (kosong = lalai).
-                params: mpCollectDeviatedParams(agent.key)
-            };
+            trinity[agent.key] = Object.assign(
+                {
+                    apiKey: key.trim(),
+                    format: effectiveFormat,
+                    baseUrl: effectiveBaseUrl,
+                    model: model.trim(),
+                    provider: provider,
+                    door: door,
+                    isCustom: isCustom,
+                    enabled: !!key.trim(),
+                    // [FASA 4 v3.9.46] Kontrak trinity.<agent>.params — HANYA medan
+                    // yang dilawati pengguna daripada lalai ejen (kosong = lalai).
+                    params: mpCollectDeviatedParams(agent.key)
+                },
+                readRotationPool(agent.key, key)
+            );
         });
 
         // [FASA 4 v3.9.46] Slot secondary (ejem ke-4) — params diukur terhadap
@@ -3252,26 +3273,10 @@
             }
         }
 
-        // Key rotation patch (hanya untuk Gemini)
-        var rotToggle = $('trinity-translation-rotation-enabled');
-        var rotMode = $('trinity-translation-rotation-mode');
-        var keysList = $('trinity-translation-rotation-keys-list');
-        if (rotToggle && rotToggle.checked) {
-            patch.geminiKeyRotationEnabled = true;
-            patch.geminiKeyRotationMode = rotMode ? rotMode.value : 'per-batch';
-            if (keysList) {
-                var keys = [];
-                var inputs = keysList.querySelectorAll('.trinity-key-input');
-                inputs.forEach(function (input) {
-                    var v = input.value.trim();
-                    if (v) keys.push(v);
-                });
-                patch.geminiApiKeys = keys;
-            }
-        } else {
-            patch.geminiKeyRotationEnabled = false;
-            patch.geminiApiKeys = [];
-        }
+        // Alias global dikekalkan untuk Translation; pool ejen lain kekal dalam slot masing-masing.
+        patch.geminiKeyRotationEnabled = t.keyRotationEnabled === true;
+        patch.geminiKeyRotationMode = t.keyRotationMode || 'per-batch';
+        patch.geminiApiKeys = Array.isArray(t.apiKeys) ? t.apiKeys.slice() : [];
 
         // Secondary Fallback — serialisasi ke kontrak sedia ada (multiProviderEnabled/secondaryProvider*/providers.<key>)
         var fb = readFallbackState();

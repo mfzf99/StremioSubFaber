@@ -81,7 +81,8 @@ function buildProvider(options = {}) {
     // pengguna dihantar (undefined di-skip oleh buildGenerationConfig).
     const advanced = {
         maxRetries: 0, // Fail fast — retry dikendalikan _callWithFailover AgentInspector
-        thinkingLevel: options.thinkingLevel || 'low' // empirikal Fasa 0: low = 6.4s, high DQ 300s
+        thinkingLevel: options.thinkingLevel || 'low', // empirikal Fasa 0: low = 6.4s, high DQ 300s
+        ...(typeof options.baseUrl === 'string' && options.baseUrl.trim() ? { baseUrl: options.baseUrl.trim() } : {})
     };
     if (options.temperature !== undefined) advanced.temperature = options.temperature;
     if (options.topP !== undefined) advanced.topP = options.topP;

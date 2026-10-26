@@ -157,6 +157,19 @@ function sanitizeConfig(config) {
         sanitized.providers = sanitizedProviders;
     }
 
+    if (sanitized.trinity && typeof sanitized.trinity === 'object') {
+        sanitized.trinity = { ...sanitized.trinity };
+        for (const agentKey of ['translation', 'preflight', 'inspector', 'secondary']) {
+            const slot = sanitized.trinity[agentKey];
+            if (!slot || typeof slot !== 'object') continue;
+            sanitized.trinity[agentKey] = {
+                ...slot,
+                apiKey: redactApiKey(slot.apiKey),
+                ...(Array.isArray(slot.apiKeys) ? { apiKeys: slot.apiKeys.map((key) => redactApiKey(key)) } : {})
+            };
+        }
+    }
+
     return sanitized;
 }
 

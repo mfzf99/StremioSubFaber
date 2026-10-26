@@ -4,6 +4,7 @@ const SubDLService = require('../services/subdl');
 const SubSourceService = require('../services/subsource');
 const TranslationEngine = require('../services/translationEngine');
 const { createTranslationProvider } = require('../services/translationProviderFactory');
+const { resolveTranslationGeminiKeyConfig } = require('../services/geminiKeyResolver');
 const { AgentInspector } = require('../services/agentInspector');
 const { createSsrfSafeLookup } = require('../utils/ssrfProtection');
 const AniDBService = require('../services/anidb');
@@ -6273,6 +6274,13 @@ async function performTranslation(
                         preflightApiKey: config.agentInspector.preflightApiKey || '',
                         preflightBaseUrl: config.agentInspector.preflightBaseUrl || '',
                         preflightFormat: config.agentInspector.preflightFormat || 'auto',
+                        preflightApiKeys: config.agentInspector.preflightApiKeys || [],
+                        preflightKeyRotationEnabled: config.agentInspector.preflightKeyRotationEnabled === true,
+                        preflightKeyRotationMode: config.agentInspector.preflightKeyRotationMode || 'per-batch',
+                        inspectorApiKey: config.agentInspector.inspectorApiKey || '',
+                        inspectorApiKeys: config.agentInspector.inspectorApiKeys || [],
+                        inspectorKeyRotationEnabled: config.agentInspector.inspectorKeyRotationEnabled === true,
+                        inspectorKeyRotationMode: config.agentInspector.inspectorKeyRotationMode || 'per-batch',
                         // [TRINITY PARAMS FASA 3 v3.9.46 + FASA 1 C2 2026-10-26]
                         // Params per-ejen — kini DIAKTIFKAN sebagai input semantik
                         // standard oleh AgentInspector._enterPhase (sifar injection
@@ -6300,26 +6308,7 @@ async function performTranslation(
             // Pass model to enable model-specific batch size optimization
             // Pass advancedSettings to enable optional features (like batch context)
             // Pass keyRotationConfig for per-batch key rotation when enabled
-            const keyRotationConfig =
-                config.geminiKeyRotationEnabled === true && providerName === 'gemini'
-                    ? {
-                          enabled: true,
-                          mode: config.geminiKeyRotationMode || 'per-batch',
-                          keys: Array.isArray(config.geminiApiKeys)
-                              ? config.geminiApiKeys.filter((k) => typeof k === 'string' && k.trim())
-                              : [],
-                          // [DYNAMIC BASE URL v3.9.29] bawa geminiBaseUrl per-pengguna
-                          // supaya setiap instance GeminiService semasa rotasi kunci
-                          // menghantar permintaan ke gateway yang dikonfigurasi pengguna
-                          // (bukan .env global pelayan).
-                          advancedSettings: {
-                              ...(config.advancedSettings || {}),
-                              ...(typeof config.geminiBaseUrl === 'string' && config.geminiBaseUrl.trim()
-                                  ? { baseUrl: config.geminiBaseUrl.trim() }
-                                  : {})
-                          }
-                      }
-                    : null;
+            const keyRotationConfig = resolveTranslationGeminiKeyConfig(config, providerName);
 
             translationEngine = new TranslationEngine(
                 provider,

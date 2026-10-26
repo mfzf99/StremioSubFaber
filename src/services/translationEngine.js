@@ -246,7 +246,7 @@ class TranslationEngine {
             this.keyRotationConfig?.enabled === true &&
             Array.isArray(this.keyRotationConfig?.keys) &&
             this.keyRotationConfig.keys.length > 1 &&
-            this.providerName === 'gemini';
+            this.gemini instanceof GeminiService;
 
         // Per-batch: rotate before every batch. Per-request: single key per file but retry rotation still works.
         this.perBatchRotationEnabled = rotationAvailable && this.keyRotationConfig?.mode === 'per-batch';

@@ -12453,7 +12453,10 @@ Translate to {target_language}.`;
         const trinityTranslationProvider = trinityTranslationSlot
             ? String(trinityTranslationSlot.provider || '').toLowerCase()
             : '';
-        const trinityIsGeminiRoute = !trinityTranslationProvider || trinityTranslationProvider === 'gemini';
+        const trinityIsGeminiRoute =
+            !trinityTranslationProvider ||
+            trinityTranslationProvider === 'gemini' ||
+            (trinityTranslationProvider === 'custom' && trinityTranslationSlot?.door === 'gemini-native');
         const trinityTranslationKey =
             trinityIsGeminiRoute && trinityTranslationSlot ? String(trinityTranslationSlot.apiKey || '').trim() : '';
         const legacyGeminiKey = document.getElementById('geminiApiKey').value.trim();
@@ -12509,9 +12512,17 @@ Translate to {target_language}.`;
             noTranslationLanguages: currentConfig.noTranslationLanguages,
             uiLanguage: (currentConfig.uiLanguage || navigator.language || 'en').toString().toLowerCase(),
             geminiApiKey: effectiveGeminiKey,
-            geminiKeyRotationEnabled: document.getElementById('geminiKeyRotationEnabled')?.checked === true,
-            geminiApiKeys: getGeminiApiKeys(),
-            geminiKeyRotationMode: document.getElementById('geminiKeyRotationMode')?.value || 'per-batch',
+            geminiKeyRotationEnabled: trinityTranslationSlot
+                ? trinityTranslationSlot.keyRotationEnabled === true
+                : document.getElementById('geminiKeyRotationEnabled')?.checked === true,
+            geminiApiKeys: trinityTranslationSlot
+                ? Array.isArray(trinityTranslationSlot.apiKeys)
+                    ? trinityTranslationSlot.apiKeys.slice()
+                    : []
+                : getGeminiApiKeys(),
+            geminiKeyRotationMode: trinityTranslationSlot
+                ? trinityTranslationSlot.keyRotationMode || 'per-batch'
+                : document.getElementById('geminiKeyRotationMode')?.value || 'per-batch',
             assemblyAiApiKey: (function () {
                 const el = document.getElementById('assemblyAiApiKey');
                 return el ? el.value.trim() : '';
