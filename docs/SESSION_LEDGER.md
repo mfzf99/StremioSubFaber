@@ -1,12 +1,12 @@
 ## 2026-10-26 — v3.24.1 KUNCI KEMAS KINI SKRIP PATCH ZOO CODE KEPADA MOD TUNGGAL FULLSTACK (MANDAT OWNER)
 
 - **Tarikh:** 2026-10-26 ~15:42 (waktu tempatan KL)
-- **Komit SHA (HEAD):** (direkod selepas push dan pengesahan CI)
+- **Komit SHA (HEAD):** `52940b09` + CI run ID 40287542514 = **SUCCESS** (Node 22 ✓ 1m8s / Node 24 ✓ 1m7s; push diverifikasi HEAD = `52940b0958ce691ab11cb74790765d300c4da3a1` = origin/main).
 - **Keputusan Owner:** Laksanakan 8-Step Release Pipeline penuh untuk mengunci pembersihan bundle Zoo Code 3.90.0 serta kemas kini skrip patch dan protokol kepada mod tunggal `fullstack` sebagai v3.24.1.
 - **Integration Self-Audit (Langkah 0):** `main()` → `patchBundle()` → `findAssignmentPrefix()`/`findArrayEnd()` disahkan bersama `syntaxOk()` dan `residualRetiredSlugs()`; utiliti standalone ini tiada pemanggil runtime aplikasi dan tiada impak Zon A/B/C, payload serialization, rehidrasi, DOM atau skema pelayan. Laluan fail-closed kekal untuk bundle/marker/assignment tidak sah. `node --check scripts/patch-zoo-code.js` PASS; `node scripts/patch-zoo-code.js --check` mengesahkan kedua-dua bundle Zoo Code 3.90.0 sudah satu-mod, sintaks PASS dan sifar definisi mod bersara tanpa sebarang penulisan.
 - **Fail Terlibat:** scripts/patch-zoo-code.js (M), docs/ZOO_CODE_PATCH_PROTOCOL.md (M), package.json (M: 3.24.0→3.24.1), CHANGELOG.md (M), docs/SESSION_LEDGER.md (blok ini). Graphify NO-OP (`graphify-out/` tiada).
 - **Status npm test:** **475 total / 474 PASS / 0 FAIL / 1 SKIP** — baseline monotonik dipelihara penuh. Prettier `--check .` PASS; ESLint 0 error (226 warning pre-existing). Cache-buster runtime 3.24.1 disahkan melalui `src/utils/version.js` + token `__APP_VERSION_QUERY__`/`?_cb=`.
-- **Next Steps:** commit + push ke `origin main` → CI `gh run watch` SUCCESS → SHA dan CI run ID direkod dalam blok ini.
+- **Next Steps:** Pelepasan v3.24.1 selesai dan CI hijau; deploy VPS mengikut prosedur standard projek.
 
 ---
 
