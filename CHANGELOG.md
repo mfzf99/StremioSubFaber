@@ -2,6 +2,27 @@
 
 All notable changes to this project will be documented in this file.
 
+## SubFaber v3.23.0 (2026-10-26) — Fasa 3 Penyatuan Kontrak Kanonik & Kemas Kini Cermin: getModelFamily Reroute+Gemini 4 & Nilai Lalai Kanonik (Mandat Owner)
+
+### 🔧 Fixed — 2 Hutang Terakhir Audit Dua-Kepala Dibayar (A2, B3)
+
+- **A2 — Cermin `getModelFamily()` Legasi ([config.js](public/config.js)):** `isSamplingStrictGemini3()` kini mengandungi whitelist reroute Google — `gemini-3.5-flash` & `gemini-3.7-flash` diterima sebagai nama legacy tetapi pelayan mereroute ke 3.6/3.8 (kelakuan strip) → `3.x-strict`. `getModelFamily()` menambah cabang future-proof `/^gemini-[4-9]/` → `3.x-strict` (elak jatuh ke `unknown` yang menghantar pensampelan penuh yang akan ditolak API generasi baharu). Cermin tepat [`src/services/gemini.js`](src/services/gemini.js).
+- **B3 — Nilai Lalai Kanonik `PROVIDER_PARAMETER_DEFAULTS` ([config.js](public/config.js)):** `temperature` distandardkan `0.2` merentas openai/anthropic/xai/deepseek/mistral/cfworkers/openrouter (deepl & googletranslate kekal `0`); `deepseek.maxOutputTokens` → `8192` (dahulu 32768). Fallback & reset kini menghasilkan tingkah laku identik dengan enjin.
+
+### ✨ Added — API Pariti Boleh-Diuji
+
+- `window.SubFaberGeminiModelUi` didedahkan dengan pembaca baca-sahaja: `getModelFamily`, `getGeminiCapabilities`, `clampGeminiThinkingBudget`, `getDefaultProviderParameters` — pariti cermin backend ↔ frontend kini boleh disahkan secara langsung (Playwright/regresi) tanpa menduplikasi logik.
+
+### ✅ Verifikasi Playwright (Gear 2)
+
+- A2: 11 model diuji — `3.5-flash`/`3.7-flash`/`3.6-flash`/`3.5-flash-lite`/`4-argon`/`4.2-pro`/`5-flash` → `3.x-strict`; `3.1-pro-preview` → `3.x-legacy`; `2.5-pro` → `2.5`; model tidak dikenali → `unknown`. Semua selari backend.
+- B3: 10 nilai default disahkan (8 LLM `0.2`, deepl/gt `0`, deepseek max `8192`, cfworkers topP `0.9`, custom max `65536`) + isolasi klon (mutasi tidak bocor antara panggilan).
+- Reset & defaults tanpa regresi (modal Clear Browser Data dibatalkan — tiada data dipadam); konsol 0 ralat.
+
+### 🧪 Tests
+
+- `npm test`: **475 total / 474 PASS / 0 FAIL / 1 SKIP** — baseline monotonik dipelihara. Prettier PASS; ESLint 0 error (226 warning pre-existing).
+
 ## SubFaber v3.22.0 (2026-10-26) — Fasa 2 Ketepatan Semantik & Penyelarasan Toolbox: Mesej Hybrid Guard, Rehidrasi Parameter, Bajet Gemini 2.5 Pro & Dialek Reasoning (Mandat Owner)
 
 ### 🔧 Fixed — 4 Hutang Sederhana Dua-Kepala Dibayar (A1, B1, B2, C4)

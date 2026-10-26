@@ -1,3 +1,17 @@
+## 2026-10-26 — v3.23.0 FASA 3 PENYATUAN KONTRAK KANONIK & KEMAS KINI CERMIN: getModelFamily REROUTE+GEMINI 4 & NILAI LALAI KANONIK (MANDAT OWNER)
+
+- **Tarikh:** 2026-10-26 ~14:45 (waktu tempatan KL)
+- **Komit SHA (HEAD):** (direkod selepas push)
+- **Keputusan Owner:** Mandat Fasa 3 — hapuskan 2 hutang terakhir audit dua-kepala (A2, B3): penyatuan fungsi utiliti cermin getModelFamily() dan nilai lalai parameter pembekal 100% konsisten backend ↔ frontend. Aliran Gear 1 (kontrak src/ disahkan — sifar perubahan runtime) → Gear 2 (pembedahan public/config.js + Playwright) → Gear 3 (audit + npm test + 8-Step).
+- **Pembedahan (public/config.js sahaja, sifar perubahan runtime src/):** (a) A2 — isSamplingStrictGemini3() + whitelist reroute gemini-3.5-flash & gemini-3.7-flash => 3.x-strict; getModelFamily() + cabang /^gemini-[4-9]/ future-proof => 3.x-strict (cermin tepat src/services/gemini.js). (b) B3 — PROVIDER_PARAMETER_DEFAULTS: temperature 0.2 merentas 8 pembekal LLM (deepl/googletranslate kekal 0); deepseek.maxOutputTokens 8192 (dahulu 32768); cfworkers.topP 0.9 & custom 65536 kekal padan backend. (c) Tambahan — window.SubFaberGeminiModelUi didedahkan (getModelFamily, getGeminiCapabilities, clampGeminiThinkingBudget, getDefaultProviderParameters) sebagai pembaca baca-sahaja untuk pariti boleh-diuji.
+- **Verifikasi Playwright (Gear 2):** A2 — 11 model diuji, semua family selari backend (3.5/3.7/3.6/3.5-lite/4-argon/4.2-pro/5-flash => strict; 3.1-pro => legacy; 2.5-pro => 2.5; unknown => unknown). B3 — 10 nilai default disahkan + isolasi klon getDefaultProviderParameters (mutasi tidak bocor). Reset & defaults tanpa regresi; modal "Clear Browser Data" DIBATALKAN (tiada data pelayar dipadam); konsol 0 ralat; node --check PASS.
+- **Integration Audit (Gear 3):** grep public/ mengesahkan tiada pemanggil bergantung pada nilai lama 0.4/32768 — baki 32768 hanya default token Trinity per-ejen (kontrak AGENT_TUNING_BASE sendiri) dan string SVG; sifar ujian mengunci nilai lama.
+- **Fail Terlibat:** public/config.js, package.json (3.22.0→3.23.0), CHANGELOG.md. Graphify NO-OP (`graphify-out/` tiada).
+- **Status npm test:** **475 total / 474 PASS / 0 FAIL / 1 SKIP** — baseline monotonik dipelihara. Prettier `--check .` PASS; ESLint 0 error (226 warning pre-existing). Cache-buster: runtime 3.23.0 (dinamik daripada package.json).
+- **Next Steps:** commit + push → CI `gh` watch SUCCESS → SHA direkod → deploy VPS. DENGAN INI SEMUA 9 HUTANG AUDIT DUA-KEPALA (C1-C3, A1, B1-B2, C4, A2, B3) TELAH DIBAYAR PENUH.
+
+---
+
 ## 2026-10-26 — v3.22.0 FASA 2 KETEPATAN SEMANTIK & PENYELARASAN TOOLBOX: MESEJ HYBRID GUARD, REHIDRASI PARAMETER, BAJET GEMINI 2.5 PRO & DIALEK REASONING (MANDAT OWNER)
 
 - **Tarikh:** 2026-10-26 ~14:20 (waktu tempatan KL)

@@ -955,9 +955,15 @@
         custom: { label: 'Custom Provider' }
     };
 
+    // [FASA 3 B3 — MANDAT OWNER 2026-10-26] Cermin TEPAT nilai kanonik backend
+    // (src/utils/config.js PROVIDER_PARAMETER_DEFAULTS): temperature 0.2
+    // merentas semua pembekal LLM (deepl/googletranslate kekal 0), dan
+    // deepseek.maxOutputTokens = 8192. Sebelum ini frontend menggunakan 0.4 /
+    // 32768 — fallback & reset menghasilkan tingkah laku berbeza daripada
+    // enjin.
     const PROVIDER_PARAMETER_DEFAULTS = {
         openai: {
-            temperature: 0.4,
+            temperature: 0.2,
             topP: 0.95,
             maxOutputTokens: 32768,
             translationTimeout: 60,
@@ -965,7 +971,7 @@
             reasoningEffort: undefined // undefined = omit from API request (default behavior)
         },
         anthropic: {
-            temperature: 0.4,
+            temperature: 0.2,
             topP: 0.95,
             maxOutputTokens: 32768,
             translationTimeout: 60,
@@ -973,16 +979,16 @@
             thinkingBudget: 0
         },
         xai: {
-            temperature: 0.4,
+            temperature: 0.2,
             topP: 0.95,
             maxOutputTokens: 32768,
             translationTimeout: 60,
             maxRetries: 2
         },
         deepseek: {
-            temperature: 0.4,
+            temperature: 0.2,
             topP: 0.95,
-            maxOutputTokens: 32768,
+            maxOutputTokens: 8192,
             translationTimeout: 60,
             maxRetries: 2
         },
@@ -997,21 +1003,21 @@
             preserveFormatting: true
         },
         mistral: {
-            temperature: 0.4,
+            temperature: 0.2,
             topP: 0.95,
             maxOutputTokens: 32768,
             translationTimeout: 60,
             maxRetries: 2
         },
         cfworkers: {
-            temperature: 0.4,
+            temperature: 0.2,
             topP: 0.9,
             maxOutputTokens: 32768,
             translationTimeout: 60,
             maxRetries: 2
         },
         openrouter: {
-            temperature: 0.4,
+            temperature: 0.2,
             topP: 0.95,
             maxOutputTokens: 32768,
             translationTimeout: 60,
@@ -1147,11 +1153,15 @@ Translate to {target_language}.`;
     }
 
     function isSamplingStrictGemini3(m) {
+        // [FASA 3 A2 — MANDAT OWNER 2026-10-26] Cermin TEPAT backend
+        // (src/services/gemini.js isSamplingStrictGemini3): whitelist reroute
+        // Google — 'gemini-3.5-flash' & 'gemini-3.7-flash' diterima sebagai
+        // nama legacy tetapi pelayan MEREROUTE ke 3.6/3.8 (kelakuan strip).
+        if (m === 'gemini-3.5-flash' || m === 'gemini-3.7-flash') return true;
         const minor = gemini3MinorVersion(m);
         if (minor === null) return false;
         if (minor >= SAMPLING_DEPRECATION_MINOR) return true;
-        // Kes tepi: gemini-3.5-flash-lite (minor 5) GA pada hari penamatan → strict;
-        // gemini-3.5-flash (minor 5, pra-sempadan) kekal legacy.
+        // Kes tepi: gemini-3.5-flash-lite (minor 5) GA pada hari penamatan → strict.
         if (minor === 5 && /flash-lite/.test(m)) return true;
         return false;
     }
@@ -1172,6 +1182,13 @@ Translate to {target_language}.`;
         }
         if (/^gemini-(flash|flash-lite|pro)-latest$/.test(m)) {
             return { family: '3.x-strict', sampling: 'stripped', thinking: 'level', alias: true };
+        }
+        // [FASA 3 A2 — MANDAT OWNER 2026-10-26] Future-proof: Gemini 4+ dianggap
+        // mod reasoning moden (sama seperti 3.x-strict) supaya tidak jatuh ke
+        // 'unknown' yang menghantar parameter pensampelan penuh (akan ditolak
+        // API generasi baharu). Cermin tepat src/services/gemini.js baris ~180.
+        if (/^gemini-[4-9](?:[.-]|$)/.test(m)) {
+            return { family: '3.x-strict', sampling: 'stripped', thinking: 'level' };
         }
         return { family: 'unknown', sampling: 'conservative', thinking: 'none' };
     }
@@ -1463,7 +1480,14 @@ Translate to {target_language}.`;
             getDefaultModelValue: getDefaultGeminiModelOptionValue,
             getDefaultModelLabel: getDefaultGeminiModelOptionLabel,
             getModelSpecificDefaults,
-            normalizeBaseModel: normalizeGeminiModelForBaseSelect
+            normalizeBaseModel: normalizeGeminiModelForBaseSelect,
+            // [FASA 3 A2/B3 — MANDAT OWNER 2026-10-26] Buka pembaca baca-sahaja
+            // supaya pariti cermin backend ↔ frontend boleh disahkan secara
+            // langsung (Playwright/regresi) tanpa menduplikasi logik.
+            getModelFamily,
+            getGeminiCapabilities,
+            clampGeminiThinkingBudget,
+            getDefaultProviderParameters
         };
     }
 
