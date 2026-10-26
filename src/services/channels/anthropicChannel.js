@@ -84,11 +84,15 @@ function buildProvider(options = {}) {
         model,
         providerName: 'anthropic',
         // maxOutputTokens provider melebihi cap API — clamp bawah siling sah.
-        maxOutputTokens: ANTHROPIC_MAX_TOKENS_CAP,
+        maxOutputTokens: options.maxOutputTokens !== undefined ? options.maxOutputTokens : ANTHROPIC_MAX_TOKENS_CAP,
         // Fail fast — retry dikendalikan _callWithFailover AgentInspector (pariti
         // maxRetries:0 dengan openaiChannel/geminiChannel).
         maxRetries: 0,
         enableJsonOutput: false, // kesahan JSON oleh parser tahan lasak AgentInspector
+        // [FASA 1 C2 — Mandat Owner 2026-10-26] Parameter semantik per-fasa
+        // (temperature/topP) disalurkan sebagai input standard — sifar-penciptaan.
+        temperature: options.temperature,
+        topP: options.topP,
         // thinking adaptive mengikut laluan provider; temperature default
         // dikawal provider (kekangan temperature/thinking dikekalkan).
         thinking: options.thinking !== undefined ? options.thinking : { type: 'adaptive' }

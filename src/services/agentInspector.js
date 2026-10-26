@@ -485,12 +485,22 @@ class AgentInspector extends OpenAICompatibleProvider {
         this._trinityInspectionBuilder = resolveTrinityPrompt('inspector', this.trinityChannel);
         this._trinityPreflightChannel = options.trinityPreflightChannel || this.trinityChannel;
 
-        // [PENYATUAN MUTLAK 2026-10-25 — Mandat Owner] Params per-ejen
-        // (preflightParams/inspectorParams/__activeAgentParams) MANSUH —
-        // tampalan khas ejen untuk muatan god-tier. Input semantik Inspector
-        // kini disalurkan sebagai parameter standard (temperature,
-        // maxOutputTokens, reasoningEffort) melalui openaiChannel
-        // buildSuperOptions; pembinaan muatan sepenuhnya milik lapisan pintu.
+        // [FASA 1 C2 — MANDAT OWNER 2026-10-26] Params per-ejen DIAKTIFKAN
+        // SEMULA sebagai input semantik standard: preflightParams (Fasa 0) dan
+        // inspectorParams (Fasa 1) disuntik ke parameter standard provider
+        // (temperature/topP/maxOutputTokens/reasoningEffort) MELALUI pembina
+        // muatan pintu — SIFAR injection pada tahap ejen kekal (pembinaan
+        // muatan tetap milik lapisan pintu). Params null → input standard
+        // tidak disentuh (sifar-penciptaan nilai K1/K5 kekal).
+        this.preflightParams = options.preflightParams || null;
+        this.inspectorParams = options.inspectorParams || null;
+        // [FASA 1 C3 — MANDAT OWNER 2026-10-26] Kredensial per-fasa: kad
+        // Preflight dan Inspector UI kini boleh membawa kunci/baseUrl/format
+        // BERASINGAN. Kosong → warisi kredensial utama (backward compatible).
+        this.preflightApiKey = options.preflightApiKey || options.apiKey || '';
+        this.preflightBaseUrl = options.preflightBaseUrl || options.baseUrl || '';
+        this.preflightFormat = options.preflightFormat || options.format || 'auto';
+        this._phaseState = null; // snapshot semasa fasa aktif (params + kredensial)
 
         // Pembina asas clamp translationTimeout kepada >= 5000ms — enforce semula
         // had mandate: 60s bagi semakan batch (lalai instance); Fasa 0 dinaikkan
@@ -628,7 +638,15 @@ class AgentInspector extends OpenAICompatibleProvider {
             model: this.model,
             preflightModel: this.preflightModel,
             thinkingLevel: 'low', // gemini: empirikal Fasa 0 (6.4s, elak DQ 300s)
-            thinking: { type: 'adaptive' } // anthropic: kekangan temp/thinking provider
+            thinking: { type: 'adaptive' }, // anthropic: kekangan temp/thinking provider
+            // [FASA 1 C2 — Mandat Owner 2026-10-26] Parameter semantik fasa
+            // AKTIF (disuntik oleh _enterPhase) disalurkan ke transport channel
+            // — sifar-penciptaan: undefined diabaikan oleh provider.
+            temperature: this.temperature,
+            topP: this.topP,
+            maxOutputTokens: this.maxOutputTokens,
+            frequencyPenalty: this.frequencyPenalty,
+            presencePenalty: this.presencePenalty
         };
         this._channelProvider =
             this.channelFormat === 'gemini'
@@ -648,6 +666,89 @@ class AgentInspector extends OpenAICompatibleProvider {
      * kelulusan owner #4 untuk mengalahkan siling Caddy 300s); muatan
      * dibina oleh buildChatRequest() standard, sifar laluan khas ejen.
      */
+    /**
+     * [FASA 1 C2+C3] Masuk fasa ejen (preflight | inspection): suntik params
+     * per-fasa sebagai input semantik standard + tukar kredensial per-fasa.
+     * Snapshot keadaan dipulihkan oleh _exitPhase() — fasa tidak bertindih
+     * (kedua-dua runPreflightPass & runSemanticInspection di-await sepenuhnya).
+     * @param {'preflight'|'inspection'} phase
+     * @returns {void}
+     */
+    _enterPhase(phase) {
+        const params = phase === 'preflight' ? this.preflightParams : this.inspectorParams;
+        // [C3] Kredensial per-fasa — kosong → kekal kredensial utama.
+        const phaseApiKey = phase === 'preflight' ? this.preflightApiKey : this.apiKey;
+        const phaseBaseUrl = phase === 'preflight' ? this.preflightBaseUrl : this.baseUrl;
+        const phaseFormat = phase === 'preflight' ? this.preflightFormat : this.format;
+        const phaseChannel = phase === 'preflight' ? this._trinityPreflightChannel : this.trinityChannel;
+        this._phaseState = {
+            temperature: this.temperature,
+            topP: this.topP,
+            maxOutputTokens: this.maxOutputTokens,
+            reasoningEffort: this.reasoningEffort,
+            presencePenalty: this.presencePenalty,
+            frequencyPenalty: this.frequencyPenalty,
+            apiKey: this.apiKey,
+            baseUrl: this.baseUrl,
+            format: this.format,
+            channelFormat: this.channelFormat,
+            channelFormatSource: this.channelFormatSource,
+            _channelProvider: this._channelProvider,
+            trinityChannel: this.trinityChannel
+        };
+        if (params && typeof params === 'object') {
+            // Sifar-penciptaan: hanya medan yang DITETAPKAN pengguna disuntik.
+            if (params.temperature !== undefined) this.temperature = params.temperature;
+            if (params.topP !== undefined) this.topP = params.topP;
+            if (params.maxOutputTokens !== undefined) this.maxOutputTokens = params.maxOutputTokens;
+            if (params.reasoningEffort !== undefined) this.reasoningEffort = params.reasoningEffort;
+            if (params.presencePenalty !== undefined) this.presencePenalty = params.presencePenalty;
+            if (params.frequencyPenalty !== undefined) this.frequencyPenalty = params.frequencyPenalty;
+        }
+        if (
+            phase === 'preflight' &&
+            (phaseApiKey !== this.apiKey || phaseBaseUrl !== this.baseUrl || phaseFormat !== this.format)
+        ) {
+            this.apiKey = phaseApiKey;
+            this.baseUrl = phaseBaseUrl;
+            this.format = phaseFormat;
+            const detected = detectAgentChannelFormat({
+                apiKey: this.apiKey,
+                baseUrl: this.baseUrl,
+                model: this.model,
+                override: this.format
+            });
+            this.channelFormat = detected.format;
+            this.channelFormatSource = detected.source;
+            this._channelProvider = null; // rebuild transport untuk kredensial fasa
+        }
+        // Pembina prompt fasa: preflight guna channel preflight (sedia ada).
+        this.trinityChannel = phaseChannel;
+    }
+
+    /**
+     * [FASA 1 C2+C3] Pulihkan keadaan selepas fasa selesai/gagal.
+     * @returns {void}
+     */
+    _exitPhase() {
+        if (!this._phaseState) return;
+        const s = this._phaseState;
+        this.temperature = s.temperature;
+        this.topP = s.topP;
+        this.maxOutputTokens = s.maxOutputTokens;
+        this.reasoningEffort = s.reasoningEffort;
+        this.presencePenalty = s.presencePenalty;
+        this.frequencyPenalty = s.frequencyPenalty;
+        this.apiKey = s.apiKey;
+        this.baseUrl = s.baseUrl;
+        this.format = s.format;
+        this.channelFormat = s.channelFormat;
+        this.channelFormatSource = s.channelFormatSource;
+        this._channelProvider = s._channelProvider;
+        this.trinityChannel = s.trinityChannel;
+        this._phaseState = null;
+    }
+
     async translateSubtitle(subtitleContent, sourceLanguage, targetLanguage, customPrompt = null, requestOptions = {}) {
         const channelProvider = this._getChannelProvider();
         if (!channelProvider) {
@@ -900,9 +1001,9 @@ class AgentInspector extends OpenAICompatibleProvider {
         const previousTimeout = this.translationTimeout;
         const previousModel = this.model;
         this.translationTimeout = this.preflightTimeoutMs; // 150s headroom (BETA RUN 10)
-        // [PENYATUAN MUTLAK 2026-10-25 — Mandat Owner] Toggle params ejen
-        // (__activeAgentParams) MANSUH — muatan kini standard merentas fasa;
-        // hanya timeout/model dipulihkan dalam finally (fasa tidak bertindih).
+        // [FASA 1 C2+C3 — Mandat Owner 2026-10-26] Fasa 0 aktif: params
+        // Preflight disuntik + kredensial per-fasa ditukar; dipulihkan dalam
+        // finally (fasa tidak bertindih — preflight di-await sepenuhnya).
 
         // [MODEL-HIERARCHY] FAILOVER FINAL (2026-09-28): Fasa 0 dihalakan ke
         // preflightHierarchy [kimi-k3] SAHAJA — STANDALONE. Kegagalan kimi-k3
@@ -911,6 +1012,7 @@ class AgentInspector extends OpenAICompatibleProvider {
         // → pre-flight dihentikan, terjemahan jalan tanpa konteks (fail-open
         // kontrak asal). null + hook aktif = kegagalan model (retry);
         // null tanpa hook = skip sahaja (fail kecil / tiada teks) — jangan retry.
+        this._enterPhase('preflight');
         try {
             const { result } = await this._callWithFailover(
                 'Pre-flight',
@@ -958,6 +1060,7 @@ class AgentInspector extends OpenAICompatibleProvider {
             );
             return null;
         } finally {
+            this._exitPhase();
             this.model = previousModel;
             this.translationTimeout = previousTimeout;
         }
@@ -1011,6 +1114,10 @@ class AgentInspector extends OpenAICompatibleProvider {
             : 'Inspection';
 
         const previousModel = this.model;
+        // [FASA 1 C2 — Mandat Owner 2026-10-26] Fasa inspection aktif: params
+        // Inspector (temperature/topP/maxOutputTokens/reasoningEffort) disuntik
+        // sebagai input semantik standard; dipulihkan dalam finally.
+        this._enterPhase('inspection');
         try {
             const { result, modelUsed } = await this._callWithFailover(
                 batchLabel,
@@ -1064,6 +1171,7 @@ class AgentInspector extends OpenAICompatibleProvider {
             );
             return { valid: true, failOpen: true, error: 'both_models_failed', detail: err?.message || String(err) };
         } finally {
+            this._exitPhase();
             this.model = previousModel;
         }
     }

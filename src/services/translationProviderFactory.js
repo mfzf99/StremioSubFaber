@@ -429,6 +429,28 @@ async function createProviderInstance(providerKey, providerConfig = {}, provider
                 });
             }
 
+            // [FASA 1 C1 — KEDAULATAN PINTU CUSTOM ANTHROPIC 2026-10-26] door
+            // 'anthropic-messages' WAJIB membina AnthropicProvider (format
+            // Messages rasmi: system top-level, x-api-key, max_tokens mandatori)
+            // — pariti penuh dengan cabang gemini-native v3.9.50. Sebelum ini
+            // pintu ini dipaksa ke OpenAICompatibleProvider → kontrak pintu
+            // hilang pada routing (hutang kritikal C1 audit dua-kepala).
+            if (String(providerConfig.door || '').toLowerCase() === 'anthropic-messages') {
+                return new AnthropicProvider({
+                    apiKey: providerConfig.apiKey || '',
+                    model: providerConfig.model,
+                    providerName: isSecondary ? 'custom_secondary' : 'custom',
+                    baseUrl: validation.sanitized,
+                    temperature: providerParams.temperature,
+                    topP: providerParams.topP,
+                    maxOutputTokens: providerParams.maxOutputTokens,
+                    thinkingBudget: providerParams.thinkingBudget,
+                    translationTimeout: providerParams.translationTimeout,
+                    maxRetries: providerParams.maxRetries,
+                    enableJsonOutput
+                });
+            }
+
             // [KIMI-K3 THINKING RESTORE 2026-10-19] reasoningEffort WAJIB
             // dihantar pada pintu Custom/Proxy — pariti dengan cabang 'openai'
             // (baris 277). Tanpa ini, nilai thinking dari kad Trinity dibuang

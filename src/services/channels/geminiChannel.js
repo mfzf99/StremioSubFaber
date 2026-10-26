@@ -75,10 +75,20 @@ function buildRequest({ model, userPrompt, systemPrompt = '', maxOutputTokens = 
  */
 function buildProvider(options = {}) {
     const model = String(options.model || options.preflightModel || 'gemini-2.5-flash').trim();
-    return new GeminiService(options.apiKey || '', model, {
+    // [FASA 1 C2 — Mandat Owner 2026-10-26] Parameter semantik per-fasa
+    // (temperature/topP/maxOutputTokens/penalties) disalurkan sebagai input
+    // standard GeminiService — sifar-penciptaan: hanya medan ditetapkan
+    // pengguna dihantar (undefined di-skip oleh buildGenerationConfig).
+    const advanced = {
         maxRetries: 0, // Fail fast — retry dikendalikan _callWithFailover AgentInspector
         thinkingLevel: options.thinkingLevel || 'low' // empirikal Fasa 0: low = 6.4s, high DQ 300s
-    });
+    };
+    if (options.temperature !== undefined) advanced.temperature = options.temperature;
+    if (options.topP !== undefined) advanced.topP = options.topP;
+    if (options.maxOutputTokens !== undefined) advanced.maxOutputTokens = options.maxOutputTokens;
+    if (options.frequencyPenalty !== undefined) advanced.frequencyPenalty = options.frequencyPenalty;
+    if (options.presencePenalty !== undefined) advanced.presencePenalty = options.presencePenalty;
+    return new GeminiService(options.apiKey || '', model, advanced);
 }
 
 module.exports = {

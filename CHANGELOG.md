@@ -2,6 +2,24 @@
 
 All notable changes to this project will be documented in this file.
 
+## SubFaber v3.21.0 (2026-10-26) — Fasa 1 Pembedahan Kritikal Tri-Door: Kedaulatan Pintu Custom Anthropic + Parameter Pro Sebenar + Pengasingan Pengangkutan Preflight/Inspector (Mandat Owner)
+
+### 🔧 Fixed — 3 Hutang Kritikal Dua-Kepala (Audit Seamless Gearbox) Dibayar Penuh
+
+- **C1 — Kedaulatan Pintu Custom Anthropic:** `providers.custom.door='anthropic-messages'` kini dihormati hujung-ke-hujung. Sebelum ini pintu dipaksa ke `openai-compatible` pada TIGA titik: serialisasi frontend ([`collectConfigPatch()`](public/js/trinity-agents.js)), jambatan backend ([`syncTrinityTranslationToProvider()`](src/utils/config.js)) dan normalisasi pintu — kini ketiga-tiga mengekalkan door pilihan (fallback `openai-compatible` hanya untuk nilai tidak dikenali). Kilang provider ([`translationProviderFactory.js`](src/services/translationProviderFactory.js)) membina `AnthropicProvider` untuk pintu ini (pariti penuh dengan cabang `gemini-native` v3.9.50), dan [`AnthropicProvider`](src/services/providers/anthropic.js) menerima `baseUrl` per-instance (SSRF-sanitized; lalai kekal endpoint rasmi).
+- **C2 — Parameter Preflight/Inspector Diaktifkan Semula:** `preflightParams`/`inspectorParams` (Fasa 3 v3.9.46) yang dimansuhkan oleh PENYATUAN MUTLAK 2026-10-25 kini disalurkan sebagai **input semantik standard** melalui `_enterPhase()`/`_exitPhase()` baru dalam [`agentInspector.js`](src/services/agentInspector.js): suntikan hanya semasa fasa aktif, snapshot/restore penuh selepasnya, sifar-penciptaan nilai (hanya medan ditetapkan pengguna dihantar). Channels [`geminiChannel`](src/services/channels/geminiChannel.js)/[`anthropicChannel`](src/services/channels/anthropicChannel.js) menerima parameter semantik fasa; `_getChannelProvider()` menyalurkannya ke transport.
+- **C3 — Pengasingan Pengangkutan Preflight vs Inspector:** kad Preflight dan Inspector UI kini boleh membawa kredensial BERASINGAN (`preflightApiKey`/`preflightBaseUrl`/`preflightFormat` dalam [`config.js`](src/utils/config.js) + [`subtitles.js`](src/handlers/subtitles.js) saluran ke konstruktor). `_enterPhase('preflight')` menukar kredensial + rebuild transport channel bila berbeza; frontend `collectConfigPatch()` membawa `preflight*` dan `inspector*` berasingan tanpa percampuran. Kosong → warisi kredensial utama (backward compatible 100%).
+
+### 🧪 Tests — Baseline Monotonik 471 → 475
+
+- 4 ujian baharu `FASA1-C1a..d` (jambatan door + normalisasi + end-to-end AnthropicProvider + baseUrl per-instance) dan `[F5]` dinaik taraf: params dihormati DALAM fasa, sifar injection di LUAR fasa, keadaan dipulihkan selepas `_exitPhase()`.
+- `npm test`: **475 total / 474 PASS / 0 FAIL / 1 SKIP** (Redis live). Prettier PASS; ESLint 0 error (warning pre-existing).
+
+### ✅ Verifikasi Playwright (Gear 2, kunci sintetik sifar rahsia)
+
+- LIVE: `slotDoor='anthropic-messages'` + `providerDoor='anthropic-messages'` (sebelum fix: `openai-compatible`).
+- LIVE: Pro-mode Preflight `anthropic-messages` + Inspector `gemini-native`, `distinctKeys=true`, `distinctUrls=true`, sifar percampuran; konsol 0 ralat.
+
 ## SubFaber v3.20.0 (2026-10-26) — Naik Taraf Seni Bina "Seamless Gearbox": Auto Cross-Domain Sync Backend ↔ Frontend (Mandat Owner)
 
 ### 🏗️ Added — [SEAMLESS GEARBOX PROTOCOL] dalam [00-subfaber-core-protocol.md](.roo/rules/00-subfaber-core-protocol.md)

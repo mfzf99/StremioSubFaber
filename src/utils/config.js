@@ -849,6 +849,15 @@ function normalizeConfig(config) {
         agentInspectorSrc.fallbackModel || process.env.AGENT_INSPECTOR_FALLBACK_MODEL || ''
     ).trim();
 
+    // [FASA 1 C3 — Mandat Owner 2026-10-26] Kredensial Preflight berasingan:
+    // kad Preflight UI boleh membawa kunci/baseUrl/format sendiri. Kosong →
+    // warisi kad Inspector/utama (backward compatible sepenuhnya).
+    const trinityPreflightApiKey = String(trinityPreflight.apiKey || '').trim();
+    const trinityPreflightBaseUrl = String(trinityPreflight.baseUrl || '').trim();
+    const trinityPreflightFormat = String(trinityPreflight.format || '')
+        .trim()
+        .toLowerCase();
+
     mergedConfig.agentInspector = {
         enabled:
             agentInspectorSrc.enabled === true ||
@@ -857,6 +866,14 @@ function normalizeConfig(config) {
         apiKey: agentInspectorApiKey,
         model: inspectorModel,
         preflightModel,
+        preflightApiKey: trinityPreflightApiKey || agentInspectorApiKey,
+        preflightBaseUrl: trinityPreflightBaseUrl || agentInspectorBaseUrl,
+        preflightFormat:
+            trinityPreflightFormat ||
+            String(trinityInspector.format || '')
+                .trim()
+                .toLowerCase() ||
+            'auto',
         // [MODEL-HIERARCHY] Fallback khusus Fasa 0 DIGUGURKAN — nilai
         // sentiasa = primer (standalone; kegagalan → retry model sama).
         preflightFallbackModel: preflightModel,
@@ -1120,11 +1137,13 @@ function normalizeConfig(config) {
         };
         if (isCustom) {
             mergedConfig.providers[provider].baseUrl = entry.baseUrl || baseUrl;
-            // door 'gemini-native' dikekalkan untuk routing custom main
-            // (builder custom_secondary sedia membaca; custom main default
-            // openai-compatible).
-            if (door === 'gemini-native') {
-                mergedConfig.providers[provider].door = 'gemini-native';
+            // [FASA 1 C1 2026-10-26] Kedaulatan pintu custom: 'gemini-native' DAN
+            // 'anthropic-messages' dikekalkan untuk routing custom main
+            // (builder custom/custom_secondary membaca; custom main default
+            // openai-compatible). Sebelum ini anthropic dipaksa terbalik ke
+            // openai-compatible — kontrak pintu hilang (hutang C1).
+            if (door === 'gemini-native' || door === 'anthropic-messages') {
+                mergedConfig.providers[provider].door = door;
             }
         }
 
@@ -1190,9 +1209,12 @@ function normalizeConfig(config) {
             // [TRINITY→PROVIDER BRIDGE v3.9.49] pintu custom MAIN turut
             // dikekalkan — trinity.translation boleh membawa door 'gemini-native'
             // (proksi Gemini-native) yang mesti mengalir ke builder custom.
+            // [FASA 1 C1 2026-10-26] door 'anthropic-messages' kini setaraf —
+            // pintu custom Anthropic tidak lagi dipaksa ke openai-compatible.
             if (normalizedKey === 'custom_secondary' || normalizedKey === 'custom') {
                 const door = String(value?.door || '').toLowerCase();
-                mergedConfig.providers[key].door = door === 'gemini-native' ? 'gemini-native' : 'openai-compatible';
+                mergedConfig.providers[key].door =
+                    door === 'gemini-native' || door === 'anthropic-messages' ? door : 'openai-compatible';
             }
         }
     }

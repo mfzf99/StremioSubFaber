@@ -3190,9 +3190,16 @@
                     };
                     if (tCustom) {
                         mainEntry.baseUrl = tBaseUrl;
+                        // [FASA 1 C1 — MANDAT OWNER 2026-10-26] Kedaulatan pintu:
+                        // door pilihan pengguna (gemini-native | anthropic-messages |
+                        // openai-compatible) MESTI kekal. Sebelum ini pintu
+                        // anthropic-messages dipaksa ke openai-compatible →
+                        // kontrak pintu hilang pada routing (hutang kritikal C1).
+                        // Fallback 'openai-compatible' hanya untuk nilai kosong/tak dikenali.
+                        var tDoor = String(t.door || '').toLowerCase();
                         mainEntry.door =
-                            String(t.door || '').toLowerCase() === 'gemini-native'
-                                ? 'gemini-native'
+                            tDoor === 'gemini-native' || tDoor === 'anthropic-messages' || tDoor === 'openai-compatible'
+                                ? tDoor
                                 : 'openai-compatible';
                     }
                     patch.providers[t.provider] = mainEntry;
@@ -3266,7 +3273,22 @@
                 baseUrl: bUrl,
                 format: insp.format !== 'auto' ? insp.format : pf.format !== 'auto' ? pf.format : 'auto',
                 model: insp.model || 'deepseek-v4-pro',
-                preflightModel: pf.model || 'kimi-k3'
+                preflightModel: pf.model || 'kimi-k3',
+                // [FASA 1 C3 — MANDAT OWNER 2026-10-26] Kredensial per-fasa
+                // BERASINGAN: kad Preflight dan kad Inspector boleh menggunakan
+                // provider/kunci/baseUrl/pintu berbeza. Nilai kosong → backend
+                // mewarisi kredensial utama (backward compatible). JANGAN gabung
+                // atau padam nilai salah satu kad.
+                preflightApiKey: pf.apiKey || '',
+                preflightBaseUrl: pf.baseUrl || '',
+                preflightFormat: pf.format !== 'auto' ? pf.format : 'auto',
+                preflightFormatDoor: pf.door || 'auto',
+                preflightProvider: pf.provider || '',
+                inspectorApiKey: insp.apiKey || '',
+                inspectorBaseUrl: insp.baseUrl || '',
+                inspectorFormat: insp.format !== 'auto' ? insp.format : 'auto',
+                inspectorFormatDoor: insp.door || 'auto',
+                inspectorProvider: insp.provider || ''
             };
         } else {
             patch.agentInspector = { enabled: false };

@@ -6268,9 +6268,15 @@ async function performTranslation(
                         // [TRI-DOOR FASA C] Format pintu: 'auto' (autodetect
                         // keyDetector) | 'gemini' | 'openai' | 'anthropic'.
                         format: config.agentInspector.format,
-                        // [TRINITY PARAMS FASA 3 v3.9.46] Params per-ejen
-                        // (sudah tersanitasi capability map oleh config.js).
-                        // Null → builder god-tier 4-kunci kekal (lalai).
+                        // [FASA 1 C3 — Mandat Owner 2026-10-26] Kredensial
+                        // Preflight berasingan (kosong → warisi utama).
+                        preflightApiKey: config.agentInspector.preflightApiKey || '',
+                        preflightBaseUrl: config.agentInspector.preflightBaseUrl || '',
+                        preflightFormat: config.agentInspector.preflightFormat || 'auto',
+                        // [TRINITY PARAMS FASA 3 v3.9.46 + FASA 1 C2 2026-10-26]
+                        // Params per-ejen — kini DIAKTIFKAN sebagai input semantik
+                        // standard oleh AgentInspector._enterPhase (sifar injection
+                        // tahap ejen kekal). Null → tiada suntikan (lalai ejen).
                         preflightParams: config.agentInspector.preflightParams || null,
                         inspectorParams: config.agentInspector.inspectorParams || null,
                         // BEAST MODE BETA RUN 10: siling token 131072 (128K rasmi DeepSeek

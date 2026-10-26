@@ -433,28 +433,104 @@ test('[F4] AgentInspector: parameter semantik eksplisit disalurkan melalui input
     assert.ok(Array.isArray(body.messages));
 });
 
-test('[F5] AgentInspector: kontrak params ejen MANSUH — sifar injection pada tahap ejen (PENYATUAN MUTLAK)', () => {
+test('[F5] AgentInspector: params ejen dihormati DALAM FASA — sifar injection di luar fasa (FASA 1 C2 2026-10-26)', () => {
     const { AgentInspector } = require('../services/agentInspector');
     const inspector = new AgentInspector({
         apiKey: 'k',
         baseUrl: 'https://x.example/v1',
         model: 'deepseek-v4-pro',
         preflightModel: 'kimi-k3',
-        // params ejen warisan diabaikan senyap — sifar tampalan ejen
         preflightParams: { topP: 0.7 },
         inspectorParams: { topP: 0.9 }
     });
-    // Muatan hanya membawa parameter standard pembina — sifar injection ejen.
+    // Di LUAR fasa: tiada suntikan — pembina standard sifar-penciptaan.
     assert.equal(
         'topP' in inspector.buildChatRequest('p', true, {}).body,
         false,
-        'tiada kunci topP (injection ejen mansuh)'
+        'tiada kunci topP di luar fasa (suntikan hanya dalam fasa)'
     );
     assert.equal(
         inspector.buildChatRequest('p', true, {}).body.top_p,
         undefined,
-        'top_p hanya daripada input semantik standard — params warisan tidak menembus'
+        'top_p hanya muncul bila fasa aktif dengan params pengguna'
     );
+    // DALAM fasa inspection: params Inspector disuntik sebagai input standard.
+    inspector._enterPhase('inspection');
+    const { body } = inspector.buildChatRequest('p', true, {});
+    assert.equal(body.top_p, 0.9, 'inspectorParams.topP dihantar semasa fasa inspection');
+    inspector._exitPhase();
+    // Selepas fasa: keadaan dipulihkan — sifar-penciptaan kembali.
+    assert.equal(
+        inspector.buildChatRequest('p', true, {}).body.top_p,
+        undefined,
+        'selepas _exitPhase keadaan dipulihkan sepenuhnya'
+    );
+});
+
+// ═══ [FASA 1 C1 — MANDAT OWNER 2026-10-26] KEDAULATAN PINTU CUSTOM ANTHROPIC ═══
+// Door 'anthropic-messages' pada custom MAIN/secondary mesti kekal Anthropic
+// Provider merentas normalizeConfig + createProviderProviderFactory — tidak
+// lagi dipaksa ke openai-compatible (hutang kritikal C1 audit dua-kepala).
+test('[FASA1-C1a] Bridge: door anthropic-messages pada custom DIKEKALKAN dalam entri provider', () => {
+    const cfg = normalizeConfig({
+        trinity: {
+            mode: 'pro',
+            translation: {
+                apiKey: 'sk-ant-test',
+                provider: 'custom',
+                door: 'anthropic-messages',
+                format: 'anthropic',
+                baseUrl: 'https://gateway.example/v1',
+                model: 'claude-sonnet-4'
+            }
+        }
+    });
+    assert.equal(cfg.providers.custom.door, 'anthropic-messages', 'door anthropic-messages mesti kekal');
+    assert.equal(cfg.mainProvider, 'custom');
+});
+
+test('[FASA1-C1b] normalizeConfig providers.custom: door anthropic-messages tidak ditarik balik ke openai-compatible', () => {
+    const cfg = normalizeConfig({
+        multiProviderEnabled: true,
+        mainProvider: 'custom',
+        providers: {
+            custom: {
+                enabled: true,
+                apiKey: 'sk-ant-test',
+                baseUrl: 'https://gateway.example/v1',
+                model: 'claude-sonnet-4',
+                door: 'anthropic-messages'
+            }
+        }
+    });
+    assert.equal(cfg.providers.custom.door, 'anthropic-messages');
+});
+
+test('[FASA1-C1c] END-TO-END: custom + door anthropic-messages → AnthropicProvider (bukan OpenAICompatible)', async () => {
+    const { createProviderInstance } = require('../services/translationProviderFactory');
+    const AnthropicProvider = require('../services/providers/anthropic');
+    const provider = await createProviderInstance(
+        'custom',
+        {
+            enabled: true,
+            apiKey: 'sk-ant-test',
+            baseUrl: 'https://api.anthropic.com/v1',
+            model: 'claude-sonnet-4',
+            door: 'anthropic-messages'
+        },
+        { temperature: 0.3, topP: 0.95 }
+    );
+    assert.ok(provider instanceof AnthropicProvider, 'custom door anthropic mesti membina AnthropicProvider');
+    assert.equal(provider.baseUrl, 'https://api.anthropic.com/v1', 'baseUrl custom dihormati per-instance');
+    assert.equal(provider.model, 'claude-sonnet-4');
+});
+
+test('[FASA1-C1d] AnthropicProvider: baseUrl per-instance mengatasi endpoint global', () => {
+    const AnthropicProvider = require('../services/providers/anthropic');
+    const a = new AnthropicProvider({ apiKey: 'k', model: 'm' });
+    const b = new AnthropicProvider({ apiKey: 'k', model: 'm', baseUrl: 'https://gw.example/v1/' });
+    assert.equal(a.baseUrl, process.env.ANTHROPIC_API_BASE || 'https://api.anthropic.com/v1', 'lalai = endpoint rasmi');
+    assert.equal(b.baseUrl, 'https://gw.example/v1', 'trailing slash dibuang + custom dihormati');
 });
 
 // ── E. KONSISTENSI getModelFamily ↔ CAPABILITY MAP ──────────────────────────

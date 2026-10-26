@@ -1,3 +1,17 @@
+## 2026-10-26 — v3.21.0 FASA 1 PEMBEDAHAN KRITIKAL TRI-DOOR: KEDAULATAN PINTU CUSTOM ANTHROPIC + PARAMETER PRO SEBENAR + PENGASINGAN PENGANGKUTAN PREFLIGHT/INSPECTOR (MANDAT OWNER)
+
+- **Tarikh:** 2026-10-26 ~13:40 (waktu tempatan KL)
+- **Komit SHA (HEAD):** (direkod selepas push)
+- **Keputusan Owner:** Susulan audit dua-kepala Seamless Gearbox (matriks 3 hutang kritikal C1/C2/C3 + 4 sederhana + 2 kosmetik). Mandat Fasa 1: hapuskan C1/C2/C3 — kedaulatan Tri-Door, fungsi parameter Pro sebenar, pengasingan pengangkutan Preflight vs Inspector. Aliran wajib Gear 1 Backend → Gear 2 Frontend + Playwright → Gear 3 Backend + npm test + 8-Step Pipeline. (Insiden kecil: switch_mode Gear 1→2 pertama tersekat/revert — retry berjaya, tiada kerja hilang.)
+- **Pembedahan (9 fail):** (a) C1 — [src/utils/config.js] jambatan + normalisasi pintu benarkan `anthropic-messages`; [src/services/translationProviderFactory.js] cabang custom bina `AnthropicProvider`; [src/services/providers/anthropic.js] `baseUrl` per-instance (3 titik panggilan `/models`+`/messages`×2). (b) C2 — [src/services/agentInspector.js] `_enterPhase()`/`_exitPhase()` suntik params per-fasa sebagai input semantik standard + `_getChannelProvider()` salur parameter; [src/services/channels/geminiChannel.js]+[anthropicChannel.js] terima parameter semantik. (c) C3 — [src/utils/config.js] dedah `preflightApiKey/preflightBaseUrl/preflightFormat`; [src/handlers/subtitles.js] salur ke konstruktor; [public/js/trinity-agents.js] `collectConfigPatch()` kekal door pilihan + bawa kredensial preflight*/inspector* berasingan. (d) Ujian — [src/utils/trinity-params-regression.test.js] F5 naik taraf + 4 ujian FASA1-C1 baharu.
+- **Verifikasi Playwright (Gear 2, kunci sintetik):** `slotDoor=anthropic-messages` + `providerDoor=anthropic-messages` (fix C1 live); Pro-mode Preflight anthropic + Inspector gemini-native, distinctKeys/Urls=true; konsol 0 ralat; visual critique lulus.
+- **Integration Audit (Gear 3):** frontend `trinity.preflight.{apiKey,baseUrl,format}` (gelung AGENTS) = sumber sebenar dibaca backend; medan tambahan `patch.agentInspector.preflight*` tidak merosakkan (backward compatible). Kontrak C3 hujung-ke-hujung selari.
+- **Fail Terlibat:** src/utils/config.js, src/services/agentInspector.js, src/services/translationProviderFactory.js, src/services/providers/anthropic.js, src/services/channels/geminiChannel.js, src/services/channels/anthropicChannel.js, src/handlers/subtitles.js, src/utils/trinity-params-regression.test.js, public/js/trinity-agents.js, package.json (3.20.0→3.21.0), CHANGELOG.md. Graphify NO-OP (`graphify-out/` tiada).
+- **Status npm test:** **475 total / 474 PASS / 0 FAIL / 1 SKIP** — baseline monotonik 471→475 (+5: 4× FASA1-C1 + F5 naik taraf). Prettier `--check .` PASS; ESLint 0 error (226 warning pre-existing). Cache-buster: runtime 3.21.0 (dinamik daripada package.json).
+- **Next Steps:** commit + push → CI `gh` watch SUCCESS → SHA direkod → deploy VPS. Fasa 2 (hutang sederhana A1/B1/B2/C4) menunggu mandat Owner.
+
+---
+
 ## 2026-10-26 — v3.20.0 SEAMLESS GEARBOX: AUTO CROSS-DOMAIN SYNC BACKEND ↔ FRONTEND (MANDAT OWNER)
 
 - **Tarikh:** 2026-10-26 ~11:15 (waktu tempatan KL)

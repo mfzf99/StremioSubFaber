@@ -16,6 +16,15 @@ class AnthropicProvider {
         this.apiKey = options.apiKey || '';
         this.model = options.model || '';
         this.providerName = options.providerName || 'anthropic';
+        // [FASA 1 C1 — KEDAULATAN PINTU CUSTOM ANTHROPIC 2026-10-26] baseUrl
+        // per-instance: kad Trinity Custom dengan door 'anthropic-messages'
+        // (cth gateway rootsys) kini dihormati. Lalai kekal endpoint rasmi.
+        // Nilai custom SUDAH ternormalisasi + SSRF-sanitized oleh
+        // translationProviderFactory (validation.sanitized) sebelum sampai ke sini.
+        this.baseUrl =
+            typeof options.baseUrl === 'string' && options.baseUrl.trim()
+                ? options.baseUrl.trim().replace(/\/+$/, '')
+                : ANTHROPIC_API_URL;
         this.maxOutputTokens = Number.isFinite(parseInt(options.maxOutputTokens, 10))
             ? Math.max(1, parseInt(options.maxOutputTokens, 10))
             : 4000;
@@ -188,7 +197,7 @@ class AnthropicProvider {
 
     async getAvailableModels() {
         try {
-            const response = await axios.get(`${ANTHROPIC_API_URL}/models`, {
+            const response = await axios.get(`${this.baseUrl}/models`, {
                 headers: this.getHeaders(),
                 timeout: 10000,
                 httpAgent,
@@ -264,7 +273,7 @@ class AnthropicProvider {
                     disableJsonPrefill,
                     forceTemperatureOne
                 });
-                const response = await axios.post(`${ANTHROPIC_API_URL}/messages`, body, {
+                const response = await axios.post(`${this.baseUrl}/messages`, body, {
                     headers: this.getHeaders(),
                     timeout: this.translationTimeout,
                     httpAgent,
@@ -338,7 +347,7 @@ class AnthropicProvider {
         requestOptions = {}
     ) {
         const executeStream = async (body) => {
-            const response = await axios.post(`${ANTHROPIC_API_URL}/messages`, body, {
+            const response = await axios.post(`${this.baseUrl}/messages`, body, {
                 headers: this.getHeaders(),
                 timeout: this.translationTimeout,
                 httpAgent,
