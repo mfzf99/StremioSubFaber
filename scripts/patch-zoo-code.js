@@ -4,13 +4,13 @@
 /**
  * scripts/patch-zoo-code.js
  * ------------------------------------------------------------------
- * SubFaber Official Maintenance Script — Zoo Code Two-Mode Lock Patch
+ * SubFaber Official Maintenance Script — Zoo Code Single-Mode Lock Patch
  * ------------------------------------------------------------------
  * Purpose:
  *   The Zoo Code VS Code extension ships with 5 built-in modes
  *   (architect, code, ask, debug, orchestrator). This repository
- *   operates under a CLOSED TWO-MODE UNIVERSE: `backend` and
- *   `frontend` ONLY (see .roo/rules/00-subfaber-core-protocol.md).
+ *   operates under a CLOSED SINGLE-MODE UNIVERSE: `fullstack`
+ *   (Fullstack Architect) ONLY (see .roo/rules/00-subfaber-core-protocol.md).
  *
  *   This script surgically replaces the built-in mode array in BOTH:
  *     1. Node.js Extension Host bundle:  dist/extension.js
@@ -44,8 +44,7 @@ const CHECK_ONLY = process.argv.includes('--check');
 /* ------------------------------------------------------------------ */
 
 const MODES_HOST = [
-	{ slug: 'backend', name: 'Backend', roleDefinition: 'Backend', groups: ['read', 'edit', 'command', 'mcp'] },
-	{ slug: 'frontend', name: 'Frontend', roleDefinition: 'Frontend', groups: ['read', 'edit', 'command', 'mcp'] },
+	{ slug: 'fullstack', name: 'Fullstack Architect', roleDefinition: 'Fullstack Architect', groups: ['read', 'edit', 'command', 'mcp'] },
 ];
 
 /** Serialize a mode array using double-quoted strings (host bundle style). */
@@ -74,7 +73,7 @@ function serializeWebview(modes) {
 /* Discovery: locate the active Zoo Code extension directory            */
 /* ------------------------------------------------------------------ */
 
-const LEGACY_SLUGS = ['architect', 'code', 'ask', 'debug', 'orchestrator'];
+const RETIRED_SLUGS = ['architect', 'code', 'ask', 'debug', 'orchestrator', 'backend', 'frontend'];
 
 function findZooCodeDirs() {
 	const base = path.join(os.homedir(), '.vscode', 'extensions');
@@ -174,12 +173,13 @@ function findAssignmentPrefix(src, arrStart) {
  */
 function patchBundle(file, quote, replacement) {
 	const src = fs.readFileSync(file, 'utf8');
-	const arrayMarker = `[{slug:${quote}architect${quote}`;
-	const patchedMarker = `[{slug:${quote}backend${quote}`;
-	const arrStart = src.indexOf(arrayMarker);
+	const patchedMarker = `[{slug:${quote}fullstack${quote}`;
+	const arrStart = ['architect', 'backend']
+		.map((slug) => src.indexOf(`[{slug:${quote}${slug}${quote}`))
+		.find((index) => index >= 0);
 
-	// Already-patched fast path: detect our two-mode definition.
-	if (arrStart < 0) {
+	// Already-patched fast path: detect our single-mode definition.
+	if (arrStart === undefined) {
 		if (src.indexOf(patchedMarker) >= 0) {
 			return { status: 'already-patched' };
 		}
@@ -217,11 +217,11 @@ function syntaxOk(file) {
 	}
 }
 
-/** Scan a patched bundle for any residual legacy slug. */
-function residualLegacySlugs(file) {
+/** Scan a patched bundle for any residual retired mode definition. */
+function residualRetiredSlugs(file) {
 	const t = fs.readFileSync(file, 'utf8');
 	const hits = [];
-	for (const slug of LEGACY_SLUGS) {
+	for (const slug of RETIRED_SLUGS) {
 		if (t.includes(`slug:"${slug}"`) || t.includes(`slug:\`${slug}\``)) {
 			hits.push(slug);
 		}
@@ -271,7 +271,7 @@ function main() {
 		const result = patchBundle(t.file, t.quote, t.replacement);
 		switch (result.status) {
 			case 'already-patched':
-				console.log('  Already patched (two-mode definition present). Skipping.');
+				console.log('  Already patched (single-mode definition present). Skipping.');
 				break;
 			case 'marker-not-found':
 				console.error('  ERROR: built-in mode array marker not found. Bundle layout may have changed in a new version — manual audit required.');
@@ -303,9 +303,9 @@ function main() {
 			continue;
 		}
 		const ok = syntaxOk(t.file);
-		const residual = residualLegacySlugs(t.file);
+		const residual = residualRetiredSlugs(t.file);
 		console.log(
-			`  ${t.label}: node --check = ${ok ? 'PASS' : 'FAIL'}; residual legacy slugs = ${residual.length === 0 ? 'NONE' : residual.join(', ')}`
+			`  ${t.label}: node --check = ${ok ? 'PASS' : 'FAIL'}; residual retired mode definitions = ${residual.length === 0 ? 'NONE' : residual.join(', ')}`
 		);
 		if (!ok || residual.length > 0) failures++;
 	}

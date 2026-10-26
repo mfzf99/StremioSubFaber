@@ -2,6 +2,17 @@
 
 All notable changes to this project will be documented in this file.
 
+## SubFaber v3.24.1 (2026-10-26) — Kunci Kemas Kini Skrip Patch Zoo Code kepada Mod Tunggal `fullstack` (Mandat Owner)
+
+### 🔧 Fixed — Penyelenggaraan Zoo Code Selaras dengan Seni Bina Mod Tunggal
+
+- **Skrip penampal ([`scripts/patch-zoo-code.js`](scripts/patch-zoo-code.js)):** Definisi bundle host dan webview kini mengunci satu mod `fullstack` (`Fullstack Architect`). Penampal menerima bundle asal mahupun patch dua-mod lama, mengecam pemboleh ubah minified secara automatik, dan mengesan sisa definisi mod bawaan serta mod projek bersara selepas patch.
+- **Protokol operasi ([`docs/ZOO_CODE_PATCH_PROTOCOL.md`](docs/ZOO_CODE_PATCH_PROTOCOL.md)):** Dokumentasi diselaraskan dengan autoriti `[CLOSED SINGLE-MODE UNIVERSE & ANTI-MODE-JUMPING LOCK]`, laluan migrasi bundle dua-mod, pengesahan integriti, dan semakan dropdown Fullstack Architect selepas restart penuh VS Code.
+
+### ✅ Verifikasi
+
+- Semakan langsung Zoo Code 3.90.0 pada kedua-dua bundle Extension Host dan Webview UI: sintaks PASS, status satu-mod disahkan, sifar definisi mod bersara. Sifar perubahan kod runtime aplikasi, payload, DOM atau skema pelayan.
+
 ## SubFaber v3.24.0 (2026-10-26) — Transisi Seni Bina Mod Tunggal `fullstack` (Fullstack Architect) — Penamatan Era Dwi-Mod (Mandat Owner)
 
 ### 🏗️ Changed — Penyatuan Mod Backend + Frontend → Mod Tunggal Berautonomi Penuh

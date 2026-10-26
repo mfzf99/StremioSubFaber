@@ -1,13 +1,13 @@
-# ZOO CODE PATCH PROTOCOL — Two-Mode Lock (backend + frontend)
+# ZOO CODE PATCH PROTOCOL — Single-Mode Lock (fullstack)
 
 > **Status:** Operational tool of the SubFaber project.
 > **Script:** [`scripts/patch-zoo-code.js`](../scripts/patch-zoo-code.js)
-> **Applies to:** Zoo Code VS Code extension (`zoocodeorganization.zoo-code-*`), verified against v3.88.0 and v3.90.0 (host bundle variable `e6` instead of `xV` in 3.90.0).
-> **Authority basis:** `.roo/rules/00-subfaber-core-protocol.md` — [CLOSED TWO-MODE UNIVERSE & ANTI-MODE-JUMPING LOCK].
+> **Applies to:** Zoo Code VS Code extension (`zoocodeorganization.zoo-code-*`), verified against v3.88.0 and v3.90.0; single-mode migration verified against v3.90.0 on 2026-10-26.
+> **Authority basis:** `.roo/rules/00-subfaber-core-protocol.md` — [CLOSED SINGLE-MODE UNIVERSE & ANTI-MODE-JUMPING LOCK].
 
 ## 1. Tujuan
 
-Repositori SubFaber beroperasi secara **tertutup dengan 2 mod sahaja** — `backend` dan `frontend`. Mod bawaan Zoo Code (`architect`, `code`, `ask`, `debug`, `orchestrator`) adalah TERLARANG dan perlu dibuang daripada sambungan setiap kali ia dipasang atau dikemas kini. Protokol ini mengabadikan kaedah pembedahan (surgical patch) supaya boleh diulang dengan satu arahan.
+Repositori SubFaber beroperasi secara **tertutup dengan 1 mod sahaja** — `fullstack` (`Fullstack Architect`). Mod bawaan Zoo Code (`architect`, `code`, `ask`, `debug`, `orchestrator`) dan mod projek bersara (`backend`, `frontend`) adalah TERLARANG dan perlu dibuang daripada sambungan setiap kali ia dipasang atau dikemas kini. Protokol ini mengabadikan kaedah pembedahan (surgical patch) supaya boleh diulang dengan satu arahan.
 
 ## 2. Punca Seni Bina (Mengapa Perlu Dua Patch)
 
@@ -23,7 +23,7 @@ Zoo Code mempunyai **DUA salinan tatasusunan mod** dalam dua runtime berbeza:
 **Perangkap kedua (insiden 2026-10-19, Zoo Code v3.90.0):** Minifier menukar nama pemboleh ubah host bundle antara versi (`xV` → `e6`), menyebabkan skrip lama hard-coded `xV` gagal dengan `marker-not-found`. Skrip kini AUTO-DETECT nama pemboleh ubah melalui analisis assignment `identifier=[` sebelum tatasusunan mod — tiada lagi hard-coded variable name.
 
 Nota tambahan:
-- Default mode slug dalam host bundle adalah dinamik (`hs=Xd[0].slug` di mana `Xd=xV`) — selepas patch, default automatik menjadi `backend` (elemen pertama). Tiada patch berasingan diperlukan.
+- Default mode slug dalam host bundle adalah dinamik (`hs=Xd[0].slug` di mana `Xd=xV`) — selepas patch, default automatik menjadi `fullstack` (elemen pertama). Tiada patch berasingan diperlukan.
 - `assets/marketplace/modes.yml` hanya mengandungi mod marketplace contoh (mode-writer, skill-writer, dll.) — BUKAN mod bawaan, tidak perlu disentuh.
 - Cache VS Code `globalState` / `state.vscdb` **tidak** menyimpan senarai mod Zoo Code — isu dropdown bukan punca cache.
 
@@ -41,8 +41,8 @@ Skrip akan:
 1. **Auto-discover** folder `~/.vscode/extensions/zoocodeorganization.zoo-code-*` dan pilih versi tertinggi (jika beberapa versi dipasang).
 2. Cipta sandaran `.bak` bagi setiap bundle **sekali sahaja** (tidak ditulis semula jika sudah wujud).
 3. Bracket-matching sedar string/backtick untuk mengesan julat tepat tatasusunan (koma dalam `roleDefinition` template-literal tidak boleh menyebabkan false match).
-4. Gantikan kedua-dua tatasusunan dengan definisi dua-mod (`backend`, `frontend`, setiap satu dengan `groups:["read","edit","command","mcp"]`).
-5. Sahkan integriti sintaks kedua-dua fail menggunakan `node --check` dan imbas sisa slug legacy.
+4. Gantikan kedua-dua tatasusunan dengan definisi satu-mod `fullstack` (`Fullstack Architect`, `groups:["read","edit","command","mcp"]`). Input bundle asal mahupun patch dua-mod lama dikesan secara automatik.
+5. Sahkan integriti sintaks kedua-dua fail menggunakan `node --check` dan imbas sisa definisi mod bawaan serta `backend`/`frontend`.
 
 **Selepas patch:** mulakan semula (restart) VS Code sepenuhnya — reload window sahaja tidak memadai kerana Webview perlu dibina semula.
 
@@ -64,10 +64,10 @@ Jika kemas kini berlaku juga: jalankan semula `node scripts/patch-zoo-code.js` d
 
 ## 5. Prosedur Selepas Kemas Kini Versi Baru
 
-1. `node scripts/patch-zoo-code.js --check` — jika marker tidak ditemui (status `marker-not-found`), minifier mungkin menukar nama pemboleh ubah dalam versi baharu; audit manual diperlukan (cari `slug:"architect"` / `slug:` + backtick + `architect` dalam kedua-dua bundle).
+1. `node scripts/patch-zoo-code.js --check` — jika marker tidak ditemui (status `marker-not-found`), minifier mungkin menukar nama pemboleh ubah dalam versi baharu; audit manual diperlukan (cari `slug:"architect"`, `slug:"backend"` atau varian backtick yang sepadan dalam kedua-dua bundle).
 2. `node scripts/patch-zoo-code.js`.
 3. Restart penuh VS Code.
-4. Sahkan dropdown Zoo Code hanya memaparkan **Backend** dan **Frontend**.
+4. Sahkan dropdown Zoo Code hanya memaparkan **Fullstack Architect**.
 
 ## 6. Rollback
 
