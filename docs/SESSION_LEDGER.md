@@ -1,6 +1,9 @@
 ## 2026-10-26 — v3.19.8 CONSOLE-QUIET BRPARITY: TERMINAL BERSIH, FAIL LOG KEGAL PENUH (MANDAT OWNER)
 
 - **Tarikh:** 2026-10-26 ~10:28 (waktu tempatan KL)
+- **Komit SHA (HEAD):** `41781302` + CI run ID 40259354404 = **SUCCESS** (Node 22 ✓ 56s / Node 24 ✓ 1m5s; push diverifikasi `git rev-parse` HEAD = `417813028e92642a9d85ec8da4d2042d8617080b` = origin/main).
+
+- **Tarikh:** 2026-10-26 ~10:28 (waktu tempatan KL)
 - **Komit SHA (HEAD):** (direkod selepas push)
 - **Keputusan Owner:** Selepas penjelasan brParity (sistem pertahanan struktur baris dalam-entri; tiada kaitan dengan shift detector atau ID Global), Owner meluluskan senyapkan notifikasi brParity di KONSOL terminal — "bukan buang, just senyapkan, dia ada run macam biasa tapi log tak perlu tunjuk; aku lebih suka clean log yang hanya tunjuk progress partial saved".
 - **Pembedahan:** (a) [`src/utils/logger.js`](../src/utils/logger.js) — fungsi baharu `debugQuiet()` (identik `debug()` tetapi melangkau konsol, terus `writeFileLog`) + eksport; (b) [`src/services/translationEngine.js`](../src/services/translationEngine.js) — 3 titik log brParity (auto-repair per-entri, repair-gagal per-entri, benign summary per-batch) ditukar `log.debug` → `log.debugQuiet`. **Logika reconcile/repair/counter/flush 100% tidak disentuh.**
