@@ -2,6 +2,19 @@
 
 All notable changes to this project will be documented in this file.
 
+## SubFaber v3.24.0 (2026-10-26) — Transisi Seni Bina Mod Tunggal `fullstack` (Fullstack Architect) — Penamatan Era Dwi-Mod (Mandat Owner)
+
+### 🏗️ Changed — Penyatuan Mod Backend + Frontend → Mod Tunggal Berautonomi Penuh
+
+- **Penggabungan mod ([`.roomodes`](.roomodes)):** Mod `backend` dan `frontend` DIGABUNGKAN sepenuhnya menjadi SATU mod tunggal `fullstack` (`Fullstack Architect`) — satu persona eksekusi berautonomi penuh yang memiliki keseluruhan kitaran hujung-ke-hujung: pembedahan kontrak pelayan `src/` + `index.js`, pelaksanaan UI/UX `public/` + markup klien dalam `src/utils/*PageGenerator.js`, verifikasi hidup Playwright MCP, `npm test`, dan 8-Step Release Pipeline. Validasi PyYAML: `customModes`=1, `slug=fullstack`, `groups=[read,edit,command,mcp]`, `source=project`, EOL CRLF terpelihara.
+- **Invariant diwarisi penuh:** Semua invariant kritikal kedua-dua domain dikekalkan tanpa pengurangan — (Backend) `systemInstruction` top-level Gemini, Preservation & Purge (`topK` haram sejak v1.6.0), HYBRID Guard v3.19.1+, baseline ujian monotonik 0 FAIL/max 1 SKIP, kuasa eksklusif 8-Step Release Pipeline; (Frontend) 4-state DOM morphing + HIDE ≠ LOCK, clamping `thinkingBudget` selari backend, rehidrasi tanpa trap `prevValue`, strict null-checks DOM, 100% Vanilla JS & Native CSS, Visual Critique Loop Playwright, Real-User Verification Doctrine (anti blind-coding).
+- **[`.roo/rules/00-subfaber-core-protocol.md`](.roo/rules/00-subfaber-core-protocol.md):** `[CLOSED TWO-MODE UNIVERSE]` → `[CLOSED SINGLE-MODE UNIVERSE & ANTI-MODE-JUMPING LOCK]` (model-agnostic); `[MULTI-AGENT ORCHESTRATION PROTOCOL]` → `[UNIFIED-STACK EXECUTION PROTOCOL — SINGLE AUTONOMOUS AGENT]`; seksyen `[SEAMLESS GEARBOX PROTOCOL]` DIHAPUSKAN sepenuhnya — matriks Zon A/B/C kekal sebagai **Coupled-Contract Self-Checklist** dalam protokol baharu; Langkah 0 pipeline menjadi **Integration Self-Audit**; kiraan validasi `.roomodes` diselaraskan `customModes`=1.
+- **Klausa lapuk dihapuskan:** Semua arahan `switch_mode` antara `backend` ↔ `frontend`, protokol penyerahan verbatim (handover report), Bilateral Two-Man Integration Gate, Dual-Head Consultation, Seamless Shift Execution Loop, larangan silang ("Frontend haram commit", "Backend haram usik HTML") — semua birokrasi dwi-persona dimansuhkan.
+
+### 📝 Nilai Rumusan
+
+- Sifar perubahan kod runtime (`src/`, `public/`, `index.js`) — perubahan terhad kepada fail tadbir urus ejen sahaja. Baseline ujian dijangka kekal 475 total / 474 PASS / 0 FAIL / 1 SKIP.
+
 ## SubFaber v3.23.0 (2026-10-26) — Fasa 3 Penyatuan Kontrak Kanonik & Kemas Kini Cermin: getModelFamily Reroute+Gemini 4 & Nilai Lalai Kanonik (Mandat Owner)
 
 ### 🔧 Fixed — 2 Hutang Terakhir Audit Dua-Kepala Dibayar (A2, B3)

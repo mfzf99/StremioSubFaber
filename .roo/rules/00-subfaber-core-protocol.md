@@ -1,57 +1,28 @@
 # SubFaber Core Protocol (global - applies to all modes)
 
-[CLOSED TWO-MODE UNIVERSE & ANTI-MODE-JUMPING LOCK]
-1. STRICT TWO-PERSONA ARCHITECTURE:
-   - This repository operates EXCLUSIVELY under TWO valid modes: `backend` and `frontend`.
-   - Built-in default modes (`architect`, `code`, `ask`, `debug`, `orchestrator`) are STRICTLY DEPRECATED AND BANNED in this workspace.
-   - Every agent is STRICTLY FORBIDDEN from invoking `switch_mode` to `architect`, `code`, `ask`, `debug`, or `orchestrator` under ANY circumstances—even when the Owner asks to "plan", "design", "architect", "debug", "investigate", or "explain". All planning, architectural design, forensic debugging, and Q&A MUST be executed directly inside the active `backend` or `frontend` mode.
+[CLOSED SINGLE-MODE UNIVERSE & ANTI-MODE-JUMPING LOCK]
+1. STRICT SINGLE-PERSONA ARCHITECTURE (TRANSISI FULLSTACK, mandat Owner):
+   - This repository operates EXCLUSIVELY under ONE valid mode: `fullstack` (Fullstack Architect).
+   - Legacy dual modes `backend` and `frontend` are DEPRECATED and fully merged into `fullstack`.
+   - Built-in default modes (`architect`, `code`, `ask`, `debug`, `orchestrator`) remain STRICTLY DEPRECATED AND BANNED in this workspace.
+   - The `fullstack` agent is STRICTLY FORBIDDEN from invoking `switch_mode` to any built-in mode under ANY circumstances—even when the Owner asks to "plan", "design", "architect", "debug", "investigate", or "explain". All planning, architectural design, forensic debugging, and Q&A MUST be executed directly inside the active `fullstack` mode.
 
-[MULTI-AGENT ORCHESTRATION PROTOCOL]
-1. Assess domain boundaries by FUNCTIONAL CONCERN (which strictly overrides folder path) before taking action on any user request:
-   - Frontend Domain: All client-side UI/UX files under `public/` (`public/config.js`, `public/partials/*.html`, `public/js/*.js`, styles), PLUS any client-side UI/UX markup, CSS styling, DOM manipulation, and browser event handlers embedded inside hybrid server files such as `src/utils/*PageGenerator.js`.
-   - Backend Domain: Server routing, business logic, API proxies (Gemini REST, Crazy Router), Redis/cache storage, schema normalization under `src/` and `index.js`, server-side data preparation/injection in `src/utils/*PageGenerator.js`, test suites (`npm test`), and Git operations.
-   - HYBRID FILE & PRECEDENCE RULE: Functional concern in this Core Protocol strictly overrides any folder-path wording in `.roomodes`. Backend is STRICTLY FORBIDDEN from unilaterally authoring, modifying, or shipping client-side HTML, CSS, or DOM scripts inside `src/utils/*PageGenerator.js`.
-2. If an implementation task or sub-phase falls into the opposite functional domain, immediately trigger `switch_mode` ONLY between `"backend"` and `"frontend"`.
-3. ANTI-LOOP GUARDRAIL: Never switch back and forth repeatedly. If you were just handed a task by the opposite mode, complete your designated scope first before handing back.
-4. BILATERAL TWO-MAN INTEGRATION GATE (ZERO UNILATERAL RELEASES):
-   - Frontend mode is STRICTLY FORBIDDEN from running `npm test`, executing Git operations (`git commit`/`git push`), or marking a release task complete. Every frontend implementation task MUST conclude with live Playwright MCP verification followed by a mandatory handover to Backend mode via `switch_mode: "backend"`.
-   - Backend mode is STRICTLY FORBIDDEN from unilaterally authoring or releasing any feature that touches client-side UI/UX, CSS, DOM state, or browser event handlers without delegating the UI/UX scope to Frontend mode (`switch_mode: "frontend"`) for implementation and live Playwright browser verification.
-5. BACKEND AS TECH LEAD & INTEGRATION GATEKEEPER:
-   - Backend persona holds sole release authority. Upon receiving a handover from Frontend, Backend MUST perform a mandatory Integration Review (verifying form payload serialization, rehydration races, state synchronization, and server schema compatibility) BEFORE initiating the 8-step release pipeline.
-6. MODE-ACTIVATION AWARENESS: The active mode is determined by the OWNER's mode switch, not by the task being performed. If a Git commit/push or `npm test` is requested while Frontend mode is active, IMMEDIATELY refuse and trigger handover to `backend`. Owner's explicit override takes precedence, but the violation MUST be surfaced first, never silently absorbed.
-7. VERBATIM MANDATE & LOSSLESS CONTEXT PROPAGATION (ANTI-INFORMATION LOSS):
-   - When triggering `switch_mode` between `backend` and `frontend`, the delegating agent is STRICTLY FORBIDDEN from providing compressed, partial, or lossy summaries of the Owner's directives.
-   - The delegating agent MUST forward the complete, VERBATIM Owner mandate (including all specifications, constraints, domain rules, and wireframe expectations) along with:
-     - (a) Full text of the Owner's requirements without truncation.
-     - (b) Current architectural/data state and completed backend contracts.
-     - (c) Concrete file boundaries and clear acceptance criteria for the receiving agent.
-   - The receiving agent must never be left in an information vacuum or forced to ask the Owner for the original mandate that was already delivered to the team.
-8. PLAN FIDELITY & ZERO RATIONALIZATION CLAUSE:
-   - Once an execution plan containing a `switch_mode` delegation step between `backend` and `frontend` is presented or approved, that delegation gate is a binding contract.
-   - No agent is permitted to self-dispense, rationalize, or bypass a planned handover for convenience, speed, or file-path technicalities. Passing `npm test` in Node.js NEVER substitutes for Frontend DOM/Playwright browser verification.
-
-[SEAMLESS GEARBOX PROTOCOL — PROACTIVE CROSS-DOMAIN SYNC]
-1. COUPLED-CONTRACT MATRIX (RADAR BERKEMBAR AUTOMATIK):
-   Setiap ejen WAJIB menyedari bahawa fail-fail berikut terikat secara kontrak dua-hala (Zon Berkembar):
+[UNIFIED-STACK EXECUTION PROTOCOL — SINGLE AUTONOMOUS AGENT]
+1. SINGLE EXECUTION LOOP (end-to-end, zero delegation):
+   - The `fullstack` agent owns the ENTIRE pipeline per task: (a) dissect & plan server contracts under `src/` and `index.js` (routing, business logic, API proxies, Redis/cache, schema normalization, test suites, Git operations), AND (b) client-side UI/UX across `public/` plus client-side markup/CSS/DOM/event handlers embedded inside hybrid files such as `src/utils/*PageGenerator.js`, AND (c) live Playwright MCP verification, AND (d) `npm test`, AND (e) the 8-step release pipeline.
+   - No handover reports, no mode switches, no bilateral integration gates. The Owner deals with exactly one autonomous execution persona from mandate to release.
+2. UNIFIED-STACK ANALYSIS: during Q&A, debugging, or planning, the agent is FORBIDDEN from giving "half-way" answers (inspecting only one side of a coupled contract). It MUST use `read`/`git grep` to inspect BOTH sides of the coupled contract matrix below before formulating an answer or plan, and present ONE integrated plan.
+3. CHECKLIST KONTRAK BERKEMBAR (COUPLED-CONTRACT CHECKLIST — auto cross-side impact check):
    - Zon A (Model & Parameter): `src/utils/modelCapabilities.js`, `src/services/gemini.js`, `src/services/providers/*` <==> `public/config.js` (`getModelFamily`, `updateGeminiThinkingControl`, dropdowns), `public/partials/main.html`.
    - Zon B (Skema & Normalisasi): `src/utils/config.js` <==> `public/config.js` (`loadConfigToForm`, payload serialization), `src/utils/*PageGenerator.js`.
    - Zon C (Trinity & Saluran Tri-Door): `src/services/channels/*`, `src/services/agentInspector.js`, `src/services/subfaberPreflight.js` <==> Komponen UI kad Trinity, pemilih pintu (door/format), dan validasi dalam `public/`.
-   * PERATURAN KERAS: Sebarang audit, perbincangan, atau pengubahsuaian pada satu sisi Zon Berkembar WAJIB mencetuskan pemeriksaan impak pada sisi pasangannya secara automatik, WALAUPUN Owner tidak menyebut sisi pasangan tersebut dalam prompt.
-2. DUAL-HEAD CONSULTATION & UNIFIED PLANNING (GABUNGAN DUA KEPALA):
-   - Semasa fasa soal jawab, pencarian punca masalah (debugging), atau perancangan seni bina: Ejen yang aktif DILARANG memberikan jawapan atau pelan "separuh jalan" (hanya melihat domain sendiri).
-   - Ejen aktif WAJIB menggunakan alat `read` / `git grep` untuk memeriksa impak pada domain pasangan sebelum merumuskan jawapan atau pelan.
-   - Jika sesuatu isu atau cadangan memerlukan kepakaran/pembedahan kedua-dua domain:
-     * Semasa Perancangan: Ejen pertama merangka spesifikasi domainnya dan (jika melibatkan reka bentuk UI/UX kompleks atau perubahan DOM) terus melakukan `switch_mode` kepada ejen pasangan supaya kedua-dua ejen menyumbang analisis sebelum Pelan Bersepadu dibentangkan kepada Owner.
-     * Semasa Pelaksanaan (Selepas Kelulusan Owner): Pertukaran gear (`Backend -> Frontend -> Backend` atau `Frontend -> Backend`) WAJIB berlaku secara automatik tanpa berhenti meminta Owner menjadi "posmen" di tengah jalan.
-3. SEAMLESS SHIFT EXECUTION LOOP (ZERO OWNER BABYSITTING):
-   - Aliran Standard (Mula di Backend): Backend bedah `src/` -> Auto-upshift `switch_mode: "frontend"` (bawa konteks penuh & diff kontrak) -> Frontend bedah `public/` + pengesahan hidup Playwright MCP -> Auto-downshift `switch_mode: "backend"` -> Backend jalankan Integration Audit + `npm test` + 8-Step Release Pipeline.
-   - Aliran Terbalik (Mula di Frontend): Frontend bedah `public/` + Playwright MCP -> Auto-downshift `switch_mode: "backend"` -> Backend selaraskan skema/normalisasi `src/` (jika berkaitan) + Integration Audit + `npm test` + 8-Step Release Pipeline.
-   - Kuasa eksekusi `npm test`, `git commit`, dan `git push` kekal 100% eksklusif di tangan Backend.
+   - PERATURAN KERAS: Sebarang audit, perbincangan, atau pengubahsuaian pada satu sisi Zon WAJIB mencetuskan pemeriksaan impak pada sisi pasangannya secara automatik, WALAUPUN Owner tidak menyebut sisi pasangan tersebut dalam prompt.
+   - REHYDRATION/CONTRACT SELF-AUDIT: sebelum pelepasan, semak sendiri payload serialization, rehydration races, DOM state synchronization, dan keserasian skema pelayan — npm test TIDAK PERNAH menggantikan verifikasi pelayar Playwright (kedua-duanya wajib).
 
 [REAL-USER VERIFICATION DOCTRINE — ANTI BLIND-CODING (2026-10-19, insiden v3.16.0 Fasa 2)]
 1. WAJIB-REPLIKASI-ALIRAN: Sebelum pembedahan/audit UI/UX yang melibatkan aliran provider/model/validation (kad Trinity, parameter, kunci), ejen WAJIB menjalankan aliran pengguna sebenar melalui Playwright MCP: pilih provider → isi API key real (SUBFABER_TEST_* via src/utils/testKeys.js) → isi base URL → pilih door/format → tekan Validate → pilih model — SEHINGGA komponen sasaran render dengan data sebenar. Hanya selepas itu pembedahan/audit dibenarkan bermula.
 2. SCREENSHOT = HIPOTESIS: Screenshot/laporan Owner adalah hipotesis awal, BUKAN kebenaran tunggal. Setiap isu yang dilaporkan mesti disahkan melalui interaksi langsung sebelum sebarang kod diubah.
-3. LARANGAN KARANG-STATE: DILARANG membina/membetulkan UI state (model list, kad parameter, status validation, paparan ralat) atas dasar tekaan tanpa pernah melihat state itu hidup hasil aliran sebenar. Pelanggaran = protokol breach; handover mesti dinyatakan & kerja diulang.
+3. LARANGAN KARANG-STATE: DILARANG membina/membetulkan UI state (model list, kad parameter, status validation, paparan ralat) atas dasar tekaan tanpa pernah melihat state itu hidup hasil aliran sebenar. Pelanggaran = protokol breach; pelanggaran mesti dinyatakan dalam laporan sesi & kerja dikerja semula.
 4. KONTRAK KUNCI: Kunci ujian tertakluk penuh kepada Zero Secret Logging (sifar nilai ke terminal/log/screenshot/ledger) dan skop ping/model-list + Playwright sahaja (bukan bulk translation).
 5. RATIONALE EKONOMI: Setiap kitaran "fix berulang" akibat tekaan membakar token API berbayar Owner — doktrin ini ialah kawalan kos rasmi projek.
 
@@ -85,7 +56,7 @@
 - The `.roomodes` file is indentation-sensitive: NEVER edit it via `apply_diff`, `write_to_file`, or inline `node -e` - all three corrupted it in the incident.
 - Safe procedure ONLY: `git checkout <clean-commit> -- .roomodes` + programmatic insert via script file + PyYAML validation BEFORE commit.
 - SCRIPT HYGIENE: Any script used to update `.roomodes` MUST be executed from the system temporary directory OUTSIDE the repository (`$TEMP` / `/tmp`) OR deleted immediately (`rm`) in the same command chain before running `git status`, in compliance with the ZERO THROWAWAY SCRIPT WASTE clause.
-- Validation gate before every `.roomodes` commit: parse with PyYAML, confirm `customModes` count (2), per-mode rule count, `groups=[read,edit,command,mcp]`, `source=project`.
+- Validation gate before every `.roomodes` commit: parse with PyYAML, confirm `customModes` count (1), per-mode rule count, `groups=[read,edit,command,mcp]`, `source=project`.
 
 [COGNITIVE DELIBERATION PROTOCOL - THINK BEFORE CODE]
 1. TRACE & AUDIT TRAIL: Explicitly state the execution call-chain and list dependent callers in your response as auditable proof before modifying code or mutating shared signatures.
@@ -135,9 +106,9 @@
    - If changes in templates (e.g. `configurePageGenerator` / `main.html`) do not reflect due to in-memory caching, strictly kill the specific server port (7001), verify the port is free, and start the script afresh (`node index.js`). Never kill other background Node runtimes.
 
 [MANDATORY COMMIT & RELEASE PROTOCOL (ZERO EXCEPTIONS)]
-1. STRICT PIPELINE COUPLING: No agent is permitted to execute a bare `git commit` or `git push`. A commit request is an atomic release event, NOT a single git command. Only `backend` mode holds release authority.
-2. SEQUENTIAL EXECUTION GATE: Every commit instruction (whether backend, frontend handover, or hotfix) MUST execute the full 8-step pipeline in order:
-   - 0. (If receiving Frontend handover) Mandatory Frontend Integration Audit (payload serialization, rehydration, DOM lifecycle race conditions, server schema compatibility).
+1. STRICT PIPELINE COUPLING: No agent is permitted to execute a bare `git commit` or `git push`. A commit request is an atomic release event, NOT a single git command. Only the `fullstack` mode holds release authority.
+2. SEQUENTIAL EXECUTION GATE: Every commit instruction (whether fullstack task or hotfix) MUST execute the full 8-step pipeline in order:
+   - 0. Integration Self-Audit (payload serialization, rehydration, DOM lifecycle race conditions, server schema compatibility).
    - 1. SemVer Version bump in `package.json` (read at runtime by `src/utils/version.js`).
    - 2. `CHANGELOG.md` update under new version header.
    - 3. Cache-buster verification (`__APP_VERSION_QUERY__` and `?_cb=`).
