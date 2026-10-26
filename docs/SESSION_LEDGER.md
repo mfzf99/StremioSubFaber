@@ -1,3 +1,16 @@
+## 2026-10-26 — v3.19.8 CONSOLE-QUIET BRPARITY: TERMINAL BERSIH, FAIL LOG KEGAL PENUH (MANDAT OWNER)
+
+- **Tarikh:** 2026-10-26 ~10:28 (waktu tempatan KL)
+- **Komit SHA (HEAD):** (direkod selepas push)
+- **Keputusan Owner:** Selepas penjelasan brParity (sistem pertahanan struktur baris dalam-entri; tiada kaitan dengan shift detector atau ID Global), Owner meluluskan senyapkan notifikasi brParity di KONSOL terminal — "bukan buang, just senyapkan, dia ada run macam biasa tapi log tak perlu tunjuk; aku lebih suka clean log yang hanya tunjuk progress partial saved".
+- **Pembedahan:** (a) [`src/utils/logger.js`](../src/utils/logger.js) — fungsi baharu `debugQuiet()` (identik `debug()` tetapi melangkau konsol, terus `writeFileLog`) + eksport; (b) [`src/services/translationEngine.js`](../src/services/translationEngine.js) — 3 titik log brParity (auto-repair per-entri, repair-gagal per-entri, benign summary per-batch) ditukar `log.debug` → `log.debugQuiet`. **Logika reconcile/repair/counter/flush 100% tidak disentuh.**
+- **Kontrak terpelihara:** fail log `app.log` kekal 100% penuh (ground truth forensik — brParity masih di-grep bila perlu); WARN/ERROR ke keluar konsol seperti biasa; hanya laluan DEBUG brParity dipindah ke fail-sahaja.
+- **Fail Terlibat:** src/utils/logger.js (M), src/services/translationEngine.js (M), package.json (M: 3.19.7→3.19.8), CHANGELOG.md (M), docs/SESSION_LEDGER.md (blok ini). Graphify NO-OP (`graphify-out/` tiada).
+- **Status npm test:** **471 total / 470 PASS / 0 FAIL / 1 SKIP** — baseline dipelihara penuh, termasuk `translationEngine-brparity-regression` (kontrak logika) + `logger-sampling-regression` (kontrak logger) kedua-duanya hijau. Prettier `--check .` PASS; ESLint 0 error (warning pre-existing sahaja). Cache-buster: runtime 3.19.8 (dinamik daripada package.json).
+- **Next Steps:** commit + push → CI `gh` watch SUCCESS → SHA direkod → deploy VPS. Run keenam dijangka: terminal bersih — hanya Preflight → Partial SAVED → Inspector PASSED → Progress % → completed → cleanup.
+
+---
+
 ## 2026-10-25 — v3.19.7 HOTFIX: SIGNATURE GATE PARTIAL SAVES (SISA 7× TULISAN 696/696 RUN KEMPAT — DEDUP FINGERPRINT TAK MENCUKUPI)
 
 - **Tarikh:** 2026-10-25 ~07:53 (waktu tempatan KL)

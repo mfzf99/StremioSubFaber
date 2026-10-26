@@ -664,6 +664,22 @@ function debug(messageFn) {
 }
 
 /**
+ * [v3.19.8 CONSOLE-QUIET] Debug file-only — ditulis ke FAIL LOG sepenuhnya
+ * (ground truth forensik terpelihara) tetapi TIDAK dipaparkan ke konsol
+ * terminal. Digunakan untuk log operasi latar belakang berfrekuensi tinggi
+ * yang Owner mahu senyap dari terminal (contoh: brParity per-entri).
+ * Tingkah laku sampling & level sama seperti debug().
+ */
+function debugQuiet(messageFn) {
+    if (currentLevel > LEVELS.debug) return;
+    if (!shouldSample('debug')) return;
+
+    const message = typeof messageFn === 'function' ? messageFn() : messageFn;
+    const args = Array.isArray(message) ? message : [message];
+    writeFileLog('DEBUG', args);
+}
+
+/**
  * Info log with lazy evaluation
  * @param {Function|string} messageFn - Function that returns the message, or a plain string
  * Usage: log.info(() => `[Module] Info: ${data}`)
@@ -873,6 +889,7 @@ function critical(messageFn, errorObj = null, extras = {}) {
 // Export the high-performance lazy logging functions
 module.exports = {
     debug,
+    debugQuiet,
     info,
     warn,
     error,

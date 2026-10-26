@@ -3636,13 +3636,16 @@ ${batchText}
 
         repaired = repaired.replace(/\n{2,}/g, '\n');
 
+        // [v3.19.8 CONSOLE-QUIET — Mandat Owner] brParity senyap di KONSOL
+        // (terminal bersih, hanya progress Partial SAVED); fail log app.log
+        // kekal 100% penuh untuk forensik. Logika repair tidak disentuh.
         if (inserted > 0) {
-            log.debug(
+            log.debugQuiet(
                 () =>
                     `[TranslationEngine] brParity: auto-repair disisip ${inserted}/${missing} line break (src=${countSrc}, out=${countOut})`
             );
         } else {
-            log.debug(
+            log.debugQuiet(
                 () =>
                     `[TranslationEngine] brParity: repair gagal cari titik split selamat (src=${countSrc}, out=${countOut}) — output dikekalkan`
             );
@@ -3661,7 +3664,8 @@ ${batchText}
         this._brParityAddedCount = 0;
         if (count > 0) {
             const batchLabel = currentBatch && totalBatches ? `batch ${currentBatch}/${totalBatches}: ` : 'final: ';
-            log.debug(
+            // [v3.19.8 CONSOLE-QUIET — Mandat Owner] Lihat komen di reconcileBrParity.
+            log.debugQuiet(
                 () => `[TranslationEngine] brParity: ${batchLabel}AI menambah ${count} line break (benign, dikekalkan)`
             );
         }

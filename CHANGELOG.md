@@ -2,6 +2,16 @@
 
 All notable changes to this project will be documented in this file.
 
+## SubFaber v3.19.8 (2026-10-26) — Console-Quiet brParity: Terminal Bersih, Fail Log Kekal Penuh (Mandat Owner)
+
+### 🔇 Changed — brParity Senyap di Konsol, Logika & Fail Log Tidak Disentuh
+
+- **Mandat Owner:** "kita boleh senyapkan notification brparity dalam log terminal. Bukan buang, just senyapkan, tak tunjuk, dia ada run macam biasa, tapi log tak perlu tunjuk, aku lebih suka clean log yang hanya tunjuk progress partial saved macam biasa."
+- **Fungsi baharu `debugQuiet()` ([logger.js](src/utils/logger.js)):** identik dengan `debug()` (level check + sampling + `writeFileLog`) tetapi **melangkui paparan konsol** — mesej terus ditulis ke fail log sahaja.
+- **3 titik log brParity ditukar `log.debug` → `log.debugQuiet` ([translationEngine.js](src/services/translationEngine.js)):** varian `auto-repair disisip`, `repair gagal cari titik split selamat` (per-entri) dan summary `AI menambah N line break (benign)` (per-batch). **Logika reconcile/repair/counter/flush 100% tidak disentuh** — brParity terus berjalan penuh di belakang tabir.
+- **Kontrak terpelihara:** fail log `app.log` kekal 100% PENUH (ground truth forensik — setiap kejadian brParity masih boleh di-grep); WARN/ERROR laluan brParity (jika timbul) kekal keluar di konsol; hanya laluan DEBUG dipindahkan ke fail-sahaja.
+- **Kesan terminal:** log terjemahan kini hanya menunjukkan aliran utama — Preflight → `Partial SAVED` per checkpoint → `AgentInspector inspection: PASSED` per batch → `Progress: X%` → completed → cleanup.
+
 ## SubFaber v3.19.7 (2026-10-25) — Hotfix: Signature Gate Partial Saves (Sapu Sisa 7× Tulisan 696/696 dari Log Run Keempat)
 
 ### 🔧 Fixed — Dedup Fingerprint Tidak Mencukupi; Gate Muktamad oleh Signature Kemajuan
