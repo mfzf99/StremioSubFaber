@@ -2,6 +2,26 @@
 
 All notable changes to this project will be documented in this file.
 
+## SubFaber v3.20.0 (2026-10-26) — Naik Taraf Seni Bina "Seamless Gearbox": Auto Cross-Domain Sync Backend ↔ Frontend (Mandat Owner)
+
+### 🏗️ Added — [SEAMLESS GEARBOX PROTOCOL] dalam [00-subfaber-core-protocol.md](.roo/rules/00-subfaber-core-protocol.md)
+
+- **Coupled-Contract Matrix (Radar Berkembar Automatik):** Zon Berkembar A (Model & Parameter: `src/utils/modelCapabilities.js`, `src/services/gemini.js`, `src/services/providers/*` ↔ `public/config.js`, `public/partials/main.html`), Zon B (Skema & Normalisasi: `src/utils/config.js` ↔ `public/config.js`, `src/utils/*PageGenerator.js`), Zon C (Trinity & Tri-Door: `src/services/channels/*`, `src/services/agentInspector.js`, `src/services/subfaberPreflight.js` ↔ komponen UI Trinity/door/validasi `public/`). Sebarang sentuhan satu sisi WAJIB mencetuskan semakan impak silang sisi pasangan secara automatik walau pun Owner tidak menanyakannya.
+- **Dual-Head Consultation & Unified Planning:** larangan pelan "separuh jalan"; ejen aktif wajib memeriksa impak domain pasangan (read/git grep) sebelum merumuskan jawapan; perundingan dua kepala semasa perancangan dan pertukaran gear automatik semasa pelaksanaan (Zero Owner Babysitting).
+- **Seamless Shift Execution Loop:** aliran standard (Backend → Frontend + Playwright MCP → Backend + Integration Audit + `npm test` + 8-Step Pipeline) dan aliran terbalik; kuasa `npm test`/`git commit`/`git push` kekal 100% eksklusif Backend.
+
+### 🔧 Changed — Penyelarasan [.roomodes](.roomodes) (Patuh Disiplin PyYAML Insiden 2026-10-08)
+
+- **Backend Item 3 → HYBRID GUARD (v3.19.1+):** `temperature`/`topP` kekal SEND-ALL untuk SEMUA keluarga Gemini 3.x; `frequencyPenalty`/`presencePenalty` DISEKAT/SUPPRESSED khusus `3.x-strict` (elak HTTP 400); `topK` kekal haram (v1.6.0); pemetaan wire-value DeepSeek `disabled` → `reasoning_effort: 'none'`.
+- **Backend Item 5 → DELEGATION & SEAMLESS GEARBOX RULE:** klausa CROSS-DOMAIN IMPACT CHECK wajib ke atas `public/config.js`, `public/partials/main.html`, `src/utils/*PageGenerator.js` setiap perubahan parameter/model/skema `src/`; auto `switch_mode: "frontend"` tanpa menunggu arahan tambahan Owner.
+- **Frontend Item 5 → MANDATORY VERIFICATION, SEAMLESS HANDOVER & ZERO-COMMIT ENFORCEMENT:** klausa SEAMLESS BACKEND SYNC — semakan kontrak backend (`src/utils/config.js`, `src/utils/modelCapabilities.js`, endpoint API) dan serahan spesifikasi automatik via `switch_mode: "backend"` selepas pengesahan Playwright selesai.
+
+### 🧹 Housekeeping
+
+- Artifak sesat `nul)` di akar repositori dipadam (sisa redirect Windows lama); working tree bersih daripada fail tidak dikenali.
+- Pengesahan PyYAML akhir: `customModes`=2 (`backend`, `frontend`), `groups=[read,edit,command,mcp]`, `source=project`, sifar kerosakan indentasi (EOL CRLF dipelihara).
+- Tiada kod runtime (`src/`, `public/`, `index.js`) disentuh — tiada impak Zon Berkembar; baseline ujian tidak berubah.
+
 ## SubFaber v3.19.8 (2026-10-26) — Console-Quiet brParity: Terminal Bersih, Fail Log Kekal Penuh (Mandat Owner)
 
 ### 🔇 Changed — brParity Senyap di Konsol, Logika & Fail Log Tidak Disentuh

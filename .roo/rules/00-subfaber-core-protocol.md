@@ -30,6 +30,24 @@
    - Once an execution plan containing a `switch_mode` delegation step between `backend` and `frontend` is presented or approved, that delegation gate is a binding contract.
    - No agent is permitted to self-dispense, rationalize, or bypass a planned handover for convenience, speed, or file-path technicalities. Passing `npm test` in Node.js NEVER substitutes for Frontend DOM/Playwright browser verification.
 
+[SEAMLESS GEARBOX PROTOCOL — PROACTIVE CROSS-DOMAIN SYNC]
+1. COUPLED-CONTRACT MATRIX (RADAR BERKEMBAR AUTOMATIK):
+   Setiap ejen WAJIB menyedari bahawa fail-fail berikut terikat secara kontrak dua-hala (Zon Berkembar):
+   - Zon A (Model & Parameter): `src/utils/modelCapabilities.js`, `src/services/gemini.js`, `src/services/providers/*` <==> `public/config.js` (`getModelFamily`, `updateGeminiThinkingControl`, dropdowns), `public/partials/main.html`.
+   - Zon B (Skema & Normalisasi): `src/utils/config.js` <==> `public/config.js` (`loadConfigToForm`, payload serialization), `src/utils/*PageGenerator.js`.
+   - Zon C (Trinity & Saluran Tri-Door): `src/services/channels/*`, `src/services/agentInspector.js`, `src/services/subfaberPreflight.js` <==> Komponen UI kad Trinity, pemilih pintu (door/format), dan validasi dalam `public/`.
+   * PERATURAN KERAS: Sebarang audit, perbincangan, atau pengubahsuaian pada satu sisi Zon Berkembar WAJIB mencetuskan pemeriksaan impak pada sisi pasangannya secara automatik, WALAUPUN Owner tidak menyebut sisi pasangan tersebut dalam prompt.
+2. DUAL-HEAD CONSULTATION & UNIFIED PLANNING (GABUNGAN DUA KEPALA):
+   - Semasa fasa soal jawab, pencarian punca masalah (debugging), atau perancangan seni bina: Ejen yang aktif DILARANG memberikan jawapan atau pelan "separuh jalan" (hanya melihat domain sendiri).
+   - Ejen aktif WAJIB menggunakan alat `read` / `git grep` untuk memeriksa impak pada domain pasangan sebelum merumuskan jawapan atau pelan.
+   - Jika sesuatu isu atau cadangan memerlukan kepakaran/pembedahan kedua-dua domain:
+     * Semasa Perancangan: Ejen pertama merangka spesifikasi domainnya dan (jika melibatkan reka bentuk UI/UX kompleks atau perubahan DOM) terus melakukan `switch_mode` kepada ejen pasangan supaya kedua-dua ejen menyumbang analisis sebelum Pelan Bersepadu dibentangkan kepada Owner.
+     * Semasa Pelaksanaan (Selepas Kelulusan Owner): Pertukaran gear (`Backend -> Frontend -> Backend` atau `Frontend -> Backend`) WAJIB berlaku secara automatik tanpa berhenti meminta Owner menjadi "posmen" di tengah jalan.
+3. SEAMLESS SHIFT EXECUTION LOOP (ZERO OWNER BABYSITTING):
+   - Aliran Standard (Mula di Backend): Backend bedah `src/` -> Auto-upshift `switch_mode: "frontend"` (bawa konteks penuh & diff kontrak) -> Frontend bedah `public/` + pengesahan hidup Playwright MCP -> Auto-downshift `switch_mode: "backend"` -> Backend jalankan Integration Audit + `npm test` + 8-Step Release Pipeline.
+   - Aliran Terbalik (Mula di Frontend): Frontend bedah `public/` + Playwright MCP -> Auto-downshift `switch_mode: "backend"` -> Backend selaraskan skema/normalisasi `src/` (jika berkaitan) + Integration Audit + `npm test` + 8-Step Release Pipeline.
+   - Kuasa eksekusi `npm test`, `git commit`, dan `git push` kekal 100% eksklusif di tangan Backend.
+
 [REAL-USER VERIFICATION DOCTRINE — ANTI BLIND-CODING (2026-10-19, insiden v3.16.0 Fasa 2)]
 1. WAJIB-REPLIKASI-ALIRAN: Sebelum pembedahan/audit UI/UX yang melibatkan aliran provider/model/validation (kad Trinity, parameter, kunci), ejen WAJIB menjalankan aliran pengguna sebenar melalui Playwright MCP: pilih provider → isi API key real (SUBFABER_TEST_* via src/utils/testKeys.js) → isi base URL → pilih door/format → tekan Validate → pilih model — SEHINGGA komponen sasaran render dengan data sebenar. Hanya selepas itu pembedahan/audit dibenarkan bermula.
 2. SCREENSHOT = HIPOTESIS: Screenshot/laporan Owner adalah hipotesis awal, BUKAN kebenaran tunggal. Setiap isu yang dilaporkan mesti disahkan melalui interaksi langsung sebelum sebarang kod diubah.
