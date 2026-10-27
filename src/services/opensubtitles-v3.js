@@ -163,6 +163,14 @@ class OpenSubtitlesV3Service {
 
                 episodeFilteredSubtitles = episodeFilteredSubtitles.filter((sub) => {
                     const nameLower = (sub.name || '').toLowerCase();
+                    const upstreamSeason = Number.parseInt(sub.season, 10);
+                    const upstreamEpisode = Number.parseInt(sub.episode, 10);
+
+                    // The V3 feed already carries structured episode metadata. Prefer
+                    // it over filename heuristics and reject stale/misassociated rows.
+                    if (Number.isFinite(upstreamSeason) && upstreamSeason !== effectiveSeason) return false;
+                    if (Number.isFinite(upstreamEpisode) && upstreamEpisode !== episode) return false;
+                    if (upstreamSeason === effectiveSeason && upstreamEpisode === episode) return true;
 
                     if (hasExplicitSeasonEpisodeMismatch(nameLower, effectiveSeason, episode)) {
                         return false;
@@ -177,7 +185,10 @@ class OpenSubtitlesV3Service {
                             `(?:first|second|third|fourth|fifth|sixth|seventh|eighth|ninth|tenth)\\s+season(?!.*episode)`,
                             'i'
                         ),
-                        new RegExp(`s0*${effectiveSeason}\\s*(?:complete|full|pack)`, 'i')
+                        new RegExp(
+                            `s0*${effectiveSeason}(?:[\\s._-]+(?:complete|full|pack)|\\s+(?:complete|full|pack))`,
+                            'i'
+                        )
                     ];
 
                     const animeSeasonPackPatterns = [
@@ -263,7 +274,14 @@ class OpenSubtitlesV3Service {
 
             return episodeFilteredSubtitles;
         } catch (error) {
-            return handleSearchError(error, 'OpenSubtitles V3');
+            const results = handleSearchError(error, 'OpenSubtitles V3');
+            // Preserve the provider's soft-failure contract while allowing the
+            // orchestrator to distinguish a failed search from a genuine empty feed.
+            Object.defineProperty(results, '__providerError', {
+                value: error,
+                enumerable: false
+            });
+            return results;
         }
     }
 
@@ -378,16 +396,20 @@ class OpenSubtitlesV3Service {
                 }
 
                 const extracted = extractedNames[index];
+                const feedFileName = String(sub.subtitleFileName || '').trim();
+                const feedReleaseName = String(sub.movieReleaseName || '').trim();
+                const resolvedFileName = extracted || feedFileName;
                 let detectedFormat = null;
                 let finalName;
-                if (extracted) {
-                    const lower = String(extracted).toLowerCase();
+                if (resolvedFileName || feedReleaseName) {
+                    const metadataName = resolvedFileName || feedReleaseName;
+                    const lower = metadataName.toLowerCase();
                     const m = lower.match(/\.([a-z0-9]{2,4})$/);
                     if (m) {
                         const ext = m[1];
                         if (['srt', 'vtt', 'ass', 'ssa', 'sub'].includes(ext)) detectedFormat = ext;
                     }
-                    finalName = extracted.replace(/\.[^.]+$/, '');
+                    finalName = detectedFormat ? metadataName.replace(/\.[^.]+$/, '') : metadataName;
                 } else {
                     try {
                         const urlLower = String(sub.url || '').toLowerCase();
@@ -409,6 +431,11 @@ class OpenSubtitlesV3Service {
                     language: sub.lang,
                     languageCode: sub.normalizedLang,
                     name: finalName,
+                    originalFilename: feedFileName || extracted || null,
+                    season: Number.isFinite(Number.parseInt(sub.season, 10)) ? Number.parseInt(sub.season, 10) : null,
+                    episode: Number.isFinite(Number.parseInt(sub.episode, 10))
+                        ? Number.parseInt(sub.episode, 10)
+                        : null,
                     downloads: 0,
                     rating: 0,
                     uploadDate: null,
@@ -418,7 +445,7 @@ class OpenSubtitlesV3Service {
                     hearing_impaired:
                         isTrueishFlag(sub.hearing_impaired) ||
                         isTrueishFlag(sub.hi) ||
-                        inferHearingImpairedFromName(extracted || finalName),
+                        inferHearingImpairedFromName(resolvedFileName || feedReleaseName || finalName),
                     foreign_parts_only: false,
                     machine_translated: false,
                     uploader: 'OpenSubtitles V3',

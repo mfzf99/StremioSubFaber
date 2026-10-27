@@ -232,6 +232,112 @@ test('OpenSubtitles Auth reuses a valid JWT for search without logging in', asyn
     }
 });
 
+test('OpenSubtitles Auth uses parent_imdb_id for series episodes and preserves imdb_id for movies', async () => {
+    const sharedCache = require('../utils/sharedCache');
+    const OpenSubtitlesService = require('./opensubtitles');
+    const originalGetStorageAdapter = sharedCache.getStorageAdapter;
+    sharedCache.getStorageAdapter = async () => ({ client: null });
+    OpenSubtitlesService.__testing.resetRateLimiterState();
+
+    const createService = () => {
+        const service = new OpenSubtitlesService({ username: 'user', password: 'pass' });
+        service.token = 'cached-jwt';
+        service.tokenExpiry = Date.now() + 60 * 60 * 1000;
+        service.client.get = async () => ({ data: { data: [], total_pages: 1 }, headers: {} });
+        return service;
+    };
+
+    try {
+        const service = createService();
+        const paths = [];
+        service.client.get = async (path) => {
+            paths.push(path);
+            return { data: { data: [], total_pages: 1 }, headers: {} };
+        };
+
+        await service.searchSubtitles({
+            imdb_id: 'tt0012345',
+            type: 'episode',
+            season: 1,
+            episode: 2,
+            languages: ['eng'],
+            providerTimeout: 12000
+        });
+        await service.searchSubtitles({
+            imdb_id: 'tt0012345',
+            type: 'movie',
+            languages: ['eng'],
+            providerTimeout: 12000
+        });
+
+        const episodeQuery = new URL(`https://api.opensubtitles.test${paths[0]}`).searchParams;
+        assert.equal(episodeQuery.get('parent_imdb_id'), '12345');
+        assert.equal(episodeQuery.get('imdb_id'), null);
+        assert.equal(episodeQuery.get('season_number'), '1');
+        assert.equal(episodeQuery.get('episode_number'), '2');
+        assert.equal(episodeQuery.get('type'), 'episode');
+
+        const movieQuery = new URL(`https://api.opensubtitles.test${paths[1]}`).searchParams;
+        assert.equal(movieQuery.get('imdb_id'), '12345');
+        assert.equal(movieQuery.get('parent_imdb_id'), null);
+        assert.equal(movieQuery.get('type'), null);
+    } finally {
+        sharedCache.getStorageAdapter = originalGetStorageAdapter;
+        OpenSubtitlesService.__testing.resetRateLimiterState();
+    }
+});
+
+test('OpenSubtitles Auth fetches bounded pagination and preserves earlier rows on later-page failure', async () => {
+    const sharedCache = require('../utils/sharedCache');
+    const OpenSubtitlesService = require('./opensubtitles');
+    const originalGetStorageAdapter = sharedCache.getStorageAdapter;
+    sharedCache.getStorageAdapter = async () => ({ client: null });
+    OpenSubtitlesService.__testing.resetRateLimiterState();
+
+    const makeRow = (fileId) => ({
+        id: `subtitle-${fileId}`,
+        attributes: {
+            language: 'en',
+            files: [{ file_id: fileId, file_name: `Show.S01E02.${fileId}.srt` }],
+            feature_details: { movie_name: 'Show' }
+        }
+    });
+
+    try {
+        const service = new OpenSubtitlesService({ username: 'user', password: 'pass' });
+        service.token = 'cached-jwt';
+        service.tokenExpiry = Date.now() + 60 * 60 * 1000;
+        const pages = [];
+        service.client.get = async (path) => {
+            const page = Number(new URL(`https://api.opensubtitles.test${path}`).searchParams.get('page'));
+            pages.push(page);
+            if (page === 3) throw new Error('synthetic page-three outage');
+            return {
+                data: { data: [makeRow(100 + page)], total_pages: 99 },
+                headers: {}
+            };
+        };
+
+        const results = await service.searchSubtitles({
+            imdb_id: 'tt0012345',
+            type: 'episode',
+            season: 1,
+            episode: 2,
+            languages: ['eng'],
+            providerTimeout: 12000
+        });
+
+        assert.deepEqual(pages, [1, 2, 3]);
+        assert.deepEqual(
+            results.map((sub) => sub.fileId),
+            ['101', '102']
+        );
+    } finally {
+        sharedCache.getStorageAdapter = originalGetStorageAdapter;
+        OpenSubtitlesService.__testing.resetRateLimiterState();
+    }
+});
+
 test('OpenSubtitles Auth does not relogin on 406 download quota responses', async () => {
     const sharedCache = require('../utils/sharedCache');
     const OpenSubtitlesService = require('./opensubtitles');

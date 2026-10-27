@@ -3,7 +3,7 @@ const assert = require('node:assert/strict');
 const fs = require('node:fs');
 const path = require('node:path');
 
-const { collectProviderSearchResults, deduplicateSearch } = require('./subtitles');
+const { collectProviderSearchResults, deduplicateSearch, finalizeSubtitleResults } = require('./subtitles');
 
 function makeSubtitle(id, languageCode) {
     return {
@@ -22,6 +22,35 @@ test('subtitle handler does not define route/cache fallback timeout knobs', () =
     assert.equal(source.includes('SUBTITLE_CACHE_PHASE_TIMEOUT_MS'), false);
     assert.equal(source.includes('withFallbackTimeout'), false);
     assert.equal(source.includes('continuing with fallback'), false);
+});
+
+test('finalizeSubtitleResults ranks before deduplicating so the best duplicate survives', () => {
+    const makeDuplicate = (provider, downloads) => ({
+        id: provider,
+        fileId: provider,
+        languageCode: 'eng',
+        language: 'en',
+        name: 'Show.S01E02.1080p.WEB-DL',
+        provider,
+        downloads,
+        rating: 0,
+        uploadDate: null,
+        format: 'srt',
+        hearing_impaired: false
+    });
+
+    const results = finalizeSubtitleResults(
+        [makeDuplicate('subdl', 1), makeDuplicate('opensubtitles-v3', 1000)],
+        ['eng'],
+        { deduplicateSubtitles: true },
+        {
+            streamFilename: 'Show.S01E02.1080p.WEB-DL.mkv',
+            videoInfo: { type: 'episode', season: 1, episode: 2 }
+        }
+    );
+
+    assert.equal(results.length, 1);
+    assert.equal(results[0].provider, 'opensubtitles-v3');
 });
 
 test('provider search timeout marks returned results as partial', async () => {
@@ -61,6 +90,10 @@ test('provider search timeout marks returned results as partial', async () => {
 
     assert.equal(results.length, 3);
     assert.equal(results.__partialProviderResults, true);
+    assert.deepEqual(results.__providerDiagnostics, [
+        { provider: 'fast-provider', status: 'success', count: 3 },
+        { provider: 'slow-provider', status: 'timeout', count: 0 }
+    ]);
     assert.deepEqual(
         results.map((sub) => sub.languageCode),
         ['srp', 'srp', 'srp']
@@ -98,6 +131,45 @@ test('provider search errors mark returned results as partial', async () => {
 
     assert.equal(results.length, 3);
     assert.equal(results.__partialProviderResults, true);
+    assert.deepEqual(results.__providerDiagnostics, [
+        { provider: 'fast-provider', status: 'success', count: 3 },
+        { provider: 'rate-limited-provider', status: 'error', category: 'http_429', count: 0 }
+    ]);
+});
+
+test('provider soft failures are diagnosed as errors rather than successful empty searches', async () => {
+    const softFailedResults = [];
+    Object.defineProperty(softFailedResults, '__providerError', {
+        value: Object.assign(new Error('DNS unavailable'), { code: 'EDESTRUCTION' }),
+        enumerable: false
+    });
+
+    const results = await collectProviderSearchResults(
+        [
+            {
+                provider: 'opensubtitles-v3',
+                promise: Promise.resolve({ provider: 'opensubtitles-v3', results: softFailedResults })
+            }
+        ],
+        [],
+        { logContext: 'Test' }
+    );
+
+    assert.equal(results.__partialProviderResults, true);
+    assert.deepEqual(results.__providerDiagnostics, [
+        { provider: 'opensubtitles-v3', status: 'error', category: 'edestruction', count: 0 }
+    ]);
+
+    const emptyResults = await collectProviderSearchResults(
+        [{ provider: 'opensubtitles-v3', promise: Promise.resolve({ provider: 'opensubtitles-v3', results: [] }) }],
+        [],
+        { logContext: 'Test' }
+    );
+
+    assert.equal(emptyResults.__partialProviderResults, undefined);
+    assert.deepEqual(emptyResults.__providerDiagnostics, [
+        { provider: 'opensubtitles-v3', status: 'success', count: 0 }
+    ]);
 });
 
 test('provider search rejects are folded into partial results', async () => {

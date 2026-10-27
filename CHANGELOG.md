@@ -2,6 +2,24 @@
 
 All notable changes to this project will be documented in this file.
 
+## SubFaber v3.25.2 (2026-10-27) — OpenSubtitles Episode Discovery, V3 Metadata & Ranking Parity (Mandat Owner)
+
+### 🔧 Fixed — Pengaktifan Sumber dan Carian Episod OpenSubtitles
+
+- **Quick Setup ([`quick-setup.js`](public/js/quick-setup.js)):** Provider OpenSubtitles yang dipaparkan sebagai Auto-enabled kini benar-benar dihantar sebagai `enabled: true`; laluan V3 tanpa login dan Auth mengekalkan pilihan kredensial masing-masing. Safe update wizard tidak lagi mematikan provider yang telah dipilih.
+- **OpenSubtitles Auth ([`opensubtitles.js`](src/services/opensubtitles.js)):** Carian episod siri kini menggunakan `parent_imdb_id` bersama `season_number`, `episode_number` dan `type=episode`, manakala filem mengekalkan `imdb_id`. Pagination diluaskan sehingga tiga halaman dalam bajet masa berkongsi; kegagalan halaman berikutnya mengekalkan hasil yang sudah diperoleh.
+
+### ✨ Added — Metadata V3 dan Diagnostik Provider
+
+- **OpenSubtitles V3 ([`opensubtitles-v3.js`](src/services/opensubtitles-v3.js)):** Nama fail/release, format, `season`, `episode` dan metadata asal dikekalkan untuk ranking. Metadata berstruktur menolak episod/season lapuk dan pengesanan season-pack menyokong pemisah titik/underscore. Soft-failure provider membawa metadata ralat bukan-enumerasi tanpa mengubah kontrak array hasil.
+- **Orkestrasi ([`subtitles.js`](src/handlers/subtitles.js)):** Ranking filename/metadata/kualiti kini berlaku sebelum deduplikasi supaya varian terbaik kekal. Diagnostik setiap provider membezakan `success`, `error`, `timeout` dan `circuit_open`; hasil ralat/timeout ditanda partial dan tidak dicache sebagai respons lengkap.
+
+### 🧪 Verification — Baseline Monotonik 489 → 501
+
+- Dua suite regresi baharu mengunci kontrak Quick Setup dan V3; suite Auth serta handler diperluas untuk `parent_imdb_id`, pagination, ranking-sebelum-deduplikasi, diagnostik soft-failure dan cache partial. Kedua-dua suite baharu didaftarkan dalam [`package.json`](package.json).
+- Playwright mengesahkan Quick Setup lengkap sehingga save, rehidrasi selepas reload dan payload sesi `enabled=true`, `implementationType=v3`. Data live V3 bagi Silo S01E01/S01E02 mengesahkan 77/78 hasil keseluruhan dan 4 hasil English setiap episod; ralat DNS Node tempatan dilaporkan sebagai `error`, bukan `success:0`.
+- `npm test`: **501 total / 500 PASS / 0 FAIL / 1 SKIP**. Prettier PASS; ESLint 0 error; `git diff --check` PASS. Tiada perubahan pada skema Trinity, sampling model atau parameter berkaitan.
+
 ## SubFaber v3.25.1 (2026-10-26) — The Finale Prompt Trinity Universal Edition (Mandat Owner)
 
 ### 🌐 Changed — Kontrak Universal Merentas Bahasa dan Kelas LLM

@@ -540,6 +540,16 @@ function finalizeSubtitleResults(
         }
     }
 
+    if (streamFilename) {
+        processedSubtitles = rankSubtitlesByFilename(processedSubtitles, streamFilename, videoInfo);
+        log.debug(
+            () =>
+                `[${logContext}] Ranked ${processedSubtitles.length} subtitles by filename match + episode metadata + quality (downloads, rating, date)`
+        );
+    }
+
+    // Deduplicate only after ranking so the best provider variant wins instead
+    // of whichever provider happened to complete first.
     if (config.deduplicateSubtitles !== false) {
         const { deduplicated, stats } = deduplicateSubtitles(processedSubtitles, {
             enabled: true,
@@ -551,12 +561,6 @@ function finalizeSubtitleResults(
     }
 
     if (streamFilename) {
-        processedSubtitles = rankSubtitlesByFilename(processedSubtitles, streamFilename, videoInfo);
-        log.debug(
-            () =>
-                `[${logContext}] Ranked ${processedSubtitles.length} subtitles by filename match + episode metadata + quality (downloads, rating, date)`
-        );
-
         if (logTopRankedSubtitles && processedSubtitles.length > 0) {
             const top3 = processedSubtitles.slice(0, 3);
             log.debug(() => [
@@ -2011,6 +2015,15 @@ scheduleBackgroundInterval(
 // If cache has fewer results, we skip it and do a fresh search
 const MIN_CACHED_SUBTITLES_THRESHOLD = 3;
 
+function summarizeProviderSearchError(error) {
+    if (!error) return 'unknown_error';
+    if (error.statusCode || error.response?.status) return `http_${error.statusCode || error.response.status}`;
+    if (error.code === 'ECONNABORTED' || error.code === 'ETIMEDOUT') return 'timeout';
+    if (error.code) return String(error.code).toLowerCase();
+    if (error.type) return String(error.type).toLowerCase();
+    return 'provider_error';
+}
+
 async function deduplicateSearch(key, fn, options = {}) {
     const timeoutMs = Number(options.timeoutMs) > 0 ? Number(options.timeoutMs) : 0;
     const staleInFlightMs =
@@ -2110,6 +2123,7 @@ async function collectProviderSearchResults(
 ) {
     let providerResults = [];
     let partialProviderResults = false;
+    const diagnostics = [];
 
     if (orchestrationTimeoutMs > 0 && searchTasks.length > 0) {
         const collectedResults = [];
@@ -2150,6 +2164,12 @@ async function collectProviderSearchResults(
 
         if (winner === 'timeout') {
             providerResults = [...collectedResults];
+            const collectedProviders = new Set(collectedResults.map((result) => result.provider));
+            for (const task of searchTasks) {
+                if (!collectedProviders.has(task.provider)) {
+                    diagnostics.push({ provider: task.provider, status: 'timeout', count: 0 });
+                }
+            }
             const pending = searchTasks.length - resolvedCount;
             if (pending > 0) {
                 partialProviderResults = true;
@@ -2168,13 +2188,45 @@ async function collectProviderSearchResults(
     let subtitles = [];
     let providerErrorCount = 0;
     for (const result of providerResults) {
-        if (result.error) {
+        const providerError = result.error || result.results?.__providerError;
+        if (providerError) {
             providerErrorCount++;
-            log.warn(() => [`[${logContext}] ${result.provider} search failed:`, result.error.message]);
+            const category = summarizeProviderSearchError(providerError);
+            diagnostics.push({ provider: result.provider, status: 'error', category, count: 0 });
+            log.warn(() => [`[${logContext}] ${result.provider} search failed (${category}):`, providerError.message]);
         } else {
-            log.debug(() => `[${logContext}] Found ${result.results.length} subtitles from ${result.provider}`);
+            const count = Array.isArray(result.results) ? result.results.length : 0;
+            diagnostics.push({ provider: result.provider, status: 'success', count });
+            log.debug(() => `[${logContext}] Found ${count} subtitles from ${result.provider}`);
             subtitles = [...subtitles, ...result.results];
         }
+    }
+
+    for (const skipped of skippedProviders) {
+        diagnostics.push({ provider: skipped.provider, status: 'skipped', category: 'circuit_open', count: 0 });
+    }
+
+    if (diagnostics.length > 0) {
+        const providerOrder = new Map(searchTasks.map((task, index) => [task.provider, index]));
+        diagnostics.sort(
+            (a, b) =>
+                (providerOrder.get(a.provider) ?? Number.MAX_SAFE_INTEGER) -
+                (providerOrder.get(b.provider) ?? Number.MAX_SAFE_INTEGER)
+        );
+        log.debug(
+            () =>
+                `[${logContext}] Provider diagnostics: ${diagnostics
+                    .map(
+                        (entry) =>
+                            `${entry.provider}=${entry.status}:${entry.count}${entry.category ? `:${entry.category}` : ''}`
+                    )
+                    .join(', ')}`
+        );
+        Object.defineProperty(subtitles, '__providerDiagnostics', {
+            value: diagnostics,
+            enumerable: false,
+            configurable: true
+        });
     }
 
     if (skippedProviders.length > 0) {
@@ -8039,6 +8091,7 @@ module.exports = {
     createSubDLCloudflareBlockedSubtitle,
     createInvalidSubtitleMessage,
     filterSubtitlesByRequestedLanguages,
+    finalizeSubtitleResults,
     collectProviderSearchResults,
     deduplicateSearch,
     maybeConvertToSRT,

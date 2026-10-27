@@ -16,6 +16,8 @@ const OPENSUBTITLES_API_URL = 'https://api.opensubtitles.com/api/v1';
 const OPENSUBTITLES_VIP_API_URL = 'https://vip-api.opensubtitles.com/api/v1';
 const USER_AGENT = `SubFaber v${version}`;
 const MAX_ZIP_BYTES = 25 * 1024 * 1024; // hard cap for ZIP downloads (~25MB) to avoid huge packs
+const MAX_SEARCH_PAGES = 3; // Expand coverage without allowing an upstream page count to exhaust the request budget
+const SEARCH_PAGE_TIMEOUT_FLOOR_MS = 2000;
 
 // 🎯 RAM Cache Anti-Spam (30s TTL + Had Siling Memori)
 const osMemoryCache = new Map();
@@ -1569,14 +1571,20 @@ class OpenSubtitlesService {
                 convertedLanguages.join(',')
             ]);
 
+            const isEpisodeSearch = (type === 'episode' || type === 'anime-episode') && episode;
             const queryParams = {
-                imdb_id: imdbId,
                 languages: convertedLanguages.join(',')
             };
 
-            if ((type === 'episode' || type === 'anime-episode') && episode) {
+            if (isEpisodeSearch) {
+                // Our Stremio ID identifies the parent series. OpenSubtitles reserves
+                // imdb_id for a movie or an individual episode, not a parent series.
+                queryParams.parent_imdb_id = imdbId;
                 queryParams.season_number = season || 1;
                 queryParams.episode_number = episode;
+                queryParams.type = 'episode';
+            } else {
+                queryParams.imdb_id = imdbId;
             }
 
             if (excludeHearingImpairedSubtitles === true) {
@@ -1590,11 +1598,27 @@ class OpenSubtitlesService {
 
             log.debug(() => ['[OpenSubtitles] Searching with params:', JSON.stringify(queryParams)]);
 
-            const queryString = buildOpenSubtitlesQueryString(queryParams);
-            const searchPath = queryString ? `/subtitles?${queryString}` : '/subtitles';
+            const buildSearchPath = (page) => {
+                const pageQuery = buildOpenSubtitlesQueryString({ ...queryParams, page });
+                return pageQuery ? `/subtitles?${pageQuery}` : '/subtitles';
+            };
+            const searchPath = buildSearchPath(1);
 
             const requestConfig = {};
             if (providerTimeout) requestConfig.timeout = providerTimeout;
+            const searchStartedAt = Date.now();
+            const searchBudgetMs = Math.max(
+                SEARCH_PAGE_TIMEOUT_FLOOR_MS,
+                Number(providerTimeout || this.client.defaults.timeout) || 12000
+            );
+            const getPageRequestOptions = () => {
+                const remainingMs = searchBudgetMs - (Date.now() - searchStartedAt);
+                if (remainingMs < SEARCH_PAGE_TIMEOUT_FLOOR_MS) return null;
+                return {
+                    remainingMs,
+                    requestConfig: providerTimeout ? { timeout: Math.min(providerTimeout, remainingMs) } : requestConfig
+                };
+            };
 
             let response;
             try {
@@ -1644,7 +1668,43 @@ class OpenSubtitlesService {
                 return [];
             }
 
-            let subtitles = response.data.data.map((sub) => {
+            const firstPage = response;
+            const searchRows = [...firstPage.data.data];
+            const reportedTotalPages = Number.parseInt(firstPage.data.total_pages, 10);
+            const totalPages = Number.isFinite(reportedTotalPages)
+                ? Math.max(1, Math.min(MAX_SEARCH_PAGES, reportedTotalPages))
+                : 1;
+
+            for (let page = 2; page <= totalPages; page++) {
+                const pageOptions = getPageRequestOptions();
+                if (!pageOptions) {
+                    log.debug(
+                        () =>
+                            `[OpenSubtitles] Pagination stopped after page ${page - 1}/${totalPages}: shared search budget exhausted`
+                    );
+                    break;
+                }
+
+                try {
+                    const pageResponse = await requestOpenSubtitlesApi(
+                        () => this.client.get(buildSearchPath(page), pageOptions.requestConfig),
+                        `search-page-${page}`,
+                        { timeoutMs: pageOptions.remainingMs }
+                    );
+                    const pageRows = Array.isArray(pageResponse?.data?.data) ? pageResponse.data.data : [];
+                    searchRows.push(...pageRows);
+                } catch (pageError) {
+                    // The first page is already useful. Do not turn a later-page
+                    // failure into an empty result or discard successfully fetched rows.
+                    log.warn(
+                        () =>
+                            `[OpenSubtitles] Pagination page ${page}/${totalPages} failed; preserving ${searchRows.length} previously fetched result(s): ${pageError.message}`
+                    );
+                    break;
+                }
+            }
+
+            let subtitles = searchRows.map((sub) => {
                 const originalLang = sub.attributes.language;
                 const normalizedLang = this.normalizeLanguageCode(originalLang);
                 const fileId = sub.attributes.files?.[0]?.file_id || sub.id;

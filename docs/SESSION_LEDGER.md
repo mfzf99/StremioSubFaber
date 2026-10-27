@@ -1,3 +1,16 @@
+## 2026-10-27 — v3.25.2 OPENSUBTITLES EPISODE DISCOVERY, V3 METADATA & RANKING PARITY (MANDAT OWNER)
+
+- **Tarikh:** 2026-10-27 ~20:47 (waktu tempatan KL)
+- **Komit SHA (HEAD):** (direkod selepas push dan CI SUCCESS)
+- **Keputusan Owner:** Terus commit pembaikan OpenSubtitles Quick Setup, carian episod Auth/V3, metadata dan ranking/deduplikasi melalui 8-Step Release Pipeline penuh.
+- **Integration Self-Audit (Langkah 0):** Rantaian `buildQuickSetupConfig()` → safe update wizard → save/rehidrasi disahkan dengan Playwright sebenar hingga konfigurasi `enabled=true` dan V3 kekal selepas reload. Backend Auth menggunakan `parent_imdb_id` + pagination berbatas; V3 mengekalkan nama/season/episode/format/season-pack; handler meranking sebelum deduplikasi. Soft-failure V3 kini menghasilkan diagnostik error/partial tanpa mengubah array kontrak hasil atau cache kejayaan kosong. Sifar perubahan skema Trinity, Tri-Door, model sampling atau parameter DOM 4-state; sesi/artifak/pelayan ujian telah dibersihkan.
+- **Fail Terlibat:** public/js/quick-setup.js, public/js/quick-setup-opensubtitles-regression.test.js (A), src/services/opensubtitles.js, src/services/opensubtitles-v3.js, src/services/opensubtitles-v3-regression.test.js (A), src/services/opensubtitles-no-backoff-regression.test.js, src/handlers/subtitles.js, src/handlers/subtitles-timeout-regression.test.js, package.json/package-lock.json (3.25.1→3.25.2), CHANGELOG.md, docs/SESSION_LEDGER.md (blok ini).
+- **Verifikasi:** Ujian bersasar **26/26 PASS**. Playwright membuktikan wizard lengkap + save/rehidrasi. Data live V3 Silo E01=77/4 English dan E02=78/4 English; DNS Node tempatan `EDESTRUCTION` disahkan luar kontrak provider dan dilaporkan sebagai `error`, bukan `success:0`. Visual critique lulus tanpa perubahan CSS.
+- **Status npm test:** **501 total / 500 PASS / 0 FAIL / 1 SKIP** — baseline monotonik 489→501. Prettier `--check .` PASS; ESLint **0 error / 226 warning pre-existing**; `git diff --check` PASS. Runtime/cache-buster 3.25.2 dan token `__APP_VERSION_QUERY__` disahkan. Graphify NO-OP (`graphify-out/` tiada; runtime tersedia).
+- **Next Steps:** Commit + push origin main → `gh run watch` sehingga SUCCESS → rekod SHA + CI run ID dalam blok ini → deploy VPS mengikut prosedur standard projek.
+
+---
+
 ## 2026-10-26 — v3.25.1 THE FINALE PROMPT TRINITY UNIVERSAL EDITION (MANDAT OWNER)
 
 - **Tarikh:** 2026-10-26 ~21:36 (waktu tempatan KL)
