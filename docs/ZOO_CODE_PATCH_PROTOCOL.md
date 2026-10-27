@@ -2,7 +2,7 @@
 
 > **Status:** Operational tool of the SubFaber project.
 > **Script:** [`scripts/patch-zoo-code.js`](../scripts/patch-zoo-code.js)
-> **Applies to:** Zoo Code VS Code extension (`zoocodeorganization.zoo-code-*`), verified against v3.88.0 and v3.90.0; single-mode migration verified against v3.90.0 on 2026-10-26.
+> **Applies to:** Zoo Code VS Code extension (`zoocodeorganization.zoo-code-*`), verified against v3.88.0, v3.90.0 and v3.92.0; single-mode re-patch verified against v3.92.0 on 2026-10-27.
 > **Authority basis:** `.roo/rules/00-subfaber-core-protocol.md` — [CLOSED SINGLE-MODE UNIVERSE & ANTI-MODE-JUMPING LOCK].
 
 ## 1. Tujuan

@@ -2,6 +2,18 @@
 
 All notable changes to this project will be documented in this file.
 
+## SubFaber v3.25.3 (2026-10-27) — Rutin Patch Zoo Code 3.92.0 kepada Mod Tunggal `fullstack` (Mandat Owner)
+
+### 🔧 Maintenance — Pemulihan Single-Mode Lock Selepas Kemas Kini Sambungan
+
+- **Patch langsung Zoo Code 3.92.0 ([`patch-zoo-code.js`](scripts/patch-zoo-code.js)):** Skrip sedia ada digunakan semula tanpa perubahan untuk menggantikan tatasusunan lima mod bawaan pada kedua-dua bundle Extension Host dan Webview UI dengan satu mod `fullstack` (`Fullstack Architect`). Auto-detection berjaya mengenal pasti pemboleh ubah minified baharu (`SH` dan `une`), sambungan array kekal sah, dan kedua-dua bundle lulus `node --check`.
+- **Protokol operasi ([`ZOO_CODE_PATCH_PROTOCOL.md`](docs/ZOO_CODE_PATCH_PROTOCOL.md)):** Rekod keserasian ditambah untuk Zoo Code 3.92.0. Semakan susulan `--check` mengesahkan patch idempoten dan sifar definisi mod bawaan atau mod projek bersara.
+
+### ✅ Verifikasi
+
+- Dry-run awal mengesan lima mod bawaan pada kedua-dua bundle; selepas patch, kedua-duanya melaporkan `Already patched` dengan `residual retired mode definitions = NONE`. Restart penuh VS Code diperlukan untuk memuatkan semula Extension Host dan Webview.
+- Sifar perubahan kod runtime aplikasi, kontrak Zon A/B/C, payload serialization, rehidrasi, DOM, skema pelayan atau aset UI/CSS. Cache-buster kekal dinamik melalui [`version.js`](src/utils/version.js) dan token `__APP_VERSION_QUERY__`/`?_cb=`.
+
 ## SubFaber v3.25.2 (2026-10-27) — OpenSubtitles Episode Discovery, V3 Metadata & Ranking Parity (Mandat Owner)
 
 ### 🔧 Fixed — Pengaktifan Sumber dan Carian Episod OpenSubtitles

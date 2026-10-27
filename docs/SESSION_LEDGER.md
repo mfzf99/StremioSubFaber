@@ -1,3 +1,16 @@
+## 2026-10-27 — v3.25.3 RUTIN PATCH ZOO CODE 3.92.0 KEPADA MOD TUNGGAL FULLSTACK (MANDAT OWNER)
+
+- **Tarikh:** 2026-10-27 ~21:23 (waktu tempatan KL)
+- **Komit SHA (HEAD):** (direkod selepas push + CI SUCCESS)
+- **Keputusan Owner:** Lima mod bawaan muncul semula selepas kemas kini Zoo Code; jalankan rutin patch mengikut nota lama dan lepaskan melalui 8-Step Release Pipeline penuh.
+- **Integration Self-Audit (Langkah 0):** Rantaian standalone `main()` → `patchBundle()` → `findAssignmentPrefix()`/`findArrayEnd()` → `syntaxOk()`/`residualRetiredSlugs()` disahkan pada Zoo Code 3.92.0. Dry-run mengesan lima mod bawaan pada kedua-dua bundle dan auto-detect pemboleh ubah minified `SH` (host) serta `une` (webview). Utiliti penyelenggaraan ini tiada pemanggil runtime aplikasi; Zon A/B/C, payload serialization, rehidrasi, DOM, skema pelayan, Trinity dan Tri-Door tidak disentuh. Tiada perubahan UI/CSS, maka Playwright/visual critique tidak terpakai. Working tree awal bersih; HEAD `65ace1f0` = origin/main.
+- **Verifikasi patch:** `node scripts/patch-zoo-code.js` PATCH COMPLETE; kedua-dua bundle `node --check` PASS dan `residual retired mode definitions = NONE`. Semakan susulan `--check` COMPLETE dengan status `Already patched` pada host dan webview, membuktikan idempoten. Restart penuh VS Code diperlukan untuk memuatkan semula kedua-dua runtime.
+- **Fail Terlibat:** docs/ZOO_CODE_PATCH_PROTOCOL.md (M: rekod keserasian 3.92.0), package.json/package-lock.json (3.25.2→3.25.3), CHANGELOG.md, docs/SESSION_LEDGER.md (blok ini). Bundle luar repositori Zoo Code 3.92.0 dipatch terus; `scripts/patch-zoo-code.js` tidak memerlukan perubahan.
+- **Status npm test:** **501 total / 500 PASS / 0 FAIL / 1 SKIP** — baseline monotonik 501 dipelihara. Prettier `--check .` PASS; ESLint **0 error / 226 warning pre-existing**; `git diff --check` PASS. Cache-buster sumber dan render sebenar `?_cb=3.25.3` PASS; runtime 3.25.3 disahkan melalui `src/utils/version.js`. Graphify NO-OP (`graphify-out/` tiada).
+- **Next Steps:** Commit + push origin main → `gh run watch` sehingga SUCCESS → rekod SHA + CI run ID dalam blok ini. Owner restart penuh VS Code (bukan sekadar Reload Window) supaya dropdown hanya memaparkan Fullstack Architect.
+
+---
+
 ## 2026-10-27 — v3.25.2 OPENSUBTITLES EPISODE DISCOVERY, V3 METADATA & RANKING PARITY (MANDAT OWNER)
 
 - **Tarikh:** 2026-10-27 ~20:47 (waktu tempatan KL)
