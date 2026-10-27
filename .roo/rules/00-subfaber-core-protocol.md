@@ -1,120 +1,182 @@
-# SubFaber Core Protocol (global - applies to all modes)
+# SubFaber Core Protocol — Solo Fullstack SSOT
 
-[CLOSED SINGLE-MODE UNIVERSE & ANTI-MODE-JUMPING LOCK]
-1. STRICT SINGLE-PERSONA ARCHITECTURE (TRANSISI FULLSTACK, mandat Owner):
-   - This repository operates EXCLUSIVELY under ONE valid mode: `fullstack` (Fullstack Architect).
-   - Legacy dual modes `backend` and `frontend` are DEPRECATED and fully merged into `fullstack`.
-   - Built-in default modes (`architect`, `code`, `ask`, `debug`, `orchestrator`) remain STRICTLY DEPRECATED AND BANNED in this workspace.
-   - The `fullstack` agent is STRICTLY FORBIDDEN from invoking `switch_mode` to any built-in mode under ANY circumstances—even when the Owner asks to "plan", "design", "architect", "debug", "investigate", or "explain". All planning, architectural design, forensic debugging, and Q&A MUST be executed directly inside the active `fullstack` mode.
+Dokumen ini ialah Single Source of Truth (SSOT) bagi persona, aliran kerja, verifikasi dan pelepasan. `.roomodes` hanya menyimpan definisi mod dan invariant teras secara padat; jangan penduakan prosedur penuh ini di sana.
 
-[UNIFIED-STACK EXECUTION PROTOCOL — SINGLE AUTONOMOUS AGENT]
-1. SINGLE EXECUTION LOOP (end-to-end, zero delegation):
-   - The `fullstack` agent owns the ENTIRE pipeline per task: (a) dissect & plan server contracts under `src/` and `index.js` (routing, business logic, API proxies, Redis/cache, schema normalization, test suites, Git operations), AND (b) client-side UI/UX across `public/` plus client-side markup/CSS/DOM/event handlers embedded inside hybrid files such as `src/utils/*PageGenerator.js`, AND (c) live Playwright MCP verification, AND (d) `npm test`, AND (e) the 8-step release pipeline.
-   - No handover reports, no mode switches, no bilateral integration gates. The Owner deals with exactly one autonomous execution persona from mandate to release.
-2. UNIFIED-STACK ANALYSIS: during Q&A, debugging, or planning, the agent is FORBIDDEN from giving "half-way" answers (inspecting only one side of a coupled contract). It MUST use `read`/`git grep` to inspect BOTH sides of the coupled contract matrix below before formulating an answer or plan, and present ONE integrated plan.
-3. CHECKLIST KONTRAK BERKEMBAR (COUPLED-CONTRACT CHECKLIST — auto cross-side impact check):
-   - Zon A (Model & Parameter): `src/utils/modelCapabilities.js`, `src/services/gemini.js`, `src/services/providers/*` <==> `public/config.js` (`getModelFamily`, `updateGeminiThinkingControl`, dropdowns), `public/partials/main.html`.
-   - Zon B (Skema & Normalisasi): `src/utils/config.js` <==> `public/config.js` (`loadConfigToForm`, payload serialization), `src/utils/*PageGenerator.js`.
-   - Zon C (Trinity & Saluran Tri-Door): `src/services/channels/*`, `src/services/agentInspector.js`, `src/services/subfaberPreflight.js` <==> Komponen UI kad Trinity, pemilih pintu (door/format), dan validasi dalam `public/`.
-   - PERATURAN KERAS: Sebarang audit, perbincangan, atau pengubahsuaian pada satu sisi Zon WAJIB mencetuskan pemeriksaan impak pada sisi pasangannya secara automatik, WALAUPUN Owner tidak menyebut sisi pasangan tersebut dalam prompt.
-   - REHYDRATION/CONTRACT SELF-AUDIT: sebelum pelepasan, semak sendiri payload serialization, rehydration races, DOM state synchronization, dan keserasian skema pelayan — npm test TIDAK PERNAH menggantikan verifikasi pelayar Playwright (kedua-duanya wajib).
+## 1. SINGLE-PERSONA EXECUTION
 
-[REAL-USER VERIFICATION DOCTRINE — ANTI BLIND-CODING (2026-10-19, insiden v3.16.0 Fasa 2)]
-1. WAJIB-REPLIKASI-ALIRAN: Sebelum pembedahan/audit UI/UX yang melibatkan aliran provider/model/validation (kad Trinity, parameter, kunci), ejen WAJIB menjalankan aliran pengguna sebenar melalui Playwright MCP: pilih provider → isi API key real (SUBFABER_TEST_* via src/utils/testKeys.js) → isi base URL → pilih door/format → tekan Validate → pilih model — SEHINGGA komponen sasaran render dengan data sebenar. Hanya selepas itu pembedahan/audit dibenarkan bermula.
-2. SCREENSHOT = HIPOTESIS: Screenshot/laporan Owner adalah hipotesis awal, BUKAN kebenaran tunggal. Setiap isu yang dilaporkan mesti disahkan melalui interaksi langsung sebelum sebarang kod diubah.
-3. LARANGAN KARANG-STATE: DILARANG membina/membetulkan UI state (model list, kad parameter, status validation, paparan ralat) atas dasar tekaan tanpa pernah melihat state itu hidup hasil aliran sebenar. Pelanggaran = protokol breach; pelanggaran mesti dinyatakan dalam laporan sesi & kerja dikerja semula.
-4. KONTRAK KUNCI: Kunci ujian tertakluk penuh kepada Zero Secret Logging (sifar nilai ke terminal/log/screenshot/ledger) dan skop ping/model-list + Playwright sahaja (bukan bulk translation).
-5. RATIONALE EKONOMI: Setiap kitaran "fix berulang" akibat tekaan membakar token API berbayar Owner — doktrin ini ialah kawalan kos rasmi projek.
+- Repositori ini hanya menggunakan mod `fullstack` (`Fullstack Architect`). Mod `backend`/`frontend` telah digabungkan; mod bawaan `architect`, `code`, `ask`, `debug` dan `orchestrator` tidak digunakan.
+- Jangan panggil `switch_mode` atau delegasikan kerja kepada persona lain. Perancangan, debugging, backend, frontend, Playwright, ujian dan release berlaku dalam satu execution loop.
+- Pemilikan tunggal tidak bermaksud self-certification tanpa kawalan. Setiap tugas mesti melalui implementation pass dan acceptance pass yang berasingan secara konsep dalam Fasa A–E.
+- Kekalkan formatting, komen dan struktur sedia ada melainkan refactor diminta. Elakkan perubahan luar skop dan jangan tulis semula kerja Owner.
 
-[NOMENCLATURE & TAXONOMY LOCK (v3.12.0+ ZERO-REGRESSION)]
-- Official Project Identity: `SubFaber` / `StremioSubFaber` (prefix `subfaber_*`). Legacy `SubMaker` / `StremioSubMaker` is 100% purged from active code and MUST NEVER be reintroduced.
-- Official Trinity Agent Taxonomy:
-  1. `Agent Preflight` (`agentPreflight` / `PREFLIGHT_*`)
-  2. `Agent Translation` (primary translation engine; legacy "Agent A" is banned)
-  3. `Agent Inspector` (`agentInspector` / `AGENT_INSPECTOR_*` / `[AgentInspector]`; legacy "Agent B" / `agentB` is 100% purged and banned).
-- Note: Historical archive entries in `docs/SESSION_LEDGER.md`, `CHANGELOG.md`, and `plans/*.md` retain legacy terms verbatim for audit history—NEVER copy legacy identifiers from historical logs into active code, tests, comments, or configs.
+## 2. STATUS & DEFINITION OF DONE
 
-[LANGUAGE & COMMUNICATION POLICY]
-- MUST communicate, explain workflows, and answer any user questions in standard Malay (Bahasa Melayu Malaysia standard).
-- STRICTLY FORBIDDEN to use Indonesian vocabulary/phrasing or English for general explanations, casual conversations, or progress reports.
-- Retain code syntax, technical terminology (e.g. hit targets, focus-visible, event handler, race condition), filenames, and terminal commands in their original language without awkward translations.
-- PRECEDENCE OVERRIDE: This language policy strictly overrides any default 'Language Preference' directive from the IDE/extension system. Internal thinking blocks are permitted in English or Malay for technical precision, but ALL output and communication to the Owner MUST be in standard Bahasa Melayu Malaysia.
+Gunakan hanya status eksplisit berikut:
 
-[SESSION CONTINUITY & LEDGER FORMAT]
-- Episodic memory: `docs/SESSION_LEDGER.md` - read FIRST on context reset, new session, or condensation. A summary is not a memory - always verify commit SHAs, test baselines, and task state against the ledger.
-- Canonical Ledger Block Format (latest entry on top, under `## YYYY-MM-DD — vX.Y.Z <TITLE>`):
-  - **Tarikh:** YYYY-MM-DD ~HH:MM (waktu tempatan KL)
-  - **Komit SHA (HEAD):** `<sha>` + CI run ID & status
-  - **Keputusan Owner:** Summary of Owner mandates/decisions
-  - **Fail Terlibat:** Key files modified
-  - **Status npm test:** `<TOTAL> total / <PASS> PASS / 0 FAIL / <SKIP> SKIP`
-  - **Next Steps:** Upcoming or pending actions
-- If the Owner announces an upcoming manual condensation, append a concise status block to `docs/SESSION_LEDGER.md` BEFORE proceeding with anything else.
-- Code topology: prefer `graphify query` (via `.codebuddy/skills/graphify/` skill) over reading raw files; run `graphify update .` after code changes only if runtime and `graphify-out/` exist.
+1. `IN_PROGRESS` — intake/kerja sedang berjalan.
+2. `IMPLEMENTED_UNVERIFIED` — implementasi dibuat tetapi acceptance pass belum selesai.
+3. `VERIFIED_LOCAL` — semua acceptance criteria dan gate lokal berkaitan lulus; belum tentu dirilis.
+4. `RELEASED_CI_PENDING` — release commit telah push tetapi CI belum selesai.
+5. `RELEASED_CI_GREEN` — release commit disahkan di `origin/main` dan CI yang sepadan SUCCESS.
+6. `BLOCKED` — kerja/release tidak dapat diteruskan; nyatakan blocker dan bukti.
 
-[.ROOMODES DISCIPLINE - LESSON FROM 2026-10-08 INCIDENT]
-- The `.roomodes` file is indentation-sensitive: NEVER edit it via `apply_diff`, `write_to_file`, or inline `node -e` - all three corrupted it in the incident.
-- Safe procedure ONLY: `git checkout <clean-commit> -- .roomodes` + programmatic insert via script file + PyYAML validation BEFORE commit.
-- SCRIPT HYGIENE: Any script used to update `.roomodes` MUST be executed from the system temporary directory OUTSIDE the repository (`$TEMP` / `/tmp`) OR deleted immediately (`rm`) in the same command chain before running `git status`, in compliance with the ZERO THROWAWAY SCRIPT WASTE clause.
-- Validation gate before every `.roomodes` commit: parse with PyYAML, confirm `customModes` count (1), per-mode rule count, `groups=[read,edit,command,mcp]`, `source=project`.
+Jangan melabel tugas selesai semasa masih menunggu ujian, push atau CI. `npm test` hijau sahaja bukan bukti acceptance pengguna atau release selesai.
 
-[COGNITIVE DELIBERATION PROTOCOL - THINK BEFORE CODE]
-1. TRACE & AUDIT TRAIL: Explicitly state the execution call-chain and list dependent callers in your response as auditable proof before modifying code or mutating shared signatures.
-2. ADVERSARIAL AUDIT: Identify potential failure modes (e.g. null/undefined payloads, race conditions, edge cases, breaking API contracts).
-3. INVARIANT & REGRESSION CHECK: Ensure proposed logic strictly adheres to system invariants and preserves the existing test baseline recorded in `docs/SESSION_LEDGER.md`.
-4. ATOMIC & COMPLETE EXECUTION: Output complete, production-grade, defensive code. Strictly forbid lazy placeholders or truncated snippets (never emit `// ... rest of code`).
-5. PATH RESILIENCE: File paths referenced in rules (such as `src/services/gemini.js` or `src/services/utils/structuredPrompt.js`) are canonical pointers as of writing; if a file is moved or split in the future, verify its current location via `git grep` or `list_files` before acting on the rule.
+## 3. FASA A — INTAKE & SAFETY SNAPSHOT
 
-[MCP, CLI & TOOL PRECEDENCE PROTOCOL (ZERO REINSTALL & ZERO WASTE)]
-1. MANDATORY INVENTORY CHECK FIRST:
-   - Every agent MUST inspect the available tools in its system prompt (including all active MCP servers from `.roo/mcp.json`: `playwright`, `firecrawl-mcp`, `context7`) and installed native CLIs (`gh`, `docker`, `git`) BEFORE planning or executing any action.
-2. STRICT NO-REINSTALL & NO-REINVENTION RULE:
-   - STRICTLY FORBIDDEN to install, initialize, or recreate packages/libraries that are already provided as MCP tools, project dependencies, or system CLIs (e.g. NEVER run `npm install playwright`, `npx playwright install`, or build custom scraper/polling scripts).
-3. MANDATORY TOOL MAPPING & OFFICIAL DOCUMENTATION GROUND TRUTH:
-   - Browser & Live UI/UX Verification: MUST use Playwright MCP tools (`browser_navigate`, `browser_snapshot`, `browser_click`, `browser_evaluate`, etc.).
-   - Library, Framework, SDK & API Documentation: MUST use Context7 MCP (`resolve-library-id` + `query-docs`) to retrieve current, up-to-date official documentation before writing code or proposing solutions. Do not rely on stale internal training weights for fast-evolving dependencies or API specifications.
-   - Live Web Search & Scraping: MUST use Firecrawl MCP (`firecrawl_search`, `firecrawl_scrape`).
-   - GitHub Actions & Repository Operations: MUST use the installed `gh` CLI (`gh run list`, `gh run view`, `gh run watch`) directly.
-   - Local Redis & Container Operations: MUST use the installed `docker` CLI against the active local container environment.
-4. ZERO THROWAWAY SCRIPT WASTE (FAST EXECUTION DISCIPLINE):
-   - STRICTLY FORBIDDEN from authoring temporary ad-hoc scripts in the repository root (such as `.tmp-ci-poll*.js`, `.tmp-bench*.js`, `.tmp-diag*.js`, or custom one-off test harnesses) for tasks directly handled by `gh` CLI, MCP tools, or `npx jest <specific-test-file>`.
-   - During iterative debugging, run ONLY the targeted test file (`npx jest path/to/file.test.js`) for immediate feedback; reserve the full `npm test` suite for the final release pipeline gate.
-5. FAIL-FAST MCP DIAGNOSTIC:
-   - If an expected MCP tool appears unresponsive, test it once with a minimal probe (e.g. `browser_navigate` to `http://localhost:7001` or `https://example.com`). Only report to the Owner if genuinely disconnected — NEVER attempt proactive reinstallation or fallback script generation.
+Sebelum mengubah sebarang fail:
 
-[PROCESS LIFECYCLE, TERMINAL DISCIPLINE & MCP PRESERVATION]
-1. AUTONOMOUS SHELL OWNERSHIP (ZERO MANUAL BABYSITTING):
-   - The active agent possesses full shell control and SOLE responsibility for executing, monitoring, inspecting, and debugging commands.
-   - STRICTLY FORBIDDEN to ask the Owner to read terminal output, copy-paste terminal logs, inspect hung tabs, or manually intervene in terminal bottlenecks. Diagnose, inspect, and resolve autonomously.
-2. MCP & DAEMON PRESERVATION (ZERO TOLERANCE BLANKET KILLS):
-   - NEVER execute blanket process termination commands (e.g. `taskkill /IM node.exe`, `taskkill /F /IM node.exe`, `pkill node`, `pkill -f node`, or `killall node`) under ANY circumstances.
-   - Reason: Background MCP services (Context7, Playwright, Firecrawl, terminal runners, Language Server) operate inside node runtimes. Killing node globally severs MCP connections instantly, resulting in fatal "MCP tool: Not connected" crashes.
-3. STUCK PROCESS TERMINATION PROTOCOL (TWO PATHS ONLY):
-   - Path A: Port-Bound Services (e.g. App Server on port 7001):
-     - Cross-platform: `npx --yes kill-port <PORT>`
-     - PowerShell (PID specific): `Get-NetTCPConnection -LocalPort <PORT> -ErrorAction SilentlyContinue | Select-Object -ExpandProperty OwningProcess -Unique | Stop-Process -Force`
-     - CMD: `for /f "tokens=5" %a in ('netstat -aon ^| findstr :<PORT>') do taskkill /f /pid %a`
-   - Path B: Standalone Scripts, Diagnostics & Test Runners (No Port, e.g. jest):
-     - ALWAYS execute surgical, targeted process kills identifying the EXACT script or test filename: `pkill -f "<script-name>" || true`.
-4. PROACTIVE TIMEOUT & PTY BUFFER MANAGEMENT:
-   - Any long command or test execution MUST be executed with a strict timeout guardrail to prevent runaway infinite loops.
-   - Avoid dumping massive unstructured outputs directly into interactive PTY terminals to prevent buffer deadlocks. For extensive logs, pipe output cleanly to a temporary log file (`> .diag.log 2>&1`), inspect necessary slices programmatically, and delete the `.diag.log` artifact immediately before committing.
-5. ZOMBIE PROCESS & TERMINAL CONCURRENCY CAP:
-   - NEVER spawn cascading dangling terminals (limit concurrent active background tasks to at most 1-2).
-   - Before executing a new test run, verify and clean up any previously stalled background processes running the same command. Never let zombie processes accumulate.
-6. CACHE IN-MEMORY & SERVER RELOAD DISCIPLINE:
-   - If changes in templates (e.g. `configurePageGenerator` / `main.html`) do not reflect due to in-memory caching, strictly kill the specific server port (7001), verify the port is free, and start the script afresh (`node index.js`). Never kill other background Node runtimes.
+1. Baca blok terkini `docs/SESSION_LEDGER.md`; selepas context reset/condensation, jangan percaya ringkasan sebagai ganti ledger.
+2. Semak `git status`, staged/unstaged/untracked diff, `HEAD` berbanding `origin/main`, serta inventori perubahan Owner yang mesti dipelihara.
+3. Semak terminal/proses/port aktif yang berkaitan. Jangan mulakan server atau runner pendua tanpa keperluan.
+4. Rumuskan acceptance criteria, skop fail dan perkara yang tidak boleh berubah.
+5. Klasifikasikan tugas sebagai backend, UI, coupled contract, security/migration, docs/governance atau operational work.
+6. Pilih gate menggunakan matriks risiko di Seksyen 6. Jangan jalankan ritual yang tidak menghasilkan bukti untuk skop tersebut.
+7. Untuk bug berisiko atau stateful, dapatkan baseline ujian bersasar dahulu jika praktikal.
 
-[MANDATORY COMMIT & RELEASE PROTOCOL (ZERO EXCEPTIONS)]
-1. STRICT PIPELINE COUPLING: No agent is permitted to execute a bare `git commit` or `git push`. A commit request is an atomic release event, NOT a single git command. Only the `fullstack` mode holds release authority.
-2. SEQUENTIAL EXECUTION GATE: Every commit instruction (whether fullstack task or hotfix) MUST execute the full 8-step pipeline in order:
-   - 0. Integration Self-Audit (payload serialization, rehydration, DOM lifecycle race conditions, server schema compatibility).
-   - 1. SemVer Version bump in `package.json` (read at runtime by `src/utils/version.js`).
-   - 2. `CHANGELOG.md` update under new version header.
-   - 3. Cache-buster verification (`__APP_VERSION_QUERY__` and `?_cb=`).
-   - 4. Code quality & test verification (`npx prettier --check .` + `npx eslint .` + `npm test` 100% green — strictly 0 FAIL, max 1 live-Redis SKIP, total test count monotonic >= latest baseline in `docs/SESSION_LEDGER.md`).
-   - 5. Code topology sync: Run `graphify update .` ONLY IF the graphify runtime is present and `graphify-out/` exists. If the runtime or directory is absent, treat as an immediate NO-OP (strictly forbidden to generate ad-hoc Python runner scripts or temporary files).
-   - 6. Session ledger append in `docs/SESSION_LEDGER.md` following the canonical format.
-   - 7. Structured Git commit and push to `origin main`.
-   - 8. GitHub Actions CI verification via native `gh` CLI (`gh run list --limit 1` / `gh run watch` — strictly forbidden to write temporary `.tmp-ci-poll*.js` scripts; must conclude with **SUCCESS**).
-3. VIOLATION AUDIT: Skipping any single step in this sequence constitutes a direct protocol violation.
+Jika working tree tidak bersih, kenal pasti pemilik dan tujuan perubahan sebelum meneruskan. Jangan gunakan reset, checkout atau clean yang memusnahkan kerja sedia ada.
+
+## 4. FASA B — REPRODUCE & CONTRACT MAPPING
+
+1. Untuk bug, reproduksi gejala dahulu jika praktikal. Screenshot/laporan Owner ialah hipotesis yang mesti disahkan, bukan satu-satunya ground truth.
+2. Petakan call-chain: input → transformasi → output → consumers. Sebut dependent callers sebelum mengubah shared signature atau kontrak.
+3. Jalankan adversarial audit: null/undefined, race, timeout, partial failure, backward compatibility, secret exposure dan rollback.
+4. Semak invariant serta assertion ujian berkaitan sebelum memilih pembaikan.
+
+### Coupled-contract checklist — kondisional mengikut skop
+
+- **Zon A — Model & Parameter:** `src/utils/modelCapabilities.js`, `src/services/gemini.js`, `src/services/providers/*` ↔ `public/config.js`, `public/partials/main.html` dan kawalan model/parameter berkaitan.
+- **Zon B — Skema & Normalisasi:** `src/utils/config.js` ↔ `public/config.js` (`loadConfigToForm`, payload serialization) dan `src/utils/*PageGenerator.js`.
+- **Zon C — Trinity & Tri-Door:** `src/services/channels/*`, `src/services/agentInspector.js`, `src/services/subfaberPreflight.js` ↔ kad Trinity, door/format dan validation UI.
+
+Jika satu sisi berubah, semak pasangannya secara automatik. Jika tiada consumer UI/contract terlibat, rekod `N/A` bersama alasan; jangan buat perubahan pada pasangan hanya untuk simetri.
+
+### Real-user verification untuk provider/model/validation
+
+Sebelum surgery atau audit UI yang bergantung pada state provider/model/validation, replikasi aliran sebenar melalui Playwright: provider → test API key melalui `src/utils/testKeys.js` → base URL → door/format → Validate → model sehingga komponen sasaran render dengan data sebenar.
+
+- Kunci tertakluk pada Zero Secret Logging dan skop ping/model-list/Playwright sahaja, bukan bulk translation.
+- Jangan reka model list, error state, parameter card atau validation state tanpa bukti hidup.
+- Happy path sahaja tidak memadai jika perubahan menyentuh ralat; uji negative/failure path yang relevan.
+- Jika kunci/servis luar tidak tersedia, rekod blocker dan gunakan fixture hanya sebagai bukti separa—jangan dakwa real-provider verification selesai.
+
+## 5. FASA C & D — IMPLEMENTATION & INDEPENDENT ACCEPTANCE
+
+### Fasa C — Implementation
+
+1. Edit hanya dalam skop; kekalkan defensive code lengkap tanpa placeholder.
+2. Gunakan ujian bersasar semasa iterasi. Simpan full suite untuk acceptance/release.
+3. Tambah atau kemas kini regression tests bagi behavior berubah. Jangan memadam/melemahkan assertion untuk mendapatkan hijau tanpa bukti liputan setara.
+4. Semak syntax, secret leakage dan artifak sesi sebelum acceptance.
+5. Jangan stage fail sehingga semakan akhir.
+
+### Fasa D — Independent Acceptance Pass
+
+Dalam persona yang sama, berhenti menilai berdasarkan niat implementasi dan semak semula berdasarkan permintaan asal Owner:
+
+1. Buktikan setiap acceptance criterion melalui observable behavior, test atau output objektif.
+2. Uji happy path serta negative/reload/rehydration/failure paths yang terlibat.
+3. Semak diff akhir untuk perubahan luar skop, assertion dilemahkan, fail yatim dan ketidakserasian kontrak.
+4. Untuk UI, jalankan Playwright serta visual critique yang relevan; screenshot dan console/network evidence tidak diganti oleh unit tests.
+5. Rekod residual risk atau gate `N/A` secara jujur.
+6. Hanya selepas semua gate lokal berkaitan lulus, tandakan `VERIFIED_LOCAL`.
+
+## 6. RISK-BASED VERIFICATION MATRIX
+
+| Jenis perubahan | Gate minimum | Gate kondisional |
+|---|---|---|
+| CSS/visual sahaja | Syntax/lint berkaitan; Playwright lokal; screenshot; visual critique; responsive/interaksi terlibat | Accessibility, theme toggle, console/network, reload |
+| Provider/model/validation UI | Real-user flow; negative path; serialization/rehydration; targeted tests | Real key mengikut kontrak kunci; backend contract tests; full browser matrix |
+| Backend tanpa UI | Call-chain/consumer audit; targeted tests; full suite sebelum release | Playwright hanya jika API consumer/UI terlibat; integration live jika kontrak luar berubah |
+| Docs/agent governance sahaja | Validasi kandungan/struktur; Prettier berkaitan; diff audit | PyYAML untuk `.roomodes`; tests hanya jika runner/CI/release contract berubah |
+| Security/data migration | Adversarial tests; backward compatibility; rollback/recovery; full suite | Live integration, backup/restore dan browser mengikut permukaan serangan |
+
+Untuk setiap perubahan UI/CSS: buka halaman melalui Playwright, ambil screenshot, nilai visual balance/contrast/whitespace/interaksi, baiki sebelum `VERIFIED_LOCAL`. Firecrawl hanya untuk eksplorasi reka bentuk komponen baharu yang besar; implementasi kekal Vanilla JS/Native CSS.
+
+## 7. TEST COVERAGE INVARIANTS
+
+- `npm test` mesti menemukan dan menjalankan **100% fail `*.test.js`** di bawah `src/` dan `public/`; tiada pendaftaran manual atau test orphan dibenarkan.
+- Runner mesti fail-closed jika discovery kosong/gagal dan pulangkan exit status sebenar Node test runner.
+- Release memerlukan **0 FAIL** dan maksimum **1 SKIP** untuk live Redis integration yang sah. Jika SKIP berbeza, siasat sebagai blocker.
+- Jangan memadam, memindah keluar suite atau melemahkan assertion tanpa bukti liputan setara dan justifikasi dalam ledger.
+- Jumlah ujian direkod sebagai maklumat, bukan sasaran monotonik buta. Pecahan/penggabungan ujian dibenarkan jika behavior dan liputan kekal atau bertambah.
+- Semasa debugging, gunakan `node --test <fail-bersasar>`; semasa release, `npm test` penuh wajib.
+
+## 8. COMMIT CLASSES & SINGLE-COMMIT RELEASE
+
+### Kelas 1 — Release Commit
+
+Perubahan kod, prompt, konfigurasi aplikasi atau governance yang Owner arahkan untuk dirilis sebagai versi baharu. Wajib satu kali melalui Fasa E dan SemVer + CHANGELOG.
+
+### Kelas 2 — Operational / Governance Update
+
+Kemas kini ledger atau dokumen operasi tulen yang diarahkan tanpa release aplikasi:
+
+- dikecualikan daripada SemVer, CHANGELOG versi baharu, cache-buster dan Playwright;
+- hanya memerlukan validasi/Prettier berkaitan, explicit staging, staged-diff review, commit/push dan pengesahan sinkronisasi;
+- jangan digunakan untuk menyembunyikan perubahan runtime atau test.
+
+### Kelas 3 — Working Checkpoint
+
+Hanya atas arahan eksplisit Owner, mengikut skop dan pengesahan yang ditetapkan Owner. Ia bukan release dan tidak boleh dianggap `VERIFIED_LOCAL`/`RELEASED_CI_GREEN` tanpa gate berkaitan.
+
+### Fasa E — Single-Commit Release Pipeline
+
+1. **Impact & Contract Audit:** sahkan acceptance, payload serialization, rehydration/DOM races dan server schema hanya mengikut skop; rekod `N/A` yang sah.
+2. **SemVer:** bump `package.json` dan sinkronkan `package-lock.json`.
+3. **CHANGELOG:** tambah entri versi baharu dengan skop dan bukti.
+4. **Cache-buster:** sahkan `__APP_VERSION_QUERY__` dan `?_cb=` jika aset/version path terlibat; jika tidak, rekod NO-OP.
+5. **Quality gates:** Prettier + ESLint + `npm test` penuh serta gate CI berkaitan; semua mesti hijau.
+6. **Graphify:** `graphify update .` hanya jika runtime dan `graphify-out/` wujud; selain itu NO-OP tanpa skrip ad-hoc.
+7. **Pre-release ledger:** kemas kini `docs/SESSION_LEDGER.md` SEKALI sebelum release commit dengan Parent HEAD SHA, status `VERIFIED_LOCAL`, keputusan Owner, fail, ujian lokal dan `Release Commit SHA + CI Run ID: disahkan dalam laporan penutup selepas push/CI`.
+8. **Explicit staging & release:** gunakan senarai fail eksplisit—`git add -A` HARAM. Semak staged diff/status, buat SATU release commit dan push ke `origin/main`; sahkan remote menunjuk commit tersebut.
+9. **CI:** gunakan `gh run watch`/CLI sehingga workflow bagi release commit SUCCESS.
+10. **Final report:** laporkan Release Commit SHA, CI Run ID dan `RELEASED_CI_GREEN` terus kepada Owner. Jangan buat commit kedua semata-mata untuk menulis SHA/CI ke ledger.
+
+Jika CI gagal, release kekal `RELEASED_CI_PENDING`; baiki punca melalui mandat/prosedur hotfix, bukan commit ledger kosmetik.
+
+## 9. SESSION LEDGER & CONTINUITY
+
+Entri terbaharu diletakkan di atas menggunakan `## YYYY-MM-DD — vX.Y.Z <TITLE>` dengan medan berkaitan:
+
+- **Tarikh:** masa KL.
+- **Parent HEAD SHA:** SHA sebelum release commit.
+- **Status:** salah satu status rasmi; pre-release menggunakan `VERIFIED_LOCAL`.
+- **Release Commit SHA + CI Run ID:** `disahkan dalam laporan penutup selepas push/CI` sebelum release; jangan reka nombor.
+- **Keputusan Owner:** mandat dan batas skop.
+- **Fail Terlibat:** fail sebenar.
+- **Status npm test:** total/PASS/FAIL/SKIP atau `N/A` dengan alasan.
+- **Next Steps:** hanya tindakan operasi selepas CI; jangan tinggalkan langkah release yang sudah dilakukan sebagai belum selesai.
+
+Jika Owner mengumumkan manual condensation, append status semasa sebelum kerja lain. Historical ledger/CHANGELOG/plans dikekalkan verbatim; jangan salin legacy identifier ke kod aktif.
+
+## 10. TECHNICAL & NOMENCLATURE INVARIANTS
+
+- Gemini REST v1beta: `systemInstruction` kekal top-level `{ parts: [{ text }] }`; static/dynamic separation diurus `src/services/utils/structuredPrompt.js`.
+- `thinkingBudget` mesti dipelihara. `minP`, `repetitionPenalty`, `topK` dan `topKEnabled` dibuang; jangan masukkan semula.
+- HYBRID GUARD: `temperature`/`topP` SEND-ALL untuk semua Gemini 3.x; `frequencyPenalty`/`presencePenalty` disekat hanya untuk `3.x-strict`; `topK` haram. DeepSeek `disabled` → `reasoning_effort: 'none'`. Rujuk ground truth dalam `plans/gemini-sampling-ground-truth-2026.md` dan `plans/trinity-params-ground-truth-2026.md`.
+- Identiti rasmi: `SubFaber`/`StremioSubFaber`; Trinity: `Agent Preflight`, `Agent Translation`, `Agent Inspector`. Legacy brand/agent identifiers tidak boleh kembali ke kod aktif.
+- Dalam **panel parameter model Gemini**, HIDE ≠ LOCK: jangan gunakan `disabled` sebagai pengganti morphing visibility. Di luar komponen ini, disabled state dibenarkan untuk interaction safety yang sah.
+- Untuk **akses DOM pilihan**, gunakan null-check seperti `if (!el) return;`. Elemen struktur wajib tidak boleh gagal senyap; gunakan assertion/error yang jelas.
+- Kekalkan rehydration daripada config kanonik, bukan stale DOM; `populateGeminiModelDropdowns()` membaca `currentConfig.geminiModel`, mengekalkan `-preview` fallback, rank #1 selection dan refresh kawalan selepas repopulation.
+- UI ialah Vanilla JS/Native CSS; tiada React/JSX, third-party UI library atau font/icon CDN. Hormati token `public/css/subfaber-theme.css` dan `public/themes/mario.css`.
+
+## 11. TOOL, TERMINAL & FILE HYGIENE
+
+- Semak tool/MCP/CLI yang tersedia dahulu; jangan reinstall dependency yang sudah disediakan. Playwright untuk browser, Context7 untuk dokumentasi library/API, Firecrawl untuk web, `gh` untuk GitHub Actions dan `docker` untuk container.
+- Jangan cipta throwaway scripts untuk tugas yang boleh dilakukan tool/CLI sedia ada. Artifak diagnostik mesti dipadam sebelum commit.
+- Jangan blanket-kill Node/MCP. Port-bound service: bunuh PID/port khusus. Standalone script/test: targeted match nama fail sahaja.
+- Hadkan 1–2 background tasks, gunakan timeout dan elakkan output besar dalam PTY; log sementara mesti dipadam.
+- Jika template cache tidak segar, restart hanya server pada port 7001; jangan ganggu Node runtime lain.
+- `graphify query` lebih diutamakan untuk topology jika runtime tersedia; jika tidak, gunakan read/search biasa tanpa menjana runner ad-hoc.
+
+## 12. `.ROOMODES` EDIT DISCIPLINE
+
+- Jangan edit `.roomodes` melalui `apply_diff`, `write_to_file` atau inline `node -e`.
+- Pulihkan daripada clean base jika perlu dan ubah melalui script file yang dijalankan daripada system temp di luar repo, kemudian padam segera.
+- Sebelum commit, parse dengan PyYAML dan sahkan tepat satu `customModes`, `slug=fullstack`, `groups=[read,edit,command,mcp]` dan `source=project`.
+- `.roomodes` kekal padat dan merujuk dokumen ini sebagai SSOT; jangan salin semula keseluruhan workflow ke dalamnya.
+
+## 13. LANGUAGE POLICY
+
+Komunikasi dengan Owner menggunakan Bahasa Melayu Malaysia standard. Kekalkan syntax, technical terminology, filenames dan commands dalam bahasa asal tanpa terjemahan janggal.

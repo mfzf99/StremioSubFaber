@@ -1,3 +1,17 @@
+## 2026-10-27 — v3.25.4 PEMODENAN ALIRAN SOLO FULLSTACK & SINGLE-COMMIT RELEASE (MANDAT OWNER)
+
+- **Tarikh:** 2026-10-27 ~22:24 (waktu tempatan KL)
+- **Parent HEAD SHA:** `d5299f2a7b7a7e5fde9ed9f25bee32f2da68305a`
+- **Status:** `VERIFIED_LOCAL` — release commit dan CI disahkan selepas push melalui laporan penutup; tiada commit ledger kedua.
+- **Release Commit SHA + CI Run ID:** disahkan dalam laporan penutup selepas push/CI.
+- **Keputusan Owner:** Laksanakan keseluruhan P0–P2 daripada audit aliran kerja; Owner meluluskan versi v3.25.4 (bukan v3.25.2 kerana HEAD telah v3.25.3) dan mewajibkan satu release commit serta satu CI run.
+- **Impact & Contract Audit (Fasa A/B):** Rantaian perubahan `npm test` → `test:tracked` → discovery rekursif `src/` + `public/` → Node test runner disahkan. Zon A/B/C, runtime aplikasi, payload serialization, rehidrasi, DOM, Trinity dan UI/CSS = `N/A`; Playwright/real-key tidak terpakai. Safety snapshot awal bersih, HEAD = origin/main, tiada listener port 7001.
+- **Fail Terlibat:** .roomodes, .roo/rules/00-subfaber-core-protocol.md, scripts/run-tracked-tests.js (A), package.json/package-lock.json (3.25.3→3.25.4 + runner), .gitignore/.prettierignore (allowlist runner), CHANGELOG.md, docs/SESSION_LEDGER.md (blok ini).
+- **Status npm test:** **38 fail / 533 total / 532 PASS / 0 FAIL / 1 SKIP** — discovery automatik menemukan dua suite yatim (observability Inspector + universal language packs; 32/32 lulus bersasar) yang kini masuk full suite. Sifar assertion dipadam/dilemahkan. Graphify NO-OP (`graphify-out/` tiada). Cache-buster aset/UI `N/A`; versi package/lockfile disegerakkan.
+- **Next Steps:** Selepas satu release commit dipush, sahkan `origin/main` dan satu CI run sehingga SUCCESS, kemudian laporkan Release Commit SHA + CI Run ID dengan status `RELEASED_CI_GREEN`.
+
+---
+
 ## 2026-10-27 — v3.25.3 RUTIN PATCH ZOO CODE 3.92.0 KEPADA MOD TUNGGAL FULLSTACK (MANDAT OWNER)
 
 - **Tarikh:** 2026-10-27 ~21:23 (waktu tempatan KL)

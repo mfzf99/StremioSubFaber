@@ -33,7 +33,8 @@ keys
 *.svg
 
 # Non-tracked working directories (mirrors .gitignore)
-scripts
+scripts/*
+!scripts/run-tracked-tests.js
 SubFaber xSync
 nSync
 native

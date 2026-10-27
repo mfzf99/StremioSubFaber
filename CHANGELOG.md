@@ -2,6 +2,20 @@
 
 All notable changes to this project will be documented in this file.
 
+## SubFaber v3.25.4 (2026-10-27) — Modernisasi Aliran Solo Fullstack & Single-Commit Release
+
+### 🔧 Changed — Governance, Discovery Ujian dan Single-Commit Release
+
+- **Core Protocol Fasa A–E ([`00-subfaber-core-protocol.md`](.roo/rules/00-subfaber-core-protocol.md)):** Aliran kerja solo kini mempunyai safety snapshot, contract mapping kondisional, implementation dan independent acceptance pass, risk-based verification matrix, status eksplisit serta tiga kelas commit. Playwright, real-provider verification dan gate lain digunakan mengikut skop, bukan sebagai ritual universal.
+- **Single-Commit Release:** Ledger pra-release merekod Parent HEAD SHA, bukti lokal dan status `VERIFIED_LOCAL`; Release Commit SHA serta CI Run ID disahkan terus dalam laporan penutup `RELEASED_CI_GREEN`. Commit kedua semata-mata untuk menampal metadata CI ke ledger dihapuskan.
+- **Persona SSOT ([`.roomodes`](.roomodes)):** Definisi Fullstack Architect, invariant kritikal dan permissions dikekalkan, manakala prosedur penuh disatukan dalam core protocol. Larangan `disabled` dihadkan kepada panel parameter Gemini dan DOM null-check dibezakan antara elemen pilihan dengan struktur wajib.
+
+### ✅ Test Coverage — Sifar Fail Yatim
+
+- **Discovery automatik ([`run-tracked-tests.js`](scripts/run-tracked-tests.js)):** `npm test` kini menemukan 100% fail `*.test.js` di bawah `src/` dan `public/`, fail-closed jika discovery kosong/gagal, dan menyebarkan exit code sebenar Node runner. Pendaftaran manual dalam `test:tracked` dimansuhkan.
+- Dua suite yang sebelum ini yatim kini berjalan dalam full suite: observability Agent Inspector dan universal language packs. Sifar assertion dipadam atau dilemahkan; jumlah ujian direkod sebagai maklumat liputan, bukan invariant monotonik buta.
+- Full suite: **38 fail / 533 total / 532 PASS / 0 FAIL / 1 SKIP (live Redis)**. Tiada perubahan runtime aplikasi, Zon A/B/C, payload serialization, rehidrasi, DOM, Trinity atau UI/CSS; Playwright dan cache-buster aset `N/A` untuk skop ini.
+
 ## SubFaber v3.25.3 (2026-10-27) — Rutin Patch Zoo Code 3.92.0 kepada Mod Tunggal `fullstack` (Mandat Owner)
 
 ### 🔧 Maintenance — Pemulihan Single-Mode Lock Selepas Kemas Kini Sambungan

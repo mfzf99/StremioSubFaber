@@ -85,6 +85,7 @@ agent-docs/
 native/
 scripts/*
 !scripts/patch-zoo-code.js
+!scripts/run-tracked-tests.js
 .tests
 .tests/
 tests/
