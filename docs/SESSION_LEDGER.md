@@ -1,7 +1,7 @@
 ## 2026-10-27 — v3.25.2 OPENSUBTITLES EPISODE DISCOVERY, V3 METADATA & RANKING PARITY (MANDAT OWNER)
 
 - **Tarikh:** 2026-10-27 ~20:47 (waktu tempatan KL)
-- **Komit SHA (HEAD):** (direkod selepas push dan CI SUCCESS)
+- **Komit SHA (HEAD):** `965d00bf` + CI run ID 40506837427 = **SUCCESS** (Node 22 ✓ 1m12s / Node 24 ✓ 1m11s; SHA penuh `965d00bfcf5ae4b49fbf3c69013590dab17a37ab`, push disahkan HEAD = origin/main).
 - **Keputusan Owner:** Terus commit pembaikan OpenSubtitles Quick Setup, carian episod Auth/V3, metadata dan ranking/deduplikasi melalui 8-Step Release Pipeline penuh.
 - **Integration Self-Audit (Langkah 0):** Rantaian `buildQuickSetupConfig()` → safe update wizard → save/rehidrasi disahkan dengan Playwright sebenar hingga konfigurasi `enabled=true` dan V3 kekal selepas reload. Backend Auth menggunakan `parent_imdb_id` + pagination berbatas; V3 mengekalkan nama/season/episode/format/season-pack; handler meranking sebelum deduplikasi. Soft-failure V3 kini menghasilkan diagnostik error/partial tanpa mengubah array kontrak hasil atau cache kejayaan kosong. Sifar perubahan skema Trinity, Tri-Door, model sampling atau parameter DOM 4-state; sesi/artifak/pelayan ujian telah dibersihkan.
 - **Fail Terlibat:** public/js/quick-setup.js, public/js/quick-setup-opensubtitles-regression.test.js (A), src/services/opensubtitles.js, src/services/opensubtitles-v3.js, src/services/opensubtitles-v3-regression.test.js (A), src/services/opensubtitles-no-backoff-regression.test.js, src/handlers/subtitles.js, src/handlers/subtitles-timeout-regression.test.js, package.json/package-lock.json (3.25.1→3.25.2), CHANGELOG.md, docs/SESSION_LEDGER.md (blok ini).
