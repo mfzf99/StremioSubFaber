@@ -1,3 +1,17 @@
+## 2026-10-30 — v3.25.7 MALAY MOTHER & MARITAL HONORIFIC PRECEDENCE (MANDAT OWNER)
+
+- **Tarikh:** 2026-10-30 ~20:24 (waktu tempatan KL)
+- **Parent HEAD SHA:** `56046ed932ed324597dc0da11d4b30158c4c5443`
+- **Status:** `VERIFIED_LOCAL` — release commit dan CI disahkan selepas push melalui laporan penutup; tiada commit ledger kedua.
+- **Release Commit SHA + CI Run ID:** disahkan dalam laporan penutup selepas push/CI.
+- **Keputusan Owner:** Polish prompt honorific Agent Preflight bagi kes wanita yang dipanggil mak atau berkahwin supaya tidak salah menjadi Cik, kemudian terus commit kerja tersebut sebagai patch release melalui Single-Commit Release Pipeline.
+- **Impact & Contract Audit (Fasa A/B):** Zon C — `malayPack.honorificMatrix` → `buildPreflightPrompt()` → semua wrapper Agent Preflight. Bukti eksplisit motherhood/perkahwinan kini mengatasi Ms./Miss dan andaian usia; direct_address Mak diasingkan daripada canonical_address Puan, dengan disiplin anti-agakan dikekalkan. Skema empat tiang, parser, Translation/Inspector, wrapper provider dan bahasa lain tidak berubah. Zon A/B, UI, config serialization, rehidrasi dan DOM = `N/A`; Playwright/real-key tidak terpakai kerana perubahan teks prompt backend sahaja. Cache-buster aset `N/A`; Graphify NO-OP kerana `graphify-out/` tiada.
+- **Fail Terlibat:** src/services/prompts/languagePacks/malay.js (M), src/services/subfaber-preflight-regression.test.js (M: +1 ujian), package.json/package-lock.json (3.25.6→3.25.7), CHANGELOG.md, docs/SESSION_LEDGER.md (blok ini).
+- **Status npm test:** **38 fail / 540 total / 540 PASS / 0 FAIL / 0 SKIP** dengan Redis 7 sebenar pada container sementara port 6380 (`REDIS_INTEGRATION_PORT=6380`); container/data ujian dipadam dan Redis aplikasi port 6379 tidak diganggu. Syntax, Prettier, ESLint (0 error; 226 warning pre-existing) dan `git diff --check` PASS.
+- **Next Steps:** Selepas satu release commit dipush, sahkan `origin/main` dan satu CI run sehingga SUCCESS, kemudian laporkan Release Commit SHA + CI Run ID dengan status `RELEASED_CI_GREEN`.
+
+---
+
 ## 2026-10-30 — v3.25.6 PROVIDER PROMPT ROUTING & MALAY TRANSLATION FIDELITY (MANDAT OWNER)
 
 - **Tarikh:** 2026-10-30 ~18:18 (waktu tempatan KL)

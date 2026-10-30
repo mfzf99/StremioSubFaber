@@ -575,6 +575,28 @@ test('SubFaberPreflight: prompt carries the Malay sociolinguistic honorific matr
     );
 });
 
+test('SubFaberPreflight: Malay honorific evidence precedence locks mothers and wives as Puan, not Cik', () => {
+    const prompt = buildPreflightPrompt(
+        '<s id="1">Mom, are you home?</s><s id="2">Miss Shen, your daughter is here.</s>',
+        'Malay',
+        'English'
+    );
+    assert.ok(
+        prompt.includes(
+            'a mother (called "Mom"/"Mother"/"Mum"/"Mommy" by her child, or identified as a parent) or married (wife/spouse) OVERRIDES "Ms.", "Miss", and apparent youth'
+        ),
+        'bukti eksplisit ibu/isteri mesti mengatasi Ms./Miss dan andaian usia muda'
+    );
+    assert.ok(
+        prompt.includes('canonical_address MUST use "Puan [Name]", NEVER "Cik [Name]"'),
+        'gelaran kanonik ibu/isteri mesti Puan, bukan Cik'
+    );
+    assert.ok(
+        prompt.includes('direct_address = "Mak" while canonical_address = "Puan [Name]"'),
+        'sapaan anak Mak mesti diasingkan daripada rujukan formal Puan'
+    );
+});
+
 // --- runPreflightSemanticPass (async) ---
 test('SubFaberPreflight: skips when entries below minimum', async () => {
     const events = [];

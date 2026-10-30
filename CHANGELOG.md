@@ -2,6 +2,18 @@
 
 All notable changes to this project will be documented in this file.
 
+## SubFaber v3.25.7 (2026-10-30) — Malay Mother & Marital Honorific Precedence
+
+### 🔧 Fixed — Agent Preflight Kini Mengutamakan Bukti Hubungan
+
+- **Malay honorific matrix ([`malay.js`](src/services/prompts/languagePacks/malay.js)):** Bukti eksplisit bahawa watak perempuan ialah ibu atau isteri kini mengatasi `Ms.`, `Miss` dan andaian usia muda; `canonical_address` mesti menggunakan `Puan [Name]`, bukan `Cik [Name]`. `Cik` hanya digunakan bagi wanita muda bujang tanpa bukti motherhood/perkahwinan.
+- **Vocative distinction:** Panggilan anak seperti `Mom/Mother/Mum/Mommy` dipetakan kepada `direct_address = Mak`, manakala rujukan formal kekal `Puan [Name]`. Disiplin anti-agakan dikekalkan—status ibu atau perkahwinan tidak boleh direka tanpa bukti dialog.
+
+### ✅ Regression & Verification
+
+- Regression test baharu di [`subfaber-preflight-regression.test.js`](src/services/subfaber-preflight-regression.test.js) mengunci keutamaan bukti ibu/isteri dan pemisahan `Mak`/`Puan`; prompt non-Malay serta kontrak empat tiang tidak berubah.
+- Full suite dengan Redis 7 sebenar pada container ujian sementara: **540 total / 540 PASS / 0 FAIL / 0 SKIP**. Syntax, Prettier, ESLint (0 error) dan `git diff --check` lulus. Tiada perubahan UI/CSS, sampling model, wrapper provider atau skema JSON; Playwright dan cache-buster aset `N/A`.
+
 ## SubFaber v3.25.6 (2026-10-30) — Provider Prompt Routing & Malay Translation Fidelity
 
 ### 🔧 Fixed — Saluran Prompt Mengikut Provider Sebenar

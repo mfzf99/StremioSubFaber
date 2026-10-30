@@ -33,12 +33,14 @@ const malayPack = {
      */
     honorificMatrix: [
         "When locking character addresses in the 'characters' pillar, apply this MANDATORY sociolinguistic matrix of official ${tgt} titles/honorifics (Malay honorifics):",
+        '* EVIDENCE PRECEDENCE: explicit evidence that a woman is a mother (called "Mom"/"Mother"/"Mum"/"Mommy" by her child, or identified as a parent) or married (wife/spouse) OVERRIDES "Ms.", "Miss", and apparent youth. Her canonical_address MUST use "Puan [Name]", NEVER "Cik [Name]". Apply this only when the relationship is explicit; never invent motherhood or marriage.',
         '* "Ms." / "Mrs." for an adult woman — married, mature, an auntie/mak cik figure, or holding a corporate/management position — MUST map to "Puan" (e.g. "Ms. [Surname]" -> "Puan [Surname]", NEVER "Cik [Surname]").',
-        '* "Miss" / "Ms." for a young unmarried woman -> "Cik".',
+        '* "Miss" / "Ms." for a young unmarried woman -> "Cik" only when there is no explicit evidence of motherhood or marriage.',
         '* "Mr." -> "Encik". "Aunt" / "Auntie" -> "Mak Cik". "Uncle" -> "Pak Cik".',
         '* "Director" -> "Pengarah". "GM" / "General Manager" -> "Pengurus Besar".',
         '* Cross-genre mappings: "Sir" -> "Tuan". "Madam" / "Ma\'am" -> "Puan". "Captain" -> "Kapten". "Detective" -> "Detektif". "Dr." -> "Dr.". "Older Brother" -> "Abang". "Older Sister" -> "Kakak".',
         'Cross-reference titles: if the same character is addressed as "Aunt" in dialogue AND called "Ms. [Surname]", lock the formal address as "Puan [Surname]" (NOT "Cik [Surname]") — one canonical title per character, never alternate.',
+        'Mother vocative distinction: if her child calls her "Mom"/"Mother"/"Mum"/"Mommy", set direct_address = "Mak" while canonical_address = "Puan [Name]". Do NOT replace the formal reference with "Mak [Name]" merely because she is a mother.',
         'These title mappings are recorded EXCLUSIVELY as character addresses (canonical_address / direct_address) — never as terms entries.'
     ].join('\n   '),
 
@@ -46,7 +48,7 @@ const malayPack = {
      * P1 pillar-3 injection: canonical_address instruction for the Malay matrix.
      */
     canonicalAddressMatrix:
-        'Apply the Malay honorific matrix below (Ms./Mrs./mature/auntie/manager -> Puan; young unmarried -> Cik; Mr. -> Encik; Auntie -> Mak Cik; Uncle -> Pak Cik; Director -> Pengarah; GM -> Pengurus Besar)',
+        'Apply the Malay honorific matrix below with evidence precedence (explicit mother/married -> Puan even if source says Ms./Miss; otherwise Ms./Mrs./mature/auntie/manager -> Puan; young unmarried without such evidence -> Cik; Mr. -> Encik; Auntie -> Mak Cik; Uncle -> Pak Cik; Director -> Pengarah; GM -> Pengurus Besar)',
 
     /**
      * P1 pillar-4 injection: official media/publishing credit translation example.
@@ -101,7 +103,7 @@ Wrong (slots skipped):
      * NOT-LOCKED guidance (P1 formatter + translationEngine._formatPreflightForChunk).
      */
     notLockedGuidance:
-        'address NOT LOCKED — infer the correct honorific from the dialogue context (Malay matrix: Puan for adult/married/auntie/manager women, Cik for young unmarried women)'
+        'address NOT LOCKED — infer the correct honorific from explicit dialogue context (Malay matrix: Puan for mothers/married/adult/auntie/manager women, Cik for young unmarried women without evidence of motherhood or marriage)'
 };
 
 module.exports = malayPack;
