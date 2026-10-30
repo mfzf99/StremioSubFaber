@@ -1,3 +1,17 @@
+## 2026-10-30 — v3.25.9 ENGLISH-ONLY CHANGELOG LOCK RESTORED (MANDAT OWNER)
+
+- **Tarikh:** 2026-10-30 ~21:56 (waktu tempatan KL)
+- **Parent HEAD SHA:** `1bd0bcacb047386bd3ae6616bdd700b14c1d32ff`
+- **Status:** `VERIFIED_LOCAL` — release commit dan CI disahkan selepas push melalui laporan penutup; tiada commit ledger kedua.
+- **Release Commit SHA + CI Run ID:** disahkan dalam laporan penutup selepas push/CI.
+- **Keputusan Owner:** Betulkan drift bahasa dalam changelog dan terus commit pembetulan melalui Single-Commit Release Pipeline sebagai patch release v3.25.9.
+- **Impact & Contract Audit (Fasa A/B):** Docs/governance sahaja — 45 entri selepas mandat English asal v3.14.0 diaudit dan ditulis dalam professional English; satu ayat Bahasa Melayu lama dalam v3.9.43 dan label bercampur turut dibetulkan. Fakta, nombor ujian, literal log dan contoh prompt teknikal dikekalkan. English-only lock diketatkan dalam SSOT dan Fasa E. Zon A/B/C, runtime, payload serialization, rehidrasi, DOM dan UI/CSS = `N/A`; Playwright/real-key tidak terpakai. Cache-buster aset `N/A`; Graphify NO-OP kerana `graphify-out/` tiada.
+- **Fail Terlibat:** CHANGELOG.md (M), .roo/rules/00-subfaber-core-protocol.md (M), package.json/package-lock.json (3.25.8→3.25.9), docs/SESSION_LEDGER.md (blok ini).
+- **Status npm test:** **39 fail / 543 total / 542 PASS / 0 FAIL / 1 SKIP (live Redis)**. Prettier penuh, ESLint (0 error; warning pre-existing) dan `git diff --check` PASS. Struktur 303 entri dan semua 183 pautan relatif disahkan selepas entri baharu.
+- **Next Steps:** Selepas satu release commit dipush, sahkan `origin/main` dan satu CI run sehingga SUCCESS, kemudian laporkan Release Commit SHA + CI Run ID dengan status `RELEASED_CI_GREEN`.
+
+---
+
 ## 2026-10-30 — v3.25.8 IPV4-ONLY SHARED PROVIDER CONNECTIONS (MANDAT OWNER)
 
 - **Tarikh:** 2026-10-30 ~21:15 (waktu tempatan KL)

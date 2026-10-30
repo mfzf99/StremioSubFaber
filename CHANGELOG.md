@@ -2,364 +2,380 @@
 
 All notable changes to this project will be documented in this file.
 
+## SubFaber v3.25.9 (2026-10-30) — English-Only Changelog Lock Restored
+
+### 🔧 Fixed — Professional English Across Release History
+
+- **Restored the English-only changelog mandate:** Audited all 45 releases added after the original v3.14.0 language lock and rewrote Malay headings, labels, and prose in professional English. One residual Malay paragraph in v3.9.43 and several mixed-language labels in earlier English entries were also corrected without changing technical facts, test results, or release numbering.
+- **Preserved verbatim technical data:** Translation examples, honorifics, log messages, identifiers, configuration values, and other contract literals remain in their original language where required for accuracy.
+
+### 🔒 Governance — Explicit Language Lock
+
+- **Reinstated the English-only rule ([`00-subfaber-core-protocol.md`](.roo/rules/00-subfaber-core-protocol.md)):** The SSOT now explicitly requires professional English for every changelog heading, category, and prose passage, including historical corrections. Communicating with the Owner in Malay must never be interpreted as permission to write changelog prose in Malay.
+- **Release-gate enforcement:** Phase E now requires an English-language check for every changelog edit, with exceptions limited to verbatim technical data such as translation examples, log literals, identifiers, and contract values.
+
+### ✅ Verification
+
+- All **302 release entries** and **182 relative links** were validated successfully. Prettier and `git diff --check` passed. Documentation and governance changes only: no application runtime, Zone A/B/C contract, UI/CSS, payload, serialization, rehydration, or asset-path changes; Playwright, asset cache-busting, and Graphify were `N/A`/NO-OP.
+
 ## SubFaber v3.25.8 (2026-10-30) — IPv4-Only Shared Provider Connections
 
-### 🔧 Fixed — Tiada Lagi Percubaan IPv6 Tanpa Laluan
+### 🔧 Fixed — No More IPv6 Attempts Without a Route
 
-- **Shared DNS resolver ([`httpAgents.js`](src/utils/httpAgents.js)):** Resolver HTTP/HTTPS dikongsi kini memilih IPv4 untuk lookup biasa dan menapis alamat IPv6 daripada hasil dual-stack. Provider yang menggunakan shared agents, connection warm-up dan keep-alive tidak lagi membuang masa mencuba IPv6 pada VPS yang tiada default IPv6 route.
-- **Behavior dikekalkan:** DNS cache, connection pooling, timeout, circuit breaker dan bounded retry/backoff provider tidak berubah. Ralat DNS tetap disebarkan; tiada alamat atau kejayaan direka apabila IPv4 tidak tersedia. Resolver SSRF untuk custom provider dan konfigurasi routing OS tidak disentuh.
+- **Shared DNS resolver ([`httpAgents.js`](src/utils/httpAgents.js)):** Shared HTTP/HTTPS resolvers now select IPv4 for ordinary lookups and filter IPv6 addresses from dual-stack results. Providers using shared agents, connection warm-up, and keep-alive no longer waste time attempting IPv6 on VPS hosts without a default IPv6 route.
+- **Preserved behavior:** DNS caching, connection pooling, timeouts, circuit breakers, and bounded provider retry/backoff remain unchanged. DNS errors still propagate; no addresses or successes are fabricated when IPv4 is unavailable. Custom-provider SSRF resolvers and OS routing configuration were not modified.
 
 ### ✅ Regression & Verification
 
-- Suite baharu [`http-agents-ipv4-regression.test.js`](src/utils/http-agents-ipv4-regression.test.js) mengunci shared-agent resolver, dual-stack filtering dan single-address/error contracts.
-- Full suite: **39 fail / 543 total / 542 PASS / 0 FAIL / 1 SKIP (live Redis)**. Targeted tests **12/12 PASS**. Syntax, Prettier, ESLint (0 error) dan `git diff --check` lulus.
-- Sambungan sebenar SubSource menggunakan kod patch: localhost dan sandbox container VPS kedua-duanya **HTTP 200 melalui IPv4**; sandbox VPS **3/3 PASS**. Tiada perubahan UI/CSS, payload provider, config serialization atau rehidrasi; Playwright dan cache-buster aset `N/A`. IPv4 timeout luar kawalan aplikasi masih mungkin berlaku dan terus dilindungi retry sedia ada.
+- The new [`http-agents-ipv4-regression.test.js`](src/utils/http-agents-ipv4-regression.test.js) suite locks the shared-agent resolver, dual-stack filtering, and single-address/error contracts.
+- Full suite: **39 files / 543 total / 542 PASS / 0 FAIL / 1 SKIP (live Redis)**. Targeted tests **12/12 PASS**. Syntax, Prettier, ESLint (0 errors), and `git diff --check` passed.
+- Live SubSource connections using the patched code returned **HTTP 200 over IPv4** on both localhost and a VPS sandbox container; the VPS sandbox passed **3/3 checks**. No UI/CSS, provider payload, config serialization, or rehydration changes were made; Playwright and asset cache-busting were `N/A`. IPv4 timeouts beyond application control remain possible and continue to be covered by the existing retry behavior.
 
 ## SubFaber v3.25.7 (2026-10-30) — Malay Mother & Marital Honorific Precedence
 
-### 🔧 Fixed — Agent Preflight Kini Mengutamakan Bukti Hubungan
+### 🔧 Fixed — Agent Preflight Now Prioritizes Relationship Evidence
 
-- **Malay honorific matrix ([`malay.js`](src/services/prompts/languagePacks/malay.js)):** Bukti eksplisit bahawa watak perempuan ialah ibu atau isteri kini mengatasi `Ms.`, `Miss` dan andaian usia muda; `canonical_address` mesti menggunakan `Puan [Name]`, bukan `Cik [Name]`. `Cik` hanya digunakan bagi wanita muda bujang tanpa bukti motherhood/perkahwinan.
-- **Vocative distinction:** Panggilan anak seperti `Mom/Mother/Mum/Mommy` dipetakan kepada `direct_address = Mak`, manakala rujukan formal kekal `Puan [Name]`. Disiplin anti-agakan dikekalkan—status ibu atau perkahwinan tidak boleh direka tanpa bukti dialog.
+- **Malay honorific matrix ([`malay.js`](src/services/prompts/languagePacks/malay.js)):** Explicit evidence that a female character is a mother or wife now takes precedence over `Ms.`, `Miss`, and assumptions of young age; `canonical_address` must use `Puan [Name]`, not `Cik [Name]`. `Cik` is reserved for young, unmarried women without evidence of motherhood or marriage.
+- **Vocative distinction:** A child's forms of address such as `Mom/Mother/Mum/Mommy` map to `direct_address = Mak`, while formal references remain `Puan [Name]`. The anti-guessing discipline is preserved—motherhood or marital status must not be inferred without dialogue evidence.
 
 ### ✅ Regression & Verification
 
-- Regression test baharu di [`subfaber-preflight-regression.test.js`](src/services/subfaber-preflight-regression.test.js) mengunci keutamaan bukti ibu/isteri dan pemisahan `Mak`/`Puan`; prompt non-Malay serta kontrak empat tiang tidak berubah.
-- Full suite dengan Redis 7 sebenar pada container ujian sementara: **540 total / 540 PASS / 0 FAIL / 0 SKIP**. Syntax, Prettier, ESLint (0 error) dan `git diff --check` lulus. Tiada perubahan UI/CSS, sampling model, wrapper provider atau skema JSON; Playwright dan cache-buster aset `N/A`.
+- A new regression test in [`subfaber-preflight-regression.test.js`](src/services/subfaber-preflight-regression.test.js) locks mother/wife evidence precedence and the `Mak`/`Puan` distinction; non-Malay prompts and the four-pillar contract remain unchanged.
+- Full suite with real Redis 7 in a temporary test container: **540 total / 540 PASS / 0 FAIL / 0 SKIP**. Syntax, Prettier, ESLint (0 errors), and `git diff --check` passed. No UI/CSS, model sampling, provider wrapper, or JSON schema changes were made; Playwright and asset cache-busting were `N/A`.
 
 ## SubFaber v3.25.6 (2026-10-30) — Provider Prompt Routing & Malay Translation Fidelity
 
-### 🔧 Fixed — Saluran Prompt Mengikut Provider Sebenar
+### 🔧 Fixed — Prompt Channels Follow the Actual Provider
 
-- **Trinity channel propagation ([`translationProviderFactory.js`](src/services/translationProviderFactory.js), [`subtitles.js`](src/handlers/subtitles.js), [`translationEngine.js`](src/services/translationEngine.js)):** Provider kini mengisytiharkan saluran prompt sebenar (`gemini`, `openai`, `anthropic`) dan menyalurkannya sehingga TranslationEngine. OpenAI-compatible tidak lagi menerima continuation prefill Gemini secara lalai.
-- **Provider coverage ([`gemini.js`](src/services/gemini.js), [`openaiCompatible.js`](src/services/providers/openaiCompatible.js), [`anthropic.js`](src/services/providers/anthropic.js)):** Penetapan saluran berasaskan transport yang dibina, bukan tekaan nama model atau kunci API.
+- **Trinity channel propagation ([`translationProviderFactory.js`](src/services/translationProviderFactory.js), [`subtitles.js`](src/handlers/subtitles.js), [`translationEngine.js`](src/services/translationEngine.js)):** Providers now declare their actual prompt channel (`gemini`, `openai`, or `anthropic`) and propagate it through TranslationEngine. OpenAI-compatible providers no longer receive Gemini continuation prefill by default.
+- **Provider coverage ([`gemini.js`](src/services/gemini.js), [`openaiCompatible.js`](src/services/providers/openaiCompatible.js), [`anthropic.js`](src/services/providers/anthropic.js)):** Channel selection is based on the constructed transport, not guesses derived from model names or API keys.
 
-### 🔧 Fixed — Bahasa Melayu Malaysia dan Register Dialog
+### 🔧 Fixed — Malaysian Malay and Dialogue Register
 
-- **Structured prompt ([`core.js`](src/services/prompts/trinity/translation/core.js)):** Peraturan khusus language pack kini disuntik ke prompt terjemahan; peraturan Bahasa Melayu Malaysia, panduan register, blacklist Indonesianism dan arahan anti-literal tidak lagi terpinggir. Peraturan bahasa lain kekal terpencil.
-- **Sanitizer ([`translationEngine.js`](src/services/translationEngine.js)):** Penggantian global yang memaksa dialog menjadi formal telah dipadam. Pilihan model seperti `aku`, `kau`, `ni`, `tu`, `jap` dan `je` dikekalkan; pembersihan struktur, brParity dan normalisasi loanword kekal.
+- **Structured prompt ([`core.js`](src/services/prompts/trinity/translation/core.js)):** Language-pack-specific rules are now injected into translation prompts; Malaysian Malay rules, register guidance, the Indonesianism blacklist, and anti-literal instructions are no longer sidelined. Rules for other languages remain isolated.
+- **Sanitizer ([`translationEngine.js`](src/services/translationEngine.js)):** Removed global replacements that forced dialogue into a formal register. Model choices such as `aku`, `kau`, `ni`, `tu`, `jap`, and `je` are preserved; structural cleanup, brParity, and loanword normalization remain intact.
 
 ### ✅ Regression & Verification
 
-- Regression tests mengunci routing provider sebenar, factory Custom OpenAI-compatible, wiring handler → TranslationEngine, suntikan language pack Melayu tanpa kebocoran ke Vietnamese dan pemeliharaan register sanitizer.
-- Full suite: **539 total / 538 PASS / 0 FAIL / 1 SKIP (live Redis)**. Syntax, Prettier, ESLint (0 error) dan `git diff --check` lulus. Tiada perubahan UI/CSS, sampling model, preprocessing SRT atau timecode; Playwright dan cache-buster aset `N/A`.
+- Regression tests lock actual-provider routing, the Custom OpenAI-compatible factory, handler-to-TranslationEngine wiring, Malay language-pack injection without Vietnamese leakage, and sanitizer register preservation.
+- Full suite: **539 total / 538 PASS / 0 FAIL / 1 SKIP (live Redis)**. Syntax, Prettier, ESLint (0 errors), and `git diff --check` passed. No UI/CSS, model sampling, SRT preprocessing, or timecode changes were made; Playwright and asset cache-busting were `N/A`.
 
 ## SubFaber v3.25.5 (2026-10-30) — Anthropic Adaptive Thinking Runtime Propagation
 
-### 🔧 Fixed — Konfigurasi Thinking Kini Sampai ke Request Body
+### 🔧 Fixed — Thinking Configuration Now Reaches the Request Body
 
-- **Native Anthropic transport ([`anthropic.js`](src/services/providers/anthropic.js)):** Opsyen `thinking` disimpan pada provider dan diserialkan ke `/v1/messages`, membetulkan konfigurasi `{type:'adaptive'}` yang sebelum ini tidak digunakan. `{type:'disabled'}` turut dihormati.
-- **Trinity channel ([`anthropicChannel.js`](src/services/channels/anthropicChannel.js)):** `thinkingBudget` kini disalurkan ke provider. Bajet manual positif kekal mengambil keutamaan sebagai `{type:'enabled', budget_tokens}` dan tidak ditindih oleh adaptive lalai.
+- **Native Anthropic transport ([`anthropic.js`](src/services/providers/anthropic.js)):** The `thinking` option is stored on the provider and serialized into `/v1/messages`, fixing the previously unused `{type:'adaptive'}` configuration. `{type:'disabled'}` is also respected.
+- **Trinity channel ([`anthropicChannel.js`](src/services/channels/anthropicChannel.js)):** `thinkingBudget` is now forwarded to the provider. A positive manual budget retains precedence as `{type:'enabled', budget_tokens}` and is not overwritten by the adaptive default.
 
 ### ✅ Regression & Verification
 
-- Dua ujian baharu di [`channels-triDoor-phaseC-regression.test.js`](src/services/channels-triDoor-phaseC-regression.test.js) mengunci serialization adaptive, keutamaan bajet manual dan disabled.
-- Targeted suite: **17/17 PASS**. Full suite: **535 total / 534 PASS / 0 FAIL / 1 SKIP (live Redis)**. Syntax, Prettier, ESLint (0 error) dan `git diff --check` lulus. Tiada perubahan UI, serialization konfigurasi atau rehidrasi.
+- Two new tests in [`channels-triDoor-phaseC-regression.test.js`](src/services/channels-triDoor-phaseC-regression.test.js) lock adaptive serialization, manual-budget precedence, and disabled behavior.
+- Targeted suite: **17/17 PASS**. Full suite: **535 total / 534 PASS / 0 FAIL / 1 SKIP (live Redis)**. Syntax, Prettier, ESLint (0 errors), and `git diff --check` passed. No UI, config serialization, or rehydration changes were made.
 
-## SubFaber v3.25.4 (2026-10-27) — Modernisasi Aliran Solo Fullstack & Single-Commit Release
+## SubFaber v3.25.4 (2026-10-27) — Solo Fullstack Workflow Modernization & Single-Commit Release
 
-### 🔧 Changed — Governance, Discovery Ujian dan Single-Commit Release
+### 🔧 Changed — Governance, Test Discovery, and Single-Commit Releases
 
-- **Core Protocol Fasa A–E ([`00-subfaber-core-protocol.md`](.roo/rules/00-subfaber-core-protocol.md)):** Aliran kerja solo kini mempunyai safety snapshot, contract mapping kondisional, implementation dan independent acceptance pass, risk-based verification matrix, status eksplisit serta tiga kelas commit. Playwright, real-provider verification dan gate lain digunakan mengikut skop, bukan sebagai ritual universal.
-- **Single-Commit Release:** Ledger pra-release merekod Parent HEAD SHA, bukti lokal dan status `VERIFIED_LOCAL`; Release Commit SHA serta CI Run ID disahkan terus dalam laporan penutup `RELEASED_CI_GREEN`. Commit kedua semata-mata untuk menampal metadata CI ke ledger dihapuskan.
-- **Persona SSOT ([`.roomodes`](.roomodes)):** Definisi Fullstack Architect, invariant kritikal dan permissions dikekalkan, manakala prosedur penuh disatukan dalam core protocol. Larangan `disabled` dihadkan kepada panel parameter Gemini dan DOM null-check dibezakan antara elemen pilihan dengan struktur wajib.
+- **Core Protocol Phases A–E ([`00-subfaber-core-protocol.md`](.roo/rules/00-subfaber-core-protocol.md)):** The solo workflow now includes a safety snapshot, conditional contract mapping, separate implementation and independent acceptance passes, a risk-based verification matrix, explicit statuses, and three commit classes. Playwright, real-provider verification, and other gates are applied according to scope rather than as universal rituals.
+- **Single-Commit Release:** The pre-release ledger records the parent HEAD SHA, local evidence, and `VERIFIED_LOCAL`; the Release Commit SHA and CI Run ID are confirmed directly in the final `RELEASED_CI_GREEN` report. A second commit solely to add CI metadata to the ledger is no longer required.
+- **Persona SSOT ([`.roomodes`](.roomodes)):** The Fullstack Architect definition, critical invariants, and permissions remain intact while complete procedures are consolidated in the core protocol. The `disabled` prohibition is limited to the Gemini parameter panel, and DOM null-check requirements distinguish optional elements from required structure.
 
-### ✅ Test Coverage — Sifar Fail Yatim
+### ✅ Test Coverage — No Orphaned Files
 
-- **Discovery automatik ([`run-tracked-tests.js`](scripts/run-tracked-tests.js)):** `npm test` kini menemukan 100% fail `*.test.js` di bawah `src/` dan `public/`, fail-closed jika discovery kosong/gagal, dan menyebarkan exit code sebenar Node runner. Pendaftaran manual dalam `test:tracked` dimansuhkan.
-- Dua suite yang sebelum ini yatim kini berjalan dalam full suite: observability Agent Inspector dan universal language packs. Sifar assertion dipadam atau dilemahkan; jumlah ujian direkod sebagai maklumat liputan, bukan invariant monotonik buta.
-- Full suite: **38 fail / 533 total / 532 PASS / 0 FAIL / 1 SKIP (live Redis)**. Tiada perubahan runtime aplikasi, Zon A/B/C, payload serialization, rehidrasi, DOM, Trinity atau UI/CSS; Playwright dan cache-buster aset `N/A` untuk skop ini.
+- **Automatic discovery ([`run-tracked-tests.js`](scripts/run-tracked-tests.js)):** `npm test` now discovers 100% of `*.test.js` files under `src/` and `public/`, fails closed when discovery is empty or fails, and propagates the Node runner's actual exit code. Manual registration in `test:tracked` was removed.
+- Two previously orphaned suites—Agent Inspector observability and universal language packs—now run in the full suite. No assertions were deleted or weakened; test counts are recorded as coverage information, not a blindly monotonic invariant.
+- Full suite: **38 files / 533 total / 532 PASS / 0 FAIL / 1 SKIP (live Redis)**. No application runtime, Zone A/B/C, payload serialization, rehydration, DOM, Trinity, or UI/CSS changes were made; Playwright and asset cache-busting were `N/A` for this scope.
 
-## SubFaber v3.25.3 (2026-10-27) — Rutin Patch Zoo Code 3.92.0 kepada Mod Tunggal `fullstack` (Mandat Owner)
+## SubFaber v3.25.3 (2026-10-27) — Zoo Code 3.92.0 Repatch to Single `fullstack` Mode
 
-### 🔧 Maintenance — Pemulihan Single-Mode Lock Selepas Kemas Kini Sambungan
+### 🔧 Maintenance — Restored the Single-Mode Lock After an Extension Update
 
-- **Patch langsung Zoo Code 3.92.0 ([`patch-zoo-code.js`](scripts/patch-zoo-code.js)):** Skrip sedia ada digunakan semula tanpa perubahan untuk menggantikan tatasusunan lima mod bawaan pada kedua-dua bundle Extension Host dan Webview UI dengan satu mod `fullstack` (`Fullstack Architect`). Auto-detection berjaya mengenal pasti pemboleh ubah minified baharu (`SH` dan `une`), sambungan array kekal sah, dan kedua-dua bundle lulus `node --check`.
-- **Protokol operasi ([`ZOO_CODE_PATCH_PROTOCOL.md`](docs/ZOO_CODE_PATCH_PROTOCOL.md)):** Rekod keserasian ditambah untuk Zoo Code 3.92.0. Semakan susulan `--check` mengesahkan patch idempoten dan sifar definisi mod bawaan atau mod projek bersara.
+- **Direct Zoo Code 3.92.0 patch ([`patch-zoo-code.js`](scripts/patch-zoo-code.js)):** Reused the existing script unchanged to replace the five built-in mode arrays in both the Extension Host and Webview UI bundles with the single `fullstack` mode (`Fullstack Architect`). Auto-detection identified the new minified variables (`SH` and `une`), array concatenation remained valid, and both bundles passed `node --check`.
+- **Operating protocol ([`ZOO_CODE_PATCH_PROTOCOL.md`](docs/ZOO_CODE_PATCH_PROTOCOL.md)):** Added a Zoo Code 3.92.0 compatibility record. A follow-up `--check` confirmed idempotence and zero remaining built-in or retired project mode definitions.
 
-### ✅ Verifikasi
+### ✅ Verification
 
-- Dry-run awal mengesan lima mod bawaan pada kedua-dua bundle; selepas patch, kedua-duanya melaporkan `Already patched` dengan `residual retired mode definitions = NONE`. Restart penuh VS Code diperlukan untuk memuatkan semula Extension Host dan Webview.
-- Sifar perubahan kod runtime aplikasi, kontrak Zon A/B/C, payload serialization, rehidrasi, DOM, skema pelayan atau aset UI/CSS. Cache-buster kekal dinamik melalui [`version.js`](src/utils/version.js) dan token `__APP_VERSION_QUERY__`/`?_cb=`.
+- The initial dry run found five built-in modes in both bundles; after patching, both reported `Already patched` with `residual retired mode definitions = NONE`. A full VS Code restart is required to reload the Extension Host and Webview.
+- No application runtime code, Zone A/B/C contracts, payload serialization, rehydration, DOM, server schema, or UI/CSS assets changed. Cache-busting remains dynamic through [`version.js`](src/utils/version.js) and the `__APP_VERSION_QUERY__`/`?_cb=` tokens.
 
-## SubFaber v3.25.2 (2026-10-27) — OpenSubtitles Episode Discovery, V3 Metadata & Ranking Parity (Mandat Owner)
+## SubFaber v3.25.2 (2026-10-27) — OpenSubtitles Episode Discovery, V3 Metadata & Ranking Parity
 
-### 🔧 Fixed — Pengaktifan Sumber dan Carian Episod OpenSubtitles
+### 🔧 Fixed — OpenSubtitles Source Activation and Episode Search
 
-- **Quick Setup ([`quick-setup.js`](public/js/quick-setup.js)):** Provider OpenSubtitles yang dipaparkan sebagai Auto-enabled kini benar-benar dihantar sebagai `enabled: true`; laluan V3 tanpa login dan Auth mengekalkan pilihan kredensial masing-masing. Safe update wizard tidak lagi mematikan provider yang telah dipilih.
-- **OpenSubtitles Auth ([`opensubtitles.js`](src/services/opensubtitles.js)):** Carian episod siri kini menggunakan `parent_imdb_id` bersama `season_number`, `episode_number` dan `type=episode`, manakala filem mengekalkan `imdb_id`. Pagination diluaskan sehingga tiga halaman dalam bajet masa berkongsi; kegagalan halaman berikutnya mengekalkan hasil yang sudah diperoleh.
+- **Quick Setup ([`quick-setup.js`](public/js/quick-setup.js)):** OpenSubtitles providers displayed as auto-enabled are now actually submitted as `enabled: true`; both the no-login V3 route and Auth preserve their respective credential choices. The safe-update wizard no longer disables selected providers.
+- **OpenSubtitles Auth ([`opensubtitles.js`](src/services/opensubtitles.js)):** Series episode searches now use `parent_imdb_id` with `season_number`, `episode_number`, and `type=episode`, while films retain `imdb_id`. Pagination extends to three pages within the shared time budget; failure on a subsequent page preserves results already obtained.
 
-### ✨ Added — Metadata V3 dan Diagnostik Provider
+### ✨ Added — V3 Metadata and Provider Diagnostics
 
-- **OpenSubtitles V3 ([`opensubtitles-v3.js`](src/services/opensubtitles-v3.js)):** Nama fail/release, format, `season`, `episode` dan metadata asal dikekalkan untuk ranking. Metadata berstruktur menolak episod/season lapuk dan pengesanan season-pack menyokong pemisah titik/underscore. Soft-failure provider membawa metadata ralat bukan-enumerasi tanpa mengubah kontrak array hasil.
-- **Orkestrasi ([`subtitles.js`](src/handlers/subtitles.js)):** Ranking filename/metadata/kualiti kini berlaku sebelum deduplikasi supaya varian terbaik kekal. Diagnostik setiap provider membezakan `success`, `error`, `timeout` dan `circuit_open`; hasil ralat/timeout ditanda partial dan tidak dicache sebagai respons lengkap.
+- **OpenSubtitles V3 ([`opensubtitles-v3.js`](src/services/opensubtitles-v3.js)):** Filename/release name, format, `season`, `episode`, and source metadata are preserved for ranking. Structured metadata rejects stale episode/season values, and season-pack detection supports dot/underscore separators. Provider soft failures carry non-enumerable error metadata without changing the result-array contract.
+- **Orchestration ([`subtitles.js`](src/handlers/subtitles.js)):** Filename, metadata, and quality ranking now occurs before deduplication so the best variant survives. Per-provider diagnostics distinguish `success`, `error`, `timeout`, and `circuit_open`; error/timeout results are marked partial and are not cached as complete responses.
 
-### 🧪 Verification — Baseline Monotonik 489 → 501
+### 🧪 Verification — Baseline Increased from 489 to 501
 
-- Dua suite regresi baharu mengunci kontrak Quick Setup dan V3; suite Auth serta handler diperluas untuk `parent_imdb_id`, pagination, ranking-sebelum-deduplikasi, diagnostik soft-failure dan cache partial. Kedua-dua suite baharu didaftarkan dalam [`package.json`](package.json).
-- Playwright mengesahkan Quick Setup lengkap sehingga save, rehidrasi selepas reload dan payload sesi `enabled=true`, `implementationType=v3`. Data live V3 bagi Silo S01E01/S01E02 mengesahkan 77/78 hasil keseluruhan dan 4 hasil English setiap episod; ralat DNS Node tempatan dilaporkan sebagai `error`, bukan `success:0`.
-- `npm test`: **501 total / 500 PASS / 0 FAIL / 1 SKIP**. Prettier PASS; ESLint 0 error; `git diff --check` PASS. Tiada perubahan pada skema Trinity, sampling model atau parameter berkaitan.
+- Two new regression suites lock the Quick Setup and V3 contracts; the Auth and handler suites now cover `parent_imdb_id`, pagination, ranking before deduplication, soft-failure diagnostics, and partial caching. Both new suites were registered in [`package.json`](package.json).
+- Playwright verified the complete Quick Setup flow through saving, rehydration after reload, and a session payload containing `enabled=true` and `implementationType=v3`. Live V3 data for Silo S01E01/S01E02 confirmed 77/78 total results and 4 English results per episode; a local Node DNS error was reported as `error`, not `success:0`.
+- `npm test`: **501 total / 500 PASS / 0 FAIL / 1 SKIP**. Prettier passed; ESLint reported 0 errors; `git diff --check` passed. No Trinity schema, model sampling, or related parameters changed.
 
-## SubFaber v3.25.1 (2026-10-26) — The Finale Prompt Trinity Universal Edition (Mandat Owner)
+## SubFaber v3.25.1 (2026-10-26) — The Finale Prompt Trinity Universal Edition
 
-### 🌐 Changed — Kontrak Universal Merentas Bahasa dan Kelas LLM
+### 🌐 Changed — Universal Contracts Across Languages and LLM Classes
 
-- **Agent Preflight ([`core.js`](src/services/prompts/trinity/preflight/core.js)):** Contoh `direct_address` kini menggunakan “a source line” dan bebas daripada bias English, selari dengan sokongan ratusan pasangan bahasa sumber/sasaran.
-- **Agent Translation ([`core.js`](src/services/prompts/trinity/translation/core.js)):** Prinsip Subtitle Economy & Flow membenarkan pemampatan untuk tempoh bacaan di skrin tanpa kehilangan maksud atau impak emosi. ANTI-MERGE kini membenarkan penyusunan semula klausa hanya merentas slot bersebelahan bagi ayat bersambung apabila dituntut oleh susunan kata bahasa sasaran, termasuk SVO ↔ SOV, sambil mengekalkan ID, susunan, dan setiap slot berisi.
-- **Agent Inspector ([`core.js`](src/services/prompts/trinity/inspector/core.js)):** Pengecualian selari Translation mengecualikan penyusunan klausa ayat bersambung yang sah daripada SHIFT/DROP. REGISTER kini hanya mengaudit `canonical_address` dan `direct_address` yang benar-benar wujud dalam skema Preflight, tanpa rujukan pasangan pronoun yang tidak dikunci oleh Preflight.
+- **Agent Preflight ([`core.js`](src/services/prompts/trinity/preflight/core.js)):** The `direct_address` example now uses “a source line” and is free of English-language bias, consistent with support for hundreds of source/target language pairs.
+- **Agent Translation ([`core.js`](src/services/prompts/trinity/translation/core.js)):** Subtitle Economy & Flow now permits compression to fit on-screen reading time without losing meaning or emotional impact. ANTI-MERGE permits clause reordering only across adjacent slots of a continuing sentence when required by target-language word order, including SVO ↔ SOV, while preserving IDs, order, and content in every slot.
+- **Agent Inspector ([`core.js`](src/services/prompts/trinity/inspector/core.js)):** A Translation-aligned exception excludes valid continuing-sentence clause reordering from SHIFT/DROP findings. REGISTER now audits only `canonical_address` and `direct_address` values actually present in the Preflight schema, without referencing pronoun pairs that Preflight does not lock.
 
-### ✨ Added — Few-Shot yang Konsisten dengan Output Contract
+### ✨ Added — Few-Shot Examples Consistent with the Output Contract
 
-- Kedua-dua pack [`generic.js`](src/services/prompts/languagePacks/generic.js) dan [`malay.js`](src/services/prompts/languagePacks/malay.js) kini membungkus setiap contoh `Correct:` dalam `<answer>...</answer>`.
-- Generic few-shot menggunakan `{translation of ...}` untuk meta-placeholder, manakala kurungan siku `[...]` dikekalkan untuk kesan bunyi SDH; konflik visual placeholder bersarang dihapuskan.
-- Empat ujian baharu dalam [`trinity-prompt-matrix-regression.test.js`](src/services/trinity-prompt-matrix-regression.test.js) mengunci keneutralan bahasa sumber, reading-speed guardrail, penyusunan SVO ↔ SOV, struktur `<answer>` dan pemisahan placeholder SDH. Assertion Inspector dalam [`agent-inspector-regression.test.js`](src/services/agent-inspector-regression.test.js) diselaraskan dengan kontrak REGISTER dan pengecualian split-sentence baharu.
+- Both [`generic.js`](src/services/prompts/languagePacks/generic.js) and [`malay.js`](src/services/prompts/languagePacks/malay.js) now wrap every `Correct:` example in `<answer>...</answer>`.
+- Generic few-shot examples use `{translation of ...}` for meta-placeholders, while square brackets `[...]` remain reserved for SDH sound effects; the nested-placeholder visual conflict was removed.
+- Four new tests in [`trinity-prompt-matrix-regression.test.js`](src/services/trinity-prompt-matrix-regression.test.js) lock source-language neutrality, the reading-speed guardrail, SVO ↔ SOV reordering, `<answer>` structure, and SDH placeholder separation. Inspector assertions in [`agent-inspector-regression.test.js`](src/services/agent-inspector-regression.test.js) were aligned with the new REGISTER contract and split-sentence exception.
 
 ### ✅ Integration & Compatibility
 
-- Sembilan sel matriks tiga ejen × tiga pintu kekal; `systemInstruction` top-level Gemini, system/user split, JSON schema, parser, dan prefill Translation tidak berubah. Tiada perubahan UI, serialization, rehidrasi atau skema storan.
-- Ujian bersasar lima suite prompt: **201 total / 201 PASS / 0 FAIL / 0 SKIP**.
+- All nine cells of the three-agent × three-door matrix remain intact; top-level Gemini `systemInstruction`, system/user separation, JSON schemas, parsers, and Translation prefill are unchanged. No UI, serialization, rehydration, or storage schema changes were made.
+- Targeted testing across five prompt suites: **201 total / 201 PASS / 0 FAIL / 0 SKIP**.
 
-## SubFaber v3.25.0 (2026-10-26) — Pool Kunci Gemini Native Per-Ejen Trinity + Rehidrasi Kanonik (Mandat Owner)
+## SubFaber v3.25.0 (2026-10-26) — Per-Agent Gemini Native Key Pools + Canonical Rehydration
 
-### ✨ Added — Pool Kunci Berkongsi untuk Gemini Native Rasmi dan Custom
+### ✨ Added — Shared Key Pools for Official and Custom Gemini Native
 
-- **Utiliti state modular ([`trinity-key-state.js`](public/js/trinity-key-state.js)):** Satu utiliti UMD tanpa rangkaian untuk browser dan Node menormalkan pool `{apiKey, apiKeys, keyRotationEnabled, keyRotationMode}`. Kunci utama sentiasa indeks 0, dedup stabil, array legacy additional-only diterima, dan mod rotasi disekat kepada `per-batch`/`per-request`.
-- **Pool per-ejen ([`trinity-agents.js`](public/js/trinity-agents.js)):** Agent Translation, Agent Preflight, dan Agent Inspector kini menyimpan kunci utama + kunci tambahan dalam slot masing-masing. Alias global Translation dikekalkan untuk keserasian konfigurasi lama dan enjin sedia ada.
-- **Resolver door backend ([`geminiKeyResolver.js`](src/services/geminiKeyResolver.js)):** Pool hanya aktif untuk Gemini Native rasmi atau Custom/Proxy dengan door berkesan Gemini Native. Custom OpenAI/Anthropic tidak boleh tersalah menggunakan laluan rotasi Gemini walaupun model atau kunci memberi hint bercampur.
-- **Runtime Translation/Preflight/Inspector:** Translation mengaktifkan rotasi berdasarkan instance `GeminiService` sebenar, bukan nama provider; Preflight dan Inspector mempunyai pool serta kaunter fasa berasingan. Base URL custom turut disalurkan ke Gemini Channel tanpa perubahan struktur payload Tri-Door.
+- **Modular state utility ([`trinity-key-state.js`](public/js/trinity-key-state.js)):** A single network-free UMD utility for browsers and Node normalizes `{apiKey, apiKeys, keyRotationEnabled, keyRotationMode}` pools. The primary key is always index 0, deduplication is stable, legacy additional-only arrays are accepted, and rotation modes are restricted to `per-batch`/`per-request`.
+- **Per-agent pools ([`trinity-agents.js`](public/js/trinity-agents.js)):** Agent Translation, Agent Preflight, and Agent Inspector now store primary and additional keys in their own slots. The global Translation alias remains for backward compatibility with legacy configurations and the existing engine.
+- **Backend door resolver ([`geminiKeyResolver.js`](src/services/geminiKeyResolver.js)):** Pools activate only for official Gemini Native or Custom/Proxy with an effective Gemini Native door. Custom OpenAI/Anthropic cannot accidentally use Gemini rotation even when model or key hints conflict.
+- **Translation/Preflight/Inspector runtime:** Translation enables rotation based on the actual `GeminiService` instance rather than the provider name; Preflight and Inspector have separate pools and phase counters. Custom base URLs are also forwarded to Gemini Channel without changing the Tri-Door payload structure.
 
-### 🔧 Fixed — Roundtrip, Smart Visibility, dan Keselamatan Kredensial
+### 🔧 Fixed — Roundtrips, Smart Visibility, and Credential Security
 
-- Rehidrasi tidak lagi memasukkan semula kunci utama ke dalam senarai Additional API Keys; pool kekal merentas Basic↔Pro dan bertukar door.
-- Perubahan Format/Door dan auto-detection Base URL kini menyegarkan Smart Visibility rotation. Row disembunyikan untuk door bukan-Gemini tanpa memadam draft kunci (HIDE ≠ LOCK).
-- Pool Trinity disulitkan sebelum storan, dinyahsulit semasa baca, dan disanitasi untuk log melalui [`encryption.js`](src/utils/encryption.js) serta [`security.js`](src/utils/security.js).
-- Normalisasi [`config.js`](src/utils/config.js) memulihkan kunci utama sebagai indeks 0 dan mengelakkan dedup silang antara ejen.
+- Rehydration no longer reinserts the primary key into Additional API Keys; pools survive Basic↔Pro transitions and door changes.
+- Format/Door changes and Base URL auto-detection now refresh rotation Smart Visibility. The row is hidden for non-Gemini doors without deleting key drafts (HIDE ≠ LOCK).
+- Trinity pools are encrypted before storage, decrypted when read, and sanitized for logs through [`encryption.js`](src/utils/encryption.js) and [`security.js`](src/utils/security.js).
+- [`config.js`](src/utils/config.js) normalization restores the primary key as index 0 and avoids cross-agent deduplication.
 
-### ✅ Verifikasi Live Playwright
+### ✅ Live Playwright Verification
 
-- Gemini rasmi: Validate berjaya, 46 model diterima; kunci utama dan tambahan sama-sama valid.
-- Custom Gemini Native/Crazy Router: Validate berjaya, 8 model diterima; `gemini-2.5-flash` dipilih.
-- Pool dua kunci kekal selepas Basic→Pro→Basic dan rehidrasi; tiada duplikasi kunci utama. Rotation tersembunyi pada OpenAI dan muncul semula pada Gemini Native tanpa kehilangan pool.
-- Visual critique lulus tanpa perubahan CSS; tiada ralat aplikasi baharu. Sifar nilai rahsia direkodkan.
+- Official Gemini: validation succeeded and returned 46 models; both primary and additional keys were valid.
+- Custom Gemini Native/Crazy Router: validation succeeded and returned 8 models; `gemini-2.5-flash` was selected.
+- A two-key pool survived Basic→Pro→Basic and rehydration without duplicating the primary key. Rotation hid on OpenAI and reappeared on Gemini Native without losing the pool.
+- Visual critique passed without CSS changes; no new application errors occurred. No secret values were recorded.
 
-### 🧪 Tests — Baseline Monotonik 475 → 484
+### 🧪 Tests — Baseline Increased from 475 to 484
 
-- 9 ujian regresi baharu dalam [`gemini-key-pool-regression.test.js`](src/services/gemini-key-pool-regression.test.js) meliputi utiliti tulen, door resolver, normalisasi, penyulitan/redaction, instance Translation custom, dan giliran pool Preflight/Inspector.
-- `npm test`: **484 total / 483 PASS / 0 FAIL / 1 SKIP**. Prettier PASS; ESLint 0 error; `git diff --check` PASS.
+- Nine new regression tests in [`gemini-key-pool-regression.test.js`](src/services/gemini-key-pool-regression.test.js) cover the pure utility, door resolver, normalization, encryption/redaction, custom Translation instances, and Preflight/Inspector pool turns.
+- `npm test`: **484 total / 483 PASS / 0 FAIL / 1 SKIP**. Prettier passed; ESLint reported 0 errors; `git diff --check` passed.
 
-## SubFaber v3.24.1 (2026-10-26) — Kunci Kemas Kini Skrip Patch Zoo Code kepada Mod Tunggal `fullstack` (Mandat Owner)
+## SubFaber v3.24.1 (2026-10-26) — Zoo Code Patch Script Updated for Single `fullstack` Mode
 
-### 🔧 Fixed — Penyelenggaraan Zoo Code Selaras dengan Seni Bina Mod Tunggal
+### 🔧 Fixed — Zoo Code Maintenance Aligned with the Single-Mode Architecture
 
-- **Skrip penampal ([`scripts/patch-zoo-code.js`](scripts/patch-zoo-code.js)):** Definisi bundle host dan webview kini mengunci satu mod `fullstack` (`Fullstack Architect`). Penampal menerima bundle asal mahupun patch dua-mod lama, mengecam pemboleh ubah minified secara automatik, dan mengesan sisa definisi mod bawaan serta mod projek bersara selepas patch.
-- **Protokol operasi ([`docs/ZOO_CODE_PATCH_PROTOCOL.md`](docs/ZOO_CODE_PATCH_PROTOCOL.md)):** Dokumentasi diselaraskan dengan autoriti `[CLOSED SINGLE-MODE UNIVERSE & ANTI-MODE-JUMPING LOCK]`, laluan migrasi bundle dua-mod, pengesahan integriti, dan semakan dropdown Fullstack Architect selepas restart penuh VS Code.
+- **Patch script ([`scripts/patch-zoo-code.js`](scripts/patch-zoo-code.js)):** Host and webview bundle definitions now lock the single `fullstack` mode (`Fullstack Architect`). The patcher accepts both original bundles and legacy two-mode patches, auto-detects minified variables, and identifies residual built-in or retired project mode definitions after patching.
+- **Operating protocol ([`docs/ZOO_CODE_PATCH_PROTOCOL.md`](docs/ZOO_CODE_PATCH_PROTOCOL.md)):** Documentation now aligns with `[CLOSED SINGLE-MODE UNIVERSE & ANTI-MODE-JUMPING LOCK]`, the two-mode bundle migration path, integrity verification, and the Fullstack Architect dropdown check after a full VS Code restart.
 
-### ✅ Verifikasi
+### ✅ Verification
 
-- Semakan langsung Zoo Code 3.90.0 pada kedua-dua bundle Extension Host dan Webview UI: sintaks PASS, status satu-mod disahkan, sifar definisi mod bersara. Sifar perubahan kod runtime aplikasi, payload, DOM atau skema pelayan.
+- Direct inspection of Zoo Code 3.90.0 in both Extension Host and Webview UI bundles confirmed valid syntax, single-mode status, and zero retired mode definitions. No application runtime code, payloads, DOM, or server schema changed.
 
-## SubFaber v3.24.0 (2026-10-26) — Transisi Seni Bina Mod Tunggal `fullstack` (Fullstack Architect) — Penamatan Era Dwi-Mod (Mandat Owner)
+## SubFaber v3.24.0 (2026-10-26) — Transition to Single `fullstack` Mode (Fullstack Architect) — End of the Two-Mode Era
 
-### 🏗️ Changed — Penyatuan Mod Backend + Frontend → Mod Tunggal Berautonomi Penuh
+### 🏗️ Changed — Backend + Frontend Unified into One Fully Autonomous Mode
 
-- **Penggabungan mod ([`.roomodes`](.roomodes)):** Mod `backend` dan `frontend` DIGABUNGKAN sepenuhnya menjadi SATU mod tunggal `fullstack` (`Fullstack Architect`) — satu persona eksekusi berautonomi penuh yang memiliki keseluruhan kitaran hujung-ke-hujung: pembedahan kontrak pelayan `src/` + `index.js`, pelaksanaan UI/UX `public/` + markup klien dalam `src/utils/*PageGenerator.js`, verifikasi hidup Playwright MCP, `npm test`, dan 8-Step Release Pipeline. Validasi PyYAML: `customModes`=1, `slug=fullstack`, `groups=[read,edit,command,mcp]`, `source=project`, EOL CRLF terpelihara.
-- **Invariant diwarisi penuh:** Semua invariant kritikal kedua-dua domain dikekalkan tanpa pengurangan — (Backend) `systemInstruction` top-level Gemini, Preservation & Purge (`topK` haram sejak v1.6.0), HYBRID Guard v3.19.1+, baseline ujian monotonik 0 FAIL/max 1 SKIP, kuasa eksklusif 8-Step Release Pipeline; (Frontend) 4-state DOM morphing + HIDE ≠ LOCK, clamping `thinkingBudget` selari backend, rehidrasi tanpa trap `prevValue`, strict null-checks DOM, 100% Vanilla JS & Native CSS, Visual Critique Loop Playwright, Real-User Verification Doctrine (anti blind-coding).
-- **[`.roo/rules/00-subfaber-core-protocol.md`](.roo/rules/00-subfaber-core-protocol.md):** `[CLOSED TWO-MODE UNIVERSE]` → `[CLOSED SINGLE-MODE UNIVERSE & ANTI-MODE-JUMPING LOCK]` (model-agnostic); `[MULTI-AGENT ORCHESTRATION PROTOCOL]` → `[UNIFIED-STACK EXECUTION PROTOCOL — SINGLE AUTONOMOUS AGENT]`; seksyen `[SEAMLESS GEARBOX PROTOCOL]` DIHAPUSKAN sepenuhnya — matriks Zon A/B/C kekal sebagai **Coupled-Contract Self-Checklist** dalam protokol baharu; Langkah 0 pipeline menjadi **Integration Self-Audit**; kiraan validasi `.roomodes` diselaraskan `customModes`=1.
-- **Klausa lapuk dihapuskan:** Semua arahan `switch_mode` antara `backend` ↔ `frontend`, protokol penyerahan verbatim (handover report), Bilateral Two-Man Integration Gate, Dual-Head Consultation, Seamless Shift Execution Loop, larangan silang ("Frontend haram commit", "Backend haram usik HTML") — semua birokrasi dwi-persona dimansuhkan.
+- **Mode consolidation ([`.roomodes`](.roomodes)):** The `backend` and `frontend` modes were fully merged into the single `fullstack` mode (`Fullstack Architect`)—one autonomous execution persona owning the complete end-to-end cycle: server contract analysis in `src/` and `index.js`, UI/UX implementation in `public/` and client markup in `src/utils/*PageGenerator.js`, live Playwright MCP verification, `npm test`, and the 8-Step Release Pipeline. PyYAML validation: `customModes`=1, `slug=fullstack`, `groups=[read,edit,command,mcp]`, `source=project`, with CRLF preserved.
+- **All invariants inherited:** No critical invariant from either domain was reduced—Backend: top-level Gemini `systemInstruction`, Preservation & Purge (`topK` forbidden since v1.6.0), HYBRID Guard v3.19.1+, monotonic test baseline with 0 FAIL/max 1 SKIP, and exclusive 8-Step Release Pipeline authority; Frontend: 4-state DOM morphing with HIDE ≠ LOCK, backend-aligned `thinkingBudget` clamping, rehydration without the `prevValue` trap, strict DOM null-checks, 100% Vanilla JS and Native CSS, the Playwright Visual Critique Loop, and the Real-User Verification Doctrine against blind coding.
+- **[`.roo/rules/00-subfaber-core-protocol.md`](.roo/rules/00-subfaber-core-protocol.md):** `[CLOSED TWO-MODE UNIVERSE]` became `[CLOSED SINGLE-MODE UNIVERSE & ANTI-MODE-JUMPING LOCK]` (model-agnostic); `[MULTI-AGENT ORCHESTRATION PROTOCOL]` became `[UNIFIED-STACK EXECUTION PROTOCOL — SINGLE AUTONOMOUS AGENT]`; `[SEAMLESS GEARBOX PROTOCOL]` was completely removed; the Zone A/B/C matrix remains as the **Coupled-Contract Self-Checklist**; pipeline Step 0 became **Integration Self-Audit**; and `.roomodes` validation now requires `customModes`=1.
+- **Obsolete clauses removed:** All `switch_mode` instructions between `backend` ↔ `frontend`, verbatim handover protocols, the Bilateral Two-Man Integration Gate, Dual-Head Consultation, Seamless Shift Execution Loop, and cross-domain prohibitions such as “Frontend must not commit” and “Backend must not touch HTML” were abolished with the two-persona bureaucracy.
 
-### 📝 Nilai Rumusan
+### 📝 Summary
 
-- Sifar perubahan kod runtime (`src/`, `public/`, `index.js`) — perubahan terhad kepada fail tadbir urus ejen sahaja. Baseline ujian dijangka kekal 475 total / 474 PASS / 0 FAIL / 1 SKIP.
+- No runtime code changed in `src/`, `public/`, or `index.js`; changes were limited to agent governance files. The expected test baseline remained 475 total / 474 PASS / 0 FAIL / 1 SKIP.
 
-## SubFaber v3.23.0 (2026-10-26) — Fasa 3 Penyatuan Kontrak Kanonik & Kemas Kini Cermin: getModelFamily Reroute+Gemini 4 & Nilai Lalai Kanonik (Mandat Owner)
+## SubFaber v3.23.0 (2026-10-26) — Phase 3 Canonical Contract Consolidation: getModelFamily Reroute + Gemini 4 and Canonical Defaults
 
-### 🔧 Fixed — 2 Hutang Terakhir Audit Dua-Kepala Dibayar (A2, B3)
+### 🔧 Fixed — Final Two Dual-Head Audit Items Resolved (A2, B3)
 
-- **A2 — Cermin `getModelFamily()` Legasi ([config.js](public/config.js)):** `isSamplingStrictGemini3()` kini mengandungi whitelist reroute Google — `gemini-3.5-flash` & `gemini-3.7-flash` diterima sebagai nama legacy tetapi pelayan mereroute ke 3.6/3.8 (kelakuan strip) → `3.x-strict`. `getModelFamily()` menambah cabang future-proof `/^gemini-[4-9]/` → `3.x-strict` (elak jatuh ke `unknown` yang menghantar pensampelan penuh yang akan ditolak API generasi baharu). Cermin tepat [`src/services/gemini.js`](src/services/gemini.js).
-- **B3 — Nilai Lalai Kanonik `PROVIDER_PARAMETER_DEFAULTS` ([config.js](public/config.js)):** `temperature` distandardkan `0.2` merentas openai/anthropic/xai/deepseek/mistral/cfworkers/openrouter (deepl & googletranslate kekal `0`); `deepseek.maxOutputTokens` → `8192` (dahulu 32768). Fallback & reset kini menghasilkan tingkah laku identik dengan enjin.
+- **A2 — Legacy `getModelFamily()` mirror ([config.js](public/config.js)):** `isSamplingStrictGemini3()` now includes Google's reroute whitelist—`gemini-3.5-flash` and `gemini-3.7-flash` are accepted as legacy names but rerouted by the server to 3.6/3.8 with stripping behavior, so they map to `3.x-strict`. `getModelFamily()` adds a future-proof `/^gemini-[4-9]/` branch mapping to `3.x-strict`, preventing newer models from falling into `unknown` and sending full sampling that their APIs would reject. This exactly mirrors [`src/services/gemini.js`](src/services/gemini.js).
+- **B3 — Canonical `PROVIDER_PARAMETER_DEFAULTS` ([config.js](public/config.js)):** `temperature` is standardized to `0.2` across OpenAI, Anthropic, xAI, DeepSeek, Mistral, Cloudflare Workers, and OpenRouter (DeepL and Google Translate remain `0`); `deepseek.maxOutputTokens` is now `8192` instead of 32768. Fallback and reset behavior now matches the engine exactly.
 
-### ✨ Added — API Pariti Boleh-Diuji
+### ✨ Added — Testable Parity API
 
-- `window.SubFaberGeminiModelUi` didedahkan dengan pembaca baca-sahaja: `getModelFamily`, `getGeminiCapabilities`, `clampGeminiThinkingBudget`, `getDefaultProviderParameters` — pariti cermin backend ↔ frontend kini boleh disahkan secara langsung (Playwright/regresi) tanpa menduplikasi logik.
+- `window.SubFaberGeminiModelUi` exposes read-only accessors for `getModelFamily`, `getGeminiCapabilities`, `clampGeminiThinkingBudget`, and `getDefaultProviderParameters`, allowing backend↔frontend parity to be verified directly through Playwright or regression tests without duplicating logic.
 
-### ✅ Verifikasi Playwright (Gear 2)
+### ✅ Playwright Verification (Gear 2)
 
-- A2: 11 model diuji — `3.5-flash`/`3.7-flash`/`3.6-flash`/`3.5-flash-lite`/`4-argon`/`4.2-pro`/`5-flash` → `3.x-strict`; `3.1-pro-preview` → `3.x-legacy`; `2.5-pro` → `2.5`; model tidak dikenali → `unknown`. Semua selari backend.
-- B3: 10 nilai default disahkan (8 LLM `0.2`, deepl/gt `0`, deepseek max `8192`, cfworkers topP `0.9`, custom max `65536`) + isolasi klon (mutasi tidak bocor antara panggilan).
-- Reset & defaults tanpa regresi (modal Clear Browser Data dibatalkan — tiada data dipadam); konsol 0 ralat.
-
-### 🧪 Tests
-
-- `npm test`: **475 total / 474 PASS / 0 FAIL / 1 SKIP** — baseline monotonik dipelihara. Prettier PASS; ESLint 0 error (226 warning pre-existing).
-
-## SubFaber v3.22.0 (2026-10-26) — Fasa 2 Ketepatan Semantik & Penyelarasan Toolbox: Mesej Hybrid Guard, Rehidrasi Parameter, Bajet Gemini 2.5 Pro & Dialek Reasoning (Mandat Owner)
-
-### 🔧 Fixed — 4 Hutang Sederhana Dua-Kepala Dibayar (A1, B1, B2, C4)
-
-- **A1 — Ketepatan Mesej UI Hybrid Guard ([trinity-agents.js](public/js/trinity-agents.js)):** `MP_NOTE_TEXT` dan `MP_UIHINT_TEXT` kini mengasingkan dua semantik berbeza: Temperature/Top-P **DIHANTAR** (dihabaikan senyap oleh Google pada 3.6+, "ignored if set") vs Frequency/Presence Penalty **DISEKAT** oleh enjin (HTTP 400). Kunci `uiHint` baharu `penalties-blocked-3x-strict` dipasang pada descriptor penalty profil `3.x-strict` supaya amaran muncul pada setiap medan.
-- **B1 — Rehidrasi Parameter & Enum Lengkap ([config.js](public/config.js)):** `mergeProviderParameters()` frontend kini mengekalkan `frequencyPenalty`/`presencePenalty` (clamp -2..2) — cermin backend; sebelum ini nilai dibuang senyap semasa rehidrasi. `sanitizeReasoningEffort()` menerima enum penuh backend `['none','minimal','disabled','low','medium','high','xhigh','max']`.
-- **B2 — Had Minimum Thinking Budget Gemini 2.5 Pro ([trinity-agents.js](public/js/trinity-agents.js) + [config.js](public/config.js)):** `mpClampGemini25ProBudget()` + `clampGeminiThinkingBudget()` — bajet tersuai > 0 tetapi < 128 dinaikkan ke 128 (cermin `buildGenerationConfig()` enjin); nilai `-1` (dinamik) dan `0` (mati) kekal sah.
-- **C4 — Seni Bina Toolbox Capability-Driven ([fileUploadPageGenerator.js](src/utils/fileUploadPageGenerator.js)):** `getProviderCapabilities()` membuka kawalan reasoning kepada DeepSeek/Custom/GLM/Kimi/Moonshot/OpenRouter/Groq/Together/Cerebras/SambaNova/Perplexity/Qwen/xAI/Mistral (sebelum ini OpenAI sahaja). Fungsi baharu `getReasoningEffortOptions()` + `refreshReasoningEffortOptions()` membina dropdown mengikut dialek pembekal aktif (DeepSeek `disabled/low/high/max`; GLM-5.3 & Kimi-K3 always-on `low/high/max`; GLM-5.2 `+disabled`; GLM-5.1 `disabled/low`; OpenAI moden kekal `none/low/medium/high/xhigh` — enum rasmi). `updateThinkingControls()` kini membezakan Gemini 2.5 (thinkingBudget integer, min 128 Pro) berbanding Gemini 3.x (thinkingLevel enum). Dropdown statik ditambah pilihan `max`/`disabled` + nod hint; teks bantuan i18n dikemas kini ([locales/en.json](locales/en.json)).
-
-### ✅ Verifikasi Playwright (Gear 2, kunci sintetik sifar rahsia)
-
-- A1: nota + 4 hint per-medan tepat pada `gemini-3.8-flash`.
-- B1: payload `{reasoningEffort:'max', frequencyPenalty:0.7, presencePenalty:-0.3}` kekal; dropdown DeepSeek tanpa `medium`.
-- B2: input `10` → DOM `128`, payload `thinkingBudget:128`; `0` sah.
-- C4: 7 kombinasi dialek diuji tepat; caps `deepl/gemini=false` betul; visual critique lulus.
+- A2: Tested 11 models—`3.5-flash`/`3.7-flash`/`3.6-flash`/`3.5-flash-lite`/`4-argon`/`4.2-pro`/`5-flash` mapped to `3.x-strict`; `3.1-pro-preview` to `3.x-legacy`; `2.5-pro` to `2.5`; and an unknown model to `unknown`. All matched the backend.
+- B3: Verified 10 defaults (8 LLMs at `0.2`, DeepL/Google Translate at `0`, DeepSeek max `8192`, Cloudflare Workers topP `0.9`, and custom max `65536`) plus clone isolation so mutations do not leak between calls.
+- Reset and defaults showed no regressions; the Clear Browser Data modal was cancelled and no data was deleted. The console reported 0 errors.
 
 ### 🧪 Tests
 
-- `npm test`: **475 total / 474 PASS / 0 FAIL / 1 SKIP** (baseline monotonik 475 dipelihara; satu kegagalan flaky timing `provider-retry-backoff` disahkan lulus 8/8 secara berasingan dan hijau pada larian semula penuh). Prettier PASS; ESLint 0 error (226 warning pre-existing).
+- `npm test`: **475 total / 474 PASS / 0 FAIL / 1 SKIP**, preserving the monotonic baseline. Prettier passed; ESLint reported 0 errors and 226 pre-existing warnings.
 
-## SubFaber v3.21.0 (2026-10-26) — Fasa 1 Pembedahan Kritikal Tri-Door: Kedaulatan Pintu Custom Anthropic + Parameter Pro Sebenar + Pengasingan Pengangkutan Preflight/Inspector (Mandat Owner)
+## SubFaber v3.22.0 (2026-10-26) — Phase 2 Semantic Accuracy & Toolbox Alignment: Hybrid Guard Messaging, Parameter Rehydration, Gemini 2.5 Pro Budgets & Reasoning Dialects
 
-### 🔧 Fixed — 3 Hutang Kritikal Dua-Kepala (Audit Seamless Gearbox) Dibayar Penuh
+### 🔧 Fixed — Four Moderate Dual-Head Audit Items Resolved (A1, B1, B2, C4)
 
-- **C1 — Kedaulatan Pintu Custom Anthropic:** `providers.custom.door='anthropic-messages'` kini dihormati hujung-ke-hujung. Sebelum ini pintu dipaksa ke `openai-compatible` pada TIGA titik: serialisasi frontend ([`collectConfigPatch()`](public/js/trinity-agents.js)), jambatan backend ([`syncTrinityTranslationToProvider()`](src/utils/config.js)) dan normalisasi pintu — kini ketiga-tiga mengekalkan door pilihan (fallback `openai-compatible` hanya untuk nilai tidak dikenali). Kilang provider ([`translationProviderFactory.js`](src/services/translationProviderFactory.js)) membina `AnthropicProvider` untuk pintu ini (pariti penuh dengan cabang `gemini-native` v3.9.50), dan [`AnthropicProvider`](src/services/providers/anthropic.js) menerima `baseUrl` per-instance (SSRF-sanitized; lalai kekal endpoint rasmi).
-- **C2 — Parameter Preflight/Inspector Diaktifkan Semula:** `preflightParams`/`inspectorParams` (Fasa 3 v3.9.46) yang dimansuhkan oleh PENYATUAN MUTLAK 2026-10-25 kini disalurkan sebagai **input semantik standard** melalui `_enterPhase()`/`_exitPhase()` baru dalam [`agentInspector.js`](src/services/agentInspector.js): suntikan hanya semasa fasa aktif, snapshot/restore penuh selepasnya, sifar-penciptaan nilai (hanya medan ditetapkan pengguna dihantar). Channels [`geminiChannel`](src/services/channels/geminiChannel.js)/[`anthropicChannel`](src/services/channels/anthropicChannel.js) menerima parameter semantik fasa; `_getChannelProvider()` menyalurkannya ke transport.
-- **C3 — Pengasingan Pengangkutan Preflight vs Inspector:** kad Preflight dan Inspector UI kini boleh membawa kredensial BERASINGAN (`preflightApiKey`/`preflightBaseUrl`/`preflightFormat` dalam [`config.js`](src/utils/config.js) + [`subtitles.js`](src/handlers/subtitles.js) saluran ke konstruktor). `_enterPhase('preflight')` menukar kredensial + rebuild transport channel bila berbeza; frontend `collectConfigPatch()` membawa `preflight*` dan `inspector*` berasingan tanpa percampuran. Kosong → warisi kredensial utama (backward compatible 100%).
+- **A1 — Accurate Hybrid Guard UI messaging ([trinity-agents.js](public/js/trinity-agents.js)):** `MP_NOTE_TEXT` and `MP_UIHINT_TEXT` now distinguish two behaviors: Temperature/Top-P are **SENT** (silently ignored by Google on 3.6+, “ignored if set”), while Frequency/Presence Penalty are **BLOCKED** by the engine to prevent HTTP 400. The new `penalties-blocked-3x-strict` `uiHint` key is attached to penalty descriptors in the `3.x-strict` profile so the warning appears on every field.
+- **B1 — Parameter rehydration and complete enums ([config.js](public/config.js)):** Frontend `mergeProviderParameters()` now preserves `frequencyPenalty` and `presencePenalty` (clamped to -2..2), mirroring the backend; previously these values were silently discarded during rehydration. `sanitizeReasoningEffort()` accepts the backend's complete enum: `['none','minimal','disabled','low','medium','high','xhigh','max']`.
+- **B2 — Gemini 2.5 Pro minimum thinking budget ([trinity-agents.js](public/js/trinity-agents.js) + [config.js](public/config.js)):** `mpClampGemini25ProBudget()` and `clampGeminiThinkingBudget()` raise custom budgets greater than 0 but below 128 to 128, mirroring the engine's `buildGenerationConfig()`; `-1` (dynamic) and `0` (off) remain valid.
+- **C4 — Capability-driven Toolbox architecture ([fileUploadPageGenerator.js](src/utils/fileUploadPageGenerator.js)):** `getProviderCapabilities()` exposes reasoning controls for DeepSeek, Custom, GLM, Kimi, Moonshot, OpenRouter, Groq, Together, Cerebras, SambaNova, Perplexity, Qwen, xAI, and Mistral instead of OpenAI alone. New `getReasoningEffortOptions()` and `refreshReasoningEffortOptions()` functions build dropdowns for the active provider dialect (DeepSeek `disabled/low/high/max`; always-on GLM-5.3 and Kimi-K3 `low/high/max`; GLM-5.2 adds `disabled`; GLM-5.1 `disabled/low`; modern OpenAI retains the official `none/low/medium/high/xhigh` enum). `updateThinkingControls()` now distinguishes Gemini 2.5's integer `thinkingBudget` (minimum 128 for Pro) from Gemini 3.x's `thinkingLevel` enum. Static dropdowns gained `max`/`disabled` options and hint nodes; helper i18n text was updated in [`locales/en.json`](locales/en.json).
 
-### 🧪 Tests — Baseline Monotonik 471 → 475
+### ✅ Playwright Verification (Gear 2, Synthetic Keys with Zero Secrets)
 
-- 4 ujian baharu `FASA1-C1a..d` (jambatan door + normalisasi + end-to-end AnthropicProvider + baseUrl per-instance) dan `[F5]` dinaik taraf: params dihormati DALAM fasa, sifar injection di LUAR fasa, keadaan dipulihkan selepas `_exitPhase()`.
-- `npm test`: **475 total / 474 PASS / 0 FAIL / 1 SKIP** (Redis live). Prettier PASS; ESLint 0 error (warning pre-existing).
+- A1: The note and all four per-field hints were correct for `gemini-3.8-flash`.
+- B1: The payload `{reasoningEffort:'max', frequencyPenalty:0.7, presencePenalty:-0.3}` survived; the DeepSeek dropdown omitted `medium`.
+- B2: Input `10` produced DOM value `128` and payload `thinkingBudget:128`; `0` remained valid.
+- C4: Seven dialect combinations passed; `deepl/gemini=false` capabilities were correct; visual critique passed.
 
-### ✅ Verifikasi Playwright (Gear 2, kunci sintetik sifar rahsia)
+### 🧪 Tests
 
-- LIVE: `slotDoor='anthropic-messages'` + `providerDoor='anthropic-messages'` (sebelum fix: `openai-compatible`).
-- LIVE: Pro-mode Preflight `anthropic-messages` + Inspector `gemini-native`, `distinctKeys=true`, `distinctUrls=true`, sifar percampuran; konsol 0 ralat.
+- `npm test`: **475 total / 474 PASS / 0 FAIL / 1 SKIP**, preserving the 475-test baseline. One flaky `provider-retry-backoff` timing failure passed 8/8 isolated runs and the full rerun. Prettier passed; ESLint reported 0 errors and 226 pre-existing warnings.
 
-## SubFaber v3.20.0 (2026-10-26) — Naik Taraf Seni Bina "Seamless Gearbox": Auto Cross-Domain Sync Backend ↔ Frontend (Mandat Owner)
+## SubFaber v3.21.0 (2026-10-26) — Phase 1 Critical Tri-Door Repairs: Custom Anthropic Door Sovereignty, Functional Pro Parameters & Separate Preflight/Inspector Transports
 
-### 🏗️ Added — [SEAMLESS GEARBOX PROTOCOL] dalam [00-subfaber-core-protocol.md](.roo/rules/00-subfaber-core-protocol.md)
+### 🔧 Fixed — Three Critical Dual-Head Audit Items Resolved
 
-- **Coupled-Contract Matrix (Radar Berkembar Automatik):** Zon Berkembar A (Model & Parameter: `src/utils/modelCapabilities.js`, `src/services/gemini.js`, `src/services/providers/*` ↔ `public/config.js`, `public/partials/main.html`), Zon B (Skema & Normalisasi: `src/utils/config.js` ↔ `public/config.js`, `src/utils/*PageGenerator.js`), Zon C (Trinity & Tri-Door: `src/services/channels/*`, `src/services/agentInspector.js`, `src/services/subfaberPreflight.js` ↔ komponen UI Trinity/door/validasi `public/`). Sebarang sentuhan satu sisi WAJIB mencetuskan semakan impak silang sisi pasangan secara automatik walau pun Owner tidak menanyakannya.
-- **Dual-Head Consultation & Unified Planning:** larangan pelan "separuh jalan"; ejen aktif wajib memeriksa impak domain pasangan (read/git grep) sebelum merumuskan jawapan; perundingan dua kepala semasa perancangan dan pertukaran gear automatik semasa pelaksanaan (Zero Owner Babysitting).
-- **Seamless Shift Execution Loop:** aliran standard (Backend → Frontend + Playwright MCP → Backend + Integration Audit + `npm test` + 8-Step Pipeline) dan aliran terbalik; kuasa `npm test`/`git commit`/`git push` kekal 100% eksklusif Backend.
+- **C1 — Custom Anthropic door sovereignty:** `providers.custom.door='anthropic-messages'` is now honored end to end. Previously the door was forced to `openai-compatible` at three points: frontend serialization ([`collectConfigPatch()`](public/js/trinity-agents.js)), the backend bridge ([`syncTrinityTranslationToProvider()`](src/utils/config.js)), and door normalization. All three now preserve the selected door, falling back to `openai-compatible` only for unknown values. The provider factory ([`translationProviderFactory.js`](src/services/translationProviderFactory.js)) constructs `AnthropicProvider` for this door with full parity to the v3.9.50 `gemini-native` branch, and [`AnthropicProvider`](src/services/providers/anthropic.js) accepts a per-instance `baseUrl` that is SSRF-sanitized and defaults to the official endpoint.
+- **C2 — Preflight/Inspector parameters restored:** `preflightParams` and `inspectorParams` from Phase 3 v3.9.46, removed by the 2026-10-25 absolute unification, are now forwarded as **standard semantic inputs** through new `_enterPhase()`/`_exitPhase()` methods in [`agentInspector.js`](src/services/agentInspector.js). Values are injected only during the active phase, fully snapshotted/restored afterward, and never invented—only user-defined fields are sent. [`geminiChannel`](src/services/channels/geminiChannel.js) and [`anthropicChannel`](src/services/channels/anthropicChannel.js) accept phase semantic parameters, and `_getChannelProvider()` forwards them to the transport.
+- **C3 — Separate Preflight and Inspector transports:** Preflight and Inspector UI cards can now carry separate credentials (`preflightApiKey`, `preflightBaseUrl`, and `preflightFormat` in [`config.js`](src/utils/config.js), forwarded through [`subtitles.js`](src/handlers/subtitles.js) to the constructor). `_enterPhase('preflight')` switches credentials and rebuilds the channel transport when they differ; frontend `collectConfigPatch()` carries `preflight*` and `inspector*` independently without mixing them. Empty values inherit the primary credentials for full backward compatibility.
 
-### 🔧 Changed — Penyelarasan [.roomodes](.roomodes) (Patuh Disiplin PyYAML Insiden 2026-10-08)
+### 🧪 Tests — Baseline Increased from 471 to 475
 
-- **Backend Item 3 → HYBRID GUARD (v3.19.1+):** `temperature`/`topP` kekal SEND-ALL untuk SEMUA keluarga Gemini 3.x; `frequencyPenalty`/`presencePenalty` DISEKAT/SUPPRESSED khusus `3.x-strict` (elak HTTP 400); `topK` kekal haram (v1.6.0); pemetaan wire-value DeepSeek `disabled` → `reasoning_effort: 'none'`.
-- **Backend Item 5 → DELEGATION & SEAMLESS GEARBOX RULE:** klausa CROSS-DOMAIN IMPACT CHECK wajib ke atas `public/config.js`, `public/partials/main.html`, `src/utils/*PageGenerator.js` setiap perubahan parameter/model/skema `src/`; auto `switch_mode: "frontend"` tanpa menunggu arahan tambahan Owner.
-- **Frontend Item 5 → MANDATORY VERIFICATION, SEAMLESS HANDOVER & ZERO-COMMIT ENFORCEMENT:** klausa SEAMLESS BACKEND SYNC — semakan kontrak backend (`src/utils/config.js`, `src/utils/modelCapabilities.js`, endpoint API) dan serahan spesifikasi automatik via `switch_mode: "backend"` selepas pengesahan Playwright selesai.
+- Four new `FASA1-C1a..d` tests cover the door bridge, normalization, end-to-end AnthropicProvider construction, and per-instance baseUrl. `[F5]` was upgraded to verify parameters are honored within a phase, never injected outside it, and state is restored after `_exitPhase()`.
+- `npm test`: **475 total / 474 PASS / 0 FAIL / 1 SKIP** (live Redis). Prettier passed; ESLint reported 0 errors and pre-existing warnings.
+
+### ✅ Playwright Verification (Gear 2, Synthetic Keys with Zero Secrets)
+
+- Live: `slotDoor='anthropic-messages'` and `providerDoor='anthropic-messages'`; before the fix both were `openai-compatible`.
+- Live: Pro mode used Preflight `anthropic-messages` and Inspector `gemini-native` with `distinctKeys=true`, `distinctUrls=true`, and no credential mixing; the console reported 0 errors.
+
+## SubFaber v3.20.0 (2026-10-26) — “Seamless Gearbox” Architecture: Automatic Backend ↔ Frontend Cross-Domain Synchronization
+
+### 🏗️ Added — [SEAMLESS GEARBOX PROTOCOL] in [00-subfaber-core-protocol.md](.roo/rules/00-subfaber-core-protocol.md)
+
+- **Coupled-Contract Matrix (automatic paired-domain radar):** Coupled Zone A (Models & Parameters: `src/utils/modelCapabilities.js`, `src/services/gemini.js`, `src/services/providers/*` ↔ `public/config.js`, `public/partials/main.html`), Zone B (Schemas & Normalization: `src/utils/config.js` ↔ `public/config.js`, `src/utils/*PageGenerator.js`), and Zone C (Trinity & Tri-Door: `src/services/channels/*`, `src/services/agentInspector.js`, `src/services/subfaberPreflight.js` ↔ Trinity/door/validation UI components in `public/`). Any change on one side automatically triggers an impact review of its counterpart, even without an explicit Owner request.
+- **Dual-Head Consultation & Unified Planning:** Prohibited partial-domain plans; the active agent must inspect the counterpart domain's impact through reads or Git searches before finalizing a response, consult both domains during planning, and switch automatically during execution without Owner supervision.
+- **Seamless Shift Execution Loop:** Standard flow (Backend → Frontend + Playwright MCP → Backend + Integration Audit + `npm test` + 8-Step Pipeline) and its reverse; `npm test`, `git commit`, and `git push` authority remained exclusive to Backend.
+
+### 🔧 Changed — [.roomodes](.roomodes) Alignment (Following the 2026-10-08 PyYAML Discipline)
+
+- **Backend Item 3 → HYBRID GUARD (v3.19.1+):** `temperature` and `topP` remain SEND-ALL for every Gemini 3.x family; `frequencyPenalty` and `presencePenalty` are suppressed specifically for `3.x-strict` to prevent HTTP 400; `topK` remains forbidden since v1.6.0; DeepSeek `disabled` maps to wire value `reasoning_effort: 'none'`.
+- **Backend Item 5 → DELEGATION & SEAMLESS GEARBOX RULE:** Mandatory cross-domain impact checks of `public/config.js`, `public/partials/main.html`, and `src/utils/*PageGenerator.js` for every `src/` parameter, model, or schema change, followed by automatic `switch_mode: "frontend"` without additional Owner instruction.
+- **Frontend Item 5 → MANDATORY VERIFICATION, SEAMLESS HANDOVER & ZERO-COMMIT ENFORCEMENT:** The seamless backend-sync clause requires checking backend contracts (`src/utils/config.js`, `src/utils/modelCapabilities.js`, and API endpoints) and automatically handing specifications back through `switch_mode: "backend"` after Playwright verification.
 
 ### 🧹 Housekeeping
 
-- Artifak sesat `nul)` di akar repositori dipadam (sisa redirect Windows lama); working tree bersih daripada fail tidak dikenali.
-- Pengesahan PyYAML akhir: `customModes`=2 (`backend`, `frontend`), `groups=[read,edit,command,mcp]`, `source=project`, sifar kerosakan indentasi (EOL CRLF dipelihara).
-- Tiada kod runtime (`src/`, `public/`, `index.js`) disentuh — tiada impak Zon Berkembar; baseline ujian tidak berubah.
+- Removed the stray `nul)` artifact from the repository root, a remnant of an old Windows redirect, leaving no unknown files in the working tree.
+- Final PyYAML validation: `customModes`=2 (`backend`, `frontend`), `groups=[read,edit,command,mcp]`, `source=project`, with no indentation damage and CRLF preserved.
+- No runtime code in `src/`, `public/`, or `index.js` changed, so there was no coupled-zone impact; the test baseline remained unchanged.
 
-## SubFaber v3.19.8 (2026-10-26) — Console-Quiet brParity: Terminal Bersih, Fail Log Kekal Penuh (Mandat Owner)
+## SubFaber v3.19.8 (2026-10-26) — Console-Quiet brParity: Clean Terminal, Complete Log Files
 
-### 🔇 Changed — brParity Senyap di Konsol, Logika & Fail Log Tidak Disentuh
+### 🔇 Changed — brParity Silenced in the Console; Logic and Log Files Untouched
 
-- **Mandat Owner:** "kita boleh senyapkan notification brparity dalam log terminal. Bukan buang, just senyapkan, tak tunjuk, dia ada run macam biasa, tapi log tak perlu tunjuk, aku lebih suka clean log yang hanya tunjuk progress partial saved macam biasa."
-- **Fungsi baharu `debugQuiet()` ([logger.js](src/utils/logger.js)):** identik dengan `debug()` (level check + sampling + `writeFileLog`) tetapi **melangkui paparan konsol** — mesej terus ditulis ke fail log sahaja.
-- **3 titik log brParity ditukar `log.debug` → `log.debugQuiet` ([translationEngine.js](src/services/translationEngine.js)):** varian `auto-repair disisip`, `repair gagal cari titik split selamat` (per-entri) dan summary `AI menambah N line break (benign)` (per-batch). **Logika reconcile/repair/counter/flush 100% tidak disentuh** — brParity terus berjalan penuh di belakang tabir.
-- **Kontrak terpelihara:** fail log `app.log` kekal 100% PENUH (ground truth forensik — setiap kejadian brParity masih boleh di-grep); WARN/ERROR laluan brParity (jika timbul) kekal keluar di konsol; hanya laluan DEBUG dipindahkan ke fail-sahaja.
-- **Kesan terminal:** log terjemahan kini hanya menunjukkan aliran utama — Preflight → `Partial SAVED` per checkpoint → `AgentInspector inspection: PASSED` per batch → `Progress: X%` → completed → cleanup.
+- **Owner mandate:** Silence brParity notifications in terminal logs without removing the behavior. Continue running it normally, but keep terminal output focused on routine progress such as partial saves.
+- **New `debugQuiet()` function ([logger.js](src/utils/logger.js)):** Identical to `debug()` for level checks, sampling, and `writeFileLog`, but **skips console display**—messages are written only to the log file.
+- **Three brParity log sites switched from `log.debug` to `log.debugQuiet` ([translationEngine.js](src/services/translationEngine.js)):** The `auto-repair disisip` and `repair gagal cari titik split selamat` variants per entry, plus the `AI menambah N line break (benign)` summary per batch. **Reconciliation, repair, counter, and flush logic is 100% unchanged**—brParity continues running fully in the background.
+- **Preserved contract:** `app.log` remains 100% complete as forensic ground truth, with every brParity event still searchable; brParity WARN/ERROR paths still appear in the console when they occur; only DEBUG paths moved to file-only output.
+- **Terminal result:** Translation logs now show only the main flow—Preflight → `Partial SAVED` per checkpoint → `AgentInspector inspection: PASSED` per batch → `Progress: X%` → completed → cleanup.
 
-## SubFaber v3.19.7 (2026-10-25) — Hotfix: Signature Gate Partial Saves (Sapu Sisa 7× Tulisan 696/696 dari Log Run Keempat)
+## SubFaber v3.19.7 (2026-10-25) — Hotfix: Signature Gate for Partial Saves
 
-### 🔧 Fixed — Dedup Fingerprint Tidak Mencukupi; Gate Muktamad oleh Signature Kemajuan
+### 🔧 Fixed — Fingerprint Deduplication Was Insufficient; Progress Signatures Now Provide the Final Gate
 
-- **Bukti run keempat ([subtitles.js](src/handlers/subtitles.js)):** walaupun dedup-at-enqueue v3.19.6 live dalam container (diverifikasi `grep partialSavesInFlight` dalam `/app`), fail log masih merakam **7× tulisan** `Partial SAVED: batch 14/14, 696/696` dalam ~20ms — kandungan partial SRT **berubah-ubah antara callback** (rebuild auto-chunk) pada kiraan entri sama, jadi fingerprint SHA1 payload berbeza dan dedup kandungan tidak dapat menangkap.
-- **Pembedahan (signature gate):** `persistPartial()` kini digate oleh signature kemajuan `batch:completedEntries` SEBELUM kerja berat — callback dengan kiraan entri sama (tak kira variasi kandungan) skip serta-merta; `lastPartialSaveSignature` dikunci hanya selepas save **berjaya** (retry selepas kegagalan boleh diteruskan); Set `partialSignaturesInFlight` melindungi tetingkap in-flight. Kesan sampingan diingini: batch-snapshot `50/696` selepas Inspector turut tersangkut apabila streaming terakhir sudah menyimpan kiraan sama — kiraan sama tiada maklumat baharu untuk pengguna.
-- **Jangkaan run kelima:** `Partial SAVED` tepat SATU baris per kiraan entri unik; sifar pengulangan `696/696`.
+- **Fourth-run evidence ([subtitles.js](src/handlers/subtitles.js)):** Although v3.19.6 dedup-at-enqueue was live in the container, verified by finding `partialSavesInFlight` in `/app`, logs still recorded **7 writes** of `Partial SAVED: batch 14/14, 696/696` within approximately 20 ms. Partial SRT content **changed between callbacks** through auto-chunk rebuilding while the entry count remained constant, producing different SHA1 payload fingerprints that content deduplication could not catch.
+- **Progress-signature gate:** `persistPartial()` is now gated by the `batch:completedEntries` progress signature before expensive work. Callbacks with the same entry count skip immediately regardless of content variation; `lastPartialSaveSignature` is locked only after a **successful** save so retries remain possible after failure; and the `partialSignaturesInFlight` set protects the in-flight window. An intentional side effect is that a post-Inspector batch snapshot such as `50/696` also skips when the final stream already saved the same count, which contains no new information for the user.
+- **Expected fifth-run behavior:** Exactly one `Partial SAVED` line per unique entry count and no repeated `696/696` writes.
 
-## SubFaber v3.19.6 (2026-10-25) — Hygiene: Dedup-at-Enqueue Partial Saves (Sapu 10× Tulisan Redis Identikal dari Log Run Ketiga)
+## SubFaber v3.19.6 (2026-10-25) — Hygiene: Dedup-at-Enqueue for Partial Saves
 
-### 🔧 Fixed — Pembaziran I/O Partial Save Dikesan dari Log Run Ketiga Owner (deepseek-v4.1-flash, "Off (No Thinking)")
+### 🔧 Fixed — Partial-Save I/O Waste Found in the Third Owner Run (deepseek-v4.1-flash, “Off (No Thinking)”)
 
-- **Verifikasi positif run ketiga terlebih dahulu:** wire-value `reasoning_effort: "none"` (v3.19.5) **diterima gateway rootsys tanpa sebarang penolakan** — 14/14 batch, 696 entri, ~4.5 minit; FIX-1 v3.19.4 **dipulihkan sepenuhnya**: file log ground truth membuktikan kesemua 10 tulisan `Partial SAVED: batch 14/14, 696/696` berlaku PADA 22:54:57.755–773 (SEBELUM completion 22:55:00.034 dan cleanup 22:55:00.048) — baris `[repeated 10 times]` pada 22:55:02 hanyalah flush summary logger (window senyap 5s), BUKAN orphan write. Turutan `Partial SAVED` batch-snapshot selepas Inspector PASSED turut disahkan **by design**: Inspector berjalan di dalam `translateBatch()`, batch-completion callback menyusul selepasnya.
-- **Akar punca pembaziran I/O ([subtitles.js](src/handlers/subtitles.js)):** dedup fingerprint `lastPartialSavedFingerprint` hanya dikemas kini ASYNC selepas save pertama selesai — 10 callback streaming pantas (batch terakhir, ~20ms) lulus dedup sebelum fingerprint pertama direkod → 10 tulisan Redis IDENTIK berturutan; snapshot batch-level turut menduplikasi save streaming terakhir dengan mekanisme sama.
-- **Pembedahan (dedup-at-enqueue):** Set `partialSavesInFlight` pada scope callback — `persistPartial()` kini memeriksa & mendaftar fingerprint SEGERA pada enqueue (callback serentak dengan payload sama skip serta-merta tanpa menunggu save async pertama); slot dikosongkan selepas save selesai tak kira kejayaan/gagal supaya payload berikutnya dengan fingerprint sama boleh dicuba semula. `lastPartialSavedFingerprint` kekal sebagai dedup merentas masa (post-save).
-- **Jangkaan pasca-deploy:** setiap checkpoint tulis SEKALI sahaja — sifar `Partial SAVED` berulang dengan kiraan sama; turutan Inspector → snapshot batch kekal seperti sedia ada (by design).
+- **Third-run positive verification:** The `reasoning_effort: "none"` wire value from v3.19.5 was **accepted by the Rootsys gateway without rejection**—14/14 batches and 696 entries in approximately 4.5 minutes. FIX-1 from v3.19.4 was also **fully restored**: ground-truth logs prove all 10 writes of `Partial SAVED: batch 14/14, 696/696` occurred at 22:54:57.755–773, before completion at 22:55:00.034 and cleanup at 22:55:00.048. The `[repeated 10 times]` line at 22:55:02 was only a logger summary flush after its 5-second quiet window, not an orphan write. The batch-snapshot `Partial SAVED` after Inspector PASSED was also confirmed **by design**: Inspector runs inside `translateBatch()`, followed by the batch-completion callback.
+- **Root cause of I/O waste ([subtitles.js](src/handlers/subtitles.js)):** The `lastPartialSavedFingerprint` deduplicator updated asynchronously only after the first save completed. Ten fast streaming callbacks for the final batch arrived within roughly 20 ms and passed deduplication before the first fingerprint was recorded, producing 10 identical consecutive Redis writes. Batch-level snapshots duplicated the final streaming save through the same mechanism.
+- **Dedup-at-enqueue fix:** A `partialSavesInFlight` set in callback scope lets `persistPartial()` check and register the fingerprint immediately at enqueue. Concurrent callbacks with the same payload skip without waiting for the first asynchronous save. The slot clears after completion regardless of success or failure so a later payload with the same fingerprint can retry. `lastPartialSavedFingerprint` remains the post-save, cross-time deduplicator.
+- **Expected post-deployment behavior:** Each checkpoint is written once, with no repeated `Partial SAVED` at the same count; the Inspector-to-batch-snapshot sequence remains unchanged by design.
 
-## SubFaber v3.19.5 (2026-10-25) — Protocol Polish: Wire-Value DeepSeek `reasoning_effort: "none"` + Ground Truth Rasmi Tri-Door (Mandat Owner 2026-10-25)
+## SubFaber v3.19.5 (2026-10-25) — Protocol Polish: DeepSeek `reasoning_effort: "none"` Wire Value + Official Tri-Door Ground Truth
 
-### 🔧 Fixed — Pemetaan Enum Rasmi DeepSeek (Mazhab OpenAI-Compatible)
+### 🔧 Fixed — Official DeepSeek Enum Mapping (OpenAI-Compatible)
 
-- **Wire-value `reasoning_effort` "none" ([openaiCompatible.js](src/services/providers/openaiCompatible.js)):** cabang DeepSeek `applySmartModelPayload()` kini menghantar KEDUA-DUA suis apabila mod pemikiran dimatikan — `thinking: { type: "disabled" }` + `reasoning_effort: "none"` — selaras dengan enum rasmi semasa api-docs.deepseek.com (sedutan live 2026-10-25: "`none` disables thinking mode; the default effort is `high`"). Sebelum ini hanya suis `thinking` dihantar tanpa medan effort; skema semasa tidak lagi merekodkan `disabled` sebagai nilai `reasoning_effort`. Cabang aktif (`low`/`high`/`max`) dihantar terus tanpa perubahan; keluarga lain (GLM/Kimi/Hunyuan/o-series) tidak disentuh.
-- **Ujian kontrak baharu S11 ([user-sovereignty-params-regression.test.js](src/utils/user-sovereignty-params-regression.test.js)):** mengunci 3 invariant — input `disabled` → `thinking:{type:"disabled"}` + `reasoning_effort:"none"`; varian input `none` → sama; effort aktif `max` → `thinking:{type:"enabled"}` + `reasoning_effort:"max"` tidak berubah. Baseline monotonik 470 → 471 total.
+- **`reasoning_effort` wire value `"none"` ([openaiCompatible.js](src/services/providers/openaiCompatible.js)):** The DeepSeek branch of `applySmartModelPayload()` now sends both switches when thinking is disabled—`thinking: { type: "disabled" }` and `reasoning_effort: "none"`—matching the official enum at api-docs.deepseek.com as captured live on 2026-10-25: “`none` disables thinking mode; the default effort is `high`.” Previously only `thinking` was sent, without the effort field; the current schema no longer lists `disabled` as a `reasoning_effort` value. Active branches (`low`/`high`/`max`) pass through unchanged; other families including GLM, Kimi, Hunyuan, and o-series are untouched.
+- **New S11 contract test ([user-sovereignty-params-regression.test.js](src/utils/user-sovereignty-params-regression.test.js)):** Locks three invariants—input `disabled` produces `thinking:{type:"disabled"}` and `reasoning_effort:"none"`; input `none` produces the same result; and active effort `max` retains `thinking:{type:"enabled"}` and `reasoning_effort:"max"`. The monotonic baseline increased from 470 to 471 tests.
 
-### 📚 Added — Ekstraksi Dokumentasi Rasmi Ground Truth Tri-Door (Firecrawl MCP, `maxAge:0`)
+### 📚 Added — Official Tri-Door Ground-Truth Documentation (Firecrawl MCP, `maxAge:0`)
 
-- **`plans/ground-truth/anthropic-messages-official-api-ground-truth.md`:** API version 2026-10-21 — **pengesahan rasmi `thinking:{type:"adaptive"}`** ialah varian union `ThinkingConfigParam` pertama-class (wajib pada Claude 4.7+; `budget_tokens` deprecated pada 4.6; 400 hanya pada model 4.5 dan awal) — kontrak BEKU `agentInspector.js:663` disahkan 100% patuh, tiada pembaikan diperlukan. Peraturan penuh `budget_tokens` (≥1024, < `max_tokens`) + `output_config.effort` (`low`/`medium`/`high`/`xhigh`/`max`).
-- **`plans/ground-truth/openai-compatible-official-api-ground-truth.md`:** skema DeepSeek 2026-10-25 — enum `reasoning_effort` `none`/`low`/`high`/`max`; `frequency_penalty`/`presence_penalty` **deprecated** (diterima tanpa kesan — SEND-ALL selamat); `top_p` model-dependent (flash: 0.95–1.0 dalam thinking mode); OpenAI kanonik: role `developer`, `system_fingerprint` deprecated, CRUD chat completions, `include_obfuscation` stream.
-- **`plans/ground-truth/gemini-native-official-api-ground-truth.md`:** rujukan v1beta updated 2026-10-22 — sampling `temperature`/`topP`/`topK` **"silently ignored" pada 3.6+** (bukan 400 — SEND-ALL selamat); `continuationToken` hadir pada v1beta (request + Candidate, `finishReason: CONTINUATION`, kumulatif); `responseSchema` deprecated → `responseFormat`; jadual `thinkingLevel` per-model; Gemini 4 Argon GA (cap sync 64K, long decode 1M perlu `background:true`).
-- **Audit pematuhan Tri-Door lengkap** direkodkan dalam setiap fail: ketiga-tiga pintu Trinity PATUH spesifikasi rasmi semasa — Hybrid Guard penalty v3.19.1 disahkan tepat (Enterprise doc), `topK` haram disahkan oleh Google sendiri, invariant `systemInstruction` top-level disahkan skema.
+- **`plans/ground-truth/anthropic-messages-official-api-ground-truth.md`:** API version 2026-10-21 officially confirms **`thinking:{type:"adaptive"}`** as a first-class `ThinkingConfigParam` union variant, required on Claude 4.7+, with `budget_tokens` deprecated on 4.6 and HTTP 400 limited to 4.5 and earlier. The frozen contract at `agentInspector.js:663` was verified fully compliant and required no fix. Full `budget_tokens` rules (≥1024 and < `max_tokens`) and `output_config.effort` values (`low`/`medium`/`high`/`xhigh`/`max`) are recorded.
+- **`plans/ground-truth/openai-compatible-official-api-ground-truth.md`:** The 2026-10-25 DeepSeek schema documents `reasoning_effort` values `none`/`low`/`high`/`max`; deprecated `frequency_penalty` and `presence_penalty` are accepted without effect, so SEND-ALL is safe; `top_p` is model-dependent (0.95–1.0 for Flash in thinking mode). Canonical OpenAI details include the `developer` role, deprecated `system_fingerprint`, chat-completion CRUD, and streaming `include_obfuscation`.
+- **`plans/ground-truth/gemini-native-official-api-ground-truth.md`:** The v1beta reference updated 2026-10-22 states that `temperature`, `topP`, and `topK` sampling is **“silently ignored” on 3.6+**, not rejected with HTTP 400, so SEND-ALL is safe. It also documents `continuationToken` in requests and Candidates with `finishReason: CONTINUATION` and cumulative output; `responseSchema` deprecated in favor of `responseFormat`; per-model `thinkingLevel` tables; and Gemini 4 Argon GA with a 64K synchronous cap and 1M long decode requiring `background:true`.
+- **Complete Tri-Door compliance audits** in each file confirm all three Trinity doors comply with current official specifications: the v3.19.1 penalty Hybrid Guard matches Enterprise documentation, Google itself supports the `topK` prohibition, and the schema confirms the top-level `systemInstruction` invariant.
 
-## SubFaber v3.19.4 (2026-10-25) — Hotfix: Hoist partialSaveChain/partialDeliveryDone ke Scope Function (ReferenceError FIX-1 v3.19.3)
+## SubFaber v3.19.4 (2026-10-25) — Hotfix: Hoisted partialSaveChain/partialDeliveryDone to Function Scope
 
-### 🔧 Fixed — Scope Bug FIX-1 v3.19.3 Dikesan dari Log Run Kedua Owner
+### 🔧 Fixed — FIX-1 Scope Bug from v3.19.3 Found in the Second Owner Run
 
-- **Akar punca ([subtitles.js](src/handlers/subtitles.js)):** deklarasi `partialSaveChain`/`partialDeliveryDone` FIX-1 v3.19.3 terperangkap dalam blok `if (agentInspector enabled)` (indent 12) yang tamat sebelum blok cleanup `finalCacheVerified` (indent 8, scope luar). Keputusan dalam log run kedua Owner: `Partial save chain drain error: partialSaveChain is not defined` — assignment `partialDeliveryDone = true` menjadi implicit global, gate `persistPartial()` tidak pernah aktif, `Partial SAVED` selepas completion berterusan (repeated 10 times).
-- **Pembedahan:** kedua-dua deklarasi dihoist ke scope function (indent 8, sebelum blok `if (translatedContent === undefined)`) — cleanup kini mengakses pembolehubah sama dengan closure `persistPartial()`; sifar implicit global, sifar ReferenceError.
-- **Verifikasi positif run kedua (FIX-2 & FIX-3A v3.19.3 disahkan berfungsi):** WARN noise `kimi-k3 temperature/topP` HILANG sepenuhnya; brParity benign kini 1 baris per batch (`batch 1/14: AI menambah 940 line break (benign, dikekalkan)` — dari ~940 baris kepada 1); varian repair kekal per-entri seperti kontrak Pilihan A.
+- **Root cause ([subtitles.js](src/handlers/subtitles.js)):** The `partialSaveChain` and `partialDeliveryDone` declarations from v3.19.3 FIX-1 were trapped inside the `if (agentInspector enabled)` block at indentation 12, which ended before the outer `finalCacheVerified` cleanup block at indentation 8. The second Owner run logged `Partial save chain drain error: partialSaveChain is not defined`; assigning `partialDeliveryDone = true` created an implicit global, the `persistPartial()` gate never activated, and `Partial SAVED` continued after completion with 10 repetitions.
+- **Fix:** Both declarations were hoisted to function scope at indentation 8 before `if (translatedContent === undefined)`. Cleanup now accesses the same variables captured by the `persistPartial()` closure, eliminating implicit globals and ReferenceError.
+- **Second-run positive verification of v3.19.3 FIX-2 and FIX-3A:** The `kimi-k3 temperature/topP` WARN noise disappeared completely; benign brParity now produces one line per batch (`batch 1/14: AI menambah 940 line break (benign, dikekalkan)` instead of approximately 940 lines); and repair variants remain per entry under the Option A contract.
 
-## SubFaber v3.19.3 (2026-10-25) — Hygiene Release: Race Partial-Cache, WARN uiHint False-Positive, Agregat brParity Per-Batch (Mandat Owner 2026-10-25)
+## SubFaber v3.19.3 (2026-10-25) — Hygiene Release: Partial-Cache Race, False-Positive uiHint WARN & Per-Batch brParity Aggregation
 
-### 🔧 Fixed — Tiga pembaikan kebersihan hasil audit forensik log terjemahan `subdl_3543003_8465067_seasonpack_s1e15` (696 entri, 14 batch)
+### 🔧 Fixed — Three Hygiene Issues Found Through Forensic Analysis of `subdl_3543003_8465067_seasonpack_s1e15` (696 Entries, 14 Batches)
 
-- **FIX-1 Race orphan-write partial cache ([subtitles.js](src/handlers/subtitles.js)):** progress callback terakhir (696/696) enqueue partial-save async ke `partialSaveChain` tanpa gate; laluan utama sudah pun `adapter.delete(PARTIAL)` — write jatuh SELEPAS delete meninggalkan entri orphan Redis (TTL 1 jam) + log `Partial SAVED` mengelirukan selepas "completed". Pembedahan: flag `partialDeliveryDone` diset sebelum delete; `persistPartial()` menolak enqueue baharu; rantaian in-flight di-drain (`await partialSaveChain`) SEBELUM delete supaya write terakhir selesai dahulu — sifar orphan, sifar kehilangan partial terakhir.
-- **FIX-2 WARN uiHint false-positive ([modelCapabilities.js](src/utils/modelCapabilities.js)):** `sanitizeAgentParams()` mengeluarkan `log.warn` pada SETIAP penghantaran parameter berkait uiHint walaupun nilai pengguna sama persis dengan lalai ground-truth (`0.95 vs hint 0.95`, `1 vs 1.0`) — 2 WARN noise pada setiap request Preflight kimi-k3. Pembedahan: perbandingan `Number(raw[name]) === Number(descriptor.default)`; WARN hanya jika nilai menyeleweng daripada lalai. Intensi asal K2 (Total Unlock) dipulihkan.
-- **FIX-3A Agregat brParity benign per-batch ([translationEngine.js](src/services/translationEngine.js)) — Pilihan Owner A:** varian `AI menambah line break (0 -> 1)` adalah benign (output tidak diubah) tetapi berlaku ~1,000–2,000 kali per fail besar — 14k baris log setiap fail. Varian ini kini dikira dalam `_brParityAddedCount` dan di-flush sebagai SATU baris summary per-batch (`_flushBrParitySummary()`). Varian yang mengubah output (`auto-repair disisip` / `repair gagal`) KEKAL per-entri untuk keupayaan forensik entri-tepat. Konsol dan fail log sama-sama dibersihkan pada sumber isu (volum), bukan simptom (collapse logger).
-- **Dibersihkan (bukan bug):** `deepseek-v4.1-flash rejects reasoningEffort=disabled (enum); dropped` disahkan tingkah laku direka betul — profil DeepSeek flash sengaja mengecualikan `disabled` atas ground truth vendor (reasoning sentiasa ON). Tiada drift daripada mandate v3.18.2.
+- **FIX-1 — Partial-cache orphan-write race ([subtitles.js](src/handlers/subtitles.js)):** The final progress callback (696/696) enqueued an asynchronous partial save into `partialSaveChain` without a gate while the main path had already called `adapter.delete(PARTIAL)`. The write landed after deletion, leaving an orphan Redis entry with a one-hour TTL and a misleading `Partial SAVED` log after “completed.” The fix sets `partialDeliveryDone` before deletion, rejects new `persistPartial()` enqueues, and drains the in-flight chain with `await partialSaveChain` before deletion so the final write completes first—no orphans and no loss of the final partial.
+- **FIX-2 — False-positive uiHint WARN ([modelCapabilities.js](src/utils/modelCapabilities.js)):** `sanitizeAgentParams()` emitted `log.warn` for every uiHint-related parameter even when the user's value exactly matched the ground-truth default (`0.95` versus `0.95`, or `1` versus `1.0`), producing two noisy warnings per Kimi-K3 Preflight request. The fix compares `Number(raw[name]) === Number(descriptor.default)` and warns only when the value deviates from the default, restoring the original K2 Total Unlock intent.
+- **FIX-3A — Per-batch benign brParity aggregation ([translationEngine.js](src/services/translationEngine.js)), Owner Option A:** The `AI menambah line break (0 -> 1)` variant is benign because output is unchanged, but it occurred roughly 1,000–2,000 times per large file, generating about 14,000 log lines. It is now counted in `_brParityAddedCount` and flushed as one summary line per batch through `_flushBrParitySummary()`. Output-changing variants (`auto-repair disisip` and `repair gagal`) remain per entry for entry-level forensics. Both console and file logs are cleaned by addressing volume at the source rather than collapsing logger symptoms.
+- **Clarified, not a bug:** `deepseek-v4.1-flash rejects reasoningEffort=disabled (enum); dropped` was confirmed as intended behavior—the DeepSeek Flash profile deliberately excludes `disabled` based on vendor ground truth because reasoning is always on. No drift from the v3.18.2 mandate occurred.
 
-### 🔒 Invariant Dikekalkan
+### 🔒 Preserved Invariants
 
-- Sifar perubahan kontrak payload/pintu/provider; sifar perubahan logger v2 (windowed counters v3.19.2 kekal); fail log kekal ground truth forensik untuk semua varian yang mengubah data; baseline ujian 470/469/0/1 monotonik.
+- No payload, door, or provider contracts changed; logger v2 and its v3.19.2 windowed counters remain unchanged; log files remain forensic ground truth for every data-changing variant; and the monotonic test baseline remains 470 total / 469 PASS / 0 FAIL / 1 SKIP.
 
-## SubFaber v3.19.2 (2026-10-25) — Hotfix Collapse Log brParity v2: Per-Key Windowed Counters (Mandat Owner 2026-10-25)
+## SubFaber v3.19.2 (2026-10-25) — Hotfix: brParity Log Collapse v2 with Per-Key Windowed Counters
 
-### 🔧 Fixed — Terminal Log Flood brParity (Susulan v3.18.1 commit `31561867`)
+### 🔧 Fixed — brParity Terminal Log Flood Following v3.18.1 Commit `31561867`
 
-- **Akar punca sebenar ([logger.js](src/utils/logger.js)):** mekanisme repeat-collapse v1 (commit `31561867`, v3.18.1) hanya merangkumkan mesej DEBUG **berturut-turut identik** (single-slot `debugRepeatState`). Dalam trafik terjemahan sebenar, tiga varian brParity (`AI menambah line break` / `auto-repair disisip` / `repair gagal cari titik split selamat`) berselang-seli pantas — corak "putus" pada setiap baris dan setiap key baharu flush key lama dengan `count=1` sebelum sempat mengumpul. Konsol kekal banjir walaupun mekanisme berfungsi seperti yang ditulis.
-- **Pembedahan v2 — per-key windowed counters:** `collapseDebugRepeat()` ditulis semula daripada single-slot consecutive dedup kepada `Map` key → `{count, timer}`. Setiap mesej unik mengumpul kiraannya sendiri; summary `… [repeated N times]` hanya dikeluarkan selepas window senyap 5 saat (`DEBUG_REPEAT_WINDOW_MS`). Corak berselang-seli kini collapse dengan betul; baris pertama setiap key tetap keluar serta-merta (back-compat penuh).
-- **Flush shutdown:** `shutdownLogger()` kini memanggil `flushAllDebugRepeatSummaries()` supaya semua summary tertahan dikeluarkan sebelum proses exit — tiada kiraan hilang semasa shutdown gracefully.
-- **Sifar perubahan enjin:** [`translationEngine.js`](src/services/translationEngine.js) TIDAK disentuh; ini lapisan pembentangan konsol sahaja. Fail log (writeFileLog) kekal 100% penuh sebagai ground truth forensik; WARN/ERROR kekal 100% penuh (doktrin perlindungan logger).
-- **Verifikasi langsung:** simulasi trafik sebenar (3 varian interleave ×3 + 50 repetisi) — konsol hanya menunjukkan baris pertama setiap varian + 2 baris summary (`repeated 3 times`, `repeated 53 times`); `logger-sampling-regression.test.js` 3 pass / 0 fail / 0 skipped.
+- **Actual root cause ([logger.js](src/utils/logger.js)):** The v1 repeat-collapse mechanism from commit `31561867` (v3.18.1) covered only **consecutively identical** DEBUG messages through the single-slot `debugRepeatState`. Real translation traffic rapidly interleaves three brParity variants (`AI menambah line break`, `auto-repair disisip`, and `repair gagal cari titik split selamat`), breaking the pattern on every line and flushing the previous key with `count=1` before it can accumulate. The console remained flooded even though the mechanism worked as written.
+- **v2 per-key windowed counters:** `collapseDebugRepeat()` was rewritten from single-slot consecutive deduplication into a `Map` of key → `{count, timer}`. Each unique message accumulates its own count, and the `… [repeated N times]` summary is emitted only after a 5-second quiet window (`DEBUG_REPEAT_WINDOW_MS`). Interleaved patterns now collapse correctly, while the first line of every key still prints immediately for full backward compatibility.
+- **Shutdown flushing:** `shutdownLogger()` now calls `flushAllDebugRepeatSummaries()` so all pending summaries are emitted before process exit and no counts are lost during graceful shutdown.
+- **No engine changes:** [`translationEngine.js`](src/services/translationEngine.js) was untouched; this is solely a console-presentation change. File logs through `writeFileLog` remain 100% complete as forensic ground truth, and WARN/ERROR output remains 100% complete under the logger-protection doctrine.
+- **Live verification:** Simulated real traffic with three interleaved variants repeated three times plus 50 repetitions produced only the first line for each variant and two summaries (`repeated 3 times` and `repeated 53 times`). `logger-sampling-regression.test.js` passed 3 tests with 0 failures and 0 skips.
 
-## SubFaber v3.19.1 (2026-10-25) — Hybrid Guard Parameter Penalty Gemini 3.6+ (Mandat Owner 2026-10-25, Pilihan B)
+## SubFaber v3.19.1 (2026-10-25) — Gemini 3.6+ Penalty Parameter Hybrid Guard
 
-### 🔧 Fixed — Gemini Native Sampling & Penalty Doctrine (Ground Truth Google 2026-10-22)
+### 🔧 Fixed — Gemini Native Sampling & Penalty Doctrine (Google Ground Truth, 2026-10-22)
 
-- **Hybrid Guard untuk parameter penalty ([gemini.js](src/services/gemini.js)):** ground truth rasmi Google (docs.cloud.google.com, inference reference, last updated 2026-10-22, disedut 2026-10-25) mengesahkan bahawa untuk model **Gemini 3.6 Flash dan kemudian**, parameter sampling (`temperature`/`topP`/`topK`) **diabaikan secara senyap** oleh pelayan manakala parameter penalization (`frequencyPenalty`/`presencePenalty`) **pulangkan ERROR 400**. `buildGenerationConfig()` kini melaksanakan mandat Owner Pilihan B (Hybrid Guard): `temperature`/`topP` KEKAL dihantar untuk SEMUA keluarga Gemini 3.x (doktrin SEND-ALL 2026-10-16 untuk sampling — selamat kerana diabaikan senyap dan memelihara keserasian gateway proksi pihak ketiga), tetapi `frequencyPenalty`/`presencePenalty` **DITEKAN** untuk keluarga `3.x-strict` sahaja (3.6+, 3.5-flash-lite, 3.5-flash & 3.7-flash reroute v3.9.46, alias `-latest`, Gemini 4+) bagi menghalang HTTP 400; amaran debug dicetak jika nilai ditetapkan eksplisit oleh pengguna.
-- **Keluarga LEGACY (3.0, 3.1) & 2.5/2.0/1.5/Gemma kekal tingkah laku sedia ada:** penalty dihantar jika ditetapkan — tiada perubahan.
-- **Ujian regresi [GT-1] dikemas kini ([gemini-auth-model-regression.test.js](src/services/gemini-auth-model-regression.test.js)):** assertion kontrak lama SEND-ALL penalty (dihantar untuk 3.8) ditulis semula kepada kontrak Hybrid Guard (sampling dihantar, penalty ditekan untuk `3.x-strict`, `topK` kekal haram, mapping `disabled → low` kekal).
+- **Hybrid Guard for penalty parameters ([gemini.js](src/services/gemini.js)):** Official Google ground truth (docs.cloud.google.com inference reference, updated 2026-10-22 and captured 2026-10-25) confirms that **Gemini 3.6 Flash and later** silently ignore sampling parameters (`temperature`, `topP`, and `topK`), while penalization parameters (`frequencyPenalty` and `presencePenalty`) return HTTP 400. `buildGenerationConfig()` now implements Owner-approved Option B, the Hybrid Guard: `temperature` and `topP` remain sent for every Gemini 3.x family under the 2026-10-16 SEND-ALL sampling doctrine, which is safe because they are silently ignored and preserves third-party proxy compatibility. `frequencyPenalty` and `presencePenalty` are suppressed only for `3.x-strict` families (3.6+, 3.5-flash-lite, the v3.9.46 3.5-flash and 3.7-flash reroutes, `-latest` aliases, and Gemini 4+) to prevent HTTP 400, with a debug warning when users explicitly set them.
+- **Legacy 3.0/3.1 and 2.5/2.0/1.5/Gemma behavior is unchanged:** Penalties are sent when explicitly set.
+- **Updated [GT-1] regression test ([gemini-auth-model-regression.test.js](src/services/gemini-auth-model-regression.test.js)):** The former assertion that penalties are sent for 3.8 was updated to the Hybrid Guard contract: sampling is sent, penalties are suppressed for `3.x-strict`, `topK` remains forbidden, and `disabled → low` mapping is preserved.
 
-### 📚 Dokumentasi
+### 📚 Documentation
 
-- **Ground truth baharu:** [`plans/gemini-enterprise-agent-platform-ground-truth-2026.md`](plans/gemini-enterprise-agent-platform-ground-truth-2026.md) — sedutan penuh 5 halaman rujukan Gemini Enterprise Agent Platform (inference sample-requests, function-calling, grounding, code-execution, tuning) termasuk `thinkingLevel` enum rasmi, `continuationToken` long decode, syarat JSON valid 100% (`responseSchema` wajib bersama `responseMimeType: application/json`), max 128 function declarations, dan limitasi code-execution (30s, tiada file I/O).
-- **Laporan keputusan:** [`plans/sendall-vs-doc-rasmi-laporan-keputusan.md`](plans/sendall-vs-doc-rasmi-laporan-keputusan.md) — perbandingan berimbang SEND-ALL DOCTRINE vs dokumen rasmi dengan 3 pilihan keputusan (A/B/C) untuk Owner; Pilihan B (Hybrid Guard) telah diluluskan dan dilaksanakan dalam release ini.
+- **New ground truth:** [`plans/gemini-enterprise-agent-platform-ground-truth-2026.md`](plans/gemini-enterprise-agent-platform-ground-truth-2026.md) captures five Gemini Enterprise Agent Platform reference pages covering inference sample requests, function calling, grounding, code execution, and tuning. It includes the official `thinkingLevel` enum, long-decode `continuationToken`, requirements for guaranteed valid JSON (`responseSchema` with `responseMimeType: application/json`), the 128-function-declaration maximum, and code-execution limitations (30 seconds and no file I/O).
+- **Decision report:** [`plans/sendall-vs-doc-rasmi-laporan-keputusan.md`](plans/sendall-vs-doc-rasmi-laporan-keputusan.md) provides a balanced comparison of SEND-ALL DOCTRINE and official documentation with three decision options. Option B, the Hybrid Guard, was approved and implemented in this release.
 
-### 🔒 Invariant Dikekalkan
+### 🔒 Preserved Invariants
 
-- Whitelist reroute `gemini-3.5-flash`/`gemini-3.7-flash` (Keputusan Owner #1, v3.9.46) — tidak disentuh.
-- `topK` kekal 100% HARAM (v1.6.0, nucleus sampling).
-- `systemInstruction` kekal top-level `{ parts: [{ text }] }` (REST v1beta rasmi).
+- The `gemini-3.5-flash`/`gemini-3.7-flash` reroute whitelist from Owner Decision #1 in v3.9.46 is untouched.
+- `topK` remains 100% forbidden for nucleus sampling since v1.6.0.
+- `systemInstruction` remains top-level `{ parts: [{ text }] }` under the official REST v1beta contract.
 
-## SubFaber v3.19.0 (2026-10-25) — Penyatuan Mutlak API Request Body Merentas Pintu & Ejen Trinity (Door-Centric Architecture)
+## SubFaber v3.19.0 (2026-10-25) — Absolute API Request-Body Unification Across Trinity Doors & Agents
 
-### 🔧 Refactoring — Channel-Centric Payload Unification (Mandat Owner 2026-10-25)
+### 🔧 Refactoring — Channel-Centric Payload Unification
 
-- **Laluan 2b PAYLOAD-GODTIER 4-kunci MANSUH ([openaiCompatible.js](src/services/providers/openaiCompatible.js)):** medan `universalPayload`, blok builder 4-kunci `{model, messages, stream, temperature}`, gate streaming `translateSubtitle()`, dan dead-store `beastMaxTokens` dipadam sepenuhnya. SEMUA ejen Trinity (Agent Translation, Agent Preflight, Agent Inspector) kini melalui `buildChatRequest()` standard TUNGGAL — format muatan HANYA ditentukan oleh PROTOKOL PINTU OpenAI-compatible (`model`, `messages`, `stream`, `max_tokens`/`max_completion_tokens`, `temperature`, `top_p`, penalti, `reasoning_effort`, `thinking`, `response_format`), bukan oleh entiti ejen.
-- **Mekanisma `meta.responseFormat` dipindah KE DALAM pembina standard:** pengaktifan `response_format` json_schema strict (INSPECTOR_SCHEMA_CONTRACT kanonik daripada wrapper prompt Trinity) kini berlaku di tahap API dalam `buildChatRequest()` — berfungsi seragam untuk laluan stream & non-stream semua ejen; bukan lagi tampalan override ejen.
-- **Kebocoran kunci legacy diperbaiki:** `max_completion_tokens`/`max_tokens` tidak lagi tersekat sebagai kunci `undefined` dalam muatan provider kompatibel (kini dihantar secara eksklusif bersyarat melalui spread conditional).
-- **AgentInspector dibersihkan ([agentInspector.js](src/services/agentInspector.js)):** override nipis `buildChatRequest()` + params ejen (`preflightParams`/`inspectorParams`/`__activeAgentParams` + toggle `runPreflightPass`) MANSUH — input semantik universal (`temperature`, `maxOutputTokens`, `reasoningEffort` dsb.) disalurkan melalui parameter standard provider. Laluan openai/rootsys dihalakan kepada `streamTranslateSubtitle()` — invariant SSE (siling Caddy 300s, kelulusan Owner #4) terpelihara sebagai pilihan PENANGKUTAN milik channel.
-- **KIV Owner dikekalkan BEKU:** `thinking: {type:'adaptive'}` pada laluan Anthropic Agent Inspector TIDAK disentuh (menunggu kajian dokumentasi rasmi Anthropic Thinking Steering).
-- **openaiChannel.buildSuperOptions() dikemas kini ([openaiChannel.js](src/services/channels/openaiChannel.js)):** bersih daripada `universalPayload`/`beastMaxTokens`; menyalurkan input semantik standard termasuk pemetaan `maxTokens` warisan → `maxOutputTokens`; `enableJsonOutput` kekal `false` (skema JSON Inspector datang melalui `meta.responseFormat` kanonik, bukan skema `subtitle_entries` Agent Translation).
-- **Kawalan penalaran kekal terkunci:** `applySmartModelPayload()` tidak diubah — DeepSeek/GLM-5.3/GLM-5.2/Kimi-k3 hanya menerima `reasoning_effort` `low`/`high`/`max`; sifar suntikan `medium`.
-- **Sifar-penciptaan parameter pengguna kekal (TOTAL UNLOCK K1/K5):** nilai yang tidak ditetapkan pengguna tetap TIDAK dihantar (pelayan guna lalai asalnya) — kini pada pembina standard.
-- **5 fail ujian regresi dikemas kini:** `agent-inspector-regression.test.js` (assertion god-tier → kontrak standard), `subfaber-fasah-regression.test.js`, `user-sovereignty-params-regression.test.js` (S5/S6), `channels-triDoor-phaseC-regression.test.js`, dan `trinity-params-regression.test.js` (F3/F4/F5 — kontrak params ejen mansuh, ditulis semula kepada input semantik standard).
+- **Route 2b PAYLOAD-GODTIER four-key path abolished ([openaiCompatible.js](src/services/providers/openaiCompatible.js)):** Removed the `universalPayload` field, the four-key `{model, messages, stream, temperature}` builder block, the `translateSubtitle()` streaming gate, and the `beastMaxTokens` dead store. Every Trinity agent—Agent Translation, Agent Preflight, and Agent Inspector—now uses the single standard `buildChatRequest()` path. Payload format is determined solely by the OpenAI-compatible door protocol (`model`, `messages`, `stream`, `max_tokens`/`max_completion_tokens`, `temperature`, `top_p`, penalties, `reasoning_effort`, `thinking`, and `response_format`), not by agent identity.
+- **`meta.responseFormat` moved into the standard builder:** Strict `response_format` JSON-schema activation using the canonical `INSPECTOR_SCHEMA_CONTRACT` from Trinity prompt wrappers now occurs at the API layer in `buildChatRequest()`, working consistently for streaming and non-streaming paths across all agents instead of as an agent-specific override patch.
+- **Legacy key leakage fixed:** `max_completion_tokens` and `max_tokens` no longer become stuck as `undefined` keys in compatible-provider payloads; conditional spreads now send them exclusively and only when appropriate.
+- **AgentInspector cleaned up ([agentInspector.js](src/services/agentInspector.js)):** Removed the thin `buildChatRequest()` override and agent parameters (`preflightParams`, `inspectorParams`, `__activeAgentParams`, and the `runPreflightPass` toggle). Universal semantic inputs such as `temperature`, `maxOutputTokens`, and `reasoningEffort` now flow through standard provider parameters. OpenAI/Rootsys routes use `streamTranslateSubtitle()`, preserving the SSE invariant from the 300-second Caddy ceiling under Owner Approval #4 as a channel-owned transport choice.
+- **Owner KIV remains frozen:** `thinking: {type:'adaptive'}` on the Anthropic Agent Inspector route was not modified while official Anthropic Thinking Steering documentation was under review.
+- **`openaiChannel.buildSuperOptions()` updated ([openaiChannel.js](src/services/channels/openaiChannel.js)):** Removed `universalPayload` and `beastMaxTokens`; forwards standard semantic inputs including legacy `maxTokens` → `maxOutputTokens` mapping; and retains `enableJsonOutput: false` because the Inspector JSON schema arrives through canonical `meta.responseFormat`, not Agent Translation's `subtitle_entries` schema.
+- **Reasoning controls remain locked:** `applySmartModelPayload()` is unchanged—DeepSeek, GLM-5.3, GLM-5.2, and Kimi-K3 accept only `reasoning_effort` values `low`, `high`, and `max`, with no `medium` injection.
+- **Zero user-parameter creation preserved (TOTAL UNLOCK K1/K5):** Values not explicitly set by the user are still not sent, allowing server defaults to apply, now through the standard builder.
+- **Five regression files updated:** `agent-inspector-regression.test.js` changed from god-tier to standard-contract assertions; `subfaber-fasah-regression.test.js`; `user-sovereignty-params-regression.test.js` S5/S6; `channels-triDoor-phaseC-regression.test.js`; and `trinity-params-regression.test.js` F3/F4/F5 replaced abolished agent-parameter contracts with standard semantic-input contracts.
 
 ## SubFaber v3.18.2 (2026-10-24) — Ground-Truth Reasoning Effort: GLM-5.3 / Kimi K3 / DeepSeek UI & Contract Surgery (Trinity Basic + Pro)
 
 ### ✨ New Features
 
-- **Official reasoning-effort ground truth for GLM-5.3, Kimi K3/K3.1-pro and all DeepSeek models (Mandat Owner 2026-10-24):** the vendor APIs were scraped live from their official documentation (api-docs.deepseek.com/guides/thinking_mode, docs.z.ai/guides/capabilities/thinking, platform.kimi.ai use-thinking-models + use-reasoning-effort) and the UI capability matrix was rebuilt to match exactly — **GLM-5.3: `low/high/max` (default `max`, thinking always-on, `disabled` = HTTP error); Kimi K3 & kimi-k3.1-pro (profile shared verbatim): `low/high/max` (default `max`, top-level `reasoning_effort`, no `thinking` parameter); all DeepSeek models (shared setup): `off/low/high/max` (default `high`, fully disableable)**. The UI label "Off" maps to the wire value `disabled` — the backend contract shape is unchanged.
+- **Official reasoning-effort ground truth for GLM-5.3, Kimi K3/K3.1-pro and all DeepSeek models (Owner mandate, 2026-10-24):** the vendor APIs were scraped live from their official documentation (api-docs.deepseek.com/guides/thinking_mode, docs.z.ai/guides/capabilities/thinking, platform.kimi.ai use-thinking-models + use-reasoning-effort) and the UI capability matrix was rebuilt to match exactly — **GLM-5.3: `low/high/max` (default `max`, thinking always-on, `disabled` = HTTP error); Kimi K3 & kimi-k3.1-pro (profile shared verbatim): `low/high/max` (default `max`, top-level `reasoning_effort`, no `thinking` parameter); all DeepSeek models (shared setup): `off/low/high/max` (default `high`, fully disableable)**. The UI label "Off" maps to the wire value `disabled` — the backend contract shape is unchanged.
 - **Coverage: every Trinity agent, both modes, both doors:** the surgery covers Agent Preflight, Agent Translation, Agent Inspector and the Secondary Fallback provider card in Basic Mode and Pro Mode, for official providers AND Custom/Proxy — one shared model-name-based resolver (`mpGlmProfile()` / `mpDeepseekProfile()` in [public/js/trinity-agents.js](public/js/trinity-agents.js)) feeds all slots so the official and Custom/Proxy doors are always in sync.
 
 ### 🔧 Fixed
@@ -378,7 +394,7 @@ All notable changes to this project will be documented in this file.
 
 ### 🔧 Fixed
 
-- **Terminal log flood after v3.18.0 (Mandat Owner 2026-10-24: "pulihkan log terminal normal, jangan sentuh benda lain"):** the sharpened translation prompt causes the AI to convert/insert line breaks far more often than before, which triggered the per-entry `brParity` debug lines (~14,300 lines for a single 696-entry file: 12,184 "AI menambah line break" + 1,682 "auto-repair" + 461 "repair gagal") — drowning the terminal at `LOG_LEVEL=debug`. Root cause was never an engine defect: the v3.17.0 `reconcileBrParity()` safety net logs once per subtitle entry, and the flood was presentation-level, not behavioral.
+- **Terminal log flood after v3.18.0 (Owner mandate, 2026-10-24: restore normal terminal logging without changing anything else):** the sharpened translation prompt causes the AI to convert/insert line breaks far more often than before, which triggered the per-entry `brParity` debug lines (~14,300 lines for a single 696-entry file: 12,184 "AI menambah line break" + 1,682 "auto-repair" + 461 "repair gagal") — drowning the terminal at `LOG_LEVEL=debug`. Root cause was never an engine defect: the v3.17.0 `reconcileBrParity()` safety net logs once per subtitle entry, and the flood was presentation-level, not behavioral.
 - **Fix: DEBUG repeat-collapse at the console layer of [src/utils/logger.js](src/utils/logger.js) (zero engine changes):** consecutive identical DEBUG console lines are now held; when the pattern breaks (a different line arrives) or a 5-second quiet window closes, a single summary line `… [repeated N times]` is emitted. Guarantees: (1) the FIRST line of every pattern still prints immediately — no diagnostic detail lost; (2) WARN/ERROR/CRITICAL are 100% untouched (existing logger protection doctrine); (3) the FILE log (`app.log`) remains 100% complete — the file is the forensic ground truth, only the terminal presentation is collapsed; (4) the dedup key is the serialized message (timestamp-excluded), and the 5s window timer is `unref()`'d so it never holds the event loop during shutdown; (5) INFO/STARTUP console paths untouched. Verified behavior: 5 identical lines → 1 line + `[repeated 5 times]`; interleaved distinct lines print in full; the final run flushes on window close.
 
 ### ✅ Verification
@@ -389,7 +405,7 @@ All notable changes to this project will be documented in this file.
 
 ### ✨ New Features
 
-- **Translation system prompt sharpened (Zero-Regression Surgical Upgrade, Mandat Owner 2026-10-24):** all edits confined to the forensically-mapped Free Zones of the Trinity Single Source of Truth [src/services/prompts/trinity/translation/core.js](src/services/prompts/trinity/translation/core.js) — every locked-zone string (parity labels, SFX clause, style contracts, Output Format) preserved verbatim, so all 470 regression tests pass untouched on the first run. (1) `<translation_principles>` upgraded: "Idiomatic & Register Fidelity" now prioritizes the character's true intent, emotional impact, and scene register (intimate, street slang, clinical, formal, high-stakes drama); "Subtitle Economy & Flow" mandates concise, punchy dialogue that reads effortlessly at a glance. (2) Rule 1 ANTI-MERGE gains grammatical-continuity guidance for cross-slot sentences: read adjacent slots for continuity, then distribute the translated parts proportionally inside their original slot IDs (in addition to the never-merge / never-empty contract). (3) Rule 2 ANTI-SHIFT extends the locked SFX clause with parenthesized cues — `(as are parenthesized cues like (sighs))`. (4) Rule 5 ANTI-UNTRANSLATED exempts Locked Terms and official translations specified in the read-only context. (5) `## Style` renamed to "Native Cinema Standard": the placebo "mentally draft, then reflect" ritual was replaced with a direct linguistic directive (active phrasing, zero textbook stiffness), and the paragraph now bridges compliance to Locked Terms and locked Character Addresses while separating pronoun choice (fit character relationships and scene register) from title restriction (titles only when present in the source — never injected onto bare names).
+- **Translation system prompt sharpened (Zero-Regression Surgical Upgrade, Owner mandate, 2026-10-24):** all edits confined to the forensically-mapped Free Zones of the Trinity Single Source of Truth [src/services/prompts/trinity/translation/core.js](src/services/prompts/trinity/translation/core.js) — every locked-zone string (parity labels, SFX clause, style contracts, Output Format) preserved verbatim, so all 470 regression tests pass untouched on the first run. (1) `<translation_principles>` upgraded: "Idiomatic & Register Fidelity" now prioritizes the character's true intent, emotional impact, and scene register (intimate, street slang, clinical, formal, high-stakes drama); "Subtitle Economy & Flow" mandates concise, punchy dialogue that reads effortlessly at a glance. (2) Rule 1 ANTI-MERGE gains grammatical-continuity guidance for cross-slot sentences: read adjacent slots for continuity, then distribute the translated parts proportionally inside their original slot IDs (in addition to the never-merge / never-empty contract). (3) Rule 2 ANTI-SHIFT extends the locked SFX clause with parenthesized cues — `(as are parenthesized cues like (sighs))`. (4) Rule 5 ANTI-UNTRANSLATED exempts Locked Terms and official translations specified in the read-only context. (5) `## Style` renamed to "Native Cinema Standard": the placebo "mentally draft, then reflect" ritual was replaced with a direct linguistic directive (active phrasing, zero textbook stiffness), and the paragraph now bridges compliance to Locked Terms and locked Character Addresses while separating pronoun choice (fit character relationships and scene register) from title restriction (titles only when present in the source — never injected onto bare names).
 - **Malay pack few-shot EXAMPLE 2 upgraded to idiomatic cinematic Malaysian Malay:** [src/services/prompts/languagePacks/malay.js](src/services/prompts/languagePacks/malay.js) — "Stop pulling my leg.[br]I'm running late." → "Jangan main-mainkan akulah.[br]Aku dah lambat ni." and "Relax, don't lose your head." → "Bawa bertenang, jangan gelabah." — demonstrating register-faithful colloquial BM (aku-register, idiom, no Indonesianisms) while preserving `[br]`, `♪♪`, `[door slams]` → `[pintu terhempas]`, the 4-slot SHIFT structure, and the anti-Indonesianisms reminder on the example header. EXAMPLE 1 (MERGE) remains 100% verbatim (`Awak ikut kami,` / `kan?` / `Wrong (merged):`).
 - **Cross-genre honorific mappings added to the Malay matrix:** one new row appended to `honorificMatrix` (all 7 existing rows kept 100% verbatim) — "Sir" → "Tuan", "Madam"/"Ma'am" → "Puan", "Captain" → "Kapten", "Detective" → "Detektif", "Dr." → "Dr.", "Older Brother" → "Abang", "Older Sister" → "Kakak" — covering police/military/medical/family-genre character addressing.
 
@@ -426,7 +442,7 @@ All notable changes to this project will be documented in this file.
 
 ### ✨ New Features
 
-- **Programmatic `[br]` parity enforcement (Mandat Owner 2026-10-23; closes the prompt-only contract gap):** until now the "same count of `[br]`" contract between source text and AI output was held ONLY by the Trinity system prompt (rule 6) — a request, not a guarantee. This release adds deterministic, zero-API-cost enforcement after the AI replies. New module-level constant `BR_MARKER_PATTERN` ([src/services/translationEngine.js](src/services/translationEngine.js)) is now the single source of truth for every line-break marker form (`[br]`, `<br>`, `<br/>`, entity-escaped `<br>`); stage 4 of `cleanTranslatedText()` consumes it directly (zero regex definition drift).
+- **Programmatic `[br]` parity enforcement (Owner mandate, 2026-10-23; closes the prompt-only contract gap):** until now the "same count of `[br]`" contract between source text and AI output was held ONLY by the Trinity system prompt (rule 6) — a request, not a guarantee. This release adds deterministic, zero-API-cost enforcement after the AI replies. New module-level constant `BR_MARKER_PATTERN` ([src/services/translationEngine.js](src/services/translationEngine.js)) is now the single source of truth for every line-break marker form (`[br]`, `<br>`, `<br/>`, entity-escaped `<br>`); stage 4 of `cleanTranslatedText()` consumes it directly (zero regex definition drift).
 - **New method `reconcileBrParity(sourceText, translatedText)`:** counts `\n` on both sides after marker normalization and enforces parity — equal counts pass through untouched (zero cost); when the AI ADDS breaks they are kept (extra breaks rarely harm playback; debug-logged); when the AI DROPS breaks, balanced auto-repair inserts `\n` at offsets computed from the **length ratios of the original source lines** (not just sentence boundaries), choosing the best split point near each target with priority **sentence boundary (. ? ! …) > comma (, ; :) > nearest space** — and never, under any path, truncating a word mid-character. Pure, deterministic, no I/O. Output never contains `\n\n` (consistent with the stage-4 collapse).
 - **Integration into 5 caller sites:** `cleanTranslatedText(text, sourceText = undefined)` gains an optional second parameter (full backward compatibility — callers without a source keep the legacy behavior) with the parity hook running as new stage 4.5, strictly AFTER the `[br]` → `\n` conversion so both sides are counted in the same unit. The three merge loops in [src/services/translationEngine.js](src/services/translationEngine.js) (batch merge ~1079, half-batch streaming ~1613, real-time stream merge ~3371) and both paths in [src/utils/parallelTranslation.js](src/utils/parallelTranslation.js) (streaming callback ~92, mapping `globalId` back to the source `firstBatch` entry; drain loop ~264) now pass the original text through.
 
@@ -463,14 +479,14 @@ All notable changes to this project will be documented in this file.
 ### 📚 Documentation
 
 - **Added the archived raw server specification [docs/GEMINI_MODELS_METADATA_GROUND_TRUTH.md](docs/GEMINI_MODELS_METADATA_GROUND_TRUTH.md) (docs-only, zero runtime code changes):** captured live from `GET /v1beta/models?pageSize=100` (63 models, single page, zero `nextPageToken`) using the `SUBFABER_TEST_GEMINI_KEY` environment variable under the strict Zero Secret Logging contract — no key value exists anywhere in the document, logs, or Git history (pattern scan clean; temporary raw-data artifacts deleted). The four core empirical proofs archived: (a) **actual output ceilings** — all modern Gemini text models (2.5/3.x/3.5/3.6/3.7/3.8 Flash/Pro/Flash-Lite, `-latest` aliases) return `outputTokenLimit: 65,536` (refuting the stale third-party 8,192 figure); `gemini-4-argon` and the image family cap at 32,768; (b) **STRICT-family evidence** — the `antigravity-preview-*` agent/reasoning family returns model objects with `temperature`/`topP`/`topK`/`maxTemperature` keys ENTIRELY ABSENT (not merely null), empirically proving that temperature-parameter suppression for reasoning families is official Google server policy (aligned with the `server-strips-for-this-model` uiHint and SEND-ALL DOCTRINE); (c) **special-purpose models** — TTS models (input 8,192 / output 16,384), embedding models (output 1 — single vector), native-audio Live (output 8,192), Veo (input 480); (d) **pagination & filtering protocol** — `pageSize=100` suffices (63/100), and text-model isolation requires dual-layer filtering (`supportedGenerationMethods: ["generateContent"]` PLUS name-pattern/token-limit exclusion since TTS models also declare `generateContent`).
-- **Full sanitized 63-model table** categorized per family (35 standard text, 5 TTS, 6 reasoning/agent, 3 embedding, 13 Live/music/video, 1 legacy AQA) with per-model input/output limits and sampling declarations, plus mapping implications for [src/utils/modelCapabilities.js](src/utils/modelCapabilities.js) (vendor ceiling basis, STRICT classification parallel, risky name suffixes to exclude, topK still HARAM per v1.6.0).
+- **Full sanitized 63-model table** categorized per family (35 standard text, 5 TTS, 6 reasoning/agent, 3 embedding, 13 Live/music/video, 1 legacy AQA) with per-model input/output limits and sampling declarations, plus mapping implications for [src/utils/modelCapabilities.js](src/utils/modelCapabilities.js) (vendor ceiling basis, STRICT classification parallel, risky name suffixes to exclude, topK still forbidden per v1.6.0).
 
 ## SubFaber v3.16.3 (2026-10-19) — Trinity API Request Body Ground Truth Documentation
 
 ### 📚 Documentation
 
 - **Added the canonical request-body parameter reference [docs/TRINITY_API_REQUEST_BODY_GROUND_TRUTH.md](docs/TRINITY_API_REQUEST_BODY_GROUND_TRUTH.md) (docs-only, zero runtime code changes):** the full official request body parameter lists for all three Trinity doors, preserved as the project's Single Source of Truth for future payload audits and parameter tuning. (1) Gemini Native v1beta — camelCase `generationConfig` hierarchy (`temperature`, `topP`, `candidateCount`, `maxOutputTokens`, `stopSequences`, `presencePenalty`, `frequencyPenalty`, `responseMimeType`/`responseSchema`, `thinkingConfig`), top-level `systemInstruction`, `contents`, `safetySettings`, `tools`/`toolConfig`, `cachedContent`; (2) OpenAI-Compatible v1/chat/completions — root-level snake_case parameters, the `max_tokens` vs `max_completion_tokens` distinction (the latter preferred for modern reasoning models to account for thinking-token overhead), Structured Outputs `json_schema` via `response_format`, and the `developer`/`system` role; (3) Anthropic Messages v1/messages — the protocol-required `max_tokens`, the `system` field (string or block array for `cache_control`), the strict `thinking { type: "enabled", budget_tokens }` arrangement, and the standard XML framing.
-- **Cross-door comparison matrix and project-invariant overlays:** endpoint/naming-convention/parameter-location/system-instruction/token-cap/thinking/structured-output/safety/cache comparisons across all three doors, plus explicit annotations where project invariants override vendor-legal parameters (topK/top_k HARAM since v1.6.0; `systemInstruction` stays top-level per the Core Protocol; SEND-ALL DOCTRINE for Gemini 3.x; `thinkingBudget` preservation), and cross-references to [src/services/gemini.js](src/services/gemini.js), [src/services/utils/structuredPrompt.js](src/services/utils/structuredPrompt.js), [src/utils/config.js](src/utils/config.js), and the Trinity door channels.
+- **Cross-door comparison matrix and project-invariant overlays:** endpoint/naming-convention/parameter-location/system-instruction/token-cap/thinking/structured-output/safety/cache comparisons across all three doors, plus explicit annotations where project invariants override vendor-legal parameters (topK/top_k forbidden since v1.6.0; `systemInstruction` stays top-level per the Core Protocol; SEND-ALL DOCTRINE for Gemini 3.x; `thinkingBudget` preservation), and cross-references to [src/services/gemini.js](src/services/gemini.js), [src/services/utils/structuredPrompt.js](src/services/utils/structuredPrompt.js), [src/utils/config.js](src/utils/config.js), and the Trinity door channels.
 
 ## SubFaber v3.16.2 (2026-10-19) — Kimi-K3 Thinking Restore: reasoningEffort Field Returns on Custom/Proxy Door
 
@@ -488,7 +504,7 @@ All notable changes to this project will be documented in this file.
 
 ### ⚠️ Behavioral Changes (Process Rules)
 
-- **Codified the [REAL-USER VERIFICATION DOCTRINE — ANTI BLIND-CODING] into the project constitution ([.roo/rules/00-subfaber-core-protocol.md](.roo/rules/00-subfaber-core-protocol.md))** after the v3.16.0 Phase-2 incident where the Frontend agent initially performed UI surgery without replicating the real user flow (placeholder key → 401 → wrong conclusion), and only saw the true Model Parameters card state (placeholders, uiHint notes, DOM collection behavior) after the Owner's correction forced the real flow (real rootsys key → base URL → door → Validate → 200/valid/22 models → model selection). The doctrine's five clauses: (1) WAJIB-REPLIKASI-ALIRAN — before any UI/UX surgery or audit involving provider/model/validation flows, the agent MUST run the real user flow via Playwright MCP (provider → real API key from `SUBFABER_TEST_*` via [src/utils/testKeys.js](src/utils/testKeys.js) → base URL → door/format → press Validate → select model) until the target component renders with real data; (2) SCREENSHOT = HIPOTESIS — Owner screenshots/reports are initial hypotheses, never the single source of truth, and must be confirmed through direct interaction before any code change; (3) LARANGAN KARANG-STATE — fabricating/fixing UI state (model lists, parameter cards, validation status, error displays) based on guesswork without ever seeing that state live is a protocol breach requiring disclosure in the handover and a redo; (4) KONTRAK KUNCI — test keys remain under the full Zero Secret Logging contract (zero key values in terminal/logs/screenshots/ledger) and scoped to ping/model-list + Playwright only; (5) RATIONALE EKONOMI — every guess-driven "repeat-fix cycle" burns the Owner's paid API tokens; this doctrine is the project's official cost control.
+- **Codified the [REAL-USER VERIFICATION DOCTRINE — ANTI BLIND-CODING] into the project constitution ([.roo/rules/00-subfaber-core-protocol.md](.roo/rules/00-subfaber-core-protocol.md))** after the v3.16.0 Phase-2 incident where the Frontend agent initially performed UI surgery without replicating the real user flow (placeholder key → 401 → wrong conclusion), and only saw the true Model Parameters card state (placeholders, uiHint notes, DOM collection behavior) after the Owner's correction forced the real flow (real rootsys key → base URL → door → Validate → 200/valid/22 models → model selection). The doctrine's five clauses: (1) MANDATORY FLOW REPLICATION — before any UI/UX surgery or audit involving provider/model/validation flows, the agent MUST run the real user flow via Playwright MCP (provider → real API key from `SUBFABER_TEST_*` via [src/utils/testKeys.js](src/utils/testKeys.js) → base URL → door/format → press Validate → select model) until the target component renders with real data; (2) SCREENSHOTS ARE HYPOTHESES — Owner screenshots/reports are initial hypotheses, never the single source of truth, and must be confirmed through direct interaction before any code change; (3) NO FABRICATED STATE — fabricating/fixing UI state (model lists, parameter cards, validation status, error displays) based on guesswork without ever seeing that state live is a protocol breach requiring disclosure in the handover and a redo; (4) KEY CONTRACT — test keys remain under the full Zero Secret Logging contract (zero key values in terminal/logs/screenshots/ledger) and scoped to ping/model-list + Playwright only; (5) ECONOMIC RATIONALE — every guess-driven "repeat-fix cycle" burns the Owner's paid API tokens; this doctrine is the project's official cost control.
 - **Appended "Item 9 — Real-User Interaction Mandate (Anti Blind-Coding, 2026-10-19)" to the Frontend mode's `customInstructions` in [.roomodes](.roomodes) (items 1–8 preserved verbatim; backend block untouched):** Item 9 binds the pre-surgery requirement (real flow replication via Playwright MCP until the target component renders with real data; Owner screenshots are hypotheses requiring confirmation) and declares that surgery based on guesswork without flow replication is a protocol violation that must be stated in the handover and reworked. Complementary to the existing Item 8 (which governs POST-surgery visual critique): Item 9 governs PRE-surgery interaction. The injection used the safe Python text-splice procedure (script written, executed, and deleted in the same command chain, per the 2026-10-08 `.roomodes` corruption incident protocol) and passed the mandatory PyYAML validation gate: customModes = 2, per-mode `groups=[read,edit,command,mcp]`, `source=project`, items 1–8 verbatim, Item 9 present, backend block untouched.
 - **Full doctrine plan and incident evidence recorded in [plans/real-user-verification-doctrine.md](plans/real-user-verification-doctrine.md)** (Owner's verbatim issue report, the empirical incident timeline, the three-part Backend justification, doctrine text, safe-injection procedure, and risk table).
 
@@ -506,7 +522,7 @@ All notable changes to this project will be documented in this file.
 
 ### ⚠️ Behavioral Changes
 
-- **Agent Inspector payload without user params is now exactly `{model, messages, stream}` (3 keys, was 4 with hardcoded `temperature: 0.0`); with `response_format` (Mazhab Rasmi) it is 4 keys.** Providers' own server defaults now apply wherever the user sets nothing — deterministic 0.0 must now be set explicitly by the user in the UI if desired.
+- **Agent Inspector payload without user params is now exactly `{model, messages, stream}` (3 keys, was 4 with hardcoded `temperature: 0.0`); with the official `response_format` contract it is 4 keys.** Providers' own server defaults now apply wherever the user sets nothing — deterministic 0.0 must now be set explicitly by the user in the UI if desired.
 - **Kimi-k3 / GLM-5.3 users who deliberately set `reasoning_effort: disabled` will now send NO reasoning parameter** (model uses its natural server default) instead of a forced `low`.
 - **maxOutputTokens below 65536 for reasoning models is now honored** (was force-raised); the hard vendor ceiling (131072) still applies.
 
@@ -806,7 +822,7 @@ All notable changes to this project will be documented in this file.
 
 ### Preserved
 
-- Kontrak payload sifar perubahan bentuk: `trinity.{preflight,translation,inspector}` = `{apiKey,format,baseUrl,model,provider,door,isCustom,enabled}`; `geminiApiKey`/`geminiModel`/`geminiKeyRotation*`/`geminiApiKeys`; `multiProviderEnabled`/`secondaryProviderEnabled`/`secondaryProvider`/`providers.<key>` (MERGE); `agentB.{enabled,apiKey,baseUrl,format,model,preflightModel}`. Verified live via Playwright: Basic (provider/key/model/fallback ON+provider+key) → Pro → Basic = 100% utuh; Pro (Preflight/Inspector key) → Basic → Pro = utuh.
+- **Payload shape preserved:** `trinity.{preflight,translation,inspector}` = `{apiKey,format,baseUrl,model,provider,door,isCustom,enabled}`; `geminiApiKey`/`geminiModel`/`geminiKeyRotation*`/`geminiApiKeys`; `multiProviderEnabled`/`secondaryProviderEnabled`/`secondaryProvider`/`providers.<key>` (MERGE); `agentB.{enabled,apiKey,baseUrl,format,model,preflightModel}`. Live Playwright verification confirmed that Basic (provider/key/model/fallback ON+provider+key) → Pro → Basic and Pro (Preflight/Inspector key) → Basic → Pro both preserve 100% of state.
 
 ## SubFaber v3.9.42 (2026-10-14) — Secondary Fallback Provider: On/Off Toggle + Premium Card Redesign
 

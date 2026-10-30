@@ -124,7 +124,7 @@ Hanya atas arahan eksplisit Owner, mengikut skop dan pengesahan yang ditetapkan 
 
 1. **Impact & Contract Audit:** sahkan acceptance, payload serialization, rehydration/DOM races dan server schema hanya mengikut skop; rekod `N/A` yang sah.
 2. **SemVer:** bump `package.json` dan sinkronkan `package-lock.json`.
-3. **CHANGELOG:** tambah entri versi baharu dengan skop dan bukti.
+3. **CHANGELOG:** tambah entri versi baharu dengan skop dan bukti. Semua prosa, tajuk dan label dalam `CHANGELOG.md` WAJIB ditulis dalam English profesional untuk pembaca global; Bahasa Melayu hanya dibenarkan sebagai data teknikal verbatim seperti contoh prompt terjemahan, literal log atau nilai kontrak.
 4. **Cache-buster:** sahkan `__APP_VERSION_QUERY__` dan `?_cb=` jika aset/version path terlibat; jika tidak, rekod NO-OP.
 5. **Quality gates:** Prettier + ESLint + `npm test` penuh serta gate CI berkaitan; semua mesti hijau.
 6. **Graphify:** `graphify update .` hanya jika runtime dan `graphify-out/` wujud; selain itu NO-OP tanpa skrip ad-hoc.
@@ -180,3 +180,5 @@ Jika Owner mengumumkan manual condensation, append status semasa sebelum kerja l
 ## 13. LANGUAGE POLICY
 
 Komunikasi dengan Owner menggunakan Bahasa Melayu Malaysia standard. Kekalkan syntax, technical terminology, filenames dan commands dalam bahasa asal tanpa terjemahan janggal.
+
+**ENGLISH-ONLY CHANGELOG LOCK (dikunci semula daripada mandat v3.14.0):** `CHANGELOG.md` WAJIB menggunakan English profesional untuk semua tajuk, kategori dan prosa, termasuk semasa mengoreksi atau menulis semula entri sejarah. Jangan sekali-kali menganggap bahasa komunikasi Owner sebagai kebenaran untuk menulis changelog dalam Bahasa Melayu. Pengecualian hanya untuk data teknikal verbatim yang mesti dikekalkan, seperti contoh prompt/output terjemahan, literal log, identifier dan nilai kontrak. Semak polisi ini pada setiap CHANGELOG edit dan semasa acceptance/release.
