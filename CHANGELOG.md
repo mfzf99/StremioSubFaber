@@ -2,6 +2,18 @@
 
 All notable changes to this project will be documented in this file.
 
+## SubFaber v3.25.5 (2026-10-30) — Anthropic Adaptive Thinking Runtime Propagation
+
+### 🔧 Fixed — Konfigurasi Thinking Kini Sampai ke Request Body
+
+- **Native Anthropic transport ([`anthropic.js`](src/services/providers/anthropic.js)):** Opsyen `thinking` disimpan pada provider dan diserialkan ke `/v1/messages`, membetulkan konfigurasi `{type:'adaptive'}` yang sebelum ini tidak digunakan. `{type:'disabled'}` turut dihormati.
+- **Trinity channel ([`anthropicChannel.js`](src/services/channels/anthropicChannel.js)):** `thinkingBudget` kini disalurkan ke provider. Bajet manual positif kekal mengambil keutamaan sebagai `{type:'enabled', budget_tokens}` dan tidak ditindih oleh adaptive lalai.
+
+### ✅ Regression & Verification
+
+- Dua ujian baharu di [`channels-triDoor-phaseC-regression.test.js`](src/services/channels-triDoor-phaseC-regression.test.js) mengunci serialization adaptive, keutamaan bajet manual dan disabled.
+- Targeted suite: **17/17 PASS**. Full suite: **535 total / 534 PASS / 0 FAIL / 1 SKIP (live Redis)**. Syntax, Prettier, ESLint (0 error) dan `git diff --check` lulus. Tiada perubahan UI, serialization konfigurasi atau rehidrasi.
+
 ## SubFaber v3.25.4 (2026-10-27) — Modernisasi Aliran Solo Fullstack & Single-Commit Release
 
 ### 🔧 Changed — Governance, Discovery Ujian dan Single-Commit Release

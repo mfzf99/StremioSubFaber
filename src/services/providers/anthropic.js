@@ -41,6 +41,10 @@ class AnthropicProvider {
         this.thinkingBudget = Number.isFinite(parseInt(options.thinkingBudget, 10))
             ? Math.max(0, parseInt(options.thinkingBudget, 10))
             : 0;
+        this.thinking =
+            options.thinking && typeof options.thinking === 'object' && !Array.isArray(options.thinking)
+                ? { ...options.thinking }
+                : null;
         const timeoutSeconds = options.translationTimeout !== undefined ? options.translationTimeout : 60;
         this.translationTimeout = Math.max(5000, parseInt(timeoutSeconds * 1000, 10) || 60000);
         this.maxRetries = Number.isFinite(parseInt(options.maxRetries, 10))
@@ -119,6 +123,8 @@ class AnthropicProvider {
                 type: 'enabled',
                 budget_tokens: thinkingBudget
             };
+        } else if (this.thinking) {
+            body.thinking = { ...this.thinking };
         }
 
         // JSON structured output: prefill assistant response with "[" to force JSON array output.

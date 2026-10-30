@@ -1,3 +1,17 @@
+## 2026-10-30 — v3.25.5 ANTHROPIC ADAPTIVE THINKING RUNTIME PROPAGATION (MANDAT OWNER)
+
+- **Tarikh:** 2026-10-30 ~16:26 (waktu tempatan KL)
+- **Parent HEAD SHA:** `3a533324f457525aa1908bce7daf8b9633d52055`
+- **Status:** `VERIFIED_LOCAL` — release commit dan CI disahkan selepas push melalui laporan penutup; tiada commit ledger kedua.
+- **Release Commit SHA + CI Run ID:** disahkan dalam laporan penutup selepas push/CI.
+- **Keputusan Owner:** Baiki dead option `thinking` Anthropic dan terus commit sebagai patch release melalui Single-Commit Release Pipeline.
+- **Impact & Contract Audit (Fasa A/B):** Zon C sahaja — `anthropicChannel.buildProvider()` → `AnthropicProvider` → `buildRequestBody()` → `/v1/messages`. Opsyen adaptive/disabled kini disimpan dan diserialkan; `thinkingBudget` manual disalurkan dan kekal mengatasi adaptive. Zon A/B, UI, config serialization, rehidrasi dan DOM = `N/A`; Playwright/real-key tidak terpakai kerana tiada UI atau kontrak luar baharu.
+- **Fail Terlibat:** src/services/providers/anthropic.js (M), src/services/channels/anthropicChannel.js (M), src/services/channels-triDoor-phaseC-regression.test.js (M: +2 ujian), package.json/package-lock.json (3.25.4→3.25.5), CHANGELOG.md, docs/SESSION_LEDGER.md (blok ini).
+- **Status npm test:** **38 fail / 535 total / 534 PASS / 0 FAIL / 1 SKIP (live Redis)**. Targeted Tri-Door 17/17 PASS. Syntax, Prettier, ESLint (0 error) dan `git diff --check` PASS. Cache-buster aset/UI `N/A`; Graphify NO-OP kerana `graphify-out/` tiada.
+- **Next Steps:** Selepas satu release commit dipush, sahkan `origin/main` dan satu CI run sehingga SUCCESS, kemudian laporkan Release Commit SHA + CI Run ID dengan status `RELEASED_CI_GREEN`.
+
+---
+
 ## 2026-10-27 — v3.25.4 PEMODENAN ALIRAN SOLO FULLSTACK & SINGLE-COMMIT RELEASE (MANDAT OWNER)
 
 - **Tarikh:** 2026-10-27 ~22:24 (waktu tempatan KL)

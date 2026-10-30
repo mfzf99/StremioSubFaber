@@ -180,6 +180,36 @@ test('AgentInspector [TRI-DOOR]: format anthropic (key sk-ant-) → delegasi tra
     assert.ok(calledViaChannel, 'panggilan diarahkan melalui anthropicChannel transport');
 });
 
+test('anthropicChannel: adaptive thinking disimpan dan diserialkan pada request runtime', () => {
+    const provider = anthropicChannel.buildProvider({ apiKey: 'k', model: 'claude-sonnet-4' });
+    assert.deepEqual(provider.thinking, { type: 'adaptive' });
+
+    const { body, thinkingEnabled } = provider.buildRequestBody('Hello', 'English', 'Translate');
+    assert.deepEqual(body.thinking, { type: 'adaptive' });
+    assert.equal(thinkingEnabled, false, 'adaptive tidak menggunakan bajet manual');
+    assert.equal(body.max_tokens, 64000);
+});
+
+test('anthropicChannel: thinkingBudget manual mengatasi adaptive; disabled menghapuskan field', () => {
+    const manual = anthropicChannel.buildProvider({
+        apiKey: 'k',
+        model: 'claude-sonnet-4',
+        thinkingBudget: 2048
+    });
+    const manualRequest = manual.buildRequestBody('Hello', 'English', 'Translate');
+    assert.deepEqual(manualRequest.body.thinking, { type: 'enabled', budget_tokens: 2048 });
+    assert.equal(manualRequest.thinkingEnabled, true);
+
+    const disabled = anthropicChannel.buildProvider({
+        apiKey: 'k',
+        model: 'claude-sonnet-4',
+        thinking: { type: 'disabled' }
+    });
+    const disabledRequest = disabled.buildRequestBody('Hello', 'English', 'Translate');
+    assert.deepEqual(disabledRequest.body.thinking, { type: 'disabled' });
+    assert.equal('budget_tokens' in disabledRequest.body.thinking, false);
+});
+
 test('AgentInspector [TRI-DOOR]: override manual format mengatasi autodetect key', () => {
     // Key gemini tetapi owner override openai (contoh gateway gemini-via-openai)
     const inspector = new AgentInspector({

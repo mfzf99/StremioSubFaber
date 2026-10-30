@@ -95,7 +95,8 @@ function buildProvider(options = {}) {
         topP: options.topP,
         // thinking adaptive mengikut laluan provider; temperature default
         // dikawal provider (kekangan temperature/thinking dikekalkan).
-        thinking: options.thinking !== undefined ? options.thinking : { type: 'adaptive' }
+        thinking: options.thinking !== undefined ? options.thinking : { type: 'adaptive' },
+        thinkingBudget: options.thinkingBudget
     });
 }
 
