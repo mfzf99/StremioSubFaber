@@ -2,6 +2,19 @@
 
 All notable changes to this project will be documented in this file.
 
+## SubFaber v3.25.8 (2026-10-30) — IPv4-Only Shared Provider Connections
+
+### 🔧 Fixed — Tiada Lagi Percubaan IPv6 Tanpa Laluan
+
+- **Shared DNS resolver ([`httpAgents.js`](src/utils/httpAgents.js)):** Resolver HTTP/HTTPS dikongsi kini memilih IPv4 untuk lookup biasa dan menapis alamat IPv6 daripada hasil dual-stack. Provider yang menggunakan shared agents, connection warm-up dan keep-alive tidak lagi membuang masa mencuba IPv6 pada VPS yang tiada default IPv6 route.
+- **Behavior dikekalkan:** DNS cache, connection pooling, timeout, circuit breaker dan bounded retry/backoff provider tidak berubah. Ralat DNS tetap disebarkan; tiada alamat atau kejayaan direka apabila IPv4 tidak tersedia. Resolver SSRF untuk custom provider dan konfigurasi routing OS tidak disentuh.
+
+### ✅ Regression & Verification
+
+- Suite baharu [`http-agents-ipv4-regression.test.js`](src/utils/http-agents-ipv4-regression.test.js) mengunci shared-agent resolver, dual-stack filtering dan single-address/error contracts.
+- Full suite: **39 fail / 543 total / 542 PASS / 0 FAIL / 1 SKIP (live Redis)**. Targeted tests **12/12 PASS**. Syntax, Prettier, ESLint (0 error) dan `git diff --check` lulus.
+- Sambungan sebenar SubSource menggunakan kod patch: localhost dan sandbox container VPS kedua-duanya **HTTP 200 melalui IPv4**; sandbox VPS **3/3 PASS**. Tiada perubahan UI/CSS, payload provider, config serialization atau rehidrasi; Playwright dan cache-buster aset `N/A`. IPv4 timeout luar kawalan aplikasi masih mungkin berlaku dan terus dilindungi retry sedia ada.
+
 ## SubFaber v3.25.7 (2026-10-30) — Malay Mother & Marital Honorific Precedence
 
 ### 🔧 Fixed — Agent Preflight Kini Mengutamakan Bukti Hubungan

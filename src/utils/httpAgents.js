@@ -43,7 +43,8 @@ const httpAgent = new http.Agent({
     maxSockets: 100, // Max 100 concurrent connections per host
     maxFreeSockets: 20, // Keep 20 idle connections ready for reuse
     timeout: 60000, // 60 second socket timeout
-    keepAliveMsecs: 30000 // Send keepalive probes every 30s (TCP keep-alive interval)
+    keepAliveMsecs: 30000, // Send keepalive probes every 30s (TCP keep-alive interval)
+    lookup: dnsLookup
 });
 
 /**
@@ -58,14 +59,35 @@ const httpsAgent = new https.Agent({
     keepAliveMsecs: 30000, // Send keepalive probes every 30s (TLS over TCP)
     // TLS settings for compatibility with servers that have strict requirements
     minVersion: 'TLSv1.2', // Minimum TLS 1.2 (widely supported, fixes some handshake issues)
-    rejectUnauthorized: true // Verify server certificates (security)
+    rejectUnauthorized: true, // Verify server certificates (security)
+    lookup: dnsLookup
 });
 
 // cacheable-lookup v7 is ESM-only, while this module is CommonJS. Start with
 // Node's lookup so requests can proceed immediately, then swap in the cache
 // once the dynamic import finishes.
-let activeDnsLookup = dns.lookup.bind(dns);
+function createIpv4Lookup(lookup) {
+    return (hostname, options, callback) => {
+        if (options && options.all) {
+            return lookup(hostname, { ...options, family: 0 }, (error, addresses) => {
+                if (error) {
+                    callback(error);
+                    return;
+                }
+                callback(
+                    null,
+                    addresses.filter((address) => address.family === 4)
+                );
+            });
+        }
+        return lookup(hostname, { ...options, family: 4 }, callback);
+    };
+}
 
+let activeDnsLookup = createIpv4Lookup(dns.lookup.bind(dns));
+
+// Production hosts currently use IPv4 egress. Select IPv4 inside the shared
+// resolver instead of changing Node's process-wide DNS order or OS routing.
 function dnsLookup(hostname, options, callback) {
     return activeDnsLookup(hostname, options, callback);
 }
@@ -82,8 +104,8 @@ void import('cacheable-lookup')
             errorTtl: 0, // don't cache failed lookups
             cache: new Map() // in-memory cache
         });
-        activeDnsLookup = dnsCache.lookup.bind(dnsCache);
-        log.debug(() => '[HTTP Agents] DNS cache initialized');
+        activeDnsLookup = createIpv4Lookup(dnsCache.lookup.bind(dnsCache));
+        log.debug(() => '[HTTP Agents] IPv4 DNS cache initialized');
     })
     .catch((error) => {
         log.warn(() => `[HTTP Agents] DNS cache unavailable; using Node DNS lookup: ${error.message}`);
@@ -572,6 +594,7 @@ module.exports = {
     httpsAgent,
     // Expose lookup so callers can pass it in request options
     dnsLookup,
+    createIpv4Lookup,
     // Connection warming and keep-alive
     warmUpConnections,
     startKeepAlivePings,

@@ -1,3 +1,17 @@
+## 2026-10-30 — v3.25.8 IPV4-ONLY SHARED PROVIDER CONNECTIONS (MANDAT OWNER)
+
+- **Tarikh:** 2026-10-30 ~21:15 (waktu tempatan KL)
+- **Parent HEAD SHA:** `4bc5e0e93e8ebebc52e8018c8d0924b2971a44a3`
+- **Status:** `VERIFIED_LOCAL` — release commit dan CI disahkan selepas push melalui laporan penutup; tiada commit ledger kedua.
+- **Release Commit SHA + CI Run ID:** disahkan dalam laporan penutup selepas push/CI.
+- **Keputusan Owner:** Luluskan pelan kekalkan infrastruktur IPv4 secara konsisten dan terus commit selepas implementasi/verifikasi; sambungan provider tidak perlu mencuba IPv6 pada VPS tanpa route, sementara timeout IPv4 tetap dilindungi bounded retry sedia ada.
+- **Impact & Contract Audit (Fasa A/B):** Backend networking sahaja — `createIpv4Lookup()` → shared HTTP/HTTPS agents → provider clients + warm-up/keep-alive. Dual-stack DNS ditapis kepada IPv4 dan single lookup memaksa family 4; DNS cache, timeout, circuit breaker, retry/backoff dan error propagation dikekalkan. Resolver SSRF custom provider, OS routing, payload provider dan Zon A/B/C/UI tidak berubah. Playwright/real-key tidak terpakai; live socket verification dilakukan pada localhost dan sandbox container VPS. Cache-buster aset `N/A`; Graphify NO-OP kerana `graphify-out/` tiada.
+- **Fail Terlibat:** src/utils/httpAgents.js (M), src/utils/http-agents-ipv4-regression.test.js (A: +3 ujian), package.json/package-lock.json (3.25.7→3.25.8), CHANGELOG.md, docs/SESSION_LEDGER.md (blok ini).
+- **Status npm test:** **39 fail / 543 total / 542 PASS / 0 FAIL / 1 SKIP (live Redis)**. Targeted 12/12 PASS; Prettier, syntax, ESLint (0 error) dan `git diff --check` PASS. Local dan VPS patched sandbox SubSource kedua-duanya HTTP 200 melalui IPv4; VPS sandbox 3/3 PASS dan semua artifak sementara dipadam.
+- **Next Steps:** Selepas satu release commit dipush, sahkan `origin/main` dan satu CI run sehingga SUCCESS, kemudian laporkan Release Commit SHA + CI Run ID dengan status `RELEASED_CI_GREEN`.
+
+---
+
 ## 2026-10-30 — v3.25.7 MALAY MOTHER & MARITAL HONORIFIC PRECEDENCE (MANDAT OWNER)
 
 - **Tarikh:** 2026-10-30 ~20:24 (waktu tempatan KL)
