@@ -6377,7 +6377,13 @@ async function performTranslation(
                     fallbackProviderName,
                     keyRotationConfig,
                     agentInspector: agentInspector,
-                    trinityChannel
+                    trinityChannel,
+                    // [PROMPT SETUP REGISTRY — Mandat Owner 2026-10-30] Setup
+                    // prompt statik Agent Translation dari kad config
+                    // (trinity.translation.promptSetup; passthrough config.js).
+                    // Kosong → engine fallback env TRINITY_TRANSLATION_PROMPT_SETUP
+                    // → default 'A'.
+                    promptSetup: config.trinity?.translation?.promptSetup || ''
                 }
             );
 

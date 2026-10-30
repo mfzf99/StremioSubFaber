@@ -29,7 +29,14 @@ const { getLanguagePack } = require('./prompts/languagePacks');
 const { SUBFABER_PROMPT_BOUNDARY } = require('./utils/structuredPrompt');
 // [TRINITY FASA 1 — Mandat Owner 2026-10-19] SystemPart statik Agent Translation
 // kini Single Source of Truth di prompts/trinity/translation/core.js (verbatim).
-const { TRANSLATION_SYSTEM_TEMPLATE } = require('./prompts/trinity/translation/core');
+// [PROMPT SETUP REGISTRY — Mandat Owner 2026-10-30] core.js kekal SSOT kontrak
+// export; teks templat kini disimpan dalam registry setup (setups/setupA.js =
+// Setup A baseline verbatim). Engine resolve setup aktif per-instance melalui
+// options.promptSetup / env TRINITY_TRANSLATION_PROMPT_SETUP (default 'A').
+// Import core.js langsung DIGUGURKAN di sini (orphan selepas migrasi registry —
+// engine kini membaca templat daripada setup aktif; core.js kekal diimport oleh
+// prompts/trinity/index.js + suite regresi sebagai SSOT kontrak export).
+const { getTranslationSetup } = require('./prompts/trinity/translation/setups');
 // [TRINITY FASA 3 — Mandat Owner 2026-10-19] Channel-native static dispatch:
 // builder dibungkus (bind) SEKALI pada constructor; prompt batch dibina melalui
 // wrapper pintu (gemini anchor continuation / openai arahan eksplisit /
@@ -183,6 +190,12 @@ class TranslationEngine {
         // Sifar semakan if-channel dalam gelung terjemahan aktif.
         this.trinityChannel = options.trinityChannel || this.gemini?.trinityChannel || 'gemini';
         this._trinityPromptBuilder = resolveTrinityPrompt('translation', this.trinityChannel);
+        // [PROMPT SETUP REGISTRY — Mandat Owner 2026-10-30] Setup prompt statik
+        // Agent Translation per-instance: options.promptSetup (dari
+        // trinity.translation.promptSetup config) → env fallback → default 'A'.
+        // Resolver registry memiliki fail-safe fallback A (unknown id tidak
+        // crash aliran terjemahan). Setup A = baseline verbatim; B/C eksperimen.
+        this.promptSetup = getTranslationSetup(options.promptSetup || process.env.TRINITY_TRANSLATION_PROMPT_SETUP);
         // TOTAL PURGE (Mandat 2026-09-25): SubFaber ialah enjin tunggal.
         // Batch size dihardcode 50 (OWNER MANUAL EDIT 2026-10-07) —
         // tiada env override.
@@ -2995,10 +3008,13 @@ You MUST translate each numbered line 1:1. NEVER merge two source lines into one
         // Nota: core menggunakan label TERISIH (fallback 'the source language'
         // / 'the target language' / 'target-language' dilaksanakan di sini
         // supaya templat kanonik kekal neutral).
-        const systemPart = TRANSLATION_SYSTEM_TEMPLATE.replaceAll(
-            '${sourceLabel}',
-            sourceLabel || 'the source language'
-        )
+        // [PROMPT SETUP REGISTRY — Mandat Owner 2026-10-30] Templat statik kini
+        // dari setup aktif per-instance (this.promptSetup — default 'A' identik
+        // dengan TRANSLATION_SYSTEM_TEMPLATE lama; sifar perubahan teks runtime
+        // untuk laluan default). Setup B/C eksperimen hanya menggantikan templat
+        // statik — interpolasi label + few-shot pack kekal tanggungjawab sini.
+        const systemPart = this.promptSetup.template
+            .replaceAll('${sourceLabel}', sourceLabel || 'the source language')
             .replaceAll('${targetLabel}', targetLabel || 'the target language')
             .replaceAll('${targetLabelShort}', targetLabel || 'target-language')
             .replaceAll('${targetSpecificRules}', fewShotPack.specificRules)

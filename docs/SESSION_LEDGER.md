@@ -1,3 +1,18 @@
+## 2026-10-30 — v3.25.10 PROMPT SETUP REGISTRY AGENT TRANSLATION (MANDAT OWNER)
+
+- **Tarikh:** 2026-10-30 ~20:56 (waktu tempatan KL)
+- **Parent HEAD SHA:** `a412e8136089d0bfb11227888c6d2687b447fe06`
+- **Status:** `VERIFIED_LOCAL` — release commit dan CI disahkan selepas push melalui laporan penutup; tiada commit ledger kedua.
+- **Release Commit SHA + CI Run ID:** disahkan dalam laporan penutup selepas push/CI.
+- **Keputusan Owner:** Backup full body prompt Agent Translation sebagai Setup A (verbatim) dan bina registry supaya Setup B/C eksperimen boleh ditambah dan ditukar anytime tanpa edit kod; scope backend sahaja (Option 1), tanpa UI. Owner meluluskan terus commit melalui Single-Commit Release Pipeline.
+- **Impact & Contract Audit (Fasa A/B):** Zon C — `setups/setupA.js` (backup verbatim 2981 chars, `=== true` disahkan 3×) → `setups/index.js` (registry + fail-safe fallback A) → `core.js` (re-export SSOT kontrak, sifar perubahan teks runtime) → `translationEngine.js` (resolve setup per-instance: options.promptSetup → env `TRINITY_TRANSLATION_PROMPT_SETUP` → default 'A') → `subtitles.js` (suntikan options) → `config.js` (bypassReasons `prompt-setup` bila setup bukan-A — kunci cache tiada diskriminator prompt; eksperimen A/B tidak makan cache silang setup). Interpolasi label + few-shot pack (Malay/generic) kekal di engine; language packs, wrapper pintu, `systemInstruction` top-level, sampling/params dan taksonomi 6-jenayah tidak disentuh. Zon A/B, UI, payload serialization, rehidrasi dan DOM = `N/A`; Playwright/real-key tidak terpakai kerana tiada perubahan UI atau kontrak provider luar. Cache-buster aset `N/A`; Graphify NO-OP kerana `graphify-out/` tiada.
+- **Fail Terlibat:** src/services/prompts/trinity/translation/setups/setupA.js (A), src/services/prompts/trinity/translation/setups/index.js (A), src/services/translation-prompt-setup-regression.test.js (A: 15 ujian), src/services/prompts/trinity/translation/core.js (M), src/services/translationEngine.js (M), src/handlers/subtitles.js (M), src/utils/config.js (M), package.json/package-lock.json (3.25.9→3.25.10), CHANGELOG.md, docs/SESSION_LEDGER.md (blok ini).
+- **Status npm test:** **40 fail / 558 total / 557 PASS / 0 FAIL / 1 SKIP (live Redis)** — baseline monotonik 543→558. Targeted 90/90 PASS (setup + CCR/ULP/TPM prompt-locking, sifar assertion dilemahkan). Prettier penuh, ESLint (0 error; warning pre-existing) dan `git diff --check` PASS. Import orphan `TRANSLATION_SYSTEM_TEMPLATE` di engine dibersihkan selepas migrasi registry.
+- **Residual risk direkod:** UI save membina semula slot `trinity.translation` daripada medan dikenali sahaja (`public/js/trinity-agents.js` collectTrinity) — `promptSetup` dari config hash dipadam bila save dari UI; mitigasi env `TRINITY_TRANSLATION_PROMPT_SETUP` merentasi UI save. Dropdown UI ialah release berasingan bila B/C stabil.
+- **Next Steps:** Selepas satu release commit dipush, sahkan `origin/main` dan satu CI run sehingga SUCCESS, kemudian laporkan Release Commit SHA + CI Run ID dengan status `RELEASED_CI_GREEN`.
+
+---
+
 ## 2026-10-30 — v3.25.9 ENGLISH-ONLY CHANGELOG LOCK RESTORED (MANDAT OWNER)
 
 - **Tarikh:** 2026-10-30 ~21:56 (waktu tempatan KL)

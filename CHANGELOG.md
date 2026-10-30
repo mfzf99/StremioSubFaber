@@ -2,6 +2,24 @@
 
 All notable changes to this project will be documented in this file.
 
+## SubFaber v3.25.10 (2026-10-30) — Agent Translation Prompt Setup Registry
+
+### ✨ Added — Switchable Prompt Setups for Agent Translation
+
+- **Prompt Setup Registry ([`setups/setupA.js`](src/services/prompts/trinity/translation/setups/setupA.js), [`setups/index.js`](src/services/prompts/trinity/translation/setups/index.js)):** The static Agent Translation batch prompt (Finale v3.25.1 baseline) is now preserved verbatim as **Setup A** in a dedicated registry. Additional experimental setups (B, C, …) can be added as new `setupX.js` files and registered without touching the baseline.
+- **Runtime setup switching:** The active setup is resolved per engine instance from `trinity.translation.promptSetup` (config passthrough) with an environment fallback (`TRINITY_TRANSLATION_PROMPT_SETUP`) and a default of `A`. Unknown setup IDs fail-safe to Setup A with an explicit warning instead of crashing the translation flow.
+- **Zero-change default path:** [`core.js`](src/services/prompts/trinity/translation/core.js) remains the Single Source of Truth for the `TRANSLATION_SYSTEM_TEMPLATE` export contract and now re-exports the template from the registry; the runtime prompt text for the default path is byte-identical to the pre-registry prompt (verified `=== true`, 2981 characters).
+
+### 🔒 Fixed — Experiment Isolation
+
+- **Cache safety for non-baseline setups ([`config.js`](src/utils/config.js)):** Translation cache keys carry no prompt discriminator, so any non-`A` setup now forces `bypassCache` automatically (reason `prompt-setup`, following the existing `trinity-params-deviated` pattern). Setup B/C experiments can no longer be served cached results produced under Setup A.
+
+### ✅ Regression & Verification
+
+- The new [`translation-prompt-setup-regression.test.js`](src/services/translation-prompt-setup-regression.test.js) suite (15 tests) locks the verbatim Setup A backup, locked-zone phrases, registry resolution (default/unknown/case-insensitive), engine per-instance setup selection, environment fallback, config passthrough, and the non-`A` bypass-cache trigger.
+- Full suite: **40 files / 558 total / 557 PASS / 0 FAIL / 1 SKIP (live Redis)**. Targeted prompt-locking suites (context, language packs, Trinity prompt matrix) pass **90/90** without any weakened assertion. Prettier, ESLint (0 errors), and `git diff --check` passed.
+- Known limitation recorded: the Web UI rebuilds the `trinity.translation` slot from known fields on save, so a `promptSetup` value set through a config hash is dropped when saving from the UI; use the environment variable for experiments until a dedicated UI control is released. No UI/CSS, provider payload, sampling, or rehydration changes were made; Playwright and asset cache-busting were `N/A`.
+
 ## SubFaber v3.25.9 (2026-10-30) — English-Only Changelog Lock Restored
 
 ### 🔧 Fixed — Professional English Across Release History
