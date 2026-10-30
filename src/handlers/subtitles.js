@@ -6264,6 +6264,7 @@ async function performTranslation(
             const {
                 provider,
                 providerName: _providerName,
+                trinityChannel,
                 model,
                 fallbackProviderName
             } = await createTranslationProvider(config);
@@ -6375,7 +6376,8 @@ async function performTranslation(
                     providerName,
                     fallbackProviderName,
                     keyRotationConfig,
-                    agentInspector: agentInspector
+                    agentInspector: agentInspector,
+                    trinityChannel
                 }
             );
 

@@ -161,6 +161,9 @@ test('P2 Malay: few-shot 2 jenayah parity hadir (MERGE/SHIFT), BM "Awak ikut kam
     assert.ok(prompt.includes('EXAMPLE 1 — MERGE'), 'label jenayah MERGE pada EXAMPLE 1');
     assert.ok(prompt.includes('EXAMPLE 2 — SHIFT'), 'label jenayah SHIFT pada EXAMPLE 2');
     assert.ok(prompt.includes('Awak ikut kami,'), 'few-shot BM hadir untuk sasaran Malay');
+    assert.ok(prompt.includes('Bahasa Melayu Malaysia'), 'peraturan BM spesifik masuk ke prompt struktur');
+    assert.ok(prompt.includes('ngomong'), 'senarai hitam Indonesianisme turut dihantar');
+    assert.ok(prompt.includes('Never translate literally word-by-word'), 'anti-literal directive aktif');
     assert.ok(prompt.includes('Wrong (merged):'));
 });
 
@@ -179,6 +182,9 @@ test('P2 Vietnamese: few-shot 2 jenayah neutral — TIADA "Awak ikut kami"', () 
         assert.ok(prompt.includes(header), `few-shot header jenayah neutral hadir: ${header}`);
     }
     assert.ok(!prompt.includes('Awak ikut kami'), 'TIADA teks BM dalam prompt Vietnamese');
+    assert.ok(!prompt.includes('Bahasa Melayu Malaysia'), 'peraturan BM tidak bocor ke bahasa lain');
+    assert.ok(!prompt.includes('ngomong'), 'senarai hitam BM tidak bocor ke bahasa lain');
+    assert.ok(prompt.includes('Never translate literally word-by-word'), 'peraturan neutral kekal aktif');
     assert.ok(!prompt.includes('Tunggu'), 'TIADA teks BM (contoh PHANTOM BM) dalam prompt Vietnamese');
     assert.ok(!prompt.includes('Baiklah'), 'TIADA teks BM (contoh DROP BM) dalam prompt Vietnamese');
     assert.ok(prompt.includes('Correct:'), 'disiplin slot kekal didemonstrasi');

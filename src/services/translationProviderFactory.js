@@ -633,6 +633,7 @@ async function createTranslationProvider(config) {
 
         return {
             providerName: 'gemini',
+            trinityChannel: primary.provider.trinityChannel || 'gemini',
             provider: wrappedProvider,
             model: primary.model,
             fallbackProvider: fallbackProvider || null,
@@ -717,6 +718,7 @@ async function createTranslationProvider(config) {
 
     return {
         providerName: mainProvider,
+        trinityChannel: provider.trinityChannel || 'openai',
         provider: wrappedProvider,
         model: selectedConfig.model,
         fallbackProvider: fallbackProvider || null,

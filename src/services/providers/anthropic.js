@@ -13,6 +13,7 @@ const ANTHROPIC_VERSION = process.env.ANTHROPIC_VERSION || '2023-06-01';
 
 class AnthropicProvider {
     constructor(options = {}) {
+        this.trinityChannel = 'anthropic';
         this.apiKey = options.apiKey || '';
         this.model = options.model || '';
         this.providerName = options.providerName || 'anthropic';

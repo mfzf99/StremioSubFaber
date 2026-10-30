@@ -44,6 +44,7 @@ const parseStreamStallMs = (raw, fallback) => {
  */
 class OpenAICompatibleProvider {
     constructor(options = {}) {
+        this.trinityChannel = 'openai';
         this.apiKey = options.apiKey || '';
         this.model = options.model || '';
         this.baseUrl = (options.baseUrl || 'https://api.openai.com/v1').replace(/\/$/, '');

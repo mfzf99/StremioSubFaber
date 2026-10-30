@@ -1,3 +1,17 @@
+## 2026-10-30 — v3.25.6 PROVIDER PROMPT ROUTING & MALAY TRANSLATION FIDELITY (MANDAT OWNER)
+
+- **Tarikh:** 2026-10-30 ~18:18 (waktu tempatan KL)
+- **Parent HEAD SHA:** `b9362f0827e24b952ae6e0a10db4d18c6831574a`
+- **Status:** `VERIFIED_LOCAL` — release commit dan CI disahkan selepas push melalui laporan penutup; tiada commit ledger kedua.
+- **Release Commit SHA + CI Run ID:** disahkan dalam laporan penutup selepas push/CI.
+- **Keputusan Owner:** Selepas audit 621 entri DeepSeek OpenAI-compatible berbanding Gemini, baiki dahulu isu aplikasi yang terbukti dan terus commit sebagai patch release melalui Single-Commit Release Pipeline.
+- **Impact & Contract Audit (Fasa A/B):** Zon C — saluran provider sebenar → `createTranslationProvider()` → handler → `TranslationEngine` → pembina prompt Trinity disahkan untuk Gemini/OpenAI/Anthropic; language pack Melayu kini sampai ke structured prompt tanpa kebocoran ke bahasa lain. Sanitizer tidak lagi menindih register dialog model. Zon A/B, sampling/thinking, UI, config serialization, rehidrasi dan DOM = `N/A`; Playwright/real-key tidak terpakai kerana tiada perubahan UI atau kontrak API luar. Preprocessing tag SRT dan minimum-duration timecode tidak disentuh.
+- **Fail Terlibat:** src/services/gemini.js (M), src/services/providers/openaiCompatible.js (M), src/services/providers/anthropic.js (M), src/services/translationProviderFactory.js (M), src/handlers/subtitles.js (M), src/services/translationEngine.js (M), src/services/prompts/trinity/translation/core.js (M), src/services/trinity-prompt-matrix-regression.test.js (M), src/services/universal-language-pack-regression.test.js (M), src/services/translationEngine-brparity-regression.test.js (M), src/utils/trinity-params-regression.test.js (M), package.json/package-lock.json (3.25.5→3.25.6), CHANGELOG.md, docs/SESSION_LEDGER.md (blok ini).
+- **Status npm test:** **539 total / 538 PASS / 0 FAIL / 1 SKIP (live Redis)**. Syntax, Prettier, ESLint (0 error) dan `git diff --check` PASS. Cache-buster aset/UI `N/A`; Graphify NO-OP kerana `graphify-out/` tiada.
+- **Next Steps:** Selepas satu release commit dipush, sahkan `origin/main` dan satu CI run sehingga SUCCESS, kemudian laporkan Release Commit SHA + CI Run ID dengan status `RELEASED_CI_GREEN`.
+
+---
+
 ## 2026-10-30 — v3.25.5 ANTHROPIC ADAPTIVE THINKING RUNTIME PROPAGATION (MANDAT OWNER)
 
 - **Tarikh:** 2026-10-30 ~16:26 (waktu tempatan KL)

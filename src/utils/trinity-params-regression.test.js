@@ -521,6 +521,7 @@ test('[FASA1-C1c] END-TO-END: custom + door anthropic-messages â†’ AnthropicProv
         { temperature: 0.3, topP: 0.95 }
     );
     assert.ok(provider instanceof AnthropicProvider, 'custom door anthropic mesti membina AnthropicProvider');
+    assert.equal(provider.trinityChannel, 'anthropic');
     assert.equal(provider.baseUrl, 'https://api.anthropic.com/v1', 'baseUrl custom dihormati per-instance');
     assert.equal(provider.model, 'claude-sonnet-4');
 });
@@ -719,6 +720,7 @@ test('[E8] Bridge END-TO-END: custom MAIN + door gemini-native (Crazy Router) â†
     assert.equal(built.providerName, 'custom', 'providerName MESTI custom');
     assert.equal(built.model, 'gemini-3-flash', 'model kekal gemini-3-flash');
     const providerCtor = built.provider?.constructor?.name;
+    assert.equal(built.trinityChannel, 'gemini', 'factory mesti memilih wrapper Gemini untuk door gemini-native');
     assert.equal(
         providerCtor,
         'GeminiService',
@@ -726,6 +728,45 @@ test('[E8] Bridge END-TO-END: custom MAIN + door gemini-native (Crazy Router) â†
     );
     assert.equal(built.provider?.baseUrl, 'https://cn.crazyrouter.com/v1beta', 'baseUrl proksi v1beta dikekalkan');
     assert.notEqual(providerCtor, 'OpenAICompatibleProvider', 'SAMA SEKALI BUKAN OpenAICompatibleProvider');
+});
+
+test('[E10] TranslationEngine menggunakan saluran provider sebenar, bukan lalai Gemini', () => {
+    const TranslationEngine = require('../services/translationEngine');
+    const provider = { trinityChannel: 'openai', translateSubtitle: async () => '' };
+    const engine = new TranslationEngine(provider, 'deepseek-v4.1-flash', {}, { providerName: 'custom' });
+    const prompt = engine.createXmlBatchPrompt('<s id="7">Hello.</s>', 'Malay', null, 1, null, 0, 1);
+    assert.equal(engine.trinityChannel, 'openai');
+    assert.ok(prompt.includes('Begin your output with the <answer> block'), 'OpenAI menerima arahan eksplisit');
+    assert.ok(!prompt.trimEnd().endsWith('<s id="7">'), 'OpenAI tidak menerima prefill continuation Gemini');
+});
+
+test('[E10b] Custom OpenAI-compatible factory melabel saluran openai', async () => {
+    const { createTranslationProvider } = require('../services/translationProviderFactory');
+    const cfg = normalizeConfig({
+        multiProviderEnabled: true,
+        trinity: {
+            translation: {
+                apiKey: 'sk-custom-test',
+                provider: 'custom',
+                door: 'openai-compatible',
+                baseUrl: 'https://rootsys.cloud/v1',
+                model: 'deepseek-v4.1-flash',
+                isCustom: true,
+                enabled: true
+            }
+        }
+    });
+    const built = await createTranslationProvider(cfg);
+    assert.equal(built.provider.constructor.name, 'OpenAICompatibleProvider');
+    assert.equal(built.trinityChannel, 'openai');
+});
+
+test('[E11] Handler menyerahkan trinityChannel daripada factory kepada TranslationEngine', () => {
+    const fs = require('fs');
+    const path = require('path');
+    const source = fs.readFileSync(path.join(__dirname, '../handlers/subtitles.js'), 'utf8');
+    assert.match(source, /trinityChannel,[\s\S]{0,160}createTranslationProvider\(config\)/);
+    assert.match(source, /agentInspector: agentInspector,\s*trinityChannel/);
 });
 
 test('[E9] BASIC-MODE PURITY: agentInspector null â†’ TIADA panggilan pre-flight kepada Agent Translation (formula 4+50+2 tulen)', async () => {

@@ -181,7 +181,7 @@ class TranslationEngine {
         // wire-format sentinel IDENTIK dengan pra-Fasa 3 untuk laluan Gemini;
         // option trinityChannel dari factory menetapkan pintu sebenar).
         // Sifar semakan if-channel dalam gelung terjemahan aktif.
-        this.trinityChannel = options.trinityChannel || 'gemini';
+        this.trinityChannel = options.trinityChannel || this.gemini?.trinityChannel || 'gemini';
         this._trinityPromptBuilder = resolveTrinityPrompt('translation', this.trinityChannel);
         // TOTAL PURGE (Mandat 2026-09-25): SubFaber ialah enjin tunggal.
         // Batch size dihardcode 50 (OWNER MANUAL EDIT 2026-10-07) —
@@ -3001,6 +3001,7 @@ You MUST translate each numbered line 1:1. NEVER merge two source lines into one
         )
             .replaceAll('${targetLabel}', targetLabel || 'the target language')
             .replaceAll('${targetLabelShort}', targetLabel || 'target-language')
+            .replaceAll('${targetSpecificRules}', fewShotPack.specificRules)
             .replaceAll('${fewShot}', fewShotPack.fewShot);
 
         // [TRINITY FASA 3 — Mandat Owner 2026-10-19] Pembungkusan channel-native:
@@ -3843,74 +3844,13 @@ ${batchText}
         cleaned = cleaned
             .split('\n')
             .map((line) => {
-                const isMusicLine = /[♫♪♬♩🎵🎶]/.test(line);
+                // 1. Preserve model-selected pronouns and dialogue register.
+                //    Global replacements such as aku→saya, kau→awak, ni→ini and
+                //    jap→sekejap overrode character voice after translation.
 
-                // 1. Pronouns (dialogue only; preserve lyrics)
-                if (!isMusicLine) {
-                    line = line
-                        // Penyeragaman "dia orang" / "diorang" -> "mereka"
-                        .replace(/\bdia orang\b/g, 'mereka')
-                        .replace(/\bDia orang\b/g, 'Mereka')
-                        .replace(/\bDIA ORANG\b/g, 'MEREKA')
-                        .replace(/\bdiorang\b/g, 'mereka')
-                        .replace(/\bDiorang\b/g, 'Mereka')
-                        .replace(/\bDIORANG\b/g, 'MEREKA')
-                        .replace(/\bakulah\b/g, 'sayalah')
-                        .replace(/\bAkulah\b/g, 'Sayalah')
-                        .replace(/\bAKULAH\b/g, 'SAYALAH')
-                        .replace(/\bkaulah\b/g, 'awaklah')
-                        .replace(/\bKaulah\b/g, 'Awaklah')
-                        .replace(/\bKAULAH\b/g, 'AWAKLAH')
-                        .replace(/\bengkaulah\b/g, 'awaklah')
-                        .replace(/\bEngkaulah\b/g, 'Awaklah')
-                        .replace(/\bENGKAULAH\b/g, 'AWAKLAH')
-                        .replace(/\bkamulah\b/g, 'awaklah')
-                        .replace(/\bKamulah\b/g, 'Awaklah')
-                        .replace(/\bKAMULAH\b/g, 'AWAKLAH')
-                        .replace(/\bandalah\b/g, 'awaklah')
-                        .replace(/\bAndalah\b/g, 'Awaklah')
-                        .replace(/\bANDALAH\b/g, 'AWAKLAH')
-                        .replace(/\baku\b/g, 'saya')
-                        .replace(/\bAku\b/g, 'Saya')
-                        .replace(/\bAKU\b/g, 'SAYA')
-                        .replace(/\bkau\b/g, 'awak')
-                        .replace(/\bKau\b/g, 'Awak')
-                        .replace(/\bKAU\b/g, 'AWAK')
-                        .replace(/\bengkau\b/g, 'awak')
-                        .replace(/\bEngkau\b/g, 'Awak')
-                        .replace(/\bENGKAU\b/g, 'AWAK')
-                        .replace(/\bkamu\b/g, 'awak')
-                        .replace(/\bKamu\b/g, 'Awak')
-                        .replace(/\bKAMU\b/g, 'AWAK')
-                        .replace(/\banda\b/g, 'awak')
-                        .replace(/\bAnda\b/g, 'Awak')
-                        .replace(/\bANDA\b/g, 'AWAK');
-                }
-
-                // 2. Particles & demonstratives
+                // 2. Particles & demonstratives: preserve colloquial particles
+                //    (ni/tu/je/jap/la) instead of rewriting the model's register.
                 line = line
-                    .replace(/\bni\b/g, 'ini')
-                    .replace(/\bNi\b/g, 'Ini')
-                    .replace(/\bNI\b/g, 'INI')
-                    .replace(/\bnilah\b/g, 'inilah')
-                    .replace(/\bNilah\b/g, 'Inilah')
-                    .replace(/\bNILAH\b/g, 'INILAH')
-                    .replace(/\btulah\b/g, 'itulah')
-                    .replace(/\bTulah\b/g, 'Itulah')
-                    .replace(/\bTULAH\b/g, 'ITULAH')
-                    .replace(/\btu\b/g, 'itu')
-                    .replace(/\bTu\b/g, 'Itu')
-                    .replace(/\bTU\b/g, 'ITU')
-                    .replace(/\bje\b/g, 'saja')
-                    .replace(/\bJe\b/g, 'Saja')
-                    .replace(/\bJE\b/g, 'SAJA')
-                    .replace(/\bjap\b/g, 'sekejap')
-                    .replace(/\bJap\b/g, 'Sekejap')
-                    .replace(/\bJAP\b/g, 'SEKEJAP')
-                    .replace(/\bla\b/g, 'lah')
-                    .replace(/\bLa\b/g, 'Lah')
-                    .replace(/\bLA\b/g, 'LAH')
-
                     // 3. Loanwords & standardization
                     // Normalize "okay" variants
                     .replace(/\bokeylah\b/g, 'okaylah')

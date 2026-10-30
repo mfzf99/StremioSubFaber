@@ -541,6 +541,7 @@ function composeDefaultTranslationPrompt(targetLanguage) {
 
 class GeminiService {
     constructor(apiKey, model = '', advancedSettings = {}) {
+        this.trinityChannel = 'gemini';
         this.apiKey = typeof apiKey === 'string' ? apiKey.trim() : apiKey;
         this.authFailureCacheKey = getProviderAuthFailureCacheKey('gemini', this.apiKey);
         this.model = normalizeGeminiModelId(model || process.env.GEMINI_MODEL || 'gemini-flash-lite-latest');

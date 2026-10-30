@@ -47,6 +47,7 @@ function interpolateTranslationSystem() {
     return core.TRANSLATION_SYSTEM_TEMPLATE.replaceAll('${sourceLabel}', 'English')
         .replaceAll('${targetLabel}', 'Malay')
         .replaceAll('${targetLabelShort}', 'Malay')
+        .replaceAll('${targetSpecificRules}', pack.specificRules)
         .replaceAll('${fewShot}', pack.fewShot);
 }
 

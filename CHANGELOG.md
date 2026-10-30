@@ -2,6 +2,23 @@
 
 All notable changes to this project will be documented in this file.
 
+## SubFaber v3.25.6 (2026-10-30) — Provider Prompt Routing & Malay Translation Fidelity
+
+### 🔧 Fixed — Saluran Prompt Mengikut Provider Sebenar
+
+- **Trinity channel propagation ([`translationProviderFactory.js`](src/services/translationProviderFactory.js), [`subtitles.js`](src/handlers/subtitles.js), [`translationEngine.js`](src/services/translationEngine.js)):** Provider kini mengisytiharkan saluran prompt sebenar (`gemini`, `openai`, `anthropic`) dan menyalurkannya sehingga TranslationEngine. OpenAI-compatible tidak lagi menerima continuation prefill Gemini secara lalai.
+- **Provider coverage ([`gemini.js`](src/services/gemini.js), [`openaiCompatible.js`](src/services/providers/openaiCompatible.js), [`anthropic.js`](src/services/providers/anthropic.js)):** Penetapan saluran berasaskan transport yang dibina, bukan tekaan nama model atau kunci API.
+
+### 🔧 Fixed — Bahasa Melayu Malaysia dan Register Dialog
+
+- **Structured prompt ([`core.js`](src/services/prompts/trinity/translation/core.js)):** Peraturan khusus language pack kini disuntik ke prompt terjemahan; peraturan Bahasa Melayu Malaysia, panduan register, blacklist Indonesianism dan arahan anti-literal tidak lagi terpinggir. Peraturan bahasa lain kekal terpencil.
+- **Sanitizer ([`translationEngine.js`](src/services/translationEngine.js)):** Penggantian global yang memaksa dialog menjadi formal telah dipadam. Pilihan model seperti `aku`, `kau`, `ni`, `tu`, `jap` dan `je` dikekalkan; pembersihan struktur, brParity dan normalisasi loanword kekal.
+
+### ✅ Regression & Verification
+
+- Regression tests mengunci routing provider sebenar, factory Custom OpenAI-compatible, wiring handler → TranslationEngine, suntikan language pack Melayu tanpa kebocoran ke Vietnamese dan pemeliharaan register sanitizer.
+- Full suite: **539 total / 538 PASS / 0 FAIL / 1 SKIP (live Redis)**. Syntax, Prettier, ESLint (0 error) dan `git diff --check` lulus. Tiada perubahan UI/CSS, sampling model, preprocessing SRT atau timecode; Playwright dan cache-buster aset `N/A`.
+
 ## SubFaber v3.25.5 (2026-10-30) — Anthropic Adaptive Thinking Runtime Propagation
 
 ### 🔧 Fixed — Konfigurasi Thinking Kini Sampai ke Request Body

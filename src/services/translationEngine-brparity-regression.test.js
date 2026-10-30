@@ -135,3 +135,11 @@ test('BrParity 9: integrasi cleanTranslatedText(text, sourceText) — hook stage
     const legacy = engine.cleanTranslatedText('Hello there friend, how are you today?');
     assert.equal(countNewlines(legacy), 0, 'Legacy path: tanpa sourceText -> tiada repair');
 });
+
+test('Sanitizer register: pilihan percakapan model dikekalkan, pinjaman English dinormalisasi', () => {
+    const engine = makeEngine();
+    const cleaned = engine.cleanTranslatedText(
+        'Akulah yang cakap tadi, bukan kau.[br]Tunggu jap, ni untuk dia je, okey?'
+    );
+    assert.equal(cleaned, 'Akulah yang cakap tadi, bukan kau.\nTunggu jap, ni untuk dia je, okay?');
+});
