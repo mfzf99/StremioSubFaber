@@ -3868,13 +3868,74 @@ ${batchText}
         cleaned = cleaned
             .split('\n')
             .map((line) => {
-                // 1. Preserve model-selected pronouns and dialogue register.
-                //    Global replacements such as aku→saya, kau→awak, ni→ini and
-                //    jap→sekejap overrode character voice after translation.
+                const isMusicLine = /[♫♪♬♩🎵🎶]/.test(line);
 
-                // 2. Particles & demonstratives: preserve colloquial particles
-                //    (ni/tu/je/jap/la) instead of rewriting the model's register.
+                // 1. Pronouns (dialogue only; preserve lyrics)
+                if (!isMusicLine) {
+                    line = line
+                        // Penyeragaman "dia orang" / "diorang" -> "mereka"
+                        .replace(/\bdia orang\b/g, 'mereka')
+                        .replace(/\bDia orang\b/g, 'Mereka')
+                        .replace(/\bDIA ORANG\b/g, 'MEREKA')
+                        .replace(/\bdiorang\b/g, 'mereka')
+                        .replace(/\bDiorang\b/g, 'Mereka')
+                        .replace(/\bDIORANG\b/g, 'MEREKA')
+                        .replace(/\bakulah\b/g, 'sayalah')
+                        .replace(/\bAkulah\b/g, 'Sayalah')
+                        .replace(/\bAKULAH\b/g, 'SAYALAH')
+                        .replace(/\bkaulah\b/g, 'awaklah')
+                        .replace(/\bKaulah\b/g, 'Awaklah')
+                        .replace(/\bKAULAH\b/g, 'AWAKLAH')
+                        .replace(/\bengkaulah\b/g, 'awaklah')
+                        .replace(/\bEngkaulah\b/g, 'Awaklah')
+                        .replace(/\bENGKAULAH\b/g, 'AWAKLAH')
+                        .replace(/\bkamulah\b/g, 'awaklah')
+                        .replace(/\bKamulah\b/g, 'Awaklah')
+                        .replace(/\bKAMULAH\b/g, 'AWAKLAH')
+                        .replace(/\bandalah\b/g, 'awaklah')
+                        .replace(/\bAndalah\b/g, 'Awaklah')
+                        .replace(/\bANDALAH\b/g, 'AWAKLAH')
+                        .replace(/\baku\b/g, 'saya')
+                        .replace(/\bAku\b/g, 'Saya')
+                        .replace(/\bAKU\b/g, 'SAYA')
+                        .replace(/\bkau\b/g, 'awak')
+                        .replace(/\bKau\b/g, 'Awak')
+                        .replace(/\bKAU\b/g, 'AWAK')
+                        .replace(/\bengkau\b/g, 'awak')
+                        .replace(/\bEngkau\b/g, 'Awak')
+                        .replace(/\bENGKAU\b/g, 'AWAK')
+                        .replace(/\bkamu\b/g, 'awak')
+                        .replace(/\bKamu\b/g, 'Awak')
+                        .replace(/\bKAMU\b/g, 'AWAK')
+                        .replace(/\banda\b/g, 'awak')
+                        .replace(/\bAnda\b/g, 'Awak')
+                        .replace(/\bANDA\b/g, 'AWAK');
+                }
+
+                // 2. Particles & demonstratives
                 line = line
+                    .replace(/\bni\b/g, 'ini')
+                    .replace(/\bNi\b/g, 'Ini')
+                    .replace(/\bNI\b/g, 'INI')
+                    .replace(/\bnilah\b/g, 'inilah')
+                    .replace(/\bNilah\b/g, 'Inilah')
+                    .replace(/\bNILAH\b/g, 'INILAH')
+                    .replace(/\btulah\b/g, 'itulah')
+                    .replace(/\bTulah\b/g, 'Itulah')
+                    .replace(/\bTULAH\b/g, 'ITULAH')
+                    .replace(/\btu\b/g, 'itu')
+                    .replace(/\bTu\b/g, 'Itu')
+                    .replace(/\bTU\b/g, 'ITU')
+                    .replace(/\bje\b/g, 'saja')
+                    .replace(/\bJe\b/g, 'Saja')
+                    .replace(/\bJE\b/g, 'SAJA')
+                    .replace(/\bjap\b/g, 'sekejap')
+                    .replace(/\bJap\b/g, 'Sekejap')
+                    .replace(/\bJAP\b/g, 'SEKEJAP')
+                    .replace(/\bla\b/g, 'lah')
+                    .replace(/\bLa\b/g, 'Lah')
+                    .replace(/\bLA\b/g, 'LAH')
+
                     // 3. Loanwords & standardization
                     // Normalize "okay" variants
                     .replace(/\bokeylah\b/g, 'okaylah')

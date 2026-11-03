@@ -1,3 +1,17 @@
+## 2026-11-03 — v3.26.1 SACRED SANITIZER RESTORE & CUSTOM CRAZY ROUTER FINOPS (MANDAT OWNER)
+
+- **Tarikh:** 2026-11-03 ~11:15 (waktu tempatan KL)
+- **Parent HEAD SHA:** `3a8f565a0f856a008ea7f34dd4e3142c04454fbc`
+- **Status:** `VERIFIED_LOCAL`
+- **Release Commit SHA + CI Run ID:** disahkan dalam laporan penutup selepas push/CI.
+- **Keputusan Owner:** `cleanTranslatedText()` ialah sacred mandatory post-processing; refinement hanya semasa AI translation dan output wajib disanitasi selepasnya. Pulihkan blok asal tanpa berdolak-dalik dan fix Telegram/FinOps Crazy Router secara bijaksana.
+- **Impact & Contract Audit (Fasa A/B):** Pemansuhan sanitizer daripada commit `56046ed9` dipulihkan; ujian yang mengunci unsanitized output diganti dengan assertion kontrak sacred yang setara. FinOps custom sebelum ini membaca pool Gemini dan mengehadkan Crazy Router kepada `provider=gemini`; resolver baharu menggunakan provider aktif + `providers.custom(_secondary).apiKey/baseUrl`, hostname tepat/serantau, tanpa pendedahan kunci. Registry menggunakan credential aktif yang sama. Setup B/prompt/schema/parser/output/UI tidak berubah. Zon A/B/C UI = `N/A`; Playwright/real-key = `N/A` kerana deterministic backend regression mencukupi. Cache-buster aset NO-OP; Graphify NO-OP.
+- **Fail Terlibat:** src/services/translationEngine.js (M sacred restore), src/services/translationEngine-brparity-regression.test.js (M), src/handlers/subtitles.js (M), src/utils/telegramFinOps.js (M), src/utils/telegram-finops-regression.test.js (A: 4 ujian), package.json/package-lock.json (3.26.0→3.26.1), CHANGELOG.md, docs/SESSION_LEDGER.md (blok ini).
+- **Status npm test:** **43 fail / 577 total / 576 PASS / 0 FAIL / 1 SKIP (live Redis)**. Targeted 29/29 PASS. Prettier PASS; ESLint 0 error (warning pre-existing); `git diff --check` dan staged audit disahkan sebelum commit.
+- **Next Steps:** Selepas satu hotfix commit dipush, sahkan `origin/main` dan CI sehingga SUCCESS, kemudian laporkan Release Commit SHA + CI Run ID dengan status `RELEASED_CI_GREEN`.
+
+---
+
 ## 2026-11-03 — v3.26.0 TRINITY SETUP B NATURAL CADENCE & DISTINCTIVE GLOSSARY (MANDAT OWNER)
 
 - **Tarikh:** 2026-11-03 ~10:25 (waktu tempatan KL)

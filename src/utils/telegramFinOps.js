@@ -205,6 +205,40 @@ function drainFinOpsLedger() {
 }
 
 /**
+ * Resolve the active translation credential without mixing the official Gemini
+ * pool with a custom provider. Crazy Router custom slots may use either the
+ * OpenAI-compatible or Gemini-native door, so the active base URL—not the door
+ * or an unrelated Gemini key—determines the billing route.
+ *
+ * @param {object} config normalized user configuration
+ * @param {string} providerName provider selected by translationProviderFactory
+ * @param {string} selectedGeminiKey key selected for the official Gemini path
+ * @returns {{isCrazyRouter: boolean, activeApiKey: string}}
+ */
+function resolveActiveFinOpsRoute(config, providerName, selectedGeminiKey = '') {
+    const normalizedProvider = String(providerName || 'gemini').toLowerCase();
+    if (normalizedProvider === 'custom' || normalizedProvider === 'custom_secondary') {
+        const customConfig = config?.providers?.[normalizedProvider] || {};
+        const activeApiKey = String(customConfig.apiKey || '').trim();
+        let hostname = '';
+        try {
+            hostname = new URL(String(customConfig.baseUrl || '').trim()).hostname.toLowerCase();
+        } catch (_) {
+            // Invalid/missing custom URL cannot be identified as Crazy Router.
+        }
+        return {
+            isCrazyRouter: hostname === 'crazyrouter.com' || hostname.endsWith('.crazyrouter.com'),
+            activeApiKey
+        };
+    }
+
+    return {
+        isCrazyRouter: normalizedProvider === 'gemini' && String(selectedGeminiKey).trim().startsWith('sk-'),
+        activeApiKey: String(selectedGeminiKey || '').trim()
+    };
+}
+
+/**
  * Build the 💰 cost section HTML for the Telegram receipt.
  *
  * @param {object} params
@@ -213,7 +247,12 @@ function drainFinOpsLedger() {
  * @returns {Promise<{costSection: string, finalUSD: number, retailUSD: number,
  *                    walletBalanceUSD: number|null}>}
  */
-async function buildCostSection({ usedModel, isCrazyRouter }) {
+async function buildCostSection({
+    usedModel,
+    isCrazyRouter,
+    walletFetcher = fetchCrazyRouterWalletUSD,
+    exchangeRateFetcher = fetchExchangeRate
+}) {
     // 1. Aggregate all token usage recorded during this translation
     const { inputTokens, cachedTokens, thoughtTokens, baseOutputTokens, wastedTokens } = drainFinOpsLedger();
 
@@ -226,7 +265,7 @@ async function buildCostSection({ usedModel, isCrazyRouter }) {
     const { input: rateInput, output: rateOutput, cache: rateCache } = resolvePricing(usedModel, totalPromptSize);
 
     // 3. Live exchange rate (cached)
-    const { rate: kadarTukaranMYR, indicator: rateIndicator } = await fetchExchangeRate();
+    const { rate: kadarTukaranMYR, indicator: rateIndicator } = await exchangeRateFetcher();
 
     // 4. Cost math
     const costInput = (inputTokens / 1000000) * rateInput;
@@ -241,7 +280,7 @@ async function buildCostSection({ usedModel, isCrazyRouter }) {
     // 5. Wallet balance (cached; only for CrazyRouter)
     let walletBalanceUSD = null;
     if (isCrazyRouter) {
-        walletBalanceUSD = await fetchCrazyRouterWalletUSD();
+        walletBalanceUSD = await walletFetcher();
     }
 
     // 6. Render
@@ -337,6 +376,7 @@ function renderIncidentSection(incidents, rateUSD_MYR = FALLBACK_USD_MYR) {
 module.exports = {
     GEMINI_PRICING,
     resolvePricing,
+    resolveActiveFinOpsRoute,
     fetchExchangeRate,
     fetchCrazyRouterWalletUSD,
     drainFinOpsLedger,

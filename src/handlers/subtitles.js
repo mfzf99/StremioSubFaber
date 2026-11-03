@@ -6801,10 +6801,16 @@ async function performTranslation(
                         const { selectGeminiApiKey } = require('../utils/config');
                         const geminiKey =
                             typeof selectGeminiApiKey === 'function' ? (await selectGeminiApiKey(config)) || '' : '';
-                        const isCrazyRouter =
-                            (providerName === 'gemini' || !providerName) && String(geminiKey).trim().startsWith('sk-');
-
-                        const { buildCostSection, renderIncidentSection } = require('../utils/telegramFinOps');
+                        const {
+                            buildCostSection,
+                            renderIncidentSection,
+                            resolveActiveFinOpsRoute
+                        } = require('../utils/telegramFinOps');
+                        const { isCrazyRouter, activeApiKey } = resolveActiveFinOpsRoute(
+                            config,
+                            providerName,
+                            geminiKey
+                        );
                         const { costSection, finalUSD: _finalUSD } = await buildCostSection({
                             usedModel,
                             isCrazyRouter
@@ -6871,8 +6877,8 @@ async function performTranslation(
                         const axios = require('axios');
                         const { registerCompletedSubtitle } = require('../services/telegramBot');
 
-                        let detectedKeys = [];
-                        if (typeof config !== 'undefined') {
+                        let detectedKeys = activeApiKey ? [activeApiKey] : [];
+                        if (detectedKeys.length === 0 && typeof config !== 'undefined') {
                             if (Array.isArray(config?.geminiApiKeys)) detectedKeys = config.geminiApiKeys;
                             else if (config?.geminiApiKey) detectedKeys = [config.geminiApiKey];
                             else if (config?.apiKey) detectedKeys = [config.apiKey];

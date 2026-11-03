@@ -2,6 +2,23 @@
 
 All notable changes to this project will be documented in this file.
 
+## SubFaber v3.26.1 (2026-11-03) — Sacred Post-Processing & Custom Crazy Router FinOps
+
+### 🔒 Restored — Owner-Mandated Post-Processing Boundary
+
+- Restored the original dialogue, pronoun, particle, and demonstrative normalization block in [`cleanTranslatedText()`](src/services/translationEngine.js:3707). AI output must always pass through this Owner-defined sanitizer after translation; prompt experiments cannot override that boundary.
+- Updated the sanitizer regression to assert the restored normalization contract instead of preserving unsanitized model output. Trinity Setup B prompt content remains unchanged.
+
+### 🔧 Fixed — Telegram FinOps Uses the Active Provider
+
+- Added [`resolveActiveFinOpsRoute()`](src/utils/telegramFinOps.js:219) so custom and custom-secondary Crazy Router runs read their own active API key and base URL rather than the unrelated official Gemini key pool. Exact `crazyrouter.com` and regional subdomains are supported; lookalike hostnames and invalid URLs are rejected.
+- Telegram receipts now render Crazy Router retail price, 45% discount, actual cost, and wallet balance for custom Gemini-native runs. Registry key detection uses the same active credential, preventing official-key misclassification.
+- Added four deterministic FinOps regression tests covering regional custom routing, non-Crazy/lookalike hosts, official Gemini compatibility, and complete discounted wallet receipt rendering.
+
+### ✅ Verification
+
+- Targeted sanitizer/FinOps suites: **29/29 PASS**. Full suite: **43 files / 577 total / 576 PASS / 0 FAIL / 1 SKIP (live Redis)**. Backend only; no UI/CSS, Playwright, or asset cache-buster work was applicable.
+
 ## SubFaber v3.26.0 (2026-11-03) — Trinity Setup B: Natural Cadence Experiment
 
 ### ✨ Added — Complete Setup B Bundle and Language-Pack Overrides
