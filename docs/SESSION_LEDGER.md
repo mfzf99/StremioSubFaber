@@ -1,3 +1,17 @@
+## 2026-11-03 — v3.25.11 TRINITY-WIDE PROMPT SETUP BUNDLE (MANDAT OWNER)
+
+- **Tarikh:** 2026-11-03 ~08:34 (waktu tempatan KL)
+- **Parent HEAD SHA:** `f88cf1f4f88a6f3957c0e5b8cb5dcef80dfbe159`
+- **Status:** `VERIFIED_LOCAL`
+- **Release Commit SHA + CI Run ID:** disahkan dalam laporan penutup selepas push/CI.
+- **Keputusan Owner:** Masukkan Agent Preflight dan Agent Inspector ke dalam Setup A bersama Agent Translation; satu resolver `getTrinitySetup`, config `trinity.promptSetup`, env `TRINITY_PROMPT_SETUP`, backend sahaja. Selepas siap, terus satu release commit melalui Single-Commit Release Pipeline.
+- **Impact & Contract Audit (Fasa A/B):** Zon C — bundle Setup A tiga prompt verbatim → resolver kanonik → tiga core re-export → suntikan per-instance ke Preflight/Translation/Inspector → handler dan cache bypass. Keutamaan config kanonik → env kanonik → config/env Translation legasi → A; unknown ID fail-safe A dengan warning. Alias `.template` dan API registry Translation lama dikekalkan. Skema Preflight/Inspector, language packs, wrapper channel, `systemInstruction`, sampling dan taksonomi 7-jenayah tidak berubah. Zon A/B, UI, serialization/rehidrasi/DOM = `N/A`; Playwright/real-key `N/A` kerana backend sahaja. Cache-buster aset NO-OP; Graphify NO-OP kerana `graphify-out/` tiada.
+- **Fail Terlibat:** src/services/prompts/trinity/setups/setupA.js (A), src/services/prompts/trinity/setups/index.js (A), src/services/trinity-prompt-setup-regression.test.js (A: 7 ujian), tiga core.js (M), translation/setups/index.js (M shim), translationEngine.js (M), subfaberPreflight.js (M), agentInspector.js (M), src/handlers/subtitles.js (M), src/utils/config.js (M), package.json/package-lock.json (3.25.10→3.25.11), CHANGELOG.md, docs/SESSION_LEDGER.md (blok ini).
+- **Status npm test:** **41 fail / 565 total / 564 PASS / 0 FAIL / 1 SKIP (live Redis)**. Targeted 134/134 PASS. Tiga prompt disahkan byte-identical; tiada assertion dipadam/dilemahkan. Prettier/ESLint/final staged diff disahkan sebelum commit.
+- **Next Steps:** Selepas satu release commit dipush, sahkan `origin/main` dan satu CI run sehingga SUCCESS, kemudian laporkan Release Commit SHA + CI Run ID dengan status `RELEASED_CI_GREEN`.
+
+---
+
 ## 2026-10-30 — v3.25.10 PROMPT SETUP REGISTRY AGENT TRANSLATION (MANDAT OWNER)
 
 - **Tarikh:** 2026-10-30 ~20:56 (waktu tempatan KL)

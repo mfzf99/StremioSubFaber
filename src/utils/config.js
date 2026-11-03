@@ -1340,12 +1340,9 @@ function normalizeConfig(config) {
     // → bypass cache automatik. Kunci cache terjemahan (generateCacheKeys)
     // tiada diskriminator prompt; tanpa bypass, eksperimen Setup B/C akan
     // menerima hasil cache Setup A dan perbandingan A/B tidak sah.
-    if (
-        String(mergedConfig.trinity?.translation?.promptSetup || '')
-            .trim()
-            .toUpperCase() !== 'A' &&
-        String(mergedConfig.trinity?.translation?.promptSetup || '').trim() !== ''
-    ) {
+    const selectedPromptSetup =
+        mergedConfig.trinity?.promptSetup || mergedConfig.trinity?.translation?.promptSetup || '';
+    if (String(selectedPromptSetup).trim().toUpperCase() !== 'A' && String(selectedPromptSetup).trim() !== '') {
         bypassReasons.push('prompt-setup');
     }
     if (bypassReasons.length > 0) {

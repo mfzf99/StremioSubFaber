@@ -33,8 +33,8 @@
 // keep slot/ID parity sacred · a native speaker would actually say ·
 // 6 label rules · klausa SFX Rule 2 · natural, conversational · Never calque ·
 // never inject titles onto bare names · Output Format · ZERO translator notes.
-const { getTranslationSetup } = require('./setups');
-const TRANSLATION_SYSTEM_TEMPLATE = getTranslationSetup('A').template;
+const { getTrinitySetup } = require('../setups');
+const TRANSLATION_SYSTEM_TEMPLATE = getTrinitySetup('A').translationTemplate;
 
 module.exports = {
     TRANSLATION_SYSTEM_TEMPLATE

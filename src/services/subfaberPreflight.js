@@ -136,14 +136,17 @@ function sampleEntriesForPreflight(entries) {
 // src/services/prompts/trinity/preflight/core.js (PREFLIGHT_STATIC_TEMPLATE).
 // Fail ini kini membina templat melalui require() + interpolasi runtime;
 // teks runtime kekal IDENTIK (sifar perubahan perkataan).
-const { PREFLIGHT_STATIC_TEMPLATE } = require('./prompts/trinity/preflight/core');
+const { getTrinitySetup } = require('./prompts/trinity/setups');
 
 // [TRINITY FASA 3 — Mandat Owner 2026-10-19] Builder channel-native dari
 // registry (static dispatch). Lalai 'gemini' menghasilkan wire IDENTIK dengan
 // pra-Fasa 3; pemanggil (AgentInspector) boleh menetapkan pintu sebenar.
 const { resolveTrinityPrompt } = require('./prompts/trinity');
 
-function buildPreflightPrompt(rawText, targetLanguage, sourceLanguage, channel = 'gemini') {
+function buildPreflightPrompt(rawText, targetLanguage, sourceLanguage, channel = 'gemini', promptSetup = null) {
+    const selectedSetup =
+        promptSetup ||
+        getTrinitySetup(process.env.TRINITY_PROMPT_SETUP || process.env.TRINITY_TRANSLATION_PROMPT_SETUP);
     const src = sourceLanguage || 'the source language';
     const tgt = targetLanguage || 'the target language';
     // [UNIVERSAL-FIX] {{PLACEHOLDER}} injection: pack mengikut bahasa sasaran.
@@ -162,7 +165,8 @@ function buildPreflightPrompt(rawText, targetLanguage, sourceLanguage, channel =
     // (43-44 terms, 14-15 characters, canonical_address Puan/Encik/Cik terkunci
     // 9/14 setiap run). canonical_address KEKAL (gelaran = FAKTA); register kata
     // ganti kini diputuskan Agent Translation dari konteks chunk (bukan lock global goyah).
-    const staticPart = PREFLIGHT_STATIC_TEMPLATE.replaceAll('${src}', src)
+    const staticPart = selectedSetup.preflightTemplate
+        .replaceAll('${src}', src)
         .replaceAll('${tgt}', tgt)
         .replaceAll('${honorificMatrix}', honorificMatrix)
         .replaceAll('${canonicalAddressMatrix}', canonicalAddressMatrix)
@@ -535,7 +539,13 @@ async function runPreflightSemanticPass(entries, targetLanguage, sourceLanguage,
         // 2. Bina prompt 4-tiang + panggil AI (flat user prompt, JSON output)
         // [TRINITY FASA 3] Channel pintu diambil dari options (dilewatkan oleh
         // AgentInspector daripada instance — static dispatch, sifar heuristik).
-        const prompt = buildPreflightPrompt(rawText, targetLanguage, sourceLanguage, options.channel);
+        const prompt = buildPreflightPrompt(
+            rawText,
+            targetLanguage,
+            sourceLanguage,
+            options.channel,
+            options.promptSetup
+        );
         const callStartedAt = Date.now();
         const responseText = await geminiService.translateSubtitle(rawText, 'detected', targetLanguage, prompt);
         const callDuration = Date.now() - callStartedAt;

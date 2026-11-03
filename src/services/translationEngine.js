@@ -36,7 +36,7 @@ const { SUBFABER_PROMPT_BOUNDARY } = require('./utils/structuredPrompt');
 // Import core.js langsung DIGUGURKAN di sini (orphan selepas migrasi registry —
 // engine kini membaca templat daripada setup aktif; core.js kekal diimport oleh
 // prompts/trinity/index.js + suite regresi sebagai SSOT kontrak export).
-const { getTranslationSetup } = require('./prompts/trinity/translation/setups');
+const { getTrinitySetup } = require('./prompts/trinity/setups');
 // [TRINITY FASA 3 — Mandat Owner 2026-10-19] Channel-native static dispatch:
 // builder dibungkus (bind) SEKALI pada constructor; prompt batch dibina melalui
 // wrapper pintu (gemini anchor continuation / openai arahan eksplisit /
@@ -195,7 +195,15 @@ class TranslationEngine {
         // trinity.translation.promptSetup config) → env fallback → default 'A'.
         // Resolver registry memiliki fail-safe fallback A (unknown id tidak
         // crash aliran terjemahan). Setup A = baseline verbatim; B/C eksperimen.
-        this.promptSetup = getTranslationSetup(options.promptSetup || process.env.TRINITY_TRANSLATION_PROMPT_SETUP);
+        const trinityPromptSetup = getTrinitySetup(
+            options.promptSetup || process.env.TRINITY_PROMPT_SETUP || process.env.TRINITY_TRANSLATION_PROMPT_SETUP
+        );
+        this.promptSetup = {
+            ...trinityPromptSetup,
+            // Compatibility alias: consumer Translation lama membaca .template.
+            template: trinityPromptSetup.translationTemplate
+        };
+        log.info(() => `[PromptSetup] Active Trinity setup: '${this.promptSetup.id}' (${this.promptSetup.label})`);
         // TOTAL PURGE (Mandat 2026-09-25): SubFaber ialah enjin tunggal.
         // Batch size dihardcode 50 (OWNER MANUAL EDIT 2026-10-07) —
         // tiada env override.
@@ -3013,7 +3021,7 @@ You MUST translate each numbered line 1:1. NEVER merge two source lines into one
         // dengan TRANSLATION_SYSTEM_TEMPLATE lama; sifar perubahan teks runtime
         // untuk laluan default). Setup B/C eksperimen hanya menggantikan templat
         // statik — interpolasi label + few-shot pack kekal tanggungjawab sini.
-        const systemPart = this.promptSetup.template
+        const systemPart = this.promptSetup.translationTemplate
             .replaceAll('${sourceLabel}', sourceLabel || 'the source language')
             .replaceAll('${targetLabel}', targetLabel || 'the target language')
             .replaceAll('${targetLabelShort}', targetLabel || 'target-language')

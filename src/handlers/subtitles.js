@@ -6343,6 +6343,7 @@ async function performTranslation(
                         // BEAST MODE BETA RUN 10: siling token 131072 (128K rasmi DeepSeek
                         // apabila reasoning_effort="max") — dinormalisasi oleh config.js.
                         maxTokens: config.agentInspector.maxTokens,
+                        promptSetup: config.trinity?.promptSetup || config.trinity?.translation?.promptSetup || '',
                         ssrfLookup: createSsrfSafeLookup()
                     });
                     log.info(
@@ -6383,7 +6384,7 @@ async function performTranslation(
                     // (trinity.translation.promptSetup; passthrough config.js).
                     // Kosong → engine fallback env TRINITY_TRANSLATION_PROMPT_SETUP
                     // → default 'A'.
-                    promptSetup: config.trinity?.translation?.promptSetup || ''
+                    promptSetup: config.trinity?.promptSetup || config.trinity?.translation?.promptSetup || ''
                 }
             );
 

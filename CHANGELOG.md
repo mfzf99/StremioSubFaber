@@ -2,6 +2,24 @@
 
 All notable changes to this project will be documented in this file.
 
+## SubFaber v3.25.11 (2026-11-03) — Trinity-Wide Prompt Setup Bundles
+
+### ✨ Added — One Setup for All Three Trinity Agents
+
+- **Complete Setup A bundle ([`setups/setupA.js`](src/services/prompts/trinity/setups/setupA.js)):** Agent Preflight, Agent Translation, and Agent Inspector prompt bodies now live together in one verbatim baseline bundle. All placeholders remain unchanged, and language-pack interpolation stays with the existing builders.
+- **Canonical resolver ([`setups/index.js`](src/services/prompts/trinity/setups/index.js)):** `getTrinitySetup(id)` selects the complete bundle for every agent, with case-insensitive IDs, a default of `A`, and an explicit warning plus fail-safe fallback for unknown IDs. Runtime precedence is `trinity.promptSetup` → `TRINITY_PROMPT_SETUP` → legacy configuration/environment values → `A`.
+- **Shared instance wiring:** [`subtitles.js`](src/handlers/subtitles.js) supplies the same setup ID to Agent Preflight, Agent Translation, and Agent Inspector. Runtime logs identify the active setup, while the existing Translation registry API remains available through a compatibility shim.
+
+### 🔒 Preserved — Prompt and Experiment Isolation
+
+- All three Setup A prompt bodies are byte-identical to their previous production exports. Preflight and Inspector JSON schemas, channel wrappers, `systemInstruction`, sampling parameters, and language packs remain unchanged.
+- Any non-`A` canonical or legacy setup continues to force translation-cache bypass, preventing experiments from consuming Setup A cached results.
+
+### ✅ Regression & Verification
+
+- Added [`trinity-prompt-setup-regression.test.js`](src/services/trinity-prompt-setup-regression.test.js) with seven tests covering bundle identity, resolver behavior, injected prompt selection, shared setup resolution, environment compatibility, and cache bypass precedence.
+- Targeted prompt suites: **134/134 PASS**. Full suite: **41 files / 565 total / 564 PASS / 0 FAIL / 1 SKIP (live Redis)**. Backend only; no UI/CSS, Playwright, or asset cache-buster work was applicable.
+
 ## SubFaber v3.25.10 (2026-10-30) — Agent Translation Prompt Setup Registry
 
 ### ✨ Added — Switchable Prompt Setups for Agent Translation
