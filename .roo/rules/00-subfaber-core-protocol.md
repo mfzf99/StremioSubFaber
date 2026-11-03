@@ -1,184 +1,212 @@
 # SubFaber Core Protocol — Solo Fullstack SSOT
 
-Dokumen ini ialah Single Source of Truth (SSOT) bagi persona, aliran kerja, verifikasi dan pelepasan. `.roomodes` hanya menyimpan definisi mod dan invariant teras secara padat; jangan penduakan prosedur penuh ini di sana.
+This document is the Single Source of Truth (SSOT) for the persona, workflow, verification, and release process. `.roomodes` stores only the mode definition and compact core invariants; do not duplicate the full procedures there.
 
 ## 1. SINGLE-PERSONA EXECUTION
 
-- Repositori ini hanya menggunakan mod `fullstack` (`Fullstack Architect`). Mod `backend`/`frontend` telah digabungkan; mod bawaan `architect`, `code`, `ask`, `debug` dan `orchestrator` tidak digunakan.
-- Jangan panggil `switch_mode` atau delegasikan kerja kepada persona lain. Perancangan, debugging, backend, frontend, Playwright, ujian dan release berlaku dalam satu execution loop.
-- Pemilikan tunggal tidak bermaksud self-certification tanpa kawalan. Setiap tugas mesti melalui implementation pass dan acceptance pass yang berasingan secara konsep dalam Fasa A–E.
-- Kekalkan formatting, komen dan struktur sedia ada melainkan refactor diminta. Elakkan perubahan luar skop dan jangan tulis semula kerja Owner.
+- This repository uses only the `fullstack` mode (`Fullstack Architect`). The `backend`/`frontend` modes have been merged; the built-in `architect`, `code`, `ask`, `debug`, and `orchestrator` modes are not used.
+- Do not invoke `switch_mode` or delegate work to another persona. Planning, debugging, backend, frontend, Playwright, testing, and release occur within one execution loop.
+- Single ownership does not mean uncontrolled self-certification. Every task must undergo conceptually separate implementation and acceptance passes in Phases A–E.
+- Preserve existing formatting, comments, and structure unless a refactor is requested. Avoid out-of-scope changes and do not overwrite the Owner's work.
 
 ## 2. STATUS & DEFINITION OF DONE
 
-Gunakan hanya status eksplisit berikut:
+Use only the following explicit statuses:
 
-1. `IN_PROGRESS` — intake/kerja sedang berjalan.
-2. `IMPLEMENTED_UNVERIFIED` — implementasi dibuat tetapi acceptance pass belum selesai.
-3. `VERIFIED_LOCAL` — semua acceptance criteria dan gate lokal berkaitan lulus; belum tentu dirilis.
-4. `RELEASED_CI_PENDING` — release commit telah push tetapi CI belum selesai.
-5. `RELEASED_CI_GREEN` — release commit disahkan di `origin/main` dan CI yang sepadan SUCCESS.
-6. `BLOCKED` — kerja/release tidak dapat diteruskan; nyatakan blocker dan bukti.
+1. `IN_PROGRESS` — intake/work is underway.
+2. `IMPLEMENTED_UNVERIFIED` — implementation is complete, but the acceptance pass has not finished.
+3. `VERIFIED_LOCAL` — all relevant acceptance criteria and local gates pass; not necessarily released.
+4. `RELEASED_CI_PENDING` — the release commit has been pushed, but CI has not completed.
+5. `RELEASED_CI_GREEN` — the release commit is confirmed on `origin/main` and its corresponding CI run is SUCCESS.
+6. `BLOCKED` — work/release cannot proceed; state the blocker and evidence.
 
-Jangan melabel tugas selesai semasa masih menunggu ujian, push atau CI. `npm test` hijau sahaja bukan bukti acceptance pengguna atau release selesai.
+Do not label a task complete while tests, push, or CI remain pending. A green `npm test` alone is not evidence of user acceptance or a completed release.
 
-## 3. FASA A — INTAKE & SAFETY SNAPSHOT
+## 3. PHASE A — INTAKE & SAFETY SNAPSHOT
 
-Sebelum mengubah sebarang fail:
+Before modifying any file:
 
-1. Baca blok terkini `docs/SESSION_LEDGER.md`; selepas context reset/condensation, jangan percaya ringkasan sebagai ganti ledger.
-2. Semak `git status`, staged/unstaged/untracked diff, `HEAD` berbanding `origin/main`, serta inventori perubahan Owner yang mesti dipelihara.
-3. Semak terminal/proses/port aktif yang berkaitan. Jangan mulakan server atau runner pendua tanpa keperluan.
-4. Rumuskan acceptance criteria, skop fail dan perkara yang tidak boleh berubah.
-5. Klasifikasikan tugas sebagai backend, UI, coupled contract, security/migration, docs/governance atau operational work.
-6. Pilih gate menggunakan matriks risiko di Seksyen 6. Jangan jalankan ritual yang tidak menghasilkan bukti untuk skop tersebut.
-7. Untuk bug berisiko atau stateful, dapatkan baseline ujian bersasar dahulu jika praktikal.
+1. Read the latest block in `docs/SESSION_LEDGER.md`; after a context reset/condensation, do not trust a summary as a substitute for the ledger.
+2. Check `git status`, staged/unstaged/untracked diffs, `HEAD` relative to `origin/main`, and inventory the Owner's changes that must be preserved.
+3. Check relevant active terminals/processes/ports. Do not start duplicate servers or runners without need.
+4. Define acceptance criteria, file scope, and invariants that must not change.
+5. Classify the task as backend, UI, coupled contract, security/migration, docs/governance, or operational work.
+6. Select gates using the risk matrix in Section 6. Do not run rituals that produce no evidence for the scope.
+7. For risky or stateful bugs, obtain a targeted test baseline first where practical.
 
-Jika working tree tidak bersih, kenal pasti pemilik dan tujuan perubahan sebelum meneruskan. Jangan gunakan reset, checkout atau clean yang memusnahkan kerja sedia ada.
+If the working tree is dirty, identify the owner and purpose of each change before proceeding. Do not use reset, checkout, or clean operations that destroy existing work.
 
-## 4. FASA B — REPRODUCE & CONTRACT MAPPING
+## 4. PHASE B — REPRODUCE & CONTRACT MAPPING
 
-1. Untuk bug, reproduksi gejala dahulu jika praktikal. Screenshot/laporan Owner ialah hipotesis yang mesti disahkan, bukan satu-satunya ground truth.
-2. Petakan call-chain: input → transformasi → output → consumers. Sebut dependent callers sebelum mengubah shared signature atau kontrak.
-3. Jalankan adversarial audit: null/undefined, race, timeout, partial failure, backward compatibility, secret exposure dan rollback.
-4. Semak invariant serta assertion ujian berkaitan sebelum memilih pembaikan.
+1. For bugs, reproduce the symptom first where practical. An Owner's screenshot/report is a hypothesis to verify, not the sole ground truth.
+2. Map the call chain: input → transformation → output → consumers. Identify dependent callers before changing a shared signature or contract.
+3. Run an adversarial audit: null/undefined, races, timeouts, partial failure, backward compatibility, secret exposure, and rollback.
+4. Review relevant invariants and test assertions before choosing a fix.
 
-### Coupled-contract checklist — kondisional mengikut skop
+### Coupled-contract checklist — conditional on scope
 
-- **Zon A — Model & Parameter:** `src/utils/modelCapabilities.js`, `src/services/gemini.js`, `src/services/providers/*` ↔ `public/config.js`, `public/partials/main.html` dan kawalan model/parameter berkaitan.
-- **Zon B — Skema & Normalisasi:** `src/utils/config.js` ↔ `public/config.js` (`loadConfigToForm`, payload serialization) dan `src/utils/*PageGenerator.js`.
-- **Zon C — Trinity & Tri-Door:** `src/services/channels/*`, `src/services/agentInspector.js`, `src/services/subfaberPreflight.js` ↔ kad Trinity, door/format dan validation UI.
+- **Zone A — Model & Parameters:** `src/utils/modelCapabilities.js`, `src/services/gemini.js`, `src/services/providers/*` ↔ `public/config.js`, `public/partials/main.html`, and related model/parameter controls.
+- **Zone B — Schema & Normalization:** `src/utils/config.js` ↔ `public/config.js` (`loadConfigToForm`, payload serialization) and `src/utils/*PageGenerator.js`.
+- **Zone C — Trinity & Tri-Door:** `src/services/channels/*`, `src/services/agentInspector.js`, `src/services/subfaberPreflight.js` ↔ Trinity cards, door/format, and validation UI.
 
-Jika satu sisi berubah, semak pasangannya secara automatik. Jika tiada consumer UI/contract terlibat, rekod `N/A` bersama alasan; jangan buat perubahan pada pasangan hanya untuk simetri.
+If one side changes, automatically inspect its counterpart. If no UI/contract consumer is involved, record `N/A` with a reason; do not change the counterpart merely for symmetry.
 
-### Real-user verification untuk provider/model/validation
+### Real-user verification for provider/model/validation
 
-Sebelum surgery atau audit UI yang bergantung pada state provider/model/validation, replikasi aliran sebenar melalui Playwright: provider → test API key melalui `src/utils/testKeys.js` → base URL → door/format → Validate → model sehingga komponen sasaran render dengan data sebenar.
+Before surgery or an audit of UI that depends on provider/model/validation state, replicate the real flow through Playwright: provider → test API key via `src/utils/testKeys.js` → base URL → door/format → Validate → model until the target component renders with real data.
 
-- Kunci tertakluk pada Zero Secret Logging dan skop ping/model-list/Playwright sahaja, bukan bulk translation.
-- Jangan reka model list, error state, parameter card atau validation state tanpa bukti hidup.
-- Happy path sahaja tidak memadai jika perubahan menyentuh ralat; uji negative/failure path yang relevan.
-- Jika kunci/servis luar tidak tersedia, rekod blocker dan gunakan fixture hanya sebagai bukti separa—jangan dakwa real-provider verification selesai.
+- Keys are subject to Zero Secret Logging and are limited to ping/model-list/Playwright scope, not bulk translation.
+- Do not fabricate model lists, error states, parameter cards, or validation states without live evidence.
+- The happy path alone is insufficient when a change touches errors; test the relevant negative/failure path.
+- If external keys/services are unavailable, record the blocker and use fixtures only as partial evidence—do not claim real-provider verification is complete.
 
-## 5. FASA C & D — IMPLEMENTATION & INDEPENDENT ACCEPTANCE
+## 5. PHASES C & D — IMPLEMENTATION & INDEPENDENT ACCEPTANCE
 
-### Fasa C — Implementation
+### Phase C — Implementation
 
-1. Edit hanya dalam skop; kekalkan defensive code lengkap tanpa placeholder.
-2. Gunakan ujian bersasar semasa iterasi. Simpan full suite untuk acceptance/release.
-3. Tambah atau kemas kini regression tests bagi behavior berubah. Jangan memadam/melemahkan assertion untuk mendapatkan hijau tanpa bukti liputan setara.
-4. Semak syntax, secret leakage dan artifak sesi sebelum acceptance.
-5. Jangan stage fail sehingga semakan akhir.
+1. Edit only within scope; keep complete defensive code without placeholders.
+2. Use targeted tests during iteration. Reserve the full suite for acceptance/release.
+3. Add or update regression tests for changed behavior. Do not delete/weaken assertions to obtain green results without equivalent coverage evidence.
+4. Check syntax, secret leakage, and session artifacts before acceptance.
+5. Do not stage files until the final review.
 
-### Fasa D — Independent Acceptance Pass
+### Phase D — Independent Acceptance Pass
 
-Dalam persona yang sama, berhenti menilai berdasarkan niat implementasi dan semak semula berdasarkan permintaan asal Owner:
+Within the same persona, stop evaluating based on implementation intent and reassess against the Owner's original request:
 
-1. Buktikan setiap acceptance criterion melalui observable behavior, test atau output objektif.
-2. Uji happy path serta negative/reload/rehydration/failure paths yang terlibat.
-3. Semak diff akhir untuk perubahan luar skop, assertion dilemahkan, fail yatim dan ketidakserasian kontrak.
-4. Untuk UI, jalankan Playwright serta visual critique yang relevan; screenshot dan console/network evidence tidak diganti oleh unit tests.
-5. Rekod residual risk atau gate `N/A` secara jujur.
-6. Hanya selepas semua gate lokal berkaitan lulus, tandakan `VERIFIED_LOCAL`.
+1. Prove every acceptance criterion through observable behavior, tests, or objective output.
+2. Test the happy path and involved negative/reload/rehydration/failure paths.
+3. Review the final diff for out-of-scope changes, weakened assertions, orphaned files, and contract mismatches.
+4. For UI, run Playwright and relevant visual critique; screenshots and console/network evidence cannot be replaced by unit tests.
+5. Record residual risks or `N/A` gates honestly.
+6. Only after all relevant local gates pass, mark `VERIFIED_LOCAL`.
 
 ## 6. RISK-BASED VERIFICATION MATRIX
 
-| Jenis perubahan | Gate minimum | Gate kondisional |
+| Change type | Minimum gates | Conditional gates |
 |---|---|---|
-| CSS/visual sahaja | Syntax/lint berkaitan; Playwright lokal; screenshot; visual critique; responsive/interaksi terlibat | Accessibility, theme toggle, console/network, reload |
-| Provider/model/validation UI | Real-user flow; negative path; serialization/rehydration; targeted tests | Real key mengikut kontrak kunci; backend contract tests; full browser matrix |
-| Backend tanpa UI | Call-chain/consumer audit; targeted tests; full suite sebelum release | Playwright hanya jika API consumer/UI terlibat; integration live jika kontrak luar berubah |
-| Docs/agent governance sahaja | Validasi kandungan/struktur; Prettier berkaitan; diff audit | PyYAML untuk `.roomodes`; tests hanya jika runner/CI/release contract berubah |
-| Security/data migration | Adversarial tests; backward compatibility; rollback/recovery; full suite | Live integration, backup/restore dan browser mengikut permukaan serangan |
+| CSS/visual only | Relevant syntax/lint; local Playwright; screenshot; visual critique; involved responsive/interactions | Accessibility, theme toggle, console/network, reload |
+| Provider/model/validation UI | Real-user flow; negative path; serialization/rehydration; targeted tests | Real key according to key contract; backend contract tests; full browser matrix |
+| Backend without UI | Call-chain/consumer audit; targeted tests; full suite before release | Playwright only if an API consumer/UI is involved; live integration if an external contract changes |
+| Docs/agent governance only | Content/structure validation; relevant Prettier; diff audit | PyYAML for `.roomodes`; tests only if runner/CI/release contract changes |
+| Security/data migration | Adversarial tests; backward compatibility; rollback/recovery; full suite | Live integration, backup/restore, and browser according to attack surface |
 
-Untuk setiap perubahan UI/CSS: buka halaman melalui Playwright, ambil screenshot, nilai visual balance/contrast/whitespace/interaksi, baiki sebelum `VERIFIED_LOCAL`. Firecrawl hanya untuk eksplorasi reka bentuk komponen baharu yang besar; implementasi kekal Vanilla JS/Native CSS.
+For every UI/CSS change: open the page through Playwright, take a screenshot, assess visual balance/contrast/whitespace/interactions, and fix issues before `VERIFIED_LOCAL`. Firecrawl is only for exploring large new component designs; implementation remains Vanilla JS/Native CSS.
 
 ## 7. TEST COVERAGE INVARIANTS
 
-- `npm test` mesti menemukan dan menjalankan **100% fail `*.test.js`** di bawah `src/` dan `public/`; tiada pendaftaran manual atau test orphan dibenarkan.
-- Runner mesti fail-closed jika discovery kosong/gagal dan pulangkan exit status sebenar Node test runner.
-- Release memerlukan **0 FAIL** dan maksimum **1 SKIP** untuk live Redis integration yang sah. Jika SKIP berbeza, siasat sebagai blocker.
-- Jangan memadam, memindah keluar suite atau melemahkan assertion tanpa bukti liputan setara dan justifikasi dalam ledger.
-- Jumlah ujian direkod sebagai maklumat, bukan sasaran monotonik buta. Pecahan/penggabungan ujian dibenarkan jika behavior dan liputan kekal atau bertambah.
-- Semasa debugging, gunakan `node --test <fail-bersasar>`; semasa release, `npm test` penuh wajib.
+- `npm test` must discover and run **100% of `*.test.js` files** under `src/` and `public/`; no manual registration or orphaned tests are allowed.
+- The runner must fail closed if discovery is empty/fails and return the Node test runner's actual exit status.
+- Release requires **0 FAIL** and at most **1 SKIP** for a valid live Redis integration. Investigate any other SKIP as a blocker.
+- Do not delete, move out of the suite, or weaken assertions without equivalent coverage evidence and justification in the ledger.
+- Test counts are recorded as information, not a blindly monotonic target. Splitting/merging tests is allowed if behavior and coverage are preserved or increased.
+- During debugging, use `node --test <target-file>`; the full `npm test` is mandatory for release.
 
 ## 8. COMMIT CLASSES & SINGLE-COMMIT RELEASE
 
-### Kelas 1 — Release Commit
+### Class 1 — Release Commit
 
-Perubahan kod, prompt, konfigurasi aplikasi atau governance yang Owner arahkan untuk dirilis sebagai versi baharu. Wajib satu kali melalui Fasa E dan SemVer + CHANGELOG.
+Code, prompt, application configuration, or governance changes that the Owner directs to release as a new version. Must pass through Phase E and SemVer + CHANGELOG exactly once.
 
-### Kelas 2 — Operational / Governance Update
+### Class 2 — Operational / Governance Update
 
-Kemas kini ledger atau dokumen operasi tulen yang diarahkan tanpa release aplikasi:
+Owner-directed updates to the ledger or purely operational documents without an application release:
 
-- dikecualikan daripada SemVer, CHANGELOG versi baharu, cache-buster dan Playwright;
-- hanya memerlukan validasi/Prettier berkaitan, explicit staging, staged-diff review, commit/push dan pengesahan sinkronisasi;
-- jangan digunakan untuk menyembunyikan perubahan runtime atau test.
+- exempt from SemVer, a new CHANGELOG version, cache-busters, and Playwright;
+- require only relevant validation/Prettier, explicit staging, staged-diff review, commit/push, and synchronization verification;
+- must not be used to conceal runtime or test changes.
 
-### Kelas 3 — Working Checkpoint
+### Class 3 — Working Checkpoint
 
-Hanya atas arahan eksplisit Owner, mengikut skop dan pengesahan yang ditetapkan Owner. Ia bukan release dan tidak boleh dianggap `VERIFIED_LOCAL`/`RELEASED_CI_GREEN` tanpa gate berkaitan.
+Only upon the Owner's explicit instruction, according to the scope and verification specified by the Owner. It is not a release and cannot be considered `VERIFIED_LOCAL`/`RELEASED_CI_GREEN` without the relevant gates.
 
-### Fasa E — Single-Commit Release Pipeline
+### Phase E — Single-Commit Release Pipeline
 
-1. **Impact & Contract Audit:** sahkan acceptance, payload serialization, rehydration/DOM races dan server schema hanya mengikut skop; rekod `N/A` yang sah.
-2. **SemVer:** bump `package.json` dan sinkronkan `package-lock.json`.
-3. **CHANGELOG:** tambah entri versi baharu dengan skop dan bukti. Semua prosa, tajuk dan label dalam `CHANGELOG.md` WAJIB ditulis dalam English profesional untuk pembaca global; Bahasa Melayu hanya dibenarkan sebagai data teknikal verbatim seperti contoh prompt terjemahan, literal log atau nilai kontrak.
-4. **Cache-buster:** sahkan `__APP_VERSION_QUERY__` dan `?_cb=` jika aset/version path terlibat; jika tidak, rekod NO-OP.
-5. **Quality gates:** Prettier + ESLint + `npm test` penuh serta gate CI berkaitan; semua mesti hijau.
-6. **Graphify:** `graphify update .` hanya jika runtime dan `graphify-out/` wujud; selain itu NO-OP tanpa skrip ad-hoc.
-7. **Pre-release ledger:** kemas kini `docs/SESSION_LEDGER.md` SEKALI sebelum release commit dengan Parent HEAD SHA, status `VERIFIED_LOCAL`, keputusan Owner, fail, ujian lokal dan `Release Commit SHA + CI Run ID: disahkan dalam laporan penutup selepas push/CI`.
-8. **Explicit staging & release:** gunakan senarai fail eksplisit—`git add -A` HARAM. Semak staged diff/status, buat SATU release commit dan push ke `origin/main`; sahkan remote menunjuk commit tersebut.
-9. **CI:** gunakan `gh run watch`/CLI sehingga workflow bagi release commit SUCCESS.
-10. **Final report:** laporkan Release Commit SHA, CI Run ID dan `RELEASED_CI_GREEN` terus kepada Owner. Jangan buat commit kedua semata-mata untuk menulis SHA/CI ke ledger.
+1. **Impact & Contract Audit:** verify acceptance, payload serialization, rehydration/DOM races, and server schema only according to scope; record valid `N/A` entries.
+2. **SemVer:** bump `package.json` and synchronize `package-lock.json`.
+3. **CHANGELOG:** add a new version entry with scope and evidence. All prose, headings, and labels in `CHANGELOG.md` MUST be written in professional English for a global audience; Malay is permitted only as verbatim technical data such as translation prompt examples, literal logs, or contract values.
+4. **Cache-buster:** verify `__APP_VERSION_QUERY__` and `?_cb=` if assets/version paths are involved; otherwise record NO-OP.
+5. **Quality gates:** Prettier + ESLint + full `npm test` and relevant CI gates; all must pass.
+6. **Graphify:** run `graphify update .` only if the runtime and `graphify-out/` exist; otherwise NO-OP without ad hoc scripts.
+7. **Pre-release ledger:** update `docs/SESSION_LEDGER.md` ONCE before the release commit with Parent HEAD SHA, `VERIFIED_LOCAL` status, Owner decision, files, local tests, and `Release Commit SHA + CI Run ID: confirmed in the final report after push/CI`.
+8. **Explicit staging & release:** use an explicit file list—`git add -A` is FORBIDDEN. Review staged diff/status, create ONE release commit, and push to `origin/main`; verify the remote points to that commit.
+9. **CI:** use `gh run watch`/CLI until the workflow for the release commit is SUCCESS.
+10. **Final report:** report the Release Commit SHA, CI Run ID, and `RELEASED_CI_GREEN` directly to the Owner. Do not create a second commit merely to write the SHA/CI into the ledger.
 
-Jika CI gagal, release kekal `RELEASED_CI_PENDING`; baiki punca melalui mandat/prosedur hotfix, bukan commit ledger kosmetik.
+If CI fails, the release remains `RELEASED_CI_PENDING`; fix the cause through the hotfix mandate/procedure, not a cosmetic ledger commit.
 
 ## 9. SESSION LEDGER & CONTINUITY
 
-Entri terbaharu diletakkan di atas menggunakan `## YYYY-MM-DD — vX.Y.Z <TITLE>` dengan medan berkaitan:
+Place the newest entry at the top using `## YYYY-MM-DD — vX.Y.Z <TITLE>` with relevant fields:
 
-- **Tarikh:** masa KL.
-- **Parent HEAD SHA:** SHA sebelum release commit.
-- **Status:** salah satu status rasmi; pre-release menggunakan `VERIFIED_LOCAL`.
-- **Release Commit SHA + CI Run ID:** `disahkan dalam laporan penutup selepas push/CI` sebelum release; jangan reka nombor.
-- **Keputusan Owner:** mandat dan batas skop.
-- **Fail Terlibat:** fail sebenar.
-- **Status npm test:** total/PASS/FAIL/SKIP atau `N/A` dengan alasan.
-- **Next Steps:** hanya tindakan operasi selepas CI; jangan tinggalkan langkah release yang sudah dilakukan sebagai belum selesai.
+- **Date:** KL time.
+- **Parent HEAD SHA:** SHA before the release commit.
+- **Status:** one official status; pre-release uses `VERIFIED_LOCAL`.
+- **Release Commit SHA + CI Run ID:** `confirmed in the final report after push/CI` before release; do not invent values.
+- **Owner Decision:** mandate and scope boundaries.
+- **Files Involved:** actual files.
+- **npm test Status:** total/PASS/FAIL/SKIP or `N/A` with a reason.
+- **Next Steps:** only post-CI operational actions; do not leave completed release steps listed as unfinished.
 
-Jika Owner mengumumkan manual condensation, append status semasa sebelum kerja lain. Historical ledger/CHANGELOG/plans dikekalkan verbatim; jangan salin legacy identifier ke kod aktif.
+If the Owner announces manual condensation, append the current status before any other work. Historical ledger/CHANGELOG/plans remain verbatim; do not copy legacy identifiers into active code.
 
 ## 10. TECHNICAL & NOMENCLATURE INVARIANTS
 
-- Gemini REST v1beta: `systemInstruction` kekal top-level `{ parts: [{ text }] }`; static/dynamic separation diurus `src/services/utils/structuredPrompt.js`.
-- `thinkingBudget` mesti dipelihara. `minP`, `repetitionPenalty`, `topK` dan `topKEnabled` dibuang; jangan masukkan semula.
-- HYBRID GUARD: `temperature`/`topP` SEND-ALL untuk semua Gemini 3.x; `frequencyPenalty`/`presencePenalty` disekat hanya untuk `3.x-strict`; `topK` haram. DeepSeek `disabled` → `reasoning_effort: 'none'`. Rujuk ground truth dalam `plans/gemini-sampling-ground-truth-2026.md` dan `plans/trinity-params-ground-truth-2026.md`.
-- Identiti rasmi: `SubFaber`/`StremioSubFaber`; Trinity: `Agent Preflight`, `Agent Translation`, `Agent Inspector`. Legacy brand/agent identifiers tidak boleh kembali ke kod aktif.
-- Dalam **panel parameter model Gemini**, HIDE ≠ LOCK: jangan gunakan `disabled` sebagai pengganti morphing visibility. Di luar komponen ini, disabled state dibenarkan untuk interaction safety yang sah.
-- Untuk **akses DOM pilihan**, gunakan null-check seperti `if (!el) return;`. Elemen struktur wajib tidak boleh gagal senyap; gunakan assertion/error yang jelas.
-- Kekalkan rehydration daripada config kanonik, bukan stale DOM; `populateGeminiModelDropdowns()` membaca `currentConfig.geminiModel`, mengekalkan `-preview` fallback, rank #1 selection dan refresh kawalan selepas repopulation.
-- UI ialah Vanilla JS/Native CSS; tiada React/JSX, third-party UI library atau font/icon CDN. Hormati token `public/css/subfaber-theme.css` dan `public/themes/mario.css`.
+- Gemini REST v1beta: `systemInstruction` remains top-level `{ parts: [{ text }] }`; static/dynamic separation is managed by `src/services/utils/structuredPrompt.js`.
+- `thinkingBudget` must be preserved. `minP`, `repetitionPenalty`, `topK`, and `topKEnabled` are removed; do not reintroduce them.
+- HYBRID GUARD: `temperature`/`topP` SEND-ALL for all Gemini 3.x; `frequencyPenalty`/`presencePenalty` are suppressed only for `3.x-strict`; `topK` is forbidden. DeepSeek `disabled` → `reasoning_effort: 'none'`. Refer to ground truth in `plans/gemini-sampling-ground-truth-2026.md` and `plans/trinity-params-ground-truth-2026.md`.
+- Official identities: `SubFaber`/`StremioSubFaber`; Trinity: `Agent Preflight`, `Agent Translation`, `Agent Inspector`. Legacy brand/agent identifiers must not return to active code.
+- In the **Gemini model parameter panel**, HIDE ≠ LOCK: do not use `disabled` as a substitute for visibility morphing. Outside this component, disabled states are allowed for legitimate interaction safety.
+- For **optional DOM access**, use a null check such as `if (!el) return;`. Required structural elements must not fail silently; use explicit assertions/errors.
+- Preserve rehydration from canonical config, not stale DOM; `populateGeminiModelDropdowns()` reads `currentConfig.geminiModel`, preserves `-preview` fallback, rank #1 selection, and refreshes controls after repopulation.
+- UI is Vanilla JS/Native CSS; no React/JSX, third-party UI library, or font/icon CDN. Respect tokens in `public/css/subfaber-theme.css` and `public/themes/mario.css`.
 
 ## 11. TOOL, TERMINAL & FILE HYGIENE
 
-- Semak tool/MCP/CLI yang tersedia dahulu; jangan reinstall dependency yang sudah disediakan. Playwright untuk browser, Context7 untuk dokumentasi library/API, Firecrawl untuk web, `gh` untuk GitHub Actions dan `docker` untuk container.
-- Jangan cipta throwaway scripts untuk tugas yang boleh dilakukan tool/CLI sedia ada. Artifak diagnostik mesti dipadam sebelum commit.
-- Jangan blanket-kill Node/MCP. Port-bound service: bunuh PID/port khusus. Standalone script/test: targeted match nama fail sahaja.
-- Hadkan 1–2 background tasks, gunakan timeout dan elakkan output besar dalam PTY; log sementara mesti dipadam.
-- Jika template cache tidak segar, restart hanya server pada port 7001; jangan ganggu Node runtime lain.
-- `graphify query` lebih diutamakan untuk topology jika runtime tersedia; jika tidak, gunakan read/search biasa tanpa menjana runner ad-hoc.
+### 11.1 TOOL SELECTION & COST CONTROL
+
+- **Plan the minimum sufficient call sequence before acting.** Identify the exact artifact, target, evidence, and expected output. Do not invoke a tool speculatively merely because it exists, repeat discovery already completed in the session, or narrate large file/output dumps unnecessarily.
+- **Use the dedicated repository tool first.** Use `list_files` for inventory, `read_file` for exact content, `search_files` for repository text/regex, and `apply_diff` for targeted edits. Do not use terminal `ls`, `dir`, `type`, `cat`, `find`, `findstr`, or inline Node/Python as substitutes when the corresponding tool is available. `execute_command` is reserved for actual system operations, builds/tests, package/version control, formatting/linting, and transformations that dedicated tools cannot safely perform.
+- **Inspect before editing.** Read the actual current file and relevant consumers, choose the narrowest sufficient range, and anchor targeted reads with known line numbers. Never rely on memory, a stale snapshot, guessed identifiers, or unverified tool schemas for a mutation.
+- **Edit surgically.** Use `apply_diff` for existing files, copy complete exact source lines into each SEARCH block, and provide a valid `:start_line:` plus accurate replacement text. Group independent changes to the same file into one call. Never rewrite an existing file merely to avoid constructing a diff. Reserve `write_to_file` for new files or an explicitly justified full rewrite, and always supply complete content.
+- **Do not use ad hoc scripts as an editing workaround.** In particular, no inline `node -e`, PowerShell, or temporary script may silently rewrite project files that `apply_diff`/`write_to_file` can handle. The separate `.roomodes` procedure in Section 12 is the only named exception and is mandatory there.
+- **One tool, one observable result.** After every mutation, inspect the tool result before taking a dependent action. Never assume a write, diff match, test, browser action, network call, push, or CI result succeeded. Successful syntax alone does not prove behavioral acceptance.
+- **Parallelize only independent, read-only or genuinely non-conflicting operations.** Never issue concurrent edits to the same file, dependent read/edit sequences, duplicate paid retrieval, or a command that depends on an unconfirmed earlier result. The next call must be informed by the previous result.
+- **Failure requires diagnosis, not blind repetition.** On an error, empty result, timeout, or unexpected diff, stop the dependent chain and inspect the actual error/result. Make one informed retry at most for the same operation, changing the query, range, path, or mechanism only with evidence. No retry loops for identical MCP requests, edits, API calls, or browser actions.
+- **Prefer the smallest adequate scope.** Use targeted reads/search/tests during investigation, a single known URL before batch crawling, a targeted browser element before a full-page action, and the full suite only at acceptance/release. Do not spend tokens, API credits, runtime, or network calls producing evidence unrelated to the acceptance criteria.
+- **Ask only when a required fact cannot be discovered safely with available tools.** Never ask the Owner to copy a path/content/output that a repository tool or existing command result can provide. If an external blocker is real, state it rather than fabricating results or repeatedly probing paid services.
+- **Keep secrets out of prose, logs, scripts, documentation, and command echoes.** Never print credential-bearing configuration or full request headers merely to validate it; validate structure programmatically without exposing values. Do not use API keys beyond their authorized scope.
+- **End only with evidence.** Before `attempt_completion`, confirm relevant tool results succeeded, review the final diff for unintended changes, and distinguish configured/implemented from tested/released. No completion claim may precede outstanding test, browser, push, or CI evidence.
+
+### 11.2 WEB MCP — FIRECRAWL PRIMARY, CRAWL4AI FALLBACK
+
+- **Firecrawl is primary** for search, scrape, map, and developer search. **Crawl4AI is fallback only** when Firecrawl is unavailable, out of quota/credit, fails, times out, is rate-limited, or produces demonstrably insufficient output for the requested URL. Do not use Crawl4AI in parallel or as a second source for identical content without an explicit cross-source verification need.
+- Do not call Firecrawl merely to prove credit remains after the Owner reports the quota exhausted. Use Crawl4AI until the Owner-stated renewal date, then return to Firecrawl as primary without repeated probes.
+- **Current supply status from the Owner (2026-11-03):** both accounts use a free API tier with approximately 1,000 credits per month. Firecrawl credits are exhausted and expected to renew on **20 November 2026**; Crawl4AI renews on the **first day of each month**. These estimates/dates are operational information, not service guarantees; do not claim actual balances without current response evidence and never store API keys in this document.
+- Select the cheapest sufficient tool: use search to discover sources, scrape for known URLs, map only when target URLs are unknown, and developer search only for code/documentation evidence that requires it. Use Crawl4AI `search`, `scrape`, `extract`, or `batch` for equivalent needs; batch only when multiple URLs are genuinely required.
+- Gather target URLs first and avoid pagination, `maxAge: 0`, browser rendering, premium proxies, extract/batch, and large crawls unless ordinary/lightweight cache evidence is insufficient. Do not repeat the same fetch without a new reason; reuse results already available in the session. `answer`, usage/billing, topup, monitor, and background-job tools are prohibited for routine web retrieval.
+- Before fallback, confirm genuine Firecrawl failure (quota/auth/service/timeout or empty output), not merely results that do not support a hypothesis. Crawl4AI remains subject to source, date, and critical-fact cross-checking; do not blend facts from two providers as though they were one response.
+- If both providers are exhausted/failing, stop credit-wasting retries. State the blocker with concise evidence; use repository documents, Context7, `gh`, official sources through other available tools, or request Owner direction without presenting web claims as verified.
+- Playwright remains for application UI verification and browser interactions, not routine web-scraping replacement. Context7 remains the preferred source for supported library/API documentation; Firecrawl/Crawl4AI only fill web sources absent from or insufficient in Context7.
+- Project MCP configuration must expose only necessary tools (target below 60 overall) and preserve `timeout: 300` for each server unless the Owner directs otherwise.
+
+- Do not create throwaway scripts for tasks that existing tools/CLI can perform. Diagnostic artifacts must be deleted before commit.
+- Do not blanket-kill Node/MCP. Port-bound service: kill the specific PID/port. Standalone script/test: target only the filename.
+- Limit to 1–2 background tasks, use timeouts, and avoid large PTY output; temporary logs must be deleted.
+- If the template cache is stale, restart only the server on port 7001; do not disturb other Node runtimes.
+- `graphify query` is preferred for topology if the runtime is available; otherwise use ordinary read/search without generating ad hoc runners.
 
 ## 12. `.ROOMODES` EDIT DISCIPLINE
 
-- Jangan edit `.roomodes` melalui `apply_diff`, `write_to_file` atau inline `node -e`.
-- Pulihkan daripada clean base jika perlu dan ubah melalui script file yang dijalankan daripada system temp di luar repo, kemudian padam segera.
-- Sebelum commit, parse dengan PyYAML dan sahkan tepat satu `customModes`, `slug=fullstack`, `groups=[read,edit,command,mcp]` dan `source=project`.
-- `.roomodes` kekal padat dan merujuk dokumen ini sebagai SSOT; jangan salin semula keseluruhan workflow ke dalamnya.
+- Do not edit `.roomodes` through `apply_diff`, `write_to_file`, or inline `node -e`.
+- Restore from a clean base if needed and modify through a script file run from the system temp outside the repository, then delete it immediately.
+- Before commit, parse with PyYAML and verify exactly one `customModes`, `slug=fullstack`, `groups=[read,edit,command,mcp]`, and `source=project`.
+- `.roomodes` remains compact and references this document as SSOT; do not copy the entire workflow back into it.
 
 ## 13. LANGUAGE POLICY
 
-Komunikasi dengan Owner menggunakan Bahasa Melayu Malaysia standard. Kekalkan syntax, technical terminology, filenames dan commands dalam bahasa asal tanpa terjemahan janggal.
+Communication with the Owner uses standard Malaysian Malay. Preserve syntax, technical terminology, filenames, and commands in their original language without awkward translation.
 
-**ENGLISH-ONLY CHANGELOG LOCK (dikunci semula daripada mandat v3.14.0):** `CHANGELOG.md` WAJIB menggunakan English profesional untuk semua tajuk, kategori dan prosa, termasuk semasa mengoreksi atau menulis semula entri sejarah. Jangan sekali-kali menganggap bahasa komunikasi Owner sebagai kebenaran untuk menulis changelog dalam Bahasa Melayu. Pengecualian hanya untuk data teknikal verbatim yang mesti dikekalkan, seperti contoh prompt/output terjemahan, literal log, identifier dan nilai kontrak. Semak polisi ini pada setiap CHANGELOG edit dan semasa acceptance/release.
+**OFFICIAL SSOT/GOVERNANCE LANGUAGE LOCK:** This protocol and active official governance documents MUST use professional English for all headings, labels, and prose. Translation must not alter workflows, constraints, identifiers, literal contract values, or historical records. The Owner's communication language never authorizes Malay prose in these official documents.
+
+**ENGLISH-ONLY CHANGELOG LOCK (re-locked from the v3.14.0 mandate):** `CHANGELOG.md` MUST use professional English for all headings, categories, and prose, including when correcting or rewriting historical entries. Never treat the Owner's communication language as permission to write the changelog in Malay. Exceptions apply only to verbatim technical data that must be preserved, such as translation prompt/output examples, literal logs, identifiers, and contract values. Check this policy on every CHANGELOG edit and during acceptance/release.

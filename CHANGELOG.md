@@ -2,6 +2,22 @@
 
 All notable changes to this project will be documented in this file.
 
+## SubFaber v3.27.2 (2026-11-04) — MCP Cost Controls & Fullstack Governance Hardening
+
+### ✨ Added — Remote Crawl4AI Fallback and Tool-Cost Discipline
+
+- Added the authenticated remote **Crawl4AI Streamable HTTP MCP** alongside the existing local servers. Credentials use system environment-variable references rather than tracked secrets. Reduced the exposed tool inventory from 71 to 28 while retaining essential Firecrawl, Playwright, Context7, and Crawl4AI capabilities below Zoo Code's recommended 60-tool limit.
+- Established **Firecrawl as primary and Crawl4AI as fallback only**, with Owner-recorded renewal guidance, low-cost retrieval rules, duplicate-call prevention, and explicit handling for exhausted or failing providers.
+- Added strict repository tool-selection and mutation discipline: dedicated tools before shell substitutes, surgical anchored edits, no ad hoc rewrite scripts, independent-only parallel calls, evidence-based retry limits, secret-safe validation, and proof-backed completion.
+
+### 🌐 Changed — Official SSOT Language Lock
+
+- Converted the complete active core protocol to professional English without changing its thirteen-section workflow or technical contracts. Added an explicit English-only requirement for active SSOT/governance documents while preserving standard Malaysian Malay for Owner communication.
+
+### ✅ Verification
+
+- Crawl4AI authentication and live search passed. MCP JSON, tool inventory, governance structure, no-secret checks, Prettier, and diff checks passed. No application runtime, coupled contracts, UI/CSS, or asset paths changed; Playwright and real-provider verification are not applicable. Graphify is not applicable because `graphify-out/` is absent.
+
 ## SubFaber v3.27.1 (2026-11-03) — Zoo Code 3.94.0 Single-Mode Re-Patch
 
 ### 🔧 Changed — Routine Post-Update Mode Maintenance

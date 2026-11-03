@@ -7,7 +7,7 @@
 				"firecrawl-mcp"
 			],
 			"env": {
-				"FIRECRAWL_API_KEY": "fc-b62bdf88a17748638cd18ce5b4e3b3e3"
+				"FIRECRAWL_API_KEY": "${env:FIRECRAWL_API_KEY}"
 			},
 			"alwaysAllow": [
 				"firecrawl_search",
@@ -40,7 +40,33 @@
 				"firecrawl_research_search_github",
 				"firecrawl_credit_usage"
 			],
-			"disabledTools": [],
+			"disabledTools": [
+				"firecrawl_crawl",
+				"firecrawl_check_crawl_status",
+				"firecrawl_find_tools",
+				"firecrawl_search_feedback",
+				"firecrawl_feedback",
+				"firecrawl_extract",
+				"firecrawl_agent",
+				"firecrawl_agent_status",
+				"firecrawl_interact",
+				"firecrawl_interact_stop",
+				"firecrawl_parse",
+				"firecrawl_monitor_create",
+				"firecrawl_monitor_list",
+				"firecrawl_monitor_get",
+				"firecrawl_monitor_update",
+				"firecrawl_monitor_delete",
+				"firecrawl_monitor_run",
+				"firecrawl_monitor_checks",
+				"firecrawl_monitor_check",
+				"firecrawl_research_search_papers",
+				"firecrawl_research_inspect_paper",
+				"firecrawl_research_related_papers",
+				"firecrawl_research_read_paper",
+				"firecrawl_research_search_github",
+				"firecrawl_credit_usage"
+			],
 			"timeout": 300
 		},
 		"playwright": {
@@ -76,7 +102,14 @@
 				"browser_wait_for"
 			],
 			"disabledTools": [
-				"browser_run_code_unsafe"
+				"browser_run_code_unsafe",
+				"browser_handle_dialog",
+				"browser_emulate_media",
+				"browser_file_upload",
+				"browser_drop",
+				"browser_fill_form",
+				"browser_network_request",
+				"browser_drag"
 			],
 			"timeout": 300
 		},
@@ -92,6 +125,34 @@
 			"alwaysAllow": [
 				"resolve-library-id",
 				"query-docs"
+			],
+			"timeout": 300
+		},
+		"crawl4ai": {
+			"type": "streamable-http",
+			"url": "https://api.crawl4ai.com/mcp",
+			"headers": {
+				"Authorization": "Bearer ${env:CRAWL4AI_API_KEY}"
+			},
+			"alwaysAllow": [
+				"search",
+				"scrape",
+				"extract",
+				"batch"
+			],
+			"disabledTools": [
+				"answer",
+				"balance",
+				"estimate",
+				"jobs_submit",
+				"jobs_results",
+				"jobs_status",
+				"plans",
+				"recharge",
+				"report_issue",
+				"serp",
+				"spend_cap",
+				"topup"
 			],
 			"timeout": 300
 		}

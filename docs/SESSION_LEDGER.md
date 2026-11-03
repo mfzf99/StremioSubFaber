@@ -1,3 +1,17 @@
+## 2026-11-04 — v3.27.2 MCP FALLBACK & TOOL-COST GOVERNANCE (OWNER MANDATE)
+
+- **Date:** 2026-11-04 ~01:59 (KL time)
+- **Parent HEAD SHA:** `1a591fee312148f8d3cb807bc4d92e273b02f7b4`
+- **Status:** `VERIFIED_LOCAL`
+- **Release Commit SHA + CI Run ID:** confirmed in the final report after push/CI.
+- **Owner Decision:** Configure authenticated Crawl4AI MCP, reduce the enabled MCP tool inventory below the Zoo Code warning threshold, verify all MCP timeouts, codify Firecrawl-primary/Crawl4AI-fallback operation and strict tool-cost discipline, convert the official SSOT to professional English, then release everything through one Single-Commit Release Pipeline commit.
+- **Impact & Contract Audit (Phase A/B):** Project MCP now exposes 28 tools across four servers, all with `timeout: 300`. Crawl4AI live authenticated search passed before secret externalization. Both MCP credentials now use `${env:...}` references backed by verified User-level Windows environment variables; a full VS Code restart is required to inherit them. The first local release commit was rejected by GitHub Push Protection before reaching the remote; its unpushed commit is being amended to remove tracked secrets rather than bypassing protection. The SSOT records current Owner-supplied quota/renewal guidance, low-cost provider selection, bounded retries, dedicated-tool precedence, surgical edits, independent-only parallelism, and proof-backed completion. Zones A/B/C, application payload serialization, rehydration/DOM, server schema, Trinity, Tri-Door, UI/CSS, Playwright, and real-provider verification = `N/A`; no application runtime changed. The Owner's existing Firecrawl credential update is preserved securely. Asset cache-buster NO-OP; Graphify NO-OP (`graphify-out/` absent).
+- **Files Involved:** .roo/mcp.json (M: remote Crawl4AI + disabled-tool inventory), .roo/rules/00-subfaber-core-protocol.md (M: complete English translation + governance), package.json/package-lock.json (3.27.1→3.27.2), CHANGELOG.md, docs/SESSION_LEDGER.md (this block).
+- **npm test Status:** **45 files / 588 total / 587 PASS / 0 FAIL / 1 SKIP (live Redis)**. Prettier `--check .` PASS; ESLint **0 errors / 226 pre-existing warnings**. MCP JSON/tool-count, no-secret, version synchronization, and `git diff --check` PASS.
+- **Next Steps:** After the single release commit is pushed, verify `origin/main` and CI until SUCCESS, then report the Release Commit SHA + CI Run ID as `RELEASED_CI_GREEN`. Refresh MCP Servers in Zoo Code to load the reduced tool inventory.
+
+---
+
 ## 2026-11-03 — v3.27.1 RUTIN PATCH ZOO CODE 3.94.0 KEPADA MOD TUNGGAL FULLSTACK (MANDAT OWNER)
 
 - **Tarikh:** 2026-11-03 ~20:43 (waktu tempatan KL)
