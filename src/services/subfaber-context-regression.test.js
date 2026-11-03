@@ -325,7 +325,7 @@ test('SubFaberSharedContext: previousMemory rendered as continuity block (single
 const { splitStructuredPrompt, SUBFABER_PROMPT_BOUNDARY } = require('./utils/structuredPrompt');
 
 test('SubFaberPrompt V4: slim sharp prompt, split system/user, no double-send', () => {
-    const engine = makeEngine({ subfaberEnabled: true });
+    const engine = makeEngine({ subfaberEnabled: true }, { promptSetup: 'A' });
     engine.sourceLanguage = 'English';
     const batch = makeEntries(2, 1);
     const batchText = engine.prepareBatchXml(batch, null);

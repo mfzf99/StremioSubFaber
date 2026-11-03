@@ -2,6 +2,24 @@
 
 All notable changes to this project will be documented in this file.
 
+## SubFaber v3.26.0 (2026-11-03) — Trinity Setup B: Natural Cadence Experiment
+
+### ✨ Added — Complete Setup B Bundle and Language-Pack Overrides
+
+- Added the Owner-supplied Setup B bundle for Agent Preflight, Agent Translation, and Agent Inspector in [`setupB.js`](src/services/prompts/trinity/setups/setupB.js). Preflight now restricts glossary extraction to distinctive terminology, Translation refines spoken cadence and formatting guidance, and Inspector recognizes valid interjections, discourse particles, and adjacent-slot clause reordering.
+- Added setup-scoped Malay and generic language-pack overrides through [`getLanguagePack()`](src/services/prompts/languagePacks/index.js:67). Setup B receives only its declared `specificRules` and Malay `fewShot` changes while inheriting the remaining canonical pack content.
+
+### 🔧 Changed — Setup B Is Now the Active Default
+
+- Empty or unspecified Trinity setup selection now resolves to **B**. Explicit `A` remains available for controlled comparisons and rollback; unknown IDs still warn and fail safely to **A**.
+- Default Setup B forces translation-cache bypass because existing cache keys do not contain a prompt discriminator. Explicit Setup A retains its previous cache behavior.
+- Preserved all existing composer, parser, JSON schema, channel wrapper, output, sampling, and `systemInstruction` contracts. Setup A and both base language packs remain byte-identical.
+
+### ✅ Regression & Verification
+
+- Added [`trinity-prompt-setup-b-regression.test.js`](src/services/trinity-prompt-setup-b-regression.test.js) with eight tests covering bundle registration, Setup A/base-pack isolation, override inheritance, all three agent prompt deltas, and complete placeholder interpolation. Historical Setup A tests now select A explicitly rather than relying on the global default.
+- Targeted prompt suites: **189/189 PASS**. Full suite: **42 files / 573 total / 572 PASS / 0 FAIL / 1 SKIP (live Redis)**. Backend only; no UI/CSS, Playwright, or asset cache-buster work was applicable.
+
 ## SubFaber v3.25.12 (2026-11-03) — Production Dependency Security Hotfix
 
 ### 🔒 Fixed — CI Dependency Audit

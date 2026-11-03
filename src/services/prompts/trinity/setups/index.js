@@ -11,9 +11,11 @@
 
 const log = require('../../../../utils/logger');
 const setupA = require('./setupA');
+const setupB = require('./setupB');
 
-const TRINITY_PROMPT_SETUPS = [setupA];
-const DEFAULT_TRINITY_PROMPT_SETUP_ID = 'A';
+const TRINITY_PROMPT_SETUPS = [setupA, setupB];
+const DEFAULT_TRINITY_PROMPT_SETUP_ID = 'B';
+const FALLBACK_TRINITY_PROMPT_SETUP_ID = 'A';
 
 function normalizeSetupId(raw) {
     return String(raw || '')
@@ -32,7 +34,7 @@ function getTrinitySetup(rawId) {
     if (found) return found;
     log.warn(
         () =>
-            `[PromptSetup] Unknown Trinity prompt setup '${rawId}' — falling back to Setup '${DEFAULT_TRINITY_PROMPT_SETUP_ID}' (${setupA.label})`
+            `[PromptSetup] Unknown Trinity prompt setup '${rawId}' — falling back to Setup '${FALLBACK_TRINITY_PROMPT_SETUP_ID}' (${setupA.label})`
     );
     return setupA;
 }
@@ -43,6 +45,7 @@ function listTrinitySetups() {
 
 module.exports = {
     DEFAULT_TRINITY_PROMPT_SETUP_ID,
+    FALLBACK_TRINITY_PROMPT_SETUP_ID,
     getTrinitySetup,
     listTrinitySetups
 };

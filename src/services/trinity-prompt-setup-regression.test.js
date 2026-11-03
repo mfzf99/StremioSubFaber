@@ -9,7 +9,13 @@ const test = require('node:test');
 const assert = require('node:assert/strict');
 
 const setupA = require('./prompts/trinity/setups/setupA');
-const { DEFAULT_TRINITY_PROMPT_SETUP_ID, getTrinitySetup, listTrinitySetups } = require('./prompts/trinity/setups');
+const setupB = require('./prompts/trinity/setups/setupB');
+const {
+    DEFAULT_TRINITY_PROMPT_SETUP_ID,
+    FALLBACK_TRINITY_PROMPT_SETUP_ID,
+    getTrinitySetup,
+    listTrinitySetups
+} = require('./prompts/trinity/setups');
 const { PREFLIGHT_STATIC_TEMPLATE } = require('./prompts/trinity/preflight/core');
 const { TRANSLATION_SYSTEM_TEMPLATE } = require('./prompts/trinity/translation/core');
 const { INSPECTOR_INSTRUCTION } = require('./prompts/trinity/inspector/core');
@@ -28,11 +34,13 @@ test('[TRINITY-SETUP-1] Setup A menyimpan ketiga-tiga prompt byte-identical deng
 });
 
 test('[TRINITY-SETUP-2] Resolver default, case-insensitive, fallback dan senarai tidak mendedahkan prompt', () => {
-    assert.equal(DEFAULT_TRINITY_PROMPT_SETUP_ID, 'A');
-    assert.equal(getTrinitySetup(''), setupA);
+    assert.equal(DEFAULT_TRINITY_PROMPT_SETUP_ID, 'B');
+    assert.equal(FALLBACK_TRINITY_PROMPT_SETUP_ID, 'A');
+    assert.equal(getTrinitySetup(''), setupB);
     assert.equal(getTrinitySetup(' a '), setupA);
     assert.equal(getTrinitySetup('unknown'), setupA);
     assert.deepEqual(listTrinitySetups()[0], { id: 'A', label: setupA.label });
+    assert.deepEqual(listTrinitySetups()[1], { id: 'B', label: setupB.label });
 });
 
 test('[TRINITY-SETUP-3] Builder Preflight dan Inspector membaca prompt daripada bundle yang disuntik', () => {

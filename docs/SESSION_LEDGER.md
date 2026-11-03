@@ -1,3 +1,17 @@
+## 2026-11-03 — v3.26.0 TRINITY SETUP B NATURAL CADENCE & DISTINCTIVE GLOSSARY (MANDAT OWNER)
+
+- **Tarikh:** 2026-11-03 ~10:25 (waktu tempatan KL)
+- **Parent HEAD SHA:** `7cf7ff42198e06bcdd4e783d6e09e3e5511bb2de`
+- **Status:** `VERIFIED_LOCAL`
+- **Release Commit SHA + CI Run ID:** disahkan dalam laporan penutup selepas push/CI.
+- **Keputusan Owner:** Selepas run terkawal Setup A selesai, tukar sistem Trinity kepada Setup B dengan parameter/model/batch yang sama untuk perbandingan line-by-line, kemudian terus satu release commit.
+- **Impact & Contract Audit (Fasa A/B):** Zon C — bundle Setup B tiga prompt → resolver kanonik lalai B → setup-scoped Malay/generic overrides → Preflight/Translation/Inspector; unknown ID kekal fail-safe A. Setup A dan base packs byte-identical; explicit A mengekalkan prompt/cache lama. Config kosong/lalai B memaksa bypass cache kerana cache key tiada diskriminator prompt. Composer, parser, skema JSON, wrapper channel, output, `systemInstruction`, sampling dan UI tidak berubah. Zon A/B = `N/A`; Playwright/real-key = `N/A` kerana backend prompt registry sahaja. Cache-buster aset NO-OP; Graphify NO-OP kerana `graphify-out/` tiada.
+- **Fail Terlibat:** src/services/prompts/trinity/setups/setupB.js (A), setups/index.js (M), languagePacks/index.js (M), subfaberPreflight.js (M), translationEngine.js (M), src/utils/config.js (M), src/services/trinity-prompt-setup-b-regression.test.js (A: 8 ujian), lima fail regression baseline (M: explicit A/default B), plans/trinity-prompt-experiment-blueprint.md (A), package.json/package-lock.json (3.25.12→3.26.0), CHANGELOG.md, docs/SESSION_LEDGER.md (blok ini).
+- **Status npm test:** **42 fail / 573 total / 572 PASS / 0 FAIL / 1 SKIP (live Redis)**. Targeted 189/189 PASS. Prettier PASS; ESLint 0 error (warning pre-existing); `git diff --check` PASS. Tiada assertion dipadam/dilemahkan; ujian kawalan dipin kepada A secara eksplisit.
+- **Next Steps:** Selepas satu release commit dipush, sahkan `origin/main` dan CI sehingga SUCCESS, kemudian laporkan Release Commit SHA + CI Run ID dengan status `RELEASED_CI_GREEN`.
+
+---
+
 ## 2026-11-03 — v3.25.12 PRODUCTION DEPENDENCY SECURITY HOTFIX (CI FOLLOW-UP)
 
 - **Tarikh:** 2026-11-03 ~08:41 (waktu tempatan KL)

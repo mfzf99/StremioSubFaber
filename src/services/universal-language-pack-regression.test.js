@@ -148,7 +148,15 @@ test('P2 Malay: few-shot 2 jenayah parity hadir (MERGE/SHIFT), BM "Awak ikut kam
         streamTranslateSubtitle: async () => '',
         estimateTokenCount: () => 10
     };
-    const engine = new TranslationEngine(dummyGemini, 'gemini-2.5-flash', {}, { providerName: 'gemini' });
+    const engine = new TranslationEngine(
+        dummyGemini,
+        'gemini-2.5-flash',
+        {},
+        {
+            providerName: 'gemini',
+            promptSetup: 'A'
+        }
+    );
     engine.sourceLanguage = 'English';
     const batchText = '<s id="1">You are coming with us,</s>\n<s id="2">aren\'t you?</s>';
     const prompt = engine.createXmlBatchPrompt(batchText, 'Malay', null, 2, null, 0, 1);

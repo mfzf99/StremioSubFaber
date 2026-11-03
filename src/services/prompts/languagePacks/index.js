@@ -64,9 +64,11 @@ function isMalayTarget(targetLang) {
  * @returns {{code, aliases, honorificMatrix, canonicalAddressMatrix,
  *            creditsExample, fewShot, specificRules, notLockedGuidance}}
  */
-function getLanguagePack(targetLang) {
-    if (isMalayTarget(targetLang)) return malayPack;
-    return genericPack;
+function getLanguagePack(targetLang, promptSetup = null) {
+    const isMalay = isMalayTarget(targetLang);
+    const basePack = isMalay ? malayPack : genericPack;
+    const overrides = promptSetup?.languagePackOverrides?.[isMalay ? 'malay' : 'generic'];
+    return overrides ? { ...basePack, ...overrides } : basePack;
 }
 
 module.exports = {

@@ -1341,7 +1341,7 @@ function normalizeConfig(config) {
     // tiada diskriminator prompt; tanpa bypass, eksperimen Setup B/C akan
     // menerima hasil cache Setup A dan perbandingan A/B tidak sah.
     const selectedPromptSetup =
-        mergedConfig.trinity?.promptSetup || mergedConfig.trinity?.translation?.promptSetup || '';
+        mergedConfig.trinity?.promptSetup || mergedConfig.trinity?.translation?.promptSetup || 'B';
     if (String(selectedPromptSetup).trim().toUpperCase() !== 'A' && String(selectedPromptSetup).trim() !== '') {
         bypassReasons.push('prompt-setup');
     }

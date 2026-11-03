@@ -65,16 +65,16 @@ test('[SETUP-A3] Setup A kekal kunci frasa ZON TERKUNCI (CCR/ULP/TPM assertion l
 
 // ── 2. Registry — resolver + fail-safe fallback ────────────────────────────
 
-test('[REG-1] Default (kosong/null/undefined) → Setup A', () => {
-    assert.equal(getTranslationSetup('').id, 'A');
-    assert.equal(getTranslationSetup(null).id, 'A');
-    assert.equal(getTranslationSetup(undefined).id, 'A');
-    assert.equal(DEFAULT_TRANSLATION_PROMPT_SETUP_ID, 'A');
+test('[REG-1] Default (kosong/null/undefined) → Setup B', () => {
+    assert.equal(getTranslationSetup('').id, 'B');
+    assert.equal(getTranslationSetup(null).id, 'B');
+    assert.equal(getTranslationSetup(undefined).id, 'B');
+    assert.equal(DEFAULT_TRANSLATION_PROMPT_SETUP_ID, 'B');
 });
 
 test('[REG-2] Id tidak dikenali → fail-safe fallback A (bukan crash)', () => {
     assert.equal(getTranslationSetup('Z').id, 'A');
-    assert.equal(getTranslationSetup('B').id, 'A', 'B belum berdaftar → fallback A');
+    assert.equal(getTranslationSetup('B').id, 'B', 'B berdaftar → resolver mengekalkan B');
     assert.equal(getTranslationSetup('nonsense').id, 'A');
 });
 
@@ -98,14 +98,16 @@ function makeEngine(options) {
     return new TranslationEngine(provider, 'gemini-2.5-flash', {}, options || {});
 }
 
-test('[ENGINE-1] Engine default → Setup A (sifar perubahan laluan legasi)', () => {
+test('[ENGINE-1] Engine default → Setup B; Setup A eksplisit kekal byte-identical', () => {
     const engine = makeEngine();
-    assert.equal(engine.promptSetup.id, 'A');
-    assert.equal(engine.promptSetup.template, core.TRANSLATION_SYSTEM_TEMPLATE);
+    const engineA = makeEngine({ promptSetup: 'A' });
+    assert.equal(engine.promptSetup.id, 'B');
+    assert.equal(engineA.promptSetup.id, 'A');
+    assert.equal(engineA.promptSetup.template, core.TRANSLATION_SYSTEM_TEMPLATE);
 });
 
-test('[ENGINE-2] options.promptSetup tidak dikenali → fallback A + prompt IDENTIK default', () => {
-    const engineDefault = makeEngine();
+test('[ENGINE-2] options.promptSetup tidak dikenali → fallback A + prompt IDENTIK Setup A eksplisit', () => {
+    const engineDefault = makeEngine({ promptSetup: 'A' });
     const engineUnknown = makeEngine({ promptSetup: 'Z' });
     assert.equal(engineUnknown.promptSetup.id, 'A');
     const pDefault = engineDefault.createXmlBatchPrompt('<s id="1">Hello.</s>', 'Malay', null, 1, null, 0, 1);
@@ -113,8 +115,8 @@ test('[ENGINE-2] options.promptSetup tidak dikenali → fallback A + prompt IDEN
     assert.equal(pUnknown, pDefault, 'prompt fallback mesti identik dengan default');
 });
 
-test('[ENGINE-3] Prompt batch default kekal kontrak penuh (interpolasi + few-shot BM)', () => {
-    const engine = makeEngine();
+test('[ENGINE-3] Prompt batch Setup A kekal kontrak penuh (interpolasi + few-shot BM)', () => {
+    const engine = makeEngine({ promptSetup: 'A' });
     engine.sourceLanguage = 'English';
     const prompt = engine.createXmlBatchPrompt('<s id="1">Hello.</s>', 'Malay', null, 1, null, 0, 1);
     assert.ok(prompt.includes('## Role'), 'seksyen Role hadir');
@@ -152,11 +154,11 @@ test('[CFG-2] Setup bukan-A → bypassCache dipaksa (prompt-setup reason)', () =
     assert.equal(cfg.bypassCache, true, 'eksperimen B mesti bypass cache');
 });
 
-test('[CFG-3] Setup A / kosong → TIADA bypass dipaksa oleh prompt-setup', () => {
+test('[CFG-3] Setup A eksplisit tiada bypass; kosong menggunakan default B dan wajib bypass', () => {
     const cfgA = normalizeConfig({ trinity: { mode: 'pro', translation: { provider: 'gemini', promptSetup: 'A' } } });
     assert.notEqual(cfgA.bypassCache, true, 'setup A tidak mencetus bypass');
     const cfgNone = normalizeConfig({ trinity: { mode: 'pro', translation: { provider: 'gemini' } } });
-    assert.notEqual(cfgNone.bypassCache, true, 'tanpa setup tidak mencetus bypass');
+    assert.equal(cfgNone.bypassCache, true, 'default B mesti mengelak cache Setup A');
 });
 
 test('[CFG-4] Setup lowercase bukan-A (cth "b") turut mencetus bypass', () => {

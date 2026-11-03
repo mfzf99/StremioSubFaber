@@ -2962,7 +2962,7 @@ You MUST translate each numbered line 1:1. NEVER merge two source lines into one
         // [UNIVERSAL-FIX] Target-conditional few-shot: pack mengikut bahasa
         // sasaran (Malay → contoh few-shot BM dari pack; bukan-Malay → contoh
         // neutral). SIFAR teks khusus-bahasa di-hardcode di sini.
-        const fewShotPack = getLanguagePack(targetLanguage);
+        const fewShotPack = getLanguagePack(targetLanguage, this.promptSetup);
 
         // SHARED PROMPT ARCHITECTURE (Mandat 2026-09-26, Lingo 1:1 parity):
         // batchText kini entri aktif SAHAJA (tiada blok konteks) — startId

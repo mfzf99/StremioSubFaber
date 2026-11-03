@@ -150,7 +150,7 @@ function buildPreflightPrompt(rawText, targetLanguage, sourceLanguage, channel =
     const src = sourceLanguage || 'the source language';
     const tgt = targetLanguage || 'the target language';
     // [UNIVERSAL-FIX] {{PLACEHOLDER}} injection: pack mengikut bahasa sasaran.
-    const pack = getLanguagePack(targetLanguage);
+    const pack = getLanguagePack(targetLanguage, selectedSetup);
     const honorificMatrix = pack.honorificMatrix.replaceAll('${tgt}', tgt);
     const canonicalAddressMatrix = pack.canonicalAddressMatrix.replaceAll('${tgt}', tgt);
     const creditsExample = pack.creditsExample.replaceAll('${tgt}', tgt);

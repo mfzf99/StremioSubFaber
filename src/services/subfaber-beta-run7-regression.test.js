@@ -103,7 +103,8 @@ test('BetaRun7/Run8: honorific directive adapts to the target language label', (
 
 // --- A.2b: Kontrak KNP terms (medan type + definisi bukan-watak) ---
 test('KNP-ALIGNMENT: terms pillar carries type field + non-character scope (2026-10-07)', () => {
-    const prompt = buildPreflightPrompt('Some dialogue.', 'Malay', 'English');
+    const { getTrinitySetup } = require('./prompts/trinity/setups');
+    const prompt = buildPreflightPrompt('Some dialogue.', 'Malay', 'English', 'gemini', getTrinitySetup('A'));
     assert.ok(
         prompt.includes('vocabulary of the story world ONLY'),
         'Terms scope must be story-world vocabulary (non-character) — KNP doctrine'
