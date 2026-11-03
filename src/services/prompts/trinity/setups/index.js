@@ -14,7 +14,7 @@ const setupA = require('./setupA');
 const setupB = require('./setupB');
 
 const TRINITY_PROMPT_SETUPS = [setupA, setupB];
-const DEFAULT_TRINITY_PROMPT_SETUP_ID = 'B';
+const DEFAULT_TRINITY_PROMPT_SETUP_ID = 'A';
 const FALLBACK_TRINITY_PROMPT_SETUP_ID = 'A';
 
 function normalizeSetupId(raw) {

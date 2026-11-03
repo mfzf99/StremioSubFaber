@@ -65,11 +65,11 @@ test('[SETUP-A3] Setup A kekal kunci frasa ZON TERKUNCI (CCR/ULP/TPM assertion l
 
 // ── 2. Registry — resolver + fail-safe fallback ────────────────────────────
 
-test('[REG-1] Default (kosong/null/undefined) → Setup B', () => {
-    assert.equal(getTranslationSetup('').id, 'B');
-    assert.equal(getTranslationSetup(null).id, 'B');
-    assert.equal(getTranslationSetup(undefined).id, 'B');
-    assert.equal(DEFAULT_TRANSLATION_PROMPT_SETUP_ID, 'B');
+test('[REG-1] Default (kosong/null/undefined) → Setup A', () => {
+    assert.equal(getTranslationSetup('').id, 'A');
+    assert.equal(getTranslationSetup(null).id, 'A');
+    assert.equal(getTranslationSetup(undefined).id, 'A');
+    assert.equal(DEFAULT_TRANSLATION_PROMPT_SETUP_ID, 'A');
 });
 
 test('[REG-2] Id tidak dikenali → fail-safe fallback A (bukan crash)', () => {
@@ -98,12 +98,14 @@ function makeEngine(options) {
     return new TranslationEngine(provider, 'gemini-2.5-flash', {}, options || {});
 }
 
-test('[ENGINE-1] Engine default → Setup B; Setup A eksplisit kekal byte-identical', () => {
+test('[ENGINE-1] Engine default → Setup A dan kekal byte-identical; Setup B kekal boleh dipilih', () => {
     const engine = makeEngine();
     const engineA = makeEngine({ promptSetup: 'A' });
-    assert.equal(engine.promptSetup.id, 'B');
+    const engineB = makeEngine({ promptSetup: 'B' });
+    assert.equal(engine.promptSetup.id, 'A');
     assert.equal(engineA.promptSetup.id, 'A');
     assert.equal(engineA.promptSetup.template, core.TRANSLATION_SYSTEM_TEMPLATE);
+    assert.equal(engineB.promptSetup.id, 'B');
 });
 
 test('[ENGINE-2] options.promptSetup tidak dikenali → fallback A + prompt IDENTIK Setup A eksplisit', () => {
@@ -154,11 +156,11 @@ test('[CFG-2] Setup bukan-A → bypassCache dipaksa (prompt-setup reason)', () =
     assert.equal(cfg.bypassCache, true, 'eksperimen B mesti bypass cache');
 });
 
-test('[CFG-3] Setup A eksplisit tiada bypass; kosong menggunakan default B dan wajib bypass', () => {
+test('[CFG-3] Setup A eksplisit dan default kosong tidak memaksa bypass', () => {
     const cfgA = normalizeConfig({ trinity: { mode: 'pro', translation: { provider: 'gemini', promptSetup: 'A' } } });
     assert.notEqual(cfgA.bypassCache, true, 'setup A tidak mencetus bypass');
     const cfgNone = normalizeConfig({ trinity: { mode: 'pro', translation: { provider: 'gemini' } } });
-    assert.equal(cfgNone.bypassCache, true, 'default B mesti mengelak cache Setup A');
+    assert.notEqual(cfgNone.bypassCache, true, 'default A mengekalkan tingkah laku cache baseline');
 });
 
 test('[CFG-4] Setup lowercase bukan-A (cth "b") turut mencetus bypass', () => {

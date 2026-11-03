@@ -2,6 +2,18 @@
 
 All notable changes to this project will be documented in this file.
 
+## SubFaber v3.26.2 (2026-11-03) — Trinity Setup A Restored as Default
+
+### 🔧 Changed — Controlled Setup A Run
+
+- Empty or unspecified Trinity setup selection now resolves to **A** for the Owner-requested controlled production rerun. Explicit **B** remains registered and selectable for the subsequent comparison run; unknown IDs continue to fail safely to **A**.
+- Restored baseline cache behavior for default Setup A. Explicit non-A setups, including Setup B, continue to force translation-cache bypass.
+- Preserved both prompt bundles, setup-scoped language-pack overrides, sacred [`cleanTranslatedText()`](src/services/translationEngine.js:3707) post-processing, and custom Crazy Router FinOps behavior without modification.
+
+### ✅ Verification
+
+- Targeted prompt setup suites: **30/30 PASS**. Full suite: **43 files / 577 total / 576 PASS / 0 FAIL / 1 SKIP (live Redis)**. Backend configuration only; no UI/CSS, Playwright, or asset cache-buster work was applicable.
+
 ## SubFaber v3.26.1 (2026-11-03) — Sacred Post-Processing & Custom Crazy Router FinOps
 
 ### 🔒 Restored — Owner-Mandated Post-Processing Boundary

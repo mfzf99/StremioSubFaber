@@ -25,8 +25,8 @@ function makeEngine(promptSetup) {
     );
 }
 
-test('[SETUP-B-1] Setup B berdaftar sebagai bundle lengkap dan default aktif', () => {
-    assert.equal(getTrinitySetup('').id, 'B');
+test('[SETUP-B-1] Setup B berdaftar sebagai bundle lengkap dan boleh dipilih secara eksplisit', () => {
+    assert.equal(getTrinitySetup('').id, 'A');
     assert.equal(getTrinitySetup('b'), setupB);
     assert.ok(setupB.preflightTemplate.length > 0);
     assert.ok(setupB.translationTemplate.length > 0);

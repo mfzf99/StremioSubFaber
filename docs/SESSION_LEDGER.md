@@ -1,3 +1,17 @@
+## 2026-11-03 — v3.26.2 TRINITY SETUP A DEFAULT UNTUK CONTROLLED RERUN (MANDAT OWNER)
+
+- **Tarikh:** 2026-11-03 ~11:31 (waktu tempatan KL)
+- **Parent HEAD SHA:** `1e324a4dc5c4999b52ce9378e7fb8b4422dd8178`
+- **Status:** `VERIFIED_LOCAL`
+- **Release Commit SHA + CI Run ID:** disahkan dalam laporan penutup selepas push/CI.
+- **Keputusan Owner:** Tukar semula sistem Trinity kepada Setup A untuk controlled production rerun dan terus commit melalui Single-Commit Release Pipeline.
+- **Impact & Contract Audit (Fasa A/B):** Zon C — lalai registry Trinity B→A merentas Preflight/Translation/Inspector dan consumer normalizeConfig; lalai A tidak lagi memaksa prompt-setup cache bypass. Setup B kekal berdaftar/boleh dipilih dan non-A tetap bypass; unknown ID fail-safe A. Kandungan setupA/setupB, language packs, sacred sanitizer, FinOps, schema/parser/output/UI tidak berubah. Zon A/B UI = `N/A`; Playwright/real-key = `N/A` kerana perubahan default backend sahaja. Cache-buster aset NO-OP; Graphify NO-OP.
+- **Fail Terlibat:** src/services/prompts/trinity/setups/index.js (M default A), src/utils/config.js (M default cache A), src/services/trinity-prompt-setup-regression.test.js (M), src/services/translation-prompt-setup-regression.test.js (M), src/services/trinity-prompt-setup-b-regression.test.js (M explicit B), package.json/package-lock.json (3.26.1→3.26.2), CHANGELOG.md, docs/SESSION_LEDGER.md (blok ini).
+- **Status npm test:** **43 fail / 577 total / 576 PASS / 0 FAIL / 1 SKIP (live Redis)**. Targeted 30/30 PASS. Prettier/ESLint/staged audit disahkan sebelum release commit.
+- **Next Steps:** Selepas satu release commit dipush, sahkan `origin/main` dan CI sehingga SUCCESS, kemudian laporkan Release Commit SHA + CI Run ID dengan status `RELEASED_CI_GREEN`.
+
+---
+
 ## 2026-11-03 — v3.26.1 SACRED SANITIZER RESTORE & CUSTOM CRAZY ROUTER FINOPS (MANDAT OWNER)
 
 - **Tarikh:** 2026-11-03 ~11:15 (waktu tempatan KL)

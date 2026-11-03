@@ -34,9 +34,9 @@ test('[TRINITY-SETUP-1] Setup A menyimpan ketiga-tiga prompt byte-identical deng
 });
 
 test('[TRINITY-SETUP-2] Resolver default, case-insensitive, fallback dan senarai tidak mendedahkan prompt', () => {
-    assert.equal(DEFAULT_TRINITY_PROMPT_SETUP_ID, 'B');
+    assert.equal(DEFAULT_TRINITY_PROMPT_SETUP_ID, 'A');
     assert.equal(FALLBACK_TRINITY_PROMPT_SETUP_ID, 'A');
-    assert.equal(getTrinitySetup(''), setupB);
+    assert.equal(getTrinitySetup(''), setupA);
     assert.equal(getTrinitySetup(' a '), setupA);
     assert.equal(getTrinitySetup('unknown'), setupA);
     assert.deepEqual(listTrinitySetups()[0], { id: 'A', label: setupA.label });
