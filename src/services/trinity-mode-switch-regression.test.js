@@ -159,6 +159,20 @@ test('[A8] deriveTranslationFromProviders — fallback rehidrasi providers.<main
     );
 });
 
+test('[A13] Basic Mode menggunakan formula 5+75+2 secara konsisten pada toggle dan config patch', () => {
+    const handlerMatch = trinitySrc.match(
+        /toggleInput\.addEventListener\('change', function \(\) \{[\s\S]*?\n        \}\);/
+    );
+    const patchMatch = trinitySrc.match(/function collectConfigPatch\(\) \{[\s\S]*?\n    \}/);
+    assert.ok(handlerMatch, 'handler toggle Basic mesti wujud');
+    assert.ok(patchMatch, 'collectConfigPatch mesti wujud');
+    for (const source of [handlerMatch[0], patchMatch[0]]) {
+        assert.match(source, /previousContextSize = 5;/, 'previous window = 5');
+        assert.match(source, /batchSize = 75;/, 'batch aktif = 75 baris');
+        assert.match(source, /futureContextSize = 2;/, 'future window kekal = 2');
+    }
+});
+
 // ---------------------------------------------------------------------------
 // A2. KONTRAK 4-STATE DOM MORPH v3.9.44
 // ---------------------------------------------------------------------------

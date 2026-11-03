@@ -769,7 +769,7 @@ test('[E11] Handler menyerahkan trinityChannel daripada factory kepada Translati
     assert.match(source, /agentInspector: agentInspector,\s*trinityChannel/);
 });
 
-test('[E9] BASIC-MODE PURITY: agentInspector null → TIADA panggilan pre-flight kepada Agent Translation (formula 4+50+2 tulen)', async () => {
+test('[E9] BASIC-MODE PURITY: agentInspector null → TIADA panggilan pre-flight kepada Agent Translation (formula 5+75+2 tulen)', async () => {
     const TranslationEngine = require('../services/translationEngine');
     let agentACalls = 0;
     const providerA = {

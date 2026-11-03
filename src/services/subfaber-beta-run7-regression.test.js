@@ -181,7 +181,7 @@ test('BetaRun7: pacing guard skips sleep when delay <= 0', () => {
 });
 
 test('BetaRun7: runtime inter-batch wall-clock contains no artificial 5s delay', async () => {
-    // Ujian kitaran terjemahan penuh: 100 entri → 2 kelompok @ 50. Tanpa
+    // Ujian kitaran terjemahan penuh: 150 entri → 2 kelompok @ 75. Tanpa
     // pacing, jumlah masa mesti jauh di bawah 5000ms (provider mock segerak).
     const TranslationEngineClass = TranslationEngine;
     const makeSrt = (count) =>
@@ -220,7 +220,7 @@ test('BetaRun7: runtime inter-batch wall-clock contains no artificial 5s delay',
     );
 
     const startedAt = Date.now();
-    const result = await engine.translateSubtitle(makeSrt(100), 'Malay', null, null, 'English');
+    const result = await engine.translateSubtitle(makeSrt(150), 'Malay', null, null, 'English');
     const duration = Date.now() - startedAt;
 
     assert.ok(result && result.length > 0, 'Translation must complete and return SRT');

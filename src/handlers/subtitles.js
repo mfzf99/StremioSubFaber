@@ -6384,7 +6384,8 @@ async function performTranslation(
                     // (trinity.translation.promptSetup; passthrough config.js).
                     // Kosong → engine fallback env TRINITY_TRANSLATION_PROMPT_SETUP
                     // → default 'A'.
-                    promptSetup: config.trinity?.promptSetup || config.trinity?.translation?.promptSetup || ''
+                    promptSetup: config.trinity?.promptSetup || config.trinity?.translation?.promptSetup || '',
+                    trinityMode: config.trinity?.mode || 'pro'
                 }
             );
 

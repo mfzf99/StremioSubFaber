@@ -155,16 +155,15 @@ const NATIVE_BATCH_PROVIDER_NAMES = new Set(['deepl', 'googletranslate']);
 const CACHE_TRANSLATIONS = process.env.CACHE_TRANSLATIONS === 'true'; // Enable/disable entry caching
 
 /**
- * OWNER MANUAL EDIT 2026-10-07: Batch size SubFaber = 50 baris
- * (naik semula daripada 30 Prompt-Slim Mandate — keputusan owner:
- * keseimbangan throughput panggilan vs beban token). Bersama slim
- * system prompt (~450 BPE) + BPE tokenizer guard. Sliding window
- * 4/2 (formula 4+50+2 — videolingo + owner's special tweak);
+ * OWNER MANUAL EDIT 2026-11-04: Batch size SubFaber = 75 baris
+ * (naik daripada 50 — keputusan owner: keseimbangan throughput
+ * panggilan vs beban token). Bersama slim system prompt (~450 BPE)
+ * + BPE tokenizer guard. Sliding window 5/2 (formula 5+75+2);
  * previousMemory membawa coherence antara batch.
  * Enjin SubFaber adalah enjin TUNGGAL — tiada env override, tiada mod
  * legacy 200-baris (Total Purge Mandat 2026-09-25).
  */
-const SUBFABER_BATCH_SIZE = 50;
+const SUBFABER_BATCH_SIZE = 75;
 
 // Module-level shared key health tracking across engine instances.
 // MULTI-INSTANCE: Now backed by Redis via sharedCache utilities.
@@ -195,17 +194,26 @@ class TranslationEngine {
         // trinity.translation.promptSetup config) → env fallback → default 'A'.
         // Resolver registry memiliki fail-safe fallback A (unknown id tidak
         // crash aliran terjemahan). Setup A = baseline verbatim; B/C eksperimen.
+        this.trinityMode = String(options.trinityMode || '').toLowerCase() === 'basic' ? 'basic' : 'pro';
         const trinityPromptSetup = getTrinitySetup(
             options.promptSetup || process.env.TRINITY_PROMPT_SETUP || process.env.TRINITY_TRANSLATION_PROMPT_SETUP
         );
+        const translationTemplate =
+            this.trinityMode === 'basic'
+                ? trinityPromptSetup.basicTranslationTemplate || trinityPromptSetup.translationTemplate
+                : trinityPromptSetup.translationTemplate;
         this.promptSetup = {
             ...trinityPromptSetup,
+            translationTemplate,
             // Compatibility alias: consumer Translation lama membaca .template.
-            template: trinityPromptSetup.translationTemplate
+            template: translationTemplate
         };
-        log.info(() => `[PromptSetup] Active Trinity setup: '${this.promptSetup.id}' (${this.promptSetup.label})`);
+        log.info(
+            () =>
+                `[PromptSetup] Active Trinity setup: '${this.promptSetup.id}' (${this.promptSetup.label}), mode: '${this.trinityMode}'`
+        );
         // TOTAL PURGE (Mandat 2026-09-25): SubFaber ialah enjin tunggal.
-        // Batch size dihardcode 50 (OWNER MANUAL EDIT 2026-10-07) —
+        // Batch size dihardcode 75 (OWNER MANUAL EDIT 2026-11-04) —
         // tiada env override.
         this.batchSize = SUBFABER_BATCH_SIZE;
         // SINGLE-BATCH PURGE (2026-09-29): mod single-batch dibuang sepenuhnya —
@@ -959,7 +967,7 @@ class TranslationEngine {
         // kini EKSKLUSIF Agent Inspector. Laluan fallback "Agent Translation pre-flight dirinya
         // sendiri" DIGUGURKAN — Basic Mode (Agent Inspector null) bermakna ENJIN TULen
         // 1-AI: terus ke batch 1 tanpa sebarang panggilan pra-penterjemahan
-        // (formula 4+50+2 sahaja). Tiada lagi feature Pro (konteks tema/istilah)
+        // (formula 5+75+2 sahaja). Tiada lagi feature Pro (konteks tema/istilah)
         // menyerap masuk mod Basic. Circuit breaker terbuka pun tidak melata
         // kepada Agent Translation — kegagalan Agent Inspector dibiarkan pada Agent Inspector.
         if (!this.isNativeBatchProvider && this.agentInspector && !this.agentInspector.circuitOpen) {
@@ -1250,19 +1258,18 @@ class TranslationEngine {
      * satu batch. Pembina konteks TUNGGAL (Total Purge Mandat 2026-09-25).
      *
      * GOLDEN STANDARD (Mandat 2026-09-26, ground truth VideoLingo):
-     * Sliding window ASIMETRIS — previousContent = 4 baris terakhir sebelum
+     * Sliding window ASIMETRIS — previousContent = 5 baris terakhir sebelum
      * batch, subsequentContent = 2 baris pertama selepas batch (chunk
-     * berikutnya `[:2]`). previousMemory diselaraskan kepada 4 baris lalu
+     * berikutnya `[:2]`). previousMemory diselaraskan kepada 5 baris lalu
      * yang sama. Konteks global Fasa 0 (theme + term-matching dinamik)
      * membawa beban koherens utama.
-     * [OWNER SPECIAL TWEAK 2026-10-07] previous dinaikkan 3 → 4
-     * (formula 4+50+2 — videolingo + owner's special tweak).
+     * [OWNER MANUAL EDIT 2026-11-04] formula 5+75+2.
      *
      * Struktur return (kontrak laporan backend §3.2 Pembedahan C):
      *   {
-     *     previousContent: entries[],   // source-only, 4 baris sebelum batch
+     *     previousContent: entries[],   // source-only, 5 baris sebelum batch
      *     subsequentContent: entries[], // source-only, 2 baris selepas batch
-     *     previousMemory: entries[],    // terjemahan disahkan (4 baris lalu)
+     *     previousMemory: entries[],    // terjemahan disahkan (5 baris lalu)
      *     preflight: {theme, terms}|null // konteks global Fasa 0
      *   }
      *
@@ -1282,9 +1289,9 @@ class TranslationEngine {
         }
         const batchEndIdx = batchStartIdx + batch.length - 1;
 
-        // 2. Sliding window ASIMETRIS (4+50+2 — videolingo + owner's
-        //    special tweak: prev 4 / next 2; VideoLingo asal 3/2)
-        const PREV_W = 4;
+        // 2. Sliding window ASIMETRIS (5+75+2 — owner's special tweak:
+        //    prev 5 / next 2; VideoLingo asal 3/2)
+        const PREV_W = 5;
         const NEXT_W = 2;
         const prevStart = Math.max(0, batchStartIdx - PREV_W);
         const prevEnd = batchStartIdx - 1; // -1 bermakna tiada previous (batch 1)
@@ -1666,7 +1673,7 @@ class TranslationEngine {
             // ke hadapan) dan preflight (bible Fasa 0), menyebabkan separuh
             // kedua diterjemah tanpa panduan global. Skop sintetik menggabungkan
             // konteks batch asal (prev/subsequent file-scoped) + kedua-dua
-            // separuh supaya formula 4+50+2 kekal satu sumber kebenaran.
+            // separuh supaya formula 5+75+2 kekal satu sumber kebenaran.
             const scopeEntries = [
                 ...(Array.isArray(context?.previousContent) ? context.previousContent : []),
                 ...firstHalf,

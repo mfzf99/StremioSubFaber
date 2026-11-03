@@ -721,8 +721,8 @@ function normalizeConfig(config) {
         // TOTAL PURGE (Mandat 2026-09-25): Field 'subfaberEnabled' dibuang —
         // SubFaber adalah enjin TUNGGAL, tiada toggle. Field legacy
         // 'enableBatchContext'/'contextSize' juga dibuang daripada config yang
-        // disimpan (sliding window SubFaber hardcode prev 4 / next 2 — formula
-        // 4+50+2, videolingo + owner's special tweak 2026-10-07).
+        // disimpan (sliding window SubFaber hardcode prev 5 / next 2 — formula
+        // 5+75+2, owner's manual edit 2026-11-04).
         mismatchRetries: (() => {
             const val = parseInt(advSettings.mismatchRetries, 10);
             return Number.isFinite(val) ? Math.max(0, Math.min(3, val)) : 3;

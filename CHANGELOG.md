@@ -2,6 +2,22 @@
 
 All notable changes to this project will be documented in this file.
 
+## SubFaber v3.28.0 (2026-11-04) — Standalone Basic Prompts for Every Trinity Setup
+
+### ✨ Added — Mode-Aware Agent Translation Prompts
+
+- Added a dedicated standalone Agent Translation prompt to each of Setup A, Setup B, and Setup C. Basic Mode now preserves the selected setup's translation identity while independently determining terminology, character voice, pronouns, honorifics, and register from the dialogue and adjacent context.
+- Removed Basic prompt dependencies on Preflight-produced locked terms, character-address references, and Inspector-oriented assumptions. Each Basic prompt includes an internal final consistency check while preserving its setup's native cadence or editorial style.
+- Pro Mode continues to use the complete, unchanged Preflight → Translation → Inspector Setup A/B/C bundles. The existing UI selector remains available in both modes.
+
+### 🔧 Changed — Basic/Pro Runtime Resolution
+
+- The subtitle handler now passes the canonical Trinity mode into the translation engine, which resolves the selected setup and chooses its standalone Translation variant only for Basic. XML boundaries, language-pack interpolation, provider wrappers, output parsing, sacred sanitization, and the Owner's 5+75+2 tuning remain intact.
+
+### ✅ Verification
+
+- Full suite: **45 files / 591 total / 590 PASS / 0 FAIL / 1 SKIP (live Redis)**. Targeted Setup A/B/C and mode-selection regressions passed; Prettier and ESLint completed with zero errors. Live UI verification confirmed that Basic/Pro switching and Setup selection remain available without console errors. Graphify and asset cache-buster changes are not applicable.
+
 ## SubFaber v3.27.2 (2026-11-04) — MCP Cost Controls & Fullstack Governance Hardening
 
 ### ✨ Added — Remote Crawl4AI Fallback and Tool-Cost Discipline

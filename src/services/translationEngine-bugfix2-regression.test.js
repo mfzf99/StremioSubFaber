@@ -111,7 +111,7 @@ test('Bug#1 auto-chunk: second-half prompt carries subsequent + preflight + prev
         'Bug#1: blok preflight (Content Summary) hadir dalam second-half'
     );
     assert.ok(secondPrompt.includes('A heist movie in Blackwood.'), 'Bug#1: theme bible disuntik ke second-half');
-    // previousContent + memory kekal (4+50+2, window 4 dari first-half)
+    // previousContent + memory kekal (5+75+2, window 5 dari first-half)
     assert.ok(secondPrompt.includes('<previous_content>'), '<previous_content> kekal hadir');
     assert.ok(secondPrompt.includes('<s id="53">'), 'previous window termasuk ID 53 (akhir first-half)');
     assert.ok(secondPrompt.includes('[PREVIOUS VERIFIED TRANSLATIONS'), 'previousMemory (terjemahan first-half) hadir');

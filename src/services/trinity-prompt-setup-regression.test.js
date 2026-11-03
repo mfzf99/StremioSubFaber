@@ -109,3 +109,31 @@ test('[TRINITY-SETUP-7] Config kanonik mengatasi slot Translation legasi untuk k
     });
     assert.notEqual(cfg.bypassCache, true);
 });
+
+test('[TRINITY-SETUP-8] Setiap Setup menyediakan prompt Basic standalone tanpa kebergantungan Preflight/Inspector', () => {
+    const setups = ['A', 'B', 'C'].map((id) => getTrinitySetup(id));
+    for (const setup of setups) {
+        assert.equal(typeof setup.basicTranslationTemplate, 'string');
+        assert.ok(setup.basicTranslationTemplate.length > 100);
+        assert.notEqual(setup.basicTranslationTemplate, setup.translationTemplate);
+        assert.ok(setup.basicTranslationTemplate.includes('${targetSpecificRules}'));
+        assert.ok(setup.basicTranslationTemplate.includes('${fewShot}'));
+        assert.doesNotMatch(
+            setup.basicTranslationTemplate,
+            /pre-?flight|Agent Inspector|Locked Terms?|locked Character Addresses?/i
+        );
+    }
+});
+
+test('[TRINITY-SETUP-9] TranslationEngine memilih varian standalone hanya dalam Basic dan mengekalkan Pro A/B/C', () => {
+    const service = { translateSubtitle: async () => '', estimateTokenCount: () => 10 };
+    for (const id of ['A', 'B', 'C']) {
+        const setup = getTrinitySetup(id);
+        const basic = new TranslationEngine(service, 'gemini-2.5-flash', {}, { promptSetup: id, trinityMode: 'basic' });
+        const pro = new TranslationEngine(service, 'gemini-2.5-flash', {}, { promptSetup: id, trinityMode: 'pro' });
+        assert.equal(basic.promptSetup.translationTemplate, setup.basicTranslationTemplate);
+        assert.equal(basic.promptSetup.template, setup.basicTranslationTemplate);
+        assert.equal(pro.promptSetup.translationTemplate, setup.translationTemplate);
+        assert.equal(pro.promptSetup.template, setup.translationTemplate);
+    }
+});

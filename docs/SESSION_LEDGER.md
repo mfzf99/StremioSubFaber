@@ -1,3 +1,17 @@
+## 2026-11-04 — v3.28.0 STANDALONE BASIC PROMPTS FOR SETUP A/B/C (OWNER MANDATE)
+
+- **Date:** 2026-11-04 ~02:58 (KL time)
+- **Parent HEAD SHA:** `3187f279`
+- **Status:** `VERIFIED_LOCAL`
+- **Release Commit SHA + CI Run ID:** confirmed in the final report after push/CI.
+- **Owner Decision:** Retain the shared A/B/C selector in Basic and Pro. Tune each setup's Agent Translation prompt into a dedicated standalone Basic variant while preserving the complete Pro bundles, then release through one Single-Commit Release Pipeline commit.
+- **Impact & Contract Audit (Phase A/B):** Zone C — each setup now carries `basicTranslationTemplate`; the handler passes `trinity.mode` and TranslationEngine selects the Basic variant only in Basic, preserving Setup A/B/C identity and the `.template` compatibility alias. Pro prompt text, Preflight/Inspector, XML wrappers, language packs, schema/parser, sacred sanitizer, Gemini systemInstruction and sampling are unchanged. Owner's existing 5+75+2 backend/frontend changes are preserved. No frontend implementation change was needed because the selector remains valid in both modes; live Basic/Pro and Setup C interaction passed with zero console errors. Cache-buster and Graphify = NO-OP (`graphify-out/` absent).
+- **Files Involved:** src/services/prompts/trinity/setups/setupA.js, setupB.js, setupC.js (A: standalone Translation variants), src/services/translationEngine.js (M: mode-aware resolution plus Owner changes), src/handlers/subtitles.js (M: mode passthrough), src/services/trinity-prompt-setup-regression.test.js (M: 2 tests), public/js/trinity-agents.js and five existing Owner-modified regression/config files (M: preserved 5+75+2 changes), package.json/package-lock.json (3.27.2→3.28.0), CHANGELOG.md, docs/SESSION_LEDGER.md (this block).
+- **npm test Status:** **45 files / 591 total / 590 PASS / 0 FAIL / 1 SKIP (live Redis)**. Targeted Setup A/B/C and mode-selection suites PASS; Prettier PASS; ESLint 0 errors with pre-existing warnings; live UI console 0 errors.
+- **Next Steps:** After the single release commit is pushed, verify `origin/main` and CI until SUCCESS, then report the Release Commit SHA + CI Run ID as `RELEASED_CI_GREEN`.
+
+---
+
 ## 2026-11-04 — v3.27.2 MCP FALLBACK & TOOL-COST GOVERNANCE (OWNER MANDATE)
 
 - **Date:** 2026-11-04 ~01:59 (KL time)

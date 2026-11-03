@@ -2918,8 +2918,8 @@
                 c.trinity = c.trinity || {};
                 c.trinity.mode = mode;
                 if (mode === MODE_BASIC) {
-                    c.previousContextSize = 4;
-                    c.batchSize = 50;
+                    c.previousContextSize = 5;
+                    c.batchSize = 75;
                     c.futureContextSize = 2;
                 }
             }
@@ -3474,8 +3474,8 @@
         }
 
         if (mode === MODE_BASIC) {
-            patch.previousContextSize = 4;
-            patch.batchSize = 50;
+            patch.previousContextSize = 5;
+            patch.batchSize = 75;
             patch.futureContextSize = 2;
         }
 
