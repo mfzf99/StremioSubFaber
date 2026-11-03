@@ -22,6 +22,25 @@
 
     var MODE_BASIC = 'basic';
     var MODE_PRO = 'pro';
+    var PROMPT_SETUP_DESCRIPTIONS = {
+        A: 'Protected Trinity control and rollback.',
+        B: 'Spoken-flow and distinctive glossary experiment.',
+        C: 'Scene-first editorial translation with forensic QA.'
+    };
+
+    function normalizePromptSetup(value) {
+        if (
+            typeof window !== 'undefined' &&
+            window.SubFaberTrinityKeyState &&
+            typeof window.SubFaberTrinityKeyState.normalizePromptSetup === 'function'
+        ) {
+            return window.SubFaberTrinityKeyState.normalizePromptSetup(value);
+        }
+        var setup = String(value || '')
+            .trim()
+            .toUpperCase();
+        return setup === 'B' || setup === 'C' ? setup : 'A';
+    }
 
     // Pintu protokol backend (door)
     var DOOR_TYPES = {
@@ -2652,6 +2671,101 @@
         seg.appendChild(modeBtn(MODE_BASIC, 'Basic Mode', 'Agent Translation only'));
         seg.appendChild(modeBtn(MODE_PRO, 'Pro Mode', 'Preflight + Translation + Inspector'));
         toggleBar.appendChild(seg);
+
+        // Satu bundle editorial untuk ketiga-tiga ejen. Selector ini bebas daripada
+        // Basic/Pro dan hanya mengubah state setup; kad serta kredential tidak dibina semula.
+        var promptSetupBar = createEl('div', 'trinity-prompt-setup');
+        promptSetupBar.id = 'trinityPromptSetup';
+        var promptSetupHead = createEl('div', 'trinity-prompt-setup-head');
+        promptSetupHead.appendChild(createEl('h3', 'trinity-prompt-setup-title', 'Prompt Setup'));
+        var promptSetupDescription = createEl('p', 'trinity-prompt-setup-description');
+        promptSetupDescription.id = 'trinityPromptSetupDescription';
+        promptSetupDescription.setAttribute('aria-live', 'polite');
+        promptSetupHead.appendChild(promptSetupDescription);
+        promptSetupBar.appendChild(promptSetupHead);
+
+        var promptSetupInput = createEl('input');
+        promptSetupInput.type = 'hidden';
+        promptSetupInput.id = 'trinityPromptSetupValue';
+        promptSetupInput.value = normalizePromptSetup(
+            cfg &&
+                cfg.trinity &&
+                (cfg.trinity.promptSetup || (cfg.trinity.translation && cfg.trinity.translation.promptSetup))
+        );
+        promptSetupBar.appendChild(promptSetupInput);
+
+        var promptSetupSegments = createEl('div', 'trinity-segmented trinity-prompt-setup-segments');
+        promptSetupSegments.setAttribute('role', 'radiogroup');
+        promptSetupSegments.setAttribute('aria-label', 'Trinity prompt setup');
+        promptSetupSegments.setAttribute('aria-describedby', 'trinityPromptSetupDescription');
+
+        function syncPromptSetup() {
+            var selected = normalizePromptSetup(promptSetupInput.value);
+            promptSetupInput.value = selected;
+            promptSetupDescription.textContent = PROMPT_SETUP_DESCRIPTIONS[selected];
+            Array.prototype.forEach.call(promptSetupSegments.querySelectorAll('.trinity-segment-btn'), function (btn) {
+                var active = btn.dataset.promptSetup === selected;
+                btn.classList.toggle('active', active);
+                btn.setAttribute('aria-checked', active ? 'true' : 'false');
+                btn.tabIndex = active ? 0 : -1;
+            });
+        }
+
+        [
+            ['A', 'A — Baseline'],
+            ['B', 'B — Natural Cadence'],
+            ['C', 'C — Invisible Editor']
+        ].forEach(function (entry) {
+            var button = createEl('button', 'trinity-segment-btn trinity-prompt-setup-btn');
+            button.type = 'button';
+            button.dataset.promptSetup = entry[0];
+            button.setAttribute('role', 'radio');
+            button.setAttribute('aria-checked', 'false');
+            button.setAttribute('aria-label', entry[1]);
+            button.appendChild(createEl('span', 'trinity-prompt-setup-compact', entry[0]));
+            button.appendChild(createEl('span', 'trinity-segment-label', entry[1]));
+            button.addEventListener('click', function () {
+                if (promptSetupInput.value === entry[0]) return;
+                promptSetupInput.value = entry[0];
+                promptSetupInput.dispatchEvent(new Event('change', { bubbles: true }));
+            });
+            promptSetupSegments.appendChild(button);
+        });
+        promptSetupBar.appendChild(promptSetupSegments);
+        promptSetupBar.appendChild(
+            createEl(
+                'p',
+                'trinity-prompt-setup-help',
+                'Applies to Preflight, Translation and Inspector. Save configuration, then start a fresh translation to compare outputs.'
+            )
+        );
+        promptSetupBar.appendChild(
+            createEl(
+                'p',
+                'trinity-prompt-setup-cache-note',
+                'Experimental B/C runs bypass cached translations automatically.'
+            )
+        );
+        promptSetupInput.addEventListener('change', syncPromptSetup);
+        promptSetupSegments.addEventListener('keydown', function (event) {
+            var keys = ['ArrowLeft', 'ArrowRight', 'Home', 'End'];
+            if (keys.indexOf(event.key) === -1) return;
+            event.preventDefault();
+            var buttons = Array.prototype.slice.call(promptSetupSegments.querySelectorAll('.trinity-segment-btn'));
+            var current = buttons.findIndex(function (button) {
+                return button.dataset.promptSetup === promptSetupInput.value;
+            });
+            var next =
+                event.key === 'Home'
+                    ? 0
+                    : event.key === 'End'
+                      ? buttons.length - 1
+                      : current + (event.key === 'ArrowRight' ? 1 : -1);
+            next = (next + buttons.length) % buttons.length;
+            buttons[next].click();
+            buttons[next].focus();
+        });
+        syncPromptSetup();
         // ── Kad induk "Translation API Keys" (Anak 2 dalam keluarga API Keys) ──
         // Trinity DIBUNGKUS dalam satu kad berstruktur sama dengan kad anak lain
         // (Source/Target Languages): header + collapse-btn kanan, collapsed default;
@@ -2690,6 +2804,7 @@
 
         var pContent = createEl('div', 'card-content trinity-parent-content');
         pContent.appendChild(toggleBar);
+        pContent.appendChild(promptSetupBar);
         parentCard.appendChild(pContent);
 
         // parentCard ADALAH root (satu elemen, satu id) — tiada append diperlukan.
@@ -2893,6 +3008,14 @@
 
         var modeToggle = $('trinityModeToggle');
         var storedMode = (cfg.trinity && cfg.trinity.mode) || cfg.mode || MODE_BASIC;
+        var promptSetupInput = $('trinityPromptSetupValue');
+        if (promptSetupInput) {
+            promptSetupInput.value = normalizePromptSetup(
+                cfg.trinity &&
+                    (cfg.trinity.promptSetup || (cfg.trinity.translation && cfg.trinity.translation.promptSetup))
+            );
+            promptSetupInput.dispatchEvent(new Event('change', { bubbles: true }));
+        }
         if (modeToggle && !_rehydratingMode) {
             var wantPro = storedMode === MODE_PRO;
             if (modeToggle.checked !== wantPro) {
@@ -3133,7 +3256,13 @@
     function collectConfigPatch() {
         var modeToggle = $('trinityModeToggle');
         var mode = modeToggle && modeToggle.checked ? MODE_PRO : MODE_BASIC;
-        var trinity = { mode: mode, preflight: {}, translation: {}, inspector: {} };
+        var trinity = {
+            mode: mode,
+            promptSetup: normalizePromptSetup(($('trinityPromptSetupValue') || {}).value),
+            preflight: {},
+            translation: {},
+            inspector: {}
+        };
 
         // [BUG FIX v3.9.43] NON-DESTRUCTIVE SAVE merentas mod: dalam Basic Mode
         // kad Preflight/Inspector TIDAK wujud dalam DOM. Sebelum ini blok

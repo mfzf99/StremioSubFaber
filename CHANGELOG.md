@@ -2,6 +2,24 @@
 
 All notable changes to this project will be documented in this file.
 
+## SubFaber v3.27.0 (2026-11-03) — Trinity Setup C & Live Setup Selector
+
+### ✨ Added — Independent Setup C and Trinity-Wide Selection
+
+- Added the independently authored **Setup C — The Invisible Editor** bundle for Agent Preflight, Agent Translation, and Agent Inspector. Its scene-first editorial prompts use the existing base language packs and all nine channel wrappers without modifying Setup A or Setup B.
+- Added one shared **Prompt Setup** selector after Basic/Pro in Translation API Keys. Desktop displays full A/B/C labels; compact mobile controls retain full accessible names and arrow/Home/End keyboard navigation without rebuilding the agent cards.
+- Canonical `trinity.promptSetup` now survives UI save and reload, including legacy-value migration and safe fallback to A for empty or unknown values. Setup A remains the protected default; explicit B/C selection continues to bypass translation cache for isolated experiments.
+- Added six backend and five frontend regression tests covering Setup C contracts, interpolation, wrapper compatibility, selector mounting, normalization, serialization, and rehydration.
+
+### 🔧 Fixed — OS-Compatible Provider DNS Resolution
+
+- Kept shared provider agents on the OS-backed Node lookup path with IPv4 filtering instead of switching to a direct DNS resolver that may target a refusing local proxy. This restores provider validation and connectivity on affected local networks without forcing a public DNS provider or changing system-wide settings.
+- Verified SubDL through the shared HTTPS agent with HTTP 200, all four warm-up targets, continuing keep-alive requests, and Owner-confirmed Chrome validation returning 30 real test results.
+
+### ✅ Verification
+
+- Playwright desktop/mobile acceptance covered A/B/C switching, keyboard navigation, canonical save/reload, legacy and invalid fallback, credential-state preservation, mobile overlap correction, and zero console errors. Full suite: **45 files / 588 total / 587 PASS / 0 FAIL / 1 SKIP (live Redis)**. Prettier, ESLint, and diff checks passed; existing version-based asset cache-busting remains active.
+
 ## SubFaber v3.26.2 (2026-11-03) — Trinity Setup A Restored as Default
 
 ### 🔧 Changed — Controlled Setup A Run

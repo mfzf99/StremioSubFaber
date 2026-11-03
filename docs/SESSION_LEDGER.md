@@ -1,3 +1,17 @@
+## 2026-11-03 — v3.27.0 TRINITY SETUP C, LIVE SELECTOR & DNS RECOVERY (MANDAT OWNER)
+
+- **Tarikh:** 2026-11-03 ~20:18 (waktu tempatan KL)
+- **Parent HEAD SHA:** `9c84220a62d6ea3be734b7dc0b9bdd59743c0fc1`
+- **Status:** `VERIFIED_LOCAL`
+- **Release Commit SHA + CI Run ID:** disahkan dalam laporan penutup selepas push/CI.
+- **Keputusan Owner:** Luluskan Setup C bebas dan selector A/B/C melalui live UI audit, baiki kegagalan DNS lokal yang menghalang real-provider API-key testing, kemudian terus satu release commit melalui Single-Commit Release Pipeline.
+- **Impact & Contract Audit (Fasa A/B):** Zon C — Setup C baharu untuk Preflight/Translation/Inspector menggunakan base packs dan sembilan wrappers sedia ada; selector tunggal selepas Basic/Pro menyimpan/merehidrasi `trinity.promptSetup`, dengan A kekal default/fallback dan B/C memaksa cache bypass. Setup A/B, sacred sanitizer, parameter/model/provider credentials tidak berubah. Hotfix backend shared HTTP agents mengekalkan IPv4 dan OS-backed Node lookup, tanpa memaksa DNS Google; tiada consumer UI baharu. Playwright desktop/mobile dan Owner Chrome real-provider validation telah lulus. Cache-buster aset versi aktif; Graphify NO-OP kerana `graphify-out/` tiada.
+- **Fail Terlibat:** src/services/prompts/trinity/setups/setupC.js (A), setups/index.js (M), public/js/trinity-agents.js (M), public/js/trinity-key-state.js (M), public/css/trinity-agents.css (M), src/services/trinity-prompt-setup-c-regression.test.js (A: 6), public/js/trinity-prompt-setup-regression.test.js (A: 5), src/utils/httpAgents.js (M resolver), package.json/package-lock.json (3.26.2→3.27.0), CHANGELOG.md, docs/SESSION_LEDGER.md (blok ini).
+- **Status npm test:** **45 fail / 588 total / 587 PASS / 0 FAIL / 1 SKIP (live Redis)**. Playwright A/B/C, keyboard, save/reload, fallback, state preservation dan mobile 390px lulus; console 0 error. Shared-agent SubDL HTTP 200, 4/4 warm-up dan keep-alive lulus; Owner mengesahkan Chrome SubDL Valid dengan 30 test results. Prettier/ESLint/diff checks disahkan.
+- **Next Steps:** Selepas satu release commit dipush, sahkan `origin/main` dan CI sehingga SUCCESS, kemudian laporkan Release Commit SHA + CI Run ID dengan status `RELEASED_CI_GREEN`.
+
+---
+
 ## 2026-11-03 — v3.26.2 TRINITY SETUP A DEFAULT UNTUK CONTROLLED RERUN (MANDAT OWNER)
 
 - **Tarikh:** 2026-11-03 ~11:31 (waktu tempatan KL)

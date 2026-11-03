@@ -63,9 +63,6 @@ const httpsAgent = new https.Agent({
     lookup: dnsLookup
 });
 
-// cacheable-lookup v7 is ESM-only, while this module is CommonJS. Start with
-// Node's lookup so requests can proceed immediately, then swap in the cache
-// once the dynamic import finishes.
 function createIpv4Lookup(lookup) {
     return (hostname, options, callback) => {
         if (options && options.all) {
@@ -84,32 +81,13 @@ function createIpv4Lookup(lookup) {
     };
 }
 
-let activeDnsLookup = createIpv4Lookup(dns.lookup.bind(dns));
-
 // Production hosts currently use IPv4 egress. Select IPv4 inside the shared
 // resolver instead of changing Node's process-wide DNS order or OS routing.
+// Keep using the OS-backed dns.lookup path: dns.Resolver can select a local
+// DNS proxy that refuses direct queries even when normal system lookup works.
 function dnsLookup(hostname, options, callback) {
-    return activeDnsLookup(hostname, options, callback);
+    return createIpv4Lookup(dns.lookup.bind(dns))(hostname, options, callback);
 }
-
-void import('cacheable-lookup')
-    .then((cacheableLookupModule) => {
-        const CacheableLookup = cacheableLookupModule.default || cacheableLookupModule.CacheableLookup;
-        if (typeof CacheableLookup !== 'function') {
-            throw new TypeError('cacheable-lookup did not export a constructor');
-        }
-
-        const dnsCache = new CacheableLookup({
-            maxTtl: 60, // seconds to keep successful lookups
-            errorTtl: 0, // don't cache failed lookups
-            cache: new Map() // in-memory cache
-        });
-        activeDnsLookup = createIpv4Lookup(dnsCache.lookup.bind(dnsCache));
-        log.debug(() => '[HTTP Agents] IPv4 DNS cache initialized');
-    })
-    .catch((error) => {
-        log.warn(() => `[HTTP Agents] DNS cache unavailable; using Node DNS lookup: ${error.message}`);
-    });
 
 log.debug(() => '[HTTP Agents] Connection pooling initialized: maxSockets=100, maxFreeSockets=20, keepAlive=true');
 

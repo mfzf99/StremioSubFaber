@@ -12,8 +12,9 @@
 const log = require('../../../../utils/logger');
 const setupA = require('./setupA');
 const setupB = require('./setupB');
+const setupC = require('./setupC');
 
-const TRINITY_PROMPT_SETUPS = [setupA, setupB];
+const TRINITY_PROMPT_SETUPS = [setupA, setupB, setupC];
 const DEFAULT_TRINITY_PROMPT_SETUP_ID = 'A';
 const FALLBACK_TRINITY_PROMPT_SETUP_ID = 'A';
 
@@ -25,7 +26,7 @@ function normalizeSetupId(raw) {
 
 /**
  * Resolve bundle prompt Trinity mengikut id.
- * @param {string} rawId - id setup (cth. 'A', 'B'); kosong → default 'A'.
+ * @param {string} rawId - id setup (cth. 'A', 'B', 'C'); kosong → default 'A'.
  * @returns {{id: string, label: string, preflightTemplate: string, translationTemplate: string, inspectorInstruction: string}}
  */
 function getTrinitySetup(rawId) {
