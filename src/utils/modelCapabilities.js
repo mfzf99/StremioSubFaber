@@ -155,9 +155,7 @@ function anthropicProfile(modelId) {
             temperature: param(0, 1, 0.3),
             topP: param(0, 1, 0.95),
             maxOutputTokens: param(1, 128000, 32768),
-            ...(hasThinking ? { thinkingBudget: param(1024, 200000, 0) } : {}),
-            frequencyPenalty: FREQUENCY_PENALTY,
-            presencePenalty: PRESENCE_PENALTY
+            ...(hasThinking ? { thinkingBudget: param(1024, 200000, 0) } : {})
         },
         notes: hasThinking ? ['thinking-locks-temperature-1.0'] : []
     };

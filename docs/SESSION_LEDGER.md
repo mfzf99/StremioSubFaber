@@ -1,3 +1,17 @@
+## 2026-11-04 — v3.28.1 TRINITY PENALTY CONTRACT AUDIT (OWNER MANDATE)
+
+- **Date:** 2026-11-04 ~03:39 (KL time)
+- **Parent HEAD SHA:** `3cca16d4203bca131281864ef00e446d78aee32f`
+- **Status:** `VERIFIED_LOCAL`
+- **Release Commit SHA + CI Run ID:** confirmed in the final report after push/CI.
+- **Owner Decision:** Audit whether presence/frequency penalties reach Gemini official and Crazy Router through every door and all three agents, and investigate blank penalties after session rehydration.
+- **Impact & Contract Audit (Phase A/B):** Zones A/B/C — real session create → reload → rehydrate preserved Translation/Preflight/Inspector penalty values for Gemini official and Custom/Proxy Gemini-native. Gemini native forwards supported model-family values, Gemini 3.x-strict intentionally suppresses them, and OpenAI-compatible transport emits `frequency_penalty`/`presence_penalty`. Anthropic Messages does not support either field; its misleading UI/server capability declarations were removed. Basic hidden-card params omission is defensive dead-path code because cards remain mounted; no unproven runtime rewrite was made. Cache-buster and Graphify = NO-OP (`graphify-out/` absent).
+- **Files Involved:** src/utils/modelCapabilities.js, public/js/trinity-agents.js (Anthropic capability parity), src/utils/trinity-params-regression.test.js (Anthropic no-sampling coverage), package.json/package-lock.json (3.28.0→3.28.1), CHANGELOG.md, docs/SESSION_LEDGER.md (this block).
+- **npm test Status:** **45 files / 591 total / 590 PASS / 0 FAIL / 1 SKIP (live Redis)**. Targeted Tri-Door/parameter suites PASS; Prettier PASS; scoped ESLint 0 errors and one pre-existing warning. Playwright verified corrected Anthropic controls and visual layout.
+- **Next Steps:** After the single release commit is pushed, verify `origin/main` and CI until SUCCESS, then report the Release Commit SHA + CI Run ID as `RELEASED_CI_GREEN`.
+
+---
+
 ## 2026-11-04 — v3.28.0 STANDALONE BASIC PROMPTS FOR SETUP A/B/C (OWNER MANDATE)
 
 - **Date:** 2026-11-04 ~02:58 (KL time)

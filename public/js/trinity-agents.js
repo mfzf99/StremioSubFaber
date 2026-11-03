@@ -612,9 +612,7 @@
         var parameters = {
             temperature: mpParam(0, 1, 0.3),
             topP: mpParam(0, 1, 0.95),
-            maxOutputTokens: mpParam(1, 128000, 32768),
-            frequencyPenalty: MP_FREQUENCY_PENALTY,
-            presencePenalty: MP_PRESENCE_PENALTY
+            maxOutputTokens: mpParam(1, 128000, 32768)
         };
         if (hasThinking) parameters.thinkingBudget = mpParam(1024, 200000, 0);
         return {

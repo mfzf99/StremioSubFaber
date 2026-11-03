@@ -2,6 +2,17 @@
 
 All notable changes to this project will be documented in this file.
 
+## SubFaber v3.28.1 (2026-11-04) — Trinity Penalty Contract Audit
+
+### 🐛 Fixed — Anthropic Capability Accuracy
+
+- Removed `frequencyPenalty` and `presencePenalty` controls from Anthropic Messages capability profiles on both server and client. Anthropic's native request schema does not support these OpenAI/Gemini-style penalties, so exposing them allowed users to save values that could never reach the provider.
+
+### ✅ Verified — Gemini Official & Crazy Router Rehydration
+
+- Confirmed through real session create → reload → DOM rehydration that Gemini official and Custom/Proxy Gemini-native preserve both penalties for Translation, Preflight, and Inspector. Supported Gemini families serialize them natively; Gemini 3.x-strict continues its intentional HTTP 400 suppression. Crazy Router through OpenAI-compatible transport serializes the equivalent `frequency_penalty` and `presence_penalty` fields.
+- Full suite: **45 files / 591 total / 590 PASS / 0 FAIL / 1 SKIP (live Redis)**. Targeted Tri-Door and parameter suites passed; Prettier passed and scoped ESLint reported zero errors. Playwright confirmed the corrected Anthropic parameter panel. Graphify and asset cache-buster changes are not applicable.
+
 ## SubFaber v3.28.0 (2026-11-04) — Standalone Basic Prompts for Every Trinity Setup
 
 ### ✨ Added — Mode-Aware Agent Translation Prompts

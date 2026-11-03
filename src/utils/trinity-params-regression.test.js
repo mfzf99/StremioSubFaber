@@ -122,8 +122,6 @@ test('[SEND-ALL v3.10.5] Penalty diisytiharkan dalam SEMUA profil bersampling (U
         ['gemini', 'gemini-3-flash-preview'],
         ['gemini', 'gemini-3.1-pro-preview'],
         ['gemini', 'gemma-3-27b-it'],
-        ['anthropic', 'claude-sonnet-4-5'],
-        ['anthropic', 'claude-3-5-haiku-latest'],
         ['moonshot', 'kimi-k3'],
         ['moonshot', 'kimi-k2.5'],
         ['openai', 'gpt-5.5'],
@@ -146,7 +144,10 @@ test('[SEND-ALL v3.10.5] Penalty diisytiharkan dalam SEMUA profil bersampling (U
     const NO_SAMPLING_CASES = [
         ['deepl', ''],
         ['openai', 'o3'],
-        ['openai', 'gpt-5.1']
+        ['openai', 'gpt-5.1'],
+        ['anthropic', 'claude-sonnet-4-5'],
+        ['anthropic', 'claude-3-5-haiku-latest'],
+        ['anthropic-messages', 'claude-sonnet-4-5']
     ];
     for (const [provider, model] of NO_SAMPLING_CASES) {
         const p = resolveCapabilityProfile(provider, model);
