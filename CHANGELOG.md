@@ -2,6 +2,13 @@
 
 All notable changes to this project will be documented in this file.
 
+## SubFaber v3.25.12 (2026-11-03) — Production Dependency Security Hotfix
+
+### 🔒 Fixed — CI Dependency Audit
+
+- Updated `follow-redirects` from `1.16.1` to `1.16.2` and `joi` from `18.2.9` to `18.3.1` through the lockfile to resolve two high-severity advisories detected by CI run `41554197943`: GHSA-mrwp-f3q8-3g9p and GHSA-4528-x5fx-h6hg.
+- `npm audit --omit=dev --audit-level=high` now reports **0 vulnerabilities**. No application code or Trinity prompt content changed in this hotfix.
+
 ## SubFaber v3.25.11 (2026-11-03) — Trinity-Wide Prompt Setup Bundles
 
 ### ✨ Added — One Setup for All Three Trinity Agents

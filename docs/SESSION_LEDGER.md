@@ -1,3 +1,17 @@
+## 2026-11-03 — v3.25.12 PRODUCTION DEPENDENCY SECURITY HOTFIX (CI FOLLOW-UP)
+
+- **Tarikh:** 2026-11-03 ~08:41 (waktu tempatan KL)
+- **Parent HEAD SHA:** `85f28c05afb93bdf022606c5651c3dccf257fbd3`
+- **Status:** `VERIFIED_LOCAL`
+- **Release Commit SHA + CI Run ID:** disahkan dalam laporan penutup selepas push/CI.
+- **Keputusan Owner:** Hotfix prosedural selepas CI release v3.25.11 gagal pada audit dependency; kekalkan implementasi Trinity-wide Setup A tanpa perubahan runtime.
+- **Impact & Contract Audit (Fasa A/B):** Security/dependency hotfix — CI run `41554197943` gagal pada Node.js 22/24 semasa `npm audit --omit=dev --audit-level=high` kerana GHSA-mrwp-f3q8-3g9p (`follow-redirects`) dan GHSA-4528-x5fx-h6hg (`joi`). Regression tests, Prettier dan ESLint CI telah lulus. `npm audit fix --omit=dev` menaikkan hanya dua pakej lockfile: follow-redirects 1.16.1→1.16.2 dan joi 18.2.9→18.3.1; audit kini 0 vulnerabilities. Kod aplikasi, kontrak Trinity, UI, Playwright, cache-buster aset = `N/A`; Graphify NO-OP.
+- **Fail Terlibat:** package-lock.json (M), package.json/package-lock.json (3.25.11→3.25.12), CHANGELOG.md, docs/SESSION_LEDGER.md (blok ini).
+- **Status npm test:** **41 fail / 565 total / 564 PASS / 0 FAIL / 1 SKIP (live Redis)**. Audit production 0 vulnerabilities; Prettier penuh dan ESLint (0 error, warning pre-existing) PASS; `git diff --check` PASS.
+- **Next Steps:** Selepas satu hotfix commit dipush, sahkan `origin/main` dan CI sehingga SUCCESS, kemudian laporkan Release Commit SHA + CI Run ID dengan status `RELEASED_CI_GREEN`.
+
+---
+
 ## 2026-11-03 — v3.25.11 TRINITY-WIDE PROMPT SETUP BUNDLE (MANDAT OWNER)
 
 - **Tarikh:** 2026-11-03 ~08:34 (waktu tempatan KL)
