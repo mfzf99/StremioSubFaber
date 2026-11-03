@@ -2,6 +2,17 @@
 
 All notable changes to this project will be documented in this file.
 
+## SubFaber v3.27.1 (2026-11-03) — Zoo Code 3.94.0 Single-Mode Re-Patch
+
+### 🔧 Changed — Routine Post-Update Mode Maintenance
+
+- Re-applied the single-mode **Fullstack Architect** lock to both Zoo Code 3.94.0 bundles after the extension update restored the five built-in modes. The existing maintenance script auto-detected the new minified variables (`ZH` for the extension host and `dne` for the webview), so no script or project `.roomodes` changes were required.
+- Verified both bundles with Node syntax checks, zero residual retired mode definitions, and an idempotent follow-up check reporting `Already patched`. Documented Zoo Code 3.94.0 compatibility in the maintenance protocol. A full VS Code restart is required to reload both runtimes.
+
+### ✅ Verification
+
+- Full suite: **45 files / 588 total / 587 PASS / 0 FAIL / 1 SKIP (live Redis)**. Prettier passed; ESLint reported **0 errors / 226 pre-existing warnings**. The maintenance script syntax, package/lockfile version synchronization, `.roomodes` PyYAML contract, and diff checks all passed. This operational release does not change application runtime, coupled contracts, UI/CSS, or test coverage. Version-based asset cache-busting remains active; Graphify is not applicable because `graphify-out/` is absent.
+
 ## SubFaber v3.27.0 (2026-11-03) — Trinity Setup C & Live Setup Selector
 
 ### ✨ Added — Independent Setup C and Trinity-Wide Selection

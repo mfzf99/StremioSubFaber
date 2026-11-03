@@ -1,3 +1,18 @@
+## 2026-11-03 — v3.27.1 RUTIN PATCH ZOO CODE 3.94.0 KEPADA MOD TUNGGAL FULLSTACK (MANDAT OWNER)
+
+- **Tarikh:** 2026-11-03 ~20:43 (waktu tempatan KL)
+- **Parent HEAD SHA:** `ed9095f8284d93d411a85e54e2b24ddc7ebc8679`
+- **Status:** `VERIFIED_LOCAL`
+- **Release Commit SHA + CI Run ID:** disahkan dalam laporan penutup selepas push/CI.
+- **Keputusan Owner:** Zoo Code telah mengeluarkan kemas kini baharu; jalankan rutin patch mod seperti biasa dan terus satu release commit melalui Single-Commit Release Pipeline.
+- **Impact & Contract Audit (Fasa A/B):** Rantaian standalone `main()` → `patchBundle()` → `findAssignmentPrefix()`/`findArrayEnd()` → `syntaxOk()`/`residualRetiredSlugs()` disahkan pada Zoo Code 3.94.0. Dry-run mengesan lima mod bawaan pada kedua-dua bundle dan auto-detect pemboleh ubah minified `ZH` (host) serta `dne` (webview). Utiliti penyelenggaraan ini tiada pemanggil runtime aplikasi; Zon A/B/C, payload serialization, rehidrasi, DOM, skema pelayan, Trinity dan Tri-Door = `N/A`. Tiada perubahan UI/CSS, maka Playwright/visual critique = `N/A`. `.roomodes` projek tidak berubah dan validasi PyYAML mengesahkan tepat satu mod `fullstack`, `groups=[read,edit,command,mcp]`, `source=project`.
+- **Verifikasi patch:** `node scripts/patch-zoo-code.js` PATCH COMPLETE; kedua-dua bundle `node --check` PASS dan `residual retired mode definitions = NONE`. Semakan susulan `--check` COMPLETE dengan status `Already patched` pada host dan webview, membuktikan idempoten. Restart penuh VS Code diperlukan untuk memuatkan semula kedua-dua runtime.
+- **Fail Terlibat:** docs/ZOO_CODE_PATCH_PROTOCOL.md (M: rekod keserasian 3.94.0), package.json/package-lock.json (3.27.0→3.27.1), CHANGELOG.md, docs/SESSION_LEDGER.md (blok ini). Bundle luar repositori Zoo Code 3.94.0 dipatch terus; `scripts/patch-zoo-code.js` dan `.roomodes` tidak memerlukan perubahan.
+- **Status npm test:** **45 fail / 588 total / 587 PASS / 0 FAIL / 1 SKIP (live Redis)**. Prettier `--check .` PASS; ESLint **0 error / 226 warning pre-existing**; syntax skrip, version sync, PyYAML dan `git diff --check` PASS. Cache-buster versi dinamik kekal aktif; Graphify NO-OP (`graphify-out/` tiada).
+- **Next Steps:** Selepas satu release commit dipush, sahkan `origin/main` dan CI sehingga SUCCESS, kemudian laporkan Release Commit SHA + CI Run ID dengan status `RELEASED_CI_GREEN`. Owner perlu restart penuh VS Code supaya dropdown hanya memaparkan Fullstack Architect.
+
+---
+
 ## 2026-11-03 — v3.27.0 TRINITY SETUP C, LIVE SELECTOR & DNS RECOVERY (MANDAT OWNER)
 
 - **Tarikh:** 2026-11-03 ~20:18 (waktu tempatan KL)
