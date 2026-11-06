@@ -21,7 +21,10 @@ const {
     normalizeImdbId,
     ensureSRTForTranslation,
     convertToSRT,
-    detectASSFormat
+    detectASSFormat,
+    sanitizeSubtitleText,
+    decodeSubtitleEntities,
+    collapseDuplicatedApostrophes
 } = require('../utils/subtitle');
 const {
     getLanguageName,
@@ -4333,6 +4336,8 @@ async function handleSubtitleDownload(fileId, language, config) {
             throw new Error('Downloaded subtitle content is empty');
         }
 
+        content = sanitizeSubtitleText(content);
+
         log.debug(() => '[Download] Subtitle downloaded successfully (' + content.length + ' bytes)');
         // Reject obviously broken/corrupted files by size (with intelligent content analysis)
         try {
@@ -5769,70 +5774,8 @@ function repairSubtitleMojibake(input) {
 // Common HTML ENTITY DECODER
 // ============================================================
 
-const SUBTITLE_HTML_ENTITIES = new Map([
-    ['amp', '&'],
-    ['lt', '<'],
-    ['gt', '>'],
-    ['quot', '"'],
-    ['apos', "'"],
-    ['nbsp', ' '],
-    ['hellip', '…'],
-    ['ndash', '–'],
-    ['mdash', '—'],
-    ['lsquo', '‘'],
-    ['rsquo', '’'],
-    ['ldquo', '“'],
-    ['rdquo', '”'],
-    ['bull', '•'],
-    ['copy', '©'],
-    ['reg', '®'],
-    ['trade', '™']
-]);
-
 function decodeSubtitleHtmlEntities(input) {
-    let decodedCount = 0;
-
-    const text = input.replace(/&(#(?:x[0-9a-f]+|\d+)|[a-z][a-z0-9]+);/gi, (fullMatch, entity) => {
-        // Numeric entity:
-        //   &#39;
-        //   &#x2019;
-        if (entity[0] === '#') {
-            let codePoint;
-
-            if (entity.length >= 3 && entity[1].toLowerCase() === 'x') {
-                codePoint = parseInt(entity.slice(2), 16);
-            } else {
-                codePoint = parseInt(entity.slice(1), 10);
-            }
-
-            // Reject invalid Unicode scalar values.
-            if (
-                Number.isInteger(codePoint) &&
-                codePoint >= 0 &&
-                codePoint <= 0x10ffff &&
-                !(codePoint >= 0xd800 && codePoint <= 0xdfff)
-            ) {
-                decodedCount++;
-                return String.fromCodePoint(codePoint);
-            }
-
-            return fullMatch;
-        }
-
-        const replacement = SUBTITLE_HTML_ENTITIES.get(entity.toLowerCase());
-
-        if (replacement != null) {
-            decodedCount++;
-            return replacement;
-        }
-
-        return fullMatch;
-    });
-
-    return {
-        text,
-        decoded: decodedCount
-    };
+    return decodeSubtitleEntities(input);
 }
 
 // ============================================================
@@ -5954,7 +5897,7 @@ function preprocessSubtitleForAI(sourceContent) {
 
     const entityResult = decodeSubtitleHtmlEntities(text);
 
-    text = entityResult.text;
+    text = collapseDuplicatedApostrophes(entityResult.text);
     stats.htmlEntitiesDecoded = entityResult.decoded;
 
     // ==========================================================

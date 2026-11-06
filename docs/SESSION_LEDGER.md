@@ -1,3 +1,18 @@
+## 2026-11-07 — v3.28.3 CONSERVATIVE SUBTITLE ARTIFACT CLEANUP (OWNER MANDATE)
+
+- **Date:** 2026-11-07 ~01:24 (KL time).
+- **Parent HEAD SHA:** `293ea314909b3a9620568343e60f741af14ca832`.
+- **Status:** `VERIFIED_LOCAL`.
+- **Release Commit SHA + CI Run ID:** confirmed in the final report after push/CI.
+- **Owner Decision:** Audit SubMaker v1.4.97 from its actual release/code, adopt the cleanup only if useful and safe, and proceed directly to one release commit when accepted. Ignore it if the change is unsafe or redundant.
+- **Impact & Contract Audit (Phase A/B):** Accepted the useful entity/apostrophe cleanup while adapting it to SubFaber's separate direct-download and translation paths. One shared decoder lives in `src/utils/subtitle.js`; the AI preprocessor delegates to it instead of retaining a divergent copy. Direct provider output is sanitized after ASS/SSA object unwrapping and before conversion/passthrough. Translation cleanup remains after source normalization, covering provider, cached, and embedded sources without adding recursive decoding. Zones A/B/C, UI, payload serialization, rehydration/DOM, server schema, Gemini/Trinity/Tri-Door, and external provider contracts are `N/A`; Playwright and real-provider verification are `N/A` because this is a backend-only text-cleanup change with unchanged external contracts. Version-based asset cache-busting remains active; Graphify NO-OP (`graphify-out/` absent).
+- **Independent Acceptance:** Five new regressions cover conservative in-word apostrophe collapse, named/decimal/hex decoding, non-recursive handling of double-encoded text, unknown/malformed/non-scalar entities, AI tag/statistics preservation, and mocked direct SubDL SRT/ASS output. Happy and negative paths pass; valid single apostrophes, accents, Unicode, quoted punctuation, SRT timecodes, ASS structure, and styling tags remain preserved. Targeted suites **41/41 PASS**, including all existing preprocess, ranking, timeout, and SubDL regressions. No assertions were deleted or weakened. Final diff contains only the intended shared utility, handler wiring, new regression file, patch version, and release documentation.
+- **Files Involved:** src/utils/subtitle.js (M: shared single-pass decoder and conservative apostrophe cleanup), src/handlers/subtitles.js (M: direct-download sanitation and AI decoder reuse), src/utils/subtitle-artifacts-regression.test.js (A: five regressions), package.json/package-lock.json (3.28.2→3.28.3), CHANGELOG.md, docs/SESSION_LEDGER.md (this block only; Owner records preserved).
+- **npm test Status:** **47 files / 606 total / 605 PASS / 0 FAIL / 1 SKIP (live Redis)**. Targeted suites **41/41 PASS**; full Prettier PASS; full ESLint **0 errors / 226 pre-existing warnings**; production dependency audit **0 vulnerabilities**; `git diff --check` PASS.
+- **Next Steps:** After the single release commit is pushed, verify `origin/main` and its CI run until SUCCESS, then report the Release Commit SHA + CI Run ID as `RELEASED_CI_GREEN`.
+
+---
+
 ## 2026-11-07 — v3.28.2 SYNC-FIRST SUBTITLE RANKING (OWNER MANDATE)
 
 - **Date:** 2026-11-07 ~00:41 (KL time).

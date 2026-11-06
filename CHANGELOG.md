@@ -2,6 +2,21 @@
 
 All notable changes to this project will be documented in this file.
 
+## SubFaber v3.28.3 (2026-11-07) — Conservative Subtitle Artifact Cleanup
+
+### 🔧 Changed — Shared Entity Decoding and Apostrophe Repair
+
+- Adapted the useful SubMaker v1.4.97 cleanup through a shared decoder in `src/utils/subtitle.js`. Supported named, decimal, and hexadecimal entities are decoded once; unknown, malformed, surrogate, and out-of-range values remain unchanged.
+- Direct provider downloads now use the same conservative sanitizer before SRT conversion or original ASS/SSA passthrough. Existing timecodes, styling tags, Unicode dialogue, and provider response contracts remain intact.
+- The AI preprocessor now reuses the shared decoder and collapses two or more apostrophe-like marks only between Unicode letters. Valid single apostrophes, accent marks, quoted punctuation, tag-removal statistics, and the existing translation post-processing pipeline are preserved.
+- Double-encoded text is not recursively expanded by a single sanitization pass, preventing escaped markup from becoming newly active markup at the direct-download output boundary.
+
+### ✅ Verification
+
+- Added five deterministic regressions for apostrophe boundaries, named/numeric entities, single-pass decoding, invalid Unicode scalar values, AI preprocessing, and mocked direct SubDL SRT/ASS downloads.
+- Targeted artifact, preprocessing, ranking, timeout, and SubDL suites: **41/41 PASS**. Full suite: **47 files / 606 total / 605 PASS / 0 FAIL / 1 SKIP (live Redis)**. Full Prettier passed; full ESLint reported zero errors and 226 pre-existing warnings. Production dependency audit reported zero vulnerabilities.
+- Backend-only change: coupled Zones A/B/C, UI, payload serialization, rehydration, and server schema are not applicable. No external provider contract changed, so live-provider and Playwright verification are not applicable. Existing version-based asset cache-busting remains active; Graphify is not applicable because `graphify-out/` is absent.
+
 ## SubFaber v3.28.2 (2026-11-07) — Sync-First Subtitle Ranking
 
 ### 🔧 Changed — Provider Release Evidence and Hash Tie-Breaking

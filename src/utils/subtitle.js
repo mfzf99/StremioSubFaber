@@ -954,6 +954,78 @@ function createSubtitleUrl(id, lang, baseUrl) {
     return `${baseUrl}/subtitle/${encodeURIComponent(id)}/${lang}.srt`;
 }
 
+const SUBTITLE_HTML_ENTITIES = new Map([
+    ['amp', '&'],
+    ['lt', '<'],
+    ['gt', '>'],
+    ['quot', '"'],
+    ['apos', "'"],
+    ['nbsp', ' '],
+    ['hellip', '…'],
+    ['ndash', '–'],
+    ['mdash', '—'],
+    ['lsquo', '‘'],
+    ['rsquo', '’'],
+    ['ldquo', '“'],
+    ['rdquo', '”'],
+    ['acute', '´'],
+    ['bull', '•'],
+    ['copy', '©'],
+    ['reg', '®'],
+    ['trade', '™']
+]);
+
+/**
+ * Decode supported subtitle entities once without recursively expanding their output.
+ * @param {string} input - Subtitle text
+ * @returns {{text: string, decoded: number}} - Decoded text and replacement count
+ */
+function decodeSubtitleEntities(input) {
+    let decodedCount = 0;
+
+    const text = input.replace(/&(#(?:x[0-9a-f]+|\d+)|[a-z][a-z0-9]+);/gi, (fullMatch, entity) => {
+        if (entity[0] === '#') {
+            const isHex = entity.length >= 3 && entity[1].toLowerCase() === 'x';
+            const codePoint = parseInt(entity.slice(isHex ? 2 : 1), isHex ? 16 : 10);
+
+            // Reject invalid Unicode scalar values.
+            if (
+                Number.isInteger(codePoint) &&
+                codePoint >= 0 &&
+                codePoint <= 0x10ffff &&
+                !(codePoint >= 0xd800 && codePoint <= 0xdfff)
+            ) {
+                decodedCount++;
+                return String.fromCodePoint(codePoint);
+            }
+
+            return fullMatch;
+        }
+
+        const replacement = SUBTITLE_HTML_ENTITIES.get(entity.toLowerCase());
+        if (replacement != null) {
+            decodedCount++;
+            return replacement;
+        }
+
+        return fullMatch;
+    });
+
+    return {
+        text,
+        decoded: decodedCount
+    };
+}
+
+/**
+ * Collapse duplicated apostrophe artifacts only between Unicode letters.
+ * @param {string} input - Subtitle text
+ * @returns {string} - Text with duplicated in-word marks collapsed
+ */
+function collapseDuplicatedApostrophes(input) {
+    return input.replace(/(\p{L})['’´]{2,}(?=\p{L})/gu, "$1'");
+}
+
 /**
  * Sanitize subtitle text (remove unwanted characters, fix encoding issues)
  * @param {string} text - Subtitle text
@@ -962,10 +1034,11 @@ function createSubtitleUrl(id, lang, baseUrl) {
 function sanitizeSubtitleText(text) {
     if (!text) return '';
 
-    return text
+    const normalized = text
         .replace(/\r\n/g, '\n') // Normalize line endings
-        .replace(/[\x00-\x08\x0B-\x0C\x0E-\x1F\x7F]/g, '') // Remove control characters
-        .trim();
+        .replace(/[\x00-\x08\x0B-\x0C\x0E-\x1F\x7F]/g, ''); // Remove control characters
+
+    return collapseDuplicatedApostrophes(decodeSubtitleEntities(normalized).text).trim();
 }
 
 module.exports = {
@@ -978,6 +1051,8 @@ module.exports = {
     parseStremioId,
     createSubtitleUrl,
     sanitizeSubtitleText,
+    decodeSubtitleEntities,
+    collapseDuplicatedApostrophes,
     srtPairToWebVTT,
     convertToSRT,
     ensureSRTForTranslation,
