@@ -544,7 +544,7 @@ function finalizeSubtitleResults(
         processedSubtitles = rankSubtitlesByFilename(processedSubtitles, streamFilename, videoInfo);
         log.debug(
             () =>
-                `[${logContext}] Ranked ${processedSubtitles.length} subtitles by filename match + episode metadata + quality (downloads, rating, date)`
+                `[${logContext}] Ranked ${processedSubtitles.length} subtitles by confirmed hash, release metadata, episode, and quality evidence`
         );
     }
 
@@ -2359,22 +2359,31 @@ function parseReleaseMetadata(filename) {
     else if (lower.includes('apple') || lower.includes('atvp')) platform = 'apple';
     else if (lower.includes('paramount') || lower.includes('pmtp')) platform = 'paramount';
 
-    // Extract release group (usually at end, after last dash or in brackets)
-    // Patterns: "Movie.Name-GROUP", "Movie.Name[GROUP]", "Movie.Name (GROUP)"
+    // Extract release group only after removing the media extension. Without
+    // this stem, ".mkv" and ".srt" can be mistaken for release groups.
+    const filenameStem = String(filename || '').replace(
+        /\.(?:mkv|mp4|webm|avi|mov|wmv|m4v|srt|ass|ssa|vtt|sub|idx|sup)$/i,
+        ''
+    );
+    const technicalSuffixes =
+        /^(?:dl|rip|bluray|brr?ip|bdrip|web|webdl|webrip|hdtv|pdtv|dvdrip|hdrip|remux|x264|x265|h264|h265|hevc|av1|mkv|mp4|webm|avi|srt|ass|ssa|vtt)$/i;
     let releaseGroup = null;
 
-    // Try multiple patterns (most specific first)
+    // Bracketed and dash/underscore-delimited groups are explicit. Removing the
+    // ambiguous bare-token pattern prevents codecs and other suffixes from
+    // becoming release groups when the filename contains no group at all.
     const patterns = [
         /\[([A-Z0-9]+)\]\s*$/i, // [RARBG] at end
         /\(([A-Z0-9]+)\)\s*$/i, // (YTS) at end
-        /[-_]([A-Z0-9]{2,})\s*$/i, // -ETRG or _PSA at end
-        /\b([A-Z0-9]{2,})\s*$/i // SPARKS at end (no separator)
+        /[-_]([A-Z0-9]{2,})\s*$/i // -ETRG or _PSA at end
     ];
 
     for (const pattern of patterns) {
-        const match = filename.match(pattern);
+        const match = filenameStem.match(pattern);
         if (match) {
-            releaseGroup = match[1].toLowerCase();
+            const candidate = match[1].toLowerCase();
+            if (technicalSuffixes.test(candidate)) continue;
+            releaseGroup = candidate;
             break;
         }
     }
@@ -2739,7 +2748,49 @@ function calculateFilenameMatchScore(streamFilename, subtitleName) {
 }
 
 /**
- * Sort subtitles by filename match score with secondary quality-based ranking
+ * Return every provider-supplied release name that can support sync matching.
+ * Display names are often generic; original filenames and release arrays retain
+ * evidence that providers already return without changing their public schema.
+ * @param {Object} subtitle - Normalized provider subtitle
+ * @returns {string[]} - Unique, non-empty release-name candidates
+ */
+function subtitleMatchNames(subtitle) {
+    const candidates = [
+        subtitle?.name,
+        subtitle?.originalFilename,
+        subtitle?.filename,
+        subtitle?.fileName,
+        subtitle?.file_name,
+        subtitle?.releaseName,
+        subtitle?.release_name,
+        subtitle?.release,
+        subtitle?.fullname,
+        subtitle?.fullName,
+        subtitle?.full_name,
+        subtitle?.title,
+        subtitle?.releaseInfo,
+        subtitle?.release_info,
+        ...(Array.isArray(subtitle?.releases) ? subtitle.releases : [])
+    ];
+    const seen = new Set();
+
+    return candidates
+        .filter((value) => typeof value === 'string')
+        .map((value) => value.trim())
+        .filter((value) => value && !/^(?:unknown|subtitle|community subtitle|opensubtitles\b)/i.test(value))
+        .filter((value) => {
+            const key = value.toLowerCase();
+            if (seen.has(key)) return false;
+            seen.add(key);
+            return true;
+        });
+}
+
+/**
+ * Sort subtitles using sync evidence first and quality metrics only as tiebreakers.
+ * Confirmed hashes remain a hard top tier; within that tier the order is release,
+ * episode, provider priority, quality, then provider reputation. No inferred
+ * provider-recommendation tier is introduced.
  * @param {Array} subtitles - Array of subtitle objects
  * @param {string} streamFilename - Stream filename from Stremio
  * @param {Object} videoInfo - Video metadata (imdbId, type, season, episode)
@@ -2753,59 +2804,69 @@ function rankSubtitlesByFilename(subtitles, streamFilename, videoInfo = null) {
     // Create fingerprint for stream once (for Tier 1 matching)
     const streamFingerprint = createReleaseFingerprint(streamFilename);
     const withScores = subtitles.map((sub) => {
-        let finalScore = 0;
-        let matchTier = 'none';
-        let matchDetails = '';
+        const isConfirmedHashMatch = sub.hashMatch === true;
+        const matchNames = subtitleMatchNames(sub);
+        let bestFingerprintMatchScore = 0;
+        let bestFilenameMatchScore = 0;
 
-        // TIER 0: Hash Match (200,000+ points)
-        // Highest priority - provider confirmed this subtitle matches the exact video file hash
-        // Supported by: OpenSubtitles auth (moviehash_match)
-        if (sub.hashMatch === true) {
-            finalScore = 200000 - (sub.hashMatchPriority || 0); // Higher priority = higher score within tier
+        // Evaluate every provider release name before considering provider order
+        // or popularity. This prevents a weak early hash result from outranking a
+        // stronger release match merely because its provider returned it first.
+        for (const matchName of matchNames) {
+            const subtitleFingerprint = createReleaseFingerprint(matchName);
+            bestFingerprintMatchScore = Math.max(
+                bestFingerprintMatchScore,
+                checkFingerprintMatch(streamFingerprint, subtitleFingerprint)
+            );
+            bestFilenameMatchScore = Math.max(
+                bestFilenameMatchScore,
+                calculateFilenameMatchScore(streamFilename, matchName)
+            );
+        }
+
+        let releaseEvidenceScore = 0;
+        let matchTier = 'tier3-fallback';
+        let matchDetails = 'No match - fallback';
+        if (bestFingerprintMatchScore >= 5) {
+            releaseEvidenceScore = 90000;
+            matchTier = 'tier1-perfect';
+            matchDetails = 'Perfect metadata match (5/5 fields)';
+            log.debug(() => `[Tier 1 Perfect] ${sub.name}: ${matchDetails}`);
+        } else if (bestFingerprintMatchScore === 4) {
+            releaseEvidenceScore = 70000;
+            matchTier = 'tier1-very-good';
+            matchDetails = 'Very good metadata match (4/5 fields)';
+            log.debug(() => `[Tier 1 Very Good] ${sub.name}: ${matchDetails}`);
+        } else if (bestFingerprintMatchScore === 3) {
+            releaseEvidenceScore = 50000;
+            matchTier = 'tier1-good';
+            matchDetails = 'Good metadata match (3/5 fields)';
+            log.debug(() => `[Tier 1 Good] ${sub.name}: ${matchDetails}`);
+        } else {
+            // Cap Tier 2 scores at 20,000 to keep them below Tier 1.
+            releaseEvidenceScore = Math.min(bestFilenameMatchScore, 20000);
+            if (releaseEvidenceScore > 0) {
+                matchTier = 'tier2-filename';
+                matchDetails = '';
+            }
+        }
+
+        const finalScore = isConfirmedHashMatch ? 200000 : releaseEvidenceScore;
+        if (isConfirmedHashMatch) {
             matchTier = 'tier0-hash';
             matchDetails = `Hash match from ${sub.provider} - exact video file match`;
             log.debug(() => `[Tier 0 Match] ${sub.name}: ${matchDetails}`);
         }
 
-        // TIER 1: Release Fingerprint Match (50,000-90,000 points)
-        // High priority - critical metadata matches (group, rip, resolution, codec, platform)
-        // Uses only sub.name for fair comparison across all providers
-        if (finalScore === 0) {
-            const subtitleFingerprint = createReleaseFingerprint(sub.name || '');
-            const fingerprintMatchScore = checkFingerprintMatch(streamFingerprint, subtitleFingerprint);
-            if (fingerprintMatchScore >= 5) {
-                finalScore = 90000;
-                matchTier = 'tier1-perfect';
-                matchDetails = 'Perfect metadata match (5/5 fields)';
-                log.debug(() => `[Tier 1 Perfect] ${sub.name}: ${matchDetails}`);
-            } else if (fingerprintMatchScore === 4) {
-                finalScore = 70000;
-                matchTier = 'tier1-very-good';
-                matchDetails = 'Very good metadata match (4/5 fields)';
-                log.debug(() => `[Tier 1 Very Good] ${sub.name}: ${matchDetails}`);
-            } else if (fingerprintMatchScore === 3) {
-                finalScore = 50000;
-                matchTier = 'tier1-good';
-                matchDetails = 'Good metadata match (3/5 fields)';
-                log.debug(() => `[Tier 1 Good] ${sub.name}: ${matchDetails}`);
-            }
-        }
-        // TIER 2: Filename Similarity Match (0-20,000 points)
-        // Standard priority - fuzzy matching based on sub.name only
-        if (finalScore === 0) {
-            const filenameScore = calculateFilenameMatchScore(streamFilename, sub.name || '');
-            // Cap Tier 2 scores at 20,000 to keep them below Tier 1
-            finalScore = Math.min(filenameScore, 20000);
-            matchTier = finalScore > 0 ? 'tier2-filename' : 'tier3-fallback';
-            if (finalScore === 0) {
-                matchDetails = 'No match - fallback';
-            }
-        }
         return {
             ...sub,
             _matchScore: finalScore,
             _matchTier: matchTier,
-            _matchDetails: matchDetails
+            _matchDetails: matchDetails,
+            _confirmedHashMatch: isConfirmedHashMatch,
+            _releaseEvidenceScore: releaseEvidenceScore,
+            _hashMatchPriority: Number.isFinite(Number(sub.hashMatchPriority)) ? Number(sub.hashMatchPriority) : null,
+            _episodeMatchScore: 0
         };
     });
 
@@ -2817,7 +2878,7 @@ function rankSubtitlesByFilename(subtitles, streamFilename, videoInfo = null) {
         const targetEpisode = videoInfo.episode;
 
         for (const sub of withScores) {
-            const name = (sub.name || '').toLowerCase();
+            const names = subtitleMatchNames(sub).map((name) => name.toLowerCase());
 
             // Check for season/episode patterns in subtitle name
             // Patterns: S02E01, s02e01, 2x01, S02.E01, etc.
@@ -2855,20 +2916,26 @@ function rankSubtitlesByFilename(subtitles, streamFilename, videoInfo = null) {
                 new RegExp(`(?:^|[\\s\\[\\(\\-_])\\d+\\s*[-~]\\s*0*${targetEpisode}(?=$|[\\s\\]\\)\\-_.])`, 'i')
             ];
 
-            const hasCorrectEpisode =
-                !hasExplicitSeasonEpisodeMismatch(name, targetSeason, targetEpisode) &&
-                (seasonEpisodePatterns.some((pattern) => pattern.test(name)) ||
-                    (videoInfo.type === 'anime-episode' && animeEpisodePatterns.some((p) => p.test(name))));
+            const hasCorrectEpisode = names.some(
+                (name) =>
+                    !hasExplicitSeasonEpisodeMismatch(name, targetSeason, targetEpisode) &&
+                    (seasonEpisodePatterns.some((pattern) => pattern.test(name)) ||
+                        (videoInfo.type === 'anime-episode' && animeEpisodePatterns.some((p) => p.test(name))))
+            );
 
             if (hasCorrectEpisode) {
-                // BONUS: Subtitle name explicitly mentions correct episode
-                sub._matchScore += 2000; // Large bonus to prioritize correct episodes
+                // Episode evidence breaks ties inside the confirmed-hash group
+                // without changing the fixed 200,000-point hash tier itself.
+                sub._episodeMatchScore = 1;
+                if (!sub._confirmedHashMatch) sub._matchScore += 2000;
             } else {
-                // Check if subtitle has ANY episode number (wrong episode)
-                const hasWrongEpisode = /s\d+e\d+|\d+x\d+|season\s*\d+.*episode\s*\d+|\b(ep?\d{1,3})\b/i.test(name);
+                // Check all provider names for an explicit, wrong episode.
+                const hasWrongEpisode = names.some((name) =>
+                    /s\d+e\d+|\d+x\d+|season\s*\d+.*episode\s*\d+|\b(ep?\d{1,3})\b/i.test(name)
+                );
                 if (hasWrongEpisode) {
-                    // PENALTY: Subtitle is for wrong episode (e.g., S02E11 when we want S02E01)
-                    sub._matchScore -= 3000; // Heavy penalty for wrong episode
+                    sub._episodeMatchScore = -1;
+                    if (!sub._confirmedHashMatch) sub._matchScore -= 3000;
                 }
             }
         }
@@ -2892,11 +2959,9 @@ function rankSubtitlesByFilename(subtitles, streamFilename, videoInfo = null) {
         subsource: 2 // Good reputation - API provides rating-sorted results with rich metadata
     };
 
-    // Three-tier ranking system (provider-agnostic, sub.name only):
-    // 0. Tier 0 (200,000+ pts): Provider hash match - exact video file match
-    // 1. Tier 1 (50,000-90,000 pts): Release fingerprint match - critical metadata matches
-    // 2. Tier 2 (0-20,000 pts): Filename similarity - fuzzy matching
-    // 3. Tier 3 (negative pts): Fallbacks - season packs, wrong episodes
+    // Ranking order: confirmed file hash, release fingerprint, filename
+    // similarity, then fallback. Every provider release name contributes to the
+    // same score. Quality metrics and reputation cannot override sync evidence.
 
     // Within each tier, quality score (downloads, ratings, date) acts as tiebreaker
     // Helper: Calculate normalized quality score (0-100) from downloads, rating, and date
@@ -2949,23 +3014,31 @@ function rankSubtitlesByFilename(subtitles, streamFilename, videoInfo = null) {
     };
 
     withScores.sort((a, b) => {
-        // Primary sort: Filename match score (descending - higher is better)
-        const scoreDiff = b._matchScore - a._matchScore;
+        // Confirmed hashes are always the top group. Only release and episode
+        // evidence may reorder that group before provider priority and quality.
+        if (a._confirmedHashMatch !== b._confirmedHashMatch) return a._confirmedHashMatch ? -1 : 1;
+        if (a._confirmedHashMatch && b._confirmedHashMatch) {
+            const releaseDiff = b._releaseEvidenceScore - a._releaseEvidenceScore;
+            if (releaseDiff !== 0) return releaseDiff;
 
-        // If scores are significantly different (>1000 points), use filename score
-        // High threshold ensures filename matching is DOMINANT over quality metrics
-        // This prevents providers without download data (OpenSubtitles V3) from being unfairly penalized
-        if (Math.abs(scoreDiff) > 1000) {
-            return scoreDiff;
+            const episodeDiff = b._episodeMatchScore - a._episodeMatchScore;
+            if (episodeDiff !== 0) return episodeDiff;
+
+            const aPriority = a._hashMatchPriority;
+            const bPriority = b._hashMatchPriority;
+            if (aPriority !== null && bPriority !== null && aPriority !== bPriority) return aPriority - bPriority;
         }
 
-        // Special case: When both scores are 0 (no filename match), prioritize by provider reputation first
-        // This ensures quality providers aren't unfairly penalized when release names are missing
+        // Any actual sync-score difference outranks popularity. Downloads,
+        // ratings, and recency are consulted only when this evidence is tied.
+        const scoreDiff = b._matchScore - a._matchScore;
+        if (scoreDiff !== 0) return scoreDiff;
+
+        // Preserve the provider-reputation preference for genuinely empty
+        // fallback results, where no release or filename evidence is available.
         if (a._matchScore === 0 && b._matchScore === 0) {
             const reputationDiff = (providerReputation[b.provider] || 0) - (providerReputation[a.provider] || 0);
-            if (reputationDiff !== 0) {
-                return reputationDiff;
-            }
+            if (reputationDiff !== 0) return reputationDiff;
         }
 
         // Secondary sort: Composite quality score (balanced weighting of all metrics)
@@ -2982,8 +3055,19 @@ function rankSubtitlesByFilename(subtitles, streamFilename, videoInfo = null) {
         return (providerReputation[b.provider] || 0) - (providerReputation[a.provider] || 0);
     });
 
-    // Remove the temporary score properties before returning
-    return withScores.map(({ _matchScore, _matchTier, _matchDetails, ...rest }) => rest);
+    // Remove every temporary ranking field before returning provider objects.
+    return withScores.map(
+        ({
+            _matchScore,
+            _matchTier,
+            _matchDetails,
+            _confirmedHashMatch,
+            _releaseEvidenceScore,
+            _hashMatchPriority,
+            _episodeMatchScore,
+            ...rest
+        }) => rest
+    );
 }
 
 /**
@@ -8095,6 +8179,8 @@ async function enrichHistoryEntriesBackground(entries, userHash, fallbackVideoId
 // Re-export everything properly
 module.exports = {
     createSubtitleHandler,
+    rankSubtitlesByFilename,
+    parseReleaseMetadata,
     handleSubtitleDownload,
     handleTranslation,
     createLoadingSubtitle,

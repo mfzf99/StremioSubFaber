@@ -2,6 +2,26 @@
 
 All notable changes to this project will be documented in this file.
 
+## SubFaber v3.28.2 (2026-11-07) — Sync-First Subtitle Ranking
+
+### 🔧 Changed — Provider Release Evidence and Hash Tie-Breaking
+
+- Ranking now evaluates provider-supplied original filenames, release fields, and SubDL release arrays in addition to display names. Generic labels no longer discard useful stream-specific synchronization evidence already returned by OpenSubtitles, OpenSubtitles V3, SubDL, and SubSource.
+- Confirmed file-hash matches remain the hard top tier, including candidates without release metadata. Within that tier, candidates are ordered by release evidence, episode evidence, provider hash priority, quality, and provider reputation.
+- Downloads, ratings, and recency now act only as tie-breakers when synchronization evidence is equal. They cannot override a positive score difference or replace confirmed hash evidence.
+- Adapted the useful P1 concepts from SubMaker v1.4.96 without importing its provider-recommendation priority tier or SCS-specific behavior. A stronger release fingerprint therefore cannot be outranked by an inferred provider recommendation or a weaker synchronization match.
+
+### 🐛 Fixed — Release Group Parsing
+
+- Media extensions are stripped before release-group extraction, preventing `.mkv` and `.srt` from being misclassified as release groups.
+- Ambiguous bare technical suffixes are no longer treated as release groups, while bracketed and explicitly delimited groups remain supported.
+
+### ✅ Verification
+
+- Added ten deterministic ranking regressions covering confirmed hashes, release and episode tie-breaks, missing metadata, original filenames, SubDL release arrays, external priority flags, quality ties, extension parsing, and non-mutating output. Strengthened the existing ranking-before-deduplication regression so the correctly synchronized duplicate survives despite lower popularity.
+- Targeted ranking and timeout suites: **18/18 PASS**. Full suite: **46 files / 601 total / 600 PASS / 0 FAIL / 1 SKIP (live Redis)**. Prettier passed; scoped ESLint reported zero errors and 14 pre-existing warnings. Production dependency audit reported zero vulnerabilities.
+- Backend-only change: coupled Zones A/B/C, UI, payload serialization, rehydration, and server schema are not applicable. No external provider contract changed, so live-provider and Playwright verification are not applicable. Existing version-based asset cache-busting remains active; Graphify is not applicable because `graphify-out/` is absent.
+
 ## SubFaber v3.28.1 (2026-11-04) — Trinity Penalty Contract Audit
 
 ### 🐛 Fixed — Anthropic Capability Accuracy

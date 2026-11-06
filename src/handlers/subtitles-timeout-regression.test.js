@@ -25,12 +25,13 @@ test('subtitle handler does not define route/cache fallback timeout knobs', () =
 });
 
 test('finalizeSubtitleResults ranks before deduplicating so the best duplicate survives', () => {
-    const makeDuplicate = (provider, downloads) => ({
+    const makeDuplicate = (provider, downloads, originalFilename) => ({
         id: provider,
         fileId: provider,
         languageCode: 'eng',
         language: 'en',
         name: 'Show.S01E02.1080p.WEB-DL',
+        originalFilename,
         provider,
         downloads,
         rating: 0,
@@ -40,11 +41,14 @@ test('finalizeSubtitleResults ranks before deduplicating so the best duplicate s
     });
 
     const results = finalizeSubtitleResults(
-        [makeDuplicate('subdl', 1), makeDuplicate('opensubtitles-v3', 1000)],
+        [
+            makeDuplicate('subdl', 1000000, 'Wrong.Show.S01E02.720p.HDTV.x264-GROUP.srt'),
+            makeDuplicate('opensubtitles-v3', 1, 'Show.S01E02.1080p.WEB-DL.x264-GROUP.srt')
+        ],
         ['eng'],
         { deduplicateSubtitles: true },
         {
-            streamFilename: 'Show.S01E02.1080p.WEB-DL.mkv',
+            streamFilename: 'Show.S01E02.1080p.WEB-DL.x264-GROUP.mkv',
             videoInfo: { type: 'episode', season: 1, episode: 2 }
         }
     );

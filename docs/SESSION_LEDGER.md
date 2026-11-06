@@ -1,3 +1,35 @@
+## 2026-11-07 — v3.28.2 SYNC-FIRST SUBTITLE RANKING (OWNER MANDATE)
+
+- **Date:** 2026-11-07 ~00:41 (KL time).
+- **Parent HEAD SHA:** `27caddbb35eabed1ca0094e66a5346090cfe9bcf`.
+- **Status:** `VERIFIED_LOCAL`.
+- **Release Commit SHA + CI Run ID:** confirmed in the final report after push/CI.
+- **Owner Decision:** Implement the audited P1 subtitle-ranking improvements from SubMaker v1.4.96 in `src/handlers/subtitles.js`, without importing its provider-priority-tier bug or SCS behavior, then proceed directly to one release commit.
+- **Impact & Contract Audit (Phase A/B):** Backend-only ranking change. Provider-supplied original filenames, release fields, and SubDL release arrays now supplement generic display names; confirmed hashes remain the hard top tier and use release → episode → provider priority → quality → reputation ordering. All nonzero synchronization-score differences precede popularity. Media extensions and technical suffixes no longer become release groups. Existing rank-before-deduplication remains intact. No provider-recommendation tier or SCS consumer was added. Zones A/B/C, UI, payload serialization, rehydration/DOM, server schema, Gemini/Trinity/Tri-Door, and external provider contracts are `N/A`; Playwright and real-provider verification are `N/A` because no UI or external API contract changed. Version-based asset cache-busting remains active; Graphify NO-OP (`graphify-out/` absent).
+- **Independent Acceptance:** Ten deterministic ranking regressions cover hash/release/episode priority, hash without metadata, provider-priority tie-breaks, original filenames, SubDL release arrays, external priority flags, quality ties, extension parsing, and non-mutating output. The existing deduplication regression was strengthened so the correct release survives despite lower popularity. Controlled comparison confirmed the old implementation made the wrong episode/hash-priority and small-score/popularity choices addressed by these tests. No assertions were deleted or weakened.
+- **Files Involved:** src/handlers/subtitles.js (M: P1 ranking and parsing), src/handlers/subtitles-ranking-regression.test.js (A: 10 regressions), src/handlers/subtitles-timeout-regression.test.js (M: stronger duplicate-survival fixture), package.json/package-lock.json (3.28.1→3.28.2), CHANGELOG.md, docs/SESSION_LEDGER.md (this block plus the Owner's pre-existing infrastructure record preserved below).
+- **npm test Status:** **46 files / 601 total / 600 PASS / 0 FAIL / 1 SKIP (live Redis)**. Targeted suites **18/18 PASS**; full Prettier PASS; full ESLint **0 errors / 226 pre-existing warnings**; production dependency audit **0 vulnerabilities**; `git diff --check` PASS.
+- **Next Steps:** After the single release commit is pushed, verify `origin/main` and its CI run until SUCCESS, then report the Release Commit SHA + CI Run ID as `RELEASED_CI_GREEN`.
+
+---
+
+## 2026-11-06 — TERABIX FRESH VPS DEPLOYMENT AND CLOUDFLARE CUTOVER (INFRASTRUCTURE OPERATION)
+
+- **Date:** 2026-11-06 ~23:32 (KL time)
+- **Parent HEAD SHA:** `27caddbb` (repository version 3.28.1; no application code changes)
+- **Status:** `VERIFIED_LOCAL`
+- **Release Commit SHA + CI Run ID:** `N/A` — infrastructure operation only; no repository release or CI run was requested.
+- **Owner Decision:** Fresh-install SubFaber on Terabix CVM-4GB and move the existing Cloudflare Worker origin from Vultr. Do not migrate Redis, old user sessions, or the old encryption key.
+- **Current Terabix access:** IP `163.61.103.134`, user `root`, Debian 12, 2 vCPU, 4 GB RAM, 2 GB swap, 30 GB NVMe. Canonical OpenSSH alias: `terabix`; private key: `C:/Users/khaty/.ssh/terabix-auto.pem`; public-key fingerprint: `SHA256:cN/WksE+RjD3Jj1IiQqjbyBu7TDv3plVSpbwxh2FmQ8`. The passphrase-free Ed25519 key is restricted to the Windows Owner account. Host key fingerprint: `SHA256:c4ZWQ3FvPOddgZVicoOPWL/Xoyoo7OThVhr2KBu//SQ`. Project: `/opt/StremioSubFaber`. OpenSSH config uses `IdentityFile ~/.ssh/terabix-auto.pem`, `BatchMode yes`, and `IdentitiesOnly yes`.
+- **Access resolution:** Initial PuTTY PPK exports produced unusable authentication material; Pageant/Plink was used only as a temporary deployment bootstrap. A dedicated OpenSSH Ed25519 key pair was then generated and installed through that bootstrap. Real `ssh terabix` BatchMode login subsequently passed with Pageant stopped and the Windows ssh-agent service stopped. Pageant/Plink is no longer an automation dependency; the original encrypted PPK remains outside the repository as the Owner's recovery key.
+- **Installed and verified:** Docker Engine 29.9.3, Compose v5.7.0, canonical Redis stack v3.28.1 at `27caddbb`, Caddy 2.11.9 with automatic HTTPS for `163-61-103-134.sslip.io`, UFW allowing only OpenSSH/80/443. Operational `.env` values including Telegram/FinOps were transferred without printing secrets. Fresh encryption material and Redis are intentional for this clean install.
+- **Cutover and acceptance:** Owner updated the Cloudflare Worker target to `https://163-61-103-134.sslip.io`. Public health returned v3.28.1 with empty fresh Redis, proving the Worker no longer pointed at Vultr. Negative Gemini validation through the public domain returned the real `API key not valid` response, proving POST/Origin/Worker routing. Playwright loaded `/configure#/configuration` with zero console errors. Both containers healthy; app/Redis idle memory approximately 120/9 MiB; 24 GB disk free; Caddy and Docker active.
+- **Files Involved:** `docs/SESSION_LEDGER.md` (this block) only. External infrastructure: `/opt/StremioSubFaber/.env`, `/etc/caddy/Caddyfile`, Docker volumes/containers on Terabix, Cloudflare Worker target, `C:/Users/khaty/.ssh/config`.
+- **npm test Status:** `N/A` — no application code, test, or release configuration changed. Live infrastructure/API/UI checks recorded above.
+- **Next Steps:** Owner enters provider keys and installs a new Stremio configuration from the fresh instance. Keep Vultr available until the real-user flow is accepted; then cancel it deliberately. Configure a secure off-VPS backup of the new encryption key when appropriate. No ledger-only commit was created.
+
+---
+
 ## 2026-11-04 — v3.28.1 TRINITY PENALTY CONTRACT AUDIT (OWNER MANDATE)
 
 - **Date:** 2026-11-04 ~03:39 (KL time)
