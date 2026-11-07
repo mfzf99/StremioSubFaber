@@ -4,7 +4,7 @@
  *
  * Kontrak yang diuji (parit laporan audit diluluskan):
  *   1. parseInspectorResponse: JSON sah / rosak / berpagar markdown / chatter
- *   2. buildInspectionPayload: blok <en>/<ms> padat, ID global, cap baris
+ *   2. buildInspectionPayload: blok <source>/<translation> padat dan ID global
  *   3. Fail-open: panggilan API tergendala → { valid: true, failOpen: true }
  *   4. Circuit breaker: 3 kegagalan berturut → silent mode (tiada panggilan)
  *   5. Muatan (PENYATUAN MUTLAK 2026-10-25 — Mandat Owner):
@@ -126,9 +126,29 @@ test('AgentInspector: parseInspectorResponse sanitizes crime fields defensively'
     );
 });
 
-test('AgentInspector: parseInspectorResponse valid:false tanpa crimes boleh diperbetulkan → valid:true', () => {
-    const verdict = parseInspectorResponse('{"valid":false}');
-    assert.deepEqual(verdict, { valid: true }, 'no salvageable crimes → treat as valid');
+test('AgentInspector: parseInspectorResponse rejects invalid verdicts without actionable crimes', () => {
+    assert.equal(parseInspectorResponse('{"valid":false}'), null, 'missing crimes is not a silent pass');
+    assert.equal(parseInspectorResponse('{"valid":false,"crimes":[]}'), null, 'empty crimes is not a silent pass');
+    assert.equal(
+        parseInspectorResponse('{"valid":false,"crimes":[{"type":"DROP","ids":[],"note":"unclear"}]}'),
+        null,
+        'a crime without an affected ID is not actionable'
+    );
+});
+
+test('AgentInspector: parseInspectorResponse accepts canonical passes but rejects contradictory verdicts', () => {
+    assert.deepEqual(parseInspectorResponse('{"valid":true,"crimes":[]}'), { valid: true });
+    assert.deepEqual(parseInspectorResponse('{"valid":true}'), { valid: true }, 'legacy pass remains compatible');
+    assert.equal(
+        parseInspectorResponse('{"valid":true,"crimes":[{"type":"DROP","ids":[4],"note":"lost meaning"}]}'),
+        null,
+        'valid:true with a crime is contradictory and cannot pass'
+    );
+    assert.equal(
+        parseInspectorResponse('{"valid":false,"crimes":[{"type":"DROP","ids":["12junk"],"note":"bad id"}]}'),
+        null,
+        'partial numeric strings cannot be repurposed as a valid affected ID'
+    );
 });
 
 test('AgentInspector: parseInspectorResponse UNBOUNDED — SEMUA jenayah dipulangkan (siling 5 digugurkan)', () => {
@@ -280,7 +300,7 @@ test('AgentInspector: inspector instruction defines UNTRANSLATED + REGISTER with
     );
     assert.ok(
         INSPECTOR_INSTRUCTION.includes(
-            'do NOT flag: proper nouns, character/brand/company names, creative-work titles'
+            'Do NOT flag an individual name/brand rendered according to target-language convention'
         ),
         'UNTRANSLATED mesti kecualikan kata nama khas / tajuk (elak false-positive ESCAPE HATCH sah)'
     );
@@ -296,6 +316,31 @@ test('AgentInspector: inspector instruction defines UNTRANSLATED + REGISTER with
         ),
         'REGISTER mesti hanya trigger bila rujukan alamat bukan-null wujud (elak audit buta)'
     );
+    assert.ok(
+        INSPECTOR_INSTRUCTION.includes('Explicit current-source evidence overrides a conflicting reference'),
+        'REGISTER must follow explicit current-source evidence over pre-flight assumptions'
+    );
+    assert.ok(
+        INSPECTOR_INSTRUCTION.includes('keeping a bare source name bare is VALID, not REGISTER'),
+        'REGISTER must not force a title onto a bare source name'
+    );
+    assert.ok(
+        INSPECTOR_INSTRUCTION.includes('A retained entity never excuses an untranslated surrounding sentence'),
+        'proper-noun/title exceptions must not excuse the surrounding sentence'
+    );
+});
+
+test('AgentInspector: Inspector shares source-evidence and title policy with Translation', () => {
+    for (const fragment of [
+        'Current source dialogue is the ground truth',
+        'a bare source name may remain bare',
+        'Apply a locked term only to the entity or sense',
+        'otherwise retaining the original title is valid',
+        'Translate generic production-credit phrases naturally',
+        'normal target-language retention or transliteration is valid'
+    ]) {
+        assert.ok(INSPECTOR_INSTRUCTION.includes(fragment), `missing evidence/title contract: ${fragment}`);
+    }
 });
 
 test('AgentInspector: formatPreflightContextForInspection renders vocative direct-address when it differs', () => {
@@ -381,19 +426,44 @@ test('AgentInspector: inspector explicitly permits compression + idiomatic adapt
 
 // ── 2. buildInspectionPayload ──
 
-test('AgentInspector: buildInspectionPayload builds compact parallel <en>/<ms> blocks with global ids', () => {
+test('AgentInspector: buildInspectionPayload builds language-neutral parallel blocks with global ids', () => {
     const source = makeEntries(3, (i) => `Hello ${i}`);
     const translated = makeTranslated(3, (i) => `Hai ${i}`);
     const payload = buildInspectionPayload(source, translated);
     assert.ok(payload, 'payload must be built');
-    assert.ok(payload.prompt.includes('<en>'), 'must contain <en> block');
-    assert.ok(payload.prompt.includes('<ms>'), 'must contain <ms> block');
+    assert.ok(payload.prompt.includes('<source>'), 'must contain source block');
+    assert.ok(payload.prompt.includes('<translation>'), 'must contain translation block');
+    assert.ok(!payload.prompt.includes('<en>'), 'language-specific source labels must be gone');
+    assert.ok(!payload.prompt.includes('<ms>'), 'language-specific target labels must be gone');
     assert.ok(payload.prompt.includes('1|Hello 0'), 'source line id|text format');
     assert.ok(payload.prompt.includes('1|Hai 0'), 'translated line id|text format');
     assert.ok(payload.prompt.includes('MERGE'), 'instruction must list MERGE');
     assert.ok(payload.prompt.includes('DROP'), 'instruction must list DROP');
     assert.ok(payload.prompt.includes('PHANTOM'), 'instruction must list PHANTOM');
-    assert.ok(payload.prompt.includes('"valid":true'), 'JSON contract must be present');
+    assert.ok(payload.prompt.includes('{"valid":true,"crimes":[]}'), 'canonical JSON contract must be present');
+});
+
+test('AgentInspector: inspection input mapping preserves ordinal pairing, pipes, and markup semantics', () => {
+    const payload = buildInspectionPayload(
+        [
+            { id: 7, text: 'Left | right[br]- Mr. Lin arrives.' },
+            { id: 9, text: 'A second disconnected ID.' }
+        ],
+        [
+            { index: 0, text: 'Kiri | kanan[br]- Lin tiba.' },
+            { index: 1, text: 'ID terpisah kedua.' }
+        ]
+    );
+    assert.ok(payload.prompt.includes('7|Left | right[br]- Mr. Lin arrives.'));
+    assert.ok(payload.prompt.includes('7|Kiri | kanan[br]- Lin tiba.'));
+    assert.ok(payload.prompt.includes('9|A second disconnected ID.'));
+    for (const fragment of [
+        'identical ordinal positions and shared integer IDs',
+        'Everything after the first "|" is text',
+        'Markup such as [br], <i>...</i>, and speaker dashes is content'
+    ]) {
+        assert.ok(payload.prompt.includes(fragment), `missing input mapping: ${fragment}`);
+    }
 });
 
 test('AgentInspector: buildInspectionPayload rejects empty input (line truncation DIGUGURKAN — UNBOUNDED-CONTEXT 2026-09-29)', () => {
@@ -420,7 +490,7 @@ test('AgentInspector: buildInspectionPayload menormalkan whitespace tanpa memoto
     assert.ok(!line.includes('\t'), 'tab dibuang');
 });
 
-test('AgentInspector: buildInspectionPayload injects preflight context (theme/terms/characters) — CONTEXT-AWARE AUDIT', () => {
+test('AgentInspector: buildInspectionPayload injects preflight context (theme/terms/characters/credits) — CONTEXT-AWARE AUDIT', () => {
     const source = makeEntries(2, (i) => `Hello ${i}`);
     const translated = makeTranslated(2, (i) => `Hai ${i}`);
     const context = {
@@ -429,7 +499,8 @@ test('AgentInspector: buildInspectionPayload injects preflight context (theme/te
         characters: [
             { name: 'Shen Ruoxin', canonical_address: 'Puan Shen', role: 'female lead' },
             { name: 'Lin Bo', canonical_address: null, role: 'antagonist' }
-        ]
+        ],
+        credits_and_titles: [{ source: 'Original Work', target: 'Original Work' }]
     };
     const payload = buildInspectionPayload(source, translated, context);
     assert.ok(payload, 'payload must be built');
@@ -440,11 +511,15 @@ test('AgentInspector: buildInspectionPayload injects preflight context (theme/te
     assert.ok(payload.prompt.includes('### Character Address Reference'), 'characters header mesti hadir');
     assert.ok(payload.prompt.includes('- Shen Ruoxin → Puan Shen (female lead)'), 'gelaran terkunci mesti dirender');
     assert.ok(payload.prompt.includes('address NOT LOCKED'), 'null address mesti dirender sebagai NOT LOCKED');
-    // Blok input kekal selepas konteks
+    assert.ok(payload.prompt.includes('### Opening Credits / Titles'), 'credit/title mappings must reach Inspector');
+    assert.ok(payload.prompt.includes('- Original Work → Original Work'), 'unknown original title remains allowed');
+    // Blok data input kekal selepas konteks; definisi <source> dalam arahan
+    // statik bukan blok data dan tidak boleh dijadikan anchor susunan.
     assert.ok(
-        payload.prompt.indexOf('### Story Context') < payload.prompt.indexOf('<en>'),
-        'konteks sebelum blok input'
+        payload.prompt.indexOf('### Story Context') < payload.prompt.indexOf('## Input\n<source>'),
+        'konteks sebelum blok data input'
     );
+    assert.ok(payload.prompt.includes('Current source dialogue overrides contradictory pre-flight assumptions'));
 });
 
 test('AgentInspector: buildInspectionPayload tanpa preflightContext → tiada blok konteks (backwards compatible)', () => {
@@ -564,6 +639,23 @@ test('AgentInspector: runSemanticInspection fails open on unparseable response',
     const verdict = await inspector.runSemanticInspection(makeEntries(2), makeTranslated(2));
     assert.equal(verdict.valid, true, 'unparseable → fail open');
     assert.equal(verdict.failOpen, true);
+});
+
+test('AgentInspector: incomplete invalid verdict fails over instead of becoming a silent pass', async () => {
+    const inspector = new AgentInspector({
+        apiKey: 'test-key',
+        baseUrl: 'https://agent-inspector.example.com/v1',
+        model: 'primary-inspector',
+        fallbackModel: 'fallback-inspector'
+    });
+    inspector.translateSubtitle = async () => {
+        if (inspector.model === 'primary-inspector') return '{"valid":false,"crimes":[]}';
+        return '{"valid":true,"crimes":[]}';
+    };
+
+    const verdict = await inspector.runSemanticInspection(makeEntries(2), makeTranslated(2));
+    assert.deepEqual(verdict, { valid: true, modelUsed: 'fallback-inspector' });
+    assert.equal(inspector.circuitOpen, false, 'successful fallback resets the failure counter');
 });
 
 test('AgentInspector: runSemanticInspection returns crimes verdict on valid:false response', async () => {

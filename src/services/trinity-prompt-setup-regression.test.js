@@ -52,7 +52,7 @@ test('[TRINITY-CORE-2] Preflight and Inspector always use their canonical cores'
 
     const inspection = buildInspectionPayload([{ id: 1, text: 'Okay, boss' }], [{ index: 0, text: 'Okay, boss' }]);
     assert.ok(inspection.prompt.startsWith(INSPECTOR_INSTRUCTION));
-    assert.ok(inspection.prompt.includes('{"valid":true}'));
+    assert.ok(inspection.prompt.includes('{"valid":true,"crimes":[]}'));
     assert.ok(inspection.prompt.includes('accounting for valid clause reordering'));
 });
 
@@ -85,7 +85,7 @@ test('[TRINITY-CORE-3] Legacy setup options and environment values cannot change
     }
 });
 
-test('[TRINITY-CORE-4] Basic uses standalone wording and Pro uses contextual wording', () => {
+test('[TRINITY-CORE-4] Basic uses standalone wording and Pro uses contextual wording', async () => {
     assert.notEqual(BASIC_TRANSLATION_SYSTEM_TEMPLATE, TRANSLATION_SYSTEM_TEMPLATE);
     assert.ok(BASIC_TRANSLATION_SYSTEM_TEMPLATE.includes('## Standalone judgment'));
     assert.doesNotMatch(
@@ -98,10 +98,41 @@ test('[TRINITY-CORE-4] Basic uses standalone wording and Pro uses contextual wor
         assert.ok(template.includes('ZERO translator notes'));
     }
 
-    const basic = makeEngine({ trinityMode: 'basic' });
-    const pro = makeEngine({ trinityMode: 'pro' });
+    const injectedInspector = {
+        circuitOpen: false,
+        runPreflightPass: async () => {
+            throw new Error('Basic must not run Preflight');
+        },
+        runSemanticInspection: async () => {
+            throw new Error('Basic must not run Inspector');
+        }
+    };
+    const basic = makeEngine({ trinityMode: 'basic', agentInspector: injectedInspector });
+    const pro = makeEngine({ trinityMode: 'pro', agentInspector: injectedInspector });
     assert.equal(basic.translationTemplate, BASIC_TRANSLATION_SYSTEM_TEMPLATE);
     assert.equal(pro.translationTemplate, TRANSLATION_SYSTEM_TEMPLATE);
+    assert.equal(basic.agentInspector, null, 'Basic must reject an Inspector even with preserved/imported credentials');
+    assert.equal(pro.agentInspector, injectedInspector, 'Pro must retain the configured Inspector');
+
+    const source = '1\n00:00:01,000 --> 00:00:02,000\nHello.\n';
+    const basicProvider = {
+        translateSubtitle: async () => '<s id="1">Hai.</s>',
+        estimateTokenCount: () => 10
+    };
+    const basicRuntime = new TranslationEngine(
+        basicProvider,
+        'gemini-2.5-flash',
+        {},
+        {
+            trinityMode: 'basic',
+            agentInspector: injectedInspector
+        }
+    );
+    const basicOutput = await basicRuntime.translateSubtitle(source, 'Malay', null, null, 'English');
+    assert.ok(basicOutput.includes('Hai.'), 'Basic standalone translation must still complete');
+    assert.equal(basicRuntime.preflightContext, null, 'Basic must not create pre-flight context');
+    assert.equal(basicRuntime.translationStats.agentInspectorUsed, false);
+    assert.equal(basicRuntime.translationStats.agentInspectorBatchesInspected, 0);
 });
 
 test('[TRINITY-CORE-5] Canonical language-pack cadence and all runtime placeholders survive interpolation', () => {
@@ -139,15 +170,45 @@ test('[TRINITY-CORE-7] Runtime modules no longer expose the retired setup regist
     assert.equal(fs.existsSync(path.join(__dirname, 'prompts', 'trinity', 'translation', 'setups')), false);
 });
 
-test('[TRINITY-CORE-8] Cache namespace excludes stale registry output and retains user/format scoping', () => {
+test('[TRINITY-CORE-8] Cache namespace excludes stale semantic output and retains user/format scoping', () => {
     const permanent = generateCacheKeys({}, 'tt123_en', 'ms');
-    assert.equal(permanent.baseKey, 'tt123_en_ms_trinity-natural-v1');
+    assert.equal(permanent.baseKey, 'tt123_en_ms_trinity-natural-v2');
     assert.equal(permanent.cacheKey, permanent.baseKey);
 
     const bypass = generateCacheKeys({ bypassCache: true, __configHash: 'config-hash' }, 'tt123_en', 'ms');
-    assert.equal(bypass.cacheKey, 'tt123_en_ms_trinity-natural-v1__u_config-hash');
+    assert.equal(bypass.cacheKey, 'tt123_en_ms_trinity-natural-v2__u_config-hash');
     assert.equal(bypass.runtimeKey, bypass.cacheKey);
 
     const ass = generateCacheKeys({ convertAssToVtt: false }, 'tt123_en', 'ms');
-    assert.equal(ass.baseKey, 'tt123_en_ms_trinity-natural-v1_ass');
+    assert.equal(ass.baseKey, 'tt123_en_ms_trinity-natural-v2_ass');
+});
+
+test('[TRINITY-CORE-9] Translation prompts use entity-scoped title/name and meaning-based split contracts', () => {
+    for (const template of [TRANSLATION_SYSTEM_TEMPLATE, BASIC_TRANSLATION_SYSTEM_TEMPLATE]) {
+        assert.ok(
+            template.includes('These exceptions apply only to the affected entity, never to the surrounding sentence')
+        );
+        assert.ok(template.includes('retaining or transliterating that entity as appropriate'));
+        assert.ok(template.includes('otherwise retain the original title'));
+        assert.ok(
+            template.includes(
+                'Distribution follows meaning and readable phrase boundaries, not equal character or word counts'
+            )
+        );
+        assert.ok(!template.includes('distribute the clauses proportionally'));
+    }
+    assert.ok(TRANSLATION_SYSTEM_TEMPLATE.includes('SOURCE-EVIDENCE HIERARCHY'));
+    assert.ok(
+        TRANSLATION_SYSTEM_TEMPLATE.includes('explicit source evidence overrides contradictory Preflight assumptions')
+    );
+    assert.ok(BASIC_TRANSLATION_SYSTEM_TEMPLATE.includes('consistent within that visible scope'));
+    assert.ok(BASIC_TRANSLATION_SYSTEM_TEMPLATE.includes('do not assume access to unseen parts of the file'));
+});
+
+test('[TRINITY-CORE-10] Subtitle handler does not construct Inspector in Basic mode', () => {
+    const handlerSource = fs.readFileSync(path.join(__dirname, '..', 'handlers', 'subtitles.js'), 'utf8');
+    const constructorGate = handlerSource.match(
+        /const isProTrinityMode =[\s\S]*?if \(\s*isProTrinityMode &&\s*config\.agentInspector\?\.enabled === true/
+    );
+    assert.ok(constructorGate, 'AgentInspector construction must require Pro mode before configuration is consumed');
 });

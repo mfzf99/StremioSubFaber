@@ -211,7 +211,11 @@ class TranslationEngine {
         // DUAL-AI (Mandat Pelaksanaan 2026-09-26): Agent Inspector — Semantic Inspector
         // & Pre-Flight Offloader (glm-5.3-flashx, OpenAI-compatible). null →
         // enjin jalan 100% Gemini (backwards compatible penuh).
-        this.agentInspector = options.agentInspector || null;
+        // Basic is standalone at runtime even when imported/preserved Pro
+        // credentials still resolve to an Inspector configuration. Construction
+        // gating in the handler and this consumer gate provide defense in depth;
+        // neither path mutates the stored Trinity credentials.
+        this.agentInspector = this.trinityMode === 'basic' ? null : options.agentInspector || null;
         this._agentInspectorSemanticRetries = new Set(); // batchIndex yang sudah guna retry semantik
 
         // Mismatch retry: number of retries when AI returns wrong entry count (default: 1)
@@ -948,7 +952,12 @@ class TranslationEngine {
         // (formula 5+75+2 sahaja). Tiada lagi feature Pro (konteks tema/istilah)
         // menyerap masuk mod Basic. Circuit breaker terbuka pun tidak melata
         // kepada Agent Translation — kegagalan Agent Inspector dibiarkan pada Agent Inspector.
-        if (!this.isNativeBatchProvider && this.agentInspector && !this.agentInspector.circuitOpen) {
+        if (
+            this.trinityMode === 'pro' &&
+            !this.isNativeBatchProvider &&
+            this.agentInspector &&
+            !this.agentInspector.circuitOpen
+        ) {
             this.preflightContext = await this.agentInspector.runPreflightPass(
                 entries,
                 targetLanguage,
@@ -2462,6 +2471,7 @@ class TranslationEngine {
             !translatedEntries.some((e) => typeof e?.text === 'string' && e.text.startsWith('[⚠️]'));
 
         if (
+            this.trinityMode === 'pro' &&
             this.agentInspector &&
             !this.agentInspector.circuitOpen &&
             !this._agentInspectorSemanticRetries.has(batchIndex) &&

@@ -43,7 +43,7 @@ const genericPack = {
      * P1 pillar-4 injection: neutral credits directive (no hardcoded translation).
      */
     creditsExample:
-        'provide the official ${tgt} media/publishing translation for each line (e.g. "Adapted from..." -> its official published ${tgt} rendering)',
+        'translate generic media/publishing credit phrases naturally in ${tgt}; for a creative-work title, use an official ${tgt} title only when already known with confidence, otherwise retain the original title',
 
     /**
      * P2 injection: language-neutral few-shot — 2 contoh PARITY-CRITICAL.

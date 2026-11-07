@@ -142,13 +142,13 @@ test('BetaRun8: preflight prompt produces the full 4-pillar JSON contract', () =
     );
 });
 
-test('BetaRun8: credits detection is delegated to Kimi K3 over lines 1-5 with official translations', () => {
+test('BetaRun8: credits detection is delegated to Preflight over lines 1-5 with evidence-safe title mappings', () => {
     const prompt = buildPreflightPrompt('Some dialogue.', 'Malay', 'English');
     assert.ok(prompt.includes('lines 1-5'), 'Credits scan must be scoped to the earliest lines (1-5)');
     assert.ok(prompt.includes('NON-DIALOGUE opening text'), 'Credits scan must target non-dialogue openings only');
     assert.ok(
         prompt.includes('Adapted from') && prompt.includes('Diadaptasi daripada'),
-        'Official media/publishing translation example must be present in Phase 0 only'
+        'Natural generic-credit example must be present alongside evidence-safe title handling'
     );
     assert.ok(
         prompt.includes("return an empty array [] for 'credits_and_titles'"),

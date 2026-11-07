@@ -54,7 +54,7 @@ const malayPack = {
      * P1 pillar-4 injection: official media/publishing credit translation example.
      */
     creditsExample:
-        'provide the official ${tgt} media/publishing translation for each line (e.g. "Adapted from" -> "Diadaptasi daripada")',
+        'translate generic media/publishing credit phrases naturally (e.g. "Adapted from" -> "Diadaptasi daripada"); for a creative-work title, use an official ${tgt} title only when already known with confidence, otherwise retain the original title',
 
     /**
      * P2 injection: Malay few-shot examples — 2 contoh PARITY-CRITICAL.

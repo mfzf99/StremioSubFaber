@@ -4,7 +4,7 @@
  * Kontrak rasmi pintu (plans/trinity-channel-native-prompts.md §2.1):
  *   - systemText (INSPECTOR_INSTRUCTION + konteks Pre-Flight terinterpolasi)
  *     → systemInstruction top-level `{ parts: [{ text }] }`.
- *   - User content: blok data <en>/<ms> + arahan penutup.
+ *   - User content: blok data <source>/<translation> + arahan penutup.
  *   - Tiada prefill; tiada response_format — kesahan JSON dijamin
  *     parseInspectorResponse tahan lasak.
  */

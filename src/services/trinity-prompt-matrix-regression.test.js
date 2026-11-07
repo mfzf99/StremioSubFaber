@@ -76,7 +76,7 @@ function translationPayload() {
 function inspectorPayload() {
     return {
         systemText: interpolateInspectorSystem(),
-        dataText: '## Input\n<en>\n11|Hello there.\n</en>\n<ms>\n11|Hai semua.\n</ms>',
+        dataText: '## Input\n<source>\n11|Hello there.\n</source>\n<translation>\n11|Hai semua.\n</translation>',
         queryText: 'Respond with ONLY the JSON now.'
     };
 }
@@ -174,7 +174,7 @@ test('[MATRIX inspector×gemini] system terpisah, tiada prefill/response_format'
     const out = build(inspectorPayload());
     assert.equal(out.channel, 'gemini');
     assert.ok(out.systemPrompt.includes('Detect ONLY these seven violations'), 'taksonomi dalam system');
-    assert.ok(out.userPrompt.includes('<ms>'), 'blok data <en>/<ms> dalam user');
+    assert.ok(out.userPrompt.includes('<translation>'), 'blok data source/translation dalam user');
     assert.equal(out.prefill, undefined);
     assert.equal(out.responseFormat, undefined);
 });
@@ -191,6 +191,7 @@ test('[MATRIX inspector×openai] json_schema strict wajib', () => {
         ['MERGE', 'DROP', 'PHANTOM', 'SHIFT', 'UNTRANSLATED', 'REGISTER', 'TERM'],
         'enum 7 jenayah dalam skema strict'
     );
+    assert.deepEqual(out.responseFormat.json_schema.schema.required, ['valid', 'crimes']);
     assert.equal(out.prefill, undefined);
 });
 

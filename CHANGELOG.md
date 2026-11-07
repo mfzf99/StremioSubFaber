@@ -2,6 +2,23 @@
 
 All notable changes to this project will be documented in this file.
 
+## SubFaber v3.28.5 (2026-11-07) — Model-Neutral Trinity Evidence Contracts
+
+### 🐛 Fixed — Shared Translation and Inspection Semantics
+
+- Clarified the canonical Pro Translation and standalone Basic Translation contracts for weak and frontier models alike. Split-sentence output is now distributed by complete meaning units and readable phrase boundaries rather than ambiguous proportional allocation. Proper-name, brand, and title exceptions apply only to the affected entity, never to the surrounding sentence, and normal target-language transliteration remains available.
+- Unified Translation and Inspector evidence precedence: explicit current-source dialogue overrides contradictory Preflight assumptions, locked addresses remain source-triggered mappings, bare source names may remain bare, and term locks apply only to the same entity or sense. Generic production credits are translated naturally; creative-work titles use a known official rendering only when supported, otherwise retaining the original title.
+- Reworked Preflight decision discipline so stronger explicit evidence can resolve an earlier tentative reading without permitting open-ended reconsideration or alternative-answer generation. Field-specific fallbacks now match the strict four-pillar schema: required strings remain populated, empty categories use arrays, only address fields accept null, and ungrounded entries are omitted.
+- Made Inspector input language-neutral with explicit ordinal/ID pairing and `id|text` semantics, including embedded pipes and subtitle markup. The prompt and strict JSON schema now require `crimes` in both valid and invalid verdicts; invalid responses without an actionable crime and affected ID follow existing failover/fail-open handling instead of becoming silent passes. Legacy valid-only responses remain accepted.
+- Enforced Basic standalone operation at both Inspector construction and TranslationEngine consumption, including imported configurations and environment-derived Pro credentials. Stored Pro credentials remain intact for later mode switching.
+- Advanced the translation cache namespace to `_trinity-natural-v2` so output generated under the former prompt semantics cannot be served as new-contract output, while preserving user and ASS/SRT scoping.
+
+### ✅ Verification
+
+- Targeted prompt, channel, Preflight, Inspector, context, language-pack, mode-switch, and compatibility suites passed **251/251** with no skips. New and strengthened regressions cover source-evidence precedence, title/name scope, field-specific fallbacks, language-neutral inspection input, invalid-verdict failover, actionable IDs, embedded pipes, credit/title propagation, Basic runtime isolation, and cache invalidation.
+- Full suite: **44 files / 583 total / 582 PASS / 0 FAIL / 1 SKIP (existing real-Redis concurrent-quota integration)**. Full Prettier passed; full ESLint reported **0 errors / 226 pre-existing warnings**; production dependency audit reported **0 vulnerabilities**; whitespace/diff validation passed.
+- This is a backend prompt/runtime change with no UI, DOM, configuration-schema, provider-sampling, credential, or transport changes. Zones A/B and Playwright are not applicable. No live-provider quality improvement is claimed without a controlled model comparison. Existing version-based asset cache-busting remains active; Graphify is not applicable because `graphify-out/` is absent.
+
 ## SubFaber v3.28.4 (2026-11-07) — Single Canonical Trinity Prompt
 
 ### 🔧 Changed — One Prompt Family for Basic and Pro

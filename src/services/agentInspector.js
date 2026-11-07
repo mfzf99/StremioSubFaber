@@ -269,19 +269,35 @@ function formatPreflightContextForInspection(preflightContext) {
             );
     }
 
+    if (Array.isArray(preflightContext.credits_and_titles) && preflightContext.credits_and_titles.length > 0) {
+        const creditLines = preflightContext.credits_and_titles
+            .map((credit) => {
+                const src = String(credit?.source ?? credit?.src ?? '').trim();
+                const tgt = String(credit?.target ?? credit?.tgt ?? '').trim() || src;
+                return src ? `- ${src} → ${tgt}` : '';
+            })
+            .filter(Boolean)
+            .join('\n');
+        if (creditLines) {
+            sections.push(
+                `### Opening Credits / Titles (known official title or original title when unknown; generic credits translated naturally)\n${creditLines}`
+            );
+        }
+    }
+
     if (sections.length === 0) return '';
-    return `${sections.join('\n\n')}\n\n`;
+    return `### Source-Evidence Hierarchy\nCurrent source dialogue overrides contradictory pre-flight assumptions. Address locks apply only to their source-triggered title/address cues; bare names may remain bare. Term locks apply only to the same entity or sense.\n\n${sections.join('\n\n')}\n\n`;
 }
 
 /**
- * Bina payload padat untuk semakan semantik: dua blok selari <en> (sumber)
- * dan <ms> (hasil) — nombor ID global + teks sahaja, tanpa timecode.
+ * Bina payload padat untuk semakan semantik: dua blok selari <source>
+ * dan <translation> — nombor ID global + teks sahaja, tanpa timecode.
  * Baris dipadankan mengikut kedudukan index (batch[i] ↔ translatedEntries[i],
  * dijamin oleh gerbang enjin yang hanya memanggil inspector selepas alignment
  * struktur muktamad).
  *
- * @param {Array<{id:number, text:string}>} sourceBatch - Batch sumber (EN)
- * @param {Array<{index:number, text:string}>} translatedEntries - Hasil sejajar (MS)
+ * @param {Array<{id:number, text:string}>} sourceBatch - Batch sumber
+ * @param {Array<{index:number, text:string}>} translatedEntries - Hasil sejajar
  * @returns {{prompt:string}|null} Prompt lengkap inspector atau null (input kosong)
  */
 // [TRINITY FASA 3] buildInspectionPayload menerima builder channel-native
@@ -301,33 +317,33 @@ function buildInspectionPayload(sourceBatch, translatedEntries, preflightContext
             .replace(/\s+/g, ' ')
             .trim();
 
-    const enLines = [];
-    const msLines = [];
+    const sourceLines = [];
+    const translationLines = [];
     for (let i = 0; i < sourceBatch.length; i++) {
         const src = sourceBatch[i];
         if (!src || typeof src.id === 'undefined') continue;
         const id = Number(src.id);
         if (!Number.isFinite(id) || id <= 0) continue;
-        enLines.push(`${id}|${clamp(src.text)}`);
+        sourceLines.push(`${id}|${clamp(src.text)}`);
         const dst = translatedEntries[i];
-        msLines.push(`${id}|${clamp(dst?.text)}`);
+        translationLines.push(`${id}|${clamp(dst?.text)}`);
     }
-    if (enLines.length === 0) return null;
+    if (sourceLines.length === 0) return null;
 
     // CONTEXT-AWARE AUDIT (MANDAT OPERASI MUTLAK 2026-09-27): suntik ringkasan
-    // konteks Pre-Flight SEBELUM blok <en>/<ms> supaya pemeriksa menilai
+    // konteks Pre-Flight SEBELUM blok <source>/<translation> supaya pemeriksa menilai
     // konsistensi gelaran/istilah dengan bukti Fasa 0, bukan secara buta.
     const contextBlock = formatPreflightContextForInspection(preflightContext);
 
     const prompt = `${inspectorInstruction}
 
 ${contextBlock ? `${contextBlock}` : ''}## Input
-<en>
-${enLines.join('\n')}
-</en>
-<ms>
-${msLines.join('\n')}
-</ms>
+<source>
+${sourceLines.join('\n')}
+</source>
+<translation>
+${translationLines.join('\n')}
+</translation>
 
 Respond with ONLY the JSON now.`;
 
@@ -340,8 +356,8 @@ Respond with ONLY the JSON now.`;
         const wrapped = buildWrapper({
             systemText: inspectorInstruction,
             dataText: contextBlock
-                ? `${contextBlock}## Input\n<en>\n${enLines.join('\n')}\n</en>\n<ms>\n${msLines.join('\n')}\n</ms>`
-                : `## Input\n<en>\n${enLines.join('\n')}\n</en>\n<ms>\n${msLines.join('\n')}\n</ms>`,
+                ? `${contextBlock}## Input\n<source>\n${sourceLines.join('\n')}\n</source>\n<translation>\n${translationLines.join('\n')}\n</translation>`
+                : `## Input\n<source>\n${sourceLines.join('\n')}\n</source>\n<translation>\n${translationLines.join('\n')}\n</translation>`,
             queryText: 'Respond with ONLY the JSON now.'
         });
         return {
@@ -391,7 +407,14 @@ function parseInspectorResponse(responseText) {
     }
 
     if (!parsed || typeof parsed !== 'object') return null;
-    if (parsed.valid === true) return { valid: true };
+    if (parsed.valid === true) {
+        // Backward compatibility: legacy valid:true omitted crimes. A non-empty
+        // crime list contradicts the verdict and is not a trustworthy pass.
+        if (parsed.crimes === undefined || (Array.isArray(parsed.crimes) && parsed.crimes.length === 0)) {
+            return { valid: true };
+        }
+        return null;
+    }
     if (parsed.valid !== false) return null; // medan valid hilang → tidak sah
 
     // Sanitize crimes: jenis mesti sah, id mesti integer positif, nota di-cap
@@ -403,10 +426,11 @@ function parseInspectorResponse(responseText) {
             if (!VALID_CRIME_TYPES.has(type)) continue;
             const ids = Array.isArray(crime.ids)
                 ? crime.ids
-                      .map((n) => parseInt(n, 10))
-                      .filter((n) => Number.isFinite(n) && n > 0)
+                      .map((n) => (typeof n === 'number' || typeof n === 'string' ? Number(n) : NaN))
+                      .filter((n) => Number.isInteger(n) && n > 0)
                       .slice(0, AGENT_INSPECTOR_MAX_IDS_PER_CRIME)
                 : [];
+            if (ids.length === 0) continue;
             crimes.push({
                 type,
                 ids,
@@ -419,8 +443,10 @@ function parseInspectorResponse(responseText) {
         }
     }
 
-    // valid:false tetapi tiada jenayah boleh diperbetulkan → tiada tindakan
-    if (crimes.length === 0) return { valid: true };
+    // valid:false tanpa sekurang-kurangnya satu jenayah + ID boleh tindakan ialah
+    // respons tidak sah, bukan lulusan. Pemanggil mengekalkan failover/fail-open
+    // forensik sedia ada tanpa menelan laporan pelanggaran yang sah.
+    if (crimes.length === 0) return null;
 
     return { valid: false, crimes };
 }

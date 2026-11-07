@@ -195,13 +195,48 @@ test('SubFaberPreflight: [REASONING-DISCIPLINE] prompt bans alternative/candidat
     assert.ok(prompt.includes('never output A/B alternatives'), 'Prompt must forbid A/B alternative output');
 });
 
-test('SubFaberPreflight: [REASONING-DISCIPLINE] first-evidence-answer rule — no field reconsideration', () => {
+test('SubFaberPreflight: [REASONING-DISCIPLINE] evidence precedence resolves tentative readings without open-ended reconsideration', () => {
     const prompt = buildPreflightPrompt('Dialogue.', 'Malay', 'English');
     assert.ok(
-        prompt.includes('use the first explicit, evidence-supported answer and never reconsider it'),
-        'Prompt must lock the decision path to the first evidence-supported answer'
+        prompt.includes(
+            'When stronger explicit evidence elsewhere in the supplied text resolves an earlier tentative reading'
+        ),
+        'Prompt must allow later explicit evidence to resolve an earlier tentative reading'
     );
-    assert.ok(prompt.includes('Return ONE answer per field'), 'Prompt must mandate exactly one answer per field');
+    assert.ok(
+        prompt.includes('do not reconsider a settled field without new textual evidence'),
+        'Prompt must prohibit reconsideration without new evidence'
+    );
+    assert.ok(
+        prompt.includes('Return ONE final answer per field'),
+        'Prompt must mandate exactly one final answer per field'
+    );
+});
+
+test('SubFaberPreflight: field-specific fallbacks match required strings, nullable addresses, and empty arrays', () => {
+    const prompt = buildPreflightPrompt('Dialogue.', 'Malay', 'English');
+    assert.ok(prompt.includes('## FIELD-SPECIFIC FALLBACKS (MANDATORY)'));
+    assert.ok(prompt.includes('"theme" is always a required English string'));
+    assert.ok(prompt.includes('Use [] when no entry has sufficient evidence'));
+    assert.ok(prompt.includes('retain the source text as "target"'));
+    assert.ok(prompt.includes('omit the character if either required field cannot be supplied without invention'));
+    assert.ok(prompt.includes('Only "canonical_address" and "direct_address" may be null'));
+    assert.ok(prompt.includes('there is no minimum number of appearances'));
+    assert.ok(!prompt.includes('null IMMEDIATELY'), 'universal null fallback must be gone');
+    assert.ok(!prompt.includes('null is always the correct answer'), 'null must not replace required fields');
+});
+
+test('SubFaberPreflight: title policy separates natural generic credits from known official work titles', () => {
+    const prompt = buildPreflightPrompt('Dialogue.', 'Malay', 'English');
+    assert.ok(prompt.includes('Distinguish generic production-credit phrases from creative-work titles'));
+    assert.ok(prompt.includes('translate generic phrases naturally'));
+    assert.ok(prompt.includes('use an official Malay title only when already known with confidence'));
+    assert.ok(prompt.includes('Otherwise retain the original title exactly'));
+    assert.ok(prompt.includes('never invent an official title or claim external verification'));
+    assert.ok(
+        !prompt.includes('its official published Malay rendering'),
+        'unverifiable published rendering demand must be gone'
+    );
 });
 
 test('SubFaberPreflight: [REASONING-DISCIPLINE] scope narrowed to pre-flight extraction (NOT translating/rewriting/register)', () => {

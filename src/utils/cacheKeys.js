@@ -32,9 +32,10 @@ function normalizeUserHash(rawHash) {
  * @returns {boolean} .allowPermanent - Whether permanent cache reads/writes are allowed (requires userHash)
  */
 function generateCacheKeys(config, sourceFileId, targetLang) {
-    // Fixed-prompt namespace prevents cached output from the former selectable
-    // prompt registry from being served under the canonical translation prompt.
-    const sourceKey = `${sourceFileId}_${targetLang}_trinity-natural-v1`;
+    // Prompt-semantic namespace prevents output produced under the former
+    // evidence/title/verdict contracts from being served under the clarified
+    // canonical prompts. User and ASS/SRT scoping remain unchanged below.
+    const sourceKey = `${sourceFileId}_${targetLang}_trinity-natural-v2`;
     // When ASS passthrough is enabled, append format discriminator to prevent
     // ASS-format cached translations from being served to users expecting SRT
     const assPassthrough = config.convertAssToVtt === false && config.forceSRTOutput !== true;

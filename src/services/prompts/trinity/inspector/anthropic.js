@@ -3,7 +3,7 @@
  *
  * Kontrak rasmi pintu (plans/trinity-channel-native-prompts.md §2.3):
  *   - systemText → medan `system` top-level.
- *   - SUSUNAN DATA-DAHULU: blok <en>/<ms> di BAHAGIAN ATAS user content;
+ *   - SUSUNAN DATA-DAHULU: blok <source>/<translation> di BAHAGIAN ATAS user content;
  *     arahan penutup di BAHAGIAN HUJUNG.
  *   - SIFAR PREFILL: dilarang assistant prefill (patuh Claude 4.6+ & mod
  *     thinking). Tag XML eksplisit sebagai pembatas data.

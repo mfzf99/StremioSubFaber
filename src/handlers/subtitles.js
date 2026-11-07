@@ -6305,7 +6305,9 @@ async function performTranslation(
             // fallback .env — TIADA lalai statik dalam kod. Gagal konfigurasi →
             // null → enjin jalan 100% Agent Translation (backwards compatible penuh).
             let agentInspector = null;
+            const isProTrinityMode = String(config.trinity?.mode || 'pro').toLowerCase() === 'pro';
             if (
+                isProTrinityMode &&
                 config.agentInspector?.enabled === true &&
                 config.agentInspector?.baseUrl &&
                 config.agentInspector?.apiKey

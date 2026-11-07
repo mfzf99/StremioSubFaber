@@ -7,7 +7,7 @@
  *   - Inspector ialah agent JSON → WAJIB response_format
  *     { type: 'json_schema', strict: true } dijana daripada skema kanonik
  *     INSPECTOR_SCHEMA_CONTRACT (core.js). Tiada pengecualian.
- *   - User content: blok data <en>/<ms> + arahan penutup.
+ *   - User content: blok data <source>/<translation> + arahan penutup.
  */
 
 const { assertTrinityPayload, joinUserContent } = require('../wrapperUtils');
