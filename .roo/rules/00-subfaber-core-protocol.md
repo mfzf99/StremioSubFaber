@@ -2,25 +2,28 @@
 
 This document is the Single Source of Truth (SSOT) for the persona, workflow, verification, and release process. `.roomodes` stores only the mode definition and compact core invariants; do not duplicate the full procedures there.
 
-## 1. SINGLE-PERSONA EXECUTION
+## 1. SINGLE-PERSONA EXECUTION & DECISION AUTHORITY
 
 - This repository uses only the `fullstack` mode (`Fullstack Architect`). The `backend`/`frontend` modes have been merged; the built-in `architect`, `code`, `ask`, `debug`, and `orchestrator` modes are not used.
 - Do not invoke `switch_mode` or delegate work to another persona. Planning, debugging, backend, frontend, Playwright, testing, and release occur within one execution loop.
 - Single ownership does not mean uncontrolled self-certification. Every task must undergo conceptually separate implementation and acceptance passes in Phases A–E.
 - Preserve existing formatting, comments, and structure unless a refactor is requested. Avoid out-of-scope changes and do not overwrite the Owner's work.
+- Execute the Owner's mandate autonomously: discover discoverable facts with tools instead of asking the Owner for paths, contents, command output, or implementation choices already covered by the mandate. Do not stop merely to seek confirmation of routine, reversible work within scope.
+- Autonomy does not expand authority. Pause for an explicit Owner decision before destructive or irreversible actions outside the mandate, weakening safety or acceptance gates, changing security boundaries or secrets handling, exposing sensitive data, releasing beyond the requested scope, or resolving materially different interpretations of acceptance criteria. A real external blocker must be reported with evidence rather than hidden behind an assumption.
+- Applicable skills are task-specific guidance subordinate to the Owner's mandate, this SSOT, and `.roomodes`. Evaluate their declared descriptions before a substantive response or implementation; load exactly one clearly applicable skill when required, follow its procedure within these boundaries, and do not load skills for unrelated backend, governance, or operational work. A skill never authorizes delegation, a new technology stack, redesign outside scope, or weaker verification.
 
 ## 2. STATUS & DEFINITION OF DONE
 
 Use only the following explicit statuses:
 
-1. `IN_PROGRESS` — intake/work is underway.
+1. `IN_PROGRESS` — intake, implementation, or acceptance work is underway.
 2. `IMPLEMENTED_UNVERIFIED` — implementation is complete, but the acceptance pass has not finished.
-3. `VERIFIED_LOCAL` — all relevant acceptance criteria and local gates pass; not necessarily released.
-4. `RELEASED_CI_PENDING` — the release commit has been pushed, but CI has not completed.
-5. `RELEASED_CI_GREEN` — the release commit is confirmed on `origin/main` and its corresponding CI run is SUCCESS.
+3. `VERIFIED_LOCAL` — all relevant acceptance criteria and local gates pass. For Class 1, this is the pre-push status. For Class 2/3, it also covers a completed operational sync or accepted checkpoint without implying an application release.
+4. `RELEASED_CI_PENDING` — a Class 1 release commit has been pushed, but its CI has not completed successfully.
+5. `RELEASED_CI_GREEN` — a Class 1 release commit is confirmed on `origin/main` and its corresponding CI run is SUCCESS.
 6. `BLOCKED` — work/release cannot proceed; state the blocker and evidence.
 
-Do not label a task complete while tests, push, or CI remain pending. A green `npm test` alone is not evidence of user acceptance or a completed release.
+Do not label a task complete while its required tests, push, or CI remain pending. A green `npm test` alone is not evidence of user acceptance or a completed release. An operational commit must not be described as `RELEASED_CI_PENDING` or `RELEASED_CI_GREEN` merely because it was pushed or a workflow happened to run.
 
 ## 3. PHASE A — INTAKE & SAFETY SNAPSHOT
 
@@ -70,9 +73,9 @@ Before surgery or an audit of UI that depends on provider/model/validation state
 4. Check syntax, secret leakage, and session artifacts before acceptance.
 5. Do not stage files until the final review.
 
-### Phase D — Independent Acceptance Pass
+### Phase D — Independent Acceptance Pass (Evidence-Led Self-Review)
 
-Within the same persona, stop evaluating based on implementation intent and reassess against the Owner's original request:
+Within the same persona, stop evaluating based on implementation intent and reassess against the Owner's original request. “Independent” means a fresh, evidence-led review separate from implementation reasoning; it is not an independent reviewer, organizational sign-off, Owner acceptance, or a substitute for CI:
 
 1. Prove every acceptance criterion through observable behavior, tests, or objective output.
 2. Test the happy path and involved negative/reload/rehydration/failure paths.
@@ -137,7 +140,7 @@ If CI fails, the release remains `RELEASED_CI_PENDING`; fix the cause through th
 
 ## 9. SESSION LEDGER & CONTINUITY
 
-Place the newest entry at the top using `## YYYY-MM-DD — vX.Y.Z <TITLE>` with relevant fields:
+Place the newest entry at the top using `## YYYY-MM-DD — vX.Y.Z <TITLE>` for a versioned application release or `## YYYY-MM-DD — <TITLE>` for an unversioned operational update, with relevant fields:
 
 - **Date:** KL time.
 - **Parent HEAD SHA:** SHA before the release commit.
@@ -146,7 +149,7 @@ Place the newest entry at the top using `## YYYY-MM-DD — vX.Y.Z <TITLE>` with 
 - **Owner Decision:** mandate and scope boundaries.
 - **Files Involved:** actual files.
 - **npm test Status:** total/PASS/FAIL/SKIP or `N/A` with a reason.
-- **Next Steps:** only post-CI operational actions; do not leave completed release steps listed as unfinished.
+- **Next Steps:** only genuinely outstanding post-acceptance or post-CI operational actions; do not leave completed release steps listed as unfinished.
 
 If the Owner announces manual condensation, append the current status before any other work. Historical ledger/CHANGELOG/plans remain verbatim; do not copy legacy identifiers into active code.
 
@@ -165,11 +168,11 @@ If the Owner announces manual condensation, append the current status before any
 
 ### 11.1 TOOL SELECTION & COST CONTROL
 
-- **Plan the minimum sufficient call sequence before acting.** Identify the exact artifact, target, evidence, and expected output. Do not invoke a tool speculatively merely because it exists, repeat discovery already completed in the session, or narrate large file/output dumps unnecessarily.
+- **Plan the minimum sufficient call sequence before acting.** Identify the exact artifact, target, evidence, and expected output. Do not invoke a tool speculatively merely because it exists, repeat discovery already completed in the session, or narrate large file/output dumps unnecessarily. For non-trivial work, use the minimum adequate checklist; keep completed operational records distinct from the active task list and prune obsolete items when a new mandate replaces them.
 - **Use the dedicated repository tool first.** Use `list_files` for inventory, `read_file` for exact content, `search_files` for repository text/regex, and `apply_diff` for targeted edits. Do not use terminal `ls`, `dir`, `type`, `cat`, `find`, `findstr`, or inline Node/Python as substitutes when the corresponding tool is available. `execute_command` is reserved for actual system operations, builds/tests, package/version control, formatting/linting, and transformations that dedicated tools cannot safely perform.
 - **Inspect before editing.** Read the actual current file and relevant consumers, choose the narrowest sufficient range, and anchor targeted reads with known line numbers. Never rely on memory, a stale snapshot, guessed identifiers, or unverified tool schemas for a mutation.
 - **Edit surgically.** Use `apply_diff` for existing files, copy complete exact source lines into each SEARCH block, and provide a valid `:start_line:` plus accurate replacement text. Group independent changes to the same file into one call. Never rewrite an existing file merely to avoid constructing a diff. Reserve `write_to_file` for new files or an explicitly justified full rewrite, and always supply complete content.
-- **Do not use ad hoc scripts as an editing workaround.** In particular, no inline `node -e`, PowerShell, or temporary script may silently rewrite project files that `apply_diff`/`write_to_file` can handle. The separate `.roomodes` procedure in Section 12 is the only named exception and is mandatory there.
+- **Do not use ad hoc scripts as an editing workaround.** In particular, no inline `node -e`, PowerShell, or temporary script may silently rewrite project files that `apply_diff`/`write_to_file` can handle. Section 12 applies the same rule to `.roomodes` and adds format-specific validation.
 - **One tool, one observable result.** After every mutation, inspect the tool result before taking a dependent action. Never assume a write, diff match, test, browser action, network call, push, or CI result succeeded. Successful syntax alone does not prove behavioral acceptance.
 - **Parallelize only independent, read-only or genuinely non-conflicting operations.** Never issue concurrent edits to the same file, dependent read/edit sequences, duplicate paid retrieval, or a command that depends on an unconfirmed earlier result. The next call must be informed by the previous result.
 - **Failure requires diagnosis, not blind repetition.** On an error, empty result, timeout, or unexpected diff, stop the dependent chain and inspect the actual error/result. Make one informed retry at most for the same operation, changing the query, range, path, or mechanism only with evidence. No retry loops for identical MCP requests, edits, API calls, or browser actions.
@@ -182,7 +185,7 @@ If the Owner announces manual condensation, append the current status before any
 
 - **Firecrawl is primary** for search, scrape, map, and developer search. **Crawl4AI is fallback only** when Firecrawl is unavailable, out of quota/credit, fails, times out, is rate-limited, or produces demonstrably insufficient output for the requested URL. Do not use Crawl4AI in parallel or as a second source for identical content without an explicit cross-source verification need.
 - Do not call Firecrawl merely to prove credit remains after the Owner reports the quota exhausted. Use Crawl4AI until the Owner-stated renewal date, then return to Firecrawl as primary without repeated probes.
-- **Current supply status from the Owner (2026-11-03):** both accounts use a free API tier with approximately 1,000 credits per month. Firecrawl credits are exhausted and expected to renew on **20 November 2026**; Crawl4AI renews on the **first day of each month**. These estimates/dates are operational information, not service guarantees; do not claim actual balances without current response evidence and never store API keys in this document.
+- **Operational supply status belongs in `docs/SESSION_LEDGER.md`, not this stable policy.** Record Owner-reported quota exhaustion, renewal estimates, and verified provider failures with their observation date in the ledger; do not treat them as permanent facts or guarantees. Do not claim actual balances without current response evidence and never store API keys in either document. Apply the current ledger record until superseded by newer Owner information or verified availability, without probing a provider merely to prove an Owner-reported outage.
 - Select the cheapest sufficient tool: use search to discover sources, scrape for known URLs, map only when target URLs are unknown, and developer search only for code/documentation evidence that requires it. Use Crawl4AI `search`, `scrape`, `extract`, or `batch` for equivalent needs; batch only when multiple URLs are genuinely required.
 - Gather target URLs first and avoid pagination, `maxAge: 0`, browser rendering, premium proxies, extract/batch, and large crawls unless ordinary/lightweight cache evidence is insufficient. Do not repeat the same fetch without a new reason; reuse results already available in the session. `answer`, usage/billing, topup, monitor, and background-job tools are prohibited for routine web retrieval.
 - Before fallback, confirm genuine Firecrawl failure (quota/auth/service/timeout or empty output), not merely results that do not support a hypothesis. Crawl4AI remains subject to source, date, and critical-fact cross-checking; do not blend facts from two providers as though they were one response.
@@ -198,10 +201,10 @@ If the Owner announces manual condensation, append the current status before any
 
 ## 12. `.ROOMODES` EDIT DISCIPLINE
 
-- Do not edit `.roomodes` through `apply_diff`, `write_to_file`, or inline `node -e`.
-- Restore from a clean base if needed and modify through a script file run from the system temp outside the repository, then delete it immediately.
-- Before commit, parse with PyYAML and verify exactly one `customModes`, `slug=fullstack`, `groups=[read,edit,command,mcp]`, and `source=project`.
-- `.roomodes` remains compact and references this document as SSOT; do not copy the entire workflow back into it.
+- Read the current file and preserve unrelated Owner changes. Use `apply_diff` for targeted edits; use `write_to_file` only for a deliberately reviewed full-format conversion that supplies the complete intended file. Do not create a temporary script or use inline `node -e`/PowerShell as an editing workaround.
+- Prefer readable YAML literal block scalars (`|`) for multiline persona prose and compact instructions. Use correct indentation and avoid unnecessary quoted-scalar wrapping; semantic content, not line wrapping, controls behavior.
+- Before commit, parse the actual working file with PyYAML and verify exactly one entry in `customModes`, `slug=fullstack`, `groups=[read,edit,command,mcp]`, and `source=project`. Check that required fields are non-empty strings and the edited diff contains only intended changes.
+- `.roomodes` remains compact and references this document as SSOT; do not copy the entire workflow or volatile provider specifications back into it.
 
 ## 13. LANGUAGE POLICY
 

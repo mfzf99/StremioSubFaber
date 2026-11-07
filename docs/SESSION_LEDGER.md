@@ -1,3 +1,19 @@
+## 2026-11-07 — FULLSTACK GOVERNANCE CONSISTENCY ALIGNMENT (OPERATIONAL GOVERNANCE UPDATE)
+
+- **Date:** 2026-11-07 ~02:46 (KL time).
+- **Parent HEAD SHA:** `51abfe2ab214fc75db7971680c4cfb9e0ae8fa06`.
+- **Status:** `VERIFIED_LOCAL`.
+- **Release Commit SHA + CI Run ID:** `N/A` — Class 2 operational/governance update; no application release or CI verification was requested.
+- **Owner Decision:** Implement all eight approved governance improvements in `.roo/rules/00-subfaber-core-protocol.md` and `.roomodes`, use readable YAML block scalars with PyYAML validation, transfer operational quota/renewal notes to this ledger, run relevant Prettier/diff checks, and create one Class 2 commit pushed to `origin/main`. No SemVer change is authorized; the actual repository version remains v3.28.3.
+- **Impact & Contract Audit (Phase A/B):** All eight approved items are implemented: direct evidence-based `.roomodes` editing replaces the temporary-script exception; tool-discoverable autonomy is separated from decisions that still require Owner authority; applicable skills are explicitly subordinate to the Owner, SSOT, and mode; independent acceptance is identified as evidence-led self-review rather than organizational independence; status semantics now distinguish local/operational completion from Class 1 CI release; the obsolete numbered pipeline is removed; stable web-provider policy is separated from dated supply records; and `.roomodes` is compacted with YAML literal block scalars. Existing Gemini/Trinity sampling and transport contracts remain enforced through the SSOT and its ground-truth references. No runtime, test, runner, or UI contract changed. Zones A/B/C, application payload serialization, rehydration/DOM, server schema, provider integration, Playwright, real keys, SemVer, CHANGELOG, cache-busting, and Graphify are `N/A`.
+- **Operational Web Supply Record:** Owner-reported snapshot originally dated **2026-11-03**, preserved from the SSOT on **2026-11-07**: both accounts use a free API tier with approximately 1,000 credits per month. Firecrawl credits were reported exhausted and expected to renew on **20 November 2026**; Crawl4AI was reported to renew on the **first day of each month**. These are dated operational estimates, not service guarantees or current balance evidence. Continue to use Crawl4AI as fallback without probing Firecrawl merely to prove the reported outage until the stated renewal or newer Owner/verified availability information supersedes this record. No API keys are recorded.
+- **Independent Acceptance:** Prettier passes for both Markdown documents and for `.roomodes` with its explicit YAML parser. PyYAML validates exactly one `customModes` entry with `slug=fullstack`, `groups=[read,edit,command,mcp]`, `source=project`, non-empty required fields, and retained critical instructions. The obsolete numbered pipeline and temporary-script requirement are absent from active governance. Final diff/whitespace checks cover only the three approved governance files; no assertion, application contract, or Owner work was weakened.
+- **Files Involved:** .roo/rules/00-subfaber-core-protocol.md (M: eight governance alignments), .roomodes (M: compact block-scalar persona and retained invariants), docs/SESSION_LEDGER.md (M: this block and dated supply record). No other files are in scope.
+- **npm test Status:** `N/A` — operational governance only; no application code, tests, runner, or CI/release behavior changed. Required content/format/YAML/diff validation is recorded below before staging.
+- **Next Steps:** After the explicit three-file commit is pushed, verify synchronization with `origin/main`. The updated `.roomodes` is intended for the next full VS Code/window reload; current-session metadata is not treated as live-reload evidence.
+
+---
+
 ## 2026-11-07 — PROJECT FRONTEND-DESIGN SKILL INSTALLATION (OPERATIONAL GOVERNANCE UPDATE)
 
 - **Date:** 2026-11-07 ~02:28 (KL time).
