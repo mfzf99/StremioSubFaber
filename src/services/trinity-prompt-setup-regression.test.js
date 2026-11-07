@@ -9,6 +9,7 @@ const test = require('node:test');
 const assert = require('node:assert/strict');
 const fs = require('node:fs');
 const path = require('node:path');
+const crypto = require('node:crypto');
 
 const { PREFLIGHT_STATIC_TEMPLATE } = require('./prompts/trinity/preflight/core');
 const {
@@ -21,6 +22,7 @@ const { buildInspectionPayload } = require('./agentInspector');
 const TranslationEngine = require('./translationEngine');
 const { normalizeConfig } = require('../utils/config');
 const { generateCacheKeys } = require('../utils/cacheKeys');
+const { splitStructuredPrompt } = require('./utils/structuredPrompt');
 
 function makeEngine(options = {}) {
     return new TranslationEngine(
@@ -85,18 +87,34 @@ test('[TRINITY-CORE-3] Legacy setup options and environment values cannot change
     }
 });
 
-test('[TRINITY-CORE-4] Basic uses standalone wording and Pro uses contextual wording', async () => {
+test('[TRINITY-CORE-4] Basic uses the locked R&D run 13/15 wording and Pro retains contextual wording', async () => {
+    assert.equal(
+        crypto.createHash('sha256').update(BASIC_TRANSLATION_SYSTEM_TEMPLATE).digest('hex'),
+        '7c0c6b217e6960be569a1aca4b17092e7c120b58567be0b0c498bfbef6afe17a'
+    );
+    assert.equal(
+        crypto
+            .createHash('sha256')
+            .update(
+                JSON.stringify({
+                    template: BASIC_TRANSLATION_SYSTEM_TEMPLATE,
+                    options: { fewShot: 'canonical', manifest: true }
+                })
+            )
+            .digest('hex'),
+        'a611a71f7025aa6efbbb6d86d0d0e1dabc24eed3d5de7a0b6884a15d80d99f3e'
+    );
     assert.notEqual(BASIC_TRANSLATION_SYSTEM_TEMPLATE, TRANSLATION_SYSTEM_TEMPLATE);
-    assert.ok(BASIC_TRANSLATION_SYSTEM_TEMPLATE.includes('## Standalone judgment'));
+    assert.ok(BASIC_TRANSLATION_SYSTEM_TEMPLATE.includes('<transport_contract>'));
+    assert.ok(BASIC_TRANSLATION_SYSTEM_TEMPLATE.includes('<editorial_craft>'));
     assert.doesNotMatch(
         BASIC_TRANSLATION_SYSTEM_TEMPLATE,
         /pre-?flight|Agent Inspector|Locked Terms?|locked Character Addresses?/i
     );
-    for (const template of [BASIC_TRANSLATION_SYSTEM_TEMPLATE, TRANSLATION_SYSTEM_TEMPLATE]) {
-        assert.ok(template.includes('${targetSpecificRules}'));
-        assert.ok(template.includes('${fewShot}'));
-        assert.ok(template.includes('ZERO translator notes'));
-    }
+    assert.ok(TRANSLATION_SYSTEM_TEMPLATE.includes('${targetSpecificRules}'));
+    assert.ok(TRANSLATION_SYSTEM_TEMPLATE.includes('${fewShot}'));
+    assert.ok(BASIC_TRANSLATION_SYSTEM_TEMPLATE.includes('Return ONLY'));
+    assert.ok(TRANSLATION_SYSTEM_TEMPLATE.includes('Return ONLY'));
 
     const injectedInspector = {
         circuitOpen: false,
@@ -170,39 +188,71 @@ test('[TRINITY-CORE-7] Runtime modules no longer expose the retired setup regist
     assert.equal(fs.existsSync(path.join(__dirname, 'prompts', 'trinity', 'translation', 'setups')), false);
 });
 
-test('[TRINITY-CORE-8] Cache namespace excludes stale semantic output and retains user/format scoping', () => {
+test('[TRINITY-CORE-8] Basic R&D cache namespace excludes stale output and retains user/format scoping', () => {
     const permanent = generateCacheKeys({}, 'tt123_en', 'ms');
-    assert.equal(permanent.baseKey, 'tt123_en_ms_trinity-natural-v2');
+    assert.equal(permanent.baseKey, 'tt123_en_ms_trinity-basic-rd-v1');
     assert.equal(permanent.cacheKey, permanent.baseKey);
 
     const bypass = generateCacheKeys({ bypassCache: true, __configHash: 'config-hash' }, 'tt123_en', 'ms');
-    assert.equal(bypass.cacheKey, 'tt123_en_ms_trinity-natural-v2__u_config-hash');
+    assert.equal(bypass.cacheKey, 'tt123_en_ms_trinity-basic-rd-v1__u_config-hash');
     assert.equal(bypass.runtimeKey, bypass.cacheKey);
 
     const ass = generateCacheKeys({ convertAssToVtt: false }, 'tt123_en', 'ms');
-    assert.equal(ass.baseKey, 'tt123_en_ms_trinity-natural-v2_ass');
+    assert.equal(ass.baseKey, 'tt123_en_ms_trinity-basic-rd-v1_ass');
 });
 
-test('[TRINITY-CORE-9] Translation prompts use entity-scoped title/name and meaning-based split contracts', () => {
-    for (const template of [TRANSLATION_SYSTEM_TEMPLATE, BASIC_TRANSLATION_SYSTEM_TEMPLATE]) {
-        assert.ok(
-            template.includes('These exceptions apply only to the affected entity, never to the surrounding sentence')
-        );
-        assert.ok(template.includes('retaining or transliterating that entity as appropriate'));
-        assert.ok(template.includes('otherwise retain the original title'));
-        assert.ok(
-            template.includes(
-                'Distribution follows meaning and readable phrase boundaries, not equal character or word counts'
-            )
-        );
-        assert.ok(!template.includes('distribute the clauses proportionally'));
+test('[TRINITY-CORE-9] Pro retains its evidence contract while Basic uses the locked R&D split/entity rules', () => {
+    for (const fragment of [
+        'These exceptions apply only to the affected entity, never to the surrounding sentence',
+        'retaining or transliterating that entity as appropriate',
+        'otherwise retain the original title',
+        'Distribution follows meaning and readable phrase boundaries, not equal character or word counts',
+        'SOURCE-EVIDENCE HIERARCHY',
+        'explicit source evidence overrides contradictory Preflight assumptions'
+    ]) {
+        assert.ok(TRANSLATION_SYSTEM_TEMPLATE.includes(fragment), fragment);
     }
-    assert.ok(TRANSLATION_SYSTEM_TEMPLATE.includes('SOURCE-EVIDENCE HIERARCHY'));
+    assert.ok(!TRANSLATION_SYSTEM_TEMPLATE.includes('distribute the clauses proportionally'));
+    assert.ok(BASIC_TRANSLATION_SYSTEM_TEMPLATE.includes('Treat input ids as opaque routing keys'));
+    assert.ok(BASIC_TRANSLATION_SYSTEM_TEMPLATE.includes('Every connected slot must remain meaningful'));
     assert.ok(
-        TRANSLATION_SYSTEM_TEMPLATE.includes('explicit source evidence overrides contradictory Preflight assumptions')
+        BASIC_TRANSLATION_SYSTEM_TEMPLATE.includes(
+            'Keep entity spellings consistent when supported by visible evidence'
+        )
     );
-    assert.ok(BASIC_TRANSLATION_SYSTEM_TEMPLATE.includes('consistent within that visible scope'));
-    assert.ok(BASIC_TRANSLATION_SYSTEM_TEMPLATE.includes('do not assume access to unseen parts of the file'));
+    assert.ok(BASIC_TRANSLATION_SYSTEM_TEMPLATE.includes('There is no unseen-file knowledge to assume'));
+});
+
+test('[TRINITY-CORE-11] Basic places the exact active-ID manifest before input on every provider door', () => {
+    const input = '<s id="8">First.</s>\n<s id="11">Second.</s>\n<s id="19">Last.</s>';
+    const manifest =
+        'Required output ids in exact order (translate every listed id, including the last one):\n8,11,19\n\n<input>';
+    for (const trinityChannel of ['gemini', 'openai', 'anthropic']) {
+        const basic = makeEngine({ trinityMode: 'basic', trinityChannel });
+        basic.sourceLanguage = 'English';
+        const structured = splitStructuredPrompt(basic.createXmlBatchPrompt(input, 'Malay', null, 3, null, 0, 1));
+        assert.ok(structured, `${trinityChannel} must retain the structured boundary`);
+        assert.ok(structured.user.includes(manifest), `${trinityChannel} must contain the exact manifest`);
+        assert.equal(
+            structured.user.includes('Required output ids in exact order'),
+            true,
+            `${trinityChannel} Basic manifest must be present`
+        );
+        const expectedSystem = basic.translationTemplate
+            .replaceAll('${sourceLabel}', 'English')
+            .replaceAll('${targetLabel}', 'Malay')
+            .replaceAll('${targetLabelShort}', 'Malay')
+            .replaceAll('${targetSpecificRules}', '')
+            .replaceAll('${fewShot}', '');
+        assert.equal(structured.system, expectedSystem);
+        assert.ok(!structured.system.includes('Spoken Malaysian Cadence'));
+        assert.ok(!structured.system.includes('Awak ikut kami sekali,'));
+
+        const pro = makeEngine({ trinityMode: 'pro', trinityChannel });
+        pro.sourceLanguage = 'English';
+        const proPrompt = pro.createXmlBatchPrompt(input, 'Malay', null, 3, null, 0, 1);
+        assert.ok(!proPrompt.includes('Required output ids in exact order'), `${trinityChannel} Pro must not change`);
+    }
 });
 
 test('[TRINITY-CORE-10] Subtitle handler does not construct Inspector in Basic mode', () => {

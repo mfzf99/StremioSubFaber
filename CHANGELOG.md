@@ -2,6 +2,22 @@
 
 All notable changes to this project will be documented in this file.
 
+## SubFaber v3.28.8 (2026-11-08) — Basic R&D Run 13/15 Production Prompt
+
+### 🔧 Changed — Standalone Basic Translation Architecture
+
+- Promoted the locked R&D run 13/15 Agent Translation architecture to Basic mode. The exact system template separates subtitle-data transport from editorial craft, with a verified template SHA-256 of `7c0c6b217e6960be569a1aca4b17092e7c120b58567be0b0c498bfbef6afe17a` and the original experiment configuration preserved.
+- Added the experiment's explicit required-output-ID manifest to the active Basic user payload immediately before the input block. Every active ID is listed in original order, including the final ID, through the existing Gemini, OpenAI-compatible, and Anthropic prompt wrappers.
+- Preserved the locked experiment's system-prompt rendering by omitting legacy language-pack and few-shot injections from Basic only. Pro retains its contextual Translation, Preflight, Inspector, language-pack, and few-shot behavior; provider sampling, credentials, transports, XML parsing, and UI remain unchanged.
+- Advanced the translation cache namespace to `_trinity-basic-rd-v1` so previously generated output cannot be served as output from the new Basic prompt. Existing user and ASS/SRT cache scoping remains intact.
+
+### ✅ Verification
+
+- Confirmed byte-identical template and experiment hashes against the retained run 13 artifact; run 15 is its unchanged-prompt replication. Targeted prompt, channel, Basic/Pro isolation, context, and mode-switch suites passed **100/100** with no skips.
+- New regression coverage locks the experiment hash, exact manifest placement with nonconsecutive IDs, absence of the manifest from Pro, and the exact rendered Basic system prompt on all three provider doors. The tracked test uses fixed hashes and no Git-ignored experiment files.
+- Full suite: **45 files / 588 total / 587 PASS / 0 FAIL / 1 SKIP (existing real-Redis concurrent-quota integration)**. Full Prettier passed; full ESLint reported **0 errors / 228 pre-existing warnings**; production dependency audit reported **0 vulnerabilities**; whitespace/diff validation passed.
+- This is a backend prompt/runtime change with no UI, DOM, configuration-schema, provider-sampling, credential, or transport changes. Playwright and new live-provider runs are not applicable; no additional paid translation was authorized or performed. Existing version-based asset cache-busting remains active; Graphify is not applicable because `graphify-out/` is absent.
+
 ## SubFaber v3.28.7 (2026-11-07) — Zoo Code 3.96.0 Single-Mode Compatibility
 
 ### 🔧 Changed — Routine Extension Re-Patch

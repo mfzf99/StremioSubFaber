@@ -33,9 +33,9 @@ function normalizeUserHash(rawHash) {
  */
 function generateCacheKeys(config, sourceFileId, targetLang) {
     // Prompt-semantic namespace prevents output produced under the former
-    // evidence/title/verdict contracts from being served under the clarified
-    // canonical prompts. User and ASS/SRT scoping remain unchanged below.
-    const sourceKey = `${sourceFileId}_${targetLang}_trinity-natural-v2`;
+    // Basic prompt from being served under the R&D run 13/15 architecture.
+    // User and ASS/SRT scoping remain unchanged below.
+    const sourceKey = `${sourceFileId}_${targetLang}_trinity-basic-rd-v1`;
     // When ASS passthrough is enabled, append format discriminator to prevent
     // ASS-format cached translations from being served to users expecting SRT
     const assPassthrough = config.convertAssToVtt === false && config.forceSRTOutput !== true;

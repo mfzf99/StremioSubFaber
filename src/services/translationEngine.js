@@ -3006,8 +3006,9 @@ You MUST translate each numbered line 1:1. NEVER merge two source lines into one
         // [TRINITY FASA 1 — Mandat Owner 2026-10-19] Bahagian STATIK prompt
         // Agent Translation dipindahkan VERBATIM ke Single Source of Truth
         // baharu src/services/prompts/trinity/translation/core.js
-        // (TRANSLATION_SYSTEM_TEMPLATE). Interpolasi label + few-shot pack
-        // kekal di sini; teks runtime kekal IDENTIK (sifar perubahan perkataan).
+        // (TRANSLATION_SYSTEM_TEMPLATE). Interpolasi label kekal di sini;
+        // Basic run 13/15 tidak menyuntik language pack/few-shot, manakala Pro
+        // mengekalkan kedua-dua blok tersebut.
         // Nota: core menggunakan label TERISIH (fallback 'the source language'
         // / 'the target language' / 'target-language' dilaksanakan di sini
         // supaya templat kanonik kekal neutral).
@@ -3015,8 +3016,8 @@ You MUST translate each numbered line 1:1. NEVER merge two source lines into one
             .replaceAll('${sourceLabel}', sourceLabel || 'the source language')
             .replaceAll('${targetLabel}', targetLabel || 'the target language')
             .replaceAll('${targetLabelShort}', targetLabel || 'target-language')
-            .replaceAll('${targetSpecificRules}', fewShotPack.specificRules)
-            .replaceAll('${fewShot}', fewShotPack.fewShot);
+            .replaceAll('${targetSpecificRules}', this.trinityMode === 'basic' ? '' : fewShotPack.specificRules)
+            .replaceAll('${fewShot}', this.trinityMode === 'basic' ? '' : fewShotPack.fewShot);
 
         // [TRINITY FASA 3 — Mandat Owner 2026-10-19] Pembungkusan channel-native:
         // payload berstruktur (systemText + dataText + queryText + startId)
@@ -3026,7 +3027,13 @@ You MUST translate each numbered line 1:1. NEVER merge two source lines into one
         // prefill). Hasil diserial-balik ke wire-format sentinel
         // system+BOUNDARY+user supaya SEMUA provider transport, cache key, dan
         // Smart Preamble Scrubber terus berfungsi tanpa perubahan.
-        const dataPart = `${sharedContextBlock ? `${sharedContextBlock}\n(Reference only — do not translate or output content from this block as a target entry.)\n\n` : ''}<input>
+        // Basic R&D run 13/15 contract: the required-ID manifest belongs to the
+        // active user data, immediately before <input>, and never to Pro.
+        const idManifest =
+            this.trinityMode === 'basic'
+                ? `Required output ids in exact order (translate every listed id, including the last one):\n${idMatches.join(',')}\n\n`
+                : '';
+        const dataPart = `${sharedContextBlock ? `${sharedContextBlock}\n(Reference only — do not translate or output content from this block as a target entry.)\n\n` : ''}${idManifest}<input>
 ${batchText}
 </input>`;
         const wrapped = this._trinityPromptBuilder({
