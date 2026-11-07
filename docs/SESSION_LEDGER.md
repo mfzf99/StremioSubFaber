@@ -1,3 +1,18 @@
+## 2026-11-07 — PROJECT FRONTEND-DESIGN SKILL INSTALLATION (OPERATIONAL GOVERNANCE UPDATE)
+
+- **Date:** 2026-11-07 ~02:28 (KL time).
+- **Parent HEAD SHA:** `152c8fd2d04dda5353acc95c0469b47ea0ab529f`.
+- **Status:** `VERIFIED_LOCAL`.
+- **Release Commit SHA + CI Run ID:** `N/A` — Class 2 operational/governance update; no application release or CI verification was requested.
+- **Owner Decision:** Verify the manually installed Anthropic Frontend Design skill against UI Skills and its official source, correct the installation if needed, and commit the completed project skill without unrelated changes.
+- **Impact & Contract Audit (Phase A/B):** The project-local `.roo/skills/frontend-design/` location is valid for the existing project skill discovery and was already exposed to the active session. UI Skills documents a generic multi-agent CLI installer sourced from `anthropics/skills`; no CLI, MCP server, dependency, or extra catalog is required for this project-local installation. `SKILL.md` is byte-identical to the official upstream file at commit `2c5958ecac7cee2b583967a2c4981d0f4a75c579`, including the restored terminal newline. Its referenced Apache License 2.0 was missing and has been added byte-identically from the same pinned source. Zones A/B/C, application runtime, UI implementation, payload serialization, rehydration/DOM, server schema, Gemini/Trinity/Tri-Door, external providers, SemVer, CHANGELOG, cache-busting, and Graphify are `N/A`; Playwright and real-provider verification are `N/A` because no application UI or runtime changed.
+- **Independent Acceptance:** Both installed files match their pinned official upstream counterparts through `git diff --no-index --exit-code`. Front matter YAML parsing confirms `name: frontend-design`, a non-empty description, and a license reference whose target exists. Prettier passes; neither skill file is ignored. The working tree initially contained only the Owner's untracked skill directory; no other work was modified or staged.
+- **Files Involved:** .roo/skills/frontend-design/SKILL.md (A: Owner-provided official skill, terminal newline normalized), .roo/skills/frontend-design/LICENSE.txt (A: official Apache License 2.0), docs/SESSION_LEDGER.md (M: this operational block only).
+- **npm test Status:** `N/A` — governance/skill content only; no application code, test, runner, or CI configuration changed. Relevant Prettier, YAML, upstream byte-comparison, and repository-ignore checks passed.
+- **Next Steps:** Commit and push only the three explicitly listed files, then verify synchronization with `origin/main`. If the Zoo Code settings panel still appears empty, reload the VS Code window; active-session skill discovery is already confirmed.
+
+---
+
 ## 2026-11-07 — v3.28.3 CONSERVATIVE SUBTITLE ARTIFACT CLEANUP (OWNER MANDATE)
 
 - **Date:** 2026-11-07 ~01:24 (KL time).
