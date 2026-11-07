@@ -1,3 +1,18 @@
+## 2026-11-07 — v3.28.7 ZOO CODE 3.96.0 SINGLE-MODE RE-PATCH (OWNER MANDATE)
+
+- **Date:** 2026-11-07 ~22:54 (KL time).
+- **Parent HEAD SHA:** `a32d47f71c61a2fa571ec4228c091fc577ef1e30`.
+- **Status:** `VERIFIED_LOCAL`.
+- **Release Commit SHA + CI Run ID:** confirmed in the final report after push/CI.
+- **Owner Decision:** Zoo Code has released an update; run the routine mode patch and proceed directly to one release commit.
+- **Impact & Contract Audit (Phase A/B):** The standalone `main()` → `patchBundle()` → `findAssignmentPrefix()`/`findArrayEnd()` → `syntaxOk()`/`residualRetiredSlugs()` chain was verified against Zoo Code 3.96.0. Dry-run detected the five built-in modes in both bundles and auto-detected minified variables `QH` (Extension Host) and `Ete` (Webview). This external maintenance utility has no application runtime consumers; coupled Zones A/B/C, application payload serialization, rehydration, DOM, server schema, Trinity, and Tri-Door are `N/A`. No application UI/CSS changed, so Playwright, visual critique, and real-provider verification are `N/A`. The project `.roomodes` remains unchanged; PyYAML confirms exactly one `fullstack` mode with `groups=[read,edit,command,mcp]` and `source=project`.
+- **Independent Acceptance:** `node scripts/patch-zoo-code.js` completed successfully; both bundles passed `node --check` with no residual retired mode definitions. A subsequent `--check` completed with `Already patched` for both bundles, proving idempotence. Full suite **45 files / 587 total / 586 PASS / 0 FAIL / 1 SKIP (existing real-Redis concurrent-quota integration)**. Scoped Prettier PASS; scoped ESLint **0 errors / 1 ignore-pattern warning**; script syntax, package-version synchronization, PyYAML validation, and diff checks PASS. Version-based asset cache-busting advances automatically to v3.28.7; Graphify NO-OP (`graphify-out/` absent). No test assertions or application contracts changed.
+- **Files Involved:** docs/ZOO_CODE_PATCH_PROTOCOL.md (M: Zoo Code 3.96.0 compatibility), package.json/package-lock.json (3.28.6→3.28.7), CHANGELOG.md, docs/SESSION_LEDGER.md (this block only). The external Zoo Code 3.96.0 bundles were patched directly; `scripts/patch-zoo-code.js` and `.roomodes` required no changes.
+- **npm test Status:** **45 files / 587 total / 586 PASS / 0 FAIL / 1 SKIP (existing real-Redis concurrent-quota integration)**.
+- **Next Steps:** After the single explicit-file release commit is pushed, verify `origin/main` and its CI run until SUCCESS, then report the Release Commit SHA + CI Run ID as `RELEASED_CI_GREEN`. Owner must fully restart VS Code to reload both patched runtimes. No additional ledger-only SHA/CI commit is permitted.
+
+---
+
 ## 2026-11-07 — v3.28.6 XSYNC EXTENSION PROTOCOL COMPATIBILITY (OWNER MANDATE)
 
 - **Date:** 2026-11-07 ~14:54 (KL time).

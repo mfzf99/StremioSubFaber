@@ -2,6 +2,20 @@
 
 All notable changes to this project will be documented in this file.
 
+## SubFaber v3.28.7 (2026-11-07) — Zoo Code 3.96.0 Single-Mode Compatibility
+
+### 🔧 Changed — Routine Extension Re-Patch
+
+- Re-applied the official single-mode lock to the Zoo Code 3.96.0 Extension Host and Webview bundles. Both runtime copies now expose only Fullstack Architect, with the retired Architect, Code, Ask, Debug, and Orchestrator definitions removed.
+- Confirmed that the existing patch utility auto-detected the new minified assignments without any script change. The project mode configuration remains unchanged and no application runtime, provider, translation, or UI contract was modified.
+- Recorded Zoo Code 3.96.0 compatibility in the maintenance protocol. A full VS Code restart is required to reload both patched bundles.
+
+### ✅ Verification
+
+- Dry-run discovery located both built-in mode arrays in Zoo Code 3.96.0. The real patch and subsequent idempotence check completed successfully; both bundles passed Node syntax validation with no residual retired mode definitions.
+- The project mode configuration passed PyYAML structural validation with exactly one Fullstack Architect mode and the required groups. Full application tests and scoped formatting/linting gates are recorded in the session ledger.
+- No application UI or runtime behavior changed, so Playwright, real-provider verification, coupled application contract changes, and Graphify are not applicable. Version-based asset cache-busting advances automatically through the synchronized package version.
+
 ## SubFaber v3.28.6 (2026-11-07) — xSync Extension Protocol Compatibility
 
 ### 🐛 Fixed — Toolbox Detection and Tool Messaging
