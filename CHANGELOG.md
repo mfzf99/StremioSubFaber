@@ -2,6 +2,20 @@
 
 All notable changes to this project will be documented in this file.
 
+## SubFaber v3.28.6 (2026-11-07) — xSync Extension Protocol Compatibility
+
+### 🐛 Fixed — Toolbox Detection and Tool Messaging
+
+- Restored compatibility with the installed xSync v1.0.9 extension by aligning every affected page with its existing `SUBMAKER_*` message protocol. The Sub Toolbox previously emitted `SUBFABER_PING` while the extension only accepted `SUBMAKER_PING` and replied with `SUBMAKER_PONG`, leaving an installed extension incorrectly reported as “Not detected.”
+- Corrected the complete two-way protocol for embedded-subtitle extraction, progress and response events, reset requests, sync requests, track selection, and automatic subtitles. The repair does not merely make the status badge appear ready: requests now reach the handlers exposed by the installed extension and their responses return to the corresponding page listener.
+- Kept the existing payload structure, message IDs, retry timing, UI, configuration serialization, provider behavior, and server APIs unchanged. No extension update is required for the message compatibility restored by this release.
+
+### ✅ Verification
+
+- New protocol regressions failed **4/4 against the unfixed baseline** and passed after the repair. Targeted generator, stream-identity, and provider/page compatibility suites passed **31/31**. The regressions assert both directions of the installed extension protocol across Sub Toolbox, Embedded Subtitles, Sync Studio, Automatic Subtitles, and File Translation.
+- Full suite: **45 files / 587 total / 586 PASS / 0 FAIL / 1 SKIP (existing real-Redis concurrent-quota integration)**. Prettier passed; scoped ESLint reported **0 errors / 6 pre-existing warnings**; production dependency audit reported **0 vulnerabilities**; whitespace/diff validation passed.
+- A read-only browser check reproduced the deployed v3.28.5 “Not detected” state. A minimal runtime fixture using the actual generated detection block then accepted a `SUBMAKER_PONG` response from the installed protocol, displayed v1.0.9 with a ready indicator, produced no JavaScript errors, and preserved no-overflow desktop/mobile behavior; the no-response control did not report a detected extension. Production Chrome detection and real stream extraction remain post-deploy verification and are not claimed by this release evidence.
+
 ## SubFaber v3.28.5 (2026-11-07) — Model-Neutral Trinity Evidence Contracts
 
 ### 🐛 Fixed — Shared Translation and Inspection Semantics

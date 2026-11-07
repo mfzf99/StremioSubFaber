@@ -1639,7 +1639,7 @@ function generateSubToolboxPage(configStr, videoId, filename, config) {
         const sendPing = () => {
           if (extReady) return;
           pingAttempts += 1;
-          window.postMessage({ type: 'SUBFABER_PING', source: 'webpage' }, '*');
+          window.postMessage({ type: 'SUBMAKER_PING', source: 'webpage' }, '*');
           if (pingAttempts >= MAX_PINGS && !extReady) {
             clearInterval(pingTimer);
             const notDetected = window.t ? window.t('toolbox.status.notDetected', {}, 'Not detected') : 'Not detected';
@@ -1651,7 +1651,7 @@ function generateSubToolboxPage(configStr, videoId, filename, config) {
       }
       window.addEventListener('message', event => {
         const msg = event.data;
-        if (!msg || msg.type !== 'SUBFABER_PONG') return;
+        if (!msg || msg.type !== 'SUBMAKER_PONG') return;
         if (msg.source && msg.source !== 'extension') return;
         const detected = window.t ? window.t('toolbox.status.detected', {}, 'Detected') : 'Detected';
         const version = msg.version ? 'v' + msg.version : detected;
@@ -3620,7 +3620,7 @@ async function generateEmbeddedSubtitlePage(configStr, videoId, filename) {
     function requestExtensionReset(reason) {
       try {
         window.postMessage({
-          type: 'SUBFABER_EMBEDDED_RESET',
+          type: 'SUBMAKER_EMBEDDED_RESET',
           source: 'webpage',
           reason: reason || ''
         }, '*');
@@ -5923,13 +5923,13 @@ async function generateEmbeddedSubtitlePage(configStr, videoId, filename) {
     window.addEventListener('message', (event) => {
       const msg = event.data || {};
       if (msg.source !== 'extension') return;
-      const trackedTypes = ['SUBFABER_EXTRACT_PROGRESS', 'SUBFABER_EXTRACT_RESPONSE', 'SUBFABER_DEBUG_LOG'];
+      const trackedTypes = ['SUBMAKER_EXTRACT_PROGRESS', 'SUBMAKER_EXTRACT_RESPONSE', 'SUBMAKER_DEBUG_LOG'];
       const isExtractEvent = trackedTypes.includes(msg.type);
       if (isExtractEvent) {
         if (!state.extractMessageId) return;
         if (msg.messageId && msg.messageId !== state.extractMessageId) return;
       }
-      if (msg.type === 'SUBFABER_PONG') {
+      if (msg.type === 'SUBMAKER_PONG') {
         pingRetries = 0; // Reset retry counter
         if (pingTimer) {
           clearTimeout(pingTimer);
@@ -5938,12 +5938,12 @@ async function generateEmbeddedSubtitlePage(configStr, videoId, filename) {
         const readyWithVersion = tt('toolbox.autoSubs.extension.readyWithVersion', { version: msg.version || '-' }, 'Ready (v' + (msg.version || '-') + ')');
         updateExtensionStatus(true, readyWithVersion);
         setXsyncVersionWarning(msg.version || '');
-      } else if (msg.type === 'SUBFABER_DEBUG_LOG') {
+      } else if (msg.type === 'SUBMAKER_DEBUG_LOG') {
         refreshExtractionWatchdog();
         const level = (msg.level || 'info').toUpperCase();
         const text = msg.text || (window.t ? window.t('toolbox.logs.event', {}, 'Log event') : 'Log event');
         logExtract('[' + level + '] ' + text);
-      } else if (msg.type === 'SUBFABER_EXTRACT_PROGRESS') {
+      } else if (msg.type === 'SUBMAKER_EXTRACT_PROGRESS') {
         refreshExtractionWatchdog();
         // Deduplicate consecutive identical progress messages to prevent spam
         const currentStatus = msg.status || ('Progress ' + msg.progress + '%');
@@ -5951,7 +5951,7 @@ async function generateEmbeddedSubtitlePage(configStr, videoId, filename) {
           state.lastProgressStatus = currentStatus;
           logExtract(currentStatus);
         }
-      } else if (msg.type === 'SUBFABER_EXTRACT_RESPONSE') {
+      } else if (msg.type === 'SUBMAKER_EXTRACT_RESPONSE') {
         setExtractionInFlight(false);
         setTranslationInFlight(false);
         state.lastProgressStatus = null; // Reset for next extraction
@@ -5988,7 +5988,7 @@ async function generateEmbeddedSubtitlePage(configStr, videoId, filename) {
         pingRetries += 1;
         const label = window.t ? window.t('toolbox.status.pinging', {}, 'Pinging extension...') : 'Pinging extension...';
         updateExtensionStatus(false, label, 'warn');
-        window.postMessage({ type: 'SUBFABER_PING', source: 'webpage' }, '*');
+        window.postMessage({ type: 'SUBMAKER_PING', source: 'webpage' }, '*');
         if (pingRetries >= MAX_PING_RETRIES && !state.extensionReady) {
           const notDetected = window.t ? window.t('toolbox.logs.extensionMissing', {}, 'Extension not detected') : 'Extension not detected';
           updateExtensionStatus(false, notDetected, 'bad');
@@ -6054,7 +6054,7 @@ async function generateEmbeddedSubtitlePage(configStr, videoId, filename) {
       state.extractMessageId = messageId;
       state.lastProgressStatus = null; // Reset progress tracking for new extraction
       window.postMessage({
-        type: 'SUBFABER_EXTRACT_REQUEST',
+        type: 'SUBMAKER_EXTRACT_REQUEST',
         source: 'webpage',
         messageId,
         data: {
@@ -8020,7 +8020,7 @@ async function generateAutoSubtitlePage(configStr, videoId, filename, config = {
                 setStatus(status);
                 window.postMessage(
                     {
-                        type: 'SUBFABER_AUTOSUB_SELECT_TRACK',
+                        type: 'SUBMAKER_AUTOSUB_SELECT_TRACK',
                         source: 'webpage',
                         messageId: state.autoSubsMessageId,
                         trackIndex: choice
@@ -8435,7 +8435,7 @@ async function generateAutoSubtitlePage(configStr, videoId, filename, config = {
                         const waitForTranscript = waitForAutoSubResponse(messageId);
                         window.postMessage(
                             {
-                                type: 'SUBFABER_AUTOSUB_REQUEST',
+                                type: 'SUBMAKER_AUTOSUB_REQUEST',
                                 source: 'webpage',
                                 messageId,
                                 data: {
@@ -8508,7 +8508,7 @@ async function generateAutoSubtitlePage(configStr, videoId, filename, config = {
                         const waitForTranscript = waitForAutoSubResponse(messageId);
                         window.postMessage(
                             {
-                                type: 'SUBFABER_AUTOSUB_REQUEST',
+                                type: 'SUBMAKER_AUTOSUB_REQUEST',
                                 source: 'webpage',
                                 messageId,
                                 data: {
@@ -8900,7 +8900,7 @@ async function generateAutoSubtitlePage(configStr, videoId, filename, config = {
                 window.addEventListener('message', (event) => {
                     const msg = event.data || {};
                     if (msg.source !== 'extension') return;
-                    if (msg.type === 'SUBFABER_PONG') {
+                    if (msg.type === 'SUBMAKER_PONG') {
                         pingRetries = 0;
                         if (pingTimer) {
                             clearTimeout(pingTimer);
@@ -8916,13 +8916,13 @@ async function generateAutoSubtitlePage(configStr, videoId, filename, config = {
                         updateExtensionStatus(true, readyLabel);
                         updateVersionWarning(msg.version || '');
                     }
-                    if (msg.type === 'SUBFABER_AUTOSUB_PROGRESS') {
+                    if (msg.type === 'SUBMAKER_AUTOSUB_PROGRESS') {
                         handleAutoSubProgressMessage(msg);
-                    } else if (msg.type === 'SUBFABER_AUTOSUB_TRACKS') {
+                    } else if (msg.type === 'SUBMAKER_AUTOSUB_TRACKS') {
                         handleTrackOptionsMessage(msg);
-                    } else if (msg.type === 'SUBFABER_AUTOSUB_RESPONSE') {
+                    } else if (msg.type === 'SUBMAKER_AUTOSUB_RESPONSE') {
                         handleAutoSubResponseMessage(msg);
-                    } else if (msg.type === 'SUBFABER_DEBUG_LOG' && state.autoSubsInFlight) {
+                    } else if (msg.type === 'SUBMAKER_DEBUG_LOG' && state.autoSubsInFlight) {
                         const logTone = (msg.level || '').toString().toLowerCase();
                         const text = msg.text || 'Extension log event';
                         const prev = state.lastDebugLog;
@@ -8944,7 +8944,7 @@ async function generateAutoSubtitlePage(configStr, videoId, filename, config = {
                         pingRetries += 1;
                         const label = tt('toolbox.status.pinging', {}, 'Pinging extension...');
                         updateExtensionStatus(false, label, 'warn');
-                        window.postMessage({ type: 'SUBFABER_PING', source: 'webpage' }, '*');
+                        window.postMessage({ type: 'SUBMAKER_PING', source: 'webpage' }, '*');
                         if (pingRetries >= MAX_PING_RETRIES && !state.extensionReady) {
                             const notDetected = tt(
                                 'toolbox.autoSubs.extension.notDetected',

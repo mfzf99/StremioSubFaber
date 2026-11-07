@@ -1,3 +1,18 @@
+## 2026-11-07 — v3.28.6 XSYNC EXTENSION PROTOCOL COMPATIBILITY (OWNER MANDATE)
+
+- **Date:** 2026-11-07 ~14:54 (KL time).
+- **Parent HEAD SHA:** `8a54563c7a7bb65fa538008b627ccee12062aed7`.
+- **Status:** `VERIFIED_LOCAL`.
+- **Release Commit SHA + CI Run ID:** confirmed in the final report after push/CI.
+- **Owner Decision:** Diagnose why Sub Toolbox reports the installed Chrome extension as “Not detected,” repair the problem, and proceed directly to one authorized release commit. Scope is message-protocol compatibility only; no production deployment is authorized by the commit instruction.
+- **Impact & Contract Audit (Phase A/B):** The coupled browser-extension boundary spans Sub Toolbox, Embedded Subtitles, Automatic Subtitles, Sync Studio, and File Translation. The installed v1.0.9 content script accepts and emits `SUBMAKER_*`; the affected page generators incorrectly used `SUBFABER_*`, breaking ping/PONG and the complete request/progress/response path. All affected messages now use the installed extension protocol with payload, IDs, retry timing, and UI preserved. Zones A/B/C provider/configuration work, server schemas, translation engines, provider transports, Gemini sampling, and rehydration are `N/A`. The version-based asset cache-buster advances automatically to v3.28.6; Graphify NO-OP (`graphify-out/` absent).
+- **Independent Acceptance:** New protocol regressions failed **4/4 on the baseline**, then passed after the fix; targeted suites passed **31/31**. The generated detection block was exercised in a minimal Playwright fixture with an explicit `SUBMAKER_PONG` adapter: v1.0.9 appeared with a ready indicator, no JavaScript errors occurred, desktop/mobile had no horizontal overflow, and the no-response control did not claim detection. A read-only browser visit reproduced the deployed “Not detected” state. Actual production Chrome detection and stream extraction remain post-deploy checks, not locally proven claims. Full suite **45 files / 587 total / 586 PASS / 0 FAIL / 1 SKIP (existing real-Redis concurrent-quota integration)**; scoped Prettier PASS; scoped ESLint **0 errors / 6 pre-existing warnings**; `git diff --check` PASS. No existing assertions were weakened.
+- **Files Involved:** src/utils/toolboxPageGenerator.js, src/utils/syncPageGenerator.js, src/utils/fileUploadPageGenerator.js, new src/utils/extension-protocol-regression.test.js, package.json/package-lock.json (3.28.5→3.28.6), CHANGELOG.md, docs/SESSION_LEDGER.md (this block only).
+- **npm test Status:** **45 files / 587 total / 586 PASS / 0 FAIL / 1 SKIP (existing real-Redis concurrent-quota integration)**. Targeted suites **31/31 PASS** with 0 SKIP.
+- **Next Steps:** Complete final full quality gates, create one explicit-file release commit, push to `origin/main`, and watch its CI run until SUCCESS; report Release Commit SHA + CI Run ID as `RELEASED_CI_GREEN`. Production deployment and live extension/extraction verification are separate post-release operational steps. No additional ledger-only SHA/CI commit is permitted.
+
+---
+
 ## 2026-11-07 — v3.28.5 MODEL-NEUTRAL TRINITY EVIDENCE CONTRACTS (OWNER MANDATE)
 
 - **Date:** 2026-11-07 ~13:44 (KL time).

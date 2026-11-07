@@ -3083,7 +3083,7 @@ function generateFileTranslationPage(videoId, configStr, config, filename = '') 
                 const sendPing = () => {
                     if (extensionDetected) return;
                     pingAttempts += 1;
-                    window.postMessage({ type: 'SUBFABER_PING', source: 'webpage' }, '*');
+                    window.postMessage({ type: 'SUBMAKER_PING', source: 'webpage' }, '*');
                     if (pingAttempts >= MAX_PINGS && !extensionDetected) {
                         clearInterval(pingTimer);
                     }
@@ -3094,7 +3094,7 @@ function generateFileTranslationPage(videoId, configStr, config, filename = '') 
 
             window.addEventListener('message', (event) => {
                 const msg = event.data || {};
-                if (!msg || msg.type !== 'SUBFABER_PONG') return;
+                if (!msg || msg.type !== 'SUBMAKER_PONG') return;
                 if (msg.source && msg.source !== 'extension') return;
                 extensionDetected = true;
                 if (pingTimer) clearInterval(pingTimer);
