@@ -1,91 +1,82 @@
 /**
- * Regression — Trinity-wide prompt setup bundle (Mandat Owner 2026-11-03)
+ * Regression — single canonical Trinity prompt contract.
  *
- * Satu resolver memilih prompt Agent Preflight, Agent Translation dan Agent
- * Inspector. Setup A kekal verbatim dan semua ejen menerima bundle yang sama.
+ * The former A/B/C registry is intentionally removed. Basic keeps its own
+ * standalone wording, while Pro uses the canonical contextual wording.
  */
 
 const test = require('node:test');
 const assert = require('node:assert/strict');
+const fs = require('node:fs');
+const path = require('node:path');
 
-const setupA = require('./prompts/trinity/setups/setupA');
-const setupB = require('./prompts/trinity/setups/setupB');
-const {
-    DEFAULT_TRINITY_PROMPT_SETUP_ID,
-    FALLBACK_TRINITY_PROMPT_SETUP_ID,
-    getTrinitySetup,
-    listTrinitySetups
-} = require('./prompts/trinity/setups');
 const { PREFLIGHT_STATIC_TEMPLATE } = require('./prompts/trinity/preflight/core');
-const { TRANSLATION_SYSTEM_TEMPLATE } = require('./prompts/trinity/translation/core');
+const {
+    TRANSLATION_SYSTEM_TEMPLATE,
+    BASIC_TRANSLATION_SYSTEM_TEMPLATE
+} = require('./prompts/trinity/translation/core');
 const { INSPECTOR_INSTRUCTION } = require('./prompts/trinity/inspector/core');
 const { buildPreflightPrompt } = require('./subfaberPreflight');
-const { AgentInspector, buildInspectionPayload } = require('./agentInspector');
+const { buildInspectionPayload } = require('./agentInspector');
 const TranslationEngine = require('./translationEngine');
 const { normalizeConfig } = require('../utils/config');
+const { generateCacheKeys } = require('../utils/cacheKeys');
 
-test('[TRINITY-SETUP-1] Setup A menyimpan ketiga-tiga prompt byte-identical dengan export core', () => {
-    assert.equal(setupA.preflightTemplate, PREFLIGHT_STATIC_TEMPLATE);
-    assert.equal(setupA.translationTemplate, TRANSLATION_SYSTEM_TEMPLATE);
-    assert.equal(setupA.inspectorInstruction, INSPECTOR_INSTRUCTION);
-    assert.ok(setupA.preflightTemplate.includes('${honorificMatrix}'));
-    assert.ok(setupA.translationTemplate.includes('${targetSpecificRules}'));
-    assert.ok(setupA.inspectorInstruction.includes('UNTRANSLATED'));
-});
-
-test('[TRINITY-SETUP-2] Resolver default, case-insensitive, fallback dan senarai tidak mendedahkan prompt', () => {
-    assert.equal(DEFAULT_TRINITY_PROMPT_SETUP_ID, 'A');
-    assert.equal(FALLBACK_TRINITY_PROMPT_SETUP_ID, 'A');
-    assert.equal(getTrinitySetup(''), setupA);
-    assert.equal(getTrinitySetup(' a '), setupA);
-    assert.equal(getTrinitySetup('unknown'), setupA);
-    assert.deepEqual(listTrinitySetups()[0], { id: 'A', label: setupA.label });
-    assert.deepEqual(listTrinitySetups()[1], { id: 'B', label: setupB.label });
-});
-
-test('[TRINITY-SETUP-3] Builder Preflight dan Inspector membaca prompt daripada bundle yang disuntik', () => {
-    const custom = {
-        ...setupA,
-        preflightTemplate:
-            'PREFLIGHT CUSTOM ${src} ${tgt} ${honorificMatrix} ${canonicalAddressMatrix} ${creditsExample}',
-        inspectorInstruction: 'INSPECTOR CUSTOM'
-    };
-    const preflight = buildPreflightPrompt('Dialogue', 'Malay', 'English', 'openai', custom);
-    assert.ok(preflight.includes('PREFLIGHT CUSTOM English Malay'));
-    const inspection = buildInspectionPayload(
-        [{ id: 1, text: 'Hello' }],
-        [{ index: 0, text: 'Helo' }],
-        null,
-        null,
-        custom
-    );
-    assert.ok(inspection.prompt.startsWith('INSPECTOR CUSTOM\n'));
-});
-
-test('[TRINITY-SETUP-4] AgentInspector dan TranslationEngine menyelesaikan id setup yang sama', () => {
-    const inspector = new AgentInspector({ promptSetup: 'a' });
-    const engine = new TranslationEngine(
+function makeEngine(options = {}) {
+    return new TranslationEngine(
         { translateSubtitle: async () => '', estimateTokenCount: () => 10 },
         'gemini-2.5-flash',
         {},
-        { promptSetup: 'A' }
+        options
     );
-    assert.equal(inspector.promptSetup.id, 'A');
-    assert.equal(engine.promptSetup.id, inspector.promptSetup.id);
-    assert.equal(engine.promptSetup.translationTemplate, setupA.translationTemplate);
+}
+
+test('[TRINITY-CORE-1] Canonical cores retain the approved prompt contracts without setup labels', () => {
+    assert.ok(PREFLIGHT_STATIC_TEMPLATE.includes("'terms' are the distinctive vocabulary"));
+    assert.ok(PREFLIGHT_STATIC_TEMPLATE.includes('${honorificMatrix}'));
+    assert.ok(TRANSLATION_SYSTEM_TEMPLATE.includes('mentally translate the complete sentence first'));
+    assert.ok(TRANSLATION_SYSTEM_TEMPLATE.includes('${targetSpecificRules}'));
+    assert.ok(TRANSLATION_SYSTEM_TEMPLATE.includes('${fewShot}'));
+    assert.ok(INSPECTOR_INSTRUCTION.includes('universal interjections/vocalizations'));
+    assert.ok(INSPECTOR_INSTRUCTION.includes('weaving in target-language discourse particles'));
+    for (const template of [PREFLIGHT_STATIC_TEMPLATE, TRANSLATION_SYSTEM_TEMPLATE, INSPECTOR_INSTRUCTION]) {
+        assert.doesNotMatch(template, /Setup [ABC]|The Invisible Editor/);
+    }
 });
 
-test('[TRINITY-SETUP-5] Env kanonik didahulukan dan env Translation legasi kekal disokong', () => {
+test('[TRINITY-CORE-2] Preflight and Inspector always use their canonical cores', () => {
+    const preflight = buildPreflightPrompt('Dialogue', 'Malay', 'English', 'openai');
+    assert.ok(preflight.includes('specializing in English comprehension and Malay expression optimization'));
+    assert.ok(preflight.includes("'terms' are the distinctive vocabulary"));
+    assert.ok(preflight.includes('"credits_and_titles"'));
+
+    const inspection = buildInspectionPayload([{ id: 1, text: 'Okay, boss' }], [{ index: 0, text: 'Okay, boss' }]);
+    assert.ok(inspection.prompt.startsWith(INSPECTOR_INSTRUCTION));
+    assert.ok(inspection.prompt.includes('{"valid":true}'));
+    assert.ok(inspection.prompt.includes('accounting for valid clause reordering'));
+});
+
+test('[TRINITY-CORE-3] Legacy setup options and environment values cannot change the active prompt', () => {
     const previousCanonical = process.env.TRINITY_PROMPT_SETUP;
     const previousLegacy = process.env.TRINITY_TRANSLATION_PROMPT_SETUP;
     try {
-        process.env.TRINITY_PROMPT_SETUP = 'unknown-canonical';
-        process.env.TRINITY_TRANSLATION_PROMPT_SETUP = 'unknown-legacy';
-        const inspector = new AgentInspector({});
-        assert.equal(inspector.promptSetup.id, 'A');
-        delete process.env.TRINITY_PROMPT_SETUP;
-        const legacyInspector = new AgentInspector({});
-        assert.equal(legacyInspector.promptSetup.id, 'A');
+        process.env.TRINITY_PROMPT_SETUP = 'C';
+        process.env.TRINITY_TRANSLATION_PROMPT_SETUP = 'A';
+        const control = makeEngine({ trinityMode: 'pro' });
+        const legacy = makeEngine({ trinityMode: 'pro', promptSetup: 'A' });
+        assert.equal(control.translationTemplate, TRANSLATION_SYSTEM_TEMPLATE);
+        assert.equal(legacy.translationTemplate, TRANSLATION_SYSTEM_TEMPLATE);
+        control.sourceLanguage = 'English';
+        legacy.sourceLanguage = 'English';
+        const input = '<s id="1">Hello.</s>';
+        assert.equal(
+            legacy.createXmlBatchPrompt(input, 'Malay', null, 1, null, 0, 1),
+            control.createXmlBatchPrompt(input, 'Malay', null, 1, null, 0, 1)
+        );
+        assert.equal(
+            buildPreflightPrompt('Dialogue', 'Malay', 'English'),
+            buildPreflightPrompt('Dialogue', 'Malay', 'English')
+        );
     } finally {
         if (previousCanonical === undefined) delete process.env.TRINITY_PROMPT_SETUP;
         else process.env.TRINITY_PROMPT_SETUP = previousCanonical;
@@ -94,46 +85,69 @@ test('[TRINITY-SETUP-5] Env kanonik didahulukan dan env Translation legasi kekal
     }
 });
 
-test('[TRINITY-SETUP-6] Config kanonik dan legasi bukan-A memaksa bypass cache', () => {
-    const canonical = normalizeConfig({ trinity: { promptSetup: 'B' } });
-    const legacy = normalizeConfig({ trinity: { translation: { promptSetup: 'c' } } });
-    const baseline = normalizeConfig({ trinity: { promptSetup: 'A' } });
-    assert.equal(canonical.bypassCache, true);
-    assert.equal(legacy.bypassCache, true);
-    assert.notEqual(baseline.bypassCache, true);
+test('[TRINITY-CORE-4] Basic uses standalone wording and Pro uses contextual wording', () => {
+    assert.notEqual(BASIC_TRANSLATION_SYSTEM_TEMPLATE, TRANSLATION_SYSTEM_TEMPLATE);
+    assert.ok(BASIC_TRANSLATION_SYSTEM_TEMPLATE.includes('## Standalone judgment'));
+    assert.doesNotMatch(
+        BASIC_TRANSLATION_SYSTEM_TEMPLATE,
+        /pre-?flight|Agent Inspector|Locked Terms?|locked Character Addresses?/i
+    );
+    for (const template of [BASIC_TRANSLATION_SYSTEM_TEMPLATE, TRANSLATION_SYSTEM_TEMPLATE]) {
+        assert.ok(template.includes('${targetSpecificRules}'));
+        assert.ok(template.includes('${fewShot}'));
+        assert.ok(template.includes('ZERO translator notes'));
+    }
+
+    const basic = makeEngine({ trinityMode: 'basic' });
+    const pro = makeEngine({ trinityMode: 'pro' });
+    assert.equal(basic.translationTemplate, BASIC_TRANSLATION_SYSTEM_TEMPLATE);
+    assert.equal(pro.translationTemplate, TRANSLATION_SYSTEM_TEMPLATE);
 });
 
-test('[TRINITY-SETUP-7] Config kanonik mengatasi slot Translation legasi untuk keputusan bypass', () => {
-    const cfg = normalizeConfig({
-        trinity: { promptSetup: 'A', translation: { promptSetup: 'B' } }
-    });
-    assert.notEqual(cfg.bypassCache, true);
-});
-
-test('[TRINITY-SETUP-8] Setiap Setup menyediakan prompt Basic standalone tanpa kebergantungan Preflight/Inspector', () => {
-    const setups = ['A', 'B', 'C'].map((id) => getTrinitySetup(id));
-    for (const setup of setups) {
-        assert.equal(typeof setup.basicTranslationTemplate, 'string');
-        assert.ok(setup.basicTranslationTemplate.length > 100);
-        assert.notEqual(setup.basicTranslationTemplate, setup.translationTemplate);
-        assert.ok(setup.basicTranslationTemplate.includes('${targetSpecificRules}'));
-        assert.ok(setup.basicTranslationTemplate.includes('${fewShot}'));
-        assert.doesNotMatch(
-            setup.basicTranslationTemplate,
-            /pre-?flight|Agent Inspector|Locked Terms?|locked Character Addresses?/i
-        );
+test('[TRINITY-CORE-5] Canonical language-pack cadence and all runtime placeholders survive interpolation', () => {
+    const engine = makeEngine();
+    engine.sourceLanguage = 'English';
+    const prompt = engine.createXmlBatchPrompt('<s id="1">Hello.</s>', 'Malay', null, 1, null, 0, 1);
+    assert.ok(prompt.includes('Spoken Malaysian Cadence'));
+    assert.ok(prompt.includes('Register-Gated Loanwords'));
+    assert.ok(prompt.includes('Awak ikut kami sekali,'));
+    for (const placeholder of [
+        '${sourceLabel}',
+        '${targetLabel}',
+        '${targetLabelShort}',
+        '${targetSpecificRules}',
+        '${fewShot}'
+    ]) {
+        assert.equal(prompt.includes(placeholder), false, placeholder);
     }
 });
 
-test('[TRINITY-SETUP-9] TranslationEngine memilih varian standalone hanya dalam Basic dan mengekalkan Pro A/B/C', () => {
-    const service = { translateSubtitle: async () => '', estimateTokenCount: () => 10 };
-    for (const id of ['A', 'B', 'C']) {
-        const setup = getTrinitySetup(id);
-        const basic = new TranslationEngine(service, 'gemini-2.5-flash', {}, { promptSetup: id, trinityMode: 'basic' });
-        const pro = new TranslationEngine(service, 'gemini-2.5-flash', {}, { promptSetup: id, trinityMode: 'pro' });
-        assert.equal(basic.promptSetup.translationTemplate, setup.basicTranslationTemplate);
-        assert.equal(basic.promptSetup.template, setup.basicTranslationTemplate);
-        assert.equal(pro.promptSetup.translationTemplate, setup.translationTemplate);
-        assert.equal(pro.promptSetup.template, setup.translationTemplate);
+test('[TRINITY-CORE-6] Legacy setup IDs no longer trigger experimental cache bypass', () => {
+    for (const trinity of [
+        { promptSetup: 'A' },
+        { promptSetup: 'B' },
+        { promptSetup: 'C' },
+        { translation: { promptSetup: 'c' } }
+    ]) {
+        const cfg = normalizeConfig({ trinity });
+        assert.notEqual(cfg.bypassCache, true);
     }
+});
+
+test('[TRINITY-CORE-7] Runtime modules no longer expose the retired setup registry', () => {
+    assert.equal(fs.existsSync(path.join(__dirname, 'prompts', 'trinity', 'setups')), false);
+    assert.equal(fs.existsSync(path.join(__dirname, 'prompts', 'trinity', 'translation', 'setups')), false);
+});
+
+test('[TRINITY-CORE-8] Cache namespace excludes stale registry output and retains user/format scoping', () => {
+    const permanent = generateCacheKeys({}, 'tt123_en', 'ms');
+    assert.equal(permanent.baseKey, 'tt123_en_ms_trinity-natural-v1');
+    assert.equal(permanent.cacheKey, permanent.baseKey);
+
+    const bypass = generateCacheKeys({ bypassCache: true, __configHash: 'config-hash' }, 'tt123_en', 'ms');
+    assert.equal(bypass.cacheKey, 'tt123_en_ms_trinity-natural-v1__u_config-hash');
+    assert.equal(bypass.runtimeKey, bypass.cacheKey);
+
+    const ass = generateCacheKeys({ convertAssToVtt: false }, 'tt123_en', 'ms');
+    assert.equal(ass.baseKey, 'tt123_en_ms_trinity-natural-v1_ass');
 });

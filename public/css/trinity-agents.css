@@ -15,6 +15,9 @@
     display: flex;
     align-items: center;
     gap: 0.75rem;
+    /* 12px + padding atas konten 12px = gap 24px, sepadan dengan jarak
+       toggle → kad ejen. Override .card-header 0.65rem hanya untuk induk ini. */
+    margin-bottom: 0.75rem;
     /* Salin padding .card-header configure.css tetapi padding-right 0 supaya
        butang collapse memegang tepi kanan — pariti dengan kad anak Languages. */
     padding: 0.9rem 0 0.9rem 1rem;
@@ -37,7 +40,7 @@
 .trinity-mode-bar {
     display: flex;
     justify-content: center;
-    margin: 0 0 1.25rem;
+    margin-bottom: 0.5rem;
 }
 .trinity-mode-input {
     position: absolute;
@@ -113,78 +116,6 @@
     font-weight: 600;
     font-size: 0.95rem;
     color: var(--text-secondary, #555);
-}
-.trinity-prompt-setup {
-    display: grid;
-    gap: 0.65rem;
-    margin: 0 0 0.25rem;
-    padding: 1rem;
-    border: 1px solid var(--border-color, rgba(0, 0, 0, 0.08));
-    border-radius: 12px;
-    background: var(--bg-secondary, rgba(0, 0, 0, 0.02));
-}
-.trinity-prompt-setup-head {
-    display: flex;
-    align-items: baseline;
-    justify-content: space-between;
-    gap: 0.75rem;
-}
-.trinity-prompt-setup-title {
-    margin: 0;
-    color: var(--text-primary, #172033);
-    font-size: 0.95rem;
-    font-weight: 650;
-}
-.trinity-prompt-setup-description,
-.trinity-prompt-setup-help,
-.trinity-prompt-setup-cache-note {
-    margin: 0;
-    color: var(--text-secondary, #64748b);
-    font-size: 0.78rem;
-    line-height: 1.5;
-}
-.trinity-prompt-setup-description {
-    text-align: right;
-}
-.trinity-prompt-setup-segments {
-    grid-template-columns: repeat(3, minmax(0, 1fr));
-    max-width: none;
-}
-.trinity-prompt-setup-btn {
-    min-width: 0;
-    padding-inline: 0.5rem;
-}
-.trinity-prompt-setup-btn .trinity-segment-label {
-    font-size: 0.82rem;
-    white-space: nowrap;
-}
-.trinity-prompt-setup-compact {
-    display: none;
-    font-size: 0.95rem;
-    font-weight: 650;
-}
-.trinity-prompt-setup-cache-note {
-    color: var(--text-secondary, #64748b);
-    font-size: 0.74rem;
-}
-@media (max-width: 520px) {
-    .trinity-prompt-setup {
-        padding: 0.85rem;
-    }
-    .trinity-prompt-setup-head {
-        align-items: flex-start;
-        flex-direction: column;
-        gap: 0.25rem;
-    }
-    .trinity-prompt-setup-description {
-        text-align: left;
-    }
-    .trinity-prompt-setup-btn .trinity-segment-label {
-        display: none;
-    }
-    .trinity-prompt-setup-compact {
-        display: inline;
-    }
 }
 @media (prefers-reduced-motion: reduce) {
     .trinity-segment-btn,

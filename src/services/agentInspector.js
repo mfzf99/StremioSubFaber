@@ -198,7 +198,6 @@ const VALID_CRIME_TYPES = new Set(['MERGE', 'DROP', 'PHANTOM', 'SHIFT', 'UNTRANS
 // src/services/prompts/trinity/inspector/core.js — fail ini kini membaca
 // melalui registry. Teks runtime kekal IDENTIK (sifar perubahan perkataan).
 const { INSPECTOR_INSTRUCTION } = require('./prompts/trinity/inspector/core');
-const { getTrinitySetup } = require('./prompts/trinity/setups');
 // [TRINITY FASA 3 — Mandat Owner 2026-10-19] Static dispatch builder channel-native.
 const { resolveTrinityPrompt } = require('./prompts/trinity');
 
@@ -289,14 +288,8 @@ function formatPreflightContextForInspection(preflightContext) {
 // optional. null → laluan warisan IDENTIK (satu mesej user verbatim —
 // digunakan oleh unit test warisan dan laluan lama). Instance produksi
 // melwatkan builder statik dari constructor (static dispatch).
-function buildInspectionPayload(
-    sourceBatch,
-    translatedEntries,
-    preflightContext = null,
-    buildWrapper = null,
-    promptSetup = null
-) {
-    const inspectorInstruction = promptSetup ? promptSetup.inspectorInstruction : INSPECTOR_INSTRUCTION;
+function buildInspectionPayload(sourceBatch, translatedEntries, preflightContext = null, buildWrapper = null) {
+    const inspectorInstruction = INSPECTOR_INSTRUCTION;
     if (!Array.isArray(sourceBatch) || sourceBatch.length === 0) return null;
     if (!Array.isArray(translatedEntries) || translatedEntries.length === 0) return null;
 
@@ -486,10 +479,6 @@ class AgentInspector extends OpenAICompatibleProvider {
 
         this.inspectionTimeoutMs = inspectionTimeoutMs;
         this.preflightTimeoutMs = preflightTimeoutMs;
-        this.promptSetup = getTrinitySetup(
-            options.promptSetup || process.env.TRINITY_PROMPT_SETUP || process.env.TRINITY_TRANSLATION_PROMPT_SETUP
-        );
-        log.info(() => `[PromptSetup] Agent Preflight + Inspector setup: '${this.promptSetup.id}'`);
 
         // [TRINITY FASA 3 — Mandat Owner 2026-10-19] Static dispatch: builder
         // prompt channel-native (inspection + preflight) dikunci SEKALI di sini.
@@ -1076,7 +1065,6 @@ class AgentInspector extends OpenAICompatibleProvider {
                             ...options,
                             // [TRINITY FASA 3] Channel preflight dari instance (static dispatch).
                             channel: this._trinityPreflightChannel,
-                            promptSetup: this.promptSetup,
                             onCallError: (err) => {
                                 callError = err;
                             },
@@ -1153,8 +1141,7 @@ class AgentInspector extends OpenAICompatibleProvider {
             sourceBatch,
             translatedEntries,
             meta.preflightContext || null,
-            this._trinityInspectionBuilder,
-            this.promptSetup
+            this._trinityInspectionBuilder
         );
         if (!payload) {
             return { valid: true, skipped: 'no_input' };

@@ -69,7 +69,7 @@ Input:
 <s id="2">aren't you?</s>
 Correct:
 <answer>
-<s id="1">Awak ikut kami,</s>
+<s id="1">Awak ikut kami sekali,</s>
 <s id="2">kan?</s>
 </answer>
 Wrong (merged):
@@ -96,8 +96,11 @@ Wrong (slots skipped):
     /**
      * P8 injection: DEFAULT_TRANSLATION_PROMPT rule (target-conditional).
      */
-    specificRules:
-        '6. For Malay (ms/my/mya/zsm): use natural Bahasa Melayu Malaysia, keep common English loanwords used in daily speech (okay, confirm, check, settle, try, call, parking, boss, etc.), and choose self-reference based on context: default saya/awak, close aku/kau, formal saya/anda. Strictly avoid Indonesianisms (bisa, banget, gimana, cewek/cowok, kalian, ngomong, kok, dong, sih). Never translate literally word-by-word.',
+    specificRules: `7. For Malay (ms/my/mya/zsm):
+- Spoken Malaysian Cadence: write natural Bahasa Melayu Malaysia using conversational particles (lah, kan, pun, je, dah, ni, tu, kot) and contractions (tak, nak, kejap) where fitting so lines sound spoken, never like a school textbook.
+- Register-Gated Loanwords: keep common English loanwords used in daily speech (okay, confirm, check, settle, try, call, parking, boss, bro, sorry) ONLY in modern, casual, or urban contexts — never in period dramas, fantasy, or formal/solemn scenes.
+- Pronouns & Pro-Drop: drop redundant pronouns when context is clear, and never translate dummy "it" as "ia/ianya" (e.g., "It hurts" → "Sakitnya", "It's over" → "Dah berakhir"). When pronouns are needed, match the relationship: close/peers/heated aku/kau, polite/neutral saya/awak (or drop "awak" with superiors/strangers), formal saya (avoid commercial "anda" in character dialogue unless addressing a public audience or broadcast).
+- Zero Indonesianisms: strictly avoid bisa, banget, gimana, cewek/cowok, kalian, ngomong, kok, dong, sih, gue/lu, keren. Never translate literally word-by-word.`,
 
     /**
      * NOT-LOCKED guidance (P1 formatter + translationEngine._formatPreflightForChunk).

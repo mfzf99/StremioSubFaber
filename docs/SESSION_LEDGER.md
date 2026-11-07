@@ -1,3 +1,18 @@
+## 2026-11-07 — v3.28.4 SINGLE CANONICAL TRINITY PROMPT & BALANCED MODE CONTROL (OWNER MANDATE)
+
+- **Date:** 2026-11-07 ~12:38 (KL time).
+- **Parent HEAD SHA:** `4076e4cb0c72c0e042e216ab80793d83709b1438`.
+- **Status:** `VERIFIED_LOCAL`.
+- **Release Commit SHA + CI Run ID:** confirmed in the final report after push/CI.
+- **Owner Decision:** Remove the Setup A/B/C labels and selection, return to one prompt architecture using the exact former Setup B content for Basic and Pro, clean the UI, fine-tune the Basic/Pro control spacing to a slightly more breathable but equal balance, and proceed directly to one release commit after visual approval.
+- **Impact & Contract Audit (Phase A/B):** Zone C spans UI → configuration save → subtitle handler → TranslationEngine/Preflight/Inspector → canonical language packs → cache keys. The former Setup B Pro Translation, standalone Basic Translation, Preflight, and Inspector wording now lives directly in the Trinity core modules; both retired setup registries and all active setup selection are removed. Legacy setup IDs and environment values cannot change prompts or force experimental cache bypass. The `_trinity-natural-v1` cache namespace prevents stale registry output while preserving user and ASS/SRT scoping. Zone A is N/A; Zone B affects only removal of the obsolete selector field, with no new server schema. XML/schema contracts, channel wrappers, parser, sacred sanitizer, provider transport, Gemini sampling, and credentials remain unchanged. Existing version-based asset cache-busting remains active; Graphify NO-OP (`graphify-out/` absent).
+- **Independent Acceptance:** Exact former Setup B prompt parity was confirmed before registry deletion. Targeted suites passed **246/246**, and the focused canonical-prompt/cache suite passed **12/12**. Playwright verified Basic/Pro behavior, legacy setup rehydration immunity, desktop/mobile visuals, zero setup controls, zero console errors, and no horizontal overflow. Following Owner visual review, final DOM measurements confirmed **24px above and 24px below** the Basic/Pro control at 1440px and 390px. Real-provider verification is N/A because no provider transport contract changed and no live translation was required. Temporary screenshots were deleted; the local verification server remains running for the Owner.
+- **Files Involved:** Trinity Translation/Preflight/Inspector core prompt modules; TranslationEngine, subfaberPreflight, agentInspector, subtitle handler, language-pack modules, cacheKeys, and config normalization; Trinity client/key-state/CSS; canonical single-prompt backend/frontend regression suites and equivalent updates to existing prompt/context/Inspector/language-pack assertions; intentional deletion of both setup registries and three superseded selectable-alternative suites; package.json/package-lock.json (3.28.3→3.28.4), CHANGELOG.md, docs/SESSION_LEDGER.md (this block only). No unrelated or untracked files are included.
+- **npm test Status:** **44 files / 575 total / 574 PASS / 0 FAIL / 1 SKIP (existing real-Redis concurrent-quota integration)**. Full Prettier PASS; full ESLint **0 errors / 226 pre-existing warnings**; production dependency audit **0 vulnerabilities**; `git diff --check` PASS.
+- **Next Steps:** After the single release commit is pushed, verify `origin/main` and its CI run until SUCCESS, then report the Release Commit SHA + CI Run ID as `RELEASED_CI_GREEN`.
+
+---
+
 ## 2026-11-07 — FULLSTACK GOVERNANCE CONSISTENCY ALIGNMENT (OPERATIONAL GOVERNANCE UPDATE)
 
 - **Date:** 2026-11-07 ~02:46 (KL time).

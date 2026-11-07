@@ -59,16 +59,13 @@ function isMalayTarget(targetLang) {
 }
 
 /**
- * Resolve the language pack for a target language.
+ * Resolve the canonical language pack for a target language.
  * @param {string} targetLang - Bahasa sasaran (kod ISO atau nama paparan)
  * @returns {{code, aliases, honorificMatrix, canonicalAddressMatrix,
  *            creditsExample, fewShot, specificRules, notLockedGuidance}}
  */
-function getLanguagePack(targetLang, promptSetup = null) {
-    const isMalay = isMalayTarget(targetLang);
-    const basePack = isMalay ? malayPack : genericPack;
-    const overrides = promptSetup?.languagePackOverrides?.[isMalay ? 'malay' : 'generic'];
-    return overrides ? { ...basePack, ...overrides } : basePack;
+function getLanguagePack(targetLang) {
+    return isMalayTarget(targetLang) ? malayPack : genericPack;
 }
 
 module.exports = {

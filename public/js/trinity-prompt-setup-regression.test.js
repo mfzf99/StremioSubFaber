@@ -5,44 +5,45 @@ const assert = require('node:assert/strict');
 const fs = require('node:fs');
 const path = require('node:path');
 const vm = require('node:vm');
-const { normalizePromptSetup } = require('./trinity-key-state.js');
 
-test('Prompt Setup defaults empty and unknown values to protected Setup A', () => {
-    for (const value of ['', null, undefined, 'Z', ' setup-d ', 0]) {
-        assert.equal(normalizePromptSetup(value), 'A');
+const trinitySource = fs.readFileSync(path.join(__dirname, 'trinity-agents.js'), 'utf8');
+const keyStateSource = fs.readFileSync(path.join(__dirname, 'trinity-key-state.js'), 'utf8');
+const trinityCss = fs.readFileSync(path.join(__dirname, '..', 'css', 'trinity-agents.css'), 'utf8');
+
+test('Trinity source and key-state module parse without the retired setup helper', () => {
+    new vm.Script(trinitySource, { filename: 'trinity-agents.js' });
+    new vm.Script(keyStateSource, { filename: 'trinity-key-state.js' });
+    const keyState = require('./trinity-key-state.js');
+    assert.equal(keyState.normalizePromptSetup, undefined);
+});
+
+test('Trinity mounts one Basic/Pro control directly before the agent cards', () => {
+    assert.match(trinitySource, /var toggleBar = createEl\('div', 'trinity-mode-bar'\)/);
+    assert.match(trinitySource, /pContent\.appendChild\(toggleBar\);\s*parentCard\.appendChild\(pContent\)/);
+    assert.match(trinitySource, /var cardsWrap = createEl\('div', 'trinity-cards'\)/);
+    assert.ok(
+        trinitySource.indexOf('pContent.appendChild(toggleBar)') <
+            trinitySource.indexOf("var cardsWrap = createEl('div', 'trinity-cards')")
+    );
+    assert.match(trinitySource, /seg\.appendChild\(modeBtn\(MODE_BASIC, 'Basic Mode'/);
+    assert.match(trinitySource, /seg\.appendChild\(modeBtn\(MODE_PRO, 'Pro Mode'/);
+});
+
+test('No prompt-setup selector, label, hidden state, or selector CSS remains', () => {
+    for (const source of [trinitySource, keyStateSource, trinityCss]) {
+        assert.doesNotMatch(source, /trinityPromptSetup|promptSetupBar|PROMPT_SETUP_DESCRIPTIONS|trinity-prompt-setup/);
+        assert.doesNotMatch(source, /A — Baseline|B — Natural Cadence|C — Invisible Editor/);
     }
 });
 
-test('Prompt Setup accepts explicit A/B/C case-insensitively', () => {
-    assert.equal(normalizePromptSetup('a'), 'A');
-    assert.equal(normalizePromptSetup(' b '), 'B');
-    assert.equal(normalizePromptSetup('c'), 'C');
-});
-
-test('Trinity UI parses and mounts one shared selector before the agent cards', () => {
-    const file = path.join(__dirname, 'trinity-agents.js');
-    const source = fs.readFileSync(file, 'utf8');
-    new vm.Script(source, { filename: file });
-    assert.match(source, /pContent\.appendChild\(toggleBar\);\s*pContent\.appendChild\(promptSetupBar\)/);
-    assert.match(source, /var cardsWrap = createEl\('div', 'trinity-cards'\)/);
-    assert.ok(
-        source.indexOf('pContent.appendChild(promptSetupBar)') <
-            source.indexOf("var cardsWrap = createEl('div', 'trinity-cards')")
-    );
-    assert.equal((source.match(/promptSetupBar\.id = 'trinityPromptSetup'/g) || []).length, 1);
-});
-
-test('Trinity save serializes canonical trinity.promptSetup without mixing it into agent slots', () => {
-    const source = fs.readFileSync(path.join(__dirname, 'trinity-agents.js'), 'utf8');
-    assert.match(source, /promptSetup: normalizePromptSetup\(\(\$\('trinityPromptSetupValue'\) \|\| \{\}\)\.value\)/);
-    assert.doesNotMatch(source, /translation:\s*\{\s*promptSetup:/);
-});
-
-test('Trinity rehydration supports canonical and legacy setup values with A fallback', () => {
-    const source = fs.readFileSync(path.join(__dirname, 'trinity-agents.js'), 'utf8');
+test('Trinity save and rehydration preserve agent settings without serializing setup IDs', () => {
+    assert.doesNotMatch(trinitySource, /promptSetup\s*:/);
     assert.match(
-        source,
-        /cfg\.trinity\.promptSetup \|\| \(cfg\.trinity\.translation && cfg\.trinity\.translation\.promptSetup\)/
+        trinitySource,
+        /var storedMode = \(cfg\.trinity && cfg\.trinity\.mode\) \|\| cfg\.mode \|\| MODE_BASIC;/
     );
-    assert.match(source, /promptSetupInput\.dispatchEvent\(new Event\('change', \{ bubbles: true \}\)\)/);
+    assert.match(trinitySource, /var prevTrinity = \(getEffectiveConfig\(\) \|\| \{\}\)\.trinity \|\| \{\};/);
+    assert.match(trinitySource, /translation:\s*\{\}/);
+    assert.match(trinitySource, /preflight:\s*\{\}/);
+    assert.match(trinitySource, /inspector:\s*\{\}/);
 });

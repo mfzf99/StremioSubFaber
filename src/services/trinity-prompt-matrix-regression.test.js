@@ -276,7 +276,8 @@ test('[FINALE preflight] direct_address example is source-language neutral', () 
 
 test('[FINALE translation] reading-speed guardrail and adjacent-slot SVO↔SOV reordering are explicit', () => {
     const prompt = interpolateTranslationSystem();
-    assert.ok(prompt.includes('within its on-screen duration without losing core meaning or emotional punch'));
+    assert.ok(prompt.includes('built for on-screen reading speed'));
+    assert.ok(prompt.includes('without losing core meaning or emotional punch'));
     assert.ok(prompt.includes('Keep every slot strictly populated'));
     assert.ok(prompt.includes('When a single sentence spans across adjacent slots'));
     assert.ok(prompt.includes('reordering clauses across the split slots only when required by Malay word order'));

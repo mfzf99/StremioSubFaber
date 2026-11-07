@@ -325,7 +325,7 @@ test('SubFaberSharedContext: previousMemory rendered as continuity block (single
 const { splitStructuredPrompt, SUBFABER_PROMPT_BOUNDARY } = require('./utils/structuredPrompt');
 
 test('SubFaberPrompt V4: slim sharp prompt, split system/user, no double-send', () => {
-    const engine = makeEngine({ subfaberEnabled: true }, { promptSetup: 'A' });
+    const engine = makeEngine({ subfaberEnabled: true });
     engine.sourceLanguage = 'English';
     const batch = makeEntries(2, 1);
     const batchText = engine.prepareBatchXml(batch, null);
@@ -365,8 +365,8 @@ test('SubFaberPrompt V4: slim sharp prompt, split system/user, no double-send', 
     assert.ok(system.includes('4. ANTI-DROP'), 'Rule 4 ANTI-DROP');
     assert.ok(system.includes('5. ANTI-UNTRANSLATED'), 'Rule 5 ANTI-UNTRANSLATED (lazy-copy guard)');
     assert.ok(system.includes('6. PRESERVE markup'), 'Rule 6 markup preservation');
-    assert.ok(system.includes('same count of [br]'), '[br] count locked');
-    assert.ok(system.includes('may move to a natural'), '[br] reposition adaptif');
+    assert.ok(system.includes('exact count of [br]'), '[br] count locked');
+    assert.ok(system.includes('place [br] at a natural'), '[br] reposition adaptif');
     // Style padat — ayat hidup, anti-calque
     // [OWNER MANUAL EDIT 2026-10-07] Style diketatkan: "natural, idiomatic"
     // menggantikan "living"; register lock kini "context titles/pronouns"
@@ -386,7 +386,7 @@ test('SubFaberPrompt V4: slim sharp prompt, split system/user, no double-send', 
     assert.ok(system.includes('[EXAMPLE 2 — SHIFT:'), 'Few-shot EXAMPLE 2 in system');
     assert.ok(!system.includes('[EXAMPLE 3 — PHANTOM:'), 'Few-shot 3-6 REMOVED (Prompt-Slim)');
     assert.ok(!system.includes('[EXAMPLE 6 — REGISTER:'), 'Few-shot 6 REMOVED (Prompt-Slim)');
-    assert.ok(system.includes('Awak ikut kami,'), 'Malay few-shot present (target=Malay)');
+    assert.ok(system.includes('Awak ikut kami sekali,'), 'Malay few-shot present (target=Malay)');
     // Output Format di SYSTEM
     assert.ok(system.includes('## Output Format'), 'Output Format in system part');
     assert.ok(system.includes('one <s id="N"> per input id'), '1-to-1 contract');

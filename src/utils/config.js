@@ -1335,16 +1335,6 @@ function normalizeConfig(config) {
     // menyimpang daripada lalai provider/ejen → bypass cache automatik
     // (konsisten logik keselamatan pangkalan data sedia ada).
     if (mergedConfig.__trinityParamsDeviated === true) bypassReasons.push('trinity-params-deviated');
-    // [PROMPT SETUP REGISTRY — Mandat Owner 2026-10-30] Setup prompt Agent
-    // Translation bukan-baseline (trinity.translation.promptSetup !== 'A')
-    // → bypass cache automatik. Kunci cache terjemahan (generateCacheKeys)
-    // tiada diskriminator prompt; tanpa bypass, eksperimen Setup B/C akan
-    // menerima hasil cache Setup A dan perbandingan A/B tidak sah.
-    const selectedPromptSetup =
-        mergedConfig.trinity?.promptSetup || mergedConfig.trinity?.translation?.promptSetup || 'A';
-    if (String(selectedPromptSetup).trim().toUpperCase() !== 'A' && String(selectedPromptSetup).trim() !== '') {
-        bypassReasons.push('prompt-setup');
-    }
     if (bypassReasons.length > 0) {
         log.debug(() => `[Config] Forcing bypass cache (${bypassReasons.join(', ')})`);
         mergedConfig.bypassCache = true;

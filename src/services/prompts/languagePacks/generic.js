@@ -83,10 +83,10 @@ Wrong (slots skipped):
 <s id="2">{translation of "No problem, sit down."}</s>`,
 
     /**
-     * P8 injection: neutral rule #6 for DEFAULT_TRANSLATION_PROMPT.
+     * P8 injection: neutral rule for DEFAULT_TRANSLATION_PROMPT.
      */
     specificRules:
-        "6. Use natural, idiomatic phrasing as a native speaker of the target language would say it — respect the target language's standard register, common loanword conventions, and self-reference/pronoun conventions. Never translate literally word-by-word.",
+        "7. Use natural, idiomatic phrasing as a native speaker of the target language would say it — respect the target language's spoken cadence, discourse particles, pro-drop habits, genre-appropriate loanword conventions, and self-reference/pronoun hierarchy. Never translate literally word-by-word.",
 
     /**
      * NOT-LOCKED guidance — neutral version for non-Malay targets.

@@ -363,7 +363,7 @@ test('AgentInspector: adjacent split-sentence clause reordering is exempt from S
 test('AgentInspector: inspector explicitly permits compression + idiomatic adaptation', () => {
     assert.ok(
         INSPECTOR_INSTRUCTION.includes(
-            'condensing wordy lines, trimming redundant filler, and replacing source idioms'
+            'condensing wordy lines, trimming redundant filler, weaving in target-language discourse particles, and replacing source idioms'
         ),
         'inspector must declare compression/idiom-adaptation as REQUIRED (not a crime)'
     );

@@ -141,22 +141,14 @@ const REMOVED_CRIME_EXAMPLE_HEADERS = [
     '[EXAMPLE 6 — REGISTER:'
 ];
 
-test('P2 Malay: few-shot 2 jenayah parity hadir (MERGE/SHIFT), BM "Awak ikut kami," kekal', () => {
+test('P2 Malay: few-shot 2 jenayah parity hadir (MERGE/SHIFT), cadence BM kanonik kekal', () => {
     const TranslationEngine = require('./translationEngine');
     const dummyGemini = {
         translateSubtitle: async () => '',
         streamTranslateSubtitle: async () => '',
         estimateTokenCount: () => 10
     };
-    const engine = new TranslationEngine(
-        dummyGemini,
-        'gemini-2.5-flash',
-        {},
-        {
-            providerName: 'gemini',
-            promptSetup: 'A'
-        }
-    );
+    const engine = new TranslationEngine(dummyGemini, 'gemini-2.5-flash', {}, { providerName: 'gemini' });
     engine.sourceLanguage = 'English';
     const batchText = '<s id="1">You are coming with us,</s>\n<s id="2">aren\'t you?</s>';
     const prompt = engine.createXmlBatchPrompt(batchText, 'Malay', null, 2, null, 0, 1);
@@ -168,7 +160,7 @@ test('P2 Malay: few-shot 2 jenayah parity hadir (MERGE/SHIFT), BM "Awak ikut kam
     }
     assert.ok(prompt.includes('EXAMPLE 1 — MERGE'), 'label jenayah MERGE pada EXAMPLE 1');
     assert.ok(prompt.includes('EXAMPLE 2 — SHIFT'), 'label jenayah SHIFT pada EXAMPLE 2');
-    assert.ok(prompt.includes('Awak ikut kami,'), 'few-shot BM hadir untuk sasaran Malay');
+    assert.ok(prompt.includes('Awak ikut kami sekali,'), 'few-shot BM hadir untuk sasaran Malay');
     assert.ok(prompt.includes('Bahasa Melayu Malaysia'), 'peraturan BM spesifik masuk ke prompt struktur');
     assert.ok(prompt.includes('ngomong'), 'senarai hitam Indonesianisme turut dihantar');
     assert.ok(prompt.includes('Never translate literally word-by-word'), 'anti-literal directive aktif');

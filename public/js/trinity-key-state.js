@@ -15,13 +15,6 @@
         return value === 'per-request' ? 'per-request' : 'per-batch';
     }
 
-    function normalizePromptSetup(value) {
-        var setup = String(value || '')
-            .trim()
-            .toUpperCase();
-        return setup === 'B' || setup === 'C' ? setup : 'A';
-    }
-
     function uniqueKeys(values) {
         var seen = new Set();
         var keys = [];
@@ -66,7 +59,6 @@
     return {
         buildGeminiKeyPool: buildGeminiKeyPool,
         getAdditionalGeminiKeys: getAdditionalGeminiKeys,
-        normalizeRotationMode: normalizeRotationMode,
-        normalizePromptSetup: normalizePromptSetup
+        normalizeRotationMode: normalizeRotationMode
     };
 });

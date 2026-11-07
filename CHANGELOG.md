@@ -2,6 +2,21 @@
 
 All notable changes to this project will be documented in this file.
 
+## SubFaber v3.28.4 (2026-11-07) — Single Canonical Trinity Prompt
+
+### 🔧 Changed — One Prompt Family for Basic and Pro
+
+- Removed the selectable Setup A/B/C registry and its runtime identifiers, environment resolution, selector controls, hidden state, rehydration, configuration serialization, and dedicated styling. The Translation API Keys panel now contains only the existing Basic/Pro control and agent cards.
+- Promoted the exact approved former Setup B content into the canonical Trinity core modules. Pro uses its Translation, Preflight, and Inspector bundle; Basic retains the standalone former Setup B Translation variant without requiring Preflight or Inspector context.
+- Legacy setup IDs in saved configurations and environment variables no longer affect runtime prompts. The fixed prompt family is namespaced as `_trinity-natural-v1` in translation cache keys so output produced by retired registry prompts cannot leak into the new runtime.
+- Refined the Basic/Pro control spacing to an Owner-approved, measured **24px above and 24px below** on desktop and mobile. No other visual tokens, agent settings, provider controls, or mode behavior changed.
+
+### ✅ Verification
+
+- Targeted backend and frontend suites passed **246/246**, with the focused canonical-prompt/cache suite passing **12/12**. Full suite: **44 files / 575 total / 574 PASS / 0 FAIL / 1 SKIP (live Redis)**. Existing prompt, Preflight, Inspector, language-pack, XML wrapper, parser, and channel contracts remain covered.
+- Playwright verified desktop and 390px mobile layouts, Basic/Pro switching, legacy setup rehydration immunity, zero setup controls, no horizontal overflow, and zero console errors. Final DOM measurements confirmed equal 24px gaps around the Basic/Pro control at both viewport sizes. Real-provider verification was not required because no provider request or response contract changed and no live translation was needed for this prompt consolidation.
+- Scoped Prettier, syntax checks, ESLint with zero errors and pre-existing warnings, and `git diff --check` passed. Existing version-based asset cache-busting remains active; Graphify is not applicable because `graphify-out/` is absent.
+
 ## SubFaber v3.28.3 (2026-11-07) — Conservative Subtitle Artifact Cleanup
 
 ### 🔧 Changed — Shared Entity Decoding and Apostrophe Repair
