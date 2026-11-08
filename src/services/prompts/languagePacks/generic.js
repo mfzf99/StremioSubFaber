@@ -89,6 +89,12 @@ Wrong (slots skipped):
         "7. Use natural, idiomatic phrasing as a native speaker of the target language would say it — respect the target language's spoken cadence, discourse particles, pro-drop habits, genre-appropriate loanword conventions, and self-reference/pronoun hierarchy. Never translate literally word-by-word.",
 
     /**
+     * Basic standalone editorial refinement — deliberately empty for non-Malay
+     * targets because the canonical core already contains the universal craft.
+     */
+    basicEditorialCraft: '',
+
+    /**
      * NOT-LOCKED guidance — neutral version for non-Malay targets.
      */
     notLockedGuidance:

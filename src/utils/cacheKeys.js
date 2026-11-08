@@ -33,9 +33,9 @@ function normalizeUserHash(rawHash) {
  */
 function generateCacheKeys(config, sourceFileId, targetLang) {
     // Prompt-semantic namespace prevents output produced under the former
-    // Basic prompt from being served under the R&D run 13/15 architecture.
+    // Malay-hardcoded Basic prompt from being served under the universal craft.
     // User and ASS/SRT scoping remain unchanged below.
-    const sourceKey = `${sourceFileId}_${targetLang}_trinity-basic-rd-v1`;
+    const sourceKey = `${sourceFileId}_${targetLang}_trinity-basic-universal-v2`;
     // When ASS passthrough is enabled, append format discriminator to prevent
     // ASS-format cached translations from being served to users expecting SRT
     const assPassthrough = config.convertAssToVtt === false && config.forceSRTOutput !== true;

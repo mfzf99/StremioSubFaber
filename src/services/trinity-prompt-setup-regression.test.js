@@ -9,7 +9,6 @@ const test = require('node:test');
 const assert = require('node:assert/strict');
 const fs = require('node:fs');
 const path = require('node:path');
-const crypto = require('node:crypto');
 
 const { PREFLIGHT_STATIC_TEMPLATE } = require('./prompts/trinity/preflight/core');
 const {
@@ -23,6 +22,7 @@ const TranslationEngine = require('./translationEngine');
 const { normalizeConfig } = require('../utils/config');
 const { generateCacheKeys } = require('../utils/cacheKeys');
 const { splitStructuredPrompt } = require('./utils/structuredPrompt');
+const { normalizeTargetLanguageForPrompt } = require('./utils/normalizeTargetLanguageForPrompt');
 
 function makeEngine(options = {}) {
     return new TranslationEngine(
@@ -87,23 +87,10 @@ test('[TRINITY-CORE-3] Legacy setup options and environment values cannot change
     }
 });
 
-test('[TRINITY-CORE-4] Basic uses the locked R&D run 13/15 wording and Pro retains contextual wording', async () => {
-    assert.equal(
-        crypto.createHash('sha256').update(BASIC_TRANSLATION_SYSTEM_TEMPLATE).digest('hex'),
-        '7c0c6b217e6960be569a1aca4b17092e7c120b58567be0b0c498bfbef6afe17a'
-    );
-    assert.equal(
-        crypto
-            .createHash('sha256')
-            .update(
-                JSON.stringify({
-                    template: BASIC_TRANSLATION_SYSTEM_TEMPLATE,
-                    options: { fewShot: 'canonical', manifest: true }
-                })
-            )
-            .digest('hex'),
-        'a611a71f7025aa6efbbb6d86d0d0e1dabc24eed3d5de7a0b6884a15d80d99f3e'
-    );
+test('[TRINITY-CORE-4] Basic retains the R&D transport/craft structure with universal target-language wording', async () => {
+    assert.ok(BASIC_TRANSLATION_SYSTEM_TEMPLATE.includes('${targetSpecificRules}'));
+    assert.ok(BASIC_TRANSLATION_SYSTEM_TEMPLATE.includes('idiomatic spoken ${targetLabelShort}'));
+    assert.ok(BASIC_TRANSLATION_SYSTEM_TEMPLATE.includes('${sourceLabel}-to-${targetLabelShort}'));
     assert.notEqual(BASIC_TRANSLATION_SYSTEM_TEMPLATE, TRANSLATION_SYSTEM_TEMPLATE);
     assert.ok(BASIC_TRANSLATION_SYSTEM_TEMPLATE.includes('<transport_contract>'));
     assert.ok(BASIC_TRANSLATION_SYSTEM_TEMPLATE.includes('<editorial_craft>'));
@@ -188,17 +175,17 @@ test('[TRINITY-CORE-7] Runtime modules no longer expose the retired setup regist
     assert.equal(fs.existsSync(path.join(__dirname, 'prompts', 'trinity', 'translation', 'setups')), false);
 });
 
-test('[TRINITY-CORE-8] Basic R&D cache namespace excludes stale output and retains user/format scoping', () => {
+test('[TRINITY-CORE-8] Universal Basic cache namespace excludes stale output and retains user/format scoping', () => {
     const permanent = generateCacheKeys({}, 'tt123_en', 'ms');
-    assert.equal(permanent.baseKey, 'tt123_en_ms_trinity-basic-rd-v1');
+    assert.equal(permanent.baseKey, 'tt123_en_ms_trinity-basic-universal-v2');
     assert.equal(permanent.cacheKey, permanent.baseKey);
 
     const bypass = generateCacheKeys({ bypassCache: true, __configHash: 'config-hash' }, 'tt123_en', 'ms');
-    assert.equal(bypass.cacheKey, 'tt123_en_ms_trinity-basic-rd-v1__u_config-hash');
+    assert.equal(bypass.cacheKey, 'tt123_en_ms_trinity-basic-universal-v2__u_config-hash');
     assert.equal(bypass.runtimeKey, bypass.cacheKey);
 
     const ass = generateCacheKeys({ convertAssToVtt: false }, 'tt123_en', 'ms');
-    assert.equal(ass.baseKey, 'tt123_en_ms_trinity-basic-rd-v1_ass');
+    assert.equal(ass.baseKey, 'tt123_en_ms_trinity-basic-universal-v2_ass');
 });
 
 test('[TRINITY-CORE-9] Pro retains its evidence contract while Basic uses the locked R&D split/entity rules', () => {
@@ -242,9 +229,16 @@ test('[TRINITY-CORE-11] Basic places the exact active-ID manifest before input o
             .replaceAll('${sourceLabel}', 'English')
             .replaceAll('${targetLabel}', 'Malay')
             .replaceAll('${targetLabelShort}', 'Malay')
-            .replaceAll('${targetSpecificRules}', '')
+            .replaceAll(
+                '${targetSpecificRules}',
+                require('./prompts/languagePacks').getLanguagePack('Malay').basicEditorialCraft
+            )
             .replaceAll('${fewShot}', '');
         assert.equal(structured.system, expectedSystem);
+        assert.ok(
+            structured.system.includes('Malaysian Malay'),
+            'Malay Basic must retain the R&D Malay editorial craft through conditional injection'
+        );
         assert.ok(!structured.system.includes('Spoken Malaysian Cadence'));
         assert.ok(!structured.system.includes('Awak ikut kami sekali,'));
 
@@ -255,7 +249,33 @@ test('[TRINITY-CORE-11] Basic places the exact active-ID manifest before input o
     }
 });
 
-test('[TRINITY-CORE-10] Subtitle handler does not construct Inspector in Basic mode', () => {
+test('[TRINITY-CORE-10] Basic universal craft carries no Malay-specific wording for non-Malay targets', () => {
+    const input = '<s id="1">Hello.</s>';
+    const malaySpecific = /Malaysian|Malay\b|ini\/itu\/yang|saya\/awak|aku\/kau|okey\/helo|English-to-Malay/i;
+    const basic = makeEngine({ trinityMode: 'basic' });
+    basic.sourceLanguage = 'English';
+
+    const malayPrompt = basic.createXmlBatchPrompt(input, 'Malay', null, 1, null, 0, 1);
+    assert.ok(malaySpecific.test(malayPrompt), 'Malay target must receive the Malay editorial craft');
+
+    for (const targetLanguage of ['Japanese', 'Vietnamese', 'Spanish']) {
+        const targetLabel = normalizeTargetLanguageForPrompt(targetLanguage);
+        const prompt = basic.createXmlBatchPrompt(input, targetLanguage, null, 1, null, 0, 1);
+        const structured = splitStructuredPrompt(prompt);
+        assert.ok(structured, `${targetLanguage} Basic prompt must stay structured`);
+        assert.doesNotMatch(
+            structured.system,
+            malaySpecific,
+            `${targetLanguage} Basic prompt must not contain Malay-specific craft`
+        );
+        assert.ok(
+            structured.system.includes(`into ${targetLabel}`),
+            `${targetLanguage} Basic prompt must name the actual target language`
+        );
+    }
+});
+
+test('[TRINITY-CORE-12] Subtitle handler does not construct Inspector in Basic mode', () => {
     const handlerSource = fs.readFileSync(path.join(__dirname, '..', 'handlers', 'subtitles.js'), 'utf8');
     const constructorGate = handlerSource.match(
         /const isProTrinityMode =[\s\S]*?if \(\s*isProTrinityMode &&\s*config\.agentInspector\?\.enabled === true/

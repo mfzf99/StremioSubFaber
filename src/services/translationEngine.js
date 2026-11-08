@@ -3007,8 +3007,9 @@ You MUST translate each numbered line 1:1. NEVER merge two source lines into one
         // Agent Translation dipindahkan VERBATIM ke Single Source of Truth
         // baharu src/services/prompts/trinity/translation/core.js
         // (TRANSLATION_SYSTEM_TEMPLATE). Interpolasi label kekal di sini;
-        // Basic run 13/15 tidak menyuntik language pack/few-shot, manakala Pro
-        // mengekalkan kedua-dua blok tersebut.
+        // Basic menggunakan editorial craft universal dengan penghalusan
+        // khusus-Malay bersyarat melalui basicEditorialCraft; few-shot kekal
+        // tidak disuntik. Pro mengekalkan specificRules + few-shot penuh.
         // Nota: core menggunakan label TERISIH (fallback 'the source language'
         // / 'the target language' / 'target-language' dilaksanakan di sini
         // supaya templat kanonik kekal neutral).
@@ -3016,7 +3017,10 @@ You MUST translate each numbered line 1:1. NEVER merge two source lines into one
             .replaceAll('${sourceLabel}', sourceLabel || 'the source language')
             .replaceAll('${targetLabel}', targetLabel || 'the target language')
             .replaceAll('${targetLabelShort}', targetLabel || 'target-language')
-            .replaceAll('${targetSpecificRules}', this.trinityMode === 'basic' ? '' : fewShotPack.specificRules)
+            .replaceAll(
+                '${targetSpecificRules}',
+                this.trinityMode === 'basic' ? fewShotPack.basicEditorialCraft : fewShotPack.specificRules
+            )
             .replaceAll('${fewShot}', this.trinityMode === 'basic' ? '' : fewShotPack.fewShot);
 
         // [TRINITY FASA 3 — Mandat Owner 2026-10-19] Pembungkusan channel-native:

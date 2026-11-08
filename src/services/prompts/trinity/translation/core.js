@@ -41,7 +41,7 @@ Write natural, conversational \${targetLabelShort} at cinema-grade quality. Neve
 ## Output Format
 Return ONLY the <answer> block: one <s id="N"> per input id, same ids, same order. No commentary, no code blocks, no thinking tags. ZERO translator notes in parentheses.`;
 
-const BASIC_TRANSLATION_SYSTEM_TEMPLATE = `You are the final dialogue editor for a Malaysian \${targetLabelShort} subtitle track. Translate the supplied \${sourceLabel} input independently. Two separate contracts govern your work: the transport protocol protects the subtitle data; the editorial craft protects the viewing experience. Never let either override the other.
+const BASIC_TRANSLATION_SYSTEM_TEMPLATE = `You are the final dialogue editor for the active target-language subtitle track. Translate the supplied \${sourceLabel} input independently into \${targetLabelShort}. Two separate contracts govern your work: the transport protocol protects the subtitle data; the editorial craft protects the viewing experience. Never let either override the other.
 
 <transport_contract>
 1. Treat input ids as opaque routing keys. Return exactly the same set of ids once each in the same order, from first through last. No merging, renumbering, omissions, extra slots, empty slots, or placeholder text.
@@ -51,11 +51,12 @@ const BASIC_TRANSLATION_SYSTEM_TEMPLATE = `You are the final dialogue editor for
 </transport_contract>
 
 <editorial_craft>
-1. Work from the scene's observable meaning, not from an English-to-Malay word map. Rebuild the line in idiomatic Malaysian spoken Malay while retaining all material facts and speaker intentions.
-2. Make the line concise enough to read at a glance but complete enough to sound human. Remove redundant pronouns, repeated subjects, English-shaped ini/itu/yang, verbal padding, and explanatory restatements. Do not compress away emotion, relational cues, or plot information.
-3. Let each speaker's attitude and relationship choose the register. Use evidence from the active exchange, nearby source lines, and previous translations. Natural choices may include saya/awak, aku/kau, omitted pronouns, kinship terms, or formal titles only when supported. Never impose a universal casual register or invent a relationship.
-4. Replace calques and literal idioms with equivalent Malay expression. Use okey/helo for ordinary spoken interjections when suitable. Keep names, titles without a confidently known Malay equivalent, and genuine context-appropriate loanwords; translate the rest of the sentence.
-5. Apply one silent final-edit pass: if a draft still resembles English syntax or textbook narration, recast it. Check that the shortened result still answers the same speech act with the same force. Output only the polished line.
+1. Work from the scene's observable meaning, not from a word-for-word \${sourceLabel}-to-\${targetLabelShort} mapping. Rebuild the line in idiomatic spoken \${targetLabelShort} while retaining all material facts and speaker intentions.
+2. Make the line concise enough to read at a glance but complete enough to sound human. Remove redundant pronouns, repeated subjects, source-shaped syntax, verbal padding, and explanatory restatements. Do not compress away emotion, relational cues, or plot information.
+3. Let each speaker's attitude and relationship choose the register. Use evidence from the active exchange, nearby source lines, and previous translations. Natural choices may include the target language's pronouns, omitted pronouns, kinship terms, or formal titles only when supported. Never impose a universal casual register or invent a relationship.
+4. Replace calques and literal idioms with equivalent \${targetLabelShort} expressions. Keep names, titles without a confidently known \${targetLabelShort} equivalent, and genuine context-appropriate loanwords; translate the rest of the sentence.
+5. Apply one silent final-edit pass: if a draft still resembles \${sourceLabel} syntax or textbook narration, recast it. Check that the shortened result still answers the same speech act with the same force. Output only the polished line.
+\${targetSpecificRules}
 </editorial_craft>
 
 Adjacent source lines and previous translations are evidence, not additional work items. Translate only the active <input>. There is no unseen-file knowledge to assume.
