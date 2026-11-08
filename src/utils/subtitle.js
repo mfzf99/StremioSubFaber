@@ -293,13 +293,16 @@ function parseSRT(srtContent) {
     for (const block of blocks) {
         // Also handle CRLF when splitting lines within each block
         const lines = block.trim().split(/\r?\n/);
-        if (lines.length < 3) continue;
+        // Slot dengan teks kosong (hanya id + timecode) adalah SAH —
+        // contohnya subtitle yang sengaja dibiarkan kosong untuk timing.
+        // Jangan buang slot ini; pariti ID mesti dikekalkan.
+        if (lines.length < 2) continue;
 
         const id = parseInt(lines[0]);
         if (isNaN(id)) continue;
 
         const timecode = lines[1];
-        const text = lines.slice(2).join('\n');
+        const text = lines.length >= 3 ? lines.slice(2).join('\n') : '';
 
         entries.push({
             id,

@@ -3,8 +3,32 @@ const assert = require('node:assert/strict');
 
 const SubDLService = require('../services/subdl');
 const { handleSubtitleDownload, preprocessSubtitleForAI } = require('../handlers/subtitles');
-const { sanitizeSubtitleText } = require('./subtitle');
+const { sanitizeSubtitleText, parseSRT } = require('./subtitle');
 const entity = (body) => String.fromCharCode(38) + body + ';';
+
+test('parseSRT preserves empty-text slots for ID parity (BUGFIX)', () => {
+    const srt = `1
+00:00:01,000 --> 00:00:02,000
+Hello.
+
+2
+00:00:02,000 --> 00:00:03,000
+
+
+3
+00:00:03,000 --> 00:00:04,000
+World.
+`;
+    const entries = parseSRT(srt);
+    assert.equal(entries.length, 3, 'Empty-text slot must be preserved');
+    assert.equal(entries[1].id, 2);
+    assert.equal(entries[1].text, '', 'Empty slot must keep empty text');
+
+    const crlf = `1\r\n00:00:01,000 --> 00:00:02,000\r\nHello.\r\n\r\n2\r\n00:00:02,000 --> 00:00:03,000\r\n\r\n\r\n3\r\n00:00:03,000 --> 00:00:04,000\r\nWorld.\r\n`;
+    const crlfEntries = parseSRT(crlf);
+    assert.equal(crlfEntries.length, 3, 'CRLF empty slot must be preserved');
+    assert.equal(crlfEntries[1].text, '');
+});
 
 test('subtitle cleanup collapses duplicated in-word apostrophes while preserving valid accents', () => {
     const input = "I'm I'’m I'´m I''m l’amour d’ete café ''quoted''";

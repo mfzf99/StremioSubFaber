@@ -70,6 +70,16 @@ const sleep = (ms) => new Promise((resolve) => setTimeout(resolve, ms));
 // + stage 4 cleanTranslatedText — satu regex, sifar drift definisi.
 const BR_MARKER_PATTERN = /\s*(?:\[br\]|<br\s*\/?>|&(?:lt|#60);br\s*\/?&(?:gt|#62);)\s*/gi;
 
+// [MALAY-SANITIZER-SET-ASIDE 2026-11-08 — Mandat Owner]
+// Penentu ini mengawal blok "hybrid sanitizer" Melayu dalam cleanTranslatedText().
+// Lalai FALSE: sanitizer diketepikan daripada laluan runtime kerana ia berjalan
+// tanpa syarat bahasa (merosakkan Bahasa Indonesia dan memasukkan perkataan
+// Melayu ke dalam terjemahan bukan-Melayu). Kod asal kekal di dalam fail ini
+// (tidak dihapus) dan senarai merah boleh-diaktifkan-sendirinya berada di
+// src/services/utils/malayHybridSanitizer.js — ubah ke TRUE hanya dengan mandat
+// Owner yang jelas dan pengesahan kualiti untuk bahasa sasaran tertentu.
+const MALAY_HYBRID_SANITIZER_ENABLED = false;
+
 // Extract normalized tokens from a language label/code (split on common separators)
 function tokenizeLanguageValue(value) {
     return String(value || '')
@@ -3007,9 +3017,11 @@ You MUST translate each numbered line 1:1. NEVER merge two source lines into one
         // Agent Translation dipindahkan VERBATIM ke Single Source of Truth
         // baharu src/services/prompts/trinity/translation/core.js
         // (TRANSLATION_SYSTEM_TEMPLATE). Interpolasi label kekal di sini;
-        // Basic menggunakan editorial craft universal dengan penghalusan
-        // khusus-Malay bersyarat melalui basicEditorialCraft; few-shot kekal
-        // tidak disuntik. Pro mengekalkan specificRules + few-shot penuh.
+        // [BASIC-UNIVERSAL 2026-11-08 — Mandat Owner] Basic kini SATU arahan
+        // universal: tiada language pack, tiada suntikan peraturan bahasa, tiada
+        // few-shot. Core Basic tidak mengandungi placeholder
+        // ${targetSpecificRules}/${fewShot}; pack hanya digunakan oleh Pro.
+        // Pro mengekalkan specificRules + few-shot penuh.
         // Nota: core menggunakan label TERISIH (fallback 'the source language'
         // / 'the target language' / 'target-language' dilaksanakan di sini
         // supaya templat kanonik kekal neutral).
@@ -3017,10 +3029,7 @@ You MUST translate each numbered line 1:1. NEVER merge two source lines into one
             .replaceAll('${sourceLabel}', sourceLabel || 'the source language')
             .replaceAll('${targetLabel}', targetLabel || 'the target language')
             .replaceAll('${targetLabelShort}', targetLabel || 'target-language')
-            .replaceAll(
-                '${targetSpecificRules}',
-                this.trinityMode === 'basic' ? fewShotPack.basicEditorialCraft : fewShotPack.specificRules
-            )
+            .replaceAll('${targetSpecificRules}', this.trinityMode === 'basic' ? '' : fewShotPack.specificRules)
             .replaceAll('${fewShot}', this.trinityMode === 'basic' ? '' : fewShotPack.fewShot);
 
         // [TRINITY FASA 3 — Mandat Owner 2026-10-19] Pembungkusan channel-native:
@@ -3865,146 +3874,160 @@ ${batchText}
             .replace(/\bÃ¢\s+(?=[💥💖💗💜💙💚💓😊😂😀🔥🎉👍✔✓✨”"“‘'…—–♪♫★☆♥])/g, '');
 
         // Hybrid sanitizer (dialogue vs lyrics + full CAPSLOCK support)
+        // [MALAY-SANITIZER-SET-ASIDE 2026-11-08 — Mandat Owner]
+        // Sanitizer "hybrid" Melayu (pronoun/zarf/pinjaman/singkatan SMS)
+        // DIKETEPIKAN daripada laluan runtime. Blok eksperimen ini berjalan
+        // tanpa syarat bahasa, jadi ia menimpa output untuk SEMUA bahasa
+        // sasaran — ia merosakkan Bahasa Indonesia ("kamu" → "awak") dan
+        // MEMASUKKAN perkataan Melayu ke dalam terjemahan bukan-Melayu.
+        // Kod asal kekal di sini (tidak dihapus) dan dikawal oleh flag
+        // MALAY_HYBRID_SANITIZER_ENABLED; senarai merah yang boleh diaktifkan
+        // semula secara sedar berada di
+        // src/services/utils/malayHybridSanitizer.js.
+        // Kontrak semasa: output AI dikekalkan seperti yang ditulis model.
         // ============================================================================
-        cleaned = cleaned
-            .split('\n')
-            .map((line) => {
-                const isMusicLine = /[♫♪♬♩🎵🎶]/.test(line);
+        // Flag tunggal untuk mengawal blok sanitizer Melayu (lihat catatan di atas).
+        if (MALAY_HYBRID_SANITIZER_ENABLED) {
+            cleaned = cleaned
+                .split('\n')
+                .map((line) => {
+                    const isMusicLine = /[♫♪♬♩🎵🎶]/.test(line);
 
-                // 1. Pronouns (dialogue only; preserve lyrics)
-                if (!isMusicLine) {
+                    // 1. Pronouns (dialogue only; preserve lyrics)
+                    if (!isMusicLine) {
+                        line = line
+                            // Penyeragaman "dia orang" / "diorang" -> "mereka"
+                            .replace(/\bdia orang\b/g, 'mereka')
+                            .replace(/\bDia orang\b/g, 'Mereka')
+                            .replace(/\bDIA ORANG\b/g, 'MEREKA')
+                            .replace(/\bdiorang\b/g, 'mereka')
+                            .replace(/\bDiorang\b/g, 'Mereka')
+                            .replace(/\bDIORANG\b/g, 'MEREKA')
+                            .replace(/\bakulah\b/g, 'sayalah')
+                            .replace(/\bAkulah\b/g, 'Sayalah')
+                            .replace(/\bAKULAH\b/g, 'SAYALAH')
+                            .replace(/\bkaulah\b/g, 'awaklah')
+                            .replace(/\bKaulah\b/g, 'Awaklah')
+                            .replace(/\bKAULAH\b/g, 'AWAKLAH')
+                            .replace(/\bengkaulah\b/g, 'awaklah')
+                            .replace(/\bEngkaulah\b/g, 'Awaklah')
+                            .replace(/\bENGKAULAH\b/g, 'AWAKLAH')
+                            .replace(/\bkamulah\b/g, 'awaklah')
+                            .replace(/\bKamulah\b/g, 'Awaklah')
+                            .replace(/\bKAMULAH\b/g, 'AWAKLAH')
+                            .replace(/\bandalah\b/g, 'awaklah')
+                            .replace(/\bAndalah\b/g, 'Awaklah')
+                            .replace(/\bANDALAH\b/g, 'AWAKLAH')
+                            .replace(/\baku\b/g, 'saya')
+                            .replace(/\bAku\b/g, 'Saya')
+                            .replace(/\bAKU\b/g, 'SAYA')
+                            .replace(/\bkau\b/g, 'awak')
+                            .replace(/\bKau\b/g, 'Awak')
+                            .replace(/\bKAU\b/g, 'AWAK')
+                            .replace(/\bengkau\b/g, 'awak')
+                            .replace(/\bEngkau\b/g, 'Awak')
+                            .replace(/\bENGKAU\b/g, 'AWAK')
+                            .replace(/\bkamu\b/g, 'awak')
+                            .replace(/\bKamu\b/g, 'Awak')
+                            .replace(/\bKAMU\b/g, 'AWAK')
+                            .replace(/\banda\b/g, 'awak')
+                            .replace(/\bAnda\b/g, 'Awak')
+                            .replace(/\bANDA\b/g, 'AWAK');
+                    }
+
+                    // 2. Particles & demonstratives
                     line = line
-                        // Penyeragaman "dia orang" / "diorang" -> "mereka"
-                        .replace(/\bdia orang\b/g, 'mereka')
-                        .replace(/\bDia orang\b/g, 'Mereka')
-                        .replace(/\bDIA ORANG\b/g, 'MEREKA')
-                        .replace(/\bdiorang\b/g, 'mereka')
-                        .replace(/\bDiorang\b/g, 'Mereka')
-                        .replace(/\bDIORANG\b/g, 'MEREKA')
-                        .replace(/\bakulah\b/g, 'sayalah')
-                        .replace(/\bAkulah\b/g, 'Sayalah')
-                        .replace(/\bAKULAH\b/g, 'SAYALAH')
-                        .replace(/\bkaulah\b/g, 'awaklah')
-                        .replace(/\bKaulah\b/g, 'Awaklah')
-                        .replace(/\bKAULAH\b/g, 'AWAKLAH')
-                        .replace(/\bengkaulah\b/g, 'awaklah')
-                        .replace(/\bEngkaulah\b/g, 'Awaklah')
-                        .replace(/\bENGKAULAH\b/g, 'AWAKLAH')
-                        .replace(/\bkamulah\b/g, 'awaklah')
-                        .replace(/\bKamulah\b/g, 'Awaklah')
-                        .replace(/\bKAMULAH\b/g, 'AWAKLAH')
-                        .replace(/\bandalah\b/g, 'awaklah')
-                        .replace(/\bAndalah\b/g, 'Awaklah')
-                        .replace(/\bANDALAH\b/g, 'AWAKLAH')
-                        .replace(/\baku\b/g, 'saya')
-                        .replace(/\bAku\b/g, 'Saya')
-                        .replace(/\bAKU\b/g, 'SAYA')
-                        .replace(/\bkau\b/g, 'awak')
-                        .replace(/\bKau\b/g, 'Awak')
-                        .replace(/\bKAU\b/g, 'AWAK')
-                        .replace(/\bengkau\b/g, 'awak')
-                        .replace(/\bEngkau\b/g, 'Awak')
-                        .replace(/\bENGKAU\b/g, 'AWAK')
-                        .replace(/\bkamu\b/g, 'awak')
-                        .replace(/\bKamu\b/g, 'Awak')
-                        .replace(/\bKAMU\b/g, 'AWAK')
-                        .replace(/\banda\b/g, 'awak')
-                        .replace(/\bAnda\b/g, 'Awak')
-                        .replace(/\bANDA\b/g, 'AWAK');
-                }
+                        .replace(/\bni\b/g, 'ini')
+                        .replace(/\bNi\b/g, 'Ini')
+                        .replace(/\bNI\b/g, 'INI')
+                        .replace(/\bnilah\b/g, 'inilah')
+                        .replace(/\bNilah\b/g, 'Inilah')
+                        .replace(/\bNILAH\b/g, 'INILAH')
+                        .replace(/\btulah\b/g, 'itulah')
+                        .replace(/\bTulah\b/g, 'Itulah')
+                        .replace(/\bTULAH\b/g, 'ITULAH')
+                        .replace(/\btu\b/g, 'itu')
+                        .replace(/\bTu\b/g, 'Itu')
+                        .replace(/\bTU\b/g, 'ITU')
+                        .replace(/\bje\b/g, 'saja')
+                        .replace(/\bJe\b/g, 'Saja')
+                        .replace(/\bJE\b/g, 'SAJA')
+                        .replace(/\bjap\b/g, 'sekejap')
+                        .replace(/\bJap\b/g, 'Sekejap')
+                        .replace(/\bJAP\b/g, 'SEKEJAP')
+                        .replace(/\bla\b/g, 'lah')
+                        .replace(/\bLa\b/g, 'Lah')
+                        .replace(/\bLA\b/g, 'LAH')
 
-                // 2. Particles & demonstratives
-                line = line
-                    .replace(/\bni\b/g, 'ini')
-                    .replace(/\bNi\b/g, 'Ini')
-                    .replace(/\bNI\b/g, 'INI')
-                    .replace(/\bnilah\b/g, 'inilah')
-                    .replace(/\bNilah\b/g, 'Inilah')
-                    .replace(/\bNILAH\b/g, 'INILAH')
-                    .replace(/\btulah\b/g, 'itulah')
-                    .replace(/\bTulah\b/g, 'Itulah')
-                    .replace(/\bTULAH\b/g, 'ITULAH')
-                    .replace(/\btu\b/g, 'itu')
-                    .replace(/\bTu\b/g, 'Itu')
-                    .replace(/\bTU\b/g, 'ITU')
-                    .replace(/\bje\b/g, 'saja')
-                    .replace(/\bJe\b/g, 'Saja')
-                    .replace(/\bJE\b/g, 'SAJA')
-                    .replace(/\bjap\b/g, 'sekejap')
-                    .replace(/\bJap\b/g, 'Sekejap')
-                    .replace(/\bJAP\b/g, 'SEKEJAP')
-                    .replace(/\bla\b/g, 'lah')
-                    .replace(/\bLa\b/g, 'Lah')
-                    .replace(/\bLA\b/g, 'LAH')
+                        // 3. Loanwords & standardization
+                        // Normalize "okay" variants
+                        .replace(/\bokeylah\b/g, 'okaylah')
+                        .replace(/\bOkeylah\b/g, 'Okaylah')
+                        .replace(/\bOKEYLAH\b/g, 'OKAYLAH')
+                        .replace(/\bokelah\b/g, 'okaylah')
+                        .replace(/\bOkelah\b/g, 'Okaylah')
+                        .replace(/\bOKELAH\b/g, 'OKAYLAH')
+                        .replace(/\boklah\b/g, 'okaylah')
+                        .replace(/\bOklah\b/g, 'Okaylah')
+                        .replace(/\bOKLAH\b/g, 'OKAYLAH')
+                        .replace(/\bokey\b/g, 'okay')
+                        .replace(/\bOkey\b/g, 'Okay')
+                        .replace(/\bOKEY\b/g, 'OKAY')
+                        .replace(/\boke\b/g, 'okay')
+                        .replace(/\bOke\b/g, 'Okay')
+                        .replace(/\bOKE\b/g, 'OKAY')
+                        .replace(/\bok\b/g, 'okay')
+                        .replace(/\bOk\b/g, 'Okay')
+                        .replace(/\bOK\b/g, 'OKAY')
 
-                    // 3. Loanwords & standardization
-                    // Normalize "okay" variants
-                    .replace(/\bokeylah\b/g, 'okaylah')
-                    .replace(/\bOkeylah\b/g, 'Okaylah')
-                    .replace(/\bOKEYLAH\b/g, 'OKAYLAH')
-                    .replace(/\bokelah\b/g, 'okaylah')
-                    .replace(/\bOkelah\b/g, 'Okaylah')
-                    .replace(/\bOKELAH\b/g, 'OKAYLAH')
-                    .replace(/\boklah\b/g, 'okaylah')
-                    .replace(/\bOklah\b/g, 'Okaylah')
-                    .replace(/\bOKLAH\b/g, 'OKAYLAH')
-                    .replace(/\bokey\b/g, 'okay')
-                    .replace(/\bOkey\b/g, 'Okay')
-                    .replace(/\bOKEY\b/g, 'OKAY')
-                    .replace(/\boke\b/g, 'okay')
-                    .replace(/\bOke\b/g, 'Okay')
-                    .replace(/\bOKE\b/g, 'OKAY')
-                    .replace(/\bok\b/g, 'okay')
-                    .replace(/\bOk\b/g, 'Okay')
-                    .replace(/\bOK\b/g, 'OKAY')
+                        // Normalize "hello" variants (helo/halo -> hello)
+                        .replace(/\bhelo\b/g, 'hello')
+                        .replace(/\bHelo\b/g, 'Hello')
+                        .replace(/\bHELO\b/g, 'HELLO')
+                        .replace(/\bhalo\b/g, 'hello')
+                        .replace(/\bHalo\b/g, 'Hello')
+                        .replace(/\bHALO\b/g, 'HELLO')
 
-                    // Normalize "hello" variants (helo/halo -> hello)
-                    .replace(/\bhelo\b/g, 'hello')
-                    .replace(/\bHelo\b/g, 'Hello')
-                    .replace(/\bHELO\b/g, 'HELLO')
-                    .replace(/\bhalo\b/g, 'hello')
-                    .replace(/\bHalo\b/g, 'Hello')
-                    .replace(/\bHALO\b/g, 'HELLO')
+                        // 4. SMS-style abbreviations
+                        // Sebab (because)
+                        .replace(/\bsbb\b/g, 'sebab')
+                        .replace(/\bSbb\b/g, 'Sebab')
+                        .replace(/\bSBB\b/g, 'SEBAB')
+                        // Untuk (for)
+                        .replace(/\butk\b/g, 'untuk')
+                        .replace(/\bUtk\b/g, 'Untuk')
+                        .replace(/\bUTK\b/g, 'UNTUK')
+                        // Tapi (but)
+                        .replace(/\btp\b/g, 'tapi')
+                        .replace(/\bTp\b/g, 'Tapi')
+                        .replace(/\bTP\b/g, 'TAPI')
+                        // Kalau (if)
+                        .replace(/\bklu\b/g, 'kalau')
+                        .replace(/\bKlu\b/g, 'Kalau')
+                        .replace(/\bKLU\b/g, 'KALAU')
+                        // Dengan (with)
+                        .replace(/\bdgn\b/g, 'dengan')
+                        .replace(/\bDgn\b/g, 'Dengan')
+                        .replace(/\bDGN\b/g, 'DENGAN')
+                        // Yang (which/that)
+                        .replace(/\byg\b/g, 'yang')
+                        .replace(/\bYg\b/g, 'Yang')
+                        .replace(/\bYG\b/g, 'YANG')
+                        // Dekat (near)
+                        .replace(/\bkat\b/g, 'dekat')
+                        .replace(/\bKat\b/g, 'Dekat')
+                        .replace(/\bKAT\b/g, 'DEKAT')
+                        .replace(/\bdkt\b/g, 'dekat')
+                        .replace(/\bDkt\b/g, 'Dekat')
+                        .replace(/\bDKT\b/g, 'DEKAT')
+                        .replace(/\bkt\b/g, 'dekat')
+                        .replace(/\bKt\b/g, 'Dekat')
+                        .replace(/\bKT\b/g, 'DEKAT');
 
-                    // 4. SMS-style abbreviations
-                    // Sebab (because)
-                    .replace(/\bsbb\b/g, 'sebab')
-                    .replace(/\bSbb\b/g, 'Sebab')
-                    .replace(/\bSBB\b/g, 'SEBAB')
-                    // Untuk (for)
-                    .replace(/\butk\b/g, 'untuk')
-                    .replace(/\bUtk\b/g, 'Untuk')
-                    .replace(/\bUTK\b/g, 'UNTUK')
-                    // Tapi (but)
-                    .replace(/\btp\b/g, 'tapi')
-                    .replace(/\bTp\b/g, 'Tapi')
-                    .replace(/\bTP\b/g, 'TAPI')
-                    // Kalau (if)
-                    .replace(/\bklu\b/g, 'kalau')
-                    .replace(/\bKlu\b/g, 'Kalau')
-                    .replace(/\bKLU\b/g, 'KALAU')
-                    // Dengan (with)
-                    .replace(/\bdgn\b/g, 'dengan')
-                    .replace(/\bDgn\b/g, 'Dengan')
-                    .replace(/\bDGN\b/g, 'DENGAN')
-                    // Yang (which/that)
-                    .replace(/\byg\b/g, 'yang')
-                    .replace(/\bYg\b/g, 'Yang')
-                    .replace(/\bYG\b/g, 'YANG')
-                    // Dekat (near)
-                    .replace(/\bkat\b/g, 'dekat')
-                    .replace(/\bKat\b/g, 'Dekat')
-                    .replace(/\bKAT\b/g, 'DEKAT')
-                    .replace(/\bdkt\b/g, 'dekat')
-                    .replace(/\bDkt\b/g, 'Dekat')
-                    .replace(/\bDKT\b/g, 'DEKAT')
-                    .replace(/\bkt\b/g, 'dekat')
-                    .replace(/\bKt\b/g, 'Dekat')
-                    .replace(/\bKT\b/g, 'DEKAT');
-
-                return line;
-            })
-            .join('\n');
+                    return line;
+                })
+                .join('\n');
+        }
 
         // 6. Auto-close unclosed inline formatting tags (per-line)
         //    Close each line individually to prevent <i> leaks across lines

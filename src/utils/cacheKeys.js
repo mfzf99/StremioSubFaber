@@ -32,10 +32,11 @@ function normalizeUserHash(rawHash) {
  * @returns {boolean} .allowPermanent - Whether permanent cache reads/writes are allowed (requires userHash)
  */
 function generateCacheKeys(config, sourceFileId, targetLang) {
-    // Prompt-semantic namespace prevents output produced under the former
-    // Malay-hardcoded Basic prompt from being served under the universal craft.
+    // Prompt-semantic namespace prevents output produced under an earlier
+    // Basic prompt (Malay-hardcoded, then editorial-craft) from being served
+    // under the current single universal Basic instruction.
     // User and ASS/SRT scoping remain unchanged below.
-    const sourceKey = `${sourceFileId}_${targetLang}_trinity-basic-universal-v2`;
+    const sourceKey = `${sourceFileId}_${targetLang}_trinity-basic-universal-v3`;
     // When ASS passthrough is enabled, append format discriminator to prevent
     // ASS-format cached translations from being served to users expecting SRT
     const assPassthrough = config.convertAssToVtt === false && config.forceSRTOutput !== true;

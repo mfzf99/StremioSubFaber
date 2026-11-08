@@ -136,10 +136,43 @@ test('BrParity 9: integrasi cleanTranslatedText(text, sourceText) — hook stage
     assert.equal(countNewlines(legacy), 0, 'Legacy path: tanpa sourceText -> tiada repair');
 });
 
-test('Sanitizer sacred: output AI WAJIB dinormalkan selepas translation, pinjaman English distandardkan', () => {
+test('[MALAY-SANITIZER-SET-ASIDE] output AI dikekalkan utuh — tiada normalisasi Melayu automatik', () => {
+    // [MALAY-SANITIZER-SET-ASIDE 2026-11-08 — Mandat Owner] Sanitizer
+    // "hybrid" Melayu DIKETEPIKAN: ia berjalan tanpa syarat bahasa lalu
+    // merosakkan Bahasa Indonesia ("kamu" → "awak") dan MEMASUKKAN perkataan
+    // Melayu ke dalam terjemahan bukan-Melayu. Kontrak semasa: output AI
+    // dikekalkan seperti yang ditulis model; normalisasi gaya ialah
+    // tanggungjawab model (satu arahan universal).
+    // Kode asal kekal di translationEngine.js di bawah flag
+    // MALAY_HYBRID_SANITIZER_ENABLED (false) dan senarai merah berada di
+    // src/services/utils/malayHybridSanitizer.js.
     const engine = makeEngine();
     const cleaned = engine.cleanTranslatedText(
         'Akulah yang cakap tadi, bukan kau.[br]Tunggu jap, ni untuk dia je, okey?'
     );
-    assert.equal(cleaned, 'Sayalah yang cakap tadi, bukan awak.\nTunggu sekejap, ini untuk dia saja, okay?');
+    assert.equal(cleaned, 'Akulah yang cakap tadi, bukan kau.\nTunggu jap, ni untuk dia je, okey?');
+    // [br] -> newline kekal berfungsi (pariti baris tidak rosak).
+    assert.equal(countNewlines(cleaned), 1);
+});
+
+test('[MALAY-SANITIZER-SET-ASIDE] senarai merah menyimpan peta normalisasi eksperimen', () => {
+    const {
+        MALAY_HYBRID_SANITIZER_RULES,
+        applyMalayHybridSanitizer,
+        wouldBeAlteredByMalaySanitizer,
+        ENABLED
+    } = require('./utils/malayHybridSanitizer');
+
+    assert.equal(ENABLED, false, 'Senarai merah mesti dilumpuhkan');
+    // Peta asal kekal utuh untuk pengaktifan semula pada masa depan.
+    assert.ok(MALAY_HYBRID_SANITIZER_RULES.length > 20, 'Peta eksperimen kekal disimpan');
+    for (const rule of MALAY_HYBRID_SANITIZER_RULES) {
+        assert.ok(rule.from && rule.to, 'Setiap peraturan ada bentuk sumber + sasaran');
+    }
+    // Fungsi pelumpuh tidak mengubah apa-apa.
+    const sample = 'Akulah yang cakap tadi, bukan kau.';
+    assert.equal(applyMalayHybridSanitizer(sample), sample);
+    // Diagnostik masih mengenali bentuk yang akan pernah diubah.
+    assert.equal(wouldBeAlteredByMalaySanitizer(sample), true);
+    assert.equal(wouldBeAlteredByMalaySanitizer('Hello there friend.'), false);
 });

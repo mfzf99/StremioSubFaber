@@ -2,6 +2,34 @@
 
 All notable changes to this project will be documented in this file.
 
+## SubFaber v3.29.0 (2026-11-08) — SubFaber Basic Universal Prompt & Slot Parity Hotfix
+
+### 🐛 Fixed — Empty-Text Slot Preservation in SRT Parsing
+
+- **Critical slot-parity bug:** `parseSRT` was discarding subtitle entries with fewer than 3 lines (ID + timecode only, no text). This caused empty-text slots to vanish before translation, breaking ID parity and producing misaligned subtitles.
+- **Fix:** `parseSRT` now accepts entries with 2 lines (empty text), preserving the full ID sequence. Empty-text slots are valid SRT entries used for timing and must not be dropped.
+- **Regression coverage:** Added `parseSRT preserves empty-text slots for ID parity` test in `subtitle-artifacts-regression.test.js` covering empty text, whitespace, normal entries, multi-line text, and CRLF line endings.
+
+### 🔧 Changed — Universal Basic Translation Prompt (Single Instruction)
+
+- **One universal instruction for all target languages:** Basic mode now uses a single, target-neutral prompt with only 2 placeholders (`${sourceLabel}`, `${targetLabel}`). No language packs, no per-language rule injection, no few-shot examples.
+- **6 explicit rules** mapped to Owner's operational problems:
+  - R1: ID parity (never merge, skip, renumber, or leave slots empty)
+  - R2: Split-sentence handling (translate whole, then divide meaning back into slots)
+  - R3: Anti-calque (native target-language word order, not source structure)
+  - R4: Markup preservation (`[br]`, `<i>`, speaker dashes, ellipsis — same count per slot)
+  - R5: Entity preservation (names, titles, brands stay as in source)
+  - R6: No lazy parenthetical notes (output only `<answer>` block)
+- **Malay hybrid sanitizer set aside:** The experimental Malay sanitizer (pronoun/particle/loanword normalization) is now disabled via `MALAY_HYBRID_SANITIZER_ENABLED = false`. Original code preserved inside the flag; red-list archived in `malayHybridSanitizer.js` for future reactivation.
+- **Cache namespace advanced:** `_trinity-basic-universal-v3` prevents output from earlier Basic prompts (Malay-hardcoded, editorial-craft) from being served under the current universal instruction.
+
+### ✅ Verification
+
+- Full tracked suite: **591 tests / 590 PASS / 0 FAIL / 1 SKIP** (existing real-Redis concurrent-quota integration).
+- Prettier: PASS on all touched files. ESLint: **0 errors** (pre-existing warnings only).
+- `git diff --check`: PASS. No CRLF contamination.
+- Independent adversarial audit confirmed: no ID overlap between context and input, no phantom IDs, no silent failures, empty-text slots preserved, symbol-only slots (`…`, `♪`) preserved, retry index mapping correct.
+
 ## SubFaber v3.28.9 (2026-11-08) — Universal Basic Translation Craft
 
 ### 🐛 Fixed — Basic Mode Target-Language Universality

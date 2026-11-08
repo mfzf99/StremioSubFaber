@@ -1,3 +1,18 @@
+## 2026-11-08 — v3.29.0 SUBFABER BASIC UNIVERSAL PROMPT & SLOT PARITY HOTFIX (OWNER MANDATE)
+
+- **Date:** 2026-11-08 ~23:42 (KL time).
+- **Parent HEAD SHA:** `fc2cfca12e8aee71e3b43001aff5e5f8f8257f59`.
+- **Status:** `VERIFIED_LOCAL`.
+- **Release Commit SHA + CI Run ID:** confirmed in the final report after push/CI.
+- **Owner Decision:** Full A→Z audit of SubFaber Basic mode with production-grade elegance mandate. Fix all identified bugs immediately. Pro/Trinity mode is officially rested; Basic is the sole focus. Single Class 1 release commit to `origin/main`.
+- **Impact & Contract Audit (Phase A/B):** Zone A (subtitle parsing) and Zone C (translation prompt/runtime) are coupled. The empty-text slot bug in `parseSRT` caused ID parity loss before translation. The universal Basic prompt (single instruction, 2 placeholders, no language packs) replaces the previous per-language approach. The Malay sanitizer is set aside with a flag and red-list archive, not deleted. Cache namespace advanced to v3. Pro, Preflight, Inspector, UI, payload serialization, and server configuration remain unchanged. Playwright and real-provider verification are `N/A` for this backend-only correction.
+- **Independent Acceptance:** The empty-text slot bug was reproduced with a 3-entry SRT containing one empty slot; `parseSRT` returned 2 entries before the fix and 3 entries after. The universal Basic prompt renders byte-identical SYSTEM for Gemini/OpenAI/Anthropic (1652 chars). USER data is identical across doors; only the anchor differs. Full tracked suite passed **591 tests / 590 PASS / 0 FAIL / 1 SKIP** (existing real-Redis concurrent-quota integration). Prettier PASS; ESLint **0 errors** (pre-existing warnings only); `git diff --check` PASS.
+- **Files Involved:** `src/utils/subtitle.js` (M: empty-text slot fix), `src/utils/subtitle-artifacts-regression.test.js` (M: regression test), `src/services/prompts/trinity/translation/core.js` (M: universal Basic prompt), `src/services/translationEngine.js` (M: sanitizer set-aside, no language-pack injection), `src/services/utils/malayHybridSanitizer.js` (A: red-list archive), `src/utils/cacheKeys.js` (M: namespace v3), `src/services/trinity-prompt-setup-regression.test.js` (M: universal prompt assertions), `src/services/translationEngine-brparity-regression.test.js` (M: sanitizer assertions), `package.json`/`package-lock.json` (3.28.9→3.29.0), `CHANGELOG.md`, `docs/SESSION_LEDGER.md` (this block only).
+- **npm test Status:** **591 tests / 590 PASS / 0 FAIL / 1 SKIP** (existing real-Redis concurrent-quota integration). Targeted regression suites: 5/5 PASS (empty-slot preservation), 12/12 PASS (Trinity prompt setup), 9/9 PASS (BR parity).
+- **Next Steps:** Create one explicit-file release commit, push to `origin/main`, watch CI until SUCCESS; report Release Commit SHA + CI Run ID as `RELEASED_CI_GREEN`. No additional ledger-only SHA/CI commit is permitted.
+
+---
+
 ## 2026-11-08 — v3.28.9 UNIVERSAL BASIC TRANSLATION CRAFT (OWNER MANDATE)
 
 - **Date:** 2026-11-08 ~18:26 (KL time).
