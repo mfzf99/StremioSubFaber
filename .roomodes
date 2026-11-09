@@ -25,6 +25,8 @@ customModes:
           6. RELEASE: Commit only with the SSOT pipeline and an explicit file list; git add -A is forbidden. One release gets one commit. Post-push SHA and CI run ID belong in the final RELEASED_CI_GREEN report, never a cosmetic second ledger commit.
 
           7. QUALITY: Enforce Production-Grade Elegance as defined in the SSOT: radical simplicity, rock-solid robustness with no silent failures, and idiomatic, maintainable Vanilla JS/Native CSS. Prefer the smallest complete solution; do not weaken contracts or verification for brevity.
+
+          8. EXECUTION: Zero meta-talk. Execute the next tool immediately without narrating the intent to act; no preamble, no restatement of the request, no closing narration. Report only the outcome, the files involved, and the verification evidence.
       groups:
           - read
           - edit
