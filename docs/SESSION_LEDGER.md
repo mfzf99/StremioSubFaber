@@ -1,3 +1,18 @@
+## 2026-11-09 — v3.29.1 UNIVERSAL PROMPT EXAMPLES FOR QUALITY CEILING (OWNER MANDATE)
+
+- **Date:** 2026-11-09 ~08:55 (KL time).
+- **Parent HEAD SHA:** `f6c0a6fb` (v3.29.0).
+- **Status:** `VERIFIED_LOCAL`.
+- **Release Commit SHA + CI Run ID:** confirmed in the final report after push/CI.
+- **Owner Decision:** Add universal English examples to Basic prompt rules R2, R3, and R4 to raise the quality ceiling for all target languages. No language packs, no per-language examples — one universal prompt with structural examples. Single Class 1 release commit to `origin/main`.
+- **Impact & Contract Audit (Phase A/B):** Zone C couples the canonical Basic Translation core → TranslationEngine interpolation → channel-native wrappers → cache namespace. The Basic prompt now includes universal English examples for R2 (split-sentence), R3 (anti-calque), and R4 (line break) that demonstrate structure without being language-specific. Pro, Preflight, Inspector, UI, payload serialization, and server configuration remain unchanged. Playwright and real-provider verification are `N/A` for this backend-only prompt correction. Cache namespace remains `_trinity-basic-universal-v3` (no change needed — examples are additive, not semantic-changing).
+- **Independent Acceptance:** The universal examples render identically for all target languages (Malay, Japanese, Spanish, Vietnamese). Full tracked suite passed **591 tests / 590 PASS / 0 FAIL / 1 SKIP** (existing real-Redis concurrent-quota integration). Prettier PASS; ESLint **0 errors**; `git diff --check` PASS. Trinity prompt regression: 12/12 PASS.
+- **Files Involved:** `src/services/prompts/trinity/translation/core.js` (M: universal examples R2/R3/R4), `package.json`/`package-lock.json` (3.29.0→3.29.1), `CHANGELOG.md`, `docs/SESSION_LEDGER.md` (this block only).
+- **npm test Status:** **591 tests / 590 PASS / 0 FAIL / 1 SKIP** (existing real-Redis concurrent-quota integration). Trinity prompt regression: 12/12 PASS.
+- **Next Steps:** Create one explicit-file release commit, push to `origin/main`, watch CI until SUCCESS; report Release Commit SHA + CI Run ID as `RELEASED_CI_GREEN`. No additional ledger-only SHA/CI commit is permitted.
+
+---
+
 ## 2026-11-08 — v3.29.0 SUBFABER BASIC UNIVERSAL PROMPT & SLOT PARITY HOTFIX (OWNER MANDATE)
 
 - **Date:** 2026-11-08 ~23:42 (KL time).

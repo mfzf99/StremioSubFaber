@@ -2,6 +2,22 @@
 
 All notable changes to this project will be documented in this file.
 
+## SubFaber v3.29.1 (2026-11-09) — Universal Prompt Examples for Quality Ceiling
+
+### 🔧 Changed — Universal Examples in Basic Prompt
+
+- Added universal English examples to Basic prompt rules R2, R3, and R4 to raise the quality ceiling for all target languages.
+- **R2 (Split-sentence):** Example shows how to divide meaning into slots without repeating or cramming: `"I was on my phone" + "and wasn't watching" → "Clause A" + "Clause B"` (each slot keeps its own meaning, NOT `"Clause A Clause B" + ""`).
+- **R3 (Anti-calque):** Example shows natural target-language phrasing vs word-for-word translation: `"I was on my phone" → "Natural target-language phrasing"` (NOT `"word-for-word translation"`).
+- **R4 (Line break):** Example shows correct vs wrong break position: `"I was on my phone [br] and wasn't watching"` (correct) vs `"I was on my [br] phone and wasn't watching"` (wrong).
+- Examples are universal (English-only) and demonstrate structure, not translation — applicable to all 400+ supported languages without language packs.
+
+### ✅ Verification
+
+- Full tracked suite: **591 tests / 590 PASS / 0 FAIL / 1 SKIP** (existing real-Redis concurrent-quota integration).
+- Prettier: PASS. ESLint: **0 errors**. `git diff --check`: PASS.
+- Trinity prompt regression: 12/12 PASS.
+
 ## SubFaber v3.29.0 (2026-11-08) — SubFaber Basic Universal Prompt & Slot Parity Hotfix
 
 ### 🐛 Fixed — Empty-Text Slot Preservation in SRT Parsing
