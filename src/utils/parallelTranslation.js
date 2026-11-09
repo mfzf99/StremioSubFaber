@@ -18,7 +18,7 @@ async function executeParallelTranslation(engine, entries, targetLanguage, custo
     }
 
     const CONCURRENCY_LIMIT = Math.max(1, Math.min(5, parseInt(engine.advancedSettings?.parallelBatchesCount) || 3));
-    const PARALLEL_BATCH_SIZE = 150; // Hardcoded optimal batch size for parallelism
+    const PARALLEL_BATCH_SIZE = engine.batchSize;
 
     log.info(
         () =>

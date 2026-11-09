@@ -159,7 +159,7 @@ test('[A8] deriveTranslationFromProviders — fallback rehidrasi providers.<main
     );
 });
 
-test('[A13] Basic Mode menggunakan formula 5+75+2 secara konsisten pada toggle dan config patch', () => {
+test('[A13] Basic Mode menggunakan formula 20+200+10 secara konsisten pada toggle dan config patch', () => {
     const handlerMatch = trinitySrc.match(
         /toggleInput\.addEventListener\('change', function \(\) \{[\s\S]*?\n        \}\);/
     );
@@ -167,9 +167,9 @@ test('[A13] Basic Mode menggunakan formula 5+75+2 secara konsisten pada toggle d
     assert.ok(handlerMatch, 'handler toggle Basic mesti wujud');
     assert.ok(patchMatch, 'collectConfigPatch mesti wujud');
     for (const source of [handlerMatch[0], patchMatch[0]]) {
-        assert.match(source, /previousContextSize = 5;/, 'previous window = 5');
-        assert.match(source, /batchSize = 75;/, 'batch aktif = 75 baris');
-        assert.match(source, /futureContextSize = 2;/, 'future window kekal = 2');
+        assert.match(source, /previousContextSize = 20;/, 'previous window = 20');
+        assert.match(source, /batchSize = 200;/, 'batch aktif = 200 baris');
+        assert.match(source, /futureContextSize = 10;/, 'future window kekal = 10');
     }
 });
 

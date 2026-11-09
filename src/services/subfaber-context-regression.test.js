@@ -58,37 +58,37 @@ test('SubFaberContext: subfaberEnabled flag REMOVED — SubFaber is the only eng
         undefined,
         'Legacy subfaberEnabled:false ignored — engine stays SubFaber'
     );
-    assert.equal(engineLegacy.batchSize, 75, 'Batch size stays 75 regardless of legacy flags');
+    assert.equal(engineLegacy.batchSize, 200, 'Batch size stays 200 regardless of legacy flags');
 });
 
 test('SubFaberContext: context builder runs WITHOUT any flag (single engine path)', () => {
     const engine = makeEngine({});
-    const all = makeEntries(30);
-    const batch = all.slice(10, 20); // batch tengah — ada baris sebelum & selepas
+    const all = makeEntries(40);
+    const batch = all.slice(20, 30); // batch tengah — ada baris sebelum & selepas
     const ctx = engine.prepareContextForBatch(batch, all, [], 1);
     assert.ok(ctx, 'Sliding context built without subfaberEnabled flag');
-    assert.equal(ctx.previousContent.length, 5, 'Prev window = 5 (always, 5+75+2)');
-    assert.equal(ctx.subsequentContent.length, 2, 'Next window = 2 (always, 5+75+2)');
+    assert.equal(ctx.previousContent.length, 20, 'Prev window = 20 (always, 20+200+10)');
+    assert.equal(ctx.subsequentContent.length, 10, 'Next window = 10 (always, 20+200+10)');
 });
 
-// --- _prepareSubfaberContext: ASYMMETRIC sliding window (5+75+2 — owner's special tweak) ---
-test('SubFaberContext: middle batch gets asymmetric context — prev=5 lines, next=2 lines', () => {
+// --- _prepareSubfaberContext: ASYMMETRIC sliding window (20+200+10 — owner's special tweak) ---
+test('SubFaberContext: middle batch gets asymmetric context — prev=20 lines, next=10 lines', () => {
     const engine = makeEngine({ subfaberEnabled: true, contextSize: 5 }); // contextSize diabaikan dalam mod SubFaber
-    const all = makeEntries(30); // IDs 1..30
-    const batch = all.slice(10, 20); // batch kedua (IDs 11..20)
+    const all = makeEntries(40); // IDs 1..40
+    const batch = all.slice(20, 30); // batch tengah (IDs 21..30)
 
     const ctx = engine.prepareContextForBatch(batch, all, [], 1);
     assert.ok(ctx, 'Context must be built for SubFaber');
     assert.ok(Array.isArray(ctx.previousContent), 'previousContent array');
     assert.ok(Array.isArray(ctx.subsequentContent), 'subsequentContent array');
-    // FORMULA 5+75+2: prev = 5 baris terakhir, next = 2 baris pertama
-    assert.equal(ctx.previousContent.length, 5, 'Prev window = 5 entries (5+75+2 owner tweak)');
-    assert.equal(ctx.subsequentContent.length, 2, 'Next window = 2 entries (5+75+2 owner tweak)');
-    // Verifikasi kandungan: previous = IDs 6..10 (5 terakhir sebelum batch), subsequent = IDs 21..22 (2 pertama selepas)
-    assert.equal(ctx.previousContent[0].id, 6);
-    assert.equal(ctx.previousContent[4].id, 10);
-    assert.equal(ctx.subsequentContent[0].id, 21);
-    assert.equal(ctx.subsequentContent[1].id, 22);
+    // FORMULA 20+200+10: prev = 20 baris terakhir, next = 10 baris pertama
+    assert.equal(ctx.previousContent.length, 20, 'Prev window = 20 entries (20+200+10 owner tweak)');
+    assert.equal(ctx.subsequentContent.length, 10, 'Next window = 10 entries (20+200+10 owner tweak)');
+    // Verifikasi kandungan: previous = IDs 1..20, subsequent = IDs 31..40
+    assert.equal(ctx.previousContent[0].id, 1);
+    assert.equal(ctx.previousContent[19].id, 20);
+    assert.equal(ctx.subsequentContent[0].id, 31);
+    assert.equal(ctx.subsequentContent[9].id, 40);
     assert.equal(ctx.preflight, null, 'No preflight context set');
 });
 
@@ -101,19 +101,20 @@ test('SubFaberContext: first batch gets subsequent but no previous (batch 1突�
     assert.ok(ctx, 'SubFaber context must exist even for batch 0');
     assert.equal(ctx.previousContent.length, 0, 'No previous for first batch');
     assert.ok(ctx.subsequentContent.length > 0, 'First batch gets forward context');
-    assert.equal(ctx.subsequentContent.length, 2, 'First batch next window = 2 (asymmetric)');
+    assert.equal(ctx.subsequentContent.length, 10, 'First batch next window = 10 (asymmetric)');
     assert.equal(ctx.subsequentContent[0].id, 11);
+    assert.equal(ctx.subsequentContent[9].id, 20);
 });
 
 test('SubFaberContext: last batch gets previous but no subsequent', () => {
     const engine = makeEngine({ subfaberEnabled: true, contextSize: 20 });
-    const all = makeEntries(20);
-    const batch = all.slice(15, 20); // batch terakhir (IDs 16..20)
+    const all = makeEntries(30);
+    const batch = all.slice(20, 30); // batch terakhir (IDs 21..30)
 
     const ctx = engine.prepareContextForBatch(batch, all, [], 1);
     assert.ok(ctx);
-    assert.equal(ctx.previousContent.length, 5, 'Last batch prev window = 5 (5+75+2)');
-    assert.equal(ctx.previousContent[4].id, 15, 'Previous ends at ID 15');
+    assert.equal(ctx.previousContent.length, 20, 'Last batch prev window = 20 (20+200+10)');
+    assert.equal(ctx.previousContent[19].id, 20, 'Previous ends at ID 20');
     assert.equal(ctx.subsequentContent.length, 0, 'No subsequent at file end');
 });
 
@@ -123,39 +124,91 @@ test('SubFaberContext: window clamps at file boundaries', () => {
     const batch = all.slice(4, 6); // IDs 5..6
 
     const ctx = engine.prepareContextForBatch(batch, all, [], 0);
-    assert.equal(ctx.previousContent.length, 4, 'Clamped prev: only 4 entries requested (of 4 available)');
-    assert.equal(ctx.subsequentContent.length, 2, 'Clamped next: only 2 entries requested (of 4 available)');
+    assert.equal(ctx.previousContent.length, 4, 'Clamped prev: only 4 entries available');
+    assert.equal(ctx.subsequentContent.length, 4, 'Clamped next: only 4 entries available');
 });
 
-// --- OWNER MANUAL EDIT 2026-11-04: batch size SubFaber = 75 (hardcoded,
-// tiada env override — naik daripada 50 untuk keseimbangan
-// throughput panggilan vs beban token) ---
-test('SubFaberContext: batch size = 75 ALWAYS (SUBFABER_BATCH_SIZE hardcoded)', () => {
+// --- OWNER MANDATE 2026-11-09: batch size SubFaber = 200 (hardcoded,
+// tiada env override), dengan previous=20 dan future=10 ---
+test('SubFaberContext: batch size = 200 ALWAYS (SUBFABER_BATCH_SIZE hardcoded)', () => {
     const engine = makeEngine({});
-    assert.equal(engine.batchSize, 75, 'SubFaber batch size = 75 (Owner Manual Edit 2026-11-04, enjin tunggal)');
+    assert.equal(engine.batchSize, 200, 'SubFaber batch size = 200 (Owner Mandate 2026-11-09, enjin tunggal)');
     // Env TRANSLATION_BATCH_SIZE tidak lagi berkesan — nilai diabaikan
-    const engineEnv = makeEngine({ TRANSLATION_BATCH_SIZE: 200 });
-    assert.equal(engineEnv.batchSize, 75, 'Env override REMOVED — always 75');
+    const engineEnv = makeEngine({ TRANSLATION_BATCH_SIZE: 75 });
+    assert.equal(engineEnv.batchSize, 200, 'Env override REMOVED — always 200');
+});
+
+test('SubFaberContext: createBatches uses 200 active entries without changing slot order', () => {
+    const engine = makeEngine({});
+    const entries = makeEntries(450);
+    const batches = engine.createBatches(entries, engine.batchSize);
+    assert.deepEqual(
+        batches.map((batch) => batch.length),
+        [200, 200, 50]
+    );
+    assert.deepEqual(batches.flat(), entries, 'Batching preserves every entry in its original order');
+});
+
+test('SubFaberContext: parallel mode shares the 20+200+10 formula', async () => {
+    const { executeParallelTranslation } = require('../utils/parallelTranslation');
+    const engine = makeEngine({ parallelBatchesCount: 1 });
+    const entries = makeEntries(450);
+    const calls = [];
+    engine.enableStreaming = false;
+    engine.translateBatch = async (batch, targetLanguage, customPrompt, batchIndex, totalBatches, context) => {
+        calls.push({
+            batchIndex,
+            totalBatches,
+            length: batch.length,
+            previous: context.previousContent.length,
+            subsequent: context.subsequentContent.length
+        });
+        return batch.map((entry) => ({ ...entry, text: `Translated ${entry.id}` }));
+    };
+
+    const result = await executeParallelTranslation(engine, entries, 'Malay', null, null);
+    calls.sort((a, b) => a.batchIndex - b.batchIndex);
+    assert.deepEqual(
+        calls.map(({ batchIndex, totalBatches, length, previous, subsequent }) => ({
+            batchIndex,
+            totalBatches,
+            length,
+            previous,
+            subsequent
+        })),
+        [
+            { batchIndex: 0, totalBatches: 3, length: 200, previous: 0, subsequent: 10 },
+            { batchIndex: 1, totalBatches: 3, length: 200, previous: 20, subsequent: 10 },
+            { batchIndex: 2, totalBatches: 3, length: 50, previous: 20, subsequent: 0 }
+        ]
+    );
+    assert.equal(result.length, entries.length, 'Parallel path preserves total slot count');
+    assert.deepEqual(
+        result.map((entry) => entry.id),
+        entries.map((entry) => entry.id),
+        'Parallel path preserves ordered IDs'
+    );
 });
 
 test('SubFaberContext: previousMemory includes verified translations, excludes placeholders', () => {
     const engine = makeEngine({ subfaberEnabled: true, contextSize: 3 });
-    const all = makeEntries(20);
-    const batch = all.slice(10, 20);
-    // translatedSoFar: entries 6..10 = previous window (5+75+2); entry 10 = [⚠️] placeholder (must be excluded)
-    const translatedSoFar = all.slice(0, 10).map((e) => ({
+    const all = makeEntries(50);
+    const batch = all.slice(20, 30);
+    // translatedSoFar: entries 1..20 = previous window (20+200+10); entry 20 = [⚠️] placeholder (must be excluded)
+    const translatedSoFar = all.slice(0, 20).map((e) => ({
         id: e.id,
         timecode: e.timecode,
-        text: e.id === 10 ? '[⚠️] untranslated' : `Terjemahan ${e.id}`
+        text: e.id === 20 ? '[⚠️] untranslated' : `Terjemahan ${e.id}`
     }));
 
     const ctx = engine.prepareContextForBatch(batch, all, translatedSoFar, 1);
     assert.ok(Array.isArray(ctx.previousMemory));
     const memoryIds = ctx.previousMemory.map((m) => m.id);
-    assert.ok(memoryIds.includes(6), 'Verified translation included (window start, 5+75+2)');
-    assert.ok(memoryIds.includes(9), 'Verified translation included');
-    assert.ok(!memoryIds.includes(10), '[⚠️] placeholder excluded');
-    assert.ok(!memoryIds.includes(5), 'Outside 5-line prev window excluded (5+75+2)');
+    assert.equal(memoryIds.length, 19);
+    assert.ok(memoryIds.includes(1), 'Verified translation included (window start, 20+200+10)');
+    assert.ok(memoryIds.includes(19), 'Verified translation included');
+    assert.ok(!memoryIds.includes(20), '[⚠️] placeholder excluded');
+    assert.ok(!memoryIds.includes(21), 'Outside 20-line prev window excluded (20+200+10)');
 });
 
 test('SubFaberContext: preflight context flows through when set', () => {

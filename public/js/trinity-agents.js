@@ -2802,9 +2802,9 @@
                 c.trinity = c.trinity || {};
                 c.trinity.mode = mode;
                 if (mode === MODE_BASIC) {
-                    c.previousContextSize = 5;
-                    c.batchSize = 75;
-                    c.futureContextSize = 2;
+                    c.previousContextSize = 20;
+                    c.batchSize = 200;
+                    c.futureContextSize = 10;
                 }
             }
             // [BUG FIX v3.9.41] Semasa rehydrate terkawal (_rehydratingMode),
@@ -3349,9 +3349,9 @@
         }
 
         if (mode === MODE_BASIC) {
-            patch.previousContextSize = 5;
-            patch.batchSize = 75;
-            patch.futureContextSize = 2;
+            patch.previousContextSize = 20;
+            patch.batchSize = 200;
+            patch.futureContextSize = 10;
         }
 
         return patch;

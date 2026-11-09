@@ -111,7 +111,7 @@ test('Bug#1 auto-chunk: second-half prompt carries subsequent + preflight + prev
         'Bug#1: blok preflight (Content Summary) hadir dalam second-half'
     );
     assert.ok(secondPrompt.includes('A heist movie in Blackwood.'), 'Bug#1: theme bible disuntik ke second-half');
-    // previousContent + memory kekal (5+75+2, window 5 dari first-half)
+    // previousContent + memory kekal (20+200+10, window 20 dari first-half)
     assert.ok(secondPrompt.includes('<previous_content>'), '<previous_content> kekal hadir');
     assert.ok(secondPrompt.includes('<s id="53">'), 'previous window termasuk ID 53 (akhir first-half)');
     assert.ok(secondPrompt.includes('[PREVIOUS VERIFIED TRANSLATIONS'), 'previousMemory (terjemahan first-half) hadir');
@@ -149,10 +149,12 @@ test('Bug#1 auto-chunk: split 4+4 — previous window penuh, subsequent dari sko
     assert.ok(secondPrompt.includes('<s id="21">'), 'window prev bermula ID 21 (4 baris penuh)');
     assert.ok(secondPrompt.includes('<s id="24">'), 'window prev berakhir ID 24');
     assert.ok(!secondPrompt.includes('<s id="20">'), 'tiada baris luar window prev');
-    // Subsequent mewarisi skop fail: IDs 29,30
+    // Subsequent mewarisi skop fail: window 10 baris (formula 20+200+10) —
+    // IDs 29..32 tersedia (fail berakhir pada ID 32) → clamp pada 4 baris.
     assert.ok(secondPrompt.includes('<subsequent_content>'), 'Bug#1: subsequent hadir');
     assert.ok(secondPrompt.includes('<s id="29">'), 'subsequent ID 29 hadir');
-    assert.ok(!secondPrompt.includes('<s id="31">'), 'subsequent clamp pada 2 baris (29,30 sahaja)');
+    assert.ok(secondPrompt.includes('<s id="31">'), 'subsequent ID 31 hadir dalam window 10');
+    assert.ok(!secondPrompt.includes('<s id="33">'), 'subsequent clamp pada hujung fail');
 });
 
 // ─────────────────────────────────────────────────────────────────────────────

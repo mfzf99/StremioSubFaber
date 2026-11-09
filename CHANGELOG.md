@@ -2,6 +2,25 @@
 
 All notable changes to this project will be documented in this file.
 
+## SubFaber v3.29.3 (2026-11-09) — SubFaber Batch Formula 20+200+10
+
+### 🔧 Changed — Translation Batching and Sliding Context Window
+
+- The single SubFaber translation engine now uses the formula **Previous Context Window 20 + Batch Size 200 + Future Context Window 10**. The batch size remains hardcoded with no environment override, and the engine stays the only supported engine.
+- Each translation batch carries up to 200 active subtitle slots. The sliding context builder takes 20 preceding entries as `previous_content` and 10 following entries as `subsequent_content`, with verified previous translations aligned to the same 20-entry window.
+- Context windows clamp at file boundaries: the first batch receives no previous entries, the final batch receives no subsequent entries, and partially available windows are trimmed to the entries that actually exist.
+- Dev-mode parallel translation now derives its batch size from the engine instead of a separate hardcoded value, so the sequential and parallel paths share one formula and one source of truth.
+- The Trinity client contract was updated in lockstep: switching to Basic mode and saving configuration now persist `previousContextSize: 20`, `batchSize: 200`, and `futureContextSize: 10` consistently in both locations.
+- Slot/ID parity, the XML prompt structure, the shared prompt architecture, auto-chunking, translation cache keys, provider transports, Gemini sampling, and the browser-extension `SUBMAKER_*` protocol are unchanged.
+
+### ✅ Verification
+
+- New and updated regressions failed **10/10 against the previous formula** before the implementation, then passed after it, proving the new assertions detect the old 5+75+2 behaviour.
+- New coverage asserts the 20/10 sliding windows, the 200-entry batch split with unchanged slot order, the parallel-path window geometry, and the frontend Basic-mode formula on both the mode toggle and the configuration patch.
+- Full tracked suite after final formatting: **599 tests / 598 PASS / 0 FAIL / 1 SKIP** (existing real-Redis concurrent-quota integration; no test Redis instance available).
+- Scoped Prettier: PASS. Scoped ESLint: **0 errors** (pre-existing warnings only). `git diff --check`: PASS.
+- Playwright and live-provider verification are not applicable: the change affects backend batching geometry and configuration values only, with no visual, provider-transport, or credentialed-flow change.
+
 ## SubFaber v3.29.2 (2026-11-09) — Autosync Manual Offset & Timing Integrity
 
 ### 🐛 Fixed — Safe Manual and Extension Synchronization

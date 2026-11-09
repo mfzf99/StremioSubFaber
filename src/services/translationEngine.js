@@ -163,15 +163,14 @@ const NATIVE_BATCH_PROVIDER_NAMES = new Set(['deepl', 'googletranslate']);
 const CACHE_TRANSLATIONS = process.env.CACHE_TRANSLATIONS === 'true'; // Enable/disable entry caching
 
 /**
- * OWNER MANUAL EDIT 2026-11-04: Batch size SubFaber = 75 baris
- * (naik daripada 50 — keputusan owner: keseimbangan throughput
- * panggilan vs beban token). Bersama slim system prompt (~450 BPE)
- * + BPE tokenizer guard. Sliding window 5/2 (formula 5+75+2);
- * previousMemory membawa coherence antara batch.
- * Enjin SubFaber adalah enjin TUNGGAL — tiada env override, tiada mod
- * legacy 200-baris (Total Purge Mandat 2026-09-25).
+ * OWNER MANDATE 2026-11-09: formula SubFaber = 20+200+10.
+ * Bersama slim system prompt (~450 BPE) + BPE tokenizer guard.
+ * Sliding window 20/10; previousMemory membawa coherence antara batch.
+ * Enjin SubFaber adalah enjin TUNGGAL — tiada env override.
  */
-const SUBFABER_BATCH_SIZE = 75;
+const SUBFABER_BATCH_SIZE = 200;
+const SUBFABER_PREVIOUS_CONTEXT_SIZE = 20;
+const SUBFABER_FUTURE_CONTEXT_SIZE = 10;
 
 // Module-level shared key health tracking across engine instances.
 // MULTI-INSTANCE: Now backed by Redis via sharedCache utilities.
@@ -201,7 +200,7 @@ class TranslationEngine {
         this.translationTemplate =
             this.trinityMode === 'basic' ? BASIC_TRANSLATION_SYSTEM_TEMPLATE : TRANSLATION_SYSTEM_TEMPLATE;
         // TOTAL PURGE (Mandat 2026-09-25): SubFaber ialah enjin tunggal.
-        // Batch size dihardcode 75 (OWNER MANUAL EDIT 2026-11-04) —
+        // Batch size dihardcode 200 (OWNER MANDATE 2026-11-09) —
         // tiada env override.
         this.batchSize = SUBFABER_BATCH_SIZE;
         // SINGLE-BATCH PURGE (2026-09-29): mod single-batch dibuang sepenuhnya —
@@ -959,7 +958,7 @@ class TranslationEngine {
         // kini EKSKLUSIF Agent Inspector. Laluan fallback "Agent Translation pre-flight dirinya
         // sendiri" DIGUGURKAN — Basic Mode (Agent Inspector null) bermakna ENJIN TULen
         // 1-AI: terus ke batch 1 tanpa sebarang panggilan pra-penterjemahan
-        // (formula 5+75+2 sahaja). Tiada lagi feature Pro (konteks tema/istilah)
+        // (formula 20+200+10 sahaja). Tiada lagi feature Pro (konteks tema/istilah)
         // menyerap masuk mod Basic. Circuit breaker terbuka pun tidak melata
         // kepada Agent Translation — kegagalan Agent Inspector dibiarkan pada Agent Inspector.
         if (
@@ -1255,18 +1254,17 @@ class TranslationEngine {
      * satu batch. Pembina konteks TUNGGAL (Total Purge Mandat 2026-09-25).
      *
      * GOLDEN STANDARD (Mandat 2026-09-26, ground truth VideoLingo):
-     * Sliding window ASIMETRIS — previousContent = 5 baris terakhir sebelum
-     * batch, subsequentContent = 2 baris pertama selepas batch (chunk
-     * berikutnya `[:2]`). previousMemory diselaraskan kepada 5 baris lalu
-     * yang sama. Konteks global Fasa 0 (theme + term-matching dinamik)
-     * membawa beban koherens utama.
-     * [OWNER MANUAL EDIT 2026-11-04] formula 5+75+2.
+     * Sliding window ASIMETRIS — previousContent = 20 baris terakhir sebelum
+     * batch, subsequentContent = 10 baris pertama selepas batch.
+     * previousMemory diselaraskan kepada 20 baris lalu yang sama. Konteks
+     * global Fasa 0 (theme + term-matching dinamik) membawa beban koherens utama.
+     * [OWNER MANDATE 2026-11-09] formula 20+200+10.
      *
      * Struktur return (kontrak laporan backend §3.2 Pembedahan C):
      *   {
-     *     previousContent: entries[],   // source-only, 5 baris sebelum batch
-     *     subsequentContent: entries[], // source-only, 2 baris selepas batch
-     *     previousMemory: entries[],    // terjemahan disahkan (5 baris lalu)
+     *     previousContent: entries[],   // source-only, 20 baris sebelum batch
+     *     subsequentContent: entries[], // source-only, 10 baris selepas batch
+     *     previousMemory: entries[],    // terjemahan disahkan (20 baris lalu)
      *     preflight: {theme, terms}|null // konteks global Fasa 0
      *   }
      *
@@ -1286,10 +1284,9 @@ class TranslationEngine {
         }
         const batchEndIdx = batchStartIdx + batch.length - 1;
 
-        // 2. Sliding window ASIMETRIS (5+75+2 — owner's special tweak:
-        //    prev 5 / next 2; VideoLingo asal 3/2)
-        const PREV_W = 5;
-        const NEXT_W = 2;
+        // 2. Sliding window ASIMETRIS (20+200+10 — owner's special tweak)
+        const PREV_W = SUBFABER_PREVIOUS_CONTEXT_SIZE;
+        const NEXT_W = SUBFABER_FUTURE_CONTEXT_SIZE;
         const prevStart = Math.max(0, batchStartIdx - PREV_W);
         const prevEnd = batchStartIdx - 1; // -1 bermakna tiada previous (batch 1)
         const nextStart = batchEndIdx + 1;
@@ -1670,7 +1667,7 @@ class TranslationEngine {
             // ke hadapan) dan preflight (bible Fasa 0), menyebabkan separuh
             // kedua diterjemah tanpa panduan global. Skop sintetik menggabungkan
             // konteks batch asal (prev/subsequent file-scoped) + kedua-dua
-            // separuh supaya formula 5+75+2 kekal satu sumber kebenaran.
+            // separuh supaya formula 20+200+10 kekal satu sumber kebenaran.
             const scopeEntries = [
                 ...(Array.isArray(context?.previousContent) ? context.previousContent : []),
                 ...firstHalf,
