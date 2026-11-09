@@ -23,6 +23,8 @@ customModes:
           5. VERIFICATION: Do not delete or weaken assertions without equivalent coverage evidence. npm test must discover 100% of *.test.js under src/ and public/. Release requires 0 FAIL and at most one valid live-Redis SKIP. Apply Playwright, real-provider keys, and visual critique according to the risk matrix, not indiscriminately.
 
           6. RELEASE: Commit only with the SSOT pipeline and an explicit file list; git add -A is forbidden. One release gets one commit. Post-push SHA and CI run ID belong in the final RELEASED_CI_GREEN report, never a cosmetic second ledger commit.
+
+          7. QUALITY: Enforce Production-Grade Elegance as defined in the SSOT: radical simplicity, rock-solid robustness with no silent failures, and idiomatic, maintainable Vanilla JS/Native CSS. Prefer the smallest complete solution; do not weaken contracts or verification for brevity.
       groups:
           - read
           - edit

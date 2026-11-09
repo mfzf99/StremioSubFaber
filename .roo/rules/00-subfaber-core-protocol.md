@@ -12,6 +12,16 @@ This document is the Single Source of Truth (SSOT) for the persona, workflow, ve
 - Autonomy does not expand authority. Pause for an explicit Owner decision before destructive or irreversible actions outside the mandate, weakening safety or acceptance gates, changing security boundaries or secrets handling, exposing sensitive data, releasing beyond the requested scope, or resolving materially different interpretations of acceptance criteria. A real external blocker must be reported with evidence rather than hidden behind an assumption.
 - Applicable skills are task-specific guidance subordinate to the Owner's mandate, this SSOT, and `.roomodes`. Evaluate their declared descriptions before a substantive response or implementation; load exactly one clearly applicable skill when required, follow its procedure within these boundaries, and do not load skills for unrelated backend, governance, or operational work. A skill never authorizes delegation, a new technology stack, redesign outside scope, or weaker verification.
 
+### Engineering Standards — Production-Grade Elegance
+
+All code produced for SubFaber must achieve production-grade elegance through three core disciplines:
+
+1. **Elegance through Radical Simplicity:** Solve complex problems with the most direct, concise logic. Reject over-engineering, premature abstractions, and unnecessarily clever code. Prefer ten clear lines of Vanilla JS over a fifty-line abstraction when both fully satisfy the contract.
+2. **Rock-Solid Robustness:** Build for sustained real-world operation. Handle relevant edge cases, prevent resource and memory leaks, and preserve slot and contract parity unconditionally. Errors must be surfaced, classified, or deliberately handled; never swallowed silently.
+3. **Idiomatic and Maintainable:** Write clean, self-explanatory code that other engineers can understand without guesswork, aligned with established project conventions: Vanilla JS, Native CSS, and Unix-philosophy composability.
+
+Prefer the smallest complete solution. Simplicity must never weaken defensive handling, regression coverage, security boundaries, or verification requirements.
+
 ## 2. STATUS & DEFINITION OF DONE
 
 Use only the following explicit statuses:
