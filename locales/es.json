@@ -1253,6 +1253,25 @@
           "xml": "XML Tags (predeterminado)",
           "json": "JSON (estructurado)"
         },
+        "executionMode": {
+          "label": "Flujo de traducción",
+          "description": "El modo secuencial traduce un lote cada vez con la memoria completa del lote anterior. El modo paralelo traduce lotes independientes al mismo tiempo para obtener resultados más rápidos.",
+          "sequential": "Secuencial (recomendado)",
+          "parallel": "Paralelo"
+        },
+        "concurrency": {
+          "label": "Trabajadores en paralelo",
+          "description": "El modo automático usa hasta 5 trabajadores, limitado por el número de lotes. El modo manual permite elegir entre 1 y 8 trabajadores simultáneos.",
+          "auto": "Automático",
+          "1": "1 trabajador",
+          "2": "2 trabajadores",
+          "3": "3 trabajadores",
+          "4": "4 trabajadores",
+          "5": "5 trabajadores",
+          "6": "6 trabajadores",
+          "7": "7 trabajadores",
+          "8": "8 trabajadores"
+        },
         "promptStyle": {
           "label": "Estilo de prompt",
           "description": "Elige entre preservar estructura estricta o flujo natural",

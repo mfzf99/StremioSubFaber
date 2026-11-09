@@ -13,6 +13,16 @@
  *   3. collectConfigPatch() menghantar trinity.preflight/inspector sebagai {}
  *      dalam Basic Mode (kad tiada dalam DOM) -> Save memusnahkan kredential Pro.
  *
+ * [PHASE C] Runtime tunggal Basic — togol Basic/Pro DIBUANG daripada UI.
+ *   Kontrak yang dipin berubah mengikut itu:
+ *   - Handler change + snapshotVisibleAgentState tiada lagi wujud; mod runtime
+ *     dibaca daripada konfigurasi TERSIMPAN (resolveStoredMode).
+ *   - Formula 20+200+10 dihantar tanpa syarat dari collectConfigPatch().
+ *   - Gaya CSS togol mod (.trinity-segment-btn* dll.) dibuang; suis sub-kad
+ *     Secondary Fallback (.trinity-fallback-switch*) kekal.
+ *   Jaminan non-destructive kekal: kredensial ejen yang kadnya tiada dipulihkan
+ *   daripada konfigurasi tersimpan (prevTrinity), bukan daripada snapshot DOM.
+ *
  * Ujian ini mengunci (pin) kontrak non-destructive pada kedua-dua peringkat:
  *   A. Kontrak sumber frontend (public/js/trinity-agents.js + public/config.js)
  *      — mekanisme snapshot, pemeliharaan pilihan, dan fallback rehidrasi.
@@ -31,6 +41,20 @@ const projectRoot = path.join(__dirname, '..', '..');
 const trinitySrc = fs.readFileSync(path.join(projectRoot, 'public', 'js', 'trinity-agents.js'), 'utf8');
 const configJsSrc = fs.readFileSync(path.join(projectRoot, 'public', 'config.js'), 'utf8');
 const trinityCssSrc = fs.readFileSync(path.join(projectRoot, 'public', 'css', 'trinity-agents.css'), 'utf8');
+
+/**
+ * [PHASE C] Komen [PHASE C] sendiri menyenaraikan nama pemilih yang telah
+ * dibuang (toggle/mode/segment). Semakan "ketiadaan" mesti dijalankan pada kod
+ * sebenar, bukan pada teks komen — jadi komen dibuang terlebih dahulu.
+ */
+function stripJsComments(source) {
+    return source.replace(/\/\*[\s\S]*?\*\//g, '').replace(/^\s*\/\/.*$/gm, '');
+}
+function stripCssComments(source) {
+    return source.replace(/\/\*[\s\S]*?\*\//g, '');
+}
+const trinityCode = stripJsComments(trinitySrc);
+const trinityCssCode = stripCssComments(trinityCssSrc);
 
 // ---------------------------------------------------------------------------
 // A. KONTRAK SUMBER FRONTEND
@@ -58,41 +82,46 @@ test('[A2] getEffectiveConfig() mengutamakan getter LIVE dengan jaring keselamat
     );
 });
 
-test('[A3] Handler togol mod merakam SNAPSHOT sebelum renderCards (non-destructive)', () => {
-    // Punca akar #2: renderCards() memusnahkan DOM (innerHTML='') — snapshot
-    // mesti dipanggil SEBELUM renderCards dalam laluan togol manual.
-    const handlerMatch = trinitySrc.match(
-        /toggleInput\.addEventListener\('change', function \(\) \{[\s\S]*?\n        \}\);/
+test('[A3] Tiada kawalan togol Basic/Pro — mod runtime datang daripada konfigurasi TERSIMPAN', () => {
+    // [PHASE C] Runtime tunggal Basic: togol Basic/Pro dibuang sepenuhnya
+    // daripada UI (bersama handler change). Mod kini dibaca daripada konfigurasi
+    // tersimpan melalui resolveStoredMode(), bukan daripada DOM atau handler.
+    assert.doesNotMatch(trinityCode, /toggleInput/, 'input togol Basic/Pro tidak lagi wujud');
+    assert.doesNotMatch(trinityCode, /trinity-mode-bar/, 'bar togol Basic/Pro tidak lagi dibina');
+    assert.doesNotMatch(trinityCode, /modeBtn/, 'kawalan togol Basic/Pro tidak lagi dibina');
+    assert.match(
+        trinitySrc,
+        /function resolveStoredMode\(cfg\) \{[\s\S]*?\n    \}/,
+        'resolveStoredMode mesti wujud sebagai sumber mod tunggal'
     );
-    assert.ok(handlerMatch, 'handler change togol mod mesti wujud');
-    const handlerSrc = handlerMatch[0];
-    const snapIdx = handlerSrc.indexOf('snapshotVisibleAgentState');
-    // Panggilan SEBENAR (baris arahan), bukan sebutan dalam komentar: cari
-    // `renderCards(snapshotCfg` — panggilan yang menggunakan hasil snapshot.
-    const renderIdx = handlerSrc.indexOf('renderCards(snapshotCfg');
-    assert.ok(snapIdx !== -1, 'handler mesti memanggil snapshotVisibleAgentState');
-    assert.ok(renderIdx !== -1, 'handler mesti memanggil renderCards(snapshotCfg)');
-    assert.ok(
-        snapIdx < renderIdx,
-        'snapshotVisibleAgentState mesti dilaksanakan SEBELUM renderCards (elak DOM musnah tanpa rakaman)'
+    assert.match(
+        trinitySrc,
+        /var mode = resolveStoredMode\(getEffectiveConfig\(\)\);/,
+        'mod runtime mesti dibaca daripada konfigurasi tersimpan (getEffectiveConfig)'
     );
-    // Pengawal rehydrate terkawal mesti kekal SEBELUM snapshot — semasa
-    // rehydrate, hook sudah membina kad dengan cfg sebenar; snapshot manual
-    // tidak boleh dicampur.
-    const guardIdx = handlerSrc.indexOf('if (_rehydratingMode) return;');
-    assert.ok(guardIdx !== -1 && guardIdx < snapIdx, 'guard _rehydratingMode mesti mendahului snapshot');
 });
 
-test('[A4] snapshotVisibleAgentState melangkau ejen yang kadnya TIADA dalam mod semasa', () => {
-    // Semantik non-destructive: dalam Basic Mode, kad Preflight/Inspector tiada
-    // dalam DOM — nilai trinity lama mesti DIKEKALKAN (tidak ditimpa {} kosong).
-    const fnMatch = trinitySrc.match(/function snapshotVisibleAgentState\(targetCfg\) \{[\s\S]*?\n    \}/);
-    assert.ok(fnMatch, 'fungsi snapshotVisibleAgentState mesti wujud');
-    const fnSrc = fnMatch[0];
+test('[A4] snapshotVisibleAgentState dibuang — jaminan non-destructive kini datang daripada config TERSIMPAN', () => {
+    // [PHASE C] Fungsi snapshot hanya wujud untuk merakam DOM sebelum mod
+    // ditukar. Runtime tunggal Basic tidak menukar mod, jadi fungsi itu dibuang
+    // bersama handler togol. Jaminan pemeliharaan kredensial kini datang
+    // daripada bacaan konfigurasi tersimpan (prevTrinity) dalam
+    // collectConfigPatch() — kad yang tiada dipulihkan daripada nilai lama.
+    assert.doesNotMatch(
+        trinityCode,
+        /function snapshotVisibleAgentState/,
+        'fungsi snapshotVisibleAgentState mesti dibuang bersama togol Basic/Pro'
+    );
     assert.match(
-        fnSrc,
-        /if \(!keyEl \|\| !providerEl\) return;/,
-        'ejen tanpa kad dalam DOM mesti dilangkau (return awal)'
+        trinitySrc,
+        /var prevTrinity = \(getEffectiveConfig\(\) \|\| \{\}\)\.trinity \|\| \{\};/,
+        'nilai trinity lama mesti dibaca daripada konfigurasi tersimpan'
+    );
+    assert.match(trinitySrc, /if \(!cardPresent\)/, 'ejen yang kadnya tiada mesti dipulihkan daripada nilai tersimpan');
+    assert.match(
+        trinitySrc,
+        /apiKey: prev\.apiKey \|\| ''/,
+        'kredential lama (apiKey) mesti dipulihkan verbatim, bukan ditimpa kosong'
     );
 });
 
@@ -159,18 +188,22 @@ test('[A8] deriveTranslationFromProviders — fallback rehidrasi providers.<main
     );
 });
 
-test('[A13] Basic Mode menggunakan formula 20+200+10 secara konsisten pada toggle dan config patch', () => {
-    const handlerMatch = trinitySrc.match(
-        /toggleInput\.addEventListener\('change', function \(\) \{[\s\S]*?\n        \}\);/
-    );
+test('[A13] Formula 20+200+10 dihantar tanpa syarat dari collectConfigPatch (runtime tunggal Basic)', () => {
+    // [PHASE C] Tiada lagi handler togol mod — formula Basic 20+200+10 menjadi
+    // SATU-SATUNYA formula dan mesti dihantar tanpa syarat pada setiap save.
     const patchMatch = trinitySrc.match(/function collectConfigPatch\(\) \{[\s\S]*?\n    \}/);
-    assert.ok(handlerMatch, 'handler toggle Basic mesti wujud');
     assert.ok(patchMatch, 'collectConfigPatch mesti wujud');
-    for (const source of [handlerMatch[0], patchMatch[0]]) {
-        assert.match(source, /previousContextSize = 20;/, 'previous window = 20');
-        assert.match(source, /batchSize = 200;/, 'batch aktif = 200 baris');
-        assert.match(source, /futureContextSize = 10;/, 'future window kekal = 10');
-    }
+    assert.match(
+        patchMatch[0],
+        /\n {8}patch\.previousContextSize = 20;\n {8}patch\.batchSize = 200;\n {8}patch\.futureContextSize = 10;/,
+        'formula 20+200+10 mesti dihantar tanpa syarat (pernyataan berturut-turut, bukan dalam gate)'
+    );
+    assert.match(patchMatch[0], /previousContextSize = 20;/, 'previous window = 20');
+    assert.match(patchMatch[0], /batchSize = 200;/, 'batch aktif = 200 baris');
+    assert.match(patchMatch[0], /futureContextSize = 10;/, 'future window kekal = 10');
+    // Sumber tunggal: tiada salinan formula yang bergate ikut mod.
+    const formulaHits = trinitySrc.match(/previousContextSize = 20;/g) || [];
+    assert.equal(formulaHits.length, 1, 'formula hanya boleh dihantar dari SATU sumber (tiada gate ikut mod)');
 });
 
 // ---------------------------------------------------------------------------
@@ -205,13 +238,16 @@ test('[A9] renderCards TIDAK memusnahkan DOM kad semasa pertukaran mod (HIDE, bu
     assert.match(visMatch[0], /trinity-mode-basic/, 'bekas kad mesti membawa kelas mod untuk hint Pro-only');
 });
 
-test('[A10] handler togol mod tidak memusnahkan DOM dan merakam snapshot dahulu', () => {
-    const handlerMatch = trinitySrc.match(
-        /toggleInput\.addEventListener\('change', function \(\) \{[\s\S]*?\n        \}\);/
-    );
-    assert.ok(handlerMatch, 'handler change togol mod mesti wujud');
-    const handlerSrc = handlerMatch[0];
-    assert.doesNotMatch(handlerSrc, /cardsWrap\.innerHTML/, 'laluan togol manual TIDAK boleh memusnahkan DOM kad');
+test('[A10] Tiada laluan togol manual — DOM kad hanya dibina SEKALI (innerHTML terkurung dalam ensureCardsBuilt)', () => {
+    // [PHASE C] Handler togol mod dibuang — tiada laluan manual yang boleh
+    // memusnahkan DOM kad. Pembinaan kad kekal idempotent: reset innerHTML
+    // hanya berlaku SEKALI dalam ensureCardsBuilt().
+    assert.doesNotMatch(trinityCode, /toggleInput/, 'handler togol mod tidak lagi wujud');
+    const buildMatch = trinitySrc.match(/function ensureCardsBuilt\(\) \{[\s\S]*?\n        \}/);
+    assert.ok(buildMatch, 'fungsi ensureCardsBuilt mesti wujud');
+    assert.match(buildMatch[0], /cardsWrap\.innerHTML = '';/, 'reset DOM kad mesti terkurung dalam ensureCardsBuilt');
+    const resetHits = trinitySrc.match(/cardsWrap\.innerHTML = '';/g) || [];
+    assert.equal(resetHits.length, 1, 'cardsWrap.innerHTML hanya boleh muncul SATU kali (pembinaan sahaja)');
 });
 
 test('[A11] deriveTranslationFromProviders hanya memetakan pembekal yang BENAR-BENAR dikonfigurasikan (fresh state kekal kosong)', () => {
@@ -266,28 +302,18 @@ test('[A12] applyAgentValues memulihkan Format/Door (peta format→door) dan men
     );
 });
 
-test('[A13] CSS — tab aktif Biru SubFaber + sub-kad Secondary Fallback bernafas (v3.9.45)', () => {
-    // Tab aktif sebelum ini putih (tiada kontra).
-    assert.match(
-        trinityCssSrc,
-        /\.trinity-segment-btn\.active \{[\s\S]*?linear-gradient\(135deg, #2563eb 0%, #1d4ed8 100%\)/,
-        'tab aktif mesti menggunakan gradien biru SubFaber'
-    );
-    assert.match(
-        trinityCssSrc,
-        /\.trinity-segment-btn\.active \{[\s\S]*?box-shadow: 0 4px 12px rgba\(37, 99, 235, 0\.25\)/,
-        'tab aktif mesti mempunyai bayang biru halus'
-    );
-    assert.match(
-        trinityCssSrc,
-        /\.trinity-segment-btn \{[\s\S]*?color: #475569;/,
-        'tab tidak aktif mesti menggunakan teks kelabu gelap #475569'
-    );
-    assert.match(
-        trinityCssSrc,
-        /\.trinity-segment-btn\.active \.trinity-segment-hint \{\s*color: rgba\(255, 255, 255, 0\.85\);/,
-        'sub-keterangan tab aktif mesti putih lembut'
-    );
+test('[A13] CSS — blok togol Basic/Pro dibuang, sub-kad Secondary Fallback kekal bernafas (v3.9.45 + PHASE C)', () => {
+    // [PHASE C] Gaya tab togol Basic/Pro (.trinity-segment-btn*) dan bar/label
+    // berkaitan DIBUANG bersama kawalan UI. Suis SUB-KAD Secondary Fallback
+    // (.trinity-fallback-switch*) kekal AKTIF — ia bukan sebahagian togol mod.
+    assert.doesNotMatch(trinityCssCode, /\.trinity-segment-btn/, 'gaya tab togol Basic/Pro mesti dibuang');
+    assert.doesNotMatch(trinityCssCode, /\.trinity-mode-bar/, 'gaya bar togol Basic/Pro mesti dibuang');
+    assert.doesNotMatch(trinityCssCode, /\.trinity-mode-input/, 'gaya input togol Basic/Pro mesti dibuang');
+    assert.doesNotMatch(trinityCssCode, /\.trinity-mode-label/, 'gaya label togol Basic/Pro mesti dibuang');
+    assert.doesNotMatch(trinityCssCode, /\.trinity-switch\b/, 'suis legasi togol mod mesti dibuang');
+    assert.doesNotMatch(trinityCssCode, /\.trinity-slider\b/, 'slider legasi togol mod mesti dibuang');
+    // Suis sub-kad Secondary Fallback kekal hidup.
+    assert.match(trinityCssSrc, /\.trinity-fallback-switch-input \{/, 'suis sub-kad Secondary Fallback mesti kekal');
     // Ruang bernafas sub-kad fallback.
     assert.match(
         trinityCssSrc,

@@ -1509,6 +1509,81 @@
                             <button type="button" class="collapse-btn collapsed" data-collapse="translation"></button>
                         </div>
                         <div class="card-content">
+                            <div class="form-group" id="translationExecutionModeGroup">
+                                <label for="translationExecutionMode" class="form-label">
+                                    <span class="label-title" data-i18n="config.translationSettings.executionMode.label"
+                                        >Translation workflow</span
+                                    >
+                                    <span
+                                        class="label-description"
+                                        data-i18n="config.translationSettings.executionMode.description"
+                                        >Sequential translates one batch at a time with full previous-batch memory.
+                                        Parallel translates independent batches concurrently for faster results.</span
+                                    >
+                                </label>
+                                <select id="translationExecutionMode" class="styled-select">
+                                    <option
+                                        value="sequential"
+                                        data-i18n="config.translationSettings.executionMode.sequential"
+                                    >
+                                        Sequential (Recommended)
+                                    </option>
+                                    <option
+                                        value="parallel"
+                                        data-i18n="config.translationSettings.executionMode.parallel"
+                                    >
+                                        Parallel
+                                    </option>
+                                </select>
+                            </div>
+
+                            <div
+                                class="form-group"
+                                id="parallelConcurrencyGroup"
+                                style="display: none; margin-top: 0.5rem; padding-left: 1.5rem"
+                            >
+                                <label for="parallelConcurrency" class="form-label">
+                                    <span class="label-title" data-i18n="config.translationSettings.concurrency.label"
+                                        >Parallel workers</span
+                                    >
+                                    <span
+                                        class="label-description"
+                                        data-i18n="config.translationSettings.concurrency.description"
+                                        >Automatic uses up to 5 workers, limited by the number of batches. Manual lets
+                                        you choose 1-8 concurrent workers.</span
+                                    >
+                                </label>
+                                <select id="parallelConcurrency" class="styled-select">
+                                    <option value="0" data-i18n="config.translationSettings.concurrency.auto">
+                                        Automatic
+                                    </option>
+                                    <option value="1" data-i18n="config.translationSettings.concurrency.1">
+                                        1 Worker
+                                    </option>
+                                    <option value="2" data-i18n="config.translationSettings.concurrency.2">
+                                        2 Workers
+                                    </option>
+                                    <option value="3" data-i18n="config.translationSettings.concurrency.3">
+                                        3 Workers
+                                    </option>
+                                    <option value="4" data-i18n="config.translationSettings.concurrency.4">
+                                        4 Workers
+                                    </option>
+                                    <option value="5" data-i18n="config.translationSettings.concurrency.5">
+                                        5 Workers
+                                    </option>
+                                    <option value="6" data-i18n="config.translationSettings.concurrency.6">
+                                        6 Workers
+                                    </option>
+                                    <option value="7" data-i18n="config.translationSettings.concurrency.7">
+                                        7 Workers
+                                    </option>
+                                    <option value="8" data-i18n="config.translationSettings.concurrency.8">
+                                        8 Workers
+                                    </option>
+                                </select>
+                            </div>
+
                             <div class="form-group" id="databaseModeGroup">
                                 <label for="databaseMode" class="form-label">
                                     <span class="label-title" data-i18n="config.translationSettings.database.label"
@@ -1991,48 +2066,6 @@
                                     <input type="checkbox" id="devMode" />
                                     <span data-i18n="config.otherSettings.devMode.label">Dev Mode</span>
                                 </label>
-                            </div>
-
-                            <!-- Dev Mode: Parallel Batches -->
-                            <div
-                                id="parallelBatchesGroup"
-                                style="
-                                    display: none;
-                                    border-top: 1px dashed var(--border);
-                                    padding-top: 1rem;
-                                    margin-top: 0.5rem;
-                                "
-                            >
-                                <div class="form-group">
-                                    <label>
-                                        <input type="checkbox" id="parallelBatchesEnabled" />
-                                        <span>[DEV] Enable Parallel Batches</span>
-                                        <span class="label-description"
-                                            >Experimental: translate multiple batches concurrently for faster
-                                            processing. Disabled on ElfHosted instances.</span
-                                        >
-                                    </label>
-                                </div>
-                                <div
-                                    class="form-group"
-                                    id="parallelBatchesCountGroup"
-                                    style="display: none; margin-top: 0.5rem; padding-left: 1.5rem"
-                                >
-                                    <label for="parallelBatchesCount" class="form-label">
-                                        <span class="label-title">Parallel Batches Count</span>
-                                        <span class="label-description"
-                                            >Number of concurrent batches to run (1-5). Higher values consume more
-                                            tokens/second.</span
-                                        >
-                                    </label>
-                                    <select id="parallelBatchesCount" class="styled-select">
-                                        <option value="1">1 Batch (Testing)</option>
-                                        <option value="2">2 Batches</option>
-                                        <option value="3">3 Batches (Recommended)</option>
-                                        <option value="4">4 Batches</option>
-                                        <option value="5">5 Batches</option>
-                                    </select>
-                                </div>
                             </div>
 
                             <!-- URL Extension Test Toggles (Dev Mode only) -->

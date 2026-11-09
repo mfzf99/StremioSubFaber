@@ -1758,7 +1758,8 @@ Translate to {target_language}.`;
             geminiKeyRotationMode: 'per-batch', // 'per-batch' or 'per-request'
             // --- Advanced Parallel Translation Engine ---
             parallelBatchesEnabled: false,
-            parallelBatchesCount: 3,
+            // 0 = Automatic worker count (W = min(totalBatches, 5)); 1-8 = manual ceiling.
+            parallelBatchesCount: 0,
             // --------------------------------------------
             assemblyAiApiKey: DEFAULT_API_KEYS.ASSEMBLYAI,
             cloudflareWorkersApiKey: DEFAULT_API_KEYS.CF_WORKERS_AUTOSUBS,
@@ -7370,6 +7371,40 @@ Translate to {target_language}.`;
     }
 
     /**
+     * Read the Sequential/Parallel execution mode from the form.
+     * The DOM select is the source of truth while the form is loaded; the stored
+     * config is only the fallback when the control is absent.
+     */
+    function isParallelExecutionActiveInForm() {
+        const modeEl = document.getElementById('translationExecutionMode');
+        if (modeEl) return modeEl.value === 'parallel';
+        return currentConfig?.parallelBatchesEnabled === true;
+    }
+
+    /**
+     * Read the Parallel worker count from the form (0 = Automatic, 1-8 = manual).
+     */
+    function getParallelConcurrencyInForm() {
+        const clamp = (value) => Math.max(0, Math.min(8, value));
+        const el = document.getElementById('parallelConcurrency');
+        if (el) {
+            const parsed = parseInt(el.value, 10);
+            if (Number.isFinite(parsed)) return clamp(parsed);
+        }
+        const stored = parseInt(currentConfig?.parallelBatchesCount, 10);
+        return Number.isFinite(stored) ? clamp(stored) : 0;
+    }
+
+    /**
+     * Show the worker-count control only when Parallel is selected.
+     */
+    function syncParallelConcurrencyVisibility() {
+        const group = document.getElementById('parallelConcurrencyGroup');
+        if (!group) return;
+        group.style.display = isParallelExecutionActiveInForm() ? 'block' : 'none';
+    }
+
+    /**
      * Update database mode dropdown state based on advanced settings or multi-provider mode
      */
     function updateBypassCacheForAdvancedSettings() {
@@ -7381,10 +7416,12 @@ Translate to {target_language}.`;
 
         const isModified = areAdvancedSettingsModified();
         const multiProvidersActive = isMultiProviderActiveInForm();
+        const parallelActive = isParallelExecutionActiveInForm();
 
         const reasons = [];
         if (isModified) reasons.push('Advanced Settings are modified');
         if (multiProvidersActive) reasons.push('Multiple Providers mode is active');
+        if (parallelActive) reasons.push('Parallel translation is active');
 
         const forceBypass = reasons.length > 0;
 
@@ -8471,7 +8508,6 @@ Translate to {target_language}.`;
                 toggleUrlExtensionTestGroup();
                 syncUrlExtensionTestModeUi();
                 toggleAndroidSubtitleCompatModeGroup();
-                toggleParallelBatchesGroup();
             });
         }
 
@@ -8505,15 +8541,6 @@ Translate to {target_language}.`;
             group.style.display = devEnabled ? 'block' : 'none';
         }
 
-        // Function to show/hide Parallel Batches group (dev mode only)
-        function toggleParallelBatchesGroup() {
-            const group = document.getElementById('parallelBatchesGroup');
-            if (!group) return;
-            const devModeEl = document.getElementById('devMode');
-            const devEnabled = devModeEl && devModeEl.checked;
-            group.style.display = devEnabled ? 'block' : 'none';
-        }
-
         // Wire ASS/SSA passthrough toggles to stay in sync and update dependent UI.
         getConvertAssToVttToggles().forEach((convertAssEl) => {
             convertAssEl.addEventListener('change', (event) => {
@@ -8540,18 +8567,19 @@ Translate to {target_language}.`;
         toggleConvertAssToVttGroup();
         toggleUrlExtensionTestGroup();
         toggleAndroidSubtitleCompatModeGroup();
-        toggleParallelBatchesGroup();
 
-        const parallelBatchesEl = document.getElementById('parallelBatchesEnabled');
-        if (parallelBatchesEl) {
-            parallelBatchesEl.addEventListener('change', (e) => {
-                const checked = !!e.target.checked;
-                const countGroup = document.getElementById('parallelBatchesCountGroup');
-                if (countGroup) {
-                    countGroup.style.display = checked ? 'block' : 'none';
-                }
+        // Sequential/Parallel execution mode + worker count (Phase C).
+        const executionModeEl = document.getElementById('translationExecutionMode');
+        if (executionModeEl) {
+            executionModeEl.addEventListener('change', (e) => {
+                currentConfig.parallelBatchesEnabled = e.target.value === 'parallel';
+                syncParallelConcurrencyVisibility();
+                // Parallel translations must bypass the shared database — keep the
+                // database-mode lock in sync with the server contract.
+                updateBypassCacheForAdvancedSettings();
             });
         }
+        syncParallelConcurrencyVisibility();
 
         // [SECONDARY FALLBACK — Option A 2026-10-13] Listener #enableMultiProviders /
         // #enableSecondaryProvider dibuang bersama elemen legasi. Keadaan kini
@@ -12151,10 +12179,6 @@ Translate to {target_language}.`;
         if (androidCompatGroup) {
             androidCompatGroup.style.display = devEnabledAfterLoad ? 'block' : 'none';
         }
-        const parallelBatchesGroupEl = document.getElementById('parallelBatchesGroup');
-        if (parallelBatchesGroupEl) {
-            parallelBatchesGroupEl.style.display = devEnabledAfterLoad ? 'block' : 'none';
-        }
         lastUrlExtensionTestChoice = normalizeUrlExtensionTestValue(currentConfig.urlExtensionTest, 'srt');
         syncUrlExtensionTestModeUi();
         const selectedCompatMode = String(currentConfig.androidSubtitleCompatMode || 'off');
@@ -12249,6 +12273,22 @@ Translate to {target_language}.`;
             mismatchRetriesEl.value = Number.isFinite(val) ? Math.max(0, Math.min(3, val)) : 3;
         }
 
+        // [PHASE C] Rehydrate the Sequential/Parallel execution mode and the worker
+        // count BEFORE the bypass-cache evaluation, so a saved Parallel
+        // configuration immediately locks the database mode to bypass.
+        const executionModeEl = document.getElementById('translationExecutionMode');
+        if (executionModeEl) {
+            executionModeEl.value = currentConfig.parallelBatchesEnabled === true ? 'parallel' : 'sequential';
+        }
+        const parallelConcurrencyEl = document.getElementById('parallelConcurrency');
+        if (parallelConcurrencyEl) {
+            const storedCount = parseInt(currentConfig.parallelBatchesCount, 10);
+            parallelConcurrencyEl.value = String(
+                Number.isFinite(storedCount) ? Math.max(0, Math.min(8, storedCount)) : 0
+            );
+        }
+        syncParallelConcurrencyVisibility();
+
         // Check if advanced settings are modified and update bypass cache accordingly
         updateBypassCacheForAdvancedSettings();
 
@@ -12339,17 +12379,6 @@ Translate to {target_language}.`;
         if (forceSRTToggleNoTranslation) {
             forceSRTToggleNoTranslation.onchange = (e) => syncForceSRT(e.target.checked);
         }
-        const parallelBatchesEl = document.getElementById('parallelBatchesEnabled');
-        if (parallelBatchesEl) {
-            parallelBatchesEl.checked = currentConfig.parallelBatchesEnabled === true;
-            const countGroup = document.getElementById('parallelBatchesCountGroup');
-            if (countGroup) countGroup.style.display = parallelBatchesEl.checked ? 'block' : 'none';
-        }
-        const parallelBatchesCountEl = document.getElementById('parallelBatchesCount');
-        if (parallelBatchesCountEl) {
-            parallelBatchesCountEl.value = currentConfig.parallelBatchesCount || 3;
-        }
-
         // [TRINITY FASA D — Ulasan Backend 2026-10-10] Rehydrate kad Trinity
         // SETELAH konfigurasi server mengalir ke currentConfig. Ini menutup
         // race: mount awal (config-loader) berlaku sebelum fetch config siap.
@@ -12422,7 +12451,8 @@ Translate to {target_language}.`;
             const advSettingsModified = areAdvancedSettingsModified();
             const databaseModeEl = document.getElementById('databaseMode');
             const userSelectedBypass = databaseModeEl ? databaseModeEl.value === 'bypass' : false;
-            return advSettingsModified || userSelectedBypass || hasActiveMultiProvider;
+            const parallelActive = isParallelExecutionActiveInForm();
+            return advSettingsModified || userSelectedBypass || hasActiveMultiProvider || parallelActive;
         };
 
         // Determine the translation prompt based on style
@@ -12672,12 +12702,12 @@ Translate to {target_language}.`;
                 return currentConfig?.mobileMode === true;
             })(),
             parallelBatchesEnabled: (function () {
-                const el = document.getElementById('parallelBatchesEnabled');
-                return el ? el.checked === true : false;
+                const el = document.getElementById('translationExecutionMode');
+                if (el) return el.value === 'parallel';
+                return currentConfig?.parallelBatchesEnabled === true;
             })(),
             parallelBatchesCount: (function () {
-                const el = document.getElementById('parallelBatchesCount');
-                return el ? parseInt(el.value, 10) : 3;
+                return getParallelConcurrencyInForm();
             })(),
             advancedSettings: {
                 enabled: areAdvancedSettingsModified(), // Auto-detect if any setting differs from defaults

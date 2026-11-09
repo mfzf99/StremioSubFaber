@@ -1278,6 +1278,25 @@
           "xml": "XML Tags (Default)",
           "json": "JSON (Structured)"
         },
+        "executionMode": {
+          "label": "Translation workflow",
+          "description": "Sequential translates one batch at a time with full previous-batch memory. Parallel translates independent batches concurrently for faster results.",
+          "sequential": "Sequential (Recommended)",
+          "parallel": "Parallel"
+        },
+        "concurrency": {
+          "label": "Parallel workers",
+          "description": "Automatic uses up to 5 workers, limited by the number of batches. Manual lets you choose 1-8 concurrent workers.",
+          "auto": "Automatic",
+          "1": "1 Worker",
+          "2": "2 Workers",
+          "3": "3 Workers",
+          "4": "4 Workers",
+          "5": "5 Workers",
+          "6": "6 Workers",
+          "7": "7 Workers",
+          "8": "8 Workers"
+        },
         "jsonOutput": {
           "label": "Enable JSON Structured Output (Beta)",
           "description": "Request JSON array format from AI for unambiguous response parsing. May improve accuracy but not all providers support it. Disabled by default."

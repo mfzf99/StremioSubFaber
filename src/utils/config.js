@@ -987,7 +987,7 @@ function normalizeConfig(config) {
     mergedConfig.parallelBatchesEnabled = mergedConfig.parallelBatchesEnabled === true;
     mergedConfig.parallelBatchesCount = (() => {
         const val = parseInt(mergedConfig.parallelBatchesCount, 10);
-        return Number.isFinite(val) ? Math.max(1, Math.min(5, val)) : 3;
+        return Number.isFinite(val) ? Math.max(0, Math.min(8, val)) : 0;
     })();
 
     if (mergedConfig.noTranslationLanguages.length > maxNoTranslationLanguages) {
@@ -1612,7 +1612,7 @@ function getDefaultConfig(modelName = null) {
         geminiApiKeys: [],
         geminiKeyRotationMode: 'per-batch',
         parallelBatchesEnabled: false,
-        parallelBatchesCount: 3,
+        parallelBatchesCount: 0,
         assemblyAiApiKey: DEFAULT_API_KEYS.ASSEMBLYAI || '',
         cloudflareWorkersApiKey: DEFAULT_API_KEYS.CF_WORKERS_AUTOSUBS || '',
         otherApiKeysEnabled: true,
@@ -1969,10 +1969,7 @@ function buildManifest(config, baseUrl = '') {
     const logo = baseUrl ? `${baseUrl}/logo.png` : 'https://i.imgur.com/5qJc5Y5.png';
     const background = baseUrl ? `${baseUrl}/background.svg` : 'https://i.imgur.com/5qJc5Y5.png';
 
-    const isElfHosted = process.env.ELFHOSTED === 'true';
-    const addonName = isElfHosted
-        ? 'SubFaber | ElfHosted'
-        : t('manifest.name', {}, 'SubFaber - Netflix-Grade Subtitle Engine');
+    const addonName = t('manifest.name', {}, 'SubFaber - Netflix-Grade Subtitle Engine');
 
     return {
         id: 'com.stremio.subfaber',

@@ -1614,7 +1614,7 @@ const extraWildcardSuffixes = (process.env.ALLOWED_ORIGIN_WILDCARD_SUFFIXES || '
     .filter(Boolean)
     .map((s) => (s.startsWith('.') ? s : `.${s}`));
 // Always allow these hosting domains
-for (const suffix of ['.elfhosted.com', '.midnightignite.me', '.fortheweak.cloud', '.nhyira.dev']) {
+for (const suffix of ['.midnightignite.me', '.fortheweak.cloud', '.nhyira.dev']) {
     if (!extraWildcardSuffixes.includes(suffix)) extraWildcardSuffixes.push(suffix);
 }
 const STREMIO_ORIGIN_PREFIXES = ['stremio://', 'capacitor://', 'app://', 'file://'];
@@ -1697,7 +1697,7 @@ function isOriginAllowed(origin, req) {
     if (extractHostnameFromOrigin(origin).includes('zarg')) return false;
     // Trust Stremio clients regardless of origin (e.g. StremioShell from self-hosted web instances)
     if (isStremioUserAgent(req.headers['user-agent'] || '')) return true;
-    // Check extra wildcard domain suffixes (e.g. .elfhosted.com via ALLOWED_ORIGIN_WILDCARD_SUFFIXES env)
+    // Check extra wildcard domain suffixes (e.g. .example.com via ALLOWED_ORIGIN_WILDCARD_SUFFIXES env)
     if (extraWildcardSuffixes.length > 0) {
         const host = extractHostnameFromOrigin(origin);
         if (host && extraWildcardSuffixes.some((suffix) => host === suffix.slice(1) || host.endsWith(suffix))) {
@@ -2456,7 +2456,7 @@ app.use((req, res, next) => {
             );
             return cors()(req, res, next);
         }
-        // Allow extra wildcard domain suffixes (e.g. *.elfhosted.com, *.midnightignite.me)
+        // Allow extra wildcard domain suffixes (e.g. *.midnightignite.me, *.example.com)
         if (extraWildcardSuffixes.length > 0) {
             const originHost = extractHostnameFromOrigin(origin);
             if (
@@ -2622,7 +2622,7 @@ app.use((req, res, next) => {
     const isConfigUiAsset = configUiAssets.includes(req.path) || configUiPartials.includes(req.path);
 
     if (isConfigUiAsset) {
-        // Force a cache-busting query so stale CDN copies (e.g. elfhosted) are bypassed
+        // Force a cache-busting query so stale CDN copies are bypassed
         if (!Object.prototype.hasOwnProperty.call(req.query || {}, '_cb')) {
             try {
                 const url = new URL(req.originalUrl, `http://${req.headers.host || 'localhost'}`);
@@ -9353,8 +9353,7 @@ app.get('/manifest.json', (req, res) => {
             : req.get('x-forwarded-proto') || 'https';
         const baseUrl = `${protocol}://${host}`;
 
-        const isElfHosted = process.env.ELFHOSTED === 'true';
-        const addonName = isElfHosted ? 'SubFaber | ElfHosted' : 'SubFaber - Netflix-Grade Subtitle Engine';
+        const addonName = 'SubFaber - Netflix-Grade Subtitle Engine';
 
         const manifest = {
             id: 'com.stremio.subfaber',

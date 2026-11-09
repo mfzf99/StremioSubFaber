@@ -1,5 +1,6 @@
 /**
- * Trinity Agents UI — Modular Trinity Cards + Dual Mode Toggle (Fasa E, 2026-10-10)
+ * Trinity Agents UI — Modular Trinity Cards (Fasa E, 2026-10-10)
+ * [PHASE C] Togol Basic/Pro dibuang — runtime tunggal Basic (Pro dibekukan).
  * Reka bentuk semula: Provider Registry Integration + Smart Visibility
  *
  * Reka bentuk:
@@ -173,17 +174,8 @@
 
     var _registryCache = null;
     var _registryPromise = null;
-    // [BUG FIX v3.9.41] Hook diregistri oleh mount(): membenarkan applyAgentValues()
-    // (dipanggil dari config.js sebagai rehydrate) memaksa mount() membina semula
-    // kad + segmented UI untuk mod baharu TANPA kehilangan nilai cfg sebenar.
-    // Sebelum ini applyAgentValues() early-return selepas dispatch 'change',
-    // bergantung pada renderCards() yang membaca global currentConfig yang mungkin
-    // belum siap semasa muat halaman — punca setting Trinity hilang pada
-    // reconfigure (config hash sedia ada).
-    var modelSyncHook = null;
-    // Pengawal re-entrancy: menghalang gelung tak terhingga apabila hook/change
-    // handler memanggil applyAgentValues() semula semasa sync mod.
-    var _rehydratingMode = false;
+    // [PHASE C] Hook modelSyncHook + pengawal re-entrancy _rehydratingMode
+    // dibuang bersama togol Basic/Pro — tiada lagi pertukaran mod dalam UI.
     // [BUG FIX v3.9.43] Cache cfg TERAKHIR yang dilihat oleh modul ini (melalui
     // mount()/rehydrate()). Jaring keselamatan jika getter LIVE
     // window.__SUB__getCurrentConfig tidak tersedia (cth modul dimuat berasingan).
@@ -2607,49 +2599,9 @@
         var existing = $('trinityRoot');
         if (existing) existing.remove();
 
-        var currentMode = (cfg && cfg.trinity && cfg.trinity.mode) || (cfg && cfg.mode) || MODE_BASIC;
-
         // Kad induk "Translation API Keys" ialah ROOT itu sendiri (satu elemen,
         // satu id 'trinityRoot') — tiada bekas luar tambahan.
         var root = null; // ditetapkan di bawah selepas parentCard dibina
-
-        // ── Togol dwimod (segmented control) ──
-        // Kontrak kekal: input checkbox #trinityModeToggle disembunyikan dan
-        // dipacu oleh dua butang segmented. applyAgentValues()/collectConfigPatch()
-        // masih membaca/menulis .checked + event 'change'.
-        var toggleBar = createEl('div', 'trinity-mode-bar');
-
-        var toggleInput = createEl('input');
-        toggleInput.type = 'checkbox';
-        toggleInput.id = 'trinityModeToggle';
-        toggleInput.checked = currentMode === MODE_PRO;
-        toggleInput.className = 'trinity-mode-input';
-        toggleInput.setAttribute('aria-hidden', 'true');
-        toggleInput.tabIndex = -1;
-        toggleBar.appendChild(toggleInput);
-
-        var seg = createEl('div', 'trinity-segmented');
-        seg.setAttribute('role', 'radiogroup');
-        seg.setAttribute('aria-label', 'Trinity agent mode');
-
-        function modeBtn(modeKey, label, hint) {
-            var b = createEl('button', 'trinity-segment-btn');
-            b.type = 'button';
-            b.dataset.mode = modeKey;
-            b.setAttribute('role', 'radio');
-            b.setAttribute('aria-checked', 'false');
-            b.appendChild(createEl('span', 'trinity-segment-label', label));
-            b.appendChild(createEl('span', 'trinity-segment-hint', hint));
-            b.addEventListener('click', function () {
-                if (toggleInput.checked === (modeKey === MODE_PRO)) return;
-                toggleInput.checked = modeKey === MODE_PRO;
-                toggleInput.dispatchEvent(new Event('change'));
-            });
-            return b;
-        }
-        seg.appendChild(modeBtn(MODE_BASIC, 'Basic Mode', 'Agent Translation only'));
-        seg.appendChild(modeBtn(MODE_PRO, 'Pro Mode', 'Preflight + Translation + Inspector'));
-        toggleBar.appendChild(seg);
 
         // ── Kad induk "Translation API Keys" (Anak 2 dalam keluarga API Keys) ──
         // Trinity DIBUNGKUS dalam satu kad berstruktur sama dengan kad anak lain
@@ -2688,7 +2640,6 @@
         parentCard.appendChild(pHead);
 
         var pContent = createEl('div', 'card-content trinity-parent-content');
-        pContent.appendChild(toggleBar);
         parentCard.appendChild(pContent);
 
         // parentCard ADALAH root (satu elemen, satu id) — tiada append diperlukan.
@@ -2709,18 +2660,6 @@
             syncParentCollapse();
         });
         syncParentCollapse();
-
-        function syncSegmented() {
-            var isPro = toggleInput.checked;
-            Array.prototype.forEach.call(seg.querySelectorAll('.trinity-segment-btn'), function (btn) {
-                var active = (btn.dataset.mode === MODE_PRO) === isPro;
-                btn.classList.toggle('active', active);
-                btn.setAttribute('aria-checked', active ? 'true' : 'false');
-                btn.tabIndex = active ? 0 : -1;
-            });
-        }
-        toggleInput.addEventListener('change', syncSegmented);
-        syncSegmented();
 
         // ── Bekas kad ──
         var cardsWrap = createEl('div', 'trinity-cards');
@@ -2756,11 +2695,11 @@
             _cardsBuilt = true;
         }
 
-        // Togol visibiliti kad mengikut mod semasa — HIDE sahaja, tiada
-        // pembinaan semula DOM. Kad yang tersembunyi kekal dalam DOM dengan
-        // SEMUA nilai input (termasuk door custom + Secondary Fallback) utuh.
+        // Visibiliti kad — HIDE sahaja, tiada pembinaan semula DOM. Runtime
+        // tunggal Basic: kad Preflight/Inspector kekal dalam DOM dengan SEMUA
+        // nilai input (termasuk door custom + Secondary Fallback) utuh.
         function applyModeVisibility() {
-            var isBasic = !toggleInput.checked;
+            var isBasic = true;
             cardsWrap.classList.toggle('trinity-mode-basic', isBasic);
             var cards = cardsWrap.querySelectorAll('.trinity-agent-card');
             Array.prototype.forEach.call(cards, function (card) {
@@ -2785,47 +2724,6 @@
                 updateVisibility(agent.key);
             });
         }
-
-        // [BUG FIX v3.9.41] Daftar hook supaya applyAgentValues(cfg) boleh
-        // memaksa bina semula kad + sync segmented untuk mod baharu, sambil
-        // menghantar cfg SEBENAR — bukan global currentConfig yang mungkin
-        // belum siap semasa muat halaman (punca setting Trinity hilang).
-        modelSyncHook = function (realCfg) {
-            syncSegmented();
-            renderCards(realCfg);
-        };
-
-        toggleInput.addEventListener('change', function () {
-            var mode = toggleInput.checked ? MODE_PRO : MODE_BASIC;
-            var c = getEffectiveConfig();
-            if (c) {
-                c.trinity = c.trinity || {};
-                c.trinity.mode = mode;
-                if (mode === MODE_BASIC) {
-                    c.previousContextSize = 20;
-                    c.batchSize = 200;
-                    c.futureContextSize = 10;
-                }
-            }
-            // [BUG FIX v3.9.41] Semasa rehydrate terkawal (_rehydratingMode),
-            // hook (modelSyncHook) sudah pun menogol visibiliti kad + mengisi
-            // nilai menggunakan cfg SEBENAR. Jangan ulang di sini.
-            if (_rehydratingMode) return;
-            // [BUG FIX v3.9.44] NON-DESTRUCTIVE MODE SWITCH (Basic <-> Pro):
-            // renderCards() TIDAK lagi memusnahkan DOM (tiada innerHTML='' pada
-            // laluan togol) — kad dibina SEKALI (ensureCardsBuilt) dan pertukaran
-            // mod hanya menogol visibiliti (applyModeVisibility). Semua nilai
-            // input, pilihan Format/Door, dan status Secondary Fallback kekal
-            // 100% utuh. Snapshot DOM → currentConfig dirakam dahulu supaya
-            // nilai yang ditaip tersedia untuk Save tanpa menunggu rehydrate.
-            var snapshotCfg = null;
-            try {
-                snapshotCfg = snapshotVisibleAgentState(c);
-            } catch (_) {
-                snapshotCfg = c;
-            }
-            renderCards(snapshotCfg || c);
-        });
 
         // [ROOT-CAUSE FIX 2026-10-10 — Integration Audit Fasa G]
         // "Subtitles API Keys" mesti kekal ATAS SEKALI. Sisipan root ke document
@@ -2884,39 +2782,21 @@
         return _lastKnownConfig && typeof _lastKnownConfig === 'object' ? _lastKnownConfig : null;
     }
 
+    // [PHASE C] Mod runtime tunggal: Basic. Mod Pro DIBEKU (tidak dipadam) —
+    // kredensial Pro yang tersimpan dikekalkan supaya boleh dipulihkan semula.
+    // Mod dibaca daripada konfigurasi TERSIMPAN (bukan DOM) kerana tiada lagi
+    // kawalan togol Basic/Pro dalam UI.
+    function resolveStoredMode(cfg) {
+        if (!cfg) return MODE_BASIC;
+        var storedMode = (cfg.trinity && cfg.trinity.mode) || cfg.mode || MODE_BASIC;
+        return storedMode;
+    }
+
     // --- Rehydrate nilai sedia ada ke dalam input baharu ---
 
     function applyAgentValues(cfg) {
         if (!cfg) return;
         if (typeof cfg === 'object') _lastKnownConfig = cfg;
-
-        var modeToggle = $('trinityModeToggle');
-        var storedMode = (cfg.trinity && cfg.trinity.mode) || cfg.mode || MODE_BASIC;
-        if (modeToggle && !_rehydratingMode) {
-            var wantPro = storedMode === MODE_PRO;
-            if (modeToggle.checked !== wantPro) {
-                modeToggle.checked = wantPro;
-                // [BUG FIX v3.9.41] JANGAN early-return di sini.
-                // Sebelum ini: dispatch 'change' → handler dalam mount() panggil
-                // renderCards() → applyAgentValues(getEffectiveConfig()), tetapi
-                // semasa muat halaman currentConfig global BELUM siap, jadi
-                // semua nilai agent hilang. Kini:
-                //   1. hook bina semula kad + segmented untuk mod baharu, dengan
-                //      cfg SEBENAR (bukan global yang belum siap);
-                //   2. kita teruskan ke bawah untuk mengisi nilai agent.
-                // Pengawal _rehydratingMode menghalang gelung tak terhingga
-                // apabila renderCards() → applyAgentValues() dipanggil semula.
-                _rehydratingMode = true;
-                try {
-                    if (typeof modelSyncHook === 'function') {
-                        modelSyncHook(cfg);
-                    }
-                    modeToggle.dispatchEvent(new Event('change'));
-                } finally {
-                    _rehydratingMode = false;
-                }
-            }
-        }
 
         AGENTS.forEach(function (agent) {
             var stored = getAgentConfig(cfg, agent.key);
@@ -3017,121 +2897,19 @@
         });
     }
 
-    // --- Snapshot non-destruktif DOM → currentConfig (pertukaran mod) ---
-
-    // [BUG FIX v3.9.43] Rakam nilai input SEMASA dari DOM ke dalam objek
-    // konfigurasi SEBELUM renderCards() membina semula kad. Entri ejen yang
-    // kadnya TIDAK wujud dalam mod semasa (cth Preflight/Inspector dalam Basic
-    // Mode) DILANGKAU — nilai lama dalam `cfg.trinity` dikekalkan supaya
-    // pertukaran Pro → Basic → Pro tidak memadam data yang telah diisi.
-    // Juga tidak menulis nilai kosong ke medan fallback/rotation.
-    function snapshotVisibleAgentState(targetCfg) {
-        var cfg = targetCfg || getEffectiveConfig();
-        if (!cfg) return null;
-        cfg.trinity = cfg.trinity || {};
-        var providers = _registryCache || FALLBACK_PROVIDERS;
-
-        // [FASA 4 v3.9.46] Simpan params Model Parameters semasa ke cfg.trinity
-        // SEBELUM pertukaran mod — memastikan nilai kekal utuh Basic↔Pro.
-        AGENTS.forEach(function (agent) {
-            var present = !!$('trinity-mp-' + agent.key);
-            if (!present) return;
-            mpSnapshot(agent.key);
-            if (_modelParamsState[agent.key] && Object.keys(_modelParamsState[agent.key]).length) {
-                cfg.trinity[agent.key] = cfg.trinity[agent.key] || {};
-                cfg.trinity[agent.key].params = Object.assign({}, _modelParamsState[agent.key]);
-            }
-        });
-        var secPresent = !!$('trinity-mp-secondary');
-        if (secPresent) {
-            mpSnapshot('secondary');
-            if (_modelParamsState.secondary && Object.keys(_modelParamsState.secondary).length) {
-                cfg.trinity.secondary = cfg.trinity.secondary || {};
-                cfg.trinity.secondary.params = Object.assign({}, _modelParamsState.secondary);
-            }
-        }
-
-        AGENTS.forEach(function (agent) {
-            var keyEl = $('trinity-' + agent.key + '-key');
-            var providerEl = $('trinity-' + agent.key + '-provider');
-            // Kad tiada dalam DOM mod semasa → jangan sentuh entri sedia ada.
-            if (!keyEl || !providerEl) return;
-
-            var fmtEl = $('trinity-' + agent.key + '-format');
-            var urlEl = $('trinity-' + agent.key + '-baseurl');
-            var modelEl = $('trinity-' + agent.key + '-model');
-            var provider = providerEl.value || '';
-            var providerEntry = getProviderById(providers, provider);
-            // [BUG FIX v3.9.44] Door direkod melalui resolveEffectiveDoor —
-            // pilihan Format/Door eksplisit Custom dirakam VERBATIM (sebelum ini
-            // door lalai registry ditulis → tidak sepadan dengan format pilihan).
-            var isCustom = isCustomProvider(providerEntry);
-            var rawFormat = fmtEl ? fmtEl.value : 'auto';
-            var door = resolveEffectiveDoor(providerEntry, rawFormat);
-            var apiKey = String(keyEl.value || '').trim();
-
-            cfg.trinity[agent.key] = Object.assign(
-                {
-                    apiKey: apiKey,
-                    format: rawFormat === 'auto' ? 'auto' : doorToFormat(rawFormat),
-                    baseUrl: isCustom && urlEl ? String(urlEl.value || '').trim() : '',
-                    model: modelEl ? String(modelEl.value || '').trim() : '',
-                    provider: provider,
-                    door: door,
-                    isCustom: isCustom,
-                    enabled: !!apiKey
-                },
-                readRotationPool(agent.key, apiKey)
-            );
-        });
-
-        // Seed legasi + key rotation (kad translation wujud dalam kedua-dua mod).
-        var t = cfg.trinity.translation;
-        if (t) {
-            if (t.apiKey) {
-                cfg.geminiApiKey = t.apiKey;
-                if (t.model) cfg.geminiModel = t.model;
-            }
-            cfg.geminiKeyRotationEnabled = t.keyRotationEnabled === true;
-            cfg.geminiKeyRotationMode = t.keyRotationMode || 'per-batch';
-            cfg.geminiApiKeys = Array.isArray(t.apiKeys) ? t.apiKeys.slice() : [];
-        }
-
-        // Secondary fallback (sub-kad dalam kad translation — kedua-dua mod).
-        if ($('trinity-translation-fallback-enabled')) {
-            var fb = readFallbackState();
-            if (fb.enabled) {
-                cfg.multiProviderEnabled = true;
-                cfg.secondaryProviderEnabled = true;
-                cfg.secondaryProvider = fb.isCustomSecondary ? CUSTOM_SECONDARY_ID : fb.providerId;
-                cfg.providers = cfg.providers || {};
-                if (fb.isCustomSecondary) {
-                    cfg.providers[CUSTOM_SECONDARY_ID] = {
-                        enabled: true,
-                        apiKey: fb.apiKey,
-                        baseUrl: fb.baseUrl,
-                        model: fb.model,
-                        door: fb.door
-                    };
-                } else {
-                    cfg.providers[fb.providerId] = {
-                        enabled: true,
-                        apiKey: fb.apiKey,
-                        model: fb.model,
-                        baseUrl: fb.baseUrl
-                    };
-                }
-            }
-        }
-
-        return cfg;
-    }
+    // [PHASE C] Fungsi snapshotVisibleAgentState DIBUANG bersama togol
+    // Basic/Pro: ia hanya wujud untuk merakam DOM sebelum mod ditukar.
+    // Runtime tunggal Basic tidak lagi menukar mod, jadi tiada pemotongan
+    // DOM yang perlu dirakam — collectConfigPatch() membaca DOM terus.
 
     // --- Pengumpulan konfigurasi (disuntik ke saveConfig) ---
 
     function collectConfigPatch() {
-        var modeToggle = $('trinityModeToggle');
-        var mode = modeToggle && modeToggle.checked ? MODE_PRO : MODE_BASIC;
+        // [PHASE C] Mod runtime tunggal Basic. Mod Pro DIBEKU (tidak dipadam) —
+        // mod dibaca daripada konfigurasi TERSIMPAN supaya kredensial Pro yang
+        // telah disimpan kekal boleh dipulihkan semula. Tiada lagi kawalan
+        // togol Basic/Pro dalam UI, jadi DOM bukan lagi sumber mod.
+        var mode = resolveStoredMode(getEffectiveConfig());
         var trinity = {
             mode: mode,
             preflight: {},
@@ -3139,12 +2917,11 @@
             inspector: {}
         };
 
-        // [BUG FIX v3.9.43] NON-DESTRUCTIVE SAVE merentas mod: dalam Basic Mode
-        // kad Preflight/Inspector TIDAK wujud dalam DOM. Sebelum ini blok
-        // `trinity.preflight`/`trinity.inspector` dihantar sebagai {} dan
-        // memusnahkan kredential Pro yang telah disimpan apabila pengguna
-        // menekan Save semasa berada dalam Basic Mode. Nilai lama dibaca
-        // daripada currentConfig dan dipulihkan untuk ejen yang kadnya tiada.
+        // [BUG FIX v3.9.43] NON-DESTRUCTIVE SAVE merentas mod: kad ejen yang
+        // tiada dalam DOM (cth Preflight/Inspector yang disembunyikan dalam
+        // runtime Basic) tidak boleh dihantar sebagai {} — ia akan memusnahkan
+        // kredential Pro yang telah disimpan. Nilai lama dibaca daripada
+        // currentConfig (prevTrinity) dan dipulihkan untuk ejen yang kadnya tiada.
         var prevTrinity = (getEffectiveConfig() || {}).trinity || {};
 
         AGENTS.forEach(function (agent) {
@@ -3348,11 +3125,11 @@
             patch.agentInspector = { enabled: false };
         }
 
-        if (mode === MODE_BASIC) {
-            patch.previousContextSize = 20;
-            patch.batchSize = 200;
-            patch.futureContextSize = 10;
-        }
+        // [PHASE C] Formula Basic 20+200+10 kini menjadi SATU-SATUNYA formula
+        // (runtime tunggal Basic) — tiada lagi gate ikut mod.
+        patch.previousContextSize = 20;
+        patch.batchSize = 200;
+        patch.futureContextSize = 10;
 
         return patch;
     }
@@ -3362,7 +3139,6 @@
         mount: mount,
         collectConfigPatch: collectConfigPatch,
         rehydrate: applyAgentValues,
-        MODES: { BASIC: MODE_BASIC, PRO: MODE_PRO },
         // API untuk debugging/testing
         fetchProviderRegistry: fetchProviderRegistry,
         getRegistryCache: function () {

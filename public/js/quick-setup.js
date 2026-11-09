@@ -1852,6 +1852,7 @@
                             finalConfig.betaModeEnabled = qsConfig.betaModeEnabled === true;
                             finalConfig.devMode = qsConfig.devMode === true;
                             finalConfig.parallelBatchesEnabled = false;
+                            finalConfig.parallelBatchesCount = 0;
                             finalConfig.mobileMode = qsConfig.mobileMode === true;
                             finalConfig.singleBatchMode = qsConfig.singleBatchMode === true;
                             finalConfig.mainProvider = qsConfig.mainProvider || 'gemini';

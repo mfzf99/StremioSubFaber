@@ -154,16 +154,14 @@ test('self-hosted Redis defaults hard-cap session payloads and retain 1 GiB head
     assert.equal(limits.smdb, 640 * MEBIBYTE);
 });
 
-test('ElfHosted preserves its existing cache and session byte profile unless explicitly overridden', () => {
-    const limits = StorageAdapter.getSizeLimits({ ELFHOSTED: 'true' });
-    const nonSessionTotal = Object.entries(limits)
-        .filter(([key, value]) => key !== 'session' && Number.isFinite(value))
-        .reduce((sum, [, value]) => sum + value, 0);
+test('Redis byte limits use one universal profile regardless of legacy ELFHOSTED env', () => {
+    const legacy = StorageAdapter.getSizeLimits({ ELFHOSTED: 'true' });
+    const baseline = StorageAdapter.getSizeLimits({});
 
-    assert.equal(nonSessionTotal, 7778336768);
-    assert.equal(limits.session, null);
-    assert.equal(limits.translation, 1.5 * 1024 * MEBIBYTE);
-    assert.equal(limits.smdb, 2 * 1024 * MEBIBYTE);
+    assert.deepEqual(legacy, baseline);
+    assert.equal(legacy.session, 512 * MEBIBYTE);
+    assert.equal(legacy.translation, 768 * MEBIBYTE);
+    assert.equal(legacy.smdb, 640 * MEBIBYTE);
 
     const overridden = StorageAdapter.getSizeLimits({
         ELFHOSTED: 'true',

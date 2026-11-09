@@ -6305,7 +6305,10 @@ async function performTranslation(
             // fallback .env — TIADA lalai statik dalam kod. Gagal konfigurasi →
             // null → enjin jalan 100% Agent Translation (backwards compatible penuh).
             let agentInspector = null;
-            const isProTrinityMode = String(config.trinity?.mode || 'pro').toLowerCase() === 'pro';
+            // Basic is the sole active runtime. Preserve stored Pro configuration
+            // for recovery without constructing its frozen Inspector pipeline.
+            const runtimeTrinityMode = 'basic';
+            const isProTrinityMode = runtimeTrinityMode === 'pro';
             if (
                 isProTrinityMode &&
                 config.agentInspector?.enabled === true &&
@@ -6398,7 +6401,7 @@ async function performTranslation(
                 {
                     ...(config.advancedSettings || {}),
                     parallelBatchesEnabled: config.parallelBatchesEnabled === true,
-                    parallelBatchesCount: config.parallelBatchesCount || 3
+                    parallelBatchesCount: config.parallelBatchesCount ?? 0
                 },
                 {
                     singleBatchMode: config.singleBatchMode === true,
@@ -6407,7 +6410,7 @@ async function performTranslation(
                     keyRotationConfig,
                     agentInspector: agentInspector,
                     trinityChannel,
-                    trinityMode: config.trinity?.mode || 'pro'
+                    trinityMode: runtimeTrinityMode
                 }
             );
 

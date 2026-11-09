@@ -1,5 +1,4 @@
 const MEBIBYTE = 1024 * 1024;
-const GIBIBYTE = 1024 * MEBIBYTE;
 
 function positiveByteLimit(env, name, fallback) {
     const raw = env?.[name];
@@ -10,12 +9,11 @@ function positiveByteLimit(env, name, fallback) {
 }
 
 /**
- * Resolve byte limits once at process startup. The public ElfHosted deployment
- * predates the self-hosted 4 GiB Compose profile and runs a separately managed,
- * unbounded Redis HA deployment. Keep its existing budgets byte-for-byte stable
- * while giving ordinary self-hosters defaults that leave meaningful Redis
- * headroom for sessions, indexes, allocator fragmentation and persistence/
- * replication buffers.
+ * Resolve byte limits once at process startup. SubFaber ships a single
+ * self-hosted 4 GiB Compose profile: 3 GiB total including a 512 MiB hard
+ * session-payload quota. This leaves 1 GiB (25%) of the bundled 4 GiB Redis for
+ * metadata/indexes, allocator fragmentation and Redis persistence/replication
+ * overhead.
  *
  * Every individual CACHE_LIMIT_* override remains authoritative.
  *
@@ -23,38 +21,21 @@ function positiveByteLimit(env, name, fallback) {
  * @returns {Record<string, number|null>}
  */
 function resolveSizeLimits(env = process.env) {
-    const preserveElfHostedBudgets = env?.ELFHOSTED === 'true';
-    const defaults = preserveElfHostedBudgets
-        ? {
-              // Preserve the managed deployment's existing unbounded session-byte
-              // profile. Operators can opt in with SESSION_STORAGE_MAX_BYTES after
-              // measuring their live namespace and Redis headroom.
-              session: null,
-              translation: 1.5 * GIBIBYTE,
-              bypass: 0.5 * GIBIBYTE,
-              partial: 0.5 * GIBIBYTE,
-              sync: 0.5 * GIBIBYTE,
-              autosub: 0.5 * GIBIBYTE,
-              embedded: 0.5 * GIBIBYTE,
-              history: GIBIBYTE,
-              provider_meta: 250 * MEBIBYTE,
-              smdb: 2 * GIBIBYTE
-          }
-        : {
-              // 3 GiB total including a 512 MiB hard session-payload quota. This
-              // leaves 1 GiB (25%) of the bundled 4 GiB Redis for metadata/indexes,
-              // allocator fragmentation and Redis persistence/replication overhead.
-              session: 512 * MEBIBYTE,
-              translation: 768 * MEBIBYTE,
-              bypass: 128 * MEBIBYTE,
-              partial: 128 * MEBIBYTE,
-              sync: 192 * MEBIBYTE,
-              autosub: 192 * MEBIBYTE,
-              embedded: 192 * MEBIBYTE,
-              history: 256 * MEBIBYTE,
-              provider_meta: 64 * MEBIBYTE,
-              smdb: 640 * MEBIBYTE
-          };
+    const defaults = {
+        // 3 GiB total including a 512 MiB hard session-payload quota. This
+        // leaves 1 GiB (25%) of the bundled 4 GiB Redis for metadata/indexes,
+        // allocator fragmentation and Redis persistence/replication overhead.
+        session: 512 * MEBIBYTE,
+        translation: 768 * MEBIBYTE,
+        bypass: 128 * MEBIBYTE,
+        partial: 128 * MEBIBYTE,
+        sync: 192 * MEBIBYTE,
+        autosub: 192 * MEBIBYTE,
+        embedded: 192 * MEBIBYTE,
+        history: 256 * MEBIBYTE,
+        provider_meta: 64 * MEBIBYTE,
+        smdb: 640 * MEBIBYTE
+    };
 
     return {
         translation: positiveByteLimit(env, 'CACHE_LIMIT_TRANSLATION', defaults.translation),
@@ -243,11 +224,9 @@ StorageAdapter.CACHE_TYPES = {
 // Ordinary self-hosted default: 3 GiB total, including a 512 MiB serialized
 // session-payload quota. This leaves 1 GiB of the bundled 4 GiB Redis for
 // metadata/indexes, allocator fragmentation and persistence/replication overhead.
-// ELFHOSTED=true preserves the existing managed-deployment budgets and session
-// byte behavior unless SESSION_STORAGE_MAX_BYTES is explicitly configured.
 //
 // Environment variables to override:
-// - SESSION_STORAGE_MAX_BYTES (self-hosted default: 512 MiB; ElfHosted: unset)
+// - SESSION_STORAGE_MAX_BYTES (default: 512 MiB)
 // - CACHE_LIMIT_TRANSLATION (default: 768 MiB)
 // - CACHE_LIMIT_BYPASS (default: 128 MiB)
 // - CACHE_LIMIT_PARTIAL (default: 128 MiB)

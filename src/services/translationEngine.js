@@ -988,8 +988,8 @@ class TranslationEngine {
 
         let translatedEntries = [];
 
-        // Parallel Batches Mode (Dev Mode specific, excluding ElfHosted)
-        if (this.advancedSettings?.parallelBatchesEnabled === true && process.env.ELFHOSTED !== 'true') {
+        // Parallel Batches Mode
+        if (this.advancedSettings?.parallelBatchesEnabled === true) {
             this.translationStats.parallelBatchesUsed = true;
             translatedEntries = await executeParallelTranslation(
                 this,
@@ -1503,7 +1503,7 @@ class TranslationEngine {
         }
 
         const allowAutoChunking = opts.allowAutoChunking !== false;
-        const streamingRequested = opts.streaming && typeof this.gemini.streamTranslateSubtitle === 'function';
+        const streamingRequested = opts.streaming && typeof this.gemini?.streamTranslateSubtitle === 'function';
 
         // Prepare batch text (with context if provided)
         const batchText = this.prepareBatchContent(batch, context);

@@ -2,6 +2,52 @@
 
 All notable changes to this project will be documented in this file.
 
+## SubFaber v3.30.0 (2026-11-10) — Phase C Parallel Engine and ElfHosted Purge
+
+### ✨ Added — Parallel Translation Engine with Auto-Worker Scheduling
+
+- Parallel batch translation is now a first-class, user-selectable execution mode. Every worker request is issued with `streaming: true` so long-running batches are carried over a server-sent-event transport instead of a single long-held non-streaming request, which removes the silent gateway/Caddy disconnect failure mode observed on large subtitle files.
+- Auto scheduling computes the worker count from the real batch geometry: `W = min(totalBatches, ceiling)` with a default ceiling of **5**. The ceiling is applied only after the batch list exists, so a short file never spawns idle workers.
+- Manual scheduling exposes **1–8** concurrent workers. The stored value `0` is the canonical Auto sentinel and is preserved verbatim through save, rehydration, and server persistence; it is never coerced into a manual worker count. An existing saved manual value of `3` remains a manual `3`.
+- Parallel batches never consume a peer's unfinished translations: `previousMemory = 0` is accepted in parallel mode, and the canonical ordered output mechanism (`runWithProgressiveSequentialResolution()`) is retained so slot and ID parity are unchanged. Batch 0 remains the only partial-SRT streaming preview.
+- Worker count is deliberately independent of provider key count and free-tier rate limits, matching the production reality of a single paid key with effectively unlimited quota. Gemini-native key rotation stays inert on the OpenAI-compatible route and is not used as a throttling mechanism.
+
+### 🔧 Changed — Translation Settings Execution Mode Selector
+
+- Settings → Translation Settings now carries a user-facing **Sequential / Parallel** execution-mode selector (`#translationExecutionMode`), with the parallel worker group (`#parallelConcurrencyGroup`, `#parallelConcurrency`) revealed only in Parallel mode.
+- Sequential remains the product default and persists `parallelBatchesEnabled = false`. Parallel Auto persists `parallelBatchesEnabled = true` with `parallelBatchesCount = 0`; a manual selection persists `1..8`.
+- The retired Dev Mode parallel group was removed together with its orphaned toggle helpers and CSS. The existing XML workflow contract (`translationWorkflow: 'xml'`) is untouched, and the retired `translationWorkflow`/`workflow` namespace was not reused for the new control.
+- Cache-bypass synchronisation was extended so the frontend indicators and the server-side bypass decision agree: with Parallel translation active the database mode is locked to **Bypass Cache (Force Retranslation)** and the reason banner names the parallel clause explicitly. Sequential mode drops that clause automatically.
+- New i18n namespaces `config.translationSettings.executionMode.*` and `config.translationSettings.concurrency.*` were added for `en`, `es`, `pt-br`, `pt-pt`, and `ar`.
+
+### 🔧 Changed — Basic-Only Runtime With Frozen Pro Capability
+
+- The runtime translation mode is now pinned to **Basic**, and the Agent Inspector is disabled for it, so Basic throughput, worker, and token calculations are never influenced by Pro capability state.
+- The Basic/Pro segmented control was removed from the UI along with its dead switch styling. Pro remains available and frozen rather than deleted: saved Pro configuration and credentials survive normalisation, the 20/200/10 formula patch is emitted unconditionally, and the Trinity agent cards are mounted directly with non-destructive rehydration that preserves previously stored Pro values.
+
+### 🔗 Changed — Universal Redis Storage Profile
+
+- The Redis storage adapter now ships a **single universal profile** for self-hosted deployments instead of two environment-dependent profiles: session 512 MiB, translation 768 MiB, bypass 128 MiB, partial 128 MiB, sync 192 MiB, autosub 192 MiB, embedded 192 MiB, history 256 MiB, provider metadata 64 MiB, and subtitle database 640 MiB. The former alternate-budget branch and its `GIBIBYTE` constant were removed.
+
+### 🔒 Changed — CORS Wildcard Suffix List
+
+- The built-in CORS wildcard suffix list was reduced from `['.elfhosted.com', '.midnightignite.me', '.fortheweak.cloud', '.nhyira.dev']` to `['.midnightignite.me', '.fortheweak.cloud', '.nhyira.dev']`. The operator-facing `ALLOWED_ORIGIN_WILDCARD_SUFFIXES` environment variable is unchanged.
+
+### 🗑️ Removed — ElfHosted-Specific Artifacts
+
+- The `ELFHOSTED` parallel-capability gate, the ElfHosted manifest branding branch (the addon name is now always the canonical `SubFaber - Netflix-Grade Subtitle Engine`), and the ElfHosted branding block in `.env.example` were removed. The public addon manifest name and the self-hosted storage behaviour are unchanged for every existing operator.
+
+### ✅ Verification
+
+- New Phase C backend regressions: **6/6 PASS**. Adjacent existing suites re-run for contract compatibility: **103/103 PASS**.
+- New ElfHosted purge regressions: **7 PASS**, plus the storage suite at **24 PASS / 0 FAIL / 1 SKIP**.
+- Rewritten frontend and mode-switch regressions (the obsolete Basic/Pro UI assertions were rewritten with equivalent coverage, using comment-stripped source for absence assertions): targeted frontend sweep **22/22 PASS**.
+- Full tracked suite after final formatting: **612 tests / 611 PASS / 0 FAIL / 1 SKIP** (the single skip is the existing real-Redis concurrent-quota integration; no test Redis instance is available). Baseline before this release was 599/598/0/1.
+- Scoped Prettier: PASS. Scoped ESLint: **0 errors** (pre-existing `no-unused-vars` warnings only). `git diff --check`: PASS.
+- Playwright acceptance on the live application confirmed the Parallel/Automatic worker state, the manual worker state, the Sequential default with the worker group hidden, the bypass lock with its reason text in each mode, and the absence of the removed Basic/Pro controls.
+- Server-side persistence was proven in both directions: Parallel + Auto (`0`) saved through `POST /api/update-session/:token` → HTTP 200 and rehydrated from the server after a full configuration-cache purge with the Auto sentinel intact; Sequential likewise rehydrated as `parallelBatchesEnabled: false` with the worker group hidden.
+- Live-provider translation execution was not performed in this release because no provider key was available on the release machine; UI acceptance used a keyless `googletranslate` session.
+
 ## SubFaber v3.29.3 (2026-11-09) — SubFaber Batch Formula 20+200+10
 
 ### 🔧 Changed — Translation Batching and Sliding Context Window

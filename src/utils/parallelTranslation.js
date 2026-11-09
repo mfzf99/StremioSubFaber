@@ -3,7 +3,6 @@ const { parseSRT, toSRT } = require('./subtitle');
 
 /**
  * Executes a standalone parallel batch translation to maximize token throughput.
- * This is restricted to Dev Mode and non-ElfHosted environments.
  *
  * @param {Object} engine - The TranslationEngine instance
  * @param {Array} entries - Array of parsed SRT entries
@@ -17,19 +16,23 @@ async function executeParallelTranslation(engine, entries, targetLanguage, custo
         throw new Error('Invalid SRT content: no valid entries found');
     }
 
-    const CONCURRENCY_LIMIT = Math.max(1, Math.min(5, parseInt(engine.advancedSettings?.parallelBatchesCount) || 3));
     const PARALLEL_BATCH_SIZE = engine.batchSize;
-
-    log.info(
-        () =>
-            `[ParallelTranslation] Initiating parallel translation mode. Entries: ${entries.length}, Concurrency: ${CONCURRENCY_LIMIT}`
-    );
 
     // Create batches explicitly sized for parallel mode
     const batches = [];
     for (let i = 0; i < entries.length; i += PARALLEL_BATCH_SIZE) {
         batches.push(entries.slice(i, i + PARALLEL_BATCH_SIZE));
     }
+
+    const configuredConcurrency = Number.parseInt(engine.advancedSettings?.parallelBatchesCount, 10);
+    const autoConcurrency = configuredConcurrency === 0 || !Number.isFinite(configuredConcurrency);
+    const requestedConcurrency = autoConcurrency ? 5 : Math.max(1, Math.min(8, configuredConcurrency));
+    const CONCURRENCY_LIMIT = Math.min(batches.length, requestedConcurrency);
+
+    log.info(
+        () =>
+            `[ParallelTranslation] Initiating parallel translation mode. Entries: ${entries.length}, Concurrency: ${CONCURRENCY_LIMIT}${autoConcurrency ? ' (Auto)' : ''}`
+    );
 
     // Storage for results keyed by batch index (0-based)
     const batchResults = new Array(batches.length);
@@ -58,14 +61,17 @@ async function executeParallelTranslation(engine, entries, targetLanguage, custo
     };
 
     // -------------------------------------------------------------------------
-    // Build one task per batch. Batch 0 uses streaming; the rest do not.
+    // Build one task per batch. Batch 0 owns the sole partial-SRT preview;
+    // workers use streaming transport without emitting competing previews.
     // All tasks are kicked off concurrently subject to CONCURRENCY_LIMIT.
     // -------------------------------------------------------------------------
     const firstBatch = batches[0];
     const firstBatchStartId = firstBatch[0]?.id || 1;
     const streamingBatchEntries = new Map();
 
-    // Task factory — returns an async thunk for the given batch index
+    // Task factory — returns an async thunk for the given batch index.
+    // Context is resolved at dispatch time: concurrently launched batches never
+    // consume a peer's unfinished translation, so their previousMemory stays 0.
     const makeTask = (batchIdx) => async () => {
         // NOTE: maybeRotateKeyForBatch(0) is a no-op by design.
         // For batch 0 we intentionally skip cloning the engine so streaming
@@ -133,7 +139,8 @@ async function executeParallelTranslation(engine, entries, targetLanguage, custo
         }
 
         // Batches 1-N: clone the engine to avoid key-rotation mutations on the
-        // shared instance, then translate without streaming.
+        // shared instance. Streaming keeps long gateway requests alive while the
+        // existing stream callback retains checkpoint-recovery text.
         const workerEngine = Object.assign(Object.create(Object.getPrototypeOf(engine)), engine);
 
         // Give each worker its own translationStats to avoid concurrent mutation
@@ -181,7 +188,7 @@ async function executeParallelTranslation(engine, entries, targetLanguage, custo
                 batchIdx,
                 batches.length,
                 context,
-                { streaming: false }
+                { streaming: true }
             );
         } finally {
             // Merge worker stats back into the original engine's stats.
