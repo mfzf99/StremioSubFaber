@@ -1,3 +1,19 @@
+## 2026-11-09 — v3.29.2 AUTOSYNC MANUAL OFFSET & TIMING INTEGRITY (OWNER MANDATE)
+
+- **Date:** 2026-11-09 ~19:00 (KL time).
+- **Parent HEAD SHA:** `7a466cbe436c2aae2c300c621305a9cc50ba54cc`.
+- **Status:** `VERIFIED_LOCAL`.
+- **Release Commit SHA + CI Run ID:** confirmed in the final report after push/CI.
+- **Owner Decision:** Deliver Autosync roadmap P0 with Vanilla JS, no new timing dependency, negative-offset clamping, SRT/VTT separator preservation, cue-overlap prevention, Phase A/B root-cause mapping, and relay checkpoints before implementation. Release the completed application change as one Class 1 commit.
+- **Impact & Contract Audit (Phase A/B):** Commit `d1d1677e` had removed Manual Offset controls and execution while extension results were copied directly into output state without timing normalization. The restored Manual path now works without an extension or stream URL, including when an extension is detected. One dependency-free factory is shared between Node and the generated browser page; extension output passes through the same transformation at offset zero before cache/download consumers. The `SUBMAKER_*` protocol, request fields, xSync/WASM ownership, downstream `/addon/:config/xsync/...` behavior, cached-content shape, and `maybeConvertToSRT()` remain unchanged. Coupled Zones A/B/C are `N/A`: no provider/model, configuration-schema, normalization, Trinity, or tri-door contract was touched. Payload/cache and generated-page consumers were audited directly.
+- **Independent Acceptance:** Six new regressions plus four existing extension-protocol tests passed **10/10** after final formatting. Playwright verified Manual SRT/VTT, mocked Autosync success/malformed/failure paths, normalized cache payloads, SRT/VTT downloads, and failure cleanup. Final Manual SRT output began at `00:00:00,000`, preserved CRLF and cue text containing `-->`, and prevented overlap; the cache POST returned HTTP 200. Desktop and 390 px mobile screenshots confirmed usable number/nudge controls and correct SRT/VTT copy without horizontal overflow. Final browser console had zero errors/warnings. Real xSync/WASM execution was not invoked; extension responses were deliberately mocked and this limitation is retained in the release notes.
+- **Cache-buster & Graphify:** Existing Sync Studio asset URLs continue using `?_cb=${appVersion}`; no additional cache-buster change is required. Graphify is `N/A` because `graphify-out/` is absent.
+- **Files Involved:** `src/utils/syncTiming.js` (A: shared timing transformation), `src/utils/syncPageGenerator.js` (M: Manual UI/execution, extension normalization, SRT/VTT handling, responsive styling), `src/utils/autosync-timing-regression.test.js` (A), `locales/en.json`, `locales/es.json`, `locales/ar.json`, `locales/pt-br.json`, `locales/pt-pt.json` (M: SRT/VTT upload copy), `package.json`, `package-lock.json` (M: v3.29.2), `CHANGELOG.md` (M: English release notes), `docs/SESSION_LEDGER.md` (M: this entry only).
+- **npm test Status:** Final post-format suite **597 total / 596 PASS / 0 FAIL / 1 SKIP** (existing real-Redis concurrent-quota integration; no test Redis port available). Scoped Prettier PASS; scoped ESLint **0 errors / 1 pre-existing unused-import warning**; `git diff --check` PASS.
+- **Next Steps:** Create one explicitly staged release commit, push it to `origin/main`, and confirm its CI workflow succeeds; report the release SHA and CI run ID in the final response.
+
+---
+
 ## 2026-11-09 — TOKEN EXPLOSION, TTFT & CADDY 300s FORENSIC REPORT (OPERATIONAL GOVERNANCE UPDATE)
 
 - **Date:** 2026-11-09 ~16:45 (KL time).

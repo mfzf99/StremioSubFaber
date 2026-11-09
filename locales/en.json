@@ -1755,7 +1755,7 @@
         "title": "Select Subtitle to Sync",
         "selectLabel": "Choose from {title} fetched subtitles:",
         "selectPlaceholder": "Choose a subtitle",
-        "uploadTitle": "Or drag & drop your .srt file here",
+        "uploadTitle": "Or drag & drop your .srt or .vtt file here",
         "uploadSubtitle": "Click to browse files",
         "sourceLabel": "Source Language:",
         "sourcePlaceholder": "Select source language",
@@ -1840,7 +1840,7 @@
         "current": "Already latest"
       },
       "upload": {
-        "invalidFile": "Please select a valid .srt file",
+        "invalidFile": "Please select a valid .srt or .vtt file",
         "loaded": "Subtitle file loaded: {name}"
       },
       "plan": {

@@ -1747,7 +1747,7 @@
         "title": "اختر الترجمة للمزامنة",
         "selectLabel": "اختر من {title} ترجمات تم جلبها:",
         "selectPlaceholder": "اختر ترجمة",
-        "uploadTitle": "أو اسحب وأفلت ملف .srt الخاص بك هنا",
+        "uploadTitle": "أو اسحب وأفلت ملف .srt أو .vtt الخاص بك هنا",
         "uploadSubtitle": "انقر لاستعراض الملفات",
         "sourceLabel": "لغة المصدر:",
         "sourcePlaceholder": "اختر لغة المصدر",
@@ -1832,7 +1832,7 @@
         "current": "الأحدث بالفعل"
       },
       "upload": {
-        "invalidFile": "يرجى اختيار ملف .srt صالح",
+        "invalidFile": "يرجى اختيار ملف .srt أو .vtt صالح",
         "loaded": "تم تحميل ملف الترجمة: {name}"
       },
       "plan": {

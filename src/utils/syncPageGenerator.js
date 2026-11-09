@@ -18,6 +18,7 @@ const { xsyncMinVersion: REQUIRED_XSYNC_VERSION } = require('../../package.json'
 const { quickNavStyles, quickNavScript, renderQuickNav, renderRefreshBadge } = require('./quickNav');
 const { buildClientBootstrap, loadLocale, getTranslator } = require('./i18n');
 const { streamFilenameSelectorClientScript } = require('./streamUrlIdentity');
+const { createSyncTiming } = require('./syncTiming');
 
 function escapeHtml(text) {
     if (!text) return '';
@@ -423,7 +424,7 @@ async function generateSubtitleSyncPage(subtitles, videoId, streamFilename, conf
             loadingPlaceholder: t('sync.step2.loadingPlaceholder', {}, 'Loading subtitles...'),
             emptyPlaceholder: t('sync.step2.emptyPlaceholder', {}, 'No subtitles found'),
             loadFailedPlaceholder: t('sync.step2.loadFailedPlaceholder', {}, 'Failed to load subtitles'),
-            uploadTitle: t('sync.step2.uploadTitle', {}, 'Or drag & drop your .srt file here'),
+            uploadTitle: t('sync.step2.uploadTitle', {}, 'Or drag & drop your .srt or .vtt file here'),
             uploadSubtitle: t('sync.step2.uploadSubtitle', {}, 'Click to browse files'),
             sourceLabel: t('sync.step2.sourceLabel', {}, 'Source Language:'),
             sourcePlaceholder: t('sync.step2.sourcePlaceholder', {}, 'Select source language'),
@@ -436,10 +437,36 @@ async function generateSubtitleSyncPage(subtitles, videoId, streamFilename, conf
             primaryLabel: t('sync.step3.primaryLabel', {}, 'Primary Mode:'),
             secondaryLabel: t('sync.step3.secondaryLabel', {}, 'Scan Profile:'),
             primaryOptions: {
+                manual: t('sync.step3.primaryOptions.manual', {}, 'Manual Offset Adjustment'),
                 alass: t('sync.step3.primaryOptions.alass', {}, 'ALASS (audio -> subtitle)'),
                 ffsubsync: t('sync.step3.primaryOptions.ffsubsync', {}, 'FFSubSync (audio -> subtitle)'),
                 vosk: t('sync.step3.primaryOptions.vosk', {}, 'Vosk CTC/DTW (text -> audio)'),
                 whisper: t('sync.step3.primaryOptions.whisper', {}, 'Whisper + ALASS (subtitle -> subtitle)')
+            },
+            manualLabel: t('sync.step3.manualLabel', {}, 'Time Offset (milliseconds):'),
+            offsetHotkeys: t(
+                'sync.step3.offsetHotkeys',
+                {},
+                'Hotkeys: Left/Right = +/-100ms; Shift+Left/Right = +/-500ms; 0 = reset'
+            ),
+            offsetHintPositive: t(
+                'sync.step3.offsetHintPositive',
+                {},
+                'Positive values = delay subtitles (appear later)'
+            ),
+            offsetHintNegative: t(
+                'sync.step3.offsetHintNegative',
+                {},
+                'Negative values = advance subtitles (appear earlier)'
+            ),
+            offsetButtons: {
+                minus1000: t('sync.step3.offsetButtons.minus1000', {}, '-1s'),
+                minus500: t('sync.step3.offsetButtons.minus500', {}, '-500ms'),
+                minus100: t('sync.step3.offsetButtons.minus100', {}, '-100ms'),
+                reset: t('sync.step3.offsetButtons.reset', {}, 'Reset'),
+                plus100: t('sync.step3.offsetButtons.plus100', {}, '+100ms'),
+                plus500: t('sync.step3.offsetButtons.plus500', {}, '+500ms'),
+                plus1000: t('sync.step3.offsetButtons.plus1000', {}, '+1s')
             },
             start: t('sync.step3.start', {}, 'Apply Sync'),
             startBusy: t('sync.step3.startBusy', {}, 'Syncing...'),
@@ -1533,6 +1560,7 @@ async function generateSubtitleSyncPage(subtitles, videoId, streamFilename, conf
         }
 
         .form-group input[type="text"],
+        .form-group input[type="number"],
         .form-group select,
         .form-group textarea {
             width: 100%;
@@ -1548,6 +1576,7 @@ async function generateSubtitleSyncPage(subtitles, videoId, streamFilename, conf
         }
 
         .form-group input[type="text"]:focus,
+        .form-group input[type="number"]:focus,
         .form-group select:focus,
         .form-group textarea:focus {
             outline: none;
@@ -1592,11 +1621,29 @@ async function generateSubtitleSyncPage(subtitles, videoId, streamFilename, conf
             text-align: right;
         }
 
+        .offset-entry {
+            display: grid;
+            grid-template-columns: minmax(0, 1fr);
+            gap: 0.75rem;
+        }
+
         .offset-nudges {
-            display: flex;
+            display: grid;
+            grid-template-columns: repeat(7, minmax(0, 1fr));
             gap: 0.35rem;
-            flex-wrap: wrap;
-            justify-content: flex-end;
+        }
+
+        .offset-nudges .offset-btn {
+            min-width: 0;
+            margin: 0;
+            padding: 0.65rem 0.35rem;
+            white-space: nowrap;
+        }
+
+        @media (max-width: 600px) {
+            .offset-nudges {
+                grid-template-columns: repeat(4, minmax(0, 1fr));
+            }
         }
 
         .checkbox-group input[type="checkbox"] {
@@ -2166,7 +2213,7 @@ async function generateSubtitleSyncPage(subtitles, videoId, streamFilename, conf
                     <div class="upload-area" id="uploadArea">
                         <p>${escapeHtml(copy.step2.uploadTitle)}</p>
                         <p style="font-size: 0.85rem; color: #9CA3AF; margin-top: 0.5rem;">${escapeHtml(copy.step2.uploadSubtitle)}</p>
-                        <input type="file" id="fileInput" accept=".srt" style="display: none;">
+                        <input type="file" id="fileInput" accept=".srt,.vtt" style="display: none;">
                     </div>
                     <div class="form-group" id="sourceLanguageGroup" style="display: none;">
                         <label for="sourceLanguage">${escapeHtml(copy.step2.sourceLabel)}</label>
@@ -2202,7 +2249,8 @@ async function generateSubtitleSyncPage(subtitles, videoId, streamFilename, conf
                     <div class="form-group">
                         <label for="primarySyncMode">${escapeHtml(copy.step3.primaryLabel)}</label>
                         <select id="primarySyncMode">
-                            <option value="alass" selected disabled>${escapeHtml(copy.step3.primaryOptions.alass)}</option>
+                            <option value="manual" selected>${escapeHtml(copy.step3.primaryOptions.manual)}</option>
+                            <option value="alass" disabled>${escapeHtml(copy.step3.primaryOptions.alass)}</option>
                             <option value="ffsubsync" disabled>${escapeHtml(copy.step3.primaryOptions.ffsubsync)}</option>
                             <option value="vosk-ctc" disabled>${escapeHtml(copy.step3.primaryOptions.vosk)}</option>
                             <option value="whisper-alass" disabled>${escapeHtml(copy.step3.primaryOptions.whisper)}</option>
@@ -2214,8 +2262,37 @@ async function generateSubtitleSyncPage(subtitles, videoId, streamFilename, conf
                         <select id="secondarySyncMode"></select>
                     </div>
 
+                    <div id="manualSyncControls">
+                        <div class="form-group">
+                            <label for="offsetMs">${escapeHtml(copy.step3.manualLabel)}</label>
+                            <div style="display: flex; flex-direction: column; gap: 0.75rem;">
+                                <div class="offset-headline">
+                                    <div id="offsetSummary" class="offset-summary">${escapeHtml(t('sync.offset.onTime', {}, 'On time'))}</div>
+                                    <div class="offset-hint">${escapeHtml(copy.step3.offsetHotkeys)}</div>
+                                </div>
+                                <input type="range" id="offsetSlider" min="-15000" max="15000" step="50" value="0" style="width: 100%;">
+                                <div class="offset-entry">
+                                    <input type="number" id="offsetMs" value="0" step="50">
+                                    <div class="offset-nudges">
+                                        <button type="button" class="btn btn-secondary offset-btn" data-step="-1000">${escapeHtml(copy.step3.offsetButtons.minus1000)}</button>
+                                        <button type="button" class="btn btn-secondary offset-btn" data-step="-500">${escapeHtml(copy.step3.offsetButtons.minus500)}</button>
+                                        <button type="button" class="btn btn-secondary offset-btn" data-step="-100">${escapeHtml(copy.step3.offsetButtons.minus100)}</button>
+                                        <button type="button" class="btn btn-secondary offset-btn" data-reset="true">${escapeHtml(copy.step3.offsetButtons.reset)}</button>
+                                        <button type="button" class="btn btn-secondary offset-btn" data-step="100">${escapeHtml(copy.step3.offsetButtons.plus100)}</button>
+                                        <button type="button" class="btn btn-secondary offset-btn" data-step="500">${escapeHtml(copy.step3.offsetButtons.plus500)}</button>
+                                        <button type="button" class="btn btn-secondary offset-btn" data-step="1000">${escapeHtml(copy.step3.offsetButtons.plus1000)}</button>
+                                    </div>
+                                </div>
+                            </div>
+                            <p style="font-size: 0.85rem; color: #9CA3AF; margin-top: 0.5rem;">
+                                ${escapeHtml(copy.step3.offsetHintPositive)}<br>
+                                ${escapeHtml(copy.step3.offsetHintNegative)}
+                            </p>
+                        </div>
+                    </div>
+
                     <!-- Auto Sync Info -->
-                    <div id="autoSyncInfo">
+                    <div id="autoSyncInfo" style="display: none;">
                     <div class="info-box auto-sync-box">
                         <p id="syncMethodDescription" class="sync-method-description"></p>
                     </div>
@@ -2268,6 +2345,9 @@ async function generateSubtitleSyncPage(subtitles, videoId, streamFilename, conf
     <script src="/js/combobox.js?_cb=${escapeHtml(appVersion || 'dev')}"></script>
     <script>
         ${quickNavScript()}
+
+        ${createSyncTiming.toString()}
+        const { detectSubtitleFormat, shiftSubtitleTimings } = createSyncTiming();
 
         const tt = (key, vars, fallback) => {
             try {
@@ -2806,6 +2886,7 @@ async function generateSubtitleSyncPage(subtitles, videoId, streamFilename, conf
             selectedSubtitleId: null,
             estimatedDurationMs: null,
             syncedSubtitle: null,
+            syncedSubtitleFormat: 'srt',
             translatedSubtitle: null,
             activeSyncPlan: null,
             useFingerprintPrepass: true,
@@ -3555,6 +3636,10 @@ async function generateSubtitleSyncPage(subtitles, videoId, streamFilename, conf
             return \`\${String(hours).padStart(2, '0')}:\${String(minutes).padStart(2, '0')}:\${String(seconds).padStart(2, '0')},\${String(milliseconds).padStart(3, '0')}\`;
         }
 
+        function offsetSubtitles(subtitleContent, offsetMs) {
+            return shiftSubtitleTimings(subtitleContent, offsetMs);
+        }
+
         function estimateSubtitleDurationMs(srtContent) {
             try {
                 const subs = parseSRT(srtContent || '');
@@ -3621,6 +3706,7 @@ async function generateSubtitleSyncPage(subtitles, videoId, streamFilename, conf
             }
         };
         const PRIMARY_DESCRIPTIONS = {
+            manual: tt('sync.primary.manual', {}, 'Manual offset: type the millisecond shift you need.'),
             alass: tt('sync.primary.alass', {}, 'ALASS anchors the subtitle to audio for fast, offline alignment.'),
             ffsubsync: tt('sync.primary.ffsubsync', {}, 'FFSubSync detects drifts/ads directly from the audio waveform.'),
             'vosk-ctc': tt('sync.primary.vosk', {}, 'Vosk CTC/DTW force-aligns your subtitle text directly to the audio.'),
@@ -3764,6 +3850,9 @@ async function generateSubtitleSyncPage(subtitles, videoId, streamFilename, conf
         const primaryModeSelect = document.getElementById('primarySyncMode');
         const secondaryModeSelect = document.getElementById('secondarySyncMode');
         const secondaryModeGroup = document.getElementById('secondaryModeGroup');
+        const manualOffsetInput = document.getElementById('offsetMs');
+        const manualOffsetSlider = document.getElementById('offsetSlider');
+        const manualOffsetSummary = document.getElementById('offsetSummary');
         const fingerprintPrepassGroup = document.getElementById('fingerprintPrepassGroup');
         const fingerprintPrepassCheckbox = document.getElementById('useFingerprintPrepass');
         const sourceLanguageSelect = document.getElementById('sourceLanguage');
@@ -3818,20 +3907,45 @@ async function generateSubtitleSyncPage(subtitles, videoId, streamFilename, conf
             }
             if (!enabled) {
                 if (primaryModeSelect) {
-                    primaryModeSelect.value = 'alass';
+                    primaryModeSelect.value = 'manual';
                 }
-                populateSecondaryOptions('alass');
+                populateSecondaryOptions('manual');
                 if (fingerprintPrepassGroup) {
                     fingerprintPrepassGroup.style.display = 'none';
                 }
                 STATE.activeSyncPlan = null;
             } else {
+                if (primaryModeSelect?.value === 'manual') {
+                    primaryModeSelect.value = 'alass';
+                }
                 populateSecondaryOptions(primaryModeSelect?.value || 'alass');
             }
         }
 
-        // Default: autosync options stay locked until extension is detected
+        // Manual offsets work immediately; audio engines unlock only after extension detection.
         setAutoSyncAvailability(false);
+
+        function formatOffsetLabel(ms) {
+            const onTime = tt('sync.offset.onTime', {}, ${JSON.stringify(t('sync.offset.onTime', {}, 'On time'))});
+            if (!Number.isFinite(ms) || ms === 0) return onTime;
+            const direction = ms > 0
+                ? tt('sync.offset.direction.later', {}, 'later')
+                : tt('sync.offset.direction.earlier', {}, 'earlier');
+            const absolute = Math.abs(ms);
+            const value = absolute >= 1000 ? (absolute / 1000).toFixed(absolute % 1000 === 0 ? 0 : 1) + 's' : absolute + 'ms';
+            return value + ' ' + direction;
+        }
+
+        function setManualOffset(ms) {
+            const min = Number(manualOffsetSlider?.min) || -15000;
+            const max = Number(manualOffsetSlider?.max) || 15000;
+            const numeric = Number.isFinite(ms) ? ms : 0;
+            const clamped = Math.min(max, Math.max(min, Math.round(numeric)));
+            if (manualOffsetInput) manualOffsetInput.value = clamped;
+            if (manualOffsetSlider) manualOffsetSlider.value = clamped;
+            if (manualOffsetSummary) manualOffsetSummary.textContent = formatOffsetLabel(clamped);
+            return clamped;
+        }
 
         function populateSecondaryOptions(primaryMode) {
             if (!secondaryModeSelect || !secondaryModeGroup) return;
@@ -4068,9 +4182,22 @@ async function generateSubtitleSyncPage(subtitles, videoId, streamFilename, conf
 
         // Sync method change handler
         function refreshSyncPlanPreview() {
-            const primaryMode = primaryModeSelect ? primaryModeSelect.value : 'alass';
+            const primaryMode = primaryModeSelect ? primaryModeSelect.value : 'manual';
+            const manualControls = document.getElementById('manualSyncControls');
             const autoSyncInfo = document.getElementById('autoSyncInfo');
             const syncMethodDesc = document.getElementById('syncMethodDescription');
+
+            if (primaryMode === 'manual') {
+                manualControls.style.display = 'block';
+                autoSyncInfo.style.display = 'none';
+                if (fingerprintPrepassGroup) fingerprintPrepassGroup.style.display = 'none';
+                syncMethodDesc.textContent = '';
+                STATE.activeSyncPlan = null;
+                setManualOffset(Number(manualOffsetInput?.value || 0));
+                return;
+            }
+
+            manualControls.style.display = 'none';
             autoSyncInfo.style.display = 'block';
             if (fingerprintPrepassGroup) fingerprintPrepassGroup.style.display = 'block';
             if (fingerprintPrepassCheckbox) {
@@ -4111,6 +4238,31 @@ async function generateSubtitleSyncPage(subtitles, videoId, streamFilename, conf
             refreshSyncPlanPreview();
         });
         secondaryModeSelect?.addEventListener('change', refreshSyncPlanPreview);
+
+        manualOffsetInput?.addEventListener('input', (event) => {
+            setManualOffset(Number(event.target.value));
+        });
+        manualOffsetSlider?.addEventListener('input', (event) => {
+            setManualOffset(Number(event.target.value));
+        });
+        document.querySelectorAll('.offset-btn').forEach((button) => {
+            button.addEventListener('click', () => {
+                const reset = button.dataset.reset === 'true';
+                const step = Number(button.dataset.step || 0);
+                setManualOffset(reset ? 0 : Number(manualOffsetInput?.value || 0) + step);
+            });
+        });
+        window.addEventListener('keydown', (event) => {
+            if (primaryModeSelect?.value !== 'manual' || !['ArrowLeft', 'ArrowRight', '0'].includes(event.key)) return;
+            if (event.key === '0') {
+                setManualOffset(0);
+            } else {
+                const delta = (event.shiftKey ? 500 : 100) * (event.key === 'ArrowRight' ? 1 : -1);
+                setManualOffset(Number(manualOffsetInput?.value || 0) + delta);
+            }
+            event.preventDefault();
+        });
+        setManualOffset(0);
 
         if (fingerprintPrepassCheckbox) {
             STATE.useFingerprintPrepass = fingerprintPrepassCheckbox.checked;
@@ -4156,6 +4308,14 @@ async function generateSubtitleSyncPage(subtitles, videoId, streamFilename, conf
             const resetFlow = (reason) => resetStepFlow(reason || lockReasons.needContinue);
 
             if (!streamUrl) {
+                if ((primaryModeSelect?.value || 'manual') === 'manual') {
+                    STATE.streamUrl = null;
+                    STATE.step1Confirmed = true;
+                    enableSection('step2Section');
+                    if (STATE.subtitleContent) enableSection('step3Section');
+                    showStatus('syncStatus', tt('sync.step3.status.noStream', {}, 'No stream linked. Manual offsets are fine, but autosync will need an http(s) stream URL.'), 'info');
+                    return;
+                }
                 STATE.streamUrl = null;
                 showStatus('syncStatus', requiredMsg, 'error');
                 resetFlow(requiredMsg);
@@ -4268,8 +4428,8 @@ async function generateSubtitleSyncPage(subtitles, videoId, streamFilename, conf
 
         function handleSubtitleFile(file) {
             if (requireStep1Confirmation()) return;
-            if (!file || !file.name.endsWith('.srt')) {
-                showStatus('syncStatus', tt('sync.upload.invalidFile', {}, 'Please select a valid .srt file'), 'error');
+            if (!file || !file.name.toLowerCase().endsWith('.srt') && !file.name.toLowerCase().endsWith('.vtt')) {
+                showStatus('syncStatus', tt('sync.upload.invalidFile', {}, 'Please select a valid .srt or .vtt file'), 'error');
                 return;
             }
 
@@ -4346,15 +4506,23 @@ async function generateSubtitleSyncPage(subtitles, videoId, streamFilename, conf
                 document.getElementById('downloadSyncedBtn').style.display = 'none';
                 document.getElementById('downloadTranslatedBtn').style.display = 'none';
 
-                if (!extensionInstalled) {
-                    pingExtension(true);
-                    throw new Error(tt('sync.step3.status.extensionRequired', {}, 'Autosync requires the SubFaber Chrome Extension. Please install/enable it.'));
-                }
-                if (!isHttpUrl(STATE.streamUrl || '')) {
-                    throw new Error(tt('sync.step3.status.urlRequired', {}, 'Autosync requires a valid http(s) stream URL. Please paste it in Step 1.'));
+                if (primaryMode !== 'manual') {
+                    if (!extensionInstalled) {
+                        pingExtension(true);
+                        throw new Error(tt('sync.step3.status.extensionRequired', {}, 'Autosync requires the SubFaber Chrome Extension. Please install/enable it.'));
+                    }
+                    if (!isHttpUrl(STATE.streamUrl || '')) {
+                        throw new Error(tt('sync.step3.status.urlRequired', {}, 'Autosync requires a valid http(s) stream URL. Please paste it in Step 1.'));
+                    }
                 }
 
-                if (AUTO_PRIMARY_MODES.includes(primaryMode)) {
+                if (primaryMode === 'manual') {
+                    const offsetMs = setManualOffset(Number(manualOffsetInput?.value || 0));
+                    updateProgress('syncProgressFill', 'syncProgressText', 50, tt('sync.step3.progressApplying', { ms: offsetMs }, 'Applying offset: ' + offsetMs + 'ms...'));
+                    STATE.syncedSubtitle = offsetSubtitles(STATE.subtitleContent, offsetMs);
+                    STATE.syncedSubtitleFormat = detectSubtitleFormat(STATE.syncedSubtitle);
+                    updateProgress('syncProgressFill', 'syncProgressText', 100, tt('sync.step3.progressComplete', {}, 'Sync complete!'));
+                } else if (AUTO_PRIMARY_MODES.includes(primaryMode)) {
                     const preset = resolveSecondaryPreset(primaryMode, secondaryMode);
                     if (!preset) {
                         throw new Error(tt('sync.step3.status.profileRequired', {}, 'Select a scan profile before starting autosync.'));
@@ -4394,7 +4562,8 @@ async function generateSubtitleSyncPage(subtitles, videoId, streamFilename, conf
                         throw new Error(syncResult.error || tt('sync.step3.status.extensionSyncFailed', {}, 'Extension sync failed'));
                     }
 
-                    STATE.syncedSubtitle = syncResult.syncedSubtitle;
+                    STATE.syncedSubtitle = shiftSubtitleTimings(syncResult.syncedSubtitle, 0);
+                    STATE.syncedSubtitleFormat = detectSubtitleFormat(STATE.syncedSubtitle);
                     updateProgress('syncProgressFill', 'syncProgressText', 100, tt('sync.step3.autosync.complete', { mode: modeName }, modeName + ' complete!'));
                 }
 
@@ -4484,7 +4653,7 @@ async function generateSubtitleSyncPage(subtitles, videoId, streamFilename, conf
         // Download handlers
         document.getElementById('downloadSyncedBtn').addEventListener('click', () => {
             if (!STATE.syncedSubtitle) return;
-            downloadSubtitle(STATE.syncedSubtitle, 'synced_subtitle.srt');
+            downloadSubtitle(STATE.syncedSubtitle, 'synced_subtitle.' + (STATE.syncedSubtitleFormat === 'vtt' ? 'vtt' : 'srt'));
         });
 
         document.getElementById('downloadTranslatedBtn').addEventListener('click', () => {

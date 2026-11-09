@@ -1747,7 +1747,7 @@
         "title": "Selecionar Legenda para Sincronizar",
         "selectLabel": "Escolha entre {title} legendas buscadas:",
         "selectPlaceholder": "Escolha uma legenda",
-        "uploadTitle": "Ou arraste & solte seu arquivo .srt aqui",
+        "uploadTitle": "Ou arraste & solte seu arquivo .srt ou .vtt aqui",
         "uploadSubtitle": "Clique para navegar pelos arquivos",
         "sourceLabel": "Idioma de Origem:",
         "sourcePlaceholder": "Selecione idioma de origem",
@@ -1832,7 +1832,7 @@
         "current": "Já é o mais recente"
       },
       "upload": {
-        "invalidFile": "Por favor, selecione um arquivo .srt válido",
+        "invalidFile": "Por favor, selecione um arquivo .srt ou .vtt válido",
         "loaded": "Arquivo de legenda carregado: {name}"
       },
       "plan": {

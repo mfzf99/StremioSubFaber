@@ -1747,7 +1747,7 @@
         "title": "Selecciona subtítulo a sincronizar",
         "selectLabel": "Elige entre los subtítulos obtenidos de {title}:",
         "selectPlaceholder": "Elige un subtítulo",
-        "uploadTitle": "📁 O arrastra y suelta tu archivo .srt aquí",
+        "uploadTitle": "📁 O arrastra y suelta tu archivo .srt o .vtt aquí",
         "uploadSubtitle": "Haz clic para buscar archivos",
         "sourceLabel": "Idioma de origen:",
         "sourcePlaceholder": "Selecciona idioma de origen",
@@ -1832,7 +1832,7 @@
         "current": "Ya es la última"
       },
       "upload": {
-        "invalidFile": "Selecciona un archivo .srt válido",
+        "invalidFile": "Selecciona un archivo .srt o .vtt válido",
         "loaded": "Archivo de subtítulo cargado: {name}"
       },
       "plan": {

@@ -2,6 +2,25 @@
 
 All notable changes to this project will be documented in this file.
 
+## SubFaber v3.29.2 (2026-11-09) — Autosync Manual Offset & Timing Integrity
+
+### 🐛 Fixed — Safe Manual and Extension Synchronization
+
+- Restored Manual Offset Adjustment in Sync Studio, including localized controls, slider/input synchronization, nudge buttons, keyboard shortcuts, and operation without an extension or stream URL.
+- Added a shared dependency-free timing transformation for browser and Node consumers. Negative offsets clamp at `00:00:00,000`, cue starts cannot overlap the previous cue, and every cue retains a duration of at least 1 ms.
+- Normalized extension synchronization output before cache and download consumers while preserving the existing `SUBMAKER_*` request and response protocol.
+- Preserved SRT comma timestamps, VTT dot timestamps, VTT headers, cue identifiers, settings, short timestamps, cue text, and CRLF line endings. Malformed timestamps, empty input, non-finite offsets, and cue-less input now fail explicitly without retaining stale output or writing a new cache entry.
+- Added SRT and VTT upload support with format-preserving `synced_subtitle.srt` and `synced_subtitle.vtt` downloads. Updated upload instructions and validation copy in all five supported interface languages.
+- Corrected number-input styling and introduced a responsive seven-control nudge grid, retaining the existing Native CSS design tokens and Vanilla JS architecture.
+
+### ✅ Verification
+
+- Targeted Autosync and extension-protocol regressions: **10/10 PASS**, including negative offsets, overlap repair, VTT preservation, invalid input, manual operation with extension detection, and normalized cache/download output.
+- Playwright acceptance covered Manual SRT/VTT, mocked Autosync success/malformed/failure responses, cache payloads, format-specific downloads, and responsive desktop/mobile layouts. Final Manual output preserved CRLF and cue text, the cache POST returned HTTP 200, and the final console reported no errors or warnings.
+- Full tracked suite after final formatting: **597 tests / 596 PASS / 0 FAIL / 1 SKIP** (existing real-Redis concurrent-quota integration; no test Redis instance available).
+- Scoped Prettier: PASS. Scoped ESLint: **0 errors / 1 pre-existing unused-import warning**. `git diff --check`: PASS.
+- Real xSync/WASM execution was not invoked; extension responses were deliberately mocked and the established extension protocol remained unchanged.
+
 ## SubFaber v3.29.1 (2026-11-09) — Universal Prompt Examples for Quality Ceiling
 
 ### 🔧 Changed — Universal Examples in Basic Prompt
