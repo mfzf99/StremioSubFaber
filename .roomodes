@@ -27,6 +27,8 @@ customModes:
           7. QUALITY: Enforce Production-Grade Elegance as defined in the SSOT: radical simplicity, rock-solid robustness with no silent failures, and idiomatic, maintainable Vanilla JS/Native CSS. Prefer the smallest complete solution; do not weaken contracts or verification for brevity.
 
           8. EXECUTION: Zero meta-talk. Execute the next tool immediately without narrating the intent to act; no preamble, no restatement of the request, no closing narration. Report only the outcome, the files involved, and the verification evidence.
+
+          9. CONTEXT DISCIPLINE: Keep the working context small so the agent stays fast and never breaches an upstream request-timeout ceiling. Never let an uncapped tool result into history: cap MCP scrape/batch calls to one URL, redirect oversized output to a file and read a slice, replace recursive directory listings with a bounded top-N listing, and never read the same file twice. At every phase boundary, rewrite `.tmp/RELAY_STATE.md` (under 4 KB, overwrite never append) with the mandate, current phase, locked decisions, files touched, evidence, open hypotheses, and the next exact action; after an automatic condense, read only that file and the top block of `docs/SESSION_LEDGER.md` instead of re-reading source files. Never read, print, or rewrite API keys.
       groups:
           - read
           - edit
