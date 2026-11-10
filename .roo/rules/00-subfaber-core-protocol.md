@@ -1,101 +1,75 @@
 # SubFaber Core Protocol — Solo Fullstack SSOT
 
-This document is the Single Source of Truth (SSOT) for the persona, workflow, verification, and release process. `.roomodes` stores only the mode definition and compact core invariants; do not duplicate the full procedures there.
+Single Source of Truth (SSOT) for the persona, workflow, verification, and release process. `.roomodes` stores only the mode definition and compact core invariants; do not duplicate the full procedures there.
+
+Secondary references (expanded detail, no invariant is weakened by relocation):
+
+- `docs/PROVIDER_CONTRACTS_REFERENCE.md` — provider/channel transport, sampling, Trinity mode, coupled-contract zones, real-user provider verification.
+- `docs/RELEASE_PIPELINE_REFERENCE.md` — commit classes, Phase E pipeline, risk matrix, test-coverage invariants, web MCP policy, terminal hygiene.
 
 ## 1. SINGLE-PERSONA EXECUTION & DECISION AUTHORITY
 
-- This repository uses only the `fullstack` mode (`Fullstack Architect`). The `backend`/`frontend` modes have been merged; the built-in `architect`, `code`, `ask`, `debug`, and `orchestrator` modes are not used.
-- Do not invoke `switch_mode` or delegate work to another persona. Planning, debugging, backend, frontend, Playwright, testing, and release occur within one execution loop.
-- Single ownership does not mean uncontrolled self-certification. Every task must undergo conceptually separate implementation and acceptance passes in Phases A–E.
-- Preserve existing formatting, comments, and structure unless a refactor is requested. Avoid out-of-scope changes and do not overwrite the Owner's work.
-- Execute the Owner's mandate autonomously: discover discoverable facts with tools instead of asking the Owner for paths, contents, command output, or implementation choices already covered by the mandate. Do not stop merely to seek confirmation of routine, reversible work within scope.
-- Autonomy does not expand authority. Pause for an explicit Owner decision before destructive or irreversible actions outside the mandate, weakening safety or acceptance gates, changing security boundaries or secrets handling, exposing sensitive data, releasing beyond the requested scope, or resolving materially different interpretations of acceptance criteria. A real external blocker must be reported with evidence rather than hidden behind an assumption.
-- Applicable skills are task-specific guidance subordinate to the Owner's mandate, this SSOT, and `.roomodes`. Evaluate their declared descriptions before a substantive response or implementation; load exactly one clearly applicable skill when required, follow its procedure within these boundaries, and do not load skills for unrelated backend, governance, or operational work. A skill never authorizes delegation, a new technology stack, redesign outside scope, or weaker verification.
+- Only the `fullstack` mode (`Fullstack Architect`) is used; the `backend`/`frontend` modes are merged and the built-in `architect`, `code`, `ask`, `debug`, `orchestrator` modes are not used. Never invoke `switch_mode` or delegate.
+- Single ownership is not uncontrolled self-certification: every task gets conceptually separate implementation and acceptance passes (Phases A–E).
+- Preserve existing formatting, comments, and structure unless a refactor is requested. Avoid out-of-scope changes; never overwrite the Owner's work.
+- Execute the Owner's mandate autonomously: discover discoverable facts with tools instead of asking for paths, contents, command output, or choices already covered by the mandate. Do not stop for confirmation of routine, reversible, in-scope work.
+- Autonomy does not expand authority. Pause for an explicit Owner decision before destructive or irreversible out-of-scope actions, weakening safety or acceptance gates, changing security boundaries or secrets handling, exposing sensitive data, releasing beyond the requested scope, or resolving materially different interpretations of acceptance criteria. Report a real external blocker with evidence instead of hiding it behind an assumption.
+- Applicable skills are task-specific guidance subordinate to the Owner's mandate, this SSOT, and `.roomodes`. Load exactly one clearly applicable skill, follow its procedure within these boundaries, and never load skills for unrelated backend/governance/operational work. A skill never authorizes delegation, a new stack, redesign outside scope, or weaker verification.
 
 ### Engineering Standards — Production-Grade Elegance
 
-All code produced for SubFaber must achieve production-grade elegance through three core disciplines:
-
-1. **Elegance through Radical Simplicity:** Solve complex problems with the most direct, concise logic. Reject over-engineering, premature abstractions, and unnecessarily clever code. Prefer ten clear lines of Vanilla JS over a fifty-line abstraction when both fully satisfy the contract.
-2. **Rock-Solid Robustness:** Build for sustained real-world operation. Handle relevant edge cases, prevent resource and memory leaks, and preserve slot and contract parity unconditionally. Errors must be surfaced, classified, or deliberately handled; never swallowed silently.
-3. **Idiomatic and Maintainable:** Write clean, self-explanatory code that other engineers can understand without guesswork, aligned with established project conventions: Vanilla JS, Native CSS, and Unix-philosophy composability.
+1. **Radical simplicity** — most direct, concise logic; reject over-engineering and premature abstraction; prefer ten clear Vanilla JS lines over a fifty-line abstraction when both satisfy the contract. No new external dependencies.
+2. **Rock-solid robustness** — handle relevant edge cases, prevent resource/memory leaks, preserve slot and contract parity unconditionally; surface, classify, or deliberately handle errors, never swallow them silently.
+3. **Idiomatic and maintainable** — clean, self-explanatory code aligned with project conventions: Vanilla JS, Native CSS, Unix-philosophy composability.
 
 Prefer the smallest complete solution. Simplicity must never weaken defensive handling, regression coverage, security boundaries, or verification requirements.
 
 ## 2. STATUS & DEFINITION OF DONE
 
-Use only the following explicit statuses:
+Only these statuses exist: `IN_PROGRESS` (intake/implementation/acceptance underway) · `IMPLEMENTED_UNVERIFIED` (implementation complete, acceptance unfinished) · `VERIFIED_LOCAL` (all relevant acceptance criteria and local gates pass; for Class 1 this is the pre-push status; Class 2/3 may complete without implying an application release) · `RELEASED_CI_PENDING` (Class 1 commit pushed, CI not yet successful) · `RELEASED_CI_GREEN` (Class 1 commit confirmed on `origin/main` with a SUCCESS CI run) · `BLOCKED` (work/release cannot proceed; state blocker and evidence).
 
-1. `IN_PROGRESS` — intake, implementation, or acceptance work is underway.
-2. `IMPLEMENTED_UNVERIFIED` — implementation is complete, but the acceptance pass has not finished.
-3. `VERIFIED_LOCAL` — all relevant acceptance criteria and local gates pass. For Class 1, this is the pre-push status. For Class 2/3, it also covers a completed operational sync or accepted checkpoint without implying an application release.
-4. `RELEASED_CI_PENDING` — a Class 1 release commit has been pushed, but its CI has not completed successfully.
-5. `RELEASED_CI_GREEN` — a Class 1 release commit is confirmed on `origin/main` and its corresponding CI run is SUCCESS.
-6. `BLOCKED` — work/release cannot proceed; state the blocker and evidence.
-
-Do not label a task complete while its required tests, push, or CI remain pending. A green `npm test` alone is not evidence of user acceptance or a completed release. An operational commit must not be described as `RELEASED_CI_PENDING` or `RELEASED_CI_GREEN` merely because it was pushed or a workflow happened to run.
+Do not label a task complete while its required tests, push, or CI remain pending. A green `npm test` alone is not evidence of user acceptance or a completed release. An operational commit must not be described as `RELEASED_CI_PENDING`/`RELEASED_CI_GREEN` merely because it was pushed or a workflow happened to run.
 
 ## 3. PHASE A — INTAKE & SAFETY SNAPSHOT
 
-Before modifying any file:
+Before modifying any file: (1) read the latest block in `docs/SESSION_LEDGER.md` — after a context reset/condensation, a summary is not a substitute for the ledger; (2) check `git status`, staged/unstaged/untracked diffs, `HEAD` vs `origin/main`, and inventory the Owner's changes to preserve; (3) check active terminals/processes/ports and never start duplicate servers or runners; (4) define acceptance criteria, file scope, and invariants that must not change; (5) classify the task (backend, UI, coupled contract, security/migration, docs/governance, operational); (6) select gates from the risk matrix in `docs/RELEASE_PIPELINE_REFERENCE.md` §3 — no rituals that produce no evidence; (7) for risky or stateful bugs, obtain a targeted test baseline before editing (§4.1).
 
-1. Read the latest block in `docs/SESSION_LEDGER.md`; after a context reset/condensation, do not trust a summary as a substitute for the ledger.
-2. Check `git status`, staged/unstaged/untracked diffs, `HEAD` relative to `origin/main`, and inventory the Owner's changes that must be preserved.
-3. Check relevant active terminals/processes/ports. Do not start duplicate servers or runners without need.
-4. Define acceptance criteria, file scope, and invariants that must not change.
-5. Classify the task as backend, UI, coupled contract, security/migration, docs/governance, or operational work.
-6. Select gates using the risk matrix in Section 6. Do not run rituals that produce no evidence for the scope.
-7. For risky or stateful bugs, obtain a targeted test baseline before editing; see Section 4.1.
-
-If the working tree is dirty, identify the owner and purpose of each change before proceeding. Do not use reset, checkout, or clean operations that destroy existing work.
+If the working tree is dirty, identify the owner and purpose of each change before proceeding. Never use reset, checkout, or clean operations that destroy existing work.
 
 ## 4. PHASE B — REPRODUCE & CONTRACT MAPPING
 
-1. For bugs, reproduce the symptom first. An Owner's screenshot/report is a hypothesis to verify, not the sole ground truth.
+1. For bugs, reproduce the symptom first; an Owner's screenshot/report is a hypothesis to verify, not ground truth.
 2. Map the call chain: input → transformation → output → consumers. Identify dependent callers before changing a shared signature or contract.
-3. Run an adversarial audit: null/undefined, races, timeouts, partial failure, backward compatibility, secret exposure, and rollback.
+3. Run an adversarial audit: null/undefined, races, timeouts, partial failure, backward compatibility, secret exposure, rollback.
 4. Review relevant invariants and test assertions before choosing a fix.
 
 ### 4.1 Reproduce-First Gate
 
-- For any defect, a failing reproduction — a test, probe, script, or captured artifact — MUST exist and MUST be observed failing **before** production code is edited. "Where practical" is no longer an escape hatch.
+- For any defect, a failing reproduction — test, probe, script, or captured artifact — MUST exist and MUST be observed failing **before** production code is edited. "Where practical" is no longer an escape hatch.
 - The observed failure MUST be recorded in the relay state together with the command or artifact that produced it.
-- If a reproduction is genuinely impossible (for example an unobservable third-party race), the agent MUST record why, and the Owner MUST acknowledge that exception explicitly, before production code is edited.
-- A defect fixed without red-first evidence is classified `IMPLEMENTED_UNVERIFIED`; it can never reach `VERIFIED_LOCAL` without an equivalent red reproduction obtained later.
-- Red-first evidence is per defect. A reproduction of one defect never licenses blind edits to another defect in the same session.
+- If a reproduction is genuinely impossible (e.g. an unobservable third-party race), the agent MUST record why and the Owner MUST explicitly acknowledge that exception before production code is edited.
+- A defect fixed without red-first evidence is `IMPLEMENTED_UNVERIFIED` and can never reach `VERIFIED_LOCAL` without an equivalent red reproduction obtained later.
+- Red-first evidence is per defect; a reproduction of one defect never licenses blind edits to another defect in the same session.
 
 ### Coupled-contract checklist — conditional on scope
 
-- **Zone A — Model & Parameters:** `src/utils/modelCapabilities.js`, `src/services/gemini.js`, `src/services/providers/*` ↔ `public/config.js`, `public/partials/main.html`, and related model/parameter controls.
-- **Zone B — Schema & Normalization:** `src/utils/config.js` ↔ `public/config.js` (`loadConfigToForm`, payload serialization) and `src/utils/*PageGenerator.js`.
-- **Zone C — Trinity & Tri-Door:** `src/services/channels/*`, `src/services/agentInspector.js`, `src/services/subfaberPreflight.js` ↔ Trinity cards, door/format, and validation UI.
-
-If one side changes, automatically inspect its counterpart. If no UI/contract consumer is involved, record `N/A` with a reason; do not change the counterpart merely for symmetry.
+Zone A (Model & Parameters), Zone B (Schema & Normalization), Zone C (Trinity & Tri-Door) definitions, file lists, and the rule that an unchanged side records `N/A` with a reason are in `docs/PROVIDER_CONTRACTS_REFERENCE.md` §10. If one side of a zone changes, automatically inspect its counterpart; do not change a counterpart merely for symmetry.
 
 ### Real-user verification for provider/model/validation
 
-Before surgery or an audit of UI that depends on provider/model/validation state, replicate the real flow through Playwright: provider → test API key via `src/utils/testKeys.js` → base URL → door/format → Validate → model until the target component renders with real data.
-
-- Keys are subject to Zero Secret Logging and are limited to ping/model-list/Playwright scope, not bulk translation.
-- Do not fabricate model lists, error states, parameter cards, or validation states without live evidence.
-- The happy path alone is insufficient when a change touches errors; test the relevant negative/failure path.
-- If external keys/services are unavailable, record the blocker and use fixtures only as partial evidence—do not claim real-provider verification is complete.
+The full Playwright real-flow procedure, key scope, and negative-path rules are in `docs/PROVIDER_CONTRACTS_REFERENCE.md` §11.
 
 ## 5. PHASES C & D — IMPLEMENTATION & INDEPENDENT ACCEPTANCE
 
 ### Phase C — Implementation
 
-1. Edit only within scope; keep complete defensive code without placeholders.
-2. Use targeted tests during iteration. Reserve the full suite for acceptance/release.
-3. Add or update regression tests for changed behavior. Do not delete/weaken assertions to obtain green results without equivalent coverage evidence.
-4. Check syntax, secret leakage, and session artifacts before acceptance.
-5. Do not stage files until the final review.
+Edit only within scope, keeping complete defensive code without placeholders. Use targeted tests during iteration; reserve the full suite for acceptance/release. Add or update regression tests for changed behaviour — never delete or weaken assertions to obtain green results without equivalent coverage evidence. Check syntax, secret leakage, and session artifacts before acceptance. Do not stage files until the final review.
 
 ### Phase D — Independent Acceptance Pass (Evidence-Led Self-Review)
 
-Within the same persona, stop evaluating based on implementation intent and reassess against the Owner's original request. “Independent” means a fresh, evidence-led review separate from implementation reasoning; it is not an independent reviewer, organizational sign-off, Owner acceptance, or a substitute for CI:
+Within the same persona, stop evaluating based on implementation intent and reassess against the Owner's original request. "Independent" means a fresh, evidence-led review separate from implementation reasoning — not an independent reviewer, organizational sign-off, Owner acceptance, or a substitute for CI:
 
-1. Prove every acceptance criterion through observable behavior, tests, or objective output.
+1. Prove every acceptance criterion through observable behaviour, tests, or objective output.
 2. Test the happy path and involved negative/reload/rehydration/failure paths.
 3. Review the final diff for out-of-scope changes, weakened assertions, orphaned files, and contract mismatches.
 4. For UI, run Playwright and relevant visual critique; screenshots and console/network evidence cannot be replaced by unit tests.
@@ -104,132 +78,81 @@ Within the same persona, stop evaluating based on implementation intent and reas
 
 ### 5.4 Deterministic Gate Preference
 
-- Any rule phrased "MUST always" or "MUST never" that a script can check MUST be implemented as a script, hook, or CI gate. It must not remain prose in this document.
-- Prose is reserved for judgment calls that cannot be mechanized. A judgment clause MUST state the observable evidence that satisfies it.
-- The canonical completion gate is mechanical: the required check set is executed by tooling, and the commit or release is refused when it fails. The agent's own report is supplementary and never a substitute for an executed check.
+- Any rule phrased "MUST always" or "MUST never" that a script can check MUST be implemented as a script, hook, or CI gate, never left as prose in this document.
+- Prose is reserved for judgment calls that cannot be mechanized; a judgment clause MUST state the observable evidence that satisfies it.
+- The canonical completion gate is mechanical: the required check set runs in tooling, and the commit or release is refused when it fails. The agent's report is supplementary and never a substitute for an executed check.
 - A mechanizable rule with no enforcement mechanism MUST be recorded as an open gap in the relay state until a mechanism exists.
 - Reusable gate logic belongs in tracked repository scripts (for example `scripts/run-tracked-tests.js`) so it survives every clone; the local `.git/hooks/pre-commit` launcher invokes that logic, and CI supplies remote enforcement.
 
 ## 6. RISK-BASED VERIFICATION MATRIX
 
-| Change type | Minimum gates | Conditional gates |
-|---|---|---|
-| CSS/visual only | Relevant syntax/lint; local Playwright; screenshot; visual critique; involved responsive/interactions | Accessibility, theme toggle, console/network, reload |
-| Provider/model/validation UI | Real-user flow; negative path; serialization/rehydration; targeted tests | Real key according to key contract; backend contract tests; full browser matrix |
-| Backend without UI | Call-chain/consumer audit; targeted tests; full suite before release | Playwright only if an API consumer/UI is involved; live integration if an external contract changes |
-| Docs/agent governance only | Content/structure validation; relevant Prettier; diff audit | PyYAML for `.roomodes`; tests only if runner/CI/release contract changes |
-| Security/data migration | Adversarial tests; backward compatibility; rollback/recovery; full suite | Live integration, backup/restore, and browser according to attack surface |
-
-For every UI/CSS change: open the page through Playwright, take a screenshot, assess visual balance/contrast/whitespace/interactions, and fix issues before `VERIFIED_LOCAL`. Firecrawl is only for exploring large new component designs; implementation remains Vanilla JS/Native CSS.
+The full matrix (change type → minimum and conditional gates) and the Playwright/visual-critique requirement live in `docs/RELEASE_PIPELINE_REFERENCE.md` §3. Select gates by change type; do not run rituals that produce no evidence for the scope.
 
 ## 7. TEST COVERAGE INVARIANTS
 
-- `npm test` must discover and run **100% of `*.test.js` files** under `src/` and `public/`; no manual registration or orphaned tests are allowed.
-- The runner must fail closed if discovery is empty/fails and return the Node test runner's actual exit status.
-- Release requires **0 FAIL** and at most **1 SKIP** for a valid live Redis integration. Investigate any other SKIP as a blocker.
-- Do not delete, move out of the suite, or weaken assertions without equivalent coverage evidence and justification in the ledger.
-- Test counts are recorded as information, not a blindly monotonic target. Splitting/merging tests is allowed if behavior and coverage are preserved or increased.
-- During debugging, use `node --test <target-file>`; the full `npm test` is mandatory for release.
+Discovery, fail-closed runner, 0 FAIL / at most 1 valid live-Redis SKIP, no weakened assertions, and the `node --test <file>` versus full-suite rule are specified in `docs/RELEASE_PIPELINE_REFERENCE.md` §4. The full `npm test` is mandatory for release.
 
 ## 8. COMMIT CLASSES & SINGLE-COMMIT RELEASE
 
-### Class 1 — Release Commit
-
-Code, prompt, application configuration, or governance changes that the Owner directs to release as a new version. Must pass through Phase E and SemVer + CHANGELOG exactly once.
-
-### Class 2 — Operational / Governance Update
-
-Owner-directed updates to the ledger or purely operational documents without an application release:
-
-- exempt from SemVer, a new CHANGELOG version, cache-busters, and Playwright;
-- require only relevant validation/Prettier, explicit staging, staged-diff review, commit/push, and synchronization verification;
-- must not be used to conceal runtime or test changes.
-
-### Class 3 — Working Checkpoint
-
-Only upon the Owner's explicit instruction, according to the scope and verification specified by the Owner. It is not a release and cannot be considered `VERIFIED_LOCAL`/`RELEASED_CI_GREEN` without the relevant gates.
-
-### Phase E — Single-Commit Release Pipeline
-
-1. **Impact & Contract Audit:** verify acceptance, payload serialization, rehydration/DOM races, and server schema only according to scope; record valid `N/A` entries.
-2. **SemVer:** bump `package.json` and synchronize `package-lock.json`.
-3. **CHANGELOG:** add a new version entry with scope and evidence. All prose, headings, and labels in `CHANGELOG.md` MUST be written in professional English for a global audience; Malay is permitted only as verbatim technical data such as translation prompt examples, literal logs, or contract values.
-4. **Cache-buster:** verify `__APP_VERSION_QUERY__` and `?_cb=` if assets/version paths are involved; otherwise record NO-OP.
-5. **Quality gates:** Prettier + ESLint + full `npm test` and relevant CI gates; all must pass.
-6. **Graphify:** run `graphify update .` only if the runtime and `graphify-out/` exist; otherwise NO-OP without ad hoc scripts.
-7. **Pre-release ledger:** update `docs/SESSION_LEDGER.md` ONCE before the release commit with Parent HEAD SHA, `VERIFIED_LOCAL` status, Owner decision, files, local tests, and `Release Commit SHA + CI Run ID: confirmed in the final report after push/CI`.
-8. **Explicit staging & release:** use an explicit file list—`git add -A` is FORBIDDEN. Review staged diff/status, create ONE release commit, and push to `origin/main`; verify the remote points to that commit.
-9. **CI:** use `gh run watch`/CLI until the workflow for the release commit is SUCCESS.
-10. **Final report:** report the Release Commit SHA, CI Run ID, and `RELEASED_CI_GREEN` directly to the Owner. Do not create a second commit merely to write the SHA/CI into the ledger.
-
-If CI fails, the release remains `RELEASED_CI_PENDING`; fix the cause through the hotfix mandate/procedure, not a cosmetic ledger commit.
+Commit classes (Class 1 Release / Class 2 Operational-Governance / Class 3 Working Checkpoint) and the ten-step Phase E single-commit release pipeline are specified in `docs/RELEASE_PIPELINE_REFERENCE.md` §§1–2. Non-negotiables: SemVer + CHANGELOG exactly once for Class 1; explicit file list only (`git add -A` is FORBIDDEN); one release, one commit; CI SUCCESS verified with `gh` before `RELEASED_CI_GREEN`; the Release Commit SHA and CI Run ID are reported to the Owner, never written back through a second cosmetic ledger commit.
 
 ## 9. SESSION LEDGER & CONTINUITY
 
-Place the newest entry at the top using `## YYYY-MM-DD — vX.Y.Z <TITLE>` for a versioned application release or `## YYYY-MM-DD — <TITLE>` for an unversioned operational update, with relevant fields:
+Newest entry at the top: `## YYYY-MM-DD — vX.Y.Z <TITLE>` for a versioned release, `## YYYY-MM-DD — <TITLE>` for an unversioned operational update. Required fields: **Date** (KL time) · **Parent HEAD SHA** · **Status** (one official status; pre-release uses `VERIFIED_LOCAL`) · **Release Commit SHA + CI Run ID** (`confirmed in the final report after push/CI` before release — never invent values) · **Owner Decision** (mandate and scope boundaries) · **Files Involved** · **npm test Status** (total/PASS/FAIL/SKIP, or `N/A` with a reason) · **Tool Navigation Ratio** (see §9.1) · **Next Steps** (only genuinely outstanding post-acceptance/post-CI actions).
 
-- **Date:** KL time.
-- **Parent HEAD SHA:** SHA before the release commit.
-- **Status:** one official status; pre-release uses `VERIFIED_LOCAL`.
-- **Release Commit SHA + CI Run ID:** `confirmed in the final report after push/CI` before release; do not invent values.
-- **Owner Decision:** mandate and scope boundaries.
-- **Files Involved:** actual files.
-- **npm test Status:** total/PASS/FAIL/SKIP or `N/A` with a reason.
-- **Next Steps:** only genuinely outstanding post-acceptance or post-CI operational actions; do not leave completed release steps listed as unfinished.
+If the Owner announces manual condensation, append the current status before any other work. Historical ledger/CHANGELOG/plans remain verbatim; never copy legacy identifiers into active code.
 
-If the Owner announces manual condensation, append the current status before any other work. Historical ledger/CHANGELOG/plans remain verbatim; do not copy legacy identifiers into active code.
+### 9.1 Tool Navigation Ratio (R5 — continuous tracking)
 
-`.tmp/RELAY_STATE.md` MUST use Relay State v2: the exact `# RELAY_STATE v2` heading followed by nine single-line fields — `Mandate`, `Current Phase`, `Active Invariants`, `Uncommitted Diffs`, `Test Baseline`, `Evidence`, `Open Hypotheses`, `Next Immediate Step`, and `Recovery`. Narrative paragraphs and additional fields are forbidden. Its hard ceiling is 4,096 bytes. `scripts/relay-state-gate.js` enforces the schema and size, and `.git/hooks/pre-commit` runs that gate before the full tracked suite.
+Every new ledger entry MUST end with a `**Tool Navigation Ratio:**` line in this exact format:
+
+```text
+- **Tool Navigation Ratio:** search_files=NN read_file=NN ratio=1:N.N anchored=NN% (NN/NN reads)
+```
+
+- `search_files` and `read_file` are the counts for the session the entry describes; `ratio` is the number of `read_file` calls per `search_files` call, expressed as `1:N.N` and rounded to one decimal.
+- `anchored` is the percentage of `read_file` calls made in `indentation` mode or in `slice` mode with an explicit `offset`+`limit`; the fraction shows the raw counts.
+- Targets (§11.4): `N.N` ≤ 2.0 (at least 1 search per 2 reads) and ≥ 60% anchored/ranged reads. A deviation MUST be stated with its reason in the same line.
+- Format check only: the value is reported in the ledger; no external tracking script is required. The ledger's own consistency is the acceptance evidence.
+
+`.tmp/RELAY_STATE.md` MUST use Relay State v2: the exact `# RELAY_STATE v2` heading followed by nine single-line fields — `Mandate`, `Current Phase`, `Active Invariants`, `Uncommitted Diffs`, `Test Baseline`, `Evidence`, `Open Hypotheses`, `Next Immediate Step`, `Recovery`. Narrative paragraphs and additional fields are forbidden. Its hard ceiling is 4,096 bytes. `scripts/relay-state-gate.js` enforces the schema and size, and `.git/hooks/pre-commit` runs that gate before the full tracked suite.
 
 ## 10. TECHNICAL & NOMENCLATURE INVARIANTS
 
-- Gemini REST v1beta: `systemInstruction` remains top-level `{ parts: [{ text }] }`; static/dynamic separation is managed by `src/services/utils/structuredPrompt.js`.
-- `thinkingBudget` must be preserved. `minP`, `repetitionPenalty`, `topK`, and `topKEnabled` are removed; do not reintroduce them.
-- HYBRID GUARD: `temperature`/`topP` SEND-ALL for all Gemini 3.x; `frequencyPenalty`/`presencePenalty` are suppressed only for `3.x-strict`; `topK` is forbidden. DeepSeek `disabled` → `reasoning_effort: 'none'`. Refer to ground truth in `plans/gemini-sampling-ground-truth-2026.md` and `plans/trinity-params-ground-truth-2026.md`.
+The binding invariants — Vanilla JS/Native CSS with no React/JSX, third-party UI library, or font/icon CDN, and respect for both theme token systems (`public/css/subfaber-theme.css`, `public/themes/mario.css`) — remain in force here. The full provider, channel, and nomenclature specifications live in `docs/PROVIDER_CONTRACTS_REFERENCE.md` §§1–9 and MUST be honoured as written:
+
+- Gemini REST v1beta `systemInstruction` stays top-level `{ parts: [{ text }] }`; static/dynamic separation is managed by `src/services/utils/structuredPrompt.js`.
+- `thinkingBudget` must be preserved; `minP`, `repetitionPenalty`, `topK`, and `topKEnabled` are removed and must not be reintroduced.
+- HYBRID GUARD: `temperature`/`topP` SEND-ALL for all Gemini 3.x; `frequencyPenalty`/`presencePenalty` suppressed only for `3.x-strict`; `topK` forbidden; DeepSeek `disabled` → `reasoning_effort: 'none'`. Ground truth: `plans/gemini-sampling-ground-truth-2026.md`, `plans/trinity-params-ground-truth-2026.md`.
 - Official identities: `SubFaber`/`StremioSubFaber`; Trinity: `Agent Preflight`, `Agent Translation`, `Agent Inspector`. Legacy brand/agent identifiers must not return to active code.
-- In the **Gemini model parameter panel**, HIDE ≠ LOCK: do not use `disabled` as a substitute for visibility morphing. Outside this component, disabled states are allowed for legitimate interaction safety.
-- For **optional DOM access**, use a null check such as `if (!el) return;`. Required structural elements must not fail silently; use explicit assertions/errors.
-- Preserve rehydration from canonical config, not stale DOM; `populateGeminiModelDropdowns()` reads `currentConfig.geminiModel`, preserves `-preview` fallback, rank #1 selection, and refreshes controls after repopulation.
-- UI is Vanilla JS/Native CSS; no React/JSX, third-party UI library, or font/icon CDN. Respect tokens in `public/css/subfaber-theme.css` and `public/themes/mario.css`.
+- In the **Gemini model parameter panel only**, HIDE ≠ LOCK: `disabled` is not a substitute for visibility morphing. Elsewhere, disabled states are allowed for legitimate interaction safety.
+- Optional DOM access uses a null check such as `if (!el) return;`. Required structural elements must not fail silently — use explicit assertions/errors.
+- Rehydration reads from canonical config, not stale DOM; `populateGeminiModelDropdowns()` reads `currentConfig.geminiModel`, preserves the `-preview` fallback and rank #1 selection, and refreshes controls after repopulation.
 
 ## 11. TOOL, TERMINAL & FILE HYGIENE
 
 ### 11.1 TOOL SELECTION & COST CONTROL
 
-- **Plan the minimum sufficient call sequence before acting.** Identify the exact artifact, target, evidence, and expected output. Do not invoke a tool speculatively merely because it exists, repeat discovery already completed in the session, or narrate large file/output dumps unnecessarily. For non-trivial work, use the minimum adequate checklist; keep completed operational records distinct from the active task list and prune obsolete items when a new mandate replaces them.
-- **Use the dedicated repository tool first.** Use `list_files` for inventory, `read_file` for exact content, `search_files` for repository text/regex, and `apply_diff` for targeted edits. Do not use terminal `ls`, `dir`, `type`, `cat`, `find`, `findstr`, or inline Node/Python as substitutes when the corresponding tool is available. `execute_command` is reserved for actual system operations, builds/tests, package/version control, formatting/linting, and transformations that dedicated tools cannot safely perform.
-- **Inspect before editing.** Read the actual current file and relevant consumers, choose the narrowest sufficient range, and anchor targeted reads with known line numbers. Never rely on memory, a stale snapshot, guessed identifiers, or unverified tool schemas for a mutation.
-- **Edit surgically.** Use `apply_diff` for existing files, copy complete exact source lines into each SEARCH block, and provide a valid `:start_line:` plus accurate replacement text. Group independent changes to the same file into one call. Never rewrite an existing file merely to avoid constructing a diff. Reserve `write_to_file` for new files or an explicitly justified full rewrite, and always supply complete content.
-- **Do not use ad hoc scripts as an editing workaround.** In particular, no inline `node -e`, PowerShell, or temporary script may silently rewrite project files that `apply_diff`/`write_to_file` can handle. Section 12 applies the same rule to `.roomodes` and adds format-specific validation.
-- **One tool, one observable result.** After every mutation, inspect the tool result before taking a dependent action. Never assume a write, diff match, test, browser action, network call, push, or CI result succeeded. Successful syntax alone does not prove behavioral acceptance.
-- **Parallelize only independent, read-only or genuinely non-conflicting operations.** Never issue concurrent edits to the same file, dependent read/edit sequences, duplicate paid retrieval, or a command that depends on an unconfirmed earlier result. The next call must be informed by the previous result.
-- **Failure requires diagnosis, not blind repetition.** On an error, empty result, timeout, or unexpected diff, stop the dependent chain and inspect the actual error/result. Make one informed retry at most for the same operation, changing the query, range, path, or mechanism only with evidence. No retry loops for identical MCP requests, edits, API calls, or browser actions.
-- **Prefer the smallest adequate scope.** Use targeted reads/search/tests during investigation, a single known URL before batch crawling, a targeted browser element before a full-page action, and the full suite only at acceptance/release. Do not spend tokens, API credits, runtime, or network calls producing evidence unrelated to the acceptance criteria.
-- **Ask only when a required fact cannot be discovered safely with available tools.** Never ask the Owner to copy a path/content/output that a repository tool or existing command result can provide. If an external blocker is real, state it rather than fabricating results or repeatedly probing paid services.
-- **Keep secrets out of prose, logs, scripts, documentation, and command echoes.** Never print credential-bearing configuration or full request headers merely to validate it; validate structure programmatically without exposing values. Do not use API keys beyond their authorized scope.
+- **Plan the minimum sufficient call sequence before acting.** Identify the exact artifact, target, evidence, and expected output. Never invoke a tool speculatively, repeat completed discovery, or narrate large dumps. Keep completed operational records distinct from the active task list.
+- **Use the dedicated repository tool first:** `list_files` for inventory, `read_file` for exact content, `search_files` for repository text/regex, `apply_diff` for targeted edits. Terminal `ls`, `dir`, `type`, `cat`, `find`, `findstr`, and inline Node/Python are not substitutes. `execute_command` is reserved for system operations, builds/tests, version control, formatting/linting, and transformations dedicated tools cannot safely perform.
+- **Inspect before editing.** Read the actual current file and relevant consumers, choose the narrowest sufficient range, anchor reads with known line numbers. Never rely on memory, a stale snapshot, guessed identifiers, or unverified tool schemas for a mutation.
+- **Edit surgically.** Use `apply_diff` for existing files with exact whole-line SEARCH blocks and a valid `:start_line:`. Group independent changes to one file into a single call. Never rewrite a file merely to avoid constructing a diff; reserve `write_to_file` for new files or a justified full rewrite with complete content.
+- **No ad hoc scripts as editing workarounds.** No inline `node -e`, PowerShell, or temporary script may silently rewrite project files that `apply_diff`/`write_to_file` can handle. §12 extends this to `.roomodes`.
+- **One tool, one observable result.** After every mutation, inspect the result before the dependent action. Never assume a write, diff match, test, browser action, network call, push, or CI result succeeded; successful syntax alone does not prove behavioural acceptance.
+- **Parallelize only independent, read-only, or non-conflicting operations.** Never concurrent edits to one file, dependent read/edit sequences, duplicate paid retrieval, or a command depending on an unconfirmed result.
+- **Failure requires diagnosis, not blind repetition.** On error, empty result, timeout, or unexpected diff, stop the dependent chain and inspect the actual error. Make at most one informed retry, changing query, range, path, or mechanism with evidence. No retry loops for identical MCP requests, edits, API calls, or browser actions.
+- **Prefer the smallest adequate scope.** Targeted reads/search/tests during investigation, one known URL before batch crawling, a targeted browser element before a full-page action, the full suite only at acceptance/release. Do not spend tokens, credits, runtime, or network calls on evidence unrelated to the acceptance criteria.
+- **Ask only when a required fact cannot be discovered safely with available tools.** Never ask the Owner to copy a path/content/output a repository tool or existing command result can provide. State a real external blocker with evidence instead of fabricating results or probing paid services repeatedly.
+- **Keep secrets out of prose, logs, scripts, documentation, and command echoes.** Never print credential-bearing configuration or full request headers to validate them; validate structure programmatically without exposing values. Never use API keys beyond their authorized scope.
 - **End only with evidence.** Before `attempt_completion`, confirm relevant tool results succeeded, review the final diff for unintended changes, and distinguish configured/implemented from tested/released. No completion claim may precede outstanding test, browser, push, or CI evidence.
 
 ### 11.2 WEB MCP — FIRECRAWL PRIMARY, CRAWL4AI FALLBACK
 
-- **Firecrawl is primary** for search, scrape, map, and developer search. **Crawl4AI is fallback only** when Firecrawl is unavailable, out of quota/credit, fails, times out, is rate-limited, or produces demonstrably insufficient output for the requested URL. Do not use Crawl4AI in parallel or as a second source for identical content without an explicit cross-source verification need.
-- Do not call Firecrawl merely to prove credit remains after the Owner reports the quota exhausted. Use Crawl4AI until the Owner-stated renewal date, then return to Firecrawl as primary without repeated probes.
-- **Operational supply status belongs in `docs/SESSION_LEDGER.md`, not this stable policy.** Record Owner-reported quota exhaustion, renewal estimates, and verified provider failures with their observation date in the ledger; do not treat them as permanent facts or guarantees. Do not claim actual balances without current response evidence and never store API keys in either document. Apply the current ledger record until superseded by newer Owner information or verified availability, without probing a provider merely to prove an Owner-reported outage.
-- Select the cheapest sufficient tool: use search to discover sources, scrape for known URLs, map only when target URLs are unknown, and developer search only for code/documentation evidence that requires it. Use Crawl4AI `search`, `scrape`, `extract`, or `batch` for equivalent needs; batch only when multiple URLs are genuinely required.
-- Gather target URLs first and avoid pagination, `maxAge: 0`, browser rendering, premium proxies, extract/batch, and large crawls unless ordinary/lightweight cache evidence is insufficient. Do not repeat the same fetch without a new reason; reuse results already available in the session. `answer`, usage/billing, topup, monitor, and background-job tools are prohibited for routine web retrieval.
-- Before fallback, confirm genuine Firecrawl failure (quota/auth/service/timeout or empty output), not merely results that do not support a hypothesis. Crawl4AI remains subject to source, date, and critical-fact cross-checking; do not blend facts from two providers as though they were one response.
-- If both providers are exhausted/failing, stop credit-wasting retries. State the blocker with concise evidence; use repository documents, Context7, `gh`, official sources through other available tools, or request Owner direction without presenting web claims as verified.
-- Playwright remains for application UI verification and browser interactions, not routine web-scraping replacement. Context7 remains the preferred source for supported library/API documentation; Firecrawl/Crawl4AI only fill web sources absent from or insufficient in Context7.
-- Project MCP configuration must expose only necessary tools (target below 60 overall) and preserve `timeout: 300` for each server unless the Owner directs otherwise.
-
-- Do not create throwaway scripts for tasks that existing tools/CLI can perform. Diagnostic artifacts must be deleted before commit.
-- Do not blanket-kill Node/MCP. Port-bound service: kill the specific PID/port. Standalone script/test: target only the filename.
-- Limit to 1–2 background tasks, use timeouts, and avoid large PTY output; temporary logs must be deleted.
-- If the template cache is stale, restart only the server on port 7001; do not disturb other Node runtimes.
-- `graphify query` is preferred for topology if the runtime is available; otherwise use ordinary read/search without generating ad hoc runners.
+The complete web-retrieval policy — Firecrawl primary, Crawl4AI fallback conditions, tool-cost selection, ledger placement of operational supply status, and Playwright/Context7 boundaries — is specified in `docs/RELEASE_PIPELINE_REFERENCE.md` §5. Terminal and process hygiene rules are in §6 of the same file.
 
 ### 11.3 Locate-Before-Read Gate
 
-- Before any `read_file` on a path that is not already confirmed in the current session, the path MUST first be resolved with `list_files` or `search_files`. A read against an unconfirmed path is a protocol violation even when it happens to succeed.
+- Before any `read_file` on a path not already confirmed in the current session, the path MUST first be resolved with `list_files` or `search_files`. A read against an unconfirmed path is a protocol violation even when it happens to succeed.
 - Before any `apply_diff`, the exact anchor lines MUST come from a read or search result produced in the current session — never from memory, a prior session, or a stale snapshot.
 - An identifier, path, symbol, or contract value that cannot be confirmed by a current tool result MUST NOT be used in an edit, a command, or a claim.
 
@@ -238,12 +161,12 @@ If the Owner announces manual condensation, append the current status before any
 - Default read sequence: `search_files` to locate, then `read_file` in `indentation` mode, or in `slice` mode with an explicit `offset` and `limit`.
 - Full-file reads are permitted only when (a) the whole file is the unit of work, or (b) the file is a small configuration or data file.
 - Ratio targets: at least 1 `search_files` per 2 `read_file` calls, and at least 60% of reads in anchored or ranged form.
-- These ratios are measured and reported in the session ledger, not merely asserted.
+- These ratios are measured and reported in the session ledger (§9.1), not merely asserted.
 
 ## 12. `.ROOMODES` EDIT DISCIPLINE
 
-- Read the current file and preserve unrelated Owner changes. Use `apply_diff` for targeted edits; use `write_to_file` only for a deliberately reviewed full-format conversion that supplies the complete intended file. Do not create a temporary script or use inline `node -e`/PowerShell as an editing workaround.
-- Prefer readable YAML literal block scalars (`|`) for multiline persona prose and compact instructions. Use correct indentation and avoid unnecessary quoted-scalar wrapping; semantic content, not line wrapping, controls behavior.
+- Read the current file and preserve unrelated Owner changes. Use `apply_diff` for targeted edits; use `write_to_file` only for a deliberately reviewed full-format conversion that supplies the complete intended file. No temporary script or inline `node -e`/PowerShell as an editing workaround.
+- Prefer readable YAML literal block scalars (`|`) for multiline persona prose and compact instructions. Use correct indentation and avoid unnecessary quoted-scalar wrapping; semantic content, not line wrapping, controls behaviour.
 - Before commit, parse the actual working file with PyYAML and verify exactly one entry in `customModes`, `slug=fullstack`, `groups=[read,edit,command,mcp]`, and `source=project`. Check that required fields are non-empty strings and the edited diff contains only intended changes.
 - `.roomodes` remains compact and references this document as SSOT; do not copy the entire workflow or volatile provider specifications back into it.
 
