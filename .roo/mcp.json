@@ -147,12 +147,20 @@
 				"jobs_submit",
 				"jobs_results",
 				"jobs_status",
+				"list_changes",
 				"plans",
+				"price",
+				"recipe_run",
+				"recipes_list",
 				"recharge",
 				"report_issue",
+				"resume_watching",
 				"serp",
 				"spend_cap",
-				"topup"
+				"stop_watching",
+				"topup",
+				"watch_changes",
+				"watch_page"
 			],
 			"timeout": 300
 		}

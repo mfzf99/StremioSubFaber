@@ -39,8 +39,8 @@ without the relevant gates.
 4. **Cache-buster:** verify `__APP_VERSION_QUERY__` and `?_cb=` if assets/version paths are
    involved; otherwise record `NO-OP`.
 5. **Quality gates:** Prettier + ESLint + full `npm test` and relevant CI gates; all must pass.
-6. **Graphify:** run `graphify update .` only if the runtime and `graphify-out/` exist; otherwise
-   `NO-OP` without ad hoc scripts.
+6. **Code-topology scan:** `NO-OP` — the Graphify skill was removed by Owner mandate on
+   2026-11-10, so no code-graph runtime or `graphify-out/` remains in this project.
 7. **Pre-release ledger:** update `docs/SESSION_LEDGER.md` ONCE before the release commit with
    Parent HEAD SHA, `VERIFIED_LOCAL` status, Owner decision, files, local tests, and
    `Release Commit SHA + CI Run ID: confirmed in the final report after push/CI`.
@@ -126,5 +126,3 @@ for exploring large new component designs; implementation remains Vanilla JS/Nat
   deleted.
 - If the template cache is stale, restart only the server on port 7001; do not disturb other Node
   runtimes.
-- `graphify query` is preferred for topology if the runtime is available; otherwise use ordinary
-  read/search without generating ad hoc runners.
