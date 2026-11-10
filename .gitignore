@@ -86,6 +86,7 @@ native/
 scripts/*
 !scripts/patch-zoo-code.js
 !scripts/run-tracked-tests.js
+!scripts/relay-state-gate.js
 .tests
 .tests/
 tests/

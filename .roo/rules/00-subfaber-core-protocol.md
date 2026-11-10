@@ -45,16 +45,24 @@ Before modifying any file:
 4. Define acceptance criteria, file scope, and invariants that must not change.
 5. Classify the task as backend, UI, coupled contract, security/migration, docs/governance, or operational work.
 6. Select gates using the risk matrix in Section 6. Do not run rituals that produce no evidence for the scope.
-7. For risky or stateful bugs, obtain a targeted test baseline first where practical.
+7. For risky or stateful bugs, obtain a targeted test baseline before editing; see Section 4.1.
 
 If the working tree is dirty, identify the owner and purpose of each change before proceeding. Do not use reset, checkout, or clean operations that destroy existing work.
 
 ## 4. PHASE B — REPRODUCE & CONTRACT MAPPING
 
-1. For bugs, reproduce the symptom first where practical. An Owner's screenshot/report is a hypothesis to verify, not the sole ground truth.
+1. For bugs, reproduce the symptom first. An Owner's screenshot/report is a hypothesis to verify, not the sole ground truth.
 2. Map the call chain: input → transformation → output → consumers. Identify dependent callers before changing a shared signature or contract.
 3. Run an adversarial audit: null/undefined, races, timeouts, partial failure, backward compatibility, secret exposure, and rollback.
 4. Review relevant invariants and test assertions before choosing a fix.
+
+### 4.1 Reproduce-First Gate
+
+- For any defect, a failing reproduction — a test, probe, script, or captured artifact — MUST exist and MUST be observed failing **before** production code is edited. "Where practical" is no longer an escape hatch.
+- The observed failure MUST be recorded in the relay state together with the command or artifact that produced it.
+- If a reproduction is genuinely impossible (for example an unobservable third-party race), the agent MUST record why, and the Owner MUST acknowledge that exception explicitly, before production code is edited.
+- A defect fixed without red-first evidence is classified `IMPLEMENTED_UNVERIFIED`; it can never reach `VERIFIED_LOCAL` without an equivalent red reproduction obtained later.
+- Red-first evidence is per defect. A reproduction of one defect never licenses blind edits to another defect in the same session.
 
 ### Coupled-contract checklist — conditional on scope
 
@@ -93,6 +101,14 @@ Within the same persona, stop evaluating based on implementation intent and reas
 4. For UI, run Playwright and relevant visual critique; screenshots and console/network evidence cannot be replaced by unit tests.
 5. Record residual risks or `N/A` gates honestly.
 6. Only after all relevant local gates pass, mark `VERIFIED_LOCAL`.
+
+### 5.4 Deterministic Gate Preference
+
+- Any rule phrased "MUST always" or "MUST never" that a script can check MUST be implemented as a script, hook, or CI gate. It must not remain prose in this document.
+- Prose is reserved for judgment calls that cannot be mechanized. A judgment clause MUST state the observable evidence that satisfies it.
+- The canonical completion gate is mechanical: the required check set is executed by tooling, and the commit or release is refused when it fails. The agent's own report is supplementary and never a substitute for an executed check.
+- A mechanizable rule with no enforcement mechanism MUST be recorded as an open gap in the relay state until a mechanism exists.
+- Reusable gate logic belongs in tracked repository scripts (for example `scripts/run-tracked-tests.js`) so it survives every clone; the local `.git/hooks/pre-commit` launcher invokes that logic, and CI supplies remote enforcement.
 
 ## 6. RISK-BASED VERIFICATION MATRIX
 
@@ -163,6 +179,8 @@ Place the newest entry at the top using `## YYYY-MM-DD — vX.Y.Z <TITLE>` for a
 
 If the Owner announces manual condensation, append the current status before any other work. Historical ledger/CHANGELOG/plans remain verbatim; do not copy legacy identifiers into active code.
 
+`.tmp/RELAY_STATE.md` MUST use Relay State v2: the exact `# RELAY_STATE v2` heading followed by nine single-line fields — `Mandate`, `Current Phase`, `Active Invariants`, `Uncommitted Diffs`, `Test Baseline`, `Evidence`, `Open Hypotheses`, `Next Immediate Step`, and `Recovery`. Narrative paragraphs and additional fields are forbidden. Its hard ceiling is 4,096 bytes. `scripts/relay-state-gate.js` enforces the schema and size, and `.git/hooks/pre-commit` runs that gate before the full tracked suite.
+
 ## 10. TECHNICAL & NOMENCLATURE INVARIANTS
 
 - Gemini REST v1beta: `systemInstruction` remains top-level `{ parts: [{ text }] }`; static/dynamic separation is managed by `src/services/utils/structuredPrompt.js`.
@@ -208,6 +226,19 @@ If the Owner announces manual condensation, append the current status before any
 - Limit to 1–2 background tasks, use timeouts, and avoid large PTY output; temporary logs must be deleted.
 - If the template cache is stale, restart only the server on port 7001; do not disturb other Node runtimes.
 - `graphify query` is preferred for topology if the runtime is available; otherwise use ordinary read/search without generating ad hoc runners.
+
+### 11.3 Locate-Before-Read Gate
+
+- Before any `read_file` on a path that is not already confirmed in the current session, the path MUST first be resolved with `list_files` or `search_files`. A read against an unconfirmed path is a protocol violation even when it happens to succeed.
+- Before any `apply_diff`, the exact anchor lines MUST come from a read or search result produced in the current session — never from memory, a prior session, or a stale snapshot.
+- An identifier, path, symbol, or contract value that cannot be confirmed by a current tool result MUST NOT be used in an edit, a command, or a claim.
+
+### 11.4 Anchored-Read Default
+
+- Default read sequence: `search_files` to locate, then `read_file` in `indentation` mode, or in `slice` mode with an explicit `offset` and `limit`.
+- Full-file reads are permitted only when (a) the whole file is the unit of work, or (b) the file is a small configuration or data file.
+- Ratio targets: at least 1 `search_files` per 2 `read_file` calls, and at least 60% of reads in anchored or ranged form.
+- These ratios are measured and reported in the session ledger, not merely asserted.
 
 ## 12. `.ROOMODES` EDIT DISCIPLINE
 
