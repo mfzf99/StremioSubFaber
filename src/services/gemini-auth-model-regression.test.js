@@ -530,12 +530,39 @@ test('[CR-B1] sk- keys are no longer routed to a proxy: native baseUrl + x-goog-
     }
 });
 
-test('[CR-B2] gemini.js source contains no hardcoded Crazy Router logic', () => {
-    const source = fs.readFileSync(path.join(projectRoot, 'src', 'services', 'gemini.js'), 'utf8');
-    assert.doesNotMatch(source, /crazyrouter/i, 'no crazyrouter references allowed in the native service');
-    assert.doesNotMatch(source, /cn\.crazyrouter\.com/, 'no hardcoded proxy URL allowed');
-    assert.doesNotMatch(source, /detectKeyType/, 'key-type detection must be purged');
-    assert.doesNotMatch(source, /CRAZYROUTER_API_BASE/, 'proxy env override must be purged');
+// [P2 F5-C FIX 2026-11-10] The old assertion scanned the source text for
+// vendor names. That proved nothing about runtime behaviour and broke on any
+// comment or log wording change. The contract is now proven BEHAVIOURALLY:
+// the native Gemini service must not expose proxy-specific helpers, must not
+// carry a key-type detector, and must resolve its endpoint from the
+// per-user baseUrl / GEMINI_API_BASE — never from a hardcoded vendor host.
+test('[CR-B2] native Gemini service exposes no proxy-specific helpers and no key-type detection', () => {
+    const service = new GeminiService('sk-relay-style-key', 'gemini-3.6-flash', { maxRetries: 0 });
+
+    // No proxy vendor helper surface on the instance or the prototype.
+    for (const helper of ['getCrazyRouterAvailableModels', 'warnIfModelUnavailable', 'detectKeyType']) {
+        assert.equal(
+            typeof service[helper],
+            'undefined',
+            `proxy-specific helper ${helper} must not exist on the native service`
+        );
+    }
+    assert.equal('keyType' in service, false, 'key-type detection state must be fully removed');
+
+    // The endpoint comes from configuration, not from a hardcoded vendor host.
+    assert.equal(
+        service.baseUrl,
+        'https://generativelanguage.googleapis.com/v1beta',
+        'default endpoint is the official Google API'
+    );
+
+    // A configured per-user baseUrl must be honoured verbatim (no vendor host
+    // is ever substituted) and must keep a single /v1beta suffix.
+    const custom = new GeminiService('dummy-key', 'gemini-3.6-flash', {
+        maxRetries: 0,
+        baseUrl: 'https://gateway.example.com/v1beta'
+    });
+    assert.equal(custom.baseUrl, 'https://gateway.example.com/v1beta', 'per-user baseUrl must be used as-is');
 });
 
 test('[CR-B3] providerRoute tagging is removed from translation error paths', async () => {

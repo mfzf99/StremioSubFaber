@@ -39,11 +39,7 @@ const { LRUCache } = require('lru-cache');
 const { addonBuilder, getRouter } = require('stremio-addon-sdk');
 const Joi = require('joi');
 const path = require('path');
-const { spawn } = require('child_process');
 const crypto = require('crypto');
-const fs = require('fs');
-const os = require('os');
-const { pipeline } = require('stream/promises');
 
 const {
     parseConfig,
@@ -112,7 +108,6 @@ const {
     createTranslationProvider,
     resolveCfWorkersCredentials
 } = require('./src/services/translationProviderFactory');
-const { quickNavScript } = require('./src/utils/quickNav');
 const streamActivity = require('./src/utils/streamActivity');
 // parallelTranslation is now handled internally by TranslationEngine
 const syncCache = require('./src/utils/syncCache');

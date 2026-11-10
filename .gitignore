@@ -58,6 +58,12 @@ build/
 preflight-payload.json
 preflight-payload-slim.json
 
+# [P2 F8 FIX 2026-11-10] TTFT probe helper scripts (previously tracked by
+# mistake; now removed from git tracking and kept out of the repo).
+extract-bible.js
+make-preflight-payload.js
+make-preflight-payload-slim.js
+
 # Graphify topology scan output (mandat owner 2026-10-08 — never commit)
 graphify-out/
 graph.json

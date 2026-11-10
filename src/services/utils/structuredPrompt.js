@@ -40,26 +40,10 @@ function splitStructuredPrompt(prompt) {
     };
 }
 
-/**
- * Strip the boundary marker from a prompt (defensive fallback for providers
- * that do not split — never leak the sentinel into a live prompt).
- * @param {string} prompt
- * @returns {string}
- */
-function stripStructuredBoundary(prompt) {
-    const str = String(prompt || '');
-    if (!str.includes(SUBFABER_PROMPT_BOUNDARY)) return str;
-    // Join the two halves back with a blank line so a non-splitting provider
-    // still receives a coherent single prompt.
-    return str
-        .split(SUBFABER_PROMPT_BOUNDARY)
-        .map((s) => s.trim())
-        .filter(Boolean)
-        .join('\n\n');
-}
-
+// [P2 F8-C FIX 2026-11-10] `stripStructuredBoundary` was an unreferenced
+// defensive export (no module imported or called it). It is removed so the
+// module exposes exactly the contract its consumers use.
 module.exports = {
     SUBFABER_PROMPT_BOUNDARY,
-    splitStructuredPrompt,
-    stripStructuredBoundary
+    splitStructuredPrompt
 };

@@ -1,8 +1,5 @@
 const test = require('node:test');
 const assert = require('node:assert/strict');
-const fs = require('node:fs');
-const path = require('node:path');
-
 const { executeParallelTranslation } = require('./parallelTranslation');
 const { getDefaultConfig, normalizeConfig } = require('./config');
 
@@ -117,11 +114,69 @@ test('Phase C: normalization preserves Auto, clamps manual input to 1..8, and re
     assert.equal(normalizeConfig({ parallelBatchesCount: 'invalid' }).parallelBatchesCount, 0);
 });
 
-test('Phase C: request runtime is Basic-only while saved Pro configuration remains recoverable', () => {
-    const source = fs.readFileSync(path.join(__dirname, '../handlers/subtitles.js'), 'utf8');
-    assert.match(source, /const runtimeTrinityMode = 'basic';/);
-    assert.match(source, /const isProTrinityMode = runtimeTrinityMode === 'pro';/);
-    assert.match(source, /trinityMode: runtimeTrinityMode/);
+// [P2 F5-A FIX 2026-11-10] Behavioral replacement for the old source-text
+// assertion (`fs.readFileSync` + `assert.match` on the handler source).
+// This now proves the ACTUAL engine contract rather than text on disk:
+// Basic-mode construction nulls the Inspector even when Pro credentials are
+// present, and a Basic standalone translation completes with zero Inspector
+// activity. Saved Pro configuration remains recoverable via normalizeConfig.
+test('Phase C: request runtime is Basic-only while saved Pro configuration remains recoverable', async () => {
+    const TranslationEngine = require('../services/translationEngine');
+    const {
+        BASIC_TRANSLATION_SYSTEM_TEMPLATE,
+        TRANSLATION_SYSTEM_TEMPLATE
+    } = require('../services/prompts/trinity/translation/core');
+
+    const injectedInspector = {
+        circuitOpen: false,
+        runPreflightPass: async () => {
+            throw new Error('Basic must not run Preflight');
+        },
+        runSemanticInspection: async () => {
+            throw new Error('Basic must not run Inspector');
+        }
+    };
+    const provider = {
+        translateSubtitle: async () => '<s id="1">Hai.</s>',
+        estimateTokenCount: () => 10
+    };
+
+    const basic = new TranslationEngine(
+        provider,
+        'gemini-2.5-flash',
+        {},
+        {
+            trinityMode: 'basic',
+            agentInspector: injectedInspector
+        }
+    );
+    assert.equal(basic.trinityMode, 'basic', 'engine selects Basic mode');
+    assert.equal(basic.translationTemplate, BASIC_TRANSLATION_SYSTEM_TEMPLATE);
+    assert.equal(basic.agentInspector, null, 'Basic rejects an Inspector even with preserved credentials');
+
+    const output = await basic.translateSubtitle(
+        '1\n00:00:01,000 --> 00:00:02,000\nHello.\n',
+        'Malay',
+        null,
+        null,
+        'English'
+    );
+    assert.ok(output.includes('Hai.'), 'Basic standalone translation completes');
+    assert.equal(basic.preflightContext, null, 'Basic never builds a pre-flight context');
+    assert.equal(basic.translationStats.agentInspectorUsed, false, 'no Inspector activity is recorded');
+    assert.equal(basic.translationStats.agentInspectorBatchesInspected, 0);
+
+    const pro = new TranslationEngine(
+        provider,
+        'gemini-2.5-flash',
+        {},
+        {
+            trinityMode: 'pro',
+            agentInspector: injectedInspector
+        }
+    );
+    assert.equal(pro.translationTemplate, TRANSLATION_SYSTEM_TEMPLATE, 'Pro keeps the Pro template');
+    assert.equal(pro.agentInspector, injectedInspector, 'Pro retains the configured Inspector');
 
     const saved = normalizeConfig({
         trinity: {

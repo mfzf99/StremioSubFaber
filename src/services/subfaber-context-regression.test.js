@@ -377,8 +377,15 @@ test('SubFaberSharedContext: previousMemory rendered as continuity block (single
 // --- createXmlBatchPrompt: PROMPT V4 "SLIM & SHARP" (Prompt-Slim Mandate 2026-09-30) ---
 const { splitStructuredPrompt, SUBFABER_PROMPT_BOUNDARY } = require('./utils/structuredPrompt');
 
-test('SubFaberPrompt V4: slim sharp prompt, split system/user, no double-send', () => {
-    const engine = makeEngine({ subfaberEnabled: true });
+// [P2 F5-B FIX 2026-11-10] Behavioral replacement for the old Pro-only
+// source-text assertions. These tests previously passed ONLY because the test
+// harness defaulted the engine to `trinityMode: 'pro'`, while the runtime is
+// Basic-only. They now construct the engine EXPLICITLY in Pro mode so the
+// Pro contract is genuinely exercised, and add a Basic-mode test that asserts
+// the ACTIVE Basic contract (universal instruction, no language pack, no
+// few-shot, ID manifest present, anchor retained).
+test('SubFaberPrompt V4: Pro mode slim sharp prompt, split system/user, no double-send', () => {
+    const engine = makeEngine({ subfaberEnabled: true }, { trinityMode: 'pro' });
     engine.sourceLanguage = 'English';
     const batch = makeEntries(2, 1);
     const batchText = engine.prepareBatchXml(batch, null);
@@ -468,11 +475,49 @@ test('SubFaberPrompt V4: slim sharp prompt, split system/user, no double-send', 
     assert.ok(!prompt.includes('[UNIVERSAL STRUCTURAL DEMONSTRATION'), 'Legacy demo REMOVED');
 });
 
+test('SubFaberPrompt V4: Basic mode uses the universal instruction with no language pack', () => {
+    const engine = makeEngine({ subfaberEnabled: true }, { trinityMode: 'basic' });
+    engine.sourceLanguage = 'English';
+    const batch = makeEntries(2, 1);
+    const batchText = engine.prepareBatchXml(batch, null);
+
+    const prompt = engine.createXmlBatchPrompt(batchText, 'Malay', null, batch.length, null, 0, 1);
+    const parts = splitStructuredPrompt(prompt);
+    assert.ok(parts, 'Prompt must split into { system, user }');
+    const { system, user } = parts;
+
+    // Basic is the ACTIVE runtime instruction: one universal directive.
+    assert.ok(
+        system.includes('You are a professional Netflix subtitle translator.'),
+        'Basic system carries the universal translator instruction'
+    );
+    assert.ok(
+        system.includes('Translate from English to Malay.'),
+        'Basic system names the actual source and target language'
+    );
+    // No language pack, no few-shot, no Pro-only rule labels.
+    assert.ok(!system.includes('ANTI-MERGE'), 'Basic carries no Pro rule labels');
+    assert.ok(!system.includes('Awak ikut kami sekali,'), 'Basic carries no language-pack few-shot');
+    assert.ok(!system.includes('## Role'), 'Basic carries no Pro Role section');
+    // The Basic contract is enforced through the numbered rules.
+    assert.ok(
+        system.includes('Return exactly one <s id="N"> per input entry, same ids, same order.'),
+        'Basic rule 1 enforces 1:1 slot parity'
+    );
+    assert.ok(system.includes('Output ONLY the <answer> block'), 'Basic output contract is the <answer> block only');
+    // The required-ID manifest belongs to Basic (never to Pro).
+    assert.ok(user.includes('Required output ids in exact order'), 'Basic user part carries the required-ID manifest');
+    // Data-only user part + retained anchor.
+    assert.ok(user.includes('<input>'), 'user part carries the batch input');
+    assert.ok(user.trimEnd().endsWith('<s id="1">'), 'user part ENDS with the anchor');
+    assert.ok(!user.includes('You are a professional'), 'static instruction not duplicated into user part');
+});
+
 test('SubFaberPrompt V3: gemini buildUserPrompt splits system/user (no double-send)', () => {
     // Fix bazir token: arahan statik dihantar SEKALI (systemInstruction),
     // data dinamik SEKALI (user content). Dulu userPrompt = systemPrompt penuh.
     const GeminiService = require('./gemini');
-    const engine = makeEngine({ subfaberEnabled: true });
+    const engine = makeEngine({ subfaberEnabled: true }, { trinityMode: 'pro' });
     engine.sourceLanguage = 'English';
     const batch = makeEntries(3, 1);
     const batchText = engine.prepareBatchXml(batch, null);
