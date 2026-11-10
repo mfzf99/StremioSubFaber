@@ -116,6 +116,14 @@ test('[TRINITY-CORE-4] Basic uses ONE universal instruction — no language pack
         BASIC_TRANSLATION_SYSTEM_TEMPLATE.includes('including inside parentheses'),
         'R6 — anti-malas (nota dalam kurungan)'
     );
+    // Basic mesti menerangkan kontrak sahaja; tiada contoh R2/R3/R4 yang boleh diikat kepada satu ayat sumber.
+    assert.ok(!BASIC_TRANSLATION_SYSTEM_TEMPLATE.includes('Example:'), 'Tiada contoh ayat dalam Basic');
+    assert.ok(!BASIC_TRANSLATION_SYSTEM_TEMPLATE.includes('I was on my phone'), 'Tiada ayat sumber contoh');
+    assert.ok(!BASIC_TRANSLATION_SYSTEM_TEMPLATE.includes('Clause A Clause B'), 'Tiada contoh pengagihan slot');
+    assert.ok(
+        !BASIC_TRANSLATION_SYSTEM_TEMPLATE.includes('Natural target-language phrasing'),
+        'Tiada contoh anti-calque'
+    );
     // Kontrak output.
     assert.ok(BASIC_TRANSLATION_SYSTEM_TEMPLATE.includes('Output ONLY the <answer> block'));
     assert.doesNotMatch(

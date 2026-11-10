@@ -18,6 +18,23 @@ This template is the R5 ledger-format deliverable. It supersedes the legacy form
 
 ---
 
+## 2026-11-10 — BASIC PROMPT R2/R3/R4 EXAMPLE REMOVAL (CLASS 3 WORKING CHECKPOINT)
+
+- **Date:** 2026-11-10 ~15:20 (KL time).
+- **Parent HEAD SHA:** `337042326e60dff2965d237c1bf043f4190abb20`.
+- **Status:** `VERIFIED_LOCAL`.
+- **Release Commit SHA + CI Run ID:** N/A — Class 3 working checkpoint by explicit Owner instruction. No SemVer bump, no CHANGELOG entry, no push, no release, no CI claim.
+- **Owner Decision:** "Aku nak kau buang contoh ayat R2, R3, dan R4... Kau tak perlu tanya kenapa, buat saja dulu dan terus commit. Nanti aku akan test run translation dan bagi feedback semula." Scope is the three `Example:` lines under rules 2, 3, and 4 of `BASIC_TRANSLATION_SYSTEM_TEMPLATE` in `src/services/prompts/trinity/translation/core.js` only; the rule bodies themselves are untouched.
+- **Impact & Contract Audit (Phase A/B):** Zone C (Trinity & Tri-Door) at the canonical Basic translation prompt only. The single engine consumer `src/services/translationEngine.js` (lines 200–201) selects `BASIC_TRANSLATION_SYSTEM_TEMPLATE` by reference; no engine edit is required. Zone A N/A (no provider, model, credential, sampling, `systemInstruction` shape, `thinkingBudget`, or transport change). Zone B N/A (no schema or normalization change). No client/`public/` counterpart consumes the Basic template text. Historical records in `CHANGELOG.md` v3.29.1 that document the now-removed examples remain verbatim per §9; the active prompt no longer contains them.
+- **Independent Acceptance:** Reproduce-first §4.1 satisfied — new absence assertions in `src/services/trinity-prompt-setup-regression.test.js` (`[TRINITY-CORE-4]`) were observed FAILING against the pre-edit prompt (no `Example:`, no `I was on my phone`, no `Clause A Clause B`, no `Natural target-language phrasing`) BEFORE the production edit; the same assertions pass after. `git diff` confirms exactly three removed `Example:` lines and zero other prompt-text changes; all six rule bodies, both templates, and the module exports are unchanged. Targeted suite 12/12 PASS. Full tracked suite `node scripts/run-tracked-tests.js`: **615 total / 614 PASS / 0 FAIL / 1 SKIP** (48 files, exit 0; sole SKIP is the existing live-Redis concurrent-quota integration). Scoped Prettier PASS (test file reformatted once); scoped ESLint 0 errors; `git diff --check` PASS. No assertion was deleted or weakened — four absence assertions were ADDED and none removed.
+- **Residual / N/A Gates:** Playwright and real-provider verification are N/A — this is a prompt-text-only change with no UI, DOM, or transport surface. The Owner's own live translation test run is the behavioural verdict; no causal fix is claimed here, only the mandated removal.
+- **Tool Navigation Ratio:** search_files=3 read_file=5 ratio=1:1.7 anchored=100% (5/5 reads) — every `read_file` used slice mode with explicit offset+limit. Targets met.
+- **Files Involved:** `src/services/prompts/trinity/translation/core.js` (M: -3 example lines), `src/services/trinity-prompt-setup-regression.test.js` (M: +5 lines, absence assertions), `docs/SESSION_LEDGER.md` (M: this entry only). `package.json`, `CHANGELOG.md`, and all other files are untouched.
+- **npm test Status:** **615 total / 614 PASS / 0 FAIL / 1 SKIP** (existing live-Redis concurrent-quota integration), 48 test files, exit 0. Targeted Trinity prompt suite 12/12 PASS.
+- **Next Steps:** Owner runs a live translation and returns feedback on the example-free Basic prompt. The checkpoint commit stays local and unpushed until the Owner gives explicit push direction.
+
+---
+
 ## 2026-11-10 — R4 & R5 SSOT SLIMMING AND TOOL-USE TELEMETRY (CLASS 2 OPERATIONAL-GOVERNANCE UPDATE)
 
 - **Date:** 2026-11-10 ~13:30 (KL time).
