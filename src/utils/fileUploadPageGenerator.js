@@ -466,7 +466,15 @@ function generateFileTranslationPage(videoId, configStr, config, filename = '') 
         /* Removed forced color-scheme override - let theme cascade handle it naturally */
 
         body {
-            font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+            font-family:
+                system-ui,
+                -apple-system,
+                BlinkMacSystemFont,
+                'Segoe UI',
+                Roboto,
+                'Helvetica Neue',
+                Arial,
+                sans-serif;
             background: linear-gradient(135deg, var(--bg-primary) 0%, #ffffff 60%, var(--bg-primary) 100%);
             color: var(--text-primary);
             min-height: 100vh;

@@ -235,6 +235,11 @@ test('AgentInspector [TRI-DOOR]: prompt bersempadan diterima channel — kedua-d
     assert.equal(systemPrompt, 'SYSTEM BLOCK');
     assert.equal(userPrompt, 'USER DYNAMIC BLOCK');
 
+    // [P0 F3 FIX 2026-11-10] Anthropic kini menguatkuasakan susunan DATA-DAHULU:
+    // user content dibalut <subtitle_input> (kontrak Trinity Anthropic,
+    // plans/trinity-channel-native-prompts.md §2.3). Assertion dikuatkuasakan
+    // (bukan dilonggarkan) — ia kini mengesahkan balut + kandungan + sentinel
+    // tidak bocor.
     const anthropicProvider = anthropicChannel.buildProvider({ apiKey: 'k', model: 'claude-sonnet-4' });
     const a = anthropicProvider.buildUserPrompt(
         'unused',
@@ -242,7 +247,10 @@ test('AgentInspector [TRI-DOOR]: prompt bersempadan diterima channel — kedua-d
         `SYSTEM BLOCK${SUBFABER_PROMPT_BOUNDARY}USER DYNAMIC BLOCK`
     );
     assert.equal(a.systemPrompt, 'SYSTEM BLOCK');
-    assert.equal(a.userPrompt, 'USER DYNAMIC BLOCK');
+    assert.ok(a.userPrompt.startsWith('<subtitle_input>'), 'Anthropic data-first: <subtitle_input> di ATAS');
+    assert.ok(a.userPrompt.includes('USER DYNAMIC BLOCK'), 'kandungan dinamik dikekalkan');
+    assert.ok(a.userPrompt.includes('</subtitle_input>'), 'blok <subtitle_input> ditutup');
+    assert.ok(!a.userPrompt.includes(SUBFABER_PROMPT_BOUNDARY), 'sentinel tidak bocor ke user content');
 });
 
 // ── 4. Konfigurasi ──

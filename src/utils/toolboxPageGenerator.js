@@ -504,9 +504,8 @@ function generateSubToolboxPage(configStr, videoId, filename, config) {
       html.setAttribute('data-theme', theme);
     })();
   </script>
-  <link rel="preconnect" href="https://fonts.googleapis.com">
-  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@500;600;700&family=Space+Grotesk:wght@600&display=swap" rel="stylesheet">
+  <!-- Native system font stack only — no external font CDN
+       (invariant: PROVIDER_CONTRACTS_REFERENCE.md §9). -->
   <style>
     * { box-sizing: border-box; }
     html { color-scheme: light; }
@@ -567,7 +566,15 @@ function generateSubToolboxPage(configStr, videoId, filename, config) {
       min-height: 100vh;
       background: linear-gradient(135deg, var(--bg) 0%, var(--bg-strong) 55%, var(--bg) 100%);
       color: var(--text);
-      font-family: 'Inter', -apple-system, 'Segoe UI', sans-serif;
+      font-family:
+          system-ui,
+          -apple-system,
+          BlinkMacSystemFont,
+          'Segoe UI',
+          Roboto,
+          'Helvetica Neue',
+          Arial,
+          sans-serif;
       padding: 32px 20px 52px;
     }
     a { color: inherit; }
@@ -737,7 +744,7 @@ function generateSubToolboxPage(configStr, videoId, filename, config) {
     }
     .status-badge.accent .status-label { color: #032132; }
     .status-value {
-      font-family: 'Space Grotesk', 'Inter', -apple-system, 'Segoe UI', sans-serif;
+      font-family: inherit;
       font-weight: 700;
       font-size: 15px;
       letter-spacing: 0.02em;
@@ -911,7 +918,7 @@ function generateSubToolboxPage(configStr, videoId, filename, config) {
       border: 1px solid rgba(124, 58, 237, 0.4);
       background: linear-gradient(120deg, rgba(124, 58, 237, 0.16), rgba(139, 92, 246, 0.08));
       color: var(--text);
-      font-family: 'Space Grotesk', 'Inter', -apple-system, 'Segoe UI', sans-serif;
+      font-family: inherit;
       font-weight: 700;
       letter-spacing: 0.06em;
       text-decoration: none;
@@ -996,7 +1003,7 @@ function generateSubToolboxPage(configStr, videoId, filename, config) {
       border: 1px solid rgba(124, 58, 237, 0.45);
       background: linear-gradient(135deg, rgba(124, 58, 237, 0.18), rgba(139, 92, 246, 0.10));
       color: var(--text);
-      font-family: 'Space Grotesk', 'Inter', -apple-system, 'Segoe UI', sans-serif;
+      font-family: inherit;
       font-weight: 700;
       font-size: 15px;
       letter-spacing: 0.04em;
@@ -1123,7 +1130,7 @@ function generateSubToolboxPage(configStr, videoId, filename, config) {
       font-weight: 700;
       color: var(--text);
       letter-spacing: -0.01em;
-      font-family: 'Space Grotesk', 'Inter', -apple-system, 'Segoe UI', sans-serif;
+      font-family: inherit;
     }
     .tool-tile p {
       margin: 6px 0 8px;
@@ -2103,9 +2110,8 @@ async function generateEmbeddedSubtitlePage(configStr, videoId, filename) {
       html.setAttribute('data-theme', theme);
     })();
   </script>
-  <link rel="preconnect" href="https://fonts.googleapis.com">
-  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-  <link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@500;600;700&family=Inter:wght@400;600;700&display=swap" rel="stylesheet">
+  <!-- Native system font stack only — no external font CDN
+       (invariant: PROVIDER_CONTRACTS_REFERENCE.md §9). -->
   <style>
     * { box-sizing: border-box; }
     html { color-scheme: light; }
@@ -2184,7 +2190,15 @@ async function generateEmbeddedSubtitlePage(configStr, videoId, filename) {
       min-height: 100vh;
       background: linear-gradient(135deg, var(--bg-primary) 0%, var(--bg-mid) 60%, var(--bg-primary) 100%);
       color: var(--text);
-      font-family: 'Inter', 'Space Grotesk', -apple-system, 'Segoe UI', sans-serif;
+      font-family:
+          system-ui,
+          -apple-system,
+          BlinkMacSystemFont,
+          'Segoe UI',
+          Roboto,
+          'Helvetica Neue',
+          Arial,
+          sans-serif;
       padding: 0 0 46px;
       position: relative;
       overflow-x: hidden;
@@ -2709,7 +2723,7 @@ async function generateEmbeddedSubtitlePage(configStr, videoId, filename) {
       border: 1px solid transparent;
       background: linear-gradient(135deg, var(--primary) 0%, var(--secondary) 100%);
       color: #ffffff;
-      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Inter', sans-serif;
+      font-family: system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
       font-weight: 600;
       font-size: 0.95rem;
       padding: 0.65rem 1rem;
@@ -9307,9 +9321,8 @@ async function generateAutoSubtitlePage(configStr, videoId, filename, config = {
         html.setAttribute('data-theme', theme);
       })();
     </script>
-    <link rel="preconnect" href="https://fonts.googleapis.com">
-    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-    <link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@500;600;700&family=Inter:wght@400;600;700&display=swap" rel="stylesheet">
+    <!-- Native system font stack only — no external font CDN
+         (invariant: PROVIDER_CONTRACTS_REFERENCE.md §9). -->
     <style>
       * { margin: 0; padding: 0; box-sizing: border-box; }
       html { scroll-behavior: smooth; color-scheme: light; }
@@ -9499,7 +9512,15 @@ async function generateAutoSubtitlePage(configStr, videoId, filename, config = {
 
       body {
         margin: 0;
-        font-family: 'Inter', 'Space Grotesk', -apple-system, 'Segoe UI', sans-serif;
+        font-family:
+            system-ui,
+            -apple-system,
+            BlinkMacSystemFont,
+            'Segoe UI',
+            Roboto,
+            'Helvetica Neue',
+            Arial,
+            sans-serif;
         background: linear-gradient(135deg, var(--bg-primary) 0%, #ffffff 60%, var(--bg-primary) 100%);
         color: var(--text-primary);
         min-height: 100vh;
@@ -9949,7 +9970,7 @@ async function generateAutoSubtitlePage(configStr, videoId, filename, config = {
       border-radius: 10px;
       border: 1px solid transparent;
       text-decoration: none;
-      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Inter', sans-serif;
+      font-family: system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
       font-weight: 600;
       font-size: 0.95rem;
       cursor: pointer;
@@ -10045,7 +10066,7 @@ async function generateAutoSubtitlePage(configStr, videoId, filename, config = {
       word-break: break-word;
     }
     .log-entry:last-child { border-bottom: none; }
-    .log-time { font-family: 'Space Grotesk', 'SFMono-Regular', 'Roboto Mono', monospace; color: var(--muted); font-weight: 700; }
+    .log-time { font-family: ui-monospace, 'SFMono-Regular', Menlo, Consolas, 'Liberation Mono', monospace; color: var(--muted); font-weight: 700; }
     .log-text { color: var(--text-secondary); }
     .log-entry.log-success .log-text { color: var(--success); font-weight: 700; }
     .log-entry.log-error .log-text { color: var(--danger); font-weight: 700; }

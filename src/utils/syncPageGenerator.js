@@ -695,9 +695,8 @@ async function generateSubtitleSyncPage(subtitles, videoId, streamFilename, conf
         html.setAttribute('data-theme', theme);
       })();
     </script>
-    <link rel="preconnect" href="https://fonts.googleapis.com">
-    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-    <link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@500;600;700&family=Inter:wght@400;600;700&display=swap" rel="stylesheet">
+    <!-- Native system font stack only — no external font CDN
+         (invariant: PROVIDER_CONTRACTS_REFERENCE.md §9). -->
     <style>
         * {
             margin: 0;
@@ -787,7 +786,15 @@ async function generateSubtitleSyncPage(subtitles, videoId, streamFilename, conf
         ${quickNavStyles()}
 
         body {
-            font-family: 'Inter', 'Space Grotesk', -apple-system, 'Segoe UI', sans-serif;
+            font-family:
+                system-ui,
+                -apple-system,
+                BlinkMacSystemFont,
+                'Segoe UI',
+                Roboto,
+                'Helvetica Neue',
+                Arial,
+                sans-serif;
             background: linear-gradient(135deg, var(--bg-primary) 0%, #ffffff 60%, var(--bg-primary) 100%);
             color: var(--text-primary);
             min-height: 100vh;
@@ -1751,7 +1758,15 @@ async function generateSubtitleSyncPage(subtitles, videoId, streamFilename, conf
             padding: 10px 12px;
             max-height: 260px;
             overflow-y: auto;
-            font-family: 'Space Grotesk', 'Inter', system-ui, -apple-system, sans-serif;
+            font-family:
+                system-ui,
+                -apple-system,
+                BlinkMacSystemFont,
+                'Segoe UI',
+                Roboto,
+                'Helvetica Neue',
+                Arial,
+                sans-serif;
             font-size: 0.9rem;
             line-height: 1.35;
             color: var(--text);

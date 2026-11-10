@@ -457,9 +457,13 @@ class OpenAICompatibleProvider {
         // systemPrompt (prompt warisan / inspection) — satu mesej user sahaja
         // (tingkah laku sedia ada dipelihara).
         const systemPrompt = typeof meta?.systemPrompt === 'string' ? meta.systemPrompt.trim() : '';
+        // [P0 F3 FIX 2026-11-10] Hormati systemRole yang dibekalkan wrapper
+        // Trinity (cth. 'developer' untuk endpoint yang menyokong hirarki
+        // developer > user). Lalai kekal 'system' apabila tidak dinyatakan.
+        const systemRole = meta?.systemRole === 'developer' ? 'developer' : 'system';
         const messages = systemPrompt
             ? [
-                  { role: 'system', content: systemPrompt },
+                  { role: systemRole, content: systemPrompt },
                   { role: 'user', content: userPrompt }
               ]
             : [
@@ -883,7 +887,10 @@ class OpenAICompatibleProvider {
                     disableStructuredOutput,
                     // [TRINITY FASA 3] Turunkan responseFormat (json_schema strict
                     // mazhab rasmi OpenAI tunggal) daripada wrapper kepada builder.
-                    responseFormat: requestOptions?.responseFormat
+                    responseFormat: requestOptions?.responseFormat,
+                    // [P0 F3 FIX 2026-11-10] Turunkan systemRole (cth. 'developer')
+                    // daripada wrapper kepada builder — lalai 'system' di builder.
+                    systemRole: requestOptions?.systemRole
                 });
 
                 const agents = this.getHttpAgents();

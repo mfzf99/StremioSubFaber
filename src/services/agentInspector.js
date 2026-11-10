@@ -362,7 +362,10 @@ Respond with ONLY the JSON now.`;
         });
         return {
             prompt: `${wrapped.systemPrompt}\n\n${wrapped.userPrompt}`,
-            responseFormat: wrapped.responseFormat || null
+            responseFormat: wrapped.responseFormat || null,
+            // [P0 F3 FIX 2026-11-10] systemRole daripada wrapper perlu sampai ke
+            // lapisan pengangkutan (cth. 'developer' untuk endpoint sokong).
+            systemRole: wrapped.systemRole || null
         };
     }
     return { prompt };
@@ -1194,7 +1197,9 @@ class AgentInspector extends OpenAICompatibleProvider {
                         // [TRINITY FASA 3] Aktifkan response_format json_schema
                         // strict (mazhab rasmi OpenAI tunggal) bila pembungkus
                         // openai membekalkannya.
-                        responseFormat: payload.responseFormat || undefined
+                        responseFormat: payload.responseFormat || undefined,
+                        // [P0 F3 FIX 2026-11-10] systemRole wrapper (developer > user).
+                        systemRole: payload.systemRole || undefined
                     });
                     const latency = Date.now() - startedAt;
                     // Mandat §3A: bersihkan tag penaakulan sebelum parse.

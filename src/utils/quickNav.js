@@ -22,7 +22,7 @@ function quickNavStyles() {
       overflow-y: hidden;
       -ms-overflow-style: none;
       scrollbar-width: none;
-      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Inter', sans-serif;
+      font-family: system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
       font-size: 0.95rem;
     }
     .quick-nav::-webkit-scrollbar { display: none; }

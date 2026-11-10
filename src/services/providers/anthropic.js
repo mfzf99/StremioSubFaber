@@ -11,6 +11,17 @@ const { resolveBackoffBaseMs, sleepRetryBackoff } = require('./retryBackoff');
 const ANTHROPIC_API_URL = process.env.ANTHROPIC_API_BASE || 'https://api.anthropic.com/v1';
 const ANTHROPIC_VERSION = process.env.ANTHROPIC_VERSION || '2023-06-01';
 
+// [P0 F3 FIX 2026-11-10] Data-first Anthropic — data dinamik dibalut
+// <subtitle_input> (kontrak Trinity Anthropic: data di ATAS, arahan di HUJUNG).
+// Fungsi ini IDEMPOTEN: user content yang sudah dibalut (oleh wrapper channel)
+// dikekalkan apa adanya supaya tiada balut berganda.
+function wrapAnthropicDataFirst(userContent) {
+    const text = String(userContent || '');
+    if (!text.trim()) return text;
+    if (text.includes('<subtitle_input>')) return text;
+    return `<subtitle_input>\n${text}\n</subtitle_input>`;
+}
+
 class AnthropicProvider {
     constructor(options = {}) {
         this.trinityChannel = 'anthropic';
@@ -75,11 +86,20 @@ class AnthropicProvider {
         // elak hantar-dua-kali & elak sempadan bocor ke prompt hidup.
         const structured = splitStructuredPrompt(combined);
         if (structured) {
-            return { systemPrompt: structured.system, userPrompt: structured.user };
+            // [P0 F3 FIX 2026-11-10] Data-first Anthropic: data dinamik dibalut
+            // <subtitle_input> di BAHAGIAN ATAS (kontrak Trinity Anthropic,
+            // plans/trinity-channel-native-prompts.md §2.3). Pembalut idempoten:
+            // user content yang sudah dibalut oleh wrapper channel dikekalkan
+            // apa adanya (tiada balut berganda).
+            return {
+                systemPrompt: structured.system,
+                userPrompt: wrapAnthropicDataFirst(structured.user),
+                isStructured: true
+            };
         }
 
         const userPrompt = `${combined}\n\nContent to translate:\n\n${subtitleContent}`;
-        return { systemPrompt: combined, userPrompt };
+        return { systemPrompt: combined, userPrompt, isStructured: false };
     }
 
     estimateTokenCount(text) {

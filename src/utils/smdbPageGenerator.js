@@ -341,9 +341,8 @@ async function generateSmdbPage(configStr, videoId, filename, config = {}) {
       html.setAttribute('data-theme', theme);
     })();
   </script>
-  <link rel="preconnect" href="https://fonts.googleapis.com">
-  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-  <link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@500;600;700&family=Inter:wght@400;600;700&display=swap" rel="stylesheet">
+  <!-- Native system font stack only — no external font CDN
+       (invariant: PROVIDER_CONTRACTS_REFERENCE.md §9). -->
   <style>
     * { box-sizing: border-box; margin: 0; padding: 0; }
 
@@ -437,7 +436,15 @@ async function generateSmdbPage(configStr, videoId, filename, config = {}) {
     ${quickNavStyles()}
 
     body {
-      font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
+      font-family:
+          system-ui,
+          -apple-system,
+          BlinkMacSystemFont,
+          'Segoe UI',
+          Roboto,
+          'Helvetica Neue',
+          Arial,
+          sans-serif;
       background: linear-gradient(135deg, var(--bg-primary) 0%, #ffffff 60%, var(--bg-primary) 100%);
       color: var(--text);
       min-height: 100vh;
@@ -493,7 +500,7 @@ async function generateSmdbPage(configStr, videoId, filename, config = {}) {
       margin-top: 16px;
     }
     .page-header h1 {
-      font-family: 'Space Grotesk', sans-serif;
+      font-family: inherit;
       font-size: 1.75rem;
       font-weight: 700;
       color: var(--text-primary);
@@ -531,7 +538,7 @@ async function generateSmdbPage(configStr, videoId, filename, config = {}) {
       flex-shrink: 0;
     }
     .card-title {
-      font-family: 'Space Grotesk', sans-serif;
+      font-family: inherit;
       font-weight: 700;
       font-size: 1.05rem;
       color: var(--text-primary);
@@ -846,7 +853,7 @@ async function generateSmdbPage(configStr, videoId, filename, config = {}) {
       color: #fff;
       font-size: 0.92rem;
       font-weight: 700;
-      font-family: 'Space Grotesk', sans-serif;
+      font-family: inherit;
       cursor: pointer;
       transition: all 0.2s;
       width: 100%;
@@ -889,7 +896,7 @@ async function generateSmdbPage(configStr, videoId, filename, config = {}) {
       box-shadow: 0 14px 40px var(--shadow-color);
     }
     .modal h3 {
-      font-family: 'Space Grotesk', sans-serif;
+      font-family: inherit;
       font-size: 1.1rem;
       margin-bottom: 10px;
     }

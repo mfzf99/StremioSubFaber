@@ -25,7 +25,9 @@
     --border: #dbe3ea;
     --shadow: rgba(0, 0, 0, 0.08);
     --glow: rgba(0, 113, 227, 0.25);
-    --vault-display-font: 'Aptos Display', 'Aptos', 'Segoe UI Variable Display', 'Segoe UI', 'Inter', sans-serif;
+    --vault-display-font:
+        system-ui, 'Segoe UI Variable Display', 'Segoe UI', -apple-system, BlinkMacSystemFont, Roboto, 'Helvetica Neue',
+        Arial, sans-serif;
     --floating-bottom-safe-zone: 0px;
 }
 
@@ -260,10 +262,13 @@ html {
 
 body {
     font-family:
-        'Inter',
+        system-ui,
         -apple-system,
         BlinkMacSystemFont,
         'Segoe UI',
+        Roboto,
+        'Helvetica Neue',
+        Arial,
         sans-serif;
     background: linear-gradient(135deg, var(--bg-primary) 0%, #ffffff 60%, var(--bg-primary) 100%);
     color: var(--text-primary);
@@ -3069,7 +3074,7 @@ textarea {
     border-radius: 10px;
     color: var(--text-primary);
     font-size: 0.85rem;
-    font-family: 'JetBrains Mono', ui-monospace, 'SF Mono', 'Cascadia Mono', Menlo, Consolas, monospace;
+    font-family: ui-monospace, 'SF Mono', 'Cascadia Mono', Menlo, Consolas, 'Liberation Mono', monospace;
     cursor: text;
     transition:
         border-color 0.2s cubic-bezier(0.16, 1, 0.3, 1),
@@ -6631,7 +6636,7 @@ label:has(#subToolboxEnabled:disabled) {
 }
 
 .token-vault-create-preview-head code {
-    font-family: 'SF Mono', 'Cascadia Code', 'Fira Code', monospace;
+    font-family: ui-monospace, 'SF Mono', 'Cascadia Code', 'Cascadia Mono', Menlo, Consolas, monospace;
     font-size: 0.72rem;
     color: var(--text-secondary);
 }
@@ -7286,7 +7291,7 @@ label:has(#subToolboxEnabled:disabled) {
 
 .token-vault-token {
     flex: 1;
-    font-family: 'SF Mono', 'Cascadia Code', 'Fira Code', monospace;
+    font-family: ui-monospace, 'SF Mono', 'Cascadia Code', 'Cascadia Mono', Menlo, Consolas, monospace;
     font-size: 0.76rem;
     font-weight: 600;
     color: var(--text-primary);
@@ -8419,7 +8424,7 @@ label:has(#subToolboxEnabled:disabled) {
     border-radius: 14px;
     color: var(--text-primary);
     font-size: 0.82rem;
-    font-family: 'SF Mono', 'Cascadia Code', monospace;
+    font-family: ui-monospace, 'SF Mono', 'Cascadia Code', 'Cascadia Mono', Menlo, Consolas, monospace;
     transition:
         border-color 0.2s cubic-bezier(0.16, 1, 0.3, 1),
         box-shadow 0.2s cubic-bezier(0.16, 1, 0.3, 1);

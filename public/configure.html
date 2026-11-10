@@ -25,13 +25,9 @@
                 html.setAttribute('data-theme-pref', 'light');
             })();
         </script>
-        <!-- Rootsys-grade typography: JetBrains Mono for code/keys (Inter is already the UI stack) -->
-        <link rel="preconnect" href="https://fonts.googleapis.com" />
-        <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
-        <link
-            href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;600;700&display=swap"
-            rel="stylesheet"
-        />
+        <!-- Typography: native system stacks only — no external font CDN
+             (invariant: PROVIDER_CONTRACTS_REFERENCE.md §9). Code/keys use the
+             ui-monospace stack declared in /css/rootify.css. -->
         <link rel="stylesheet" href="/css/configure.css?_cb=__APP_VERSION_QUERY__" />
         <!-- [TRINITY FASA D 2026-10-10] Styles kad modular Trinity Agents -->
         <link rel="stylesheet" href="/css/trinity-agents.css?_cb=__APP_VERSION_QUERY__" />

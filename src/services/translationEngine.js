@@ -1532,7 +1532,27 @@ class TranslationEngine {
                 ).toLowerCase();
                 const fallbackIsNative = NATIVE_BATCH_PROVIDER_NAMES.has(fallbackProviderName);
                 const fallbackContent = fallbackIsNative ? this.prepareBatchSrt(batch) : batchText;
-                const fallbackPrompt = fallbackIsNative ? null : prompt;
+                // [P0 F2 FIX 2026-11-10] Re-wrap prompt untuk pintu fallback
+                // sebenar. Sebelum ini prompt yang dibungkus untuk PRIMER
+                // dihantar apa adanya (cth. anchor continuation Gemini bocor ke
+                // Anthropic/OpenAI). Kini, jika channel fallback berbeza,
+                // bina semula prompt menggunakan builder channel fallback supaya
+                // kontrak pintu (anchor/data-first/directive) dipatuhi.
+                const fallbackChannel = this.fallbackProvider?.trinityChannel || this.trinityChannel;
+                const fallbackPrompt = fallbackIsNative
+                    ? null
+                    : fallbackChannel && fallbackChannel !== this.trinityChannel
+                      ? this.createXmlBatchPrompt(
+                            batchText,
+                            targetLanguage,
+                            customPrompt,
+                            batch.length,
+                            context,
+                            batchIndex,
+                            totalBatches,
+                            fallbackChannel
+                        )
+                      : prompt;
                 const translated = await this.fallbackProvider.translateSubtitle(
                     fallbackContent,
                     'detected',
@@ -2957,7 +2977,8 @@ You MUST translate each numbered line 1:1. NEVER merge two source lines into one
         expectedCount,
         context = null,
         batchIndex = 0,
-        totalBatches = 1
+        totalBatches = 1,
+        trinityChannelOverride = null
     ) {
         const targetLabel = normalizeTargetLanguageForPrompt(targetLanguage);
         const sourceLabel = this.sourceLanguage;
@@ -3037,6 +3058,12 @@ You MUST translate each numbered line 1:1. NEVER merge two source lines into one
         // prefill). Hasil diserial-balik ke wire-format sentinel
         // system+BOUNDARY+user supaya SEMUA provider transport, cache key, dan
         // Smart Preamble Scrubber terus berfungsi tanpa perubahan.
+        // [P0 F2 FIX 2026-11-10] trinityChannelOverride membolehkan laluan
+        // fallback membungkus semula prompt mengikut pintu provider fallback,
+        // bukan pintu primer. Null = kekalkan tingkah laku primer.
+        const trinityPromptBuilder = trinityChannelOverride
+            ? resolveTrinityPrompt('translation', trinityChannelOverride)
+            : this._trinityPromptBuilder;
         // Basic R&D run 13/15 contract: the required-ID manifest belongs to the
         // active user data, immediately before <input>, and never to Pro.
         const idManifest =
@@ -3046,7 +3073,7 @@ You MUST translate each numbered line 1:1. NEVER merge two source lines into one
         const dataPart = `${sharedContextBlock ? `${sharedContextBlock}\n(Reference only — do not translate or output content from this block as a target entry.)\n\n` : ''}${idManifest}<input>
 ${batchText}
 </input>`;
-        const wrapped = this._trinityPromptBuilder({
+        const wrapped = trinityPromptBuilder({
             systemText: systemPart,
             dataText: dataPart,
             queryText: '',

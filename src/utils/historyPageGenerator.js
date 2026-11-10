@@ -609,9 +609,8 @@ function generateHistoryPage(configStr, historyEntries, config, videoId, filenam
   ${localeBootstrap}
   <link rel="icon" type="image/svg+xml" href="/favicon-toolbox.svg?_cb=${escapeHtml(appVersion || 'dev')}">
   <link rel="shortcut icon" href="/favicon-toolbox.svg?_cb=${escapeHtml(appVersion || 'dev')}">
-  <link rel="preconnect" href="https://fonts.googleapis.com">
-  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Space+Grotesk:wght@600&display=swap" rel="stylesheet">
+  <!-- Native system font stack only — no external font CDN
+       (invariant: PROVIDER_CONTRACTS_REFERENCE.md §9). -->
   <script>
     (function() {
       var html = document.documentElement;
@@ -721,7 +720,15 @@ function generateHistoryPage(configStr, historyEntries, config, videoId, filenam
       margin: 0;
       background: linear-gradient(135deg, var(--bg-primary) 0%, #ffffff 60%, var(--bg-primary) 100%);
       color: var(--text-primary);
-      font-family: 'Inter', 'Space Grotesk', -apple-system, 'Segoe UI', sans-serif;
+      font-family:
+          system-ui,
+          -apple-system,
+          BlinkMacSystemFont,
+          'Segoe UI',
+          Roboto,
+          'Helvetica Neue',
+          Arial,
+          sans-serif;
       min-height: 100vh;
       overflow-x: hidden;
       position: relative;
@@ -806,7 +813,15 @@ function generateHistoryPage(configStr, historyEntries, config, videoId, filenam
 
     h1 {
       margin: 0;
-      font-family: 'Space Grotesk', sans-serif;
+      font-family:
+          system-ui,
+          -apple-system,
+          BlinkMacSystemFont,
+          'Segoe UI',
+          Roboto,
+          'Helvetica Neue',
+          Arial,
+          sans-serif;
       font-size: 2rem;
       color: var(--text-primary);
     }

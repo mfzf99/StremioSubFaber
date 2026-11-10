@@ -109,7 +109,7 @@
 }
 
 /* ---------------------------------------------------------------------------
-   2. Typography — Inter for UI (already the stack), JetBrains Mono for code
+   2. Typography — native system stack for UI, ui-monospace for code
    --------------------------------------------------------------------------- */
 code,
 kbd,
@@ -117,7 +117,7 @@ pre,
 .mono,
 .install-url-box code,
 .token-vault-rail-item code {
-    font-family: 'JetBrains Mono', ui-monospace, 'SF Mono', 'Cascadia Mono', Menlo, Consolas, monospace;
+    font-family: ui-monospace, 'SF Mono', 'Cascadia Mono', Menlo, Consolas, 'Liberation Mono', monospace;
 }
 
 /* ---------------------------------------------------------------------------

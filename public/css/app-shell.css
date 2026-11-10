@@ -922,7 +922,7 @@ body.app-shell .container {
 }
 
 .app-changelog-entry-content code {
-    font-family: 'JetBrains Mono', ui-monospace, monospace;
+    font-family: ui-monospace, 'SF Mono', 'Cascadia Mono', Menlo, Consolas, monospace;
     font-size: 12px;
     background: var(--surface-tint);
     border: 1px solid var(--border);
