@@ -9,12 +9,9 @@ const { parseStremioId } = require('./subtitle');
 const { buildClientBootstrap, loadLocale, getTranslator } = require('./i18n');
 const { quickNavStyles, quickNavScript, renderQuickNav } = require('./quickNav');
 const { version: appVersion } = require('./version');
+const { escapeHtml } = require('./escapeHtml');
 
-function escapeHtml(value) {
-    if (value === null || value === undefined) return '';
-    return String(value).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;');
-}
-
+// [P1 F4 FIX 2026-11-10] Canonical SSOT escapeHtml is imported from ./escapeHtml
 function cleanDisplayName(raw) {
     if (!raw) return '';
     try {

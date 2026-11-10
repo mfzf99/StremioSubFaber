@@ -3,6 +3,7 @@ const path = require('path');
 
 const { getLanguageSelectionLimits } = require('./config');
 const { version } = require('./version');
+const { escapeHtml } = require('./escapeHtml');
 
 const TEMPLATE_PATH = path.join(__dirname, '..', '..', 'public', 'configure.html');
 const APP_VERSION_JSON_TOKEN = '__APP_VERSION_JSON__';
@@ -27,15 +28,7 @@ const INLINE_PARTIALS = [
     }
 ];
 
-function escapeHtml(value) {
-    return String(value)
-        .replace(/&/g, '&amp;')
-        .replace(/</g, '&lt;')
-        .replace(/>/g, '&gt;')
-        .replace(/"/g, '&quot;')
-        .replace(/'/g, '&#39;');
-}
-
+// [P1 F4 FIX 2026-11-10] Canonical SSOT escapeHtml is imported from ./escapeHtml
 function loadTemplate() {
     return fs.readFileSync(TEMPLATE_PATH, 'utf8');
 }

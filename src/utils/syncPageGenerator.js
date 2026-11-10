@@ -19,17 +19,9 @@ const { quickNavStyles, quickNavScript, renderQuickNav, renderRefreshBadge } = r
 const { buildClientBootstrap, loadLocale, getTranslator } = require('./i18n');
 const { streamFilenameSelectorClientScript } = require('./streamUrlIdentity');
 const { createSyncTiming } = require('./syncTiming');
+const { escapeHtml } = require('./escapeHtml');
 
-function escapeHtml(text) {
-    if (!text) return '';
-    return text
-        .replace(/&/g, '&amp;')
-        .replace(/</g, '&lt;')
-        .replace(/>/g, '&gt;')
-        .replace(/"/g, '&quot;')
-        .replace(/'/g, '&#039;');
-}
-
+// [P1 F4 FIX 2026-11-10] Canonical SSOT escapeHtml is imported from ./escapeHtml
 function resolveUiLang(config) {
     const lang = config && config.uiLanguage ? String(config.uiLanguage).toLowerCase() : 'en';
     return escapeHtml(lang || 'en');
@@ -2416,13 +2408,13 @@ async function generateSubtitleSyncPage(subtitles, videoId, streamFilename, conf
             prefetchPromise: null
         };
         const escapeHtmlClient = (value) => {
-            if (value === undefined || value === null) return '';
+            if (value === null || value === undefined) return '';
             return String(value)
-                .replace(/&/g, '&amp;')
-                .replace(/</g, '&lt;')
-                .replace(/>/g, '&gt;')
-                .replace(/\"/g, '&quot;')
-                .replace(/'/g, '&#39;');
+                .replace(/&/g, "&amp;")
+                .replace(/</g, "&lt;")
+                .replace(/>/g, "&gt;")
+                .replace(/"/g, "&quot;")
+                .replace(/'/g, '&#039;');
         };
         function normalizeStreamContext(payload = {}) {
             const videoId = (payload.videoId ?? CONFIG.videoId ?? '').toString().trim();

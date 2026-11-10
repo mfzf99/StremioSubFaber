@@ -10,17 +10,9 @@ const { buildClientBootstrap, loadLocale, getTranslator } = require('./i18n');
 const { resolveHistoryTitle } = require('../handlers/subtitles');
 const { getEffectiveGeminiModel } = require('./config');
 const { streamFilenameSelectorClientScript } = require('./streamUrlIdentity');
+const { escapeHtml } = require('./escapeHtml');
 
-function escapeHtml(value) {
-    if (value === undefined || value === null) return '';
-    return String(value)
-        .replace(/&/g, '&amp;')
-        .replace(/</g, '&lt;')
-        .replace(/>/g, '&gt;')
-        .replace(/"/g, '&quot;')
-        .replace(/'/g, '&#039;');
-}
-
+// [P1 F4 FIX 2026-11-10] Canonical SSOT escapeHtml is imported from ./escapeHtml
 function resolveUiLang(config) {
     const lang = config && config.uiLanguage ? String(config.uiLanguage).toLowerCase() : 'en';
     return escapeHtml(lang || 'en');
@@ -3531,13 +3523,13 @@ async function generateEmbeddedSubtitlePage(configStr, videoId, filename) {
       validBody: hashMismatchStrings.validBody || tt('toolbox.embedded.step1.hashStatus.validBody', {}, 'Hashes match. You can extract subtitles now.')
     };
     const escapeHtmlClient = (value) => {
-      if (value === undefined || value === null) return '';
-      return String(value)
-        .replace(/&/g, '&amp;')
-        .replace(/</g, '&lt;')
-        .replace(/>/g, '&gt;')
-        .replace(/\"/g, '&quot;')
-        .replace(/'/g, '&#39;');
+        if (value === null || value === undefined) return '';
+        return String(value)
+            .replace(/&/g, "&amp;")
+            .replace(/</g, "&lt;")
+            .replace(/>/g, "&gt;")
+            .replace(/"/g, "&quot;")
+            .replace(/'/g, '&#039;');
     };
     function buildMetaSubtitleHtml(topLine, fileLine, fallbackLine) {
       const parts = [];
@@ -6399,13 +6391,13 @@ async function generateAutoSubtitlePage(configStr, videoId, filename, config = {
             };
             const AUTO_SUB_TIMEOUT_MS = 15 * 60 * 1000;
             const escapeHtmlClient = (value) => {
-                if (value === undefined || value === null) return '';
+                if (value === null || value === undefined) return '';
                 return String(value)
                     .replace(/&/g, '&amp;')
                     .replace(/</g, '&lt;')
                     .replace(/>/g, '&gt;')
-                    .replace(/\"/g, '&quot;')
-                    .replace(/'/g, '&#39;');
+                    .replace(/"/g, '&quot;')
+                    .replace(/'/g, '&#039;');
             };
             function buildMetaSubtitleHtml(topLine, fileLine, fallbackLine) {
                 const parts = [];

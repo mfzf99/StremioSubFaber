@@ -2,6 +2,7 @@ const { getLanguageName } = require('./languages');
 const { version: appVersion } = require('./version');
 const { quickNavStyles, quickNavScript, renderQuickNav } = require('./quickNav');
 const { buildClientBootstrap, loadLocale, getTranslator } = require('./i18n');
+const { escapeHtml } = require('./escapeHtml');
 
 function buildQuery(params) {
     const entries = Object.entries(params || {}).filter(
@@ -14,16 +15,7 @@ function buildQuery(params) {
     return query ? `?${query}` : '';
 }
 
-function escapeHtml(value) {
-    if (value === undefined || value === null) return '';
-    return String(value)
-        .replace(/&/g, '&amp;')
-        .replace(/</g, '&lt;')
-        .replace(/>/g, '&gt;')
-        .replace(/"/g, '&quot;')
-        .replace(/'/g, '&#039;');
-}
-
+// [P1 F4 FIX 2026-11-10] Canonical SSOT escapeHtml is imported from ./escapeHtml
 function truncateText(value, max = 64) {
     const raw = value === undefined || value === null ? '' : String(value).trim();
     if (!raw) return '';

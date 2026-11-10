@@ -9732,25 +9732,43 @@ app.use((error, req, res, next) => {
 // Initialize caches and session manager, then start server
 (async () => {
     // =========================================================================
-    // PHASE 1: Bind HTTP server IMMEDIATELY so Kubernetes startup probes pass.
-    // The readiness middleware (FORCE_SESSION_READY) already gates all
-    // session-dependent routes, so no requests will be served with missing
-    // sessions — but the port will be open and /health will respond.
+    // PHASE 1 (P1 F7 FIX 2026-11-10): Run infrastructure validation FIRST.
+    // Encryption key, storage path and Redis must be verified BEFORE any HTTP
+    // connection is accepted. A critical failure exits fail-closed with
+    // process.exit(1) — the port never opens on a broken deployment.
     // =========================================================================
-    const server = app.listen(PORT, () => {
-        log.info(() => `[Startup] HTTP server listening on port ${PORT} (accepting probe connections)`);
-    });
+    try {
+        log.info(() => '[Startup] Running infrastructure validation...');
+        const validation = await runStartupValidation();
+        if (!validation.success) {
+            log.error(() => ['[Startup] CRITICAL: Infrastructure validation failed']);
+            log.error(() => '[Startup] Server startup ABORTED due to validation errors');
+            log.error(() => '[Startup] Please review the validation errors above and fix your configuration');
+            process.exit(1);
+        }
+    } catch (error) {
+        // [P1 F7 FIX] Fatal startup policy is now uniform: a validation error
+        // is fatal, not a warning. No "Continuing startup anyway" downgrade.
+        log.error(() => ['[Startup] CRITICAL: Infrastructure validation threw unexpectedly:', error.message]);
+        log.error(() => '[Startup] Server startup ABORTED due to validation errors');
+        process.exit(1);
+    }
 
-    // Setup graceful shutdown handlers right away
-    sessionManager.setupShutdownHandlers(server);
-    process.on('SIGTERM', () => stopKeepAlivePings());
-    process.on('SIGINT', () => stopKeepAlivePings());
-
     // =========================================================================
-    // PHASE 2: Run all the heavy initialization in the background.
-    // The server is already accepting connections (probes pass), but the
-    // readiness middleware will hold real requests until sessions are loaded.
+    // PHASE 2: Heavy initialization (caches, session readiness) completes
+    // before the port opens. SessionManager readiness failure is now fatal
+    // (aligned with the validation policy above).
     // =========================================================================
+    try {
+        log.info(() => '[Startup] Waiting for session manager to be ready...');
+        await sessionManager.waitUntilReady();
+        log.info(() => '[Startup] Session manager is ready - sessions loaded successfully');
+    } catch (error) {
+        // [P1 F7 FIX] Fatal startup policy is uniform — no silent downgrade.
+        log.error(() => ['[Startup] CRITICAL: Session manager initialization failed:', error.message]);
+        log.error(() => '[Startup] Server startup ABORTED because sessions could not be loaded');
+        process.exit(1);
+    }
 
     try {
         // Initialize sync cache
@@ -9793,16 +9811,6 @@ app.use((error, req, res, next) => {
         log.error(() => '[Startup] Failed to start keep-alive pings:', error.message);
     }
 
-    // Wait for session manager to be ready (this is the slow part with 21K+ Redis sessions)
-    try {
-        log.info(() => '[Startup] Waiting for session manager to be ready...');
-        await sessionManager.waitUntilReady();
-        log.info(() => '[Startup] Session manager is ready - sessions loaded successfully');
-    } catch (error) {
-        log.error(() => ['[Startup] Session manager initialization failed:', error.message]);
-        log.warn(() => '[Startup] Continuing startup anyway, but sessions may not be available');
-    }
-
     // SECURITY: Clean up any contaminated cache entries from previous runs
     try {
         cleanupCachesOnStartup();
@@ -9817,20 +9825,19 @@ app.use((error, req, res, next) => {
         log.warn(() => `[Startup] Stream activity pub/sub init failed (non-fatal): ${error.message}`);
     }
 
-    // Run comprehensive startup validation
-    try {
-        log.info(() => '[Startup] Running infrastructure validation...');
-        const validation = await runStartupValidation();
-        if (!validation.success) {
-            log.error(() => ['[Startup] CRITICAL: Infrastructure validation failed']);
-            log.error(() => '[Startup] Server startup ABORTED due to validation errors');
-            log.error(() => '[Startup] Please review the validation errors above and fix your configuration');
-            process.exit(1);
-        }
-    } catch (error) {
-        log.error(() => ['[Startup] Validation check failed unexpectedly:', error.message]);
-        log.warn(() => '[Startup] Continuing startup anyway, but configuration may be invalid');
-    }
+    // =========================================================================
+    // PHASE 3: Bind the HTTP server ONLY after validation + readiness pass.
+    // Kubernetes startup probes pass here; the readiness middleware
+    // (FORCE_SESSION_READY) still gates session-dependent routes.
+    // =========================================================================
+    const server = app.listen(PORT, () => {
+        log.info(() => `[Startup] HTTP server listening on port ${PORT}`);
+    });
+
+    // Setup graceful shutdown handlers right away
+    sessionManager.setupShutdownHandlers(server);
+    process.on('SIGTERM', () => stopKeepAlivePings());
+    process.on('SIGINT', () => stopKeepAlivePings());
 
     // =========================================================================
     // PHASE 3: Print startup banner now that everything is initialized.

@@ -208,16 +208,20 @@ test('[TRINITY-CORE-7] Runtime modules no longer expose the retired setup regist
 });
 
 test('[TRINITY-CORE-8] Universal Basic cache namespace excludes stale output and retains user/format scoping', () => {
+    // [P1 F6 FIX 2026-11-10] Namespace now carries the trinity channel
+    // discriminator (`_ch-gemini` for the default Gemini door). Assertions
+    // strengthened: exact key strings include the channel segment so the
+    // discriminator cannot regress silently.
     const permanent = generateCacheKeys({}, 'tt123_en', 'ms');
-    assert.equal(permanent.baseKey, 'tt123_en_ms_trinity-basic-universal-v3');
+    assert.equal(permanent.baseKey, 'tt123_en_ms_trinity-basic-universal-v3_ch-gemini');
     assert.equal(permanent.cacheKey, permanent.baseKey);
 
     const bypass = generateCacheKeys({ bypassCache: true, __configHash: 'config-hash' }, 'tt123_en', 'ms');
-    assert.equal(bypass.cacheKey, 'tt123_en_ms_trinity-basic-universal-v3__u_config-hash');
+    assert.equal(bypass.cacheKey, 'tt123_en_ms_trinity-basic-universal-v3_ch-gemini__u_config-hash');
     assert.equal(bypass.runtimeKey, bypass.cacheKey);
 
     const ass = generateCacheKeys({ convertAssToVtt: false }, 'tt123_en', 'ms');
-    assert.equal(ass.baseKey, 'tt123_en_ms_trinity-basic-universal-v3_ass');
+    assert.equal(ass.baseKey, 'tt123_en_ms_trinity-basic-universal-v3_ch-gemini_ass');
 });
 
 test('[TRINITY-CORE-9] Pro retains its evidence contract while Basic uses the locked R&D split/entity rules', () => {

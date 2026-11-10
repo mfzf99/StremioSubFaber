@@ -5,6 +5,7 @@ const { quickNavStyles, quickNavScript, renderQuickNav, renderRefreshBadge } = r
 const { version: appVersion } = require('./version');
 const { xsyncMinVersion: REQUIRED_XSYNC_VERSION } = require('../../package.json');
 const { buildClientBootstrap, loadLocale, getTranslator } = require('./i18n');
+const { escapeHtml } = require('./escapeHtml');
 
 function safeLanguageMaps() {
     try {
@@ -15,34 +16,7 @@ function safeLanguageMaps() {
 }
 
 // Security: Enhanced HTML escaping to prevent XSS attacks
-function escapeHtml(text) {
-    if (text == null) return '';
-
-    // Convert to string
-    text = String(text);
-
-    const map = {
-        '&': '&amp;',
-        '<': '&lt;',
-        '>': '&gt;',
-        '"': '&quot;',
-        "'": '&#x27;',
-        '/': '&#x2F;',
-        '`': '&#x60;',
-        '=': '&#x3D;'
-    };
-
-    // Escape basic HTML entities
-    text = text.replace(/[&<>"'`=\/]/g, (m) => map[m]);
-
-    // Additional protection: Escape unicode control characters
-    text = text.replace(/[\u0000-\u001F\u007F-\u009F]/g, (ch) => {
-        return '&#' + ch.charCodeAt(0) + ';';
-    });
-
-    return text;
-}
-
+// [P1 F4 FIX 2026-11-10] Canonical SSOT escapeHtml is imported from ./escapeHtml
 function resolveUiLang(config) {
     const lang = config && config.uiLanguage ? String(config.uiLanguage).toLowerCase() : 'en';
     return escapeHtml(lang || 'en');

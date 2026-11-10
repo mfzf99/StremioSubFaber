@@ -35,8 +35,17 @@ function generateCacheKeys(config, sourceFileId, targetLang) {
     // Prompt-semantic namespace prevents output produced under an earlier
     // Basic prompt (Malay-hardcoded, then editorial-craft) from being served
     // under the current single universal Basic instruction.
+    // [P1 F6 FIX 2026-11-10] Channel discriminator: the key now carries the
+    // trinity channel that will actually generate the translation, so the
+    // same file+language under different doors (gemini/openai/anthropic)
+    // never shares one permanent cache entry (cross-door poisoning).
+    // Default 'gemini' preserves the runtime default and keeps legacy
+    // configs reading the same namespace as trinityChannel:'gemini'.
     // User and ASS/SRT scoping remain unchanged below.
-    const sourceKey = `${sourceFileId}_${targetLang}_trinity-basic-universal-v3`;
+    const trinityChannel = String(config?.trinityChannel || 'gemini')
+        .toLowerCase()
+        .replace(/[^a-z0-9-]/g, '');
+    const sourceKey = `${sourceFileId}_${targetLang}_trinity-basic-universal-v3_ch-${trinityChannel}`;
     // When ASS passthrough is enabled, append format discriminator to prevent
     // ASS-format cached translations from being served to users expecting SRT
     const assPassthrough = config.convertAssToVtt === false && config.forceSRTOutput !== true;
