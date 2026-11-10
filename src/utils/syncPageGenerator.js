@@ -2272,7 +2272,7 @@ async function generateSubtitleSyncPage(subtitles, videoId, streamFilename, conf
                                 </div>
                                 <input type="range" id="offsetSlider" min="-15000" max="15000" step="50" value="0" style="width: 100%;">
                                 <div class="offset-entry">
-                                    <input type="number" id="offsetMs" value="0" step="50">
+                                    <input type="number" id="offsetMs" value="0" step="any">
                                     <div class="offset-nudges">
                                         <button type="button" class="btn btn-secondary offset-btn" data-step="-1000">${escapeHtml(copy.step3.offsetButtons.minus1000)}</button>
                                         <button type="button" class="btn btn-secondary offset-btn" data-step="-500">${escapeHtml(copy.step3.offsetButtons.minus500)}</button>
@@ -3932,17 +3932,19 @@ async function generateSubtitleSyncPage(subtitles, videoId, streamFilename, conf
                 ? tt('sync.offset.direction.later', {}, 'later')
                 : tt('sync.offset.direction.earlier', {}, 'earlier');
             const absolute = Math.abs(ms);
-            const value = absolute >= 1000 ? (absolute / 1000).toFixed(absolute % 1000 === 0 ? 0 : 1) + 's' : absolute + 'ms';
+            const value = absolute >= 1000 ? (absolute / 1000).toFixed(absolute % 1000 === 0 ? 0 : 1) + 's' : Math.round(absolute * 1000) / 1000 + 'ms';
             return value + ' ' + direction;
         }
 
         function setManualOffset(ms) {
-            const min = Number(manualOffsetSlider?.min) || -15000;
-            const max = Number(manualOffsetSlider?.max) || 15000;
-            const numeric = Number.isFinite(ms) ? ms : 0;
-            const clamped = Math.min(max, Math.max(min, Math.round(numeric)));
+            const clamped = Number.isFinite(ms) ? ms : 0;
             if (manualOffsetInput) manualOffsetInput.value = clamped;
-            if (manualOffsetSlider) manualOffsetSlider.value = clamped;
+            if (manualOffsetSlider) {
+                // The slider is a visual indicator only; never let it overwrite a typed value that exceeds its range.
+                const min = Number(manualOffsetSlider.min) || -15000;
+                const max = Number(manualOffsetSlider.max) || 15000;
+                manualOffsetSlider.value = Math.min(max, Math.max(min, Math.round(clamped)));
+            }
             if (manualOffsetSummary) manualOffsetSummary.textContent = formatOffsetLabel(clamped);
             return clamped;
         }

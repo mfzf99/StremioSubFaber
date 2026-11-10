@@ -15,6 +15,34 @@ async function generateSyncPage() {
     return generateSubtitleSyncPage([], 'tt14819828:1:1', 'Business Proposal S01E01.mkv', 'test-config', CONFIG);
 }
 
+test('manual offsets remain valid outside the slider range and preserve a typed decimal', async () => {
+    const html = await generateSyncPage();
+
+    // The applied offset is the exact typed value, not a slider-clamped or rounded substitute.
+    assert.match(html, /const clamped = Number\.isFinite\(ms\) \? ms : 0/);
+    // The slider stays a visual indicator and is clamped separately, so it cannot clobber the input.
+    assert.match(html, /manualOffsetSlider\.value = Math\.min\(max, Math\.max\(min, Math\.round\(clamped\)\)\)/);
+    // The summary reflects the real applied value, not the clamped slider value.
+    assert.match(html, /formatOffsetLabel\(clamped\)/);
+    // The number input accepts fractional milliseconds instead of forcing 50ms steps.
+    assert.match(html, /<input type="number" id="offsetMs" value="0" step="any">/);
+    // The legacy clamp of the applied value is gone.
+    assert.doesNotMatch(html, /const clamped = Math\.min\(max, Math\.max\(min, Math\.round\(numeric\)\)\)/);
+});
+
+test('offset summary rounds fractional milliseconds instead of exposing floating-point noise', async () => {
+    const html = await generateSyncPage();
+
+    assert.match(html, /Math\.round\(absolute \* 1000\) \/ 1000 \+ 'ms'/);
+});
+
+test('characterization guard: negative offsets clamp the cue start at zero and shorten the tail', () => {
+    const input = '1\n00:00:00,100 --> 00:00:01,500\nDialogue';
+    const output = shiftSubtitleTimings(input, -200);
+
+    assert.match(output, /00:00:00,000 --> 00:00:01,300/);
+});
+
 test('Sync Studio keeps manual offsets available without the autosync extension', async () => {
     const html = await generateSyncPage();
 

@@ -6,7 +6,7 @@ This document outlines the planned features and improvements for StremioSubFaber
 
 - [ ] **Stable Multi-Providers Workflows** - Integrate more AI models with provider-specific translation workflows
 
-- [ ] **Autosync Feature** - Finish autosync implementation for automatic subtitle timing adjustment in-browser
+- [X] **Autosync Feature** - Finish autosync implementation for automatic subtitle timing adjustment in-browser
 
 - [ ] **Latin Spanish Support** - Fix Latin Spanish (es-419) subtitle fetching across all providers
 
