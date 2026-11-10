@@ -18,6 +18,53 @@ This template is the R5 ledger-format deliverable. It supersedes the legacy form
 
 ---
 
+## 2026-11-10 — INCIDENT RETROSPECTIVE: F4 PATCHING LOOP & ROOT-CAUSE ANALYSIS (POST-MORTEM GOVERNANCE RECORD)
+
+- **Date:** 2026-11-10 (KL time, retrospective entry recorded after the P1 commit).
+- **Parent HEAD SHA:** `b2979fa10dccd9080394f2a553d36ffd7b9831e2`.
+- **Status:** `VERIFIED_LOCAL`.
+- **Release Commit SHA + CI Run ID:** N/A — post-mortem governance record. This entry is folded into the P1 commit (amended, not a new commit), and the amended SHA is reported to the Owner in the final report.
+- **Owner Decision:** "MANDAT TADBIR URUS: REKOD POST-MORTEM INSIDEN F4 PATCHING LOOP KE DALAM LEJAR" — record the F4 patching incident honestly and objectively across five facets (chronology, false CRLF hypothesis vs physical reality, the one-line regex logic collapse, the balanced-brace state-machine solution, and the anti-thrashing protocol), then fold the record into the P1 commit and re-verify the pre-commit hook and the relay gate.
+
+### 1. Chronology of the incident & symptoms
+
+- **Original error:** `apply_diff` failed repeatedly with `no sufficiently similar match` on the page generators (especially the large `toolboxPageGenerator.js`, >10,000 lines), reporting similarity scores in the 88–92% band when the diff engine demanded a 100% exact match (`diffFuzzyThreshold: 1`).
+- **Shortcut attempt:** repeated `node -e` one-line scripts were run in the terminal, each printing `done`, while actually leaving the source files syntactically broken (orphaned function bodies, missing imports) — a textbook example of a false "success" signal.
+
+### 2. False hypothesis vs physical reality (the CRLF blindspot)
+
+- **Wrong model (declared):** the source was allegedly corrupted by invisible control characters (U+0000–U+001F), causing `apply_diff` to fail.
+- **Actual truth:** there was **no file corruption at all**. The byte 0x0D (U+000D) is the Carriage Return in a standard Windows CRLF (`\r\n`) sequence, and a buffer-vs-disk line-ending difference alone breaks an exact-match diff engine.
+- **Measured evidence (recorded in this incident):** byte scans of all six generators (`toolboxPageGenerator.js`, `syncPageGenerator.js`, `configurePageGenerator.js`, `fileUploadPageGenerator.js`, `historyPageGenerator.js`, `smdbPageGenerator.js`) found **zero CRLF and zero NUL/control bytes**; the Git blob of `toolboxPageGenerator.js` also reports **CRLF = 0, LF = 10,656**. `.gitattributes` enforces `*.js text eol=lf` and `git config core.autocrlf = true`, so LF endings are guaranteed on checkout — meaning the "CRLF hypothesis" does not hold in this repository's current state, and the exact-match failures were driven by the diff engine's 100% similarity requirement, not by corrupt files.
+
+### 3. The one-line regex logic collapse (nested-brace failure)
+
+The naive script used:
+
+```js
+if (/^function escapeHtml\(/.test(l.trim())) { skip = true; }
+if (skip && /^}/.test(l.trim())) { skip = false; continue; }
+```
+
+This is structurally broken: any nested block inside the function body — an `if (...) { ... }`, a `try { ... }`, or an object literal like `const map = { ... };` — contains a closing `}` that flips `skip` back to `false` **before the function actually ends**. The body is then cut mid-function, leaving orphaned statements, and the `injected` flag that was supposed to gate the `require('./escapeHtml')` import was declared but never actually used, so the import was never inserted. A subsequent "cleanup" script that dropped every empty line and every lone `}` deleted **3,756 lines across the six files** — the catastrophic data-loss step of the incident. Files had to be restored from `git show HEAD:<path>` to recover.
+
+### 4. The correct solution pattern (balanced-brace state machine)
+
+The incident was closed with a structured patch script that:
+
+1. Uses a **brace counter** (`balance += count('{') − count('}'`) from the function's opening brace until `balance === 0`, so the function's exact boundary is found without being fooled by nested braces, `};` object-closing lines, or strings — and, critically, a scanner that also **skips regex literals** (e.g. the `/"` in `/.replace(/"/g, ...)`) and comments, so a quote inside a regex is never mistaken for a string delimiter.
+2. **Preserves the original line-ending format** (LF/CRLF) on rewrite, so no unintended mass diffs appear.
+3. **Delegates to the canonical SSOT helper** in a single line, minimising diff surface and future drift.
+4. **Single-pass replacement** of the inline client copies — because the SSOT client source itself begins with the same `const escapeHtmlClient = (value) => {` pattern, a rescan loop would re-match its own output forever; this was the *second*, separate infinite loop discovered during the incident.
+
+### 5. Anti-thrashing protocol (forward-looking engineering rules)
+
+1. **Stop after two consecutive diff failures.** Never assume a file is corrupted; verify line endings and bytes first (e.g. a byte scan for `\r\n` / NUL), then inspect the exact anchor lines rather than guessing content.
+2. **Never use single-line regexes anchored at `^}`** to manipulate nested JavaScript scopes. A brace counter or a real parser is mandatory.
+3. **Always write structured patch scripts** (in `.tmp/`) that use balanced-brace counting or an AST parser when editing nested code — and validate the result with `node --check` and a targeted test before moving on, so a "done" log line is never mistaken for correctness.
+
+---
+
 ## 2026-11-10 — P1 INTEGRITY FIX: CANONICAL escapeHtml SSOT, CHANNEL-AWARE CACHE KEYS, STARTUP VALIDATION ORDER (CLASS 2 OPERATIONAL UPDATE)
 
 - **Date:** 2026-11-10 ~23:30 (KL time).
