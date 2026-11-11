@@ -92,29 +92,49 @@ test('[TRINITY-CORE-4] Basic uses ONE universal instruction — no language pack
     assert.notEqual(BASIC_TRANSLATION_SYSTEM_TEMPLATE, TRANSLATION_SYSTEM_TEMPLATE);
     assert.ok(
         BASIC_TRANSLATION_SYSTEM_TEMPLATE.includes(
-            'You are a professional Netflix subtitle translator. Translate from ${sourceLabel} to ${targetLabel}.'
+            'You are a professional Netflix subtitle translator, specializing in localizing subtitles from ${sourceLabel} into ${targetLabel}.'
         )
     );
     // Tiada suntikan bahasa/pack dalam Basic.
     assert.ok(!BASIC_TRANSLATION_SYSTEM_TEMPLATE.includes('${targetSpecificRules}'));
     assert.ok(!BASIC_TRANSLATION_SYSTEM_TEMPLATE.includes('${fewShot}'));
     assert.ok(!BASIC_TRANSLATION_SYSTEM_TEMPLATE.includes('${targetLabelShort}'));
-    // Empat masalah operasi Owner dipetakan ke peraturan khusus.
+    // Enam peraturan Basic baharu dikekalkan sebagai kontrak literal.
     assert.ok(
-        BASIC_TRANSLATION_SYSTEM_TEMPLATE.includes('Return exactly one <s id="N"> per input entry'),
+        BASIC_TRANSLATION_SYSTEM_TEMPLATE.includes(
+            'STRICT 1:1 SLOT PARITY: Return exactly one <s id="N"> per input entry with identical IDs in identical order.'
+        ),
         'R1 — ID pariti'
     );
     assert.ok(
-        BASIC_TRANSLATION_SYSTEM_TEMPLATE.includes('When one sentence is split across consecutive slots'),
+        BASIC_TRANSLATION_SYSTEM_TEMPLATE.includes(
+            'SPLIT SENTENCES: When a sentence spans multiple consecutive slots, distribute the translated meaning naturally across those exact same slots.'
+        ),
         'R2 — ayat dipecah'
     );
     assert.ok(
-        BASIC_TRANSLATION_SYSTEM_TEMPLATE.includes('not the way the ${sourceLabel} sentence is built'),
-        'R3 — anti-calque'
+        BASIC_TRANSLATION_SYSTEM_TEMPLATE.includes(
+            'CONVERSATIONAL & UNFILTERED: Translate for spoken dialogue, not textbook literature. Never translate idioms or slang literally.'
+        ),
+        'R3 — dialog semula jadi tanpa penapisan'
     );
     assert.ok(
-        BASIC_TRANSLATION_SYSTEM_TEMPLATE.includes('including inside parentheses'),
-        'R6 — anti-malas (nota dalam kurungan)'
+        BASIC_TRANSLATION_SYSTEM_TEMPLATE.includes(
+            'BREVITY & PACING: Keep translations concise and punchy to fit strict subtitle reading speeds (CPS).'
+        ),
+        'R4 — ringkas dan mengikut rentak'
+    );
+    assert.ok(
+        BASIC_TRANSLATION_SYSTEM_TEMPLATE.includes(
+            'PRESERVE FORMATTING VERBATIM: Retain every [br], <i>...</i>, "--", and "…" exactly as placed. Count must match per slot.'
+        ),
+        'R5 — pemeliharaan format'
+    );
+    assert.ok(
+        BASIC_TRANSLATION_SYSTEM_TEMPLATE.includes(
+            'ZERO CHATTER: Output ONLY the <answer> block containing the <s> entries, ending with </answer>.'
+        ),
+        'R6 — tiada catatan penterjemah'
     );
     // Basic mesti menerangkan kontrak sahaja; tiada contoh R2/R3/R4 yang boleh diikat kepada satu ayat sumber.
     assert.ok(!BASIC_TRANSLATION_SYSTEM_TEMPLATE.includes('Example:'), 'Tiada contoh ayat dalam Basic');
@@ -237,11 +257,15 @@ test('[TRINITY-CORE-9] Pro retains its evidence contract while Basic uses the lo
     }
     assert.ok(!TRANSLATION_SYSTEM_TEMPLATE.includes('distribute the clauses proportionally'));
     // Basic universal — kontrak diringkas, tiada jargon metaformer.
-    assert.ok(BASIC_TRANSLATION_SYSTEM_TEMPLATE.includes('same ids, same order'));
-    assert.ok(BASIC_TRANSLATION_SYSTEM_TEMPLATE.includes('Every slot keeps its own meaningful part'));
+    assert.ok(BASIC_TRANSLATION_SYSTEM_TEMPLATE.includes('identical IDs in identical order'));
     assert.ok(
         BASIC_TRANSLATION_SYSTEM_TEMPLATE.includes(
-            'Personal names, titles of works, and brand, shop and platform names stay as in the source'
+            'distribute the translated meaning naturally across those exact same slots'
+        )
+    );
+    assert.ok(
+        BASIC_TRANSLATION_SYSTEM_TEMPLATE.includes(
+            'Keep proper nouns, character names, and titles intact unless official localization demands otherwise.'
         )
     );
     assert.ok(BASIC_TRANSLATION_SYSTEM_TEMPLATE.includes('Anything outside <input> is read-only context'));
@@ -272,7 +296,7 @@ test('[TRINITY-CORE-11] Basic places the exact active-ID manifest before input o
         assert.ok(!structured.system.includes('Awak ikut kami sekali,'));
         assert.ok(!structured.system.includes('Malaysian Malay'));
         assert.ok(
-            structured.system.includes('Translate from English to Malay.'),
+            structured.system.includes('localizing subtitles from English into Malay.'),
             'Basic Basic-names the actual target language'
         );
 
@@ -298,7 +322,7 @@ test('[TRINITY-CORE-10] Basic instruction is IDENTICAL for every target except t
         const structured = splitStructuredPrompt(prompt);
         assert.ok(structured, `${targetLanguage} Basic prompt must stay structured`);
         assert.ok(
-            structured.system.includes(`Translate from English to ${targetLabel}.`),
+            structured.system.includes(`localizing subtitles from English into ${targetLabel}.`),
             `${targetLanguage} Basic prompt must name the actual target language`
         );
         // Normalize-away label (semua kemunculan) supaya hanya arahan yang tinggal.

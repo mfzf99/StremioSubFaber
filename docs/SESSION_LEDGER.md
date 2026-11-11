@@ -18,6 +18,24 @@ This template is the R5 ledger-format deliverable. It supersedes the legacy form
 
 ---
 
+## 2026-11-11 — BASIC TRANSLATION PROMPT REBUILD (CLASS 3 WORKING CHECKPOINT)
+
+- **Date:** 2026-11-11 ~19:26 (KL time; commit authorized by Owner ~19:38).
+- **Parent HEAD SHA:** `7bafc2d96eb6edc14f1ea03665312f3156c5d347`.
+- **Status:** `VERIFIED_LOCAL`.
+- **Release Commit SHA + CI Run ID:** N/A — Class 3 working checkpoint. No SemVer bump, no CHANGELOG entry, no release tag, and no push. The commit SHA is reported directly to the Owner in the final report.
+- **Owner Decision:** Replace only `BASIC_TRANSLATION_SYSTEM_TEMPLATE` in `src/services/prompts/trinity/translation/core.js` with the supplied six-rule text while keeping the Pro template, interpolation placeholders, and module exports unchanged.
+- **Impact & Contract Audit (Phase A/B):** Zone C (Trinity & Tri-Door) at the canonical Basic translation prompt only. Server consumer inspected: `src/services/translationEngine.js` imports `BASIC_TRANSLATION_SYSTEM_TEMPLATE` by reference at lines 35–37 and selects it for Basic at lines 199–201; no engine change is required because `${sourceLabel}` and `${targetLabel}` remain the only template placeholders. Client/public consumer: `N/A`, confirmed by a `public/` search for Basic-template phrases with zero results. Zone A `N/A` (no model, credential, sampling, `systemInstruction`, or `thinkingBudget` change). Zone B `N/A` (no schema or normalization change).
+- **Reproduce-First Evidence (§4.1):** The updated contract assertions were observed failing before the production prompt edit in `.tmp/basic-prompt-red-1.log`: `[TRINITY-CORE-4]` and `[TRINITY-CORE-9]` were `✖` against the old Basic text. The old required-ID manifest and cross-target tests were still green at that stage because they continued to assert the old interpolation phrasing; those expectations were then aligned and the full suite re-run.
+- **Independent Acceptance:** The new Basic template text matches the Owner-supplied replacement verbatim, including all six rule bodies and the unchanged export block. Targeted Trinity/context suites pass after the edit. Full tracked suite via `npm test` → **642 total / 641 PASS / 0 FAIL / 1 SKIP** (54 files, exit 0; the sole SKIP is the existing live-Redis concurrent-quota integration). `node --check src/services/prompts/trinity/translation/core.js` PASS. Scoped Prettier is clean after a one-file formatting fix; scoped ESLint reports 0 errors. `git diff --check` PASS. Final diff review shows exactly three modified files and no unrelated edits, secrets, or release metadata.
+- **Residual / N/A Gates:** Playwright and real-provider verification are `N/A` for a prompt-text-only change with no UI, DOM, transport, credential, or provider surface. Behavioural translation quality remains the Owner's live-test feedback item, not claimed here. Commit, push, CI, SemVer, CHANGELOG, and release status are all `N/A` because the mandate did not request them.
+- **Files Involved:** `src/services/prompts/trinity/translation/core.js` (M: Basic template replaced), `src/services/trinity-prompt-setup-regression.test.js` (M: exact new-text and interpolation expectations), `src/services/subfaber-context-regression.test.js` (M: runtime Basic system expectations), `docs/SESSION_LEDGER.md` (M: this entry only), `.tmp/RELAY_STATE.md` (M: relay checkpoint).
+- **npm test Status:** **642 total / 641 PASS / 0 FAIL / 1 SKIP** (existing live-Redis concurrent-quota integration), 54 test files, exit 0.
+- **Next Steps:** Owner runs a live translation and provides behavioural feedback on the rebuilt Basic prompt. The checkpoint commit stays local and unpushed until the Owner gives explicit push direction.
+- **Tool Navigation Ratio:** search_files=8 read_file=10 ratio=1:1.3 anchored=100% (10/10 reads) — every `read_file` used explicit line ranges or anchored indentation mode; targets met.
+
+---
+
 ## 2026-11-11 — P2 HYGIENE FIX: BEHAVIORAL TESTS REPLACE SOURCE-REGEX, PROBE/DEAD-CODE PURGE (CLASS 2 OPERATIONAL UPDATE)
 
 - **Date:** 2026-11-11 ~04:03 (KL time; the Fasa 3 session continues the 2026-11-10 A–Z audit cycle).

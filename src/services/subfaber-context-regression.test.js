@@ -488,11 +488,11 @@ test('SubFaberPrompt V4: Basic mode uses the universal instruction with no langu
 
     // Basic is the ACTIVE runtime instruction: one universal directive.
     assert.ok(
-        system.includes('You are a professional Netflix subtitle translator.'),
+        system.includes('You are a professional Netflix subtitle translator, specializing in localizing subtitles'),
         'Basic system carries the universal translator instruction'
     );
     assert.ok(
-        system.includes('Translate from English to Malay.'),
+        system.includes('specializing in localizing subtitles from English into Malay.'),
         'Basic system names the actual source and target language'
     );
     // No language pack, no few-shot, no Pro-only rule labels.
@@ -501,7 +501,7 @@ test('SubFaberPrompt V4: Basic mode uses the universal instruction with no langu
     assert.ok(!system.includes('## Role'), 'Basic carries no Pro Role section');
     // The Basic contract is enforced through the numbered rules.
     assert.ok(
-        system.includes('Return exactly one <s id="N"> per input entry, same ids, same order.'),
+        system.includes('Return exactly one <s id="N"> per input entry with identical IDs in identical order.'),
         'Basic rule 1 enforces 1:1 slot parity'
     );
     assert.ok(system.includes('Output ONLY the <answer> block'), 'Basic output contract is the <answer> block only');
