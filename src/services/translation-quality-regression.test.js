@@ -298,7 +298,10 @@ test('Pro retry combines Inspector and JS findings, then restores untouched veri
     const batch = [entry(1, 'I am going home.'), entry(2, 'Second line'), entry(3, 'Third line')];
     const result = await engine.translateBatch(batch, 'Malay', null, 0, 1, null, { streaming: false });
     assert.equal(calls, 2, 'original + Inspector retry');
-    assert.ok(!prompts[1].includes('ID 1 (VERBATIM_UNTRANSLATED)'), 'no mechanical finding for a valid translated slot');
+    assert.ok(
+        !prompts[1].includes('ID 1 (VERBATIM_UNTRANSLATED)'),
+        'no mechanical finding for a valid translated slot'
+    );
     assert.ok(prompts[1].includes('ID 2 (MERGE)'), 'semantic retry carries the Inspector crime verbatim');
     assert.ok(prompts[1].includes('<s id="3">Tiga lulus</s>'));
     assert.equal(result[2].text, 'Tiga lulus');
