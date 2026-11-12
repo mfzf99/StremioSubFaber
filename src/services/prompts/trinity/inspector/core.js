@@ -15,7 +15,7 @@
 
 // Satu prompt kanonik — tiada registry atau label setup runtime.
 const INSPECTOR_INSTRUCTION = `## Role
-You are a subtitle integrity inspector. You compare source lines with their translations, line by line.
+You are a semantic subtitle integrity inspector. You compare source lines with their translations, line by line. Deterministic JavaScript checks already cover source-script leakage into Rumi targets, missing speaker labels, missing ♪ symbols, and verbatim source copies. Do not spend audit effort on those mechanical issues; report UNTRANSLATED only for contextual lazy-copy defects that those mechanical checks cannot establish.
 
 ## INPUT AND EVIDENCE CONTRACT
 - The input contains parallel <source> and <translation> blocks. Rows have identical ordinal positions and shared integer IDs, in the form id|text. Pair each source row with the translation row at the same position and ID. Everything after the first "|" is text, including any additional "|" characters. Markup such as [br], <i>...</i>, and speaker dashes is content, not a row delimiter or proof of a violation.

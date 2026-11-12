@@ -18,6 +18,80 @@ This template is the R5 ledger-format deliverable. It supersedes the legacy form
 
 ---
 
+## 2026-11-12 — IMPLEMENT: SUBFABER × MONKEY SURGERY PHASE A+B (CLASS 3 WORKING CHECKPOINT)
+
+- **Date:** 2026-11-12 ~20:25 (KL time; Owner approved the plan with 4 mandatory amendments and Phase C cancellation).
+- **Parent HEAD SHA:** `1becb32c8876e181ccebfb9734dc0eccf76f1f7c`.
+- **Status:** `VERIFIED_LOCAL`.
+- **Release Commit SHA + CI Run ID:** N/A — Class 3 working checkpoint. No SemVer bump, no CHANGELOG entry, no release tag, and no push. The commit SHA is reported directly to the Owner in the final report.
+- **Owner Decision:** Approved combined SubFaber×Monkey plan for Phase A+B with four mandatory amendments: (1) mechanical JS validator with zero false-positive tolerance, only 4 objective defects trigger retry — script leakage into Rumi targets, speaker-label loss, music-symbol loss, verbatim >5-char copies; `?`/`!` punctuation is piggyback diagnostics only; (2) full retry contract via `src/services/utils/retryDiagnostics.js` (`buildCrimeCorrections()`), VERIFIED SLOTS block, diagnostics before the `<answer>` anchor; (3) Pro rules 2/5 absorb "convert meaning, not sounds" + speaker-label preservation (NO new Rules 7/8 — `targetSpecificRules` already numbers 7+); Basic gets a sharp 6-rule update and runs the JS validator + retry loop even with `agentInspector === null`; (4) Inspector prompt re-scoped to semantic crimes only. Phase C (static apple/dumpling vocabulary) CANCELLED by Owner. Owner asked to verify the plan critically and correct mistakes rather than follow blindly; the mandated "Class 2" commit label was corrected to Class 3 because runtime/test changes may not ride a Class 2 commit under the SSOT. A mid-session owner request ("take over, fix the 504s") was resolved as a test-fixture artifact, not a live API failure.
+- **Impact & Contract Audit (Phase A/B):** Zone C (Trinity & Tri-Door) — `translationEngine.js` (post-alignment mechanical gate before the Inspector gate; one mechanical retry per batch; semantic retry carries residual mechanical findings and restores verified slots after re-verdict), `prompts/trinity/translation/core.js` (Pro Rules 2/5; Basic Rules 3/4/5), `prompts/trinity/inspector/core.js` (semantic scope note), `trinity-prompt-setup-regression.test.js` (conditional-cadence contract re-expressed: the full conditional sentence is removed before cross-target comparison, forbidden list now catches "Malaysian", identity assertion restored for ALL targets). Zone A N/A (no model/sampling/`systemInstruction`/`thinkingBudget` change). Zone B N/A (no schema/normalization change). No `public/` consumer touched — no UI surface exists for engine-internal validation; recorded N/A with this reason.
+- **Reproduce-First Evidence (§4.1):** Red-first per defect, captured in `.tmp/translation-quality-red.log` (MODULE_NOT_FOUND for both new utilities before any production edit) and `.tmp/translation-quality-assert-debug.log` (integration-level red: Basic completed without retry; Pro retry prompt lacked per-ID corrections). Every later production change was preceded by an observed failing assertion that pins it.
+- **Independent Acceptance:**
+  - **Four-objective trigger contract:** validator test PASS — SCRIPT_LEAK / SPEAKER_LABEL_LOSS / MUSIC_SYMBOL_LOSS / VERBATIM_UNTRANSLATED all detected and hard-mapped; unrelated line untouched; punctuation absent from hard findings.
+  - **Zero-false-positive sweep:** Rumi-target gating proven via `Intl.Locale` maximization (Arabic/Japanese outputs with matching source script produce no findings; dedicated non-Rumi target probes PASS); SDH `[sighs]`→`[mengeluh]`, single-token proper nouns, `Okay!`, and music-preserved lines produce zero hard findings; punctuation recorded as diagnostic-only and never triggers retry alone.
+  - **Speaker labels:** preserved `(Name)`/`[Name]` labels pass; lowercase `(sighs)` correctly ignored as an SDH cue, not a speaker name.
+  - **Diagnostics mapping:** all 4 mechanical + 7 semantic crimes map to explicit per-ID corrections; a verbatim slot also flagged UNTRANSLATED merges into one semantic line (12 corrections, not 13 duplicates).
+  - **Anchor preservation:** diagnostics injected before the `<answer>` marker (Gemini) and before the explicit anchor directive (OpenAI/Anthropic); verified slot text retained in the block; anchor stays the final prompt token.
+  - **Basic mode:** mechanical retry runs with `agentInspector === null`; the complete original input batch is resent; verified slots restored from the pre-retry result; incident `MECHANICAL_TRANSLATION_RETRY` closes `recovered`; punctuation-only batch spends exactly 1 provider call.
+  - **Pro mode:** Inspector verdict rides the same `selectRetryFindings` merge; the semantic retry prompt carries the Inspector crime verbatim; untouched verified slots are preserved after re-verdict.
+  - **Unresolved retry:** if the mechanical defect persists after retry, the original aligned result is kept and the incident closes `failed`.
+  - **Prompt contracts:** Pro retains `${targetSpecificRules}` numbering (no Rules 7/8 added); Basic universal identity asserted for all 5 probe targets after removing the single literal conditional cadence clause; no language-pack leakage.
+  - **Full suite:** `npm test` → **654 total / 653 PASS / 0 FAIL / 1 SKIP** (exit 0, ~32s; the sole SKIP is the pre-existing live-Redis concurrent-quota integration). Delta vs 642 baseline: +12 new behavioral tests.
+  - **Scoped gates:** `node --check` PASS on all touched JS files; Prettier scoped check clean after `--write`; scoped ESLint **0 errors / 6 warnings**, all pre-existing `no-unused-vars` legacy warnings in untouched regions of `translationEngine.js`; `git diff --check` PASS; relay gate PASS.
+- **Residual / N/A Gates:** Playwright N/A — no UI/DOM surface changed (engine-internal validation only). Real-provider verification N/A — no network path, credential, or sampling change; behaviour pinned by 653 automated tests. Cache-hit path bypasses the new validator by design (cached entries were validated when first produced) — recorded as a deliberate scope boundary, not a silent failure. The 502/504 lines in earlier terminal output were simulated warnings from `agent-inspector-regression.test.js` fail-open fixtures, not live API errors; the true loop cause was a stale test assertion (a removed placeholder was still asserted) plus a second normalization variant from "Indonesian-dub" inside the conditional clause — both fixed under evidence. SemVer/CHANGELOG/push/CI N/A under Class 3.
+- **Files Involved:** `src/services/utils/mechanicalValidator.js` (new), `src/services/utils/retryDiagnostics.js` (new), `src/services/translation-quality-regression.test.js` (new: 12 behavioral tests, red-first), `src/services/translationEngine.js` (M), `src/services/prompts/trinity/translation/core.js` (M), `src/services/prompts/trinity/inspector/core.js` (M), `src/services/trinity-prompt-setup-regression.test.js` (M), `docs/SESSION_LEDGER.md` (M: this entry), `.tmp/RELAY_STATE.md` (M: relay checkpoint).
+- **npm test Status:** **654 total / 653 PASS / 0 FAIL / 1 SKIP** (existing live-Redis concurrent-quota integration), exit 0.
+- **Next Steps:** Owner reviews the checkpoint commit. If approved, a separate Class 1 release mandate will cut the version, add the CHANGELOG entry, and push through the full Phase E pipeline. No push occurs from this session.
+- **Tool Navigation Ratio:** search_files=27 read_file=31 ratio=1:1.1 anchored=87% (27/31 reads) — ratio within target; reads used slice mode with explicit offset+limit or indentation anchors; the two full-file reads were the small new utilities that were themselves the unit of work, justified under §11.4(a).
+
+## 2026-11-12 — PLAN: SUBFABER × MONKEY COMBINED SURGERY (CLASS 3 WORKING CHECKPOINT)
+
+- **Date:** 2026-11-12 ~15:14 (KL time; Owner awaiting approval for new task).
+- **Parent HEAD SHA:** `1becb32c8876e181ccebfb9734dc0eccf76f1f7c`.
+- **Status:** `VERIFIED_LOCAL`.
+- **Release Commit SHA + CI Run ID:** N/A — Class 3 working checkpoint. No SemVer bump, no CHANGELOG entry, no release tag, and no push. Plan document only.
+- **Owner Decision:** Mandate for plan-only architecture review combining SubFaber (4-pillar Preflight, 7-crime Inspector, split-sentence discipline, 3 channel wrappers) with Monkey's mechanical validators and actionable retry diagnostics. No code changes until explicit approval.
+- **Impact & Contract Audit (Phase A/B):** Zone C (Trinity prompt & pipeline) — plan only, no production code modified. Zone A N/A (no model/sampling/`systemInstruction`/`thinkingBudget` change). Zone B N/A (no schema/normalization change). All work confined to `plans/subfaber-monkey-combined-surgery-plan.md` (new) and this ledger entry.
+- **Reproduce-First Evidence (§4.1):** N/A — plan-only, no defect repair. Baseline analysis from previous R&D session (v1 ~17.5% → v9-max 27.5% similarity) informed the plan.
+- **Independent Acceptance:**
+  - **Plan completeness:** 4-section plan covers (1) mechanical validators injection, (2) 4-surface prompt/pipeline changes (Preflight/Pro/Basic/Inspector), (3) 3-channel compatibility (Gemini/OpenAI/Anthropic), and (4) phased implementation with token cost and regression tests.
+  - **Monkey mechanism mapping:** DIAG_MSGS per-line validation, `?`/`!` mismatch, source script leakage, speaker label parentheses, `♪` preservation, `[br]` count — all mapped to zero-cost JS validators in `translationEngine.js`.
+  - **Retry diagnostics:** `buildCrimeCorrections()` utility planned to map each crime type + ID to explicit repair instructions, replacing generic `warningBlock`.
+  - **Clean-line preservation:** Plan includes `normalizeForRetry()` to prevent copy-mode on already-correct entries.
+  - **Channel compatibility:** Gemini anchor preservation, OpenAI `developer`/`json_schema`, Anthropic data-first/no-prefill — all verified in plan.
+  - **Cost analysis:** Basic +10%, Pro +8%, Retry +15% prompt tokens; zero additional API calls.
+  - **Regression tests:** Validator detection, retry diagnostics format, anchor preservation, good-entry retention, channel compatibility — all specified.
+- **Residual / N/A Gates:** Playwright N/A (no UI change). Real-provider verification completed in previous R&D session (50+ runs). No regression tests added (plan-only). No production integration performed.
+- **Files Involved:** `plans/subfaber-monkey-combined-surgery-plan.md` (new: full 4-section surgery plan), `docs/SESSION_LEDGER.md` (M: this entry only).
+- **npm test Status:** N/A — plan-only, no production code changed.
+- **Next Steps:** Owner reviews and approves plan. New task will implement the surgery in a separate workspace. No production integration in this session.
+- **Tool Navigation Ratio:** search_files=8 read_file=12 ratio=1:1.5 anchored=100% (12/12 reads) — every `read_file` used explicit line ranges or anchored indentation mode; targets met.
+
+---
+
+## 2026-11-11 — R&D: NETFLIX-STYLE PROMPT ENGINEERING (CLASS 3 WORKING CHECKPOINT)
+
+- **Date:** 2026-11-11 ~23:19 (KL time; session paused by Owner ~23:19).
+- **Parent HEAD SHA:** `1becb32c8876e181ccebfb9734dc0eccf76f1f7c`.
+- **Status:** `VERIFIED_LOCAL`.
+- **Release Commit SHA + CI Run ID:** N/A — Class 3 working checkpoint. No SemVer bump, no CHANGELOG entry, no release tag, and no push. R&D artifacts remain in `.tmp/rd/` (untracked).
+- **Owner Decision:** Mandate to research Netflix-style translation prompts for the Agent Translation (Trinity), using the provided English→Malay Business Proposal S01E01 pair. 10 prompt iterations × 4 reasoning efforts (40 runs) on 120-cue sample, then 5 advanced approaches (self-critique, ensemble, glossary, register, hybrid), then one full 950-cue run with the champion config. API: Rootsys deepseek-v4.1-flash, temp 0.3, top_p 0.9, effort off/low/high/max.
+- **Impact & Contract Audit (Phase A/B):** Zone C (Trinity prompt) — research only, no production code modified. Zone A N/A (no model/sampling/`systemInstruction`/`thinkingBudget` change). Zone B N/A (no schema/normalization change). All work confined to `.tmp/rd/` (harness, prompts, outputs, reports). No `src/` or `public/` files touched.
+- **Reproduce-First Evidence (§4.1):** N/A — this is R&D, not defect repair. The baseline v1 (neutral prompt) was run first and measured at ~17.5% similarity to establish the starting point.
+- **Independent Acceptance:**
+  - **Phase 1 (40 runs):** v1 baseline 18.6% → v9-max 27.5% similarity (+57%). Key levers: reframe as native screenwriter, GOLD few-shot from actual Netflix reference, anti-calque rules, register balance, pro-drop/economy, micro-fixes for persistent weak pairs.
+  - **Phase 2 (5 approaches):** glossary injection (v9 + fixed Netflix term list) won at 29.4% (effort off). Self-critique (23.9%), ensemble (23.9%), register tuning (25.8%), hybrid (23.1%) all failed to beat glossary.
+  - **Full run (950 cues):** champion config (v9 + glossary, effort off) produced 950/950 cues, 0 errors, 0 failed batches, 121 exact matches (12.7%), lenRatio 1.128, anda=0. But simScore dropped to 19.7% vs 29.4% on sample — confirming prompt alone is insufficient for complex dialogue without Preflight context.
+  - **Conclusion:** The champion prompt (v9 + glossary) is a better starting point than baseline but NOT production-ready. It validates the Trinity architecture (Preflight + Translation + Inspector) as the correct approach for complex scenes.
+- **Residual / N/A Gates:** Playwright N/A (no UI change). Real-provider verification completed via 50+ live API runs. No regression tests added (R&D only). `.tmp/rd/` artifacts are untracked and not for commit.
+- **Files Involved:** `.tmp/rd/harness.js`, `.tmp/rd/harness-v2.js`, `.tmp/rd/harness-full.js`, `.tmp/rd/prompts.js` (v1–v10), `.tmp/rd/evaluate.js`, `.tmp/rd/similarity.js`, `.tmp/rd/weakcases.js`, `.tmp/rd/audit-full.js`, `.tmp/rd/AUDIT_LOG.md`, `.tmp/rd/FINAL_REPORT.md`, `.tmp/rd/FINAL_REPORT_V2.md`, `.tmp/rd/out/` (50+ output files), `docs/SESSION_LEDGER.md` (M: this entry only).
+- **npm test Status:** N/A — R&D only, no production code changed.
+- **Next Steps:** Owner reviews R&D findings. Champion prompt (v9 + glossary) may be integrated as `BASIC_TRANSLATION_SYSTEM_TEMPLATE` or `TRANSLATION_SYSTEM_TEMPLATE` after further validation with Preflight context. No production integration performed in this session.
+- **Tool Navigation Ratio:** search_files=12 read_file=18 ratio=1:1.5 anchored=100% (18/18 reads) — every `read_file` used explicit line ranges or anchored indentation mode; targets met.
+
+---
+
 ## 2026-11-11 — BASIC TRANSLATION PROMPT REBUILD (CLASS 3 WORKING CHECKPOINT)
 
 - **Date:** 2026-11-11 ~19:26 (KL time; commit authorized by Owner ~19:38).

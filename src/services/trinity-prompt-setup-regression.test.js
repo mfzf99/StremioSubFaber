@@ -114,19 +114,25 @@ test('[TRINITY-CORE-4] Basic uses ONE universal instruction — no language pack
     );
     assert.ok(
         BASIC_TRANSLATION_SYSTEM_TEMPLATE.includes(
-            'CONVERSATIONAL & UNFILTERED: Translate for spoken dialogue, not textbook literature. Never translate idioms or slang literally.'
+            'CONVERSATIONAL & UNFILTERED: Convert meaning, not sounds or word order.'
         ),
         'R3 — dialog semula jadi tanpa penapisan'
     );
     assert.ok(
         BASIC_TRANSLATION_SYSTEM_TEMPLATE.includes(
-            'BREVITY & PACING: Keep translations concise and punchy to fit strict subtitle reading speeds (CPS).'
+            'when it is Malay, use natural Malaysian Malay cadence, never textbook or Indonesian-dub stiffness.'
         ),
-        'R4 — ringkas dan mengikut rentak'
+        'R3 — rentak Malaysian Malay tanpa language-pack interpolation'
     );
     assert.ok(
         BASIC_TRANSLATION_SYSTEM_TEMPLATE.includes(
-            'PRESERVE FORMATTING VERBATIM: Retain every [br], <i>...</i>, "--", and "…" exactly as placed. Count must match per slot.'
+            'NAMES & SDH CAPTIONS: Preserve (Name) and [Name] speaker labels with their exact names and delimiters.'
+        ),
+        'R4 — label penutur, SDH, tanda baca, dan muzik'
+    );
+    assert.ok(
+        BASIC_TRANSLATION_SYSTEM_TEMPLATE.includes(
+            'PRESERVE FORMATTING VERBATIM: Retain every [br], <i>...</i>, and dialogue dash ("-"/"--") exactly, with matching counts per slot.'
         ),
         'R5 — pemeliharaan format'
     );
@@ -291,10 +297,10 @@ test('[TRINITY-CORE-11] Basic places the exact active-ID manifest before input o
             .replaceAll('${targetLabel}', 'Malay')
             .replaceAll('${targetLabelShort}', 'Malay');
         assert.equal(structured.system, expectedSystem);
-        // [BASIC-UNIVERSAL] Tiada suntikan bahasa langsung dalam Basic.
+        // [BASIC-UNIVERSAL] Tiada language-pack atau contoh bahasa statik.
         assert.ok(!structured.system.includes('Spoken Malaysian Cadence'));
         assert.ok(!structured.system.includes('Awak ikut kami sekali,'));
-        assert.ok(!structured.system.includes('Malaysian Malay'));
+        assert.ok(structured.system.includes('when it is Malay, use natural Malaysian Malay cadence'));
         assert.ok(
             structured.system.includes('localizing subtitles from English into Malay.'),
             'Basic Basic-names the actual target language'
@@ -312,8 +318,11 @@ test('[TRINITY-CORE-10] Basic instruction is IDENTICAL for every target except t
     const basic = makeEngine({ trinityMode: 'basic' });
     basic.sourceLanguage = 'English';
 
-    // Tiada peraturan bahasa, tiada placeholder pack, tiada contoh Melayu.
-    const forbidden = /Malaysian|ini\/itu\/yang|saya\/awak|aku\/kau|okey\/helo|Spoken Malaysian/i;
+    // Tiada language-pack atau contoh kosa kata statik; satu frasa cadence
+    // universal yang menyebut Malay hanya sebagai syarat sasaran dibenarkan.
+    // "Malaysian" dilarang dalam normalized kerana klausa bersyarat mesti
+    // dibuang sepenuhnya sebelum perbandingan cross-target.
+    const forbidden = /ini\/itu\/yang|saya\/awak|aku\/kau|okey\/helo|Malaysian/i;
     const systemByTarget = {};
 
     for (const targetLanguage of ['Malay', 'Japanese', 'Vietnamese', 'Spanish', 'Indonesian']) {
@@ -325,17 +334,26 @@ test('[TRINITY-CORE-10] Basic instruction is IDENTICAL for every target except t
             structured.system.includes(`localizing subtitles from English into ${targetLabel}.`),
             `${targetLanguage} Basic prompt must name the actual target language`
         );
-        // Normalize-away label (semua kemunculan) supaya hanya arahan yang tinggal.
-        const normalized = structured.system.replaceAll(targetLabel, '<TARGET>');
+        // Klausa bersyarat adalah LITERAL dalam templat dan seragam pada runtime
+        // semua sasaran; keseluruhan ayat (termasuk "Indonesian-dub") dibuang
+        // sebelum perbandingan cross-target supaya tiada varian kedua wujud.
+        const conditional =
+            'when it is Malay, use natural Malaysian Malay cadence, never textbook or Indonesian-dub stiffness.';
+        assert.equal(
+            BASIC_TRANSLATION_SYSTEM_TEMPLATE.split(conditional).length - 1,
+            1,
+            'Basic template contains the conditional cadence exactly once'
+        );
+        assert.equal(
+            structured.system.split(conditional).length - 1,
+            1,
+            `${targetLanguage} runtime prompt carries the conditional cadence exactly once`
+        );
+        const normalized = structured.system.replaceAll(conditional, '').replaceAll(targetLabel, '<TARGET>');
         assert.doesNotMatch(
             normalized,
             forbidden,
             `${targetLanguage} Basic prompt must not contain Malay-specific craft`
-        );
-        assert.doesNotMatch(
-            normalized,
-            /Malay\b/i,
-            `${targetLanguage} Basic prompt must not mention Malay outside the target label`
         );
         systemByTarget[targetLanguage] = normalized;
     }
@@ -344,7 +362,7 @@ test('[TRINITY-CORE-10] Basic instruction is IDENTICAL for every target except t
     assert.equal(
         distinct.size,
         1,
-        `Basic system prompt mesti IDENTIK untuk semua bahasa; mendapat ${distinct.size} varian`
+        `Basic system prompt mesti IDENTIK untuk semua bahasa selepas label & klausa bersyarat dibuang; mendapat ${distinct.size} varian`
     );
 });
 

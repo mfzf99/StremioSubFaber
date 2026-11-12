@@ -41,6 +41,13 @@ const {
 // anthropic data-first) — sifar semakan if-channel dalam gelung terjemahan.
 // Wire-format kekal sentinel system+BOUNDARY+user (semua provider split sama).
 const { resolveTrinityPrompt } = require('./prompts/trinity');
+const { validateMechanicalBatch, getHardMechanicalFindings } = require('./utils/mechanicalValidator');
+const {
+    buildRetryDiagnosticBlock,
+    injectRetryDiagnostics,
+    preserveVerifiedEntries,
+    selectRetryFindings
+} = require('./utils/retryDiagnostics');
 // [AGENT-INSPECTOR-OBS] Namespace import (bukan destructure) — mudah di-stub dalam
 // ujian. Telemetri tulen: tiada panggilan API tambahan.
 const sentry = require('../utils/sentry');
@@ -226,6 +233,7 @@ class TranslationEngine {
         // neither path mutates the stored Trinity credentials.
         this.agentInspector = this.trinityMode === 'basic' ? null : options.agentInspector || null;
         this._agentInspectorSemanticRetries = new Set(); // batchIndex yang sudah guna retry semantik
+        this._mechanicalRetries = new Set(); // Satu retry penuh bagi kecacatan mekanikal setiap batch.
 
         // Mismatch retry: number of retries when AI returns wrong entry count (default: 1)
         const rawMismatchRetries = parseInt(this.advancedSettings.mismatchRetries);
@@ -365,6 +373,7 @@ class TranslationEngine {
             agentInspectorBatchesSkippedAfterOpen: 0, // batch tanpa perlindungan selepas open
             // [AGENT-INSPECTOR-OBS P3] Crime pattern tracking (observation-only)
             // [KNP-ALIGNMENT 2026-10-07] TERM ditambah ke taksonomi telemetry.
+            mechanicalRetries: 0, // retry tanpa LLM Inspector untuk kecacatan objektif
             crimesDetectedByType: { MERGE: 0, DROP: 0, PHANTOM: 0, SHIFT: 0, UNTRANSLATED: 0, REGISTER: 0, TERM: 0 },
             crimesResolvedByRetry: 0, // hanya re-verdict LULUS yang disahkan (K3)
             crimePatternDetected: null, // → array string (K2)
@@ -2484,6 +2493,78 @@ class TranslationEngine {
             translatedEntries = Object.values(aligned).sort((a, b) => a.index - b.index);
         }
 
+        const agentInspectorStructurallyClean =
+            translatedEntries.length === batch.length &&
+            !translatedEntries.some((e) => typeof e?.text === 'string' && e.text.startsWith('[⚠️]'));
+
+        // Semakan JS berlaku pada hasil muktamad yang lengkap, sebelum Inspector.
+        // Kecacatan mekanikal tidak membazirkan audit LLM dan berfungsi dalam Basic.
+        let mechanicalFindings = [];
+        if (agentInspectorStructurallyClean) {
+            mechanicalFindings = validateMechanicalBatch(batch, translatedEntries, targetLanguage);
+        }
+        const mechanicalHardFindings = getHardMechanicalFindings(mechanicalFindings);
+        const mechanicalAffectedIndices = new Set(
+            mechanicalFindings
+                .filter((finding) => finding.type !== 'PUNCTUATION_MISMATCH')
+                .map((finding) => finding.index)
+        );
+        if (mechanicalHardFindings.length > 0 && !this._mechanicalRetries.has(batchIndex)) {
+            this._mechanicalRetries.add(batchIndex);
+            const verifiedIndices = batch
+                .map((_, index) => index)
+                .filter((index) => !mechanicalAffectedIndices.has(index));
+            const diagnosticBlock = buildRetryDiagnosticBlock({
+                findings: mechanicalFindings,
+                verifiedEntries: verifiedIndices.map((index) => ({
+                    id: batch[index].id,
+                    text: translatedEntries[index].text
+                })),
+                targetLanguage
+            });
+            const retryPrompt = injectRetryDiagnostics(prompt, diagnosticBlock);
+            this.translationStats.mechanicalRetries++;
+            this._logIncident({
+                type: 'MECHANICAL_TRANSLATION_RETRY',
+                batch: batchIndex + 1,
+                recovery: 'full batch retry with per-ID mechanical corrections',
+                outcome: 'in_progress'
+            });
+            try {
+                const retryText = await this._translateCall(batchText, targetLanguage, retryPrompt, false, null);
+                const retryEntries = this.parseResponseForWorkflow(retryText, batch.length, batch);
+                const { aligned: retryAligned, missingIndices: retryMissing } = this.alignTranslatedEntries(
+                    retryEntries,
+                    batch
+                );
+                if (retryMissing.length === 0 && retryEntries.length === batch.length) {
+                    const retrySorted = Object.values(retryAligned).sort((a, b) => a.index - b.index);
+                    const retryValidation = validateMechanicalBatch(batch, retrySorted, targetLanguage);
+                    const resolvedOriginalDefects = mechanicalHardFindings.every(
+                        (finding) =>
+                            !getHardMechanicalFindings(retryValidation).some((next) => next.index === finding.index)
+                    );
+                    if (resolvedOriginalDefects && getHardMechanicalFindings(retryValidation).length === 0) {
+                        translatedEntries = preserveVerifiedEntries(translatedEntries, retrySorted, verifiedIndices);
+                        mechanicalFindings = validateMechanicalBatch(batch, translatedEntries, targetLanguage);
+                        this._closeIncident('MECHANICAL_TRANSLATION_RETRY', batchIndex + 1, { outcome: 'recovered' });
+                    } else {
+                        this._closeIncident('MECHANICAL_TRANSLATION_RETRY', batchIndex + 1, { outcome: 'failed' });
+                    }
+                } else {
+                    this._closeIncident('MECHANICAL_TRANSLATION_RETRY', batchIndex + 1, {
+                        outcome: 'failed — structural mismatch'
+                    });
+                }
+            } catch (retryErr) {
+                if (this.retryRotationEnabled && this.gemini?.apiKey) {
+                    this._recordKeyError(this.gemini.apiKey);
+                }
+                this._closeIncident('MECHANICAL_TRANSLATION_RETRY', batchIndex + 1, { outcome: 'failed' });
+                log.warn(() => `[TranslationEngine] Mechanical retry failed: ${retryErr.message}`);
+            }
+        }
+
         // ── DUAL-AI GERBANG SEMANTIK (Mandat Pelaksanaan 2026-09-26) ──
         // Agent Inspector menyemak hasil MUKA-AKHIR (selepas semua pemulihan struktur
         // Pass 1/2/3 selesai) — mengesan MERGE/DROP/PHANTOM yang lolos daripada
@@ -2493,9 +2574,6 @@ class TranslationEngine {
         // Guard struktur: hasil muktamad mesti lengkap tanpa placeholder [⚠️]
         // (alignTranslatedEntries memadamkan slot hilang dengan placeholder —
         // bercacat dari segi struktur, bukan calon semakan semantik).
-        const agentInspectorStructurallyClean =
-            translatedEntries.length === batch.length &&
-            !translatedEntries.some((e) => typeof e?.text === 'string' && e.text.startsWith('[⚠️]'));
 
         if (
             this.trinityMode === 'pro' &&
@@ -2546,24 +2624,23 @@ class TranslationEngine {
                         () => `[AgentInspector] Semantic crime(s) detected in batch ${batchIndex + 1}:\n${crimeLines}`
                     );
 
-                    const warningBlock = `
-
-CRITICAL SEMANTIC ALERT (from independent inspector):
-${crimeLines}
-You MUST translate each numbered line 1:1. NEVER merge two source lines into one output slot. NEVER invent dialogue.`;
-
-                    // [BUG#2 PATCH 2026-10-07, deep scan #2] Amaran jenayah
-                    // disisip SEBELUM blok <answer> — anchor '<s id="N">' mesti
-                    // kekal token terakhir prompt (kontrak Smart Preamble
-                    // Scrubber + prefill Gemini). Concat lama
-                    // `prompt + warningBlock` menolak anchor ke tengah prompt
-                    // dan berisiko merosakkan pemulihan slot pertama.
-                    const answerMarker = '\n\n<answer>';
-                    const answerIdx = prompt.lastIndexOf(answerMarker);
-                    const retryPrompt =
-                        answerIdx !== -1
-                            ? `${prompt.slice(0, answerIdx)}\n${warningBlock}${prompt.slice(answerIdx)}`
-                            : prompt + warningBlock; // prompt warisan tanpa <answer> — append di hujung
+                    const retryFindings = selectRetryFindings(mechanicalFindings, verdict.crimes);
+                    const affectedIds = new Set(retryFindings.flatMap((finding) => finding.ids || []));
+                    const verifiedIndices = batch
+                        .map((_, index) => index)
+                        .filter((index) => !affectedIds.has(batch[index].id));
+                    const retryPrompt = injectRetryDiagnostics(
+                        prompt,
+                        buildRetryDiagnosticBlock({
+                            findings: retryFindings,
+                            semantic: true,
+                            verifiedEntries: verifiedIndices.map((index) => ({
+                                id: batch[index].id,
+                                text: translatedEntries[index].text
+                            })),
+                            targetLanguage
+                        })
+                    );
 
                     try {
                         await new Promise((resolve) => setTimeout(resolve, 500));
@@ -2603,8 +2680,18 @@ You MUST translate each numbered line 1:1. NEVER merge two source lines into one
                             // LULUS dan DISAHKAN (bukan failOpen — failOpen bermaksud
                             // TIDAK disemak; mengiranya sebagai resolved ialah telemetry
                             // yang tidak jujur). Pipeline behavior kekal tidak berubah.
-                            if (reVerdict && !reVerdict.failOpen && reVerdict.valid !== false) {
-                                translatedEntries = retrySorted;
+                            const retryMechanical = validateMechanicalBatch(batch, retrySorted, targetLanguage);
+                            if (
+                                reVerdict &&
+                                !reVerdict.failOpen &&
+                                reVerdict.valid !== false &&
+                                getHardMechanicalFindings(retryMechanical).length === 0
+                            ) {
+                                translatedEntries = preserveVerifiedEntries(
+                                    translatedEntries,
+                                    retrySorted,
+                                    verifiedIndices
+                                );
                                 this.translationStats.crimesResolvedByRetry += Array.isArray(verdict.crimes)
                                     ? verdict.crimes.length
                                     : 0;
