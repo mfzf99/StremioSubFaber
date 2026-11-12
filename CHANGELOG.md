@@ -2,6 +2,30 @@
 
 All notable changes to this project will be documented in this file.
 
+## SubFaber v3.31.0 (2026-11-12) — Mechanical Quality Validators and Actionable Retry Diagnostics
+
+### ✨ Added — Zero-Cost Mechanical Translation Validators (Phase A)
+
+- A deterministic JavaScript quality gate now runs on every structurally complete batch result, in both Basic and Pro modes, before any LLM Inspector audit is spent. It detects exactly four objective translation defects: source-script leakage into Latin-script (Rumi) targets, lost speaker labels, lost `♪` music symbols, and verbatim copies of source sentences longer than five characters. Rumi gating is resolved through `Intl.Locale` maximization so Arabic/Japanese/Cyrillic targets are never punished for legitimately retaining their own script.
+- Speaker-label detection distinguishes capitalized speaker names from lowercase SDH sound cues, and the verbatim check exempts single-token proper nouns and universal interjections, so the validator can trigger retries without manufacturing false positives on legitimate craft.
+
+### ✨ Added — Actionable Full-Batch Retry With Verified-Slot Preservation (Phase B)
+
+- Every failed mechanical check triggers exactly one full-batch retry per batch that resends the complete original `<input>` payload, keeping split-sentence context and the XML parser contract intact. A new diagnostics builder maps each mechanical finding and each of the seven Inspector semantic crimes to an explicit per-ID correction instruction, and a `VERIFIED SLOTS (keep verbatim)` block lists the entries that already passed inspection so the model does not disturb correct slots.
+- The retry diagnostics block is injected strictly before the `<answer>` anchor on Gemini Native and before the explicit anchor directive on OpenAI-compatible and Anthropic channels, preserving each door's anchor contract. After a retry, the engine restores the previously validated text of every untouched slot, and a retry is only accepted when the original defects are resolved without introducing new ones; unresolved retries keep the original aligned result.
+- Basic mode now receives this entire validation and retry loop even with no Inspector configured, closing the quality gap between modes for mechanical defects. The semantic retry path in Pro mode additionally carries any residual mechanical findings in the same merged diagnostics block.
+- `?`/`!` punctuation differences are recorded as piggyback diagnostics only and never trigger a retry on their own, respecting cross-language sentence-structure differences.
+
+### 🔧 Changed — Translation Prompt and Inspector Scope Alignment
+
+- The Pro translation template absorbs "convert meaning, not sounds" and speaker-label preservation into its existing ANTI-SHIFT and ANTI-UNTRANSLATED rules instead of adding numbered rules that would collide with the language-pack numbering. The Basic template sharpens its conversational, brevity, and formatting rules, adds a conditional Malaysian-Malay cadence clause that only applies to Malay targets, and now names speaker labels, SDH captions, punctuation intent, and music symbols explicitly while keeping the universal six-rule contract identical for all other targets.
+- The Agent Inspector instruction now declares that deterministic JavaScript checks already cover script leakage, speaker labels, music symbols, and verbatim copies, re-scoping its full audit budget to the seven semantic crimes (MERGE, DROP, PHANTOM, SHIFT, UNTRANSLATED, REGISTER, TERM).
+
+### ✅ Verification
+
+- Full tracked suite: 654 tests / 653 passed / 0 failed / 1 skipped (pre-existing live-Redis integration), including 12 new red-first behavioral tests covering validator detection, zero-false-positive sweeps across Rumi and non-Rumi targets, diagnostics mapping, anchor preservation, verified-slot restoration, Basic-mode retries without an Inspector, Pro-mode merged Inspector+JS retries, and unresolved-retry fallbacks.
+- Scoped Prettier and repository-wide `prettier --check .` clean; scoped ESLint 0 errors; relay gate PASS; CI SUCCESS on Node 22 and Node 24.
+
 ## SubFaber v3.30.0 (2026-11-10) — Phase C Parallel Engine and ElfHosted Purge
 
 ### ✨ Added — Parallel Translation Engine with Auto-Worker Scheduling

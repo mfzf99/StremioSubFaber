@@ -18,6 +18,23 @@ This template is the R5 ledger-format deliverable. It supersedes the legacy form
 
 ---
 
+## 2026-11-12 — RELEASE: SUBFABER v3.31.0 MECHANICAL VALIDATORS & RETRY DIAGNOSTICS (CLASS 1 RELEASE COMMIT)
+
+- **Date:** 2026-11-12 ~20:46 (KL time; Owner ordered "buat terus commit/push class 1" after reviewing the green Class 3 checkpoint).
+- **Parent HEAD SHA:** `683bf324055f18068e73bf4e51c1344795d15779`.
+- **Status:** `VERIFIED_LOCAL` (pre-release).
+- **Release Commit SHA + CI Run ID:** confirmed in the final report after push/CI — never invented.
+- **Owner Decision:** Owner ordered an immediate Class 1 release of the approved Phase A+B implementation already verified at `abcbcd3b`/`683bf324` (CI run 43302720084 SUCCESS). Scope: SemVer minor bump to 3.31.0 (new behavioral feature), CHANGELOG entry exactly once, release commit and push through the full Phase E pipeline. No additional code changes beyond version metadata; the feature content is exactly the Class 3 checkpoint content already CI-green.
+- **Impact & Contract Audit (Phase E):** Audit of the release delta (package.json + package-lock.json + CHANGELOG.md + this ledger entry only) confirms no runtime, schema, prompt, transport, or UI change versus the CI-green 683bf324. Zone A/B/C all N/A for the release commit itself — the underlying feature's contract audit (Zone C, engine + Trinity prompt cores) was completed and recorded in the Class 3 entry below and CI-verified on both Node versions. Cache-buster: NO-OP — no asset, page-generator, or `__APP_VERSION_QUERY__` path touched by v3.31.0.
+- **Independent Acceptance:** Release metadata is consistent (`package.json` and `package-lock.json` both 3.31.0, verified programmatically); CHANGELOG entry is in professional English per the language lock, placed above v3.30.0, and describes only shipped behavior with its test evidence; full pre-commit pipeline re-runs on this commit (relay gate + 55-file tracked suite); CI runs the full suite on Node 22 and Node 24 plus repo-wide Prettier/ESLint.
+- **Residual / N/A Gates:** Playwright N/A — no UI change in this release delta. SemVer/CHANGELOG obligations discharged exactly once in this commit; no second cosmetic commit will write back the SHA/CI (per §8 they are reported to the Owner in the final report).
+- **Files Involved:** `package.json` (M: 3.31.0), `package-lock.json` (M: 3.31.0), `CHANGELOG.md` (M: v3.31.0 entry), `docs/SESSION_LEDGER.md` (M: this entry).
+- **npm test Status:** run inside the release pre-commit hook; expectation 654 total / 653 PASS / 0 FAIL / 1 SKIP (same tree as 683bf324 plus version metadata only).
+- **Next Steps:** push to origin/main, watch CI to SUCCESS, then report Release Commit SHA + CI Run ID to the Owner.
+- **Tool Navigation Ratio:** search_files=30 read_file=34 ratio=1:1.1 anchored=88% (30/34 reads) — ratio within target; reads anchored via slice offset+limit or indentation mode; the release-delta audit reused existing session evidence rather than re-reading files already inspected this session.
+
+---
+
 ## 2026-11-12 — IMPLEMENT: SUBFABER × MONKEY SURGERY PHASE A+B (CLASS 3 WORKING CHECKPOINT)
 
 - **Date:** 2026-11-12 ~20:25 (KL time; Owner approved the plan with 4 mandatory amendments and Phase C cancellation).
