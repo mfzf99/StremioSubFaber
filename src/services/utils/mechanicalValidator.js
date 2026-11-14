@@ -68,8 +68,18 @@ function speakerLabels(text) {
     const pattern = /(?:^|\n)\s*(?:\(([^()\n]{1,60})\)|（([^（）\n]{1,60})）|\[([^\][\n]{1,60})\])/g;
     for (const match of String(text || '').matchAll(pattern)) {
         const label = normalizeText(match[1] || match[2] || match[3]);
+        if (!label) continue;
         // Lowercase parenthesized cues are SDH sound effects, not speaker names.
-        if (label && label !== label.toLocaleLowerCase()) labels.push(label);
+        // [R#3-FIX] Huruf besar Rumi bukan syarat nama watak: label kurungan
+        // penuh berisi skrip bukan-Rumi (（りん）/（タカシ）) ialah nama watak
+        // CJK — bukan isyarat SDH. Ujian kecil: ada mana-mana huruf skrip
+        // bukan-Rumi/Latin? Kalau ada, ia label penutur.
+        if (
+            label !== label.toLocaleLowerCase() ||
+            /\p{Script=Han}|\p{Script=Hiragana}|\p{Script=Katakana}|\p{Script=Hangul}/u.test(label)
+        ) {
+            labels.push(label);
+        }
     }
     return labels;
 }

@@ -145,29 +145,52 @@ async function executeParallelTranslation(engine, entries, targetLanguage, custo
 
         // Give each worker its own translationStats to avoid concurrent mutation
         // of the shared reference. Start with zeroed counters so merge-back is additive.
+        // [B1-FIX] Gunakan kilang createDefaultStats() enjin — skema tunggal
+        // termasuk incidents/crimesDetectedByType/mechanicalRetries, menutup
+        // TypeError gate mekanikal/jenayah pada batch worker (>= 1). Capaian
+        // melalui constructor pada rantaian prototaip (tiada import —
+        // translationEngine memuat modul ini; import membulat memecahkan
+        // static di waktu load). Enjin/stub tanpa kilang (prototaip sintetik
+        // ujian) kembali ke bentuk inline lama yang kini dilengkapkan medan
+        // v3.31.0 supaya stub pun tidak boleh menghidupkan TypeError.
         if (engine.translationStats) {
-            workerEngine.translationStats = {
-                entryCount: 0,
-                batchCount: 0,
-                mismatchDetected: false,
-                missingEntries: 0,
-                recoveredEntries: 0,
-                usedSecondaryProvider: false,
-                secondaryProviderName: null,
-                primaryFailureReason: '',
-                secondaryFailureReason: '',
-                secondaryErrorTypes: [],
-                rateLimitErrors: 0,
-                keyRotationRetries: 0,
-                errorTypes: [],
-                jsonXmlFallback: false,
-                // DUAL-AI (Mandat 2026-09-26): Agent Inspector counters — zeroed supaya
-                // merge-back additive ke stats enjin induk.
-                agentInspectorUsed: false,
-                agentInspectorFailures: 0,
-                agentInspectorInspections: 0,
-                agentInspectorRetries: 0
-            };
+            const statsFactory = Object.getPrototypeOf(engine).constructor.createDefaultStats;
+            workerEngine.translationStats = statsFactory
+                ? statsFactory(workerEngine)
+                : {
+                      entryCount: 0,
+                      batchCount: 0,
+                      mismatchDetected: false,
+                      missingEntries: 0,
+                      recoveredEntries: 0,
+                      usedSecondaryProvider: false,
+                      secondaryProviderName: null,
+                      primaryFailureReason: '',
+                      secondaryFailureReason: '',
+                      secondaryErrorTypes: [],
+                      rateLimitErrors: 0,
+                      keyRotationRetries: 0,
+                      errorTypes: [],
+                      jsonXmlFallback: false,
+                      agentInspectorUsed: false,
+                      agentInspectorFailures: 0,
+                      agentInspectorInspections: 0,
+                      agentInspectorRetries: 0,
+                      agentInspectorBatchesInspected: 0,
+                      agentInspectorBatchesSkippedAfterOpen: 0,
+                      mechanicalRetries: 0,
+                      crimesDetectedByType: {
+                          MERGE: 0,
+                          DROP: 0,
+                          PHANTOM: 0,
+                          SHIFT: 0,
+                          UNTRANSLATED: 0,
+                          REGISTER: 0,
+                          TERM: 0
+                      },
+                      crimesResolvedByRetry: 0,
+                      incidents: []
+                  };
         }
 
         await workerEngine.maybeRotateKeyForBatch(batchIdx);
@@ -207,6 +230,37 @@ async function executeParallelTranslation(engine, entries, targetLanguage, custo
                 es.agentInspectorInspections =
                     (es.agentInspectorInspections || 0) + (ws.agentInspectorInspections || 0);
                 es.agentInspectorRetries = (es.agentInspectorRetries || 0) + (ws.agentInspectorRetries || 0);
+                // [B1-FIX] Gate mekanikal + taksonomi jenayah + insiden (additive):
+                // medan v3.31.0 yang dahulu hilang pada stats worker kini
+                // digabung semula sepenuhnya ke stats enjin induk.
+                es.mechanicalRetries = (es.mechanicalRetries || 0) + (ws.mechanicalRetries || 0);
+                es.agentInspectorBatchesInspected =
+                    (es.agentInspectorBatchesInspected || 0) + (ws.agentInspectorBatchesInspected || 0);
+                es.agentInspectorBatchesSkippedAfterOpen =
+                    (es.agentInspectorBatchesSkippedAfterOpen || 0) + (ws.agentInspectorBatchesSkippedAfterOpen || 0);
+                if (Array.isArray(ws.incidents) && Array.isArray(es.incidents)) {
+                    for (const incident of ws.incidents) es.incidents.push(incident);
+                }
+                // Taksonomi jenayah/stub: enjin induk tanpa medan taksonomi
+                // (stub ujian) tidak boleh dijamah — jumlah kekal pada worker.
+                if (es.crimesDetectedByType && typeof es.crimesDetectedByType === 'object') {
+                    for (const [type, count] of Object.entries(ws.crimesDetectedByType || {})) {
+                        es.crimesDetectedByType[type] = (es.crimesDetectedByType[type] || 0) + (count || 0);
+                    }
+                }
+                for (const [type, batches] of Object.entries(ws.crimeBatchIndices || {})) {
+                    if (!Array.isArray(es.crimeBatchIndices[type])) continue;
+                    for (const batch of batches) {
+                        if (!es.crimeBatchIndices[type].includes(batch)) es.crimeBatchIndices[type].push(batch);
+                    }
+                }
+                es.crimesResolvedByRetry = (es.crimesResolvedByRetry || 0) + (ws.crimesResolvedByRetry || 0);
+                if (ws.agentInspectorCircuitOpened) es.agentInspectorCircuitOpened = true;
+                if (ws.agentInspectorCircuitOpenAtPhase && !es.agentInspectorCircuitOpenAtPhase) {
+                    es.agentInspectorCircuitOpenAtPhase = ws.agentInspectorCircuitOpenAtPhase;
+                    es.agentInspectorCircuitOpenAtBatch = ws.agentInspectorCircuitOpenAtBatch;
+                    es.agentInspectorFailuresBeforeOpen = ws.agentInspectorFailuresBeforeOpen;
+                }
                 // Merge boolean flags
                 if (ws.usedSecondaryProvider) es.usedSecondaryProvider = true;
                 if (ws.mismatchDetected) es.mismatchDetected = true;

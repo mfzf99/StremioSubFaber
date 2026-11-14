@@ -129,6 +129,38 @@ test('Speaker-label checks accept preserved labels and ignore lowercase sound cu
     assert.deepEqual(getHardMechanicalFindings(validateMechanicalBatch(source, output, 'ms')), []);
 });
 
+test('RENDah #3: label penutur skrip CJK dikesan, bukan diabaikan sebagai SDH', () => {
+    // （りん）/（タカシ） — nama watak CJK dalam kurungan penuh tanpa huruf besar
+    // Rumi. Kehilangannya dalam terjemahan mesti dilaporkan sebagai
+    // SPEAKER_LABEL_LOSS, bukan diabaikan sebagai isyarat SDH lowercase.
+    const cjkSource = [entry(21, '（りん）　こんにちは'), entry(22, '（タカシ）　さようなら')];
+    const cjkMissingLabels = [translated(0, 'Hai'), translated(1, 'Selamat tinggal')];
+    const hardMissing = getHardMechanicalFindings(validateMechanicalBatch(cjkSource, cjkMissingLabels, 'Malay'));
+    assert.equal(hardMissing.length, 2, 'both lost CJK character-name labels must be reported');
+    assert.ok(
+        hardMissing.every((finding) => finding.type === 'SPEAKER_LABEL_LOSS'),
+        'CJK character-name labels are speaker labels, not SDH cues'
+    );
+
+    // Label yang dipelihara tidak boleh menjadi false positive pada sasaran
+    // bukan-Rumi (label CJK pada sasaran Rumi memang sah dicatat SCRIPT_LEAK —
+    // itu gelagat validator yang betul, bukan false positive).
+    const cjkPreserved = [translated(0, '（りん） こんにちは'), translated(1, '（タカシ） さようなら')];
+    const preservedFindings = getHardMechanicalFindings(validateMechanicalBatch(cjkSource, cjkPreserved, 'Japanese'));
+    assert.ok(
+        preservedFindings.every((finding) => finding.type !== 'SPEAKER_LABEL_LOSS'),
+        'preserved CJK labels must not raise speaker-label findings on non-Rumi targets'
+    );
+
+    // Kawalan negatif: isyarat SDH lowercase Rumi kekal diabaikan.
+    const sdhSource = [entry(23, '(sighs) loudly')];
+    assert.deepEqual(
+        getHardMechanicalFindings(validateMechanicalBatch(sdhSource, [translated(0, '(mengeluh) kuat')], 'Malay')),
+        [],
+        'lowercase Rumi SDH cues stay ignored'
+    );
+});
+
 test('Script leakage still retries validly into Rumi targets without misclassifying non-Rumi output', () => {
     assert.equal(
         getHardMechanicalFindings(

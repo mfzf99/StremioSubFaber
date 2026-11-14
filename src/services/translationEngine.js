@@ -186,7 +186,79 @@ const SUBFABER_FUTURE_CONTEXT_SIZE = 10;
 // Local Map is kept as a fast cache layer; Redis is source of truth.
 const _sharedKeyHealthErrors = new Map(); // Local cache: apiKey -> { count: number, lastError: number }
 
+/**
+ * [B1-FIX] Kilang tunggal bagi skema translationStats.
+ * Digunakan oleh konstruktor enjin dan oleh worker selari
+ * (parallelTranslation.js) supaya tiada jurang medan antara enjin induk
+ * dengan worker — dahulu stats worker zero-kan tanpa `incidents`,
+ * `crimesDetectedByType`, `mechanicalRetries` menghidupkan TypeError pada
+ * gate mekanikal v3.31.0 (batch worker >= 1) dan pada _recordCrime.
+ * Medan kontekstual (workflow/keyRotationMode/streaming) diambil dari enjin
+ * pembekal bila diisi; worker mewarisi konteks induk melalui klon.
+ */
+function createDefaultStats(engine) {
+    return {
+        // Tier 1: Critical diagnostics
+        usedSecondaryProvider: false,
+        secondaryProviderName: '',
+        primaryFailureReason: '',
+        secondaryFailureReason: '', // Error message from secondary provider when it also failed
+        secondaryErrorTypes: [], // Error types encountered on the secondary provider side
+        rateLimitErrors: 0,
+        keyRotationRetries: 0,
+        errorTypes: [], // Error types from main provider retry chain
+        // Tier 2: Quality/performance
+        mismatchDetected: false,
+        missingEntries: 0,
+        recoveredEntries: 0,
+        // v1.6.1 telemetry: batches whose first slot arrived WITHOUT an opening
+        // tag (Rule 7 compliant continuation) and was rebuilt by the smart
+        // preamble scrubber instead of triggering two-pass recovery.
+        untaggedFirstSlotCount: 0,
+        entryCount: 0,
+        batchCount: 0,
+        // Tier 3: Configuration context
+        workflow: engine?.translationWorkflow,
+        keyRotationMode: engine?.keyRotationConfig?.enabled ? engine.keyRotationConfig.mode || 'per-batch' : 'disabled',
+        subfaberEngine: true, // TOTAL PURGE: enjin tunggal — sentiasa SubFaber
+        parallelBatchesUsed: false,
+        streaming: engine?.enableStreaming,
+        // Tier 4: FinOps incident log — each entry describes one recovery
+        // operation with the tokens burned by the failed attempt(s).
+        incidents: [],
+        // DUAL-AI: Agent Inspector telemetry
+        // [BS#1] NOTA PENAMAAN: `agentInspectorInspections` mengira VERDICT LULUS
+        // sahaja (semantik legasi). `agentInspectorBatchesInspected` mengira SEMUA
+        // semakan yang selesai dipanggil — penyebut nisbah corak & liputan.
+        // Kedua-duanya BERBEZA MAKSUD. Jangan dicampur dalam dashboard.
+        agentInspectorUsed: false, // Fasa 0 dijalankan oleh Agent Inspector
+        agentInspectorFailures: 0, // kegagalan API/rosak (fail-open count)
+        agentInspectorInspections: 0, // (LEGASI) verdict LULUS sahaja — lihat NOTA PENAMAAN di atas
+        agentInspectorRetries: 0, // semantic retry dilaksanakan
+        // [AGENT-INSPECTOR-OBS P0] Circuit breaker visibility (semua additive, default selamat)
+        agentInspectorCircuitOpened: false, // transisi sekali per fail
+        agentInspectorCircuitOpenAtPhase: null, // 'preflight' | 'inspection'
+        agentInspectorCircuitOpenAtBatch: null, // 1-based; 0 untuk fasa preflight (K1)
+        agentInspectorFailuresBeforeOpen: 0, // snapshot agentInspectorFailures saat transisi
+        agentInspectorBatchesInspected: 0, // penyebut (semua semakan lengkap — bukan PASS-only; beza dgn agentInspectorInspections legasi)
+        agentInspectorBatchesSkippedAfterOpen: 0, // batch tanpa perlindungan selepas open
+        // [AGENT-INSPECTOR-OBS P3] Crime pattern tracking (observation-only)
+        // [KNP-ALIGNMENT 2026-10-07] TERM ditambah ke taksonomi telemetry.
+        mechanicalRetries: 0, // retry tanpa LLM Inspector untuk kecacatan objektif
+        crimesDetectedByType: { MERGE: 0, DROP: 0, PHANTOM: 0, SHIFT: 0, UNTRANSLATED: 0, REGISTER: 0, TERM: 0 },
+        crimesResolvedByRetry: 0, // hanya re-verdict LULUS yang disahkan (K3)
+        crimePatternDetected: null, // → array string (K2)
+        crimeBatchIndices: { MERGE: [], DROP: [], PHANTOM: [], SHIFT: [], UNTRANSLATED: [], REGISTER: [], TERM: [] } // cap 50/type
+    };
+}
+
 class TranslationEngine {
+    // [B1-FIX] Kaedah statik — worker selari (parallelTranslation.js) mencapai
+    // kilang ini melalui rantaian prototaip (Object.getPrototypeOf(engine)
+    // .constructor) tanpa import, mengelakkan kebergantungan membulat.
+    static createDefaultStats(engine) {
+        return createDefaultStats(engine);
+    }
     constructor(geminiService, model = null, advancedSettings = {}, options = {}) {
         this.gemini = geminiService?.primary || geminiService;
         this.fallbackProvider = geminiService?.fallback || null;
@@ -326,59 +398,11 @@ class TranslationEngine {
 
         // Translation diagnostics — accumulated during translation, read by caller after completion.
         // These stats are surfaced on the Translation History cards in Sub Toolbox.
-        this.translationStats = {
-            // Tier 1: Critical diagnostics
-            usedSecondaryProvider: false,
-            secondaryProviderName: '',
-            primaryFailureReason: '',
-            secondaryFailureReason: '', // Error message from secondary provider when it also fails
-            secondaryErrorTypes: [], // Error types encountered on the secondary provider side
-            rateLimitErrors: 0,
-            keyRotationRetries: 0,
-            errorTypes: [], // Error types from main provider retry chain
-            // Tier 2: Quality/performance
-            mismatchDetected: false,
-            missingEntries: 0,
-            recoveredEntries: 0,
-            // v1.6.1 telemetry: batches whose first slot arrived WITHOUT an opening
-            // tag (Rule 7 compliant continuation) and was rebuilt by the smart
-            // preamble scrubber instead of triggering two-pass recovery.
-            untaggedFirstSlotCount: 0,
-            entryCount: 0,
-            batchCount: 0,
-            // Tier 3: Configuration context
-            workflow: this.translationWorkflow,
-            keyRotationMode: this.keyRotationConfig?.enabled ? this.keyRotationConfig.mode || 'per-batch' : 'disabled',
-            subfaberEngine: true, // TOTAL PURGE: enjin tunggal — sentiasa SubFaber
-            parallelBatchesUsed: false,
-            streaming: this.enableStreaming,
-            // Tier 4: FinOps incident log — each entry describes one recovery
-            // operation with the tokens burned by the failed attempt(s).
-            incidents: [],
-            // DUAL-AI: Agent Inspector telemetry
-            // [BS#1] NOTA PENAMAAN: `agentInspectorInspections` mengira VERDICT LULUS
-            // sahaja (semantik legasi). `agentInspectorBatchesInspected` mengira SEMUA
-            // semakan yang selesai dipanggil — penyebut nisbah corak & liputan.
-            // Kedua-duanya BERBEZA MAKSUD. Jangan dicampur dalam dashboard.
-            agentInspectorUsed: false, // Fasa 0 dijalankan oleh Agent Inspector
-            agentInspectorFailures: 0, // kegagalan API/rosak (fail-open count)
-            agentInspectorInspections: 0, // (LEGASI) verdict LULUS sahaja — lihat NOTA PENAMAAN di atas
-            agentInspectorRetries: 0, // semantic retry dilaksanakan
-            // [AGENT-INSPECTOR-OBS P0] Circuit breaker visibility (semua additive, default selamat)
-            agentInspectorCircuitOpened: false, // transisi sekali per fail
-            agentInspectorCircuitOpenAtPhase: null, // 'preflight' | 'inspection'
-            agentInspectorCircuitOpenAtBatch: null, // 1-based; 0 untuk fasa preflight (K1)
-            agentInspectorFailuresBeforeOpen: 0, // snapshot agentInspectorFailures saat transisi
-            agentInspectorBatchesInspected: 0, // penyebut (semua semakan lengkap — bukan PASS-only; beza dgn agentInspectorInspections legasi)
-            agentInspectorBatchesSkippedAfterOpen: 0, // batch tanpa perlindungan selepas open
-            // [AGENT-INSPECTOR-OBS P3] Crime pattern tracking (observation-only)
-            // [KNP-ALIGNMENT 2026-10-07] TERM ditambah ke taksonomi telemetry.
-            mechanicalRetries: 0, // retry tanpa LLM Inspector untuk kecacatan objektif
-            crimesDetectedByType: { MERGE: 0, DROP: 0, PHANTOM: 0, SHIFT: 0, UNTRANSLATED: 0, REGISTER: 0, TERM: 0 },
-            crimesResolvedByRetry: 0, // hanya re-verdict LULUS yang disahkan (K3)
-            crimePatternDetected: null, // → array string (K2)
-            crimeBatchIndices: { MERGE: [], DROP: [], PHANTOM: [], SHIFT: [], UNTRANSLATED: [], REGISTER: [], TERM: [] } // cap 50/type
-        };
+        // B1-FIX: satu kilang skema tunggal; worker selari (parallelTranslation.js)
+        // membina stats dari kilang yang sama supaya tiada jurang medan
+        // (incidents/crimesDetectedByType/mechanicalRetries) yang menghidupkan
+        // TypeError pada gate mekanikal/jenayah batch worker.
+        this.translationStats = createDefaultStats(this);
     }
 
     /**
@@ -2503,6 +2527,13 @@ class TranslationEngine {
         if (agentInspectorStructurallyClean) {
             mechanicalFindings = validateMechanicalBatch(batch, translatedEntries, targetLanguage);
         }
+        // [D1-FIX] Defensive close: sebarang insiden mekanikal batch ini yang
+        // masih `in_progress` (contoh: structural-mismatch pada batch parity
+        // ganjil) mencapai status muktamad SEBELUM peringkat Inspector —
+        // insiden tidak boleh tergantung selepas pemprosesan batch tamat.
+        this._closeIncident('MECHANICAL_TRANSLATION_RETRY', batchIndex + 1, {
+            outcome: getHardMechanicalFindings(mechanicalFindings).length === 0 ? 'recovered' : 'unrecovered'
+        });
         const mechanicalHardFindings = getHardMechanicalFindings(mechanicalFindings);
         const mechanicalAffectedIndices = new Set(
             mechanicalFindings
@@ -2625,6 +2656,26 @@ class TranslationEngine {
                     );
 
                     const retryFindings = selectRetryFindings(mechanicalFindings, verdict.crimes);
+                    // [R#1-FIX] Pastikan setiap kemasukan UNTRANSLATED yang
+                    // digabungkan oleh selectRetryFindings() terkira dalam
+                    // crimesDetectedByType — verdict.crimes merekodkan sisi
+                    // semantik; sisi mekanikal yang di-retype berkongsi ID dan
+                    // jenis yang sama, jadi rekod sekali sahaja (tanpa
+                    // double-count) untuk ID yang belum direkod.
+                    const untranslatedRecordedIds = new Set(
+                        verdict.crimes
+                            .filter((c) => c.type === 'UNTRANSLATED')
+                            .flatMap((c) => (Array.isArray(c.ids) ? c.ids.map(Number) : []))
+                    );
+                    for (const finding of retryFindings) {
+                        if (finding?.type !== 'UNTRANSLATED') continue;
+                        for (const id of finding.ids || []) {
+                            if (!untranslatedRecordedIds.has(Number(id))) {
+                                untranslatedRecordedIds.add(Number(id));
+                                this._recordCrime('UNTRANSLATED', batchIndex + 1);
+                            }
+                        }
+                    }
                     const affectedIds = new Set(retryFindings.flatMap((finding) => finding.ids || []));
                     const verifiedIndices = batch
                         .map((_, index) => index)
@@ -2752,9 +2803,17 @@ class TranslationEngine {
             this.translationStats.agentInspectorBatchesSkippedAfterOpen++;
         }
 
-        // Cache individual entries
+        // Cache individual entries.
+        // [C1-FIX] Kira kecacatan keras yang masih tidak selesai selepas semua
+        // kuota retry (mekanikal + semantik) dan langkau penulisan cache bagi
+        // entri tersebut — terjemahan bermasalah mesti tidak meracuni cache
+        // untuk permintaan akan datang. Entri lain yang lulus kekal dicache.
         if (CACHE_TRANSLATIONS) {
+            const unresolvedEntryIds = new Set(
+                getHardMechanicalFindings(mechanicalFindings).flatMap((f) => f.ids || [])
+            );
             for (let i = 0; i < batch.length && i < translatedEntries.length; i++) {
+                if (unresolvedEntryIds.has(batch[i].id)) continue;
                 this.cacheEntry(batch[i].text, targetLanguage, translatedEntries[i].text, prompt);
             }
         }
