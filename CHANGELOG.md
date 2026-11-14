@@ -2,6 +2,21 @@
 
 All notable changes to this project will be documented in this file.
 
+## SubFaber v3.31.2 (2026-11-14) — Tri-Door Wire Lane and Transport Contract Repairs
+
+### 🔧 Fixed — Forensic Wire-Level Audit Repairs (K1/K2, H1, M1, M2)
+
+- **Inspector lane separation (K1/K2, critical):** the Agent Inspector dispatch joined its wrapped system and user prompts without the `SUBFABER_PROMPT_BOUNDARY` sentinel, so all three transports fell back to the legacy single-lane path — on the Gemini door the entire inspection prompt, including `<source>`/`<translation>` data, rode in `systemInstruction`, and on the Anthropic door it rode in the root `system` field, in both cases with the payload duplicated three times across the request body. The join now carries the boundary (full parity with Agent Translation and Agent Preflight), so the instruction rides the system lane and the data rides the user lane exactly once on every door.
+- **Preflight OpenAI structured outputs (H1, critical):** the preflight wrapper built the mandated `response_format: { type: "json_schema", ..., strict: true }` but the call path discarded it, so Preflight × OpenAI shipped without structured output. A new `buildPreflightPayload()` companion returns the prompt plus `responseFormat`, and the preflight call path forwards it to the standard OpenAI builder — identical to the Inspector path. The string-returning `buildPreflightPrompt()` export is preserved unchanged for all existing consumers.
+- **Gemini generic model-turn prefill (M1, high):** when no `<s id="N">` continuation anchor was present (Preflight/Inspector JSON agents), both the non-streaming and streaming Gemini transports still injected a generic `"Task confirmed. Executing..."` model turn. The model turn is now exclusive to Translation: it exists only when the anchor is found at the tail of the user content; JSON agents send a single user turn.
+- **Anthropic double XML delimiter (M2, medium):** the data-first wrapper only checked `<subtitle_input>`, so preflight data already wrapped in `<subtitle_text>` was nested inside a second `<subtitle_input>` wrapper. The wrapper is now idempotent across all three Trinity delimiters (`<subtitle_input>`, `<subtitle_text>`, `<inspection_input>`).
+
+### ✅ Verification
+
+- New permanent wire regression suite `src/services/tri-door-wire-parity-regression.test.js` (12 tests, red-first: 6 failures observed against the pre-fix code) drives the real Gemini/OpenAI-compatible/Anthropic transports with only the axios layer mocked, capturing the final URL, headers, and JSON body of every request: the full 12-cell matrix (three doors × Preflight, Translation Basic, Translation Pro, Inspector) plus the four transition points (boundary split, retry diagnostics placement, cross-channel Gemini→Anthropic fallback rewrap, parallel worker lane parity). All 12 pass post-fix.
+- One legacy agent-inspector assertion that pinned the defective single-message shape was re-pinned to the corrected two-lane contract with equivalent-plus coverage (system carries instruction, user carries data, no data in system lane).
+- Full tracked suite: 675 tests / 674 passed / 0 failed / 1 skipped (pre-existing live-Redis integration), exit 0. Translation cache keys and the Basic translation path are untouched.
+
 ## SubFaber v3.31.1 (2026-11-14) — Universal Basic Translation Prompt Contract Restoration
 
 ### 🔧 Fixed — Basic Translation Prompt Is Fully Language-Neutral Again

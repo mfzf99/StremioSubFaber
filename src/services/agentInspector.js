@@ -73,7 +73,7 @@ const log = require('../utils/logger');
 // (bobot arahan lebih tinggi — terms Jaccard 0.47→0.72, null spread 20pt→7pt),
 // input DINAMIK sebagai saluran user. Prompt pemeriksaan (Fasa B) tanpa
 // sempadan kekal laluan lama (satu user message).
-const { splitStructuredPrompt } = require('./utils/structuredPrompt');
+const { splitStructuredPrompt, SUBFABER_PROMPT_BOUNDARY } = require('./utils/structuredPrompt');
 
 // ── [MODEL-HIERARCHY] Konfigurasi tetap Agent Inspector (FINAL 2026-09-28) ──
 // Hierarki model MUKTAMAD (empirikal curl gateway rootsys.cloud):
@@ -360,8 +360,14 @@ Respond with ONLY the JSON now.`;
                 : `## Input\n<source>\n${sourceLines.join('\n')}\n</source>\n<translation>\n${translationLines.join('\n')}\n</translation>`,
             queryText: 'Respond with ONLY the JSON now.'
         });
+        // [WIRE-K1/K2 2026-11-14] Cantuman WAJIB membawa SUBFABER_PROMPT_BOUNDARY
+        // (pariti penuh dengan translationEngine/subfaberPreflight) supaya
+        // splitStructuredPrompt membahagi system/user pada KETIGA transport.
+        // Sebelum ini join tanpa sempadan mencetuskan laluan legasi: Gemini meletakkan
+        // seluruh prompt (termasuk DATA <source>/<translation>) dalam systemInstruction
+        // dan Anthropic dalam medan system akar — dengan duplikasi 3× pada user.
         return {
-            prompt: `${wrapped.systemPrompt}\n\n${wrapped.userPrompt}`,
+            prompt: `${wrapped.systemPrompt}\n\n${SUBFABER_PROMPT_BOUNDARY}\n\n${wrapped.userPrompt}`,
             responseFormat: wrapped.responseFormat || null,
             // [P0 F3 FIX 2026-11-10] systemRole daripada wrapper perlu sampai ke
             // lapisan pengangkutan (cth. 'developer' untuk endpoint sokong).

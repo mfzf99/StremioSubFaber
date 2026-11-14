@@ -2197,7 +2197,14 @@ test('AgentInspector: [PENYATUAN MUTLAK] muatan HTTP sebenar (axios.post, stream
             'muatan HTTP WAJIB membawa stream:true (siling Caddy 300s — STREAMING MANDATORY)'
         );
         assert.equal(body.model, 'deepseek-v4-pro');
-        assert.ok(Array.isArray(body.messages) && body.messages.length === 1, 'satu mesej user');
+        // [WIRE-K1/K2 2026-11-14] Kontrak dua-lane: prompt inspector kini
+        // bersempadan → messages = [system(arahan), user(data)] — sifar
+        // data dalam lane system (dipinkan penuh oleh
+        // tri-door-wire-parity-regression.test.js).
+        assert.ok(Array.isArray(body.messages) && body.messages.length === 2, 'dua mesej: system arahan + user data');
+        assert.equal(body.messages[0].role, 'system', 'lane system membawa arahan statik');
+        assert.equal(body.messages[1].role, 'user', 'lane user membawa data inspection');
+        assert.ok(!body.messages[0].content.includes('|Hello'), 'data HARAM dalam lane system');
         // Sifar-penciptaan parameter pengguna (enjin tidak mencipta nilai):
         assert.equal(
             'reasoning_effort' in body,

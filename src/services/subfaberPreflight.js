@@ -140,7 +140,12 @@ const { PREFLIGHT_STATIC_TEMPLATE } = require('./prompts/trinity/preflight/core'
 // pra-Fasa 3; pemanggil (AgentInspector) boleh menetapkan pintu sebenar.
 const { resolveTrinityPrompt } = require('./prompts/trinity');
 
-function buildPreflightPrompt(rawText, targetLanguage, sourceLanguage, channel = 'gemini') {
+// [WIRE-H1 2026-11-14] Payload penuh preflight: prompt bersempadan +
+// responseFormat (json_schema strict daripada wrapper pintu openai).
+// buildPreflightPrompt kekal pulangan string (kontrak sedia ada terpelihara);
+// pembina payload ini membenarkan laluan panggilan menghantar response_format
+// ke pembina standard OpenAI — pariti penuh dengan laluan Inspector.
+function buildPreflightPayload(rawText, targetLanguage, sourceLanguage, channel = 'gemini') {
     const src = sourceLanguage || 'the source language';
     const tgt = targetLanguage || 'the target language';
     // [UNIVERSAL-FIX] {{PLACEHOLDER}} injection: pack mengikut bahasa sasaran.
@@ -175,7 +180,14 @@ function buildPreflightPrompt(rawText, targetLanguage, sourceLanguage, channel =
         dataText: `<text>\n${rawText}\n</text>`,
         queryText: 'Apply the tasks above to this subtitle dialogue and return ONLY the JSON object.'
     });
-    return `${wrapped.systemPrompt}\n\n${SUBFABER_PROMPT_BOUNDARY}\n\n${wrapped.userPrompt}`;
+    return {
+        prompt: `${wrapped.systemPrompt}\n\n${SUBFABER_PROMPT_BOUNDARY}\n\n${wrapped.userPrompt}`,
+        responseFormat: wrapped.responseFormat || null
+    };
+}
+
+function buildPreflightPrompt(rawText, targetLanguage, sourceLanguage, channel = 'gemini') {
+    return buildPreflightPayload(rawText, targetLanguage, sourceLanguage, channel).prompt;
 }
 
 /**
@@ -532,9 +544,19 @@ async function runPreflightSemanticPass(entries, targetLanguage, sourceLanguage,
         // 2. Bina prompt 4-tiang + panggil AI (flat user prompt, JSON output)
         // [TRINITY FASA 3] Channel pintu diambil dari options (dilewatkan oleh
         // AgentInspector daripada instance — static dispatch, sifar heuristik).
-        const prompt = buildPreflightPrompt(rawText, targetLanguage, sourceLanguage, options.channel);
+        // [WIRE-H1 2026-11-14] responseFormat (json_schema strict) wajib sampai
+        // ke pembina standard pintu openai melalui requestOptions — sebelum ini
+        // wrapper membekalkannya tetapi laluan panggilan membuangnya. Pintu
+        // gemini/anthropic menerima undefined (tiada kontrak response_format).
+        const preflightPayload = buildPreflightPayload(rawText, targetLanguage, sourceLanguage, options.channel);
         const callStartedAt = Date.now();
-        const responseText = await geminiService.translateSubtitle(rawText, 'detected', targetLanguage, prompt);
+        const responseText = await geminiService.translateSubtitle(
+            rawText,
+            'detected',
+            targetLanguage,
+            preflightPayload.prompt,
+            preflightPayload.responseFormat ? { responseFormat: preflightPayload.responseFormat } : undefined
+        );
         const callDuration = Date.now() - callStartedAt;
         const modelUsed = geminiService && geminiService.model ? geminiService.model : 'unknown';
 
@@ -606,6 +628,7 @@ module.exports = {
     runPreflightSemanticPass,
     buildPreflightRawText,
     sampleEntriesForPreflight,
+    buildPreflightPayload,
     buildPreflightPrompt,
     parsePreflightResponse,
     resilientParseJson,

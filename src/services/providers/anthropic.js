@@ -15,10 +15,16 @@ const ANTHROPIC_VERSION = process.env.ANTHROPIC_VERSION || '2023-06-01';
 // <subtitle_input> (kontrak Trinity Anthropic: data di ATAS, arahan di HUJUNG).
 // Fungsi ini IDEMPOTEN: user content yang sudah dibalut (oleh wrapper channel)
 // dikekalkan apa adanya supaya tiada balut berganda.
+// [WIRE-M2 2026-11-14] Idempotensi merentas KETIGA pembatas Trinity: data
+// yang sudah dibalut oleh wrapper pintu (<subtitle_text> preflight,
+// <inspection_input> inspector, <subtitle_input> translation) tidak dibalut
+// semula — menghapuskan dwi-pembatas bersarang pada Preflight × Anthropic.
 function wrapAnthropicDataFirst(userContent) {
     const text = String(userContent || '');
     if (!text.trim()) return text;
-    if (text.includes('<subtitle_input>')) return text;
+    if (text.includes('<subtitle_input>') || text.includes('<subtitle_text>') || text.includes('<inspection_input>')) {
+        return text;
+    }
     return `<subtitle_input>\n${text}\n</subtitle_input>`;
 }
 
