@@ -33,8 +33,9 @@ function normalizeUserHash(rawHash) {
  */
 function generateCacheKeys(config, sourceFileId, targetLang) {
     // Prompt-semantic namespace prevents output produced under an earlier
-    // Basic prompt (Malay-hardcoded, then editorial-craft) from being served
-    // under the current single universal Basic instruction.
+    // Basic prompt (Malay-hardcoded, then editorial-craft, then the
+    // Malay-conditional cadence clause) from being served under the current
+    // single universal Basic instruction.
     // [P1 F6 FIX 2026-11-10] Channel discriminator: the key now carries the
     // trinity channel that will actually generate the translation, so the
     // same file+language under different doors (gemini/openai/anthropic)
@@ -45,7 +46,7 @@ function generateCacheKeys(config, sourceFileId, targetLang) {
     const trinityChannel = String(config?.trinityChannel || 'gemini')
         .toLowerCase()
         .replace(/[^a-z0-9-]/g, '');
-    const sourceKey = `${sourceFileId}_${targetLang}_trinity-basic-universal-v3_ch-${trinityChannel}`;
+    const sourceKey = `${sourceFileId}_${targetLang}_trinity-basic-universal-v4_ch-${trinityChannel}`;
     // When ASS passthrough is enabled, append format discriminator to prevent
     // ASS-format cached translations from being served to users expecting SRT
     const assPassthrough = config.convertAssToVtt === false && config.forceSRTOutput !== true;

@@ -118,11 +118,17 @@ test('[TRINITY-CORE-4] Basic uses ONE universal instruction — no language pack
         ),
         'R3 — dialog semula jadi tanpa penapisan'
     );
+    // [BASIC-UNIVERSAL 2026-11-14] Templat Basic mesti UNIVERSAL: TIADA nama
+    // bahasa konkrit dalam mana-mana peraturan. Klausa bersyarat Melayu
+    // ("when it is Malay, use natural Malaysian Malay cadence...") adalah
+    // pelanggaran kontrak universal dan mesti tidak wujud.
     assert.ok(
-        BASIC_TRANSLATION_SYSTEM_TEMPLATE.includes(
-            'when it is Malay, use natural Malaysian Malay cadence, never textbook or Indonesian-dub stiffness.'
-        ),
-        'R3 — rentak Malaysian Malay tanpa language-pack interpolation'
+        !BASIC_TRANSLATION_SYSTEM_TEMPLATE.includes('Malay'),
+        'R3 — templat Basic tidak boleh menamakan bahasa konkrit (Malay)'
+    );
+    assert.ok(
+        !BASIC_TRANSLATION_SYSTEM_TEMPLATE.includes('Indonesian-dub'),
+        'R3 — tiada klausa bersyarat kraf bahasa (Indonesian-dub)'
     );
     assert.ok(
         BASIC_TRANSLATION_SYSTEM_TEMPLATE.includes(
@@ -238,16 +244,19 @@ test('[TRINITY-CORE-8] Universal Basic cache namespace excludes stale output and
     // discriminator (`_ch-gemini` for the default Gemini door). Assertions
     // strengthened: exact key strings include the channel segment so the
     // discriminator cannot regress silently.
+    // [BASIC-UNIVERSAL 2026-11-14] Namespace advanced v3 → v4: the Basic
+    // prompt dropped its Malay-conditional cadence clause, so v3 output
+    // (generated under that clause) must never be served under v4.
     const permanent = generateCacheKeys({}, 'tt123_en', 'ms');
-    assert.equal(permanent.baseKey, 'tt123_en_ms_trinity-basic-universal-v3_ch-gemini');
+    assert.equal(permanent.baseKey, 'tt123_en_ms_trinity-basic-universal-v4_ch-gemini');
     assert.equal(permanent.cacheKey, permanent.baseKey);
 
     const bypass = generateCacheKeys({ bypassCache: true, __configHash: 'config-hash' }, 'tt123_en', 'ms');
-    assert.equal(bypass.cacheKey, 'tt123_en_ms_trinity-basic-universal-v3_ch-gemini__u_config-hash');
+    assert.equal(bypass.cacheKey, 'tt123_en_ms_trinity-basic-universal-v4_ch-gemini__u_config-hash');
     assert.equal(bypass.runtimeKey, bypass.cacheKey);
 
     const ass = generateCacheKeys({ convertAssToVtt: false }, 'tt123_en', 'ms');
-    assert.equal(ass.baseKey, 'tt123_en_ms_trinity-basic-universal-v3_ch-gemini_ass');
+    assert.equal(ass.baseKey, 'tt123_en_ms_trinity-basic-universal-v4_ch-gemini_ass');
 });
 
 test('[TRINITY-CORE-9] Pro retains its evidence contract while Basic uses the locked R&D split/entity rules', () => {
@@ -297,10 +306,12 @@ test('[TRINITY-CORE-11] Basic places the exact active-ID manifest before input o
             .replaceAll('${targetLabel}', 'Malay')
             .replaceAll('${targetLabelShort}', 'Malay');
         assert.equal(structured.system, expectedSystem);
-        // [BASIC-UNIVERSAL] Tiada language-pack atau contoh bahasa statik.
+        // [BASIC-UNIVERSAL] Tiada language-pack atau contoh bahasa statik;
+        // klausa bersyarat Melayu turut diharamkan pada runtime.
         assert.ok(!structured.system.includes('Spoken Malaysian Cadence'));
         assert.ok(!structured.system.includes('Awak ikut kami sekali,'));
-        assert.ok(structured.system.includes('when it is Malay, use natural Malaysian Malay cadence'));
+        assert.ok(!structured.system.includes('when it is Malay'));
+        assert.ok(!structured.system.includes('Indonesian-dub'));
         assert.ok(
             structured.system.includes('localizing subtitles from English into Malay.'),
             'Basic Basic-names the actual target language'
@@ -318,11 +329,11 @@ test('[TRINITY-CORE-10] Basic instruction is IDENTICAL for every target except t
     const basic = makeEngine({ trinityMode: 'basic' });
     basic.sourceLanguage = 'English';
 
-    // Tiada language-pack atau contoh kosa kata statik; satu frasa cadence
-    // universal yang menyebut Malay hanya sebagai syarat sasaran dibenarkan.
-    // "Malaysian" dilarang dalam normalized kerana klausa bersyarat mesti
-    // dibuang sepenuhnya sebelum perbandingan cross-target.
-    const forbidden = /ini\/itu\/yang|saya\/awak|aku\/kau|okey\/helo|Malaysian/i;
+    // [BASIC-UNIVERSAL 2026-11-14] Templat Basic tidak boleh menamakan
+    // SEBARANG bahasa konkrit — klausa bersyarat Melayu dibuang sepenuhnya,
+    // jadi tiada lagi klausa yang perlu dikeluarkan sebelum perbandingan
+    // cross-target: dua runtime sasaran berbeza hanya pada label bahasa.
+    const forbidden = /ini\/itu\/yang|saya\/awak|aku\/kau|okey\/helo|Malaysian|Indonesian-dub|when it is Malay/i;
     const systemByTarget = {};
 
     for (const targetLanguage of ['Malay', 'Japanese', 'Vietnamese', 'Spanish', 'Indonesian']) {
@@ -334,22 +345,13 @@ test('[TRINITY-CORE-10] Basic instruction is IDENTICAL for every target except t
             structured.system.includes(`localizing subtitles from English into ${targetLabel}.`),
             `${targetLanguage} Basic prompt must name the actual target language`
         );
-        // Klausa bersyarat adalah LITERAL dalam templat dan seragam pada runtime
-        // semua sasaran; keseluruhan ayat (termasuk "Indonesian-dub") dibuang
-        // sebelum perbandingan cross-target supaya tiada varian kedua wujud.
-        const conditional =
-            'when it is Malay, use natural Malaysian Malay cadence, never textbook or Indonesian-dub stiffness.';
-        assert.equal(
-            BASIC_TRANSLATION_SYSTEM_TEMPLATE.split(conditional).length - 1,
-            1,
-            'Basic template contains the conditional cadence exactly once'
+        // Templat statik mesti bebas daripada nama bahasa konkrit pada sumber.
+        assert.doesNotMatch(
+            BASIC_TRANSLATION_SYSTEM_TEMPLATE,
+            forbidden,
+            'Basic template mesti UNIVERSAL — tiada nama bahasa konkrit'
         );
-        assert.equal(
-            structured.system.split(conditional).length - 1,
-            1,
-            `${targetLanguage} runtime prompt carries the conditional cadence exactly once`
-        );
-        const normalized = structured.system.replaceAll(conditional, '').replaceAll(targetLabel, '<TARGET>');
+        const normalized = structured.system.replaceAll(targetLabel, '<TARGET>');
         assert.doesNotMatch(
             normalized,
             forbidden,
@@ -362,7 +364,7 @@ test('[TRINITY-CORE-10] Basic instruction is IDENTICAL for every target except t
     assert.equal(
         distinct.size,
         1,
-        `Basic system prompt mesti IDENTIK untuk semua bahasa selepas label & klausa bersyarat dibuang; mendapat ${distinct.size} varian`
+        `Basic system prompt mesti IDENTIK untuk semua bahasa selepas label dibuang; mendapat ${distinct.size} varian`
     );
 });
 

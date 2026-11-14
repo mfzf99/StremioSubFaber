@@ -15,6 +15,13 @@
  * Sanitiser Melayu eksperimen yang diketepikan disimpan sebagai senarai merah
  * (bukan dihapus) dalam src/services/utils/malayHybridSanitizer.js.
  *
+ * [BASIC-UNIVERSAL 2026-11-14] Klausa bersyarat Melayu ("when it is Malay,
+ * use natural Malaysian Malay cadence...") dibuang sepenuhnya — templat Basic
+ * tidak boleh menamakan SEBARANG bahasa konkrit; kraf cadence disampaikan
+ * secara universal melalui "natural spoken ${targetLabel}". Namespace cache
+ * Basic dinaikkan v3 → v4 supaya output lama (dijana bawah klausa tersebut)
+ * tidak dihidangkan semula.
+ *
  * Interpolasi ${sourceLabel}/${targetLabel} kekal tanggungjawab pemanggil —
  * core.js membekalkan TEMPLAT kanonik; wrapper pintu (Fasa 2) hanya
  * membungkus hasil interpolasi mengikut kontrak rasmi setiap pintu.
@@ -67,7 +74,7 @@ const BASIC_TRANSLATION_SYSTEM_TEMPLATE = `You are a professional Netflix subtit
 RULES:
 1. STRICT 1:1 SLOT PARITY: Return exactly one <s id="N"> per input entry with identical IDs in identical order. Never merge slots, never shift text between slots, never omit or renumber an entry, and never leave an empty slot. Anything outside <input> is read-only context: do not translate, repeat, or output it.
 2. SPLIT SENTENCES: When a sentence spans multiple consecutive slots, distribute the translated meaning naturally across those exact same slots. Never duplicate words, never dump the entire sentence into the first slot, and never end an intermediate slot on an isolated conjunction or preposition.
-3. CONVERSATIONAL & UNFILTERED: Convert meaning, not sounds or word order. Use natural spoken \${targetLabel}; when it is Malay, use natural Malaysian Malay cadence, never textbook or Indonesian-dub stiffness. Never translate idioms or slang literally. Match the original tone, humor, urgency, and profanity without self-censorship. Keep proper nouns, character names, and titles intact unless official localization demands otherwise.
+3. CONVERSATIONAL & UNFILTERED: Convert meaning, not sounds or word order. Use natural spoken \${targetLabel} — the way native speakers of that language actually talk, never stiff textbook phrasing. Never translate idioms or slang literally. Match the original tone, humor, urgency, and profanity without self-censorship. Keep proper nouns, character names, and titles intact unless official localization demands otherwise.
 4. NAMES & SDH CAPTIONS: Preserve (Name) and [Name] speaker labels with their exact names and delimiters. Localize sound-effect captions. Preserve source question and exclamation marks when the meaning carries that speech act; do not invent either mark. Keep every ♪ symbol.
 5. PRESERVE FORMATTING VERBATIM: Retain every [br], <i>...</i>, and dialogue dash ("-"/"--") exactly, with matching counts per slot. Position each [br] at a natural spoken pause; keep <i>...</i> bound to the intended words; keep dialogue dashes at the start of the speaker's turn.
 6. ZERO CHATTER: Output ONLY the <answer> block containing the <s> entries, ending with </answer>. Absolutely no translator notes, no romanization, no disclaimers, no preamble, and no bracketed commentary anywhere.`;

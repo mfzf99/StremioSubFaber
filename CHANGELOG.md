@@ -2,6 +2,19 @@
 
 All notable changes to this project will be documented in this file.
 
+## SubFaber v3.31.1 (2026-11-14) — Universal Basic Translation Prompt Contract Restoration
+
+### 🔧 Fixed — Basic Translation Prompt Is Fully Language-Neutral Again
+
+- The Basic-mode Agent Translation template carried a Malay-conditional cadence clause ("when it is Malay, use natural Malaysian Malay cadence, never textbook or Indonesian-dub stiffness") that named a concrete target language inside an instruction the architecture declares universal for all 433 supported targets. The clause is removed; Rule 3 now delivers the same craft universally ("Use natural spoken ${targetLabel} — the way native speakers of that language actually talk, never stiff textbook phrasing"), so every target language receives one identical instruction except for the interpolated language labels. Malay-specific craft remains available in Pro mode through the sanctioned language-pack system, which resolves per target.
+- The orphaned pack-level `basicEditorialCraft` slot (a dead remnant of the retired per-language Basic injection mechanism) is removed from both language packs so no future re-wiring can reintroduce per-language craft into the universal Basic prompt.
+- The Basic translation cache namespace advances `_trinity-basic-universal-v3` → `_trinity-basic-universal-v4` (per trinity channel) so output previously generated under the conditional clause is never served under the corrected prompt. Existing user and ASS/SRT scoping remain intact.
+
+### ✅ Verification
+
+- Red-first evidence: four strengthened regression assertions (forbidden concrete language names in the Basic template, exact `universal-v4` cache keys, runtime clause absence on every provider door, cross-target identity) were observed failing before the fix and pass after it.
+- Full tracked suite: 663 tests / 662 passed / 0 failed / 1 skipped (pre-existing live-Redis integration); Pro language-pack cadence, preflight honorific matrix, inspector parity, and all nine Trinity door cells unchanged and green.
+
 ## SubFaber v3.31.0 (2026-11-12) — Mechanical Quality Validators and Actionable Retry Diagnostics
 
 ### ✨ Added — Zero-Cost Mechanical Translation Validators (Phase A)

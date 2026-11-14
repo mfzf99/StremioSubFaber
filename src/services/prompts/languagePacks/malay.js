@@ -103,14 +103,6 @@ Wrong (slots skipped):
 - Zero Indonesianisms: strictly avoid bisa, banget, gimana, cewek/cowok, kalian, ngomong, kok, dong, sih, gue/lu, keren. Never translate literally word-by-word.`,
 
     /**
-     * Basic R&D run 13/15 editorial refinement, retained only for Malay targets.
-     * The canonical Basic core is language-neutral; this conditional block keeps
-     * the experiment's Malay-specific craft out of every other target language.
-     */
-    basicEditorialCraft:
-        'For Malaysian Malay targets, avoid English-shaped ini/itu/yang; use natural choices such as saya/awak, aku/kau, or omitted pronouns according to the evidenced relationship; use okey/helo for ordinary spoken interjections when suitable.',
-
-    /**
      * NOT-LOCKED guidance (P1 formatter + translationEngine._formatPreflightForChunk).
      */
     notLockedGuidance:
