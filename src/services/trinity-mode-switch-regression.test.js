@@ -185,6 +185,82 @@ test('[A8] deriveTranslationFromProviders — fallback rehidrasi providers.<main
     );
 });
 
+test('[A14] collectConfigPatch menserialisasikan slot per-mod translationBasic/translationPro daripada kad semasa', () => {
+    // [PER-MODE SLOTS v3.34] Backend kini menyimpan trinity.translationBasic dan
+    // trinity.translationPro sebagai slot berasingan; trinity.translation kekal
+    // sebagai ALIAS salinan-dalam slot AKTIF. Serializer mesti menulis ketiga-tiga
+    // alamat dengan nilai kad semasa, dan tidak boleh menyamakan slot kedua-dua
+    // mod daripada satu sumber (tiada cross-sync).
+    const patchMatch = trinitySrc.match(/function collectConfigPatch\(\) \{[\s\S]*?\n    \}/);
+    assert.ok(patchMatch, 'collectConfigPatch mesti wujud');
+    const fnSrc = patchMatch[0];
+    assert.match(
+        fnSrc,
+        /var activeSlotKey = mode === MODE_PRO \? 'translationPro' : 'translationBasic';/,
+        'kunci slot aktif mesti ditakrifkan daripada mod semasa'
+    );
+    assert.match(fnSrc, /trinity\[activeSlotKey\] =/, 'slot aktif mesti ditulis dengan nilai kad semasa');
+    assert.match(
+        fnSrc,
+        /trinity\.translation = JSON\.parse\(JSON\.stringify\(trinity\[activeSlotKey\]\)\);/,
+        'alias legasi trinity.translation mesti salinan-dalam slot aktif (deep copy)'
+    );
+});
+
+test('[A15] prevTrinity memelihara kedua-dua slot per-mod semasa Save (non-destructive dua hala)', () => {
+    // Save dalam Basic TIDAK boleh memadam translationPro dan sebaliknya.
+    // Slot INACTIVE dipulihkan daripada prevTrinity; slot {} kosong TIDAK
+    // dibenarkan menimpa slot berisi.
+    const patchMatch = trinitySrc.match(/function collectConfigPatch\(\) \{[\s\S]*?\n    \}/);
+    assert.ok(patchMatch, 'collectConfigPatch mesti wujud');
+    const fnSrc = patchMatch[0];
+    assert.match(
+        fnSrc,
+        /var otherSlotKey = mode === MODE_PRO \? 'translationBasic' : 'translationPro';/,
+        'kunci slot tak aktif mesti ditakrifkan (slot yang ditinggalkan)'
+    );
+    assert.match(
+        fnSrc,
+        /var inactive = prevTrinity\[otherSlotKey\];/,
+        'slot tak aktif mesti dibaca daripada konfigurasi tersimpan'
+    );
+    assert.match(fnSrc, /trinity\[otherSlotKey\] = inactiveSlot;/, 'slot tak aktif mesti dipulihkan — bukan {} kosong');
+    assert.match(
+        fnSrc,
+        /prev\.apiKey \|\| ''/,
+        'kredential lama (apiKey) mesti dipulihkan verbatim untuk slot tak aktif'
+    );
+});
+
+test('[A16] Pertukaran mod merakam nilai kad ke slot yang DITINGGALKAN dan mengisi semula kad dari slot yang DIMASUKI', () => {
+    // Scenario Owner: set Basic -> tukar ke Pro -> kad FRESH (tiada sync);
+    // tukar balik ke Basic -> SEMUA nilai Basic kembali. Ini memerlukan
+    // pemetaan slot per-mod di dalam snapshot/mod-change, bukan boolean soup.
+    assert.match(
+        trinitySrc,
+        /function slotKeyForMode\(mode\)/,
+        'pemetaan mode->slot wajib wujud sebagai fungsi tersendiri'
+    );
+    assert.match(
+        trinitySrc,
+        /var prevMode = mode === MODE_PRO \? MODE_BASIC : MODE_PRO;/,
+        'mod lama mesti ditakrifkan sebelum snapshot'
+    );
+    assert.match(trinitySrc, /slotKeyForMode\(prevMode\)/, 'snapshot mod mesti menulis ke slot MOD YANG DITINGGALKAN');
+    assert.match(
+        trinitySrc,
+        /toggleInput\.checked = prevMode === MODE_PRO;/,
+        'toggle mesti dipulihkan ke mod lama SEMENTARA supaya collectConfigPatch membaca mod lama'
+    );
+    // Semakan ketiadaan: tiada corak lama yang menulis trinity.translation
+    // sebagai slot tunggal merentas mod dalam pemetaan switch.
+    assert.doesNotMatch(
+        trinitySrc,
+        /c\.trinity\.translation = JSON\.parse\(JSON\.stringify\(/,
+        'jangan tulis slot tunggal trinity.translation semasa switch — tulis slot per-mod'
+    );
+});
+
 test('[A13] Formula 20+200+10 dihantar tanpa syarat dari collectConfigPatch (runtime tunggal Basic)', () => {
     // [PHASE C] Tiada lagi handler togol mod — formula Basic 20+200+10 menjadi
     // SATU-SATUNYA formula dan mesti dihantar tanpa syarat pada setiap save.

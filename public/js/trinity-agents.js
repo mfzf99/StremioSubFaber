@@ -2791,20 +2791,65 @@
 
         toggleInput.addEventListener('change', function () {
             var mode = toggleInput.checked ? MODE_PRO : MODE_BASIC;
-            var c = getEffectiveConfig() || _lastKnownConfig;
-            if (c) {
-                c.trinity = c.trinity || {};
-                c.trinity.mode = mode;
-            }
+            // [PER-MODE SLOTS v3.34] currentConfig mungkin null pada fresh page
+            // (getter LIVE memulangkan null; _lastKnownConfig belum diisi).
+            // Tanpa objek config, mod tidak boleh ditulis dan applyAgentValues
+            // akan membalikkan toggle semula ke mod lama. Sediakan objek minimum
+            // dan daftarkan sebagai _lastKnownConfig supaya getEffectiveConfig()
+            // dan applyAgentValues melihat mod baharu.
+            var c = getEffectiveConfig() || _lastKnownConfig || {};
+            if (!c.trinity) c.trinity = {};
+            c.trinity.mode = mode;
+            _lastKnownConfig = c;
             if (_rehydratingMode) return;
-            // Rakam nilai yang belum disimpan sebelum render; kad tidak dibina semula.
+            // [PER-MODE SLOTS v3.34] Snapshot MESTI menggunakan mod LAMA (yang
+            // ditinggalkan). Toggle sudah terbalik ke mod baharu, jadi
+            // resolveSelectedMode() akan membaca mod baharu — salah. Pulihkan
+            // toggle ke mod lama SEMENTARA supaya collectConfigPatch menulis
+            // nilai kad ke slot yang DITINGGALKAN, bukan slot mod baharu.
+            // (Setting .checked secara programatik TIDAK mencetuskan event change.)
+            var prevMode = mode === MODE_PRO ? MODE_BASIC : MODE_PRO;
             var snapshotCfg = null;
             try {
+                toggleInput.checked = prevMode === MODE_PRO;
                 snapshotCfg = snapshotVisibleAgentState(c);
             } catch (error) {
                 console.error('[Trinity] Mode-state snapshot failed:', error);
                 snapshotCfg = c;
+            } finally {
+                toggleInput.checked = mode === MODE_PRO;
             }
+            if (snapshotCfg && snapshotCfg.trinity) {
+                // collectConfigPatch membaca toggle (yang sementara dipulihkan ke
+                // mod lama), jadi snapshotCfg.trinity.mode = mod LAMA. Paksa semula
+                // ke mod BAHARU supaya applyAgentValues tidak membalikkan toggle.
+                snapshotCfg.trinity.mode = mode;
+                var enteredKey = slotKeyForMode(mode);
+                var leftKey = slotKeyForMode(prevMode);
+                // Alihkan alias ke slot mod yang DIMASUKI — kosong jika belum
+                // pernah diisi (FRESH card, tiada cross-sync).
+                var enteredSlot = snapshotCfg.trinity[enteredKey];
+                if (!enteredSlot || typeof enteredSlot !== 'object') enteredSlot = {};
+                snapshotCfg.trinity.translation = JSON.parse(JSON.stringify(enteredSlot));
+                // Pastikan slot yang ditinggalkan kekal (defensive: jika snapshot gagal).
+                if (!snapshotCfg.trinity[leftKey]) snapshotCfg.trinity[leftKey] = {};
+            }
+            // [PER-MODE SLOTS v3.34] Sebelum rehidrasi, kosongkan medan kad supaya
+            // slot FRESH (tiada nilai) benar-benar memaparkan kad kosong — bukan
+            // nilai lama mod sebelumnya. applyAgentValues hanya menulis nilai
+            // tidak-kosong; tanpa reset ini, nilai mod lama kekal melekat.
+            AGENTS.forEach(function (agent) {
+                var keyEl = $('trinity-' + agent.key + '-key');
+                var fmtEl = $('trinity-' + agent.key + '-format');
+                var urlEl = $('trinity-' + agent.key + '-baseurl');
+                var modelEl = $('trinity-' + agent.key + '-model');
+                var providerEl = $('trinity-' + agent.key + '-provider');
+                if (keyEl) keyEl.value = '';
+                if (fmtEl) fmtEl.value = 'auto';
+                if (urlEl) urlEl.value = '';
+                if (modelEl) modelEl.value = '';
+                if (providerEl) providerEl.value = '';
+            });
             renderCards(snapshotCfg || c);
         });
 
@@ -2875,6 +2920,13 @@
     function resolveSelectedMode() {
         var modeToggle = $('trinityModeToggle');
         return modeToggle ? (modeToggle.checked ? MODE_PRO : MODE_BASIC) : resolveStoredMode(getEffectiveConfig());
+    }
+
+    // [PER-MODE SLOTS v3.34] Pemetaan mod -> kunci slot translation berasingan.
+    // Backend menyimpan trinity.translationBasic / trinity.translationPro dengan
+    // SIFAT berbeza; trinity.translation kekal ALIAS salinan-dalam slot AKTIF.
+    function slotKeyForMode(mode) {
+        return mode === MODE_PRO ? 'translationPro' : 'translationBasic';
     }
 
     // --- Rehydrate nilai sedia ada ke dalam input baharu ---
@@ -3021,10 +3073,14 @@
         // Pilihan UI ialah sumber mod semasa; konfigurasi tersimpan ialah fallback
         // sebelum mount. Blok ejen tersembunyi kekal dibaca dan diserialisasi.
         var mode = resolveSelectedMode();
+        var activeSlotKey = mode === MODE_PRO ? 'translationPro' : 'translationBasic';
+        var otherSlotKey = mode === MODE_PRO ? 'translationBasic' : 'translationPro';
         var trinity = {
             mode: mode,
             preflight: {},
             translation: {},
+            translationBasic: {},
+            translationPro: {},
             inspector: {}
         };
 
@@ -3100,6 +3156,34 @@
                 readRotationPool(agent.key, key)
             );
         });
+
+        // [PER-MODE SLOTS v3.34] Kad Translation disalin ke slot mod AKTIF;
+        // slot tak aktif dipulihkan daripada konfigurasi lama (non-destructive
+        // dua hala — Save dalam Basic TIDAK memadam translationPro dan sebaliknya).
+        if (trinity.translation && typeof trinity.translation === 'object') {
+            trinity[activeSlotKey] = JSON.parse(JSON.stringify(trinity.translation));
+        }
+        var inactive = prevTrinity[otherSlotKey];
+        var inactiveSlot = {};
+        if (inactive && typeof inactive === 'object') {
+            inactiveSlot = {
+                apiKey: inactive.apiKey || '',
+                format: inactive.format || 'auto',
+                baseUrl: inactive.baseUrl || '',
+                model: inactive.model || '',
+                provider: inactive.provider || '',
+                door: inactive.door || '',
+                isCustom: inactive.isCustom === true,
+                enabled: inactive.enabled === true,
+                apiKeys: Array.isArray(inactive.apiKeys) ? inactive.apiKeys.slice() : [],
+                keyRotationEnabled: inactive.keyRotationEnabled === true,
+                keyRotationMode: inactive.keyRotationMode || 'per-batch',
+                params: inactive.params && typeof inactive.params === 'object' ? Object.assign({}, inactive.params) : {}
+            };
+        }
+        trinity[otherSlotKey] = inactiveSlot;
+        // Alias legasi kekal salinan-dalam slot aktif (kontrak downstream tidak berubah).
+        trinity.translation = JSON.parse(JSON.stringify(trinity[activeSlotKey]));
 
         // [FASA 4 v3.9.46] Slot secondary (ejem ke-4) — params diukur terhadap
         // capability profile fallback semasa; slot disimpan tanpa kredential

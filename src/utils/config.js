@@ -300,6 +300,51 @@ function normalizeTrinityAgentParams(mergedConfig) {
         .replace(/[^a-z0-9-]/g, '');
     trinity.mode = storedMode === 'pro' ? 'pro' : 'basic';
 
+    // (0b) [PER-MODE TRANSLATION SLOTS v3.34.0 — Mandat Owner 2026-11-14]
+    // Slot translation kini BERASINGAN per mod: `trinity.translationBasic` /
+    // `trinity.translationPro`. Medan `trinity.translation` KEKAL sebagai ALIAS
+    // (salinan) slot mod AKTIF supaya semua pengguna downstream (jambatan
+    // syncTrinityTranslationToProvider, fallback geminiBaseUrl, params factory,
+    // key resolver) terus berfungsi tanpa perubahan.
+    //   SEED SEKALI: hash legasi (hanya trinity.translation) memindahkan nilainya
+    //   ke slot mod aktif sahaja — mod kedua mula FRESH. Selepas itu kedua-dua
+    //   slot tidak pernah disegerakkan antara satu sama lain.
+    const modeSlotKey = trinity.mode === 'pro' ? 'translationPro' : 'translationBasic';
+    for (const slotKey of ['translationBasic', 'translationPro']) {
+        if (!trinity[slotKey] || typeof trinity[slotKey] !== 'object') {
+            trinity[slotKey] = {};
+        }
+    }
+    const slotHasPayload = (slot) =>
+        !!slot &&
+        Object.entries(slot).some(
+            ([k, v]) =>
+                !k.startsWith('__') &&
+                v !== undefined &&
+                v !== null &&
+                v !== '' &&
+                !(typeof v === 'object' && Object.keys(v).length === 0)
+        );
+    if (
+        !slotHasPayload(trinity.translationBasic) &&
+        !slotHasPayload(trinity.translationPro) &&
+        !trinity.__perModeSlotsSeeded
+    ) {
+        if (slotHasPayload(trinity.translation)) {
+            trinity[modeSlotKey] = JSON.parse(JSON.stringify(trinity.translation));
+            log.debug(
+                () =>
+                    `[Config] [PerModeSlots] Seeded legacy trinity.translation into trinity.${modeSlotKey} (mode '${trinity.mode}'); the other mode stays fresh`
+            );
+        }
+        // Bendera sekali sahaja — hash legasi tanpa payload juga dianggap selesai
+        // supaya normalize berikutnya tidak menyemak semula (idempoten).
+        trinity.__perModeSlotsSeeded = true;
+    }
+    // Alias sentiasa dibina semula daripada slot aktif SEBELUM migrasi/sanitasi
+    // supaya kedua-dua langkah tersebut beroperasi ke atas salinan aktif.
+    trinity.translation = JSON.parse(JSON.stringify(trinity[modeSlotKey] || {}));
+
     // (1) Pastikan keempat-empat slot wujud (non-destructive).
     for (const agentKey of TRINITY_AGENT_KEYS) {
         if (!trinity[agentKey] || typeof trinity[agentKey] !== 'object') {
@@ -353,6 +398,13 @@ function normalizeTrinityAgentParams(mergedConfig) {
             if (Object.keys(carried).length > 0) {
                 translationSlot.params = carried;
                 translationSlot.__paramsMigrated = true;
+                // [PER-MODE SLOTS v3.34.0] migrasi params turut mendarat pada slot
+                // mod AKTIF — translationSlot ialah ALIAS yang dibina semula oleh
+                // langkah (5); tanpa tulis balik ini params migrasi akan hilang.
+                if (trinity[modeSlotKey] && typeof trinity[modeSlotKey] === 'object') {
+                    trinity[modeSlotKey].params = carried;
+                    trinity[modeSlotKey].__paramsMigrated = true;
+                }
                 log.debug(
                     () =>
                         `[Config] [TrinityParams] Migrated legacy advancedSettings/providerParameters.${mainKey} → trinity.translation.params (${Object.keys(carried).length} fields)`
@@ -387,6 +439,28 @@ function normalizeTrinityAgentParams(mergedConfig) {
     if (anyDeviation) {
         mergedConfig.__trinityParamsDeviated = true;
     }
+
+    // (5) [PER-MODE TRANSLATION SLOTS v3.34.0] Sanitasi params KEDUA-DUA slot
+    // mod (translationBasic / translationPro) dengan kaedah sama seperti (3),
+    // kemudian bina semula ALIAS daripada slot aktif supaya migrasi (2) +
+    // sanitasi (3) yang beroperasi ke atas alias terbawa masuk ke slot asal.
+    for (const slotKey of ['translationBasic', 'translationPro']) {
+        const slot = trinity[slotKey];
+        if (!slot || typeof slot !== 'object') continue;
+        const providerOrDoor = resolveTrinityAgentProvider(mergedConfig, 'translation');
+        const modelId = typeof slot.model === 'string' ? slot.model : '';
+        const rawParams = slot.params && typeof slot.params === 'object' ? slot.params : {};
+        if (Object.keys(rawParams).length === 0) {
+            slot.params = null;
+            continue;
+        }
+        const sanitized = capabilities.sanitizeAgentParams('translation', rawParams, providerOrDoor, modelId);
+        slot.params = Object.keys(sanitized).length > 0 ? sanitized : null;
+        if (capabilities.agentParamsDeviateFromDefault('translation', rawParams, providerOrDoor, modelId)) {
+            mergedConfig.__trinityParamsDeviated = true;
+        }
+    }
+    trinity.translation = JSON.parse(JSON.stringify(trinity[modeSlotKey] || {}));
 }
 
 const OVERRIDE_DEPRECATED_MODELS = true;

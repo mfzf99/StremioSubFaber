@@ -63,6 +63,15 @@ test('Trinity save serializes the selected mode and rehydration preserves all ag
     assert.match(trinitySource, /mode:\s*mode/);
     assert.match(trinitySource, /var prevTrinity = \(getEffectiveConfig\(\) \|\| \{\}\)\.trinity \|\| \{\};/);
     assert.match(trinitySource, /translation:\s*\{\}/);
+    assert.match(trinitySource, /translationBasic:\s*\{\}/);
+    assert.match(trinitySource, /translationPro:\s*\{\}/);
+    assert.match(trinitySource, /var activeSlotKey = mode === MODE_PRO \? 'translationPro' : 'translationBasic';/);
+    assert.match(trinitySource, /var otherSlotKey = mode === MODE_PRO \? 'translationBasic' : 'translationPro';/);
+    assert.match(trinitySource, /function slotKeyForMode\(mode\)/);
+    assert.match(trinitySource, /var prevMode = mode === MODE_PRO \? MODE_BASIC : MODE_PRO;/);
+    assert.match(trinitySource, /slotKeyForMode\(prevMode\)/);
+    assert.match(trinitySource, /toggleInput\.checked = prevMode === MODE_PRO;/);
+    assert.match(trinitySource, /trinity\.translation = JSON\.parse\(JSON\.stringify\(trinity\[activeSlotKey\]\)\);/);
     assert.match(trinitySource, /preflight:\s*\{\}/);
     assert.match(trinitySource, /inspector:\s*\{\}/);
     assert.match(trinitySource, /function snapshotVisibleAgentState\(targetCfg\)/);

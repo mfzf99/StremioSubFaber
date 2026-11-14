@@ -2,6 +2,20 @@
 
 All notable changes to this project will be documented in this file.
 
+## SubFaber v3.34.0 (2026-11-15) — Per-Mode Translation Slots: Independent Basic and Pro Credentials
+
+### ✨ Added — Each Trinity Mode Keeps Its Own Translation Setup
+
+- **Per-mode translation slots.** `trinity.translationBasic` and `trinity.translationPro` now hold separate credentials, model, provider, door, rotation pool, and model-parameter payloads for each mode, ending the silent cross-mode bleed where a translation setup done in Basic appeared in Pro. `trinity.translation` is retained as a deep-copy alias of the ACTIVE mode slot so every downstream consumer (provider bridge, Gemini base-URL fallback, params factory, key resolver) keeps working unchanged. Migration seeds the ACTIVE mode slot from a legacy `trinity.translation` hash exactly once (flag `__perModeSlotsSeeded`); the other mode starts fresh and the two slots are never synchronized.
+- **Single-card UI with per-mode values (frontend).** The Translation card morphs with the mode toggle: switching modes records the current card values into the slot being LEFT (the toggle is briefly restored to the previous mode during the snapshot so `collectConfigPatch` writes to the correct slot), then rehydrates the card from the slot being ENTERED — a never-configured slot shows a genuinely empty card (field reset before rehydrate), a configured slot restores its exact values. Saves are non-destructive in both directions: the inactive slot is re-serialized from the stored config, so saving in Basic never wipes the Pro slot and vice versa. Canonical rehydration on reload reads the alias of the stored active mode, and switching after reload restores each mode's own credentials.
+- **Slot-aware normalization (backend).** `normalizeTrinityAgentParams` in `src/utils/config.js` gains three steps: (0b) slot seeding + alias rebuild, a legacy-params write-back that also lands on the active slot, and per-slot params sanitization for BOTH mode slots before the alias is rebuilt — so migrated and per-mode params survive sanitization and never collapse into one value.
+
+### ✅ Verification
+
+- Red-first evidence: the new backend suite `src/utils/per-mode-translation-slot-regression.test.js` observed 9/9 failures before any production edit; the frontend re-pins observed 4 expected failures (source-shape + new `[A14]`/`[A15]`/`[A16]` assertions in `src/services/trinity-mode-switch-regression.test.js`) before the UI surgery.
+- Frontend acceptance (Playwright, isolated memory-storage server): Basic setup → switch Pro → fresh empty card → switch Basic → all Basic values restored; `collectConfigPatch` serializes alias + both slots in both directions without cross-sync; Save → reload round-trip via `/api/create-session` + `/api/get-session` preserves mode, alias, both per-mode slots, and Preflight; canonical rehydration after reload populates the Pro card and a post-reload switch restores the Basic values. Backend re-inspection re-verified canonical Pro rehydration plus both switch directions with exact credential restore and zero console errors.
+- Full tracked suite: **714 tests / 713 passed / 0 failed / 1 skipped** (pre-existing live-Redis concurrent-quota integration), exit 0.
+
 ## SubFaber v3.33.0 (2026-11-15) — Pro Mode Revival: Single-Template Trinity Prompt and Restored Basic/Pro Segmented Toggle
 
 ### ✨ Added — Pro Mode Is Live Again, Driven by Data
