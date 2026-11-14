@@ -7,7 +7,7 @@
 
 ## 1. Tujuan
 
-Repositori SubFaber beroperasi secara **tertutup dengan 1 mod sahaja** — `fullstack` (`Fullstack Architect`). Mod bawaan Zoo Code (`architect`, `code`, `ask`, `debug`, `orchestrator`) dan mod projek bersara (`backend`, `frontend`) adalah TERLARANG dan perlu dibuang daripada sambungan setiap kali ia dipasang atau dikemas kini. Protokol ini mengabadikan kaedah pembedahan (surgical patch) supaya boleh diulang dengan satu arahan.
+Repositori SubFaber beroperasi secara **tertutup dengan 1 mod sahaja** — `fullstack` (`SubFaber Principal Engineer`). Mod bawaan Zoo Code (`architect`, `code`, `ask`, `debug`, `orchestrator`) dan mod projek bersara (`backend`, `frontend`) adalah TERLARANG dan perlu dibuang daripada sambungan setiap kali ia dipasang atau dikemas kini. Protokol ini mengabadikan kaedah pembedahan (surgical patch) supaya boleh diulang dengan satu arahan.
 
 ## 2. Punca Seni Bina (Mengapa Perlu Dua Patch)
 
@@ -41,7 +41,7 @@ Skrip akan:
 1. **Auto-discover** folder `~/.vscode/extensions/zoocodeorganization.zoo-code-*` dan pilih versi tertinggi (jika beberapa versi dipasang).
 2. Cipta sandaran `.bak` bagi setiap bundle **sekali sahaja** (tidak ditulis semula jika sudah wujud).
 3. Bracket-matching sedar string/backtick untuk mengesan julat tepat tatasusunan (koma dalam `roleDefinition` template-literal tidak boleh menyebabkan false match).
-4. Gantikan kedua-dua tatasusunan dengan definisi satu-mod `fullstack` (`Fullstack Architect`, `groups:["read","edit","command","mcp"]`). Input bundle asal mahupun patch dua-mod lama dikesan secara automatik.
+4. Gantikan kedua-dua tatasusunan dengan definisi satu-mod `fullstack` (`SubFaber Principal Engineer`, `groups:["read","edit","command","mcp"]`). Input bundle asal mahupun patch dua-mod lama dikesan secara automatik.
 5. Sahkan integriti sintaks kedua-dua fail menggunakan `node --check` dan imbas sisa definisi mod bawaan serta `backend`/`frontend`.
 
 **Selepas patch:** mulakan semula (restart) VS Code sepenuhnya — reload window sahaja tidak memadai kerana Webview perlu dibina semula.
@@ -67,7 +67,7 @@ Jika kemas kini berlaku juga: jalankan semula `node scripts/patch-zoo-code.js` d
 1. `node scripts/patch-zoo-code.js --check` — jika marker tidak ditemui (status `marker-not-found`), minifier mungkin menukar nama pemboleh ubah dalam versi baharu; audit manual diperlukan (cari `slug:"architect"`, `slug:"backend"` atau varian backtick yang sepadan dalam kedua-dua bundle).
 2. `node scripts/patch-zoo-code.js`.
 3. Restart penuh VS Code.
-4. Sahkan dropdown Zoo Code hanya memaparkan **Fullstack Architect**.
+4. Sahkan dropdown Zoo Code hanya memaparkan **SubFaber Principal Engineer**.
 
 ## 6. Rollback
 

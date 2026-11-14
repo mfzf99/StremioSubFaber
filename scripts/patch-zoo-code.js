@@ -10,7 +10,7 @@
  *   The Zoo Code VS Code extension ships with 5 built-in modes
  *   (architect, code, ask, debug, orchestrator). This repository
  *   operates under a CLOSED SINGLE-MODE UNIVERSE: `fullstack`
- *   (Fullstack Architect) ONLY (see .roo/rules/00-subfaber-core-protocol.md).
+ *   (SubFaber Principal Engineer) ONLY (see .roo/rules/00-subfaber-core-protocol.md).
  *
  *   This script surgically replaces the built-in mode array in BOTH:
  *     1. Node.js Extension Host bundle:  dist/extension.js
@@ -44,7 +44,7 @@ const CHECK_ONLY = process.argv.includes('--check');
 /* ------------------------------------------------------------------ */
 
 const MODES_HOST = [
-	{ slug: 'fullstack', name: 'Fullstack Architect', roleDefinition: 'Fullstack Architect', groups: ['read', 'edit', 'command', 'mcp'] },
+	{ slug: 'fullstack', name: 'SubFaber Principal Engineer', roleDefinition: 'SubFaber Principal Engineer', groups: ['read', 'edit', 'command', 'mcp'] },
 ];
 
 /** Serialize a mode array using double-quoted strings (host bundle style). */

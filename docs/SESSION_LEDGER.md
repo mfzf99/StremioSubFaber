@@ -18,6 +18,23 @@ This template is the R5 ledger-format deliverable. It supersedes the legacy form
 
 ---
 
+## 2026-11-14 — GOVERNANCE: ALIGN ZOO CODE PATCH SCRIPT & PROTOCOL TO SUBFABER PRINCIPAL ENGINEER (CLASS 2)
+
+- **Date:** 2026-11-14 ~15:43 (KL time).
+- **Parent HEAD SHA:** `78ffd5b2` (CI-green on origin/main; rename release completed `RELEASED_CI_GREEN`, run 43572094352).
+- **Status:** `VERIFIED_LOCAL` (Class 2 operational-governance; push executed per explicit Owner instruction).
+- **Release Commit SHA + CI Run ID:** confirmed in the final report after push/CI — never invented.
+- **Owner Decision:** Close the two residuals left open by the title rename (78ffd5b2): update the `Fullstack Architect` display entries in `MODES_HOST` of `scripts/patch-zoo-code.js` (keeping `slug: fullstack`) and align the dropdown-name references in `docs/ZOO_CODE_PATCH_PROTOCOL.md`, so a future Zoo Code re-patch writes the new title. Validate with `node --check`, record this ledger entry, one commit, push to origin/main, verify CI and a clean tree.
+- **Impact & Contract Audit (Phase A/B):** Governance/maintenance-tooling only; zero application runtime, provider transport, schema, prompt, DOM, or CSS surface touched. Zone A/B/C all N/A — no model/sampling, schema/normalization, or Trinity pipeline change; no client/public consumer exists for the patch script's mode definitions. The already-patched live Zoo Code bundles are untouched — this change only affects FUTURE patch invocations, so no restart is required now.
+- **Independent Acceptance:** `node --check scripts/patch-zoo-code.js` PASS (SYNTAX_OK). `git diff --stat` confirms the surgical delta: 2 files, 5 insertions / 5 deletions (patch script: header comment + `MODES_HOST` entry name and roleDefinition; protocol: §1 universe description, §3 step 4 replacement definition, §5 step 4 dropdown checklist). Residual scan (`findstr /s /m`) across `scripts/*.js`, `ZOO_CODE_PATCH_PROTOCOL.md`, `.roomodes`, and the core protocol returned zero files — no `Fullstack Architect` remains in any active edit surface; remaining occurrences in CHANGELOG/ledger history/plans/dated audits stay verbatim by the history invariant.
+- **Residual / N/A Gates:** Playwright N/A (no UI/DOM surface), real-provider verification N/A (no network/credential path), cache-buster NO-OP (no versioned asset path touched), SemVer/CHANGELOG N/A under Class 2. The live extension bundles were patched under the old title in the v3.96.0 era; the running dropdown shows the title from the harness `.roomodes` (already `SubFaber Principal Engineer`), and a future re-patch will stamp the new title into both bundles. Full tracked suite ran through the pre-commit hook for this commit.
+- **Files Involved:** `scripts/patch-zoo-code.js` (M: header comment + `MODES_HOST` display title), `docs/ZOO_CODE_PATCH_PROTOCOL.md` (M: 3 title references), `docs/SESSION_LEDGER.md` (M: this entry), `.tmp/RELAY_STATE.md` (M: relay checkpoint).
+- **npm test Status:** run inside the pre-commit tracked runner; expectation 663 total / 662 PASS / 0 FAIL / 1 SKIP (tooling/docs-only delta on the 78ffd5b2 CI-green tree; the sole SKIP is the pre-existing live-Redis concurrent-quota integration).
+- **Next Steps:** Report Release Commit SHA + CI Run ID after push. None — the title alignment across all active surfaces is complete.
+- **Tool Navigation Ratio:** search_files=0 read_file=3 ratio=1:0.0 anchored=100% (3/3 reads) — ratio deviation (target ≤2.0, floor n/a) stated with reason: a zero-search continuation of the already-confirmed residual list from the previous session segment; every read was anchored to the exact line targets (:46/:47 script, :1/:10/:44/:70 protocol) previously located by search, and the post-edit residual scan used `findstr` programmatically.
+
+---
+
 ## 2026-11-14 — GOVERNANCE: RENAME FULLSTACK MODE DISPLAY TITLE TO SUBFABER PRINCIPAL ENGINEER (CLASS 2)
 
 - **Date:** 2026-11-14 ~15:36 (KL time).
