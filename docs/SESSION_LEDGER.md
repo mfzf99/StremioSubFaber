@@ -18,6 +18,23 @@ This template is the R5 ledger-format deliverable. It supersedes the legacy form
 
 ---
 
+## 2026-11-14 — GOVERNANCE: RENAME FULLSTACK MODE DISPLAY TITLE TO SUBFABER PRINCIPAL ENGINEER (CLASS 2)
+
+- **Date:** 2026-11-14 ~15:36 (KL time).
+- **Parent HEAD SHA:** `3ac964ba` (CI-green on origin/main at intake; clean tree).
+- **Status:** `VERIFIED_LOCAL` (Class 2 operational-governance; push executed per explicit Owner instruction).
+- **Release Commit SHA + CI Run ID:** confirmed in the final report after push/CI — never invented.
+- **Owner Decision:** Approved the A–Z responsibility-scope study and the title-gap finding that "Fullstack Architect" under-represents the actual 31-domain scope (architecture, backend, client SSR, security, caching, infra, QA, governance, release). Mandated renaming the mode display title to `SubFaber Principal Engineer` in `.roomodes` while keeping `slug: fullstack` unchanged, tightening the opening `roleDefinition` line to state end-to-end execution ownership (architecture, code implementation, backend and client changes, security boundaries, QA and regression coverage, approved release workflow) without decorative prose, updating the §1 display-name reference in the core protocol, validating `.roomodes` with a YAML parser, recording this ledger entry, then one local commit and `git push origin main` with a clean-tree check. Historical references to the old title in CHANGELOG, ledger history, plans, and dated audit documents remain verbatim.
+- **Impact & Contract Audit (Phase A/B):** Governance-only change (agent mode configuration); zero application runtime, provider transport, schema, prompt, DOM, or CSS surface touched. Zone A N/A (no model/sampling change), Zone B N/A (no schema/normalization change), Zone C N/A (no Trinity pipeline change); no client/public consumer exists for a `.roomodes` display title. The Zoo Code harness hot-reloaded the new title (`SubFaber Principal Engineer`) immediately after the edit — observed live in the mode indicator before the commit.
+- **Independent Acceptance:** PyYAML structural validation PASS: exactly one `customModes` entry, `slug=fullstack`, `name=SubFaber Principal Engineer`, `groups=[read,edit,command,mcp]`, `source=project`, and all required fields non-empty strings. `git diff --stat` confirms the surgical delta before the ledger write: 2 tracked files, 3 insertions / 3 deletions. Repository-wide search for `Fullstack Architect` found zero remaining occurrences in active governance/code edit surfaces; all hits are verbatim historical records or the two residuals below. Full tracked suite ran through the pre-commit hook for this commit.
+- **Residual / N/A Gates:** `scripts/patch-zoo-code.js` (MODES_HOST entry) and `docs/ZOO_CODE_PATCH_PROTOCOL.md` (patch checklist) still embed the old title `Fullstack Architect`. They were deliberately NOT edited because the Owner's mandate scoped exactly `.roomodes` and `.roo/rules/00-subfaber-core-protocol.md`; if a future Zoo Code update is re-patched, the extension dropdown would show the old title again until those two files are aligned in a follow-up mandate. Playwright N/A (no UI/DOM surface), real-provider verification N/A (no network/credential path), cache-buster NO-OP (no versioned asset path touched), SemVer/CHANGELOG N/A under Class 2.
+- **Files Involved:** `.roomodes` (M: display name + opening roleDefinition line), `.roo/rules/00-subfaber-core-protocol.md` (M: §1 display-name reference), `docs/SESSION_LEDGER.md` (M: this entry), `.tmp/RELAY_STATE.md` (M: relay checkpoint).
+- **npm test Status:** run inside the pre-commit tracked runner; expectation 663 total / 662 PASS / 0 FAIL / 1 SKIP (governance-only delta on the 3ac964ba CI-green tree; the sole SKIP is the pre-existing live-Redis concurrent-quota integration).
+- **Next Steps:** Report Release Commit SHA + CI Run ID after push. Optional follow-up mandate: align the Zoo Code patch script/protocol title residuals.
+- **Tool Navigation Ratio:** search_files=1 read_file=6 ratio=1:6.0 anchored=100% (6/6 reads) — ratio deviation (target ≤2.0) stated with reason: the A–Z scope survey was executed through bounded `list_files` top-level inventories (context-discipline compliant) rather than text searches, and one exhaustive title search sufficed to lock the edit surface; every read used an explicit offset+limit range.
+
+---
+
 ## 2026-11-14 — FIX: ZOO CODE GLM-5.3 PER-PROFILE CONDENSE THRESHOLD PERSISTENCE (OPERATIONAL)
 
 - **Date:** 2026-11-14 ~14:54 (KL time).
