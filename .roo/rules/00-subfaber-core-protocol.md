@@ -24,6 +24,13 @@ Secondary references (expanded detail, no invariant is weakened by relocation):
 
 Prefer the smallest complete solution. Simplicity must never weaken defensive handling, regression coverage, security boundaries, or verification requirements.
 
+### State-Machine & Tri-Experience Doctrine
+
+- Model lifecycles, retries, async workers, and UI states as explicit finite states with deterministic transitions. Eliminate boolean soup: scattered booleans (`isRetrying && !isInspectorDone && batchIndex > 0`) form implicit state machines whose "impossible states" surface as defects — an incident stuck `in_progress` forever, an async race with no clear failure. When a defect traces back to an impossible state, fix the model first, then pin it with a regression test.
+- Terminal-state closure: every stateful lifecycle that opens a record (incident, job, batch) must guarantee it reaches a terminal state on every path — success, failure, retry exhaustion, structural mismatch. Reference case: the D1 defect (`MECHANICAL_TRANSLATION_RETRY` incident left `in_progress`) closed by a defensive terminal write-back plus a "never `in_progress`" regression assertion.
+- Tri-Experience: no change may regress UX, DX, or AX, and acceptance is observable, never asserted: UX — fast, clear, resilient interfaces with accurate subtitles and no silent failures; DX — modular, readable code with zero dead code and deterministic regression tests; AX — structured JSON contracts, bounded file reads, and a clean machine-parseable `.tmp/RELAY_STATE.md` relay so any agent stays oriented within its token ceiling.
+- This doctrine is an engineering standard, not new ceremony: it binds where a lifecycle or UI state exists, and its evidence is behaviour (terminal-closure tests, contract-shaped output, deterministic transitions).
+
 ## 2. STATUS & DEFINITION OF DONE
 
 Only these statuses exist: `IN_PROGRESS` (intake/implementation/acceptance underway) · `IMPLEMENTED_UNVERIFIED` (implementation complete, acceptance unfinished) · `VERIFIED_LOCAL` (all relevant acceptance criteria and local gates pass; for Class 1 this is the pre-push status; Class 2/3 may complete without implying an application release) · `RELEASED_CI_PENDING` (Class 1 commit pushed, CI not yet successful) · `RELEASED_CI_GREEN` (Class 1 commit confirmed on `origin/main` with a SUCCESS CI run) · `BLOCKED` (work/release cannot proceed; state blocker and evidence).
@@ -83,6 +90,7 @@ Within the same persona, stop evaluating based on implementation intent and reas
 - The canonical completion gate is mechanical: the required check set runs in tooling, and the commit or release is refused when it fails. The agent's report is supplementary and never a substitute for an executed check.
 - A mechanizable rule with no enforcement mechanism MUST be recorded as an open gap in the relay state until a mechanism exists.
 - Reusable gate logic belongs in tracked repository scripts (for example `scripts/run-tracked-tests.js`) so it survives every clone; the local `.git/hooks/pre-commit` launcher invokes that logic, and CI supplies remote enforcement.
+- Recorded open gap (2026-11-14): incident terminal-state closure (§1 State-Machine & Tri-Experience Doctrine) is enforced only by per-scenario regression tests (the D1 variants), not yet by a mechanical gate. Until a script/hook/CI mechanism asserts "no incident remains non-terminal after its lifecycle ends" across the tracked suite, this stays a named open gap; closing it is a future test-gate mandate.
 
 ## 6. RISK-BASED VERIFICATION MATRIX
 
