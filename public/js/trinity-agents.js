@@ -1,6 +1,6 @@
 /**
  * Trinity Agents UI — Modular Trinity Cards (Fasa E, 2026-10-10)
- * [PHASE C] Togol Basic/Pro dibuang — runtime tunggal Basic (Pro dibekukan).
+ * [PRO REVIVAL] Togol segmented Basic/Pro; kad kekal dalam DOM merentas mod.
  * Reka bentuk semula: Provider Registry Integration + Smart Visibility
  *
  * Reka bentuk:
@@ -174,8 +174,10 @@
 
     var _registryCache = null;
     var _registryPromise = null;
-    // [PHASE C] Hook modelSyncHook + pengawal re-entrancy _rehydratingMode
-    // dibuang bersama togol Basic/Pro — tiada lagi pertukaran mod dalam UI.
+    // Hook rehidrasi menyegerakkan togol, visibiliti dan nilai kad menggunakan
+    // konfigurasi sebenar; pengawal re-entrancy menghalang gelung change/render.
+    var modelSyncHook = null;
+    var _rehydratingMode = false;
     // [BUG FIX v3.9.43] Cache cfg TERAKHIR yang dilihat oleh modul ini (melalui
     // mount()/rehydrate()). Jaring keselamatan jika getter LIVE
     // window.__SUB__getCurrentConfig tidak tersedia (cth modul dimuat berasingan).
@@ -2595,6 +2597,43 @@
             });
         });
 
+        var currentMode = resolveStoredMode(cfg || getEffectiveConfig());
+
+        // Togol dwimod: checkbox tersembunyi ialah state tunggal DOM; dua butang
+        // radio memacunya dan menyelaraskan aria-checked/tabIndex pada setiap mod.
+        var toggleBar = createEl('div', 'trinity-mode-bar');
+        var toggleInput = createEl('input');
+        toggleInput.type = 'checkbox';
+        toggleInput.id = 'trinityModeToggle';
+        toggleInput.checked = currentMode === MODE_PRO;
+        toggleInput.className = 'trinity-mode-input';
+        toggleInput.setAttribute('aria-hidden', 'true');
+        toggleInput.tabIndex = -1;
+        toggleBar.appendChild(toggleInput);
+
+        var seg = createEl('div', 'trinity-segmented');
+        seg.setAttribute('role', 'radiogroup');
+        seg.setAttribute('aria-label', 'Trinity agent mode');
+
+        function modeBtn(modeKey, label, hint) {
+            var b = createEl('button', 'trinity-segment-btn');
+            b.type = 'button';
+            b.dataset.mode = modeKey;
+            b.setAttribute('role', 'radio');
+            b.setAttribute('aria-checked', 'false');
+            b.appendChild(createEl('span', 'trinity-segment-label', label));
+            b.appendChild(createEl('span', 'trinity-segment-hint', hint));
+            b.addEventListener('click', function () {
+                if (toggleInput.checked === (modeKey === MODE_PRO)) return;
+                toggleInput.checked = modeKey === MODE_PRO;
+                toggleInput.dispatchEvent(new Event('change'));
+            });
+            return b;
+        }
+        seg.appendChild(modeBtn(MODE_BASIC, 'Basic Mode', 'Agent Translation only'));
+        seg.appendChild(modeBtn(MODE_PRO, 'Pro Mode', 'Preflight + Translation + Inspector'));
+        toggleBar.appendChild(seg);
+
         // Semak sedia ada (idempotent — dipanggil semula semasa rehydrate)
         var existing = $('trinityRoot');
         if (existing) existing.remove();
@@ -2640,6 +2679,7 @@
         parentCard.appendChild(pHead);
 
         var pContent = createEl('div', 'card-content trinity-parent-content');
+        pContent.appendChild(toggleBar);
         parentCard.appendChild(pContent);
 
         // parentCard ADALAH root (satu elemen, satu id) — tiada append diperlukan.
@@ -2660,6 +2700,26 @@
             syncParentCollapse();
         });
         syncParentCollapse();
+
+        function syncSegmented() {
+            var isPro = toggleInput.checked;
+            Array.prototype.forEach.call(seg.querySelectorAll('.trinity-segment-btn'), function (btn) {
+                var active = (btn.dataset.mode === MODE_PRO) === isPro;
+                btn.classList.toggle('active', active);
+                btn.setAttribute('aria-checked', active ? 'true' : 'false');
+                btn.tabIndex = active ? 0 : -1;
+            });
+        }
+        toggleInput.addEventListener('change', syncSegmented);
+        seg.addEventListener('keydown', function (event) {
+            if (event.key !== 'ArrowLeft' && event.key !== 'ArrowRight') return;
+            event.preventDefault();
+            toggleInput.checked = !toggleInput.checked;
+            toggleInput.dispatchEvent(new Event('change'));
+            var active = seg.querySelector('.trinity-segment-btn.active');
+            if (active) active.focus();
+        });
+        syncSegmented();
 
         // ── Bekas kad ──
         var cardsWrap = createEl('div', 'trinity-cards');
@@ -2695,11 +2755,10 @@
             _cardsBuilt = true;
         }
 
-        // Visibiliti kad — HIDE sahaja, tiada pembinaan semula DOM. Runtime
-        // tunggal Basic: kad Preflight/Inspector kekal dalam DOM dengan SEMUA
-        // nilai input (termasuk door custom + Secondary Fallback) utuh.
+        // Visibiliti kad — HIDE sahaja, tiada pembinaan semula DOM atau LOCK.
+        // Semua nilai input (termasuk door custom + Secondary Fallback) kekal utuh.
         function applyModeVisibility() {
-            var isBasic = true;
+            var isBasic = !toggleInput.checked;
             cardsWrap.classList.toggle('trinity-mode-basic', isBasic);
             var cards = cardsWrap.querySelectorAll('.trinity-agent-card');
             Array.prototype.forEach.call(cards, function (card) {
@@ -2724,6 +2783,30 @@
                 updateVisibility(agent.key);
             });
         }
+
+        modelSyncHook = function (realCfg) {
+            syncSegmented();
+            renderCards(realCfg);
+        };
+
+        toggleInput.addEventListener('change', function () {
+            var mode = toggleInput.checked ? MODE_PRO : MODE_BASIC;
+            var c = getEffectiveConfig() || _lastKnownConfig;
+            if (c) {
+                c.trinity = c.trinity || {};
+                c.trinity.mode = mode;
+            }
+            if (_rehydratingMode) return;
+            // Rakam nilai yang belum disimpan sebelum render; kad tidak dibina semula.
+            var snapshotCfg = null;
+            try {
+                snapshotCfg = snapshotVisibleAgentState(c);
+            } catch (error) {
+                console.error('[Trinity] Mode-state snapshot failed:', error);
+                snapshotCfg = c;
+            }
+            renderCards(snapshotCfg || c);
+        });
 
         // [ROOT-CAUSE FIX 2026-10-10 — Integration Audit Fasa G]
         // "Subtitles API Keys" mesti kekal ATAS SEKALI. Sisipan root ke document
@@ -2782,14 +2865,16 @@
         return _lastKnownConfig && typeof _lastKnownConfig === 'object' ? _lastKnownConfig : null;
     }
 
-    // [PHASE C] Mod runtime tunggal: Basic. Mod Pro DIBEKU (tidak dipadam) —
-    // kredensial Pro yang tersimpan dikekalkan supaya boleh dipulihkan semula.
-    // Mod dibaca daripada konfigurasi TERSIMPAN (bukan DOM) kerana tiada lagi
-    // kawalan togol Basic/Pro dalam UI.
+    // Mod kanonik hanya basic|pro; nilai lama/tidak sah berundur selamat ke Basic.
     function resolveStoredMode(cfg) {
         if (!cfg) return MODE_BASIC;
         var storedMode = (cfg.trinity && cfg.trinity.mode) || cfg.mode || MODE_BASIC;
-        return storedMode;
+        return storedMode === MODE_PRO ? MODE_PRO : MODE_BASIC;
+    }
+
+    function resolveSelectedMode() {
+        var modeToggle = $('trinityModeToggle');
+        return modeToggle ? (modeToggle.checked ? MODE_PRO : MODE_BASIC) : resolveStoredMode(getEffectiveConfig());
     }
 
     // --- Rehydrate nilai sedia ada ke dalam input baharu ---
@@ -2797,6 +2882,30 @@
     function applyAgentValues(cfg) {
         if (!cfg) return;
         if (typeof cfg === 'object') _lastKnownConfig = cfg;
+
+        var modeToggle = $('trinityModeToggle');
+        var storedMode = (cfg.trinity && cfg.trinity.mode) || cfg.mode || MODE_BASIC;
+        if (modeToggle && !_rehydratingMode) {
+            var wantPro = resolveStoredMode(cfg) === MODE_PRO;
+            if (modeToggle.checked !== wantPro) {
+                modeToggle.checked = wantPro;
+                _rehydratingMode = true;
+                try {
+                    if (typeof modelSyncHook === 'function') modelSyncHook(cfg);
+                    modeToggle.dispatchEvent(new Event('change'));
+                } finally {
+                    _rehydratingMode = false;
+                }
+            } else if (typeof modelSyncHook === 'function') {
+                // Nilai yang sama masih memerlukan aria/visibiliti disegerakkan.
+                _rehydratingMode = true;
+                try {
+                    modelSyncHook(cfg);
+                } finally {
+                    _rehydratingMode = false;
+                }
+            }
+        }
 
         AGENTS.forEach(function (agent) {
             var stored = getAgentConfig(cfg, agent.key);
@@ -2897,19 +3006,21 @@
         });
     }
 
-    // [PHASE C] Fungsi snapshotVisibleAgentState DIBUANG bersama togol
-    // Basic/Pro: ia hanya wujud untuk merakam DOM sebelum mod ditukar.
-    // Runtime tunggal Basic tidak lagi menukar mod, jadi tiada pemotongan
-    // DOM yang perlu dirakam — collectConfigPatch() membaca DOM terus.
+    // Satu serializer untuk Save dan snapshot morph: params, rotation dan
+    // Secondary Fallback dipindahkan ke config SEBELUM sebarang rehidrasi DOM.
+    function snapshotVisibleAgentState(targetCfg) {
+        var cfg = targetCfg || getEffectiveConfig();
+        if (!cfg) return null;
+        Object.assign(cfg, collectConfigPatch());
+        return cfg;
+    }
 
     // --- Pengumpulan konfigurasi (disuntik ke saveConfig) ---
 
     function collectConfigPatch() {
-        // [PHASE C] Mod runtime tunggal Basic. Mod Pro DIBEKU (tidak dipadam) —
-        // mod dibaca daripada konfigurasi TERSIMPAN supaya kredensial Pro yang
-        // telah disimpan kekal boleh dipulihkan semula. Tiada lagi kawalan
-        // togol Basic/Pro dalam UI, jadi DOM bukan lagi sumber mod.
-        var mode = resolveStoredMode(getEffectiveConfig());
+        // Pilihan UI ialah sumber mod semasa; konfigurasi tersimpan ialah fallback
+        // sebelum mount. Blok ejen tersembunyi kekal dibaca dan diserialisasi.
+        var mode = resolveSelectedMode();
         var trinity = {
             mode: mode,
             preflight: {},

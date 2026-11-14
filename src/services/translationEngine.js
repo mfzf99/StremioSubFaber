@@ -31,10 +31,7 @@ const { SUBFABER_PROMPT_BOUNDARY } = require('./utils/structuredPrompt');
 // kini Single Source of Truth di prompts/trinity/translation/core.js. Satu
 // prompt kanonik digunakan untuk semua konfigurasi, dengan varian Basic
 // standalone dan varian Pro yang kekal mengikut mod operasi.
-const {
-    TRANSLATION_SYSTEM_TEMPLATE,
-    BASIC_TRANSLATION_SYSTEM_TEMPLATE
-} = require('./prompts/trinity/translation/core');
+const { TRANSLATION_SYSTEM_TEMPLATE } = require('./prompts/trinity/translation/core');
 // [TRINITY FASA 3 — Mandat Owner 2026-10-19] Channel-native static dispatch:
 // builder dibungkus (bind) SEKALI pada constructor; prompt batch dibina melalui
 // wrapper pintu (gemini anchor continuation / openai arahan eksplisit /
@@ -289,8 +286,10 @@ class TranslationEngine {
         this.trinityChannel = options.trinityChannel || this.gemini?.trinityChannel || 'gemini';
         this._trinityPromptBuilder = resolveTrinityPrompt('translation', this.trinityChannel);
         this.trinityMode = String(options.trinityMode || '').toLowerCase() === 'basic' ? 'basic' : 'pro';
-        this.translationTemplate =
-            this.trinityMode === 'basic' ? BASIC_TRANSLATION_SYSTEM_TEMPLATE : TRANSLATION_SYSTEM_TEMPLATE;
+        // [SINGLE-TEMPLATE 2026-11-14 — Mandat Owner] SATU templat kanonik untuk
+        // kedua-dua mod; perbezaan Pro/Basic ialah DATA (konteks preflight),
+        // bukan teks arahan.
+        this.translationTemplate = TRANSLATION_SYSTEM_TEMPLATE;
         // TOTAL PURGE (Mandat 2026-09-25): SubFaber ialah enjin tunggal.
         // Batch size dihardcode 200 (OWNER MANDATE 2026-11-09) —
         // tiada env override.
@@ -1412,17 +1411,6 @@ class TranslationEngine {
         // sebenar melalui this.currentTargetLanguage supaya bukan-Malay dapat
         // panduan neutral tanpa teks BM.
         const chunkPack = getLanguagePack(targetLanguage || this.currentTargetLanguage || 'Malay');
-        let block = `### Content Summary\n${preflight.theme}`;
-
-        // ── HIERARCHY OF TRUTH (Agent Translation Safety Net — Mandat Beta Run 9) ──
-        // Suntikan VERBATIM peraturan hierarki kebenaran: dialog sumber
-        // mengatasi apa-apa gelaran/jantina/andaian Pre-Flight yang bertentangan.
-        // [BARE-NAME FIX 2026-09-30] Runtime lesson (Shine on Me S01E31): model
-        // menghormati "Encik Lin" sebagai mandat walaupun sumber hanya berkata
-        // "Lin" — gelaran disuntik pada nama kosong. Peraturan baru: mapping
-        // gelaran hanya dipakai BILA baris sumber sendiri membawa gelaran itu;
-        // nama kosong kekal kosong (jangan inject title yang tiada dalam sumber).
-        block += `\n\n### HIERARCHY OF TRUTH\nHIERARCHY OF TRUTH: Pre-flight context provides macro-guidance. However, the SOURCE DIALOGUE in the current batch is the absolute ground truth. If the source dialogue explicitly contradicts a pre-flight title, gender, or assumption, ALWAYS FOLLOW THE SOURCE DIALOGUE. Character titles are MAPPINGS, not mandates: use a locked title (e.g. "Encik Lin") only when the source line itself carries that title ("Mr. Lin" / "Lin xiansheng"); when the source uses a bare name ("Lin"), keep it bare — never inject a title the source line does not have.`;
 
         const resolvePillarText = (item, ...keys) => {
             if (!item || typeof item !== 'object') return '';
@@ -1435,100 +1423,79 @@ class TranslationEngine {
             return '';
         };
 
-        // ── TIANG 2: Technical Glossary (dynamic term-matching per-chunk) ──
-        const terms = Array.isArray(preflight.terms) ? preflight.terms : [];
-        if (terms.length > 0) {
-            // Gabungkan semua teks dalam skop chunk (prev + batch + next) jadi
-            // satu lowercase haystack untuk imbasan substring sekali lalu.
-            const scopeText = [
-                ...(Array.isArray(previousContent) ? previousContent : []),
-                ...(Array.isArray(batch) ? batch : []),
-                ...(Array.isArray(subsequentContent) ? subsequentContent : [])
-            ]
-                .map((e) => String(e?.text || ''))
-                .join('\n')
-                .toLowerCase();
-
-            const matched = [];
-            for (const term of terms) {
-                const src = resolvePillarText(term, 'source', 'src');
-                if (src && scopeText.includes(src.toLowerCase())) {
-                    matched.push(term);
+        // ── [KNP-VERBATIM 2026-11-14 — Mandat Owner D1] Normalisasi defensif
+        // 4 tiang ke bentuk JSON kontrak (sama seperti skema Preflight) supaya
+        // "suntik terus" menghasilkan JSON sah yang boleh dipercayai model.
+        const terms = (Array.isArray(preflight.terms) ? preflight.terms : [])
+            .map((t) => {
+                const source = resolvePillarText(t, 'source', 'src');
+                if (!source) return null;
+                const entry = { source, target: resolvePillarText(t, 'target', 'tgt') || source };
+                const type = resolvePillarText(t, 'type');
+                if (type) entry.type = type;
+                const note = resolvePillarText(t, 'note');
+                if (note) entry.note = note;
+                return entry;
+            })
+            .filter(Boolean);
+        const characters = (Array.isArray(preflight.characters) ? preflight.characters : [])
+            .map((c) => {
+                const name = resolvePillarText(c, 'name');
+                if (!name) return null;
+                const entry = { name };
+                const rawAddress = c && typeof c === 'object' ? c.canonical_address : undefined;
+                const legacyAddress = c && typeof c === 'object' ? c.canonicalAddress : undefined;
+                const hasAddress =
+                    (rawAddress !== undefined && rawAddress !== null && String(rawAddress).trim() !== '') ||
+                    (legacyAddress !== undefined && legacyAddress !== null && String(legacyAddress).trim() !== '');
+                if (hasAddress) {
+                    entry.canonical_address = resolvePillarText(c, 'canonical_address', 'canonicalAddress') || name;
+                } else {
+                    // MANDAT SOSIOLINGUISTIK 2026-09-27: null → NOT LOCKED (bukan
+                    // nama mentah). [UNIVERSAL-FIX] guidance pack-driven.
+                    entry.canonical_address = null;
+                    entry.not_locked = chunkPack.notLockedGuidance;
                 }
-            }
+                const vocative = resolvePillarText(c, 'direct_address', 'directAddress');
+                if (vocative) entry.direct_address = vocative;
+                const pronoun = resolvePillarText(c, 'pronoun_register', 'pronounRegister');
+                if (pronoun) entry.pronoun_register = pronoun;
+                const role = resolvePillarText(c, 'role');
+                if (role) entry.role = role;
+                return entry;
+            })
+            .filter(Boolean);
+        const credits = (Array.isArray(preflight.credits_and_titles) ? preflight.credits_and_titles : [])
+            .map((c) => {
+                const source = resolvePillarText(c, 'source', 'src');
+                if (!source) return null;
+                return { source, target: resolvePillarText(c, 'target', 'tgt') || source };
+            })
+            .filter(Boolean);
 
-            if (matched.length > 0) {
-                const termLines = matched
-                    .map((t) => {
-                        const src = resolvePillarText(t, 'source', 'src');
-                        const tgt = resolvePillarText(t, 'target', 'tgt') || src;
-                        // [KNP-ALIGNMENT 2026-10-07] label kategori KNP — ''
-                        // bila Bible warisan tanpa medan type.
-                        const type = resolvePillarText(t, 'type').toLowerCase();
-                        const typeTag = ['location', 'organization', 'object', 'technical', 'phrase'].includes(type)
-                            ? ` [${type}]`
-                            : '';
-                        const note = resolvePillarText(t, 'note');
-                        return `- ${src}: ${tgt}${typeTag}${note ? ` (${note})` : ''}`;
-                    })
-                    .join('\n');
-                block += `\n\n### Technical Glossary (use the locked rendering for each term)\n${termLines}`;
-            }
-            // Tiada padanan → tiada Technical Glossary (seksyen dikosongkan)
-        }
+        const knpJson = JSON.stringify(
+            {
+                theme: String(preflight.theme),
+                terms,
+                characters,
+                credits_and_titles: credits
+            },
+            null,
+            2
+        );
 
-        // ── TIANG 3: Character Hierarchy (watak utama — suntik penuh) ──
-        // MANDAT SOSIOLINGUISTIK 2026-09-27: canonical_address null kini dirender
-        // sebagai isyarat NOT LOCKED (fallback lama `|| name` menyesatkan Agent Translation
-        // dengan nama mentah dan memaksa tekaan gelaran Cik/Puan tanpa panduan).
-        const characters = Array.isArray(preflight.characters) ? preflight.characters : [];
-        if (characters.length > 0) {
-            const charLines = characters
-                .map((c) => {
-                    const name = resolvePillarText(c, 'name');
-                    if (!name) return '';
-                    const rawAddress = c && typeof c === 'object' ? c.canonical_address : undefined;
-                    const legacyAddress = c && typeof c === 'object' ? c.canonicalAddress : undefined;
-                    const hasAddress =
-                        (rawAddress !== undefined && rawAddress !== null && String(rawAddress).trim() !== '') ||
-                        (legacyAddress !== undefined && legacyAddress !== null && String(legacyAddress).trim() !== '');
-                    const address = hasAddress
-                        ? resolvePillarText(c, 'canonical_address', 'canonicalAddress') || name
-                        : chunkPack.notLockedGuidance; // [UNIVERSAL-FIX] pack-driven (Malay / generic)
-                    const role = resolvePillarText(c, 'role');
-                    // MANDAT SOSIOLINGUISTIK v2 2026-09-29: vocative (direct address) +
-                    // pronoun register. Dirender hanya bila hadir supaya token dijimat
-                    // dan watak tanpa data tidak dipaksa gelaran/ganti nama tekaan.
-                    const vocative = resolvePillarText(c, 'direct_address', 'directAddress');
-                    const pronoun = resolvePillarText(c, 'pronoun_register', 'pronounRegister');
-                    const addressPart =
-                        vocative && vocative !== address ? `${address} (direct address: ${vocative})` : address;
-                    const pronounPart = pronoun ? ` [pronouns: ${pronoun}]` : '';
-                    return `- ${name} → ${addressPart}${role ? ` (${role})` : ''}${pronounPart}`;
-                })
-                .filter(Boolean)
-                .join('\n');
-            if (charLines) {
-                block += `\n\n### Character Hierarchy\n${charLines}`;
-            }
-        }
+        // ── HIERARCHY OF TRUTH (Agent Translation Safety Net — Mandat Beta Run 9) ──
+        // [BARE-NAME FIX 2026-09-30] Runtime lesson (Shine on Me S01E31): gelaran
+        // hanya dipakai BILA baris sumber sendiri membawanya; nama kosong kekal
+        // kosong. [KNP-VERBATIM 2026-11-14] Guidance address (canonical ketiga vs
+        // direct vocative) digabung di sini — blok KNP ialah satu-satunya tempat
+        // arahan ini wujud supaya templat statik sifar rujukan preflight.
+        let block = `<preflight_knp note="READ-ONLY Netflix knowledge base from Preflight. Use it to keep terms, titles, and addresses consistent. DO NOT TRANSLATE OR OUTPUT THIS BLOCK.">\n${knpJson}\n</preflight_knp>\nHIERARCHY OF TRUTH: the source dialogue in <input> is the absolute ground truth. If the source explicitly contradicts this context (a title, gender, or assumption), ALWAYS FOLLOW THE SOURCE. Character titles are MAPPINGS, not mandates: use a locked title only when the source line itself carries that title; when the source uses a bare name, keep it bare — never inject a title the source line does not have. Use canonical_address when referring ABOUT a character in the third person and direct_address when speaking TO them face-to-face.`;
 
-        // ── TIANG 4: Opening Credits / Titles (kredit permulaan — suntik penuh) ──
-        const credits = Array.isArray(preflight.credits_and_titles) ? preflight.credits_and_titles : [];
-        if (credits.length > 0) {
-            const creditLines = credits
-                .map((c) => {
-                    const src = resolvePillarText(c, 'source', 'src');
-                    if (!src) return '';
-                    const tgt = resolvePillarText(c, 'target', 'tgt') || src;
-                    return `- ${src}: ${tgt}`;
-                })
-                .filter(Boolean)
-                .join('\n');
-            if (creditLines) {
-                block += `\n\n### Opening Credits / Titles\n${creditLines}`;
-            }
-        }
+        // [KNP-VERBATIM] Blok <preflight_knp> di atas mengandungi KESELURUHAN
+        // 4 tiang (terms/characters/credits) secara verbatim — renderer lama
+        // per-tiang (Technical Glossary term-matching, Character Hierarchy,
+        // Opening Credits) dipensiunkan bersama pemadanan dinamik per-chunk.
 
         return block;
     }
@@ -3034,28 +3001,58 @@ class TranslationEngine {
         let block = '';
 
         // ── SUBFABER CONTEXT BLOCK (Fasa 1: Sliding Buffer — ENJIN TUNGGAL) ──
-        // Kontrak verbatim mandat: Context Information berlapis, semua blok
-        // READ-ONLY. Theme (Content Summary) kekal disuntik untuk semua batch;
-        // Points to Note dikosongkan apabila tiada istilah padan (penjimatan
-        // token).
+        // [SLIDING-V2 2026-11-14 — Mandat Owner D2/D6] Tetingkap previous kini
+        // SATU blok <previous_translated> pasangan src+dst: terjemahan disahkan
+        // batch lepas dipasangkan dengan sumber asal supaya kata ganti nama dan
+        // panggilan (aku/kau, Abang/Kapten) kekal konsisten; blok
+        // <previous_content> sumber-sahaja DIBUBARKAN (buang duplikasi senyap
+        // 20 baris yang dihantar dua kali). <subsequent_content> DINAMAKAN
+        // <future_source> (10 baris sumber, arah perbualan).
+        // [KNP-VERBATIM 2026-11-14 — Mandat Owner D1] Blok preflight membawa
+        // JSON 4-tiang VERBATIM dalam <preflight_knp> + HIERARCHY OF TRUTH.
         if (hasPrev || hasNext || preflightBlock) {
             block += '[CONTEXT INFORMATION - READ ONLY. DO NOT TRANSLATE THIS SECTION]\n';
 
             if (hasPrev) {
-                block += '<previous_content>\n';
+                block +=
+                    '<previous_translated note="Final translations from the previous batch. Keep pronouns, addresses, and register consistent with these lines.">\n';
+                const memoryById = new Map(
+                    (Array.isArray(context.previousMemory) ? context.previousMemory : [])
+                        .filter((entry) => entry && entry.translation)
+                        .map((entry) => [entry.id, entry])
+                );
                 context.previousContent.forEach((entry) => {
                     const cleanText = escapeXml(
                         String(entry.text || '')
                             .trim()
                             .replace(/\n+/g, ' [br] ')
                     );
-                    block += `<s id="${entry.id}">${cleanText}</s>\n`;
+                    const memory = memoryById.get(entry.id);
+                    if (memory) {
+                        const cleanSrc = escapeXml(
+                            String(memory.source || entry.text || '')
+                                .trim()
+                                .replace(/\n+/g, ' [br] ')
+                        );
+                        const cleanDst = escapeXml(
+                            String(memory.translation || '')
+                                .trim()
+                                .replace(/\n+/g, ' [br] ')
+                        );
+                        block += `<m id="${entry.id}"><src>${cleanSrc}</src><dst>${cleanDst}</dst></m>\n`;
+                    } else {
+                        // Baris tanpa terjemahan disahkan (batch 1 / belum
+                        // selesai) — kekal src-sahaja supaya window 20 tidak
+                        // gugur; model hanya lihat sumber untuk baris ini.
+                        block += `<m id="${entry.id}"><src>${cleanText}</src></m>\n`;
+                    }
                 });
-                block += '</previous_content>\n\n';
+                block += '</previous_translated>\n\n';
             }
 
             if (hasNext) {
-                block += '<subsequent_content>\n';
+                block +=
+                    '<future_source note="Upcoming source text. Use this to understand where the conversation is heading; do not translate these lines.">\n';
                 context.subsequentContent.forEach((entry) => {
                     const cleanText = escapeXml(
                         String(entry.text || '')
@@ -3064,31 +3061,12 @@ class TranslationEngine {
                     );
                     block += `<s id="${entry.id}">${cleanText}</s>\n`;
                 });
-                block += '</subsequent_content>\n\n';
+                block += '</future_source>\n\n';
             }
 
             if (preflightBlock) {
                 block += `${preflightBlock}\n\n`;
             }
-        }
-
-        // ── SUBFABER PREVIOUS MEMORY (continuity translations) ──
-        // Terjemahan disahkan untuk 3 baris lalu (kelebihan kita atas VideoLingo:
-        // hantar terjemahan disahkan, bukan source sahaja).
-        if (Array.isArray(context.previousMemory) && context.previousMemory.length > 0) {
-            block += '[PREVIOUS VERIFIED TRANSLATIONS - FOR CONTINUITY ONLY. DO NOT TRANSLATE THIS]\n';
-            context.previousMemory.forEach((entry) => {
-                if (entry.translation) {
-                    const cleanSource = String(entry.source || '')
-                        .trim()
-                        .replace(/\n+/g, ' [br] ');
-                    const cleanTrans = String(entry.translation || '')
-                        .trim()
-                        .replace(/\n+/g, ' [br] ');
-                    block += `<m id="${entry.id}"><src>${escapeXml(cleanSource)}</src><dst>${escapeXml(cleanTrans)}</dst></m>\n`;
-                }
-            });
-            block += '=== END OF MEMORY ===\n';
         }
 
         return block.trim();
@@ -3148,6 +3126,9 @@ class TranslationEngine {
         // [UNIVERSAL-FIX] Target-conditional few-shot: pack mengikut bahasa
         // sasaran (Malay → contoh few-shot BM dari pack; bukan-Malay → contoh
         // neutral). SIFAR teks khusus-bahasa di-hardcode di sini.
+        // [SINGLE-TEMPLATE 2026-11-14] few-shot kini disuntik TANPA SYARAT —
+        // kedua-dua mod (Pro + Basic) menerima contoh pack; specificRules
+        // dipensiunkan (Owner D3).
         const fewShotPack = getLanguagePack(targetLanguage);
 
         // SHARED PROMPT ARCHITECTURE (Mandat 2026-09-26, Lingo 1:1 parity):
@@ -3197,12 +3178,11 @@ class TranslationEngine {
         // [TRINITY FASA 1 — Mandat Owner 2026-10-19] Bahagian STATIK prompt
         // Agent Translation dipindahkan VERBATIM ke Single Source of Truth
         // baharu src/services/prompts/trinity/translation/core.js
-        // (TRANSLATION_SYSTEM_TEMPLATE). Interpolasi label kekal di sini;
-        // [BASIC-UNIVERSAL 2026-11-08 — Mandat Owner] Basic kini SATU arahan
-        // universal: tiada language pack, tiada suntikan peraturan bahasa, tiada
-        // few-shot. Core Basic tidak mengandungi placeholder
-        // ${targetSpecificRules}/${fewShot}; pack hanya digunakan oleh Pro.
-        // Pro mengekalkan specificRules + few-shot penuh.
+        // (TRANSLATION_SYSTEM_TEMPLATE). Interpolasi label kekal di sini.
+        // [SINGLE-TEMPLATE 2026-11-14 — Mandat Owner] SATU templat, dua mod:
+        // few-shot pack disuntik TANPA SYARAT (Pro + Basic); suntikan
+        // specificRules dipensiunkan (Owner D3 — placeholder tidak wujud lagi
+        // dalam templat).
         // Nota: core menggunakan label TERISIH (fallback 'the source language'
         // / 'the target language' / 'target-language' dilaksanakan di sini
         // supaya templat kanonik kekal neutral).
@@ -3210,8 +3190,7 @@ class TranslationEngine {
             .replaceAll('${sourceLabel}', sourceLabel || 'the source language')
             .replaceAll('${targetLabel}', targetLabel || 'the target language')
             .replaceAll('${targetLabelShort}', targetLabel || 'target-language')
-            .replaceAll('${targetSpecificRules}', this.trinityMode === 'basic' ? '' : fewShotPack.specificRules)
-            .replaceAll('${fewShot}', this.trinityMode === 'basic' ? '' : fewShotPack.fewShot);
+            .replaceAll('${fewShot}', fewShotPack.fewShot);
 
         // [TRINITY FASA 3 — Mandat Owner 2026-10-19] Pembungkusan channel-native:
         // payload berstruktur (systemText + dataText + queryText + startId)
@@ -3227,12 +3206,10 @@ class TranslationEngine {
         const trinityPromptBuilder = trinityChannelOverride
             ? resolveTrinityPrompt('translation', trinityChannelOverride)
             : this._trinityPromptBuilder;
-        // Basic R&D run 13/15 contract: the required-ID manifest belongs to the
-        // active user data, immediately before <input>, and never to Pro.
-        const idManifest =
-            this.trinityMode === 'basic'
-                ? `Required output ids in exact order (translate every listed id, including the last one):\n${idMatches.join(',')}\n\n`
-                : '';
+        // [SINGLE-TEMPLATE 2026-11-14 — Owner D5] idManifest dilanjutkan ke
+        // KEDUA-DUA mod: anti-drop perlindungan entri terakhir (R&D run 13/15)
+        // tidak mengenal mod. Kekal sebelum <input> dalam data aktif user lane.
+        const idManifest = `Required output ids in exact order (translate every listed id, including the last one):\n${idMatches.join(',')}\n\n`;
         const dataPart = `${sharedContextBlock ? `${sharedContextBlock}\n(Reference only — do not translate or output content from this block as a target entry.)\n\n` : ''}${idManifest}<input>
 ${batchText}
 </input>`;

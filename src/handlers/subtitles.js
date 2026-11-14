@@ -3,7 +3,11 @@ const OpenSubtitlesV3Service = require('../services/opensubtitles-v3');
 const SubDLService = require('../services/subdl');
 const SubSourceService = require('../services/subsource');
 const TranslationEngine = require('../services/translationEngine');
-const { createTranslationProvider, resolveTrinityChannelForConfig } = require('../services/translationProviderFactory');
+const {
+    createTranslationProvider,
+    resolveTrinityChannelForConfig,
+    resolveTrinityModeForConfig
+} = require('../services/translationProviderFactory');
 const { resolveTranslationGeminiKeyConfig } = require('../services/geminiKeyResolver');
 const { AgentInspector } = require('../services/agentInspector');
 const { createSsrfSafeLookup } = require('../utils/ssrfProtection');
@@ -4870,6 +4874,12 @@ async function handleTranslation(sourceFileId, targetLanguage, config, options =
         if (config && typeof config === 'object' && !config.trinityChannel) {
             config.trinityChannel = resolveTrinityChannelForConfig(config);
         }
+        // [STRUCTURE-V5 2026-11-14] Same pre-population for the trinity MODE
+        // (A1 pattern): the config handed to generateCacheKeys carries the
+        // mode so the v5 namespace discriminates Basic vs Pro runs.
+        if (config && typeof config === 'object' && !config.trinityMode) {
+            config.trinityMode = resolveTrinityModeForConfig(config);
+        }
 
         // Generate cache keys using shared utility (single source of truth for cache key scoping)
         const { baseKey, cacheKey, runtimeKey, bypass, bypassEnabled, userHash, allowPermanent } = generateCacheKeys(
@@ -6316,9 +6326,13 @@ async function performTranslation(
             // fallback .env — TIADA lalai statik dalam kod. Gagal konfigurasi →
             // null → enjin jalan 100% Agent Translation (backwards compatible penuh).
             let agentInspector = null;
-            // Basic is the sole active runtime. Preserve stored Pro configuration
-            // for recovery without constructing its frozen Inspector pipeline.
-            const runtimeTrinityMode = 'basic';
+            // [PRO-REVIVAL 2026-11-14 — Mandat Owner] Pro mode DIBANGKITKAN
+            // SEMULA: mod runtime kini diselesaikan daripada konfigurasi
+            // tersimpan (trinity.mode) dengan lalai defensive 'basic' — konfig
+            // lama/tanpa medan kekal Basic; UI Kimi mensiri semula togol segmen
+            // Basic/Pro. Konfigurasi Pro tersimpan dipelihara seperti sebelum
+            // beku (kontrak prevTrinity frontend).
+            const runtimeTrinityMode = resolveTrinityModeForConfig(config);
             const isProTrinityMode = runtimeTrinityMode === 'pro';
             if (
                 isProTrinityMode &&

@@ -245,7 +245,8 @@ function resolveCfWorkersCredentials(rawKey) {
 // [A1 FIX 2026-11-14] The trinity-channel resolver for cache keys lives in
 // src/utils/cacheKeys.js (leaf utility, zero cycles). Re-exported here so
 // handler/test imports keep a single source of truth.
-const { resolveTrinityChannelForConfig } = require('../utils/cacheKeys');
+// [STRUCTURE-V5 2026-11-14] Same pattern for the trinity-MODE resolver.
+const { resolveTrinityChannelForConfig, resolveTrinityModeForConfig } = require('../utils/cacheKeys');
 
 async function createProviderInstance(providerKey, providerConfig = {}, providerParams = {}, globalOptions = {}) {
     const key = String(providerKey || '').toLowerCase();
@@ -736,5 +737,6 @@ module.exports = {
     createTranslationProvider,
     createProviderInstance,
     resolveCfWorkersCredentials,
-    resolveTrinityChannelForConfig
+    resolveTrinityChannelForConfig,
+    resolveTrinityModeForConfig
 };

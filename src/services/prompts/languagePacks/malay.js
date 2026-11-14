@@ -57,41 +57,54 @@ const malayPack = {
         'translate generic media/publishing credit phrases naturally (e.g. "Adapted from" -> "Diadaptasi daripada"); for a creative-work title, use an official ${tgt} title only when already known with confidence, otherwise retain the original title',
 
     /**
-     * P2 injection: Malay few-shot examples — 2 contoh PARITY-CRITICAL.
-     * [PROMPT-SLIM 2026-09-30] 6 → 2 contoh: hanya MERGE + SHIFT (dua
-     * jenayah yang merosakkan struktur fail; PHANTOM/DROP/UNTRANSLATED/
-     * REGISTER sudah dilindungi rules + inspection Agent Inspector). Ini memangkas
-     * ~350 BPE tok daripada system statik tanpa hilang kuasa parity.
+     * [FEW-SHOT-V2 2026-11-14 — Mandat Owner] 3 contoh ISOMETRIK dalam
+     * format <example><example_input>/<example_output><answer>: (1) [br] + <i> markup, (2)
+     * SDH speaker label + muzik + SFX, (3) disiplin alamat KNP (direct
+     * address face-to-face "Abang" vs canonical ketiga "Kapten Vance").
+     * Few-shot kini disuntik KEDUA-DUA mod (templat tunggal); label
+     * jenayah legasi dibuang — perlindungan parity dibawa oleh seksyen
+     * [TECHNICAL CONSTRAINTS] + Agent Inspector.
      */
-    fewShot: `[EXAMPLE 1 — MERGE: keep split sentences and question tags isolated]
-Input:
-<s id="1">You are coming with us,</s>
-<s id="2">aren't you?</s>
-Correct:
+    fewShot: `<example>
+<example_input>
+<s id="1">You've got to be kidding me.[br]Are we really doing this right now?</s>
+<s id="2"><i>Internal Affairs</i> won't back us up if this goes south.</s>
+</example_input>
+<example_output>
 <answer>
-<s id="1">Awak ikut kami sekali,</s>
-<s id="2">kan?</s>
+<s id="1">Biar betul.[br]Memang nak buat sekarang ke?</s>
+<s id="2"><i>Unit Integriti</i> takkan bantu kita kalau benda ni jadi kecoh.</s>
 </answer>
-Wrong (merged):
-<s id="1">Awak ikut kami, kan?</s>
-<s id="2">.</s>
+</example_output>
+</example>
 
-[EXAMPLE 2 — SHIFT: every slot must appear; symbols/music copied as-is; idiomatic Malaysian Malay, never Indonesianisms]
-Input:
-<s id="1">Stop pulling my leg.[br]I'm running late.</s>
-<s id="2">♪♪</s>
+<example>
+<example_input>
+<s id="1">♪♪</s>
+<s id="2">(Marcus) Relax, kid. The Pier Syndicate doesn't even know it's missing yet.</s>
 <s id="3">[door slams]</s>
-<s id="4">Relax, don't lose your head.</s>
-Correct:
+</example_input>
+<example_output>
 <answer>
-<s id="1">Jangan main-mainkan akulah.[br]Aku dah lambat ni.</s>
-<s id="2">♪♪</s>
+<s id="1">♪♪</s>
+<s id="2">(Marcus) Bertenang, adik.[br]Sindiket Jeti tak tahu pun benda tu dah hilang.</s>
 <s id="3">[pintu terhempas]</s>
-<s id="4">Bawa bertenang, jangan gelabah.</s>
 </answer>
-Wrong (slots skipped):
-<s id="1">Jangan main-mainkan akulah.[br]Aku dah lambat ni.</s>
-<s id="2">Bawa bertenang, jangan gelabah.</s>`,
+</example_output>
+</example>
+
+<example>
+<example_input>
+<s id="1">Marcus, listen to me. I found <i>Manifest 404</i> in the vault.</s>
+<s id="2">If Captain Vance finds out we took it, we're dead.</s>
+</example_input>
+<example_output>
+<answer>
+<s id="1">Abang, dengar sini.[br]Aku jumpa <i>Manifes 404</i> dalam bilik besi tu.</s>
+<s id="2">Kalau Kapten Vance tahu kita yang ambil, kita dah kongsi.</s>
+</answer>
+</example_output>
+</example>`,
 
     /**
      * P8 injection: DEFAULT_TRANSLATION_PROMPT rule (target-conditional).

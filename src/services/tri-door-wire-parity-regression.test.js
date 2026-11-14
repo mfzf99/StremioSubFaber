@@ -420,20 +420,16 @@ test('[WIRE-MATRIX-GEMINI] Translation Basic+Pro × Gemini: systemInstruction to
         const system = body.systemInstruction?.parts?.[0]?.text || '';
         assert.ok(system, `[${mode}] systemInstruction top-level hadir`);
         assert.ok(!has(system, '<s id="1">Hello'), `[${mode}] lorong system bersih daripada data`);
-        if (mode === 'basic') {
-            assert.ok(has(system, 'STRICT 1:1 SLOT PARITY'), `[${mode}] templat universal Basic`);
-            assert.ok(!has(system, 'Spoken Malaysian Cadence'), `[${mode}] sifar suntikan pack dalam Basic`);
-        } else {
-            assert.ok(has(system, 'ANTI-MERGE'), `[${mode}] templat Pro hadir`);
-        }
+        // [SINGLE-TEMPLATE 2026-11-14] Kedua-dua mod berkongsi SATU templat;
+        // Basic menerima pack few-shot juga (D5b), jadi pin pack-untuk-Pro
+        // dibuang dan pin kontrak-teras dikuatkan pada kedua-dua mod.
+        assert.ok(has(system, 'STRICT 1:1 SLOT PARITY'), `[${mode}] templat tunggal hadir`);
+        assert.ok(has(system, 'ANTI-MERGE'), `[${mode}] label jenayah ANTI-MERGE hadir`);
+        assert.ok(has(system, 'Biar betul.'), `[${mode}] few-shot pack disuntik (D5b)`);
 
         const user = body.contents[0]?.parts?.[0]?.text || '';
         assert.ok(has(user, '<input>'), `[${mode}] user membawa <input>`);
-        assert.equal(
-            has(user, 'Required output ids in exact order'),
-            mode === 'basic',
-            `[${mode}] manifest ID mengikut mod`
-        );
+        assert.ok(has(user, 'Required output ids in exact order'), `[${mode}] manifest ID kedua-dua mod (D5)`);
 
         assert.equal(body.contents.length, 2, `[${mode}] model turn continuation aktif`);
         assert.equal(body.contents[1]?.role, 'model');
@@ -482,11 +478,8 @@ test('[WIRE-MATRIX-OPENAI] Translation Basic+Pro × OpenAI: dua lorong mesej, ar
         assert.equal(m0?.role, 'system', `[${mode}] messages[0] role system`);
         assert.ok(!has(m1?.content, 'STRICT 1:1 SLOT PARITY'), `[${mode}] arahan tidak bocor ke user`);
         assert.ok(has(m1?.content, '<input>'), `[${mode}] user membawa <input>`);
-        assert.equal(
-            has(m1?.content, 'Required output ids in exact order'),
-            mode === 'basic',
-            `[${mode}] manifest ID mengikut mod`
-        );
+        // [SINGLE-TEMPLATE 2026-11-14, Owner D5] idManifest kini KEDUA-DUA mod.
+        assert.ok(has(m1?.content, 'Required output ids in exact order'), `[${mode}] manifest ID kedua-dua mod`);
         assert.ok(
             has(m1?.content, 'Begin your output with the <answer> block'),
             `[${mode}] arahan anchor eksplisit di hujung user`

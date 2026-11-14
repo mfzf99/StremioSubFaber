@@ -37,12 +37,94 @@
     padding: 0.75rem 1rem 1rem;
 }
 
-/* [PHASE C] Blok CSS togol Basic/Pro (`.trinity-mode-bar`, `.trinity-mode-input`,
-   `.trinity-segmented`, `.trinity-segment-btn*`, `.trinity-mode-label`) dan suis
-   legasi `.trinity-switch`/`.trinity-slider` DIBUANG — tiada lagi kawalan mod
-   dalam UI (runtime tunggal Basic)..reduce-motion global kekal melalui
-   public/css/subfaber-theme.css. Suis SUB-KAD Secondary Fallback
-   (.trinity-fallback-switch*) MASIH AKTIF dan dikekalkan di bawah. */
+.trinity-mode-bar {
+    display: flex;
+    justify-content: center;
+    margin: 0 0 1.25rem;
+}
+.trinity-mode-input {
+    position: absolute;
+    width: 1px;
+    height: 1px;
+    opacity: 0;
+    pointer-events: none;
+}
+.trinity-segmented {
+    display: inline-grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 0.25rem;
+    width: 100%;
+    max-width: 34rem;
+    padding: 0.25rem;
+    border-radius: 12px;
+    border: 1px solid var(--border-color, rgba(0, 0, 0, 0.08));
+    background: var(--bg-secondary, rgba(0, 0, 0, 0.03));
+}
+.trinity-segment-btn {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    gap: 0.15rem;
+    min-height: 44px;
+    padding: 0.5rem 0.75rem;
+    border: 0;
+    border-radius: 9px;
+    background: transparent;
+    color: var(--text-secondary, #475569);
+    cursor: pointer;
+    transition:
+        color 0.2s ease,
+        background 0.2s ease,
+        box-shadow 0.2s ease;
+}
+.trinity-segment-btn:hover {
+    color: var(--text-primary, #1e293b);
+    background: rgba(37, 99, 235, 0.08);
+}
+.trinity-segment-btn.active {
+    background: linear-gradient(135deg, #2563eb 0%, #1d4ed8 100%);
+    color: #ffffff;
+    box-shadow: 0 4px 12px rgba(37, 99, 235, 0.25);
+}
+.trinity-segment-btn.active:hover {
+    background: linear-gradient(135deg, #2563eb 0%, #1d4ed8 100%);
+    color: #ffffff;
+}
+.trinity-segment-btn:focus-visible {
+    outline: 2px solid #2563eb;
+    outline-offset: 2px;
+}
+.trinity-segment-label {
+    font-weight: 600;
+    font-size: 0.95rem;
+}
+.trinity-segment-hint {
+    font-size: 0.75rem;
+    color: var(--text-secondary, #6b7280);
+}
+.trinity-segment-btn.active .trinity-segment-label {
+    color: #ffffff;
+}
+.trinity-segment-btn.active .trinity-segment-hint {
+    color: rgba(255, 255, 255, 0.85);
+}
+@media (max-width: 480px) {
+    .trinity-segmented {
+        max-width: none;
+    }
+    .trinity-segment-btn {
+        padding-inline: 0.4rem;
+    }
+    .trinity-segment-hint {
+        font-size: 0.7rem;
+    }
+}
+@media (prefers-reduced-motion: reduce) {
+    .trinity-segment-btn {
+        transition: none;
+    }
+}
 
 /* Kad modular */
 .trinity-cards {
@@ -67,7 +149,7 @@
     border: 1px solid var(--border-color, rgba(0, 0, 0, 0.1));
     border-radius: 14px;
     padding: 1.1rem 1.15rem;
-    background: var(--bg-card, #fff);
+    background: var(--surface, var(--bg-card, #fff));
 }
 /* Header kad: pariti penuh dengan .section-header kad utama
    (ikon + tajuk + keterangan + butang lipat di hujung kanan). */

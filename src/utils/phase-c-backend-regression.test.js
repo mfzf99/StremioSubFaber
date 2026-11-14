@@ -120,12 +120,12 @@ test('Phase C: normalization preserves Auto, clamps manual input to 1..8, and re
 // Basic-mode construction nulls the Inspector even when Pro credentials are
 // present, and a Basic standalone translation completes with zero Inspector
 // activity. Saved Pro configuration remains recoverable via normalizeConfig.
-test('Phase C: request runtime is Basic-only while saved Pro configuration remains recoverable', async () => {
+// [PRO-REVIVAL 2026-11-14] Kontrak dikemas kini: runtime kini menyelesaikan
+// mod daripada konfigurasi tersimpan; Basic kekal lalai defensive dan
+// menolak Inspector, Pro mengekalkannya (pembangkitan semula mod Pro).
+test('Phase C: runtime resolves the stored mode while saved Pro configuration remains recoverable', async () => {
     const TranslationEngine = require('../services/translationEngine');
-    const {
-        BASIC_TRANSLATION_SYSTEM_TEMPLATE,
-        TRANSLATION_SYSTEM_TEMPLATE
-    } = require('../services/prompts/trinity/translation/core');
+    const { TRANSLATION_SYSTEM_TEMPLATE } = require('../services/prompts/trinity/translation/core');
 
     const injectedInspector = {
         circuitOpen: false,
@@ -151,7 +151,7 @@ test('Phase C: request runtime is Basic-only while saved Pro configuration remai
         }
     );
     assert.equal(basic.trinityMode, 'basic', 'engine selects Basic mode');
-    assert.equal(basic.translationTemplate, BASIC_TRANSLATION_SYSTEM_TEMPLATE);
+    assert.equal(basic.translationTemplate, TRANSLATION_SYSTEM_TEMPLATE, 'Basic uses the single canonical template');
     assert.equal(basic.agentInspector, null, 'Basic rejects an Inspector even with preserved credentials');
 
     const output = await basic.translateSubtitle(
@@ -175,7 +175,7 @@ test('Phase C: request runtime is Basic-only while saved Pro configuration remai
             agentInspector: injectedInspector
         }
     );
-    assert.equal(pro.translationTemplate, TRANSLATION_SYSTEM_TEMPLATE, 'Pro keeps the Pro template');
+    assert.equal(pro.translationTemplate, TRANSLATION_SYSTEM_TEMPLATE, 'Pro uses the same single canonical template');
     assert.equal(pro.agentInspector, injectedInspector, 'Pro retains the configured Inspector');
 
     const saved = normalizeConfig({

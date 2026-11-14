@@ -293,17 +293,19 @@ test('BetaRun8: engine renders all four preflight pillars into the Agent Transla
         batch,
         []
     );
-    assert.ok(block.includes('### Content Summary'), 'Pillar 1: Content Summary rendered');
-    assert.ok(block.includes('A corporate family drama.'), 'Pillar 1: theme text rendered');
-    assert.ok(block.includes('### Technical Glossary'), 'Pillar 2: Technical Glossary rendered');
-    assert.ok(block.includes('- Zhuang Group: Kumpulan Zhuang (company)'), 'Pillar 2: matched term rendered');
-    assert.ok(block.includes('### Character Hierarchy'), 'Pillar 3: Character Hierarchy rendered');
-    assert.ok(block.includes('- Shen → Pakcik Shen (mentor)'), 'Pillar 3: canonical address rendered');
-    assert.ok(block.includes('### Opening Credits / Titles'), 'Pillar 4: Opening Credits / Titles rendered');
-    assert.ok(
-        block.includes('- Adapted from the novel: Diadaptasi daripada novel'),
-        'Pillar 4: credit translation rendered'
-    );
+    // [KNP-VERBATIM 2026-11-14] Empat tiang kini disuntik VERBATIM sebagai
+    // JSON dalam blok <preflight_knp> (Owner D1) — pin dikemas kini ke bentuk
+    // JSON; koverans kekal penuh: keempat-empat kunci tiang + nilai.
+    assert.ok(block.includes('<preflight_knp'), 'Blok KNP hadir');
+    assert.ok(block.includes('"theme": "A corporate family drama."'), 'Pillar 1: theme verbatim');
+    assert.ok(block.includes('"source": "Zhuang Group"'), 'Pillar 2: terms source verbatim');
+    assert.ok(block.includes('"target": "Kumpulan Zhuang"'), 'Pillar 2: terms target verbatim');
+    assert.ok(block.includes('"note": "company"'), 'Pillar 2: terms note dikekalkan');
+    assert.ok(block.includes('"name": "Shen"'), 'Pillar 3: character name verbatim');
+    assert.ok(block.includes('"canonical_address": "Pakcik Shen"'), 'Pillar 3: canonical address verbatim');
+    assert.ok(block.includes('"role": "mentor"'), 'Pillar 3: role verbatim');
+    assert.ok(block.includes('"source": "Adapted from the novel"'), 'Pillar 4: credit source verbatim');
+    assert.ok(block.includes('"target": "Diadaptasi daripada novel"'), 'Pillar 4: credit translation verbatim');
 });
 
 test('BetaRun7: cleanTranslatedText HTML tag preservation contract intact', () => {

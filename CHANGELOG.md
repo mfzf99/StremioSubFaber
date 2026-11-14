@@ -2,6 +2,26 @@
 
 All notable changes to this project will be documented in this file.
 
+## SubFaber v3.33.0 (2026-11-15) — Pro Mode Revival: Single-Template Trinity Prompt and Restored Basic/Pro Segmented Toggle
+
+### ✨ Added — Pro Mode Is Live Again, Driven by Data
+
+- **One shared translation template for both modes.** The separate Basic translation system template is retired: Basic and Pro now run the same 8-section Agent Translation prompt, the only difference being that Basic runs without the Preflight KNP data block (the context Bible is a Pro pipeline artifact). Few-shot isometric examples from the language packs are injected for **both** modes, ending the quality gap where Basic lacked the craft examples Pro enjoyed. The Pro cache namespace advances to `trinity-pro-universal-v5_ch-<channel>` (Basic keeps `trinity-basic-universal-v5_ch-<channel>`), so v4-era output is never served under the new prompt.
+- **Preflight KNP travels verbatim inside the prompt.** The 4-pillar knowledge payload now rides in a dedicated `<preflight_knp>` block in the user lane, with the HIERARCHY OF TRUTH and canonical/direct-address guidance moved from the static template into the same dynamic block — the static template now contains zero preflight references. Previous-window context is delivered as `<m>` source+translation pairs with a renamed `<future_source>` block (10 lines), and the ID manifest is emitted for both modes.
+- **Pro freeze lifted end-to-end.** The backend no longer hardcodes runtime Basic: mode resolves from stored config through `resolveTrinityModeForConfig` (explicit `config.trinityMode` > `config.trinity.mode` > `basic`), `normalizeConfig` normalizes `trinity.mode` to `pro|basic` with garbage falling back to basic, and the handler pre-populates the resolved mode before cache-key generation — so a saved Pro configuration constructs the full Preflight + Translation + Inspector pipeline at request time.
+- **Restored segmented Basic/Pro toggle (frontend).** The historical segmented control returns on the Translation API Keys card: an accessible `radiogroup` with two radio buttons (Basic — Agent Translation only; Pro — Preflight + Translation + Inspector), roving arrow-key focus, SubFaber-blue active state, reduced-motion support, and full responsive behavior down to mobile. Mode switches morph card visibility with HIDE only — cards stay in the DOM, nothing is destroyed or disabled, and every credential, model, format/door, rotation pool, model-parameter, and Secondary Fallback field survives Basic ↔ Pro round-trips (the mode-switch snapshot now feeds the same full serializer as Save). `collectConfigPatch()` serializes the UI-selected `trinity.mode` (`basic|pro`), and canonical Save → reload → rehydrate restores the stored mode and all Pro credentials.
+- **Theme-correct agent cards.** The Trinity agent-card surface now resolves through the shared `--surface` theme token (with the previous `--bg-card` fallback), fixing a light-on-white contrast failure in dark theme observed during visual acceptance.
+
+### 🔧 Changed — Prompt Architecture Cleanup
+
+- `<input>` tag collision is eliminated: few-shot examples use `<example_input>`/`<example_output>` wrappers; per-chunk term-matching is retired in favor of the verbatim KNP JSON block; `specificRules` and per-agent character limits are dropped from the Trinity templates; ANTI-crime labels are preserved for the 1:1 HARMONY mapping with the Agent Inspector.
+
+### ✅ Verification
+
+- Red-first evidence: 7 TRINITY-CORE contract tests and 12 adjacent assertions observed failing before the backend rewrite; the frontend toggle restoration ran 7 expected suite failures plus in-browser reproductions (Secondary Fallback reset on mode switch; dark-theme card contrast) before their fixes.
+- Frontend acceptance (Playwright, isolated memory-storage server): Basic shows Translation only, Pro shows all three cards; arrow-key radio semantics; UI mode serialization `basic|pro`; real Save → reload → canonical Pro rehydration with synthetic agent and fallback credentials/models preserved; console errors zero; desktop/mobile light/dark screenshots reviewed.
+- Full tracked suite: **702 tests / 701 passed / 0 failed / 1 skipped** (pre-existing live-Redis concurrent-quota integration), exit 0 — including the re-pinned `trinity-mode-switch` and `trinity-prompt-setup` frontend suites and the tri-door wire-parity matrix asserting template/manifest parity across both modes and all three doors.
+
 ## SubFaber v3.32.0 (2026-11-14) — Cross-Door Cache Channel Fix and Full-Door FinOps
 
 ### 🔧 Fixed — Cache Keys Now Match the Door That Actually Translates (A1, critical)

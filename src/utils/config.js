@@ -292,6 +292,14 @@ function normalizeTrinityAgentParams(mergedConfig) {
     const trinity = mergedConfig.trinity;
     if (!trinity || typeof trinity !== 'object') return;
 
+    // (0) [PRO-REVIVAL 2026-11-14] Normalisasi mod trinity: 'pro' | 'basic'.
+    // Lalai defensive 'basic' — konfigurasi lama tanpa medan kekal Basic;
+    // nilai sampah dipulihkan ke Basic (jangan bina Inspector atas nilai rosak).
+    const storedMode = String(trinity.mode || '')
+        .toLowerCase()
+        .replace(/[^a-z0-9-]/g, '');
+    trinity.mode = storedMode === 'pro' ? 'pro' : 'basic';
+
     // (1) Pastikan keempat-empat slot wujud (non-destructive).
     for (const agentKey of TRINITY_AGENT_KEYS) {
         if (!trinity[agentKey] || typeof trinity[agentKey] !== 'object') {

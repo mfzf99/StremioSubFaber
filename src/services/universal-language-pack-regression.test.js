@@ -127,21 +127,17 @@ test('P1 Japanese: generic pack — tiada teks BM', () => {
     assert.ok(!prompt.includes('Diadaptasi daripada'));
 });
 
-// ── 4. P2 (translationEngine) — few-shot 2 jenayah PARITY-CRITICAL, target-conditional ──
-// [PROMPT-SLIM 2026-09-30] few-shot dipangkas 6 → 2 contoh (MERGE/SHIFT
-// sahaja — jenayah struktur; PHANTOM/DROP/UNTRANSLATED/REGISTER kekal
-// dilindungi rules V4 + inspection Agent Inspector). Label jenayah kekal pada
-// header supaya pemetaan 1:1 taksonomi Agent Inspector tidak putus.
+// ── 4. P2 (translationEngine) — few-shot 3 contoh ISOMETRIK dari pack, target-conditional ──
+// [FEW-SHOT-V2 2026-11-14] few-shot direka semula: 3 contoh isometrik
+// (split+markup, SDH+syarahan, disiplin alamat KNP) dalam format
+// <example><input>/<output><answer>. Perlindungan parity kini dibawa oleh
+// seksyen [TECHNICAL CONSTRAINTS] + inspection Agent Inspector. few-shot
+// disuntik KEDUA-DUA mod (templat tunggal); specificRules dipensiunkan (D3).
 
-const CRIME_EXAMPLE_HEADERS = ['[EXAMPLE 1 — MERGE:', '[EXAMPLE 2 — SHIFT:'];
-const REMOVED_CRIME_EXAMPLE_HEADERS = [
-    '[EXAMPLE 3 — PHANTOM:',
-    '[EXAMPLE 4 — DROP:',
-    '[EXAMPLE 5 — UNTRANSLATED:',
-    '[EXAMPLE 6 — REGISTER:'
-];
+const FEW_SHOT_EXAMPLE_HEADERS = ['<example_input>', '<example_output>'];
+const RETIRED_CRIME_HEADERS = ['[EXAMPLE 1 — MERGE:', '[EXAMPLE 2 — SHIFT:'];
 
-test('P2 Malay: few-shot 2 jenayah parity hadir (MERGE/SHIFT), cadence BM kanonik kekal', () => {
+test('P2 Malay: few-shot 3 contoh isometrik BM hadir, specificRules dipensiunkan', () => {
     const TranslationEngine = require('./translationEngine');
     const dummyGemini = {
         translateSubtitle: async () => '',
@@ -152,22 +148,24 @@ test('P2 Malay: few-shot 2 jenayah parity hadir (MERGE/SHIFT), cadence BM kanoni
     engine.sourceLanguage = 'English';
     const batchText = '<s id="1">You are coming with us,</s>\n<s id="2">aren\'t you?</s>';
     const prompt = engine.createXmlBatchPrompt(batchText, 'Malay', null, 2, null, 0, 1);
-    for (const header of CRIME_EXAMPLE_HEADERS) {
-        assert.ok(prompt.includes(header), `few-shot header jenayah hadir: ${header}`);
+    for (const header of FEW_SHOT_EXAMPLE_HEADERS) {
+        assert.ok(prompt.includes(header), `few-shot format hadir: ${header}`);
     }
-    for (const gone of REMOVED_CRIME_EXAMPLE_HEADERS) {
-        assert.ok(!prompt.includes(gone), `few-shot dipangkas (Prompt-Slim): ${gone}`);
+    for (const gone of RETIRED_CRIME_HEADERS) {
+        assert.ok(!prompt.includes(gone), `header jenayah legasi dibuang: ${gone}`);
     }
-    assert.ok(prompt.includes('EXAMPLE 1 — MERGE'), 'label jenayah MERGE pada EXAMPLE 1');
-    assert.ok(prompt.includes('EXAMPLE 2 — SHIFT'), 'label jenayah SHIFT pada EXAMPLE 2');
-    assert.ok(prompt.includes('Awak ikut kami sekali,'), 'few-shot BM hadir untuk sasaran Malay');
-    assert.ok(prompt.includes('Bahasa Melayu Malaysia'), 'peraturan BM spesifik masuk ke prompt struktur');
-    assert.ok(prompt.includes('ngomong'), 'senarai hitam Indonesianisme turut dihantar');
-    assert.ok(prompt.includes('Never translate literally word-by-word'), 'anti-literal directive aktif');
-    assert.ok(prompt.includes('Wrong (merged):'));
+    assert.ok(prompt.includes('Biar betul.'), 'contoh BM (example 1) hadir untuk sasaran Malay');
+    assert.ok(prompt.includes('Bertenang, adik.'), 'contoh BM (example 2 SDH) hadir');
+    assert.ok(prompt.includes('Abang, dengar sini.'), 'contoh BM (example 3 KNP) hadir');
+    assert.ok(
+        prompt.includes('<example_input>'),
+        'few-shot V2 menggunakan <example_input> (tiada pertembungan <input>)'
+    );
+    assert.ok(!prompt.includes('Bahasa Melayu Malaysia'), 'specificRules DIPENSIUNKAN — tiada dalam templat');
+    assert.ok(!prompt.includes('ngomong'), 'senarai hitam BM tidak lagi diinterpolasi');
 });
 
-test('P2 Vietnamese: few-shot 2 jenayah neutral — TIADA "Awak ikut kami"', () => {
+test('P2 Vietnamese: few-shot neutral — TIADA contoh BM, placeholder meta hadir', () => {
     const TranslationEngine = require('./translationEngine');
     const dummyGemini = {
         translateSubtitle: async () => '',
@@ -178,16 +176,21 @@ test('P2 Vietnamese: few-shot 2 jenayah neutral — TIADA "Awak ikut kami"', () 
     engine.sourceLanguage = 'English';
     const batchText = '<s id="1">You are coming with us,</s>\n<s id="2">aren\'t you?</s>';
     const prompt = engine.createXmlBatchPrompt(batchText, 'Vietnamese', null, 2, null, 0, 1);
-    for (const header of CRIME_EXAMPLE_HEADERS) {
-        assert.ok(prompt.includes(header), `few-shot header jenayah neutral hadir: ${header}`);
+    for (const header of FEW_SHOT_EXAMPLE_HEADERS) {
+        assert.ok(prompt.includes(header), `few-shot format neutral hadir: ${header}`);
     }
-    assert.ok(!prompt.includes('Awak ikut kami'), 'TIADA teks BM dalam prompt Vietnamese');
-    assert.ok(!prompt.includes('Bahasa Melayu Malaysia'), 'peraturan BM tidak bocor ke bahasa lain');
-    assert.ok(!prompt.includes('ngomong'), 'senarai hitam BM tidak bocor ke bahasa lain');
-    assert.ok(prompt.includes('Never translate literally word-by-word'), 'peraturan neutral kekal aktif');
-    assert.ok(!prompt.includes('Tunggu'), 'TIADA teks BM (contoh PHANTOM BM) dalam prompt Vietnamese');
-    assert.ok(!prompt.includes('Baiklah'), 'TIADA teks BM (contoh DROP BM) dalam prompt Vietnamese');
-    assert.ok(prompt.includes('Correct:'), 'disiplin slot kekal didemonstrasi');
+    assert.ok(!prompt.includes('Biar betul.'), 'TIADA contoh BM dalam prompt Vietnamese');
+    assert.ok(!prompt.includes('Abang, dengar sini.'), 'TIADA teks BM (KNP) dalam prompt Vietnamese');
+    assert.ok(
+        prompt.includes('{translation of "You\'ve got to be kidding me."}'),
+        'placeholder meta neutral hadir (example 1)'
+    );
+    assert.ok(prompt.includes('{translation of "Relax, kid."}'), 'placeholder meta neutral hadir (example 2)');
+    assert.ok(
+        prompt.includes('{direct address for "Marcus"}'),
+        'placeholder meta neutral hadir (example 3 direct address)'
+    );
+    assert.ok(!prompt.includes('{translation of "Sorry I\'m late."}'), 'contoh legasi dipensiunkan');
 });
 
 // ── 5. P8 (gemini DEFAULT_TRANSLATION_PROMPT) — rule #6 target-conditional ──

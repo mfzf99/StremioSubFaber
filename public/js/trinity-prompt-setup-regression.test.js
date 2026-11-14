@@ -27,16 +27,20 @@ test('Trinity source and key-state module parse without the retired setup helper
     assert.equal(keyState.normalizePromptSetup, undefined);
 });
 
-test('Trinity mounts NO Basic/Pro control — the agent cards are mounted directly', () => {
-    // [PHASE C] Togol Basic/Pro dibuang daripada UI (runtime tunggal Basic).
-    // Bekas kad dipasang terus ke kad agent; tiada bar/segmen togol.
-    assert.doesNotMatch(trinityCode, /trinity-mode-bar/, 'bar togol Basic/Pro mesti dibuang');
-    assert.doesNotMatch(trinityCode, /toggleBar/, 'bar togol Basic/Pro tidak lagi dibina');
-    assert.doesNotMatch(trinityCode, /modeBtn/, 'kawalan togol Basic/Pro tidak lagi dibina');
-    assert.doesNotMatch(trinityCode, /Basic Mode/, 'label "Basic Mode" tidak lagi wujud');
-    assert.doesNotMatch(trinityCode, /Pro Mode/, 'label "Pro Mode" tidak lagi wujud');
-    // Kad agent kekal dipasang terus pada bekas kad.
+test('Trinity mounts an accessible Basic/Pro segmented control above persistent agent cards', () => {
+    assert.match(trinityCode, /var toggleBar = createEl\('div', 'trinity-mode-bar'\)/);
+    assert.match(trinityCode, /var toggleInput = createEl\('input'\)/);
+    assert.match(trinityCode, /toggleInput\.id = 'trinityModeToggle'/);
+    assert.match(trinityCode, /var seg = createEl\('div', 'trinity-segmented'\)/);
+    assert.match(trinityCode, /seg\.setAttribute\('role', 'radiogroup'\)/);
+    assert.match(trinityCode, /function modeBtn\(modeKey, label, hint\)/);
+    assert.match(trinityCode, /b\.setAttribute\('role', 'radio'\)/);
+    assert.match(trinityCode, /Basic Mode/);
+    assert.match(trinityCode, /Pro Mode/);
+    assert.match(trinityCode, /function syncSegmented\(\)/);
+    assert.match(trinityCode, /aria-checked/);
     assert.match(trinitySource, /var cardsWrap = createEl\('div', 'trinity-cards'\)/);
+    assert.match(trinitySource, /pContent\.appendChild\(toggleBar\);/);
     assert.match(trinitySource, /pContent\.appendChild\(cardsWrap\);/);
 });
 
@@ -47,14 +51,20 @@ test('No prompt-setup selector, label, hidden state, or selector CSS remains', (
     }
 });
 
-test('Trinity save and rehydration preserve agent settings without serializing setup IDs', () => {
+test('Trinity save serializes the selected mode and rehydration preserves all agent settings', () => {
     assert.doesNotMatch(trinitySource, /promptSetup\s*:/);
     assert.match(
         trinitySource,
         /var storedMode = \(cfg\.trinity && cfg\.trinity\.mode\) \|\| cfg\.mode \|\| MODE_BASIC;/
     );
+    assert.match(trinitySource, /return storedMode === MODE_PRO \? MODE_PRO : MODE_BASIC;/);
+    assert.match(trinitySource, /function resolveSelectedMode\(\)/);
+    assert.match(trinitySource, /var mode = resolveSelectedMode\(\);/);
+    assert.match(trinitySource, /mode:\s*mode/);
     assert.match(trinitySource, /var prevTrinity = \(getEffectiveConfig\(\) \|\| \{\}\)\.trinity \|\| \{\};/);
     assert.match(trinitySource, /translation:\s*\{\}/);
     assert.match(trinitySource, /preflight:\s*\{\}/);
     assert.match(trinitySource, /inspector:\s*\{\}/);
+    assert.match(trinitySource, /function snapshotVisibleAgentState\(targetCfg\)/);
+    assert.match(trinitySource, /params: mpCollectDeviatedParams\(agent\.key\)/);
 });

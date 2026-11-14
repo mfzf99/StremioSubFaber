@@ -97,24 +97,21 @@ test('Bug#1 auto-chunk: second-half prompt carries subsequent + preflight + prev
     // Anchor second-half = ID aktif pertama second-half (54)
     assert.ok(secondPrompt.trimEnd().endsWith('<s id="54">'), 'anchor <s id="54"> token terakhir');
 
-    // ── ASSERTION BUG #1 (sebelum patch: MERAH) ──
+    // ── ASSERTION BUG #1 (sebelum patch: MERAH; bentuk blok dikemas kini SLIDING-V2) ──
     assert.ok(
-        secondPrompt.includes('<subsequent_content>'),
-        'Bug#1: <subsequent_content> mewarisi context asal — window ke hadapan second-half'
+        secondPrompt.includes('<future_source'),
+        'Bug#1: <future_source> mewarisi context asal — window ke hadapan second-half'
     );
+    assert.ok(secondPrompt.includes('<s id="57">'), 'Bug#1: baris future ID 57 (selepas batch dalam skop fail) hadir');
     assert.ok(
-        secondPrompt.includes('<s id="57">'),
-        'Bug#1: baris subsequent ID 57 (selepas batch dalam skop fail) hadir'
-    );
-    assert.ok(
-        secondPrompt.includes('### Content Summary'),
-        'Bug#1: blok preflight (Content Summary) hadir dalam second-half'
+        secondPrompt.includes('<preflight_knp'),
+        'Bug#1: blok <preflight_knp> (KNP verbatim) hadir dalam second-half'
     );
     assert.ok(secondPrompt.includes('A heist movie in Blackwood.'), 'Bug#1: theme bible disuntik ke second-half');
     // previousContent + memory kekal (20+200+10, window 20 dari first-half)
-    assert.ok(secondPrompt.includes('<previous_content>'), '<previous_content> kekal hadir');
-    assert.ok(secondPrompt.includes('<s id="53">'), 'previous window termasuk ID 53 (akhir first-half)');
-    assert.ok(secondPrompt.includes('[PREVIOUS VERIFIED TRANSLATIONS'), 'previousMemory (terjemahan first-half) hadir');
+    assert.ok(secondPrompt.includes('<previous_translated'), '<previous_translated> hadir (D6)');
+    assert.ok(secondPrompt.includes('<m id="53">'), 'previous window termasuk ID 53 (akhir first-half, D6 <m>)');
+    assert.ok(!secondPrompt.includes('<s id="53">'), 'tiada <s> luar <input> dalam window prev (bentuk D6)');
 });
 
 test('Bug#1 auto-chunk: split 4+4 — previous window penuh, subsequent dari skop fail', async () => {
@@ -145,16 +142,16 @@ test('Bug#1 auto-chunk: split 4+4 — previous window penuh, subsequent dari sko
 
     // Second-half = IDs 25..28; previous = 4 baris terakhir first-half (21..24)
     assert.ok(secondPrompt.trimEnd().endsWith('<s id="25">'), 'anchor <s id="25"> token terakhir');
-    assert.ok(secondPrompt.includes('<previous_content>'), 'previous_content hadir');
-    assert.ok(secondPrompt.includes('<s id="21">'), 'window prev bermula ID 21 (4 baris penuh)');
-    assert.ok(secondPrompt.includes('<s id="24">'), 'window prev berakhir ID 24');
-    assert.ok(!secondPrompt.includes('<s id="20">'), 'tiada baris luar window prev');
-    // Subsequent mewarisi skop fail: window 10 baris (formula 20+200+10) —
+    assert.ok(secondPrompt.includes('<previous_translated'), 'previous_translated hadir (D6)');
+    assert.ok(secondPrompt.includes('<m id="21">'), 'window prev bermula ID 21 (4 baris penuh, D6 <m>)');
+    assert.ok(secondPrompt.includes('<m id="24">'), 'window prev berakhir ID 24 (D6 <m>)');
+    assert.ok(!secondPrompt.includes('<m id="20">'), 'tiada baris luar window prev');
+    // Future window mewarisi skop fail: window 10 baris (formula 20+200+10) —
     // IDs 29..32 tersedia (fail berakhir pada ID 32) → clamp pada 4 baris.
-    assert.ok(secondPrompt.includes('<subsequent_content>'), 'Bug#1: subsequent hadir');
-    assert.ok(secondPrompt.includes('<s id="29">'), 'subsequent ID 29 hadir');
-    assert.ok(secondPrompt.includes('<s id="31">'), 'subsequent ID 31 hadir dalam window 10');
-    assert.ok(!secondPrompt.includes('<s id="33">'), 'subsequent clamp pada hujung fail');
+    assert.ok(secondPrompt.includes('<future_source'), 'Bug#1: future_source hadir');
+    assert.ok(secondPrompt.includes('<s id="29">'), 'future ID 29 hadir');
+    assert.ok(secondPrompt.includes('<s id="31">'), 'future ID 31 hadir dalam window 10');
+    assert.ok(!secondPrompt.includes('<s id="33">'), 'future clamp pada hujung fail');
 });
 
 // ─────────────────────────────────────────────────────────────────────────────

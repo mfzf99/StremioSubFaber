@@ -79,6 +79,32 @@ function resolveTrinityChannelForConfig(config) {
     return 'gemini';
 }
 
+/**
+ * [STRUCTURE-V5 2026-11-14 — Owner D8] Resolve the trinity MODE for cache-key
+ * derivation. Pro output is KNP-guided (Preflight context) and must never be
+ * served to Basic runs — cross-mode cache poisoning — so the namespace carries
+ * `trinity-basic-` vs `trinity-pro-` alongside the channel discriminator.
+ * Priority: explicit `config.trinityMode` > `config.trinity.mode` > basic
+ * default (legacy configs and the current UI runtime stay on Basic).
+ * Mirrors resolveTrinityChannelForConfig (single source of truth, re-exported
+ * by the factory) so every call site derives the same mode.
+ * @param {Object} config
+ * @returns {'basic'|'pro'}
+ */
+function resolveTrinityModeForConfig(config) {
+    const explicit = String(config?.trinityMode || '')
+        .toLowerCase()
+        .replace(/[^a-z0-9-]/g, '');
+    if (explicit === 'pro' || explicit === 'basic') return explicit;
+
+    const nested = String(config?.trinity?.mode || '')
+        .toLowerCase()
+        .replace(/[^a-z0-9-]/g, '');
+    if (nested === 'pro' || nested === 'basic') return nested;
+
+    return 'basic';
+}
+
 function generateCacheKeys(config, sourceFileId, targetLang) {
     // Prompt-semantic namespace prevents output produced under an earlier
     // Basic prompt (Malay-hardcoded, then editorial-craft, then the
@@ -92,7 +118,11 @@ function generateCacheKeys(config, sourceFileId, targetLang) {
     // configs reading the same namespace as trinityChannel:'gemini'.
     // User and ASS/SRT scoping remain unchanged below.
     const trinityChannel = resolveTrinityChannelForConfig(config);
-    const sourceKey = `${sourceFileId}_${targetLang}_trinity-basic-universal-v4_ch-${trinityChannel}`;
+    // [STRUCTURE-V5 2026-11-14] Mode discriminator: Pro output is KNP-guided
+    // and must never be served to Basic runs (cross-mode poisoning). The
+    // redesigned prompt (v5) also guarantees stale v4 output is not served.
+    const trinityMode = resolveTrinityModeForConfig(config);
+    const sourceKey = `${sourceFileId}_${targetLang}_trinity-${trinityMode}-universal-v5_ch-${trinityChannel}`;
     // When ASS passthrough is enabled, append format discriminator to prevent
     // ASS-format cached translations from being served to users expecting SRT
     const assPassthrough = config.convertAssToVtt === false && config.forceSRTOutput !== true;
@@ -157,5 +187,6 @@ function generateCacheKeys(config, sourceFileId, targetLang) {
 
 module.exports = {
     generateCacheKeys,
-    resolveTrinityChannelForConfig
+    resolveTrinityChannelForConfig,
+    resolveTrinityModeForConfig
 };

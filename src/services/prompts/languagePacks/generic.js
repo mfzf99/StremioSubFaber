@@ -46,41 +46,51 @@ const genericPack = {
         'translate generic media/publishing credit phrases naturally in ${tgt}; for a creative-work title, use an official ${tgt} title only when already known with confidence, otherwise retain the original title',
 
     /**
-     * P2 injection: language-neutral few-shot — 2 contoh PARITY-CRITICAL.
-     * [PROMPT-SLIM 2026-09-30] 6 → 2 contoh: hanya MERGE + SHIFT (dua
-     * jenayah yang merosakkan struktur; yang lain dilindungi rules +
-     * inspection Agent Inspector). UNIVERSAL COMPLIANCE kekal: sifar teks
-     * khusus-bahasa — placeholder + simbol universal sahaja.
+     * [FEW-SHOT-V2 2026-11-14 — Mandat Owner] 3 contoh ISOMETRIK (sama
+     * struktur dengan malay.js) dalam format <example><example_input>/<example_output>,
+     * SIFAR teks khusus-bahasa — placeholder meta + simbol universal sahaja
+     * (kontrak 433-bahasa). Disuntik KEDUA-DUA mod (templat tunggal).
      */
-    fewShot: `[EXAMPLE 1 — MERGE: keep split sentences and question tags isolated]
-Input:
-<s id="1">You are coming with us,</s>
-<s id="2">aren't you?</s>
-Correct:
+    fewShot: `<example>
+<example_input>
+<s id="1">You've got to be kidding me.[br]Are we really doing this right now?</s>
+<s id="2"><i>Internal Affairs</i> won't back us up if this goes south.</s>
+</example_input>
+<example_output>
 <answer>
-<s id="1">{translation of "You are coming with us,"}</s>
-<s id="2">{translation of "aren't you?" — isolated tag in own slot}</s>
+<s id="1">{translation of "You've got to be kidding me."}[br]{translation of "Are we really doing this right now?"}</s>
+<s id="2"><i>{locked rendering of "Internal Affairs"}</i> {translation of "won't back us up if this goes south."}</s>
 </answer>
-Wrong (merged):
-<s id="1">{full merged sentence}</s>
-<s id="2">.</s>
+</example_output>
+</example>
 
-[EXAMPLE 2 — SHIFT: every slot must appear; symbols/music copied as-is]
-Input:
-<s id="1">Sorry I'm late.</s>
-<s id="2">♪♪</s>
+<example>
+<example_input>
+<s id="1">♪♪</s>
+<s id="2">(Marcus) Relax, kid. The Pier Syndicate doesn't even know it's missing yet.</s>
 <s id="3">[door slams]</s>
-<s id="4">No problem, sit down.</s>
-Correct:
+</example_input>
+<example_output>
 <answer>
-<s id="1">{translation of "Sorry I'm late."}</s>
-<s id="2">♪♪</s>
+<s id="1">♪♪</s>
+<s id="2">(Marcus) {translation of "Relax, kid."}[br]{translation of "The Pier Syndicate doesn't even know it's missing yet."}</s>
 <s id="3">[{translation of "door slams"}]</s>
-<s id="4">{translation of "No problem, sit down."}</s>
 </answer>
-Wrong (slots skipped):
-<s id="1">{translation of "Sorry I'm late."}</s>
-<s id="2">{translation of "No problem, sit down."}</s>`,
+</example_output>
+</example>
+
+<example>
+<example_input>
+<s id="1">Marcus, listen to me. I found <i>Manifest 404</i> in the vault.</s>
+<s id="2">If Captain Vance finds out we took it, we're dead.</s>
+</example_input>
+<example_output>
+<answer>
+<s id="1">{direct address for "Marcus"}, {translation of "listen to me."}[br]{translation of "I found"} <i>{locked rendering of "Manifest 404"}</i> {translation of "in the vault."}</s>
+<s id="2">{translation of "If Captain Vance finds out we took it, we're dead." — canonical third-person name}</s>
+</answer>
+</example_output>
+</example>`,
 
     /**
      * P8 injection: neutral rule for DEFAULT_TRANSLATION_PROMPT.

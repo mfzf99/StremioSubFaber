@@ -319,8 +319,12 @@ test('SubFaberPreflight: engine renders vocative + pronoun register in Character
         [],
         'Malay'
     );
-    assert.ok(block.includes('direct address: Mak Cik Shen'), 'vocative rendered in Character Hierarchy');
-    assert.ok(block.includes('[pronouns: saya/awak]'), 'pronoun register rendered in Character Hierarchy');
+    // [KNP-VERBATIM 2026-11-14] Character pillar kini JSON verbatim dalam
+    // blok KNP; medan vocative + pronoun kekal dibawa penuh.
+    assert.ok(block.includes('"direct_address": "Mak Cik Shen"'), 'vocative rendered in KNP JSON');
+    assert.ok(block.includes('"pronoun_register": "saya/awak"'), 'pronoun register rendered in KNP JSON');
+    assert.ok(block.includes('"canonical_address": "Puan Shen"'), 'canonical address rendered in KNP JSON');
+    assert.ok(block.includes('direct_address when speaking TO them'), 'panduan vocative hadir dalam HIERARCHY');
 });
 
 test('SubFaberPreflight: credits detection directive — Phase 0 engine inspects lines 1-5 for non-dialogue openings', () => {

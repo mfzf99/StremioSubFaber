@@ -47,7 +47,6 @@ function interpolateTranslationSystem() {
     return core.TRANSLATION_SYSTEM_TEMPLATE.replaceAll('${sourceLabel}', 'English')
         .replaceAll('${targetLabel}', 'Malay')
         .replaceAll('${targetLabelShort}', 'Malay')
-        .replaceAll('${targetSpecificRules}', pack.specificRules)
         .replaceAll('${fewShot}', pack.fewShot);
 }
 
@@ -218,10 +217,9 @@ const CANONICAL_FRAGMENTS = {
     translation: [
         'ANTI-MERGE',
         'ANTI-SHIFT',
-        'ANTI-PHANTOM',
+        'PRESERVE markup',
         'ANTI-DROP',
         'ANTI-UNTRANSLATED',
-        'PRESERVE markup',
         'Return ONLY the <answer> block'
     ],
     inspector: [
@@ -284,22 +282,35 @@ test('[FINALE translation] reading-speed guardrail and adjacent-slot SVO↔SOV r
     assert.ok(prompt.includes('reordering clauses across the split slots only when required by Malay word order'));
     assert.ok(!prompt.includes('Translate only the fragment belonging to each slot'));
 });
+// Nota: pin di atas dikekalkan verbatim — templat tunggal membawa semula
+// frasa mandat Owner (economy + strict slots + reordering clause).
 
-test('[FINALE few-shot] both language packs wrap Correct examples in <answer> exactly twice', () => {
+test('[FINALE few-shot] both language packs wrap Output examples in <answer> exactly three times', () => {
+    // [FEW-SHOT-V2 2026-11-14] 3 contoh isometrik (split+markup, SDH+syarahan,
+    // disiplin alamat KNP). Tag pembungkus contoh dinamakan <example_input>/
+    // <example_output> supaya TIDAK bertembung dengan blok <input> sebenar.
     for (const language of ['Malay', 'Japanese']) {
         const fewShot = getLanguagePack(language).fewShot;
-        assert.equal((fewShot.match(/<answer>/g) || []).length, 2, `${language}: two answer openers`);
-        assert.equal((fewShot.match(/<\/answer>/g) || []).length, 2, `${language}: two answer closers`);
-        assert.equal((fewShot.match(/Correct:\n<answer>\n/g) || []).length, 2, `${language}: Correct uses answer`);
+        assert.equal((fewShot.match(/<example>/g) || []).length, 3, `${language}: three examples`);
+        assert.equal((fewShot.match(/<\/example>/g) || []).length, 3, `${language}: three example closers`);
+        assert.equal((fewShot.match(/<example_input>/g) || []).length, 3, `${language}: three input openers`);
+        assert.equal((fewShot.match(/<example_output>/g) || []).length, 3, `${language}: three output openers`);
+        assert.equal((fewShot.match(/<answer>/g) || []).length, 3, `${language}: three answer openers`);
+        assert.equal((fewShot.match(/<\/answer>/g) || []).length, 3, `${language}: three answer closers`);
+        assert.equal((fewShot.match(/<input>/g) || []).length, 0, `${language}: sifar tag <input> dalam few-shot`);
     }
 });
 
 test('[FINALE generic few-shot] meta placeholders avoid square-bracket SDH collisions', () => {
     const fewShot = getLanguagePack('Japanese').fewShot;
-    assert.ok(fewShot.includes('{translation of "Sorry I\'m late."}'));
-    assert.ok(fewShot.includes('[{translation of "door slams"}]'));
-    assert.ok(!fewShot.includes('[translation of'));
-    assert.ok(!fewShot.includes('[full merged sentence]'));
+    assert.ok(
+        fewShot.includes('{translation of "You\'ve got to be kidding me."}'),
+        'generic example 1 placeholder hadir'
+    );
+    assert.ok(fewShot.includes('[{translation of "door slams"}]'), 'generic example 2 SDH placeholder hadir');
+    assert.ok(!fewShot.includes('{translation of "Sorry I\'m late."}'), 'contoh legasi example-1 dipensiunkan');
+    assert.ok(!fewShot.includes('[translation of'), 'tiada kurungan meta bertabrakan dengan SDH');
+    assert.ok(!fewShot.includes('[full merged sentence]'), 'tiada placeholder legasi');
 });
 
 // ── 5. Fail-fast registry (sifar silent fallback) ──

@@ -1,8 +1,11 @@
 /**
  * Regression — single canonical Trinity prompt contract.
  *
- * The former A/B/C registry is intentionally removed. Basic keeps its own
- * standalone wording, while Pro uses the canonical contextual wording.
+ * The former A/B/C registry is intentionally removed. [SINGLE-TEMPLATE
+ * 2026-11-14] Pro and Basic now share ONE canonical template; the only
+ * runtime difference is data: Basic never receives a Preflight context, so
+ * the <preflight_knp> block is absent. Few-shot from the language pack and
+ * the active-ID manifest are injected for BOTH modes (Owner Mandate D5/D5b).
  */
 
 const test = require('node:test');
@@ -11,10 +14,7 @@ const fs = require('node:fs');
 const path = require('node:path');
 
 const { PREFLIGHT_STATIC_TEMPLATE } = require('./prompts/trinity/preflight/core');
-const {
-    TRANSLATION_SYSTEM_TEMPLATE,
-    BASIC_TRANSLATION_SYSTEM_TEMPLATE
-} = require('./prompts/trinity/translation/core');
+const { TRANSLATION_SYSTEM_TEMPLATE } = require('./prompts/trinity/translation/core');
 const { INSPECTOR_INSTRUCTION } = require('./prompts/trinity/inspector/core');
 const { buildPreflightPrompt } = require('./subfaberPreflight');
 const { buildInspectionPayload } = require('./agentInspector');
@@ -37,7 +37,9 @@ test('[TRINITY-CORE-1] Canonical cores retain the approved prompt contracts with
     assert.ok(PREFLIGHT_STATIC_TEMPLATE.includes("'terms' are the distinctive vocabulary"));
     assert.ok(PREFLIGHT_STATIC_TEMPLATE.includes('${honorificMatrix}'));
     assert.ok(TRANSLATION_SYSTEM_TEMPLATE.includes('mentally translate the complete sentence first'));
-    assert.ok(TRANSLATION_SYSTEM_TEMPLATE.includes('${targetSpecificRules}'));
+    // [SINGLE-TEMPLATE 2026-11-14] ${targetSpecificRules} is retired (Owner
+    // D3); ${fewShot} stays and is now interpolated for BOTH modes.
+    assert.ok(!TRANSLATION_SYSTEM_TEMPLATE.includes('${targetSpecificRules}'));
     assert.ok(TRANSLATION_SYSTEM_TEMPLATE.includes('${fewShot}'));
     assert.ok(INSPECTOR_INSTRUCTION.includes('universal interjections/vocalizations'));
     assert.ok(INSPECTOR_INSTRUCTION.includes('weaving in target-language discourse particles'));
@@ -87,85 +89,42 @@ test('[TRINITY-CORE-3] Legacy setup options and environment values cannot change
     }
 });
 
-test('[TRINITY-CORE-4] Basic uses ONE universal instruction — no language pack, no per-language rules', async () => {
-    // [BASIC-UNIVERSAL 2026-11-08] Basic = SATU arahan untuk SEMUA bahasa sasaran.
-    assert.notEqual(BASIC_TRANSLATION_SYSTEM_TEMPLATE, TRANSLATION_SYSTEM_TEMPLATE);
+test('[TRINITY-CORE-4] ONE template serves Basic and Pro — Basic rejects an Inspector but keeps pack few-shot', async () => {
+    // [SINGLE-TEMPLATE 2026-11-14, Owner D5b] Basic dan Pro berkongsi SATU
+    // templat; perbezaan ialah data (Basic tiada konteks preflight). Few-shot
+    // pack disuntik pada KEDUA-DUA mod — templat tetap sifar nama bahasa
+    // konkrit (R3 kekal: kekunci universaliti berpindah kepada pack, pembawa
+    // per-sasaran yang sah).
+    assert.ok(TRANSLATION_SYSTEM_TEMPLATE.includes('${fewShot}'), 'few-shot placeholder hadir (kedua-dua mod)');
+    assert.ok(!TRANSLATION_SYSTEM_TEMPLATE.includes('${targetSpecificRules}'), 'specificRules dipensiunkan (D3)');
+    assert.ok(TRANSLATION_SYSTEM_TEMPLATE.includes('STRICT 1:1 SLOT PARITY'), 'R1 — ID pariti');
     assert.ok(
-        BASIC_TRANSLATION_SYSTEM_TEMPLATE.includes(
-            'You are a professional Netflix subtitle translator, specializing in localizing subtitles from ${sourceLabel} into ${targetLabel}.'
-        )
-    );
-    // Tiada suntikan bahasa/pack dalam Basic.
-    assert.ok(!BASIC_TRANSLATION_SYSTEM_TEMPLATE.includes('${targetSpecificRules}'));
-    assert.ok(!BASIC_TRANSLATION_SYSTEM_TEMPLATE.includes('${fewShot}'));
-    assert.ok(!BASIC_TRANSLATION_SYSTEM_TEMPLATE.includes('${targetLabelShort}'));
-    // Enam peraturan Basic baharu dikekalkan sebagai kontrak literal.
-    assert.ok(
-        BASIC_TRANSLATION_SYSTEM_TEMPLATE.includes(
-            'STRICT 1:1 SLOT PARITY: Return exactly one <s id="N"> per input entry with identical IDs in identical order.'
-        ),
-        'R1 — ID pariti'
-    );
-    assert.ok(
-        BASIC_TRANSLATION_SYSTEM_TEMPLATE.includes(
-            'SPLIT SENTENCES: When a sentence spans multiple consecutive slots, distribute the translated meaning naturally across those exact same slots.'
-        ),
+        TRANSLATION_SYSTEM_TEMPLATE.includes('mentally translate the complete sentence first'),
         'R2 — ayat dipecah'
     );
     assert.ok(
-        BASIC_TRANSLATION_SYSTEM_TEMPLATE.includes(
-            'CONVERSATIONAL & UNFILTERED: Convert meaning, not sounds or word order.'
-        ),
-        'R3 — dialog semula jadi tanpa penapisan'
+        TRANSLATION_SYSTEM_TEMPLATE.includes('Convert meaning, not sounds or word order'),
+        'R3 — dialog semula jadi'
     );
-    // [BASIC-UNIVERSAL 2026-11-14] Templat Basic mesti UNIVERSAL: TIADA nama
-    // bahasa konkrit dalam mana-mana peraturan. Klausa bersyarat Melayu
-    // ("when it is Malay, use natural Malaysian Malay cadence...") adalah
-    // pelanggaran kontrak universal dan mesti tidak wujud.
+    assert.ok(TRANSLATION_SYSTEM_TEMPLATE.includes('SDH & SYMBOLS'), 'R4 — label penutur, SDH');
     assert.ok(
-        !BASIC_TRANSLATION_SYSTEM_TEMPLATE.includes('Malay'),
-        'R3 — templat Basic tidak boleh menamakan bahasa konkrit (Malay)'
-    );
-    assert.ok(
-        !BASIC_TRANSLATION_SYSTEM_TEMPLATE.includes('Indonesian-dub'),
-        'R3 — tiada klausa bersyarat kraf bahasa (Indonesian-dub)'
-    );
-    assert.ok(
-        BASIC_TRANSLATION_SYSTEM_TEMPLATE.includes(
-            'NAMES & SDH CAPTIONS: Preserve (Name) and [Name] speaker labels with their exact names and delimiters.'
-        ),
-        'R4 — label penutur, SDH, tanda baca, dan muzik'
-    );
-    assert.ok(
-        BASIC_TRANSLATION_SYSTEM_TEMPLATE.includes(
-            'PRESERVE FORMATTING VERBATIM: Retain every [br], <i>...</i>, and dialogue dash ("-"/"--") exactly, with matching counts per slot.'
-        ),
+        TRANSLATION_SYSTEM_TEMPLATE.includes('PRESERVE markup') &&
+            TRANSLATION_SYSTEM_TEMPLATE.includes('preserve the exact count of [br]'),
         'R5 — pemeliharaan format'
     );
     assert.ok(
-        BASIC_TRANSLATION_SYSTEM_TEMPLATE.includes(
-            'ZERO CHATTER: Output ONLY the <answer> block containing the <s> entries, ending with </answer>.'
-        ),
+        TRANSLATION_SYSTEM_TEMPLATE.includes('ZERO translator notes in parentheses'),
         'R6 — tiada catatan penterjemah'
     );
-    // Basic mesti menerangkan kontrak sahaja; tiada contoh R2/R3/R4 yang boleh diikat kepada satu ayat sumber.
-    assert.ok(!BASIC_TRANSLATION_SYSTEM_TEMPLATE.includes('Example:'), 'Tiada contoh ayat dalam Basic');
-    assert.ok(!BASIC_TRANSLATION_SYSTEM_TEMPLATE.includes('I was on my phone'), 'Tiada ayat sumber contoh');
-    assert.ok(!BASIC_TRANSLATION_SYSTEM_TEMPLATE.includes('Clause A Clause B'), 'Tiada contoh pengagihan slot');
-    assert.ok(
-        !BASIC_TRANSLATION_SYSTEM_TEMPLATE.includes('Natural target-language phrasing'),
-        'Tiada contoh anti-calque'
-    );
-    // Kontrak output.
-    assert.ok(BASIC_TRANSLATION_SYSTEM_TEMPLATE.includes('Output ONLY the <answer> block'));
+    // R3: templat tunggal tidak boleh menamakan bahasa konkrit.
+    assert.ok(!TRANSLATION_SYSTEM_TEMPLATE.includes('Malay'), 'R3 — tiada nama bahasa konkrit (Malay)');
+    assert.ok(!TRANSLATION_SYSTEM_TEMPLATE.includes('Indonesian-dub'), 'R3 — tiada klausa kraf bersyarat');
+    // Templat statik sifar rujukan preflight (arahan KNP hidup dalam blok
+    // <preflight_knp> user-lane; Basic tak pernah nampaknya).
     assert.doesNotMatch(
-        BASIC_TRANSLATION_SYSTEM_TEMPLATE,
+        TRANSLATION_SYSTEM_TEMPLATE,
         /pre-?flight|Agent Inspector|Locked Terms?|locked Character Addresses?/i
     );
-    // Pro kekalkan pack + few-shot.
-    assert.ok(TRANSLATION_SYSTEM_TEMPLATE.includes('${targetSpecificRules}'));
-    assert.ok(TRANSLATION_SYSTEM_TEMPLATE.includes('${fewShot}'));
-    assert.ok(TRANSLATION_SYSTEM_TEMPLATE.includes('Return ONLY'));
 
     const injectedInspector = {
         circuitOpen: false,
@@ -178,8 +137,8 @@ test('[TRINITY-CORE-4] Basic uses ONE universal instruction — no language pack
     };
     const basic = makeEngine({ trinityMode: 'basic', agentInspector: injectedInspector });
     const pro = makeEngine({ trinityMode: 'pro', agentInspector: injectedInspector });
-    assert.equal(basic.translationTemplate, BASIC_TRANSLATION_SYSTEM_TEMPLATE);
-    assert.equal(pro.translationTemplate, TRANSLATION_SYSTEM_TEMPLATE);
+    assert.equal(basic.translationTemplate, TRANSLATION_SYSTEM_TEMPLATE, 'Basic uses the single canonical template');
+    assert.equal(pro.translationTemplate, TRANSLATION_SYSTEM_TEMPLATE, 'Pro uses the same single canonical template');
     assert.equal(basic.agentInspector, null, 'Basic must reject an Inspector even with preserved/imported credentials');
     assert.equal(pro.agentInspector, injectedInspector, 'Pro must retain the configured Inspector');
 
@@ -204,21 +163,21 @@ test('[TRINITY-CORE-4] Basic uses ONE universal instruction — no language pack
     assert.equal(basicRuntime.translationStats.agentInspectorBatchesInspected, 0);
 });
 
-test('[TRINITY-CORE-5] Canonical language-pack cadence and all runtime placeholders survive interpolation', () => {
-    const engine = makeEngine();
-    engine.sourceLanguage = 'English';
-    const prompt = engine.createXmlBatchPrompt('<s id="1">Hello.</s>', 'Malay', null, 1, null, 0, 1);
-    assert.ok(prompt.includes('Spoken Malaysian Cadence'));
-    assert.ok(prompt.includes('Register-Gated Loanwords'));
-    assert.ok(prompt.includes('Awak ikut kami sekali,'));
-    for (const placeholder of [
-        '${sourceLabel}',
-        '${targetLabel}',
-        '${targetLabelShort}',
-        '${targetSpecificRules}',
-        '${fewShot}'
-    ]) {
-        assert.equal(prompt.includes(placeholder), false, placeholder);
+test('[TRINITY-CORE-5] Pack few-shot is injected for BOTH modes and every placeholder survives interpolation', () => {
+    // [SINGLE-TEMPLATE 2026-11-14] few-shot pack (contoh isometrik baharu)
+    // kini disuntik TANPA SYARAT — Basic dan Pro sama. specificRules sudah
+    // tidak lagi diinterpolasi (D3: placeholder dipensiunkan; craft BM
+    // kekal tersedia melalui P8 composer lalai gemini.js).
+    for (const mode of ['basic', 'pro']) {
+        const engine = makeEngine({ trinityMode: mode });
+        engine.sourceLanguage = 'English';
+        const prompt = engine.createXmlBatchPrompt('<s id="1">Hello.</s>', 'Malay', null, 1, null, 0, 1);
+        assert.ok(prompt.includes('Biar betul.'), `${mode}: contoh few-shot BM hadir (pack disuntik)`);
+        assert.ok(!prompt.includes('Spoken Malaysian Cadence'), `${mode}: specificRules TIADA (dipensiunkan)`);
+        assert.ok(!prompt.includes('Register-Gated Loanwords'), `${mode}: tiada peraturan pack lama`);
+        for (const placeholder of ['${sourceLabel}', '${targetLabel}', '${targetLabelShort}', '${fewShot}']) {
+            assert.equal(prompt.includes(placeholder), false, `${mode}: ${placeholder}`);
+        }
     }
 });
 
@@ -239,124 +198,166 @@ test('[TRINITY-CORE-7] Runtime modules no longer expose the retired setup regist
     assert.equal(fs.existsSync(path.join(__dirname, 'prompts', 'trinity', 'translation', 'setups')), false);
 });
 
-test('[TRINITY-CORE-8] Universal Basic cache namespace excludes stale output and retains user/format scoping', () => {
-    // [P1 F6 FIX 2026-11-10] Namespace now carries the trinity channel
-    // discriminator (`_ch-gemini` for the default Gemini door). Assertions
-    // strengthened: exact key strings include the channel segment so the
-    // discriminator cannot regress silently.
-    // [BASIC-UNIVERSAL 2026-11-14] Namespace advanced v3 → v4: the Basic
-    // prompt dropped its Malay-conditional cadence clause, so v3 output
-    // (generated under that clause) must never be served under v4.
+test('[TRINITY-CORE-8] v5 namespace discriminates mode + channel and retains user/format scoping', () => {
+    // [P1 F6 FIX 2026-11-10] Channel discriminator (`_ch-gemini` default).
+    // [STRUCTURE-V5 2026-11-14] Namespace advanced v4 → v5 with a MODE
+    // discriminator: the prompt was redesigned (8-section single template,
+    // pack few-shot both modes, <previous_translated>/<future_source>,
+    // verbatim <preflight_knp>), so v4 output must never be served under
+    // v5; and Pro (KNP-guided) output must never be served to Basic runs
+    // (cross-mode poisoning), hence trinity-{basic|pro}.
     const permanent = generateCacheKeys({}, 'tt123_en', 'ms');
-    assert.equal(permanent.baseKey, 'tt123_en_ms_trinity-basic-universal-v4_ch-gemini');
+    assert.equal(permanent.baseKey, 'tt123_en_ms_trinity-basic-universal-v5_ch-gemini');
     assert.equal(permanent.cacheKey, permanent.baseKey);
 
+    const pro = generateCacheKeys({ trinityMode: 'pro' }, 'tt123_en', 'ms');
+    assert.equal(pro.baseKey, 'tt123_en_ms_trinity-pro-universal-v5_ch-gemini', 'Pro namespace must differ from Basic');
+
     const bypass = generateCacheKeys({ bypassCache: true, __configHash: 'config-hash' }, 'tt123_en', 'ms');
-    assert.equal(bypass.cacheKey, 'tt123_en_ms_trinity-basic-universal-v4_ch-gemini__u_config-hash');
+    assert.equal(bypass.cacheKey, 'tt123_en_ms_trinity-basic-universal-v5_ch-gemini__u_config-hash');
     assert.equal(bypass.runtimeKey, bypass.cacheKey);
 
     const ass = generateCacheKeys({ convertAssToVtt: false }, 'tt123_en', 'ms');
-    assert.equal(ass.baseKey, 'tt123_en_ms_trinity-basic-universal-v4_ch-gemini_ass');
+    assert.equal(ass.baseKey, 'tt123_en_ms_trinity-basic-universal-v5_ch-gemini_ass');
 });
 
-test('[TRINITY-CORE-9] Pro retains its evidence contract while Basic uses the locked R&D split/entity rules', () => {
+test('[TRINITY-CORE-9] The single template retains the owner-vetted evidence + split/entity contract', () => {
+    // [SINGLE-TEMPLATE 2026-11-14] Kontrak bukti (evidence discipline) Pro
+    // diserap ke dalam templat tunggal; SOURCE-EVIDENCE HIERARCHY berpindah
+    // ke blok <preflight_knp> user-lane (sifar rujukan preflight statik) —
+    // jadi pin untuk fragmen itu kini diuji pada OUTPUT enjin Pro melalui
+    // blok KNP, bukan pada teks statik.
     for (const fragment of [
         'These exceptions apply only to the affected entity, never to the surrounding sentence',
         'retaining or transliterating that entity as appropriate',
         'otherwise retain the original title',
-        'Distribution follows meaning and readable phrase boundaries, not equal character or word counts',
-        'SOURCE-EVIDENCE HIERARCHY',
-        'explicit source evidence overrides contradictory Preflight assumptions'
+        'Never invent an official rendering',
+        'Distribution follows meaning and readable phrase boundaries, not equal character or word counts'
     ]) {
         assert.ok(TRANSLATION_SYSTEM_TEMPLATE.includes(fragment), fragment);
     }
-    assert.ok(!TRANSLATION_SYSTEM_TEMPLATE.includes('distribute the clauses proportionally'));
-    // Basic universal — kontrak diringkas, tiada jargon metaformer.
-    assert.ok(BASIC_TRANSLATION_SYSTEM_TEMPLATE.includes('identical IDs in identical order'));
+    // Static lane mesti SIFAR rujukan preflight — hierarki kebenaran hidup
+    // bersama blok KNP (user lane), supaya Basic tidak nampaknya.
+    assert.ok(!/pre-?flight/i.test(TRANSLATION_SYSTEM_TEMPLATE), 'Static lane tiada rujukan preflight');
+    const proEngine = makeEngine({ trinityMode: 'pro' });
+    proEngine.preflightContext = {
+        theme: 'A heist movie in Blackwood.',
+        terms: [{ source: 'Blackwood', target: 'Hutan Hitam' }],
+        characters: [],
+        credits_and_titles: []
+    };
+    proEngine.sourceLanguage = 'English';
+    // KNP hidup dalam user lane melalui parameter context (bukan hardcode) —
+    // bina konteks cara produksi supaya blok <preflight_knp> terbentuk.
+    const ctx = {
+        previousContent: [],
+        subsequentContent: [],
+        previousMemory: [],
+        preflight: proEngine.preflightContext
+    };
+    const proPrompt = proEngine.createXmlBatchPrompt('<s id="1">Hello.</s>', 'Malay', null, 1, ctx, 0, 1);
+    assert.ok(proPrompt.includes('HIERARCHY OF TRUTH'), 'Hierarchy-of-truth guidance hadir dalam blok KNP (Pro)');
     assert.ok(
-        BASIC_TRANSLATION_SYSTEM_TEMPLATE.includes(
+        proPrompt.includes('If the source explicitly contradicts this context'),
+        'Source-over-context precedence hadir (Pro)'
+    );
+
+    assert.ok(!TRANSLATION_SYSTEM_TEMPLATE.includes('distribute the clauses proportionally'));
+    // [SINGLE-TEMPLATE] Kontrak teras kekal dalam templat tunggal.
+    assert.ok(TRANSLATION_SYSTEM_TEMPLATE.includes('identical IDs in identical order'));
+    assert.ok(
+        TRANSLATION_SYSTEM_TEMPLATE.includes(
             'distribute the translated meaning naturally across those exact same slots'
         )
     );
     assert.ok(
-        BASIC_TRANSLATION_SYSTEM_TEMPLATE.includes(
-            'Keep proper nouns, character names, and titles intact unless official localization demands otherwise.'
-        )
+        TRANSLATION_SYSTEM_TEMPLATE.includes('proper name or brand'),
+        'Names-intact default kekal (kontrak entiti 5-V; frasa "keep proper nouns..." dipensiunkan bersama kemas kini)'
     );
-    assert.ok(BASIC_TRANSLATION_SYSTEM_TEMPLATE.includes('Anything outside <input> is read-only context'));
+    assert.ok(
+        TRANSLATION_SYSTEM_TEMPLATE.includes('titles intact unless official localization demands otherwise') === false,
+        'Kontrak baharu 5-V menggantikan frasa legasi'
+    );
+    assert.ok(TRANSLATION_SYSTEM_TEMPLATE.includes('Anything outside <input> is read-only context'));
+    // [SINGLE-TEMPLATE] Kontrak 5-V: jangka mengekalkan entiti kekal melalui
+    // frasa "retaining or transliterating" (dipin di atas) + larangan rekaan
+    // ("Never invent an official rendering") — koverans setara penuh.
 });
 
-test('[TRINITY-CORE-11] Basic places the exact active-ID manifest before input on every provider door', () => {
+test('[TRINITY-CORE-11] Both modes place the exact active-ID manifest before input on every provider door', () => {
+    // [SINGLE-TEMPLATE 2026-11-14, Owner D5] idManifest dilanjutkan ke Pro —
+    // perlindungan anti-drop entri terakhir kini untuk KEDUA-DUA mod.
     const input = '<s id="8">First.</s>\n<s id="11">Second.</s>\n<s id="19">Last.</s>';
     const manifest =
         'Required output ids in exact order (translate every listed id, including the last one):\n8,11,19\n\n<input>';
     for (const trinityChannel of ['gemini', 'openai', 'anthropic']) {
-        const basic = makeEngine({ trinityMode: 'basic', trinityChannel });
-        basic.sourceLanguage = 'English';
-        const structured = splitStructuredPrompt(basic.createXmlBatchPrompt(input, 'Malay', null, 3, null, 0, 1));
-        assert.ok(structured, `${trinityChannel} must retain the structured boundary`);
-        assert.ok(structured.user.includes(manifest), `${trinityChannel} must contain the exact manifest`);
-        assert.equal(
-            structured.user.includes('Required output ids in exact order'),
-            true,
-            `${trinityChannel} Basic manifest must be present`
-        );
-        const expectedSystem = basic.translationTemplate
-            .replaceAll('${sourceLabel}', 'English')
-            .replaceAll('${targetLabel}', 'Malay')
-            .replaceAll('${targetLabelShort}', 'Malay');
-        assert.equal(structured.system, expectedSystem);
-        // [BASIC-UNIVERSAL] Tiada language-pack atau contoh bahasa statik;
-        // klausa bersyarat Melayu turut diharamkan pada runtime.
-        assert.ok(!structured.system.includes('Spoken Malaysian Cadence'));
-        assert.ok(!structured.system.includes('Awak ikut kami sekali,'));
-        assert.ok(!structured.system.includes('when it is Malay'));
-        assert.ok(!structured.system.includes('Indonesian-dub'));
-        assert.ok(
-            structured.system.includes('localizing subtitles from English into Malay.'),
-            'Basic Basic-names the actual target language'
-        );
-
-        const pro = makeEngine({ trinityMode: 'pro', trinityChannel });
-        pro.sourceLanguage = 'English';
-        const proPrompt = pro.createXmlBatchPrompt(input, 'Malay', null, 3, null, 0, 1);
-        assert.ok(!proPrompt.includes('Required output ids in exact order'), `${trinityChannel} Pro must not change`);
+        for (const mode of ['basic', 'pro']) {
+            const engine = makeEngine({ trinityMode: mode, trinityChannel });
+            engine.sourceLanguage = 'English';
+            const structured = splitStructuredPrompt(engine.createXmlBatchPrompt(input, 'Malay', null, 3, null, 0, 1));
+            assert.ok(structured, `${trinityChannel}/${mode} must retain the structured boundary`);
+            assert.ok(structured.user.includes(manifest), `${trinityChannel}/${mode} must contain the exact manifest`);
+            assert.equal(
+                structured.user.includes('Required output ids in exact order'),
+                true,
+                `${trinityChannel}/${mode} manifest must be present`
+            );
+            const expectedSystem = engine.translationTemplate
+                .replaceAll('${sourceLabel}', 'English')
+                .replaceAll('${targetLabel}', 'Malay')
+                .replaceAll('${targetLabelShort}', 'Malay')
+                .replaceAll('${fewShot}', require('./prompts/languagePacks').getLanguagePack('Malay').fewShot);
+            assert.equal(structured.system, expectedSystem, `${trinityChannel}/${mode} system lane exact`);
+            // specificRules dipensiunkan — tiada teksnya pada mana-mana mod.
+            assert.ok(!structured.system.includes('Spoken Malaysian Cadence'), `${trinityChannel}/${mode}: D3`);
+            // Templat statik tidak menamakan bahasa konkrit (universaliti
+            // dibawa oleh label interpolasi + pack few-shot sahaja).
+            assert.ok(!structured.system.includes('when it is Malay'));
+            assert.ok(!structured.system.includes('Indonesian-dub'));
+        }
     }
 });
 
-test('[TRINITY-CORE-10] Basic instruction is IDENTICAL for every target except the language label', () => {
+test('[TRINITY-CORE-10] System instruction is IDENTICAL for every target except the language label', () => {
     const input = '<s id="1">Hello.</s>';
-    const basic = makeEngine({ trinityMode: 'basic' });
-    basic.sourceLanguage = 'English';
+    const engine = makeEngine({ trinityMode: 'basic' });
+    engine.sourceLanguage = 'English';
 
-    // [BASIC-UNIVERSAL 2026-11-14] Templat Basic tidak boleh menamakan
-    // SEBARANG bahasa konkrit — klausa bersyarat Melayu dibuang sepenuhnya,
-    // jadi tiada lagi klausa yang perlu dikeluarkan sebelum perbandingan
-    // cross-target: dua runtime sasaran berbeza hanya pada label bahasa.
+    // [SINGLE-TEMPLATE 2026-11-14] Templat tunggal tidak boleh menamakan
+    // SEBARANG bahasa konkrit. Few-shot pack (Malay sahaja dapat contoh BM)
+    // DIBUANG daripada perbandingan cross-target terlebih dahulu kerana
+    // ia pembawa per-sasaran yang sah — kontrak universaliti berpindah
+    // daripada "tiada suntikan pack" kepada "pack melalui ${fewShot}".
     const forbidden = /ini\/itu\/yang|saya\/awak|aku\/kau|okey\/helo|Malaysian|Indonesian-dub|when it is Malay/i;
     const systemByTarget = {};
+    const { getLanguagePack } = require('./prompts/languagePacks');
 
     for (const targetLanguage of ['Malay', 'Japanese', 'Vietnamese', 'Spanish', 'Indonesian']) {
         const targetLabel = normalizeTargetLanguageForPrompt(targetLanguage);
-        const prompt = basic.createXmlBatchPrompt(input, targetLanguage, null, 1, null, 0, 1);
+        const prompt = engine.createXmlBatchPrompt(input, targetLanguage, null, 1, null, 0, 1);
         const structured = splitStructuredPrompt(prompt);
-        assert.ok(structured, `${targetLanguage} Basic prompt must stay structured`);
+        assert.ok(structured, `${targetLanguage} prompt must stay structured`);
         assert.ok(
-            structured.system.includes(`localizing subtitles from English into ${targetLabel}.`),
-            `${targetLanguage} Basic prompt must name the actual target language`
+            structured.system.includes(`localizing subtitles from English into ${targetLabel}`),
+            `${targetLanguage} prompt must name the actual target language`
         );
         // Templat statik mesti bebas daripada nama bahasa konkrit pada sumber.
         assert.doesNotMatch(
-            BASIC_TRANSLATION_SYSTEM_TEMPLATE,
+            TRANSLATION_SYSTEM_TEMPLATE,
             forbidden,
-            'Basic template mesti UNIVERSAL — tiada nama bahasa konkrit'
+            'Templat tunggal mesti UNIVERSAL — tiada nama bahasa konkrit'
         );
-        const normalized = structured.system.replaceAll(targetLabel, '<TARGET>');
-        assert.doesNotMatch(
-            normalized,
-            forbidden,
-            `${targetLanguage} Basic prompt must not contain Malay-specific craft`
-        );
+        // Few-shot runtime: pack betul mengikut sasaran (BM untuk Malay,
+        // placeholder neutral untuk yang lain) — bukti wiring pack berfungsi.
+        const packFewShot = getLanguagePack(targetLanguage).fewShot;
+        if (targetLanguage === 'Malay') {
+            assert.ok(structured.system.includes('Biar betul.'), 'Malay pack few-shot hadir untuk sasaran Malay');
+        } else {
+            assert.ok(!structured.system.includes('Biar betul.'), `${targetLanguage}: TIADA contoh BM`);
+        }
+        const withoutPack = structured.system.replaceAll(packFewShot, '');
+        const normalized = withoutPack.replaceAll(targetLabel, '<TARGET>');
+        assert.doesNotMatch(normalized, forbidden, `${targetLanguage} prompt must not contain Malay-specific craft`);
         systemByTarget[targetLanguage] = normalized;
     }
 
@@ -364,7 +365,7 @@ test('[TRINITY-CORE-10] Basic instruction is IDENTICAL for every target except t
     assert.equal(
         distinct.size,
         1,
-        `Basic system prompt mesti IDENTIK untuk semua bahasa selepas label dibuang; mendapat ${distinct.size} varian`
+        `System prompt mesti IDENTIK untuk semua bahasa selepas label + pack dibuang; mendapat ${distinct.size} varian`
     );
 });
 

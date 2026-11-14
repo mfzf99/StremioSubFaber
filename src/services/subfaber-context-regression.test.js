@@ -247,7 +247,10 @@ test('SubFaberXml: batchText is active entries ONLY — no context, no ENTRIES m
 });
 
 // --- _formatSharedContext: blok konteks verbatim mandat (slot {shared_prompt}) ---
-test('SubFaberSharedContext: renders previous_content + subsequent_content + preflight + memory', () => {
+// [SLIDING-V2 2026-11-14] <previous_content> sumber-sahaja DIBUBARKAN
+// (Owner D6): tetingkap previous kini SATU blok <previous_translated>
+// pasangan src+dst. <subsequent_content> DINAMAKAN <future_source>.
+test('SubFaberSharedContext: renders previous_translated + future_source + verbatim preflight_knp', () => {
     const engine = makeEngine({ subfaberEnabled: true });
     const batch = makeEntries(3, 11); // IDs 11..13
     const batchText = engine.prepareBatchXml(batch);
@@ -258,24 +261,32 @@ test('SubFaberSharedContext: renders previous_content + subsequent_content + pre
         preflight: {
             theme: 'A story about survival.',
             terms: [{ source: 'Entry 12', target: 'Entri 12', note: 'Term' }],
-            characters: [],
-            credits_and_titles: []
+            characters: [{ name: 'Liam', canonical_address: 'Liam', direct_address: 'Adik', role: 'Rookie' }],
+            credits_and_titles: [{ source: 'EPISODE 4', target: 'EPISOD 4' }]
         }
     };
 
     const block = engine._formatSharedContext(context, batchText);
     assert.ok(block.includes('[CONTEXT INFORMATION - READ ONLY. DO NOT TRANSLATE THIS SECTION]'), 'Read-only header');
-    assert.ok(block.includes('<previous_content>'), 'previous_content opening tag');
-    assert.ok(block.includes('</previous_content>'), 'previous_content closing tag');
-    assert.ok(block.includes('<subsequent_content>'), 'subsequent_content opening tag');
-    assert.ok(block.includes('</subsequent_content>'), 'subsequent_content closing tag');
-    assert.ok(block.includes('### Content Summary'), 'Preflight Content Summary block');
-    assert.ok(block.includes('[PREVIOUS VERIFIED TRANSLATIONS'), 'Continuity memory header');
-    assert.ok(block.includes('<m id="9">'), 'Verified translation rendered as <m> tag');
-    assert.ok(block.includes('=== END OF MEMORY ==='), 'Memory terminator present');
-    // Term 'Entry 12' wujud dalam batchText → Technical Glossary aktif (TIANG 2)
-    assert.ok(block.includes('### Technical Glossary'), 'Technical Glossary (term matched in batch)');
-    assert.ok(block.includes('- Entry 12: Entri 12 (Term)'), 'Matched term rendered');
+    // D6: blok gabungan src+dst menggantikan dua blok berasingan.
+    assert.ok(block.includes('<previous_translated'), 'previous_translated opening tag');
+    assert.ok(block.includes('</previous_translated>'), 'previous_translated closing tag');
+    assert.ok(block.includes('<m id="9"><src>Hi</src><dst>Hai</dst></m>'), 'src+dst pair rendered as <m>');
+    assert.ok(!block.includes('<previous_content>'), 'previous_content sumber-sahaja DIBUBARKAN (D6)');
+    assert.ok(!block.includes('[PREVIOUS VERIFIED TRANSLATIONS'), 'header memory legasi dibubarkan');
+    // Future window: sumber sahaja, nama baharu.
+    assert.ok(block.includes('<future_source'), 'future_source opening tag');
+    assert.ok(block.includes('</future_source>'), 'future_source closing tag');
+    assert.ok(!block.includes('<subsequent_content>'), 'subsequent_content legasi dibubarkan');
+    // KNP verbatim (D1): JSON penuh 4 tiang + HIERARCHY OF TRUTH. Tag
+    // pembawa membawa atribut note — semak awalan, bukan tag kosong.
+    assert.ok(block.includes('<preflight_knp'), 'preflight_knp opening tag');
+    assert.ok(block.includes('</preflight_knp>'), 'preflight_knp closing tag');
+    assert.ok(block.includes('"theme": "A story about survival."'), 'JSON theme verbatim');
+    assert.ok(block.includes('"source": "Entry 12"'), 'JSON terms verbatim');
+    assert.ok(block.includes('"canonical_address": "Liam"'), 'JSON characters verbatim');
+    assert.ok(block.includes('"credits_and_titles"'), 'JSON credits pillar verbatim');
+    assert.ok(block.includes('HIERARCHY OF TRUTH'), 'hierarchy-of-truth guidance hadir');
 });
 
 test('SubFaberSharedContext: null/empty context returns empty string', () => {
@@ -292,10 +303,10 @@ test('SubFaberSharedContext: null/empty context returns empty string', () => {
     );
 });
 
-test('SubFaberSharedContext: preflight renders Content Summary + Points to Note (term matched via batchText)', () => {
+test('SubFaberSharedContext: preflight renders the verbatim KNP JSON block (D1)', () => {
     const engine = makeEngine({ subfaberEnabled: true });
-    // GS3: term-matching dinamik — istilah mesti wujud dalam skop chunk
-    // (prev/batchText/next) untuk disuntik. BatchText ini menyebut "Zhuang Xu".
+    // [KNP-VERBATIM 2026-11-14] Owner D1: suntik JSON penuh terus — bukan
+    // lagi term-matching fragmen per-chunk. Semua 4 tiang hadir verbatim.
     const batch = [
         { id: 1, timecode: 't', text: 'Zhuang Xu walked into the room.' },
         { id: 2, timecode: 't', text: 'He looked tired.' }
@@ -314,10 +325,10 @@ test('SubFaberSharedContext: preflight renders Content Summary + Points to Note 
 
     const batchText = engine.prepareBatchXml(batch);
     const block = engine._formatSharedContext(context, batchText);
-    assert.ok(block.includes('### Content Summary'), 'Content Summary header');
-    assert.ok(block.includes('A story about survival.'), 'Theme text');
-    assert.ok(block.includes('### Technical Glossary'), 'Technical Glossary header');
-    assert.ok(block.includes('- Zhuang Xu: Zhuang Xu (Male colleague)'), 'Term line rendered (matched in batch)');
+    assert.ok(block.includes('<preflight_knp'), 'preflight_knp block present');
+    assert.ok(block.includes('A story about survival.'), 'Theme text verbatim in JSON');
+    assert.ok(block.includes('"source": "Zhuang Xu"'), 'terms pillar verbatim (even unmatched terms)');
+    assert.ok(block.includes('"credits_and_titles"'), 'credits pillar key present');
 });
 
 test('SubFaberXml: empty context renders plain active entries (no context anywhere)', () => {
@@ -356,21 +367,23 @@ test('SubFaberSharedContext: XML escaping applied to context entries', () => {
     assert.ok(!block.includes(`>A ${AMP} B ${LT}tag${GT}<`), 'Raw unescaped form must NOT appear inside tags');
 });
 
-test('SubFaberSharedContext: previousMemory rendered as continuity block (single SubFaber path)', () => {
-    // TOTAL PURGE: blok legacy [PREVIOUS_TRANSLATION_MEMORY] berasingan dibuang;
-    // previousMemory dirender dalam blok {shared_prompt}, bukan batchText.
+test('SubFaberSharedContext: previousMemory rendered as <previous_translated> src+dst pairs (D2/D6)', () => {
+    // TOTAL PURGE + [SLIDING-V2 2026-11-14]: previousMemory + previousContent
+    // digabungkan ke SATU blok <previous_translated> pasangan <m><src/><dst/>.
+    // Fixture: window id 5 DIPADANKAN dengan memory id 5 (cara produksi —
+    // _prepareSubfaberContext membina memory daripada window yang sama).
     const engine = makeEngine({});
     const batch = makeEntries(2, 1);
     const context = {
-        previousContent: makeEntries(1, 0),
+        previousContent: makeEntries(1, 5),
         previousMemory: [{ id: 5, source: 'Hello', translation: 'Helo' }]
     };
     const batchText = engine.prepareBatchXml(batch);
     const block = engine._formatSharedContext(context, batchText);
-    assert.ok(block.includes('[PREVIOUS VERIFIED TRANSLATIONS'), 'Continuity memory header present');
-    assert.ok(block.includes('<m id="5">'), 'Verified translation rendered as <m> tag');
-    assert.ok(block.includes('=== END OF MEMORY ==='), 'Memory terminator present');
-    assert.ok(!block.includes('[PREVIOUS_TRANSLATION_MEMORY'), 'Legacy standalone header REMOVED');
+    assert.ok(block.includes('<previous_translated'), 'Merged previous_translated block present');
+    assert.ok(block.includes('<m id="5"><src>Hello</src><dst>Helo</dst></m>'), 'src+dst pair rendered as <m>');
+    assert.ok(!block.includes('[PREVIOUS VERIFIED TRANSLATIONS'), 'Legacy standalone header REMOVED');
+    assert.ok(!block.includes('<previous_content>'), 'Source-only previous block REMOVED (D6)');
     assert.ok(!batchText.includes('<m id='), 'Memory NOT in batchText (clean <input>)');
 });
 
@@ -384,7 +397,9 @@ const { splitStructuredPrompt, SUBFABER_PROMPT_BOUNDARY } = require('./utils/str
 // Pro contract is genuinely exercised, and add a Basic-mode test that asserts
 // the ACTIVE Basic contract (universal instruction, no language pack, no
 // few-shot, ID manifest present, anchor retained).
-test('SubFaberPrompt V4: Pro mode slim sharp prompt, split system/user, no double-send', () => {
+test('SubFaberPrompt V5: Pro mode structured template, split system/user, no double-send', () => {
+    // [SINGLE-TEMPLATE 2026-11-14] Pro dan Basic berkongsi SATU templat berstruktur
+    // 8 seksyen; ujian ini menzip kontrak templat itu pada mod Pro.
     const engine = makeEngine({ subfaberEnabled: true }, { trinityMode: 'pro' });
     engine.sourceLanguage = 'English';
     const batch = makeEntries(2, 1);
@@ -398,84 +413,66 @@ test('SubFaberPrompt V4: Pro mode slim sharp prompt, split system/user, no doubl
     assert.ok(parts, 'Prompt must split into { system, user }');
     const { system, user } = parts;
 
-    // ── SYSTEM part V4 (slim): Role+parity digabung, rules 6 tajam, style padat ──
-    assert.ok(system.includes('## Role'), 'Role section in system part');
-    // V4: Role terus ke point — dua mandat: parity suci + ayat hidup
-    assert.ok(system.includes('keep slot/ID parity sacred'), 'Role states parity mandate directly');
+    // ── SYSTEM lane: 5 seksyen statik berlabel ──
+    assert.ok(system.includes('[SYSTEM / ROLE]'), 'System/Role section label');
     assert.ok(system.includes('a native speaker would actually say'), 'Role states living-language mandate');
     assert.ok(system.includes('English'), 'Source language in role');
     assert.ok(system.includes('Malay'), 'Target language in role');
-    // Rules — 6 padat, label ANTI-* kekal (pemetaan 1:1 taksonomi 6-jenayah Agent Inspector)
-    assert.ok(system.includes('1. ANTI-MERGE'), 'Rule 1 ANTI-MERGE');
-    assert.ok(system.includes('2. ANTI-SHIFT'), 'Rule 2 ANTI-SHIFT');
-    // [SFX CONSISTENCY 2026-10-01] Rule 2 mesti berpisah tegas: muzik/simbol
-    // verbatim, kesan bunyi dalam kurungan DILOKALKAN — konsisten dengan
-    // Example 2 few-shot ([door slams] → [pintu terhempas] untuk Malay).
-    // Kontradiksi lama ("copied as-is" untuk kedua-duanya) membingungkan
-    // reasoning model (kritikan review 2026-10-01).
+    // Technical constraints — parity + markup + SDH (pemetaan 1:1 taksonomi Agent Inspector)
+    assert.ok(system.includes('[TECHNICAL CONSTRAINTS & FORMATTING]'), 'Constraints section label');
+    assert.ok(system.includes('identical IDs in identical order'), 'ID parity contract');
     assert.ok(
         system.includes('Music symbols (♪♪) are copied as-is; bracketed sound effects ([door slams]) are localized'),
-        'Rule 2: music verbatim vs SFX localized (no contradiction with Example 2)'
+        'Music verbatim vs SFX localized (no contradiction with pack Example 2)'
     );
     assert.ok(
         !system.includes('[door slams]) are copied as-is'),
-        'Rule 2 mesti TIDAK mengatakan SFX copied as-is (kontradiksi few-shot)'
+        'TIDAK mengatakan SFX copied as-is (kontradiksi few-shot)'
     );
-    assert.ok(system.includes('3. ANTI-PHANTOM'), 'Rule 3 ANTI-PHANTOM');
-    assert.ok(system.includes('4. ANTI-DROP'), 'Rule 4 ANTI-DROP');
-    assert.ok(system.includes('5. ANTI-UNTRANSLATED'), 'Rule 5 ANTI-UNTRANSLATED (lazy-copy guard)');
-    assert.ok(system.includes('6. PRESERVE markup'), 'Rule 6 markup preservation');
     assert.ok(system.includes('exact count of [br]'), '[br] count locked');
     assert.ok(system.includes('place [br] at a natural'), '[br] reposition adaptif');
-    // Style padat — ayat hidup, anti-calque
-    // [OWNER MANUAL EDIT 2026-10-07] Style diketatkan: "natural, idiomatic"
-    // menggantikan "living"; register lock kini "context titles/pronouns"
-    // dengan larangan keras suntikan gelaran pada nama kosong.
-    assert.ok(system.includes('## Style'), 'Style section present');
-    // [OWNER MANUAL EDIT 2026-10-09] "natural, idiomatic" → "natural, conversational"
+    // Style — ayat hidup, anti-calque
+    assert.ok(system.includes('[STYLE & TONE GUIDELINES]'), 'Style section label');
     assert.ok(system.includes('natural, conversational'), 'Natural conversational directive in style');
-    // [OWNER MANUAL EDIT 2026-10-07] "never calque" → "Never calque" (kini
-    // membuka ayat sendiri — huruf besar N; includes() case-sensitive).
     assert.ok(system.includes('Never calque'), 'Anti-calque in style');
     assert.ok(
-        system.includes('never inject titles onto bare names'),
+        system.includes('never inject a title onto a bare name'),
         'Style forbids injecting titles onto bare names (register lock tightened)'
     );
-    // Few-shot 2 contoh parity-critical sahaja (PROMPT-SLIM)
-    assert.ok(system.includes('[EXAMPLE 1 — MERGE:'), 'Few-shot EXAMPLE 1 in system');
-    assert.ok(system.includes('[EXAMPLE 2 — SHIFT:'), 'Few-shot EXAMPLE 2 in system');
-    assert.ok(!system.includes('[EXAMPLE 3 — PHANTOM:'), 'Few-shot 3-6 REMOVED (Prompt-Slim)');
-    assert.ok(!system.includes('[EXAMPLE 6 — REGISTER:'), 'Few-shot 6 REMOVED (Prompt-Slim)');
-    assert.ok(system.includes('Awak ikut kami sekali,'), 'Malay few-shot present (target=Malay)');
-    // Output Format di SYSTEM
-    assert.ok(system.includes('## Output Format'), 'Output Format in system part');
-    assert.ok(system.includes('one <s id="N"> per input id'), '1-to-1 contract');
+    // Few-shot 3 contoh isometrik dari pack (FEW-SHOT-V2)
+    assert.ok(system.includes('[FEW-SHOT EXAMPLES'), 'Few-shot section label');
+    assert.ok(system.includes('<example>'), 'Few-shot <example> format (pack V2)');
+    assert.ok(system.includes('Biar betul.'), 'Malay pack few-shot example 1 (target=Malay)');
+    assert.ok(!system.includes('[EXAMPLE 1 — MERGE:'), 'Legacy crime-labeled examples REMOVED');
+    // Output requirement
+    assert.ok(system.includes('[OUTPUT REQUIREMENT]'), 'Output requirement label');
+    assert.ok(system.includes('one <s id="N"> per input ID'), '1-to-1 contract');
     assert.ok(system.includes('no thinking tags'), 'No-thinking-tags contract');
-    // OWNER HACK (2026-09-30, A/B tested): larangan nota penterjemah dalam
-    // kurungan — AI cenderung ambil jalan mudah jelaskan ayat susah dengan
-    // (brackets) berbanding commit kepada terjemahan sebenar.
     assert.ok(
         system.includes('ZERO translator notes in parentheses'),
         'Anti-lazy-parenthetical contract (owner A/B tested hack)'
     );
+    // Static lane mesti sifar rujukan preflight (arahan KNP hidup dalam blok user-lane)
+    assert.ok(!/pre-?flight/i.test(system), 'Static lane carries NO preflight reference (KNP guidance is user-lane)');
 
     // ── USER part: HANYA data dinamik + anchor (tiada arahan statik) ──
     assert.ok(user.includes('<input>'), 'input block in user part');
     assert.ok(user.trimEnd().endsWith('<s id="1">'), 'User part ENDS with prefill anchor');
-    assert.ok(!user.includes('## Role'), 'Role NOT duplicated into user part');
-    assert.ok(!user.includes('ANTI-MERGE'), 'Rules NOT duplicated into user part');
-    assert.ok(!user.includes('[EXAMPLE 1'), 'Few-shot NOT duplicated into user part');
-
-    // ── NO DOUBLE-SEND: static instructions live ONLY in system, not in user ──
-    assert.ok(system.includes('ANTI-MERGE') && !user.includes('ANTI-MERGE'), 'No duplication: rules only in system');
+    assert.ok(!user.includes('[SYSTEM / ROLE]'), 'Static sections NOT duplicated into user part');
+    assert.ok(!user.includes('<example>'), 'Few-shot NOT duplicated into user part');
+    // Pro juga menerima idManifest (Owner D5).
+    assert.ok(user.includes('Required output ids in exact order'), 'Pro user part carries the required-ID manifest');
 
     // ── DETOX: legacy bloat gone ──
-    assert.ok(!prompt.includes('<translation_craft>'), 'translation_craft tag block REMOVED (folded into Style prose)');
+    assert.ok(!prompt.includes('<translation_craft>'), 'translation_craft tag block REMOVED');
     assert.ok(!prompt.includes('CRITICAL ENFORCEMENT RULES'), 'Legacy 7-rule REMOVED');
     assert.ok(!prompt.includes('[UNIVERSAL STRUCTURAL DEMONSTRATION'), 'Legacy demo REMOVED');
 });
 
-test('SubFaberPrompt V4: Basic mode uses the universal instruction with no language pack', () => {
+test('SubFaberPrompt V5: Basic mode uses the SAME single template with pack few-shot', () => {
+    // [SINGLE-TEMPLATE 2026-11-14] Basic = templat yang sama; beza hanya data
+    // (tiada konteks preflight → tiada blok <preflight_knp>). Few-shot pack
+    // disuntik pada Basic juga (mandat Owner).
     const engine = makeEngine({ subfaberEnabled: true }, { trinityMode: 'basic' });
     engine.sourceLanguage = 'English';
     const batch = makeEntries(2, 1);
@@ -486,7 +483,7 @@ test('SubFaberPrompt V4: Basic mode uses the universal instruction with no langu
     assert.ok(parts, 'Prompt must split into { system, user }');
     const { system, user } = parts;
 
-    // Basic is the ACTIVE runtime instruction: one universal directive.
+    // SATU templat: Basic membawa seksyen berlabel yang sama.
     assert.ok(
         system.includes('You are a professional Netflix subtitle translator, specializing in localizing subtitles'),
         'Basic system carries the universal translator instruction'
@@ -495,17 +492,13 @@ test('SubFaberPrompt V4: Basic mode uses the universal instruction with no langu
         system.includes('specializing in localizing subtitles from English into Malay.'),
         'Basic system names the actual source and target language'
     );
-    // No language pack, no few-shot, no Pro-only rule labels.
-    assert.ok(!system.includes('ANTI-MERGE'), 'Basic carries no Pro rule labels');
-    assert.ok(!system.includes('Awak ikut kami sekali,'), 'Basic carries no language-pack few-shot');
-    assert.ok(!system.includes('## Role'), 'Basic carries no Pro Role section');
-    // The Basic contract is enforced through the numbered rules.
-    assert.ok(
-        system.includes('Return exactly one <s id="N"> per input entry with identical IDs in identical order.'),
-        'Basic rule 1 enforces 1:1 slot parity'
-    );
-    assert.ok(system.includes('Output ONLY the <answer> block'), 'Basic output contract is the <answer> block only');
-    // The required-ID manifest belongs to Basic (never to Pro).
+    assert.ok(system.includes('[TECHNICAL CONSTRAINTS & FORMATTING]'), 'Basic carries the same constraints section');
+    assert.ok(system.includes('[FEW-SHOT EXAMPLES'), 'Basic carries the few-shot section (mandat Owner)');
+    assert.ok(system.includes('Biar betul.'), 'Basic carries the pack few-shot for target=Malay');
+    assert.ok(system.includes('[OUTPUT REQUIREMENT]'), 'Basic output contract label');
+    // Basic tiada konteks preflight → tiada blok KNP dalam user lane.
+    assert.ok(!user.includes('<preflight_knp'), 'Basic user part carries NO KNP block (no preflight context)');
+    // idManifest kekal hadir untuk Basic.
     assert.ok(user.includes('Required output ids in exact order'), 'Basic user part carries the required-ID manifest');
     // Data-only user part + retained anchor.
     assert.ok(user.includes('<input>'), 'user part carries the batch input');
@@ -527,14 +520,18 @@ test('SubFaberPrompt V3: gemini buildUserPrompt splits system/user (no double-se
     const { userPrompt, systemPrompt } = svc.buildUserPrompt('unused', 'Malay', combined);
 
     // System carries the static instructions; user carries the dynamic data.
-    assert.ok(systemPrompt.includes('## Role'), 'systemPrompt carries Role');
-    assert.ok(systemPrompt.includes('1. ANTI-MERGE'), 'systemPrompt carries Rules');
+    assert.ok(systemPrompt.includes('[SYSTEM / ROLE]'), 'systemPrompt carries the Role section label');
+    assert.ok(systemPrompt.includes('[TECHNICAL CONSTRAINTS & FORMATTING]'), 'systemPrompt carries the constraints');
     assert.ok(userPrompt.includes('<input>'), 'userPrompt carries the batch input');
     assert.ok(userPrompt.trimEnd().endsWith('<s id="1">'), 'userPrompt keeps the prefill anchor');
     // The critical anti-duplication guarantee:
-    assert.ok(!userPrompt.includes('## Role'), 'Role NOT duplicated into userPrompt');
-    assert.ok(!userPrompt.includes('1. ANTI-MERGE'), 'Rules NOT duplicated into userPrompt');
-    assert.ok(!systemPrompt.includes('<input>'), 'Input NOT leaked into systemPrompt');
+    assert.ok(!userPrompt.includes('[SYSTEM / ROLE]'), 'Role NOT duplicated into userPrompt');
+    assert.ok(!userPrompt.includes('[TECHNICAL CONSTRAINTS'), 'Constraints NOT duplicated into userPrompt');
+    // [SINGLE-TEMPLATE] Templat kini menyebut '<input>' dalam TEKS ARAHAN
+    // ("Only translate the lines inside <input>") — itu bukan kebocoran data.
+    // Yang dilarang: BLOK data sebenar <input>...</input> jatuh ke system.
+    assert.ok(!systemPrompt.includes('<input>\n<s id='), 'Input DATA block NOT leaked into systemPrompt');
+    assert.ok(!systemPrompt.includes('Hello there.'), 'Batch text NOT leaked into systemPrompt');
     // Boundary sentinel must never survive into either delivered part.
     assert.ok(!userPrompt.includes(SUBFABER_PROMPT_BOUNDARY), 'No boundary sentinel in userPrompt');
     assert.ok(!systemPrompt.includes(SUBFABER_PROMPT_BOUNDARY), 'No boundary sentinel in systemPrompt');
@@ -552,16 +549,16 @@ test('SubFaberPrompt V3: legacy markerless custom prompt keeps old behaviour', (
     assert.ok(userPrompt.includes('Hello world'), 'legacy user carries the subtitle content');
 });
 
-test('SubFaberPrompt V4: prompt is the ONLY path (no flags), parity + rules always present', () => {
+test('SubFaberPrompt V5: prompt is the ONLY path (no flags), structured sections always present', () => {
     const engine = makeEngine({});
     engine.sourceLanguage = 'English';
     const batch = makeEntries(2, 1);
     const batchText = engine.prepareBatchXml(batch, null);
 
     const prompt = engine.createXmlBatchPrompt(batchText, 'Malay', null, batch.length, null, 0, 1);
-    assert.ok(prompt.includes('## Role'), 'Role always present');
-    assert.ok(prompt.includes('keep slot/ID parity sacred'), 'Parity mandate always present (V4 role)');
-    assert.ok(prompt.includes('1. ANTI-MERGE'), 'Rules always present');
+    assert.ok(prompt.includes('[SYSTEM / ROLE]'), 'Role section always present');
+    assert.ok(prompt.includes('strict 1-to-1'), 'Parity mandate always present (V5 role)');
+    assert.ok(prompt.includes('[TECHNICAL CONSTRAINTS & FORMATTING]'), 'Constraints section always present');
     assert.ok(!prompt.includes('CRITICAL ENFORCEMENT RULES'), 'Legacy 7-rule REMOVED permanently');
 });
 
@@ -614,8 +611,8 @@ test('SubFaberPrompt V3: shared context block lives in the USER part, before <in
         user.includes('[CONTEXT INFORMATION - READ ONLY. DO NOT TRANSLATE THIS SECTION]'),
         'Context block in USER part'
     );
-    assert.ok(user.includes('<previous_content>'), 'previous_content in USER part');
-    assert.ok(user.includes('### Content Summary'), 'Content Summary (theme) in USER part');
+    assert.ok(user.includes('<previous_translated'), 'previous_translated in USER part');
+    assert.ok(user.includes('<preflight_knp'), 'KNP block in USER part');
     assert.ok(user.includes('A heist movie.'), 'Theme text present in USER');
     assert.ok(!system.includes('[CONTEXT INFORMATION'), 'Context NOT in SYSTEM part (dynamic data only in user)');
 
@@ -625,9 +622,13 @@ test('SubFaberPrompt V3: shared context block lives in the USER part, before <in
         'Anti-PHANTOM disclaimer present in USER part'
     );
 
-    // Susunan dalam USER: context → disclaimer → <input> → anchor
+    // Susunan dalam USER: context → disclaimer → idManifest → <input> data.
+    // [KNP-VERBATIM] Blok KNP membawa ARAHAN yang menyebut '<input>' (hierarki
+    // kebenaran) — itu bukan blok data; cari blok data `<input>` pada
+    // kedudukan selepas idManifest.
     const ctxIdx = user.indexOf('[CONTEXT INFORMATION');
-    const inputIdx = user.indexOf('<input>');
+    const manifestIdx = user.indexOf('Required output ids in exact order');
+    const inputIdx = user.indexOf('<input>', manifestIdx);
     const disclaimerIdx = user.indexOf('(Reference only — do not translate');
     assert.ok(ctxIdx < inputIdx, 'Context BEFORE <input> in USER');
     assert.ok(disclaimerIdx > ctxIdx && disclaimerIdx < inputIdx, 'Disclaimer between context and <input>');
@@ -635,8 +636,8 @@ test('SubFaberPrompt V3: shared context block lives in the USER part, before <in
     // <input> SUCI — tiada konteks di dalamnya
     const inputSection = user.slice(inputIdx, user.indexOf('</input>'));
     assert.ok(inputSection.includes('<s id="6">'), 'Active entry 6 inside <input>');
-    assert.ok(!inputSection.includes('<previous_content>'), 'No previous_content inside <input>');
-    assert.ok(!inputSection.includes('### Content Summary'), 'No theme inside <input>');
+    assert.ok(!inputSection.includes('<previous_translated'), 'No previous_translated inside <input>');
+    assert.ok(!inputSection.includes('<preflight_knp'), 'No KNP inside <input>');
     assert.ok(!inputSection.includes('[CONTEXT INFORMATION'), 'No context header inside <input>');
 });
 
@@ -655,8 +656,10 @@ test('SubFaberPrompt V3: no shared context block when context empty (user part c
     assert.ok(user.trimEnd().endsWith('<s id="1">'), 'User ends with anchor even without context');
 });
 
-// --- GOLDEN STANDARD GS3: Dynamic term-matching per-chunk (VideoLingo search_things_to_note) ---
-test('SubFaberGS3: Technical Glossary only injects terms whose source text appears in chunk scope', () => {
+// --- [KNP-VERBATIM 2026-11-14] Istilah disuntik VERBATIM (Owner D1) —
+// pemadanan dinamik per-chunk GS3 DIPENSIUNKAN. Koverans: KESEMUA istilah
+// kini hadir dalam JSON (tiada gugur senyap), notes/type dikekalkan.
+test('SubFaberKNP: terms pillar carries every term verbatim regardless of chunk scope', () => {
     const engine = makeEngine({ subfaberEnabled: true });
     engine.preflightContext = {
         theme: 'A story about survival.',
@@ -676,15 +679,13 @@ test('SubFaberGS3: Technical Glossary only injects terms whose source text appea
     const subsequentContent = [{ id: 13, timecode: 't', text: 'They sat down together.' }];
 
     const block = engine._formatPreflightForChunk(engine.preflightContext, previousContent, batch, subsequentContent);
-    assert.ok(block.includes('### Content Summary'), 'Theme always injected');
-    assert.ok(block.includes('A story about survival.'), 'Theme text present');
-    assert.ok(block.includes('### Technical Glossary'), 'Technical Glossary present (2 terms matched)');
-    assert.ok(block.includes('- Zhuang Xu: Zhuang Xu (Male colleague)'), 'Matched term 1 rendered');
-    assert.ok(block.includes('- Nie Xiguang: Nie Xiguang (Female lead)'), 'Matched term 2 rendered');
-    assert.ok(!block.includes('CP Group'), 'Unmatched term NOT injected (token savings)');
+    assert.ok(block.includes('A story about survival.'), 'Theme verbatim dalam JSON');
+    assert.ok(block.includes('"source": "Zhuang Xu"'), 'Term 1 verbatim');
+    assert.ok(block.includes('"note": "Male colleague"'), 'Note term 1 dikekalkan');
+    assert.ok(block.includes('"source": "CP Group"'), 'Term luar skop KEKAL hadir (D1 — tiada gugur senyap)');
 });
 
-test('SubFaberGS3: Technical Glossary section emptied when no terms match chunk scope', () => {
+test('SubFaberKNP: verbatim renderer keeps unmatched-only terms (retirement of per-chunk gating)', () => {
     const engine = makeEngine({ subfaberEnabled: true });
     engine.preflightContext = {
         theme: 'A heist movie.',
@@ -695,8 +696,8 @@ test('SubFaberGS3: Technical Glossary section emptied when no terms match chunk 
     const batch = [{ id: 1, timecode: 't', text: 'Hello world.' }];
 
     const block = engine._formatPreflightForChunk(engine.preflightContext, [], batch, []);
-    assert.ok(block.includes('### Content Summary'), 'Theme still injected');
-    assert.ok(!block.includes('### Technical Glossary'), 'No Technical Glossary when zero matches (token savings)');
+    assert.ok(block.includes('A heist movie.'), 'Theme verbatim hadir');
+    assert.ok(block.includes('"source": "Ghost"'), 'Istilah tanpa padanan KEKAL disuntik (D1)');
 });
 
 test('SubFaberGS3: term matching is case-insensitive and scans prev + batch + next scope', () => {
@@ -715,8 +716,10 @@ test('SubFaberGS3: term matching is case-insensitive and scans prev + batch + ne
     const subsequentContent = [{ id: 3, timecode: 't', text: 'Arriving at Silverton soon.' }];
 
     const block = engine._formatPreflightForChunk(engine.preflightContext, previousContent, batch, subsequentContent);
-    assert.ok(block.includes('- BLACKWOOD: Hutan Hitam'), 'Prev-scope match (case-insensitive)');
-    assert.ok(block.includes('- Silverton: Bandar Perak'), 'Next-scope match');
+    // [KNP-VERBATIM] Semua istilah kini disuntik verbatim (D1) — istilah di
+    // luar skop chunk kekal hadir, tiada lagi pemadanan dinamik per-chunk.
+    assert.ok(block.includes('BLACKWOOD'), 'Full terms pillar carries BLACKWOOD verbatim');
+    assert.ok(block.includes('Silverton'), 'Full terms pillar carries Silverton verbatim');
 });
 
 test('SubFaberGS3: null canonical_address renders NOT LOCKED marker (MANDAT SOSIOLINGUISTIK 2026-09-27)', () => {
@@ -733,12 +736,12 @@ test('SubFaberGS3: null canonical_address renders NOT LOCKED marker (MANDAT SOSI
     const batch = [{ id: 1, timecode: 't', text: 'Shen Ruoxin arrives.' }];
 
     const block = engine._formatPreflightForChunk(engine.preflightContext, [], batch, []);
-    assert.ok(block.includes('- Shen Ruoxin → Puan Shen (female lead)'), 'gelaran terkunci dirender seperti biasa');
-    assert.ok(
-        block.includes('- Mystery Woman → address NOT LOCKED'),
-        'null → isyarat NOT LOCKED (fallback lama || name DIBUANG)'
-    );
-    assert.ok(!block.includes('- Mystery Woman → Mystery Woman'), 'nama mentah TIDAK lagi dijadikan gelaran');
+    // [KNP-VERBATIM] characters kini JSON: gelaran terkunci hadir verbatim.
+    assert.ok(block.includes('"canonical_address": "Puan Shen"'), 'gelaran terkunci dirender verbatim');
+    // null → isyarat NOT LOCKED pack-driven (fallback lama || name DIBUANG).
+    assert.ok(block.includes('"canonical_address": null'), 'null dirender sebagai null (bukan nama mentah)');
+    assert.ok(block.includes('address NOT LOCKED'), 'isyarat NOT LOCKED hadir (guidance pack)');
+    assert.ok(!block.includes('"canonical_address": "Mystery Woman"'), 'nama mentah TIDAK dijadikan gelaran');
     assert.ok(block.includes('Malay matrix'), 'panduan matriks BM mesti hadir untuk Agent Translation');
 });
 
