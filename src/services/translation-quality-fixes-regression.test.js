@@ -49,7 +49,10 @@ test('C1-relocation: ujian cache-poisoning dipindahkan ke fail proses terasing',
                 source.indexOf("require('./translationEngine')"),
         'env CACHE_TRANSLATIONS mesti di-set SEBELUM require enjin dalam fail terasing'
     );
-    assert.ok(!source.includes('delete require.cache'), 'fail terasing tidak boleh mengandungi manipulasi require.cache');
+    assert.ok(
+        !source.includes('delete require.cache'),
+        'fail terasing tidak boleh mengandungi manipulasi require.cache'
+    );
 });
 
 test('D1: insiden MECHANICAL_TRANSLATION_RETRY mencapai status muktamad sebelum peringkat Inspector', async () => {

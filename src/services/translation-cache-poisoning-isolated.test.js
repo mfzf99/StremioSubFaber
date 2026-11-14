@@ -57,11 +57,7 @@ test('C1: entri gagal-retry dipulangkan sebagai fallback tetapi TIDAK ditulis ke
     // Baris bermasalah tetap dipulangkan (fallback terbaik) — kontrak pipeline.
     assert.equal(result.length, 2, 'failed-retry entries must still be returned as best-effort fallback');
     // TAPI baris tersebut tidak boleh dicemarkan ke cache.
-    assert.equal(
-        cachedSources.includes(batch[0].text),
-        false,
-        'entry with unresolved hard defects must NOT be cached'
-    );
+    assert.equal(cachedSources.includes(batch[0].text), false, 'entry with unresolved hard defects must NOT be cached');
     // Baris bersih dalam batch sama kekal dicache seperti biasa.
     assert.equal(cachedSources.includes(batch[1].text), true, 'clean entries in the same batch stay cached');
 });
