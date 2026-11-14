@@ -294,6 +294,39 @@ class AnthropicProvider {
         return !!(error?.message && /stream/i.test(error.message));
     }
 
+    /**
+     * [A2 FIX 2026-11-14] Record an Anthropic usage block into the shared
+     * FinOps ledger (global.geminiFinOps.streams) drained by the Telegram
+     * receipt. Mapping mirrors GeminiService semantics:
+     *   input  = input_tokens − cache_read_input_tokens
+     *   cached = cache_read_input_tokens
+     *   output = output_tokens (message_delta carries the final count)
+     * Missing/zero usage → no ledger entry (fail-open, never fake zeros).
+     * @param {object} usage - raw `usage` object (message or message_delta)
+     * @param {string} streamId - unique id for this API attempt
+     */
+    recordUsageIntoFinOps(usage, streamId) {
+        if (!usage || typeof usage !== 'object' || !streamId) return;
+        const input = Number(usage.input_tokens) || 0;
+        const output = Number(usage.output_tokens) || 0;
+        if (input <= 0 && output <= 0) return;
+        const cached = Number(usage.cache_read_input_tokens) || 0;
+        if (!global.geminiFinOps) {
+            global.geminiFinOps = { streams: {} };
+        }
+        // Stream merge semantics: message_start carries the full input count,
+        // message_delta carries only the FINAL output count — merge so the
+        // second event never erases the first's input (last-write-wins would
+        // zero the input on message_delta).
+        const existing = global.geminiFinOps.streams[streamId] || { input: 0, cached: 0, thought: 0, output: 0 };
+        global.geminiFinOps.streams[streamId] = {
+            input: input > 0 ? Math.max(0, input - cached) : existing.input,
+            cached: cached > 0 ? cached : existing.cached,
+            thought: 0,
+            output: output > 0 ? output : existing.output
+        };
+    }
+
     async translateSubtitle(subtitleContent, sourceLanguage, targetLanguage, customPrompt = null, requestOptions = {}) {
         let lastError;
         let disableTopP = requestOptions?.disableTopP === true;
@@ -312,6 +345,13 @@ class AnthropicProvider {
                     httpAgent,
                     httpsAgent
                 });
+
+                // [A2 FIX 2026-11-14] Record usage into the shared FinOps
+                // ledger (non-stream path — usage rides the response body).
+                this.recordUsageIntoFinOps(
+                    response.data?.usage,
+                    `ant_ns_${Date.now()}_${Math.random().toString(36).slice(2, 8)}`
+                );
 
                 const blocks = response.data?.content || [];
                 const text = blocks
@@ -394,6 +434,8 @@ class AnthropicProvider {
                 let finishReason = null;
                 let rawStream = '';
                 const blockTypes = new Map();
+                // [A2 FIX 2026-11-14] one FinOps ledger id per stream attempt
+                let finOpsStreamId = null;
 
                 const processEventBlock = (block) => {
                     if (!block || !block.trim()) return;
@@ -428,6 +470,19 @@ class AnthropicProvider {
                             blockTypes.set(payload.index, payload.content_block.type);
                         }
                         return;
+                    }
+
+                    // [A2 FIX 2026-11-14] usage rides message_start (input)
+                    // and message_delta (final output) — one ledger id per
+                    // stream attempt, last write wins (cumulative counts).
+                    if (eventType === 'message_start' || eventType === 'message_delta') {
+                        const usage = eventType === 'message_start' ? payload?.message?.usage : payload?.usage;
+                        if (usage) {
+                            if (!finOpsStreamId) {
+                                finOpsStreamId = `ant_st_${Date.now()}_${Math.random().toString(36).slice(2, 8)}`;
+                            }
+                            this.recordUsageIntoFinOps(usage, finOpsStreamId);
+                        }
                     }
 
                     if (eventType === 'content_block_delta' && typeof payload.index === 'number') {

@@ -31,6 +31,54 @@ function normalizeUserHash(rawHash) {
  * @returns {string} .userHash - User configuration hash (empty string if not available)
  * @returns {boolean} .allowPermanent - Whether permanent cache reads/writes are allowed (requires userHash)
  */
+/**
+ * [A1 FIX 2026-11-14] Resolve the trinity channel a config will actually
+ * translate through, for the `_ch-<door>` cache-key discriminator.
+ *
+ * Live defect: nothing ever populated `config.trinityChannel` at runtime, so
+ * every cache key defaulted to `_ch-gemini` — including custom/OpenAI and
+ * custom/Anthropic runs (cross-door namespace poisoning in the shared
+ * permanent cache; observed live: deepseek-v4-pro @ rootsys stored under
+ * ch-gemini). The handler now populates the field via this resolver before
+ * key generation, and generateCacheKeys derives it defensively as well so
+ * every call site (hasCachedTranslation, radar, xEmbed) stays consistent.
+ * Priority: explicit `config.trinityChannel` > active custom provider door
+ * (`providers.<main>.door`) > native provider door > gemini legacy default
+ * (existing permanent caches must never be orphaned).
+ * @param {object} config normalized user configuration
+ * @returns {'gemini'|'openai'|'anthropic'}
+ */
+function resolveTrinityChannelForConfig(config) {
+    const explicit = String(config?.trinityChannel || '')
+        .toLowerCase()
+        .replace(/[^a-z0-9-]/g, '');
+    if (explicit) return explicit;
+
+    const mainProvider = String(config?.mainProvider || 'gemini').toLowerCase();
+    if (mainProvider === 'gemini') return 'gemini';
+    if (mainProvider === 'anthropic') return 'anthropic';
+
+    const slot = config?.providers?.[mainProvider] || config?.providers?.custom;
+    if (slot && typeof slot === 'object') {
+        const door = String(slot.door || '').toLowerCase();
+        if (door === 'gemini-native') return 'gemini';
+        if (door === 'anthropic-messages') return 'anthropic';
+        if (door === 'openai-compatible') return 'openai';
+    }
+
+    // Native transports of the remaining provider keys; anything unrecognized
+    // keeps the historical gemini namespace (defensive, never orphans keys).
+    if (
+        mainProvider === 'openai' ||
+        mainProvider === 'xai' ||
+        mainProvider === 'deepseek' ||
+        mainProvider === 'custom'
+    ) {
+        return 'openai';
+    }
+    return 'gemini';
+}
+
 function generateCacheKeys(config, sourceFileId, targetLang) {
     // Prompt-semantic namespace prevents output produced under an earlier
     // Basic prompt (Malay-hardcoded, then editorial-craft, then the
@@ -43,9 +91,7 @@ function generateCacheKeys(config, sourceFileId, targetLang) {
     // Default 'gemini' preserves the runtime default and keeps legacy
     // configs reading the same namespace as trinityChannel:'gemini'.
     // User and ASS/SRT scoping remain unchanged below.
-    const trinityChannel = String(config?.trinityChannel || 'gemini')
-        .toLowerCase()
-        .replace(/[^a-z0-9-]/g, '');
+    const trinityChannel = resolveTrinityChannelForConfig(config);
     const sourceKey = `${sourceFileId}_${targetLang}_trinity-basic-universal-v4_ch-${trinityChannel}`;
     // When ASS passthrough is enabled, append format discriminator to prevent
     // ASS-format cached translations from being served to users expecting SRT
@@ -110,5 +156,6 @@ function generateCacheKeys(config, sourceFileId, targetLang) {
 }
 
 module.exports = {
-    generateCacheKeys
+    generateCacheKeys,
+    resolveTrinityChannelForConfig
 };

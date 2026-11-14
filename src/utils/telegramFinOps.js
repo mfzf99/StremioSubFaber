@@ -38,6 +38,52 @@ const GEMINI_PRICING = {
     'gemma-4': { input: 0, output: 0, cache: 0 }
 };
 
+// ── [A2 FIX 2026-11-14] Non-Gemini official provider pricing (USD / 1M) ──────
+// Ground truth: plans/provider-pricing-ground-truth-2026.md (official pages,
+// collected 2026-11-14). Semantics per Owner decision: Retail Value estimated
+// at the model's OFFICIAL provider rates, door-agnostic (same principle as
+// CrazyRouter using official Gemini rates). DeepSeek = peak rates (conservative
+// ceiling; off-peak is half). Unlisted models (rootsys -mod variants, hy3,
+// ...) return null → the receipt renders an explicit "unpriced model" N/A
+// instead of silently falling back to Gemini flash-lite rates.
+const PROVIDER_PRICING = {
+    // DeepSeek (api-docs.deepseek.com) — peak, cache-hit under `cache`
+    'deepseek-v4-pro': { input: 1.32, output: 3.96, cache: 0.044 },
+    'deepseek-flash': { input: 0.3, output: 1.2, cache: 0.006 },
+    'deepseek-v4.1-flash': { input: 0.3, output: 1.2, cache: 0.006 },
+    // Moonshot / Kimi (platform.kimi.ai) — cache-read under `cache`
+    'kimi-k3': { input: 2.0, output: 10.0, cache: 0.2 },
+    'kimi-k3.1-pro': { input: 3.0, output: 15.0, cache: 0.3 },
+    'kimi-k3.1-pro-highspeed': { input: 4.0, output: 20.0, cache: 0.4 },
+    'kimi-k2.6': { input: 0.95, output: 4.0, cache: 0.095 },
+    'kimi-k2.7-code': { input: 0.95, output: 4.0, cache: 0.095 },
+    // Z.ai / GLM (z.ai/model-api)
+    'glm-5.3': { input: 1.4, output: 4.4, cache: 0.26 },
+    'glm-5.3-flashx': { input: 0.37, output: 1.25, cache: 0.075 },
+    'glm-5.3-flash': { input: 0.37, output: 1.25, cache: 0.075 },
+    // OpenAI (developers.openai.com) — standard speed, short context
+    'gpt-6-astra': { input: 10.0, output: 50.0, cache: 1.0 },
+    'gpt-6.1-sol': { input: 2.0, output: 10.0, cache: 0.1 },
+    'gpt-6.1-terra': { input: 1.0, output: 5.0, cache: 0.05 },
+    'gpt-6-luna': { input: 0.1, output: 0.5, cache: 0.01 },
+    'gpt-6-sol': { input: 2.0, output: 10.0, cache: 0.2 },
+    'gpt-5.6-sol': { input: 4.0, output: 20.0, cache: 0.4 },
+    'gpt-5.6-terra': { input: 2.0, output: 12.0, cache: 0.2 },
+    'gpt-5.6-luna': { input: 0.2, output: 1.2, cache: 0.02 },
+    'gpt-5.5': { input: 5.0, output: 30.0, cache: 0.5 },
+    'gpt-5.4': { input: 2.5, output: 15.0, cache: 0.25 },
+    'gpt-5.4-mini': { input: 0.75, output: 4.5, cache: 0.075 },
+    // Anthropic (platform.claude.com) — cache-read under `cache`
+    'claude-fable-5.2': { input: 8.0, output: 40.0, cache: 0.2 },
+    'claude-opus-5.5': { input: 4.0, output: 20.0, cache: 0.2 },
+    'claude-opus-5': { input: 5.0, output: 25.0, cache: 0.5 },
+    'claude-sonnet-5.5': { input: 2.0, output: 10.0, cache: 0.1 },
+    'claude-sonnet-5': { input: 2.0, output: 10.0, cache: 0.2 },
+    'claude-sonnet-4.6': { input: 3.0, output: 15.0, cache: 0.3 },
+    'claude-haiku-5.5': { input: 0.1, output: 0.5, cache: 0.01 },
+    'claude-haiku-4.5': { input: 1.0, output: 5.0, cache: 0.1 }
+};
+
 const DEFAULT_PRICING_KEY = '3.5-flash-lite';
 const TIER2_PROMPT_THRESHOLD = 200000; // tokens — long-context pricing kicks in
 const CRAZYROUTER_DISCOUNT = 0.55; // pay 55% of retail via CrazyRouter proxy
@@ -60,6 +106,17 @@ const WALLET_TTL_MS = 5 * 60 * 1000; // 5 minutes
 function resolvePricing(usedModel, totalPromptSize) {
     const model = String(usedModel || '').toLowerCase();
 
+    // [A2 2026-11-14] Exact-name routing for non-Gemini provider models first
+    // (the gateway serves exact ids like `deepseek-v4-pro`; aliasing e.g.
+    // kimi-k3 → kimi-k3-1 happens server-side, so the REQUESTED name is the
+    // stable key). Unknown non-Gemini models → null (explicit "unpriced"
+    // receipt) — never a silent Gemini-rate fallback.
+    if (PROVIDER_PRICING[model]) {
+        const p = PROVIDER_PRICING[model];
+        return { input: p.input, output: p.output, cache: p.cache };
+    }
+
+    // Gemini family (historical substring routing, Tier-2 aware).
     // Order matters: check the most specific keys first.
     const checks = [
         ['3.8-flash', '3.8-flash'],
@@ -89,8 +146,15 @@ function resolvePricing(usedModel, totalPromptSize) {
         }
     }
 
-    const fallback = GEMINI_PRICING[DEFAULT_PRICING_KEY];
-    return { input: fallback.input, output: fallback.output, cache: fallback.cache };
+    // [A2 2026-11-14] Only models that are recognizably Gemini/Gemma keep the
+    // legacy flash-lite fallback (future Gemini names must stay priced);
+    // every other unknown model is honestly unpriced (N/A receipt) — never
+    // silently billed at Gemini rates.
+    if (/gemini|gemma/.test(model)) {
+        const fallback = GEMINI_PRICING[DEFAULT_PRICING_KEY];
+        return { input: fallback.input, output: fallback.output, cache: fallback.cache };
+    }
+    return null;
 }
 
 /**
@@ -261,21 +325,29 @@ async function buildCostSection({
     const totalTokens = totalPromptSize + outputTokens;
     const effectiveTokens = totalTokens - wastedTokens;
 
-    // 2. Resolve per-token pricing for this model (incl. Tier-2 long context)
-    const { input: rateInput, output: rateOutput, cache: rateCache } = resolvePricing(usedModel, totalPromptSize);
+    // 2. Resolve per-token pricing for this model (incl. Tier-2 long context).
+    // [A2 2026-11-14] Unpriced non-Gemini models resolve to null → render an
+    // explicit N/A receipt instead of invented dollars.
+    const rates = resolvePricing(usedModel, totalPromptSize);
+    const unpriced = rates === null;
 
     // 3. Live exchange rate (cached)
     const { rate: kadarTukaranMYR, indicator: rateIndicator } = await exchangeRateFetcher();
 
-    // 4. Cost math
-    const costInput = (inputTokens / 1000000) * rateInput;
-    const costCache = (cachedTokens / 1000000) * rateCache;
-    const costOutput = (outputTokens / 1000000) * rateOutput;
-    const retailUSD = costInput + costCache + costOutput;
-    const finalUSD = isCrazyRouter ? retailUSD * CRAZYROUTER_DISCOUNT : retailUSD;
-
-    const totalMYR = finalUSD * kadarTukaranMYR;
-    const retailMYR = retailUSD * kadarTukaranMYR;
+    // 4. Cost math (skipped for unpriced models)
+    let retailUSD = 0;
+    let finalUSD = 0;
+    let totalMYR = 0;
+    let retailMYR = 0;
+    if (!unpriced) {
+        const costInput = (inputTokens / 1000000) * rates.input;
+        const costCache = (cachedTokens / 1000000) * rates.cache;
+        const costOutput = (outputTokens / 1000000) * rates.output;
+        retailUSD = costInput + costCache + costOutput;
+        finalUSD = isCrazyRouter ? retailUSD * CRAZYROUTER_DISCOUNT : retailUSD;
+        totalMYR = finalUSD * kadarTukaranMYR;
+        retailMYR = retailUSD * kadarTukaranMYR;
+    }
 
     // 5. Wallet balance (cached; only for CrazyRouter)
     let walletBalanceUSD = null;
@@ -314,7 +386,13 @@ async function buildCostSection({
 
     let costSection = `\n💰 <b>API Cost Estimate (${cleanModelName}):</b>\n` + tokenBreakdown;
 
-    if (isCrazyRouter) {
+    if (unpriced) {
+        // [A2 2026-11-14] Honest N/A: token counts above are real; the model
+        // has no official rate on file (e.g. rootsys -mod variants), so no
+        // dollar figure is invented. finalUSD=null signals callers (cost-per-
+        // entry line renders $0-equivalent N/A) that no price exists.
+        costSection += `  └ <b>Retail Value:</b> N/A (unpriced model — no official rate on file)\n`;
+    } else if (isCrazyRouter) {
         costSection +=
             `  ├ <b>Retail Price:</b> $${retailUSD.toFixed(5)} (RM ${retailMYR.toFixed(4)})\n` +
             `  ├ <b>Discount:</b> 45% (CrazyRouter Proxy) 📉\n`;
@@ -329,7 +407,7 @@ async function buildCostSection({
         costSection += `  └ <b>Retail Value:</b> $${finalUSD.toFixed(2)} (RM ${totalMYR.toFixed(2)} | <i>${rateIndicator}</i>)\n`;
     }
 
-    return { costSection, finalUSD, retailUSD, walletBalanceUSD };
+    return { costSection, finalUSD: unpriced ? null : finalUSD, retailUSD, walletBalanceUSD };
 }
 
 /**

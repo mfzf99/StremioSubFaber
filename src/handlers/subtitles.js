@@ -3,7 +3,7 @@ const OpenSubtitlesV3Service = require('../services/opensubtitles-v3');
 const SubDLService = require('../services/subdl');
 const SubSourceService = require('../services/subsource');
 const TranslationEngine = require('../services/translationEngine');
-const { createTranslationProvider } = require('../services/translationProviderFactory');
+const { createTranslationProvider, resolveTrinityChannelForConfig } = require('../services/translationProviderFactory');
 const { resolveTranslationGeminiKeyConfig } = require('../services/geminiKeyResolver');
 const { AgentInspector } = require('../services/agentInspector');
 const { createSsrfSafeLookup } = require('../utils/ssrfProtection');
@@ -4858,6 +4858,17 @@ async function handleTranslation(sourceFileId, targetLanguage, config, options =
             } catch (err) {
                 log.warn(() => [`[Translation] Failed to load embedded source ${sourceFileId}:`, err.message]);
             }
+        }
+
+        // [A1 FIX 2026-11-14] Populate the trinity channel BEFORE cache-key
+        // generation so the `_ch-<door>` discriminator matches the door that
+        // will actually translate this file. Live defect: the factory resolved
+        // the channel but only TranslationEngine received it — every cache key
+        // defaulted to `_ch-gemini` (cross-door namespace poisoning; a
+        // deepseek/rootsys run was observed stored under ch-gemini).
+        // Explicit config.trinityChannel (tests/manual override) wins.
+        if (config && typeof config === 'object' && !config.trinityChannel) {
+            config.trinityChannel = resolveTrinityChannelForConfig(config);
         }
 
         // Generate cache keys using shared utility (single source of truth for cache key scoping)

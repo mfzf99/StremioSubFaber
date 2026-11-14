@@ -2,6 +2,25 @@
 
 All notable changes to this project will be documented in this file.
 
+## SubFaber v3.32.0 (2026-11-14) — Cross-Door Cache Channel Fix and Full-Door FinOps
+
+### 🔧 Fixed — Cache Keys Now Match the Door That Actually Translates (A1, critical)
+
+- The `_ch-<door>` discriminator in translation cache keys was dead in production: `generateCacheKeys` reads `config.trinityChannel`, but no runtime path ever populated that field — the provider factory resolved the real channel and handed it only to `TranslationEngine`, so every cache key defaulted to `_ch-gemini`, including custom/OpenAI-compatible and custom/Anthropic runs. Live evidence: a `deepseek-v4-pro` translation through the rootsys OpenAI-compatible door was stored under the `ch-gemini` namespace, poisoning the shared permanent cache across doors (the exact cross-door poisoning the F6 fix was built to prevent; its regression suite passed only because tests injected the field manually).
+- A new pure resolver `resolveTrinityChannelForConfig()` in `src/utils/cacheKeys.js` derives the real door from the config (explicit `config.trinityChannel` > the active custom provider's `door` field > the provider's native transport > the legacy `gemini` default, so existing Gemini-door permanent caches are never orphaned). The resolver is re-exported by the provider factory, `generateCacheKeys` derives the channel defensively on every call, and `handleTranslation` populates the field before cache-key generation. All call sites (radar, `hasCachedTranslation`, xEmbed) are covered by the same derivation.
+
+### ✨ Added — Real Token Accounting for Non-Gemini Doors (A2)
+
+- The OpenAI-compatible and Anthropic providers now record per-attempt usage into the shared FinOps ledger that the Telegram receipt drains; previously only the Gemini door recorded usage, so every custom-door run reported `±0 tokens / $0.00` and incident burned-token tracking stayed dark on those doors. A live wire probe against the rootsys gateway (recorded in `plans/provider-pricing-ground-truth-2026.md`) proved the gateway returns a usage superset — OpenAI, DeepSeek, and Anthropic field names merged — on every transport mode including plain SSE streams, so recording required zero transport changes: the stream parser reads the `usage` chunk that already arrives, and the non-stream path reads the response body. Mapping mirrors the Gemini door: cache-hit input is split out, reasoning tokens land on the Thought line (billed as output), and a missing usage block records nothing (fail-open, never fake zeros).
+- Official provider pricing tables (DeepSeek peak, Kimi/Moonshot, GLM/Z.ai, OpenAI, Anthropic — collected 2026-11-14 from each provider's official pricing page, ground truth documented in `plans/provider-pricing-ground-truth-2026.md`) extend the cost estimate beyond Gemini. Pricing resolves by exact model name, door-agnostic, as a Retail Value estimate at official rates (the same principle the CrazyRouter discount applies to official Gemini rates).
+- Unpriced models (gateway-only variants like `-mod`, `hy3-tencent`, or any unknown non-Gemini model) render an explicit `Retail Value: N/A (unpriced model)` receipt instead of silently falling back to Gemini flash-lite rates; recognizably Gemini/Gemma models keep the legacy default so future Gemini names stay priced.
+
+### ✅ Verification
+
+- New regression suite `src/utils/finops-channel-regression.test.js` (26 tests, red-first: 22 failures observed against the pre-fix code — exactly the A1 wiring gap and the A2 missing instrumentation/pricing set; four negative/legacy tests were green before and after). Coverage: channel resolution for every door shape, cache-key derivation per door with the exact historical `ch-gemini` namespace preserved, official rates for all five providers, the unpriced-null contract, unpriced/priced/thought-token receipt rendering, and usage recording on both transport paths of both providers including the DeepSeek superset mapping and the Anthropic `message_start`/`message_delta` merge.
+- Adjacent suites green: tri-door wire parity, agent-inspector, fallback-rewrap (105/105), and the full FinOps/cache-keys/trinity-params set (84/84).
+- Full tracked suite: 701 tests / 700 passed / 0 failed / 1 skipped (pre-existing live-Redis integration), exit 0. Gemini-door receipts (official key and CrazyRouter) are byte-identical in behaviour.
+
 ## SubFaber v3.31.2 (2026-11-14) — Tri-Door Wire Lane and Transport Contract Repairs
 
 ### 🔧 Fixed — Forensic Wire-Level Audit Repairs (K1/K2, H1, M1, M2)

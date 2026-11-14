@@ -863,6 +863,46 @@ class OpenAICompatibleProvider {
         return requestIssue && mentionsStructuredMode;
     }
 
+    /**
+     * [A2 FIX 2026-11-14] Record a usage payload into the shared FinOps
+     * ledger (global.geminiFinOps.streams) — the same ledger the Telegram
+     * receipt drains, so non-Gemini doors stop reporting ±0 tokens.
+     * Live wire ground truth (rootsys probe, plans/provider-pricing-ground-
+     * truth-2026.md): the gateway returns a field SUPERSET (OpenAI +
+     * DeepSeek + Anthropic names) on every mode, including plain SSE streams.
+     * Mapping (mirrors GeminiService semantics):
+     *   input   = prompt_tokens − cached tokens
+     *   cached  = prompt_cache_hit_tokens | cache_read_input_tokens | cached_tokens
+     *   thought = completion_thinking_tokens | reasoning_tokens detail
+     *   output  = completion_tokens − thought
+     * Missing/zero usage → no ledger entry (fail-open, never fake zeros).
+     * @param {object} usage - raw `usage` object from the response/chunk
+     * @param {string} streamId - unique id for this API attempt
+     */
+    recordUsageIntoFinOps(usage, streamId) {
+        if (!usage || typeof usage !== 'object' || !streamId) return;
+        const prompt = Number(usage.prompt_tokens) || 0;
+        const completion = Number(usage.completion_tokens) || 0;
+        if (prompt <= 0 && completion <= 0) return;
+        const cached =
+            Number(usage.prompt_cache_hit_tokens) ||
+            Number(usage.cache_read_input_tokens) ||
+            Number(usage.cached_tokens) ||
+            Number(usage.prompt_tokens_details?.cached_tokens) ||
+            0;
+        const thought =
+            Number(usage.completion_thinking_tokens) || Number(usage.completion_tokens_details?.reasoning_tokens) || 0;
+        if (!global.geminiFinOps) {
+            global.geminiFinOps = { streams: {} };
+        }
+        global.geminiFinOps.streams[streamId] = {
+            input: Math.max(0, prompt - cached),
+            cached,
+            thought,
+            output: Math.max(0, completion - thought)
+        };
+    }
+
     async translateSubtitle(subtitleContent, sourceLanguage, targetLanguage, customPrompt = null, requestOptions = {}) {
         // [PENYATUAN MUTLAK 2026-10-25 — Mandat Owner] Gate streaming
         // universalPayload MANSUH. Ejen yang memerlukan SSE (cth. Agent
@@ -900,6 +940,14 @@ class OpenAICompatibleProvider {
                     httpAgent: agents.httpAgent,
                     httpsAgent: agents.httpsAgent
                 });
+
+                // [A2 FIX 2026-11-14] Record usage into the shared FinOps
+                // ledger — the openai-compatible gateway returns `usage` on
+                // the response body for non-stream calls (live probe T1/T5).
+                this.recordUsageIntoFinOps(
+                    response.data?.usage,
+                    `oai_ns_${Date.now()}_${Math.random().toString(36).slice(2, 8)}`
+                );
 
                 let text;
                 if (isCfRun) {
@@ -1072,6 +1120,12 @@ class OpenAICompatibleProvider {
                     reject(err);
                 };
 
+                // [A2 FIX 2026-11-14] One ledger id per stream attempt; the
+                // final SSE chunk carries the cumulative usage object (live
+                // probe T2/T3: identical with and without stream_options), so
+                // the record is overwritten idempotently — never summed twice.
+                let finOpsStreamId = null;
+
                 const processPayload = (payloadStr) => {
                     if (!payloadStr || !payloadStr.trim()) return;
                     const cleaned = payloadStr.trim().startsWith('data:')
@@ -1084,6 +1138,13 @@ class OpenAICompatibleProvider {
                         data = JSON.parse(cleaned);
                     } catch (_) {
                         return;
+                    }
+
+                    if (data.usage) {
+                        if (!finOpsStreamId) {
+                            finOpsStreamId = `oai_st_${Date.now()}_${Math.random().toString(36).slice(2, 8)}`;
+                        }
+                        this.recordUsageIntoFinOps(data.usage, finOpsStreamId);
                     }
 
                     if (isCfRun && (data.finished || data.done === true)) {
