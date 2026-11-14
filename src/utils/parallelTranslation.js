@@ -37,7 +37,15 @@ async function executeParallelTranslation(engine, entries, targetLanguage, custo
     // Storage for results keyed by batch index (0-based)
     const batchResults = new Array(batches.length);
     // Stats: set batch count on engine for history tracking
-    if (engine.translationStats) engine.translationStats.batchCount = batches.length;
+    // [M1-FIX 2026-11-14] entryCount muktamad fail (bukan per-batch, bukan
+    // zero): orkestrator selari kini merekod jumlah entri sekali — dahulu
+    // entryCount kekal 0 kerana hanya laluan berurutan translateSubtitle()
+    // yang menulisnya. batchCount kekal tulen dari sini (worker tidak
+    // menimpanya: klon stats bermula kosong).
+    if (engine.translationStats) {
+        engine.translationStats.batchCount = batches.length;
+        engine.translationStats.entryCount = entries.length;
+    }
     const translatedEntries = [];
     let completedSRT = '';
     let completedEntryCount = 0;

@@ -261,11 +261,24 @@ class TranslationEngine {
     }
     constructor(geminiService, model = null, advancedSettings = {}, options = {}) {
         this.gemini = geminiService?.primary || geminiService;
-        this.fallbackProvider = geminiService?.fallback || null;
+        // [M2-FIX 2026-11-14] Dua laluan wayar fallback kini keduanya sah:
+        // (1) pembungkus factory { primary, fallback } sebagai geminiService,
+        // (2) options.fallbackProvider terus (sebelum ini diabaikan senyap —
+        //     pemanggil yang wayar begitu kehilangan fallback tanpa isyarat,
+        //     red probe .tmp/m2-red-probe.test.js M2-A/M2-B).
+        this.fallbackProvider = geminiService?.fallback || options.fallbackProvider || null;
         this.providerName = options.providerName || 'gemini';
         this.fallbackProviderName = options.fallbackProviderName || (this.fallbackProvider ? 'fallback' : '');
         if (!this.fallbackProviderName && this.fallbackProvider?.providerName) {
             this.fallbackProviderName = this.fallbackProvider.providerName;
+        }
+        // [M2-FIX 2026-11-14] fallbackChannel mesti cermin pintu fallback SEBENAR
+        // pada translateBatch() (:1584). Pembekal telanjang membawa trinityChannel
+        // sendiri; pembungkus cascade (fallback nested) tidak — unwrap sekali di
+        // sini supaya re-wrap prompt sentiasa menggunakan kontrak pintu fallback,
+        // bukan pintu primer (anchor Gemini bocor ke Anthropic/OpenAI).
+        if (!this.fallbackProvider?.trinityChannel && this.fallbackProvider?.fallback?.trinityChannel) {
+            this.fallbackProvider.trinityChannel = this.fallbackProvider.fallback.trinityChannel;
         }
         this.model = model;
         // [TRINITY FASA 3 — Mandat Owner 2026-10-19] Static dispatch: builder
@@ -2583,8 +2596,12 @@ class TranslationEngine {
                         this._closeIncident('MECHANICAL_TRANSLATION_RETRY', batchIndex + 1, { outcome: 'failed' });
                     }
                 } else {
+                    // [M3-FIX 2026-11-14] Taksonomi tertutup: kegagalan struktur
+                    // retry dikodkan 'failed_structural' (sebelum ini string
+                    // gabungan 'failed — structural mismatch' melanggar
+                    // agregasi telemetri — red probe .tmp/m3-red-probe.test.js).
                     this._closeIncident('MECHANICAL_TRANSLATION_RETRY', batchIndex + 1, {
-                        outcome: 'failed — structural mismatch'
+                        outcome: 'failed_structural'
                     });
                 }
             } catch (retryErr) {
