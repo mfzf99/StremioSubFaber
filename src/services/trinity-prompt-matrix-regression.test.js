@@ -29,16 +29,11 @@ const {
 const { getLanguagePack } = require('./prompts/languagePacks');
 
 // ── Fixtures: interpolasi core seperti runtime produksi ──
+// [TOTAL-PURGE v3.36.0] Preflight neutral-global — TIADA interpolasi pack.
 
 function interpolatePreflightSystem() {
     const core = getTrinityCore('preflight');
-    const pack = getLanguagePack('Malay');
-    const tgt = 'Malay';
-    return core.PREFLIGHT_STATIC_TEMPLATE.replaceAll('${src}', 'English')
-        .replaceAll('${tgt}', tgt)
-        .replaceAll('${honorificMatrix}', pack.honorificMatrix.replaceAll('${tgt}', tgt))
-        .replaceAll('${canonicalAddressMatrix}', pack.canonicalAddressMatrix.replaceAll('${tgt}', tgt))
-        .replaceAll('${creditsExample}', pack.creditsExample.replaceAll('${tgt}', tgt));
+    return core.PREFLIGHT_STATIC_TEMPLATE.replaceAll('${src}', 'English').replaceAll('${tgt}', 'Malay');
 }
 
 function interpolateTranslationSystem() {
@@ -139,7 +134,8 @@ test('[MATRIX translation×gemini] prefill continuation anchor EKSKLUSIF', () =>
     assert.equal(out.channel, 'gemini');
     assert.ok(out.userPrompt.endsWith('<answer>\n<s id="11">'), 'anchor di HUJUNG user content');
     assert.equal(out.prefill, '<answer>\n<s id="11">', 'medan prefill eksplisit');
-    assert.ok(out.systemPrompt.includes('ANTI-MERGE'), 'rules parity dalam system');
+    // [TOTAL-PURGE v3.36.0] Templat pendek Owner — kontrak parity baharu.
+    assert.ok(out.systemPrompt.includes('STRICT 1:1 SLOT PARITY'), 'rules parity dalam system');
     assert.ok(!out.systemPrompt.includes('<s id="11">'), 'system bebas data batch');
 });
 
@@ -214,13 +210,14 @@ const CANONICAL_FRAGMENTS = {
         '4-pillar pre-flight context',
         'lines 1-5'
     ],
+    // [TOTAL-PURGE v3.36.0] Templat pendek Owner — frasa kanonik baharu.
     translation: [
-        'ANTI-MERGE',
-        'ANTI-SHIFT',
-        'PRESERVE markup',
-        'ANTI-DROP',
-        'ANTI-UNTRANSLATED',
-        'Return ONLY the <answer> block'
+        'STRICT 1:1 SLOT PARITY',
+        'SPLIT SENTENCES',
+        'PRESERVE MARKUP & SDH',
+        'ISOLATION',
+        'Anti-calque',
+        'Output ONLY the <answer> block'
     ],
     inspector: [
         'MERGE: Two source lines merged',
@@ -248,20 +245,21 @@ for (const agent of ['preflight', 'translation', 'inspector']) {
 
 // ── 3. Harmony Translation↔Inspector (anti-drift antara agen) ──
 
-test('[HARMONY] label jenayah Inspector memetakan 1:1 kepada rules parity Translation', () => {
+test('[HARMONY] kontrak templat pendek memetakan 1:1 kepada jenayah Inspector', () => {
     const translationSystem = interpolateTranslationSystem();
     const inspectorSystem = interpolateInspectorSystem();
-    // ANTI-X ↔ X berpasangan (HARMONY-FIX 2026-09-29):
+    // [TOTAL-PURGE v3.36.0] Templat pendek Owner ↔ taksonomi Inspector:
+    // setiap peraturan 1:1 terpakar kepada jenayah yang diauditnya.
     const pairs = [
-        ['ANTI-MERGE', 'MERGE'],
-        ['ANTI-SHIFT', 'SHIFT'],
-        ['ANTI-PHANTOM', 'PHANTOM'],
-        ['ANTI-DROP', 'DROP'],
-        ['ANTI-UNTRANSLATED', 'UNTRANSLATED']
+        ['STRICT 1:1 SLOT PARITY', 'MERGE:'],
+        ['SPLIT SENTENCES', 'SHIFT:'],
+        ['PRESERVE MARKUP & SDH', 'PHANTOM:'],
+        ['Keep lines punchy and concise', 'DROP:'],
+        ['Anti-calque', 'UNTRANSLATED:']
     ];
     for (const [rule, crime] of pairs) {
-        assert.ok(translationSystem.includes(rule), `Translation rule ${rule} hadir`);
-        assert.ok(inspectorSystem.includes(`${crime}:`), `Inspector crime ${crime} hadir`);
+        assert.ok(translationSystem.includes(rule), `Translation rule "${rule}" hadir`);
+        assert.ok(inspectorSystem.includes(crime), `Inspector crime ${crime} hadir`);
     }
 });
 
@@ -273,13 +271,13 @@ test('[FINALE preflight] direct_address example is source-language neutral', () 
     assert.ok(!prompt.includes('an English line that addresses them as'));
 });
 
-test('[FINALE translation] reading-speed guardrail and adjacent-slot SVO↔SOV reordering are explicit', () => {
+test('[FINALE translation] reading-speed guardrail and cross-slot flow are explicit (Owner short template)', () => {
     const prompt = interpolateTranslationSystem();
-    assert.ok(prompt.includes('built for on-screen reading speed'));
-    assert.ok(prompt.includes('without losing core meaning or emotional punch'));
-    assert.ok(prompt.includes('Keep every slot strictly populated'));
-    assert.ok(prompt.includes('When a single sentence spans across adjacent slots'));
-    assert.ok(prompt.includes('reordering clauses across the split slots only when required by Malay word order'));
+    assert.ok(prompt.includes('Keep lines punchy and concise for subtitle reading speed'));
+    assert.ok(prompt.includes('translate the complete thought first'));
+    assert.ok(prompt.includes('flow the meaning naturally across those exact slots'));
+    assert.ok(prompt.includes('Never repeat words or dump the whole sentence into the first slot'));
+    assert.ok(prompt.includes('never mirror'));
     assert.ok(!prompt.includes('Translate only the fragment belonging to each slot'));
 });
 // Nota: pin di atas dikekalkan verbatim — templat tunggal membawa semula

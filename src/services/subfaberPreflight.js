@@ -41,8 +41,8 @@
 
 const log = require('../utils/logger');
 // [UNIVERSAL-FIX] Target-conditional prompt composition — pack di-resolve
-// mengikut bahasa sasaran (Malay → malay.js; lain → generic.js).
-const { getLanguagePack } = require('./prompts/languagePacks');
+// [TOTAL-PURGE v3.36.0] getLanguagePack DIBUANG — Preflight neutral-global
+// (pack few-shot ialah milik Agent Translation sahaja).
 // [FASA H 2026-10-07] Sempadan statik/dinamik — sama seperti Agent Translation
 // (PROMPT REBUILD v2). Bahagian STATIK (Role → Task + nota format input +
 // skema output + FINAL CHECK) dibawa sebagai saluran system; input DINAMIK
@@ -123,8 +123,8 @@ function sampleEntriesForPreflight(entries) {
  *     contoh kredit rasmi BM) — IDENTIK dengan tingkah laku lama (tiada
  *     regresi kualiti).
  *   - Bukan-Malay (vi/ja/es/... 432 lagi) → generic.js (peraturan neutral).
- * SIFAR teks khusus-Malay di-hardcode dalam fail ini — getLanguagePack()
- * satu-satunya punca.
+ * [TOTAL-PURGE v3.36.0] Preflight TIDAK lagi memakan language pack —
+ * templat neutral-global; few-shot pack ialah milik Agent Translation.
  *
  * @param {string} rawText - Teks dialog mentah (tanpa timecode)
  * @param {string} targetLanguage - Bahasa sasaran (untuk terjemahan istilah)
@@ -148,11 +148,9 @@ const { resolveTrinityPrompt } = require('./prompts/trinity');
 function buildPreflightPayload(rawText, targetLanguage, sourceLanguage, channel = 'gemini') {
     const src = sourceLanguage || 'the source language';
     const tgt = targetLanguage || 'the target language';
-    // [UNIVERSAL-FIX] {{PLACEHOLDER}} injection: pack mengikut bahasa sasaran.
-    const pack = getLanguagePack(targetLanguage);
-    const honorificMatrix = pack.honorificMatrix.replaceAll('${tgt}', tgt);
-    const canonicalAddressMatrix = pack.canonicalAddressMatrix.replaceAll('${tgt}', tgt);
-    const creditsExample = pack.creditsExample.replaceAll('${tgt}', tgt);
+    // [TOTAL-PURGE v3.36.0 — Mandat Owner] Prompt Preflight adalah neutral-global:
+    // TIDAK lagi memakan language pack (honorificMatrix/canonicalAddressMatrix/
+    // creditsExample DIBUANG). Few-shot pack ialah milik Agent Translation sahaja.
     // [PREFLIGHT-SLIM 2026-09-29] Ground-truth curl (kimi-k3, SRT 759 baris)
     // membuktikan medan 'pronoun_register' + 'direct_address' (SOCIOLINGUISTIC
     // v2) mencetuskan deliberation subjektif meleret: kimi-k3 membakar ~80%
@@ -164,11 +162,7 @@ function buildPreflightPayload(rawText, targetLanguage, sourceLanguage, channel 
     // (43-44 terms, 14-15 characters, canonical_address Puan/Encik/Cik terkunci
     // 9/14 setiap run). canonical_address KEKAL (gelaran = FAKTA); register kata
     // ganti kini diputuskan Agent Translation dari konteks chunk (bukan lock global goyah).
-    const staticPart = PREFLIGHT_STATIC_TEMPLATE.replaceAll('${src}', src)
-        .replaceAll('${tgt}', tgt)
-        .replaceAll('${honorificMatrix}', honorificMatrix)
-        .replaceAll('${canonicalAddressMatrix}', canonicalAddressMatrix)
-        .replaceAll('${creditsExample}', creditsExample);
+    const staticPart = PREFLIGHT_STATIC_TEMPLATE.replaceAll('${src}', src).replaceAll('${tgt}', tgt);
     // [TRINITY FASA 3] Pembungkusan channel-native: builder statik menguatkuasakan
     // kontrak pintu (gemini: split system/user; openai: json_schema strict dalam
     // responseFormat; anthropic: data-first + tag XML + sifar prefill). Hasil
@@ -401,13 +395,12 @@ function parsePreflightResponse(responseText) {
  * @param {{theme:string, terms:Array, characters:Array, credits_and_titles:Array}} preflightContext - Hasil Fasa 0
  * @returns {string} Blok teks "Content Summary + Technical Glossary + Character Hierarchy + Opening Credits / Titles"
  */
+// [TOTAL-PURGE v3.36.0] NOT-LOCKED guidance neutral-global statik — pack
+// bahasa tidak lagi terlibat pada mana-mana laluan Preflight.
+const NOT_LOCKED_GUIDANCE = 'address not locked — decide from the dialogue context';
+
 function formatPreflightForPrompt(preflightContext, targetLanguage) {
     if (!preflightContext || !preflightContext.theme) return '';
-    // [UNIVERSAL-FIX] NOT-LOCKED guidance mengikut pack bahasa sasaran.
-    // Lalai 'Malay' mengekalkan tingkah laku lama (matriks BM) bagi pemanggil
-    // warisan yang tidak menghantar targetLanguage; pemanggil enjin menghantar
-    // bahasa sasaran sebenar supaya bukan-Malay dapat panduan neutral.
-    const notLockedPack = getLanguagePack(targetLanguage || 'Malay');
     let block = `### Content Summary\n${preflightContext.theme}`;
 
     // TIANG 2: Technical Glossary
@@ -448,7 +441,7 @@ function formatPreflightForPrompt(preflightContext, targetLanguage) {
                     (legacyAddress !== undefined && legacyAddress !== null && String(legacyAddress).trim() !== '');
                 const address = hasAddress
                     ? pickField(c, 'canonical_address', 'canonicalAddress') || name
-                    : notLockedPack.notLockedGuidance; // [UNIVERSAL-FIX] pack-driven (Malay / generic)
+                    : NOT_LOCKED_GUIDANCE;
                 const role = pickField(c, 'role');
                 return `- ${name} → ${address}${role ? ` (${role})` : ''}`;
             })

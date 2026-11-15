@@ -1,24 +1,23 @@
-// Ujian regresi B1 — hijau selepas fix: crash worker mod selari pada gate
-// mekanikal & rekod jenayah (v3.31.0). Dahulu MERAH: stats worker zero-kan
-// tanpa incidents/crimesDetectedByType/mechanicalRetries menghidupkan
-// TypeError pada _logIncident/_recordCrime batch worker >= 1.
+// Ujian regresi B1 — pasca-TOTAL-PURGE v3.36.0: lapisan mekanikal MONKEY
+// dipadam (gate/insiden MECHANICAL_TRANSLATION_RETRY/mechanicalRetries),
+// tetapi stats worker dari kilang enjin MESTI kekal menyokong rekod jenayah
+// (crimesDetectedByType) dan insiden (incidents) tanpa TypeError pada batch
+// worker >= 1 — laluan Agent Inspector semantik sahaja yang tinggal.
 const { test } = require('node:test');
 const assert = require('node:assert');
 const TranslationEngine = require('../services/translationEngine');
 const { executeParallelTranslation } = require('./parallelTranslation');
 
 // Provider yang memulangkan jawapan 1:1 berdasarkan ID sebenar dalam input:
-// baris pertama setiap batch sengaja bocor skrip Jepun (SCRIPT_LEAK keras ke
-// sasaran Rumi) supaya gate mekanikal menyala pada SETIAP batch — termasuk
-// worker — dan retry juga bocor (insiden failed, telemetri penuh tercetus).
-function makeLeakyProvider() {
+// baris pertama setiap batch membawa kandungan diterjemah biasa (tiada gate
+// mekanikal lagi selepas purge; parity struktur 1:1 dipelihara supaya tiada
+// laluan MISMATCH_RETRY menyala).
+function makeCleanProvider() {
     return {
         translateSubtitle: async (input) => {
             const matches = [...String(input).matchAll(/<s id="(\d+)">([^<]*)<\/s>/g)];
             if (matches.length === 0) return '';
-            const lines = matches.map(
-                (m, i) => `<s id="${m[1]}">${i === 0 ? 'これはテストです' : `Baris ${m[1]} ok`}</s>`
-            );
+            const lines = matches.map((m) => `<s id="${m[1]}">Baris ${m[1]} diterjemah</s>`);
             return `<answer>\n${lines.join('\n')}\n</answer>`;
         },
         estimateTokenCount: () => 10,
@@ -35,8 +34,8 @@ function makeParallelEngine(provider) {
     );
 }
 
-test('B1 parallel: worker batch ke-2 mencetus pengesah mekanikal tanpa TypeError', async () => {
-    const engine = makeParallelEngine(makeLeakyProvider());
+test('B1 parallel: worker batch ke-2 selesai tanpa TypeError (kilang stats tunggal)', async () => {
+    const engine = makeParallelEngine(makeCleanProvider());
     engine.batchSize = 2;
     engine.sourceLanguage = 'English';
 
@@ -63,7 +62,7 @@ test('B1 parallel: stats worker dari kilang menyokong rekod jenayah & insiden', 
     const workerEngine = Object.assign(Object.create(Object.getPrototypeOf(engine)), engine);
     workerEngine.translationStats = Object.getPrototypeOf(engine).constructor.createDefaultStats(workerEngine);
 
-    // Semua laluan yang dahulu TypeError pada stats lama kini berfungsi.
+    // Semua laluan semantik yang tinggal berfungsi tanpa TypeError.
     workerEngine._recordCrime('MERGE', 2);
     assert.equal(
         workerEngine.translationStats.crimesDetectedByType.MERGE,
@@ -71,18 +70,22 @@ test('B1 parallel: stats worker dari kilang menyokong rekod jenayah & insiden', 
         'worker crime recording must increment taxonomy'
     );
     workerEngine._logIncident({
-        type: 'MECHANICAL_TRANSLATION_RETRY',
+        type: 'AGENT_INSPECTOR_SEMANTIC_RETRY',
         batch: 2,
         recovery: 'x',
         outcome: 'in_progress'
     });
     assert.equal(workerEngine.translationStats.incidents.length, 1, 'worker incident recording must not throw');
-    workerEngine.translationStats.mechanicalRetries++;
-    assert.equal(workerEngine.translationStats.mechanicalRetries, 1, 'worker mechanical retry counter must be numeric');
+    // [TOTAL-PURGE v3.36.0] mechanicalRetries DIBUANG dari skema stats.
+    assert.equal(
+        workerEngine.translationStats.mechanicalRetries,
+        undefined,
+        'mechanicalRetries stat must be removed from the worker stats factory'
+    );
 });
 
-test('B1 parallel: stats worker digabung semula ke enjin induk (mechanicalRetries, crimes, incidents)', async () => {
-    const engine = makeParallelEngine(makeLeakyProvider());
+test('B1 parallel: stats worker digabung semula ke enjin induk (crimes, incidents)', async () => {
+    const engine = makeParallelEngine(makeCleanProvider());
     engine.batchSize = 2;
     engine.sourceLanguage = 'English';
 
@@ -95,12 +98,11 @@ test('B1 parallel: stats worker digabung semula ke enjin induk (mechanicalRetrie
     await executeParallelTranslation(engine, entries, 'Malay', null, null);
     assert.equal(
         engine.translationStats.mechanicalRetries,
-        2,
-        'both batches (original + worker) must merge mechanical retry counters back'
+        undefined,
+        'merged parent stats must not carry the removed mechanicalRetries field'
     );
-    assert.equal(
-        engine.translationStats.incidents.filter((i) => i.type === 'MECHANICAL_TRANSLATION_RETRY').length,
-        2,
-        'mechanical retry incidents from both batches must merge back'
+    assert.ok(
+        Array.isArray(engine.translationStats.incidents),
+        'incidents array must exist and merge cleanly across workers'
     );
 });

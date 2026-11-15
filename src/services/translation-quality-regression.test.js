@@ -4,7 +4,6 @@ const assert = require('node:assert/strict');
 process.env.ENTRY_CACHE_SIZE = '100';
 
 const TranslationEngine = require('./translationEngine');
-const { validateMechanicalBatch, getHardMechanicalFindings } = require('./utils/mechanicalValidator');
 const {
     buildCrimeCorrections,
     buildRetryDiagnosticBlock,
@@ -40,149 +39,14 @@ function makeEngine(provider, options = {}) {
     return engine;
 }
 
-test('Mechanical validator detects only the four objective retry defects', () => {
-    const source = [
-        entry(41, 'これはテストです'),
-        entry(42, '(John) Where are you going?'),
-        entry(43, '♪ This is singing ♪'),
-        entry(44, 'This sentence must be translated.'),
-        entry(45, 'Where are you?')
-    ];
-    const output = [
-        translated(0, 'Ini ialah テスト'),
-        translated(1, 'Ke mana awak pergi?'),
-        translated(2, 'Ini nyanyian'),
-        translated(3, 'This sentence must be translated.'),
-        translated(4, 'Ke mana awak?')
-    ];
+// [TOTAL-PURGE v3.36.0] Ujian validator mekanikal MONKEY dipadam bersama
+// lapisan tersebut — perlindungan pasca-purge: tiada panggilan retry mekanikal
+// (dipin dalam subfaber-monkey-total-purge-regression.test.js P2) dan laluan
+// semantik Inspector kekal dipin di bawah.
 
-    const findings = validateMechanicalBatch(source, output, 'Malay');
-    const hard = getHardMechanicalFindings(findings);
-    assert.deepEqual(
-        hard.map(({ type, ids }) => ({ type, ids })),
-        [
-            { type: 'SCRIPT_LEAK', ids: [41] },
-            { type: 'SPEAKER_LABEL_LOSS', ids: [42] },
-            { type: 'MUSIC_SYMBOL_LOSS', ids: [43] },
-            { type: 'VERBATIM_UNTRANSLATED', ids: [44] }
-        ]
-    );
-    assert.equal(
-        findings.some(({ type }) => type === 'PUNCTUATION_MISMATCH'),
-        false
-    );
-    assert.equal(
-        hard.some(({ ids }) => ids.includes(45)),
-        false
-    );
-});
-
-test('Mechanical validator avoids script, SDH, name, interjection, and punctuation false positives', () => {
-    const source = [
-        entry(1, 'مرحبا بالعالم'),
-        entry(2, 'これはテストです'),
-        entry(3, '[sighs]'),
-        entry(4, 'São Paulo'),
-        entry(5, 'Okay!'),
-        entry(6, 'Are you coming?'),
-        entry(7, '♪ Singing ♪')
-    ];
-    const malay = [
-        translated(0, 'Helo dunia'),
-        translated(1, 'Ini ujian'),
-        translated(2, '[mengeluh]'),
-        translated(3, 'SãoPaulo'),
-        translated(4, 'Okay!'),
-        translated(5, 'Awak datang.'),
-        translated(6, '♪ Menyanyi ♪')
-    ];
-    const findings = validateMechanicalBatch(source, malay, 'Malay');
-    const hard = getHardMechanicalFindings(findings);
-    assert.deepEqual(hard, []);
-    assert.deepEqual(
-        findings.filter(({ type }) => type === 'PUNCTUATION_MISMATCH').map(({ ids }) => ids),
-        [[6]]
-    );
-    assert.deepEqual(selectRetryFindings(findings), [], 'punctuation alone must never trigger retry');
-
-    const nonRumi = [translated(0, 'مرحبا بالعالم'), translated(1, 'これはテストです')];
-    assert.deepEqual(
-        getHardMechanicalFindings(
-            validateMechanicalBatch([entry(1, 'Hello world')], [{ index: 0, text: nonRumi[0].text }], 'Arabic')
-        ),
-        []
-    );
-    const japaneseOutput = [{ index: 0, text: nonRumi[1].text }];
-    assert.deepEqual(
-        getHardMechanicalFindings(validateMechanicalBatch([entry(1, 'Hello world')], japaneseOutput, 'Japanese')),
-        []
-    );
-});
-
-test('Speaker-label checks accept preserved labels and ignore lowercase sound cues', () => {
-    const source = [entry(8, '[MARY] Listen.'), entry(9, '(Dr. Reyes) Come here.'), entry(10, '(sighs)')];
-    const output = [
-        translated(0, '[MARY] Dengar.'),
-        translated(1, '(Dr. Reyes) Mari sini.'),
-        translated(2, '(mengeluh)')
-    ];
-    assert.deepEqual(getHardMechanicalFindings(validateMechanicalBatch(source, output, 'ms')), []);
-});
-
-test('RENDah #3: label penutur skrip CJK dikesan, bukan diabaikan sebagai SDH', () => {
-    // （りん）/（タカシ） — nama watak CJK dalam kurungan penuh tanpa huruf besar
-    // Rumi. Kehilangannya dalam terjemahan mesti dilaporkan sebagai
-    // SPEAKER_LABEL_LOSS, bukan diabaikan sebagai isyarat SDH lowercase.
-    const cjkSource = [entry(21, '（りん）　こんにちは'), entry(22, '（タカシ）　さようなら')];
-    const cjkMissingLabels = [translated(0, 'Hai'), translated(1, 'Selamat tinggal')];
-    const hardMissing = getHardMechanicalFindings(validateMechanicalBatch(cjkSource, cjkMissingLabels, 'Malay'));
-    assert.equal(hardMissing.length, 2, 'both lost CJK character-name labels must be reported');
-    assert.ok(
-        hardMissing.every((finding) => finding.type === 'SPEAKER_LABEL_LOSS'),
-        'CJK character-name labels are speaker labels, not SDH cues'
-    );
-
-    // Label yang dipelihara tidak boleh menjadi false positive pada sasaran
-    // bukan-Rumi (label CJK pada sasaran Rumi memang sah dicatat SCRIPT_LEAK —
-    // itu gelagat validator yang betul, bukan false positive).
-    const cjkPreserved = [translated(0, '（りん） こんにちは'), translated(1, '（タカシ） さようなら')];
-    const preservedFindings = getHardMechanicalFindings(validateMechanicalBatch(cjkSource, cjkPreserved, 'Japanese'));
-    assert.ok(
-        preservedFindings.every((finding) => finding.type !== 'SPEAKER_LABEL_LOSS'),
-        'preserved CJK labels must not raise speaker-label findings on non-Rumi targets'
-    );
-
-    // Kawalan negatif: isyarat SDH lowercase Rumi kekal diabaikan.
-    const sdhSource = [entry(23, '(sighs) loudly')];
-    assert.deepEqual(
-        getHardMechanicalFindings(validateMechanicalBatch(sdhSource, [translated(0, '(mengeluh) kuat')], 'Malay')),
-        [],
-        'lowercase Rumi SDH cues stay ignored'
-    );
-});
-
-test('Script leakage still retries validly into Rumi targets without misclassifying non-Rumi output', () => {
-    assert.equal(
-        getHardMechanicalFindings(
-            validateMechanicalBatch([entry(1, 'これはテストです')], [translated(0, 'これはテストです')], 'Malay')
-        )[0]?.type,
-        'SCRIPT_LEAK'
-    );
-    assert.deepEqual(
-        getHardMechanicalFindings(
-            validateMechanicalBatch([entry(1, 'これはテストです')], [translated(0, 'これはテストです')], 'Japanese')
-        ),
-        []
-    );
-});
-
-test('Retry diagnostics map all mechanical and seven semantic findings to explicit per-ID repairs', () => {
+test('Retry diagnostics map the seven semantic findings to explicit per-ID repairs', () => {
     const findings = [
-        { type: 'SCRIPT_LEAK', ids: [1] },
-        { type: 'SPEAKER_LABEL_LOSS', ids: [2] },
-        { type: 'MUSIC_SYMBOL_LOSS', ids: [3] },
-        { type: 'VERBATIM_UNTRANSLATED', ids: [4] },
-        { type: 'MERGE', ids: [5, 6] },
+        { type: 'MERGE', ids: [5, 6] }, // 2 IDs → 2 correction lines
         { type: 'DROP', ids: [7] },
         { type: 'PHANTOM', ids: [8] },
         { type: 'SHIFT', ids: [9] },
@@ -191,7 +55,7 @@ test('Retry diagnostics map all mechanical and seven semantic findings to explic
         { type: 'UNTRANSLATED', ids: [12] }
     ];
     const corrections = buildCrimeCorrections(findings, { targetLanguage: 'Malay' });
-    assert.equal(corrections.length, 12, 'contextual UNTRANSLATED replaces the duplicate mechanical type');
+    assert.equal(corrections.length, 8);
     for (const finding of findings) {
         for (const id of finding.ids) {
             assert.ok(
@@ -200,13 +64,32 @@ test('Retry diagnostics map all mechanical and seven semantic findings to explic
             );
         }
     }
-    assert.ok(corrections.find((line) => line.includes('ID 4'))?.includes('Malay'));
+    assert.ok(corrections.find((line) => line.includes('ID 12'))?.includes('Malay'));
 });
 
-test('Piggyback punctuation appears only when another finding already fails the batch', () => {
-    const punctuation = [{ type: 'PUNCTUATION_MISMATCH', ids: [3], note: 'question mark differs' }];
-    assert.deepEqual(selectRetryFindings(punctuation), []);
-    assert.equal(selectRetryFindings(punctuation, [{ type: 'DROP', ids: [1] }]).length, 2);
+test('Punctuation and mechanical types are no longer part of retry diagnostics', () => {
+    // [TOTAL-PURGE v3.36.0] Taksonomi mekanikal DIBUANG — entri sedemikian
+    // tidak lagi menjana arahan pembetulan.
+    const corrections = buildCrimeCorrections(
+        [
+            { type: 'SCRIPT_LEAK', ids: [1] },
+            { type: 'SPEAKER_LABEL_LOSS', ids: [2] },
+            { type: 'MUSIC_SYMBOL_LOSS', ids: [3] },
+            { type: 'PUNCTUATION_MISMATCH', ids: [4] }
+        ],
+        { targetLanguage: 'Malay' }
+    );
+    assert.deepEqual(corrections, []);
+});
+
+test('selectRetryFindings is semantic-only and passes crimes through', () => {
+    const crimes = [
+        { type: 'DROP', ids: [1] },
+        { type: 'UNTRANSLATED', ids: [3] }
+    ];
+    assert.deepEqual(selectRetryFindings(crimes), crimes);
+    assert.deepEqual(selectRetryFindings([]), []);
+    assert.deepEqual(selectRetryFindings(undefined), []);
 });
 
 test('Retry block preserves verified text, escapes markup, and leaves Gemini anchor last', () => {
@@ -236,27 +119,20 @@ test('Verified-slot merge restores the approved original text after a full-batch
     ]);
 });
 
-test('Basic mode retries a mechanical defect without Inspector and keeps verified slots unchanged', async () => {
-    const prompts = [];
-    const contents = [];
-    const replies = [
-        response([
-            { id: 11, text: '(John) Ke mana awak pergi?' },
-            { id: 12, text: 'I am going home.' },
-            { id: 13, text: 'Apa yang berlaku!' }
-        ]),
-        response([
-            { id: 11, text: '(John) Model merosakkan slot lulus' },
-            { id: 12, text: 'Saya pulang.' },
-            { id: 13, text: 'Apa yang berlaku!' }
-        ])
-    ];
+test('Basic mode never runs the Inspector and keeps the single translation call', async () => {
+    let calls = 0;
     const engine = makeEngine(
         {
-            translateSubtitle: async (content, _source, _target, prompt) => {
-                contents.push(content);
-                prompts.push(prompt);
-                return replies[contents.length - 1];
+            translateSubtitle: async () => {
+                calls++;
+                // Jawapan lengkap 3/3 — tiada mismatch struktur, tiada
+                // retry apa-apa jenis; entri bermasalah (dahulu hard
+                // MONKEY) diterima seadanya tanpa panggilan kedua.
+                return response([
+                    { id: 11, text: '(John) Ke mana awak pergi?' },
+                    { id: 12, text: 'Saya pulang.' },
+                    { id: 13, text: '（りん） Apa yang berlaku!' }
+                ]);
             }
         },
         { trinityMode: 'basic', agentInspector: null }
@@ -268,40 +144,16 @@ test('Basic mode retries a mechanical defect without Inspector and keeps verifie
     ];
     const result = await engine.translateBatch(batch, 'Malay', null, 0, 1, null, { streaming: false });
 
-    assert.equal(contents.length, 2, 'Basic mechanical retry must run without Inspector');
-    assert.equal(contents[1], contents[0], 'retry must resend the complete original input batch');
-    assert.deepEqual(
-        result.map(({ text }) => text),
-        ['(John) Ke mana awak pergi?', 'Saya pulang.', 'Apa yang berlaku!']
-    );
-    assert.ok(prompts[1].includes('ID 12 (VERBATIM_UNTRANSLATED)'));
-    assert.ok(prompts[1].includes('VERIFIED SLOTS (keep verbatim)'));
-    assert.ok(prompts[1].trimEnd().endsWith('<answer>\n<s id="11">'));
+    assert.equal(calls, 1, 'complete structural output → exactly one call, no retry of any kind');
     assert.equal(engine.agentInspector, null);
     assert.equal(engine.translationStats.agentInspectorRetries, 0);
-    const incident = engine.translationStats.incidents.find(({ type }) => type === 'MECHANICAL_TRANSLATION_RETRY');
-    assert.equal(incident?.outcome, 'recovered');
-});
-
-test('Basic punctuation mismatch alone never spends a retry', async () => {
-    let calls = 0;
-    const engine = makeEngine(
-        {
-            translateSubtitle: async () => {
-                calls++;
-                return '<s id="1">Awak datang.</s>';
-            }
-        },
-        { trinityMode: 'basic', agentInspector: null }
+    assert.deepEqual(
+        result.map(({ text }) => text),
+        ['(John) Ke mana awak pergi?', 'Saya pulang.', '（りん） Apa yang berlaku!']
     );
-    const result = await engine.translateBatch([entry(1, 'Are you coming?')], 'Malay', null, 0, 1, null, {
-        streaming: false
-    });
-    assert.equal(calls, 1);
-    assert.equal(result[0].text, 'Awak datang.');
 });
 
-test('Pro retry combines Inspector and JS findings, then restores untouched verified slots', async () => {
+test('Pro retry combines Inspector crimes into per-ID corrections, then restores untouched verified slots', async () => {
     const prompts = [];
     let calls = 0;
     const engine = makeEngine(
@@ -330,39 +182,7 @@ test('Pro retry combines Inspector and JS findings, then restores untouched veri
     const batch = [entry(1, 'I am going home.'), entry(2, 'Second line'), entry(3, 'Third line')];
     const result = await engine.translateBatch(batch, 'Malay', null, 0, 1, null, { streaming: false });
     assert.equal(calls, 2, 'original + Inspector retry');
-    assert.ok(
-        !prompts[1].includes('ID 1 (VERBATIM_UNTRANSLATED)'),
-        'no mechanical finding for a valid translated slot'
-    );
     assert.ok(prompts[1].includes('ID 2 (MERGE)'), 'semantic retry carries the Inspector crime verbatim');
     assert.ok(prompts[1].includes('<s id="3">Tiga lulus</s>'));
     assert.equal(result[2].text, 'Tiga lulus');
-});
-
-test('An unresolved mechanical retry keeps the original aligned result', async () => {
-    let calls = 0;
-    const engine = makeEngine(
-        {
-            translateSubtitle: async () => {
-                calls++;
-                return '<s id="1">This sentence must be translated.</s>';
-            }
-        },
-        { trinityMode: 'basic', agentInspector: null }
-    );
-    const result = await engine.translateBatch(
-        [entry(1, 'This sentence must be translated.')],
-        'Malay',
-        null,
-        0,
-        1,
-        null,
-        { streaming: false }
-    );
-    assert.equal(calls, 2);
-    assert.equal(result[0].text, 'This sentence must be translated.');
-    assert.equal(
-        engine.translationStats.incidents.find(({ type }) => type === 'MECHANICAL_TRANSLATION_RETRY')?.outcome,
-        'failed'
-    );
 });

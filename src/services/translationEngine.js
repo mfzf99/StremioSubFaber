@@ -38,7 +38,9 @@ const { TRANSLATION_SYSTEM_TEMPLATE } = require('./prompts/trinity/translation/c
 // anthropic data-first) — sifar semakan if-channel dalam gelung terjemahan.
 // Wire-format kekal sentinel system+BOUNDARY+user (semua provider split sama).
 const { resolveTrinityPrompt } = require('./prompts/trinity');
-const { validateMechanicalBatch, getHardMechanicalFindings } = require('./utils/mechanicalValidator');
+// [TOTAL-PURGE v3.36.0 — Mandat Owner] Lapisan MONKEY dimusnahkan:
+// mechanicalValidator DIBUANG; retryDiagnostics kekal untuk laluan
+// SEMANTIK Agent Inspector (7-jenayah DUAL-AI) sahaja.
 const {
     buildRetryDiagnosticBlock,
     injectRetryDiagnostics,
@@ -241,7 +243,7 @@ function createDefaultStats(engine) {
         agentInspectorBatchesSkippedAfterOpen: 0, // batch tanpa perlindungan selepas open
         // [AGENT-INSPECTOR-OBS P3] Crime pattern tracking (observation-only)
         // [KNP-ALIGNMENT 2026-10-07] TERM ditambah ke taksonomi telemetry.
-        mechanicalRetries: 0, // retry tanpa LLM Inspector untuk kecacatan objektif
+        // [TOTAL-PURGE v3.36.0] mechanicalRetries DIBUANG (lapisan MONKEY).
         crimesDetectedByType: { MERGE: 0, DROP: 0, PHANTOM: 0, SHIFT: 0, UNTRANSLATED: 0, REGISTER: 0, TERM: 0 },
         crimesResolvedByRetry: 0, // hanya re-verdict LULUS yang disahkan (K3)
         crimePatternDetected: null, // → array string (K2)
@@ -317,7 +319,6 @@ class TranslationEngine {
         // neither path mutates the stored Trinity credentials.
         this.agentInspector = this.trinityMode === 'basic' ? null : options.agentInspector || null;
         this._agentInspectorSemanticRetries = new Set(); // batchIndex yang sudah guna retry semantik
-        this._mechanicalRetries = new Set(); // Satu retry penuh bagi kecacatan mekanikal setiap batch.
 
         // Mismatch retry: number of retries when AI returns wrong entry count (default: 1)
         const rawMismatchRetries = parseInt(this.advancedSettings.mismatchRetries);
@@ -1405,12 +1406,9 @@ class TranslationEngine {
      */
     _formatPreflightForChunk(preflight, previousContent, batch, subsequentContent, targetLanguage) {
         if (!preflight || !preflight.theme) return '';
-        // [UNIVERSAL-FIX] NOT-LOCKED guidance mengikut pack bahasa sasaran.
-        // Lalai 'Malay' mengekalkan tingkah laku lama (matriks BM) bagi pemanggil
-        // warisan 4-arg (ujian regresi); runtime menghantar bahasa sasaran
-        // sebenar melalui this.currentTargetLanguage supaya bukan-Malay dapat
-        // panduan neutral tanpa teks BM.
-        const chunkPack = getLanguagePack(targetLanguage || this.currentTargetLanguage || 'Malay');
+        // [TOTAL-PURGE v3.36.0] NOT-LOCKED guidance neutral-global statik —
+        // pack bahasa (few-shot) tidak lagi terlibat pada konteks Preflight.
+        const chunkNotLockedGuidance = 'address not locked — decide from the dialogue context';
 
         const resolvePillarText = (item, ...keys) => {
             if (!item || typeof item !== 'object') return '';
@@ -1452,9 +1450,9 @@ class TranslationEngine {
                     entry.canonical_address = resolvePillarText(c, 'canonical_address', 'canonicalAddress') || name;
                 } else {
                     // MANDAT SOSIOLINGUISTIK 2026-09-27: null → NOT LOCKED (bukan
-                    // nama mentah). [UNIVERSAL-FIX] guidance pack-driven.
+                    // nama mentah). [TOTAL-PURGE v3.36.0] guidance neutral statik.
                     entry.canonical_address = null;
-                    entry.not_locked = chunkPack.notLockedGuidance;
+                    entry.not_locked = chunkNotLockedGuidance;
                 }
                 const vocative = resolvePillarText(c, 'direct_address', 'directAddress');
                 if (vocative) entry.direct_address = vocative;
@@ -2501,127 +2499,10 @@ class TranslationEngine {
             translatedEntries.length === batch.length &&
             !translatedEntries.some((e) => typeof e?.text === 'string' && e.text.startsWith('[⚠️]'));
 
-        // Semakan JS berlaku pada hasil muktamad yang lengkap, sebelum Inspector.
-        // Kecacatan mekanikal tidak membazirkan audit LLM dan berfungsi dalam Basic.
-        let mechanicalFindings = [];
-        if (agentInspectorStructurallyClean) {
-            mechanicalFindings = validateMechanicalBatch(batch, translatedEntries, targetLanguage);
-        }
-        // [D1-FIX] Defensive close: sebarang insiden mekanikal batch ini yang
-        // masih `in_progress` (contoh: structural-mismatch pada batch parity
-        // ganjil) mencapai status muktamad SEBELUM peringkat Inspector —
-        // insiden tidak boleh tergantung selepas pemprosesan batch tamat.
-        this._closeIncident('MECHANICAL_TRANSLATION_RETRY', batchIndex + 1, {
-            outcome: getHardMechanicalFindings(mechanicalFindings).length === 0 ? 'recovered' : 'unrecovered'
-        });
-        const mechanicalHardFindings = getHardMechanicalFindings(mechanicalFindings);
-        const mechanicalAffectedIndices = new Set(
-            mechanicalFindings
-                .filter((finding) => finding.type !== 'PUNCTUATION_MISMATCH')
-                .map((finding) => finding.index)
-        );
-        if (mechanicalHardFindings.length > 0 && !this._mechanicalRetries.has(batchIndex)) {
-            this._mechanicalRetries.add(batchIndex);
-            const verifiedIndices = batch
-                .map((_, index) => index)
-                .filter((index) => !mechanicalAffectedIndices.has(index));
-            const diagnosticBlock = buildRetryDiagnosticBlock({
-                findings: mechanicalFindings,
-                verifiedEntries: verifiedIndices.map((index) => ({
-                    id: batch[index].id,
-                    text: translatedEntries[index].text
-                })),
-                targetLanguage
-            });
-            const retryPrompt = injectRetryDiagnostics(prompt, diagnosticBlock);
-            this.translationStats.mechanicalRetries++;
-            this._logIncident({
-                type: 'MECHANICAL_TRANSLATION_RETRY',
-                batch: batchIndex + 1,
-                recovery: 'full batch retry with per-ID mechanical corrections',
-                outcome: 'in_progress'
-            });
-            try {
-                const retryText = await this._translateCall(batchText, targetLanguage, retryPrompt, false, null);
-                const retryEntries = this.parseResponseForWorkflow(retryText, batch.length, batch);
-                const { aligned: retryAligned, missingIndices: retryMissing } = this.alignTranslatedEntries(
-                    retryEntries,
-                    batch
-                );
-                if (retryMissing.length === 0 && retryEntries.length === batch.length) {
-                    const retrySorted = Object.values(retryAligned).sort((a, b) => a.index - b.index);
-                    const retryValidation = validateMechanicalBatch(batch, retrySorted, targetLanguage);
-                    const retryHard = getHardMechanicalFindings(retryValidation);
-                    const originalHardIndices = new Set(mechanicalHardFindings.map((finding) => finding.index));
-                    const resolvedOriginalDefects = mechanicalHardFindings.every(
-                        (finding) => !retryHard.some((next) => next.index === finding.index)
-                    );
-                    // [MONKEY-H3 2026-11-15] Penerimaan hibrid: retry yang
-                    // membaiki kecacatan asal tetapi memperkenalkan kecacatan
-                    // keras BAHARU pada entri yang asalnya bersih tidak lagi
-                    // dibuang sepenuhnya. Entri dibaiki diambil dari retry;
-                    // entri rosak-baharu dikekalkan daripada hasil asal (yang
-                    // bersih untuk slot tersebut). Gerbang lama (sifar-defek
-                    // mutlak) membuang hasil yang secara ketat lebih baik —
-                    // punca insiden 'not recovered' palsu dan retry terbuang
-                    // (audit MONKEY × SubFaber 2026-11-15).
-                    const newlyDefectiveIndices = retryHard
-                        .map((finding) => finding.index)
-                        .filter((index) => !originalHardIndices.has(index));
-                    if (resolvedOriginalDefects) {
-                        if (newlyDefectiveIndices.length === 0) {
-                            translatedEntries = preserveVerifiedEntries(
-                                translatedEntries,
-                                retrySorted,
-                                verifiedIndices
-                            );
-                            mechanicalFindings = validateMechanicalBatch(batch, translatedEntries, targetLanguage);
-                            this._closeIncident('MECHANICAL_TRANSLATION_RETRY', batchIndex + 1, {
-                                outcome: 'recovered'
-                            });
-                        } else {
-                            const originalByIndex = new Map(translatedEntries.map((entry) => [entry.index, entry]));
-                            translatedEntries = preserveVerifiedEntries(
-                                translatedEntries,
-                                retrySorted,
-                                verifiedIndices
-                            );
-                            // Entri rosak-baharu mengekalkan teks ASAL (bersih
-                            // untuk slot tersebut); slot dibaiki mengambil teks
-                            // retry. preserveVerifiedEntries sudah memulihkan
-                            // slot verified; laluan ini hanya memulihkan
-                            // slot rosak-baharu.
-                            translatedEntries = translatedEntries.map((entry, index) =>
-                                newlyDefectiveIndices.includes(index)
-                                    ? { ...entry, text: originalByIndex.get(index)?.text ?? entry.text }
-                                    : entry
-                            );
-                            mechanicalFindings = validateMechanicalBatch(batch, translatedEntries, targetLanguage);
-                            this._closeIncident('MECHANICAL_TRANSLATION_RETRY', batchIndex + 1, {
-                                outcome: 'recovered_partial'
-                            });
-                        }
-                    } else {
-                        this._closeIncident('MECHANICAL_TRANSLATION_RETRY', batchIndex + 1, { outcome: 'failed' });
-                    }
-                } else {
-                    // [M3-FIX 2026-11-14] Taksonomi tertutup: kegagalan struktur
-                    // retry dikodkan 'failed_structural' (sebelum ini string
-                    // gabungan 'failed — structural mismatch' melanggar
-                    // agregasi telemetri — red probe .tmp/m3-red-probe.test.js).
-                    this._closeIncident('MECHANICAL_TRANSLATION_RETRY', batchIndex + 1, {
-                        outcome: 'failed_structural'
-                    });
-                }
-            } catch (retryErr) {
-                if (this.retryRotationEnabled && this.gemini?.apiKey) {
-                    this._recordKeyError(this.gemini.apiKey);
-                }
-                this._closeIncident('MECHANICAL_TRANSLATION_RETRY', batchIndex + 1, { outcome: 'failed' });
-                log.warn(() => `[TranslationEngine] Mechanical retry failed: ${retryErr.message}`);
-            }
-        }
-
+        // [TOTAL-PURGE v3.36.0 — Mandat Owner] Lapisan MONKEY dimusnahkan:
+        // gate mekanikal + insiden MECHANICAL_TRANSLATION_RETRY dipadam
+        // sepenuhnya. Struktur kuantiti kekal dilindungi MISMATCH_RETRY
+        // Pass 1/2/3; semantik Pro dilindungi Agent Inspector di bawah.
         // ── DUAL-AI GERBANG SEMANTIK (Mandat Pelaksanaan 2026-09-26) ──
         // Agent Inspector menyemak hasil MUKA-AKHIR (selepas semua pemulihan struktur
         // Pass 1/2/3 selesai) — mengesan MERGE/DROP/PHANTOM yang lolos daripada
@@ -2681,7 +2562,7 @@ class TranslationEngine {
                         () => `[AgentInspector] Semantic crime(s) detected in batch ${batchIndex + 1}:\n${crimeLines}`
                     );
 
-                    const retryFindings = selectRetryFindings(mechanicalFindings, verdict.crimes);
+                    const retryFindings = selectRetryFindings(verdict.crimes);
                     // [R#1-FIX] Pastikan setiap kemasukan UNTRANSLATED yang
                     // digabungkan oleh selectRetryFindings() terkira dalam
                     // crimesDetectedByType — verdict.crimes merekodkan sisi
@@ -2757,13 +2638,10 @@ class TranslationEngine {
                             // LULUS dan DISAHKAN (bukan failOpen — failOpen bermaksud
                             // TIDAK disemak; mengiranya sebagai resolved ialah telemetry
                             // yang tidak jujur). Pipeline behavior kekal tidak berubah.
-                            const retryMechanical = validateMechanicalBatch(batch, retrySorted, targetLanguage);
-                            if (
-                                reVerdict &&
-                                !reVerdict.failOpen &&
-                                reVerdict.valid !== false &&
-                                getHardMechanicalFindings(retryMechanical).length === 0
-                            ) {
+                            // [TOTAL-PURGE v3.36.0] Penerimaan retry semantik kini
+                            // berasaskan re-verdict Inspector sahaja (lapisan
+                            // mekanikal dipadamkan).
+                            if (reVerdict && !reVerdict.failOpen && reVerdict.valid !== false) {
                                 translatedEntries = preserveVerifiedEntries(
                                     translatedEntries,
                                     retrySorted,
@@ -2830,16 +2708,11 @@ class TranslationEngine {
         }
 
         // Cache individual entries.
-        // [C1-FIX] Kira kecacatan keras yang masih tidak selesai selepas semua
-        // kuota retry (mekanikal + semantik) dan langkau penulisan cache bagi
-        // entri tersebut — terjemahan bermasalah mesti tidak meracuni cache
-        // untuk permintaan akan datang. Entri lain yang lulus kekal dicache.
+        // [TOTAL-PURGE v3.36.0] Guard cache-skip C1 (lapisan mekanikal)
+        // dipadamkan; hasil akhir enjin kini hasil terbaik yang diterima
+        // (Pass 1/2/3 + Inspector) dan dicache sepenuhnya.
         if (CACHE_TRANSLATIONS) {
-            const unresolvedEntryIds = new Set(
-                getHardMechanicalFindings(mechanicalFindings).flatMap((f) => f.ids || [])
-            );
             for (let i = 0; i < batch.length && i < translatedEntries.length; i++) {
-                if (unresolvedEntryIds.has(batch[i].id)) continue;
                 this.cacheEntry(batch[i].text, targetLanguage, translatedEntries[i].text, prompt);
             }
         }

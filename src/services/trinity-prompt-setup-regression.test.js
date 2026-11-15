@@ -35,8 +35,13 @@ function makeEngine(options = {}) {
 
 test('[TRINITY-CORE-1] Canonical cores retain the approved prompt contracts without setup labels', () => {
     assert.ok(PREFLIGHT_STATIC_TEMPLATE.includes("'terms' are the distinctive vocabulary"));
-    assert.ok(PREFLIGHT_STATIC_TEMPLATE.includes('${honorificMatrix}'));
-    assert.ok(TRANSLATION_SYSTEM_TEMPLATE.includes('mentally translate the complete sentence first'));
+    // [TOTAL-PURGE v3.36.0] Templat terjemahan pendek Owner; Preflight
+    // neutral-global (sifar placeholder pack).
+    assert.ok(!PREFLIGHT_STATIC_TEMPLATE.includes('${honorificMatrix}'));
+    assert.ok(!PREFLIGHT_STATIC_TEMPLATE.includes('${canonicalAddressMatrix}'));
+    assert.ok(!PREFLIGHT_STATIC_TEMPLATE.includes('${creditsExample}'));
+    assert.ok(TRANSLATION_SYSTEM_TEMPLATE.includes('STRICT 1:1 SLOT PARITY'));
+    assert.ok(TRANSLATION_SYSTEM_TEMPLATE.includes('flow the meaning naturally across those exact slots'));
     // [SINGLE-TEMPLATE 2026-11-14] ${targetSpecificRules} is retired (Owner
     // D3); ${fewShot} stays and is now interpolated for BOTH modes.
     assert.ok(!TRANSLATION_SYSTEM_TEMPLATE.includes('${targetSpecificRules}'));
@@ -99,18 +104,14 @@ test('[TRINITY-CORE-4] ONE template serves Basic and Pro — Basic rejects an In
     assert.ok(!TRANSLATION_SYSTEM_TEMPLATE.includes('${targetSpecificRules}'), 'specificRules dipensiunkan (D3)');
     assert.ok(TRANSLATION_SYSTEM_TEMPLATE.includes('STRICT 1:1 SLOT PARITY'), 'R1 — ID pariti');
     assert.ok(
-        TRANSLATION_SYSTEM_TEMPLATE.includes('mentally translate the complete sentence first'),
-        'R2 — ayat dipecah'
+        TRANSLATION_SYSTEM_TEMPLATE.includes('translate the complete thought first'),
+        'R2 — ayat dipecah (templat pendek Owner)'
     );
+    assert.ok(TRANSLATION_SYSTEM_TEMPLATE.includes('Anti-calque'), 'R3 — dialog semula jadi');
+    assert.ok(TRANSLATION_SYSTEM_TEMPLATE.includes('PRESERVE MARKUP & SDH'), 'R4 — label penutur, SDH');
     assert.ok(
-        TRANSLATION_SYSTEM_TEMPLATE.includes('Convert meaning, not sounds or word order'),
-        'R3 — dialog semula jadi'
-    );
-    assert.ok(TRANSLATION_SYSTEM_TEMPLATE.includes('SDH & SYMBOLS'), 'R4 — label penutur, SDH');
-    assert.ok(
-        TRANSLATION_SYSTEM_TEMPLATE.includes('PRESERVE markup') &&
-            TRANSLATION_SYSTEM_TEMPLATE.includes('preserve the exact count of [br]'),
-        'R5 — pemeliharaan format'
+        TRANSLATION_SYSTEM_TEMPLATE.includes('Keep every [br], <i>...</i>, dialogue dash'),
+        'R5 — pemeliharaan format (exact counts per slot)'
     );
     assert.ok(
         TRANSLATION_SYSTEM_TEMPLATE.includes('ZERO translator notes in parentheses'),
@@ -201,38 +202,32 @@ test('[TRINITY-CORE-7] Runtime modules no longer expose the retired setup regist
 test('[TRINITY-CORE-8] v5 namespace discriminates mode + channel and retains user/format scoping', () => {
     // [P1 F6 FIX 2026-11-10] Channel discriminator (`_ch-gemini` default).
     // [STRUCTURE-V5 2026-11-14] Namespace advanced v4 → v5 with a MODE
-    // discriminator: the prompt was redesigned (8-section single template,
-    // pack few-shot both modes, <previous_translated>/<future_source>,
-    // verbatim <preflight_knp>), so v4 output must never be served under
-    // v5; and Pro (KNP-guided) output must never be served to Basic runs
-    // (cross-mode poisoning), hence trinity-{basic|pro}.
+    // discriminator; [TOTAL-PURGE v3.36.0] maju ke v6: templat pendek baharu
+    // + few-shot baharu — output v5/ke-bawah tidak diservis.
     const permanent = generateCacheKeys({}, 'tt123_en', 'ms');
-    assert.equal(permanent.baseKey, 'tt123_en_ms_trinity-basic-universal-v5_ch-gemini');
+    assert.equal(permanent.baseKey, 'tt123_en_ms_trinity-basic-universal-v6_ch-gemini');
     assert.equal(permanent.cacheKey, permanent.baseKey);
 
     const pro = generateCacheKeys({ trinityMode: 'pro' }, 'tt123_en', 'ms');
-    assert.equal(pro.baseKey, 'tt123_en_ms_trinity-pro-universal-v5_ch-gemini', 'Pro namespace must differ from Basic');
+    assert.equal(pro.baseKey, 'tt123_en_ms_trinity-pro-universal-v6_ch-gemini', 'Pro namespace must differ from Basic');
 
     const bypass = generateCacheKeys({ bypassCache: true, __configHash: 'config-hash' }, 'tt123_en', 'ms');
-    assert.equal(bypass.cacheKey, 'tt123_en_ms_trinity-basic-universal-v5_ch-gemini__u_config-hash');
+    assert.equal(bypass.cacheKey, 'tt123_en_ms_trinity-basic-universal-v6_ch-gemini__u_config-hash');
     assert.equal(bypass.runtimeKey, bypass.cacheKey);
 
     const ass = generateCacheKeys({ convertAssToVtt: false }, 'tt123_en', 'ms');
-    assert.equal(ass.baseKey, 'tt123_en_ms_trinity-basic-universal-v5_ch-gemini_ass');
+    assert.equal(ass.baseKey, 'tt123_en_ms_trinity-basic-universal-v6_ch-gemini_ass');
 });
 
-test('[TRINITY-CORE-9] The single template retains the owner-vetted evidence + split/entity contract', () => {
-    // [SINGLE-TEMPLATE 2026-11-14] Kontrak bukti (evidence discipline) Pro
-    // diserap ke dalam templat tunggal; SOURCE-EVIDENCE HIERARCHY berpindah
-    // ke blok <preflight_knp> user-lane (sifar rujukan preflight statik) —
-    // jadi pin untuk fragmen itu kini diuji pada OUTPUT enjin Pro melalui
-    // blok KNP, bukan pada teks statik.
+test('[TRINITY-CORE-9] The single template retains the owner-vetted entity + isolation contract', () => {
+    // [TOTAL-PURGE v3.36.0] Templat pendek Owner: kontrak bukti dipindahkan
+    // ke Inspector; templat mengekalkan kontrak entiti + isolation ringkas.
     for (const fragment of [
-        'These exceptions apply only to the affected entity, never to the surrounding sentence',
-        'retaining or transliterating that entity as appropriate',
-        'otherwise retain the original title',
-        'Never invent an official rendering',
-        'Distribution follows meaning and readable phrase boundaries, not equal character or word counts'
+        'Never merge, split, skip, or leave any slot empty',
+        'Never repeat words or dump the whole sentence into the first slot',
+        'Localize [sound effects]',
+        'Everything outside <input> is read-only context',
+        'ZERO translator notes in parentheses'
     ]) {
         assert.ok(TRANSLATION_SYSTEM_TEMPLATE.includes(fragment), fragment);
     }
@@ -263,25 +258,15 @@ test('[TRINITY-CORE-9] The single template retains the owner-vetted evidence + s
     );
 
     assert.ok(!TRANSLATION_SYSTEM_TEMPLATE.includes('distribute the clauses proportionally'));
-    // [SINGLE-TEMPLATE] Kontrak teras kekal dalam templat tunggal.
-    assert.ok(TRANSLATION_SYSTEM_TEMPLATE.includes('identical IDs in identical order'));
+    // [TOTAL-PURGE v3.36.0] Kontrak teras templat pendek Owner.
+    assert.ok(TRANSLATION_SYSTEM_TEMPLATE.includes('identical IDs and order'));
+    assert.ok(TRANSLATION_SYSTEM_TEMPLATE.includes('flow the meaning naturally across those exact slots'));
     assert.ok(
-        TRANSLATION_SYSTEM_TEMPLATE.includes(
-            'distribute the translated meaning naturally across those exact same slots'
-        )
+        TRANSLATION_SYSTEM_TEMPLATE.includes('(Name)/[Name] speaker label intact with exact counts per slot'),
+        'Pemeliharaan label penutur (templat pendek Owner)'
     );
-    assert.ok(
-        TRANSLATION_SYSTEM_TEMPLATE.includes('proper name or brand'),
-        'Names-intact default kekal (kontrak entiti 5-V; frasa "keep proper nouns..." dipensiunkan bersama kemas kini)'
-    );
-    assert.ok(
-        TRANSLATION_SYSTEM_TEMPLATE.includes('titles intact unless official localization demands otherwise') === false,
-        'Kontrak baharu 5-V menggantikan frasa legasi'
-    );
-    assert.ok(TRANSLATION_SYSTEM_TEMPLATE.includes('Anything outside <input> is read-only context'));
-    // [SINGLE-TEMPLATE] Kontrak 5-V: jangka mengekalkan entiti kekal melalui
-    // frasa "retaining or transliterating" (dipin di atas) + larangan rekaan
-    // ("Never invent an official rendering") — koverans setara penuh.
+    assert.ok(!TRANSLATION_SYSTEM_TEMPLATE.includes('proper name or brand'), 'Kontrak entiti dipindah ke Inspector');
+    assert.ok(TRANSLATION_SYSTEM_TEMPLATE.includes('Everything outside <input> is read-only context'));
 });
 
 test('[TRINITY-CORE-11] Both modes place the exact active-ID manifest before input on every provider door', () => {
@@ -338,7 +323,7 @@ test('[TRINITY-CORE-10] System instruction is IDENTICAL for every target except 
         const structured = splitStructuredPrompt(prompt);
         assert.ok(structured, `${targetLanguage} prompt must stay structured`);
         assert.ok(
-            structured.system.includes(`localizing subtitles from English into ${targetLabel}`),
+            structured.system.includes(`Translate from English into ${targetLabel}`),
             `${targetLanguage} prompt must name the actual target language`
         );
         // Templat statik mesti bebas daripada nama bahasa konkrit pada sumber.

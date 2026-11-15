@@ -510,23 +510,29 @@ Do NOT include acknowledgements, explanations, notes or alternative translations
 
 Output ONLY the translated content, nothing else.`;
 
-// Neutral statik lalai (generic pack) — keserasian warisan bagi pemanggil
-// yang membaca DEFAULT_TRANSLATION_PROMPT terus tanpa bahasa sasaran.
+// [TOTAL-PURGE v3.36.0] specificRules pack DIBUANG — neutral statik sahaja
+// (laluan warisan bukan-Trinity; prompt Trinity sebenar datang daripada
+// TRANSLATION_SYSTEM_TEMPLATE + fewShot pack melalui createXmlBatchPrompt).
+const DEFAULT_NEUTRAL_RULES =
+    '6. Use natural, idiomatic phrasing a native speaker of the target language would actually say — never translate literally word-by-word.';
+
+// Neutral statik lalai — keserasian warisan bagi pemanggil yang membaca
+// DEFAULT_TRANSLATION_PROMPT terus tanpa bahasa sasaran.
 const DEFAULT_TRANSLATION_PROMPT = DEFAULT_TRANSLATION_PROMPT_TEMPLATE.replace(
     '{{SPECIFIC_RULES}}',
-    getLanguagePack(null).specificRules
+    DEFAULT_NEUTRAL_RULES
 );
 
 /**
- * [UNIVERSAL-FIX] Komposisi prompt lalai mengikut bahasa sasaran.
- * Malay → peraturan BM penuh daripada malay.js; lain → peraturan neutral
- * generic.js. Identik untuk Malay (tiada regresi), baru untuk 432 bahasa lain.
- * @param {string} targetLanguage - Bahasa sasaran (kod/nama)
- * @returns {string} Prompt lalai penuh dengan rule #6 target-conditional
+ * [TOTAL-PURGE v3.36.0] Komposisi prompt lalai neutral-global — pack bahasa
+ * tidak lagi terlibat (few-shot ialah milik Agent Translation Trinity).
+ * @param {string} targetLanguage - Bahasa sasaran (kod/nama) — dikekalkan
+ * untuk kestabilan API; tidak digunakan lagi.
+ * @returns {string} Prompt lalai penuh neutral
  */
 function composeDefaultTranslationPrompt(targetLanguage) {
-    const pack = getLanguagePack(targetLanguage);
-    return DEFAULT_TRANSLATION_PROMPT_TEMPLATE.replace('{{SPECIFIC_RULES}}', pack.specificRules);
+    void targetLanguage;
+    return DEFAULT_TRANSLATION_PROMPT;
 }
 
 // v1.6.0 ID-PARITY SURGERY V2: GEMINI3_SYSTEM_INSTRUCTION is RETIRED. The

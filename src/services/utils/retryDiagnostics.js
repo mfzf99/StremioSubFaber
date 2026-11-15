@@ -1,13 +1,10 @@
-const { getHardMechanicalFindings } = require('./mechanicalValidator');
+// [TOTAL-PURGE v3.36.0 — Mandat Owner] Diagnostik retry SEMANTIK sahaja
+// (7-jenayah Agent Inspector, DUAL-AI 2026-09-26). Entri mekanikal MONKEY
+// (SCRIPT_LEAK, SPEAKER_LABEL_LOSS, MUSIC_SYMBOL_LOSS, VERBATIM_UNTRANSLATED,
+// PUNCTUATION_MISMATCH) dan gabungan mekanikal dalam selectRetryFindings
+// DIBUANG — mechanicalValidator.js tidak lagi wujud.
 
 const CORRECTION_BY_TYPE = {
-    SCRIPT_LEAK: 'Remove source-script characters; express the complete meaning in the Rumi target language.',
-    SPEAKER_LABEL_LOSS: 'Restore every source speaker label with its exact name and (Name)/[Name] delimiters.',
-    MUSIC_SYMBOL_LOSS: 'Restore every missing ♪ symbol in its corresponding lyric position.',
-    VERBATIM_UNTRANSLATED:
-        'Translate the complete sentence into {targetLanguage}; only valid names and universal interjections may remain.',
-    PUNCTUATION_MISMATCH:
-        'Review the reported ?/! difference as a secondary diagnostic; natural target sentence structure takes precedence.',
     MERGE: 'Restore this source line as its own populated slot; do not merge it with or displace an adjacent slot.',
     DROP: 'Restore the specific meaning and emotional subtext of this source line without generic substitution.',
     PHANTOM: 'Remove invented content and render only the meaning supported by this source line.',
@@ -42,22 +39,11 @@ function buildCrimeCorrections(findings, options = {}) {
     return lines;
 }
 
-function selectRetryFindings(mechanicalFindings, semanticFindings = []) {
-    const mechanical = Array.isArray(mechanicalFindings) ? mechanicalFindings : [];
+// [TOTAL-PURGE v3.36.0] Kini semantic-sahaja: terima senarai crimes
+// Inspector sahaja (tiada lagi parameter mekanikal).
+function selectRetryFindings(semanticFindings = []) {
     const semantic = Array.isArray(semanticFindings) ? semanticFindings : [];
-    const semanticUntranslatedIds = new Set(
-        semantic.filter((finding) => finding?.type === 'UNTRANSLATED').flatMap((finding) => normalizeIds(finding))
-    );
-    const selected = [
-        ...getHardMechanicalFindings(mechanical).map((finding) =>
-            semanticUntranslatedIds.has(Number(finding.id)) ? { ...finding, type: 'UNTRANSLATED' } : finding
-        ),
-        ...semantic
-    ];
-    if (selected.length > 0) {
-        selected.push(...mechanical.filter((finding) => finding?.type === 'PUNCTUATION_MISMATCH'));
-    }
-    return selected;
+    return semantic;
 }
 
 function escapeXmlText(text) {
@@ -72,7 +58,7 @@ function buildRetryDiagnosticBlock(options = {}) {
     if (corrections.length === 0) return '';
     const heading = options.semantic
         ? 'CRITICAL SEMANTIC ALERT (from independent inspector):'
-        : 'CRITICAL MECHANICAL TRANSLATION ALERT:';
+        : 'CRITICAL SEMANTIC ALERT:';
     const affectedIds = new Set(findings.flatMap((finding) => normalizeIds(finding)));
     const verified = (Array.isArray(options.verifiedEntries) ? options.verifiedEntries : [])
         .filter(

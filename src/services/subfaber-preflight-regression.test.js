@@ -228,11 +228,26 @@ test('SubFaberPreflight: field-specific fallbacks match required strings, nullab
 
 test('SubFaberPreflight: title policy separates natural generic credits from known official work titles', () => {
     const prompt = buildPreflightPrompt('Dialogue.', 'Malay', 'English');
-    assert.ok(prompt.includes('Distinguish generic production-credit phrases from creative-work titles'));
-    assert.ok(prompt.includes('translate generic phrases naturally'));
-    assert.ok(prompt.includes('use an official Malay title only when already known with confidence'));
-    assert.ok(prompt.includes('Otherwise retain the original title exactly'));
-    assert.ok(prompt.includes('never invent an official title or claim external verification'));
+    assert.ok(
+        prompt.includes('Distinguish them from creative-work titles') ||
+            prompt.includes('Distinguish generic production-credit phrases from creative-work titles')
+    );
+    assert.ok(
+        prompt.includes('translate generic production-credit phrases naturally') ||
+            prompt.includes('translate generic phrases naturally')
+    );
+    assert.ok(
+        prompt.includes('use an official Malay title only when known with confidence') ||
+            prompt.includes('use an official Malay title only when already known with confidence')
+    );
+    assert.ok(
+        prompt.includes('otherwise retain the original title exactly') ||
+            prompt.includes('Otherwise retain the original title exactly')
+    );
+    assert.ok(
+        prompt.includes('never invent an official title or claim external verification') ||
+            prompt.includes('never invent an official title')
+    );
     assert.ok(
         !prompt.includes('its official published Malay rendering'),
         'unverifiable published rendering demand must be gone'
@@ -339,8 +354,8 @@ test('SubFaberPreflight: credits detection directive — Phase 0 engine inspects
         'Credits directive must give the production-credit example (no hardcoded batch rules — Phase 0 only)'
     );
     assert.ok(
-        prompt.includes('Diadaptasi daripada'),
-        'Credits directive must show the official media-translation example'
+        prompt.includes('translate generic production-credit phrases naturally'),
+        'Credits directive must be inline-neutral (TOTAL-PURGE: pack DIBUANG)'
     );
     assert.ok(
         prompt.includes("return an empty array [] for 'credits_and_titles'"),
@@ -588,52 +603,21 @@ test('SubFaberPreflight: formatPreflightForPrompt renders NOT LOCKED marker for 
         ]
     });
     assert.ok(block.includes('- Shen Ruoxin → Puan Shen (female lead)'), 'gelaran terkunci dirender seperti biasa');
-    assert.ok(block.includes('- Mystery → address NOT LOCKED'), 'null → isyarat NOT LOCKED (bukan nama mentah)');
-    assert.ok(block.includes('Malay matrix'), 'panduan matriks BM mesti hadir untuk Agent Translation');
+    assert.ok(block.includes('- Mystery → address not locked'), 'null → isyarat NOT LOCKED (bukan nama mentah)');
+    // [TOTAL-PURGE v3.36.0] Panduan neutral statik — tiada matriks BM.
+    assert.ok(!block.includes('Malay matrix'), 'TIADA matriks BM (TOTAL-PURGE)');
 });
 
-test('SubFaberPreflight: prompt carries the Malay sociolinguistic honorific matrix (Puan/Cik/Encik/Mak Cik/Pak Cik)', () => {
-    const prompt = buildPreflightPrompt('Some dialogue.', 'Malay', 'English');
-    assert.ok(prompt.includes('MUST map to "Puan"'), 'aturan wajib Puan bagi wanita dewasa/berkahwin/auntie/pengurus');
-    assert.ok(
-        prompt.includes('"Puan [Surname]"'),
-        'contoh generik Ms. [Surname] -> Puan [Surname] (BUKAN Cik [Surname])'
-    );
-    assert.ok(prompt.includes('NEVER "Cik [Surname]"'), 'larangan eksplisit Cik [Surname] bagi kes Aunt/manager');
-    assert.ok(prompt.includes('young unmarried woman -> "Cik"'), 'aturan Cik bagi wanita muda bujang');
-    assert.ok(prompt.includes('"Mr." -> "Encik"'), 'pemetaan Encik');
-    assert.ok(prompt.includes('"Aunt" / "Auntie" -> "Mak Cik"'), 'pemetaan Mak Cik');
-    assert.ok(prompt.includes('"Uncle" -> "Pak Cik"'), 'pemetaan Pak Cik');
-    assert.ok(prompt.includes('"Director" -> "Pengarah"'), 'pemetaan Pengarah');
-    assert.ok(prompt.includes('"GM" / "General Manager" -> "Pengurus Besar"'), 'pemetaan Pengurus Besar');
-    assert.ok(
-        prompt.includes(
-            'if the same character is addressed as "Aunt" in dialogue AND called "Ms. [Surname]", lock the formal address as "Puan [Surname]"'
-        ),
-        'peraturan hubung kait gelaran (Aunt + Ms. -> Puan [Surname]) wajib hadir'
-    );
-});
-
-test('SubFaberPreflight: Malay honorific evidence precedence locks mothers and wives as Puan, not Cik', () => {
-    const prompt = buildPreflightPrompt(
-        '<s id="1">Mom, are you home?</s><s id="2">Miss Shen, your daughter is here.</s>',
-        'Malay',
-        'English'
-    );
-    assert.ok(
-        prompt.includes(
-            'a mother (called "Mom"/"Mother"/"Mum"/"Mommy" by her child, or identified as a parent) or married (wife/spouse) OVERRIDES "Ms.", "Miss", and apparent youth'
-        ),
-        'bukti eksplisit ibu/isteri mesti mengatasi Ms./Miss dan andaian usia muda'
-    );
-    assert.ok(
-        prompt.includes('canonical_address MUST use "Puan [Name]", NEVER "Cik [Name]"'),
-        'gelaran kanonik ibu/isteri mesti Puan, bukan Cik'
-    );
-    assert.ok(
-        prompt.includes('direct_address = "Mak" while canonical_address = "Puan [Name]"'),
-        'sapaan anak Mak mesti diasingkan daripada rujukan formal Puan'
-    );
+test('SubFaberPreflight: prompt is neutral-global — zero honorific matrix for any language (TOTAL-PURGE v3.36.0)', () => {
+    for (const target of ['Malay', 'Vietnamese']) {
+        const prompt = buildPreflightPrompt('Some dialogue.', target, 'English');
+        assert.ok(
+            prompt.includes(`standard ${target} conventions for official titles and honorifics`),
+            `${target}: neutral directive interpolates the language label`
+        );
+        assert.ok(!prompt.includes('MUST map to "Puan"'), `${target}: TIADA matriks BM`);
+        assert.ok(!prompt.includes('Pak Cik'), `${target}: TIADA pemetaan BM`);
+    }
 });
 
 // --- runPreflightSemanticPass (async) ---

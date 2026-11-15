@@ -57,19 +57,18 @@ test('BetaRun7/Run8: theme lock appears in the JSON schema contract itself', () 
 // [KNP-ALIGNMENT 2026-10-07] Matriks honorifik berpindah dari terms → characters
 // (doktrin Netflix KNP — gelaran watak TIDAK PERNAH berada dalam senarai istilah).
 // Arahan lama "terms WAJIB mengunci gelaran" adalah punca akar terms-pollution.
-test('BetaRun7/Run8: preflight prompt mandates honorific locking in the characters pillar (MATRIKS SOSIOLINGUISTIK + KNP-ALIGNMENT 2026-10-07)', () => {
+test('BetaRun7/Run8: preflight prompt mandates honorific locking in the characters pillar (TOTAL-PURGE v3.36.0 — neutral-global)', () => {
     const prompt = buildPreflightPrompt('Some dialogue.', 'Malay', 'English');
     assert.ok(
-        prompt.includes("When locking character addresses in the 'characters' pillar"),
-        'Prompt must contain the characters-pillar honorific directive (KNP-aligned)'
+        prompt.includes('the ONE locked'),
+        'Prompt must contain the characters-pillar canonical-address directive'
     );
     assert.ok(
-        prompt.includes('titles/honorifics (Malay honorifics)'),
-        'Prompt must reference titles/honorifics via the mandatory sociolinguistic matrix'
+        prompt.includes('standard'),
+        'Prompt must reference standard target-language conventions (pack DIBUANG — neutral)'
     );
-    assert.ok(prompt.includes('"Ms." / "Mrs." for an adult woman'), 'Prompt must enumerate the Ms./Mrs. -> Puan rule');
     assert.ok(
-        prompt.includes('never alternate'),
+        prompt.includes('one canonical address per character, never alternate'),
         'Prompt must forbid alternating between competing titles for one character'
     );
     // KNP: larangan silang-tiang — sifar gelaran watak dalam terms.
@@ -81,6 +80,9 @@ test('BetaRun7/Run8: preflight prompt mandates honorific locking in the characte
         !prompt.includes("In the 'terms' list, you MUST include and lock"),
         'Legacy terms-pillar honorific directive must be GONE (pollution root cause)'
     );
+    // [TOTAL-PURGE v3.36.0] Sifar matriks BM dalam prompt — neutral 433 bahasa.
+    assert.ok(!prompt.includes('Puan [Surname]'), 'TIADA matriks BM dalam prompt (TOTAL-PURGE)');
+    assert.ok(!prompt.includes('Mak Cik'), 'TIADA pemetaan BM dalam prompt');
 });
 
 test('BetaRun7/Run8: character hierarchy pillar locks one canonical address per character', () => {
@@ -93,11 +95,11 @@ test('BetaRun7/Run8: character hierarchy pillar locks one canonical address per 
     assert.ok(prompt.includes('"role"'), 'Characters pillar must carry the narrative role field');
 });
 
-test('BetaRun7/Run8: honorific directive adapts to the target language label', () => {
+test('BetaRun7/Run8: neutral directive adapts to the target language label', () => {
     const prompt = buildPreflightPrompt('Dialogue.', 'Spanish', 'English');
     assert.ok(
-        prompt.includes('official Spanish titles/honorifics'),
-        'Honorific directive must interpolate the target language label'
+        prompt.includes('standard Spanish conventions for official titles and honorifics'),
+        'Neutral directive must interpolate the target language label'
     );
 });
 
@@ -147,8 +149,8 @@ test('BetaRun8: credits detection is delegated to Preflight over lines 1-5 with 
     assert.ok(prompt.includes('lines 1-5'), 'Credits scan must be scoped to the earliest lines (1-5)');
     assert.ok(prompt.includes('NON-DIALOGUE opening text'), 'Credits scan must target non-dialogue openings only');
     assert.ok(
-        prompt.includes('Adapted from') && prompt.includes('Diadaptasi daripada'),
-        'Natural generic-credit example must be present alongside evidence-safe title handling'
+        prompt.includes('Adapted from') && prompt.includes('translate generic production-credit phrases naturally'),
+        'Inline generic-credit directive must be present alongside evidence-safe title handling'
     );
     assert.ok(
         prompt.includes("return an empty array [] for 'credits_and_titles'"),

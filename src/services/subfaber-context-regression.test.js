@@ -413,32 +413,26 @@ test('SubFaberPrompt V5: Pro mode structured template, split system/user, no dou
     assert.ok(parts, 'Prompt must split into { system, user }');
     const { system, user } = parts;
 
-    // ── SYSTEM lane: 5 seksyen statik berlabel ──
+    // ── SYSTEM lane: templat pendek Owner (TOTAL-PURGE v3.36.0) ──
     assert.ok(system.includes('[SYSTEM / ROLE]'), 'System/Role section label');
-    assert.ok(system.includes('a native speaker would actually say'), 'Role states living-language mandate');
-    assert.ok(system.includes('English'), 'Source language in role');
-    assert.ok(system.includes('Malay'), 'Target language in role');
-    // Technical constraints — parity + markup + SDH (pemetaan 1:1 taksonomi Agent Inspector)
-    assert.ok(system.includes('[TECHNICAL CONSTRAINTS & FORMATTING]'), 'Constraints section label');
-    assert.ok(system.includes('identical IDs in identical order'), 'ID parity contract');
     assert.ok(
-        system.includes('Music symbols (♪♪) are copied as-is; bracketed sound effects ([door slams]) are localized'),
-        'Music verbatim vs SFX localized (no contradiction with pack Example 2)'
+        system.includes('You are a professional Netflix subtitle translator. Translate from English into Malay'),
+        'Role names both languages (Owner short template)'
     );
+    // Technical constraints — 4 peraturan pendek Owner.
+    assert.ok(system.includes('[TECHNICAL CONSTRAINTS & FORMATTING]'), 'Constraints section label');
+    assert.ok(system.includes('STRICT 1:1 SLOT PARITY'), 'ID parity contract');
+    assert.ok(system.includes('Localize [sound effects]'), 'SFX localized secara eksplisit (templat pendek Owner)');
+    assert.ok(system.includes('♪ symbol'), 'Symbol muzik dipelihara (templat pendek Owner)');
     assert.ok(
         !system.includes('[door slams]) are copied as-is'),
         'TIDAK mengatakan SFX copied as-is (kontradiksi few-shot)'
     );
-    assert.ok(system.includes('exact count of [br]'), '[br] count locked');
-    assert.ok(system.includes('place [br] at a natural'), '[br] reposition adaptif');
-    // Style — ayat hidup, anti-calque
+    assert.ok(system.includes('exact counts per slot'), '[br] count locked (Owner short template)');
+    // Style — 5 baris Owner.
     assert.ok(system.includes('[STYLE & TONE GUIDELINES]'), 'Style section label');
-    assert.ok(system.includes('natural, conversational'), 'Natural conversational directive in style');
-    assert.ok(system.includes('Never calque'), 'Anti-calque in style');
-    assert.ok(
-        system.includes('never inject a title onto a bare name'),
-        'Style forbids injecting titles onto bare names (register lock tightened)'
-    );
+    assert.ok(system.includes('Anti-calque: Convert meaning, never word order'), 'Anti-calque in style');
+    assert.ok(system.includes('without censorship'), 'No-censorship directive');
     // Few-shot 3 contoh isometrik dari pack (FEW-SHOT-V2)
     assert.ok(system.includes('[FEW-SHOT EXAMPLES'), 'Few-shot section label');
     assert.ok(system.includes('<example>'), 'Few-shot <example> format (pack V2)');
@@ -446,7 +440,7 @@ test('SubFaberPrompt V5: Pro mode structured template, split system/user, no dou
     assert.ok(!system.includes('[EXAMPLE 1 — MERGE:'), 'Legacy crime-labeled examples REMOVED');
     // Output requirement
     assert.ok(system.includes('[OUTPUT REQUIREMENT]'), 'Output requirement label');
-    assert.ok(system.includes('one <s id="N"> per input ID'), '1-to-1 contract');
+    assert.ok(system.includes('one <s id="N"> per input entry'), '1-to-1 contract (templat pendek Owner)');
     assert.ok(system.includes('no thinking tags'), 'No-thinking-tags contract');
     assert.ok(
         system.includes('ZERO translator notes in parentheses'),
@@ -485,11 +479,11 @@ test('SubFaberPrompt V5: Basic mode uses the SAME single template with pack few-
 
     // SATU templat: Basic membawa seksyen berlabel yang sama.
     assert.ok(
-        system.includes('You are a professional Netflix subtitle translator, specializing in localizing subtitles'),
+        system.includes('You are a professional Netflix subtitle translator. Translate from'),
         'Basic system carries the universal translator instruction'
     );
     assert.ok(
-        system.includes('specializing in localizing subtitles from English into Malay.'),
+        system.includes('Translate from English into Malay'),
         'Basic system names the actual source and target language'
     );
     assert.ok(system.includes('[TECHNICAL CONSTRAINTS & FORMATTING]'), 'Basic carries the same constraints section');
@@ -557,7 +551,7 @@ test('SubFaberPrompt V5: prompt is the ONLY path (no flags), structured sections
 
     const prompt = engine.createXmlBatchPrompt(batchText, 'Malay', null, batch.length, null, 0, 1);
     assert.ok(prompt.includes('[SYSTEM / ROLE]'), 'Role section always present');
-    assert.ok(prompt.includes('strict 1-to-1'), 'Parity mandate always present (V5 role)');
+    assert.ok(prompt.includes('STRICT 1:1 SLOT PARITY'), 'Parity mandate always present (V5 role)');
     assert.ok(prompt.includes('[TECHNICAL CONSTRAINTS & FORMATTING]'), 'Constraints section always present');
     assert.ok(!prompt.includes('CRITICAL ENFORCEMENT RULES'), 'Legacy 7-rule REMOVED permanently');
 });
@@ -738,11 +732,11 @@ test('SubFaberGS3: null canonical_address renders NOT LOCKED marker (MANDAT SOSI
     const block = engine._formatPreflightForChunk(engine.preflightContext, [], batch, []);
     // [KNP-VERBATIM] characters kini JSON: gelaran terkunci hadir verbatim.
     assert.ok(block.includes('"canonical_address": "Puan Shen"'), 'gelaran terkunci dirender verbatim');
-    // null → isyarat NOT LOCKED pack-driven (fallback lama || name DIBUANG).
+    // null → isyarat NOT LOCKED neutral statik (fallback lama || name DIBUANG).
     assert.ok(block.includes('"canonical_address": null'), 'null dirender sebagai null (bukan nama mentah)');
-    assert.ok(block.includes('address NOT LOCKED'), 'isyarat NOT LOCKED hadir (guidance pack)');
+    assert.ok(block.includes('address not locked'), 'isyarat NOT LOCKED hadir (neutral statik TOTAL-PURGE)');
     assert.ok(!block.includes('"canonical_address": "Mystery Woman"'), 'nama mentah TIDAK dijadikan gelaran');
-    assert.ok(block.includes('Malay matrix'), 'panduan matriks BM mesti hadir untuk Agent Translation');
+    assert.ok(!block.includes('Malay matrix'), 'TIADA matriks BM (TOTAL-PURGE v3.36.0)');
 });
 
 // --- Parser: konteks tidak rosakkan parseXmlBatchResponse ---

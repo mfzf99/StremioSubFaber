@@ -10,7 +10,7 @@
  * [STRUCTURE-V5 2026-11-14] The key now also discriminates the trinity MODE
  * (`trinity-basic-` vs `trinity-pro-`): Pro output is KNP-guided and must
  * never be served to Basic runs (cross-mode poisoning), and the redesigned
- * prompt (v5) must never serve v4 output. Legacy configs default to Basic.
+ * prompt (v6) must never serve v4 output. Legacy configs default to Basic.
  */
 
 const test = require('node:test');
@@ -25,15 +25,15 @@ test('[F6-A] Same file+language under different trinity channels produces distin
     assert.notEqual(gemini.baseKey, openai.baseKey, 'gemini and openai keys must not collide');
     assert.notEqual(gemini.baseKey, anthropic.baseKey, 'gemini and anthropic keys must not collide');
     assert.notEqual(openai.baseKey, anthropic.baseKey, 'openai and anthropic keys must not collide');
-    assert.equal(gemini.baseKey, 'tt123_en_ms_trinity-basic-universal-v5_ch-gemini', 'exact v5 basic gemini key');
+    assert.equal(gemini.baseKey, 'tt123_en_ms_trinity-basic-universal-v6_ch-gemini', 'exact v6 basic gemini key');
     assert.ok(openai.baseKey.includes('openai'), 'openai key carries the channel discriminator');
     assert.ok(anthropic.baseKey.includes('anthropic'), 'anthropic key carries the channel discriminator');
 });
 
-test('[F6-E] Trinity mode discriminates the v5 namespace (Basic vs Pro never share a key)', () => {
+test('[F6-E] Trinity mode discriminates the v6 namespace (Basic vs Pro never share a key)', () => {
     const basic = generateCacheKeys({ trinityChannel: 'gemini' }, 'tt123_en', 'ms');
     const pro = generateCacheKeys({ trinityChannel: 'gemini', trinityMode: 'pro' }, 'tt123_en', 'ms');
-    assert.equal(pro.baseKey, 'tt123_en_ms_trinity-pro-universal-v5_ch-gemini', 'exact v5 pro key');
+    assert.equal(pro.baseKey, 'tt123_en_ms_trinity-pro-universal-v6_ch-gemini', 'exact v6 pro key');
     assert.notEqual(basic.baseKey, pro.baseKey, 'cross-mode cache poisoning must be impossible');
 });
 

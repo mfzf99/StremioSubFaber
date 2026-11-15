@@ -1,18 +1,19 @@
 /**
- * [UNIVERSAL-FIX] Language Pack System — Regression Tests
- * [PAYLOAD-GODTIER] 4-key streaming payload — supplementary checks
- * [MODEL-HIERARCHY] kimi-k3 standalone pre-flight / DeepSeek dual inspection
+ * [TOTAL-PURGE v3.36.0] Language Pack System — Regression Tests (pasca-purge)
  *
  * Kontrak yang diuji:
  *   1. Pack resolution: Malay family (ms/my/mya/zsm/zzm/Malay/Bahasa Melayu)
  *      → malay pack; semua lain → generic pack.
- *   2. Malay target → composed prompts IDENTIK dengan tingkah laku lama
- *      (matriks Puan/Cik/Encik, "Ms. Shen", few-shot "Awak ikut kami,").
- *   3. Non-Malay target (Vietnamese/Japanese) → generic pack → TIADA teks
- *      Malay dalam prompt.
- *   4. Sifar hardcoded "Ms. Shen"/"Puan Shen"/few-shot BM dalam P1/P2/P8
- *      source (semua dari pack).
- *   5. P8 composer: Malay → rule BM; Vietnamese → rule neutral.
+ *   2. Antara muka pack kini { code, aliases, fewShot } SAHAJA — medan
+ *      sosiolinguistik MONKEY/KNP (honorificMatrix, canonicalAddressMatrix,
+ *      creditsExample, specificRules, notLockedGuidance) DIBUANG.
+ *   3. fewShot Malay = 3 contoh VERBATIM Owner; generic = meta-placeholder
+ *      neutral (sifar BM).
+ *   4. Preflight TIDAK memakan pack: prompt neutral-global — tiada teks BM,
+ *      tiada matriks honorifik, tiada contoh kredit BM untuk mana-mana bahasa.
+ *   5. P8 composer neutral statik (warisan bukan-Trinity).
+ *   6. [PAYLOAD-GODTIER] supplementary: SSE propagation + timeout ceiling
+ *      (tidak berubah).
  */
 
 const test = require('node:test');
@@ -21,7 +22,7 @@ const fs = require('fs');
 const path = require('path');
 
 const { getLanguagePack, isMalayTarget, malayPack, genericPack } = require('./prompts/languagePacks');
-const { buildPreflightPrompt } = require('./subfaberPreflight');
+const { buildPreflightPrompt, formatPreflightForPrompt } = require('./subfaberPreflight');
 const { composeDefaultTranslationPrompt, DEFAULT_TRANSLATION_PROMPT } = require('./gemini');
 
 // ── 1. Pack resolution ──
@@ -57,87 +58,72 @@ test('LanguagePacks: isMalayTarget TIDAK salah positif pada bahasa lain', () => 
     assert.equal(isMalayTarget('Maori'), false); // mengandungi 'ma' bukan 'malay'
     assert.equal(isMalayTarget('Japanese'), false);
     assert.equal(isMalayTarget('Tamil'), false);
-    assert.equal(isMalayTarget('my'), true); // ISO-639-1 Burmese alias dipakai untuk Malay dalam sistem ini (kontrak pack lama)
+    assert.equal(isMalayTarget('my'), true); // ISO-639-1 alias dipakai untuk Malay dalam sistem ini
 });
 
-test('LanguagePacks: antara muka pack — semua kunci wajib wujud pada kedua-dua pack', () => {
+// ── 2. Antara muka pack pasca-purge ──
+
+test('LanguagePacks: antara muka pack — { code, aliases, fewShot } sahaja', () => {
     for (const pack of [malayPack, genericPack]) {
+        for (const key of ['code', 'aliases', 'fewShot']) {
+            assert.ok(pack[key] !== undefined, `${pack.code}.${key} wajib wujud`);
+        }
+        assert.ok(typeof pack.fewShot === 'string' && pack.fewShot.length > 0, `${pack.code}.fewShot wajib string`);
+        // [TOTAL-PURGE] Medan MONKEY/sosiolinguistik DIBUANG.
         for (const key of [
-            'code',
             'honorificMatrix',
             'canonicalAddressMatrix',
             'creditsExample',
-            'fewShot',
             'specificRules',
             'notLockedGuidance'
         ]) {
-            assert.ok(typeof pack[key] === 'string' && pack[key].length > 0, `${pack.code}.${key} wajib bukan kosong`);
+            assert.equal(pack[key], undefined, `${pack.code}.${key} mesti dibuang (TOTAL-PURGE)`);
         }
     }
 });
 
-// ── 2. P1 (subfaberPreflight) — Malay target: tingkah laku IDENTIK ──
-
-test('P1 Malay: prompt bawa matriks honorifik penuh (Puan/Cik/Encik/Mak Cik/Pak Cik/Pengarah/Pengurus Besar)', () => {
-    const prompt = buildPreflightPrompt('Some dialogue.', 'Malay', 'English');
-    assert.ok(prompt.includes('MUST map to "Puan"'));
-    assert.ok(prompt.includes('"Puan [Surname]"'));
-    assert.ok(prompt.includes('NEVER "Cik [Surname]"'));
-    assert.ok(prompt.includes('young unmarried woman -> "Cik"'));
-    assert.ok(prompt.includes('"Mr." -> "Encik"'));
-    assert.ok(prompt.includes('"Aunt" / "Auntie" -> "Mak Cik"'));
-    assert.ok(prompt.includes('"Uncle" -> "Pak Cik"'));
-    assert.ok(prompt.includes('"Director" -> "Pengarah"'));
-    assert.ok(
-        prompt.includes(
-            'if the same character is addressed as "Aunt" in dialogue AND called "Ms. [Surname]", lock the formal address as "Puan [Surname]"'
-        )
-    );
+test('LanguagePacks: fewShot Malay = 3 contoh VERBATIM Owner', () => {
+    assert.ok(malayPack.fewShot.includes('Biar betul.[br]Memang nak buat sekarang ke?'));
+    assert.ok(malayPack.fewShot.includes('(Marcus) Relaks lah, budak.'));
+    assert.ok(malayPack.fewShot.includes('memang habislah kita semua.'));
+    assert.ok(malayPack.fewShot.includes('[pintu terhempas]'));
 });
 
-test('P1 Malay: kredit contoh "Diadaptasi daripada" hadir', () => {
+test('LanguagePacks: fewShot generic = meta-placeholder neutral, sifar BM', () => {
+    assert.ok(genericPack.fewShot.includes('{translation of "You\'ve got to be kidding me."}'));
+    assert.ok(genericPack.fewShot.includes('[{translation of "door slams"}]'));
+    assert.ok(!genericPack.fewShot.includes('Biar betul.'));
+    assert.ok(!genericPack.fewShot.includes('Relaks'));
+});
+
+// ── 3. P1 (subfaberPreflight) — neutral-global, TIDAK memakan pack ──
+
+test('P1 neutral: tiada matriks honorifik / tiada teks BM pada mana-mana bahasa', () => {
+    for (const target of ['Malay', 'Vietnamese', 'Japanese']) {
+        const prompt = buildPreflightPrompt('Some dialogue.', target, 'English');
+        assert.ok(
+            prompt.includes(`standard ${target} conventions for official titles and honorifics`),
+            `panduan neutral ${target} hadir`
+        );
+        assert.ok(!prompt.includes('Puan'), `${target}: TIADA Puan`);
+        assert.ok(!prompt.includes('Mak Cik'), `${target}: TIADA Mak Cik`);
+        assert.ok(!prompt.includes('Diadaptasi daripada'), `${target}: TIADA contoh kredit BM`);
+        assert.ok(!prompt.includes('${honorificMatrix}'), `${target}: tiada placeholder pack mentah`);
+        assert.ok(!prompt.includes('${creditsExample}'), `${target}: tiada placeholder pack mentah`);
+    }
+});
+
+test('P1 neutral: kredit dipandu arahan inline — tiada contoh BM', () => {
     const prompt = buildPreflightPrompt('Dialogue.', 'Malay', 'English');
-    assert.ok(prompt.includes('Adapted from'));
-    assert.ok(prompt.includes('Diadaptasi daripada'));
+    assert.ok(prompt.includes('translate generic production-credit phrases naturally'));
+    assert.ok(prompt.includes('never invent an official title'));
 });
 
-test('P1 Malay: interpolasi label bahasa sasaran dalam matriks', () => {
-    const prompt = buildPreflightPrompt('Dialogue.', 'Bahasa Melayu', 'English');
-    assert.ok(prompt.includes('official Bahasa Melayu titles/honorifics'), 'label ${tgt} diganti dengan nama sasaran');
-    assert.ok(!prompt.includes('${tgt}'), 'tiada placeholder mentah tertinggal');
-});
-
-// ── 3. P1 — bukan-Malay: generic pack, TIADA teks Malay ──
-
-test('P1 Vietnamese: generic pack — tiada matriks BM, tiada Ms. Shen, tiada Diadaptasi', () => {
-    const prompt = buildPreflightPrompt('Dialogue.', 'Vietnamese', 'English');
-    assert.ok(prompt.includes('official Vietnamese titles/honorifics'), 'panduan neutral dengan label Vietnamese');
-    assert.ok(!prompt.includes('Puan'), 'TIADA Puan (BM) dalam prompt Vietnamese');
-    assert.ok(!prompt.includes('Cik Shen'), 'TIADA Cik Shen');
-    assert.ok(!prompt.includes('Ms. Shen'), 'TIADA Ms. Shen (contoh khusus BM)');
-    assert.ok(!prompt.includes('Diadaptasi daripada'), 'TIADA contoh kredit BM');
-    assert.ok(!prompt.includes('Mak Cik'), 'TIADA Mak Cik');
-    assert.ok(!prompt.includes('Encik'), 'TIADA Encik');
-});
-
-test('P1 Japanese: generic pack — tiada teks BM', () => {
-    const prompt = buildPreflightPrompt('Dialogue.', 'Japanese', 'English');
-    assert.ok(prompt.includes('official Japanese titles/honorifics'));
-    assert.ok(!prompt.includes('Puan'));
-    assert.ok(!prompt.includes('Diadaptasi daripada'));
-});
-
-// ── 4. P2 (translationEngine) — few-shot 3 contoh ISOMETRIK dari pack, target-conditional ──
-// [FEW-SHOT-V2 2026-11-14] few-shot direka semula: 3 contoh isometrik
-// (split+markup, SDH+syarahan, disiplin alamat KNP) dalam format
-// <example><input>/<output><answer>. Perlindungan parity kini dibawa oleh
-// seksyen [TECHNICAL CONSTRAINTS] + inspection Agent Inspector. few-shot
-// disuntik KEDUA-DUA mod (templat tunggal); specificRules dipensiunkan (D3).
+// ── 4. P2 (translationEngine) — few-shot 3 contoh isometrik dari pack ──
 
 const FEW_SHOT_EXAMPLE_HEADERS = ['<example_input>', '<example_output>'];
-const RETIRED_CRIME_HEADERS = ['[EXAMPLE 1 — MERGE:', '[EXAMPLE 2 — SHIFT:'];
 
-test('P2 Malay: few-shot 3 contoh isometrik BM hadir, specificRules dipensiunkan', () => {
+test('P2 Malay: few-shot 3 contoh Owner hadir dalam prompt', () => {
     const TranslationEngine = require('./translationEngine');
     const dummyGemini = {
         translateSubtitle: async () => '',
@@ -151,18 +137,13 @@ test('P2 Malay: few-shot 3 contoh isometrik BM hadir, specificRules dipensiunkan
     for (const header of FEW_SHOT_EXAMPLE_HEADERS) {
         assert.ok(prompt.includes(header), `few-shot format hadir: ${header}`);
     }
-    for (const gone of RETIRED_CRIME_HEADERS) {
-        assert.ok(!prompt.includes(gone), `header jenayah legasi dibuang: ${gone}`);
-    }
-    assert.ok(prompt.includes('Biar betul.'), 'contoh BM (example 1) hadir untuk sasaran Malay');
-    assert.ok(prompt.includes('Bertenang, adik.'), 'contoh BM (example 2 SDH) hadir');
-    assert.ok(prompt.includes('Abang, dengar sini.'), 'contoh BM (example 3 KNP) hadir');
-    assert.ok(
-        prompt.includes('<example_input>'),
-        'few-shot V2 menggunakan <example_input> (tiada pertembungan <input>)'
-    );
-    assert.ok(!prompt.includes('Bahasa Melayu Malaysia'), 'specificRules DIPENSIUNKAN — tiada dalam templat');
-    assert.ok(!prompt.includes('ngomong'), 'senarai hitam BM tidak lagi diinterpolasi');
+    assert.ok(prompt.includes('Biar betul.[br]Memang nak buat sekarang ke?'), 'contoh BM (example 1) hadir');
+    assert.ok(prompt.includes('(Marcus) Relaks lah, budak.'), 'contoh BM (example 2 SDH) hadir');
+    assert.ok(prompt.includes('memang habislah kita semua.'), 'contoh BM (example 3 split) hadir');
+    assert.ok(prompt.includes('<i>Manifest 404</i>'), 'markup <i> kekal dalam few-shot');
+    // Templat pendek Owner hadir.
+    assert.ok(prompt.includes('STRICT 1:1 SLOT PARITY'));
+    assert.ok(prompt.includes('Anti-calque'));
 });
 
 test('P2 Vietnamese: few-shot neutral — TIADA contoh BM, placeholder meta hadir', () => {
@@ -180,45 +161,29 @@ test('P2 Vietnamese: few-shot neutral — TIADA contoh BM, placeholder meta hadi
         assert.ok(prompt.includes(header), `few-shot format neutral hadir: ${header}`);
     }
     assert.ok(!prompt.includes('Biar betul.'), 'TIADA contoh BM dalam prompt Vietnamese');
-    assert.ok(!prompt.includes('Abang, dengar sini.'), 'TIADA teks BM (KNP) dalam prompt Vietnamese');
+    assert.ok(!prompt.includes('Relaks lah'), 'TIADA teks BM (SDH) dalam prompt Vietnamese');
     assert.ok(
         prompt.includes('{translation of "You\'ve got to be kidding me."}'),
         'placeholder meta neutral hadir (example 1)'
     );
-    assert.ok(prompt.includes('{translation of "Relax, kid."}'), 'placeholder meta neutral hadir (example 2)');
-    assert.ok(
-        prompt.includes('{direct address for "Marcus"}'),
-        'placeholder meta neutral hadir (example 3 direct address)'
-    );
-    assert.ok(!prompt.includes('{translation of "Sorry I\'m late."}'), 'contoh legasi dipensiunkan');
+    assert.ok(prompt.includes('[{translation of "door slams"}]'), 'placeholder meta neutral hadir (example 2)');
 });
 
-// ── 5. P8 (gemini DEFAULT_TRANSLATION_PROMPT) — rule #6 target-conditional ──
+// ── 5. P8 (gemini DEFAULT_TRANSLATION_PROMPT) — neutral statik ──
 
-test('P8 Malay: composer membawa peraturan BM (saya/awak, anti-Indonesianisms)', () => {
-    const prompt = composeDefaultTranslationPrompt('ms');
-    assert.ok(prompt.includes('Bahasa Melayu Malaysia'), 'peraturan BM hadir untuk sasaran Malay');
-    assert.ok(prompt.includes('Indonesianisms'), 'larangan Indonesianism hadir');
+test('P8: composer neutral statik — tiada teks BM untuk mana-mana sasaran', () => {
+    for (const target of ['ms', 'Vietnamese', null]) {
+        const prompt = composeDefaultTranslationPrompt(target);
+        assert.ok(!prompt.includes('Bahasa Melayu'), `${target}: TIADA peraturan BM`);
+        assert.ok(!prompt.includes('Indonesianisms'), `${target}: TIADA senarai hitam BM`);
+        assert.ok(prompt.includes('natural, idiomatic phrasing'), `${target}: peraturan neutral hadir`);
+    }
+    assert.equal(DEFAULT_TRANSLATION_PROMPT, composeDefaultTranslationPrompt(null), 'warisan statik = neutral');
 });
 
-test('P8 Vietnamese: composer neutral — TIADA teks BM', () => {
-    const prompt = composeDefaultTranslationPrompt('Vietnamese');
-    assert.ok(!prompt.includes('Bahasa Melayu'), 'TIADA peraturan BM untuk Vietnamese');
-    assert.ok(!prompt.includes('Indonesianisms'));
-    assert.ok(prompt.includes('natural, idiomatic phrasing'), 'peraturan neutral hadir');
-});
+// ── 6. SIFAR hardcode: few-shot BM hanya dalam malay.js ──
 
-test('P8: DEFAULT_TRANSLATION_PROMPT statik (warisan) = generic neutral', () => {
-    assert.ok(
-        !DEFAULT_TRANSLATION_PROMPT.includes('Bahasa Melayu'),
-        'constant warisan tidak lagi membawa peraturan BM tanpa syarat'
-    );
-    assert.equal(DEFAULT_TRANSLATION_PROMPT, composeDefaultTranslationPrompt(null), 'warisan statik = generic');
-});
-
-// ── 6. SIFAR hardcode: "Ms. Shen"/"Puan Shen"/few-shot BM di luar pack ──
-
-test('Grep proof: P1/P2/P8 source TIADA hardcoded "Ms. Shen"/"Puan Shen"/Awak ikut kami', () => {
+test('Grep proof: sumber enjin/preflight/composer TIADA hardcoded few-shot BM', () => {
     const p1 = fs.readFileSync(path.join(__dirname, 'subfaberPreflight.js'), 'utf8');
     const p2 = fs.readFileSync(path.join(__dirname, 'translationEngine.js'), 'utf8');
     const p8 = fs.readFileSync(path.join(__dirname, 'gemini.js'), 'utf8');
@@ -228,26 +193,20 @@ test('Grep proof: P1/P2/P8 source TIADA hardcoded "Ms. Shen"/"Puan Shen"/Awak ik
         ['P2', p2],
         ['P8', p8]
     ]) {
-        assert.ok(!src.includes('Ms. Shen'), `${name}: TIADA "Ms. Shen" hardcoded`);
-        assert.ok(!src.includes('Puan Shen'), `${name}: TIADA "Puan Shen" hardcoded`);
+        assert.ok(!src.includes('Relaks lah'), `${name}: TIADA few-shot BM hardcoded`);
+        assert.ok(!src.includes('Biar betul'), `${name}: TIADA few-shot BM hardcoded`);
+        assert.ok(!src.includes('Puan [Surname]'), `${name}: TIADA matriks BM hardcoded`);
     }
-    // Few-shot BM hanya dalam malay.js
-    assert.ok(!p2.includes('Awak ikut kami'), 'P2: TIADA few-shot BM hardcoded');
     const malayPackSrc = fs.readFileSync(path.join(__dirname, 'prompts/languagePacks/malay.js'), 'utf8');
-    assert.ok(
-        malayPackSrc.includes('Puan [Surname]'),
-        'malay.js membawa contoh generik Puan [Surname] (migration verified)'
-    );
-    assert.ok(malayPackSrc.includes('Awak ikut kami'), 'malay.js membawa few-shot BM (migration verified)');
-    // Rule #6 BM hanya dalam malay.js
-    assert.ok(!p8.includes('Indonesianisms'), 'P8: TIADA peraturan BM hardcoded');
-    assert.ok(malayPackSrc.includes('Indonesianisms'), 'malay.js membawa larangan Indonesianism');
+    assert.ok(malayPackSrc.includes('Relaks lah, budak.'), 'malay.js membawa fewShot Owner');
+    // Preflight/composer tidak membawa pack (komen legacy tidak dikira — kod sahaja).
+    assert.ok(!/^[^\/]*getLanguagePack\(/m.test(p1), 'P1: TIADA panggilan pack (kod sahaja)');
+    assert.ok(!/require\('\.\/prompts\/languagePacks'\)/.test(p1), 'P1: TIADA import pack');
 });
 
-// ── 7. NOT-LOCKED guidance target-conditional ──
+// ── 7. NOT-LOCKED guidance neutral statik ──
 
-test('NOT-LOCKED: Malay → matriks BM; Vietnamese → panduan neutral', () => {
-    const { formatPreflightForPrompt } = require('./subfaberPreflight');
+test('NOT-LOCKED: panduan neutral statik untuk SEMUA bahasa', () => {
     const ctx = {
         theme: 'T.',
         terms: [],
@@ -255,13 +214,11 @@ test('NOT-LOCKED: Malay → matriks BM; Vietnamese → panduan neutral', () => {
         credits_and_titles: []
     };
     const malayBlock = formatPreflightForPrompt(ctx, 'Malay');
-    assert.ok(malayBlock.includes('Malay matrix'), 'panduan matriks BM untuk Malay');
+    assert.ok(malayBlock.includes('address not locked'), 'isyarat neutral untuk Malay');
+    assert.ok(!malayBlock.includes('Malay matrix'), 'TIADA matriks BM');
     const vnBlock = formatPreflightForPrompt(ctx, 'Vietnamese');
+    assert.ok(vnBlock.includes('address not locked'), 'isyarat neutral untuk Vietnamese');
     assert.ok(!vnBlock.includes('Puan'), 'TIADA matriks BM untuk Vietnamese');
-    assert.ok(vnBlock.includes('address NOT LOCKED'), 'isyarat NOT LOCKED kekal');
-    // Kes warisan: tanpa targetLanguage → lalai Malay (keserasian penuh)
-    const legacyBlock = formatPreflightForPrompt(ctx);
-    assert.ok(legacyBlock.includes('Malay matrix'), 'pemanggil warisan (tiada arg) kekal matriks BM');
 });
 
 // ── 8. [PAYLOAD-GODTIER] supplementary: SSE propagation + timeout ceiling ──
@@ -293,7 +250,6 @@ test('[PAYLOAD-GODTIER]: translateSubtitle Agent Inspector MENGDELEGASI ke lalua
         return { data: { choices: [{ message: { content: '' } }] } };
     };
     try {
-        // Laluan langsung translateSubtitle (dipakai Fasa 0 & Fasa B)
         const text = await inspector.translateSubtitle('probe', 'en', 'en', 'probe prompt');
         assert.ok(sseUsed, 'panggilan Agent Inspector melalui SSE (responseType stream)');
         assert.ok(text.includes('SSE ok.'), 'jawapan dihuraikan daripada stream');

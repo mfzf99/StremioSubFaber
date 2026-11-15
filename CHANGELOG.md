@@ -2,6 +2,29 @@
 
 All notable changes to this project will be documented in this file.
 
+## SubFaber v3.36.0 (2026-11-15) — MONKEY Total Purge: Short Owner Translation Template as the Trinity Foundation
+
+### ⚡ Changed — Translation Prompt Is Now the Owner's Short Template (Verbatim)
+
+- **`TRANSLATION_SYSTEM_TEMPLATE` replaced verbatim** with the Owner's short template: `[SYSTEM / ROLE]` (two lines), four technical constraints (`STRICT 1:1 SLOT PARITY`, `SPLIT SENTENCES`, `PRESERVE MARKUP & SDH`, `ISOLATION`), four style bullets (anti-calque, natural dialogue flow, colloquialisms without censorship, punchy reading speed), few-shot, and the output requirement. The 5-rule ANTI-* template with its "mentally translate the complete sentence first", honorific-lock, and register-lock prose is retired. The translation prompt is the BATU ASAS: Preflight and Inspector instructions were re-grounded on the same foundation (Inspector now audits the translator's own 1:1/split/markup/isolation contract instead of a parallel rulebook).
+- **Language packs reduced to `{ code, aliases, fewShot }`.** `honorificMatrix`, `canonicalAddressMatrix`, `creditsExample`, `specificRules`, and `notLockedGuidance` are deleted from both packs. The Malay few-shot is the Owner's three verbatim examples (Biar betul / Relaks lah, budak / memang habislah kita semua); the generic pack keeps language-neutral meta placeholders. Few-shot is the ONLY per-target wiring, and only Agent Translation consumes it.
+- **Preflight is neutral-global.** The prompt no longer injects any language-pack content: `${honorificMatrix}`, `${canonicalAddressMatrix}`, and `${creditsExample}` placeholders are gone; character-address guidance is the standard target-language convention inline; credits policy is inline-neutral; NOT-LOCKED guidance is a static neutral string. The 4-pillar JSON schema (theme/terms/characters/credits_and_titles) and all null-discipline are unchanged.
+
+### 🗑️ Removed — The MONKEY Layer Is Deleted Entirely
+
+- `src/services/utils/mechanicalValidator.js` is **deleted**; the mechanical validation gate, the `MECHANICAL_TRANSLATION_RETRY` incident (open/close/D1 variants), the full-batch mechanical retry with per-ID corrections, the `mechanicalRetries` stat, and the C1 cache-poisoning skip are removed from `src/services/translationEngine.js` and `src/utils/parallelTranslation.js`. The recurring Telegram `MECHANICAL_TRANSLATION_RETRY — not recovered` incidents are now structurally impossible: no code path records that incident type anymore. Structure remains guarded by MISMATCH_RETRY Pass 1/2/3 + shift detector; Pro-mode semantics remain guarded by the Agent Inspector's 7-crime audit and single semantic retry (retry diagnostics are now semantic-only; mechanical correction entries are gone from `CORRECTION_BY_TYPE` and `selectRetryFindings`).
+- The legacy `composeDefaultTranslationPrompt` (non-Trinity default) is now a neutral static string (no pack input).
+
+### 🔄 Migration
+
+- Trinity cache namespace advances v5 → **v6** (`trinity-{mode}-universal-v6_ch-{channel}`): outputs produced under any earlier prompt are never served under the short-template prompt. All users (including private bypass caches) retranslate once.
+
+### ✅ Verification
+
+- Red-first: the new suite `src/services/subfaber-monkey-total-purge-regression.test.js` observed **5/6 RED before production edits** (`.tmp/red-total-purge.log`) — P1 validator-file-deleted, P2 no mechanical retry on hard defects, P3 short-template pins, P4 pack/few-shot pins, P5 v6 cache namespace; P6 (Inspector semantic retry survives) was green before and after as the control.
+- Re-pinned suites: translation-quality, translation-quality-fixes (D1 re-pinned to "no mechanical incident at all"), universal-language-pack, trinity-prompt-setup, trinity-prompt-matrix, subfaber-context, subfaber-beta-run7, subfaber-preflight, tri-door-wire-parity, cache-keys-channel, finops-channel, parallel-worker-stats — all green; deleted with the removed layer: `translation-monkey-harmony-regression.test.js` (v3.35.0 subject), `translation-cache-poisoning-isolated.test.js` (C1 guard deleted with the layer; justification in the ledger).
+- Full tracked suite: **708 tests / 706 passed / 0 failed / 1 skipped** (pre-existing live-Redis concurrent-quota integration), exit 0.
+
 ## SubFaber v3.35.0 (2026-11-15) — MONKEY × SubFaber Harmony: Mechanical Validator False-Positive Purge and Honest Hybrid Retry Acceptance
 
 ### 🛠 Fixed — The Recurring `MECHANICAL_TRANSLATION_RETRY — not recovered` Incidents Are Root-Caused and Eliminated

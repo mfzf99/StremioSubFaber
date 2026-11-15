@@ -186,7 +186,7 @@ async function executeParallelTranslation(engine, entries, targetLanguage, custo
                       agentInspectorRetries: 0,
                       agentInspectorBatchesInspected: 0,
                       agentInspectorBatchesSkippedAfterOpen: 0,
-                      mechanicalRetries: 0,
+                      // [TOTAL-PURGE v3.36.0] mechanicalRetries DIBUANG.
                       crimesDetectedByType: {
                           MERGE: 0,
                           DROP: 0,
@@ -238,10 +238,10 @@ async function executeParallelTranslation(engine, entries, targetLanguage, custo
                 es.agentInspectorInspections =
                     (es.agentInspectorInspections || 0) + (ws.agentInspectorInspections || 0);
                 es.agentInspectorRetries = (es.agentInspectorRetries || 0) + (ws.agentInspectorRetries || 0);
-                // [B1-FIX] Gate mekanikal + taksonomi jenayah + insiden (additive):
-                // medan v3.31.0 yang dahulu hilang pada stats worker kini
-                // digabung semula sepenuhnya ke stats enjin induk.
-                es.mechanicalRetries = (es.mechanicalRetries || 0) + (ws.mechanicalRetries || 0);
+                // [B1-FIX] Taksonomi jenayah + insiden (additive): medan yang
+                // dahulu hilang pada stats worker digabung semula sepenuhnya
+                // ke stats enjin induk. [TOTAL-PURGE v3.36.0] mechanicalRetries
+                // DIBUANG (lapisan MONKEY).
                 es.agentInspectorBatchesInspected =
                     (es.agentInspectorBatchesInspected || 0) + (ws.agentInspectorBatchesInspected || 0);
                 es.agentInspectorBatchesSkippedAfterOpen =
