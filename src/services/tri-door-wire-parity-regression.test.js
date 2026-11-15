@@ -423,9 +423,10 @@ test('[WIRE-MATRIX-GEMINI] Translation Basic+Pro × Gemini: systemInstruction to
         // [SINGLE-TEMPLATE 2026-11-14] Kedua-dua mod berkongsi SATU templat;
         // Basic menerima pack few-shot juga (D5b), jadi pin pack-untuk-Pro
         // dibuang dan pin kontrak-teras dikuatkan pada kedua-dua mod.
-        assert.ok(has(system, 'STRICT 1:1 SLOT PARITY'), `[${mode}] templat pendek Owner hadir`);
-        assert.ok(has(system, 'Never merge, split, skip'), `[${mode}] pariti 1:1 eksplisit (templat pendek)`);
-        assert.ok(has(system, 'Biar betul.'), `[${mode}] few-shot pack disuntik (D5b)`);
+        // [STREAMLINE 2026-11-15] Templat streamline Owner — pin baharu.
+        assert.ok(has(system, '### CORE RULES'), `[${mode}] templat streamline Owner hadir`);
+        assert.ok(has(system, 'Never merge, split, skip'), `[${mode}] pariti 1:1 eksplisit (templat streamline)`);
+        assert.ok(has(system, 'memang gila lah kau.'), `[${mode}] few-shot pack disuntik (D5b)`);
 
         const user = body.contents[0]?.parts?.[0]?.text || '';
         assert.ok(has(user, '<input>'), `[${mode}] user membawa <input>`);

@@ -77,14 +77,18 @@ test('P2: engine tidak menjalankan retry mekanikal pada kecacatan keras', async 
 });
 
 // P3 — templat baharu (pembandingan rentetan kunci pada sumber SSOT).
-test('P3: TRANSLATION_SYSTEM_TEMPLATE = templat pendek Owner', () => {
+test('P3: TRANSLATION_SYSTEM_TEMPLATE = templat streamline Owner (sifar melalut)', () => {
     const { TRANSLATION_SYSTEM_TEMPLATE } = require('./prompts/trinity/translation/core');
-    assert.ok(TRANSLATION_SYSTEM_TEMPLATE.includes('STRICT 1:1 SLOT PARITY'));
-    assert.ok(TRANSLATION_SYSTEM_TEMPLATE.includes('SPLIT SENTENCES'));
-    assert.ok(TRANSLATION_SYSTEM_TEMPLATE.includes('PRESERVE MARKUP & SDH'));
-    assert.ok(TRANSLATION_SYSTEM_TEMPLATE.includes('ISOLATION'));
-    assert.ok(TRANSLATION_SYSTEM_TEMPLATE.includes('Anti-calque'));
+    assert.ok(TRANSLATION_SYSTEM_TEMPLATE.includes('### CORE RULES'));
+    assert.ok(TRANSLATION_SYSTEM_TEMPLATE.includes('translate the whole thought first'));
+    assert.ok(TRANSLATION_SYSTEM_TEMPLATE.includes('Keep exact counts per slot'));
+    assert.ok(TRANSLATION_SYSTEM_TEMPLATE.includes('Translate ONLY the lines inside <input>'));
+    assert.ok(TRANSLATION_SYSTEM_TEMPLATE.includes('ZERO markdown code blocks'));
     assert.ok(TRANSLATION_SYSTEM_TEMPLATE.includes('${fewShot}'));
+    // Rentetan templat pendek v3.36.0 — mesti hilang (STREAMLINE 2026-11-15).
+    assert.ok(!TRANSLATION_SYSTEM_TEMPLATE.includes('[SYSTEM / ROLE]'));
+    assert.ok(!TRANSLATION_SYSTEM_TEMPLATE.includes('STRICT 1:1 SLOT PARITY'));
+    assert.ok(!TRANSLATION_SYSTEM_TEMPLATE.includes('Anti-calque'));
     // Rentetan lama templat V4 — mesti hilang.
     assert.ok(!TRANSLATION_SYSTEM_TEMPLATE.includes('mentally translate the complete sentence first'));
     assert.ok(!TRANSLATION_SYSTEM_TEMPLATE.includes('ANTI-MERGE'));
@@ -98,9 +102,10 @@ test('P3: TRANSLATION_SYSTEM_TEMPLATE = templat pendek Owner', () => {
 // P4 — fewShot baharu hadir pada kedua-dua mod.
 test('P4: fewShot baharu Malay hadir untuk Basic dan Pro', () => {
     const { malayPack } = require('./prompts/languagePacks/index');
-    assert.ok(malayPack.fewShot.includes('Biar betul.'));
-    assert.ok(malayPack.fewShot.includes('Relaks lah, budak.'));
-    assert.ok(malayPack.fewShot.includes('memang habislah kita semua.'));
+    assert.ok(malayPack.fewShot.includes('<bad_textbook>'));
+    assert.ok(malayPack.fewShot.includes('memang gila lah kau.'));
+    assert.ok(malayPack.fewShot.includes('Masa dah suntuk.'));
+    assert.ok(!malayPack.fewShot.includes('Biar betul.'));
     // Medan MONKEY/sosiolinguistik lama — mesti tidak wujud pada pack.
     for (const field of [
         'honorificMatrix',
@@ -129,8 +134,8 @@ test('P4: fewShot baharu Malay hadir untuk Basic dan Pro', () => {
     assert.ok(!PREFLIGHT_STATIC_TEMPLATE.includes('${creditsExample}'));
 });
 
-// P5 — namespace cache v6.
-test('P5: kunci cache Trinity membawa namespace v6', () => {
+// P5 — namespace cache v7.
+test('P5: kunci cache Trinity membawa namespace v7', () => {
     const { generateCacheKeys } = require('../utils/cacheKeys');
     const keys = generateCacheKeys(
         { trinityMode: 'basic', trinity: { mode: 'basic' }, bypassCache: true, bypassCacheConfig: { enabled: true } },
@@ -140,7 +145,7 @@ test('P5: kunci cache Trinity membawa namespace v6', () => {
     const allKeys = [keys.baseKey, keys.cacheKey, keys.runtimeKey].filter((k) => typeof k === 'string');
     assert.ok(allKeys.length > 0, 'at least one cache key must be generated');
     for (const key of allKeys) {
-        assert.ok(String(key).includes('-v6_'), `cache key must carry v6 namespace: ${key}`);
+        assert.ok(String(key).includes('-v7_'), `cache key must carry v7 namespace: ${key}`);
     }
 });
 

@@ -40,8 +40,8 @@ test('[TRINITY-CORE-1] Canonical cores retain the approved prompt contracts with
     assert.ok(!PREFLIGHT_STATIC_TEMPLATE.includes('${honorificMatrix}'));
     assert.ok(!PREFLIGHT_STATIC_TEMPLATE.includes('${canonicalAddressMatrix}'));
     assert.ok(!PREFLIGHT_STATIC_TEMPLATE.includes('${creditsExample}'));
-    assert.ok(TRANSLATION_SYSTEM_TEMPLATE.includes('STRICT 1:1 SLOT PARITY'));
-    assert.ok(TRANSLATION_SYSTEM_TEMPLATE.includes('flow the meaning naturally across those exact slots'));
+    assert.ok(TRANSLATION_SYSTEM_TEMPLATE.includes('Output exactly one <s id="N"> per <input> entry'));
+    assert.ok(TRANSLATION_SYSTEM_TEMPLATE.includes('flow it naturally across those exact slots'));
     // [SINGLE-TEMPLATE 2026-11-14] ${targetSpecificRules} is retired (Owner
     // D3); ${fewShot} stays and is now interpolated for BOTH modes.
     assert.ok(!TRANSLATION_SYSTEM_TEMPLATE.includes('${targetSpecificRules}'));
@@ -102,15 +102,18 @@ test('[TRINITY-CORE-4] ONE template serves Basic and Pro — Basic rejects an In
     // per-sasaran yang sah).
     assert.ok(TRANSLATION_SYSTEM_TEMPLATE.includes('${fewShot}'), 'few-shot placeholder hadir (kedua-dua mod)');
     assert.ok(!TRANSLATION_SYSTEM_TEMPLATE.includes('${targetSpecificRules}'), 'specificRules dipensiunkan (D3)');
-    assert.ok(TRANSLATION_SYSTEM_TEMPLATE.includes('STRICT 1:1 SLOT PARITY'), 'R1 — ID pariti');
     assert.ok(
-        TRANSLATION_SYSTEM_TEMPLATE.includes('translate the complete thought first'),
-        'R2 — ayat dipecah (templat pendek Owner)'
+        TRANSLATION_SYSTEM_TEMPLATE.includes('Output exactly one <s id="N"> per <input> entry in identical order'),
+        'R1 — ID pariti (templat streamline Owner)'
     );
-    assert.ok(TRANSLATION_SYSTEM_TEMPLATE.includes('Anti-calque'), 'R3 — dialog semula jadi');
-    assert.ok(TRANSLATION_SYSTEM_TEMPLATE.includes('PRESERVE MARKUP & SDH'), 'R4 — label penutur, SDH');
     assert.ok(
-        TRANSLATION_SYSTEM_TEMPLATE.includes('Keep every [br], <i>...</i>, dialogue dash'),
+        TRANSLATION_SYSTEM_TEMPLATE.includes('translate the whole thought first'),
+        'R2 — ayat dipecah (templat streamline Owner)'
+    );
+    assert.ok(TRANSLATION_SYSTEM_TEMPLATE.includes('natural, conversational'), 'R3 — dialog semula jadi');
+    assert.ok(TRANSLATION_SYSTEM_TEMPLATE.includes('Keep exact counts per slot'), 'R4 — label penutur, SDH');
+    assert.ok(
+        TRANSLATION_SYSTEM_TEMPLATE.includes('Keep exact counts per slot for [br], <i>...</i>'),
         'R5 — pemeliharaan format (exact counts per slot)'
     );
     assert.ok(
@@ -173,7 +176,7 @@ test('[TRINITY-CORE-5] Pack few-shot is injected for BOTH modes and every placeh
         const engine = makeEngine({ trinityMode: mode });
         engine.sourceLanguage = 'English';
         const prompt = engine.createXmlBatchPrompt('<s id="1">Hello.</s>', 'Malay', null, 1, null, 0, 1);
-        assert.ok(prompt.includes('Biar betul.'), `${mode}: contoh few-shot BM hadir (pack disuntik)`);
+        assert.ok(prompt.includes('memang gila lah kau.'), `${mode}: contoh few-shot BM hadir (pack disuntik)`);
         assert.ok(!prompt.includes('Spoken Malaysian Cadence'), `${mode}: specificRules TIADA (dipensiunkan)`);
         assert.ok(!prompt.includes('Register-Gated Loanwords'), `${mode}: tiada peraturan pack lama`);
         for (const placeholder of ['${sourceLabel}', '${targetLabel}', '${targetLabelShort}', '${fewShot}']) {
@@ -205,28 +208,28 @@ test('[TRINITY-CORE-8] v5 namespace discriminates mode + channel and retains use
     // discriminator; [TOTAL-PURGE v3.36.0] maju ke v6: templat pendek baharu
     // + few-shot baharu — output v5/ke-bawah tidak diservis.
     const permanent = generateCacheKeys({}, 'tt123_en', 'ms');
-    assert.equal(permanent.baseKey, 'tt123_en_ms_trinity-basic-universal-v6_ch-gemini');
+    assert.equal(permanent.baseKey, 'tt123_en_ms_trinity-basic-universal-v7_ch-gemini');
     assert.equal(permanent.cacheKey, permanent.baseKey);
 
     const pro = generateCacheKeys({ trinityMode: 'pro' }, 'tt123_en', 'ms');
-    assert.equal(pro.baseKey, 'tt123_en_ms_trinity-pro-universal-v6_ch-gemini', 'Pro namespace must differ from Basic');
+    assert.equal(pro.baseKey, 'tt123_en_ms_trinity-pro-universal-v7_ch-gemini', 'Pro namespace must differ from Basic');
 
     const bypass = generateCacheKeys({ bypassCache: true, __configHash: 'config-hash' }, 'tt123_en', 'ms');
-    assert.equal(bypass.cacheKey, 'tt123_en_ms_trinity-basic-universal-v6_ch-gemini__u_config-hash');
+    assert.equal(bypass.cacheKey, 'tt123_en_ms_trinity-basic-universal-v7_ch-gemini__u_config-hash');
     assert.equal(bypass.runtimeKey, bypass.cacheKey);
 
     const ass = generateCacheKeys({ convertAssToVtt: false }, 'tt123_en', 'ms');
-    assert.equal(ass.baseKey, 'tt123_en_ms_trinity-basic-universal-v6_ch-gemini_ass');
+    assert.equal(ass.baseKey, 'tt123_en_ms_trinity-basic-universal-v7_ch-gemini_ass');
 });
 
 test('[TRINITY-CORE-9] The single template retains the owner-vetted entity + isolation contract', () => {
     // [TOTAL-PURGE v3.36.0] Templat pendek Owner: kontrak bukti dipindahkan
     // ke Inspector; templat mengekalkan kontrak entiti + isolation ringkas.
     for (const fragment of [
-        'Never merge, split, skip, or leave any slot empty',
-        'Never repeat words or dump the whole sentence into the first slot',
-        'Localize [sound effects]',
-        'Everything outside <input> is read-only context',
+        'Never merge, split, skip, or leave a slot empty',
+        'without repeating words or dumping everything into the first slot',
+        'localize [sound effects]',
+        'Translate ONLY the lines inside <input>',
         'ZERO translator notes in parentheses'
     ]) {
         assert.ok(TRANSLATION_SYSTEM_TEMPLATE.includes(fragment), fragment);
@@ -258,15 +261,15 @@ test('[TRINITY-CORE-9] The single template retains the owner-vetted entity + iso
     );
 
     assert.ok(!TRANSLATION_SYSTEM_TEMPLATE.includes('distribute the clauses proportionally'));
-    // [TOTAL-PURGE v3.36.0] Kontrak teras templat pendek Owner.
-    assert.ok(TRANSLATION_SYSTEM_TEMPLATE.includes('identical IDs and order'));
-    assert.ok(TRANSLATION_SYSTEM_TEMPLATE.includes('flow the meaning naturally across those exact slots'));
+    // [STREAMLINE 2026-11-15] Kontrak teras templat streamline Owner.
+    assert.ok(TRANSLATION_SYSTEM_TEMPLATE.includes('in identical order'));
+    assert.ok(TRANSLATION_SYSTEM_TEMPLATE.includes('flow it naturally across those exact slots'));
     assert.ok(
-        TRANSLATION_SYSTEM_TEMPLATE.includes('(Name)/[Name] speaker label intact with exact counts per slot'),
-        'Pemeliharaan label penutur (templat pendek Owner)'
+        TRANSLATION_SYSTEM_TEMPLATE.includes('(Name)/[Name] labels'),
+        'Pemeliharaan label penutur (templat streamline Owner)'
     );
     assert.ok(!TRANSLATION_SYSTEM_TEMPLATE.includes('proper name or brand'), 'Kontrak entiti dipindah ke Inspector');
-    assert.ok(TRANSLATION_SYSTEM_TEMPLATE.includes('Everything outside <input> is read-only context'));
+    assert.ok(TRANSLATION_SYSTEM_TEMPLATE.includes('Translate ONLY the lines inside <input>'));
 });
 
 test('[TRINITY-CORE-11] Both modes place the exact active-ID manifest before input on every provider door', () => {
@@ -323,7 +326,7 @@ test('[TRINITY-CORE-10] System instruction is IDENTICAL for every target except 
         const structured = splitStructuredPrompt(prompt);
         assert.ok(structured, `${targetLanguage} prompt must stay structured`);
         assert.ok(
-            structured.system.includes(`Translate from English into ${targetLabel}`),
+            structured.system.includes(`from English into natural, conversational ${targetLabel}`),
             `${targetLanguage} prompt must name the actual target language`
         );
         // Templat statik mesti bebas daripada nama bahasa konkrit pada sumber.
@@ -336,9 +339,12 @@ test('[TRINITY-CORE-10] System instruction is IDENTICAL for every target except 
         // placeholder neutral untuk yang lain) — bukti wiring pack berfungsi.
         const packFewShot = getLanguagePack(targetLanguage).fewShot;
         if (targetLanguage === 'Malay') {
-            assert.ok(structured.system.includes('Biar betul.'), 'Malay pack few-shot hadir untuk sasaran Malay');
+            assert.ok(
+                structured.system.includes('memang gila lah kau.'),
+                'Malay pack few-shot hadir untuk sasaran Malay'
+            );
         } else {
-            assert.ok(!structured.system.includes('Biar betul.'), `${targetLanguage}: TIADA contoh BM`);
+            assert.ok(!structured.system.includes('memang gila lah kau.'), `${targetLanguage}: TIADA contoh BM`);
         }
         const withoutPack = structured.system.replaceAll(packFewShot, '');
         const normalized = withoutPack.replaceAll(targetLabel, '<TARGET>');

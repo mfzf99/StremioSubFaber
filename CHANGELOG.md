@@ -2,6 +2,25 @@
 
 All notable changes to this project will be documented in this file.
 
+## SubFaber v3.37.0 (2026-11-15) — TRANSLATION_SYSTEM_TEMPLATE & Malay fewShot Streamline (Zero Rambling)
+
+### ⚡ Changed — Translation System Template (Owner Verbatim, Streamlined)
+
+- **`TRANSLATION_SYSTEM_TEMPLATE` replaced verbatim** with the Owner's streamlined template: a single role line, `### CORE RULES` (four rules: per-slot translation into natural conversational target language, exact 1:1 output per `<input>` entry, whole-thought-then-flow for split sentences with `[br]` placed at a natural target-language phrase break, exact per-slot markup counts including `♪` and speaker labels with localized `[sound effects]`), `### FEW-SHOT EXAMPLES (FORMAT REFERENCE ONLY)`, and `### OUTPUT FORMAT` (`Translate ONLY the lines inside <input>`, answer-only, zero commentary/markdown/translator notes). The v3.36.0 short template's labeled sections (`[SYSTEM / ROLE]`, `[TECHNICAL CONSTRAINTS & FORMATTING]`, `[STYLE & TONE GUIDELINES]`, `[OUTPUT REQUIREMENT]`) and the explicit style bullets (anti-calque list, colloquialisms, punchy lines) are retired; their surviving intent is carried by the `natural, conversational` register clause, the `<bad_textbook>` few-shot contrast, and the tightened core rules. The `${sourceLabel}`, `${targetLabel}`, `${targetLabelShort}`, and `${fewShot}` interpolation contracts, the `<answer>`/`<s id="N">` output contract, the idManifest placement, and the Gemini prefill anchor are unchanged.
+
+### ⚡ Changed — Malay fewShot (Owner Verbatim, Two Examples with Anti-Calque Contrast)
+
+- **`malayPack.fewShot` replaced verbatim** with the Owner's two examples: (1) a split-sentence pair shown twice — once as a literal `<bad_textbook>` calque (`Jika awak fikir saya akan biarkan dia berjalan pergi…`) and once as the idiomatic `<example_output>` (`Kalau kau ingat aku nak lepaskan dia macam tu je… / memang gila lah kau.`) — and (2) a full SDH example (`♪♪`, `(Marcus)` speaker label, `[br]`, `<i>Manifest 404</i>`, localized `[door slams]` → `[pintu terhempas]`). The previous three examples (`Biar betul`, `Relaks lah, budak`, `memang habislah kita semua`) are retired. The generic pack is untouched.
+
+### 🔄 Migration
+
+- Trinity cache namespace advances v6 → **v7** (`trinity-{mode}-universal-v7_ch-{channel}`): outputs produced under any earlier prompt are never served under the streamlined template and new few-shot (same migration contract as v5 → v6 at v3.36.0). All users (including private bypass caches) retranslate once; v6-era namespaces are intentionally orphaned.
+
+### ✅ Verification
+
+- Regression pins realigned to the verbatim texts (monkey-total-purge P3/P4, universal-language-pack, trinity-prompt-setup CORE-9/CORE-10/R-pins, trinity-prompt-matrix canonical fragments/HARMONY/FINALE, tri-door-wire-parity MATRIX, subfaber-context V5 lanes) with equivalent coverage; negative pins added asserting the retired v3.36.0 phrasing never returns.
+- Full tracked suite: **708 tests / 707 passed / 0 failed / 1 skipped** (pre-existing live-Redis concurrent-quota integration), exit 0, rerun after the v7 namespace bump and Prettier, log `.tmp/streamline-full2.log`.
+
 ## SubFaber v3.36.0 (2026-11-15) — MONKEY Total Purge: Short Owner Translation Template as the Trinity Foundation
 
 ### ⚡ Changed — Translation Prompt Is Now the Owner's Short Template (Verbatim)

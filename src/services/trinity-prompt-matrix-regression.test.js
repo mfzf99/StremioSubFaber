@@ -134,8 +134,11 @@ test('[MATRIX translation×gemini] prefill continuation anchor EKSKLUSIF', () =>
     assert.equal(out.channel, 'gemini');
     assert.ok(out.userPrompt.endsWith('<answer>\n<s id="11">'), 'anchor di HUJUNG user content');
     assert.equal(out.prefill, '<answer>\n<s id="11">', 'medan prefill eksplisit');
-    // [TOTAL-PURGE v3.36.0] Templat pendek Owner — kontrak parity baharu.
-    assert.ok(out.systemPrompt.includes('STRICT 1:1 SLOT PARITY'), 'rules parity dalam system');
+    // [STREAMLINE 2026-11-15] Templat streamline Owner — kontrak parity baharu.
+    assert.ok(
+        out.systemPrompt.includes('Output exactly one <s id="N"> per <input> entry'),
+        'rules parity dalam system'
+    );
     assert.ok(!out.systemPrompt.includes('<s id="11">'), 'system bebas data batch');
 });
 
@@ -210,14 +213,14 @@ const CANONICAL_FRAGMENTS = {
         '4-pillar pre-flight context',
         'lines 1-5'
     ],
-    // [TOTAL-PURGE v3.36.0] Templat pendek Owner — frasa kanonik baharu.
+    // [STREAMLINE 2026-11-15] Templat streamline Owner — frasa kanonik baharu.
     translation: [
-        'STRICT 1:1 SLOT PARITY',
-        'SPLIT SENTENCES',
-        'PRESERVE MARKUP & SDH',
-        'ISOLATION',
-        'Anti-calque',
-        'Output ONLY the <answer> block'
+        '### CORE RULES',
+        'translate the whole thought first',
+        'Keep exact counts per slot',
+        'natural, conversational',
+        'Return ONLY the <answer> block',
+        'ZERO translator notes in parentheses'
     ],
     inspector: [
         'MERGE: Two source lines merged',
@@ -248,14 +251,14 @@ for (const agent of ['preflight', 'translation', 'inspector']) {
 test('[HARMONY] kontrak templat pendek memetakan 1:1 kepada jenayah Inspector', () => {
     const translationSystem = interpolateTranslationSystem();
     const inspectorSystem = interpolateInspectorSystem();
-    // [TOTAL-PURGE v3.36.0] Templat pendek Owner ↔ taksonomi Inspector:
+    // [STREAMLINE 2026-11-15] Templat streamline Owner ↔ taksonomi Inspector:
     // setiap peraturan 1:1 terpakar kepada jenayah yang diauditnya.
     const pairs = [
-        ['STRICT 1:1 SLOT PARITY', 'MERGE:'],
-        ['SPLIT SENTENCES', 'SHIFT:'],
-        ['PRESERVE MARKUP & SDH', 'PHANTOM:'],
-        ['Keep lines punchy and concise', 'DROP:'],
-        ['Anti-calque', 'UNTRANSLATED:']
+        ['Output exactly one <s id="N"> per <input> entry', 'MERGE:'],
+        ['flow it naturally across those exact slots', 'SHIFT:'],
+        ['Keep exact counts per slot', 'PHANTOM:'],
+        ['localize [sound effects]', 'DROP:'],
+        ['ZERO translator notes in parentheses', 'UNTRANSLATED:']
     ];
     for (const [rule, crime] of pairs) {
         assert.ok(translationSystem.includes(rule), `Translation rule "${rule}" hadir`);
@@ -271,32 +274,37 @@ test('[FINALE preflight] direct_address example is source-language neutral', () 
     assert.ok(!prompt.includes('an English line that addresses them as'));
 });
 
-test('[FINALE translation] reading-speed guardrail and cross-slot flow are explicit (Owner short template)', () => {
+test('[FINALE translation] conversational register and cross-slot flow are explicit (streamline template)', () => {
     const prompt = interpolateTranslationSystem();
-    assert.ok(prompt.includes('Keep lines punchy and concise for subtitle reading speed'));
-    assert.ok(prompt.includes('translate the complete thought first'));
-    assert.ok(prompt.includes('flow the meaning naturally across those exact slots'));
-    assert.ok(prompt.includes('Never repeat words or dump the whole sentence into the first slot'));
-    assert.ok(prompt.includes('never mirror'));
+    assert.ok(prompt.includes('natural, conversational'));
+    assert.ok(prompt.includes('translate the whole thought first'));
+    assert.ok(prompt.includes('flow it naturally across those exact slots'));
+    assert.ok(prompt.includes('without repeating words or dumping everything into the first slot'));
+    assert.ok(prompt.includes('Place each [br] at a natural'));
     assert.ok(!prompt.includes('Translate only the fragment belonging to each slot'));
 });
-// Nota: pin di atas dikekalkan verbatim — templat tunggal membawa semula
-// frasa mandat Owner (economy + strict slots + reordering clause).
+// Nota: pin di atas dikemas kini selaras templat streamline Owner
+// (economy + strict slots + reordering clause kekal dipegang).
 
-test('[FINALE few-shot] both language packs wrap Output examples in <answer> exactly three times', () => {
-    // [FEW-SHOT-V2 2026-11-14] 3 contoh isometrik (split+markup, SDH+syarahan,
-    // disiplin alamat KNP). Tag pembungkus contoh dinamakan <example_input>/
-    // <example_output> supaya TIDAK bertembung dengan blok <input> sebenar.
-    for (const language of ['Malay', 'Japanese']) {
+test('[FINALE few-shot] packs wrap Output examples in <answer> at the pack-declared count', () => {
+    // [STREAMLINE 2026-11-15] Malay kini 2 contoh (contoh 1 tambah blok
+    // <bad_textbook> anti-calque); generic kekal 3 contoh. Tag pembungkus
+    // contoh dinamakan <example_input>/<example_output> supaya TIDAK
+    // bertembung dengan blok <input> sebenar.
+    const EXPECTED_EXAMPLES = { Malay: 2, Japanese: 3 };
+    for (const [language, expected] of Object.entries(EXPECTED_EXAMPLES)) {
         const fewShot = getLanguagePack(language).fewShot;
-        assert.equal((fewShot.match(/<example>/g) || []).length, 3, `${language}: three examples`);
-        assert.equal((fewShot.match(/<\/example>/g) || []).length, 3, `${language}: three example closers`);
-        assert.equal((fewShot.match(/<example_input>/g) || []).length, 3, `${language}: three input openers`);
-        assert.equal((fewShot.match(/<example_output>/g) || []).length, 3, `${language}: three output openers`);
-        assert.equal((fewShot.match(/<answer>/g) || []).length, 3, `${language}: three answer openers`);
-        assert.equal((fewShot.match(/<\/answer>/g) || []).length, 3, `${language}: three answer closers`);
+        assert.equal((fewShot.match(/<example>/g) || []).length, expected, `${language}: ${expected} examples`);
+        assert.equal((fewShot.match(/<\/example>/g) || []).length, expected, `${language}: example closers`);
+        assert.equal((fewShot.match(/<example_input>/g) || []).length, expected, `${language}: input openers`);
+        assert.equal((fewShot.match(/<example_output>/g) || []).length, expected, `${language}: output openers`);
+        assert.equal((fewShot.match(/<answer>/g) || []).length, expected, `${language}: answer openers`);
+        assert.equal((fewShot.match(/<\/answer>/g) || []).length, expected, `${language}: answer closers`);
         assert.equal((fewShot.match(/<input>/g) || []).length, 0, `${language}: sifar tag <input> dalam few-shot`);
     }
+    // Blok <bad_textbook> eksklusif contoh 1 Malay (kontras anti-calque).
+    assert.ok(getLanguagePack('Malay').fewShot.includes('<bad_textbook>'), 'Malay: blok <bad_textbook> hadir');
+    assert.ok(!getLanguagePack('Japanese').fewShot.includes('<bad_textbook>'), 'generic: TIADA <bad_textbook>');
 });
 
 test('[FINALE generic few-shot] meta placeholders avoid square-bracket SDH collisions', () => {

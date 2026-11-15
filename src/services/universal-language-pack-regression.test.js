@@ -82,11 +82,13 @@ test('LanguagePacks: antara muka pack — { code, aliases, fewShot } sahaja', ()
     }
 });
 
-test('LanguagePacks: fewShot Malay = 3 contoh VERBATIM Owner', () => {
-    assert.ok(malayPack.fewShot.includes('Biar betul.[br]Memang nak buat sekarang ke?'));
-    assert.ok(malayPack.fewShot.includes('(Marcus) Relaks lah, budak.'));
-    assert.ok(malayPack.fewShot.includes('memang habislah kita semua.'));
+test('LanguagePacks: fewShot Malay = 2 contoh VERBATIM Owner (STREAMLINE)', () => {
+    assert.ok(malayPack.fewShot.includes('<bad_textbook>'));
+    assert.ok(malayPack.fewShot.includes('memang gila lah kau.'));
+    assert.ok(malayPack.fewShot.includes('Masa dah suntuk.'));
     assert.ok(malayPack.fewShot.includes('[pintu terhempas]'));
+    assert.ok(malayPack.fewShot.includes('<i>Manifest 404</i>'));
+    assert.ok(!malayPack.fewShot.includes('Biar betul.'));
 });
 
 test('LanguagePacks: fewShot generic = meta-placeholder neutral, sifar BM', () => {
@@ -123,7 +125,7 @@ test('P1 neutral: kredit dipandu arahan inline — tiada contoh BM', () => {
 
 const FEW_SHOT_EXAMPLE_HEADERS = ['<example_input>', '<example_output>'];
 
-test('P2 Malay: few-shot 3 contoh Owner hadir dalam prompt', () => {
+test('P2 Malay: few-shot 2 contoh Owner hadir dalam prompt', () => {
     const TranslationEngine = require('./translationEngine');
     const dummyGemini = {
         translateSubtitle: async () => '',
@@ -137,13 +139,12 @@ test('P2 Malay: few-shot 3 contoh Owner hadir dalam prompt', () => {
     for (const header of FEW_SHOT_EXAMPLE_HEADERS) {
         assert.ok(prompt.includes(header), `few-shot format hadir: ${header}`);
     }
-    assert.ok(prompt.includes('Biar betul.[br]Memang nak buat sekarang ke?'), 'contoh BM (example 1) hadir');
-    assert.ok(prompt.includes('(Marcus) Relaks lah, budak.'), 'contoh BM (example 2 SDH) hadir');
-    assert.ok(prompt.includes('memang habislah kita semua.'), 'contoh BM (example 3 split) hadir');
+    assert.ok(prompt.includes('memang gila lah kau.'), 'contoh BM (example 1 split + bad_textbook) hadir');
+    assert.ok(prompt.includes('(Marcus) - Masa dah suntuk.'), 'contoh BM (example 2 SDH) hadir');
     assert.ok(prompt.includes('<i>Manifest 404</i>'), 'markup <i> kekal dalam few-shot');
-    // Templat pendek Owner hadir.
-    assert.ok(prompt.includes('STRICT 1:1 SLOT PARITY'));
-    assert.ok(prompt.includes('Anti-calque'));
+    // Templat streamline Owner hadir (STREAMLINE 2026-11-15).
+    assert.ok(prompt.includes('### CORE RULES'));
+    assert.ok(prompt.includes('translate the whole thought first'));
 });
 
 test('P2 Vietnamese: few-shot neutral — TIADA contoh BM, placeholder meta hadir', () => {
@@ -198,7 +199,7 @@ test('Grep proof: sumber enjin/preflight/composer TIADA hardcoded few-shot BM', 
         assert.ok(!src.includes('Puan [Surname]'), `${name}: TIADA matriks BM hardcoded`);
     }
     const malayPackSrc = fs.readFileSync(path.join(__dirname, 'prompts/languagePacks/malay.js'), 'utf8');
-    assert.ok(malayPackSrc.includes('Relaks lah, budak.'), 'malay.js membawa fewShot Owner');
+    assert.ok(malayPackSrc.includes('memang gila lah kau.'), 'malay.js membawa fewShot Owner');
     // Preflight/composer tidak membawa pack (komen legacy tidak dikira — kod sahaja).
     assert.ok(!/^[^\/]*getLanguagePack\(/m.test(p1), 'P1: TIADA panggilan pack (kod sahaja)');
     assert.ok(!/require\('\.\/prompts\/languagePacks'\)/.test(p1), 'P1: TIADA import pack');

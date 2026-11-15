@@ -413,35 +413,32 @@ test('SubFaberPrompt V5: Pro mode structured template, split system/user, no dou
     assert.ok(parts, 'Prompt must split into { system, user }');
     const { system, user } = parts;
 
-    // ── SYSTEM lane: templat pendek Owner (TOTAL-PURGE v3.36.0) ──
-    assert.ok(system.includes('[SYSTEM / ROLE]'), 'System/Role section label');
+    // ── SYSTEM lane: templat streamline Owner (STREAMLINE 2026-11-15) ──
+    assert.ok(system.includes('You are a professional Netflix subtitle translator.'), 'System/Role pembuka');
     assert.ok(
-        system.includes('You are a professional Netflix subtitle translator. Translate from English into Malay'),
-        'Role names both languages (Owner short template)'
+        system.includes('from English into natural, conversational Malay'),
+        'Role names both languages (streamline template)'
     );
-    // Technical constraints — 4 peraturan pendek Owner.
-    assert.ok(system.includes('[TECHNICAL CONSTRAINTS & FORMATTING]'), 'Constraints section label');
-    assert.ok(system.includes('STRICT 1:1 SLOT PARITY'), 'ID parity contract');
-    assert.ok(system.includes('Localize [sound effects]'), 'SFX localized secara eksplisit (templat pendek Owner)');
-    assert.ok(system.includes('♪ symbol'), 'Symbol muzik dipelihara (templat pendek Owner)');
+    // Core rules — 4 peraturan streamline Owner.
+    assert.ok(system.includes('### CORE RULES'), 'Core rules section label');
+    assert.ok(system.includes('Output exactly one <s id="N"> per <input> entry'), 'ID parity contract');
+    assert.ok(system.includes('localize [sound effects]'), 'SFX localized secara eksplisit (streamline Owner)');
+    assert.ok(system.includes('Keep exact counts per slot for [br]'), 'Markup + [br] count (streamline Owner)');
     assert.ok(
         !system.includes('[door slams]) are copied as-is'),
         'TIDAK mengatakan SFX copied as-is (kontradiksi few-shot)'
     );
-    assert.ok(system.includes('exact counts per slot'), '[br] count locked (Owner short template)');
-    // Style — 5 baris Owner.
-    assert.ok(system.includes('[STYLE & TONE GUIDELINES]'), 'Style section label');
-    assert.ok(system.includes('Anti-calque: Convert meaning, never word order'), 'Anti-calque in style');
-    assert.ok(system.includes('without censorship'), 'No-censorship directive');
-    // Few-shot 3 contoh isometrik dari pack (FEW-SHOT-V2)
-    assert.ok(system.includes('[FEW-SHOT EXAMPLES'), 'Few-shot section label');
-    assert.ok(system.includes('<example>'), 'Few-shot <example> format (pack V2)');
-    assert.ok(system.includes('Biar betul.'), 'Malay pack few-shot example 1 (target=Malay)');
+    assert.ok(system.includes('Place each [br] at a natural'), '[br] reposition adaptif (streamline Owner)');
+    // Few-shot 2 contoh dari pack (STREAMLINE: contoh 1 bawa <bad_textbook>)
+    assert.ok(system.includes('### FEW-SHOT EXAMPLES'), 'Few-shot section label');
+    assert.ok(system.includes('<example>'), 'Few-shot <example> format');
+    assert.ok(system.includes('<bad_textbook>'), 'Few-shot anti-calque contrast block (STREAMLINE)');
+    assert.ok(system.includes('memang gila lah kau.'), 'Malay pack few-shot example 1 (target=Malay)');
     assert.ok(!system.includes('[EXAMPLE 1 — MERGE:'), 'Legacy crime-labeled examples REMOVED');
-    // Output requirement
-    assert.ok(system.includes('[OUTPUT REQUIREMENT]'), 'Output requirement label');
-    assert.ok(system.includes('one <s id="N"> per input entry'), '1-to-1 contract (templat pendek Owner)');
-    assert.ok(system.includes('no thinking tags'), 'No-thinking-tags contract');
+    // Output format
+    assert.ok(system.includes('### OUTPUT FORMAT'), 'Output format label');
+    assert.ok(system.includes('exactly one <s id="N"> per <input> entry'), '1-to-1 contract (streamline Owner)');
+    assert.ok(system.includes('ZERO markdown code blocks'), 'No-markdown-blocks contract');
     assert.ok(
         system.includes('ZERO translator notes in parentheses'),
         'Anti-lazy-parenthetical contract (owner A/B tested hack)'
@@ -479,17 +476,17 @@ test('SubFaberPrompt V5: Basic mode uses the SAME single template with pack few-
 
     // SATU templat: Basic membawa seksyen berlabel yang sama.
     assert.ok(
-        system.includes('You are a professional Netflix subtitle translator. Translate from'),
+        system.includes('You are a professional Netflix subtitle translator.'),
         'Basic system carries the universal translator instruction'
     );
     assert.ok(
-        system.includes('Translate from English into Malay'),
+        system.includes('from English into natural, conversational Malay'),
         'Basic system names the actual source and target language'
     );
-    assert.ok(system.includes('[TECHNICAL CONSTRAINTS & FORMATTING]'), 'Basic carries the same constraints section');
-    assert.ok(system.includes('[FEW-SHOT EXAMPLES'), 'Basic carries the few-shot section (mandat Owner)');
-    assert.ok(system.includes('Biar betul.'), 'Basic carries the pack few-shot for target=Malay');
-    assert.ok(system.includes('[OUTPUT REQUIREMENT]'), 'Basic output contract label');
+    assert.ok(system.includes('### CORE RULES'), 'Basic carries the same core rules section');
+    assert.ok(system.includes('### FEW-SHOT EXAMPLES'), 'Basic carries the few-shot section (mandat Owner)');
+    assert.ok(system.includes('memang gila lah kau.'), 'Basic carries the pack few-shot for target=Malay');
+    assert.ok(system.includes('### OUTPUT FORMAT'), 'Basic output contract label');
     // Basic tiada konteks preflight → tiada blok KNP dalam user lane.
     assert.ok(!user.includes('<preflight_knp'), 'Basic user part carries NO KNP block (no preflight context)');
     // idManifest kekal hadir untuk Basic.
@@ -514,8 +511,11 @@ test('SubFaberPrompt V3: gemini buildUserPrompt splits system/user (no double-se
     const { userPrompt, systemPrompt } = svc.buildUserPrompt('unused', 'Malay', combined);
 
     // System carries the static instructions; user carries the dynamic data.
-    assert.ok(systemPrompt.includes('[SYSTEM / ROLE]'), 'systemPrompt carries the Role section label');
-    assert.ok(systemPrompt.includes('[TECHNICAL CONSTRAINTS & FORMATTING]'), 'systemPrompt carries the constraints');
+    assert.ok(
+        systemPrompt.includes('You are a professional Netflix subtitle translator.'),
+        'systemPrompt carries the role line'
+    );
+    assert.ok(systemPrompt.includes('### CORE RULES'), 'systemPrompt carries the core rules');
     assert.ok(userPrompt.includes('<input>'), 'userPrompt carries the batch input');
     assert.ok(userPrompt.trimEnd().endsWith('<s id="1">'), 'userPrompt keeps the prefill anchor');
     // The critical anti-duplication guarantee:
@@ -550,9 +550,9 @@ test('SubFaberPrompt V5: prompt is the ONLY path (no flags), structured sections
     const batchText = engine.prepareBatchXml(batch, null);
 
     const prompt = engine.createXmlBatchPrompt(batchText, 'Malay', null, batch.length, null, 0, 1);
-    assert.ok(prompt.includes('[SYSTEM / ROLE]'), 'Role section always present');
-    assert.ok(prompt.includes('STRICT 1:1 SLOT PARITY'), 'Parity mandate always present (V5 role)');
-    assert.ok(prompt.includes('[TECHNICAL CONSTRAINTS & FORMATTING]'), 'Constraints section always present');
+    assert.ok(prompt.includes('You are a professional Netflix subtitle translator.'), 'Role line always present');
+    assert.ok(prompt.includes('Output exactly one <s id="N"> per <input> entry'), 'Parity mandate always present');
+    assert.ok(prompt.includes('### CORE RULES'), 'Core rules section always present');
     assert.ok(!prompt.includes('CRITICAL ENFORCEMENT RULES'), 'Legacy 7-rule REMOVED permanently');
 });
 

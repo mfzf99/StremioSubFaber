@@ -95,7 +95,7 @@ test('[A1-K1] cache key: custom openai-compatible config (no explicit channel) d
     };
     const { baseKey } = generateCacheKeys(config, 'subdl_1_en', 'ms');
     assert.ok(
-        baseKey.endsWith('_trinity-basic-universal-v6_ch-openai'),
+        baseKey.endsWith('_trinity-basic-universal-v7_ch-openai'),
         `expected ch-openai namespace, got ${baseKey}`
     );
 });
@@ -111,7 +111,7 @@ test('[A1-K2] cache key: custom anthropic-messages config derives ch-anthropic',
 
 test('[A1-K3] cache key: legacy gemini config keeps the exact historical ch-gemini namespace', () => {
     const { baseKey } = generateCacheKeys({ mainProvider: 'gemini' }, 'tt123_en', 'ms');
-    assert.equal(baseKey, 'tt123_en_ms_trinity-basic-universal-v6_ch-gemini');
+    assert.equal(baseKey, 'tt123_en_ms_trinity-basic-universal-v7_ch-gemini');
 });
 
 test('[A1-K4] cache key: explicit trinityChannel in config still wins end-to-end', () => {
@@ -121,7 +121,7 @@ test('[A1-K4] cache key: explicit trinityChannel in config still wins end-to-end
         providers: { custom: { door: 'openai-compatible' } }
     };
     const { baseKey } = generateCacheKeys(config, 'tt9_en', 'ms');
-    assert.equal(baseKey, 'tt9_en_ms_trinity-basic-universal-v6_ch-openai');
+    assert.equal(baseKey, 'tt9_en_ms_trinity-basic-universal-v7_ch-openai');
 });
 
 // ─────────────────────────────────────────────────────────────────────────────

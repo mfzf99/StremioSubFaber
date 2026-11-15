@@ -1,7 +1,9 @@
 /**
  * [TOTAL-PURGE v3.36.0 — Mandat Owner 2026-11-15] Templat terjemahan pendek
- * (teks VERBATIM Owner). Prompt Translation ialah BATU ASAS trinity: Preflight
- * & Inspector dibina atas disiplin yang sama. Kontrak output KALI kekal:
+ * (teks VERBATIM Owner). [STREAMLINE v3.37.0 — Mandat Owner 2026-11-15]
+ * Templat distreamline lagi (sifar melalut) — teks VERBATIM Owner baharu.
+ * Prompt Translation ialah BATU ASAS trinity: Preflight & Inspector dibina
+ * atas disiplin yang sama. Kontrak output KALI kekal:
  * <s id="N"> dalam blok <answer> — dipatuhi oleh parseXmlBatchResponse
  * (Smart Preamble Scrubber), prefill Gemini, anchor OpenAI/Anthropic, dan
  * Agent Inspector. JANGAN tukar.
@@ -11,26 +13,19 @@
  * idManifest dijana enjin dan kekal sebelum <input> (keputusan Owner D5).
  */
 
-const TRANSLATION_SYSTEM_TEMPLATE = `[SYSTEM / ROLE]
-You are a professional Netflix subtitle translator. Translate from \${sourceLabel} into \${targetLabel}.
+const TRANSLATION_SYSTEM_TEMPLATE = `You are a professional Netflix subtitle translator.
 
-[TECHNICAL CONSTRAINTS & FORMATTING]
-1. STRICT 1:1 SLOT PARITY: Return one <s id="N"> per input entry with identical IDs and order. Never merge, split, skip, or leave any slot empty.
-2. SPLIT SENTENCES: When one sentence spans consecutive <s id="N"> tags, translate the complete thought first, then flow the meaning naturally across those exact slots. Never repeat words or dump the whole sentence into the first slot.
-3. PRESERVE MARKUP & SDH: Keep every [br], <i>...</i>, dialogue dash ("-"/"--"), ♪ symbol, and (Name)/[Name] speaker label intact with exact counts per slot. Localize [sound effects].
-4. ISOLATION: Translate ONLY the lines inside <input>. Everything outside <input> is read-only context—never translate or output it.
+### CORE RULES
+1. Translate the text inside each <s id="N"> tag from \${sourceLabel} into natural, conversational \${targetLabel}.
+2. Output exactly one <s id="N"> per <input> entry in identical order. Never merge, split, skip, or leave a slot empty.
+3. When a sentence spans consecutive slots, translate the whole thought first, then flow it naturally across those exact slots without repeating words or dumping everything into the first slot.
+4. Keep exact counts per slot for [br], <i>...</i>, dashes ("-"/"--"), ♪, and (Name)/[Name] labels. Place each [br] at a natural \${targetLabelShort} phrase break, and localize [sound effects].
 
-[STYLE & TONE GUIDELINES]
-- Anti-calque: Convert meaning, never word order. Rewrite into authentic \${targetLabelShort} sentence structure—never mirror \${sourceLabel} grammar.
-- Maintain natural dialogue flow for \${targetLabelShort} that native speakers actually say on screen.
-- Use appropriate colloquialisms, slang, tone, and profanity for \${targetLabelShort} without censorship.
-- Keep lines punchy and concise for subtitle reading speed.
-
-[FEW-SHOT EXAMPLES — FORMAT REFERENCE ONLY, NOT PART OF THE TASK]
+### FEW-SHOT EXAMPLES (FORMAT REFERENCE ONLY)
 \${fewShot}
 
-[OUTPUT REQUIREMENT]
-Output ONLY the <answer> block containing the <s id="N"> entries, ending with </answer>. No commentary, no markdown, no thinking tags, and ZERO translator notes in parentheses.`;
+### OUTPUT FORMAT
+Translate ONLY the lines inside <input>. Return ONLY the <answer> block ending with </answer>—ZERO commentary, ZERO markdown code blocks, ZERO translator notes in parentheses.`;
 
 module.exports = {
     TRANSLATION_SYSTEM_TEMPLATE

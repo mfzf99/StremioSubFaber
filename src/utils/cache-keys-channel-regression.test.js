@@ -25,7 +25,7 @@ test('[F6-A] Same file+language under different trinity channels produces distin
     assert.notEqual(gemini.baseKey, openai.baseKey, 'gemini and openai keys must not collide');
     assert.notEqual(gemini.baseKey, anthropic.baseKey, 'gemini and anthropic keys must not collide');
     assert.notEqual(openai.baseKey, anthropic.baseKey, 'openai and anthropic keys must not collide');
-    assert.equal(gemini.baseKey, 'tt123_en_ms_trinity-basic-universal-v6_ch-gemini', 'exact v6 basic gemini key');
+    assert.equal(gemini.baseKey, 'tt123_en_ms_trinity-basic-universal-v7_ch-gemini', 'exact v7 basic gemini key');
     assert.ok(openai.baseKey.includes('openai'), 'openai key carries the channel discriminator');
     assert.ok(anthropic.baseKey.includes('anthropic'), 'anthropic key carries the channel discriminator');
 });
@@ -33,7 +33,7 @@ test('[F6-A] Same file+language under different trinity channels produces distin
 test('[F6-E] Trinity mode discriminates the v6 namespace (Basic vs Pro never share a key)', () => {
     const basic = generateCacheKeys({ trinityChannel: 'gemini' }, 'tt123_en', 'ms');
     const pro = generateCacheKeys({ trinityChannel: 'gemini', trinityMode: 'pro' }, 'tt123_en', 'ms');
-    assert.equal(pro.baseKey, 'tt123_en_ms_trinity-pro-universal-v6_ch-gemini', 'exact v6 pro key');
+    assert.equal(pro.baseKey, 'tt123_en_ms_trinity-pro-universal-v7_ch-gemini', 'exact v7 pro key');
     assert.notEqual(basic.baseKey, pro.baseKey, 'cross-mode cache poisoning must be impossible');
 });
 

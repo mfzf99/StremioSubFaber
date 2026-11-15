@@ -123,8 +123,11 @@ function generateCacheKeys(config, sourceFileId, targetLang) {
     // redesigned prompt (v5) also guarantees stale v4 output is not served.
     // [TOTAL-PURGE v3.36.0] Namespace maju ke v6: templat pendek baharu +
     // few-shot baharu — output prompt lama (v5 dan ke bawah) tidak diservis.
+    // [STREAMLINE v3.37.0] Namespace maju ke v7: templat streamline baharu +
+    // few-shot Melayu baharu — output prompt lama (v6 dan ke bawah) tidak
+    // diservis (kontrak penghijrahan yang sama seperti v5→v6).
     const trinityMode = resolveTrinityModeForConfig(config);
-    const sourceKey = `${sourceFileId}_${targetLang}_trinity-${trinityMode}-universal-v6_ch-${trinityChannel}`;
+    const sourceKey = `${sourceFileId}_${targetLang}_trinity-${trinityMode}-universal-v7_ch-${trinityChannel}`;
     // When ASS passthrough is enabled, append format discriminator to prevent
     // ASS-format cached translations from being served to users expecting SRT
     const assPassthrough = config.convertAssToVtt === false && config.forceSRTOutput !== true;
