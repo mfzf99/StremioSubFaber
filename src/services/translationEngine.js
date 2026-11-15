@@ -2551,14 +2551,56 @@ class TranslationEngine {
                 if (retryMissing.length === 0 && retryEntries.length === batch.length) {
                     const retrySorted = Object.values(retryAligned).sort((a, b) => a.index - b.index);
                     const retryValidation = validateMechanicalBatch(batch, retrySorted, targetLanguage);
+                    const retryHard = getHardMechanicalFindings(retryValidation);
+                    const originalHardIndices = new Set(mechanicalHardFindings.map((finding) => finding.index));
                     const resolvedOriginalDefects = mechanicalHardFindings.every(
-                        (finding) =>
-                            !getHardMechanicalFindings(retryValidation).some((next) => next.index === finding.index)
+                        (finding) => !retryHard.some((next) => next.index === finding.index)
                     );
-                    if (resolvedOriginalDefects && getHardMechanicalFindings(retryValidation).length === 0) {
-                        translatedEntries = preserveVerifiedEntries(translatedEntries, retrySorted, verifiedIndices);
-                        mechanicalFindings = validateMechanicalBatch(batch, translatedEntries, targetLanguage);
-                        this._closeIncident('MECHANICAL_TRANSLATION_RETRY', batchIndex + 1, { outcome: 'recovered' });
+                    // [MONKEY-H3 2026-11-15] Penerimaan hibrid: retry yang
+                    // membaiki kecacatan asal tetapi memperkenalkan kecacatan
+                    // keras BAHARU pada entri yang asalnya bersih tidak lagi
+                    // dibuang sepenuhnya. Entri dibaiki diambil dari retry;
+                    // entri rosak-baharu dikekalkan daripada hasil asal (yang
+                    // bersih untuk slot tersebut). Gerbang lama (sifar-defek
+                    // mutlak) membuang hasil yang secara ketat lebih baik —
+                    // punca insiden 'not recovered' palsu dan retry terbuang
+                    // (audit MONKEY × SubFaber 2026-11-15).
+                    const newlyDefectiveIndices = retryHard
+                        .map((finding) => finding.index)
+                        .filter((index) => !originalHardIndices.has(index));
+                    if (resolvedOriginalDefects) {
+                        if (newlyDefectiveIndices.length === 0) {
+                            translatedEntries = preserveVerifiedEntries(
+                                translatedEntries,
+                                retrySorted,
+                                verifiedIndices
+                            );
+                            mechanicalFindings = validateMechanicalBatch(batch, translatedEntries, targetLanguage);
+                            this._closeIncident('MECHANICAL_TRANSLATION_RETRY', batchIndex + 1, {
+                                outcome: 'recovered'
+                            });
+                        } else {
+                            const originalByIndex = new Map(translatedEntries.map((entry) => [entry.index, entry]));
+                            translatedEntries = preserveVerifiedEntries(
+                                translatedEntries,
+                                retrySorted,
+                                verifiedIndices
+                            );
+                            // Entri rosak-baharu mengekalkan teks ASAL (bersih
+                            // untuk slot tersebut); slot dibaiki mengambil teks
+                            // retry. preserveVerifiedEntries sudah memulihkan
+                            // slot verified; laluan ini hanya memulihkan
+                            // slot rosak-baharu.
+                            translatedEntries = translatedEntries.map((entry, index) =>
+                                newlyDefectiveIndices.includes(index)
+                                    ? { ...entry, text: originalByIndex.get(index)?.text ?? entry.text }
+                                    : entry
+                            );
+                            mechanicalFindings = validateMechanicalBatch(batch, translatedEntries, targetLanguage);
+                            this._closeIncident('MECHANICAL_TRANSLATION_RETRY', batchIndex + 1, {
+                                outcome: 'recovered_partial'
+                            });
+                        }
                     } else {
                         this._closeIncident('MECHANICAL_TRANSLATION_RETRY', batchIndex + 1, { outcome: 'failed' });
                     }

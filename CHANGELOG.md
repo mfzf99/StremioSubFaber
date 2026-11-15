@@ -2,6 +2,27 @@
 
 All notable changes to this project will be documented in this file.
 
+## SubFaber v3.35.0 (2026-11-15) — MONKEY × SubFaber Harmony: Mechanical Validator False-Positive Purge and Honest Hybrid Retry Acceptance
+
+### 🛠 Fixed — The Recurring `MECHANICAL_TRANSLATION_RETRY — not recovered` Incidents Are Root-Caused and Eliminated
+
+- **SDH cue vs speaker-name classifier (lexical, not case-based).** `speakerLabels()` in `src/services/utils/mechanicalValidator.js` no longer treats every uppercase parenthesized/bracketed label as a must-preserve character name. A new `isSdhCue()` classifier recognizes descriptive cues ("IN KOREAN", "THUNDER RUMBLES", gerunds, sound/action/language phrases) as SDH cues that template Rule 4 explicitly orders to be **localized** — localizing them is compliance, not a defect. True character names ("MARY", "DR. REYES") remain strictly preserved. This closes the validator-vs-prompt contradiction that made every SDH-heavy episode file one or two "not recovered" incidents.
+- **CJK speaker labels exempt from `SCRIPT_LEAK`.** A preserved CJK speaker label (`（りん）` kept verbatim in a Rumi-target translation) is a preserved character name, per the retry correction's own instruction — it is no longer re-flagged as script leakage, dissolving the `SPEAKER_LABEL_LOSS` × `SCRIPT_LEAK` double-bind where obeying one correction triggered the other validator. Leaked CJK dialogue outside speaker labels still reports `SCRIPT_LEAK` exactly as before.
+- **Transliterated CJK names are valid.** A transliterated name (`（タカシ）` → `(Takashi)`) passes structural label-parity checking instead of failing verbatim string comparison across scripts, ending the second half of the double-bind.
+- **Hybrid retry acceptance.** The mechanical retry gate in `src/services/translationEngine.js` previously required a strictly zero-defect retry: a retry that fixed the original defect but introduced one new hard defect on a previously-clean entry was **discarded entirely**, keeping the defective original and burning the retry tokens. The gate now accepts such retries partially: fixed slots take the retry text, newly-defective slots keep their clean original text, and the incident closes `recovered_partial` instead of `failed`. Fully-clean retries still close `recovered`; unresolved ones still close `failed`; the D1 defensive terminal-closure write remains untouched.
+- **Honest Telegram incident labels.** `renderIncidentSection` in `src/utils/telegramFinOps.js` maps the full closed outcome taxonomy (`unrecovered`, `failed_structural`, `unsalvageable — best result kept`, `unsalvageable — structural mismatch on retry`, `retry failed — original kept`) to human labels instead of leaking raw internal strings, and an `in_progress` incident now renders as "still closing" instead of being falsely displayed as "✅ recovered".
+
+### 🔬 Audit Findings Recorded (No Runtime Change)
+
+- The Gemini `cached: 0` observation is **not a defect**: the static `systemInstruction` (~500–700 tokens) sits below Gemini's implicit-cache minimum prefix threshold (~1024 tokens), and `cachedContentTokenCount` is only reported when a cache is actually hit. OpenAI's automatic prefix caching has a lower effective threshold, which is why the rootsys/OpenAI-door run showed `Cached: 13,568` while the Gemini-door run showed none. Options (growing the static system lane, or explicit `cachedContent` API) are recorded in the session ledger for a future Owner decision.
+- Monkey-origin ideas already live in the system (mechanical validators, `buildCrimeCorrections`, `VERIFIED SLOTS` clean-line preservation, anchor-safe retry injection) were re-verified end-to-end; remaining un-injected ideas (`normalizeForRetry()` fullwidth normalization, Malay micro-fix few-shots) remain consciously deferred per Owner decision D3 (few-shot is the sole per-target craft carrier).
+
+### ✅ Verification
+
+- Red-first evidence: the new suite `src/services/translation-monkey-harmony-regression.test.js` observed **6/8 failures before any production edit** (`.tmp/red-monkey-harmony.log`) — H1A/H1B (SDH-cue false positives), H2A/H2C (CJK double-bind), H3 (strictly-better retry discarded), H4 (raw taxonomy leaked to Telegram); the two control cases (H1C name preservation, H2B genuine dialogue leak) passed before and after, proving no weakened assertions.
+- Targeted suites: MONKEY 8/8, translation-quality 13/13, translation-quality-fixes (D1 terminal closure) 4/4, cross-file consumer batch 32/32 — all green.
+- Full tracked suite: **722 tests / 721 passed / 0 failed / 1 skipped** (pre-existing live-Redis concurrent-quota integration), exit 0.
+
 ## SubFaber v3.34.0 (2026-11-15) — Per-Mode Translation Slots: Independent Basic and Pro Credentials
 
 ### ✨ Added — Each Trinity Mode Keeps Its Own Translation Setup

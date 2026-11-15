@@ -20,6 +20,24 @@ This template is the R5 ledger-format deliverable. It supersedes the legacy form
 
 -------
 
+## 2026-11-15 — RELEASE: SUBFABER v3.35.0 MONKEY × SUBFABER HARMONY — MECHANICAL VALIDATOR FALSE-POSITIVE PURGE + HONEST HYBRID RETRY ACCEPTANCE (CLASS 1)
+
+- **Date:** 2026-11-15 ~16:02 (KL time).
+- **Parent HEAD SHA:** `6d2e5dd5` (v3.34.0, CI-green on origin/main).
+- **Status:** `VERIFIED_LOCAL` (pre-release).
+- **Release Commit SHA + CI Run ID:** confirmed in the final report after push/CI — never invented.
+- **Owner Decision:** Accepted all audit conclusions and repair phases from the MONKEY × SubFaber audit (two-run evidence: kimi-k3.1-pro @ custom/rootsys door and gemini-3-flash @ gemini door, both Basic mode, both showing recurring `MECHANICAL_TRANSLATION_RETRY — not recovered`). Mandate: sweep all identified problems cleanly and carefully, make the system clean and stable, then immediately commit/push to main and deliver the full report. Gemini cached-token finding recorded as N/A (not a defect); cache-lane growth recorded as a future Owner decision.
+- **Impact & Contract Audit (Phase A/B):** Backend-only, no UI change. Zone C (Trinity pipeline & retry diagnostics) heavy: `mechanicalValidator.js` (classifier + exemptions), `translationEngine.js` (hybrid mechanical-retry acceptance), `telegramFinOps.js` (outcome label mapping — rendering only, no ledger change). Zone A N/A (no model/sampling/transport change). Zone B N/A (no response schema/normalization change; incident taxonomy remains closed — `recovered_partial` already existed in the taxonomy). Coupled consumers audited: retryDiagnostics/translation-quality/translation-quality-fixes/cache-poisoning/bugfix2/context/tri-door — all re-verified green.
+- **Reproduce-First Evidence (§4.1):** `.tmp/red-monkey-harmony.log` — new suite `src/services/translation-monkey-harmony-regression.test.js` observed 6/8 RED before any production edit (H1A/H1B SDH-cue false positives, H2A/H2C CJK double-bind, H3 strictly-better-retry discarded, H4 raw taxonomy leaked); two control cases (H1C name preservation, H2B genuine dialogue leak) green before and after — no weakened assertions.
+- **Independent Acceptance:** MONKEY suite 8/8 (`.tmp/s4-tap.log`); translation-quality 13/13; translation-quality-fixes (D1 terminal-closure variants against the modified gate) 4/4; cross-file consumer batch 32/32 (`quality + fixes + cache-poisoning + bugfix2 + context + tri-door`); full tracked suite **722 total / 721 PASS / 0 FAIL / 1 SKIP** (sole SKIP = pre-existing live-Redis concurrent-quota integration), exit 0, log `.tmp/release-monkey-full-suite.log`. `node --check` PASS on all four touched JS files. Cache-buster: auto-advances via `package.json` version to `3.35.0` (CACHE_BUSTER_VERSION default and `?v=` bootstrapped asset query derive from the package version).
+- **Residual / N/A Gates:** Playwright N/A (no UI change; report renderer is server-side HTML string). Real-provider verification N/A (no transport/sampling change; behaviour pinned by 721 automated tests). Gemini implicit-cache threshold finding recorded above for a future Owner decision (grow static system lane ≥ ~1024 tokens vs explicit `cachedContent` API vs status-quo) — not part of this release. Deferred Monkey ideas (`normalizeForRetry()`, Malay micro-fix few-shots) consciously not injected per Owner decision D3.
+- **Files Involved:** `src/services/utils/mechanicalValidator.js` (M: `isSdhCue` lexical classifier, CJK-label SCRIPT_LEAK exemption, transliteration structural check), `src/services/translationEngine.js` (M: hybrid retry acceptance with `recovered_partial`), `src/utils/telegramFinOps.js` (M: closed-taxonomy outcome labels), `src/services/translation-monkey-harmony-regression.test.js` (new: 8 tests, red-first), `package.json` (M: 3.35.0), `package-lock.json` (M: 3.35.0), `CHANGELOG.md` (M: v3.35.0 entry, English lock), `docs/SESSION_LEDGER.md` (M: this entry), `.tmp/RELAY_STATE.md` (untracked relay checkpoint).
+- **npm test Status:** 722 total / 721 PASS / 0 FAIL / 1 SKIP (sole SKIP = pre-existing live-Redis concurrent-quota integration), exit 0; log `.tmp/release-monkey-full-suite.log`.
+- **Next Steps:** One Class 1 commit `fix(quality): purge mechanical validator false positives and adopt honest hybrid retry acceptance`, push to origin/main, watch CI to SUCCESS on Node 22/24, report Release Commit SHA + CI Run ID to the Owner (never a second cosmetic ledger commit).
+- **Tool Navigation Ratio:** search_files=21 read_file=24 ratio=1:1.1 anchored=100% (24/24 reads) — all reads anchored/ranged via search results or prior tool evidence in this session.
+
+-------
+
 ## 2026-11-15 — RELEASE: SUBFABER v3.34.0 PER-MODE TRANSLATION SLOTS — INDEPENDENT BASIC/PRO CREDENTIALS + SLOT-AWARE UI (CLASS 1)
 
 - **Date:** 2026-11-15 ~05:31 (KL time).

@@ -433,7 +433,18 @@ function renderIncidentSection(incidents, rateUSD_MYR = FALLBACK_USD_MYR) {
         recovered_partial: '🟡 partially recovered',
         fallback: '🛟 fallback provider',
         failed: '❌ not recovered',
-        in_progress: '✅ recovered'
+        // [MONKEY-H4 2026-11-15] Taksonomi tertutup dipetakan kepada label
+        // manusia — string dalaman tidak lagi bocor ke resit Telegram, dan
+        // insiden in_progress TIDAK lagi dipaparkan palsu sebagai 'recovered'
+        // (kejujuran telemetri; laluan D1 menjamin insiden ditutup sebelum
+        // laporan dihantar, jadi in_progress di sini hanyalah sisa
+        // pra-penutupan yang dilabel jujur).
+        unrecovered: '❌ not recovered',
+        failed_structural: '❌ not recovered (structural mismatch)',
+        'unsalvageable — best result kept': '🟡 best result kept',
+        'unsalvageable — structural mismatch on retry': '❌ retry discarded (structural mismatch)',
+        'retry failed — original kept': '❌ not recovered (retry failed)',
+        in_progress: '⏳ still closing…'
     };
 
     let section = `\n🚨 <b>Incident Report</b> — ${incidents.length} ${incidents.length === 1 ? 'recovery' : 'recoveries'}:\n`;
