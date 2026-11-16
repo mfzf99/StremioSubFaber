@@ -144,14 +144,14 @@ function validateRow(row) {
     const checkTextField = (field, value) => {
         if (value === null || value === undefined) return true; // sah: kembali official
         if (typeof value !== 'string') {
-            fieldErrors.push({ field, code: 'invalid_type', message: `${field} mesti string atau null.` });
+            fieldErrors.push({ field, code: 'invalid_type', message: `${field} must be a string or null.` });
             return false;
         }
         if (value.trim().length === 0) {
             fieldErrors.push({
                 field,
                 code: 'empty_or_whitespace',
-                message: `${field} tidak boleh kosong (guna null untuk kembali kepada teks rasmi).`
+                message: `${field} cannot be empty (use null to fall back to the official text).`
             });
             return false;
         }
@@ -159,19 +159,27 @@ function validateRow(row) {
             fieldErrors.push({
                 field,
                 code: 'boundary_sentinel_forbidden',
-                message: `${field} mengandungi sempadan sistem yang dilarang — ia akan memecahkan pembahagian arahan.`
+                message: `${field} contains a forbidden system boundary — it would break the instruction split.`
             });
             return false;
         }
         if (value.length > MAX_FIELD_CHARS) {
-            fieldErrors.push({ field, code: 'too_large', message: `${field} melebihi had ${MAX_FIELD_CHARS} aksara.` });
+            fieldErrors.push({
+                field,
+                code: 'too_large',
+                message: `${field} exceeds the ${MAX_FIELD_CHARS}-character limit.`
+            });
             return false;
         }
         return true;
     };
 
     if (typeof row?.enabled !== 'boolean') {
-        fieldErrors.push({ field: 'enabled', code: 'invalid_type', message: 'enabled mesti boolean (true / false).' });
+        fieldErrors.push({
+            field: 'enabled',
+            code: 'invalid_type',
+            message: 'enabled must be a boolean (true / false).'
+        });
     }
     const templateOk = checkTextField('translationSystemTemplate', row?.translationSystemTemplate);
     const fewShotOk = checkTextField('malayFewShot', row?.malayFewShot);
@@ -193,7 +201,7 @@ function validateRow(row) {
                         code: 'placeholder_missing',
                         field,
                         placeholder: name,
-                        message: `Placeholder {{${name}}} tertinggal — terjemahan masih akan berjalan, tetapi arahan ini tidak akan dilaraskan secara automatik.`
+                        message: `The {{${name}}} placeholder is missing — translation will still run, but this instruction will not be adjusted automatically.`
                     });
                     break; // satu amaran per medan cukup
                 }

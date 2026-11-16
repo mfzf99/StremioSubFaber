@@ -2,6 +2,18 @@
 
 All notable changes to this project will be documented in this file.
 
+## SubFaber v3.39.1 (2026-11-16) — Sandbox Panel & API Messages Localized to English
+
+### 🔄 Changed — Full English Localization of the Sandbox Panel (Owner Mandate)
+
+- **`public/sandbox.html`** — `<html lang="en">` plus every user-facing label, headline, button, status badge, and dialog string translated to natural English matching the `configure.html` voice: `Owner Private Space` / `Unlock the Experiment Desk.` lock screen, `Sandbox Admin Key` field with `Use the SANDBOX_ADMIN_KEY value configured on the server.` help, `Unlock Sandbox` submit, `Enable Sandbox` switch, `Active` / `Inactive` status, `Redis` / `Official` source, `Save & Activate` / `Reset to Official` / `Copy Draft` / `Lock` actions, and the reset confirmation (`Reset sandbox to official templates?` / `This will delete your live Redis configuration and revert to the official v3.37.0 prompts.` / `Cancel` / `Confirm Reset`).
+- **`public/js/sandbox-panel.js`** — all runtime strings translated: friendly error mapping (`Invalid admin key.`, `SANDBOX_ADMIN_KEY is not configured on the server.`, `Too many attempts — please wait a moment.`, storage/network messages), feedback titles (`Sandbox saved and activated.`, `Draft copied to clipboard.`, `Sandbox reset to official templates.`), character counters now `en-US` formatted (`/ 50,000 characters`), busy labels (`Saving…` / `Resetting…` / `Verifying…` / `Copying…`), the dirty-note, and the `<!-- promptSandbox draft — for AI-agent transfer into core.js / malay.js -->` clipboard marker comment. Zero logic, FSM, security (`textContent`-only rendering), or contract changes.
+- **`src/services/promptSandboxLiveStore.js` + `src/config/promptSandbox.js`** — all API-facing `fieldErrors[]`, `warnings[]`, and `reasons[]` messages translated to clear English (e.g. `must be a string or null.`, `cannot be empty (use null to fall back to the official text).`, `contains a forbidden system boundary — it would break the instruction split.`, `exceeds the 50000-character limit.`, `The {{sourceLabel}} placeholder is missing — translation will still run, but this instruction will not be adjusted automatically.`, and the resolver reasons including the live-row/test-context/fallback notes). Internal server logs and code comments are untouched.
+
+### ✅ Verification
+
+- Full tracked suite **747 tests / 746 passed / 0 failed / 1 skipped** (pre-existing live-Redis concurrent-quota integration) — no test assertions pinned the old Malay message bodies (all pins are shape/regex based and remain satisfied); log `.tmp/sbx-v3391-full.log`. `node --check` + Prettier + ESLint clean on all touched files. Live Playwright spot-check on a local server confirmed the English UI end-to-end: lock screen, unlock, `Active`/`Redis`/`hash8` status after save, the English placeholder warning and sentinel field error from the real API, and the English reset dialog — zero JS console errors.
+
 ## SubFaber v3.39.0 (2026-11-16) — Prompt Sandbox Web Panel: Visual Live Editing with Redis Sync & E2E Verification
 
 ### ✨ Added — Visual Sandbox Panel at `/sandbox` (Phase 2 Frontend, three new files)

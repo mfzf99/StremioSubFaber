@@ -28,7 +28,7 @@
 
     function requiredElement(id) {
         var element = document.getElementById(id);
-        if (!element) throw new Error('Struktur panel tidak lengkap: ' + id);
+        if (!element) throw new Error('Panel structure is incomplete: ' + id);
         return element;
     }
 
@@ -94,7 +94,7 @@
             return;
         }
         if (!ALLOWED_TRANSITIONS[uiState].includes(nextState)) {
-            throw new Error('Peralihan keadaan tidak sah: ' + uiState + ' -> ' + nextState);
+            throw new Error('Illegal state transition: ' + uiState + ' -> ' + nextState);
         }
         uiState = nextState;
         document.body.dataset.sandboxState = nextState;
@@ -123,7 +123,7 @@
         elements['sandbox-key'].disabled = isUnlocking;
         elements['reveal-key'].disabled = isUnlocking;
         elements['auth-submit'].disabled = isUnlocking;
-        elements['auth-submit-label'].textContent = isUnlocking ? 'Mengesahkan…' : 'Buka sandbox';
+        elements['auth-submit-label'].textContent = isUnlocking ? 'Verifying…' : 'Unlock Sandbox';
 
         elements.enabled.disabled = isBusy;
         elements.translationSystemTemplate.readOnly = isBusy;
@@ -132,8 +132,8 @@
         elements['save-config'].disabled = isBusy || hasOversizedField();
         elements['reset-config'].disabled = isBusy;
         elements['copy-draft'].disabled = isBusy;
-        elements['save-label'].textContent = isSaving ? 'Menyimpan…' : 'Simpan & Aktifkan';
-        elements['reset-label'].textContent = isResetting ? 'Memulihkan…' : 'Reset ke Rasmi';
+        elements['save-label'].textContent = isSaving ? 'Saving…' : 'Save & Activate';
+        elements['reset-label'].textContent = isResetting ? 'Resetting…' : 'Reset to Official';
     }
 
     function clearStoredKey() {
@@ -161,7 +161,7 @@
         try {
             return window.sessionStorage.getItem(STORAGE_KEY) || '';
         } catch (_) {
-            setAuthMessage('Storan sesi pelayar tidak tersedia. Dayakannya untuk membuka sandbox.');
+            setAuthMessage('Browser session storage is unavailable. Enable it to unlock the sandbox.');
             return '';
         }
     }
@@ -172,10 +172,10 @@
         elements.malayFewShot.value = '';
         elements['enabled-value'].textContent = 'OFF';
         elements['enabled-status'].textContent = 'OFF';
-        elements['active-status'].textContent = 'Tidak Aktif';
+        elements['active-status'].textContent = 'Inactive';
         elements['status-beacon'].classList.remove('is-active');
         elements.hash8.textContent = '—';
-        elements['source-status'].textContent = 'Rasmi';
+        elements['source-status'].textContent = 'Official';
         clearFeedback();
         updateEditorMetrics();
     }
@@ -186,14 +186,14 @@
         var storageCleared = clearStoredKey();
         elements['sandbox-key'].value = '';
         elements['sandbox-key'].type = 'password';
-        elements['reveal-key'].setAttribute('aria-label', 'Tunjukkan kunci');
+        elements['reveal-key'].setAttribute('aria-label', 'Show key');
         clearEditor();
         if (uiState !== UI_STATES.LOCKED) transitionTo(UI_STATES.LOCKED);
         else renderState();
-        var finalMessage = message || 'Panel dikunci.';
-        if (!storageCleared) finalMessage += ' Storan sesi tidak dapat dikosongkan; tutup tab ini untuk keselamatan.';
+        var finalMessage = message || 'Panel locked.';
+        if (!storageCleared) finalMessage += ' Session storage could not be cleared; close this tab to stay safe.';
         setAuthMessage(finalMessage);
-        elements['copy-label'].textContent = 'Salin Draf';
+        elements['copy-label'].textContent = 'Copy Draft';
     }
 
     function ApiError(status, payload) {
@@ -232,7 +232,9 @@
         if (response.status === 401) {
             var wasUnlocking = uiState === UI_STATES.UNLOCKING;
             lockPanel(
-                wasUnlocking ? 'Kunci salah. Semak semula dan cuba lagi.' : 'Sesi kunci tamat — log masuk semula.'
+                wasUnlocking
+                    ? 'Invalid admin key. Check it and try again.'
+                    : 'Key session expired — please log in again.'
             );
         }
         if (!response.ok) throw new ApiError(response.status, payload);
@@ -242,20 +244,21 @@
 
     function friendlyError(error, action) {
         var code = error && error.payload ? error.payload.error : '';
-        if (code === 'sandbox_admin_key_not_configured') return 'Pelayan belum menetapkan SANDBOX_ADMIN_KEY.';
+        if (code === 'sandbox_admin_key_not_configured') return 'SANDBOX_ADMIN_KEY is not configured on the server.';
         if (code === 'storage_unavailable')
-            return 'Storan sandbox tidak tersedia. Draf anda kekal dalam kotak; cuba lagi sebentar.';
+            return 'Sandbox storage is unavailable. Your draft stays in the boxes; try again in a moment.';
         if (code === 'session_storage_unavailable')
-            return 'Pelayar tidak membenarkan storan sesi. Dayakannya sebelum log masuk.';
-        if (error && error.status === 429) return 'Terlalu banyak percubaan. Tunggu seminit sebelum mencuba lagi.';
+            return 'Your browser is blocking session storage. Enable it before logging in.';
+        if (error && error.status === 429) return 'Too many attempts — please wait a moment.';
         if (error && error.status === 0)
-            return 'Tidak dapat menghubungi pelayan. Semak sambungan; draf dalam kotak tidak diubah.';
+            return 'Could not reach the server. Check your connection; the draft in the boxes is unchanged.';
         if (code === 'invalid_response' || (error && error.status === 200)) {
-            return 'Respons pelayan tidak lengkap. Tiada perubahan dibuat pada status yang dipaparkan.';
+            return 'The server response was incomplete. No change was made to the displayed status.';
         }
-        if (action === 'reset') return 'Templat rasmi belum dapat dipulihkan. Draf anda kekal; cuba lagi.';
-        if (action === 'save') return 'Draf belum dapat disimpan. Semak semula medan dan cuba lagi.';
-        return 'Sandbox belum dapat dibuka. Semak kunci dan cuba lagi.';
+        if (action === 'reset')
+            return 'The official templates could not be restored yet. Your draft is kept; try again.';
+        if (action === 'save') return 'The draft could not be saved. Please check the fields and try again.';
+        return 'The sandbox could not be opened. Check your key and try again.';
     }
 
     function clearFeedback() {
@@ -303,17 +306,17 @@
                 input: elements.malayFewShot,
                 output: elements['few-shot-count'],
                 error: elements['few-shot-error'],
-                label: 'Contoh Dialog Melayu'
+                label: 'Malay Few-Shot Examples'
             }
         ].forEach(function (field) {
             var length = field.input.value.length;
-            field.output.textContent = length.toLocaleString('ms-MY') + ' / 50,000 aksara';
+            field.output.textContent = length.toLocaleString('en-US') + ' / 50,000 characters';
             field.output.classList.toggle('is-over-limit', length > MAX_FIELD_CHARS);
             if (length > MAX_FIELD_CHARS) {
                 field.input.setAttribute('aria-invalid', 'true');
                 setInlineMessage(
                     field.error,
-                    field.label + ' melebihi had 50,000 aksara. Pendekkan sebelum menyimpan.'
+                    field.label + ' exceeds the 50,000-character limit. Shorten it before saving.'
                 );
             } else if (field.input.getAttribute('aria-invalid') === 'true') {
                 field.input.removeAttribute('aria-invalid');
@@ -343,7 +346,7 @@
                 generalMessages.push(entry.message);
             }
         });
-        if (generalMessages.length) showFeedback('Semak semula draf anda', generalMessages, 'error');
+        if (generalMessages.length) showFeedback('Please review your draft', generalMessages, 'error');
     }
 
     function assertSnapshot(snapshot) {
@@ -368,17 +371,17 @@
         elements.enabled.checked = snapshot.enabled === true;
         elements['enabled-value'].textContent = elements.enabled.checked ? 'ON' : 'OFF';
         elements['enabled-status'].textContent = elements.enabled.checked ? 'ON' : 'OFF';
-        elements['active-status'].textContent = snapshot.active ? 'Aktif' : 'Tidak Aktif';
+        elements['active-status'].textContent = snapshot.active ? 'Active' : 'Inactive';
         elements['status-beacon'].classList.toggle('is-active', snapshot.active);
         elements.hash8.textContent = typeof snapshot.hash8 === 'string' && snapshot.hash8 ? snapshot.hash8 : '—';
-        elements['source-status'].textContent = snapshot.source === 'redis' ? 'Redis' : 'Rasmi';
+        elements['source-status'].textContent = snapshot.source === 'redis' ? 'Redis' : 'Official';
         var reasons = Array.isArray(snapshot.reasons)
             ? snapshot.reasons.filter(function (reason) {
                   return typeof reason === 'string';
               })
             : [];
         setStatusNote(
-            reasons.length ? reasons[0] : 'Status ini menunjukkan konfigurasi yang berkuat kuasa di pelayan.'
+            reasons.length ? reasons[0] : 'This status reflects the configuration currently in effect on the server.'
         );
         updateEditorMetrics();
     }
@@ -426,18 +429,14 @@
             malayFewShot: elements.malayFewShot.value || null
         };
         clearFeedback();
-        setStatusNote('Menyimpan kedua-dua medan dan menyegerakkan prompt…');
+        setStatusNote('Saving both fields and syncing the prompt…');
         transitionTo(UI_STATES.SAVING);
         try {
             var result = await sandboxFetch('/config', { method: 'PUT', body: JSON.stringify(payload) });
             if (operation !== operationSequence) return;
             applySnapshot(result.effective);
             var warnings = warningMessages(result.warnings);
-            showFeedback(
-                'Draf disimpan. Status pelayan telah dikemas kini.',
-                warnings,
-                warnings.length ? 'warning' : 'success'
-            );
+            showFeedback('Sandbox saved and activated.', warnings, warnings.length ? 'warning' : 'success');
             transitionTo(UI_STATES.READY);
         } catch (error) {
             if (operation !== operationSequence) return;
@@ -445,11 +444,11 @@
             if (error.status === 400 && Array.isArray(error.payload.fieldErrors)) {
                 showFieldErrors(error.payload.fieldErrors);
                 if (!error.payload.fieldErrors.length)
-                    showFeedback('Draf belum disimpan', ['Semak semula kedua-dua medan.'], 'error');
+                    showFeedback('The draft was not saved', ['Please review both fields.'], 'error');
             } else {
-                showFeedback('Draf belum disimpan', [friendlyError(error, 'save')], 'error');
+                showFeedback('The draft was not saved', [friendlyError(error, 'save')], 'error');
             }
-            setStatusNote('Draf masih berada dalam kotak. Tiada status baharu diandaikan.');
+            setStatusNote('Your draft is still in the boxes. No new status is assumed.');
         }
     }
 
@@ -466,21 +465,21 @@
             if (operation !== operationSequence) return;
             applySnapshot(config);
             showFeedback(
-                'Templat rasmi dipulihkan',
-                ['Eksperimen tersimpan telah dipadam dan kedua-dua kotak kini menggunakan teks rasmi.'],
+                'Sandbox reset to official templates.',
+                ['The saved experiment was deleted and both boxes now use the official text.'],
                 'success'
             );
             transitionTo(UI_STATES.READY);
         } catch (error) {
             if (operation !== operationSequence) return;
             transitionTo(UI_STATES.READY);
-            showFeedback('Reset belum selesai', [friendlyError(error, 'reset')], 'error');
+            showFeedback('Reset did not complete', [friendlyError(error, 'reset')], 'error');
         }
     }
 
     function draftText() {
         return [
-            '<!-- promptSandbox draft — untuk dipindahkan ejen AI ke core.js / malay.js -->',
+            '<!-- promptSandbox draft — for AI-agent transfer into core.js / malay.js -->',
             '=== translationSystemTemplate ===',
             elements.translationSystemTemplate.value,
             '=== malayFewShot ===',
@@ -512,29 +511,29 @@
         if (uiState !== UI_STATES.READY) return;
         var operation = ++copySequence;
         elements['copy-draft'].disabled = true;
-        elements['copy-label'].textContent = 'Menyalin…';
+        elements['copy-label'].textContent = 'Copying…';
         try {
             await writeClipboard(draftText());
             if (operation !== copySequence) return;
-            elements['copy-label'].textContent = 'Draf disalin';
+            elements['copy-label'].textContent = 'Draft copied';
             showFeedback(
-                'Draf disalin ke papan keratan',
-                ['Penanda promptSandbox disertakan untuk serahan kepada ejen AI.'],
+                'Draft copied to clipboard.',
+                ['The promptSandbox marker is included for handing over to an AI agent.'],
                 'success'
             );
         } catch (_) {
             if (operation !== copySequence) return;
-            elements['copy-label'].textContent = 'Salin Draf';
+            elements['copy-label'].textContent = 'Copy Draft';
             showFeedback(
-                'Papan keratan tidak tersedia',
-                ['Benarkan akses papan keratan dalam tetapan pelayar, kemudian cuba lagi.'],
+                'Clipboard unavailable',
+                ['Allow clipboard access in your browser settings, then try again.'],
                 'error'
             );
         } finally {
             if (operation === copySequence) {
                 elements['copy-draft'].disabled = uiState !== UI_STATES.READY;
-                if (elements['copy-label'].textContent === 'Menyalin…')
-                    elements['copy-label'].textContent = 'Salin Draf';
+                if (elements['copy-label'].textContent === 'Copying…')
+                    elements['copy-label'].textContent = 'Copy Draft';
             }
         }
     }
@@ -550,14 +549,14 @@
         }
         clearFeedback();
         updateEditorMetrics();
-        setStatusNote('Perubahan belum disimpan. Status di atas masih menunjukkan konfigurasi terakhir di pelayan.');
+        setStatusNote('Unsaved changes. The status above still shows the last configuration saved on the server.');
     }
 
     function updateThemeControl() {
         var isDark = document.documentElement.getAttribute('data-theme') === 'dark';
-        var label = isDark ? 'Mod cerah' : 'Mod gelap';
+        var label = isDark ? 'Light mode' : 'Dark mode';
         elements['theme-label'].textContent = label;
-        elements['theme-toggle'].setAttribute('aria-label', 'Tukar ke ' + label.toLowerCase());
+        elements['theme-toggle'].setAttribute('aria-label', 'Switch to ' + label.toLowerCase());
     }
 
     function toggleTheme() {
@@ -567,7 +566,7 @@
         try {
             window.localStorage.setItem('theme', next);
         } catch (_) {
-            /* Tema masih berfungsi untuk sesi ini walaupun pilihan tidak dapat disimpan. */
+            /* The theme still works for this session even if the preference cannot be saved. */
         }
         updateThemeControl();
     }
@@ -577,7 +576,7 @@
             event.preventDefault();
             var key = elements['sandbox-key'].value;
             if (!key) {
-                setAuthMessage('Masukkan kunci pentadbir sandbox.');
+                setAuthMessage('Enter the sandbox admin key.');
                 elements['sandbox-key'].focus();
                 return;
             }
@@ -586,7 +585,7 @@
         elements['reveal-key'].addEventListener('click', function () {
             var reveal = elements['sandbox-key'].type === 'password';
             elements['sandbox-key'].type = reveal ? 'text' : 'password';
-            elements['reveal-key'].setAttribute('aria-label', reveal ? 'Sembunyikan kunci' : 'Tunjukkan kunci');
+            elements['reveal-key'].setAttribute('aria-label', reveal ? 'Hide key' : 'Show key');
         });
         elements['config-form'].addEventListener('submit', function (event) {
             event.preventDefault();
@@ -604,7 +603,7 @@
             resetConfig();
         });
         elements['lock-panel'].addEventListener('click', function () {
-            lockPanel('Panel dikunci. Kunci sesi telah dibuang.');
+            lockPanel('Panel locked. The session key has been discarded.');
             elements['sandbox-key'].focus();
         });
         elements['copy-draft'].addEventListener('click', copyDraft);

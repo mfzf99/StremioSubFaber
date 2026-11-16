@@ -98,18 +98,18 @@ function __resetPromptSandboxForTests() {
 // ── Validasi medan ──────────────────────────────────────────────────────
 
 function resolveField(rawValue, fieldName, reasons) {
-    if (rawValue === null || rawValue === undefined) return null; // lalai rasmi
+    if (rawValue === null || rawValue === undefined) return null; // official default
     if (typeof rawValue !== 'string' || rawValue.trim().length === 0) {
-        reasons.push(`[PromptSandbox] ${fieldName} tidak sah (bukan string tidak-kosong) — medan kekal rasmi.`);
+        reasons.push(`[PromptSandbox] ${fieldName} is invalid (not a non-empty string) — field stays official.`);
         return null;
     }
     if (rawValue.includes(SUBFABER_PROMPT_BOUNDARY)) {
         reasons.push(
-            `[PromptSandbox] ${fieldName} ditolak: mengandungi sentinel SUBFABER_PROMPT_BOUNDARY (memusnahkan split system/user).`
+            `[PromptSandbox] ${fieldName} rejected: contains the SUBFABER_PROMPT_BOUNDARY sentinel (it would break the system/user split).`
         );
         return null;
     }
-    return rawValue; // verbatim — .trim() hanya untuk pemeriksaan di atas
+    return rawValue; // verbatim — .trim() is only used for the checks above
 }
 
 function computeHash8(effectiveTemplate, effectiveMalayFewShot) {
@@ -147,7 +147,7 @@ function resolvePromptSandbox(official) {
     const source = isInjection ? testOverride : (liveRow ?? promptSandboxConfig);
     const reasons = [];
     if (!isInjection && liveRow) {
-        reasons.push('[PromptSandbox] Baris live Redis aktif (panel web) — mengatasi fail konfigurasi.');
+        reasons.push('[PromptSandbox] Live Redis row active (web panel) — overrides the configuration file.');
     }
 
     const enabled = source.enabled === true;
@@ -156,7 +156,7 @@ function resolvePromptSandbox(official) {
     // menghalang KONFIGURASI PRODUKSI daripada mewarnakan ujian/CI.
     const wantsSandbox = isInjection ? enabled : enabled && !isTestContext();
     if (!isInjection && enabled && isTestContext()) {
-        reasons.push('[PromptSandbox] Test context dikesan — sandbox TIDAK diaktifkan (CI/ujian kekal teks rasmi).');
+        reasons.push('[PromptSandbox] Test context detected — sandbox NOT activated (CI/tests stay on official text).');
     }
 
     // Per-medan bebas; medan rosak diberi reason, rakan sihat tidak terjejas.
@@ -171,7 +171,7 @@ function resolvePromptSandbox(official) {
 
     if (wantsSandbox && !active) {
         reasons.push(
-            '[PromptSandbox] enabled=true tetapi translationSystemTemplate/malayFewShot tiada teks sah — fall-back penuh ke templat/pack rasmi (sifar eksperimen separuh jalan).'
+            '[PromptSandbox] enabled=true but translationSystemTemplate/malayFewShot has no valid text — full fallback to the official template/pack (zero half-experiments).'
         );
     }
 

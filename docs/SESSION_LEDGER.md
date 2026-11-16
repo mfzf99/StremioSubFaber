@@ -20,6 +20,24 @@ This template is the R5 ledger-format deliverable. It supersedes the legacy form
 
 -------
 
+## 2026-11-16 — RELEASE: SUBFABER v3.39.1 SANDBOX PANEL & API MESSAGES — FULL ENGLISH LOCALIZATION (CLASS 1 PATCH)
+
+- **Date:** 2026-11-16 ~22:20 (KL time).
+- **Parent HEAD SHA:** `52b8b2bb86dffd7827de7865ccdc8f14fc5445a2` (v3.39.0, CI-green on origin/main, Run 43879841407).
+- **Status:** `VERIFIED_LOCAL` (pre-release).
+- **Release Commit SHA + CI Run ID:** confirmed in the final report after push/CI — never invented.
+- **Owner Decision:** Correction mandate (GLM-5.3): the whole SubFaber web UI (`configure.html` etc.) is English, but the `/sandbox` panel and its API-facing messages were built in Malay. Translate ALL user-facing panel text AND the API `warnings[]`/`fieldErrors[]`/`reasons[]` message bodies to natural English matching the `configure.html` voice. FORBIDDEN: engine logic changes, API contract changes, XSS safety (`textContent`), CSS colors/tokens.
+- **Impact & Contract Audit (Phase A/B):** Display-string-only change across the coupled UI↔API surface: HTML labels/dialogs, JS runtime strings (error mapping, feedback, counters now `en-US` locale, clipboard marker comment), and backend message bodies (liveStore validateRow fieldErrors/warnings + resolver reasons). Zone A N/A (no sampling/transport). Zone B N/A (schemas/codes/error identifiers unchanged — `error`, `code`, `field`, `placeholder` keys byte-identical; only human-readable `message`/`reasons` prose translated). Internal server logs and code comments untouched per mandate scope.
+- **Reproduce-First / Inspection Evidence:** Live Playwright spot-check on local server (:7141, memory storage, test key): `lang="en"`, `Owner Private Space` / `Unlock the Experiment Desk.` / `Sandbox Admin Key` / `Unlock Sandbox`; after unlock `Inactive`/`Official`; save with placeholder-free text → `Sandbox saved and activated.` + English placeholder warning from the REAL API + `Active`/`Redis`/`hash8`; sentinel paste → English field error `contains a forbidden system boundary — it would break the instruction split.` with `aria-invalid`; reset dialog fully English (`Cancel` / `Confirm Reset`); zero JS console errors (only the expected network-level 400 line from the deliberate sentinel test).
+- **Independent Acceptance:** Full tracked suite **747 total / 746 PASS / 0 FAIL / 1 SKIP** (`.tmp/sbx-v3391-full.log`; sole SKIP = pre-existing live-Redis concurrent-quota integration) — zero test edits required: audit proved no assertion pinned the old Malay message bodies (all pins are shape/regex-based: `test context`, `fallback`, `boundary|sentinel`, `placeholder_missing`, field/code pairs). `node --check` PASS on all three JS files; Prettier clean; ESLint 0 errors. Version bumped 3.39.1 via `npm version`.
+- **Residual / N/A Gates:** Full Playwright flow N/A as a repeat (logic/FSM/security untouched — only string literals changed; the spot-check covered unlock, save, warnings, sentinel, dialog). Real-provider verification N/A (no transport change). Cache-buster auto-advances via package version 3.39.1.
+- **Files Involved:** `public/sandbox.html` (M: `lang="en"` + all display strings), `public/js/sandbox-panel.js` (M: all runtime strings, `en-US` counter locale), `src/services/promptSandboxLiveStore.js` (M: fieldErrors/warnings message bodies), `src/config/promptSandbox.js` (M: resolver reasons prose), `package.json`/`package-lock.json` (M: 3.39.1), `CHANGELOG.md` (M: v3.39.1 entry, English lock), `docs/SESSION_LEDGER.md` (M: this entry), `.tmp/RELAY_STATE.md` (untracked relay checkpoint).
+- **npm test Status:** 747 total / 746 PASS / 0 FAIL / 1 SKIP (sole SKIP = pre-existing live-Redis concurrent-quota integration), exit 0; log `.tmp/sbx-v3391-full.log`.
+- **Next Steps:** One Class 1 patch commit `fix(sandbox): localize sandbox panel UI and API messages to English (v3.39.1)`, push to origin/main, watch CI to SUCCESS, report Release Commit SHA + CI Run ID to the Owner (never a second cosmetic ledger commit).
+- **Tool Navigation Ratio:** search_files=6 read_file=5 ratio=1:0.8 anchored=100% (5/5 reads) — every read anchored/ranged to lines located by search or prior tool evidence in this session.
+
+-------
+
 ## 2026-11-16 — RELEASE: SUBFABER v3.39.0 PROMPT SANDBOX WEB PANEL — Panel Visual Live-Edit dengan Redis Sync + E2E Playwright (CLASS 1)
 
 - **Date:** 2026-11-16 ~21:40 (KL time).
