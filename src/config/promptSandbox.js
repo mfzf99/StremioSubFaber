@@ -57,9 +57,14 @@ const promptSandboxConfig = {
 // ── Gate test-context (pengetatan Owner #1) ─────────────────────────────
 // node --test telanjang tidak melalui scripts/run-tracked-tests.js; deteksi
 // meliputi SEMUA laluan supaya teks eksperimen tidak pernah mewarnakan CI.
+// [FASA 1 v3.39.0] Gate kini SSUT KONGSI: promptSandboxLiveStore memakai
+// isTestContext() ini (lazy require) supaya override ujian (@_setTestContextForTests)
+// menyegerakkan kedua-dua lapisan resolver dan live store.
 
 let testContextCache = null;
+let testContextOverride = null; // null = auto-deteksi; true/false = paksaan ujian
 function isTestContext() {
+    if (testContextOverride !== null) return testContextOverride === true;
     if (testContextCache !== null) return testContextCache;
     try {
         testContextCache =
@@ -71,6 +76,11 @@ function isTestContext() {
         testContextCache = false;
     }
     return testContextCache;
+}
+
+/** Uji-sahaja: paksa nilai gate (null = pulihkan auto-deteksi). */
+function __setTestContextForTests(value) {
+    testContextOverride = value === true || value === false ? value : null;
 }
 
 // Injection uji-sahaja (bypass gate; dipulihkan oleh reset). Kontrak
@@ -116,6 +126,11 @@ let bootLogged = false;
 /**
  * Selesaikan pasangan EFEKTIF (official + sandbox) — SSUT tunggal bagi enjin
  * dan kunci cache. Panggilan kekal MURAH & DETERMINISTIK; tiada mutasi input.
+ * [FASA 1 v3.39.0] Keutamaan: injection uji-sahaja > baris live Redis
+ * (promptSandboxLiveStore — panel web, berkuasa selepas Simpan tanpa restart)
+ * > fail konfigurasi penghantaran > official. Baris live DIABAIKAN sepenuhnya
+ * dalam test context (jaminan v3.38.0: CI kekal 100% hijau walau baris Redis
+ * aktif secara live).
  *
  * @param {{officialTemplate:string, officialMalayFewShot:string}} official
  * @returns {{template:string, malayFewShot:string, active:boolean, hash8:string|null, reasons:string[]}}
@@ -124,9 +139,16 @@ function resolvePromptSandbox(official) {
     const officialTemplate = String(official?.officialTemplate ?? '');
     const officialMalayFewShot = String(official?.officialMalayFewShot ?? '');
 
+    // Lazy require elak kitaran modul (liveStore pula mengimport gate ini).
+    const { getLiveRow } = require('../services/promptSandboxLiveStore');
+
     const isInjection = testOverride !== null;
-    const source = isInjection ? testOverride : promptSandboxConfig;
+    const liveRow = isInjection || isTestContext() ? null : getLiveRow();
+    const source = isInjection ? testOverride : (liveRow ?? promptSandboxConfig);
     const reasons = [];
+    if (!isInjection && liveRow) {
+        reasons.push('[PromptSandbox] Baris live Redis aktif (panel web) — mengatasi fail konfigurasi.');
+    }
 
     const enabled = source.enabled === true;
     // Injection eksplisit uji-sahaja MEMUTUSKAN gate sendiri (suite sandbox
@@ -169,6 +191,8 @@ function resolvePromptSandbox(official) {
 module.exports = {
     promptSandboxConfig,
     resolvePromptSandbox,
+    isTestContext,
+    __setTestContextForTests,
     __setPromptSandboxForTests,
     __resetPromptSandboxForTests
 };

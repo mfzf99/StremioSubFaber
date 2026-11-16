@@ -132,6 +132,7 @@ const smdbCache = require('./src/utils/smdbCache');
 const { deriveVideoHash } = require('./src/utils/videoHash');
 const { deriveStreamHashFromUrl } = require('./src/utils/streamUrlIdentity');
 const { registerFileUploadRoutes } = require('./src/routes/fileUploadRoutes');
+const { registerSandboxRoutes } = require('./src/routes/sandboxRoutes');
 const {
     getProviderAuthFailureCacheKey,
     hasCachedProviderAuthFailure,
@@ -6282,6 +6283,10 @@ app.get(
 
 // Register file upload page routes (redirect + standalone page)
 registerFileUploadRoutes(app, { log, resolveConfigGuarded, computeConfigHash, setNoStore, respondStorageUnavailable });
+
+// [PROMPT-SANDBOX-PANEL v3.39.0 — Fasa 1] Panel visual Prompt Sandbox Owner:
+// auth kunci env (SANDBOX_ADMIN_KEY), no-store semua respons, live config Redis.
+registerSandboxRoutes(app, { log, setNoStore, respondStorageUnavailable, packageVersion: version });
 
 // Custom route: Sub Toolbox homepage (BEFORE SDK router)
 app.get('/addon/:config/sub-toolbox/:videoId', async (req, res) => {

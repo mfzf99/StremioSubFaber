@@ -54,6 +54,7 @@ const log = require('../utils/logger');
 const { handleCaughtError } = require('../utils/errorClassifier');
 const { isHearingImpairedSubtitle } = require('../utils/subtitleFlags');
 const { generateCacheKeys } = require('../utils/cacheKeys');
+const promptSandboxLiveStore = require('../services/promptSandboxLiveStore');
 const { deduplicateSubtitles, logDeduplicationStats } = require('../utils/subtitleDeduplication');
 const { version } = require('../utils/version');
 const { isProviderHealthy, circuitBreaker } = require('../utils/httpAgents');
@@ -4880,6 +4881,11 @@ async function handleTranslation(sourceFileId, targetLanguage, config, options =
         if (config && typeof config === 'object' && !config.trinityMode) {
             config.trinityMode = resolveTrinityModeForConfig(config);
         }
+        // [PROMPT-SANDBOX-PANEL v3.39.0 — Fasa 1] Refresh snapshot live panel
+        // Owner (fire-and-forget, TTL 2s, sifar r/h pada hot path; NO-OP penuh
+        // dalam test context) supaya kunci cache + enjin seterusnya membaca
+        // teks eksperimen terkini tanpa restart.
+        promptSandboxLiveStore.refreshIfStale();
 
         // Generate cache keys using shared utility (single source of truth for cache key scoping)
         const { baseKey, cacheKey, runtimeKey, bypass, bypassEnabled, userHash, allowPermanent } = generateCacheKeys(

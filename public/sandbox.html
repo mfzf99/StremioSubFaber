@@ -1,0 +1,374 @@
+<!doctype html>
+<html lang="ms" data-theme="light">
+    <head>
+        <meta charset="UTF-8" />
+        <meta name="viewport" content="width=device-width, initial-scale=1" />
+        <meta name="color-scheme" content="light dark" />
+        <title>Prompt Sandbox · SubFaber</title>
+        <link rel="icon" type="image/svg+xml" href="/favicon.svg" />
+        <script>
+            (function () {
+                var theme = 'light';
+                try {
+                    var saved = localStorage.getItem('theme');
+                    if (saved === 'dark' || saved === 'light') {
+                        theme = saved;
+                    } else if (window.matchMedia('(prefers-color-scheme: dark)').matches) {
+                        theme = 'dark';
+                    }
+                } catch (_) {
+                    if (window.matchMedia('(prefers-color-scheme: dark)').matches) theme = 'dark';
+                }
+                document.documentElement.setAttribute('data-theme', theme);
+                document.documentElement.setAttribute('data-theme-pref', theme);
+            })();
+        </script>
+        <link rel="stylesheet" href="/css/subfaber-theme.css?v=__SBX_ASSET_VERSION__" />
+        <link rel="stylesheet" href="/css/sandbox-panel.css?v=__SBX_ASSET_VERSION__" />
+        <script src="/js/sandbox-panel.js?v=__SBX_ASSET_VERSION__" defer></script>
+    </head>
+    <body class="sandbox-body">
+        <a class="skip-link" href="#sandbox-main">Langkau ke kandungan</a>
+        <header class="sandbox-topbar">
+            <a class="sandbox-brand" href="/configure" aria-label="Kembali ke konfigurasi SubFaber">
+                <img src="/favicon.svg" alt="" width="30" height="30" />
+                <span>SubFaber</span>
+                <span class="sandbox-brand-divider" aria-hidden="true"></span>
+                <span class="sandbox-brand-product">Prompt Sandbox</span>
+            </a>
+            <button class="icon-button" id="theme-toggle" type="button" aria-label="Tukar ke mod gelap">
+                <svg
+                    viewBox="0 0 24 24"
+                    width="19"
+                    height="19"
+                    fill="none"
+                    stroke="currentColor"
+                    stroke-width="1.8"
+                    aria-hidden="true"
+                >
+                    <path d="M20.4 15.2A8.5 8.5 0 0 1 8.8 3.6 8.5 8.5 0 1 0 20.4 15.2Z" />
+                </svg>
+                <span id="theme-label">Mod gelap</span>
+            </button>
+        </header>
+
+        <main class="sandbox-main" id="sandbox-main">
+            <section class="auth-screen" id="auth-screen" aria-labelledby="auth-title">
+                <div class="auth-mark" aria-hidden="true">
+                    <svg
+                        viewBox="0 0 32 32"
+                        width="32"
+                        height="32"
+                        fill="none"
+                        stroke="currentColor"
+                        stroke-width="1.7"
+                    >
+                        <rect x="6" y="14" width="20" height="14" rx="4" />
+                        <path d="M10 14V9a6 6 0 0 1 12 0v5M16 20v3" />
+                    </svg>
+                </div>
+                <p class="eyebrow">Ruang peribadi Owner</p>
+                <h1 id="auth-title">Buka meja eksperimen.</h1>
+                <p class="auth-intro">
+                    Sunting arahan terjemahan dan contoh dialog Melayu tanpa menyentuh kod. Kunci hanya disimpan untuk
+                    tab pelayar ini.
+                </p>
+                <form id="auth-form" novalidate>
+                    <label for="sandbox-key">Kunci pentadbir sandbox</label>
+                    <div class="password-field">
+                        <input
+                            id="sandbox-key"
+                            name="sandboxKey"
+                            type="password"
+                            autocomplete="current-password"
+                            spellcheck="false"
+                            required
+                            aria-describedby="key-help auth-feedback"
+                        />
+                        <button id="reveal-key" class="password-reveal" type="button" aria-label="Tunjukkan kunci">
+                            <svg
+                                viewBox="0 0 24 24"
+                                width="20"
+                                height="20"
+                                fill="none"
+                                stroke="currentColor"
+                                stroke-width="1.7"
+                                aria-hidden="true"
+                            >
+                                <path d="M2.5 12s3.5-6 9.5-6 9.5 6 9.5 6-3.5 6-9.5 6-9.5-6-9.5-6Z" />
+                                <circle cx="12" cy="12" r="2.7" />
+                            </svg>
+                        </button>
+                    </div>
+                    <p class="field-help" id="key-help">
+                        Gunakan nilai SANDBOX_ADMIN_KEY yang ditetapkan pada pelayan.
+                    </p>
+                    <p class="auth-feedback hidden" id="auth-feedback" role="alert"></p>
+                    <button class="button button-primary auth-submit" id="auth-submit" type="submit">
+                        <span id="auth-submit-label">Buka sandbox</span>
+                        <svg
+                            viewBox="0 0 24 24"
+                            width="18"
+                            height="18"
+                            fill="none"
+                            stroke="currentColor"
+                            stroke-width="2"
+                            aria-hidden="true"
+                        >
+                            <path d="m9 5 7 7-7 7" />
+                        </svg>
+                    </button>
+                </form>
+                <p class="auth-footnote">
+                    <svg
+                        viewBox="0 0 20 20"
+                        width="16"
+                        height="16"
+                        fill="none"
+                        stroke="currentColor"
+                        stroke-width="1.5"
+                        aria-hidden="true"
+                    >
+                        <path d="M10 2.5 16 5v4.4c0 3.7-2.5 6.6-6 8.1-3.5-1.5-6-4.4-6-8.1V5l6-2.5Z" />
+                        <path d="m7.2 10 1.8 1.8 3.8-4" />
+                    </svg>
+                    Kunci dihantar melalui pengepala yang dilindungi, bukan melalui URL.
+                </p>
+            </section>
+
+            <div class="sandbox-panel hidden" id="sandbox-panel">
+                <section class="sandbox-hero" aria-labelledby="sandbox-title">
+                    <div>
+                        <p class="eyebrow">Makmal prompt terjemahan</p>
+                        <h1 id="sandbox-title">Uji ayat. Dengar perubahannya.</h1>
+                        <p class="hero-copy">
+                            Ubah arahan dan contoh dalam satu tempat. Simpan untuk menggunakannya pada terjemahan
+                            seterusnya.
+                        </p>
+                    </div>
+                    <button class="button button-quiet lock-button" id="lock-panel" type="button">
+                        <svg
+                            viewBox="0 0 24 24"
+                            width="17"
+                            height="17"
+                            fill="none"
+                            stroke="currentColor"
+                            stroke-width="1.8"
+                            aria-hidden="true"
+                        >
+                            <rect x="5" y="10" width="14" height="10" rx="2" />
+                            <path d="M8 10V7a4 4 0 0 1 8 0v3" />
+                        </svg>
+                        Kunci panel
+                    </button>
+                </section>
+
+                <section class="live-status" aria-labelledby="live-status-title">
+                    <div class="live-status-main">
+                        <span class="status-beacon" id="status-beacon" aria-hidden="true"></span>
+                        <div>
+                            <h2 id="live-status-title">Status terjemahan</h2>
+                            <p id="active-status" class="active-status">Tidak Aktif</p>
+                        </div>
+                    </div>
+                    <dl class="status-facts">
+                        <div>
+                            <dt>Cap prompt</dt>
+                            <dd><code id="hash8">—</code></dd>
+                        </div>
+                        <div>
+                            <dt>Sumber teks</dt>
+                            <dd id="source-status">Rasmi</dd>
+                        </div>
+                        <div>
+                            <dt>Suis eksperimen</dt>
+                            <dd id="enabled-status">OFF</dd>
+                        </div>
+                    </dl>
+                </section>
+
+                <div class="feedback-region hidden" id="feedback-region" aria-live="polite" aria-atomic="false"></div>
+                <p class="status-note hidden" id="status-note" aria-live="polite"></p>
+
+                <form id="config-form" novalidate>
+                    <section class="editor-section" aria-labelledby="editor-title">
+                        <div class="section-heading">
+                            <div>
+                                <p class="section-index">Draf aktif</p>
+                                <h2 id="editor-title">Dua bahan, satu arahan.</h2>
+                            </div>
+                            <label class="switch-control" for="enabled">
+                                <span class="switch-copy">
+                                    <span class="switch-title">Gunakan eksperimen</span>
+                                    <span class="switch-description" id="enabled-help"
+                                        >OFF mengekalkan teks tanpa mengaktifkannya.</span
+                                    >
+                                </span>
+                                <input
+                                    id="enabled"
+                                    name="enabled"
+                                    type="checkbox"
+                                    role="switch"
+                                    aria-describedby="enabled-help"
+                                />
+                                <span class="switch-track" aria-hidden="true"><span class="switch-thumb"></span></span>
+                                <span class="switch-value" id="enabled-value">OFF</span>
+                            </label>
+                        </div>
+
+                        <div class="editor-field">
+                            <div class="editor-label-row">
+                                <div>
+                                    <label for="translationSystemTemplate">System Prompt</label>
+                                    <p>Arahan utama yang menentukan cara setiap subtitle diterjemahkan.</p>
+                                </div>
+                                <output id="template-count" for="translationSystemTemplate">0 / 50,000 aksara</output>
+                            </div>
+                            <textarea
+                                id="translationSystemTemplate"
+                                name="translationSystemTemplate"
+                                rows="18"
+                                spellcheck="false"
+                                autocapitalize="off"
+                                autocomplete="off"
+                                wrap="soft"
+                                aria-describedby="template-help template-error"
+                            ></textarea>
+                            <p class="field-error hidden" id="template-error"></p>
+                            <details class="placeholder-guide" id="template-help">
+                                <summary>Placeholder yang boleh digunakan</summary>
+                                <p>
+                                    Guna bentuk <code>${...}</code> atau <code>{{...}}</code>. Semua placeholder berikut
+                                    disokong:
+                                </p>
+                                <ul>
+                                    <li><code>${sourceLabel}</code> — bahasa asal</li>
+                                    <li><code>${targetLabel}</code> — bahasa sasaran penuh</li>
+                                    <li><code>${targetLabelShort}</code> — nama ringkas bahasa sasaran</li>
+                                    <li><code>${fewShot}</code> — contoh dialog untuk bahasa sasaran</li>
+                                </ul>
+                            </details>
+                        </div>
+
+                        <div class="editor-field">
+                            <div class="editor-label-row">
+                                <div>
+                                    <label for="malayFewShot">Contoh Dialog Melayu</label>
+                                    <p>Contoh gaya, sebutan dan pembahagian ayat yang menjadi panduan model.</p>
+                                </div>
+                                <output id="few-shot-count" for="malayFewShot">0 / 50,000 aksara</output>
+                            </div>
+                            <textarea
+                                id="malayFewShot"
+                                name="malayFewShot"
+                                rows="14"
+                                spellcheck="false"
+                                autocapitalize="off"
+                                autocomplete="off"
+                                wrap="soft"
+                                aria-describedby="few-shot-help few-shot-error"
+                            ></textarea>
+                            <p class="field-error hidden" id="few-shot-error"></p>
+                            <p class="field-help" id="few-shot-help">
+                                Kosongkan sepenuhnya mana-mana kotak untuk menggunakan semula teks rasmi bagi bahagian
+                                itu.
+                            </p>
+                        </div>
+                    </section>
+
+                    <div class="action-dock">
+                        <div class="action-primary">
+                            <button class="button button-primary" id="save-config" type="submit">
+                                <svg
+                                    viewBox="0 0 24 24"
+                                    width="18"
+                                    height="18"
+                                    fill="none"
+                                    stroke="currentColor"
+                                    stroke-width="1.8"
+                                    aria-hidden="true"
+                                >
+                                    <path d="M5 3h12l3 3v15H4V3h1Z" />
+                                    <path d="M8 3v6h8V3M8 21v-8h8v8" />
+                                </svg>
+                                <span id="save-label">Simpan & Aktifkan</span>
+                            </button>
+                            <button class="button button-secondary" id="copy-draft" type="button">
+                                <svg
+                                    viewBox="0 0 24 24"
+                                    width="18"
+                                    height="18"
+                                    fill="none"
+                                    stroke="currentColor"
+                                    stroke-width="1.8"
+                                    aria-hidden="true"
+                                >
+                                    <rect x="8" y="8" width="12" height="12" rx="2" />
+                                    <path d="M16 8V4H4v12h4" />
+                                </svg>
+                                <span id="copy-label">Salin Draf</span>
+                            </button>
+                        </div>
+                        <button class="button button-danger" id="reset-config" type="button">
+                            <svg
+                                viewBox="0 0 24 24"
+                                width="18"
+                                height="18"
+                                fill="none"
+                                stroke="currentColor"
+                                stroke-width="1.8"
+                                aria-hidden="true"
+                            >
+                                <path d="M4 4v6h6M5.5 15a7 7 0 1 0 .5-7L4 10" />
+                            </svg>
+                            <span id="reset-label">Reset ke Rasmi</span>
+                        </button>
+                    </div>
+                    <p class="save-explainer">
+                        Simpan menghantar kedua-dua medan sekaligus. Perubahan berkuat kuasa pada terjemahan baharu,
+                        bukan pada sari kata yang telahpun siap.
+                    </p>
+                </form>
+            </div>
+        </main>
+
+        <footer class="sandbox-footer">
+            <span>Eksperimen berasingan daripada prompt rasmi.</span>
+            <a href="/configure">Kembali ke konfigurasi</a>
+        </footer>
+
+        <dialog
+            class="reset-dialog"
+            id="reset-dialog"
+            aria-labelledby="reset-dialog-title"
+            aria-describedby="reset-dialog-copy"
+        >
+            <form method="dialog">
+                <div class="dialog-mark" aria-hidden="true">
+                    <svg
+                        viewBox="0 0 24 24"
+                        width="25"
+                        height="25"
+                        fill="none"
+                        stroke="currentColor"
+                        stroke-width="1.7"
+                    >
+                        <path d="M4 4v6h6M5.5 15a7 7 0 1 0 .5-7L4 10" />
+                    </svg>
+                </div>
+                <h2 id="reset-dialog-title">Pulihkan kepada templat rasmi?</h2>
+                <p id="reset-dialog-copy">
+                    Eksperimen tersimpan akan dipadam. Draf yang belum disimpan dalam kedua-dua kotak juga akan diganti.
+                </p>
+                <div class="dialog-actions">
+                    <button class="button button-secondary" id="cancel-reset" value="cancel" type="submit">
+                        Kekalkan draf
+                    </button>
+                    <button class="button button-danger-solid" id="confirm-reset" value="confirm" type="button">
+                        Ya, reset
+                    </button>
+                </div>
+            </form>
+        </dialog>
+    </body>
+</html>
