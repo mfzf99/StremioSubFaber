@@ -182,31 +182,24 @@ function validateRow(row) {
         });
     }
     const templateOk = checkTextField('translationSystemTemplate', row?.translationSystemTemplate);
-    const fewShotOk = checkTextField('malayFewShot', row?.malayFewShot);
+    checkTextField('malayFewShot', row?.malayFewShot);
 
     // AMARAN MESRA (bukan ralat): placeholder tertinggal — terjemahan tetap
     // berjalan; Owner kekal bebas (keputusan D4). Bila kedua-dua medan rosak,
     // skip semakan placeholder (tiada apa yang akan disimpan).
     if (templateOk && typeof row?.translationSystemTemplate === 'string' && row.translationSystemTemplate.length > 0) {
-        // [v3.39.2 — Mandat Owner] SATU format placeholder rasmi sahaja: ${...}
-        // (selari 100% dengan core.js). Bentuk {{...}} dibersihkan daripada
-        // kontrak; pengesan hanya menyemak bentuk rasmi ini.
-        for (const [field, value] of [
-            ['translationSystemTemplate', row.translationSystemTemplate],
-            ['malayFewShot', typeof row?.malayFewShot === 'string' ? row.malayFewShot : null]
-        ]) {
-            if (field === 'malayFewShot' && !fewShotOk) continue;
-            if (!value) continue;
-            for (const name of ['sourceLabel', 'targetLabel', 'targetLabelShort', 'fewShot']) {
-                if (!value.includes(`\${${name}}`)) {
-                    warnings.push({
-                        code: 'placeholder_missing',
-                        field,
-                        placeholder: name,
-                        message: `The \${${name}} placeholder is missing — translation will still run, but this instruction will not be adjusted automatically.`
-                    });
-                    break; // satu amaran per medan cukup
-                }
+        // [v3.39.3 — Mandat Owner] Semakan template sahaja, dengan tiga
+        // placeholder rasmi dan String.includes() deterministik. Malaya fewShot
+        // tidak diperiksa dan targetLabelShort bukan amaran wajib.
+        const template = row.translationSystemTemplate;
+        for (const placeholder of ['sourceLabel', 'targetLabel', 'fewShot']) {
+            if (!template.includes(`\${${placeholder}}`)) {
+                warnings.push({
+                    code: 'placeholder_missing',
+                    field: 'translationSystemTemplate',
+                    placeholder,
+                    message: `The \${${placeholder}} placeholder is missing — translation will still run, but this instruction will not be adjusted automatically.`
+                });
             }
         }
     }

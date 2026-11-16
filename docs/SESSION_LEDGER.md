@@ -20,6 +20,24 @@ This template is the R5 ledger-format deliverable. It supersedes the legacy form
 
 -------
 
+## 2026-11-16 — SUBFABER v3.39.3 DETERMINISTIC SANDBOX PLACEHOLDER WARNINGS (CLASS 1 PATCH)
+
+- **Date:** 2026-11-16 ~23:57 (KL time).
+- **Parent HEAD SHA:** `bcf7b219282e594fcf6a0fad81ab4981cde0e8b1` (v3.39.2, CI green on Run `43894232469`).
+- **Status:** `VERIFIED_LOCAL` (pre-release).
+- **Release Commit SHA + CI Run ID:** confirmed in the final report after push/CI — never invented.
+- **Owner Decision:** Implement deterministic direct string checks for `${sourceLabel}`, `${targetLabel}`, and `${fewShot}` on `translationSystemTemplate`; retain the empty-warning guarantee for two consecutive PUT calls; release v3.39.3 and deploy to Terabix.
+- **Impact & Contract Audit (Phase A/B):** Coupled warning producer (`promptSandboxLiveStore.validateRow`) ↔ API producer (`sandboxRoutes`) ↔ UI consumer (`sandbox-panel.js`) inspected; only detector implementation changed. Zone A N/A (no model parameters), Zone B N/A (response shape/codes/HTTP statuses unchanged).
+- **Reproduce-First Evidence:** Added SBX-API-9 before production edit: two consecutive saves of the official template must return `warnings: []` both times; both passed pre-fix. Exact Owner-line and negative controls also passed pre-fix. Direct VPS v3.39.2 probe of the exact line produced only `targetLabelShort` on both calls (no `sourceLabel` false positive). Thus no regex-state bug is claimed. The mandated change narrows the detector to three template placeholders and removes the extra `targetLabelShort`/few-shot scan rather than pretending to repair a demonstrated regex defect.
+- **Independent Acceptance:** After implementation, local direct probe of the exact Owner line twice returned only the valid `fewShot` warning, never `sourceLabel` (`.tmp/sbx-v3393-probe-local.log`). Full suite **748 total / 747 PASS / 0 FAIL / 1 SKIP** (sole SKIP = pre-existing live-Redis integration). Scoped `node --check`, Prettier, ESLint, and `git diff --check` all pass. No production files outside `promptSandboxLiveStore.js` changed; test assertions were added, not removed.
+- **Residual / N/A Gates:** Playwright N/A for this detector-only backend patch; real-provider verification N/A because provider transport is untouched. Production deployment and direct live warning verification are mandatory after CI.
+- **Files Involved:** `src/services/promptSandboxLiveStore.js` (M: deterministic detector), `src/routes/sandbox-routes-regression.test.js` (M: SBX-API-9), `package.json`/`package-lock.json` (M: 3.39.3), `CHANGELOG.md`, `docs/SESSION_LEDGER.md`, `.tmp/RELAY_STATE.md` (release evidence).
+- **npm test Status:** 748 total / 747 PASS / 0 FAIL / 1 SKIP, exit 0.
+- **Next Steps:** Single patch commit, push, watch CI green, then pull/rebuild/verify on Terabix.
+- **Tool Navigation Ratio:** search_files=16 read_file=12 ratio=1:0.8 anchored=100% (12/12 reads); all reads ranged or indentation-anchored.
+
+-------
+
 ## 2026-11-16 — RELEASE: SUBFABER v3.39.2 SANDBOX PLACEHOLDER — SINGLE OFFICIAL ${...} FORMAT & WARNING FALSE-POSITIVE FIX (CLASS 1 PATCH)
 
 - **Date:** 2026-11-16 ~23:09 (KL time).

@@ -399,6 +399,52 @@ test('SBX-API-7: POST /reset — baris dipadam + snapshot segerak; 503 bila stor
     }
 });
 
+test('SBX-API-9: dua PUT berulang pada templat rasmi → warnings sentiasa kosong', async () => {
+    const app = makeApp();
+    registerSandboxRoutes(app, baseDeps());
+    const prev = process.env.SANDBOX_ADMIN_KEY;
+    try {
+        process.env.SANDBOX_ADMIN_KEY = ADMIN_KEY;
+        __setTestContextForTests(false);
+        __setAdapterForTests(makeFakeAdapter());
+        __resetLiveRowForTests();
+        const { TRANSLATION_SYSTEM_TEMPLATE } = require('../services/prompts/trinity/translation/core');
+        const body = {
+            enabled: true,
+            translationSystemTemplate: TRANSLATION_SYSTEM_TEMPLATE,
+            malayFewShot: null
+        };
+        for (let call = 1; call <= 2; call++) {
+            const saved = await dispatch(app, 'put', '/api/sandbox/config', { headers: authHeaders(), body });
+            assert.equal(saved.res.statusCode, 200, `panggilan ${call} diterima`);
+            assert.deepEqual(saved.res.body.warnings, [], `panggilan ${call} tidak menghasilkan amaran`);
+        }
+        // Control yang mengasingkan Owner false-positive: sourceLabel hadir
+        // walaupun fewShot dan targetLabelShort sengaja tiada.
+        body.translationSystemTemplate =
+            '1. Translate the text inside each <s id="N"> tag from ${sourceLabel} into${targetLabel}. Use appropriate colloquialisms.';
+        const control = await dispatch(app, 'put', '/api/sandbox/config', { headers: authHeaders(), body });
+        assert.equal(control.res.statusCode, 200);
+        assert.ok(
+            !control.res.body.warnings.some((w) => w.placeholder === 'sourceLabel'),
+            'sourceLabel hadir → tiada amaran sourceLabel'
+        );
+        body.translationSystemTemplate = 'TEXT ${targetLabel} ${fewShot}';
+        body.malayFewShot = '${sourceLabel} ONLY IN FEWSHOT';
+        const missingSource = await dispatch(app, 'put', '/api/sandbox/config', { headers: authHeaders(), body });
+        assert.ok(
+            missingSource.res.body.warnings.some((w) => w.placeholder === 'sourceLabel'),
+            'sourceLabel benar-benar tiada → amaran wajib kekal'
+        );
+    } finally {
+        if (prev === undefined) delete process.env.SANDBOX_ADMIN_KEY;
+        else process.env.SANDBOX_ADMIN_KEY = prev;
+        __setTestContextForTests(null);
+        __resetLiveRowForTests();
+        __setAdapterForTests(null);
+    }
+});
+
 test('SBX-API-8: semua respons API sandbox membawa no-store + tiada kebocoran kunci', async () => {
     const app = makeApp();
     registerSandboxRoutes(app, baseDeps());

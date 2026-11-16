@@ -2,6 +2,18 @@
 
 All notable changes to this project will be documented in this file.
 
+## SubFaber v3.39.3 (2026-11-16) — Deterministic Template Placeholder Warning
+
+### Fixed
+
+- **The Sandbox warning detector now uses deterministic `String.prototype.includes()` checks for `${sourceLabel}`, `${targetLabel}`, and `${fewShot}` on `translationSystemTemplate` only.** The retired `{{...}}` form is not recognized, `targetLabelShort` no longer produces a warning, and placeholder-like text inside `malayFewShot` is never scanned. Repeated saves return the same warning result every time.
+- Added the Owner's exact `sourceLabel`/`targetLabel` line as a regression control, a negative control proving that a genuinely absent `sourceLabel` still warns, and two consecutive saves of the complete official template that must both return empty `warnings[]`.
+
+### Verified
+
+- Full tracked suite: **748 tests, 747 passed, 0 failed, 1 skipped** (pre-existing live-Redis integration). JavaScript syntax, Prettier, ESLint, relay-state, and whitespace checks pass on the production and regression-test files.
+- A direct probe of the previous v3.39.2 VPS implementation showed that the reported `sourceLabel` false positive could not be reproduced on the exact input; the actual warning for that line was `targetLabelShort`. v3.39.3 removes that extra warning while retaining the three explicitly required template checks.
+
 ## SubFaber v3.39.2 (2026-11-16) — Single Official Placeholder Format `${...}` & Missing-Placeholder Warning Fix
 
 ### 🔄 Changed — One Placeholder Contract (Owner Mandate)
