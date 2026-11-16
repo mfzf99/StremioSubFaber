@@ -309,6 +309,24 @@ test('SBX-API-6: PUT config — 400 medan, warnings placeholder, snapshot segera
         const eff = resolvePromptSandbox({ officialTemplate: 'OFF', officialMalayFewShot: 'OFF-F' });
         assert.equal(eff.template, 'TEKS TANPA PLACEHOLDER SAMA SEKALI', 'snapshot selepas 200 sudah baru');
 
+        // (e) [v3.39.2] Teks dengan SEMUA placeholder rasmi ${...} → TIADA
+        // amaran placeholder (pembetulan tersalah-lapor: dahulu bentuk ${...}
+        // sah disalahlaporkan hilang; pengesan kini menyemak ${...} tunggal).
+        const withPlaceholders = await dispatch(app, 'put', '/api/sandbox/config', {
+            headers: authHeaders(),
+            body: {
+                enabled: true,
+                translationSystemTemplate: 'TEXT ${sourceLabel} -> ${targetLabel} ${targetLabelShort} ${fewShot}',
+                malayFewShot: null
+            }
+        });
+        assert.equal(withPlaceholders.res.statusCode, 200, 'save dengan ${...} diterima');
+        assert.equal(
+            withPlaceholders.res.body.warnings.filter((w) => w.code === 'placeholder_missing').length,
+            0,
+            'placeholder ${...} lengkap pada templat → sifar amaran pada medan templat'
+        );
+
         // (e) 401 tanpa kunci pada PUT.
         const unauth = await dispatch(app, 'put', '/api/sandbox/config', {
             body: { enabled: true, translationSystemTemplate: 'X', malayFewShot: null }

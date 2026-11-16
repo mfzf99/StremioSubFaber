@@ -22,8 +22,8 @@
  *   SBX-8  Medan rosak (non-string / kosong / whitespace-only) → medan itu
  *          official + reason; medan sihat tidak terjejas.
  *   SBX-9  Sentinel SUBFABER_PROMPT_BOUNDARY HARAM dalam teks override.
- *   SBX-10 Kedua-dua bentuk placeholder (${...} dan {{...}}) kekal VERBATIM
- *          dalam hasil resolve (interpolasi milik engine, bukan resolver).
+ *   SBX-10 Bentuk placeholder rasmi tunggal ${...} kekal VERBATIM dalam
+ *          hasil resolve (interpolasi milik engine, bukan resolver).
  *   SBX-11 Verbatim penuh: leading/trailing whitespace + newline dikekalkan.
  */
 
@@ -238,16 +238,16 @@ test('SBX-9: sentinel SUBFABER_PROMPT_BOUNDARY HARAM dalam teks override', () =>
 
 // ── 10. Placeholder kedua-dua bentuk kekal verbatim (resolver tidak interpolate) ──
 
-test('SBX-10: ${...} dan {{...}} kekal VERBATIM dalam hasil resolve (interpolasi milik engine)', () => {
+test('SBX-10: ${...} kekal VERBATIM dalam hasil resolve (interpolasi milik engine)', () => {
     try {
         __setPromptSandboxForTests({
             enabled: true,
-            translationSystemTemplate: 'SBX {{sourceLabel}} -> ${targetLabel} {{fewShot}}',
-            malayFewShot: 'SBX FEWSHOT {{targetLabelShort}}'
+            translationSystemTemplate: 'SBX ${sourceLabel} -> ${targetLabel} ${fewShot}',
+            malayFewShot: 'SBX FEWSHOT ${targetLabelShort}'
         });
         const out = resolve();
-        assert.equal(out.template, 'SBX {{sourceLabel}} -> ${targetLabel} {{fewShot}}', 'templat tidak diubah');
-        assert.equal(out.malayFewShot, 'SBX FEWSHOT {{targetLabelShort}}', 'few-shot tidak diubah');
+        assert.equal(out.template, 'SBX ${sourceLabel} -> ${targetLabel} ${fewShot}', 'templat tidak diubah');
+        assert.equal(out.malayFewShot, 'SBX FEWSHOT ${targetLabelShort}', 'few-shot tidak diubah');
     } finally {
         __resetPromptSandboxForTests();
     }

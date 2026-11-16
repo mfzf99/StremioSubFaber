@@ -3119,16 +3119,16 @@ class TranslationEngine {
         // Nota: core menggunakan label TERISIH (fallback 'the source language'
         // / 'the target language' / 'target-language' dilaksanakan di sini
         // supaya templat kanonik kekal neutral).
-        // [PROMPT-SANDBOX v3.38.0 — pengetatan Owner #3 + D4] Interpolasi
-        // callback () => value melindungi token substitution ($&, $`, $')
-        // dalam teks suntingan GitHub; KEDUA-DUA bentuk placeholder disokong:
-        // ${...} (konvensyen core.js) dan {{...}} (kalis template literal JS).
-        // SATU imbasan regex gabungan per token: kandungan tersuntik TIDAK
-        // diimbas semula (contoh few-shot yang membawa {{fewShot}} kekal
-        // verbatim) — kontrak penghantaran verbatim eksperimen Owner.
-        // few-shot disuntik TERAKHIR — pariti tunggal dengan laluan official.
+        // [PROMPT-SANDBOX v3.39.2 — Mandat Owner] SATU format placeholder
+        // rasmi sahaja: ${...} (selari 100% dengan core.js; bentuk {{...}}
+        // dibersihkan daripada kontrak). Interpolasi callback () => value
+        // kekal melindungi token substitution ($&, $`, $') dalam teks
+        // suntingan GitHub. SATU imbasan regex per token: kandungan tersuntik
+        // TIDAK diimbas semula — kontrak penghantaran verbatim eksperimen
+        // Owner. few-shot disuntik TERAKHIR — pariti tunggal dengan laluan
+        // official.
         const applyPlaceholder = (text, token, value) =>
-            text.replace(new RegExp(`\\$\\{${token}\\}|\\{\\{${token}\\}\\}`, 'g'), () => value);
+            text.replace(new RegExp(`\\$\\{${token}\\}`, 'g'), () => value);
         const systemPart = [
             ['sourceLabel', sourceLabel || 'the source language'],
             ['targetLabel', targetLabel || 'the target language'],

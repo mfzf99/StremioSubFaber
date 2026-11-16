@@ -15,8 +15,8 @@
  * Pin tambahan (pengetatan Owner #2/#3):
  *   - Interpolasi callback selamat: token $& / $` / $' dalam teks sandbox
  *     kekal VERBATIM pada wayar (bukti risiko R1 ditutup).
- *   - Placeholder KEDUA-DUA bentuk ${...} dan {{...}} diinterpolasi enjin
- *     (D4); sifar residu token pada system lane.
+ *   - Placeholder format rasmi tunggal ${...} diinterpolasi enjin (v3.39.2);
+ *     sifar residu token pada system lane.
  *   - Generic pack verbatim walaupun malayFewShot aktif (sasaran bukan-Malay
  *     100% tak tersentuh).
  *   - Resolusi cacheKeys DINAMIK per panggilan: injection menukar kunci ke
@@ -96,9 +96,9 @@ function resetCapture() {
 
 // ── Teks eksperimen sentinel + token khas ──────────────────────────────
 // Token $& / $` / $' adalah token substitution yang DIMUSNAHKAN oleh
-// replaceAll(replaceValue) — callback melindunginya. Placeholder kedua-dua
-// bentuk (${...} dan {{...}}) mesti kedua-duanya diinterpolasi (D4).
-const SBX_TEMPLATE = "SBX ROLE {{sourceLabel}} -> ${targetLabel} {{targetLabelShort}} RULES $& $` $' END ${fewShot}";
+// replaceAll(replaceValue) — callback melindunginya. Placeholder format
+// rasmi tunggal ${...} (v3.39.2 — selari core.js) mesti diinterpolasi.
+const SBX_TEMPLATE = "SBX ROLE ${sourceLabel} -> ${targetLabel} ${targetLabelShort} RULES $& $` $' END ${fewShot}";
 // [[fewShot]] ialah PSEUDO-TOKEN data (bukan placeholder sah): ia pin
 // "kandungan tersuntik TIDAK diimbas semula" tanpa mencalarkan semakan
 // sifar-residu placeholder sah pada templat.
@@ -239,22 +239,11 @@ for (const door of ['gemini', 'openai', 'anthropic']) {
                     sandboxSystem.includes(DOLLAR_QUOTE),
                     `${door}/${trinityMode}: token DOLLAR_QUOTE kekal verbatim`
                 );
-                assert.ok(
-                    sandboxSystem.includes(SBX_MALAY_FEWSHOT.split('{{')[0]),
-                    `${door}/${trinityMode}: few-shot sandbox hadir`
-                );
+                assert.ok(sandboxSystem.includes('SBX FEWSHOT'), `${door}/${trinityMode}: few-shot sandbox hadir`);
 
-                // 7) Sifar residu placeholder pada system lane.
-                for (const residue of [
-                    '${sourceLabel}',
-                    '${targetLabel}',
-                    '${targetLabelShort}',
-                    '${fewShot}',
-                    '{{sourceLabel}}',
-                    '{{targetLabel}}',
-                    '{{targetLabelShort}}',
-                    '{{fewShot}}'
-                ]) {
+                // 7) Sifar residu placeholder pada system lane (format rasmi
+                // tunggal ${...} — v3.39.2).
+                for (const residue of ['${sourceLabel}', '${targetLabel}', '${targetLabelShort}', '${fewShot}']) {
                     assert.ok(!sandboxSystem.includes(residue), `${door}/${trinityMode}: sifar residu ${residue}`);
                 }
 

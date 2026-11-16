@@ -2,6 +2,24 @@
 
 All notable changes to this project will be documented in this file.
 
+## SubFaber v3.39.2 (2026-11-16) — Single Official Placeholder Format `${...}` & Missing-Placeholder Warning Fix
+
+### 🔄 Changed — One Placeholder Contract (Owner Mandate)
+
+- **`src/services/translationEngine.js` (`createXmlBatchPrompt()`)** — placeholder interpolation now replaces only the single official form `${sourceLabel}` / `${targetLabel}` / `${targetLabelShort}` / `${fewShot}` (100% aligned with `core.js`); the confusing second `{{...}}` syntax is removed from the replacement regex. The callback `() => value` substitution guard (protecting `$&`, `` $` ``, `$'` tokens in Owner-edited text) and the single-scan-per-token no-rescan guarantee are unchanged.
+- **`src/services/promptSandboxLiveStore.js`** — the friendly `placeholder_missing` warning detector now checks for the official `${...}` forms only, and the warning message displayed in the UI reports `${...}` instead of `{{...}}`. This fixes the false report where a template using `${sourceLabel}` was flagged as missing its placeholder.
+- **`src/config/promptSandbox.js` + `public/sandbox.html`** — documentation comments and the panel's placeholder help text now reference only the official `${...}` form (the commented ready-to-use example now shows `\${...}` escapes).
+
+### 🧪 Added / Changed — Regression Coverage
+
+- **`src/routes/sandbox-routes-regression.test.js`** — new step in SBX-API-6: saving a template containing ALL four official `${...}` placeholders returns `200` with **zero** `placeholder_missing` warnings (the false-positive regression pin); the existing no-placeholder case still yields the friendly warning.
+- **`src/config/promptSandbox-wire-parity.test.js`** — `SBX_TEMPLATE` now uses only `${...}` placeholders; the zero-residue assertion list drops the retired `{{...}}` entries; the few-shot presence pin no longer splits on `{{`.
+- **`src/config/promptSandbox-regression.test.js`** — SBX-10 now pins the single `${...}` form staying VERBATIM through the resolver.
+
+### ✅ Verification
+
+- Full tracked suite **747 tests / 746 passed / 0 failed / 1 skipped** (pre-existing live-Redis concurrent-quota integration) after two intermediate red iterations (first draft of the new pin omitted `${targetLabelShort}` — correctly warned; second draft ran before the snapshot pin — reordered), log `.tmp/sbx-v3392-full3.log`. `node --check` + Prettier + ESLint 0 errors (10 pre-existing warnings on `translationEngine.js` untouched).
+
 ## SubFaber v3.39.1 (2026-11-16) — Sandbox Panel & API Messages Localized to English
 
 ### 🔄 Changed — Full English Localization of the Sandbox Panel (Owner Mandate)

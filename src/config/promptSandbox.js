@@ -8,8 +8,8 @@
  * KONTRAK (keputusan Owner D1–D4 + laporan audit v2):
  *   - enabled TUNGGAL mengaktifkan; false = pengeluaran 100% rasmi.
  *   - Medan null = guna teks rasmi (core.js / malay.js TIDAK disentuh).
- *   - Kedua-dua bentuk placeholder disokong oleh enjin: \${...} dan {{...}}
- *     (sourceLabel, targetLabel, targetLabelShort, fewShot).
+ *   - Format placeholder rasmi TUNGGAL: \${...} (sourceLabel, targetLabel,
+ *     targetLabelShort, fewShot) — selari 100% dengan core.js (v3.39.2).
  *   - Teks verbatim di hantar ke wayar; sifar mutasi eksport rasmi.
  *   - Hash8 = SHA-256(JSON.stringify([template, fewShot])) 8 hex pertama —
  *     dipakai cacheKeys untuk auto cache-busting sandbox.
@@ -37,14 +37,13 @@ const { SUBFABER_PROMPT_BOUNDARY } = require('../services/utils/structuredPrompt
 /**
  * Konfigurasi eksperimen Owner — SUNTING DI SINI melalui GitHub web.
  *
- * Contoh siap sedia (template literal backtick, kedua-dua bentuk placeholder
- * disokong — jangan biarkan ${...} tanpa backslash dalam template literal,
- * ATAU guna {{...}} yang bebas risiko interpolasi JavaScript):
+ * Contoh siap sedia (template literal backtick — jangan biarkan ${...} tanpa
+ * backslash dalam template literal JavaScript):
  *
  * // enabled: true,
  * // translationSystemTemplate: `You are a professional Netflix subtitle translator.
- * // {{sourceLabel}} -> {{targetLabel}} {{targetLabelShort}}
- * // {{fewShot}}
+ * // \${sourceLabel} -> \${targetLabel} \${targetLabelShort}
+ * // \${fewShot}
  * // ZERO markdown code blocks.`,
  * // malayFewShot: `<example>...</example>`
  */

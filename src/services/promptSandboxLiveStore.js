@@ -188,7 +188,9 @@ function validateRow(row) {
     // berjalan; Owner kekal bebas (keputusan D4). Bila kedua-dua medan rosak,
     // skip semakan placeholder (tiada apa yang akan disimpan).
     if (templateOk && typeof row?.translationSystemTemplate === 'string' && row.translationSystemTemplate.length > 0) {
-        const placeholderForms = (name) => [`\${${name}}`, `{{${name}}}`];
+        // [v3.39.2 — Mandat Owner] SATU format placeholder rasmi sahaja: ${...}
+        // (selari 100% dengan core.js). Bentuk {{...}} dibersihkan daripada
+        // kontrak; pengesan hanya menyemak bentuk rasmi ini.
         for (const [field, value] of [
             ['translationSystemTemplate', row.translationSystemTemplate],
             ['malayFewShot', typeof row?.malayFewShot === 'string' ? row.malayFewShot : null]
@@ -196,12 +198,12 @@ function validateRow(row) {
             if (field === 'malayFewShot' && !fewShotOk) continue;
             if (!value) continue;
             for (const name of ['sourceLabel', 'targetLabel', 'targetLabelShort', 'fewShot']) {
-                if (!placeholderForms(name).some((form) => value.includes(form))) {
+                if (!value.includes(`\${${name}}`)) {
                     warnings.push({
                         code: 'placeholder_missing',
                         field,
                         placeholder: name,
-                        message: `The {{${name}}} placeholder is missing — translation will still run, but this instruction will not be adjusted automatically.`
+                        message: `The \${${name}} placeholder is missing — translation will still run, but this instruction will not be adjusted automatically.`
                     });
                     break; // satu amaran per medan cukup
                 }
