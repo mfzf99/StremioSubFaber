@@ -24,7 +24,7 @@ const { DEFAULT_TRANSLATION_PROMPT } = GeminiService;
 // menggunakan modul subfaberPreflight sendiri). Import orphan digugurkan.
 // [UNIVERSAL-FIX] Target-conditional few-shot / NOT-LOCKED guidance — pack
 // di-resolve mengikut bahasa sasaran (Malay → malay.js; lain → generic.js).
-const { getLanguagePack } = require('./prompts/languagePacks');
+const { getLanguagePack, isMalayTarget } = require('./prompts/languagePacks');
 // [PROMPT REBUILD v2] Sempadan split system/user (fix hantar-dua-kali).
 const { SUBFABER_PROMPT_BOUNDARY } = require('./utils/structuredPrompt');
 // [TRINITY FASA 1 — Mandat Owner 2026-10-19] SystemPart statik Agent Translation
@@ -32,6 +32,10 @@ const { SUBFABER_PROMPT_BOUNDARY } = require('./utils/structuredPrompt');
 // prompt kanonik digunakan untuk semua konfigurasi, dengan varian Basic
 // standalone dan varian Pro yang kekal mengikut mod operasi.
 const { TRANSLATION_SYSTEM_TEMPLATE } = require('./prompts/trinity/translation/core');
+// [PROMPT-SANDBOX v3.38.0 — Mandat Owner 2026-11-16] Suis eksperimen Owner:
+// resolver memilih pasangan EFEKTIF (rasmi ATAU eksperimen promptSandbox.js).
+// core.js / malay.js TIDAK pernah dimutasi — eksport rasmi kekal suci.
+const { resolvePromptSandbox } = require('../config/promptSandbox');
 // [TRINITY FASA 3 — Mandat Owner 2026-10-19] Channel-native static dispatch:
 // builder dibungkus (bind) SEKALI pada constructor; prompt batch dibina melalui
 // wrapper pintu (gemini anchor continuation / openai arahan eksplisit /
@@ -291,7 +295,14 @@ class TranslationEngine {
         // [SINGLE-TEMPLATE 2026-11-14 — Mandat Owner] SATU templat kanonik untuk
         // kedua-dua mod; perbezaan Pro/Basic ialah DATA (konteks preflight),
         // bukan teks arahan.
-        this.translationTemplate = TRANSLATION_SYSTEM_TEMPLATE;
+        // [PROMPT-SANDBOX v3.38.0] Pasangan EFEKTIF dipilih SEKALI per
+        // instance: Basic, Pro, keempat-empat laluan retry, dan fallback
+        // berkongsi pilihan yang sama (sifar oscilasi mid-flight).
+        this._promptSandbox = resolvePromptSandbox({
+            officialTemplate: TRANSLATION_SYSTEM_TEMPLATE,
+            officialMalayFewShot: getLanguagePack('Malay').fewShot
+        });
+        this.translationTemplate = this._promptSandbox.template;
         // TOTAL PURGE (Mandat 2026-09-25): SubFaber ialah enjin tunggal.
         // Batch size dihardcode 200 (OWNER MANDATE 2026-11-09) —
         // tiada env override.
@@ -3045,6 +3056,13 @@ class TranslationEngine {
         // kedua-dua mod (Pro + Basic) menerima contoh pack; specificRules
         // dipensiunkan (Owner D3).
         const fewShotPack = getLanguagePack(targetLanguage);
+        // [PROMPT-SANDBOX v3.38.0] few-shot EFEKTIF: sasaran Malay + sandbox
+        // aktif → contoh eksperimen Owner; selain itu → pack asal (sifar
+        // mutasi objek pack; bahasa sasaran lain 100% tak tersentuh).
+        const effectiveFewShot =
+            this._promptSandbox.active && isMalayTarget(targetLanguage)
+                ? this._promptSandbox.malayFewShot
+                : fewShotPack.fewShot;
 
         // SHARED PROMPT ARCHITECTURE (Mandat 2026-09-26, Lingo 1:1 parity):
         // batchText kini entri aktif SAHAJA (tiada blok konteks) — startId
@@ -3101,11 +3119,22 @@ class TranslationEngine {
         // Nota: core menggunakan label TERISIH (fallback 'the source language'
         // / 'the target language' / 'target-language' dilaksanakan di sini
         // supaya templat kanonik kekal neutral).
-        const systemPart = this.translationTemplate
-            .replaceAll('${sourceLabel}', sourceLabel || 'the source language')
-            .replaceAll('${targetLabel}', targetLabel || 'the target language')
-            .replaceAll('${targetLabelShort}', targetLabel || 'target-language')
-            .replaceAll('${fewShot}', fewShotPack.fewShot);
+        // [PROMPT-SANDBOX v3.38.0 — pengetatan Owner #3 + D4] Interpolasi
+        // callback () => value melindungi token substitution ($&, $`, $')
+        // dalam teks suntingan GitHub; KEDUA-DUA bentuk placeholder disokong:
+        // ${...} (konvensyen core.js) dan {{...}} (kalis template literal JS).
+        // SATU imbasan regex gabungan per token: kandungan tersuntik TIDAK
+        // diimbas semula (contoh few-shot yang membawa {{fewShot}} kekal
+        // verbatim) — kontrak penghantaran verbatim eksperimen Owner.
+        // few-shot disuntik TERAKHIR — pariti tunggal dengan laluan official.
+        const applyPlaceholder = (text, token, value) =>
+            text.replace(new RegExp(`\\$\\{${token}\\}|\\{\\{${token}\\}\\}`, 'g'), () => value);
+        const systemPart = [
+            ['sourceLabel', sourceLabel || 'the source language'],
+            ['targetLabel', targetLabel || 'the target language'],
+            ['targetLabelShort', targetLabel || 'target-language'],
+            ['fewShot', effectiveFewShot]
+        ].reduce((text, [token, value]) => applyPlaceholder(text, token, value), this.translationTemplate);
 
         // [TRINITY FASA 3 — Mandat Owner 2026-10-19] Pembungkusan channel-native:
         // payload berstruktur (systemText + dataText + queryText + startId)

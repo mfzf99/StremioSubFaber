@@ -8,6 +8,13 @@
  */
 
 const log = require('./logger');
+// [PROMPT-SANDBOX v3.38.0 — pengetatan Owner #2] Resolusi DINAMIK per
+// panggilan (bukan cache module-level) supaya injection uji-sahaja
+// (__setPromptSandboxForTests) mempengaruhi kunci dalam unit test. Resolusi
+// deterministik: hasil sama untuk pasangan rasmi/eksperimen yang sama.
+const { resolvePromptSandbox } = require('../config/promptSandbox');
+const { TRANSLATION_SYSTEM_TEMPLATE } = require('../services/prompts/trinity/translation/core');
+const { getLanguagePack } = require('../services/prompts/languagePacks');
 
 function normalizeUserHash(rawHash) {
     if (!rawHash || typeof rawHash !== 'string') return '';
@@ -127,7 +134,18 @@ function generateCacheKeys(config, sourceFileId, targetLang) {
     // few-shot Melayu baharu — output prompt lama (v6 dan ke bawah) tidak
     // diservis (kontrak penghijrahan yang sama seperti v5→v6).
     const trinityMode = resolveTrinityModeForConfig(config);
-    const sourceKey = `${sourceFileId}_${targetLang}_trinity-${trinityMode}-universal-v7_ch-${trinityChannel}`;
+    // [PROMPT-SANDBOX v3.38.0] Namespace EFEKTIF: rasmi kekal v7 (pin ujian
+    // tidak berubah); sandbox aktif → v7-sbx-{hash8} (auto cache-busting —
+    // satu aksara eksperimen berubah = kunci baharu; cache rasmi tidak pernah
+    // tercemar kunci eksperimen). Hash = pasangan EFEKTIF (template +
+    // malayFewShot selepas fall-back) — keputusan Owner #2: SHA-256 UTF-8 ke
+    // atas JSON.stringify pasangan, 8 hex pertama.
+    const promptSandbox = resolvePromptSandbox({
+        officialTemplate: TRANSLATION_SYSTEM_TEMPLATE,
+        officialMalayFewShot: getLanguagePack('Malay').fewShot
+    });
+    const promptNamespace = promptSandbox.active ? `universal-v7-sbx-${promptSandbox.hash8}` : 'universal-v7';
+    const sourceKey = `${sourceFileId}_${targetLang}_trinity-${trinityMode}-${promptNamespace}_ch-${trinityChannel}`;
     // When ASS passthrough is enabled, append format discriminator to prevent
     // ASS-format cached translations from being served to users expecting SRT
     const assPassthrough = config.convertAssToVtt === false && config.forceSRTOutput !== true;

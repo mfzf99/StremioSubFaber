@@ -32,9 +32,13 @@ if (testFiles.length === 0) {
 }
 
 console.log(`[test:tracked] Discovered ${testFiles.length} test files under ${TEST_ROOTS.join(' and ')}.`);
+// [PROMPT-SANDBOX v3.38.0 — pengetatan Owner #1] NODE_ENV=test memastikan
+// suite SELALU melihat teks rasmi walaupun promptSandbox.js diaktifkan
+// pada branch — CI kekal hijau walau Owner push teks eksperimen ke GitHub.
 const result = spawnSync(process.execPath, ['--test', '--test-force-exit', ...testFiles], {
     cwd: PROJECT_ROOT,
-    stdio: 'inherit'
+    stdio: 'inherit',
+    env: { ...process.env, NODE_ENV: 'test' }
 });
 
 if (result.error) {

@@ -2,6 +2,31 @@
 
 All notable changes to this project will be documented in this file.
 
+## SubFaber v3.38.0 (2026-11-16) — Prompt Sandbox: GitHub-Editable Experimental Prompt Switch with Wire Parity & Auto Cache-Busting
+
+### ✨ Added — Owner Prompt Sandbox (`src/config/promptSandbox.js`)
+
+- **One-file experiment switch.** The Owner can now edit `TRANSLATION_SYSTEM_TEMPLATE` and/or the Malay `fewShot` directly through GitHub web (`enabled`, `translationSystemTemplate`, `malayFewShot` fields; `null` = keep official), redeploy, and test the experiment live in Stremio. The official exports (`core.js`, `malay.js`) are never mutated — the resolver picks the effective pair, per-field independently, with a full safe fallback: `enabled: true` without valid text falls back to the official template/pack with explicit reasons (zero silent half-experiments). Text is delivered to the wire verbatim (no trimming of content). Shipping default: `enabled: false`.
+- **Both placeholder forms supported** (Owner decision D4): `${sourceLabel}` / `${targetLabel}` / `${targetLabelShort}` / `${fewShot}` (core.js convention) and `{{...}}` (safe inside template literals on GitHub web). A commented ready-to-use example is included.
+- **Hazard-proof interpolation** (Owner tightening #3): all placeholder injection now uses callback replacement `replace(pattern, () => value)`, so special substitution tokens (`$&`, `` $` ``, `$'`) in an Owner-edited text survive verbatim on the wire. Injection is single-scan per token (injected few-shot content is never rescanned), preserving byte-for-byte parity with the official path.
+
+### 🔒 Added — Test-Context Gate (CI Stays Green While Experiments Run)
+
+- **The sandbox can never color CI.** The gate detects every bare-test path (`NODE_ENV === 'test'` set by the tracked runner, `npm_lifecycle_event`, `NODE_TEST_CONTEXT`, `--test` in `process.execArgv` — Owner tightening #1). With the sandbox active on `main` (experiment text committed to GitHub), the full suite still runs 100% against the official prompts; only the sandbox suites — which inject the experimental wire explicitly via the test-only `__setPromptSandboxForTests()` — ever see experimental text. Mechanically proven: the Phase D clean-room probe ran the full suite with the sandbox ENABLED and experimental text in place — **0 FAIL**.
+
+### 🔄 Changed — Auto Cache-Busting for Experiments (Owner Decision D2)
+
+- **Translation cache namespace derives from the effective prompt.** `generateCacheKeys()` now resolves the sandbox dynamically per call (no module-level caching — Owner tightening #2) and computes `hash8 = SHA-256(JSON.stringify([effectiveTemplate, effectiveMalayFewShot]))` (first 8 hex chars). Official runs keep the exact pinned `trinity-{mode}-universal-v7_ch-{channel}` keys; active experiments get `trinity-{mode}-universal-v7-sbx-{hash8}_ch-{channel}`. One character of experimental text changes the key; official cache is never contaminated by experiment outputs; `_ass` and user-scoping segments still trail the namespace. Phase 0 Preflight is untouched in this release (documented known behavior: Pro experiments re-run Phase 0 per file+language on a cache miss).
+
+### 🧪 Added — Regression Coverage (Red-First)
+
+- **`src/config/promptSandbox-regression.test.js`** (11 tests): module API and safe shape, gate behavior in test context, injection force-activation, deterministic per-character hash over the effective pair, safe fallback with reasons, per-field independence, invalid-field rejection (non-string/empty/whitespace), boundary-sentinel rejection, both placeholder forms preserved verbatim by the resolver, and whitespace/newline verbatim guarantees.
+- **`src/config/promptSandbox-wire-parity.test.js`** (8+ tests): for all three doors × Basic/Pro, the final HTTP body under an active sandbox is deep-equal to the official body after normalizing only the system-lane text — URLs, headers, anchors, id manifests, KNP blocks, retry diagnostics placement, cross-channel fallback re-wrapping, and the Gemini stream path are all byte-identical; `$&`-family tokens and `{{...}}` data survive verbatim; the generic pack is untouched for non-Malay targets even with `malayFewShot` active; cache keys switch to `v7-sbx-{hash8}` under injection and restore the pinned official key after reset.
+
+### ✅ Verification
+
+- Red-first: both new suites observed failing before production code existed (`.tmp/red-sbx.log`). Targeted existing suites 108/108 green post-surgery; new suites 19/19 green. **Clean-room probe (sandbox ACTIVE + experimental text): 732 tests / 731 passed / 0 failed / 1 skipped** (pre-existing live-Redis concurrent-quota integration). Final clean tree (`enabled: false`): **732 tests / 731 passed / 0 failed / 1 skipped**, exit 0, log `.tmp/sbx-final-clean.log`. `node --check` PASS on all six touched JS files; Prettier clean; ESLint 0 errors.
+
 ## SubFaber v3.37.0 (2026-11-15) — TRANSLATION_SYSTEM_TEMPLATE & Malay fewShot Streamline (Zero Rambling)
 
 ### ⚡ Changed — Translation System Template (Owner Verbatim, Streamlined)
