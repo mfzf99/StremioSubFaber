@@ -2,6 +2,24 @@
 
 All notable changes to this project will be documented in this file.
 
+## SubFaber v3.39.6 (2026-11-20) — Gemini Reconfigure Parameter Persistence & Rotation Parity
+
+### Fixed
+
+- **Mandatory Gemini parameters no longer disappear during reconfigure or save.** `public/js/trinity-agents.js` now treats `temperature`, `topP`, `thinkingLevel`, `frequencyPenalty`, and `presencePenalty` as actual effective values on Gemini native doors, rather than rendering them only as placeholders. The serializer preserves all five values even when they equal the agent defaults, including explicit `0.0` penalties. Non-Gemini providers retain their deviation-only contract.
+- **Partial legacy hashes now use Agent Translation defaults instead of silently falling back to model-specific temperature `0.5`.** `src/services/translationProviderFactory.js` merges partial `trinity.translation.params` with the effective agent defaults while preserving pure model-only configuration behavior.
+- **Bulk-key rotation now matches the primary provider.** `src/services/geminiKeyResolver.js` applies the same effective-parameter hierarchy when rebuilding `GeminiService` for per-batch/per-request rotation, preventing the first batch and subsequent rotated batches from using different temperature or penalty values. Official Gemini and custom/proxy Gemini-native doors are covered.
+
+### Added
+
+- **`public/js/gemini-sendall-serialization-regression.test.js` (3 tests)** — proves that Gemini native values survive serialization even when equal to defaults, while non-Gemini deviation-only behavior remains unchanged and custom/proxy Gemini models are recognized.
+- **`src/services/gemini-params-endtoend-regression.test.js` (2 tests)** — proves partial reconfigure hashes and custom/proxy native rotation preserve the five effective parameters, including `0.0` penalties.
+
+### Verified
+
+- Live read-only reproduction before the fix: actual temperature input value was empty with `0.3` only as a placeholder; stored and serialized params contained only `topP` and `thinkingLevel`; typing `0.3` and explicit `0.0` penalties still did not serialize those values. Local Playwright after the fix proved all five DOM values and serialized params for official and custom/proxy Gemini-native doors with bulk-key rotation.
+- Full tracked suite: **775 tests, 774 passed, 0 failed, 1 skipped** (sole skip = pre-existing live-Redis concurrent-quota integration), exit 0. Prettier clean; `git diff --check` clean; targeted end-to-end and serializer regressions all pass.
+
 ## SubFaber v3.39.5 (2026-11-20) — Gemini Native SEND-ALL v2 (Five Mandatory Parameters)
 
 ### Changed

@@ -20,6 +20,24 @@ This template is the R5 ledger-format deliverable. It supersedes the legacy form
 
 -------
 
+## 2026-11-20 — v3.39.6 GEMINI RECONFIGURE PARAM LOSS & BULK-KEY TEMPERATURE DRIFT (CLASS 1 PATCH)
+
+- **Date:** 2026-11-20 ~04:07 (KL time).
+- **Parent HEAD SHA:** `0dc20c9bd47f15387a9e3cdda36bea223e87839f` (v3.39.5).
+- **Status:** `VERIFIED_LOCAL` (pre-release; Owner subsequently ordered the Class 1 release in the same session).
+- **Release Commit SHA + CI Run ID:** confirmed in the final report after push/CI — not applicable; no release requested.
+- **Owner Decision:** A–Z audit and fix after a real reconfigure link stored only `topP`/`thinkingLevel`; visible temperature `0.3` produced API log `0.5`; explicit `0.0` penalties disappeared; bulk-key rotation and custom/proxy must be covered.
+- **Impact & Contract Audit (Phase A/B):** Coupled Zone A + Zone C. Three root causes proven: (1) frontend stored only deviations, so default-equal `temperature=0.3` and penalties `0.0` were discarded; (2) Gemini mandatory values were rendered as placeholders with empty actual `input.value`; (3) partial Trinity params and per-batch key rotation used different precedence, so provider initial defaults and rotation could diverge. Backend factory and resolver now share the effective five-parameter contract. Non-Gemini deviation-only behavior and pure model-default behavior are preserved.
+- **Reproduce-First Evidence:** Live Playwright on the Owner's reconfigure URL (read-only; no Save pressed) showed actual temperature `value=""`, `placeholder="0.3"`, stored/serialized params only `{ topP: 0.9, thinkingLevel: 'high' }`; typing `0.3`, `0.0`, `0.0` still serialized only the same two keys. Backend red reproduction: `.tmp/gemini-params-e2e-red2.log`; initial two red scenarios.
+- **Independent Acceptance:** Local Playwright against modified source with partial params + rotation proved actual DOM values `temperature=0.3`, `frequencyPenalty=0`, `presencePenalty=0` and serialized all five keys for both official and custom/proxy Gemini-native doors; backend probe proved identical effective values on provider and bulk-key rotation. Targeted end-to-end 2/2 (`.tmp/gemini-params-e2e-final4.log`), serializer 3/3 (`.tmp/gemini-serialization-after.log`), full tracked suite **775 total / 774 PASS / 0 FAIL / 1 SKIP** (`.tmp/gemini-full-suite-v3396-final.log`), Prettier clean, `git diff --check` clean.
+- **Residual / N/A Gates:** Hosted production hash remains unchanged until a new release/deploy; no claim of live production fix. Existing hashes receive backend effective-default fallback, while one reconfigure/save after deployment will persist all five keys explicitly. Real provider network calls N/A (no keys used); real UI behavior verified on local server. Own probe/server processes terminated.
+- **Files Involved:** `public/js/trinity-agents.js` (M), `public/js/gemini-sendall-serialization-regression.test.js` (A), `src/services/translationProviderFactory.js` (M), `src/services/geminiKeyResolver.js` (M), `src/services/gemini-params-endtoend-regression.test.js` (A), `docs/SESSION_LEDGER.md` (M this entry), `.tmp/RELAY_STATE.md` (untracked relay).
+- **npm test Status:** 775 total / 774 PASS / 0 FAIL / 1 SKIP, exit 0.
+- **Next Steps:** Owner decision required for Class 1 release; no commit taken.
+- **Tool Navigation Ratio:** search_files=18 read_file=31 ratio=1:1.7 anchored=100% (31/31 reads) — approximate from this mandate's tool log; all reads were anchored/ranged.
+
+-------
+
 ## 2026-11-20 — v3.39.5 GEMINI NATIVE SEND-ALL v2 — FIVE MANDATORY PARAMETERS INCLUDING EXPLICIT 0.0 PENALTIES (CLASS 1 PATCH)
 
 - **Date:** 2026-11-20 ~02:09 (KL time).

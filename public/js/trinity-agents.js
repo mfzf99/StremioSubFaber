@@ -696,6 +696,26 @@
         notes: []
     };
 
+    // [SEND-ALL v2 — Owner 2026-11-20] Pintu Gemini native (rasmi + custom/proxy)
+    // MESTI menyimpan dan menghantar kelima-lima parameter ini, termasuk nilai
+    // yang sama dengan cadangan lalai. Jangan guna placeholder sebagai pengganti
+    // nilai: ia mengelirukan pengguna dan menghilangkan nilai daripada hash.
+    function mpIsGeminiNativeContext(ctx) {
+        var key = String((ctx && ctx.providerOrDoor) || '')
+            .trim()
+            .toLowerCase();
+        var model = String((ctx && ctx.model) || '')
+            .trim()
+            .toLowerCase();
+        if (key === 'gemini' || key === 'gemini-native') return true;
+        return (
+            (key === 'custom' || key === 'custom_secondary' || key === 'openai-compatible') &&
+            /^gemini|^gemma/.test(model)
+        );
+    }
+
+    var MP_GEMINI_MANDATORY_PARAMS = ['temperature', 'topP', 'thinkingLevel', 'frequencyPenalty', 'presencePenalty'];
+
     // Mirror resolveCapabilityProfile(providerOrDoor, modelId) backend.
     function resolveCapabilityProfile(providerOrDoor, modelId) {
         var key = String(providerOrDoor || '')
@@ -951,11 +971,27 @@
         input.max = String(descriptor.max);
         input.step = name === 'topP' ? '0.01' : '0.1';
         input.dataset.mpStep = String(mpStepperStep(name, descriptor));
-        // Nilai SEBENAR pengguna hanya bila wujud (bukan lalai auto-isi).
+        var ctx = mpResolveAgentContext(agentKey);
+        var isMandatoryGemini = mpIsGeminiNativeContext(ctx) && MP_GEMINI_MANDATORY_PARAMS.indexOf(name) >= 0;
+        var effectiveValue =
+            savedValue !== undefined && savedValue !== null && String(savedValue) !== ''
+                ? savedValue
+                : isMandatoryGemini
+                  ? placeholderValue
+                  : '';
+        // Gemini native: nilai efektif MESTI menjadi input.value (bukan placeholder)
+        // supaya ia benar-benar wujud dalam hash config dan sampai ke HTTP request.
         input.value =
-            savedValue !== undefined && savedValue !== null && String(savedValue) !== '' ? String(savedValue) : '';
-        // Cadangan lalai dipaparkan sebagai placeholder kelabu (tidak dihantar).
-        if (placeholderValue !== undefined && placeholderValue !== null && String(placeholderValue) !== '') {
+            effectiveValue !== undefined && effectiveValue !== null && String(effectiveValue) !== ''
+                ? String(effectiveValue)
+                : '';
+        // Provider lain mengekalkan cadangan placeholder sedia ada.
+        if (
+            !isMandatoryGemini &&
+            placeholderValue !== undefined &&
+            placeholderValue !== null &&
+            String(placeholderValue) !== ''
+        ) {
             input.placeholder = String(placeholderValue);
         }
         input.dataset.mpName = name;
@@ -1217,10 +1253,17 @@
         var profile = resolveCapabilityProfile(ctx.providerOrDoor, ctx.model);
         var out = {};
         var hasDev = false;
+        var isGeminiNative = mpIsGeminiNativeContext(ctx);
         Object.keys(params).forEach(function (name) {
             var descriptor = profile.parameters[name];
             if (!descriptor) return; // tidak disokong — dibuang senyap
-            if (defaults[name] !== params[name]) {
+            // Gemini native ialah kontrak SEND-ALL v2: nilai lalai juga wajib
+            // disimpan (0.0 penalty bukan "tiada nilai"). Provider lain kekal
+            // menggunakan kontrak deviasi sedia ada (tiada auto-fill).
+            if (isGeminiNative && MP_GEMINI_MANDATORY_PARAMS.indexOf(name) >= 0) {
+                out[name] = params[name];
+                hasDev = true;
+            } else if (defaults[name] !== params[name]) {
                 out[name] = params[name];
                 hasDev = true;
             }

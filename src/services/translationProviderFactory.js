@@ -12,6 +12,7 @@ const {
     selectGeminiApiKey,
     getEffectiveGeminiModel
 } = require('../utils/config');
+const { getAgentDefaultParams } = require('../utils/modelCapabilities');
 
 const KEY_OPTIONAL_PROVIDERS = new Set(['googletranslate', 'custom', 'custom_secondary']);
 
@@ -531,7 +532,13 @@ async function createTranslationProvider(config) {
     };
     const getGeminiAdvancedSettings = () => {
         const settings = config?.advancedSettings || {};
-        const modelDefaults = getModelSpecificDefaults(getEffectiveGeminiModel(config));
+        const effectiveGeminiModel = getEffectiveGeminiModel(config);
+        const modelDefaults = getModelSpecificDefaults(effectiveGeminiModel);
+        // [SEND-ALL v2 — Owner 2026-11-20] Gemini native mesti mempunyai lima
+        // parameter efektif. Bila Advanced Settings tidak aktif dan hash lama
+        // tidak membawa params, gunakan lalai Agent Translation (0.3/0.95/low)
+        // — BUKAN lalai model flash 0.5. Nilai tersimpan kekal diutamakan.
+        const agentDefaults = getAgentDefaultParams('translation', 'gemini-native', effectiveGeminiModel);
         const base =
             settings.enabled === true
                 ? { ...settings }
@@ -542,11 +549,31 @@ async function createTranslationProvider(config) {
                       thinkingBudget: modelDefaults.thinkingBudget,
                       thinkingLevel: modelDefaults.thinkingLevel,
                       temperature: modelDefaults.temperature,
-                      topP: settings.topP
+                      topP: settings.topP,
+                      frequencyPenalty:
+                          settings.frequencyPenalty !== undefined
+                              ? settings.frequencyPenalty
+                              : agentDefaults.frequencyPenalty,
+                      presencePenalty:
+                          settings.presencePenalty !== undefined
+                              ? settings.presencePenalty
+                              : agentDefaults.presencePenalty
                   };
         // [TRINITY PARAMS FASA 3] trinity.translation.params mengatasi advancedSettings
         // (seni bina kad Trinity — parameter model tinggal di kad ejen).
-        if (trinityTranslationParams) Object.assign(base, trinityTranslationParams);
+        // [SEND-ALL v2] Objek separa daripada hash lama MESTI digabung, bukan
+        // menggantikan seluruh blok lalai — temperature/penalty yang tiada
+        // kekal menggunakan lalai Agent Translation.
+        if (trinityTranslationParams) {
+            const mergedParams = {
+                ...agentDefaults,
+                thinkingLevel: settings.thinkingLevel ?? modelDefaults.thinkingLevel,
+                temperature: agentDefaults.temperature,
+                topP: agentDefaults.topP,
+                ...trinityTranslationParams
+            };
+            Object.assign(base, mergedParams);
+        }
         // [DYNAMIC BASE URL v3.9.29] Suntik baseUrl per-pengguna (sudah
         // ternormalisasi + SSRF-lite oleh config.js). Keutamaan dalam
         // GeminiService: nilai ini > env GEMINI_API_BASE > Google rasmi.
