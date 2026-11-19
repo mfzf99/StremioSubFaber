@@ -18,11 +18,19 @@ async function executeParallelTranslation(engine, entries, targetLanguage, custo
 
     const PARALLEL_BATCH_SIZE = engine.batchSize;
 
-    // Create batches explicitly sized for parallel mode
-    const batches = [];
-    for (let i = 0; i < entries.length; i += PARALLEL_BATCH_SIZE) {
-        batches.push(entries.slice(i, i + PARALLEL_BATCH_SIZE));
-    }
+    // [SCENE-GAP 2026-11-19 — Mandat Owner Fasa 1] Mod parallel kini berkongsi
+    // pembina batch TUNGGAL enjin (scene-gap alignment). Fallback duck-typing
+    // untuk enjin mock/legacy tanpa createBatches: potongan tegar klasik.
+    const batches =
+        typeof engine.createBatches === 'function'
+            ? engine.createBatches(entries, PARALLEL_BATCH_SIZE)
+            : (() => {
+                  const rigid = [];
+                  for (let i = 0; i < entries.length; i += PARALLEL_BATCH_SIZE) {
+                      rigid.push(entries.slice(i, i + PARALLEL_BATCH_SIZE));
+                  }
+                  return rigid;
+              })();
 
     const configuredConcurrency = Number.parseInt(engine.advancedSettings?.parallelBatchesCount, 10);
     const autoConcurrency = configuredConcurrency === 0 || !Number.isFinite(configuredConcurrency);

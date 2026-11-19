@@ -2,6 +2,30 @@
 
 All notable changes to this project will be documented in this file.
 
+## SubFaber v3.39.4 (2026-11-19) — Scene-Gap Batch Alignment & Pro Term-Drift Telemetry
+
+### ✨ Added — Scene-Gap Cut Alignment (Owner Mandate, Phase 1 — Basic & Pro)
+
+- **`src/services/translationEngine.js` (`createBatches()`)** — the nominal 200-entry cut now shifts deterministically to the largest silent timecode gap inside a ±20-entry corridor around the nominal cut (re-based grid: the next nominal cut is derived from the actual cut, keeping batch sizes bounded within 180–220 entries). Gaps are measured between `endTime` of entry `i` and `startTime` of entry `i+1` parsed from the raw SRT `timecode` string; gaps below 2,000 ms are ignored as scene noise, ties resolve to the earliest gap (full determinism), and missing/invalid timecodes degrade to nominal rigid cuts. Zero AI calls; identical input always yields identical geometry and 1:1 ID coverage is preserved.
+- **`src/utils/parallelTranslation.js`** — the parallel path now delegates batch construction to the single `engine.createBatches()` builder (with a rigid-slicing fallback for mock/legacy engines), so Sequential, Parallel, Basic, and Pro modes all share the same scene-gap geometry.
+
+### ✨ Added — Deterministic Whole-File Term-Drift Telemetry (Pro Only, Read-Only)
+
+- **`src/services/translationEngine.js`** — new `sweepTermDrift()` + `collectDriftTermsFromKnp()` helpers and the `_runTermDriftSweep()` engine method: after final assembly (post timecode sanitization, pre-`toSRT`), every locked Preflight KNP term and character canonical/direct address is matched against the whole translated output using Malay-affix-safe word-boundary matching (`Kapten`, `Kaptennya`, `sekapten`, `Kapten-Kapten` count as one rendering). A still-present source-language form is counted as drift (the strongest leak signal); terms absent from the output are counted separately. The sweep is strictly **read-only** (never mutates subtitle text, no auto find-and-replace) and **fail-open** (any metric error is logged and skipped — delivery is never blocked).
+- **BASIC-MODE PURITY v3.9.51 preserved** — the sweep is gated on `trinityMode === 'pro'`; Basic stats stay zero even if a preflight context is force-injected (pinned by regression test).
+- **Reporting** — results land in `translationStats.termDrift`, the Agent Inspector FILE SUMMARY line, and a new Telegram battle-log diagnostics line (`🔤 Term Drift: N/M drifted, …`); WARN on any drift, DEBUG otherwise.
+
+### 🧪 Added — Regression Coverage (18 new tests, reproduce-first)
+
+- **`src/services/scene-gap-alignment-regression.test.js` (9 tests)** — red-proof that the rigid 200-cut splits a scene mid-exchange, corridor inclusivity at exactly ±20 (a 221-entry batch must NOT move), sub-threshold silence ignored, earliest-gap tie-break, short files, invalid timecodes, repeated-call determinism, and parallel-path geometry parity.
+- **`src/services/term-drift-telemetry-regression.test.js` (9 tests)** — red-proof drift counting on a source leak, Malay affix tolerance, absent-vs-drift distinction, malformed-input fail-open, zeroed stats default, Basic-mode purity gate with injected KNP, Pro population path, engine-level fail-open, and KNP term collection (null addresses excluded).
+
+### ✅ Verification
+
+- Reproduce-first RED baseline: the 18 new tests produced **5 pass / 13 fail** against the pre-change code (`.tmp/red-baseline2.log`) before implementation; all 18 pass after.
+- Full tracked suite: **766 tests / 765 passed / 0 failed / 1 skipped** (sole skip = pre-existing live-Redis concurrent-quota integration), re-run after Prettier. `node --check` PASS on all touched files; Prettier clean; ESLint 0 errors (25 pre-existing warnings untouched); `git diff --check` clean.
+- Owner's Continuity Ledger item (`<locked_decisions>`) remains deferred pending production telemetry from this release.
+
 ## SubFaber v3.39.3 (2026-11-16) — Deterministic Template Placeholder Warning
 
 ### Fixed

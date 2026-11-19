@@ -181,6 +181,157 @@ const CACHE_TRANSLATIONS = process.env.CACHE_TRANSLATIONS === 'true'; // Enable/
 const SUBFABER_BATCH_SIZE = 200;
 const SUBFABER_PREVIOUS_CONTEXT_SIZE = 20;
 const SUBFABER_FUTURE_CONTEXT_SIZE = 10;
+// [SCENE-GAP 2026-11-19 — Mandat Owner, Fasa 1] Penjajaran potongan batch pada
+// jurang senyap babak: koridor carian ±20 entri (diskala min(20, floor(size/10))
+// supaya pemanggil batch kecil kekal tegar) dan ambang senyap 2,000ms — jurang
+// di bawah ambang bukan sempadan babak. Sifar panggilan AI; deterministik penuh.
+const SCENE_GAP_CORRIDOR_MAX = 20;
+const SCENE_GAP_SILENCE_MS = 2000;
+
+// [TERM-DRIFT 2026-11-19 — Mandat Owner, Fasa 1] Sweep telemetri konsistensi
+// istilah whole-file (Pro sahaja, READ-ONLY, fail-open). Padanan selamat
+// imbuhan Melayu: awalan produktif (meny|mem|men|me|di|ke|se|ber|ter|peng|pem|
+// pen|pe) dibenarkan sebelum kata pertama sasaran; akhiran partikel
+// (nya|lah|kah|an) selepas kata akhir; bentuk SUMBER dipadankan sempadan
+// perkataan tulen — kebocoran sumber = isyarat drift paling kuat.
+const DRIFT_PREFIX_RE = '(?:meny|mem|men|me|di|ke|se|ber|ter|peng|pem|pen|pe)?';
+const DRIFT_SUFFIX_RE = '(?:nya|lah|kah|an)?';
+const DRIFT_DETAILS_CAP = 20; // butir drift dibatas supaya stats kekal ringkas
+
+function escapeDriftRe(str) {
+    return String(str).replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+}
+
+/**
+ * Parse satu stempel masa SRT "HH:MM:SS,mmm" → milisaat. Pulangkan null bila
+ * format tidak sah (defensif — jurang kemudiannya 0 → potongan nominal).
+ */
+function parseSrtTimeMs(stamp) {
+    const m = /^(\d+):(\d{2}):(\d{2}),(\d{3})$/.exec(String(stamp || '').trim());
+    if (!m) return null;
+    return (parseInt(m[1], 10) * 3600 + parseInt(m[2], 10) * 60 + parseInt(m[3], 10)) * 1000 + parseInt(m[4], 10);
+}
+
+/**
+ * Jurang senyap antara dua entri berturutan: startTime entri seterusnya
+ * dikurangkan endTime entri sebelumnya. Timecode rosak/hilang → 0 (bukan
+ * sempadan babak); tidak pernah negatif (defensif terhadap overlap SRT).
+ */
+function sceneGapMs(prevEntry, nextEntry) {
+    const prevEnd = parseSrtTimeMs(String(prevEntry?.timecode || '').split('-->')[1]);
+    const nextStart = parseSrtTimeMs(String(nextEntry?.timecode || '').split('-->')[0]);
+    if (prevEnd === null || nextStart === null) return 0;
+    return Math.max(0, nextStart - prevEnd);
+}
+
+/**
+ * Bina matcher bentuk sasaran kanonik dengan toleransi imbuhan Melayu.
+ * Kata tunggal: prefix?+core+suffix?; kata majmuk: prefix? pada kata pertama,
+ * suffix? pada kata akhir, kata tengah verbatim (pemisah \s+ fleksibel).
+ */
+function buildTargetMatcher(target) {
+    const words = String(target || '')
+        .trim()
+        .split(/\s+/)
+        .filter(Boolean);
+    if (words.length === 0) return null;
+    const first = escapeDriftRe(words[0]);
+    const last = escapeDriftRe(words[words.length - 1]);
+    let core;
+    if (words.length === 1) {
+        core = `${DRIFT_PREFIX_RE}${first}${DRIFT_SUFFIX_RE}`;
+    } else {
+        const middle = words
+            .slice(1, -1)
+            .map((w) => `\\s+${escapeDriftRe(w)}`)
+            .join('');
+        core = `${DRIFT_PREFIX_RE}${first}${middle}\\s+${last}${DRIFT_SUFFIX_RE}`;
+    }
+    try {
+        return new RegExp(`\\b${core}\\b`, 'iu');
+    } catch (_) {
+        return null; // fail-open: istilah tidak dipantau, sweep berterusan
+    }
+}
+
+/**
+ * [TERM-DRIFT 2026-11-19] Sweep deterministik konsistensi istilah pada output
+ * terjemahan. BACA-SAHAJA: tiada mutasi entri; tiada auto find-and-replace.
+ * Drift = bentuk SUMBER masih hadir dalam output (kebocoran salinan malas)
+ * walaupun bentuk sasaran turut hadir. Absent = tiada bentuk sumber ATAU
+ * sasaran langsung. Input rosak → kiraan sifar, tidak pernah throw (fail-open).
+ */
+function sweepTermDrift(terms, entries) {
+    const result = { checked: 0, consistent: 0, drifted: 0, absent: 0, driftDetails: [] };
+    try {
+        if (!Array.isArray(terms) || terms.length === 0) return result;
+        if (!Array.isArray(entries)) return result;
+        const haystack = entries
+            .map((e) => (e && typeof e.text === 'string' ? e.text : String(e?.text || '')))
+            .join('\n');
+        if (!haystack.trim()) {
+            // Output kosong/rosak — jangan mengira istilah sebagai absent palsu.
+            return result;
+        }
+        for (const term of terms) {
+            if (!term || typeof term !== 'object') continue;
+            const source = String(term.source || '').trim();
+            const target = String(term.target || '').trim();
+            if (!source || !target) continue;
+            result.checked++;
+            const targetRe = buildTargetMatcher(target);
+            const sourceRe = new RegExp(`\\b${escapeDriftRe(source)}\\b`, 'iu');
+            const sourceSeen = sourceRe.test(haystack);
+            const targetSeen = targetRe ? targetRe.test(haystack) : false;
+            if (sourceSeen) {
+                result.drifted++;
+                result.driftDetails.push({ source, target });
+            } else if (targetSeen) {
+                result.consistent++;
+            } else {
+                result.absent++;
+            }
+        }
+    } catch (err) {
+        // Fail-open: telemetri tidak pernah mengganggu penghantaran sarikata.
+        log.warn(() => `[TermDrift] Sweep aborted (fail-open): ${err?.message || err}`);
+    }
+    return result;
+}
+
+/**
+ * [TERM-DRIFT 2026-11-19] Kumpul senarai istilah dipantau daripada KNP Fasa 0:
+ * terms[].source→target + characters[].name→canonical_address/direct_address.
+ * Alamat null dikecualikan (tiada keputusan untuk dipantau). KNP rosak → [].
+ */
+function collectDriftTermsFromKnp(knp) {
+    if (!knp || typeof knp !== 'object') return [];
+    const out = [];
+    const seen = new Set();
+    const push = (source, target) => {
+        const s = String(source || '').trim();
+        const t = String(target || '').trim();
+        if (!s || !t) return;
+        const key = `${s}\u2192${t}`;
+        if (seen.has(key)) return;
+        seen.add(key);
+        out.push({ source: s, target: t });
+    };
+    if (Array.isArray(knp.terms)) {
+        for (const t of knp.terms) {
+            if (t && typeof t === 'object') push(t.source, t.target);
+        }
+    }
+    if (Array.isArray(knp.characters)) {
+        for (const c of knp.characters) {
+            if (c && typeof c === 'object') {
+                push(c.name, c.canonical_address);
+                push(c.name, c.direct_address);
+            }
+        }
+    }
+    return out;
+}
 
 // Module-level shared key health tracking across engine instances.
 // MULTI-INSTANCE: Now backed by Redis via sharedCache utilities.
@@ -251,7 +402,10 @@ function createDefaultStats(engine) {
         crimesDetectedByType: { MERGE: 0, DROP: 0, PHANTOM: 0, SHIFT: 0, UNTRANSLATED: 0, REGISTER: 0, TERM: 0 },
         crimesResolvedByRetry: 0, // hanya re-verdict LULUS yang disahkan (K3)
         crimePatternDetected: null, // → array string (K2)
-        crimeBatchIndices: { MERGE: [], DROP: [], PHANTOM: [], SHIFT: [], UNTRANSLATED: [], REGISTER: [], TERM: [] } // cap 50/type
+        crimeBatchIndices: { MERGE: [], DROP: [], PHANTOM: [], SHIFT: [], UNTRANSLATED: [], REGISTER: [], TERM: [] }, // cap 50/type
+        // [TERM-DRIFT 2026-11-19 — Mandat Owner Fasa 1] Telemetri konsistensi
+        // istilah whole-file. Pro sahaja; Basic kekal sifar (purity v3.9.51).
+        termDrift: { checked: 0, consistent: 0, drifted: 0, absent: 0 }
     };
 }
 
@@ -261,6 +415,16 @@ class TranslationEngine {
     // .constructor) tanpa import, mengelakkan kebergantungan membulat.
     static createDefaultStats(engine) {
         return createDefaultStats(engine);
+    }
+
+    // [TERM-DRIFT 2026-11-19] Eksport statik bagi ujian regresi — sweep murni
+    // deterministik, tiada keadaan enjin diperlukan.
+    static sweepTermDrift(terms, entries) {
+        return sweepTermDrift(terms, entries);
+    }
+
+    static collectDriftTermsFromKnp(knp) {
+        return collectDriftTermsFromKnp(knp);
     }
     constructor(geminiService, model = null, advancedSettings = {}, options = {}) {
         this.gemini = geminiService?.primary || geminiService;
@@ -534,7 +698,13 @@ class TranslationEngine {
         const hasPattern = Array.isArray(s.crimePatternDetected) && s.crimePatternDetected.length > 0;
         const coverage = s.agentInspectorBatchesInspected + s.agentInspectorBatchesSkippedAfterOpen;
         const pct = coverage > 0 ? Math.round((s.agentInspectorBatchesInspected / coverage) * 100) : 100;
-        const msg = `[AgentInspector] FILE SUMMARY: Circuit opened at ${s.agentInspectorCircuitOpenAtPhase || '—'}${s.agentInspectorCircuitOpened ? ` batch ${s.agentInspectorCircuitOpenAtBatch}` : ''}. Inspection coverage: ${s.agentInspectorBatchesInspected}/${coverage} (${pct}% protected). Crimes: ${JSON.stringify(s.crimesDetectedByType)}, resolved-by-retry: ${s.crimesResolvedByRetry}.`;
+        // [TERM-DRIFT 2026-11-19] Meterai term-drift dibawa ke dalam FILE SUMMARY
+        // (Pro sahaja — Basic tidak pernah mengisi medan ini; purity v3.9.51).
+        const driftSuffix =
+            s.termDrift && s.termDrift.checked > 0
+                ? ` Term drift: checked=${s.termDrift.checked}, consistent=${s.termDrift.consistent}, drifted=${s.termDrift.drifted}, absent=${s.termDrift.absent}.`
+                : '';
+        const msg = `[AgentInspector] FILE SUMMARY: Circuit opened at ${s.agentInspectorCircuitOpenAtPhase || '—'}${s.agentInspectorCircuitOpened ? ` batch ${s.agentInspectorCircuitOpenAtBatch}` : ''}. Inspection coverage: ${s.agentInspectorBatchesInspected}/${coverage} (${pct}% protected). Crimes: ${JSON.stringify(s.crimesDetectedByType)}, resolved-by-retry: ${s.crimesResolvedByRetry}.${driftSuffix}`;
         if (s.agentInspectorCircuitOpened || hasPattern || totalCrimes >= 3) {
             log.warn(() => msg);
         } else {
@@ -1253,6 +1423,11 @@ class TranslationEngine {
             entry.text = this.sanitizeTimecodes(entry.text);
         }
 
+        // [TERM-DRIFT 2026-11-19 — Mandat Owner Fasa 1] Sweep telemetri konsistensi
+        // istilah whole-file pada output muktamad (Pro sahaja; read-only; fail-open).
+        // Selepas sanitize supaya kebocoran yang diukur ialah teks benar yang dihantar.
+        this._runTermDriftSweep(translatedEntries);
+
         // Step 5: Convert back to SRT format
         if (translatedEntries.length > 0) {
             log.info(() => `[DIAGNOSTIC] Final entry 0 text: "${translatedEntries[0]?.text?.slice(0, 60)}"`);
@@ -1265,10 +1440,81 @@ class TranslationEngine {
      */
     createBatches(entries, batchSize) {
         const batches = [];
-        for (let i = 0; i < entries.length; i += batchSize) {
-            batches.push(entries.slice(i, i + batchSize));
+        if (!Array.isArray(entries) || entries.length === 0 || !Number.isFinite(batchSize) || batchSize <= 0) {
+            return batches;
+        }
+        const n = Math.floor(batchSize);
+        // [SCENE-GAP 2026-11-19] Batch kecil (kontrak ujian/masa depan) — koridor
+        // tidak bermakna; kekal potongan tegar supaya kontrak sedia ada terpelihara.
+        if (n < 2 * SCENE_GAP_CORRIDOR_MAX) {
+            for (let i = 0; i < entries.length; i += n) {
+                batches.push(entries.slice(i, i + n));
+            }
+            return batches;
+        }
+        const corridor = Math.max(0, Math.min(SCENE_GAP_CORRIDOR_MAX, Math.floor(n / 10)));
+        let cursor = 0;
+        while (cursor < entries.length) {
+            let cut = Math.min(entries.length, cursor + n);
+            // Potongan terakhir (cut == hujung fail) tidak memerlukan penjajaran.
+            if (cut < entries.length) {
+                // Cari jurang senyap TERBESAR dalam koridor; 'strictly greater'
+                // memastikan seri dimenangi oleh jurang TERAWAL (deterministik).
+                let bestIdx = -1;
+                let bestGap = SCENE_GAP_SILENCE_MS; // mesti melebihi ambang senyap
+                const lo = Math.max(cursor, cut - corridor - 1);
+                const hi = Math.min(cut + corridor - 1, entries.length - 2);
+                for (let j = lo; j <= hi; j++) {
+                    const gap = sceneGapMs(entries[j], entries[j + 1]);
+                    if (gap > bestGap) {
+                        bestGap = gap;
+                        bestIdx = j;
+                    }
+                }
+                if (bestIdx !== -1) cut = bestIdx + 1;
+            }
+            batches.push(entries.slice(cursor, cut));
+            cursor = cut;
         }
         return batches;
+    }
+
+    /**
+     * [TERM-DRIFT 2026-11-19 — Mandat Owner Fasa 1] Sweep telemetri konsistensi
+     * istilah whole-file (Pro SAHJA). READ-ONLY: tidak pernah mengubah teks;
+     * fail-open: sebarang ralat ditegaskan dan diabaikan — penghantaran sarikata
+     * tidak pernah terganggu. Basic dipintu oleh mod (purity v3.9.51): stats
+     * kekal sifar walaupun slot preflight disuntik secara paksa.
+     * @param {Array} translatedEntries - Entri terjemahan muktamad (dibaca sahaja)
+     */
+    _runTermDriftSweep(translatedEntries) {
+        if (this.trinityMode !== 'pro') return; // [BASIC-MODE PURITY v3.9.51]
+        try {
+            const terms = collectDriftTermsFromKnp(this.preflightContext);
+            if (terms.length === 0) return;
+            const r = sweepTermDrift(terms, translatedEntries);
+            this.translationStats.termDrift = {
+                checked: r.checked,
+                consistent: r.consistent,
+                drifted: r.drifted,
+                absent: r.absent
+            };
+            if (r.driftDetails.length > DRIFT_DETAILS_CAP) r.driftDetails.length = DRIFT_DETAILS_CAP;
+            const msg =
+                `[TermDrift] FILE SWEEP: checked=${r.checked}, consistent=${r.consistent}, ` +
+                `drifted=${r.drifted}, absent=${r.absent}` +
+                (r.driftDetails.length > 0
+                    ? ` — leaks: ${r.driftDetails.map((d) => `${d.source}→${d.target}`).join(', ')}`
+                    : '');
+            if (r.drifted > 0) {
+                log.warn(() => msg);
+            } else {
+                log.debug(() => msg);
+            }
+        } catch (err) {
+            // Fail-open mutlak: telemetri tidak pernah menggagalkan terjemahan.
+            log.warn(() => `[TermDrift] Sweep skipped (fail-open): ${err?.message || err}`);
+        }
     }
 
     /**

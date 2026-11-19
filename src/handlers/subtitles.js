@@ -6846,6 +6846,11 @@ async function performTranslation(
                         if (stats.untaggedFirstSlotCount > 0) {
                             advancedStats += `🎯 <b>Untagged First Slots:</b> ${stats.untaggedFirstSlotCount} rebuilt inline (Rule 7 continuation)\n`;
                         }
+                        // [TERM-DRIFT 2026-11-19 — Mandat Owner Fasa 1] Baris telemetri
+                        // konsistensi istilah whole-file (Pro sahaja; Basic stats sifar → senyap).
+                        if (stats.termDrift && stats.termDrift.checked > 0) {
+                            advancedStats += `🔤 <b>Term Drift:</b> ${stats.termDrift.drifted}/${stats.termDrift.checked} drifted, ${stats.termDrift.consistent} consistent, ${stats.termDrift.absent} absent\n`;
+                        }
 
                         let diagnosticsSection =
                             advancedStats !== '' ? `\n🔍 <b>Advanced Diagnostics:</b>\n${advancedStats}` : '';

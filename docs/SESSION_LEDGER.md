@@ -20,6 +20,24 @@ This template is the R5 ledger-format deliverable. It supersedes the legacy form
 
 -------
 
+## 2026-11-19 — SUBFABER v3.39.4 SCENE-GAP BATCH ALIGNMENT & PRO TERM-DRIFT TELEMETRY (CLASS 1 PATCH)
+
+- **Date:** 2026-11-19 ~22:10 (KL time).
+- **Parent HEAD SHA:** `1984a37b42c1b9ca6ca677ac823a91b29a9912e3` (v3.39.3).
+- **Status:** `VERIFIED_LOCAL` (pre-release).
+- **Release Commit SHA + CI Run ID:** confirmed in the final report after push/CI — never invented.
+- **Owner Decision:** Mandate Fasa 1 (from the ChatGPT-share evaluation, `.tmp/CHATGPT_IDEAS_EVALUATION_2026-11-19.md`): (1) Scene-Gap Cut Alignment for Basic & Pro — deterministic ±20-entry corridor, silence threshold, zero AI calls; (2) Pro-only Deterministic Whole-File Term-Drift Telemetry — read-only, fail-open, stats + FILE SUMMARY + Telegram battle-log. Continuity Ledger (`<locked_decisions>`) deferred pending production telemetry. Release directive: bump, CHANGELOG, single commit, push, CI. **Mandate correction:** the directive named v3.39.3, but v3.39.3 is already the released HEAD; bumped to **v3.39.4** per the one-version-one-release invariant.
+- **Impact & Contract Audit (Phase A/B):** Backend batching + telemetry only. Zone A N/A (no sampling/model parameters/transport). Zone B N/A (no response schema change; `translationStats.termDrift` is additive and every consumer guards `checked > 0`). Zone C: `createBatches` is shared by Sequential (Basic+Pro) and Parallel (new delegation via `engine.createBatches` with rigid fallback for mock engines) — parity proven by 66 collateral tests. Three mandate discrepancies corrected against live code: entries carry no `startTime`/`endTime` fields (gaps parsed from the raw `timecode` string); the cache-key determinism premise is wrong (keys carry no batch geometry — real invariant = identical-input geometry + 1:1 ID coverage, both pinned); patching `createBatches` alone would leave the parallel path rigid (it builds batches inline).
+- **Reproduce-First Evidence:** 18 new tests written before production edits: **5 pass / 13 fail** against pre-change code (`.tmp/red-baseline2.log`) — rigid 200-cut splitting a scene at a 30s gap, corridor edge (batch 220 moves / 221 does not), earliest-gap tie-break, parallel geometry parity, drift counting on source leak, Malay affix tolerance, absent-vs-drift, Basic purity with forced KNP, fail-open on malformed inputs. All 13 red cases pass post-implementation (`.tmp/green-check1.log`); the 5 defensive cases stayed green throughout.
+- **Independent Acceptance:** New suites 18/18; collateral (context/parallel/phase-c/mode-switch/bugfix2) 66/66 (`.tmp/green-check2.log`); full tracked suite **766 total / 765 PASS / 0 FAIL / 1 SKIP** (sole SKIP = pre-existing live-Redis concurrent-quota integration), re-run after Prettier (`.tmp/full-suite-fasa1-final.log`). `node --check` PASS ×3; Prettier clean ×5; ESLint 0 errors (25 pre-existing warnings untouched); `git diff --check` clean. Read-only sweep pinned by JSON deepEqual before/after; Basic stats stay zeroed even with forced preflight injection; fail-open pinned at sweep and engine level.
+- **Residual / N/A Gates:** Playwright N/A (no UI change — backend batching + telemetry + one Telegram diagnostics line). Real-provider verification N/A (zero transport/prompt changes; wire is byte-identical). Cache-buster NO-OP (no public assets touched; version auto-advance only). Continuity Ledger deferred by Owner.
+- **Files Involved:** `src/services/translationEngine.js` (M: scene-gap constants/helpers + `createBatches` rewrite, `sweepTermDrift`/`collectDriftTermsFromKnp`/`_runTermDriftSweep`, `stats.termDrift`, FILE SUMMARY suffix, static exports, post-sanitize call), `src/utils/parallelTranslation.js` (M: delegate to `engine.createBatches` w/ rigid fallback), `src/handlers/subtitles.js` (M: Telegram Term Drift diagnostics line), `src/services/scene-gap-alignment-regression.test.js` (A, 9 tests), `src/services/term-drift-telemetry-regression.test.js` (A, 9 tests), `package.json`/`package-lock.json` (M: 3.39.4), `CHANGELOG.md` (M: v3.39.4 entry, English lock), `docs/SESSION_LEDGER.md` (M: this entry), `.tmp/RELAY_STATE.md` (untracked relay checkpoint).
+- **npm test Status:** 766 total / 765 PASS / 0 FAIL / 1 SKIP, exit 0; log `.tmp/full-suite-fasa1-final.log`.
+- **Next Steps:** One Class 1 commit `feat(engine): scene-gap batch alignment + Pro term-drift telemetry (v3.39.4)`, push to origin/main, watch CI to SUCCESS, report Release Commit SHA + CI Run ID to the Owner (never a second cosmetic ledger commit).
+- **Tool Navigation Ratio:** search_files=23 read_file=36 ratio=1:1.6 anchored=100% (36/36 reads)
+
+-------
+
 ## 2026-11-16 — SUBFABER v3.39.3 DETERMINISTIC SANDBOX PLACEHOLDER WARNINGS (CLASS 1 PATCH)
 
 - **Date:** 2026-11-16 ~23:57 (KL time).
