@@ -538,12 +538,13 @@
                     topP: mpParam(0, 1, 0.95, { uiHint: 'server-strips-for-this-model' }),
                     thinkingLevel: mpParam(0, 0, 'medium', { enum: MP_GEMINI_THINKING_LEVELS }),
                     maxOutputTokens: mpParam(1, 65536, 32768),
-                    // [FASA 2 A1 2026-10-26] Penalty strict: enjin MENAHAN medan
-                    // ini pada wire (HTTP 400) — beri amaran tepat pada medan.
-                    frequencyPenalty: mpParam(-2, 2, 0, { uiHint: 'penalties-blocked-3x-strict' }),
-                    presencePenalty: mpParam(-2, 2, 0, { uiHint: 'penalties-blocked-3x-strict' })
+                    // [MANDAT OWNER 2026-11-20 — SEND-ALL v2] Penalty strict
+                    // kini DIHANTAR pada wire bersama temperature/topP — enjin
+                    // tidak lagi menahan; nota amaran 400 dibuang.
+                    frequencyPenalty: MP_FREQUENCY_PENALTY,
+                    presencePenalty: MP_PRESENCE_PENALTY
                 },
-                notes: ['sampling-controlled', rerouteStrict ? 'server-reroute-stripped' : 'sampling-stripped-by-api']
+                notes: rerouteStrict ? ['sampling-controlled', 'server-reroute-stripped'] : ['sampling-controlled']
             };
         }
         if (minor !== null) {
@@ -801,17 +802,13 @@
             'Kimi works best with temperature 1.0 and topP 0.95 — other values may be rejected by the API.',
         'ground-truth-suggests-temp-1.0-topP-0.95':
             'Kimi works best with temperature 1.0 and topP 0.95 — other values may be rejected by the API.',
-        // [FASA 2 A1 — MANDAT OWNER 2026-10-26] Ketepatan semantik Hybrid Guard:
-        // temperature/topP DIHANTAR (Google mengabaikannya secara SENYAP pada
-        // 3.6+), manakala frequencyPenalty/presencePenalty DISEKAT oleh enjin
-        // kerana API memulangkan HTTP 400 — dua tingkah laku berbeza, jangan
-        // digabung dalam satu ayat.
+        // [MANDAT OWNER 2026-11-20 — SEND-ALL v2] Lima parameter dihantar untuk
+        // semua keluarga Gemini native; nota "penalty ditahan (HTTP 400)"
+        // dibuang kerana enjin tidak lagi menindas penalty.
         'sampling-stripped-by-api':
-            'Temperature and Top-P are sent but silently ignored by the API for this model. Frequency/Presence penalties are not sent at all (the API rejects them with HTTP 400).',
+            'Temperature and Top-P are sent but may be silently ignored by the API for this model.',
         'server-reroute-stripped':
-            'The server reroutes this model name to the Gemini 3.x strict family. Temperature and Top-P are sent but silently ignored; Frequency/Presence penalties are withheld to avoid HTTP 400.',
-        'penalties-blocked-3x-strict':
-            'Penalties are withheld for Gemini 3.x strict models — the API rejects frequency/presence penalties with HTTP 400.',
+            'The server reroutes this model name to the Gemini 3.x strict family; Temperature and Top-P are sent but may be ignored.',
         'thinking-locks-temperature-1.0':
             'When extended thinking is enabled, Anthropic forces temperature to 1.0 and drops topP.',
         'sampling-unsupported-in-thinking-mode':
@@ -819,7 +816,7 @@
         'no-llm-sampling': 'DeepL is not a generative LLM — model type, formality and formatting controls only.',
         'sampling-not-supported': 'This reasoning model does not accept sampling parameters — reasoning effort only.',
         'sampling-controlled':
-            'This Gemini 3 model manages sampling automatically: Temperature/Top-P are sent but may be ignored, and penalties are withheld to prevent HTTP 400.',
+            'This Gemini 3 model manages sampling automatically: Temperature, Top-P, Thinking level and both penalties are always sent (defaults 0.0 for penalties) and may be ignored by the server.',
         'thinking-mode-temperature-1.0':
             'Thinking mode forces temperature 1.0 — lower values are ignored while thinking is on.',
         'google-recommends-temperature-1.0': 'Google recommends temperature 1.0 for Gemini 3.x models.'
@@ -1044,8 +1041,6 @@
         // [FASA 2 A1 2026-10-26] Sampling 3.x-strict: nilai DIHANTAR, pelayan
         // rasmi Google mengabaikannya secara senyap (bukan dibuang oleh enjin).
         'server-strips-for-this-model': 'Sent, but the provider may ignore this value for this model.',
-        // [FASA 2 A1 2026-10-26] Penalty 3.x-strict: DISEKAT oleh enjin (HTTP 400).
-        'penalties-blocked-3x-strict': 'Not sent for this model — withheld to avoid HTTP 400.',
         'ground-truth-suggests-1.0': 'Suggested value: 1.0 (other values may be rejected by the server).',
         'ground-truth-suggests-0.95': 'Suggested value: 0.95 (other values may be rejected by the server).',
         'thinking-locks-temperature-1.0': 'When thinking is enabled, temperature is set to 1.0 by the provider.',

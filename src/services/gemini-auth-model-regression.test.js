@@ -79,11 +79,14 @@ test('[SEND-ALL 2026-10-16] Gemini 3.x-legacy (3.1) keeps sampling; 3.x-strict (
     assert.equal(legacy.model, 'gemini-3.1-pro-preview');
     assert.equal(legacy.getModelFamily().family, '3.x-legacy');
     // LEGACY: sampling IS sent alongside thinkingLevel (fix — dulu di-strip senyap)
+    // [SEND-ALL v2 2026-11-20] penalty lalai 0.0 kini turut hadir pada setiap keluarga.
     assert.deepEqual(legacy.buildGenerationConfig(4096), {
         maxOutputTokens: 4096,
         thinkingConfig: { thinkingLevel: 'high' },
         temperature: 0.5,
-        topP: 0.95
+        topP: 0.95,
+        frequencyPenalty: 0,
+        presencePenalty: 0
     });
     // topK never sent even for legacy (nucleus sampling)
     assert.equal('topK' in legacy.buildGenerationConfig(4096), false);
@@ -212,10 +215,13 @@ test('legacy numeric thinking budgets and sampling controls remain unchanged for
         topP: 0.9
     });
 
+    // [SEND-ALL v2 2026-11-20] penalty lalai 0.0 wajib pada cabang 2.5 juga.
     assert.deepEqual(service.buildGenerationConfig(4096), {
         maxOutputTokens: 4096,
         temperature: 0.5,
         topP: 0.9,
+        frequencyPenalty: 0,
+        presencePenalty: 0,
         thinkingConfig: { thinkingBudget: 1000 }
     });
 });
@@ -330,17 +336,19 @@ test('Configure and Toolbox pages expose current Gemini choices and model-aware 
 
 // ─── Fasa 5: Kunci Ground Truth — family-aware payload & schema regression ───
 
-test('[GT-1 / HYBRID GUARD 2026-10-25] gemini-3.8-flash: sampling DIHANTAR bila ditetapkan; penalty DITEKAN (3.x-strict); disabled -> low mapping kekal', () => {
-    // [SEND-ALL] sampling tiada hanya kerana instance tidak menetapkannya.
+test('[GT-1 / SEND-ALL v2 2026-11-20] gemini-3.8-flash: sampling + penalty DIHANTAR; disabled -> low mapping kekal', () => {
+    // [SEND-ALL v2] Lima parameter wajib pada wayar Gemini native; lalai penalty 0.0.
     const service = new GeminiService('test-key', 'gemini-3.8-flash', { thinkingLevel: 'disabled' });
     const cfg = service.buildGenerationConfig(4096);
     assert.equal('topK' in cfg, false, 'topK kekal haram (v1.6.0)');
     assert.equal(cfg.thinkingConfig.thinkingLevel, 'low'); // BUKAN 'minimal' — elak ralat API 3.7/3.8
+    assert.equal(cfg.frequencyPenalty, 0, 'SEND-ALL v2: lalai frequencyPenalty 0 dihantar');
+    assert.equal(cfg.presencePenalty, 0, 'SEND-ALL v2: lalai presencePenalty 0 dihantar');
 
-    // Instance yang menetapkan sampling → DIHANTAR (doktrin send-all untuk sampling).
-    // Penalty → DITEKAN untuk keluarga 3.x-strict: dokumen rasmi Google (inference
-    // reference, 2026-10-22) mengesahkan frequencyPenalty/presencePenalty PULANGKAN
-    // ERROR pada Gemini 3.6 Flash dan kemudian (Mandat Owner 2026-10-25, Pilihan B).
+    // [MANDAT OWNER 2026-11-20] HYBRID GUARD lama (2026-10-25, Pilihan B)
+    // DIMANSUHKAN — nilai eksplisit pengguna dihantar apa adanya, termasuk
+    // pada keluarga 3.x-strict. Keputusan pelayan (terima/abaikan/400) bukan
+    // lagi ditapis oleh enjin.
     const tuned = new GeminiService('test-key', 'gemini-3.8-flash', {
         thinkingLevel: 'high',
         temperature: 0.4,
@@ -351,8 +359,8 @@ test('[GT-1 / HYBRID GUARD 2026-10-25] gemini-3.8-flash: sampling DIHANTAR bila 
     const tunedCfg = tuned.buildGenerationConfig(4096);
     assert.equal(tunedCfg.temperature, 0.4, 'SEND-ALL: 3.8 hantar temperature');
     assert.equal(tunedCfg.topP, 0.9, 'SEND-ALL: 3.8 hantar topP');
-    assert.equal('frequencyPenalty' in tunedCfg, false, 'HYBRID GUARD: 3.8 penalty ditekan (elak 400)');
-    assert.equal('presencePenalty' in tunedCfg, false, 'HYBRID GUARD: 3.8 penalty ditekan (elak 400)');
+    assert.equal(tunedCfg.frequencyPenalty, 0.5, 'SEND-ALL v2: 3.8 hantar frequencyPenalty eksplisit');
+    assert.equal(tunedCfg.presencePenalty, -0.5, 'SEND-ALL v2: 3.8 hantar presencePenalty eksplisit');
     assert.equal('topK' in tunedCfg, false);
 });
 

@@ -655,20 +655,23 @@ class GeminiService {
                   ? parseInt(process.env.GEMINI_THINKING_BUDGET, 10)
                   : undefined;
 
-        // Penalti kekerapan/kehadiran — sah untuk 1.5/2.x sahaja (bukan 3.x).
+        // [MANDAT OWNER 2026-11-20 — SEND-ALL v2] Penalti kekerapan/kehadiran
+        // WAJIB eksplisit pada wayar pintu Gemini native (rasmi + custom/proxy):
+        // lalai 0.0 (bukan undefined/omit). Keputusan ini memansuhkan penindasan
+        // HYBRID GUARD 3.x-strict (2026-10-25) dan kelakuan omit-when-unset.
         this.frequencyPenalty =
             advancedSettings.frequencyPenalty !== undefined
                 ? advancedSettings.frequencyPenalty
                 : process.env.GEMINI_FREQUENCY_PENALTY !== undefined
                   ? parseFloat(process.env.GEMINI_FREQUENCY_PENALTY)
-                  : undefined;
+                  : 0;
 
         this.presencePenalty =
             advancedSettings.presencePenalty !== undefined
                 ? advancedSettings.presencePenalty
                 : process.env.GEMINI_PRESENCE_PENALTY !== undefined
                   ? parseFloat(process.env.GEMINI_PRESENCE_PENALTY)
-                  : undefined;
+                  : 0;
 
         if (this.isGemmaModel) {
             this.maxOutputTokens = 8192;
@@ -789,13 +792,12 @@ class GeminiService {
     }
 
     buildGenerationConfig(maxOutputTokens) {
-        // [SEND-ALL 2026-10-16 + HYBRID GUARD 2026-10-25] `sampling` kekeluargaan
-        // tidak lagi mengetuai sebarang gate — doktrin send-all menghantar sampling
-        // (temperature/topP) untuk semua family. PENALTY dikecualikan daripada
-        // doktrin untuk keluarga 3.x-strict: dokumen rasmi Google (docs.cloud.google.com,
-        // inference reference, last updated 2026-10-22) mengesahkan frequencyPenalty/
-        // presencePenalty PULANGKAN ERROR pada Gemini 3.6 Flash dan kemudian.
-        const { family, thinking } = this.getModelFamily();
+        // [MANDAT OWNER 2026-11-20 — SEND-ALL v2] Lima parameter WAJIB pada wayar
+        // pintu Gemini native (rasmi + custom/proxy): temperature, topP,
+        // thinkingLevel, frequencyPenalty, presencePenalty — untuk SEMUA keluarga.
+        // Ini memansuhkan pengecualian HYBRID GUARD (2026-10-25); nilai eksplisit
+        // dihantar apa adanya, lalai penalty ialah 0.0.
+        const { thinking } = this.getModelFamily();
 
         // ── Cabang THINKING LEVEL (semua Gemini 3.x) ──────────────────────────────
         if (thinking === 'level') {
@@ -829,28 +831,13 @@ class GeminiService {
             if (this.temperature !== undefined) levelConfig.temperature = this.temperature;
             if (this.topP !== undefined) levelConfig.topP = this.topP;
 
-            // [MANDAT OWNER 2026-10-25 — HYBRID GUARD (PILIHAN B)] Penalty params
-            // DITEKAN untuk keluarga 3.x-strict sahaja (3.6+, 3.5-flash-lite,
-            // 3.5-flash & 3.7-flash reroute v3.9.46, alias -latest, Gemini 4+):
-            // dokumen rasmi mengesahkan frequencyPenalty/presencePenalty
-            // PULANGKAN ERROR (bukan diabaikan) pada Gemini 3.6 Flash dan kemudian.
-            // Keluarga LEGACY (3.0, 3.1) & 2.5/2.0 kekal menghantar penalty jika
-            // ditetapkan — tingkah laku sedia ada dikekalkan.
-            if (family === '3.x-strict') {
-                if (this.frequencyPenalty !== undefined || this.presencePenalty !== undefined) {
-                    log.debug(
-                        () =>
-                            '[Gemini] frequencyPenalty/presencePenalty suppressed for 3.x-strict model to prevent HTTP 400'
-                    );
-                }
-            } else {
-                if (this.frequencyPenalty !== undefined) {
-                    levelConfig.frequencyPenalty = this.frequencyPenalty;
-                }
-                if (this.presencePenalty !== undefined) {
-                    levelConfig.presencePenalty = this.presencePenalty;
-                }
-            }
+            // [MANDAT OWNER 2026-11-20 — SEND-ALL v2] Penalty DIHANTAR untuk
+            // SEMUA keluarga (termasuk 3.x-strict, reroute, alias -latest,
+            // Gemini 4+). Nilai eksplisit pengguna dihantar apa adanya; tanpa
+            // input, 0.0 dihantar (pilihan constructor). Ini memansuhkan
+            // penindasan HYBRID GUARD (Pilihan B, 2026-10-25).
+            levelConfig.frequencyPenalty = this.frequencyPenalty;
+            levelConfig.presencePenalty = this.presencePenalty;
 
             return levelConfig;
         }
@@ -862,8 +849,8 @@ class GeminiService {
                 temperature: this.temperature,
                 topP: this.topP
             };
-            if (this.frequencyPenalty !== undefined) config.frequencyPenalty = this.frequencyPenalty;
-            if (this.presencePenalty !== undefined) config.presencePenalty = this.presencePenalty;
+            config.frequencyPenalty = this.frequencyPenalty;
+            config.presencePenalty = this.presencePenalty;
 
             if (this.thinkingBudget !== undefined) {
                 let budget = this.thinkingBudget;
@@ -883,12 +870,8 @@ class GeminiService {
             temperature: this.temperature,
             topP: this.topP
         };
-        if (this.frequencyPenalty !== undefined) {
-            generationConfig.frequencyPenalty = this.frequencyPenalty;
-        }
-        if (this.presencePenalty !== undefined) {
-            generationConfig.presencePenalty = this.presencePenalty;
-        }
+        generationConfig.frequencyPenalty = this.frequencyPenalty;
+        generationConfig.presencePenalty = this.presencePenalty;
         return generationConfig;
     }
 

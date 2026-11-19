@@ -32,12 +32,18 @@ The following parameters were deliberately removed from the codebase and MUST NO
 
 `topK` in particular is forbidden for every Gemini family; see §3.
 
-## 3. HYBRID GUARD — Gemini 3.x sampling
+## 3. SEND-ALL v2 — Gemini native door parameters (Owner mandate 2026-11-20)
 
-- `temperature` and `topP` are **SEND-ALL** for **all** Gemini 3.x models. Do not suppress them,
-  clamp them, or gate them behind a per-model allow-list.
-- `frequencyPenalty` and `presencePenalty` are suppressed **only** for the `3.x-strict` family.
-  For all other 3.x models they pass through.
+- For BOTH the official Gemini door and Gemini via custom/proxy (Crazy Router) on the
+  gemini-native door, the request MUST always carry **five** parameters:
+  `temperature`, `topP`, `thinkingLevel`, `frequencyPenalty`, `presencePenalty`.
+- `frequencyPenalty`/`presencePenalty` default to **0.0** when the user provides no value —
+  explicit `0.0` is a valid, sendable value; "unset/omit" is not a valid state for this door.
+- This mandate **repeals** the former HYBRID GUARD (2026-10-25 Pilihan B) that suppressed
+  penalties for the `3.x-strict` family to avoid HTTP 400. The engine no longer filters; the
+  server decides (accept/ignore/reject).
+- `temperature` and `topP` remain **SEND-ALL** for **all** Gemini 3.x models. Do not suppress
+  them, clamp them, or gate them behind a per-model allow-list.
 - `topK` is forbidden for the entire family (see §2).
 - DeepSeek: a user selection of `disabled` maps to `reasoning_effort: 'none'` on the wire.
 - Ground truth: `plans/gemini-sampling-ground-truth-2026.md`,

@@ -2,6 +2,26 @@
 
 All notable changes to this project will be documented in this file.
 
+## SubFaber v3.39.5 (2026-11-20) — Gemini Native SEND-ALL v2 (Five Mandatory Parameters)
+
+### Changed
+
+- **`src/services/gemini.js`** — the Google Gemini native door (official and custom/proxy such as Crazy Router) now always sends **five** parameters on every request: `temperature`, `topP`, `thinkingLevel`, `frequencyPenalty`, `presencePenalty`. `frequencyPenalty`/`presencePenalty` default to `0.0` when the user supplies no value; explicit `0.0` is a valid, transmitted value. The former HYBRID GUARD (2026-10-25 Pilihan B), which suppressed penalties for `3.x-strict` models to avoid HTTP 400, is repealed — the engine no longer filters provider parameters; the server decides whether to accept, ignore, or reject them.
+- **`public/js/trinity-agents.js`** — Gemini 3.x-strict capability descriptors now expose the ordinary penalty fields; the "penalties withheld to avoid HTTP 400" hints and notes are removed so the UI no longer claims behaviour the engine no longer performs.
+
+### Added
+
+- **`src/services/gemini-sendall-v2-regression.test.js` (4 tests)** — red-first contract coverage proving that legacy, 3.x-strict, thinking-budget, full-sampling and custom/proxy native requests all carry penalties (explicit values preserved, defaults emitted as `0.0`), and that `topK` remains forbidden.
+- **`src/services/gemini-auth-model-regression.test.js`** — three existing payload-shape pins upgraded from four-parameter to five-parameter expectations (equivalent-or-stronger coverage; no assertion removed).
+
+### Documentation
+
+- **`docs/PROVIDER_CONTRACTS_REFERENCE.md` §3** — rewritten as "SEND-ALL v2" recording the Owner's 2026-11-20 mandate and the repeal of HYBRID GUARD.
+
+### Verified
+
+- Reproduce-first RED baseline: 1 pass / 3 fail before implementation (`.tmp/sendall-v2-red.log`); 4/4 pass after (`.tmp/sendall-v2-green.log`). Full tracked suite: **770 tests, 769 passed, 0 failed, 1 skipped** (sole skip = pre-existing live-Redis concurrent-quota integration), exit 0 (`.tmp/sendall-v2-full-suite3.log`). `node --check` PASS on all touched JS; Prettier clean; `git diff --check` clean.
+
 ## SubFaber v3.39.4 (2026-11-19) — Scene-Gap Batch Alignment & Pro Term-Drift Telemetry
 
 ### ✨ Added — Scene-Gap Cut Alignment (Owner Mandate, Phase 1 — Basic & Pro)

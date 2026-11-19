@@ -20,6 +20,24 @@ This template is the R5 ledger-format deliverable. It supersedes the legacy form
 
 -------
 
+## 2026-11-20 — v3.39.5 GEMINI NATIVE SEND-ALL v2 — FIVE MANDATORY PARAMETERS INCLUDING EXPLICIT 0.0 PENALTIES (CLASS 1 PATCH)
+
+- **Date:** 2026-11-20 ~02:09 (KL time).
+- **Parent HEAD SHA:** `f18c8d3c5ced2744b8c110182546a2e42ef656f6` (v3.39.4).
+- **Status:** `VERIFIED_LOCAL` (pre-release; Owner subsequently ordered the Class 1 release in the same session).
+- **Release Commit SHA + CI Run ID:** confirmed in the final report after push/CI — no release requested in this mandate; never invented.
+- **Owner Decision:** Explicit reversal of the 2026-10-25 HYBRID GUARD. For BOTH official Gemini and Gemini via Crazy Router custom/proxy on the gemini-native door, the HTTP request MUST always carry `temperature`, `topP`, `thinkingLevel`, `frequencyPenalty`, `presencePenalty`; explicit `0.0` penalties are valid sendable values, not omissions. "Who told you not to send it? I did not order that." Fix immediately. Scope limited to the Gemini native door request builder and its coupled UI/documentation/test surfaces.
+- **Impact & Contract Audit (Phase A/B):** Zone A (Model & Parameters) + Zone C (Tri-Door) coupled work. Producer: `GeminiService` constructor/defaults and `buildGenerationConfig()` (all three branches); Native channel `buildRequest()`; consumer: Trinity Model Parameter panel capability descriptors/notes in `public/js/trinity-agents.js`. `translationProviderFactory.js` already forwarded penalties (N/A — no change). No response-schema change (Zone B N/A). Working tree clean at intake; HEAD == origin/main; no Owner uncommitted work to preserve.
+- **Reproduce-First Evidence:** New suite `gemini-sendall-v2-regression.test.js` written before production edits: **1 pass / 3 fail** (`.tmp/sendall-v2-red.log`) — strict-family suppression and explicit/default omission reproduced. Post-fix **4/4 PASS** (`.tmp/sendall-v2-green.log`).
+- **Independent Acceptance:** Full tracked suite **770 total / 769 PASS / 0 FAIL / 1 SKIP** (sole SKIP = pre-existing live-Redis concurrent-quota integration), exit 0 (`.tmp/sendall-v2-full-suite3.log`). One earlier run showed a timing-flaky retry-backoff assertion (`gap2 86ms > gap1 98ms`) caused by three concurrent hung Node test processes; after terminating only my own probe PIDs, the clean run passed — no assertion was weakened or removed. `node --check` PASS on all touched JS; Prettier clean on all five touched files; `git diff --check` clean. Wire verified through `buildGenerationConfig()` and `geminiChannel.buildRequest()` observable output for legacy, strict, 2.5, custom/proxy, explicit nonzero and default-zero cases.
+- **Residual / N/A Gates:** Playwright N/A (no DOM/CSS structure change; only descriptor objects and note strings in an existing panel; no new interactive state). Real-provider verification N/A (no live key used; this is a wire-shape contract verified by captured-config probes and regression tests — Owner's live production request remains the end-to-end confirmation, especially because strict-family providers may now return HTTP 400 by design). Version bump/CHANGELOG/release N/A (no release directive).
+- **Files Involved:** `src/services/gemini.js` (M: penalty defaults 0.0; unconditional emission in all three generation-config branches; HYBRID GUARD removal), `src/services/gemini-sendall-v2-regression.test.js` (A, 4 tests), `src/services/gemini-auth-model-regression.test.js` (M: 3 call sites re-anchored to five-parameter contract), `public/js/trinity-agents.js` (M: strict-family descriptors + notes re-anchored; 400-withheld hints removed), `docs/PROVIDER_CONTRACTS_REFERENCE.md` (M: §3 SEND-ALL v2), `.tmp/RELAY_STATE.md` (untracked relay checkpoint).
+- **npm test Status:** 770 total / 769 PASS / 0 FAIL / 1 SKIP, exit 0; log `.tmp/sendall-v2-full-suite3.log`.
+- **Next Steps:** Owner decision required before any Class 1 release (SemVer + CHANGELOG + single explicit-file-list commit + push + CI to SUCCESS). None taken in this mandate.
+- **Tool Navigation Ratio:** search_files=7 read_file=12 ratio=1:1.7 anchored=100% (12/12 reads) — every read was an anchored `slice` or `indentation` call; counts are approximate from this session's tool log.
+
+-------
+
 ## 2026-11-19 — SUBFABER v3.39.4 SCENE-GAP BATCH ALIGNMENT & PRO TERM-DRIFT TELEMETRY (CLASS 1 PATCH)
 
 - **Date:** 2026-11-19 ~22:10 (KL time).
