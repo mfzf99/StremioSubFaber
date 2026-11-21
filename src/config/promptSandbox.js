@@ -9,10 +9,12 @@
  *   - enabled TUNGGAL mengaktifkan; false = pengeluaran 100% rasmi.
  *   - Medan null = guna teks rasmi (core.js / malay.js TIDAK disentuh).
  *   - Format placeholder rasmi TUNGGAL: \${...} (sourceLabel, targetLabel,
- *     targetLabelShort, fewShot) — selari 100% dengan core.js (v3.39.2).
+ *     targetLabelShort, fewShot, targetLanguageRules) — selari core.js +
+ *     templat eksperimen Owner (v3.39.2 + TLR 2026-11-21).
  *   - Teks verbatim di hantar ke wayar; sifar mutasi eksport rasmi.
- *   - Hash8 = SHA-256(JSON.stringify([template, fewShot])) 8 hex pertama —
- *     dipakai cacheKeys untuk auto cache-busting sandbox.
+ *   - Hash8 = SHA-256(JSON.stringify([template, fewShot, rules])) 8 hex
+ *     pertama — dipakai cacheKeys untuk auto cache-busting sandbox
+ *     (3-tuple sejak TLR 2026-11-21; eksperimen pra-TLR dibust sekali).
  *   - Sandbox global per-deploy (D1): kuat selepas redeploy/restart.
  *
  * KESELAMATAN:
@@ -51,6 +53,9 @@ const promptSandboxConfig = {
     enabled: false,
     translationSystemTemplate: null,
     malayFewShot: null,
+    // [TARGET-LANGUAGE-RULES 2026-11-21] Rules khusus BM (token
+    // ${targetLanguageRules}); null = rasmi (malay.js pack).
+    malayTargetLanguageRules: null,
     // [SANDBOX-TUNING v3.39.7] Medan turun-naik (nullable) pada konfigurasi
     // fail penghantaran — selari dengan baris live Redis; null = default enjin.
     batchSize: null,
@@ -128,10 +133,10 @@ function resolveField(rawValue, fieldName, reasons) {
     return rawValue; // verbatim — .trim() is only used for the checks above
 }
 
-function computeHash8(effectiveTemplate, effectiveMalayFewShot) {
+function computeHash8(effectiveTemplate, effectiveMalayFewShot, effectiveRules) {
     return crypto
         .createHash('sha256')
-        .update(JSON.stringify([effectiveTemplate, effectiveMalayFewShot]), 'utf8')
+        .update(JSON.stringify([effectiveTemplate, effectiveMalayFewShot, effectiveRules]), 'utf8')
         .digest('hex')
         .slice(0, 8);
 }
@@ -154,6 +159,10 @@ let bootLogged = false;
 function resolvePromptSandbox(official) {
     const officialTemplate = String(official?.officialTemplate ?? '');
     const officialMalayFewShot = String(official?.officialMalayFewShot ?? '');
+    // [TARGET-LANGUAGE-RULES 2026-11-21] Rules official (pack malay.js;
+    // dipanggil dari malay pack .targetLanguageRules — nama medan official*
+    // kekal prefix malayFewShot-style).
+    const officialRules = String(official?.officialMalayTargetLanguageRules ?? '');
 
     // Lazy require elak kitaran modul (liveStore pula mengimport gate ini).
     const { getLiveRow } = require('../services/promptSandboxLiveStore');
@@ -180,6 +189,13 @@ function resolvePromptSandbox(official) {
         ? resolveField(source.translationSystemTemplate, 'translationSystemTemplate', reasons)
         : null;
     const sbxFewShot = wantsSandbox ? resolveField(source.malayFewShot, 'malayFewShot', reasons) : null;
+    // [TARGET-LANGUAGE-RULES 2026-11-21] Medan ketiga — semantik sama seperti
+    // fewShot: null = rasmi pack; string kosong/whitespace ditolak (bukan
+    // eksperimen senyap) — Owner yang mahu tiada rules membuang token
+    // daripada templat.
+    const sbxRules = wantsSandbox
+        ? resolveField(source.malayTargetLanguageRules, 'malayTargetLanguageRules', reasons)
+        : null;
 
     // [SANDBOX-TUNING v3.39.7] Tuning chunking/konteks berkongsi suis enabled
     // dengan teks prompt. Medan integer sahaja; nilai rosak → reason + null
@@ -204,15 +220,16 @@ function resolvePromptSandbox(official) {
 
     const effectiveTemplate = sbxTemplate ?? officialTemplate;
     const effectiveMalayFewShot = sbxFewShot ?? officialMalayFewShot;
-    const active = wantsSandbox && (sbxTemplate !== null || sbxFewShot !== null);
+    const effectiveRules = sbxRules ?? officialRules;
+    const active = wantsSandbox && (sbxTemplate !== null || sbxFewShot !== null || sbxRules !== null);
 
     if (wantsSandbox && !active) {
         reasons.push(
-            '[PromptSandbox] enabled=true but translationSystemTemplate/malayFewShot has no valid text — full fallback to the official template/pack (zero half-experiments).'
+            '[PromptSandbox] enabled=true but translationSystemTemplate/malayFewShot/malayTargetLanguageRules has no valid text — full fallback to the official template/pack (zero half-experiments).'
         );
     }
 
-    const hash8 = active ? computeHash8(effectiveTemplate, effectiveMalayFewShot) : null;
+    const hash8 = active ? computeHash8(effectiveTemplate, effectiveMalayFewShot, effectiveRules) : null;
 
     if (active && !bootLogged) {
         bootLogged = true;
@@ -225,6 +242,8 @@ function resolvePromptSandbox(official) {
     return {
         template: effectiveTemplate,
         malayFewShot: effectiveMalayFewShot,
+        // [TARGET-LANGUAGE-RULES 2026-11-21] Pasangan EFEKTIF 3-tuple.
+        malayTargetLanguageRules: effectiveRules,
         active,
         hash8,
         reasons,

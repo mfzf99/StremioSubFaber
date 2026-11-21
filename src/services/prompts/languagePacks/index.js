@@ -60,11 +60,12 @@ function isMalayTarget(targetLang) {
 
 /**
  * Resolve the canonical language pack for a target language.
- * [TOTAL-PURGE v3.36.0] Antara muka pack kini { code, aliases, fewShot }
- * SAHAJA — few-shot contoh isometrik Agent Translation ialah satu-satunya
- * wayar per-bahasa. Preflight/Inspector tidak lagi memakan pack.
+ * [TOTAL-PURGE v3.36.0] Antara muka pack { code, aliases, fewShot };
+ * [TARGET-LANGUAGE-RULES 2026-11-21] + targetLanguageRules (Malay =
+ * rules BM verbatim Owner; generic = string kosong). Preflight/Inspector
+ * tidak lagi memakan pack.
  * @param {string} targetLang - Bahasa sasaran (kod ISO atau nama paparan)
- * @returns {{code:string, aliases:string[], fewShot:string}}
+ * @returns {{code:string, aliases:string[], fewShot:string, targetLanguageRules:string}}
  */
 function getLanguagePack(targetLang) {
     return isMalayTarget(targetLang) ? malayPack : genericPack;

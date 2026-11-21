@@ -478,7 +478,9 @@ class TranslationEngine {
         // berkongsi pilihan yang sama (sifar oscilasi mid-flight).
         this._promptSandbox = resolvePromptSandbox({
             officialTemplate: TRANSLATION_SYSTEM_TEMPLATE,
-            officialMalayFewShot: getLanguagePack('Malay').fewShot
+            officialMalayFewShot: getLanguagePack('Malay').fewShot,
+            // [TARGET-LANGUAGE-RULES 2026-11-21] Official ketiga: rules BM.
+            officialMalayTargetLanguageRules: getLanguagePack('Malay').targetLanguageRules
         });
         this.translationTemplate = this._promptSandbox.template;
         // TOTAL PURGE (Mandat 2026-09-25): SubFaber ialah enjin tunggal.
@@ -3342,6 +3344,14 @@ class TranslationEngine {
             this._promptSandbox.active && isMalayTarget(targetLanguage)
                 ? this._promptSandbox.malayFewShot
                 : fewShotPack.fewShot;
+        // [TARGET-LANGUAGE-RULES 2026-11-21 — Mandat Owner] Rules EFEKTIF:
+        // sasaran Malay + sandbox aktif → rules eksperimen; selain itu →
+        // rules pack (Malay = rules BM; generic = string kosong → token
+        // ${targetLanguageRules} digugurkan bersih pada prompt generik).
+        const effectiveRules =
+            this._promptSandbox.active && isMalayTarget(targetLanguage)
+                ? this._promptSandbox.malayTargetLanguageRules
+                : fewShotPack.targetLanguageRules;
 
         // SHARED PROMPT ARCHITECTURE (Mandat 2026-09-26, Lingo 1:1 parity):
         // batchText kini entri aktif SAHAJA (tiada blok konteks) — startId
@@ -3412,7 +3422,12 @@ class TranslationEngine {
             ['sourceLabel', sourceLabel || 'the source language'],
             ['targetLabel', targetLabel || 'the target language'],
             ['targetLabelShort', targetLabel || 'target-language'],
-            ['fewShot', effectiveFewShot]
+            ['fewShot', effectiveFewShot],
+            // [TARGET-LANGUAGE-RULES 2026-11-21] Token ke-5; templat official
+            // tiada token ini (applyPlaceholder no-op pada wayar rasmi —
+            // byte-identik), templat eksperimen Owner menyuntik rules di
+            // hujung seksyen MEANING.
+            ['targetLanguageRules', effectiveRules]
         ].reduce((text, [token, value]) => applyPlaceholder(text, token, value), this.translationTemplate);
 
         // [TRINITY FASA 3 — Mandat Owner 2026-10-19] Pembungkusan channel-native:

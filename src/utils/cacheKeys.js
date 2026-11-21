@@ -142,7 +142,10 @@ function generateCacheKeys(config, sourceFileId, targetLang) {
     // atas JSON.stringify pasangan, 8 hex pertama.
     const promptSandbox = resolvePromptSandbox({
         officialTemplate: TRANSLATION_SYSTEM_TEMPLATE,
-        officialMalayFewShot: getLanguagePack('Malay').fewShot
+        officialMalayFewShot: getLanguagePack('Malay').fewShot,
+        // [TARGET-LANGUAGE-RULES 2026-11-21] Feed ketiga supaya hash8
+        // 3-tuple merangkumi rules eksperimen (auto cache-busting).
+        officialMalayTargetLanguageRules: getLanguagePack('Malay').targetLanguageRules
     });
     // [SANDBOX-TUNING v3.39.7] Suffix geometri chunking/konteks HANYA bila
     // medan tuning diisi pada baris sandbox: -tb{batch}p{prev}f{future}

@@ -388,7 +388,9 @@ test('[SBX-CACHE] generateCacheKeys dinamik: injection → v7-sbx-{hash8}; reset
         const sandboxKey = generateCacheKeys({}, 'tt123_en', 'ms').baseKey;
         const { hash8 } = resolvePromptSandbox({
             officialTemplate: TRANSLATION_SYSTEM_TEMPLATE,
-            officialMalayFewShot: getLanguagePack('Malay').fewShot
+            officialMalayFewShot: getLanguagePack('Malay').fewShot,
+            // [TARGET-LANGUAGE-RULES 2026-11-21] Feed ketiga selari cacheKeys.
+            officialMalayTargetLanguageRules: getLanguagePack('Malay').targetLanguageRules
         });
         assert.equal(
             sandboxKey,

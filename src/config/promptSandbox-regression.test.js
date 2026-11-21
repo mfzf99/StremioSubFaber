@@ -40,9 +40,15 @@ const { SUBFABER_PROMPT_BOUNDARY } = require('../services/utils/structuredPrompt
 
 const OFFICIAL_TEMPLATE = 'OFFICIAL TEMPLATE ${sourceLabel} -> ${targetLabel} ${fewShot}';
 const OFFICIAL_MALAY_FEWSHOT = '<example>\n<example_input>\nOFFICIAL FEWSHOT\n</example_input>\n</example>';
+// [TARGET-LANGUAGE-RULES 2026-11-21] Official ketiga bagi ujian 3-tuple.
+const OFFICIAL_MALAY_RULES = 'OFFICIAL RULES ${targetLanguageRules}';
 
-function resolve(officialTemplate = OFFICIAL_TEMPLATE, officialMalayFewShot = OFFICIAL_MALAY_FEWSHOT) {
-    return resolvePromptSandbox({ officialTemplate, officialMalayFewShot });
+function resolve(
+    officialTemplate = OFFICIAL_TEMPLATE,
+    officialMalayFewShot = OFFICIAL_MALAY_FEWSHOT,
+    officialMalayTargetLanguageRules = OFFICIAL_MALAY_RULES
+) {
+    return resolvePromptSandbox({ officialTemplate, officialMalayFewShot, officialMalayTargetLanguageRules });
 }
 
 // ── 1. Modul & API ──────────────────────────────────────────────────────
@@ -151,12 +157,14 @@ test('SBX-5: hash8 berubah per-aksara, berbeza antara varian, dan dikira atas pa
         assert.notEqual(mixed, a, 'hash pasangan efektif ≠ hash pasangan override penuh');
 
         const crypto = require('crypto');
+        // [TARGET-LANGUAGE-RULES 2026-11-21] Formula 3-tuple: medan rules
+        // (di sini official, kerana injection tidak menetapkannya).
         const expected = crypto
             .createHash('sha256')
-            .update(JSON.stringify(['SANDBOX TEMPLATE A', OFFICIAL_MALAY_FEWSHOT]), 'utf8')
+            .update(JSON.stringify(['SANDBOX TEMPLATE A', OFFICIAL_MALAY_FEWSHOT, OFFICIAL_MALAY_RULES]), 'utf8')
             .digest('hex')
             .slice(0, 8);
-        assert.equal(mixed, expected, 'hash8 = SHA-256(JSON.stringify([template, fewShot])) 8-hex');
+        assert.equal(mixed, expected, 'hash8 = SHA-256(JSON.stringify([template, fewShot, rules])) 8-hex');
     } finally {
         __resetPromptSandboxForTests();
     }

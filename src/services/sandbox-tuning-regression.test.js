@@ -237,7 +237,9 @@ test('SBX-T7: cacheKeys — prompt-sahaja byte-identik; +tuning → suffix; tuni
     const { getLanguagePack } = require('./prompts/languagePacks');
     const realOfficial = {
         officialTemplate: TRANSLATION_SYSTEM_TEMPLATE,
-        officialMalayFewShot: getLanguagePack('Malay').fewShot
+        officialMalayFewShot: getLanguagePack('Malay').fewShot,
+        // [TARGET-LANGUAGE-RULES 2026-11-21] Feed ketiga selari cacheKeys.
+        officialMalayTargetLanguageRules: getLanguagePack('Malay').targetLanguageRules
     };
 
     // (a) Prompt-sahaja: kunci mesti BYTE-IDENTIK dengan pra-v3.39.7.

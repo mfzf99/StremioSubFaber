@@ -197,7 +197,7 @@
                         <div class="section-heading">
                             <div>
                                 <p class="section-index">Active draft</p>
-                                <h2 id="editor-title">Two ingredients, one instruction.</h2>
+                                <h2 id="editor-title">Three ingredients, one instruction.</h2>
                             </div>
                             <label class="switch-control" for="enabled">
                                 <span class="switch-copy">
@@ -251,6 +251,7 @@
                                     <li><code>${targetLabel}</code> — full target language</li>
                                     <li><code>${targetLabelShort}</code> — short target language name</li>
                                     <li><code>${fewShot}</code> — dialogue examples for the target language</li>
+                                    <li><code>${targetLanguageRules}</code> — target language rules</li>
                                 </ul>
                             </details>
                         </div>
@@ -275,7 +276,34 @@
                             ></textarea>
                             <p class="field-error hidden" id="few-shot-error"></p>
                             <p class="field-help" id="few-shot-help">
-                                Leave either box completely empty to fall back to the official text for that part.
+                                Leave any box completely empty to fall back to the official text for that part.
+                            </p>
+                        </div>
+
+                        <div class="editor-field">
+                            <div class="editor-label-row">
+                                <div>
+                                    <label for="malayTargetLanguageRules">Malay Target Language Rules</label>
+                                    <p>
+                                        Language-specific rules injected where the prompt uses ${targetLanguageRules}.
+                                    </p>
+                                </div>
+                                <output id="rules-count" for="malayTargetLanguageRules">0 / 50,000 characters</output>
+                            </div>
+                            <textarea
+                                id="malayTargetLanguageRules"
+                                name="malayTargetLanguageRules"
+                                rows="6"
+                                spellcheck="false"
+                                autocapitalize="off"
+                                autocomplete="off"
+                                wrap="soft"
+                                aria-describedby="rules-help rules-error"
+                            ></textarea>
+                            <p class="field-error hidden" id="rules-error"></p>
+                            <p class="field-help" id="rules-help">
+                                Used only when the target language is Malay and the template contains
+                                ${targetLanguageRules}.
                             </p>
                         </div>
 

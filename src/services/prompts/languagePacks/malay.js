@@ -3,12 +3,13 @@
  * [STREAMLINE v3.37.0 — Mandat Owner 2026-11-15] fewShot baharu VERBATIM Owner:
  * 2 contoh — (1) ayat terpisah + demo anti-calque <bad_textbook> vs
  * <example_output> idiomatik, (2) SDH penuh (♪♪, label penutur, [br], <i>,
- * SFX). Antara muka pack kini { code, aliases, fewShot } SAHAJA: satu-satunya
- * wayar per-bahasa ialah few-shot contoh isometrik Agent Translation.
- * Semua medan sosiolinguistik MONKEY/KNP
- * (honorificMatrix, canonicalAddressMatrix, creditsExample, specificRules,
- * notLockedGuidance) DIKELUARKAN — prompt Preflight/Inspector tidak lagi
- * memakan language pack (kontrak 433-bahasa: prompt neutral-global).
+ * SFX). [TARGET-LANGUAGE-RULES 2026-11-21 — Mandat Owner] Antara muka pack
+ * kini { code, aliases, fewShot, targetLanguageRules }: dua wayar per-bahasa —
+ * few-shot contoh isometrik + rules khusus BM (token ${targetLanguageRules}).
+ * Medan MONKEY/KNP lama (honorificMatrix, canonicalAddressMatrix,
+ * creditsExample, specificRules, notLockedGuidance) TETAP DIKELUARKAN —
+ * prompt Preflight/Inspector tidak lagi memakan language pack (kontrak
+ * 433-bahasa: prompt neutral-global).
  *
  * Aliases (ms/my/mya/zsm/zzm...) diselesaikan oleh index.js getLanguagePack().
  * Bukan-Malay → generic.js. Bahasa Melayu TIDAK boleh bocor ke pack lain.
@@ -17,6 +18,14 @@
 const malayPack = {
     code: 'ms',
     aliases: ['ms', 'my', 'mya', 'zsm', 'zzm', 'malay', 'bahasa melayu', 'melayu', 'may'],
+
+    /**
+     * [TARGET-LANGUAGE-RULES 2026-11-21 — Mandat Owner] Rules khusus BM,
+     * teks VERBATIM Owner, disuntik melalui token ${targetLanguageRules}
+     * (templat eksperimen sandbox Owner meletakkannya di hujung seksyen
+     * MEANING). Generic pack membawa string kosong.
+     */
+    targetLanguageRules: `- Use natural Malaysian Malay (tak, dah, boleh, kereta, telefon)—NEVER Indonesian (nggak, udah, bisa, mobil, ponsel). Keep "we/our" accurate: "kita" if listener is included, "kami" if excluded. Match pronouns (saya/awak, aku/kau, kinship terms) to the characters' relationship and keep them consistent across the scene.`,
 
     /**
      * [STREAMLINE 2026-11-15] 2 contoh few-shot VERBATIM Owner baharu:

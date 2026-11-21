@@ -2,6 +2,22 @@
 
 All notable changes to this project will be documented in this file.
 
+## SubFaber v3.40.0 (2026-11-21) — Target Language Rules Placeholder & Third Sandbox Experiment Field
+
+### Added
+
+- **Fifth interpolation token `${targetLanguageRules}`** in the translation engine. The engine now interpolates a per-target rules block alongside `${sourceLabel}` / `${targetLabel}` / `${targetLabelShort}` / `${fewShot}`; the official template is untouched (official wire stays byte-identical), while Owner experiment templates can place the token wherever needed (typically at the end of the MEANING section).
+- **`targetLanguageRules` field in the Malay language pack** carrying the Owner's verbatim rules: natural Malaysian Malay vocabulary (tak, dah, boleh, kereta, telefon), a hard ban on Indonesianisms (nggak, udah, bisa, mobil, ponsel), inclusive/exclusive "kita"/"kami" accuracy, and relationship-matched pronouns (saya/awak, aku/kau, kinship terms) kept consistent across a scene. The generic pack ships an empty string, so the token is dropped cleanly for all non-Malay targets — the 433-language neutral contract holds and no Malay text can leak into other targets.
+- **Third experiment field "Malay Target Language Rules" in the `/sandbox` panel** — same experiment loop as the prompt text and few-shot: same Redis row, same enable switch, same Save & Activate / Reset to Official, per-field empty fallback to the official pack text, friendly field errors, character counter, and Copy Draft integration. The placeholder guide now lists all five supported tokens.
+
+### Changed
+
+- **Sandbox hash8 widened to a 3-tuple** `SHA-256(JSON.stringify([template, fewShot, rules]))` (first 8 hex). Rule-only experiments now produce a fresh `-sbx-{hash8}` cache namespace automatically; existing experiments get one cache bust on upgrade. The mandatory-placeholder warning list intentionally stays at `sourceLabel` / `targetLabel` / `fewShot` (v3.39.3 Owner decision — the official template carries no `${targetLanguageRules}`, so warning on it would be a false positive on every save).
+
+### Verified
+
+- Red-first: new `target-language-rules-regression` suite observed 8/10 failing before production edits, 10/10 after; collateral suites 126/126; full tracked suite **796 total / 795 PASS / 0 FAIL / 1 SKIP** (sole SKIP = pre-existing live-Redis integration). Playwright live loop on the local server: third box rendered with the 319-character official fallback, `PUT` with experimental rules activated (`hash8` confirmed), reload rehydrated from Redis, whitespace-only rules rejected with a friendly `fieldErrors` 400, Reset restored the official text. `node --check`, Prettier, and ESLint clean.
+
 ## SubFaber v3.39.9 (2026-11-21) — Sandbox Tuning Range Widening & Label Hints
 
 ### Changed

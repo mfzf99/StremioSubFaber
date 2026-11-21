@@ -214,6 +214,9 @@ function validateRow(row) {
     }
     const templateOk = checkTextField('translationSystemTemplate', row?.translationSystemTemplate);
     checkTextField('malayFewShot', row?.malayFewShot);
+    // [TARGET-LANGUAGE-RULES 2026-11-21] Medan teks ketiga — semantik sama
+    // seperti malayFewShot (null = rasmi; whitespace ditolak mesra).
+    checkTextField('malayTargetLanguageRules', row?.malayTargetLanguageRules);
 
     // AMARAN MESRA (bukan ralat): placeholder tertinggal — terjemahan tetap
     // berjalan; Owner kekal bebas (keputusan D4). Bila kedua-dua medan rosak,
@@ -249,8 +252,10 @@ function sanitizeRow(raw) {
     if (typeof raw.enabled !== 'boolean') return null;
     const t = raw.translationSystemTemplate;
     const f = raw.malayFewShot;
+    const r = raw.malayTargetLanguageRules;
     if (t !== null && t !== undefined && typeof t !== 'string') return null;
     if (f !== null && f !== undefined && typeof f !== 'string') return null;
+    if (r !== null && r !== undefined && typeof r !== 'string') return null;
     const tuning = {};
     for (const field of TUNING_FIELDS) {
         const v = raw[field];
@@ -262,6 +267,9 @@ function sanitizeRow(raw) {
         enabled: raw.enabled,
         translationSystemTemplate: typeof t === 'string' ? t : null,
         malayFewShot: typeof f === 'string' ? f : null,
+        // [TARGET-LANGUAGE-RULES 2026-11-21] Baris legasi tanpa medan → null
+        // (fall-back rasmi pack) — kompatibel ke belakang.
+        malayTargetLanguageRules: typeof r === 'string' ? r : null,
         batchSize: tuning.batchSize,
         previousContextSize: tuning.previousContextSize,
         futureContextSize: tuning.futureContextSize,
@@ -285,6 +293,8 @@ async function saveLiveRow(row) {
         enabled: row.enabled === true,
         translationSystemTemplate: row.translationSystemTemplate ?? null,
         malayFewShot: row.malayFewShot ?? null,
+        // [TARGET-LANGUAGE-RULES 2026-11-21] Persist rules eksperimen.
+        malayTargetLanguageRules: row.malayTargetLanguageRules ?? null,
         // [SANDBOX-TUNING v3.39.7] Persist medan tuning (null = default enjin);
         // validateRow di atas sudah menolak nilai luar julat sebelum ke sini.
         batchSize: row.batchSize ?? null,

@@ -1,7 +1,10 @@
 /**
  * [TOTAL-PURGE v3.36.0 — Mandat Owner 2026-11-15] Language Pack — GENERIC
  * (neutral fallback untuk semua bahasa sasaran bukan-Malay, kontrak
- * 433-bahasa). Antara muka pack kini { code, aliases, fewShot } SAHAJA.
+ * 433-bahasa). [TARGET-LANGUAGE-RULES 2026-11-21] Antara muka pack kini
+ * { code, aliases, fewShot, targetLanguageRules } — generic KALAH dgn
+ * targetLanguageRules '' (string kosong): token ${targetLanguageRules}
+ * digugurkan bersih pada prompt, sifar teks khusus-bahasa.
  *
  * fewShot kekal META-PLACEHOLDER (sifar teks khusus-bahasa): struktur
  * isometrik sama dengan malay.js tetapi output contoh ialah perihal
@@ -12,6 +15,13 @@
 const genericPack = {
     code: 'generic',
     aliases: [],
+
+    /**
+     * [TARGET-LANGUAGE-RULES 2026-11-21 — Mandat Owner] String kosong:
+     * tiada rules khusus-bahasa untuk sasaran generik — token
+     * ${targetLanguageRules} digugurkan bersih (sifar BM/konkrit).
+     */
+    targetLanguageRules: '',
 
     fewShot: `<example>
 <example_input>

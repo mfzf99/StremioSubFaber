@@ -121,14 +121,22 @@ function registerSandboxRoutes(app, deps = {}) {
         const { getLanguagePack } = require('../services/prompts/languagePacks');
         const officialTemplate = TRANSLATION_SYSTEM_TEMPLATE;
         const officialMalayFewShot = getLanguagePack('Malay').fewShot;
-        const eff = resolvePromptSandbox({ officialTemplate, officialMalayFewShot });
+        // [TARGET-LANGUAGE-RULES 2026-11-21] Official ketiga: rules pack BM.
+        const officialMalayTargetLanguageRules = getLanguagePack('Malay').targetLanguageRules;
+        const eff = resolvePromptSandbox({
+            officialTemplate,
+            officialMalayFewShot,
+            officialMalayTargetLanguageRules
+        });
         const liveRow = liveStore.getLiveRow();
         return {
             officialTemplate,
             officialMalayFewShot,
+            officialMalayTargetLanguageRules,
             enabled: liveRow ? liveRow.enabled === true : promptSandboxConfig.enabled === true,
             translationSystemTemplate: liveRow ? liveRow.translationSystemTemplate : null,
             malayFewShot: liveRow ? liveRow.malayFewShot : null,
+            malayTargetLanguageRules: liveRow ? liveRow.malayTargetLanguageRules : null,
             // [SANDBOX-TUNING v3.39.7] Medan tuning aktif (null = default
             // enjin) + defaults/julat supaya frontend tidak pernah hardcode.
             batchSize: liveRow ? liveRow.batchSize : null,
@@ -213,6 +221,9 @@ function registerSandboxRoutes(app, deps = {}) {
             enabled: body.enabled,
             translationSystemTemplate: body.translationSystemTemplate ?? null,
             malayFewShot: body.malayFewShot ?? null,
+            // [TARGET-LANGUAGE-RULES 2026-11-21] Medan eksperimen ketiga
+            // (nullable — klien legasi pra-TLR kekal sah).
+            malayTargetLanguageRules: body.malayTargetLanguageRules ?? null,
             // [SANDBOX-TUNING v3.39.7] Medan tuning nullable — klien legasi
             // tanpa medan ini kekal sah (undefined → null = default enjin).
             batchSize: body.batchSize ?? null,

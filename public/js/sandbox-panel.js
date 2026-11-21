@@ -64,10 +64,13 @@
             'status-note',
             'translationSystemTemplate',
             'malayFewShot',
+            'malayTargetLanguageRules',
             'template-count',
             'few-shot-count',
+            'rules-count',
             'template-error',
             'few-shot-error',
+            'rules-error',
             'save-config',
             'save-label',
             'copy-draft',
@@ -119,7 +122,8 @@
     function hasOversizedField() {
         return (
             elements.translationSystemTemplate.value.length > MAX_FIELD_CHARS ||
-            elements.malayFewShot.value.length > MAX_FIELD_CHARS
+            elements.malayFewShot.value.length > MAX_FIELD_CHARS ||
+            elements.malayTargetLanguageRules.value.length > MAX_FIELD_CHARS
         );
     }
 
@@ -143,6 +147,7 @@
         elements.enabled.disabled = isBusy;
         elements.translationSystemTemplate.readOnly = isBusy;
         elements.malayFewShot.readOnly = isBusy;
+        elements.malayTargetLanguageRules.readOnly = isBusy;
         elements['batch-size'].disabled = isBusy;
         elements['previous-context-size'].disabled = isBusy;
         elements['future-context-size'].disabled = isBusy;
@@ -188,6 +193,7 @@
         elements.enabled.checked = false;
         elements.translationSystemTemplate.value = '';
         elements.malayFewShot.value = '';
+        elements.malayTargetLanguageRules.value = '';
         applyTuningValue('batch-size', null);
         applyTuningValue('previous-context-size', null);
         applyTuningValue('future-context-size', null);
@@ -406,6 +412,12 @@
                 output: elements['few-shot-count'],
                 error: elements['few-shot-error'],
                 label: 'Malay Few-Shot Examples'
+            },
+            {
+                input: elements.malayTargetLanguageRules,
+                output: elements['rules-count'],
+                error: elements['rules-error'],
+                label: 'Malay Target Language Rules'
             }
         ].forEach(function (field) {
             var length = field.input.value.length;
@@ -430,6 +442,8 @@
             return { input: elements.translationSystemTemplate, error: elements['template-error'] };
         }
         if (fieldName === 'malayFewShot') return { input: elements.malayFewShot, error: elements['few-shot-error'] };
+        if (fieldName === 'malayTargetLanguageRules')
+            return { input: elements.malayTargetLanguageRules, error: elements['rules-error'] };
         if (fieldName === 'batchSize') return { input: elements['batch-size'], error: elements['batch-size-error'] };
         if (fieldName === 'previousContextSize')
             return { input: elements['previous-context-size'], error: elements['previous-context-size-error'] };
@@ -458,6 +472,7 @@
         if (
             typeof snapshot.officialTemplate !== 'string' ||
             typeof snapshot.officialMalayFewShot !== 'string' ||
+            typeof snapshot.officialMalayTargetLanguageRules !== 'string' ||
             typeof snapshot.active !== 'boolean'
         ) {
             throw new ApiError(200, { error: 'invalid_response' });
@@ -472,6 +487,10 @@
                 : snapshot.officialTemplate;
         elements.malayFewShot.value =
             typeof snapshot.malayFewShot === 'string' ? snapshot.malayFewShot : snapshot.officialMalayFewShot;
+        elements.malayTargetLanguageRules.value =
+            typeof snapshot.malayTargetLanguageRules === 'string'
+                ? snapshot.malayTargetLanguageRules
+                : snapshot.officialMalayTargetLanguageRules;
         elements.enabled.checked = snapshot.enabled === true;
         elements['enabled-value'].textContent = elements.enabled.checked ? 'ON' : 'OFF';
         elements['enabled-status'].textContent = elements.enabled.checked ? 'ON' : 'OFF';
@@ -551,6 +570,7 @@
             enabled: elements.enabled.checked,
             translationSystemTemplate: elements.translationSystemTemplate.value || null,
             malayFewShot: elements.malayFewShot.value || null,
+            malayTargetLanguageRules: elements.malayTargetLanguageRules.value || null,
             batchSize: tuning.batchSize,
             previousContextSize: tuning.previousContextSize,
             futureContextSize: tuning.futureContextSize
@@ -610,7 +630,9 @@
             '=== translationSystemTemplate ===',
             elements.translationSystemTemplate.value,
             '=== malayFewShot ===',
-            elements.malayFewShot.value
+            elements.malayFewShot.value,
+            '=== malayTargetLanguageRules ===',
+            elements.malayTargetLanguageRules.value
         ].join('\n');
     }
 
@@ -744,6 +766,9 @@
         });
         elements.malayFewShot.addEventListener('input', function () {
             markDirty('malayFewShot');
+        });
+        elements.malayTargetLanguageRules.addEventListener('input', function () {
+            markDirty('malayTargetLanguageRules');
         });
         ['batch-size', 'previous-context-size', 'future-context-size'].forEach(function (id) {
             elements[id].addEventListener('input', function () {
