@@ -116,7 +116,7 @@ function registerSandboxRoutes(app, deps = {}) {
     // ── Status efektif — SSUT resolver + snapshot live ────────────────────
     function effectiveSnapshot() {
         const liveStore = loadLiveStore();
-        const { resolvePromptSandbox, promptSandboxConfig } = loadResolver();
+        const { resolvePromptSandbox, promptSandboxConfig, TUNING_LIMITS } = loadResolver();
         const { TRANSLATION_SYSTEM_TEMPLATE } = require('../services/prompts/trinity/translation/core');
         const { getLanguagePack } = require('../services/prompts/languagePacks');
         const officialTemplate = TRANSLATION_SYSTEM_TEMPLATE;
@@ -129,6 +129,25 @@ function registerSandboxRoutes(app, deps = {}) {
             enabled: liveRow ? liveRow.enabled === true : promptSandboxConfig.enabled === true,
             translationSystemTemplate: liveRow ? liveRow.translationSystemTemplate : null,
             malayFewShot: liveRow ? liveRow.malayFewShot : null,
+            // [SANDBOX-TUNING v3.39.7] Medan tuning aktif (null = default
+            // enjin) + defaults/julat supaya frontend tidak pernah hardcode.
+            batchSize: liveRow ? liveRow.batchSize : null,
+            previousContextSize: liveRow ? liveRow.previousContextSize : null,
+            futureContextSize: liveRow ? liveRow.futureContextSize : null,
+            engineDefaults: { batchSize: 200, previousContextSize: 20, futureContextSize: 10 },
+            limits: [
+                { field: 'batchSize', min: TUNING_LIMITS.batchSize.min, max: TUNING_LIMITS.batchSize.max },
+                {
+                    field: 'previousContextSize',
+                    min: TUNING_LIMITS.previousContextSize.min,
+                    max: TUNING_LIMITS.previousContextSize.max
+                },
+                {
+                    field: 'futureContextSize',
+                    min: TUNING_LIMITS.futureContextSize.min,
+                    max: TUNING_LIMITS.futureContextSize.max
+                }
+            ],
             active: eff.active,
             hash8: eff.hash8,
             reasons: eff.reasons,
@@ -193,7 +212,12 @@ function registerSandboxRoutes(app, deps = {}) {
         const row = {
             enabled: body.enabled,
             translationSystemTemplate: body.translationSystemTemplate ?? null,
-            malayFewShot: body.malayFewShot ?? null
+            malayFewShot: body.malayFewShot ?? null,
+            // [SANDBOX-TUNING v3.39.7] Medan tuning nullable — klien legasi
+            // tanpa medan ini kekal sah (undefined → null = default enjin).
+            batchSize: body.batchSize ?? null,
+            previousContextSize: body.previousContextSize ?? null,
+            futureContextSize: body.futureContextSize ?? null
         };
         try {
             const warnings = liveStore.validateRow(row).warnings;

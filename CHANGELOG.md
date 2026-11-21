@@ -2,6 +2,22 @@
 
 All notable changes to this project will be documented in this file.
 
+## SubFaber v3.39.7 (2026-11-21) — Sandbox Chunking & Context Tuning Controls
+
+### Added
+
+- **Chunking & context tuning fields in the Prompt Sandbox panel (`/sandbox`).** The Owner can now tune `batchSize` (1–400), `previousContextSize` (0–30), and `futureContextSize` (0–15) live through the same experiment loop as the prompt text: same Redis row (`session:sandbox:prompt-config`), same single enable switch, same Save & Activate / Reset to Official actions, no restart or redeploy. Fields start empty with grey placeholders showing the real engine defaults (200/20/10); an empty field falls back to the engine default, and `0` is a valid explicit value for the context fields (the `<previous_translated>` / `<future_source>` blocks are dropped entirely).
+- **`TUNING_LIMITS` single source of truth** in `src/config/promptSandbox.js`, shared by panel validation, engine defensive sanitization, and the GET config payload (which also returns `engineDefaults` and `limits`, so the frontend never hardcodes numbers).
+- **Engine consumption without signature changes.** `src/services/translationEngine.js` reads the validated tuning from the already-resolved sandbox row (`sanitizeTuningValue`: reject at save, default at read — no silent clamping) into `batchSize` / `previousWindowSize` / `futureWindowSize`; `_prepareSubfaberContext` and the sequential/parallel batch builders consume the instance fields. Production without a sandbox row stays exactly 200/20/10.
+- **Cache-key geometry suffix.** `src/utils/cacheKeys.js` appends `-tb{B}p{P}f{F}` only when a tuning value is set, so experiments with different batch/context geometry never share cached output with each other or with production; prompt-only sandbox keys remain byte-identical to v3.39.6, and untouched production keys stay `universal-v7`.
+- **API contract extension.** `PUT /api/sandbox/config` persists the three nullable fields (legacy clients without them remain valid); `GET /api/sandbox/config` returns the active values plus `engineDefaults` and `limits`; out-of-range or non-integer values are rejected with the existing `fieldErrors[]` UX.
+
+### Verified
+
+- Red-first regression evidence: services suite observed 8 fail / 1 pass and routes suite 2 new fails before any production edit (`.tmp/sbx-tuning-red.log`); all green after implementation.
+- New pins: `src/services/sandbox-tuning-regression.test.js` (SBX-T1–T8: validation ranges, legacy-row compatibility, resolver gating, engine geometry 40/5/3, explicit-zero context, defaults pin, layered defense for corrupted rows, four cache-namespace states, end-to-end XML window sizes) and two route contract tests (SBX-API-TUNING-1/2).
+- Full tracked suite: **786 tests, 785 passed, 0 failed, 1 skipped** (sole skip = pre-existing live-Redis concurrent-quota integration), exit 0. Live HTTP probe and Playwright real-flow on the local server: unlock → empty fields with placeholders from GET → save `40/5/3` → reload rehydrates → invalid `500` blocked client-side with inline error → reset returns fields to empty with placeholders; dark theme, 360px single-column without horizontal overflow, zero console errors.
+
 ## SubFaber v3.39.6 (2026-11-20) — Gemini Reconfigure Parameter Persistence & Rotation Parity
 
 ### Fixed

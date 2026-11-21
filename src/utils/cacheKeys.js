@@ -144,7 +144,28 @@ function generateCacheKeys(config, sourceFileId, targetLang) {
         officialTemplate: TRANSLATION_SYSTEM_TEMPLATE,
         officialMalayFewShot: getLanguagePack('Malay').fewShot
     });
-    const promptNamespace = promptSandbox.active ? `universal-v7-sbx-${promptSandbox.hash8}` : 'universal-v7';
+    // [SANDBOX-TUNING v3.39.7] Suffix geometri chunking/konteks HANYA bila
+    // medan tuning diisi pada baris sandbox: -tb{batch}p{prev}f{future}
+    // (komponen null digugurkan). Eksperimen batch 40 tidak berkongsi cache
+    // dengan batch 200; teks-prompt-sahaja & produksi kekal BYTE-IDENTIK
+    // dengan pra-v3.39.7 (pin SBX-T7). Enjin yang membaca kunci inilah yang
+    // membina geometri — kedua-duanya diselesaikan daripada baris sandbox
+    // yang sama, jadi kunci dan geometri tidak boleh berpisah.
+    const tuningParts = [];
+    if (promptSandbox.tuningActive) {
+        const t = promptSandbox.tuning || {};
+        if (t.batchSize !== null && t.batchSize !== undefined) tuningParts.push(`b${t.batchSize}`);
+        if (t.previousContextSize !== null && t.previousContextSize !== undefined)
+            tuningParts.push(`p${t.previousContextSize}`);
+        if (t.futureContextSize !== null && t.futureContextSize !== undefined)
+            tuningParts.push(`f${t.futureContextSize}`);
+    }
+    const tuningSuffix = tuningParts.length > 0 ? `-t${tuningParts.join('')}` : '';
+    const promptNamespace = promptSandbox.active
+        ? `universal-v7-sbx-${promptSandbox.hash8}${tuningSuffix}`
+        : tuningSuffix.length > 0
+          ? `universal-v7${tuningSuffix}`
+          : 'universal-v7';
     const sourceKey = `${sourceFileId}_${targetLang}_trinity-${trinityMode}-${promptNamespace}_ch-${trinityChannel}`;
     // When ASS passthrough is enabled, append format discriminator to prevent
     // ASS-format cached translations from being served to users expecting SRT

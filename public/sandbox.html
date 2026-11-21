@@ -274,6 +274,66 @@
                                 Leave either box completely empty to fall back to the official text for that part.
                             </p>
                         </div>
+
+                        <div class="tuning-section">
+                            <div class="tuning-heading">
+                                <div>
+                                    <h3 class="tuning-title">Chunking & Context</h3>
+                                    <p class="tuning-copy">
+                                        Tune how the engine splits lines and remembers context. Empty = engine default.
+                                    </p>
+                                </div>
+                            </div>
+                            <div class="tuning-grid">
+                                <div class="tuning-field">
+                                    <label for="batch-size">Batch Size</label>
+                                    <input
+                                        id="batch-size"
+                                        type="number"
+                                        inputmode="numeric"
+                                        step="1"
+                                        placeholder="200"
+                                        aria-describedby="batch-size-help batch-size-error"
+                                    />
+                                    <p class="field-help" id="batch-size-help">Lines per AI batch call.</p>
+                                    <p class="field-error hidden" id="batch-size-error"></p>
+                                </div>
+                                <div class="tuning-field">
+                                    <label for="previous-context-size">Previous Context</label>
+                                    <input
+                                        id="previous-context-size"
+                                        type="number"
+                                        inputmode="numeric"
+                                        step="1"
+                                        placeholder="20"
+                                        aria-describedby="previous-context-size-help previous-context-size-error"
+                                    />
+                                    <p class="field-help" id="previous-context-size-help">
+                                        Finished translation lines from earlier batches, sent for consistency.
+                                    </p>
+                                    <p class="field-error hidden" id="previous-context-size-error"></p>
+                                </div>
+                                <div class="tuning-field">
+                                    <label for="future-context-size">Future Context</label>
+                                    <input
+                                        id="future-context-size"
+                                        type="number"
+                                        inputmode="numeric"
+                                        step="1"
+                                        placeholder="10"
+                                        aria-describedby="future-context-size-help future-context-size-error"
+                                    />
+                                    <p class="field-help" id="future-context-size-help">
+                                        Upcoming source lines used as lookahead, never translated.
+                                    </p>
+                                    <p class="field-error hidden" id="future-context-size-error"></p>
+                                </div>
+                            </div>
+                            <p class="tuning-note">
+                                0 is a valid explicit value for context fields (blocks are dropped). Changes apply to
+                                new translations only.
+                            </p>
+                        </div>
                     </section>
 
                     <div class="action-dock">
@@ -325,8 +385,8 @@
                         </button>
                     </div>
                     <p class="save-explainer">
-                        Saving always sends both fields at once. Changes take effect on new translations, not on
-                        subtitles that have already been completed.
+                        Saving sends all fields at once. Changes take effect on new translations, not on subtitles that
+                        have already been completed.
                     </p>
                 </form>
             </div>

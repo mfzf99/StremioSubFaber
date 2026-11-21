@@ -39,7 +39,8 @@ const { SUBFABER_PROMPT_BOUNDARY } = require('./utils/structuredPrompt');
 // Gate SSUT KONGSI dari resolver — override uji-sahaja (__setTestContextForTests)
 // menyegerakkan kedua-dua lapisan. Kitaran require selamat: promptSandbox
 // hanya lazy-mem-require modul ini DALAM resolvePromptSandbox.
-const { isTestContext } = require('../config/promptSandbox');
+// [SANDBOX-TUNING v3.39.7] TUNING_LIMITS turut dikongsi (SSUT julat medan).
+const { isTestContext, TUNING_LIMITS } = require('../config/promptSandbox');
 
 const SANDBOX_REDIS_KEY = 'sandbox:prompt-config';
 const SNAPSHOT_TTL_MS = 2000; // Tetingkap micro-cache lintas-replica
@@ -138,6 +139,8 @@ function invalidate() {
  * Pengesahan baris (dipakai oleh saveLiveRow dan sanitizeRow pembacaan).
  * @returns {{fieldErrors: Array, warnings: Array}} keputusan pengesahan.
  */
+const TUNING_FIELDS = ['batchSize', 'previousContextSize', 'futureContextSize'];
+
 function validateRow(row) {
     const fieldErrors = [];
     const warnings = [];
@@ -173,6 +176,34 @@ function validateRow(row) {
         }
         return true;
     };
+    // [SANDBOX-TUNING v3.39.7] Medan integer: null/undefined = default enjin
+    // (sah); integer dalam julat sah; selain itu ditolak dengan fieldErrors[]
+    // mesra frontend. 0 ialah nilai sah EKSPLISIT bagi medan konteks (blok
+    // context gugur) — bukan keadaan kosong.
+    const checkCountField = (field, value) => {
+        if (value === null || value === undefined) return true;
+        const limits = TUNING_LIMITS[field];
+        if (typeof value !== 'number' || !Number.isInteger(value)) {
+            fieldErrors.push({
+                field,
+                code: 'invalid_type',
+                message: `${field} must be a whole number between ${limits.min} and ${limits.max} (or empty for the engine default).`
+            });
+            return false;
+        }
+        if (value < limits.min || value > limits.max) {
+            fieldErrors.push({
+                field,
+                code: 'out_of_range',
+                message: `${field} must be between ${limits.min} and ${limits.max} (got ${value}).`
+            });
+            return false;
+        }
+        return true;
+    };
+    for (const field of TUNING_FIELDS) {
+        checkCountField(field, row?.[field]);
+    }
 
     if (typeof row?.enabled !== 'boolean') {
         fieldErrors.push({
@@ -207,7 +238,12 @@ function validateRow(row) {
     return { fieldErrors, warnings };
 }
 
-/** Sanitasi baris yang dibaca dari storan (edisi tangan / replika lama). */
+/**
+ * Sanitasi baris yang dibaca dari storan (edisi tangan / replika lama).
+ * [SANDBOX-TUNING v3.39.7] Medan tuning: integer dalam julat dikekalkan;
+ * selain itu (termasuk baris LEGASI pra-v3.39.7 tanpa medan) → null =
+ * default enjin. Baris legasi kekal 100% sah — tiada migrasi diperlukan.
+ */
 function sanitizeRow(raw) {
     if (!raw || typeof raw !== 'object') return null;
     if (typeof raw.enabled !== 'boolean') return null;
@@ -215,11 +251,20 @@ function sanitizeRow(raw) {
     const f = raw.malayFewShot;
     if (t !== null && t !== undefined && typeof t !== 'string') return null;
     if (f !== null && f !== undefined && typeof f !== 'string') return null;
+    const tuning = {};
+    for (const field of TUNING_FIELDS) {
+        const v = raw[field];
+        const limits = TUNING_LIMITS[field];
+        tuning[field] = typeof v === 'number' && Number.isInteger(v) && v >= limits.min && v <= limits.max ? v : null;
+    }
     return {
         schema: 1,
         enabled: raw.enabled,
         translationSystemTemplate: typeof t === 'string' ? t : null,
         malayFewShot: typeof f === 'string' ? f : null,
+        batchSize: tuning.batchSize,
+        previousContextSize: tuning.previousContextSize,
+        futureContextSize: tuning.futureContextSize,
         savedAt: typeof raw.savedAt === 'string' ? raw.savedAt : null
     };
 }
@@ -240,6 +285,11 @@ async function saveLiveRow(row) {
         enabled: row.enabled === true,
         translationSystemTemplate: row.translationSystemTemplate ?? null,
         malayFewShot: row.malayFewShot ?? null,
+        // [SANDBOX-TUNING v3.39.7] Persist medan tuning (null = default enjin);
+        // validateRow di atas sudah menolak nilai luar julat sebelum ke sini.
+        batchSize: row.batchSize ?? null,
+        previousContextSize: row.previousContextSize ?? null,
+        futureContextSize: row.futureContextSize ?? null,
         savedAt: new Date().toISOString()
     };
     await adapter.set(SANDBOX_REDIS_KEY, persist, StorageAdapter.CACHE_TYPES.SESSION, null);

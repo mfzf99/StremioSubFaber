@@ -445,6 +445,105 @@ test('SBX-API-9: dua PUT berulang pada templat rasmi → warnings sentiasa koson
     }
 });
 
+test('SBX-API-TUNING-1: PUT config dengan medan tuning — 200, persist membawa tuning, GET memulangkan nilai + defaults enjin', async () => {
+    const app = makeApp();
+    registerSandboxRoutes(app, baseDeps());
+    const prev = process.env.SANDBOX_ADMIN_KEY;
+    try {
+        process.env.SANDBOX_ADMIN_KEY = ADMIN_KEY;
+        __setTestContextForTests(false);
+        const adapter = makeFakeAdapter();
+        __setAdapterForTests(adapter);
+        __resetLiveRowForTests();
+
+        const saved = await dispatch(app, 'put', '/api/sandbox/config', {
+            headers: authHeaders(),
+            body: {
+                enabled: true,
+                translationSystemTemplate: null,
+                malayFewShot: null,
+                batchSize: 40,
+                previousContextSize: 5,
+                futureContextSize: 3
+            }
+        });
+        assert.equal(saved.res.statusCode, 200, 'PUT dengan tuning sah diterima');
+        const { StorageAdapter: SA } = require('../storage');
+        const persisted = adapter.store.get(`${SA.CACHE_TYPES.SESSION}:sandbox:prompt-config`);
+        assert.equal(persisted.batchSize, 40, 'persist membawa batchSize');
+        assert.equal(persisted.previousContextSize, 5, 'persist membawa previousContextSize');
+        assert.equal(persisted.futureContextSize, 3, 'persist membawa futureContextSize');
+
+        const got = await dispatch(app, 'get', '/api/sandbox/config', { headers: authHeaders() });
+        assert.equal(got.res.statusCode, 200);
+        const b = got.res.body;
+        assert.equal(b.batchSize, 40, 'GET memulangkan batchSize aktif');
+        assert.equal(b.previousContextSize, 5, 'GET memulangkan previousContextSize aktif');
+        assert.equal(b.futureContextSize, 3, 'GET memulangkan futureContextSize aktif');
+        assert.deepEqual(
+            b.engineDefaults,
+            { batchSize: 200, previousContextSize: 20, futureContextSize: 10 },
+            'GET membawa defaults enjin (frontend tidak pernah hardcode)'
+        );
+        assert.ok(Array.isArray(b.limits), 'GET membawa limits julat untuk UI');
+
+        // Baris aktif TIADA teks prompt (kedua-duanya null) — eksperimen tuning
+        // sahaja; hash8 prompt kekal null (tiada perubahan teks prompt).
+        assert.equal(b.active, false, 'tuning sahaja tidak mengaktifkan namespace prompt');
+    } finally {
+        if (prev === undefined) delete process.env.SANDBOX_ADMIN_KEY;
+        else process.env.SANDBOX_ADMIN_KEY = prev;
+        __setTestContextForTests(null);
+        __resetLiveRowForTests();
+        __setAdapterForTests(null);
+    }
+});
+
+test('SBX-API-TUNING-2: PUT tuning luar julat / bukan integer → 400 fieldErrors[]', async () => {
+    const app = makeApp();
+    registerSandboxRoutes(app, baseDeps());
+    const prev = process.env.SANDBOX_ADMIN_KEY;
+    try {
+        process.env.SANDBOX_ADMIN_KEY = ADMIN_KEY;
+        __setTestContextForTests(false);
+        __setAdapterForTests(makeFakeAdapter());
+        __resetLiveRowForTests();
+
+        const tooBig = await dispatch(app, 'put', '/api/sandbox/config', {
+            headers: authHeaders(),
+            body: { enabled: true, translationSystemTemplate: null, malayFewShot: null, batchSize: 401 }
+        });
+        assert.equal(tooBig.res.statusCode, 400, 'batchSize 401 → 400');
+        assert.ok(
+            tooBig.res.body.fieldErrors.some((f) => f.field === 'batchSize'),
+            'fieldErrors membawa batchSize'
+        );
+
+        const notInt = await dispatch(app, 'put', '/api/sandbox/config', {
+            headers: authHeaders(),
+            body: { enabled: true, translationSystemTemplate: null, malayFewShot: null, previousContextSize: 'abc' }
+        });
+        assert.equal(notInt.res.statusCode, 400, 'bukan integer → 400');
+        assert.ok(
+            notInt.res.body.fieldErrors.some((f) => f.field === 'previousContextSize'),
+            'fieldErrors membawa previousContextSize'
+        );
+
+        // Legasi: PUT TANPA medan tuning (klien lama) kekal diterima penuh.
+        const legacy = await dispatch(app, 'put', '/api/sandbox/config', {
+            headers: authHeaders(),
+            body: { enabled: true, translationSystemTemplate: 'X ${sourceLabel}', malayFewShot: null }
+        });
+        assert.equal(legacy.res.statusCode, 200, 'PUT legasi tanpa tuning kekal sah');
+    } finally {
+        if (prev === undefined) delete process.env.SANDBOX_ADMIN_KEY;
+        else process.env.SANDBOX_ADMIN_KEY = prev;
+        __setTestContextForTests(null);
+        __resetLiveRowForTests();
+        __setAdapterForTests(null);
+    }
+});
+
 test('SBX-API-8: semua respons API sandbox membawa no-store + tiada kebocoran kunci', async () => {
     const app = makeApp();
     registerSandboxRoutes(app, baseDeps());

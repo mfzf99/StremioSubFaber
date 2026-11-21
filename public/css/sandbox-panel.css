@@ -586,6 +586,81 @@ textarea[aria-invalid='true'] {
     border-color: var(--danger);
 }
 
+.tuning-section {
+    margin: 0 0 2.25rem;
+    padding-top: 1.5rem;
+    border-top: 1px solid var(--border);
+}
+
+.tuning-heading {
+    margin-bottom: 1rem;
+}
+
+.tuning-title {
+    margin: 0;
+    color: var(--text-primary);
+    font-size: 0.95rem;
+    font-weight: 650;
+}
+
+.tuning-copy,
+.tuning-note {
+    margin: 0.35rem 0 0;
+    color: var(--text-secondary);
+    font-size: 0.78rem;
+    line-height: 1.55;
+}
+
+.tuning-grid {
+    display: grid;
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+    gap: 1rem;
+}
+
+.tuning-field {
+    min-width: 0;
+}
+
+.tuning-field label {
+    display: block;
+    margin-bottom: 0.45rem;
+    color: var(--text-primary);
+    font-size: 0.82rem;
+    font-weight: 650;
+}
+
+.tuning-field input {
+    width: 100%;
+    min-width: 0;
+    min-height: 48px;
+    padding: 0.65rem 0.8rem;
+    border: 1px solid var(--border-strong);
+    border-radius: var(--radius-control);
+    outline: none;
+    background: var(--surface);
+    color: var(--text-primary);
+    font: inherit;
+    font-variant-numeric: tabular-nums;
+}
+
+.tuning-field input:focus-visible {
+    border-color: var(--primary);
+    box-shadow: 0 0 0 3px color-mix(in srgb, var(--primary) 18%, transparent);
+}
+
+.tuning-field input[aria-invalid='true'] {
+    border-color: var(--danger);
+}
+
+.tuning-field input::placeholder {
+    color: var(--text-secondary);
+    opacity: 0.75;
+}
+
+.tuning-note {
+    margin-top: 1rem;
+}
+
 .placeholder-guide {
     margin-top: 0.65rem;
     color: var(--text-secondary);
@@ -879,6 +954,10 @@ textarea[aria-invalid='true'] {
         align-items: flex-start;
         flex-direction: column;
         gap: 0.45rem;
+    }
+
+    .tuning-grid {
+        grid-template-columns: minmax(0, 1fr);
     }
 
     .placeholder-guide ul {

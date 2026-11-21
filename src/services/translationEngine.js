@@ -35,7 +35,9 @@ const { TRANSLATION_SYSTEM_TEMPLATE } = require('./prompts/trinity/translation/c
 // [PROMPT-SANDBOX v3.38.0 — Mandat Owner 2026-11-16] Suis eksperimen Owner:
 // resolver memilih pasangan EFEKTIF (rasmi ATAU eksperimen promptSandbox.js).
 // core.js / malay.js TIDAK pernah dimutasi — eksport rasmi kekal suci.
-const { resolvePromptSandbox } = require('../config/promptSandbox');
+// [SANDBOX-TUNING v3.39.7] TUNING_LIMITS turut diimport untuk sanitasi
+// defensif enjin (nilai baris rosak → julat selamat, bukan kegagalan).
+const { resolvePromptSandbox, TUNING_LIMITS } = require('../config/promptSandbox');
 // [TRINITY FASA 3 — Mandat Owner 2026-10-19] Channel-native static dispatch:
 // builder dibungkus (bind) SEKALI pada constructor; prompt batch dibina melalui
 // wrapper pintu (gemini anchor continuation / openai arahan eksplisit /
@@ -181,6 +183,18 @@ const CACHE_TRANSLATIONS = process.env.CACHE_TRANSLATIONS === 'true'; // Enable/
 const SUBFABER_BATCH_SIZE = 200;
 const SUBFABER_PREVIOUS_CONTEXT_SIZE = 20;
 const SUBFABER_FUTURE_CONTEXT_SIZE = 10;
+
+/**
+ * [SANDBOX-TUNING v3.39.7] Sanitasi satu medan tuning: integer sahaja;
+ * integer luar julat → CLAMP ke sempadan terdekat; selain itu → default
+ * enjin. Sifar kegagalan — baris Redis rosak/hand-edit tidak pernah
+ * merosakkan enjin. (Resolver sudah menolak nilai rosak pada panel;
+ * ini lapisan defensif kedua untuk baris yang ditulis luar panel.)
+ */
+function sanitizeTuningValue(rawValue, defaultValue, limits) {
+    if (typeof rawValue !== 'number' || !Number.isInteger(rawValue)) return defaultValue;
+    return Math.min(limits.max, Math.max(limits.min, rawValue));
+}
 // [SCENE-GAP 2026-11-19 — Mandat Owner, Fasa 1] Penjajaran potongan batch pada
 // jurang senyap babak: koridor carian ±20 entri (diskala min(20, floor(size/10))
 // supaya pemanggil batch kecil kekal tegar) dan ambang senyap 2,000ms — jurang
@@ -469,8 +483,25 @@ class TranslationEngine {
         this.translationTemplate = this._promptSandbox.template;
         // TOTAL PURGE (Mandat 2026-09-25): SubFaber ialah enjin tunggal.
         // Batch size dihardcode 200 (OWNER MANDATE 2026-11-09) —
-        // tiada env override.
-        this.batchSize = SUBFABER_BATCH_SIZE;
+        // tiada env override. [SANDBOX-TUNING v3.39.7] Kini medan tunggal
+        // yang boleh ditala MELALUI BARIS SANDBOX (gelung eksperimen panel —
+        // keutamaan sama seperti teks prompt: injection ujian > baris Redis
+        // > default enjin); produksi tanpa baris sandbox kekal 200/20/10.
+        this.batchSize = sanitizeTuningValue(
+            this._promptSandbox.tuning?.batchSize,
+            SUBFABER_BATCH_SIZE,
+            TUNING_LIMITS.batchSize
+        );
+        this.previousWindowSize = sanitizeTuningValue(
+            this._promptSandbox.tuning?.previousContextSize,
+            SUBFABER_PREVIOUS_CONTEXT_SIZE,
+            TUNING_LIMITS.previousContextSize
+        );
+        this.futureWindowSize = sanitizeTuningValue(
+            this._promptSandbox.tuning?.futureContextSize,
+            SUBFABER_FUTURE_CONTEXT_SIZE,
+            TUNING_LIMITS.futureContextSize
+        );
         // SINGLE-BATCH PURGE (2026-09-29): mod single-batch dibuang sepenuhnya —
         // SubFaber kini SATU workflow sahaja (chunking/batch). Tiada option
         // singleBatchMode, tiada laluan translateSubtitleSingleBatch.
@@ -1588,8 +1619,10 @@ class TranslationEngine {
         const batchEndIdx = batchStartIdx + batch.length - 1;
 
         // 2. Sliding window ASIMETRIS (20+200+10 — owner's special tweak)
-        const PREV_W = SUBFABER_PREVIOUS_CONTEXT_SIZE;
-        const NEXT_W = SUBFABER_FUTURE_CONTEXT_SIZE;
+        // [SANDBOX-TUNING v3.39.7] Tetingkap dibaca daripada medan instance
+        // (default konstanta; boleh ditala melalui baris sandbox panel).
+        const PREV_W = this.previousWindowSize;
+        const NEXT_W = this.futureWindowSize;
         const prevStart = Math.max(0, batchStartIdx - PREV_W);
         const prevEnd = batchStartIdx - 1; // -1 bermakna tiada previous (batch 1)
         const nextStart = batchEndIdx + 1;

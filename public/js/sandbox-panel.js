@@ -5,6 +5,14 @@
     var API_ROOT = '/api/sandbox';
     var STORAGE_KEY = 'sandboxAdminKey';
     var MAX_FIELD_CHARS = 50000;
+    // [SANDBOX-TUNING v3.39.7] Fallback defensif hanya jika backend lama tidak
+    // membawa engineDefaults/limits; semasa runtime dibaca dari GET config.
+    var TUNING_DEFAULTS = { batchSize: 200, previousContextSize: 20, futureContextSize: 10 };
+    var TUNING_LIMITS = {
+        batchSize: { min: 1, max: 400 },
+        previousContextSize: { min: 0, max: 30 },
+        futureContextSize: { min: 0, max: 15 }
+    };
     var UI_STATES = Object.freeze({
         LOCKED: 'LOCKED',
         UNLOCKING: 'UNLOCKING',
@@ -69,7 +77,13 @@
             'cancel-reset',
             'confirm-reset',
             'theme-toggle',
-            'theme-label'
+            'theme-label',
+            'batch-size',
+            'batch-size-error',
+            'previous-context-size',
+            'previous-context-size-error',
+            'future-context-size',
+            'future-context-size-error'
         ].forEach(function (id) {
             elements[id] = requiredElement(id);
         });
@@ -128,6 +142,9 @@
         elements.enabled.disabled = isBusy;
         elements.translationSystemTemplate.readOnly = isBusy;
         elements.malayFewShot.readOnly = isBusy;
+        elements['batch-size'].disabled = isBusy;
+        elements['previous-context-size'].disabled = isBusy;
+        elements['future-context-size'].disabled = isBusy;
         elements['lock-panel'].disabled = isBusy;
         elements['save-config'].disabled = isBusy || hasOversizedField();
         elements['reset-config'].disabled = isBusy;
@@ -170,6 +187,10 @@
         elements.enabled.checked = false;
         elements.translationSystemTemplate.value = '';
         elements.malayFewShot.value = '';
+        applyTuningValue('batch-size', null);
+        applyTuningValue('previous-context-size', null);
+        applyTuningValue('future-context-size', null);
+        clearTuningErrors();
         elements['enabled-value'].textContent = 'OFF';
         elements['enabled-status'].textContent = 'OFF';
         elements['active-status'].textContent = 'Inactive';
@@ -178,6 +199,82 @@
         elements['source-status'].textContent = 'Official';
         clearFeedback();
         updateEditorMetrics();
+    }
+
+    function clearTuningErrors() {
+        ['batch-size', 'previous-context-size', 'future-context-size'].forEach(function (id) {
+            elements[id].removeAttribute('aria-invalid');
+            setInlineMessage(elements[id + '-error'], '');
+        });
+    }
+
+    function normalizeLimits(snapshot) {
+        var defaults = snapshot && snapshot.engineDefaults ? snapshot.engineDefaults : TUNING_DEFAULTS;
+        var limits = snapshot && Array.isArray(snapshot.limits) ? snapshot.limits : [];
+        ['batch-size', 'previous-context-size', 'future-context-size'].forEach(function (id, index) {
+            var field = ['batchSize', 'previousContextSize', 'futureContextSize'][index];
+            var def = defaults[field];
+            if (typeof def === 'number' && Number.isInteger(def)) elements[id].placeholder = String(def);
+            var bound = limits.find(function (entry) {
+                return entry && entry.field === field;
+            });
+            var range = bound || TUNING_LIMITS[field];
+            if (range && typeof range.min === 'number') elements[id].min = String(range.min);
+            if (range && typeof range.max === 'number') elements[id].max = String(range.max);
+        });
+    }
+
+    function applyTuningValue(id, value) {
+        elements[id].value = value === null || value === undefined ? '' : String(value);
+    }
+
+    function readTuningValue(id) {
+        var raw = elements[id].value.trim();
+        if (raw === '') return null;
+        var field =
+            id === 'batch-size'
+                ? 'batchSize'
+                : id === 'previous-context-size'
+                  ? 'previousContextSize'
+                  : 'futureContextSize';
+        var range = TUNING_LIMITS[field];
+        var min = Number(elements[id].min);
+        var max = Number(elements[id].max);
+        if (!Number.isFinite(min)) min = range.min;
+        if (!Number.isFinite(max)) max = range.max;
+        var value = Number(raw);
+        if (!Number.isInteger(value) || value < min || value > max) {
+            elements[id].setAttribute('aria-invalid', 'true');
+            setInlineMessage(
+                elements[id + '-error'],
+                'Use a whole number between ' + min + ' and ' + max + ', or leave it empty for the engine default.'
+            );
+            return { invalid: true };
+        }
+        elements[id].removeAttribute('aria-invalid');
+        setInlineMessage(elements[id + '-error'], '');
+        return value;
+    }
+
+    function validateTuningFields() {
+        clearTuningErrors();
+        var values = {
+            batchSize: readTuningValue('batch-size'),
+            previousContextSize: readTuningValue('previous-context-size'),
+            futureContextSize: readTuningValue('future-context-size')
+        };
+        var hasError = Object.keys(values).some(function (key) {
+            return values[key] && typeof values[key] === 'object' && values[key].invalid === true;
+        });
+        if (hasError) {
+            showFeedback(
+                'Please review the chunking and context fields',
+                ['Correct the highlighted numeric fields before saving.'],
+                'error'
+            );
+            return null;
+        }
+        return values;
     }
 
     function lockPanel(message) {
@@ -331,6 +428,11 @@
             return { input: elements.translationSystemTemplate, error: elements['template-error'] };
         }
         if (fieldName === 'malayFewShot') return { input: elements.malayFewShot, error: elements['few-shot-error'] };
+        if (fieldName === 'batchSize') return { input: elements['batch-size'], error: elements['batch-size-error'] };
+        if (fieldName === 'previousContextSize')
+            return { input: elements['previous-context-size'], error: elements['previous-context-size-error'] };
+        if (fieldName === 'futureContextSize')
+            return { input: elements['future-context-size'], error: elements['future-context-size-error'] };
         return null;
     }
 
@@ -383,6 +485,11 @@
         setStatusNote(
             reasons.length ? reasons[0] : 'This status reflects the configuration currently in effect on the server.'
         );
+        normalizeLimits(snapshot);
+        applyTuningValue('batch-size', snapshot.batchSize);
+        applyTuningValue('previous-context-size', snapshot.previousContextSize);
+        applyTuningValue('future-context-size', snapshot.futureContextSize);
+        clearTuningErrors();
         updateEditorMetrics();
     }
 
@@ -422,14 +529,19 @@
 
     async function saveConfig() {
         if (uiState !== UI_STATES.READY || hasOversizedField()) return;
+        var tuning = validateTuningFields();
+        if (!tuning) return;
         var operation = ++operationSequence;
         var payload = {
             enabled: elements.enabled.checked,
             translationSystemTemplate: elements.translationSystemTemplate.value || null,
-            malayFewShot: elements.malayFewShot.value || null
+            malayFewShot: elements.malayFewShot.value || null,
+            batchSize: tuning.batchSize,
+            previousContextSize: tuning.previousContextSize,
+            futureContextSize: tuning.futureContextSize
         };
         clearFeedback();
-        setStatusNote('Saving both fields and syncing the prompt…');
+        setStatusNote('Saving all fields and syncing the prompt…');
         transitionTo(UI_STATES.SAVING);
         try {
             var result = await sandboxFetch('/config', { method: 'PUT', body: JSON.stringify(payload) });
@@ -617,6 +729,12 @@
         });
         elements.malayFewShot.addEventListener('input', function () {
             markDirty('malayFewShot');
+        });
+        ['batch-size', 'previous-context-size', 'future-context-size'].forEach(function (id) {
+            elements[id].addEventListener('input', function () {
+                markDirty();
+                clearTuningErrors();
+            });
         });
         window.addEventListener('storage', function (event) {
             if (event.key === 'theme' && (event.newValue === 'light' || event.newValue === 'dark')) {

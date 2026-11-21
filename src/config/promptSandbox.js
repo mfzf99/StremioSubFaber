@@ -50,8 +50,24 @@ const { SUBFABER_PROMPT_BOUNDARY } = require('../services/utils/structuredPrompt
 const promptSandboxConfig = {
     enabled: false,
     translationSystemTemplate: null,
-    malayFewShot: null
+    malayFewShot: null,
+    // [SANDBOX-TUNING v3.39.7] Medan turun-naik (nullable) pada konfigurasi
+    // fail penghantaran — selari dengan baris live Redis; null = default enjin.
+    batchSize: null,
+    previousContextSize: null,
+    futureContextSize: null
 };
+
+// [SANDBOX-TUNING v3.39.7 — Mandat Owner 2026-11-20] Julat selamat medan
+// tuning chunking/konteks. SSUT tunggal: liveStore (pengesahan simpanan),
+// panel UI (had input), enjin (sanitasi defensif) membaca julat ini.
+// batchSize max 400 = default produksi 200 + margin (keputusan Owner);
+// previous 0–30 / future 0–15; 0 konteks = nilai sah eksplisit.
+const TUNING_LIMITS = Object.freeze({
+    batchSize: { min: 1, max: 400 },
+    previousContextSize: { min: 0, max: 30 },
+    futureContextSize: { min: 0, max: 15 }
+});
 
 // ── Gate test-context (pengetatan Owner #1) ─────────────────────────────
 // node --test telanjang tidak melalui scripts/run-tracked-tests.js; deteksi
@@ -164,6 +180,27 @@ function resolvePromptSandbox(official) {
         : null;
     const sbxFewShot = wantsSandbox ? resolveField(source.malayFewShot, 'malayFewShot', reasons) : null;
 
+    // [SANDBOX-TUNING v3.39.7] Tuning chunking/konteks berkongsi suis enabled
+    // dengan teks prompt. Medan integer sahaja; nilai rosak → reason + null
+    // (sifar eksperimen separuh jalan senyap). 0 konteks ialah nilai sah.
+    const tuningFields = ['batchSize', 'previousContextSize', 'futureContextSize'];
+    const tuning = { batchSize: null, previousContextSize: null, futureContextSize: null };
+    if (wantsSandbox) {
+        for (const field of tuningFields) {
+            const raw = source[field];
+            if (raw === null || raw === undefined) continue;
+            const limits = TUNING_LIMITS[field];
+            if (typeof raw !== 'number' || !Number.isInteger(raw) || raw < limits.min || raw > limits.max) {
+                reasons.push(
+                    `[PromptSandbox] ${field} is invalid (${JSON.stringify(raw)}) — stays at the engine default.`
+                );
+                continue;
+            }
+            tuning[field] = raw;
+        }
+    }
+    const tuningActive = wantsSandbox && tuningFields.some((f) => tuning[f] !== null);
+
     const effectiveTemplate = sbxTemplate ?? officialTemplate;
     const effectiveMalayFewShot = sbxFewShot ?? officialMalayFewShot;
     const active = wantsSandbox && (sbxTemplate !== null || sbxFewShot !== null);
@@ -184,13 +221,26 @@ function resolvePromptSandbox(official) {
         );
     }
 
-    return { template: effectiveTemplate, malayFewShot: effectiveMalayFewShot, active, hash8, reasons };
+    return {
+        template: effectiveTemplate,
+        malayFewShot: effectiveMalayFewShot,
+        active,
+        hash8,
+        reasons,
+        // [SANDBOX-TUNING v3.39.7] Raw tervalidasi — DEFAULT ENJIN TIDAK
+        // diduplikasi di sini; pengguna (translationEngine/cacheKeys) yang
+        // memiliki nilai default masing-masing. null bila tidak aktif
+        // (konvensyen sama seperti hash8).
+        tuning: tuningActive ? tuning : null,
+        tuningActive
+    };
 }
 
 module.exports = {
     promptSandboxConfig,
     resolvePromptSandbox,
     isTestContext,
+    TUNING_LIMITS,
     __setTestContextForTests,
     __setPromptSandboxForTests,
     __resetPromptSandboxForTests
