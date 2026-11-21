@@ -20,6 +20,24 @@ This template is the R5 ledger-format deliverable. It supersedes the legacy form
 
 -------
 
+## 2026-11-21 — v3.39.8 SANDBOX LIVE-STATUS TUNING VISIBILITY (CLASS 1 PATCH)
+
+- **Date:** 2026-11-21 ~15:30 (KL time).
+- **Parent HEAD SHA:** `6b0405be98f123efc5d26135c26b5c377bdd057b` (v3.39.7, CI green Run `44877079018`).
+- **Status:** `VERIFIED_LOCAL` (pre-release).
+- **Release Commit SHA + CI Run ID:** confirmed in the final report after push/CI — never invented.
+- **Owner Decision:** Approved follow-up patch after Owner spotted the UX gap: `hash8` intentionally tracks prompt text only, so tuning-only experiments left the Live status card unchanged with no glanceable confirmation that chunking/context values were saved. Add a `Tuning` fact to the Live status card.
+- **Impact & Contract Audit (Phase A/B):** Display-only. Zone A/B/C all N/A (no engine, cache-key, API contract, or provider changes — GET/PUT payloads untouched; the new fact renders from the existing snapshot). Files: `public/sandbox.html` (one `<dt>/<dd>` fact), `public/js/sandbox-panel.js` (element wiring + render in `applySnapshot`/`clearEditor`).
+- **Reproduce-First Evidence:** N/A — display enhancement with no behavioural defect; observable acceptance is the rendered state itself, proven below against live payloads (no production code path changed semantics).
+- **Independent Acceptance:** Render logic proven against live GET payloads on the local server for all three states: empty → `Engine defaults`; saved `40/5/3` → `40 / 5 / 3`; partial (`batchSize`+`futureContextSize` only) → `40 / · / 15`. `tuning-status` element confirmed present in served shell. `node --check` PASS; Prettier clean (html/js/json); ESLint 0 errors; full tracked suite re-run mechanically by the pre-commit gate on commit.
+- **Residual / N/A Gates:** Playwright MCP was disconnected for this patch (third session-level "Not connected" occurrence, same tooling failure Deepseek hit); visual acceptance substituted with live-payload render verification plus the fact that the change is a pure `textContent` assignment in an already-Pass real-flow path (same render function verified end-to-end in v3.39.7). Real-provider N/A. No cache-busting concern: asset version auto-advances with package version 3.39.8.
+- **Files Involved:** `public/sandbox.html` (M: Tuning fact in Live status), `public/js/sandbox-panel.js` (M: wiring + tuning-status render), `package.json`/`package-lock.json` (M: 3.39.8), `CHANGELOG.md` (M: v3.39.8 entry, English lock), `docs/SESSION_LEDGER.md` (M: this entry), `.tmp/RELAY_STATE.md` (untracked relay checkpoint).
+- **npm test Status:** re-run by pre-commit gate on commit (previous full-suite baseline 786/785 PASS/0 FAIL/1 SKIP; no test files touched by this patch).
+- **Next Steps:** One Class 1 commit `feat(sandbox): live-status tuning visibility (v3.39.8)`, push to origin/main, watch CI to SUCCESS, report Release Commit SHA + CI Run ID.
+- **Tool Navigation Ratio:** search_files=0 read_file=0 ratio=1:0.0 anchored=N/A (0 reads this entry — continuation session with all anchors already confirmed by tool evidence in the v3.39.7 entry; no new file discovery needed for a two-file display patch).
+
+-------
+
 ## 2026-11-21 — v3.39.7 SANDBOX CHUNKING & CONTEXT TUNING CONTROLS (CLASS 1 PATCH)
 
 - **Date:** 2026-11-21 ~14:44 (KL time).

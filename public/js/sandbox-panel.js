@@ -59,6 +59,7 @@
             'status-beacon',
             'hash8',
             'source-status',
+            'tuning-status',
             'feedback-region',
             'status-note',
             'translationSystemTemplate',
@@ -197,6 +198,7 @@
         elements['status-beacon'].classList.remove('is-active');
         elements.hash8.textContent = '—';
         elements['source-status'].textContent = 'Official';
+        elements['tuning-status'].textContent = 'Engine defaults';
         clearFeedback();
         updateEditorMetrics();
     }
@@ -477,6 +479,19 @@
         elements['status-beacon'].classList.toggle('is-active', snapshot.active);
         elements.hash8.textContent = typeof snapshot.hash8 === 'string' && snapshot.hash8 ? snapshot.hash8 : '—';
         elements['source-status'].textContent = snapshot.source === 'redis' ? 'Redis' : 'Official';
+        // [SANDBOX-TUNING v3.39.8] Paparan sekali-imbas state tuning tersimpan:
+        // nilai aktif (cth. 40 / 5 / 3) atau default enjin bila semua kosong.
+        // Pembacaan daripada snapshot GET sedia ada — sifar logik baharu.
+        var tuningValues = [snapshot.batchSize, snapshot.previousContextSize, snapshot.futureContextSize];
+        elements['tuning-status'].textContent = tuningValues.some(function (v) {
+            return v !== null && v !== undefined;
+        })
+            ? tuningValues
+                  .map(function (v) {
+                      return v === null || v === undefined ? '·' : String(v);
+                  })
+                  .join(' / ')
+            : 'Engine defaults';
         var reasons = Array.isArray(snapshot.reasons)
             ? snapshot.reasons.filter(function (reason) {
                   return typeof reason === 'string';

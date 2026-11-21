@@ -2,6 +2,16 @@
 
 All notable changes to this project will be documented in this file.
 
+## SubFaber v3.39.8 (2026-11-21) — Sandbox Live-Status Tuning Visibility
+
+### Added
+
+- **`Tuning` fact in the `/sandbox` Live status card.** The status card now shows the persisted chunking/context tuning state at a glance — `Tuning: 40 / 5 / 3` when values are saved (`·` marks unset fields, e.g. `40 / · / 15`), `Tuning: Engine defaults` when all three are empty — rendered from the existing GET config snapshot with zero new backend logic. This closes the visibility gap where tuning-only experiments (prompt text unchanged) left `hash8` and `active` looking unchanged.
+
+### Verified
+
+- Render logic proven against live server payloads for all three states (empty / full `40/5/3` / partial `40/·/15`); `node --check`, Prettier, and ESLint clean; full tracked suite re-run by the pre-commit gate.
+
 ## SubFaber v3.39.7 (2026-11-21) — Sandbox Chunking & Context Tuning Controls
 
 ### Added
