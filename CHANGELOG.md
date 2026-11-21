@@ -2,6 +2,17 @@
 
 All notable changes to this project will be documented in this file.
 
+## SubFaber v3.40.1 (2026-11-21) — Rules Field Becomes Pure Opt-Out
+
+### Changed
+
+- **"Malay Target Language Rules" is now a pure opt-out field.** Filled = the rules are sent in the prompt; empty/null = **no rules are sent at all** — the `${targetLanguageRules}` token is dropped from the experimental wire instead of falling back to the official pack text (previously an empty box silently injected the official 319-character rules). The box now starts empty with no official pre-fill, and its help text states the semantics explicitly. Whitespace-only values remain rejected with a friendly field error. The sandbox hash8 3-tuple follows the real wire (rules component is `''` when opted out), so rule-on/rule-off experiments never share a cache entry. Outside the experiment loop (production path) nothing changes: the official template carries no token and the official wire stays byte-identical.
+- **Dead `officialMalayTargetLanguageRules` payload dropped from the sandbox GET snapshot** — with opt-out semantics the panel no longer needs an official fallback, so the unused field was removed from the route response and the panel's response assertion (zero dead code).
+
+### Verified
+
+- Red-first: TLR-7/TLR-10/TLR-11 observed failing before the production edit; post-fix the suite is 11/11. Playwright live loop on the local server: filled rules → active `hash8=86b359c2`; empty rules → 200 with hash8 `65de962a` and the box stays empty (0 characters, no official pre-fill); reset → 200/inactive. Collateral suites 88/88; full tracked suite **797 total / 796 PASS / 0 FAIL / 1 SKIP**; Prettier and ESLint clean.
+
 ## SubFaber v3.40.0 (2026-11-21) — Target Language Rules Placeholder & Third Sandbox Experiment Field
 
 ### Added

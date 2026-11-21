@@ -157,11 +157,12 @@ test('SBX-5: hash8 berubah per-aksara, berbeza antara varian, dan dikira atas pa
         assert.notEqual(mixed, a, 'hash pasangan efektif ≠ hash pasangan override penuh');
 
         const crypto = require('crypto');
-        // [TARGET-LANGUAGE-RULES 2026-11-21] Formula 3-tuple: medan rules
-        // (di sini official, kerana injection tidak menetapkannya).
+        // [TARGET-LANGUAGE-RULES OPT-OUT 2026-11-21] Formula 3-tuple dengan
+        // komponen rules = wire sebenar: injection eksperimen tanpa rules
+        // membawa '' (opt-out), bukan teks rasmi.
         const expected = crypto
             .createHash('sha256')
-            .update(JSON.stringify(['SANDBOX TEMPLATE A', OFFICIAL_MALAY_FEWSHOT, OFFICIAL_MALAY_RULES]), 'utf8')
+            .update(JSON.stringify(['SANDBOX TEMPLATE A', OFFICIAL_MALAY_FEWSHOT, '']), 'utf8')
             .digest('hex')
             .slice(0, 8);
         assert.equal(mixed, expected, 'hash8 = SHA-256(JSON.stringify([template, fewShot, rules])) 8-hex');

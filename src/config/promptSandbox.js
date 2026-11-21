@@ -220,7 +220,13 @@ function resolvePromptSandbox(official) {
 
     const effectiveTemplate = sbxTemplate ?? officialTemplate;
     const effectiveMalayFewShot = sbxFewShot ?? officialMalayFewShot;
-    const effectiveRules = sbxRules ?? officialRules;
+    // [TARGET-LANGUAGE-RULES OPT-OUT 2026-11-21 — Mandat Owner] Dalam gelung
+    // eksperimen (sandbox aktif), rules ialah OPT-OUT TULen: kotak kosong
+    // (null) = rules TIDAK dihantar ('' — token digugurkan), JANGAN
+    // fallback kepada teks rasmi. Fall-back official hanya untuk laluan
+    // bukan-eksperimen (sandbox tidak aktif) — di sana templat official
+    // tidak mempunyai token, jadi nilai tidak pernah sampai ke wayar.
+    const effectiveRules = wantsSandbox ? (sbxRules ?? '') : (sbxRules ?? officialRules);
     const active = wantsSandbox && (sbxTemplate !== null || sbxFewShot !== null || sbxRules !== null);
 
     if (wantsSandbox && !active) {

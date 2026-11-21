@@ -121,18 +121,11 @@ function registerSandboxRoutes(app, deps = {}) {
         const { getLanguagePack } = require('../services/prompts/languagePacks');
         const officialTemplate = TRANSLATION_SYSTEM_TEMPLATE;
         const officialMalayFewShot = getLanguagePack('Malay').fewShot;
-        // [TARGET-LANGUAGE-RULES 2026-11-21] Official ketiga: rules pack BM.
-        const officialMalayTargetLanguageRules = getLanguagePack('Malay').targetLanguageRules;
-        const eff = resolvePromptSandbox({
-            officialTemplate,
-            officialMalayFewShot,
-            officialMalayTargetLanguageRules
-        });
+        const eff = resolvePromptSandbox({ officialTemplate, officialMalayFewShot });
         const liveRow = liveStore.getLiveRow();
         return {
             officialTemplate,
             officialMalayFewShot,
-            officialMalayTargetLanguageRules,
             enabled: liveRow ? liveRow.enabled === true : promptSandboxConfig.enabled === true,
             translationSystemTemplate: liveRow ? liveRow.translationSystemTemplate : null,
             malayFewShot: liveRow ? liveRow.malayFewShot : null,

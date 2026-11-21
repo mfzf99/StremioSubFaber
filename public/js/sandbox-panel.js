@@ -472,7 +472,6 @@
         if (
             typeof snapshot.officialTemplate !== 'string' ||
             typeof snapshot.officialMalayFewShot !== 'string' ||
-            typeof snapshot.officialMalayTargetLanguageRules !== 'string' ||
             typeof snapshot.active !== 'boolean'
         ) {
             throw new ApiError(200, { error: 'invalid_response' });
@@ -487,10 +486,11 @@
                 : snapshot.officialTemplate;
         elements.malayFewShot.value =
             typeof snapshot.malayFewShot === 'string' ? snapshot.malayFewShot : snapshot.officialMalayFewShot;
+        // [TARGET-LANGUAGE-RULES OPT-OUT 2026-11-21] Kotak mula KOSONG bila
+        // tiada rules tersimpan — medan ini opt-out tulen (kosong = rules
+        // tidak dihantar; bukan pra-isi official).
         elements.malayTargetLanguageRules.value =
-            typeof snapshot.malayTargetLanguageRules === 'string'
-                ? snapshot.malayTargetLanguageRules
-                : snapshot.officialMalayTargetLanguageRules;
+            typeof snapshot.malayTargetLanguageRules === 'string' ? snapshot.malayTargetLanguageRules : '';
         elements.enabled.checked = snapshot.enabled === true;
         elements['enabled-value'].textContent = elements.enabled.checked ? 'ON' : 'OFF';
         elements['enabled-status'].textContent = elements.enabled.checked ? 'ON' : 'OFF';

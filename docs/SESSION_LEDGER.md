@@ -20,6 +20,24 @@ This template is the R5 ledger-format deliverable. It supersedes the legacy form
 
 -------
 
+## 2026-11-21 — v3.40.1 RULES FIELD BECOMES PURE OPT-OUT (CLASS 1 PATCH)
+
+- **Date:** 2026-11-21 ~22:10 (KL time).
+- **Parent HEAD SHA:** `3dfdf419...` (v3.40.0, CI green Run `44906318897`).
+- **Status:** `RELEASED_CI_PENDING` → `RELEASED_CI_GREEN` confirmed in the final report.
+- **Release Commit SHA + CI Run ID:** confirmed in the final report after push/CI — never invented.
+- **Owner Decision:** Clarification after v3.40.0: the rules box must be a pure opt-out — filled = sent in the prompt; empty = NOT sent at all (token dropped), with no silent fallback to the official pack text inside the experiment loop.
+- **Impact & Contract Audit (Phase A/B):** Zone C experiment semantics only. Resolver: `effectiveRules = wantsSandbox ? (sbxRules ?? '') : (sbxRules ?? officialRules)` — opt-out applies to the experiment loop; the non-experiment path keeps official (never reaches the wire since the official template has no token). Routes: dead `officialMalayTargetLanguageRules` snapshot field removed. Panel: no official pre-fill (snapshot null → ''), assertion updated, help text states the semantics. Engine unchanged (already interpolates `''` cleanly). hash8 follows the real wire (rules `''` when opted out). Zone A/B N/A otherwise.
+- **Reproduce-First Evidence:** TLR-7 re-pinned, TLR-10 strengthened (no `officialMalayTargetLanguageRules` reference in panel JS), TLR-11 added (engine: sandbox active + rules null → token dropped, official rules text absent from wire) — **3 RED observed** before the production edit (`.tmp/tlr-optout-red.log`).
+- **Independent Acceptance:** TLR suite 11/11 post-fix; collateral 88/88; full tracked suite **797 total / 796 PASS / 0 FAIL / 1 SKIP** (+1 test vs v3.40.0). SBX-5 hash pin re-pinned to the real-wire rules component. Playwright live loop on the local server: filled rules → active `hash8=86b359c2`; empty rules → 200, hash8 `65de962a`, box stays empty (0 chars); whitespace → still rejected (TLR-8 unchanged); reset → 200/inactive. `node --check`, Prettier, ESLint clean; `git diff --check` clean.
+- **Residual / N/A Gates:** Real-provider N/A (no transport change). Production official path byte-identical (no token in the official template). Cache-buster auto-advances to 3.40.1. Lesson recorded from the v3.40.0 CI failure: formatting checks in-session must cover every touched file including `package.json`.
+- **Files Involved:** `src/config/promptSandbox.js` (M: opt-out resolver), `src/routes/sandboxRoutes.js` (M: dead official rules field removed), `public/sandbox.html` (M: help text), `public/js/sandbox-panel.js` (M: no pre-fill + assertion), `src/config/target-language-rules-regression.test.js` (M: TLR-7/10 re-pin + TLR-11), `src/config/promptSandbox-regression.test.js` (M: SBX-5 real-wire hash pin), `package.json`/`package-lock.json` (M: 3.40.1), `CHANGELOG.md` (M: v3.40.1 entry, English lock), `docs/SESSION_LEDGER.md` (M: this entry), `.tmp/RELAY_STATE.md` (untracked relay checkpoint).
+- **npm test Status:** 797 total / 796 PASS / 0 FAIL / 1 SKIP, exit 0; log `.tmp/tlr-optout-full.log`.
+- **Next Steps:** One Class 1 commit `feat(sandbox): rules field pure opt-out (v3.40.1)`, push to origin/main, watch CI to SUCCESS, report Release Commit SHA + CI Run ID.
+- **Tool Navigation Ratio:** search_files=3 read_file=6 ratio=1:2.0 anchored=100% (6/6 reads) — continuation session; every read anchored to lines located by search or prior tool evidence.
+
+-------
+
 ## 2026-11-21 — v3.40.0 TARGET LANGUAGE RULES PLACEHOLDER & THIRD SANDBOX FIELD (CLASS 1 MINOR)
 
 - **Date:** 2026-11-21 ~20:50 (KL time).

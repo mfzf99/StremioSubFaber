@@ -131,7 +131,7 @@ test('TLR-6: resolvePromptSandbox menerima malayTargetLanguageRules dan hash8 = 
     }
 });
 
-test('TLR-7: resolvePromptSandbox fall-back per-medan untuk rules sahaja', () => {
+test('TLR-7: [OPT-OUT 2026-11-21] rules null semasa eksperimen = TIDAK dihantar, bukan official', () => {
     const {
         resolvePromptSandbox,
         __setPromptSandboxForTests,
@@ -149,8 +149,18 @@ test('TLR-7: resolvePromptSandbox fall-back per-medan untuk rules sahaja', () =>
             officialMalayFewShot: 'OFF-FS',
             officialMalayTargetLanguageRules: 'OFF-RULES'
         });
-        assert.equal(out.malayTargetLanguageRules, 'OFF-RULES', 'null rules = official');
+        // Kotak kosong dalam gelung eksperimen = rules digugurkan daripada
+        // wayar — JANGAN fallback kepada teks rasmi (mandat Owner opt-out).
+        assert.equal(out.malayTargetLanguageRules, '', 'null rules = string kosong (opt-out)');
         assert.equal(out.template, 'T ${sourceLabel} ${targetLabel} ${fewShot}');
+        // Hash mengikut wire sebenar (rules = '') — kunci konsisten.
+        const crypto = require('node:crypto');
+        const expected = crypto
+            .createHash('sha256')
+            .update(JSON.stringify(['T ${sourceLabel} ${targetLabel} ${fewShot}', 'FS', '']), 'utf8')
+            .digest('hex')
+            .slice(0, 8);
+        assert.equal(out.hash8, expected, "hash8 mengikut wire sebenar (rules = '')");
     } finally {
         __resetPromptSandboxForTests();
     }
@@ -190,7 +200,7 @@ test('TLR-9: sandbox.html membawa kotak ke-3 + placeholder guide 5 token', () =>
     assert.ok(html.includes('id="rules-error"'), 'field-error kotak rules hadir');
 });
 
-test('TLR-10: sandbox-panel.js memasang wiring kotak rules', () => {
+test('TLR-10: sandbox-panel.js memasang wiring kotak rules — [OPT-OUT] tiada pra-isi official', () => {
     const js = fs.readFileSync(path.join(__dirname, '..', '..', 'public', 'js', 'sandbox-panel.js'), 'utf8');
     for (const needle of [
         "'malayTargetLanguageRules'",
@@ -199,6 +209,37 @@ test('TLR-10: sandbox-panel.js memasang wiring kotak rules', () => {
         'malayTargetLanguageRules:'
     ]) {
         assert.ok(js.includes(needle), `panel JS mesti memasang ${needle}`);
+    }
+    // [OPT-OUT 2026-11-21] Kotak mula KOSONG — snapshot null = '' (bukan
+    // pra-isi officialMalayTargetLanguageRules yang sudah dibuang).
+    assert.ok(
+        !js.includes('officialMalayTargetLanguageRules'),
+        'tiada rujukan official rules dalam panel (laluan opt-out)'
+    );
+});
+
+test('TLR-11: [OPT-OUT] enjin — sandbox aktif + rules null → token digugurkan, bukan rasmi', () => {
+    const TranslationEngine = require('../services/translationEngine');
+    const { __setPromptSandboxForTests, __resetPromptSandboxForTests } = require('../config/promptSandbox');
+    const experimental = 'X ${sourceLabel} RULES[${targetLanguageRules}] FS ${fewShot} END';
+    __setPromptSandboxForTests({
+        enabled: true,
+        translationSystemTemplate: experimental,
+        malayFewShot: 'FS',
+        malayTargetLanguageRules: null // kotak kosong
+    });
+    let engine;
+    try {
+        engine = new TranslationEngine({}, 'gemini-2.5-flash', {}, { trinityMode: 'basic', trinityChannel: 'gemini' });
+        engine.sourceLanguage = 'English';
+        const wire = engine.createXmlBatchPrompt('<s id="1">hello</s>', 'Malay', null, 1);
+        assert.ok(wire.includes('RULES[]'), 'kotak kosong → token digugurkan bersih');
+        assert.ok(!wire.includes('${targetLanguageRules}'), 'sifar residu token');
+        // Rules RASMI pack (319 aksara) TIDAK bocor masuk.
+        const { malayPack } = require('../services/prompts/languagePacks');
+        assert.ok(!wire.includes('natural Malaysian Malay'), 'teks rasmi pack tidak dihantar');
+    } finally {
+        __resetPromptSandboxForTests();
     }
 });
 
