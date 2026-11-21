@@ -2,6 +2,17 @@
 
 All notable changes to this project will be documented in this file.
 
+## SubFaber v3.39.9 (2026-11-21) — Sandbox Tuning Range Widening & Label Hints
+
+### Changed
+
+- **Previous Context and Future Context ranges widened to 0–50** (from 0–30 / 0–15) in the single-source-of-truth `TUNING_LIMITS`, per Owner directive. Validation, engine sanitization, `GET /config` `limits`, and the panel's defensive fallback all follow automatically; `0` remains a valid explicit value that drops the context blocks entirely.
+- **Field labels now carry their ranges** in the `/sandbox` panel: `Batch Size (1–400)`, `Previous Context (0–50)`, `Future Context (0–50)`, so acceptable values are visible without consulting documentation.
+
+### Verified
+
+- Regression pins updated for the new boundaries: `51` rejected for both context fields, the new `50` edge accepted; targeted tuning suites 20/20; live HTTP probe on the local server confirmed `limits` payload `0–50/0–50`, `PUT` with `previousContextSize:50/futureContextSize:50` accepted (200), `futureContextSize:51` rejected (400), and all three range-hint labels present in the served shell. Full tracked suite re-run by the pre-commit gate on commit.
+
 ## SubFaber v3.39.8 (2026-11-21) — Sandbox Live-Status Tuning Visibility
 
 ### Added

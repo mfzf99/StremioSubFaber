@@ -20,6 +20,24 @@ This template is the R5 ledger-format deliverable. It supersedes the legacy form
 
 -------
 
+## 2026-11-21 — v3.39.9 SANDBOX TUNING RANGE WIDENING & LABEL HINTS (CLASS 1 PATCH)
+
+- **Date:** 2026-11-21 ~16:14 (KL time).
+- **Parent HEAD SHA:** `ce4a289effe548ec39d5dafb7b5b3094b0ed782b` (v3.39.8, CI green Run `44880918153`).
+- **Status:** `VERIFIED_LOCAL` (pre-release).
+- **Release Commit SHA + CI Run ID:** confirmed in the final report after push/CI — never invented.
+- **Owner Decision:** (1) widen Previous Context and Future Context ranges to **0–50** each (previously 0–30 / 0–15; Batch Size stays 1–400); (2) show the ranges in the panel field labels — e.g. `Batch Size (1–400)`, `Previous Context (0–50)`, `Future Context (0–50)`.
+- **Impact & Contract Audit (Phase A/B):** SSUT change: `TUNING_LIMITS` in `src/config/promptSandbox.js` is consumed by liveStore validation, engine defensive sanitization, GET `limits` payload, and the panel fallback — one edit, all layers follow. Zone A N/A; Zone B: `limits` payload values changed by design (additive semantics unchanged); Zone C N/A. No engine geometry defaults touched (200/20/10).
+- **Reproduce-First Evidence:** N/A for pure range widening — the boundary behaviour is pinned by updated regression assertions (51 rejected / 50 accepted) executed against the changed code; prior pins for 31/16 boundaries were updated with equivalent-or-stronger coverage (edge-acceptance added).
+- **Independent Acceptance:** Targeted tuning suites 20/20 (incl. new edge pins); live HTTP probe on local server: `GET limits` = `[{1,400},{0,50},{0,50}]`, `PUT prev=50/fut=50` → 200, `PUT fut=51` → 400 `fieldErrors`, all three range-hint labels present in served shell; `node --check`, Prettier clean; full tracked suite re-run mechanically by pre-commit gate on commit.
+- **Residual / N/A Gates:** Playwright MCP still disconnected this session — visual label check substituted by served-shell content probe (labels are static text in the shipped HTML). Real-provider N/A. Context-window size vs prompt token budget: 50+50 lines of context inflates prompt tokens proportionally; bounded by existing MAX_TOKENS_PER_BATCH chunking — no new guardrail introduced by widening (unchanged engine behavior, Owner accepts larger prompts by choice).
+- **Files Involved:** `src/config/promptSandbox.js` (M: TUNING_LIMITS 0–50), `src/services/sandbox-tuning-regression.test.js` (M: boundary pins 51-reject/50-accept), `public/sandbox.html` (M: range hints in three labels), `public/js/sandbox-panel.js` (M: fallback limits 0–50), `package.json`/`package-lock.json` (M: 3.39.9), `CHANGELOG.md` (M: v3.39.9 entry, English lock), `docs/SESSION_LEDGER.md` (M: this entry), `.tmp/RELAY_STATE.md` (untracked relay checkpoint).
+- **npm test Status:** re-run by pre-commit gate on commit (baseline 786/785 PASS/0 FAIL/1 SKIP; only boundary pins changed in tests, strengthened not weakened).
+- **Next Steps:** One Class 1 commit `feat(sandbox): widen tuning ranges to 0-50 with label hints (v3.39.9)`, push, CI to SUCCESS, report SHA + Run ID.
+- **Tool Navigation Ratio:** search_files=2 read_file=0 ratio=1:0.0 anchored=N/A (0 reads — two targeted searches located every limit literal; anchors from prior session tool evidence; display/range patch with no new discovery needed).
+
+-------
+
 ## 2026-11-21 — v3.39.8 SANDBOX LIVE-STATUS TUNING VISIBILITY (CLASS 1 PATCH)
 
 - **Date:** 2026-11-21 ~15:30 (KL time).

@@ -61,12 +61,13 @@ const promptSandboxConfig = {
 // [SANDBOX-TUNING v3.39.7 — Mandat Owner 2026-11-20] Julat selamat medan
 // tuning chunking/konteks. SSUT tunggal: liveStore (pengesahan simpanan),
 // panel UI (had input), enjin (sanitasi defensif) membaca julat ini.
-// batchSize max 400 = default produksi 200 + margin (keputusan Owner);
-// previous 0–30 / future 0–15; 0 konteks = nilai sah eksplisit.
+// batchSize max 400 = default produksi 200 + margin (keputusan Owner).
+// [v3.39.9 — Mandat Owner] previous/future dinaikkan 0–30/0–15 → 0–50.
+// 0 konteks = nilai sah eksplisit.
 const TUNING_LIMITS = Object.freeze({
     batchSize: { min: 1, max: 400 },
-    previousContextSize: { min: 0, max: 30 },
-    futureContextSize: { min: 0, max: 15 }
+    previousContextSize: { min: 0, max: 50 },
+    futureContextSize: { min: 0, max: 50 }
 });
 
 // ── Gate test-context (pengetatan Owner #1) ─────────────────────────────

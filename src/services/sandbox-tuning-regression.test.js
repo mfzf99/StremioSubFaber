@@ -80,16 +80,19 @@ test('SBX-T1: validateRow — integer dalam julat sah; luar julat / bukan intege
         outOfRange.fieldErrors.some((f) => f.field === 'batchSize'),
         'batchSize 401 → fieldErrors (max 400)'
     );
-    const prevRange = liveStore.validateRow({ ...TUNING_ROW, previousContextSize: 31 });
+    const prevRange = liveStore.validateRow({ ...TUNING_ROW, previousContextSize: 51 });
     assert.ok(
         prevRange.fieldErrors.some((f) => f.field === 'previousContextSize'),
-        'prev 31 → tolak (max 30)'
+        'prev 51 → tolak (max 50) [v3.39.9]'
     );
-    const futureRange = liveStore.validateRow({ ...TUNING_ROW, futureContextSize: 16 });
+    const futureRange = liveStore.validateRow({ ...TUNING_ROW, futureContextSize: 51 });
     assert.ok(
         futureRange.fieldErrors.some((f) => f.field === 'futureContextSize'),
-        'future 16 → tolak (max 15)'
+        'future 51 → tolak (max 50) [v3.39.9]'
     );
+    // [v3.39.9] sempadan baharu diterima penuh: 50 kini sah bagi kedua konteks.
+    const edgeOk = liveStore.validateRow({ ...TUNING_ROW, previousContextSize: 50, futureContextSize: 50 });
+    assert.equal(edgeOk.fieldErrors.length, 0, 'prev/future 50 → diterima (sempadan max baharu)');
     const batchMin = liveStore.validateRow({ ...TUNING_ROW, batchSize: 0 });
     assert.ok(
         batchMin.fieldErrors.some((f) => f.field === 'batchSize'),

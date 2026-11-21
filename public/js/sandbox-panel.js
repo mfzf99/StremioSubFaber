@@ -10,8 +10,8 @@
     var TUNING_DEFAULTS = { batchSize: 200, previousContextSize: 20, futureContextSize: 10 };
     var TUNING_LIMITS = {
         batchSize: { min: 1, max: 400 },
-        previousContextSize: { min: 0, max: 30 },
-        futureContextSize: { min: 0, max: 15 }
+        previousContextSize: { min: 0, max: 50 },
+        futureContextSize: { min: 0, max: 50 }
     };
     var UI_STATES = Object.freeze({
         LOCKED: 'LOCKED',
