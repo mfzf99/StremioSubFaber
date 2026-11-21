@@ -20,6 +20,24 @@ This template is the R5 ledger-format deliverable. It supersedes the legacy form
 
 -------
 
+## 2026-11-21 — v3.40.2 ADAPTIVE INTERPOLATION COLLAPSES ORPHANED SECTIONS (CLASS 1 PATCH)
+
+- **Date:** 2026-11-21 ~23:08 (KL time).
+- **Parent HEAD SHA:** `aaa92c56...` (v3.40.1, CI green Run `44912576523`).
+- **Status:** `RELEASED_CI_PENDING` → `RELEASED_CI_GREEN` confirmed in the final report.
+- **Release Commit SHA + CI Run ID:** confirmed in the final report after push/CI — never invented.
+- **Owner Decision:** "Up game" mandate — when a dropped placeholder leaves an orphaned markdown header (Owner's v2 template places `${targetLanguageRules}` under its own `### TARGET-LANGUAGE RULES` header), the engine must adaptively collapse the empty section instead of shipping a header with no content ("tak boleh tertinggal bas").
+- **Impact & Contract Audit (Phase A/B):** Zone C (translation engine interpolation only). New bounded fixpoint in `createXmlBatchPrompt`: empty-valued tokens are marked with a `\u0000` sentinel, lines that become pure whitespace are dropped, markdown headers immediately followed by another header or end-of-text are dropped, max 4 passes, then inline sentinel occurrences are stripped. Filled tokens keep the classic `applyPlaceholder` verbatim path (no sentinel, no deletion). Official wire byte-identical (no empty tokens in the official template — no sentinel ever produced; pinned by existing official-wire parity suites). Zone A/B N/A.
+- **Reproduce-First Evidence:** TLR-12 (Owner-style v2 template: orphan header + lone token line must vanish, neighbors intact, no doubled blanks) observed **RED** before the engine edit (`.tmp/tlr-collapse-red.log`); TLR-13 (filled → verbatim, zero deletion) and TLR-14 (inline empty → line kept) pinned green-before-and-after as controls.
+- **Independent Acceptance:** TLR suite 14/14 post-fix; collateral (wire-parity, promptSandbox regression, trinity setup/matrix, context, beta-run7) 110/110; full tracked suite **800 total / 799 PASS / 0 FAIL / 1 SKIP** (+3 tests vs v3.40.1). Live sandbox loop with the Owner's v2 template: empty rules → active `hash8=af368557`; filled → `5f7cd112`; reset → 200/inactive (hash8 unchanged in design — resolver inputs identical; the collapse happens downstream in the engine). `node --check`, Prettier, ESLint clean.
+- **Residual / N/A Gates:** Playwright visual pass on the panel itself N/A for this engine-only change (panel UI untouched; prior panel verification from v3.40.0/v3.40.1 stands). Real-provider N/A (no transport change; wire shape pinned by suites). One abandoned terminal probe (`node -e` wire dump without `--test-force-exit`) hung on the known runner-exit behavior and was discarded — all evidence comes from the tracked suites and the live API loop.
+- **Files Involved:** `src/services/translationEngine.js` (M: adaptive interpolation + collapse fixpoint), `src/config/target-language-rules-regression.test.js` (M: TLR-12/13/14), `package.json`/`package-lock.json` (M: 3.40.2), `CHANGELOG.md` (M: v3.40.2 entry, English lock), `docs/SESSION_LEDGER.md` (M: this entry), `.tmp/RELAY_STATE.md` (untracked relay checkpoint).
+- **npm test Status:** 800 total / 799 PASS / 0 FAIL / 1 SKIP, exit 0; log `.tmp/tlr-collapse-full.log`.
+- **Next Steps:** One Class 1 commit `feat(engine): adaptive interpolation collapses orphaned sections (v3.40.2)`, push to origin/main, watch CI to SUCCESS, report Release Commit SHA + CI Run ID.
+- **Tool Navigation Ratio:** search_files=1 read_file=2 ratio=1:2.0 anchored=100% (2/2 reads) — continuation session; anchors from current-session tool evidence.
+
+-------
+
 ## 2026-11-21 — v3.40.1 RULES FIELD BECOMES PURE OPT-OUT (CLASS 1 PATCH)
 
 - **Date:** 2026-11-21 ~22:10 (KL time).

@@ -3418,17 +3418,73 @@ class TranslationEngine {
         // official.
         const applyPlaceholder = (text, token, value) =>
             text.replace(new RegExp(`\\$\\{${token}\\}`, 'g'), () => value);
-        const systemPart = [
+        // [LINE-COLLAPSE 2026-11-21 — Mandat Owner "up game"] Interpolasi
+        // ADAPTIF: token yang digugurkan (nilai '') dan bersendirian dalam
+        // satu baris meninggalkan baris kosong — dan jika baris itu duduk
+        // di bawah header markdown (cth. '### TARGET-LANGUAGE RULES' +
+        // '${targetLanguageRules}' + '### STYLE'), header itu menjadi yatim.
+        // Algoritma fixpoint:
+        //   1. Tanda setiap penggantian-kosong dengan sentinel \u0000.
+        //   2. Buang baris yang jadi whitespace-TULEN + sentinel sahaja.
+        //   3. Buang header markdown (#...) yang seksyen berikutnya juga
+        //      header (atau EOF) — iaitu header yang kehilangan isi.
+        //   4. Ulang sehingga stabil ( maks 4 laluan).
+        // Invarian: templat official (tiada token kosong) tidak tersentuh —
+        // wayar rasmi kekal byte-identik; baris kosong DISIENGAJAKAN di
+        // bahagian tanpa sentinel kekal; token bernilai disuntik verbatim
+        // dan tiada pemadaman berlaku (tiada sentinel dihasilkan).
+        const EMPTY_MARK = '\u0000';
+        const markedSystemPart = [
             ['sourceLabel', sourceLabel || 'the source language'],
             ['targetLabel', targetLabel || 'the target language'],
             ['targetLabelShort', targetLabel || 'target-language'],
             ['fewShot', effectiveFewShot],
-            // [TARGET-LANGUAGE-RULES 2026-11-21] Token ke-5; templat official
-            // tiada token ini (applyPlaceholder no-op pada wayar rasmi —
-            // byte-identik), templat eksperimen Owner menyuntik rules di
-            // hujung seksyen MEANING.
             ['targetLanguageRules', effectiveRules]
-        ].reduce((text, [token, value]) => applyPlaceholder(text, token, value), this.translationTemplate);
+        ].reduce(
+            (text, [token, value]) =>
+                value === ''
+                    ? text.replace(new RegExp(`\\$\\{${token}\\}`, 'g'), () => EMPTY_MARK)
+                    : applyPlaceholder(text, token, value),
+            this.translationTemplate
+        );
+        const collapseEmptySections = (text) => {
+            if (!text.includes(EMPTY_MARK)) return text;
+            let collapsed = text;
+            for (let pass = 0; pass < 4; pass += 1) {
+                const before = collapsed;
+                // (2) Baris whitespace-tulen yang mengandungi JEJAK
+                // penggantian kosong → buang seluruh baris (+CRLF-nya).
+                collapsed = collapsed
+                    .split(/(?<=\n)/)
+                    .filter((line) => !(line.includes(EMPTY_MARK) && line.replace(/[ \t\u0000\r\n]/g, '') === ''))
+                    .join('');
+                // (3) Header markdown yatim: header yang disusuli TERUS oleh
+                // header lain (atau hujung teks) → buang baris header itu.
+                // Hanya dilepaskan bila pemadaman (2) baru berlaku — baris
+                // kosong pemisah disengajakan Owner tidak pernah menyebabkan
+                // pemadanan palsu kerana ia bukan header.
+                const lines = collapsed.split(/(?<=\n)/);
+                for (let i = lines.length - 1; i >= 0; i -= 1) {
+                    const isHeader = /^#{1,6}[ \t]*\r?\n?$/.test(lines[i].replace(EMPTY_MARK, ''));
+                    const headerWithTitle = /^#{1,6}[ \t]+\S[^\r\n]*\r?\n?$/.test(lines[i]);
+                    if (!(isHeader || headerWithTitle)) continue;
+                    const rest = lines.slice(i + 1).join('');
+                    const trimmedRest = rest.replace(/^(?:[ \t]*\r?\n)+/, '');
+                    if (
+                        trimmedRest === '' ||
+                        /^#{1,6}[ \t]/.test(trimmedRest) ||
+                        /^#{1,6}[ \t]*\r?\n/.test(trimmedRest)
+                    ) {
+                        lines.splice(i, 1);
+                    }
+                }
+                collapsed = lines.join('');
+                if (collapsed === before) break;
+            }
+            // Sentinel baki (kemunculan inline kosong) digugurkan bersih.
+            return collapsed.split(EMPTY_MARK).join('');
+        };
+        const systemPart = collapseEmptySections(markedSystemPart);
 
         // [TRINITY FASA 3 — Mandat Owner 2026-10-19] Pembungkusan channel-native:
         // payload berstruktur (systemText + dataText + queryText + startId)

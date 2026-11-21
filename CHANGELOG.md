@@ -2,6 +2,16 @@
 
 All notable changes to this project will be documented in this file.
 
+## SubFaber v3.40.2 (2026-11-21) — Adaptive Interpolation Collapses Orphaned Sections
+
+### Added
+
+- **Adaptive interpolation (line-collapse) for dropped placeholders.** When a sandbox placeholder resolves to an empty string and sits alone on its own line, the engine now removes that entire line — and if the line sat under its own markdown header (e.g. `### TARGET-LANGUAGE RULES` followed by `${targetLanguageRules}`), the orphaned header is removed too, so the experiment wire never carries empty sections or doubled blank lines. The algorithm runs a bounded fixpoint: mark empty substitutions with a sentinel, drop lines that became pure whitespace, drop markdown headers immediately followed by another header or end-of-text, repeat until stable (max 4 passes), then strip remaining inline sentinel occurrences.
+
+### Verified
+
+- Red-first TLR-12 observed failing before the engine change; post-fix the suite is 14/14. Invariants pinned: filled tokens are injected verbatim with zero line removal (TLR-13); inline empty occurrences (`PREFIX[]` style) still just drop the token without removing the line (TLR-14); intentionally blank template lines elsewhere are untouched; the official wire stays byte-identical (no empty tokens in the official template, no sentinel ever produced). Collateral suites 110/110; full tracked suite **800 total / 799 PASS / 0 FAIL / 1 SKIP**; live sandbox loop confirmed separate hash8 for empty (`af368557`) vs filled (`5f7cd112`) rules on the Owner's v2 template. Prettier and ESLint clean.
+
 ## SubFaber v3.40.1 (2026-11-21) — Rules Field Becomes Pure Opt-Out
 
 ### Changed

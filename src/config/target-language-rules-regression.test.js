@@ -243,5 +243,97 @@ test('TLR-11: [OPT-OUT] enjin — sandbox aktif + rules null → token digugurka
     }
 });
 
+// ── 7. [LINE-COLLAPSE 2026-11-21 — Mandat Owner] Interpolasi adaptif ─────
+
+test('TLR-12: token kosong bersendirian → SELURUH baris + header yatim lenyap', () => {
+    const TranslationEngine = require('../services/translationEngine');
+    const { __setPromptSandboxForTests, __resetPromptSandboxForTests } = require('../config/promptSandbox');
+    // Templat gaya Owner v2: token di bawah header seksyen sendiri.
+    const experimental = [
+        'You translate ${sourceLabel} into ${targetLabel}.',
+        '### PRIORITY',
+        '1. Structure 2. Meaning 3. Target-language rules 4. Style',
+        '### TARGET-LANGUAGE RULES',
+        '${targetLanguageRules}',
+        '### STYLE',
+        'Write naturally.',
+        '### EXAMPLES',
+        '${fewShot}',
+        '### OUTPUT',
+        'Return ONLY <answer>.'
+    ].join('\n');
+    __setPromptSandboxForTests({
+        enabled: true,
+        translationSystemTemplate: experimental,
+        malayFewShot: 'FS-CONTENT',
+        malayTargetLanguageRules: null // kotak kosong
+    });
+    let engine;
+    try {
+        engine = new TranslationEngine({}, 'gemini-2.5-flash', {}, { trinityMode: 'basic', trinityChannel: 'gemini' });
+        engine.sourceLanguage = 'English';
+        const wire = engine.createXmlBatchPrompt('<s id="1">hello</s>', 'Malay', null, 1);
+        // (a) Header yatim + baris token lenyap sepenuhnya.
+        assert.ok(!wire.includes('### TARGET-LANGUAGE RULES'), 'header yatim lenyap');
+        assert.ok(!/${targetLanguageRules}/.test(wire), 'sifar residu token');
+        // (b) Seksyen jiran kekal utuh + berturutan tanpa reruntuhan kosong.
+        assert.ok(wire.includes('### STYLE'), 'seksyen STYLE kekal');
+        assert.ok(wire.includes('Write naturally.'), 'isi STYLE kekal');
+        assert.ok(wire.includes('FS-CONTENT'), 'few-shot diisi → dihantar');
+        assert.ok(!/\n[ \t]*\n[ \t]*\n/.test(wire), 'tiada blok baris-kosong bertindih');
+        // (c) Baris kosong disengajakan di bahagian lain template kekal
+        // (hanya reruntuhan pemadaman yang dirawat).
+        assert.ok(wire.includes('Return ONLY <answer>.'), 'bahagian akhir kekal');
+    } finally {
+        __resetPromptSandboxForTests();
+    }
+});
+
+test('TLR-13: token diisi → suntikan verbatim, TIADA pemadaman baris', () => {
+    const TranslationEngine = require('../services/translationEngine');
+    const { __setPromptSandboxForTests, __resetPromptSandboxForTests } = require('../config/promptSandbox');
+    const experimental = 'HEAD\n### RULES\n${targetLanguageRules}\nTAIL ${targetLanguageRules} END';
+    __setPromptSandboxForTests({
+        enabled: true,
+        translationSystemTemplate: experimental,
+        malayFewShot: 'FS',
+        malayTargetLanguageRules: 'RULES-ACTIVE'
+    });
+    let engine;
+    try {
+        engine = new TranslationEngine({}, 'gemini-2.5-flash', {}, { trinityMode: 'basic', trinityChannel: 'gemini' });
+        engine.sourceLanguage = 'English';
+        const wire = engine.createXmlBatchPrompt('<s id="1">hello</s>', 'Malay', null, 1);
+        assert.ok(wire.includes('### RULES'), 'header kekal bila diisi');
+        assert.ok(wire.includes('RULES-ACTIVE'), 'suntikan verbatim');
+        assert.ok(wire.includes('TAIL RULES-ACTIVE END'), 'kemunculan inline disuntik sama');
+        assert.ok(wire.includes('HEAD'), 'struktur kekal');
+    } finally {
+        __resetPromptSandboxForTests();
+    }
+});
+
+test('TLR-14: token kosong INLINE (bukan bersendirian) → digugurkan tanpa padam baris', () => {
+    const TranslationEngine = require('../services/translationEngine');
+    const { __setPromptSandboxForTests, __resetPromptSandboxForTests } = require('../config/promptSandbox');
+    const experimental = 'PREFIX[${targetLanguageRules}] SUFFIX';
+    __setPromptSandboxForTests({
+        enabled: true,
+        translationSystemTemplate: experimental,
+        malayFewShot: 'FS',
+        malayTargetLanguageRules: null
+    });
+    let engine;
+    try {
+        engine = new TranslationEngine({}, 'gemini-2.5-flash', {}, { trinityMode: 'basic', trinityChannel: 'gemini' });
+        engine.sourceLanguage = 'English';
+        const wire = engine.createXmlBatchPrompt('<s id="1">hello</s>', 'Malay', null, 1);
+        assert.ok(wire.includes('PREFIX[] SUFFIX'), 'inline kosong: token digugurkan, baris kekal');
+        assert.ok(!/${targetLanguageRules}/.test(wire), 'sifar residu token');
+    } finally {
+        __resetPromptSandboxForTests();
+    }
+});
+
 // fixtures helper (tidak wajib digunakan oleh suite lain)
 if (!fs.existsSync(fixtures)) fs.mkdirSync(fixtures, { recursive: true });
