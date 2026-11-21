@@ -2,6 +2,17 @@
 
 All notable changes to this project will be documented in this file.
 
+## SubFaber v3.40.3 (2026-11-21) — Dangling List References Removed & Sections Renumbered
+
+### Added
+
+- **Dangling numbered-list references to dropped sections are now removed and renumbered.** When a section collapses (e.g. `### TARGET-LANGUAGE RULES` with an empty `${targetLanguageRules}`), any numbered-list item referencing that section title is deleted and the remaining items are renumbered in sequence — the Owner's v2 PRIORITY line ships as `1. Structure and Markup  2. Meaning  3. Style` instead of leaving a dangling `3. Target-language rules` and an unrenumbered `4. Style`. Matching is exact-title (case-insensitive) against the headers that actually collapsed, so unrelated numbered lines elsewhere in the prompt are never touched.
+- **Post-deletion blank-line flattening.** Any doubled blank lines produced where sections were removed are flattened back to a single blank line, so section junctions look exactly like a hand-written prompt.
+
+### Verified
+
+- Red-first: the strengthened TLR-12 (list-reference removal + renumber assertions) observed failing before the engine change, 14/14 after; TLR-13/TLR-14 controls confirm filled tokens stay verbatim with zero deletion and inline empties keep their line. Full-verbose wire dump of the Owner's complete v2 template with an empty rules box produces the exact clean target: orphan header gone, PRIORITY renumbered to `1./2./3.`, no doubled blank lines. Full tracked suite **800 total / 799 PASS / 0 FAIL / 1 SKIP**; Prettier and ESLint clean.
+
 ## SubFaber v3.40.2 (2026-11-21) — Adaptive Interpolation Collapses Orphaned Sections
 
 ### Added

@@ -3450,6 +3450,7 @@ class TranslationEngine {
         const collapseEmptySections = (text) => {
             if (!text.includes(EMPTY_MARK)) return text;
             let collapsed = text;
+            let droppedTitles = [];
             for (let pass = 0; pass < 4; pass += 1) {
                 const before = collapsed;
                 // (2) Baris whitespace-tulen yang mengandungi JEJAK
@@ -3475,12 +3476,56 @@ class TranslationEngine {
                         /^#{1,6}[ \t]/.test(trimmedRest) ||
                         /^#{1,6}[ \t]*\r?\n/.test(trimmedRest)
                     ) {
+                        // [v3.40.3] Rekod tajuk header yang gugur supaya
+                        // rujukan senarai bernombor padannya boleh dibuang +
+                        // dinomborkan semula di langkah (4).
+                        const title = lines[i].match(/^#{1,6}[ \t]+(.+?)[ \t]*\r?\n?$/);
+                        if (title) droppedTitles.push(title[1].trim());
                         lines.splice(i, 1);
                     }
                 }
                 collapsed = lines.join('');
                 if (collapsed === before) break;
             }
+            // (4) [v3.40.3 — Mandat Owner "level up"] Rujukan senarai
+            // bernombor kepada seksyen yang gugur dibuang + item berikutnya
+            // DINOMBORKAN SEMULA ("1. A  2. B  3. X  4. C" dengan X gugur →
+            // "1. A  2. B  3. C"). Padanan: "N. <tajuk>" (tajuk = salah satu
+            // droppedTitles, case-insensitive) sebagai item dalam baris
+            // senarai sama.
+            if (droppedTitles.length > 0) {
+                const dropped = droppedTitles.map((t) => t.toLowerCase());
+                const splitItems = (line) => {
+                    // "1. A  2. B" → [{marker:'1. ', label:'A  '}, ...];
+                    // pemisah antara item tinggal bersama label (whitespace
+                    // pemisah di hujung label dipelihara).
+                    const parts = line.split(/(\d+[.)][ \t]+)/);
+                    const items = [];
+                    for (let i = 1; i + 1 < parts.length; i += 2) {
+                        items.push({ marker: parts[i], label: parts[i + 1] });
+                    }
+                    return items;
+                };
+                collapsed = collapsed
+                    .split(/(?<=\n)/)
+                    .map((line) => {
+                        if (!/\d+[.)][ \t]+\S/.test(line)) return line;
+                        const items = splitItems(line);
+                        if (items.length === 0) return line;
+                        const kept = items.filter((item) => !dropped.includes(item.label.trim().toLowerCase()));
+                        if (kept.length === items.length) return line;
+                        const head = line.slice(0, line.indexOf(items[0].marker));
+                        const rebuilt = kept
+                            .map((item, i) => `${i + 1}${item.marker.replace(/^\d+/, '')}${item.label}`)
+                            .join('');
+                        return head + rebuilt;
+                    })
+                    .join('');
+            }
+            // (5) [v3.40.3] Ratakan baris kosong bertindih hasil pemadaman
+            // kepada SATU baris kosong (pemisah asli templat disengajakan
+            // tidak terjejas — ia sudah satu-satu).
+            collapsed = collapsed.replace(/\n[ \t]*\n(?:[ \t]*\n)+/g, '\n\n');
             // Sentinel baki (kemunculan inline kosong) digugurkan bersih.
             return collapsed.split(EMPTY_MARK).join('');
         };

@@ -20,6 +20,24 @@ This template is the R5 ledger-format deliverable. It supersedes the legacy form
 
 -------
 
+## 2026-11-21 — v3.40.3 DANGLING LIST REFERENCES REMOVED & SECTIONS RENUMBERED (CLASS 1 PATCH)
+
+- **Date:** 2026-11-21 ~23:28 (KL time).
+- **Parent HEAD SHA:** `16a8a78c...` (v3.40.2, CI green Run `44917628524`).
+- **Status:** `RELEASED_CI_PENDING` → `RELEASED_CI_GREEN` confirmed in the final report.
+- **Release Commit SHA + CI Run ID:** confirmed in the final report after push/CI — never invented.
+- **Owner Decision:** "Level up" follow-up on the v3.40.2 dump: the final wire must be fully clean — the dangling numbered-list reference (`3. Target-language rules`) must be removed AND the list renumbered (`4. Style` → `3. Style`), and doubled blank lines at removal junctions must be flattened to one.
+- **Impact & Contract Audit (Phase A/B):** Zone C (engine collapse fixpoint only). Step (4) records the titles of headers dropped in step (3), then rewrites numbered-list lines item-by-item: items whose label exactly matches a dropped title (case-insensitive) are removed, survivors are renumbered sequentially preserving their original separators and any head-of-line text. Step (5) flattens runs of blank lines (post-deletion) to a single blank. Exact-title matching keeps unrelated numbered lines untouched; official wire remains byte-identical (no empty tokens → no collapse path).
+- **Reproduce-First Evidence:** Strengthened TLR-12 observed **RED** before the engine change (`.tmp/tlr-v3-red.log` — list-reference assertion failing on the pre-edit engine).
+- **Independent Acceptance:** TLR suite 14/14 post-fix; full-verbose wire dump of the Owner's complete v2 template with empty rules (`/tmp`-style artifact `.tmp/tlr-wire-full.txt` regenerated post-fix): orphan header gone, PRIORITY rendered `1. Structure and Markup  2. Meaning  3. Style`, zero doubled blank lines — matching the Owner's target verbatim. Full tracked suite **800 total / 799 PASS / 0 FAIL / 1 SKIP**; `node --check`, Prettier, ESLint clean. One mid-iteration regex defect (double-escaped `\\d` inside a template literal) was caught red by the failing pin and replaced with a simple split-based item parser.
+- **Residual / N/A Gates:** Real-provider N/A (no transport change). Renumbering applies only to lines containing numbered items whose labels exactly match dropped headers — prose mentioning a section title mid-sentence is intentionally untouched (conservative scope).
+- **Files Involved:** `src/services/translationEngine.js` (M: step 4/5 of the collapse fixpoint), `src/config/target-language-rules-regression.test.js` (M: TLR-12 strengthened), `package.json`/`package-lock.json` (M: 3.40.3), `CHANGELOG.md` (M: v3.40.3 entry, English lock), `docs/SESSION_LEDGER.md` (M: this entry), `.tmp/RELAY_STATE.md` (untracked relay checkpoint).
+- **npm test Status:** 800 total / 799 PASS / 0 FAIL / 1 SKIP, exit 0; log `.tmp/tlr-v3-full.log`.
+- **Next Steps:** One Class 1 commit `feat(engine): remove dangling list references and renumber sections (v3.40.3)`, push to origin/main, watch CI to SUCCESS, report Release Commit SHA + CI Run ID.
+- **Tool Navigation Ratio:** search_files=0 read_file=2 ratio=1:0.0 anchored=100% (2/2 reads) — continuation session; anchors from current-session tool evidence; zero new discovery needed.
+
+-------
+
 ## 2026-11-21 — v3.40.2 ADAPTIVE INTERPOLATION COLLAPSES ORPHANED SECTIONS (CLASS 1 PATCH)
 
 - **Date:** 2026-11-21 ~23:08 (KL time).

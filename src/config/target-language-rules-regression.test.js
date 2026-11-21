@@ -244,6 +244,9 @@ test('TLR-11: [OPT-OUT] enjin — sandbox aktif + rules null → token digugurka
 });
 
 // ── 7. [LINE-COLLAPSE 2026-11-21 — Mandat Owner] Interpolasi adaptif ─────
+// [v3.40.3 — Mandat Owner "level up"] Rujukan seksyen yang gugur dalam
+// senarai bernombor turut dibuang + dinomborkan semula; baris kosong
+// bertindih di persimpangan diratakan kepada satu.
 
 test('TLR-12: token kosong bersendirian → SELURUH baris + header yatim lenyap', () => {
     const TranslationEngine = require('../services/translationEngine');
@@ -281,6 +284,14 @@ test('TLR-12: token kosong bersendirian → SELURUH baris + header yatim lenyap'
         assert.ok(wire.includes('Write naturally.'), 'isi STYLE kekal');
         assert.ok(wire.includes('FS-CONTENT'), 'few-shot diisi → dihantar');
         assert.ok(!/\n[ \t]*\n[ \t]*\n/.test(wire), 'tiada blok baris-kosong bertindih');
+        // (d) [v3.40.3 — Mandat Owner "level up"] Rujukan seksyen gugur
+        // dalam senarai bernombor PRIORITY turut dibuang + dinomborkan
+        // semula ("4. Style" → "3. Style"; item "3. Target-language rules"
+        // lenyap).
+        assert.ok(!wire.includes('Target-language rules'), 'item senarai rujukan seksyen gugur lenyap');
+        assert.ok(wire.includes('3. Style'), 'senarai dinomborkan semula');
+        assert.ok(wire.includes('1. Structure'), 'item awal kekal');
+        assert.ok(wire.includes('2. Meaning'), 'item tengah kekal');
         // (c) Baris kosong disengajakan di bahagian lain template kekal
         // (hanya reruntuhan pemadaman yang dirawat).
         assert.ok(wire.includes('Return ONLY <answer>.'), 'bahagian akhir kekal');
