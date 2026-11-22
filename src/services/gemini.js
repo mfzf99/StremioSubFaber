@@ -875,19 +875,6 @@ class GeminiService {
         return generationConfig;
     }
 
-    isPrefillSupported() {
-        if (this.isGemmaModel) return false;
-
-        const modelNameLower = String(this.model).toLowerCase();
-        const matchVer = modelNameLower.match(/gemini-(\d+(?:\.\d+)?)/);
-        if (matchVer) {
-            const geminiVersion = parseFloat(matchVer[1]);
-            return geminiVersion <= 3.1;
-        }
-
-        return false;
-    }
-
     async getAvailableModels(options = {}) {
         const silent = !!options.silent;
         const throwOnError = options.throwOnError === true;
@@ -1230,36 +1217,18 @@ class GeminiService {
                     { category: 'HARM_CATEGORY_DANGEROUS_CONTENT', threshold: 'OFF' }
                 ];
 
-                let contents = [];
-                // [WIRE-M1 2026-11-14] Model-turn continuation adalah EKSKLUSIF
-                // Translation: giliran 'model' hanya wajar wujud bila anchor
-                // <s id="N"> dijumpai di hujung user content. Agen JSON
-                // (Preflight/Inspector) tiada anchor — sebelum ini mereka tetap
-                // menerima prefill generik "Task confirmed..." sebagai giliran
-                // model, mencalarkan kontrak sifar-prefill agen JSON.
-                const prefillAnchorMatch = userPrompt.match(/<s id="\d+">\s*$/);
-                if (this.isPrefillSupported() && prefillAnchorMatch) {
-                    const processedUserPrompt = userPrompt.slice(0, prefillAnchorMatch.index).trimEnd();
-                    const modelPrefill = `Task confirmed. Executing the strictly isolated raw data pipe localization stream now.\n${prefillAnchorMatch[0].trim()}`;
-
-                    contents = [
-                        {
-                            role: 'user',
-                            parts: [{ text: processedUserPrompt }]
-                        },
-                        {
-                            role: 'model',
-                            parts: [{ text: modelPrefill }]
-                        }
-                    ];
-                } else {
-                    contents = [
-                        {
-                            role: 'user',
-                            parts: [{ text: userPrompt }]
-                        }
-                    ];
-                }
+                // [PREFILL-PURGE 2026-11-22 — Mandat Owner] Pengesanan anchor
+                // <s id="N">$ + giliran 'model' praisi dibuang sepenuhnya:
+                // suntikan "Task confirmed..." mengganggu fasa reasoning/thought
+                // tokens Gemini 3.x dan melemahkan pematuhan ID pariti 1:1.
+                // Payload kini mematuhi format standard rasmi: systemInstruction
+                // top-level + contents berakhir dengan role 'user' sahaja.
+                const contents = [
+                    {
+                        role: 'user',
+                        parts: [{ text: userPrompt }]
+                    }
+                ];
 
                 // Strukturkan requestBody dengan systemInstruction sebagai medan peringkat
                 // atas yang berasingan (REST v1beta), bukan digabung dalam contents.
@@ -1431,34 +1400,16 @@ class GeminiService {
                     { category: 'HARM_CATEGORY_DANGEROUS_CONTENT', threshold: 'OFF' }
                 ];
 
-                let contents = [];
-                // [WIRE-M1 2026-11-14] Stream path — kontrak M1 yang sama: giliran
-                // model continuation hanya wajar bila anchor <s id="N"> dijumpai di
-                // hujung user content; agen JSON (Preflight/Inspector) menerima
-                // giliran user TUNGGAL (sifar prefill generik).
-                const prefillAnchorMatch = userPrompt.match(/<s id="\d+">\s*$/);
-                if (this.isPrefillSupported() && prefillAnchorMatch) {
-                    const processedUserPrompt = userPrompt.slice(0, prefillAnchorMatch.index).trimEnd();
-                    const modelPrefill = `Task confirmed. Executing the strictly isolated raw data pipe localization stream now.\n${prefillAnchorMatch[0].trim()}`;
-
-                    contents = [
-                        {
-                            role: 'user',
-                            parts: [{ text: processedUserPrompt }]
-                        },
-                        {
-                            role: 'model',
-                            parts: [{ text: modelPrefill }]
-                        }
-                    ];
-                } else {
-                    contents = [
-                        {
-                            role: 'user',
-                            parts: [{ text: userPrompt }]
-                        }
-                    ];
-                }
+                // [PREFILL-PURGE 2026-11-22 — Mandat Owner] Stream path —
+                // kontrak standard yang sama dengan laluan bukan-stream:
+                // contents berakhir dengan role 'user' sahaja (sifar giliran
+                // 'model' praisi / "Task confirmed").
+                const contents = [
+                    {
+                        role: 'user',
+                        parts: [{ text: userPrompt }]
+                    }
+                ];
 
                 // Strukturkan requestBody dengan systemInstruction sebagai medan peringkat
                 // atas yang berasingan (REST v1beta), bukan digabung dalam contents.

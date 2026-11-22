@@ -446,9 +446,13 @@ test('SubFaberPrompt V5: Pro mode structured template, split system/user, no dou
     // Static lane mesti sifar rujukan preflight (arahan KNP hidup dalam blok user-lane)
     assert.ok(!/pre-?flight/i.test(system), 'Static lane carries NO preflight reference (KNP guidance is user-lane)');
 
-    // ── USER part: HANYA data dinamik + anchor (tiada arahan statik) ──
+    // ── USER part: HANYA data dinamik + arahan penutup (tiada arahan statik) ──
     assert.ok(user.includes('<input>'), 'input block in user part');
-    assert.ok(user.trimEnd().endsWith('<s id="1">'), 'User part ENDS with prefill anchor');
+    // [PREFILL-PURGE 2026-11-22] arahan eksplisit menggantikan anchor.
+    assert.ok(
+        user.trimEnd().endsWith('Begin your output with the <answer> block, starting with the first entry <s id="1">.'),
+        'User part ENDS with the explicit output directive'
+    );
     assert.ok(!user.includes('[SYSTEM / ROLE]'), 'Static sections NOT duplicated into user part');
     assert.ok(!user.includes('<example>'), 'Few-shot NOT duplicated into user part');
     // Pro juga menerima idManifest (Owner D5).
@@ -493,7 +497,10 @@ test('SubFaberPrompt V5: Basic mode uses the SAME single template with pack few-
     assert.ok(user.includes('Required output ids in exact order'), 'Basic user part carries the required-ID manifest');
     // Data-only user part + retained anchor.
     assert.ok(user.includes('<input>'), 'user part carries the batch input');
-    assert.ok(user.trimEnd().endsWith('<s id="1">'), 'user part ENDS with the anchor');
+    assert.ok(
+        user.trimEnd().endsWith('Begin your output with the <answer> block, starting with the first entry <s id="1">.'),
+        'user part ENDS with the explicit directive (sifar anchor continuation)'
+    );
     assert.ok(!user.includes('You are a professional'), 'static instruction not duplicated into user part');
 });
 
@@ -517,7 +524,12 @@ test('SubFaberPrompt V3: gemini buildUserPrompt splits system/user (no double-se
     );
     assert.ok(systemPrompt.includes('### CORE RULES'), 'systemPrompt carries the core rules');
     assert.ok(userPrompt.includes('<input>'), 'userPrompt carries the batch input');
-    assert.ok(userPrompt.trimEnd().endsWith('<s id="1">'), 'userPrompt keeps the prefill anchor');
+    assert.ok(
+        userPrompt
+            .trimEnd()
+            .endsWith('Begin your output with the <answer> block, starting with the first entry <s id="1">.'),
+        'userPrompt keeps the explicit output directive'
+    );
     // The critical anti-duplication guarantee:
     assert.ok(!userPrompt.includes('[SYSTEM / ROLE]'), 'Role NOT duplicated into userPrompt');
     assert.ok(!userPrompt.includes('[TECHNICAL CONSTRAINTS'), 'Constraints NOT duplicated into userPrompt');
@@ -573,13 +585,19 @@ test('SubFaberPrompt: anchor startId derived directly from clean batchText (firs
     const batchText = engine.prepareBatchXml(batch); // context diabaikan — entri aktif sahaja
     const prompt = engine.createXmlBatchPrompt(batchText, 'Malay', null, batch.length, context, 0, 1);
 
-    // Anchor mesti <s id="6"> (ID aktif pertama), BUKAN <s id="1"> (context ID)
+    // Anchor mesti <s id="6"> (ID aktif pertama), BUKAN <s id="1"> (context ID).
+    // [PREFILL-PURGE 2026-11-22] startId kini disebut dalam ARAHAN EKSLISITIT
+    // di hujung prompt (sifar anchor continuation).
     assert.ok(prompt.includes('<s id="6">'), 'Anchor must be active first ID (6)');
-    assert.ok(prompt.trimEnd().endsWith('<s id="6">'), 'Prompt must END with anchor <s id="6">');
-    // Anchor ialah token terakhir prompt
+    assert.ok(
+        prompt.trimEnd().endsWith('starting with the first entry <s id="6">.'),
+        'Prompt must END with the explicit directive naming slot 6'
+    );
+    // Arahan eksplisit ialah token terakhir prompt
+    const directive = 'starting with the first entry <s id="6">.';
     const lastIdx = prompt.trimEnd().length;
-    const anchorIdx = prompt.lastIndexOf('<s id="6">');
-    assert.ok(anchorIdx === lastIdx - '<s id="6">'.length, 'Anchor is the final token of the prompt');
+    const directiveIdx = prompt.lastIndexOf(directive);
+    assert.ok(directiveIdx === lastIdx - directive.length, 'Directive is the final token of the prompt');
 });
 
 test('SubFaberPrompt V3: shared context block lives in the USER part, before <input>', () => {
@@ -644,10 +662,14 @@ test('SubFaberPrompt V3: no shared context block when context empty (user part c
     const { user } = splitStructuredPrompt(prompt);
 
     assert.ok(!user.includes('[CONTEXT INFORMATION'), 'No context block without context');
-    // USER part goes straight to <input> then anchor
+    // USER part goes straight to <input> then the explicit directive
+    // [PREFILL-PURGE 2026-11-22] sifar anchor continuation.
     const inputIdx = user.indexOf('<input>');
     assert.ok(inputIdx !== -1, '<input> present in user part');
-    assert.ok(user.trimEnd().endsWith('<s id="1">'), 'User ends with anchor even without context');
+    assert.ok(
+        user.trimEnd().endsWith('starting with the first entry <s id="1">.'),
+        'User ends with the explicit directive even without context'
+    );
 });
 
 // --- [KNP-VERBATIM 2026-11-14] Istilah disuntik VERBATIM (Owner D1) —

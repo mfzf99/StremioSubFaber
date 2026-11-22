@@ -92,7 +92,7 @@ async function runBatch(engine) {
     await engine.translateBatch(batch, 'Malay', null, 0, 1, null, {});
 }
 
-test('[F2-A] Fallback OpenAI → Gemini: prompt must be re-wrapped with Gemini continuation anchor', async () => {
+test('[F2-A] Fallback OpenAI → Gemini: prompt must be re-wrapped with the Gemini explicit directive', async () => {
     const { engine, primaryCalls, fallbackCalls } = makeEngine({ primaryChannel: 'openai', fallbackChannel: 'gemini' });
     await runBatch(engine);
     assert.equal(primaryCalls.length, 1, 'primary attempted once');
@@ -100,16 +100,15 @@ test('[F2-A] Fallback OpenAI → Gemini: prompt must be re-wrapped with Gemini c
     const fallbackPrompt = fallbackCalls[0].prompt;
     const structured = splitStructuredPrompt(fallbackPrompt);
     assert.ok(structured, 'fallback prompt must carry the structured boundary');
-    // Gemini wrapper: user content ENDS with the continuation anchor.
+    // [PREFILL-PURGE 2026-11-22] Gemini wrapper kini selari OpenAI: arahan
+    // eksplisit di hujung; sifar continuation anchor.
     assert.ok(
-        structured.user.trimEnd().endsWith('<s id="1">'),
-        `Gemini fallback user content must END with continuation anchor <s id="1">, got tail: ${JSON.stringify(structured.user.slice(-120))}`
+        structured.user.includes('Begin your output with the <answer> block, starting with the first entry <s id="1">'),
+        'Gemini fallback must include the explicit output directive'
     );
-    assert.ok(structured.user.includes('<answer>'), 'Gemini fallback must include the <answer> anchor block');
-    // It must NOT end with the OpenAI explicit-directive tail.
     assert.ok(
-        !structured.user.trimEnd().endsWith('<s id="1">.'),
-        'Gemini fallback must not end with the OpenAI directive sentence'
+        !structured.user.trimEnd().endsWith('<s id="1">'),
+        'Gemini fallback must NOT end with a continuation anchor'
     );
 });
 
@@ -153,10 +152,13 @@ test('[F2-C] Fallback Gemini → OpenAI: prompt must use explicit directive, not
     );
 });
 
-test('[F2-D] Same-channel fallback (Gemini → Gemini): still ends with continuation anchor', async () => {
+test('[F2-D] Same-channel fallback (Gemini → Gemini): keeps the explicit directive', async () => {
     const { engine, fallbackCalls } = makeEngine({ primaryChannel: 'gemini', fallbackChannel: 'gemini' });
     await runBatch(engine);
     assert.equal(fallbackCalls.length, 1, 'fallback attempted once');
     const structured = splitStructuredPrompt(fallbackCalls[0].prompt);
-    assert.ok(structured.user.trimEnd().endsWith('<s id="1">'), 'same-channel fallback keeps the anchor');
+    assert.ok(
+        structured.user.trimEnd().endsWith('starting with the first entry <s id="1">.'),
+        'same-channel fallback keeps the explicit directive (sifar anchor)'
+    );
 });

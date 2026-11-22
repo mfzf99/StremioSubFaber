@@ -3,15 +3,18 @@
  *
  * Kontrak rasmi pintu (plans/trinity-channel-native-prompts.md §2.1):
  *   - systemText → systemInstruction top-level `{ parts: [{ text }] }`.
- *   - PREFILL CONTINUATION ANCHOR — ciri EKSKLUSIF Gemini: user content
- *     berakhir dengan `\n\n<answer>\n<s id="${startId}">` supaya model
- *     menyambung terus slot pertama (enjin sebenar; Smart Preamble Scrubber
- *     membersihkan preambel patuh). Tiada pintu lain dibenarkan prefill.
+ *   - [PREFILL-PURGE 2026-11-22 — Mandat Owner] SIFAR PREFILL: jahitan
+ *     continuation anchor (`\n\n<answer>\n<s id="${startId}">`) di hujung user
+ *     content DIBUANG — ia mengganggu fasa reasoning/thought tokens Gemini 3.x
+ *     dan melemahkan pematuhan ID pariti 1:1. Gemini kini selari 100% dengan
+ *     pintu OpenAI/Anthropic: arahan penutup teks EKSKLISITIT dan model
+ *     memulangkan blok <answer>...</answer> penuh dari awal giliran model
+ *     sendiri. Kes PROHIBITED_CONTENT kekal dilindungi protokol pemulihan
+ *     2 peringkat + fallback sedia ada.
  *
- * Output: { channel, systemPrompt, userPrompt, prefill } — pemanggil (Fasa 3)
- * menghantar userPrompt (yang sudah berakhir dengan anchor) sebagai user
- * content; medan prefill disediakan sebagai kontrak eksplisit bagi
- * pengesahan/ujian.
+ * Output: { channel, systemPrompt, userPrompt } — pemanggil (Fasa 3)
+ * menghantar userPrompt sebagai user content; payload ke API Gemini
+ * berakhir dengan role `user` sahaja (tiada giliran `model` praisi).
  */
 
 const { assertTrinityPayload, assertStartId } = require('../wrapperUtils');
@@ -20,7 +23,7 @@ const channel = 'gemini';
 
 /**
  * @param {{systemText:string, dataText:string, queryText?:string, startId:string|number}} payload
- * @returns {{channel:string, systemPrompt:string, userPrompt:string, prefill:string}}
+ * @returns {{channel:string, systemPrompt:string, userPrompt:string}}
  */
 function buildTranslationGeminiPrompt(payload) {
     assertTrinityPayload(payload, 'translation/gemini');
@@ -28,14 +31,13 @@ function buildTranslationGeminiPrompt(payload) {
     const data = String(payload.dataText || '');
     const query = String(payload.queryText || '').trim();
     const base = query ? `${data}\n\n${query}` : data;
-    // Prefill continuation anchor — EKSKLUSIF Gemini (hujung user content).
-    const anchor = `<answer>\n<s id="${payload.startId}">`;
-    const userPrompt = `${base}\n\n${anchor}`;
+    // Anchor eksplisit — arahan teks (sifar prefill), selari OpenAI/Anthropic.
+    const anchorDirective = `Begin your output with the <answer> block, starting with the first entry <s id="${payload.startId}">.`;
+    const userPrompt = `${base}\n\n${anchorDirective}`;
     return {
         channel,
         systemPrompt: String(payload.systemText),
-        userPrompt,
-        prefill: anchor
+        userPrompt
     };
 }
 

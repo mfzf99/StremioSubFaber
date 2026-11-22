@@ -12,9 +12,10 @@
  * cross-channel fallback, parallel workers).
  *
  * Kontrak wayar yang dikunci:
- *   GEMINI    — systemInstruction top-level; model-turn continuation anchor
- *               EKSKLUSIF Translation (M1: sifar model turn generik pada
- *               agen JSON); sifar parameter haram (topK/minP/repetitionPenalty).
+ *   GEMINI    — systemInstruction top-level; [PREFILL-PURGE 2026-11-22]
+ *               sifar giliran model praisi pada SEMUA agen (Translation
+ *               termasuk — arahan eksplisit selari OpenAI); sifar parameter
+ *               haram (topK/minP/repetitionPenalty).
  *   OPENAI    — messages[0] system/developer statik; agent JSON wajib
  *               response_format json_schema strict (H1); agent teks sifar
  *               response_format; sifar assistant prefill.
@@ -335,8 +336,9 @@ test('[WIRE-M1] Preflight×Gemini: sifar model turn generik pada agen JSON; anch
     assert.ok(user.startsWith('<text>'), 'user membuka dengan data <text>');
     assert.ok(!has(user, '<answer>'), 'sifar anchor <answer> pada agen JSON');
 
-    // Bahagian 2 — kontrak M1 pada laluan TRANSLATION: model turn hanya wujud
-    // bila anchor ditemui (regression pin bagi gelag yang sah).
+    // Bahagian 2 — kontrak baharu pada laluan TRANSLATION: [PREFILL-PURGE
+    // 2026-11-22] sifar giliran model praisi; user content penuh (arahan
+    // eksplisit di hujung, tidak dipotong).
     const engine = new TranslationEngine(
         makeGemini(),
         'gemini-2.5-flash',
@@ -353,11 +355,12 @@ test('[WIRE-M1] Preflight×Gemini: sifar model turn generik pada agen JSON; anch
     const translationRecord = captured.find((r) => r.url.includes(':generateContent'));
     assert.ok(translationRecord, 'request translation ditangkap');
     const tBody = translationRecord.body;
-    assert.equal(tBody.contents.length, 2, 'Translation: model turn continuation aktif bila anchor dijumpai');
-    assert.equal(tBody.contents[1]?.role, 'model', 'giliran model pembawa anchor');
+    assert.equal(tBody.contents.length, 1, 'Translation: giliran user TUNGGAL (sifar prefill purge)');
+    assert.equal(tBody.contents[0]?.role, 'user', 'giliran tunggal mesti role user');
+    assert.ok(!JSON.stringify(tBody).includes('Task confirmed'), 'Translation: sifar teks prefill generik');
     assert.ok(
-        /<s id="1">\s*$/.test(tBody.contents[1]?.parts?.[0]?.text || ''),
-        'model turn berakhir dengan anchor slot pertama'
+        (tBody.contents[0]?.parts?.[0]?.text || '').trimEnd().endsWith('starting with the first entry <s id="1">.'),
+        'user content penuh — arahan eksplisit di hujung'
     );
 });
 
@@ -432,13 +435,16 @@ test('[WIRE-MATRIX-GEMINI] Translation Basic+Pro × Gemini: systemInstruction to
         assert.ok(has(user, '<input>'), `[${mode}] user membawa <input>`);
         assert.ok(has(user, 'Required output ids in exact order'), `[${mode}] manifest ID kedua-dua mod (D5)`);
 
-        assert.equal(body.contents.length, 2, `[${mode}] model turn continuation aktif`);
-        assert.equal(body.contents[1]?.role, 'model');
+        // [PREFILL-PURGE 2026-11-22 — Mandat Owner] Sifar giliran model
+        // praisi; user content penuh (arahan eksplisit di hujung).
+        assert.equal(body.contents.length, 1, `[${mode}] giliran user TUNGGAL (sifar prefill)`);
+        assert.equal(body.contents[0]?.role, 'user');
+        assert.ok(!JSON.stringify(body).includes('Task confirmed'), `[${mode}] sifar teks prefill generik`);
         assert.ok(
-            /<s id="1">\s*$/.test(body.contents[1]?.parts?.[0]?.text || ''),
-            `[${mode}] model turn berakhir dengan anchor`
+            user.trimEnd().endsWith('starting with the first entry <s id="1">.'),
+            `[${mode}] user content berakhir dengan arahan eksplisit`
         );
-        assert.ok(!/<s id="1">\s*$/.test(user), `[${mode}] anchor telah dialih keluar dari user`);
+        assert.ok(!/<s id="1">\s*$/.test(user), `[${mode}] sifar anchor continuation di hujung user`);
 
         const generationConfig = body.generationConfig || {};
         for (const forbidden of ['topK', 'minP', 'repetitionPenalty', 'topKEnabled']) {
@@ -550,7 +556,9 @@ test('[WIRE-MATRIX-ANTHROPIC] Translation Basic+Pro × Anthropic: system akar, d
 test('[WIRE-T-RETRY] Diagnostics retry di lorong user, sebelum anchor/arahan, pada ketiga-tiga pintu', () => {
     const block =
         '\n\nRETRY REPAIRS\nID 1 (VERBATIM_UNTRANSLATED)\n\nVERIFIED SLOTS (keep verbatim)\n<s id="2">Baik</s>';
-    const geminiPrompt = `STATIC SYSTEM\n\n${SUBFABER_PROMPT_BOUNDARY}\n\n<input>\n<s id="1">Hello.</s>\n</input>\n\n<answer>\n<s id="1">`;
+    // [PREFILL-PURGE 2026-11-22] Fixture Gemini kini membawa arahan
+    // eksplisit pintu (selari OpenAI) — sifar jahitan continuation.
+    const geminiPrompt = `STATIC SYSTEM\n\n${SUBFABER_PROMPT_BOUNDARY}\n\n<input>\n<s id="1">Hello.</s>\n</input>\n\nBegin your output with the <answer> block, starting with the first entry <s id="1">.`;
     const openaiPrompt = `STATIC SYSTEM\n\n${SUBFABER_PROMPT_BOUNDARY}\n\n<input>\n<s id="1">Hello.</s>\n</input>\n\nBegin your output with the <answer> block, starting with the first entry <s id="1">.`;
     const anthropicPrompt = `STATIC SYSTEM\n\n${SUBFABER_PROMPT_BOUNDARY}\n\n<subtitle_input>\n<s id="1">Hello.</s>\n</subtitle_input>\n\nWrite your answer inside a single <answer> block: one <s id="N"> per input id, same ids, same order, beginning with <s id="1">.`;
 
@@ -565,7 +573,9 @@ test('[WIRE-T-RETRY] Diagnostics retry di lorong user, sebelum anchor/arahan, pa
         assert.ok(!has(parts.system, 'VERIFIED SLOTS'), `[${door}] diagnostik HARAM dalam lorong system`);
         assert.ok(has(parts.user, 'VERIFIED SLOTS'), `[${door}] diagnostik hadir dalam lorong user`);
         const anchorToken =
-            door === 'gemini' ? '\n\n<answer>' : door === 'openai' ? 'Begin your output' : 'Write your answer';
+            door === 'anthropic'
+                ? 'Write your answer inside a single <answer> block'
+                : 'Begin your output with the <answer> block';
         assert.ok(
             injected.indexOf(block) < injected.lastIndexOf(anchorToken),
             `[${door}] diagnostik berada SEBELUM anchor/arahan`

@@ -2,6 +2,22 @@
 
 All notable changes to this project will be documented in this file.
 
+## SubFaber v3.41.0 (2026-11-22) — Gemini Prefill Purge, Generation Params in Cache Keys & Paired-Quote Preservation
+
+### Changed
+
+- **Purged the Gemini model-turn prefill hack.** The Translation wrapper no longer stitches a continuation anchor (`<answer>\n<s id="N">`) onto the end of user content, and both Gemini transport paths (non-stream `generateContent` and SSE `streamGenerateContent`) no longer truncate the user turn to inject a praised-up `model` turn (`Task confirmed. Executing the strictly isolated raw data pipe localization stream now.`). The injected model turn was disrupting the reasoning/thought phase of Gemini 3.x models and weakening 1:1 ID-parity compliance. The Gemini door now mirrors the OpenAI/Anthropic contract exactly: user content ends with an explicit text directive (`Begin your output with the <answer> block, starting with the first entry <s id="N">.`), and the API payload is the official standard shape — `systemInstruction` at top level plus `contents` ending with a single `user` role. The dead `isPrefillSupported()` gate (prefill only existed for Gemini ≤ 3.1) was removed. The Smart Preamble Scrubber in `parseXmlBatchResponse()` remains as the defensive parser, and PROHIBITED_CONTENT keeps its existing two-stage recovery + fallback protection.
+- **Streaming progress now parses model-opened `<answer>` blocks without corrupting slot 1.** With the prefill gone, Gemini streams now begin with `<answer>\n<s id="N">` from the model's own turn. `buildStreamingProgress()` previously prepended the batch anchor whenever the text did not start with `<s` — before even stripping markdown fences — which would have produced `<s id="N"><answer>\n<s id="N">...` and corrupted the first slot. The new pipeline strips fences first, returns `null` while the stream is still mid-opening-tag (no premature anchor paste), re-attaches the anchor for a Rule-7-compliant untagged first slot (preamble ending with `</s>`), drops short chatter before the first opening `<s` tag, leaves >200-char structural anomalies untouched, and strips `<answer>`/`</answer>` wrappers.
+- **Generation parameters now fork translation cache keys.** `generateCacheKeys()` includes the active LLM-influencing parameters — `temperature`, `topP`, `thinkingLevel`, `frequencyPenalty`, `presencePenalty` — in a deterministic `_g-…` key segment (e.g. `_g-t0.9p0.95`), so silent A/B parameter changes no longer serve stale cached translations. Resolution mirrors the runtime provider factory (`trinity.translation.params` overrides `advancedSettings`), normalization collapses unset/default values consistently, and the separation is active for Basic, Pro, and sandbox modes. Configs that never set any of these parameters keep the exact historical key (byte-identical — no needless cache invalidation).
+
+### Fixed
+
+- **Paired double quotes inside a sentence are no longer destroyed.** Stage 3.1 of `cleanTranslatedText()` previously deleted every double-quote character (`"`, `“`, `”`, `„`, `«`, `»`) wholesale, so sarcasm or legitimate quotation like `(That money was really "well spent".)` lost its quotes. XML quote entities are now converted (`"` → `"`, `' → '`), validly paired `"..."` / `“...”` spans are preserved, whole-slot wrappers (`"..."` / `«...»` around the entire slot) are stripped only when the source text itself is not quoted, and unpaired dangling quotes left by AI errors are removed through greedy left-to-right pairing — while in-word apostrophes (`Xing'anli`, `don't`) remain protected.
+
+### Added
+
+- **New regression suite `prefill-purge-regression.test.js` (17 tests)** pinning the new contracts: single-user-turn Gemini payload with zero `Task confirmed` residue, `<answer>`-opening streams leaving slot 1 intact, cache-key separation per parameter change (Basic/Pro/sandbox/Trinity-card override), and paired-quote preservation with wrapper/dangling cleanup. Seven legacy suites that pinned the old anchor contract were re-pinned to the explicit-directive contract (tri-door wire parity, trinity prompt matrix, context, fallback rewrap, monkey total purge, bugfix2, prompt-sandbox wire parity).
+
 ## SubFaber v3.40.3 (2026-11-21) — Dangling List References Removed & Sections Renumbered
 
 ### Added

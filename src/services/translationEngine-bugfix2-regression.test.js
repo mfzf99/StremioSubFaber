@@ -94,8 +94,12 @@ test('Bug#1 auto-chunk: second-half prompt carries subsequent + preflight + prev
     assert.equal(captured.length, 2, `auto-chunk mesti split 3+3 (dapat ${captured.length} panggilan)`);
     const secondPrompt = captured[1];
 
-    // Anchor second-half = ID aktif pertama second-half (54)
-    assert.ok(secondPrompt.trimEnd().endsWith('<s id="54">'), 'anchor <s id="54"> token terakhir');
+    // Anchor second-half = ID aktif pertama second-half (54).
+    // [PREFILL-PURGE 2026-11-22] arahan eksplisit menggantikan anchor.
+    assert.ok(
+        secondPrompt.trimEnd().endsWith('starting with the first entry <s id="54">.'),
+        'directive names <s id="54"> as the final token'
+    );
 
     // ── ASSERTION BUG #1 (sebelum patch: MERAH; bentuk blok dikemas kini SLIDING-V2) ──
     assert.ok(
@@ -141,7 +145,11 @@ test('Bug#1 auto-chunk: split 4+4 — previous window penuh, subsequent dari sko
     const secondPrompt = captured[1];
 
     // Second-half = IDs 25..28; previous = 4 baris terakhir first-half (21..24)
-    assert.ok(secondPrompt.trimEnd().endsWith('<s id="25">'), 'anchor <s id="25"> token terakhir');
+    // [PREFILL-PURGE 2026-11-22] arahan eksplisit menggantikan anchor.
+    assert.ok(
+        secondPrompt.trimEnd().endsWith('starting with the first entry <s id="25">.'),
+        'directive names <s id="25"> as the final token'
+    );
     assert.ok(secondPrompt.includes('<previous_translated'), 'previous_translated hadir (D6)');
     assert.ok(secondPrompt.includes('<m id="21">'), 'window prev bermula ID 21 (4 baris penuh, D6 <m>)');
     assert.ok(secondPrompt.includes('<m id="24">'), 'window prev berakhir ID 24 (D6 <m>)');
@@ -187,24 +195,24 @@ test('Bug#2 crime retry: warning injected BEFORE <answer>, anchor stays last tok
     // Amaran jenayah hadir
     assert.ok(retryPrompt.includes('CRITICAL SEMANTIC ALERT'), 'warning crime hadir dalam retry');
     // ── ASSERTION BUG #2 (sebelum patch: MERAH) ──
+    // [PREFILL-PURGE 2026-11-22] arahan eksplisit menggantikan anchor sebagai
+    // token terakhir; amaran mesti kekal SEBELUM arahan.
     assert.ok(
-        retryPrompt.trimEnd().endsWith('<s id="11">'),
-        'Bug#2: anchor <s id="11"> mesti kekal token terakhir prompt retry'
+        retryPrompt.trimEnd().endsWith('starting with the first entry <s id="11">.'),
+        'Bug#2: arahan eksplisit <s id="11"> mesti kekal token terakhir prompt retry'
     );
-    // Susunan: ALERT → <answer> → anchor
+    // Susunan: ALERT → arahan eksplisit
     const alertIdx = retryPrompt.indexOf('CRITICAL SEMANTIC ALERT');
-    const answerIdx = retryPrompt.lastIndexOf('\n\n<answer>');
-    const anchorIdx = retryPrompt.lastIndexOf('<s id="11">');
-    assert.ok(answerIdx !== -1, 'blok <answer> hadir');
+    const directiveIdx = retryPrompt.lastIndexOf('starting with the first entry <s id="11">');
+    assert.ok(directiveIdx !== -1, 'arahan eksplisit hadir');
     assert.ok(
-        alertIdx !== -1 && alertIdx < answerIdx && answerIdx < anchorIdx,
-        'Susunan mesti: ALERT → <answer> → anchor (amaran SEBELUM <answer>)'
+        alertIdx !== -1 && alertIdx < directiveIdx,
+        'Susunan mesti: ALERT → arahan eksplisit (amaran SEBELUM arahan)'
     );
-    // Anchor tidak berganda SELEPAS blok <answer> (ID sama memang wujud
-    // dalam <input> — itu bukan duplikasi anchor).
-    const afterAnswer = retryPrompt.slice(answerIdx);
-    const anchorCountAfterAnswer = (afterAnswer.match(/<s id="11">/g) || []).length;
-    assert.equal(anchorCountAfterAnswer, 1, 'anchor tepat SATU selepas <answer> (tiada duplikasi oleh retry)');
+    // Arahan tidak berganda (ID sama memang wujud dalam <input> — itu bukan
+    // duplikasi arahan).
+    const directiveCount = (retryPrompt.match(/starting with the first entry <s id="11">/g) || []).length;
+    assert.equal(directiveCount, 1, 'arahan eksplisit tepat SATU (tiada duplikasi oleh retry)');
 });
 
 test('Bug#2 crime retry: split system/user kekal — warning hidup dalam USER part', async () => {
@@ -234,5 +242,8 @@ test('Bug#2 crime retry: split system/user kekal — warning hidup dalam USER pa
 
     assert.ok(user.includes('CRITICAL SEMANTIC ALERT'), 'warning dalam USER part');
     assert.ok(!system.includes('CRITICAL SEMANTIC ALERT'), 'warning TIDAK bocor ke SYSTEM part');
-    assert.ok(user.trimEnd().endsWith('<s id="1">'), 'USER part berakhir dengan anchor');
+    assert.ok(
+        user.trimEnd().endsWith('starting with the first entry <s id="1">.'),
+        'USER part berakhir dengan arahan eksplisit'
+    );
 });

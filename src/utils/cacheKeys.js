@@ -23,21 +23,7 @@ function normalizeUserHash(rawHash) {
     return trimmed;
 }
 
-/**
- * Generate cache keys for translation caching
- *
- * @param {Object} config - User configuration
- * @param {string} sourceFileId - Source file identifier (e.g., "imdb123_en")
- * @param {string} targetLang - Target language code (e.g., "es")
- * @returns {Object} Cache key information
- * @returns {string} .baseKey - Base key without user scoping (e.g., "imdb123_en_es")
- * @returns {string} .cacheKey - Primary cache key (bypass uses user scope, permanent uses shared base)
- * @returns {string} .runtimeKey - Key used for in-flight tracking/partials (scoped per config when available)
- * @returns {boolean} .bypass - Whether bypass mode is enabled in config
- * @returns {boolean} .bypassEnabled - Whether bypass mode is actually active (requires userHash)
- * @returns {string} .userHash - User configuration hash (empty string if not available)
- * @returns {boolean} .allowPermanent - Whether permanent cache reads/writes are allowed (requires userHash)
- */
+/* Generate-cache-keys JSDoc kini melekat terus pada fungsi (lihat bawah). */
 /**
  * [A1 FIX 2026-11-14] Resolve the trinity channel a config will actually
  * translate through, for the `_ch-<door>` cache-key discriminator.
@@ -112,6 +98,67 @@ function resolveTrinityModeForConfig(config) {
     return 'basic';
 }
 
+/**
+ * [GEN-PARAMS-KEY 2026-11-22 — Mandat Owner] Normalize the generation
+ * parameters that influence LLM output into a deterministic key segment so
+ * silent A/B parameter changes never serve stale cached translations.
+ *
+ * Resolution order mirrors the runtime provider factory: explicit
+ * `trinity.translation.params` (Trinity agent card) OVERRIDES
+ * `advancedSettings`; values absent from both fall back to the model's
+ * effective defaults and are omitted from the segment — a config that never
+ * set a parameter keeps the exact historical key (no needless forking).
+ * Segment format: `_g-t{temp}p{topP}k{thinkingLevel}f{freq}r{pres}` with
+ * only explicitly-set components included.
+ * @param {Object} config normalized user configuration
+ * @returns {string} cache-key segment ('' when no explicit params)
+ */
+function buildGenerationParamsSegment(config) {
+    const advanced = config?.advancedSettings || {};
+    const agentParams = config?.trinity?.translation?.params;
+    const picks = [
+        ['t', 'temperature'],
+        ['p', 'topP'],
+        ['k', 'thinkingLevel'],
+        ['f', 'frequencyPenalty'],
+        ['r', 'presencePenalty']
+    ];
+    const parts = [];
+    for (const [tag, field] of picks) {
+        let value;
+        if (agentParams && agentParams[field] !== undefined) {
+            value = agentParams[field];
+        } else if (advanced[field] !== undefined) {
+            value = advanced[field];
+        }
+        if (value === undefined || value === null || value === '') continue;
+        if (typeof value === 'number') {
+            if (!Number.isFinite(value)) continue;
+            value = Number(value.toFixed(4));
+        } else {
+            value = String(value).trim();
+            if (!value) continue;
+        }
+        parts.push(`${tag}${value}`);
+    }
+    return parts.length > 0 ? `_g-${parts.join('')}` : '';
+}
+
+/**
+ * Generate cache keys for translation caching
+ *
+ * @param {Object} config - User configuration
+ * @param {string} sourceFileId - Source file identifier (e.g., "imdb123_en")
+ * @param {string} targetLang - Target language code (e.g., "es")
+ * @returns {Object} Cache key information
+ * @returns {string} .baseKey - Base key without user scoping (e.g., "imdb123_en_es")
+ * @returns {string} .cacheKey - Primary cache key (bypass uses user scope, permanent uses shared base)
+ * @returns {string} .runtimeKey - Key used for in-flight tracking/partials (scoped per config when available)
+ * @returns {boolean} .bypass - Whether bypass mode is enabled in config
+ * @returns {boolean} .bypassEnabled - Whether bypass mode is actually active (requires userHash)
+ * @returns {string} .userHash - User configuration hash (empty string if not available)
+ * @returns {boolean} .allowPermanent - Whether permanent cache reads/writes are allowed (requires userHash)
+ */
 function generateCacheKeys(config, sourceFileId, targetLang) {
     // Prompt-semantic namespace prevents output produced under an earlier
     // Basic prompt (Malay-hardcoded, then editorial-craft, then the
@@ -169,7 +216,12 @@ function generateCacheKeys(config, sourceFileId, targetLang) {
         : tuningSuffix.length > 0
           ? `universal-v7${tuningSuffix}`
           : 'universal-v7';
-    const sourceKey = `${sourceFileId}_${targetLang}_trinity-${trinityMode}-${promptNamespace}_ch-${trinityChannel}`;
+    // [GEN-PARAMS-KEY 2026-11-22 — Mandat Owner] Parameter generasi aktif
+    // (temperature/topP/thinkingLevel/penalti) memisahkan kunci cache supaya
+    // ujian A/B tidak dipulangkan hasil cache lama. Segment kosong bila tiada
+    // parameter eksplisit → kunci legacy byte-identik.
+    const genParamsSuffix = buildGenerationParamsSegment(config);
+    const sourceKey = `${sourceFileId}_${targetLang}_trinity-${trinityMode}-${promptNamespace}${genParamsSuffix}_ch-${trinityChannel}`;
     // When ASS passthrough is enabled, append format discriminator to prevent
     // ASS-format cached translations from being served to users expecting SRT
     const assPassthrough = config.convertAssToVtt === false && config.forceSRTOutput !== true;

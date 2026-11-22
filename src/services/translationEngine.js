@@ -3831,15 +3831,44 @@ ${batchText}
         // Phase 3: streaming-safe XML regex
         let cleaned = partialText;
 
-        // Prepend anchor continuation for streaming (uses batchStartId above)
-        if (!cleaned.startsWith('<s')) {
-            cleaned = `<s id="${batchStartId}">` + cleaned;
-        }
-
         // Remove markdown fences (hex avoids markdown UI breakage)
         const mdRegex = new RegExp('\\x60\\x60\\x60[a-z]*(?:\\r?\\n)?', 'gi');
         cleaned = cleaned.replace(mdRegex, '');
         cleaned = cleaned.replace(new RegExp('\\x60\\x60\\x60', 'g'), '');
+
+        // [PREFILL-PURGE 2026-11-22 — Mandat Owner] Tanpa giliran 'model'
+        // praisi, stream Gemini kini dibuka model sendiri dengan
+        // `<answer>\n<s id="N">…` — kod lama menampal anchor di awal dan
+        // mencemarkan slot pertama (`<s id="N"><answer>\n<s id="N">…`).
+        // Algoritma baru (susunan WAJIB selepas buang fence), selari Smart
+        // Preamble Scrubber dalam parseXmlBatchResponse:
+        //   1. Cari tag <s PEMBUKA pertama (<s diikuti whitespace/>).
+        //   2. Tiada tag pembuka:
+        //      a. stream masih membina tag (awalan `<`/`</` pendek) → null;
+        //      b. selain itu → tampal anchor (pemulihan Rule 7 asal).
+        //   3. Tag pembuka wujud pada idx > 0 — klasifikasi preamble:
+        //      a. berakhir `</s>` → slot pertama TANPA tag (Rule 7 patuh) →
+        //         tampal anchor pada TEKS PENUH (jangan buang preamble);
+        //      b. pendek (≤200) → chatter → buang;
+        //      c. panjang → anomali struktur → kekal (jangan blind-slice).
+        //   4. Buang `<answer>`/`</answer>` (pembalut blok, bukan data slot).
+        const firstOpenSTagIdx = cleaned.search(/<s[\s>]/);
+        if (firstOpenSTagIdx === -1) {
+            if (/^\s*<\/?[a-z]*\s*$/i.test(cleaned)) {
+                // Stream masih membina tag pembuka/pembalut — belum ada slot.
+                return null;
+            }
+            cleaned = `<s id="${batchStartId}">` + cleaned;
+        } else if (firstOpenSTagIdx > 0) {
+            const preamble = cleaned.slice(0, firstOpenSTagIdx).trim();
+            if (/<\/s>\s*$/.test(preamble)) {
+                // Untagged first slot — re-attach the opening anchor.
+                cleaned = `<s id="${batchStartId}">` + cleaned;
+            } else if (preamble.length > 0 && preamble.length <= 200) {
+                cleaned = cleaned.slice(firstOpenSTagIdx);
+            }
+        }
+        cleaned = cleaned.replace(/<\/?answer>/gi, '');
 
         // Capture normal and truncated lines during real-time streaming
         // Tolerant of quotes, spaces, and invalid attributes.
@@ -4255,16 +4284,64 @@ ${batchText}
 
         // 3.1 Quote normalization (Broadcast standard + AI error resilient)
         cleaned = cleaned
-            // 0. Remove leftover XML quote entities (&quot; &apos;)
-            .replace(/&quot;/gi, '')
-            .replace(/&apos;/gi, '')
+            // 0. Convert leftover XML quote entities to real characters
+            .replace(/&quot;/gi, '"')
+            .replace(/&apos;/gi, String.fromCharCode(39))
             // 1. Remove ALL double quotes (paired or dangling)
-            .replace(/["“”„«»]/g, '')
+            // [QUOTE-PRESERVE 2026-11-22] blanket double-quote removal
+            // REMOVED — replaced by wrapper/dangling cleanup in 3.1b below
             // 2. Remove leading/trailing single quotes around words
             .replace(/(^|[\s([{\-])['‘`]([a-zA-Z0-9])/g, '$1$2')
             .replace(/([a-zA-Z0-9])['’`]([\s)\]}.,!?-]|$)/g, '$1$2')
             // 3. Remove standalone floating single quotes
             .replace(/(^|\s)['‘`]+(?=\s|$)/g, '$1');
+
+        // 3.1b [QUOTE-PRESERVE 2026-11-22 — Mandat Owner] Slot-wrapper and
+        // dangling double-quote cleanup (paired quotes already preserved):
+        //   (a) remove a wrapping pair around the WHOLE slot only when the
+        //       source text itself is not quoted (AI added an unrequested
+        //       wrapper); one-sided wraps at line edges also fall here since
+        //       they can never pair;
+        //   (b) drop unpaired (dangling) double quotes left by AI errors —
+        //       greedy left-to-right pairing keeps every proper pair.
+        // Apostrophes inside words (Xing'anli, don't) are untouched.
+        const DQ_CLASS = '["\u201C\u201D\u201E\u00AB\u00BB]';
+        const DQ_OPEN = '["\u201C\u201E\u00AB]';
+        const DQ_CLOSE = '["\u201D\u201E\u00BB]';
+        // Normalize German-style „x” to ASCII pair for pairing math
+        cleaned = cleaned.replace(/\u201E([^\u201E\u201D]*)\u201D/g, '"$1"');
+        const isSourceWrapped =
+            typeof sourceText === 'string' &&
+            sourceText.trim().length > 0 &&
+            new RegExp(`^\\s*${DQ_OPEN}[\\s\\S]*${DQ_CLOSE}\\s*$`).test(sourceText);
+        if (!isSourceWrapped) {
+            cleaned = cleaned.replace(new RegExp(`^\\s*${DQ_OPEN}([\\s\\S]*?)${DQ_CLOSE}\\s*$`), (_m, inner) => inner);
+        }
+        {
+            const quoteIdxs = [];
+            const scanRe = new RegExp(DQ_CLASS, 'g');
+            let qm;
+            while ((qm = scanRe.exec(cleaned)) !== null) quoteIdxs.push(qm.index);
+            const keepIdxs = new Set();
+            for (let i = 0; i < quoteIdxs.length; i += 1) {
+                if (keepIdxs.has(quoteIdxs[i])) continue;
+                for (let j = i + 1; j < quoteIdxs.length; j += 1) {
+                    if (keepIdxs.has(quoteIdxs[j])) continue;
+                    keepIdxs.add(quoteIdxs[i]);
+                    keepIdxs.add(quoteIdxs[j]);
+                    break;
+                }
+            }
+            if (quoteIdxs.length !== keepIdxs.size) {
+                let out = '';
+                const isDQ = new RegExp(`^${DQ_CLASS}$`);
+                for (let i = 0; i < cleaned.length; i += 1) {
+                    if (isDQ.test(cleaned[i]) && !keepIdxs.has(i)) continue;
+                    out += cleaned[i];
+                }
+                cleaned = out;
+            }
+        }
 
         // 3.2 LITERAL UNICODE & HEX ESCAPE — some providers (Mistral/Llama/Qwen/DeepSeek)
         //     output escape sequences as literal TEXT instead of actual characters.

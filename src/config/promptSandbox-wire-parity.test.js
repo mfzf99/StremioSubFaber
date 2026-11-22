@@ -336,7 +336,13 @@ test('[SBX-RETRY] Diagnostik retry pada prompt sandbox: lorong user, sebelum anc
         assert.ok(parts.user.includes('VERIFIED SLOTS'), 'diagnostik hadir dalam user');
         assert.ok(parts.system.includes('SBX ROLE'), 'system lane kekal teks sandbox');
         assert.ok(parts.system.includes('$&'), 'token $& kekal verbatim selepas retry path');
-        assert.ok(injected.indexOf(block) < injected.lastIndexOf('\n\n<answer>'), 'diagnostik SEBELUM anchor');
+        // [PREFILL-PURGE 2026-11-22] Gemini kini berakhir dengan arahan
+        // eksplisit pintu (sifar jahitan <answer>) — diagnostik mesti Duduk
+        // sebelum arahan tersebut.
+        assert.ok(
+            injected.indexOf(block) < injected.lastIndexOf('Begin your output with the <answer> block'),
+            'diagnostik SEBELUM arahan eksplisit pintu'
+        );
     } finally {
         __resetPromptSandboxForTests();
     }

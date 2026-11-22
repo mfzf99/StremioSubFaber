@@ -192,7 +192,9 @@ test('P6: Inspector semantic retry kekal dengan VERIFIED SLOTS + anchor', async 
     assert.equal(calls, 2, 'original + semantic retry');
     assert.ok(prompts[1].includes('ID 2 (MERGE)'), 'semantic crime carried into retry prompt');
     assert.ok(prompts[1].includes('VERIFIED SLOTS (keep verbatim)'));
-    assert.ok(prompts[1].trimEnd().endsWith('<answer>\n<s id="1">'));
+    // [PREFILL-PURGE 2026-11-22] Retry prompt kini berakhir dengan arahan
+    // eksplisit pintu (sifar anchor continuation).
+    assert.ok(prompts[1].trimEnd().endsWith('starting with the first entry <s id="1">.'));
     assert.equal(result[1].text, 'Dua dibaiki');
     const semantic = engine.translationStats.incidents.find(
         (i) => i.type === 'AGENT_INSPECTOR_SEMANTIC_RETRY' && i.batch === 1

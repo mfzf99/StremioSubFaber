@@ -128,12 +128,20 @@ test('[MATRIX preflight×anthropic] data-first + sifar prefill + tag XML pembata
     assert.equal(out.responseFormat, undefined, 'Anthropic tiada response_format');
 });
 
-test('[MATRIX translation×gemini] prefill continuation anchor EKSKLUSIF', () => {
+test('[MATRIX translation×gemini] sifar prefill — arahan eksplisit selari OpenAI', () => {
     const build = resolveTrinityPrompt('translation', 'gemini');
     const out = build(translationPayload());
     assert.equal(out.channel, 'gemini');
-    assert.ok(out.userPrompt.endsWith('<answer>\n<s id="11">'), 'anchor di HUJUNG user content');
-    assert.equal(out.prefill, '<answer>\n<s id="11">', 'medan prefill eksplisit');
+    // [PREFILL-PURGE 2026-11-22 — Mandat Owner] Kontrak baharu: sifar
+    // continuation anchor; user content berakhir dengan arahan eksplisit.
+    assert.equal(out.prefill, undefined, 'medan prefill dibuang');
+    assert.ok(!out.userPrompt.trimEnd().endsWith('<s id="11">'), 'sifar anchor continuation');
+    assert.ok(
+        out.userPrompt
+            .trimEnd()
+            .endsWith('Begin your output with the <answer> block, starting with the first entry <s id="11">.'),
+        'arahan eksplisit di hujung user content'
+    );
     // [STREAMLINE 2026-11-15] Templat streamline Owner — kontrak parity baharu.
     assert.ok(
         out.systemPrompt.includes('Output exactly one <s id="N"> per <input> entry'),
