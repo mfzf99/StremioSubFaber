@@ -435,6 +435,31 @@ async function pruneTranslationsForVideo(videoHash, preferredBatchId = null) {
     }
 }
 
+/**
+ * [CACHE-COHERENCE-SWEEP v3.41.1 — Peringkat 4 / W4] Padam SATU terjemahan
+ * embedded (kunci derived `{videoHash}_translation_{src}_{track}_{tgt}`) dan
+ * keluarkannya daripada indeks per-video supaya listEmbeddedTranslations()
+ * tidak lagi menyenaraikannya. Original embedded TIDAK disentuh.
+ * @param {string} videoHash - Video hash (indeks per-video)
+ * @param {string} cacheKey - Kunci embedded yang dijana saveTranslatedEmbedded()
+ * @returns {Promise<boolean>} true jika kunci benar-benar terpadam
+ */
+async function deleteTranslatedEmbedded(videoHash, cacheKey) {
+    if (!videoHash || !cacheKey) return false;
+    const adapter = await getStorageAdapter();
+    try {
+        const deleted = await adapter.delete(cacheKey, StorageAdapter.CACHE_TYPES.EMBEDDED);
+        if (deleted) {
+            await removeFromIndex(adapter, videoHash, 'translation', cacheKey);
+            log.debug(() => `[Embedded Cache] Deleted translation ${cacheKey}`);
+        }
+        return deleted === true;
+    } catch (error) {
+        handleCaughtError(error, `[Embedded Cache] Failed to delete translation ${cacheKey}`, log);
+        return false;
+    }
+}
+
 module.exports = {
     generateEmbeddedCacheKey,
     saveOriginalEmbedded,
@@ -445,6 +470,7 @@ module.exports = {
     indexExists,
     listEmbeddedOriginals,
     listEmbeddedTranslations,
+    deleteTranslatedEmbedded,
     pruneOriginalsForVideo,
     pruneTranslationsForVideo
 };

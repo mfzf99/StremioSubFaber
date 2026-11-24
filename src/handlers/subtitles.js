@@ -53,7 +53,15 @@ const { getCached: getDownloadCached, saveCached: saveDownloadCached } = require
 const log = require('../utils/logger');
 const { handleCaughtError } = require('../utils/errorClassifier');
 const { isHearingImpairedSubtitle } = require('../utils/subtitleFlags');
-const { generateCacheKeys } = require('../utils/cacheKeys');
+// [CACHE-COHERENCE-SWEEP v3.41.1] SSUT kunci storan dipindah ke cacheKeys.js
+// (modul daun) supaya telegramBot dapat memakainya tanpa kitaran import.
+const {
+    generateCacheKeys,
+    normalizeRegistryEntry,
+    TRANSLATION_STORAGE_PREFIX,
+    getTranslationStorageKey,
+    isValidTranslationKey
+} = require('../utils/cacheKeys');
 const promptSandboxLiveStore = require('../services/promptSandboxLiveStore');
 const { deduplicateSubtitles, logDeduplicationStats } = require('../utils/subtitleDeduplication');
 const { version } = require('../utils/version');
@@ -374,10 +382,38 @@ const inFlightTranslations = new LRUCache({
     updateAgeOnGet: false
 });
 
+// [CACHE-COHERENCE-SWEEP v3.41.1 — W3 zombie gate] Generasi penterjemahan per
+// runtimeKey. purgeTranslationCacheByKeys() menaikkan generasi (monotonic,
+// bukan Date.now()); setiap titik tulisan cache (partial / bypass / kekal /
+// error) menyemak generasi yang ditangkap di permulaan handleTranslation —
+// kerja in-flight lama yang siap selepas padam TIDAK menulis semula cache yang
+// baru dipadam. Dikunci pada runtimeKey (bukan baseKey) supaya padam Bypass
+// tidak membunuh in-flight Kekal untuk baseKey yang sama.
+const translationGeneration = new LRUCache({
+    max: 500,
+    ttl: 30 * 60 * 1000, // 30 minutes (aligned with inFlightTranslations)
+    updateAgeOnGet: false
+});
+
+function getTranslationGeneration(runtimeKey) {
+    return translationGeneration.get(runtimeKey) || 0;
+}
+
+function bumpTranslationGeneration(runtimeKey) {
+    if (!runtimeKey) return 0;
+    const next = (translationGeneration.get(runtimeKey) || 0) + 1;
+    translationGeneration.set(runtimeKey, next);
+    return next;
+}
+
+function isTranslationGenerationCurrent(runtimeKey, generation) {
+    return getTranslationGeneration(runtimeKey) === generation;
+}
+
 // Feature flag (default ON): allow permanent translation cache usage
 const ENABLE_PERMANENT_TRANSLATIONS = process.env.ENABLE_PERMANENT_TRANSLATIONS !== 'false';
-// Single shared prefix for the permanent translation cache (content-only)
-const TRANSLATION_STORAGE_PREFIX = 't2s__'; // Shared across configs/users (content-only)
+// Single shared prefix for the permanent translation cache (content-only) —
+// TRANSLATION_STORAGE_PREFIX kini diimport daripada utils/cacheKeys.js (SSUT).
 // Shared translation lock configuration (cross-instance in-flight awareness)
 const SHARED_TRANSLATION_LOCK_PREFIX = 'translation_lock:';
 const SHARED_TRANSLATION_LOCK_TTL_SECONDS = Math.max(
@@ -385,16 +421,8 @@ const SHARED_TRANSLATION_LOCK_TTL_SECONDS = Math.max(
     parseInt(process.env.TRANSLATION_LOCK_TTL_SECONDS, 10) || 15 * 60
 ); // default 15 minutes (must exceed stale detection threshold of max(10min, translationTimeout); max translationTimeout is 720s = 12min)
 
-function getTranslationStorageKey(cacheKey) {
-    if (!cacheKey || typeof cacheKey !== 'string') return '';
-    if (cacheKey.startsWith(TRANSLATION_STORAGE_PREFIX)) return cacheKey;
-    return `${TRANSLATION_STORAGE_PREFIX}${cacheKey}`;
-}
-
-function isValidTranslationKey(cacheKey) {
-    if (typeof cacheKey !== 'string' || cacheKey.length === 0) return false;
-    return cacheKey.startsWith(TRANSLATION_STORAGE_PREFIX);
-}
+// getTranslationStorageKey()/isValidTranslationKey()/TRANSLATION_STORAGE_PREFIX
+// kini datang daripada utils/cacheKeys.js (SSUT) — lihat import di atas.
 
 // Directory for persistent translation cache (disk-only)
 const CACHE_DIR = path.join(__dirname, '..', '..', '.cache', 'translations');
@@ -6049,6 +6077,16 @@ async function performTranslation(
     // Hoisted so the catch block can include them in error translationStats for history correction
     let providerName = '';
     let effectiveModel = '';
+    // [CACHE-COHERENCE-SWEEP v3.41.1 — W3 zombie gate] Tangkap generasi
+    // permulaan DI SINI — keempat-empat titik semakan (partial / bypass /
+    // kekal / error) berada dalam fungsi ini, jadi tangkapan mesti berada
+    // dalam skop fungsi ini juga (function-scoped `const`). Ditangkap
+    // sebarang await: performTranslation dipanggil secara segerak oleh
+    // handleTranslation sejurus selepas lock ditanda, jadi nilai generasi
+    // identik dengan generasi semasa kerja bermula. purgeTranslationCacheByKeys
+    // menaikkan generasi → kerja in-flight lama yang siap selepas padam
+    // TIDAK menulis semula cache yang baru dipadam.
+    const translationGen = getTranslationGeneration(runtimeKey);
     try {
         log.debug(() => `[Translation] Background translation started for ${sourceFileId} to ${targetLanguage}`);
         cacheMetrics.apiCalls++;
@@ -6613,6 +6651,11 @@ async function performTranslation(
                             partialSaveChain = partialSaveChain
                                 .then(async () => {
                                     try {
+                                        // [W3 zombie gate] Jangan tulis semula partial
+                                        // untuk runtimeKey yang sudah dipadam.
+                                        if (!isTranslationGenerationCurrent(runtimeKey, translationGen)) {
+                                            return;
+                                        }
                                         await saveToPartialCacheAsync(runtimeKey, {
                                             content: partialSrt,
                                             isComplete: false,
@@ -7016,7 +7059,15 @@ async function performTranslation(
                                 title: movieTitle,
                                 provider: sourceProv,
                                 targetLang: targetLanguage,
-                                keys: [runtimeKey, sourceFileId],
+                                // [CACHE-COHERENCE-SWEEP v3.41.1] Metadata purge —
+                                // Telegram memadam kunci yang BETUL (t2s__ kekal /
+                                // __u_ bypass) dan menu membezakan namespace.
+                                baseKey,
+                                runtimeKey,
+                                bypass: bypass && bypassEnabled,
+                                userHash,
+                                trinityMode: config?.trinityMode,
+                                trinityChannel: config?.trinityChannel,
                                 apiKeys: detectedKeys,
                                 model: detectedModel,
                                 walletBalanceUSD: detectedWalletUSD
@@ -7111,11 +7162,17 @@ async function performTranslation(
                     isComplete: true,
                     configHash: userHash // Always set configHash for user isolation
                 };
-                await saveToBypassStorage(cacheKey, cachedData);
-                log.debug(
-                    () =>
-                        `[Translation] Saved to bypass cache: key=${cacheKey}, userHash=${userHash}, expiresAt=${expiresAt ? new Date(expiresAt).toISOString() : 'permanent'}`
-                );
+                // [W3 zombie gate] Bypass yang dipadam semasa penterjemahan
+                // berjalan tidak boleh ditulis semula oleh kerja lama.
+                if (!isTranslationGenerationCurrent(runtimeKey, translationGen)) {
+                    log.debug(() => `[Translation] Skipped bypass cache write (generation stale) for key=${cacheKey}`);
+                } else {
+                    await saveToBypassStorage(cacheKey, cachedData);
+                    log.debug(
+                        () =>
+                            `[Translation] Saved to bypass cache: key=${cacheKey}, userHash=${userHash}, expiresAt=${expiresAt ? new Date(expiresAt).toISOString() : 'permanent'}`
+                    );
+                }
             }
         } else if (
             cacheConfig.enabled &&
@@ -7135,7 +7192,13 @@ async function performTranslation(
                 targetLanguage,
                 isComplete: true
             };
-            await saveToStorage(baseKey, cachedData, { allowPermanent });
+            // [W3 zombie gate] Kekal yang dipadam semasa penterjemahan berjalan
+            // tidak boleh ditulis semula oleh kerja lama.
+            if (!isTranslationGenerationCurrent(runtimeKey, translationGen)) {
+                log.debug(() => `[Translation] Skipped permanent cache write (generation stale) for key=${baseKey}`);
+            } else {
+                await saveToStorage(baseKey, cachedData, { allowPermanent });
+            }
         } else {
             log.debug(
                 () =>
@@ -7278,7 +7341,12 @@ async function performTranslation(
                 expiresAt: Date.now() + 15 * 60 * 1000 // 15 minutes - auto-expire old errors
             };
 
-            if (bypass && bypassEnabled) {
+            // [W3 zombie gate] Entri ralat untuk kunci yang sudah dipadam
+            // tidak ditulis semula (kerana lama gagal selepas padam).
+            const generationStale = !isTranslationGenerationCurrent(runtimeKey, translationGen);
+            if (generationStale) {
+                log.debug(() => `[Translation] Skipped error cache (generation stale) for key=${cacheKey}`);
+            } else if (bypass && bypassEnabled) {
                 // Save to bypass storage with short TTL
                 errorCache.configHash = userHash; // Include user hash for isolation
                 await saveToBypassStorage(cacheKey, errorCache);
@@ -8295,4 +8363,95 @@ module.exports.purgeTranslationCache = async function (sourceFileId, targetLangu
         log.error(() => ['[Purge] Error purging translation cache:', error.message]);
         return false;
     }
+};
+
+// ── [CACHE-COHERENCE-SWEEP v3.41.1 — Peringkat 2] PURGE PUSAT ────────────────
+// SSUT pemadaman untuk registry Telegram. Menerima entri registry mentah
+// (baharu ATAU lama — dinormalkan oleh normalizeRegistryEntry) dan memadam
+// mengikut JENIS entri:
+//   bypass → bypass:{runtimeKey} + partial:{runtimeKey} SAHAJA
+//   kekal  → translation:t2s__{baseKey} (via getTranslationStorageKey) + partial:{runtimeKey}
+// Kedua-dua jenis: naikkan generasi (zombie gate), kosongkan status/lock/in-flight,
+// bump SUBTITLE_SEARCH_REV per-userHash. Memulangkan bilangan kunci benar-benar
+// terpadam supaya bot melaporkan kebenaran (W9).
+module.exports.purgeTranslationCacheByKeys = async function purgeTranslationCacheByKeys(rawEntry) {
+    try {
+        const entry = normalizeRegistryEntry(rawEntry);
+        if (!entry.runtimeKey) return { deleted: 0, entry: null };
+
+        const adapter = await getStorageAdapter();
+        let deleted = 0;
+
+        // Zombie gate (W3): kerja in-flight lama untuk runtimeKey ini tidak
+        // boleh menulis semula cache selepas pemadaman.
+        bumpTranslationGeneration(entry.runtimeKey);
+
+        const remove = async (key, cacheType) => {
+            try {
+                const ok = await adapter.delete(key, cacheType);
+                if (ok) deleted += 1;
+                return ok;
+            } catch (e) {
+                log.warn(() => [`[Purge] Failed deleting ${cacheType}:${key}:`, e.message]);
+                return false;
+            }
+        };
+
+        if (entry.bypass) {
+            // Bypass: padam kunci bypass penuh (runtimeKey sudah bawa __u_{hash})
+            // — JANGAN bina semula akhiran; JANGAN sentuh cache kekal.
+            await remove(entry.runtimeKey, StorageAdapter.CACHE_TYPES.BYPASS);
+            await remove(entry.runtimeKey, StorageAdapter.CACHE_TYPES.PARTIAL);
+        } else {
+            // Kekal: padam melalui helper SSUT (tiada hardcode prefix).
+            await remove(getTranslationStorageKey(entry.baseKey), StorageAdapter.CACHE_TYPES.TRANSLATION);
+            await remove(entry.runtimeKey, StorageAdapter.CACHE_TYPES.PARTIAL);
+        }
+
+        // Status / lock / in-flight — untuk KEDUA-DUA jenis (bypass juga
+        // menggunakan shared lock pada runtimeKey).
+        try {
+            translationStatus.delete(entry.runtimeKey);
+            if (!entry.bypass) translationStatus.delete(entry.baseKey);
+        } catch (_) {}
+        try {
+            inFlightTranslations.delete(entry.runtimeKey);
+        } catch (_) {}
+        await clearSharedTranslationInFlight(entry.runtimeKey);
+
+        // W4: xEmbed — terjemahan derived disimpan di bawah kunci embedded
+        // (embeddedKeys: [{videoHash, cacheKey}]). Padam + keluarkan daripada
+        // indeks supaya listEmbeddedTranslations() tidak lagi menyenaraikannya.
+        // Original embedded TIDAK disentuh.
+        const embeddedKeys = Array.isArray(rawEntry?.embeddedKeys) ? rawEntry.embeddedKeys : [];
+        if (embeddedKeys.length > 0) {
+            const { deleteTranslatedEmbedded } = require('../utils/embeddedCache');
+            for (const emb of embeddedKeys) {
+                if (!emb || typeof emb.videoHash !== 'string' || typeof emb.cacheKey !== 'string') continue;
+                try {
+                    if (await deleteTranslatedEmbedded(emb.videoHash, emb.cacheKey)) deleted += 1;
+                } catch (e) {
+                    log.warn(() => [`[Purge] Failed deleting embedded ${emb.cacheKey}:`, e.message]);
+                }
+            }
+        }
+
+        // W5: refresh senarai Stremio untuk pengguna entri ini.
+        if (entry.userHash) {
+            await bumpSubtitleSearchRevisionForConfigHash(entry.userHash);
+        }
+
+        return { deleted, entry };
+    } catch (error) {
+        log.error(() => ['[Purge] Error purging translation cache by keys:', error.message]);
+        return { deleted: 0, entry: null };
+    }
+};
+
+// Eksport uji-sahaja untuk zombie gate (tiada API runtime baru; ikut corak
+// __testing pada gemini.js / opensubtitles.js).
+module.exports.__testing = {
+    getTranslationGeneration,
+    bumpTranslationGeneration,
+    isTranslationGenerationCurrent
 };

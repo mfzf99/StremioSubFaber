@@ -284,8 +284,76 @@ function generateCacheKeys(config, sourceFileId, targetLang) {
     };
 }
 
+// ── [CACHE-COHERENCE-SWEEP v3.41.1] SSUT kunci storan terjemahan ─────────────
+// Dipindah daripada src/handlers/subtitles.js supaya telegramBot.js boleh
+// memakainya TANPA kitaran import (cacheKeys.js ialah modul daun — tidak
+// mengimport subtitles.js / telegramBot.js). Kontrak byte-identik dengan
+// definisi lama: prefix tunggal kongsi merentas konfigurasi/pengguna.
+const TRANSLATION_STORAGE_PREFIX = 't2s__';
+
+function getTranslationStorageKey(cacheKey) {
+    if (!cacheKey || typeof cacheKey !== 'string') return '';
+    if (cacheKey.startsWith(TRANSLATION_STORAGE_PREFIX)) return cacheKey;
+    return `${TRANSLATION_STORAGE_PREFIX}${cacheKey}`;
+}
+
+function isValidTranslationKey(cacheKey) {
+    if (typeof cacheKey !== 'string' || cacheKey.length === 0) return false;
+    return cacheKey.startsWith(TRANSLATION_STORAGE_PREFIX);
+}
+
+// ── [CACHE-COHERENCE-SWEEP v3.41.1] Penormalan entri registry Telegram ───────
+// Registry lama hanya menyimpan `keys: [runtimeKey, sourceFileId]` tanpa
+// metadata jenis. Helper ini mengekstrak (baseKey, runtimeKey, bypass,
+// userHash) secara deterministik untuk entri baharu MAUPUN lama, supaya
+// purge pusat memadam kunci yang betul tanpa sekali-kali membina semula
+// akhiran `__u_{hash}` (elak `__u_x__u_x`).
+// Kontrak kunci (cacheKeys.js generateCacheKeys):
+//   bypass   → runtimeKey === cacheKey === `${baseKey}__u_${userHash}`
+//   kekal    → runtimeKey === baseKey
+const BYPASS_USER_SUFFIX_RE = /^(.*)__u_([A-Za-z0-9_-]+)$/;
+
+function normalizeRegistryEntry(raw) {
+    const source = raw && typeof raw === 'object' ? raw : {};
+    const rawKey =
+        typeof source.runtimeKey === 'string' && source.runtimeKey.trim()
+            ? source.runtimeKey.trim()
+            : Array.isArray(source.keys) && typeof source.keys[0] === 'string'
+              ? source.keys[0].trim()
+              : typeof source.baseKey === 'string'
+                ? source.baseKey.trim()
+                : '';
+
+    let baseKey = typeof source.baseKey === 'string' && source.baseKey.trim() ? source.baseKey.trim() : '';
+    let userHash = typeof source.userHash === 'string' ? source.userHash.trim() : '';
+    let bypass = source.bypass === true;
+
+    if (!baseKey || !userHash || !source.bypass) {
+        const m = BYPASS_USER_SUFFIX_RE.exec(rawKey);
+        if (m && m[1] && m[2]) {
+            if (!baseKey) baseKey = m[1];
+            if (!userHash) userHash = m[2];
+            bypass = true;
+        }
+    }
+
+    if (!baseKey) baseKey = rawKey;
+    const runtimeKey = bypass && userHash ? `${baseKey}__u_${userHash}` : baseKey;
+    return {
+        baseKey,
+        runtimeKey,
+        bypass,
+        userHash,
+        sourceFileId: typeof source.sourceFileId === 'string' ? source.sourceFileId : ''
+    };
+}
+
 module.exports = {
     generateCacheKeys,
     resolveTrinityChannelForConfig,
-    resolveTrinityModeForConfig
+    resolveTrinityModeForConfig,
+    TRANSLATION_STORAGE_PREFIX,
+    getTranslationStorageKey,
+    isValidTranslationKey,
+    normalizeRegistryEntry
 };

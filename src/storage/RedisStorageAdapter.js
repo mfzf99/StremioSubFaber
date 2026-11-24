@@ -1185,7 +1185,7 @@ class RedisStorageAdapter extends StorageAdapter {
                     cacheType === StorageAdapter.CACHE_TYPES.SESSION
                         ? isSessionToken && !!this._getSizeLimit(cacheType)
                         : !!this._getSizeLimit(cacheType);
-                await this.client.subfaberAtomicCacheDelete(
+                const result = await this.client.subfaberAtomicCacheDelete(
                     redisKey,
                     metaKey,
                     lruKey,
@@ -1195,7 +1195,14 @@ class RedisStorageAdapter extends StorageAdapter {
                     tracksPayloadBytes ? 1 : 0,
                     isSessionToken ? 1 : 0
                 );
-                return true;
+                // [CACHE-COHERENCE-SWEEP v3.41.1 — W9] Lua memulangkan
+                // {contentDeleted, metadataDeleted, oldSize}; contentDeleted ialah
+                // hasil `DEL` (0 bila kunci tidak wujud). Pulangkan kebenaran
+                // sebenar supaya pemanggil (bot Telegram, purge pusat) tidak
+                // melaporkan pemadaman yang tidak berlaku — pariti penuh dengan
+                // FilesystemStorageAdapter.delete() yang sudah memulangkan false.
+                const contentDeleted = Array.isArray(result) ? Number(result[0]) || 0 : 0;
+                return contentDeleted > 0;
             });
         } catch (error) {
             if (error instanceof StorageUnavailableError) {

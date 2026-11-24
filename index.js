@@ -8989,12 +8989,10 @@ app.post('/api/translate-embedded', embeddedTranslationLimiter, async (req, res)
                             `🧠 <b>Engine:</b> ${usedModel}\n\n` +
                             `🎉 <b>Ready to stream!</b>`;
 
-                        // Daftarkan token pemadam untuk sarikata xEmbed
-                        const { registerDeletionTarget } = require('./src/services/telegramBot');
-                        const deleteToken = registerDeletionTarget({
-                            runtimeKey: runtimeKey,
-                            sourceFileId: `xembed:${safeVideoHash}:${safeTrackId}`
-                        });
+                        // [CACHE-COHERENCE-SWEEP v3.41.1 — W7] Bekas import mati dibuang:
+                        // fungsi pemadam token tidak pernah dieksport oleh telegramBot.js →
+                        // TypeError ditelan senyap dan seluruh laporan xEmbed ke Telegram mati.
+                        // Pemadaman xEmbed kini dikendalikan oleh registry entry (Peringkat 4).
 
                         // Daftarkan ke dalam registry Redis untuk xEmbed & butang padam
                         const { registerCompletedSubtitle } = require('./src/services/telegramBot');
@@ -9070,7 +9068,20 @@ app.post('/api/translate-embedded', embeddedTranslationLimiter, async (req, res)
                                 title: movieTitle,
                                 provider: sourceProv,
                                 targetLang: targetLangName || targetLanguage,
-                                keys: [runtimeKey, `xembed:${safeVideoHash}:${safeTrackId}`],
+                                // [CACHE-COHERENCE-SWEEP v3.41.1] xEmbed: runtimeKey
+                                // ialah kunci partial sahaja (`partial:xembed:…`); kunci
+                                // storan sebenar ialah embedded cacheKey yang dijana
+                                // oleh saveTranslatedEmbedded — disimpan sebagai
+                                // embeddedKeys supaya purge pusat memadam terjemahan
+                                // derived (W4). Entri tidak bypass dan tidak kekal.
+                                runtimeKey,
+                                userHash: workingConfig?.__configHash || '',
+                                trinityMode: workingConfig?.trinityMode,
+                                trinityChannel: workingConfig?.trinityChannel,
+                                embeddedKeys:
+                                    saveResult?.cacheKey && safeVideoHash
+                                        ? [{ videoHash: safeVideoHash, cacheKey: saveResult.cacheKey }]
+                                        : [],
                                 apiKeys: detectedKeys,
                                 model: detectedModel,
                                 walletBalanceUSD: detectedWalletUSD

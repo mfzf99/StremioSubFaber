@@ -421,7 +421,28 @@ async function getActiveKeyInfo() {
 }
 
 // 1. Simpan rekod sarikata & status kunci ke Redis
-async function registerCompletedSubtitle({ title, provider, targetLang, keys, apiKeys, model, walletBalanceUSD }) {
+// [CACHE-COHERENCE-SWEEP v3.41.1 — Peringkat 3] Entry kini membawa metadata
+// jenis (baseKey / runtimeKey / bypass / userHash / trinityMode / trinityChannel
+// / embeddedKeys) supaya purge pusat memadam kunci yang betul dan senarai menu
+// boleh membezakan entri yang sama tajuk tetapi namespace berbeza. `keys`
+// dikekalkan untuk keserasian pembaca lama (W2: sourceFileId bukan kunci storan,
+// jadi ia tidak lagi dihantar sebagai kunci).
+async function registerCompletedSubtitle({
+    title,
+    provider,
+    targetLang,
+    keys,
+    apiKeys,
+    model,
+    walletBalanceUSD,
+    baseKey,
+    runtimeKey,
+    bypass,
+    userHash,
+    trinityMode,
+    trinityChannel,
+    embeddedKeys
+}) {
     try {
         const adapter = await getStorageAdapter();
         const id = 'sub_' + crypto.randomBytes(4).toString('hex');
@@ -469,23 +490,48 @@ async function registerCompletedSubtitle({ title, provider, targetLang, keys, ap
             StorageAdapter.CACHE_TYPES.TRANSLATION
         );
 
+        const { normalizeRegistryEntry } = require('../utils/cacheKeys');
+        const normalized = normalizeRegistryEntry({ baseKey, runtimeKey, bypass, userHash, keys });
         const entry = {
             id,
             title: title || 'Untitled Media',
             provider: provider || 'Generic Provider',
             targetLang: resolveTargetLang(targetLang),
-            keys: Array.isArray(keys) ? keys : [keys].filter(Boolean),
+            // Metadata purge (SSUT) — normalizeRegistryEntry menjamin runtimeKey
+            // sah walaupun pemanggil hanya menghantar `keys` lama.
+            baseKey: normalized.baseKey,
+            runtimeKey: normalized.runtimeKey,
+            bypass: normalized.bypass,
+            userHash: normalized.userHash,
+            trinityMode: typeof trinityMode === 'string' && trinityMode ? trinityMode : '',
+            trinityChannel: typeof trinityChannel === 'string' && trinityChannel ? trinityChannel : '',
+            embeddedKeys: Array.isArray(embeddedKeys)
+                ? embeddedKeys.filter((e) => e && typeof e.videoHash === 'string' && typeof e.cacheKey === 'string')
+                : [],
+            // Jangan hantar sourceFileId sebagai "kunci" (bukan kunci storan).
+            keys: [normalized.runtimeKey],
             createdAt: Date.now()
         };
 
         const current = (await adapter.get(REGISTRY_REDIS_KEY, StorageAdapter.CACHE_TYPES.TRANSLATION)) || [];
         const list = Array.isArray(current) ? current : [];
 
-        const filtered = list.filter((item) => item.title !== entry.title || item.provider !== entry.provider);
+        // Dedup pada (baseKey, bypass, userHash) — bukan tajuk. Tajuk sama
+        // dengan namespace berbeza ialah entri berasingan (W10/K3). Entri lama
+        // tanpa metadata dinormalkan dengan helper yang sama.
+        const filtered = list.filter((item) => {
+            const n = normalizeRegistryEntry(item);
+            return !(
+                n.baseKey === entry.baseKey &&
+                n.bypass === entry.bypass &&
+                (n.userHash || '') === (entry.userHash || '')
+            );
+        });
         filtered.unshift(entry);
 
-        // Cap registry size: oldest entries fall off after MAX_REGISTRY_ENTRIES so
-        // every renderRegistryPage call does not load an ever-growing array.
+        // Cap registry size ialah HAD MENU TELEGRAM sahaja — ia TIDAK memadam
+        // data cache (Redis TTL/LRU yang mengurus). Entri yang gugur dari menu
+        // kekal di storan (keputusan Owner, Draf V3 §1.4).
         const capped = filtered.slice(0, MAX_REGISTRY_ENTRIES);
 
         await adapter.set(REGISTRY_REDIS_KEY, capped, StorageAdapter.CACHE_TYPES.TRANSLATION);
@@ -728,8 +774,21 @@ async function renderRegistryPage(chatId, messageId, page = 1, botToken) {
             const itemNum = startIndex + index + 1;
             const safeTitle = item.title.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
 
+            // [CACHE-COHERENCE-SWEEP v3.41.1 — K3] Pembezah namespace supaya
+            // entri tajuk sama tetapi mode/pintu/jenis berbeza boleh dibezakan.
+            const { normalizeRegistryEntry } = require('../utils/cacheKeys');
+            const normalized = normalizeRegistryEntry(item);
+            const typeLabel = normalized.bypass ? 'Bypass' : 'Kekal';
+            const modeLabel = item.trinityMode === 'pro' ? 'Pro' : item.trinityMode === 'basic' ? 'Basic' : '—';
+            const doorLabel = item.trinityChannel ? String(item.trinityChannel) : '—';
+            const isLegacy = !item.baseKey && !item.bypass && !item.trinityMode && !item.trinityChannel;
+            const hasEmbedded = Array.isArray(item.embeddedKeys) && item.embeddedKeys.length > 0;
+            const badge = isLegacy
+                ? `Lama · ${typeLabel}`
+                : `${modeLabel} · ${doorLabel} · ${typeLabel}${hasEmbedded ? ' · xEmbed' : ''}`;
+
             text += `<b>${itemNum}.</b> 🎬 <code>${safeTitle}</code>\n`;
-            text += `   └ 📥 <b>Source:</b> ${item.provider} | 🌐 ${item.targetLang}\n\n`;
+            text += `   └ 📁 ${badge} | 🌐 ${item.targetLang}\n\n`;
 
             deleteRow.push({ text: `🗑️ Padam #${itemNum}`, callback_data: `del_reg:${item.id}:${currentPage}` });
         });
@@ -923,16 +982,15 @@ async function handleCallbackQuery(query, botToken, authorizedChatId) {
             const adapter = await getStorageAdapter();
             const list = (await adapter.get(REGISTRY_REDIS_KEY, StorageAdapter.CACHE_TYPES.TRANSLATION)) || [];
 
+            // [CACHE-COHERENCE-SWEEP v3.41.1 — Peringkat 2] Flush SEMUA entri
+            // melalui purge pusat (SSUT) — bukan padam kekal tanpa prefix (W1).
+            // Hanya kunci yang DIDATA dalam registry dipadam; tiada SCAN.
+            let totalDeleted = 0;
             if (Array.isArray(list)) {
+                const { purgeTranslationCacheByKeys } = require('../handlers/subtitles');
                 for (const item of list) {
-                    for (const key of item.keys || []) {
-                        await adapter.delete(key, StorageAdapter.CACHE_TYPES.EMBEDDED);
-                        await adapter.delete(key, StorageAdapter.CACHE_TYPES.SYNC);
-                        await adapter.delete(key, StorageAdapter.CACHE_TYPES.AUTOSUB);
-                        await adapter.delete(key, StorageAdapter.CACHE_TYPES.BYPASS);
-                        await adapter.delete(key, StorageAdapter.CACHE_TYPES.PARTIAL);
-                        await adapter.delete(key, StorageAdapter.CACHE_TYPES.TRANSLATION);
-                    }
+                    const { deleted } = await purgeTranslationCacheByKeys(item);
+                    totalDeleted += deleted;
                 }
             }
 
@@ -940,7 +998,7 @@ async function handleCallbackQuery(query, botToken, authorizedChatId) {
 
             await axios.post(`https://api.telegram.org/bot${botToken}/answerCallbackQuery`, {
                 callback_query_id: query.id,
-                text: '💥 Semua cache sarikata telah dibersihkan!',
+                text: `💥 Semua cache sarikata telah dibersihkan! (${totalDeleted} kunci)`,
                 show_alert: true
             });
             await renderMainMenu(fromChatId, messageId, botToken);
@@ -969,21 +1027,25 @@ async function handleCallbackQuery(query, botToken, authorizedChatId) {
             if (itemIndex !== -1) {
                 const item = list[itemIndex];
 
-                for (const key of item.keys) {
-                    await adapter.delete(key, StorageAdapter.CACHE_TYPES.EMBEDDED);
-                    await adapter.delete(key, StorageAdapter.CACHE_TYPES.SYNC);
-                    await adapter.delete(key, StorageAdapter.CACHE_TYPES.AUTOSUB);
-                    await adapter.delete(key, StorageAdapter.CACHE_TYPES.BYPASS);
-                    await adapter.delete(key, StorageAdapter.CACHE_TYPES.PARTIAL);
-                    await adapter.delete(key, StorageAdapter.CACHE_TYPES.TRANSLATION);
-                }
+                // [CACHE-COHERENCE-SWEEP v3.41.1 — Peringkat 2] Padam melalui
+                // purge pusat (SSUT) supaya kunci kekal `t2s__{baseKey}` betul-betul
+                // terpadam (W1), bypass tidak double-append (migrasi), status/lock
+                // dikosongkan (W3), dan bot melaporkan kebenaran (W9).
+                // Lazy require DALAM callback — tiada kitaran import (P3).
+                const { purgeTranslationCacheByKeys } = require('../handlers/subtitles');
+                const { deleted } = await purgeTranslationCacheByKeys(item);
 
                 list.splice(itemIndex, 1);
                 await adapter.set(REGISTRY_REDIS_KEY, list, StorageAdapter.CACHE_TYPES.TRANSLATION);
 
+                const message =
+                    deleted > 0
+                        ? `🗑️ Sarikata berjaya dipadam! (${deleted} kunci)`
+                        : 'ℹ️ Sarikata ini telah pun dipadam sebelum ini.';
+
                 await axios.post(`https://api.telegram.org/bot${botToken}/answerCallbackQuery`, {
                     callback_query_id: query.id,
-                    text: '🗑️ Sarikata berjaya dipadam!',
+                    text: message,
                     show_alert: false
                 });
 
@@ -1004,5 +1066,10 @@ async function handleCallbackQuery(query, botToken, authorizedChatId) {
 
 module.exports = {
     startTelegramBot,
-    registerCompletedSubtitle
+    registerCompletedSubtitle,
+    // Eksport uji-sahaja (ikut corak __testing gemini.js / subtitles.js) —
+    // ujian tingkah-laku memanggil renderRegistryPage terus untuk memin badge.
+    // ReferenceError runtime dalam template literal TIDAK tertangkap oleh
+    // node --check / eslint; hanya pelaksanaan sebenar mengesahkannya.
+    __testing: { renderRegistryPage }
 };
