@@ -2,6 +2,12 @@
 
 All notable changes to this project will be documented in this file.
 
+## SubFaber v3.42.1 (2026-11-27) — CI Hotfix: Workflow YAML Was Invalid
+
+### Fixed
+
+- **The CI workflow file did not parse, so the v3.42.0 run failed before any job started.** Three step names in `.github/workflows/ci.yml` contained an unquoted `: ` (`full history: the floor guard…`, `committed range: the working tree…`), which YAML reads as a new key-value pair. GitHub reported "This run likely failed because of a workflow file issue" and scheduled no job. The colons are replaced with commas; the file now parses, with `services` and `strategy` as sibling job-level keys and all nine steps intact. The lesson is recorded in the core protocol's release reference: parse a workflow file locally before committing it.
+
 ## SubFaber v3.42.0 (2026-11-27) — House Upgrade & Cleaning: MCP-Safe Process Gates, Live Redis in CI, Governance Repairs
 
 ### Added

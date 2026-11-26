@@ -39,6 +39,10 @@ without the relevant gates.
 4. **Cache-buster:** verify `__APP_VERSION_QUERY__` and `?_cb=` if assets/version paths are
    involved; otherwise record `NO-OP`.
 5. **Quality gates:** Prettier + ESLint + full `npm test` and relevant CI gates; all must pass.
+   When a change touches a file under `.github/workflows/`, parse it locally first
+   (`python -c "import yaml,sys; yaml.safe_load(open(sys.argv[1]))" <file>`) — an unquoted `: `
+   inside a step name makes the whole workflow unparseable and the run fails before any job
+   starts.
 6. **Code-topology scan:** `NO-OP` — the Graphify skill was removed by Owner mandate on
    2026-11-10, so no code-graph runtime or `graphify-out/` remains in this project.
 7. **Pre-release ledger:** update `docs/SESSION_LEDGER.md` ONCE before the release commit with

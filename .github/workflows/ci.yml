@@ -16,11 +16,6 @@ jobs:
   test:
     name: Node.js ${{ matrix.node-version }}
     runs-on: ubuntu-latest
-    strategy:
-      fail-fast: false
-      matrix:
-        node-version: [22, 24]
-
     # [CI 2026-11-27] Service Redis tempatan supaya ujian live-Redis benar-benar JALAN
     # di CI dan bukan dilangkau. Ujian menggunakan 127.0.0.1 + DB 15 (sandbox DB 0),
     # jadi container ini tidak berkongsi data dengan apa-apa sahaja.
@@ -34,9 +29,13 @@ jobs:
           --health-interval 5s
           --health-timeout 3s
           --health-retries 10
+    strategy:
+      fail-fast: false
+      matrix:
+        node-version: [22, 24]
 
     steps:
-      - name: Check out the repo (full history: the floor guard diffs the pushed range)
+      - name: Check out the repo (full history, the floor guard diffs the pushed range)
         uses: actions/checkout@v7
         with:
           fetch-depth: 0
@@ -58,7 +57,7 @@ jobs:
         env:
           REDIS_INTEGRATION_PORT: 6379
 
-      - name: Constraints floor guard (committed range: the working tree equals HEAD on CI)
+      - name: Constraints floor guard (committed range, the working tree equals HEAD on CI)
         run: node scripts/floor-guard.js --committed "${{ github.event.pull_request.base.sha || github.event.before }}..${{ github.sha }}"
 
       - name: Check formatting
