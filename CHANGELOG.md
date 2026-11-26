@@ -2,6 +2,19 @@
 
 All notable changes to this project will be documented in this file.
 
+## SubFaber v3.43.0 (2026-11-27) — Incident Terminal-State Closure, Zombie-Test Root Cause, Floor-Guard Direction Fix
+
+### Fixed
+
+- **`PROHIBITED_CONTENT` incidents no longer stay "still closing" forever.** The engine opened this incident with `outcome: 'in_progress'` and never closed it on any of its three exits — a successful recovery stage, a fallback-served batch, and a thrown failure. The Telegram battle-log therefore reported a finished recovery as `⏳ still closing…`. Each exit now closes the incident with the existing taxonomy (`recovered`, `fallback`, `failed`). The two other incident types that open in progress (`MISMATCH_RETRY`, `AGENT_INSPECTOR_SEMANTIC_RETRY`) already closed correctly and are unchanged.
+- **The documented command for running one test file no longer hangs the process.** `docs/RELEASE_PIPELINE_REFERENCE.md` told every agent to run `node --test <target-file>`. Loading `src/handlers/subtitles.js` — the `require` chain, not any test hook — instantiates module-level `setInterval` timers in `src/utils/sessionManager.js` that keep the event loop alive forever, so a run without `--test-force-exit` never exits and becomes an orphaned process. This is the root cause of the 17 orphaned processes cleaned up in v3.42.0. The documented command now carries `--test-force-exit`, and `src/utils/zombie-root-cause-regression.test.js` fails the suite if the documentation, the tracked runner, or the timer wiring regresses.
+- **The floor guard misread a "must not fall" value as loosened when it carried a version label.** A measured row such as `903 (v3.43.0) | must not fall` made the guard report `threshold-loosened`, because the label's digits were counted as extra thresholds and the direction words were then read in the wrong position. Version labels and dates are now stripped together with their parentheses before the direction is read. Raising such a value is clean; lowering it is still caught (`FG-11`).
+
+### Added
+
+- **Mechanical incident terminal-state gate** — `src/services/incident-terminal-state-gate.test.js` parses `translationEngine.js` and fails the suite when an incident type is opened as `in_progress` without a matching `_closeIncident` call, when a `_logIncident` call carries no literal type, or when closers would be outnumbered. This closes the open gap recorded in core protocol §5.4 on 2026-11-14. It was proven red against a real leak before it was trusted.
+- **Per-exit terminal-state pins** — `src/services/incident-terminal-state-regression.test.js` drives the engine through each `PROHIBITED_CONTENT` exit and asserts the incident reaches a final state. All four were red against the pre-fix engine.
+
 ## SubFaber v3.42.1 (2026-11-27) — CI Hotfix: Workflow YAML Was Invalid
 
 ### Fixed

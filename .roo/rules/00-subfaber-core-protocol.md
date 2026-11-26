@@ -90,7 +90,7 @@ Within the same persona, stop evaluating based on implementation intent and reas
 - The canonical completion gate is mechanical: the required check set runs in tooling, and the commit or release is refused when it fails. The agent's report is supplementary and never a substitute for an executed check.
 - A mechanizable rule with no enforcement mechanism MUST be recorded as an open gap in the relay state until a mechanism exists.
 - Reusable gate logic belongs in tracked repository scripts (for example `scripts/run-tracked-tests.js`) so it survives every clone; the local `.git/hooks/pre-commit` launcher invokes that logic, and CI supplies remote enforcement.
-- Recorded open gap (2026-11-14): incident terminal-state closure (§1 State-Machine & Tri-Experience Doctrine) is enforced only by per-scenario regression tests (the D1 variants), not yet by a mechanical gate. Until a script/hook/CI mechanism asserts "no incident remains non-terminal after its lifecycle ends" across the tracked suite, this stays a named open gap; closing it is a future test-gate mandate.
+- Closed gap (recorded 2026-11-14, closed 2026-11-27): incident terminal-state closure (§1 State-Machine & Tri-Experience Doctrine) is now enforced mechanically by `src/services/incident-terminal-state-gate.test.js` — it parses `translationEngine.js` and fails the suite whenever an incident type is opened as `in_progress` without a matching `_closeIncident` call (GATE 1), when a `_logIncident` call carries no literal type (GATE 2), or when closers outnumber openers (GATE 3). The per-scenario pins in `incident-terminal-state-regression.test.js` cover each exit of the one type that was leaking (`PROHIBITED_CONTENT`).
 
 ## 6. RISK-BASED VERIFICATION MATRIX
 

@@ -2480,6 +2480,11 @@ class TranslationEngine {
                         log.info(
                             () => `[TranslationEngine] Retry Stage ${stage} succeeded for batch ${batchIndex + 1}!`
                         );
+                        // [TERMINAL-STATE v3.43.0] Insiden PROHIBITED_CONTENT dibuka sebagai
+                        // in_progress; setiap pintu keluar WAJIB menutupnya (SSOT §1 terminal-state
+                        // closure). Sebelum ini tiada satu pun laluan menutupnya, jadi resit
+                        // Telegram memaparkan "still closing…" untuk insiden yang sudah selesai.
+                        this._closeIncident('PROHIBITED_CONTENT', batchIndex + 1, { outcome: 'recovered' });
                         retrySuccess = true;
                         break; // Success — exit recovery loop.
                     } catch (retryError) {
@@ -2502,6 +2507,7 @@ class TranslationEngine {
                     const fallbackResult = await tryFallback(currentError);
                     if (fallbackResult.handled) {
                         translatedText = fallbackResult.text;
+                        this._closeIncident('PROHIBITED_CONTENT', batchIndex + 1, { outcome: 'fallback' });
 
                         // Route native SRT fallback output away from the XML parser
                         const fallbackName = String(this.fallbackProviderName || '').toLowerCase();
@@ -2517,6 +2523,7 @@ class TranslationEngine {
                             }
                         }
                     } else {
+                        this._closeIncident('PROHIBITED_CONTENT', batchIndex + 1, { outcome: 'failed' });
                         throw fallbackResult.error; // Tier 5: Fallback provider failed, abort batch
                     }
                 }

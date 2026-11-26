@@ -84,7 +84,12 @@ for exploring large new component designs; implementation remains Vanilla JS/Nat
   and justification in the ledger.
 - Test counts are recorded as information, not a blindly monotonic target. Splitting/merging tests
   is allowed if behaviour and coverage are preserved or increased.
-- During debugging, use `node --test <target-file>`; the full `npm test` is mandatory for release.
+- During debugging, use `node --test --test-force-exit <target-file>`; the full `npm test` is
+  mandatory for release. `--test-force-exit` is not optional: loading `src/handlers/subtitles.js`
+  (the `require` chain, not any test hook) instantiates module-level `setInterval` timers in
+  `src/utils/sessionManager.js` that keep the event loop alive forever. Without the flag the
+  process never exits and becomes an orphaned "zombie" — the origin of the 17 orphaned processes
+  cleaned up on 2026-11-27. Always wrap ad-hoc runs in a tool timeout as a second net.
 
 ## 5. Web MCP policy (Firecrawl primary, Crawl4AI fallback)
 

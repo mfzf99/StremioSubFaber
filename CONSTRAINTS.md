@@ -29,7 +29,7 @@ This file is SubFaber's written quality bar. Read it before writing code. Do not
 
 | Metric                                         | Today                         | Direction     |
 | ---------------------------------------------- | ----------------------------- | ------------- |
-| Test count                                     | 877 (v3.41.3)                 | must not fall |
+| Test count                                     | 904 (v3.43.0)                 | must not fall |
 | ESLint `no-unused-vars` warnings               | 217                           | must not grow |
 | `eslint-disable` directives in the active tree | 3 (pre-existing, other rules) | must not grow |
 

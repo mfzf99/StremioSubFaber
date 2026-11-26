@@ -230,15 +230,37 @@ const ruleKey = (t) => {
 const isException = (t) => /^\| *(W|E)\d+ *\|/.test(t.trim());
 const MIN_BEFORE = /(>=|>|≥|at least|minimum|\bmin\b|no less than|not fall|not drop)\s*$/;
 const MAX_BEFORE = /(<=|<|≤|at most|maximum|\bmax\b|no more than|under|below|not grow|not exceed)\s*$/;
-const MIN_AFTER = /^\s*\S*\s*(?:\|\s*)?(or more|or higher|must not fall|must not drop)/;
-const MAX_AFTER = /^\s*\S*\s*(?:\|\s*)?(or less|or lower|must not grow|must not exceed)/;
+// The direction may sit in the very next cell (`903 | must not fall`) or after one short word
+// (`903 or more`). `\S*` is greedy and would swallow the cell separator, so the separator is
+// matched on its own first and the "one short word" alternative second.
+const DIRECTION_AFTER =
+    /^\s*(?:\|\s*)?(?:\S{1,12}\s+)?(must not fall|must not drop|must not grow|must not exceed|or more|or higher|or less|or lower)\b/;
+const MIN_AFTER = new RegExp(
+    DIRECTION_AFTER.source.replace(
+        '(must not fall|must not drop|must not grow|must not exceed|or more|or higher|or less|or lower)',
+        '(must not fall|must not drop|or more|or higher)'
+    )
+);
+const MAX_AFTER = new RegExp(
+    DIRECTION_AFTER.source.replace(
+        '(must not fall|must not drop|must not grow|must not exceed|or more|or higher|or less|or lower)',
+        '(must not grow|must not exceed|or less|or lower)'
+    )
+);
 const thresholds = (t) => {
     const out = [];
+    // A version label (`v3.43.0`, `3.41.3`) or a date (`2027-02-27`) is metadata, not a threshold:
+    // its digits would otherwise be read as extra values and paired against the wrong direction.
+    const scrubbed = t
+        .replace(/\(\s*v?\d+(?:\.\d+){2}\s*\)/g, ' ')
+        .replace(/\(\s*\d{4}-\d{2}-\d{2}\s*\)/g, ' ')
+        .replace(/\bv?\d+(?:\.\d+){2}\b/g, ' ')
+        .replace(/\b\d{4}-\d{2}-\d{2}\b/g, ' ');
     const re = /\d+(?:\.\d+)?/g;
     let m;
-    while ((m = re.exec(t))) {
-        const before = t.slice(Math.max(0, m.index - 24), m.index).toLowerCase();
-        const after = t.slice(m.index + m[0].length, m.index + m[0].length + 40).toLowerCase();
+    while ((m = re.exec(scrubbed))) {
+        const before = scrubbed.slice(Math.max(0, m.index - 24), m.index).toLowerCase();
+        const after = scrubbed.slice(m.index + m[0].length, m.index + m[0].length + 40).toLowerCase();
         const dir =
             MIN_BEFORE.test(before) || MIN_AFTER.test(after)
                 ? 'min'

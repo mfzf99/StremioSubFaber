@@ -218,6 +218,26 @@ test('[FG-9] --committed reviews a committed range instead of an empty working t
     assert.equal(malformed.status, 2);
 });
 
+test('[FG-11] raising a "must not fall" value that carries a version label is not a loosening', (t) => {
+    const root = makeRepo(t);
+    const header = '# Constraints\n\n## Measured, not yet enforced\n\n| Metric | Today | Direction |\n|---|---|---|\n';
+    write(root, 'CONSTRAINTS.md', header + '| Test count | 877 (v3.41.3) | must not fall |\n');
+    git(root, ['add', 'CONSTRAINTS.md']);
+    git(root, ['commit', '-q', '-m', 'constraints']);
+
+    // Raising a floor is tightening. The version label must not be mistaken for extra thresholds.
+    write(root, 'CONSTRAINTS.md', header + '| Test count | 903 (v3.43.0) | must not fall |\n');
+    const raised = guard(root);
+    assert.equal(raised.status, 0, raised.stderr);
+    assert.doesNotMatch(raised.stderr, /threshold/);
+
+    // Lowering the same value is still caught.
+    write(root, 'CONSTRAINTS.md', header + '| Test count | 800 (v3.43.0) | must not fall |\n');
+    const lowered = guard(root);
+    assert.equal(lowered.status, 1, lowered.stderr);
+    assert.deepEqual(rulesOf(lowered.stderr), ['threshold-loosened']);
+});
+
 test('[FG-10] a new exception row needs an explicit approval naming its exact ID', (t) => {
     const root = makeRepo(t);
     const row = '| W9 | Floor: example | `src/x.js` | reason | @owner | 2027-01-01 |\n';
