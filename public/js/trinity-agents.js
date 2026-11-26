@@ -2140,17 +2140,22 @@
                 input.classList.add('is-invalid');
                 testBtn.classList.add('is-invalid');
                 testBtn.textContent = '✕';
-                if (typeof showAlert === 'function') {
+                // [v3.41.3 — D3] showAlert ialah fungsi skop-modul di config.js,
+                // bukan global — pengawal lama `typeof showAlert` sentiasa palsu.
+                // Baca melalui API yang config.js dedahkan pada window.
+                var notifyAlert = window.__SUB__showAlert;
+                if (typeof notifyAlert === 'function') {
                     var msg = data && data.error ? String(data.error).slice(0, 80) : 'authentication failed';
-                    showAlert('Invalid API key — ' + msg, 'error');
+                    notifyAlert('Invalid API key — ' + msg, 'error');
                 }
             }
         } catch (err) {
             input.classList.add('is-invalid');
             testBtn.classList.add('is-invalid');
             testBtn.textContent = '✕';
-            if (typeof showAlert === 'function') {
-                showAlert('Invalid API key — ' + (err && err.message ? err.message : 'network error'), 'error');
+            var notifyAlert = window.__SUB__showAlert;
+            if (typeof notifyAlert === 'function') {
+                notifyAlert('Invalid API key — ' + (err && err.message ? err.message : 'network error'), 'error');
             }
         } finally {
             // [TOTAL UNLOCK FASA 2] Tanggalkan keadaan memuatkan (spinner + denyut)

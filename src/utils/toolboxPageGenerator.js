@@ -9,7 +9,7 @@ const { quickNavStyles, quickNavScript, renderQuickNav, renderRefreshBadge } = r
 const { buildClientBootstrap, loadLocale, getTranslator } = require('./i18n');
 const { resolveHistoryTitle } = require('../handlers/subtitles');
 const { getEffectiveGeminiModel } = require('./config');
-const { streamFilenameSelectorClientScript } = require('./streamUrlIdentity');
+const { streamFilenameSelectorClientScript, streamUrlRedirectResolverClientScript } = require('./streamUrlIdentity');
 const { escapeHtml } = require('./escapeHtml');
 
 // [P1 F4 FIX 2026-11-10] Canonical SSOT escapeHtml is imported from ./escapeHtml
@@ -10562,6 +10562,10 @@ async function generateAutoSubtitlePage(configStr, videoId, filename, config = {
     window.__SUBFABER_REQUIRED_XSYNC_VERSION = ${JSON.stringify(REQUIRED_XSYNC_VERSION)};
     const copy = ${safeJsonSerialize(copy)};
     ${streamFilenameSelectorClientScript()}
+    // [v3.41.3 — D1] autoSubsRuntime() memanggil resolveStreamUrlRedirect();
+    // tanpa baris ini nama itu tidak wujud dalam skrip halaman ini →
+    // ReferenceError ditelan senyap dan peleraian redirect tidak pernah berjalan.
+    ${streamUrlRedirectResolverClientScript()}
     (${autoSubsRuntime.toString()})(copy, selectStreamFilename);
 
     if (window.ComboBox && typeof window.ComboBox.enhanceAll === 'function') {

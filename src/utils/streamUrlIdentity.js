@@ -126,9 +126,84 @@ function streamFilenameSelectorClientScript() {
     return `const selectStreamFilename = ${selectStreamFilename.toString()};`;
 }
 
+/**
+ * [v3.41.3 — KUNCI no-undef, defek D1] Resolve a stream URL by following
+ * redirects to the final URL, which often carries the real filename.
+ *
+ * This function is deliberately self-contained because, like
+ * selectStreamFilename above, its source is EMBEDDED in the browser runtime
+ * generated for the auto-subtitles page (see streamUrlRedirectResolverClientScript).
+ *
+ * Why it exists here: autoSubsRuntime() in toolboxPageGenerator.js already
+ * called `resolveStreamUrlRedirect(streamUrl)`, but that name was only
+ * declared inside the *embedded-subtitles* page script — a different script.
+ * On the auto-subtitles page the call always threw ReferenceError, which a
+ * surrounding `catch (_)` swallowed, so `resolved` stayed null forever while
+ * the UI still told the user "Resolving stream URL...". Declaring the helper
+ * in the page that calls it closes that gap.
+ *
+ * Runs in the BROWSER only: it uses window.location, fetch and AbortController.
+ * The cache lives inside the function so the embedded copy owns its own state.
+ *
+ * @param {string} url - The URL to resolve
+ * @returns {Promise<string>} - The final URL after following redirects
+ */
+function resolveStreamUrlRedirect(url) {
+    if (!url) return url;
+    resolveStreamUrlRedirect.cache = resolveStreamUrlRedirect.cache || new Map();
+    const REDIRECT_CACHE_TTL = 5 * 60 * 1000; // 5 minutes
+    try {
+        const cached = resolveStreamUrlRedirect.cache.get(url);
+        if (cached && Date.now() - cached.timestamp < REDIRECT_CACHE_TTL) {
+            return cached.resolved;
+        }
+
+        // The page CSP does not allow arbitrary cross-origin fetches.
+        // Skip redirect probing for foreign hosts and keep the original URL.
+        const parsed = new URL(url, window.location.href);
+        if (parsed.origin !== window.location.origin) {
+            resolveStreamUrlRedirect.cache.set(url, { resolved: url, timestamp: Date.now() });
+            return url;
+        }
+
+        // HEAD with redirect: 'follow' exposes the final URL via response.url.
+        // Keep it short so the UI is never blocked for long.
+        const controller = new AbortController();
+        const timeoutId = setTimeout(() => controller.abort(), 8000);
+
+        return fetch(url, {
+            method: 'HEAD',
+            redirect: 'follow',
+            signal: controller.signal,
+            // Do not send credentials/cookies for cross-origin requests
+            credentials: 'omit'
+        })
+            .then((response) => {
+                clearTimeout(timeoutId);
+                const resolved = response.url || url;
+                resolveStreamUrlRedirect.cache.set(url, { resolved, timestamp: Date.now() });
+                return resolved;
+            })
+            .catch((err) => {
+                clearTimeout(timeoutId);
+                console.warn('[resolveStreamUrlRedirect] Failed to resolve URL, using original:', err.message);
+                return url;
+            });
+    } catch (err) {
+        console.warn('[resolveStreamUrlRedirect] Failed to resolve URL, using original:', err.message);
+        return Promise.resolve(url);
+    }
+}
+
+function streamUrlRedirectResolverClientScript() {
+    return `const resolveStreamUrlRedirect = ${resolveStreamUrlRedirect.toString()};`;
+}
+
 module.exports = {
     selectStreamFilename,
     extractStreamVideoId,
     deriveStreamHashFromUrl,
-    streamFilenameSelectorClientScript
+    streamFilenameSelectorClientScript,
+    resolveStreamUrlRedirect,
+    streamUrlRedirectResolverClientScript
 };

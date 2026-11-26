@@ -6,8 +6,10 @@
 
     function loadConfigJs(versionQuery) {
         // [TRINITY FASA D 2026-10-10] Muat modul Trinity Agents SELEPAS
-        // config.js — trinity-agents.js bergantung pada global yang config.js
-        // tetapkan (currentConfig, fungsi simpan) dan mount pada partialsReady.
+        // config.js — trinity-agents.js bergantung pada API yang config.js
+        // dedahkan pada window (cth. __SUB__getCurrentConfig) dan mount pada
+        // partialsReady. Nilai konfigurasi dibaca melalui getter itu, BUKAN
+        // melalui nama pemboleh ubah dalam config.js (lihat D4 di bawah).
         var script = document.createElement('script');
         script.src = '/config.js' + versionQuery;
         script.defer = false;
@@ -20,7 +22,20 @@
                     try {
                         var mount = function () {
                             if (window.TrinityAgents && typeof window.TrinityAgents.mount === 'function') {
-                                window.TrinityAgents.mount(typeof currentConfig !== 'undefined' ? currentConfig : null);
+                                // [v3.41.3 — D4] `currentConfig` ialah pemboleh ubah
+                                // skop-modul DI DALAM config.js (IIFE) — ia TIDAK
+                                // pernah kelihatan di fail ini, jadi rujukan lama
+                                // sentiasa menghantar null. Guna getter rasmi yang
+                                // didedahkan config.js (window.__SUB__getCurrentConfig)
+                                // untuk membaca nilai LANGSUNG; null hanya sebagai
+                                // unduran jika getter tiada.
+                                var liveConfig =
+                                    typeof window.__SUB__getCurrentConfig === 'function'
+                                        ? window.__SUB__getCurrentConfig()
+                                        : null;
+                                window.TrinityAgents.mount(
+                                    liveConfig && typeof liveConfig === 'object' ? liveConfig : null
+                                );
                             }
                         };
                         if (window.partialsReady && typeof window.partialsReady.then === 'function') {

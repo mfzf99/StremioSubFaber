@@ -304,3 +304,254 @@ test('ND-3: KAWALAN — pengesan skop mengesan const-try→catch sebagai ROSAK, 
         assert.equal(blockClosesBefore(a2, d2, u), false, `penggunaan sah di baris ${u} tidak boleh dilaporkan rosak`);
     }
 });
+
+// ── PIN 4: no-undef mesti MELAPORKAN 0 ralat pada seluruh pokok ──────────────
+// [v3.41.3] ND-1..ND-3 menjaga kes yang SUDAH diketahui. Pin ini menjaga
+// SEMUA kes: ia menjalankan ESLint sendiri (peraturan yang sama dengan CI)
+// dan gagal jika ada sebarang rujukan yang tidak diisytiharkan.
+// Ia sengaja tidak bergantung pada nama fail — apa jua ReferenceError baharu
+// di mana-mana fail aktif akan ditangkap di sini.
+
+const ROOT_LINT = path.resolve(__dirname, '..', '..');
+const LINT_TARGETS = ['index.js', 'src', 'public', 'eslint.config.mjs'];
+
+async function lintTreeWithNoUndef() {
+    const { ESLint } = require('eslint');
+    const eslint = new ESLint({ cwd: ROOT_LINT });
+    const results = await eslint.lintFiles(LINT_TARGETS);
+    return results.flatMap((r) =>
+        r.messages
+            .filter((m) => m.ruleId === 'no-undef')
+            .map((m) => `${path.relative(ROOT_LINT, r.filePath).replace(/\\/g, '/')}:${m.line} ${m.message}`)
+    );
+}
+
+test('ND-4: ESLint melaporkan 0 ralat no-undef pada seluruh pokok aktif', async () => {
+    const undef = await lintTreeWithNoUndef();
+    assert.deepEqual(
+        undef,
+        [],
+        `no-undef masih melaporkan ${undef.length} ralat — rujukan yang tidak diisytiharkan akan menjadi ReferenceError:\n` +
+            undef.join('\n')
+    );
+});
+
+// ── KAWALAN PIN 4: pengesan mesti BOLEH gagal ───────────────────────────────
+// Tanpa kawalan ini ND-4 boleh lulus kosong (cth. sasaran lint kosong, atau
+// peraturan tidak diaktifkan) dan kita tidak akan sedar. Fail sementara ini
+// mengandungi rujukan yang PASTI tidak wujud; pengesan mesti menemuinya.
+
+test('ND-4b: KAWALAN — pengesan no-undef MENGESAN rujukan yang tidak wujud', async () => {
+    const { ESLint } = require('eslint');
+    const probePath = path.join(ROOT_LINT, 'src', 'utils', `nd4b-probe-${process.pid}.js`);
+    const probeSource = [
+        "'use strict';",
+        'function probe() {',
+        '    return nameThatIsNeverDeclaredAnywhere;',
+        '}',
+        'module.exports = probe;',
+        ''
+    ].join('\n');
+    fs.writeFileSync(probePath, probeSource, 'utf8');
+    try {
+        const eslint = new ESLint({ cwd: ROOT_LINT });
+        const results = await eslint.lintFiles([path.relative(ROOT_LINT, probePath)]);
+        const hits = results.flatMap((r) => r.messages.filter((m) => m.ruleId === 'no-undef'));
+        assert.ok(hits.length >= 1, 'kawalan mesti gagal: pengesan tidak menemui rujukan yang jelas tidak wujud');
+        assert.match(hits[0].message, /nameThatIsNeverDeclaredAnywhere/);
+    } finally {
+        fs.rmSync(probePath, { force: true });
+    }
+});
+
+// ── PIN 5: pembina metadata Telegram tidak dilempar bila nama tiada ─────────
+// [v3.41.3] Sebelum ini, logik yang menentukan detectedKeys / detectedModel /
+// detectedWalletUSD dalam laporan Telegram wujud sebagai DUA salinan inline
+// (index.js xEmbed; subtitles.js terjemahan biasa). Setiap salinan merujuk
+// nama yang TIDAK wujud dalam skopnya (config, userConfig, geminiApiKeys,
+// message, text, ...) dan menyembunyikannya dengan `typeof x !== 'undefined'`.
+//
+// Kedua-dua salinan kini digantikan oleh SATU fungsi tulen:
+//   resolveTelegramRegistryMeta(sources)  — src/utils/telegramFinOps.js
+// Setiap "nama yang mungkin wujud" ialah SIFAT objek `sources`, jadi tiada
+// nama yang tidak diisytiharkan dirujuk langsung. Kontrak yang dikekalkan:
+//   - sumber yang tiada kekal `undefined` → hasil SAMA seperti sebelum ini;
+//   - urutan keutamaan tidak berubah;
+//   - tidak dilempar walau semua sumber tiada.
+//
+// index.js TIDAK dimuatkan dalam ujian: ia memanggil startTelegramBot() pada
+// masa dimuatkan (line 1226). Pin di bawah menguji resolver secara langsung.
+
+const { resolveTelegramRegistryMeta } = require('./telegramFinOps');
+
+const resolveMeta = (sources) => resolveTelegramRegistryMeta(sources);
+
+test('ND-5: resolver metadata Telegram TIDAK dilempar bila semua sumber tiada', () => {
+    let out;
+    assert.doesNotThrow(() => {
+        out = resolveMeta({});
+    }, 'resolver dilempar bila tiada sumber dibekalkan');
+    assert.deepEqual(out.detectedKeys, [], 'detectedKeys mesti array kosong — bukan undefined/null');
+    assert.equal(out.detectedModel, 'gemini-3.5-flash', 'model pengganti lalai mesti kekal');
+    assert.equal(out.detectedWalletUSD, 0, 'baki dompet lalai mesti kekal 0');
+    // Bentuk pulangan mesti kekal stabil — registerCompletedSubtitle()
+    // membaca ketiga-tiga medan ini.
+    assert.deepEqual(Object.keys(out).sort(), ['detectedKeys', 'detectedModel', 'detectedWalletUSD']);
+});
+
+// ── Jadual nilai: urutan keutamaan dan pengekstrakan, dipeterai satu-satu ───
+// Setiap baris ialah (sumber → hasil yang DIHARAPKAN). Nilai diambil daripada
+// tingkah laku kod asal (diverifikasi setara merentas 58 kes semasa refaktor).
+
+const KEY_CASES = [
+    {
+        label: 'activeApiKey diutamakan',
+        in: { activeApiKey: 'K-ACTIVE', config: { apiKey: 'K-CFG' } },
+        want: ['K-ACTIVE']
+    },
+    { label: 'activeApiKey kosong → abaikan', in: { activeApiKey: '', config: { apiKey: 'K-CFG' } }, want: ['K-CFG'] },
+    { label: 'config.geminiApiKeys (array)', in: { config: { geminiApiKeys: ['K1', 'K2'] } }, want: ['K1', 'K2'] },
+    { label: 'geminiApiKeys bukan array → abaikan', in: { config: { geminiApiKeys: 'K-STR' } }, want: [] },
+    { label: 'config.geminiApiKey', in: { config: { geminiApiKey: 'K-SINGLE' } }, want: ['K-SINGLE'] },
+    { label: 'config.apiKey', in: { config: { apiKey: 'K-PLAIN' } }, want: ['K-PLAIN'] },
+    { label: 'config null → selamat', in: { config: null }, want: [] },
+    {
+        label: 'config mengatasi userConfig',
+        in: { config: { apiKey: 'K-CFG' }, userConfig: { apiKey: 'K-USER' } },
+        want: ['K-CFG']
+    },
+    {
+        label: 'userConfig hanya jika config kosong',
+        in: { config: {}, userConfig: { apiKey: 'K-USER' } },
+        want: ['K-USER']
+    },
+    { label: 'geminiApiKeys teras', in: { geminiApiKeys: ['K-B1'] }, want: ['K-B1'] },
+    { label: 'geminiApiKey teras', in: { geminiApiKey: 'K-BARE' }, want: ['K-BARE'] },
+    { label: 'apiKey teras', in: { apiKey: 'K-PLAIN-BARE' }, want: ['K-PLAIN-BARE'] }
+];
+
+const MODEL_CASES = [
+    { label: 'translationEngine.model', in: { translationEngine: { model: 'm-engine' } }, want: 'm-engine' },
+    { label: 'translationEngine null → abaikan', in: { translationEngine: null }, want: 'gemini-3.5-flash' },
+    { label: 'translationEngine tanpa model → abaikan', in: { translationEngine: {} }, want: 'gemini-3.5-flash' },
+    { label: 'geminiService.model', in: { geminiService: { model: 'm-svc' } }, want: 'm-svc' },
+    {
+        label: 'enjin mengatasi service',
+        in: { translationEngine: { model: 'm-engine' }, geminiService: { model: 'm-svc' } },
+        want: 'm-engine'
+    },
+    { label: 'config.geminiModel', in: { config: { geminiModel: 'm-cfg' } }, want: 'm-cfg' },
+    {
+        label: 'config.advancedSettings.geminiModel',
+        in: { config: { advancedSettings: { geminiModel: 'm-adv' } } },
+        want: 'm-adv'
+    },
+    { label: 'userConfig.geminiModel', in: { userConfig: { geminiModel: 'm-user' } }, want: 'm-user' },
+    {
+        label: 'enjin mengatasi config',
+        in: { translationEngine: { model: 'm-e' }, config: { geminiModel: 'm-c' } },
+        want: 'm-e'
+    },
+    { label: 'teks "Engine: model" tanpa teg', in: { message: 'Engine: plain-model' }, want: 'plain-model' }
+];
+
+const WALLET_CASES = [
+    { label: 'teleMsg', in: { teleMsg: '💰 <b>Wallet Balance:</b> $12.50' }, want: 12.5 },
+    { label: 'walletSection', in: { walletSection: 'Wallet Balance: $3.25' }, want: 3.25 },
+    { label: 'tiada teks → 0', in: {}, want: 0 }
+];
+
+test('ND-5b: urutan keutamaan dan pengekstrakan resolver adalah seperti kod asal', () => {
+    for (const c of KEY_CASES) {
+        assert.deepEqual(resolveMeta(c.in).detectedKeys, c.want, `kunci / ${c.label}`);
+    }
+    for (const c of MODEL_CASES) {
+        assert.equal(resolveMeta(c.in).detectedModel, c.want, `model / ${c.label}`);
+    }
+    for (const c of WALLET_CASES) {
+        assert.equal(resolveMeta(c.in).detectedWalletUSD, c.want, `baki / ${c.label}`);
+    }
+
+    // Kedua-dua pengekstrakan berlaku serentak dari teks yang sama.
+    const both = resolveMeta({ teleMsg: '🧠 <b>Engine:</b> m9\nWallet Balance: $7.00' });
+    assert.equal(both.detectedWalletUSD, 7, 'baki diekstrak walaupun model turut ada');
+});
+
+test('ND-5q: KEANEHAN DIPETERAI — Sumber C menangkap "b" daripada teg, bukan model', () => {
+    // DIREKOD, BUKAN DIBAIKI (mandat: tingkah laku tidak berubah).
+    // Regex asal ialah /Engine:[^\w]*([a-zA-Z0-9._-]+)/i tetapi laporan
+    // sebenar ialah `🧠 <b>Engine:</b> <model>`: selepas "Engine:" aksara
+    // berikutnya ialah "</b>", jadi `[^\w]*` melangkaunya dan kumpulan
+    // penangkap mengambil huruf "b" — BUKAN nama model.
+    // Ia tersembunyi selama ini kerana Sumber A/B lazimnya sudah memberi
+    // nilai sebelum Sumber C dicapai. Pin ini memeterai kelakuan SEMASA
+    // supaya sebarang perubahan padanya adalah disengajakan dan kelihatan.
+    assert.equal(
+        resolveMeta({ teleMsg: '🧠 <b>Engine:</b> gemini-uji-9' }).detectedModel,
+        'b',
+        'Sumber C semasa menangkap "b" (teg), bukan model — ubah hanya dengan sengaja'
+    );
+});
+
+test('ND-5c: KAWALAN — resolver tidak mencipta nilai daripada sumber yang tiada', () => {
+    // Bukti bahawa ND-5/ND-5b menguji sesuatu yang nyata: pembekalan sumber
+    // yang betul MESTI mengubah hasil. Jika ini gagal, bermakna resolver
+    // mengabaikan input dan semua pin di atas adalah lulus kosong.
+    const empty = resolveMeta({});
+    const withKey = resolveMeta({ config: { apiKey: 'K' } });
+    const withModel = resolveMeta({ translationEngine: { model: 'm' } });
+    const withWallet = resolveMeta({ teleMsg: 'Wallet Balance: $5.00' });
+    assert.notDeepEqual(withKey.detectedKeys, empty.detectedKeys, 'config.apiKey mesti mengubah detectedKeys');
+    assert.notEqual(withModel.detectedModel, empty.detectedModel, 'translationEngine.model mesti mengubah model');
+    assert.notEqual(withWallet.detectedWalletUSD, empty.detectedWalletUSD, 'teleMsg mesti mengubah baki');
+});
+
+test('ND-5d: KONTRAK TAPAK PANGGILAN — kedua-dua fail memanggil resolver dengan nama skop sahaja', () => {
+    // Kedua-dua fungsi BUKAN corak seragam (amaran mandat):
+    //  - index.js (xEmbed): hanya `teleMsg` wujud dalam skop.
+    //  - subtitles.js: `config`, `translationEngine`, `activeApiKey`, `teleMsg`.
+    // Pin ini memastikan (a) rantaian `typeof` tidak kembali, dan (b) tiada
+    // tapak panggilan menghantar nama yang TIDAK wujud dalam skopnya —
+    // kerana itu akan menjadi ReferenceError sebaik `typeof` dibuang.
+    const forbidden =
+        /typeof\s+(config|userConfig|geminiApiKeys|geminiApiKey|apiKey|translationEngine|geminiService|teleMsg|telegramMessage|message|caption|text|walletSection)\s*!==?\s*'undefined'/;
+
+    const xembed = read('index.js');
+    assert.ok(
+        /resolveTelegramRegistryMeta\s*\(\s*\{[^}]*teleMsg[^}]*\}\s*\)/.test(xembed),
+        'index.js mesti memanggil resolveTelegramRegistryMeta({ ... teleMsg })'
+    );
+    assert.doesNotMatch(
+        xembed,
+        forbidden,
+        'index.js: rantaian typeof_nama tidak boleh kembali — guna resolveTelegramRegistryMeta'
+    );
+    // index.js TIDAK mempunyai config/activeApiKey dalam skop — pastikan ia
+    // tidak dihantar (ini akan menjadi bug yang membungkam ralat).
+    const xembedCall = xembed.match(/resolveTelegramRegistryMeta\s*\(\s*\{[^}]*\}\s*\)/);
+    assert.ok(xembedCall, 'index.js: panggilan resolver mesti wujud');
+    assert.doesNotMatch(
+        xembedCall[0],
+        /\b(config|userConfig|activeApiKey|geminiApiKeys)\b/,
+        'index.js: jangan hantar nama yang tiada dalam skop'
+    );
+
+    const normal = read('src/handlers/subtitles.js');
+    const normalCall = normal.match(/resolveTelegramRegistryMeta\s*\(\s*\{[^}]*\}\s*\)/);
+    assert.ok(normalCall, 'subtitles.js: panggilan resolver mesti wujud');
+    assert.match(normalCall[0], /\bactiveApiKey\b/, 'subtitles.js: activeApiKey wujud dan mesti dihantar');
+    assert.match(normalCall[0], /\bconfig\b/, 'subtitles.js: config wujud dan mesti dihantar');
+    assert.match(normalCall[0], /\btranslationEngine\b/, 'subtitles.js: translationEngine wujud dan mesti dihantar');
+    assert.doesNotMatch(
+        normal,
+        forbidden,
+        'subtitles.js: rantaian typeof_nama tidak boleh kembali — guna resolveTelegramRegistryMeta'
+    );
+    // subtitles.js TIDAK mempunyai userConfig/geminiService — pastikan ia
+    // tidak dihantar.
+    assert.doesNotMatch(
+        normalCall[0],
+        /\b(userConfig|geminiService|geminiApiKeys|geminiApiKey)\b/,
+        'subtitles.js: jangan hantar nama yang tiada dalam skop'
+    );
+});

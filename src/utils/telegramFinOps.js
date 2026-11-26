@@ -462,6 +462,125 @@ function renderIncidentSection(incidents, rateUSD_MYR = FALLBACK_USD_MYR) {
     return section;
 }
 
+/**
+ * Resolve the registry metadata (API keys, model, wallet USD) attached to a
+ * completed-translation Telegram report.
+ *
+ * [v3.41.3 — KUNCI no-undef] Sebelum ini, logik yang sama disalin ke dalam
+ * index.js (xEmbed) dan src/handlers/subtitles.js (terjemahan biasa) sebagai
+ * rantaian `typeof nama !== 'undefined'`. Kedua-dua salinan merujuk nama yang
+ * TIDAK wujud dalam skop masing-masing (config, userConfig, message, ...) dan
+ * menyembunyikannya dengan `typeof`. Rantaian itu kini digantikan oleh fungsi
+ * tulen ini: setiap sumber ialah SIFAT objek argumen, jadi tiada nama yang
+ * tidak diisytiharkan dirujuk langsung.
+ *
+ * Kontrak tingkah laku (dipeterai oleh ND-5):
+ *  - Sumber yang tiada mesti kekal `undefined` — bukan null, bukan [].
+ *  - Urutan keutamaan tidak berubah (lihat setiap langkah di bawah).
+ *  - Fungsi ini TULEN: tiada kesan sampingan, tiada bacaan global.
+ *
+ * @param {object} sources setiap kunci ialah nama yang "mungkin wujud" dalam
+ *   skop pemanggil. Pemanggil yang tidak mempunyai sesebuah sumber cuma
+ *   jangan hantar kunci itu.
+ * @returns {{detectedKeys: Array, detectedModel: string, detectedWalletUSD: number}}
+ */
+function resolveTelegramRegistryMeta(sources = {}) {
+    const pick = (key) => (Object.prototype.hasOwnProperty.call(sources, key) ? sources[key] : undefined);
+    const keyList = (value) => {
+        if (Array.isArray(value)) return value;
+        return undefined;
+    };
+
+    // ── Kunci API (urutan asal dikekalkan) ──────────────────────────────────
+    let detectedKeys = [];
+    const activeApiKey = pick('activeApiKey');
+    if (activeApiKey) {
+        detectedKeys = [activeApiKey];
+    }
+
+    // config → userConfig → geminiApiKeys / geminiApiKey / apiKey
+    for (const name of ['config', 'userConfig']) {
+        if (detectedKeys.length > 0) break;
+        const candidate = pick(name);
+        if (candidate === undefined) continue;
+        const list = keyList(candidate?.geminiApiKeys);
+        if (list) detectedKeys = list;
+        else if (candidate?.geminiApiKey) detectedKeys = [candidate.geminiApiKey];
+        else if (candidate?.apiKey) detectedKeys = [candidate.apiKey];
+    }
+
+    if (detectedKeys.length === 0) {
+        const list = keyList(pick('geminiApiKeys'));
+        if (list) detectedKeys = list;
+        else if (pick('geminiApiKey')) detectedKeys = [pick('geminiApiKey')];
+        else if (pick('apiKey')) detectedKeys = [pick('apiKey')];
+    }
+
+    // ── Model (Sumber A → B → C → lalai) ────────────────────────────────────
+    let detectedModel = '';
+
+    // Sumber A: enjin terjemahan yang sedang berjalan.
+    // Tingkah laku asal: `typeof x !== 'undefined' && x?.model` — iaitu
+    // "bukan undefined DAN bukan null DAN ada model".
+    const translationEngine = pick('translationEngine');
+    if (translationEngine !== undefined && translationEngine?.model) {
+        detectedModel = translationEngine.model;
+    } else {
+        const geminiService = pick('geminiService');
+        if (geminiService !== undefined && geminiService?.model) {
+            detectedModel = geminiService.model;
+        }
+    }
+
+    // Sumber B: objek konfigurasi pengguna.
+    for (const name of ['config', 'userConfig']) {
+        if (detectedModel) break;
+        const candidate = pick(name);
+        if (candidate === undefined) continue;
+        detectedModel = candidate?.advancedSettings?.geminiModel || candidate?.geminiModel;
+    }
+
+    // Sumber C: imbas regex daripada sebarang teks laporan yang wujud.
+    // KEANEHAN DIPETERAI (lihat ND-5b): laporan sebenar ialah
+    // `🧠 <b>Engine:</b> <model>`, dan `[^\w]*` melangkau `</b>` lalu
+    // menangkap huruf "b" — bukan nama model. Dikekalkan sepenuhnya kerana
+    // mandat ialah tingkah laku TIDAK berubah.
+    if (!detectedModel) {
+        const candidateTexts = [
+            pick('teleMsg'),
+            pick('telegramMessage'),
+            pick('message'),
+            pick('caption'),
+            pick('text'),
+            pick('walletSection')
+        ]
+            .map((value) => (value === undefined ? '' : value))
+            .join('\n');
+
+        const engineMatch = candidateTexts.match(/Engine:[^\w]*([a-zA-Z0-9._-]+)/i);
+        if (engineMatch && engineMatch[1]) {
+            detectedModel = engineMatch[1];
+        }
+    }
+
+    if (!detectedModel) {
+        detectedModel = process.env.GEMINI_MODEL || 'gemini-3.5-flash';
+    }
+
+    // ── Baki dompet USD ─────────────────────────────────────────────────────
+    let detectedWalletUSD = 0;
+    const allCandidateTexts = [pick('teleMsg'), pick('telegramMessage'), pick('message'), pick('walletSection')]
+        .map((value) => (value === undefined ? '' : value))
+        .join('\n');
+
+    const walletMatch = allCandidateTexts.match(/Wallet Balance:[^\$]*\$([0-9.]+)/i);
+    if (walletMatch && walletMatch[1]) {
+        detectedWalletUSD = parseFloat(walletMatch[1]);
+    }
+
+    return { detectedKeys, detectedModel, detectedWalletUSD };
+}
+
 module.exports = {
     GEMINI_PRICING,
     resolvePricing,
@@ -470,5 +589,6 @@ module.exports = {
     fetchCrazyRouterWalletUSD,
     drainFinOpsLedger,
     buildCostSection,
-    renderIncidentSection
+    renderIncidentSection,
+    resolveTelegramRegistryMeta
 };

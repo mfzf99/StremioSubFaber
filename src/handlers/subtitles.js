@@ -6909,7 +6909,8 @@ async function performTranslation(
                         const {
                             buildCostSection,
                             renderIncidentSection,
-                            resolveActiveFinOpsRoute
+                            resolveActiveFinOpsRoute,
+                            resolveTelegramRegistryMeta
                         } = require('../utils/telegramFinOps');
                         const { isCrazyRouter, activeApiKey } = resolveActiveFinOpsRoute(
                             config,
@@ -6982,76 +6983,19 @@ async function performTranslation(
                         const axios = require('axios');
                         const { registerCompletedSubtitle } = require('../services/telegramBot');
 
-                        let detectedKeys = activeApiKey ? [activeApiKey] : [];
-                        if (detectedKeys.length === 0 && typeof config !== 'undefined') {
-                            if (Array.isArray(config?.geminiApiKeys)) detectedKeys = config.geminiApiKeys;
-                            else if (config?.geminiApiKey) detectedKeys = [config.geminiApiKey];
-                            else if (config?.apiKey) detectedKeys = [config.apiKey];
-                        }
-                        if (detectedKeys.length === 0 && typeof userConfig !== 'undefined') {
-                            if (Array.isArray(userConfig?.geminiApiKeys)) detectedKeys = userConfig.geminiApiKeys;
-                            else if (userConfig?.geminiApiKey) detectedKeys = [userConfig.geminiApiKey];
-                            else if (userConfig?.apiKey) detectedKeys = [userConfig.apiKey];
-                        }
-                        if (detectedKeys.length === 0) {
-                            if (typeof geminiApiKeys !== 'undefined' && Array.isArray(geminiApiKeys))
-                                detectedKeys = geminiApiKeys;
-                            else if (typeof geminiApiKey !== 'undefined' && geminiApiKey) detectedKeys = [geminiApiKey];
-                            else if (typeof apiKey !== 'undefined' && apiKey) detectedKeys = [apiKey];
-                        }
-
-                        // 🛡️ Resolusi Model Kebal (Multi-source detection)
-                        let detectedModel = '';
-
-                        // Sumber A: Dari enjin terjemahan yang sedang berjalan
-                        if (typeof translationEngine !== 'undefined' && translationEngine?.model) {
-                            detectedModel = translationEngine.model;
-                        } else if (typeof geminiService !== 'undefined' && geminiService?.model) {
-                            detectedModel = geminiService.model;
-                        }
-
-                        // Sumber B: Dari objek konfigurasi pengguna
-                        if (!detectedModel && typeof config !== 'undefined') {
-                            detectedModel = config?.advancedSettings?.geminiModel || config?.geminiModel;
-                        }
-                        if (!detectedModel && typeof userConfig !== 'undefined') {
-                            detectedModel = userConfig?.advancedSettings?.geminiModel || userConfig?.geminiModel;
-                        }
-
-                        // Sumber C: Imbas regex daripada sebarang teks laporan telegram yang wujud
-                        if (!detectedModel) {
-                            const candidateTexts = [
-                                typeof teleMsg !== 'undefined' ? teleMsg : '',
-                                typeof telegramMessage !== 'undefined' ? telegramMessage : '',
-                                typeof message !== 'undefined' ? message : '',
-                                typeof caption !== 'undefined' ? caption : '',
-                                typeof text !== 'undefined' ? text : '',
-                                typeof walletSection !== 'undefined' ? walletSection : ''
-                            ].join('\n');
-
-                            const engineMatch = candidateTexts.match(/Engine:[^\w]*([a-zA-Z0-9._-]+)/i);
-                            if (engineMatch && engineMatch[1]) {
-                                detectedModel = engineMatch[1];
-                            }
-                        }
-
-                        if (!detectedModel) {
-                            detectedModel = process.env.GEMINI_MODEL || 'gemini-3.5-flash';
-                        }
-
-                        // Tangkap baki USD jika ada
-                        let detectedWalletUSD = 0;
-                        const allCandidateTexts = [
-                            typeof teleMsg !== 'undefined' ? teleMsg : '',
-                            typeof telegramMessage !== 'undefined' ? telegramMessage : '',
-                            typeof message !== 'undefined' ? message : '',
-                            typeof walletSection !== 'undefined' ? walletSection : ''
-                        ].join('\n');
-
-                        const walletMatch = allCandidateTexts.match(/Wallet Balance:[^\$]*\$([0-9.]+)/i);
-                        if (walletMatch && walletMatch[1]) {
-                            detectedWalletUSD = parseFloat(walletMatch[1]);
-                        }
+                        // [v3.41.3 — KUNCI no-undef] Rantaian `typeof nama` yang
+                        // asal merujuk banyak nama yang TIDAK wujud dalam skop
+                        // ini (userConfig, geminiApiKeys, message, ...). Ia
+                        // digantikan oleh resolver tulen; hanya nama yang
+                        // BENAR-BENAR wujud di sini dihantar. Tingkah laku
+                        // (urutan keutamaan + hasil) dikekalkan — dipeterai
+                        // oleh ND-5/ND-5b/ND-5q dalam no-undef-scope-regression.
+                        const { detectedKeys, detectedModel, detectedWalletUSD } = resolveTelegramRegistryMeta({
+                            config,
+                            translationEngine,
+                            activeApiKey,
+                            teleMsg
+                        });
 
                         let subRegistryId = null;
                         try {

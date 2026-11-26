@@ -9005,70 +9005,16 @@ app.post('/api/translate-embedded', embeddedTranslationLimiter, async (req, res)
                         // Daftarkan ke dalam registry Redis untuk xEmbed & butang padam
                         const { registerCompletedSubtitle } = require('./src/services/telegramBot');
 
-                        let detectedKeys = [];
-                        if (typeof config !== 'undefined') {
-                            if (Array.isArray(config?.geminiApiKeys)) detectedKeys = config.geminiApiKeys;
-                            else if (config?.geminiApiKey) detectedKeys = [config.geminiApiKey];
-                            else if (config?.apiKey) detectedKeys = [config.apiKey];
-                        }
-                        if (detectedKeys.length === 0 && typeof userConfig !== 'undefined') {
-                            if (Array.isArray(userConfig?.geminiApiKeys)) detectedKeys = userConfig.geminiApiKeys;
-                            else if (userConfig?.geminiApiKey) detectedKeys = [userConfig.geminiApiKey];
-                            else if (userConfig?.apiKey) detectedKeys = [userConfig.apiKey];
-                        }
-                        if (detectedKeys.length === 0) {
-                            if (typeof geminiApiKeys !== 'undefined' && Array.isArray(geminiApiKeys))
-                                detectedKeys = geminiApiKeys;
-                            else if (typeof geminiApiKey !== 'undefined' && geminiApiKey) detectedKeys = [geminiApiKey];
-                            else if (typeof apiKey !== 'undefined' && apiKey) detectedKeys = [apiKey];
-                        }
-
-                        let detectedModel = '';
-                        if (typeof translationEngine !== 'undefined' && translationEngine?.model) {
-                            detectedModel = translationEngine.model;
-                        } else if (typeof geminiService !== 'undefined' && geminiService?.model) {
-                            detectedModel = geminiService.model;
-                        }
-
-                        if (!detectedModel && typeof config !== 'undefined') {
-                            detectedModel = config?.advancedSettings?.geminiModel || config?.geminiModel;
-                        }
-                        if (!detectedModel && typeof userConfig !== 'undefined') {
-                            detectedModel = userConfig?.advancedSettings?.geminiModel || userConfig?.geminiModel;
-                        }
-
-                        if (!detectedModel) {
-                            const candidateTexts = [
-                                typeof teleMsg !== 'undefined' ? teleMsg : '',
-                                typeof telegramMessage !== 'undefined' ? telegramMessage : '',
-                                typeof message !== 'undefined' ? message : '',
-                                typeof caption !== 'undefined' ? caption : '',
-                                typeof text !== 'undefined' ? text : '',
-                                typeof walletSection !== 'undefined' ? walletSection : ''
-                            ].join('\n');
-
-                            const engineMatch = candidateTexts.match(/Engine:[^\w]*([a-zA-Z0-9._-]+)/i);
-                            if (engineMatch && engineMatch[1]) {
-                                detectedModel = engineMatch[1];
-                            }
-                        }
-
-                        if (!detectedModel) {
-                            detectedModel = process.env.GEMINI_MODEL || 'gemini-3.5-flash';
-                        }
-
-                        let detectedWalletUSD = 0;
-                        const allCandidateTexts = [
-                            typeof teleMsg !== 'undefined' ? teleMsg : '',
-                            typeof telegramMessage !== 'undefined' ? telegramMessage : '',
-                            typeof message !== 'undefined' ? message : '',
-                            typeof walletSection !== 'undefined' ? walletSection : ''
-                        ].join('\n');
-
-                        const walletMatch = allCandidateTexts.match(/Wallet Balance:[^\$]*\$([0-9.]+)/i);
-                        if (walletMatch && walletMatch[1]) {
-                            detectedWalletUSD = parseFloat(walletMatch[1]);
-                        }
+                        // [v3.41.3 — KUNCI no-undef] Rantaian `typeof nama` yang asal
+                        // merujuk nama yang TIDAK wujud dalam skop ini (config,
+                        // userConfig, translationEngine, geminiService, message, ...).
+                        // Di xEmbed, SATU-SATUNYA nama yang benar-benar wujud ialah
+                        // `teleMsg` — berbeza daripada laluan terjemahan biasa.
+                        // Tingkah laku dikekalkan: sumber yang tiada kekal undefined.
+                        const { resolveTelegramRegistryMeta } = require('./src/utils/telegramFinOps');
+                        const { detectedKeys, detectedModel, detectedWalletUSD } = resolveTelegramRegistryMeta({
+                            teleMsg
+                        });
 
                         let subRegistryId = null;
                         try {

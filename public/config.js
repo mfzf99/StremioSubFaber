@@ -6033,6 +6033,21 @@ Translate to {target_language}.`;
             .filter(Boolean);
     }
 
+    // Function to show/hide URL extension test group (requires devMode AND passthrough enabled).
+    // [v3.41.3 — D2] Dideklarasikan di peringkat atas supaya KEDUA-dua pemanggil
+    // melihatnya: setupEventListeners() dan loadConfigToForm() -> syncForceSRT().
+    function toggleUrlExtensionTestGroup() {
+        const urlExtTestGroup = document.getElementById('urlExtensionTestGroup');
+        if (!urlExtTestGroup) return;
+        const devModeEl = document.getElementById('devMode');
+        const convertAssEl = getConvertAssToVttToggle();
+        const devEnabled = devModeEl && devModeEl.checked;
+        // checked = passthrough (ASS conversion OFF)
+        const assConversionDisabled = convertAssEl && convertAssEl.checked;
+        // Show only when devMode is ON and ASS conversion is OFF (raw ASS mode)
+        urlExtTestGroup.style.display = devEnabled && assConversionDisabled ? 'block' : 'none';
+    }
+
     function syncConvertAssToVttInputs({ checked, disabled } = {}) {
         getConvertAssToVttToggles().forEach((toggle) => {
             if (typeof checked === 'boolean') {
@@ -8519,18 +8534,11 @@ Translate to {target_language}.`;
             convertAssGroup.style.display = 'block';
         }
 
-        // Function to show/hide URL extension test group (requires devMode AND passthrough enabled)
-        function toggleUrlExtensionTestGroup() {
-            const urlExtTestGroup = document.getElementById('urlExtensionTestGroup');
-            if (!urlExtTestGroup) return;
-            const devModeEl = document.getElementById('devMode');
-            const convertAssEl = getConvertAssToVttToggle();
-            const devEnabled = devModeEl && devModeEl.checked;
-            // checked = passthrough (ASS conversion OFF)
-            const assConversionDisabled = convertAssEl && convertAssEl.checked;
-            // Show only when devMode is ON and ASS conversion is OFF (raw ASS mode)
-            urlExtTestGroup.style.display = devEnabled && assConversionDisabled ? 'block' : 'none';
-        }
+        // [v3.41.3 — D2] toggleUrlExtensionTestGroup() telah dipindahkan ke
+        // peringkat atas IIFE (selepas getConvertAssToVttToggles) kerana ia juga
+        // dipanggil daripada loadConfigToForm() -> syncForceSRT(), iaitu fungsi
+        // SAUDARA di luar skop setupEventListeners(). Di sini ia menyebabkan
+        // ReferenceError setiap kali kotak Force SRT ditukar.
 
         // Function to show/hide Android subtitle compatibility mode group (dev mode only)
         function toggleAndroidSubtitleCompatModeGroup() {
@@ -13460,6 +13468,22 @@ Translate to {target_language}.`;
             alert.style.animation = 'slideInRight 0.3s cubic-bezier(0.16, 1, 0.3, 1) reverse';
             setTimeout(() => alert.remove(), 300);
         }, displayTime);
+    }
+
+    // [v3.41.3 — D3] Pendedahan rasmi showAlert kepada modul luaran
+    // (public/js/trinity-agents.js). `showAlert` ialah fungsi skop-modul
+    // (IIFE) — ia TIDAK pernah menjadi global, jadi pengawal
+    // `typeof showAlert === 'function'` di trinity-agents.js sentiasa palsu
+    // dan amaran "Invalid API key" tidak pernah dipaparkan. Mengikut corak
+    // yang sama seperti __SUB__getCurrentConfig di atas.
+    try {
+        Object.defineProperty(window, '__SUB__showAlert', {
+            value: showAlert,
+            writable: false,
+            configurable: true
+        });
+    } catch (_) {
+        /* defensif — pendedahan gagal tidak boleh menghalang pemuatan */
     }
 
     function showLoading(show) {
