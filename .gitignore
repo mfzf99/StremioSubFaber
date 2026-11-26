@@ -93,6 +93,8 @@ scripts/*
 !scripts/patch-zoo-code.js
 !scripts/run-tracked-tests.js
 !scripts/relay-state-gate.js
+!scripts/proc-triage.js
+!scripts/floor-guard.js
 .tests
 .tests/
 tests/

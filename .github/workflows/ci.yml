@@ -21,9 +21,25 @@ jobs:
       matrix:
         node-version: [22, 24]
 
+    # [CI 2026-11-27] Service Redis tempatan supaya ujian live-Redis benar-benar JALAN
+    # di CI dan bukan dilangkau. Ujian menggunakan 127.0.0.1 + DB 15 (sandbox DB 0),
+    # jadi container ini tidak berkongsi data dengan apa-apa sahaja.
+    services:
+      redis:
+        image: redis:7-alpine
+        ports:
+          - 6379:6379
+        options: >-
+          --health-cmd "redis-cli ping"
+          --health-interval 5s
+          --health-timeout 3s
+          --health-retries 10
+
     steps:
-      - name: Check out the repo
+      - name: Check out the repo (full history: the floor guard diffs the pushed range)
         uses: actions/checkout@v7
+        with:
+          fetch-depth: 0
 
       - name: Set up Node.js
         uses: actions/setup-node@v7
@@ -39,6 +55,11 @@ jobs:
 
       - name: Run regression tests
         run: npm test
+        env:
+          REDIS_INTEGRATION_PORT: 6379
+
+      - name: Constraints floor guard (committed range: the working tree equals HEAD on CI)
+        run: node scripts/floor-guard.js --committed "${{ github.event.pull_request.base.sha || github.event.before }}..${{ github.sha }}"
 
       - name: Check formatting
         run: npx prettier --check .

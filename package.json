@@ -1,6 +1,6 @@
 {
   "name": "stremio-subfaber",
-  "version": "3.41.3",
+  "version": "3.42.0",
   "xsyncMinVersion": "1.0.9",
   "description": "Automated Netflix-Grade Malay Subtitle Engine for Stremio powered by VideoLingo principles",
   "main": "index.js",
@@ -14,9 +14,7 @@
     "dev": "nodemon index.js",
     "test": "npm run test:tracked",
     "test:tracked": "node scripts/run-tracked-tests.js",
-    "test:release": "npm run test:tracked && node scripts/run-tests.js --release",
-    "test:manual": "npm run test:tracked && node scripts/run-tests.js --standalone",
-    "update:anime-list": "node update-anime-list.js"
+    "check:floor": "node scripts/floor-guard.js"
   },
   "keywords": [
     "stremio",

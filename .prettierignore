@@ -36,6 +36,8 @@ keys
 scripts/*
 !scripts/run-tracked-tests.js
 !scripts/relay-state-gate.js
+!scripts/proc-triage.js
+!scripts/floor-guard.js
 SubFaber xSync
 nSync
 native

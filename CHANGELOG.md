@@ -2,6 +2,21 @@
 
 All notable changes to this project will be documented in this file.
 
+## SubFaber v3.42.0 (2026-11-27) — House Upgrade & Cleaning: MCP-Safe Process Gates, Live Redis in CI, Governance Repairs
+
+### Added
+
+- **MCP servers can no longer be killed by name.** The local destructive-command guard (`dcg`) now blocks every name-addressed stop — `taskkill /IM`, `Stop-Process -Name`, piping a process list into `Stop-Process`, `pkill node`, `killall node` — and blocks printing an env file. Verified with a 16-case proof: every bulk shape is refused while a single triaged PID and the normal release commands stay allowed. The MCP servers (Context7, Firecrawl, Playwright) share the `node.exe` image, so one name-addressed kill took every MCP tool down until the UI was restarted by hand.
+- **`scripts/proc-triage.js` — a read-only process triage.** Lists every `node.exe` with its parent, start time, listening ports and an owner class (MCP server, test runner, SubFaber server, this script), and prints only a script marker, never a command line, so no secret can reach the transcript. It never stops a process. Pinned by `src/utils/proc-triage-regression.test.js` (PT-1 to PT-3): no termination API in its source, only the two read-only listers are launched, and the summary must match the rows it printed.
+- **Live Redis integration tests now run in CI.** The workflow starts a `redis:7-alpine` service and sets `REDIS_INTEGRATION_PORT`, so the 14 live-Redis tests execute instead of being skipped on every push.
+
+### Changed
+
+- **Core protocol gains §11.5 "Process lifecycle & MCP preservation".** It mandates triage-before-kill, acting on one identified PID, recording every kill in the relay state, and one-process-per-task; `.roomodes` Rule 9 and `docs/RELEASE_PIPELINE_REFERENCE.md` §6 point at it. This restores a rule that existed until the 2026-10-27 and 2026-11-10 protocol slimming removed it, which is the root cause of the MCP-server kills.
+- **Core protocol sampling contract corrected to SEND-ALL v2.** The stale HYBRID GUARD sentence (penalties suppressed for `3.x-strict`) contradicted `docs/PROVIDER_CONTRACTS_REFERENCE.md` §3 and the shipped engine since v3.39.5; it now states the contract that the code already honours.
+- **`docs/PROVIDER_CONTRACTS_REFERENCE.md` §5 corrected to "Basic by default".** The runtime resolves the mode through `resolveTrinityModeForConfig(config)` (`config.trinityMode` > `config.trinity.mode` > `basic`) since v3.33.0; the document still described a hard-coded constant.
+- **Three dead scripts removed from `package.json`:** `test:release`, `test:manual` and `update:anime-list` pointed at `scripts/run-tests.js` and `update-anime-list.js`, neither of which has existed in this repository since 2026-03-17.
+
 ## SubFaber v3.41.3 (2026-11-26) — no-undef Locked: Four Silent ReferenceErrors Closed
 
 ### Changed

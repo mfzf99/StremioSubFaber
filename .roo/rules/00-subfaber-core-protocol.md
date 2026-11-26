@@ -131,7 +131,7 @@ The binding invariants — Vanilla JS/Native CSS with no React/JSX, third-party 
 
 - Gemini REST v1beta `systemInstruction` stays top-level `{ parts: [{ text }] }`; static/dynamic separation is managed by `src/services/utils/structuredPrompt.js`.
 - `thinkingBudget` must be preserved; `minP`, `repetitionPenalty`, `topK`, and `topKEnabled` are removed and must not be reintroduced.
-- HYBRID GUARD: `temperature`/`topP` SEND-ALL for all Gemini 3.x; `frequencyPenalty`/`presencePenalty` suppressed only for `3.x-strict`; `topK` forbidden; DeepSeek `disabled` → `reasoning_effort: 'none'`. Ground truth: `plans/gemini-sampling-ground-truth-2026.md`, `plans/trinity-params-ground-truth-2026.md`.
+- SEND-ALL v2 (Owner mandate 2026-11-20, supersedes the former HYBRID GUARD): the Gemini native door always sends `temperature`, `topP`, `thinkingLevel`, `frequencyPenalty`, and `presencePenalty`; the penalties default to `0.0`, the engine no longer suppresses them for any family, and the server decides (accept/ignore/reject). `topK` is forbidden; DeepSeek `disabled` → `reasoning_effort: 'none'`. Ground truth: `plans/gemini-sampling-ground-truth-2026.md`, `plans/trinity-params-ground-truth-2026.md`.
 - Official identities: `SubFaber`/`StremioSubFaber`; Trinity: `Agent Preflight`, `Agent Translation`, `Agent Inspector`. Legacy brand/agent identifiers must not return to active code.
 - In the **Gemini model parameter panel only**, HIDE ≠ LOCK: `disabled` is not a substitute for visibility morphing. Elsewhere, disabled states are allowed for legitimate interaction safety.
 - Optional DOM access uses a null check such as `if (!el) return;`. Required structural elements must not fail silently — use explicit assertions/errors.
@@ -156,7 +156,7 @@ The binding invariants — Vanilla JS/Native CSS with no React/JSX, third-party 
 
 ### 11.2 WEB MCP — FIRECRAWL PRIMARY, CRAWL4AI FALLBACK
 
-The complete web-retrieval policy — Firecrawl primary, Crawl4AI fallback conditions, tool-cost selection, ledger placement of operational supply status, and Playwright/Context7 boundaries — is specified in `docs/RELEASE_PIPELINE_REFERENCE.md` §5. Terminal and process hygiene rules are in §6 of the same file.
+The complete web-retrieval policy — Firecrawl primary, Crawl4AI fallback conditions, tool-cost selection, ledger placement of operational supply status, and Playwright/Context7 boundaries — is specified in `docs/RELEASE_PIPELINE_REFERENCE.md` §5. Terminal hygiene is in §6 of the same file; process lifecycle and MCP preservation are in §11.5 below.
 
 ### 11.3 Locate-Before-Read Gate
 
@@ -170,6 +170,17 @@ The complete web-retrieval policy — Firecrawl primary, Crawl4AI fallback condi
 - Full-file reads are permitted only when (a) the whole file is the unit of work, or (b) the file is a small configuration or data file.
 - Ratio targets: at least 1 `search_files` per 2 `read_file` calls, and at least 60% of reads in anchored or ranged form.
 - These ratios are measured and reported in the session ledger (§9.1), not merely asserted.
+
+### 11.5 Process lifecycle & MCP preservation
+
+The MCP servers (Context7, Firecrawl, Playwright, Crawl4AI) run inside `node.exe`. One kill addressed by name takes every MCP tool down at once ("MCP tool: Not connected") and only a manual restart in the UI recovers it, so the triage below is mandatory before any kill:
+
+1. **Triage first.** List the running processes with their command lines (`node scripts/proc-triage.js`) and classify each one: MCP server, editor runtime, application server, or a task this session started.
+2. **Kill only an identified PID.** Act on the exact PID whose owner was classified in step 1, and prefer the bound port for a port-bound service.
+3. **Record it.** Every kill goes into `.tmp/RELAY_STATE.md` (`Evidence`) with the PID and the reason.
+4. **One task, one process.** Before starting a new test or server, check for an earlier run of the same script and account for it before adding another.
+
+Kill by image or process name is forbidden because it skips step 1 by construction: `taskkill /IM`, `Stop-Process -Name`, piping a name filter into `Stop-Process`, `pkill node`, and `killall node`.
 
 ## 12. `.ROOMODES` EDIT DISCIPLINE
 

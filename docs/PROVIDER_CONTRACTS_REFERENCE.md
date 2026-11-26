@@ -59,11 +59,14 @@ The following parameters were deliberately removed from the codebase and MUST NO
 
 ## 5. Runtime Trinity mode
 
-- The server runtime is **Basic-only**: `src/handlers/subtitles.js` sets
-  `const runtimeTrinityMode = 'basic';` and derives `isProTrinityMode` from it.
-- The Agent Inspector pipeline is only constructed in Pro mode; in Basic it is `null`.
+- The server runtime is **Basic by default**: `src/handlers/subtitles.js` derives
+  `runtimeTrinityMode` through `resolveTrinityModeForConfig(config)` (`src/utils/cacheKeys.js`),
+  whose priority is explicit `config.trinityMode` > `config.trinity.mode` > `basic`, and derives
+  `isProTrinityMode` from the resolved value.
+- The Agent Inspector pipeline is only constructed when the resolved mode is Pro; in Basic it is
+  `null`.
 - A stored `trinity.mode: 'pro'` configuration is preserved by normalization so it stays
-  recoverable. Basic-only runtime is not a licence to delete stored Pro configuration.
+  recoverable. The Basic default is not a licence to delete stored Pro configuration.
 
 ## 6. Gemini model parameter panel — HIDE is not LOCK
 

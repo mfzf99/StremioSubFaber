@@ -1,0 +1,10 @@
+# .constraintsignore — paths exempt from scripts/floor-guard.js (one glob per line).
+# An entry here is a tracked exception, not a loosened rule: it shows up in review, and every
+# entry must have a matching W-row in CONSTRAINTS.md. Adding a path to hide a real weakening is
+# itself a floor violation.
+
+# W1 — proves the guard catches weakened changes, so it must hold those shapes as fixture strings.
+src/utils/floor-guard-regression.test.js
+
+# W2 — the guard itself names the shapes it detects (eslint-disable, .skip) inside its own regexes.
+scripts/floor-guard.js

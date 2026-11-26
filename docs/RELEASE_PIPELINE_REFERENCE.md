@@ -113,15 +113,19 @@ for exploring large new component designs; implementation remains Vanilla JS/Nat
 - Playwright remains for application UI verification and browser interactions, not routine
   web-scraping replacement. Context7 remains the preferred source for supported library/API
   documentation.
-- Project MCP configuration must expose only necessary tools (target below 60 overall) and preserve
-  `timeout: 300` for each server unless the Owner directs otherwise.
+- Project MCP configuration must expose only necessary tools and preserve `timeout: 300` for each
+  server unless the Owner directs otherwise. Re-count the enabled tools on every `.roo/mcp.json`
+  edit and record the number here: 29 enabled as of 2026-11-27 (Firecrawl 6, Playwright 17,
+  Context7 2, Crawl4AI 4 — `extract` and `batch` stay allowed but are used only when several URLs
+  are genuinely required). A tool must not appear in both `alwaysAllow` and `disabledTools`.
 
 ## 6. Terminal & process hygiene
 
 - Do not create throwaway scripts for tasks that existing tools/CLI can perform. Diagnostic
   artifacts must be deleted before commit.
-- Do not blanket-kill Node/MCP. Port-bound service: kill the specific PID/port. Standalone
-  script/test: target only the filename.
+- Triage before any kill and act on the identified PID only; name-addressed kills are forbidden
+  because they take the MCP servers down (core protocol §11.5). Port-bound service: use the bound
+  port. Standalone script/test: target only the PID running that file.
 - Limit to 1–2 background tasks, use timeouts, and avoid large PTY output; temporary logs must be
   deleted.
 - If the template cache is stale, restart only the server on port 7001; do not disturb other Node
