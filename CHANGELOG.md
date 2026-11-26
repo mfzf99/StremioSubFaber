@@ -2,6 +2,28 @@
 
 All notable changes to this project will be documented in this file.
 
+## SubFaber v3.41.2 (2026-11-26) — Live Redis Verification & Gemini Auth-Failure Cache Scope Fix
+
+### Fixed
+
+- **Gemini key validation no longer hangs on the authentication-error path.** In `POST /api/validate-gemini`, the cache key `geminiAuthFailureCacheKey` was declared with `const` inside the handler's `try` block but referenced inside the sibling `catch` block. A `const` is block-scoped, so every authentication failure threw `ReferenceError: geminiAuthFailureCacheKey is not defined` before `res.json()` could run — the request hung until the client timed out, and the auth-failure cache (which exists so a known-bad key is rejected without another round trip to Google) was never written. The key is now declared with `let` at function scope, before the `try`, and assigned inside it. The empty-key guard returns early before the `try`, so the `catch` can never observe an unassigned key.
+
+### Added
+
+- **Live-Redis integration suite** (`src/storage/redis-live-purge-integration.test.js`, 13 tests). Until now the v3.41.1 `delete()` truthiness fix was only proven against a stubbed Lua reply; the real shape returned by `ioredis` was never observed. Against a real Redis this suite now proves, for `RedisStorageAdapter.delete()`: present key → `true`, absent key → `false`, **already-expired key → `false`**, and delete-twice → `true` then `false`. It captures the raw Lua reply directly (`[1, 1, size]` for a present key, `[0, 0, 0]` for an absent one) and exercises the complete write → purge → gone cycle for permanent (`translation:t2s__*`), bypass (`bypass:*__u_*`), partial, and xEmbed caches (including `listEmbeddedTranslations()` returning empty afterwards). It also pins the Filesystem/Redis `delete()` parity.
+- **Scope-regression pins** (`src/utils/no-undef-scope-regression.test.js`, 3 tests). The project ESLint config enables only `no-unused-vars`, so a reference to an out-of-scope variable is syntactically valid and invisible to both `node --check` and ESLint. Three production `ReferenceError`s escaped that way (the v3.41.1 `badge` and `translationGen` defects, and the one fixed here). ND-1 and ND-2 pin the two known cases at the source level; ND-3 is a control that proves the detector itself can fail, so the pins cannot pass vacuously.
+
+### Verified
+
+- Full suite **868 total / 868 PASS / 0 FAIL / 0 SKIP** (78 files) with `REDIS_INTEGRATION_PORT` pointed at a local Redis. The pre-existing test `atomic quota scripts stay exact under concurrent writes on real Redis` — the single valid SKIP in every earlier run — now executes and passes.
+- **Safety guardrail honoured.** The live suite writes only to Redis DB 15 under a per-process key prefix, forces `REDIS_PREFIX_MIGRATION=false` so no cross-prefix scan runs, and never issues a flush command (asserted mechanically against the test's own source). It snapshots the pre-existing sandbox keys in DB 0 before running and asserts afterwards that none of them disappeared. The sandbox key present throughout was intact before and after every run.
+
+### Known Limitations
+
+- **0 SKIP is conditional on `REDIS_INTEGRATION_PORT` being set.** That gate is pre-existing design, not something this release changed. In an environment with no reachable Redis (for example CI) the 13 live tests skip again and the count becomes **14 SKIP** (the 13 live tests plus the pre-existing quota test). They do not fail, and in that mode the file opens no Redis connection at all. This was confirmed by running the suite both with and without the variable: 13 × `# SKIP` with none of the connection errors, and 13/13 passing with it.
+- **The `validate-gemini` fix is proven by a scope pin, syntax check, and lint — not by a behavioural handler test.** `index.js` calls `startTelegramBot()` unconditionally at module load, so requiring it from a test would start the Telegram polling engine against real environment values. A behavioural test was judged not worth that side effect; the scope pin with its negative control is the chosen evidence.
+- **Deferred to v3.41.3 by Owner decision: locking `'no-undef': 'error'` in ESLint.** A full audit classified 2,624 hits across 128 files. Exactly one was a genuine defect (fixed here). The other 277 non-backup hits are safe code: 212 are a browser function embedded via `.toString()`, 55 are `typeof`-guarded Telegram identifiers, and 5 are `window.` globals and a locally-declared function. Enabling the rule today would turn all 277 red, and declaring `config`/`message`/`text` as Node globals to silence them would hide real bugs. The prepared globals configuration is preserved for that follow-up.
+
 ## SubFaber v3.41.1 (2026-11-24) — Cache Coherence Sweep: Telegram Delete Now Purges the Real Key
 
 ### Fixed

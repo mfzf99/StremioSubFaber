@@ -3970,6 +3970,14 @@ app.post('/api/validate-gemini', validationLimiter, async (req, res) => {
     // CRITICAL: Prevent caching to avoid cross-user config contamination (user credentials in request body)
     setNoStore(res);
 
+    // [v3.41.2 — AUDIT no-undef] Diisytiharkan pada SKOP FUNGSI (sebelum
+    // `try`), bukan sebagai `const` di dalam blok `try`. Sebelum ini rujukan
+    // dalam blok `catch` bersaudara di bawah (laluan ralat auth) dilempar
+    // ReferenceError sebelum res.json() — permintaan tergantung dan cache
+    // kegagalan-auth tidak pernah ditulis. `let` tanpa nilai kerana kunci
+    // hanya dikira selepas `req.body` disahkan di dalam `try`; `catch` tidak
+    // boleh dicapai sebelum tugasan itu dibuat (penjaga kosong return awal).
+    let geminiAuthFailureCacheKey;
     try {
         const t = res.locals?.t || getTranslatorFromRequest(req, res);
         const { apiKey } = req.body || {};
@@ -3983,7 +3991,7 @@ app.post('/api/validate-gemini', validationLimiter, async (req, res) => {
             });
         }
 
-        const geminiAuthFailureCacheKey = getProviderAuthFailureCacheKey('gemini', geminiApiKey);
+        geminiAuthFailureCacheKey = getProviderAuthFailureCacheKey('gemini', geminiApiKey);
         if (await hasCachedProviderAuthFailure(geminiAuthFailureCacheKey)) {
             return res.json({
                 valid: false,
